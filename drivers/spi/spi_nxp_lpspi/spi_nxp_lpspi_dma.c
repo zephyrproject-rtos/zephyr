@@ -1,5 +1,5 @@
 /*
- * Copyright 2018, 2024 NXP
+ * Copyright 2018, 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,106 +7,93 @@
 #define DT_DRV_COMPAT nxp_lpspi
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(spi_mcux_lpspi_dma, CONFIG_SPI_LOG_LEVEL);
+LOG_MODULE_DECLARE(spi_lpspi, CONFIG_SPI_LOG_LEVEL);
 
 #include <zephyr/drivers/dma.h>
 #include "spi_nxp_lpspi_priv.h"
 
+/* These states indicate what's the status of RX and TX, also synchronization
+ * status of DMA size of the next DMA transfer.
+ */
+typedef enum {
+	LPSPI_TRANSFER_STATE_NULL,
+	LPSPI_TRANSFER_STATE_ONGOING,
+	LPSPI_TRANSFER_STATE_NEXT_DMA_SIZE_UPDATED,
+	LPSPI_TRANSFER_STATE_TX_DONE,
+	LPSPI_TRANSFER_STATE_RX_DONE,
+	LPSPI_TRANSFER_STATE_RX_TX_DONE,
+	LPSPI_TRANSFER_STATE_INVALID = 0xFFFFFFFFUL,
+} lpspi_transfer_state_t;
+
+/* dummy memory used for transferring NOP when tx buf is null */
+static uint32_t tx_nop_val; /* check compliance says no init to 0, but should be 0 in bss */
+/* dummy memory for transferring to when RX buf is null */
+static uint32_t dummy_buffer;
+
 struct spi_dma_stream {
 	const struct device *dma_dev;
-	uint32_t channel; /* stores the channel for dma */
+	uint32_t channel;
 	struct dma_config dma_cfg;
 	struct dma_block_config dma_blk_cfg;
 };
 
 struct spi_nxp_dma_data {
-	volatile uint32_t status_flags;
 	struct spi_dma_stream dma_rx;
 	struct spi_dma_stream dma_tx;
-	/* dummy value used for transferring NOP when tx buf is null */
-	uint32_t dummy_buffer;
+
+	lpspi_transfer_state_t state;
+	/* This DMA size is used in callback function for RX and TX context update.
+	 * because of old LPSPI IP limitation, RX complete depend on next TX DMA transfer start,
+	 * so TX and RX not always start at the same time while we can only calculate DMA transfer
+	 * size once and update the buffer pointers at the same time.
+	 */
+	size_t synchronize_dma_size;
 };
 
-/* These flags are arbitrary */
-#define LPSPI_DMA_ERROR_FLAG   BIT(0)
-#define LPSPI_DMA_RX_DONE_FLAG BIT(1)
-#define LPSPI_DMA_TX_DONE_FLAG BIT(2)
-#define LPSPI_DMA_DONE_FLAG    (LPSPI_DMA_RX_DONE_FLAG | LPSPI_DMA_TX_DONE_FLAG)
-
-/* This function is executed in the interrupt context */
-static void spi_mcux_dma_callback(const struct device *dev, void *arg, uint32_t channel, int status)
+/*
+ * Issue a TCR (Transmit Command Register) command to properly end RX DMA transfers
+ * on certain LPSPI versions. The behavior depends on:
+ *
+ * 1. LPSPI Hardware Version:
+ *    - Version 1 (RT1170, RT10xx, Kinetis K series): TCR issue always required
+ *    - Version 2 (RT1180, MCXN, RT700, K32W, S32K3xx, MCXL10): TCR issue not needed
+ *
+ * 2. SPI_HOLD_ON_CS Configuration:
+ *    - If enabled: Keeps chip select (PCS) asserted between transfers
+ *    - If disabled: Deasserts PCS after each transfer
+ *
+ * This function checks the LPSPI version and SPI_HOLD_ON_CS setting to determine
+ * if a TCR command is needed. For version 1, TCR is always issued. For version 2,
+ * TCR is only issued if SPI_HOLD_ON_CS is not set. Therefore, SPI_HOLD_ON_CS is not
+ * supported for version 1.
+ *
+ * The LPSPI version can be read from the VERID register, which is typically the
+ * first register in the memory map.
+ */
+static void spi_mcux_issue_TCR(const struct device *dev)
 {
-	/* arg directly holds the spi device */
-	const struct device *spi_dev = arg;
-	struct spi_mcux_data *data = (struct spi_mcux_data *)spi_dev->data;
-	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
-	char debug_char;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	const struct spi_config *spi_cfg = DEV_DATA(dev)->ctx.config;
+	uint8_t major_ver = (base->VERID & LPSPI_VERID_MAJOR_MASK) >> LPSPI_VERID_MAJOR_SHIFT;
 
-	if (status < 0) {
-		goto error;
+	/* On old LPSPI versions, we always have to issue TCR, or transaction will never end.
+	 * On a newer LPSPI version, only issue TCR when hold on CS feature is disabled.
+	 */
+	if (major_ver < 2 || !(spi_cfg->operation & SPI_HOLD_ON_CS)) {
+		base->TCR &= ~LPSPI_TCR_CONTC_MASK;
 	}
-
-	/* identify the origin of this callback */
-	if (channel == dma_data->dma_tx.channel) {
-		/* this part of the transfer ends */
-		dma_data->status_flags |= LPSPI_DMA_TX_DONE_FLAG;
-		debug_char = 'T';
-	} else if (channel == dma_data->dma_rx.channel) {
-		/* this part of the transfer ends */
-		dma_data->status_flags |= LPSPI_DMA_RX_DONE_FLAG;
-		debug_char = 'R';
-	} else {
-		goto error;
-	}
-
-	LOG_DBG("DMA %cX Block Complete", debug_char);
-
-#if CONFIG_SPI_ASYNC
-	if (data->ctx.asynchronous && (dma_data->status_flags & LPSPI_DMA_DONE_FLAG)) {
-		/* Load dma blocks of equal length */
-		size_t dma_size = spi_context_max_continuous_chunk(data->ctx);
-
-		if (dma_size != 0) {
-			return;
-		}
-
-		spi_context_update_tx(&data->ctx, 1, dma_size);
-		spi_context_update_rx(&data->ctx, 1, dma_size);
-	}
-#endif
-
-	goto done;
-error:
-	LOG_ERR("DMA callback error with channel %d.", channel);
-	dma_data->status_flags |= LPSPI_DMA_ERROR_FLAG;
-done:
-	spi_context_complete(&data->ctx, spi_dev, 0);
 }
 
-static struct dma_block_config *spi_mcux_dma_common_load(struct spi_dma_stream *stream,
-							 const struct device *dev,
-							 const uint8_t *buf, size_t len)
+static struct dma_block_config *lpspi_dma_common_load(struct spi_dma_stream *stream,
+						      const struct device *dev, const uint8_t *buf,
+						      size_t len)
 {
-	struct spi_mcux_data *data = dev->data;
-	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
 	struct dma_block_config *blk_cfg = &stream->dma_blk_cfg;
 
-	/* prepare the block for this TX DMA channel */
 	memset(blk_cfg, 0, sizeof(struct dma_block_config));
 
 	blk_cfg->block_size = len;
 
-	if (buf == NULL) {
-		blk_cfg->source_address = (uint32_t)&dma_data->dummy_buffer;
-		blk_cfg->dest_address = (uint32_t)&dma_data->dummy_buffer;
-		/* pretend it is peripheral xfer so DMA just xfer to dummy buf */
-		stream->dma_cfg.channel_direction = PERIPHERAL_TO_PERIPHERAL;
-	} else {
-		blk_cfg->source_address = (uint32_t)buf;
-		blk_cfg->dest_address = (uint32_t)buf;
-	}
-
-	/* Transfer 1 byte each DMA loop */
 	stream->dma_cfg.source_burst_length = 1;
 	stream->dma_cfg.user_data = (void *)dev;
 	stream->dma_cfg.head_block = blk_cfg;
@@ -114,218 +101,256 @@ static struct dma_block_config *spi_mcux_dma_common_load(struct spi_dma_stream *
 	return blk_cfg;
 }
 
-static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf, size_t len)
+static int lpspi_dma_tx_load(const struct device *dev, const uint8_t *buf, size_t len)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
+	struct lpspi_data *data = dev->data;
 	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
-	/* remember active TX DMA channel (used in callback) */
 	struct spi_dma_stream *stream = &dma_data->dma_tx;
-	struct dma_block_config *blk_cfg = spi_mcux_dma_common_load(stream, dev, buf, len);
+	struct dma_block_config *blk_cfg = lpspi_dma_common_load(stream, dev, buf, len);
 
-	if (buf != NULL) {
-		/* tx direction has memory as source and periph as dest. */
+	if (buf == NULL) {
+		/* pretend that nop value comes from peripheral so dma doesn't move source */
+		blk_cfg->source_address = (uint32_t)&tx_nop_val;
+		stream->dma_cfg.channel_direction = PERIPHERAL_TO_PERIPHERAL;
+	} else {
+		blk_cfg->source_address = (uint32_t)buf;
 		stream->dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 	}
 
-	/* Dest is LPSPI tx fifo */
-	blk_cfg->dest_address = LPSPI_GetTxRegisterAddress(base);
+	blk_cfg->dest_address = (uint32_t) &(base->TDR);
 
-	/* give the client dev as arg, as the callback comes from the dma */
-	/* pass our client origin to the dma: data->dma_tx.dma_channel */
 	return dma_config(stream->dma_dev, stream->channel, &stream->dma_cfg);
 }
 
-static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf, size_t len)
+static int lpspi_dma_rx_load(const struct device *dev, uint8_t *buf, size_t len)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
+	struct lpspi_data *data = dev->data;
 	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
-	/* retrieve active RX DMA channel (used in callback) */
 	struct spi_dma_stream *stream = &dma_data->dma_rx;
-	struct dma_block_config *blk_cfg = spi_mcux_dma_common_load(stream, dev, buf, len);
+	struct dma_block_config *blk_cfg = lpspi_dma_common_load(stream, dev, buf, len);
 
-	if (buf != NULL) {
-		/* rx direction has periph as source and mem as dest. */
+	if (buf == NULL) {
+		/* pretend it is peripheral xfer so DMA just xfer to dummy buf */
+		stream->dma_cfg.channel_direction = PERIPHERAL_TO_PERIPHERAL;
+		blk_cfg->dest_address = (uint32_t)&dummy_buffer;
+	} else {
 		stream->dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+		blk_cfg->dest_address = (uint32_t)buf;
 	}
 
-	/* Source is LPSPI rx fifo */
-	blk_cfg->source_address = LPSPI_GetRxRegisterAddress(base);
+	blk_cfg->source_address = (uint32_t) &(base->RDR);
 
-	/* pass our client origin to the dma: data->dma_rx.channel */
 	return dma_config(stream->dma_dev, stream->channel, &stream->dma_cfg);
 }
 
-static int wait_dma_rx_tx_done(const struct device *dev)
+/* Return values:
+ * positive value if a data chunk is loaded successfully and return the data chunk size loaded;
+ * negative value if error happens and return the error code;
+ * 0 if no data is loaded;
+ */
+static int lpspi_dma_rxtx_load(const struct device *dev)
 {
-	struct spi_mcux_data *data = dev->data;
+	struct lpspi_data *data = dev->data;
 	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
-	int ret;
-
-	do {
-		ret = spi_context_wait_for_completion(&data->ctx);
-		if (ret) {
-			LOG_DBG("Timed out waiting for SPI context to complete");
-			return ret;
-		} else if (dma_data->status_flags & LPSPI_DMA_ERROR_FLAG) {
-			return -EIO;
-		}
-	} while (!((dma_data->status_flags & LPSPI_DMA_DONE_FLAG) == LPSPI_DMA_DONE_FLAG));
-
-	LOG_DBG("DMA block completed");
-	return 0;
-}
-
-static inline int spi_mcux_dma_rxtx_load(const struct device *dev, size_t *dma_size)
-{
-	struct spi_mcux_data *data = dev->data;
-	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
+	struct spi_dma_stream *rx = &dma_data->dma_rx;
+	struct spi_dma_stream *tx = &dma_data->dma_tx;
 	struct spi_context *ctx = &data->ctx;
+	size_t dma_size = spi_context_max_continuous_chunk(ctx);
 	int ret = 0;
 
-	/* Clear status flags */
-	dma_data->status_flags = 0U;
+	if (dma_size == 0) {
+		/* In case both buffers are 0 length, we should not even be here
+		 * and attempting to set up a DMA transfer like this will cause
+		 * errors that lock up the system in some cases with eDMA.
+		 */
+		return 0;
+	}
 
-	/* Load dma blocks of equal length */
-	*dma_size = spi_context_max_continuous_chunk(ctx);
-
-	ret = spi_mcux_dma_tx_load(dev, ctx->tx_buf, *dma_size);
+	ret = lpspi_dma_tx_load(dev, ctx->tx_buf, dma_size);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = spi_mcux_dma_rx_load(dev, ctx->rx_buf, *dma_size);
+	ret = lpspi_dma_rx_load(dev, ctx->rx_buf, dma_size);
 	if (ret != 0) {
 		return ret;
 	}
 
-	/* Start DMA */
-	ret = dma_start(dma_data->dma_tx.dma_dev, dma_data->dma_tx.channel);
+	ret = dma_start(rx->dma_dev, rx->channel);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = dma_start(dma_data->dma_rx.dma_dev, dma_data->dma_rx.channel);
-	return ret;
+	ret = dma_start(tx->dma_dev, tx->channel);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return dma_size;
 }
 
-#ifdef CONFIG_SPI_ASYNC
-static int transceive_dma_async(const struct device *dev, spi_callback_t cb, void *userdata)
+static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t channel, int status)
 {
-	struct spi_mcux_data *data = dev->data;
+	/* arg directly holds the spi device */
+	const struct device *spi_dev = arg;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(spi_dev, reg_base);
+	struct lpspi_data *data = (struct lpspi_data *)spi_dev->data;
+	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
+	struct spi_dma_stream *rx = &dma_data->dma_rx;
+	struct spi_dma_stream *tx = &dma_data->dma_tx;
 	struct spi_context *ctx = &data->ctx;
-	size_t dma_size;
-	int ret;
+	char debug_char = (channel == dma_data->dma_tx.channel) ? 'T' : 'R';
+	int ret = 0;
 
-	ctx->asynchronous = true;
-	ctx->callback = cb;
-	ctx->callback_data = userdata;
-
-	ret = spi_mcux_dma_rxtx_load(dev, &dma_size);
-	if (ret) {
-		return ret;
+	if (status < 0) {
+		ret = status;
+		goto error;
 	}
 
-	/* Enable DMA Requests */
-	LPSPI_EnableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
-
-	return 0;
-}
-#else
-#define transceive_dma_async(...) 0
-#endif /* CONFIG_SPI_ASYNC */
-
-static int transceive_dma_sync(const struct device *dev)
-{
-	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
-	struct spi_context *ctx = &data->ctx;
-	size_t dma_size;
-	int ret;
-
-	spi_context_cs_control(ctx, true);
-
-	/* Send each spi buf via DMA, updating context as DMA completes */
-	while (ctx->rx_len > 0 || ctx->tx_len > 0) {
-		/* Load dma block */
-		ret = spi_mcux_dma_rxtx_load(dev, &dma_size);
-		if (ret) {
-			return ret;
-		}
-
-#ifdef CONFIG_SOC_SERIES_MCXN
-		while (!(LPSPI_GetStatusFlags(base) & kLPSPI_TxDataRequestFlag)) {
-			/* wait until previous tx finished */
-		}
-#endif
-
-		/* Enable DMA Requests */
-		LPSPI_EnableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
-
-		/* Wait for DMA to finish */
-		ret = wait_dma_rx_tx_done(dev);
-		if (ret) {
-			return ret;
-		}
-
-#ifndef CONFIG_SOC_SERIES_MCXN
-		while ((LPSPI_GetStatusFlags(base) & kLPSPI_ModuleBusyFlag)) {
-			/* wait until module is idle */
-		}
-#endif
-
-		/* Disable DMA */
-		LPSPI_DisableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
-
-		/* Update SPI contexts with amount of data we just sent */
-		spi_context_update_tx(ctx, 1, dma_size);
-		spi_context_update_rx(ctx, 1, dma_size);
+	if (channel != dma_data->dma_tx.channel && channel != dma_data->dma_rx.channel) {
+		ret = -EIO;
+		goto error;
 	}
 
+	switch (dma_data->state) {
+	case LPSPI_TRANSFER_STATE_ONGOING:
+		spi_context_update_tx(ctx, 1, tx->dma_blk_cfg.block_size);
+		spi_context_update_rx(ctx, 1, rx->dma_blk_cfg.block_size);
+		/* Calculate next DMA transfer size */
+		dma_data->synchronize_dma_size = spi_context_max_continuous_chunk(ctx);
+		LOG_DBG("tx len:%d rx len:%d next dma size:%d",	ctx->tx_len, ctx->rx_len,
+			dma_data->synchronize_dma_size);
+		if (dma_data->synchronize_dma_size > 0)	{
+			ret = (channel == dma_data->dma_tx.channel)
+				      ? lpspi_dma_tx_load(spi_dev, ctx->tx_buf,
+							  dma_data->synchronize_dma_size)
+				      : lpspi_dma_rx_load(spi_dev, ctx->rx_buf,
+							  dma_data->synchronize_dma_size);
+
+			if (ret != 0) {
+				goto error;
+			}
+
+			ret = dma_start(dev, channel);
+			if (ret != 0) {
+				goto error;
+			}
+			dma_data->state = LPSPI_TRANSFER_STATE_NEXT_DMA_SIZE_UPDATED;
+		} else {
+			ret = dma_stop(dev, channel);
+			if (ret != 0) {
+				goto error;
+			}
+			/* This is the end of the transfer. */
+			if (channel == dma_data->dma_tx.channel) {
+				spi_mcux_issue_TCR(spi_dev);
+				dma_data->state = LPSPI_TRANSFER_STATE_TX_DONE;
+				base->DER &= ~LPSPI_DER_TDDE_MASK;
+			} else {
+				dma_data->state = LPSPI_TRANSFER_STATE_RX_DONE;
+				base->DER &= ~LPSPI_DER_RDDE_MASK;
+			}
+		}
+		break;
+	case LPSPI_TRANSFER_STATE_NEXT_DMA_SIZE_UPDATED:
+		ret = (channel == dma_data->dma_tx.channel)
+			      ? lpspi_dma_tx_load(spi_dev, ctx->tx_buf,
+						  dma_data->synchronize_dma_size)
+			      : lpspi_dma_rx_load(spi_dev, ctx->rx_buf,
+						  dma_data->synchronize_dma_size);
+		dma_data->synchronize_dma_size = 0;
+
+		if (ret != 0) {
+			goto error;
+		}
+
+		ret = dma_start(dev, channel);
+		if (ret != 0) {
+			goto error;
+		}
+		dma_data->state = LPSPI_TRANSFER_STATE_ONGOING;
+		break;
+
+	case LPSPI_TRANSFER_STATE_TX_DONE:
+	case LPSPI_TRANSFER_STATE_RX_DONE:
+		dma_data->state = LPSPI_TRANSFER_STATE_RX_TX_DONE;
+		/* TX and RX both done here. */
+		spi_context_complete(ctx, spi_dev, 0);
+		spi_context_cs_control(ctx, false);
+		break;
+
+	default:
+		LOG_ERR("unknown spi stransfer state:%d", dma_data->state);
+		ret = -EIO;
+		goto error;
+	}
+
+	LOG_DBG("DMA %cX Block Complete", debug_char);
+	return;
+error:
+	LOG_ERR("DMA callback error with channel %d.", channel);
+	spi_context_complete(ctx, spi_dev, ret);
 	spi_context_cs_control(ctx, false);
-
-	base->TCR = 0;
-
-	return 0;
 }
 
 static int transceive_dma(const struct device *dev, const struct spi_config *spi_cfg,
 			  const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
 			  bool asynchronous, spi_callback_t cb, void *userdata)
 {
-	struct spi_mcux_data *data = dev->data;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	struct lpspi_data *data = dev->data;
+	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
+	struct spi_context *ctx = &data->ctx;
+	uint8_t major_ver = (base->VERID & LPSPI_VERID_MAJOR_MASK) >> LPSPI_VERID_MAJOR_SHIFT;
 	int ret;
 
-	if (!asynchronous) {
-		spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
-	}
+	spi_context_lock(ctx, asynchronous, cb, userdata, spi_cfg);
 
-	ret = spi_mcux_configure(dev, spi_cfg);
-	if (ret && !asynchronous) {
+	ret = lpspi_configure(dev, spi_cfg);
+	if (ret) {
 		goto out;
-	} else if (ret) {
-		return ret;
 	}
 
-#ifdef CONFIG_SOC_SERIES_MCXN
-	base->TCR |= LPSPI_TCR_CONT_MASK;
-#endif
+	/* Check CS hold on feature for DMA mode, it is not supported on some platform. */
+	if ((spi_cfg->operation & SPI_HOLD_ON_CS) && major_ver < 2) {
+		LOG_ERR("SPI CS hold on feature is not supported on this platform.");
+		return -ENOTSUP;
+	}
 
-	/* DMA is fast enough watermarks are not required */
-	LPSPI_SetFifoWatermarks(base, 0U, 0U);
+	/* Always use continuous mode to satisfy SPI API requirements. */
+	base->TCR |= LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK;
 
+	/* Please set both watermarks as 0 because there are some synchronize requirements
+	 * between RX and TX on RT platform. TX and RX DMA callback must be called in interleaved
+	 * mode, a none-zero TX watermark may break this.
+	 */
+	base->FCR = LPSPI_FCR_TXWATER(0) | LPSPI_FCR_RXWATER(0);
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
-	if (asynchronous) {
-		ret = transceive_dma_async(dev, cb, userdata);
-	} else {
-		ret = transceive_dma_sync(dev);
+	/* Set next dma size is invalid. */
+	dma_data->synchronize_dma_size = 0;
+	dma_data->state = LPSPI_TRANSFER_STATE_NULL;
+
+	/* Load dma block */
+	ret = lpspi_dma_rxtx_load(dev);
+	if (ret <= 0) {
+		goto out;
 	}
 
+	dma_data->state = LPSPI_TRANSFER_STATE_ONGOING;
+	/* Set CS line just before DMA transfer. */
+	spi_context_cs_control(ctx, true);
+	/* Enable DMA Requests */
+	base->DER |= LPSPI_DER_TDDE_MASK | LPSPI_DER_RDDE_MASK;
+
+	ret = spi_context_wait_for_completion(ctx);
+	if (ret) {
+		spi_context_cs_control(ctx, false);
+	}
 out:
-	spi_context_release(&data->ctx, ret);
+	spi_context_release(ctx, ret);
 	return ret;
 }
 
@@ -333,28 +358,21 @@ static int lpspi_dma_dev_ready(const struct device *dma_dev)
 {
 	if (!device_is_ready(dma_dev)) {
 		LOG_ERR("%s device is not ready", dma_dev->name);
-		return -ENODEV;
+		return false;
 	}
 
-	return 0;
+	return true;
 }
 
-static int lpspi_dma_devs_ready(struct spi_mcux_data *data)
+static int lpspi_dma_init(const struct device *dev)
 {
+	struct lpspi_data *data = dev->data;
 	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
-
-	return lpspi_dma_dev_ready(dma_data->dma_tx.dma_dev) |
-	       lpspi_dma_dev_ready(dma_data->dma_rx.dma_dev);
-}
-
-static int spi_mcux_dma_init(const struct device *dev)
-{
-	struct spi_mcux_data *data = dev->data;
 	int err = 0;
 
-	err = lpspi_dma_devs_ready(data);
-	if (err < 0) {
-		return err;
+	if (!lpspi_dma_dev_ready(dma_data->dma_tx.dma_dev) ||
+	    !lpspi_dma_dev_ready(dma_data->dma_rx.dma_dev)) {
+		return -ENODEV;
 	}
 
 	err = spi_nxp_init_common(dev);
@@ -384,7 +402,7 @@ static int spi_nxp_dma_transceive_async(const struct device *dev, const struct s
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static DEVICE_API(spi, spi_mcux_driver_api) = {
+static DEVICE_API(spi, lpspi_dma_driver_api) = {
 	.transceive = spi_nxp_dma_transceive_sync,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_nxp_dma_transceive_async,
@@ -392,7 +410,7 @@ static DEVICE_API(spi, spi_mcux_driver_api) = {
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
-	.release = spi_mcux_release,
+	.release = spi_lpspi_release,
 };
 
 static void lpspi_isr(const struct device *dev)
@@ -400,40 +418,38 @@ static void lpspi_isr(const struct device *dev)
 	/* ISR not used for DMA based LPSPI driver */
 }
 
+#define LPSPI_DMA_COMMON_CFG(n)			\
+	.dma_callback = lpspi_dma_callback,	\
+	.source_data_size = 1,			\
+	.dest_data_size = 1,			\
+	.block_count = 1
+
 #define SPI_DMA_CHANNELS(n)                                                                        \
-	IF_ENABLED(                                                                                \
-		DT_INST_DMAS_HAS_NAME(n, tx),                                                      \
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(n, tx),                                                   \
 		(.dma_tx = {.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),            \
 			    .channel = DT_INST_DMAS_CELL_BY_NAME(n, tx, mux),                      \
 			    .dma_cfg = {.channel_direction = MEMORY_TO_PERIPHERAL,                 \
-					.dma_callback = spi_mcux_dma_callback,                     \
-					.source_data_size = 1,                                     \
-					.dest_data_size = 1,                                       \
-					.block_count = 1,                                          \
-					.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, source)}},)) \
-	IF_ENABLED(                                                                                \
-		DT_INST_DMAS_HAS_NAME(n, rx),                                                      \
+			    LPSPI_DMA_COMMON_CFG(n),						   \
+			    .dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, source)}},))		   \
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(n, rx),                                                   \
 		(.dma_rx = {.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, rx)),            \
 			    .channel = DT_INST_DMAS_CELL_BY_NAME(n, rx, mux),                      \
 			    .dma_cfg = {.channel_direction = PERIPHERAL_TO_MEMORY,                 \
-					.dma_callback = spi_mcux_dma_callback,                     \
-					.source_data_size = 1,                                     \
-					.dest_data_size = 1,                                       \
-					.block_count = 1,                                          \
-					.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, rx, source)}},))
+			    LPSPI_DMA_COMMON_CFG(n),						   \
+			    .dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, rx, source)}},))
 
 #define LPSPI_DMA_INIT(n)                                                                          \
 	SPI_NXP_LPSPI_COMMON_INIT(n)                                                               \
-	SPI_MCUX_LPSPI_CONFIG_INIT(n)                                                              \
+	SPI_LPSPI_CONFIG_INIT(n)                                                              \
                                                                                                    \
 	static struct spi_nxp_dma_data lpspi_dma_data##n = {SPI_DMA_CHANNELS(n)};                  \
                                                                                                    \
-	static struct spi_mcux_data spi_mcux_data_##n = {.driver_data = &lpspi_dma_data##n,        \
+	static struct lpspi_data lpspi_data_##n = {.driver_data = &lpspi_dma_data##n,        \
 							 SPI_NXP_LPSPI_COMMON_DATA_INIT(n)};       \
                                                                                                    \
-	SPI_DEVICE_DT_INST_DEFINE(n, spi_mcux_dma_init, NULL, &spi_mcux_data_##n,                  \
-				  &spi_mcux_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \
-				  &spi_mcux_driver_api);
+	SPI_DEVICE_DT_INST_DEFINE(n, lpspi_dma_init, NULL, &lpspi_data_##n,                  \
+				  &lpspi_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \
+				  &lpspi_dma_driver_api);
 
 #define SPI_NXP_LPSPI_DMA_INIT(n) IF_ENABLED(SPI_NXP_LPSPI_HAS_DMAS(n), (LPSPI_DMA_INIT(n)))
 

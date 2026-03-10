@@ -16,8 +16,9 @@ CONFIG_CC13X2_CC26X2_BOOTLOADER_BACKDOOR_PIN=15
 CONFIG_ARM_MPU=y
 CONFIG_HW_STACK_PROTECTION=y
 
-# Adjust for oscillator capacitors
-CONFIG_CC13X2_CC26X2_XOSC_CAPARRAY_DELTA=0x02
+# Disable internal capacitors. BeaglePlay has external load capacitors.
+# Source: https://www.ti.com/lit/er/swrz109a/swrz109a.pdf?ts=1761755410798 Radio_01
+CONFIG_CC13X2_CC26X2_XOSC_CAPARRAY_DELTA=0xFF
 
 # Enable default uart console
 CONFIG_SERIAL=y

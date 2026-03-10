@@ -29,6 +29,32 @@ static const struct args_index args_indx = {
 	.flags = 5,
 };
 
+static int cmd_frequency(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	uint32_t channel;
+	uint64_t cycles;
+	int err;
+
+	dev = shell_device_get_binding(argv[args_indx.device]);
+	if (dev == NULL) {
+		shell_error(sh, "PWM device not found");
+		return -EINVAL;
+	}
+
+	channel = strtoul(argv[args_indx.channel], NULL, 0);
+
+	err = pwm_get_cycles_per_sec(dev, channel, &cycles);
+	if (err != 0) {
+		shell_error(sh, "failed to get PWM cycles per second (err %d)", err);
+		return err;
+	}
+
+	shell_print(sh, "Frequency: %" PRIu64 " Hz", cycles);
+
+	return 0;
+}
+
 static int cmd_cycles(const struct shell *sh, size_t argc, char **argv)
 {
 	pwm_flags_t flags = 0;
@@ -144,12 +170,25 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(pwm_cmds,
-	SHELL_CMD_ARG(cycles, &dsub_device_name, "<device> <channel> <period in cycles> "
-		      "<pulse width in cycles> [flags]", cmd_cycles, 5, 1),
-	SHELL_CMD_ARG(usec, &dsub_device_name, "<device> <channel> <period in usec> "
-		      "<pulse width in usec> [flags]", cmd_usec, 5, 1),
-	SHELL_CMD_ARG(nsec, &dsub_device_name, "<device> <channel> <period in nsec> "
-		      "<pulse width in nsec> [flags]", cmd_nsec, 5, 1),
+	SHELL_CMD_ARG(frequency, &dsub_device_name,
+		SHELL_HELP("Get PWM counter frequency in Hz.",
+			   "<device> <channel>"),
+		cmd_frequency, 3, 0),
+	SHELL_CMD_ARG(
+		cycles, &dsub_device_name,
+		SHELL_HELP("Set PWM period and pulse width in cycles.",
+			   "<device> <channel> <period> <pulse width> [flags]"),
+		cmd_cycles, 5, 1),
+	SHELL_CMD_ARG(
+		usec, &dsub_device_name,
+		SHELL_HELP("Set PWM period and pulse width in microseconds.",
+			   "<device> <channel> <period> <pulse width> [flags]"),
+		cmd_usec, 5, 1),
+	SHELL_CMD_ARG(
+		nsec, &dsub_device_name,
+		SHELL_HELP("Set PWM period and pulse width in nanoseconds.",
+			   "<device> <channel> <period> <pulse width> [flags]"),
+		cmd_nsec, 5, 1),
 	SHELL_SUBCMD_SET_END
 );
 

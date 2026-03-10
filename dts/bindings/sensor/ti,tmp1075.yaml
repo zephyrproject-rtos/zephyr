@@ -11,13 +11,17 @@ include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
   conversion-rate:
-    description: Conversion rate in us.
+    description: |
+      Conversion rate in us.
+      Defaults to 27500 us (27.5 ms), which matches the hardware
+      power-on reset value per the TMP1075 datasheet.
     type: int
     enum:
       - 27500 # 27.5ms
       - 55000 # 55ms
       - 110000 # 110ms
       - 220000 # 220ms
+    default: 27500
   alert-gpios:
     type: phandle-array
     description: |
@@ -27,13 +31,17 @@ properties:
     description: One-shot conversion mode.
     type: boolean
   consecutive-fault-measurements:
-    description: Number of consecutive measured faults that will trigger the alert.
+    description: |
+      Number of consecutive measured faults that will trigger the alert.
+      Defaults to 1, which matches the hardware power-on reset value
+      per the TMP1075 datasheet.
     type: int
     enum:
       - 1
       - 2
       - 3
       - 4
+    default: 1
   alert-pin-active-high:
     description: Polarity of the alert pin.
     type: boolean

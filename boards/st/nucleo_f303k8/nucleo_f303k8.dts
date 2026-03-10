@@ -22,13 +22,16 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_3: green_led_3 {
 			gpios = <&gpiob 3 GPIO_ACTIVE_HIGH>;
 			label = "LD3";
 		};
 	};
+
 	pwmleds {
 		compatible = "pwm-leds";
+
 		green_pwm_led: green_pwm_led {
 			pwms = <&pwm2 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
@@ -63,7 +66,6 @@
 	ahb-prescaler = <1>;
 	apb1-prescaler = <2>;
 	apb2-prescaler = <1>;
-	adc12-prescaler = <0>;
 };
 
 &timers2 {
@@ -106,7 +108,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };

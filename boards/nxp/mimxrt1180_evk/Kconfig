@@ -1,0 +1,30 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MIMXRT1180_EVK
+	select BOARD_EARLY_INIT_HOOK
+
+# CM7 execution mode
+config CM7_BOOT_FROM_FLASH
+	bool "Run CM7 core from Flash (XIP)"
+	depends on SECOND_CORE_MCUX && (SOC_MIMXRT1189_CM7 || SOC_MIMXRT1189_CM33)
+	default n
+	help
+	  If enabled, the CM7 core will run directly from flash (XIP).
+	  If disabled, the CM7 core will run from ITCM memory.
+
+# Define the FlexSPI offset for CM7
+config CM7_FLEXSPI_OFFSET
+	hex "CM7 FlexSPI offset"
+	depends on SECOND_CORE_MCUX && BOARD_MIMXRT1180_EVK_MIMXRT1189_CM33
+	default 0x28000000
+	help
+	  This is the FlexSPI offset for CM7.
+
+config NXP_BOARD_SPECIFIC_MPU_SETTINGS
+	bool "Use default MPU settings for NXP boards"
+	default y if CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	help
+	  Enable this option to use the default MPU settings for NXP boards.
+	  This will configure the MPU regions according to the board's memory
+	  map and peripherals.

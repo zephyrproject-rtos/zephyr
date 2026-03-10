@@ -108,8 +108,8 @@ void test_throw_network_error_from_engine(int err)
 }
 
 DEFINE_FAKE_VOID_FUNC(lwm2m_engine_context_close, struct lwm2m_ctx *);
-DEFINE_FAKE_VALUE_FUNC(char *, lwm2m_sprint_ip_addr, const struct sockaddr *);
-char *lwm2m_sprint_ip_addr_fake_default(const struct sockaddr *addr)
+DEFINE_FAKE_VALUE_FUNC(char *, lwm2m_sprint_ip_addr, const struct net_sockaddr *);
+char *lwm2m_sprint_ip_addr_fake_default(const struct net_sockaddr *addr)
 {
 	return "192.168.1.1:4444";
 }

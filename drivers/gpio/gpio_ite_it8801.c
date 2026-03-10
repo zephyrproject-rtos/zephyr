@@ -60,7 +60,7 @@ static int gpio_it8801_configure(const struct device *dev, gpio_pin_t pin, gpio_
 	int ret;
 	uint8_t reg_gpcr = config->reg_gpcr + pin;
 	uint8_t mask = BIT(pin);
-	uint8_t new_value, control;
+	uint8_t control;
 
 	/* Don't support "open source" mode */
 	if (((flags & GPIO_SINGLE_ENDED) != 0) && ((flags & GPIO_LINE_OPEN_DRAIN) == 0)) {
@@ -86,13 +86,11 @@ static int gpio_it8801_configure(const struct device *dev, gpio_pin_t pin, gpio_
 	/* If output, set level before changing type to an output. */
 	if (flags & GPIO_OUTPUT) {
 		if (flags & GPIO_OUTPUT_INIT_HIGH) {
-			new_value = mask;
+			ret = i2c_reg_update_byte_dt(&config->i2c_dev, config->reg_sovr, mask,
+						     mask);
 		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
-			new_value = 0;
-		} else {
-			new_value = 0;
+			ret = i2c_reg_update_byte_dt(&config->i2c_dev, config->reg_sovr, mask, 0);
 		}
-		ret = i2c_reg_update_byte_dt(&config->i2c_dev, config->reg_sovr, mask, new_value);
 		if (ret) {
 			LOG_ERR("Failed to set output value (ret %d)", ret);
 			return ret;
@@ -445,7 +443,7 @@ static int gpio_it8801_init(const struct device *dev)
 #define GPIO_IT8801_DEVICE_INST(inst)                                                              \
 	static struct gpio_it8801_data gpio_it8801_data_##inst;                                    \
 	static const struct gpio_it8801_config gpio_it8801_cfg_##inst = {                          \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst)},                \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
 		.i2c_dev = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),                                  \
 		.reg_ipsr = DT_INST_REG_ADDR_BY_IDX(inst, 0),                                      \

@@ -66,16 +66,19 @@ static int init_callback(const struct device *dev_in, const struct device *dev_o
 static void trigger_callback(const struct device *dev_in, const struct device *dev_out,
 			     int enable_cb)
 {
+	int rc;
+
 	gpio_pin_set(dev_out, PIN_OUT, 0);
 	k_sleep(K_MSEC(100));
 
 	cb_cnt[0] = 0;
 	cb_cnt[1] = 0;
 	if (enable_cb == 1) {
-		gpio_pin_interrupt_configure(dev_in, PIN_IN, GPIO_INT_EDGE_RISING);
+		rc = gpio_pin_interrupt_configure(dev_in, PIN_IN, GPIO_INT_EDGE_RISING);
 	} else {
-		gpio_pin_interrupt_configure(dev_in, PIN_IN, GPIO_INT_DISABLE);
+		rc = gpio_pin_interrupt_configure(dev_in, PIN_IN, GPIO_INT_DISABLE);
 	}
+	zassert_equal(rc, 0);
 	k_sleep(K_MSEC(100));
 	gpio_pin_set(dev_out, PIN_OUT, 1);
 	k_sleep(K_MSEC(1000));
@@ -234,18 +237,15 @@ err_exit:
 
 ZTEST(gpio_port_cb_mgmt, test_gpio_callback_add_remove)
 {
-	zassert_equal(test_callback_add_remove(), TC_PASS,
-		     NULL);
+	zassert_equal(test_callback_add_remove(), TC_PASS);
 }
 
 ZTEST(gpio_port_cb_mgmt, test_gpio_callback_self_remove)
 {
-	zassert_equal(test_callback_self_remove(), TC_PASS,
-		     NULL);
+	zassert_equal(test_callback_self_remove(), TC_PASS);
 }
 
 ZTEST(gpio_port_cb_mgmt, test_gpio_callback_enable_disable)
 {
-	zassert_equal(test_callback_enable_disable(), TC_PASS,
-		     NULL);
+	zassert_equal(test_callback_enable_disable(), TC_PASS);
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright 2023 honglin leng <a909204013@gmail.com>
+ * Copyright (c) 2025 Muhammad Waleed Badar
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,6 +37,14 @@
 			      IRQ_DEFAULT_PRIORITY>;
 	};
 
+	clocks {
+		clk_uart: clk-uart {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			#clock-cells = <0>;
+		};
+	};
+
 	soc {
 		sram0: memory@200000 {
 			device_type = "memory";
@@ -52,8 +61,14 @@
 			status = "okay";
 		};
 
-		gpio: gpio@fe200000 {
-			compatible = "simple-bus";
+		rng: rng@fe104000 {
+			compatible = "brcm,iproc-rng200";
+			reg = <0xfe104000 0x28>;
+			status = "okay";
+		};
+
+		pinctrl: pin-controller@fe200000 {
+			compatible = "brcm,bcm2711-pinctrl";
 			reg = <0xfe200000 0xf4>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -83,12 +98,62 @@
 			};
 		};
 
+		uart0: uart@fe201000 {
+			compatible = "arm,pl011";
+			reg = <0xfe201000 0x200>;
+			interrupts = <GIC_SPI 121 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "uart0";
+			clocks = <&clk_uart>;
+			status = "disabled";
+		};
+
 		uart1: uart@fe215040 {
 			compatible = "brcm,bcm2711-aux-uart";
 			reg = <0xfe215040 0x40>;
 			clock-frequency = <DT_FREQ_M(500)>;
 			interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart2: uart@fe201400 {
+			compatible = "arm,pl011";
+			reg = <0xfe201400 0x200>;
+			interrupts = <GIC_SPI 121 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "uart2";
+			clocks = <&clk_uart>;
+			status = "disabled";
+		};
+
+		uart3: uart@fe201600 {
+			compatible = "arm,pl011";
+			reg = <0xfe201600 0x200>;
+			interrupts = <GIC_SPI 121 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "uart3";
+			clocks = <&clk_uart>;
+			status = "disabled";
+		};
+
+		uart4: uart@fe201800 {
+			compatible = "arm,pl011";
+			reg = <0xfe201800 0x200>;
+			interrupts = <GIC_SPI 121 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "uart4";
+			clocks = <&clk_uart>;
+			status = "disabled";
+		};
+
+		uart5: uart@fe201a00 {
+			compatible = "arm,pl011";
+			reg = <0xfe201a00 0x200>;
+			interrupts = <GIC_SPI 121 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "uart5";
+			clocks = <&clk_uart>;
 			status = "disabled";
 		};
 	};

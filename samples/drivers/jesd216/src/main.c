@@ -14,6 +14,8 @@
 
 #if DT_HAS_COMPAT_STATUS_OKAY(jedec_spi_nor)
 #define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(jedec_spi_nor)
+#elif DT_HAS_COMPAT_STATUS_OKAY(jedec_mspi_nor)
+#define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(jedec_mspi_nor)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_qspi_nor)
 #define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_qspi_nor)
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_qspi_nor)
@@ -24,8 +26,22 @@
 #define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(st_stm32_xspi_nor)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_s32_qspi_nor)
 #define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_s32_qspi_nor)
+#elif DT_HAS_COMPAT_STATUS_OKAY(adi_max32_spixf_nor)
+#define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(adi_max32_spixf_nor)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_flexspi_nor)
 #define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_imx_flexspi_nor)
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_ospi_b_nor)
+#define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_ospi_b_nor)
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_qspi_nor)
+#define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_qspi_nor)
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_rz_qspi_xspi)
+#define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_rz_qspi_xspi)
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_rz_qspi_spibsc)
+#define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_rz_qspi_spibsc)
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_rza2m_qspi_spibsc)
+#define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_rza2m_qspi_spibsc)
+#elif DT_HAS_COMPAT_STATUS_OKAY(sifli_sf32lb_mpi_qspi_nor)
+#define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(sifli_sf32lb_mpi_qspi_nor)
 #else
 #error Unsupported flash driver
 #define FLASH_NODE DT_INVALID_NODE
@@ -201,7 +217,7 @@ static void summarize_dw15(const struct jesd216_param_header *php,
 		printf("0-4-4 Mode methods: entry 0x%01x ; exit 0x%02x\n",
 		       dw15.entry_044, dw15.exit_044);
 	} else {
-		printf("0-4-4 Mode: not supported");
+		printf("0-4-4 Mode: not supported\n");
 	}
 	printf("4-4-4 Mode sequences: enable 0x%02x ; disable 0x%01x\n",
 	       dw15.enable_444, dw15.disable_444);
@@ -229,6 +245,18 @@ static void summarize_dw16(const struct jesd216_param_header *php,
 	       dw16.sr1_interface);
 }
 
+static void summarize_dw19(const struct jesd216_param_header *php,
+			   const struct jesd216_bfp *bfp)
+{
+	struct jesd216_bfp_dw19 dw19;
+
+	if (jesd216_bfp_decode_dw19(php, bfp, &dw19) != 0) {
+		return;
+	}
+
+	printf("Octal Enable Requirement: %u\n", dw19.octal_enable_req);
+}
+
 /* Indexed from 1 to match JESD216 data word numbering */
 static const dw_extractor extractor[] = {
 	[1] = summarize_dw1,
@@ -239,6 +267,7 @@ static const dw_extractor extractor[] = {
 	[14] = summarize_dw14,
 	[15] = summarize_dw15,
 	[16] = summarize_dw16,
+	[19] = summarize_dw19,
 };
 
 static void dump_bfp(const struct jesd216_param_header *php,
@@ -338,7 +367,7 @@ int main(void)
 			const struct jesd216_bfp *bfp = (struct jesd216_bfp *)dw;
 
 			dump_bfp(php, bfp);
-			printf("size = <%u> bits;\n", (uint32_t)jesd216_bfp_density(bfp));
+			printf("size = <%u>; // bits\n", (uint32_t)jesd216_bfp_density(bfp));
 			printf("sfdp-bfp =");
 		} else {
 			printf("sfdp-%04x =", id);

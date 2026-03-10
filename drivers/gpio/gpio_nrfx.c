@@ -7,15 +7,35 @@
 #define DT_DRV_COMPAT nordic_nrf_gpio
 
 #include <nrfx_gpiote.h>
+#include <gpiote_nrfx.h>
 #include <string.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_nrf.h>
 #include <zephyr/dt-bindings/gpio/nordic-nrf-gpio.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <soc.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-#include <nrf/gpd.h>
+#define GPIOTE_PHANDLE(id) DT_INST_PHANDLE(id, gpiote_instance)
+#define GPIOTE_PROP(idx, prop)     DT_PROP(GPIOTE(idx), prop)
+
+#define IS_NO_PORT_INSTANCE(id) DT_PROP_OR(GPIOTE_PHANDLE(id), no_port_event, 0) ||
+#define IS_FIXED_CH_INSTANCE(id) DT_PROP_OR(GPIOTE_PHANDLE(id), fixed_channels_supported, 0) ||
+
+#if DT_INST_FOREACH_STATUS_OKAY(IS_NO_PORT_INSTANCE) 0
+#define GPIOTE_NO_PORT_EVT_SUPPORT 1
+#endif
+
+#if DT_INST_FOREACH_STATUS_OKAY(IS_FIXED_CH_INSTANCE) 0
+#define GPIOTE_FIXED_CH_SUPPORT 1
+#endif
+
+#if defined(GPIOTE_NO_PORT_EVT_SUPPORT) || defined(GPIOTE_FIXED_CH_SUPPORT)
+#define GPIOTE_FEATURE_FLAG 1
+#define GPIOTE_FLAG_NO_PORT_EVT BIT(0)
+#define GPIOTE_FLAG_FIXED_CHAN  BIT(1)
 #endif
 
 struct gpio_nrfx_data {
@@ -28,11 +48,11 @@ struct gpio_nrfx_cfg {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 	NRF_GPIO_Type *port;
+	nrfx_gpiote_t *gpiote;
 	uint32_t edge_sense;
 	uint8_t port_num;
-	nrfx_gpiote_t gpiote;
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	uint8_t pad_pd;
+#if defined(GPIOTE_FEATURE_FLAG)
+	uint32_t flags;
 #endif
 };
 
@@ -46,10 +66,45 @@ static inline const struct gpio_nrfx_cfg *get_port_cfg(const struct device *port
 	return port->config;
 }
 
+void *gpio_nrf_gpiote_by_port_get(const struct device *port)
+{
+	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
+
+	return cfg->gpiote;
+}
+
 static bool has_gpiote(const struct gpio_nrfx_cfg *cfg)
 {
-	return cfg->gpiote.p_reg != NULL;
+	return cfg->gpiote != NULL;
 }
+
+#if NRF_GPIO_HAS_RETENTION_SETCLEAR
+
+static void port_retain_set(const struct gpio_nrfx_cfg *cfg, uint32_t mask)
+{
+	nrf_gpio_port_retain_enable(cfg->port, mask);
+}
+
+static void port_retain_clear(const struct gpio_nrfx_cfg *cfg, uint32_t mask)
+{
+	nrf_gpio_port_retain_disable(cfg->port, mask);
+}
+
+#else
+
+static void port_retain_set(const struct gpio_nrfx_cfg *cfg, uint32_t mask)
+{
+	ARG_UNUSED(cfg);
+	ARG_UNUSED(mask);
+}
+
+static void port_retain_clear(const struct gpio_nrfx_cfg *cfg, uint32_t mask)
+{
+	ARG_UNUSED(cfg);
+	ARG_UNUSED(mask);
+}
+
+#endif
 
 static nrf_gpio_pin_pull_t get_pull(gpio_flags_t flags)
 {
@@ -62,60 +117,11 @@ static nrf_gpio_pin_pull_t get_pull(gpio_flags_t flags)
 	return NRF_GPIO_PIN_NOPULL;
 }
 
-static int gpio_nrfx_gpd_retain_set(const struct device *port, uint32_t mask, gpio_flags_t flags)
-{
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
-
-	if (cfg->pad_pd == NRF_GPD_FAST_ACTIVE1) {
-		int ret;
-
-		if (flags & GPIO_OUTPUT) {
-			nrf_gpio_port_retain_enable(cfg->port, mask);
-		}
-
-		ret = nrf_gpd_release(NRF_GPD_FAST_ACTIVE1);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-#else
-	ARG_UNUSED(port);
-	ARG_UNUSED(mask);
-	ARG_UNUSED(flags);
-#endif
-
-	return 0;
-}
-
-static int gpio_nrfx_gpd_retain_clear(const struct device *port, uint32_t mask)
-{
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
-
-	if (cfg->pad_pd == NRF_GPD_FAST_ACTIVE1) {
-		int ret;
-
-		ret = nrf_gpd_request(NRF_GPD_FAST_ACTIVE1);
-		if (ret < 0) {
-			return ret;
-		}
-
-		nrf_gpio_port_retain_disable(cfg->port, mask);
-	}
-#else
-	ARG_UNUSED(port);
-	ARG_UNUSED(mask);
-#endif
-
-	return 0;
-}
-
 static int gpio_nrfx_pin_configure(const struct device *port, gpio_pin_t pin,
 				   gpio_flags_t flags)
 {
 	int ret = 0;
-	nrfx_err_t err = NRFX_SUCCESS;
+	int err = 0;
 	uint8_t ch;
 	bool free_ch = false;
 	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
@@ -152,10 +158,7 @@ static int gpio_nrfx_pin_configure(const struct device *port, gpio_pin_t pin,
 		return -EINVAL;
 	}
 
-	ret = gpio_nrfx_gpd_retain_clear(port, BIT(pin));
-	if (ret < 0) {
-		return ret;
-	}
+	port_retain_clear(cfg, BIT(pin));
 
 	if (flags & GPIO_OUTPUT_INIT_HIGH) {
 		nrf_gpio_port_out_set(cfg->port, BIT(pin));
@@ -180,13 +183,13 @@ static int gpio_nrfx_pin_configure(const struct device *port, gpio_pin_t pin,
 	 * to be freed when the pin is reconfigured or disconnected.
 	 */
 	if (IS_ENABLED(CONFIG_GPIO_NRFX_INTERRUPT)) {
-		err = nrfx_gpiote_channel_get(&cfg->gpiote, abs_pin, &ch);
-		free_ch = (err == NRFX_SUCCESS);
+		err = nrfx_gpiote_channel_get(cfg->gpiote, abs_pin, &ch);
+		free_ch = (err == 0);
 	}
 
 	if ((flags & (GPIO_INPUT | GPIO_OUTPUT)) == GPIO_DISCONNECTED) {
 		/* Ignore the error code. The pin may not have been used. */
-		(void)nrfx_gpiote_pin_uninit(&cfg->gpiote, abs_pin);
+		(void)nrfx_gpiote_pin_uninit(cfg->gpiote, abs_pin);
 	} else {
 		/* Remove previously configured trigger when pin is reconfigured. */
 		if (IS_ENABLED(CONFIG_GPIO_NRFX_INTERRUPT)) {
@@ -197,10 +200,9 @@ static int gpio_nrfx_pin_configure(const struct device *port, gpio_pin_t pin,
 				.p_trigger_config = &trigger_config,
 			};
 
-			err = nrfx_gpiote_input_configure(&cfg->gpiote,
+			err = nrfx_gpiote_input_configure(cfg->gpiote,
 				abs_pin, &input_pin_config);
-			if (err != NRFX_SUCCESS) {
-				ret = -EINVAL;
+			if (err < 0) {
 				goto end;
 			}
 		}
@@ -214,32 +216,110 @@ static int gpio_nrfx_pin_configure(const struct device *port, gpio_pin_t pin,
 				.pull = pull,
 			};
 
-			err = nrfx_gpiote_output_configure(&cfg->gpiote,
+			err = nrfx_gpiote_output_configure(cfg->gpiote,
 				abs_pin, &output_config, NULL);
+
+			port_retain_set(cfg, BIT(pin));
 		} else {
 			nrfx_gpiote_input_pin_config_t input_pin_config = {
 				.p_pull_config = &pull,
 			};
 
-			err = nrfx_gpiote_input_configure(&cfg->gpiote,
+			err = nrfx_gpiote_input_configure(cfg->gpiote,
 				abs_pin, &input_pin_config);
 		}
 
-		if (err != NRFX_SUCCESS) {
-			ret = -EINVAL;
+		if (err < 0) {
 			goto end;
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_GPIO_NRFX_INTERRUPT) && free_ch) {
-		err = nrfx_gpiote_channel_free(&cfg->gpiote, ch);
-		__ASSERT_NO_MSG(err == NRFX_SUCCESS);
+#ifdef GPIOTE_FEATURE_FLAG
+		/* Fixed channel was used, no need to free. */
+		if (cfg->flags & GPIOTE_FLAG_FIXED_CHAN) {
+			goto end;
+		}
+#endif
+		err = nrfx_gpiote_channel_free(cfg->gpiote, ch);
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 end:
-	(void)gpio_nrfx_gpd_retain_set(port, BIT(pin), flags);
 	return ret;
 }
+
+#ifdef CONFIG_GPIO_GET_CONFIG
+static int gpio_nrfx_pin_get_config(const struct device *port, gpio_pin_t pin,
+				    gpio_flags_t *flags)
+{
+	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
+	nrfx_gpiote_pin_t abs_pin = NRF_GPIO_PIN_MAP(cfg->port_num, pin);
+
+	*flags = 0U;
+
+	nrf_gpio_pin_dir_t dir = nrf_gpio_pin_dir_get(abs_pin);
+
+	if (dir == NRF_GPIO_PIN_DIR_OUTPUT) {
+		*flags |= GPIO_OUTPUT;
+		*flags |= nrf_gpio_pin_out_read(abs_pin)
+			? GPIO_OUTPUT_INIT_HIGH
+			: GPIO_OUTPUT_INIT_LOW;
+	}
+
+	nrf_gpio_pin_input_t input = nrf_gpio_pin_input_get(abs_pin);
+
+	if (input == NRF_GPIO_PIN_INPUT_CONNECT) {
+		*flags |= GPIO_INPUT;
+	}
+
+	nrf_gpio_pin_pull_t pull = nrf_gpio_pin_pull_get(abs_pin);
+
+	switch (pull) {
+	case NRF_GPIO_PIN_PULLUP:
+		*flags |= GPIO_PULL_UP;
+		break;
+	case NRF_GPIO_PIN_PULLDOWN:
+		*flags |= GPIO_PULL_DOWN;
+		break;
+	default:
+		break;
+	}
+
+	nrf_gpio_pin_drive_t drive = nrf_gpio_pin_drive_get(abs_pin);
+
+	switch (drive) {
+	case NRF_GPIO_PIN_S0S1:
+		*flags |= NRF_GPIO_DRIVE_S0S1;
+		break;
+	case NRF_GPIO_PIN_S0H1:
+		*flags |= NRF_GPIO_DRIVE_S0H1;
+		break;
+	case NRF_GPIO_PIN_H0S1:
+		*flags |= NRF_GPIO_DRIVE_H0S1;
+		break;
+	case NRF_GPIO_PIN_H0H1:
+		*flags |= NRF_GPIO_DRIVE_H0H1;
+		break;
+	case NRF_GPIO_PIN_S0D1:
+		*flags |= NRF_GPIO_DRIVE_S0 | GPIO_OPEN_DRAIN;
+		break;
+	case NRF_GPIO_PIN_H0D1:
+		*flags |= NRF_GPIO_DRIVE_H0 | GPIO_OPEN_DRAIN;
+		break;
+	case NRF_GPIO_PIN_D0S1:
+		*flags |= NRF_GPIO_DRIVE_S1 | GPIO_OPEN_SOURCE;
+		break;
+	case NRF_GPIO_PIN_D0H1:
+		*flags |= NRF_GPIO_DRIVE_H1 | GPIO_OPEN_SOURCE;
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+#endif
 
 static int gpio_nrfx_port_get_raw(const struct device *port,
 				  gpio_port_value_t *value)
@@ -256,52 +336,37 @@ static int gpio_nrfx_port_set_masked_raw(const struct device *port,
 					 gpio_port_value_t value)
 {
 	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
-	int ret;
 
 	const uint32_t set_mask = value & mask;
 	const uint32_t clear_mask = (~set_mask) & mask;
 
-	ret = gpio_nrfx_gpd_retain_clear(port, mask);
-	if (ret < 0) {
-		return ret;
-	}
-
+	port_retain_clear(get_port_cfg(port), mask);
 	nrf_gpio_port_out_set(reg, set_mask);
 	nrf_gpio_port_out_clear(reg, clear_mask);
-
-	return gpio_nrfx_gpd_retain_set(port, mask, GPIO_OUTPUT);
+	port_retain_set(get_port_cfg(port), mask);
+	return 0;
 }
 
 static int gpio_nrfx_port_set_bits_raw(const struct device *port,
 				       gpio_port_pins_t mask)
 {
 	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
-	int ret;
 
-	ret = gpio_nrfx_gpd_retain_clear(port, mask);
-	if (ret < 0) {
-		return ret;
-	}
-
+	port_retain_clear(get_port_cfg(port), mask);
 	nrf_gpio_port_out_set(reg, mask);
-
-	return gpio_nrfx_gpd_retain_set(port, mask, GPIO_OUTPUT);
+	port_retain_set(get_port_cfg(port), mask);
+	return 0;
 }
 
 static int gpio_nrfx_port_clear_bits_raw(const struct device *port,
 					 gpio_port_pins_t mask)
 {
 	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
-	int ret;
 
-	ret = gpio_nrfx_gpd_retain_clear(port, mask);
-	if (ret < 0) {
-		return ret;
-	}
-
+	port_retain_clear(get_port_cfg(port), mask);
 	nrf_gpio_port_out_clear(reg, mask);
-
-	return gpio_nrfx_gpd_retain_set(port, mask, GPIO_OUTPUT);
+	port_retain_set(get_port_cfg(port), mask);
+	return 0;
 }
 
 static int gpio_nrfx_port_toggle_bits(const struct device *port,
@@ -311,17 +376,12 @@ static int gpio_nrfx_port_toggle_bits(const struct device *port,
 	const uint32_t value = nrf_gpio_port_out_read(reg) ^ mask;
 	const uint32_t set_mask = value & mask;
 	const uint32_t clear_mask = (~value) & mask;
-	int ret;
 
-	ret = gpio_nrfx_gpd_retain_clear(port, mask);
-	if (ret < 0) {
-		return ret;
-	}
-
+	port_retain_clear(get_port_cfg(port), mask);
 	nrf_gpio_port_out_set(reg, set_mask);
 	nrf_gpio_port_out_clear(reg, clear_mask);
-
-	return gpio_nrfx_gpd_retain_set(port, mask, GPIO_OUTPUT);
+	port_retain_set(get_port_cfg(port), mask);
+	return 0;
 }
 
 #ifdef CONFIG_GPIO_NRFX_INTERRUPT
@@ -338,6 +398,37 @@ static nrfx_gpiote_trigger_t get_trigger(enum gpio_int_mode mode,
 					    NRFX_GPIOTE_TRIGGER_LOTOHI;
 }
 
+static int chan_alloc(const struct gpio_nrfx_cfg *cfg, gpio_pin_t pin, uint8_t *ch)
+{
+#ifdef GPIOTE_FEATURE_FLAG
+	if (cfg->flags & GPIOTE_FLAG_FIXED_CHAN) {
+		/* Currently fixed channel relation is only present in one instance (GPIOTE0 on
+		 * cpurad). The rules are following:
+		 * - GPIOTE0 can only be used with P1 (pins 4-11) and P2 (pins (0-11))
+		 * - P1: channel => pin - 4, e.g. P1.4 => channel 0, P1.5 => channel 1
+		 * - P2: channel => pin % 8, e.g. P2.0 => channel 0, P2.8 => channel 0
+		 */
+		int err = 0;
+
+		if (cfg->port_num == 1) {
+			if (pin < 4) {
+				err = -EINVAL;
+			} else {
+				*ch = pin - 4;
+			}
+		} else if (cfg->port_num == 2) {
+			*ch = pin & 0x7;
+		} else {
+			err = -EINVAL;
+		}
+
+		return err;
+	}
+#endif
+
+	return nrfx_gpiote_channel_alloc(cfg->gpiote, ch);
+}
+
 static int gpio_nrfx_pin_interrupt_configure(const struct device *port,
 					     gpio_pin_t pin,
 					     enum gpio_int_mode mode,
@@ -345,7 +436,7 @@ static int gpio_nrfx_pin_interrupt_configure(const struct device *port,
 {
 	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
 	uint32_t abs_pin = NRF_GPIO_PIN_MAP(cfg->port_num, pin);
-	nrfx_err_t err;
+	int err;
 	uint8_t ch;
 
 	if (!has_gpiote(cfg)) {
@@ -353,7 +444,7 @@ static int gpio_nrfx_pin_interrupt_configure(const struct device *port,
 	}
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
-		nrfx_gpiote_trigger_disable(&cfg->gpiote, abs_pin);
+		nrfx_gpiote_trigger_disable(cfg->gpiote, abs_pin);
 
 		return 0;
 	}
@@ -371,23 +462,37 @@ static int gpio_nrfx_pin_interrupt_configure(const struct device *port,
 	if (!(BIT(pin) & cfg->edge_sense) &&
 	    (mode == GPIO_INT_MODE_EDGE) &&
 	    (nrf_gpio_pin_dir_get(abs_pin) == NRF_GPIO_PIN_DIR_INPUT)) {
-		err = nrfx_gpiote_channel_get(&cfg->gpiote, abs_pin, &ch);
-		if (err == NRFX_ERROR_INVALID_PARAM) {
-			err = nrfx_gpiote_channel_alloc(&cfg->gpiote, &ch);
-			if (err != NRFX_SUCCESS) {
-				return -ENOMEM;
+		err = nrfx_gpiote_channel_get(cfg->gpiote, abs_pin, &ch);
+		if (err == -EINVAL) {
+			err = chan_alloc(cfg, pin, &ch);
+			if (err < 0) {
+				return err;
 			}
 		}
 
 		trigger_config.p_in_channel = &ch;
+	} else {
+#ifdef GPIOTE_FEATURE_FLAG
+		if (cfg->flags & GPIOTE_FLAG_NO_PORT_EVT) {
+			return -ENOTSUP;
+		}
+#endif
+		/* If edge mode with channel was previously used and we are changing to sense or
+		 * level triggered, we must free the channel.
+		 */
+		err = nrfx_gpiote_channel_get(cfg->gpiote, abs_pin, &ch);
+		if (err == 0) {
+			err = nrfx_gpiote_channel_free(cfg->gpiote, ch);
+			__ASSERT_NO_MSG(err == 0);
+		}
 	}
 
-	err = nrfx_gpiote_input_configure(&cfg->gpiote, abs_pin, &input_pin_config);
-	if (err != NRFX_SUCCESS) {
-		return -EINVAL;
+	err = nrfx_gpiote_input_configure(cfg->gpiote, abs_pin, &input_pin_config);
+	if (err < 0) {
+		return err;
 	}
 
-	nrfx_gpiote_trigger_enable(&cfg->gpiote, abs_pin, true);
+	nrfx_gpiote_trigger_enable(cfg->gpiote, abs_pin, true);
 
 	return 0;
 }
@@ -476,34 +581,70 @@ static void nrfx_gpio_handler(nrfx_gpiote_pin_t abs_pin,
 }
 #endif /* CONFIG_GPIO_NRFX_INTERRUPT */
 
-#define GPIOTE_IRQ_HANDLER_CONNECT(node_id) \
-	IRQ_CONNECT(DT_IRQN(node_id), DT_IRQ(node_id, priority), nrfx_isr, \
-		    NRFX_CONCAT(nrfx_gpiote_, DT_PROP(node_id, instance), _irq_handler), 0);
+#ifdef CONFIG_GPIO_NRFX_INTERRUPT
+/* Wrap nrfx IRQ handler to make native builds happy, as providing nrfx IRQ handler
+ * directly in IRQ_CONNECT causes complaints about mismatched types.
+ * Casting brings similar effect, however clashes with IRQ_CONNECT macro implementation
+ * for non-native builds.
+ */
+void gpio_nrfx_gpiote_irq_handler(void const *param)
+{
+	nrfx_gpiote_t *gpiote = (nrfx_gpiote_t *)param;
+
+	nrfx_gpiote_irq_handler(gpiote);
+}
+#endif
+
+#define GPIOTE_IRQ_HANDLER_CONNECT(node_id)							\
+	NRF_DT_IRQ_CONNECT(									\
+		node_id,									\
+		gpio_nrfx_gpiote_irq_handler,							\
+		&GPIOTE_NRFX_INST_BY_NODE(node_id)						\
+	)
+
+#define GPIOTE_IRQ_DIRECT_DEFINE(node_id)							\
+	NRF_DT_IRQ_DIRECT_DEFINE(								\
+		node_id,									\
+		gpio_nrfx_gpiote_irq_handler,							\
+		&GPIOTE_NRFX_INST_BY_NODE(node_id)						\
+	)
+
+#ifdef CONFIG_GPIO_NRFX_INTERRUPT
+	DT_FOREACH_STATUS_OKAY(nordic_nrf_gpiote, GPIOTE_IRQ_DIRECT_DEFINE);
+#endif /* CONFIG_GPIO_NRFX_INTERRUPT */
+
+static int gpio_nrfx_pm_hook(const struct device *port, enum pm_device_action action)
+{
+	ARG_UNUSED(port);
+	ARG_UNUSED(action);
+	return 0;
+}
 
 static int gpio_nrfx_init(const struct device *port)
 {
 	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
-	nrfx_err_t err;
+	int err;
 
 	if (!has_gpiote(cfg)) {
-		return 0;
+		goto pm_init;
 	}
 
-	if (nrfx_gpiote_init_check(&cfg->gpiote)) {
-		return 0;
+	if (nrfx_gpiote_init_check(cfg->gpiote)) {
+		goto pm_init;
 	}
 
-	err = nrfx_gpiote_init(&cfg->gpiote, 0 /*not used*/);
-	if (err != NRFX_SUCCESS) {
+	err = nrfx_gpiote_init(cfg->gpiote, 0 /*not used*/);
+	if (err != 0) {
 		return -EIO;
 	}
 
 #ifdef CONFIG_GPIO_NRFX_INTERRUPT
-	nrfx_gpiote_global_callback_set(&cfg->gpiote, nrfx_gpio_handler, NULL);
+	nrfx_gpiote_global_callback_set(cfg->gpiote, nrfx_gpio_handler, NULL);
 	DT_FOREACH_STATUS_OKAY(nordic_nrf_gpiote, GPIOTE_IRQ_HANDLER_CONNECT);
 #endif /* CONFIG_GPIO_NRFX_INTERRUPT */
 
-	return 0;
+pm_init:
+	return pm_device_driver_init(port, gpio_nrfx_pm_hook);
 }
 
 static DEVICE_API(gpio, gpio_nrfx_drv_api_funcs) = {
@@ -520,57 +661,55 @@ static DEVICE_API(gpio, gpio_nrfx_drv_api_funcs) = {
 #ifdef CONFIG_GPIO_GET_DIRECTION
 	.port_get_direction = gpio_nrfx_port_get_direction,
 #endif
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = gpio_nrfx_pin_get_config,
+#endif
 };
-
-#define GPIOTE_PHANDLE(id) DT_INST_PHANDLE(id, gpiote_instance)
-#define GPIOTE_INST(id)    DT_PROP(GPIOTE_PHANDLE(id), instance)
-
-#define GPIOTE_INSTANCE(id)                                     \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(id, gpiote_instance), \
-		    (NRFX_GPIOTE_INSTANCE(GPIOTE_INST(id))),    \
-		    ({ .p_reg = NULL }))
 
 /* Device instantiation is done with node labels because 'port_num' is
  * the peripheral number by SoC numbering. We therefore cannot use
  * DT_INST APIs here without wider changes.
  */
 
+#define HAS_GPIOTE(id) DT_INST_NODE_HAS_PROP(id, gpiote_instance)
+
 #define GPIOTE_CHECK(id)						       \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(id, gpiote_instance),		       \
-		(BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(GPIOTE_PHANDLE(id)),    \
+	COND_CODE_1(HAS_GPIOTE(id),					       \
+		(BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(GPIOTE_PHANDLE(id)),     \
 			"Please enable GPIOTE instance for used GPIO port!")), \
 		())
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-#define PAD_PD(inst) \
-	.pad_pd = DT_INST_PHA_BY_NAME_OR(inst, power_domains, pad, id,	       \
-					 NRF_GPD_SLOW_MAIN),
-#else
-#define PAD_PD(inst)
-#endif
+#define GPIOTE_REF(id) \
+	COND_CODE_1(HAS_GPIOTE(id),				     \
+		    (&GPIOTE_NRFX_INST_BY_NODE(GPIOTE_PHANDLE(id))), \
+		    (NULL))
 
-#define GPIO_NRF_DEVICE(id)						\
-	GPIOTE_CHECK(id);						\
-	static const struct gpio_nrfx_cfg gpio_nrfx_p##id##_cfg = {	\
-		.common = {						\
-			.port_pin_mask =				\
-			GPIO_PORT_PIN_MASK_FROM_DT_INST(id),		\
-		},							\
-		.port = _CONCAT(NRF_P, DT_INST_PROP(id, port)),		\
-		.port_num = DT_INST_PROP(id, port),			\
-		.edge_sense = DT_INST_PROP_OR(id, sense_edge_mask, 0),	\
-		.gpiote = GPIOTE_INSTANCE(id),				\
-		PAD_PD(id)						\
-	};								\
-									\
-	static struct gpio_nrfx_data gpio_nrfx_p##id##_data;		\
-									\
-	DEVICE_DT_INST_DEFINE(id, gpio_nrfx_init,			\
-			 NULL,						\
-			 &gpio_nrfx_p##id##_data,			\
-			 &gpio_nrfx_p##id##_cfg,			\
-			 PRE_KERNEL_1,					\
-			 CONFIG_GPIO_INIT_PRIORITY,			\
+#define GPIO_NRF_DEVICE(id)								\
+	GPIOTE_CHECK(id);								\
+	static struct gpio_nrfx_data gpio_nrfx_p##id##_data;				\
+	static const struct gpio_nrfx_cfg gpio_nrfx_p##id##_cfg = {			\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(id),				\
+		.port = _CONCAT(NRF_P, DT_INST_PROP(id, port)),				\
+		.gpiote = GPIOTE_REF(id),						\
+		.edge_sense = DT_INST_PROP_OR(id, sense_edge_mask, 0),			\
+		.port_num = DT_INST_PROP(id, port),					\
+		IF_ENABLED(GPIOTE_FEATURE_FLAG,						\
+			(.flags =							\
+			 (DT_PROP_OR(GPIOTE_PHANDLE(id), no_port_event, 0) ?		\
+			    GPIOTE_FLAG_NO_PORT_EVT : 0) |				\
+			 (DT_PROP_OR(GPIOTE_PHANDLE(id), fixed_channels_supported, 0) ?	\
+			  GPIOTE_FLAG_FIXED_CHAN : 0),)					\
+			)								\
+	};										\
+											\
+	PM_DEVICE_DT_INST_DEFINE(id, gpio_nrfx_pm_hook);				\
+											\
+	DEVICE_DT_INST_DEFINE(id, gpio_nrfx_init,					\
+			 PM_DEVICE_DT_INST_GET(id),					\
+			 &gpio_nrfx_p##id##_data,					\
+			 &gpio_nrfx_p##id##_cfg,					\
+			 PRE_KERNEL_1,							\
+			 CONFIG_GPIO_INIT_PRIORITY,					\
 			 &gpio_nrfx_drv_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NRF_DEVICE)

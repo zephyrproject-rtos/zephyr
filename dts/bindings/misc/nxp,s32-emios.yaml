@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  NXP S32 Enhanced Modular IO SubSystem (eMIOS) node for S32 SoCs.
+  Enhanced Modular IO SubSystem (eMIOS) for NXP S32 SoCs.
   eMIOS provides independent unified channels (UCs), some of channels
   have internal counter that either can be used independently or used
   as a reference timebase (master bus) for other channels.
@@ -35,6 +35,14 @@ properties:
     required: true
     description: |
       A mask for channels that have internal counter, lsb is channel 0.
+
+  global-timebase-provider:
+    type: phandle
+    description: |
+      Phandle to eMIOS instance that provides the global timebase. On some hardware designs, this
+      property must be set explicitly, even if the timebase provider is the eMIOS instance itself.
+      On other hardware platforms, this property is not required or may not be present at all.
+      Refer to the Reference Manual to determine whether this property is needed
 
 child-binding:
   child-binding:

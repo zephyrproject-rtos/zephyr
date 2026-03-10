@@ -15,6 +15,9 @@
 #include "zephyr/drivers/gpio/gpio_utils.h"
 #include <zephyr/logging/log.h>
 #include <zephyr/dt-bindings/gpio/realtek-gpio.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/sys/atomic.h>
 
 #include <reg/reg_gpio.h>
 
@@ -32,6 +35,22 @@ struct gpio_rts5912_data {
 	struct gpio_driver_data common;
 	sys_slist_t callbacks;
 };
+
+#if defined(CONFIG_PM)
+#define GPIO_EXPIRED_TIMEOUT_MS 1000
+static struct k_work_delayable gpio_wake_delay_work;
+static atomic_t gpio_wake_hold;			/* 0: no hold, 1: holding */
+static atomic_t gpio_wake_init_once;	/* 0: not inited, 1: inited */
+
+static void gpio_wake_delay_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	if (atomic_cas(&gpio_wake_hold, 1, 0)) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+#endif /* CONFIG_PM */
 
 static int pin_is_valid(const struct gpio_rts5912_config *config, gpio_pin_t pin)
 {
@@ -95,7 +114,15 @@ static int gpio_rts5912_configuration(const struct device *port, gpio_pin_t pin,
 	if (flags & GPIO_INPUT) {
 		cfg_val &= ~GPIO_GCR_DIR_Msk;
 		cfg_val &= ~GPIO_GCR_OUTCTRL_Msk;
+		/* enable input detect */
 		cfg_val |= GPIO_GCR_INDETEN_Msk;
+	}
+
+	if (flags & GPIO_DISCONNECTED) {
+		cfg_val &= ~GPIO_GCR_DIR_Msk;
+		cfg_val &= ~GPIO_GCR_OUTCTRL_Msk;
+		/* disable input detect */
+		cfg_val &= ~GPIO_GCR_INDETEN_Msk;
 	}
 
 	if (flags & GPIO_OPEN_DRAIN) {
@@ -131,12 +158,48 @@ static int gpio_rts5912_configuration(const struct device *port, gpio_pin_t pin,
 		break;
 	}
 
+	if (flags & RTS5912_GPIO_OUTDRV) {
+		cfg_val |= GPIO_GCR_OUTDRV_Msk;
+	} else {
+		cfg_val &= ~GPIO_GCR_OUTDRV_Msk;
+	}
+
+	if (flags & RTS5912_GPIO_SLEWRATE) {
+		cfg_val |= GPIO_GCR_SLEWRATE_Msk;
+	} else {
+		cfg_val &= ~GPIO_GCR_SLEWRATE_Msk;
+	}
+
+	if (flags & RTS5912_GPIO_SCHEN) {
+		cfg_val |= GPIO_GCR_SCHEN_Msk;
+	} else {
+		cfg_val &= ~GPIO_GCR_SCHEN_Msk;
+	}
+
+	cfg_val &= ~GPIO_GCR_MFCTRL_Msk;
+	switch (flags & RTS5912_GPIO_MFCTRL_MASK) {
+	case RTS5912_GPIO_MFCTRL_0:
+		cfg_val |= (0U << GPIO_GCR_MFCTRL_Pos);
+		break;
+	case RTS5912_GPIO_MFCTRL_1:
+		cfg_val |= (1U << GPIO_GCR_MFCTRL_Pos);
+		break;
+	case RTS5912_GPIO_MFCTRL_2:
+		cfg_val |= (2U << GPIO_GCR_MFCTRL_Pos);
+		break;
+	case RTS5912_GPIO_MFCTRL_3:
+		cfg_val |= (3U << GPIO_GCR_MFCTRL_Pos);
+		break;
+	default:
+		return -EINVAL;
+	}
+
 	*gcr = cfg_val;
 
 	if (flags & GPIO_OUTPUT) {
 		if (flags & GPIO_OUTPUT_INIT_HIGH) {
 			pin_output_high(port, pin);
-		} else {
+		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
 			pin_output_low(port, pin);
 		}
 	}
@@ -181,6 +244,73 @@ static int gpio_rts5912_get_configuration(const struct device *port, gpio_pin_t 
 		cfg_flag |= GPIO_PULL_UP;
 	} else if (*gcr & GPIO_GCR_PULLDWEN_Msk) {
 		cfg_flag |= GPIO_PULL_DOWN;
+	}
+
+	if (*gcr & GPIO_GCR_INDETEN_Msk) {
+		cfg_flag |= RTS5912_GPIO_INDETEN;
+	} else {
+		cfg_flag &= ~RTS5912_GPIO_INDETEN;
+	}
+
+	if (*gcr & GPIO_GCR_OUTDRV_Msk) {
+		cfg_flag |= RTS5912_GPIO_OUTDRV;
+	} else {
+		cfg_flag &= ~RTS5912_GPIO_OUTDRV;
+	}
+
+	if (*gcr & GPIO_GCR_SLEWRATE_Msk) {
+		cfg_flag |= RTS5912_GPIO_SLEWRATE;
+	} else {
+		cfg_flag &= ~RTS5912_GPIO_SLEWRATE;
+	}
+
+	if (*gcr & GPIO_GCR_SCHEN_Msk) {
+		cfg_flag |= RTS5912_GPIO_SCHEN;
+	} else {
+		cfg_flag &= ~RTS5912_GPIO_SCHEN;
+	}
+
+	switch ((*gcr & GPIO_GCR_MFCTRL_Msk) >> GPIO_GCR_MFCTRL_Pos) {
+	case 0:
+		cfg_flag |= RTS5912_GPIO_MFCTRL_0;
+		break;
+	case 1:
+		cfg_flag |= RTS5912_GPIO_MFCTRL_1;
+		break;
+	case 2:
+		cfg_flag |= RTS5912_GPIO_MFCTRL_2;
+		break;
+	case 3:
+		cfg_flag |= RTS5912_GPIO_MFCTRL_3;
+		break;
+	default:
+		cfg_flag |= RTS5912_GPIO_MFCTRL_0;
+		break;
+	}
+
+	if (*gcr & GPIO_GCR_INTEN_Msk) {
+		switch (*gcr & GPIO_GCR_INTCTRL_Msk) {
+		case GPIO_GCR_INTCTRL_TRIG_EDGE_HIGH:
+			cfg_flag |= GPIO_INT_EDGE_RISING;
+			break;
+		case GPIO_GCR_INTCTRL_TRIG_EDGE_LOW:
+			cfg_flag |= GPIO_INT_EDGE_FALLING;
+			break;
+		case GPIO_GCR_INTCTRL_TRIG_EDGE_BOTH:
+			cfg_flag |= GPIO_INT_EDGE_BOTH;
+			break;
+		case GPIO_GCR_INTCTRL_TRIG_LEVEL_LOW:
+			cfg_flag |= GPIO_INT_LEVEL_LOW;
+			break;
+		case GPIO_GCR_INTCTRL_TRIG_LEVEL_HIGH:
+			cfg_flag |= GPIO_INT_LEVEL_HIGH;
+			break;
+		default:
+			cfg_flag |= GPIO_INT_LEVEL_LOW;
+			break;
+		}
+	} else {
+		cfg_flag |= GPIO_INT_DISABLE;
 	}
 
 	*flags = cfg_flag;
@@ -301,7 +431,25 @@ static int gpio_rts5912_port_toggle_bits(const struct device *port, gpio_port_pi
 	return 0;
 }
 
-static gpio_pin_t gpio_rts5912_get_intr_pin(volatile uint32_t *reg_base)
+int gpio_rts5912_get_pin_num(const struct gpio_dt_spec *gpio)
+{
+	const struct device *dev = gpio->port;
+	const struct gpio_rts5912_config *config = dev->config;
+	uint32_t gcr = (uint32_t)config->reg_base;
+
+	return (gcr - (uint32_t)(RTS5912_GPIOA_REG_BASE)) / 4 + gpio->pin;
+}
+
+volatile uint32_t *gpio_rts5912_get_port_address(const struct gpio_dt_spec *gpio)
+{
+	const struct device *dev = gpio->port;
+	const struct gpio_rts5912_config *config = dev->config;
+	volatile uint32_t *gcr = config->reg_base;
+
+	return gcr;
+}
+
+gpio_pin_t gpio_rts5912_get_intr_pin(volatile uint32_t *reg_base)
 {
 	gpio_pin_t pin = 0U;
 
@@ -325,6 +473,19 @@ static void gpio_rts5912_isr(const void *arg)
 
 	if (gcr[pin] & GPIO_GCR_INTSTS_Msk) {
 		gcr[pin] |= GPIO_GCR_INTSTS_Msk;
+
+#if defined(CONFIG_PM)
+		/*
+		 * When EC wakes by GPIO, it may fall back to SUSPEND_TO_IDLE before
+		 * the host or peripherals have a chance to take further action.
+		 * Delay sleep for GPIO_EXPIRED_TIMEOUT_MS.
+		 */
+		if (atomic_cas(&gpio_wake_hold, 0, 1)) {
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		}
+		k_work_reschedule(&gpio_wake_delay_work,
+				K_MSEC(GPIO_EXPIRED_TIMEOUT_MS));
+#endif
 
 		gpio_fire_callbacks(&data->callbacks, port, BIT(pin));
 	}
@@ -357,11 +518,11 @@ static int gpio_rts5912_intr_config(const struct device *port, gpio_pin_t pin,
 		switch (trig) {
 		case GPIO_INT_TRIG_LOW:
 			cfg_val &= ~GPIO_GCR_INTCTRL_Msk;
-			cfg_val |= 0x03UL << GPIO_GCR_INTCTRL_Pos;
+			cfg_val |= GPIO_GCR_INTCTRL_TRIG_LEVEL_LOW;
 			break;
 		case GPIO_INT_TRIG_HIGH:
 			cfg_val &= ~GPIO_GCR_INTCTRL_Msk;
-			cfg_val |= 0x04UL << GPIO_GCR_INTCTRL_Pos;
+			cfg_val |= GPIO_GCR_INTCTRL_TRIG_LEVEL_HIGH;
 			break;
 		default:
 			return -EINVAL;
@@ -371,15 +532,15 @@ static int gpio_rts5912_intr_config(const struct device *port, gpio_pin_t pin,
 		switch (trig) {
 		case GPIO_INT_TRIG_LOW:
 			cfg_val &= ~GPIO_GCR_INTCTRL_Msk;
-			cfg_val |= 0x01UL << GPIO_GCR_INTCTRL_Pos;
+			cfg_val |= GPIO_GCR_INTCTRL_TRIG_EDGE_LOW;
 			break;
 		case GPIO_INT_TRIG_HIGH:
 			cfg_val &= ~GPIO_GCR_INTCTRL_Msk;
-			cfg_val |= 0x00UL << GPIO_GCR_INTCTRL_Pos;
+			cfg_val |= GPIO_GCR_INTCTRL_TRIG_EDGE_HIGH;
 			break;
 		case GPIO_INT_TRIG_BOTH:
 			cfg_val &= ~GPIO_GCR_INTCTRL_Msk;
-			cfg_val |= 0x2UL << GPIO_GCR_INTCTRL_Pos;
+			cfg_val |= GPIO_GCR_INTCTRL_TRIG_EDGE_BOTH;
 			break;
 		default:
 			return -EINVAL;
@@ -389,7 +550,9 @@ static int gpio_rts5912_intr_config(const struct device *port, gpio_pin_t pin,
 		return -EINVAL;
 	}
 
+	/* enable interrupt */
 	cfg_val |= GPIO_GCR_INTEN_Msk;
+	/* set value to GPIO register */
 	*gcr = cfg_val;
 
 	irq_enable(pin_index);
@@ -437,6 +600,14 @@ static DEVICE_API(gpio, gpio_rts5912_driver_api) = {
 		if (!(DT_INST_IRQ_HAS_CELL(id, irq))) {                                            \
 			return 0;                                                                  \
 		}                                                                                  \
+		                                                                                   \
+		if (IS_ENABLED(CONFIG_PM)) {                                                       \
+			if (atomic_cas(&gpio_wake_init_once, 0, 1)) {                              \
+				k_work_init_delayable(&gpio_wake_delay_work,                       \
+					gpio_wake_delay_work_handler);                             \
+				atomic_clear(&gpio_wake_hold);                                     \
+			}                                                                          \
+		}                                                                                  \
                                                                                                    \
 		RTS5912_GPIO_DTNAMIC_IRQ(id)                                                       \
                                                                                                    \
@@ -446,12 +617,12 @@ static DEVICE_API(gpio, gpio_rts5912_driver_api) = {
 	static struct gpio_rts5912_data gpio_rts5912_data_##id;                                    \
                                                                                                    \
 	static const struct gpio_rts5912_config gpio_rts5912_config_##id = {                       \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(id)},                  \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(id),                                     \
 		.reg_base = (volatile uint32_t *)DT_INST_REG_ADDR(id),                             \
 		.num_pins = DT_INST_PROP(id, ngpios),                                              \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(id, gpio_rts5912_init_##id, NULL, &gpio_rts5912_data_##id,           \
-			      &gpio_rts5912_config_##id, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,   \
+			      &gpio_rts5912_config_##id, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,  \
 			      &gpio_rts5912_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_RTS5912_INIT)

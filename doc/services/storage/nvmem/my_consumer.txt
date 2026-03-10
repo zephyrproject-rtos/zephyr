@@ -1,0 +1,5 @@
+my_consumer: my-consumer {
+	compatible = "my,consumer";
+	nvmem-cells = <&mac_address>, <&calibration_data>;
+	nvmem-cell-names = "mac-address", "calibration-data";
+};

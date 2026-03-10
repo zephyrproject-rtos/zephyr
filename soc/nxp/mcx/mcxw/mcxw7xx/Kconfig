@@ -1,0 +1,30 @@
+# Copyright 2025-2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "../../../common/Kconfig.nbu"
+
+config MCUX_CORE_SUFFIX
+	default "_cm33_core0" if SOC_MCXW727C
+
+config SOC_MCXW716C
+	select NXP_MULTICORE if NXP_NBU
+	select HAS_PM
+
+config SOC_MCXW727C
+	select NXP_MULTICORE if NXP_NBU
+
+config SOC_MCXW70AC
+	select NXP_MULTICORE if NXP_NBU
+	select HAS_PM
+
+config SOC_MCXW70AC
+	bool
+	select NXP_MCXW7XX_BOOT_HEADER if !BOOTLOADER_MCUBOOT
+
+config NXP_MCXW7XX_BOOT_HEADER
+	bool "Create boot header"
+	depends on !BOOTLOADER_MCUBOOT
+	help
+	  Create data structures required by the boot ROM to boot the
+	  application from flash.

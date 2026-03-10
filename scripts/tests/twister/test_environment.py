@@ -7,15 +7,13 @@
 Tests for environment.py classes' methods
 """
 
-import mock
 import os
-import pytest
 import shutil
-
 from contextlib import nullcontext
+from unittest import mock
 
+import pytest
 import twisterlib.environment
-
 
 TESTDATA_1 = [
     (
@@ -31,20 +29,6 @@ TESTDATA_1 = [
         None,
         ['--device-serial-pty', 'dummy'],
         '--device-serial-pty is not supported on Windows OS'
-    ),
-    (
-        None,
-        None,
-        None,
-        ['--west-runner=dummy'],
-        'west-runner requires west-flash to be enabled'
-    ),
-    (
-        None,
-        None,
-        None,
-        ['--west-flash=\"--board-id=dummy\"'],
-        'west-flash requires device-testing to be enabled'
     ),
     (
         None,
@@ -136,8 +120,6 @@ TESTDATA_1 = [
     ids=[
         'short build path without ninja',
         'device-serial-pty on Windows',
-        'west runner without west flash',
-        'west-flash without device-testing',
         'valgrind without executable',
         'device serial without platform',
         'device serial with multiple platforms',
@@ -554,7 +536,7 @@ TESTDATA_6 = [
         'Using \'dummy toolchain\' toolchain.'
     ),
     (
-        {'returncode': 1},
+        {'returncode': 1, "returnmsg": "something went wrong"},
         2,
         None
     ),
@@ -588,7 +570,7 @@ def test_get_toolchain(caplog, script_result, exit_value, expected_log):
             twisterlib.environment.TwisterEnv,
             'run_cmake_script',
             mock.Mock(return_value=script_result)), \
-         pytest.raises(SystemExit) \
+         pytest.raises(SystemExit, match='2') \
             if exit_value is not None else nullcontext() as exit_info:
         twister_env.get_toolchain()
 

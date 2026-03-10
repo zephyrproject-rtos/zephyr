@@ -19,7 +19,7 @@ ZTEST_F(eventfd, test_write_then_read)
 
 	ret = eventfd_read(fixture->fd, &val);
 	zassert_true(ret == 0, "read ret %d", ret);
-	zassert_true(val == 5, "val == %d", val);
+	zassert_true(val == 5, "val == %lld", val);
 
 	/* Test EFD_SEMAPHORE */
 	reopen(&fixture->fd, 0, EFD_SEMAPHORE);
@@ -32,7 +32,7 @@ ZTEST_F(eventfd, test_write_then_read)
 
 	ret = eventfd_read(fixture->fd, &val);
 	zassert_true(ret == 0, "read ret %d", ret);
-	zassert_true(val == 1, "val == %d", val);
+	zassert_true(val == 1, "val == %lld", val);
 }
 
 ZTEST_F(eventfd, test_zero_shall_not_unblock)
@@ -94,6 +94,29 @@ ZTEST_F(eventfd, test_read_then_write_block)
 	zassert_ok(eventfd_write(fixture->fd, 42));
 
 	/* unreachable code */
+	k_thread_join(&thread, K_FOREVER);
+}
+
+static void thread_eventfd_posix_read_42(void *arg1, void *arg2, void *arg3)
+{
+	uint64_t value;
+	struct eventfd_fixture *fixture = arg1;
+	int ret;
+
+	ret = read(fixture->fd, &value, sizeof(value));
+	zassert(ret == sizeof(value), "read(2) failed");
+	zassert_equal(value, 42);
+}
+
+ZTEST_F(eventfd, test_posix_read_then_write_block)
+{
+	k_thread_create(&thread, thread_stack, K_THREAD_STACK_SIZEOF(thread_stack),
+			thread_eventfd_posix_read_42, fixture, NULL, NULL, 0, 0, K_NO_WAIT);
+
+	k_msleep(100);
+
+	zassert_ok(eventfd_write(fixture->fd, 42));
+
 	k_thread_join(&thread, K_FOREVER);
 }
 
@@ -161,4 +184,24 @@ ZTEST_F(eventfd, test_read_while_pollout)
 	zassert_equal(fds[0].revents, ZSOCK_POLLOUT);
 
 	zassert_ok(k_thread_join(&thread, K_FOREVER));
+}
+
+static void thread_eventfd_close(void *arg1, void *arg2, void *arg3)
+{
+	struct eventfd_fixture *fixture = arg1;
+
+	zassert_ok(close(fixture->fd));
+}
+
+ZTEST_F(eventfd, test_read_then_close_block)
+{
+	eventfd_t value;
+
+	k_thread_create(&thread, thread_stack, K_THREAD_STACK_SIZEOF(thread_stack),
+			thread_eventfd_close, fixture, NULL, NULL, 0, 0, K_MSEC(100));
+
+	zassert_equal(read(fixture->fd, &value, sizeof(value)), -1);
+	printf("ERRNO: %d\n", errno);
+
+	k_thread_join(&thread, K_FOREVER);
 }

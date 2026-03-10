@@ -3,6 +3,7 @@
 zephyr_include_directories(${ZEPHYR_BASE}/drivers)
 
 zephyr_sources(soc.c)
+zephyr_sources_ifdef(CONFIG_PM power.c s2ram_marking.S)
 zephyr_include_directories(.)
 
 zephyr_linker_sources(RAM_SECTIONS ram_sections.ld)

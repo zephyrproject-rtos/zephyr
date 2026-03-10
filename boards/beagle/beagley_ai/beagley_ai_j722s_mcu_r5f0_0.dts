@@ -8,7 +8,7 @@
 /dts-v1/;
 
 #include <ti/j722s_mcu_r5.dtsi>
-#include "beagley_ai_j722s_mcu_r5f0_0-pinctrl.dtsi"
+#include "beagley_ai_j722s_r5f0_0-pinctrl.dtsi"
 #include <freq.h>
 
 / {
@@ -18,6 +18,13 @@
 	chosen {
 		zephyr,sram = &atcm;
 		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,ipc = &ipc0;
+		zephyr,ipc_shm = &ddr0;
+	};
+
+	aliases {
+		watchdog0 = &mcu_rti0;
 	};
 
 	cpus {
@@ -42,6 +49,12 @@
 		reg = <0xa1200000 DT_SIZE_M(14)>;
 		zephyr,memory-region = "DRAM";
 	};
+
+	ipc0: ipc {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox1 0>, <&mbox1 1>;
+		mbox-names = "tx", "rx";
+	};
 };
 
 &uart1 {
@@ -52,5 +65,9 @@
 };
 
 &systick_timer {
+	status = "okay";
+};
+
+&mcu_rti0 {
 	status = "okay";
 };

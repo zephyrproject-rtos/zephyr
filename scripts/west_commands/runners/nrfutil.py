@@ -9,7 +9,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-from runners.core import _DRY_RUN
 from runners.nrf_common import NrfBinaryRunner
 
 
@@ -17,13 +16,14 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
     '''Runner front-end for nrfutil.'''
 
     def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
-                 reset=True, tool_opt=None, force=False, recover=False,
-                 suit_starter=False, ext_mem_config_file=None):
+                 erase_mode=None, ext_erase_mode=None, reset=True, tool_opt=None,
+                 force=False, recover=False, ext_mem_config_file=None,
+                 dry_run=False):
 
-        super().__init__(cfg, family, softreset, pinreset, dev_id, erase, reset,
-                         tool_opt, force, recover)
+        super().__init__(cfg, family, softreset, pinreset, dev_id, erase,
+                         erase_mode, ext_erase_mode, reset, tool_opt, force,
+                         recover, dry_run)
 
-        self.suit_starter = suit_starter
         self.ext_mem_config_file = ext_mem_config_file
 
         self._ops = []
@@ -34,6 +34,15 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         return 'nrfutil'
 
     @classmethod
+    def capabilities(cls):
+        return NrfBinaryRunner._capabilities(mult_dev_ids=True, dry_run=True)
+
+    @classmethod
+    def dev_id_help(cls) -> str:
+        return NrfBinaryRunner._dev_id_help() + \
+               '''.\n This option can be specified multiple times'''
+
+    @classmethod
     def tool_opt_help(cls) -> str:
         return 'Additional options for nrfutil, e.g. "--log-level"'
 
@@ -41,30 +50,27 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
     def do_create(cls, cfg, args):
         return NrfUtilBinaryRunner(cfg, args.nrf_family, args.softreset,
                                    args.pinreset, args.dev_id, erase=args.erase,
-                                   reset=args.reset,
-                                   tool_opt=args.tool_opt, force=args.force,
-                                   recover=args.recover,
-                                   suit_starter=args.suit_manifest_starter,
-                                   ext_mem_config_file=args.ext_mem_config_file)
+                                   erase_mode=args.erase_mode,
+                                   ext_erase_mode=args.ext_erase_mode,
+                                   reset=args.reset, tool_opt=args.tool_opt,
+                                   force=args.force, recover=args.recover,
+                                   ext_mem_config_file=args.ext_mem_config_file,
+                                   dry_run=args.dry_run)
 
     @classmethod
     def do_add_parser(cls, parser):
         super().do_add_parser(parser)
-        parser.add_argument('--suit-manifest-starter', required=False,
-                            action='store_true',
-                            help='Use the SUIT manifest starter file')
         parser.add_argument('--ext-mem-config-file', required=False,
                             dest='ext_mem_config_file',
                             help='path to an JSON file with external memory configuration')
 
-
-    def _exec(self, args):
+    def _exec(self, args, force=False):
         jout_all = []
 
         cmd = ['nrfutil', '--json', 'device'] + args
         self._log_cmd(cmd)
 
-        if _DRY_RUN:
+        if self.dry_run and not force:
             return {}
 
         with subprocess.Popen(cmd, stdout=subprocess.PIPE) as p:
@@ -85,6 +91,8 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
                         raise subprocess.CalledProcessError(
                             jout['data']['error']['code'], cmd
                         )
+        if p.returncode != 0:
+            raise subprocess.CalledProcessError(p.returncode, cmd)
 
         return jout_all
 
@@ -107,6 +115,12 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         self._op_id += 1
         self._ops.append(op)
 
+    def _format_dev_ids(self):
+        if isinstance(self.dev_id, list):
+            return ','.join(self.dev_id)
+        else:
+            return self.dev_id
+
     def _append_batch(self, op, json_file):
         _op = op['operation']
         op_type = _op['type']
@@ -128,15 +142,17 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
             cmd += ['--reset-kind', _op['kind']]
         elif op_type == 'erase':
             cmd.append(f'--{_op["kind"]}')
+        elif op_type == 'x-provision-keys':
+            cmd += ['--key-file', _op['keyfile']]
 
         cmd += ['--core', op['core']] if op.get('core') else []
         cmd += ['--x-family', f'{self.family}']
         cmd += ['--x-append-batch', f'{json_file}']
-        self._exec(cmd)
+        self._exec(cmd, force=True)
 
     def _exec_batch(self):
         # Use x-append-batch to get the JSON from nrfutil itself
-        json_file = Path(self.hex_).parent / 'generated_nrfutil_batch.json'
+        json_file = Path(self.cfg.build_dir) / 'zephyr' / 'generated_nrfutil_batch.json'
         json_file.unlink(missing_ok=True)
         for op in self._ops:
             self._append_batch(op, json_file)
@@ -151,7 +167,7 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
             precmd = ['--x-ext-mem-config-file', self.ext_mem_config_file]
 
         self._exec(precmd + ['x-execute-batch', '--batch-path', f'{json_file}',
-                             '--serial-number', f'{self.dev_id}'])
+                             '--serial-number', self._format_dev_ids()])
 
     def do_exec_op(self, op, force=False):
         self.logger.debug(f'Executing op: {op}')

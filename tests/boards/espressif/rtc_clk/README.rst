@@ -12,11 +12,11 @@ Espressif SOCs have 3 main clock subsystems: CPU, RTC_FAST and RTC_SLOW. Each of
 
 Supported Boards
 ****************
-- esp32_devkitc_wrover/esp32/procpu
+- esp32_devkitc/esp32/procpu
 - esp32c3_devkitm
-- esp32c6_devkitc
+- esp32c6_devkitc/esp32c6/hpcore
 - esp32s2_saola
-- esp32s3_devkitm/esp32s3/procpu
+- esp32s3_devkitc/esp32s3/procpu
 
 Building and Running
 ********************

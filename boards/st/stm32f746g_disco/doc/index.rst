@@ -40,7 +40,7 @@ Hardware
 The STM32F746G Discovery kit provides the following hardware components:
 
 - STM32F746NGH6 in BGA216 package
-- ARM |reg| 32-bit Cortex |reg| -M7 CPU with FPU
+- ARM® 32-bit Cortex®-M7 CPU with FPU
 - 216 MHz max CPU frequency
 - VDD from 1.8 V to 3.6 V
 - 2 MB Flash
@@ -48,7 +48,7 @@ The STM32F746G Discovery kit provides the following hardware components:
 - GPIO with external interrupt capability
 - LCD parallel interface, 8080/6800 modes
 - LCD TFT controller supporting up to XGA resolution
-- MIPI |reg|  DSI host controller supporting up to 720p 30Hz resolution
+- MIPI®  DSI host controller supporting up to 720p 30Hz resolution
 - 3x12-bit ADC with 24 channels
 - 2x12-bit D/A converters
 - RTC
@@ -77,45 +77,7 @@ More information about STM32F746NGH6 can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f746g_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | Ethernet                            |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-| SDMMC     | on-chip    | disk access                         |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| QSPI NOR  | on-chip    | off-chip flash                      |
-+-----------+------------+-------------------------------------+
-| FMC       | on-chip    | memc (SDRAM)                        |
-+-----------+------------+-------------------------------------+
-| LTDC      | on-chip    | display                             |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32f746g_disco/stm32f746g_disco_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -175,6 +137,8 @@ settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32F746G Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
 

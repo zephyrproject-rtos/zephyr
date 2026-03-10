@@ -441,9 +441,6 @@ static int gpio_xlnx_ps_bank_init(const struct device *dev)
 
 	sys_write32(~0x0, GPIO_XLNX_PS_BANK_INT_DIS_REG);  /* Disable all interrupts */
 	sys_write32(~0x0, GPIO_XLNX_PS_BANK_INT_STAT_REG); /* Clear all interrupts */
-	sys_write32(0x0, GPIO_XLNX_PS_BANK_OEN_REG);       /* All outputs disabled */
-	sys_write32(0x0, GPIO_XLNX_PS_BANK_DIRM_REG);      /* All pins input */
-	sys_write32(0x0, GPIO_XLNX_PS_BANK_DATA_REG);      /* Zero data register */
 
 	return 0;
 }
@@ -451,10 +448,8 @@ static int gpio_xlnx_ps_bank_init(const struct device *dev)
 /* MIO / EMIO bank device definition macros */
 #define GPIO_XLNX_PS_BANK_INIT(idx)\
 static const struct gpio_xlnx_ps_bank_dev_cfg gpio_xlnx_ps_bank##idx##_cfg = {\
-	.common = {\
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),\
-	},\
-	.bank_index = idx,\
+	.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx),\
+	.bank_index = DT_INST_REG_ADDR(idx),\
 };\
 static struct gpio_xlnx_ps_bank_dev_data gpio_xlnx_ps_bank##idx##_data = {\
 	.base = 0,\

@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief SCMI power domain protocol helpers
+ * @ingroup scmi_power
+ * @brief Header file for the SCMI Power Domain Protocol.
  */
 
 #ifndef _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_POWER_H_
@@ -14,7 +15,52 @@
 
 #include <zephyr/drivers/firmware/scmi/protocol.h>
 
+/**
+ * @brief Power domain state management via SCMI
+ * @defgroup scmi_power Power Domain Protocol
+ * @ingroup scmi_protocols
+ * @{
+ */
+
 #define SCMI_POWER_STATE_SET_FLAGS_ASYNC BIT(0)
+
+#define SCMI_POWER_DOMAIN_PROTOCOL_SUPPORTED_VERSION	0x30001
+
+/**
+ * @name SCMI power domain state parameters
+ * @{
+ */
+
+/** Power state type field bit shift */
+#define SCMI_POWER_STATE_TYPE_SHIFT	30U
+
+/** Power state ID field mask */
+#define SCMI_POWER_STATE_ID_MASK	(BIT(28) - 1)
+
+/**
+ * @brief Construct SCMI power state parameter
+ *
+ * @param type Power state type
+ * @param id   Power state ID
+ */
+#define SCMI_POWER_STATE_PARAM(type, id) \
+	((((type) & BIT(0)) << SCMI_POWER_STATE_TYPE_SHIFT) | \
+	 ((id) & SCMI_POWER_STATE_ID_MASK))
+
+/** @} */
+
+/**
+ * @name SCMI power domain generic states
+ * @{
+ */
+
+/** Power domain is in ON state */
+#define SCMI_POWER_STATE_GENERIC_ON	SCMI_POWER_STATE_PARAM(0, 0)
+
+/** Power domain is in OFF state */
+#define SCMI_POWER_STATE_GENERIC_OFF	SCMI_POWER_STATE_PARAM(1, 0)
+
+/** @} */
 
 /**
  * @struct scmi_power_state_config
@@ -64,5 +110,9 @@ int scmi_power_state_set(struct scmi_power_state_config *cfg);
  * @retval negative errno if failure
  */
 int scmi_power_state_get(uint32_t domain_id, uint32_t *power_state);
+
+/**
+ * @}
+ */
 
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_POWER_H_ */

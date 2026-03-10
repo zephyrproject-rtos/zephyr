@@ -19,18 +19,7 @@ Hardware
 Supported Features
 ==================
 
-This configuration supports the following hardware features:
-
-+--------------+------------+-----------------------+
-| Interface    | Controller | Driver/Component      |
-+==============+============+=======================+
-| HPET         | on-chip    | system clock          |
-+--------------+------------+-----------------------+
-| APIC         | on-chip    | interrupt controller  |
-+--------------+------------+-----------------------+
-| NS16550      | on-chip    | serial port           |
-| UART         |            |                       |
-+--------------+------------+-----------------------+
+.. zephyr:board-supported-hw::
 
 Devices
 =======
@@ -66,6 +55,8 @@ The following platform features are unsupported:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``qemu_x86`` board configuration can be built and run in
 the usual way for emulated boards (see :ref:`build_an_application` and

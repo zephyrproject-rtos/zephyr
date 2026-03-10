@@ -1,0 +1,13 @@
+# Copyright 2025 Christoph Schnetzler
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DBI_RPI_PICO_PIO
+	bool "MIPI DBI driver using PIO"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_MIPI_DBI_PIO_ENABLED
+	select GPIO
+	select PICOSDK_USE_PIO
+	select PICOSDK_USE_DMA
+	help
+	  Enable support for MIPI DBI driver. This driver implements
+	  a MIPI-DBI mode B compatible controller using PIO and DMA.

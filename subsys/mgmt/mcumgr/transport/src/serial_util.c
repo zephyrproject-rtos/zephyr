@@ -1,6 +1,6 @@
 /*
  * Copyright Runtime.io 2018. All rights reserved.
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,10 @@
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/transport/serial.h>
 
+#if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE)
+#include <mgmt/mcumgr/transport/smp_internal.h>
+#endif
+
 static void mcumgr_serial_free_rx_ctxt(struct mcumgr_serial_rx_ctxt *rx_ctxt)
 {
 	if (rx_ctxt->nb != NULL) {
@@ -25,6 +29,7 @@ static void mcumgr_serial_free_rx_ctxt(struct mcumgr_serial_rx_ctxt *rx_ctxt)
 	}
 }
 
+#if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE)
 static uint16_t mcumgr_serial_calc_crc(const uint8_t *data, int len)
 {
 	return crc16_itu_t(0x0000, data, len);
@@ -57,6 +62,49 @@ static int mcumgr_serial_decode_frag(struct mcumgr_serial_rx_ctxt *rx_ctxt,
 
 	return 0;
 }
+#endif
+
+#if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE)
+static inline bool mcumgr_serial_process_frag_raw(struct mcumgr_serial_rx_ctxt *rx_ctxt,
+							     const uint8_t *frag, int frag_len,
+							     struct smp_hdr *rec_hdr)
+{
+	uint16_t total_size;
+
+	net_buf_add_mem(rx_ctxt->nb, frag, frag_len);
+
+	if (rx_ctxt->nb->len < sizeof(struct smp_hdr)) {
+		/* Missing header */
+		return false;
+	}
+
+	/*
+	 * Perform some basic cursory checks to ensure some fields of the packet are
+	 * actually valid.
+	 */
+	rec_hdr = (struct smp_hdr *)rx_ctxt->nb->data;
+	total_size = sys_be16_to_cpu(rec_hdr->nh_len) + sizeof(struct smp_hdr);
+
+	if (total_size > CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE) {
+		/* Payload is longer than the maximum supported MTU. */
+		mcumgr_serial_free_rx_ctxt(rx_ctxt);
+		return false;
+	} else if (rec_hdr->nh_op >= MGMT_OP_COUNT) {
+		/* Unknown op-code, likely not a valid MCUmgr message. */
+		mcumgr_serial_free_rx_ctxt(rx_ctxt);
+		return false;
+	} else if (rx_ctxt->nb->len < total_size) {
+		/* More fragments expected. */
+		return false;
+	} else if (rx_ctxt->nb->len > total_size) {
+		/* Payload longer than indicated in header. */
+		mcumgr_serial_free_rx_ctxt(rx_ctxt);
+		return false;
+	}
+
+	return true;
+}
+#endif
 
 /**
  * Processes a received mcumgr frame.
@@ -65,84 +113,108 @@ static int mcumgr_serial_decode_frag(struct mcumgr_serial_rx_ctxt *rx_ctxt,
  *                              false if the frame is invalid or if additional
  *                                  fragments are expected.
  */
-struct net_buf *mcumgr_serial_process_frag(
-	struct mcumgr_serial_rx_ctxt *rx_ctxt,
-	const uint8_t *frag, int frag_len)
+struct net_buf *mcumgr_serial_process_frag(struct mcumgr_serial_rx_ctxt *rx_ctxt,
+					   const uint8_t *frag, int frag_len)
 {
 	struct net_buf *nb;
+
+#if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE)
+	int rc;
 	uint16_t crc;
 	uint16_t op;
-	int rc;
+#endif
+#if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE)
+	struct smp_hdr *rec_hdr;
+#endif
 
 	if (rx_ctxt->nb == NULL) {
 		rx_ctxt->nb = smp_packet_alloc();
+		net_buf_reset(rx_ctxt->nb);
 		if (rx_ctxt->nb == NULL) {
 			return NULL;
 		}
 	}
 
-	if (frag_len < sizeof(op)) {
-		return NULL;
-	}
+#if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE) && \
+	defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE)
+	if (rx_ctxt->raw_transport == true) {
+#endif
+#if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE)
+		if (mcumgr_serial_process_frag_raw(rx_ctxt, frag, frag_len, rec_hdr) == false) {
+			return NULL;
+		}
+#endif
+#if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE) && \
+	defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE)
+	} else {
+#endif
+#if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE)
+		if (frag_len < sizeof(op)) {
+			return NULL;
+		}
 
-	op = sys_be16_to_cpu(*(uint16_t *)frag);
-	switch (op) {
-	case MCUMGR_SERIAL_HDR_PKT:
-		net_buf_reset(rx_ctxt->nb);
-		break;
+		op = sys_be16_to_cpu(*(uint16_t *)frag);
+		switch (op) {
+		case MCUMGR_SERIAL_HDR_PKT:
+			net_buf_reset(rx_ctxt->nb);
+			break;
 
-	case MCUMGR_SERIAL_HDR_FRAG:
-		if (rx_ctxt->nb->len == 0U) {
+		case MCUMGR_SERIAL_HDR_FRAG:
+			if (rx_ctxt->nb->len == 0U) {
+				mcumgr_serial_free_rx_ctxt(rx_ctxt);
+				return NULL;
+			}
+			break;
+
+		default:
+			return NULL;
+		}
+
+		rc = mcumgr_serial_decode_frag(rx_ctxt,
+					       frag + sizeof(op),
+					       frag_len - sizeof(op));
+		if (rc != 0) {
 			mcumgr_serial_free_rx_ctxt(rx_ctxt);
 			return NULL;
 		}
-		break;
 
-	default:
-		return NULL;
-	}
+		if (op == MCUMGR_SERIAL_HDR_PKT) {
+			rc = mcumgr_serial_extract_len(rx_ctxt);
+			if (rc < 0) {
+				mcumgr_serial_free_rx_ctxt(rx_ctxt);
+				return NULL;
+			}
+		}
 
-	rc = mcumgr_serial_decode_frag(rx_ctxt,
-				       frag + sizeof(op),
-				       frag_len - sizeof(op));
-	if (rc != 0) {
-		mcumgr_serial_free_rx_ctxt(rx_ctxt);
-		return NULL;
-	}
-
-	if (op == MCUMGR_SERIAL_HDR_PKT) {
-		rc = mcumgr_serial_extract_len(rx_ctxt);
-		if (rc < 0) {
+		if (rx_ctxt->nb->len < rx_ctxt->pkt_len) {
+			/* More fragments expected. */
+			return NULL;
+		} else if (rx_ctxt->nb->len > rx_ctxt->pkt_len) {
+			/* Payload longer than indicated in header. */
 			mcumgr_serial_free_rx_ctxt(rx_ctxt);
 			return NULL;
 		}
-	}
 
-	if (rx_ctxt->nb->len < rx_ctxt->pkt_len) {
-		/* More fragments expected. */
-		return NULL;
-	}
+		crc = mcumgr_serial_calc_crc(rx_ctxt->nb->data, rx_ctxt->nb->len);
+		if (crc != 0U) {
+			mcumgr_serial_free_rx_ctxt(rx_ctxt);
+			return NULL;
+		}
 
-	if (rx_ctxt->nb->len > rx_ctxt->pkt_len) {
-		/* Payload longer than indicated in header. */
-		mcumgr_serial_free_rx_ctxt(rx_ctxt);
-		return NULL;
+		/* Packet is complete; strip the CRC. */
+		rx_ctxt->nb->len -= 2U;
+#endif
+#if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE) && \
+	defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE)
 	}
-
-	crc = mcumgr_serial_calc_crc(rx_ctxt->nb->data, rx_ctxt->nb->len);
-	if (crc != 0U) {
-		mcumgr_serial_free_rx_ctxt(rx_ctxt);
-		return NULL;
-	}
-
-	/* Packet is complete; strip the CRC. */
-	rx_ctxt->nb->len -= 2U;
+#endif
 
 	nb = rx_ctxt->nb;
 	rx_ctxt->nb = NULL;
 	return nb;
 }
 
+#if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE)
 /**
  * Base64-encodes a small chunk of data and transmits it. The data must be no larger than three
  * bytes.
@@ -314,3 +386,4 @@ int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb)
 
 	return 0;
 }
+#endif

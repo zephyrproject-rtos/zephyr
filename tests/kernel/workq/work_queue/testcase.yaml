@@ -4,3 +4,10 @@ tests:
     tags:
       - kernel
       - workqueue
+  kernel.workqueue.work_timeout:
+    min_flash: 34
+    tags:
+      - kernel
+      - workqueue
+    extra_configs:
+      - CONFIG_WORKQUEUE_WORK_TIMEOUT=y

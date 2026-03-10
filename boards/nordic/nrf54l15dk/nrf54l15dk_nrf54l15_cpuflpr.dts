@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf54l15_cpuflpr.dtsi>
+#include <vendor/nordic/nrf54l15_cpuflpr.dtsi>
 #include "nrf54l15dk_common.dtsi"
 
 / {
@@ -21,18 +21,12 @@
 	};
 };
 
-&cpuflpr_sram {
-	status = "okay";
-	/* size must be increased due to booting from SRAM */
-	reg = <0x20028000 DT_SIZE_K(96)>;
-	ranges = <0x0 0x20028000 0x18000>;
-};
-
 &cpuflpr_rram {
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		cpuflpr_code_partition: partition@0 {
 			label = "image-0";
@@ -68,4 +62,15 @@
 
 &gpiote30 {
 	status = "okay";
+};
+
+/*
+ * Note this SPI instance conflicts with UART30. Disable or reconfigure pinctrl for UART30
+ * to use this SPI instance.
+ */
+nordic_expansion_spi: &spi22 {
+	cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi22_default>;
+	pinctrl-1 = <&spi22_sleep>;
+	pinctrl-names = "default", "sleep";
 };

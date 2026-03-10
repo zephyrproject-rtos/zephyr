@@ -363,7 +363,7 @@ static int bq274xx_ensure_chemistry(const struct device *dev)
 
 		uint16_t cmd;
 
-		switch (val) {
+		switch (chem_id) {
 		case BQ27427_CHEM_ID_A:
 			cmd = BQ27427_CTRL_CHEM_A;
 			break;
@@ -418,7 +418,8 @@ static int bq274xx_gauge_configure(const struct device *dev)
 	}
 	regs = data->regs;
 
-	designenergy_mwh = (uint32_t)config->design_capacity * 37 / 10; /* x3.7 */
+	designenergy_mwh = (uint32_t)config->design_capacity *
+					((uint32_t)config->design_voltage) / 1000;
 	taperrate = config->design_capacity * 10 / config->taper_current;
 
 	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY_A);

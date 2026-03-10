@@ -168,10 +168,8 @@ static int uart_cc13xx_cc26xx_configure(const struct device *dev,
 			    line_ctrl);
 
 	/* Clear all UART interrupts */
-	UARTIntClear(config->reg,
-		UART_INT_OE | UART_INT_BE | UART_INT_PE |
-		UART_INT_FE | UART_INT_RT | UART_INT_TX |
-		UART_INT_RX | UART_INT_CTS);
+	UARTIntClear(config->reg, UART_INT_OE | UART_INT_BE | UART_INT_PE | UART_INT_FE |
+					  UART_INT_RT | UART_INT_RX | UART_INT_CTS);
 
 	if (flow_ctrl) {
 		UARTHwFlowControlEnable(config->reg);
@@ -282,8 +280,9 @@ static void uart_cc13xx_cc26xx_irq_tx_disable(const struct device *dev)
 static int uart_cc13xx_cc26xx_irq_tx_ready(const struct device *dev)
 {
 	const struct uart_cc13xx_cc26xx_config *config = dev->config;
+	uint32_t status = UARTIntStatus(config->reg, true);
 
-	return UARTSpaceAvail(config->reg) ? 1 : 0;
+	return (status & UART_INT_TX) ? 1 : 0;
 }
 
 static void uart_cc13xx_cc26xx_irq_rx_enable(const struct device *dev)

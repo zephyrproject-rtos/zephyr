@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,12 +13,46 @@
 #include "r_ioport.h"
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
-#include "gpio_renesas_rz.h"
 #include <zephyr/logging/log.h>
+#if defined(CONFIG_RENESAS_RZ_TINT)
+#include <zephyr/drivers/interrupt_controller/intc_rz_tint.h>
+#endif
+#if defined(CONFIG_RENESAS_RZ_EXT_IRQ)
+#include "r_icu.h"
+#include <zephyr/drivers/interrupt_controller/intc_rz_ext_irq.h>
+#endif
+#include "pinctrl_soc.h"
 LOG_MODULE_REGISTER(rz_gpio, CONFIG_GPIO_LOG_LEVEL);
 
-#define LOG_DEV_ERR(dev, format, ...) LOG_ERR("%s:" #format, (dev)->name, ##__VA_ARGS__)
-#define LOG_DEV_DBG(dev, format, ...) LOG_DBG("%s:" #format, (dev)->name, ##__VA_ARGS__)
+#define GPIO_RZ_MODE_HIZ    (0x0U)
+#define GPIO_RZ_MODE_IN     (0x1U)
+#define GPIO_RZ_MODE_OUT    (0x2U)
+#define GPIO_RZ_MODE_OUT_IN (0x3U)
+
+#define GPIO_RZ_INT_EDGE_FALLING (0x0U)
+#define GPIO_RZ_INT_EDGE_RISING  (0x1U)
+#define GPIO_RZ_INT_BOTH_EDGE    (0x2U)
+#define GPIO_RZ_INT_LEVEL_LOW    (0x3U)
+#define GPIO_RZ_INT_LEVEL_HIGH   (0x4U)
+
+#define REG_P_READ(base, port)          sys_read8((base) + regs.p + (port))
+#define REG_P_WRITE(base, port, v)      sys_write8((v), (base) + regs.p + (port))
+#define REG_PM_READ(base, port)         sys_read16((base) + regs.pm + (port) * 2)
+#define REG_PM_WRITE(base, port, v)     sys_write16((v), (base) + regs.pm + (port) * 2)
+#define REG_RSELP_READ(rselp, port)     sys_read8(rselp + (port))
+#define REG_RSELP_WRITE(rselp, port, v) sys_write8((v), (rselp) + (port))
+
+#ifdef CONFIG_GPIO_RENESAS_RZ_TYPE3
+#define NONSAFETY_PORT_START            13
+#define REG_PFC_READ(base, port)        sys_read64((base) + regs.pfc + (port) * 8)
+#define REG_PFC_WRITE(base, port, v)    sys_write64((v), (base) + regs.pfc + (port) * 8)
+#else /* CONFIG_GPIO_RENESAS_RZ_TYPE1 || CONFIG_GPIO_RENESAS_RZ_TYPE2 */
+#define REG_PFC_READ(base, port)        sys_read32((base) + regs.pfc + (port) * 4)
+#define REG_PFC_WRITE(base, port, v)    sys_write32((v), (base) + regs.pfc + (port) * 4)
+#endif /* CONFIG_GPIO_RENESAS_RZ_TYPE3 */
+
+#define PORT(port_pin) FIELD_GET(BIT_MASK(8) << 8, port_pin)
+#define PIN(port_pin)  FIELD_GET(BIT_MASK(8), port_pin)
 
 struct gpio_rz_config {
 	struct gpio_driver_config common;
@@ -27,71 +61,252 @@ struct gpio_rz_config {
 	bsp_io_port_t fsp_port;
 	const ioport_cfg_t *fsp_cfg;
 	const ioport_api_t *fsp_api;
-	const struct device *int_dev;
-	uint8_t tint_num[GPIO_RZ_MAX_TINT_NUM];
+	struct gpio_rz_irq_info *irq_info;
+	uint8_t irq_info_size;
 };
 
 struct gpio_rz_data {
 	struct gpio_driver_data common;
 	sys_slist_t cb;
-	ioport_instance_ctrl_t *fsp_ctrl;
+	ioport_ctrl_t *fsp_ctrl;
 	struct k_spinlock lock;
 };
 
-struct gpio_rz_tint_isr_data {
+struct gpio_rz_pin {
+	uint32_t mode;
+	uint32_t func;
+	uint32_t out_state;
+};
+struct gpio_rz_irq_info {
+	const struct device *irq_dev;
 	const struct device *gpio_dev;
-	gpio_pin_t pin;
+	uint8_t pin;
 };
 
-struct gpio_rz_tint_data {
-	struct gpio_rz_tint_isr_data tint_data[GPIO_RZ_MAX_TINT_NUM];
-	uint32_t irq_set_edge;
+struct gpio_rz_regs {
+	mem_addr_t p;
+	mem_addr_t pm;
+	mem_addr_t pfc;
+#ifdef CONFIG_GPIO_RENESAS_RZ_TYPE1
+	mem_addr_t base;
+#endif
+#ifdef CONFIG_GPIO_RENESAS_RZ_TYPE2
+	mem_addr_t rselp;
+	struct {
+		mem_addr_t ns;
+		mem_addr_t s;
+	} base;
+#endif
+#ifdef CONFIG_GPIO_RENESAS_RZ_TYPE3
+	mem_addr_t rselp;
+	struct {
+		mem_addr_t srs;
+		mem_addr_t srn;
+		mem_addr_t nsr;
+	} base;
+#endif
+} regs = {
+	.p = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), p),
+	.pm = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), pm),
+	.pfc = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), pfc),
+#ifdef CONFIG_GPIO_RENESAS_RZ_TYPE1
+	.base = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), base),
+#endif
+#ifdef CONFIG_GPIO_RENESAS_RZ_TYPE2
+	.rselp = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), rselp),
+	.base = {
+		.ns = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), base_ns),
+		.s = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), base_s),
+	},
+#endif
+#ifdef CONFIG_GPIO_RENESAS_RZ_TYPE3
+	.rselp = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), rselp),
+	.base = {
+		.srs = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), base_srs),
+		.srn = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), base_srn),
+		.nsr = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), base_nsr),
+	},
+#endif
 };
 
-struct gpio_rz_tint_config {
-	void (*gpio_int_init)(void);
-};
+/* Helper function to get current pin state from P register */
+static inline uint32_t gpio_rz_get_out_state(mem_addr_t base, uint8_t port, gpio_pin_t pin)
+{
+	return FIELD_GET(BIT_MASK(1) << pin, REG_P_READ(base, port));
+}
 
-static int gpio_rz_pin_config_get_raw(bsp_io_port_pin_t port_pin, uint32_t *flags);
+/* Helper function to get pin mode from PM register */
+static inline uint32_t gpio_rz_get_mode(mem_addr_t base, uint8_t port, gpio_pin_t pin)
+{
+	return FIELD_GET(BIT_MASK(2) << (pin * 2), REG_PM_READ(base, port));
+}
 
-#ifdef CONFIG_GPIO_GET_CONFIG
-static int gpio_rz_pin_get_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t *flags)
+/* Helper function to get pin function from PFC register */
+static inline uint32_t gpio_rz_get_func(mem_addr_t base, uint8_t port, gpio_pin_t pin)
+{
+#ifdef CONFIG_GPIO_RENESAS_RZ_TYPE3
+	return FIELD_GET(BIT_MASK(6) << (pin * 8), REG_PFC_READ(base, port));
+#else
+	return FIELD_GET(BIT_MASK(4) << (pin * 4), REG_PFC_READ(base, port));
+#endif
+}
+
+static __maybe_unused int gpio_rz_pincfg_to_flags(const struct gpio_rz_pin *pincfg,
+						  gpio_flags_t *out_flags)
+{
+	gpio_flags_t flags = 0;
+
+	if (pincfg->mode == GPIO_RZ_MODE_OUT || pincfg->mode == GPIO_RZ_MODE_OUT_IN) {
+		if (pincfg->out_state != 0) {
+			flags |= GPIO_OUTPUT_HIGH;
+		} else {
+			flags |= GPIO_OUTPUT_LOW;
+		}
+	}
+
+	if (pincfg->mode == GPIO_RZ_MODE_IN || pincfg->mode == GPIO_RZ_MODE_OUT_IN) {
+		flags |= GPIO_INPUT;
+	}
+
+	*out_flags = flags;
+
+	return 0;
+}
+
+/* Get pin's configuration, used by pin_configure/pin_interrupt_configure api */
+static int gpio_rz_pin_config_get_raw(bsp_io_port_pin_t port_pin, struct gpio_rz_pin *pincfg)
+{
+	uint8_t port = PORT(port_pin);
+	gpio_pin_t pin = PIN(port_pin);
+
+#ifdef CONFIG_GPIO_RENESAS_RZ_TYPE1
+	pincfg->mode = gpio_rz_get_mode(regs.base, port, pin);
+	pincfg->func = gpio_rz_get_func(regs.base, port, pin);
+	pincfg->out_state = gpio_rz_get_out_state(regs.base, port, pin);
+#elif CONFIG_GPIO_RENESAS_RZ_TYPE2
+	pincfg->mode = gpio_rz_get_mode(regs.base.ns, port, pin);
+	pincfg->mode |= gpio_rz_get_mode(regs.base.s, port, pin);
+
+	pincfg->func = gpio_rz_get_func(regs.base.ns, port, pin);
+	pincfg->func |= gpio_rz_get_func(regs.base.s, port, pin);
+
+	pincfg->out_state = gpio_rz_get_out_state(regs.base.ns, port, pin);
+	pincfg->out_state |= gpio_rz_get_out_state(regs.base.s, port, pin);
+#else /* CONFIG_GPIO_RENESAS_RZ_TYPE3 */
+	if (port >= NONSAFETY_PORT_START) {
+		pincfg->mode = gpio_rz_get_mode(regs.base.nsr, port, pin);
+		pincfg->func = gpio_rz_get_func(regs.base.nsr, port, pin);
+		pincfg->out_state = gpio_rz_get_out_state(regs.base.nsr, port, pin);
+	} else {
+		pincfg->mode = gpio_rz_get_mode(regs.base.srn, port, pin);
+		pincfg->mode |= gpio_rz_get_mode(regs.base.srs, port, pin);
+
+		pincfg->func = gpio_rz_get_func(regs.base.srn, port, pin);
+		pincfg->func |= gpio_rz_get_func(regs.base.srs, port, pin);
+
+		pincfg->out_state = gpio_rz_get_out_state(regs.base.srn, port, pin);
+		pincfg->out_state |= gpio_rz_get_out_state(regs.base.srs, port, pin);
+	}
+#endif
+
+	return 0;
+}
+
+static int gpio_rz_flags_to_cfg(const gpio_flags_t flags, const struct gpio_rz_pin *curr_pincfg,
+				uint32_t *out_cfg)
+{
+	if (flags & GPIO_OPEN_DRAIN) {
+		return -ENOTSUP;
+	}
+
+	pinctrl_cfg_data_t pincfg;
+
+	pincfg.cfg = 0;
+	if (flags & GPIO_INPUT) {
+		if (flags & GPIO_OUTPUT) {
+			pincfg.cfg |= IOPORT_CFG_PORT_DIRECTION_OUTPUT_INPUT;
+		} else {
+			pincfg.cfg |= IOPORT_CFG_PORT_DIRECTION_INPUT;
+		}
+	} else if (flags & GPIO_OUTPUT) {
+		pincfg.cfg |= IOPORT_CFG_PORT_DIRECTION_OUTPUT;
+	} else {
+		pincfg.cfg |= IOPORT_CFG_PORT_DIRECTION_HIZ;
+	}
+
+	if (flags & GPIO_OUTPUT_INIT_HIGH) {
+		pincfg.cfg |= IOPORT_CFG_PORT_OUTPUT_HIGH;
+	} else if (flags & GPIO_OUTPUT_INIT_LOW) {
+		pincfg.cfg &= ~IOPORT_CFG_PORT_OUTPUT_HIGH;
+	} else {
+		/* Keep the current state */
+		pincfg.cfg_b.p_reg = curr_pincfg->out_state;
+	}
+
+	if (flags & GPIO_PULL_UP) {
+		pincfg.cfg |= IOPORT_CFG_PULLUP_ENABLE;
+	} else if (flags & GPIO_PULL_DOWN) {
+		pincfg.cfg |= IOPORT_CFG_PULLDOWN_ENABLE;
+	}
+
+	if (flags & GPIO_INT_ENABLE) {
+		IF_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE1, (
+			pincfg.cfg_b.isel_reg = 1;
+		))
+
+		IF_ENABLED(UTIL_OR(IS_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE2),
+				   IS_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE3)), (
+			pincfg.cfg_b.pmc_reg = 1;
+		))
+	} else if (flags & GPIO_INT_DISABLE) {
+		IF_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE1, (
+			pincfg.cfg_b.isel_reg = 0;
+		))
+
+		IF_ENABLED(UTIL_OR(IS_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE2),
+				   IS_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE3)), (
+			pincfg.cfg_b.pmc_reg = 0;
+		))
+	}
+
+	/* Type 1 (RZ/A,G,V): IOLH, FILONOFF, FILNUM, FILCLKSEL
+	 * Type 2 (RZ/T,N): DRCTL, RSELP
+	 */
+	IF_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE1, (
+		pincfg.cfg_b.iolh_reg = FIELD_GET(GENMASK(9, 8), flags);
+		pincfg.cfg_b.filonoff_reg = FIELD_GET(BIT(10), flags);
+		pincfg.cfg_b.filnum_reg = FIELD_GET(GENMASK(12, 11), flags);
+		pincfg.cfg_b.filclksel_reg = FIELD_GET(GENMASK(14, 13), flags);
+	))
+
+	IF_ENABLED(UTIL_OR(IS_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE2),
+			   IS_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE3)), (
+		/* Must use OR for DRCTL since it is already updated for pull-up/down above */
+		pincfg.cfg_b.drct_reg |= FIELD_GET(GENMASK(13, 8), flags);
+		pincfg.cfg_b.rsel_reg = FIELD_GET(BIT(14), flags);
+	))
+
+	/* PFC */
+	pincfg.cfg_b.pfc_reg = curr_pincfg->func;
+
+	*out_cfg = pincfg.cfg;
+
+	return 0;
+}
+
+static __maybe_unused int gpio_rz_pin_get_config(const struct device *dev, gpio_pin_t pin,
+						 gpio_flags_t *flags)
 {
 	const struct gpio_rz_config *config = dev->config;
 	bsp_io_port_pin_t port_pin = config->fsp_port | pin;
+	struct gpio_rz_pin pincfg;
 
-	gpio_rz_pin_config_get_raw(port_pin, flags);
-	return 0;
-}
-#endif
+	/* Get the current pin config */
+	gpio_rz_pin_config_get_raw(port_pin, &pincfg);
 
-/* Get previous pin's configuration, used by pin_configure/pin_interrupt_configure api */
-static int gpio_rz_pin_config_get_raw(bsp_io_port_pin_t port_pin, uint32_t *flags)
-{
-	bsp_io_port_t port = (port_pin >> 8U) & 0xFF;
-	gpio_pin_t pin = port_pin & 0xFF;
-	volatile uint8_t *p_p = GPIO_RZ_IOPORT_P_REG_BASE_GET;
-	volatile uint16_t *p_pm = GPIO_RZ_IOPORT_PM_REG_BASE_GET;
+	/* Convert the pin config to flags */
+	gpio_rz_pincfg_to_flags(&pincfg, flags);
 
-	uint8_t adr_offset;
-	uint8_t p_value;
-	uint16_t pm_value;
-
-	adr_offset = (uint8_t)GPIO_RZ_REG_OFFSET(port, pin);
-
-	p_p = &p_p[adr_offset];
-	p_pm = &p_pm[adr_offset];
-
-	p_value = GPIO_RZ_P_VALUE_GET(*p_p, pin);
-	pm_value = GPIO_RZ_PM_VALUE_GET(*p_pm, pin);
-
-	if (p_value) {
-		*flags |= GPIO_OUTPUT_INIT_HIGH;
-	} else {
-		*flags |= GPIO_OUTPUT_INIT_LOW;
-	}
-
-	*flags |= ((pm_value << 16));
 	return 0;
 }
 
@@ -100,65 +315,33 @@ static int gpio_rz_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 	const struct gpio_rz_config *config = dev->config;
 	struct gpio_rz_data *data = dev->data;
 	bsp_io_port_pin_t port_pin = config->fsp_port | pin;
-	uint32_t ioport_config_data = 0;
-	gpio_flags_t pre_flags;
+	struct gpio_rz_pin curr_pincfg;
+	uint32_t cfg = 0;
 	fsp_err_t err;
+	int ret;
 
-	gpio_rz_pin_config_get_raw(port_pin, &pre_flags);
+	/* Get the current pin config */
+	gpio_rz_pin_config_get_raw(port_pin, &curr_pincfg);
 
-	if (!flags) {
-		/* Disconnect mode */
-		ioport_config_data = 0;
-	} else if (!(flags & GPIO_OPEN_DRAIN)) {
-		/* PM register */
-		ioport_config_data &= GPIO_RZ_PIN_CONFIGURE_INPUT_OUTPUT_RESET;
-		if (flags & GPIO_INPUT) {
-			if (flags & GPIO_OUTPUT) {
-				ioport_config_data |= IOPORT_CFG_PORT_DIRECTION_OUTPUT_INPUT;
-			} else {
-				ioport_config_data |= IOPORT_CFG_PORT_DIRECTION_INPUT;
-			}
-		} else if (flags & GPIO_OUTPUT) {
-			ioport_config_data &= GPIO_RZ_PIN_CONFIGURE_INPUT_OUTPUT_RESET;
-			ioport_config_data |= IOPORT_CFG_PORT_DIRECTION_OUTPUT;
-		}
-		/* P register */
-		if (!(flags & (GPIO_OUTPUT_INIT_HIGH | GPIO_OUTPUT_INIT_LOW))) {
-			flags |= pre_flags & (GPIO_OUTPUT_INIT_HIGH | GPIO_OUTPUT_INIT_LOW);
-		}
+	IF_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE3, (
+		/* For nonsafety ports, always mark bit[14] (1=Nonsafety, 0=Safety)
+		 * of flag as '1' to let the HAL (FSP) handle it differently since
+		 * they have a different address base
+		 */
+		flags |= PORT(port_pin) >= NONSAFETY_PORT_START ? BIT(14) : 0;
+	))
 
-		if (flags & GPIO_OUTPUT_INIT_HIGH) {
-			ioport_config_data |= IOPORT_CFG_PORT_OUTPUT_HIGH;
-		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
-			ioport_config_data &= ~(IOPORT_CFG_PORT_OUTPUT_HIGH);
-		}
-		/* PUPD register */
-		if (flags & GPIO_PULL_UP) {
-			ioport_config_data |= IOPORT_CFG_PULLUP_ENABLE;
-		} else if (flags & GPIO_PULL_DOWN) {
-			ioport_config_data |= IOPORT_CFG_PULLUP_ENABLE;
-		}
-
-		/* ISEL register */
-		if (flags & GPIO_INT_ENABLE) {
-			ioport_config_data |= GPIO_RZ_PIN_CONFIGURE_INT_ENABLE;
-		} else if (flags & GPIO_INT_DISABLE) {
-			ioport_config_data &= GPIO_RZ_PIN_CONFIGURE_INT_DISABLE;
-		}
-
-		/* Drive Ability register */
-		ioport_config_data |= GPIO_RZ_PIN_CONFIGURE_GET_DRIVE_ABILITY(flags);
-
-		/* Filter register, see in renesas-rz-gpio-ioport.h */
-		ioport_config_data |= GPIO_RZ_PIN_CONFIGURE_GET_FILTER(flags);
-	} else {
-		return -ENOTSUP;
+	/* Convert flags and current pin config to pin config */
+	ret = gpio_rz_flags_to_cfg(flags, &curr_pincfg, &cfg);
+	if (ret < 0) {
+		return ret;
 	}
 
-	err = config->fsp_api->pinCfg(data->fsp_ctrl, port_pin, ioport_config_data);
+	err = config->fsp_api->pinCfg(data->fsp_ctrl, port_pin, cfg);
 	if (err != FSP_SUCCESS) {
 		return -EIO;
 	}
+
 	return 0;
 }
 
@@ -174,6 +357,7 @@ static int gpio_rz_port_get_raw(const struct device *dev, gpio_port_value_t *val
 		return -EIO;
 	}
 	*value = (gpio_port_value_t)port_value;
+
 	return 0;
 }
 
@@ -190,6 +374,7 @@ static int gpio_rz_port_set_masked_raw(const struct device *dev, gpio_port_pins_
 	if (err != FSP_SUCCESS) {
 		return -EIO;
 	}
+
 	return 0;
 }
 
@@ -205,6 +390,7 @@ static int gpio_rz_port_set_bits_raw(const struct device *dev, gpio_port_pins_t 
 	if (err != FSP_SUCCESS) {
 		return -EIO;
 	}
+
 	return 0;
 }
 
@@ -220,93 +406,131 @@ static int gpio_rz_port_clear_bits_raw(const struct device *dev, gpio_port_pins_
 	if (err != FSP_SUCCESS) {
 		return -EIO;
 	}
+
 	return 0;
 }
 
 static int gpio_rz_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_rz_config *config = dev->config;
-	struct gpio_rz_data *data = dev->data;
-	bsp_io_port_pin_t port_pin;
-	gpio_flags_t pre_flags;
-	ioport_size_t value = 0;
-	fsp_err_t err;
+	uint8_t val;
+	uint8_t port = PORT(config->fsp_port);
 
-	for (uint8_t idx = 0; idx < config->ngpios; idx++) {
-		if (pins & (1U << idx)) {
-			port_pin = config->fsp_port | idx;
-			gpio_rz_pin_config_get_raw(port_pin, &pre_flags);
-			if (pre_flags & GPIO_OUTPUT_INIT_HIGH) {
-				value &= (1U << idx);
-			} else if (pre_flags & GPIO_OUTPUT_INIT_LOW) {
-				value |= (1U << idx);
-			}
+#ifdef CONFIG_GPIO_RENESAS_RZ_TYPE1
+	val = REG_P_READ(regs.base, port);
+	REG_P_WRITE(regs.base, port, val ^ pins);
+#elif CONFIG_GPIO_RENESAS_RZ_TYPE2
+	uint8_t rselp = REG_RSELP_READ(regs.rselp, port);
+
+	uint8_t pins_ns = rselp & pins;
+	uint8_t pins_s = ~rselp & pins;
+
+	val = REG_P_READ(regs.base.ns, port);
+	REG_P_WRITE(regs.base.ns, port, val ^ pins_ns);
+
+	val = REG_P_READ(regs.base.s, port);
+	REG_P_WRITE(regs.base.s, port, val ^ pins_s);
+#else /* CONFIG_GPIO_RENESAS_RZ_TYPE3 */
+	if (port >= NONSAFETY_PORT_START) {
+		val = REG_P_READ(regs.base.nsr, port);
+		REG_P_WRITE(regs.base.nsr, port, val ^ pins);
+	} else {
+		uint8_t rselp = REG_RSELP_READ(regs.rselp, port);
+
+		uint8_t pins_ns = rselp & pins;
+		uint8_t pins_s = ~rselp & pins;
+
+		val = REG_P_READ(regs.base.srn, port);
+		REG_P_WRITE(regs.base.srn, port, val ^ pins_ns);
+
+		val = REG_P_READ(regs.base.srs, port);
+		REG_P_WRITE(regs.base.srs, port, val ^ pins_s);
+	}
+#endif /* CONFIG_GPIO_RENESAS_RZ_TYPE1 */
+
+	return 0;
+}
+
+#if defined(CONFIG_RENESAS_RZ_TINT) || defined(CONFIG_RENESAS_RZ_EXT_IRQ)
+static int gpio_rz_int_disable(struct gpio_rz_irq_info *irq_info)
+{
+#if defined(CONFIG_RENESAS_RZ_TINT)
+	if (strstr(irq_info->irq_dev->name, "tint") != NULL) {
+		return intc_rz_tint_disable(irq_info->irq_dev);
+	}
+#endif /* CONFIG_RENESAS_RZ_TINT */
+
+#if defined(CONFIG_RENESAS_RZ_EXT_IRQ)
+	if (strstr(irq_info->irq_dev->name, "irq") != NULL) {
+		return intc_rz_ext_irq_disable(irq_info->irq_dev);
+	}
+#endif /* CONFIG_RENESAS_RZ_EXT_IRQ */
+
+	return 0;
+}
+
+static void gpio_rz_callback(void *arg);
+
+static int gpio_rz_int_enable(struct gpio_rz_irq_info *irq_info, uint8_t irq_type)
+{
+	int ret = 0;
+	const struct device *irq_dev = irq_info->irq_dev;
+
+#if defined(CONFIG_RENESAS_RZ_TINT)
+	if (strstr(irq_dev->name, "tint") != NULL) {
+		const struct gpio_rz_config *gpio_config = irq_info->gpio_dev->config;
+
+		ret = intc_rz_tint_connect(irq_dev, gpio_config->port_num, irq_info->pin);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = intc_rz_tint_set_type(irq_dev, irq_type);
+		if (ret < 0) {
+			return ret;
+		}
+
+		intc_rz_tint_enable(irq_dev);
+		intc_rz_tint_set_callback(irq_dev, gpio_rz_callback, (void *)irq_info);
+	}
+#endif /* CONFIG_RENESAS_RZ_TINT */
+
+#if defined(CONFIG_RENESAS_RZ_EXT_IRQ)
+	if (strstr(irq_dev->name, "irq") != NULL) {
+		ret = intc_rz_ext_irq_set_type(irq_dev, irq_type);
+		if (ret < 0) {
+			return ret;
+		}
+
+		intc_rz_ext_irq_enable(irq_dev);
+		intc_rz_ext_irq_set_callback(irq_dev, gpio_rz_callback, (void *)irq_info);
+	}
+#endif /* CONFIG_RENESAS_RZ_EXT_IRQ */
+
+	return ret;
+}
+
+static void gpio_rz_callback(void *arg)
+{
+	const struct gpio_rz_irq_info *irq_info = (const struct gpio_rz_irq_info *)arg;
+	const struct device *gpio_dev = irq_info->gpio_dev;
+	struct gpio_rz_data *gpio_data = gpio_dev->data;
+
+	gpio_fire_callbacks(&gpio_data->cb, gpio_dev, BIT(irq_info->pin));
+}
+
+static struct gpio_rz_irq_info *gpio_rz_get_irq_info(const struct device *dev, gpio_pin_t pin)
+{
+	const struct gpio_rz_config *config = dev->config;
+	struct gpio_rz_irq_info *irq_info = config->irq_info;
+
+	for (int i = 0; i < config->irq_info_size; i++) {
+		if (irq_info[i].pin == pin) {
+			return &irq_info[i];
 		}
 	}
-	err = config->fsp_api->portWrite(data->fsp_ctrl, config->fsp_port, value,
-					 (ioport_size_t)pins);
-	if (err != FSP_SUCCESS) {
-		return -EIO;
-	}
-	return 0;
-}
 
-#define GPIO_RZ_HAS_INTERRUPT DT_HAS_COMPAT_STATUS_OKAY(renesas_rz_gpio_int)
-
-#if GPIO_RZ_HAS_INTERRUPT
-static int gpio_rz_int_disable(const struct device *dev, uint8_t tint_num)
-{
-	struct gpio_rz_tint_data *data = dev->data;
-	volatile uint32_t *tssr = &R_INTC_IM33->TSSR0;
-	volatile uint32_t *titsr = &R_INTC_IM33->TITSR0;
-	volatile uint32_t *tscr = &R_INTC_IM33->TSCR;
-
-	/* Get register offset base on interrupt number. */
-	tssr = &tssr[tint_num / 4];
-	titsr = &titsr[tint_num / 16];
-
-	irq_disable(GPIO_RZ_TINT_IRQ_GET(tint_num));
-	/* Disable interrupt and clear interrupt source. */
-	*tssr &= ~(0xFF << GPIO_RZ_TSSR_OFFSET(tint_num));
-	/* Reset interrupt dectect type to default. */
-	*titsr &= ~(0x3 << GPIO_RZ_TITSR_OFFSET(tint_num));
-
-	/* Clear interrupt detection status. */
-	if (data->irq_set_edge & BIT(tint_num)) {
-		*tscr &= ~BIT(tint_num);
-		data->irq_set_edge &= ~BIT(tint_num);
-	}
-	data->tint_data[tint_num].gpio_dev = NULL;
-	data->tint_data[tint_num].pin = UINT8_MAX;
-
-	return 0;
-}
-
-static int gpio_rz_int_enable(const struct device *int_dev, const struct device *gpio_dev,
-			      uint8_t tint_num, uint8_t irq_type, gpio_pin_t pin)
-{
-	struct gpio_rz_tint_data *int_data = int_dev->data;
-	const struct gpio_rz_config *gpio_config = gpio_dev->config;
-	volatile uint32_t *tssr = &R_INTC_IM33->TSSR0;
-	volatile uint32_t *titsr = &R_INTC_IM33->TITSR0;
-
-	tssr = &tssr[tint_num / 4];
-	titsr = &titsr[tint_num / 16];
-	/* Select interrupt detect type. */
-	*titsr |= (irq_type << GPIO_RZ_TITSR_OFFSET(tint_num));
-	/* Select interrupt source base on port and pin number.*/
-	*tssr |= (GPIO_RZ_TSSR_VAL(gpio_config->port_num, pin)) << GPIO_RZ_TSSR_OFFSET(tint_num);
-
-	if (irq_type == GPIO_RZ_TINT_EDGE_RISING || irq_type == GPIO_RZ_TINT_EDGE_FALLING) {
-		int_data->irq_set_edge |= BIT(tint_num);
-		/* Clear interrupt status. */
-		R_INTC_IM33->TSCR &= ~BIT(tint_num);
-	}
-	int_data->tint_data[tint_num].gpio_dev = gpio_dev;
-	int_data->tint_data[tint_num].pin = pin;
-	irq_enable(GPIO_RZ_TINT_IRQ_GET(tint_num));
-
-	return 0;
+	return NULL;
 }
 
 static int gpio_rz_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
@@ -314,55 +538,57 @@ static int gpio_rz_pin_interrupt_configure(const struct device *dev, gpio_pin_t 
 {
 	const struct gpio_rz_config *config = dev->config;
 	struct gpio_rz_data *data = dev->data;
-	bsp_io_port_pin_t port_pin = config->fsp_port | pin;
-	uint8_t tint_num = config->tint_num[pin];
 	uint8_t irq_type = 0;
-	gpio_flags_t pre_flags = 0;
+	gpio_flags_t flags;
 	k_spinlock_key_t key;
+	int ret = 0;
 
-	if (tint_num >= GPIO_RZ_MAX_TINT_NUM) {
-		LOG_DEV_ERR(dev, "Invalid TINT interrupt:%d >= %d", tint_num, GPIO_RZ_MAX_TINT_NUM);
-	}
-
-	if (pin > config->ngpios) {
+	if (pin >= config->ngpios) {
 		return -EINVAL;
-	}
-
-	if (trig == GPIO_INT_TRIG_BOTH) {
-		return -ENOTSUP;
 	}
 
 	key = k_spin_lock(&data->lock);
 
+	gpio_rz_pin_get_config(dev, pin, &flags);
+	ret = gpio_rz_pin_configure(dev, pin, flags | mode);
+	if (ret < 0) {
+		goto exit_unlock;
+	}
+
+	struct gpio_rz_irq_info *irq_info = gpio_rz_get_irq_info(dev, pin);
+
+	if (!irq_info || !device_is_ready(irq_info->irq_dev)) {
+		/* No interrupt to configure */
+		goto exit_unlock;
+	}
+
 	if (mode == GPIO_INT_MODE_DISABLED) {
-		gpio_rz_pin_config_get_raw(port_pin, &pre_flags);
-		pre_flags |= GPIO_INT_DISABLE;
-		gpio_rz_pin_configure(dev, pin, pre_flags);
-		gpio_rz_int_disable(config->int_dev, tint_num);
+		ret = gpio_rz_int_disable(irq_info);
 		goto exit_unlock;
 	}
 
 	if (mode == GPIO_INT_MODE_EDGE) {
-		irq_type = GPIO_RZ_TINT_EDGE_RISING;
 		if (trig == GPIO_INT_TRIG_LOW) {
-			irq_type = GPIO_RZ_TINT_EDGE_FALLING;
+			irq_type = GPIO_RZ_INT_EDGE_FALLING;
+		} else if (trig == GPIO_INT_TRIG_HIGH) {
+			irq_type = GPIO_RZ_INT_EDGE_RISING;
+		} else if (trig == GPIO_INT_TRIG_BOTH) {
+			irq_type = GPIO_RZ_INT_BOTH_EDGE;
 		}
 	} else {
-		irq_type = GPIO_RZ_TINT_LEVEL_HIGH;
 		if (trig == GPIO_INT_TRIG_LOW) {
-			irq_type = GPIO_RZ_TINT_LEVEL_LOW;
+			irq_type = GPIO_RZ_INT_LEVEL_LOW;
+		} else if (trig == GPIO_INT_TRIG_HIGH) {
+			irq_type = GPIO_RZ_INT_LEVEL_HIGH;
 		}
 	}
 
-	/* Set register ISEL */
-	gpio_rz_pin_config_get_raw(port_pin, &pre_flags);
-	pre_flags |= GPIO_INT_ENABLE;
-	gpio_rz_pin_configure(dev, pin, pre_flags);
-	gpio_rz_int_enable(config->int_dev, dev, tint_num, irq_type, pin);
+	ret = gpio_rz_int_enable(irq_info, irq_type);
 
 exit_unlock:
 	k_spin_unlock(&data->lock, key);
-	return 0;
+
+	return ret;
 }
 
 static int gpio_rz_manage_callback(const struct device *dev, struct gpio_callback *callback,
@@ -373,41 +599,7 @@ static int gpio_rz_manage_callback(const struct device *dev, struct gpio_callbac
 	return gpio_manage_callback(&data->cb, callback, set);
 }
 
-static void gpio_rz_isr(const struct device *dev, uint8_t pin)
-{
-	struct gpio_rz_data *data = dev->data;
-
-	gpio_fire_callbacks(&data->cb, dev, BIT(pin));
-}
-
-static void gpio_rz_tint_isr(uint16_t irq, const struct device *dev)
-{
-	struct gpio_rz_tint_data *data = dev->data;
-	volatile uint32_t *tscr = &R_INTC_IM33->TSCR;
-	uint8_t tint_num;
-
-	tint_num = irq - GPIO_RZ_TINT_IRQ_OFFSET;
-
-	if (!(*tscr & BIT(tint_num))) {
-		LOG_DEV_DBG(dev, "tint:%u spurious irq, status 0", tint_num);
-		return;
-	}
-
-	if (data->irq_set_edge & BIT(tint_num)) {
-		*tscr &= ~BIT(tint_num);
-	}
-
-	gpio_rz_isr(data->tint_data[tint_num].gpio_dev, data->tint_data[tint_num].pin);
-}
-
-static int gpio_rz_int_init(const struct device *dev)
-{
-	const struct gpio_rz_tint_config *config = dev->config;
-
-	config->gpio_int_init();
-	return 0;
-}
-#endif
+#endif /* CONFIG_RENESAS_RZ_TINT || CONFIG_RENESAS_RZ_EXT_IRQ */
 
 static DEVICE_API(gpio, gpio_rz_driver_api) = {
 	.pin_configure = gpio_rz_pin_configure,
@@ -419,78 +611,40 @@ static DEVICE_API(gpio, gpio_rz_driver_api) = {
 	.port_set_bits_raw = gpio_rz_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_rz_port_clear_bits_raw,
 	.port_toggle_bits = gpio_rz_port_toggle_bits,
-#if GPIO_RZ_HAS_INTERRUPT
+#if defined(CONFIG_RENESAS_RZ_TINT) || defined(CONFIG_RENESAS_RZ_EXT_IRQ)
 	.pin_interrupt_configure = gpio_rz_pin_interrupt_configure,
 	.manage_callback = gpio_rz_manage_callback,
 #endif
 };
 
-/*Initialize GPIO interrupt device*/
-#define GPIO_RZ_TINT_ISR_DECLARE(irq_num, node_id)                                                 \
-	static void rz_gpio_isr_##irq_num(void *param)                                             \
+#define IRQ_INFO_GET_BY_IDX(node_id, prop, idx, inst)                                              \
 	{                                                                                          \
-		gpio_rz_tint_isr(DT_IRQ_BY_IDX(node_id, irq_num, irq), param);                     \
+		.irq_dev = DEVICE_DT_GET_OR_NULL(DT_PHANDLE_BY_IDX(node_id, irqs, idx)),           \
+		.gpio_dev = DEVICE_DT_INST_GET(inst),                                              \
+		.pin = DT_PHA_BY_IDX(node_id, irqs, idx, pin),                                     \
 	}
 
-#define GPIO_RZ_TINT_ISR_INIT(node_id, irq_num) LISTIFY(irq_num,                                   \
-							GPIO_RZ_TINT_ISR_DECLARE, (), node_id)
+#define IRQ_INFO_GET(inst)                                                                         \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irqs),                                             \
+		    (DT_INST_FOREACH_PROP_ELEM_SEP_VARGS(inst, irqs,                               \
+							 IRQ_INFO_GET_BY_IDX, (,), inst)), ())
 
-#define GPIO_RZ_TINT_CONNECT(irq_num, node_id)                                                     \
-	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, irq_num, irq),                                          \
-		    DT_IRQ_BY_IDX(node_id, irq_num, priority), rz_gpio_isr_##irq_num,              \
-		    DEVICE_DT_GET(node_id), 0);
-
-#define GPIO_RZ_TINT_CONNECT_FUNC(node_id)                                                         \
-	static void rz_gpio_tint_connect_func##node_id(void)                                       \
-	{                                                                                          \
-		LISTIFY(DT_NUM_IRQS(node_id),                    \
-			GPIO_RZ_TINT_CONNECT, (;),               \
-			node_id)                                 \
-	}
-/* Initialize GPIO device*/
-#define GPIO_RZ_INT_INIT(node_id)                                                                  \
-	GPIO_RZ_TINT_ISR_INIT(node_id, DT_NUM_IRQS(node_id))                                       \
-	GPIO_RZ_TINT_CONNECT_FUNC(node_id)                                                         \
-	static const struct gpio_rz_tint_config rz_gpio_tint_cfg_##node_id = {                     \
-		.gpio_int_init = rz_gpio_tint_connect_func##node_id,                               \
-	};                                                                                         \
-	static struct gpio_rz_tint_data rz_gpio_tint_data_##node_id = {};                          \
-	DEVICE_DT_DEFINE(node_id, gpio_rz_int_init, NULL, &rz_gpio_tint_data_##node_id,            \
-			 &rz_gpio_tint_cfg_##node_id, POST_KERNEL,                                 \
-			 UTIL_DEC(CONFIG_GPIO_INIT_PRIORITY), NULL);
-
-DT_FOREACH_STATUS_OKAY(renesas_rz_gpio_int, GPIO_RZ_INT_INIT)
-
-#define VALUE_2X(i, _) UTIL_X2(i)
-#define PIN_IRQ_GET(idx, inst)                                                                     \
-	COND_CODE_1(DT_INST_PROP_HAS_IDX(inst, irqs, idx),                                         \
-		    ([DT_INST_PROP_BY_IDX(inst, irqs, idx)] =                                      \
-			     DT_INST_PROP_BY_IDX(inst, irqs, UTIL_INC(idx)),),                     \
-		    ())
-
-#define PIN_IRQS_GET(inst)                                                                         \
-	FOR_EACH_FIXED_ARG(PIN_IRQ_GET, (), inst,                                                  \
-			   LISTIFY(DT_INST_PROP_LEN_OR(inst, irqs, 0), VALUE_2X, (,)))
-
-#define RZG_GPIO_PORT_INIT(inst)                                                                   \
+#define RZ_GPIO_PORT_INIT(inst)                                                                    \
+	static struct gpio_rz_irq_info gpio_rz_irq_info_##inst[] = {IRQ_INFO_GET(inst)};           \
 	static ioport_cfg_t g_ioport_##inst##_cfg = {                                              \
 		.number_of_pins = 0,                                                               \
 		.p_pin_cfg_data = NULL,                                                            \
 		.p_extend = NULL,                                                                  \
 	};                                                                                         \
 	static const struct gpio_rz_config gpio_rz_##inst##_config = {                             \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask =                                                   \
-					(gpio_port_pins_t)GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),   \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.fsp_port = (uint32_t)DT_INST_REG_ADDR(inst),                                      \
 		.port_num = (uint8_t)DT_NODE_CHILD_IDX(DT_DRV_INST(inst)),                         \
 		.ngpios = (uint8_t)DT_INST_PROP(inst, ngpios),                                     \
 		.fsp_cfg = &g_ioport_##inst##_cfg,                                                 \
 		.fsp_api = &g_ioport_on_ioport,                                                    \
-		.int_dev = DEVICE_DT_GET_OR_NULL(DT_INST(0, renesas_rz_gpio_int)),                 \
-		.tint_num = {PIN_IRQS_GET(inst)},                                                  \
+		.irq_info = gpio_rz_irq_info_##inst,                                               \
+		.irq_info_size = ARRAY_SIZE(gpio_rz_irq_info_##inst),                              \
 	};                                                                                         \
 	static ioport_instance_ctrl_t g_ioport_##inst##_ctrl;                                      \
 	static struct gpio_rz_data gpio_rz_##inst##_data = {                                       \
@@ -499,4 +653,4 @@ DT_FOREACH_STATUS_OKAY(renesas_rz_gpio_int, GPIO_RZ_INT_INIT)
 	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &gpio_rz_##inst##_data, &gpio_rz_##inst##_config,  \
 			      POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY, &gpio_rz_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(RZG_GPIO_PORT_INIT)
+DT_INST_FOREACH_STATUS_OKAY(RZ_GPIO_PORT_INIT)

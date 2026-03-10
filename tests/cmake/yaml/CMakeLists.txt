@@ -109,6 +109,25 @@ function(test_reading_int)
   )
 endfunction()
 
+function(test_reading_map_list_entry)
+  set(expected_length 2)
+  set(expected_name "MapEntry1")
+  set(expected_int  5)
+  yaml_length(actual_length NAME yaml-test KEY cmake test map-list)
+  yaml_get(actual_name NAME yaml-test KEY cmake test map-list 0 map-entry-name)
+  yaml_get(actual_int NAME yaml-test KEY cmake test map-list 0 map-entry-int)
+
+  test_assert(TEST ${expected_length} EQUAL ${actual_length}
+              COMMENT "yaml key value does not match expectation."
+  )
+  test_assert(TEST ${expected_name} STREQUAL ${actual_name}
+              COMMENT "yaml key value does not match expectation."
+  )
+  test_assert(TEST ${expected_int} EQUAL ${actual_int}
+              COMMENT "yaml key value does not match expectation."
+  )
+endfunction()
+
 function(test_reading_not_found)
   set(expected cmake-missing-NOTFOUND)
   yaml_get(actual NAME yaml-test KEY cmake missing test key)
@@ -133,6 +152,15 @@ function(test_reading_not_array)
 
   test_assert(TEST ${expected} STREQUAL ${actual}
               COMMENT "Not array expected, so length should be -1."
+  )
+endfunction()
+
+function(test_reading_not_found_map_list_entry)
+  set(expected cmake-test-map-list-3-NOTFOUND)
+  yaml_get(actual NAME yaml-test KEY cmake test map-list 3 map-entry-name)
+
+  test_assert(TEST ${expected} STREQUAL ${actual}
+              COMMENT "Expected -NOTFOUND, but something was found."
   )
 endfunction()
 
@@ -211,6 +239,46 @@ function(test_setting_list_strings)
     test_assert(TEST "${e}" STREQUAL "${a}"
                 COMMENT "list values mismatch."
     )
+  endforeach()
+endfunction()
+
+function(test_setting_list_escaped_strings)
+  yaml_create(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
+              NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  )
+
+  set(new_value "back\\slash" "dou\"ble" "sin'gle" "co:lon" "win:\\path")
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string LIST ${new_value}
+  )
+
+  yaml_save(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create)
+
+  # Read-back the yaml and verify the value.
+  yaml_load(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
+            NAME ${CMAKE_CURRENT_FUNCTION}_readback
+  )
+
+  yaml_length(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string)
+
+  test_assert(TEST 5 EQUAL ${readback}
+              COMMENT "readback yaml list length does not match original."
+  )
+
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string)
+
+  foreach(a e IN ZIP_LISTS readback new_value)
+    # cmake_parse_arguments() breaks horribly when given strings that include
+    # escapes, making it impossible to use test_assert() here. Or, for that
+    # matter, even trying to print them in message(). Thanks, CMake!
+    if("${e}" STREQUAL "${a}")
+      message("${CMAKE_CURRENT_FUNCTION}(): Passed")
+    else()
+      message(FATAL_ERROR
+        "${CMAKE_CURRENT_FUNCTION}(): Failed\n"
+        "Test: list values mismatch."
+      )
+    endif()
   endforeach()
 endfunction()
 
@@ -321,6 +389,137 @@ function(test_setting_list_int)
   endforeach()
 endfunction()
 
+function(test_setting_map_list_entry)
+  yaml_create(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
+              NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  )
+
+  set(new_entry_name_0 MapEntryNew1)
+  set(new_entry_int_0  42)
+  set(new_entry_name_1 MapEntryNew2)
+  set(new_entry_int_1  24)
+  set(new_entry_name_2 MapEntryNew3)
+  set(new_entry_int_2  4224)
+  yaml_set(actual NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set map-list LIST
+           MAP "map-entry-name: ${new_entry_name_0}, map-entry-int: ${new_entry_int_0}"
+           MAP "map-entry-name: ${new_entry_name_1}, map-entry-int: ${new_entry_int_1}"
+           MAP "map-entry-name: ${new_entry_name_2}, map-entry-int: ${new_entry_int_2}"
+  )
+
+  yaml_save(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create)
+
+  # Read-back the yaml and verify the values.
+  yaml_load(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
+            NAME ${CMAKE_CURRENT_FUNCTION}_readback
+  )
+
+  yaml_length(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set map-list)
+
+  test_assert(TEST 3 EQUAL ${readback}
+              COMMENT "readback yaml list length does not match original."
+  )
+
+  foreach(index 0 1 2)
+    yaml_get(readback_name NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set map-list ${index} map-entry-name)
+    yaml_get(readback_int  NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set map-list ${index} map-entry-int)
+
+    test_assert(TEST "${readback_name}" STREQUAL "${new_entry_name_${index}}"
+                COMMENT "list values mismatch."
+    )
+    test_assert(TEST "${readback_int}" EQUAL "${new_entry_int_${index}}"
+                COMMENT "list values mismatch."
+    )
+  endforeach()
+endfunction()
+
+function(test_setting_map_list_entry_windows)
+  yaml_create(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
+              NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  )
+
+  set(new_entry_name_0 MapEntryWindowsPath1)
+  set(new_entry_path_0  "c:/tmp/zephyr")
+  set(new_entry_name_1 MapEntryWindowsPath2)
+  set(new_entry_path_1  "c:/program files/space")
+  set(new_entry_name_2 MapEntryWindowsPath3)
+  set(new_entry_path_2  "D:/alternative/drive")
+  yaml_set(actual NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set map-list LIST
+           MAP "map-entry-name: ${new_entry_name_0}, map-entry-path: ${new_entry_path_0}"
+           MAP "map-entry-name: ${new_entry_name_1}, map-entry-path: ${new_entry_path_1}"
+           MAP "map-entry-name: ${new_entry_name_2}, map-entry-path: ${new_entry_path_2}"
+  )
+
+  yaml_save(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create)
+
+  # Read-back the yaml and verify the values.
+  yaml_load(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
+            NAME ${CMAKE_CURRENT_FUNCTION}_readback
+  )
+
+  yaml_length(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set map-list)
+
+  test_assert(TEST 3 EQUAL ${readback}
+              COMMENT "readback yaml list length does not match original."
+  )
+
+  foreach(index 0 1 2)
+    yaml_get(readback_name NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set map-list ${index} map-entry-name)
+    yaml_get(readback_path  NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set map-list ${index} map-entry-path)
+
+    test_assert(TEST "${readback_name}" STREQUAL "${new_entry_name_${index}}"
+                COMMENT "list values mismatch."
+    )
+    test_assert(TEST "${readback_path}" STREQUAL "${new_entry_path_${index}}"
+                COMMENT "list values mismatch."
+    )
+  endforeach()
+endfunction()
+
+function(test_setting_map_list_entry_commas)
+  yaml_create(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
+              NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  )
+
+  set(new_entry_name_0 TestString1)
+  set(new_entry_str_0  "'A\\,string'")
+  set(new_entry_name_1 TestString2)
+  set(new_entry_str_1  "'\\, is first'")
+  set(new_entry_name_2 TestString3)
+  set(new_entry_str_2  "'\\, and : is\\,everywhere\\,'")
+  yaml_set(actual NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set map-list LIST
+           MAP "map-entry-name: ${new_entry_name_0}, map-entry-str: ${new_entry_str_0}"
+           MAP "map-entry-name: ${new_entry_name_1}, map-entry-str: ${new_entry_str_1}"
+           MAP "map-entry-name: ${new_entry_name_2}, map-entry-str: ${new_entry_str_2}"
+  )
+
+  yaml_save(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create)
+
+  # Read-back the yaml and verify the values.
+  yaml_load(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
+            NAME ${CMAKE_CURRENT_FUNCTION}_readback
+  )
+
+  yaml_length(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set map-list)
+
+  test_assert(TEST 3 EQUAL ${readback}
+              COMMENT "readback yaml list length does not match original."
+  )
+
+  foreach(index 0 1 2)
+    yaml_get(readback_name NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set map-list ${index} map-entry-name)
+    yaml_get(readback_str  NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set map-list ${index} map-entry-str)
+
+    test_assert(TEST "${readback_name}" STREQUAL "${new_entry_name_${index}}"
+                COMMENT "list values mismatch."
+    )
+    test_assert(TEST "${readback_str}" STREQUAL "${new_entry_str_${index}}"
+                COMMENT "list values mismatch."
+    )
+  endforeach()
+endfunction()
 function(test_setting_empty_value)
   yaml_create(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
               NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
@@ -494,6 +693,51 @@ function(test_verify_genexes)
   endforeach()
 endfunction()
 
+function(test_setting_escaped_genexes)
+  set(file ${CMAKE_BINARY_DIR}/test_setting_escaped_genexes.yaml)
+  yaml_create(FILE ${file}
+              NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  )
+
+  set_property(TARGET app PROPERTY escaped_list
+               "back\\slash" "dou\"ble" "sin'gle" "co:lon" "win:\\path")
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string-genex
+           GENEX LIST "$<TARGET_PROPERTY:app,escaped_list>"
+  )
+
+  yaml_save(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create)
+endfunction()
+
+function(test_verify_escaped_genexes)
+  set(file ${CMAKE_BINARY_DIR}/test_setting_escaped_genexes.yaml)
+  yaml_load(FILE ${file}
+      NAME ${CMAKE_CURRENT_FUNCTION}_readback
+  )
+
+  set(expected "back\\slash" "dou\"ble" "sin'gle" "co:lon" "win:\\path")
+  list(LENGTH expected exp_len)
+
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string-genex)
+  yaml_length(act_len NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string-genex)
+
+  test_assert(TEST ${exp_len} EQUAL ${act_len}
+              COMMENT "yaml list length does not match expectation."
+  )
+
+  foreach(a e IN ZIP_LISTS readback expected)
+    # See comment in test_setting_list_escaped_strings() for why test_assert() is not used here.
+    if("${e}" STREQUAL "${a}")
+      message("${CMAKE_CURRENT_FUNCTION}(): Passed")
+    else()
+      message(FATAL_ERROR
+        "${CMAKE_CURRENT_FUNCTION}(): Failed\n"
+        "Test: key-list-string-genex list values mismatch."
+      )
+    endif()
+  endforeach()
+endfunction()
+
 function(test_set_remove_int)
   yaml_create(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
               NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
@@ -558,16 +802,22 @@ test_reading_string()
 test_reading_int()
 test_reading_list_strings()
 test_reading_list_int()
+test_reading_map_list_entry()
 test_reading_not_found()
 test_reading_not_found_array()
 test_reading_not_array()
+test_reading_not_found_map_list_entry()
 
 test_save_new_file()
 
 test_setting_int()
 test_setting_string()
 test_setting_list_strings()
+test_setting_list_escaped_strings()
 test_setting_list_int()
+test_setting_map_list_entry()
+test_setting_map_list_entry_windows()
+test_setting_map_list_entry_commas()
 
 test_setting_empty_value()
 test_setting_empty_list()
@@ -585,6 +835,7 @@ test_fail_missing_filename()
 if(NOT CMAKE_SCRIPT_MODE_FILE)
   # create a file containing genexes
   test_setting_genexes()
+  test_setting_escaped_genexes()
 
   # Spawn a new CMake instance to re-run the whole test suite in script mode
   # and verify the genex values once the associated target is built.
@@ -592,6 +843,7 @@ if(NOT CMAKE_SCRIPT_MODE_FILE)
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_FILE}
   )
 else()
-  # verify the contents of the created genex file
+  # verify the contents of the created genex files
   test_verify_genexes()
+  test_verify_escaped_genexes()
 endif()

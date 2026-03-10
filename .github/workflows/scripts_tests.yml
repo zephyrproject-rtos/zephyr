@@ -19,17 +19,20 @@ on:
       - 'scripts/build/**'
       - '.github/workflows/scripts_tests.yml'
 
+permissions:
+  contents: read
+
 jobs:
   scripts-tests:
     name: Scripts tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13']
-        os: [ubuntu-20.04]
+        python-version: ['3.12', '3.13']
+        os: [ubuntu-24.04]
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -49,22 +52,15 @@ jobs:
           git log --graph --oneline HEAD...${PR_HEAD}
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: scripts/requirements-actions.txt
 
-      - name: cache-pip-linux
-        if: startsWith(runner.os, 'Linux')
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}
-          restore-keys: |
-            ${{ runner.os }}-pip-${{ matrix.python-version }}
-
-      - name: install-packages
+      - name: Install Python packages
         run: |
-          pip install -r scripts/requirements-base.txt -r scripts/requirements-build-test.txt
+          pip install -r scripts/requirements-actions.txt --require-hashes
 
       - name: Run pytest
         env:

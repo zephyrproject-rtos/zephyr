@@ -1,7 +1,7 @@
 # Copyright (c) 2022 Intel Corporation. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Intel ADSP Designware based General Purpose DMA Controller node
+description: Intel ADSP Designware based General Purpose DMA Controller
 
 compatible: "intel,adsp-gpdma"
 

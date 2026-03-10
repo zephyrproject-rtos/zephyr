@@ -12,14 +12,14 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/test_toolchain.h>
 #include <stdio.h>
 #include <stdarg.h>
 
 /**
  *
  * @brief Test implementation-defined constants library
- * @defgroup libc_api
- * @ingroup all_tests
+ * @ingroup libc_api
  * @{
  *
  */
@@ -282,7 +282,7 @@ ZTEST(sprintf, test_sprintf_double)
 	var.d = 0x1p800;
 	sprintf(buffer, "%.140f", var.d);
 	zassert_true((strlen(buffer) == 382),
-		     "sprintf(<large output>) - incorrect length %d\n",
+		     "sprintf(<large output>) - incorrect length %zu\n",
 		     strlen(buffer));
 	buffer[10] = 0;  /* log facility doesn't support %.10s */
 	zassert_true((strcmp(buffer, "6668014432") == 0),
@@ -297,7 +297,7 @@ ZTEST(sprintf, test_sprintf_double)
 	/* 3.872E-121 expressed as " 0.0...387" */
 	sprintf(buffer, "% .380f", var.d);
 	zassert_true((strlen(buffer) == 383),
-		     "sprintf(<large output>) - incorrect length %d\n",
+		     "sprintf(<large output>) - incorrect length %zu\n",
 		     strlen(buffer));
 	zassert_equal(strncmp(&buffer[119], "00003872", 8), 0,
 		      "sprintf(<large output>) - misplaced value\n");
@@ -499,7 +499,6 @@ ZTEST(sprintf, test_vsprintf)
 
 ZTEST(sprintf, test_snprintf)
 {
-#if defined(__GNUC__) && __GNUC__ >= 7
 	/*
 	 * GCC 7 and newer are smart enough to realize that in the statements
 	 * below, the output will not fit in 0 or 4 bytes, but that it requires
@@ -508,9 +507,7 @@ ZTEST(sprintf, test_snprintf)
 	 * actually testing that snprintf's return value is what it should be
 	 * while truncating the output. So let's suppress this warning here.
 	 */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-truncation"
-#endif
+	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_FORMAT_TRUNCATION);
 
 	int len;
 	char buffer[100];
@@ -535,9 +532,7 @@ ZTEST(sprintf, test_snprintf)
 		     "snprintf(%%x).  Expected '%s', got '%s'\n",
 		     "dea", buffer);
 
-#if defined(__GNUC__) && __GNUC__ >= 7
-#pragma GCC diagnostic pop
-#endif
+	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_FORMAT_TRUNCATION);
 }
 
 /**

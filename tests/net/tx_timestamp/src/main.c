@@ -45,19 +45,19 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 static char *test_data = "Test data to be sent";
 
 /* Interface 1 addresses */
-static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
+static struct net_in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Interface 2 addresses */
-static struct in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Destination address for test packets */
-static struct in6_addr dst_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 9, 0, 0, 0,
+static struct net_in6_addr dst_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 9, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Extra address is assigned to ll_addr */
-static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0xf2, 0xaa, 0x29, 0x02,
 				       0x04 } } };
 
@@ -171,7 +171,7 @@ static void timestamp_callback(struct net_pkt *pkt)
 		 */
 		zassert_true(pkt->timestamp.nanosecond > pkt->timestamp.second,
 			     "Timestamp not working ok (%d < %d)\n",
-			     pkt->timestamp.nanosecond, pkt->timestamp.second);
+			     (int)pkt->timestamp.nanosecond, (int)pkt->timestamp.second);
 	}
 
 	/* The pkt was ref'ed in send_some_data()() */
@@ -201,7 +201,7 @@ void test_timestamp_setup(void)
 	net_if_call_timestamp_cb(pkt);
 
 	zassert_true(timestamp_cb_called, "Timestamp callback not called\n");
-	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
+	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n", pkt);
 }
 
 static void timestamp_callback_2(struct net_pkt *pkt)
@@ -214,7 +214,7 @@ static void timestamp_callback_2(struct net_pkt *pkt)
 		 */
 		zassert_true(pkt->timestamp.nanosecond > pkt->timestamp.second,
 			     "Timestamp not working ok (%d < %d)\n",
-			     pkt->timestamp.nanosecond, pkt->timestamp.second);
+			     (int)pkt->timestamp.nanosecond, (int)pkt->timestamp.second);
 	}
 
 	zassert_equal(eth_interfaces[1], net_pkt_iface(pkt),
@@ -247,7 +247,7 @@ void test_timestamp_setup_2nd_iface(void)
 	net_if_call_timestamp_cb(pkt);
 
 	zassert_true(timestamp_cb_called, "Timestamp callback not called\n");
-	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
+	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n", pkt);
 }
 
 void test_timestamp_setup_all(void)
@@ -272,7 +272,7 @@ void test_timestamp_setup_all(void)
 	net_if_call_timestamp_cb(pkt);
 
 	zassert_true(timestamp_cb_called, "Timestamp callback not called\n");
-	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
+	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n", pkt);
 
 	net_if_unregister_timestamp_cb(&timestamp_cb_3);
 }
@@ -296,7 +296,7 @@ void test_timestamp_cleanup(void)
 	net_if_call_timestamp_cb(pkt);
 
 	zassert_false(timestamp_cb_called, "Timestamp callback called\n");
-	zassert_false(atomic_get(&pkt->atomic_ref) < 1, "Pkt %p released\n");
+	zassert_false(atomic_get(&pkt->atomic_ref) < 1, "Pkt %p released\n", pkt);
 
 	net_pkt_unref(pkt);
 }
@@ -397,21 +397,19 @@ void test_address_setup(void)
 	test_failed = false;
 }
 
-static bool add_neighbor(struct net_if *iface, struct in6_addr *addr)
+static bool add_neighbor(struct net_if *iface, struct net_in6_addr *addr)
 {
-	struct net_linkaddr_storage llstorage;
 	struct net_linkaddr lladdr;
 	struct net_nbr *nbr;
 
-	llstorage.addr[0] = 0x01;
-	llstorage.addr[1] = 0x02;
-	llstorage.addr[2] = 0x33;
-	llstorage.addr[3] = 0x44;
-	llstorage.addr[4] = 0x05;
-	llstorage.addr[5] = 0x06;
+	lladdr.addr[0] = 0x01;
+	lladdr.addr[1] = 0x02;
+	lladdr.addr[2] = 0x33;
+	lladdr.addr[3] = 0x44;
+	lladdr.addr[4] = 0x05;
+	lladdr.addr[5] = 0x06;
 
 	lladdr.len = 6U;
-	lladdr.addr = llstorage.addr;
 	lladdr.type = NET_LINK_ETHERNET;
 
 	nbr = net_ipv6_nbr_add(iface, addr, &lladdr, false,
@@ -427,33 +425,33 @@ static bool add_neighbor(struct net_if *iface, struct in6_addr *addr)
 
 static void send_some_data(struct net_if *iface)
 {
-	struct sockaddr_in6 dst_addr6 = {
-		.sin6_family = AF_INET6,
-		.sin6_port = htons(TEST_PORT),
+	struct net_sockaddr_in6 dst_addr6 = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(TEST_PORT),
 	};
-	struct sockaddr_in6 src_addr6 = {
-		.sin6_family = AF_INET6,
+	struct net_sockaddr_in6 src_addr6 = {
+		.sin6_family = NET_AF_INET6,
 		.sin6_port = 0,
 	};
 	int ret;
 
-	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP,
+	ret = net_context_get(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP,
 			      &udp_v6_ctx);
 	zassert_equal(ret, 0, "Create IPv6 UDP context failed\n");
 
-	memcpy(&src_addr6.sin6_addr, &my_addr1, sizeof(struct in6_addr));
-	memcpy(&dst_addr6.sin6_addr, &dst_addr, sizeof(struct in6_addr));
+	memcpy(&src_addr6.sin6_addr, &my_addr1, sizeof(struct net_in6_addr));
+	memcpy(&dst_addr6.sin6_addr, &dst_addr, sizeof(struct net_in6_addr));
 
-	ret = net_context_bind(udp_v6_ctx, (struct sockaddr *)&src_addr6,
-			       sizeof(struct sockaddr_in6));
+	ret = net_context_bind(udp_v6_ctx, (struct net_sockaddr *)&src_addr6,
+			       sizeof(struct net_sockaddr_in6));
 	zassert_equal(ret, 0, "Context bind failure test failed\n");
 
 	ret = add_neighbor(iface, &dst_addr);
 	zassert_true(ret, "Cannot add neighbor\n");
 
 	ret = net_context_sendto(udp_v6_ctx, test_data, strlen(test_data),
-				 (struct sockaddr *)&dst_addr6,
-				 sizeof(struct sockaddr_in6),
+				 (struct net_sockaddr *)&dst_addr6,
+				 sizeof(struct net_sockaddr_in6),
 				 NULL, K_NO_WAIT, NULL);
 	zassert_true(ret > 0, "Send UDP pkt failed\n");
 

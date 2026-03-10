@@ -7,8 +7,6 @@
 #include <soc_secure.h>
 #include <errno.h>
 
-#include "nrf.h"
-
 #include "tfm_platform_api.h"
 #include "tfm_ioctl_api.h"
 

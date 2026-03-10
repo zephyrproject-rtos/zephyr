@@ -190,9 +190,9 @@ struct can_rcar_data {
 	uint8_t tx_tail;
 	uint8_t tx_unsent;
 	struct k_mutex rx_mutex;
-	can_rx_callback_t rx_callback[CONFIG_CAN_RCAR_MAX_FILTER];
-	void *rx_callback_arg[CONFIG_CAN_RCAR_MAX_FILTER];
-	struct can_filter filter[CONFIG_CAN_RCAR_MAX_FILTER];
+	can_rx_callback_t rx_callback[CONFIG_CAN_RCAR_MAX_FILTERS];
+	void *rx_callback_arg[CONFIG_CAN_RCAR_MAX_FILTERS];
+	struct can_filter filter[CONFIG_CAN_RCAR_MAX_FILTERS];
 	enum can_state state;
 };
 
@@ -364,7 +364,7 @@ static void can_rcar_rx_filter_isr(const struct device *dev,
 	}
 #endif /* !CONFIG_CAN_ACCEPT_RTR */
 
-	for (i = 0; i < CONFIG_CAN_RCAR_MAX_FILTER; i++) {
+	for (i = 0; i < CONFIG_CAN_RCAR_MAX_FILTERS; i++) {
 		if (data->rx_callback[i] == NULL) {
 			continue;
 		}
@@ -474,12 +474,11 @@ static void can_rcar_isr(const struct device *dev)
 static int can_rcar_leave_sleep_mode(const struct can_rcar_cfg *config)
 {
 	uint16_t ctlr, str;
-	int i;
 
 	ctlr = can_rcar_read16(config, RCAR_CAN_CTLR);
 	ctlr &= ~RCAR_CAN_CTLR_SLPM;
 	can_rcar_write16(config, RCAR_CAN_CTLR, ctlr);
-	for (i = 0; i < MAX_STR_READS; i++) {
+	for (int i = 0; i < MAX_STR_READS; i++) {
 		str = can_rcar_read16(config, RCAR_CAN_STR);
 		if (!(str & RCAR_CAN_STR_SLPST)) {
 			return 0;
@@ -491,7 +490,6 @@ static int can_rcar_leave_sleep_mode(const struct can_rcar_cfg *config)
 static int can_rcar_enter_reset_mode(const struct can_rcar_cfg *config, bool force)
 {
 	uint16_t ctlr;
-	int i;
 
 	ctlr = can_rcar_read16(config, RCAR_CAN_CTLR);
 	ctlr &= ~RCAR_CAN_CTLR_CANM_MASK;
@@ -500,7 +498,7 @@ static int can_rcar_enter_reset_mode(const struct can_rcar_cfg *config, bool for
 		ctlr |= RCAR_CAN_CTLR_CANM_HALT;
 	}
 	can_rcar_write16(config, RCAR_CAN_CTLR, ctlr);
-	for (i = 0; i < MAX_STR_READS; i++) {
+	for (int i = 0; i < MAX_STR_READS; i++) {
 		if (can_rcar_read16(config, RCAR_CAN_STR) & RCAR_CAN_STR_RSTST) {
 			return 0;
 		}
@@ -511,7 +509,6 @@ static int can_rcar_enter_reset_mode(const struct can_rcar_cfg *config, bool for
 static int can_rcar_enter_halt_mode(const struct can_rcar_cfg *config)
 {
 	uint16_t ctlr;
-	int i;
 
 	ctlr = can_rcar_read16(config, RCAR_CAN_CTLR);
 	ctlr &= ~RCAR_CAN_CTLR_CANM_MASK;
@@ -521,7 +518,7 @@ static int can_rcar_enter_halt_mode(const struct can_rcar_cfg *config)
 	/* Wait for controller to apply high bit timing settings */
 	k_usleep(1);
 
-	for (i = 0; i < MAX_STR_READS; i++) {
+	for (int i = 0; i < MAX_STR_READS; i++) {
 		if (can_rcar_read16(config, RCAR_CAN_STR) & RCAR_CAN_STR_HLTST) {
 			return 0;
 		}
@@ -830,7 +827,7 @@ static int can_rcar_recover(const struct device *dev, k_timeout_t timeout)
 	const struct can_rcar_cfg *config = dev->config;
 	struct can_rcar_data *data = dev->data;
 	int64_t start_time;
-	int ret;
+	int ret = 0;
 
 	if (!data->common.started) {
 		return -ENETDOWN;
@@ -960,7 +957,7 @@ static inline int can_rcar_add_rx_filter_unlocked(const struct device *dev,
 	struct can_rcar_data *data = dev->data;
 	int i;
 
-	for (i = 0; i < CONFIG_CAN_RCAR_MAX_FILTER; i++) {
+	for (i = 0; i < CONFIG_CAN_RCAR_MAX_FILTERS; i++) {
 		if (data->rx_callback[i] == NULL) {
 			data->rx_callback_arg[i] = cb_arg;
 			data->filter[i] = *filter;
@@ -994,7 +991,7 @@ static void can_rcar_remove_rx_filter(const struct device *dev, int filter_id)
 {
 	struct can_rcar_data *data = dev->data;
 
-	if (filter_id < 0 || filter_id >= CONFIG_CAN_RCAR_MAX_FILTER) {
+	if (filter_id < 0 || filter_id >= CONFIG_CAN_RCAR_MAX_FILTERS) {
 		LOG_ERR("filter ID %d out of bounds", filter_id);
 		return;
 	}
@@ -1026,11 +1023,9 @@ static int can_rcar_init(const struct device *dev)
 	data->common.state_change_cb = NULL;
 	data->common.state_change_cb_user_data = NULL;
 
-	if (config->common.phy != NULL) {
-		if (!device_is_ready(config->common.phy)) {
-			LOG_ERR("CAN transceiver not ready");
-			return -ENODEV;
-		}
+	if (config->common.phy != NULL && !device_is_ready(config->common.phy)) {
+		LOG_ERR("CAN transceiver not ready");
+		return -ENODEV;
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
@@ -1147,7 +1142,7 @@ static int can_rcar_get_max_filters(const struct device *dev, bool ide)
 {
 	ARG_UNUSED(ide);
 
-	return CONFIG_CAN_RCAR_MAX_FILTER;
+	return CONFIG_CAN_RCAR_MAX_FILTERS;
 }
 
 static DEVICE_API(can, can_rcar_driver_api) = {

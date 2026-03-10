@@ -175,52 +175,6 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	return 0;
 }
 
-static int start_extended_adv(struct bt_le_ext_adv *adv)
-{
-	int err;
-
-	/* Start extended advertising */
-	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
-		printk("Failed to start extended advertising: %d\n", err);
-
-		return err;
-	}
-
-	/* Enable Periodic Advertising */
-	err = bt_le_per_adv_start(adv);
-	if (err) {
-		printk("Failed to enable periodic advertising: %d\n", err);
-
-		return err;
-	}
-
-	return 0;
-}
-
-static int setup_extended_adv(struct bt_le_ext_adv **adv)
-{
-	int err;
-
-	/* Create a non-connectable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, adv);
-	if (err != 0) {
-		printk("Unable to create extended advertising set: %d\n", err);
-
-		return err;
-	}
-
-	/* Set periodic advertising parameters */
-	err = bt_le_per_adv_set_param(*adv, BT_LE_PER_ADV_DEFAULT);
-	if (err) {
-		printk("Failed to set periodic advertising parameters: %d\n", err);
-
-		return err;
-	}
-
-	return 0;
-}
-
 static int stop_extended_adv(struct bt_le_ext_adv *adv)
 {
 	int err;
@@ -292,11 +246,7 @@ static void test_main(void)
 		k_sem_reset(&sem_started);
 		k_sem_reset(&sem_stopped);
 
-		err = setup_extended_adv(&adv);
-		if (err != 0) {
-			printk("Unable to setup extended advertiser: %d\n", err);
-			FAIL("Public Broadcast source failed\n");
-		}
+		setup_broadcast_adv(&adv);
 
 		err = bt_cap_initiator_broadcast_audio_create(&create_param, &broadcast_source);
 		if (err != 0) {
@@ -316,11 +266,7 @@ static void test_main(void)
 			FAIL("Public Broadcast source failed\n");
 		}
 
-		err = start_extended_adv(adv);
-		if (err != 0) {
-			printk("Unable to start extended advertiser: %d\n", err);
-			FAIL("Public Broadcast source failed\n");
-		}
+		start_broadcast_adv(adv);
 
 		k_sem_take(&sem_started, SEM_TIMEOUT);
 

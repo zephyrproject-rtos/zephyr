@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,21 +9,27 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/gpio/renesas-ra-gpio-ioport.h>
+#ifdef CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT
 #include <zephyr/drivers/misc/renesas_ra_external_interrupt/renesas_ra_external_interrupt.h>
+#endif
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <soc.h>
 
+#ifdef CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT
 struct gpio_ra_irq_info {
 	const struct device *port_irq;
 	const uint8_t *const pins;
 	size_t num;
 };
+#endif /* CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT */
 
 struct gpio_ra_config {
 	struct gpio_driver_config common;
 	uint8_t port_num;
 	R_PORT0_Type *port;
+#if CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT
 	const struct gpio_ra_irq_info *irq_info;
+#endif /* CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT */
 	const size_t irq_info_size;
 	gpio_pin_t vbatt_pins[];
 };
@@ -78,6 +84,7 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 		return -ENOTSUP;
 	}
 
+#if CONFIG_GPIO_RA_HAS_VBTICTLR
 	if (config->vbatt_pins[0] != 0xFF) {
 		uint32_t clear = 0;
 
@@ -93,6 +100,7 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 
 		R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_OM_LPC_BATT);
 	}
+#endif
 
 	pincfg.port_num = config->port_num;
 	pincfg.pin_num = pin;
@@ -169,10 +177,45 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 	}
 #endif
 
+#ifdef CONFIG_PINCTRL_RENESAS_RA_PFS
 	pincfg.cfg =
 		pfs_cfg | (((flags & RENESAS_GPIO_DS_MSK) >> 8) << R_PFS_PORT_PIN_PmnPFS_DSCR_Pos);
+#else
+	pincfg.cfg = pfs_cfg;
+#endif /* CONFIG_PINCTRL_RENESAS_RA_PFS */
 
 	return pinctrl_configure_pins(&pincfg, 1, PINCTRL_REG_NONE);
+}
+
+__maybe_unused static int gpio_ra_pin_get_config(const struct device *dev, gpio_pin_t pin,
+						 gpio_flags_t *flags)
+{
+	const struct gpio_ra_config *config = dev->config;
+	uint32_t pincfg;
+
+	if (pin >= RA_PINCTRL_PIN_NUM) {
+		return -EINVAL;
+	}
+
+	memset(flags, 0, sizeof(gpio_flags_t));
+
+	pincfg = R_PFS->PORT[config->port_num].PIN[pin].PmnPFS;
+
+	if (pincfg & BIT(R_PFS_PORT_PIN_PmnPFS_PDR_Pos)) {
+		*flags |= GPIO_OUTPUT;
+	} else {
+		*flags |= GPIO_INPUT;
+	}
+
+	if (pincfg & BIT(R_PFS_PORT_PIN_PmnPFS_NCODR_Pos)) {
+		*flags |= GPIO_LINE_OPEN_DRAIN;
+	}
+
+	if (pincfg & BIT(R_PFS_PORT_PIN_PmnPFS_PCR_Pos)) {
+		*flags |= GPIO_PULL_UP;
+	}
+
+	return 0;
 }
 
 static int gpio_ra_port_get_raw(const struct device *dev, uint32_t *value)
@@ -230,7 +273,15 @@ static int gpio_ra_port_toggle_bits(const struct device *dev, gpio_port_pins_t p
 static int gpio_ra_pin_interrupt_configure(const struct device *port, gpio_pin_t pin,
 					   enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
-	return gpio_ra_pin_configure(port, pin, (mode | trig));
+	gpio_flags_t flags;
+	int err;
+
+	err = gpio_ra_pin_get_config(port, pin, &flags);
+	if (err) {
+		return err;
+	}
+
+	return gpio_ra_pin_configure(port, pin, (flags | mode | trig));
 }
 
 static int gpio_ra_manage_callback(const struct device *dev, struct gpio_callback *callback,
@@ -244,6 +295,9 @@ static int gpio_ra_manage_callback(const struct device *dev, struct gpio_callbac
 
 static DEVICE_API(gpio, gpio_ra_drv_api_funcs) = {
 	.pin_configure = gpio_ra_pin_configure,
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = gpio_ra_pin_get_config,
+#endif
 	.port_get_raw = gpio_ra_port_get_raw,
 	.port_set_masked_raw = gpio_ra_port_set_masked_raw,
 	.port_set_bits_raw = gpio_ra_port_set_bits_raw,
@@ -261,23 +315,28 @@ static DEVICE_API(gpio, gpio_ra_drv_api_funcs) = {
 	const uint8_t CONCAT(n, ___pins##i[]) = {                                                  \
 		DT_FOREACH_PROP_ELEM_SEP(n, GPIO_RA_PINS_NAME(n, p, i), DT_PROP_BY_IDX, (,))};
 
+#ifdef CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT
 #define GPIO_RA_IRQ_INFO(n, p, i)                                                                  \
 	{                                                                                          \
 		.port_irq = DEVICE_DT_GET_OR_NULL(DT_PHANDLE_BY_IDX(n, port_irqs, i)),             \
 		.pins = CONCAT(n, ___pins##i),                                                     \
 		.num = ARRAY_SIZE(CONCAT(n, ___pins##i)),                                          \
 	},
+#endif /* CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT */
 
+#ifdef CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT
 #define DECL_PINS_PARAMETER(node)                                                                  \
 	COND_CODE_1(DT_NODE_HAS_PROP(node, port_irq_names),                                        \
 	(DT_FOREACH_PROP_ELEM(node, port_irq_names, GPIO_RA_DECL_PINS)), ())
 #define IRQ_INFO_PARAMETER(node)                                                                   \
 	COND_CODE_1(DT_NODE_HAS_PROP(node, port_irq_names),                                        \
 	(DT_FOREACH_PROP_ELEM(node, port_irq_names, GPIO_RA_IRQ_INFO)), ())
+#endif /* CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT */
 
 #define GPIO_DEVICE_INIT(node, port_number, suffix, addr)                                          \
-	DECL_PINS_PARAMETER(node);                                                                 \
-	struct gpio_ra_irq_info gpio_ra_irq_info_##suffix[] = {IRQ_INFO_PARAMETER(node)};          \
+	IF_ENABLED(CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT, (DECL_PINS_PARAMETER(node);))             \
+	IF_ENABLED(CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT,                                           \
+	(struct gpio_ra_irq_info gpio_ra_irq_info_##suffix[] = {IRQ_INFO_PARAMETER(node)};))	   \
 	static const struct gpio_ra_config gpio_ra_config_##suffix = {                             \
 		.common =                                                                          \
 			{                                                                          \
@@ -286,7 +345,8 @@ static DEVICE_API(gpio, gpio_ra_drv_api_funcs) = {
 		.port_num = port_number,                                                           \
 		.port = (R_PORT0_Type *)addr,                                                      \
 		.vbatt_pins = DT_PROP_OR(DT_NODELABEL(ioport##suffix), vbatts_pins, {0xFF}),       \
-		.irq_info = gpio_ra_irq_info_##suffix,                                             \
+		IF_ENABLED(CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT,				   \
+		(.irq_info = gpio_ra_irq_info_##suffix,))                                          \
 		.irq_info_size = DT_PROP_LEN_OR(DT_NODELABEL(ioport##suffix), port_irq_names, 0),  \
 	};                                                                                         \
 	static struct gpio_ra_data gpio_ra_data_##suffix;                                          \
@@ -315,3 +375,5 @@ GPIO_DEVICE_INIT_RA_IF_OKAY(8);
 GPIO_DEVICE_INIT_RA_IF_OKAY(9);
 GPIO_DEVICE_INIT_RA_IF_OKAY(a);
 GPIO_DEVICE_INIT_RA_IF_OKAY(b);
+GPIO_DEVICE_INIT_RA_IF_OKAY(c);
+GPIO_DEVICE_INIT_RA_IF_OKAY(d);

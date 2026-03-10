@@ -4,26 +4,26 @@ Overview
 ********
 
 The STM32L562E-DK Discovery kit is designed as a complete demonstration and
-development platform for STMicroelectronics Arm |reg| Cortex |reg|-M33 core-based
-STM32L562QEI6QU microcontroller with TrustZone |reg|. Here are some highlights of
+development platform for STMicroelectronics Arm® Cortex®-M33 core-based
+STM32L562QEI6QU microcontroller with TrustZone®. Here are some highlights of
 the STM32L562E-DK Discovery board:
 
 
 - STM32L562QEI6QU microcontroller featuring 512 Kbytes of Flash memory and 256 Kbytes of SRAM in BGA132 package
 - 1.54" 240 x 240 pixel-262K color TFT LCD module with parallel interface and touch-control panel
-- USB Type-C |trade| Sink device FS
+- USB Type-C® Sink device FS
 - On-board energy meter: 300 nA to 150 mA measurement range with a dedicated USB interface
 - SAI Audio CODEC
 - MEMS digital microphones
 - 512-Mbit Octal-SPI Flash memory
-- Bluetooth |reg| V4.1 Low Energy module
+- Bluetooth® V4.1 Low Energy module
 - iNEMO 3D accelerometer and 3D gyroscope
 - Board connectors
 
-  - STMod+ expansion connector with fan-out expansion board for Wi‑Fi |reg|, Grove and mikroBUS |trade| compatible connectors
-  - Pmod |trade| expansion connector
+  - STMod+ expansion connector with fan-out expansion board for Wi‑Fi®, Grove and mikroBUS™ compatible connectors
+  - Pmod™ expansion connector
   - Audio MEMS daughterboard expansion connector
-  - ARDUINO |reg| Uno V3 expansion connector
+  - ARDUINO® Uno V3 expansion connector
 
 - Flexible power-supply options
 
@@ -46,19 +46,19 @@ Hardware
 ********
 
 The STM32L562xx devices are an ultra-low-power microcontrollers family (STM32L5
-Series) based on the high-performance Arm |reg| Cortex |reg|-M33 32-bit RISC core.
+Series) based on the high-performance Arm® Cortex®-M33 32-bit RISC core.
 They operate at a frequency of up to 110 MHz.
 
 - Ultra-low-power with FlexPowerControl (down to 108 nA Standby mode and 62 uA/MHz run mode)
-- Core: ARM |reg| 32-bit Cortex |reg| -M33 CPU with TrustZone |reg| and FPU.
+- Core: ARM® 32-bit Cortex®-M33 CPU with TrustZone® and FPU.
 - Performance benchmark:
 
   - 1.5 DMPIS/MHz (Drystone 2.1)
-  - 442 CoreMark |reg| (4.02 CoreMark |reg| /MHZ)
+  - 442 CoreMark® (4.02 CoreMark® /MHZ)
 
 - Security
 
-  - Arm |reg| TrustZone |reg| and securable I/Os memories and peripherals
+  - Arm® TrustZone® and securable I/Os memories and peripherals
   - Flexible life cycle scheme with RDP (readout protection)
   - Root of trust thanks to unique boot entry and hide protection area (HDP)
   - Secure Firmware Installation thanks to embedded Root Secure Services
@@ -76,10 +76,10 @@ They operate at a frequency of up to 110 MHz.
 
   - 4 to 48 MHz crystal oscillator
   - 32 kHz crystal oscillator for RTC (LSE)
-  - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
-  - Internal low-power 32 kHz RC ( |plusminus| 5%)
+  - Internal 16 MHz factory-trimmed RC (±1%)
+  - Internal low-power 32 kHz RC (±5%)
   - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by
-    LSE (better than  |plusminus| 0.25 % accuracy)
+    LSE (better than ±0.25 % accuracy)
   - 3 PLLs for system clock, USB, audio, ADC
 
 - Power management
@@ -128,7 +128,7 @@ They operate at a frequency of up to 110 MHz.
   - 2x 14 channel DMA controllers
 
 - CRC calculation unit
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
 
 
 More information about STM32L562QE can be found here:
@@ -139,68 +139,8 @@ More information about STM32L562QE can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32l562e_dk board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| AES       | on-chip    | crypto                              |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | DAC Controller                      |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | TFT LCD screen with st7789v driver  |
-|           |            | and touch panel with ft5336 driver  |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | Direct Memory Access                |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | PWM                                 |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| SDMMC     | on-chip    | sd/mmc                              |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| TrustZone | on-chip    | Trusted Firmware-M                  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig and dts files:
-
-- Common:
-
-  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_common.dtsi`
-
-- Secure target:
-
-  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_defconfig`
-  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk.dts`
-
-- Non-Secure target:
-
-  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_stm32l562xx_ns_defconfig`
-  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_stm32l562xx_ns.dts`
 
 Zephyr board options
 ====================
@@ -289,6 +229,8 @@ They can be tested using :zephyr:code-sample:`lvgl` sample:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32L562E-DK Discovery board includes an ST-LINK/V3E embedded debug tool interface.
 

@@ -26,6 +26,8 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Build application as usual for the ``google_icetower`` board, and flash
 using μServo or an external J-Link connected to J4. If μServo is used, please
 follow the `Chromium EC Flashing Documentation`_.

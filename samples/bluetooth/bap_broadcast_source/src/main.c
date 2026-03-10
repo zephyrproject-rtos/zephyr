@@ -21,7 +21,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/drivers/usb/udc_buf.h>
+#include <zephyr/drivers/usb/usb_buf.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
@@ -32,21 +32,14 @@
 #include <zephyr/usb/class/usbd_uac2.h>
 #include <zephyr/usb/usbd.h>
 
-BUILD_ASSERT(strlen(CONFIG_BROADCAST_CODE) <= BT_ISO_BROADCAST_CODE_SIZE, "Invalid broadcast code");
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+#include <nrfx_clock.h>
+#endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
-/* Zephyr Controller works best while Extended Advertising interval to be a multiple
- * of the ISO Interval minus 10 ms (max. advertising random delay). This is
- * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
- * Broadcast ISO radio events.
- *
- * I.e. for a 7.5 ms ISO interval use 90 ms minus 10 ms ==> 80 ms advertising
- * interval.
- * And, for 10 ms ISO interval, can use 90 ms minus 10 ms ==> 80 ms advertising
- * interval.
- */
-#define BT_LE_EXT_ADV_CUSTOM                                                                       \
-	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, BT_GAP_MS_TO_ADV_INTERVAL(80),                      \
-			BT_GAP_MS_TO_ADV_INTERVAL(80), NULL)
+BUILD_ASSERT(strlen(CONFIG_BROADCAST_CODE) <= BT_ISO_BROADCAST_CODE_SIZE, "Invalid broadcast code");
+BUILD_ASSERT(IN_RANGE(strlen(CONFIG_BROADCAST_NAME), BT_AUDIO_BROADCAST_NAME_LEN_MIN,
+		      BT_AUDIO_BROADCAST_NAME_LEN_MAX),
+	     "Invalid broadcast name");
 
 /* When BROADCAST_ENQUEUE_COUNT > 1 we can enqueue enough buffers to ensure that
  * the controller is never idle
@@ -74,12 +67,22 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_24_2
 
 #define BROADCAST_SAMPLE_RATE 24000
 
+#elif defined(CONFIG_BAP_BROADCAST_48_2_1)
+
+static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_48_2_1(
+	BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
+	BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+
+#define BROADCAST_SAMPLE_RATE 48000
+
 #endif
 
 #if defined(CONFIG_BAP_BROADCAST_16_2_1)
 #define MAX_SAMPLE_RATE 16000
 #elif defined(CONFIG_BAP_BROADCAST_24_2_1)
 #define MAX_SAMPLE_RATE 24000
+#elif defined(CONFIG_BAP_BROADCAST_48_2_1)
+#define MAX_SAMPLE_RATE 48000
 #endif
 #define MAX_FRAME_DURATION_US 10000
 #define MAX_NUM_SAMPLES       ((MAX_FRAME_DURATION_US * MAX_SAMPLE_RATE) / USEC_PER_SEC)
@@ -150,6 +153,8 @@ static struct broadcast_source_stream {
 #if defined(CONFIG_BAP_BROADCAST_16_2_1)
 	lc3_encoder_mem_16k_t lc3_encoder_mem;
 #elif defined(CONFIG_BAP_BROADCAST_24_2_1)
+	lc3_encoder_mem_48k_t lc3_encoder_mem;
+#elif defined(CONFIG_BAP_BROADCAST_48_2_1)
 	lc3_encoder_mem_48k_t lc3_encoder_mem;
 #endif
 #if defined(CONFIG_USE_USB_AUDIO_INPUT)
@@ -321,7 +326,7 @@ K_THREAD_DEFINE(encoder, LC3_ENCODER_STACK_SIZE, init_lc3_thread, NULL, NULL, NU
 /* Allocate 3: 1 for USB to receive data to and 2 additional buffers to prevent out of memory
  * errors when USB host decides to perform rapid terminal enable/disable cycles.
  */
-K_MEM_SLAB_DEFINE_STATIC(usb_in_buf_pool, USB_MAX_STEREO_FRAME_SIZE, 3, UDC_BUF_ALIGN);
+K_MEM_SLAB_DEFINE_STATIC(usb_out_buf_pool, USB_MAX_STEREO_FRAME_SIZE, 3, UDC_BUF_ALIGN);
 static bool terminal_enabled;
 
 static void terminal_update_cb(const struct device *dev, uint8_t terminal, bool enabled,
@@ -348,7 +353,7 @@ static void *get_recv_buf_cb(const struct device *dev, uint8_t terminal, uint16_
 	__ASSERT(size <= USB_MAX_STEREO_FRAME_SIZE, "%u was not <= %d", size,
 		 USB_MAX_STEREO_FRAME_SIZE);
 
-	ret = k_mem_slab_alloc(&usb_in_buf_pool, &buf, K_NO_WAIT);
+	ret = k_mem_slab_alloc(&usb_out_buf_pool, &buf, K_NO_WAIT);
 	if (ret != 0) {
 		printk("Failed to allocate buffer: %d\n", ret);
 	}
@@ -365,7 +370,7 @@ static void data_recv_cb(const struct device *dev, uint8_t terminal, void *buf, 
 	int16_t *pcm;
 
 	if (!terminal_enabled || buf == NULL || size == 0U) {
-		k_mem_slab_free(&usb_in_buf_pool, buf);
+		k_mem_slab_free(&usb_out_buf_pool, buf);
 		return;
 	}
 
@@ -399,7 +404,7 @@ static void data_recv_cb(const struct device *dev, uint8_t terminal, void *buf, 
 		printk("USB Data received (count = %d)\n", count);
 	}
 
-	k_mem_slab_free(&usb_in_buf_pool, buf);
+	k_mem_slab_free(&usb_out_buf_pool, buf);
 }
 #endif /* defined(CONFIG_USE_USB_AUDIO_INPUT) */
 #endif /* defined(CONFIG_LIBLC3) */
@@ -408,6 +413,14 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 {
 	struct broadcast_source_stream *source_stream =
 		CONTAINER_OF(stream, struct broadcast_source_stream, stream);
+	struct bt_iso_info info;
+	int err;
+
+	err = bt_iso_chan_get_info(stream->iso, &info);
+	__ASSERT(err == 0, "Failed to get ISO chan info: %d", err);
+
+	printk("Stream %p started with BIG_Handle %u and BIS_Number %u\n", stream,
+	       info.broadcaster.big_handle, info.broadcaster.bis_number);
 
 	source_stream->seq_num = 0U;
 	source_stream->sent_cnt = 0U;
@@ -462,7 +475,9 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	create_param.params = subgroup_param;
 	create_param.qos = &preset_active.qos;
 	create_param.encryption = strlen(CONFIG_BROADCAST_CODE) > 0;
-	create_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	create_param.packing = (IS_ENABLED(CONFIG_ISO_PACKING_INTERLEAVED) ?
+				BT_ISO_PACKING_INTERLEAVED :
+				BT_ISO_PACKING_SEQUENTIAL);
 
 	if (create_param.encryption) {
 		memcpy(create_param.broadcast_code, CONFIG_BROADCAST_CODE,
@@ -501,6 +516,15 @@ int main(void)
 	};
 	struct bt_le_ext_adv *adv;
 	int err;
+
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+	/* Use this to turn on 128 MHz clock for the nRF5340 cpu_app */
+	err = nrfx_clock_divider_set(NRF_CLOCK_DOMAIN_HFCLK, NRF_CLOCK_HFCLK_DIV_1);
+	if (err != 0) {
+		printk("Failed to set 128 MHz: %d\n", err);
+		return 0;
+	}
+#endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -571,19 +595,19 @@ int main(void)
 		/* Broadcast Audio Streaming Endpoint advertising data */
 		NET_BUF_SIMPLE_DEFINE(ad_buf, BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
 		NET_BUF_SIMPLE_DEFINE(base_buf, 128);
-		struct bt_data ext_ad[2];
+		struct bt_data ext_ad[3];
 		struct bt_data per_ad;
 		uint32_t broadcast_id;
 
 		/* Create a connectable advertising set */
-		err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CUSTOM, NULL, &adv);
+		err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_BROADCAST_FAST, NULL, &adv);
 		if (err != 0) {
 			printk("Unable to create extended advertising set: %d\n", err);
 			return 0;
 		}
 
 		/* Set periodic advertising parameters */
-		err = bt_le_per_adv_set_param(adv, BT_LE_PER_ADV_DEFAULT);
+		err = bt_le_per_adv_set_param(adv, BT_BAP_PER_ADV_PARAM_BROADCAST_FAST);
 		if (err) {
 			printk("Failed to set periodic advertising parameters (err %d)\n", err);
 			return 0;
@@ -614,7 +638,11 @@ int main(void)
 		ext_ad[0].data = ad_buf.data;
 		ext_ad[1] = (struct bt_data)BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME,
 						    sizeof(CONFIG_BT_DEVICE_NAME) - 1);
-		err = bt_le_ext_adv_set_data(adv, ext_ad, 2, NULL, 0);
+		/* Broadcast name used for scanning device that displays information on the */
+		/* available broadcast sources. */
+		ext_ad[2] = (struct bt_data)BT_DATA(BT_DATA_BROADCAST_NAME, CONFIG_BROADCAST_NAME,
+						    sizeof(CONFIG_BROADCAST_NAME) - 1);
+		err = bt_le_ext_adv_set_data(adv, ext_ad, 3, NULL, 0);
 		if (err != 0) {
 			printk("Failed to set extended advertising data: %d\n", err);
 			return 0;

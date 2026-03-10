@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -162,8 +162,7 @@ static bool check_audio_support_and_connect(struct bt_data *data,
 	printk("Audio server found with type %u, contexts 0x%08x and meta_len %u; connecting\n",
 	       announcement_type, audio_contexts, meta_len);
 
-	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
-				BT_LE_CONN_PARAM_DEFAULT,
+	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_BAP_CONN_PARAM_RELAXED,
 				&default_conn);
 	if (err != 0) {
 		printk("Create conn to failed (%u)\n", err);
@@ -224,7 +223,14 @@ static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_
 
 static void stream_qos_set(struct bt_bap_stream *stream)
 {
-	printk("Audio Stream %p QoS set\n", stream);
+	struct bt_iso_info info;
+	int err;
+
+	err = bt_iso_chan_get_info(stream->iso, &info);
+	__ASSERT(err == 0, "Failed to get ISO chan info: %d", err);
+
+	printk("Audio Stream %p QoS set with CIG_ID %u and CIS_ID %u\n", stream,
+	       info.unicast.cig_id, info.unicast.cis_id);
 
 	k_sem_give(&sem_stream_qos);
 }
@@ -271,6 +277,8 @@ static void stream_connected_cb(struct bt_bap_stream *stream)
 static void stream_started(struct bt_bap_stream *stream)
 {
 	printk("Audio Stream %p started\n", stream);
+	unicast_audio_recv_ctr = 0U;
+
 	/* Register the stream for TX if it can send */
 	if (IS_ENABLED(CONFIG_BT_AUDIO_TX) && stream_tx_can_send(stream)) {
 		const int err = stream_tx_register(stream);
@@ -318,8 +326,12 @@ static void stream_recv(struct bt_bap_stream *stream,
 {
 	if (info->flags & BT_ISO_FLAGS_VALID) {
 		unicast_audio_recv_ctr++;
-		printk("Incoming audio on stream %p len %u (%"PRIu64")\n", stream, buf->len,
-			unicast_audio_recv_ctr);
+
+		if (CONFIG_INFO_REPORTING_INTERVAL > 0 &&
+		    (unicast_audio_recv_ctr % CONFIG_INFO_REPORTING_INTERVAL) == 0U) {
+			printk("Incoming audio on stream %p len %u (%" PRIu64 ")\n", stream,
+			       buf->len, unicast_audio_recv_ctr);
+		}
 	}
 }
 

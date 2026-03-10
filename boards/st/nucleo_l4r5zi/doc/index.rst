@@ -32,7 +32,7 @@ The STM32L4R5ZI SoC provides the following hardware IPs:
 
 - Ultra-low-power with FlexPowerControl (down to 130 nA Standby mode
   and 100 uA/MHz run mode)
-- Core: ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU, adaptive
+- Core: ARM® 32-bit Cortex®-M4 CPU with FPU, adaptive
   real-time accelerator (ART Accelerator) allowing 0-wait-state
   execution from Flash memory, frequency up to 120 MHz, MPU, 150
   DMIPS/1.25 DMIPS/MHz (Dhrystone 2.1), and DSP instructions
@@ -40,10 +40,10 @@ The STM32L4R5ZI SoC provides the following hardware IPs:
 
   - 4 to 48 MHz crystal oscillator
   - 32 kHz crystal oscillator for RTC (LSE)
-  - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
-  - Internal low-power 32 kHz RC ( |plusminus| 5%)
+  - Internal 16 MHz factory-trimmed RC (±1%)
+  - Internal low-power 32 kHz RC (±5%)
   - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by
-    LSE (better than |plusminus| 0.25 % accuracy)
+    LSE (better than ±0.25 % accuracy)
   - Internal 48 MHz with clock recovery
   - 3 PLLs for system clock, USB, audio, ADC
 
@@ -109,39 +109,7 @@ More information about STM32L4R5ZI can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_l4r5zi board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_l4r5zi/nucleo_l4r5zi_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -213,6 +181,8 @@ Ethernet over USB is configured as the default network interface (EEM)
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The NUCLEO-L4R5ZI board includes a ST-LINK/V2 embedded debug tool interface.
 

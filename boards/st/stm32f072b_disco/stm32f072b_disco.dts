@@ -8,6 +8,7 @@
 #include <st/f0/stm32f072Xb.dtsi>
 #include <st/f0/stm32f072r(8-b)tx-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/input/stm32-tsc-defines.h>
 
 / {
 	model = "STMicroelectronics STM32F072B-DISCO board";
@@ -23,18 +24,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_up_led_3: led_3 {
 			gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
+
 		yellow_left_4: led_4 {
 			gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
 		};
+
 		green_right_led_5: led_5 {
 			gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
 			label = "User LD5";
 		};
+
 		blue_low_led_6: led_6 {
 			gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
 			label = "User LD6";
@@ -43,6 +48,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
@@ -52,6 +58,7 @@
 
 	pwmleds: pwmleds {
 		compatible = "pwm-leds";
+		/* NOTE: disabled by default; TIM3_CH1 shares LD3 pin PC6 */
 		status = "disabled";
 
 		red_pwm_led: red_pwm_led {
@@ -133,5 +140,65 @@
 		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pc6>;
 		pinctrl-names = "default";
+	};
+};
+
+&tsc {
+	status = "okay";
+	pinctrl-0 = <&tsc_g1_io3_pa2 &tsc_g1_io4_pa3 &tsc_g2_io3_pa6 &tsc_g2_io4_pa7 &tsc_g3_io2_pb0
+		     &tsc_g3_io3_pb1>;
+	pinctrl-names = "default";
+
+	st,pulse-generator-prescaler = <2>;
+	st,charge-transfer-pulse-high = <2>;
+	st,charge-transfer-pulse-low = <2>;
+	st,spread-spectrum;
+	st,spread-spectrum-prescaler = <2>;
+	st,spread-spectrum-deviation = <100>;
+	st,max-count-value = <8191>;
+
+	tsc_group1: g1 {
+		group = <1>;
+		channel-ios = <TSC_IO3>;
+		sampling-io = <TSC_IO4>;
+
+		ts2 {
+			compatible = "tsc-keys";
+			sampling-interval-ms = <10>;
+			oversampling = <10>;
+			noise-threshold = <50>;
+			sticky-key-timeout-ms = <10000>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+
+	tsc_group2: g2 {
+		group = <2>;
+		channel-ios = <TSC_IO3>;
+		sampling-io = <TSC_IO4>;
+
+		ts0 {
+			compatible = "tsc-keys";
+			sampling-interval-ms = <10>;
+			oversampling = <10>;
+			noise-threshold = <50>;
+			sticky-key-timeout-ms = <10000>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	tsc_group3: g3 {
+		group = <3>;
+		channel-ios = <TSC_IO2>;
+		sampling-io = <TSC_IO3>;
+
+		ts1 {
+			compatible = "tsc-keys";
+			sampling-interval-ms = <10>;
+			oversampling = <10>;
+			noise-threshold = <50>;
+			sticky-key-timeout-ms = <10000>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
 	};
 };

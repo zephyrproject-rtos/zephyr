@@ -40,7 +40,7 @@ integration.
 
 If ``harness: pytest`` is used, twister delegates the test execution to pytest, by calling it as
 a subprocess. Required parameters (such as build directory, device to be used, etc.) are passed
-through a CLI command. When pytest is done, twister looks for a pytest report (results.xml) and
+through a YAML configuration file. When pytest is done, twister looks for a pytest report (results.xml) and
 sets the test result accordingly.
 
 How to create a pytest test
@@ -120,7 +120,7 @@ writing tests which are device-type-agnostic. Scope of this fixture is determine
    from twister_harness import DeviceAdapter
 
    def test_sample(dut: DeviceAdapter):
-      dut.readlines_until('Hello world')
+      dut.readlines_until(regex='Hello world')
 
 shell
 =====
@@ -182,7 +182,7 @@ device.
 
    def test_sample(unlaunched_dut: DeviceAdapter):
       unlaunched_dut.launch()
-      unlaunched_dut.readlines_until('Hello world')
+      unlaunched_dut.readlines_until(regex='Hello world')
 
 Classes
 *******
@@ -194,7 +194,7 @@ DeviceAdapter
 
    .. automethod:: launch
 
-   .. automethod:: connect
+   .. automethod:: close
 
    .. automethod:: readline
 
@@ -203,10 +203,6 @@ DeviceAdapter
    .. automethod:: readlines_until
 
    .. automethod:: write
-
-   .. automethod:: disconnect
-
-   .. automethod:: close
 
 .. _shell_class:
 
@@ -300,6 +296,32 @@ How to rerun locally pytest tests without rebuilding application by Twister?
    command. Another way is running Twister with highest verbosity level (``-vv``) and then
    copy-pasting from logs command dedicated for spawning pytest (log started by ``Running pytest
    command: ...``).
+
+   First, run scenario with Twister:
+
+   .. code-block:: console
+
+      $ west twister -vv -ll debug -T samples/subsys/testsuite/pytest/shell \
+      -s sample.pytest.shell --device-testing -p nrf54l15dk/nrf54l15/cpuapp --device-serial \
+      /dev/ttyACM1 --west-flash=--erase
+
+   Twister automatically generates a configuration file ``twister_pytest_config.yaml`` in the build
+   directory containing all test parameters including device configuration etc.
+
+   Then export the required PYTHONPATH environment variable if not already set:
+
+   .. code-block:: console
+
+      $ export PYTHONPATH=$ZEPHYR_BASE/scripts/pylib/pytest-twister-harness/src
+
+   Finally, run pytest command:
+
+   .. code-block:: console
+
+      $ pytest -s -v -p twister_harness.plugin \
+      --twister-config=twister-out/.../sample.pytest.shell/twister_pytest_config.yaml \
+      samples/subsys/testsuite/pytest/shell/pytest
+
 
 Is this possible to run pytest tests in parallel?
 =================================================

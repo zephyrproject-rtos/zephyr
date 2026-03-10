@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  CPU based Stepper Motion Controller for controlling stepper motors using GPIO pins.
+  It is used to generate step and direction signals for a stepper motor driver.
+
+compatible: "zephyr,gpio-step-dir-stepper-ctrl"
+
+properties:
+  invert-direction:
+    type: boolean
+    description: |
+      Invert motor direction.
+
+  step-gpios:
+    type: phandle-array
+    description: |
+      The GPIO pins used to send step signals to the stepper motor.
+
+  dir-gpios:
+    type: phandle-array
+    description: |
+      The GPIO pins used to send direction signals to the stepper motor.
+      Pin will be driven high for forward direction and low for reverse direction.
+
+  counter:
+    type: phandle
+    description: |
+      Counter used for generating step-accurate pulse signals.
+      This should be a reference to a counter node in the device tree.
+      When this property is present, the stepper motion controller will use
+      the counter as a timing source instead of the default work queue timing.
+      This enables more precise step timing control.
+
+      Note: The counter needs to support both set_top_value functionalities:
+            - Setting a new top value
+            - Attaching an ISR to the turnaround
+
+  stepper-driver:
+    type: phandle
+    description: |
+      Reference to the stepper driver device.
+      This property, if provided, will result in configuring the driver with the
+      step-width-ns and dual-edge-step properties from the stepper driver node.
+
+examples:
+  - |
+    step_dir_motion_control: motion-controller {
+        compatible = "zephyr,gpio-step-dir-stepper-ctrl";
+        step-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+        dir-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+        invert-direction;
+        counter = <&counter1>;
+        stepper-driver = <&tmc2209>; /* Optional stepper hardware driver reference */
+    };

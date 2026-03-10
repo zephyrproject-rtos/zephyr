@@ -25,6 +25,8 @@ LOG_MODULE_REGISTER(net_echo_client_sample, LOG_LEVEL_DBG);
 #include <stdio.h>
 
 #include <zephyr/posix/sys/eventfd.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/poll.h>
 
 #include <zephyr/misc/lorem_ipsum.h>
 #include <zephyr/net/socket.h>
@@ -229,7 +231,7 @@ static int check_our_ipv6_sockets(int sock,
 }
 
 static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
-			       uint32_t mgmt_event, struct net_if *iface)
+			       uint64_t mgmt_event, struct net_if *iface)
 {
 	static char addr_str[INET6_ADDRSTRLEN];
 
@@ -297,7 +299,7 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 }
 
 static void event_handler(struct net_mgmt_event_callback *cb,
-			  uint32_t mgmt_event, struct net_if *iface)
+			  uint64_t mgmt_event, struct net_if *iface)
 {
 	if ((mgmt_event & EVENT_MASK) != mgmt_event) {
 		return;

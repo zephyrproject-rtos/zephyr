@@ -9,11 +9,28 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/storage/flash_map.h>
+#include <zephyr/drivers/gpio.h>
 
-#if defined(CONFIG_NORDIC_QSPI_NOR)
+#if defined(CONFIG_TEST_FORCE_STORAGE_PARTITION)
+#define TEST_AREA	storage_partition
+#elif defined(CONFIG_NORDIC_QSPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, nordic_qspi_nor)
+#elif defined(SOC_SERIES_STM32N6X)
+#define TEST_AREA_DEV_NODE	DT_INST(0, st_stm32_xspi_nor)
+#elif defined(CONFIG_FLASH_RENESAS_RA_OSPI_B)
+#define TEST_AREA_DEV_NODE	DT_INST(0, renesas_ra_ospi_b_nor)
 #elif defined(CONFIG_SPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, jedec_spi_nor)
+#elif defined(CONFIG_FLASH_MSPI_NOR)
+#define TEST_AREA_DEV_NODE	DT_INST(0, jedec_mspi_nor)
+#elif defined(CONFIG_FLASH_RENESAS_RA_QSPI)
+#define TEST_AREA_DEV_NODE DT_INST(0, renesas_ra_qspi_nor)
+#elif defined(CONFIG_FLASH_RENESAS_RZ_QSPI_XSPI)
+#define TEST_AREA_DEV_NODE DT_INST(0, renesas_rz_qspi_xspi)
+#elif defined(CONFIG_FLASH_RENESAS_RZ_QSPI_SPIBSC)
+#define TEST_AREA_DEV_NODE DT_INST(0, renesas_rz_qspi_spibsc)
+#elif defined(CONFIG_FLASH_RENESAS_RZA2M_QSPI_SPIBSC)
+#define TEST_AREA_DEV_NODE DT_INST(0, renesas_rza2m_qspi_spibsc)
 #else
 #define TEST_AREA	storage_partition
 #endif
@@ -22,6 +39,7 @@
  * fixed-partition nodes.
  */
 #ifdef TEST_AREA
+
 #define TEST_AREA_OFFSET	FIXED_PARTITION_OFFSET(TEST_AREA)
 #define TEST_AREA_SIZE		FIXED_PARTITION_SIZE(TEST_AREA)
 #define TEST_AREA_MAX		(TEST_AREA_OFFSET + TEST_AREA_SIZE)
@@ -30,16 +48,22 @@
 #elif defined(TEST_AREA_DEV_NODE)
 
 #define TEST_AREA_DEVICE	DEVICE_DT_GET(TEST_AREA_DEV_NODE)
+#if defined CONFIG_FLASH_RENESAS_RA_OSPI_B
+#define TEST_AREA_OFFSET	0x40000
+#else
 #define TEST_AREA_OFFSET	0xff000
+#endif
 
 #if DT_NODE_HAS_PROP(TEST_AREA_DEV_NODE, size_in_bytes)
 #define TEST_AREA_MAX DT_PROP(TEST_AREA_DEV_NODE, size_in_bytes)
-#else
+#elif DT_NODE_HAS_PROP(TEST_AREA_DEV_NODE, size)
 #define TEST_AREA_MAX (DT_PROP(TEST_AREA_DEV_NODE, size) / 8)
+#else
+#define TEST_AREA_MAX DT_REG_SIZE(TEST_AREA_DEV_NODE)
 #endif
 
 #else
-#error "Unsupported configuraiton"
+#error "Unsupported configuration"
 #endif
 
 #define EXPECTED_SIZE	512
@@ -47,6 +71,11 @@
 #if !defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE) &&		\
 	!defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
 #error There is no flash device enabled or it is missing Kconfig options
+#endif
+
+#if DT_NODE_HAS_PROP(DT_BUS(TEST_AREA_DEV_NODE), packet_data_limit)
+#define CONTROLLER_PACKET_DATA_LIMIT  DT_PROP(DT_BUS(TEST_AREA_DEV_NODE), packet_data_limit)
+#define BUFFER_SIZE_OVER_PACKET_LIMIT CONTROLLER_PACKET_DATA_LIMIT + 1
 #endif
 
 static const struct device *const flash_dev = TEST_AREA_DEVICE;
@@ -77,7 +106,8 @@ static void flash_driver_before(void *arg)
 		TC_PRINT("No devices with erase requirement present\n");
 		erase_value = 0x55;
 		page_info.start_offset = TEST_AREA_OFFSET;
-		page_info.size = TEST_AREA_MAX - TEST_AREA_OFFSET;
+		/* test_flash_copy uses 2 pages, so split the test area */
+		page_info.size = (TEST_AREA_MAX - TEST_AREA_OFFSET) / 2;
 	}
 
 
@@ -100,6 +130,10 @@ static void flash_driver_before(void *arg)
 	/* Check if tested region fits in flash */
 	zassert_true((TEST_AREA_OFFSET + EXPECTED_SIZE) <= TEST_AREA_MAX,
 		     "Test area exceeds flash size");
+
+	/* Check if test region is suitable for test_flash_copy */
+	zassert_true((TEST_AREA_OFFSET + 2 * page_info.size) <= TEST_AREA_MAX,
+		     "test_flash_copy needs 2 flash pages");
 
 	/* Check if flash is cleared */
 	if (IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE) && ebw_required) {
@@ -167,14 +201,14 @@ ZTEST(flash_driver, test_read_unaligned_address)
 						expected + ad_o,
 						len),
 					0, "Flash read failed at len=%d, "
-					"ad_o=%d, buf_o=%d", len, ad_o, buf_o);
+					"ad_o=%d, buf_o=%d", (int)len, (int)ad_o, (int)buf_o);
 				/* check buffer guards */
 				zassert_equal(buf[buf_o - 1], canary,
 					"Buffer underflow at len=%d, "
-					"ad_o=%d, buf_o=%d", len, ad_o, buf_o);
+					"ad_o=%d, buf_o=%d", (int)len, (int)ad_o, (int)buf_o);
 				zassert_equal(buf[buf_o + len], canary,
 					"Buffer overflow at len=%d, "
-					"ad_o=%d, buf_o=%d", len, ad_o, buf_o);
+					"ad_o=%d, buf_o=%d", (int)len, (int)ad_o, (int)buf_o);
 			}
 		}
 	}
@@ -307,9 +341,58 @@ ZTEST(flash_driver, test_flash_erase)
 	zassert_not_equal(expected[0], erase_value, "These values shall be different");
 }
 
+ZTEST(flash_driver, test_flash_write_read_over_the_packet_limit)
+{
+
+#if !defined(CONTROLLER_PACKET_DATA_LIMIT)
+	TC_PRINT("Given bus controller does not have 'packet_data_limit' property\n");
+	ztest_test_skip();
+#else
+	int rc;
+	const uint8_t pattern = 0xA1;
+	static uint8_t large_data_buf[BUFFER_SIZE_OVER_PACKET_LIMIT];
+
+	/* Flatten area corresponding to the size of two packets */
+	rc = flash_flatten(flash_dev, page_info.start_offset, 2 * CONTROLLER_PACKET_DATA_LIMIT);
+	zassert_equal(rc, 0, "Flash flatten failed: %d", rc);
+
+	/* Fill flash area with buffer size over the configured packet limit */
+	rc = flash_fill(flash_dev, pattern, page_info.start_offset, BUFFER_SIZE_OVER_PACKET_LIMIT);
+	zassert_equal(rc, 0, "Flash fill failed");
+
+	/* Read flash area with buffer size over the MSPI packet limit */
+	rc = flash_read(flash_dev, page_info.start_offset, large_data_buf,
+			BUFFER_SIZE_OVER_PACKET_LIMIT);
+	zassert_equal(rc, 0, "Flash read failed");
+
+	/* Compare read data to the pre-defined pattern */
+	for (int i = 0; i < BUFFER_SIZE_OVER_PACKET_LIMIT; i++) {
+		zassert_equal(large_data_buf[i], pattern,
+			      "large_data_buf[%u]=%x read, does not match written pattern %x", i,
+			      large_data_buf[i], pattern);
+	}
+#endif
+}
+
+ZTEST(flash_driver, test_supply_gpios_control)
+{
+	if (!DT_NODE_HAS_PROP(TEST_AREA_DEV_NODE, supply_gpios)) {
+		ztest_test_skip();
+	}
+
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), test_gpios)
+	const struct gpio_dt_spec test_gpio =
+		GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), test_gpios);
+	zassert_true(gpio_is_ready_dt(&test_gpio), "Test GPIO is not ready\n");
+	zassert_ok(gpio_pin_configure_dt(&test_gpio, GPIO_INPUT | GPIO_PULL_DOWN),
+		   "Failed to configure test pin\n");
+	zassert_equal(gpio_pin_get(test_gpio.port, test_gpio.pin), 1, "Supply GPIO is not set\n");
+#endif
+}
+
 struct test_cb_data_type {
-	uint32_t page_counter; /* used to count how many pages was iterated */
-	uint32_t exit_page;    /* terminate iteration when this page is reached */
+	size_t page_counter; /* used to count how many pages was iterated */
+	size_t exit_page;    /* terminate iteration when this page is reached */
 };
 
 static bool flash_callback(const struct flash_pages_info *info, void *data)
@@ -368,7 +451,7 @@ ZTEST(flash_driver, test_flash_page_layout)
 	zassert_equal(page_info_off.index, page_info_idx.index);
 
 	page_count = flash_get_page_count(flash_dev);
-	TC_PRINT("page_count=%d\n", (int)page_count);
+	TC_PRINT("page_count=%zu\n", page_count);
 	zassert_true(page_count > 0, "flash_get_page_count returned %d", rc);
 	zassert_true(page_count >= page_info_off.index);
 
@@ -376,7 +459,7 @@ ZTEST(flash_driver, test_flash_page_layout)
 	test_cb_data.exit_page = page_count + 1;
 	flash_page_foreach(flash_dev, flash_callback, &test_cb_data);
 	zassert_true(page_count == test_cb_data.page_counter,
-		     "page_count = %d not equal to pages counted with cb = %d", page_count,
+		     "page_count = %zu not equal to pages counted with cb = %zu", page_count,
 		     test_cb_data.page_counter);
 
 	/* Test that callback can cancell iteration */
@@ -384,7 +467,7 @@ ZTEST(flash_driver, test_flash_page_layout)
 	test_cb_data.exit_page = page_count >> 1;
 	flash_page_foreach(flash_dev, flash_callback, &test_cb_data);
 	zassert_true(test_cb_data.exit_page == test_cb_data.page_counter,
-		     "%d pages were iterated while it shall stop on page %d",
+		     "%zu pages were iterated while it shall stop on page %zu",
 		     test_cb_data.page_counter, test_cb_data.exit_page);
 }
 
@@ -406,7 +489,7 @@ static void test_flash_copy_inner(const struct device *src_dev, off_t src_offset
 	actual_result = flash_copy(src_dev, src_offset, dst_dev, dst_offset, size, buf, buf_size);
 	zassert_equal(actual_result, expected_result,
 		      "flash_copy(%p, %lx, %p, %lx, %zu, %p, %zu) failed: expected: %d actual: %d",
-		      src_dev, src_offset, dst_dev, dst_offset, size, buf, buf_size,
+		      src_dev, src_offset, dst_dev, dst_offset, (size_t)size, buf, buf_size,
 		      expected_result, actual_result);
 
 	if ((expected_result == 0) && (size != 0) && (src_offset != dst_offset)) {
@@ -460,8 +543,8 @@ ZTEST(flash_driver, test_flash_copy)
 
 	/* copy with overlapping ranges should fail */
 	test_flash_copy_inner(flash_dev, page_info.start_offset, flash_dev,
-			      page_info.start_offset + 32, page_info.size - 32, buf, sizeof(buf),
-			      -EINVAL);
+			      page_info.start_offset + (page_info.size / 4),
+			      page_info.size - (page_info.size / 4), buf, sizeof(buf), -EINVAL);
 }
 
 ZTEST_SUITE(flash_driver, NULL, NULL, flash_driver_before, NULL, NULL);

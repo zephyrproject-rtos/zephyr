@@ -172,9 +172,90 @@ static void set_on_state(uint32_t *flags)
 	irq_unlock(key);
 }
 
+#ifdef CONFIG_CLOCK_CONTROL_NRF_HFINT_CALIBRATION
+
+static void nrf54l_errata_30_workaround(void)
+{
+	while (FIELD_GET(CLOCK_XO_STAT_STATE_Msk, NRF_CLOCK->XO.STAT) !=
+	       CLOCK_XO_STAT_STATE_Running) {
+	}
+	const uint32_t higher_bits = *((volatile uint32_t *)0x50120820UL) & 0xFFFFFFC0;
+	*((volatile uint32_t *)0x50120864UL) = 1 | BIT(31);
+	*((volatile uint32_t *)0x50120848UL) = 1;
+	uint32_t off_abs = 24;
+
+	while (off_abs >= 24) {
+		*((volatile uint32_t *)0x50120844UL) = 1;
+		while (((*((volatile uint32_t *)0x50120840UL)) & (1 << 16)) != 0) {
+		}
+		const uint32_t current_cal = *((volatile uint32_t *)0x50120820UL) & 0x3F;
+		const uint32_t cal_result = *((volatile uint32_t *)0x50120840UL) & 0x7FF;
+		int32_t off = 1024 - cal_result;
+
+		off_abs = (off < 0) ? -off : off;
+
+		if (off >= 24 && current_cal < 0x3F) {
+			*((volatile uint32_t *)0x50120820UL) = higher_bits | (current_cal + 1);
+		} else if (off <= -24 && current_cal > 0) {
+			*((volatile uint32_t *)0x50120820UL) = higher_bits | (current_cal - 1);
+		}
+	}
+
+	*((volatile uint32_t *)0x50120848UL) = 0;
+	*((volatile uint32_t *)0x50120864UL) = 0;
+}
+
+#if CONFIG_CLOCK_CONTROL_NRF_HFINT_CALIBRATION_PERIOD
+
+static struct onoff_client hf_cal_cli;
+
+static void calibration_finished_callback(struct onoff_manager *mgr,
+					  struct onoff_client *cli,
+					  uint32_t state,
+					  int res)
+{
+	(void)onoff_cancel_or_release(mgr, cli);
+}
+
+static void calibration_handler(struct k_timer *timer)
+{
+	nrf_clock_hfclk_t clk_src;
+
+	bool ret = nrfx_clock_is_running(NRF_CLOCK_DOMAIN_HFCLK, &clk_src);
+
+	if (ret && (clk_src == NRF_CLOCK_HFCLK_HIGH_ACCURACY)) {
+		return;
+	}
+
+	sys_notify_init_callback(&hf_cal_cli.notify, calibration_finished_callback);
+	(void)onoff_request(z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF),
+			    &hf_cal_cli);
+}
+
+static K_TIMER_DEFINE(calibration_timer, calibration_handler, NULL);
+
+static int calibration_init(void)
+{
+	k_timer_start(&calibration_timer,
+		      K_NO_WAIT,
+		      K_MSEC(CONFIG_CLOCK_CONTROL_NRF_HFINT_CALIBRATION_PERIOD));
+
+	return 0;
+}
+
+SYS_INIT(calibration_init, APPLICATION, 0);
+
+#endif /* CONFIG_CLOCK_CONTROL_NRF_HFINT_CALIBRATION_PERIOD */
+#endif /* CONFIG_CLOCK_CONTROL_NRF_HFINT_CALIBRATION */
+
 static void clkstarted_handle(const struct device *dev,
 			      enum clock_control_nrf_type type)
 {
+#if CONFIG_CLOCK_CONTROL_NRF_HFINT_CALIBRATION
+	if (NRF_ERRATA_DYNAMIC_CHECK(54L, 30) && (type == CLOCK_CONTROL_NRF_TYPE_HFCLK)) {
+		nrf54l_errata_30_workaround();
+	}
+#endif
 	struct nrf_clock_control_sub_data *sub_data = get_sub_data(dev, type);
 	clock_control_cb_t callback = sub_data->cb;
 	void *user_data = sub_data->user_data;
@@ -235,7 +316,7 @@ static void hfclk_start(void)
 		hf_start_tstamp = k_uptime_get();
 	}
 
-	nrfx_clock_hfclk_start();
+	nrfx_clock_start(NRF_CLOCK_DOMAIN_HFCLK);
 }
 
 static void hfclk_stop(void)
@@ -244,8 +325,20 @@ static void hfclk_stop(void)
 		hf_stop_tstamp = k_uptime_get();
 	}
 
-	nrfx_clock_hfclk_stop();
+	nrfx_clock_stop(NRF_CLOCK_DOMAIN_HFCLK);
 }
+
+#if NRF_CLOCK_HAS_HFCLK24M
+static void hfclk24m_start(void)
+{
+	nrfx_clock_start(NRF_CLOCK_DOMAIN_HFCLK24M);
+}
+
+static void hfclk24m_stop(void)
+{
+	nrfx_clock_stop(NRF_CLOCK_DOMAIN_HFCLK24M);
+}
+#endif
 
 #if NRF_CLOCK_HAS_HFCLK192M
 static void hfclk192m_start(void)
@@ -354,6 +447,13 @@ void z_nrf_clock_bt_ctlr_hf_release(void)
 	irq_unlock(key);
 }
 
+#if DT_NODE_EXISTS(DT_NODELABEL(hfxo))
+uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void)
+{
+	return DT_PROP(DT_NODELABEL(hfxo), startup_time_us);
+}
+#endif
+
 static int stop(const struct device *dev, clock_control_subsys_t subsys,
 		uint32_t ctx)
 {
@@ -393,7 +493,7 @@ static int async_start(const struct device *dev, clock_control_subsys_t subsys,
 	subdata->cb = cb;
 	subdata->user_data = user_data;
 
-	 get_sub_config(dev, type)->start();
+	get_sub_config(dev, type)->start();
 
 	return 0;
 }
@@ -594,25 +694,49 @@ void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode)
 	}
 }
 
+static void hfclkstarted_handle(const struct device *dev)
+{
+	struct nrf_clock_control_sub_data *data =
+			get_sub_data(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK);
+
+	if (GET_STATUS(data->flags) == CLOCK_CONTROL_STATUS_STARTING) {
+		/* Handler is called only if state is set. BT specific API
+		 * does not set this state and does not require handler to
+		 * be called.
+		 */
+		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK);
+	}
+}
+
 static void clock_event_handler(nrfx_clock_evt_type_t event)
 {
 	const struct device *dev = CLOCK_DEVICE;
 
 	switch (event) {
-	case NRFX_CLOCK_EVT_HFCLK_STARTED:
-	{
-		struct nrf_clock_control_sub_data *data =
-				get_sub_data(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK);
-
-		/* Check needed due to anomaly 201:
-		 * HFCLKSTARTED may be generated twice.
-		 */
-		if (GET_STATUS(data->flags) == CLOCK_CONTROL_STATUS_STARTING) {
-			clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK);
-		}
-
+#if NRF_CLOCK_HAS_XO_TUNE
+	case NRFX_CLOCK_EVT_XO_TUNED:
+		hfclkstarted_handle(dev);
 		break;
-	}
+	case NRFX_CLOCK_EVT_XO_TUNE_ERROR:
+	case NRFX_CLOCK_EVT_XO_TUNE_FAILED:
+		/* No processing needed. */
+		break;
+	case NRFX_CLOCK_EVT_HFCLK_STARTED:
+		/* HFCLK is stable after XOTUNED event.
+		 * HFCLK_STARTED means only that clock has been started.
+		 */
+		break;
+#else
+	/* HFCLK started should be used only if tune operation is done implicitly. */
+	case NRFX_CLOCK_EVT_HFCLK_STARTED:
+		hfclkstarted_handle(dev);
+		break;
+#endif
+#if NRF_CLOCK_HAS_HFCLK24M
+	case NRFX_CLOCK_EVT_HFCLK24M_STARTED:
+		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK24M);
+		break;
+#endif
 #if NRF_CLOCK_HAS_HFCLK192M
 	case NRFX_CLOCK_EVT_HFCLK192M_STARTED:
 		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK192M);
@@ -629,6 +753,7 @@ static void clock_event_handler(nrfx_clock_evt_type_t event)
 		}
 		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_LFCLK);
 		break;
+#if NRF_CLOCK_HAS_CALIBRATION || NRF_LFRC_HAS_CALIBRATION
 	case NRFX_CLOCK_EVT_CAL_DONE:
 		if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_DRIVER_CALIBRATION)) {
 			z_nrf_clock_calibration_done_handler();
@@ -637,16 +762,12 @@ static void clock_event_handler(nrfx_clock_evt_type_t event)
 			__ASSERT_NO_MSG(false);
 		}
 		break;
-	case NRFX_CLOCK_EVT_PLL_STARTED:
-#if NRF_CLOCK_HAS_XO_TUNE
-	case NRFX_CLOCK_EVT_XO_TUNED:
-	case NRFX_CLOCK_EVT_XO_TUNE_ERROR:
-	case NRFX_CLOCK_EVT_XO_TUNE_FAILED:
 #endif
-	{
-		/* unhandled event */
+#if NRF_CLOCK_HAS_PLL
+	case NRFX_CLOCK_EVT_PLL_STARTED:
+		/* No processing needed. */
 		break;
-	}
+#endif
 	default:
 		__ASSERT_NO_MSG(0);
 		break;
@@ -675,18 +796,20 @@ static void hfclkaudio_init(void)
 
 static int clk_init(const struct device *dev)
 {
-	nrfx_err_t nrfx_err;
 	int err;
 	static const struct onoff_transitions transitions = {
 		.start = onoff_start,
 		.stop = onoff_stop
 	};
 
+#if NRF_LFRC_HAS_CALIBRATION
+	IRQ_CONNECT(LFRC_IRQn, DT_INST_IRQ(0, priority), nrfx_isr, nrfx_power_clock_irq_handler, 0);
+#endif
+
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    nrfx_isr, nrfx_power_clock_irq_handler, 0);
 
-	nrfx_err = nrfx_clock_init(clock_event_handler);
-	if (nrfx_err != NRFX_SUCCESS) {
+	if (nrfx_clock_init(clock_event_handler) != 0) {
 		return -EIO;
 	}
 
@@ -738,6 +861,13 @@ static const struct nrf_clock_control_config config = {
 			.stop = lfclk_stop,
 			IF_ENABLED(CONFIG_LOG, (.name = "lfclk",))
 		},
+#if NRF_CLOCK_HAS_HFCLK24M
+		[CLOCK_CONTROL_NRF_TYPE_HFCLK24M] = {
+			.start = hfclk24m_start,
+			.stop = hfclk24m_stop,
+			IF_ENABLED(CONFIG_LOG, (.name = "hfclk24m",))
+		},
+#endif
 #if NRF_CLOCK_HAS_HFCLK192M
 		[CLOCK_CONTROL_NRF_TYPE_HFCLK192M] = {
 			.start = hfclk192m_start,

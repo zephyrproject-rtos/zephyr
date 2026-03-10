@@ -1,7 +1,4 @@
-.. _it8xxx2_evb:
-
-ITE IT8XXX2 series
-######################
+.. zephyr:board:: it8xxx2_evb
 
 Overview
 ********
@@ -37,42 +34,8 @@ Listing the IT81302 hardware features as following:
 
 Supported Features
 ==================
-currently supports the following hardware features:
 
-.. list-table:: Supported Features
-   :header-rows: 1
-   :widths: auto
-
-   * - Interface
-     - Controller
-     - Driver/Component
-   * - NVIC
-     - on-chip
-     - interrupt controller
-   * - TIMER
-     - on-chip
-     - timer
-   * - UART
-     - on-chip
-     - serial
-   * - GPIO
-     - on-chip
-     - gpio
-   * - ADC
-     - on-chip
-     - adc
-   * - I2C
-     - on-chip
-     - i2c
-   * - KSCAN
-     - on-chip
-     - kscan
-
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the
-:zephyr_file:`boards/ite/it8xxx2_evb/it8xxx2_evb_defconfig` Kconfig file.
+.. zephyr:board-supported-hw::
 
 Hardware reworks
 ****************
@@ -153,7 +116,7 @@ Use the winflash tool to program a zephyr application
 to the it8xxx2 board flash.
 
 #. Open winflash tool and make sure the order you open the switch is right.
-   Fisrt, turn on the Download board switch.
+   First, turn on the Download board switch.
    Second, turn on the it8xxx2_evb board switch.
    Then, configure your winflash tool like below.
 
@@ -164,7 +127,7 @@ to the it8xxx2 board flash.
 
 #. Using winflash tool flash zephyr.bin into your ITE board.
    First, click ``Load`` button and select your zephyr.bin file.
-   Second, click ``run`` to flash the iamge into board.
+   Second, click ``run`` to flash the image into board.
 
     .. figure:: WinFlashTool_P3.jpg
           :align: center

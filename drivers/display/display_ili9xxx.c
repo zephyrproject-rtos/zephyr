@@ -7,8 +7,7 @@
  */
 
 #include "display_ili9xxx.h"
-
-#include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -295,7 +294,7 @@ ili9xxx_set_pixel_format(const struct device *dev,
 	uint8_t tx_data;
 	uint8_t bytes_per_pixel;
 
-	if (pixel_format == PIXEL_FORMAT_RGB_565) {
+	if (pixel_format == PIXEL_FORMAT_RGB_565  || pixel_format == PIXEL_FORMAT_RGB_565X) {
 		bytes_per_pixel = 2U;
 		tx_data = ILI9XXX_PIXSET_MCU_16_BIT | ILI9XXX_PIXSET_RGB_16_BIT;
 	} else if (pixel_format == PIXEL_FORMAT_RGB_888) {
@@ -324,14 +323,15 @@ static int ili9xxx_set_orientation(const struct device *dev,
 	struct ili9xxx_data *data = dev->data;
 
 	int r;
-	uint8_t tx_data = ILI9XXX_MADCTL_BGR;
+	uint8_t tx_data = data->pixel_format == PIXEL_FORMAT_RGB_565X
+			? ILI9XXX_MADCTL_BGR : 0;
 	if (config->quirks->cmd_set == CMD_SET_1) {
 		if (orientation == DISPLAY_ORIENTATION_NORMAL) {
 			tx_data |= ILI9XXX_MADCTL_MX;
 		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
 			tx_data |= ILI9XXX_MADCTL_MV;
 		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-			tx_data |= ILI9XXX_MADCTL_MY;
+			tx_data |= ILI9XXX_MADCTL_MY | ILI9XXX_MADCTL_ML;
 		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
 			tx_data |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MX |
 				   ILI9XXX_MADCTL_MY;
@@ -342,7 +342,8 @@ static int ili9xxx_set_orientation(const struct device *dev,
 		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
 			tx_data |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MY;
 		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-			tx_data |= ILI9XXX_MADCTL_MY | ILI9XXX_MADCTL_MX;
+			tx_data |= ILI9XXX_MADCTL_MY | ILI9XXX_MADCTL_MX |
+				   ILI9XXX_MADCTL_ML;
 		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
 			tx_data |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MX;
 		}
@@ -367,7 +368,7 @@ static void ili9xxx_get_capabilities(const struct device *dev,
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 
 	capabilities->supported_pixel_formats =
-		PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888;
+		PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_RGB_565X;
 	capabilities->current_pixel_format = data->pixel_format;
 
 	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
@@ -391,10 +392,15 @@ static int ili9xxx_configure(const struct device *dev)
 	enum display_orientation orientation;
 
 	/* pixel format */
-	if (config->pixel_format == ILI9XXX_PIXEL_FORMAT_RGB565) {
+	if (config->pixel_format == PANEL_PIXEL_FORMAT_RGB_565) {
 		pixel_format = PIXEL_FORMAT_RGB_565;
-	} else {
+	} else if (config->pixel_format == PANEL_PIXEL_FORMAT_RGB_565X) {
+		pixel_format = PIXEL_FORMAT_RGB_565X;
+	} else if (config->pixel_format == PANEL_PIXEL_FORMAT_RGB_888) {
 		pixel_format = PIXEL_FORMAT_RGB_888;
+	} else {
+		LOG_ERR("Unsupported pixel format in DT");
+		return -ENOTSUP;
 	}
 
 	r = ili9xxx_set_pixel_format(dev, pixel_format);
@@ -422,6 +428,20 @@ static int ili9xxx_configure(const struct device *dev)
 		r = ili9xxx_transmit(dev, ILI9XXX_DINVON, NULL, 0U);
 		if (r < 0) {
 			return r;
+		}
+	}
+
+	if (config->te_mode != MIPI_DBI_TE_NO_EDGE) {
+		/* Attempt to enable TE signal */
+		r = mipi_dbi_configure_te(config->mipi_dev, config->te_mode, 0);
+		if (r == 0) {
+			/* TE was enabled, send TEON, and enable vblank only */
+			const uint8_t tx_data = 0x0; /* Set M bit to 0 */
+
+			r = ili9xxx_transmit(dev, ILI9XXX_TEON, &tx_data, 1U);
+			if (r < 0) {
+				return r;
+			}
 		}
 	}
 
@@ -496,7 +516,7 @@ static const struct ili9xxx_quirks ili9340_quirks = {
 
 #ifdef CONFIG_ILI9341
 static const struct ili9xxx_quirks ili9341_quirks = {
-	.cmd_set = CMD_SET_1,
+	.cmd_set = CMD_SET_2,
 };
 #endif
 
@@ -535,6 +555,7 @@ static const struct ili9xxx_quirks ili9488_quirks = {
 		.x_resolution = ILI##t##_X_RES,                                \
 		.y_resolution = ILI##t##_Y_RES,                                \
 		.inversion = DT_PROP(INST_DT_ILI9XXX(n, t), display_inversion),\
+		.te_mode = MIPI_DBI_TE_MODE_DT(INST_DT_ILI9XXX(n, t), te_mode),\
 		.regs = &ili##t##_regs_##n,                                    \
 		.regs_init_fn = ili##t##_regs_init,                            \
 	};                                                                     \

@@ -1,4 +1,5 @@
-# originates from thread-local-storage.ld
+# The contents of this file is based on include/zephyr/linker/thread-local-storage.ld
+# Please keep in sync
 
 if(CONFIG_THREAD_LOCAL_STORAGE)
   zephyr_linker_section(NAME .tdata LMA FLASH NOINPUT)
@@ -12,7 +13,7 @@ if(CONFIG_THREAD_LOCAL_STORAGE)
   zephyr_linker_section_configure(SECTION .tbss INPUT ".tbss.*")
   zephyr_linker_section_configure(SECTION .tbss INPUT ".gnu.linkonce.tb.*")
   zephyr_linker_section_configure(SECTION .tbss INPUT ".tcommon")
-  # GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+  # GROUP_ROM_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
   #
   # These needs to be outside of the tdata/tbss

@@ -23,13 +23,20 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "audio_internal.h"
 
 LOG_MODULE_REGISTER(bt_tmap, CONFIG_BT_TMAP_LOG_LEVEL);
+
+/* TMAP mandates the support for CAP Handover if it supports both UMS and BMS */
+BUILD_ASSERT(!(IS_ENABLED(CONFIG_BT_TMAP_UMS_SUPPORTED) &&
+	       IS_ENABLED(CONFIG_BT_TMAP_BMS_SUPPORTED)) ||
+		     IS_ENABLED(CONFIG_BT_CAP_HANDOVER),
+	     "If both TMAP UMS is supported and TMAP BMS is supported, CONFIG_BT_CAP_HANDOVER "
+	     "shall be enabled");
 
 /* Hex value if all TMAP role bits are set */
 #define TMAP_ALL_ROLES                                                                             \
@@ -209,7 +216,7 @@ int bt_tmap_register(enum bt_tmap_role role)
 {
 	int err;
 
-	CHECKIF(!valid_tmap_role(role)) {
+	if (!valid_tmap_role(role)) {
 		LOG_DBG("Invalid role: %d", role);
 
 		return -EINVAL;

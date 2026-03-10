@@ -126,7 +126,7 @@ LOG_MODULE_REGISTER(NRFX_MODULE_PREFIX, NRFX_MODULE_LOG_LEVEL);
  * @return String containing the textual representation of the error code.
  */
 #define NRFX_LOG_ERROR_STRING_GET(error_code)  nrfx_error_string_get(error_code)
-extern char const *nrfx_error_string_get(nrfx_err_t code);
+extern char const *nrfx_error_string_get(int code);
 
 /** @} */
 

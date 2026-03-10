@@ -3,55 +3,28 @@
 Overview
 ********
 
-The Texas Instruments CC1352R LaunchPad |trade| (LAUNCHXL-CC1352R1) is a
-development kit for the SimpleLink |trade| multi-Standard CC1352R wireless MCU.
+The Texas Instruments CC1352R LaunchPad™ (LAUNCHXL-CC1352R1) is a
+development kit for the SimpleLink™ multi-Standard CC1352R wireless MCU.
 
 See the `TI CC1352R LaunchPad Product Page`_ for details.
 
 Hardware
 ********
 
-The CC1352R LaunchPad |trade| development kit features the CC1352R wireless MCU.
+The CC1352R LaunchPad™ development kit features the CC1352R wireless MCU.
 The board is equipped with two LEDs, two push buttons and BoosterPack connectors
 for expansion. It also includes an integrated (XDS110) debugger.
 
-The CC13522 wireless MCU has a 48 MHz Arm |reg| Cortex |reg|-M4F SoC and an
+The CC13522 wireless MCU has a 48 MHz Arm® Cortex®-M4F SoC and an
 integrated Sub-1 and 2.4 GHz transceiver supporting multiple protocols including
-Bluetooth |reg| Low Energy and IEEE |reg| 802.15.4.
+Bluetooth® Low Energy and IEEE® 802.15.4.
 
 See the `TI CC1352R Product Page`_ for additional details.
 
 Supported Features
 ==================
 
-The CC1352R LaunchPad board configuration supports the following hardware
-features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PINMUX    | on-chip    | pinmux               |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-| AUX_ADC   | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| HWINFO    | on-chip    | hwinfo               |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -121,6 +94,8 @@ aligns with the LaunchPad standard.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Before flashing or debugging ensure the RESET, TMS, TCK, TDO, and TDI jumpers
 are in place. Also place jumpers on the TXD and RXD signals for a serial

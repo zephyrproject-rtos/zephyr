@@ -6,24 +6,7 @@
 
 description: |
   Common timing settings for display panels. These timings can be added to
-  a panel under display-timings node. For example:
-
-  &lcdif {
-    display-timings {
-      compatible = "zephyr,panel-timing";
-      hsync-len = <8>;
-      hfront-porch = <32>;
-      hback-porch = <32>;
-      vsync-len = <2>;
-      vfront-porch = <16>;
-      vback-porch = <14>;
-      hsync-active = <0>;
-      vsync-active = <0>;
-      de-active = <1>;
-      pixelclk-active = <0>;
-      clock-frequency = <62346240>;
-    };
-  };
+  a panel under display-timings node.
 
 compatible: "zephyr,panel-timing"
 
@@ -132,3 +115,22 @@ properties:
       and sample sync on rising edge of pixel clock.
       Use 1 to drive sync on rising edge
       and sample sync on falling edge of pixel clock.
+
+examples:
+  - |
+    &lcdif {
+      display-timings {
+        compatible = "zephyr,panel-timing";
+        hsync-len = <8>;
+        hfront-porch = <32>;
+        hback-porch = <32>;
+        vsync-len = <2>;
+        vfront-porch = <16>;
+        vback-porch = <14>;
+        hsync-active = <0>;
+        vsync-active = <0>;
+        de-active = <1>;
+        pixelclk-active = <0>;
+        clock-frequency = <62346240>;
+      };
+    };

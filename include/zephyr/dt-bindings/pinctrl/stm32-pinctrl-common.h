@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_STM32_PINCTRL_COMMON_H_
-#define ZEPHYR_STM32_PINCTRL_COMMON_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_STM32_PINCTRL_COMMON_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_STM32_PINCTRL_COMMON_H_
 
 /**
  * @brief numerical IDs for IO ports
@@ -27,9 +27,10 @@
 #define	STM32_PORTO 14
 #define	STM32_PORTP 15	/* IO port P (0xF) */
 #define	STM32_PORTQ 16	/* IO port Q (0x10) */
+#define	STM32_PORTZ 25  /* IO port Z (0x19) */
 
 #ifndef STM32_PORTS_MAX
-#define STM32_PORTS_MAX (STM32_PORTQ + 1)
+#define STM32_PORTS_MAX (STM32_PORTZ + 1)
 #endif
 
 /**
@@ -38,4 +39,4 @@
 #define STM32PIN(_port, _pin) \
 	(_port << 4 | _pin)
 
-#endif	/* ZEPHYR_STM32_PINCTRL_COMMON_H_ */
+#endif	/* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_STM32_PINCTRL_COMMON_H_ */

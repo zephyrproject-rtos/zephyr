@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# SOC Packages for Infineon PSOC4100Smax series MCUs
+config SOC_PACKAGE_PSOC4100SMAX_100_TQFP
+	bool
+	help
+	  100-pin TQFP package
+
+# Hardware configuration for PSOC4100SMAX series
+config SOC_SERIES_PSOC4100SMAX
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_HAS_ARM_MPU
+	select BUILD_OUTPUT_HEX
+	select BUILD_OUTPUT_BIN
+	select DYNAMIC_INTERRUPTS
+	select SOC_EARLY_INIT_HOOK
+	select CPU_CORTEX_M_HAS_SYSTICK
+
+config SOC_CY8C4149AZI_S598
+	select SOC_PACKAGE_PSOC4100SMAX_100_TQFP

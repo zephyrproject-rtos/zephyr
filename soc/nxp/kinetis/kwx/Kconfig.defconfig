@@ -3,7 +3,7 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_KINETIS_KWX
+if SOC_SERIES_KWX
 
 config NUM_IRQS
 	default 65 if SOC_MKW22D5 || SOC_MKW24D5
@@ -43,4 +43,4 @@ config KINETIS_FLASH_CONFIG_FOPT
 
 endif # SOC_MKW22D5 || SOC_MKW24D5
 
-endif # SOC_SERIES_KINETIS_KWX
+endif # SOC_SERIES_KWX

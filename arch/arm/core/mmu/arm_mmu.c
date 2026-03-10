@@ -805,10 +805,10 @@ int z_arm_mmu_init(void)
 	}
 
 	/* Clear TTBR1 */
-	__asm__ __volatile__("mcr p15, 0, %0, c2, c0, 1" : : "r"(reg_val));
+	__asm__ volatile("mcr p15, 0, %0, c2, c0, 1" : : "r"(reg_val));
 
 	/* Write TTBCR: EAE, security not yet relevant, N[2:0] = 0 */
-	__asm__ __volatile__("mcr p15, 0, %0, c2, c0, 2"
+	__asm__ volatile("mcr p15, 0, %0, c2, c0, 2"
 			     : : "r"(reg_val));
 
 	/* Write TTBR0 */
@@ -890,6 +890,9 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 
 	switch (flags & K_MEM_CACHE_MASK) {
 
+	case K_MEM_ARM_NORMAL_NC:
+		conv_flags |= MT_NORMAL;
+		break;
 	case K_MEM_CACHE_NONE:
 	default:
 		conv_flags |= MT_DEVICE;

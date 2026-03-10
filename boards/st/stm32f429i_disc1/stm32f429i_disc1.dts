@@ -8,7 +8,7 @@
 /dts-v1/;
 #include <st/f4/stm32f429Xi.dtsi>
 #include <st/f4/stm32f429zitx-pinctrl.dtsi>
-#include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -20,7 +20,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,ccm = &ccm0;
+		zephyr,dtcm = &ccm0;
 		zephyr,display = &ltdc;
 		zephyr,touch = &stmpe811;
 	};
@@ -34,10 +34,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_3: led_3 {
 			gpios = <&gpiog 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
+
 		red_led_4: led_4 {
 			gpios = <&gpiog 14 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
@@ -46,6 +48,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
@@ -56,11 +59,6 @@
 	aliases {
 		led0 = &green_led_3;
 		sw0 = &user_button;
-	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&stmpe811>;
 	};
 
 	mipi_dbi {
@@ -78,7 +76,7 @@
 			width = <240>;
 			height = <320>;
 			rotation = <180>;
-			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 			pwctrla = [39 2c 00 34 02];
 			pwctrlb = [00 c1 30];
 			timctrla = [85 00 78];
@@ -95,7 +93,7 @@
 			frmctr1 = [00 1b];
 			pwctrl1 = [10];
 			pwctrl2 = [10];
-			pgamctrl = [0F 29 24 0c 0e 09 4e 78 3c 09 13 05 17 11 00];
+			pgamctrl = [0f 29 24 0c 0e 09 4e 78 3c 09 13 05 17 11 00];
 			ngamctrl = [00 16 1b 04 11 07 31 33 42 05 0c 0a 28 2f 0f];
 		};
 	};
@@ -119,6 +117,15 @@
 	status = "okay";
 };
 
+&pllsai {
+	div-m = <8>;
+	mul-n = <192>;
+	div-r = <4>;
+	post-div-r = <8>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(168)>;
@@ -135,7 +142,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
@@ -241,7 +248,8 @@
 
 	width = <240>;
 	height = <320>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+
 	display-timings {
 		compatible = "zephyr,panel-timing";
 		de-active = <0>;
@@ -250,14 +258,15 @@
 		vsync-active = <0>;
 		hsync-len = <10>;
 		vsync-len = <2>;
-		hback-porch= <20>;
+		hback-porch = <20>;
 		vback-porch = <2>;
 		hfront-porch = <10>;
 		vfront-porch = <4>;
 	};
-	def-back-color-red = <0xFF>;
-	def-back-color-green = <0xFF>;
-	def-back-color-blue = <0xFF>;
+
+	def-back-color-red = <0xff>;
+	def-back-color-green = <0xff>;
+	def-back-color-blue = <0xff>;
 };
 
 zephyr_udc0: &usbotg_hs {

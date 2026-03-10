@@ -12,8 +12,11 @@
  */
 
 #include <zephyr/kernel.h>
-#include <ksched.h>
+#include <kernel_internal.h>
 #include <zephyr/arch/cpu.h>
+#ifdef CONFIG_ARM_PAC_PER_THREAD
+#include <zephyr/arch/arm64/pac.h>
+#endif
 
 /*
  * Note about stack usage:
@@ -30,7 +33,7 @@
  *   privileged portion of the user stack without touching SP_EL0. This portion
  *   is marked as not user accessible in the MMU/MPU.
  *
- * - a stack guard region will be added bellow the kernel stack when
+ * - a stack guard region will be added below the kernel stack when
  *   ARM64_STACK_PROTECTION is enabled. In this case, SP_EL0 will always point
  *   to the safe exception stack in the kernel space. For the kernel thread,
  *   SP_EL0 will not change always pointing to safe exception stack. For the
@@ -149,6 +152,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->arch.stack_limit = (uint64_t)stack + Z_ARM64_STACK_GUARD_SIZE;
 	z_arm64_thread_mem_domains_init(thread);
 #endif
+
+#ifdef CONFIG_ARM_PAC_PER_THREAD
+	/* Generate unique PAC keys for this thread */
+	z_arm64_pac_keys_generate(&thread->arch.pac_keys);
+#endif
 }
 
 #ifdef CONFIG_USERSPACE
@@ -199,3 +207,12 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	CODE_UNREACHABLE;
 }
 #endif
+
+int arch_coprocessors_disable(struct k_thread *thread)
+{
+#if defined(CONFIG_FPU_SHARING)
+	return arch_float_disable(thread);
+#else
+	return -ENOTSUP;
+#endif
+}

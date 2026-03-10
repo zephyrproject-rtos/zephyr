@@ -11,20 +11,45 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/pm/device_runtime.h>
 
+/**
+ * Structure grouping gpio pins used for QENC emulation connected with a QDEC device
+ * with a loopback.
+ */
+struct qdec_qenc_loopback {
+	struct gpio_dt_spec qenc_phase_a;
+	struct gpio_dt_spec qenc_phase_b;
+
+	const struct device *qdec;
+	uint32_t qdec_config_step;
+};
+
 static K_SEM_DEFINE(sem, 0, 1);
-static const struct gpio_dt_spec phase_a = GPIO_DT_SPEC_GET(DT_ALIAS(qenca), gpios);
-static const struct gpio_dt_spec phase_b = GPIO_DT_SPEC_GET(DT_ALIAS(qencb), gpios);
-static const struct device *const qdec_dev = DEVICE_DT_GET(DT_ALIAS(qdec0));
-static const uint32_t qdec_config_step = DT_PROP(DT_ALIAS(qdec0), steps);
+
+#define GET_QDEC_QENC_LOOPBACK(x)								   \
+	{											   \
+		.qenc_phase_a = GPIO_DT_SPEC_GET(DT_PHANDLE_BY_IDX(x, qenc_emul_gpios, 0), gpios), \
+		.qenc_phase_b = GPIO_DT_SPEC_GET(DT_PHANDLE_BY_IDX(x, qenc_emul_gpios, 1), gpios), \
+		.qdec = DEVICE_DT_GET(DT_PHANDLE(x, qdec)),					   \
+		.qdec_config_step = DT_PROP_BY_PHANDLE(x, qdec, steps)				   \
+	}
+
+
+struct qdec_qenc_loopback loopbacks[] = {
+	DT_FOREACH_CHILD_SEP(DT_NODELABEL(qdec_loopbacks), GET_QDEC_QENC_LOOPBACK, (,))
+};
+
+#define TESTED_QDEC_COUNT ARRAY_SIZE(loopbacks)
+
 static struct sensor_trigger qdec_trigger = {.type = SENSOR_TRIG_DATA_READY,
 					     .chan = SENSOR_CHAN_ROTATION};
+
 static bool toggle_a = true;
+static struct qdec_qenc_loopback *loopback_currently_under_test;
 
 static void qdec_trigger_handler(const struct device *dev, const struct sensor_trigger *trigger)
 {
 	zassert_not_null(dev);
 	zassert_not_null(trigger);
-	zassert_equal_ptr(dev, qdec_dev);
 	/* trigger should be stored as a pointer in a driver
 	 * thus this address should match
 	 */
@@ -35,10 +60,15 @@ static void qdec_trigger_handler(const struct device *dev, const struct sensor_t
 
 static void qenc_emulate_work_handler(struct k_work *work)
 {
+	/* Check if emulation has been stopped after submitting this work item. */
+	if (loopback_currently_under_test == NULL) {
+		return;
+	}
+
 	if (toggle_a) {
-		gpio_pin_toggle_dt(&phase_a);
+		gpio_pin_toggle_dt(&loopback_currently_under_test->qenc_phase_a);
 	} else {
-		gpio_pin_toggle_dt(&phase_b);
+		gpio_pin_toggle_dt(&loopback_currently_under_test->qenc_phase_b);
 	}
 	toggle_a = !toggle_a;
 }
@@ -71,43 +101,48 @@ static void qenc_emulate_setup_pin(const struct gpio_dt_spec *gpio_dt)
 	zassert_true(rc == 0, "%s: pin configure failed: %d", gpio_dt->port->name, rc);
 }
 
-static void qenc_emulate_start(k_timeout_t period, bool forward)
+static void qenc_emulate_start(struct qdec_qenc_loopback *loopback, k_timeout_t period,
+		bool forward)
 {
-	qenc_emulate_reset_pin(&phase_a);
-	qenc_emulate_reset_pin(&phase_b);
+	qenc_emulate_reset_pin(&loopback->qenc_phase_a);
+	qenc_emulate_reset_pin(&loopback->qenc_phase_b);
 
 	toggle_a = !forward;
-
+	loopback_currently_under_test = loopback;
 	k_timer_start(&qenc_emulate_timer, period, period);
 }
 
 static void qenc_emulate_stop(void)
 {
-	k_timer_stop(&qenc_emulate_timer);
+	if (loopback_currently_under_test) {
+		k_timer_stop(&qenc_emulate_timer);
+		qenc_emulate_reset_pin(&loopback_currently_under_test->qenc_phase_a);
+		qenc_emulate_reset_pin(&loopback_currently_under_test->qenc_phase_b);
 
-	qenc_emulate_reset_pin(&phase_a);
-	qenc_emulate_reset_pin(&phase_b);
+		loopback_currently_under_test = NULL;
+	}
 }
 
-static void qenc_emulate_verify_reading(int emulator_period_ms, int emulation_duration_ms,
-					bool forward, bool overflow_expected)
+static void qenc_emulate_verify_reading(struct qdec_qenc_loopback *loopback,
+		int emulator_period_ms, int emulation_duration_ms, bool forward,
+		bool overflow_expected)
 {
 	int rc;
 	struct sensor_value val = {0};
 	int32_t expected_steps = emulation_duration_ms / emulator_period_ms;
-	int32_t expected_reading = 360 * expected_steps / qdec_config_step;
-	int32_t delta = expected_reading / 5;
+	int32_t expected_reading = 360 * expected_steps / loopback->qdec_config_step;
+	int32_t delta = expected_reading / 4;
 
 	if (!forward) {
 		expected_reading *= -1;
 	}
 
-	qenc_emulate_start(K_MSEC(emulator_period_ms), forward);
+	qenc_emulate_start(loopback, K_MSEC(emulator_period_ms), forward);
 
-	/* wait for some readings*/
+	/* wait for some readings */
 	k_msleep(emulation_duration_ms);
 
-	rc = sensor_sample_fetch(qdec_dev);
+	rc = sensor_sample_fetch(loopback->qdec);
 
 	if (!overflow_expected) {
 		zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
@@ -115,9 +150,11 @@ static void qenc_emulate_verify_reading(int emulator_period_ms, int emulation_du
 		zassert_true(rc == -EOVERFLOW, "Failed to detect overflow");
 	}
 
-	rc = sensor_channel_get(qdec_dev, SENSOR_CHAN_ROTATION, &val);
+	rc = sensor_channel_get(loopback->qdec, SENSOR_CHAN_ROTATION, &val);
 	zassert_true(rc == 0, "Failed to get sample (%d)", rc);
 
+	TC_PRINT("Expected reading: %d, actual value: %d, delta: %d\n",
+			expected_reading, val.val1, delta);
 	if (!overflow_expected) {
 		zassert_within(val.val1, expected_reading, delta,
 			       "Expected reading: %d,  but got: %d", expected_reading, val.val1);
@@ -128,35 +165,31 @@ static void qenc_emulate_verify_reading(int emulator_period_ms, int emulation_du
 	/* wait and get readings to clear state */
 	k_msleep(100);
 
-	rc = sensor_sample_fetch(qdec_dev);
+	rc = sensor_sample_fetch(loopback->qdec);
 	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
 
-	rc = sensor_channel_get(qdec_dev, SENSOR_CHAN_ROTATION, &val);
+	rc = sensor_channel_get(loopback->qdec, SENSOR_CHAN_ROTATION, &val);
 	zassert_true(rc == 0, "Failed to get sample (%d)", rc);
 }
 
-/**
- * @brief sensor_trigger_set test disable trigger
- *
- * Confirm trigger happens after set and stops after being disabled
- *
- */
-ZTEST(qdec_sensor, test_sensor_trigger_set_and_disable)
+static void sensor_trigger_set_and_disable(struct qdec_qenc_loopback *loopback)
 {
 	int rc;
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_get(qdec_dev);
+		pm_device_runtime_get(loopback->qdec);
 	}
+
+	k_sem_give(&sem);
 
 	qdec_trigger.type = SENSOR_TRIG_DATA_READY;
 	qdec_trigger.chan = SENSOR_CHAN_ALL;
-	rc = sensor_trigger_set(qdec_dev, &qdec_trigger, qdec_trigger_handler);
+	rc = sensor_trigger_set(loopback->qdec, &qdec_trigger, qdec_trigger_handler);
 	zassume_true(rc != -ENOSYS, "sensor_trigger_set not supported");
 
 	zassert_true(rc == 0, "sensor_trigger_set failed: %d", rc);
 
-	qenc_emulate_start(K_MSEC(10), true);
+	qenc_emulate_start(loopback, K_MSEC(10), true);
 
 	/* emulation working, handler should be called */
 	rc = k_sem_take(&sem, K_MSEC(200));
@@ -168,7 +201,7 @@ ZTEST(qdec_sensor, test_sensor_trigger_set_and_disable)
 	rc = k_sem_take(&sem, K_MSEC(200));
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put(qdec_dev);
+		pm_device_runtime_put(loopback->qdec);
 	}
 
 	/* there should be no triggers now*/
@@ -176,22 +209,78 @@ ZTEST(qdec_sensor, test_sensor_trigger_set_and_disable)
 	zassert_true(rc == -EAGAIN, "qdec handler should not be triggered (%d)", rc);
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_get(qdec_dev);
+		pm_device_runtime_get(loopback->qdec);
 	}
 
 	/* register empty trigger - disable trigger */
-	rc = sensor_trigger_set(qdec_dev, &qdec_trigger, NULL);
+	rc = sensor_trigger_set(loopback->qdec, &qdec_trigger, NULL);
 	zassert_true(rc == 0, "sensor_trigger_set failed: %d", rc);
 
-	qenc_emulate_start(K_MSEC(10), true);
+	qenc_emulate_start(loopback, K_MSEC(10), true);
 
 	/* emulation working, but handler not set, thus should not be called */
 	rc = k_sem_take(&sem, K_MSEC(200));
 	zassert_true(rc == -EAGAIN, "qdec handler should not be triggered (%d)", rc);
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put(qdec_dev);
+		pm_device_runtime_put(loopback->qdec);
 	}
+
+	qenc_emulate_stop();
+	k_sem_reset(&sem);
+}
+
+/**
+ * @brief sensor_trigger_set test disable trigger
+ *
+ * Confirm trigger happens after set and stops after being disabled
+ *
+ */
+ZTEST(qdec_sensor, test_sensor_trigger_set_and_disable)
+{
+	for (size_t i = 0; i < TESTED_QDEC_COUNT; i++) {
+		TC_PRINT("Testing QDEC index %d, address: %p\n", i, loopbacks[i].qdec);
+		sensor_trigger_set_and_disable(&loopbacks[i]);
+	}
+}
+
+static void sensor_trigger_set_test(struct qdec_qenc_loopback *loopback)
+{
+	int rc;
+	struct sensor_value val = {0};
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(loopback->qdec);
+	}
+
+	qdec_trigger.type = SENSOR_TRIG_DATA_READY;
+	qdec_trigger.chan = SENSOR_CHAN_ROTATION;
+	rc = sensor_trigger_set(loopback->qdec, &qdec_trigger, qdec_trigger_handler);
+	zassume_true(rc != -ENOSYS, "sensor_trigger_set not supported");
+
+	zassert_true(rc == 0, "sensor_trigger_set failed: %d", rc);
+
+	qenc_emulate_start(loopback, K_MSEC(10), true);
+
+	/* emulation working now */
+	rc = k_sem_take(&sem, K_MSEC(200));
+	zassert_true(rc == 0, "qdec handler should be triggered (%d)", rc);
+
+	rc = sensor_sample_fetch(loopback->qdec);
+	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
+
+	rc = sensor_channel_get(loopback->qdec, SENSOR_CHAN_ROTATION, &val);
+	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
+
+	TC_PRINT("QDEC reading: %d\n", val.val1);
+	zassert_true(val.val1 != 0, "No readings from QDEC");
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(loopback->qdec);
+	}
+
+	qenc_emulate_stop();
+	k_sem_reset(&sem);
 }
 
 /**
@@ -202,37 +291,37 @@ ZTEST(qdec_sensor, test_sensor_trigger_set_and_disable)
  */
 ZTEST(qdec_sensor, test_sensor_trigger_set)
 {
+	for (size_t i = 0; i < TESTED_QDEC_COUNT; i++) {
+		TC_PRINT("Testing QDEC index %d, address: %p\n", i, loopbacks[i].qdec);
+		sensor_trigger_set_test(&loopbacks[i]);
+	}
+}
+
+static void sensor_trigger_set_negative(struct qdec_qenc_loopback *loopback)
+{
 	int rc;
-	struct sensor_value val = {0};
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_get(qdec_dev);
+		pm_device_runtime_get(loopback->qdec);
 	}
 
-	qdec_trigger.type = SENSOR_TRIG_DATA_READY;
-	qdec_trigger.chan = SENSOR_CHAN_ROTATION;
-	rc = sensor_trigger_set(qdec_dev, &qdec_trigger, qdec_trigger_handler);
+	rc = sensor_trigger_set(loopback->qdec, &qdec_trigger, qdec_trigger_handler);
 	zassume_true(rc != -ENOSYS, "sensor_trigger_set not supported");
 
-	zassert_true(rc == 0, "sensor_trigger_set failed: %d", rc);
+	qdec_trigger.type = SENSOR_TRIG_MAX;
+	qdec_trigger.chan = SENSOR_CHAN_ROTATION;
 
-	qenc_emulate_start(K_MSEC(10), true);
+	rc = sensor_trigger_set(loopback->qdec, &qdec_trigger, qdec_trigger_handler);
+	zassume_true(rc < 0, "sensor_trigger_set should fail due to invalid trigger type");
 
-	/* emulation working now */
-	rc = k_sem_take(&sem, K_MSEC(200));
-	zassert_true(rc == 0, "qdec handler should be triggered (%d)", rc);
+	qdec_trigger.type = SENSOR_TRIG_DATA_READY;
+	qdec_trigger.chan = SENSOR_CHAN_MAX;
 
-	rc = sensor_sample_fetch(qdec_dev);
-	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
-
-	rc = sensor_channel_get(qdec_dev, SENSOR_CHAN_ROTATION, &val);
-	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
-
-	TC_PRINT("QDEC reading: %d\n", val.val1);
-	zassert_true(val.val1 != 0, "No readings from QDEC");
+	rc = sensor_trigger_set(loopback->qdec, &qdec_trigger, qdec_trigger_handler);
+	zassume_true(rc < 0, "sensor_trigger_set should fail due to invalid channel");
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put(qdec_dev);
+		pm_device_runtime_put(loopback->qdec);
 	}
 }
 
@@ -244,29 +333,9 @@ ZTEST(qdec_sensor, test_sensor_trigger_set)
  */
 ZTEST(qdec_sensor, test_sensor_trigger_set_negative)
 {
-	int rc;
-
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_get(qdec_dev);
-	}
-
-	rc = sensor_trigger_set(qdec_dev, &qdec_trigger, qdec_trigger_handler);
-	zassume_true(rc != -ENOSYS, "sensor_trigger_set not supported");
-
-	qdec_trigger.type = SENSOR_TRIG_MAX;
-	qdec_trigger.chan = SENSOR_CHAN_ROTATION;
-
-	rc = sensor_trigger_set(qdec_dev, &qdec_trigger, qdec_trigger_handler);
-	zassume_true(rc < 0, "sensor_trigger_set should fail due to invalid trigger type");
-
-	qdec_trigger.type = SENSOR_TRIG_DATA_READY;
-	qdec_trigger.chan = SENSOR_CHAN_MAX;
-
-	rc = sensor_trigger_set(qdec_dev, &qdec_trigger, qdec_trigger_handler);
-	zassume_true(rc < 0, "sensor_trigger_set should fail due to invalid channel");
-
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put(qdec_dev);
+	for (size_t i = 0; i < TESTED_QDEC_COUNT; i++) {
+		TC_PRINT("Testing QDEC index %d, address: %p\n", i, loopbacks[i].qdec);
+		sensor_trigger_set_negative(&loopbacks[i]);
 	}
 }
 
@@ -278,18 +347,59 @@ ZTEST(qdec_sensor, test_sensor_trigger_set_negative)
  */
 ZTEST(qdec_sensor, test_qdec_readings)
 {
+	for (size_t i = 0; i < TESTED_QDEC_COUNT; i++) {
+		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+			pm_device_runtime_get(loopbacks[i].qdec);
+		}
+
+		TC_PRINT("Testing QDEC index %d, address: %p\n", i, loopbacks[i].qdec);
+		qenc_emulate_verify_reading(&loopbacks[i], 10,  100,  true, false);
+		qenc_emulate_verify_reading(&loopbacks[i],  2,  500,  true, false);
+		qenc_emulate_verify_reading(&loopbacks[i], 10,  200, false, false);
+		qenc_emulate_verify_reading(&loopbacks[i],  1, 1000, false,  true);
+		qenc_emulate_verify_reading(&loopbacks[i],  1, 1000,  true,  true);
+
+		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+			pm_device_runtime_put(loopbacks[i].qdec);
+		}
+	}
+}
+
+static void sensor_channel_get_empty(const struct device *const dev)
+{
+	int rc;
+	struct sensor_value val = {0};
+
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_get(qdec_dev);
+		pm_device_runtime_get(dev);
 	}
 
-	qenc_emulate_verify_reading(10, 100, true, false);
-	qenc_emulate_verify_reading(2, 500, true, false);
-	qenc_emulate_verify_reading(10, 200, false, false);
-	qenc_emulate_verify_reading(1, 1000, false, true);
-	qenc_emulate_verify_reading(1, 1000, true, true);
+	/* wait for potential new readings */
+	k_msleep(100);
+
+	rc = sensor_sample_fetch(dev);
+	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
+
+	/* get readings but ignore them, as they may include reading from time
+	 * when emulation was still working (i.e. during previous test)
+	 */
+	rc = sensor_channel_get(dev, SENSOR_CHAN_ROTATION, &val);
+	zassert_true(rc == 0, "Failed to get sample (%d)", rc);
+
+	/* wait for potential new readings */
+	k_msleep(100);
+
+	rc = sensor_sample_fetch(dev);
+	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
+
+	/* emulation was not working, expect no readings */
+	rc = sensor_channel_get(dev, SENSOR_CHAN_ROTATION, &val);
+	zassert_true(rc == 0, "Failed to get sample (%d)", rc);
+	zassert_true(val.val1 == 0, "Expected no readings but got: %d", val.val1);
+	zassert_true(val.val2 == 0, "Expected no readings but got: %d", val.val2);
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put(qdec_dev);
+		pm_device_runtime_put(dev);
 	}
 }
 
@@ -301,74 +411,38 @@ ZTEST(qdec_sensor, test_qdec_readings)
  */
 ZTEST(qdec_sensor, test_sensor_channel_get_empty)
 {
-	int rc;
-	struct sensor_value val = {0};
-
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_get(qdec_dev);
-	}
-
-	/* wait for potential new readings */
-	k_msleep(100);
-
-	rc = sensor_sample_fetch(qdec_dev);
-	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
-
-	/* get readings but ignore them, as they may include reading from time
-	 * when emulation was still working (i.e. during previous test)
-	 */
-	rc = sensor_channel_get(qdec_dev, SENSOR_CHAN_ROTATION, &val);
-	zassert_true(rc == 0, "Failed to get sample (%d)", rc);
-
-	/* wait for potential new readings */
-	k_msleep(100);
-
-	rc = sensor_sample_fetch(qdec_dev);
-	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
-
-	/* emulation was not working, expect no readings */
-	rc = sensor_channel_get(qdec_dev, SENSOR_CHAN_ROTATION, &val);
-	zassert_true(rc == 0, "Failed to get sample (%d)", rc);
-	zassert_true(val.val1 == 0, "Expected no readings but got: %d", val.val1);
-	zassert_true(val.val2 == 0, "Expected no readings but got: %d", val.val2);
-
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put(qdec_dev);
+	for (size_t i = 0; i < TESTED_QDEC_COUNT; i++) {
+		TC_PRINT("Testing QDEC index %d, address: %p\n", i, loopbacks[i].qdec);
+		sensor_channel_get_empty(loopbacks[i].qdec);
 	}
 }
 
-/**
- * @brief sensor_channel_get test with emulation
- *
- * Confirm getting readings from QDEC
- *
- */
-ZTEST(qdec_sensor, test_sensor_channel_get)
+static void sensor_channel_get_test(struct qdec_qenc_loopback *loopback)
 {
 	int rc;
 	struct sensor_value val_first = {0};
 	struct sensor_value val_second = {0};
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_get(qdec_dev);
+		pm_device_runtime_get(loopback->qdec);
 	}
 
-	qenc_emulate_start(K_MSEC(10), true);
+	qenc_emulate_start(loopback, K_MSEC(10), true);
 
 	/* wait for some readings*/
 	k_msleep(100);
 
-	rc = sensor_sample_fetch(qdec_dev);
+	rc = sensor_sample_fetch(loopback->qdec);
 	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
 
-	rc = sensor_channel_get(qdec_dev, SENSOR_CHAN_ROTATION, &val_first);
+	rc = sensor_channel_get(loopback->qdec, SENSOR_CHAN_ROTATION, &val_first);
 	zassert_true(rc == 0, "Failed to get sample (%d)", rc);
 	zassert_true(val_first.val1 != 0, "No readings from QDEC");
 
 	/* wait for more readings*/
 	k_msleep(200);
 
-	rc = sensor_channel_get(qdec_dev, SENSOR_CHAN_ROTATION, &val_second);
+	rc = sensor_channel_get(loopback->qdec, SENSOR_CHAN_ROTATION, &val_second);
 	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
 	zassert_true(val_second.val1 != 0, "No readings from QDEC");
 
@@ -386,7 +460,48 @@ ZTEST(qdec_sensor, test_sensor_channel_get)
 		     val_second.val2);
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put(qdec_dev);
+		pm_device_runtime_put(loopback->qdec);
+	}
+}
+
+/**
+ * @brief sensor_channel_get test with emulation
+ *
+ * Confirm getting readings from QDEC
+ *
+ */
+ZTEST(qdec_sensor, test_sensor_channel_get)
+{
+	for (size_t i = 0; i < TESTED_QDEC_COUNT; i++) {
+		TC_PRINT("Testing QDEC index %d, address: %p\n", i, loopbacks[i].qdec);
+		sensor_channel_get_test(&loopbacks[i]);
+	}
+}
+
+static void sensor_channel_get_negative(struct qdec_qenc_loopback *loopback)
+{
+	int rc;
+	struct sensor_value val = {0};
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(loopback->qdec);
+	}
+
+	qenc_emulate_start(loopback, K_MSEC(10), true);
+
+	/* wait for some readings*/
+	k_msleep(100);
+
+	rc = sensor_sample_fetch(loopback->qdec);
+	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
+
+	rc = sensor_channel_get(loopback->qdec, SENSOR_CHAN_MAX, &val);
+	zassert_true(rc < 0, "Should failed to get sample (%d)", rc);
+	zassert_true(val.val1 == 0, "Some readings from QDEC: %d", val.val1);
+	zassert_true(val.val2 == 0, "Some readings from QDEC: %d", val.val2);
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(loopback->qdec);
 	}
 }
 
@@ -398,28 +513,31 @@ ZTEST(qdec_sensor, test_sensor_channel_get)
  */
 ZTEST(qdec_sensor, test_sensor_channel_get_negative)
 {
+	for (size_t i = 0; i < TESTED_QDEC_COUNT; i++) {
+		TC_PRINT("Testing QDEC index %d, address: %p\n", i, loopbacks[i].qdec);
+		sensor_channel_get_negative(&loopbacks[i]);
+	}
+}
+
+static void sensor_sample_fetch_test(const struct device *const dev)
+{
 	int rc;
-	struct sensor_value val = {0};
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_get(qdec_dev);
+		pm_device_runtime_get(dev);
 	}
 
-	qenc_emulate_start(K_MSEC(10), true);
-
-	/* wait for some readings*/
-	k_msleep(100);
-
-	rc = sensor_sample_fetch(qdec_dev);
+	rc = sensor_sample_fetch(dev);
 	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
 
-	rc = sensor_channel_get(qdec_dev, SENSOR_CHAN_MAX, &val);
-	zassert_true(rc < 0, "Should failed to get sample (%d)", rc);
-	zassert_true(val.val1 == 0, "Some readings from QDEC: %d", val.val1);
-	zassert_true(val.val2 == 0, "Some readings from QDEC: %d", val.val2);
+	rc = sensor_sample_fetch_chan(dev, SENSOR_CHAN_ROTATION);
+	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
+
+	rc = sensor_sample_fetch_chan(dev, SENSOR_CHAN_MAX);
+	zassert_true(rc < 0, "Should fail to fetch sample from invalid channel (%d)", rc);
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put(qdec_dev);
+		pm_device_runtime_put(dev);
 	}
 }
 
@@ -431,36 +549,22 @@ ZTEST(qdec_sensor, test_sensor_channel_get_negative)
  */
 ZTEST(qdec_sensor, test_sensor_sample_fetch)
 {
-	int rc;
-
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_get(qdec_dev);
-	}
-
-	rc = sensor_sample_fetch(qdec_dev);
-	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
-
-	rc = sensor_sample_fetch_chan(qdec_dev, SENSOR_CHAN_ROTATION);
-	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
-
-	rc = sensor_sample_fetch_chan(qdec_dev, SENSOR_CHAN_MAX);
-	zassert_true(rc < 0, "Should fail to fetch sample from invalid channel (%d)", rc);
-
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put(qdec_dev);
+	for (size_t i = 0; i < TESTED_QDEC_COUNT; i++) {
+		TC_PRINT("Testing QDEC index %d, address: %p\n", i, loopbacks[i].qdec);
+		sensor_sample_fetch_test(loopbacks[i].qdec);
 	}
 }
 
 static void *setup(void)
 {
-	int rc;
+	for (size_t i = 0; i < TESTED_QDEC_COUNT; i++) {
+		int rc = device_is_ready(loopbacks[i].qdec);
 
-	rc = device_is_ready(qdec_dev);
-	zassert_true(rc, "QDEC device not ready: %d", rc);
+		zassert_true(rc, "QDEC index %d not ready: %d", i, rc);
 
-	qenc_emulate_setup_pin(&phase_a);
-	qenc_emulate_setup_pin(&phase_b);
-
+		qenc_emulate_setup_pin(&loopbacks[i].qenc_phase_a);
+		qenc_emulate_setup_pin(&loopbacks[i].qenc_phase_b);
+	}
 	return NULL;
 }
 
@@ -476,6 +580,7 @@ static void after(void *fixture)
 	ARG_UNUSED(fixture);
 
 	qenc_emulate_stop();
+	k_sem_reset(&sem);
 }
 
 ZTEST_SUITE(qdec_sensor, NULL, setup, before, after, NULL);

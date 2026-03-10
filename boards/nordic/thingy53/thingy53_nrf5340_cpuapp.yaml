@@ -8,10 +8,11 @@ toolchain:
 ram: 448
 flash: 1024
 supported:
+  - ble
   - gpio
   - i2c
   - pwm
   - watchdog
-  - usb_device
+  - usbd
   - netif:openthread
 vendor: nordic

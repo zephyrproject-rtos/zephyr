@@ -207,7 +207,9 @@ static uint8_t bme680_calc_gas_wait(uint16_t dur)
 			dur = dur / 4;
 			factor += 1;
 		}
-		durval = dur + (factor * 64);
+		const uint16_t max_duration = dur + (factor * 64);
+
+		durval = CLAMP(max_duration, 0, 0xff);
 	}
 
 	return durval;
@@ -487,7 +489,7 @@ static DEVICE_API(sensor, bme680_api_funcs) = {
 #define BME680_CONFIG_SPI(inst)				\
 	{						\
 		.bus.spi = SPI_DT_SPEC_INST_GET(	\
-			inst, BME680_SPI_OPERATION, 0),	\
+			inst, BME680_SPI_OPERATION),	\
 		.bus_io = &bme680_bus_io_spi,		\
 	}
 

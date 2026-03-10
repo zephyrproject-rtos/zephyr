@@ -88,8 +88,11 @@ static inline bool is_condition_met(struct k_poll_event *event, uint32_t *state)
 		}
 		break;
 	case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
-		*state = K_POLL_STATE_PIPE_DATA_AVAILABLE;
-		return true;
+		if (!ring_buf_is_empty(&event->pipe->buf)) {
+			*state = K_POLL_STATE_PIPE_DATA_AVAILABLE;
+			return true;
+		}
+		break;
 	case K_POLL_TYPE_IGNORE:
 		break;
 	default:
@@ -373,11 +376,11 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 		goto out;
 	}
 
-	key = k_spin_lock(&lock);
 	if (K_SYSCALL_MEMORY_WRITE(events, bounds)) {
-		k_spin_unlock(&lock, key);
 		goto oops_free;
 	}
+
+	key = k_spin_lock(&lock);
 	(void)memcpy(events_copy, events, bounds);
 	k_spin_unlock(&lock, key);
 

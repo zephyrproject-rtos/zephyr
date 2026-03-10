@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #include "flash_clock_setup.h"
 #endif
 
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
 #include "usb_phy.h"
 #include "usb.h"
 #endif
@@ -71,8 +71,8 @@ const clock_frg_clk_config_t g_frg0Config_clock_init = {
 const clock_frg_clk_config_t g_frg12Config_clock_init = {
 	.num = 12, .sfg_clock_src = kCLOCK_FrgMainClk, .divider = 255U, .mult = 167};
 
-#if CONFIG_USB_DC_NXP_LPCIP3511
-/* USB PHY condfiguration */
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
+/* USB PHY configuration */
 #define BOARD_USB_PHY_D_CAL     (0x0CU)
 #define BOARD_USB_PHY_TXCAL45DP (0x06U)
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
@@ -127,7 +127,7 @@ __imx_boot_ivt_section void (*const image_vector_table[])(void) = {
 };
 #endif /* CONFIG_NXP_IMXRT_BOOT_HEADER */
 
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
 
 static void usb_device_clock_init(void)
 {
@@ -177,7 +177,7 @@ static void usb_device_clock_init(void)
 	while (SYSCTL0->USB0CLKSTAT & SYSCTL0_USB0CLKSTAT_HOST_NEED_CLKST_MASK) {
 		__ASM("nop");
 	}
-	/* According to reference mannual, device mode setting has to be set by access
+	/* According to reference manual, device mode setting has to be set by access
 	 * usb host register
 	 */
 	USBHSH->PORTMODE |= USBHSH_PORTMODE_DEV_ENABLE_MASK;
@@ -280,7 +280,7 @@ void __weak rt5xx_clock_init(void)
 	CLOCK_AttachClk(kFRO_DIV4_to_FLEXCOMM0);
 #endif
 #endif
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
 	usb_device_clock_init();
 #endif
 

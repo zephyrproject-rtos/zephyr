@@ -1238,6 +1238,9 @@ struct can_mcan_config {
 	uint16_t mram_offsets[CAN_MCAN_MRAM_CFG_NUM_CELLS];
 	size_t mram_size;
 	const void *custom;
+#ifdef CONFIG_CAN_RX_TIMESTAMP
+	uint8_t timestamp_prescaler;
+#endif /* CONFIG_CAN_RX_TIMESTAMP */
 };
 
 /**
@@ -1298,6 +1301,8 @@ struct can_mcan_config {
 		.mram_offsets = CAN_MCAN_DT_MRAM_OFFSETS_GET(node_id),                             \
 		.mram_size = CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id),                              \
 		.custom = _custom,                                                                 \
+		COND_CODE_1(IS_ENABLED(CONFIG_CAN_RX_TIMESTAMP),                                   \
+		(.timestamp_prescaler = DT_PROP(node_id, bosch_timestamp_counter_prescaler),), ()) \
 	}
 #else /* CONFIG_CAN_FD_MODE */
 #define CAN_MCAN_DT_CONFIG_GET(node_id, _custom, _ops, _cbs)                                       \
@@ -1309,6 +1314,8 @@ struct can_mcan_config {
 		.mram_offsets = CAN_MCAN_DT_MRAM_OFFSETS_GET(node_id),                             \
 		.mram_size = CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id),                              \
 		.custom = _custom,                                                                 \
+		COND_CODE_1(IS_ENABLED(CONFIG_CAN_RX_TIMESTAMP),                                   \
+		(.timestamp_prescaler = DT_PROP(node_id, bosch_timestamp_counter_prescaler),), ()) \
 	}
 #endif /* !CONFIG_CAN_FD_MODE */
 

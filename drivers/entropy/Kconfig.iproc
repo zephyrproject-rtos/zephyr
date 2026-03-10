@@ -1,0 +1,10 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_BRCM_IPROC_RNG200
+	bool "Broadcom iProc RNG200 driver"
+	default y
+	depends on DT_HAS_BRCM_IPROC_RNG200_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  Enable the Broadcom iProc RNG200 random number generator

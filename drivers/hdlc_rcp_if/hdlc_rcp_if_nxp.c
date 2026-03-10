@@ -58,7 +58,7 @@ static void hdlc_iface_init(struct net_if *iface)
 
 	ctx->ot_context = net_if_l2_data(iface);
 
-	otPlatRadioGetIeeeEui64(ctx->ot_context->instance, eui64.m8);
+	otPlatRadioGetIeeeEui64(openthread_get_default_instance(), eui64.m8);
 	net_if_set_link_addr(iface, eui64.m8, OT_EXT_ADDRESS_SIZE, NET_LINK_IEEE802154);
 }
 
@@ -66,7 +66,7 @@ static int hdlc_register_rx_cb(hdlc_rx_callback_t hdlc_rx_callback, void *param)
 {
 	int ret = 0;
 
-	ret = PLATFORM_InitHdlcInterface(hdlc_rx_callback, param);
+	ret = PLATFORM_InitHdlcInterface((platform_hdlc_rx_callback_t)hdlc_rx_callback, param);
 	if (ret < 0) {
 		LOG_ERR("HDLC RX callback registration failed");
 	}

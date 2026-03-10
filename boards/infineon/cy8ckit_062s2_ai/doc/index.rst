@@ -5,12 +5,12 @@ Overview
 
 The PSOC 6 AI Evaluation Kit (CY8CKIT-062S2-AI) is a cost effective and small development kit that
 enables design and debug of PSOC 6 MCUs.
-It includes a CY8C624ABZI-S2D44 MCU which is based on a 150-MHz Arm |reg| Cortex |reg|-M4 and
-a 100-MHz Arm |reg| Cortex |reg|-M0+, with 2048 KB of on-chip Flash, 1024 KB of SRAM,
+It includes a CY8C624ABZI-S2D44 MCU which is based on a 150-MHz Arm® Cortex®-M4 and
+a 100-MHz Arm® Cortex®-M0+, with 2048 KB of on-chip Flash, 1024 KB of SRAM,
 a Quad-SPI external memory interface, built-in hardware and software security features,
 rich analog, digital, and communication peripherals.
 
-The board features an AIROC |reg| CYW43439 Wi-Fi & Bluetooth |reg| combo device,
+The board features an AIROC® CYW43439 Wi-Fi & Bluetooth® combo device,
 a 512 MB NOR flash, an onboard programmer/debugger (KitProg3), USB host and device features,
 two user LEDs, and one push button.
 
@@ -28,31 +28,7 @@ For more information about the CY8C624ABZI-S2D44 MCU SoC and CY8CKIT-062S2-AI bo
 Supported Features
 ==================
 
-The ``cy8ckit_062s2_ai/cy8c624abzi_s2d44`` board target supports the following hardware features:
-
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| NVIC      | on-chip    | nested vectored       |
-|           |            | interrupt controller  |
-+-----------+------------+-----------------------+
-| SYSTICK   | on-chip    | system clock          |
-+-----------+------------+-----------------------+
-| GPIO      | on-chip    | GPIO                  |
-+-----------+------------+-----------------------+
-| PINCTRL   | on-chip    | pin control           |
-+-----------+------------+-----------------------+
-| UART      | on-chip    | serial port-polling;  |
-|           |            | serial port-interrupt |
-+-----------+------------+-----------------------+
-| WATCHDOG  | on-chip    | watchdog              |
-+-----------+------------+-----------------------+
-
-
-The default configuration can be found in the defconfig and dts files:
-
-  - :zephyr_file:`boards/infineon/cy8ckit_062s2_ai/cy8ckit_062s2_ai_defconfig`
-  - :zephyr_file:`boards/infineon/cy8ckit_062s2_ai/cy8ckit_062s2_ai.dts`
+.. zephyr:board-supported-hw::
 
 System Clock
 ============
@@ -86,6 +62,8 @@ Here is an example for building the :zephyr:code-sample:`blinky` sample applicat
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The CY8CKIT-062S2-AI board includes an onboard programmer/debugger (`KitProg3`_)
 to provide debugging, flash programming, and serial communication over USB.

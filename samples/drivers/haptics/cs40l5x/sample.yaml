@@ -1,0 +1,9 @@
+sample:
+  name: CS40L5x Haptic Driver Sample
+tests:
+  sample.haptics.cs40l5x:
+    build_only: true
+    tags: haptics
+    platform_allow:
+      - nucleo_f401re
+      - crd40l50

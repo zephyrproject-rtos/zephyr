@@ -1,16 +1,26 @@
 compatible: "silabs,hfxo"
 
+title: Silicon Labs Series 2 HFXO (High-Frequency Crystal Oscillator)
+
+description: |
+  High-Frequency Crystal Oscillator peripheral on Silicon Labs SoCs.
+
 include: fixed-clock.yaml
 
 properties:
   ctune:
-    type: int
+    type: array
     required: true
-    description: Load capacitance configuration
+    description: |
+      Load capacitance configuration. If two values are set, they are used for
+      XI and XO respectively. If a single value is set, it is used for both.
   precision:
     type: int
     required: true
     description: Precision configuration
+  internal-bias:
+    type: boolean
+    description: Enable XI internal DC bias with an external clock. Ignored in xtal mode.
   mode:
     type: string
     description: |

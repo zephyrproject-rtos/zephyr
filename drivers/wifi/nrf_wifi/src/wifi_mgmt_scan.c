@@ -109,10 +109,9 @@ int nrf_wifi_disp_scan_zep(const struct device *dev, struct wifi_scan_params *pa
 
 	vif_ctx_zep->disp_scan_cb = cb;
 
-	scan_info = k_calloc(sizeof(*scan_info) +
+	scan_info = nrf_wifi_osal_mem_zalloc(sizeof(*scan_info) +
 			     (num_scan_channels *
-			      sizeof(scan_info->scan_params.center_frequency[0])),
-			     sizeof(char));
+			      sizeof(scan_info->scan_params.center_frequency[0])));
 
 	if (!scan_info) {
 		LOG_ERR("%s: Unable to allocate memory for scan_info (size: %d bytes)",
@@ -226,7 +225,7 @@ int nrf_wifi_disp_scan_zep(const struct device *dev, struct wifi_scan_params *pa
 	ret = 0;
 out:
 	if (scan_info) {
-		k_free(scan_info);
+		nrf_wifi_osal_mem_free(scan_info);
 	}
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 	return ret;
@@ -291,8 +290,10 @@ static inline enum wifi_security_type drv_to_wifi_mgmt(int drv_security_type)
 		return WIFI_SECURITY_TYPE_PSK;
 	case NRF_WIFI_WPA2_256:
 		return WIFI_SECURITY_TYPE_PSK_SHA256;
-	case NRF_WIFI_WPA3:
+	case NRF_WIFI_WPA3_HNP:
 		return WIFI_SECURITY_TYPE_SAE;
+	case NRF_WIFI_WPA3_H2E:
+		return WIFI_SECURITY_TYPE_SAE_H2E;
 	case NRF_WIFI_WAPI:
 		return WIFI_SECURITY_TYPE_WAPI;
 	case NRF_WIFI_EAP:
@@ -307,14 +308,12 @@ void nrf_wifi_event_proc_disp_scan_res_zep(void *vif_ctx,
 				unsigned int event_len,
 				bool more_res)
 {
-	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = vif_ctx;
 	struct umac_display_results *r = NULL;
 	struct wifi_scan_result res;
 	uint16_t max_bss_cnt = 0;
 	unsigned int i = 0;
 	scan_result_cb_t cb = NULL;
-
-	vif_ctx_zep = vif_ctx;
 
 	cb = (scan_result_cb_t)vif_ctx_zep->disp_scan_cb;
 
@@ -389,12 +388,9 @@ void nrf_wifi_rx_bcn_prb_resp_frm(void *vif_ctx,
 {
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = vif_ctx;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
-	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
 	struct wifi_raw_scan_result bcn_prb_resp_info;
 	int frame_length = 0;
 	int val = signal;
-
-	vif_ctx_zep = vif_ctx;
 
 	if (!vif_ctx_zep) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
@@ -418,8 +414,6 @@ void nrf_wifi_rx_bcn_prb_resp_frm(void *vif_ctx,
 		LOG_DBG("%s: RPU context not initialized", __func__);
 		goto out;
 	}
-
-	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
 
 	frame_length = nrf_wifi_osal_nbuf_data_size(nwb);
 

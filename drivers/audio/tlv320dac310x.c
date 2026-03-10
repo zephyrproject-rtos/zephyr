@@ -13,7 +13,6 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/sys/util.h>
 #include <zephyr/audio/codec.h>
 #include "tlv320dac310x.h"
 
@@ -48,7 +47,7 @@ static void codec_soft_reset(const struct device *dev);
 static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg);
 static int codec_configure_clocks(const struct device *dev,
 				  struct audio_codec_cfg *cfg);
-static int codec_configure_filters(const struct device *dev,
+static void codec_configure_filters(const struct device *dev,
 				   audio_dai_cfg_t *cfg);
 static enum osr_multiple codec_get_osr_multiple(audio_dai_cfg_t *cfg);
 static void codec_configure_output(const struct device *dev);
@@ -92,7 +91,11 @@ static int codec_configure(const struct device *dev,
 	/* Configure reset GPIO, and set the line to inactive, which will also
 	 * de-assert the reset line and thus enable the codec.
 	 */
-	gpio_pin_configure_dt(&dev_cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
+	ret = gpio_pin_configure_dt(&dev_cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure reset GPIO (%d)", ret);
+		return ret;
+	}
 
 	codec_soft_reset(dev);
 
@@ -101,7 +104,7 @@ static int codec_configure(const struct device *dev,
 		ret = codec_configure_dai(dev, &cfg->dai_cfg);
 	}
 	if (ret == 0) {
-		ret = codec_configure_filters(dev, &cfg->dai_cfg);
+		codec_configure_filters(dev, &cfg->dai_cfg);
 	}
 	codec_configure_output(dev);
 
@@ -223,11 +226,11 @@ static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg)
 
 	/* configure I2S interface */
 	val = IF_CTRL_IFTYPE(IF_CTRL_IFTYPE_I2S);
-	if (cfg->i2s.options & I2S_OPT_BIT_CLK_MASTER) {
+	if (cfg->i2s.options & I2S_OPT_BIT_CLK_CONTROLLER) {
 		val |= IF_CTRL_BCLK_OUT;
 	}
 
-	if (cfg->i2s.options & I2S_OPT_FRAME_CLK_MASTER) {
+	if (cfg->i2s.options & I2S_OPT_FRAME_CLK_CONTROLLER) {
 		val |= IF_CTRL_WCLK_OUT;
 	}
 
@@ -317,7 +320,7 @@ static int codec_configure_clocks(const struct device *dev,
 			dac_clk, mod_clk);
 	LOG_DBG("NDAC: %u MDAC: %u OSR: %u", ndac, mdac, osr);
 
-	if (i2s->options & I2S_OPT_BIT_CLK_MASTER) {
+	if (i2s->options & I2S_OPT_BIT_CLK_CONTROLLER) {
 		bclk_div = osr * mdac / (i2s->word_size * 2U); /* stereo */
 		if ((bclk_div * i2s->word_size * 2) != (osr * mdac)) {
 			LOG_ERR("Unable to generate BCLK %u from MCLK %u",
@@ -338,7 +341,7 @@ static int codec_configure_clocks(const struct device *dev,
 	codec_write_reg(dev, OSR_MSB_ADDR, (uint8_t)((osr >> 8) & OSR_MSB_MASK));
 	codec_write_reg(dev, OSR_LSB_ADDR, (uint8_t)(osr & OSR_LSB_MASK));
 
-	if (i2s->options & I2S_OPT_BIT_CLK_MASTER) {
+	if (i2s->options & I2S_OPT_BIT_CLK_CONTROLLER) {
 		codec_write_reg(dev, BCLK_DIV_ADDR,
 				BCLK_DIV(bclk_div) | BCLK_DIV_POWER_UP);
 	}
@@ -353,7 +356,7 @@ static int codec_configure_clocks(const struct device *dev,
 	return 0;
 }
 
-static int codec_configure_filters(const struct device *dev,
+static void codec_configure_filters(const struct device *dev,
 				   audio_dai_cfg_t *cfg)
 {
 	enum proc_block proc_blk;
@@ -374,7 +377,6 @@ static int codec_configure_filters(const struct device *dev,
 	}
 
 	codec_write_reg(dev, PROC_BLK_SEL_ADDR, PROC_BLK_SEL(proc_blk));
-	return 0;
 }
 
 static enum osr_multiple codec_get_osr_multiple(audio_dai_cfg_t *cfg)
@@ -407,12 +409,21 @@ static void codec_configure_output(const struct device *dev)
 	val |= HEADPHONE_DRV_CM(CM_VOLTAGE_1P65) | HEADPHONE_DRV_RESERVED;
 	codec_write_reg(dev, HEADPHONE_DRV_ADDR, val);
 
+#if DT_INST_PROP(0, use_volume_control_pin)
+	/*
+	 * set mic detect and volume control pin to volume control function.
+	 * See chapter "6.3.10.2 DAC Digital-Volume Control" and chapter
+	 * "6.3.10.3 Volume Control Pin" in the TLV320DAC3100 datasheet.
+	 */
+	codec_write_reg(dev, VOL_MICDET_ADC_CTRL_ADDR, VOL_MICDET_VOL_CTRL_PIN);
+#endif
+
 	/* enable pop removal on power down/up */
 	codec_read_reg(dev, HP_OUT_POP_RM_ADDR, &val);
 	codec_write_reg(dev, HP_OUT_POP_RM_ADDR, val | HP_OUT_POP_RM_ENABLE);
 
-	/* route DAC output to Headphone */
-	val = OUTPUT_ROUTING_HPL | OUTPUT_ROUTING_HPR;
+	/* route DAC output to Mixer Amplifier -> so that volume control has effect */
+	val = OUTPUT_ROUTING_MIXERL | OUTPUT_ROUTING_MIXERR;
 	codec_write_reg(dev, OUTPUT_ROUTING_ADDR, val);
 
 	/* enable volume control on Headphone out */

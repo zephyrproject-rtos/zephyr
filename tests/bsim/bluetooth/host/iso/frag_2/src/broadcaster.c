@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor
+ * Copyright (c) 2024-2025 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/byteorder.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/logging/log.h>
@@ -22,9 +22,9 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
-static DEFINE_FLAG(iso_connected);
-static DEFINE_FLAG(first_frag);
-static DEFINE_FLAG(sdu_sent);
+DEFINE_FLAG_STATIC(iso_connected);
+DEFINE_FLAG_STATIC(first_frag);
+DEFINE_FLAG_STATIC(sdu_sent);
 
 extern void bt_conn_suspend_tx(bool suspend);
 extern void bt_testing_set_iso_mtu(uint16_t mtu);
@@ -57,6 +57,15 @@ static int send_data(struct bt_iso_chan *chan)
 
 static void iso_connected_cb(struct bt_iso_chan *chan)
 {
+	const struct bt_iso_chan_path hci_path = {
+		.pid = BT_ISO_DATA_PATH_HCI,
+		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+	};
+	int err;
+
+	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
+	TEST_ASSERT(err == 0, "Unable to setup ISO TX path: %d", err);
+
 	LOG_INF("ISO Channel %p connected", chan);
 
 	SET_FLAG(iso_connected);
@@ -152,7 +161,6 @@ static struct bt_iso_chan_io_qos iso_tx = {
 	.sdu = CONFIG_BT_ISO_TX_MTU,
 	.phy = BT_GAP_LE_PHY_2M,
 	.rtn = 1,
-	.path = NULL,
 };
 static struct bt_iso_chan_qos iso_qos = {
 	.tx = &iso_tx,
@@ -260,9 +268,9 @@ int __real_bt_send(struct net_buf *buf);
 
 int __wrap_bt_send(struct net_buf *buf)
 {
-	struct bt_hci_iso_hdr *hci_hdr = (void *)buf->data;
+	if (buf->data[0] == BT_HCI_H4_ISO) {
+		struct bt_hci_iso_hdr *hci_hdr = (void *)(buf->data + 1);
 
-	if (bt_buf_get_type(buf) == BT_BUF_ISO_OUT) {
 		uint16_t handle = sys_le16_to_cpu(hci_hdr->handle);
 		uint8_t flags = bt_iso_flags(handle);
 		uint8_t pb_flag = bt_iso_flags_pb(flags);

@@ -9,6 +9,5 @@
 / {
 	/delete-node/ added-by-native-one;
 
-	added-by-native-two{
-	};
+	added-by-native-two {};
 };

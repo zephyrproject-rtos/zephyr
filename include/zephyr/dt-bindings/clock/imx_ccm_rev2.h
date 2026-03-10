@@ -1,5 +1,5 @@
 /*
- * Copyright 2021,2024 NXP
+ * Copyright 2021,2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -121,6 +121,7 @@
 /* ADC */
 #define IMX_CCM_LPADC1_CLK             0x1500UL
 #define IMX_CCM_LPADC2_CLK             0x1501UL
+#define IMX_CCM_SAR_ADC1_CLK           0x1500UL
 
 /* TPM */
 #define IMX_CCM_TPM_CLK                0x1600UL
@@ -149,11 +150,32 @@
 #define IMX_CCM_I3C1_CLK               0x2200UL
 #define IMX_CCM_I3C2_CLK               0x2201UL
 
+/* LPIT */
+#define IMX_CCM_LPIT_CLK  0x2300UL
+#define IMX_CCM_LPIT1_CLK 0x2300UL
+#define IMX_CCM_LPIT2_CLK 0x2301UL
+#define IMX_CCM_LPIT3_CLK 0x2302UL
+
+/* KPP */
+#define IMX_CCM_KPP_CLK                0x2400UL
+
+/* USB */
+#define IMX_CCM_USB_CLK                0x2500UL
+#define IMX_CCM_USB_PHY_CLK            0x2600UL
+
 /* QTMR */
 #define IMX_CCM_QTMR_CLK               0x6000UL
 #define IMX_CCM_QTMR1_CLK              0x6000UL
 #define IMX_CCM_QTMR2_CLK              0x6001UL
 #define IMX_CCM_QTMR3_CLK              0x6002UL
 #define IMX_CCM_QTMR4_CLK              0x6003UL
+
+/* MEDIA */
+#define IMX_CCM_MEDIA_AXI_CLK      0x3000UL
+#define IMX_CCM_MEDIA_APB_CLK      0x3100UL
+#define IMX_CCM_MEDIA_DISP_PIX_CLK 0x3200UL
+#define IMX_CCM_MEDIA_LDB_CLK      0x3300UL
+#define IMX_CCM_MIPI_PHY_CFG_CLK   0x3400UL
+#define IMX_CCM_CAM_PIX_CLK        0x3500UL
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IMX_CCM_REV2_H_ */

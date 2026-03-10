@@ -79,13 +79,13 @@ void llcp_lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 		struct proc_ctx *ctx_header;
 
 		ctx_header = llcp_lr_peek(conn);
-		LL_ASSERT(ctx_header == ctx);
+		LL_ASSERT_DBG(ctx_header == ctx);
 
 		/* If we have a node rx it must not be marked RETAIN as
 		 * the memory referenced would leak
 		 */
-		LL_ASSERT(ctx->node_ref.rx == NULL ||
-			  ctx->node_ref.rx->hdr.type != NODE_RX_TYPE_RETAIN);
+		LL_ASSERT_DBG(ctx->node_ref.rx == NULL ||
+			      ctx->node_ref.rx->hdr.type != NODE_RX_TYPE_RETAIN);
 
 		lr_dequeue(conn);
 
@@ -197,6 +197,31 @@ struct proc_ctx *llcp_lr_peek_proc(struct ll_conn *conn, uint8_t proc)
 	return ctx;
 }
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+struct proc_ctx *llcp_lr_peek_cc(struct ll_conn *conn, uint16_t cc_handle)
+{
+	/* This function is called from both Thread and Mayfly (ISR),
+	 * make sure only a single context have access at a time.
+	 */
+
+	struct proc_ctx *ctx, *tmp;
+
+	bool key = shared_data_access_lock();
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->llcp.local.pend_proc_list, ctx, tmp, node) {
+		if (ctx->proc == PROC_CIS_CREATE &&
+		    (cc_handle == ctx->data.cis_create.cis_handle ||
+		     cc_handle == LLL_HANDLE_INVALID)) {
+			break;
+		}
+	}
+
+	shared_data_access_unlock(key);
+
+	return ctx;
+}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+
 bool llcp_lr_ispaused(struct ll_conn *conn)
 {
 	return conn->llcp.local.pause == 1U;
@@ -234,6 +259,9 @@ void llcp_lr_flush_procedures(struct ll_conn *conn)
 	/* Flush all pending procedures */
 	ctx = lr_dequeue(conn);
 	while (ctx) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO) && ctx->proc == PROC_CIS_CREATE) {
+			llcp_lp_cc_flush(conn, ctx);
+		}
 		llcp_nodes_release(conn, ctx);
 		llcp_proc_ctx_release(ctx);
 		ctx = lr_dequeue(conn);
@@ -326,7 +354,7 @@ void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	default:
 		/* Unknown procedure */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
@@ -475,7 +503,7 @@ static void lr_act_run(struct ll_conn *conn)
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
 	default:
 		/* Unknown procedure */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
@@ -487,7 +515,7 @@ static void lr_act_complete(struct ll_conn *conn)
 	struct proc_ctx *ctx;
 
 	ctx = llcp_lr_peek(conn);
-	LL_ASSERT(ctx != NULL);
+	LL_ASSERT_DBG(ctx != NULL);
 
 	/* Stop procedure response timeout timer */
 	llcp_lr_prt_stop(conn);
@@ -617,7 +645,7 @@ static void lr_execute_fsm(struct ll_conn *conn, uint8_t evt, void *param)
 		break;
 	default:
 		/* Unknown state */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 

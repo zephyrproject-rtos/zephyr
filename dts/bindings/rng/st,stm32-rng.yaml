@@ -45,3 +45,9 @@ properties:
     description: |
          Heath Test Configuration, necessary to have proper RNG behavior,
          when available.
+
+  noise-source-control:
+    type: int
+    description: |
+      This property is used to configure the RNG_NSCR register for the NIST
+      certification.

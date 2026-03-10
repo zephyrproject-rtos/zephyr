@@ -1,0 +1,10 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_RPI_PICO_SHA256
+	bool "Raspberry Pi RP2 series SHA-256 Accelerator"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_SHA256_ENABLED
+	select PICOSDK_USE_SHA256
+	help
+	  Enable driver for RP2 series SHA-256 accelerator

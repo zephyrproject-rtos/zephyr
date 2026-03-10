@@ -8,41 +8,7 @@
 #include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/arch/common/semihost.h>
-
-struct semihost_poll_in_args {
-	long zero;
-} __packed;
-
-struct semihost_open_args {
-	const char *path;
-	long mode;
-	long path_len;
-} __packed;
-
-struct semihost_close_args {
-	long fd;
-} __packed;
-
-struct semihost_flen_args {
-	long fd;
-} __packed;
-
-struct semihost_seek_args {
-	long fd;
-	long offset;
-} __packed;
-
-struct semihost_read_args {
-	long fd;
-	char *buf;
-	long len;
-} __packed;
-
-struct semihost_write_args {
-	long fd;
-	const char *buf;
-	long len;
-} __packed;
+#include "semihost_types.h"
 
 char semihost_poll_in(void)
 {

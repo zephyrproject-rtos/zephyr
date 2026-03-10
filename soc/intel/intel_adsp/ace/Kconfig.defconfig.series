@@ -9,9 +9,10 @@ config SMP
 config POWER_DOMAIN
 	default y
 
-# MTL leaves the upper mapping in the same spot as cAVS, but moves the
-# lower one inexplicably.
-config XTENSA_UNCACHED_REGION
+config INTEL_ADSP_CACHED_REGION
+	default 5
+
+config INTEL_ADSP_UNCACHED_REGION
 	default 2
 
 # Parameters for gen_isr_tables.py:
@@ -23,7 +24,7 @@ config MULTI_LEVEL_INTERRUPTS
 	default y
 
 config MAX_IRQ_PER_AGGREGATOR
-	default 29
+	default 30
 
 config NUM_2ND_LEVEL_AGGREGATORS
 	default 1
@@ -52,24 +53,13 @@ config DYNAMIC_INTERRUPTS
 
 if LOG
 
+config LOG_BACKEND_XTENSA_SIM
+	default y if SIMULATOR_XTENSA
+
 config LOG_BACKEND_ADSP
-	default y
+	default y if !SIMULATOR_XTENSA
 
 endif # LOG
-
-config XTENSA_MORE_SPIN_RELAX_NOPS
-	default y if SMP && MP_MAX_NUM_CPUS > 1
-
-if XTENSA_MORE_SPIN_RELAX_NOPS
-
-config XTENSA_NUM_SPIN_RELAX_NOPS
-	default 32 if MP_MAX_NUM_CPUS = 1
-	default 64 if MP_MAX_NUM_CPUS = 2
-	default 96 if MP_MAX_NUM_CPUS = 3
-	default 128 if MP_MAX_NUM_CPUS = 4
-	default 160 if MP_MAX_NUM_CPUS = 5
-
-endif # XTENSA_MORE_SPIN_RELAX_NOPS
 
 if KERNEL_VM_SUPPORT
 
@@ -77,6 +67,22 @@ config KERNEL_VM_SIZE
 	default 0xfe0000
 
 endif
+
+if GDBSTUB
+
+# GDB expects 420 byte G-packet, so double for hexadecimal digits.
+config GDBSTUB_BUF_SZ
+	default 840 if GDBSTUB
+
+endif
+
+# No need to use the reset vector and crt1 from the arch layer
+# as ACE has its own entry point: rom_entry().
+config XTENSA_USE_CORE_CRT1
+	default n
+
+config XTENSA_RESET_VECTOR
+	default n
 
 rsource "Kconfig.defconfig.ace*"
 

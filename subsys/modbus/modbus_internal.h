@@ -13,7 +13,7 @@
  *
  *      Copyright 2003-2020 Silicon Laboratories Inc. www.silabs.com
  *
- *                   SPDX-License-Identifier: APACHE-2.0
+ *                   SPDX-License-Identifier: Apache-2.0
  *
  * This software is subject to an open source license and is distributed by
  *  Silicon Laboratories Inc. pursuant to the terms of the Apache License,
@@ -88,6 +88,7 @@ struct modbus_serial_config {
 };
 
 #define MODBUS_STATE_CONFIGURED		0
+#define MODBUS_STATE_RX_ENABLED		1
 
 struct modbus_context {
 	/* Interface name */

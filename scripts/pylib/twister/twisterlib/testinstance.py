@@ -36,7 +36,7 @@ from twisterlib.statuses import TwisterStatus
 from twisterlib.testsuite import TestCase, TestSuite
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
+
 
 class TestInstance:
     """Class representing the execution of a particular TestSuite on a platform
@@ -55,7 +55,7 @@ class TestInstance:
         self.platform: Platform = platform
 
         self._status = TwisterStatus.NONE
-        self.reason = "Unknown"
+        self.reason = None
         self.metrics = dict()
         self.handler = None
         self.recording = None
@@ -66,9 +66,11 @@ class TestInstance:
         self.build_time = 0
         self.retries = 0
         self.toolchain = toolchain
-
         self.name = os.path.join(platform.name, toolchain, testsuite.name)
         self.dut = None
+        self.suite_repeat = None
+        self.test_repeat = None
+        self.test_shuffle = None
 
         if testsuite.detailed_test_id:
             self.build_dir = os.path.join(
@@ -95,6 +97,8 @@ class TestInstance:
         self.init_cases()
         self.filters = []
         self.filter_type = None
+        self.required_applications = []
+        self.required_build_dirs = []
 
     def setup_run_id(self):
         self.run_id = self._get_run_id()
@@ -152,7 +156,7 @@ class TestInstance:
             with open(run_id_file) as fp:
                 run_id = fp.read()
         else:
-            hash_object = hashlib.md5(self.name.encode())
+            hash_object = hashlib.md5(self.name.encode(), usedforsecurity=False)
             random_str = f"{random.getrandbits(64)}".encode()
             hash_object.update(random_str)
             run_id = hash_object.hexdigest()
@@ -181,9 +185,6 @@ class TestInstance:
 
     def __lt__(self, other):
         return self.name < other.name
-
-    def compose_case_name(self, tc_name) -> str:
-        return self.testsuite.compose_case_name(tc_name)
 
     def set_case_status_by_name(self, name, status, reason=None):
         tc = self.get_case_or_create(name)
@@ -220,8 +221,10 @@ class TestInstance:
         # console harness allows us to run the test and capture data.
         if testsuite.harness in [
             'console',
+            'display_capture',
             'ztest',
             'pytest',
+            'power',
             'test',
             'gtest',
             'robot',
@@ -313,7 +316,7 @@ class TestInstance:
                             device_testing)
 
         # check if test is runnable in pytest
-        if self.testsuite.harness in ['pytest', 'shell']:
+        if self.testsuite.harness in ['pytest', 'shell', 'power', 'display_capture']:
             target_ready = bool(
                 filter == 'runnable' or simulator and simulator.name in SUPPORTED_SIMS_IN_PYTEST
             )
@@ -371,11 +374,27 @@ class TestInstance:
 
             content = "\n".join(new_config_list)
 
+
+        if self.testsuite.harness_config:
+            self.suite_repeat = self.testsuite.harness_config.get('ztest_suite_repeat', None)
+            self.test_repeat = self.testsuite.harness_config.get('ztest_test_repeat', None)
+            self.test_shuffle = self.testsuite.harness_config.get('ztest_test_shuffle', False)
+
+
+        # Use suite_repeat and test_repeat values
+        if self.suite_repeat or self.test_repeat or self.test_shuffle:
+            content +="\nCONFIG_ZTEST_REPEAT=y"
+            if self.suite_repeat:
+                content += f"\nCONFIG_ZTEST_SUITE_REPEAT_COUNT={self.suite_repeat}"
+            if self.test_repeat:
+                content += f"\nCONFIG_ZTEST_TEST_REPEAT_COUNT={self.test_repeat}"
+            if self.test_shuffle:
+                content +="\nCONFIG_ZTEST_SHUFFLE=y"
+
         if enable_coverage:
             for cp in coverage_platform:
                 if cp in platform.aliases:
                     content = content + "\nCONFIG_COVERAGE=y"
-                    content = content + "\nCONFIG_COVERAGE_DUMP=y"
 
         if platform.type == "native":
             if enable_asan:

@@ -1,15 +1,23 @@
+common:
+  platform_exclude:
+    - qemu_arc/qemu_arc_em
+    # Too few MPU regions for USERSPACE testing
+    - numaker_m2l31ki
+  filter: CONFIG_ARCH_HAS_USERSPACE
+  arch_exclude:
+    - posix
+  tags:
+    - kernel
+    - security
+    - userspace
+  ignore_faults: true
+  timeout: 180
 tests:
-  kernel.memory_protection.syscalls:
-    platform_exclude:
-      - qemu_arc/qemu_arc_em
-      # Too few MPU regions for USERSPACE testing
-      - numaker_m2l31ki
-    filter: CONFIG_ARCH_HAS_USERSPACE
-    arch_exclude:
-      - posix
-    tags:
-      - kernel
-      - security
-      - userspace
-    ignore_faults: true
-    timeout: 180
+  kernel.memory_protection.syscalls.timeslicing:
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+      - CONFIG_TIMESLICE_SIZE=20
+  kernel.memory_protection.syscalls.kyield:
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+      - CONFIG_TIMESLICE_SIZE=0

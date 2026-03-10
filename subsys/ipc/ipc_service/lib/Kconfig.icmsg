@@ -21,14 +21,6 @@ config IPC_SERVICE_ICMSG_SHMEM_ACCESS_TO_MS
 	  Maximum time to wait, in milliseconds, for access to send data with
 	  backends basing on icmsg library. This time should be relatively low.
 
-config IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS
-	int "Bond notification timeout in miliseconds"
-	range 1 100
-	default 1
-	help
-	  Time to wait for remote bonding notification before the
-	  notification is repeated.
-
 config IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE
 	bool "Use dedicated workqueue"
 	depends on MULTITHREADING
@@ -67,6 +59,33 @@ config IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY
 	  at a cooperative priority.
 
 endif
+
+config IPC_SERVICE_ICMSG_UNBOUND_ENABLED_ALLOWED
+	bool "Instance is allowed to set unbound to enabled"
+	default y
+	help
+	  Controls whether the "enabled" value of the "unbound"
+	  property is allowed to be set in any of the ICMsg instances. You
+	  can set this option to "n", if you want to reduce code size and
+	  no instance of ICMsg is using unbound functionality.
+
+config IPC_SERVICE_ICMSG_UNBOUND_DISABLED_ALLOWED
+	bool "Instance is allowed to set unbound to disabled"
+	default y
+	help
+	  Controls whether the "disabled" value of the "unbound"
+	  property is allowed to be set in any of the ICMsg instances. You
+	  can set this option to "n", if you want to reduce code size and
+	  all instances of ICMsg are using unbound functionality.
+
+config IPC_SERVICE_ICMSG_UNBOUND_DETECT_ALLOWED
+	bool "Instance is allowed to set unbound to detect"
+	default y
+	help
+	  Controls whether the "detect" value of the "unbound"
+	  property is allowed to be set in any of the ICMsg instances. You
+	  can set this option to "n", if you want to reduce code size and
+	  all instances of ICMsg are using unbound detection functionality.
 
 # The Icmsg library in its simplicity requires the system workqueue to execute
 # at a cooperative priority.

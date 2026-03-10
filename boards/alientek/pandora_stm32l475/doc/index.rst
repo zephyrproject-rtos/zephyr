@@ -39,90 +39,63 @@ Hardware
 The STM32L475VE SoC provides the following hardware features:
 
 - Ultra-low-power with FlexPowerControl (down to 130 nA Standby mode and 100 uA/MHz run mode)
-- Core: ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU, frequency up to 80 MHz, 100DMIPS/1.25DMIPS/MHz (Dhrystone 2.1)
+- Core: ARM® 32-bit Cortex®-M4 CPU with FPU, frequency up to 80 MHz, 100DMIPS/1.25DMIPS/MHz (Dhrystone 2.1)
 - Clock Sources:
-    - 4 to 48 MHz crystal oscillator
-    - 32 kHz crystal oscillator for RTC (LSE)
-    - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
-    - Internal low-power 32 kHz RC ( |plusminus| 5%)
-    - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by
-      LSE (better than  |plusminus| 0.25 % accuracy)
-    - 3 PLLs for system clock, USB, audio, ADC
+
+  - 4 to 48 MHz crystal oscillator
+  - 32 kHz crystal oscillator for RTC (LSE)
+  - Internal 16 MHz factory-trimmed RC (±1%)
+  - Internal low-power 32 kHz RC (±5%)
+  - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by
+    LSE (better than ±0.25 % accuracy)
+  - 3 PLLs for system clock, USB, audio, ADC
+
 - RTC with HW calendar, alarms and calibration
 - 16x timers:
-    - 2x 16-bit advanced motor-control
-    - 2x 32-bit and 7x 16-bit general purpose
-    - 2x 16-bit basic
-    - 2x low-power 16-bit timers (available in Stop mode)
-    - 2x watchdogs
-    - SysTick timer
+
+  - 2x 16-bit advanced motor-control
+  - 2x 32-bit and 7x 16-bit general purpose
+  - 2x 16-bit basic
+  - 2x low-power 16-bit timers (available in Stop mode)
+  - 2x watchdogs
+  - SysTick timer
+
 - Up to 82 fast I/Os, most 5 V-tolerant, up to 14 I/Os with independent supply down to 1.08 V
+
 - Memories
-    - Up to 1 MB Flash, 2 banks read-while-write, proprietary code readout protection
-    - Up to 128 KB of SRAM including 32 KB with hardware parity check
-    - External memory interface for static memories supporting SRAM, PSRAM, NOR and NAND memories
-    - Quad SPI memory interface
+
+  - Up to 1 MB Flash, 2 banks read-while-write, proprietary code readout protection
+  - Up to 128 KB of SRAM including 32 KB with hardware parity check
+  - External memory interface for static memories supporting SRAM, PSRAM, NOR and NAND memories
+  - Quad SPI memory interface
 - 4x digital filters for sigma delta modulator
 - Rich analog peripherals (independent supply)
-    - 3x 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200 uA/MSPS
-    - 2x 12-bit DAC, low-power sample and hold
-    - 2x operational amplifiers with built-in PGA
-    - 2x ultra-low-power comparators
+
+  - 3x 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200 uA/MSPS
+  - 2x 12-bit DAC, low-power sample and hold
+  - 2x operational amplifiers with built-in PGA
+  - 2x ultra-low-power comparators
+
 - 18x communication interfaces
-    - USB OTG 2.0 full-speed, LPM and BCD
-    - 2x SAIs (serial audio interface)
-    - 3x I2C FM+(1 Mbit/s), SMBus/PMBus
-    - 6x USARTs (ISO 7816, LIN, IrDA, modem)
-    - 3x SPIs (4x SPIs with the Quad SPI)
-    - CAN (2.0B Active) and SDMMC interface
-    - SWPMI single wire protocol master I/F
+
+  - USB OTG 2.0 full-speed, LPM and BCD
+  - 2x SAIs (serial audio interface)
+  - 3x I2C FM+(1 Mbit/s), SMBus/PMBus
+  - 6x USARTs (ISO 7816, LIN, IrDA, modem)
+  - 3x SPIs (4x SPIs with the Quad SPI)
+  - CAN (2.0B Active) and SDMMC interface
+  - SWPMI single wire protocol master I/F
+
 - 14-channel DMA controller
 - True random number generator
 - CRC calculation unit, 96-bit unique ID
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
 
 
 Supported Features
 ==================
 
-The Zephyr stm32l475ve_pandora board configuration supports the following hardware features:
-
-+-----------+------------+----------------------------------------------+
-| Interface | Controller | Driver/Component                             |
-+===========+============+==============================================+
-| NVIC      | on-chip    | nested vector interrupt controller           |
-+-----------+------------+----------------------------------------------+
-| UART      | on-chip    | serial port-polling;                         |
-|           |            | serial port-interrupt                        |
-+-----------+------------+----------------------------------------------+
-| PINMUX    | on-chip    | pinmux                                       |
-+-----------+------------+----------------------------------------------+
-| GPIO      | on-chip    | gpio                                         |
-+-----------+------------+----------------------------------------------+
-| I2C       | on-chip    | I2C-AHT10(Temperature and humidity sensor)   |
-|           |            | I2C-ICM2068(light environment sensor)        |
-+-----------+------------+----------------------------------------------+
-| I2S       | on-chip    | I2S-ES8388(Audio Decoder)                    |
-+-----------+------------+----------------------------------------------+
-| USB       | on-chip    | I2S-OTG                                      |
-+-----------+------------+----------------------------------------------+
-| SDIO      | on-chip    | SDIO-AP6181(WIFI)                            |
-+-----------+------------+----------------------------------------------+
-| SPI       | on-chip    | LCD-TFT                                      |
-+-----------+------------+----------------------------------------------+
-| QSPI NOR  | on-chip    | flash                                        |
-+-----------+------------+----------------------------------------------+
-| IR-RX/TX  | on-board   | Infrared Receiver(38Khz)/Transmitter         |
-+-----------+------------+----------------------------------------------+
-| STLINK-V2 | on-board   | STLINK-V2 Debugger                           |
-+-----------+------------+----------------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-
-	:zephyr_file:`boards/alientek/pandora_stm32l475/pandora_stm32l475_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -157,6 +130,8 @@ Default settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========

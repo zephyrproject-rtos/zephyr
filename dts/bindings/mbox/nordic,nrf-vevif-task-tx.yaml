@@ -11,19 +11,6 @@ description: |
   intended for signaling within an interprocessor communication (IPC) framework.
   When used in task tx mode, the VEVIF tasks are used to trigger IRQs on VPR core.
 
-  Example definition:
-
-    cpuppr_vpr: vpr@deadbeef{
-      ...
-      cpuppr_vevif_task_tx: mailbox@0 {
-        compatible = "nordic,nrf-vevif-task-tx";
-        reg = <0x0 0x1000>;
-        #mbox-cells = <1>;
-        nordic,tasks = <16>;
-        nordic,tasks-mask = <0xfffffff0>;
-      };
-    };
-
 compatible: "nordic,nrf-vevif-task-tx"
 
 include: [base.yaml, mailbox-controller.yaml]
@@ -44,3 +31,16 @@ properties:
 
 mbox-cells:
   - channel
+
+examples:
+  - |
+    cpuppr_vpr: vpr@deadbeef{
+      /* ... */
+      cpuppr_vevif_task_tx: mailbox@0 {
+        compatible = "nordic,nrf-vevif-task-tx";
+        reg = <0x0 0x1000>;
+        #mbox-cells = <1>;
+        nordic,tasks = <16>;
+        nordic,tasks-mask = <0xfffffff0>;
+      };
+    };

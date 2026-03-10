@@ -13,7 +13,7 @@ menuconfig GPIO_TCA6424A
 
 config GPIO_TCA6424A_INIT_PRIORITY
 	int "Init priority"
-	default 70
+	default I2C_INIT_PRIORITY
 	depends on GPIO_TCA6424A
 	help
 	  Device driver initialization priority.

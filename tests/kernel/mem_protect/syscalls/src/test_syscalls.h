@@ -10,7 +10,7 @@
 
 __syscall int string_alloc_copy(char *src);
 
-__syscall int string_copy(char *src);
+__syscall int string_copy(char *src, int id);
 
 __syscall int to_copy(char *dest);
 

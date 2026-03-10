@@ -7,7 +7,11 @@
 
 source "Kconfig.constants"
 
-osource "${APPLICATION_SOURCE_DIR}/VERSION"
+osource "$(APPLICATION_SOURCE_DIR)/VERSION"
+
+# This should be sourced early since the autogen Kconfig.dts options
+# and macros may get used by shields/boards/SoC defconfig or modules.
+source "dts/Kconfig"
 
 # Include Kconfig.defconfig files first so that they can override defaults and
 # other symbol/choice properties by adding extra symbol/choice definitions.
@@ -32,10 +36,6 @@ source "$(KCONFIG_BINARY_DIR)/soc/Kconfig.defconfig"
 osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig.defconfig"
 # This loads the testsuite defconfig
 source "subsys/testsuite/Kconfig.defconfig"
-
-# This should be early since the autogen Kconfig.dts symbols may get
-# used by modules
-source "dts/Kconfig"
 
 menu "Modules"
 
@@ -98,11 +98,31 @@ config USE_DT_CODE_PARTITION
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
+config FLASH_CODE_PARTITION_ADDRESS_INVALID
+	bool
+	default y if XIP && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) < FLASH_BASE_ADDRESS
+	depends on USE_DT_CODE_PARTITION
+	select DEPRECATED
+	help
+	  If this item is selected, it is likely selected because your board/SoC/base DTS files
+	  are wrong and have a flash memory that does not start at absolute address 0x0 and:
+	    * Do not have a ``ranges <>;`` property in the flash node passing down the address
+	      and size to child nodes
+	    * Do not have a ``ranges;`` property in the partitions node passing down the previous
+	      ranges to child nodes
+
+	  Support for this will be removed and required that your files be updated correctly for
+	  a future release, check the Zephyr 4.4 migration notes.
 
 config FLASH_LOAD_OFFSET
 	# Only user-configurable when USE_DT_CODE_PARTITION is disabled
 	hex "Kernel load offset" if !USE_DT_CODE_PARTITION
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) \
+		if FLASH_CODE_PARTITION_ADDRESS_INVALID
+	default $(sub_hex, $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)), \
+			   $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))) if USE_DT_CODE_PARTITION
 	default 0
 	help
 	  This option specifies the byte offset from the beginning of flash that
@@ -214,12 +234,6 @@ config LINKER_SORT_BY_ALIGNMENT
 	  This turns on the linker flag to sort sections by alignment
 	  in decreasing size of symbols. This helps to minimize
 	  padding between symbols.
-
-config SRAM_VECTOR_TABLE
-	bool "Place the vector table in SRAM instead of flash"
-	help
-	  The option specifies that the vector table should be placed at the
-	  start of SRAM instead of the start of flash.
 
 config HAS_SRAM_OFFSET
 	bool
@@ -363,18 +377,19 @@ menu "Compiler Options"
 
 config REQUIRES_STD_C99
 	bool
+	select DEPRECATED
 	help
 	  Hidden option to select compiler support C99 standard or higher.
 
 config REQUIRES_STD_C11
 	bool
+	select DEPRECATED
 	select REQUIRES_STD_C99
 	help
 	  Hidden option to select compiler support C11 standard or higher.
 
 config REQUIRES_STD_C17
 	bool
-	select REQUIRES_STD_C11
 	help
 	  Hidden option to select compiler support C17 standard or higher.
 
@@ -387,27 +402,28 @@ config REQUIRES_STD_C23
 choice STD_C
 	prompt "C Standard"
 	default STD_C23 if REQUIRES_STD_C23
-	default STD_C17 if REQUIRES_STD_C17
-	default STD_C11 if REQUIRES_STD_C11
-	default STD_C99
+	default STD_C17
 	help
 	  C Standards.
 
 config STD_C90
-	bool "C90"
+	bool "C90 [DEPRECATED]"
+	select DEPRECATED
 	depends on !REQUIRES_STD_C99
 	help
 	  1989 C standard as completed in 1989 and ratified by ISO/IEC
 	  as ISO/IEC 9899:1990. This version is known as "ANSI C".
 
 config STD_C99
-	bool "C99"
+	bool "C99 [DEPRECATED]"
+	select DEPRECATED
 	depends on !REQUIRES_STD_C11
 	help
 	  1999 C standard.
 
 config STD_C11
-	bool "C11"
+	bool "C11 [DEPRECATED]"
+	select DEPRECATED
 	depends on !REQUIRES_STD_C17
 	help
 	  2011 C standard.
@@ -466,17 +482,6 @@ config NATIVE_BUILD
 	  Zephyr will be built targeting the host system for debug and
 	  development purposes.
 
-config NATIVE_APPLICATION
-	bool
-	default y if ARCH_POSIX
-	depends on !NATIVE_LIBRARY
-	select NATIVE_BUILD
-	select DEPRECATED
-	help
-	  Build as a native application that can run on the host and using
-	  resources and libraries provided by the host. This option is deprecated
-	  and will be removed in Zephyr v4.3
-
 config NATIVE_LIBRARY
 	bool
 	select NATIVE_BUILD
@@ -513,7 +518,7 @@ config SIZE_OPTIMIZATIONS
 config SIZE_OPTIMIZATIONS_AGGRESSIVE
 	bool "Aggressively optimize for size"
 	help
-	  Compiler optimizations wil be set to -Oz independently of other
+	  Compiler optimizations will be set to -Oz independently of other
 	  options.
 
 config SPEED_OPTIMIZATIONS
@@ -546,10 +551,26 @@ config LTO
 	help
 	  This option enables Link Time Optimization.
 
+config LTO_SINGLE_THREADED
+	bool "Single-threaded LTO"
+	depends on LTO
+	help
+	  This option instructs the linker to use a single thread to process
+	  LTO. See the following issue for more info:
+	  https://github.com/zephyrproject-rtos/sdk-ng/issues/1038
+
 config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
 	help
 	  Turn on "warning as error" toolchain flags
+
+config DEPRECATION_TEST
+	bool "Indicate test for deprecated feature"
+	help
+	  This option is selected by tests which check functionality of
+	  deprecated features. It ensures that COMPILER_WARNINGS_AS_ERRORS
+	  is not selected as that would generate errors when the deprecated
+	  features are used.
 
 config COMPILER_SAVE_TEMPS
 	bool "Save temporary object files"
@@ -621,6 +642,58 @@ config MISRA_SANE
 	  standard for safety reasons.  Specifically variable length
 	  arrays are not permitted (and gcc will enforce this).
 
+config TOOLCHAIN_SUPPORTS_VLA_IN_STATEMENTS
+	bool
+	default y
+	help
+	  Hidden symbol to state if the toolchain can handle vla in
+	  statements.
+
+config TOOLCHAIN_SUPPORTS_VARIABLE_CLEANUP_ATTRIBUTE
+	bool
+	default y
+	help
+	  Hidden option to signal that toolchain supports the variable
+	  __cleanup(function) attribute.
+
+config SCOPE_CLEANUP_HELPERS
+	bool "Scope-based Cleanup Helpers"
+	depends on TOOLCHAIN_SUPPORTS_VARIABLE_CLEANUP_ATTRIBUTE
+	help
+	  This option enables scope-based cleanup helpers, which are macros making
+	  use of the variable cleanup function attribute.
+
+menu "Code Generation"
+
+choice COMPILER_CODEGEN_VLIW
+	prompt "VLIW (Very Long Instruction Word)"
+	default COMPILER_CODEGEN_VLIW_AUTO
+	help
+	  This option instructs the compiler whether to use VLIW
+	  (Very Long Instruction Word) instructions. VLIW allows
+	  the compiler to fuse instructions for parallel execution.
+
+config COMPILER_CODEGEN_VLIW_AUTO
+	bool "Auto"
+	help
+	  Let the compiler decide whether to generate VLIW instructions.
+
+	  This usually means using the compiler defaults.
+
+config COMPILER_CODEGEN_VLIW_ENABLED
+	bool "Generate VLIW"
+	help
+	  Explicitly instructs the compiler to generate VLIW instructions if possible.
+
+config COMPILER_CODEGEN_VLIW_DISABLED
+	bool "DO NOT generate VLIW"
+	help
+	  Explicitly instructs the compiler to NEVER generate VLIW instructions.
+
+endchoice # COMPILER_CODEGEN_VLIW
+
+endmenu # Code Generation
+
 endmenu
 
 choice
@@ -687,6 +760,13 @@ config OUTPUT_DISASSEMBLY_WITH_SOURCE
 	  since it can be used to remove one of the elements of
 	  the .lst file that can vary across platforms because
 	  of reasons such as having ".." include paths.
+
+config OUTPUT_DISASSEMBLY_NO_ALIASES
+	bool "Disassemble with raw instruction mnemonics"
+	depends on OUTPUT_DISASSEMBLY
+	help
+	  The .lst file will contain raw instruction mnemonic instead of
+	  pseudo instructions.
 
 config OUTPUT_PRINT_MEMORY_USAGE
 	bool "Print memory usage to stdout"
@@ -782,6 +862,12 @@ config BUILD_OUTPUT_UF2
 	depends on BUILD_OUTPUT_BIN
 	help
 	  Build a UF2 binary zephyr/zephyr.uf2 in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_MOT
+	bool "Build a binary in MOT format"
+	help
+	  Build a MOT binary zephyr/zephyr.mot in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
 if BUILD_OUTPUT_UF2
@@ -952,7 +1038,7 @@ config BUILD_OUTPUT_STRIP_PATHS
 	bool "Strip absolute paths from binaries"
 	default y
 	help
-	  If the compiler supports it, strip the ${ZEPHYR_BASE} prefix from the
+	  If the compiler supports it, strip the $(ZEPHYR_BASE) prefix from the
 	  __FILE__ macro used in __ASSERT*, in the
 	  .noinit."/home/joe/zephyr/fu/bar.c" section names and in any
 	  application code.
@@ -1000,7 +1086,8 @@ config WARN_DEPRECATED
 	prompt "Warn on deprecated usage"
 	help
 	  Print a warning when the Kconfig tree is parsed if any deprecated
-	  features are enabled.
+	  features are enabled, or at compile time, when deprecated macros or
+	  symbols are used.
 
 config EXPERIMENTAL
 	bool
@@ -1014,6 +1101,12 @@ config WARN_EXPERIMENTAL
 	help
 	  Print a warning when the Kconfig tree is parsed if any experimental
 	  features are enabled.
+
+config NOT_SECURE
+	bool
+	help
+	  Symbol to be selected by a feature to indicate that feature is
+	  not secure.
 
 config TAINT
 	bool
@@ -1044,8 +1137,6 @@ menu "Boot Options"
 
 config IS_BOOTLOADER
 	bool "Act as a bootloader"
-	depends on XIP
-	depends on ARM
 	help
 	  This option indicates that Zephyr will act as a bootloader to execute
 	  a separate Zephyr image payload.

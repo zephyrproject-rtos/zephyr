@@ -5,19 +5,14 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log_core.h>
 #include <stdarg.h>
-#include <stdio.h>
 
 #include <openthread/platform/logging.h>
-#include "openthread-core-zephyr-config.h"
-
-#define LOG_MODULE_NAME net_openthread
-#define LOG_LEVEL LOG_LEVEL_DBG
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "platform-zephyr.h"
 
+#if defined(CONFIG_LOG)
 /* Convert OT log level to zephyr log level. */
 static inline int log_translate(otLogLevel aLogLevel)
 {
@@ -38,6 +33,7 @@ static inline int log_translate(otLogLevel aLogLevel)
 
 	return -1;
 }
+#endif
 
 void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const char *aFormat, ...)
 {
@@ -47,7 +43,7 @@ void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const char *aFormat
 	int level = log_translate(aLogLevel);
 	va_list param_list;
 
-	if (level < 0) {
+	if (level < 0 || level > CONFIG_OPENTHREAD_PLATFORM_LOG_LEVEL) {
 		return;
 	}
 

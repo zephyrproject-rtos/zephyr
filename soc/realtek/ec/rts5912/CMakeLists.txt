@@ -12,6 +12,8 @@ zephyr_sources_ifdef(CONFIG_PM
   power.c
   )
 
-zephyr_sources_ifdef(CONFIG_DT_HAS_SWJ_CONNECTOR_ENABLED debug_swj.c)
+zephyr_sources_ifdef(CONFIG_RTS5912_DEBUG_SWJ debug_swj.c)
+zephyr_sources_ifdef(CONFIG_POWEROFF poweroff.c)
+zephyr_sources_ifdef(CONFIG_SOC_RTS5912_ULPM rts5912_ulpm.c)
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")

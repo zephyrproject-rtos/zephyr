@@ -1,0 +1,7 @@
+shield:
+  name: buydisplay_3_5_tft_touch_arduino
+  full_name: BuyDisplay 3.5" TFT Touch Shield
+  vendor: gooddisplay
+  supported_features:
+    - input
+    - display

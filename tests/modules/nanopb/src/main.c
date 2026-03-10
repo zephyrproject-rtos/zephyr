@@ -30,17 +30,19 @@ ZTEST(nanopb_tests, test_nanopb_simple)
 	zassert_true(pb_encode(&ostream, SimpleMessage_fields, &msg),
 		     "Encoding failed: %s", PB_GET_ERROR(&ostream));
 
-	/* Sanity check, clear data */
+	/* Coherence check, clear data */
 	memset(&msg, 0, sizeof(SimpleMessage));
 
 	pb_istream_t istream = pb_istream_from_buffer(buffer, ostream.bytes_written);
 
 	zassert_true(pb_decode(&istream, SimpleMessage_fields, &msg),
-		     "Decoding failed: %s", PB_GET_ERROR(&ostream));
+		     "Decoding failed: %s", PB_GET_ERROR(&istream));
 
 	for (size_t i = 0; i < sizeof(msg.buffer); ++i) {
 		zassert_equal(msg.buffer[i], i);
 	}
+
+	pb_release(SimpleMessage_fields, &msg);
 }
 
 ZTEST(nanopb_tests, test_nanopb_nested)
@@ -57,7 +59,7 @@ ZTEST(nanopb_tests, test_nanopb_nested)
 	zassert_true(pb_encode(&ostream, ComplexMessage_fields, &msg),
 		     "Encoding failed: %s", PB_GET_ERROR(&ostream));
 
-	/* Sanity check, clear data */
+	/* Coherence check, clear data */
 	memset(&msg, 0, sizeof(ComplexMessage));
 
 	pb_istream_t istream = pb_istream_from_buffer(buffer, ostream.bytes_written);
@@ -68,6 +70,8 @@ ZTEST(nanopb_tests, test_nanopb_nested)
 	zassert_equal(42, msg.nested.id);
 	zassert_true(msg.has_nested);
 	zassert_str_equal(msg.nested.name, "Test name");
+
+	pb_release(ComplexMessage_fields, &msg);
 }
 
 ZTEST(nanopb_tests, test_nanopb_lib)

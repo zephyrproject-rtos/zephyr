@@ -150,33 +150,7 @@ The mps2/an521 board provides the following user push buttons:
 Supported Features
 ===================
 
-The mps2/an521 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| TIMER     | on-chip    | timer                               |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by the port.
-See the `MPS2 FPGA Website`_ for a complete list of MPS2+ AN521 board hardware
-features.
-
-The default configuration can be found in
-:zephyr_file:`boards/arm/mps2/mps2_an521_cpu0_defconfig`.
+* Refer to :zephyr:board:`mps2` for details.
 
 Interrupt Controller
 ====================
@@ -390,8 +364,8 @@ boot in the Secure state.
 
 MPS2+ AN521 (CPU1) does not support the Armv8m Security Extension.
 
-Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
-=============================================================================
+Building Secure/Non-Secure Zephyr applications with Arm® TrustZone®
+===================================================================
 
 Applications on the MPS2+ AN521 (CPU0) may contain a Secure and a Non-Secure
 firmware image. The Secure image can be built using either Zephyr
@@ -562,7 +536,7 @@ serial port:
    https://developer.arm.com/documentation/100235/latest/
 
 .. _Trusted Firmware M:
-   https://tf-m-user-guide.trustedfirmware.org/building/tfm_build_instruction.html
+   https://tf-m.docs.trustedfirmware.org/en/latest/building/tfm_build_instruction.html
 
 .. _Corelink SSE-200 Subsystem:
    https://developer.arm.com/documentation/dto0051/latest/subsystem-overview/about-the-sse-200

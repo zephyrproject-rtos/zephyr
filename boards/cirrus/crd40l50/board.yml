@@ -1,0 +1,6 @@
+board:
+  name: crd40l50
+  full_name: CRD40L50-POC-Q
+  vendor: cirrus
+  socs:
+    - name: stm32f401xd

@@ -8,3 +8,19 @@ config I2C_GPIO
 	select I2C_BITBANG
 	help
 	  Enable software driven (bit banging) I2C support using GPIO pins
+
+if I2C_GPIO
+
+config I2C_GPIO_CLOCK_STRETCHING
+	bool "GPIO bit banging I2C clock stretching support"
+	default y
+	help
+	  Enable Slave clock stretching support
+
+config I2C_GPIO_CLOCK_STRETCHING_TIMEOUT_US
+	int "GPIO bit banging I2C clock stretching timeout (us)"
+	default 100000
+	help
+	  Timeout for clock stretching in microseconds.
+
+endif # I2C_GPIO

@@ -3,7 +3,7 @@ sample:
   name: spiram_test
 tests:
   sample.board.esp32.spiram:
-    platform_allow: esp32_devkitc_wrover/esp32/procpu
+    platform_allow: esp32_devkitc/esp32/procpu
     tags: esp32
     harness: console
     harness_config:

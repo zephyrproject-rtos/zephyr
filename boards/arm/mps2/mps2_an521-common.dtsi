@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Linaro Limited
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -112,6 +113,8 @@ uart3: uart@203000 {
 	interrupt-names = "tx", "rx";
 	clocks = <&sysclk>;
 	current-speed = <115200>;
+	pinctrl-0 = <&uart3_default>;
+	pinctrl-names = "default";
 };
 
 uart4: uart@204000 {
@@ -121,6 +124,8 @@ uart4: uart@204000 {
 	interrupt-names = "tx", "rx";
 	clocks = <&sysclk>;
 	current-speed = <115200>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
 };
 
 i2c_touch: i2c@207000 {
@@ -145,6 +150,8 @@ i2c_shield0: i2c@20c000 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x20c000 0x1000>;
+	pinctrl-0 = <&sbcon0_default>;
+	pinctrl-names = "default";
 };
 
 i2c_shield1: i2c@20d000 {
@@ -153,10 +160,12 @@ i2c_shield1: i2c@20d000 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x20d000 0x1000>;
+	pinctrl-0 = <&sbcon1_default>;
+	pinctrl-names = "default";
 };
 
 gpio_led0: mps2_fpgaio@302000 {
-	compatible = "arm,mps2-fpgaio-gpio";
+	compatible = "arm,mmio32-gpio";
 
 	reg = <0x302000 0x4>;
 	gpio-controller;
@@ -165,16 +174,17 @@ gpio_led0: mps2_fpgaio@302000 {
 };
 
 gpio_button: mps2_fpgaio@302008 {
-	compatible = "arm,mps2-fpgaio-gpio";
+	compatible = "arm,mmio32-gpio";
 
 	reg = <0x302008 0x4>;
 	gpio-controller;
 	#gpio-cells = <1>;
 	ngpios = <2>;
+	direction-input;
 };
 
 gpio_misc: mps2_fpgaio@30204c {
-	compatible = "arm,mps2-fpgaio-gpio";
+	compatible = "arm,mmio32-gpio";
 
 	reg = <0x30204c 0x4>;
 	gpio-controller;
@@ -188,4 +198,9 @@ eth0: eth@2000000 {
 	/* Actual reg range is ~0x200 */
 	reg = <0x2000000 0x100000>;
 	interrupts = <48 3>;
+};
+
+pinctrl: pinctrl {
+	compatible = "arm,mps2-pinctrl";
+	status = "okay";
 };

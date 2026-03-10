@@ -6,6 +6,7 @@
 menuconfig BT_MESH
 	bool "Bluetooth Mesh support"
 	depends on BT_OBSERVER && BT_BROADCASTER
+	select POLL
 	help
 	  This option enables Bluetooth Mesh support. The specific
 	  features that are available may depend on other features
@@ -72,7 +73,8 @@ if BT_MESH_ADV_LEGACY
 
 config BT_MESH_ADV_STACK_SIZE
 	int "Mesh advertiser thread stack size"
-	default 1024 if BT_HOST_CRYPTO
+	default 1800 if BT_MESH_PROVISIONER
+	default 1536 if BT_MESH_PROXY
 	default 776 if BT_MESH_PRIV_BEACONS
 	default 768
 	help
@@ -126,10 +128,12 @@ config BT_MESH_WORKQ_SYS
 	  refer to BT_MESH_ADV_STACK_SIZE for the recommended minimum.
 
 	  When this option is enabled and the mesh tries to send a message,
-	  and the host ran out the HCI command buffers controlled by
-	  CONFIG_BT_BUF_CMD_TX_COUNT, the host returns -ENOBUFS immediately
-	  and the mesh drops the message transmission. To mitigate this
-	  issue, make sure to have sufficient number of HCI command buffers.
+	  and the host ran out of the HCI command buffers controlled by
+	  CONFIG_BT_BUF_CMD_TX_COUNT, the system work queue will be blocked
+	  until an HCI command buffer has been freed. This may cause a deadlock
+	  where the host cannot use the system workqueue to free the buffer
+	  that the mesh is waiting for. To mitigate this issue, make sure to
+	  have a sufficient number of HCI command buffers.
 	  When this option is enabled, the latency of sending mesh messages
 	  will be affected by other users on the system work queue, resulting in
 	  reduced reliability for sending mesh messages.
@@ -140,8 +144,8 @@ if BT_MESH_WORKQ_MESH
 
 config BT_MESH_ADV_STACK_SIZE
 	int "Mesh extended advertiser thread stack size"
+	default 2048 if BT_MESH_PROVISIONER
 	default 1536 if BT_MESH_PROXY
-	default 1024 if BT_HOST_CRYPTO
 	default 776 if BT_MESH_PRIV_BEACONS
 	default 768
 	help
@@ -358,6 +362,18 @@ config BT_MESH_OOB_AUTH_REQUIRED
 	bool "OOB authentication mandates to use HMAC SHA256"
 	depends on BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM
 
+config BT_MESH_PROV_OOB_API_LEGACY
+	bool "Reduced maximum OOB authentication size support [DEPRECATED]"
+	select DEPRECATED
+	depends on BT_MESH_PROV
+	help
+	  By default, the maximum OOB authentication size is 32 bytes.
+	  Enable this option to use the legacy API which is only compatible with
+	  specification v1.1 and earlier. This limits OOB authentication to 8
+	  bytes maximum.
+	  This option is intended for backward compatibility.
+	  Not recommended for new designs due to reduced security.
+
 config BT_MESH_PROVISIONER
 	bool "Provisioner support"
 	depends on BT_MESH_CDB
@@ -394,6 +410,16 @@ config BT_MESH_CDB_APP_KEY_COUNT
 	help
 	  This option specifies how many application keys that can at most
 	  be saved in the configuration database.
+
+config BT_MESH_CDB_KEY_SYNC
+	bool "Keys synchronization support"
+	default y
+	help
+	  Enable this option to have support for synchronizing keys between
+	  mesh stack and cdb.
+	  When this option is enabled, key operations (add, remove, update)
+	  performed on the mesh stack through Configuration Server messages
+	  are automatically mirrored to the CDB.
 
 endif # BT_MESH_CDB
 
@@ -770,11 +796,12 @@ config BT_MESH_ACCESS_LAYER_MSG
 	  might wear out persistent memory.
 
 config BT_MESH_MODEL_VND_MSG_CID_FORCE
-	bool "Force vendor model to use the corresponding CID field message"
-	default y
+	bool "Force vendor model to use opcodes with matching CID [DEPRECATED]"
+	default n
+	select DEPRECATED
 	help
-	  This option forces vendor model to use messages for the
-	  corresponding CID field.
+	  This option forces vendor models to only use opcodes with a CID field
+	  matching the models CID. It is deprecated and should no longer be used.
 
 config BT_MESH_MODEL_EXTENSIONS
 	bool "Support for Model extensions"
@@ -1036,6 +1063,7 @@ config BT_MESH_BLOB_IO_FLASH
 	default y
 	depends on BT_MESH_BLOB_SRV || BT_MESH_BLOB_CLI
 	depends on FLASH_MAP
+	depends on FLASH_PAGE_LAYOUT
 	help
 	  Enable the BLOB flash stream for reading and writing BLOBs directly to
 	  and from flash.
@@ -1043,24 +1071,28 @@ config BT_MESH_BLOB_IO_FLASH
 if BT_MESH_BLOB_IO_FLASH
 
 config BT_MESH_BLOB_IO_FLASH_WITHOUT_ERASE
-	bool "BLOB flash support for devices without erase"
-	default y if FLASH_HAS_NO_EXPLICIT_ERASE
+	bool "BLOB flash support for devices without erase [DEPRECATED]"
+	default n
 	depends on FLASH_HAS_NO_EXPLICIT_ERASE
+	select DEPRECATED
 	help
-	  Enable path supporting devices without erase. This option appears only
-	  if there are devices without explicit erase requirements in the system
-	  and may be disabled to reduce code size in case when no operations
-	  are intended on such type of devices.
+	  This option is deprecated and is no longer used by the BLOB IO Flash module.
 
 config BT_MESH_BLOB_IO_FLASH_WITH_ERASE
-	bool "BLOB flash support for devices with erase"
-	default y if FLASH_HAS_EXPLICIT_ERASE
+	bool "BLOB flash support for devices with erase [DEPRECATED]"
+	default n
 	depends on FLASH_HAS_EXPLICIT_ERASE
+	depends on FLASH_PAGE_LAYOUT
+	select DEPRECATED
 	help
-	  Enable path supporting devices with erase. This option appears only
-	  if there are devices requiring erase,  before write, in the system
-	  and may be disabled to reduce code size in case when no operations
-	  are intended on such type of devices.
+	  This option is deprecated and is no longer used by the BLOB IO Flash module.
+
+config BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX
+	int "Maximum supported write block size"
+	default 4
+	help
+	  The BLOB IO Flash module will support flash devices with explicit erase
+	  when this value is set to a multiple of the device write block size.
 
 endif # BT_MESH_BLOB_IO_FLASH
 
@@ -1083,10 +1115,15 @@ menu "Firmware Update model configuration"
 
 config BT_MESH_DFU_FWID_MAXLEN
 	int "DFU FWID max length"
-	default 16
+	default 106
 	range 0 106
 	help
-	  This value defines the maximum length of an image's firmware ID.
+	  This value defines the maximum length of the vendor-specific version information
+	  that the mesh stack can manage, describing the image. Please note that
+	  only 106 octets size allows the device to be compliant with
+	  the Bluetooth Mesh DFU specification. If smaller than 106 octets are set,
+	  then the device will fail with managing firmware images that have
+	  a longer vendor-specific version information.
 
 config BT_MESH_DFU_METADATA_MAXLEN
 	int "DFU metadata max length"
@@ -1480,30 +1517,10 @@ config BT_MESH_SECURE_STORAGE
 	bool
 	depends on SECURE_STORAGE
 
-choice BT_MESH_CRYPTO_LIB
-	prompt "Crypto library:"
-	default BT_MESH_USES_TFM_PSA if BUILD_WITH_TFM
-	default BT_MESH_USES_MBEDTLS_PSA
-	help
-	  Crypto library selection for mesh security.
-
-config BT_MESH_USES_TINYCRYPT
-	bool "TinyCrypt [DEPRECATED]"
-	select DEPRECATED
-	select TINYCRYPT
-	select TINYCRYPT_AES
-	select TINYCRYPT_AES_CMAC
-	select TINYCRYPT_ECC_DH
-	select TINYCRYPT_SHA256
-	select TINYCRYPT_SHA256_HMAC
-	select BT_HOST_CCM
-	help
-	  Use TinyCrypt library to perform crypto operations.
-
-config BT_MESH_USES_MBEDTLS_PSA
-	bool "mbed TLS PSA"
-	select MBEDTLS
-	select MBEDTLS_PSA_CRYPTO_C
+config BT_MESH_CRYPTO_LIB
+	bool
+	default y
+	select PSA_CRYPTO
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
@@ -1517,37 +1534,10 @@ config BT_MESH_USES_MBEDTLS_PSA
 	select PSA_WANT_ALG_SHA_256
 	select PSA_WANT_ALG_ECDH
 	select PSA_WANT_ECC_SECP_R1_256
-	select BT_MESH_SECURE_STORAGE if BT_SETTINGS
-	imply MBEDTLS_AES_ROM_TABLES
+	select BT_MESH_SECURE_STORAGE if BT_SETTINGS && PSA_CRYPTO_PROVIDER_MBEDTLS
+	imply MBEDTLS_AES_ROM_TABLES if PSA_CRYPTO_PROVIDER_MBEDTLS
 	help
-	  Use Mbed TLS as PSA Crypto API provider.
-
-config BT_MESH_USES_TFM_PSA
-	bool "Use TF-M PSA [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	depends on BUILD_WITH_TFM
-	help
-	  Use TF-M as PSA Crypto API provider. This is only possible on platforms
-	  that support TF-M.
-	  This feature is experimental.
-
-endchoice
-
-if BT_MESH_USES_MBEDTLS_PSA || BT_MESH_USES_TFM_PSA
-
-config BT_MESH_PSA_KEY_ID_USER_MIN_OFFSET
-	int "Offset of BLE Mesh key id range regarding PSA_KEY_ID_USER_MIN"
-	default 0
-	help
-	  The PSA specification mandates to set key identifiers for keys
-	  with persistent lifetime. The users of the PSA API is responsible
-	  (BLE Mesh is user of PSA API) to provide correct and unique identifiers.
-	  The BLE Mesh identifier range should be between PSA_KEY_ID_USER_MIN and
-	  PSA_KEY_ID_USER_MAX. BLE Mesh requires two ids for each subnetwork, two ids
-	  for each application key, and two ids for the device key and device key candidate.
-	  It should consider the Mesh Configuration Database instances if database enabled.
-
-endif # BT_MESH_USES_MBEDTLS_PSA || BT_MESH_USES_TFM_PSA
+	  Crypto library support for mesh security.
 
 menu "Beacons"
 

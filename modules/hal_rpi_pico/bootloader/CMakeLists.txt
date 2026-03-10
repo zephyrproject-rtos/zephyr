@@ -37,21 +37,28 @@ target_include_directories(boot_stage2 PUBLIC
   ${rp2040_dir}/pico_platform/include
   ${rp2040_dir}/hardware_regs/include
   ${common_dir}/pico_base_headers/include
+  ${rp2_common_dir}/pico_platform_common/include
   ${rp2_common_dir}/pico_platform_compiler/include
   ${rp2_common_dir}/pico_platform_sections/include
   ${rp2_common_dir}/pico_platform_panic/include
   ${ZEPHYR_BASE}/include
   )
 
+if(CONFIG_PICOLIBC)
+  target_compile_options(boot_stage2 PRIVATE "--specs=picolibc.specs")
+  target_link_options(boot_stage2 PRIVATE "--specs=picolibc.specs")
+else()
+  target_link_options(boot_stage2 PRIVATE "--specs=nosys.specs")
+endif()
+
 target_link_options(boot_stage2 PRIVATE
   "-nostartfiles"
-  "--specs=nosys.specs"
-  "LINKER:--script=${boot_stage_dir}/boot_stage2.ld"
+  "-T${boot_stage_dir}/boot_stage2.ld"
   )
 
 # The second stage bootloader is compiled without kconfig definitions.
 # Therefore, in order to use toolchain.h, it needs to define CONFIG_ARM.
-target_compile_definitions(boot_stage2 PRIVATE -DCONFIG_ARM=1)
+target_compile_definitions(boot_stage2 PRIVATE CONFIG_ARM=1)
 
 # Generates a binary file from the compiled bootloader
 add_custom_command(TARGET boot_stage2

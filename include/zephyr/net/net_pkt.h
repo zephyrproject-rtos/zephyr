@@ -123,6 +123,19 @@ struct net_pkt {
 	struct net_if *orig_iface; /* Original network interface */
 #endif
 
+#if defined(CONFIG_NET_VPN)
+	struct {
+		/** Original network interface */
+		struct net_if *iface;
+		/** Pointer to IP header of the encrypted pkt */
+		union net_ip_header ip_hdr;
+		/** Pointer to UDP header of the encrypted pkt */
+		union net_proto_header proto_hdr;
+		/** Peer id */
+		int peer_id;
+	} vpn;
+#endif
+
 #if defined(CONFIG_NET_PKT_TIMESTAMP) || defined(CONFIG_NET_PKT_TXTIME)
 	/**
 	 * TX or RX timestamp if available
@@ -200,13 +213,13 @@ struct net_pkt {
 	uint8_t ipv4_acd_arp_msg : 1;  /* Is this pkt IPv4 conflict detection ARP
 					* message.
 					* Note: family needs to be
-					* AF_INET.
+					* NET_AF_INET.
 					*/
 #endif
 #if defined(CONFIG_NET_LLDP)
 	uint8_t lldp_pkt : 1; /* Is this pkt an LLDP message.
 			       * Note: family needs to be
-			       * AF_UNSPEC.
+			       * NET_AF_UNSPEC.
 			       */
 #endif
 	uint8_t ppp_msg : 1; /* This is a PPP message */
@@ -224,6 +237,7 @@ struct net_pkt {
 	uint8_t chksum_done : 1; /* Checksum has already been computed for
 				  * the packet.
 				  */
+	uint8_t loopback : 1; /* Packet is a loop back packet. */
 #if defined(CONFIG_NET_IP_FRAGMENT)
 	uint8_t ip_reassembled : 1; /* Packet is a reassembled IP packet. */
 #endif
@@ -303,18 +317,18 @@ struct net_pkt {
 	uint16_t vlan_tci;
 #endif /* CONFIG_NET_VLAN */
 
-#if defined(NET_PKT_HAS_CONTROL_BLOCK)
-	/* TODO: Evolve this into a union of orthogonal
-	 *       control block declarations if further L2
-	 *       stacks require L2-specific attributes.
-	 */
+#if defined(CONFIG_NET_PKT_CONTROL_BLOCK)
+	/* Control block which could be used by any layer */
+	union {
+		uint8_t cb[CONFIG_NET_PKT_CONTROL_BLOCK_SIZE];
 #if defined(CONFIG_IEEE802154)
-	/* The following structure requires a 4-byte alignment
-	 * boundary to avoid padding.
-	 */
-	struct net_pkt_cb_ieee802154 cb;
+		/* The following structure requires a 4-byte alignment
+		 * boundary to avoid padding.
+		 */
+		struct net_pkt_cb_ieee802154 cb_ieee802154;
 #endif /* CONFIG_IEEE802154 */
-#endif /* NET_PKT_HAS_CONTROL_BLOCK */
+	} cb;
+#endif /* CONFIG_NET_PKT_CONTROL_BLOCK */
 
 	/** Network packet priority, can be left out in which case packet
 	 * is not prioritised.
@@ -327,13 +341,13 @@ struct net_pkt {
 	 * have network tunneling in use.
 	 */
 	union {
-		struct sockaddr remote;
+		struct net_sockaddr remote;
 
 		/* This will make sure that there is enough storage to store
 		 * the address struct. The access to value is via remote
 		 * address.
 		 */
-		struct sockaddr_storage remote_storage;
+		struct net_sockaddr_storage remote_storage;
 	};
 #endif /* CONFIG_NET_OFFLOAD */
 
@@ -409,6 +423,52 @@ static inline void net_pkt_set_orig_iface(struct net_pkt *pkt,
 	ARG_UNUSED(iface);
 #endif
 }
+
+#if defined(CONFIG_NET_VPN)
+static inline struct net_if *net_pkt_vpn_iface(struct net_pkt *pkt)
+{
+	return pkt->vpn.iface;
+}
+
+static inline void net_pkt_set_vpn_iface(struct net_pkt *pkt,
+					 struct net_if *iface)
+{
+	pkt->vpn.iface = iface;
+}
+
+static inline union net_ip_header *net_pkt_vpn_ip_hdr(struct net_pkt *pkt)
+{
+	return &pkt->vpn.ip_hdr;
+}
+
+static inline void net_pkt_set_vpn_ip_hdr(struct net_pkt *pkt,
+					  union net_ip_header *ip_hdr)
+{
+	pkt->vpn.ip_hdr = *ip_hdr;
+}
+
+static inline union net_proto_header *net_pkt_vpn_udp_hdr(struct net_pkt *pkt)
+{
+	return &pkt->vpn.proto_hdr;
+}
+
+static inline void net_pkt_set_vpn_udp_hdr(struct net_pkt *pkt,
+					   union net_proto_header *proto_hdr)
+{
+	pkt->vpn.proto_hdr = *proto_hdr;
+}
+
+static inline int net_pkt_vpn_peer_id(struct net_pkt *pkt)
+{
+	return pkt->vpn.peer_id;
+}
+
+static inline void net_pkt_set_vpn_peer_id(struct net_pkt *pkt,
+					   int peer_id)
+{
+	pkt->vpn.peer_id = peer_id;
+}
+#endif /* CONFIG_NET_VPN */
 
 static inline uint8_t net_pkt_family(struct net_pkt *pkt)
 {
@@ -961,6 +1021,17 @@ static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
 }
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
+static inline bool net_pkt_is_loopback(struct net_pkt *pkt)
+{
+	return !!(pkt->loopback);
+}
+
+static inline void net_pkt_set_loopback(struct net_pkt *pkt,
+					bool loopback)
+{
+	pkt->loopback = loopback;
+}
+
 #if defined(CONFIG_NET_IP_FRAGMENT)
 static inline bool net_pkt_is_ip_reassembled(struct net_pkt *pkt)
 {
@@ -1284,16 +1355,23 @@ static inline struct net_linkaddr *net_pkt_lladdr_dst(struct net_pkt *pkt)
 
 static inline void net_pkt_lladdr_swap(struct net_pkt *pkt)
 {
-	uint8_t *addr = net_pkt_lladdr_src(pkt)->addr;
+	struct net_linkaddr tmp;
 
-	net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_dst(pkt)->addr;
-	net_pkt_lladdr_dst(pkt)->addr = addr;
+	memcpy(tmp.addr,
+	       net_pkt_lladdr_src(pkt)->addr,
+	       net_pkt_lladdr_src(pkt)->len);
+	memcpy(net_pkt_lladdr_src(pkt)->addr,
+	       net_pkt_lladdr_dst(pkt)->addr,
+	       net_pkt_lladdr_dst(pkt)->len);
+	memcpy(net_pkt_lladdr_dst(pkt)->addr,
+	       tmp.addr,
+	       net_pkt_lladdr_src(pkt)->len);
 }
 
 static inline void net_pkt_lladdr_clear(struct net_pkt *pkt)
 {
-	net_pkt_lladdr_src(pkt)->addr = NULL;
-	net_pkt_lladdr_src(pkt)->len = 0U;
+	(void)net_linkaddr_clear(net_pkt_lladdr_src(pkt));
+	(void)net_linkaddr_clear(net_pkt_lladdr_dst(pkt));
 }
 
 static inline uint16_t net_pkt_ll_proto_type(struct net_pkt *pkt)
@@ -1385,7 +1463,7 @@ static inline void net_pkt_set_ppp(struct net_pkt *pkt,
 }
 #endif /* CONFIG_NET_L2_PPP */
 
-#if defined(NET_PKT_HAS_CONTROL_BLOCK)
+#if defined(CONFIG_NET_PKT_CONTROL_BLOCK)
 static inline void *net_pkt_cb(struct net_pkt *pkt)
 {
 	return &pkt->cb;
@@ -1406,7 +1484,7 @@ static inline void net_pkt_set_src_ipv6_addr(struct net_pkt *pkt)
 {
 	net_if_ipv6_select_src_addr(net_context_get_iface(
 					    net_pkt_context(pkt)),
-				    (struct in6_addr *)NET_IPV6_HDR(pkt)->src);
+				    (struct net_in6_addr *)NET_IPV6_HDR(pkt)->src);
 }
 
 static inline void net_pkt_set_overwrite(struct net_pkt *pkt, bool overwrite)
@@ -1474,14 +1552,14 @@ static inline bool net_pkt_filter_local_in_recv_ok(struct net_pkt *pkt)
 #endif /* CONFIG_NET_PKT_FILTER && CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK */
 
 #if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_L2_IPIP)
-static inline struct sockaddr *net_pkt_remote_address(struct net_pkt *pkt)
+static inline struct net_sockaddr *net_pkt_remote_address(struct net_pkt *pkt)
 {
 	return &pkt->remote;
 }
 
 static inline void net_pkt_set_remote_address(struct net_pkt *pkt,
-					      struct sockaddr *address,
-					      socklen_t len)
+					      struct net_sockaddr *address,
+					      net_socklen_t len)
 {
 	memcpy(&pkt->remote, address, len);
 }
@@ -1879,7 +1957,7 @@ int net_pkt_alloc_buffer_raw_debug(struct net_pkt *pkt, size_t size,
 
 struct net_pkt *net_pkt_alloc_with_buffer_debug(struct net_if *iface,
 						size_t size,
-						sa_family_t family,
+						net_sa_family_t family,
 						enum net_ip_protocol proto,
 						k_timeout_t timeout,
 						const char *caller,
@@ -1892,7 +1970,7 @@ struct net_pkt *net_pkt_alloc_with_buffer_debug(struct net_if *iface,
 
 struct net_pkt *net_pkt_rx_alloc_with_buffer_debug(struct net_if *iface,
 						   size_t size,
-						   sa_family_t family,
+						   net_sa_family_t family,
 						   enum net_ip_protocol proto,
 						   k_timeout_t timeout,
 						   const char *caller,
@@ -2064,7 +2142,7 @@ int net_pkt_alloc_buffer_raw(struct net_pkt *pkt, size_t size,
  */
 struct net_pkt *net_pkt_alloc_with_buffer(struct net_if *iface,
 					  size_t size,
-					  sa_family_t family,
+					  net_sa_family_t family,
 					  enum net_ip_protocol proto,
 					  k_timeout_t timeout);
 
@@ -2073,7 +2151,7 @@ struct net_pkt *net_pkt_alloc_with_buffer(struct net_if *iface,
 /* Same as above but specifically for RX packet */
 struct net_pkt *net_pkt_rx_alloc_with_buffer(struct net_if *iface,
 					     size_t size,
-					     sa_family_t family,
+					     net_sa_family_t family,
 					     enum net_ip_protocol proto,
 					     k_timeout_t timeout);
 
@@ -2355,6 +2433,48 @@ int net_pkt_read_le16(struct net_pkt *pkt, uint16_t *data);
 int net_pkt_read_be32(struct net_pkt *pkt, uint32_t *data);
 
 /**
+ * @brief Read uint32_t little endian data from a net_pkt
+ *
+ * @details net_pkt's cursor should be properly initialized and,
+ *          if needed, positioned using net_pkt_skip.
+ *          Cursor position will be updated after the operation.
+ *
+ * @param pkt  The network packet from where to read
+ * @param data The destination uint32_t where to copy the data
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+int net_pkt_read_le32(struct net_pkt *pkt, uint32_t *data);
+
+/**
+ * @brief Read uint64_t big endian data from a net_pkt
+ *
+ * @details net_pkt's cursor should be properly initialized and,
+ *          if needed, positioned using net_pkt_skip.
+ *          Cursor position will be updated after the operation.
+ *
+ * @param pkt  The network packet from where to read
+ * @param data The destination uint64_t where to copy the data
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+int net_pkt_read_be64(struct net_pkt *pkt, uint64_t *data);
+
+/**
+ * @brief Read uint64_t little endian data from a net_pkt
+ *
+ * @details net_pkt's cursor should be properly initialized and,
+ *          if needed, positioned using net_pkt_skip.
+ *          Cursor position will be updated after the operation.
+ *
+ * @param pkt  The network packet from where to read
+ * @param data The destination uint64_t where to copy the data
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+int net_pkt_read_le64(struct net_pkt *pkt, uint64_t *data);
+
+/**
  * @brief Write data into a net_pkt
  *
  * @details net_pkt's cursor should be properly initialized and,
@@ -2400,7 +2520,7 @@ static inline int net_pkt_write_u8(struct net_pkt *pkt, uint8_t data)
  */
 static inline int net_pkt_write_be16(struct net_pkt *pkt, uint16_t data)
 {
-	uint16_t data_be16 = htons(data);
+	uint16_t data_be16 = net_htons(data);
 
 	return net_pkt_write(pkt, &data_be16, sizeof(uint16_t));
 }
@@ -2419,7 +2539,7 @@ static inline int net_pkt_write_be16(struct net_pkt *pkt, uint16_t data)
  */
 static inline int net_pkt_write_be32(struct net_pkt *pkt, uint32_t data)
 {
-	uint32_t data_be32 = htonl(data);
+	uint32_t data_be32 = net_htonl(data);
 
 	return net_pkt_write(pkt, &data_be32, sizeof(uint32_t));
 }
@@ -2498,11 +2618,12 @@ static inline size_t net_pkt_get_len(struct net_pkt *pkt)
 int net_pkt_update_length(struct net_pkt *pkt, size_t length);
 
 /**
- * @brief Remove data from the packet at current location
+ * @brief Remove data from the start of the packet.
  *
- * @details net_pkt's cursor should be properly initialized and,
- *          eventually, properly positioned using net_pkt_skip/read/write.
+ * @details net_pkt's cursor should be properly initialized.
  *          Note that net_pkt's cursor is reset by this function.
+ *          This functions works in similar way as net_buf_pull(),
+ *          but it can handle multiple net_buf fragments.
  *
  * @param pkt    Network packet
  * @param length Number of bytes to be removed

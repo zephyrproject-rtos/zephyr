@@ -9,19 +9,33 @@ zephyr_linker_symbol(SYMBOL soc_reset_hook EXPR "@SystemInit@")
 # This file is used when the CMake linker script generator is disabled.
 zephyr_linker_sources(SECTIONS platform_init.ld)
 
-zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
-if(CONFIG_ARM)
-  zephyr_library_sources_ifdef(CONFIG_NRF_PLATFORM_HALTIUM soc_lrcconf.c)
+# TF-M provides its own reboot sequence
+if(NOT CONFIG_TFM_PARTITION_PLATFORM)
+  zephyr_library_sources_ifdef(CONFIG_ARM reboot.c)
 endif()
 
-if((CONFIG_SOC_SERIES_NRF54HX OR CONFIG_SOC_SERIES_NRF92X) AND CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS)
-  zephyr_library_sources(nrf54hx_nrf92x_mpu_regions.c)
+zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
+
+if(CONFIG_NRF_PLATFORM_HALTIUM AND CONFIG_ARM)
+  zephyr_library_sources(haltium_power.c)
+  zephyr_code_relocate(
+    FILES haltium_power.c
+    FILTER ".*\\.cache_retain_and_sleep"
+    LOCATION PMLocalRamfunc_TEXT
+  )
+  zephyr_library_sources_ifdef(CONFIG_PM_S2RAM haltium_pm_s2ram.c)
+  zephyr_library_sources_ifdef(CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS nrf54hx_nrf92x_mpu_regions.c)
+  zephyr_library_sources(soc_lrcconf.c)
 endif()
 
 zephyr_include_directories(.)
 
 if(CONFIG_HAS_NORDIC_DMM)
   zephyr_library_sources(dmm.c)
+endif()
+
+if(CONFIG_NRFX_GPPI AND NOT CONFIG_NRFX_GPPI_V1)
+  zephyr_library_sources(gppi_init.c)
 endif()
 
 if(CONFIG_TFM_PARTITION_PLATFORM)
@@ -32,4 +46,6 @@ if(CONFIG_TFM_PARTITION_PLATFORM)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_NRF_SYS_EVENT nrf_sys_event.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_NRF_FORCE_CONSTLAT nrf_constlat.c)
 zephyr_library_sources_ifdef(CONFIG_MRAM_LATENCY mram_latency.c)
+zephyr_library_sources(gpiote_nrfx.c)

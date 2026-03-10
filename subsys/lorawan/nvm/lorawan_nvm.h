@@ -10,21 +10,13 @@
 #include <stdint.h>
 
 /**
- * @brief Hook function called when an interrupt related to NVM
- * is received from the LoRaWAN stack.
+ * @brief Hook function called when an NVM update event is received from
+ * the LoRaWAN stack.
  *
- * @note This function should not be called directly by the application
+ * @note This function should not be called directly by the application.
  *
- * @param flags OR'ed flags received with the interrupt
- *
- * @see LORAMAC_NVM_NOTIFY_FLAG_NONE
- * @see LORAMAC_NVM_NOTIFY_FLAG_CRYPTO
- * @see LORAMAC_NVM_NOTIFY_FLAG_MAC_GROUP1
- * @see LORAMAC_NVM_NOTIFY_FLAG_MAC_GROUP2
- * @see LORAMAC_NVM_NOTIFY_FLAG_SECURE_ELEMENT
- * @see LORAMAC_NVM_NOTIFY_FLAG_REGION_GROUP1
- * @see LORAMAC_NVM_NOTIFY_FLAG_REGION_GROUP2
- * @see LORAMAC_NVM_NOTIFY_FLAG_CLASS_B
+ * @param flags OR'ed flags indicating which data sections need to be stored.
+ *              The flag values are backend-specific.
  */
 void lorawan_nvm_data_mgmt_event(uint16_t flags);
 

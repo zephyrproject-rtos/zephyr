@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup espi_emul_interface
+ * @brief Main header file for eSPI emulation driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_ESPI_SPI_EMUL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_ESPI_SPI_EMUL_H_
 
@@ -14,15 +20,10 @@
 #include <zephyr/types.h>
 
 /**
- * @file
- *
- * @brief Public APIs for the eSPI emulation drivers.
- */
-
-/**
  * @brief eSPI Emulation Interface
  * @defgroup espi_emul_interface eSPI Emulation Interface
  * @ingroup io_emulators
+ * @ingroup espi_interface
  * @{
  */
 
@@ -68,7 +69,7 @@ typedef int (*emul_espi_api_get_vw)(const struct emul *target, enum espi_vwire_s
  *
  * @param target The device Emulator instance
  *
- * @retval The address of the memory.
+ * @return The address of the memory.
  */
 typedef uintptr_t (*emul_espi_api_get_acpi_shm)(const struct emul *target);
 #endif

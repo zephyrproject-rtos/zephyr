@@ -7,6 +7,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mqtt_azure, LOG_LEVEL_DBG);
 
+#include <zephyr/posix/netinet/in.h>
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/netdb.h>
+#include <zephyr/posix/poll.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/socket.h>
@@ -487,7 +494,7 @@ static void abort_mqtt_connection(void)
 }
 
 static void l4_event_handler(struct net_mgmt_event_callback *cb,
-			     uint32_t mgmt_event, struct net_if *iface)
+			     uint64_t mgmt_event, struct net_if *iface)
 {
 	if ((mgmt_event & L4_EVENT_MASK) != mgmt_event) {
 		return;

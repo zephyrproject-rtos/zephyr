@@ -282,7 +282,7 @@ particular state are enclosed in a single Devicetree node.
 Another popular model is based on having a node for each pin configuration and
 state. While this model may lead to shorter board pin control files, it also
 requires to have one node for each pin mapping and state, since in general,
-nodes can not be re-used for multiple states. This method is discouraged if
+nodes can not be reused for multiple states. This method is discouraged if
 autogeneration is not an option.
 
 .. note::

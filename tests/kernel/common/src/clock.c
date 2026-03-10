@@ -29,7 +29,12 @@ static ZTEST_BMEM struct timer_data tdata;
 #define LESS_DURATION 70
 
 /**
- * @addtogroup kernel_common_tests
+ * @defgroup kernel_clock_tests Clock Operations
+ * @ingroup all_tests
+ * @{
+ * @}
+ *
+ * @addtogroup kernel_clock_tests
  * @{
  */
 
@@ -132,12 +137,10 @@ ZTEST(clock, test_clock_cycle_32)
 	/*avoid cycle counter wrap around*/
 	if (c1 > c0) {
 		/* delta cycle should be greater than 1 milli-second*/
-		zassert_true((c1 - c0) >
-			     (sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC),
-			     NULL);
+		zassert_true((c1 - c0) > (sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC));
 		/* delta NS should be greater than 1 milli-second */
 		zassert_true((uint32_t)k_cyc_to_ns_floor64(c1 - c0) >
-			     (NSEC_PER_SEC / MSEC_PER_SEC), NULL);
+			     (NSEC_PER_SEC / MSEC_PER_SEC));
 	}
 }
 
@@ -231,9 +234,9 @@ ZTEST(clock, test_ms_time_duration)
 	k_timer_stop(&ktimer);
 }
 
-extern void *common_setup(void);
-ZTEST_SUITE(clock, NULL, common_setup, NULL, NULL, NULL);
-
 /**
  * @}
  */
+
+extern void *common_setup(void);
+ZTEST_SUITE(clock, NULL, common_setup, NULL, NULL, NULL);

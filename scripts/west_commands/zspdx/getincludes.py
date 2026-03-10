@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from subprocess import run, PIPE
+from subprocess import run
 
 from west import log
 
@@ -30,7 +30,7 @@ def getCIncludes(compilerPath, srcFile, tcg):
     # prepare command invocation
     cmd = [compilerPath, "-E", "-H"] + fragments + includes + defines + [srcFile]
 
-    cp = run(cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True)
+    cp = run(cmd, capture_output=True, text=True)
     if cp.returncode != 0:
         log.dbg(f"    - calling {compilerPath} failed with error code {cp.returncode}")
         return []
@@ -45,7 +45,7 @@ def extractIncludes(resp):
 
     # lines we want will start with one or more periods, followed by
     # a space and then the include file path, e.g.:
-    # .... /home/steve/programming/zephyr/zephyrproject/zephyr/include/kernel.h
+    # .... /home/steve/programming/zephyr/zephyrproject/zephyr/include/zephyr/kernel.h
     # the number of periods indicates the depth of nesting (for transitively-
     # included files), but here we aren't going to care about that. We'll
     # treat everything as tied to the corresponding source file.

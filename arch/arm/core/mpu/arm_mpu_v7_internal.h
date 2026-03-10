@@ -52,9 +52,9 @@ static void region_init(const uint32_t index,
 #endif
 }
 
-/* @brief Partition sanity check
+/* @brief Partition coherence check
  *
- * This internal function performs run-time sanity check for
+ * This internal function performs run-time coherence check for
  * MPU region start address and size.
  *
  * @param part Pointer to the data structure holding the partition
@@ -145,7 +145,7 @@ static inline int get_dyn_region_min_index(void)
 /* Only a single bit is set for all user accessible permissions.
  * In ARMv7-M MPU this is bit AP[1].
  */
-#define MPU_USER_READ_ACCESSIBLE_Msk (P_RW_U_RO & P_RW_U_RW & P_RO_U_RO & RO)
+#define MPU_USER_READ_ACCESSIBLE_Msk (P_RW_U_RO & P_RW_U_RW & P_RO_U_RO)
 
 /**
  * This internal function checks if the region is user accessible or not.
@@ -207,7 +207,7 @@ static int mpu_configure_region(const uint8_t index,
 
 static int mpu_configure_regions(const struct z_arm_mpu_partition
 	regions[], uint8_t regions_num, uint8_t start_reg_index,
-	bool do_sanity_check);
+	bool do_coherence_check);
 
 /* This internal function programs the static MPU regions.
  *

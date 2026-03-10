@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,7 +65,7 @@ struct sdhc_ra_priv {
 	/* Transfer DTC */
 	struct st_transfer_instance transfer;
 	struct st_dtc_instance_ctrl transfer_ctrl;
-	struct st_transfer_info transfer_info;
+	struct st_transfer_info transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	struct st_transfer_cfg transfer_cfg;
 	struct st_dtc_extended_cfg transfer_cfg_extend;
 };
@@ -126,16 +126,19 @@ static int sdhc_ra_card_busy(const struct device *dev)
 }
 
 static int sdhi_command_send_wait(sdhi_instance_ctrl_t *p_ctrl, uint32_t command, uint32_t argument,
-				  uint32_t timeout)
+				  uint32_t timeout_ms)
 {
 	/* Verify the device is not busy. */
 	r_sdhi_wait_for_device(p_ctrl);
+
+	/* Convert timeout to us */
+	uint32_t timeout_us = timeout_ms * 1000U;
 
 	/* Send the command. */
 	r_sdhi_command_send_no_wait(p_ctrl, command, argument);
 
 	/* Wait for end of response, error or timeout */
-	return r_sdhi_wait_for_event(p_ctrl, SDHI_PRV_RESPONSE_BIT, timeout);
+	return r_sdhi_wait_for_event(p_ctrl, SDHI_PRV_RESPONSE_BIT, timeout_us);
 }
 
 static int sdhc_ra_send_cmd(struct sdhc_ra_priv *priv, struct sdmmc_ra_command *ra_cmd, int retries)
@@ -190,10 +193,6 @@ static int sdhc_ra_request(const struct device *dev, struct sdhc_command *cmd,
 	/* Reset semaphore */
 	k_sem_reset(&priv->sdmmc_event.transfer_sem);
 	k_sem_take(&priv->thread_lock, K_FOREVER);
-	if (ret < 0) {
-		LOG_ERR("Can not take sem!");
-		goto end;
-	}
 
 	/*
 	 * Handle opcode with RA specifics
@@ -591,24 +590,25 @@ static DEVICE_API(sdhc, sdhc_api) = {
 	.get_host_props = sdhc_ra_get_host_props,
 };
 
-#define _ELC_EVENT_SDMMC_ACCS(channel)    ELC_EVENT_SDHIMMC##channel##_ACCS
-#define _ELC_EVENT_SDMMC_CARD(channel)    ELC_EVENT_SDHIMMC##channel##_CARD
-#define _ELC_EVENT_SDMMC_DMA_REQ(channel) ELC_EVENT_SDHIMMC##channel##_DMA_REQ
-
-#define ELC_EVENT_SDMMC_ACCS(channel)    _ELC_EVENT_SDMMC_ACCS(channel)
-#define ELC_EVENT_SDMMC_CARD(channel)    _ELC_EVENT_SDMMC_CARD(channel)
-#define ELC_EVENT_SDMMC_DMA_REQ(channel) _ELC_EVENT_SDMMC_DMA_REQ(channel)
+#define EVENT_SDMMC_ACCS(channel)    BSP_PRV_IELS_ENUM(CONCAT(EVENT_SDHIMMC, channel, _ACCS))
+#define EVENT_SDMMC_CARD(channel)    BSP_PRV_IELS_ENUM(CONCAT(EVENT_SDHIMMC, channel, _CARD))
+#define EVENT_SDMMC_DMA_REQ(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SDHIMMC, channel, _DMA_REQ))
 
 #define RA_SDMMC_IRQ_CONFIG_INIT(index)                                                            \
 	do {                                                                                       \
 		ARG_UNUSED(dev);                                                                   \
                                                                                                    \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, accs, irq)] =                              \
-			ELC_EVENT_SDMMC_ACCS(DT_INST_PROP(index, channel));                        \
+			EVENT_SDMMC_ACCS(DT_INST_PROP(index, channel));                            \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, card, irq)] =                              \
-			ELC_EVENT_SDMMC_CARD(DT_INST_PROP(index, channel));                        \
+			EVENT_SDMMC_CARD(DT_INST_PROP(index, channel));                            \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, dma_req, irq)] =                           \
-			ELC_EVENT_SDMMC_DMA_REQ(DT_INST_PROP(index, channel));                     \
+			EVENT_SDMMC_DMA_REQ(DT_INST_PROP(index, channel));                         \
+                                                                                                   \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SDMMC_ACCS(DT_INST_PROP(index, channel)));  \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SDMMC_CARD(DT_INST_PROP(index, channel)));  \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(                                                  \
+			EVENT_SDMMC_DMA_REQ(DT_INST_PROP(index, channel)));                        \
                                                                                                    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, accs, irq),                                 \
 			    DT_INST_IRQ_BY_NAME(index, accs, priority), ra_sdmmc_accs_isr,         \
@@ -717,12 +717,10 @@ static DEVICE_API(sdhc, sdhc_api) = {
 					.ddr50_support = false,                                    \
 					.sdr104_support = false,                                   \
 					.sdr50_support = false,                                    \
-					.bus_8_bit_support = false,                                \
-					.bus_4_bit_support = (DT_INST_PROP(index, bus_width) == 4) \
-								     ? true                        \
-								     : false,                      \
-					.hs200_support = false,                                    \
-					.hs400_support = false}},                                  \
+					.bus_8_bit_support = false},                               \
+			  .bus_4_bit_support = (DT_INST_PROP(index, bus_width) == 4),              \
+			  .hs200_support = false,                                                  \
+			  .hs400_support = false},                                                 \
 		RA_SDHI_EN(index),                                                                 \
 		RA_SDMMC_DTC_STRUCT_INIT(index)};                                                  \
                                                                                                    \

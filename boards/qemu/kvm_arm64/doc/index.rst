@@ -18,19 +18,7 @@ Hardware
 Supported Features
 ==================
 
-The following hardware features are supported:
-
-+--------------+------------+----------------------+
-| Interface    | Controller | Driver/Component     |
-+==============+============+======================+
-| GIC          | on-chip    | interrupt controller |
-+--------------+------------+----------------------+
-| PL011 UART   | on-chip    | serial port          |
-+--------------+------------+----------------------+
-| ARM TIMER    | on-chip    | system clock         |
-+--------------+------------+----------------------+
-
-The kernel currently does not support other hardware features on this platform.
+.. zephyr:board-supported-hw::
 
 Devices
 ========
@@ -47,6 +35,8 @@ CPU's UART0.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Refer to the qemu_cortex_a53 board instructions for this part.
 

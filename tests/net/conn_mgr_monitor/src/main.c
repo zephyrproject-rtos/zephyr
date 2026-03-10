@@ -38,24 +38,24 @@
 #define DAD_WAIT_TIME EVENT_WAIT_TIME
 #endif
 
-#define TEST_EXPECT_L4_CONNECTED         BIT(NET_EVENT_L4_CMD_CONNECTED)
-#define TEST_EXPECT_L4_DISCONNECTED      BIT(NET_EVENT_L4_CMD_DISCONNECTED)
-#define TEST_EXPECT_L4_IPV6_CONNECTED    BIT(NET_EVENT_L4_CMD_IPV6_CONNECTED)
-#define TEST_EXPECT_L4_IPV6_DISCONNECTED BIT(NET_EVENT_L4_CMD_IPV6_DISCONNECTED)
-#define TEST_EXPECT_L4_IPV4_CONNECTED    BIT(NET_EVENT_L4_CMD_IPV4_CONNECTED)
-#define TEST_EXPECT_L4_IPV4_DISCONNECTED BIT(NET_EVENT_L4_CMD_IPV4_DISCONNECTED)
+#define TEST_EXPECT_L4_CONNECTED         NET_EVENT_L4_CMD_CONNECTED
+#define TEST_EXPECT_L4_DISCONNECTED      NET_EVENT_L4_CMD_DISCONNECTED
+#define TEST_EXPECT_L4_IPV6_CONNECTED    NET_EVENT_L4_CMD_IPV6_CONNECTED
+#define TEST_EXPECT_L4_IPV6_DISCONNECTED NET_EVENT_L4_CMD_IPV6_DISCONNECTED
+#define TEST_EXPECT_L4_IPV4_CONNECTED    NET_EVENT_L4_CMD_IPV4_CONNECTED
+#define TEST_EXPECT_L4_IPV4_DISCONNECTED NET_EVENT_L4_CMD_IPV4_DISCONNECTED
 
 #define TEST_EXPECT_CLEAR(event) (global_stats.expected_events &= ~event)
 
 /* IP addresses -- Two of each are needed because address sharing will cause address removal to
  * fail silently (Address is only removed from one iface).
  */
-static struct in_addr test_ipv4_a = { { { 10, 0, 0, 1 } } };
-static struct in_addr test_ipv4_b = { { { 10, 0, 0, 2 } } };
-static struct in6_addr test_ipv6_a = { { {
+static struct net_in_addr test_ipv4_a = { { { 10, 0, 0, 1 } } };
+static struct net_in_addr test_ipv4_b = { { { 10, 0, 0, 2 } } };
+static struct net_in6_addr test_ipv6_a = { { {
 	0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1
 } } };
-static struct in6_addr test_ipv6_b = { { {
+static struct net_in6_addr test_ipv6_b = { { {
 	0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2
 } } };
 
@@ -63,7 +63,7 @@ static struct in6_addr test_ipv6_b = { { {
 /* Helpers */
 static void reset_test_iface(struct net_if *iface)
 {
-	struct in6_addr *ll_ipv6;
+	struct net_in6_addr *ll_ipv6;
 
 	if (net_if_is_admin_up(iface)) {
 		(void)net_if_down(iface);
@@ -162,7 +162,7 @@ static struct test_stats get_reset_stats(void)
 /* Callback hooks */
 struct net_mgmt_event_callback l4_callback;
 
-void l4_handler(struct net_mgmt_event_callback *cb, uint32_t event, struct net_if *iface)
+void l4_handler(struct net_mgmt_event_callback *cb, uint64_t event, struct net_if *iface)
 {
 	if (event == NET_EVENT_L4_CONNECTED) {
 		k_mutex_lock(&stats_mutex, K_FOREVER);
@@ -187,7 +187,7 @@ void l4_handler(struct net_mgmt_event_callback *cb, uint32_t event, struct net_i
 
 struct net_mgmt_event_callback conn_callback;
 
-void conn_handler(struct net_mgmt_event_callback *cb, uint32_t event, struct net_if *iface)
+void conn_handler(struct net_mgmt_event_callback *cb, uint64_t event, struct net_if *iface)
 {
 	if (event == NET_EVENT_L4_IPV6_CONNECTED) {
 		k_mutex_lock(&stats_mutex, K_FOREVER);
@@ -224,7 +224,7 @@ void conn_handler(struct net_mgmt_event_callback *cb, uint32_t event, struct net
 	}
 }
 
-static void wait_for_events(uint32_t event_mask, k_timeout_t timeout)
+static void wait_for_events(uint64_t event_mask, k_timeout_t timeout)
 {
 	k_mutex_lock(&stats_mutex, K_FOREVER);
 	k_sem_reset(&event_sem);

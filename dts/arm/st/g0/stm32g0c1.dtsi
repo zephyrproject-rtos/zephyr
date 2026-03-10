@@ -6,9 +6,14 @@
 
 #include <st/g0/stm32g0b1.dtsi>
 #include <st/g0/stm32g0_crypt.dtsi>
+#include <zephyr/dt-bindings/clock/stm32g0_b1x_c1x_clock.h>
 
 / {
 	soc {
 		compatible = "st,stm32g0c1", "st,stm32g0", "simple-bus";
 	};
+};
+
+&exti {
+	num-lines = <64>;
 };

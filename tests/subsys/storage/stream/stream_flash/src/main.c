@@ -276,6 +276,42 @@ ZTEST(lib_stream_flash, test_stream_flash_bytes_written)
 	VERIFY_WRITTEN(BUF_LEN, BUF_LEN);
 }
 
+ZTEST(lib_stream_flash, test_stream_flash_bytes_buffered)
+{
+	int rc;
+	size_t buffered;
+
+	init_target();
+
+	/* Initially no bytes should be buffered */
+	buffered = stream_flash_bytes_buffered(&ctx);
+	zassert_equal(buffered, 0, "expected no buffered bytes");
+
+	/* Write partial buffer */
+	rc = stream_flash_buffered_write(&ctx, write_buf, BUF_LEN - 128, false);
+	zassert_equal(rc, 0, "expected success");
+
+	/* Verify buffered bytes */
+	buffered = stream_flash_bytes_buffered(&ctx);
+	zassert_equal(buffered, BUF_LEN - 128, "expected buffered bytes");
+
+	/* Write remaining buffer */
+	rc = stream_flash_buffered_write(&ctx, write_buf, 128, false);
+	zassert_equal(rc, 0, "expected success");
+
+	/* After auto-flush, no bytes should be buffered */
+	buffered = stream_flash_bytes_buffered(&ctx);
+	zassert_equal(buffered, 0, "expected no buffered bytes");
+
+	/* Write more than buffer size to trigger auto-flush */
+	rc = stream_flash_buffered_write(&ctx, write_buf, BUF_LEN + 128, false);
+	zassert_equal(rc, 0, "expected success");
+
+	/* Verify buffered bytes */
+	buffered = stream_flash_bytes_buffered(&ctx);
+	zassert_equal(buffered, 128, "expected remaining buffered bytes after auto-flush");
+}
+
 ZTEST(lib_stream_flash, test_stream_flash_buf_size_greater_than_page_size)
 {
 	int rc;
@@ -359,7 +395,7 @@ ZTEST(lib_stream_flash, test_stream_flash_buffered_write_callback)
 	cmp_ctx = bad_ctx;
 	/* Just flush buffer */
 	rc = stream_flash_buffered_write(&bad_ctx, write_buf, 0, true);
-	zassert_equal(rc, -EINVAL, "expected failure from flash_sync", rc);
+	zassert_equal(rc, -EINVAL, "expected failure from flash_sync got %d", rc);
 	zassert_equal(ctx.buf_bytes, BUF_LEN, "Expected bytes to be left in buffer");
 
 	/* Pretend flashed context and attempt write write block - 1 bytes to trigger unaligned
@@ -373,7 +409,7 @@ ZTEST(lib_stream_flash, test_stream_flash_buffered_write_callback)
 	size_t tow = (wblock == 1) ? 1 : wblock - 1;
 
 	rc = stream_flash_buffered_write(&bad_ctx, write_buf, tow, true);
-	zassert_equal(rc, -EINVAL, "expected failure from flash_sync", rc);
+	zassert_equal(rc, -EINVAL, "expected failure from flash_sync got %d", rc);
 	zassert_equal(cmp_ctx.bytes_written, bad_ctx.bytes_written,
 		      "Expected bytes_written not modified");
 	/* The write failed but bytes have already been added to buffer and buffer offset

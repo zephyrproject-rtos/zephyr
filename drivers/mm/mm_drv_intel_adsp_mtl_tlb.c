@@ -62,6 +62,11 @@ SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(
 		L2_SRAM_PAGES_NUM,
 		(uint8_t *) L2_SRAM_BASE);
 
+uintptr_t adsp_mm_get_unused_l2_start_aligned(void)
+{
+	return UNUSED_L2_START_ALIGNED;
+}
+
 /**
  * Calculate the index to the TLB table.
  *
@@ -143,6 +148,10 @@ static int sys_mm_drv_hpsram_pwr(uint32_t bank_idx, bool enable, bool non_blocki
 	}
 
 	HPSRAM_REGS(bank_idx)->HSxPGCTL = !enable;
+
+	if (enable) {
+		HPSRAM_REGS(bank_idx)->HSxRMCTL = IS_ENABLED(CONFIG_SRAM_RETENTION_MODE);
+	}
 
 	if (!non_blocking) {
 		while (HPSRAM_REGS(bank_idx)->HSxPGISTS == enable) {
@@ -462,7 +471,7 @@ int sys_mm_drv_update_page_flags(void *virt, uint32_t flags)
 	tlb_entries[entry_idx] = entry;
 
 #ifdef CONFIG_MMU
-	arch_mem_map(virt, tlb_entry_to_pa(entry), CONFIG_MM_DRV_PAGE_SIZE, flags);
+	arch_mem_map(virt, va, CONFIG_MM_DRV_PAGE_SIZE, flags);
 #endif
 
 out:
@@ -738,10 +747,6 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 
 	L2_PHYS_SRAM_REGION.info.num_blocks = avalible_memory_size / CONFIG_MM_DRV_PAGE_SIZE;
 
-	ret = calculate_memory_regions(UNUSED_L2_START_ALIGNED);
-	CHECKIF(ret != 0) {
-		return ret;
-	}
 	/*
 	 * Initialize memblocks that will store physical
 	 * page usage. Initially all physical pages are
@@ -850,7 +855,7 @@ static void adsp_mm_save_context(void *storage_buffer)
 
 #ifdef CONFIG_MMU
 			arch_mem_map(UINT_TO_POINTER(phys_addr), phys_addr, CONFIG_MM_DRV_PAGE_SIZE,
-				     K_MEM_CACHE_WB);
+				     K_MEM_CACHE_WB | K_MEM_PERM_RW);
 #endif
 
 			/* Invalidate cache to avoid stalled data
@@ -910,6 +915,7 @@ __imr void adsp_mm_restore_context(void *storage_buffer)
 		/* turn on memory bank power, wait till the power is on */
 		__ASSERT_NO_MSG(bank_idx <= ace_hpsram_get_bank_count());
 		HPSRAM_REGS(bank_idx)->HSxPGCTL = 0;
+		HPSRAM_REGS(bank_idx)->HSxRMCTL = IS_ENABLED(CONFIG_SRAM_RETENTION_MODE);
 		while (HPSRAM_REGS(bank_idx)->HSxPGISTS == 1) {
 			/* k_busy_wait cannot be used here - not available */
 		}

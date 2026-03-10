@@ -6,8 +6,8 @@
 
 /dts-v1/;
 
-#include <microchip/mec1501hsz.dtsi>
-#include <microchip/mec152x/mec152xhsz-pinctrl.dtsi>
+#include <microchip/mec/mec1501hsz.dtsi>
+#include <microchip/mec/mec152x/mec152xhsz-pinctrl.dtsi>
 
 &ps2_clk0b_gpio007 {
 	drive-open-drain;

@@ -1,7 +1,4 @@
-.. _ek_ra4m3:
-
-RA4M3 Evaluation Kit
-####################
+.. zephyr:board:: ek_ra4m3
 
 Overview
 ********
@@ -18,6 +15,7 @@ The MCU in this series incorporates a high-performance Arm Cortex®-M33 core run
 100 MHz with the following features:
 
 **MCU Native Pin Access**
+
 - R7FA4M3AF3CFB
 - 100-pin LQFP package
 - 100 MHz Arm® Cortex®-M33 core
@@ -26,24 +24,23 @@ The MCU in this series incorporates a high-performance Arm Cortex®-M33 core run
 - Native pin access through 4 x 40-pin male headers
 - MCU and USB current measurement points for precision current consumption measurement
 - Multiple clock sources - RA MCU oscillator and sub-clock oscillator crystals, providing precision
-24.000 MHz and 32,768 Hz reference clock. Additional low-precision clocks are available internal to the
-RA MCU
+  24.000 MHz and 32,768 Hz reference clock. Additional low-precision clocks are available internal to the
+  RA MCU
 
 **System Control and Ecosystem Access**
-- USB Full Speed Host and Device (micro AB connector)
-- Three 5 V input sources
 
+- USB Full Speed Host and Device (micro AB connector)
+
+- Three 5 V input sources
 	- USB (Debug, Full Speed)
 	- External power supply (using surface mount clamp test points and power input vias)
 
- Three Debug modes
-
+- Three Debug modes
 	- Debug on-board (SWD)
 	- Debug in (ETM, SWD, and JTAG)
 	- Debug out (SWD)
 
- User LEDs and buttons
-
+- User LEDs and buttons
 	- Three User LEDs (red, blue, green)
 	- Power LED (white) indicating availability of regulated power
 	- Debug LED (yellow) indicating the debug connection
@@ -51,7 +48,6 @@ RA MCU
 	- One Reset button
 
 - Five most popular ecosystems expansions
-
 	- 2 Seeed Grove® system (I2C/Analog) connectors
 	- SparkFun® Qwiic® connector
 	- 2 Digilent PmodTM (SPI and UART) connectors
@@ -63,15 +59,9 @@ RA MCU
 **Special Feature Access**
 - 32 MB (256 Mb) External Quad-SPI Flash
 
-.. figure:: ek_ra4m3.webp
-	:align: center
-	:alt: RA4M3 Evaluation Kit
-
-	EK-RA4M3 Board Functional Area Definitions (Credit: Renesas Electronics Corporation)
-
 Hardware
 ********
-Detail Hardware feature for the RA4M3 MCU group can be found at `RA4M3 Group User's Manual Hardware`_
+Detailed hardware features for the RA4M3 MCU group can be found at `RA4M3 Group User's Manual Hardware`_
 
 .. figure:: ra4m3_block_diagram.webp
 	:width: 442px
@@ -80,45 +70,17 @@ Detail Hardware feature for the RA4M3 MCU group can be found at `RA4M3 Group Use
 
 	RA4M3 Block diagram (Credit: Renesas Electronics Corporation)
 
-Detail Hardware feature for the EK-RA4M3 MCU can be found at `EK-RA4M3 - User's Manual`_
+Detailed hardware features for the EK-RA4M3 MCU can be found at `EK-RA4M3 - User's Manual`_
 
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr OS for EK-RA4M3 board:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock control        |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| COUNTER   | on-chip    | counter              |
-+-----------+------------+----------------------+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| ENTROPY   | on-chip    | entropy              |
-+-----------+------------+----------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``ek_ra4m3`` board target configuration can be
 built, flashed, and debugged in the usual way. See
@@ -129,7 +91,7 @@ Flashing
 ========
 
 Program can be flashed to EK-RA4M3 via the on-board SEGGER J-Link debugger.
-SEGGER J-link's drivers are avaialbe at https://www.segger.com/downloads/jlink/
+SEGGER J-link's drivers are available at https://www.segger.com/downloads/jlink/
 
 To flash the program to board
 

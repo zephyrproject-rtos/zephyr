@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -13,6 +13,11 @@ toolchain:
   - cross-compile
 ram: 1024
 supported:
-  - uart
   - counter
+  - i2c
+  - uart
+  - net
+testing:
+  binaries:
+    - flash.bin
 vendor: nxp

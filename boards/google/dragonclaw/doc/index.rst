@@ -15,7 +15,7 @@ Hardware
 
 - STM32F412CGU6 UFQFPN48 package
 
-Peripherial Mapping
+Peripheral Mapping
 ===================
 
 - USART_1 TX/RX : PA9/PA10
@@ -25,6 +25,8 @@ Peripherial Mapping
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build application as usual for the ``dragonclaw`` board, and flash
 using μServo or an external J-Link connected to J4. If μServo is used, please

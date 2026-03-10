@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mimxrt1170_evk/mimxrt1176/cm7
-name: NXP MIMXRT1170-EVK CM7
+identifier: mimxrt1170_evk@A/mimxrt1176/cm7
+name: NXP MIMXRT1170-EVK (CM7)
 type: mcu
 arch: arm
 toolchain:
@@ -17,6 +17,7 @@ supported:
   - adc
   - can
   - counter
+  - dac
   - display
   - dma
   - flash

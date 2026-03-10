@@ -32,6 +32,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         self,
         cfg: RunnerConfig,
         port: str,
+        dev_id: str | None,
         frequency: int | None,
         reset_mode: str | None,
         download_address: int | None,
@@ -48,6 +49,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         super().__init__(cfg)
 
         self._port = port
+        self._dev_id = dev_id
         self._frequency = frequency
 
         self._download_address = download_address
@@ -122,6 +124,10 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             return Path(os.environ["PROGRAMW6432"]) / cli
 
         if platform.system() == "Darwin":
+            cmd = shutil.which("STM32_Programmer_CLI")
+            if cmd is not None:
+                return Path(cmd)
+
             return (
                 Path("/Applications")
                 / "STMicroelectronics"
@@ -142,10 +148,17 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={"flash"}, erase=True, extload=True, tool_opt=True)
+        return RunnerCaps(commands={"flash"}, dev_id=True, erase=True, extload=True, tool_opt=True,
+                          reset_types=True, reset_types_supported=
+                                         list(STM32CubeProgrammerBinaryRunner._RESET_MODES.keys())
+                          )
 
     @classmethod
     def do_add_parser(cls, parser):
+        # To accept arguments in hex format, a wrapper lambda around int() must be used.
+        # Wrapping the lambda with functools.wraps() makes it so that 'invalid int value'
+        # is displayed when an invalid value is provided for these arguments.
+        multi_base=functools.wraps(int)(lambda s: int(s, base=0))
         parser.add_argument(
             "--port",
             type=str,
@@ -158,18 +171,16 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument(
             "--reset-mode",
             type=str,
+            dest="reset_type",
             required=False,
-            choices=["sw", "hw", "core"],
-            help="Reset mode",
+            choices=list(STM32CubeProgrammerBinaryRunner._RESET_MODES.keys()),
+            help="Obsolete synonym for --reset-type",
         )
         parser.add_argument(
             "--download-address",
-            # To accept arguments in hex format, a wrapper lambda around int() must be used.
-            # Wrapping the lambda with functools.wraps() makes it so that 'invalid int value'
-            # is displayed when an invalid value is provided for this argument.
-            type=functools.wraps(int)(lambda s: int(s, base=0)),
+            type=multi_base,
             required=False,
-            help="Address where flashing should be done"
+            help="Flashing location address. If present, .bin used instead of .hex"
         )
         parser.add_argument(
             "--download-modifiers",
@@ -180,10 +191,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         )
         parser.add_argument(
             "--start-address",
-            # To accept arguments in hex format, a wrapper lambda around int() must be used.
-            # Wrapping the lambda with functools.wraps() makes it so that 'invalid int value'
-            # is displayed when an invalid value is provided for this argument.
-            type=functools.wraps(int)(lambda s: int(s, base=0)),
+            type=multi_base,
             required=False,
             help="Address where execution should begin after flashing"
         )
@@ -228,8 +236,9 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         return STM32CubeProgrammerBinaryRunner(
             cfg,
             port=args.port,
+            dev_id=args.dev_id,
             frequency=args.frequency,
-            reset_mode=args.reset_mode,
+            reset_mode=args.reset_type,
             download_address=args.download_address,
             download_modifiers=args.download_modifiers,
             start_address=args.start_address,
@@ -260,6 +269,8 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             connect_opts += f" reset={reset_mode}"
         if self._conn_modifiers:
             connect_opts += f" {self._conn_modifiers}"
+        if self._dev_id:
+            connect_opts += f" sn={self._dev_id}"
 
         cmd += ["--connect", connect_opts]
         cmd += self._tool_opt
@@ -271,15 +282,25 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         if self._erase:
             self.check_call(cmd + ["--erase", "all"])
 
-        # flash image and run application
+        # Define binary to be loaded
+        dl_file = None
+
         if self._use_elf:
+            # Use elf file if instructed to do so.
             dl_file = self.cfg.elf_file
-        elif self.cfg.bin_file is not None and os.path.isfile(self.cfg.bin_file) and \
-            "zephyr.signed" in self.cfg.bin_file:
+        elif (self.cfg.bin_file is not None and
+               (self._download_address is not None or
+                  (str(self._port).startswith("usb") and self._download_modifiers is not None))):
+            # Use bin file if a binary is available and
+            # --download-address provided
+            # or flashing by dfu (port=usb and download-modifier used)
             dl_file = self.cfg.bin_file
-        elif self.cfg.hex_file is not None and os.path.isfile(self.cfg.hex_file):
-            # --user-elf not used and no bin file given, default to hex
+        elif self.cfg.hex_file is not None:
+            # Neither --use-elf nor --download-address are present:
+            # default to flashing using hex file.
             dl_file = self.cfg.hex_file
+
+        # Verify file configuration
         if dl_file is None:
             raise RuntimeError('cannot flash; no download file was specified')
         elif not os.path.isfile(dl_file):

@@ -27,7 +27,7 @@ char __aligned(4) slab_buffer[8 * 4];
 stack_data_t stack_array[8 * 4];
 int msgq_buffer[64];
 
-ZTEST(obj_tracking, test_obj_tracking_sanity)
+ZTEST(obj_tracking, test_obj_tracking_coherence)
 {
 	struct k_timer timer;
 	struct k_mem_slab slab;
@@ -150,7 +150,7 @@ ZTEST(obj_tracking, test_obj_tracking_sanity)
 		}
 		list = SYS_PORT_TRACK_NEXT((struct k_event *)list);
 	}
-	zassert_equal(count, 2, "Wrong number of queue objects");
+	zassert_equal(count, 2, "Wrong number of event objects");
 
 
 }

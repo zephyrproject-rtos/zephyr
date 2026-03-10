@@ -80,6 +80,7 @@ config NET_L2_WIFI_SHELL
 config NET_L2_PTP
 	bool "PTP L2 support"
 	select NET_PKT_TIMESTAMP
+	select NET_PKT_TIMESTAMP_THREAD
 	select PTP_CLOCK
 	help
 	  Add support for PTP L2 capabilities. Required by gPTP.

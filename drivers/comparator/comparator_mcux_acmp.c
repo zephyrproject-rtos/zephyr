@@ -77,7 +77,7 @@ LOG_MODULE_REGISTER(nxp_kinetis_acmp, CONFIG_COMPARATOR_LOG_LEVEL);
 #endif
 
 #define MCUX_ACMP_ENUM(name, value) \
-	_CONCAT_4(COMP_MCUX_ACMP_, name, _, value)
+	CONCAT(COMP_MCUX_ACMP_, name, _, value)
 
 #define MCUX_ACMP_DT_INST_ENUM(inst, name, prop) \
 	MCUX_ACMP_ENUM(name, DT_INST_STRING_TOKEN(inst, prop))
@@ -561,11 +561,7 @@ static int mcux_acmp_init(const struct device *dev)
 
 	comp_mcux_acmp_init_mode_config(dev, &config->mode_config);
 
-	ret = comp_mcux_acmp_set_input_config(dev, &config->input_config);
-	if (ret) {
-		LOG_ERR("failed to set %s", "input config");
-		return ret;
-	}
+	comp_mcux_acmp_set_input_config(dev, &config->input_config);
 
 	ret = comp_mcux_acmp_set_filter_config(dev, &config->filter_config);
 	if (ret) {
@@ -573,26 +569,14 @@ static int mcux_acmp_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = comp_mcux_acmp_set_dac_config(dev, &config->dac_config);
-	if (ret) {
-		LOG_ERR("failed to set %s", "dac config");
-		return ret;
-	}
+	comp_mcux_acmp_set_dac_config(dev, &config->dac_config);
 
 #if COMP_MCUX_ACMP_HAS_DISCRETE_MODE
-	ret = comp_mcux_acmp_set_dm_config(dev, &config->dm_config);
-	if (ret) {
-		LOG_ERR("failed to set %s", "discrete mode config");
-		return ret;
-	}
+	comp_mcux_acmp_set_dm_config(dev, &config->dm_config);
 #endif
 
 #if COMP_MCUX_ACMP_HAS_WINDOW_MODE
-	ret = comp_mcux_acmp_set_window_mode(dev, config->enable_window_mode);
-	if (ret) {
-		LOG_ERR("failed to set %s", "window mode");
-		return ret;
-	}
+	comp_mcux_acmp_set_window_mode(dev, config->enable_window_mode);
 #endif
 
 	ACMP_DisableInterrupts(config->base, UINT32_MAX);

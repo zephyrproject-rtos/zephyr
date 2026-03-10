@@ -10,13 +10,13 @@ menuconfig ESPI
 
 if ESPI
 
-source "drivers/espi/Kconfig.xec"
-
-source "drivers/espi/Kconfig.npcx"
-
+# zephyr-keep-sorted-start
 source "drivers/espi/Kconfig.espi_emul"
-
 source "drivers/espi/Kconfig.it8xxx2"
+source "drivers/espi/Kconfig.npcx"
+source "drivers/espi/Kconfig.rts5912"
+source "drivers/espi/Kconfig.xec"
+# zephyr-keep-sorted-stop
 
 module = ESPI
 module-str = espi
@@ -110,6 +110,16 @@ config ESPI_PERIPHERAL_HOST_IO_PVT
 	help
 	  Enables ACPI Host I/O over eSPI peripheral channel for private channel.
 
+config ESPI_PERIPHERAL_HOST_IO_PVT2
+	bool "Host I/O peripheral Private Channel 2"
+	help
+	  Enables ACPI Host I/O over eSPI peripheral channel for private channel 2.
+
+config ESPI_PERIPHERAL_HOST_IO_PVT3
+	bool "Host I/O peripheral Private Channel 3"
+	help
+	  Enables ACPI Host I/O over eSPI peripheral channel for private channel 3.
+
 config ESPI_PERIPHERAL_HOST_IO_PVT_PORT_NUM
 	hex "Host I/O peripheral Private Channel"
 	depends on ESPI_PERIPHERAL_HOST_IO_PVT
@@ -119,6 +129,22 @@ config ESPI_PERIPHERAL_HOST_IO_PVT_PORT_NUM
 	  the private channel. Please ensure the Host code is configured to use
 	  the same port. Also, ensure the port number selected doesn't clash
 	  with the existing ports (like 80, 92, 62 etc).
+
+config ESPI_PERIPHERAL_HOST_IO_PVT2_PORT_NUM
+	hex "Host I/O peripheral Private Channel 2"
+	depends on ESPI_PERIPHERAL_HOST_IO_PVT2
+	default 0x0068
+	help
+	  This is the port number used by the Host and EC to communicate over
+	  the private channel 2.
+
+config ESPI_PERIPHERAL_HOST_IO_PVT3_PORT_NUM
+	hex "Host I/O peripheral Private Channel 3"
+	depends on ESPI_PERIPHERAL_HOST_IO_PVT3
+	default 0x0070
+	help
+	  This is the port number used by the Host and EC to communicate over
+	  the private channel 3.
 
 config ESPI_PERIPHERAL_DEBUG_PORT_80
 	bool "Debug Port 80 peripheral"

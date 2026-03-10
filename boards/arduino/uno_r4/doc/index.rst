@@ -1,7 +1,4 @@
-.. _arduino_uno_r4:
-
-Arduino UNO R4
-##############
+.. zephyr:board:: arduino_uno_r4
 
 Overview
 ********
@@ -23,19 +20,12 @@ Hardware
 Supported Features
 ==================
 
-The Arduino UNO R4 Minima/Wifi  board configuration supports the following
-hardware features:
-
-+-----------+------------+------------------------------------------+
-| Interface | Controller | Driver/Component                         |
-+===========+============+==========================================+
-| GPIO      | on-chip    | I/O ports                                |
-+-----------+------------+------------------------------------------+
-| UART      | on-chip    | Serial ports                             |
-+-----------+------------+------------------------------------------+
+.. zephyr:board-supported-hw::
 
 Programming and debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Debug adapter
 =============
@@ -60,12 +50,12 @@ Here is an example for building and flashing the :zephyr:code-sample:`blinky` ap
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: arduino_uno_r4_minima
+   :board: arduino_uno_r4@minima
    :goals: build flash
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: arduino_uno_r4_wifi
+   :board: arduino_uno_r4@wifi
    :goals: build flash
 
 Debugging
@@ -77,13 +67,13 @@ Also, see the instructions specific to the debug server that you use.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: arduino_uno_r4_minima
+   :board: arduino_uno_r4@minima
    :maybe-skip-config:
    :goals: debug
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: arduino_uno_r4_wifi
+   :board: arduino_uno_r4@wifi
    :maybe-skip-config:
    :goals: debug
 

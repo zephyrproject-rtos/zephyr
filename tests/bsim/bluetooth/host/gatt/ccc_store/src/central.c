@@ -29,10 +29,10 @@
 
 #define SERVER_CHAN 0
 
-static DEFINE_FLAG(connected_flag);
-static DEFINE_FLAG(disconnected_flag);
-static DEFINE_FLAG(security_updated_flag);
-static DEFINE_FLAG(notification_received_flag);
+DEFINE_FLAG_STATIC(connected_flag);
+DEFINE_FLAG_STATIC(disconnected_flag);
+DEFINE_FLAG_STATIC(security_updated_flag);
+DEFINE_FLAG_STATIC(notification_received_flag);
 
 #define BT_UUID_DUMMY_SERVICE BT_UUID_DECLARE_128(DUMMY_SERVICE_TYPE)
 #define BT_UUID_DUMMY_SERVICE_NOTIFY BT_UUID_DECLARE_128(DUMMY_SERVICE_NOTIFY_TYPE)
@@ -41,7 +41,8 @@ static struct bt_conn *default_conn;
 
 static struct bt_conn_cb central_cb;
 
-static DEFINE_FLAG(gatt_subscribed_flag);
+DEFINE_FLAG_STATIC(gatt_subscribed_rejected_flag);
+DEFINE_FLAG_STATIC(gatt_subscribed_flag);
 
 static uint8_t notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
 			 const void *data, uint16_t length)
@@ -69,6 +70,9 @@ static uint8_t notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe_params *
 static void subscribe_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_subscribe_params *params)
 {
 	if (err) {
+		if (err == BT_ATT_ERR_WRITE_NOT_PERMITTED) {
+			SET_FLAG(gatt_subscribed_rejected_flag);
+		}
 		return;
 	}
 
@@ -81,6 +85,7 @@ static void ccc_subscribe(void)
 {
 	int err;
 
+	UNSET_FLAG(gatt_subscribed_rejected_flag);
 	UNSET_FLAG(gatt_subscribed_flag);
 
 	subscribe_params.notify = notify_cb;
@@ -88,6 +93,13 @@ static void ccc_subscribe(void)
 	subscribe_params.ccc_handle = CCC_HANDLE;
 	subscribe_params.value_handle = VAL_HANDLE;
 	subscribe_params.value = BT_GATT_CCC_NOTIFY;
+
+	err = bt_gatt_subscribe(default_conn, &subscribe_params);
+	if (err) {
+		TEST_FAIL("Failed to subscribe (att err %d)", err);
+	}
+
+	WAIT_FOR_FLAG(gatt_subscribed_rejected_flag);
 
 	err = bt_gatt_subscribe(default_conn, &subscribe_params);
 	if (err) {

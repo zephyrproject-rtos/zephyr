@@ -1,12 +1,14 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2025 Nordic Semiconductor ASA
  * Copyright (c) 2015 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdint.h>
 
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/bluetooth/buf.h>
@@ -19,6 +21,7 @@
 
 #include "host/hci_core.h"
 #include "host/conn_internal.h"
+#include "l2cap_br_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -47,7 +50,7 @@ static int pin_code_neg_reply(const bt_addr_t *bdaddr)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_NEG_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -65,7 +68,7 @@ static int pin_code_reply(struct bt_conn *conn, const char *pin, uint8_t len)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -87,7 +90,8 @@ int bt_conn_auth_pincode_entry(struct bt_conn *conn, const char *pin)
 		return -EINVAL;
 	}
 
-	if (conn->type != BT_CONN_TYPE_BR) {
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
 		return -EINVAL;
 	}
 
@@ -158,15 +162,16 @@ static uint8_t ssp_pair_method(const struct bt_conn *conn)
 
 static uint8_t ssp_get_auth(const struct bt_conn *conn)
 {
-	/* Validate no bond auth request, and if valid use it. */
-	if ((conn->br.remote_auth == BT_HCI_NO_BONDING) ||
-	    ((conn->br.remote_auth == BT_HCI_NO_BONDING_MITM) &&
-	     (ssp_pair_method(conn) > JUST_WORKS))) {
-		return conn->br.remote_auth;
-	}
+	bt_security_t max_sec_level;
 
-	/* Local & remote have enough IO capabilities to get MITM protection. */
-	if (ssp_pair_method(conn) > JUST_WORKS) {
+	/* Check if the MITM is required by service */
+	max_sec_level = bt_l2cap_br_get_max_sec_level();
+
+	/*
+	 * The local device shall only set the MITM protection required flag
+	 * if the local device itself requires MITM protection.
+	 */
+	if ((max_sec_level > BT_SECURITY_L2) && (ssp_pair_method(conn) > JUST_WORKS)) {
 		return conn->br.remote_auth | BT_MITM;
 	}
 
@@ -181,7 +186,7 @@ static int ssp_confirm_reply(struct bt_conn *conn)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_USER_CONFIRM_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -199,7 +204,7 @@ static int ssp_confirm_neg_reply(struct bt_conn *conn)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_USER_CONFIRM_NEG_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -243,9 +248,19 @@ static void ssp_pairing_complete(struct bt_conn *conn, uint8_t status)
 	}
 }
 
+#define BR_SSP_AUTH_MITM_DISABLED(auth) (((auth) & BT_MITM) == 0)
+
 static void ssp_auth(struct bt_conn *conn, uint32_t passkey)
 {
 	conn->br.pairing_method = ssp_pair_method(conn);
+
+	if (BR_SSP_AUTH_MITM_DISABLED(conn->br.local_auth) &&
+	    BR_SSP_AUTH_MITM_DISABLED(conn->br.remote_auth)) {
+		/*
+		 * If the MITM flag of both sides is false, the pairing method is `just works`.
+		 */
+		conn->br.pairing_method = JUST_WORKS;
+	}
 
 	/*
 	 * If local required security is HIGH then MITM is mandatory.
@@ -298,7 +313,7 @@ static int ssp_passkey_reply(struct bt_conn *conn, unsigned int passkey)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_USER_PASSKEY_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -317,7 +332,7 @@ static int ssp_passkey_neg_reply(struct bt_conn *conn)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_USER_PASSKEY_NEG_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -336,7 +351,7 @@ static int conn_auth(struct bt_conn *conn)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_AUTH_REQUESTED, sizeof(*auth));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -524,7 +539,7 @@ void link_key_neg_reply(const bt_addr_t *bdaddr)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LINK_KEY_NEG_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Out of command buffers");
 		return;
@@ -542,7 +557,7 @@ void link_key_reply(const bt_addr_t *bdaddr, const uint8_t *lk)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LINK_KEY_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Out of command buffers");
 		return;
@@ -598,8 +613,7 @@ void io_capa_neg_reply(const bt_addr_t *bdaddr, const uint8_t reason)
 	struct bt_hci_cp_io_capability_neg_reply *cp;
 	struct net_buf *resp_buf;
 
-	resp_buf = bt_hci_cmd_create(BT_HCI_OP_IO_CAPABILITY_NEG_REPLY,
-				     sizeof(*cp));
+	resp_buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!resp_buf) {
 		LOG_ERR("Out of command buffers");
 		return;
@@ -639,6 +653,25 @@ void bt_hci_io_capa_resp(struct net_buf *buf)
 		return;
 	}
 
+	if (atomic_test_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR) &&
+	    (evt->authentication > BT_HCI_NO_BONDING_MITM) &&
+	    !atomic_test_bit(conn->flags, BT_CONN_BR_BONDABLE)) {
+		/*
+		 * BLUETOOTH CORE SPECIFICATION Version 6.0 | Vol 3, Part C, section 9.4.2.
+		 * A device in the non-bondable mode does not allow a bond to be created with a
+		 * peer device.
+		 *
+		 * If the local is SSP initiator and non-bondable mode, and the bonding is required
+		 * by peer device, reports the pairing failure and disconnects the ACL connection
+		 * with error `BT_HCI_ERR_AUTH_FAIL`.
+		 */
+		LOG_WRN("Bonding flag mismatch (initiator:false != responder:true)");
+		ssp_pairing_complete(conn, bt_security_err_get(BT_HCI_ERR_AUTH_FAIL));
+		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+		bt_conn_unref(conn);
+		return;
+	}
+
 	conn->br.remote_io_capa = evt->capability;
 	conn->br.remote_auth = evt->authentication;
 	atomic_set_bit(conn->flags, BT_CONN_BR_PAIRING);
@@ -673,20 +706,12 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 
 		err = bt_auth->pairing_accept(conn, NULL);
 		if (err != BT_SECURITY_ERR_SUCCESS) {
-			io_capa_neg_reply(&evt->bdaddr,
-					  BT_HCI_ERR_PAIRING_NOT_ALLOWED);
+			io_capa_neg_reply(&evt->bdaddr, BT_HCI_ERR_PAIRING_NOT_ALLOWED);
+			bt_conn_unref(conn);
 			return;
 		}
 	}
 #endif
-
-	resp_buf = bt_hci_cmd_create(BT_HCI_OP_IO_CAPABILITY_REPLY,
-				     sizeof(*cp));
-	if (!resp_buf) {
-		LOG_ERR("Out of command buffers");
-		bt_conn_unref(conn);
-		return;
-	}
 
 	/*
 	 * Set authentication requirements when acting as pairing initiator to
@@ -715,11 +740,39 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 		}
 	} else {
 		auth = ssp_get_auth(conn);
+
+		/*
+		 * Core v6.0, Vol 3, Part C, Section 4.3.1 Non-bondable mode
+		 * When a Bluetooth device is in non-bondable mode it shall not accept a
+		 * pairing request that results in bonding. Devices in non-bondable mode
+		 * may accept connections that do not request or require bonding.
+		 *
+		 * If the peer supports bonding mode, but the local is in non-bondable
+		 * mode, it will send a negative response with error code
+		 * `BT_HCI_ERR_PAIRING_NOT_ALLOWED`.
+		 */
+		if (!atomic_test_bit(conn->flags, BT_CONN_BR_BONDABLE) &&
+		    (conn->br.remote_auth > BT_HCI_NO_BONDING_MITM)) {
+			LOG_WRN("Invalid remote bonding requirements");
+			io_capa_neg_reply(&evt->bdaddr,
+					  BT_HCI_ERR_PAIRING_NOT_ALLOWED);
+			bt_conn_unref(conn);
+			return;
+		}
 	}
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_BR_BONDABLE)) {
 		/* If bondable is false, clear bonding flag. */
 		auth = BT_HCI_SET_NO_BONDING(auth);
+	}
+
+	conn->br.local_auth = auth;
+
+	resp_buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!resp_buf) {
+		LOG_ERR("Out of command buffers");
+		bt_conn_unref(conn);
+		return;
 	}
 
 	cp = net_buf_add(resp_buf, sizeof(*cp));
@@ -811,7 +864,7 @@ static void link_encr(const uint16_t handle)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_SET_CONN_ENCRYPT, sizeof(*encr));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Out of command buffers");
 		return;

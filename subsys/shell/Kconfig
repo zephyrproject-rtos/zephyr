@@ -8,7 +8,7 @@
 menuconfig SHELL
 	bool "Shell"
 	imply LOG_RUNTIME_FILTERING
-	select POLL
+	select EVENTS
 
 if SHELL
 
@@ -115,6 +115,7 @@ config SHELL_DEFAULT_TERMINAL_HEIGHT
 config SHELL_ARGC_MAX
 	int "Maximum arguments in shell command"
 	range 3 $(UINT8_MAX)
+	default 30 if NET_L2_WIFI_SHELL
 	default 20
 	help
 	  Maximum number of arguments that can build a command.
@@ -189,11 +190,11 @@ config SHELL_VT100_COLORS
 
 config SHELL_GETOPT
 	bool "Threadsafe getopt support in shell"
-	select POSIX_C_LIB_EXT
+	select GETOPT
 	help
 	  This config creates a separate getopt_state for the shell instance.
 	  It ensures that using getopt with shell is thread safe.
-	  When more threads are using getopt please call getopt_state_get to
+	  When more threads are using sys_getopt please call sys_getopt_state_get to
 	  get getopt state of the shell thread.
 
 config SHELL_METAKEYS
@@ -228,7 +229,6 @@ config SHELL_HELP_ON_WRONG_ARGUMENT_COUNT
 config SHELL_HISTORY
 	bool "History in shell"
 	default y if !SHELL_MINIMAL
-	select RING_BUFFER
 	help
 	  Enable commands history. History can be accessed using up and down
 	  arrows or Ctrl+n and Ctrl+p meta keys.
@@ -296,12 +296,48 @@ config SHELL_LOG_BACKEND_CUSTOM
 	  It allows to provide custom implementation of multiplexing logging messages
 	  with shell data.
 
+if SHELL_LOG_BACKEND
+
+config SHELL_LOG_OUTPUT_TIMESTAMP
+	bool "Log output timestamp"
+	default y
+	help
+	  Enable timestamp in log output.
+
 config SHELL_LOG_FORMAT_TIMESTAMP
 	bool "Format timestamp"
 	default y
-	depends on SHELL_LOG_BACKEND
 	help
 	  Enable timestamp formatting.
+
+config SHELL_LOG_OUTPUT_LEVEL
+	bool "Log output level"
+	default y
+	help
+	  Enable log level in log output.
+
+config SHELL_LOG_OUTPUT_CRLF_NONE
+	bool "Log output CRLF none"
+	help
+	  Do not modify CRLF characters in log output.
+
+config SHELL_LOG_OUTPUT_CRLF_LFONLY
+	bool "Log output CRLF LF only"
+	help
+	  Convert CRLF to LF in log output.
+
+config SHELL_LOG_OUTPUT_THREAD
+	bool "Log output thread"
+	default y
+	help
+	  Enable logging thread id or name
+
+config SHELL_LOG_OUTPUT_SKIP_SOURCE
+	bool "Log output skip source"
+	help
+	  Skip outputting source in log output.
+
+endif # SHELL_LOG_BACKEND
 
 config SHELL_AUTOSTART
 	bool "Auto-start shell at boot"
@@ -318,12 +354,37 @@ config SHELL_CMDS_RETURN_VALUE
 	  the return value from the most recently executed command.
 
 config SHELL_CUSTOM_HEADER
-	bool "Include Custom Shell Header"
+	bool "Include Custom Shell Header [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  When enabled, a custom application provided header, named
 	  "zephyr_custom_shell.h", is included at the end of shell.h. This enables
 	  extension of the shell APIs at the macro level. Please use cautiously!
 	  The internal shell API may change in future releases.
+
+config SHELL_TX_TIMEOUT_MS
+	int "Shell TX timeout in milliseconds"
+	default 500 if SHELL_LOG_BACKEND
+	default 50
+	help
+	  The timeout in milliseconds for the shell TX mutex. This is used to
+	  prevent deadlocks when called from other than the shell's processing thread.
+	  When using the shell log backend, the timeout should be longer to avoid
+	  timeouts due to log processing. A value of 0 means no timeout.
+
+config SHELL_BYPASS_READ_BUF_SIZE
+	int "Bypass read buffer size"
+	range 1 $(UINT16_MAX)
+	default SEGGER_RTT_BUFFER_SIZE_DOWN if SHELL_BACKEND_RTT
+	default 16
+	help
+	  Size of buffer used for reading data in bypass mode.
+	  This buffer is allocated on stack. The bypass reads data
+	  in a loop, so a small buffer is sufficient.
+	  Must be smaller than SHELL_STACK_SIZE.
+
+	  When using RTT backend, this defaults to SEGGER_RTT_BUFFER_SIZE_DOWN
+	  for backward compatibility.
 
 source "subsys/shell/modules/Kconfig"
 

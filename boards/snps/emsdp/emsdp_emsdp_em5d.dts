@@ -31,7 +31,6 @@
 
 / {
 	soc {
-
 		uart@f0004000 {
 			interrupts = <107 1>;
 		};

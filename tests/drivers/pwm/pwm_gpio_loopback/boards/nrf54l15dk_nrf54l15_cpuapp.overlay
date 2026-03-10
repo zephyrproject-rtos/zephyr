@@ -3,12 +3,36 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Test requires jumper between:
- *  - PWM20 OUT[0] at P1.10 <-> GPIO input at P1.11
+ *  - PWM20 OUT[0] at P1.08 <-> GPIO input at P1.09
+ *  - PWM20 OUT[1] at P1.10 <-> GPIO input at P1.11
+ *  - PWM20 OUT[2] at P1.12 <-> GPIO input at P1.13
  */
 
 / {
 	zephyr,user {
-		pwms = <&pwm20 0 160000 PWM_POLARITY_NORMAL>;
-		gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+		pwms = <&pwm20 0 160000 PWM_POLARITY_NORMAL>,
+		       <&pwm20 1 160000 PWM_POLARITY_NORMAL>,
+		       <&pwm20 2 160000 PWM_POLARITY_NORMAL>;
+		gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>,
+			<&gpio1 11 GPIO_ACTIVE_HIGH>,
+			<&gpio1 13 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	pwm20_default: pwm20_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 8)>,
+				<NRF_PSEL(PWM_OUT1, 1, 10)>,
+				<NRF_PSEL(PWM_OUT2, 1, 12)>;
+		};
+	};
+
+	pwm20_sleep: pwm20_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 8)>,
+				<NRF_PSEL(PWM_OUT1, 1, 10)>,
+				<NRF_PSEL(PWM_OUT2, 1, 12)>;
+		};
 	};
 };

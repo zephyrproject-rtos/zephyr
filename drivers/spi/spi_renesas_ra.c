@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -41,14 +41,14 @@ struct ra_spi_data {
 	/* RX */
 	struct st_transfer_instance rx_transfer;
 	struct st_dtc_instance_ctrl rx_transfer_ctrl;
-	struct st_transfer_info rx_transfer_info;
+	struct st_transfer_info rx_transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	struct st_transfer_cfg rx_transfer_cfg;
 	struct st_dtc_extended_cfg rx_transfer_cfg_extend;
 
 	/* TX */
 	struct st_transfer_instance tx_transfer;
 	struct st_dtc_instance_ctrl tx_transfer_ctrl;
-	struct st_transfer_info tx_transfer_info;
+	struct st_transfer_info tx_transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	struct st_transfer_cfg tx_transfer_cfg;
 	struct st_dtc_extended_cfg tx_transfer_cfg_extend;
 #endif
@@ -82,6 +82,7 @@ static int ra_spi_configure(const struct device *dev, const struct spi_config *c
 {
 	struct ra_spi_data *data = dev->data;
 	fsp_err_t fsp_err;
+	uint8_t word_size = SPI_WORD_SIZE_GET(config->operation);
 
 	if (spi_context_configured(&data->ctx, config)) {
 		/* Nothing to do */
@@ -93,6 +94,12 @@ static int ra_spi_configure(const struct device *dev, const struct spi_config *c
 	}
 
 	if ((config->operation & SPI_FRAME_FORMAT_TI) == SPI_FRAME_FORMAT_TI) {
+		return -ENOTSUP;
+	}
+
+	if (!((word_size >= 8 && word_size <= 16) || word_size == 20 || word_size == 24 ||
+	      word_size == 32)) {
+		LOG_ERR("Unsupported SPI word size: %u", word_size);
 		return -ENOTSUP;
 	}
 
@@ -146,13 +153,29 @@ static int ra_spi_configure(const struct device *dev, const struct spi_config *c
 		data->fsp_config_extend.spi_clksyn = SPI_SSL_MODE_CLK_SYN;
 	} else {
 		data->fsp_config_extend.spi_clksyn = SPI_SSL_MODE_SPI;
-		data->fsp_config_extend.ssl_select = SPI_SSL_SELECT_SSL0;
+		switch (config->slave) {
+		case 0:
+			data->fsp_config_extend.ssl_select = SPI_SSL_SELECT_SSL0;
+			break;
+		case 1:
+			data->fsp_config_extend.ssl_select = SPI_SSL_SELECT_SSL1;
+			break;
+		case 2:
+			data->fsp_config_extend.ssl_select = SPI_SSL_SELECT_SSL2;
+			break;
+		case 3:
+			data->fsp_config_extend.ssl_select = SPI_SSL_SELECT_SSL3;
+			break;
+		default:
+			LOG_ERR("Invalid SSL");
+			return -EINVAL;
+		}
 	}
 
 	data->fsp_config.p_extend = &data->fsp_config_extend;
 
 	data->fsp_config.p_callback = spi_cb;
-	data->fsp_config.p_context = dev;
+	data->fsp_config.p_context = (void *)dev;
 	fsp_err = R_SPI_Open(&data->spi, &data->fsp_config);
 	if (fsp_err != FSP_SUCCESS) {
 		LOG_ERR("R_SPI_Open error: %d", fsp_err);
@@ -165,15 +188,7 @@ static int ra_spi_configure(const struct device *dev, const struct spi_config *c
 
 static bool ra_spi_transfer_ongoing(struct ra_spi_data *data)
 {
-#if defined(CONFIG_SPI_INTERRUPT)
 	return (spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx));
-#else
-	if (spi_context_total_tx_len(&data->ctx) < spi_context_total_rx_len(&data->ctx)) {
-		return (spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx));
-	} else {
-		return (spi_context_tx_on(&data->ctx) && spi_context_rx_on(&data->ctx));
-	}
-#endif
 }
 
 #ifndef CONFIG_SPI_INTERRUPT
@@ -348,6 +363,11 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 
 	spi_context_cs_control(&data->ctx, true);
 
+	if ((!spi_context_tx_buf_on(&data->ctx)) && (!spi_context_rx_buf_on(&data->ctx))) {
+		/* If current buffer has no data, do nothing */
+		goto end;
+	}
+
 #ifdef CONFIG_SPI_INTERRUPT
 	if (data->ctx.rx_len == 0) {
 		data->data_len = spi_context_is_slave(&data->ctx)
@@ -462,9 +482,9 @@ static int ra_spi_release(const struct device *dev, const struct spi_config *con
 
 static DEVICE_API(spi, ra_spi_driver_api) = {.transceive = ra_spi_transceive,
 #ifdef CONFIG_SPI_ASYNC
-							.transceive_async = ra_spi_transceive_async,
+					     .transceive_async = ra_spi_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
-							.release = ra_spi_release};
+					     .release = ra_spi_release};
 
 static int spi_ra_init(const struct device *dev)
 {
@@ -664,15 +684,10 @@ static void ra_spi_eri_isr(const struct device *dev)
 }
 #endif
 
-#define _ELC_EVENT_SPI_RXI(channel) ELC_EVENT_SPI##channel##_RXI
-#define _ELC_EVENT_SPI_TXI(channel) ELC_EVENT_SPI##channel##_TXI
-#define _ELC_EVENT_SPI_TEI(channel) ELC_EVENT_SPI##channel##_TEI
-#define _ELC_EVENT_SPI_ERI(channel) ELC_EVENT_SPI##channel##_ERI
-
-#define ELC_EVENT_SPI_RXI(channel) _ELC_EVENT_SPI_RXI(channel)
-#define ELC_EVENT_SPI_TXI(channel) _ELC_EVENT_SPI_TXI(channel)
-#define ELC_EVENT_SPI_TEI(channel) _ELC_EVENT_SPI_TEI(channel)
-#define ELC_EVENT_SPI_ERI(channel) _ELC_EVENT_SPI_ERI(channel)
+#define EVENT_SPI_RXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SPI, channel, _RXI))
+#define EVENT_SPI_TXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SPI, channel, _TXI))
+#define EVENT_SPI_TEI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SPI, channel, _TEI))
+#define EVENT_SPI_ERI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SPI, channel, _ERI))
 
 #if defined(CONFIG_SPI_INTERRUPT)
 
@@ -681,13 +696,13 @@ static void ra_spi_eri_isr(const struct device *dev)
 		ARG_UNUSED(dev);                                                                   \
                                                                                                    \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, rxi, irq)] =                               \
-			ELC_EVENT_SPI_RXI(DT_INST_PROP(index, channel));                           \
+			EVENT_SPI_RXI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, txi, irq)] =                               \
-			ELC_EVENT_SPI_TXI(DT_INST_PROP(index, channel));                           \
+			EVENT_SPI_TXI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, tei, irq)] =                               \
-			ELC_EVENT_SPI_TEI(DT_INST_PROP(index, channel));                           \
+			EVENT_SPI_TEI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, eri, irq)] =                               \
-			ELC_EVENT_SPI_ERI(DT_INST_PROP(index, channel));                           \
+			EVENT_SPI_ERI(DT_INST_PROP(index, channel));                               \
                                                                                                    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rxi, irq),                                  \
 			    DT_INST_IRQ_BY_NAME(index, rxi, priority), ra_spi_rxi_isr,             \
@@ -819,7 +834,7 @@ static void ra_spi_eri_isr(const struct device *dev)
 		return 0;                                                                          \
 	}                                                                                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, spi_ra_init##index, PM_DEVICE_DT_INST_GET(index),             \
+	DEVICE_DT_INST_DEFINE(index, spi_ra_init##index, NULL,                                     \
 			      &ra_spi_data_##index, &ra_spi_config_##index, PRE_KERNEL_1,          \
 			      CONFIG_SPI_INIT_PRIORITY, &ra_spi_driver_api);
 

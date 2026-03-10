@@ -55,7 +55,5 @@ elseif(CONFIG_COMPILER_RT_RTLIB)
   set(runtime_lib "compiler_rt")
 endif()
 
-list(APPEND TOOLCHAIN_C_FLAGS --config
-	${ZEPHYR_BASE}/cmake/toolchain/llvm/clang_${runtime_lib}.cfg)
-list(APPEND TOOLCHAIN_LD_FLAGS --config
-	${ZEPHYR_BASE}/cmake/toolchain/llvm/clang_${runtime_lib}.cfg)
+list(APPEND TOOLCHAIN_C_FLAGS --config=${ZEPHYR_BASE}/cmake/toolchain/llvm/clang_${runtime_lib}.cfg)
+list(APPEND TOOLCHAIN_LD_FLAGS --config=${ZEPHYR_BASE}/cmake/toolchain/llvm/clang_${runtime_lib}.cfg)

@@ -97,7 +97,7 @@ static int32_t configure_simplelink(void)
 	uint8_t power;
 
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
-	struct in_addr addr4;
+	struct net_in_addr addr4;
 	SlNetCfgIpV4Args_t ipV4;
 
 	memset(&ipV4, 0, sizeof(ipV4));
@@ -141,7 +141,7 @@ static int32_t configure_simplelink(void)
 	ASSERT_ON_ERROR(retval, WLAN_ERROR);
 
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
-	if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &addr4)
+	if (net_addr_pton(NET_AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &addr4)
 			< 0) {
 		LOG_ERR("Invalid CONFIG_NET_CONFIG_MY_IPV4_ADDR");
 		return -1;
@@ -153,7 +153,7 @@ static int32_t configure_simplelink(void)
 
 #if defined(CONFIG_NET_CONFIG_MY_IPV4_GW)
 	if (strcmp(CONFIG_NET_CONFIG_MY_IPV4_GW, "") != 0) {
-		if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_GW,
+		if (net_addr_pton(NET_AF_INET, CONFIG_NET_CONFIG_MY_IPV4_GW,
 				  &addr4) < 0) {
 			LOG_ERR("Invalid CONFIG_NET_CONFIG_MY_IPV4_GW");
 			return -1;
@@ -167,7 +167,7 @@ static int32_t configure_simplelink(void)
 
 #if defined(CONFIG_NET_CONFIG_MY_IPV4_NETMASK)
 	if (strcmp(CONFIG_NET_CONFIG_MY_IPV4_NETMASK, "") != 0) {
-		if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_NETMASK,
+		if (net_addr_pton(NET_AF_INET, CONFIG_NET_CONFIG_MY_IPV4_NETMASK,
 				  &addr4) < 0) {
 			LOG_ERR("Invalid CONFIG_NET_CONFIG_MY_IPV4_NETMASK");
 			return -1;

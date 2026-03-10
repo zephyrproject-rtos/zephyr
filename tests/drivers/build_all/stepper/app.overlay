@@ -31,5 +31,49 @@
 
 			#include "spi.dtsi"
 		};
+
+		test_uart: uart@55556666 {
+			compatible = "vnd,serial";
+			reg = <0x55556666 0x1000>;
+			status = "okay";
+
+			#include "uart.dtsi"
+		};
+
+		zephyr_gpio_step_dir_workq: zephyr-gpio-step-dir {
+			compatible = "zephyr,gpio-step-dir-stepper-ctrl";
+			step-gpios = <&test_gpio 0 0>;
+			dir-gpios = <&test_gpio 0 0>;
+			stepper-driver = <&adi_tmc2209>;
+		};
+
+		zephyr_gpio_step_dir_counter: zephyr-gpio-step-dir-counter {
+			compatible = "zephyr,gpio-step-dir-stepper-ctrl";
+			step-gpios = <&test_gpio 0 0>;
+			dir-gpios = <&test_gpio 0 0>;
+			counter = <&counter0>;
+			stepper-driver = <&ti_drv84xx>;
+		};
+
+		zephyr_h_bridge_stepper_workq: zephyr-h-bridge-stepper {
+			compatible = "zephyr,h-bridge-stepper-ctrl";
+			status = "okay";
+			lut-step-gap = <1>;
+			gpios = <&test_gpio 0 0>,
+				<&test_gpio 0 0>,
+				<&test_gpio 0 0>,
+				<&test_gpio 0 0>;
+		};
+
+		zephyr_h_bridge_stepper_counter: zephyr-h-bridge-stepper-counter {
+			compatible = "zephyr,h-bridge-stepper-ctrl";
+			status = "okay";
+			lut-step-gap = <1>;
+			counter = <&counter0>;
+			gpios = <&test_gpio 0 0>,
+				<&test_gpio 0 0>,
+				<&test_gpio 0 0>,
+				<&test_gpio 0 0>;
+		};
 	};
 };

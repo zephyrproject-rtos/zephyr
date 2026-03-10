@@ -58,35 +58,7 @@ More information about STM32F030R8 can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f030r8 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c controller                      |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC controller                      |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported in this Zephyr port.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f030r8/nucleo_f030r8_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -121,6 +93,8 @@ For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo F030R8 board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Applications for the ``nucleo_f030r8`` board configuration can be built and
@@ -135,14 +109,14 @@ Flashing
 The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
 so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-Alternatively, OpenOCD, JLink, prob-rs can also be used to flash the board using
+Alternatively, OpenOCD, JLink, probe-rs can also be used to flash the board using
 the ``--runner`` (or ``-r``) option:
 
 .. code-block:: console
 
    $ west flash --runner openocd
    $ west flash --runner jlink
-   $ west flash --runner prob-rs
+   $ west flash --runner probe-rs
 
 Flashing an application to Nucleo F030R8
 ----------------------------------------

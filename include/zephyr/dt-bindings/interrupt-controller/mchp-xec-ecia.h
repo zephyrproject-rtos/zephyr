@@ -3,8 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __DT_BINDING_MCHP_XEC_ECIA_H
-#define __DT_BINDING_MCHP_XEC_ECIA_H
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_MCHP_XEC_ECIA_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_MCHP_XEC_ECIA_H_
+
+/* Encode peripheral's GIRQ and GIRQ bit position only
+ * g = GIRQ number [8, 26], b = bit position [0, 31]
+ */
+#define MCHP_XEC_ECIA_GIRQ_ENC(g, b) (((g) & 0x1f) + (((b) & 0x1f) << 8))
 
 /*
  * Encode peripheral interrupt information into a 32-bit unsigned.
@@ -26,4 +31,4 @@
 #define MCHP_XEC_ECIA_NVIC_AGGR(e)	(((e) >> 16) & 0xff)
 #define MCHP_XEC_ECIA_NVIC_DIRECT(e)	(((e) >> 24) & 0xff)
 
-#endif /* __DT_BINDING_MCHP_XEC_ECIA_H */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_MCHP_XEC_ECIA_H_ */

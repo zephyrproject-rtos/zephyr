@@ -5,7 +5,7 @@ config ESPI_IT8XXX2
 	bool "ITE IT8XXX2 embedded controller ESPI driver"
 	default y
 	depends on DT_HAS_ITE_IT8XXX2_ESPI_ENABLED
-	depends on SOC_IT8XXX2
+	depends on SOC_IT8XXX2 || SOC_IT51XXX
 	help
 	  Enable ITE IT8XXX2 ESPI driver.
 
@@ -18,6 +18,9 @@ config ESPI_PERIPHERAL_8042_KBC
 	default y
 
 config ESPI_PERIPHERAL_HOST_IO
+	default y
+
+config ESPI_PERIPHERAL_HOST_IO_PVT
 	default y
 
 config ESPI_PERIPHERAL_DEBUG_PORT_80
@@ -132,7 +135,7 @@ config ESPI_IT8XXX2_PNPCFG_DEVICE_KBC_MOUSE
 # status bit to indicate which cycle triggered the interrupt and data registers
 # of these two ports are read only. Hence EC have to read these two data
 # registers at the same time in the ISR.
-# It means that the Host must alwasy write 2 bytes of data to port 80 otherwise
+# It means that the Host must always write 2 bytes of data to port 80 otherwise
 # port 81 data will not be updated.
 config ESPI_IT8XXX2_PORT_81_CYCLE
 	bool "EC accepts 0x81 I/O cycle from eSPI transaction"
@@ -141,5 +144,21 @@ config ESPI_IT8XXX2_PORT_81_CYCLE
 	  With this option enabled, EC will accept 0x81 I/O cycle from the Host.
 	  This allows EC to accept 2 bytes of port 80 data written from the Host.
 	  (e.g. using iotools: iotools io_write16 0x80 0x1234)
+
+config ESPI_IT8XXX2_H2RAM_SHARED
+	bool "Shared access to h2ram_pool"
+	help
+	  Enabling this option exposes the eSPI driver h2ram_pool as a
+	  global symbol (non-static), allowing other modules to reuse
+	  this memory space.
+	  The configurations CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM and
+	  CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION_PORT_NUM have a gap in RAM space.
+	  By enabling CONFIG_ESPI_IT8XXX2_H2RAM_SHARED, this unused gap can be
+	  reused by other modules to reduce overall RAM usage.
+
+	  NOTE: A build-time assertion must ensure that the shared region size
+	  does not exceed the available space defined by
+	  CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM and
+	  CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION_PORT_NUM.
 
 endif #ESPI_IT8XXX2

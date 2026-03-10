@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bs_bt_utils.h"
-
 #include <stdint.h>
 #include <string.h>
 
@@ -14,10 +12,12 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/toolchain.h>
 
-#include <babblekit/testcase.h>
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
+#include "babblekit/sync.h"
 
-DEFINE_FLAG(flag_new_address);
-DEFINE_FLAG(flag_connected);
+DEFINE_FLAG_STATIC(flag_new_address);
+DEFINE_FLAG_STATIC(flag_connected);
 
 void scanned_cb(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_scanned_info *info)
 {
@@ -41,9 +41,10 @@ void scanned_cb(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_scanned_info *in
 	/* Check if the scan request comes from a new address */
 	if (bt_addr_le_cmp(&old_addr, &new_addr)) {
 		int64_t new_time, diff, time_diff_ms, rpa_timeout_ms;
+		char addr_str[BT_ADDR_LE_STR_LEN];
 
-		printk("Scanned request from new ");
-		print_address(info->addr);
+		bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+		printk("Scanned request from new address : %s\n", addr_str);
 
 		/* Ensure the RPA rotation occurs within +-10% of CONFIG_BT_RPA_TIMEOUT */
 		new_time = k_uptime_get();
@@ -57,7 +58,8 @@ void scanned_cb(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_scanned_info *in
 		}
 
 		if (diff > rpa_timeout_ms * 0.10) {
-			FAIL("RPA rotation did not occur within +-10%% of CONFIG_BT_RPA_TIMEOUT");
+			TEST_FAIL("RPA rotation did not occur within +-10%% of "
+				  "CONFIG_BT_RPA_TIMEOUT");
 		}
 		old_time = new_time;
 
@@ -89,7 +91,7 @@ void start_advertising(void)
 	/* Enable bluetooth */
 	err = bt_enable(NULL);
 	if (err) {
-		FAIL("Failed to enable bluetooth (err %d\n)", err);
+		TEST_FAIL("Failed to enable bluetooth (err %d)", err);
 	}
 
 	/* Create advertising set */
@@ -104,13 +106,13 @@ void start_advertising(void)
 
 	err = bt_le_ext_adv_create(&params, &adv_callbacks, &adv);
 	if (err) {
-		FAIL("Failed to create advertising set (err %d)\n", err);
+		TEST_FAIL("Failed to create advertising set (err %d)", err);
 	}
 
 	/* Set scan data */
 	err = bt_le_ext_adv_set_data(adv, NULL, 0, sd, ARRAY_SIZE(sd));
 	if (err) {
-		FAIL("Failed to set advertising data (err %d)", err);
+		TEST_FAIL("Failed to set advertising data (err %d)", err);
 	}
 
 	/* Start advertising */
@@ -119,7 +121,7 @@ void start_advertising(void)
 
 	err = bt_le_ext_adv_start(adv, &start_params);
 	if (err) {
-		FAIL("Failed to start advertising (err %d)\n", err);
+		TEST_FAIL("Failed to start advertising (err %d)", err);
 	}
 }
 
@@ -132,12 +134,12 @@ void tester_procedure(void)
 		UNSET_FLAG(flag_new_address);
 	}
 
-	PASS("PASS\n");
+	TEST_PASS("PASS");
 }
 
 void tester_procedure_periph_delayed_start_of_conn_adv(void)
 {
-	backchannel_init(0);
+	TEST_ASSERT(bk_sync_init() == 0);
 
 	int err;
 	struct bt_le_adv_param params =
@@ -167,7 +169,7 @@ void tester_procedure_periph_delayed_start_of_conn_adv(void)
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
 	TEST_ASSERT(!err, "Failed to start advertiser (err %d)", err);
 
-	backchannel_sync_wait();
+	bk_sync_wait();
 
 	err = bt_le_ext_adv_stop(adv);
 	TEST_ASSERT(!err, "Failed to stop advertiser (err %d)", err);
@@ -182,5 +184,5 @@ void tester_procedure_periph_delayed_start_of_conn_adv(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 
-	PASS("PASS\n");
+	TEST_PASS("PASS");
 }

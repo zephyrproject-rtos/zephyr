@@ -77,10 +77,11 @@ struct gpio_smartbond_config {
 	volatile uint32_t *mode_regs;
 	volatile struct gpio_smartbond_latch_regs *latch_regs;
 	volatile struct gpio_smartbond_wkup_regs *wkup_regs;
-	/* Value of TRIG_SELECT for PDC_CTRLx_REG entry */
-	uint8_t wkup_trig_select;
 #if CONFIG_PM_DEVICE
 	uint8_t ngpios;
+#endif
+#if CONFIG_PM
+	uint8_t port;
 #endif
 };
 
@@ -226,7 +227,7 @@ static int gpio_smartbond_pin_interrupt_configure(const struct device *dev,
 	struct gpio_smartbond_data *data = dev->data;
 	uint32_t pin_mask = BIT(pin);
 #if CONFIG_PM
-	int trig_select_id = (config->wkup_trig_select << 5) | pin;
+	int trig_select_id = (config->port << 5) | pin;
 	int pdc_ix;
 #endif
 
@@ -399,10 +400,7 @@ static DEVICE_API(gpio, gpio_smartbond_drv_api_funcs) = {
 #define GPIO_SMARTBOND_DEVICE(id)							\
 	GPIO_PM_DEVICE_STATE(id, DT_INST_PROP(id, ngpios))				\
 	static const struct gpio_smartbond_config gpio_smartbond_config_##id = {	\
-		.common = {								\
-			.port_pin_mask =						\
-			GPIO_PORT_PIN_MASK_FROM_DT_INST(id),				\
-		},									\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(id),				\
 		.data_regs = (volatile struct gpio_smartbond_data_regs *)		\
 						DT_INST_REG_ADDR_BY_NAME(id, data),	\
 		.mode_regs = (volatile uint32_t *)DT_INST_REG_ADDR_BY_NAME(id, mode),	\
@@ -410,7 +408,7 @@ static DEVICE_API(gpio, gpio_smartbond_drv_api_funcs) = {
 						DT_INST_REG_ADDR_BY_NAME(id, latch),	\
 		.wkup_regs = (volatile struct gpio_smartbond_wkup_regs *)		\
 						DT_INST_REG_ADDR_BY_NAME(id, wkup),	\
-		.wkup_trig_select = id,							\
+		IF_ENABLED(CONFIG_PM, (.port = DT_INST_PROP(id, port),))		\
 		GPIO_PM_DEVICE_CFG(.ngpios, DT_INST_PROP(id, ngpios))			\
 	};										\
 											\
@@ -430,9 +428,9 @@ static DEVICE_API(gpio, gpio_smartbond_drv_api_funcs) = {
 		return 0;								\
 	}										\
 											\
-	PM_DEVICE_DEFINE(id, gpio_smartbond_pm_action);					\
+	PM_DEVICE_DT_INST_DEFINE(id, gpio_smartbond_pm_action);				\
 	DEVICE_DT_INST_DEFINE(id, gpio_smartbond_init_##id,				\
-			      PM_DEVICE_GET(id),					\
+			      PM_DEVICE_DT_INST_GET(id),				\
 			      &gpio_smartbond_data_##id,				\
 			      &gpio_smartbond_config_##id,				\
 			      PRE_KERNEL_1,						\

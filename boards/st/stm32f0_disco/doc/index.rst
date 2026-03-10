@@ -40,31 +40,7 @@ More information about STM32F051R8 can be found in the `STM32F0x8 reference manu
 Supported Features
 ==================
 
-The Zephyr stm32f0_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported in this Zephyr port.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32f0_disco/stm32f0_disco_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -86,6 +62,8 @@ For more details please refer to `STM32F0DISCOVERY board User Manual`_.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32F0DISCOVERY board includes an ST-LINK/V2-1 embedded debug tool interface.
 

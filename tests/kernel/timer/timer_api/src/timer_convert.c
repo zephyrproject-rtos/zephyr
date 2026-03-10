@@ -14,7 +14,7 @@ enum units { UNIT_ticks, UNIT_cyc, UNIT_ms, UNIT_us, UNIT_ns };
 
 enum round { ROUND_floor, ROUND_ceil, ROUND_near };
 
-static const char *const round_s[] = {
+static const char *const round_s[] __maybe_unused = {
 	[ROUND_floor] = "floor",
 	[ROUND_ceil] = "ceil",
 	[ROUND_near] = "near",

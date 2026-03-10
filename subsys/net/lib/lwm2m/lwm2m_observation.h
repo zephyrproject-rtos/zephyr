@@ -32,7 +32,7 @@ const char *lwm2m_engine_get_attr_name(const struct lwm2m_attr *attr);
 
 const char *const lwm2m_attr_to_str(uint8_t type);
 
-void clear_attrs(void *ref);
+void clear_attrs(uint8_t level, void *ref);
 
 int64_t engine_observe_shedule_next_event(struct observe_node *obs, uint16_t srv_obj_inst,
 					  const int64_t timestamp);
@@ -87,6 +87,8 @@ int lwm2m_get_path_reference_ptr(struct lwm2m_engine_obj *obj, const struct lwm2
  * @param lwm2m_free_list free list
  */
 void lwm2m_engine_clear_duplicate_path(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list);
+
+void lwm2m_engine_observer_refresh_notified_values(struct observe_node *obs);
 
 /* Resources */
 sys_slist_t *lwm2m_obs_obj_path_list(void);

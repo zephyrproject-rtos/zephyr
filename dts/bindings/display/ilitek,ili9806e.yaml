@@ -1,7 +1,11 @@
 # Copyright (c) 2024 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: ILITEK ILI9806E display controller
+title: Ilitek ILI9806E display controller
+
+description: |
+   The Ilitek ILI9806E is a 16.7M colors TFT-LCD controller
+   with a maximum 480RGBx864 resolution.
 
 compatible: "ilitek,ili9806e-dsi"
 

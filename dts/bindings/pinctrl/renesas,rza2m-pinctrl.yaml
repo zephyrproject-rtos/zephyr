@@ -1,0 +1,59 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Renesas RZ/A2M pin controller
+
+    The Renesas RZ/A2M pin controller is a node responsible for controlling
+    pin function selection and pin properties, such as routing the TX and RX of UART4
+    to pin 0 and pin 1 of port 9.
+
+    #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rza2m.h>
+    example_pins: device_pin {
+        device-pinmux {
+          pinmux = <RZA2M_PINMUX(PORT_09, 0, 4)>, /* TXD */
+                   <RZA2M_PINMUX(PORT_09, 1, 4)>; /* RXD */
+        };
+    };
+
+compatible: "renesas,rza2m-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    This RZA2M pins mux/cfg nodes description.
+
+  child-binding:
+    description: |
+      The RZA2M pinmux/pincfg configuration nodes description.
+
+    include:
+      - name: pincfg-node.yaml
+
+    properties:
+      pinmux:
+        type: array
+        required: true
+        description: |
+          Pinmux configuration node.
+          Values are constructed from GPIO port number, pin number, and
+          alternate function configuration number using the RZA2M_PINMUX()
+          helper macro in pinctrl-rza2m.h
+
+      drive-strength:
+        type: int
+        enum:
+          - 0 # 2 mA
+          - 1 # 8 mA
+          - 2 # 12 mA
+        description: |
+          The DSCR register controls driving ability of the ports.
+          The PCKIO register controls driving ability of the CKIO pin.
+          The PSDMMC(0/1/2) registers specify the driving ability of the pins of the SD/MMC.
+          The PSPIBSC register specifies the driving ability of the pins
+            of the SPI multi I/O bus controller.

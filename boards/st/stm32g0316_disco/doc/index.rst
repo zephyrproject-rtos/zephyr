@@ -11,7 +11,7 @@ and program the embedded STM32 microcontroller.
 Hardware
 ********
 
-- STM32G031J6 Arm |reg| Cortex |reg|-M0+ core-based microcontroller,
+- STM32G031J6 Arm® Cortex®-M0+ core-based microcontroller,
   featuring 32 Kbytes of Flash memory and 8 Kbytes of SRAM, in an SO8 package
 - 1 user LED
 - 1 reset/user push-button
@@ -30,29 +30,7 @@ For more information about the STM32G03x SoC and the STM32G0316-DISCO board, see
 Supported Features
 ==================
 
-The Zephyr stm32g0316_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by the port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32g0316_disco/stm32g0316_disco_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -73,6 +51,8 @@ Default Zephyr Peripheral Mapping:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The STM32G0316-DISCO board includes an ST-LINK/V2-1 embedded debug tool interface.
 

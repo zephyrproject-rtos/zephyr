@@ -122,16 +122,13 @@ set(GEN_DRIVER_KCONFIG_SCRIPT   ${DT_SCRIPTS}/gen_driver_kconfig_dts.py)
 # Generated Kconfig symbols go here.
 set(DTS_KCONFIG                 ${KCONFIG_BINARY_DIR}/Kconfig.dts)
 
-# This generates DT information needed by the CMake APIs.
-set(GEN_DTS_CMAKE_SCRIPT        ${DT_SCRIPTS}/gen_dts_cmake.py)
-# The generated information itself, which we include() after
-# creating it.
-set(DTS_CMAKE                   ${PROJECT_BINARY_DIR}/dts.cmake)
-
 # The location of a file containing known vendor prefixes, relative to
 # each element of DTS_ROOT. Users can define their own in their own
 # modules.
 set(VENDOR_PREFIXES             dts/bindings/vendor-prefixes.txt)
+
+# Fetch variable from sysbuild which might be forcing a configuration (for variant build images)
+zephyr_get(DTS_SOURCE SYSBUILD LOCAL)
 
 if(NOT DEFINED DTS_SOURCE)
   zephyr_build_string(board_string SHORT shortened_board_string
@@ -264,6 +261,9 @@ zephyr_dt_preprocess(
   WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
   )
 
+# Fetch variable from sysbuild which might be forcing a configuration (for variant build images)
+zephyr_get(DTS_DEPS SYSBUILD LOCAL)
+
 #
 # Make sure we re-run CMake if any devicetree sources or transitive
 # includes change.
@@ -283,18 +283,27 @@ set_property(DIRECTORY APPEND PROPERTY
   ${GEN_EDT_SCRIPT}
   ${GEN_DEFINES_SCRIPT}
   ${GEN_DRIVER_KCONFIG_SCRIPT}
-  ${GEN_DTS_CMAKE_SCRIPT}
   )
 
 #
 # Run GEN_EDT_SCRIPT.
 #
 
+if(WEST_TOPDIR)
+  set(GEN_EDT_WORKSPACE_DIR ${WEST_TOPDIR})
+else()
+  # If West is not available, define the parent directory of ZEPHYR_BASE as
+  # the workspace. This will create comments that reference the files in the
+  # Zephyr tree with a 'zephyr/' prefix.
+  set(GEN_EDT_WORKSPACE_DIR ${ZEPHYR_BASE}/..)
+endif()
+
 string(REPLACE ";" " " EXTRA_DTC_FLAGS_RAW "${EXTRA_DTC_FLAGS}")
 set(CMD_GEN_EDT ${PYTHON_EXECUTABLE} ${GEN_EDT_SCRIPT}
 --dts ${DTS_POST_CPP}
 --dtc-flags '${EXTRA_DTC_FLAGS_RAW}'
 --bindings-dirs ${DTS_ROOT_BINDINGS}
+--workspace-dir ${GEN_EDT_WORKSPACE_DIR}
 --dts-out ${ZEPHYR_DTS}.new # for debugging and dtc
 --edt-pickle-out ${EDT_PICKLE}.new
 ${EXTRA_GEN_EDT_ARGS}
@@ -346,31 +355,12 @@ if(NOT "${ret}" STREQUAL "0")
 endif()
 
 #
-# Run GEN_DTS_CMAKE_SCRIPT.
+# Import devicetree contents into CMake.
+# This enables the CMake dt_* API.
 #
-# A temporary file is copied to the original file if it differs. This prevents issue such as a
-# cycle when sysbuild is used of configuring and building multiple times due to the dts.cmake file
-# of images having a newer modification time than the sysbuild build.ninja file, despite the
-# output having not changed
-#
-set(dts_cmake_tmp ${DTS_CMAKE}.new)
 
-execute_process(
-  COMMAND ${PYTHON_EXECUTABLE} ${GEN_DTS_CMAKE_SCRIPT}
-  --edt-pickle ${EDT_PICKLE}
-  --cmake-out ${dts_cmake_tmp}
-  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-  RESULT_VARIABLE ret
-  )
-if(NOT "${ret}" STREQUAL "0")
-  message(FATAL_ERROR "gen_dts_cmake.py failed with return code: ${ret}")
-else()
-  zephyr_file_copy(${dts_cmake_tmp} ${DTS_CMAKE} ONLY_IF_DIFFERENT)
-  file(REMOVE ${dts_cmake_tmp})
-  set(dts_cmake_tmp)
-  message(STATUS "Including generated dts.cmake file: ${DTS_CMAKE}")
-  include(${DTS_CMAKE})
-endif()
+add_custom_target(devicetree_target)
+zephyr_dt_import(EDT_PICKLE_FILE ${EDT_PICKLE} TARGET devicetree_target)
 
 #
 # Run dtc if it was found.
@@ -382,20 +372,20 @@ if(DTC)
 
 set(DTC_WARN_UNIT_ADDR_IF_ENABLED "")
 check_dtc_flag("-Wunique_unit_address_if_enabled" check)
-if (check)
+if(check)
   set(DTC_WARN_UNIT_ADDR_IF_ENABLED "-Wunique_unit_address_if_enabled")
 endif()
 
 set(DTC_NO_WARN_UNIT_ADDR "")
 check_dtc_flag("-Wno-unique_unit_address" check)
-if (check)
+if(check)
   set(DTC_NO_WARN_UNIT_ADDR "-Wno-unique_unit_address")
 endif()
 
 set(VALID_EXTRA_DTC_FLAGS "")
 foreach(extra_opt ${EXTRA_DTC_FLAGS})
   check_dtc_flag(${extra_opt} check)
-  if (check)
+  if(check)
     list(APPEND VALID_EXTRA_DTC_FLAGS ${extra_opt})
   endif()
 endforeach()
@@ -413,17 +403,9 @@ execute_process(
   ${ZEPHYR_DTS}
   OUTPUT_QUIET # Discard stdout
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-  RESULT_VARIABLE ret
-  ERROR_VARIABLE stderr
+  COMMAND_ERROR_IS_FATAL ANY
   )
 
-if(NOT "${ret}" STREQUAL "0")
-  message(FATAL_ERROR "dtc failed with return code: ${ret}")
-elseif(stderr)
-  # dtc printed warnings on stderr but did not fail.
-  # Display them as CMake warnings to draw attention.
-  message(WARNING "dtc raised one or more warnings:\n${stderr}")
-endif()
 endif(DTC)
 
 build_info(devicetree files PATH ${dts_files})

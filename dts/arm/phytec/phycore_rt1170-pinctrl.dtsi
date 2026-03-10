@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2025 PHYTEC America LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_imx/rt/mimxrt1176dvmaa-pinctrl.dtsi>
+
+&pinctrl {
+	pinmux_enet1g: pinmux_enet1g {
+		group0 {
+			pinmux = <&iomuxc_gpio_disp_b1_11_enet_1g_tx_clk_io>, /* ENET_RGMII_TXC */
+				 <&iomuxc_gpio_disp_b1_01_enet_1g_rx_clk>;    /* ENET_RGMII_RXC */
+			bias-disable;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_disp_b1_09_enet_1g_tdata00>, /* ENET_RGMII_TXD0 */
+				 <&iomuxc_gpio_disp_b1_08_enet_1g_tdata01>, /* ENET_RGMII_TXD1 */
+				 <&iomuxc_gpio_disp_b1_07_enet_1g_tdata02>, /* ENET_RGMII_TXD2 */
+				 <&iomuxc_gpio_disp_b1_06_enet_1g_tdata03>, /* ENET_RGMII_TXD3 */
+				 <&iomuxc_gpio_disp_b1_10_enet_1g_tx_en>;   /* ENET_RGMII_TX_EN */
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+
+		group2 {
+			pinmux = <&iomuxc_gpio_disp_b1_02_enet_1g_rdata00>, /* ENET_RGMII_RXD0 */
+				 <&iomuxc_gpio_disp_b1_03_enet_1g_rdata01>, /* ENET_RGMII_RXD1 */
+				 <&iomuxc_gpio_disp_b1_04_enet_1g_rdata02>, /* ENET_RGMII_RXD2 */
+				 <&iomuxc_gpio_disp_b1_05_enet_1g_rdata03>, /* ENET_RGMII_RXD3 */
+				 <&iomuxc_gpio_disp_b1_00_enet_1g_rx_en>;   /* ENET_RGMII_RX_EN */
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_enet1g_mdio: pinmux_enet1g_mdio {
+		group0 {
+			pinmux = <&iomuxc_gpio_emc_b2_19_enet_1g_mdc>,
+				 <&iomuxc_gpio_emc_b2_20_enet_1g_mdio>;
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "fast";
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_disp_b2_01_gpio_mux5_io02>; /* ETHPHY_RST */
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "slow";
+		};
+	};
+
+	pinmux_flexspi1: pinmux_flexspi1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_sd_b2_05_flexspi1_a_dqs>,
+				 <&iomuxc_gpio_sd_b2_06_flexspi1_a_ss0_b>,
+				 <&iomuxc_gpio_sd_b2_07_flexspi1_a_sclk>,
+				 <&iomuxc_gpio_sd_b2_08_flexspi1_a_data00>,
+				 <&iomuxc_gpio_sd_b2_09_flexspi1_a_data01>,
+				 <&iomuxc_gpio_sd_b2_10_flexspi1_a_data02>,
+				 <&iomuxc_gpio_sd_b2_11_flexspi1_a_data03>;
+			bias-pull-down;
+			input-enable;
+		};
+	};
+
+	pinmux_lpi2c2: pinmux_lpi2c2 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_18_lpi2c2_scl>,
+				 <&iomuxc_gpio_ad_19_lpi2c2_sda>;
+			drive-strength = "normal";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+};

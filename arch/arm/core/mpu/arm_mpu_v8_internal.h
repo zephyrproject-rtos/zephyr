@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Linaro Limited.
  * Copyright (c) 2018 Nordic Semiconductor ASA.
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +32,8 @@ struct dynamic_region_info {
  */
 static struct dynamic_region_info dyn_reg_info[MPU_DYNAMIC_REGION_AREAS_NUM];
 #if defined(CONFIG_CPU_CORTEX_M23) || defined(CONFIG_CPU_CORTEX_M33) || \
-	defined(CONFIG_CPU_CORTEX_M55) || defined(CONFIG_CPU_CORTEX_M85)
+	defined(CONFIG_CPU_CORTEX_M52) || defined(CONFIG_CPU_CORTEX_M55) || \
+	defined(CONFIG_CPU_CORTEX_M85)
 static inline void mpu_set_mair0(uint32_t mair0)
 {
 	MPU->MAIR0 = mair0;
@@ -158,6 +160,7 @@ static void mpu_set_region(uint32_t rnr, uint32_t rbar, uint32_t rlar)
 static void region_init(const uint32_t index,
 	const struct arm_mpu_region *region_conf)
 {
+	/* clang-format off */
 	mpu_set_region(
 		/* RNR */
 		index,
@@ -170,16 +173,20 @@ static void region_init(const uint32_t index,
 		| ((region_conf->attr.mair_idx << MPU_RLAR_AttrIndx_Pos)
 			& MPU_RLAR_AttrIndx_Msk)
 		| MPU_RLAR_EN_Msk
+#ifdef CONFIG_ARM_MPU_PXN
+		| ((region_conf->attr.pxn << MPU_RLAR_PXN_Pos) & MPU_RLAR_PXN_Msk)
+#endif
 	);
+	/* clang-format on */
 
 	LOG_DBG("[%d] 0x%08x 0x%08x 0x%08x 0x%08x",
 			index, region_conf->base, region_conf->attr.rbar,
 			region_conf->attr.mair_idx, region_conf->attr.r_limit);
 }
 
-/* @brief Partition sanity check
+/* @brief Partition coherence check
  *
- * This internal function performs run-time sanity check for
+ * This internal function performs run-time coherence check for
  * MPU region start address and size.
  *
  * @param part Pointer to the data structure holding the partition
@@ -279,6 +286,9 @@ static inline void mpu_region_get_access_attr(const uint32_t index,
 		(MPU_RBAR_XN_Msk | MPU_RBAR_AP_Msk | MPU_RBAR_SH_Msk);
 	attr->mair_idx = (mpu_get_rlar() & MPU_RLAR_AttrIndx_Msk) >>
 		MPU_RLAR_AttrIndx_Pos;
+#ifdef CONFIG_ARM_MPU_PXN
+	attr->pxn = (mpu_get_rlar() & MPU_RLAR_PXN_Msk) >> MPU_RLAR_PXN_Pos;
+#endif
 }
 
 static inline void mpu_region_get_conf(const uint32_t index,
@@ -313,6 +323,9 @@ static inline void get_region_attr_from_mpu_partition_info(
 		(MPU_RBAR_XN_Msk | MPU_RBAR_AP_Msk | MPU_RBAR_SH_Msk);
 	p_attr->mair_idx = attr->mair_idx;
 	p_attr->r_limit = REGION_LIMIT_ADDR(base, size);
+#ifdef CONFIG_ARM_MPU_PXN
+	p_attr->pxn = attr->pxn;
+#endif
 }
 
 #if defined(CONFIG_USERSPACE)
@@ -506,19 +519,19 @@ static int mpu_configure_region(const uint8_t index,
 #if !defined(CONFIG_MPU_GAP_FILLING)
 static int mpu_configure_regions(const struct z_arm_mpu_partition
 	regions[], uint8_t regions_num, uint8_t start_reg_index,
-	bool do_sanity_check);
+	bool do_coherence_check);
 #endif
 
 /* This internal function programs a set of given MPU regions
  * over a background memory area, optionally performing a
- * sanity check of the memory regions to be programmed.
+ * coherence check of the memory regions to be programmed.
  *
  * The function performs a full partition of the background memory
  * area, effectively, leaving no space in this area uncovered by MPU.
  */
 static int mpu_configure_regions_and_partition(const struct z_arm_mpu_partition
 	regions[], uint8_t regions_num, uint8_t start_reg_index,
-	bool do_sanity_check)
+	bool do_coherence_check)
 {
 	int i;
 	int reg_index = start_reg_index;
@@ -529,9 +542,9 @@ static int mpu_configure_regions_and_partition(const struct z_arm_mpu_partition
 		}
 		/* Non-empty region. */
 
-		if (do_sanity_check &&
+		if (do_coherence_check &&
 			(!mpu_partition_is_valid(&regions[i]))) {
-			LOG_ERR("Partition %u: sanity check failed.", i);
+			LOG_ERR("Partition %u: coherence check failed.", i);
 			return -EINVAL;
 		}
 

@@ -66,7 +66,7 @@ static int cmd_net_udp_bind(const struct shell *sh, size_t argc, char *argv[])
 	int ret;
 
 	struct net_if *iface;
-	struct sockaddr addr;
+	struct net_sockaddr addr;
 	int addrlen;
 
 	if (argc < 3) {
@@ -82,7 +82,7 @@ static int cmd_net_udp_bind(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if (udp_ctx && net_context_is_used(udp_ctx)) {
+	if (udp_ctx != NULL && net_context_is_used(udp_ctx)) {
 		PR_WARNING("Network context already in use\n");
 		return -EALREADY;
 	}
@@ -95,7 +95,7 @@ static int cmd_net_udp_bind(const struct shell *sh, size_t argc, char *argv[])
 		return ret;
 	}
 
-	ret = net_context_get(addr.sa_family, SOCK_DGRAM, IPPROTO_UDP,
+	ret = net_context_get(addr.sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP,
 			      &udp_ctx);
 	if (ret < 0) {
 		PR_WARNING("Cannot get UDP context (%d)\n", ret);
@@ -104,15 +104,15 @@ static int cmd_net_udp_bind(const struct shell *sh, size_t argc, char *argv[])
 
 	udp_shell = sh;
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == AF_INET6) {
-		net_sin6(&addr)->sin6_port = htons(port);
-		addrlen = sizeof(struct sockaddr_in6);
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == NET_AF_INET6) {
+		net_sin6(&addr)->sin6_port = net_htons(port);
+		addrlen = sizeof(struct net_sockaddr_in6);
 
 		iface = net_if_ipv6_select_src_iface(
 				&net_sin6(&addr)->sin6_addr);
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr.sa_family == AF_INET) {
-		net_sin(&addr)->sin_port = htons(port);
-		addrlen = sizeof(struct sockaddr_in);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr.sa_family == NET_AF_INET) {
+		net_sin(&addr)->sin_port = net_htons(port);
+		addrlen = sizeof(struct net_sockaddr_in);
 
 		iface = net_if_ipv4_select_src_iface(
 				&net_sin(&addr)->sin_addr);
@@ -191,9 +191,10 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 	uint16_t port;
 	uint8_t *payload = NULL;
 	int ret;
+	bool should_release_ctx = false;
 
 	struct net_if *iface;
-	struct sockaddr addr;
+	struct net_sockaddr addr;
 	int addrlen;
 
 	if (argc < 4) {
@@ -210,11 +211,6 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if (udp_ctx && net_context_is_used(udp_ctx)) {
-		PR_WARNING("Network context already in use\n");
-		return -EALREADY;
-	}
-
 	memset(&addr, 0, sizeof(addr));
 	ret = net_ipaddr_parse(host, strlen(host), &addr);
 	if (ret < 0) {
@@ -222,24 +218,27 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 		return ret;
 	}
 
-	ret = net_context_get(addr.sa_family, SOCK_DGRAM, IPPROTO_UDP,
-			      &udp_ctx);
-	if (ret < 0) {
-		PR_WARNING("Cannot get UDP context (%d)\n", ret);
-		return ret;
+	/* Re-use already bound context if possible, or allocate temporary one. */
+	if (udp_ctx == NULL || !net_context_is_used(udp_ctx)) {
+		ret = net_context_get(addr.sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP, &udp_ctx);
+		if (ret < 0) {
+			PR_WARNING("Cannot get UDP context (%d)\n", ret);
+			return ret;
+		}
+		should_release_ctx = true;
 	}
 
 	udp_shell = sh;
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == AF_INET6) {
-		net_sin6(&addr)->sin6_port = htons(port);
-		addrlen = sizeof(struct sockaddr_in6);
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == NET_AF_INET6) {
+		net_sin6(&addr)->sin6_port = net_htons(port);
+		addrlen = sizeof(struct net_sockaddr_in6);
 
 		iface = net_if_ipv6_select_src_iface(
 				&net_sin6(&addr)->sin6_addr);
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr.sa_family == AF_INET) {
-		net_sin(&addr)->sin_port = htons(port);
-		addrlen = sizeof(struct sockaddr_in);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr.sa_family == NET_AF_INET) {
+		net_sin(&addr)->sin_port = net_htons(port);
+		addrlen = sizeof(struct net_sockaddr_in);
 
 		iface = net_if_ipv4_select_src_iface(
 				&net_sin(&addr)->sin_addr);
@@ -274,9 +273,11 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 release_ctx:
-	ret = net_context_put(udp_ctx);
-	if (ret < 0) {
-		PR_WARNING("Cannot put UDP context (%d)\n", ret);
+	if (should_release_ctx) {
+		ret = net_context_put(udp_ctx);
+		if (ret < 0) {
+			PR_WARNING("Cannot put UDP context (%d)\n", ret);
+		}
 	}
 
 	return 0;
@@ -294,14 +295,14 @@ static int cmd_net_udp(const struct shell *sh, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_udp,
 	SHELL_CMD(bind, NULL,
-		  "'net udp bind <addr> <port>' binds to UDP local port.",
+		  SHELL_HELP("Binds to UDP local port", "<addr> <port>"),
 		  cmd_net_udp_bind),
 	SHELL_CMD(close, NULL,
-		  "'net udp close' closes previously bound port.",
+		  SHELL_HELP("Closes previously bound port", ""),
 		  cmd_net_udp_close),
 	SHELL_CMD(send, NULL,
-		  "'net udp send <host> <port> <payload>' "
-		  "sends UDP packet to a network host.",
+		  SHELL_HELP("Sends UDP packet to a network host",
+			     "<host> <port> <payload>"),
 		  cmd_net_udp_send),
 	SHELL_SUBCMD_SET_END
 );

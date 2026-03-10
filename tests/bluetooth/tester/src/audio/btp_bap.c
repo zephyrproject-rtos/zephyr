@@ -7,25 +7,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
-#include <errno.h>
 
-#include <zephyr/types.h>
-#include <zephyr/kernel.h>
-#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
-#include <hci_core.h>
-
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
-#define LOG_MODULE_NAME bttester_bap
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
+
 #include "btp/btp.h"
 #include "btp_bap_audio_stream.h"
 #include "btp_bap_unicast.h"
 #include "btp_bap_broadcast.h"
+
+#include <hci_core.h>
+
+#define LOG_MODULE_NAME bttester_bap
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #define SUPPORTED_SINK_CONTEXT	BT_AUDIO_CONTEXT_TYPE_ANY
 #define SUPPORTED_SOURCE_CONTEXT BT_AUDIO_CONTEXT_TYPE_ANY
@@ -65,10 +69,8 @@ static uint8_t btp_ascs_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_ascs_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_ASCS_READ_SUPPORTED_COMMANDS);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_ASCS, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -196,14 +198,8 @@ static uint8_t pacs_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_pacs_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_PACS_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_PACS_UPDATE_CHARACTERISTIC);
-	tester_set_bit(rp->data, BTP_PACS_SET_LOCATION);
-	tester_set_bit(rp->data, BTP_PACS_SET_AVAILABLE_CONTEXTS);
-	tester_set_bit(rp->data, BTP_PACS_SET_SUPPORTED_CONTEXTS);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_PACS, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -330,10 +326,8 @@ static uint8_t btp_bap_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_bap_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_BAP_READ_SUPPORTED_COMMANDS);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_BAP, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -369,11 +363,16 @@ static const struct btp_handler bap_handlers[] = {
 		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = btp_bap_audio_stream_send,
 	},
-#if defined(CONFIG_BT_BAP_BROADCAST_SINK) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
 	{
 		.opcode = BTP_BAP_BROADCAST_SOURCE_SETUP,
 		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = btp_bap_broadcast_source_setup,
+	},
+	{
+		.opcode = BTP_BAP_BROADCAST_SOURCE_SETUP_V2,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = btp_bap_broadcast_source_setup_v2,
 	},
 	{
 		.opcode = BTP_BAP_BROADCAST_SOURCE_RELEASE,
@@ -475,12 +474,17 @@ static const struct btp_handler bap_handlers[] = {
 		.expect_len = sizeof(struct btp_bap_send_past_cmd),
 		.func = btp_bap_broadcast_assistant_send_past,
 	},
-#endif /* CONFIG_BT_BAP_BROADCAST_SINK || CONFIG_BT_BAP_BROADCAST_SINK */
+	{
+		.opcode = BTP_BAP_SCAN_DELEGATOR_ADD_SRC,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = btp_bap_scan_delegator_add_src,
+	},
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_BROADCAST_SINK */
 };
 
 uint8_t tester_init_pacs(void)
 {
-	const struct bt_bap_pacs_register_param pacs_param = {
+	const struct bt_pacs_register_param pacs_param = {
 #if defined(CONFIG_BT_PAC_SNK)
 		.snk_pac = true,
 #endif /* CONFIG_BT_PAC_SNK */
@@ -491,7 +495,7 @@ uint8_t tester_init_pacs(void)
 		.src_pac = true,
 #endif /* CONFIG_BT_PAC_SRC */
 #if defined(CONFIG_BT_PAC_SRC_LOC)
-		.src_loc = true
+		.src_loc = true,
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 	};
 	int err;

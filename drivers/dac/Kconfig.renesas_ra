@@ -1,0 +1,43 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_RENESAS_RA
+	bool "Renesas RA DAC"
+	default y
+	depends on DT_HAS_RENESAS_RA_DAC_ENABLED
+	select USE_RA_FSP_DAC
+	select PINCTRL
+	help
+	  Enable Renesas RA DAC Driver.
+
+if DAC_RENESAS_RA
+config DAC_RENESAS_RA_DA_AD_SYNCHRONIZE
+	bool "D/A A/D Synchronous Conversion"
+	help
+	  - n: Do not synchronize DAC12 with ADC (unit 1) operation
+	  (disable interference reduction between D/A and A/D conversion).
+	  - y: Synchronize DAC12 with ADC (unit 1) operation
+	  (enable interference reduction between D/A and A/D conversion).
+
+choice DAC_RENESAS_RA_DAVREFCR
+	prompt "D/A Reference Voltage"
+	depends on $(dt_nodelabel_bool_prop,dac_global,has-davrefcr)
+	default DAC_RENESAS_RA_DAVREFCR_AVCC0_AVSS0
+
+config DAC_RENESAS_RA_DAVREFCR_NONE
+	bool "No reference voltage selected"
+	help
+	  No reference voltage selected
+
+config DAC_RENESAS_RA_DAVREFCR_AVCC0_AVSS0
+	bool "Using AVCC0/AVSS0 for reference voltage source"
+	help
+	  AVCC0/AVSS0 selected
+
+config DAC_RENESAS_RA_DAVREFCR_VREFH_VREFL
+	bool "Using VREFH/VREFL for reference voltage source"
+	help
+	  VREFH/VREFL selected
+
+endchoice #DAC_RENESAS_RA_DAVREFCR
+endif # DAC_RENESAS_RA

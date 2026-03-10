@@ -1,0 +1,199 @@
+/*
+ * Copyright (c) 2026 Cirrus Logic, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f401Xd.dtsi>
+#include <st/f4/stm32f401c(d-e)yx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Cirrus Logic CRD40L50-POC-Q";
+	compatible = "cirrus,crd40l50";
+
+	aliases {
+		flash1 = &flash_1;
+		haptic0 = &haptic_0;
+		led0 = &green_led_1;
+		led1 = &red_led_1;
+		led2 = &yellow_led_1;
+		led3 = &yellow_led_2;
+		led4 = &yellow_led_3;
+		sw0 = &user_button;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		user_button: button {
+			label = "User";
+			gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &rtt0;
+		zephyr,flash = &flash0;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		green_led_1: led_1 {
+			gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
+			label = "LED PASS";
+		};
+
+		red_led_1: led_2 {
+			gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+			label = "LED FAIL";
+		};
+
+		yellow_led_1: led_3 {
+			gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
+			label = "SEL LED 1";
+		};
+
+		yellow_led_2: led_4 {
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			label = "SEL LED 2";
+		};
+
+		yellow_led_3: led_5 {
+			gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+			label = "SEL LED 3";
+		};
+	};
+
+	rtt0: rtt_chan0 {
+		compatible = "segger,rtt-uart";
+		status = "okay";
+	};
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	status = "okay";
+
+	clocks = <&clk_hsi>;
+
+	div-m = <16>;
+	mul-n = <336>;
+	div-p = <4>;
+	div-q = <7>;
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(84)>;
+
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+};
+
+&i2c1 {
+	status = "okay";
+
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-1 = <&analog_pb6 &analog_pb7>;
+	pinctrl-names = "default", "sleep";
+
+	haptic_0: haptic@30 {
+		compatible = "cirrus,cs40l5x";
+		reg = <0x30>;
+
+		reset-gpios = <&gpiob 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		int-gpios = <&gpioh 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+		trigger-mapping = <11 12 13>;
+		trigger-gpios = <&gpioa 8 GPIO_PULL_UP>,
+				<&gpioa 9 GPIO_PULL_UP>,
+				<&gpiob 10 GPIO_PULL_UP>;
+
+		flash-storage = <&flash_1>;
+		flash-offset = <0x0>;
+
+		status = "okay";
+	};
+};
+
+&spi2 {
+	status = "okay";
+
+	cs-gpios = <&gpiob 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-1 = <&analog_pb13 &analog_pb14 &analog_pb15>;
+	pinctrl-names = "default", "sleep";
+
+	flash_1: flash@0 {
+		compatible = "atmel,at25xv021a";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		size = <DT_SIZE_K(256)>;
+		page-size = <256>;
+		timeout = <10>;
+		timeout-erase = <4000>;
+
+		wp-gpios = <&gpiob 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+		status = "okay";
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			read-only;
+		};
+
+		/*
+		 * The flash starting at offset 0x10000 and ending at
+		 * offset 0x1ffff is reserved for use by the application.
+		 */
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 DT_SIZE_K(64)>;
+		};
+
+		slot1_partition: partition@30000 {
+			label = "image-1";
+			reg = <0x00030000 DT_SIZE_K(64)>;
+		};
+
+		scratch_partition: partition@40000 {
+			label = "image-scratch";
+			reg = <0x00040000 DT_SIZE_K(64)>;
+		};
+
+		storage_partition: partition@50000 {
+			label = "storage";
+			reg = <0x00050000 DT_SIZE_K(64)>;
+		};
+	};
+};

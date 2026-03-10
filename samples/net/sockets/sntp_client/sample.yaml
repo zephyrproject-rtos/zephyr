@@ -9,6 +9,15 @@ tests:
     platform_allow:
       - qemu_x86
       - native_sim
+  sample.net.sockets.sntp_client.native:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME=y
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-nsos.conf"
   sample.net.sockets.sntp_client.wifi.nrf70dk:
     extra_args:
       - SNIPPET=wifi-ipv4

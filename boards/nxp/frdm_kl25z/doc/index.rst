@@ -4,8 +4,8 @@ Overview
 ********
 
 The Freedom KL25Z is an ultra-low-cost development platform for
-Kinetis |reg| L Series KL1x (KL14/15) and KL2x (KL24/25) MCUs built
-on ARM |reg| Cortex |reg|-M0+ processor.
+Kinetis® L Series KL1x (KL14/15) and KL2x (KL24/25) MCUs built
+on ARM® Cortex®-M0+ processor.
 
 The FRDM-KL25Z features include easy access to MCU I/O, battery-ready,
 low-power operation, a standard-based form factor with expansion board
@@ -30,35 +30,7 @@ For more information about the KL25Z SoC and FRDM-KL25Z board:
 Supported Features
 ==================
 
-The frdm_kl25z board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | soc flash                           |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/nxp/frdm_kl25z/frdm_kl25z_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -107,6 +79,8 @@ Only USB device function is supported in Zephyr at the moment.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -213,6 +187,8 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
    Hello World! frdm_kl25z
+
+.. include:: ../../common/board-footer.rst.inc
 
 .. _FRDM-KL25Z Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/l-seriesultra-low-powerm0-plus/freedom-development-platform-for-kinetis-kl14-kl15-kl24-kl25-mcus:FRDM-KL25Z

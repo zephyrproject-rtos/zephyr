@@ -7,8 +7,8 @@
 Overview
 ********
 
-The sockets/echo_service sample application for Zephyr implements a TCP echo
-server supporting both IPv4 and IPv6 and using a BSD Sockets compatible API.
+The sockets/echo_service sample application for Zephyr implements a TCP and UDP
+echo server supporting both IPv4 and IPv6 and using a BSD Sockets compatible API.
 
 The purpose of this sample is to show how to use socket service API.
 The socket service is a concept where many blocking sockets can be listened by
@@ -46,6 +46,4 @@ The easiest way to connect is:
     $ telnet 192.0.2.1 4242
 
 After a connection is made, the application will echo back any line sent
-to it. The application implements a single-threaded server using blocking
-sockets, and currently is only implemented to serve only one client connection
-at time. After the current client disconnects, the next connection can proceed.
+to it.

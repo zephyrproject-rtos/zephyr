@@ -10,8 +10,7 @@ zephyr_get(ZEPHYR_SCA_VARIANT)
 
 if(ScaTools_FIND_REQUIRED AND NOT DEFINED ZEPHYR_SCA_VARIANT)
   message(FATAL_ERROR "ScaTools required but 'ZEPHYR_SCA_VARIANT' is not set. "
-                      "Please set 'ZEPHYR_SCA_VARIANT' to desired tool."
-  )
+    "Please set 'ZEPHYR_SCA_VARIANT' to desired tool.")
 endif()
 
 if(NOT DEFINED ZEPHYR_SCA_VARIANT)
@@ -26,6 +25,4 @@ foreach(root ${SCA_ROOT})
 endforeach()
 
 message(FATAL_ERROR "ZEPHYR_SCA_VARIANT set to '${ZEPHYR_SCA_VARIANT}' but no "
-                    "implementation for '${ZEPHYR_SCA_VARIANT}' found. "
-                    "SCA_ROOTs searched: ${SCA_ROOT}"
-)
+  "implementation for '${ZEPHYR_SCA_VARIANT}' found. SCA_ROOTs searched: ${SCA_ROOT}")

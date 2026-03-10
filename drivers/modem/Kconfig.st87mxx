@@ -1,0 +1,47 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+# ST87MXX driver options
+
+config MODEM_ST87MXX
+	bool "ST87MXX modem driver"
+	select MODEM_RECEIVER
+	select MODEM_CONTEXT
+	select MODEM_CMD_HANDLER
+	select MODEM_IFACE_UART
+	select MODEM_SOCKET
+	select NET_OFFLOAD
+	select NET_SOCKETS_OFFLOAD
+	imply GPIO
+	help
+	  Enable ST87M01 NB-IoT modem driver.
+
+if MODEM_ST87MXX
+	config MODEM_ST87MXX_INIT_PRIORITY
+	int "ST87M01 driver init priority"
+	default 80
+	help
+	  ST87M01 device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.
+
+config MODEM_ST87MXX_MAX_RX_DATA_LENGTH
+	int "Size of the receive buffer for the ST87M01 modem"
+	default 1024
+	help
+	  This buffer is used by the ST87M01 RX AT command logic.
+
+config MODEM_ST87MXX_MAX_TX_DATA_LENGTH
+	int "Size of the transmit buffer for the ST87M01 modem"
+	default 1024
+	help
+	  This buffer is used by the ST87M01 TX AT command logic.
+
+config MODEM_ST87MXX_RX_STACK_SIZE
+	int "Size of the stack for the ST87M01 modem driver RX thread"
+	default 1024
+	help
+	  This stack is used by the ST87M01 RX thread.
+
+endif # MODEM_ST87MXX

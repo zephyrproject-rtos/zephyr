@@ -20,18 +20,15 @@ LOG_MODULE_REGISTER(spi_ambiq_spid);
 #include <stdlib.h>
 #include <errno.h>
 #include "spi_context.h"
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
-#define AMBIQ_SPID_PWRCTRL_MAX_WAIT_US 5
-
-typedef int (*ambiq_spi_pwr_func_t)(void);
-
+#define SPID_ADDR_INTERVAL 1
 struct spi_ambiq_config {
 	const struct gpio_dt_spec int_gpios;
 	uint32_t base;
 	int size;
+	int inst_idx;
 	const struct pinctrl_dev_config *pcfg;
-	ambiq_spi_pwr_func_t pwr_func;
 	void (*irq_config_func)(void);
 };
 
@@ -39,7 +36,6 @@ struct spi_ambiq_data {
 	struct spi_context ctx;
 	am_hal_ios_config_t ios_cfg;
 	void *ios_handler;
-	int inst_idx;
 	struct k_sem spim_wrcmp_sem;
 };
 
@@ -336,13 +332,12 @@ static int spi_ambiq_init(const struct device *dev)
 	const struct spi_ambiq_config *cfg = dev->config;
 	int ret = 0;
 
-	if (AM_HAL_STATUS_SUCCESS !=
-	    am_hal_ios_initialize((cfg->base - IOSLAVE_BASE) / cfg->size, &data->ios_handler)) {
+	if (AM_HAL_STATUS_SUCCESS != am_hal_ios_initialize(cfg->inst_idx, &data->ios_handler)) {
 		LOG_ERR("Fail to initialize SPID\n");
 		return -ENXIO;
 	}
 
-	ret = cfg->pwr_func();
+	ret = am_hal_ios_power_ctrl(data->ios_handler, AM_HAL_SYSCTRL_WAKE, false);
 
 	ret |= pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
@@ -369,24 +364,43 @@ end:
 #ifdef CONFIG_PM_DEVICE
 static int spi_ambiq_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	const struct spi_ambiq_config *cfg = dev->config;
 	struct spi_ambiq_data *data = dev->data;
-	uint32_t ret;
+	int err;
 	am_hal_sysctrl_power_state_e status;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		/* Set pins to active state */
+		err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			return err;
+		}
 		status = AM_HAL_SYSCTRL_WAKE;
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
+		/* Move pins to sleep state */
+		err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+		if ((err < 0) && (err != -ENOENT)) {
+			/*
+			 * If returning -ENOENT, no pins where defined for sleep mode :
+			 * Do not output on console (might sleep already) when going to
+			 * sleep,
+			 * "SPI pinctrl sleep state not available"
+			 * and don't block PM suspend.
+			 * Else return the error.
+			 */
+			return err;
+		}
 		status = AM_HAL_SYSCTRL_DEEPSLEEP;
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	ret = am_hal_ios_power_ctrl(data->ios_handler, status, true);
-	if (ret != AM_HAL_STATUS_SUCCESS) {
-		LOG_ERR("am_hal_ios_power_ctrl failed: %d", ret);
+	err = am_hal_ios_power_ctrl(data->ios_handler, status, true);
+	if (err != AM_HAL_STATUS_SUCCESS) {
+		LOG_ERR("am_hal_ios_power_ctrl failed: %d", err);
 		return -EPERM;
 	} else {
 		return 0;
@@ -396,14 +410,6 @@ static int spi_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 
 #define AMBIQ_SPID_INIT(n)                                                                         \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static int pwr_on_ambiq_spi_##n(void)                                                      \
-	{                                                                                          \
-		uint32_t addr = DT_REG_ADDR(DT_INST_PHANDLE(n, ambiq_pwrcfg)) +                    \
-				DT_INST_PHA(n, ambiq_pwrcfg, offset);                              \
-		sys_write32((sys_read32(addr) | DT_INST_PHA(n, ambiq_pwrcfg, mask)), addr);        \
-		k_busy_wait(AMBIQ_SPID_PWRCTRL_MAX_WAIT_US);                                       \
-		return 0;                                                                          \
-	}                                                                                          \
 	static void spi_irq_config_func_##n(void)                                                  \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_ambiq_isr,              \
@@ -413,15 +419,14 @@ static int spi_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 	static struct spi_ambiq_data spi_ambiq_data##n = {                                         \
 		SPI_CONTEXT_INIT_LOCK(spi_ambiq_data##n, ctx),                                     \
 		SPI_CONTEXT_INIT_SYNC(spi_ambiq_data##n, ctx),                                     \
-		.spim_wrcmp_sem = Z_SEM_INITIALIZER(spi_ambiq_data##n.spim_wrcmp_sem, 0, 1),       \
-		.inst_idx = n};                                                                    \
+		.spim_wrcmp_sem = Z_SEM_INITIALIZER(spi_ambiq_data##n.spim_wrcmp_sem, 0, 1)};      \
 	static const struct spi_ambiq_config spi_ambiq_config##n = {                               \
 		.int_gpios = GPIO_DT_SPEC_INST_GET(n, int_gpios),                                  \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.size = DT_INST_REG_SIZE(n),                                                       \
+		.inst_idx = (DT_INST_REG_ADDR(n) - IOSLAVE_BASE) / SPID_ADDR_INTERVAL,             \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.irq_config_func = spi_irq_config_func_##n,                                        \
-		.pwr_func = pwr_on_ambiq_spi_##n};                                                 \
+		.irq_config_func = spi_irq_config_func_##n};                                       \
 	PM_DEVICE_DT_INST_DEFINE(n, spi_ambiq_pm_action);                                          \
 	SPI_DEVICE_DT_INST_DEFINE(n, spi_ambiq_init, PM_DEVICE_DT_INST_GET(n), &spi_ambiq_data##n, \
 				  &spi_ambiq_config##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \

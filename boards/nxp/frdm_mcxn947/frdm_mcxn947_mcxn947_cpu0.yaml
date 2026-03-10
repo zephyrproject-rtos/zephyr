@@ -5,7 +5,7 @@
 #
 
 identifier: frdm_mcxn947/mcxn947/cpu0
-name: NXP FRDM MCXN947 (CPU0)
+name: NXP FRDM-MCXN947 (CPU0)
 type: mcu
 arch: arm
 ram: 320
@@ -15,6 +15,10 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
   - can
   - counter
   - dac
@@ -24,10 +28,15 @@ supported:
   - i2c
   - i2s
   - i3c
+  - netif:eth
+  - nvs
   - pwm
   - regulator
+  - rtc
   - sdhc
   - spi
   - usb_device
+  - usbd
+  - video
   - watchdog
 vendor: nxp

@@ -16,38 +16,8 @@ manifest:
       remote: upstream
       groups:
         - optional
-    - name: lz4
-      revision: 11b8a1e22fa651b524494e55d22b69d3d9cebcfd
-      path: modules/lib/lz4
-      remote: upstream
-      groups:
-        - optional
-    - name: nanopb
-      revision: 7307ce399b81ddcb3c3a5dc862c52d4754328d38
-      path: modules/lib/nanopb
-      remote: upstream
-      groups:
-        - optional
-    - name: psa-arch-tests
-      revision: 2cadb02a72eacda7042505dcbdd492371e8ce024
-      path: modules/tee/tf-m/psa-arch-tests
-      remote: upstream
-      groups:
-        - optional
-    - name: sof
-      revision: bc08c9c606324cfba0c104f4ffaf5dd456cb11d6
-      path: modules/audio/sof
-      remote: upstream
-      groups:
-        - optional
-    - name: tf-m-tests
-      revision: 502ea90105ee18f20c78f710e2ba2ded0fc0756e
-      path: modules/tee/tf-m/tf-m-tests
-      remote: upstream
-      groups:
-        - optional
     - name: tflite-micro
-      revision: 48613f7ba1ffbda46ad771a77a35408f48f922e9
+      revision: 8d404de73acf7687831e16d88e86e4f73cfddf8e
       path: optional/modules/lib/tflite-micro
       repo-path: tflite-micro
       remote: upstream
@@ -60,14 +30,8 @@ manifest:
       groups:
         - optional
     - name: zephyr-lang-rust
-      revision: cf3dc6cb79631717464f1cd6b3fb122220f12915
+      revision: dd73abc242e995784da62352fe8c70d9a6c7ac2e
       path: modules/lang/rust
-      remote: upstream
-      groups:
-        - optional
-    - name: zscilib
-      path: modules/lib/zscilib
-      revision: ee1b287d9dd07208d2cc52284240ac25bb66eae3
       remote: upstream
       groups:
         - optional

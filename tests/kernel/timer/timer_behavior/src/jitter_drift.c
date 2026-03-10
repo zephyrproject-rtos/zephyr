@@ -237,10 +237,10 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		- expected_time_drift_us;
 	double time_diff_us_abs = time_diff_us >= 0.0 ? time_diff_us : -time_diff_us;
 
-	/* If max stddev is lower than a single clock cycle then round it up. */
-	uint32_t max_stddev = MAX(k_cyc_to_us_ceil32(1), CONFIG_TIMER_TEST_MAX_STDDEV);
+	/* If max stddev is lower than a single clock tick then round it up. */
+	uint32_t max_stddev = MAX(k_ticks_to_us_ceil32(1), CONFIG_TIMER_TEST_MAX_STDDEV);
 
-	TC_PRINT("timer clock rate %d, kernel tick rate %d\n",
+	TC_PRINT("timer clock rate %u, kernel tick rate %d\n",
 		 sys_clock_hw_cycles_per_sec(), CONFIG_SYS_CLOCK_TICKS_PER_SEC);
 	if ((USEC_PER_SEC / CONFIG_TIMER_TEST_PERIOD) > CONFIG_SYS_CLOCK_TICKS_PER_SEC) {
 		TC_PRINT("test timer period (%u us) is smaller than "
@@ -282,8 +282,8 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		 ", \"total_drift_us\":%.6f"
 		 ", \"expected_period_cycles\":%.0f"
 		 ", \"expected_period_drift_us\":%.6f"
-		 ", \"sys_clock_hw_cycles_per_sec\":%d"
-		 ", \"CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC\":%d"
+		 ", \"sys_clock_hw_cycles_per_sec\":%u"
+		 ", \"CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC\":%u"
 		 ", \"CONFIG_SYS_CLOCK_TICKS_PER_SEC\":%d"
 		 ", \"CONFIG_TIMER_TEST_PERIOD\":%d"
 		 ", \"CONFIG_TIMER_TEST_SAMPLES\":%d"
@@ -304,7 +304,7 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		 expected_period,
 		 expected_period_drift,
 		 sys_clock_hw_cycles_per_sec(),
-		 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+		 (uint32_t)CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
 		 CONFIG_SYS_CLOCK_TICKS_PER_SEC,
 		 CONFIG_TIMER_TEST_PERIOD,
 		 CONFIG_TIMER_TEST_SAMPLES,
@@ -321,10 +321,10 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		+ expected_period_drift;
 
 	zassert_true(min_us >= min_us_bound,
-		"Shortest timer period too short (off by more than expected %d%)",
+		"Shortest timer period too short (off by more than expected %d%%)",
 		CONFIG_TIMER_TEST_PERIOD_MAX_DRIFT_PERCENT);
 	zassert_true(max_us <= max_us_bound,
-		"Longest timer period too long (off by more than expected %d%)",
+		"Longest timer period too long (off by more than expected %d%%)",
 		CONFIG_TIMER_TEST_PERIOD_MAX_DRIFT_PERCENT);
 
 

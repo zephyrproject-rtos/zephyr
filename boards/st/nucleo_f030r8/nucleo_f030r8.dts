@@ -24,6 +24,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_2: led_2 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
@@ -32,6 +33,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
@@ -70,8 +72,13 @@
 
 /* Due to limited available memory, don't enable gpiod and gpiof */
 /* (Test cases fail due to 'SRAM' region overflow) */
-&gpiod {status = "disabled";};
-&gpiof {status = "disabled";};
+&gpiod {
+	status = "disabled";
+};
+
+&gpiof {
+	status = "disabled";
+};
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;

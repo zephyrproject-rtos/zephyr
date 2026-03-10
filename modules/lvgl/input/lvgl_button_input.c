@@ -69,8 +69,8 @@ int lvgl_button_input_init(const struct device *dev)
 
 #define LVGL_BUTTON_INPUT_DEFINE(inst)                                                             \
 	ASSERT_PROPERTIES(inst);                                                                   \
-	LVGL_INPUT_DEFINE(inst, button, CONFIG_LV_Z_BUTTON_INPUT_MSGQ_COUNT,                       \
-			  lvgl_button_process_event);                                              \
+	LVGL_INPUT_INST_DEFINE(inst, button, CONFIG_LV_Z_BUTTON_INPUT_MSGQ_COUNT,                  \
+			       lvgl_button_process_event);                                         \
 	static const uint16_t lvgl_button_input_codes_##inst[] = DT_INST_PROP(inst, input_codes);  \
 	static const int32_t lvgl_button_coordinates_##inst[] = DT_INST_PROP(inst, coordinates);   \
 	static const struct lvgl_button_input_config lvgl_button_input_config_##inst = {           \

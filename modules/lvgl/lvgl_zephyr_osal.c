@@ -4,11 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "lvgl_zephyr_osal.h"
+#include <zephyr/debug/cpu_load.h>
 #include <lvgl.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(lvgl, CONFIG_LV_Z_LOG_LEVEL);
+
+#ifdef CONFIG_LV_Z_USE_OSAL
+
+#include "lvgl_zephyr_osal.h"
 
 typedef void (*lv_thread_entry)(void *);
 static void thread_entry(void *thread, void *cb, void *user_data);
@@ -38,10 +42,20 @@ lv_result_t lv_thread_delete(lv_thread_t *thread)
 {
 	int ret;
 
-	k_thread_abort(thread->tid);
+	if (thread == NULL || thread->tid == NULL) {
+		LOG_ERR("Invalid thread pointer");
+		return LV_RESULT_INVALID;
+	}
+
+	ret = k_thread_join(&thread->thread, K_MSEC(100));
+	if (ret != 0) {
+		LOG_WRN("Thread join failed or timed out: %d, aborting thread", ret);
+		k_thread_abort(thread->tid);
+	}
+
 	ret = k_thread_stack_free(thread->stack);
 	if (ret < 0) {
-		LOG_ERR("Failled to delete thread: %d", ret);
+		LOG_ERR("Failed to delete thread: %d", ret);
 		return LV_RESULT_INVALID;
 	}
 
@@ -149,5 +163,28 @@ void thread_entry(void *thread, void *cb, void *user_data)
 	lv_thread_entry entry_cb = (lv_thread_entry)cb;
 
 	entry_cb(user_data);
-	lv_thread_delete((lv_thread_t *)thread);
+}
+
+void lv_sleep_ms(uint32_t ms)
+{
+	k_msleep(ms);
+}
+
+#endif /* CONFIG_LV_Z_USE_OSAL */
+
+uint32_t lv_os_get_idle_percent(void)
+{
+#ifdef CONFIG_CPU_LOAD
+	int load = cpu_load_get(true);
+
+	if (load < 0) {
+		LOG_ERR("Failed to get CPU load, returning UINT32_MAX");
+		return UINT32_MAX;
+	}
+
+	return 100 - (load / 10);
+#else
+	LOG_WRN_ONCE("CONFIG_CPU_LOAD is not enabled, idle percent will always be 0");
+	return 0;
+#endif
 }

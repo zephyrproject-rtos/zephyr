@@ -550,7 +550,6 @@ static int eth_enc28j60_tx(const struct device *dev, struct net_pkt *pkt)
 
 static void enc28j60_read_packet(const struct device *dev, uint16_t frm_len)
 {
-	const struct eth_enc28j60_config *config = dev->config;
 	struct eth_enc28j60_runtime *context = dev->data;
 	struct net_buf *pkt_buf;
 	struct net_pkt *pkt;
@@ -558,8 +557,8 @@ static void enc28j60_read_packet(const struct device *dev, uint16_t frm_len)
 	uint8_t dummy[4];
 
 	/* Get the frame from the buffer */
-	pkt = net_pkt_rx_alloc_with_buffer(get_iface(context), frm_len,
-					   AF_UNSPEC, 0, K_MSEC(config->timeout));
+	pkt = net_pkt_rx_alloc_with_buffer(get_iface(context), frm_len, NET_AF_UNSPEC, 0,
+					   K_MSEC(CONFIG_ETH_ENC28J60_TIMEOUT));
 	if (!pkt) {
 		LOG_ERR("%s: Could not allocate rx buffer", dev->name);
 		eth_stats_update_errors_rx(get_iface(context));
@@ -750,11 +749,44 @@ static enum ethernet_hw_caps eth_enc28j60_get_capabilities(const struct device *
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T
+	return ETHERNET_LINK_10BASE
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
 #endif
 		;
+}
+
+static int eth_enc28j60_set_config(const struct device *dev,
+				   enum ethernet_config_type type,
+				   const struct ethernet_config *config)
+{
+	struct eth_enc28j60_runtime *context = dev->data;
+
+	/* Compile time check that the memcpy below won't overflow */
+	BUILD_ASSERT(sizeof(context->mac_address) <= sizeof(config->mac_address.addr),
+		     "ENC28j60 Runtime MAC address buffer too small");
+
+	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
+		memcpy(context->mac_address, config->mac_address.addr,
+		       sizeof(config->mac_address.addr));
+		eth_enc28j60_init_mac(dev);
+
+		if (context->iface != NULL) {
+			net_if_set_link_addr(context->iface, context->mac_address,
+					     sizeof(context->mac_address),
+					     NET_LINK_ETHERNET);
+		}
+
+		LOG_INF("Set cfg - MAC %02x:%02x:%02x:%02x:%02x:%02x",
+			context->mac_address[0], context->mac_address[1],
+			context->mac_address[2], context->mac_address[3],
+			context->mac_address[4], context->mac_address[5]);
+
+		return 0;
+	}
+
+	/* Only mac address config supported */
+	return -ENOTSUP;
 }
 
 static void eth_enc28j60_iface_init(struct net_if *iface)
@@ -766,9 +798,7 @@ static void eth_enc28j60_iface_init(struct net_if *iface)
 			     sizeof(context->mac_address),
 			     NET_LINK_ETHERNET);
 
-	if (context->iface == NULL) {
-		context->iface = iface;
-	}
+	context->iface = iface;
 
 	ethernet_init(iface);
 
@@ -783,7 +813,7 @@ static void eth_enc28j60_iface_init(struct net_if *iface)
 
 static const struct ethernet_api api_funcs = {
 	.iface_api.init		= eth_enc28j60_iface_init,
-
+	.set_config		= eth_enc28j60_set_config,
 	.get_capabilities	= eth_enc28j60_get_capabilities,
 	.send			= eth_enc28j60_tx,
 };
@@ -881,10 +911,9 @@ static int eth_enc28j60_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	static const struct eth_enc28j60_config eth_enc28j60_config_##inst = {                     \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),                                \
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
 		.full_duplex = DT_INST_PROP(0, full_duplex),                                       \
-		.timeout = CONFIG_ETH_ENC28J60_TIMEOUT,                                            \
 		.hw_rx_filter = DT_INST_PROP_OR(inst, hw_rx_filter, ENC28J60_RECEIVE_FILTERS),     \
 		.random_mac = DT_INST_PROP(inst, zephyr_random_mac_address),                    \
 	};                                                                                         \

@@ -52,12 +52,6 @@ config SPI_NOR_INIT_PRIORITY
 	  Device is connected to SPI bus, it has to
 	  be initialized after SPI driver.
 
-config SPI_NOR_CS_WAIT_DELAY
-	int "Delay time in us"
-	default 0
-	help
-	  This is the wait delay (in us) to allow for CS switching to take effect
-
 config SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
 	bool "Sleep while waiting for flash operations to complete"
 	default y
@@ -71,10 +65,10 @@ config SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
 config SPI_NOR_SLEEP_ERASE_MS
 	int "Delay between polls while waiting for an erase operation in ms"
 	default 50
+	depends on SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
 	help
 	  The delay between polling while waiting for the flash to finish
 	  an erase operation.
-	depends on SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
 
 
 config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE

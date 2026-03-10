@@ -34,63 +34,16 @@ For more information about the MCX-A156 SoC and FRDM-MCXA156 board, see:
 Supported Features
 ==================
 
-The FRDM-MCXA156 board configuration supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | soc flash                           |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| CTIMER    | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | dac                                 |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma                                 |
-+-----------+------------+-------------------------------------+
-| FLEXCAN   | on-chip    | CAN                                 |
-+-----------+------------+-------------------------------------+
-| FLEXIO    | on-chip    | flexio                              |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | flexio; MIPI-DBI. Tested with       |
-|           |            | :ref:`lcd_par_s035`                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| LPCMP     | on-chip    | sensor(comparator)                  |
-+-----------+------------+-------------------------------------+
-| LPSPI     | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| LPTMR     | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
+Shields for Supported Features
+==============================
 
-Targets available
-==================
+Some features in the table above are tested with Zephyr shields.  These shields
+are tested on this board:
 
-The default configuration file
-:zephyr_file:`boards/nxp/frdm_mcxa156/frdm_mcxa156_defconfig`
-
-Other hardware features are not currently supported by the port.
+- :ref:`lcd_par_s035` - supports the Display interface.  This board uses the
+  MIPI_DBI interface of the shield, connected to the FlexIO on-chip peripheral.
 
 Connections and IOs
 ===================
@@ -111,6 +64,7 @@ System Clock
 
 The MCX-A156 SoC is configured to use FRO running at 96MHz as a source for
 the system clock.
+The MCX-A156 uses OS timer as the kernel timer.
 
 Serial Port
 ===========
@@ -120,6 +74,8 @@ LPUART 0 is configured as UART for the console.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -207,8 +163,9 @@ should see the following message in the terminal:
 Troubleshooting
 ===============
 
-.. include:: ../../common/segger-ecc-systemview.rst
-   :start-after: segger-ecc-systemview
+.. include:: ../../common/segger-ecc-systemview.rst.inc
+
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MCX-A156 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-a-series-microcontrollers/mcx-a13x-14x-15x-mcus-with-arm-cortex-m33-scalable-device-options-low-power-and-intelligent-peripherals:MCX-A13X-A14X-A15X

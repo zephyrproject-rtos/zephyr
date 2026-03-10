@@ -1,11 +1,9 @@
 #
 # Synopsys DesignWare XGMAC configuration options
 #
-# Copyright(c) 2024, Intel Corporation
+# Copyright (c) 2024, Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 #
-
-DT_COMPAT_DWC_XGMAC := snps,dwcxgmac
 
 menu "DWC XGMAC configuration"
 

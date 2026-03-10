@@ -7,7 +7,6 @@
 
 import abc
 import contextlib
-import functools
 import os
 import shlex
 import subprocess
@@ -16,10 +15,7 @@ from collections import deque
 from pathlib import Path
 from re import escape, fullmatch
 
-from zephyr_ext_common import ZEPHYR_BASE
-
 sys.path.append(os.fspath(Path(__file__).parent.parent.parent))
-import zephyr_module
 
 from runners.core import RunnerCaps, ZephyrBinaryRunner
 
@@ -43,6 +39,9 @@ UICR_RANGES = {
     'nrf54l': {
         'Application': (0x00FFD000, 0x00FFDA00),
     },
+    'nrf71': {
+        'Application': (0x00FFD000, 0x00FFDA00)
+    },
     'nrf91': {
         'Application': (0x00FF8000, 0x00FF8800),
     },
@@ -52,34 +51,12 @@ UICR_RANGES = {
     },
 }
 
-# Relative to the root of the hal_nordic module
-SUIT_STARTER_PATH = Path('zephyr/blobs/suit/bin/suit_manifest_starter.hex')
-
-@functools.cache
-def _get_suit_starter():
-    path = None
-    modules = zephyr_module.parse_modules(ZEPHYR_BASE)
-    for m in modules:
-        if 'hal_nordic' in m.meta.get('name'):
-            path = Path(m.project)
-            break
-
-    if not path:
-        raise RuntimeError("hal_nordic project missing in the manifest")
-
-    suit_starter = path / SUIT_STARTER_PATH
-    if not suit_starter.exists():
-        raise RuntimeError("Unable to find suit manifest starter file, "
-                           "please make sure to run \'west blobs fetch "
-                           "hal_nordic\'")
-
-    return str(suit_starter.resolve())
-
 class NrfBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end base class for nrf tools.'''
 
     def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
-                 reset=True, tool_opt=None, force=False, recover=False):
+                 erase_mode=None, ext_erase_mode=None, reset=True,
+                 tool_opt=None, force=False, recover=False, dry_run=False):
         super().__init__(cfg)
         self.hex_ = cfg.hex_file
         # The old --nrf-family options takes upper-case family names
@@ -88,12 +65,12 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         self.pinreset = pinreset
         self.dev_id = dev_id
         self.erase = bool(erase)
+        self.erase_mode = erase_mode
+        self.ext_erase_mode = ext_erase_mode
         self.reset = bool(reset)
         self.force = force
         self.recover = bool(recover)
-
-        # Only applicable for nrfutil
-        self.suit_starter = False
+        self.dry_run = bool(dry_run)
 
         self.tool_opt = []
         if tool_opt is not None:
@@ -101,12 +78,13 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                 self.tool_opt += opts
 
     @classmethod
-    def capabilities(cls):
-        return RunnerCaps(commands={'flash'}, dev_id=True, erase=True,
-                          reset=True, tool_opt=True)
+    def _capabilities(cls, mult_dev_ids=False, dry_run=False):
+        return RunnerCaps(commands={'flash'}, dev_id=True,
+                          mult_dev_ids=mult_dev_ids, erase=True, reset=True,
+                          tool_opt=True, dry_run=dry_run)
 
     @classmethod
-    def dev_id_help(cls) -> str:
+    def _dev_id_help(cls) -> str:
         return '''Device identifier. Use it to select the J-Link Serial Number
                   of the device connected over USB. '*' matches one or more
                   characters/digits'''
@@ -115,7 +93,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
     def do_add_parser(cls, parser):
         parser.add_argument('--nrf-family',
                             choices=['NRF51', 'NRF52', 'NRF53', 'NRF54L',
-                                     'NRF54H', 'NRF91', 'NRF92'],
+                                     'NRF54H', 'NRF71', 'NRF91', 'NRF92'],
                             help='''MCU family; still accepted for
                             compatibility only''')
         # Not using a mutual exclusive group for softreset and pinreset due to
@@ -136,7 +114,14 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                             help='''erase all user available non-volatile
                             memory and disable read back protection before
                             flashing (erases flash for both cores on nRF53)''')
-
+        parser.add_argument('--erase-mode', required=False,
+                            choices=['none', 'ranges', 'all'],
+                            help='Select the type of erase operation for the '
+                                 'internal non-volatile memory')
+        parser.add_argument('--ext-erase-mode', required=False,
+                            choices=['none', 'ranges', 'all'],
+                            help='Select the type of erase operation for the '
+                                 'external non-volatile memory')
         parser.set_defaults(reset=True)
 
     @classmethod
@@ -146,9 +131,22 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             args.dev_id = previous_runner.dev_id
 
     def ensure_snr(self):
-        if not self.dev_id or "*" in self.dev_id:
-            self.dev_id = self.get_board_snr(self.dev_id or "*")
-        self.dev_id = self.dev_id.lstrip("0")
+        # dev_id can be None, str or list of str
+        dev_id = self.dev_id
+        if isinstance(dev_id, list):
+            if len(dev_id) == 0:
+                dev_id = None
+            elif len(dev_id) == 1:
+                dev_id = dev_id[0]
+            else:
+                self.dev_id = [d.lstrip("0") for d in dev_id]
+                return
+        if not dev_id or "*" in dev_id:
+            if not self.dry_run:
+                dev_id = self.get_board_snr(dev_id or "*")
+            else:
+                dev_id = "DEVICEID" # for a dry run
+        self.dev_id = dev_id.lstrip("0")
 
     @abc.abstractmethod
     def do_get_boards(self):
@@ -221,19 +219,21 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         if self.family is not None:
             return
 
-        if self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF51X'):
+        if self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF51'):
             self.family = 'nrf51'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF52X'):
+        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF52'):
             self.family = 'nrf52'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF53X'):
+        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF53'):
             self.family = 'nrf53'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF54LX'):
+        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF54L'):
             self.family = 'nrf54l'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF54HX'):
+        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF54H'):
             self.family = 'nrf54h'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF91X'):
+        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF71'):
+            self.family = 'nrf71'
+        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF91'):
             self.family = 'nrf91'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF92X'):
+        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF92'):
             self.family = 'nrf92'
         else:
             raise RuntimeError(f'unknown nRF; update {__file__}')
@@ -298,8 +298,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         # recover operation unlocks the core and then flashes a small image that
         # keeps the debug access port open, recovering the network core last
         # would result in that small image being deleted from the app core.
-        # In the case of the 54H, the order is indifferent.
-        if self.family in ('nrf53', 'nrf54h', 'nrf92'):
+        if self.family in ('nrf53', 'nrf92'):
             self.exec_op('recover', core='Network')
 
         self.exec_op('recover')
@@ -325,6 +324,18 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
 
         return None
 
+    def _get_erase_mode(self, mode):
+        if not mode:
+            return None
+        elif mode == "none":
+            return "ERASE_NONE"
+        elif mode == "ranges":
+            return "ERASE_RANGES_TOUCHED_BY_FIRMWARE"
+        elif mode == "all":
+            return "ERASE_ALL"
+        else:
+            raise RuntimeError(f"Invalid erase mode: {mode}")
+
     def program_hex(self):
         # Get the command use to actually program self.hex_.
         self.logger.info(f'Flashing file: {self.hex_}')
@@ -335,9 +346,9 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         if self.family in ('nrf54h', 'nrf92'):
             erase_arg = 'ERASE_NONE'
 
-            generated_uicr = self.build_conf.getboolean('CONFIG_NRF_REGTOOL_GENERATE_UICR')
+            regtool_generated_uicr = self.build_conf.getboolean('CONFIG_NRF_REGTOOL_GENERATE_UICR')
 
-            if generated_uicr and not self.hex_get_uicrs().get(core):
+            if regtool_generated_uicr and not self.hex_get_uicrs().get(core):
                 raise RuntimeError(
                     f"Expected a UICR to be contained in: {self.hex_}\n"
                     "Please ensure that the correct version of nrf-regtool is "
@@ -345,63 +356,22 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                 )
 
             if self.erase:
-                self.exec_op('erase', core='Application', kind='all')
-                self.exec_op('erase', core='Network', kind='all')
+                if self.family == 'nrf54h':
+                    self.exec_op('erase', kind='all')
+                else:
+                    self.exec_op('erase', core='Application', kind='all')
+                    self.exec_op('erase', core='Network', kind='all')
 
-            # Manage SUIT artifacts.
-            # This logic should be executed only once per build.
-            # Use sysbuild board qualifiers to select the context,
-            # with which the artifacts will be programmed.
-            if self.build_conf.get('CONFIG_BOARD_QUALIFIERS') == self.sysbuild_conf.get(
-                'SB_CONFIG_BOARD_QUALIFIERS'
-            ):
-                mpi_hex_dir = Path(os.path.join(self.cfg.build_dir, 'zephyr'))
-
-                # Handle Manifest Provisioning Information
-                if self.sysbuild_conf.getboolean('SB_CONFIG_SUIT_MPI_GENERATE'):
-                    app_mpi_hex_file = os.fspath(
-                        mpi_hex_dir / self.sysbuild_conf.get('SB_CONFIG_SUIT_MPI_APP_AREA_PATH'))
-                    rad_mpi_hex_file = os.fspath(
-                        mpi_hex_dir / self.sysbuild_conf.get('SB_CONFIG_SUIT_MPI_RAD_AREA_PATH')
-                    )
-                    if os.path.exists(app_mpi_hex_file):
-                        self.op_program(
-                            app_mpi_hex_file,
-                            'ERASE_NONE',
-                            None,
-                            defer=True,
-                            core='Application',
-                        )
-                    if os.path.exists(rad_mpi_hex_file):
-                        self.op_program(
-                            rad_mpi_hex_file,
-                            'ERASE_NONE',
-                            None,
-                            defer=True,
-                            core='Network',
-                        )
-
-                # Handle SUIT root manifest if application manifests are not used.
-                # If an application firmware is built, the root envelope is merged
-                # with other application manifests as well as the output HEX file.
-                if core != 'Application' and self.sysbuild_conf.get('SB_CONFIG_SUIT_ENVELOPE'):
-                    app_root_envelope_hex_file = os.fspath(
-                        mpi_hex_dir / 'suit_installed_envelopes_application_merged.hex'
-                    )
-                    if os.path.exists(app_root_envelope_hex_file):
-                        self.op_program(
-                            app_root_envelope_hex_file,
-                            'ERASE_NONE',
-                            None,
-                            defer=True,
-                            core='Application',
-                        )
-
-            if not self.erase and generated_uicr:
+            if not self.erase and regtool_generated_uicr:
                 self.exec_op('erase', core=core, kind='uicr')
         else:
+            erase_mode = self._get_erase_mode(self.erase_mode)
             if self.erase:
                 erase_arg = 'ERASE_ALL'
+            elif self.erase_mode:
+                erase_arg = erase_mode
+            elif self.family == 'nrf54l':
+                erase_arg = 'ERASE_NONE'
             else:
                 erase_arg = 'ERASE_RANGES_TOUCHED_BY_FIRMWARE'
 
@@ -413,9 +383,31 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         if self.family in xip_ranges:
             xip_start, xip_end = xip_ranges[self.family]
             if self.hex_refers_region(xip_start, xip_end):
-                ext_mem_erase_opt = erase_arg
+                # Default to pages for the external memory
+                ext_mem_erase_opt = self._get_erase_mode(self.ext_erase_mode) or \
+                        (erase_arg if erase_arg == 'ERASE_ALL' else \
+                                    'ERASE_RANGES_TOUCHED_BY_FIRMWARE')
+
+        if not ext_mem_erase_opt and self.ext_erase_mode:
+            self.logger.warning('Option --ext-erase-mode ignored, no parts of the '
+                                'image refer to external memory')
+
+        self.logger.debug(f'Erase modes: chip:{erase_arg} ext_mem:'
+                          f'{ext_mem_erase_opt}')
+
+        # Temp hack while waiting for nrfutil Network support for NRF54H20 with IronSide
+        if self.family == 'nrf54h' and core == 'Network':
+            core = "Application"
 
         self.op_program(self.hex_, erase_arg, ext_mem_erase_opt, defer=True, core=core)
+
+        if self.erase or self.recover:
+            # provision keys if keyfile.json exists in the build directory
+            keyfile = Path(self.cfg.build_dir).parent / 'keyfile.json'
+            if keyfile.exists():
+                self.logger.info(f'Provisioning key file: {keyfile}')
+                self.exec_op('x-provision-keys', keyfile=str(keyfile), defer=True)
+
         self.flush(force=False)
 
 
@@ -437,18 +429,6 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
     @abc.abstractmethod
     def do_require(self):
         ''' Ensure the tool is installed '''
-
-    def _check_suit_starter(self, op):
-        op = op['operation']
-        if op['type'] not in ('erase', 'recover', 'program'):
-            return None
-        if op['type'] == 'program' and op['options']['chip_erase_mode'] != "ERASE_UICR":
-            return None
-
-        file = _get_suit_starter()
-        self.logger.debug(f'suit starter: {file}')
-
-        return file
 
     def op_program(self, hex_file, erase, ext_mem_erase, defer=False, core=None):
         args = self._op_program(hex_file, erase, ext_mem_erase)
@@ -476,12 +456,6 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             return op
 
         _op = _exec_op(op, defer, core, **kwargs)
-        # Check if the suit manifest starter needs programming
-        if self.suit_starter and self.family == 'nrf54h':
-            file = self._check_suit_starter(_op)
-            if file:
-                args = self._op_program(file, 'ERASE_NONE', None)
-                _exec_op('program', defer, core, **args)
 
     @abc.abstractmethod
     def do_exec_op(self, op, force=False):
@@ -506,6 +480,16 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             raise RuntimeError('Options --softreset and --pinreset are mutually '
                                'exclusive.')
 
+        if self.erase and self.erase_mode:
+            raise RuntimeError('Options --erase and --erase-mode are mutually '
+                               'exclusive.')
+
+        if self.erase and self.ext_erase_mode:
+            raise RuntimeError('Options --erase and --ext-erase-mode are mutually '
+                               'exclusive.')
+
+        self.ensure_family()
+
         self.ensure_output('hex')
         if IntelHex is None:
             raise RuntimeError('Python dependency intelhex was missing; '
@@ -516,7 +500,6 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             self.hex_contents.loadfile(self.hex_, format='hex')
 
         self.ensure_snr()
-        self.ensure_family()
 
         self.ops = deque()
 
@@ -528,5 +511,5 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         # All done, now flush any outstanding ops
         self.flush(force=True)
 
-        self.logger.info(f'Board with serial number {self.dev_id} '
-                         'flashed successfully.')
+        self.logger.info(f'Board(s) with serial number(s) {self.dev_id} '
+                          'flashed successfully.')

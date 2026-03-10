@@ -110,7 +110,7 @@ Details on the configuration settings are captured in the following files:
 - :zephyr_file:`snippets/nus-console/nus-console.conf`.
 - :zephyr_file:`snippets/nus-console/nus-console.overlay`.
 
-Segget RTT
+Segger RTT
 ==========
 
 To configure Segger RTT backend, add the following configurations to your build:
@@ -121,6 +121,27 @@ To configure Segger RTT backend, add the following configurations to your build:
 
 Details on additional configuration settings are captured in:
 :zephyr_file:`samples/subsys/shell/shell_module/prj_minimal_rtt.conf`.
+
+.. _shell_rtt_west:
+
+Using west
+-----------
+
+Attach to and configure RTT with:
+
+.. code-block:: console
+
+   $ west rtt
+
+.. note::
+
+   If your default runner does not have support for RTT, check your board's documentation page for
+   any other runners that support RTT. You may then use the ``--runner`` option to specify a
+   different runner.
+
+  .. code-block:: console
+
+     $ west rtt --runner <runner>
 
 .. _shell_rtt_putty:
 
@@ -219,6 +240,13 @@ File-System
 
 - :kconfig:option:`CONFIG_FILE_SYSTEM`
 - :kconfig:option:`CONFIG_FILE_SYSTEM_SHELL`
+
+ADC
+---
+
+- :kconfig:option:`CONFIG_ADC`
+- :kconfig:option:`CONFIG_ADC_SHELL`
+- :kconfig:option:`CONFIG_ADC_EMUL_SHELL` (requires :kconfig:option:`CONFIG_ADC_EMUL`)
 
 Creating commands
 =================
@@ -610,6 +638,10 @@ modules you can execute the following command:
 
 This feature is activated by :kconfig:option:`CONFIG_SHELL_WILDCARD` set to ``y``.
 
+.. note::
+	When the wildcard feature is enabled, the characters ``*`` and ``?``
+	cannot be used as normal characters in commands or arguments.
+
 Meta Keys Feature
 *****************
 
@@ -643,6 +675,8 @@ The shell module supports the following meta keys:
      - Moves in history to next entry.
    * - :kbd:`Ctrl+p`
      - Moves in history to previous entry.
+   * - :kbd:`Ctrl+t`
+     - Toggles logs output on the shell when :kconfig:option:`CONFIG_SHELL_LOG_BACKEND` is set.
    * - :kbd:`Ctrl+u`
      - Clears the currently typed command.
    * - :kbd:`Ctrl+w`
@@ -655,16 +689,16 @@ The shell module supports the following meta keys:
 
 This feature is activated by :kconfig:option:`CONFIG_SHELL_METAKEYS` set to ``y``.
 
-Getopt Feature
-*****************
+sys_getopt Feature
+******************
 
 Some shell users apart from subcommands might need to use options as well.
 the arguments string, looking for supported options. Typically, this task
 is accomplished by the ``getopt`` family functions.
 
-For this purpose shell supports the getopt and getopt_long libraries available
-in the FreeBSD project. This feature is activated by:
-:kconfig:option:`CONFIG_POSIX_C_LIB_EXT` set to ``y`` and :kconfig:option:`CONFIG_GETOPT_LONG`
+For this purpose shell supports a variant of the getopt and getopt_long libraries from
+the FreeBSD project called sys_getopt and sys_getopt_long. This feature is activated by:
+:kconfig:option:`CONFIG_GETOPT` set to ``y`` and :kconfig:option:`CONFIG_GETOPT_LONG`
 set to ``y``.
 
 This feature can be used in thread safe as well as non thread safe manner.
@@ -676,10 +710,10 @@ An example non-thread safe usage:
 .. code-block:: c
 
   char *cvalue = NULL;
-  while ((char c = getopt(argc, argv, "abhc:")) != -1) {
+  while ((char c = sys_getopt(argc, argv, "abhc:")) != -1) {
         switch (c) {
         case 'c':
-                cvalue = optarg;
+                cvalue = sys_getopt_optarg;
                 break;
         default:
                 break;
@@ -691,9 +725,9 @@ An example thread safe usage:
 .. code-block:: c
 
   char *cvalue = NULL;
-  struct getopt_state *state;
-  while ((char c = getopt(argc, argv, "abhc:")) != -1) {
-        state = getopt_state_get();
+  struct sys_getopt_state *state;
+  while ((char c = sys_getopt(argc, argv, "abhc:")) != -1) {
+        state = sys_getopt_state_get();
         switch (c) {
         case 'c':
                 cvalue = state->optarg;
@@ -703,7 +737,7 @@ An example thread safe usage:
         }
   }
 
-Thread safe getopt functionality is activated by
+Thread safe sys_getopt functionality is activated by
 :kconfig:option:`CONFIG_SHELL_GETOPT` set to ``y``.
 
 Obscured Input Feature
@@ -728,6 +762,55 @@ of any other command besides a login command, by means of the
 ``shell_set_root_cmd`` function. Likewise, :kconfig:option:`CONFIG_SHELL_PROMPT_UART`
 allows you to set the prompt upon startup, but it can be changed later with the
 ``shell_prompt_change`` function.
+
+.. _shell-readline:
+
+Reading User Input
+******************
+
+The shell provides a :c:func:`shell_readline` function that allows command handlers
+to interactively read a line of input from the user. This is useful for implementing
+commands that need to prompt the user for additional information, such as confirmation
+dialogs, multi-step wizards, or interactive data entry.
+
+The function reads from the shell transport until a newline character is received,
+storing the data in a provided buffer. The newline character itself is not included
+in the buffer. The buffer is automatically null-terminated on success.
+
+.. note::
+
+   The :c:func:`shell_readline` function should be called from the shell thread in a
+   shell command handler and blocks the thread until a result is returned.
+
+Example usage:
+
+.. code-block:: c
+
+   static int cmd_read_secret(const struct shell *sh, size_t argc, char **argv)
+   {
+           uint8_t input_buf[256];
+           int ret;
+
+           shell_fprintf_normal(sh, "Enter your secret: ");
+
+           shell_obscure_set(sh, true);
+           ret = shell_readline(sh, input_buf, sizeof(input_buf), K_SECONDS(10));
+           shell_obscure_set(sh, false);
+
+           if (ret < 0) {
+                   if (ret == -ETIMEDOUT) {
+                           shell_error(sh, "Timeout waiting for input");
+                   } else if (ret == -ECANCELED) {
+                           shell_error(sh, "Input canceled");
+                   } else if (ret == -ENOBUFS) {
+                           shell_error(sh, "Input too long");
+                   }
+                   return ret;
+           }
+
+           shell_print(sh, "Secret input received (%d bytes)", ret);
+           return 0;
+   }
 
 Shell Logger Backend Feature
 ****************************

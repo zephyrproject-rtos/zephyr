@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(flash_mcux);
 #define DT_DRV_COMPAT nxp_kinetis_ftfe
 #elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_kinetis_ftfl))
 #define DT_DRV_COMPAT nxp_kinetis_ftfl
+#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_kinetis_ftfc))
+#define DT_DRV_COMPAT nxp_kinetis_ftfc
 #elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_iap_fmc55))
 #define DT_DRV_COMPAT nxp_iap_fmc55
 #define SOC_HAS_IAP 1
@@ -43,8 +45,12 @@ LOG_MODULE_REGISTER(flash_mcux);
 
 #if defined(SOC_HAS_IAP) && !defined(CONFIG_SOC_LPC55S36)
 #include "fsl_iap.h"
-#elif defined(CONFIG_SOC_MCXA156)
+#elif defined(CONFIG_SOC_FAMILY_MCXA)
+#if defined(CONFIG_SOC_SERIES_MCXAXX7)
+#include "fsl_flash.h"
+#else
 #include "fsl_romapi.h"
+#endif
 #define FLASH_Erase   FLASH_EraseSector
 #define FLASH_Program FLASH_ProgramPhrase
 #elif defined(CONFIG_MCUX_FLASH_K4_API)
@@ -55,7 +61,7 @@ LOG_MODULE_REGISTER(flash_mcux);
 
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 
-#if defined(CONFIG_CHECK_BEFORE_READING) && !defined(CONFIG_SOC_LPC55S36)
+#if defined(CONFIG_CHECK_BEFORE_READING) && !defined(CONFIG_SOC_SERIES_LPC55XXX)
 #define FMC_STATUS_FAIL	FLASH_INT_CLR_ENABLE_FAIL_MASK
 #define FMC_STATUS_ERR	FLASH_INT_CLR_ENABLE_ERR_MASK
 #define FMC_STATUS_DONE	FLASH_INT_CLR_ENABLE_DONE_MASK
@@ -115,10 +121,16 @@ static status_t is_area_readable(uint32_t addr, size_t len)
 
 	return 0;
 }
-#endif /* CONFIG_CHECK_BEFORE_READING && ! CONFIG_SOC_LPC55S36 */
+#endif /* CONFIG_CHECK_BEFORE_READING && ! CONFIG_SOC_SERIES_LPC55XXX */
 
 #define SOC_FLASH_NEED_CLEAR_CACHES 1
-#ifdef CONFIG_SOC_SERIES_MCXW
+#ifdef CONFIG_SOC_FAMILY_MCXW
+#ifdef CONFIG_SOC_SERIES_MCXW2XX
+static void clear_flash_caches(void)
+{
+	FLASH_CacheClear();
+}
+#else
 static void clear_flash_caches(void)
 {
 	volatile uint32_t *const smscm_ocmdr0 = (volatile uint32_t *)0x40015400;
@@ -128,7 +140,8 @@ static void clear_flash_caches(void)
 	/* this bit clears the code cache */
 	*mcm_cpcr2 |= BIT(0);
 }
-#elif CONFIG_SOC_SERIES_MCXN
+#endif
+#elif CONFIG_SOC_FAMILY_MCXN
 static void clear_flash_caches(void)
 {
 	volatile uint32_t *const nvm_ctrl = (volatile uint32_t *)0x40000400;
@@ -138,10 +151,32 @@ static void clear_flash_caches(void)
 	/* this bit clears the code cache */
 	*lpcac_ctrl |= BIT(1);
 }
+#elif CONFIG_SOC_FAMILY_MCXA
+static void clear_flash_caches(void)
+{
+	SYSCON->LPCAC_CTRL |= SYSCON_LPCAC_CTRL_DIS_LPCAC(1U);
+}
 #else
 #undef SOC_FLASH_NEED_CLEAR_CACHES
 #define clear_flash_caches(...)
 #endif
+
+#if defined(FTFx_DRIVER_IS_FLASH_RESIDENT) && FTFx_DRIVER_IS_FLASH_RESIDENT
+/*
+ * MCUXSDK FTFX driver (fsl_ftfx_controller.c) places the run command function
+ * in data section (array s_ftfxRunCommand). When Zephyr configured the memory
+ * permission, the data section is not executable. The workaround is
+ * implementing a ram function in Zephyr, to replace FTFX driver's run command
+ * function.
+ */
+static __ramfunc void flash_ftfx_run_command(FTFx_REG8_ACCESS_TYPE ftfx_fstat)
+{
+	*ftfx_fstat = FTFx_FSTAT_CCIF_MASK;
+
+	while (!((*ftfx_fstat) & FTFx_FSTAT_CCIF_MASK)) {
+	}
+}
+#endif /* FTFx_DRIVER_IS_FLASH_RESIDENT */
 
 struct flash_priv {
 	flash_config_t config;
@@ -233,8 +268,8 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 	 * on erased or otherwise unreadable pages. Emulate erased pages,
 	 * return other errors.
 	 */
-  #ifdef CONFIG_SOC_LPC55S36
-	/* On LPC55S36, use a HAL function to safely copy from Flash. */
+  #ifdef CONFIG_SOC_SERIES_LPC55XXX
+	/* On LPC55XXX, use a HAL function to safely copy from Flash. */
 	rc = FLASH_Read(&priv->config, addr, data, len);
 	switch (rc) {
 	case kStatus_FLASH_Success:
@@ -257,7 +292,7 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 		rc = -EIO;
 		break;
 	}
-  #else /* CONFIG_SOC_LPC55S36 */
+  #else /* CONFIG_SOC_SERIES_LPC55XXX */
 	/* On all other targets, check if the Flash area is readable.
 	 * If so, copy data from it directly.
 	 */
@@ -265,7 +300,7 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 	if (!rc) {
 		memcpy(data, (void *) addr, len);
 	}
-  #endif /* CONFIG_SOC_LPC55S36 */
+  #endif /* CONFIG_SOC_SERIES_LPC55XXX */
 
 	if (rc == -ENODATA) {
 		/* Erased area, return dummy data as an erased page. */
@@ -363,6 +398,15 @@ static int flash_mcux_init(const struct device *dev)
 	k_sem_init(&priv->write_lock, 1, 1);
 
 	rc = FLASH_Init(&priv->config);
+
+#if defined(FTFx_DRIVER_IS_FLASH_RESIDENT) && FTFx_DRIVER_IS_FLASH_RESIDENT
+	/* MCUXSDK FTFX driver's commadAddr is an address to data (LSB = 0), but
+	 * (uint32_t)flash_ftfx_run_command is an address to code (LDB = 1), so
+	 * clear the LSB here.
+	 */
+	priv->config.ftfxConfig->runCmdFuncAddr.commadAddr =
+		((uint32_t)flash_ftfx_run_command) & ~0x01U;
+#endif /* FTFx_DRIVER_IS_FLASH_RESIDENT */
 
 	FLASH_GetProperty(&priv->config, FLASH_PROP_BLOCK_BASE, &pflash_block_base);
 

@@ -14,5 +14,7 @@ supported:
   - uart
   - i2c
   - dma
+  - pwm
   - spi
+  - watchdog
 vendor: silabs

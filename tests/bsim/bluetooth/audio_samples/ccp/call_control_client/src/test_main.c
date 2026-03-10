@@ -37,10 +37,10 @@ static void test_ccp_call_control_client_sample_init(void)
 
 static void test_ccp_call_control_client_sample_tick(bs_time_t HW_device_time)
 {
-	extern struct bt_ccp_call_control_client *client;
+	extern struct bt_ccp_call_control_client *call_control_client;
 
-	/* If discovery was a success then client is non-NULL - Use as pass criteria */
-	if (client == NULL) {
+	/* If discovery was a success then call_control_client is non-NULL - Use as pass criteria */
+	if (call_control_client == NULL) {
 		FAIL("CCP Call Control Client sample FAILED (Did not pass after %i seconds)\n",
 		     WAIT_TIME);
 	} else {

@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 #include <stdlib.h>
 #include <string.h>
 
-#include <zephyr/posix/sys/eventfd.h>
+#include <zephyr/zvfs/eventfd.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/ptp_clock.h>
@@ -53,6 +53,7 @@ struct ptp_clock {
 		uint64_t	    t3;
 		uint64_t	    t4;
 	} timestamp;			/* latest timestamps in nanoseconds */
+	double pi_drift;
 };
 
 __maybe_unused static struct ptp_clock ptp_clk = { 0 };
@@ -285,7 +286,7 @@ const struct ptp_clock *ptp_clock_init(void)
 		return NULL;
 	}
 
-	ptp_clk.pollfd[0].fd = eventfd(0, EFD_NONBLOCK);
+	ptp_clk.pollfd[0].fd = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
 	ptp_clk.pollfd[0].events = ZSOCK_POLLIN;
 
 	sys_slist_init(&ptp_clk.ports_list);
@@ -300,9 +301,9 @@ struct zsock_pollfd *ptp_clock_poll_sockets(void)
 	clock_check_pollfd();
 	ret = zsock_poll(ptp_clk.pollfd, PTP_SOCKET_CNT * ptp_clk.default_ds.n_ports + 1, -1);
 	if (ret > 0 && ptp_clk.pollfd[0].revents) {
-		eventfd_t value;
+		zvfs_eventfd_t value;
 
-		eventfd_read(ptp_clk.pollfd[0].fd, &value);
+		zvfs_eventfd_read(ptp_clk.pollfd[0].fd, &value);
 	}
 
 	return &ptp_clk.pollfd[1];
@@ -506,10 +507,23 @@ int ptp_clock_management_msg_process(struct ptp_port *port, struct ptp_msg *msg)
 	return state_decision_required;
 }
 
+static double ptp_servo_pi(int64_t nanosecond_diff)
+{
+	double kp = 0.7;
+	double ki = 0.3;
+	double ppb;
+
+	ptp_clk.pi_drift += ki * nanosecond_diff;
+	ppb = kp * nanosecond_diff + ptp_clk.pi_drift;
+
+	return ppb;
+}
+
 void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
 {
+	double ppb;
 	int64_t offset;
-	uint64_t delay = ptp_clk.current_ds.mean_delay >> 16;
+	int64_t delay = ptp_clk.current_ds.mean_delay >> 16;
 
 	ptp_clk.timestamp.t1 = egress;
 	ptp_clk.timestamp.t2 = ingress;
@@ -518,7 +532,7 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
 		return;
 	}
 
-	offset = ptp_clk.timestamp.t2 - ptp_clk.timestamp.t1 - delay;
+	offset = (int64_t)(ptp_clk.timestamp.t2 - ptp_clk.timestamp.t1) - delay;
 
 	/* If diff is too big, ptp_clk needs to be set first. */
 	if ((offset > (int64_t)NSEC_PER_SEC) || (offset < -(int64_t)NSEC_PER_SEC)) {
@@ -543,24 +557,31 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
 		current.nanosecond = (uint32_t)dest_nsec;
 
 		ptp_clock_set(ptp_clk.phc, &current);
+		LOG_WRN("Set clock time: %"PRIu64".%09u", current.second, current.nanosecond);
 		return;
 	}
 
 	LOG_DBG("Offset %lldns", offset);
 	ptp_clk.current_ds.offset_from_tt = clock_ns_to_timeinterval(offset);
 
-	ptp_clock_adjust(ptp_clk.phc, -offset);
+	ppb = ptp_servo_pi(-offset);
+	ptp_clock_rate_adjust(ptp_clk.phc, 1.0 + (ppb / 1000000000.0));
 }
 
 void ptp_clock_delay(uint64_t egress, uint64_t ingress)
 {
 	int64_t delay;
 
+	if (ptp_clk.timestamp.t1 == 0 || ptp_clk.timestamp.t2 == 0) {
+		return;
+	}
+
 	ptp_clk.timestamp.t3 = egress;
 	ptp_clk.timestamp.t4 = ingress;
 
-	delay = ((ptp_clk.timestamp.t2 - ptp_clk.timestamp.t3) +
-		 (ptp_clk.timestamp.t4 - ptp_clk.timestamp.t1)) / 2;
+	delay = ((int64_t)(ptp_clk.timestamp.t2 - ptp_clk.timestamp.t3) +
+		 (int64_t)(ptp_clk.timestamp.t4 - ptp_clk.timestamp.t1)) /
+		2LL;
 
 	LOG_DBG("Delay %lldns", delay);
 	ptp_clk.current_ds.mean_delay = clock_ns_to_timeinterval(delay);
@@ -637,7 +658,7 @@ void ptp_clock_pollfd_invalidate(void)
 
 void ptp_clock_signal_timeout(void)
 {
-	eventfd_write(ptp_clk.pollfd[0].fd, 1);
+	zvfs_eventfd_write(ptp_clk.pollfd[0].fd, 1);
 }
 
 void ptp_clock_state_decision_req(void)

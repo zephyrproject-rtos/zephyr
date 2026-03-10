@@ -8,13 +8,20 @@
 #include <zephyr/arch/cpu.h>
 #include <cmsis_core.h>
 
-#if defined(CONFIG_ARM_SECURE_FIRMWARE) && \
-	defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#if defined(CONFIG_ARM_SECURE_FIRMWARE) && defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#if CONFIG_2ND_LVL_ISR_TBL_OFFSET > 0
+#define TEST_1ST_LEVEL_INTERRUPTS_MAX (CONFIG_2ND_LVL_ISR_TBL_OFFSET - 1)
+#else
+#define TEST_1ST_LEVEL_INTERRUPTS_MAX (CONFIG_NUM_IRQS - 1)
+#endif
 
-extern irq_target_state_t irq_target_state_set(unsigned int irq,
-	irq_target_state_t target_state);
+extern irq_target_state_t irq_target_state_set(unsigned int irq, irq_target_state_t target_state);
 extern int irq_target_state_is_secure(unsigned int irq);
 
+/**
+ * @brief Test the ARM IRQ target state functionality.
+ * @ingroup kernel_arch_interrupt_tests
+ */
 ZTEST(arm_irq_advanced_features, test_arm_irq_target_state)
 {
 	/* Determine an NVIC IRQ line that is implemented
@@ -22,7 +29,7 @@ ZTEST(arm_irq_advanced_features, test_arm_irq_target_state)
 	 */
 	int i;
 
-	for (i = CONFIG_NUM_IRQS - 1; i >= 0; i--) {
+	for (i = TEST_1ST_LEVEL_INTERRUPTS_MAX; i >= 0; i--) {
 		if (NVIC_GetEnableIRQ(i) == 0) {
 			/*
 			 * In-use interrupts are automatically enabled by
@@ -54,39 +61,29 @@ ZTEST(arm_irq_advanced_features, test_arm_irq_target_state)
 		}
 	}
 
-	zassert_true(i >= 0,
-		"No available IRQ line to configure as zero-latency\n");
+	zassert_true(i >= 0, "No available IRQ line to configure as zero-latency\n");
 
 	TC_PRINT("Available IRQ line: %u\n", i);
 
 	/* Set the available IRQ line to Secure and check the result. */
-	irq_target_state_t result_state =
-		irq_target_state_set(i, IRQ_TARGET_STATE_SECURE);
+	irq_target_state_t result_state = irq_target_state_set(i, IRQ_TARGET_STATE_SECURE);
 
-	zassert_equal(result_state, IRQ_TARGET_STATE_SECURE,
-		"Target state not set to Secure\n");
+	zassert_equal(result_state, IRQ_TARGET_STATE_SECURE, "Target state not set to Secure\n");
 
-	zassert_equal(irq_target_state_is_secure(i), 1,
-		"Target state not set to Secure\n");
+	zassert_equal(irq_target_state_is_secure(i), 1, "Target state not set to Secure\n");
 
 	/* Set the available IRQ line to Secure and check the result. */
-	result_state =
-		irq_target_state_set(i, IRQ_TARGET_STATE_NON_SECURE);
+	result_state = irq_target_state_set(i, IRQ_TARGET_STATE_NON_SECURE);
 
 	zassert_equal(result_state, IRQ_TARGET_STATE_NON_SECURE,
-		"Target state not set to Secure\n");
-	zassert_equal(irq_target_state_is_secure(i), 0,
-		"Target state not set to Non-Secure\n");
+		      "Target state not set to Secure\n");
+	zassert_equal(irq_target_state_is_secure(i), 0, "Target state not set to Non-Secure\n");
 
-	result_state =
-		irq_target_state_set(i, IRQ_TARGET_STATE_SECURE);
+	result_state = irq_target_state_set(i, IRQ_TARGET_STATE_SECURE);
 
-	zassert_equal(result_state, IRQ_TARGET_STATE_SECURE,
-		"Target state not set to Secure\n");
+	zassert_equal(result_state, IRQ_TARGET_STATE_SECURE, "Target state not set to Secure\n");
 
-	zassert_equal(irq_target_state_is_secure(i), 1,
-		"Target state not set to Secure\n");
-
+	zassert_equal(irq_target_state_is_secure(i), 1, "Target state not set to Secure\n");
 }
 #else
 ZTEST(arm_irq_advanced_features, test_arm_irq_target_state)
@@ -94,6 +91,3 @@ ZTEST(arm_irq_advanced_features, test_arm_irq_target_state)
 	TC_PRINT("Skipped (TrustZone-M-enabled Cortex-M Mainline only)\n");
 }
 #endif /* CONFIG_ZERO_LATENCY_IRQS */
-/**
- * @}
- */

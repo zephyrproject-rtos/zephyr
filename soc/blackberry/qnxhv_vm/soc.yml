@@ -1,0 +1,4 @@
+series:
+- name: qnxhv_vm
+  socs:
+  - name: qnxhv_vm

@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Renesas SmartBond(tm) RTC node
+description: Renesas SmartBond(tm) RTC
 
 compatible: "renesas,smartbond-rtc"
 

@@ -8,7 +8,23 @@
 		group1 {
 			/* tx rx */
 			psels = <RA_PSEL(RA_PSEL_SCI_3, 4, 9)>,
-			<RA_PSEL(RA_PSEL_SCI_3, 4, 8)>;
+				<RA_PSEL(RA_PSEL_SCI_3, 4, 8)>;
+		};
+	};
+
+	usbfs_default: usbfs_default {
+		group1 {
+			/* USB_VBUS */
+			psels = <RA_PSEL(RA_PSEL_USBFS, 4, 7)>;
+			drive-strength = "high";
+		};
+	};
+
+	dac0_default: dac0_default {
+		group1 {
+			/* output */
+			psels = <RA_PSEL(RA_PSEL_DAC, 0, 14)>;
+			renesas,analog-enable;
 		};
 	};
 };

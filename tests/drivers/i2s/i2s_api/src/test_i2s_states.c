@@ -18,7 +18,7 @@
  */
 ZTEST_USER(i2s_states, test_i2s_state_not_ready_neg)
 {
-	struct i2s_config i2s_cfg;
+	struct i2s_config i2s_cfg = {0};
 	size_t rx_size;
 	int ret;
 	char rx_buf[BLOCK_SIZE];

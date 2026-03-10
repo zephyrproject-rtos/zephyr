@@ -24,7 +24,8 @@
 		cpu: cpu@0 {
 			clock-frequency = <DT_FREQ_M(108)>;
 			compatible = "nuclei,bumblebee", "riscv";
-			riscv,isa = "rv32imac_zicsr_zifencei";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
 			reg = <0>;
 		};
 	};
@@ -43,6 +44,7 @@
 		systimer: timer@d1000000 {
 			compatible = "nuclei,systimer", "riscv,machine-timer";
 			reg = <0xd1000000 0x8 0xd1000008 0x8>;
+			reg-names = "mtime", "mtimecmp";
 			interrupts-extended = <&eclic 7 0>;
 			clk-divider = <NUCLEI_SYSTIMER_DIVIDER_4>;
 		};
@@ -52,10 +54,7 @@
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
-			reg =  <0xd2000000 0x0001
-				0xd2000004 0x0004
-				0xd200000b 0x0001
-				0xd2001000 0x1000>;
+			reg = <0xd2000000 0x2000>;
 		};
 
 		rcu: reset-clock-controller@40021000 {
@@ -231,7 +230,7 @@
 
 		wwdgt: watchdog@40002c00 {
 			compatible = "gd,gd32-wwdgt";
-			reg = <0x40002C00 0x400>;
+			reg = <0x40002c00 0x400>;
 			clocks = <&cctl GD32_CLOCK_WWDGT>;
 			resets = <&rctl GD32_RESET_WWDGT>;
 			interrupts = <0 0>;

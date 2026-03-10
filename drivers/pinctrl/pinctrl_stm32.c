@@ -9,6 +9,8 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <gpio/gpio_stm32.h>
 
 #include <stm32_ll_bus.h>
@@ -64,6 +66,15 @@ static const struct device *const gpio_ports[] = {
 	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioo)),
 	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiop)),
 	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioq)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpior)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpios)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiot)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiou)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiov)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiow)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiox)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioy)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioz)),
 };
 
 /** Number of GPIO ports. */
@@ -118,39 +129,6 @@ SYS_INIT(stm32_pinmux_init_remap, PRE_KERNEL_1,
 #endif /* REMAP_PA11 || REMAP_PA12 || REMAP_PA11_PA12 */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
-
-/* ignore swj-cfg reset state (default value) */
-#if ((DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg)) && \
-	(DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) != 0))
-
-static int stm32f1_swj_cfg_init(void)
-{
-
-	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
-
-	/* reset state is '000' (Full SWJ, (JTAG-DP + SW-DP)) */
-	/* only one of the 3 bits can be set */
-#if (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 1)
-	/* 001: Full SWJ (JTAG-DP + SW-DP) but without NJTRST */
-	/* releases: PB4 */
-	LL_GPIO_AF_Remap_SWJ_NONJTRST();
-#elif (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 2)
-	/* 010: JTAG-DP Disabled and SW-DP Enabled */
-	/* releases: PB4 PB3 PA15 */
-	LL_GPIO_AF_Remap_SWJ_NOJTAG();
-#elif (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 3)
-	/* 100: JTAG-DP Disabled and SW-DP Disabled */
-	/* releases: PB4 PB3 PA13 PA14 PA15 */
-	LL_GPIO_AF_DisableRemap_SWJ();
-#endif
-
-	return 0;
-}
-
-SYS_INIT(stm32f1_swj_cfg_init, PRE_KERNEL_1, 0);
-
-#endif /* DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg) */
-
 /**
  * @brief Helper function to check and apply provided pinctrl remap
  * configuration.
@@ -225,6 +203,61 @@ static int stm32_pin_configure(uint32_t pin, uint32_t pin_cgf, uint32_t pin_func
 	return gpio_stm32_configure(port_device, STM32_PIN(pin), pin_cgf, pin_func);
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl)
+static int apply_iosync_configuration(uint32_t port, uint32_t pin, uint32_t pincfg)
+{
+	const struct device *port_device;
+	const struct gpio_stm32_config *gpio_cfg;
+	uint32_t piocfgr, delayr, pinbit;
+	GPIO_TypeDef *gpio_reg;
+	int ret;
+
+	if (port >= gpio_ports_cnt) {
+		return -EINVAL;
+	}
+
+	port_device = gpio_ports[port];
+	if (port_device == NULL || !device_is_ready(port_device)) {
+		return -ENODEV;
+	}
+
+	/**
+	 * For lack of better way, obtain the GPIO base address from the
+	 * device's configuration directly. This *can* be made cleaner
+	 * but would require reworking the GPIO & PINCTRL entirely...
+	 */
+	gpio_cfg = port_device->config;
+	gpio_reg = (GPIO_TypeDef *)gpio_cfg->base;
+
+	/* Make sure GPIO clock is enabled */
+	ret = pm_device_runtime_get(port_device);
+	if (ret < 0) {
+		return ret;
+	}
+
+	piocfgr = (pincfg >> STM32_IORETIME_ADVCFGR_SHIFT) & STM32_IORETIME_ADVCFGR_MASK;
+	delayr = (pincfg >> STM32_IODELAY_LENGTH_SHIFT) & STM32_IODELAY_LENGTH_MASK;
+	pinbit = BIT(pin);
+
+	/**
+	 * Thanks to clever encoding, we don't have to check whether the I/O retiming
+	 * is to be enabled or not; all we need to do is write to the registers where
+	 * everything will fall in place nicely. This can obviously be updated for
+	 * new hardware, if required...
+	 */
+	if (pin <= 7) {
+		LL_GPIO_SetDelayPin_0_7(gpio_reg, pinbit, delayr);
+		LL_GPIO_SetPIOControlPin_0_7(gpio_reg, pinbit, piocfgr);
+	} else {
+		LL_GPIO_SetDelayPin_8_15(gpio_reg, pinbit, delayr);
+		LL_GPIO_SetPIOControlPin_8_15(gpio_reg, pinbit, piocfgr);
+	}
+
+	/* Release GPIO device since we are done */
+	return pm_device_runtime_put(port_device);
+}
+#endif
+
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
 {
@@ -285,6 +318,16 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		if (ret < 0) {
 			return ret;
 		}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl)
+		ret = apply_iosync_configuration(
+			STM32_DT_PINMUX_PORT(mux),
+			STM32_DT_PINMUX_LINE(mux),
+			pins[i].pincfg);
+		if (ret < 0) {
+			return ret;
+		}
+#endif
 	}
 
 	return 0;

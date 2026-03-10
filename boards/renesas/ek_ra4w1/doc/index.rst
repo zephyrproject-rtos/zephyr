@@ -1,7 +1,4 @@
-.. _ek_ra4w1:
-
-RA4W1 Evaluation Kit
-####################
+.. zephyr:board:: ek_ra4w1
 
 Overview
 ********
@@ -14,54 +11,56 @@ excellent reception performance. RA4W1 is geared towards IoT application requiri
 embedded RAM and low power consumption.
 
 **MCU Native Pin Access**
+
 - R7FA4W1AD2CNG
 - QFN-56 package
 - On-chip memory: 512-KB ROM, 96-KB RAM, 8-KB data flash memory
 
 **Power-supply voltage**
+
 - USB connector: 5-V input
 - Power-supply IC: 5-V input, 3.3-V output
 - External power-supply header*1: 3.3-V input, 2 pins x 1
 
 **Main clock**
+
 - Crystal oscillator (surface-mount technology (SMT)) for the main system clock
 - Crystal oscillator or ceramic resonator (lead type) for the main system clock
 
 **Sub-clock**
+
 - Crystal oscillator (SMT) for the sub-clock
 
 **Bluetooth Low Energy**
+
 - Bluetooth Low Energy (BLE) circuit x1
 - Range of frequency: 2402 to 2480 MHz
 - Maximum transmission output power: 4 dBm (in 4-dBm output mode)
 - Output variation: +2 dB
 
 **Push switches**
+
 - Reset switch x 1
 - User switch x 1
 
 **LED**
+
 - Power indicator: green x 1
 - User: green x 2
 - ACT LED: green x 1
 
-**Conetivity**
+**Connectivity**
+
 - Connector for an on-board emulator: USB Micro-B
 - Connector for a USB serial-conversion interface: USB Micro-B
 - Pmod™ connector: Angle type, 12 pins
 - Arduino™ UNO connectors
 
-- Emulator reset switch
-
-.. figure:: ek_ra4w1.webp
-	:align: center
-	:alt: RA4W1 Evaluation Kit
-
-	EK-RA4W1 Board Functional Area Definitions (Credit: Renesas Electronics Corporation)
+- Emulator reset switch: DIP switch x 1
 
 Hardware
 ********
-Detail Hardware feature for the RA4W1 MCU group can be found at `RA4W1 Group User's Manual Hardware`_
+Detailed Hardware features for the RA4W1 MCU group can be found at `RA4W1 Group User's Manual Hardware`_
 
 .. figure:: ra4w1_block_diagram.webp
 	:width: 442px
@@ -70,43 +69,17 @@ Detail Hardware feature for the RA4W1 MCU group can be found at `RA4W1 Group Use
 
 	RA4W1 Block diagram (Credit: Renesas Electronics Corporation)
 
-Detail Hardware feature for the EK-RA4W1 MCU can be found at `EK-RA4W1 - User's Manual`_
+Detailed Hardware features for the EK-RA4W1 MCU can be found at `EK-RA4W1 - User's Manual`_
 
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr OS for EK-RA4W1 board:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock control        |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| COUNTER   | on-chip    | counter              |
-+-----------+------------+----------------------+
-| ENTROPY   | on-chip    | entropy              |
-+-----------+------------+----------------------+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``ek_ra4w1`` board target configuration can be
 built, flashed, and debugged in the usual way. See
@@ -117,15 +90,15 @@ Flashing
 ========
 
 Program can be flashed to EK-RA4W1 via the on-board SEGGER J-Link debugger.
-SEGGER J-link's drivers are avaialbe at https://www.segger.com/downloads/jlink/
+SEGGER J-link's drivers are available at https://www.segger.com/downloads/jlink/
 
 To flash the program to board
 
-  1. Connect to J-Link OB via USB port to host PC
+1. Connect to J-Link OB via USB port to host PC
 
-  2. Make sure J-Link OB jumper is in default configuration as describe in `EK-RA4W1 - User's Manual`_
+2. Make sure J-Link OB jumper is in default configuration as describe in `EK-RA4W1 - User's Manual`_
 
-  3. Execute west command
+3. Execute west command
 
 	.. code-block:: console
 

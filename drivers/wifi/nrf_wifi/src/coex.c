@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 #include "coex.h"
 #include "coex_struct.h"
 #include "fmac_main.h"
-#include "fmac_api.h"
+#include "common/fmac_api_common.h"
 
 LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
@@ -103,7 +103,7 @@ const uint16_t config_buffer_5G[] = {
 /* Shared antenna */
 const uint32_t ch_config_sha[] = {
 	0x00000028, 0x00000000, 0x001e1023, 0x00000000, 0x00000000,
-	0x00000000, 0x00000021, 0x000002ca, 0x00000050, 0x00000000,
+	0x00000000, 0x00000021, 0x000002ca, 0x0000005A, 0x00000000,
 	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 	0x00000000
 };
@@ -289,6 +289,35 @@ int nrf_wifi_coex_hw_reset(void)
 }
 
 #ifdef CONFIG_NRF70_SR_COEX_RF_SWITCH
+/**
+ * @brief Configure SR RF switch GPIO to OUTPUT_INACTIVE state during
+ * driver initialization.
+ *
+ * This function configures the SR RF switch GPIO pin to OUTPUT_INACTIVE
+ * state to prevent it from floating. This should be called early during
+ * driver initialization, before the interface is brought up.
+ *
+ * @return 0 on success, negative error code on failure
+ */
+int sr_gpio_config_early(void)
+{
+	int ret;
+
+	if (!device_is_ready(sr_rf_switch_spec.port)) {
+		return -ENODEV;
+	}
+
+	/* Configure SR RF switch as output in inactive (low) state to
+	 * prevent floating pin from accidentally switching the antenna.
+	 */
+	ret = gpio_pin_configure_dt(&sr_rf_switch_spec, GPIO_OUTPUT_INACTIVE);
+	if (ret) {
+		LOG_ERR("SR GPIO early configuration failed %d", ret);
+	}
+
+	return ret;
+}
+
 int sr_gpio_config(void)
 {
 	int ret;

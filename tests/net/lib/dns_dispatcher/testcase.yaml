@@ -5,9 +5,12 @@ common:
   depends_on: netif
   min_ram: 21
   timeout: 600
-  platform_exclude:
-    - native_posix
-    - native_posix/native/64
 tests:
   net.dns.dispatch:
     min_ram: 21
+  net.dns.dispatch.ctx_cleanup:
+    extra_configs:
+      - CONFIG_DNS_RECONFIGURE_CLEANUP=y
+  net.dns.dispatch.ctx_no_cleanup:
+    extra_configs:
+      - CONFIG_DNS_RECONFIGURE_CLEANUP=n

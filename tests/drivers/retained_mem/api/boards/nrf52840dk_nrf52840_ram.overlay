@@ -1,13 +1,19 @@
 / {
-	sram@2003FFE0 {
+	sram@2003ffe0 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x2003FFE0 0x20>;
+		reg = <0x2003ffe0 0x20>;
+		ranges = <0x0 0x2003ffe0 0x20>;
 		zephyr,memory-region = "RetainedMem";
 		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		retainedmem0: retainedmem {
 			compatible = "zephyr,retained-ram";
 			status = "okay";
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 	};
 

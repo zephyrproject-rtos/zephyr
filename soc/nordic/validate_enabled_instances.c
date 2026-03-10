@@ -13,9 +13,9 @@
 			   DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(spi##idx)))
 
 #define UART_ENABLED(idx) (IS_ENABLED(CONFIG_SERIAL) && \
-			   (IS_ENABLED(CONFIG_SOC_SERIES_NRF53X) || \
-			    IS_ENABLED(CONFIG_SOC_SERIES_NRF54LX) || \
-			    IS_ENABLED(CONFIG_SOC_SERIES_NRF91X)) && \
+			   (IS_ENABLED(CONFIG_SOC_SERIES_NRF53) || \
+			    IS_ENABLED(CONFIG_SOC_SERIES_NRF54L) || \
+			    IS_ENABLED(CONFIG_SOC_SERIES_NRF91)) && \
 			   DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart##idx)))
 
 /*
@@ -39,9 +39,9 @@
 #define MSG(idx) \
 	"Only one of the following peripherals can be enabled: " \
 	"SPI"#idx", SPIM"#idx", SPIS"#idx", TWI"#idx", TWIM"#idx", TWIS"#idx \
-	IF_ENABLED(CONFIG_SOC_SERIES_NRF53X, (", UARTE"#idx)) \
-	IF_ENABLED(CONFIG_SOC_SERIES_NRF54LX, (", UARTE"#idx)) \
-	IF_ENABLED(CONFIG_SOC_SERIES_NRF91X, (", UARTE"#idx)) \
+	IF_ENABLED(CONFIG_SOC_SERIES_NRF53, (", UARTE"#idx)) \
+	IF_ENABLED(CONFIG_SOC_SERIES_NRF54L, (", UARTE"#idx)) \
+	IF_ENABLED(CONFIG_SOC_SERIES_NRF91, (", UARTE"#idx)) \
 	". Check nodes with status \"okay\" in zephyr.dts."
 
 #if (!IS_ENABLED(CONFIG_SOC_NRF52810) &&	\

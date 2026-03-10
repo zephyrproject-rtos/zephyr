@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,9 +12,13 @@
 		#size-cells = <1>;
 
 		/* Set 2 last blocks of the code flash as storage partition */
-		storage_partition: partition@1F0000 {
+		storage_partition: partition@1f0000 {
 			label = "storage";
-			reg = <0x1F0000 DT_SIZE_K(64)>;
+			reg = <0x1f0000 DT_SIZE_K(64)>;
 		};
 	};
+};
+
+&mx25l25645g {
+	status = "disabled";
 };

@@ -22,6 +22,9 @@
 
 LOG_MODULE_REGISTER(STTS22H, CONFIG_SENSOR_LOG_LEVEL);
 
+#define ST22H_RANGE_LOWEST_TEMP	-40
+#define ST22H_RANGE_HIGHEST_TEMP 127
+
 static inline int stts22h_set_odr_raw(const struct device *dev, stts22h_odr_temp_t odr)
 {
 	const struct stts22h_config *cfg = dev->config;
@@ -105,6 +108,26 @@ static int stts22h_odr_set(const struct device *dev,
 		return -EINVAL;
 	}
 }
+#if CONFIG_STTS22H_TRIGGER
+static inline uint32_t stts22h_val_to_threshold(const struct sensor_value *val)
+{
+	if (val->val1 < ST22H_RANGE_LOWEST_TEMP || val->val1 > ST22H_RANGE_HIGHEST_TEMP) {
+		LOG_ERR("Invalid value: %d", val->val1);
+		return UINT32_MAX;
+	}
+	/* The conversion formula is: (degC / 0.64) + 63, we multiply by 100*/
+	int32_t temperature_degree_times100 = val->val1 * 100 + val->val2 / 10000;
+	uint32_t raw_value = (temperature_degree_times100 / 64) + 63;
+
+	if (raw_value > 0xFF) {
+		LOG_ERR("Invalid value: %d", raw_value);
+		return UINT32_MAX;
+	}
+
+	return raw_value;
+}
+#endif
+
 
 static int stts22h_attr_set(const struct device *dev,
 			    enum sensor_channel chan,
@@ -115,10 +138,41 @@ static int stts22h_attr_set(const struct device *dev,
 		LOG_ERR("Invalid channel: %d", chan);
 		return -ENOTSUP;
 	}
-
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return stts22h_odr_set(dev, val);
+#if CONFIG_STTS22H_TRIGGER
+	case SENSOR_ATTR_UPPER_THRESH: {
+		const struct stts22h_config *cfg = dev->config;
+		stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+
+		uint32_t raw_value = stts22h_val_to_threshold(val);
+
+		if (raw_value == UINT32_MAX) {
+			return -EINVAL;
+		}
+		if (stts22h_temp_trshld_high_set(ctx, (uint8_t)raw_value) < 0) {
+			LOG_DBG("Could not set high threshold");
+			return -EIO;
+		}
+		return 0;
+	}
+	case SENSOR_ATTR_LOWER_THRESH: {
+		const struct stts22h_config *cfg = dev->config;
+		stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+
+		uint32_t raw_value = stts22h_val_to_threshold(val);
+
+		if (raw_value == UINT32_MAX) {
+			return -EINVAL;
+		}
+		if (stts22h_temp_trshld_low_set(ctx, (uint8_t)raw_value) < 0) {
+			LOG_DBG("Could not set low threshold ");
+			return -EIO;
+		}
+		return 0;
+	}
+#endif
 	default:
 		LOG_ERR("Attribute %d not supported.", attr);
 		return -ENOTSUP;

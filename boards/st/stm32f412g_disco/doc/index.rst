@@ -11,9 +11,9 @@ some highlights of the STM32F412G-DISCO board:
 - STM32F412ZGT6 microcontroller featuring 1 Mbyte of Flash memory and 256 Kbytes of RAM in an LQFP144 package
 - On-board ST-LINK/V2-1 SWD debugger supporting USB re-enumeration capability:
 
-       - USB virtual COM port
-       - mass storage
-       - debug port
+  - USB virtual COM port
+  - Mass storage
+  - Debug port
 
 - 1.54 inch 240x240 pixel TFT color LCD with parallel interface and capacitive touchscreen
 - I2S Audio CODEC, with a stereo headset jack, including analog microphone input and a loudspeaker output
@@ -26,10 +26,10 @@ some highlights of the STM32F412G-DISCO board:
 - USB OTG FS with Micro-AB connector
 - Four power supply options:
 
-       - ST-LINK/V2-1 USB connector
-       - User USB FS connector
-       - VIN from Arduino* connectors
-       - + 5 V from Arduino* connectors
+  - ST-LINK/V2-1 USB connector
+  - User USB FS connector
+  - VIN from Arduino* connectors
+  - + 5 V from Arduino* connectors
 
 - Two power supplies for MCU: 2.0 V and 3.3 V
 - Compatible with Arduino(tm) Uno revision 3 connectors
@@ -44,7 +44,7 @@ Hardware
 STM32F412G-DISCO Discovery kit provides the following hardware components:
 
 - STM32F412ZGT6 in LQFP144 package
-- ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
+- ARM® 32-bit Cortex®-M4 CPU with FPU
 - 100 MHz max CPU frequency
 - VDD from 1.7 V to 3.6 V
 - 1 MB Flash
@@ -66,38 +66,14 @@ STM32F412G-DISCO Discovery kit provides the following hardware components:
 - DMA Controller
 
 More information about STM32F412ZG can be found here:
-       - `STM32F412ZG on www.st.com`_
-       - `STM32F412 reference manual`_
+
+- `STM32F412ZG on www.st.com`_
+- `STM32F412 reference manual`_
 
 Supported Features
 ==================
 
-The Zephyr stm32f412g_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| QSPI NOR  | on-chip    | off-chip flash                      |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32f412g_disco/stm32f412g_disco_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -132,6 +108,8 @@ Default settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32F412G-DISCO Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
 

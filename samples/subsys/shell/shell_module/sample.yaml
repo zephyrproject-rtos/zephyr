@@ -1,12 +1,10 @@
 sample:
   name: Shell Sample
 common:
-  filter: not CONFIG_NATIVE_LIBC
-  platform_exclude:
-    - native_posix
-    - native_posix/native/64
+  filter: not CONFIG_SOC_SERIES_BSIM_NRFXX
 tests:
   sample.shell.shell_module:
+    platform_exclude: qemu_rx
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell
     harness: shell
@@ -14,9 +12,10 @@ tests:
     integration_platforms:
       - native_sim
     extra_configs:
-      - arch:posix:CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+      - platform:iotdk/arc_iot:CONFIG_ARC_IOT_CUSTOM_CPU_IDLE=y
   sample.shell.shell_module.usb:
-    depends_on: usb_device
+    depends_on: usbd
     tags:
       - shell
       - usb
@@ -26,7 +25,7 @@ tests:
       - EXTRA_CONF_FILE="overlay-usb.conf"
       - DTC_OVERLAY_FILE="usb.overlay"
     integration_platforms:
-      - native_sim
+      - frdm_k64f
   sample.shell.shell_module.minimal:
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell

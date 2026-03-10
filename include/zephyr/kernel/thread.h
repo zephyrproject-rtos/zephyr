@@ -42,18 +42,6 @@ struct __thread_entry {
 
 struct k_thread;
 
-/*
- * This _pipe_desc structure is used by the pipes kernel module when
- * CONFIG_PIPES has been selected.
- */
-
-struct _pipe_desc {
-	sys_dnode_t      node;
-	unsigned char   *buffer;         /* Position in src/dest buffer */
-	size_t           bytes_to_xfer;  /* # bytes left to transfer */
-	struct k_thread *thread;         /* Back pointer to pended thread */
-};
-
 /* can be used for creating 'dummy' threads, e.g. for pending on objects */
 struct _thread_base {
 
@@ -68,11 +56,8 @@ struct _thread_base {
 	 */
 	_wait_q_t *pended_on;
 
-	/* user facing 'thread options'; values defined in include/kernel.h */
-	uint8_t user_options;
-
-	/* thread state */
-	uint8_t thread_state;
+	/* user facing 'thread options'; values defined in include/zephyr/kernel.h */
+	uint16_t user_options;
 
 	/*
 	 * scheduler lock count and thread priority
@@ -105,13 +90,18 @@ struct _thread_base {
 	int prio_deadline;
 #endif /* CONFIG_SCHED_DEADLINE */
 
+#if defined(CONFIG_SCHED_SCALABLE) || defined(CONFIG_WAITQ_SCALABLE)
 	uint32_t order_key;
+#endif
+
+	/* thread state */
+	uint8_t thread_state;
 
 #ifdef CONFIG_SMP
 	/* True for the per-CPU idle threads */
 	uint8_t is_idle;
 
-	/* CPU index on which thread was last run */
+	/* Identify CPU on which thread is (or was last) executing */
 	uint8_t cpu;
 
 	/* Recursive count of irq_lock() calls */
@@ -121,11 +111,7 @@ struct _thread_base {
 
 #ifdef CONFIG_SCHED_CPU_MASK
 	/* "May run on" bits for each CPU */
-#if CONFIG_MP_MAX_NUM_CPUS <= 8
-	uint8_t cpu_mask;
-#else
 	uint16_t cpu_mask;
-#endif /* CONFIG_MP_MAX_NUM_CPUS */
 #endif /* CONFIG_SCHED_CPU_MASK */
 
 	/* data returned by APIs */
@@ -150,6 +136,13 @@ struct _thread_base {
 typedef struct _thread_base _thread_base_t;
 
 #if defined(CONFIG_THREAD_STACK_INFO)
+
+#if defined(CONFIG_THREAD_RUNTIME_STACK_SAFETY)
+struct _thread_stack_usage {
+	size_t unused_threshold; /* Threshold below which to trigger hook */
+};
+#endif
+
 /* Contains the stack information of a thread */
 struct _thread_stack_info {
 	/* Stack start - Represents the start address of the thread-writable
@@ -181,6 +174,10 @@ struct _thread_stack_info {
 		size_t sz;
 	} mapped;
 #endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+
+#if defined(CONFIG_THREAD_RUNTIME_STACK_SAFETY)
+	struct _thread_stack_usage usage;
+#endif
 };
 
 typedef struct _thread_stack_info _thread_stack_info_t;
@@ -188,12 +185,15 @@ typedef struct _thread_stack_info _thread_stack_info_t;
 
 #if defined(CONFIG_USERSPACE)
 struct _mem_domain_info {
+#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
 	/** memory domain queue node */
-	sys_dnode_t mem_domain_q_node;
+	sys_dnode_t thread_mem_domain_node;
+#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
 	/** memory domain of the thread */
 	struct k_mem_domain *mem_domain;
 };
 
+typedef struct _mem_domain_info _mem_domain_info_t;
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
@@ -274,13 +274,21 @@ struct k_thread {
 #endif /* CONFIG_POLL */
 
 #if defined(CONFIG_EVENTS)
+#if defined(CONFIG_WAITQ_SCALABLE)
+	/*
+	 * Used to build a list of threads that are
+	 * pending on a k_event and should be woken
+	 * up due to a k_event_post/set() call.
+	 *
+	 * Needed only when red-black tree is used for
+	 * wait queues because it is forbidden to mutate
+	 * an rbtree waitq while walking it.
+	 */
 	struct k_thread *next_event_link;
+#endif /* CONFIG_WAITQ_SCALABLE */
 
-	uint32_t   events;
+	uint32_t   events; /* dual purpose - wait on and then received */
 	uint32_t   event_options;
-
-	/** true if timeout should not wake the thread */
-	bool no_wake_on_timeout;
 #endif /* CONFIG_EVENTS */
 
 #if defined(CONFIG_THREAD_MONITOR)
@@ -357,11 +365,6 @@ struct k_thread {
 	/** Paging statistics */
 	struct k_mem_paging_stats_t paging_stats;
 #endif /* CONFIG_DEMAND_PAGING_THREAD_STATS */
-
-#ifdef CONFIG_PIPES
-	/** Pipe descriptor used with blocking k_pipe operations */
-	struct _pipe_desc pipe_desc;
-#endif /* CONFIG_PIPES */
 
 #ifdef CONFIG_OBJ_CORE_THREAD
 	struct k_obj_core  obj_core;

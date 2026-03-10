@@ -49,6 +49,9 @@ west-commands:
       - name: rtt
         class: Rtt
         help: open an rtt shell
+      - name: reset
+        class: Reset
+        help: reset the board to reboot
   - file: scripts/west_commands/export.py
     commands:
       - name: zephyr-export
@@ -94,3 +97,8 @@ west-commands:
       - name: patch
         class: Patch
         help: manage patches for Zephyr modules
+  - file: scripts/west_commands/gtags.py
+    commands:
+      - name: gtags
+        class: Gtags
+        help: create a GNU global tags file for the current workspace

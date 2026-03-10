@@ -44,12 +44,15 @@ BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 #define LOCK_SCHED_SPINLOCK   K_SPINLOCK(&_sched_spinlock)
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern struct k_spinlock _sched_spinlock;
 
 extern struct k_thread _thread_dummy;
 
 void z_sched_init(void);
-void z_move_thread_to_end_of_prio_q(struct k_thread *thread);
 void z_unpend_thread_no_timeout(struct k_thread *thread);
 struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q);
 int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
@@ -65,14 +68,11 @@ void *z_get_next_switch_handle(void *interrupted);
 
 void z_time_slice(void);
 void z_reset_time_slice(struct k_thread *curr);
-void z_sched_ipi(void);
 void z_sched_start(struct k_thread *thread);
 void z_ready_thread(struct k_thread *thread);
 void z_requeue_current(struct k_thread *curr);
 struct k_thread *z_swap_next_thread(void);
-void z_thread_abort(struct k_thread *thread);
-void move_thread_to_end_of_prio_q(struct k_thread *thread);
-bool thread_is_sliceable(struct k_thread *thread);
+void move_current_to_end_of_prio_q(void);
 
 static inline void z_reschedule_unlocked(void)
 {
@@ -136,16 +136,6 @@ static inline bool _is_valid_prio(int prio, k_thread_entry_t entry_point)
 	}
 
 	return true;
-}
-
-static inline void z_sched_lock(void)
-{
-	__ASSERT(!arch_is_in_isr(), "");
-	__ASSERT(_current->base.sched_locked != 1U, "");
-
-	--_current->base.sched_locked;
-
-	compiler_barrier();
 }
 
 static ALWAYS_INLINE _wait_q_t *pended_on_thread(struct k_thread *thread)
@@ -231,11 +221,12 @@ bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data);
  * Given a specific thread, wake it up. This routine assumes that the given
  * thread is not on the timeout queue.
  *
+ * @warning Caller must hold _sched_spinlock when calling this function!
+ *
  * @param thread Given thread to wake up.
- * @param is_timeout True if called from the timer ISR; false otherwise.
  *
  */
-void z_sched_wake_thread(struct k_thread *thread, bool is_timeout);
+void z_sched_wake_thread_locked(struct k_thread *thread);
 
 /**
  * Wake up all threads pending on the provided wait queue
@@ -286,25 +277,48 @@ int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
 		 _wait_q_t *wait_q, k_timeout_t timeout, void **data);
 
 /**
- * @brief Walks the wait queue invoking the callback on each waiting thread
+ * Callback function called during queue walk by @ref z_sched_waitq_walk
+ * for each thread in the wait queue (if not ended earlier)
  *
- * This function walks the wait queue invoking the callback function on each
- * waiting thread while holding _sched_spinlock. This can be useful for routines
- * that need to operate on multiple waiting threads.
+ * @param thread Thread info data structure
+ * @param data   `data` parameter of z_sched_waitq_walk()
+ * @return non-zero to end wait queue walk immediately, 0 to continue
+ */
+typedef int (*_waitq_walk_cb_t)(struct k_thread *thread, void *data);
+
+/**
+ * Callback function called after queue walk by @ref z_sched_waitq_walk
+ *
+ * @param status Wait queue walk status
+ * (same value that will be returned to caller of z_sched_waitq_walk())
+ * @param data   `data` parameter of z_sched_waitq_walk()
+ */
+typedef void (*_waitq_post_walk_cb_t)(int status, void *data);
+
+/**
+ * @brief Walks the wait queue invoking a callback on each waiting thread
+ *
+ * This function walks the wait queue invoking the `walk_func` callback function
+ * on each waiting thread (except if stopped earlier by a non-zero return value),
+ * followed by a single call of `post_func`, all while holding `_sched_spinlock`.
+ * This can be useful for routines that need to operate on multiple waiting threads.
  *
  * CAUTION! As a wait queue is of indeterminate length, the scheduler will be
- * locked for an indeterminate amount of time. This may impact system
- * performance. As such, care must be taken when using both this function and
- * the specified callback.
+ * locked for an indeterminate amount of time. This may impact system performance.
+ * As such, care must be taken when using this function and in the callbacks.
  *
- * @param wait_q Identifies the wait queue to walk
- * @param func   Callback to invoke on each waiting thread
- * @param data   Custom data passed to the callback
+ * @warning @p walk_func may safely remove the thread received as argument from
+ * the wait queue only when `CONFIG_WAITQ_SCALABLE=n`.
  *
- * @retval non-zero if walk is terminated by the callback; otherwise 0
+ * @param wait_q    Identifies the wait queue to walk
+ * @param walk_func Callback to invoke for each waiting thread
+ * @param post_func Callback to invoke after queue walk (optional)
+ * @param data      Custom data passed to the callbacks
+ *
+ * @return non-zero if walk is terminated by the callback; otherwise 0
  */
-int z_sched_waitq_walk(_wait_q_t *wait_q,
-		       int (*func)(struct k_thread *, void *), void *data);
+int z_sched_waitq_walk(_wait_q_t *wait_q, _waitq_walk_cb_t walk_func,
+		       _waitq_post_walk_cb_t post_func, void *data);
 
 /** @brief Halt thread cycle usage accounting.
  *
@@ -346,5 +360,9 @@ static inline void z_sched_usage_switch(struct k_thread *thread)
 	z_sched_usage_start(thread);
 #endif /* CONFIG_SCHED_THREAD_USAGE */
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_KSCHED_H_ */

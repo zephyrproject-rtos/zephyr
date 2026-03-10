@@ -28,7 +28,7 @@
 /* The overhead of k_usleep() adds three ticks per loop iteration on
  * nRF51, which has a slow CPU clock.
  */
-#define MAXIMUM_SHORTEST_TICKS (IS_ENABLED(CONFIG_SOC_SERIES_NRF51X) ? 6 : 3)
+#define MAXIMUM_SHORTEST_TICKS (IS_ENABLED(CONFIG_SOC_SERIES_NRF51) ? 6 : 3)
 /* Similar situation for TI CC13XX/CC26XX RTC kernel timer due to the
  * limitation that a value too close to the current time cannot be
  * loaded to its comparator.
@@ -36,6 +36,17 @@
 #elif defined(CONFIG_CC13XX_CC26XX_RTC_TIMER) && \
 	(CONFIG_SYS_CLOCK_TICKS_PER_SEC > 16384)
 #define MAXIMUM_SHORTEST_TICKS 3
+#elif defined(CONFIG_SILABS_SLEEPTIMER_TIMER) && (CONFIG_SYS_CLOCK_TICKS_PER_SEC > 16384)
+/* Similar situation for Silabs devices using sleeptimer due to the
+ * limitation that a value too close to the current time cannot be
+ * loaded to its comparator.
+ */
+#define MAXIMUM_SHORTEST_TICKS 2
+#elif defined(CONFIG_SOC_NRF54H20_CPUPPR) && (CONFIG_SYS_CLOCK_TICKS_PER_SEC > 16384)
+/* Similar for nRF54H20 cpuppr (RISC-V core), it has a slow CPU clock
+ * compared to other cores, causing the increased overhead.
+ */
+#define MAXIMUM_SHORTEST_TICKS (IS_ENABLED(CONFIG_XIP) ? 8 : 4)
 #else
 #define MAXIMUM_SHORTEST_TICKS 1
 #endif

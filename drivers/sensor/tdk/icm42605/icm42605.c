@@ -150,7 +150,7 @@ int icm42605_tap_fetch(const struct device *dev)
 					if (drv_data->double_tap_handler) {
 						LOG_DBG("Double Tap detected");
 						drv_data->double_tap_handler(dev
-						     , drv_data->tap_trigger);
+						     , drv_data->double_tap_trigger);
 					}
 				} else {
 					LOG_ERR("Trigger type is mismatched");
@@ -432,8 +432,7 @@ static DEVICE_API(sensor, icm42605_driver_api) = {
 					    SPI_MODE_CPOL |		\
 					    SPI_MODE_CPHA |		\
 					    SPI_WORD_SET(8) |		\
-					    SPI_TRANSFER_MSB,		\
-					    0U),			\
+					    SPI_TRANSFER_MSB),		\
 		.gpio_int = GPIO_DT_SPEC_INST_GET(index, int_gpios),    \
 		.accel_hz = DT_INST_PROP(index, accel_hz),		\
 		.gyro_hz = DT_INST_PROP(index, gyro_hz),		\

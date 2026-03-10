@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,16 +24,6 @@ struct pm_state_device_constraint {
  */
 #define PM_CONSTRAINTS_NAME(node_id) _CONCAT(__devicepmconstraints_, node_id)
 
-/**
- * @brief initialize a device pm constraint with information from devicetree.
- *
- * @param node_id Node identifier.
- */
-#define PM_STATE_CONSTRAINT_INIT(node_id)                                     \
-	{                                                                     \
-		.state = PM_STATE_DT_INIT(node_id),                           \
-		.substate_id = DT_PROP_OR(node_id, substate_id, 0),           \
-	}
 
 /**
  * @brief Helper macro to define a device pm constraints.
@@ -72,7 +63,7 @@ DT_FOREACH_STATUS_OKAY_NODE(DEVICE_CONSTRAINTS_DEFINE)
 #define PM_STATE_DEVICE_CONSTRAINT_INIT(node_id)                                              \
 	{                                                                                     \
 		.dev = DEVICE_DT_NAME(node_id),                                                \
-		.pm_constraints_size = DT_PROP_LEN(node_id, zephyr_disabling_power_states),   \
+		.pm_constraints_size = ARRAY_SIZE(PM_CONSTRAINTS_NAME(node_id)),               \
 		.constraints = PM_CONSTRAINTS_NAME(node_id),                                  \
 	},
 
@@ -83,24 +74,43 @@ DT_FOREACH_STATUS_OKAY_NODE(DEVICE_CONSTRAINTS_DEFINE)
 	COND_CODE_0(DT_NODE_HAS_PROP(node_id, zephyr_disabling_power_states), (),       \
 		(PM_STATE_DEVICE_CONSTRAINT_INIT(node_id)))
 
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
 static struct pm_state_device_constraint _devices_constraints[] = {
 	DT_FOREACH_STATUS_OKAY_NODE(PM_STATE_DEVICE_CONSTRAINT_DEFINE)
 };
 
-void pm_policy_device_power_lock_get(const struct device *dev)
+/* returns device's constraints in _devices_constraints, NULL if not found */
+static struct pm_state_device_constraint *
+pm_policy_priv_device_find_device_constraints(const struct device *dev)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+	if (dev == NULL) {
+		return NULL;
+	}
+
 	for (size_t i = 0; i < ARRAY_SIZE(_devices_constraints); i++) {
 		const struct device *device = device_get_binding(_devices_constraints[i].dev);
 
-		if ((device != NULL) && (device == dev)) {
-			for (size_t j = 0; j < _devices_constraints[i].pm_constraints_size; j++) {
-				pm_policy_state_lock_get(
-						_devices_constraints[i].constraints[j].state,
-						_devices_constraints[i].constraints[j].substate_id);
-			}
-			break;
+		if (device == dev) {
+			return &_devices_constraints[i];
 		}
+	}
+
+	return NULL;
+}
+#endif
+
+void pm_policy_device_power_lock_get(const struct device *dev)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+	struct pm_state_device_constraint *constraints =
+				pm_policy_priv_device_find_device_constraints(dev);
+	if (constraints == NULL) {
+		return;
+	}
+
+	for (size_t j = 0; j < constraints->pm_constraints_size; j++) {
+		pm_policy_state_lock_get(constraints->constraints[j].state,
+					 constraints->constraints[j].substate_id);
 	}
 #endif
 }
@@ -108,17 +118,35 @@ void pm_policy_device_power_lock_get(const struct device *dev)
 void pm_policy_device_power_lock_put(const struct device *dev)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
-	for (size_t i = 0; i < ARRAY_SIZE(_devices_constraints); i++) {
-		const struct device *device = device_get_binding(_devices_constraints[i].dev);
+	struct pm_state_device_constraint *constraints =
+				pm_policy_priv_device_find_device_constraints(dev);
+	if (constraints == NULL) {
+		return;
+	}
 
-		if ((device != NULL) && (device == dev)) {
-			for (size_t j = 0; j < _devices_constraints[i].pm_constraints_size; j++) {
-				pm_policy_state_lock_put(
-						_devices_constraints[i].constraints[j].state,
-						_devices_constraints[i].constraints[j].substate_id);
-			}
-			break;
+	for (size_t j = 0; j < constraints->pm_constraints_size; j++) {
+		pm_policy_state_lock_put(constraints->constraints[j].state,
+					 constraints->constraints[j].substate_id);
+	}
+#endif
+}
+
+bool pm_policy_device_is_disabling_state(const struct device *dev,
+					 enum pm_state state, uint8_t substate_id)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+	struct pm_state_device_constraint *constraints =
+				pm_policy_priv_device_find_device_constraints(dev);
+	if (constraints == NULL) {
+		return false;
+	}
+
+	for (size_t j = 0; j < constraints->pm_constraints_size; j++) {
+		if (constraints->constraints[j].state == state &&
+		    constraints->constraints[j].substate_id == substate_id) {
+			return true;
 		}
 	}
 #endif
+	return false;
 }

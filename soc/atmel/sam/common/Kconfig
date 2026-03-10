@@ -32,6 +32,18 @@ config SOC_ATMEL_SAM_EXT_MAINCK
 
 	  Says n here will use the internal fast RC oscillator running at 12 MHz.
 
+config SOC_ATMEL_SAM_EXT_MAINCK_BYPASS
+	bool "Use bypass mode for external crystal oscillator"
+	depends on SOC_ATMEL_SAM_EXT_MAINCK
+	help
+	  When bypass mode is enabled, the external crystal oscillator is bypassed,
+	  and the main clock is directly driven by an external clock signal.
+
+	  Says y here if you want to use an external clock signal directly instead
+	  of the crystal oscillator.
+
+	  Says n here to use the external crystal oscillator normally.
+
 menu "PLL A"
 
 config SOC_ATMEL_SAM_PLLA_MULA

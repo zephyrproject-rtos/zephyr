@@ -41,4 +41,4 @@ static void consumer_thread(void)
 	}
 }
 
-K_THREAD_DEFINE(consumer_thread_id, 1024, consumer_thread, NULL, NULL, NULL, 4, 0, 1000);
+K_THREAD_DEFINE(consumer_thread_id, 2048, consumer_thread, NULL, NULL, NULL, 4, 0, 1000);

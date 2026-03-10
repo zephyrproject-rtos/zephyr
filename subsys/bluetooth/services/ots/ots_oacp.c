@@ -728,7 +728,7 @@ void bt_gatt_ots_oacp_cfg_changed(const struct bt_gatt_attr *attr,
 				      uint16_t value)
 {
 	struct bt_gatt_ots_indicate *oacp_ind =
-	    CONTAINER_OF((struct _bt_gatt_ccc *) attr->user_data,
+	    CONTAINER_OF((struct bt_gatt_ccc_managed_user_data *) attr->user_data,
 			 struct bt_gatt_ots_indicate, ccc);
 
 	LOG_DBG("Object Action Control Point CCCD value: 0x%04X", value);

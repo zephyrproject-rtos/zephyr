@@ -1,7 +1,7 @@
 .. _usb_device_stack:
 
-USB device support
-##################
+USB device support (deprecated)
+###############################
 
 .. contents::
     :local:
@@ -26,10 +26,9 @@ over time. It provides the following functionalities:
   :zephyr_file:`include/zephyr/usb/usb_device.h`
 
 .. note::
-   It is planned to deprecate all APIs listed in :ref:`usb_api` and the
-   functions that depend on them between Zephyr v4.1.0 and v4.2.0, and remove
-   them in v4.4.0. The new USB device support, represented by the APIs in
-   :ref:`usb_device_next_api`, will become the default in Zephyr v4.2.0.
+   All APIs listed in :ref:`usb_api` and the functions that depend on them are
+   deprecated and will be remove in v4.4.0. Please use the new USB device
+   support represented by the APIs in :ref:`usb_device_next_api`.
 
 Supported USB classes
 *********************
@@ -212,7 +211,7 @@ DFU
 USB DFU class implementation is tightly coupled to :ref:`dfu` and :ref:`mcuboot_api`.
 This means that the target platform must support the :ref:`flash_img_api` API.
 
-See :zephyr:code-sample:`usb-dfu` sample for reference.
+See :zephyr:code-sample:`legacy-usb-dfu` sample for reference.
 
 USB Human Interface Devices (HID) support
 =========================================
@@ -373,9 +372,7 @@ Ethernet connection between the remote (USB host) and Zephyr network support.
 * CDC EEM class, enabled with :kconfig:option:`CONFIG_USB_DEVICE_NETWORK_EEM`
 * RNDIS support, enabled with :kconfig:option:`CONFIG_USB_DEVICE_NETWORK_RNDIS`
 
-See :zephyr:code-sample:`zperf` or :zephyr:code-sample:`socket-dumb-http-server` for reference.
-Typically, users will need to add a configuration file overlay to the build,
-such as :zephyr_file:`samples/net/zperf/overlay-netusb.conf`.
+See :zephyr:code-sample:`legacy-netusb` sample for reference.
 
 Applications using RNDIS support should enable :kconfig:option:`CONFIG_USB_DEVICE_OS_DESC`
 for a better user experience on a host running Microsoft Windows OS.
@@ -389,62 +386,7 @@ The application should register descriptors such as Capability Descriptor
 using :c:func:`usb_bos_register_cap`. Registered descriptors are added to the root
 BOS descriptor and handled by the stack.
 
-See :zephyr:code-sample:`webusb` sample for reference.
-
-Implementing a non-standard USB class
-*************************************
-
-The configuration of USB device is done in the stack layer.
-
-The following structures and callbacks need to be defined:
-
-* Part of USB Descriptor table
-* USB Endpoint configuration table
-* USB Device configuration structure
-* Endpoint callbacks
-* Optionally class, vendor and custom handlers
-
-For example, for the USB loopback application:
-
-.. literalinclude:: ../../../../subsys/usb/device/class/loopback.c
-   :language: c
-   :start-after: usb.rst config structure start
-   :end-before: usb.rst config structure end
-   :linenos:
-
-Endpoint configuration:
-
-.. literalinclude:: ../../../../subsys/usb/device/class/loopback.c
-   :language: c
-   :start-after: usb.rst endpoint configuration start
-   :end-before: usb.rst endpoint configuration end
-   :linenos:
-
-USB Device configuration structure:
-
-.. literalinclude:: ../../../../subsys/usb/device/class/loopback.c
-   :language: c
-   :start-after: usb.rst device config data start
-   :end-before: usb.rst device config data end
-   :linenos:
-
-
-The vendor device requests are forwarded by the USB stack core driver to the
-class driver through the registered vendor handler.
-
-For the loopback class driver, :c:func:`loopback_vendor_handler` processes
-the vendor requests:
-
-.. literalinclude:: ../../../../subsys/usb/device/class/loopback.c
-   :language: c
-   :start-after: usb.rst vendor handler start
-   :end-before:  usb.rst vendor handler end
-   :linenos:
-
-The class driver waits for the :makevar:`USB_DC_CONFIGURED` device status code
-before transmitting any data.
-
-.. _testing_USB_native_sim:
+See :zephyr:code-sample:`legacy-webusb` sample for reference.
 
 Interface number and endpoint address assignment
 ************************************************
@@ -510,12 +452,14 @@ prevent you from implementing a hardware-clone firmware. Instead, if possible,
 the host driver implementation should be fixed to use values from the interface
 and endpoint descriptor.
 
+.. _testing_USB_native_sim:
+
 Testing over USBIP in native_sim
 ********************************
 
 A virtual USB controller implemented through USBIP might be used to test the USB
 device stack. Follow the general build procedure to build the USB sample for
-the :ref:`native_sim <native_sim>` configuration.
+the :zephyr:board:`native_sim <native_sim>` configuration.
 
 Run built sample with:
 
@@ -603,6 +547,8 @@ The following Product IDs are currently used:
 | :zephyr:code-sample:`uac2-explicit-feedback`       | 0x000E |
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`uac2-implicit-feedback`       | 0x000F |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`uvc`                          | 0x0011 |
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`usb-dfu` (DFU Mode)           | 0xFFFF |
 +----------------------------------------------------+--------+

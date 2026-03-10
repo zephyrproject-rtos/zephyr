@@ -1,0 +1,43 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: microchip_pic32cz_ca
+  series:
+  - name: pic32cz_ca80
+    socs:
+    - name: pic32cz2051ca80100
+    - name: pic32cz2051ca80144
+    - name: pic32cz2051ca80176
+    - name: pic32cz2051ca80208
+    - name: pic32cz4010ca80100
+    - name: pic32cz4010ca80144
+    - name: pic32cz4010ca80176
+    - name: pic32cz4010ca80208
+    - name: pic32cz8110ca80100
+    - name: pic32cz8110ca80144
+    - name: pic32cz8110ca80176
+    - name: pic32cz8110ca80208
+  - name: pic32cz_ca90
+    socs:
+    - name: pic32cz2051ca90100
+    - name: pic32cz2051ca90144
+    - name: pic32cz2051ca90176
+    - name: pic32cz2051ca90208
+    - name: pic32cz4010ca90100
+    - name: pic32cz4010ca90144
+    - name: pic32cz4010ca90176
+    - name: pic32cz4010ca90208
+    - name: pic32cz8110ca90100
+    - name: pic32cz8110ca90144
+    - name: pic32cz8110ca90176
+    - name: pic32cz8110ca90208
+  - name: pic32cz_ca91
+    socs:
+    - name: pic32cz2051ca91100
+    - name: pic32cz2051ca91144
+    - name: pic32cz2051ca91176
+    - name: pic32cz4010ca91100
+    - name: pic32cz4010ca91144
+    - name: pic32cz4010ca91176
+    - name: pic32cz4010ca91208

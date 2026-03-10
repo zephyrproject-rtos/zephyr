@@ -16,6 +16,7 @@ ZBUS_CHAN_DEFINE(chan, struct msg, NULL, NULL, ZBUS_OBSERVERS_EMPTY, ZBUS_MSG_IN
 ZTEST(publish_stats, test_channel_metadata)
 {
 	k_ticks_t clock_window = CONFIG_SYS_CLOCK_TICKS_PER_SEC / 20; /* Accept +- 50ms */
+	const uint32_t clock_window_ms = 50;
 	struct msg *cval, val = {0};
 	k_ticks_t pub_time;
 
@@ -23,18 +24,21 @@ ZTEST(publish_stats, test_channel_metadata)
 	zassert_equal(0, zbus_chan_pub_stats_count(&chan));
 	zassert_equal(0, zbus_chan_pub_stats_last_time(&chan));
 	zassert_equal(0, zbus_chan_pub_stats_avg_period(&chan));
+	zassert_equal(UINT64_MAX, zbus_chan_pub_stats_msg_age(&chan));
 
 	/* Should be no different after a second of runtime */
 	k_sleep(K_TIMEOUT_ABS_MS(1000));
 	zassert_equal(0, zbus_chan_pub_stats_count(&chan));
 	zassert_equal(0, zbus_chan_pub_stats_last_time(&chan));
 	zassert_equal(0, zbus_chan_pub_stats_avg_period(&chan));
+	zassert_equal(UINT64_MAX, zbus_chan_pub_stats_msg_age(&chan));
 
 	/* Normal publish */
 	zassert_equal(0, zbus_chan_pub(&chan, &val, K_NO_WAIT));
 	zassert_equal(1, zbus_chan_pub_stats_count(&chan));
 	zassert_within(k_uptime_ticks(), zbus_chan_pub_stats_last_time(&chan), clock_window);
-	zassert_within(1000, zbus_chan_pub_stats_avg_period(&chan), 50);
+	zassert_within(1000, zbus_chan_pub_stats_avg_period(&chan), clock_window_ms);
+	zassert_equal(0, zbus_chan_pub_stats_msg_age(&chan));
 
 	/* Push 4 times in quick succession, wait for 2 second boundary */
 	for (int i = 0; i < 4; i++) {
@@ -44,11 +48,13 @@ ZTEST(publish_stats, test_channel_metadata)
 	k_sleep(K_TIMEOUT_ABS_MS(2000));
 	zassert_equal(5, zbus_chan_pub_stats_count(&chan));
 	zassert_within(pub_time, zbus_chan_pub_stats_last_time(&chan), clock_window);
-	zassert_within(400, zbus_chan_pub_stats_avg_period(&chan), 50);
+	zassert_within(400, zbus_chan_pub_stats_avg_period(&chan), clock_window_ms);
+	zassert_within(1000, zbus_chan_pub_stats_msg_age(&chan), clock_window_ms);
 
 	/* Channel claim and finish does not update metadata by default */
 	zassert_equal(0, zbus_chan_claim(&chan, K_NO_WAIT));
 	zassert_equal(0, zbus_chan_finish(&chan));
+	zassert_within(1000, zbus_chan_pub_stats_msg_age(&chan), clock_window_ms);
 
 	zassert_equal(0, zbus_chan_claim(&chan, K_NO_WAIT));
 	cval = zbus_chan_msg(&chan);
@@ -56,6 +62,7 @@ ZTEST(publish_stats, test_channel_metadata)
 	zassert_equal(0, zbus_chan_finish(&chan));
 	zassert_equal(5, zbus_chan_pub_stats_count(&chan));
 	zassert_within(pub_time, zbus_chan_pub_stats_last_time(&chan), clock_window);
+	zassert_within(1000, zbus_chan_pub_stats_msg_age(&chan), clock_window_ms);
 
 	/* Channel notify does not update metadata */
 	for (int i = 0; i < 10; i++) {
@@ -63,6 +70,7 @@ ZTEST(publish_stats, test_channel_metadata)
 	}
 	zassert_equal(5, zbus_chan_pub_stats_count(&chan));
 	zassert_within(pub_time, zbus_chan_pub_stats_last_time(&chan), clock_window);
+	zassert_within(1000, zbus_chan_pub_stats_msg_age(&chan), clock_window_ms);
 
 	/* Manually update publish statistics with claim */
 	zassert_equal(0, zbus_chan_claim(&chan, K_NO_WAIT));
@@ -73,7 +81,11 @@ ZTEST(publish_stats, test_channel_metadata)
 	k_sleep(K_TIMEOUT_ABS_MS(3000));
 	zassert_equal(6, zbus_chan_pub_stats_count(&chan));
 	zassert_within(pub_time, zbus_chan_pub_stats_last_time(&chan), clock_window);
-	zassert_within(500, zbus_chan_pub_stats_avg_period(&chan), 50);
+	zassert_within(500, zbus_chan_pub_stats_avg_period(&chan), clock_window_ms);
+	zassert_within(1000, zbus_chan_pub_stats_msg_age(&chan), clock_window_ms);
+
+	k_sleep(K_TIMEOUT_ABS_MS(5000));
+	zassert_within(3000, zbus_chan_pub_stats_msg_age(&chan), clock_window_ms);
 }
 
 ZTEST_SUITE(publish_stats, NULL, NULL, NULL, NULL, NULL);

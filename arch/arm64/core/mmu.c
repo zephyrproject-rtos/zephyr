@@ -54,7 +54,15 @@ static uint64_t *new_table(void)
 		}
 	}
 
-	LOG_ERR("CONFIG_MAX_XLAT_TABLES, too small");
+#if defined(CONFIG_LOG)
+	LOG_ERR("CONFIG_MAX_XLAT_TABLES is too small");
+#else
+	printk("ERROR: CONFIG_MAX_XLAT_TABLES is too small\n");
+#endif
+
+	/* Unfortunately many code paths are not ready for failure */
+	k_panic();
+
 	return NULL;
 }
 
@@ -720,6 +728,13 @@ static uint64_t get_region_desc(uint32_t attrs)
 			desc |= PTE_BLOCK_DESC_UXN;
 		}
 
+#ifdef CONFIG_ARM_BTI
+		/* Set GP (Guarded Page) bit for executable pages to enable BTI */
+		if (!(desc & PTE_BLOCK_DESC_PXN)) {
+			desc |= PTE_BLOCK_DESC_GP;
+		}
+#endif
+
 		if (mem_type == MT_NORMAL) {
 			desc |= PTE_BLOCK_DESC_INNER_SHARE;
 		} else {
@@ -778,15 +793,30 @@ static void remove_map(struct arm_mmu_ptables *ptables, const char *name,
 
 static void invalidate_tlb_all(void)
 {
+#ifdef CONFIG_SMP
+	/* Use IS variant to broadcast to all CPUs in Inner Shareable domain */
+	__asm__ volatile (
+	"dsb ishst; tlbi vmalle1is; dsb ish; isb"
+	: : : "memory");
+#else
 	__asm__ volatile (
 	"dsb ishst; tlbi vmalle1; dsb ish; isb"
 	: : : "memory");
+#endif
 }
 
 static inline void invalidate_tlb_page(uintptr_t virt)
 {
-	/* to be refined */
-	invalidate_tlb_all();
+#ifdef CONFIG_SMP
+	/* Use IS variant to broadcast to all CPUs in Inner Shareable domain */
+	__asm__ volatile (
+	"dsb ishst; tlbi vae1is, %0; dsb ish; isb"
+	: : "r" (virt >> PAGE_SIZE_SHIFT) : "memory");
+#else
+	__asm__ volatile (
+	"dsb ishst; tlbi vae1, %0; dsb ish; isb"
+	: : "r" (virt >> PAGE_SIZE_SHIFT) : "memory");
+#endif
 }
 
 /* zephyr execution regions with appropriate attributes */
@@ -849,24 +879,15 @@ static inline void add_arm_mmu_region(struct arm_mmu_ptables *ptables,
 				      uint32_t extra_flags)
 {
 	if (region->size || region->attrs) {
+		uintptr_t pa = ROUND_DOWN(region->base_pa, CONFIG_MMU_PAGE_SIZE);
+		uintptr_t va = ROUND_DOWN(region->base_va, CONFIG_MMU_PAGE_SIZE);
+		size_t pa_offset = region->base_pa - pa;
+		size_t size = ROUND_UP(region->size + pa_offset,
+				       CONFIG_MMU_PAGE_SIZE);
+
 		/* MMU not yet active: must use unlocked version */
-		__add_map(ptables, region->name, region->base_pa, region->base_va,
-			  region->size, region->attrs | extra_flags);
-	}
-}
-
-static inline void inv_dcache_after_map_helper(void *virt, size_t size, uint32_t attrs)
-{
-	/*
-	 * DC IVAC instruction requires write access permission to the VA,
-	 * otherwise it can generate a permission fault
-	 */
-	if ((attrs & MT_RW) != MT_RW) {
-		return;
-	}
-
-	if (MT_TYPE(attrs) == MT_NORMAL || MT_TYPE(attrs) == MT_NORMAL_WT) {
-		sys_cache_data_invd_range(virt, size);
+		__add_map(ptables, region->name, pa, va,
+			  size, region->attrs | extra_flags);
 	}
 }
 
@@ -909,20 +930,6 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 	}
 
 	invalidate_tlb_all();
-
-	for (index = 0U; index < ARRAY_SIZE(mmu_zephyr_ranges); index++) {
-		size_t size;
-
-		range = &mmu_zephyr_ranges[index];
-		size = POINTER_TO_UINT(range->end) - POINTER_TO_UINT(range->start);
-		inv_dcache_after_map_helper(range->start, size, range->attrs);
-	}
-
-	for (index = 0U; index < mmu_config.num_regions; index++) {
-		region = &mmu_config.mmu_regions[index];
-		inv_dcache_after_map_helper(UINT_TO_POINTER(region->base_va), region->size,
-					    region->attrs);
-	}
 }
 
 /* Translation table control register settings */
@@ -994,6 +1001,16 @@ static sys_slist_t domain_list;
  * This function provides the default configuration mechanism for the Memory
  * Management Unit (MMU).
  */
+#ifdef CONFIG_ARM_PAC
+/*
+ * Disable PAC protection for MMU activation to prevent authentication
+ * failures. When PAC is enabled, return address authentication can fail
+ * during MMU activation because memory mapping changes affect the return address
+ * stored on the stack, causing the PAC authentication to fail on function
+ * return. This attribute ensures the MMU init can complete safely.
+ */
+__attribute__((target("branch-protection=none")))
+#endif
 void z_arm64_mm_init(bool is_primary_core)
 {
 	unsigned int flags = 0U;
@@ -1117,20 +1134,8 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 		LOG_ERR("__arch_mem_map() returned %d", ret);
 		k_panic();
 	} else {
-		uint32_t mem_flags = flags & K_MEM_CACHE_MASK;
-
 		sync_domains((uintptr_t)virt, size, "mem_map");
 		invalidate_tlb_all();
-
-		switch (mem_flags) {
-		case K_MEM_CACHE_WB:
-		case K_MEM_CACHE_WT:
-			mem_flags = (mem_flags == K_MEM_CACHE_WB) ? MT_NORMAL : MT_NORMAL_WT;
-			mem_flags |= (flags & K_MEM_PERM_RW) ? MT_RW : 0;
-			inv_dcache_after_map_helper(virt, size, mem_flags);
-		default:
-			break;
-		}
 	}
 }
 
@@ -1235,6 +1240,30 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	return 0;
 }
 
+int arch_mem_domain_deinit(struct k_mem_domain *domain)
+{
+	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
+	k_spinlock_key_t key;
+
+	if (domain_ptables->base_xlat_table == NULL) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&xlat_lock);
+
+	sys_slist_find_and_remove(&domain_list, &domain->arch.node);
+
+	discard_table(domain_ptables->base_xlat_table, BASE_XLAT_LEVEL);
+	dec_table_ref(domain_ptables->base_xlat_table);
+
+	domain_ptables->base_xlat_table = NULL;
+	domain_ptables->ttbr0 = 0;
+
+	k_spin_unlock(&xlat_lock, key);
+
+	return 0;
+}
+
 static int private_map(struct arm_mmu_ptables *ptables, const char *name,
 		       uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
 {
@@ -1246,7 +1275,6 @@ static int private_map(struct arm_mmu_ptables *ptables, const char *name,
 	__ASSERT(ret == 0, "add_map() returned %d", ret);
 	invalidate_tlb_all();
 
-	inv_dcache_after_map_helper(UINT_TO_POINTER(virt), size, attrs);
 	return ret;
 }
 

@@ -14,12 +14,11 @@
 };
 
 &mspi1 {
-
 	compatible = "ambiq,mspi-controller";
 	pinctrl-0 = <&mspi1_default>;
 	pinctrl-1 = <&mspi1_sleep>;
 	pinctrl-2 = <&mspi1_flash>;
-	pinctrl-names = "default","sleep","flash";
+	pinctrl-names = "default", "sleep", "flash";
 	status = "okay";
 
 	ce-gpios = <&gpio32_63 18 GPIO_ACTIVE_LOW>;
@@ -36,7 +35,7 @@
 		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
 		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
 		mspi-hardware-ce-num = <0>;
-		read-command = <0x0B>;
+		read-command = <0x0b>;
 		write-command = <0x02>;
 		command-length = "INSTR_1_BYTE";
 		address-length = "ADDR_4_BYTE";
@@ -47,12 +46,10 @@
 		ambiq,timing-config-mask = <3>;
 		ambiq,timing-config = <0 8 0 0 0 0 0 0>;
 	};
-
 };
 
 &pinctrl {
-
-	mspi1_sleep: mspi1_sleep{
+	mspi1_sleep: mspi1_sleep {
 		group1 {
 			pinmux = <GPIO_P51>,
 				 <GPIO_P52>,
@@ -68,8 +65,7 @@
 		};
 	};
 
-	mspi1_flash: mspi1_flash{
-
+	mspi1_flash: mspi1_flash {
 		group1 {
 			pinmux = <MSPI1_0_P51>,
 				 <MSPI1_1_P52>,
@@ -101,7 +97,5 @@
 		group4 {
 			pinmux = <GPIO_P69>;
 		};
-
 	};
-
 };

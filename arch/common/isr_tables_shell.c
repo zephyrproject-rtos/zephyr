@@ -8,7 +8,8 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/sw_isr_table.h>
 
-static void dump_isr_table_entry(const struct shell *sh, int idx, struct _isr_table_entry *entry)
+static void dump_isr_table_entry(const struct shell *sh, int idx,
+				 const struct _isr_table_entry *entry)
 {
 
 	if ((entry->isr == z_irq_spurious) || (entry->isr == NULL)) {

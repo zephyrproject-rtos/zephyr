@@ -19,6 +19,11 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 
+#define BMI270_WR_LEN                           32
+#define BMI270_CONFIG_FILE_RETRIES              15
+#define BMI270_CONFIG_FILE_POLL_PERIOD_US       10000
+#define BMI270_INTER_WRITE_DELAY_US             1000
+
 #define BMI270_REG_CHIP_ID         0x00
 #define BMI270_REG_ERROR           0x02
 #define BMI270_REG_STATUS          0x03
@@ -83,7 +88,7 @@
 #define BMI270_ANYMO_1_SELECT_Z		BIT(15)
 #define BMI270_ANYMO_1_SELECT_XYZ	(BMI270_ANYMO_1_SELECT_X | \
 					 BMI270_ANYMO_1_SELECT_Y | \
-					 BMI270_ANYMO_1_SELECT_Y)
+					 BMI270_ANYMO_1_SELECT_Z)
 #define BMI270_ANYMO_2_THRESHOLD_POS	0
 #define BMI270_ANYMO_2_THRESHOLD_MASK	BIT_MASK(10)
 #define BMI270_ANYMO_2_THRESHOLD(n)	((n) << BMI270_ANYMO_2_THRESHOLD_POS)

@@ -4,9 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
+#include <kernel_internal.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/init.h>
-#include <ksched.h>
+#include <zephyr/debug/cpu_load.h>
 
 #include <SEGGER_SYSVIEW.h>
 
@@ -31,6 +32,10 @@ uint32_t sysview_get_interrupt(void)
 void sys_trace_k_thread_switched_in(void)
 {
 	struct k_thread *thread;
+
+	if (k_is_pre_kernel()) {
+		return;
+	}
 
 	thread = k_current_get();
 
@@ -63,7 +68,20 @@ void sys_trace_isr_exit_to_scheduler(void)
 
 void sys_trace_idle(void)
 {
+#ifdef CONFIG_TRACING_IDLE
 	SEGGER_SYSVIEW_OnIdle();
+#endif
+
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		cpu_load_on_enter_idle();
+	}
+}
+
+void sys_trace_idle_exit(void)
+{
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		cpu_load_on_exit_idle();
+	}
 }
 
 void sys_trace_named_event(const char *name, uint32_t arg0, uint32_t arg1)

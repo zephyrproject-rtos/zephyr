@@ -875,9 +875,9 @@ ZTEST(semaphore, test_sem_multiple_threads_wait)
 		expect_k_sem_count_get_nomsg(&simple_sem, 0U);
 		expect_k_sem_count_get_nomsg(&multiple_thread_sem, 0U);
 
-	}
-	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
-		k_thread_join(&multiple_tid[i], K_FOREVER);
+		for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
+			k_thread_join(&multiple_tid[i], K_FOREVER);
+		}
 	}
 }
 
@@ -972,7 +972,7 @@ ZTEST(semaphore, test_sem_measure_timeout_from_thread)
 
 	zassert_true((diff_ticks < SEC2MS(1)),
 		     "k_sem_take took too long: %d >= %d",
-		     diff_ticks, SEC2MS(1));
+		     (int)diff_ticks, SEC2MS(1));
 	k_thread_join(&sem_tid_1, K_FOREVER);
 }
 

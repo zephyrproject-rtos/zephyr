@@ -10,7 +10,7 @@
 #include <zephyr/drivers/watchdog.h>
 
 #include <errno.h>
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_ambiq, CONFIG_WDT_LOG_LEVEL);
@@ -20,7 +20,7 @@ typedef void (*ambiq_wdt_cfg_func_t)(void);
 struct wdt_ambiq_config {
 	uint32_t base;
 	uint32_t irq_num;
-	uint8_t clk_freq;
+	uint32_t clk_freq;
 	ambiq_wdt_cfg_func_t cfg_func;
 };
 
@@ -29,6 +29,13 @@ struct wdt_ambiq_data {
 	uint32_t timeout;
 	bool reset;
 };
+
+uint32_t wdt_ambiq_clk_select[] =
+#if defined(CONFIG_SOC_SERIES_APOLLO3X) || defined(CONFIG_SOC_SERIES_APOLLO4X)
+	{128, 16, 1};
+#else
+	{128, 16, 1, 32768, 16384};
+#endif
 
 static void wdt_ambiq_isr(void *arg)
 {
@@ -39,7 +46,7 @@ static void wdt_ambiq_isr(void *arg)
 	am_hal_wdt_int_clear();
 #else
 	uint32_t status;
-	am_hal_wdt_interrupt_status_get(AM_HAL_WDT_MCU, &status, false);
+	am_hal_wdt_interrupt_status_get(AM_HAL_WDT_MCU, &status, true);
 	am_hal_wdt_interrupt_clear(AM_HAL_WDT_MCU, status);
 #endif
 
@@ -79,14 +86,23 @@ static int wdt_ambiq_setup(const struct device *dev, uint8_t options)
 		cfg.eClockSource = AM_HAL_WDT_16HZ;
 	} else if (dev_cfg->clk_freq == 1) {
 		cfg.eClockSource = AM_HAL_WDT_1HZ;
+#if defined(CONFIG_SOC_SERIES_APOLLO5X)
+	} else if (dev_cfg->clk_freq == 32768) {
+		cfg.eClockSource = AM_HAL_WDT_XTAL_HS;
+	} else if (dev_cfg->clk_freq == 16384) {
+		cfg.eClockSource = AM_HAL_WDT_XTAL_HS_DIV2;
 	}
+#else
+	}
+#endif
 
 	cfg.bInterruptEnable = true;
 	cfg.ui32InterruptValue = data->timeout;
 	cfg.bResetEnable = data->reset;
 	cfg.ui32ResetValue = data->timeout;
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
 	cfg.bAlertOnDSPReset = false;
-
+#endif
 	am_hal_wdt_config(AM_HAL_WDT_MCU, &cfg);
 	am_hal_wdt_interrupt_enable(AM_HAL_WDT_MCU, AM_HAL_WDT_INTERRUPT_MCU);
 	am_hal_wdt_start(AM_HAL_WDT_MCU, false);
@@ -115,7 +131,7 @@ static int wdt_ambiq_install_timeout(const struct device *dev, const struct wdt_
 		return -EINVAL;
 	}
 
-	data->timeout = cfg->window.max / 1000 * dev_cfg->clk_freq;
+	data->timeout = cfg->window.max * dev_cfg->clk_freq / 1000;
 	data->callback = cfg->callback;
 
 	switch (cfg->flags) {
@@ -144,7 +160,6 @@ static int wdt_ambiq_feed(const struct device *dev, int channel_id)
 #else
 	am_hal_wdt_restart(AM_HAL_WDT_MCU);
 #endif
-	LOG_DBG("Fed the watchdog");
 
 	return 0;
 }
@@ -152,9 +167,15 @@ static int wdt_ambiq_feed(const struct device *dev, int channel_id)
 static int wdt_ambiq_init(const struct device *dev)
 {
 	const struct wdt_ambiq_config *dev_cfg = dev->config;
+	uint8_t clk_index = sizeof(wdt_ambiq_clk_select) / sizeof(uint32_t);
 
-	if (dev_cfg->clk_freq != 128 && dev_cfg->clk_freq != 16 && dev_cfg->clk_freq != 1) {
-		return -ENOTSUP;
+	for (uint8_t i = 0; i < clk_index; i++) {
+		if (dev_cfg->clk_freq == wdt_ambiq_clk_select[i]) {
+			break;
+		}
+		if (i == clk_index - 1) {
+			return -ENOTSUP;
+		}
 	}
 
 	NVIC_ClearPendingIRQ(dev_cfg->irq_num);

@@ -70,12 +70,12 @@ struct nsos_mid_sockaddr_in6 {
 
 #define UNIX_PATH_MAX 108
 struct nsos_mid_sockaddr_un {
-	sa_family_t sun_family;              /* AF_UNIX */
+	uint16_t    sun_family;              /* AF_UNIX */
 	char        sun_path[UNIX_PATH_MAX]; /* pathname */
 };
 
 struct nsos_mid_sockaddr_ll {
-	sa_family_t sll_family;   /**< Always AF_PACKET                   */
+	uint16_t    sll_family;   /**< Always AF_PACKET                   */
 	uint16_t    sll_protocol; /**< Physical-layer protocol            */
 	int         sll_ifindex;  /**< Interface number                   */
 	uint16_t    sll_hatype;   /**< ARP hardware type                  */
@@ -153,6 +153,10 @@ int nsos_adapt_getsockopt(int fd, int level, int optname,
 			  void *optval, size_t *optlen);
 int nsos_adapt_setsockopt(int fd, int level, int optname,
 			  const void *optval, size_t optlen);
+int nsos_adapt_getpeername(int fd, struct nsos_mid_sockaddr *addr,
+			   size_t *addrlen);
+int nsos_adapt_getsockname(int fd, struct nsos_mid_sockaddr *addr,
+			   size_t *addrlen);
 
 void nsos_adapt_poll_add(struct nsos_mid_pollfd *pollfd);
 void nsos_adapt_poll_remove(struct nsos_mid_pollfd *pollfd);

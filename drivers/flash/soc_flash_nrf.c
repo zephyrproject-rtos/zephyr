@@ -15,7 +15,6 @@
 #include <zephyr/drivers/flash.h>
 #include <string.h>
 #include <nrfx_nvmc.h>
-#include <nrf_erratas.h>
 
 #include "soc_flash_nrf.h"
 
@@ -116,7 +115,7 @@ static inline bool is_uicr_addr_valid(off_t addr, size_t len)
 #endif /* CONFIG_SOC_FLASH_NRF_UICR */
 }
 
-#if CONFIG_SOC_FLASH_NRF_UICR && IS_ENABLED(NRF91_ERRATA_7_ENABLE_WORKAROUND)
+#if CONFIG_SOC_FLASH_NRF_UICR && NRF_ERRATA_STATIC_CHECK(91, 7)
 static inline void nrf91_errata_7_enter(void)
 {
 	__disable_irq();
@@ -159,7 +158,7 @@ static int flash_nrf_read(const struct device *dev, off_t addr,
 		return 0;
 	}
 
-#if CONFIG_SOC_FLASH_NRF_UICR && IS_ENABLED(NRF91_ERRATA_7_ENABLE_WORKAROUND)
+#if CONFIG_SOC_FLASH_NRF_UICR && NRF_ERRATA_STATIC_CHECK(91, 7)
 	if (within_uicr) {
 		nrf_buffer_read_91_uicr(data, (uint32_t)addr, len);
 		return 0;
@@ -556,7 +555,7 @@ static bool pofcon_enabled;
 
 static int suspend_pofwarn(void)
 {
-	if (!nrf52_errata_242()) {
+	if (!NRF_ERRATA_DYNAMIC_CHECK(52, 242)) {
 		return 0;
 	}
 

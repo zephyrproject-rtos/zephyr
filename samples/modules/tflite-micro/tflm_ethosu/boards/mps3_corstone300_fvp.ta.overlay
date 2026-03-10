@@ -1,0 +1,58 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright 2025 Arm Limited and/or its
+ * affiliates <open-source-office@arm.com></text>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&ethosu0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/*
+	 * Corstone-300 FVP: TAs on AXI ports (SRAM, Flash/DRAM)
+	 * Vela: System_Config.Ethos_U55_High_End_Embedded
+	 * (core_clock=500 MHz, SRAM=4 GB/s, Flash=0.5 GB/s)
+	 */
+
+	ta0: timing-adapter@48103000 {
+		compatible = "arm,axi-timing-adapter";
+		reg = <0x48103000>;
+		status = "okay";
+
+		version = <0x1117>;
+		maxr = <8>;
+		maxw = <8>;
+		maxrw = <0>;
+		rlatency = <32>;
+		wlatency = <32>;
+		pulse-on = <3999>;
+		pulse-off = <1>;
+		bwcap = <4000>;
+		mode = <1>;
+		perfctrl = <0>;
+		perfcnt = <0>;
+		histbin = <0>;
+		histcnt = <0>;
+	};
+
+	ta1: timing-adapter@48103200 {
+		compatible = "arm,axi-timing-adapter";
+		reg = <0x48103200>;
+		status = "okay";
+
+		version = <0x1117>;
+		maxr = <2>;
+		maxw = <0>;
+		maxrw = <0>;
+		rlatency = <64>;
+		wlatency = <0>;
+		pulse-on = <320>;
+		pulse-off = <80>;
+		bwcap = <50>;
+		mode = <1>;
+		perfctrl = <0>;
+		perfcnt = <0>;
+		histbin = <0>;
+		histcnt = <0>;
+	};
+};

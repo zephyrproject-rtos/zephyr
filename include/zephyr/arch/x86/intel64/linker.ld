@@ -95,6 +95,8 @@ SECTIONS
 	*(.text)
 	*(.text.*)
 
+	#include <snippets-text-sections.ld>
+
 	#include <zephyr/linker/kobject-text.ld>
 
 	MMU_PAGE_ALIGN_PERM
@@ -189,6 +191,32 @@ SECTIONS
 #include <zephyr/linker/cplusplus-ram.ld>
 #include <zephyr/arch/x86/pagetables.ld>
 
+#ifdef CONFIG_HW_SHADOW_STACK
+SECTION_PROLOGUE(.x86shadowstack,,)
+{
+    MMU_PAGE_ALIGN
+
+    __x86shadowstack_start = .;
+
+    *(.x86shadowstack)
+
+    MMU_PAGE_ALIGN
+
+} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+SECTION_PROLOGUE(.x86shadowstack.arr,,)
+{
+    MMU_PAGE_ALIGN
+
+    *(.x86shadowstack.arr*)
+
+    MMU_PAGE_ALIGN
+
+    __x86shadowstack_end = .;
+
+} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
+
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
@@ -223,12 +251,6 @@ SECTIONS
 	*(.rel.*)
 	*(.rela.*)
 	}
-/*
- * eh_frame section won't be removed even with "--gc-sections" by LLVM lld.
- */
-#if !defined(CONFIG_CPP_EXCEPTIONS)
-	/DISCARD/ : { *(.eh_frame) }
-#endif
 
 /*
  * The sections below are still treated as warnings
@@ -240,7 +262,5 @@ SECTIONS
 	.shstrtab 0 : { *(.shstrtab) }
 #endif
 
-#ifdef CONFIG_LLEXT
-	#include <zephyr/linker/llext-sections.ld>
-#endif
+#include <zephyr/linker/llext-sections.ld>
 }

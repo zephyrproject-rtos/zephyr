@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(net_6lo, CONFIG_NET_6LO_LOG_LEVEL);
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
 struct net_6lo_context {
-	struct in6_addr prefix;
+	struct net_in6_addr prefix;
 	struct net_if *iface;
 	uint16_t lifetime;
 	uint8_t is_used		: 1;
@@ -119,40 +119,42 @@ static int get_ihpc_inlined_size(uint16_t iphc)
  *       Mesh header compression
  */
 
-static inline bool net_6lo_ll_prefix_padded_with_zeros(struct in6_addr *addr)
+static inline bool net_6lo_ll_prefix_padded_with_zeros(const uint8_t *addr)
 {
-	return (net_ipv6_is_ll_addr(addr) &&
-		(UNALIGNED_GET(&addr->s6_addr16[1]) == 0x00) &&
-		(UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00));
+	return (net_ipv6_is_ll_addr_raw(addr) &&
+		(UNALIGNED_GET((uint16_t *)addr + 1) == 0x00) &&
+		(UNALIGNED_GET((uint32_t *)addr + 1) == 0x00));
 }
 
-static inline bool net_6lo_addr_16_bit_compressible(struct in6_addr *addr)
+static inline bool net_6lo_addr_16_bit_compressible(const uint8_t *addr)
 {
-	return ((UNALIGNED_GET(&addr->s6_addr32[2]) == htonl(0xFF)) &&
-		 (UNALIGNED_GET(&addr->s6_addr16[6]) == htons(0xFE00)));
+	return ((UNALIGNED_GET((uint32_t *)addr + 2) == net_htonl(0xFFu)) &&
+		(UNALIGNED_GET((uint16_t *)addr + 6) == net_htons(0xFE00u)));
 }
 
-static inline bool net_6lo_maddr_8_bit_compressible(struct in6_addr *addr)
+static inline bool net_6lo_maddr_8_bit_compressible(const uint8_t *addr)
 {
-	return ((addr->s6_addr[1] == 0x02) &&
-		 (UNALIGNED_GET(&addr->s6_addr16[1]) == 0x00) &&
-		 (UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00) &&
-		 (UNALIGNED_GET(&addr->s6_addr32[2]) == 0x00) &&
-		 (addr->s6_addr[14] == 0x00));
+	return ((addr[1] == 0x02) &&
+		(UNALIGNED_GET((uint16_t *)addr + 1) == 0x00) &&
+		(UNALIGNED_GET((uint32_t *)addr + 1) == 0x00) &&
+		(UNALIGNED_GET((uint32_t *)addr + 2) == 0x00) &&
+		(addr[14] == 0x00));
+
 }
 
-static inline bool net_6lo_maddr_32_bit_compressible(struct in6_addr *addr)
+static inline bool net_6lo_maddr_32_bit_compressible(const uint8_t *addr)
 {
-	return ((UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00) &&
-		 (UNALIGNED_GET(&addr->s6_addr32[2]) == 0x00) &&
-		 (addr->s6_addr[12] == 0x00));
+	return ((UNALIGNED_GET((uint32_t *)addr + 1) == 0x00) &&
+		(UNALIGNED_GET((uint32_t *)addr + 2) == 0x00) &&
+		(addr[12] == 0x00));
+
 }
 
-static inline bool net_6lo_maddr_48_bit_compressible(struct in6_addr *addr)
+static inline bool net_6lo_maddr_48_bit_compressible(const uint8_t *addr)
 {
-	return ((UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00) &&
-		 (UNALIGNED_GET(&addr->s6_addr16[4]) == 0x00) &&
-		 (addr->s6_addr[10] == 0x00));
+	return ((UNALIGNED_GET((uint32_t *)addr + 1) == 0x00) &&
+		(UNALIGNED_GET((uint16_t *)addr + 4) == 0x00) &&
+		(addr[10] == 0x00));
 }
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
@@ -231,7 +233,7 @@ get_6lo_context_by_cid(struct net_if *iface, uint8_t cid)
 
 /* Get the context by addr */
 static inline struct net_6lo_context *
-get_6lo_context_by_addr(struct net_if *iface, struct in6_addr *addr)
+get_6lo_context_by_addr(struct net_if *iface, struct net_in6_addr *addr)
 {
 	uint8_t i;
 
@@ -351,7 +353,7 @@ static uint8_t *compress_nh(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr,
 			 uint16_t *iphc)
 {
 	/* Next header */
-	if (ipv6->nexthdr == IPPROTO_UDP) {
+	if (ipv6->nexthdr == NET_IPPROTO_UDP) {
 		*iphc |= NET_6LO_IPHC_NH_1;
 	} else {
 		inline_ptr -= sizeof(ipv6->nexthdr);
@@ -365,11 +367,8 @@ static uint8_t *compress_nh(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr,
 static uint8_t *compress_sa(struct net_ipv6_hdr *ipv6, struct net_pkt *pkt,
 			 uint8_t *inline_ptr, uint16_t *iphc)
 {
-	NET_ASSERT(net_pkt_lladdr_src(pkt)->addr);
-
 	/* Address is fully elided */
-	if (net_ipv6_addr_based_on_ll((struct in6_addr *)ipv6->src,
-				      net_pkt_lladdr_src(pkt))) {
+	if (net_ipv6_addr_based_on_ll_raw(ipv6->src, net_pkt_lladdr_src(pkt))) {
 		NET_DBG("SAM_11 src address is fully elided");
 
 		*iphc |= NET_6LO_IPHC_SAM_11;
@@ -377,7 +376,7 @@ static uint8_t *compress_sa(struct net_ipv6_hdr *ipv6, struct net_pkt *pkt,
 	}
 
 	/* Following 64 bits are 0000:00ff:fe00:XXXX */
-	if (net_6lo_addr_16_bit_compressible((struct in6_addr *)ipv6->src)) {
+	if (net_6lo_addr_16_bit_compressible(ipv6->src)) {
 		NET_DBG("SAM_10 src addr 16 bit compressible");
 		*iphc |= NET_6LO_IPHC_SAM_10;
 
@@ -411,13 +410,10 @@ static uint8_t *compress_sa_ctx(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr,
 			     struct net_pkt *pkt, uint16_t *iphc,
 			     struct net_6lo_context *src)
 {
-	NET_ASSERT(net_pkt_lladdr_src(pkt)->addr);
-
 	NET_DBG("SAC_1 src address context based");
 	*iphc |= NET_6LO_IPHC_SAC_1;
 
-	if (net_ipv6_addr_based_on_ll((struct in6_addr *)ipv6->src,
-				      net_pkt_lladdr_src(pkt))) {
+	if (net_ipv6_addr_based_on_ll_raw(ipv6->src, net_pkt_lladdr_src(pkt))) {
 		NET_DBG("SAM_11 src address is fully elided");
 
 		/* Address is fully elided */
@@ -426,7 +422,7 @@ static uint8_t *compress_sa_ctx(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr,
 	}
 
 	/* Following 64 bits are 0000:00ff:fe00:XXXX */
-	if (net_6lo_addr_16_bit_compressible((struct in6_addr *)ipv6->src)) {
+	if (net_6lo_addr_16_bit_compressible(ipv6->src)) {
 		NET_DBG("SAM_10 src addr 16 bit compressible");
 
 		*iphc |= NET_6LO_IPHC_SAM_10;
@@ -456,7 +452,7 @@ static uint8_t *compress_da_mcast(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr
 
 	NET_DBG("M_1 dst is mcast");
 
-	if (net_6lo_maddr_8_bit_compressible((struct in6_addr *)ipv6->dst)) {
+	if (net_6lo_maddr_8_bit_compressible(ipv6->dst)) {
 		NET_DBG("DAM_11 dst maddr 8 bit compressible");
 
 		/* last byte */
@@ -468,7 +464,7 @@ static uint8_t *compress_da_mcast(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr
 		return inline_ptr;
 	}
 
-	if (net_6lo_maddr_32_bit_compressible((struct in6_addr *)ipv6->dst)) {
+	if (net_6lo_maddr_32_bit_compressible(ipv6->dst)) {
 		NET_DBG("DAM_10 4 bytes: 2nd byte + last three bytes");
 
 		/* 4 bytes: 2nd byte + last three bytes */
@@ -483,7 +479,7 @@ static uint8_t *compress_da_mcast(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr
 		return inline_ptr;
 	}
 
-	if (net_6lo_maddr_48_bit_compressible((struct in6_addr *)ipv6->dst)) {
+	if (net_6lo_maddr_48_bit_compressible(ipv6->dst)) {
 		NET_DBG("DAM_01 6 bytes: 2nd byte + last five bytes");
 
 		/* 6 bytes: 2nd byte + last five bytes */
@@ -510,11 +506,8 @@ static uint8_t *compress_da_mcast(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr
 static uint8_t *compress_da(struct net_ipv6_hdr *ipv6, struct net_pkt *pkt,
 			 uint8_t *inline_ptr, uint16_t *iphc)
 {
-	NET_ASSERT(net_pkt_lladdr_dst(pkt)->addr);
-
 	/* Address is fully elided */
-	if (net_ipv6_addr_based_on_ll((struct in6_addr *)ipv6->dst,
-				      net_pkt_lladdr_dst(pkt))) {
+	if (net_ipv6_addr_based_on_ll_raw(ipv6->dst, net_pkt_lladdr_dst(pkt))) {
 		NET_DBG("DAM_11 dst addr fully elided");
 
 		*iphc |= NET_6LO_IPHC_DAM_11;
@@ -522,7 +515,7 @@ static uint8_t *compress_da(struct net_ipv6_hdr *ipv6, struct net_pkt *pkt,
 	}
 
 	/* Following 64 bits are 0000:00ff:fe00:XXXX */
-	if (net_6lo_addr_16_bit_compressible((struct in6_addr *)ipv6->dst)) {
+	if (net_6lo_addr_16_bit_compressible(ipv6->dst)) {
 		NET_DBG("DAM_10 dst addr 16 bit compressible");
 
 		*iphc |= NET_6LO_IPHC_DAM_10;
@@ -559,8 +552,7 @@ static uint8_t *compress_da_ctx(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr,
 {
 	*iphc |= NET_6LO_IPHC_DAC_1;
 
-	if (net_ipv6_addr_based_on_ll((struct in6_addr *)ipv6->dst,
-				      net_pkt_lladdr_dst(pkt))) {
+	if (net_ipv6_addr_based_on_ll_raw(ipv6->dst, net_pkt_lladdr_dst(pkt))) {
 		NET_DBG("DAM_11 dst addr fully elided");
 
 		*iphc |= NET_6LO_IPHC_DAM_11;
@@ -568,7 +560,7 @@ static uint8_t *compress_da_ctx(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr,
 	}
 
 	/* Following 64 bits are 0000:00ff:fe00:XXXX */
-	if (net_6lo_addr_16_bit_compressible((struct in6_addr *)ipv6->dst)) {
+	if (net_6lo_addr_16_bit_compressible(ipv6->dst)) {
 		NET_DBG("DAM_10 dst addr 16 bit compressible");
 
 		*iphc |= NET_6LO_IPHC_DAM_10;
@@ -621,9 +613,9 @@ static inline uint8_t *compress_nh_udp(struct net_udp_hdr *udp, uint8_t *inline_
 		memmove(inline_ptr_udp, &udp->chksum, sizeof(udp->chksum));
 	}
 
-	if ((((htons(udp->src_port) >> 4) & 0xFFF) ==
+	if ((((net_htons(udp->src_port) >> 4) & 0xFFF) ==
 	    NET_6LO_NHC_UDP_4_BIT_PORT) &&
-	    (((htons(udp->dst_port) >> 4) & 0xFFF) ==
+	    (((net_htons(udp->dst_port) >> 4) & 0xFFF) ==
 	    NET_6LO_NHC_UDP_4_BIT_PORT)) {
 
 		NET_DBG("UDP ports src and dst 4 bits inlined");
@@ -632,14 +624,14 @@ static inline uint8_t *compress_nh_udp(struct net_udp_hdr *udp, uint8_t *inline_
 		  */
 		nhc |= NET_6LO_NHC_UDP_PORT_11;
 
-		tmp = (uint8_t)(htons(udp->src_port));
+		tmp = (uint8_t)(net_htons(udp->src_port));
 		tmp = tmp << 4;
 
-		tmp |= (((uint8_t)(htons(udp->dst_port))) & 0x0F);
+		tmp |= (((uint8_t)(net_htons(udp->dst_port))) & 0x0F);
 		inline_ptr_udp -= sizeof(tmp);
 		*inline_ptr_udp = tmp;
 
-	} else if (((htons(udp->dst_port) >> 8) & 0xFF) ==
+	} else if (((net_htons(udp->dst_port) >> 8) & 0xFF) ==
 		   NET_6LO_NHC_UDP_8_BIT_PORT) {
 
 		NET_DBG("UDP ports src full, dst 8 bits inlined");
@@ -649,12 +641,12 @@ static inline uint8_t *compress_nh_udp(struct net_udp_hdr *udp, uint8_t *inline_
 		nhc |= NET_6LO_NHC_UDP_PORT_01;
 
 		inline_ptr_udp -= sizeof(uint8_t);
-		*inline_ptr_udp = (uint8_t)(htons(udp->dst_port));
+		*inline_ptr_udp = (uint8_t)(net_htons(udp->dst_port));
 
 		inline_ptr_udp -= sizeof(udp->src_port);
 		memmove(inline_ptr_udp, &udp->src_port, sizeof(udp->src_port));
 
-	} else if (((htons(udp->src_port) >> 8) & 0xFF) ==
+	} else if (((net_htons(udp->src_port) >> 8) & 0xFF) ==
 		    NET_6LO_NHC_UDP_8_BIT_PORT) {
 
 		NET_DBG("UDP ports src 8bits, dst full inlined");
@@ -667,7 +659,7 @@ static inline uint8_t *compress_nh_udp(struct net_udp_hdr *udp, uint8_t *inline_
 		memmove(inline_ptr_udp, &udp->dst_port, sizeof(udp->dst_port));
 
 		inline_ptr_udp -= sizeof(uint8_t);
-		*inline_ptr_udp = (uint8_t)(htons(udp->src_port));
+		*inline_ptr_udp = (uint8_t)(net_htons(udp->src_port));
 
 	} else {
 		NET_DBG("Can not compress ports, ports are inlined");
@@ -693,7 +685,7 @@ static struct net_6lo_context *get_src_addr_ctx(struct net_pkt *pkt,
 	struct net_6lo_context *src;
 
 	src = get_6lo_context_by_addr(net_pkt_iface(pkt),
-				      (struct in6_addr *)ipv6->src);
+				      (struct net_in6_addr *)ipv6->src);
 	if (!src || !src->compress) {
 		return NULL;
 	}
@@ -708,7 +700,7 @@ static struct net_6lo_context *get_dst_addr_ctx(struct net_pkt *pkt,
 	struct net_6lo_context *dst;
 
 	dst = get_6lo_context_by_addr(net_pkt_iface(pkt),
-				      (struct in6_addr *)ipv6->dst);
+				      (struct net_in6_addr *)ipv6->dst);
 	if (!dst || !dst->compress) {
 		return NULL;
 	}
@@ -743,7 +735,7 @@ static inline int compress_IPHC_header(struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
-	if (ipv6->nexthdr == IPPROTO_UDP &&
+	if (ipv6->nexthdr == NET_IPPROTO_UDP &&
 	    pkt->frags->len < NET_IPV6UDPH_LEN) {
 		NET_ERR("Invalid length %d, min %d",
 			pkt->frags->len, NET_IPV6UDPH_LEN);
@@ -752,19 +744,19 @@ static inline int compress_IPHC_header(struct net_pkt *pkt)
 
 	inline_pos = pkt->buffer->data + NET_IPV6H_LEN;
 
-	if (ipv6->nexthdr == IPPROTO_UDP) {
+	if (ipv6->nexthdr == NET_IPPROTO_UDP) {
 		udp = (struct net_udp_hdr *)inline_pos;
 		inline_pos += NET_UDPH_LEN;
 
 		inline_pos = compress_nh_udp(udp, inline_pos, false);
 	}
 
-	if (net_6lo_ll_prefix_padded_with_zeros((struct in6_addr *)ipv6->dst)) {
+	if (net_6lo_ll_prefix_padded_with_zeros(ipv6->dst)) {
 		inline_pos = compress_da(ipv6, pkt, inline_pos, &iphc);
 		goto da_end;
 	}
 
-	if (net_ipv6_is_addr_mcast((struct in6_addr *)ipv6->dst)) {
+	if (net_ipv6_is_addr_mcast_raw(ipv6->dst)) {
 		inline_pos = compress_da_mcast(ipv6, inline_pos, &iphc);
 		goto da_end;
 	}
@@ -781,12 +773,12 @@ static inline int compress_IPHC_header(struct net_pkt *pkt)
 	inline_pos = set_da_inline(ipv6, inline_pos, &iphc);
 da_end:
 
-	if (net_6lo_ll_prefix_padded_with_zeros((struct in6_addr *)ipv6->src)) {
+	if (net_6lo_ll_prefix_padded_with_zeros(ipv6->src)) {
 		inline_pos = compress_sa(ipv6, pkt, inline_pos, &iphc);
 		goto sa_end;
 	}
 
-	if (net_ipv6_is_addr_unspecified((struct in6_addr *)ipv6->src)) {
+	if (net_ipv6_is_addr_unspecified((struct net_in6_addr *)ipv6->src)) {
 		NET_DBG("SAM_00, SAC_1 unspecified src address");
 
 		/* Unspecified IPv6 src address */
@@ -827,7 +819,7 @@ sa_end:
 #endif
 
 	inline_pos -= sizeof(iphc);
-	iphc = htons(iphc);
+	iphc = net_htons(iphc);
 	memmove(inline_pos, &iphc, sizeof(iphc));
 
 	compressed = inline_pos - pkt->buffer->data;
@@ -928,7 +920,7 @@ static inline uint8_t *uncompress_sa(uint16_t iphc, uint8_t *cursor,
 				 struct net_ipv6_hdr *ipv6,
 				 struct net_pkt *pkt)
 {
-	struct in6_addr src_ip;
+	struct net_in6_addr src_ip;
 
 	NET_DBG("SAC_0");
 
@@ -989,7 +981,7 @@ static inline uint8_t *uncompress_sa_ctx(uint16_t iphc, uint8_t *cursor,
 				     struct net_6lo_context *ctx,
 				     struct net_pkt *pkt)
 {
-	struct in6_addr src_ip;
+	struct net_in6_addr src_ip;
 
 	net_ipv6_addr_copy_raw((uint8_t *)&src_ip, ipv6->src);
 
@@ -1049,7 +1041,7 @@ static inline uint8_t *uncompress_sa_ctx(uint16_t iphc, uint8_t *cursor,
 static inline uint8_t *uncompress_da_mcast(uint16_t iphc, uint8_t *cursor,
 				       struct net_ipv6_hdr *ipv6)
 {
-	struct in6_addr dst_ip;
+	struct net_in6_addr dst_ip;
 
 	NET_DBG("Dst is multicast");
 
@@ -1134,7 +1126,7 @@ static inline uint8_t *uncompress_da(uint16_t iphc, uint8_t *cursor,
 				 struct net_ipv6_hdr *ipv6,
 				 struct net_pkt *pkt)
 {
-	struct in6_addr dst_ip;
+	struct net_in6_addr dst_ip;
 
 	NET_DBG("DAC_0");
 
@@ -1196,7 +1188,7 @@ static inline uint8_t *uncompress_da_ctx(uint16_t iphc, uint8_t *cursor,
 				     struct net_6lo_context *ctx,
 				     struct net_pkt *pkt)
 {
-	struct in6_addr dst_ip;
+	struct net_in6_addr dst_ip;
 
 	NET_DBG("DAC_1");
 
@@ -1283,7 +1275,7 @@ static uint8_t *uncompress_nh_udp(uint8_t nhc, uint8_t *cursor,
 
 		memmove(&udp->src_port, cursor, sizeof(udp->src_port));
 		cursor += sizeof(udp->src_port);
-		udp->dst_port = htons(((uint16_t)NET_6LO_NHC_UDP_8_BIT_PORT << 8) |
+		udp->dst_port = net_htons(((uint16_t)NET_6LO_NHC_UDP_8_BIT_PORT << 8) |
 				*cursor);
 		cursor++;
 
@@ -1291,7 +1283,7 @@ static uint8_t *uncompress_nh_udp(uint8_t nhc, uint8_t *cursor,
 	case NET_6LO_NHC_UDP_PORT_10:
 		NET_DBG("src 8 bits, dst full inlined");
 
-		udp->src_port = htons(((uint16_t)NET_6LO_NHC_UDP_8_BIT_PORT << 8) |
+		udp->src_port = net_htons(((uint16_t)NET_6LO_NHC_UDP_8_BIT_PORT << 8) |
 				*cursor);
 		cursor++;
 		memmove(&udp->dst_port, cursor, sizeof(udp->dst_port));
@@ -1301,10 +1293,10 @@ static uint8_t *uncompress_nh_udp(uint8_t nhc, uint8_t *cursor,
 	case NET_6LO_NHC_UDP_PORT_11:
 		NET_DBG("src and dst 4 bits inlined");
 
-		udp->src_port = htons((NET_6LO_NHC_UDP_4_BIT_PORT << 4) |
+		udp->src_port = net_htons((NET_6LO_NHC_UDP_4_BIT_PORT << 4) |
 				(*cursor >> 4));
 
-		udp->dst_port = htons((NET_6LO_NHC_UDP_4_BIT_PORT << 4) |
+		udp->dst_port = net_htons((NET_6LO_NHC_UDP_4_BIT_PORT << 4) |
 				(*cursor & 0x0F));
 		cursor++;
 
@@ -1361,7 +1353,7 @@ static bool uncompress_IPHC_header(struct net_pkt *pkt)
 	struct net_6lo_context *dst = NULL;
 #endif
 
-	iphc = ntohs(UNALIGNED_GET((uint16_t *)pkt->buffer->data));
+	iphc = net_ntohs(UNALIGNED_GET((uint16_t *)pkt->buffer->data));
 
 	inline_size = get_ihpc_inlined_size(iphc);
 	if (inline_size < 0) {
@@ -1493,7 +1485,7 @@ static bool uncompress_IPHC_header(struct net_pkt *pkt)
 	}
 
 	if (iphc & NET_6LO_IPHC_NH_MASK) {
-		ipv6->nexthdr = IPPROTO_UDP;
+		ipv6->nexthdr = NET_IPPROTO_UDP;
 		udp = (struct net_udp_hdr *)(frag->data + NET_IPV6H_LEN);
 		/* skip nhc */
 		cursor++;
@@ -1507,10 +1499,10 @@ static bool uncompress_IPHC_header(struct net_pkt *pkt)
 
 	/* Set IPv6 header and UDP (if next header is) length */
 	len = net_pkt_get_len(pkt) - NET_IPV6H_LEN;
-	ipv6->len = htons(len);
+	ipv6->len = net_htons(len);
 
-	if (ipv6->nexthdr == IPPROTO_UDP && udp) {
-		udp->len = htons(len);
+	if (ipv6->nexthdr == NET_IPPROTO_UDP && udp) {
+		udp->len = net_htons(len);
 
 		if (nhc & NET_6LO_NHC_UDP_CHECKSUM) {
 			udp->chksum = net_calc_chksum_udp(pkt);
@@ -1610,7 +1602,7 @@ int net_6lo_uncompress_hdr_diff(struct net_pkt *pkt)
 		return 0;
 	}
 
-	iphc = ntohs(UNALIGNED_GET((uint16_t *)pkt->buffer->data));
+	iphc = net_ntohs(UNALIGNED_GET((uint16_t *)pkt->buffer->data));
 
 	inline_size = get_ihpc_inlined_size(iphc);
 	if (inline_size < 0) {

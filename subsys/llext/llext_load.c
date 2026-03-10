@@ -107,11 +107,12 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 
 	size_t sect_map_sz = ext->sect_cnt * sizeof(ldr->sect_map[0]);
 
-	ldr->sect_map = llext_alloc(sect_map_sz);
+	ldr->sect_map = llext_alloc_metadata(sect_map_sz);
 	if (!ldr->sect_map) {
 		LOG_ERR("Failed to allocate section map, size %zu", sect_map_sz);
 		return -ENOMEM;
 	}
+	ext->alloc_size += sect_map_sz;
 	for (int i = 0; i < ext->sect_cnt; i++) {
 		ldr->sect_map[i].mem_idx = LLEXT_MEM_COUNT;
 		ldr->sect_map[i].offset = 0;
@@ -124,7 +125,7 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 		size_t sect_hdrs_sz = ext->sect_cnt * sizeof(ext->sect_hdrs[0]);
 
 		ext->sect_hdrs_on_heap = true;
-		ext->sect_hdrs = llext_alloc(sect_hdrs_sz);
+		ext->sect_hdrs = llext_alloc_metadata(sect_hdrs_sz);
 		if (!ext->sect_hdrs) {
 			LOG_ERR("Failed to allocate section headers, size %zu", sect_hdrs_sz);
 			return -ENOMEM;
@@ -161,38 +162,39 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 	for (i = 0, table_cnt = 0; i < ext->sect_cnt && table_cnt < 3; ++i) {
 		elf_shdr_t *shdr = ext->sect_hdrs + i;
 
-		LOG_DBG("section %d at 0x%zx: name %d, type %d, flags 0x%zx, "
-			"addr 0x%zx, size %zd, link %d, info %d",
+		LOG_DBG("section %d at %#zx: name %d, type %d, flags %#zx, "
+			"addr %#zx, align %#zx, size %zd, link %d, info %d",
 			i,
 			(size_t)shdr->sh_offset,
 			shdr->sh_name,
 			shdr->sh_type,
 			(size_t)shdr->sh_flags,
 			(size_t)shdr->sh_addr,
+			(size_t)shdr->sh_addralign,
 			(size_t)shdr->sh_size,
 			shdr->sh_link,
 			shdr->sh_info);
 
 		if (shdr->sh_type == SHT_SYMTAB && ldr->hdr.e_type == ET_REL) {
 			LOG_DBG("symtab at %d", i);
-			ldr->sects[LLEXT_MEM_SYMTAB] = *shdr;
+			memcpy(&ldr->sects[LLEXT_MEM_SYMTAB], shdr, sizeof(*shdr));
 			ldr->sect_map[i].mem_idx = LLEXT_MEM_SYMTAB;
 			strtab_ndx = shdr->sh_link;
 			table_cnt++;
 		} else if (shdr->sh_type == SHT_DYNSYM && ldr->hdr.e_type == ET_DYN) {
 			LOG_DBG("dynsym at %d", i);
-			ldr->sects[LLEXT_MEM_SYMTAB] = *shdr;
+			memcpy(&ldr->sects[LLEXT_MEM_SYMTAB], shdr, sizeof(*shdr));
 			ldr->sect_map[i].mem_idx = LLEXT_MEM_SYMTAB;
 			strtab_ndx = shdr->sh_link;
 			table_cnt++;
 		} else if (shdr->sh_type == SHT_STRTAB && i == shstrtab_ndx) {
 			LOG_DBG("shstrtab at %d", i);
-			ldr->sects[LLEXT_MEM_SHSTRTAB] = *shdr;
+			memcpy(&ldr->sects[LLEXT_MEM_SHSTRTAB], shdr, sizeof(*shdr));
 			ldr->sect_map[i].mem_idx = LLEXT_MEM_SHSTRTAB;
 			table_cnt++;
 		} else if (shdr->sh_type == SHT_STRTAB && i == strtab_ndx) {
 			LOG_DBG("strtab at %d", i);
-			ldr->sects[LLEXT_MEM_STRTAB] = *shdr;
+			memcpy(&ldr->sects[LLEXT_MEM_STRTAB], shdr, sizeof(*shdr));
 			ldr->sect_map[i].mem_idx = LLEXT_MEM_STRTAB;
 			table_cnt++;
 		}
@@ -205,12 +207,31 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 		return -ENOEXEC;
 	}
 
+	if (ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize != sizeof(elf_sym_t) ||
+	    ldr->sects[LLEXT_MEM_SYMTAB].sh_size % ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize != 0) {
+		LOG_ERR("Invalid symbol table");
+		return -ENOEXEC;
+	}
+
 	return 0;
 }
 
+/* First (bottom) and last (top) entries of a region, inclusive, for a specific field. */
+#define REGION_BOT(reg, field) (size_t)(reg->field + reg->sh_info)
+#define REGION_TOP(reg, field) (size_t)(reg->field + reg->sh_size - 1)
+
+/* Check if two regions x and y have any overlap on a given field. Any shared value counts. */
+#define REGIONS_OVERLAP_ON(x, y, f) \
+	((REGION_BOT(x, f) <= REGION_BOT(y, f) && REGION_TOP(x, f) >= REGION_BOT(y, f)) || \
+	 (REGION_BOT(y, f) <= REGION_BOT(x, f) && REGION_TOP(y, f) >= REGION_BOT(x, f)))
+
 /*
- * Maps the ELF sections into regions according to their usage flags,
- * calculating ldr->sects and ldr->sect_map.
+ * Loops through all defined ELF sections and collapses those with similar
+ * usage flags into LLEXT "regions", taking alignment constraints into account.
+ * Checks the generated regions for overlaps and calculates the offset of each
+ * section within its region.
+ *
+ * This information is stored in the ldr->sects and ldr->sect_map arrays.
  */
 static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			      const struct llext_load_param *ldr_parm)
@@ -221,7 +242,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 	for (i = 0; i < ext->sect_cnt; ++i) {
 		elf_shdr_t *shdr = ext->sect_hdrs + i;
 
-		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr->sh_name);
+		name = llext_section_name(ldr, ext, shdr);
 
 		if (ldr->sect_map[i].mem_idx != LLEXT_MEM_COUNT) {
 			LOG_DBG("section %d name %s already mapped to region %d",
@@ -241,6 +262,10 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				mem_idx = LLEXT_MEM_TEXT;
 			} else if (shdr->sh_flags & SHF_WRITE) {
 				mem_idx = LLEXT_MEM_DATA;
+#ifdef CONFIG_LLEXT_RODATA_NO_RELOC
+			} else if (strcmp(name, LLEXT_SECTION_RODATA_NO_RELOC) == 0) {
+				mem_idx = LLEXT_MEM_RODATA_NO_RELOC;
+#endif
 			} else {
 				mem_idx = LLEXT_MEM_RODATA;
 			}
@@ -290,11 +315,28 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 		elf_shdr_t *region = ldr->sects + mem_idx;
 
 		/*
-		 * ELF objects can have sections for memory regions, detached from
-		 * other sections of the same type. E.g. executable sections that will be
-		 * placed in slower memory. Don't merge such sections into main regions
+		 * Some applications may require specific ELF sections to not
+		 * be included in their default memory regions; e.g. the ELF
+		 * file may contain executable sections that are designed to be
+		 * placed in slower memory. Don't merge such sections into main
+		 * regions.
 		 */
 		if (ldr_parm->section_detached && ldr_parm->section_detached(shdr)) {
+			if (mem_idx == LLEXT_MEM_TEXT &&
+			    !INSTR_FETCHABLE(llext_peek(ldr, shdr->sh_offset), shdr->sh_size)) {
+#ifdef CONFIG_ARC
+				LOG_ERR("ELF buffer's detached text section %s not in instruction "
+					"memory: %p-%p",
+					name, (void *)(llext_peek(ldr, shdr->sh_offset)),
+					(void *)((char *)llext_peek(ldr, shdr->sh_offset) +
+						 shdr->sh_size));
+				return -ENOEXEC;
+#else
+				LOG_WRN("Unknown if ELF buffer's detached text section %s is in "
+					"instruction memory; proceeding...",
+					name);
+#endif
+			}
 			continue;
 		}
 
@@ -303,65 +345,109 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			 * region descriptor.
 			 */
 			memcpy(region, shdr, sizeof(*region));
-		} else {
-			/* Make sure this section is compatible with the region */
-			if ((shdr->sh_flags & SHF_BASIC_TYPE_MASK) !=
-			    (region->sh_flags & SHF_BASIC_TYPE_MASK)) {
-				LOG_ERR("Unsupported section flags %#x / %#x for %s (region %d)",
-					(uint32_t)shdr->sh_flags, (uint32_t)region->sh_flags,
+			continue;
+		}
+
+		/* Make sure this section is compatible with the existing region */
+		if ((shdr->sh_flags & SHF_BASIC_TYPE_MASK) !=
+		    (region->sh_flags & SHF_BASIC_TYPE_MASK)) {
+			LOG_ERR("Unsupported section flags %#x / %#x for %s (region %d)",
+				(uint32_t)shdr->sh_flags, (uint32_t)region->sh_flags,
+				name, mem_idx);
+			return -ENOEXEC;
+		}
+
+		/* Check if this region type is extendable */
+		switch (mem_idx) {
+		case LLEXT_MEM_BSS:
+			/* SHT_NOBITS sections cannot be merged properly:
+			 * as they use no space in the file, the logic
+			 * below does not work; they must be treated as
+			 * independent entities.
+			 */
+			LOG_ERR("Multiple SHT_NOBITS sections are not supported");
+			return -ENOTSUP;
+		case LLEXT_MEM_PREINIT:
+		case LLEXT_MEM_INIT:
+		case LLEXT_MEM_FINI:
+			/* These regions are not extendable and must be
+			 * referenced at most once in the ELF file.
+			 */
+			LOG_ERR("Region %d redefined", mem_idx);
+			return -ENOEXEC;
+		default:
+			break;
+		}
+
+		if (ldr->hdr.e_type == ET_DYN) {
+			/* In shared objects, sh_addr is the VMA.
+			 * Before merging this section in the region,
+			 * make sure the delta in VMAs matches that of
+			 * file offsets.
+			 */
+			if (shdr->sh_addr - region->sh_addr !=
+			    shdr->sh_offset - region->sh_offset) {
+				LOG_ERR("Incompatible section addresses for %s (region %d)",
 					name, mem_idx);
 				return -ENOEXEC;
 			}
-
-			/* Check if this region type is extendable */
-			switch (mem_idx) {
-			case LLEXT_MEM_BSS:
-				/* SHT_NOBITS sections cannot be merged properly:
-				 * as they use no space in the file, the logic
-				 * below does not work; they must be treated as
-				 * independent entities.
-				 */
-				LOG_ERR("Multiple SHT_NOBITS sections are not supported");
-				return -ENOTSUP;
-			case LLEXT_MEM_PREINIT:
-			case LLEXT_MEM_INIT:
-			case LLEXT_MEM_FINI:
-				/* These regions are not extendable and must be
-				 * referenced at most once in the ELF file.
-				 */
-				LOG_ERR("Region %d redefined", mem_idx);
-				return -ENOEXEC;
-			default:
-				break;
-			}
-
-			if (ldr->hdr.e_type == ET_DYN) {
-				/* In shared objects, sh_addr is the VMA.
-				 * Before merging this section in the region,
-				 * make sure the delta in VMAs matches that of
-				 * file offsets.
-				 */
-				if (shdr->sh_addr - region->sh_addr !=
-				    shdr->sh_offset - region->sh_offset) {
-					LOG_ERR("Incompatible section addresses "
-						"for %s (region %d)", name, mem_idx);
-					return -ENOEXEC;
-				}
-			}
-
-			/*
-			 * Extend the current region to include the new section
-			 * (overlaps are detected later)
-			 */
-			size_t address = MIN(region->sh_addr, shdr->sh_addr);
-			size_t bot_ofs = MIN(region->sh_offset, shdr->sh_offset);
-			size_t top_ofs = MAX(region->sh_offset + region->sh_size,
-					     shdr->sh_offset + shdr->sh_size);
-
-			region->sh_addr = address;
-			region->sh_offset = bot_ofs;
-			region->sh_size = top_ofs - bot_ofs;
 		}
+
+		/*
+		 * Extend the current region to include the new section
+		 * (overlaps are detected later)
+		 */
+		size_t address = MIN(region->sh_addr, shdr->sh_addr);
+		size_t bot_ofs = MIN(region->sh_offset, shdr->sh_offset);
+		size_t top_ofs = MAX(region->sh_offset + region->sh_size,
+				     shdr->sh_offset + shdr->sh_size);
+		size_t addralign = MAX(region->sh_addralign, shdr->sh_addralign);
+
+		region->sh_addr = address;
+		region->sh_offset = bot_ofs;
+		region->sh_size = top_ofs - bot_ofs;
+		region->sh_addralign = addralign;
+	}
+
+	/*
+	 * Make sure each of the mapped sections satisfies its alignment
+	 * requirement when placed in the region.
+	 *
+	 * The ELF standard already guarantees that each section's offset in
+	 * the file satisfies its own alignment, and since only powers of 2 can
+	 * be specified, a solution satisfying the largest alignment will also
+	 * work for any smaller one. Aligning the ELF region to the largest
+	 * requirement among the contained sections will then guarantee that
+	 * all are properly aligned.
+	 *
+	 * However, adjusting the region's start address will make the region
+	 * appear larger than it actually is, and might even make it overlap
+	 * with others. To allow for further precise adjustments, the length of
+	 * the calculated pre-padding area is stored in the 'sh_info' field of
+	 * the region descriptor, which is not used on any SHF_ALLOC section.
+	 */
+	for (i = 0; i < LLEXT_MEM_COUNT; i++) {
+		elf_shdr_t *region = ldr->sects + i;
+
+		if (region->sh_type == SHT_NULL || region->sh_size == 0) {
+			/* Skip empty regions */
+			continue;
+		}
+
+		size_t prepad = region->sh_offset & (region->sh_addralign - 1);
+
+		if (ldr->hdr.e_type == ET_DYN) {
+			/* Only shared files populate sh_addr fields */
+			if (prepad > region->sh_addr) {
+				LOG_ERR("Bad section alignment in region %d", i);
+				return -ENOEXEC;
+			}
+
+			region->sh_addr -= prepad;
+		}
+		region->sh_offset -= prepad;
+		region->sh_size += prepad;
+		region->sh_info = prepad;
 	}
 
 	/*
@@ -402,14 +488,11 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				/*
 				 * Test regions that have VMA ranges for overlaps
 				 */
-				if ((x->sh_addr <= y->sh_addr &&
-				     x->sh_addr + x->sh_size > y->sh_addr) ||
-				    (y->sh_addr <= x->sh_addr &&
-				     y->sh_addr + y->sh_size > x->sh_addr)) {
-					LOG_ERR("Region %d VMA range (0x%zx +%zd) "
-						"overlaps with %d (0x%zx +%zd)",
-						i, (size_t)x->sh_addr, (size_t)x->sh_size,
-						j, (size_t)y->sh_addr, (size_t)y->sh_size);
+				if (REGIONS_OVERLAP_ON(x, y, sh_addr)) {
+					LOG_ERR("Region %d VMA range (%#zx-%#zx) "
+						"overlaps with %d (%#zx-%#zx)",
+						i, REGION_BOT(x, sh_addr), REGION_TOP(x, sh_addr),
+						j, REGION_BOT(y, sh_addr), REGION_TOP(y, sh_addr));
 					return -ENOEXEC;
 				}
 			}
@@ -423,14 +506,11 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				continue;
 			}
 
-			if ((x->sh_offset <= y->sh_offset &&
-			     x->sh_offset + x->sh_size > y->sh_offset) ||
-			    (y->sh_offset <= x->sh_offset &&
-			     y->sh_offset + y->sh_size > x->sh_offset)) {
-				LOG_ERR("Region %d ELF file range (0x%zx +%zd) "
-					"overlaps with %d (0x%zx +%zd)",
-					i, (size_t)x->sh_offset, (size_t)x->sh_size,
-					j, (size_t)y->sh_offset, (size_t)y->sh_size);
+			if (REGIONS_OVERLAP_ON(x, y, sh_offset)) {
+				LOG_ERR("Region %d ELF file range (%#zx-%#zx) "
+					"overlaps with %d (%#zx-%#zx)",
+					i, REGION_BOT(x, sh_offset), REGION_TOP(x, sh_offset),
+					j, REGION_BOT(y, sh_offset), REGION_TOP(y, sh_offset));
 				return -ENOEXEC;
 			}
 		}
@@ -439,15 +519,31 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 	/*
 	 * Calculate each ELF section's offset inside its memory region. This
 	 * is done as a separate pass so the final regions are already defined.
+	 * Also mark the regions that include relocation targets.
 	 */
 	for (i = 0; i < ext->sect_cnt; ++i) {
 		elf_shdr_t *shdr = ext->sect_hdrs + i;
 		enum llext_mem mem_idx = ldr->sect_map[i].mem_idx;
 
+		if (shdr->sh_type == SHT_REL || shdr->sh_type == SHT_RELA) {
+			enum llext_mem target_region = ldr->sect_map[shdr->sh_info].mem_idx;
+
+			if (target_region != LLEXT_MEM_COUNT) {
+				ldr->sects[target_region].sh_flags |= SHF_LLEXT_HAS_RELOCS;
+			}
+		}
+
 		if (mem_idx != LLEXT_MEM_COUNT) {
 			ldr->sect_map[i].offset = shdr->sh_offset - ldr->sects[mem_idx].sh_offset;
 		}
 	}
+
+#ifdef CONFIG_LLEXT_RODATA_NO_RELOC
+	if (ldr->sects[LLEXT_MEM_RODATA_NO_RELOC].sh_flags & SHF_LLEXT_HAS_RELOCS) {
+		LOG_ERR("%s has relocations", LLEXT_SECTION_RODATA_NO_RELOC);
+		return -ENOEXEC;
+	}
+#endif
 
 	return 0;
 }
@@ -457,6 +553,8 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 	size_t ent_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize;
 	size_t syms_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_size;
 	int sym_cnt = syms_size / sizeof(elf_sym_t);
+	elf_shdr_t *str_region = ldr->sects + LLEXT_MEM_STRTAB;
+	size_t str_reg_size = str_region->sh_size;
 	const char *name;
 	elf_sym_t sym;
 	int i, ret;
@@ -483,11 +581,17 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 			return ret;
 		}
 
+		if (sym.st_name >= str_reg_size) {
+			LOG_ERR("Invalid symbol name index %d in symbol %d",
+				sym.st_name, i);
+			return -ENOEXEC;
+		}
+
 		uint32_t stt = ELF_ST_TYPE(sym.st_info);
 		uint32_t stb = ELF_ST_BIND(sym.st_info);
 		uint32_t sect = sym.st_shndx;
 
-		name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
+		name = llext_symbol_name(ldr, ext, &sym);
 
 		if ((stt == STT_FUNC || stt == STT_OBJECT) && stb == STB_GLOBAL) {
 			LOG_DBG("function symbol %d, name %s, type tag %d, bind %d, sect %d",
@@ -507,7 +611,7 @@ static int llext_allocate_symtab(struct llext_loader *ldr, struct llext *ext)
 	struct llext_symtable *sym_tab = &ext->sym_tab;
 	size_t syms_size = sym_tab->sym_cnt * sizeof(struct llext_symbol);
 
-	sym_tab->syms = llext_alloc(syms_size);
+	sym_tab->syms = llext_alloc_metadata(syms_size);
 	if (!sym_tab->syms) {
 		return -ENOMEM;
 	}
@@ -517,7 +621,8 @@ static int llext_allocate_symtab(struct llext_loader *ldr, struct llext *ext)
 	return 0;
 }
 
-static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext)
+static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext,
+				const struct llext_load_param *ldr_parm)
 {
 	struct llext_symtable *exp_tab = &ext->exp_tab;
 	struct llext_symbol *sym;
@@ -539,13 +644,31 @@ static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext)
 		return 0;
 	}
 
-	exp_tab->syms = llext_alloc(exp_tab->sym_cnt * sizeof(struct llext_symbol));
+	exp_tab->syms = llext_alloc_metadata(exp_tab->sym_cnt * sizeof(struct llext_symbol));
 	if (!exp_tab->syms) {
 		return -ENOMEM;
 	}
 
 	for (i = 0; i < exp_tab->sym_cnt; i++, sym++) {
-		exp_tab->syms[i].name = sym->name;
+		/*
+		 * Offsets in objects, built for pre-defined addresses have to
+		 * be translated to memory locations for symbol name access
+		 * during dependency resolution.
+		 */
+		const char *name = NULL;
+
+		if (ldr_parm->pre_located) {
+			ssize_t name_offset = llext_file_offset(ldr, (uintptr_t)sym->name);
+
+			if (name_offset > 0) {
+				name = llext_peek(ldr, name_offset);
+			}
+		}
+		if (!name) {
+			name = sym->name;
+		}
+
+		exp_tab->syms[i].name = name;
 		exp_tab->syms[i].addr = sym->addr;
 		LOG_DBG("sym %p name %s", sym->addr, sym->name);
 	}
@@ -588,7 +711,7 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 
 		if ((stt == STT_FUNC || stt == STT_OBJECT) &&
 		    stb == STB_GLOBAL && shndx != SHN_UNDEF) {
-			const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
+			const char *name = llext_symbol_name(ldr, ext, &sym);
 
 			__ASSERT(j <= sym_tab->sym_cnt, "Miscalculated symbol number %u\n", j);
 
@@ -632,6 +755,25 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 	return 0;
 }
 
+static int llext_validate_sections_name(struct llext_loader *ldr, struct llext *ext)
+{
+	const elf_shdr_t *shstrtab = ldr->sects + LLEXT_MEM_SHSTRTAB;
+	size_t shstrtab_size = shstrtab->sh_size;
+	int i;
+
+	for (i = 0; i < ext->sect_cnt; i++) {
+		elf_shdr_t *shdr = ext->sect_hdrs + i;
+
+		if (shdr->sh_name >= shstrtab_size) {
+			LOG_ERR("Invalid section name index %d in section %d",
+				shdr->sh_name, i);
+			return -ENOEXEC;
+		}
+	}
+
+	return 0;
+}
+
 /*
  * Load a valid ELF as an extension
  */
@@ -664,14 +806,6 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		goto out;
 	}
 
-#ifdef CONFIG_USERSPACE
-	ret = k_mem_domain_init(&ext->mem_domain, 0, NULL);
-	if (ret != 0) {
-		LOG_ERR("Failed to initialize extenion memory domain %d", ret);
-		goto out;
-	}
-#endif
-
 	LOG_DBG("Finding ELF tables...");
 	ret = llext_find_tables(ldr, ext);
 	if (ret != 0) {
@@ -680,9 +814,15 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	}
 
 	LOG_DBG("Allocate and copy strings...");
-	ret = llext_copy_strings(ldr, ext);
+	ret = llext_copy_strings(ldr, ext, ldr_parm);
 	if (ret != 0) {
 		LOG_ERR("Failed to copy ELF string sections, ret %d", ret);
+		goto out;
+	}
+
+	ret = llext_validate_sections_name(ldr, ext);
+	if (ret != 0) {
+		LOG_ERR("Failed to validate ELF section names, ret %d", ret);
 		goto out;
 	}
 
@@ -730,29 +870,32 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		}
 	}
 
-	ret = llext_export_symbols(ldr, ext);
+	ret = llext_export_symbols(ldr, ext, ldr_parm);
 	if (ret != 0) {
 		LOG_ERR("Failed to export, ret %d", ret);
 		goto out;
 	}
 
-	llext_adjust_mmu_permissions(ext);
+	if (!ldr_parm->pre_located) {
+		llext_adjust_mmu_permissions(ext);
+	}
 
 out:
 	/*
-	 * Free resources only used during loading. Note that this exploits
-	 * the fact that freeing a NULL pointer has no effect.
+	 * Free resources only used during loading, unless explicitly requested.
+	 * Note that this exploits the fact that freeing a NULL pointer has no effect.
 	 */
 
-	llext_free(ldr->sect_map);
-	ldr->sect_map = NULL;
+	if (ret != 0 || !ldr_parm->keep_section_info) {
+		llext_free_inspection_data(ldr, ext);
+	}
 
 	/* Until proper inter-llext linking is implemented, the symbol table is
 	 * not useful outside of the loading process; keep it only if debugging
 	 * is enabled and no error is detected.
 	 */
 	if (!(IS_ENABLED(CONFIG_LLEXT_LOG_LEVEL_DBG) && ret == 0)) {
-		llext_free(ext->sym_tab.syms);
+		llext_free_metadata(ext->sym_tab.syms);
 		ext->sym_tab.sym_cnt = 0;
 		ext->sym_tab.syms = NULL;
 	}
@@ -765,15 +908,26 @@ out:
 		 * such as regions and exported symbols.
 		 */
 		llext_free_regions(ext);
-		llext_free(ext->exp_tab.syms);
+		llext_free_metadata(ext->exp_tab.syms);
 		ext->exp_tab.sym_cnt = 0;
 		ext->exp_tab.syms = NULL;
 	} else {
-		LOG_DBG("loaded module, .text at %p, .rodata at %p", ext->mem[LLEXT_MEM_TEXT],
-			ext->mem[LLEXT_MEM_RODATA]);
+		LOG_DBG("Loaded llext: %zu bytes in heap, .text at %p, .rodata at %p",
+			ext->alloc_size, ext->mem[LLEXT_MEM_TEXT], ext->mem[LLEXT_MEM_RODATA]);
 	}
 
 	llext_finalize(ldr);
 
 	return ret;
+}
+
+int llext_free_inspection_data(struct llext_loader *ldr, struct llext *ext)
+{
+	if (ldr->sect_map) {
+		ext->alloc_size -= ext->sect_cnt * sizeof(ldr->sect_map[0]);
+		llext_free_metadata(ldr->sect_map);
+		ldr->sect_map = NULL;
+	}
+
+	return 0;
 }

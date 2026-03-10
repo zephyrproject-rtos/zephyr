@@ -1,7 +1,7 @@
 .. _nrf54l15bsim:
 
-NRF54L15 simulated boards (BabbleSim)
-#####################################
+NRF54L15 simulated board (BabbleSim)
+####################################
 
 .. contents::
    :depth: 1
@@ -12,7 +12,7 @@ NRF54L15 simulated boards (BabbleSim)
 Overview
 ********
 
-To allow simulating nRF54L15 SOCs a Zephyr target boards is provided: the
+To allow simulating nRF54L15 SOCs, a Zephyr target board is provided: the
 ``nrf54l15bsim/nrf54l15/cpuapp``.
 
 This uses `BabbleSim`_ to simulate the radio activity, and the
@@ -35,7 +35,7 @@ on the simulated nRF54L15 SOC.
 
    This simulated target does **not** yet support targeting the cpuflpr core.
 
-This boards include models of some of the nRF54L15 SOC peripherals:
+This board includes models of some of the nRF54L15 SOC peripherals:
 
 * AAR (Accelerated Address Resolver)
 * CCM (AES CCM mode encryption)
@@ -76,6 +76,8 @@ You can follow the instructions from the :ref:`nrf52_bsim board <nrf52bsim_build
 Simply change the board/target appropriately when building.
 
 
+.. _nrf54l15bsim_tz:
+
 TrustZone, TF-M and other security considerations
 *************************************************
 
@@ -90,6 +92,4 @@ ARM's TrustZone is not modeled in this board. This means that:
   can be labeled as restricted for secure or non secure access.
 * TF-M cannot be used.
 
-Note that the CRACEN peripheral is not modeled.
 As crypto library, Mbed TLS can be used with its SW crypto backend.
-As entropy driver, the :dtcompatible:`zephyr,native-posix-rng` is enabled by default.

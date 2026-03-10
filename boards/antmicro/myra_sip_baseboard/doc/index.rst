@@ -102,62 +102,21 @@ Other board's peripherals:
 
   - Relative humidity accuracy: ±1.0% RH
   - Operating humidity range: 0-100% RH
-  - Temperature accuracy: ±0.1°C
-  - Operating temperature range: -40°C to 125°C
+  - Temperature accuracy: ±0.1 °C
+  - Operating temperature range: -40 °C to 125 °C
 - BME280 sensor:
 
   - Relative humidity accuracy: ±3% RH
-  - Temperature accuracy: ±1°C
+  - Temperature accuracy: ±1 C
   - Pressure accuracy: ±1 hPa
-  - Operating temperature range: -40°C to 85°C
+  - Operating temperature range: -40 °C to 85 °C
   - Pressure range: 300-1100 hPa
 - QWIIC connectors: For easy peripheral expansion.
 
 Supported Features
 ------------------
 
-The Zephyr ``myra_sip_baseboard`` board target supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling; serial         |
-|           |            | port-interrupt                      |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | dac controller                      |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| EEPROM    | on-chip    | eeprom                              |
-+-----------+------------+-------------------------------------+
-| NVS       | on-chip    | nvs                                 |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| die-temp  | on-chip    | die temperature sensor              |
-+-----------+------------+-------------------------------------+
-| FDCAN1    | on-chip    | can controller                      |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 -------------------
@@ -212,6 +171,8 @@ settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``myra_sip_baseboard`` board target can be built and flashed in the usual way (see :ref:`build_an_application` and :ref:`application_run` for more details).
 

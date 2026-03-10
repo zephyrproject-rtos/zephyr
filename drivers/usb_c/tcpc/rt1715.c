@@ -26,6 +26,8 @@ struct rt1715_data {
 	int init_retries;
 	/** Boolean value if chip was successfully initialized */
 	bool initialized;
+	/** TCPCI Specification Revision */
+	uint8_t pd_int_rev;
 
 	/** Callback for alert GPIO */
 	struct gpio_callback alert_cb;
@@ -265,8 +267,7 @@ static int rt1715_tcpc_rx_fifo_enqueue(const struct device *dev)
 {
 	const struct rt1715_cfg *const cfg = dev->config;
 	struct rt1715_data *data = dev->data;
-	struct i2c_msg buf[5];
-	uint8_t reg = TCPC_REG_RX_BUFFER;
+	uint8_t buf[4];
 	uint8_t rxbcnt;
 	uint8_t rxftype;
 	uint16_t rxhead;
@@ -274,26 +275,14 @@ static int rt1715_tcpc_rx_fifo_enqueue(const struct device *dev)
 	struct pd_msg *msg = &data->rx_msg;
 	int ret = 0;
 
-	buf[0].buf = &reg;
-	buf[0].len = 1;
-	buf[0].flags = I2C_MSG_WRITE;
-
-	buf[1].buf = &rxbcnt;
-	buf[1].len = 1;
-	buf[1].flags = I2C_MSG_RESTART | I2C_MSG_READ;
-
-	buf[2].buf = &rxftype;
-	buf[2].len = 1;
-	buf[2].flags = I2C_MSG_RESTART | I2C_MSG_READ;
-
-	buf[3].buf = (uint8_t *)&rxhead;
-	buf[3].len = 2;
-	buf[3].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
-
-	ret = i2c_transfer(cfg->bus.bus, buf, 5, cfg->bus.addr);
+	ret = i2c_burst_read_dt(&cfg->bus, TCPC_REG_RX_BUFFER, buf, sizeof(buf));
 	if (ret != 0) {
 		return ret;
 	}
+
+	rxbcnt = buf[0];
+	rxftype = buf[1];
+	rxhead = (buf[3] << 8) | buf[2];
 
 	/* rxbcnt = 1 (frame type) + 2 (Message Header) + Rx data byte count */
 	if (rxbcnt < 3) {
@@ -427,8 +416,9 @@ static int rt1715_tcpc_mask_status_register(const struct device *dev, enum tcpc_
 static int rt1715_tcpc_set_drp_toggle(const struct device *dev, bool enable)
 {
 	const struct rt1715_cfg *cfg = dev->config;
+	const struct rt1715_data *data = dev->data;
 
-	return tcpci_tcpm_set_drp_toggle(&cfg->bus, enable);
+	return tcpci_tcpm_set_drp_toggle(&cfg->bus, data->pd_int_rev, enable);
 }
 
 static int rt1715_tcpc_get_chip_info(const struct device *dev, struct tcpc_chip_info *chip_info)
@@ -556,34 +546,13 @@ void rt1715_alert_work_cb(struct k_work *work)
 							 (uint16_t)fault);
 
 			LOG_DBG("fault: %02x", fault);
-		} else if (alert_type == TCPC_ALERT_EXTENDED_STATUS) {
-			uint8_t ext_status;
-
-			tcpci_tcpm_get_status_register(&cfg->bus, TCPC_EXTENDED_STATUS,
-						       (uint16_t *)&ext_status);
-			tcpci_tcpm_clear_status_register(&cfg->bus, TCPC_EXTENDED_STATUS,
-							 (uint16_t)ext_status);
-
-			data->cc_changed = true;
-			LOG_DBG("ext status: %02x", ext_status);
 		} else if (alert_type == TCPC_ALERT_POWER_STATUS) {
 			uint8_t pwr_status;
 
 			tcpci_tcpm_get_status_register(&cfg->bus, TCPC_POWER_STATUS,
 						       (uint16_t *)&pwr_status);
-			tcpci_tcpm_clear_status_register(&cfg->bus, TCPC_POWER_STATUS,
-							 (uint16_t)pwr_status);
 
 			LOG_DBG("power status: %02x", pwr_status);
-		} else if (alert_type == TCPC_ALERT_EXTENDED) {
-			uint8_t alert_status;
-
-			tcpci_tcpm_get_status_register(&cfg->bus, TCPC_EXTENDED_ALERT_STATUS,
-						       (uint16_t *)&alert_status);
-			tcpci_tcpm_clear_status_register(&cfg->bus, TCPC_EXTENDED_ALERT_STATUS,
-							 (uint16_t)alert_status);
-
-			LOG_DBG("ext alert: %02x", alert_status);
 		} else if (alert_type == TCPC_ALERT_MSG_STATUS) {
 			LOG_DBG("MSG pending");
 
@@ -619,6 +588,7 @@ void rt1715_init_work_cb(struct k_work *work)
 	const struct rt1715_cfg *cfg = data->dev->config;
 	uint8_t power_reg, lp_reg = 0;
 	struct tcpc_chip_info chip_info;
+	uint16_t tcpci_rev;
 	int ret;
 
 	LOG_INF("Initializing RT1715 chip: %s", data->dev->name);
@@ -642,6 +612,11 @@ void rt1715_init_work_cb(struct k_work *work)
 	LOG_INF("Initialized chip is: %04x:%04x:%04x", chip_info.vendor_id, chip_info.product_id,
 		chip_info.device_id);
 
+	/* get TCPCI Specification Revision */
+	tcpci_read_reg16(&cfg->bus, TCPC_REG_PD_INT_REV, &tcpci_rev);
+	data->pd_int_rev = TCPC_REG_PD_INT_REV_REV_MAJOR(tcpci_rev) << 4 |
+			   TCPC_REG_PD_INT_REV_REV_MINOR(tcpci_rev);
+
 	/* Exit shutdown mode & Enable ext messages */
 	lp_reg = RT1715_REG_LP_CTRL_SHUTDOWN_OFF | RT1715_REG_LP_CTRL_ENEXTMSG;
 	/* Disable idle mode */
@@ -652,7 +627,14 @@ void rt1715_init_work_cb(struct k_work *work)
 	gpio_pin_configure_dt(&cfg->alert_gpio, GPIO_INPUT);
 
 	gpio_init_callback(&data->alert_cb, rt1715_alert_cb, BIT(cfg->alert_gpio.pin));
-	gpio_add_callback(cfg->alert_gpio.port, &data->alert_cb);
+
+	ret = gpio_add_callback(cfg->alert_gpio.port, &data->alert_cb);
+
+	if (ret != 0) {
+		LOG_ERR("Failed to add alert callback: %d", ret);
+		return;
+	}
+
 	gpio_pin_interrupt_configure_dt(&cfg->alert_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 	tcpci_init_alert_mask(data->dev);

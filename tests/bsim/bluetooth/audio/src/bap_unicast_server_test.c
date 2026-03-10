@@ -114,8 +114,6 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 
 	bt_bap_unicast_server_foreach_ep(conn, print_ase_info, NULL);
 
-	SET_FLAG(flag_stream_configured);
-
 	*pref = qos_pref;
 
 	return 0;
@@ -222,6 +220,23 @@ static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.release = lc3_release,
 };
 
+static void stream_configured_cb(struct bt_bap_stream *stream,
+				 const struct bt_bap_qos_cfg_pref *pref)
+{
+	struct bt_conn *ep_conn;
+
+	printk("Configured stream %p\n", stream);
+
+	ep_conn = bt_bap_ep_get_conn(stream->ep);
+	if (ep_conn == NULL || stream->conn != ep_conn) {
+		FAIL("Invalid conn from endpoint: %p", ep_conn);
+		return;
+	}
+	bt_conn_unref(ep_conn);
+
+	SET_FLAG(flag_stream_configured);
+}
+
 static void stream_enabled_cb(struct bt_bap_stream *stream)
 {
 	struct bt_bap_ep_info ep_info;
@@ -279,6 +294,7 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 }
 
 static struct bt_bap_stream_ops stream_ops = {
+	.configured = stream_configured_cb,
 	.enabled = stream_enabled_cb,
 	.started = stream_started_cb,
 	.stopped = stream_stopped_cb,
@@ -336,8 +352,11 @@ static void transceive_test_streams(void)
 	}
 
 	if (sink_stream != NULL) {
+		struct audio_test_stream *test_stream =
+			audio_test_stream_from_bap_stream(sink_stream);
+
 		printk("Waiting for data\n");
-		WAIT_FOR_FLAG(flag_audio_received);
+		WAIT_FOR_FLAG(test_stream->flag_audio_received);
 	}
 }
 
@@ -407,7 +426,7 @@ static void init(void)
 	static struct bt_pacs_cap cap = {
 		.codec_cap = &lc3_codec_cap,
 	};
-	const struct bt_bap_pacs_register_param pacs_param = {
+	const struct bt_pacs_register_param pacs_param = {
 #if defined(CONFIG_BT_PAC_SNK)
 		.snk_pac = true,
 #endif /* CONFIG_BT_PAC_SNK */
@@ -418,7 +437,7 @@ static void init(void)
 		.src_pac = true,
 #endif /* CONFIG_BT_PAC_SRC */
 #if defined(CONFIG_BT_PAC_SRC_LOC)
-		.src_loc = true
+		.src_loc = true,
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 	};
 	int err;
@@ -471,6 +490,29 @@ static void init(void)
 	setup_connectable_adv(&ext_adv);
 }
 
+static void deinit(void)
+{
+	int err;
+
+	err = bt_bap_unicast_server_unregister_cb(&unicast_server_cb);
+	if (err != 0) {
+		FAIL("Failed to unregister unicast server callbacks (err %d)\n", err);
+		return;
+	}
+
+	err = bt_bap_unicast_server_unregister();
+	if (err != 0) {
+		FAIL("Failed to unregister unicast server (err %d)\n", err);
+		return;
+	}
+
+	err = bt_pacs_unregister();
+	if (err != 0) {
+		FAIL("Failed to unregister PACS (err %d)\n", err);
+		return;
+	}
+}
+
 static void test_main(void)
 {
 	init();
@@ -484,6 +526,8 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_stream_started);
 	transceive_test_streams();
 	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	deinit();
 	PASS("Unicast server passed\n");
 }
 
@@ -540,6 +584,8 @@ static void test_main_acl_disconnect(void)
 	/* The client will reconnect */
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 	WAIT_FOR_FLAG(flag_connected);
+
+	deinit();
 	PASS("Unicast server ACL disconnect  passed\n");
 }
 

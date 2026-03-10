@@ -7,23 +7,18 @@
 Tests for testinstance class
 """
 
-from contextlib import nullcontext
 import os
-import sys
+from contextlib import nullcontext
+from unittest import mock
+
 import pytest
-import mock
-
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
-
-from pylib.twister.twisterlib.platform import Simulator
+from expr_parser import reserved
+from twisterlib.error import BuildError
+from twisterlib.handlers import QEMUHandler
+from twisterlib.platform import Simulator
+from twisterlib.runner import TwisterRunner
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
-from twisterlib.error import BuildError
-from twisterlib.runner import TwisterRunner
-from twisterlib.handlers import QEMUHandler
-from expr_parser import reserved
-
 
 TESTDATA_PART_1 = [
     (False, False, "console", None, "qemu", False, [], (False, True)),
@@ -96,13 +91,13 @@ def test_check_build_or_run(
 
 TESTDATA_PART_2 = [
     (True, True, True, ["demo_board_2/unit_testing"], "native",
-     None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y\nCONFIG_ASAN=y\nCONFIG_UBSAN=y'),
+     None, '\nCONFIG_COVERAGE=y\nCONFIG_ASAN=y\nCONFIG_UBSAN=y'),
     (True, False, True, ["demo_board_2/unit_testing"], "native",
-     None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y\nCONFIG_ASAN=y'),
+     None, '\nCONFIG_COVERAGE=y\nCONFIG_ASAN=y'),
     (False, False, True, ["demo_board_2/unit_testing"], 'native',
-     None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y'),
+     None, '\nCONFIG_COVERAGE=y'),
     (True, False, True, ["demo_board_2/unit_testing"], 'mcu',
-     None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y'),
+     None, '\nCONFIG_COVERAGE=y'),
     (False, False, False, ["demo_board_2/unit_testing"], 'native', None, ''),
     (False, False, True, ['demo_board_1'], 'native', None, ''),
     (True, False, False, ["demo_board_2"], 'native', None, '\nCONFIG_ASAN=y'),
@@ -651,3 +646,38 @@ def test_testinstance_get_buildlog_file(tmp_path, testinstance, create_build_log
 
     if expected_error is None:
         assert res == str(build_log)
+
+
+TESTDATA_9 = [
+    (
+        {'ztest_suite_repeat': 5, 'ztest_test_repeat': 10, 'ztest_test_shuffle': True},
+        '\nCONFIG_ZTEST_REPEAT=y\nCONFIG_ZTEST_SUITE_REPEAT_COUNT=5\nCONFIG_ZTEST_TEST_REPEAT_COUNT=10\nCONFIG_ZTEST_SHUFFLE=y'
+    ),
+    (
+        {'ztest_suite_repeat': 3},
+        '\nCONFIG_ZTEST_REPEAT=y\nCONFIG_ZTEST_SUITE_REPEAT_COUNT=3'
+    ),
+    (
+        {'ztest_test_repeat': 7},
+        '\nCONFIG_ZTEST_REPEAT=y\nCONFIG_ZTEST_TEST_REPEAT_COUNT=7'
+    ),
+    (
+        {'ztest_test_shuffle': True},
+        '\nCONFIG_ZTEST_REPEAT=y\nCONFIG_ZTEST_SHUFFLE=y'
+    ),
+    (
+        {},
+        ''
+    ),
+]
+
+@pytest.mark.parametrize('harness_config, expected_content', TESTDATA_9)
+def test_create_overlay_with_harness_config(class_testplan, all_testsuites_dict, platforms_list, harness_config, expected_content):
+    testsuite_path = 'scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app'
+    class_testplan.testsuites = all_testsuites_dict
+    testsuite = class_testplan.testsuites.get(testsuite_path)
+    testsuite.harness_config = harness_config
+    class_testplan.platforms = platforms_list
+    platform = class_testplan.get_platform("demo_board_2")
+    testinstance = TestInstance(testsuite, platform,'zephyr', class_testplan.env.outdir)
+    assert testinstance.create_overlay(platform) == expected_content

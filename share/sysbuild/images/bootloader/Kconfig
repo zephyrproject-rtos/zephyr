@@ -32,7 +32,9 @@ if BOOTLOADER_MCUBOOT
 
 choice MCUBOOT_MODE
 	prompt "Mode of operation"
-	default MCUBOOT_MODE_SWAP_WITHOUT_SCRATCH
+	# Should be removed if board dts is updated
+	default MCUBOOT_MODE_SWAP_USING_MOVE if SOC_FAMILY_ESPRESSIF_ESP32
+	default MCUBOOT_MODE_SWAP_USING_OFFSET
 	help
 	  The operating mode of MCUboot (which will also be propagated to the application).
 
@@ -43,8 +45,15 @@ config MCUBOOT_MODE_SINGLE_APP
 	  slots. In this mode application is not able to DFU its own update to secondary slot and
 	  all updates need to be performed using MCUboot serial recovery.
 
-config MCUBOOT_MODE_SWAP_WITHOUT_SCRATCH
-	bool "Swap without scratch (swap using move)"
+config MCUBOOT_MODE_SWAP_USING_OFFSET
+	bool "Swap using offset"
+	help
+	  MCUboot expects slot0_partition and slot1_partition to be present in DT and application
+	  will boot from slot0_partition. MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
+	  in main application if MCUboot has been built with MCUBOOT_DOWNGRADE_PREVENTION.
+
+config MCUBOOT_MODE_SWAP_USING_MOVE
+	bool "Swap using move"
 	help
 	  MCUboot expects slot0_partition and slot1_partition to be present in DT and application
 	  will boot from slot0_partition. MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
@@ -77,7 +86,7 @@ config MCUBOOT_MODE_DIRECT_XIP
 	  can boot from either partition and will select one with higher application image version,
 	  which usually means major.minor.patch triple, unless BOOT_VERSION_CMP_USE_BUILD_NUMBER is
 	  also selected in MCUboot that enables comparison of build number.
-	  This option automatically selectes MCUBOOT_BOOTLOADER_NO_DOWNGRADE as it is not possible
+	  This option automatically selects MCUBOOT_BOOTLOADER_NO_DOWNGRADE as it is not possible
 	  to swap back to older version of application.
 
 config MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT
@@ -105,6 +114,20 @@ config MCUBOOT_MODE_RAM_LOAD
 	  Note: RAM must be assigned to the bootloader that is not used by the application in this
 	  mode so that the bootloader is able to function until the application has booted.
 
+config MCUBOOT_MODE_RAM_LOAD_WITH_REVERT
+	bool "RAM load with revert"
+	help
+	  MCUboot expects slot0_partition and slot1_partition to exist in DT. In this mode, MCUboot
+	  will select the image with the higher version number, copy it to RAM and begin execution
+	  from there. MCUBoot will only boot an image if it has been marked to be boot next time
+	  for test or permanently. In case when application is marked for test it needs to confirm
+	  itself, on the first boot, or it will be removed and MCUboot will revert to booting
+	  previously approved application. The image must be linked to execute from RAM, the address
+	  that it is copied to is specified using the load-addr argument when running imgtool.
+
+	  Note: RAM must be assigned to the bootloader that is not used by the application in this
+	  mode so that the bootloader is able to function until the application has booted.
+
 config MCUBOOT_MODE_FIRMWARE_UPDATER
 	bool "Firmware updater"
 	help
@@ -112,7 +135,39 @@ config MCUBOOT_MODE_FIRMWARE_UPDATER
 	  mechanism defined for entering the slot1_partition which is a dedicated firmware updater
 	  application used to update the slot0_partition application.
 
+config MCUBOOT_MODE_SINGLE_APP_RAM_LOAD
+	bool "Single app RAM load mode"
+	help
+	  MCUboot can load the image to RAM from an arbitrary location. In this mode,
+	  MCUboot will copy the image to RAM and begin execution from there. The image
+	  must be linked to execute from RAM, the address that it is copied to is
+	  specified using the load-addr argument when running imgtool.
+	  Note that while not used directly, a slot0_partition must be defined in the
+	  DT, as it is used to get information about size of the image to be loaded.
+	  This option automatically selects MCUBOOT_BOOTLOADER_NO_DOWNGRADE as it is
+	  not possible to swap back to older version of the application. In fact, none
+	  of the swap operations are supported in this mode.
+
 endchoice
+
+config MCUBOOT_DIRECT_XIP_GENERATE_VARIANT
+	bool "Generate slot 1 variant image [EXPERIMENTAL]"
+	depends on MCUBOOT_MODE_DIRECT_XIP || MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT
+	select EXPERIMENTAL
+	default y
+	help
+	  Will generate an image for the alternate partition (``slot1_partition``) which can be
+	  used for firmware updates. This image will have the same configuration options applied
+	  as the main image, with an extra dts overlay that changes the chosen flash partition to
+	  slot1_partition, and will be named ``<app>_slot_1_variant``.
+
+config MCUBOOT_MODE_FIRMWARE_UPDATER_BOOT_MODE_ENTRANCE
+	bool "Firmware updater retention boot mode entrance"
+	depends on MCUBOOT_MODE_FIRMWARE_UPDATER
+	help
+	  Will enable retained memory, retention and the boot mode module in MCUboot and the main
+	  application so that it can be used to force booting the firmware loader application
+	  image. This needs the ``zephyr,boot-mode`` chosen node to be correctly configured.
 
 config SIGNATURE_TYPE
 	string
@@ -168,5 +223,21 @@ config BOOT_ENCRYPTION_KEY_FILE
 	default ""
 	help
 	  Absolute path to encryption key file to use with MCUBoot.
+
+if BOOT_ENCRYPTION
+
+choice BOOT_ENCRYPTION_ALG
+	prompt "Algorithm used for image encryption"
+	default BOOT_ENCRYPTION_ALG_AES_128
+
+config BOOT_ENCRYPTION_ALG_AES_128
+	bool "Use AES-128 for image encryption"
+
+config BOOT_ENCRYPTION_ALG_AES_256
+	bool "Use AES-256 for image encryption"
+
+endchoice # BOOT_ENCRYPTION_ALG
+
+endif # BOOT_ENCRYPTION
 
 endif

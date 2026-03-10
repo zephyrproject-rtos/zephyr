@@ -12,9 +12,6 @@
 #include <zephyr/sys/util.h>
 #include <soc.h>
 #include <em_gpio.h>
-#ifdef CONFIG_SOC_GECKO_DEV_INIT
-#include <em_cmu.h>
-#endif
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
@@ -107,7 +104,9 @@ static int gpio_gecko_configure(const struct device *dev,
 	if (flags & GPIO_OUTPUT) {
 		/* Following modes enable both output and input */
 		if (flags & GPIO_SINGLE_ENDED) {
-			if (flags & GPIO_LINE_OPEN_DRAIN) {
+			if ((flags & GPIO_LINE_OPEN_DRAIN) && (flags & GPIO_PULL_UP)) {
+				mode = gpioModeWiredAndPullUp;
+			} else if (flags & GPIO_LINE_OPEN_DRAIN) {
 				mode = gpioModeWiredAnd;
 			} else {
 				mode = gpioModeWiredOr;
@@ -292,10 +291,10 @@ static int gpio_gecko_pin_interrupt_configure(const struct device *dev,
 	} else {
 		/* Interrupt line is already in use */
 		if ((GPIO->IEN & BIT(pin)) != 0) {
-			/* TODO: Return an error only if request is done for
-			 * a pin from a different port.
-			 */
-			return -EBUSY;
+			/* Check if the interrupt is already configured for this port */
+			if (!(data->int_enabled_mask & BIT(pin))) {
+				return -EBUSY;
+			}
 		}
 
 		bool rising_edge = true;
@@ -389,9 +388,6 @@ DEVICE_DT_DEFINE(DT_INST(0, silabs_gecko_gpio),
 
 static int gpio_gecko_common_init(const struct device *dev)
 {
-#ifdef CONFIG_SOC_GECKO_DEV_INIT
-	CMU_ClockEnable(cmuClock_GPIO, true);
-#endif
 	gpio_gecko_common_data.count = 0;
 	IRQ_CONNECT(GPIO_EVEN_IRQn,
 		    DT_IRQ_BY_NAME(DT_INST(0, silabs_gecko_gpio), gpio_even, priority),

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,23 +27,24 @@ extern "C" {
 #define IOMUXC_CFGREG   (IOMUXC_BASE + 0x204)
 #define IOMUXC_DAISYREG (IOMUXC_BASE + 0x408)
 
-#define IOMUXC_INPUT_SCHMITT_ENABLE_SHIFT IOMUXC_SW_PAD_CTL_PAD_HYS_SHIFT
-#define IOMUXC_DRIVE_OPEN_DRAIN_SHIFT     IOMUXC_SW_PAD_CTL_PAD_OD_SHIFT
-#define IOMUXC_BIAS_PULL_DOWN_SHIFT       IOMUXC_SW_PAD_CTL_PAD_PD_SHIFT
-#define IOMUXC_BIAS_PULL_UP_SHIFT         IOMUXC_SW_PAD_CTL_PAD_PU_SHIFT
-#define IOMUXC_SLEW_RATE_SHIFT            IOMUXC_SW_PAD_CTL_PAD_FSEL1_SHIFT
-#define IOMUXC_DRIVE_STRENGTH_SHIFT       IOMUXC_SW_PAD_CTL_PAD_DSE_SHIFT
+#define MCUX_IMX_INPUT_SCHMITT_ENABLE_SHIFT IOMUXC_SW_PAD_CTL_PAD_HYS_SHIFT
+#define MCUX_IMX_DRIVE_OPEN_DRAIN_SHIFT     IOMUXC_SW_PAD_CTL_PAD_OD_SHIFT
+#define MCUX_IMX_BIAS_PULL_DOWN_SHIFT       IOMUXC_SW_PAD_CTL_PAD_PD_SHIFT
+#define MCUX_IMX_BIAS_PULL_UP_SHIFT         IOMUXC_SW_PAD_CTL_PAD_PU_SHIFT
+#define MCUX_IMX_SLEW_RATE_SHIFT            IOMUXC_SW_PAD_CTL_PAD_FSEL1_SHIFT
+#define MCUX_IMX_DRIVE_STRENGTH_SHIFT       IOMUXC_SW_PAD_CTL_PAD_DSE_SHIFT
 
 #define IOMUXC_INPUT_ENABLE_SHIFT 23 /* Shift to a bit not used by IOMUXC_SW_PAD_CTL */
 #define IOMUXC_INPUT_ENABLE(x)    ((x >> IOMUXC_INPUT_ENABLE_SHIFT) & 0x1)
 
 #define Z_PINCTRL_IOMUXC_PINCFG_INIT(node_id)                                                      \
-	((DT_PROP(node_id, input_schmitt_enable) << IOMUXC_INPUT_SCHMITT_ENABLE_SHIFT) |           \
-	 (DT_PROP(node_id, drive_open_drain) << IOMUXC_DRIVE_OPEN_DRAIN_SHIFT) |                   \
-	 (DT_PROP(node_id, bias_pull_down) << IOMUXC_BIAS_PULL_DOWN_SHIFT) |                       \
-	 (DT_PROP(node_id, bias_pull_up) << IOMUXC_BIAS_PULL_UP_SHIFT) |                           \
-	 (DT_ENUM_IDX(node_id, slew_rate) << IOMUXC_SLEW_RATE_SHIFT) |                             \
-	 ((~(0xff << DT_ENUM_IDX(node_id, drive_strength))) << IOMUXC_DRIVE_STRENGTH_SHIFT) |      \
+	((DT_PROP(node_id, input_schmitt_enable) << MCUX_IMX_INPUT_SCHMITT_ENABLE_SHIFT) |         \
+	 (DT_PROP(node_id, drive_open_drain) << MCUX_IMX_DRIVE_OPEN_DRAIN_SHIFT) |                 \
+	 (DT_PROP(node_id, bias_pull_down) << MCUX_IMX_BIAS_PULL_DOWN_SHIFT) |                     \
+	 (DT_PROP(node_id, bias_pull_up) << MCUX_IMX_BIAS_PULL_UP_SHIFT) |                         \
+	 (DT_ENUM_IDX(node_id, slew_rate) << MCUX_IMX_SLEW_RATE_SHIFT) |                           \
+	 ((~(0xffffffff << DT_ENUM_IDX(node_id, drive_strength)))                                  \
+	  << MCUX_IMX_DRIVE_STRENGTH_SHIFT) |                                                      \
 	 (DT_PROP(node_id, input_enable) << IOMUXC_INPUT_ENABLE_SHIFT))
 
 /* This struct must be present. It is used by the mcux gpio driver */
@@ -63,7 +64,7 @@ struct pinctrl_soc_pin {
 typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
 
 /* This definition must be present. It is used by the mcux gpio driver */
-#define IOMUXC_PINMUX(node_id)                                                                     \
+#define MCUX_IMX_PINMUX(node_id)                                                                   \
 	{                                                                                          \
 		.mux_register = DT_PROP_BY_IDX(node_id, pinmux, 0),                                \
 		.config_register = DT_PROP_BY_IDX(node_id, pinmux, 4),                             \
@@ -73,7 +74,7 @@ typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
 	}
 
 #define Z_PINCTRL_PINMUX(group_id, pin_prop, idx)                                                  \
-	IOMUXC_PINMUX(DT_PHANDLE_BY_IDX(group_id, pin_prop, idx))
+	MCUX_IMX_PINMUX(DT_PHANDLE_BY_IDX(group_id, pin_prop, idx))
 
 #define Z_PINCTRL_STATE_PIN_INIT(group_id, pin_prop, idx)                                          \
 	{                                                                                          \

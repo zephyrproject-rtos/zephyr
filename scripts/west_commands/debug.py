@@ -16,7 +16,7 @@ from run_common import add_parser_common, do_run_common
 class Debug(WestCommand):
 
     def __init__(self):
-        super(Debug, self).__init__(
+        super().__init__(
             'debug',
             # Keep this in sync with the string in west-commands.yml.
             'flash and interactively debug a Zephyr application',
@@ -37,7 +37,7 @@ class Debug(WestCommand):
 class DebugServer(WestCommand):
 
     def __init__(self):
-        super(DebugServer, self).__init__(
+        super().__init__(
             'debugserver',
             # Keep this in sync with the string in west-commands.yml.
             'connect to board and launch a debug server',
@@ -61,7 +61,7 @@ class DebugServer(WestCommand):
 class Attach(WestCommand):
 
     def __init__(self):
-        super(Attach, self).__init__(
+        super().__init__(
             'attach',
             # Keep this in sync with the string in west-commands.yml.
             'interactively debug a board',
@@ -79,7 +79,7 @@ class Attach(WestCommand):
 class Rtt(WestCommand):
 
     def __init__(self):
-        super(Rtt, self).__init__(
+        super().__init__(
             'rtt',
             # Keep this in sync with the string in west-commands.yml.
             'open an rtt shell',
@@ -89,6 +89,26 @@ class Rtt(WestCommand):
 
     def do_add_parser(self, parser_adder):
         return add_parser_common(self, parser_adder)
+
+    def do_run(self, my_args, runner_args):
+        do_run_common(self, my_args, runner_args)
+
+
+class Reset(WestCommand):
+
+    def __init__(self):
+        super().__init__(
+            'reset',
+            # Keep this in sync with the string in west-commands.yml.
+            'reset the board to reboot',
+            "",
+            accepts_unknown_args=True)
+        self.runner_key = 'debug-runner'  # in runners.yaml
+
+    def do_add_parser(self, parser_adder):
+        parser = add_parser_common(self, parser_adder)
+        parser.set_defaults(rebuild=False)
+        return parser
 
     def do_run(self, my_args, runner_args):
         do_run_common(self, my_args, runner_args)

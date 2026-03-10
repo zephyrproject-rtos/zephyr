@@ -1,0 +1,24 @@
+shields:
+  - name: nrf7002ek
+    full_name: nRF7002 Evaluation Kit Shield
+    vendor: nordic
+    supported_features:
+      - wifi
+
+  - name: nrf7002ek_nrf7000
+    full_name: nRF7002 Evaluation Kit Shield (nRF7000)
+    vendor: nordic
+    supported_features:
+      - wifi
+
+  - name: nrf7002ek_nrf7001
+    full_name: nRF7002 Evaluation Kit Shield (nRF7001)
+    vendor: nordic
+    supported_features:
+      - wifi
+
+  - name: nrf7002ek_coex
+    full_name: nRF7002 Evaluation Kit Shield (SR Co-Existence)
+    vendor: nordic
+    supported_features:
+      - wifi

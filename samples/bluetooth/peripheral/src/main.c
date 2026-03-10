@@ -130,35 +130,6 @@ static struct bt_gatt_cep vnd_long_cep = {
 	.properties = BT_GATT_CEP_RELIABLE_WRITE,
 };
 
-static int signed_value;
-
-static ssize_t read_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			   void *buf, uint16_t len, uint16_t offset)
-{
-	const char *value = attr->user_data;
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
-				 sizeof(signed_value));
-}
-
-static ssize_t write_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			    const void *buf, uint16_t len, uint16_t offset,
-			    uint8_t flags)
-{
-	uint8_t *value = attr->user_data;
-
-	if (offset + len > sizeof(signed_value)) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	}
-
-	memcpy(value + offset, buf, len);
-
-	return len;
-}
-
-static const struct bt_uuid_128 vnd_signed_uuid = BT_UUID_INIT_128(
-	BT_UUID_128_ENCODE(0x13345678, 0x1234, 0x5678, 0x1334, 0x56789abcdef3));
-
 static const struct bt_uuid_128 vnd_write_cmd_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcdef4));
 
@@ -208,10 +179,6 @@ BT_GATT_SERVICE_DEFINE(vnd_svc,
 			       BT_GATT_PERM_PREPARE_WRITE,
 			       read_vnd, write_long_vnd, &vnd_long_value),
 	BT_GATT_CEP(&vnd_long_cep),
-	BT_GATT_CHARACTERISTIC(&vnd_signed_uuid.uuid, BT_GATT_CHRC_READ |
-			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_AUTH,
-			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-			       read_signed, write_signed, &signed_value),
 	BT_GATT_CHARACTERISTIC(&vnd_write_cmd_uuid.uuid,
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP,
 			       BT_GATT_PERM_WRITE, NULL,
@@ -354,22 +321,26 @@ static void hrs_notify(void)
  * this is only for demo purpose, for more precise synchronization please
  * review clock_settime API implementation.
  */
-static int64_t unix_ms_ref;
+static struct bt_cts_local_time local_time = {
+	.timezone_offset = BT_CTS_TIMEZONE_DEFAULT_VALUE,
+	.dst_offset = BT_CTS_DST_OFFSET_UNKNOWN,
+};
 static bool cts_notification_enabled;
+static int64_t unix_ms_ref;
 
-void bt_cts_notification_changed(bool enabled)
+static void cts_notification_changed_cb(bool enabled)
 {
 	cts_notification_enabled = enabled;
 }
 
-int bt_cts_cts_time_write(struct bt_cts_time_format *cts_time)
+static int cts_time_write_cb(struct bt_cts_time_format *cts_time)
 {
 	int err;
 	int64_t unix_ms;
 
 	if (IS_ENABLED(CONFIG_BT_CTS_HELPER_API)) {
 		err = bt_cts_time_to_unix_ms(cts_time, &unix_ms);
-		if (err) {
+		if (err != 0) {
 			return err;
 		}
 	} else {
@@ -381,7 +352,7 @@ int bt_cts_cts_time_write(struct bt_cts_time_format *cts_time)
 	return 0;
 }
 
-int bt_cts_fill_current_cts_time(struct bt_cts_time_format *cts_time)
+static int cts_fill_current_cts_time_cb(struct bt_cts_time_format *cts_time)
 {
 	int64_t unix_ms = unix_ms_ref + k_uptime_get();
 
@@ -392,10 +363,24 @@ int bt_cts_fill_current_cts_time(struct bt_cts_time_format *cts_time)
 	}
 }
 
+static int cts_local_time_write_cb(const struct bt_cts_local_time *cts_local_time)
+{
+	memcpy(&local_time, cts_local_time, sizeof(local_time));
+	return 0;
+}
+
+static int cts_fill_local_time_cb(struct bt_cts_local_time *cts_local_time)
+{
+	memcpy(cts_local_time, &local_time, sizeof(local_time));
+	return 0;
+}
+
 const struct bt_cts_cb cts_cb = {
-	.notification_changed = bt_cts_notification_changed,
-	.cts_time_write = bt_cts_cts_time_write,
-	.fill_current_cts_time = bt_cts_fill_current_cts_time,
+	.notification_changed = cts_notification_changed_cb,
+	.cts_time_write = cts_time_write_cb,
+	.fill_current_cts_time = cts_fill_current_cts_time_cb,
+	.cts_local_time_write = cts_local_time_write_cb,
+	.fill_current_cts_local_time = cts_fill_local_time_cb,
 };
 
 static int bt_hrs_ctrl_point_write(uint8_t request)
@@ -420,7 +405,7 @@ int main(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return 0;
 	}

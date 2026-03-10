@@ -237,6 +237,8 @@ static int get_s64(struct lwm2m_input_context *in, int64_t *value)
 {
 	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
 
+	states->constant_state->enforce_canonical = false;
+
 	if (!zcbor_int64_decode(states, value)) {
 		LOG_WRN("unable to decode a 64-bit integer value");
 		return -EBADMSG;
@@ -252,6 +254,8 @@ static int get_s64(struct lwm2m_input_context *in, int64_t *value)
 static int get_s32(struct lwm2m_input_context *in, int32_t *value)
 {
 	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
+
+	states->constant_state->enforce_canonical = false;
 
 	if (!zcbor_int32_decode(states, value)) {
 		LOG_WRN("unable to decode a 32-bit integer value, err: %d",
@@ -269,6 +273,8 @@ static int get_s32(struct lwm2m_input_context *in, int32_t *value)
 static int get_float(struct lwm2m_input_context *in, double *value)
 {
 	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
+
+	states->constant_state->enforce_canonical = false;
 
 	if (!zcbor_float_decode(states, value)) {
 		LOG_ERR("unable to decode a floating-point value");
@@ -289,15 +295,19 @@ static int get_string(struct lwm2m_input_context *in, uint8_t *value, size_t buf
 
 	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
 
+	states->constant_state->enforce_canonical = false;
+
 	if (!zcbor_tstr_decode(states, &hndl)) {
 		LOG_WRN("unable to decode a string");
 		return -EBADMSG;
 	}
 
-	len = MIN(buflen-1, hndl.len);
+	len = hndl.len;
+	if (len >= buflen) {
+		return -ENOMEM;
+	}
 
 	memcpy(value, hndl.value, len);
-
 	value[len] = '\0';
 
 	len = ICTX_CBOR_R_SZ(states[0].payload, in);
@@ -318,6 +328,8 @@ static int get_time_string(struct lwm2m_input_context *in, int64_t *value)
 
 	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
 
+	states->constant_state->enforce_canonical = false;
+
 	if (!zcbor_tstr_decode(states, &hndl)) {
 		return -EBADMSG;
 	}
@@ -335,6 +347,8 @@ static int get_time_string(struct lwm2m_input_context *in, int64_t *value)
 static int get_time_numerical(struct lwm2m_input_context *in, int64_t *value)
 {
 	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
+
+	states->constant_state->enforce_canonical = false;
 
 	if (!zcbor_int64_decode(states, value)) {
 		LOG_WRN("unable to decode seconds since Epoch");
@@ -354,6 +368,8 @@ static int get_time(struct lwm2m_input_context *in, time_t *value)
 	int64_t temp64;
 
 	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
+
+	states->constant_state->enforce_canonical = false;
 
 	success = zcbor_tag_decode(states, &tag);
 
@@ -405,6 +421,8 @@ static int get_bool(struct lwm2m_input_context *in, bool *value)
 {
 	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
 
+	states->constant_state->enforce_canonical = false;
+
 	if (!zcbor_bool_decode(states, value)) {
 		LOG_WRN("unable to decode a boolean value");
 		return -EBADMSG;
@@ -424,6 +442,8 @@ static int get_opaque(struct lwm2m_input_context *in, uint8_t *value, size_t buf
 	int ret;
 
 	ZCBOR_STATE_D(states, 1, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
+
+	states->constant_state->enforce_canonical = false;
 
 	/* Get the CBOR header only on first read. */
 	if (opaque->offset == 0) {

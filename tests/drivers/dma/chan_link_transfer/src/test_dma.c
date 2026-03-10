@@ -23,21 +23,35 @@
 
 #define TEST_DMA_CHANNEL_0 (0)
 #define TEST_DMA_CHANNEL_1 (1)
+#define GUARD_BUFF_SIZE (16)
 #define RX_BUFF_SIZE (48)
+#define DMA_DATA_ALIGNMENT DT_INST_PROP_OR(tst_dma0, dma_buf_addr_alignment, 32)
 
 #ifdef CONFIG_NOCACHE_MEMORY
-static __aligned(32) char tx_data[RX_BUFF_SIZE] __used
+static __aligned(DMA_DATA_ALIGNMENT) char tx_data[RX_BUFF_SIZE] __used
 	__attribute__((__section__(".nocache")));
 static const char TX_DATA[] = "It is harder to be kind than to be wise........";
-static __aligned(32) char rx_data[RX_BUFF_SIZE] __used
+static __aligned(DMA_DATA_ALIGNMENT) char rx_data[RX_BUFF_SIZE + GUARD_BUFF_SIZE] __used
 	__attribute__((__section__(".nocache.dma")));
-static __aligned(32) char rx_data2[RX_BUFF_SIZE] __used
+static __aligned(DMA_DATA_ALIGNMENT) char rx_data2[RX_BUFF_SIZE + GUARD_BUFF_SIZE] __used
 	__attribute__((__section__(".nocache.dma")));
 #else
-static const char tx_data[] = "It is harder to be kind than to be wise........";
-static char rx_data[RX_BUFF_SIZE] = { 0 };
-static char rx_data2[RX_BUFF_SIZE] = { 0 };
+static __aligned(DMA_DATA_ALIGNMENT) const char tx_data[] =
+	"It is harder to be kind than to be wise........";
+static __aligned(DMA_DATA_ALIGNMENT) char rx_data[RX_BUFF_SIZE + GUARD_BUFF_SIZE] = { 0 };
+static __aligned(DMA_DATA_ALIGNMENT) char rx_data2[RX_BUFF_SIZE + GUARD_BUFF_SIZE] = { 0 };
 #endif
+
+static int check_overflow_buffer(const uint8_t *buf, int len)
+{
+	for (int i = 0; i < len; ++i) {
+		if (buf[i] != 0xA5) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
 
 static void test_done(const struct device *dma_dev, void *arg, uint32_t id,
 		      int status)
@@ -53,7 +67,7 @@ static int test_task(int minor, int major)
 {
 	struct dma_config dma_cfg = { 0 };
 	struct dma_block_config dma_block_cfg = { 0 };
-	const struct device *const dma = DEVICE_DT_GET(DT_NODELABEL(dma0));
+	const struct device *const dma = DEVICE_DT_GET(DT_NODELABEL(tst_dma0));
 
 	if (!device_is_ready(dma)) {
 		TC_PRINT("dma controller device is not ready\n");
@@ -82,8 +96,10 @@ static int test_task(int minor, int major)
 		 TEST_DMA_CHANNEL_1, 8 >> 3);
 
 	TC_PRINT("Starting the transfer\n");
-	(void)memset(rx_data, 0, sizeof(rx_data));
-	(void)memset(rx_data2, 0, sizeof(rx_data2));
+	(void)memset(rx_data, 0, RX_BUFF_SIZE);
+	(void)memset(rx_data + RX_BUFF_SIZE, 0xA5, GUARD_BUFF_SIZE);
+	(void)memset(rx_data2, 0, RX_BUFF_SIZE);
+	(void)memset(rx_data2 + RX_BUFF_SIZE, 0xA5, GUARD_BUFF_SIZE);
 
 	dma_block_cfg.block_size = sizeof(tx_data);
 #ifdef CONFIG_DMA_64BIT
@@ -143,6 +159,15 @@ static int test_task(int minor, int major)
 		if (strcmp(tx_data, rx_data2) != 0) {
 			return TC_FAIL;
 		}
+	}
+
+	if (check_overflow_buffer(rx_data + RX_BUFF_SIZE, GUARD_BUFF_SIZE)) {
+		TC_PRINT("rx_data guard pattern has been overwritten.");
+		return TC_FAIL;
+	}
+	if (check_overflow_buffer(rx_data2 + RX_BUFF_SIZE, GUARD_BUFF_SIZE)) {
+		TC_PRINT("rx_data2 guard pattern has been overwritten.");
+		return TC_FAIL;
 	}
 
 	return TC_PASS;

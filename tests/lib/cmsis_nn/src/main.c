@@ -203,6 +203,7 @@ ZTEST(cmsis_nn, test_convolve)
 					    kernel_data,
 					    &bias_dims,
 					    bias_data,
+					    NULL,
 					    &output_dims,
 					    output);
 

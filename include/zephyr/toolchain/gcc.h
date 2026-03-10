@@ -174,6 +174,16 @@ do {                                                                    \
 
 #endif
 
+/*
+ * Get the address of a structure member even if the member may not be properly
+ * aligned. Note that accessing such an address must be done with care (for
+ * example with UNALIGNED_GET/PUT) and cannot be in general de-referenced to
+ * access the member directly, as that would cause a fault in architectures
+ * which have alignment requirements.
+ */
+#define UNALIGNED_MEMBER_ADDR(_p, _member) ((__typeof__(_p->_member) *) \
+		(((intptr_t)(_p)) + offsetof(__typeof__(*_p), _member)))
+
 /* Double indirection to ensure section names are expanded before
  * stringification
  */
@@ -190,13 +200,17 @@ do {                                                                    \
 				"." Z_STRINGIFY(c))))
 #define __in_section(a, b, c) ___in_section(a, b, c)
 
+#define ___in_section_unique(a, b) \
+	__attribute__((section("." Z_STRINGIFY(a)		\
+				"." __FILE__			\
+				"." Z_STRINGIFY(b))))
+
 #ifndef __in_section_unique
-#define __in_section_unique(seg) ___in_section(seg, __FILE__, __COUNTER__)
+#define __in_section_unique(seg) ___in_section_unique(seg, __COUNTER__)
 #endif
 
 #ifndef __in_section_unique_named
-#define __in_section_unique_named(seg, name) \
-	___in_section(seg, __FILE__, name)
+#define __in_section_unique_named(seg, name) ___in_section_unique(seg, name)
 #endif
 
 /* When using XIP, using '__ramfunc' places a function into RAM instead
@@ -209,8 +223,17 @@ do {                                                                    \
 #define __ramfunc
 #elif defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
 #if defined(CONFIG_ARM)
+#if defined(__clang__)
+/* No long_call attribute for Clang.
+ * Rely on linker to place required veneers.
+ * https://github.com/llvm/llvm-project/issues/39969
+ */
+#define __ramfunc __attribute__((noinline)) __attribute__((section(".ramfunc")))
+#else
+/* GCC version */
 #define __ramfunc	__attribute__((noinline))			\
 			__attribute__((long_call, section(".ramfunc")))
+#endif
 #else
 #define __ramfunc	__attribute__((noinline))			\
 			__attribute__((section(".ramfunc")))
@@ -267,6 +290,11 @@ do {                                                                    \
  */
 #endif
 
+#ifndef __deprecated_version
+#define __deprecated_version(version) \
+	__attribute__((deprecated("planned removal in v" #version)))
+#endif
+
 #ifndef __attribute_const__
 #define __attribute_const__ __attribute__((__const__))
 #endif
@@ -291,6 +319,10 @@ do {                                                                    \
 
 #ifndef __attribute_nonnull
 #define __attribute_nonnull(...) __attribute__((nonnull(__VA_ARGS__)))
+#endif
+
+#ifndef __cleanup
+#define __cleanup(x) __attribute__((cleanup(x)))
 #endif
 
 /* Builtins with availability that depend on the compiler version. */
@@ -325,11 +357,13 @@ do {                                                                    \
 #define __WARN1(s) _Pragma(#s)
 
 /* Generic message */
-#ifndef __DEPRECATED_MACRO
+#if !(defined(CONFIG_DEPRECATION_TEST) || !defined(CONFIG_WARN_DEPRECATED))
 #define __DEPRECATED_MACRO __WARN("Macro is deprecated")
 /* When adding this, remember to follow the instructions in
  * https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated
  */
+#else
+#define __DEPRECATED_MACRO
 #endif
 
 /* These macros allow having ARM asm functions callable from thumb */
@@ -368,9 +402,9 @@ do {                                                                    \
 
 #if defined(_ASMLANGUAGE)
 
-#if defined(CONFIG_ARM) || defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) \
+#if defined(CONFIG_ARM) || defined(CONFIG_RISCV) \
 	|| defined(CONFIG_XTENSA) || defined(CONFIG_ARM64) \
-	|| defined(CONFIG_MIPS)
+	|| defined(CONFIG_MIPS) || defined(CONFIG_RX)
 #define GTEXT(sym) .global sym; .type sym, %function
 #define GDATA(sym) .global sym; .type sym, %object
 #define WTEXT(sym) .weak sym; .type sym, %function
@@ -507,7 +541,7 @@ do {                                                                    \
  * to generate named symbol/value pairs for kconfigs.
  */
 
-#if defined(CONFIG_ARM)
+#if defined(CONFIG_ARM) || (defined(CONFIG_ARCH_POSIX) && defined(__arm__))
 
 /*
  * GNU/ARM backend does not have a proper operand modifier which does not
@@ -527,7 +561,9 @@ do {                                                                    \
 		"\n\t.equ\t" #name "," #value       \
 		"\n\t.type\t" #name ",%object")
 
-#elif defined(CONFIG_X86)
+#elif defined(CONFIG_ARC) || defined(CONFIG_ARM64) \
+	|| defined(CONFIG_ARCH_POSIX) /*&& (__x86_64 or __i*86 or __aarch64__)*/ \
+	|| defined(CONFIG_X86)
 
 #define GEN_ABSOLUTE_SYM(name, value)               \
 	__asm__(".globl\t" #name "\n\t.equ\t" #name \
@@ -539,20 +575,7 @@ do {                                                                    \
 		"\n\t.equ\t" #name "," #value       \
 		"\n\t.type\t" #name ",@object")
 
-#elif defined(CONFIG_ARC) || defined(CONFIG_ARM64)
-
-#define GEN_ABSOLUTE_SYM(name, value)               \
-	__asm__(".globl\t" #name "\n\t.equ\t" #name \
-		",%c0"                              \
-		"\n\t.type\t" #name ",@object" :  : "n"(value))
-
-#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
-	__asm__(".globl\t" #name                    \
-		"\n\t.equ\t" #name "," #value       \
-		"\n\t.type\t" #name ",@object")
-
-#elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || \
-	defined(CONFIG_XTENSA) || defined(CONFIG_MIPS)
+#elif defined(CONFIG_RISCV) || defined(CONFIG_XTENSA) || defined(CONFIG_MIPS)
 
 /* No special prefixes necessary for constants in this arch AFAICT */
 #define GEN_ABSOLUTE_SYM(name, value)		\
@@ -565,17 +588,6 @@ do {                                                                    \
 		"\n\t.equ\t" #name "," #value       \
 		"\n\t.type\t" #name ",%object")
 
-#elif defined(CONFIG_ARCH_POSIX)
-#define GEN_ABSOLUTE_SYM(name, value)               \
-	__asm__(".globl\t" #name "\n\t.equ\t" #name \
-		",%c0"                              \
-		"\n\t.type\t" #name ",@object" :  : "n"(value))
-
-#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
-	__asm__(".globl\t" #name                    \
-		"\n\t.equ\t" #name "," #value       \
-		"\n\t.type\t" #name ",@object")
-
 #elif defined(CONFIG_SPARC)
 #define GEN_ABSOLUTE_SYM(name, value)			\
 	__asm__(".global\t" #name "\n\t.equ\t" #name	\
@@ -587,6 +599,17 @@ do {                                                                    \
 		"\n\t.equ\t" #name "," #value       \
 		"\n\t.type\t" #name ",#object")
 
+#elif defined(CONFIG_RX)
+#define GEN_ABSOLUTE_SYM(name, value)                \
+	__asm__(".global\t" #name "\n\t.equ\t" #name \
+		",%c0"                               \
+		"\n\t.type\t" #name ",%%object" :  : "n"(value))
+
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)        \
+	__asm__(".global\t" #name                    \
+		"\n\t.equ\t" #name "," #value        \
+		"\n\t.type\t" #name ",#object")
+
 #else
 #error processor architecture not supported
 #endif
@@ -594,49 +617,6 @@ do {                                                                    \
 #define compiler_barrier() do { \
 	__asm__ __volatile__ ("" ::: "memory"); \
 } while (false)
-
-/** @brief Return larger value of two provided expressions.
- *
- * Macro ensures that expressions are evaluated only once.
- *
- * @note Macro has limited usage compared to the standard macro as it cannot be
- *	 used:
- *	 - to generate constant integer, e.g. __aligned(Z_MAX(4,5))
- *	 - static variable, e.g. array like static uint8_t array[Z_MAX(...)];
- */
-#define Z_MAX(a, b) ({ \
-		/* random suffix to avoid naming conflict */ \
-		__typeof__(a) _value_a_ = (a); \
-		__typeof__(b) _value_b_ = (b); \
-		(_value_a_ > _value_b_) ? _value_a_ : _value_b_; \
-	})
-
-/** @brief Return smaller value of two provided expressions.
- *
- * Macro ensures that expressions are evaluated only once. See @ref Z_MAX for
- * macro limitations.
- */
-#define Z_MIN(a, b) ({ \
-		/* random suffix to avoid naming conflict */ \
-		__typeof__(a) _value_a_ = (a); \
-		__typeof__(b) _value_b_ = (b); \
-		(_value_a_ < _value_b_) ? _value_a_ : _value_b_; \
-	})
-
-/** @brief Return a value clamped to a given range.
- *
- * Macro ensures that expressions are evaluated only once. See @ref Z_MAX for
- * macro limitations.
- */
-#define Z_CLAMP(val, low, high) ({                                             \
-		/* random suffix to avoid naming conflict */                   \
-		__typeof__(val) _value_val_ = (val);                           \
-		__typeof__(low) _value_low_ = (low);                           \
-		__typeof__(high) _value_high_ = (high);                        \
-		(_value_val_ < _value_low_)  ? _value_low_ :                   \
-		(_value_val_ > _value_high_) ? _value_high_ :                  \
-					       _value_val_;                    \
-	})
 
 /**
  * @brief Calculate power of two ceiling for some nonzero value
@@ -679,12 +659,43 @@ do {                                                                    \
 #define FUNC_NO_STACK_PROTECTOR
 #endif
 
-#define TOOLCHAIN_IGNORE_WSHADOW_BEGIN \
-	_Pragma("GCC diagnostic push") \
-	_Pragma("GCC diagnostic ignored \"-Wshadow\"")
-
-#define TOOLCHAIN_IGNORE_WSHADOW_END \
-	_Pragma("GCC diagnostic pop")
+#if defined(CONFIG_INSTRUMENTATION)
+#define __no_instrumentation__ __attribute__((__no_instrument_function__))
+#else
+#define __no_instrumentation__ /**/
+#endif
 
 #endif /* !_LINKER */
+
+#define TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER "-Waddress-of-packed-member"
+#define TOOLCHAIN_WARNING_ARRAY_BOUNDS             "-Warray-bounds"
+#define TOOLCHAIN_WARNING_ATTRIBUTES               "-Wattributes"
+#define TOOLCHAIN_WARNING_DELETE_NON_VIRTUAL_DTOR  "-Wdelete-non-virtual-dtor"
+#define TOOLCHAIN_WARNING_EXTRA                    "-Wextra"
+#define TOOLCHAIN_WARNING_NONNULL                  "-Wnonnull"
+#define TOOLCHAIN_WARNING_SHADOW                   "-Wshadow"
+#define TOOLCHAIN_WARNING_UNUSED_LABEL             "-Wunused-label"
+#define TOOLCHAIN_WARNING_UNUSED_VARIABLE          "-Wunused-variable"
+#define TOOLCHAIN_WARNING_CAST_QUAL                "-Wcast-qual"
+
+/* GCC-specific warnings that aren't in clang. */
+#if defined(__GNUC__) && !defined(__clang__)
+#define TOOLCHAIN_WARNING_POINTER_ARITH     "-Wpointer-arith"
+#define TOOLCHAIN_WARNING_STRINGOP_OVERREAD "-Wstringop-overread"
+#endif
+
+#define _TOOLCHAIN_DISABLE_WARNING(compiler, warning)                                              \
+	TOOLCHAIN_PRAGMA(compiler diagnostic push)                                                 \
+	TOOLCHAIN_PRAGMA(compiler diagnostic ignored warning)
+
+#define _TOOLCHAIN_ENABLE_WARNING(compiler, warning) TOOLCHAIN_PRAGMA(compiler diagnostic pop)
+
+#define TOOLCHAIN_DISABLE_WARNING(warning) _TOOLCHAIN_DISABLE_WARNING(GCC, warning)
+#define TOOLCHAIN_ENABLE_WARNING(warning) _TOOLCHAIN_ENABLE_WARNING(GCC, warning)
+
+#if defined(__GNUC__) && !defined(__clang__)
+#define TOOLCHAIN_DISABLE_GCC_WARNING(warning) _TOOLCHAIN_DISABLE_WARNING(GCC, warning)
+#define TOOLCHAIN_ENABLE_GCC_WARNING(warning)  _TOOLCHAIN_ENABLE_WARNING(GCC, warning)
+#endif
+
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_ */

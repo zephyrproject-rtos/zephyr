@@ -82,3 +82,8 @@ properties:
     description: |
       Enables data sync if defined. This is to point to the bmi08x-gyro definition
       that is within the same IC as the bmi08x-accel.
+
+  fifo-watermark:
+    type: int
+    description: |
+      FIFO Watermark in number of samples. Ranges between 1 and 99

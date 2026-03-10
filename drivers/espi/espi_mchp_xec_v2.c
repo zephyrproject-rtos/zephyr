@@ -25,9 +25,9 @@
 #define ESPI_XEC_VWIRE_ACK_DELAY	10ul
 
 /* Maximum timeout to transmit a virtual wire packet.
- * 10 ms expressed in multiples of 100us
+ * 1 ms expressed in multiples of 1us
  */
-#define ESPI_XEC_VWIRE_SEND_TIMEOUT	100ul
+#define ESPI_XEC_VWIRE_SEND_TIMEOUT	1000ul
 
 #define VW_MAX_GIRQS			2ul
 
@@ -325,10 +325,15 @@ static int espi_xec_send_vwire(const struct device *dev,
 		/* Ensure eSPI virtual wire packet is transmitted
 		 * There is no interrupt, so need to poll register
 		 */
-		uint8_t rd_cnt = ESPI_XEC_VWIRE_SEND_TIMEOUT;
+		uint16_t rd_cnt = ESPI_XEC_VWIRE_SEND_TIMEOUT;
 
 		while (sys_read8(regaddr + SMVW_BI_SRC_CHG) && rd_cnt--) {
-			k_busy_wait(100);
+			k_busy_wait(1);
+		}
+
+		if (rd_cnt == 0) {
+			LOG_ERR("VW %d send timeout", signal);
+			return -ETIMEDOUT;
 		}
 	}
 
@@ -1371,7 +1376,7 @@ static void xec_vw_cfg_properties(const struct xec_signal *p, uint32_t regaddr, 
 	uint8_t src_pos = (8u * p->bit);
 	uint8_t rst_state = (p->flags >> MCHP_DT_ESPI_VW_FLAG_RST_STATE_POS)
 				& MCHP_DT_ESPI_VW_FLAG_RST_STATE_MSK0;
-	uint8_t rst_src = rst_src = (p->flags >> MCHP_DT_ESPI_VW_FLAG_RST_SRC_POS)
+	uint8_t rst_src = (p->flags >> MCHP_DT_ESPI_VW_FLAG_RST_SRC_POS)
 				& MCHP_DT_ESPI_VW_FLAG_RST_SRC_MSK0;
 
 	if (dir) {
@@ -1389,7 +1394,7 @@ static void xec_vw_cfg_properties(const struct xec_signal *p, uint32_t regaddr, 
 				temp |= BIT(p->bit + 4u);
 				sys_set_bit(regaddr + src_ofs, src_pos);
 			} else {
-				temp |= ~BIT(p->bit + 4u);
+				temp &= ~BIT(p->bit + 4u);
 				sys_clear_bit(regaddr + src_ofs, src_pos);
 			}
 		}

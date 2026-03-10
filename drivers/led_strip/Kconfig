@@ -21,20 +21,33 @@ config LED_STRIP_INIT_PRIORITY
 	help
 	  System initialization priority for LED strip drivers.
 
+config LED_STRIP_SHELL
+	bool "LED strip shell"
+	depends on SHELL
+	help
+	  Enable LED strip shell for testing.
+
+config LED_STRIP_SHELL_MAX_PIXELS
+	int "Maximum number of LEDs that the shell can access"
+	default 16
+	depends on LED_STRIP_SHELL
+	help
+	  The commands that expect pixel colors to be listed will accept no
+	  more pixels than this value.
+
 # Hidden option. The extra byte enables efficient serialization and transmission
 # for drivers which require 4 B on wire for every 3 B of color, e.g. APA102, but
 # is not normally needed.
 config LED_STRIP_RGB_SCRATCH
 	bool
 
-source "drivers/led_strip/Kconfig.lpd880x"
-
-source "drivers/led_strip/Kconfig.ws2812"
-
+# zephyr-keep-sorted-start
 source "drivers/led_strip/Kconfig.apa102"
-
+source "drivers/led_strip/Kconfig.lpd880x"
+source "drivers/led_strip/Kconfig.modulino"
 source "drivers/led_strip/Kconfig.tlc5971"
-
 source "drivers/led_strip/Kconfig.tlc59731"
+source "drivers/led_strip/Kconfig.ws2812"
+# zephyr-keep-sorted-stop
 
 endif # LED_STRIP

@@ -89,3 +89,17 @@ tests:
     integration_platforms:
       - qemu_x86
       - mps2/an385
+  kernel.common.lto.singlethreaded:
+    platform_key:
+      - arch
+    # CONFIG_CODE_DATA_RELOCATION causes a build error (issue #69730)
+    filter: CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED and not CONFIG_CODE_DATA_RELOCATION
+    tags: lto
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
+      - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
+      - CONFIG_LTO=y
+      - CONFIG_LTO_SINGLE_THREADED=y
+    integration_platforms:
+      - qemu_x86
+      - mps2/an385

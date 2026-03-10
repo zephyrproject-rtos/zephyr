@@ -1,7 +1,4 @@
-.. _nrf7002dk_nrf5340:
-
-nRF7002 DK
-##########
+.. zephyr:board:: nrf7002dk
 
 Overview
 ********
@@ -28,12 +25,6 @@ The ``nrf7002dk/nrf5340/cpuapp`` board target provides support for the applicati
 nRF5340 SoC. The ``nrf7002dk/nrf5340/cpunet`` board target provides support for the network
 core on the nRF5340 SoC.
 
-.. figure:: img/nrf7002dk.jpg
-   :align: center
-   :alt: nRF7002 DK
-
-   nRF7002 DK (Credit: Nordic Semiconductor)
-
 More information about the board can be found at the
 `nRF7002 DK website`_.
 The `nRF7002 DK Product Specification`_
@@ -53,78 +44,8 @@ Hardware
 Supported features
 ------------------
 
-The ``nrf7002dk/nrf5340/cpuapp`` board configuration supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| RADIO     | nrf7002    | Wi-Fi 6 (802.11ax)   |
-+-----------+------------+----------------------+
-| QSPI      | on-chip    | qspi                 |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| SPU       | on-chip    | system protection    |
-+-----------+------------+----------------------+
-| UARTE     | on-chip    | serial               |
-+-----------+------------+----------------------+
-| USB       | on-chip    | usb                  |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-The ``nrf7002dk/nrf5340/cpunet`` board configuration supports the following hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UARTE     | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
 See `nRF7002 DK Product Specification`_
 for a complete list of nRF7002 DK board hardware features.
 
@@ -173,6 +94,8 @@ The following security components are available:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The nRF5340 application core supports the Armv8-M Security Extension.
 Applications built for the ``nrf7002dk/nrf5340/cpuapp`` board boot by default in the
 secure state.
@@ -181,8 +104,8 @@ The nRF5340 network core does not support the Armv8-M Security Extension.
 nRF5340 IDAU can configure bus accesses by the nRF5340 network core to have the secure
 attribute set. This allows to build and run secure-only applications on the nRF5340 SoC.
 
-Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
-=============================================================================
+Building Secure/Non-Secure Zephyr applications with Arm® TrustZone®
+===================================================================
 
 Applications on the nRF5340 may contain a Secure and a Non-Secure firmware
 image for the application core. The Secure image can be built using either

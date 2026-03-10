@@ -106,7 +106,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 		len += sizeof(uint16_t);
 	}
 
-	pkt = net_pkt_alloc_with_buffer(lldp->iface, len, AF_UNSPEC, 0,
+	pkt = net_pkt_alloc_with_buffer(lldp->iface, len, NET_AF_UNSPEC, 0,
 					BUF_ALLOC_TIMEOUT);
 	if (!pkt) {
 		ret = -ENOMEM;
@@ -133,7 +133,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_LLDP_END_LLDPDU_TLV_ENABLED)) {
-		uint16_t tlv_end = htons(NET_LLDP_END_LLDPDU_VALUE);
+		uint16_t tlv_end = net_htons(NET_LLDP_END_LLDPDU_VALUE);
 
 		ret = net_pkt_write(pkt, (uint8_t *)&tlv_end, sizeof(tlv_end));
 		if (ret < 0) {
@@ -142,12 +142,17 @@ static int lldp_send(struct ethernet_lldp *lldp)
 		}
 	}
 
-	net_pkt_lladdr_src(pkt)->addr = net_if_get_link_addr(lldp->iface)->addr;
-	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
-	net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)lldp_multicast_eth_addr.addr;
-	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
+	(void)net_linkaddr_copy(net_pkt_lladdr_src(pkt),
+				net_if_get_link_addr(lldp->iface));
 
-	if (net_if_send_data(lldp->iface, pkt) == NET_DROP) {
+	(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
+			       (uint8_t *)lldp_multicast_eth_addr.addr,
+			       sizeof(struct net_eth_addr));
+
+	/* send without timeout, so we do not risk being blocked by tx when
+	 * being flooded
+	 */
+	if (net_if_try_send_data(lldp->iface, pkt, K_NO_WAIT) == NET_DROP) {
 		net_pkt_unref(pkt);
 		ret = -EIO;
 	}
@@ -229,7 +234,7 @@ static int lldp_check_iface(struct net_if *iface)
 	return 0;
 }
 
-static int lldp_start(struct net_if *iface, uint32_t mgmt_event)
+static int lldp_start(struct net_if *iface, uint64_t mgmt_event)
 {
 	struct ethernet_context *ctx;
 	int ret, slot;
@@ -323,7 +328,7 @@ int net_lldp_register_callback(struct net_if *iface, net_lldp_recv_cb_t recv_cb)
 }
 
 static void iface_event_handler(struct net_mgmt_event_callback *evt_cb,
-				uint32_t mgmt_event, struct net_if *iface)
+				uint64_t mgmt_event, struct net_if *iface)
 {
 	lldp_start(iface, mgmt_event);
 }
@@ -372,21 +377,21 @@ int net_lldp_config_optional(struct net_if *iface, const uint8_t *tlv, size_t le
 
 static const struct net_lldpdu lldpdu = {
 	.chassis_id = {
-		.type_length = htons((LLDP_TLV_CHASSIS_ID << 9) |
+		.type_length = net_htons((LLDP_TLV_CHASSIS_ID << 9) |
 			NET_LLDP_CHASSIS_ID_TLV_LEN),
 		.subtype = CONFIG_NET_LLDP_CHASSIS_ID_SUBTYPE,
 		.value = NET_LLDP_CHASSIS_ID_VALUE
 	},
 	.port_id = {
-		.type_length = htons((LLDP_TLV_PORT_ID << 9) |
+		.type_length = net_htons((LLDP_TLV_PORT_ID << 9) |
 			NET_LLDP_PORT_ID_TLV_LEN),
 		.subtype = CONFIG_NET_LLDP_PORT_ID_SUBTYPE,
 		.value = NET_LLDP_PORT_ID_VALUE
 	},
 	.ttl = {
-		.type_length = htons((LLDP_TLV_TTL << 9) |
+		.type_length = net_htons((LLDP_TLV_TTL << 9) |
 			NET_LLDP_TTL_TLV_LEN),
-		.ttl = htons(NET_LLDP_TTL)
+		.ttl = net_htons(NET_LLDP_TTL)
 	},
 };
 

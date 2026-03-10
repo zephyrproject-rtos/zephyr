@@ -9,6 +9,8 @@ toolchain:
 supported:
   - netif
   - smp
+ram: 262144
+flash: 32768
 testing:
   default: true
   ignore_tags:

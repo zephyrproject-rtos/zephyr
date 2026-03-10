@@ -2,10 +2,11 @@ sample:
   description: Code data relocation nocopy Sample
   name: code relocation nocopy
 tests:
-  sample.application_development.code_relocation_nocopy:
+  sample.app_dev.code_relocation_nocopy:
     platform_allow:
       - qemu_cortex_m3
       - nrf5340dk/nrf5340/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
       - stm32f769i_disco
       - stm32h7b3i_dk
       - stm32h573i_dk

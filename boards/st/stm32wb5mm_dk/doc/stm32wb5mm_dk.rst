@@ -5,17 +5,17 @@ Overview
 
 The STM32WB5MM-DK Discovery kit is designed as a complete demonstration
 and development platform for the STMicroelectronics STM32W5MMG module based
-on the Arm |reg| Cortex |reg|-M4 and Arm |reg|  Cortex |reg|-M0+ cores.
+on the Arm® Cortex®-M4 and Arm®  Cortex®-M0+ cores.
 The STM32 device is a multi-protocol wireless and ultra-low-power device
 embedding a powerful and ultra-low-power radio compliant with the
-Bluetooth |reg| Low Energy (BLE) SIG specification v5.2 and with
+Bluetooth® Low Energy (BLE) SIG specification v5.2 and with
 IEEE 802.15.4-2011.
 
 
 STM32WB5MM-DK supports the following features:
 
 * STM32WB5MMG (1-Mbyte Flash memory, 256-Kbyte SRAM)
-    - Dual-core 32‑bit (Arm |reg| Cortex |reg|-M4 and M0+)
+    - Dual-core 32‑bit (Arm® Cortex®-M4 and M0+)
     - 2.4 GHz RF transceiver
     - 0.96-inch 128x64 OLED display
     - 128-Mbit Quad-SPI NOR Flash Memory
@@ -29,14 +29,14 @@ STM32WB5MM-DK supports the following features:
 
 * Board connectors:
     - STMod+
-    - ARDUINO |reg| Uno V3 expansion connector
+    - ARDUINO® Uno V3 expansion connector
     - USB user with Micro-B connector
     - TAG10 10-pin footprint
 
 * Flexible power-supply options:
     - ST-LINK/V2-1 USB connector,
     - 5 V delivered by:
-        - ARDUINO |reg|,
+        - ARDUINO®,
         - external connector,
         - USB charger, or USB power
 
@@ -50,7 +50,7 @@ Hardware
 ********
 
 STM32WB5MMG is an ultra-low-power and small form factor certified 2.4 GHz
-wireless module. It supports Bluetooth |reg| Low Energy 5.4, Zigbee |reg| 3.0,
+wireless module. It supports Bluetooth® Low Energy 5.4, Zigbee® 3.0,
 OpenThread, dynamic, and static concurrent modes, and 802.15.4 proprietary
 protocols.
 
@@ -60,19 +60,19 @@ receiver sensitivity and output power signal. Its low-power features
 enable extended battery life, small coin-cell batteries, and energy harvesting.
 
 - Ultra-low-power with FlexPowerControl
-- Core: ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU
+- Core: ARM® 32-bit Cortex®-M4 CPU with FPU
 - Radio:
 
   - 2.4GHz
   - RF transceiver supporting:
 
-    - Bluetooth |reg| 5.4 specification,
+    - Bluetooth® 5.4 specification,
     - IEEE 802.15.4-2011 PHY and MAC,
-    - Zigbee |reg| 3.0
+    - Zigbee® 3.0
 
   - RX sensitivity:
 
-    - -96 dBm (Bluetooth |reg| Low Energy at 1 Mbps),
+    - -96 dBm (Bluetooth® Low Energy at 1 Mbps),
     - -100 dBm (802.15.4)
 
   - Programmable output power up to +6 dBm with 1 dB steps
@@ -98,7 +98,7 @@ enable extended battery life, small coin-cell batteries, and energy harvesting.
     trimmed RC (±1%)
   - 2x PLL for system clock, USB, SAI, ADC
 
-More information about STM32WB55RG can be found here:
+More information about STM32WB5MMG can be found here:
 
 - `STM32WB5MM-DK on www.st.com`_
 - `STM32WB5MMG datasheet`_
@@ -106,34 +106,18 @@ More information about STM32WB55RG can be found here:
 Supported Features
 ==================
 
-The Zephyr STM32WB5MM-DK board configuration supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
+Bluetooth® and compatibility with STM32WB Copro Wireless Binaries
+=================================================================
 
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32wb5mm_dk/stm32wb5mm_dk_defconfig`
-
-Bluetooth and compatibility with STM32WB Copro Wireless Binaries
-================================================================
-
-To operate bluetooth on STM32WB5MMG, Cortex-M0 core should be flashed with
+To operate Bluetooth® on STM32WB5MMG, Cortex-M0 core should be flashed with
 a valid STM32WB Coprocessor binaries (either 'Full stack' or 'HCI Layer').
 These binaries are delivered in STM32WB Cube packages, under
 ``Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/``.
 
 For compatibility information with the various versions of these binaries,
-please check `modules/hal/stm32/lib/stm32wb/hci/README`_
-in the ``hal_stm32`` repo.
+please check :module_file:`hal_stm32:lib/stm32wb/README.rst`.
 
 Note that since STM32WB Cube package V1.13.2, "full stack" binaries are not
 compatible anymore for a use in Zephyr and only "HCI Only" versions should be
@@ -181,6 +165,8 @@ and the second to PC13. They have the aliases sw0 and sw1 respectively.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32WB5MM-DK has an on-board ST-Link to flash and debug the firmware on the module.
 
@@ -244,9 +230,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32WB5MMG datasheet:
    https://www.st.com/resource/en/datasheet/stm32wb5mmg.pdf
-
-.. _modules/hal/stm32/lib/stm32wb/hci/README:
-   https://github.com/zephyrproject-rtos/hal_stm32/blob/main/lib/stm32wb/hci/README
 
 .. _Hello_World:
    https://docs.zephyrproject.org/latest/samples/hello_world/README.html

@@ -1,13 +1,37 @@
 set(COMMON_ZEPHYR_LINKER_DIR ${ZEPHYR_BASE}/cmake/linker_script/common)
 
-set_ifndef(region_min_align CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE)
+# This should be different for cortex_r or cortex_a....
+# cut from zephyr/include/zephyr/arch/arm/cortex_m/scripts/linker.ld
+if(DEFINED CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE)
+  set_ifndef(region_min_align ${CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE})
+endif()
 
 # Set alignment to CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE if not set above
 # to make linker section alignment comply with MPU granularity.
-set_ifndef(region_min_align CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
+if(DEFINED CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
+  set_ifndef(region_min_align ${CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE})
+endif()
 
 # If building without MPU support, use default 4-byte alignment.. if not set above.
 set_ifndef(region_min_align 4)
+
+zephyr_linker_include_var(VAR region_min_align)
+if((NOT DEFINED CONFIG_CUSTOM_SECTION_ALIGN) AND DEFINED  CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+  # define MPU_ALIGN(region_size) \
+  # . = ALIGN(_region_min_align); \
+  # . = ALIGN( 1 << LOG2CEIL(region_size))
+  # Handling this requires us to handle log2ceil() in iar linker since the size
+  # isn't known until then.
+  set(MPU_ALIGN_BYTES ${region_min_align})
+  #message(WARNING "We can not handle . = ALIGN( 1 << LOG2CEIL(region_size))  ")
+else()
+  set(MPU_ALIGN_BYTES ${region_min_align})
+endif()
+# The APP_SHARED_ALIGN and SMEM_PARTITION_ALIGN macros are defined as
+# ". = ALIGN(...)" things.
+# the cmake generator stuff needs an align-size in bytes so:
+zephyr_linker_include_var(VAR APP_SHARED_ALIGN_BYTES VALUE ${region_min_align})
+zephyr_linker_include_var(VAR SMEM_PARTITION_ALIGN_BYTES VALUE ${MPU_ALIGN_BYTES})
 
 # Note, the `+ 0` in formulas below avoids errors in cases where a Kconfig
 #       variable is undefined and thus expands to nothing.
@@ -30,7 +54,6 @@ endif()
 
 set(RAM_ADDR ${CONFIG_SRAM_BASE_ADDRESS})
 math(EXPR RAM_SIZE "(${CONFIG_SRAM_SIZE} + 0) * 1024" OUTPUT_FORMAT HEXADECIMAL)
-math(EXPR IDT_ADDR "${RAM_ADDR} + ${RAM_SIZE}" OUTPUT_FORMAT HEXADECIMAL)
 
 # ToDo: decide on the optimal location for this.
 # linker/ld/target.cmake based on arch, or directly in arch and scatter_script.cmake can ignore
@@ -39,7 +62,15 @@ zephyr_linker(ENTRY ${CONFIG_KERNEL_ENTRY})
 
 zephyr_linker_memory(NAME FLASH    FLAGS rx START ${FLASH_ADDR} SIZE ${FLASH_SIZE})
 zephyr_linker_memory(NAME RAM      FLAGS wx START ${RAM_ADDR}   SIZE ${RAM_SIZE})
-zephyr_linker_memory(NAME IDT_LIST FLAGS wx START ${IDT_ADDR}   SIZE 2K)
+zephyr_linker_memory(NAME IDT_LIST FLAGS wx START 0xFFFF8000    SIZE 2K)
+
+# If ROMSTART relocation is enabled, create a *separate* load/exec memory region
+# for the vector table. This must be separate for armlink,
+# otherwise moving .rom_start changes the LR base and drags .text with it.
+if(CONFIG_ROMSTART_RELOCATION_ROM)
+  math(EXPR _romstart_size_bytes "${CONFIG_ROMSTART_REGION_SIZE} * 1024" OUTPUT_FORMAT HEXADECIMAL)
+  zephyr_linker_memory(NAME ROMSTART FLAGS rx START ${CONFIG_ROMSTART_REGION_ADDRESS} SIZE ${_romstart_size_bytes})
+endif()
 
 dt_comp_path(paths COMPATIBLE "zephyr,memory-region")
 foreach(path IN LISTS paths)
@@ -55,10 +86,19 @@ else()
   set(rom_start ${RAM_ADDR})
 endif()
 
+set(ROMSTART_ADDRESS ${rom_start})
+if(CONFIG_ROMSTART_RELOCATION_ROM)
+  set(ROMSTART_ADDRESS ${CONFIG_ROMSTART_REGION_ADDRESS})
+endif()
+
 zephyr_linker_group(NAME RAM_REGION VMA RAM LMA ROM_REGION)
+if(CONFIG_ROMSTART_RELOCATION_ROM)
+  zephyr_linker_group(NAME ROMSTART_REGION VMA ROMSTART LMA ROMSTART)
+endif()
 zephyr_linker_group(NAME TEXT_REGION GROUP ROM_REGION SYMBOL SECTION)
 zephyr_linker_group(NAME RODATA_REGION GROUP ROM_REGION)
 zephyr_linker_group(NAME DATA_REGION GROUP RAM_REGION SYMBOL SECTION)
+zephyr_linker_group(NAME NOINIT_REGION GROUP RAM_REGION SYMBOL SECTION)
 
 # should go to a relocation.cmake - from include/linker/rel-sections.ld - start
 zephyr_linker_section(NAME  .rel.plt  HIDDEN)
@@ -75,14 +115,20 @@ zephyr_linker_section_configure(SECTION /DISCARD/ INPUT ".igot.plt")
 zephyr_linker_section_configure(SECTION /DISCARD/ INPUT ".got")
 zephyr_linker_section_configure(SECTION /DISCARD/ INPUT ".igot")
 
-zephyr_linker_section(NAME .rom_start ADDRESS ${rom_start} GROUP ROM_REGION NOINPUT)
-
+if(CONFIG_ROMSTART_RELOCATION_ROM)
+  # Put vectors into their own LR/ER rooted at ROMSTART.
+  # Do NOT place this in ROM_REGION, or armlink will move the whole LR base.
+  zephyr_linker_section(NAME .rom_start GROUP ROMSTART_REGION NOINPUT)
+else()
+  zephyr_linker_section(NAME .rom_start ADDRESS ${rom_start} GROUP ROM_REGION NOINPUT)
+endif()
 zephyr_linker_section(NAME .text         GROUP TEXT_REGION)
 
 zephyr_linker_section_configure(SECTION .rel.plt  INPUT ".rel.iplt")
 zephyr_linker_section_configure(SECTION .rela.plt INPUT ".rela.iplt")
 
-zephyr_linker_section_configure(SECTION .text INPUT ".TEXT.*")
+include(${COMMON_ZEPHYR_LINKER_DIR}/kobject-text.cmake)
+
 zephyr_linker_section_configure(SECTION .text INPUT ".gnu.linkonce.t.*")
 
 zephyr_linker_section_configure(SECTION .text INPUT ".glue_7t")
@@ -98,7 +144,7 @@ endif()
 zephyr_linker_section(NAME .ARM.exidx GROUP ROM_REGION)
 # Here the original linker would check for __GCC_LINKER_CMD__, need to check toolchain linker ?
 #if(__GCC_LINKER_CMD__)
-  zephyr_linker_section_configure(SECTION .ARM.exidx INPUT ".gnu.linkonce.armexidx.*")
+  zephyr_linker_section_configure(SECTION .ARM.exidx INPUT ".gnu.linkonce.armexidx.*" SYMBOLS "__exidx_start" "__exidx_end")
 #endif()
 
 
@@ -107,9 +153,9 @@ include(${COMMON_ZEPHYR_LINKER_DIR}/thread-local-storage.cmake)
 
 zephyr_linker_section(NAME .rodata GROUP RODATA_REGION)
 zephyr_linker_section_configure(SECTION .rodata INPUT ".gnu.linkonce.r.*")
-if(CONFIG_USERSPACE AND CONFIG_XIP)
-  zephyr_linker_section_configure(SECTION .rodata INPUT ".kobject_data.rodata*")
-endif()
+
+include(${COMMON_ZEPHYR_LINKER_DIR}/kobject-rom.cmake)
+
 zephyr_linker_section_configure(SECTION .rodata ALIGN 4)
 
 # ToDo - . = ALIGN(_region_min_align);
@@ -119,23 +165,43 @@ zephyr_linker_section_configure(SECTION .rodata ALIGN 4)
 zephyr_linker_section(NAME .ramfunc GROUP RAM_REGION SUBALIGN 8)
 # Todo: handle MPU_ALIGN(_ramfunc_size);
 
-# ToDo - handle if(CONFIG_USERSPACE)
+if(CONFIG_USERSPACE)
+  # This is where the app_mem_partition stuff is going to be placed, once it
+  # is generated by gen_app_partitions.py. _app_smem has its own init-copy
+  # handling in arch_data_copy, so put it in RAM_REGION rather than DATA_REGION
+  zephyr_linker_group(NAME APP_SMEM_GROUP GROUP RAM_REGION SYMBOL SECTION)
+  zephyr_linker_symbol(SYMBOL "_app_smem_size" EXPR "@__app_smem_group_size@")
+  zephyr_linker_symbol(SYMBOL "_app_smem_rom_start" EXPR "@__app_smem_group_load_start@")
 
-zephyr_linker_section(NAME .data GROUP DATA_REGION)
+
+  zephyr_linker_section(NAME .bss GROUP RAM_REGION TYPE BSS)
+  zephyr_linker_section_configure(SECTION .bss INPUT COMMON)
+  zephyr_linker_section_configure(SECTION .bss INPUT ".kernel_bss.*")
+
+  #TODO: the skeletons includes <linker_sram_bss_relocate.ld> here
+
+  # As memory is cleared in words only, it is simpler to ensure the BSS
+  # section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
+  zephyr_linker_section_configure(SECTION .bss ALIGN 4)
+
+  include(${COMMON_ZEPHYR_LINKER_DIR}/common-noinit.cmake)
+endif()
+
+zephyr_linker_section(NAME .data GROUP DATA_REGION ALIGN_WITH_INPUT)
 zephyr_linker_section_configure(SECTION .data INPUT ".kernel.*")
 
 include(${COMMON_ZEPHYR_LINKER_DIR}/common-ram.cmake)
-#include(kobject.ld)
+include(${COMMON_ZEPHYR_LINKER_DIR}/kobject-data.cmake)
 
 if(NOT CONFIG_USERSPACE)
-  zephyr_linker_section(NAME .bss VMA RAM LMA FLASH TYPE BSS)
+  zephyr_linker_section(NAME .bss GROUP RAM_REGION TYPE BSS)
   zephyr_linker_section_configure(SECTION .bss INPUT COMMON)
   zephyr_linker_section_configure(SECTION .bss INPUT ".kernel_bss.*")
   # As memory is cleared in words only, it is simpler to ensure the BSS
   # section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
   zephyr_linker_section_configure(SECTION .bss ALIGN 4)
 
-  zephyr_linker_section(NAME .noinit GROUP RAM_REGION TYPE NOLOAD NOINIT)
+  zephyr_linker_section(NAME .noinit GROUP NOINIT_REGION TYPE NOLOAD NOINIT)
   # This section is used for non-initialized objects that
   # will not be cleared during the boot process.
   zephyr_linker_section_configure(SECTION .noinit INPUT ".kernel_noinit.*")
@@ -143,7 +209,7 @@ endif()
 
 include(${COMMON_ZEPHYR_LINKER_DIR}/ram-end.cmake)
 
-zephyr_linker_symbol(SYMBOL __ramfunc_region_start EXPR "ADDR(.ramfunc)")
+zephyr_linker_symbol(SYMBOL __ramfunc_region_start EXPR "(@__ramfunc_start@)")
 zephyr_linker_symbol(SYMBOL __kernel_ram_start EXPR "(@__bss_start@)")
 zephyr_linker_symbol(SYMBOL __kernel_ram_end  EXPR "(${RAM_ADDR} + ${RAM_SIZE})")
 zephyr_linker_symbol(SYMBOL __kernel_ram_size EXPR "(@__kernel_ram_end@ - @__bss_start@)")
@@ -209,3 +275,12 @@ dt_comp_path(paths COMPATIBLE "zephyr,memory-region")
 foreach(path IN LISTS paths)
   zephyr_linker_dts_section(PATH ${path})
 endforeach()
+
+
+# .last_section must be last in romable region
+# .last_section contains a fixed word to ensure location counter and actual
+# rom region data usage match when CONFIG_LINKER_LAST_SECTION_ID=y.
+zephyr_linker_section(NAME .last_section VMA FLASH LMA FLASH
+                      NOINPUT TYPE LINKER_SCRIPT_FOOTER)
+# KEEP can not be passed to zephyr_linker_section, so:
+zephyr_linker_section_configure(SECTION .last_section INPUT ".last_section" KEEP)

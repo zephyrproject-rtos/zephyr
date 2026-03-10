@@ -6,9 +6,10 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
-#include <cmsis_os2.h>
+#include <zephyr/portability/cmsis_os2.h>
+#include <zephyr/portability/cmsis_types.h>
 
-#define STACKSZ         CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE
+#define STACKSZ CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE
 
 /* This is used to check the thread yield functionality between 2 threads */
 static int thread_yield_check;
@@ -78,15 +79,13 @@ static void thread2(void *argument)
 
 	thread_array = k_calloc(max_num_threads, sizeof(osThreadId_t));
 	num_threads = osThreadEnumerate(thread_array, max_num_threads);
-	zassert_equal(num_threads, 2,
-		      "Incorrect number of cmsis rtos v2 threads");
+	zassert_equal(num_threads, 2, "Incorrect number of cmsis rtos v2 threads");
 
 	for (i = 0U; i < num_threads; i++) {
 		uint32_t size = osThreadGetStackSize(thread_array[i]);
 		uint32_t space = osThreadGetStackSpace(thread_array[i]);
 
-		zassert_true(space < size,
-			     "stack size remaining is not what is expected");
+		zassert_true(space < size, "stack size remaining is not what is expected");
 	}
 
 	zassert_equal(osThreadGetState(thread_array[1]), osThreadReady,
@@ -108,18 +107,13 @@ static void thread2(void *argument)
 	osThreadYield();
 }
 
-static void thread_apis_common(int *yield_check,
-			       const char *thread1_name,
-			       osThreadAttr_t *thread1_attr,
-			       osThreadAttr_t *thread2_attr)
+static void thread_apis_common(int *yield_check, const char *thread1_name,
+			       osThreadAttr_t *thread1_attr, osThreadAttr_t *thread2_attr)
 {
 	osThreadId_t id1;
 	osThreadId_t id2;
 
-	struct thread1_args args = {
-		.yield_check = yield_check,
-		.name = thread1_name
-	};
+	struct thread1_args args = {.yield_check = yield_check, .name = thread1_name};
 
 	id1 = osThreadNew(thread1, &args, thread1_attr);
 	zassert_true(id1 != NULL, "Failed creating thread1");
@@ -127,8 +121,7 @@ static void thread_apis_common(int *yield_check,
 	id2 = osThreadNew(thread2, yield_check, thread2_attr);
 	zassert_true(id2 != NULL, "Failed creating thread2");
 
-	zassert_equal(osThreadGetCount(), 2,
-		      "Incorrect number of cmsis rtos v2 threads");
+	zassert_equal(osThreadGetCount(), 2, "Incorrect number of cmsis rtos v2 threads");
 
 	do {
 		osDelay(100);
@@ -137,14 +130,13 @@ static void thread_apis_common(int *yield_check,
 
 ZTEST(cmsis_thread_apis, test_thread_apis_dynamic)
 {
-	thread_apis_common(&thread_yield_check_dynamic, "ZephyrThread",
-			   NULL, NULL);
+	thread_apis_common(&thread_yield_check_dynamic, "ZephyrThread", NULL, NULL);
 }
 
 ZTEST(cmsis_thread_apis, test_thread_apis)
 {
-	thread_apis_common(&thread_yield_check, os_thread1_attr.name,
-			   &os_thread1_attr, &os_thread2_attr);
+	thread_apis_common(&thread_yield_check, os_thread1_attr.name, &os_thread1_attr,
+			   &os_thread2_attr);
 }
 
 static osPriority_t OsPriorityInvalid = 60;
@@ -172,28 +164,24 @@ static void thread3(void *argument)
 	/* Lower the priority of the current thread */
 	osThreadSetPriority(id, osPriorityBelowNormal);
 	rv = osThreadGetPriority(id);
-	zassert_equal(rv, osPriorityBelowNormal,
-		      "Expected priority to be changed to %d, not %d",
+	zassert_equal(rv, osPriorityBelowNormal, "Expected priority to be changed to %d, not %d",
 		      (int)osPriorityBelowNormal, (int)rv);
 
 	/* Increase the priority of the current thread */
 	osThreadSetPriority(id, osPriorityAboveNormal);
 	rv = osThreadGetPriority(id);
-	zassert_equal(rv, osPriorityAboveNormal,
-		      "Expected priority to be changed to %d, not %d",
+	zassert_equal(rv, osPriorityAboveNormal, "Expected priority to be changed to %d, not %d",
 		      (int)osPriorityAboveNormal, (int)rv);
 
 	/* Restore the priority of the current thread */
 	osThreadSetPriority(id, prio);
 	rv = osThreadGetPriority(id);
-	zassert_equal(rv, prio,
-		      "Expected priority to be changed to %d, not %d",
-		      (int)prio, (int)rv);
+	zassert_equal(rv, prio, "Expected priority to be changed to %d, not %d", (int)prio,
+		      (int)rv);
 
 	/* Try to set unsupported priority and assert failure */
 	status = osThreadSetPriority(id, OsPriorityInvalid);
-	zassert_true(status == osErrorParameter,
-		     "Something's wrong with osThreadSetPriority!");
+	zassert_true(status == osErrorParameter, "Something's wrong with osThreadSetPriority!");
 
 	/* Indication that thread3 is done with its processing */
 	*state = 1;
@@ -224,13 +212,11 @@ static void thread_prior_common(int *state, osThreadAttr_t *attr)
 
 	/* Try to set priority to inactive thread and assert failure */
 	status = osThreadSetPriority(id3, osPriorityNormal);
-	zassert_true(status == osErrorResource,
-		     "Something's wrong with osThreadSetPriority!");
+	zassert_true(status == osErrorResource, "Something's wrong with osThreadSetPriority!");
 
 	/* Try to terminate inactive thread and assert failure */
 	status = osThreadTerminate(id3);
-	zassert_true(status == osErrorResource,
-		     "Something's wrong with osThreadTerminate!");
+	zassert_true(status == osErrorResource, "Something's wrong with osThreadTerminate!");
 
 	*state = 0;
 }
@@ -268,7 +254,7 @@ static void thread4(void *argument)
 
 ZTEST(cmsis_thread_apis, test_thread_join)
 {
-	osThreadAttr_t attr = { 0 };
+	osThreadAttr_t attr = {0};
 	int64_t time_stamp;
 	int64_t milliseconds_spent;
 	osThreadId_t tA, tB;
@@ -297,7 +283,7 @@ ZTEST(cmsis_thread_apis, test_thread_join)
 
 	milliseconds_spent = k_uptime_delta(&time_stamp);
 	zassert_true((milliseconds_spent >= DELAY_MS - DELTA_MS) &&
-		     (milliseconds_spent <= DELAY_MS + DELTA_MS),
+			     (milliseconds_spent <= DELAY_MS + DELTA_MS),
 		     "Join completed but was too fast or too slow.");
 
 	printk(" - Waiting for thread A to join...\n");
@@ -320,8 +306,7 @@ ZTEST(cmsis_thread_apis, test_thread_detached)
 	osDelay(k_ms_to_ticks_ceil32(DELAY_MS - DELTA_MS));
 
 	status = osThreadJoin(thread);
-	zassert_equal(status, osErrorResource,
-		      "Incorrect status returned from osThreadJoin!");
+	zassert_equal(status, osErrorResource, "Incorrect status returned from osThreadJoin!");
 
 	osDelay(k_ms_to_ticks_ceil32(DELTA_MS));
 }
@@ -331,14 +316,16 @@ void thread6(void *argument)
 	osThreadId_t thread = argument;
 	osStatus_t status;
 
+	/* Thread passed as argument may or may not have already terminated, but is expected to be
+	 * joinable for this test as it was created with osThreadJoinable attr_bits.
+	 */
 	status = osThreadJoin(thread);
-	zassert_equal(status, osErrorResource,
-		      "Incorrect status returned from osThreadJoin!");
+	zassert_equal(status, osOK, "Incorrect status returned from osThreadJoin!");
 }
 
 ZTEST(cmsis_thread_apis, test_thread_joinable_detach)
 {
-	osThreadAttr_t attr = { 0 };
+	osThreadAttr_t attr = {0};
 	osThreadId_t tA, tB;
 	osStatus_t status;
 
@@ -360,7 +347,7 @@ ZTEST(cmsis_thread_apis, test_thread_joinable_detach)
 
 ZTEST(cmsis_thread_apis, test_thread_joinable_terminate)
 {
-	osThreadAttr_t attr = { 0 };
+	osThreadAttr_t attr = {0};
 	osThreadId_t tA, tB;
 	osStatus_t status;
 
@@ -378,5 +365,86 @@ ZTEST(cmsis_thread_apis, test_thread_joinable_terminate)
 	zassert_equal(status, osOK, "osThreadTerminate failed.");
 
 	osDelay(k_ms_to_ticks_ceil32(DELTA_MS));
+}
+
+static K_THREAD_STACK_DEFINE(test_stack7, STACKSZ);
+static struct cmsis_rtos_thread_cb test_cb7;
+static const osThreadAttr_t os_thread7_attr = {
+	.name = "Thread7",
+	.cb_mem = &test_cb7,
+	.cb_size = sizeof(test_cb7),
+	.stack_mem = &test_stack7,
+	.stack_size = STACKSZ,
+	.priority = osPriorityNormal,
+};
+static void thread7(void *argument)
+{
+	printf("Thread 7 ran\n");
+}
+ZTEST(cmsis_thread_apis, test_thread_apis_static_allocation)
+{
+	osThreadId_t id;
+
+	id = osThreadNew(thread7, NULL, &os_thread7_attr);
+	zassert_not_null(id, "Failed to create thread with osThreadNew using static cb/stack");
+}
+
+static K_THREAD_STACK_DEFINE(test_stack8, STACKSZ);
+static struct cmsis_rtos_thread_cb test_cb8;
+static const osThreadAttr_t os_thread8_attr = {
+	.name = "Thread8",
+	.attr_bits = osThreadJoinable,
+	.cb_mem = &test_cb8,
+	.cb_size = sizeof(test_cb8),
+	.stack_mem = &test_stack8,
+	.stack_size = STACKSZ,
+	.priority = osPriorityNormal,
+};
+static void thread8(void *argument)
+{
+	printf("Thread 8 ran\n");
+	osDelay(k_ms_to_ticks_ceil32(DELAY_MS));
+	osThreadExit();
+}
+ZTEST(cmsis_thread_apis, test_thread_apis_join_after_exit)
+{
+	osThreadId_t id;
+	osStatus_t status;
+
+	id = osThreadNew(thread8, NULL, &os_thread8_attr);
+	zassert_not_null(id, "Failed to create thread with osThreadNew using static cb/stack");
+
+	status = osThreadJoin(id);
+	zassert_equal(status, osOK, "osThreadJoin failed with status=%d!", status);
+}
+
+static K_THREAD_STACK_DEFINE(test_stack9, STACKSZ);
+static struct cmsis_rtos_thread_cb test_cb9;
+static const osThreadAttr_t os_thread9_attr = {
+	.name = "Thread9",
+	.attr_bits = osThreadJoinable,
+	.cb_mem = &test_cb9,
+	.cb_size = sizeof(test_cb9),
+	.stack_mem = &test_stack9,
+	.stack_size = STACKSZ,
+	.priority = osPriorityNormal,
+};
+static void thread9(void *argument)
+{
+	osThreadExit();
+}
+ZTEST(cmsis_thread_apis, test_thread_apis_multiple_new_static)
+{
+	osThreadId_t id;
+	osStatus_t status;
+
+	for (int i = 0; i < 100; i++) {
+		id = osThreadNew(thread9, NULL, &os_thread9_attr);
+		zassert_not_null(id,
+				 "Failed to create thread with osThreadNew using static cb/stack");
+
+		status = osThreadJoin(id);
+		zassert_equal(status, osOK, "osThreadJoin failed with status=%d!", status);
+	}
 }
 ZTEST_SUITE(cmsis_thread_apis, NULL, NULL, NULL, NULL, NULL);

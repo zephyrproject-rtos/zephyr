@@ -3,8 +3,8 @@
 Overview
 ********
 
-The Nucleo WB05KZ board is a Bluetooth |reg| Low Energy wireless and ultra-low-power
-board featuring an ARM Cortex |reg|-M0+ based STM32WB05KZV MCU, embedding a
+The Nucleo WB05KZ board is a Bluetooth® Low Energy wireless and ultra-low-power
+board featuring an ARM Cortex®-M0+ based STM32WB05KZV MCU, embedding a
 powerful and ultra-low-power radio compliant with the Bluetooth® Low Energy
 SIG specification v5.4.
 
@@ -16,7 +16,7 @@ Hardware
 Nucleo WB05KZ provides the following hardware components:
 
 - STM32WB05KZV in VFQFPN32 package
-- ARM |reg| 32-bit Cortex |reg|-M0+ CPU
+- ARM® 32-bit Cortex®-M0+ CPU
 - 64 MHz maximal CPU frequebct
 - 192 KB Flash
 - 24 KB SRAM
@@ -30,44 +30,13 @@ More information about STM32WB05KZV can be found here:
 Supported Features
 ==================
 
-The Zephyr ``nucleo_wb05kz`` board target supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | internal flash memory               |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| TIMER     | on-chip    | counter, pwm                        |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | Bluetooth Low Energy                |
-+-----------+------------+-------------------------------------+
+Bluetooth® support
+------------------
 
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_wb09ke/nucleo_wb09ke_defconfig`
-
-Bluetooh support
-----------------
-
-BLE support is enabled; however, to build a Zephyr sample using this board,
-you first need to fetch the Bluetooth controller library into Zephyr as a binary BLOB.
+Bluetooth® Low Energy support is enabled; however, to build a Zephyr sample using this board,
+you first need to fetch the Bluetooth® controller library into Zephyr as a binary BLOB.
 
 To fetch binary BLOBs:
 
@@ -93,6 +62,8 @@ For more details, please refer to the `Nucleo WB05KZ board User Manual`_.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Nucleo WB05KZ board includes an ST-LINK-V3EC embedded debug tool interface.
 
@@ -137,6 +108,13 @@ You should see the following message on the console:
 
    Hello World! nucleo_wb05kz/stm32wb05
 
+Usage of the pyOCD runner requires installation of an additional target pack.
+This can be done using the following commands:
+
+.. code-block:: console
+
+   $ pyocd pack update
+   $ pyocd pack install stm32wb0
 
 Debugging
 =========

@@ -36,37 +36,7 @@ For more information about the SOC's please see `MEC172x Reference Manual`_
 Supported Features
 ==================
 
-The mec172xevb_assy6906 board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| PS/2      | on-chip    | ps2                                 |
-+-----------+------------+-------------------------------------+
-| KSCAN     | on-chip    | kscan                               |
-+-----------+------------+-------------------------------------+
-| TACH      | on-chip    | tachometer                          |
-+-----------+------------+-------------------------------------+
-| RPMFAN    | on-chip    | Fan speed controller                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the
-:zephyr_file:`boards/microchip/mec172xevb_assy6906/mec172xevb_assy6906_defconfig` Kconfig file.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -259,6 +229,8 @@ NOTE: ``JP121 3-4`` on base board also needs to be loaded.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Setup
 =====

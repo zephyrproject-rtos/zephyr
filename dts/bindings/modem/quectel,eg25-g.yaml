@@ -2,7 +2,7 @@ description: Quectel EG25-G modem
 
 compatible: "quectel,eg25-g"
 
-include: uart-device.yaml
+include: zephyr,cellular-modem-device.yaml
 
 properties:
   mdm-reset-gpios:
@@ -14,3 +14,6 @@ properties:
 
   mdm-wdisable-gpios:
     type: phandle-array
+
+  zephyr,mdm-reset-behavior:
+    default: ["toggle_on_recovery"]

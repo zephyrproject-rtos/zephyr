@@ -27,11 +27,11 @@
 
 LOG_MODULE_REGISTER(dut, LOG_LEVEL_DBG);
 
-static DEFINE_FLAG(is_subscribed);
-static DEFINE_FLAG(mtu_has_been_exchanged);
-static DEFINE_FLAG(conn_recycled);
-static DEFINE_FLAG(conn_param_updated);
-static DEFINE_FLAG(indicated);
+DEFINE_FLAG_STATIC(is_subscribed);
+DEFINE_FLAG_STATIC(mtu_has_been_exchanged);
+DEFINE_FLAG_STATIC(conn_recycled);
+DEFINE_FLAG_STATIC(conn_param_updated);
+DEFINE_FLAG_STATIC(indicated);
 
 extern unsigned long runtime_log_level;
 

@@ -12,6 +12,7 @@
 LOG_MODULE_REGISTER(net_dhcpv6, CONFIG_NET_DHCPV6_LOG_LEVEL);
 
 #include <zephyr/net/dhcpv6.h>
+#include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/random/random.h>
 #include <zephyr/sys/math_extras.h>
@@ -25,6 +26,12 @@ LOG_MODULE_REGISTER(net_dhcpv6, CONFIG_NET_DHCPV6_LOG_LEVEL);
 
 /* Maximum number of options client can request. */
 #define DHCPV6_MAX_OPTION_REQUEST 2
+
+#if defined(CONFIG_NET_DHCPV6_OPTION_DNS_ADDRESS)
+#define MAX_DNS_SERVERS CONFIG_DNS_RESOLVER_MAX_SERVERS
+#else
+#define MAX_DNS_SERVERS 1
+#endif
 
 struct dhcpv6_options_include {
 	bool clientid : 1;
@@ -40,7 +47,7 @@ struct dhcpv6_options_include {
 static K_MUTEX_DEFINE(lock);
 
 /* All_DHCP_Relay_Agents_and_Servers (ff02::1:2) */
-static const struct in6_addr all_dhcpv6_ra_and_servers = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
+static const struct net_in6_addr all_dhcpv6_ra_and_servers = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
 							       0, 0, 0, 0, 0, 0x01, 0, 0x02 } } };
 
 static sys_slist_t dhcpv6_ifaces = SYS_SLIST_STATIC_INIT(&dhcpv6_ifaces);
@@ -571,7 +578,7 @@ static struct net_pkt *dhcpv6_create_message(struct net_if *iface,
 					     enum dhcpv6_msg_type msg_type,
 					     struct dhcpv6_options_include *options)
 {
-	struct in6_addr *local_addr;
+	struct net_in6_addr *local_addr;
 	struct net_pkt *pkt;
 	size_t msg_size;
 
@@ -583,15 +590,15 @@ static struct net_pkt *dhcpv6_create_message(struct net_if *iface,
 
 	msg_size = dhcpv6_calculate_message_size(options);
 
-	pkt = net_pkt_alloc_with_buffer(iface, msg_size, AF_INET6,
-					IPPROTO_UDP, PKT_WAIT_TIME);
+	pkt = net_pkt_alloc_with_buffer(iface, msg_size, NET_AF_INET6,
+					NET_IPPROTO_UDP, PKT_WAIT_TIME);
 	if (pkt == NULL) {
 		return NULL;
 	}
 
 	if (net_ipv6_create(pkt, local_addr, &all_dhcpv6_ra_and_servers) < 0 ||
-	    net_udp_create(pkt, htons(DHCPV6_CLIENT_PORT),
-			   htons(DHCPV6_SERVER_PORT)) < 0) {
+	    net_udp_create(pkt, net_htons(DHCPV6_CLIENT_PORT),
+			   net_htons(DHCPV6_SERVER_PORT)) < 0) {
 		goto fail;
 	}
 
@@ -606,7 +613,7 @@ static struct net_pkt *dhcpv6_create_message(struct net_if *iface,
 	}
 
 	net_pkt_cursor_init(pkt);
-	net_ipv6_finalize(pkt, IPPROTO_UDP);
+	net_ipv6_finalize(pkt, NET_IPPROTO_UDP);
 
 	return pkt;
 
@@ -625,7 +632,12 @@ static int dhcpv6_send_solicit(struct net_if *iface)
 		.elapsed_time = true,
 		.ia_na = iface->config.dhcpv6.params.request_addr,
 		.ia_pd = iface->config.dhcpv6.params.request_prefix,
-		.oro = { DHCPV6_OPTION_CODE_SOL_MAX_RT },
+		.oro = {
+			DHCPV6_OPTION_CODE_SOL_MAX_RT,
+#if defined(CONFIG_NET_DHCPV6_OPTION_DNS_ADDRESS)
+			DHCPV6_OPTION_CODE_OPTION_DNS_SERVERS,
+#endif
+		},
 	};
 
 	pkt = dhcpv6_create_message(iface, DHCPV6_MSG_TYPE_SOLICIT, &options);
@@ -651,7 +663,12 @@ static int dhcpv6_send_request(struct net_if *iface)
 		.elapsed_time = true,
 		.ia_na = iface->config.dhcpv6.params.request_addr,
 		.ia_pd = iface->config.dhcpv6.params.request_prefix,
-		.oro = { DHCPV6_OPTION_CODE_SOL_MAX_RT },
+		.oro = {
+			DHCPV6_OPTION_CODE_SOL_MAX_RT,
+#if defined(CONFIG_NET_DHCPV6_OPTION_DNS_ADDRESS)
+			DHCPV6_OPTION_CODE_OPTION_DNS_SERVERS,
+#endif
+		},
 	};
 
 	pkt = dhcpv6_create_message(iface, DHCPV6_MSG_TYPE_REQUEST, &options);
@@ -1178,6 +1195,42 @@ static int dhcpv6_parse_option_ia_pd(struct net_pkt *pkt, uint16_t length,
 	return 0;
 }
 
+static int dhcpv6_parse_option_dns_servers(struct net_pkt *pkt, uint16_t length,
+					   struct net_sockaddr_in6 *servers,
+					   uint16_t *server_count)
+
+{
+	const uint8_t addr_size = sizeof(struct net_in6_addr);
+	uint16_t addr_count;
+	int ret;
+
+	if (length % addr_size != 0) {
+		NET_ERR("Invalid DNS Recursive Name Server option size");
+		return -EMSGSIZE;
+	}
+
+	/* Parse only as many server addresses as the buffer allows. */
+	addr_count = length / addr_size;
+	addr_count = MIN(addr_count, *server_count);
+
+	for (int i = 0; i < addr_count; i++) {
+		ret = net_pkt_read(pkt, &servers[i].sin6_addr, addr_size);
+		if (ret < 0) {
+			return ret;
+		}
+
+		length -= addr_size;
+	}
+
+	*server_count = addr_count;
+
+	if (length > 0) {
+		net_pkt_skip(pkt, length);
+	}
+
+	return 0;
+}
+
 static int dhcpv6_find_option(struct net_pkt *pkt, enum dhcpv6_option_code opt_code,
 			      uint16_t *opt_len)
 {
@@ -1322,6 +1375,70 @@ static int dhcpv6_find_status_code(struct net_pkt *pkt, uint16_t *status)
 		ret = 0;
 	}
 
+	net_pkt_cursor_restore(pkt, &backup);
+
+	return ret;
+}
+
+static int dhcpv6_handle_dns_server_option(struct net_pkt *pkt)
+{
+	const struct net_sockaddr *dns_servers[MAX_DNS_SERVERS + 1] = { 0 };
+	struct net_sockaddr_in6 dns_saddr[MAX_DNS_SERVERS] = { 0 };
+	uint16_t server_count = MAX_DNS_SERVERS;
+	struct dns_resolve_context *ctx;
+	struct net_pkt_cursor backup;
+	uint16_t length;
+	int ret, status;
+
+	net_pkt_cursor_backup(pkt, &backup);
+
+	ret = dhcpv6_find_option(pkt, DHCPV6_OPTION_CODE_OPTION_DNS_SERVERS,
+				 &length);
+	if (ret < 0) {
+		/* If the option is not present, don't report an error. */
+		ret = 0;
+		goto out;
+	}
+
+	ret = dhcpv6_parse_option_dns_servers(pkt, length, dns_saddr,
+					      &server_count);
+	if (ret < 0 || server_count == 0) {
+		goto out;
+	}
+
+	for (uint8_t i = 0; i < server_count; i++) {
+		dns_saddr[i].sin6_family = NET_AF_INET6;
+		dns_servers[i] = (struct net_sockaddr *)&dns_saddr[i];
+	}
+
+	ctx = dns_resolve_get_default();
+
+	if (IS_ENABLED(CONFIG_NET_DHCPV6_DNS_SERVER_VIA_INTERFACE)) {
+		/* If we are using the interface to resolve DNS servers,
+		 * we need to save the interface index.
+		 */
+		int ifindex = net_if_get_by_iface(net_pkt_iface(pkt));
+		int interfaces[MAX_DNS_SERVERS];
+
+		for (uint8_t i = 0; i < server_count; i++) {
+			interfaces[i] = ifindex;
+		}
+
+		status = dns_resolve_reconfigure_with_interfaces(ctx, NULL,
+								 dns_servers,
+								 interfaces,
+								 DNS_SOURCE_DHCPV6);
+	} else {
+		status = dns_resolve_reconfigure(ctx, NULL, dns_servers,
+						 DNS_SOURCE_DHCPV6);
+	}
+
+	if (status < 0) {
+		NET_DBG("Failed to reconfigure DNS resolver from DHCPv6 "
+			"option: %d", status);
+	}
+
+out:
 	net_pkt_cursor_restore(pkt, &backup);
 
 	return ret;
@@ -1684,7 +1801,7 @@ static int dhcpv6_handle_reply(struct net_if *iface, struct net_pkt *pkt,
 		    ia_na.iaaddr.valid_lifetime == 0) {
 			/* Remove old lease. */
 			net_if_ipv6_addr_rm(iface, &iface->config.dhcpv6.addr);
-			memset(&iface->config.dhcpv6.addr, 0, sizeof(struct in6_addr));
+			memset(&iface->config.dhcpv6.addr, 0, sizeof(struct net_in6_addr));
 			rediscover = true;
 			goto prefix;
 		}
@@ -1728,7 +1845,7 @@ prefix:
 			/* Remove old lease. */
 			net_if_ipv6_prefix_rm(iface, &iface->config.dhcpv6.prefix,
 					      iface->config.dhcpv6.prefix_len);
-			memset(&iface->config.dhcpv6.prefix, 0, sizeof(struct in6_addr));
+			memset(&iface->config.dhcpv6.prefix, 0, sizeof(struct net_in6_addr));
 			iface->config.dhcpv6.prefix_len = 0;
 			rediscover = true;
 			goto out;
@@ -1763,6 +1880,14 @@ prefix:
 			NET_ERR("Failed to configure DHCPv6 prefix");
 			net_dhcpv6_stop(iface);
 			return -EFAULT;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_DHCPV6_OPTION_DNS_ADDRESS)) {
+		ret = dhcpv6_handle_dns_server_option(pkt);
+		if (ret < 0) {
+			NET_ERR("DNS server option handling failed");
+			return ret;
 		}
 	}
 
@@ -2075,7 +2200,7 @@ static void dhcpv6_timeout(struct k_work *work)
 }
 
 static void dhcpv6_iface_event_handler(struct net_mgmt_event_callback *cb,
-				       uint32_t mgmt_event, struct net_if *iface)
+				       uint64_t mgmt_event, struct net_if *iface)
 {
 	sys_snode_t *node = NULL;
 
@@ -2094,6 +2219,17 @@ static void dhcpv6_iface_event_handler(struct net_mgmt_event_callback *cb,
 	if (mgmt_event == NET_EVENT_IF_DOWN) {
 		NET_DBG("Interface %p going down", iface);
 		dhcpv6_set_timeout(iface, UINT64_MAX);
+
+		/* Remove DNS servers as interface is gone. We only need to
+		 * do this for this interface. If using global setting, the
+		 * DNS servers are removed automatically when the interface
+		 * comes back up.
+		 */
+		if (IS_ENABLED(CONFIG_NET_DHCPV6_DNS_SERVER_VIA_INTERFACE)) {
+			dns_resolve_remove_source(dns_resolve_get_default(),
+						  net_if_get_by_iface(iface),
+						  DNS_SOURCE_DHCPV6);
+		}
 	} else if (mgmt_event == NET_EVENT_IF_UP) {
 		NET_DBG("Interface %p coming up", iface);
 		dhcpv6_enter_state(iface, NET_DHCPV6_INIT);
@@ -2114,8 +2250,10 @@ static void dhcpv6_generate_client_duid(struct net_if *iface)
 
 	memset(clientid, 0, sizeof(*clientid));
 
-	UNALIGNED_PUT(htons(DHCPV6_DUID_TYPE_LL), &clientid->duid.type);
-	UNALIGNED_PUT(htons(DHCPV6_HARDWARE_ETHERNET_TYPE), &duid_ll->hw_type);
+	UNALIGNED_PUT(net_htons(DHCPV6_DUID_TYPE_LL),
+		      UNALIGNED_MEMBER_ADDR(clientid, duid.type));
+	UNALIGNED_PUT(net_htons(DHCPV6_HARDWARE_ETHERNET_TYPE),
+		      UNALIGNED_MEMBER_ADDR(duid_ll, hw_type));
 	memcpy(duid_ll->ll_addr, lladdr->addr, lladdr->len);
 
 	clientid->length = DHCPV6_DUID_LL_HEADER_SIZE + lladdr->len;
@@ -2188,6 +2326,12 @@ void net_dhcpv6_stop(struct net_if *iface)
 
 		(void)dhcpv6_enter_state(iface, NET_DHCPV6_DISABLED);
 
+		if (IS_ENABLED(CONFIG_NET_DHCPV6_DNS_SERVER_VIA_INTERFACE)) {
+			dns_resolve_remove_source(dns_resolve_get_default(),
+						  net_if_get_by_iface(iface),
+						  DNS_SOURCE_DHCPV6);
+		}
+
 		sys_slist_find_and_remove(&dhcpv6_ifaces,
 					  &iface->config.dhcpv6.node);
 
@@ -2214,15 +2358,15 @@ void net_dhcpv6_restart(struct net_if *iface)
 
 int net_dhcpv6_init(void)
 {
-	struct sockaddr unspec_addr;
+	struct net_sockaddr unspec_addr = {0};
 	int ret;
 
 	net_ipaddr_copy(&net_sin6(&unspec_addr)->sin6_addr,
 			net_ipv6_unspecified_address());
-	unspec_addr.sa_family = AF_INET6;
+	unspec_addr.sa_family = NET_AF_INET6;
 
-	ret = net_udp_register(AF_INET6, NULL, &unspec_addr,
-			       DHCPV6_SERVER_PORT, DHCPV6_CLIENT_PORT,
+	ret = net_udp_register(NET_AF_INET6, NULL, &unspec_addr,
+			       0, DHCPV6_CLIENT_PORT,
 			       NULL, dhcpv6_input, NULL, NULL);
 	if (ret < 0) {
 		NET_DBG("UDP callback registration failed");

@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <microchip/pic32c/pic32cz_ca/common/pic32cz_ca_208.dtsi>
+#include <microchip/pic32c/pic32cz_ca/common/pic32cz_2051_ca.dtsi>

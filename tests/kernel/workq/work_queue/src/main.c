@@ -10,11 +10,6 @@
  * about the use of that API.
  */
 #include <zephyr/toolchain.h>
-#undef __deprecated
-#define __deprecated
-#undef __DEPRECATED_MACRO
-#define __DEPRECATED_MACRO
-
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/tc_util.h>
@@ -68,8 +63,8 @@ static int results[NUM_TEST_ITEMS];
 static int num_results;
 static int expected_poll_result;
 
-#define MSG_PROVIDER_THREAD_STACK_SIZE 0x400U
-#define MSG_CONSUMER_WORKQ_STACK_SIZE 0x400U
+#define MSG_PROVIDER_THREAD_STACK_SIZE 2048
+#define MSG_CONSUMER_WORKQ_STACK_SIZE 2048
 
 #define MSG_PROVIDER_THREAD_PRIO K_PRIO_PREEMPT(8)
 #define MSG_CONSUMER_WORKQ_PRIO K_PRIO_COOP(7)

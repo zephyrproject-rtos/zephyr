@@ -20,13 +20,17 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
-#include <zephyr/posix/sys/eventfd.h>
+#include <zephyr/zvfs/eventfd.h>
 #include <zephyr/posix/fnmatch.h>
+#include <zephyr/sys/util_macro.h>
 
 LOG_MODULE_REGISTER(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
 #include "../../ip/net_private.h"
 #include "headers/server_internal.h"
+
+BUILD_ASSERT(CONFIG_HTTP_SERVER_VERSION > 0,
+	     "HTTP server requires at least HTTP/1.x or HTTP/2 support");
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 /* Lowest priority cooperative thread */
@@ -43,7 +47,6 @@ LOG_MODULE_REGISTER(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 #define HTTP_SERVER_SOCK_COUNT (1 + HTTP_SERVER_MAX_SERVICES + HTTP_SERVER_MAX_CLIENTS)
 
 struct http_server_ctx {
-	int num_clients;
 	int listen_fds; /* max value of 1 + MAX_SERVICES */
 
 	/* First pollfd is eventfd that can be used to stop the server,
@@ -76,15 +79,15 @@ int http_server_init(struct http_server_ctx *ctx)
 	int proto;
 	int failed = 0, count = 0;
 	int svc_count;
-	socklen_t len;
+	net_socklen_t len;
 	int fd, af, i;
-	struct sockaddr_storage addr_storage;
+	struct net_sockaddr_storage addr_storage;
 	const union {
-		struct sockaddr *addr;
-		struct sockaddr_in *addr4;
-		struct sockaddr_in6 *addr6;
+		struct net_sockaddr *addr;
+		struct net_sockaddr_in *addr4;
+		struct net_sockaddr_in6 *addr6;
 	} addr = {
-		.addr = (struct sockaddr *)&addr_storage
+		.addr = (struct net_sockaddr *)&addr_storage
 	};
 
 	HTTP_SERVICE_COUNT(&svc_count);
@@ -98,7 +101,7 @@ int http_server_init(struct http_server_ctx *ctx)
 	}
 
 	/* Create an eventfd that can be used to trigger events during polling */
-	fd = eventfd(0, 0);
+	fd = zvfs_eventfd(0, 0);
 	if (fd < 0) {
 		fd = -errno;
 		LOG_ERR("eventfd failed (%d)", fd);
@@ -110,37 +113,37 @@ int http_server_init(struct http_server_ctx *ctx)
 	count++;
 
 	HTTP_SERVICE_FOREACH(svc) {
-		/* set the default address (in6addr_any / INADDR_ANY are all 0) */
-		memset(&addr_storage, 0, sizeof(struct sockaddr_storage));
+		/* set the default address (in6addr_any / NET_INADDR_ANY are all 0) */
+		memset(&addr_storage, 0, sizeof(struct net_sockaddr_storage));
 
 		/* Set up the server address struct according to address family */
 		if (IS_ENABLED(CONFIG_NET_IPV6) && svc->host != NULL &&
-		    zsock_inet_pton(AF_INET6, svc->host, &addr.addr6->sin6_addr) == 1) {
-			af = AF_INET6;
+		    zsock_inet_pton(NET_AF_INET6, svc->host, &addr.addr6->sin6_addr) == 1) {
+			af = NET_AF_INET6;
 			len = sizeof(*addr.addr6);
 
-			addr.addr6->sin6_family = AF_INET6;
-			addr.addr6->sin6_port = htons(*svc->port);
+			addr.addr6->sin6_family = NET_AF_INET6;
+			addr.addr6->sin6_port = net_htons(*svc->port);
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) && svc->host != NULL &&
-			   zsock_inet_pton(AF_INET, svc->host, &addr.addr4->sin_addr) == 1) {
-			af = AF_INET;
+			   zsock_inet_pton(NET_AF_INET, svc->host, &addr.addr4->sin_addr) == 1) {
+			af = NET_AF_INET;
 			len = sizeof(*addr.addr4);
 
-			addr.addr4->sin_family = AF_INET;
-			addr.addr4->sin_port = htons(*svc->port);
+			addr.addr4->sin_family = NET_AF_INET;
+			addr.addr4->sin_port = net_htons(*svc->port);
 		} else if (IS_ENABLED(CONFIG_NET_IPV6)) {
 			/* prefer IPv6 if both IPv6 and IPv4 are supported */
-			af = AF_INET6;
+			af = NET_AF_INET6;
 			len = sizeof(*addr.addr6);
 
-			addr.addr6->sin6_family = AF_INET6;
-			addr.addr6->sin6_port = htons(*svc->port);
+			addr.addr6->sin6_family = NET_AF_INET6;
+			addr.addr6->sin6_port = net_htons(*svc->port);
 		} else if (IS_ENABLED(CONFIG_NET_IPV4)) {
-			af = AF_INET;
+			af = NET_AF_INET;
 			len = sizeof(*addr.addr4);
 
-			addr.addr4->sin_family = AF_INET;
-			addr.addr4->sin_port = htons(*svc->port);
+			addr.addr4->sin_family = NET_AF_INET;
+			addr.addr4->sin_port = net_htons(*svc->port);
 		} else {
 			LOG_ERR("Neither IPv4 nor IPv6 is enabled");
 			failed++;
@@ -151,12 +154,16 @@ int http_server_init(struct http_server_ctx *ctx)
 		if (COND_CODE_1(CONFIG_NET_SOCKETS_SOCKOPT_TLS,
 				(svc->sec_tag_list != NULL),
 				(0))) {
-			proto = IPPROTO_TLS_1_2;
+			proto = NET_IPPROTO_TLS_1_2;
 		} else {
-			proto = IPPROTO_TCP;
+			proto = NET_IPPROTO_TCP;
 		}
 
-		fd = zsock_socket(af, SOCK_STREAM, proto);
+		if (svc->config != NULL && svc->config->socket_create != NULL) {
+			fd = svc->config->socket_create(svc, af, proto);
+		} else {
+			fd = zsock_socket(af, NET_SOCK_STREAM, proto);
+		}
 		if (fd < 0) {
 			LOG_ERR("socket: %d", errno);
 			failed++;
@@ -169,13 +176,13 @@ int http_server_init(struct http_server_ctx *ctx)
 		if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
 			int optval = 0;
 
-			(void)zsock_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &optval,
+			(void)zsock_setsockopt(fd, NET_IPPROTO_IPV6, ZSOCK_IPV6_V6ONLY, &optval,
 					       sizeof(optval));
 		}
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 		if (svc->sec_tag_list != NULL) {
-			if (zsock_setsockopt(fd, SOL_TLS, TLS_SEC_TAG_LIST,
+			if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
 					     svc->sec_tag_list,
 					     svc->sec_tag_list_size) < 0) {
 				LOG_ERR("setsockopt: %d", errno);
@@ -183,7 +190,7 @@ int http_server_init(struct http_server_ctx *ctx)
 				continue;
 			}
 
-			if (zsock_setsockopt(fd, SOL_TLS, TLS_HOSTNAME, "localhost",
+			if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_HOSTNAME, "localhost",
 					     sizeof("localhost")) < 0) {
 				LOG_ERR("setsockopt: %d", errno);
 				zsock_close(fd);
@@ -191,7 +198,7 @@ int http_server_init(struct http_server_ctx *ctx)
 			}
 
 #if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
-			if (zsock_setsockopt(fd, SOL_TLS, TLS_ALPN_LIST, alpn_list,
+			if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST, alpn_list,
 					     sizeof(alpn_list)) < 0) {
 				LOG_ERR("setsockopt: %d", errno);
 				zsock_close(fd);
@@ -201,7 +208,7 @@ int http_server_init(struct http_server_ctx *ctx)
 		}
 #endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 
-		if (zsock_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &(int){1},
+		if (zsock_setsockopt(fd, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR, &(int){1},
 				     sizeof(int)) < 0) {
 			LOG_ERR("setsockopt: %d", errno);
 			zsock_close(fd);
@@ -224,10 +231,11 @@ int http_server_init(struct http_server_ctx *ctx)
 				continue;
 			}
 
-			*svc->port = ntohs(addr.addr4->sin_port);
+			*svc->port = net_ntohs(addr.addr4->sin_port);
 		}
 
-		if (zsock_listen(fd, HTTP_SERVER_MAX_CLIENTS) < 0) {
+		svc->data->num_clients = 0;
+		if (zsock_listen(fd, svc->backlog) < 0) {
 			LOG_ERR("listen: %d", errno);
 			failed++;
 			zsock_close(fd);
@@ -251,7 +259,6 @@ int http_server_init(struct http_server_ctx *ctx)
 	}
 
 	ctx->listen_fds = count;
-	ctx->num_clients = 0;
 
 	return 0;
 }
@@ -259,22 +266,23 @@ int http_server_init(struct http_server_ctx *ctx)
 static int accept_new_client(int server_fd)
 {
 	int new_socket;
-	socklen_t addrlen;
-	struct sockaddr_storage sa;
+	net_socklen_t addrlen;
+	struct net_sockaddr_storage sa;
 
 	memset(&sa, 0, sizeof(sa));
 	addrlen = sizeof(sa);
 
-	new_socket = zsock_accept(server_fd, (struct sockaddr *)&sa, &addrlen);
+	new_socket = zsock_accept(server_fd, (struct net_sockaddr *)&sa, &addrlen);
 	if (new_socket < 0) {
 		new_socket = -errno;
 		LOG_DBG("[%d] accept failed (%d)", server_fd, new_socket);
 		return new_socket;
 	}
 
-	LOG_DBG("New client from %s:%d",
-		net_sprint_addr(sa.ss_family, &net_sin((struct sockaddr *)&sa)->sin_addr),
-		ntohs(net_sin((struct sockaddr *)&sa)->sin_port));
+	const char * const addrstr =
+		net_sprint_addr(sa.ss_family, &net_sin((struct net_sockaddr *)&sa)->sin_addr);
+	LOG_DBG("New client from %s:%d", addrstr != NULL ? addrstr : "<unknown>",
+		net_ntohs(net_sin((struct net_sockaddr *)&sa)->sin_port));
 
 	return new_socket;
 }
@@ -339,7 +347,7 @@ static void client_release_resources(struct http_client_ctx *client)
 
 			populate_request_ctx(&request_ctx, NULL, 0, NULL);
 
-			dynamic_detail->cb(client, HTTP_SERVER_DATA_ABORTED, &request_ctx,
+			dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_ABORTED, &request_ctx,
 					   &response_ctx, dynamic_detail->user_data);
 		}
 	}
@@ -355,8 +363,14 @@ void http_server_release_client(struct http_client_ctx *client)
 	k_work_cancel_delayable_sync(&client->inactivity_timer, &sync);
 	client_release_resources(client);
 
-	server_ctx.num_clients--;
+	client->service->data->num_clients--;
 
+	for (i = 0; i < server_ctx.listen_fds; i++) {
+		if (server_ctx.fds[i].fd == *client->service->fd) {
+			server_ctx.fds[i].events = ZSOCK_POLLIN;
+			break;
+		}
+	}
 	for (i = server_ctx.listen_fds; i < ARRAY_SIZE(server_ctx.fds); i++) {
 		if (server_ctx.fds[i].fd == client->fd) {
 			server_ctx.fds[i].fd = INVALID_SOCK;
@@ -372,9 +386,11 @@ static void close_client_connection(struct http_client_ctx *client)
 {
 	int fd = client->fd;
 
-	http_server_release_client(client);
+	if (fd >= 0) {
+		http_server_release_client(client);
 
-	(void)zsock_close(fd);
+		(void)zsock_close(fd);
+	}
 }
 
 static void client_timeout(struct k_work *work)
@@ -448,11 +464,13 @@ static int handle_http_preface(struct http_client_ctx *client)
 		client->header_capture_ctx.status = HTTP_HEADER_STATUS_OK;
 	}
 
-	if (strncmp(client->cursor, HTTP2_PREFACE, sizeof(HTTP2_PREFACE) - 1) != 0) {
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_1) &&
+	    strncmp(client->cursor, HTTP2_PREFACE, sizeof(HTTP2_PREFACE) - 1) != 0) {
 		return enter_http1_request(client);
 	}
 
-	return enter_http2_request(client);
+	return IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) ?
+		enter_http2_request(client) : -ENOTSUP;
 }
 
 static int handle_http_done(struct http_client_ctx *client)
@@ -482,40 +500,51 @@ static int handle_http_request(struct http_client_ctx *client)
 	do {
 		switch (client->server_state) {
 		case HTTP_SERVER_FRAME_DATA_STATE:
-			ret = handle_http_frame_data(client);
+			ret = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) ?
+				handle_http_frame_data(client) : -ENOTSUP;
 			break;
 		case HTTP_SERVER_PREFACE_STATE:
 			ret = handle_http_preface(client);
 			break;
 		case HTTP_SERVER_REQUEST_STATE:
-			ret = handle_http1_request(client);
+			ret = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_1) ?
+				handle_http1_request(client) : -ENOTSUP;
 			break;
 		case HTTP_SERVER_FRAME_HEADER_STATE:
-			ret = handle_http_frame_header(client);
+			ret = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) ?
+				handle_http_frame_header(client) : -ENOTSUP;
 			break;
 		case HTTP_SERVER_FRAME_HEADERS_STATE:
-			ret = handle_http_frame_headers(client);
+			ret = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) ?
+				handle_http_frame_headers(client) : -ENOTSUP;
 			break;
 		case HTTP_SERVER_FRAME_CONTINUATION_STATE:
-			ret = handle_http_frame_continuation(client);
+			ret = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) ?
+				handle_http_frame_continuation(client) : -ENOTSUP;
 			break;
 		case HTTP_SERVER_FRAME_SETTINGS_STATE:
-			ret = handle_http_frame_settings(client);
+			ret = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) ?
+				handle_http_frame_settings(client) : -ENOTSUP;
 			break;
 		case HTTP_SERVER_FRAME_WINDOW_UPDATE_STATE:
-			ret = handle_http_frame_window_update(client);
+			ret = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) ?
+				handle_http_frame_window_update(client) : -ENOTSUP;
 			break;
 		case HTTP_SERVER_FRAME_RST_STREAM_STATE:
-			ret = handle_http_frame_rst_stream(client);
+			ret = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) ?
+				handle_http_frame_rst_stream(client) : -ENOTSUP;
 			break;
 		case HTTP_SERVER_FRAME_GOAWAY_STATE:
-			ret = handle_http_frame_goaway(client);
+			ret = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) ?
+				handle_http_frame_goaway(client) : -ENOTSUP;
 			break;
 		case HTTP_SERVER_FRAME_PRIORITY_STATE:
-			ret = handle_http_frame_priority(client);
+			ret = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) ?
+				handle_http_frame_priority(client) : -ENOTSUP;
 			break;
 		case HTTP_SERVER_FRAME_PADDING_STATE:
-			ret = handle_http_frame_padding(client);
+			ret = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) ?
+				handle_http_frame_padding(client) : -ENOTSUP;
 			break;
 		case HTTP_SERVER_DONE_STATE:
 			ret = handle_http_done(client);
@@ -542,12 +571,12 @@ static int http_server_run(struct http_server_ctx *ctx)
 {
 	struct http_client_ctx *client;
 	const struct http_service_desc *service;
-	eventfd_t value;
+	zvfs_eventfd_t value;
 	bool found_slot;
 	int new_socket;
 	int ret, i, j;
 	int sock_error;
-	socklen_t optlen = sizeof(int);
+	net_socklen_t optlen = sizeof(int);
 
 	value = 0;
 
@@ -565,7 +594,7 @@ static int http_server_run(struct http_server_ctx *ctx)
 		}
 
 		if (ret == 1 && ctx->fds[0].revents) {
-			eventfd_read(ctx->fds[0].fd, &value);
+			zvfs_eventfd_read(ctx->fds[0].fd, &value);
 			LOG_DBG("Received stop event. exiting ..");
 			ret = 0;
 			goto closing;
@@ -589,8 +618,8 @@ static int http_server_run(struct http_server_ctx *ctx)
 			}
 
 			if (ctx->fds[i].revents & ZSOCK_POLLERR) {
-				(void)zsock_getsockopt(ctx->fds[i].fd, SOL_SOCKET,
-						       SO_ERROR, &sock_error, &optlen);
+				(void)zsock_getsockopt(ctx->fds[i].fd, ZSOCK_SOL_SOCKET,
+						       ZSOCK_SO_ERROR, &sock_error, &optlen);
 				LOG_DBG("Error on fd %d %d", ctx->fds[i].fd, sock_error);
 
 				if (i >= ctx->listen_fds) {
@@ -599,9 +628,14 @@ static int http_server_run(struct http_server_ctx *ctx)
 					continue;
 				}
 
-				/* Listening socket error, abort. */
-				LOG_ERR("Listening socket error, aborting.");
 				ret = -sock_error;
+
+				if (ret == -ENETDOWN) {
+					LOG_INF("Network is down");
+				} else {
+					LOG_ERR("Listening socket error, aborting. (%d)", ret);
+				}
+
 				goto closing;
 
 			}
@@ -612,15 +646,20 @@ static int http_server_run(struct http_server_ctx *ctx)
 
 			/* First check if we have something to accept */
 			if (i < ctx->listen_fds) {
+				service = lookup_service(ctx->fds[i].fd);
+				__ASSERT(NULL != service, "fd not associated with a service");
+
+				if (service->data->num_clients >= service->concurrent) {
+					ctx->fds[i].events = 0;
+					continue;
+				}
+
 				new_socket = accept_new_client(ctx->fds[i].fd);
 				if (new_socket < 0) {
 					ret = -errno;
 					LOG_DBG("accept: %d", ret);
 					continue;
 				}
-
-				service = lookup_service(ctx->fds[i].fd);
-				__ASSERT(NULL != service, "fd not associated with a service");
 
 				found_slot = false;
 
@@ -633,7 +672,7 @@ static int http_server_run(struct http_server_ctx *ctx)
 					ctx->fds[j].events = ZSOCK_POLLIN;
 					ctx->fds[j].revents = 0;
 
-					ctx->num_clients++;
+					service->data->num_clients++;
 
 					LOG_DBG("Init client #%d", j - ctx->listen_fds);
 
@@ -757,21 +796,27 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 			continue;
 		}
 
-		if (IS_ENABLED(CONFIG_HTTP_SERVER_RESOURCE_WILDCARD)) {
-			int ret;
-
-			ret = fnmatch(resource->resource, path, (FNM_PATHNAME | FNM_LEADING_DIR));
-			if (ret == 0) {
-				*path_len = strlen(resource->resource);
-				return resource->detail;
-			}
-		}
-
 		if (compare_strings(path, resource->resource) == 0) {
 			NET_DBG("Got match for %s", resource->resource);
 
 			*path_len = strlen(resource->resource);
 			return resource->detail;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_RESOURCE_WILDCARD)) {
+		HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
+			int ret;
+
+			if (skip_this(resource, is_websocket)) {
+				continue;
+			}
+
+			ret = fnmatch(resource->resource, path, (FNM_PATHNAME | FNM_LEADING_DIR));
+			if (ret == 0) {
+				*path_len = path_len_without_query(path);
+				return resource->detail;
+			}
 		}
 	}
 
@@ -785,26 +830,66 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 	return NULL;
 }
 
-int http_server_find_file(char *fname, size_t fname_size, size_t *file_size, bool *gzipped)
+int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
+			  uint8_t supported_compression, enum http_compression *chosen_compression)
 {
 	struct fs_dirent dirent;
-	size_t len;
 	int ret;
 
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION)) {
+		const size_t len = strlen(fname);
+		*chosen_compression = HTTP_NONE;
+		if (IS_BIT_SET(supported_compression, HTTP_BR)) {
+			snprintk(fname + len, fname_size - len, ".br");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_BR;
+				goto return_filename;
+			}
+		}
+		if (IS_BIT_SET(supported_compression, HTTP_GZIP)) {
+			snprintk(fname + len, fname_size - len, ".gz");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_GZIP;
+				goto return_filename;
+			}
+		}
+		if (IS_BIT_SET(supported_compression, HTTP_ZSTD)) {
+			snprintk(fname + len, fname_size - len, ".zst");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_ZSTD;
+				goto return_filename;
+			}
+		}
+		if (IS_BIT_SET(supported_compression, HTTP_COMPRESS)) {
+			snprintk(fname + len, fname_size - len, ".lzw");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_COMPRESS;
+				goto return_filename;
+			}
+		}
+		if (IS_BIT_SET(supported_compression, HTTP_DEFLATE)) {
+			snprintk(fname + len, fname_size - len, ".zz");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_DEFLATE;
+				goto return_filename;
+			}
+		}
+		/* No compressed file found, try the original filename */
+		fname[len] = '\0';
+	}
 	ret = fs_stat(fname, &dirent);
-	if (ret < 0) {
-		len = strlen(fname);
-		snprintk(fname + len, fname_size - len, ".gz");
-		ret = fs_stat(fname, &dirent);
-		*gzipped = (ret == 0);
+	if (ret != 0) {
+		return -ENOENT;
 	}
 
-	if (ret == 0) {
-		*file_size = dirent.size;
-		return ret;
-	}
-
-	return -ENOENT;
+return_filename:
+	*file_size = dirent.size;
+	return ret;
 }
 
 void http_server_get_content_type_from_extension(char *url, char *content_type,
@@ -846,9 +931,9 @@ int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t 
 	return 0;
 }
 
-bool http_response_is_final(struct http_response_ctx *rsp, enum http_data_status status)
+bool http_response_is_final(struct http_response_ctx *rsp, enum http_transaction_status status)
 {
-	if (status != HTTP_SERVER_DATA_FINAL) {
+	if (status != HTTP_SERVER_REQUEST_DATA_FINAL) {
 		return false;
 	}
 
@@ -910,7 +995,7 @@ int http_server_stop(void)
 
 	server_running = false;
 	k_sem_reset(&server_start);
-	eventfd_write(server_ctx.fds[0].fd, 1);
+	zvfs_eventfd_write(server_ctx.fds[0].fd, 1);
 
 	LOG_DBG("Stopping HTTP server");
 

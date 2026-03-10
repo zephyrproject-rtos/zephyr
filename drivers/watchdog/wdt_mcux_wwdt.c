@@ -3,7 +3,7 @@
  *
  * Based on wdt_mcux_wdog32.c, which is:
  * Copyright (c) 2019 Vestas Wind Systems A/S
- * Copyright (c) 2018, NXP
+ * Copyright 2018, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/pm/device.h>
 #include <fsl_wwdt.h>
 #include <fsl_clock.h>
 
@@ -21,6 +22,7 @@
 LOG_MODULE_REGISTER(wdt_mcux_wwdt);
 
 #define MIN_TIMEOUT 0xFF
+#define MAX_TIMEOUT WWDT_TC_COUNT_MASK
 
 struct mcux_wwdt_config {
 	WWDT_Type *base;
@@ -32,6 +34,7 @@ struct mcux_wwdt_data {
 	wdt_callback_t callback;
 	wwdt_config_t wwdt_config;
 	bool timeout_valid;
+	bool active_before_sleep;
 };
 
 static int mcux_wwdt_setup(const struct device *dev, uint8_t options)
@@ -59,6 +62,7 @@ static int mcux_wwdt_disable(const struct device *dev)
 
 	WWDT_Deinit(base);
 	data->timeout_valid = false;
+	data->active_before_sleep = false;
 	LOG_DBG("Disabled the watchdog");
 
 	return 0;
@@ -83,11 +87,20 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 	}
 
 #if defined(CONFIG_SOC_MIMXRT685S_CM33) || defined(CONFIG_SOC_MIMXRT595S_CM33) \
-	|| defined(CONFIG_SOC_SERIES_MCXN)
+	|| defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_MIMXRT798S_CM33_CPU0) \
+	|| defined(CONFIG_SOC_MIMXRT798S_CM33_CPU1)
 	clock_freq = CLOCK_GetWdtClkFreq(0);
 #elif defined(CONFIG_SOC_SERIES_RW6XX)
 	clock_freq = CLOCK_GetWdtClkFreq();
-#elif defined(CONFIG_SOC_SERIES_MCXA)
+#elif defined(CONFIG_SOC_MCXA577)
+	const struct mcux_wwdt_config *config = dev->config;
+
+	if (config->base == WWDT0) {
+		clock_freq = CLOCK_GetWwdt0ClkFreq();
+	} else {
+		clock_freq = CLOCK_GetWwdt1ClkFreq();
+	}
+#elif defined(CONFIG_SOC_FAMILY_MCXA)
 	clock_freq = CLOCK_GetWwdtClkFreq();
 #else
 	const struct mcux_wwdt_config *config = dev->config;
@@ -103,30 +116,43 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 	data->wwdt_config.timeoutValue =
 		MSEC_TO_WWDT_TICKS(clock_freq, cfg->window.max);
 
-	if (cfg->window.min) {
-		data->wwdt_config.windowValue =
-			MSEC_TO_WWDT_TICKS(clock_freq, cfg->window.min);
-	}
-
-	if ((data->wwdt_config.timeoutValue < MIN_TIMEOUT) ||
-	    ((data->wwdt_config.windowValue != 0xFFFFFFU) &&
-	     (data->wwdt_config.timeoutValue <
-	      data->wwdt_config.windowValue))) {
+	if (data->wwdt_config.timeoutValue > MAX_TIMEOUT ||
+	    data->wwdt_config.timeoutValue < MIN_TIMEOUT) {
+		LOG_ERR("Timeout value out of range");
 		return -EINVAL;
 	}
+
+	/*
+	 * WWDT uses a count-down counter.
+	 * Window value specifies the highest timer value in which a watchdog
+	 * feed can occur. Therefore, calculate the window value as:
+	 * windowValue = timeoutValue - min_window_ticks (maybe 0)
+	 */
+	data->wwdt_config.windowValue =
+		data->wwdt_config.timeoutValue - MSEC_TO_WWDT_TICKS(clock_freq, cfg->window.min);
 
 	if (cfg->flags & WDT_FLAG_RESET_SOC) {
 		data->wwdt_config.enableWatchdogReset = true;
 		LOG_DBG("Enabling SoC reset");
 	}
 
-	if (cfg->callback && (CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0)) {
-		data->callback = cfg->callback;
-		data->wwdt_config.warningValue = CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG;
-	} else if (cfg->callback) {
-		return -ENOTSUP;
+	/*
+	 * The user callback is only invoked from the WWDT warning interrupt.
+	 * If CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG is 0, the warning interrupt
+	 * is disabled (no warningValue programmed), so a callback would never fire.
+	 * Reject this configuration to avoid a silent no-op.
+	 */
+	if (cfg->callback) {
+		if (CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0) {
+			data->callback = cfg->callback;
+			data->wwdt_config.warningValue =
+				CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG;
+		} else {
+			LOG_ERR("Warning interrupt callback requires "
+				"CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0");
+			return -ENOTSUP;
+		}
 	}
-
 
 	data->timeout_valid = true;
 	LOG_DBG("Installed timeout (timeoutValue = %d)",
@@ -166,13 +192,52 @@ static void mcux_wwdt_isr(const struct device *dev)
 	}
 }
 
+/*
+ * Power Management:
+ * When the system enters sleep mode, this driver maintains awareness
+ * of whether the WWDT was active. After wake up, the WDT counter
+ * resets to its reload value.
+ */
+static int mcux_wwdt_driver_pm_action(const struct device *dev,
+				      enum pm_device_action action)
+{
+	const struct mcux_wwdt_config *config = dev->config;
+	struct mcux_wwdt_data *data = dev->data;
+	int err = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		if (data->active_before_sleep) {
+			err = mcux_wwdt_setup(dev, 0);
+			data->active_before_sleep = false;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		if (config->base->MOD & WWDT_MOD_WDEN_MASK) {
+			data->active_before_sleep = true;
+		}
+		break;
+	default:
+		err = -ENOTSUP;
+	}
+
+	return err;
+}
+
 static int mcux_wwdt_init(const struct device *dev)
 {
 	const struct mcux_wwdt_config *config = dev->config;
 
+	/* The rest of the device init is done from the
+	 * PM_DEVICE_ACTION_TURN_ON in the pm callback
+	 * which is invoked by pm_device_driver_init.
+	 */
 	config->irq_config_func(dev);
-
-	return 0;
+	return pm_device_driver_init(dev, mcux_wwdt_driver_pm_action);
 }
 
 static DEVICE_API(wdt, mcux_wwdt_api) = {
@@ -193,8 +258,10 @@ static const struct mcux_wwdt_config mcux_wwdt_config_0 = {
 
 static struct mcux_wwdt_data mcux_wwdt_data_0;
 
+PM_DEVICE_DT_INST_DEFINE(0, mcux_wwdt_driver_pm_action);
+
 DEVICE_DT_INST_DEFINE(0, &mcux_wwdt_init,
-		    NULL, &mcux_wwdt_data_0,
+		    PM_DEVICE_DT_INST_GET(0), &mcux_wwdt_data_0,
 		    &mcux_wwdt_config_0, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_wwdt_api);

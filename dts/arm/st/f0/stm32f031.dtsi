@@ -13,8 +13,9 @@
 		timers2: timers@40000000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40000000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 0U)>;
-			resets = <&rctl STM32_RESET(APB1, 0U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 0)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1, 0)>;
 			interrupts = <15 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -27,9 +28,9 @@
 			};
 
 			counter {
-					compatible = "st,stm32-counter";
-					status = "disabled";
-				};
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		rtc@40002800 {
@@ -39,12 +40,24 @@
 				status = "disabled";
 			};
 		};
+
+		flash-controller@40022000 {
+			flash@1ffff700 {
+				nvmem-layout {
+					ts_cal2_otp: ts-cal2@c2 {
+						reg = <0xc2 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+				};
+			};
+		};
 	};
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		ts-cal1-addr = <0x1FFFF7B8>;
-		ts-cal2-addr = <0x1FFFF7C2>;
+		nvmem-cells = <&ts_cal1_otp>, <&ts_cal2_otp>;
+		nvmem-cell-names = "TS_CAL1", "TS_CAL2";
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <110>;
 		ts-cal-vrefanalog = <3300>;

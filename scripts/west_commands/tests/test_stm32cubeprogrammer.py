@@ -3,14 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import os
 from pathlib import Path
 from unittest.mock import patch, call
 
 import pytest
 
 from runners.stm32cubeprogrammer import STM32CubeProgrammerBinaryRunner
-from conftest import RC_KERNEL_HEX, RC_KERNEL_ELF
-
+from conftest import RC_KERNEL_HEX, RC_KERNEL_ELF, RC_KERNEL_BIN
 
 CLI_PATH = Path("STM32_Programmer_CLI")
 """Default CLI path used in tests."""
@@ -62,6 +62,7 @@ MACOS_CLI_PATH = (
 TEST_CASES = (
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
@@ -89,6 +90,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
@@ -117,6 +119,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": "4000",
         "reset_mode": None,
         "download_address": None,
@@ -144,6 +147,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": "hw",
         "download_address": None,
@@ -171,6 +175,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": "sw",
         "download_address": None,
@@ -198,6 +203,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": "core",
         "download_address": None,
@@ -225,11 +231,12 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": "TEST",
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
         "start_address": None,
-        "conn_modifiers": "br=115200 sn=TEST",
+        "conn_modifiers": "br=115200",
         "start_modifiers": [],
         "download_modifiers": [],
         "cli": CLI_PATH,
@@ -252,6 +259,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
@@ -279,6 +287,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
@@ -307,6 +316,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
@@ -335,6 +345,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
@@ -362,6 +373,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
@@ -389,6 +401,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
@@ -416,6 +429,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": 0x80000000,
@@ -436,7 +450,7 @@ TEST_CASES = (
                 "--connect",
                 "port=swd",
                 "--download",
-                RC_KERNEL_HEX,
+                RC_KERNEL_BIN,
                 "0x80000000",
                 "0x1",
                 "--start",
@@ -447,6 +461,12 @@ TEST_CASES = (
 )
 """Test cases."""
 
+os_path_isfile = os.path.isfile
+
+def os_path_isfile_patch(filename):
+    if filename == RC_KERNEL_BIN:
+        return True
+    return os_path_isfile(filename)
 
 @pytest.mark.parametrize("tc", TEST_CASES)
 @patch("runners.stm32cubeprogrammer.platform.system")
@@ -455,7 +475,9 @@ TEST_CASES = (
 @patch.dict("runners.stm32cubeprogrammer.os.environ", ENVIRON)
 @patch("runners.core.ZephyrBinaryRunner.require")
 @patch("runners.stm32cubeprogrammer.STM32CubeProgrammerBinaryRunner.check_call")
+@patch("os.path.isfile", side_effect=os_path_isfile_patch)
 def test_stm32cubeprogrammer_init(
+    os_path_isfile_patch,
     check_call, require, path_exists, path_home, system, tc, runner_config
 ):
     """Tests that ``STM32CubeProgrammerBinaryRunner`` class can be initialized
@@ -467,6 +489,7 @@ def test_stm32cubeprogrammer_init(
     runner = STM32CubeProgrammerBinaryRunner(
         cfg=runner_config,
         port=tc["port"],
+        dev_id=tc["dev_id"],
         frequency=tc["frequency"],
         reset_mode=tc["reset_mode"],
         download_address=tc["download_address"],
@@ -494,7 +517,9 @@ def test_stm32cubeprogrammer_init(
 @patch.dict("runners.stm32cubeprogrammer.os.environ", ENVIRON)
 @patch("runners.core.ZephyrBinaryRunner.require")
 @patch("runners.stm32cubeprogrammer.STM32CubeProgrammerBinaryRunner.check_call")
+@patch("os.path.isfile", side_effect=os_path_isfile_patch)
 def test_stm32cubeprogrammer_create(
+    os_path_isfile_patch,
     check_call, require, path_exists, path_home, system, tc, runner_config
 ):
     """Tests that ``STM32CubeProgrammerBinaryRunner`` class can be created using
@@ -504,6 +529,8 @@ def test_stm32cubeprogrammer_create(
     system.return_value = tc["system"]
 
     args = ["--port", tc["port"]]
+    if tc["dev_id"]:
+        args.extend(["--dev-id", tc["dev_id"]])
     if tc["frequency"]:
         args.extend(["--frequency", tc["frequency"]])
     if tc["reset_mode"]:

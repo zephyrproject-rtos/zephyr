@@ -1,7 +1,4 @@
-.. _ek_ra6m4:
-
-RA6M4 Evaluation Kit
-####################
+.. zephyr:board:: ek_ra6m4
 
 Overview
 ********
@@ -24,7 +21,7 @@ The key features of the EK-RA6M4 board are categorized in three groups as follow
 - MCU current measurement points for precision current consumption measurement
 - Multiple clock sources - RA6M4 MCU oscillator and sub-clock oscillator crystals,
   providing precision 24.000 MHz and 32,768 Hz reference clock.
-  Additional low precision clocks are avaialbe internal to the RA6M4 MCU
+  Additional low precision clocks are available internal to the RA6M4 MCU
 
 **System Control and Ecosystem Access**
 
@@ -64,15 +61,9 @@ The key features of the EK-RA6M4 board are categorized in three groups as follow
 - 32 Mb (256 Mb) External Quad-SPI Flash
 - 64 Mb (512 Mb) External Octo-SPI Flash
 
-.. figure:: ek_ra6m4.webp
-	:align: center
-	:alt: RA6M4 Evaluation Kit
-
-	EK-RA6M4 Board Functional Area Definitions (Credit: Renesas Electronics Corporation)
-
 Hardware
 ********
-Detailed hardware feature for the RA6M4 MCU group can be found at `RA6M4 Group User's Manual Hardware`_
+Detailed hardware features for the RA6M4 MCU group can be found at `RA6M4 Group User's Manual Hardware`_
 
 .. figure:: ra6m4_block_diagram.webp
 	:width: 442px
@@ -81,68 +72,68 @@ Detailed hardware feature for the RA6M4 MCU group can be found at `RA6M4 Group U
 
 	RA6M4 Block diagram (Credit: Renesas Electronics Corporation)
 
-Detailed hardware feature for the EK-RA6M4 MCU can be found at `EK-RA6M4 - User's Manual`_
+Detailed hardware features for the EK-RA6M4 MCU can be found at `EK-RA6M4 - User's Manual`_
 
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr OS for EK-RA6M4 board:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock control        |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| COUNTER   | on-chip    | counter              |
-+-----------+------------+----------------------+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| ENTROPY   | on-chip    | entropy              |
-+-----------+------------+----------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``ek_ra6m4`` board target configuration can be
 built, flashed, and debugged in the usual way. See
 :ref:`build_an_application` and :ref:`application_run` for more details on
 building and running.
 
+.. note::
+
+   In applications using ethernet, ethernet buffers must be placed in non-secure RAM.
+   This requires configuration of the Implementation Defined Attribution Unit (IDAU),
+   which must be applied by partition memory using Renesas Flash Programmer.
+
+Partition Memory
+================
+
+Renesas Flash Programmer is available at (`Renesas Flash Programmer Download`_).
+Once downloaded and installed, check rfp-cli is available or set rfp-cli path manually.
+
+Renesas partition data file will be available at build/zephyr/zephyr.rpd.
+Connect jumper J6 then run Renesas Flash Programmer.
+
+To partition memory manually, execute:
+
+   .. code-block:: console
+
+      # From the root of the zephyr repository
+      rfp-cli -device ra -tool jlink -fo boundary-file build/zephyr/zephyr.rpd -p
+
 Flashing
 ========
 
 Program can be flashed to EK-RA6M4 via the on-board SEGGER J-Link debugger.
-SEGGER J-link's drivers are avaialbe at https://www.segger.com/downloads/jlink/
+SEGGER J-link's drivers are available at https://www.segger.com/downloads/jlink/
 
 To flash the program to board
 
-  1. Connect to J-Link OB via USB port to host PC
+1. Connect to J-Link OB via USB port to host PC
 
-  2. Make sure J-Link OB jumper is in default configuration as describe in `EK-RA6M4 - User's Manual`_
+2. Make sure J-Link OB jumper is in default configuration as describe in `EK-RA6M4 - User's Manual`_
 
-  3. Execute west command
+3. Execute west command to flash using jlink runner
 
 	.. code-block:: console
 
 		west flash -r jlink
+
+4. Or flash using rfp runner, this will partition memory then flash zephyr image.
+
+   .. code-block:: console
+
+      west flash -r rfp
 
 Debugging
 =========
@@ -165,6 +156,7 @@ References
 **********
 - `EK-RA6M4 Website`_
 - `RA6M4 MCU group Website`_
+- `RA6 Ethernet Controller configuration`_
 
 .. _EK-RA6M4 Website:
    https://www.renesas.com/us/en/products/microcontrollers-microprocessors/ra-cortex-m-mcus/ek-ra6m4-evaluation-kit-ra6m4-mcu-group
@@ -180,3 +172,9 @@ References
 
 .. _Segger Ozone Download:
    https://www.segger.com/downloads/jlink#Ozone
+
+.. _Renesas Flash Programmer Download:
+   https://www.renesas.com/en/software-tool/renesas-flash-programmer-programming-gui
+
+.. _RA6 Ethernet Controller configuration:
+   https://www.renesas.com/en/blogs/configuration-issues-ra6-ethernet-controller#document

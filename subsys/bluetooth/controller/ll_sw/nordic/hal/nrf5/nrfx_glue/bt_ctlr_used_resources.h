@@ -12,7 +12,7 @@
  *       conditionally compile them based on feature Kconfig defines in those
  *       resources header file.
  */
-#if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
+#if defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
 #include "../radio/radio_nrf5_ppi_resources.h"
 #else
 #include "../radio/radio_nrf5_dppi_resources.h"
@@ -78,7 +78,7 @@
 #endif
 
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
-#if !defined(CONFIG_SOC_SERIES_NRF51X) && !defined(CONFIG_SOC_COMPATIBLE_NRF52X)
+#if !defined(CONFIG_SOC_SERIES_NRF51) && !defined(CONFIG_SOC_COMPATIBLE_NRF52X)
 #define HAL_USED_PPI_CHANNELS_7 \
 	(BIT(HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI))
 #else

@@ -11,6 +11,10 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Define COREDUMP_*_STR as public to allow coredump_backend_other to re-use
  * these strings if necessary
@@ -29,7 +33,7 @@
  * @file
  *
  * @defgroup coredump_apis Coredump APIs
- * @ingroup os_services
+ * @ingroup debug
  * @brief Coredump APIs
  * @{
  */
@@ -235,7 +239,7 @@ struct coredump_backend_api {
 	coredump_backend_start_t		start;
 
 	/* Signal to backend of the end of coredump. */
-	coredump_backend_end_t		end;
+	coredump_backend_end_t			end;
 
 	/* Raw buffer output */
 	coredump_backend_buffer_output_t	buffer_output;
@@ -353,5 +357,9 @@ static inline int coredump_cmd(enum coredump_cmd_id query_id, void *arg)
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_DEBUG_COREDUMP_H_ */

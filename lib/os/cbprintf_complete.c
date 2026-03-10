@@ -15,7 +15,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <zephyr/toolchain.h>
-#include <sys/types.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/cbprintf.h>
 
@@ -360,6 +359,7 @@ static inline const char *extract_flags(struct conversion *conv,
 			break;
 		default:
 			loop = false;
+			break;
 		}
 		if (loop) {
 			++sp;

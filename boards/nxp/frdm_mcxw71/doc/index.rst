@@ -32,42 +32,7 @@ For more information about the MCXW71 SoC and FRDM-MCXW71 board, see:
 Supported Features
 ==================
 
-The ``frdm_mcxw71`` board target in Zephyr currently supports the following features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinctrl                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| LPUART    | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| LPI2C     | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| LPSPI     | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| FMU       | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| TPM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| WDOG32    | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| LPTMR     | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| BLE       | on-chip    | Bluetooth                           |
-+-----------+------------+-------------------------------------+
-| FLEXCAN   | on-chip    | can                                 |
-+-----------+------------+-------------------------------------+
-| VREF      | on-chip    | regulator                           |
-+-----------+------------+-------------------------------------+
-| LPADC     | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Fetch Binary Blobs
 ******************
@@ -81,6 +46,8 @@ achieved by running the following command:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -128,8 +95,26 @@ Connect a USB cable from your PC to J10, and use the serial terminal of your cho
 - Parity: None
 - Stop bits: 1
 
-Flashing
-========
+Application Building
+====================
+
+Openthread applications
+-----------------------
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/sockets/echo_server
+   :board: frdm_mcxw71
+   :goals: build
+   :gen-args: -DEXTRA_CONF_FILE=overlay-ot.conf
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/sockets/echo_client
+   :board: frdm_mcxw71
+   :goals: build
+   :gen-args: -DEXTRA_CONF_FILE=overlay-ot.conf
+
+Application Flashing
+====================
 
 Here is an example for the :zephyr:code-sample:`hello_world` application.
 
@@ -164,15 +149,17 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v3.7.0-xxx-xxxx ***
    Hello World! frdm_mcxw71/mcxw716c
 
-Bluetooth
-=========
+NBU Flashing
+============
 
 BLE functionality requires to fetch binary blobs, so make sure to follow
 the ``Fetch Binary Blobs`` section first.
 
 Two images must be written to the board: one for the host (CM33) and one for the NBU (CM3).
-- To flash the application (CM33) refer to the ``Flashing`` section above.
-- To flash the NBU, follow the instructions below:
+
+- To flash the application (CM33) refer to the ``Application Flashing`` section above.
+
+- To flash the ``NBU Flashing``, follow the instructions below:
 
    * Install ``blhost`` from NXP's website. This is the tool that will allow you to flash the NBU.
    * Enter ISP mode. To boot the MCU in ISP mode, follow these steps:
@@ -182,17 +169,39 @@ Two images must be written to the board: one for the host (CM33) and one for the
       - Reconnect any external power supply, if needed.
    * Use the following command to flash NBU file:
 
-.. code-block:: console
+.. tabs::
 
-   # On Windows
-   blhost.exe -p COMxx -- receive-sb-file mcxw71_nbu_ble.sb3
+   .. group-tab:: BLE NBU - Windows
 
-   # On Linux
-   ./blhost -p /dev/ttyxx -- receive-sb-file mcxw71_nbu_ble.sb3
+      .. code-block:: console
+         :caption: Flash BLE only NBU on Windows
+
+         blhost.exe -p COMxx -- receive-sb-file mcxw71_nbu_ble.sb3
+
+   .. group-tab:: BLE NBU - Linux
+
+      .. code-block:: console
+         :caption: Flash BLE only NBU on Linux
+
+         ./blhost -p /dev/ttyxx -- receive-sb-file mcxw71_nbu_ble.sb3
+
+   .. group-tab:: DYN NBU - Windows
+
+      .. code-block:: console
+         :caption: Flash Dynamic NBU (BLE + 15.4) on Windows
+
+         blhost.exe -p COMxx -- receive-sb-file mcxw71_nbu_ble_15_4_dyn.sb3
+
+   .. group-tab:: DYN NBU - Linux
+
+      .. code-block:: console
+         :caption: Flash Dynamic NBU (BLE + 15.4) on Linux
+
+         ./blhost -p /dev/ttyxx -- receive-sb-file mcxw71_nbu_ble_15_4_dyn.sb3
 
 Please consider changing ``COMxx`` on Windows or ``ttyxx`` on Linux to the serial port used by your board.
 
-The NBU file can be found in : ``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/mcxw71/mcxw71_nbu_ble.sb3``
+The NBU files can be found in : ``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/mcxw71/`` folder.
 
 For more details:
 
@@ -205,8 +214,9 @@ For more details:
 Troubleshooting
 ===============
 
-.. include:: ../../common/segger-ecc-systemview.rst
-   :start-after: segger-ecc-systemview
+.. include:: ../../common/segger-ecc-systemview.rst.inc
+
+.. include:: ../../common/board-footer.rst.inc
 
 References
 **********

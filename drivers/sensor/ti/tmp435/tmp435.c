@@ -24,12 +24,6 @@ static inline int tmp435_reg_read(const struct tmp435_config *cfg, uint8_t reg, 
 	return i2c_burst_read_dt(&cfg->i2c, reg, buf, size);
 }
 
-static inline int tmp435_reg_write(const struct tmp435_config *cfg, uint8_t reg, uint8_t *buf,
-				   uint32_t size)
-{
-	return i2c_burst_write_dt(&cfg->i2c, reg, buf, size);
-}
-
 static inline int tmp435_get_status(const struct tmp435_config *cfg, uint8_t *status)
 {
 	return tmp435_reg_read(cfg, TMP435_STATUS_REG, status, 1);
@@ -43,7 +37,7 @@ static int tmp435_one_shot(const struct device *dev)
 	const struct tmp435_config *cfg = dev->config;
 
 	data = 1; /* write anything to start */
-	ret = tmp435_reg_write(cfg, TMP435_ONE_SHOT_START_REG, &data, 1);
+	ret = i2c_reg_write_byte_dt(&cfg->i2c, TMP435_ONE_SHOT_START_REG, data);
 	for (uint16_t i = 0; i < TMP435_CONV_LOOP_LIMIT; i++) {
 		ret = tmp435_get_status(cfg, &status);
 		if (ret < 0) {
@@ -160,14 +154,14 @@ static int tmp435_init(const struct device *dev)
 	}
 
 	data = 1; /* write anything to reset */
-	ret = tmp435_reg_write(cfg, TMP435_SOFTWARE_RESET_REG, &data, 1);
+	ret = i2c_reg_write_byte_dt(&cfg->i2c, TMP435_SOFTWARE_RESET_REG, data);
 	if (ret < 0) {
 		LOG_ERR("Failed to write TMP435_SOFTWARE_RESET_REG ret:%d", ret);
 		return ret;
 	}
 
 	data = TMP435_CONF_REG_1_DATA;
-	ret = tmp435_reg_write(cfg, TMP435_CONF_REG_1, &data, 1);
+	ret = i2c_reg_write_byte_dt(&cfg->i2c, TMP435_CONF_REG_1, data);
 	if (ret < 0) {
 		LOG_ERR("Failed to write TMP435_CONF_REG_1 ret:%d", ret);
 		return ret;
@@ -180,14 +174,14 @@ static int tmp435_init(const struct device *dev)
 	if (cfg->resistance_correction) {
 		data = data + TMP435_CONF_REG_2_RC;
 	}
-	ret = tmp435_reg_write(cfg, TMP435_CONF_REG_2, &data, 1);
+	ret = i2c_reg_write_byte_dt(&cfg->i2c, TMP435_CONF_REG_2, data);
 	if (ret < 0) {
 		LOG_ERR("Failed to write TMP435_CONF_REG_2 ret:%d", ret);
 		return ret;
 	}
 
 	data = cfg->beta_compensation;
-	ret = tmp435_reg_write(cfg, TMP435_BETA_RANGE_REG, &data, 1);
+	ret = i2c_reg_write_byte_dt(&cfg->i2c, TMP435_BETA_RANGE_REG, data);
 	if (ret < 0) {
 		LOG_ERR("Failed to write TMP435_BETA_RANGE_REG ret:%d", ret);
 		return ret;

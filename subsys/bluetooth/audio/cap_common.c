@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "cap_internal.h"
 #include "csip_internal.h"
@@ -43,11 +44,10 @@ void bt_cap_common_clear_active_proc(void)
 	(void)memset(&active_proc, 0, sizeof(active_proc));
 }
 
-void bt_cap_common_start_proc(enum bt_cap_common_proc_type proc_type, size_t proc_cnt)
+void bt_cap_common_set_proc(enum bt_cap_common_proc_type proc_type, size_t proc_cnt)
 {
 	LOG_DBG("Setting proc to %d for %zu streams", proc_type, proc_cnt);
 
-	atomic_set_bit(active_proc.proc_state_flags, BT_CAP_COMMON_PROC_STATE_ACTIVE);
 	active_proc.proc_cnt = proc_cnt;
 	active_proc.proc_type = proc_type;
 	active_proc.proc_done_cnt = 0U;
@@ -75,6 +75,18 @@ bool bt_cap_common_subproc_is_type(enum bt_cap_common_subproc_type subproc_type)
 }
 #endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
 
+#if defined(CONFIG_BT_CAP_HANDOVER)
+void bt_cap_common_set_handover_active(void)
+{
+	atomic_set_bit(active_proc.proc_state_flags, BT_CAP_COMMON_PROC_STATE_HANDOVER);
+}
+
+bool bt_cap_common_handover_is_active(void)
+{
+	return atomic_test_bit(active_proc.proc_state_flags, BT_CAP_COMMON_PROC_STATE_HANDOVER);
+}
+#endif /* CONFIG_BT_CAP_HANDOVER */
+
 struct bt_conn *bt_cap_common_get_member_conn(enum bt_cap_set_type type,
 					      const union bt_cap_set_member *member)
 {
@@ -98,6 +110,12 @@ struct bt_conn *bt_cap_common_get_member_conn(enum bt_cap_set_type type,
 	}
 
 	return member->member;
+}
+
+bool bt_cap_common_test_and_set_proc_active(void)
+{
+	return atomic_test_and_set_bit(active_proc.proc_state_flags,
+				       BT_CAP_COMMON_PROC_STATE_ACTIVE);
 }
 
 bool bt_cap_common_proc_is_active(void)

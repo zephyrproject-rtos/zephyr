@@ -9,6 +9,12 @@ module = BTTESTER
 module-str = bttester
 source "subsys/logging/Kconfig.template.log_config"
 
+config BTTESTER_BTP_CMD_THREAD_STACK_SIZE
+	int "BTP CMD threads stack size."
+	default 2048
+	help
+	  Stack size in byte used by the BTP CMD thread.
+
 endmenu
 
 source "Kconfig.zephyr"

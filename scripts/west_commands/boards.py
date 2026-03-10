@@ -10,6 +10,7 @@ import textwrap
 from pathlib import Path
 
 from west.commands import WestCommand
+
 from zephyr_ext_common import ZEPHYR_BASE
 
 sys.path.append(os.fspath(Path(__file__).parent.parent))
@@ -49,9 +50,9 @@ class Boards(WestCommand):
 
             - name: board name
             - full_name: board full name (typically, its commercial name)
+            - revision_default: board default revision
+            - revisions: list of board revisions
             - qualifiers: board qualifiers (will be empty for legacy boards)
-            - arch: board architecture (deprecated)
-                    (arch is ambiguous for boards described in new hw model)
             - dir: directory that contains the board definition
             - vendor: board vendor
             '''))
@@ -90,19 +91,21 @@ class Boards(WestCommand):
         args.board_roots += module_settings['board_root']
         args.soc_roots += module_settings['soc_root']
 
-        for board in list_boards.find_boards(args):
-            if name_re is not None and not name_re.search(board.name):
-                continue
-            self.inf(args.format.format(name=board.name, arch=board.arch,
-                                        dir=board.dir, hwm=board.hwm, qualifiers=''))
-
         for board in list_boards.find_v2_boards(args).values():
             if name_re is not None and not name_re.search(board.name):
                 continue
+
+            if board.revisions:
+                revisions_list = ' '.join([rev.name for rev in board.revisions])
+            else:
+                revisions_list = 'None'
+
             self.inf(
                 args.format.format(
                     name=board.name,
                     full_name=board.full_name,
+                    revision_default=board.revision_default,
+                    revisions=revisions_list,
                     dir=board.dir,
                     hwm=board.hwm,
                     vendor=board.vendor,

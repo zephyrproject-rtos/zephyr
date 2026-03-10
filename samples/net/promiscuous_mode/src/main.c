@@ -49,8 +49,8 @@ static int get_ports(struct net_pkt *pkt, uint16_t *src, uint16_t *dst)
 		return -EINVAL;
 	}
 
-	*src = ntohs(udp_hdr->src_port);
-	*dst = ntohs(udp_hdr->dst_port);
+	*src = net_ntohs(udp_hdr->src_port);
+	*dst = net_ntohs(udp_hdr->dst_port);
 
 	return 0;
 }
@@ -60,7 +60,7 @@ static void print_info(struct net_pkt *pkt)
 	char src_addr_buf[NET_IPV6_ADDR_LEN], *src_addr;
 	char dst_addr_buf[NET_IPV6_ADDR_LEN], *dst_addr;
 	uint16_t dst_port = 0U, src_port = 0U;
-	sa_family_t family = AF_UNSPEC;
+	net_sa_family_t family = NET_AF_UNSPEC;
 	void *dst, *src;
 	uint8_t next_hdr;
 	const char *proto;
@@ -72,16 +72,16 @@ static void print_info(struct net_pkt *pkt)
 
 	switch (NET_IPV6_HDR(pkt)->vtc & 0xf0) {
 	case 0x60:
-		family = AF_INET6;
-		net_pkt_set_family(pkt, AF_INET6);
+		family = NET_AF_INET6;
+		net_pkt_set_family(pkt, NET_AF_INET6);
 		dst = &NET_IPV6_HDR(pkt)->dst;
 		src = &NET_IPV6_HDR(pkt)->src;
 		next_hdr = NET_IPV6_HDR(pkt)->nexthdr;
 		net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 		break;
 	case 0x40:
-		family = AF_INET;
-		net_pkt_set_family(pkt, AF_INET);
+		family = NET_AF_INET;
+		net_pkt_set_family(pkt, NET_AF_INET);
 		dst = &NET_IPV4_HDR(pkt)->dst;
 		src = &NET_IPV4_HDR(pkt)->src;
 		next_hdr = NET_IPV4_HDR(pkt)->proto;
@@ -89,7 +89,7 @@ static void print_info(struct net_pkt *pkt)
 		break;
 	}
 
-	if (family == AF_UNSPEC) {
+	if (family == NET_AF_UNSPEC) {
 		LOG_INF("Recv %p len %zd (unknown address family)",
 			pkt, net_pkt_get_len(pkt));
 		return;
@@ -98,16 +98,16 @@ static void print_info(struct net_pkt *pkt)
 	ret = 0;
 
 	switch (next_hdr) {
-	case IPPROTO_TCP:
+	case NET_IPPROTO_TCP:
 		proto = "TCP";
 		ret = get_ports(pkt, &src_port, &dst_port);
 		break;
-	case IPPROTO_UDP:
+	case NET_IPPROTO_UDP:
 		proto = "UDP";
 		ret = get_ports(pkt, &src_port, &dst_port);
 		break;
-	case IPPROTO_ICMPV6:
-	case IPPROTO_ICMP:
+	case NET_IPPROTO_ICMPV6:
+	case NET_IPPROTO_ICMP:
 		proto = "ICMP";
 		break;
 	default:
@@ -127,8 +127,8 @@ static void print_info(struct net_pkt *pkt)
 
 	len = net_pkt_get_len(pkt);
 
-	if (family == AF_INET) {
-		if (next_hdr == IPPROTO_TCP || next_hdr == IPPROTO_UDP) {
+	if (family == NET_AF_INET) {
+		if (next_hdr == NET_IPPROTO_TCP || next_hdr == NET_IPPROTO_UDP) {
 			LOG_INF("%s %s (%zd) %s:%u -> %s:%u",
 				"IPv4", proto, len,
 				src_addr, src_port,
@@ -139,7 +139,7 @@ static void print_info(struct net_pkt *pkt)
 				dst_addr);
 		}
 	} else {
-		if (next_hdr == IPPROTO_TCP || next_hdr == IPPROTO_UDP) {
+		if (next_hdr == NET_IPPROTO_TCP || next_hdr == NET_IPPROTO_UDP) {
 			LOG_INF("%s %s (%zd) [%s]:%u -> [%s]:%u",
 				"IPv6", proto, len,
 				src_addr, src_port,

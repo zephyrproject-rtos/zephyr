@@ -13,6 +13,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/dt-bindings/sensor/adxl367.h>
 
 #define DT_DRV_COMPAT  adi_adxl367
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
@@ -154,10 +155,9 @@
 #define ADXL367_NO_ACTIVITY_DETECTION_2			0x2
 #define ADXL367_REFERENCED_ACTIVITY_ENABLE		0x3
 
-#define ADXL367_TEMP_OFFSET				1185
-#define ADXL367_TEMP_25C				165
-#define ADXL367_TEMP_SCALE				18518518LL
-#define ADXL367_TEMP_SCALE_DIV				1000000000
+#define ADXL367_TEMP_SENSITIVITY 54 /* LSB per C */
+#define ADXL367_TEMP_25C         (165) /* Counts at 25 C */
+#define ADXL367_TEMP_SCALE       (uint32_t)(1000000 / ADXL367_TEMP_SENSITIVITY)
 
 #define ADXL367_THRESH_H_MSK				GENMASK(6, 0)
 #define ADXL367_THRESH_L_MSK				GENMASK(7, 2)
@@ -280,10 +280,10 @@ enum adxl367_fifo_format {
 };
 
 enum adxl367_fifo_mode {
-	ADXL367_FIFO_DISABLED,
-	ADXL367_OLDEST_SAVED,
-	ADXL367_STREAM_MODE,
-	ADXL367_TRIGGERED_MODE
+	ADXL367_FIFO_DISABLED = ADXL367_FIFO_MODE_DISABLED,
+	ADXL367_OLDEST_SAVED = ADXL367_FIFO_MODE_OLDEST_SAVED,
+	ADXL367_STREAM_MODE = ADXL367_FIFO_MODE_STREAM,
+	ADXL367_TRIGGERED_MODE = ADXL367_FIFO_MODE_TRIGGERED
 };
 
 enum adxl367_fifo_read_mode {
@@ -441,7 +441,7 @@ void adxl367_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 int adxl367_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
 int adxl367_get_accel_data(const struct device *dev,
 			   struct adxl367_xyz_accel_data *accel_data);
-int adxl367_get_temp_data(const struct device *dev, int16_t *raw_temp);
+int adxl367_get_temp_data(const struct device *dev, int16_t *raw_temp, bool check_data_rdy);
 void adxl367_accel_convert(struct sensor_value *val, int16_t value,
 				enum adxl367_range range);
 void adxl367_temp_convert(struct sensor_value *val, int16_t value);

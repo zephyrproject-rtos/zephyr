@@ -11,11 +11,15 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <zephyr/drivers/comparator.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/poweroff.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/drivers/timer/system_timer.h>
+
+#define NON_WAKEUP_RESET_REASON (RESET_PIN | RESET_SOFTWARE | RESET_POR | RESET_DEBUG)
 
 #if defined(CONFIG_GRTC_WAKEUP_ENABLE)
 #include <zephyr/drivers/timer/nrf_grtc_timer.h>
@@ -28,9 +32,34 @@ static const struct gpio_dt_spec sw0 = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
 static const struct device *comp_dev = DEVICE_DT_GET(DT_NODELABEL(comp));
 #endif
 
+int print_reset_cause(uint32_t reset_cause)
+{
+	int32_t ret;
+	uint32_t supported;
+
+	ret = hwinfo_get_supported_reset_cause((uint32_t *) &supported);
+
+	if (ret || !(reset_cause & supported)) {
+		return -ENOTSUP;
+	}
+
+	if (reset_cause & RESET_DEBUG) {
+		printf("Reset by debugger.\n");
+	} else if (reset_cause & RESET_CLOCK) {
+		printf("Wakeup from System OFF by GRTC.\n");
+	} else if (reset_cause & RESET_LOW_POWER_WAKE) {
+		printf("Wakeup from System OFF by GPIO.\n");
+	} else  {
+		printf("Other wake up cause 0x%08X.\n", reset_cause);
+	}
+
+	return 0;
+}
+
 int main(void)
 {
 	int rc;
+	uint32_t reset_cause;
 	const struct device *const cons = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	if (!device_is_ready(cons)) {
@@ -39,10 +68,24 @@ int main(void)
 	}
 
 	printf("\n%s system off demo\n", CONFIG_BOARD);
+	hwinfo_get_reset_cause(&reset_cause);
+	rc = print_reset_cause(reset_cause);
+
+	if (rc < 0) {
+		printf("Reset cause not supported.\n");
+		return 0;
+	}
 
 	if (IS_ENABLED(CONFIG_APP_USE_RETAINED_MEM)) {
 		bool retained_ok = retained_validate();
 
+		if (reset_cause & NON_WAKEUP_RESET_REASON) {
+			retained.boots = 0;
+			retained.off_count = 0;
+			retained.uptime_sum = 0;
+			retained.uptime_latest = 0;
+			retained_ok = true;
+		}
 		/* Increment for this boot attempt and update. */
 		retained.boots += 1;
 		retained_update();
@@ -55,11 +98,15 @@ int main(void)
 		printf("Retained data not supported\n");
 	}
 
+#if defined(CONFIG_SYS_CLOCK_DISABLE)
+	printf("System clock will be disabled\n");
+#endif
 #if defined(CONFIG_GRTC_WAKEUP_ENABLE)
 	int err = z_nrf_grtc_wakeup_prepare(DEEP_SLEEP_TIME_S * USEC_PER_SEC);
 
 	if (err < 0) {
 		printk("Unable to prepare GRTC as a wake up source (err = %d).\n", err);
+		return 0;
 	} else {
 		printk("Entering system off; wait %u seconds to restart\n", DEEP_SLEEP_TIME_S);
 	}
@@ -98,6 +145,10 @@ int main(void)
 		retained_update();
 	}
 
+	hwinfo_clear_reset_cause();
+#if defined(CONFIG_SYS_CLOCK_DISABLE)
+	sys_clock_disable();
+#endif
 	sys_poweroff();
 
 	return 0;

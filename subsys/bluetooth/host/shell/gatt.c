@@ -10,24 +10,29 @@
  */
 
 #include <errno.h>
-#include <zephyr/types.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <zephyr/shell/shell_string_conv.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/util.h>
-#include <zephyr/kernel.h>
 
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
-
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/time_units.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/sys/util.h>
+#include <sys/types.h>
 
-#include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
+#include "host/shell/bt.h"
 
 #if defined(CONFIG_BT_GATT_CLIENT) || defined(CONFIG_BT_GATT_DYNAMIC_DB)
 extern uint8_t selected_id;
@@ -57,14 +62,14 @@ static void update_write_stats(uint16_t len)
 	/* if last data rx-ed was greater than 1 second in the past,
 	 * reset the metrics.
 	 */
-	if (delta > 1000000000) {
+	if (delta > NSEC_PER_SEC) {
 		write_stats.len = 0U;
 		write_stats.rate = 0U;
 		cycle_stamp = k_cycle_get_32();
 	} else {
 		write_stats.len += len;
 		write_stats.rate = ((uint64_t)write_stats.len << 3) *
-			1000000000U / delta;
+			NSEC_PER_SEC / delta;
 	}
 }
 
@@ -136,8 +141,49 @@ static int cmd_exchange_mtu(const struct shell *sh,
 	return err;
 }
 
-static struct bt_gatt_discover_params discover_params;
-static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
+#define GATT_OP_POOL_SIZE (1U + COND_CODE_1(IS_ENABLED(CONFIG_BT_EATT), (CONFIG_BT_EATT_MAX), (0U)))
+#define GATT_READ_MAX_HANDLES 8
+
+static struct gatt_op_context {
+	struct bt_gatt_discover_params discover;
+	struct bt_gatt_read_params read;
+	uint16_t read_handles[GATT_READ_MAX_HANDLES];
+	struct bt_gatt_write_params write;
+	uint8_t write_buf[BT_ATT_MAX_ATTRIBUTE_LEN];
+	struct bt_uuid_16 uuid;
+} gatt_ctx[GATT_OP_POOL_SIZE];
+
+static struct gatt_op_context *gatt_ctx_discover_alloc(void)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(gatt_ctx); i++) {
+		if (gatt_ctx[i].discover.func == NULL) {
+			gatt_ctx[i].uuid.uuid.type = BT_UUID_TYPE_16;
+			return &gatt_ctx[i];
+		}
+	}
+	return NULL;
+}
+
+static struct gatt_op_context *gatt_ctx_read_alloc(void)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(gatt_ctx); i++) {
+		if (gatt_ctx[i].read.func == NULL) {
+			gatt_ctx[i].uuid.uuid.type = BT_UUID_TYPE_16;
+			return &gatt_ctx[i];
+		}
+	}
+	return NULL;
+}
+
+static struct gatt_op_context *gatt_ctx_write_alloc(void)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(gatt_ctx); i++) {
+		if (gatt_ctx[i].write.func == NULL) {
+			return &gatt_ctx[i];
+		}
+	}
+	return NULL;
+}
 
 static void print_chrc_props(uint8_t properties)
 {
@@ -165,10 +211,6 @@ static void print_chrc_props(uint8_t properties)
 
 	if (properties & BT_GATT_CHRC_INDICATE) {
 		bt_shell_print("[indicate]");
-	}
-
-	if (properties & BT_GATT_CHRC_AUTH) {
-		bt_shell_print("[auth]");
 	}
 
 	if (properties & BT_GATT_CHRC_EXT_PROP) {
@@ -225,6 +267,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 
 static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 {
+	struct gatt_op_context *ctx;
 	int err;
 
 	if (!default_conn) {
@@ -232,47 +275,49 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (discover_params.func) {
-		shell_print(sh, "Discover ongoing");
+	ctx = gatt_ctx_discover_alloc();
+	if (ctx == NULL) {
+		shell_error(sh, "No available operation slots");
 		return -ENOEXEC;
 	}
 
-	discover_params.func = discover_func;
-	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
-	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
-	SET_CHAN_OPT_ANY(discover_params);
+	ctx->discover.func = discover_func;
+	ctx->discover.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	ctx->discover.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
+	SET_CHAN_OPT_ANY(ctx->discover);
 
 	if (argc > 1) {
 		/* Only set the UUID if the value is valid (non zero) */
-		uuid.val = strtoul(argv[1], NULL, 16);
-		if (uuid.val) {
-			discover_params.uuid = &uuid.uuid;
+		ctx->uuid.val = strtoul(argv[1], NULL, 16);
+		if (ctx->uuid.val) {
+			ctx->discover.uuid = &ctx->uuid.uuid;
 		}
 	}
 
 	if (argc > 2) {
-		discover_params.start_handle = strtoul(argv[2], NULL, 16);
+		ctx->discover.start_handle = strtoul(argv[2], NULL, 16);
 		if (argc > 3) {
-			discover_params.end_handle = strtoul(argv[3], NULL, 16);
+			ctx->discover.end_handle = strtoul(argv[3], NULL, 16);
 		}
 	}
 
 	if (!strcmp(argv[0], "discover")) {
-		discover_params.type = BT_GATT_DISCOVER_ATTRIBUTE;
+		ctx->discover.type = BT_GATT_DISCOVER_ATTRIBUTE;
 	} else if (!strcmp(argv[0], "discover-secondary")) {
-		discover_params.type = BT_GATT_DISCOVER_SECONDARY;
+		ctx->discover.type = BT_GATT_DISCOVER_SECONDARY;
 	} else if (!strcmp(argv[0], "discover-include")) {
-		discover_params.type = BT_GATT_DISCOVER_INCLUDE;
+		ctx->discover.type = BT_GATT_DISCOVER_INCLUDE;
 	} else if (!strcmp(argv[0], "discover-characteristic")) {
-		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+		ctx->discover.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 	} else if (!strcmp(argv[0], "discover-descriptor")) {
-		discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
+		ctx->discover.type = BT_GATT_DISCOVER_DESCRIPTOR;
 	} else {
-		discover_params.type = BT_GATT_DISCOVER_PRIMARY;
+		ctx->discover.type = BT_GATT_DISCOVER_PRIMARY;
 	}
 
-	err = bt_gatt_discover(default_conn, &discover_params);
+	err = bt_gatt_discover(default_conn, &ctx->discover);
 	if (err) {
+		(void)memset(&ctx->discover, 0, sizeof(ctx->discover));
 		shell_error(sh, "Discover failed (err %d)", err);
 	} else {
 		shell_print(sh, "Discover pending");
@@ -280,8 +325,6 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 
 	return err;
 }
-
-static struct bt_gatt_read_params read_params;
 
 static uint8_t read_func(struct bt_conn *conn, uint8_t err,
 			 struct bt_gatt_read_params *params,
@@ -301,6 +344,7 @@ static uint8_t read_func(struct bt_conn *conn, uint8_t err,
 
 static int cmd_read(const struct shell *sh, size_t argc, char *argv[])
 {
+	struct gatt_op_context *ctx;
 	int err;
 
 	if (!default_conn) {
@@ -308,23 +352,25 @@ static int cmd_read(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (read_params.func) {
-		shell_print(sh, "Read ongoing");
-		return -ENOEXEC;
+	ctx = gatt_ctx_read_alloc();
+	if (ctx == NULL) {
+		shell_error(sh, "No available operation slots");
+		return -EBUSY;
 	}
 
-	read_params.func = read_func;
-	read_params.handle_count = 1;
-	read_params.single.handle = strtoul(argv[1], NULL, 16);
-	read_params.single.offset = 0U;
-	SET_CHAN_OPT_ANY(read_params);
+	ctx->read.func = read_func;
+	ctx->read.handle_count = 1;
+	ctx->read.single.handle = strtoul(argv[1], NULL, 16);
+	ctx->read.single.offset = 0U;
+	SET_CHAN_OPT_ANY(ctx->read);
 
 	if (argc > 2) {
-		read_params.single.offset = strtoul(argv[2], NULL, 16);
+		ctx->read.single.offset = strtoul(argv[2], NULL, 16);
 	}
 
-	err = bt_gatt_read(default_conn, &read_params);
+	err = bt_gatt_read(default_conn, &ctx->read);
 	if (err) {
+		(void)memset(&ctx->read, 0, sizeof(ctx->read));
 		shell_error(sh, "Read failed (err %d)", err);
 	} else {
 		shell_print(sh, "Read pending");
@@ -335,7 +381,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_mread(const struct shell *sh, size_t argc, char *argv[])
 {
-	uint16_t h[8];
+	struct gatt_op_context *ctx;
 	size_t i;
 	int err;
 
@@ -344,29 +390,34 @@ static int cmd_mread(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (read_params.func) {
-		shell_print(sh, "Read ongoing");
-		return -ENOEXEC;
+	ctx = gatt_ctx_read_alloc();
+	if (ctx == NULL) {
+		shell_error(sh, "No available operation slots");
+		return -EBUSY;
 	}
 
-	if ((argc - 1) > ARRAY_SIZE(h)) {
-		shell_print(sh, "Enter max %zu handle items to read", ARRAY_SIZE(h));
+	if ((argc - 1) > ARRAY_SIZE(ctx->read_handles)) {
+		shell_print(sh, "Enter max %zu handle items to read",
+			    ARRAY_SIZE(ctx->read_handles));
 		return -EINVAL;
 	}
 
 	for (i = 0; i < argc - 1; i++) {
-		h[i] = strtoul(argv[i + 1], NULL, 16);
+		ctx->read_handles[i] = strtoul(argv[i + 1], NULL, 16);
 	}
 
-	read_params.func = read_func;
-	read_params.handle_count = i;
-	read_params.multiple.handles = h;
-	read_params.multiple.variable = true;
-	SET_CHAN_OPT_ANY(read_params);
+	ctx->read.func = read_func;
+	ctx->read.handle_count = i;
+	ctx->read.multiple.handles = ctx->read_handles;
+	ctx->read.multiple.variable = true;
+	SET_CHAN_OPT_ANY(ctx->read);
 
-	err = bt_gatt_read(default_conn, &read_params);
+	err = bt_gatt_read(default_conn, &ctx->read);
 	if (err) {
+		(void)memset(&ctx->read, 0, sizeof(ctx->read));
 		shell_error(sh, "GATT multiple read request failed (err %d)", err);
+	} else {
+		shell_print(sh, "Read pending");
 	}
 
 	return err;
@@ -374,6 +425,7 @@ static int cmd_mread(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_read_uuid(const struct shell *sh, size_t argc, char *argv[])
 {
+	struct gatt_op_context *ctx;
 	int err;
 
 	if (!default_conn) {
@@ -381,33 +433,35 @@ static int cmd_read_uuid(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (read_params.func) {
-		shell_print(sh, "Read ongoing");
-		return -ENOEXEC;
+	ctx = gatt_ctx_read_alloc();
+	if (ctx == NULL) {
+		shell_error(sh, "No available operation slots");
+		return -EBUSY;
 	}
 
-	read_params.func = read_func;
-	read_params.handle_count = 0;
-	read_params.by_uuid.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
-	read_params.by_uuid.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
-	SET_CHAN_OPT_ANY(read_params);
+	ctx->read.func = read_func;
+	ctx->read.handle_count = 0;
+	ctx->read.by_uuid.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	ctx->read.by_uuid.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
+	SET_CHAN_OPT_ANY(ctx->read);
 
 	if (argc > 1) {
-		uuid.val = strtoul(argv[1], NULL, 16);
-		if (uuid.val) {
-			read_params.by_uuid.uuid = &uuid.uuid;
+		ctx->uuid.val = strtoul(argv[1], NULL, 16);
+		if (ctx->uuid.val) {
+			ctx->read.by_uuid.uuid = &ctx->uuid.uuid;
 		}
 	}
 
 	if (argc > 2) {
-		read_params.by_uuid.start_handle = strtoul(argv[2], NULL, 16);
+		ctx->read.by_uuid.start_handle = strtoul(argv[2], NULL, 16);
 		if (argc > 3) {
-			read_params.by_uuid.end_handle = strtoul(argv[3], NULL, 16);
+			ctx->read.by_uuid.end_handle = strtoul(argv[3], NULL, 16);
 		}
 	}
 
-	err = bt_gatt_read(default_conn, &read_params);
+	err = bt_gatt_read(default_conn, &ctx->read);
 	if (err) {
+		(void)memset(&ctx->read, 0, sizeof(ctx->read));
 		shell_error(sh, "Read failed (err %d)", err);
 	} else {
 		shell_print(sh, "Read pending");
@@ -416,19 +470,17 @@ static int cmd_read_uuid(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-static struct bt_gatt_write_params write_params;
-static uint8_t gatt_write_buf[BT_ATT_MAX_ATTRIBUTE_LEN];
-
 static void write_func(struct bt_conn *conn, uint8_t err,
 		       struct bt_gatt_write_params *params)
 {
 	bt_shell_print("Write complete: err 0x%02x", err);
 
-	(void)memset(&write_params, 0, sizeof(write_params));
+	(void)memset(params, 0, sizeof(*params));
 }
 
 static int cmd_write(const struct shell *sh, size_t argc, char *argv[])
 {
+	struct gatt_op_context *ctx;
 	int err;
 	uint16_t handle, offset;
 
@@ -437,30 +489,31 @@ static int cmd_write(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (write_params.func) {
-		shell_error(sh, "Write ongoing");
-		return -ENOEXEC;
+	ctx = gatt_ctx_write_alloc();
+	if (ctx == NULL) {
+		shell_error(sh, "No available operation slots");
+		return -EBUSY;
 	}
 
 	handle = strtoul(argv[1], NULL, 16);
 	offset = strtoul(argv[2], NULL, 16);
 
-	write_params.length = hex2bin(argv[3], strlen(argv[3]),
-				      gatt_write_buf, sizeof(gatt_write_buf));
-	if (write_params.length == 0) {
+	ctx->write.length = hex2bin(argv[3], strlen(argv[3]),
+				    ctx->write_buf, sizeof(ctx->write_buf));
+	if (ctx->write.length == 0) {
 		shell_error(sh, "No data set");
 		return -ENOEXEC;
 	}
 
-	write_params.data = gatt_write_buf;
-	write_params.handle = handle;
-	write_params.offset = offset;
-	write_params.func = write_func;
-	SET_CHAN_OPT_ANY(write_params);
+	ctx->write.data = ctx->write_buf;
+	ctx->write.handle = handle;
+	ctx->write.offset = offset;
+	ctx->write.func = write_func;
+	SET_CHAN_OPT_ANY(ctx->write);
 
-	err = bt_gatt_write(default_conn, &write_params);
+	err = bt_gatt_write(default_conn, &ctx->write);
 	if (err) {
-		write_params.func = NULL;
+		(void)memset(&ctx->write, 0, sizeof(ctx->write));
 		shell_error(sh, "Write failed (err %d)", err);
 	} else {
 		shell_print(sh, "Write pending");
@@ -477,6 +530,9 @@ static void write_without_rsp_cb(struct bt_conn *conn, void *user_data)
 
 	print_write_stats();
 }
+
+/* Separate buffer for write-without-response (doesn't use async params) */
+static uint8_t gatt_write_without_rsp_buf[BT_ATT_MAX_ATTRIBUTE_LEN];
 
 static int cmd_write_without_rsp(const struct shell *sh,
 				 size_t argc, char *argv[])
@@ -502,16 +558,16 @@ static int cmd_write_without_rsp(const struct shell *sh,
 	}
 
 	handle = strtoul(argv[1], NULL, 16);
-	gatt_write_buf[0] = strtoul(argv[2], NULL, 16);
+	gatt_write_without_rsp_buf[0] = strtoul(argv[2], NULL, 16);
 	len = 1U;
 
 	if (argc > 3) {
 		int i;
 
-		len = MIN(strtoul(argv[3], NULL, 16), sizeof(gatt_write_buf));
+		len = MIN(strtoul(argv[3], NULL, 16), sizeof(gatt_write_without_rsp_buf));
 
 		for (i = 1; i < len; i++) {
-			gatt_write_buf[i] = gatt_write_buf[0];
+			gatt_write_without_rsp_buf[i] = gatt_write_without_rsp_buf[0];
 		}
 	}
 
@@ -528,7 +584,7 @@ static int cmd_write_without_rsp(const struct shell *sh,
 
 	while (repeat--) {
 		err = bt_gatt_write_without_response_cb(default_conn, handle,
-							gatt_write_buf, len,
+							gatt_write_without_rsp_buf, len,
 							sign, func,
 							UINT_TO_POINTER(len));
 		if (err) {
@@ -740,7 +796,7 @@ static int cmd_show_db(const struct shell *sh, size_t argc, char *argv[])
 	total_len = stats.svc_count * sizeof(struct bt_gatt_service);
 	total_len += stats.chrc_count * sizeof(struct bt_gatt_chrc);
 	total_len += stats.attr_count * sizeof(struct bt_gatt_attr);
-	total_len += stats.ccc_count * sizeof(struct _bt_gatt_ccc);
+	total_len += stats.ccc_count * sizeof(struct bt_gatt_ccc_managed_user_data);
 
 	shell_print(sh, "=================================================");
 	shell_print(sh, "Total: %u services %u attributes (%zu bytes)",
@@ -1013,7 +1069,7 @@ static void notify_cb(struct bt_conn *conn, void *user_data)
 {
 	const struct shell *sh = user_data;
 
-	shell_print(sh, "Nofication sent to conn %p", conn);
+	shell_print(sh, "Notification sent to conn %p", conn);
 }
 static int cmd_notify_mult(const struct shell *sh, size_t argc, char *argv[])
 {

@@ -3,6 +3,7 @@ common:
   ignore_faults: true
   ignore_qemu_crash: true
   tags: kernel
+  filter: CONFIG_ARCH_STACKWALK
 tests:
   arch.common.stack_unwind.riscv_fp:
     arch_allow: riscv
@@ -33,8 +34,8 @@ tests:
   arch.common.stack_unwind.x86:
     arch_allow: x86
     extra_configs:
-      - CONFIG_NO_OPTIMIZATIONS=y
       - CONFIG_OMIT_FRAME_POINTER=n
+      - CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT=y
     integration_platforms:
       - qemu_x86
       - qemu_x86_64
@@ -66,6 +67,10 @@ tests:
       - qemu_riscv32
       - qemu_riscv64
       - qemu_cortex_a53
+    platform_exclude:
+      # these platforms disabled here since CONFIG_ARM_MMU=n by default
+      - fvp_baser_aemv8r/fvp_aemv8r_aarch64
+      - fvp_baser_aemv8r/fvp_aemv8r_aarch64/smp
     extra_configs:
       - CONFIG_FRAME_POINTER=y
       - CONFIG_SYMTAB=y

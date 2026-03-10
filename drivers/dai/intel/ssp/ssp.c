@@ -859,7 +859,7 @@ static void dai_ssp_pm_runtime_dis_ssp_power(struct dai_intel_ssp *dp, uint32_t 
 static void dai_ssp_program_channel_map(struct dai_intel_ssp *dp,
 		const struct dai_config *cfg, uint32_t ssp_index, const void *spec_config)
 {
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL)
+#if defined(CONFIG_SOC_ACE20_LNL)
 	ARG_UNUSED(spec_config);
 	uint16_t pcmsycm = cfg->link_config;
 	 /* Set upper slot number from configuration */
@@ -918,7 +918,7 @@ static void dai_ssp_program_channel_map(struct dai_intel_ssp *dp,
 	ARG_UNUSED(cfg);
 	ARG_UNUSED(ssp_index);
 	ARG_UNUSED(spec_config);
-#endif /* CONFIG_SOC_INTEL_ACE20_LNL */
+#endif /* CONFIG_SOC_ACE20_LNL */
 }
 
 /* empty SSP transmit FIFO */
@@ -1875,6 +1875,9 @@ static int dai_ssp_check_aux_data(struct ssp_intel_aux_tlv *aux_tlv, int aux_len
 #else
 		return 0;
 #endif
+	case SSP_GTW_DMA_CONFIG_ID:
+		/* ignored */
+		return 0;
 	default:
 		LOG_ERR("undefined aux data type %u", aux_tlv->type);
 		return -EINVAL;
@@ -1937,9 +1940,7 @@ static int dai_ssp_parse_tlv(struct dai_intel_ssp *dp, const uint8_t *aux_ptr, s
 	struct ssp_intel_ext_ctl *ext;
 #if SSP_IP_VER >= SSP_IP_VER_1_5
 	struct ssp_intel_link_ctl *link;
-#if SSP_IP_VER > SSP_IP_VER_1_5
 	struct dai_intel_ssp_plat_data *ssp = dai_get_plat_data(dp);
-#endif
 #endif
 
 	for (i = 0; i < aux_len; i += hop) {
@@ -1987,13 +1988,13 @@ static int dai_ssp_parse_tlv(struct dai_intel_ssp *dp, const uint8_t *aux_ptr, s
 		case SSP_LINK_CLK_SOURCE:
 #if SSP_IP_VER >= SSP_IP_VER_1_5
 			link = (struct ssp_intel_link_ctl *)&aux_tlv->val;
+			ssp->link_clock = link->clock_source;
 #if SSP_IP_VER < SSP_IP_VER_2_0
 			sys_write32((sys_read32(dai_ip_base(dp) + I2SLCTL_OFFSET) &
 				    ~I2CLCTL_MLCS(0x7)) |
 				    I2CLCTL_MLCS(link->clock_source), dai_ip_base(dp) +
 				    I2SLCTL_OFFSET);
 #elif SSP_IP_VER > SSP_IP_VER_1_5
-			ssp->link_clock = link->clock_source;
 			sys_write32((sys_read32(dai_i2svss_base(dp) + I2SLCTL_OFFSET) &
 				    ~I2CLCTL_MLCS(0x7)) |
 				    I2CLCTL_MLCS(link->clock_source),
@@ -2001,6 +2002,9 @@ static int dai_ssp_parse_tlv(struct dai_intel_ssp *dp, const uint8_t *aux_ptr, s
 #endif
 			LOG_INF("link clock_source %u", link->clock_source);
 #endif
+			break;
+		case SSP_GTW_DMA_CONFIG_ID:
+			/* ignored */
 			break;
 		default:
 			LOG_ERR("undefined aux data type %u", aux_tlv->type);
@@ -2014,7 +2018,7 @@ static int dai_ssp_parse_tlv(struct dai_intel_ssp *dp, const uint8_t *aux_ptr, s
 	return 0;
 }
 
-static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_config)
+static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_config, size_t size)
 {
 	const struct dai_intel_ipc4_ssp_configuration_blob_ver_1_5 *blob15 = spec_config;
 	const struct dai_intel_ipc4_ssp_configuration_blob_ver_3_0 *blob30 = spec_config;
@@ -2028,7 +2032,7 @@ static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_con
 		aux_len = cfg_len - pre_aux_len;
 		aux_ptr = (uint8_t *)blob15 + pre_aux_len;
 	} else if (blob30->version == SSP_BLOB_VER_3_0) {
-		cfg_len = blob30->size;
+		cfg_len = size;
 		pre_aux_len = sizeof(*blob30) +
 			      blob30->i2s_mclk_control.mdivrcnt * sizeof(uint32_t);
 		aux_len = cfg_len - pre_aux_len;
@@ -2062,15 +2066,13 @@ static int dai_ssp_set_clock_control_ver_1_5(struct dai_intel_ssp *dp,
 	return 0;
 }
 
-static int dai_ssp_set_clock_control_ver_1(struct dai_intel_ssp *dp,
+static void dai_ssp_set_clock_control_ver_1(struct dai_intel_ssp *dp,
 					   const struct dai_intel_ipc4_ssp_mclk_config *cc)
 {
 	/* ssp blob is set by pcm_hw_params for ipc4 stream, so enable
 	 * mclk and bclk at this time.
 	 */
 	dai_ssp_mn_set_mclk_blob(dp, cc->mdivc, cc->mdivr);
-
-	return 0;
 }
 
 #if SSP_IP_VER > SSP_IP_VER_2_0
@@ -2182,7 +2184,7 @@ static void dai_ssp_set_reg_config(struct dai_intel_ssp *dp, const struct dai_co
 #endif
 
 static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_config *cfg,
-				   const void *spec_config)
+				   const void *spec_config, size_t size)
 {
 	const struct dai_intel_ipc4_ssp_configuration_blob_ver_1_5 *blob15 = spec_config;
 	const struct dai_intel_ipc4_ssp_configuration_blob_ver_3_0 *blob30 = spec_config;
@@ -2202,7 +2204,7 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_co
 	}
 
 	if (blob15->version == SSP_BLOB_VER_1_5) {
-		err = dai_ssp_parse_aux_data(dp, spec_config);
+		err = dai_ssp_parse_aux_data(dp, spec_config, size);
 		if (err) {
 			return err;
 		}
@@ -2212,7 +2214,7 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_co
 			return err;
 		}
 	} else if (blob30->version == SSP_BLOB_VER_3_0) {
-		err = dai_ssp_parse_aux_data(dp, spec_config);
+		err = dai_ssp_parse_aux_data(dp, spec_config, size);
 		if (err) {
 			return err;
 		}
@@ -2223,10 +2225,7 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_co
 		}
 	} else {
 		dai_ssp_set_reg_config(dp, cfg, (void *)&blob->i2s_driver_config.i2s_config);
-		err = dai_ssp_set_clock_control_ver_1(dp, &blob->i2s_driver_config.mclk_config);
-		if (err) {
-			return err;
-		}
+		dai_ssp_set_clock_control_ver_1(dp, &blob->i2s_driver_config.mclk_config);
 	}
 
 	ssp_plat_data->clk_active |= SSP_CLK_MCLK_ES_REQ;
@@ -2504,7 +2503,7 @@ static int dai_ssp_config_get(const struct device *dev, struct dai_config *cfg, 
 }
 
 static int dai_ssp_config_set(const struct device *dev, const struct dai_config *cfg,
-			      const void *bespoke_cfg)
+			      const void *bespoke_cfg, size_t size)
 {
 	struct dai_intel_ssp *dp = (struct dai_intel_ssp *)dev->data;
 	struct dai_intel_ssp_plat_data *ssp_plat_data = dai_get_plat_data(dp);
@@ -2513,7 +2512,7 @@ static int dai_ssp_config_set(const struct device *dev, const struct dai_config 
 	if (cfg->type == DAI_INTEL_SSP) {
 		ret = dai_ssp_set_config_tplg(dp, cfg, bespoke_cfg);
 	} else {
-		ret = dai_ssp_set_config_blob(dp, cfg, bespoke_cfg);
+		ret = dai_ssp_set_config_blob(dp, cfg, bespoke_cfg, size);
 	}
 	dai_ssp_program_channel_map(dp, cfg, ssp_plat_data->ssp_index, bespoke_cfg);
 
@@ -2544,6 +2543,25 @@ static const struct dai_properties *dai_ssp_get_properties(const struct device *
 	return prop;
 }
 
+static int dai_ssp_get_properties_copy(const struct device *dev,
+				       enum dai_dir dir, int stream_id,
+				       struct dai_properties *prop)
+{
+	const struct dai_properties *kernel_prop = dai_ssp_get_properties(dev, dir, stream_id);
+
+	if (!prop) {
+		return -EINVAL;
+	}
+
+	if (!kernel_prop) {
+		return -ENOENT;
+	}
+
+	memcpy(prop, kernel_prop, sizeof(*kernel_prop));
+
+	return 0;
+}
+
 static void ssp_acquire_ip(struct dai_intel_ssp *dp)
 {
 	struct dai_intel_ssp_plat_data *ssp = dai_get_plat_data(dp);
@@ -2563,6 +2581,11 @@ static void ssp_acquire_ip(struct dai_intel_ssp *dp)
 			    ~I2CLCTL_MLCS(0x7)) |
 			    I2CLCTL_MLCS(ssp->link_clock),
 			    dai_i2svss_base(dp) + I2SLCTL_OFFSET);
+#elif SSP_IP_VER == SSP_IP_VER_1_5
+		sys_write32((sys_read32(dai_ip_base(dp) + I2SLCTL_OFFSET) &
+			    ~I2CLCTL_MLCS(0x7)) |
+			    I2CLCTL_MLCS(ssp->link_clock), dai_ip_base(dp) +
+			    I2SLCTL_OFFSET);
 #endif
 	}
 }
@@ -2595,6 +2618,11 @@ static void ssp_release_ip(struct dai_intel_ssp *dp)
 			    ~I2CLCTL_MLCS(0x7)) |
 			    I2CLCTL_MLCS(DAI_INTEL_SSP_CLOCK_XTAL_OSCILLATOR),
 			    dai_i2svss_base(dp) + I2SLCTL_OFFSET);
+#elif SSP_IP_VER == SSP_IP_VER_1_5
+		sys_write32((sys_read32(dai_ip_base(dp) + I2SLCTL_OFFSET) &
+			   ~I2CLCTL_MLCS(0x7)) |
+			   I2CLCTL_MLCS(DAI_INTEL_SSP_CLOCK_XTAL_OSCILLATOR),
+			   dai_ip_base(dp) + I2SLCTL_OFFSET);
 #endif
 
 		dai_ssp_pm_runtime_en_ssp_clk_gating(dp, ssp->ssp_index);
@@ -2716,6 +2744,7 @@ static DEVICE_API(dai, dai_intel_ssp_api_funcs) = {
 	.config_get		= dai_ssp_config_get,
 	.trigger		= dai_ssp_trigger,
 	.get_properties		= dai_ssp_get_properties,
+	.get_properties_copy	= dai_ssp_get_properties_copy,
 	.config_update		= dai_ssp_dma_control_set,
 };
 

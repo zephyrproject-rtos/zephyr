@@ -499,9 +499,9 @@ struct mcp251xfd_data {
 
 	/* Filter Data */
 	uint32_t filter_usage;
-	struct can_filter filter[CONFIG_CAN_MAX_FILTER];
-	can_rx_callback_t rx_cb[CONFIG_CAN_MAX_FILTER];
-	void *cb_arg[CONFIG_CAN_MAX_FILTER];
+	struct can_filter filter[CONFIG_CAN_MCP251XFD_MAX_FILTERS];
+	can_rx_callback_t rx_cb[CONFIG_CAN_MCP251XFD_MAX_FILTERS];
+	void *cb_arg[CONFIG_CAN_MCP251XFD_MAX_FILTERS];
 
 	const struct device *dev;
 
@@ -524,6 +524,7 @@ struct mcp251xfd_config {
 
 	/* IO Config */
 	bool sof_on_clko;
+	bool xstby_enable;
 	bool pll_enable;
 	uint8_t clko_div;
 

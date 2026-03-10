@@ -13,10 +13,12 @@ function(process_region)
 
   get_property(empty GLOBAL PROPERTY ${REGION_OBJECT}_EMPTY)
   if(NOT empty)
-    # For scatter files we move any system symbols into first non-empty load section.
+    # For scatter files we move any system symbols into FLASH.
     get_parent(OBJECT ${REGION_OBJECT} PARENT parent TYPE SYSTEM)
     get_property(symbols GLOBAL PROPERTY ${parent}_SYMBOLS)
-    set_property(GLOBAL APPEND PROPERTY ${REGION_OBJECT}_SYMBOLS ${symbols})
+
+    get_property(flash GLOBAL PROPERTY ${parent}_REGION_BY_NAME_FLASH)
+    set_property(GLOBAL APPEND PROPERTY ${flash}_SYMBOLS ${symbols})
     set_property(GLOBAL PROPERTY ${parent}_SYMBOLS)
   endif()
 

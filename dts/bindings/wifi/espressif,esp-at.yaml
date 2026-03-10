@@ -1,7 +1,7 @@
 # Copyright (c) 2019 Tobias Svehagen
 # SPDX-License-Identifier: Apache-2.0
 
-description: Espressif ESP8266/ESP32 WiFi modem (AT Commands)
+description: ESP8266/ESP32 WiFi modem (AT Commands)
 
 compatible: "espressif,esp-at"
 

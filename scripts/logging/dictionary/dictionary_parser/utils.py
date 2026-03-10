@@ -15,7 +15,7 @@ def convert_hex_file_to_bin(hexfile):
     """This converts a file in hexadecimal to binary"""
     bin_data = b''
 
-    with open(hexfile, "r", encoding="iso-8859-1") as hfile:
+    with open(hexfile, encoding="iso-8859-1") as hfile:
         for line in hfile.readlines():
             hex_str = line.strip()
 
@@ -62,6 +62,6 @@ def find_string_in_mappings(string_mappings, str_ptr):
     for ptr, string in string_mappings.items():
         if ptr <= str_ptr < (ptr + len(string)):
             whole_str = string_mappings[ptr]
-            return whole_str[str_ptr - ptr:]
+            return whole_str[str_ptr - ptr :]
 
     return None

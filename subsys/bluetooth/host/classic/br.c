@@ -24,10 +24,18 @@ LOG_MODULE_REGISTER(bt_br);
 
 #define RSSI_INVALID 127
 
+enum __packed resolve_name_state {
+	RESOLVE_REMOTE_NAME_PENDING,
+	RESOLVE_REMOTE_NAME_RESOLVING,
+	RESOLVE_REMOTE_NAME_RESOLVED,
+};
+
 struct bt_br_discovery_result *discovery_results;
 static size_t discovery_results_size;
 static size_t discovery_results_count;
 static sys_slist_t discovery_cbs = SYS_SLIST_STATIC_INIT(&discovery_cbs);
+
+static bt_br_conn_req_func_t br_conn_req_func;
 
 static int reject_conn(const bt_addr_t *bdaddr, uint8_t reason)
 {
@@ -35,7 +43,7 @@ static int reject_conn(const bt_addr_t *bdaddr, uint8_t reason)
 	struct net_buf *buf;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_REJECT_CONN_REQ, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -52,39 +60,62 @@ static int reject_conn(const bt_addr_t *bdaddr, uint8_t reason)
 	return 0;
 }
 
-static int accept_conn(const bt_addr_t *bdaddr)
+static uint8_t accept_conn(const struct bt_hci_evt_conn_request *evt)
 {
 	struct bt_hci_cp_accept_conn_req *cp;
 	struct net_buf *buf;
+	uint32_t cod;
 	int err;
+	enum bt_br_conn_req_rsp rsp;
+	uint8_t role;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_ACCEPT_CONN_REQ, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
+	if (br_conn_req_func != NULL) {
+		cod = sys_get_le24(evt->dev_class);
+		rsp = br_conn_req_func(&evt->bdaddr, cod);
+
+		switch (rsp) {
+		case BT_BR_CONN_REQ_ACCEPT_CENTRAL:
+		case BT_BR_CONN_REQ_ACCEPT_PERIPHERAL:
+			role = (uint8_t)rsp;
+			break;
+		case BT_BR_CONN_REQ_REJECT_NO_RESOURCES:
+		case BT_BR_CONN_REQ_REJECT_SECURITY:
+		case BT_BR_CONN_REQ_REJECT_ADDR:
+			return (uint8_t)rsp;
+		default:
+			return BT_HCI_ERR_UNSPECIFIED;
+		}
+	} else {
+		role = IS_ENABLED(CONFIG_BT_ACCEPT_CONN_AS_CENTRAL) ?
+			BT_HCI_ROLE_CENTRAL : BT_HCI_ROLE_PERIPHERAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	bt_addr_copy(&cp->bdaddr, bdaddr);
-	cp->role = BT_HCI_ROLE_PERIPHERAL;
+	bt_addr_copy(&cp->bdaddr, &evt->bdaddr);
+	cp->role = role;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_ACCEPT_CONN_REQ, buf, NULL);
-	if (err) {
-		return err;
+	if (err != 0) {
+		return BT_HCI_ERR_UNSPECIFIED;
 	}
 
-	return 0;
+	return BT_HCI_ERR_SUCCESS;
 }
 
 void bt_hci_conn_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_conn_request *evt = (void *)buf->data;
 	struct bt_conn *conn;
+	uint8_t err;
 
 	LOG_DBG("conn req from %s, type 0x%02x", bt_addr_str(&evt->bdaddr), evt->link_type);
 
 	if (evt->link_type != BT_HCI_ACL) {
-		uint8_t err;
-
 		err = bt_esco_conn_req(evt);
 		if (err != BT_HCI_ERR_SUCCESS) {
 			reject_conn(&evt->bdaddr, err);
@@ -93,13 +124,24 @@ void bt_hci_conn_req(struct net_buf *buf)
 	}
 
 	conn = bt_conn_add_br(&evt->bdaddr);
-	if (!conn) {
+	if (conn == NULL) {
 		reject_conn(&evt->bdaddr, BT_HCI_ERR_INSUFFICIENT_RESOURCES);
 		return;
 	}
 
-	accept_conn(&evt->bdaddr);
-	conn->role = BT_HCI_ROLE_PERIPHERAL;
+	err = accept_conn(evt);
+	if (err != BT_HCI_ERR_SUCCESS) {
+		LOG_ERR("Failed to accept conn from %s (err %u)", bt_addr_str(&evt->bdaddr), err);
+		reject_conn(&evt->bdaddr, err);
+		bt_conn_unref(conn);
+		return;
+	}
+
+	/* The role is peripheral by default. If CONFIG_BT_ACCEPT_CONN_AS_CENTRAL is enabled,
+	 * the role will be updated by the role change event if the role switch is accepted by
+	 * the peer device.
+	 */
+	conn->role = BT_CONN_ROLE_PERIPHERAL;
 	bt_conn_set_state(conn, BT_CONN_INITIATING);
 	bt_conn_unref(conn);
 }
@@ -112,7 +154,7 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 	uint8_t key_size;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Failed to allocate command buffer");
 		return false;
@@ -137,6 +179,10 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 	key_size = rp->key_size;
 	net_buf_unref(rsp);
 
+	if (conn->br.link_key) {
+		conn->br.link_key->enc_key_size = key_size;
+	}
+
 	LOG_DBG("Encryption key size is %u", key_size);
 
 	if (conn->sec_level == BT_SECURITY_L4) {
@@ -155,7 +201,7 @@ bool bt_br_update_sec_level(struct bt_conn *conn)
 
 	if (conn->br.link_key) {
 		if (conn->br.link_key->flags & BT_LINK_KEY_AUTHENTICATED) {
-			if (conn->encrypt == 0x02) {
+			if (conn->encrypt == BT_HCI_ENCRYPTION_ON_BR_AES_CCM) {
 				conn->sec_level = BT_SECURITY_L4;
 			} else {
 				conn->sec_level = BT_SECURITY_L3;
@@ -205,6 +251,12 @@ void bt_hci_synchronous_conn_complete(struct net_buf *buf)
 	}
 
 	sco_conn->handle = handle;
+	sco_conn->sco.air_mode = evt->air_mode;
+
+	if (sco_conn->sco.link_type != evt->link_type) {
+		LOG_WRN("link type mismatch %u != %u", sco_conn->sco.link_type, evt->link_type);
+		sco_conn->sco.link_type = evt->link_type;
+	}
 	bt_conn_set_state(sco_conn, BT_CONN_CONNECTED);
 	bt_conn_unref(sco_conn);
 }
@@ -248,7 +300,7 @@ void bt_hci_conn_complete(struct net_buf *buf)
 
 	bt_conn_unref(conn);
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_READ_REMOTE_FEATURES, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return;
 	}
@@ -264,7 +316,7 @@ static int request_name(const bt_addr_t *addr, uint8_t pscan, uint16_t offset)
 	struct bt_hci_cp_remote_name_request *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_REMOTE_NAME_REQUEST, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -327,11 +379,10 @@ void bt_br_discovery_reset(void)
 	discovery_results_count = 0;
 }
 
-static void report_discovery_results(void)
+static bool check_request_name(void)
 {
-	bool resolving_names = false;
 	int i;
-	struct bt_br_discovery_cb *listener, *next;
+	bool resolving_names = false;
 
 	for (i = 0; i < discovery_results_count; i++) {
 		struct bt_br_discovery_priv *priv;
@@ -342,16 +393,37 @@ static void report_discovery_results(void)
 			continue;
 		}
 
-		if (request_name(&discovery_results[i].addr, priv->pscan_rep_mode,
-				 priv->clock_offset)) {
+		if (priv->resolve_state != RESOLVE_REMOTE_NAME_PENDING) {
 			continue;
 		}
 
-		priv->resolving = true;
+		if (request_name(&discovery_results[i].addr, priv->pscan_rep_mode,
+				 priv->clock_offset)) {
+			priv->resolve_state = RESOLVE_REMOTE_NAME_RESOLVED;
+			continue;
+		}
+
+		priv->resolve_state = RESOLVE_REMOTE_NAME_RESOLVING;
 		resolving_names = true;
+		break;
 	}
 
-	if (resolving_names) {
+	return resolving_names;
+}
+
+static void report_discovery_results(void)
+{
+	int i;
+	struct bt_br_discovery_cb *listener, *next;
+
+	for (i = 0; i < discovery_results_count; i++) {
+		struct bt_br_discovery_priv *priv;
+
+		priv = &discovery_results[i]._priv;
+		priv->resolve_state = RESOLVE_REMOTE_NAME_PENDING;
+	}
+
+	if (check_request_name()) {
 		return;
 	}
 
@@ -511,7 +583,6 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 	struct bt_br_discovery_priv *priv;
 	int eir_len = 240;
 	uint8_t *eir;
-	int i;
 	struct bt_br_discovery_cb *listener, *next;
 
 	result = get_result_slot(&evt->bdaddr, RSSI_INVALID);
@@ -520,7 +591,7 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 	}
 
 	priv = &result->_priv;
-	priv->resolving = false;
+	priv->resolve_state = RESOLVE_REMOTE_NAME_RESOLVED;
 
 	if (evt->status) {
 		goto check_names;
@@ -572,15 +643,9 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 	}
 
 check_names:
-	/* if still waiting for names */
-	for (i = 0; i < discovery_results_count; i++) {
-		struct bt_br_discovery_priv *dpriv;
-
-		dpriv = &discovery_results[i]._priv;
-
-		if (dpriv->resolving) {
-			return;
-		}
+	/* if still need to request name */
+	if (check_request_name()) {
+		return;
 	}
 
 	/* all names resolved, report discovery results */
@@ -618,7 +683,7 @@ void bt_hci_read_remote_features_complete(struct net_buf *buf)
 		goto done;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_READ_REMOTE_EXT_FEATURES, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		goto done;
 	}
@@ -662,24 +727,58 @@ void bt_hci_role_change(struct net_buf *buf)
 
 	LOG_DBG("status 0x%02x role %u addr %s", evt->status, evt->role, bt_addr_str(&evt->bdaddr));
 
-	if (evt->status) {
-		return;
-	}
-
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
 		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
-	if (evt->role) {
-		conn->role = BT_CONN_ROLE_PERIPHERAL;
-	} else {
-		conn->role = BT_CONN_ROLE_CENTRAL;
+	if (evt->status == 0) {
+		if (evt->role == BT_HCI_ROLE_PERIPHERAL) {
+			conn->role = BT_CONN_ROLE_PERIPHERAL;
+		} else {
+			conn->role = BT_CONN_ROLE_CENTRAL;
+		}
 	}
+
+	bt_conn_role_changed(conn, evt->status);
 
 	bt_conn_unref(conn);
 }
+
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+void bt_hci_link_mode_change(struct net_buf *buf)
+{
+	struct bt_hci_evt_mode_change *evt = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	uint16_t interval = sys_le16_to_cpu(evt->interval);
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_BR);
+	if (!conn) {
+		LOG_ERR("Can't find conn for handle 0x%x", handle);
+		return;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		LOG_ERR("Invalid state %d", conn->state);
+		bt_conn_unref(conn);
+		return;
+	}
+
+	if (evt->status) {
+		LOG_ERR("Error %d, type %d", evt->status, conn->type);
+		bt_conn_unref(conn);
+		return;
+	}
+
+	LOG_DBG("hdl 0x%x mode %d intervel %d", handle, evt->mode, interval);
+
+	conn->br.mode = evt->mode;
+	bt_conn_notify_mode_changed(conn, evt->mode, interval);
+	bt_conn_unref(conn);
+}
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 
 static int read_ext_features(void)
 {
@@ -692,7 +791,7 @@ static int read_ext_features(void)
 		struct net_buf *buf, *rsp;
 		int err;
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_READ_LOCAL_EXT_FEATURES, sizeof(*cp));
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
 		}
@@ -781,8 +880,10 @@ int bt_br_init(void)
 	struct bt_hci_cp_write_ssp_mode *ssp_cp;
 	struct bt_hci_cp_write_inquiry_mode *inq_cp;
 	struct bt_hci_write_local_name *name_cp;
-	struct bt_hci_cp_write_class_of_device *cod;
+	struct bt_hci_rp_read_default_link_policy_settings *rp;
+	struct net_buf *rsp;
 	int err;
+	uint16_t default_link_policy_settings;
 
 	/* Read extended local features */
 	if (BT_FEAT_EXT_FEATURES(bt_dev.features)) {
@@ -805,7 +906,7 @@ int bt_br_init(void)
 	net_buf_unref(buf);
 
 	/* Set SSP mode */
-	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_SSP_MODE, sizeof(*ssp_cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -818,7 +919,7 @@ int bt_br_init(void)
 	}
 
 	/* Enable Inquiry results with RSSI or extended Inquiry */
-	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_INQUIRY_MODE, sizeof(*inq_cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -831,7 +932,7 @@ int bt_br_init(void)
 	}
 
 	/* Set local name */
-	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_LOCAL_NAME, sizeof(*name_cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -845,7 +946,7 @@ int bt_br_init(void)
 	}
 
 	/* Set Class of device */
-	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_CLASS_OF_DEVICE, sizeof(*cod));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -858,7 +959,7 @@ int bt_br_init(void)
 	}
 
 	/* Set page timeout*/
-	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_PAGE_TIMEOUT, sizeof(uint16_t));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -874,7 +975,7 @@ int bt_br_init(void)
 	if (BT_FEAT_SC(bt_dev.features)) {
 		struct bt_hci_cp_write_sc_host_supp *sc_cp;
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_SC_HOST_SUPP, sizeof(*sc_cp));
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
 		}
@@ -883,6 +984,39 @@ int bt_br_init(void)
 		sc_cp->sc_support = 0x01;
 
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_SC_HOST_SUPP, buf, NULL);
+		if (err) {
+			return err;
+		}
+	}
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_DEFAULT_LINK_POLICY_SETTINGS, NULL, &rsp);
+	if (err) {
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+	default_link_policy_settings = rp->default_link_policy_settings;
+	net_buf_unref(rsp);
+
+	bool should_enable = IS_ENABLED(CONFIG_BT_DEFAULT_ROLE_SWITCH_ENABLE);
+	bool is_enabled = (default_link_policy_settings &
+			   BT_HCI_LINK_POLICY_SETTINGS_ENABLE_ROLE_SWITCH);
+
+	/* Enable/Disable the default role switch */
+	if (should_enable != is_enabled) {
+		struct bt_hci_cp_write_default_link_policy_settings *policy_cp;
+
+		default_link_policy_settings ^= BT_HCI_LINK_POLICY_SETTINGS_ENABLE_ROLE_SWITCH;
+
+		buf = bt_hci_cmd_alloc(K_FOREVER);
+		if (!buf) {
+			return -ENOBUFS;
+		}
+
+		policy_cp = net_buf_add(buf, sizeof(*policy_cp));
+		policy_cp->default_link_policy_settings = default_link_policy_settings;
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY_SETTINGS, buf, NULL);
 		if (err) {
 			return err;
 		}
@@ -897,7 +1031,7 @@ static int br_start_inquiry(const struct bt_br_discovery_param *param)
 	struct bt_hci_op_inquiry *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_INQUIRY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -982,11 +1116,11 @@ int bt_br_discovery_stop(void)
 
 		priv = &discovery_results[i]._priv;
 
-		if (!priv->resolving) {
+		if (priv->resolve_state != RESOLVE_REMOTE_NAME_RESOLVING) {
 			continue;
 		}
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_REMOTE_NAME_CANCEL, sizeof(*cp));
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			continue;
 		}
@@ -1023,7 +1157,7 @@ static int write_scan_enable(uint8_t scan)
 
 	LOG_DBG("type %u", scan);
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_SCAN_ENABLE, 1);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -1040,25 +1174,149 @@ static int write_scan_enable(uint8_t scan)
 	return 0;
 }
 
-int bt_br_set_connectable(bool enable)
+int bt_br_set_connectable(bool enable, bt_br_conn_req_func_t func)
 {
 	if (enable) {
 		if (atomic_test_bit(bt_dev.flags, BT_DEV_PSCAN)) {
 			return -EALREADY;
-		} else {
-			return write_scan_enable(BT_BREDR_SCAN_PAGE);
 		}
+
+		br_conn_req_func = func;
+		return write_scan_enable(BT_BREDR_SCAN_PAGE);
+	}
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_PSCAN)) {
+		return -EALREADY;
+	}
+
+	return write_scan_enable(BT_BREDR_SCAN_DISABLED);
+}
+
+#define BT_LIAC 0x9e8b00
+#define BT_GIAC 0x9e8b33
+
+static int bt_br_write_current_iac_lap(bool limited)
+{
+	struct bt_hci_cp_write_current_iac_lap *iac_lap;
+	struct net_buf *buf;
+	uint8_t param_len;
+	uint8_t num_current_iac = limited ? 2 : 1;
+
+	LOG_DBG("limited discoverable mode? %s", limited ? "Yes" : "No");
+
+	param_len = sizeof(*iac_lap) + (num_current_iac * sizeof(struct bt_hci_iac_lap));
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	iac_lap = net_buf_add(buf, param_len);
+	iac_lap->num_current_iac = num_current_iac;
+	sys_put_le24(BT_GIAC, iac_lap->lap[0].iac);
+	if (num_current_iac > 1) {
+		sys_put_le24(BT_LIAC, iac_lap->lap[1].iac);
+	}
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CURRENT_IAC_LAP, buf, NULL);
+}
+
+#define BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER BIT(13)
+
+static int bt_br_read_cod(uint32_t *cod)
+{
+	struct net_buf *rsp;
+	struct bt_hci_rp_read_class_of_device *rp;
+	int err;
+
+	LOG_DBG("Read COD");
+
+	if (cod == NULL) {
+		return -EINVAL;
+	}
+
+	/* Read Class of device */
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_CLASS_OF_DEVICE, NULL, &rsp);
+	if (err) {
+		LOG_WRN("Fail to read COD");
+		return err;
+	}
+
+	if (!rsp || (rsp->len < sizeof(*rp))) {
+		LOG_WRN("Invalid response");
+		return -EIO;
+	}
+
+	rp = (void *)rsp->data;
+	*cod = sys_get_le24(rp->class_of_device);
+
+	LOG_DBG("Current COD %06x", *cod);
+
+	net_buf_unref(rsp);
+
+	return 0;
+}
+
+static int bt_br_write_cod(uint32_t cod)
+{
+	struct net_buf *buf;
+
+	/* Set Class of device */
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	net_buf_add_le24(buf, cod);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CLASS_OF_DEVICE, buf, NULL);
+}
+
+static int bt_br_update_cod(bool limited)
+{
+	int err;
+	uint32_t cod;
+
+	LOG_DBG("Update COD");
+
+	err = bt_br_read_cod(&cod);
+	if (err) {
+		return err;
+	}
+
+	if (limited) {
+		cod |= BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER;
 	} else {
-		if (!atomic_test_bit(bt_dev.flags, BT_DEV_PSCAN)) {
-			return -EALREADY;
-		} else {
-			return write_scan_enable(BT_BREDR_SCAN_DISABLED);
-		}
+		cod &= ~BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER;
+	}
+
+	err = bt_br_write_cod(cod);
+	return err;
+}
+
+static void bt_br_limited_discoverable_timeout_handler(struct k_work *work)
+{
+	int err;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE)) {
+		LOG_INF("Limited discoverable mode has been disabled");
+		return;
+	}
+
+	err = bt_br_set_discoverable(false, false);
+	if (err) {
+		LOG_WRN("Disable discoverable failure (err %d)", err);
 	}
 }
 
-int bt_br_set_discoverable(bool enable)
+/* Work used for limited discoverable mode time span */
+static K_WORK_DELAYABLE_DEFINE(bt_br_limited_discoverable_timeout,
+			       bt_br_limited_discoverable_timeout_handler);
+
+int bt_br_set_discoverable(bool enable, bool limited)
 {
+	int err;
+
 	if (enable) {
 		if (atomic_test_bit(bt_dev.flags, BT_DEV_ISCAN)) {
 			return -EALREADY;
@@ -1068,12 +1326,303 @@ int bt_br_set_discoverable(bool enable)
 			return -EPERM;
 		}
 
-		return write_scan_enable(BT_BREDR_SCAN_INQUIRY | BT_BREDR_SCAN_PAGE);
-	} else {
-		if (!atomic_test_bit(bt_dev.flags, BT_DEV_ISCAN)) {
-			return -EALREADY;
+		err = bt_br_write_current_iac_lap(limited);
+		if (err) {
+			return err;
 		}
 
-		return write_scan_enable(BT_BREDR_SCAN_PAGE);
+		err = bt_br_update_cod(limited);
+		if (err) {
+			return err;
+		}
+
+		err = write_scan_enable(BT_BREDR_SCAN_INQUIRY | BT_BREDR_SCAN_PAGE);
+		if (!err && (limited == true)) {
+			atomic_set_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE);
+			k_work_reschedule(&bt_br_limited_discoverable_timeout,
+					  K_SECONDS(CONFIG_BT_LIMITED_DISCOVERABLE_DURATION));
+		}
+		return err;
 	}
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ISCAN)) {
+		return -EALREADY;
+	}
+
+	err = write_scan_enable(BT_BREDR_SCAN_PAGE);
+	if (err) {
+		return err;
+	}
+
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE)) {
+		err = bt_br_write_current_iac_lap(false);
+		if (err) {
+			return err;
+		}
+
+		err = bt_br_update_cod(false);
+		if (err) {
+			return err;
+		}
+
+		atomic_clear_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE);
+		k_work_cancel_delayable(&bt_br_limited_discoverable_timeout);
+	}
+
+	return 0;
+}
+
+static int bt_br_write_page_scan_activity(uint16_t interval, uint16_t window)
+{
+	struct bt_hci_cp_write_page_scan_activity *cp;
+	struct net_buf *buf;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	if (interval < BT_BR_SCAN_INTERVAL_MIN || interval > BT_BR_SCAN_INTERVAL_MAX) {
+		return -EINVAL;
+	}
+
+	if (window < BT_BR_SCAN_WINDOW_MIN || window > BT_BR_SCAN_WINDOW_MAX) {
+		return -EINVAL;
+	}
+
+	if (interval < window) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->interval = sys_cpu_to_le16(interval);
+	cp->window = sys_cpu_to_le16(window);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_PAGE_SCAN_ACTIVITY, buf, NULL);
+}
+
+static int bt_br_write_inquiry_scan_activity(uint16_t interval, uint16_t window)
+{
+	struct bt_hci_cp_write_inquiry_scan_activity *cp;
+	struct net_buf *buf;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	if (interval < BT_BR_SCAN_INTERVAL_MIN || interval > BT_BR_SCAN_INTERVAL_MAX) {
+		return -EINVAL;
+	}
+
+	if (window < BT_BR_SCAN_WINDOW_MIN || window > BT_BR_SCAN_WINDOW_MAX) {
+		return -EINVAL;
+	}
+
+	if (interval < window) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->interval = sys_cpu_to_le16(interval);
+	cp->window = sys_cpu_to_le16(window);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_INQUIRY_SCAN_ACTIVITY, buf, NULL);
+}
+
+static int bt_br_write_page_scan_type(uint8_t type)
+{
+	struct bt_hci_cp_write_page_scan_type *cp;
+	struct net_buf *buf;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	if (type != BT_BR_SCAN_TYPE_STANDARD && type != BT_BR_SCAN_TYPE_INTERLACED) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->type = type;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_PAGE_SCAN_TYPE, buf, NULL);
+}
+
+static int bt_br_write_inquiry_scan_type(uint8_t type)
+{
+	struct bt_hci_cp_write_inquiry_scan_type *cp;
+	struct net_buf *buf;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	if (type != BT_BR_SCAN_TYPE_STANDARD && type != BT_BR_SCAN_TYPE_INTERLACED) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->type = type;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_INQUIRY_SCAN_TYPE, buf, NULL);
+}
+
+int bt_br_page_scan_update_param(const struct bt_br_page_scan_param *param)
+{
+	int err;
+
+	if (param == NULL) {
+		return -EINVAL;
+	}
+
+	err = bt_br_write_page_scan_activity(param->interval, param->window);
+	if (err != 0) {
+		LOG_ERR("write page scan activity failed (err %d)", err);
+		return err;
+	}
+
+	err = bt_br_write_page_scan_type(param->type);
+	if (err != 0) {
+		LOG_ERR("write page scan type failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_br_inquiry_scan_update_param(const struct bt_br_inquiry_scan_param *param)
+{
+	int err;
+
+	if (param == NULL) {
+		return -EINVAL;
+	}
+
+	err = bt_br_write_inquiry_scan_activity(param->interval, param->window);
+	if (err != 0) {
+		LOG_ERR("write inquiry scan activity failed (err %d)", err);
+		return err;
+	}
+
+	err = bt_br_write_inquiry_scan_type(param->type);
+	if (err != 0) {
+		LOG_ERR("write inquiry scan type failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_br_set_class_of_device(uint32_t cod)
+{
+	int err;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	/* Limited discoverable mode could be set with bt_br_set_discoverable */
+	if (cod & BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER) {
+		LOG_ERR("Cannot set limited discoverable bit directly in COD");
+		return -EINVAL;
+	}
+
+	/* If limited discoverable mode is set, then it should be set in COD.
+	 * If it is not set, then clear the bit from COD.
+	 */
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE)) {
+		cod |= BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER;
+	} else {
+		cod &= ~BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER;
+	}
+
+	err = bt_br_write_cod(cod);
+	if (err != 0) {
+		LOG_ERR("write cod:0x%06x failed (err %d)", cod, err);
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_br_get_class_of_device(uint32_t *cod)
+{
+	int err;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	err = bt_br_read_cod(cod);
+	if (err != 0) {
+		LOG_ERR("read cod failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+bool bt_br_bond_exists(const bt_addr_t *addr)
+{
+	struct bt_keys_link_key *key = bt_keys_find_link_key(addr);
+
+	/* if there are any keys stored then device is bonded */
+	return key != NULL;
+}
+
+static void unpair(const bt_addr_t *addr)
+{
+	struct bt_conn *conn = bt_conn_lookup_addr_br(addr);
+	struct bt_conn_auth_info_cb *listener, *next;
+
+	if (conn) {
+		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		bt_conn_unref(conn);
+	}
+
+	bt_keys_link_key_clear_addr(addr);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
+					  next, node) {
+		if (listener->br_bond_deleted) {
+			listener->br_bond_deleted(addr);
+		}
+	}
+}
+
+static void bt_br_unpair_remote(const struct bt_br_bond_info *info, void *data)
+{
+	ARG_UNUSED(data);
+
+	unpair(&info->addr);
+}
+
+int bt_br_unpair(const bt_addr_t *addr)
+{
+	if (!addr || bt_addr_eq(addr, BT_ADDR_ANY)) {
+		bt_br_foreach_bond(bt_br_unpair_remote, NULL);
+	} else {
+		unpair(addr);
+	}
+
+	return 0;
 }

@@ -81,7 +81,7 @@ static const uint32_t sam_tc_input_freq_table[] = {
 	SOC_ATMEL_SAM_MCK_FREQ_HZ / 128,
 	32768,
 #elif defined(CONFIG_SOC_SERIES_SAM4L)
-	USEC_PER_SEC,
+	1024,
 	SOC_ATMEL_SAM_MCK_FREQ_HZ / 2,
 	SOC_ATMEL_SAM_MCK_FREQ_HZ / 8,
 	SOC_ATMEL_SAM_MCK_FREQ_HZ / 32,
@@ -356,6 +356,7 @@ static DEVICE_API(counter, counter_sam_driver_api) = {
 
 #define COUNTER_SAM_TC_CMR(n)	\
 		 (TC_CMR_TCCLKS(DT_INST_PROP_OR(n, clk, 0)) \
+		| TC_CMR_WAVEFORM_EEVT_XC0 \
 		| TC_CMR_WAVEFORM_WAVSEL_UP_RC \
 		| TC_CMR_WAVE)
 

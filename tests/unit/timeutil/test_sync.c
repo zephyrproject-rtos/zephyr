@@ -225,6 +225,7 @@ static void tref_from_local(const char *tag,
 	};
 	uint64_t ref = 0;
 	int rv = timeutil_sync_ref_from_local(&ss, 0, &ref);
+	int skew_factor;
 
 	zassert_equal(rv, -EINVAL,
 		      "%s: unexpected uninit convert: %d", tag, rv);
@@ -233,7 +234,7 @@ static void tref_from_local(const char *tag,
 	zassert_equal(rv, 0,
 		      "%s: unexpected init: %d", tag, rv);
 	zassert_equal(ss.skew, 1.0,
-		      "%s: unexpected skew");
+		      "%s: unexpected skew", tag);
 
 	rv = timeutil_sync_ref_from_local(&ss, ss.base.local, NULL);
 	zassert_equal(rv, -EINVAL,
@@ -241,19 +242,19 @@ static void tref_from_local(const char *tag,
 
 	rv = timeutil_sync_ref_from_local(&ss, ss.base.local, &ref);
 	zassert_equal(rv, 0,
-		      "%s: unexpected fail", tag, rv);
+		      "%s: unexpected fail %d", tag, rv);
 	zassert_equal(ref, ss.base.ref,
 		      "%s: unexpected base convert", tag);
 
 	rv = timeutil_sync_ref_from_local(&ss, 0, &ref);
 	zassert_equal(rv, 0,
-		      "%s: unexpected local=0 fail", tag, rv);
+		      "%s: unexpected local=0 fail %d", tag, rv);
 	zassert_equal(ref, scale_ref(5, cfg),
 		      "%s: unexpected local=0 ref", tag);
 
 	rv = timeutil_sync_ref_from_local(&ss, ss.base.local, &ref);
 	zassert_equal(rv, 0,
-		      "%s: unexpected local=base fail", tag, rv);
+		      "%s: unexpected local=base fail, %d", tag, rv);
 	zassert_equal(ref, ss.base.ref,
 		      "%s: unexpected local=base ref", tag);
 
@@ -274,9 +275,15 @@ static void tref_from_local(const char *tag,
 	zassert_equal(rv, 0,
 		      "%s: failed set skew", tag);
 
+	/* Whether the conversion takes skew into account is controlled
+	 * by the Kconfig option.
+	 */
+	skew_factor = IS_ENABLED(CONFIG_TIMEUTIL_APPLY_SKEW) ? 2 : 1;
+
 	/* Local at double speed corresponds to half advance in ref */
 	rv = timeutil_sync_ref_from_local(&ss, ss.base.local
-					  + scale_local(2, cfg), &ref);
+					  + scale_local(skew_factor, cfg),
+					  &ref);
 	zassert_equal(rv, 1,
 		      "%s: unexpected skew adj fail", tag);
 	zassert_equal(ref, ss.base.ref + cfg->ref_Hz,
@@ -302,6 +309,7 @@ static void tlocal_from_ref(const char *tag,
 	};
 	int64_t local = 0;
 	int rv = timeutil_sync_local_from_ref(&ss, 0, &local);
+	int skew_factor;
 
 	zassert_equal(rv, -EINVAL,
 		      "%s: unexpected uninit convert: %d", tag, rv);
@@ -314,11 +322,11 @@ static void tlocal_from_ref(const char *tag,
 
 	rv = timeutil_sync_local_from_ref(&ss, ss.base.ref, NULL);
 	zassert_equal(rv, -EINVAL,
-		      "%s: unexpected missing dest", tag, rv);
+		      "%s: unexpected missing dest %d", tag, rv);
 
 	rv = timeutil_sync_local_from_ref(&ss, ss.base.ref, &local);
 	zassert_equal(rv, 0,
-		      "%s: unexpected fail", tag, rv);
+		      "%s: unexpected fail %d", tag, rv);
 	zassert_equal(local, ss.base.local,
 		      "%s: unexpected base convert", tag);
 
@@ -336,15 +344,20 @@ static void tlocal_from_ref(const char *tag,
 	zassert_equal(local, scale_local_signed(-2, cfg),
 		      "%s: unexpected base-7s convert", tag);
 
-
 	/* Skew of 0.5 means local runs at double speed */
 	rv = timeutil_sync_state_set_skew(&ss, 0.5, NULL);
 	zassert_equal(rv, 0,
 		      "%s: failed set skew", tag);
 
+	/* Whether the conversion takes skew into account is controlled
+	 * by the Kconfig option.
+	 */
+	skew_factor = IS_ENABLED(CONFIG_TIMEUTIL_APPLY_SKEW) ? 2 : 1;
+
 	/* Local at double speed corresponds to half advance in ref */
 	rv = timeutil_sync_local_from_ref(&ss, ss.base.ref
-					  + scale_ref(1, cfg) / 2, &local);
+					  + scale_ref(1, cfg) / skew_factor,
+					  &local);
 	zassert_equal(rv, 1,
 		      "%s: unexpected skew adj fail", tag);
 	zassert_equal(local, ss.base.local + scale_local(1, cfg),

@@ -56,6 +56,7 @@ ForEachMacros:
   - 'SYS_SLIST_FOR_EACH_NODE'
   - 'SYS_SLIST_FOR_EACH_NODE_SAFE'
   - '_WAIT_Q_FOR_EACH'
+  - '_WAIT_Q_FOR_EACH_SAFE'
   - 'Z_FOR_EACH'
   - 'Z_FOR_EACH_ENGINE'
   - 'Z_FOR_EACH_EXEC'
@@ -81,7 +82,10 @@ ForEachMacros:
   - 'HTTP_SERVICE_FOREACH'
   - 'HTTP_SERVICE_FOREACH_RESOURCE'
   - 'I3C_BUS_FOR_EACH_I3CDEV'
+  - 'I3C_BUS_FOR_EACH_I3CDEV_SAFE'
   - 'I3C_BUS_FOR_EACH_I2CDEV'
+  - 'I3C_BUS_FOR_EACH_I2CDEV_SAFE'
+  - 'MIN_HEAP_FOREACH'
 IfMacros:
   - 'CHECKIF'
 # Disabled for now, see bug https://github.com/zephyrproject-rtos/zephyr/issues/48520
@@ -99,6 +103,7 @@ IndentCaseLabels: false
 IndentGotoLabels: false
 IndentWidth: 8
 InsertBraces: true
+InsertNewlineAtEOF: true
 SpaceBeforeInheritanceColon: False
 SpaceBeforeParens: ControlStatementsExceptControlMacros
 SortIncludes: Never

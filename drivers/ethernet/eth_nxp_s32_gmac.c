@@ -53,7 +53,6 @@ struct eth_nxp_s32_data {
 	struct net_if *iface;
 	uint8_t mac_addr[ETH_NXP_S32_MAC_ADDR_LEN];
 	uint8_t	if_suspended;
-	struct k_mutex tx_mutex;
 	struct k_sem rx_sem;
 	struct k_sem tx_sem;
 	struct k_thread rx_thread;
@@ -71,27 +70,27 @@ static inline struct net_if *get_iface(struct eth_nxp_s32_data *ctx)
 static void convert_phy_to_mac_config(Gmac_Ip_ConfigType *gmac_cfg, enum phy_link_speed phy_speed)
 {
 	switch (phy_speed) {
-	case LINK_HALF_10BASE_T:
+	case LINK_HALF_10BASE:
 		gmac_cfg->Speed = GMAC_SPEED_10M;
 		gmac_cfg->Duplex = GMAC_HALF_DUPLEX;
 		break;
-	case LINK_FULL_10BASE_T:
+	case LINK_FULL_10BASE:
 		gmac_cfg->Speed = GMAC_SPEED_10M;
 		gmac_cfg->Duplex = GMAC_FULL_DUPLEX;
 		break;
-	case LINK_HALF_100BASE_T:
+	case LINK_HALF_100BASE:
 		gmac_cfg->Speed = GMAC_SPEED_100M;
 		gmac_cfg->Duplex = GMAC_HALF_DUPLEX;
 		break;
-	case LINK_FULL_100BASE_T:
+	case LINK_FULL_100BASE:
 		gmac_cfg->Speed = GMAC_SPEED_100M;
 		gmac_cfg->Duplex = GMAC_FULL_DUPLEX;
 		break;
-	case LINK_HALF_1000BASE_T:
+	case LINK_HALF_1000BASE:
 		gmac_cfg->Speed = GMAC_SPEED_1G;
 		gmac_cfg->Duplex = GMAC_HALF_DUPLEX;
 		break;
-	case LINK_FULL_1000BASE_T:
+	case LINK_FULL_1000BASE:
 		__fallthrough;
 	default:
 		gmac_cfg->Speed = GMAC_SPEED_1G;
@@ -209,7 +208,6 @@ static int eth_nxp_s32_init(const struct device *dev)
 		return -EIO;
 	}
 
-	k_mutex_init(&ctx->tx_mutex);
 	k_sem_init(&ctx->rx_sem, 0, 1);
 	k_sem_init(&ctx->tx_sem, 0, 1);
 
@@ -296,9 +294,7 @@ static void eth_nxp_s32_iface_init(struct net_if *iface)
 	const struct eth_nxp_s32_config *cfg = dev->config;
 	struct eth_nxp_s32_data *ctx = dev->data;
 
-	if (ctx->iface == NULL) {
-		ctx->iface = iface;
-	}
+	ctx->iface = iface;
 
 	ethernet_init(iface);
 
@@ -350,7 +346,6 @@ static int eth_nxp_s32_tx(const struct device *dev, struct net_pkt *pkt)
 
 	__ASSERT(pkt, "Packet pointer is NULL");
 
-	k_mutex_lock(&ctx->tx_mutex, K_FOREVER);
 	k_sem_reset(&ctx->tx_sem);
 
 	buf.Length = (uint16_t)pkt_len;
@@ -396,8 +391,6 @@ static int eth_nxp_s32_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 
 error:
-	k_mutex_unlock(&ctx->tx_mutex);
-
 	if (res != 0) {
 		eth_stats_update_errors_tx(ctx->iface);
 	}
@@ -414,7 +407,7 @@ static struct net_pkt *eth_nxp_s32_get_pkt(const struct device *dev,
 
 	/* Using root iface, it will be updated in net_recv_data() */
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, rx_info->PktLen,
-					   AF_UNSPEC, 0, ETH_NXP_S32_BUF_TIMEOUT);
+					   NET_AF_UNSPEC, 0, ETH_NXP_S32_BUF_TIMEOUT);
 	if (!pkt) {
 		LOG_ERR("Failed to allocate rx buffer of length %u", rx_info->PktLen);
 		goto exit;
@@ -537,7 +530,7 @@ static int eth_nxp_s32_set_config(const struct device *dev,
 		break;
 #endif
 #if defined(CONFIG_ETH_NXP_S32_MULTICAST_FILTER)
-	case ETHERNET_HW_FILTERING:
+	case ETHERNET_CONFIG_TYPE_FILTER:
 		if (config->filter.set) {
 			Gmac_Ip_AddDstAddrToHashFilter(cfg->instance,
 						       config->filter.mac_address.addr);
@@ -559,12 +552,11 @@ static enum ethernet_hw_caps eth_nxp_s32_get_capabilities(const struct device *d
 {
 	ARG_UNUSED(dev);
 
-	return (ETHERNET_LINK_10BASE_T
-		| ETHERNET_LINK_100BASE_T
+	return (ETHERNET_LINK_10BASE
+		| ETHERNET_LINK_100BASE
 #if (FEATURE_GMAC_RGMII_EN == 1U)
-		| ETHERNET_LINK_1000BASE_T
+		| ETHERNET_LINK_1000BASE
 #endif
-		| ETHERNET_DUPLEX_SET
 		| ETHERNET_HW_TX_CHKSUM_OFFLOAD
 		| ETHERNET_HW_RX_CHKSUM_OFFLOAD
 #if defined(CONFIG_NET_VLAN)

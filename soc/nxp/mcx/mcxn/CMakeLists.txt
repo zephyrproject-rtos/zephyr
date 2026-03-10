@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -7,6 +7,20 @@
 # Pass this flag so the SDK I2C, UART and SPI drivers do not init the LP
 # Flexcomm SDK driver
 zephyr_compile_definitions_ifdef(CONFIG_NXP_LP_FLEXCOMM LPFLEXCOMM_INIT_NOT_USED_IN_DRIVER=1)
+
+zephyr_linker_sources_ifdef(CONFIG_NXP_FLEXSPI_BOOT_HEADER
+  ROM_START SORT_KEY 0 boot_header.ld)
+
+if(CONFIG_NXP_FLEXSPI_BOOT_HEADER)
+  zephyr_linker_section_configure(
+    SECTION .rom_start
+    INPUT ".flexspi_fcb"
+    OFFSET ${CONFIG_FLEXSPI_CONFIG_BLOCK_OFFSET}
+    KEEP
+    PRIO 10
+  )
+  zephyr_compile_definitions(XIP_EXTERNAL_FLASH)
+endif()
 
 zephyr_sources(soc.c)
 
@@ -20,3 +34,8 @@ endif()
 zephyr_include_directories(.)
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
+
+# Build the SoC P-state setter implementation for CPUFreq when selected
+zephyr_library_sources_ifdef(CONFIG_CPU_FREQ_PSTATE_SET_SOC cpu_freq_scale.c)
+
+zephyr_sources_ifdef(CONFIG_PM power.c)

@@ -13,6 +13,8 @@ tests:
         regex:
           - "RECORD:(?P<metrics>.*)"
         as_json: ['metrics']
+    platform_exclude:
+      - nrf54h20dk/nrf54h20/cpuppr
   kernel.timer.timer_behavior_external:
     tags:
       - kernel

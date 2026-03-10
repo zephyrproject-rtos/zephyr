@@ -23,6 +23,10 @@
 #include <zephyr/kernel/mm.h>
 #include <sys/time.h>
 
+#ifdef CONFIG_XTENSA
+#include <xtensa/config/core-isa.h>
+#endif
+
 int _fstat(int fd, struct stat *st);
 int _read(int fd, void *buf, int nbytes);
 int _write(int fd, const void *buf, int nbytes);
@@ -88,6 +92,9 @@ int _getpid(void);
 		#elif defined(CONFIG_ARC)
 			#define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, \
 							  Z_ARC_MPU_ALIGN)
+		#elif defined(CONFIG_XTENSA)
+			#define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, \
+							  XCHAL_MPU_ALIGN)
 		#else
 			#error "Unsupported platform"
 		#endif /* CONFIG_<arch> */
@@ -114,7 +121,7 @@ static int malloc_prepare(void)
 
 #ifdef USE_MALLOC_PREPARE
 #ifdef CONFIG_MMU
-	max_heap_size = MIN(CONFIG_NEWLIB_LIBC_MAX_MAPPED_REGION_SIZE,
+	max_heap_size = min(CONFIG_NEWLIB_LIBC_MAX_MAPPED_REGION_SIZE,
 			    k_mem_free_get());
 
 	if (max_heap_size != 0) {

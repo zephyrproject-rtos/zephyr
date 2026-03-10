@@ -1,7 +1,4 @@
-.. _ek_ra6m2:
-
-RA6M2 Evaluation Kit
-####################
+.. zephyr:board:: ek_ra6m2
 
 Overview
 ********
@@ -20,7 +17,7 @@ The key features of the EK-RA6M2 board are categorized in three groups as follow
 - MCU and USB current measurement points for precision current consumption measurement
 - Multiple clock sources - RA6M2 MCU oscillator and sub-clock oscillator crystals,
   providing precision 12.000 MHz and 32,768 Hz reference clock.
-  Additional low precision clocks are avaialbe internal to the RA6M2 MCU
+  Additional low precision clocks are available internal to the RA6M2 MCU
 
 **System Control and Ecosystem Access**
 
@@ -51,15 +48,9 @@ The key features of the EK-RA6M2 board are categorized in three groups as follow
 
 - USB Full Speed Host and Device (micro-AB connector)
 
-.. figure:: ek_ra6m2.webp
-	:align: center
-	:alt: RA6M2 Evaluation Kit
-
-	EK-RA6M2 Board Functional Area Definitions (Credit: Renesas Electronics Corporation)
-
 Hardware
 ********
-Detailed hardware feature for the RA6M2 MCU group can be found at `RA6M2 Group User's Manual Hardware`_
+Detailed hardware features for the RA6M2 MCU group can be found at `RA6M2 Group User's Manual Hardware`_
 
 .. figure:: ra6m2_block_diagram.webp
 	:width: 871px
@@ -68,43 +59,17 @@ Detailed hardware feature for the RA6M2 MCU group can be found at `RA6M2 Group U
 
 	RA6M2 Block diagram (Credit: Renesas Electronics Corporation)
 
-Detailed hardware feature for the EK-RA6M2 MCU can be found at `EK-RA6M2 - User's Manual`_
+Detailed hardware features for the EK-RA6M2 MCU can be found at `EK-RA6M2 - User's Manual`_
 
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr OS for EK-RA6M2 board:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock control        |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| COUNTER   | on-chip    | counter              |
-+-----------+------------+----------------------+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``ek_ra6m2`` board target configuration can be
 built, flashed, and debugged in the usual way. See
@@ -115,7 +80,7 @@ Flashing
 ========
 
 Program can be flashed to EK-RA6M2 via the on-board SEGGER J-Link debugger.
-SEGGER J-link's drivers are avaialbe at https://www.segger.com/downloads/jlink/
+SEGGER J-link's drivers are available at https://www.segger.com/downloads/jlink/
 
 To flash the program to board
 

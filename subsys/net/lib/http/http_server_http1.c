@@ -19,6 +19,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/http/service.h>
+#include <zephyr/net/http/server.h>
 
 LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
@@ -36,6 +37,11 @@ static const char conflict_response[] = "HTTP/1.1 409 Conflict\r\n\r\n";
 
 static const char final_chunk[] = "0\r\n\r\n";
 static const char *crlf = &final_chunk[3];
+
+static bool is_client_http10(const struct http_client_ctx *client)
+{
+	return ((client->parser.http_major == 1) && (client->parser.http_minor == 0));
+}
 
 static int send_http1_error_common(struct http_client_ctx *client,
 				   const char *response, size_t len)
@@ -195,8 +201,55 @@ static int handle_http1_static_resource(
 	ret; })
 
 #define RESPONSE_TEMPLATE_DYNAMIC_PART1                                                            \
-	"HTTP/1.1 %d\r\n"                                                                          \
+	"HTTP/1.1 %d%s%s\r\n"                                                                      \
 	"Transfer-Encoding: chunked\r\n"
+#define RESPONSE_TEMPLATE_DYNAMIC_HTTP_10_COMPATIBLE "HTTP/1.1 %d%s%s\r\n"
+
+static const char *http_status_str(enum http_status status)
+{
+#if defined(CONFIG_HTTP_SERVER_COMPLETE_STATUS_PHRASES)
+	switch (status) {
+	case HTTP_200_OK:
+		return "OK";
+	case HTTP_201_CREATED:
+		return "Created";
+	case HTTP_204_NO_CONTENT:
+		return "No Content";
+	case HTTP_400_BAD_REQUEST:
+		return "Bad Request";
+	case HTTP_401_UNAUTHORIZED:
+		return "Unauthorized";
+	case HTTP_403_FORBIDDEN:
+		return "Forbidden";
+	case HTTP_404_NOT_FOUND:
+		return "Not Found";
+	case HTTP_405_METHOD_NOT_ALLOWED:
+		return "Method Not Allowed";
+	case HTTP_500_INTERNAL_SERVER_ERROR:
+		return "Internal Server Error";
+	default:
+		return "";
+	}
+#endif
+	return "";
+}
+
+#if defined(CONFIG_HTTP_SERVER_COMPLETE_STATUS_PHRASES)
+#define REASON_PHRASE_MAX_LENGTH sizeof("Internal Server Error")
+#else
+#define REASON_PHRASE_MAX_LENGTH 0
+#endif
+
+#define RESPONSE_TEMPLATE_SIZE_HTTP10                                                              \
+	(sizeof(RESPONSE_TEMPLATE_DYNAMIC_HTTP_10_COMPATIBLE) + REASON_PHRASE_MAX_LENGTH)
+#define RESPONSE_TEMPLATE_SIZE_DYNAMIC                                                             \
+	(sizeof(RESPONSE_TEMPLATE_DYNAMIC_PART1) + sizeof("xxx") + REASON_PHRASE_MAX_LENGTH)
+
+#define MAX_RESPONSE_TEMPLATE_SIZE                                                                 \
+	MAX(RESPONSE_TEMPLATE_SIZE_HTTP10, RESPONSE_TEMPLATE_SIZE_DYNAMIC)
+
+#define HTTP_RESPONSE_BUF_SIZE                                                                     \
+	MAX(MAX_RESPONSE_TEMPLATE_SIZE, CONFIG_HTTP_SERVER_MAX_HEADER_LEN + 2)
 
 static int http1_send_headers(struct http_client_ctx *client, enum http_status status,
 			      const struct http_header *headers, size_t header_count,
@@ -204,8 +257,8 @@ static int http1_send_headers(struct http_client_ctx *client, enum http_status s
 {
 	int ret;
 	bool content_type_sent = false;
-	char http_response[MAX(sizeof(RESPONSE_TEMPLATE_DYNAMIC_PART1) + sizeof("xxx"),
-			       CONFIG_HTTP_SERVER_MAX_HEADER_LEN + 2)];
+	char http_response[HTTP_RESPONSE_BUF_SIZE];
+	const char *header_template;
 
 	if (status < HTTP_100_CONTINUE || status > HTTP_511_NETWORK_AUTHENTICATION_REQUIRED) {
 		LOG_DBG("Invalid HTTP status code: %d", status);
@@ -217,8 +270,13 @@ static int http1_send_headers(struct http_client_ctx *client, enum http_status s
 		return -EINVAL;
 	}
 
+	header_template = is_client_http10(client) ? RESPONSE_TEMPLATE_DYNAMIC_HTTP_10_COMPATIBLE
+						   : RESPONSE_TEMPLATE_DYNAMIC_PART1;
+
 	/* Send response code and transfer encoding */
-	snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_DYNAMIC_PART1, status);
+	snprintk(http_response, sizeof(http_response), header_template, status,
+		 IS_ENABLED(CONFIG_HTTP_SERVER_COMPLETE_STATUS_PHRASES) ? " " : "",
+		 http_status_str(status));
 
 	ret = http_server_sendall(client, http_response,
 				  strnlen(http_response, sizeof(http_response) - 1));
@@ -319,10 +377,15 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 
 	/* Send body data if provided */
 	if (rsp->body != NULL && rsp->body_len > 0) {
-		ret = snprintk(tmp, sizeof(tmp), "%zx\r\n", rsp->body_len);
-		ret = http_server_sendall(client, tmp, ret);
-		if (ret < 0) {
-			return ret;
+
+		/* Check if the client expects HTTP/1.0 compatible response */
+		if (!is_client_http10(client)) {
+			/* Use Transfer-Encoding: chunked */
+			ret = snprintk(tmp, sizeof(tmp), "%zx\r\n", rsp->body_len);
+			ret = http_server_sendall(client, tmp, ret);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 
 		ret = http_server_sendall(client, rsp->body, rsp->body_len);
@@ -330,25 +393,28 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 			return ret;
 		}
 
-		(void)http_server_sendall(client, crlf, 2);
+		if (!is_client_http10(client)) {
+			/* Use Transfer-Encoding: chunked */
+			(void)http_server_sendall(client, crlf, 2);
+		}
 	}
 
 	return 0;
 }
 
-static int dynamic_get_del_req(struct http_resource_detail_dynamic *dynamic_detail,
-			       struct http_client_ctx *client)
+static int dynamic_get_del_opts_req(struct http_resource_detail_dynamic *dynamic_detail,
+				    struct http_client_ctx *client)
 {
 	int ret, len;
 	char *ptr;
-	enum http_data_status status;
+	enum http_transaction_status status;
 	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
 
 	/* Start of GET params */
 	ptr = &client->url_buffer[dynamic_detail->common.path_len];
 	len = strlen(ptr);
-	status = HTTP_SERVER_DATA_FINAL;
+	status = HTTP_SERVER_REQUEST_DATA_FINAL;
 
 	do {
 		memset(&response_ctx, 0, sizeof(response_ctx));
@@ -369,13 +435,21 @@ static int dynamic_get_del_req(struct http_resource_detail_dynamic *dynamic_deta
 		len = 0;
 	} while (!http_response_is_final(&response_ctx, status));
 
-	dynamic_detail->holder = NULL;
+	/* Only send the 0\r\n\r\n if the client is NOT HTTP/1.0 */
+	if (!is_client_http10(client)) {
+		ret = http_server_sendall(client, final_chunk, sizeof(final_chunk) - 1);
+		if (ret < 0) {
+			return ret;
+		}
+	}
 
-	ret = http_server_sendall(client, final_chunk,
-				  sizeof(final_chunk) - 1);
+	ret = dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_COMPLETE, &request_ctx,
+				 &response_ctx, dynamic_detail->user_data);
 	if (ret < 0) {
 		return ret;
 	}
+
+	dynamic_detail->holder = NULL;
 
 	return 0;
 }
@@ -385,7 +459,7 @@ static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_det
 {
 	int ret;
 	char *ptr = client->cursor;
-	enum http_data_status status;
+	enum http_transaction_status status;
 	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
 
@@ -394,9 +468,9 @@ static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_det
 	}
 
 	if (client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {
-		status = HTTP_SERVER_DATA_FINAL;
+		status = HTTP_SERVER_REQUEST_DATA_FINAL;
 	} else {
-		status = HTTP_SERVER_DATA_MORE;
+		status = HTTP_SERVER_REQUEST_DATA_MORE;
 	}
 
 	memset(&response_ctx, 0, sizeof(response_ctx));
@@ -424,7 +498,8 @@ static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_det
 	}
 
 	/* Once all data is transferred to application, repeat cb until response is complete */
-	while (!http_response_is_final(&response_ctx, status) && status == HTTP_SERVER_DATA_FINAL) {
+	while (!http_response_is_final(&response_ctx, status) &&
+	       status == HTTP_SERVER_REQUEST_DATA_FINAL) {
 		memset(&response_ctx, 0, sizeof(response_ctx));
 		populate_request_ctx(&request_ctx, ptr, 0, &client->header_capture_ctx);
 
@@ -451,8 +526,16 @@ static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_det
 			}
 		}
 
-		ret = http_server_sendall(client, final_chunk,
-					sizeof(final_chunk) - 1);
+		/* HTTP/1.0 client does not expect CRLF in the response */
+		if (!is_client_http10(client)) {
+			ret = http_server_sendall(client, final_chunk, sizeof(final_chunk) - 1);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+
+		ret = dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_COMPLETE, &request_ctx,
+					 &response_ctx, dynamic_detail->user_data);
 		if (ret < 0) {
 			return ret;
 		}
@@ -468,13 +551,34 @@ static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_det
 int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *static_fs_detail,
 				    struct http_client_ctx *client)
 {
-#define RESPONSE_TEMPLATE_STATIC_FS				\
-	"HTTP/1.1 200 OK\r\n"					\
-	"Content-Length: %zd\r\n"				\
-	"Content-Type: %s%s\r\n\r\n"
-#define CONTENT_ENCODING_GZIP "\r\nContent-Encoding: gzip"
+#define RESPONSE_TEMPLATE_STATIC_FS                                                                \
+	"HTTP/1.1 200 OK\r\n"                                                                      \
+	"Content-Length: %zd\r\n"                                                                  \
+	"Content-Type: %s%s%s\r\n\r\n"
+#define CONTENT_ENCODING_HEADER "\r\nContent-Encoding: "
+/* Add couple of bytes to response template size to have space
+ * for the content type and encoding
+ */
+#define STATIC_FS_RESPONSE_BASE_SIZE                                                               \
+	sizeof(RESPONSE_TEMPLATE_STATIC_FS) + HTTP_SERVER_MAX_CONTENT_TYPE_LEN +                   \
+		sizeof("Content-Length: 01234567890123456789\r\n")
+#define CONTENT_ENCODING_HEADER_SIZE                                                               \
+	sizeof(CONTENT_ENCODING_HEADER) + HTTP_COMPRESSION_MAX_STRING_LEN + sizeof("\r\n")
+/* Calculate the minimum size required for the headers */
+#define STATIC_FS_RESPONSE_SIZE                                                                    \
+	COND_CODE_1(                                                                               \
+		IS_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION),                                        \
+		(STATIC_FS_RESPONSE_BASE_SIZE + CONTENT_ENCODING_HEADER_SIZE),                     \
+		(STATIC_FS_RESPONSE_BASE_SIZE))
+#if CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE > 0
+BUILD_ASSERT(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE >= STATIC_FS_RESPONSE_SIZE,
+			"CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE must be at least "
+			"large enough to hold HTTP headers");
+#undef STATIC_FS_RESPONSE_SIZE
+#define STATIC_FS_RESPONSE_SIZE CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE
+#endif
 
-	bool gzipped = false;
+	enum http_compression chosen_compression = 0;
 	int len;
 	int remaining;
 	int ret;
@@ -482,12 +586,7 @@ int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *stati
 	struct fs_file_t file;
 	char fname[HTTP_SERVER_MAX_URL_LENGTH];
 	char content_type[HTTP_SERVER_MAX_CONTENT_TYPE_LEN] = "text/html";
-	/* Add couple of bytes to response template size to have space
-	 * for the content type and encoding
-	 */
-	char http_response[sizeof(RESPONSE_TEMPLATE_STATIC_FS) + HTTP_SERVER_MAX_CONTENT_TYPE_LEN +
-			   sizeof("Content-Length: 01234567890123456789\r\n") +
-			   sizeof(CONTENT_ENCODING_GZIP)];
+	char http_response[STATIC_FS_RESPONSE_SIZE];
 
 	if (client->method != HTTP_GET) {
 		return send_http1_405(client);
@@ -506,7 +605,12 @@ int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *stati
 	}
 
 	/* open file, if it exists */
-	ret = http_server_find_file(fname, sizeof(fname), &file_size, &gzipped);
+#ifdef CONFIG_HTTP_SERVER_COMPRESSION
+	ret = http_server_find_file(fname, sizeof(fname), &file_size, client->supported_compression,
+			    &chosen_compression);
+#else
+	ret = http_server_find_file(fname, sizeof(fname), &file_size, 0, NULL);
+#endif /* CONFIG_HTTP_SERVER_COMPRESSION */
 	if (ret < 0) {
 		LOG_ERR("fs_stat %s: %d", fname, ret);
 		return send_http1_404(client);
@@ -523,8 +627,15 @@ int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *stati
 	LOG_DBG("found %s, file size: %zu", fname, file_size);
 
 	/* send HTTP header */
-	len = snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_STATIC_FS,
-		       file_size, content_type, gzipped ? CONTENT_ENCODING_GZIP : "");
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION) &&
+	    http_compression_text(chosen_compression)[0] != 0) {
+		len = snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_STATIC_FS,
+			       file_size, content_type, CONTENT_ENCODING_HEADER,
+			       http_compression_text(chosen_compression));
+	} else {
+		len = snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_STATIC_FS,
+			       file_size, content_type, "", "");
+	}
 	ret = http_server_sendall(client, http_response, len);
 	if (ret < 0) {
 		goto close;
@@ -602,11 +713,12 @@ static int handle_http1_dynamic_resource(
 
 	case HTTP_GET:
 	case HTTP_DELETE:
-		/* For GET/DELETE request, we do not pass any data to the app
+	case HTTP_OPTIONS:
+		/* For GET/DELETE/OPTIONS request, we do not pass any data to the app
 		 * but let the app send data to the peer.
 		 */
 		if (user_method & BIT(client->method)) {
-			return dynamic_get_del_req(dynamic_detail, client);
+			return dynamic_get_del_opts_req(dynamic_detail, client);
 		}
 
 		goto not_supported;
@@ -657,7 +769,7 @@ static void check_user_request_headers(struct http_header_capture_ctx *ctx, cons
 				break;
 			}
 
-			strcpy(dest, header->name);
+			memcpy(dest, header->name, header_len + 1);
 
 			ctx->headers[ctx->count].name = dest;
 			ctx->cursor += (header_len + 1);
@@ -698,6 +810,11 @@ static int on_header_field(struct http_parser *parser, const char *at,
 			} else if (strcasecmp(ctx->header_buffer, "Sec-WebSocket-Key") == 0) {
 				ctx->websocket_sec_key_next = true;
 			}
+#ifdef CONFIG_HTTP_SERVER_COMPRESSION
+			else if (strcasecmp(ctx->header_buffer, "Accept-Encoding") == 0) {
+				ctx->accept_encoding_next = true;
+			}
+#endif /* CONFIG_HTTP_SERVER_COMPRESSION */
 
 			ctx->header_buffer[0] = '\0';
 		}
@@ -730,7 +847,7 @@ static void populate_user_request_header(struct http_header_capture_ctx *ctx, co
 	}
 
 	dest = &ctx->buffer[ctx->cursor];
-	strcpy(dest, buf);
+	memcpy(dest, buf, value_len + 1);
 	ctx->cursor += (value_len + 1);
 
 	ctx->headers[ctx->count].value = dest;
@@ -767,7 +884,8 @@ static int on_header_value(struct http_parser *parser,
 			}
 
 			if (ctx->has_upgrade_header) {
-				if (strcasecmp(ctx->header_buffer, "h2c") == 0) {
+				if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) &&
+				    strcasecmp(ctx->header_buffer, "h2c") == 0) {
 					ctx->http2_upgrade = true;
 				} else if (strcasecmp(ctx->header_buffer, "websocket") == 0) {
 					ctx->websocket_upgrade = true;
@@ -783,6 +901,13 @@ static int on_header_value(struct http_parser *parser,
 #endif
 				ctx->websocket_sec_key_next = false;
 			}
+#ifdef CONFIG_HTTP_SERVER_COMPRESSION
+			if (ctx->accept_encoding_next) {
+				http_compression_parse_accept_encoding(ctx->header_buffer, offset,
+								       &ctx->supported_compression);
+				ctx->accept_encoding_next = false;
+			}
+#endif /* CONFIG_HTTP_SERVER_COMPRESSION */
 
 			ctx->header_buffer[0] = '\0';
 		}
@@ -957,7 +1082,7 @@ int handle_http1_request(struct http_client_ctx *client)
 			goto upgrade_not_found;
 		}
 
-		if (client->http2_upgrade) {
+		if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) && client->http2_upgrade) {
 			ret = handle_http1_to_http2_upgrade(client);
 			if (ret < 0) {
 				goto error;
@@ -1032,7 +1157,12 @@ not_found: ; /* Add extra semicolon to make clang to compile when using label */
 	client->data_len -= parsed;
 
 	if (client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {
-		if ((client->parser.flags & F_CONNECTION_CLOSE) == 0) {
+		/* FORCE CLOSE for HTTP/1.0 clients so they know the data is done */
+		if (is_client_http10(client)) {
+			LOG_DBG("HTTP/1.0 request complete, closing connection");
+			enter_http_done_state(client);
+		} else if ((client->parser.flags & F_CONNECTION_CLOSE) == 0) {
+			/* Standard HTTP/1.1 Keep-Alive logic */
 			LOG_DBG("Waiting for another request, client %p", client);
 			client->server_state = HTTP_SERVER_PREFACE_STATE;
 		} else {

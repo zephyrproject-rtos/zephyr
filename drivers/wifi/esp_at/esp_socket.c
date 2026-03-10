@@ -76,6 +76,11 @@ void esp_socket_unref(struct esp_socket *sock)
 		}
 	} while (!atomic_cas(&sock->refcount, ref, ref - 1));
 
+	/* notifies free only on 1-to-0 transition */
+	if (ref > 1) {
+		return;
+	}
+
 	k_sem_give(&sock->sem_free);
 }
 
@@ -109,7 +114,7 @@ static struct net_pkt *esp_socket_prepare_pkt(struct esp_socket *sock,
 	struct net_pkt *pkt;
 	size_t to_copy;
 
-	pkt = net_pkt_rx_alloc_with_buffer(data->net_iface, len, AF_UNSPEC,
+	pkt = net_pkt_rx_alloc_with_buffer(data->net_iface, len, NET_AF_UNSPEC,
 					   0, RX_NET_PKT_ALLOC_TIMEOUT);
 	if (!pkt) {
 		return NULL;
@@ -175,7 +180,7 @@ void esp_socket_rx(struct esp_socket *sock, struct net_buf *buf,
 	pkt = esp_socket_prepare_pkt(sock, buf, offset, len);
 	if (!pkt) {
 		LOG_ERR("Failed to get net_pkt: len %zu", len);
-		if (esp_socket_type(sock) == SOCK_STREAM) {
+		if (esp_socket_type(sock) == NET_SOCK_STREAM) {
 			if (!esp_socket_flags_test_and_set(sock,
 						ESP_SOCK_CLOSE_PENDING)) {
 				esp_socket_work_submit(sock, &sock->close_work);
@@ -189,8 +194,29 @@ void esp_socket_rx(struct esp_socket *sock, struct net_buf *buf,
 	 * net_context and socket mutex claims matches the TX code path. Failure
 	 * to do so can lead to deadlocks.
 	 */
+	/* In the close path, we will meet deadlock in the scenario:
+	 * 1. on_cmd_ipd/esp_socket_rx invokes esp_socket_ref_from_link_id
+	 *    and increments refcount.
+	 * 2. zvfs_close/esp_put locks cond.lock.
+	 * 3. zvfs_close/esp_put waits on sem_free.
+	 * 4. on_cmd_ipd/esp_socket_rx waits on cond.lock before esp_socket_unref.
+	 * 5. sem_free waits on esp_socket_unref for refcount reaching zero.
+	 */
 	if (sock->context->cond.lock) {
-		k_mutex_lock(sock->context->cond.lock, K_FOREVER);
+		int ret = -EAGAIN;
+
+		/*
+		 * If the socket is closing, we can ignore the packet and won't
+		 * trap in deadlock.
+		 */
+		while (atomic_get(&sock->refcount) > 1 && ret == -EAGAIN) {
+			ret = k_mutex_lock(sock->context->cond.lock, K_SECONDS(1));
+		}
+		if (ret != 0) {
+			/* Discard */
+			net_pkt_unref(pkt);
+			return;
+		}
 	}
 #endif /* CONFIG_NET_SOCKETS */
 	k_mutex_lock(&sock->lock, K_FOREVER);

@@ -90,10 +90,7 @@ SECTIONS
     {
 
 #include <zephyr/linker/rel-sections.ld>
-
-#ifdef CONFIG_LLEXT
 #include <zephyr/linker/llext-sections.ld>
-#endif
 
     /*
      * The .plt and .iplt are here according to
@@ -131,9 +128,9 @@ SECTIONS
     } GROUP_LINK_IN(ROMABLE_REGION)
 
 #ifdef CONFIG_SOC_IT8XXX2_JTAG_DEBUG_INTERFACE
-#define JTAG_DEBUG_RESERVED_ADDR_START 0x80000800
-#define JTAG_DEBUG_RESERVED_ADDR_END 0x800008FF
-	/* The CPU address from 0x80000800 to 0x800008FF is reserved for JTAG
+#define JTAG_DEBUG_RESERVED_ADDR_START (ROM_BASE + 0x800)
+#define JTAG_DEBUG_RESERVED_ADDR_END (ROM_BASE + 0x8FF)
+	/* The flash range at offset 0x800 to 0x8FF is reserved for JTAG
 	 * debug usage. */
 	SECTION_PROLOGUE(jtag_dbg,,)
 	{
@@ -173,6 +170,9 @@ SECTIONS
 #ifdef CONFIG_SOC_IT8XXX2_LIBRARY_TO_RAM
 		*(EXCLUDE_FILE (
 #endif
+#ifdef CONFIG_SOC_IT8XXX2_SWITCH_IN_RAM
+			*libarch__riscv__core.a:*
+#endif
 #ifdef CONFIG_SOC_IT8XXX2_SERIAL_IN_RAM
 			*libdrivers__serial.a:*
 #endif
@@ -190,6 +190,9 @@ SECTIONS
 
 #ifdef CONFIG_SOC_IT8XXX2_LIBRARY_TO_RAM
 		*(EXCLUDE_FILE (
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_SWITCH_IN_RAM
+			*libarch__riscv__core.a:*
 #endif
 #ifdef CONFIG_SOC_IT8XXX2_SERIAL_IN_RAM
 			*libdrivers__serial.a:*
@@ -226,6 +229,9 @@ SECTIONS
 #ifdef CONFIG_SOC_IT8XXX2_EXCEPTIONS_IN_RAM
 		KEEP(*(".exception.entry.*"))
 		*(".exception.other.*")
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_SWITCH_IN_RAM
+		*libarch__riscv__core.a:*(.text .text.*)
 #endif
 #ifdef CONFIG_SOC_IT8XXX2_SERIAL_IN_RAM
 		*libdrivers__serial.a:*(.text .text.*)
@@ -441,6 +447,7 @@ SECTIONS
 
     __data_region_end = .;
 
+#ifdef CONFIG_ESPI_IT8XXX2
 	SECTION_DATA_PROLOGUE(.h2ram_pool,(NOLOAD),)
 	{
 		/*
@@ -456,6 +463,7 @@ SECTIONS
 		_h2ram_pool_end = .;
 	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 	_h2ram_pool_size = ABSOLUTE(_h2ram_pool_end - _h2ram_pool_start);
+#endif
 
 	__kernel_ram_end = .;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;

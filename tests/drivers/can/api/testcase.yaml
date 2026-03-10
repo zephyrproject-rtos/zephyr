@@ -15,9 +15,14 @@ tests:
   drivers.can.api.twai:
     extra_args: DTC_OVERLAY_FILE=twai-enable.overlay
     platform_allow:
-      - esp32s3_devkitm/esp32s3/procpu
+      - esp32s3_devkitc/esp32s3/procpu
       - xiao_esp32s3/esp32s3/procpu
+      - esp32h2_devkitm
   drivers.can.api.nxp_s32_canxl.non_rx_fifo:
     extra_configs:
       - CONFIG_CAN_NXP_S32_RX_FIFO=n
-    filter: dt_compat_enabled("nxp,s32-canxl")
+    platform_allow:
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1

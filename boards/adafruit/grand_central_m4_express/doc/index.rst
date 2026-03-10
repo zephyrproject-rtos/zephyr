@@ -21,37 +21,7 @@ Hardware
 Supported Features
 ==================
 
-The adafruit_grand_central_m4_express board configuration supports the following
-hardware features:
-
-+-----------+------------+------------------------------------------+
-| Interface | Controller | Driver/Component                         |
-+===========+============+==========================================+
-| NVIC      | on-chip    | Nested vector interrupt controller       |
-+-----------+------------+------------------------------------------+
-| SYSTICK   | on-chip    | SysTick                                  |
-+-----------+------------+------------------------------------------+
-| WDT       | on-chip    | Watchdog                                 |
-+-----------+------------+------------------------------------------+
-| GPIO      | on-chip    | I/O ports, User LED                      |
-+-----------+------------+------------------------------------------+
-| UART      | on-chip    | Serial ports, Console                    |
-+-----------+------------+------------------------------------------+
-| SPI       | on-chip    | SPI ports, microSDHC slot                |
-+-----------+------------+------------------------------------------+
-| TRNG      | on-chip    | True Random Number Generator             |
-+-----------+------------+------------------------------------------+
-| RTC       | on-chip    | Real-Time Counter                        |
-+-----------+------------+------------------------------------------+
-| USB       | on-chip    | USB device                               |
-+-----------+------------+------------------------------------------+
-| WDT       | on-chip    | Watchdog Timer                           |
-+-----------+------------+------------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/adafruit/grand_central_m4_express/adafruit_grand_central_m4_express_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -94,6 +64,8 @@ serial port that echos characters back to the host PC.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The Grand Central ships with a BOSSA compatible UF2 bootloader.
 The bootloader can be entered by quickly tapping the reset button twice.

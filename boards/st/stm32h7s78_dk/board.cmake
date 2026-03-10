@@ -2,9 +2,24 @@
 
 # keep first
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
+if(CONFIG_STM32_MEMMAP OR CONFIG_BOOTLOADER_MCUBOOT)
+  board_runner_args(stm32cubeprogrammer "--extload=MX66UW1G45G_STM32H7S78-DK.stldr")
+endif()
+
 board_runner_args(openocd --target-handle=_CHIPNAME.cpu0)
+
+board_runner_args(pyocd "--target=stm32h7s7l8hxh")
+board_runner_args(pyocd "--flash-opt=-O reset_type=hw")
+board_runner_args(pyocd "--flash-opt=-O connect_mode=under-reset")
+
+board_runner_args(stlink_gdbserver "--apid=1")
+board_runner_args(stlink_gdbserver "--extload=MX66UW1G45G_STM32H7S78-DK.stldr")
+
+board_runner_args(jlink "--device=STM32H7S7L8" "--speed=4000")
 
 # keep first
 include(${ZEPHYR_BASE}/boards/common/stm32cubeprogrammer.board.cmake)
-# FIXME: openocd runner not yet available.
-include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/stlink_gdbserver.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/openocd-stm32.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)

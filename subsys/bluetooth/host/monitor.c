@@ -8,24 +8,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/kernel.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/buf.h>
 #include <zephyr/device.h>
-#include <zephyr/init.h>
 #include <zephyr/drivers/uart_pipe.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log_msg.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/atomic_types.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk-hooks.h>
 #include <zephyr/sys/libc-hooks.h>
 #include <zephyr/drivers/uart.h>
-
-#include <zephyr/logging/log_backend.h>
-#include <zephyr/logging/log_output.h>
-#include <zephyr/logging/log_ctrl.h>
-#include <zephyr/logging/log.h>
-
-#include <zephyr/bluetooth/buf.h>
+#include <zephyr/sys/time_units.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "monitor.h"
 
@@ -126,13 +134,12 @@ static void monitor_send(const void *data, size_t len)
 	}
 
 	if (!drop) {
-		if (!panic_mode) {
-			SEGGER_RTT_LOCK();
-		}
-		cnt = SEGGER_RTT_WriteNoLock(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER,
-					     rtt_buf, rtt_buf_offset);
-		if (!panic_mode) {
-			SEGGER_RTT_UNLOCK();
+		if (panic_mode) {
+			cnt = SEGGER_RTT_WriteNoLock(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER,
+						     rtt_buf, rtt_buf_offset);
+		} else {
+			cnt = SEGGER_RTT_Write(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER,
+					       rtt_buf, rtt_buf_offset);
 		}
 	}
 

@@ -17,6 +17,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/http/service.h>
+#include <zephyr/net/http/server.h>
 
 LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
@@ -259,15 +260,15 @@ int send_settings_frame(struct http_client_ctx *client, bool ack)
 
 		setting = (struct http2_settings_field *)
 			(settings_frame + HTTP2_FRAME_HEADER_SIZE);
-		UNALIGNED_PUT(htons(HTTP2_SETTINGS_HEADER_TABLE_SIZE),
-			      &setting->id);
-		UNALIGNED_PUT(0, &setting->value);
+		UNALIGNED_PUT(net_htons(HTTP2_SETTINGS_HEADER_TABLE_SIZE),
+			      UNALIGNED_MEMBER_ADDR(setting, id));
+		UNALIGNED_PUT(0, UNALIGNED_MEMBER_ADDR(setting, value));
 
 		setting++;
-		UNALIGNED_PUT(htons(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS),
-			      &setting->id);
-		UNALIGNED_PUT(htonl(CONFIG_HTTP_SERVER_MAX_STREAMS),
-			      &setting->value);
+		UNALIGNED_PUT(net_htons(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS),
+			      UNALIGNED_MEMBER_ADDR(setting, id));
+		UNALIGNED_PUT(net_htonl(CONFIG_HTTP_SERVER_MAX_STREAMS),
+			      UNALIGNED_MEMBER_ADDR(setting, value));
 
 		len = HTTP2_FRAME_HEADER_SIZE +
 		      2 * sizeof(struct http2_settings_field);
@@ -449,6 +450,7 @@ out:
 	return ret;
 }
 
+#if defined(CONFIG_FILE_SYSTEM)
 static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs *static_fs_detail,
 					   struct http2_frame *frame,
 					   struct http_client_ctx *client)
@@ -464,7 +466,7 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 		.path_len = static_fs_detail->common.path_len,
 		.type = static_fs_detail->common.type,
 	};
-	bool gzipped;
+	enum http_compression chosen_compression = 0;
 	int len;
 	int remaining;
 	char tmp[64];
@@ -490,7 +492,12 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	}
 
 	/* open file, if it exists */
-	ret = http_server_find_file(fname, sizeof(fname), &client->data_len, &gzipped);
+#ifdef CONFIG_HTTP_SERVER_COMPRESSION
+	ret = http_server_find_file(fname, sizeof(fname), &client->data_len,
+					client->supported_compression, &chosen_compression);
+#else
+	ret = http_server_find_file(fname, sizeof(fname), &client->data_len, 0, NULL);
+#endif /* CONFIG_HTTP_SERVER_COMPRESSION */
 	if (ret < 0) {
 		LOG_ERR("fs_stat %s: %d", fname, ret);
 
@@ -511,8 +518,8 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	}
 
 	/* send headers */
-	if (gzipped) {
-		res_detail.content_encoding = "gzip";
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION)) {
+		res_detail.content_encoding = http_compression_text(chosen_compression);
 	}
 	ret = send_headers_frame(client, HTTP_200_OK, frame->stream_identifier, &res_detail, 0,
 				 NULL, 0);
@@ -547,14 +554,16 @@ out:
 
 	return ret;
 }
+#endif /* CONFIG_FILE_SYSTEM */
 
 static int http2_dynamic_response(struct http_client_ctx *client, struct http2_frame *frame,
-				  struct http_response_ctx *rsp, enum http_data_status data_status,
+				  struct http_response_ctx *rsp,
+				  enum http_transaction_status status,
 				  struct http_resource_detail_dynamic *dynamic_detail)
 {
 	int ret;
 	uint8_t flags = 0;
-	bool final_response = http_response_is_final(rsp, data_status);
+	bool final_response = http_response_is_final(rsp, status);
 
 	if (client->current_stream->headers_sent && (rsp->header_count > 0 || rsp->status != 0)) {
 		LOG_WRN("Already sent headers, dropping new headers and/or response code");
@@ -608,13 +617,13 @@ static int http2_dynamic_response(struct http_client_ctx *client, struct http2_f
 	return 0;
 }
 
-static int dynamic_get_del_req_v2(struct http_resource_detail_dynamic *dynamic_detail,
-				  struct http_client_ctx *client)
+static int dynamic_get_del_opts_req_v2(struct http_resource_detail_dynamic *dynamic_detail,
+				       struct http_client_ctx *client)
 {
 	int ret, len;
 	char *ptr;
 	struct http2_frame *frame = &client->current_frame;
-	enum http_data_status status;
+	enum http_transaction_status status;
 	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
 
@@ -625,7 +634,7 @@ static int dynamic_get_del_req_v2(struct http_resource_detail_dynamic *dynamic_d
 	/* Start of GET params */
 	ptr = &client->url_buffer[dynamic_detail->common.path_len];
 	len = strlen(ptr);
-	status = HTTP_SERVER_DATA_FINAL;
+	status = HTTP_SERVER_REQUEST_DATA_FINAL;
 
 	do {
 		memset(&response_ctx, 0, sizeof(response_ctx));
@@ -652,7 +661,14 @@ static int dynamic_get_del_req_v2(struct http_resource_detail_dynamic *dynamic_d
 				      HTTP2_FLAG_END_STREAM);
 		if (ret < 0) {
 			LOG_DBG("Cannot send last frame (%d)", ret);
+			return ret;
 		}
+	}
+
+	ret = dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_COMPLETE, &request_ctx,
+				 &response_ctx, dynamic_detail->user_data);
+	if (ret < 0) {
+		return ret;
 	}
 
 	dynamic_detail->holder = NULL;
@@ -666,7 +682,7 @@ static int dynamic_post_put_req_v2(struct http_resource_detail_dynamic *dynamic_
 	int ret = 0;
 	char *ptr = client->cursor;
 	size_t data_len;
-	enum http_data_status status;
+	enum http_transaction_status status;
 	struct http2_frame *frame = &client->current_frame;
 	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
@@ -692,9 +708,9 @@ static int dynamic_post_put_req_v2(struct http_resource_detail_dynamic *dynamic_
 
 	if (frame->length == 0 && is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM) &&
 	    !headers_only) {
-		status = HTTP_SERVER_DATA_FINAL;
+		status = HTTP_SERVER_REQUEST_DATA_FINAL;
 	} else {
-		status = HTTP_SERVER_DATA_MORE;
+		status = HTTP_SERVER_REQUEST_DATA_MORE;
 	}
 
 	memset(&response_ctx, 0, sizeof(response_ctx));
@@ -717,7 +733,8 @@ static int dynamic_post_put_req_v2(struct http_resource_detail_dynamic *dynamic_
 	}
 
 	/* Once all data is transferred to application, repeat cb until response is complete */
-	while (!http_response_is_final(&response_ctx, status) && status == HTTP_SERVER_DATA_FINAL) {
+	while (!http_response_is_final(&response_ctx, status) &&
+	       status == HTTP_SERVER_REQUEST_DATA_FINAL) {
 		memset(&response_ctx, 0, sizeof(response_ctx));
 		populate_request_ctx(&request_ctx, ptr, 0, request_headers_ctx);
 
@@ -743,15 +760,28 @@ static int dynamic_post_put_req_v2(struct http_resource_detail_dynamic *dynamic_
 			memset(&response_ctx, 0, sizeof(response_ctx));
 			response_ctx.final_chunk = true;
 			ret = http2_dynamic_response(client, frame, &response_ctx,
-						     HTTP_SERVER_DATA_FINAL, dynamic_detail);
+						     HTTP_SERVER_REQUEST_DATA_FINAL,
+						     dynamic_detail);
 		}
 
 		if (ret < 0) {
 			LOG_DBG("Cannot send last frame (%d)", ret);
+			return ret;
 		}
 
 		client->current_stream->end_stream_sent = true;
-		dynamic_detail->holder = NULL;
+
+		if (http_response_is_final(&response_ctx, status) &&
+		    status == HTTP_SERVER_REQUEST_DATA_FINAL) {
+			ret = dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_COMPLETE,
+						 &request_ctx, &response_ctx,
+						 dynamic_detail->user_data);
+			if (ret < 0) {
+				return ret;
+			}
+
+			dynamic_detail->holder = NULL;
+		}
 	}
 
 	return ret;
@@ -788,8 +818,9 @@ static int handle_http2_dynamic_resource(
 	switch (client->method) {
 	case HTTP_GET:
 	case HTTP_DELETE:
+	case HTTP_OPTIONS:
 		if (user_method & BIT(client->method)) {
-			return dynamic_get_del_req_v2(dynamic_detail, client);
+			return dynamic_get_del_opts_req_v2(dynamic_detail, client);
 		}
 
 		goto not_supported;
@@ -1094,12 +1125,14 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 			if (ret < 0) {
 				goto error;
 			}
+#if defined(CONFIG_FILE_SYSTEM)
 		} else if (detail->type == HTTP_RESOURCE_TYPE_STATIC_FS) {
 			ret = handle_http2_static_fs_resource(
 				(struct http_resource_detail_static_fs *)detail, frame, client);
 			if (ret < 0) {
 				goto error;
 			}
+#endif
 		} else if (detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
 			ret = handle_http2_dynamic_resource(
 				(struct http_resource_detail_dynamic *)detail,
@@ -1387,7 +1420,15 @@ static int process_header(struct http_client_ctx *client,
 		}
 
 		client->content_len = (size_t)len;
-	} else {
+	}
+#ifdef CONFIG_HTTP_SERVER_COMPRESSION
+	else if (header->name_len == (sizeof("accept-encoding") - 1) &&
+		 memcmp(header->name, "accept-encoding", header->name_len) == 0) {
+		http_compression_parse_accept_encoding(header->value, header->value_len,
+						       &client->supported_compression);
+	}
+#endif /* CONFIG_HTTP_SERVER_COMPRESSION */
+	else {
 		/* Just ignore for now. */
 		LOG_DBG("Ignoring field %.*s", (int)header->name_len, header->name);
 	}
@@ -1474,7 +1515,7 @@ static int handle_http_frame_headers_end_stream(struct http_client_ctx *client)
 		memset(&response_ctx, 0, sizeof(response_ctx));
 		populate_request_ctx(&request_ctx, NULL, 0, NULL);
 
-		ret = dynamic_detail->cb(client, HTTP_SERVER_DATA_FINAL, &request_ctx,
+		ret = dynamic_detail->cb(client, HTTP_SERVER_REQUEST_DATA_FINAL, &request_ctx,
 					 &response_ctx, dynamic_detail->user_data);
 		if (ret < 0) {
 			dynamic_detail->holder = NULL;
@@ -1484,8 +1525,17 @@ static int handle_http_frame_headers_end_stream(struct http_client_ctx *client)
 		/* Force end stream */
 		response_ctx.final_chunk = true;
 
-		ret = http2_dynamic_response(client, frame, &response_ctx, HTTP_SERVER_DATA_FINAL,
-					     dynamic_detail);
+		ret = http2_dynamic_response(client, frame, &response_ctx,
+					     HTTP_SERVER_REQUEST_DATA_FINAL, dynamic_detail);
+
+		if (ret < 0) {
+			dynamic_detail->holder = NULL;
+			goto out;
+		}
+
+		ret = dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_COMPLETE, &request_ctx,
+					 &response_ctx, dynamic_detail->user_data);
+
 		dynamic_detail->holder = NULL;
 
 		if (ret < 0) {
@@ -1594,12 +1644,14 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 			if (ret < 0) {
 				goto error;
 			}
+#if defined(CONFIG_FILE_SYSTEM)
 		} else if (detail->type == HTTP_RESOURCE_TYPE_STATIC_FS) {
 			ret = handle_http2_static_fs_resource(
 				(struct http_resource_detail_static_fs *)detail, frame, client);
 			if (ret < 0) {
 				goto error;
 			}
+#endif
 		} else if (detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
 			ret = handle_http2_dynamic_resource(
 				(struct http_resource_detail_dynamic *)detail,

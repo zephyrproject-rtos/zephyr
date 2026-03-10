@@ -113,7 +113,10 @@ int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 
 	domain->num_partitions = 0U;
 	(void)memset(domain->partitions, 0, sizeof(domain->partitions));
-	sys_dlist_init(&domain->mem_domain_q);
+
+#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
+	sys_dlist_init(&domain->thread_mem_domain_list);
+#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_DATA
 	ret = arch_mem_domain_init(domain);
@@ -156,6 +159,52 @@ out:
 	return ret;
 }
 
+int k_mem_domain_deinit(struct k_mem_domain *domain)
+{
+#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
+	k_spinlock_key_t key;
+	int ret = 0;
+
+	CHECKIF(domain == NULL) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (domain == &k_mem_domain_default) {
+		/* Default memory domain must be there forever. */
+		ret = -EINVAL;
+		goto out;
+	}
+
+	key = k_spin_lock(&z_mem_domain_lock);
+
+	/* Must make sure there are no threads associated with this memory
+	 * domain anymore. Or else these threads will run with an invalid
+	 * memory domain.
+	 */
+	if (!sys_dlist_is_empty(&domain->thread_mem_domain_list)) {
+		ret = -EBUSY;
+		goto unlock_out;
+	}
+
+	ret = arch_mem_domain_deinit(domain);
+	if (ret != 0) {
+		LOG_ERR("architecture-specific de-initialization failed for domain %p with %d",
+			domain, ret);
+		ret = -ENOMEM;
+		goto unlock_out;
+	}
+
+unlock_out:
+	k_spin_unlock(&z_mem_domain_lock, key);
+
+out:
+	return ret;
+#else  /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
+	return -ENOTSUP;
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
+}
+
 int k_mem_domain_add_partition(struct k_mem_domain *domain,
 			       struct k_mem_partition *part)
 {
@@ -189,7 +238,7 @@ int k_mem_domain_add_partition(struct k_mem_domain *domain,
 		goto unlock_out;
 	}
 
-	LOG_DBG("add partition base %lx size %zu to domain %p\n",
+	LOG_DBG("add partition base %lx size %zu to domain %p",
 		part->start, part->size, domain);
 
 	domain->partitions[p_idx].start = part->start;
@@ -237,7 +286,7 @@ int k_mem_domain_remove_partition(struct k_mem_domain *domain,
 		goto unlock_out;
 	}
 
-	LOG_DBG("remove partition base %lx size %zu from domain %p\n",
+	LOG_DBG("remove partition base %lx size %zu from domain %p",
 		part->start, part->size, domain);
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
@@ -264,9 +313,13 @@ static int add_thread_locked(struct k_mem_domain *domain,
 	__ASSERT_NO_MSG(domain != NULL);
 	__ASSERT_NO_MSG(thread != NULL);
 
-	LOG_DBG("add thread %p to domain %p\n", thread, domain);
-	sys_dlist_append(&domain->mem_domain_q,
-			 &thread->mem_domain_info.mem_domain_q_node);
+	LOG_DBG("add thread %p to domain %p", thread, domain);
+
+#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
+	sys_dlist_append(&domain->thread_mem_domain_list,
+			 &thread->mem_domain_info.thread_mem_domain_node);
+#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
+
 	thread->mem_domain_info.mem_domain = domain;
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
@@ -281,9 +334,12 @@ static int remove_thread_locked(struct k_thread *thread)
 	int ret = 0;
 
 	__ASSERT_NO_MSG(thread != NULL);
-	LOG_DBG("remove thread %p from memory domain %p\n",
+	LOG_DBG("remove thread %p from memory domain %p",
 		thread, thread->mem_domain_info.mem_domain);
-	sys_dlist_remove(&thread->mem_domain_info.mem_domain_q_node);
+
+#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
+	sys_dlist_remove(&thread->mem_domain_info.thread_mem_domain_node);
+#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	ret = arch_mem_domain_thread_remove(thread);

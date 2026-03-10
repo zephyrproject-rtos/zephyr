@@ -15,6 +15,28 @@ else()
   endif()
 endif()
 
+# Flags not supported by llext linker
+# (regexps are supported and match whole word)
+set(LLEXT_REMOVE_FLAGS
+  -fno-pic
+  -fno-pie
+  -ffunction-sections
+  -fdata-sections
+  -g.*
+  -Os
+)
+
+# Force compiler and linker match
+if(CONFIG_X86_64)
+  set(LLEXT_APPEND_FLAGS
+    -m64
+  )
+else()
+  set(LLEXT_APPEND_FLAGS
+    -m32
+  )
+endif()
+
 # GNU Assembler, by default on non-Linux targets, treats slashes as
 # start of comments on i386.
 # (https://sourceware.org/binutils/docs-2.33.1/as/i386_002dChars.html#i386_002dChars)

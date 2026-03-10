@@ -22,50 +22,9 @@ Details on the Relax Kit development board can be found in the `Relax Kit User M
 Supported Features
 ==================
 
-* The on-board 12-MHz crystal allows the device to run at its maximum operating speed of 120MHz.
+.. zephyr:board-supported-hw::
 
-The Relax Kit development board configuration supports the following hardware features:
-
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| NVIC      | on-chip    | nested vectored       |
-|           |            | interrupt controller  |
-+-----------+------------+-----------------------+
-| SYSTICK   | on-chip    | system clock          |
-+-----------+------------+-----------------------+
-| UART      | on-chip    | serial port           |
-+-----------+------------+-----------------------+
-| SPI       | on-chip    | spi                   |
-+-----------+------------+-----------------------+
-| GPIO      | on-chip    | gpio                  |
-+-----------+------------+-----------------------+
-| FLASH     | on-chip    | flash                 |
-+-----------+------------+-----------------------+
-| ADC       | on-chip    | adc                   |
-+-----------+------------+-----------------------+
-| DMA       | on-chip    | dma                   |
-+-----------+------------+-----------------------+
-| PWM       | on-chip    | pwm                   |
-+-----------+------------+-----------------------+
-| WATCHDOG  | on-chip    | watchdog              |
-+-----------+------------+-----------------------+
-| MDIO      | on-chip    | mdio                  |
-+-----------+------------+-----------------------+
-| ETHERNET  | on-chip    | ethernet              |
-+-----------+------------+-----------------------+
-| PTP       | on-chip    | ethernet              |
-+-----------+------------+-----------------------+
-| RTC       | on-chip    | rtc                   |
-+-----------+------------+-----------------------+
-
-More details about the supported peripherals are available in `XMC4500 TRM`_
-
-The default configuration can be found in the Kconfig
-
-:zephyr_file:`boards/infineon/xmc45_relax_kit/xmc45_relax_kit_defconfig`
-
-Other hardware features are not currently supported by the Zephyr kernel.
+The on-board 12-MHz crystal allows the device to run at its maximum operating speed of 120MHz.
 
 Build hello world sample
 ************************
@@ -78,6 +37,9 @@ Here is an example for building the :zephyr:code-sample:`hello_world` sample app
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
+
 West Commands
 =============
 Here is an example for the :zephyr:code-sample:`hello_world` application.

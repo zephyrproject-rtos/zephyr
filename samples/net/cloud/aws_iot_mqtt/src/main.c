@@ -10,6 +10,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <zephyr/posix/netinet/in.h>
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/netdb.h>
+#include <zephyr/posix/poll.h>
+
 #include <zephyr/net/socket.h>
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/mqtt.h>
@@ -414,7 +421,7 @@ void aws_client_loop(void)
 	}
 
 cleanup:
-	mqtt_disconnect(&client_ctx);
+	mqtt_disconnect(&client_ctx, NULL);
 
 	close(fds.fd);
 	fds.fd = -1;

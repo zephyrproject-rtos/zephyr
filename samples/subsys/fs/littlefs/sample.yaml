@@ -24,12 +24,15 @@ tests:
       - stm32h747i_disco/stm32h747xx/m7
       - stm32h750b_dk
       - nrf54l15dk/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
       - frdm_ke17z
       - frdm_ke17z512
       - s32z2xxdc2/s32z270/rtu0
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
+      - s32k5xxcvb/s32k566/m7
+      - s32k5xxcvb/s32k566/r52
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.filesystem.littlefs.blk:

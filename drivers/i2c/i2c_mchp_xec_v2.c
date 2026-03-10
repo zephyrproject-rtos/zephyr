@@ -106,6 +106,7 @@ struct i2c_xec_data {
 	uint8_t i2c_ctrl;
 	uint8_t i2c_addr;
 	uint8_t i2c_status;
+	struct k_mutex mux;
 };
 
 /* Recommended programming values based on 16MHz
@@ -783,6 +784,7 @@ static int i2c_xec_transfer(const struct device *dev, struct i2c_msg *msgs,
 	}
 #endif
 
+	k_mutex_lock(&data->mux, K_FOREVER);
 	for (uint8_t i = 0; i < num_msgs; i++) {
 		struct i2c_msg *m = &msgs[i];
 
@@ -798,6 +800,7 @@ static int i2c_xec_transfer(const struct device *dev, struct i2c_msg *msgs,
 			break;
 		}
 	}
+	k_mutex_unlock(&data->mux);
 
 	return ret;
 }
@@ -1074,6 +1077,7 @@ static int i2c_xec_init(const struct device *dev)
 		return ret;
 	}
 
+	k_mutex_init(&data->mux);
 #ifdef CONFIG_I2C_TARGET
 	const struct i2c_xec_config *config =
 	(const struct i2c_xec_config *const) (dev->config);

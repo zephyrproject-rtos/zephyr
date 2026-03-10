@@ -1,0 +1,29 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 power controller with dual regulator (LDO + SMPS)
+
+compatible: "st,stm32-dualreg-pwr"
+
+include: "st,stm32-pwr.yaml"
+
+properties:
+  power-supply:
+    type: string
+    required: true
+    description: |
+      Power supply configuration
+
+      This property specifies the voltage regulators configuration
+      and indicates how the core domain voltage (Vcore) is generated.
+      Refer to your product's Datasheet and Reference Manual for details.
+
+      ldo: LDO supply
+        The LDO is enabled and generates Vcore; the SMPS is disabled.
+
+      smps: SMPS supply
+        The SMPS is enabled and generates Vcore; the LDO is disabled.
+    enum:
+      - "ldo"
+      - "smps"

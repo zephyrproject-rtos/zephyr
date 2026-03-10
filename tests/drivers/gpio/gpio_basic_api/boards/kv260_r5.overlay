@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2025 Advanced Micro Devices, Inc. (AMD)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	loop {
+		compatible = "test-gpio-basic-api";
+
+		out-gpios = <&psgpio_bank3 0 0>; /* GPIOPS BANK 3 PIN 0 */
+		in-gpios = <&psgpio_bank3 1 0>; /* GPIOPS BANK 3 PIN 1 */
+	};
+};

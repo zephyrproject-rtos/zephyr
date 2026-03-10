@@ -1,13 +1,19 @@
 /*
  * Copyright (c) 2019 Oticon A/S
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
-#include <zephyr/sys/util.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
+#include <zephyr/ztest.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_utf8.h>
+#include <zephyr/ztest_assert.h>
+#include <zephyr/ztest_test.h>
 
 ZTEST(util, test_u8_to_dec) {
 	char text[4];
@@ -78,6 +84,27 @@ ZTEST(util, test_sign_extend) {
 	zassert_equal(sign_extend(u32, 28), 0xfffffff);
 }
 
+ZTEST(util, test_arithmetic_shift_right)
+{
+	/* Test positive number */
+	zassert_equal(arithmetic_shift_right(0x8, 2), 0x2);
+	zassert_equal(arithmetic_shift_right(0x10, 3), 0x2);
+	zassert_equal(arithmetic_shift_right(0x20, 4), 0x2);
+
+	/* Test negative number */
+	zassert_equal(arithmetic_shift_right(-0x8, 2), -0x2);
+	zassert_equal(arithmetic_shift_right(-0x10, 3), -0x2);
+	zassert_equal(arithmetic_shift_right(-0x20, 4), -0x2);
+
+	/* Test zero shift */
+	zassert_equal(arithmetic_shift_right(0x2A, 0), 0x2A);
+	zassert_equal(arithmetic_shift_right(-0x2A, 0), -0x2A);
+
+	/* Test large shifts */
+	zassert_equal(arithmetic_shift_right(0x7FFFFFFFFFFFFFFF, 63), 0x0);
+	zassert_equal(arithmetic_shift_right(0x8000000000000000, 63), -0x1);
+}
+
 ZTEST(util, test_sign_extend_64) {
 	uint8_t u8;
 	uint16_t u16;
@@ -135,6 +162,37 @@ ZTEST(util, test_COND_CODE_0) {
 
 	COND_CODE_0(2, (uint32_t x3 = 1;), (uint32_t y3 = 1;))
 	zassert_true((y3 == 1));
+}
+
+ZTEST(util, test_COND_CASE_1) {
+	/* Intentionally undefined symbols used to verify that only the selected
+	 * branch expands.
+	 */
+	int val;
+
+	#define CASE_TRUE 1
+	#define CASE_FALSE 0
+
+	val = COND_CASE_1(CASE_TRUE, (42),
+			  CASE_TRUE, (COND_CASE_1_SHOULD_NOT_REACH_SECOND_TRUE_CASE),
+			  (0));
+	zexpect_equal(val, 42);
+
+	val = COND_CASE_1(CASE_FALSE, (COND_CASE_1_SHOULD_NOT_USE_FIRST_CASE),
+			  CASE_TRUE, (7),
+			  (11));
+	zexpect_equal(val, 7);
+
+	val = COND_CASE_1(CASE_FALSE, (COND_CASE_1_SHOULD_NOT_USE_SECOND_CASE),
+			  CASE_FALSE, (COND_CASE_1_SHOULD_NOT_USE_THIRD_CASE),
+			  (5));
+	zexpect_equal(val, 5);
+
+	val = COND_CASE_1((9));
+	zexpect_equal(val, 9);
+
+	#undef CASE_TRUE
+	#undef CASE_FALSE
 }
 
 #undef ZERO
@@ -217,26 +275,96 @@ static int inc_func(bool cleanup)
 	return a++;
 }
 
-/* Test checks if @ref Z_MAX, @ref Z_MIN and @ref Z_CLAMP return correct result
+/* Test checks if @ref max, @ref min and @ref clamp return correct result
  * and perform single evaluation of input arguments.
  */
-ZTEST(util, test_z_max_z_min_z_clamp) {
-	zassert_equal(Z_MAX(inc_func(true), 0), 1, "Unexpected macro result");
-	/* Z_MAX should have call inc_func only once */
+ZTEST(util, test_max_min_clamp) {
+#ifdef __cplusplus
+	/* C++ has its own std::min() and std::max(), min and max are not available. */
+	ztest_test_skip();
+#else
+	zassert_equal(max(inc_func(true), 0), 1, "Unexpected macro result");
+	/* max should have call inc_func only once */
 	zassert_equal(inc_func(false), 2, "Unexpected return value");
 
-	zassert_equal(Z_MIN(inc_func(false), 2), 2, "Unexpected macro result");
-	/* Z_MIN should have call inc_func only once */
+	zassert_equal(min(inc_func(false), 2), 2, "Unexpected macro result");
+	/* min should have call inc_func only once */
 	zassert_equal(inc_func(false), 4, "Unexpected return value");
 
-	zassert_equal(Z_CLAMP(inc_func(false), 1, 3), 3, "Unexpected macro result");
-	/* Z_CLAMP should have call inc_func only once */
+	zassert_equal(clamp(inc_func(false), 1, 3), 3, "Unexpected macro result");
+	/* clamp should have call inc_func only once */
 	zassert_equal(inc_func(false), 6, "Unexpected return value");
 
-	zassert_equal(Z_CLAMP(inc_func(false), 10, 15), 10,
+	zassert_equal(clamp(inc_func(false), 10, 15), 10,
 		      "Unexpected macro result");
-	/* Z_CLAMP should have call inc_func only once */
+	/* clamp should have call inc_func only once */
 	zassert_equal(inc_func(false), 8, "Unexpected return value");
+
+	/* Nested calls do not generate build warnings */
+	zassert_equal(max(inc_func(false),
+			  max(inc_func(false),
+			      min(inc_func(false),
+				  inc_func(false)))), 11, "Unexpected macro result");
+	zassert_equal(inc_func(false), 13, "Unexpected return value");
+#endif
+}
+
+ZTEST(util, test_max3_min3) {
+	/* check for single call */
+	zassert_equal(max3(inc_func(true), 0, 0), 1, "Unexpected macro result");
+	zassert_equal(inc_func(false), 2, "Unexpected return value");
+
+	zassert_equal(min3(inc_func(false), 9, 10), 3, "Unexpected macro result");
+	zassert_equal(inc_func(false), 4, "Unexpected return value");
+
+	/* test the general functionality */
+	zassert_equal(max3(1, 2, 3), 3, "Unexpected macro result");
+	zassert_equal(max3(3, 1, 2), 3, "Unexpected macro result");
+	zassert_equal(max3(2, 3, 1), 3, "Unexpected macro result");
+	zassert_equal(max3(-1, 0, 1), 1, "Unexpected macro result");
+
+	zassert_equal(min3(1, 2, 3), 1, "Unexpected macro result");
+	zassert_equal(min3(3, 1, 2), 1, "Unexpected macro result");
+	zassert_equal(min3(2, 3, 1), 1, "Unexpected macro result");
+	zassert_equal(min3(-1, 0, 1), -1, "Unexpected macro result");
+}
+
+ZTEST(util, test_max_from_list_macro) {
+	/* Test with one argument */
+	zassert_equal(MAX_FROM_LIST(10), 10, "Should return the single value.");
+
+	/* Test with two arguments */
+	zassert_equal(MAX_FROM_LIST(10, 20), 20, "Should return 20.");
+	zassert_equal(MAX_FROM_LIST(30, 15), 30, "Should return 30.");
+
+	/* Test with three arguments */
+	zassert_equal(MAX_FROM_LIST(10, 5, 20), 20, "Should return 20.");
+	zassert_equal(MAX_FROM_LIST(30, 15, 25), 30, "Should return 30.");
+	zassert_equal(MAX_FROM_LIST(5, 40, 35), 40, "Should return 40.");
+
+	/* Test with five arguments */
+	zassert_equal(MAX_FROM_LIST(10, 50, 20, 5, 30), 50, "Should return 50.");
+
+	/* Test with seven arguments */
+	zassert_equal(MAX_FROM_LIST(10, 50, 20, 5, 30, 45, 25), 50, "Should return 50.");
+
+	/* Test with eight arguments */
+	zassert_equal(MAX_FROM_LIST(1, 2, 3, 4, 5, 6, 7, 8), 8, "Should return 8.");
+	zassert_equal(MAX_FROM_LIST(10, 5, 20, 15, 30, 25, 35, 40), 40, "Should return 40.");
+
+	/* Test with nine arguments */
+	zassert_equal(MAX_FROM_LIST(1, 2, 3, 4, 5, 6, 7, 8, 9), 9, "Should return 9.");
+	zassert_equal(MAX_FROM_LIST(10, 5, 20, 15, 30, 25, 35, 40, 45), 45, "Should return 45.");
+
+	/* Test with ten arguments */
+	zassert_equal(MAX_FROM_LIST(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 10, "Should return 10.");
+	zassert_equal(MAX_FROM_LIST(10, 9, 8, 7, 6, 5, 4, 3, 2, 1), 10, "Should return 10.");
+	zassert_equal(MAX_FROM_LIST(5, 15, 25, 35, 45, 55, 65, 75, 85, 95),
+		95, "Should return 95.");
+
+	/* Test with various values */
+	zassert_equal(MAX_FROM_LIST(25600, 12800, 9800), 25600, "Should return 25600.");
+	zassert_equal(MAX_FROM_LIST(9800, 25600, 12800), 25600, "Should return 25600.");
 }
 
 ZTEST(util, test_CLAMP) {
@@ -436,20 +564,25 @@ ZTEST(util, test_nested_FOR_EACH) {
 	zassert_equal(a2, 2);
 }
 
+#define TWO 2 /* to showcase that GET_ARG_N and GET_ARGS_LESS_N also work with macros */
+
 ZTEST(util, test_GET_ARG_N) {
 	int a = GET_ARG_N(1, 10, 100, 1000);
 	int b = GET_ARG_N(2, 10, 100, 1000);
 	int c = GET_ARG_N(3, 10, 100, 1000);
+	int d = GET_ARG_N(TWO, 10, 100, 1000);
 
 	zassert_equal(a, 10);
 	zassert_equal(b, 100);
 	zassert_equal(c, 1000);
+	zassert_equal(d, 100);
 }
 
 ZTEST(util, test_GET_ARGS_LESS_N) {
 	uint8_t a[] = { GET_ARGS_LESS_N(0, 1, 2, 3) };
 	uint8_t b[] = { GET_ARGS_LESS_N(1, 1, 2, 3) };
 	uint8_t c[] = { GET_ARGS_LESS_N(2, 1, 2, 3) };
+	uint8_t d[] = { GET_ARGS_LESS_N(TWO, 1, 2, 3) };
 
 	zassert_equal(sizeof(a), 3);
 
@@ -459,6 +592,31 @@ ZTEST(util, test_GET_ARGS_LESS_N) {
 
 	zassert_equal(sizeof(c), 1);
 	zassert_equal(c[0], 3);
+
+	zassert_equal(sizeof(d), 1);
+	zassert_equal(d[0], 3);
+}
+
+ZTEST(util, test_GET_ARGS_FIRST_N)
+{
+	uint8_t a[] = {GET_ARGS_FIRST_N(0, 1, 2, 3)};
+	uint8_t b[] = {GET_ARGS_FIRST_N(1, 1, 2, 3)};
+	uint8_t c[] = {GET_ARGS_FIRST_N(2, 1, 2, 3)};
+	uint8_t d[] = {GET_ARGS_FIRST_N(3, 1, 2, 3)};
+
+	zassert_equal(sizeof(a), 0);
+
+	zassert_equal(sizeof(b), 1);
+	zassert_equal(b[0], 1);
+
+	zassert_equal(sizeof(c), 2);
+	zassert_equal(c[0], 1);
+	zassert_equal(c[1], 2);
+
+	zassert_equal(sizeof(d), 3);
+	zassert_equal(d[0], 1);
+	zassert_equal(d[1], 2);
+	zassert_equal(d[2], 3);
 }
 
 ZTEST(util, test_mixing_GET_ARG_and_FOR_EACH) {
@@ -697,6 +855,62 @@ skipped_c:
 	#undef test_IF_DISABLED_FLAG_B
 }
 
+ZTEST(util, test_bytecpy)
+{
+	/* Test basic byte-by-byte copying */
+	uint8_t src1[16] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+			    0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10};
+	uint8_t dst1[16] = {0};
+	uint8_t expected1[16] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+				 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10};
+
+	bytecpy(dst1, src1, sizeof(src1));
+	zassert_mem_equal(dst1, expected1, sizeof(expected1), "Basic byte-by-byte copy failed");
+
+	/* Test copying with different sizes */
+	uint8_t src2[8] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22};
+	uint8_t dst2[8] = {0};
+	uint8_t expected2[8] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22};
+
+	bytecpy(dst2, src2, sizeof(src2));
+	zassert_mem_equal(dst2, expected2, sizeof(expected2), "Copy with different size failed");
+
+	/* Test copying with zero size */
+	uint8_t src3[4] = {0x11, 0x22, 0x33, 0x44};
+	uint8_t dst3[4] = {0xAA, 0xBB, 0xCC, 0xDD};
+	uint8_t expected3[4] = {0xAA, 0xBB, 0xCC, 0xDD}; /* Should remain unchanged */
+
+	bytecpy(dst3, src3, 0);
+	zassert_mem_equal(dst3, expected3, sizeof(expected3),
+			  "Zero size copy should not modify destination");
+
+	/* Test copying with overlapping memory regions */
+	uint8_t buf[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+	uint8_t expected4[8] = {0x11, 0x22, 0x33, 0x44, 0x11, 0x22, 0x33, 0x44};
+
+	bytecpy(&buf[4], buf, 4); /* Copy first 4 bytes to last 4 bytes */
+	zassert_mem_equal(buf, expected4, sizeof(expected4), "Overlapping memory copy failed");
+}
+
+ZTEST(util, test_byteswp)
+{
+	uint8_t a1 = 0xAAU;
+	uint8_t b1 = 0x55U;
+	uint32_t a2 = 0x12345678U;
+	uint32_t b2 = 0xABCDEF00U;
+
+	byteswp(&a1, &b1, sizeof(a1));
+	zassert_equal(a1, 0x55U, "Failed to swap single bytes");
+	zassert_equal(b1, 0xAAU, "Failed to swap single bytes");
+	byteswp(&a1, &b1, 0);
+	zassert_equal(a1, 0x55U, "Zero size swap should not modify values");
+	zassert_equal(b1, 0xAAU, "Zero size swap should not modify values");
+
+	byteswp(&a2, &b2, sizeof(a2));
+	zassert_equal(a2, 0xABCDEF00U, "Failed to swap multiple bytes");
+	zassert_equal(b2, 0x12345678U, "Failed to swap multiple bytes");
+}
+
 ZTEST(util, test_mem_xor_n)
 {
 	const size_t max_len = 128;
@@ -768,6 +982,26 @@ ZTEST(util, test_mem_xor_128)
 	zassert_mem_equal(expected_result, dst, 16);
 }
 
+ZTEST(util, test_sys_count_bits)
+{
+	uint8_t zero = 0U;
+	uint8_t u8 = 29U;
+	uint16_t u16 = 29999U;
+	uint32_t u32 = 2999999999U;
+	uint64_t u64 = 123456789012345ULL;
+	uint8_t u8_arr[] = {u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8,
+			    u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8};
+
+	zassert_equal(sys_count_bits(&zero, sizeof(zero)), 0);
+	zassert_equal(sys_count_bits(&u8, sizeof(u8)), 4);
+	zassert_equal(sys_count_bits(&u16, sizeof(u16)), 10);
+	zassert_equal(sys_count_bits(&u32, sizeof(u32)), 20);
+	zassert_equal(sys_count_bits(&u64, sizeof(u64)), 23);
+
+	zassert_equal(sys_count_bits(u8_arr, sizeof(u8_arr)), 128);
+	zassert_equal(sys_count_bits(&u8_arr[1], sizeof(u8_arr) - sizeof(u8_arr[0])), 124);
+}
+
 ZTEST(util, test_CONCAT)
 {
 #define _CAT_PART1 1
@@ -821,30 +1055,40 @@ ZTEST(util, test_SIZEOF_FIELD)
 
 ZTEST(util, test_utf8_trunc_truncated)
 {
-	char test_str[] = "€€€";
-	char expected_result[] = "€€";
+	struct {
+		char input[20];
+		char expected[20];
+	} tests[] = {
+		{"ééé", "éé"},                    /* 2-byte UTF-8 characters */
+		{"€€€", "€€"},                    /* 3-byte UTF-8 characters */
+		{"𠜎𠜎𠜎", "𠜎𠜎"},                 /* 4-byte UTF-8 characters */
+		{"Hello 世界!🌍", "Hello 世界!"},   /* mixed UTF-8 characters */
+	};
 
-	/* Remove last byte from truncated_test_str and verify that it first is incorrectly
-	 * truncated, followed by a proper truncation and verification
-	 */
-	test_str[strlen(test_str) - 1] = '\0';
-	zassert(strcmp(test_str, "€€€") != 0, "Failed to do invalid truncation");
-	zassert(strcmp(test_str, expected_result) != 0, "Failed to do invalid truncation");
-
-	utf8_trunc(test_str);
-
-	zassert_str_equal(test_str, expected_result, "Failed to truncate");
+	for (size_t i = 0; i < ARRAY_SIZE(tests); i++) {
+		tests[i].input[strlen(tests[i].input) - 1] = '\0';
+		utf8_trunc(tests[i].input);
+		zassert_str_equal(tests[i].input, tests[i].expected, "Failed to truncate");
+	}
 }
 
 ZTEST(util, test_utf8_trunc_not_truncated)
 {
-	/* Attempt to truncate a valid UTF8 string and verify no changed */
-	char test_str[] = "€€€";
-	char expected_result[] = "€€€";
+	struct {
+		char input[20];
+		char expected[20];
+	} tests[] = {
+		{"abc", "abc"},                    /* 1-byte ASCII characters */
+		{"ééé", "ééé"},                    /* 2-byte UTF-8 characters */
+		{"€€€", "€€€"},                    /* 3-byte UTF-8 characters */
+		{"𠜎𠜎𠜎", "𠜎𠜎𠜎"},                /* 4-byte UTF-8 characters */
+		{"Hello 世界!🌍", "Hello 世界!🌍"},  /* mixed UTF-8 characters */
+	};
 
-	utf8_trunc(test_str);
-
-	zassert_str_equal(test_str, expected_result, "Failed to truncate");
+	for (size_t i = 0; i < ARRAY_SIZE(tests); i++) {
+		utf8_trunc(tests[i].input);
+		zassert_str_equal(tests[i].input, tests[i].expected, "No-op truncation failed");
+	}
 }
 
 ZTEST(util, test_utf8_trunc_zero_length)
@@ -916,6 +1160,170 @@ ZTEST(util, test_utf8_lcpy_null_termination)
 	utf8_lcpy(dest_str, test_str, sizeof(dest_str));
 
 	zassert_str_equal(dest_str, expected_result, "Failed to truncate");
+}
+
+ZTEST(util, test_utf8_count_chars_ASCII)
+{
+	const char *test_str = "I have 15 char.";
+	int count = utf8_count_chars(test_str);
+
+	zassert_equal(count, 15, "Failed to count ASCII");
+}
+
+ZTEST(util, test_utf8_count_chars_non_ASCII)
+{
+	const char *test_str = "Hello دنیا!🌍";
+	int count = utf8_count_chars(test_str);
+
+	zassert_equal(count, 12, "Failed to count non-ASCII");
+}
+
+ZTEST(util, test_utf8_count_chars_invalid_utf)
+{
+	const char test_str[] = { (char)0x80, 0x00 };
+	int count = utf8_count_chars(test_str);
+	int expected_result = -EINVAL;
+
+	zassert_equal(count, expected_result, "Failed to detect invalid UTF");
+}
+
+ZTEST(util, test_util_eq)
+{
+	uint8_t src1[16];
+	uint8_t src2[16];
+
+	bool mem_area_matching_1;
+	bool mem_area_matching_2;
+
+	memset(src1, 0, sizeof(src1));
+	memset(src2, 0, sizeof(src2));
+
+	for (size_t i = 0U; i < 16; i++) {
+		src1[i] = 0xAB;
+		src2[i] = 0xAB;
+	}
+
+	src1[15] = 0xCD;
+	src2[15] = 0xEF;
+
+	mem_area_matching_1 = util_eq(src1, sizeof(src1), src2, sizeof(src2));
+	mem_area_matching_2 = util_eq(src1, sizeof(src1) - 1, src2, sizeof(src2) - 1);
+
+	zassert_false(mem_area_matching_1);
+	zassert_true(mem_area_matching_2);
+}
+
+ZTEST(util, test_util_memeq)
+{
+	uint8_t src1[16];
+	uint8_t src2[16];
+	uint8_t src3[16];
+
+	bool mem_area_matching_1;
+	bool mem_area_matching_2;
+
+	memset(src1, 0, sizeof(src1));
+	memset(src2, 0, sizeof(src2));
+
+	for (size_t i = 0U; i < 16; i++) {
+		src1[i] = 0xAB;
+		src2[i] = 0xAB;
+		src3[i] = 0xCD;
+	}
+
+	mem_area_matching_1 = util_memeq(src1, src2, sizeof(src1));
+	mem_area_matching_2 = util_memeq(src1, src3, sizeof(src1));
+
+	zassert_true(mem_area_matching_1);
+	zassert_false(mem_area_matching_2);
+}
+
+static void test_single_bitmask_find_gap(uint32_t mask, size_t num_bits, size_t total_bits,
+					 bool first_match, int exp_rv, int line)
+{
+	int rv;
+
+	rv = bitmask_find_gap(mask, num_bits, total_bits, first_match);
+	zassert_equal(rv, exp_rv, "%d Unexpected rv:%d (exp:%d)", line, rv, exp_rv);
+}
+
+ZTEST(util, test_bitmask_find_gap)
+{
+	test_single_bitmask_find_gap(0x0F0F070F, 6, 32, true, -1, __LINE__);
+	test_single_bitmask_find_gap(0x0F0F070F, 5, 32, true, 11, __LINE__);
+	test_single_bitmask_find_gap(0x030F070F, 5, 32, true, 26, __LINE__);
+	test_single_bitmask_find_gap(0x030F070F, 5, 32, false, 11, __LINE__);
+	test_single_bitmask_find_gap(0x0F0F070F, 5, 32, true, 11, __LINE__);
+	test_single_bitmask_find_gap(0x030F070F, 5, 32, true, 26, __LINE__);
+	test_single_bitmask_find_gap(0x030F070F, 5, 32, false, 11, __LINE__);
+	test_single_bitmask_find_gap(0x0, 1, 32, true, 0, __LINE__);
+	test_single_bitmask_find_gap(0x1F1F071F, 4, 32, true, 11, __LINE__);
+	test_single_bitmask_find_gap(0x0000000F, 2, 6, false, 4, __LINE__);
+}
+
+ZTEST(util, test_sys_gcd)
+{
+	/* Zero cases */
+	zassert_equal(sys_gcd(0, 0), 0, "should be 0");
+	zassert_equal(sys_gcd(0, INT_MAX), INT_MAX, "should be 0");
+	zassert_equal(sys_gcd(INT_MAX, 0), INT_MAX, "should be 0");
+
+	/* Normal cases */
+	zassert_equal(sys_gcd(12, 8), 4, "should be 4");
+
+	/* Negative number cases */
+	zassert_equal(sys_gcd(-12, 8), 4, "should be 4");
+	zassert_equal(sys_gcd(-12, -8), 4, "should be 4");
+
+	/* Prime numbers */
+	zassert_equal(sys_gcd(17, 13), 1, "should be 1");
+	zassert_equal(sys_gcd(25, 49), 1, "should be 1");
+
+	/* Boundary values */
+	zassert_equal(sys_gcd(INT_MAX, INT_MAX), INT_MAX, "should be INT_MAX");
+	zassert_equal(sys_gcd(INT_MIN, INT_MIN), (uint32_t)(-(int64_t)INT_MIN),
+		      "should be INT_MAX + 1");
+	zassert_equal(sys_gcd(INT_MIN, INT_MAX), 1, "should be 1");
+	zassert_equal(sys_gcd(UINT32_MAX, UINT32_MAX), UINT32_MAX, "should be UINT32_MAX");
+
+	/* Macro expansion */
+	int a = 12, b = 8;
+
+	zassert_equal(sys_gcd(a++, b++), 4, "should be 4");
+	zassert_equal(a, 13, "should be 13");
+	zassert_equal(b, 9, "should be 9");
+}
+
+ZTEST(util, test_sys_lcm)
+{
+	/* Zero cases - lcm with 0 should be 0 */
+	zassert_equal(sys_lcm(0, 0), 0, "should be 0");
+	zassert_equal(sys_lcm(0, INT_MAX), 0, "should be 0");
+
+	/* Normal cases */
+	zassert_equal(sys_lcm(12, 8), 24, "should be 24");
+	zassert_equal(sys_lcm(8, 12), 24, "should be 24");
+
+	/* Negative number cases - lcm should always be positive */
+	zassert_equal(sys_lcm(-12, 8), 24, "should be 24");
+
+	/* Prime numbers (gcd = 1, so lcm = a * b) */
+	zassert_equal(sys_lcm(17, 13), 221, "should be 221");
+
+	/* Boundary values */
+	zassert_equal(sys_lcm(INT_MAX, INT_MAX - 1), (uint64_t)INT_MAX * (INT_MAX - 1),
+		      "should be INT_MAX * (INT_MAX - 1)");
+	zassert_equal(sys_lcm(INT_MIN, INT_MIN), (uint64_t)INT_MAX + 1, "should be INT_MAX + 1");
+	zassert_equal(sys_lcm(INT_MIN, INT_MAX), (uint64_t)INT_MAX * (uint64_t)(-(int64_t)INT_MIN),
+		      "should be INT_MAX * (INT_MAX + 1)");
+	zassert_equal(sys_lcm(UINT32_MAX, UINT32_MAX), UINT32_MAX, "should be UINT32_MAX");
+
+	/* Macro expansion */
+	int a = 12, b = 8;
+
+	zassert_equal(sys_lcm(a++, b++), 24, "should be 4");
+	zassert_equal(a, 13, "should be 13");
+	zassert_equal(b, 9, "should be 9");
 }
 
 ZTEST_SUITE(util, NULL, NULL, NULL, NULL, NULL);

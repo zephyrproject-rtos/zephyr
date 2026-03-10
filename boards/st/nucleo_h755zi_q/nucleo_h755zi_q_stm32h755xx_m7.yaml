@@ -17,4 +17,5 @@ supported:
   - pwm
   - netif:eth
   - usb_device
+  - can
 vendor: st

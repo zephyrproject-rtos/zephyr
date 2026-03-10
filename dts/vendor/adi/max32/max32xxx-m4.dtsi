@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+
+&i2c0 {
+	interrupts = <13 0>;
+};
+
+&i2c1 {
+	interrupts = <36 0>;
+};
+
+&i2c2 {
+	interrupts = <62 0>;
+};
+
+&gpio0 {
+	interrupts = <24 0>;
+};
+
+&gpio1 {
+	interrupts = <25 0>;
+};
+
+&uart0 {
+	interrupts = <14 0>;
+};
+
+&uart1 {
+	interrupts = <15 0>;
+};
+
+&uart2 {
+	interrupts = <34 0>;
+};
+
+&wdt0 {
+	interrupts = <1 0>;
+};
+
+&adc {
+	interrupts = <20 0>;
+};
+
+&timer0 {
+	interrupts = <5 0>;
+};
+
+&timer1 {
+	interrupts = <6 0>;
+};
+
+&timer2 {
+	interrupts = <7 0>;
+};
+
+&timer3 {
+	interrupts = <8 0>;
+};
+
+&rtc_counter {
+	interrupts = <3 0>;
+};
+
+&flc0 {
+	status = "okay";
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

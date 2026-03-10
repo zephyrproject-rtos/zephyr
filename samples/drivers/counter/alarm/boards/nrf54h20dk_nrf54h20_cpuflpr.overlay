@@ -1,0 +1,12 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	chosen {
+		counter = &timer120;
+	};
+};
+
+&timer120 {
+	status = "okay";
+	prescaler = <7>;
+};

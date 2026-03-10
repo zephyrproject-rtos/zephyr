@@ -2,7 +2,7 @@
 
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2020-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/settings/settings.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
@@ -35,12 +36,12 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 
 #include "../host/conn_internal.h"
-#include "../host/hci_core.h"
 #include "../host/keys.h"
+#include "../host/settings.h"
 
+#include "common/bt_settings_commit.h"
 #include "common/bt_str.h"
 #include "audio_internal.h"
 #include "csip_internal.h"
@@ -51,12 +52,17 @@
 #define CSIS_CHAR_ATTR_COUNT	  3 /* declaration + value + cccd */
 #define CSIS_RANK_CHAR_ATTR_COUNT 2 /* declaration + value */
 
+#define CSIS_MAX_ATTR                                                                              \
+	(10U + IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE) +                             \
+	 IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE))
+
 LOG_MODULE_REGISTER(bt_csip_set_member, CONFIG_BT_CSIP_SET_MEMBER_LOG_LEVEL);
 
 enum csip_flag {
 	FLAG_ACTIVE,
 	FLAG_NOTIFY_LOCK,
 	FLAG_NOTIFY_SIRK,
+	FLAG_NOTIFY_SIZE,
 	FLAG_NUM,
 };
 
@@ -72,17 +78,41 @@ struct bt_csip_set_member_svc_inst {
 	uint8_t set_size;
 	uint8_t set_lock;
 	uint8_t rank;
+	bool lockable;
 	struct bt_csip_set_member_cb *cb;
 	struct k_work_delayable set_lock_timer;
 	bt_addr_le_t lock_client_addr;
-	struct bt_gatt_service *service_p;
 	struct csip_client clients[CONFIG_BT_MAX_PAIRED];
+
+	struct bt_gatt_service gatt_svc;
+	struct bt_gatt_attr attrs[CSIS_MAX_ATTR];
+
+	/* Must be last: exclude from memset during unregister */
+	struct k_mutex mutex;
 };
 
 static struct bt_csip_set_member_svc_inst svc_insts[CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT];
-static bt_addr_le_t server_dummy_addr; /* 0'ed address */
 
 static void deferred_nfy_work_handler(struct k_work *work);
+static void add_bonded_addr_to_client_list(const struct bt_bond_info *info, void *data);
+
+#if defined(CONFIG_BT_SETTINGS)
+static int csip_settings_commit(void)
+{
+	bt_foreach_bond(BT_ID_DEFAULT, add_bonded_addr_to_client_list, NULL);
+
+	LOG_DBG("Restored CSIP client list from bonded devices");
+
+	return 0;
+}
+
+/* Register CSIP settings handler with commit priority, BT_SETTINGS_CPRIO_2,
+ * to ensure csip_settings_commit() runs after BT keys settings are loaded.
+ * Priority is reduced to ensure existing bonds are loaded first.
+ */
+SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(bt_csip_set_member, "bt/csip", NULL, NULL,
+					csip_settings_commit, NULL, BT_SETTINGS_CPRIO_2);
+#endif /* CONFIG_BT_SETTINGS */
 
 static K_WORK_DELAYABLE_DEFINE(deferred_nfy_work, deferred_nfy_work_handler);
 
@@ -93,8 +123,7 @@ static bool is_last_client_to_write(const struct bt_csip_set_member_svc_inst *sv
 		return bt_addr_le_eq(bt_conn_get_dst(conn),
 				     &svc_inst->lock_client_addr);
 	} else {
-		return bt_addr_le_eq(&server_dummy_addr,
-				     &svc_inst->lock_client_addr);
+		return bt_addr_le_eq(BT_ADDR_LE_NONE, &svc_inst->lock_client_addr);
 	}
 }
 
@@ -151,7 +180,7 @@ static int sirk_encrypt(struct bt_conn *conn, const struct bt_csip_sirk *sirk,
 		/* test_k is from the sample data from A.2 in the CSIS spec */
 		static const uint8_t test_k[] = {
 			/* Sample data is in big-endian, we need it in little-endian. */
-+                       REVERSE_ARGS(0x67, 0x6e, 0x1b, 0x9b,
+			REVERSE_ARGS(0x67, 0x6e, 0x1b, 0x9b,
 				     0xd4, 0x48, 0x69, 0x6f,
 				     0x06, 0x1e, 0xc6, 0x22,
 				     0x3c, 0xe5, 0xce, 0xd9) };
@@ -286,12 +315,10 @@ static ssize_t read_sirk(struct bt_conn *conn, const struct bt_gatt_attr *attr, 
 				 sirk, sizeof(*sirk));
 }
 
-#if defined(CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE)
 static void sirk_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	LOG_DBG("value 0x%04x", value);
 }
-#endif /* CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE */
 
 static ssize_t read_set_size(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
@@ -368,8 +395,7 @@ static uint8_t set_lock(struct bt_conn *conn,
 		(void)k_work_reschedule(&svc_inst->set_lock_timer,
 					CSIP_SET_LOCK_TIMER_VALUE);
 	} else {
-		(void)memset(&svc_inst->lock_client_addr, 0,
-			     sizeof(svc_inst->lock_client_addr));
+		bt_addr_le_copy(&svc_inst->lock_client_addr, BT_ADDR_LE_NONE);
 		(void)k_work_cancel_delayable(&svc_inst->set_lock_timer);
 	}
 
@@ -460,27 +486,50 @@ static void set_lock_timer_handler(struct k_work *work)
 static void csip_security_changed(struct bt_conn *conn, bt_security_t level,
 				  enum bt_security_err err)
 {
+	const bt_addr_le_t *peer_addr;
+
 	if (err != 0 || conn->encrypt == 0) {
 		return;
 	}
 
-	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	peer_addr = bt_conn_get_dst(conn);
+
+	if (!bt_le_bond_exists(conn->id, &conn->le.dst)) {
 		return;
 	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
 		struct bt_csip_set_member_svc_inst *svc_inst = &svc_insts[i];
+		struct csip_client *client;
+		bool found = false;
 
+		/* Check if client is already in the active list */
 		for (size_t j = 0U; j < ARRAY_SIZE(svc_inst->clients); j++) {
-			struct csip_client *client;
+			client = &svc_inst->clients[j];
 
-			client = &svc_inst->clients[i];
-
-			if (atomic_test_bit(client->flags, FLAG_NOTIFY_LOCK) &&
-			    bt_addr_le_eq(bt_conn_get_dst(conn), &client->addr)) {
-				notify_work_reschedule(K_NO_WAIT);
+			if (atomic_test_bit(client->flags, FLAG_ACTIVE) &&
+			    bt_addr_le_eq(peer_addr, &client->addr)) {
+				found = true;
 				break;
 			}
+		}
+
+		/* If not found, add the bonded address to the client list */
+		if (!found) {
+			const struct bt_bond_info bond_info = {
+				.addr = *peer_addr
+			};
+
+			add_bonded_addr_to_client_list(&bond_info, NULL);
+			return;
+		}
+
+		/* Check if client has pending notifications */
+		if (atomic_test_bit(client->flags, FLAG_NOTIFY_LOCK) ||
+		    atomic_test_bit(client->flags, FLAG_NOTIFY_SIRK) ||
+		    atomic_test_bit(client->flags, FLAG_NOTIFY_SIZE)) {
+			notify_work_reschedule(K_NO_WAIT);
+			break;
 		}
 	}
 }
@@ -490,8 +539,7 @@ static void handle_csip_disconnect(struct bt_csip_set_member_svc_inst *svc_inst,
 {
 	LOG_DBG("Non-bonded device");
 	if (is_last_client_to_write(svc_inst, conn)) {
-		(void)memset(&svc_inst->lock_client_addr, 0,
-			     sizeof(svc_inst->lock_client_addr));
+		bt_addr_le_copy(&svc_inst->lock_client_addr, BT_ADDR_LE_NONE);
 		svc_inst->set_lock = BT_CSIP_RELEASE_VALUE;
 		notify_clients(svc_inst, NULL, FLAG_NOTIFY_LOCK);
 
@@ -521,7 +569,7 @@ static void csip_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	LOG_DBG("Disconnected: %s (reason %u)", bt_addr_le_str(bt_conn_get_dst(conn)), reason);
 
-	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	if (!bt_le_bond_exists(conn->id, &conn->le.dst)) {
 		for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
 			handle_csip_disconnect(&svc_insts[i], conn);
 		}
@@ -605,7 +653,7 @@ static void csip_bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 	}
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = csip_disconnected,
 	.security_changed = csip_security_changed,
 };
@@ -615,48 +663,14 @@ static struct bt_conn_auth_info_cb auth_callbacks = {
 	.bond_deleted = csip_bond_deleted
 };
 
-#if defined(CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE)
-#define BT_CSIS_CHR_SIRK(_csip)                                                                    \
-	BT_AUDIO_CHRC(BT_UUID_CSIS_SIRK, BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,                  \
-		      BT_GATT_PERM_READ_ENCRYPT, read_sirk, NULL, &_csip),                         \
-		BT_AUDIO_CCC(sirk_cfg_changed)
-#else
-#define BT_CSIS_CHR_SIRK(_csip)                                                                    \
-	BT_AUDIO_CHRC(BT_UUID_CSIS_SIRK, BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, read_sirk,  \
-		      NULL, &_csip)
-#endif /* CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE */
-
-#define BT_CSIP_SERVICE_DEFINITION(_csip) {\
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_CSIS), \
-	BT_CSIS_CHR_SIRK(_csip), \
-	BT_AUDIO_CHRC(BT_UUID_CSIS_SET_SIZE, \
-		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-		      BT_GATT_PERM_READ_ENCRYPT, \
-		      read_set_size, NULL, &_csip), \
-	BT_AUDIO_CCC(set_size_cfg_changed), \
-	BT_AUDIO_CHRC(BT_UUID_CSIS_SET_LOCK, \
-		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_WRITE, \
-		      BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT, \
-		      read_set_lock, write_set_lock, &_csip), \
-	BT_AUDIO_CCC(set_lock_cfg_changed), \
-	BT_AUDIO_CHRC(BT_UUID_CSIS_RANK, \
-		      BT_GATT_CHRC_READ, \
-		      BT_GATT_PERM_READ_ENCRYPT, \
-		      read_rank, NULL, &_csip) \
-	}
-
-BT_GATT_SERVICE_INSTANCE_DEFINE(csip_set_member_service_list, svc_insts,
-				CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT,
-				BT_CSIP_SERVICE_DEFINITION);
-
 /****************************** Public API ******************************/
 void *bt_csip_set_member_svc_decl_get(const struct bt_csip_set_member_svc_inst *svc_inst)
 {
-	if (svc_inst == NULL || svc_inst->service_p == NULL) {
+	if (svc_inst == NULL || svc_inst->gatt_svc.attrs == NULL) {
 		return NULL;
 	}
 
-	return svc_inst->service_p->attrs;
+	return svc_inst->gatt_svc.attrs;
 }
 
 static bool valid_register_param(const struct bt_csip_set_member_register_param *param)
@@ -682,60 +696,25 @@ static bool valid_register_param(const struct bt_csip_set_member_register_param 
 	return true;
 }
 
-static void remove_csis_char(const struct bt_uuid *uuid, struct bt_gatt_service *svc)
-{
-	size_t attrs_to_rem;
-
-	/* Rank does not have any CCCD */
-	if (bt_uuid_cmp(uuid, BT_UUID_CSIS_RANK) == 0) {
-		attrs_to_rem = CSIS_RANK_CHAR_ATTR_COUNT;
-	} else {
-		attrs_to_rem = CSIS_CHAR_ATTR_COUNT;
-	}
-
-	/* Start at index 4 as the first 4 attributes are mandatory */
-	for (size_t i = 4U; i < svc->attr_count; i++) {
-		if (bt_uuid_cmp(svc->attrs[i].uuid, uuid) == 0) {
-			/* Remove the characteristic declaration, the characteristic value and
-			 * potentially the CCCD. The value declaration will be a i - 1, the
-			 * characteristic value at i and the CCCD is potentially at i + 1
-			 */
-
-			/* We use attrs_to_rem to determine whether there is a CCCD after the
-			 * characteristic value or not, which then determines if this is the last
-			 * characteristic or not
-			 */
-			if (i == (svc->attr_count - (attrs_to_rem - 1))) {
-				/* This is the last characteristic in the service: just decrement
-				 * the attr_count by number of attributes to remove
-				 * (CSIS_CHAR_ATTR_COUNT)
-				 */
-			} else {
-				/* Move all following attributes attrs_to_rem locations "up" */
-				for (size_t j = i - 1U; j < svc->attr_count - attrs_to_rem; j++) {
-					svc->attrs[j] = svc->attrs[j + attrs_to_rem];
-				}
-			}
-
-			svc->attr_count -= attrs_to_rem;
-
-			return;
-		}
-	}
-
-	__ASSERT(false, "Failed to remove CSIS char %s", bt_uuid_str(uuid));
-}
-
 static void notify(struct bt_csip_set_member_svc_inst *svc_inst, struct bt_conn *conn,
 		   const struct bt_uuid *uuid, const void *data, uint16_t len)
 {
 	int err;
+	const struct bt_gatt_attr *attr;
 
-	if (svc_inst->service_p == NULL) {
+	attr = bt_gatt_find_by_uuid(svc_inst->gatt_svc.attrs, svc_inst->gatt_svc.attr_count, uuid);
+
+	if (attr == NULL) {
+		LOG_WRN("Attribute for UUID %p not found", uuid);
 		return;
 	}
 
-	err = bt_gatt_notify_uuid(conn, uuid, svc_inst->service_p->attrs, data, len);
+	if (!bt_gatt_is_subscribed(conn, attr, BT_GATT_CCC_NOTIFY)) {
+		LOG_DBG("Connection %p not subscribed to UUID %p", conn, uuid);
+		return;
+	}
+
+	err = bt_gatt_notify(conn, attr, data, len);
 	if (err) {
 		if (err == -ENOTCONN) {
 			LOG_DBG("Notification error: ENOTCONN (%d)", err);
@@ -763,18 +742,56 @@ static void notify_cb(struct bt_conn *conn, void *data)
 
 	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
 		struct bt_csip_set_member_svc_inst *svc_inst = &svc_insts[i];
-		struct csip_client *client = &svc_inst->clients[bt_conn_index(conn)];
+		struct csip_client *client;
+		bool client_found = false;
+
+		err = k_mutex_lock(&svc_inst->mutex, K_NO_WAIT);
+		if (err != 0) {
+			LOG_DBG("Mutex lock failed (%d) for svc_inst[%zu], rescheduling", err, i);
+			notify_work_reschedule(K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
+			continue;
+		}
+
+		if (svc_inst->gatt_svc.attrs == NULL) {
+			goto unlock_and_return;
+		}
+
+		/* find the client object for the connection */
+		for (size_t j = 0U; j < ARRAY_SIZE(svc_inst->clients); j++) {
+
+			client = &svc_inst->clients[j];
+
+			if (atomic_test_bit(client->flags, FLAG_ACTIVE) &&
+			    bt_addr_le_eq(bt_conn_get_dst(conn), &client->addr)) {
+				client_found = true;
+				break;
+			}
+		}
+
+		if (client_found == false) {
+			goto unlock_and_return;
+		}
 
 		if (atomic_test_and_clear_bit(client->flags, FLAG_NOTIFY_LOCK)) {
 			notify(svc_inst, conn, BT_UUID_CSIS_SET_LOCK, &svc_inst->set_lock,
 			       sizeof(svc_inst->set_lock));
 		}
 
-		if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE) &&
+		if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE) &&
 		    atomic_test_and_clear_bit(client->flags, FLAG_NOTIFY_SIRK)) {
 			notify(svc_inst, conn, BT_UUID_CSIS_SIRK, &svc_inst->sirk,
 			       sizeof(svc_inst->sirk));
 		}
+
+		if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE) &&
+		    atomic_test_and_clear_bit(client->flags, FLAG_NOTIFY_SIZE)) {
+			notify(svc_inst, conn, BT_UUID_CSIS_SET_SIZE, &svc_inst->set_size,
+			       sizeof(svc_inst->set_size));
+		}
+
+unlock_and_return:
+		err = k_mutex_unlock(&svc_inst->mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 	}
 }
 
@@ -789,7 +806,7 @@ static void add_bonded_addr_to_client_list(const struct bt_bond_info *info, void
 	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
 		struct bt_csip_set_member_svc_inst *svc_inst = &svc_insts[i];
 
-		for (size_t j = 1U; j < ARRAY_SIZE(svc_inst->clients); i++) {
+		for (size_t j = 0U; j < ARRAY_SIZE(svc_inst->clients); j++) {
 			/* Check if device is registered, it not, add it */
 			if (!atomic_test_bit(svc_inst->clients[j].flags, FLAG_ACTIVE)) {
 				char addr_str[BT_ADDR_LE_STR_LEN];
@@ -806,62 +823,270 @@ static void add_bonded_addr_to_client_list(const struct bt_bond_info *info, void
 	}
 }
 
+/* Set sirk */
+static const struct bt_gatt_chrc set_sirk_user_data = BT_GATT_CHRC_INIT(
+	BT_UUID_CSIS_SIRK, 0U,
+	BT_GATT_CHRC_READ |
+		(IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE) ? BT_GATT_CHRC_NOTIFY : 0U));
+
+#define CSIS_SET_SIRK_AUDIO_USER_DATA(_n, ...)                                                     \
+	(struct bt_audio_attr_user_data)                                                           \
+		BT_AUDIO_ATTR_USER_DATA_INIT(read_sirk, NULL, &svc_insts[(_n)])
+
+static const struct bt_audio_attr_user_data set_sirk_audio_user_data[] = {
+	LISTIFY(CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT,
+		CSIS_SET_SIRK_AUDIO_USER_DATA, (,)),
+};
+
+#define CSIS_SET_SIRK_AUDIO_CCC_USER_DATA(_n, ...)                                                 \
+	(struct bt_gatt_ccc_managed_user_data)                                                     \
+		BT_GATT_CCC_MANAGED_USER_DATA_INIT(sirk_cfg_changed, bt_audio_ccc_cfg_write, NULL)
+
+/* Unlike the other user_data used for CSIP this
+ * one needs to be in RAM as it contains the `value` written by clients
+ */
+static struct bt_gatt_ccc_managed_user_data set_sirk_audio_ccc_user_data[] = {
+	LISTIFY(CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT,
+		CSIS_SET_SIRK_AUDIO_CCC_USER_DATA, (,)),
+};
+
+/* Set size */
+static const struct bt_gatt_chrc set_size_user_data = BT_GATT_CHRC_INIT(
+	BT_UUID_CSIS_SET_SIZE, 0U,
+	BT_GATT_CHRC_READ |
+		(IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE) ? BT_GATT_CHRC_NOTIFY : 0U));
+
+#define CSIS_SET_SIZE_AUDIO_USER_DATA(_n, ...)                                                     \
+	(struct bt_audio_attr_user_data)                                                           \
+		BT_AUDIO_ATTR_USER_DATA_INIT(read_set_size, NULL, &svc_insts[(_n)])
+
+static const struct bt_audio_attr_user_data set_size_audio_user_data[] = {
+	LISTIFY(CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT,
+		CSIS_SET_SIZE_AUDIO_USER_DATA, (,)),
+};
+
+#define CSIS_SET_SIZE_AUDIO_CCC_USER_DATA(_n, ...)                                                 \
+	(struct bt_gatt_ccc_managed_user_data) BT_GATT_CCC_MANAGED_USER_DATA_INIT(                 \
+		set_size_cfg_changed, bt_audio_ccc_cfg_write, NULL)
+
+/* Unlike the other user_data used for CSIP this
+ * one needs to be in RAM as it contains the `value` written by clients
+ */
+static struct bt_gatt_ccc_managed_user_data set_size_audio_ccc_user_data[] = {
+	LISTIFY(CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT,
+		CSIS_SET_SIZE_AUDIO_CCC_USER_DATA, (,)),
+};
+
+/* Set lock */
+static const struct bt_gatt_chrc set_lock_user_data = BT_GATT_CHRC_INIT(
+	BT_UUID_CSIS_SET_LOCK, 0U, BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | BT_GATT_CHRC_NOTIFY);
+
+#define CSIS_SET_LOCK_AUDIO_USER_DATA(_n, ...)                                                     \
+	(struct bt_audio_attr_user_data)                                                           \
+		BT_AUDIO_ATTR_USER_DATA_INIT(read_set_lock, write_set_lock, &svc_insts[(_n)])
+
+static const struct bt_audio_attr_user_data set_lock_audio_user_data[] = {
+	LISTIFY(CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT,
+		CSIS_SET_LOCK_AUDIO_USER_DATA, (,)),
+};
+
+#define CSIS_SET_LOCK_AUDIO_CCC_USER_DATA(_n, ...)                                                 \
+	(struct bt_gatt_ccc_managed_user_data) BT_GATT_CCC_MANAGED_USER_DATA_INIT(                 \
+		set_lock_cfg_changed, bt_audio_ccc_cfg_write, NULL)
+
+/* Unlike the other user_data used for CSIP this
+ * one needs to be in RAM as it contains the `value` written by clients
+ */
+static struct bt_gatt_ccc_managed_user_data set_lock_audio_ccc_user_data[] = {
+	LISTIFY(CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT,
+		CSIS_SET_LOCK_AUDIO_CCC_USER_DATA, (,)),
+};
+
+/* Rank */
+static const struct bt_gatt_chrc rank_user_data =
+	BT_GATT_CHRC_INIT(BT_UUID_CSIS_RANK, 0U, BT_GATT_CHRC_READ);
+
+#define CSIS_RANK_AUDIO_USER_DATA(_n, ...)                                                         \
+	(struct bt_audio_attr_user_data)                                                           \
+		BT_AUDIO_ATTR_USER_DATA_INIT(read_rank, NULL, &svc_insts[(_n)])
+
+static const struct bt_audio_attr_user_data rank_audio_user_data[] = {
+	LISTIFY(CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT,
+		CSIS_RANK_AUDIO_USER_DATA, (,)),
+};
+
+static const struct bt_uuid *svc_uuid = BT_UUID_GATT_PRIMARY;
+static const struct bt_uuid *ccc_uuid = BT_UUID_GATT_CCC;
+static const struct bt_uuid *chrc_uuid = BT_UUID_GATT_CHRC;
+static const struct bt_uuid *csis_uuid = BT_UUID_CSIS;
+static const struct bt_uuid *sirk_uuid = BT_UUID_CSIS_SIRK;
+static const struct bt_uuid *size_uuid = BT_UUID_CSIS_SET_SIZE;
+static const struct bt_uuid *lock_uuid = BT_UUID_CSIS_SET_LOCK;
+static const struct bt_uuid *rank_uuid = BT_UUID_CSIS_RANK;
+static void instantiate_service(struct bt_csip_set_member_svc_inst *inst,
+				const struct bt_csip_set_member_register_param *param)
+{
+	const ptrdiff_t idx = ARRAY_INDEX(svc_insts, inst);
+	size_t attr_cnt = 0U;
+
+	inst->gatt_svc.attrs = inst->attrs;
+	/* Primary service */
+	inst->attrs[attr_cnt].uuid = svc_uuid;
+	inst->attrs[attr_cnt].perm = BT_GATT_PERM_READ;
+	inst->attrs[attr_cnt].read = bt_gatt_attr_read_service;
+	inst->attrs[attr_cnt].user_data = (void *)csis_uuid;
+	attr_cnt++;
+
+	/* Set SIRK declaration */
+	inst->attrs[attr_cnt].uuid = chrc_uuid;
+	inst->attrs[attr_cnt].perm = BT_GATT_PERM_READ;
+	inst->attrs[attr_cnt].read = bt_gatt_attr_read_chrc;
+	inst->attrs[attr_cnt].user_data = (void *)&set_sirk_user_data;
+	attr_cnt++;
+
+	/* Set SIRK value */
+	inst->attrs[attr_cnt].uuid = sirk_uuid;
+	inst->attrs[attr_cnt].perm = BT_GATT_PERM_READ_ENCRYPT;
+	inst->attrs[attr_cnt].read = bt_audio_read_chrc;
+	inst->attrs[attr_cnt].user_data = (void *)&set_sirk_audio_user_data[idx];
+	attr_cnt++;
+
+	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE)) {
+		/* Set SIRK CCCD */
+		inst->attrs[attr_cnt].uuid = ccc_uuid;
+		inst->attrs[attr_cnt].perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT;
+		inst->attrs[attr_cnt].read = bt_gatt_attr_read_ccc;
+		inst->attrs[attr_cnt].write = bt_gatt_attr_write_ccc;
+		inst->attrs[attr_cnt].user_data = (void *)&set_sirk_audio_ccc_user_data[idx];
+		attr_cnt++;
+	}
+
+	if (param->set_size > 0U) {
+		/* Set Size declaration */
+		inst->attrs[attr_cnt].uuid = chrc_uuid;
+		inst->attrs[attr_cnt].perm = BT_GATT_PERM_READ;
+		inst->attrs[attr_cnt].read = bt_gatt_attr_read_chrc;
+		inst->attrs[attr_cnt].user_data = (void *)&set_size_user_data;
+		attr_cnt++;
+
+		/* Set Size value */
+		inst->attrs[attr_cnt].uuid = size_uuid;
+		inst->attrs[attr_cnt].perm = BT_GATT_PERM_READ_ENCRYPT;
+		inst->attrs[attr_cnt].read = bt_audio_read_chrc;
+		inst->attrs[attr_cnt].user_data = (void *)&set_size_audio_user_data[idx];
+		attr_cnt++;
+
+		if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE)) {
+			/* Set Size CCCD */
+			inst->attrs[attr_cnt].uuid = ccc_uuid;
+			inst->attrs[attr_cnt].perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT;
+			inst->attrs[attr_cnt].read = bt_gatt_attr_read_ccc;
+			inst->attrs[attr_cnt].write = bt_gatt_attr_write_ccc;
+			inst->attrs[attr_cnt].user_data =
+				(void *)&set_size_audio_ccc_user_data[idx];
+			attr_cnt++;
+		}
+	}
+	if (param->lockable) {
+		/* Set lock declaration */
+		inst->attrs[attr_cnt].uuid = chrc_uuid;
+		inst->attrs[attr_cnt].perm = BT_GATT_PERM_READ;
+		inst->attrs[attr_cnt].read = bt_gatt_attr_read_chrc;
+		inst->attrs[attr_cnt].user_data = (void *)&set_lock_user_data;
+		attr_cnt++;
+
+		/* Set lock value */
+		inst->attrs[attr_cnt].uuid = lock_uuid;
+		inst->attrs[attr_cnt].perm = BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT;
+		inst->attrs[attr_cnt].read = bt_audio_read_chrc;
+		inst->attrs[attr_cnt].write = bt_audio_write_chrc;
+		inst->attrs[attr_cnt].user_data = (void *)&set_lock_audio_user_data[idx];
+		attr_cnt++;
+
+		/* Set lock CCCD */
+		inst->attrs[attr_cnt].uuid = ccc_uuid;
+		inst->attrs[attr_cnt].perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT;
+		inst->attrs[attr_cnt].read = bt_gatt_attr_read_ccc;
+		inst->attrs[attr_cnt].write = bt_gatt_attr_write_ccc;
+		inst->attrs[attr_cnt].user_data = (void *)&set_lock_audio_ccc_user_data[idx];
+		attr_cnt++;
+	}
+
+	if (param->rank > 0U) {
+		/* Rank declaration */
+		inst->attrs[attr_cnt].uuid = chrc_uuid;
+		inst->attrs[attr_cnt].perm = BT_GATT_PERM_READ;
+		inst->attrs[attr_cnt].read = bt_gatt_attr_read_chrc;
+		inst->attrs[attr_cnt].user_data = (void *)&rank_user_data;
+		attr_cnt++;
+
+		/* Rank value */
+		inst->attrs[attr_cnt].uuid = rank_uuid;
+		inst->attrs[attr_cnt].perm = BT_GATT_PERM_READ_ENCRYPT;
+		inst->attrs[attr_cnt].read = bt_audio_read_chrc;
+		inst->attrs[attr_cnt].user_data = (void *)&rank_audio_user_data[idx];
+		attr_cnt++;
+	}
+
+	inst->gatt_svc.attr_count = attr_cnt;
+}
+
 int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *param,
 				struct bt_csip_set_member_svc_inst **svc_inst)
 {
 	static bool first_register;
-	static uint8_t instance_cnt;
 	struct bt_csip_set_member_svc_inst *inst;
 	int err;
 
-	if (instance_cnt == ARRAY_SIZE(svc_insts)) {
-		LOG_DBG("Too many set member registrations");
-		return -ENOMEM;
-	}
-
-	CHECKIF(param == NULL) {
+	if (param == NULL) {
 		LOG_DBG("NULL param");
 		return -EINVAL;
 	}
 
-	CHECKIF(!valid_register_param(param)) {
+	if (!valid_register_param(param)) {
 		LOG_DBG("Invalid parameters");
 		return -EINVAL;
 	}
 
-	inst = &svc_insts[instance_cnt];
-	inst->service_p = &csip_set_member_service_list[instance_cnt];
-	instance_cnt++;
-
 	if (!first_register) {
-		bt_conn_cb_register(&conn_callbacks);
+		for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
+			k_mutex_init(&svc_insts[i].mutex);
+		}
 		bt_conn_auth_info_cb_register(&auth_callbacks);
-
-		/* Restore bonding list */
-		bt_foreach_bond(BT_ID_DEFAULT, add_bonded_addr_to_client_list, NULL);
-
 		first_register = true;
 	}
 
-	/* The removal of the optional characteristics should be done in reverse order of the order
-	 * in BT_CSIP_SERVICE_DEFINITION, as that improves the performance of remove_csis_char,
-	 * since it's easier to remove the last characteristic
-	 */
-	if (param->rank == 0U) {
-		remove_csis_char(BT_UUID_CSIS_RANK, inst->service_p);
+	inst = NULL;
+	ARRAY_FOR_EACH_PTR(svc_insts, si) {
+		err = k_mutex_lock(&si->mutex, K_NO_WAIT);
+		if (err != 0) {
+			/* Try the next */
+			continue;
+		}
+
+		if (si->gatt_svc.attrs == NULL) {
+			inst = si;
+			break;
+		} else {
+			err = k_mutex_unlock(&si->mutex);
+			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+		}
 	}
 
-	if (param->set_size == 0U) {
-		remove_csis_char(BT_UUID_CSIS_SET_SIZE, inst->service_p);
+	if (inst == NULL) {
+		LOG_DBG("Too many set member registrations");
+		return -ENOMEM;
 	}
 
-	if (!param->lockable) {
-		remove_csis_char(BT_UUID_CSIS_SET_LOCK, inst->service_p);
-	}
+	instantiate_service(inst, param);
 
-	err = bt_gatt_service_register(inst->service_p);
+	err = bt_gatt_service_register(&inst->gatt_svc);
 	if (err != 0) {
+		int mutex_err;
+
 		LOG_DBG("CSIS service register failed: %d", err);
+		mutex_err = k_mutex_unlock(&inst->mutex);
+		__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
 		return err;
 	}
 
@@ -872,6 +1097,8 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 	inst->set_lock = BT_CSIP_RELEASE_VALUE;
 	inst->sirk.type = BT_CSIP_SIRK_TYPE_PLAIN;
 	inst->cb = param->cb;
+	inst->lockable = param->lockable;
+	bt_addr_le_copy(&inst->lock_client_addr, BT_ADDR_LE_NONE);
 
 	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_TEST_SAMPLE_DATA)) {
 		uint8_t test_sirk[] = {
@@ -886,6 +1113,10 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 	}
 
 	*svc_inst = inst;
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
 	return 0;
 }
 
@@ -893,19 +1124,34 @@ int bt_csip_set_member_unregister(struct bt_csip_set_member_svc_inst *svc_inst)
 {
 	int err;
 
-	CHECKIF(svc_inst == NULL) {
+	if (svc_inst == NULL) {
 		LOG_DBG("NULL svc_inst");
 		return -EINVAL;
 	}
 
-	err = bt_gatt_service_unregister(svc_inst->service_p);
+	err = k_mutex_lock(&svc_inst->mutex, K_NO_WAIT);
 	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
+	}
+
+	err = bt_gatt_service_unregister(&svc_inst->gatt_svc);
+	if (err != 0) {
+		int mutex_err;
+
 		LOG_DBG("CSIS service unregister failed: %d", err);
+		mutex_err = k_mutex_unlock(&svc_inst->mutex);
+		__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
 		return err;
 	}
 
 	(void)k_work_cancel_delayable(&svc_inst->set_lock_timer);
-	memset(svc_inst, 0, sizeof(*svc_inst));
+
+	memset(svc_inst, 0, offsetof(struct bt_csip_set_member_svc_inst, mutex));
+
+	err = k_mutex_unlock(&svc_inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
 	return 0;
 }
@@ -913,37 +1159,84 @@ int bt_csip_set_member_unregister(struct bt_csip_set_member_svc_inst *svc_inst)
 int bt_csip_set_member_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
 			    const uint8_t sirk[BT_CSIP_SIRK_SIZE])
 {
-	CHECKIF(svc_inst == NULL) {
+	if (svc_inst == NULL) {
 		LOG_DBG("NULL svc_inst");
 		return -EINVAL;
 	}
 
-	CHECKIF(sirk == NULL) {
+	if (sirk == NULL) {
 		LOG_DBG("NULL SIRK");
 		return -EINVAL;
 	}
 
-	memcpy(svc_inst->sirk.value, sirk, BT_CSIP_SIRK_SIZE);
+	if (memcmp(sirk, svc_inst->sirk.value, BT_CSIP_SIRK_SIZE) != 0) {
+		memcpy(svc_inst->sirk.value, sirk, BT_CSIP_SIRK_SIZE);
 
-	notify_clients(svc_inst, NULL, FLAG_NOTIFY_SIRK);
+		if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE)) {
+			notify_clients(svc_inst, NULL, FLAG_NOTIFY_SIRK);
+		}
+	}
 
 	return 0;
 }
 
-int bt_csip_set_member_get_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
-				uint8_t sirk[BT_CSIP_SIRK_SIZE])
+int bt_csip_set_member_set_size_and_rank(struct bt_csip_set_member_svc_inst *svc_inst, uint8_t size,
+					 uint8_t rank)
 {
-	CHECKIF(svc_inst == NULL) {
-		LOG_DBG("NULL svc_inst");
+	if (svc_inst == NULL) {
+		LOG_DBG("svc_inst is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(sirk == NULL) {
-		LOG_DBG("NULL SIRK");
+	if (size < 1U) {
+		LOG_DBG("Invalid set size %u", size);
 		return -EINVAL;
 	}
 
-	memcpy(sirk, svc_inst->sirk.value, BT_CSIP_SIRK_SIZE);
+	if (!svc_inst->lockable && rank != 0U) {
+		LOG_DBG("Invalid rank %u for non-lockable service", rank);
+		return -EINVAL;
+	}
+
+	if (svc_inst->lockable && !IN_RANGE(rank, 1U, size)) {
+		LOG_DBG("Invalid rank: %u for size %u", rank, size);
+		return -EINVAL;
+	}
+
+	if (svc_inst->set_size == size) {
+		LOG_DBG("Set size %u is already set", size);
+		return -EALREADY;
+	}
+
+	svc_inst->set_size = size;
+	svc_inst->rank = svc_inst->lockable ? rank : 0U;
+
+	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE)) {
+		notify_clients(svc_inst, NULL, FLAG_NOTIFY_SIZE);
+	}
+
+	return 0;
+}
+
+int bt_csip_set_member_get_info(const struct bt_csip_set_member_svc_inst *svc_inst,
+				struct bt_csip_set_member_set_info *info)
+{
+	if (svc_inst == NULL) {
+		LOG_DBG("svc_inst is NULL");
+		return -EINVAL;
+	}
+
+	if (info == NULL) {
+		LOG_DBG("info is NULL");
+		return -EINVAL;
+	}
+
+	info->lockable = svc_inst->lockable;
+	info->locked = svc_inst->set_lock == BT_CSIP_LOCK_VALUE;
+	info->rank = svc_inst->rank;
+	info->set_size = svc_inst->set_size;
+	memcpy(info->sirk, svc_inst->sirk.value, BT_CSIP_SIRK_SIZE);
+	bt_addr_le_copy(&info->lock_client_addr, &svc_inst->lock_client_addr);
 
 	return 0;
 }

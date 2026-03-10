@@ -7,12 +7,19 @@
 #include <nordic/nrf54h20.dtsi>
 
 cpu: &cpurad {};
+
 systick: &cpurad_systick {};
+
 nvic: &cpurad_nvic {};
+
 cpuppr_vevif: &cpuppr_vevif_tx {};
+
 cpuflpr_vevif: &cpuflpr_vevif_tx {};
+
 cpusys_vevif: &cpusys_vevif_tx {};
+
 wdt010: &cpurad_wdt010 {};
+
 wdt011: &cpurad_wdt011 {};
 
 /delete-node/ &cpuapp;
@@ -21,6 +28,7 @@ wdt011: &cpurad_wdt011 {};
 /delete-node/ &cpuapp_ram0;
 /delete-node/ &cpuppr;
 /delete-node/ &cpuflpr;
+/delete-node/ &s2ram;
 
 / {
 	soc {
@@ -97,5 +105,29 @@ wdt011: &cpurad_wdt011 {};
 };
 
 &dppic020 {
+	status = "okay";
+};
+
+&gdpwr {
+	status = "okay";
+};
+
+&gdpwr_fast_active_0 {
+	status = "okay";
+};
+
+&gdpwr_fast_active_1 {
+	status = "okay";
+};
+
+&gdpwr_fast_main {
+	status = "okay";
+};
+
+&gdpwr_slow_active {
+	status = "okay";
+};
+
+&gdpwr_slow_main {
 	status = "okay";
 };

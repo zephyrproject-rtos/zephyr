@@ -1,0 +1,23 @@
+#include <zephyr/nvmem.h>
+
+static const struct nvmem_cell mac_address =
+	NVMEM_CELL_GET_BY_NAME(DT_NODELABEL(my_consumer), mac_address);
+
+int main(void)
+{
+	uint8_t mac[6];
+	int ret;
+
+	if (!nvmem_cell_is_ready(&mac_address)) {
+		printk("NVMEM cell is not ready\n");
+		return -ENODEV;
+	}
+
+	ret = nvmem_cell_read(&mac_address, mac, 0, sizeof(mac));
+	if (ret < 0) {
+		printk("Failed to read MAC address: %d\n", ret);
+		return ret;
+	}
+
+	/* ... */
+}

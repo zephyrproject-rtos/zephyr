@@ -1,0 +1,8 @@
+# Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: AP Memory pSRAM Version Z8 on MSPI bus
+
+compatible: "mspi-aps-z8"
+
+include: [mspi-device.yaml, "jedec,jesd216.yaml"]

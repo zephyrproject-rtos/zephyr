@@ -9,4 +9,15 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default $(dt_node_reg_addr_hex,/soc/flash-controller@3f402000/flash@0)
 
+config MAIN_STACK_SIZE
+	default 2048
+
+if PM && TICKLESS_KERNEL
+
+choice XTENSA_TIMER_LPM_TIMER
+	default XTENSA_TIMER_LPM_TIMER_HOOK
+endchoice
+
+endif # PM && TICKLESS_KERNEL
+
 endif # SOC_SERIES_ESP32S2

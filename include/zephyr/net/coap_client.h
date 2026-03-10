@@ -24,9 +24,47 @@
 #include <zephyr/net/coap.h>
 #include <zephyr/kernel.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Maximum size of a CoAP message */
 #define MAX_COAP_MSG_LEN (CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE + \
 			  CONFIG_COAP_CLIENT_MESSAGE_SIZE)
+
+/**
+ * @brief Representation for CoAP client response data.
+ */
+struct coap_client_response_data {
+	/**
+	 * Result code of the response. Negative if there was a failure in send.
+	 * @ref coap_response_code for positive.
+	 */
+	int16_t result_code;
+	/** A pointer to the response CoAP packet. NULL for error result. */
+	const struct coap_packet *packet;
+	/** Payload offset from the beginning of a blockwise transfer. */
+	size_t offset;
+	/** Buffer containing the payload from the response. NULL for empty payload. */
+	const uint8_t *payload;
+	/** Size of the payload. */
+	size_t payload_len;
+	/** Indicates the last block of the response. */
+	bool last_block;
+#if defined(CONFIG_COAP_CLIENT_MULTICAST) || defined(__DOXYGEN__)
+	/**
+	 * Source address of the response.
+	 * @kconfig_dep{CONFIG_COAP_CLIENT_MULTICAST}
+	 */
+	const struct net_sockaddr *source;
+
+	/**
+	 * Source address length of the response.
+	 * @kconfig_dep{CONFIG_COAP_CLIENT_MULTICAST}
+	 */
+	net_socklen_t source_len;
+#endif
+};
 
 /**
  * @typedef coap_client_response_cb_t
@@ -37,33 +75,47 @@
  * Blockwise transfers cause this callback to be called sequentially with increasing payload offset
  * and only partial content in buffer pointed by payload parameter.
  *
- * @param result_code Result code of the response. Negative if there was a failure in send.
- *                    @ref coap_response_code for positive.
- * @param offset Payload offset from the beginning of a blockwise transfer.
- * @param payload Buffer containing the payload from the response. NULL for empty payload.
- * @param len Size of the payload.
- * @param last_block Indicates the last block of the response.
+ * For multicast requests the callback is invoked once per responding server with
+ * @p source set to the unicast source address of that server. When the collection window
+ * expires, the callback is invoked one final time with @p source set to @c NULL to
+ * signal that no further responses will be delivered for this request.
+ *
+ * @param data The CoAP response data.
  * @param user_data User provided context.
  */
-typedef void (*coap_client_response_cb_t)(int16_t result_code,
-					  size_t offset, const uint8_t *payload, size_t len,
-					  bool last_block, void *user_data);
+typedef void (*coap_client_response_cb_t)(const struct coap_client_response_data *data,
+					  void *user_data);
 
 /**
- * @brief Representation of a CoAP client request.
+ * @typedef coap_client_payload_cb_t
+ * @brief Callback for providing a payload for the CoAP request.
+ *
+ * An optional callback for providing a payload for CoAP client requests. If set in
+ * @ref coap_client_request, the CoAP client library will call this callback when
+ * preparing a PUT/POST request.
+ *
+ * When called, the library provides the application with the current payload offset
+ * for the transfer and the payload block size. In return, the application sets the
+ * payload pointer, payload size and information whether more data blocks are expected.
+ * Setting the @p last_block parameter to false on the initial callback call triggers
+ * a block transfer upload. The library will keep calling the callback until the
+ * @p last_block parameter is set to false.
+ *
+ * @note If block transfer is used, the application is expected to provide full blocks of
+ * payload. Only the final block (i.e. when @p last_block is set to true) can be shorter
+ * than the requested block size.
+ *
+ * @param offset Payload offset from the beginning of a blockwise transfer.
+ * @param payload A pointer for the buffer containing the payload block.
+ * @param len Requested (maximum) block size on input. The actual payload length on output.
+ * @param last_block A pointer to the flag indicating whether more payload blocks are expected.
+ * @param user_data User provided context.
+ *
+ * @return Zero on success, a negative error code to abort upload.
  */
-struct coap_client_request {
-	enum coap_method method;                  /**< Method of the request */
-	bool confirmable;                         /**< CoAP Confirmable/Non-confirmable message */
-	const char *path;                         /**< Path of the requested resource */
-	enum coap_content_format fmt;             /**< Content format to be used */
-	const uint8_t *payload;                   /**< User allocated buffer for send request */
-	size_t len;                               /**< Length of the payload */
-	coap_client_response_cb_t cb;             /**< Callback when response received */
-	const struct coap_client_option *options; /**< Extra options to be added to request */
-	uint8_t num_options;                      /**< Number of extra options */
-	void *user_data;                          /**< User provided context */
-};
+typedef int (*coap_client_payload_cb_t)(size_t offset, const uint8_t **payload,
+					size_t *len, bool *last_block,
+					void *user_data);
 
 /**
  * @brief Representation of extra options for the CoAP client request
@@ -85,7 +137,45 @@ struct coap_client_option {
 };
 
 /** @cond INTERNAL_HIDDEN */
+#define MAX_PATH_SIZE (CONFIG_COAP_CLIENT_MAX_PATH_LENGTH + 1)
+#define MAX_EXTRA_OPTIONS CONFIG_COAP_CLIENT_MAX_EXTRA_OPTIONS
+/** @endcond */
+
+/**
+ * @brief Representation of a CoAP client request.
+ */
+struct coap_client_request {
+	enum coap_method method;                  /**< Method of the request */
+	bool confirmable;                         /**< CoAP Confirmable/Non-confirmable message */
+	char path[MAX_PATH_SIZE];                 /**< Path of the requested resource */
+	enum coap_content_format fmt;             /**< Content format to be used */
+	const uint8_t *payload;                   /**< User allocated buffer for send request */
+	size_t len;                               /**< Length of the payload */
+	coap_client_payload_cb_t payload_cb;      /**< Optional payload callback */
+	coap_client_response_cb_t cb;             /**< Callback when response received */
+	struct coap_client_option
+		options[MAX_EXTRA_OPTIONS];       /**< Extra options to be added to request */
+	uint8_t num_options;                      /**< Number of extra options */
+	void *user_data;                          /**< User provided context */
+#if defined(CONFIG_COAP_CLIENT_MULTICAST) || defined(__DOXYGEN__)
+	/**
+	 * Multicast response timeout in milliseconds. When > 0, indicates a multicast
+	 * request that accepts multiple responses within the timeout period. After the
+	 * timeout, a final callback with source=NULL signals completion, after which
+	 * no further callbacks will be issued. Multicast requests are always
+	 * non-confirmable (RFC 7252).
+	 *
+	 * @kconfig_dep{CONFIG_COAP_CLIENT_MULTICAST}
+	 */
+	uint32_t multicast_timeout_ms;
+#endif
+};
+
+/** @cond INTERNAL_HIDDEN */
 struct coap_client_internal_request {
+	struct net_sockaddr_storage addr;
+	net_socklen_t addrlen;
+
 	uint8_t request_token[COAP_TOKEN_MAX_LEN];
 	uint32_t offset;
 	uint16_t last_id;
@@ -98,24 +188,31 @@ struct coap_client_internal_request {
 	struct coap_client_request coap_request;
 	struct coap_packet request;
 	uint8_t request_tag[COAP_TOKEN_MAX_LEN];
+	uint8_t send_buf[MAX_COAP_MSG_LEN];
 
 	/* For GETs with observe option set */
 	bool is_observe;
 	int last_response_id;
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+	bool is_mcast;
+	k_timepoint_t mcast_timeout;
+#endif
 };
+/** @endcond */
 
+/**
+ * @brief Representation of a CoAP client.
+ */
 struct coap_client {
+	/** @cond INTERNAL_HIDDEN */
 	int fd;
-	struct sockaddr address;
-	socklen_t socklen;
 	struct k_mutex lock;
-	uint8_t send_buf[MAX_COAP_MSG_LEN];
 	uint8_t recv_buf[MAX_COAP_MSG_LEN];
 	struct coap_client_internal_request requests[CONFIG_COAP_CLIENT_MAX_REQUESTS];
 	struct coap_option echo_option;
 	bool send_echo;
+	/** @endcond */
 };
-/** @endcond */
 
 /**
  * @brief Initialize the CoAP client.
@@ -137,6 +234,10 @@ int coap_client_init(struct coap_client *client, const char *info);
  * Once the callback is called with last block set as true, socket can be closed or
  * used for another query.
  *
+ * @note If block transfer is used, the @p payload pointer provided in @p req parameter has to
+ * remain valid throughout the transaction (i.e. until the last block or an error is reported).
+ * The library will need to access the payload pointer when sending consecutive payload blocks.
+ *
  * @param client Client instance.
  * @param sock Open socket file descriptor.
  * @param addr the destination address of the request, NULL if socket is already connected.
@@ -145,7 +246,7 @@ int coap_client_init(struct coap_client *client, const char *info);
  * @return zero when operation started successfully or negative error code otherwise.
  */
 
-int coap_client_req(struct coap_client *client, int sock, const struct sockaddr *addr,
+int coap_client_req(struct coap_client *client, int sock, const struct net_sockaddr *addr,
 		    struct coap_client_request *req, struct coap_transmission_parameters *params);
 
 /**
@@ -153,6 +254,8 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
  *
  * This is intended for canceling long-running requests (e.g. GETs with the OBSERVE option set)
  * which has gone stale for some reason.
+ * The function should also be called before the corresponding client socket is closed,
+ * to prevent the socket from being monitored by the internal polling thread.
  *
  * @param client Client instance.
  */
@@ -184,16 +287,28 @@ void coap_client_cancel_request(struct coap_client *client, struct coap_client_r
  *
  * @return CoAP client initial Block2 option structure
  */
-static inline struct coap_client_option coap_client_option_initial_block2(void)
-{
-	struct coap_client_option block2 = {
-		.code = COAP_OPTION_BLOCK2,
-		.len = 1,
-		.value[0] = coap_bytes_to_block_size(CONFIG_COAP_CLIENT_BLOCK_SIZE),
-	};
+struct coap_client_option coap_client_option_initial_block2(void);
 
-	return block2;
+/**
+ * @brief Check if client has ongoing exchange.
+ *
+ * @note Function not only considers ongoing requests, but also lifetime of completed requests
+ * (which provides graceful duplicates handling).
+ *
+ * @note For socket handling.
+ * Function does no consider a socket POLL that has started before this call,
+ * therefore it is recommended to wait out POLL timeout before closing socket
+ * (e.g. call coap_client_cancel_requests() which applies delay for timeout).
+ *
+ * @param client Pointer to the CoAP client instance.
+ *
+ * @return true if there is an ongoing exchange, false otherwise.
+ */
+bool coap_client_has_ongoing_exchange(struct coap_client *client);
+
+#ifdef __cplusplus
 }
+#endif
 
 /**
  * @}

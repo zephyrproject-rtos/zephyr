@@ -26,7 +26,3 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # message is received with the empty content.
 RunTest mesh_brg_table_state_change \
 	brg_tester_table_state_change brg_bridge_simple brg_device_simple brg_device_simple
-
-overlay=overlay_psa_conf
-RunTest mesh_brg_table_state_change_psa \
-	brg_tester_table_state_change brg_bridge_simple brg_device_simple brg_device_simple

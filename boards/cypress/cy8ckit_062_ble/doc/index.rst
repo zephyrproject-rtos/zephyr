@@ -1,7 +1,4 @@
-.. _cy8ckit_062_ble:
-
-INFINEON PSOC 63 BLE Pioneer Kit
-################################
+.. zephyr:board:: cy8ckit_062_ble
 
 Overview
 ********
@@ -29,10 +26,6 @@ enabling you to emulate a BLE host on your computer.
 
 The Cortex-M0+ is a primary core on the board's SoC. It starts first and
 enables the CM4 core.
-
-.. image:: img/cy8ckit-062-ble.jpg
-     :align: center
-     :alt: CY8CKIT_062_BLE
 
 1. Battery charging indicator (LED6)
 2. USB PD output voltage availability indicator (LED7)
@@ -88,32 +81,7 @@ For more information about the PSOC 63 BLE MCU SoC and CY8CKIT-062-BLE board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| NVIC      | on-chip    | nested vectored       |
-|           |            | interrupt controller  |
-+-----------+------------+-----------------------+
-| SYSTICK   | on-chip    | system clock          |
-+-----------+------------+-----------------------+
-| GPIO      | on-chip    | gpio                  |
-+-----------+------------+-----------------------+
-| PINCTRL   | on-chip    | pin control           |
-+-----------+------------+-----------------------+
-| SPI       | on-chip    | spi                   |
-+-----------+------------+-----------------------+
-| UART      | on-chip    | serial port-polling;  |
-|           |            | serial port-interrupt |
-+-----------+------------+-----------------------+
-
-
-The default configurations can be found in the Kconfig
-:zephyr_file:`boards/cypress/cy8ckit_062_ble/cy8ckit_062_ble_cy8c6347_m0_defconfig` for
-Cortex-M0+ and on the Kconfig
-:zephyr_file:`boards/cypress/cy8ckit_062_ble/cy8ckit_062_ble_cy8c6347_m4_defconfig` for
-Cortex-M4
+.. zephyr:board-supported-hw::
 
 System Clock
 ============
@@ -146,6 +114,8 @@ To get the OpenOCD package, it is required that you
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The CY8CKIT-062-BLE includes an onboard programmer/debugger (KitProg2) with
 mass storage programming to provide debugging, flash programming, and serial

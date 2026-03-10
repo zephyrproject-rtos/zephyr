@@ -10,7 +10,6 @@
 #include <adi/max32/max32666-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <zephyr/dt-bindings/dma/max32666_dma.h>
 
 / {
 	model = "Analog Devices MAX32666EVKIT";
@@ -21,14 +20,17 @@
 		zephyr,shell-uart = &uart1;
 		zephyr,sram = &sram4;
 		zephyr,flash = &flash0;
+		zephyr,display = &ls0xx_ls013b7dh03;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led_1 {
 			gpios = <&gpio1 14 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 			label = "Red LED";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio1 15 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 			label = "Blue LED";
@@ -37,15 +39,17 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		pb1: pb1 {
-			gpios = <&gpio1 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW
-								| MAX32_GPIO_VSEL_VDDIOH)>;
+			gpios = <&gpio1 6
+				 (GPIO_PULL_UP | GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 			label = "SW2";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		pb2: pb2 {
-			gpios = <&gpio1 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW
-								| MAX32_GPIO_VSEL_VDDIOH)>;
+			gpios = <&gpio1 7
+				 (GPIO_PULL_UP | GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 			label = "SW3";
 			zephyr,code = <INPUT_KEY_1>;
 		};
@@ -58,6 +62,25 @@
 		sw0 = &pb1;
 		sw1 = &pb2;
 		watchdog0 = &wdt0;
+	};
+
+	spibb0: spibb0 {
+		compatible = "zephyr,spi-bitbang";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clk-gpios = <&gpio1 11 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		mosi-gpios = <&gpio1 9 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		cs-gpios = <&gpio1 8 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+
+		ls0xx_ls013b7dh03: ls0xx@0 {
+			compatible = "sharp,ls0xx";
+			spi-max-frequency = <2000000>;
+			reg = <0>;
+			width = <128>;
+			height = <128>;
+			disp-en-gpios = <&gpio1 10 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		};
 	};
 };
 

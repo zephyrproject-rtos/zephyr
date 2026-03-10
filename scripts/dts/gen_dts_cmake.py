@@ -11,13 +11,12 @@ That data can then be used in the rest of the build system.
 
 The generated CMake file looks like this:
 
-  add_custom_target(devicetree_target)
-  set_target_properties(devicetree_target PROPERTIES
+  set_target_properties(${DEVICETREE_TARGET} PROPERTIES
                         "DT_PROP|/soc|compatible" "vnd,soc;")
   ...
 
-It defines a special CMake target, and saves various values in the
-devicetree as CMake target properties.
+It takes an input variable - DEVICETREE_TARGET - and saves various
+values in the devicetree as properties of this CMake target.
 
 Be careful:
 
@@ -45,14 +44,13 @@ import pickle
 import sys
 from collections import defaultdict
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree',
-                                'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree', 'src'))
 
 ESCAPE_TABLE = str.maketrans(
     {
         "\n": "\\n",
         "\r": "\\r",
-        '\"': '\\"',
+        '"': '\\"',
         "\\": "\\\\",
     }
 )
@@ -65,14 +63,18 @@ def escape(value):
     return value
 
 
+def to_cmake_list(iter, map=lambda x: x) -> str:
+    return ";".join(str(map(val)) for val in iter)
+
+
 def parse_args():
     # Returns parsed command-line arguments
 
     parser = argparse.ArgumentParser(allow_abbrev=False)
-    parser.add_argument("--cmake-out", required=True,
-                        help="path to write the CMake property file")
-    parser.add_argument("--edt-pickle", required=True,
-                        help="path to read the pickled edtlib.EDT object from")
+    parser.add_argument("--cmake-out", required=True, help="path to write the CMake property file")
+    parser.add_argument(
+        "--edt-pickle", required=True, help="path to read the pickled edtlib.EDT object from"
+    )
 
     return parser.parse_args()
 
@@ -119,66 +121,75 @@ def main():
         for label in node.labels:
             cmake_props.append(f'"DT_NODELABEL|{label}" "{node.path}"')
 
-        for item in node.props:
-            # We currently do not support phandles for edt -> cmake conversion.
-            if "phandle" not in node.props[item].type:
-                if "array" in node.props[item].type:
+        if node.props:
+            for item in node.props:
+                # We currently do not support phandle-arrays for edt -> cmake conversion.
+                # The code below supports the following phandle types:
+                # - phandle: which specifies a reference to a single node
+                # - phandles: which specifies a bare list of references to other nodes
+                if "phandle" in node.props[item].type:
+                    if "array" in node.props[item].type:
+                        continue  # phandle-array not supported
                     # Convert array to CMake list
-                    cmake_value = ''
-                    for val in node.props[item].val:
-                        cmake_value = f'{cmake_value}{val};'
+                    if isinstance(node.props[item].val, list):
+                        cmake_value = to_cmake_list(node.props[item].val, lambda ph: ph.path)
+                    else:
+                        cmake_value = node.props[item].val.path
+
+                    # Encode node's property 'item' as a CMake target property
+                    # with a name like 'DT_PROP|<path>|<property>'.
+                    cmake_prop = f'DT_PROP|{node.path}|{item}'
+                    cmake_props.append(f'"{cmake_prop}" "{escape(cmake_value)}"')
+
                 else:
-                    cmake_value = node.props[item].val
+                    if "array" in node.props[item].type:
+                        # Convert array to CMake list
+                        cmake_value = to_cmake_list(node.props[item].val)
+                    else:
+                        cmake_value = node.props[item].val
 
-                # Encode node's property 'item' as a CMake target property
-                # with a name like 'DT_PROP|<path>|<property>'.
-                cmake_prop = f'DT_PROP|{node.path}|{item}'
-                cmake_props.append(f'"{cmake_prop}" "{escape(cmake_value)}"')
+                    # Encode node's property 'item' as a CMake target property
+                    # with a name like 'DT_PROP|<path>|<property>'.
+                    cmake_prop = f'DT_PROP|{node.path}|{item}'
+                    cmake_props.append(f'"{cmake_prop}" "{escape(cmake_value)}"')
+        elif node.compats:
+            # Manually output compatibles for nodes that have no properties
+            cmake_value = to_cmake_list(node.compats)
 
-                if item == 'compatible':
-                    # compatibles is always an array
-                    for comp in node.props[item].val:
-                        compatible2paths[comp].append(node.path)
+            cmake_prop = f'DT_PROP|{node.path}|compatible'
+            cmake_props.append(f'"{cmake_prop}" "{escape(cmake_value)}"')
+
+        for comp in node.compats:
+            compatible2paths[comp].append(node.path)
 
         if node.regs is not None:
             cmake_props.append(f'"DT_REG|{node.path}|NUM" "{len(node.regs)}"')
-            cmake_addr = ''
-            cmake_size = ''
 
-            for reg in node.regs:
-                if reg.addr is None:
-                    cmake_addr = f'{cmake_addr}NONE;'
-                else:
-                    cmake_addr = f'{cmake_addr}{hex(reg.addr)};'
-
-                if reg.size is None:
-                    cmake_size = f'{cmake_size}NONE;'
-                else:
-                    cmake_size = f'{cmake_size}{hex(reg.size)};'
+            cmake_addr = ';'.join(
+                'NONE' if reg.addr is None else hex(reg.addr) for reg in node.regs
+            )
+            cmake_size = ';'.join(
+                'NONE' if reg.size is None else hex(reg.size) for reg in node.regs
+            )
 
             cmake_props.append(f'"DT_REG|{node.path}|ADDR" "{cmake_addr}"')
             cmake_props.append(f'"DT_REG|{node.path}|SIZE" "{cmake_size}"')
 
-    for comp in compatible2paths.keys():
-        cmake_path = ''
-        for path in compatible2paths[comp]:
-            cmake_path = f'{cmake_path}{path};'
+            cmake_unit_addr_int = 'NONE' if node.unit_addr is None else hex(node.unit_addr)
 
-        # Remove the last ';'
-        cmake_path = cmake_path[:-1]
+            cmake_props.append(f'"DT_UNIT_ADDR|{node.path}" "{cmake_unit_addr_int}"')
+
+    for comp in compatible2paths:
+        cmake_path = to_cmake_list(compatible2paths[comp])
 
         cmake_comp = f'DT_COMP|{comp}'
         cmake_props.append(f'"{cmake_comp}" "{cmake_path}"')
 
+    cmake_props = map(
+        'set_target_properties(${{DEVICETREE_TARGET}} PROPERTIES {})'.format, cmake_props
+    )
     with open(args.cmake_out, "w", encoding="utf-8") as cmake_file:
-        print('add_custom_target(devicetree_target)', file=cmake_file)
-        print(file=cmake_file)
-
-        for prop in cmake_props:
-            print(
-                f'set_target_properties(devicetree_target PROPERTIES {prop})',
-                file=cmake_file
-            )
+        print("\n".join(cmake_props), file=cmake_file)
 
 
 if __name__ == "__main__":

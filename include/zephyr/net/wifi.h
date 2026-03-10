@@ -38,6 +38,33 @@
 extern "C" {
 #endif
 
+/** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status
+ * in the connect result event for detailed status.
+ */
+enum wifi_conn_status {
+	/** Connection successful */
+	WIFI_STATUS_CONN_SUCCESS = 0,
+	/** Connection failed - generic failure */
+	WIFI_STATUS_CONN_FAIL,
+	/** Connection failed - wrong password
+	 * Few possible reasons for 4-way handshake failure that we can guess are as follows:
+	 * 1) Incorrect key
+	 * 2) EAPoL frames lost causing timeout
+	 *
+	 * #1 is the likely cause, so, we convey to the user that it is due to
+	 * Wrong passphrase/password.
+	 */
+	WIFI_STATUS_CONN_WRONG_PASSWORD,
+	/** Connection timed out */
+	WIFI_STATUS_CONN_TIMEOUT,
+	/** Connection failed - AP not found */
+	WIFI_STATUS_CONN_AP_NOT_FOUND,
+	/** Last connection status */
+	WIFI_STATUS_CONN_LAST_STATUS,
+	/** Connection disconnected status */
+	WIFI_STATUS_DISCONN_FIRST_STATUS = WIFI_STATUS_CONN_LAST_STATUS,
+};
+
 /** @brief IEEE 802.11 security types. */
 enum wifi_security_type {
 	/** No security. */
@@ -84,6 +111,12 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_FT_EAP,
 	/** FT-EAP-SHA384 security */
 	WIFI_SECURITY_TYPE_FT_EAP_SHA384,
+	/** SAE Extended key (uses group-dependent hashing) */
+	WIFI_SECURITY_TYPE_SAE_EXT_KEY,
+	/** WEP security with Open System authentication. */
+	WIFI_SECURITY_TYPE_WEP_OPEN,
+	/** WEP security with Shared Key authentication. */
+	WIFI_SECURITY_TYPE_WEP_SHARED,
 
 	/** @cond INTERNAL_HIDDEN */
 	__WIFI_SECURITY_TYPE_AFTER_LAST,
@@ -266,7 +299,7 @@ enum wifi_frequency_bandwidths {
 	WIFI_FREQ_BANDWIDTH_UNKNOWN
 };
 
-const char *const wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
+const char *wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
 
 /** Max SSID length */
 #define WIFI_SSID_MAX_LEN 32
@@ -274,6 +307,8 @@ const char *const wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
 #define WIFI_PSK_MIN_LEN 8
 /** Maximum PSK length */
 #define WIFI_PSK_MAX_LEN 64
+/** Maximum WEP key length (WEP-104: 26 hex chars) */
+#define WIFI_WEP_KEY_MAX_LEN 26
 /** Max SAW password length */
 #define WIFI_SAE_PSWD_MAX_LEN 128
 /** MAC address length */
@@ -670,7 +705,6 @@ static const char * const wifi_ps_param_config_err_code_tbl[] = {
 };
 /** @endcond */
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 /** IEEE 802.11v BTM (BSS transition management) Query reasons.
  * Refer to IEEE Std 802.11v-2011 - Table 7-43x-Transition and Transition Query reasons table.
  */
@@ -682,7 +716,6 @@ enum wifi_btm_query_reason {
 	/** Leaving ESS. */
 	WIFI_BTM_QUERY_REASON_LEAVING_ESS = 20,
 };
-#endif
 
 /** Helper function to get user-friendly power save error code name. */
 static inline const char *wifi_ps_get_config_err_code_str(int16_t err_no)
@@ -707,6 +740,15 @@ enum wifi_ap_config_param {
 	/** Used for AP mode configuration parameter vht_capab */
 	WIFI_AP_CONFIG_PARAM_VHT_CAPAB = BIT(4),
 };
+
+/** @brief Wi-Fi STA mode configuration parameter */
+enum wifi_config_param {
+	/** Used for STA mode configuration parameter OKC */
+	WIFI_CONFIG_PARAM_OKC = BIT(0),
+};
+
+/** Helper function to get user-friendly status name for the status code. */
+const char *wifi_conn_status_txt(enum wifi_conn_status status);
 
 #ifdef __cplusplus
 }

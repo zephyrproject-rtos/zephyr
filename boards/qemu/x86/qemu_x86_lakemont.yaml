@@ -13,4 +13,5 @@ testing:
     - kernel
   ignore_tags:
     - benchmark
+ram: 3000
 vendor: qemu

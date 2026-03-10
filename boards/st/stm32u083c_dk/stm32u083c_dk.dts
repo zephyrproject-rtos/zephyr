@@ -9,6 +9,7 @@
 #include <st/u0/stm32u083mctx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/input/stm32-tsc-defines.h>
 
 / {
 	model = "STMicroelectronics STM32U83C-DK board";
@@ -22,10 +23,12 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_3 {
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
@@ -37,15 +40,15 @@
 	};
 };
 
-&usart1 {
-	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
-&usart2 {
-	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pc4 &usart3_rx_pc5>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
@@ -76,8 +79,9 @@
 	pinctrl-0 = <&adc1_in0_pc0 &adc1_in1_pc1>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "ASYNC";
-	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00100000>,
+	clocks = <&rcc STM32_CLOCK(APB1_2, 20)>,
 		 <&rcc STM32_SRC_HSI ADC_SEL(2)>;
+	clock-names = "adcx", "adc_ker";
 	st,adc-prescaler = <4>;
 	status = "okay";
 	vref-mv = <3300>;
@@ -103,6 +107,13 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
+&spi3 {
+	pinctrl-0 = <&spi3_nss_pa15 &spi3_sck_pc10
+		     &spi3_miso_pc11 &spi3_mosi_pc12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &timers1 {
 	st,prescaler = <10000>;
 	status = "okay";
@@ -122,5 +133,91 @@
 		pinctrl-0 = <&tim2_ch1_pa5>;
 		pinctrl-names = "default";
 		status = "okay";
+	};
+};
+
+stm32_lp_tick_source: &lptim2 {
+	clocks = <&rcc STM32_CLOCK(APB1, 30)>,
+		 <&rcc STM32_SRC_LSI LPTIM2_SEL(1)>;
+	status = "okay";
+};
+
+&tsc {
+	status = "okay";
+	pinctrl-0 = <&tsc_g1_io1_pb12 &tsc_g1_io2_pb13 &tsc_g6_io1_pd10 &tsc_g6_io2_pd11>;
+	pinctrl-names = "default";
+
+	st,pulse-generator-prescaler = <2>;
+	st,charge-transfer-pulse-high = <2>;
+	st,charge-transfer-pulse-low = <2>;
+	st,spread-spectrum;
+	st,spread-spectrum-prescaler = <2>;
+	st,spread-spectrum-deviation = <100>;
+	st,max-count-value = <8191>;
+
+	tsc_group1: g1 {
+		group = <1>;
+		st,use-as-shield;
+		channel-ios = <TSC_IO2>;
+		sampling-io = <TSC_IO1>;
+	};
+
+	tsc_group6: g6 {
+		group = <6>;
+		channel-ios = <TSC_IO2>;
+		sampling-io = <TSC_IO1>;
+
+		ts1 {
+			compatible = "tsc-keys";
+			sampling-interval-ms = <10>;
+			oversampling = <10>;
+			noise-threshold = <50>;
+			sticky-key-timeout-ms = <10000>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&clk_hsi48 {
+	crs-usb-sof;
+	status = "okay";
+};
+
+&clk48 {
+	clocks = <&rcc STM32_SRC_HSI48 CLK48_SEL(3)>;
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+		};
+
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 DT_SIZE_K(100)>;
+		};
+
+		slot1_partition: partition@25000 {
+			label = "image-1";
+			reg = <0x00025000 DT_SIZE_K(102)>;
+		};
+
+		storage_partition: partition@3e800 {
+			label = "storage";
+			reg = <0x0003e800 DT_SIZE_K(6)>;
+		};
 	};
 };

@@ -1,0 +1,10 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_MCHP_G1
+	bool "Microchip G1 Watchdog (WDT) Driver"
+	default y
+	depends on DT_HAS_MICROCHIP_WDT_G1_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	help
+	  Enable WDT driver for Microchip G1 IPs.

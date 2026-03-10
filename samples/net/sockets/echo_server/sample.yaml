@@ -75,49 +75,33 @@ tests:
   sample.net.sockets.echo_server.b91_802154:
     extra_args: EXTRA_CONF_FILE="overlay-802154.conf"
     platform_allow: tlsr9518adk80d
-  sample.net.sockets.echo_server.usbnet:
-    depends_on: usb_device
+  sample.net.sockets.echo_server.usbd_cdc_ncm:
+    depends_on: usbd
     harness: net
-    extra_args: EXTRA_CONF_FILE="overlay-netusb.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-usbd.conf"
+                EXTRA_DTC_OVERLAY_FILE="usbd_cdc_ncm.overlay"
     tags:
       - net
       - usb
-    # native_sim usb driver does not work with CONFIG_POSIX_API
-    platform_exclude:
-      - native_sim
-      - native_sim/native/64
-      - native_posix
-      - native_posix/native/64
-  sample.net.sockets.echo_server.nrf_openthread:
+  sample.net.sockets.echo_server.openthread:
     extra_args: EXTRA_CONF_FILE="overlay-ot.conf"
     slow: true
     tags:
       - net
       - openthread
-    platform_allow: nrf52840dk/nrf52840
-    filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
-  sample.net.sockets.echo_server.b91_openthread:
-    extra_args: EXTRA_CONF_FILE="overlay-ot.conf"
-    slow: true
-    tags:
-      - net
-      - openthread
-    platform_allow: tlsr9518adk80d
-    filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
-  sample.net.sockets.echo_server.kw41z_openthread:
-    extra_args: EXTRA_CONF_FILE="overlay-ot.conf"
-    slow: true
-    tags:
-      - net
-      - openthread
-    platform_allow: frdm_kw41z
+    platform_allow:
+      - frdm_kw41z
+      - frdm_mcxw71
+      - frdm_mcxw72
+      - nrf52840dk/nrf52840
+      - tlsr9518adk80d
     filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
   sample.net.sockets.echo_server.rw612_openthread_rcp_host:
     build_only: true
     extra_args:
       # Disabling monolithic since CI environment doesn't use blobs
       - CONFIG_NXP_MONOLITHIC_NBU=n
-      - OVERLAY_CONFIG="overlay-ot-rcp-host-nxp.conf"
+      - EXTRA_CONF_FILE="overlay-ot-rcp-host-nxp.conf"
     slow: true
     tags:
       - net
@@ -151,11 +135,21 @@ tests:
     integration_platforms:
       - qemu_x86
   sample.net.sockets.echo_server.nsos:
+    harness: console
     platform_allow:
       - native_sim
       - native_sim/native/64
     extra_args:
       - EXTRA_CONF_FILE="overlay-nsos.conf"
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Network connected"
+        - "Waiting for TCP.*IPv4"
+        - "Waiting for TCP.*IPv6"
+        - "Waiting for UDP.*IPv4"
+        - "Waiting for UDP.*IPv6"
   sample.net.sockets.echo_server.802154.subg:
     extra_args: EXTRA_CONF_FILE="overlay-802154-subg.conf"
     platform_allow: beagleconnect_freedom

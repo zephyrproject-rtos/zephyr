@@ -5,7 +5,7 @@ Overview
 Linum is a development board released by Witte Tenology in 2023, and it was developed around the
 STM32H753BI microcontroller. The board has 2 expansion connectors used by the LCD display with
 touchscreen and another for access to other peripherals of microcontroller. Also it brings plenty
-of communications interfaces like UART with RS232 and RS485 capabillities, CAN bus compatible to
+of communications interfaces like UART with RS232 and RS485 capabilities, CAN bus compatible to
 FD standard, and networking over Ethernet.
 
 Hardware
@@ -47,50 +47,7 @@ More information about the board, can be found at the `Witte Linum website`_.
 Supported Features
 ==================
 
-The Zephyr Linum board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb_device                          |
-+-----------+------------+-------------------------------------+
-| CAN/CANFD | on-chip    | canbus                              |
-+-----------+------------+-------------------------------------+
-| LTDC      | on-chip    | LCD Interface                       |
-+-----------+------------+-------------------------------------+
-| FMC       | on-chip    | memc (SDRAM)                        |
-+-----------+------------+-------------------------------------+
-| SDMMC     | on-chip    | disk access                         |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/witte/linum/linum_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -348,6 +305,8 @@ driven by the PLL clock at 480MHz, driven by an 25MHz high-speed external clock.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``linum`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -355,7 +314,7 @@ flashed in the usual way (see :ref:`build_an_application` and
 .. note::
 
   For debugging or programming Linum you will need to use an external debug
-  debug or flash tool and connect it to the SWD Connnector. JLink or ST-Link
+  debug or flash tool and connect it to the SWD Connector. JLink or ST-Link
   probes are examples of out of the box compatible tools.
 
 Flashing

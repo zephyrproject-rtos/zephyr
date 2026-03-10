@@ -87,6 +87,33 @@ Project Setup
    The project can be run using the :guilabel:`Run` button, as well as debugged
    using the :guilabel:`Debug` button.
 
+Debugging only
+**************
+
+If you only want to use STM32CubeIDE to debug your project you can proceed as follows:
+
+#. First, make sure to compile your project and have the ``zephyr.elf`` available.
+
+#. Run STM32CubeIDE and import your project by going to :menuselection:`File --> Import...`:
+
+   .. figure:: img/stm32cube_menu_import.webp
+      :align: center
+      :alt: Import project
+
+#. Select :menuselection:`C/C++ --> STM32 Cortex-M Executable`, then click :guilabel:`Next`:
+
+   .. figure:: img/stm32cube_import_project.webp
+      :align: center
+      :alt: Import project selection
+
+#. Click on :guilabel:`Browse` to browse to your build folder and select your ``zephyr.elf``.
+
+#. Click on :guilabel:`Select` to select your MCU. If relevant, choose also your CPU and/or core.
+
+#. Click on :guilabel:`Finish`.
+
+#. The project can now be debugged using the :guilabel:`Debug` button.
+
 Troubleshooting
 ***************
 

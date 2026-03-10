@@ -1,5 +1,5 @@
 identifier: mimxrt595_evk/mimxrt595s/f1
-name: i.MXRT595 Fusion F1 DSP
+name: NXP MIMXRT595-EVK (Fusion F1 DSP)
 type: mcu
 arch: xtensa
 toolchain:

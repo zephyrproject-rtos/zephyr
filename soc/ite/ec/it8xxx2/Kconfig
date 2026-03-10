@@ -2,25 +2,20 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_IT8XXX2
-	select CPU_HAS_FPU if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "zephyr" || RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_F if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "zephyr" || RISCV_ISA_EXT_M
 	select HAS_PM
 	select ARCH_HAS_CUSTOM_CPU_IDLE
 	select ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
 	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	select SOC_PREP_HOOK
 
 if SOC_SERIES_IT8XXX2
 
 config SOC_IT8XXX2
 	select RISCV
-	select ATOMIC_OPERATIONS_BUILTIN
-	select RISCV_ISA_RV32I
-	select RISCV_ISA_EXT_ZICSR
-	select RISCV_ISA_EXT_ZIFENCEI
 	# Workaround mul instruction bug, see:
 	# https://www.ite.com.tw/uploads/product_download/it81202-bx-chip-errata.pdf
 	select RISCV_ISA_EXT_M if !(SOC_IT81302BX || SOC_IT81202BX)
-	select RISCV_ISA_EXT_A
-	select RISCV_ISA_EXT_C
 	imply XIP
 
 config SOC_IT8XXX2_REG_SET_V1
@@ -46,6 +41,12 @@ config SOC_IT8XXX2_USBPD_PHY_V2
 	help
 	  This option is automatically selected by variant soc and sets
 	  the USBPD PHY version.
+
+config SOC_IT8XXX2_GPIO_Q_GROUP_SUPPORTED
+	bool
+	help
+	  This option indicates GPIO-Q group support and is
+	  automatically selected based on the SoC variant.
 
 config SOC_IT81302BX
 	select SOC_IT8XXX2_REG_SET_V1
@@ -100,6 +101,11 @@ config SOC_IT82302BW
 	select SOC_IT8XXX2_REG_SET_V2
 	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
 	select SOC_IT8XXX2_USBPD_PHY_V2
+
+config SOC_IT82000BW
+	select SOC_IT8XXX2_REG_SET_V2
+	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
+	select SOC_IT8XXX2_GPIO_Q_GROUP_SUPPORTED
 
 config SOC_IT8XXX2_PLL_FLASH_48M
 	bool "Flash frequency is 48MHz"
@@ -176,6 +182,9 @@ config SOC_IT8XXX2_EXT_32K
 
 endchoice
 
+config ARCH_IRQ_VECTOR_TABLE_ALIGN
+	default 4
+
 config SOC_IT8XXX2_USE_ILM
 	bool
 	default y
@@ -202,6 +211,13 @@ config SOC_IT8XXX2_LIBRARY_TO_RAM
 	  If this is selected it means that there is a library that needs to be excluded
 	  from the text section.
 
+config SOC_IT8XXX2_SWITCH_IN_RAM
+	bool "Place switch handling code in RAM"
+	select SOC_IT8XXX2_USE_ILM
+	select SOC_IT8XXX2_LIBRARY_TO_RAM
+	help
+	  Place content switching code in ILM for better performance.
+
 config SOC_IT8XXX2_SERIAL_IN_RAM
 	bool "Place serial handling code in RAM"
 	select SOC_IT8XXX2_USE_ILM
@@ -214,6 +230,7 @@ config SOC_IT8XXX2_KERNEL_IN_RAM
 	bool "Place kernel handling code in RAM"
 	select SOC_IT8XXX2_USE_ILM
 	select SOC_IT8XXX2_LIBRARY_TO_RAM
+	select KERNEL_NO_LTO if LTO
 	help
 	  Place kernel handling code in ILM. This can significantly improve performance.
 
@@ -223,6 +240,15 @@ config SOC_IT8XXX2_ZEPHYR_IN_RAM
 	select SOC_IT8XXX2_LIBRARY_TO_RAM
 	help
 	  Place zephyr handling code in ILM. This can significantly improve performance.
+
+config SOC_IT8XXX2_RAM_CODE_NOINLINE
+	bool "Force RAM code functions to be non-inlined"
+	depends on LTO
+	help
+	  When enabled, functions marked with __soc_ram_code will use the 'noinline'
+	  attribute to ensure they are not inlined by the compiler.
+	  This guarantees the function body stays in the RAM code section rather
+	  than being merged into callers.
 
 config SOC_IT8XXX2_SHA256_HW_ACCELERATE
 	bool "HW SHA256 calculation"

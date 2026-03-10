@@ -6,8 +6,7 @@
  */
 
 #include "frag_flash.h"
-
-#include <FragDecoder.h>
+#include "frag_decoder_lowmem.h"
 
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/kernel.h>

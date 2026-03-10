@@ -20,6 +20,3 @@ CONFIG_GPIO=y
 
 # Enable clock controller
 CONFIG_CLOCK_CONTROL=y
-
-# Main Stack Size
-CONFIG_MAIN_STACK_SIZE=2048

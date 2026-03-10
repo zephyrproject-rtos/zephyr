@@ -20,33 +20,32 @@ extern "C" {
 	: bitrate == 250000               ? NRF_TWI_FREQ_250K		       \
 	: bitrate == I2C_BITRATE_FAST     ? NRF_TWI_FREQ_400K		       \
 					  : I2C_NRFX_TWI_INVALID_FREQUENCY)
-#define I2C(idx) DT_NODELABEL(i2c##idx)
-#define I2C_FREQUENCY(idx)						       \
-	I2C_NRFX_TWI_FREQUENCY(DT_PROP_OR(I2C(idx), clock_frequency,	       \
-					  I2C_BITRATE_STANDARD))
+
+#define I2C_FREQUENCY(node)	\
+	I2C_NRFX_TWI_FREQUENCY(DT_PROP_OR(node, clock_frequency, I2C_BITRATE_STANDARD))
 
 struct i2c_nrfx_twi_common_data {
+	nrfx_twi_t twi;
 	uint32_t dev_config;
 };
 
 struct i2c_nrfx_twi_config {
-	nrfx_twi_t twi;
 	nrfx_twi_config_t config;
-	nrfx_twi_evt_handler_t event_handler;
+	nrfx_twi_event_handler_t event_handler;
 	const struct pinctrl_dev_config *pcfg;
 };
 
-static inline nrfx_err_t i2c_nrfx_twi_get_evt_result(nrfx_twi_evt_t const *p_event)
+static inline int i2c_nrfx_twi_get_evt_result(nrfx_twi_event_t const *p_event)
 {
 	switch (p_event->type) {
 	case NRFX_TWI_EVT_DONE:
-		return NRFX_SUCCESS;
+		return 0;
 	case NRFX_TWI_EVT_ADDRESS_NACK:
-		return NRFX_ERROR_DRV_TWI_ERR_ANACK;
+		__fallthrough;
 	case NRFX_TWI_EVT_DATA_NACK:
-		return NRFX_ERROR_DRV_TWI_ERR_DNACK;
+		return -EIO;
 	default:
-		return NRFX_ERROR_INTERNAL;
+		return -EINVAL;
 	}
 }
 

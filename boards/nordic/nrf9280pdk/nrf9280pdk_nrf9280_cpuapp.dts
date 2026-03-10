@@ -20,14 +20,13 @@
 
 	chosen {
 		zephyr,console = &uart136;
-		zephyr,code-partition = &cpuapp_slot0_partition;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpuapp_data;
 		zephyr,shell-uart = &uart136;
-		zephyr,ieee802154 = &cpuapp_ieee802154;
+		zephyr,uart-mcumgr = &uart136;
 		zephyr,bt-hci = &bt_hci_ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
-		zephyr,canbus = &can120;
 	};
 
 	aliases {
@@ -99,6 +98,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		/*
 		 * LEDs are connected to GPIO Port 9 - pins 2-5. There is no valid hardware
 		 * configuration to pass PWM signal on pins 0 and 1. First valid config is P9.2.
@@ -133,7 +133,7 @@
 	 *  - Bell 18: cpurad
 	 *  - Bells 24, 25, 29, 31: cpucell
 	 */
-	nordic,interrupt-mapping = <0xA3042041 0>;
+	nordic,interrupt-mapping = <0xa3042041 0>;
 };
 
 &cpurad_bellboard {
@@ -144,14 +144,17 @@
 	status = "okay";
 };
 
+&cpusec_bellboard {
+	status = "okay";
+};
+
 &cpusys_vevif {
 	status = "okay";
 };
 
 &cpusec_cpuapp_ipc {
 	mbox-names = "tx", "rx";
-	tx-region = <&cpuapp_cpusec_ipc_shm>;
-	rx-region = <&cpusec_cpuapp_ipc_shm>;
+	status = "okay";
 };
 
 ipc0: &cpuapp_cpurad_ipc {
@@ -185,12 +188,18 @@ ipc0: &cpuapp_cpurad_ipc {
 	status = "okay";
 };
 
-&cpuapp_rx_partitions {
-	status = "okay";
+ironside_se_boot_report: &cpuapp_ironside_se_boot_report {};
+
+boot_partition: &cpuapp_boot_partition {
+	label = "mcuboot";
 };
 
-&cpuapp_rw_partitions {
-	status = "okay";
+slot0_partition: &cpuapp_slot0_partition {
+	label = "image-0";
+};
+
+slot1_partition: &cpuapp_slot1_partition {
+	label = "image-1";
 };
 
 &cpuppr_vpr {
@@ -218,7 +227,8 @@ ipc0: &cpuapp_cpurad_ipc {
 &grtc {
 	status = "okay";
 	child-owned-channels = <5 6>;
-	nonsecure-channels = <5 6>;
+	/* Workaround for a GRTC related issue with SoC1.1, set channel 4 to nonsecure. */
+	nonsecure-channels = <4 5 6>;
 	owned-channels = <4 5 6>;
 };
 
@@ -243,46 +253,44 @@ ipc0: &cpuapp_cpurad_ipc {
 };
 
 &exmif {
-	cs-gpios = <&gpio6 3 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&exmif_default>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&exmif_sleep>;
+	pinctrl-names = "default", "sleep";
 	status = "okay";
+
 	mx25uw63: mx25uw6345g@0 {
-		compatible = "jedec,spi-nor";
+		compatible = "mxicy,mx25u", "jedec,mspi-nor";
 		status = "disabled";
 		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(48)>;
 		jedec-id = [c2 84 37];
-		sfdp-bfp = [
-			e5 20 8a ff  ff ff ff 03  00 ff 00 ff  00 ff 00 ff
-			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 10 d8
-			00 ff 00 ff  87 79 01 00  84 12 00 c4  cc 04 67 46
-			30 b0 30 b0  f4 bd d5 5c  00 00 00 ff  10 10 00 20
-			00 00 00 00  00 00 7c 23  48 00 00 00  00 00 88 88
-		];
+		sfdp-bfp = [e5 20 8a ff ff ff ff 03 00 ff 00 ff 00 ff 00 ff
+			    ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 10 d8
+			    00 ff 00 ff 87 79 01 00 84 12 00 c4 cc 04 67 46
+			    30 b0 30 b0 f4 bd d5 5c 00 00 00 ff 10 10 00 20
+			    00 00 00 00 00 00 7c 23 48 00 00 00 00 00 88 88];
+		sfdp-ff05 = [00 ee c0 69 72 72 71 71 00 d8 f7 f6 00 0a 00 00
+			     14 45 98 80];
+		sfdp-ff84 = [43 06 0f 00 21 dc ff ff];
 		size = <67108864>;
 		has-dpd;
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <30000>;
-	};
-};
+		reset-gpios = <&gpio6 12 GPIO_ACTIVE_LOW>;
+		t-reset-pulse = <10000>;
+		t-reset-recovery = <35000>;
 
-&cpuapp_ieee802154 {
-	status = "okay";
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <1>;
+		mspi-cpp-mode = "MSPI_CPP_MODE_0";
+		mspi-endian = "MSPI_BIG_ENDIAN";
+		mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
+	};
 };
 
 zephyr_udc0: &usbhs {
 	status = "okay";
-};
-
-&canpll {
-	status = "okay";
-};
-
-&can120 {
-	status = "okay";
-	pinctrl-0 = <&can120_default>;
-	pinctrl-names = "default";
 };
 
 &pwm130 {

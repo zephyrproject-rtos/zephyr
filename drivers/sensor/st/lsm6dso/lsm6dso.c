@@ -22,6 +22,14 @@ LOG_MODULE_REGISTER(LSM6DSO, CONFIG_SENSOR_LOG_LEVEL);
 
 static const uint16_t lsm6dso_odr_map[] = {0, 12, 26, 52, 104, 208, 417, 833,
 					1667, 3333, 6667};
+static const uint8_t lsm6dso_lp_filter_map[] = {0,
+						LSM6DSO_LP_ODR_DIV_10,
+						LSM6DSO_LP_ODR_DIV_20,
+						LSM6DSO_LP_ODR_DIV_45,
+						LSM6DSO_LP_ODR_DIV_100,
+						LSM6DSO_LP_ODR_DIV_200,
+						LSM6DSO_LP_ODR_DIV_400,
+						LSM6DSO_LP_ODR_DIV_800};
 
 static int lsm6dso_freq_to_odr_val(uint16_t freq)
 {
@@ -84,21 +92,6 @@ static int lsm6dso_gyro_range_to_fs_val(int32_t range)
 	}
 
 	return -EINVAL;
-}
-
-static inline int lsm6dso_reboot(const struct device *dev)
-{
-	const struct lsm6dso_config *cfg = dev->config;
-	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-
-	if (lsm6dso_boot_set(ctx, 1) < 0) {
-		return -EIO;
-	}
-
-	/* Wait sensor turn-on time as per datasheet */
-	k_busy_wait(35 * USEC_PER_MSEC);
-
-	return 0;
 }
 
 static int lsm6dso_accel_set_fs_raw(const struct device *dev, uint8_t fs)
@@ -715,25 +708,25 @@ static int lsm6dso_init_chip(const struct device *dev)
 	 * set the bank now.
 	 */
 	if (lsm6dso_mem_bank_set(ctx, LSM6DSO_USER_BANK) < 0) {
-		LOG_DBG("Failed to set user bank");
+		LOG_ERR("Failed to set user bank");
 		return -EIO;
 	}
 
 	if (lsm6dso_device_id_get(ctx, &chip_id) < 0) {
-		LOG_DBG("Failed reading chip id");
+		LOG_ERR("Failed reading chip id");
 		return -EIO;
 	}
 
 	LOG_INF("chip id 0x%x", chip_id);
 
 	if (chip_id != LSM6DSO_ID) {
-		LOG_DBG("Invalid chip id 0x%x", chip_id);
+		LOG_ERR("Invalid chip id 0x%x", chip_id);
 		return -EIO;
 	}
 
 	/* I3C disable stay preserved after s/w reset */
 	if (lsm6dso_i3c_disable_set(ctx, LSM6DSO_I3C_DISABLE) < 0) {
-		LOG_DBG("Failed to disable I3C");
+		LOG_ERR("Failed to disable I3C");
 		return -EIO;
 	}
 
@@ -741,7 +734,7 @@ static int lsm6dso_init_chip(const struct device *dev)
 	 * must be disabled, followed by a 300 μs wait."
 	 */
 	if (lsm6dso_sh_master_get(ctx, &master_on) < 0) {
-		LOG_DBG("Failed to get I2C_MASTER status");
+		LOG_ERR("Failed to get I2C_MASTER status");
 		return -EIO;
 	}
 	if (master_on) {
@@ -752,6 +745,7 @@ static int lsm6dso_init_chip(const struct device *dev)
 
 	/* reset device */
 	if (lsm6dso_reset_set(ctx, 1) < 0) {
+		LOG_ERR("Failed to reset device");
 		return -EIO;
 	}
 
@@ -818,13 +812,26 @@ static int lsm6dso_init_chip(const struct device *dev)
 
 	/* Set FIFO bypass mode */
 	if (lsm6dso_fifo_mode_set(ctx, LSM6DSO_BYPASS_MODE) < 0) {
-		LOG_DBG("failed to set FIFO mode");
+		LOG_ERR("failed to set FIFO mode");
 		return -EIO;
 	}
 
 	if (lsm6dso_block_data_update_set(ctx, 1) < 0) {
-		LOG_DBG("failed to set BDU mode");
+		LOG_ERR("failed to set BDU mode");
 		return -EIO;
+	}
+
+	if (cfg->accel_lp_filter) {
+		if (lsm6dso_xl_filter_lp2_set(ctx, 1)) {
+			LOG_ERR("failed to enable low pass filter (LPF2)");
+			return -EIO;
+		}
+
+		if (lsm6dso_xl_hp_path_on_out_set(ctx,
+				lsm6dso_lp_filter_map[cfg->accel_lp_filter])) {
+			LOG_ERR("failed to configure low pass filter (LPF2)");
+			return -EIO;
+		}
 	}
 
 	return 0;
@@ -841,7 +848,7 @@ static int lsm6dso_init(const struct device *dev)
 	data->dev = dev;
 
 	if (lsm6dso_init_chip(dev) < 0) {
-		LOG_DBG("failed to initialize chip");
+		LOG_ERR("failed to initialize chip");
 		return -EIO;
 	}
 
@@ -884,6 +891,17 @@ static int lsm6dso_init(const struct device *dev)
  * Instantiation macros used when a device is on a SPI bus.
  */
 
+#ifdef CONFIG_LSM6DSO_TAP
+#define LSM6DSO_CONFIG_TAP(inst)					\
+	.tap_mode = DT_INST_PROP(inst, tap_mode),			\
+	.tap_threshold = DT_INST_PROP(inst, tap_threshold),		\
+	.tap_shock = DT_INST_PROP(inst, tap_shock),			\
+	.tap_latency = DT_INST_PROP(inst, tap_latency),			\
+	.tap_quiet = DT_INST_PROP(inst, tap_quiet),
+#else
+#define LSM6DSO_CONFIG_TAP(inst)
+#endif /* CONFIG_LSM6DSO_TAP */
+
 #ifdef CONFIG_LSM6DSO_TRIGGER
 #define LSM6DSO_CFG_IRQ(inst)						\
 	.trig_enabled = true,						\
@@ -901,13 +919,15 @@ static int lsm6dso_init(const struct device *dev)
 #define LSM6DSO_CONFIG_COMMON(inst)					\
 	.accel_pm = DT_INST_PROP(inst, accel_pm),			\
 	.accel_odr = DT_INST_PROP(inst, accel_odr),			\
+	.accel_lp_filter = DT_INST_PROP(inst, accel_lp_filter),		\
 	.accel_range = DT_INST_PROP(inst, accel_range) |		\
 		(DT_INST_NODE_HAS_COMPAT(inst, st_lsm6dso32) ?	        \
 			ACCEL_RANGE_DOUBLE : 0),			\
 	.gyro_pm = DT_INST_PROP(inst, gyro_pm),				\
 	.gyro_odr = DT_INST_PROP(inst, gyro_odr),			\
 	.gyro_range = DT_INST_PROP(inst, gyro_range),			\
-	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),                 \
+	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),			\
+	LSM6DSO_CONFIG_TAP(inst)					\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
 		(LSM6DSO_CFG_IRQ(inst)), ())
 
@@ -916,8 +936,7 @@ static int lsm6dso_init(const struct device *dev)
 		STMEMSC_CTX_SPI(&model##_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.spi = SPI_DT_SPEC_INST_GET(inst,		\
-					   LSM6DSO_SPI_OP,		\
-					   0),				\
+					   LSM6DSO_SPI_OP),		\
 		},							\
 		LSM6DSO_CONFIG_COMMON(inst)				\
 	}

@@ -14,6 +14,7 @@
 #include <xtensa/config/core-isa.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/arch/xtensa/arch.h>
 
 /**
  * @defgroup xtensa_mmu_internal_apis Xtensa Memory Management Unit (MMU) Internal APIs
@@ -27,12 +28,6 @@
 /** Mask for PPN in PTE */
 #define XTENSA_MMU_PTE_PPN_MASK			0xFFFFF000U
 
-/** Mask for attributes in PTE */
-#define XTENSA_MMU_PTE_ATTR_MASK		0x0000000FU
-
-/** Mask for cache mode in PTE */
-#define XTENSA_MMU_PTE_ATTR_CACHED_MASK		0x0000000CU
-
 /** Mask used to figure out which L1 page table to use */
 #define XTENSA_MMU_L1_MASK			0x3FF00000U
 
@@ -43,62 +38,6 @@
 
 /** Number of bits to shift for PPN in PTE */
 #define XTENSA_MMU_PTE_PPN_SHIFT		12U
-
-/** Mask for ring in PTE */
-#define XTENSA_MMU_PTE_RING_MASK		0x00000030U
-
-/** Number of bits to shift for ring in PTE */
-#define XTENSA_MMU_PTE_RING_SHIFT		4U
-
-/** Number of bits to shift for SW reserved ared in PTE */
-#define XTENSA_MMU_PTE_SW_SHIFT		6U
-
-/** Mask for SW bits in PTE */
-#define XTENSA_MMU_PTE_SW_MASK		0x00000FC0U
-
-/**
- * Internal bit just used to indicate that the attr field must
- * be set in the SW bits too. It is used later when duplicating the
- * kernel page tables.
- */
-#define XTENSA_MMU_PTE_ATTR_ORIGINAL BIT(31)
-
-/** Construct a page table entry (PTE) */
-#define XTENSA_MMU_PTE(paddr, ring, sw, attr) \
-	(((paddr) & XTENSA_MMU_PTE_PPN_MASK) | \
-	 (((ring) << XTENSA_MMU_PTE_RING_SHIFT) & XTENSA_MMU_PTE_RING_MASK) | \
-	 (((sw) << XTENSA_MMU_PTE_SW_SHIFT) & XTENSA_MMU_PTE_SW_MASK) | \
-	 ((attr) & XTENSA_MMU_PTE_ATTR_MASK))
-
-/** Get the attributes from a PTE */
-#define XTENSA_MMU_PTE_ATTR_GET(pte) \
-	((pte) & XTENSA_MMU_PTE_ATTR_MASK)
-
-/** Set the attributes in a PTE */
-#define XTENSA_MMU_PTE_ATTR_SET(pte, attr) \
-	(((pte) & ~XTENSA_MMU_PTE_ATTR_MASK) | (attr & XTENSA_MMU_PTE_ATTR_MASK))
-
-/** Set the SW field in a PTE */
-#define XTENSA_MMU_PTE_SW_SET(pte, sw) \
-	(((pte) & ~XTENSA_MMU_PTE_SW_MASK) | (sw << XTENSA_MMU_PTE_SW_SHIFT))
-
-/** Get the SW field from a PTE */
-#define XTENSA_MMU_PTE_SW_GET(pte) \
-	(((pte) & XTENSA_MMU_PTE_SW_MASK) >> XTENSA_MMU_PTE_SW_SHIFT)
-
-/** Set the ring in a PTE */
-#define XTENSA_MMU_PTE_RING_SET(pte, ring) \
-	(((pte) & ~XTENSA_MMU_PTE_RING_MASK) | \
-	((ring) << XTENSA_MMU_PTE_RING_SHIFT))
-
-/** Get the ring from a PTE */
-#define XTENSA_MMU_PTE_RING_GET(pte) \
-	(((pte) & XTENSA_MMU_PTE_RING_MASK) >> XTENSA_MMU_PTE_RING_SHIFT)
-
-/** Get the ASID from the RASID register corresponding to the ring in a PTE */
-#define XTENSA_MMU_PTE_ASID_GET(pte, rasid) \
-	(((rasid) >> ((((pte) & XTENSA_MMU_PTE_RING_MASK) \
-		       >> XTENSA_MMU_PTE_RING_SHIFT) * 8)) & 0xFF)
 
 /** Calculate the L2 page table position from a virtual address */
 #define XTENSA_MMU_L2_POS(vaddr) \
@@ -129,15 +68,6 @@
 /** Fixed data TLB way to map the vecbase */
 #define XTENSA_MMU_VECBASE_WAY			8
 
-/** Kernel specific ASID. Ring field in the PTE */
-#define XTENSA_MMU_KERNEL_RING			0
-
-/** User specific ASID. Ring field in the PTE */
-#define XTENSA_MMU_USER_RING			2
-
-/** Ring value for MMU_SHARED_ASID */
-#define XTENSA_MMU_SHARED_RING			3
-
 /** Number of data TLB ways [0-9] */
 #define XTENSA_MMU_NUM_DTLB_WAYS		10
 
@@ -146,9 +76,6 @@
 
 /** Number of auto-refill ways */
 #define XTENSA_MMU_NUM_TLB_AUTOREFILL_WAYS	4
-
-/** Indicate PTE is illegal. */
-#define XTENSA_MMU_PTE_ILLEGAL			(BIT(3) | BIT(2))
 
 /**
  * PITLB HIT bit.
@@ -167,6 +94,15 @@
  * 4.6.5.7 Formats for Probing MMU Option TLB Entries
  */
 #define XTENSA_MMU_PDTLB_HIT			BIT(4)
+
+/**
+ * PDTLB WAY mask.
+ *
+ * For more information see
+ * Xtensa Instruction Set Architecture (ISA) Reference Manual
+ * 4.6.5.7 Formats for Probing MMU Option TLB Entries
+ */
+#define XTENSA_MMU_PDTLB_WAY_MASK		0xFU
 
 /**
  * Virtual address where the page table is mapped
@@ -364,6 +300,51 @@ static inline void xtensa_tlb_autorefill_invalidate(void)
 }
 
 /**
+ * @brief Invalidate all autorefill DTLB entries.
+ *
+ * This should be used carefully since all refill entries in the data
+ * TLBs are affected. The current stack page will be repopulated by
+ * this code as it returns.
+ */
+static inline void xtensa_dtlb_autorefill_invalidate(void)
+{
+	uint8_t way, i, entries;
+
+	entries = BIT(XCHAL_DTLB_ARF_ENTRIES_LOG2);
+
+	for (way = 0; way < XTENSA_MMU_NUM_TLB_AUTOREFILL_WAYS; way++) {
+		for (i = 0; i < entries; i++) {
+			uint32_t entry = way + (i << XTENSA_MMU_PTE_PPN_SHIFT);
+
+			xtensa_dtlb_entry_invalidate(entry);
+		}
+	}
+	__asm__ volatile("isync");
+}
+
+/**
+ * @brief Invalidate all autorefill ITLB entries.
+ *
+ * This should be used carefully since all refill entries in
+ * the instruction TLBs are affected.
+ */
+static inline void xtensa_itlb_autorefill_invalidate(void)
+{
+	uint8_t way, i, entries;
+
+	entries = BIT(XCHAL_ITLB_ARF_ENTRIES_LOG2);
+
+	for (way = 0; way < XTENSA_MMU_NUM_TLB_AUTOREFILL_WAYS; way++) {
+		for (i = 0; i < entries; i++) {
+			uint32_t entry = way + (i << XTENSA_MMU_PTE_PPN_SHIFT);
+
+			xtensa_itlb_entry_invalidate(entry);
+		}
+	}
+	__asm__ volatile("isync");
+}
+
+/**
  * @brief Set the page tables.
  *
  * The page tables is set writing ptevaddr address.
@@ -509,18 +490,22 @@ static inline void xtensa_dtlb_vaddr_invalidate(void *vaddr)
 
 /**
  * @brief Tell hardware to use a page table very first time after boot.
- *
- * @param l1_page Pointer to the page table to be used.
  */
-void xtensa_init_paging(uint32_t *l1_page);
+void xtensa_mmu_init_paging(void);
 
 /**
  * @brief Switch to a new page table.
  *
- * @param asid The ASID of the memory domain associated with the incoming page table.
- * @param l1_page Page table to be switched to.
+ * @param domain Architecture-specific memory domain data.
  */
-void xtensa_set_paging(uint32_t asid, uint32_t *l1_page);
+void xtensa_mmu_set_paging(struct arch_mem_domain *domain);
+
+/**
+ * @brief Computer the necessary register values when changing page tables.
+ *
+ * @param domain Architecture-specific memory domain data.
+ */
+void xtensa_mmu_compute_domain_regs(struct arch_mem_domain *domain);
 
 /**
  * @}

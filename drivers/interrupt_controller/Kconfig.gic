@@ -73,4 +73,22 @@ config GIC_SAFE_CONFIG
 	  crash the OS has already been started. With this enabled, it will bypass
 	  GIC distributor configuration if it has been configured by other OS.
 
+config GIC_V3_RDIST_DMA_NONCOHERENT
+	bool "GIC redistributor is DMA noncoherent"
+	depends on GIC_V3
+	default n
+	help
+	  GIC redistributor on some platforms is connected to a non-coherent
+	  downstream interconnect, it needs to use Non-cacheable and Non-shareable
+	  access attributes to access external memory.
+
+config GIC_V3_ITS_DMA_NONCOHERENT
+	bool "GIC ITS is DMA noncoherent"
+	depends on GIC_V3_ITS
+	default n
+	help
+	  GIC ITS on Some platform are connected to a non-coherent downstream
+	  interconnect, it need to use Non-cacheable and Non-shareable access
+	  attributes to access external memory.
+
 endif # CPU_CORTEX

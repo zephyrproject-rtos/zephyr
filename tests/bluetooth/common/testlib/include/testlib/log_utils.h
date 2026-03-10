@@ -5,8 +5,13 @@
 #ifndef ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_LOG_UTILS_H_
 #define ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_LOG_UTILS_H_
 
+#include <stddef.h>
+#include <stdint.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util_macro.h>
 
 static inline void bt_testlib_log_level_set(char *module, uint32_t new_level)
 {

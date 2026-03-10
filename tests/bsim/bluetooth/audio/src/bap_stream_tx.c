@@ -27,6 +27,7 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 
+#include "bap_common.h"
 #include "bap_stream_tx.h"
 #include "common.h"
 
@@ -42,32 +43,6 @@ struct tx_stream {
 };
 
 static struct tx_stream tx_streams[CONFIG_BT_ISO_MAX_CHAN];
-
-static bool stream_is_streaming(const struct bt_bap_stream *bap_stream)
-{
-	struct bt_bap_ep_info ep_info;
-	int err;
-
-	if (bap_stream == NULL) {
-		return false;
-	}
-
-	/* No-op if stream is not configured */
-	if (bap_stream->ep == NULL) {
-		return false;
-	}
-
-	err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
-	if (err != 0) {
-		return false;
-	}
-
-	if (ep_info.iso_chan == NULL || ep_info.iso_chan->state != BT_ISO_STATE_CONNECTED) {
-		return false;
-	}
-
-	return ep_info.state == BT_BAP_EP_STATE_STREAMING;
-}
 
 static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 {
@@ -88,7 +63,7 @@ static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 		for (size_t i = 0U; i < ARRAY_SIZE(tx_streams); i++) {
 			struct bt_bap_stream *bap_stream = tx_streams[i].bap_stream;
 
-			if (stream_is_streaming(bap_stream) &&
+			if (bap_stream_is_streaming(bap_stream) &&
 			    atomic_get(&tx_streams[i].enqueued) < ENQUEUE_CNT) {
 				struct net_buf *buf;
 
@@ -102,7 +77,7 @@ static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 					tx_streams[i].seq_num++;
 					atomic_inc(&tx_streams[i].enqueued);
 				} else {
-					if (!stream_is_streaming(bap_stream)) {
+					if (!bap_stream_is_streaming(bap_stream)) {
 						/* Can happen if we disconnected while waiting for a
 						 * buffer - Ignore
 						 */

@@ -197,7 +197,7 @@ GAF mandates the use of the LC3 codec, but also supports other codecs.
 The top-level profiles TMAP and HAP are not part of the GAF, but rather provide
 top-level requirements for how to use the GAF.
 
-GAF and the top layer profiles gave been implemented in Zephyr with the following structure.
+GAF and the top layer profiles have been implemented in Zephyr with the following structure.
 
 .. graphviz::
    :caption: Zephyr Generic Audio Framework
@@ -698,19 +698,19 @@ Bluetooth Audio Stack.
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
    | Module | Role                          | Version | Added in Release | Status                | Remaining                                        |
    +========+===============================+=========+==================+=======================+==================================================+
-   | VCP    | Volume Renderer               | 1.0     | 2.6              | - Feature complete    | - Sample Application                             |
+   | VCP    | Volume Renderer               | 1.0.0   | 2.6              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Volume Controller             | 1.0     | 2.6              | - Feature complete    | - Sample Application                             |
+   |        | Volume Controller             | 1.0.0   | 2.6              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | MICP   | Microphone Device             | 1.0     | 2.7              | - Feature complete    | - Sample Application                             |
+   | MICP   | Microphone Device             | 1.0.0   | 2.7              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Microphone Controller         | 1.0     | 2.7              | - Feature complete    | - Sample Application                             |
+   |        | Microphone Controller         | 1.0.0   | 2.7              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
@@ -722,19 +722,19 @@ Bluetooth Audio Stack.
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | CCP    | Call Control Server           | 1.0     | 3.0              | - Feature complete    | - API refactor (in progress)                     |
+   | CCP    | Call Control Server           | 1.0.0   | 3.0              | - Feature complete    | - API refactor (in progress)                     |
    |        |                               |         |                  | - Shell Module        | - Sample Application (in progress)               |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Call Control Client           | 1.0     | 3.0              | - Feature complete    | - API refactor (in progress)                     |
+   |        | Call Control Client           | 1.0.0   | 3.0              | - Feature complete    | - API refactor (in progress)                     |
    |        |                               |         |                  | - Shell Module        | - Sample Application (in progress)               |
    |        |                               |         |                  | - BSIM test           |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | MCP    | Media Control Server          | 1.0     | 3.0              | - Feature complete    | - API refactor                                   |
+   | MCP    | Media Control Server          | 1.0.0   | 3.0              | - Feature complete    | - API refactor                                   |
    |        |                               |         |                  | - Shell Module        | - Support for multiple instances and connections |
    |        |                               |         |                  | - BSIM test           | - Sample Application                             |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Media Control Client          | 1.0     | 3.0              | - Feature complete    | - API refactor                                   |
+   |        | Media Control Client          | 1.0.0   | 3.0              | - Feature complete    | - API refactor                                   |
    |        |                               |         |                  | - Shell Module        | - Sample Application                             |
    |        |                               |         |                  | - BSIM test           |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
@@ -768,27 +768,27 @@ Bluetooth Audio Stack.
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | CAP    | Acceptor                      | 1.0     | 3.2              | - Feature complete    |                                                  |
+   | CAP    | Acceptor                      | 1.0.1   | 3.2              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Initiator                     | 1.0     | 3.3              | - Feature complete    |                                                  |
+   |        | Initiator                     | 1.0.1   | 3.3              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Commander                     |         |                  | - WIP                 | - Feature complete                               |
-   |        |                               |         |                  |                       | - Shell Module                                   |
-   |        |                               |         |                  |                       | - BSIM test                                      |
-   |        |                               |         |                  |                       | - Sample Application                             |
+   |        | Commander                     |         |                  | - Feature complete    | - Shell Module                                   |
+   |        |                               |         |                  | - BSIM test           | - Sample Application                             |
+   |        |                               |         |                  |                       |                                                  |
+   |        |                               |         |                  |                       |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | HAP    | Hearing Aid                   | 1.0     | 3.1              | - Feature complete    |                                                  |
+   | HAP    | Hearing Aid                   | 1.0.0   | 3.1              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Hearing Aid Unicast Client    | 1.0     | 3.1              | - Feature complete    |                                                  |
+   |        | Hearing Aid Unicast Client    | 1.0.0   | 3.1              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
@@ -798,42 +798,42 @@ Bluetooth Audio Stack.
    |        |                               |         |                  |                       | - BSIM test                                      |
    |        |                               |         |                  |                       | - Sample Application                             |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | TMAP   | Call Gateway                  | 1.0     | 3.4              | - Feature complete    |                                                  |
+   | TMAP   | Call Gateway                  | 1.0.0   | 3.4              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Call Terminal                 | 1.0     | 3.4              | - Feature complete    |                                                  |
+   |        | Call Terminal                 | 1.0.0   | 3.4              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Unicast Media Sender          | 1.0     | 3.4              | - Feature complete    |                                                  |
+   |        | Unicast Media Sender          | 1.0.0   | 3.4              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Unicast Media Receiver        | 1.0     | 3.4              | - Feature complete    |                                                  |
+   |        | Unicast Media Receiver        | 1.0.0   | 3.4              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Broadcast Media Sender        | 1.0     | 3.4              | - Feature complete    |                                                  |
+   |        | Broadcast Media Sender        | 1.0.0   | 3.4              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Broadcast Media Receiver      | 1.0     | 3.4              | - Feature complete    |                                                  |
+   |        | Broadcast Media Receiver      | 1.0.0   | 3.4              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | PBP    | Public Broadcast Source       |         | 3.5              | - Feature complete    |                                                  |
+   | PBP    | Public Broadcast Source       | 1.0.2   | 3.5              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Public Broadcast Sink         |         | 3.5              | - Feature complete    |                                                  |
+   |        | Public Broadcast Sink         | 1.0.2   | 3.5              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
@@ -843,22 +843,22 @@ Bluetooth Audio Stack.
    |        |                               |         |                  |                       | - BSIM test                                      |
    |        |                               |         |                  |                       | - Sample Application                             |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | GMAP   | Unicast Game Gateway          |         | 3.5              | - Feature complete    | - Sample Application                             |
+   | GMAP   | Unicast Game Gateway          | 1.0.1   | 3.5              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  |                       |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Unicast Game Terminal         |         | 3.5              | - Feature complete    | - Sample Application                             |
+   |        | Unicast Game Terminal         | 1.0.1   | 3.5              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  |                       |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Broadcast Game Sender         |         | 3.5              | - Feature complete    | - Sample Application                             |
+   |        | Broadcast Game Sender         | 1.0.1   | 3.5              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  |                       |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Broadcast Game Receiver       |         | 3.5              | - Feature complete    | - Sample Application                             |
+   |        | Broadcast Game Receiver       | 1.0.1   | 3.5              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  |                       |                                                  |
@@ -932,7 +932,7 @@ That means a sink endpoint is always audio from the Unicast Client to the Unicas
 and a source endpoint is always from the Unicast Server to the Unicast Client.
 
 Unlike most other GATT services,
-ASCS require that each characteristic in the service has unique data per client.
+ASCS requires that each characteristic in the service has unique data per client.
 This means that if a Unicast Server is connected to multiple Unicast Clients,
 the Unicast Clients are not able to see or control the endpoints configured by the other clients.
 For example if a person's smartphone is streaming audio to a headset,
@@ -954,7 +954,7 @@ A Broadcast Assistant can be any device,
 and may only support this one role without any audio capabilities.
 This allows legacy devices that do not support periodic advertisements or isochronous channels to
 still provide an interface and scan offloading for peripherals.
-The Bluetooth SIG have provided a guide on how to develop such legacy Broadcast Assistants that can
+The Bluetooth SIG has provided a guide on how to develop such legacy Broadcast Assistants that can
 be found at
 https://www.bluetooth.com/bluetooth-resources/developing-auracast-receivers-with-an-assistant-application-for-legacy-smartphones/.
 An important note about this guide is that many operating systems (especially on phones),
@@ -974,7 +974,7 @@ The values for the LC3 codec are defined by the Bluetooth Assigned numbers
 (https://www.bluetooth.com/specifications/assigned-numbers/), and the values for other codecs such
 as SBC are left undefined/implementation specific for BAP.
 
-PACS also usually share the same data between each connected client,
+PACS also usually shares the same data between each connected client,
 but by using functions such as :c:func:`bt_pacs_conn_set_available_contexts_for_conn`,
 it is possible to set specific values for specific clients.
 
@@ -1055,9 +1055,9 @@ A telephone bearer could be any application on a device that can handle (telepho
 such as the default Call application on a smartphone,
 but also other applications such as Signal, Discord, Teams, Slack, etc.
 
-GTBS may be standalone (i.e.the device only has a GTBS instance without any TBS instances),
+GTBS may be standalone (i.e. the device only has a GTBS instance without any TBS instances),
 and the behavior of the GTBS is mostly left up to the implementation.
-In Zephyr the implementation of GBTS is that it contains some generic information,
+In Zephyr the implementation of GTBS is that it contains some generic information,
 such as the provider name which is defined to  simply be "Generic TBS",
 but the majority of the information in the GTBS instance in Zephyr has been implemented to be a
 union of the data of the other bearers.
@@ -1155,19 +1155,19 @@ various reasons.
 One reason when the stack cannot handle a requirement is if the data related to the requirement is
 exclusively controlled by the application.
 An example of this is the advertising data,
-where multiple service have requirements for what to advertise and when,
+where multiple services have requirements for what to advertise and when,
 but where both the advertising state and data is exclusively controlled by the application.
 
 Oppositely there are also requirements from the specification,
 where the data related to the requirement is exclusively controlled by the stack.
 An example of this is the Volume Control Service (VCS) state,
-where the specifications mandata that the VCP Volume Renderer (VCS server) modify the values
+where the specifications mandate that the VCP Volume Renderer (VCS server) modify the values
 without a choice,
 e.g. when setting the absolutely volume.
 In cases like this the application is only notified about the change with a callback,
 but cannot reject the request (the stack will reject any invalid requests).
 
-Generally when the data is simple (like the VCS state which only take up a few bytes),
+Generally when the data is simple (like the VCS state which only takes up a few bytes),
 the data is kept in and controlled by the stack,
 as this can ensure that the requirements can be handled by the stack,
 making it easier to use a profile role correctly.
@@ -1188,7 +1188,7 @@ and how much control the role has in a given context.
 Things worth knowing or considering when using LE Audio
 =======================================================
 
-This section describes a few tings to consider when contributing to or using LE Audio in Zephyr.
+This section describes a few things to consider when contributing to or using LE Audio in Zephyr.
 The things described by this section are not unique to Zephyr as they are defined by the
 specifications.
 
@@ -1238,10 +1238,10 @@ The LE audio channel on Discord
 
 Zephyr has a specific Discord channel for LE Audio development, which is open to all.
 Find it here at https://discordapp.com/channels/720317445772017664/1207326649591271434 or simply
-search for "ble-audio" from within Discord.
-Since the ``#ble-audio`` channel is open for all,
+search for "bt-audio" from within Discord.
+Since the ``#bt-audio`` channel is open for all,
 we cannot discuss any specifications that are in development in that channel.
-For discussions that require a Bluetooth SIG membership we refer to the ``#bluetooth-sig``
+For discussions that require a Bluetooth SIG membership we refer to the ``#bt-sig``
 Discord channel found at https://discordapp.com/channels/720317445772017664/869172014018097162.
 
 Zephyr weekly meetings

@@ -3,8 +3,8 @@
 Overview
 ********
 
-The Texas Instruments CC1352P7 LaunchPad |trade| (LP-CC1352P7) is a
-development kit for the SimpleLink |trade| multi-Standard CC1352P7 wireless MCU.
+The Texas Instruments CC1352P7 LaunchPad™ (LP-CC1352P7) is a
+development kit for the SimpleLink™ multi-Standard CC1352P7 wireless MCU.
 
 See the `TI CC1352P7 LaunchPad Product Page`_ for details.
 
@@ -12,47 +12,22 @@ See the `TI CC1352P7 LaunchPad Product Page`_ for details.
 Hardware
 ********
 
-The CC1352P7 LaunchPad |trade| development kit features the CC1352P7 wireless MCU.
+The CC1352P7 LaunchPad™ development kit features the CC1352P7 wireless MCU.
 The board is equipped with two LEDs, two push buttons, antenna switch and
 BoosterPack connectors for expansion. It also includes an integrated (XDS110)
 debugger.
 
-The CC1352P7 wireless MCU has a 48 MHz Arm |reg| Cortex |reg|-M4F SoC and an
+The CC1352P7 wireless MCU has a 48 MHz Arm® Cortex®-M4F SoC and an
 integrated sub-1GHz and 2.4 GHz transceiver with integrated 20dBm power amplifier
-(PA) supporting multiple protocols including Bluetooth |reg| Low Energy and IEEE
-|reg| 802.15.4.
+(PA) supporting multiple protocols including Bluetooth® Low Energy and IEEE®
+802.15.4.
 
 See the `TI CC1352P7 Product Page`_ for additional details.
 
 Supported Features
 ==================
 
-The CC1352P7 LaunchPad board configuration supports the following hardware
-features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PINMUX    | on-chip    | pinmux               |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-| HWINFO    | on-chip    | hwinfo               |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -123,6 +98,8 @@ aligns with the LaunchPad standard.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Before flashing or debugging ensure the RESET, TMS, TCK, TDO, and TDI jumpers
 are in place. Also place jumpers on the TXD and RXD signals for a serial
 console using the XDS110 application serial port.
@@ -143,7 +120,7 @@ Prerequisites:
 #. Install OpenOCD
 
    Currently, OpenOCD doesn't support the CC1352P7.
-   Until its support get merged, we have to builld a downstream version that could found `here <https://github.com/anobli/openocd>`_.
+   Until its support get merged, we have to build a downstream version that could found `here <https://github.com/anobli/openocd>`_.
    Please refer to OpenOCD documentation to build and install OpenOCD.
 
    For your convenience, we provide a `prebuilt binary <https://github.com/anobli/openocd/actions/runs/10566225265>`_.

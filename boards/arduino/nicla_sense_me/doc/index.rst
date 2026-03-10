@@ -1,7 +1,4 @@
-.. _arduino_nicla_sense_me:
-
-Arduino Nicla Sense ME
-######################
+.. zephyr:board:: arduino_nicla_sense_me
 
 Overview
 ********
@@ -9,12 +6,6 @@ The `Arduino Nicla Sense ME`_ is designed around Nordic Semiconductor's
 nrf52832 ARM Cortex-M4F CPU. The board houses 4 low power industrial grade sensors
 that can measure rotation, acceleration, pressure, humidity, temperature, air quality
 and CO2 levels.
-
-.. figure:: arduino_nicla_sense_me.jpg
-   :align: center
-   :alt: Arduino Nicla Sense ME
-
-   Arduino Nicla Sense ME (Credit: Arduino)
 
 Hardware
 ********
@@ -39,35 +30,7 @@ Hardware
 Supported Features
 ==================
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M/S)  | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth Low Energy |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -84,6 +47,8 @@ For more details please refer to the `datasheet`_, `full pinout`_ and the `schem
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``arduino_nicla_sense_me`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and

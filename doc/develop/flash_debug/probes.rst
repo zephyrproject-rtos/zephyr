@@ -36,29 +36,29 @@ with pyOCD or OpenOCD debug host tools, or with J-Link firmware to communicate
 with J-Link debug host tools.
 
 
-+------------------------------------------+---------------------------------------------------------------------------------------------------------+
-|| *Debug Probes & Host Tools*             |                                               Host Tools                                                |
-+| *Compatibility Chart*                   +--------------------+--------------------+---------------------+--------------------+--------------------+
-|                                          |  **J-Link Debug**  |    **OpenOCD**     |      **pyOCD**      |   **NXP S32DS**    | **NXP LinkServer** |
-+----------------+-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+
-|                | **J-Link External**     |           ✓        |          ✓         |                     |                    |                    |
-|                +-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+
-|                | **LPC-Link2 CMSIS-DAP** |                    |                    |                     |                    |         ✓          |
-|                +-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+
-|                | **LPC-Link2 J-Link**    |           ✓        |                    |                     |                    |                    |
-|                +-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+
-|                | **MCU-Link CMSIS-DAP**  |                    |                    |                     |                    |         ✓          |
-|  Debug Probes  +-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+
-|                | **MCU-Link J-Link**     |           ✓        |                    |                     |                    |                    |
-|                +-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+
-|                | **NXP S32 Debug Probe** |                    |                    |                     |          ✓         |                    |
-|                +-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+
-|                | **OpenSDA DAPLink**     |                    |          ✓         |          ✓          |                    |         ✓          |
-|                +-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+
-|                | **OpenSDA J-Link**      |           ✓        |                    |                     |                    |                    |
-|                +-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+
-|                | **ST-LINK/V2-1**        |           ✓        |          ✓         | *some STM32 boards* |                    |                    |
-+----------------+-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+
++------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
+|| *Debug Probes & Host Tools*             |                                                            Host Tools                                                            |
++| *Compatibility Chart*                   +--------------------+--------------------+---------------------+--------------------+--------------------+------------------------+
+|                                          |  **J-Link Debug**  |    **OpenOCD**     |      **pyOCD**      |   **NXP S32DS**    | **NXP LinkServer** | **ST-LINK GDB Server** |
++----------------+-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+------------------------+
+|                | **J-Link External**     |           ✓        |          ✓         |                     |                    |                    |                        |
+|                +-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+------------------------+
+|                | **LPC-Link2 CMSIS-DAP** |                    |                    |                     |                    |         ✓          |                        |
+|                +-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+------------------------+
+|                | **LPC-Link2 J-Link**    |           ✓        |                    |                     |                    |                    |                        |
+|                +-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+------------------------+
+|                | **MCU-Link CMSIS-DAP**  |                    |                    |                     |                    |         ✓          |                        |
+|  Debug Probes  +-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+------------------------+
+|                | **MCU-Link J-Link**     |           ✓        |                    |                     |                    |                    |                        |
+|                +-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+------------------------+
+|                | **NXP S32 Debug Probe** |                    |                    |                     |          ✓         |                    |                        |
+|                +-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+------------------------+
+|                | **OpenSDA DAPLink**     |                    |          ✓         |          ✓          |                    |         ✓          |                        |
+|                +-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+------------------------+
+|                | **OpenSDA J-Link**      |           ✓        |                    |                     |                    |                    |                        |
+|                +-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+------------------------+
+|                | **ST-LINK/V2-1**        |           ✓        |          ✓         | *some STM32 boards* |                    |                    |           ✓            |
++----------------+-------------------------+--------------------+--------------------+---------------------+--------------------+--------------------+------------------------+
 
 
 Some supported boards in Zephyr do not include an onboard debug probe and
@@ -374,6 +374,7 @@ It is compatible with the following host debug tools:
 
 - :ref:`openocd-debug-host-tools`
 - :ref:`jlink-debug-host-tools`
+- :ref:`stm32cubeclt-host-tools`
 
 For some STM32 based boards, it is also compatible with:
 
@@ -456,6 +457,8 @@ Flash and debug with ST-Link
         with the RTT one if they are enabled by default in the particular sample or
         application you are running, such as disable UART_CONSOLE in menuconfig
 
+.. _stlink-adapter-firmware-update:
+
 Updating or restoring ST-Link firmware
 ======================================
 
@@ -474,6 +477,33 @@ Where board_uid can be obtained using twister's generate-hardware-map
 option. For more information about twister and available options, see
 :ref:`twister_script`.
 
+OpenOCD Deprecates HLA ST-Link Interface
+========================================
+
+OpenOCD has deprecated the legacy HLA interface used by ST-Link firmware in favor to the
+generic DAP interface in January 2024 (see `OpenOCD deprecates ST-Link HLA Interface`_)
+in favor of the generic DAP interface. DAP interface is supported by ST-Link firmware
+since 2015 (from version v2j24).
+
+Since OpenOCD deprecation, one using a recent OpenOCD tool (after release tag v0.12.0)
+may experience communication issues when the ST-Link adapter embeds a firmware prior version
+v2j24. In such case, it is recommended to update the ST-Link firmware (refer to
+`ST-LINK firmware update <#_stlink-adapter-firmware-update>`_).
+If it is not possible to update the firmware, one may still use the old HLA interface
+by modifying its OpenOCD configuration script replacing (if applicable) the 2 below lines:
+
+  .. code-block::
+
+    source [find interface/stlink-dap.cfg]
+    transport select dapdirect_swd
+
+with the 2 following lines:
+
+  .. code-block::
+
+    source [find interface/stlink-hla.cfg]
+    transport select hla_swd
+
 .. _nxp-s32-debug-probe:
 
 NXP S32 Debug Probe
@@ -487,6 +517,19 @@ NXP S32 Debug Probe is designed to work in conjunction with NXP S32 Design Studi
 (S32DS) and NXP Automotive microcontrollers and processors. Install the debug
 host tools as in indicated in :ref:`nxp-s32-debug-host-tools` before you program
 the firmware.
+
+.. _black-magic-probe:
+
+Black Magic Probe
+*****************
+
+The Black Magic Probe is an open-source hardware for debugging that is designed
+to be used with `Black Magic Debug`_ firmware.
+The firmware incorporates GDB Server so that you can connect directly from ``gdb``
+to the target device.
+
+Some of the STM32F103-based boards can run the `Black Magic Debug`_ firmware.
+See `Black Magic Debug supported hardware`_.
 
 .. _LPCScrypt:
    https://www.nxp.com/lpcscrypt
@@ -515,6 +558,9 @@ the firmware.
 .. _STM32CubeProgrammer Tool:
     https://www.st.com/en/development-tools/stm32cubeprog.html
 
+.. _OpenOCD deprecates ST-Link HLA Interface:
+    https://sourceforge.net/p/openocd/code/ci/34ec5536c0ba3315bc5a841244bbf70141ccfbb4
+
 .. _MCUXpresso Installer:
 	https://www.nxp.com/lgfiles/updates/mcuxpresso/MCUXpressoInstaller.exe
 
@@ -526,3 +572,9 @@ the firmware.
 
 .. _DAPLink Bootloader Update:
    https://os.mbed.com/blog/entry/DAPLink-bootloader-update/
+
+.. _Black Magic Debug:
+   https://black-magic.org/index.html
+
+.. _Black Magic Debug supported hardware:
+   https://black-magic.org/hardware.html

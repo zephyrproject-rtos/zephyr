@@ -40,7 +40,13 @@ CREATE_FLAG(flag_broadcast_code_received);
 CREATE_FLAG(flag_recv_state_updated);
 CREATE_FLAG(flag_bis_sync_requested);
 CREATE_FLAG(flag_bis_sync_term_requested);
+CREATE_FLAG(flag_broadcast_source_added);
+CREATE_FLAG(flag_broadcast_source_modified);
+CREATE_FLAG(flag_broadcast_source_removed);
+CREATE_FLAG(flag_remove_source_rejected);
+
 static volatile uint32_t g_broadcast_id;
+static bool reject_control_op;
 
 struct sync_state {
 	uint8_t src_id;
@@ -117,6 +123,7 @@ static void pa_timer_handler(struct k_work *work)
 
 	if (state->recv_state != NULL) {
 		enum bt_bap_pa_state pa_state;
+		int err;
 
 		if (state->recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
 			pa_state = BT_BAP_PA_STATE_NO_PAST;
@@ -124,8 +131,11 @@ static void pa_timer_handler(struct k_work *work)
 			pa_state = BT_BAP_PA_STATE_FAILED;
 		}
 
-		bt_bap_scan_delegator_set_pa_state(state->recv_state->src_id,
-						   pa_state);
+		err = bt_bap_scan_delegator_set_pa_state(state->recv_state->src_id, pa_state);
+		if (err != 0) {
+			FAIL("Could not set PA sync state: %d\n", err);
+			return;
+		}
 	}
 
 	FAIL("PA timeout\n");
@@ -142,11 +152,11 @@ static int pa_sync_past(struct bt_conn *conn,
 	param.skip = PA_SYNC_SKIP;
 	param.timeout = interval_to_sync_timeout(pa_interval);
 
+	printk("Subscribing to PAST from %p\n", conn);
 	err = bt_le_per_adv_sync_transfer_subscribe(conn, &param);
 	if (err != 0) {
 		printk("Could not do PAST subscribe: %d\n", err);
 	} else {
-		printk("Syncing with PAST: %d\n", err);
 		state->pa_syncing = true;
 		k_work_init_delayable(&state->pa_timer, pa_timer_handler);
 		(void)k_work_reschedule(&state->pa_timer,
@@ -203,6 +213,8 @@ static int pa_sync_term(struct sync_state *state)
 
 	printk("Deleting PA sync\n");
 
+	UNSET_FLAG(flag_pa_terminated);
+
 	err = bt_le_per_adv_sync_delete(state->pa_sync);
 	if (err != 0) {
 		FAIL("Could not delete per adv sync: %d\n", err);
@@ -210,6 +222,8 @@ static int pa_sync_term(struct sync_state *state)
 		state->pa_syncing = false;
 		state->pa_sync = NULL;
 	}
+
+	WAIT_FOR_FLAG(flag_pa_terminated);
 
 	return err;
 }
@@ -223,14 +237,14 @@ static void recv_state_updated_cb(struct bt_conn *conn,
 
 	state = sync_state_get_by_src_id(recv_state->src_id);
 	if (state == NULL) {
-		FAIL("Could not get state");
+		FAIL("Could not get state\n");
 		return;
 	}
 
 	if (state->recv_state != NULL) {
 		if (state->recv_state != recv_state) {
-			FAIL("Sync state receive state mismatch: %p - %p",
-			     state->recv_state, recv_state);
+			FAIL("Sync state receive state mismatch: %p - %p\n", state->recv_state,
+			     recv_state);
 			return;
 		}
 	} else {
@@ -240,6 +254,13 @@ static void recv_state_updated_cb(struct bt_conn *conn,
 	SET_FLAG(flag_recv_state_updated);
 }
 
+static void reset_cp_flags(void)
+{
+	UNSET_FLAG(flag_broadcast_source_added);
+	UNSET_FLAG(flag_broadcast_source_modified);
+	UNSET_FLAG(flag_broadcast_source_removed);
+}
+
 static int pa_sync_req_cb(struct bt_conn *conn,
 			  const struct bt_bap_scan_delegator_recv_state *recv_state,
 			  bool past_avail, uint16_t pa_interval)
@@ -247,12 +268,13 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 	struct sync_state *state;
 	int err;
 
-	printk("PA Sync request: past_avail %u, pa_interval 0x%04x\n: %p",
-	       past_avail, pa_interval, recv_state);
+	reset_cp_flags();
+	printk("PA Sync request: past_avail %u, pa_interval 0x%04x: %p\n", past_avail, pa_interval,
+	       recv_state);
 
 	state = sync_state_get_or_new(recv_state);
 	if (state == NULL) {
-		FAIL("Could not get state");
+		FAIL("Could not get state\n");
 		return -1;
 	}
 
@@ -272,7 +294,8 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 			err = bt_bap_scan_delegator_set_pa_state(state->recv_state->src_id,
 								 BT_BAP_PA_STATE_INFO_REQ);
 			if (err != 0) {
-				printk("Failed to set INFO_REQ state: %d", err);
+				FAIL("Could not set PA sync state: %d\n", err);
+				return err;
 			}
 		}
 	} else {
@@ -351,12 +374,44 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 	return 0;
 }
 
+static int add_source_cb(struct bt_conn *conn,
+	const struct bt_bap_scan_delegator_recv_state *recv_state)
+{
+	printk("Add Source callback: src_id=%u\n", recv_state->src_id);
+	SET_FLAG(flag_broadcast_source_added);
+	return 0;
+}
+
+static int modify_source_cb(struct bt_conn *conn,
+	   const struct bt_bap_scan_delegator_recv_state *recv_state)
+{
+	printk("Modify Source callback: src_id=%u\n", recv_state->src_id);
+	SET_FLAG(flag_broadcast_source_modified);
+	return 0;
+}
+
+static int remove_source_cb(struct bt_conn *conn, uint8_t src_id)
+{
+	printk("Remove Source callback: src_id=%u\n", src_id);
+
+	if (reject_control_op) {
+		SET_FLAG(flag_remove_source_rejected);
+		return BT_ATT_ERR_WRITE_REQ_REJECTED;
+	}
+
+	SET_FLAG(flag_broadcast_source_removed);
+	return 0;
+}
+
 static struct bt_bap_scan_delegator_cb scan_delegator_cb = {
 	.recv_state_updated = recv_state_updated_cb,
 	.pa_sync_req = pa_sync_req_cb,
 	.pa_sync_term_req = pa_sync_term_req_cb,
 	.broadcast_code = broadcast_code_cb,
 	.bis_sync_req = bis_sync_req_cb,
+	.add_source = add_source_cb,
+	.modify_source = modify_source_cb,
+	.remove_source = remove_source_cb
 };
 
 static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
@@ -380,6 +435,16 @@ static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
 		return;
 	}
 
+	if (state->recv_state != NULL) {
+		int err;
+
+		err = bt_bap_scan_delegator_set_pa_state(state->src_id, BT_BAP_PA_STATE_SYNCED);
+		if (err != 0) {
+			FAIL("Could not set PA sync state: %d\n", err);
+			return;
+		}
+	}
+
 	k_work_cancel_delayable(&state->pa_timer);
 
 	SET_FLAG(flag_pa_synced);
@@ -396,6 +461,16 @@ static void pa_term_cb(struct bt_le_per_adv_sync *sync,
 	if (state == NULL) {
 		FAIL("Could not get sync state from PA sync %p\n", sync);
 		return;
+	}
+
+	if (state->recv_state != NULL) {
+		int err;
+
+		err = bt_bap_scan_delegator_set_pa_state(state->src_id, BT_BAP_PA_STATE_NOT_SYNCED);
+		if (err != 0) {
+			FAIL("Could not set PA sync state: %d\n", err);
+			return;
+		}
 	}
 
 	k_work_cancel_delayable(&state->pa_timer);
@@ -442,7 +517,7 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 
 	state = sync_state_get_or_new(NULL);
 	if (state == NULL) {
-		FAIL("Failed to get sync state");
+		FAIL("Failed to get sync state\n");
 		return true;
 	}
 
@@ -495,6 +570,7 @@ static int add_source(struct sync_state *state)
 
 	bt_addr_le_copy(&param.addr, &sync_info.addr);
 	param.sid = sync_info.sid;
+	param.pa_state = BT_BAP_PA_STATE_SYNCED;
 	param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
 	param.broadcast_id = g_broadcast_id;
 	param.num_subgroups = 1U;
@@ -611,6 +687,8 @@ static int remove_source(struct sync_state *state)
 		return err;
 	}
 
+	state->recv_state = NULL;
+
 	WAIT_FOR_FLAG(flag_recv_state_updated);
 
 	return 0;
@@ -634,13 +712,48 @@ static void remove_all_sources(void)
 
 			printk("[%zu]: Source removed with id %u\n",
 			       i, state->src_id);
+		}
+	}
+}
 
-			printk("Terminating PA sync\n");
-			err = pa_sync_term(state);
-			if (err) {
-				FAIL("[%zu]: PA sync term failed (err %d)\n", err);
-				return;
-			}
+static void terminate_all_pa(void)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
+		int err;
+		struct sync_state *state = &sync_states[i];
+
+		if (state->pa_sync == NULL) {
+			continue;
+		}
+
+		err = pa_sync_term(state);
+		if (err != 0) {
+			FAIL("[%zu]: PA sync term failed (err %d)\n", i, err);
+			return;
+		}
+	}
+}
+
+static void set_bis_sync_state(struct sync_state *state,
+			       uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
+{
+	int err;
+
+	err = bt_bap_scan_delegator_set_bis_sync_state(state->src_id, bis_sync_req);
+	if (err != 0) {
+		FAIL("Could not set BIS sync state: %d\n", err);
+		return;
+	}
+}
+
+static void set_all_bis_sync_states(uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
+		struct sync_state *state = &sync_states[i];
+
+		if (state->recv_state != NULL) {
+			printk("[%zu]: Setting BIS sync state\n", i);
+			set_bis_sync_state(state, bis_sync_req);
 		}
 	}
 }
@@ -728,6 +841,7 @@ static void test_main_client_sync(void)
 		return;
 	}
 
+	WAIT_FOR_FLAG(flag_broadcast_source_added);
 	/* Wait for broadcast assistant to request us to sync to PA */
 	printk("Waiting for flag_pa_synced\n");
 	WAIT_FOR_FLAG(flag_pa_synced);
@@ -735,6 +849,7 @@ static void test_main_client_sync(void)
 	/* Mod all sources by modifying the metadata */
 	mod_all_sources();
 
+	WAIT_FOR_FLAG(flag_broadcast_source_modified);
 	/* Wait for broadcast assistant to tell us to BIS sync */
 	printk("Waiting for flag_bis_sync_requested\n");
 	WAIT_FOR_FLAG(flag_bis_sync_requested);
@@ -750,6 +865,7 @@ static void test_main_client_sync(void)
 	printk("Waiting for flag_pa_terminated\n");
 	WAIT_FOR_FLAG(flag_pa_terminated);
 
+	WAIT_FOR_FLAG(flag_broadcast_source_removed);
 	PASS("BAP Scan Delegator Client Sync passed\n");
 }
 
@@ -788,6 +904,13 @@ static void test_main_server_sync_client_rem(void)
 	/* Set the BIS sync state */
 	sync_all_broadcasts();
 
+	/* Enable rejection for the first remove source request */
+	reject_control_op = true;
+
+	WAIT_FOR_FLAG(flag_remove_source_rejected);
+
+	/* Disable rejection for subsequent remove source requests */
+	reject_control_op = false;
 	/* For for client to remove source and thus terminate the PA */
 	printk("Waiting for flag_pa_terminated\n");
 	WAIT_FOR_FLAG(flag_pa_terminated);
@@ -809,7 +932,7 @@ static void test_main_server_sync_server_rem(void)
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err != 0) {
-		FAIL("Could not start scan (%d)", err);
+		FAIL("Could not start scan (%d)\n", err);
 		return;
 	}
 
@@ -830,7 +953,12 @@ static void test_main_server_sync_server_rem(void)
 	/* Set the BIS sync state */
 	sync_all_broadcasts();
 
-	/* Remote all sources, causing PA sync term request to trigger */
+	uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS] = {0};
+
+	set_all_bis_sync_states(bis_sync_req);
+	terminate_all_pa();
+
+	/* Remove all sources, causing PA sync term request to trigger */
 	remove_all_sources();
 
 	/* Wait for PA sync to be terminated */

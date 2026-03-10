@@ -160,7 +160,7 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	if ((lll->data_chan_count < CHM_USED_COUNT_MIN) ||
 	    (lll->data_chan_hop < CHM_HOP_COUNT_MIN) ||
 	    (lll->data_chan_hop > CHM_HOP_COUNT_MAX) ||
-	    !lll->interval) {
+	    !IN_RANGE(lll->interval, BT_HCI_LE_INTERVAL_MIN, BT_HCI_LE_INTERVAL_MAX)) {
 		invalid_release(&adv->ull, lll, link, rx);
 
 		return;
@@ -250,7 +250,7 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	 * complete event.
 	 */
 	node = pdu_adv;
-	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_cc));
+	LL_ASSERT_DBG(IS_PTR_ALIGNED(node, struct node_rx_cc));
 
 	/* Populate the fields required for connection complete event */
 	cc = node;
@@ -334,7 +334,7 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 		link = rx->hdr.link;
 
 		handle = ull_adv_handle_get(adv);
-		LL_ASSERT(handle < BT_CTLR_ADV_SET);
+		LL_ASSERT_DBG(handle < BT_CTLR_ADV_SET);
 
 		rx->hdr.type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
 		rx->hdr.handle = handle;
@@ -400,16 +400,9 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	}
 
-	/* TODO: active_to_start feature port */
-	conn->ull.ticks_active_to_start = 0U;
-	conn->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	conn->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	conn->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 
-	ticks_slot_offset = MAX(conn->ull.ticks_active_to_start,
-				conn->ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
@@ -425,6 +418,19 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	conn_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	conn_offset_us -= EVENT_JITTER_US;
 	conn_offset_us -= ready_delay_us;
+	/*
+	 * NOTE: Correct window widening for the first connection will be:
+	 *
+	 * conn_offset_us -=
+	 *         DIV_ROUND_UP(((lll_clock_ppm_local_get() +
+	 *                        lll_clock_ppm_get(conn->periph.sca)) *
+	 *                       (win_offset * CONN_INT_UNIT_US + win_delay_us)), USEC_PER_SEC);
+	 *
+	 * But, as currently in the implementation the drift compensation uses the
+	 * `lll->periph.window_widening_periodic_us` value, we may as well use that value here
+	 * as well. Adding another value for LLL to use seems overkill for this one case.
+	 */
+	conn_offset_us -= lll->periph.window_widening_periodic_us;
 
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	/* disable ticker job, in order to chain stop and start to avoid RTC
@@ -488,8 +494,8 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 				      ticks_slot_overhead),
 				     ull_periph_ticker_cb, conn, ticker_op_cb,
 				     (void *)__LINE__);
-	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+		      (ticker_status == TICKER_STATUS_BUSY));
 
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	/* enable ticker job, irrespective of disabled in this function so
@@ -514,8 +520,8 @@ void ull_periph_latency_cancel(struct ll_conn *conn, uint16_t handle)
 				      0, 0, 0, 0, 1, 0,
 				      ticker_update_latency_cancel_op_cb,
 				      (void *)conn);
-		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-			  (ticker_status == TICKER_STATUS_BUSY));
+		LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+			      (ticker_status == TICKER_STATUS_BUSY));
 	}
 }
 
@@ -572,7 +578,10 @@ void ull_periph_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&conn->ull);
-	LL_ASSERT(ref);
+	LL_ASSERT_DBG(ref);
+
+	/* Increment event counter */
+	conn->event_counter += (lazy + 1U);
 
 	/* Append timing parameters */
 	p.ticks_at_expire = ticks_at_expire;
@@ -585,7 +594,7 @@ void ull_periph_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	/* Kick LLL prepare */
 	err = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
 			     0, &mfy);
-	LL_ASSERT(!err);
+	LL_ASSERT_ERR(!err);
 
 	/* De-mux remaining tx nodes from FIFO */
 	ull_conn_tx_demux(UINT8_MAX);
@@ -655,15 +664,15 @@ static void invalid_release(struct ull_hdr *hdr, struct lll_conn *lll,
 
 static void ticker_op_stop_adv_cb(uint32_t status, void *param)
 {
-	LL_ASSERT(status != TICKER_STATUS_FAILURE ||
-		  param == ull_disable_mark_get());
+	LL_ASSERT_ERR((status != TICKER_STATUS_FAILURE) ||
+		      (param == ull_disable_mark_get()));
 }
 
 static void ticker_op_cb(uint32_t status, void *param)
 {
 	ARG_UNUSED(param);
 
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT_ERR(status == TICKER_STATUS_SUCCESS);
 }
 
 static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
@@ -671,7 +680,7 @@ static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
 {
 	struct ll_conn *conn = param;
 
-	LL_ASSERT(ticker_status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT_ERR(ticker_status == TICKER_STATUS_SUCCESS);
 
 	conn->periph.latency_cancel = 0U;
 }

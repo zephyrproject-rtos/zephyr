@@ -37,6 +37,10 @@ set_property(TARGET linker PROPERTY warnings_as_errors)
 # such as, "-no-pie" for LD, and "--no-pie" for LLD.
 set_property(TARGET linker PROPERTY no_position_independent)
 
+# Linker flag for ignoring section overlap check errors
+# such as, "--no-check-sections" for LD and LLD.
+set_property(TARGET linker PROPERTY no_check_sections)
+
 # Linker flag for doing partial linking
 # such as, "-r" or "--relocatable" for LD and LLD.
 set_property(TARGET linker PROPERTY partial_linking)
@@ -50,6 +54,18 @@ set_property(TARGET linker PROPERTY no_relax)
 # Linker flag for enabling relaxation of address optimization for jump calls.
 set_property(TARGET linker PROPERTY relax)
 
+# Linker flags for Link Time Optimizations (LTO)
+set_property(TARGET linker PROPERTY lto_arguments)
+set_property(TARGET linker PROPERTY lto_arguments_st)
+
 # Linker flag for defining specs. Defined only by gcc, when gcc is used as
 # front-end for ld.
 set_compiler_property(PROPERTY specs)
+
+# The optimization properties are used for controlling inheritance for linker settings.
+set(linker_property_docs BRIEF_DOCS "INHERIT" FULL_DOCS "Linker property with inheritance")
+define_property(TARGET PROPERTY no_optimization INHERITED ${linker_property_docs})
+define_property(TARGET PROPERTY optimization_debug INHERITED ${linker_property_docs})
+define_property(TARGET PROPERTY optimization_speed INHERITED ${linker_property_docs})
+define_property(TARGET PROPERTY optimization_size INHERITED ${linker_property_docs})
+define_property(TARGET PROPERTY optimization_size_aggressive INHERITED ${linker_property_docs})

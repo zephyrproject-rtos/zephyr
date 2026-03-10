@@ -69,7 +69,7 @@ SECTION_FUNC(TEXT, z_arm_do_swap)
     cps #MODE_SVC
 
 #if defined(CONFIG_FPU_SHARING)
-    ldrb r0, [r2, #_thread_offset_to_user_options]
+    ldrh r0, [r2, #_thread_offset_to_user_options]
     tst r0, #K_FP_REGS /* _current->base.user_options & K_FP_REGS */
     beq out_fp_inactive
 
@@ -151,7 +151,7 @@ out_fp_inactive:
     cps #MODE_SVC
 
 #if defined(CONFIG_FPU_SHARING)
-    ldrb r0, [r2, #_thread_offset_to_user_options]
+    ldrh r0, [r2, #_thread_offset_to_user_options]
     tst r0, #K_FP_REGS /* _current->base.user_options & K_FP_REGS */
     beq in_fp_inactive
 
@@ -423,5 +423,9 @@ valid_syscall_id:
 
 GTEXT(z_arm_cortex_r_svc)
 SECTION_FUNC(TEXT, z_arm_cortex_r_svc)
+    .cfi_sections .debug_frame
+    .cfi_startproc simple
+    .cfi_def_cfa 13, 0x0
     svc #_SVC_CALL_CONTEXT_SWITCH
     bx lr
+    .cfi_endproc

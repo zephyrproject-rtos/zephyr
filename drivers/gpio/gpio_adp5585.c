@@ -76,8 +76,7 @@ static int gpio_adp5585_config(const struct device *dev, gpio_pin_t pin, gpio_fl
 	uint8_t reg_value;
 
 	/* ADP5585 has non-contiguous gpio pin layouts, account for this */
-	if ((pin & cfg->common.port_pin_mask) == 0) {
-		LOG_ERR("pin %d is invalid for this device", pin);
+	if ((BIT(pin) & cfg->common.port_pin_mask) == 0) {
 		return -ENOTSUP;
 	}
 
@@ -143,14 +142,14 @@ static int gpio_adp5585_config(const struct device *dev, gpio_pin_t pin, gpio_fl
 			data->output |= BIT(pin);
 		}
 		if (bank == 0) {
-			/* reg_value for ADP5585_GPO_OUT_MODE */
+			/* reg_value for ADP5585_GPO_DATA_OUT */
 			reg_value = (uint8_t)data->output;
 		} else {
-			/* reg_value for ADP5585_GPO_OUT_MODE */
+			/* reg_value for ADP5585_GPO_DATA_OUT */
 			reg_value = (uint8_t)(data->output >> 8);
 		}
 		ret = i2c_reg_write_byte_dt(&parent_cfg->i2c_bus,
-					ADP5585_GPO_OUT_MODE_A + bank,
+					ADP5585_GPO_DATA_OUT_A + bank,
 					reg_value);
 		if (ret != 0) {
 			goto out;
@@ -194,7 +193,7 @@ static int gpio_adp5585_port_read(const struct device *dev, gpio_port_value_t *v
 
 	/** Read Input Register */
 
-	uint8_t gpi_status_reg;
+	uint8_t gpi_status_reg = ADP5585_GPI_STATUS_A;
 	uint8_t gpi_status_buf[2];
 
 	ret = i2c_write_read_dt(&parent_cfg->i2c_bus, &gpi_status_reg, 1U,
@@ -224,6 +223,11 @@ static int gpio_adp5585_port_write(const struct device *dev, gpio_port_pins_t ma
 	uint16_t out;
 	uint8_t reg_value;
 	int ret;
+
+	/* ADP5585 has non-contiguous gpio pin layouts, account for this */
+	if ((mask & cfg->common.port_pin_mask) == 0) {
+		return -ENOTSUP;
+	}
 
 	/* Can't do I2C bus operations from an ISR */
 	if (k_is_in_isr()) {
@@ -288,8 +292,7 @@ static int gpio_adp5585_pin_interrupt_configure(const struct device *dev, gpio_p
 	}
 
 	/* ADP5585 has non-contiguous gpio pin layouts, account for this */
-	if ((pin & cfg->common.port_pin_mask) == 0) {
-		LOG_ERR("pin %d is invalid for this device", pin);
+	if ((BIT(pin) & cfg->common.port_pin_mask) == 0) {
 		return -ENOTSUP;
 	}
 

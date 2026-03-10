@@ -14,7 +14,6 @@
 #include <zephyr/sys/errno_private.h>
 #include <zephyr/dt-bindings/gpio/renesas-rzt2m-gpio.h>
 #include <soc.h>
-#include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/irq.h>
 
 static const struct device *const ns_portnf_md_dev = DEVICE_DT_GET(DT_NODELABEL(ns_portnf_md));
@@ -318,17 +317,16 @@ static int rzt2m_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 		return -ENOTSUP;
 	}
 
-	uint8_t irq = rzt2m_gpio_get_pin_irq(dev, pin);
-	bool irq_used_by_other = rzt2m_gpio_is_irq_used_by_other_pin(dev, pin, irq);
-
+	int irq = rzt2m_gpio_get_pin_irq(dev, pin);
 	if (irq < 0) {
 		return -ENOTSUP;
 	}
-
 	/* secure range - currently not supported*/
 	if (irq >= NS_IRQ_COUNT) {
 		return -ENOSYS;
 	}
+
+	bool irq_used_by_other = rzt2m_gpio_is_irq_used_by_other_pin(dev, pin, irq);
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		rzt2m_gpio_unlock();
@@ -452,7 +450,7 @@ DEVICE_DT_DEFINE(DT_INST(0, renesas_rzt2m_gpio_common),
 		.ptadr = (uint8_t *)DT_REG_ADDR_BY_NAME(DT_INST_GPARENT(inst), ptadr),             \
 		.port = DT_INST_REG_ADDR(inst),                                                    \
 		.pin_irqs = {PORT_IRQS_INITIALIZER(inst)},                                         \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst)}};               \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst)};                                  \
 	DEVICE_DT_INST_DEFINE(inst, rzt2m_gpio_init, NULL, &rzt2m_gpio_data##inst,          \
 			      &rzt2m_gpio_config##inst, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,   \
 			      &rzt2m_gpio_driver_api);

@@ -16,7 +16,6 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
@@ -346,13 +345,13 @@ int bt_gmap_register(enum bt_gmap_role role, struct bt_gmap_feat features)
 {
 	int err;
 
-	CHECKIF(!valid_gmap_role(role)) {
+	if (!valid_gmap_role(role)) {
 		LOG_DBG("Invalid role: %d", role);
 
 		return -EINVAL;
 	}
 
-	CHECKIF(!valid_gmap_features(role, features)) {
+	if (!valid_gmap_features(role, features)) {
 		LOG_DBG("Invalid features");
 
 		return -EINVAL;
@@ -383,13 +382,13 @@ int bt_gmap_set_role(enum bt_gmap_role role, struct bt_gmap_feat features)
 		return -ENOEXEC;
 	}
 
-	CHECKIF(!valid_gmap_role(role)) {
+	if (!valid_gmap_role(role)) {
 		LOG_DBG("Invalid role: %d", role);
 
 		return -EINVAL;
 	}
 
-	CHECKIF(!valid_gmap_features(role, features)) {
+	if (!valid_gmap_features(role, features)) {
 		LOG_DBG("Invalid features");
 
 		return -EINVAL;

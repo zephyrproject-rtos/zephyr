@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,10 @@
 #include "r_gpt_cfg.h"
 #include <zephyr/logging/log.h>
 #include <stdio.h>
+
+#ifdef CONFIG_RENESAS_RA_ELC
+#include <zephyr/drivers/misc/interconn/renesas_elc/renesas_elc.h>
+#endif
 
 LOG_MODULE_REGISTER(pwm_renesas_ra, CONFIG_PWM_LOG_LEVEL);
 
@@ -39,6 +43,12 @@ struct pwm_renesas_ra_data {
 	gpt_instance_ctrl_t fsp_ctrl;
 	timer_cfg_t fsp_cfg;
 	gpt_extended_cfg_t extend_cfg;
+
+#ifdef CONFIG_RENESAS_RA_ELC
+	struct renesas_elc_dt_spec start_renesas_elc;
+	struct renesas_elc_dt_spec stop_renesas_elc;
+#endif /* CONFIG_RENESAS_RA_ELC */
+
 	uint16_t capture_a_event;
 	uint16_t overflow_event;
 
@@ -180,6 +190,17 @@ static int pwm_renesas_ra_set_cycles(const struct device *dev, uint32_t pin, uin
 	if (err != FSP_SUCCESS) {
 		return -EIO;
 	}
+
+#ifdef CONFIG_RENESAS_RA_ELC
+	/* Enables external event triggers */
+	if (data->extend_cfg.start_source != GPT_SOURCE_NONE ||
+	    data->extend_cfg.stop_source != GPT_SOURCE_NONE) {
+		err = R_GPT_Enable(&data->fsp_ctrl);
+		if (err != FSP_SUCCESS) {
+			return -EIO;
+		}
+	}
+#endif /* CONFIG_RENESAS_RA_ELC */
 
 	LOG_DBG("channel %u, pin %u, pulse %u, period %u, prescaler: %u.", data->fsp_cfg.channel,
 		pin, pulse_cycles, period_cycles, data->fsp_cfg.source_div);
@@ -337,7 +358,7 @@ static int pwm_renesas_ra_enable_capture(const struct device *dev, uint32_t pin)
 	}
 
 	/* Enable interruption */
-	enable_irq(data->fsp_cfg.cycle_end_irq, data->fsp_cfg.cycle_end_irq, &data->fsp_ctrl);
+	enable_irq(data->fsp_cfg.cycle_end_irq, data->fsp_cfg.cycle_end_ipl, &data->fsp_ctrl);
 	enable_irq(data->extend_cfg.capture_a_irq, data->extend_cfg.capture_a_ipl, &data->fsp_ctrl);
 
 	R_ICU->IELSR[data->fsp_cfg.cycle_end_irq] = (elc_event_t)data->overflow_event;
@@ -472,8 +493,30 @@ static int pwm_renesas_ra_init(const struct device *dev)
 
 #if defined(CONFIG_PWM_CAPTURE)
 	data->fsp_cfg.p_callback = fsp_callback;
-	data->fsp_cfg.p_context = dev;
+	data->fsp_cfg.p_context = (void *)dev;
 #endif /* defined(CONFIG_PWM_CAPTURE) */
+
+#ifdef CONFIG_RENESAS_RA_ELC
+	if (device_is_ready(data->start_renesas_elc.dev) && data->start_renesas_elc.event != 0) {
+		err = renesas_elc_link_set(data->start_renesas_elc.dev,
+					   data->start_renesas_elc.peripheral,
+					   data->start_renesas_elc.event);
+		if (err) {
+			LOG_ERR("Failed to set Renesas ELC link for PWM start source(%d)", err);
+			return err;
+		}
+	}
+
+	if (device_is_ready(data->stop_renesas_elc.dev) && data->stop_renesas_elc.event != 0) {
+		err = renesas_elc_link_set(data->stop_renesas_elc.dev,
+					   data->stop_renesas_elc.peripheral,
+					   data->stop_renesas_elc.event);
+		if (err) {
+			LOG_ERR("Failed to set Renesas ELC link for PWM stop source(%d)", err);
+			return err;
+		}
+	}
+#endif /* CONFIG_RENESAS_RA_ELC */
 
 	data->fsp_cfg.p_extend = &data->extend_cfg;
 
@@ -485,15 +528,36 @@ static int pwm_renesas_ra_init(const struct device *dev)
 	return 0;
 }
 
-#define _ELC_EVENT_GPT_CAPTURE_COMPARE_A(channel) ELC_EVENT_GPT##channel##_CAPTURE_COMPARE_A
-#define _ELC_EVENT_GPT_COUNTER_OVERFLOW(channel)  ELC_EVENT_GPT##channel##_COUNTER_OVERFLOW
+#define EVENT_GPT_CAPTURE_COMPARE_A(channel)                                                       \
+	BSP_PRV_IELS_ENUM(CONCAT(EVENT_GPT, channel, _CAPTURE_COMPARE_A))
+#define EVENT_GPT_COUNTER_OVERFLOW(channel)                                                        \
+	BSP_PRV_IELS_ENUM(CONCAT(EVENT_GPT, channel, _COUNTER_OVERFLOW))
 
-#define ELC_EVENT_GPT_CAPTURE_COMPARE_A(channel) _ELC_EVENT_GPT_CAPTURE_COMPARE_A(channel)
-#define ELC_EVENT_GPT_COUNTER_OVERFLOW(channel)  _ELC_EVENT_GPT_COUNTER_OVERFLOW(channel)
+#ifdef CONFIG_RENESAS_RA_ELC
+#define PWM_RENESAS_ELC_DATA(index)                                                                \
+	.start_renesas_elc =                                                                       \
+		{                                                                                  \
+			.dev = RENESAS_ELC_DT_SPEC_DEVICE_INST_GET_BY_NAME_OR_NULL(index, start),  \
+			.peripheral = RENESAS_ELC_DT_SPEC_PERIPHERAL_INST_GET_BY_NAME_OR(          \
+				index, start, 0),                                                  \
+			.event = RENESAS_ELC_DT_SPEC_EVENT_INST_GET_BY_NAME_OR(index, start, 0),   \
+	},                                                                                         \
+	.stop_renesas_elc = {                                                                      \
+		.dev = RENESAS_ELC_DT_SPEC_DEVICE_INST_GET_BY_NAME_OR_NULL(index, stop),           \
+		.peripheral = RENESAS_ELC_DT_SPEC_PERIPHERAL_INST_GET_BY_NAME_OR(index, stop, 0),  \
+		.event = RENESAS_ELC_DT_SPEC_EVENT_INST_GET_BY_NAME_OR(index, stop, 0),            \
+	},
+#else
+#define PWM_RENESAS_ELC_DATA(index)
+#endif
 
 #ifdef CONFIG_PWM_CAPTURE
 #define PWM_RA_IRQ_CONFIG_INIT(index)                                                              \
 	do {                                                                                       \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(                                                  \
+			EVENT_GPT_CAPTURE_COMPARE_A(DT_INST_PROP(index, channel)));                \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(                                                  \
+			EVENT_GPT_COUNTER_OVERFLOW(DT_INST_PROP(index, channel)));                 \
                                                                                                    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, gtioca, irq),                               \
 			    DT_INST_IRQ_BY_NAME(index, gtioca, priority),                          \
@@ -506,6 +570,9 @@ static int pwm_renesas_ra_init(const struct device *dev)
 #else
 #define PWM_RA_IRQ_CONFIG_INIT(index)
 #endif /* CONFIG_PWM_CAPTURE */
+
+#define PWM_INST_SOURCE_OR(index, prop, default_value)                                             \
+	DT_INST_STRING_TOKEN_OR(index, prop, default_value)
 
 #define PWM_RA8_INIT(index)                                                                        \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
@@ -520,8 +587,10 @@ static int pwm_renesas_ra_init(const struct device *dev)
 				.output_enabled = false,                                           \
 				.stop_level = GPT_PIN_LEVEL_LOW,                                   \
 			},                                                                         \
-		.start_source = (gpt_source_t)(GPT_SOURCE_NONE),                                   \
-		.stop_source = (gpt_source_t)(GPT_SOURCE_NONE),                                    \
+		.start_source =                                                                    \
+			(gpt_source_t)(PWM_INST_SOURCE_OR(index, start_source, GPT_SOURCE_NONE)),  \
+		.stop_source =                                                                     \
+			(gpt_source_t)(PWM_INST_SOURCE_OR(index, stop_source, GPT_SOURCE_NONE)),   \
 		.clear_source = (gpt_source_t)(GPT_SOURCE_NONE),                                   \
 		.count_up_source = (gpt_source_t)(GPT_SOURCE_NONE),                                \
 		.count_down_source = (gpt_source_t)(GPT_SOURCE_NONE),                              \
@@ -535,6 +604,8 @@ static int pwm_renesas_ra_init(const struct device *dev)
 		.capture_filter_gtiocb = GPT_CAPTURE_FILTER_NONE,                                  \
 		.p_pwm_cfg = NULL,                                                                 \
 		.gtior_setting.gtior = (0x0U),                                                     \
+		.gtioca_polarity = GPT_GTIOC_POLARITY_NORMAL,                                      \
+		.gtiocb_polarity = GPT_GTIOC_POLARITY_NORMAL,                                      \
 	};                                                                                         \
 	static struct pwm_renesas_ra_data pwm_renesas_ra_data_##index = {                          \
 		.fsp_cfg =                                                                         \
@@ -546,8 +617,9 @@ static int pwm_renesas_ra_init(const struct device *dev)
 				.cycle_end_irq = DT_INST_IRQ_BY_NAME(index, overflow, irq),        \
 			},                                                                         \
 		.extend_cfg = g_timer1_extend_##index,                                             \
-		.capture_a_event = ELC_EVENT_GPT_CAPTURE_COMPARE_A(DT_INST_PROP(index, channel)),  \
-		.overflow_event = ELC_EVENT_GPT_COUNTER_OVERFLOW(DT_INST_PROP(index, channel)),    \
+		PWM_RENESAS_ELC_DATA(index).capture_a_event =                                      \
+			EVENT_GPT_CAPTURE_COMPARE_A(DT_INST_PROP(index, channel)),                 \
+		.overflow_event = EVENT_GPT_COUNTER_OVERFLOW(DT_INST_PROP(index, channel)),        \
 	};                                                                                         \
 	static const struct pwm_renesas_ra_config pwm_renesas_ra_config_##index = {                \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                   \

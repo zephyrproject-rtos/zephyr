@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	test {
@@ -27,6 +27,12 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 
 			#include "i2c.dtsi"
+		};
+
+		charger_gpio {
+			compatible = "zephyr,charger-gpio";
+			status = "okay";
+			ctrl-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

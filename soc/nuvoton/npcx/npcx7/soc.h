@@ -24,6 +24,9 @@
 #define NPCX_WKEN_OFFSET(n)		(0x01e + (n * 2) + ((n < 5) ? 0 : 0x012))
 #define NPCX_WKINEN_OFFSET(n)		(0x01f + (n * 2) + ((n < 5) ? 0 : 0x012))
 
+/* NPCX7 PMC multi-registers */
+#define NPCX_PWDWN_CTL_OFFSET(n)	(((n - 1) < 6) ? (0x008 + (n - 1)) : (0x01e + (n - 1)))
+
 /* NPCX7 ADC multi-registers offset */
 #define NPCX_CHNDAT_OFFSET(n)		(0x040 + (n * 2))
 #define NPCX_THRCTL_OFFSET(n)		(0x014 + (n * 2))
@@ -42,11 +45,16 @@
 /* NPCX7 Clock configuration */
 #define MAX_OFMCLK 100000000
 
-#include <reg/reg_access.h>
-#include <reg/reg_def.h>
+#include "reg_def.h"
+#include "clock_def.h"
 #include <soc_dt.h>
-#include <soc_clock.h>
 #include <soc_pins.h>
 #include <soc_power.h>
+
+/* NPCX7 Clock prescaler configurations */
+#define VAL_HFCGP   ((FPRED_VAL << 4) | AHB6DIV_VAL)
+#define VAL_HFCBCD  (FIUDIV_VAL << 4)
+#define VAL_HFCBCD1 (APB1DIV_VAL | (APB2DIV_VAL << 4))
+#define VAL_HFCBCD2 APB3DIV_VAL
 
 #endif /* _NUVOTON_NPCX_SOC_H_ */

@@ -3,6 +3,9 @@
 
 if BOARD_XG24_DK2601B
 
+configdefault LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+
 if SOC_GECKO_USE_RAIL
 
 config FPU
@@ -14,9 +17,6 @@ if BT
 
 config FPU
 	default y
-
-config COMMON_LIBC_MALLOC_ARENA_SIZE
-	default 8192
 
 config MAIN_STACK_SIZE
 	default 2304

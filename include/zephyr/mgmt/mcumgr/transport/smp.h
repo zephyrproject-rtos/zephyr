@@ -15,9 +15,9 @@ extern "C" {
 #endif
 
 /**
- * @brief MCUmgr transport SMP API
- * @defgroup mcumgr_transport_smp MCUmgr transport SMP API
- * @ingroup mcumgr
+ * @brief MCUmgr SMP transport API
+ * @defgroup mcumgr_transport_smp SMP transport
+ * @ingroup mcumgr_transport
  * @{
  */
 
@@ -42,7 +42,7 @@ typedef int (*smp_transport_out_fn)(struct net_buf *nb);
  * The supplied net_buf should contain a request received from the peer whose
  * MTU is being queried.  This function takes a net_buf parameter because some
  * transports store connection-specific information in the net_buf user header
- * (e.g., the BLE transport stores the peer address).
+ * (e.g., the Bluetooth transport stores the peer address).
  *
  * @param nb                    Contains a request from the relevant peer.
  *
@@ -55,7 +55,7 @@ typedef uint16_t (*smp_transport_get_mtu_fn)(const struct net_buf *nb);
  * @brief SMP copy user_data callback
  *
  * The supplied src net_buf should contain a user_data that cannot be copied
- * using regular memcpy function (e.g., the BLE transport net_buf user_data
+ * using regular memcpy function (e.g., the Bluetooth transport net_buf user_data
  * stores the connection reference that has to be incremented when is going
  * to be used by another buffer).
  *
@@ -71,7 +71,7 @@ typedef int (*smp_transport_ud_copy_fn)(struct net_buf *dst,
  * @brief SMP free user_data callback
  *
  * This function frees net_buf user data, because some transports store
- * connection-specific information in the net_buf user data (e.g., the BLE
+ * connection-specific information in the net_buf user data (e.g., the Bluetooth
  * transport stores the connection reference that has to be decreased).
  *
  * @param ud                    Contains a user_data pointer to be freed.
@@ -90,6 +90,16 @@ typedef void (*smp_transport_ud_free_fn)(void *ud);
  * @return			false if data is no longer valid/should be freed, true otherwise.
  */
 typedef bool (*smp_transport_query_valid_check_fn)(struct net_buf *nb, void *arg);
+
+/** @typedef smp_transport_ud_req_init_fn
+ * @brief SMP init request buffer
+ *
+ * The supplied net_buf should be for a SMP request
+ *
+ * @param nb                    net buf for SMP request
+ * @param priv			SMP transport private data
+ */
+typedef void (*smp_transport_ud_req_init_fn)(struct net_buf *nb, void *priv);
 
 /**
  * @brief Function pointers of SMP transport functions, if a handler is NULL then it is not
@@ -110,6 +120,9 @@ struct smp_transport_api_t {
 
 	/** Transport's check function for if a query is valid. */
 	smp_transport_query_valid_check_fn query_valid_check;
+
+	/** Transport's request buffer init function */
+	smp_transport_ud_req_init_fn ud_init;
 };
 
 /**

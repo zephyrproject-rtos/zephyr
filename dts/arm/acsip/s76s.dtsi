@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <st/l0/stm32l073Xz.dtsi>
 #include <st/l0/stm32l073r(b-z)tx-pinctrl.dtsi>
 
@@ -21,18 +20,18 @@
 		/* SX1276 nRESET */
 		reset-gpios = <&gpiob 10 GPIO_ACTIVE_LOW>;
 		dio-gpios =
-			/* SX1276 D0 */
-			<&gpiob 11 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
-			/* SX1276 D1 */
-			<&gpioc 13 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
-			/* SX1276 D2 */
-			<&gpiob 9 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
-			/* SX1276 D3 */
-			<&gpiob 4 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
-			/* SX1276 D4 */
-			<&gpiob 3 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
-			/* SX1276 D5 */
-			<&gpioa 15 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			    /* SX1276 D0 */
+			    <&gpiob 11 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    /* SX1276 D1 */
+			    <&gpioc 13 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    /* SX1276 D2 */
+			    <&gpiob 9 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    /* SX1276 D3 */
+			    <&gpiob 4 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    /* SX1276 D4 */
+			    <&gpiob 3 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    /* SX1276 D5 */
+			    <&gpioa 15 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 		spi-max-frequency = <1000000>;
 		power-amplifier-output = "pa-boost";
 	};

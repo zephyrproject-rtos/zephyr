@@ -556,13 +556,13 @@ static int mcp251xfd_add_rx_filter(const struct device *dev, can_rx_callback_t r
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
-	for (filter_idx = 0; filter_idx < CONFIG_CAN_MAX_FILTER ; filter_idx++) {
+	for (filter_idx = 0; filter_idx < CONFIG_CAN_MCP251XFD_MAX_FILTERS ; filter_idx++) {
 		if ((BIT(filter_idx) & dev_data->filter_usage) == 0) {
 			break;
 		}
 	}
 
-	if (filter_idx >= CONFIG_CAN_MAX_FILTER) {
+	if (filter_idx >= CONFIG_CAN_MCP251XFD_MAX_FILTERS) {
 		filter_idx = -ENOSPC;
 		goto done;
 	}
@@ -629,7 +629,7 @@ static void mcp251xfd_remove_rx_filter(const struct device *dev, int filter_idx)
 	uint32_t *reg;
 	int ret;
 
-	if (filter_idx < 0 || filter_idx >= CONFIG_CAN_MAX_FILTER) {
+	if (filter_idx < 0 || filter_idx >= CONFIG_CAN_MCP251XFD_MAX_FILTERS) {
 		LOG_ERR("Filter ID %d out of bounds", filter_idx);
 		return;
 	}
@@ -731,7 +731,7 @@ static int mcp251xfd_get_max_filters(const struct device *dev, bool ide)
 {
 	ARG_UNUSED(ide);
 
-	return CONFIG_CAN_MAX_FILTER;
+	return CONFIG_CAN_MCP251XFD_MAX_FILTERS;
 }
 
 static int mcp251xfd_handle_fifo_read(const struct device *dev, const struct mcp251xfd_fifo *fifo,
@@ -1394,6 +1394,12 @@ static inline int mcp251xfd_init_iocon_reg(const struct device *dev)
 		tmp |= MCP251XFD_REG_IOCON_SOF;
 	}
 
+	if (dev_cfg->xstby_enable) {
+		tmp &= ~MCP251XFD_REG_IOCON_TRIS0;
+		tmp &= ~MCP251XFD_REG_IOCON_PM0;
+		tmp |= MCP251XFD_REG_IOCON_XSTBYEN;
+	}
+
 	*reg = sys_cpu_to_le32(tmp);
 
 	return  mcp251xfd_write(dev, MCP251XFD_REG_IOCON, MCP251XFD_REG_SIZE);
@@ -1745,10 +1751,11 @@ static DEVICE_API(can, mcp251xfd_api_funcs) = {
 	};                                                                                         \
 	static const struct mcp251xfd_config mcp251xfd_config_##inst = {                           \
 		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 8000000),                         \
-		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
+		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),                                \
 		.int_gpio_dt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                             \
                                                                                                    \
 		.sof_on_clko = DT_INST_PROP(inst, sof_on_clko),                                    \
+		.xstby_enable = DT_INST_PROP(inst, xstby_enable),                                  \
 		.clko_div = DT_INST_ENUM_IDX(inst, clko_div),                                      \
 		.pll_enable = DT_INST_PROP(inst, pll_enable),                                      \
 		.timestamp_prescaler = DT_INST_PROP(inst, timestamp_prescaler),                    \

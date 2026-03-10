@@ -1,40 +1,47 @@
 /*
- * Copyright (c) 2017-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2025 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
-#include <zephyr/bluetooth/hci_types.h>
-#include <zephyr/settings/settings.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
-
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/buf.h>
-#include <zephyr/sys/__assert.h>
-
-#include "hci_core.h"
-#include "id.h"
-#include "scan.h"
-#include "adv.h"
-#include "smp.h"
-#include "conn_internal.h"
-#include "keys.h"
-#include "common/rpa.h"
-
-#include "settings.h"
-
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/time_units.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/toolchain.h>
 
+#include "adv.h"
 #include "common/bt_str.h"
+#include "common/rpa.h"
+#include "conn_internal.h"
+#include "hci_core.h"
+#include "id.h"
+#include "keys.h"
+#include "scan.h"
+#include "settings.h"
+#include "smp.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -135,7 +142,7 @@ static int set_random_address(const bt_addr_t *addr)
 		return 0;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(*addr));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -186,8 +193,7 @@ int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 		return 0;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_SET_RANDOM_ADDR,
-				sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -265,7 +271,7 @@ static void adv_rpa_clear_data(struct bt_le_ext_adv *adv, void *data)
 		atomic_clear_bit(adv->flags, BT_ADV_RPA_VALID);
 		bt_addr_copy(&bt_dev.rpa[adv->id], BT_ADDR_NONE);
 	} else {
-		LOG_WRN("Adv sets rpa expired cb with id %d returns false\n", adv->id);
+		LOG_WRN("Adv sets rpa expired cb with id %d returns false", adv->id);
 	}
 }
 #endif
@@ -284,6 +290,9 @@ static void le_rpa_invalidate(void)
 			return;
 		}
 		bool rpa_expired_data[bt_dev.id_count];
+		for (uint8_t i = 0; i < bt_dev.id_count; i++) {
+			rpa_expired_data[i] = true;
+		}
 
 		bt_le_ext_adv_foreach(adv_rpa_invalidate, &rpa_expired_data);
 #if defined(CONFIG_BT_RPA_SHARING)
@@ -304,8 +313,7 @@ static void le_rpa_timeout_update(void)
 		struct net_buf *buf;
 		struct bt_hci_cp_le_set_rpa_timeout *cp;
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RPA_TIMEOUT,
-					sizeof(*cp));
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			LOG_ERR("Failed to create HCI RPA timeout command");
 			err = -ENOBUFS;
@@ -831,12 +839,11 @@ bool bt_id_adv_random_addr_check(const struct bt_le_adv_param *param)
 		 * Explicitly stop it here.
 		 */
 
-		if (!(param->options & _BT_LE_ADV_OPT_CONNECTABLE) &&
-		     (param->options & BT_LE_ADV_OPT_USE_IDENTITY)) {
+		if (!(param->options & BT_LE_ADV_OPT_CONN) &&
+		    (param->options & BT_LE_ADV_OPT_USE_IDENTITY)) {
 			/* Attempt to set non-connectable NRPA */
 			return false;
-		} else if (bt_dev.id_addr[param->id].type ==
-			   BT_ADDR_LE_RANDOM &&
+		} else if (bt_dev.id_addr[param->id].type == BT_ADDR_LE_RANDOM &&
 			   param->id != BT_ID_DEFAULT) {
 			/* Attempt to set connectable, or non-connectable with
 			 * identity different than scanner.
@@ -876,7 +883,7 @@ static int le_set_privacy_mode(const bt_addr_le_t *addr, uint8_t mode)
 	bt_addr_le_copy(&cp.id_addr, addr);
 	cp.mode = mode;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PRIVACY_MODE, sizeof(cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -897,7 +904,7 @@ static int addr_res_enable(uint8_t enable)
 
 	LOG_DBG("%s", enable ? "enabled" : "disabled");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADDR_RES_ENABLE, 1);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -919,7 +926,7 @@ static int hci_id_add(uint8_t id, const bt_addr_le_t *addr, uint8_t peer_irk[16]
 
 	LOG_DBG("addr %s", bt_addr_le_str(addr));
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ADD_DEV_TO_RL, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -952,7 +959,7 @@ static void pending_id_update(struct bt_keys *keys, void *data)
 	}
 }
 
-static void bt_id_pending_keys_update_set(struct bt_keys *keys, uint8_t flag)
+void bt_id_pending_keys_update_set(struct bt_keys *keys, uint8_t flag)
 {
 	atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
 	keys->state |= flag;
@@ -981,7 +988,7 @@ struct bt_id_conflict {
  * must refuse bonds that conflict in the resolve list. Notably, this prevents
  * multiple local identities to bond with the same remote identity.
  */
-void find_rl_conflict(struct bt_keys *resident, void *user_data)
+static void find_rl_conflict(struct bt_keys *resident, void *user_data)
 {
 	struct bt_id_conflict *conflict = user_data;
 	bool addr_conflict;
@@ -1009,10 +1016,12 @@ void find_rl_conflict(struct bt_keys *resident, void *user_data)
 			bt_irk_eq(&conflict->candidate->irk, &resident->irk));
 
 	if (addr_conflict || irk_conflict) {
-		LOG_DBG("Resident : addr %s and IRK %s", bt_addr_le_str(&resident->addr),
-			bt_hex(resident->irk.val, sizeof(resident->irk.val)));
-		LOG_DBG("Candidate: addr %s and IRK %s", bt_addr_le_str(&conflict->candidate->addr),
-			bt_hex(conflict->candidate->irk.val, sizeof(conflict->candidate->irk.val)));
+		LOG_DBG("Resident : addr %s and IRK %s, id: %d", bt_addr_le_str(&resident->addr),
+			bt_hex(resident->irk.val, sizeof(resident->irk.val)), resident->id);
+		LOG_DBG("Candidate: addr %s and IRK %s, id: %d",
+			bt_addr_le_str(&conflict->candidate->addr),
+			bt_hex(conflict->candidate->irk.val, sizeof(conflict->candidate->irk.val)),
+			conflict->candidate->id);
 
 		conflict->found = resident;
 	}
@@ -1037,6 +1046,7 @@ void bt_id_add(struct bt_keys *keys)
 
 	struct bt_conn *conn;
 	int err;
+	bool enable_controller_res = true;
 
 	LOG_DBG("addr %s", bt_addr_le_str(&keys->addr));
 
@@ -1093,6 +1103,10 @@ void bt_id_add(struct bt_keys *keys)
 		err = addr_res_enable(BT_HCI_ADDR_RES_DISABLE);
 		if (err) {
 			LOG_WRN("Failed to disable address resolution");
+			/* If it fails to disable, it should already be enabled,
+			 * don't need to enable again.
+			 */
+			enable_controller_res = false;
 			goto done;
 		}
 	}
@@ -1100,6 +1114,10 @@ void bt_id_add(struct bt_keys *keys)
 	if (bt_dev.le.rl_entries == bt_dev.le.rl_size) {
 		LOG_WRN("Resolving list size exceeded. Switching to host.");
 
+		/* Since the controller resolving list is cleared,
+		 * don't need to enable the address resolution.
+		 */
+		enable_controller_res = false;
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CLEAR_RL, NULL, NULL);
 		if (err) {
 			LOG_ERR("Failed to clear resolution list");
@@ -1140,7 +1158,9 @@ void bt_id_add(struct bt_keys *keys)
 	}
 
 done:
-	addr_res_enable(BT_HCI_ADDR_RES_ENABLE);
+	if (enable_controller_res) {
+		addr_res_enable(BT_HCI_ADDR_RES_ENABLE);
+	}
 
 #if defined(CONFIG_BT_OBSERVER)
 	if (scan_enabled) {
@@ -1167,7 +1187,7 @@ static int hci_id_del(const bt_addr_le_t *addr)
 
 	LOG_DBG("addr %s", bt_addr_le_str(addr));
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_REM_DEV_FROM_RL, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -1381,7 +1401,8 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 			return -EALREADY;
 		}
 
-		if (addr->type == BT_ADDR_LE_PUBLIC && IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR)) {
+		if (addr->type == BT_ADDR_LE_PUBLIC &&
+		    (IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR) || IS_ENABLED(CONFIG_BT_HCI_VS))) {
 			/* set the single public address */
 			if (bt_dev.id_count != 0) {
 				return -EALREADY;
@@ -1801,7 +1822,7 @@ int bt_id_set_create_conn_own_addr(bool use_filter, uint8_t *own_addr_type)
 #endif /* defined(CONFIG_BT_CENTRAL) */
 
 #if defined(CONFIG_BT_OBSERVER)
-static bool is_adv_using_rand_addr(void)
+static bool is_legacy_adv_enabled(void)
 {
 	struct bt_le_ext_adv *adv;
 
@@ -1817,7 +1838,27 @@ static bool is_adv_using_rand_addr(void)
 
 	adv = bt_le_adv_lookup_legacy();
 
-	return adv && atomic_test_bit(adv->flags, BT_ADV_ENABLED);
+	return adv != NULL && atomic_test_bit(adv->flags, BT_ADV_ENABLED);
+}
+
+static bool is_legacy_adv_using_id_addr(void)
+{
+	struct bt_le_ext_adv *adv;
+
+	if (!IS_ENABLED(CONFIG_BT_BROADCASTER) ||
+	    (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	     BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
+		/* When advertising is not enabled or is using extended
+		 * advertising HCI commands then only the scanner uses the set
+		 * random address command.
+		 */
+		return false;
+	}
+
+	adv = bt_le_adv_lookup_legacy();
+
+	return adv != NULL && atomic_test_bit(adv->flags, BT_ADV_ENABLED)
+			   && atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY);
 }
 
 int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
@@ -1850,6 +1891,45 @@ int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
 		if (err) {
 			return err;
 		}
+	} else {
+		/* Use NRPA unless identity has been explicitly requested
+		 * (through Kconfig).
+		 * Use same RPA as legacy advertiser if advertising.
+		 */
+		if (!IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY)) {
+			/* When using legacy advertising commands, the scanner and advertiser
+			 * share the same address, so we cannot change it.
+			 * When using extended advertising commands, however, the advertising
+			 * sets have their own addresses, so we can always change the scanner
+			 * address here.
+			 */
+			if (is_legacy_adv_using_id_addr()) {
+				if (bt_dev.id_addr[BT_ID_DEFAULT].type == BT_ADDR_LE_RANDOM) {
+					*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
+				} else {
+					*own_addr_type = BT_HCI_OWN_ADDR_PUBLIC;
+				}
+			} else if (is_legacy_adv_enabled()) {
+				*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
+			} else {
+				err = bt_id_set_private_addr(BT_ID_DEFAULT);
+				if (err) {
+					return err;
+				}
+
+				*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
+			}
+		} else {
+			if (bt_dev.id_addr[BT_ID_DEFAULT].type == BT_ADDR_LE_RANDOM) {
+				/* If scanning with Identity Address we must set the
+				 * random identity address for both active and passive
+				 * scanner in order to receive adv reports that are
+				 * directed towards this identity.
+				 */
+				err = set_random_address(&bt_dev.id_addr[BT_ID_DEFAULT].a);
+				if (err) {
+					return err;
+				}
 
 		*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 	} else if (bt_dev.id_addr[BT_ID_DEFAULT].type == BT_ADDR_LE_PUBLIC) {
@@ -1886,7 +1966,7 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 	}
 #endif
 
-	if (options & _BT_LE_ADV_OPT_CONNECTABLE) {
+	if (options & BT_LE_ADV_OPT_CONN) {
 		if (dir_adv && (options & BT_LE_ADV_OPT_DIR_ADDR_RPA) &&
 		    !BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
 			return -ENOTSUP;
@@ -1946,9 +2026,21 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 			 * problem.
 			 */
 #if defined(CONFIG_BT_OBSERVER)
+			bool scan_disabled = false;
 			bool dev_scanning = atomic_test_bit(bt_dev.flags,
 							    BT_DEV_SCANNING);
 
+			/* If active scan with NRPA is ongoing refresh NRPA */
+			if (!IS_ENABLED(CONFIG_BT_PRIVACY) &&
+			    !IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
+			    dev_scanning) {
+				err = bt_le_scan_set_enable(BT_HCI_LE_SCAN_DISABLE);
+				scan_disabled = err == 0;
+			}
+
+			/* If we are scanning with the identity address, it does
+			 * not make sense to set an NRPA.
+			 */
 			if (!IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) ||
 			    !dev_scanning) {
 				err = bt_id_set_adv_private_addr(adv);
@@ -1960,14 +2052,13 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 					*own_addr_type = BT_HCI_OWN_ADDR_PUBLIC;
 				}
 			}
+
+			if (scan_disabled) {
+				bt_le_scan_set_enable(BT_HCI_LE_SCAN_ENABLE);
+			}
 #else
 			err = bt_id_set_adv_private_addr(adv);
 			*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
-
-#if defined(CONFIG_BT_OBSERVER)
-			if (scan_enabled) {
-				bt_le_scan_set_enable(BT_HCI_LE_SCAN_ENABLE);
-			}
 #endif /* defined(CONFIG_BT_OBSERVER) */
 		} else {
 			err = bt_id_set_adv_private_addr(adv);
@@ -2150,7 +2241,12 @@ int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 int bt_le_oob_set_legacy_tk(struct bt_conn *conn, const uint8_t *tk)
 {
-	CHECKIF(conn == NULL || tk == NULL) {
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		return -EINVAL;
+	}
+
+	CHECKIF(tk == NULL) {
 		return -EINVAL;
 	}
 
@@ -2163,7 +2259,8 @@ int bt_le_oob_set_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data *oobd_local,
 			  const struct bt_le_oob_sc_data *oobd_remote)
 {
-	CHECKIF(conn == NULL) {
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
 		return -EINVAL;
 	}
 
@@ -2178,7 +2275,9 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data **oobd_local,
 			  const struct bt_le_oob_sc_data **oobd_remote)
 {
-	CHECKIF(conn == NULL) {
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		LOG_ERR("Invalid connection: %p", conn);
+		LOG_ERR("Invalid connection type: %u for %p", conn->handle, conn);
 		return -EINVAL;
 	}
 

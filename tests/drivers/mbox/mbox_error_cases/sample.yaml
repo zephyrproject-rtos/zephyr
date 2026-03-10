@@ -17,6 +17,13 @@ tests:
   tests.drivers.mbox_error_cases.nrf54l:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
     extra_args: SNIPPET=nordic-flpr

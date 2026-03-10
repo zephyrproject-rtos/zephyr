@@ -195,15 +195,6 @@ static int bmp388_attr_set(const struct device *dev,
 {
 	int ret;
 
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		return -EBUSY;
-	}
-#endif
-
 	switch (attr) {
 #ifdef CONFIG_BMP388_ODR_RUNTIME
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
@@ -232,15 +223,6 @@ static int bmp388_sample_fetch(const struct device *dev,
 	int ret = 0;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
-
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		return -EBUSY;
-	}
-#endif
 
 	pm_device_busy_set(dev);
 
@@ -555,7 +537,7 @@ static int bmp388_init(const struct device *dev)
 
 /* Initializes a struct bmp388_config for an instance on a SPI bus. */
 #define BMP388_CONFIG_SPI(inst)				\
-	.bus.spi = SPI_DT_SPEC_INST_GET(inst, BMP388_SPI_OPERATION, 0),	\
+	.bus.spi = SPI_DT_SPEC_INST_GET(inst, BMP388_SPI_OPERATION),	\
 	.bus_io = &bmp388_bus_io_spi,
 
 /* Initializes a struct bmp388_config for an instance on an I2C bus. */

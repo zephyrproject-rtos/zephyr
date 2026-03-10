@@ -22,7 +22,7 @@ Important board features include:
 
 - STM32H7B3LIH6Q microcontroller featuring 2 Mbytes of Flash memory and 1.4 Mbyte of RAM in BGA225 package
 - 4.3" (480x272 pixels) TFT color LCD module including a capacitive touch panel with RGB interface
-- Wi-Fi |reg| module compliant with 802.11 b/g/n
+- Wi-Fi® module compliant with 802.11 b/g/n
 - USB OTG HS
 - Audio codec
 - 512-Mbit Octo-SPI NOR Flash memory
@@ -31,20 +31,24 @@ Important board features include:
 - User and Reset push-buttons
 - Fanout daughterboard
 - 1x FDCAN
-- Board connectors:
-   - Camera (8 bit)
-   - USB with Micro-AB
-   - Stereo headset jack including analog microphone input
-   - Audio jack for external speakers
-   - microSD |trade| card
-   - TAG-Connect 10-pin footprint
-   - Arm |reg| Cortex |reg| 10-pin 1.27mm-pitch debug connector over STDC14 footprint
-   - ARDUINO |reg| Uno V3 expansion connector
-   - STMod+ expansion connector
-   - Audio daughterboard expansion connector
-   - External I2C expansion connector
+- Board connectors
+
+  - Camera (8 bit)
+  - USB with Micro-AB
+  - Stereo headset jack including analog microphone input
+  - Audio jack for external speakers
+  - microSD™ card
+  - TAG-Connect 10-pin footprint
+  - Arm® Cortex® 10-pin 1.27mm-pitch debug connector over STDC14 footprint
+  - ARDUINO® Uno V3 expansion connector
+  - STMod+ expansion connector
+  - Audio daughterboard expansion connector
+  - External I2C expansion connector
+
 - Flexible power-supply options:
-   - ST-LINK USB VBUS, USB OTG HS connector, or external sources
+
+  - ST-LINK USB VBUS, USB OTG HS connector, or external sources
+
 - On-board STLINK-V3E debugger/programmer with USB re-enumeration capability
 
 More information about the board can be found at the `STM32H7B3I-DK website`_.
@@ -55,7 +59,7 @@ Hardware
 The STM32H7B3I Discovery kit provides the following hardware components:
 
 - STM32H7B3LIH6Q in BGA225 package
-- ARM |reg| 32-bit Cortex |reg| -M7 CPU with FPU
+- ARM® 32-bit Cortex®-M7 CPU with FPU
 - 280 MHz max CPU frequency
 - VDD from 1.62 V to 3.6 V
 - 2 MB Flash
@@ -94,42 +98,7 @@ More information about STM32H7B3 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32h7b3i_dk board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SDMMC     | on-chip    | disk access                         |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| OSPI NOR  | on-chip    | off-chip flash                      |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| FMC       | on-chip    | memc (SDRAM)                        |
-+-----------+------------+-------------------------------------+
-| LTDC      | on-chip    | display                             |
-+-----------+------------+-------------------------------------+
-| CANFD     | on-chip    | can                                 |
-+-----------+------------+-------------------------------------+
-
-
-Other hardware features have not been enabled yet for this board.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32h7b3i_dk/stm32h7b3i_dk_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -188,6 +157,8 @@ default communication settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32H7B3I Discovery kit includes an STLINK-V3E embedded debug tool interface.
 

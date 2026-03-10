@@ -4,12 +4,12 @@ Overview
 ********
 
 The STM32H745I-DISCO Discovery kit is a complete demonstration and development
-platform for STMicroelectronics Arm |reg| Cortex |reg|‑M7 and Cortex |reg|‑M4 core-based STM32H745XI microcontroller.
+platform for STMicroelectronics Arm® Cortex®‑M7 and Cortex®‑M4 core-based STM32H745XI microcontroller.
 
 The full range of hardware features available on the board helps users enhance their application
 development by an evaluation of almost all peripherals (such as USB OTG FS, Ethernet 10/100Mb/s,
 eMMC, USART, SAI audio DAC stereo with audio jack input and output, MEMS digital microphone, SDRAM,
-Quad-SPI flash memory, and RGB interface LCD with capacitive multi-touch panel). ARDUINO |reg| Uno V3
+Quad-SPI flash memory, and RGB interface LCD with capacitive multi-touch panel). ARDUINO® Uno V3
 connectors provide easy connection to extension shields or daughterboards for specific applications.
 
 STLINK-V3E is integrated into the board, as an embedded in-circuit debugger and programmer for the
@@ -17,7 +17,7 @@ STM32 MCU and the USB Virtual COM port bridge
 
 Key Features
 
-- Arm |reg| Cortex |reg| core-based microcontroller with 2 Mbytes of flash memory and 1 Mbyte of RAM, in a TFBGA240+25 package
+- Arm® Cortex® core-based microcontroller with 2 Mbytes of flash memory and 1 Mbyte of RAM, in a TFBGA240+25 package
 - 4.3” RGB interface LCD with touch panel connector
 - Ethernet compliant with IEEE-802.3-2002, and PoE
 - USB OTG FS
@@ -37,16 +37,16 @@ Key Features
  - Ethernet RJ45
  - Stereo headset jack including analog microphone input
  - Audio header for external speakers
- - Tag‑Connect |trade| (TAG) 10-pin footprint
- - Arm |reg| Cortex |reg| 10-pin 1.27 mm pitch debug connector over STDC14 footprint
- - ARDUINO |reg| Uno V3 expansion connectors
+ - Tag‑Connect™ (TAG) 10-pin footprint
+ - Arm® Cortex® 10-pin 1.27 mm pitch debug connector over STDC14 footprint
+ - ARDUINO® Uno V3 expansion connectors
  - STMod+
 
 - Flexible power-supply options:
 
  - STLINK-V3E USB connector, USB FS connector
  - 5 V delivered by RJ45 (Power over Ethernet)
- - 5 V delivered by ARDUINO |reg| or external connector
+ - 5 V delivered by ARDUINO® or external connector
  - USB charger
  - USB power
 
@@ -60,45 +60,9 @@ More information about STM32H747XIH6 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32h745i_disco board configuration supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| QSPI NOR  | on-chip    | off-chip flash                      |
-+-----------+------------+-------------------------------------+
-| FDCAN     | on-chip    | fdcan                               |
-+-----------+------------+-------------------------------------+
-| FMC       | on-chip    | memc (SDRAM)                        |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration per core can be found in the defconfig files:
-:zephyr_file:`boards/st/stm32h745i_disco/stm32h745i_disco_stm32h745xx_m7_defconfig` and
-:zephyr_file:`boards/st/stm32h745i_disco/stm32h745i_disco_stm32h745xx_m4_defconfig`
-
-For more details please refer to `STM32H745-Disco UM`_.
+For more details please refer to the `STM32H745-Disco User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -142,6 +106,8 @@ two cores. This is done in 3 ways:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32H745I-DISCO board includes an ST-LINK/V3 embedded debug tool interface.
 
@@ -226,7 +192,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application on M4 core.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32h745i_disco/stm32h745xx/m7
+   :board: stm32h745i_disco/stm32h745xx/m4
    :goals: build flash
 
 .. note::
@@ -262,7 +228,7 @@ In order to debug a Zephyr application on Cortex M4 side, you can use
 .. _STM32H745xx datasheet:
    https://www.st.com/resource/en/datasheet/stm32h745xi.pdf
 
-.. _STM32H745-Disco UM:
+.. _STM32H745-Disco User Manual:
    https://www.st.com/resource/en/user_manual/um2488-discovery-kits-with-stm32h745xi-and-stm32h750xb-mcus-stmicroelectronics.pdf
 
 .. _STM32CubeProgrammer:

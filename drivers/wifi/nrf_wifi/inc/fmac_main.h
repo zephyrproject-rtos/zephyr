@@ -31,10 +31,14 @@
 #else
 #include <radio_test/fmac_api.h>
 #endif /* !CONFIG_NRF70_RADIO_TEST */
-
 #include <host_rpu_umac_if.h>
 
 #define NRF70_DRIVER_VERSION "1."KERNEL_VERSION_STRING
+
+/* Calculate compile-time maximum for vendor stats */
+#ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
+#define MAX_VENDOR_STATS ((sizeof(struct rpu_sys_fw_stats) / sizeof(uint32_t)) + 1)
+#endif /* CONFIG_NET_STATISTICS_ETHERNET_VENDOR */
 
 #ifndef CONFIG_NRF70_OFFLOADED_RAW_TX
 #ifndef CONFIG_NRF70_RADIO_TEST
@@ -52,6 +56,7 @@ struct nrf_wifi_vif_ctx_zep {
 	uint16_t max_bss_cnt;
 	unsigned int scan_res_cnt;
 	struct k_work_delayable scan_timeout_work;
+	struct k_work disp_scan_res_work;
 
 	struct net_eth_addr mac_addr;
 	int if_type;
@@ -60,8 +65,15 @@ struct nrf_wifi_vif_ctx_zep {
 	bool set_if_event_received;
 	int set_if_status;
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
+#ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
+	struct net_stats_eth_vendor eth_stats_vendor_data[MAX_VENDOR_STATS];
+	char vendor_key_strings[MAX_VENDOR_STATS][16];
+#endif /* CONFIG_NET_STATISTICS_ETHERNET_VENDOR */
 	struct net_stats_eth eth_stats;
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
+#if defined(CONFIG_NRF70_STA_MODE) || defined(CONFIG_NRF70_RAW_DATA_TX)
+	bool authorized;
+#endif
 #ifdef CONFIG_NRF70_STA_MODE
 	unsigned int assoc_freq;
 	enum nrf_wifi_fmac_if_carr_state if_carr_state;
@@ -72,7 +84,6 @@ struct nrf_wifi_vif_ctx_zep {
 	unsigned char twt_flow_in_progress_map;
 	struct wifi_ps_config *ps_info;
 	bool ps_config_info_evnt;
-	bool authorized;
 	bool cookie_resp_received;
 #ifdef CONFIG_NRF70_DATA_TX
 	struct k_work nrf_wifi_net_iface_work;
@@ -85,8 +96,10 @@ struct nrf_wifi_vif_ctx_zep {
 #endif /* CONFIG_NRF70_AP_MODE */
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY
 	struct k_work nrf_wifi_rpu_recovery_work;
+	struct k_work_delayable nrf_wifi_rpu_recovery_bringup_work;
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 	int rts_threshold_value;
+	unsigned short bss_max_idle_period;
 };
 
 struct nrf_wifi_vif_ctx_map {
@@ -117,6 +130,8 @@ struct nrf_wifi_ctx_zep {
 	unsigned int rpu_recovery_retries;
 	int rpu_recovery_success;
 	int rpu_recovery_failure;
+	int wdt_irq_received;
+	int wdt_irq_ignored;
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 };
 
@@ -135,6 +150,8 @@ void configure_tx_pwr_settings(struct nrf_wifi_tx_pwr_ctrl_params *tx_pwr_ctrl_p
 void configure_board_dep_params(struct nrf_wifi_board_params *board_params);
 void set_tx_pwr_ceil_default(struct nrf_wifi_tx_pwr_ceil_params *pwr_ceil_params);
 const char *nrf_wifi_get_drv_version(void);
+char *nrf_wifi_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
+				   char *buf, int buflen);
 enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv_priv_zep);
 enum nrf_wifi_status nrf_wifi_fmac_dev_rem_zep(struct nrf_wifi_drv_priv_zep *drv_priv_zep);
 struct nrf_wifi_vif_ctx_zep *nrf_wifi_get_vif_ctx(struct net_if *iface);

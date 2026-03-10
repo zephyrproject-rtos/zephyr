@@ -9,28 +9,29 @@ from west import log
 
 import zspdx.cmakefileapi
 
+
 def parseReply(replyIndexPath):
     replyDir, _ = os.path.split(replyIndexPath)
 
     # first we need to find the codemodel reply file
     try:
-        with open(replyIndexPath, 'r') as indexFile:
+        with open(replyIndexPath) as indexFile:
             js = json.load(indexFile)
 
             # get reply object
             reply_dict = js.get("reply", {})
             if reply_dict == {}:
-                log.err(f"no \"reply\" field found in index file")
+                log.err('no "reply" field found in index file')
                 return None
             # get codemodel object
             cm_dict = reply_dict.get("codemodel-v2", {})
             if cm_dict == {}:
-                log.err(f"no \"codemodel-v2\" field found in \"reply\" object in index file")
+                log.err('no "codemodel-v2" field found in "reply" object in index file')
                 return None
             # and get codemodel filename
             jsonFile = cm_dict.get("jsonFile", "")
             if jsonFile == "":
-                log.err(f"no \"jsonFile\" field found in \"codemodel-v2\" object in index file")
+                log.err('no "jsonFile" field found in "codemodel-v2" object in index file')
                 return None
 
             return parseCodemodel(replyDir, jsonFile)
@@ -46,7 +47,7 @@ def parseCodemodel(replyDir, codemodelFile):
     codemodelPath = os.path.join(replyDir, codemodelFile)
 
     try:
-        with open(codemodelPath, 'r') as cmFile:
+        with open(codemodelPath) as cmFile:
             js = json.load(cmFile)
 
             cm = zspdx.cmakefileapi.Codemodel()
@@ -54,15 +55,18 @@ def parseCodemodel(replyDir, codemodelFile):
             # for correctness, check kind and version
             kind = js.get("kind", "")
             if kind != "codemodel":
-                log.err(f"Error loading CMake API reply: expected \"kind\":\"codemodel\" in {codemodelPath}, got {kind}")
+                log.err('Error loading CMake API reply: expected "kind":"codemodel" '
+                        f'in {codemodelPath}, got {kind}')
                 return None
             version = js.get("version", {})
             versionMajor = version.get("major", -1)
             if versionMajor != 2:
                 if versionMajor == -1:
-                    log.err(f"Error loading CMake API reply: expected major version 2 in {codemodelPath}, no version found")
+                    log.err("Error loading CMake API reply: expected major version 2 "
+                            f"in {codemodelPath}, no version found")
                     return None
-                log.err(f"Error loading CMake API reply: expected major version 2 in {codemodelPath}, got {versionMajor}")
+                log.err("Error loading CMake API reply: expected major version 2 "
+                        f"in {codemodelPath}, got {versionMajor}")
                 return None
 
             # get paths
@@ -143,7 +147,7 @@ def parseConfig(cfg_dict, replyDir):
 
 def parseTarget(targetPath):
     try:
-        with open(targetPath, 'r') as targetFile:
+        with open(targetPath) as targetFile:
             js = json.load(targetFile)
 
             target = zspdx.cmakefileapi.Target()
@@ -191,20 +195,14 @@ def parseTarget(targetPath):
         return None
 
 def parseTargetType(targetType):
-    if targetType == "EXECUTABLE":
-        return zspdx.cmakefileapi.TargetType.EXECUTABLE
-    elif targetType == "STATIC_LIBRARY":
-        return zspdx.cmakefileapi.TargetType.STATIC_LIBRARY
-    elif targetType == "SHARED_LIBRARY":
-        return zspdx.cmakefileapi.TargetType.SHARED_LIBRARY
-    elif targetType == "MODULE_LIBRARY":
-        return zspdx.cmakefileapi.TargetType.MODULE_LIBRARY
-    elif targetType == "OBJECT_LIBRARY":
-        return zspdx.cmakefileapi.TargetType.OBJECT_LIBRARY
-    elif targetType == "UTILITY":
-        return zspdx.cmakefileapi.TargetType.UTILITY
-    else:
-        return zspdx.cmakefileapi.TargetType.UNKNOWN
+    return {
+        "EXECUTABLE": zspdx.cmakefileapi.TargetType.EXECUTABLE,
+        "STATIC_LIBRARY": zspdx.cmakefileapi.TargetType.STATIC_LIBRARY,
+        "SHARED_LIBRARY": zspdx.cmakefileapi.TargetType.SHARED_LIBRARY,
+        "MODULE_LIBRARY": zspdx.cmakefileapi.TargetType.MODULE_LIBRARY,
+        "OBJECT_LIBRARY": zspdx.cmakefileapi.TargetType.OBJECT_LIBRARY,
+        "UTILITY": zspdx.cmakefileapi.TargetType.UTILITY,
+    }.get(targetType, zspdx.cmakefileapi.TargetType.UNKNOWN)
 
 def parseTargetInstall(target, js):
     install_dict = js.get("install", {})

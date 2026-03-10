@@ -67,7 +67,7 @@ extern "C" {
  */
 #define GPTP_ANNOUNCE_LEN(pkt) \
 	(sizeof(struct gptp_hdr) + sizeof(struct gptp_announce) \
-	 + ntohs(GPTP_ANNOUNCE(pkt)->tlv.len) \
+	 + net_ntohs(GPTP_ANNOUNCE(pkt)->tlv.len) \
 	 - sizeof(struct gptp_path_trace_tlv) + 4)
 
 #define GPTP_CHECK_LEN(pkt, len) \
@@ -107,13 +107,16 @@ extern "C" {
 
 /* Other default values. */
 #define GPTP_RESP_LOG_MSG_ITV           0x7F
-#define GPTP_ANNOUNCE_MSG_PATH_SEQ_TYPE htons(0x8)
+#define GPTP_ANNOUNCE_MSG_PATH_SEQ_TYPE net_htons(0x8)
 
 /* Organization Id used for TLV. */
 #define GPTP_FUP_TLV_ORG_ID_BYTE_0  0x00
 #define GPTP_FUP_TLV_ORG_ID_BYTE_1  0x80
 #define GPTP_FUP_TLV_ORG_ID_BYTE_2  0xC2
 #define GPTP_FUP_TLV_ORG_SUB_TYPE   0x01
+
+/* Organizationally Unique Identifiers */
+#define OUI_IEEE_802_1_COMMITTEE 0x00, 0x80, 0xC2
 
 /**
  * @brief gPTP Clock Quality

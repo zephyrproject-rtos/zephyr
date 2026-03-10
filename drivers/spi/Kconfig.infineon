@@ -1,0 +1,63 @@
+# Infineon SPI configuration options
+
+# Copyright (c) 2022 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_INFINEON_HAL
+	bool "Infineon SPI driver"
+	default y
+	depends on DT_HAS_INFINEON_SPI_ENABLED
+	depends on USE_INFINEON_LEGACY_HAL
+	select USE_INFINEON_SPI
+	select PINCTRL
+	select GPIO
+	help
+	  This option enables the Legacy HAL based SPI driver for Infineon family.
+
+config SPI_INFINEON_PDL
+	bool "Infineon SPI driver"
+	default y
+	depends on DT_HAS_INFINEON_SPI_ENABLED
+	depends on !USE_INFINEON_LEGACY_HAL
+	select USE_INFINEON_SPI
+	select PINCTRL
+	select GPIO
+	help
+	  This option enables the PDL based SPI driver for Infineon family.
+
+if USE_INFINEON_SPI
+
+config SPI_INFINEON_DMA
+	bool "Infineon SPI DMA Support"
+	select DMA
+	help
+		Enable DMA during usage of SPI driver.
+
+config IFX_SPI_OVERSAMPLE_DEFAULT
+	int "Default SPI oversample value"
+	default 16 if SOC_FAMILY_INFINEON_PSOC4
+	default 4
+	range 1 32
+	help
+	  Default oversample value for SPI clock generation.
+	  Higher values provide better clock accuracy but lower maximum frequency.
+
+config IFX_SPI_MIN_DATA_WIDTH
+	int "Minimum SPI data width (bits)"
+	default 4 if SOC_FAMILY_INFINEON_EDGE || SOC_FAMILY_INFINEON_PSOC4
+	default 8
+	range 1 32
+	help
+	  Minimum supported data width for SPI transactions.
+	  Some devices have hardware limitations on minimum data width.
+
+config IFX_SPI_MAX_DATA_WIDTH
+	int "Maximum SPI data width (bits)"
+	default 16 if SOC_FAMILY_INFINEON_PSOC4
+	default 32
+	range 4 32
+	help
+	  Maximum supported data width for SPI transactions.
+	  PSoC4 devices typically support up to 16 bits, while others support 32 bits.
+
+endif # USE_INFINEON_SPI

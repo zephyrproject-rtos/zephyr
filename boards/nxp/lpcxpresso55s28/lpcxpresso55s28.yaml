@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2020 Lemonbeat
+# Copyright 2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -8,8 +9,8 @@ identifier: lpcxpresso55s28
 name: NXP LPCXpresso55S28
 type: mcu
 arch: arm
-ram: 64
-flash: 256
+ram: 192
+flash: 512
 toolchain:
   - zephyr
   - gnuarmemb
@@ -24,4 +25,5 @@ supported:
   - spi
   - usb_device
   - watchdog
+  - gint
 vendor: nxp

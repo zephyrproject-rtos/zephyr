@@ -340,6 +340,8 @@ For hardware feature details, refer to : `Designware HS4x/HS4xD Development Kit 
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Required Hardware and Software
 ==============================
 
@@ -548,4 +550,4 @@ References
 
 .. _Digilent Pmod Modules: http://store.digilentinc.com/pmod-modules
 
-.. _Putty website: http://www.putty.org
+.. _Putty website: https://www.putty.software

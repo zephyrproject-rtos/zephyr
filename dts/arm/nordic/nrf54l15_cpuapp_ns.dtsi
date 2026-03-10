@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <vendor/nordic/nrf54l15_cpuapp_ns.dtsi>
+#include "nrf54l_05_10_15_cpuapp.dtsi"

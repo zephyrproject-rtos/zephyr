@@ -86,7 +86,7 @@ MISO with MOSI, DW SPI register is configured to internally connect them. This t
 use two different speed to verify data transfer with asynchronous functionality.
 Note: DW SPI only available on SPI0 and SPI1.
 
-``samples/drivers/spi_flash``: Verfiy DW SPI and SPI-FLASH on SPI1. First erase the
+``samples/drivers/spi_flash``: Verify DW SPI and SPI-FLASH on SPI1. First erase the
 whole flash then write 4 byte data to the flash. Read from the flash and compare the
 result with buffer to check functionality.
 
@@ -116,6 +116,8 @@ multiplexer ARDUINO_MUX_CTRL is in the default mode (GPIO).
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Required Hardware and Software
 ==============================
@@ -276,4 +278,4 @@ References
    http://store.digilentinc.com/pmod-modules
 
 .. _Putty website:
-   http://www.putty.org
+   https://www.putty.software

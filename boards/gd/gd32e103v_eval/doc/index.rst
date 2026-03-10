@@ -43,24 +43,7 @@ For more information about the GD32E103 SoC and GD32E103V-EVAL board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v7m-nvic`
-   * - SYSTICK
-     - N/A
-     - N/A
-   * - USART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`gd,gd32-usart`
-
+.. zephyr:board-supported-hw::
 
 Serial Port
 ===========
@@ -70,6 +53,8 @@ is UART0 at PIN-9 and PIN-10.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Before program your board make sure to configure boot setting and serial port.
 The default serial port is USART0.  This port uses header JP-5/6 to route

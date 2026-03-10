@@ -42,7 +42,6 @@ struct bt_conn *default_conn;
 atomic_t flag_connected;
 atomic_t flag_disconnected;
 atomic_t flag_conn_updated;
-atomic_t flag_audio_received;
 volatile bt_security_t security_level;
 #if defined(CONFIG_BT_CSIP_SET_MEMBER)
 uint8_t csip_rsi[BT_CSIP_RSI_SIZE];
@@ -107,7 +106,7 @@ static void device_found(const struct bt_le_scan_recv_info *info, struct net_buf
 		return;
 	}
 
-	err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
+	err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN, BT_BAP_CONN_PARAM_RELAXED,
 				&default_conn);
 	if (err) {
 		FAIL("Could not connect to peer: %d", err);
@@ -186,12 +185,13 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.security_changed = security_changed_cb,
 };
 
+
 void setup_connectable_adv(struct bt_le_ext_adv **ext_adv)
 {
 	int err;
 
 	/* Create a non-connectable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, ext_adv);
+	err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_CONN_QUICK, NULL, ext_adv);
 	if (err != 0) {
 		FAIL("Unable to create extended advertising set: %d\n", err);
 		return;
@@ -216,6 +216,73 @@ void setup_connectable_adv(struct bt_le_ext_adv **ext_adv)
 	}
 
 	printk("Advertising started\n");
+}
+
+void setup_broadcast_adv(struct bt_le_ext_adv **adv)
+{
+	struct bt_le_adv_param ext_adv_param = *BT_BAP_ADV_PARAM_BROADCAST_SLOW;
+	int err;
+
+	/* Zephyr Controller works best while Extended Advertising interval is a multiple
+	 * of the ISO Interval minus 10 ms (max. advertising random delay). This is
+	 * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
+	 * Broadcast ISO radio events.
+	 */
+	ext_adv_param.interval_min -= BT_GAP_MS_TO_ADV_INTERVAL(10U);
+	ext_adv_param.interval_max -= BT_GAP_MS_TO_ADV_INTERVAL(10U);
+
+	/* Create a non-connectable advertising set */
+	err = bt_le_ext_adv_create(&ext_adv_param, NULL, adv);
+	if (err != 0) {
+		FAIL("Unable to create extended advertising set: %d\n", err);
+		return;
+	}
+
+	/* Set periodic advertising parameters */
+	err = bt_le_per_adv_set_param(*adv, BT_BAP_PER_ADV_PARAM_BROADCAST_SLOW);
+	if (err) {
+		FAIL("Failed to set periodic advertising parameters: %d\n", err);
+		return;
+	}
+}
+
+void start_broadcast_adv(struct bt_le_ext_adv *adv)
+{
+	char addr_str[BT_ADDR_LE_STR_LEN];
+	struct bt_le_ext_adv_info info;
+	int err;
+
+	err = bt_le_ext_adv_get_info(adv, &info);
+	if (err != 0) {
+		FAIL("Failed to get adv info: %d\n", err);
+		return;
+	}
+
+	if (info.per_adv_state == BT_LE_PER_ADV_STATE_NONE) {
+		FAIL("Cannot start periodic advertising for non-periodic advertising set");
+		return;
+	}
+
+	if (info.per_adv_state == BT_LE_PER_ADV_STATE_DISABLED) {
+		/* Enable Periodic Advertising */
+		err = bt_le_per_adv_start(adv);
+		if (err != 0) {
+			FAIL("Failed to enable periodic advertising: %d\n", err);
+			return;
+		}
+	}
+
+	if (info.ext_adv_state == BT_LE_EXT_ADV_STATE_DISABLED) {
+		/* Start extended advertising */
+		err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+		if (err != 0) {
+			FAIL("Failed to start extended advertising: %d\n", err);
+			return;
+		}
+	}
+
+	bt_addr_le_to_str(info.addr, addr_str, sizeof(addr_str));
+	printk("Started advertising with addr %s\n", addr_str);
 }
 
 void test_tick(bs_time_t HW_device_time)
@@ -328,10 +395,8 @@ static void setup_backchannels(void)
 	uint *channels;
 
 	for (int32_t i = 0; i < dev_cnt; i++) {
-		if (i != self) { /* skip ourselves*/
-			backchannel_nums[chan_cnt] = get_chan_num((uint16_t)i);
-			device_numbers[chan_cnt++] = i;
-		}
+		backchannel_nums[chan_cnt] = get_chan_num((uint16_t)i);
+		device_numbers[chan_cnt++] = i;
 	}
 
 	channels = bs_open_back_channel(self, device_numbers, backchannel_nums, chan_cnt);

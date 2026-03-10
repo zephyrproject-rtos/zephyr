@@ -9,7 +9,6 @@ supported:
   - arduino_i2c
   - arduino_gpio
   - gpio
-  - shell
   - i2c
   - spi
 testing:
@@ -20,8 +19,7 @@ testing:
     - crypto
     - aes
     - cmm
-    - LED
     - nfc
-ram: 256
+ram: 320
 flash: 64
 vendor: st

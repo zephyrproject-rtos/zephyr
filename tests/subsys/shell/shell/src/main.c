@@ -9,6 +9,7 @@
  *
  */
 
+#include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
@@ -333,7 +334,7 @@ ZTEST(sh, test_shell_fprintf)
 	shell_fprintf(sh, SHELL_VT100_COLOR_DEFAULT, "testing %d %s %c",
 		      1, "2", '3');
 	buf = shell_backend_dummy_get_output(sh, &size);
-	zassert_true(size >= sizeof(expect), "Expected size > %u, got %d",
+	zassert_true(size >= sizeof(expect), "Expected size > %zu, got %zu",
 		     sizeof(expect), size);
 
 	/*
@@ -342,6 +343,33 @@ ZTEST(sh, test_shell_fprintf)
 	 */
 	zassert_true(strstr(buf, expect),
 		     "Expected string to contain '%s', got '%s'", expect, buf);
+}
+
+static void test_bypass_cb(const struct shell *sh, uint8_t *data, size_t len,
+			   void *user_data)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+	ARG_UNUSED(user_data);
+}
+
+ZTEST(sh, test_shell_set_bypass)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	uint8_t user_data;
+
+	zassert_not_null(sh, "Failed to get shell backend");
+
+	shell_set_bypass(sh, test_bypass_cb, &user_data);
+
+	zassert_equal_ptr(sh->ctx->bypass, test_bypass_cb, "Bypass callback not stored");
+	zassert_equal_ptr(sh->ctx->bypass_user_data, &user_data, "User data pointer not stored");
+
+	shell_set_bypass(sh, NULL, NULL);
+
+	zassert_is_null(sh->ctx->bypass, "Bypass callback not cleared");
+	zassert_is_null(sh->ctx->bypass_user_data, "User data pointer not cleared");
 }
 
 #define RAW_ARG "aaa \"\" bbb"
@@ -487,6 +515,127 @@ ZTEST(sh, test_section_cmd)
 	test_shell_execute_cmd("section_cmd cmd2", 20);
 	test_shell_execute_cmd("section_cmd cmd1 sub_cmd1", 11);
 	test_shell_execute_cmd("section_cmd cmd1 sub_cmd2", -EINVAL);
+}
+
+static int cmd_readline_null_buf(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	return shell_readline(sh, NULL, 0, K_NO_WAIT);
+}
+
+static int cmd_readline_error(const struct shell *sh, size_t argc, char **argv)
+{
+	uint8_t buf[10];
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	return shell_readline(sh, buf, sizeof(buf), K_NO_WAIT);
+}
+
+static int cmd_readline_with_bypass(const struct shell *sh, size_t argc, char **argv)
+{
+	uint8_t buf[10];
+	uint8_t user_data;
+	int ret;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	/* Set bypass - shell_readline should fail when bypass is active */
+	shell_set_bypass(sh, test_bypass_cb, &user_data);
+	ret = shell_readline(sh, buf, sizeof(buf), K_NO_WAIT);
+	shell_set_bypass(sh, NULL, NULL);
+
+	return ret;
+}
+
+
+static uint8_t readline_buf[64];
+static int readline_len;
+
+static int cmd_readline_success(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	/* Input was pushed before this command was executed */
+	readline_len = shell_readline(sh, readline_buf, sizeof(readline_buf), K_SECONDS(1));
+
+	return readline_len >= 0 ? 0 : readline_len;
+}
+
+SHELL_CMD_REGISTER(test_readline_null_buf, NULL, NULL, cmd_readline_null_buf);
+SHELL_CMD_REGISTER(test_readline_error, NULL, NULL, cmd_readline_error);
+SHELL_CMD_REGISTER(test_readline_with_bypass, NULL, NULL, cmd_readline_with_bypass);
+SHELL_CMD_REGISTER(test_readline_success, NULL, NULL, cmd_readline_success);
+
+ZTEST(sh, test_shell_readline_errors)
+{
+	static const char short_line[] = "short\n";
+	static const char long_line[] = "a line longer than the input buffer\n";
+
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+
+	shell_backend_dummy_push_input(sh, short_line, sizeof(long_line));
+	test_shell_execute_cmd("test_readline_null_buf", -ENOBUFS);
+	shell_backend_dummy_clear_input(sh);
+
+	test_shell_execute_cmd("test_readline_with_bypass", -EACCES);
+	test_shell_execute_cmd("test_readline_error", -ETIMEDOUT);
+
+	shell_backend_dummy_push_input(sh, long_line, sizeof(long_line));
+	test_shell_execute_cmd("test_readline_error", -ENOBUFS);
+	shell_backend_dummy_clear_input(sh);
+}
+
+ZTEST(sh, test_shell_readline_canceled)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	const char ctrl_c = 0x03;
+
+	if (!IS_ENABLED(CONFIG_SHELL_METAKEYS)) {
+		ztest_test_skip();
+	}
+
+	shell_backend_dummy_push_input(sh, &ctrl_c, 1);
+	test_shell_execute_cmd("test_readline_error", -ECANCELED);
+	shell_backend_dummy_clear_input(sh);
+}
+
+ZTEST(sh, test_shell_readline_outside_cmd_ctx)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	uint8_t buf[10];
+	int ret;
+
+	/* Calling shell_readline outside of a command context should fail */
+	ret = shell_readline(sh, buf, sizeof(buf), K_NO_WAIT);
+	zassert_equal(ret, -EACCES, "Expected -EACCES outside command context, got %d", ret);
+}
+
+ZTEST(sh, test_shell_readline_success)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	const char *test_input = "hello\n";
+	int ret;
+
+	/* Clear any previous input and push test data */
+	shell_backend_dummy_clear_input(sh);
+	ret = shell_backend_dummy_push_input(sh, test_input, strlen(test_input));
+	zassert_equal(ret, 0, "Failed to push input: %d", ret);
+
+	/* Execute the command - it will call shell_readline which reads the pushed input */
+	test_shell_execute_cmd("test_readline_success", 0);
+
+	/* Verify the result */
+	zassert_equal(readline_len, 5, "Expected 5 bytes read, got %d", readline_len);
+	zassert_str_equal(readline_buf, "hello", "Input mismatch: got '%s'", readline_buf);
+
+	/* Clean up */
+	shell_backend_dummy_clear_input(sh);
 }
 
 static void *shell_setup(void)

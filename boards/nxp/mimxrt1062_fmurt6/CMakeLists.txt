@@ -11,16 +11,13 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
     # the SDK, but we can reuse the block for the RT1050 as FMURT6 also uses
     # the same HyperFlash chip
     set(FLASH_CONF evkbimxrt1050_flexspi_nor_config.c)
-    set(BOARD_NAME evkbimxrt1050)
+    set(BOARD_NAME mimxrt1050_evk)
   endif()
-  set(RT1062_BOARD_DIR
-    "${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk/boards/${BOARD_NAME}")
+  set(RT1062_BOARD_DIR ../${BOARD_NAME})
   if(CONFIG_BOOT_FLEXSPI_NOR)
     # Include flash configuration block for RT1050 EVK from NXP's HAL.
     # This configuration block may need modification if another flash chip is
     # used on your custom board. See NXP AN12238 for more information.
-    zephyr_compile_definitions(XIP_BOOT_HEADER_ENABLE=1)
-    zephyr_compile_definitions(BOARD_FLASH_SIZE=CONFIG_FLASH_SIZE*1024)
     zephyr_library_sources(${RT1062_BOARD_DIR}/xip/${FLASH_CONF})
     zephyr_library_include_directories(${RT1062_BOARD_DIR}/xip)
   endif()
@@ -28,8 +25,7 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
     # Include device configuration data block for RT1050 EVK from NXP's HAL.
     # This configuration block may need modification if another SDRAM chip
     # is used on your custom board.
-    zephyr_compile_definitions(XIP_BOOT_HEADER_DCD_ENABLE=1)
-    zephyr_library_sources(${RT1062_BOARD_DIR}/dcd.c)
+    zephyr_library_sources(${RT1062_BOARD_DIR}/dcd/dcd.c)
   endif()
 endif()
 

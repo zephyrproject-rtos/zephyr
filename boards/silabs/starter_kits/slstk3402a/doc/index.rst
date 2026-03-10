@@ -29,41 +29,7 @@ For more information about the EFM32PG SoC and SLSTK3402A board:
 Supported Features
 ==================
 
-The slstk3402a board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | rtcc                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c port-polling                    |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | true random number generator        |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/silabs/starter_kits/slstk3402a/slstk3402a_efm32pg12b500f1024gl125_defconfig`
-
-The default configuration when building using this board to develop for the
-EFM32JG12 SoC can be found in
-:zephyr_file:`boards/silabs/starter_kits/slstk3402a/slstk3402a_efm32jg12b500f1024gl125_defconfig`
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 EFM32 Jade Gecko SoC
 --------------------
@@ -131,6 +97,8 @@ The EFM32PG12 SoC has four USARTs and one Low Energy UART (LEUART).
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 .. note::
    Before using the kit the first time, you should update the J-Link firmware

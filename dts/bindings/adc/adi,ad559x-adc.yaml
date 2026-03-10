@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Grinn
 # SPDX-License-Identifier: Apache-2.0
 
-description: AD559x ADC Controller
+description: ADI AD559x ADC Controller
 
 compatible: "adi,ad559x-adc"
 

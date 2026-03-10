@@ -1,11 +1,12 @@
 # STM32 GPIO configuration
 
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
+# Copyright (C) 2025 Savoir-faire Linux, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config GPIO_STM32
 	bool "GPIO Driver for STM32 family of MCUs"
 	default y
-	depends on DT_HAS_ST_STM32_GPIO_ENABLED
+	depends on DT_HAS_ST_STM32_GPIO_ENABLED || DT_HAS_ST_STM32MP2_GPIO_ENABLED
 	help
 	  Enable GPIO driver for STM32 line of MCUs

@@ -46,7 +46,7 @@ struct udc_dwc2_config {
 	/* Pointer to pin control configuration or NULL */
 	struct pinctrl_dev_config *const pcfg;
 	/* Pointer to vendor quirks or NULL */
-	struct dwc2_vendor_quirks *const quirks;
+	const struct dwc2_vendor_quirks *const quirks;
 	void (*make_thread)(const struct device *dev);
 	void (*irq_enable_func)(const struct device *dev);
 	void (*irq_disable_func)(const struct device *dev);
@@ -55,13 +55,23 @@ struct udc_dwc2_config {
 	uint32_t ghwcfg4;
 };
 
+#include "udc_dwc2_vendor_quirks.h"
+
+#define UDC_DWC2_VENDOR_QUIRK_GET(n)						\
+	COND_CODE_1(DT_NODE_VENDOR_HAS_IDX(DT_DRV_INST(n), 1),			\
+		    (&dwc2_vendor_quirks_##n),					\
+		    (NULL))
+
 #define DWC2_QUIRK_FUNC_DEFINE(fname)						\
 static inline int dwc2_quirk_##fname(const struct device *dev)			\
 {										\
 	const struct udc_dwc2_config *const config = dev->config;		\
-	struct dwc2_vendor_quirks *quirks = config->quirks;			\
+	const struct dwc2_vendor_quirks *const quirks =				\
+		COND_CODE_1(IS_EQ(DT_NUM_INST_STATUS_OKAY(snps_dwc2), 1),	\
+			(UDC_DWC2_VENDOR_QUIRK_GET(0); ARG_UNUSED(config);),	\
+			(config->quirks;))					\
 										\
-	if (quirks != NULL && config->quirks->fname != NULL) {			\
+	if (quirks != NULL && quirks->fname != NULL) {				\
 		return quirks->fname(dev);					\
 	}									\
 										\

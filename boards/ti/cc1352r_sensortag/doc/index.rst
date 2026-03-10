@@ -3,63 +3,28 @@
 Overview
 ********
 
-The Texas Instruments CC1352R SensorTag |trade| (LPSTK-CC1352R) is a
-development kit for the SimpleLink |trade| multi-Standard CC1352R wireless MCU.
+The Texas Instruments CC1352R SensorTag™ (LPSTK-CC1352R) is a
+development kit for the SimpleLink™ multi-Standard CC1352R wireless MCU.
 
 See the `TI CC1352R SensorTag Product Page`_ for details.
 
 Hardware
 ********
 
-The CC1352R SensorTag |trade| development kit features the CC1352R wireless MCU.
+The CC1352R SensorTag™ development kit features the CC1352R wireless MCU.
 The board is equipped with three LEDs, two push buttons and BoosterPack connectors
 for expansion.
 
-The CC13522 wireless MCU has a 48 MHz Arm |reg| Cortex |reg|-M4F SoC and an
+The CC13522 wireless MCU has a 48 MHz Arm® Cortex®-M4F SoC and an
 integrated Sub-1 and 2.4 GHz transceiver supporting multiple protocols including
-Bluetooth |reg| Low Energy and IEEE |reg| 802.15.4.
+Bluetooth® Low Energy and IEEE® 802.15.4.
 
 See the `TI CC1352R Product Page`_ for additional details.
 
 Supported Features
 ==================
 
-The CC1352R SensorTag board configuration supports the following hardware
-features:
-
-+-----------+------------+------------------+
-| Interface | Controller | Driver/Component |
-+===========+============+==================+
-| GPIO      | on-chip    | gpio             |
-+-----------+------------+------------------+
-| MPU       | on-chip    | arch/arm         |
-+-----------+------------+------------------+
-| NVIC      | on-chip    | arch/arm         |
-+-----------+------------+------------------+
-| PINMUX    | on-chip    | pinmux           |
-+-----------+------------+------------------+
-| UART      | on-chip    | serial           |
-+-----------+------------+------------------+
-| I2C       | on-chip    | i2c              |
-+-----------+------------+------------------+
-| SPI       | on-chip    | spi              |
-+-----------+------------+------------------+
-| AUX_ADC   | on-chip    | adc              |
-+-----------+------------+------------------+
-| DIO23     | off-chip   | DRV5032          |
-+-----------+------------+------------------+
-| I2C       | off-chip   | HDC2080          |
-+-----------+------------+------------------+
-| I2C       | off-chip   | OPT3001          |
-+-----------+------------+------------------+
-| SPI       | off-chip   | ADXL362          |
-+-----------+------------+------------------+
-| WDT       | on-chip    | watchdog         |
-+-----------+------------+------------------+
-| HWINFO    | on-chip    | hwinfo           |
-+-----------+------------+------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -129,6 +94,8 @@ aligns with the SensorTag standard.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 TI's supported method of programming and debugging the ``CC1352R SensorTag`` is
 to use it in tandem with a ``CC1352R LaunchPad``, making use of the integrated

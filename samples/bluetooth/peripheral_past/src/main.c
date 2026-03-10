@@ -139,6 +139,7 @@ int main(void)
 	printk("Subscribing to periodic advertising sync transfers\n");
 	past_param.skip = 1;
 	past_param.timeout = 1000; /* 10 seconds */
+	past_param.options = BT_LE_PER_ADV_SYNC_TRANSFER_OPT_NONE;
 	err = bt_le_per_adv_sync_transfer_subscribe(NULL /* any peer */,
 						    &past_param);
 	if (err) {

@@ -5,7 +5,7 @@ description: Ambiq SPI Device
 
 compatible: "ambiq,spid"
 
-include: [spi-controller.yaml, pinctrl-device.yaml, ambiq-pwrcfg.yaml]
+include: [spi-controller.yaml, pinctrl-device.yaml]
 
 properties:
   int-gpios:

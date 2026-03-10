@@ -16,7 +16,7 @@ The STM32F405RG based Core V1.0 Board provides the following
 hardware components:
 
 - STM32F405RG in QFPN64 package
-- ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU, Adaptive real-time
+- ARM® 32-bit Cortex®-M4 CPU with FPU, Adaptive real-time
   accelerator (ART Accelerator) allowing 0-wait state execution from Flash memory
 - 168 MHz max CPU frequency
 - VDD from 1.7 V to 3.6 V
@@ -45,35 +45,7 @@ hardware components:
 Supported Features
 ==================
 
-The Zephyr weact_stm32f405_core board configuration supports the following
-hardware features:
-
-+------------+------------+-------------------------------------+
-| Interface  | Controller | Driver/Component                    |
-+============+============+=====================================+
-| NVIC       | on-chip    | nested vector interrupt controller  |
-+------------+------------+-------------------------------------+
-| SYSTICK    | on-chip    | system clock                        |
-+------------+------------+-------------------------------------+
-| UART       | on-chip    | serial port                         |
-+------------+------------+-------------------------------------+
-| GPIO       | on-chip    | gpio                                |
-+------------+------------+-------------------------------------+
-| PINMUX     | on-chip    | pinmux                              |
-+------------+------------+-------------------------------------+
-| FLASH      | on-chip    | flash                               |
-+------------+------------+-------------------------------------+
-| SPI        | on-chip    | spi                                 |
-+------------+------------+-------------------------------------+
-| I2C        | on-chip    | i2c                                 |
-+------------+------------+-------------------------------------+
-| ADC        | on-chip    | ADC Controller                      |
-+------------+------------+-------------------------------------+
-| USB OTG FS | on-chip    | USB device                          |
-+------------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/weact/stm32f405_core/weact_stm32f405_core_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -102,6 +74,8 @@ to achieve a stable USB clock (48MHz).
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 There are 2 main entry points for flashing STM32F4X SoCs, one using the ROM
 bootloader, and another by using the SWD debug port (which requires additional

@@ -8,7 +8,7 @@ Hardware
 ********
 
 - EFR32BG22 Blue Gecko Wireless SoC with upto 76.8 MHz operating frequency
-- ARM® Cortex® M33 core with 32 kB RAM and 512 kB Flash
+- ARM® Cortex®-M33 core with 32 kB RAM and 512 kB Flash
 - Macronix ultra low power 8-Mbit SPI flash (MX25R8035F)
 - 2.4 GHz ceramic antenna for wireless transmission
 - Silicon Labs Si7021 relative humidity and temperature sensor
@@ -42,40 +42,7 @@ For more information about the EFR32BG SoC and Thunderboard EFR32BG22 board:
 Supported Features
 ==================
 
-The sltb010a board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | stimer                              |
-+-----------+------------+-------------------------------------+
-| SPI(M/S)  | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | ldma                                |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | true random number generator        |
-+-----------+------------+-------------------------------------+
-| I2C(M/S)  | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | bluetooth                           |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/silabs/dev_kits/sltb010a/sltb010a_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -121,6 +88,8 @@ board.
 
 Programming and Debugging
 =========================
+
+.. zephyr:board-supported-runners::
 
 Flashing an application
 -----------------------

@@ -14,6 +14,7 @@
 				pins = <0>;
 				bias-pull-up;
 			};
+
 			group2 {
 				pins = <1>;
 				bias-pull-down;
@@ -33,6 +34,7 @@
 				pins = <2>;
 				bias-pull-down;
 			};
+
 			group2 {
 				pins = <3>;
 				bias-pull-up;
@@ -58,10 +60,12 @@
 			group1 {
 				pins = <10>;
 			};
+
 			group2 {
 				pins = <11>;
 				bias-pull-up;
 			};
+
 			group3 {
 				pins = <12>;
 				bias-pull-down;

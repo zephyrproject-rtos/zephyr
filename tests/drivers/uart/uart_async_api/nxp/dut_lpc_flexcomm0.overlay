@@ -1,0 +1,15 @@
+/*
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * To test this sample
+ * frdm_rw612/rw612 connect J5-3 to J5-4
+ *   Note this will impact i2s_speed test
+ */
+
+dut: &flexcomm0 {
+	status = "okay";
+	current-speed = <115200>;
+};

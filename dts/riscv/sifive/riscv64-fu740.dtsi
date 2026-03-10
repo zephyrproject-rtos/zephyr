@@ -35,7 +35,8 @@
 			compatible = "sifive,s7", "riscv";
 			device_type = "cpu";
 			reg = <0>;
-			riscv,isa = "rv64imac_zicsr_zifencei";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
 			status = "okay";
 
 			hlic0: interrupt-controller {
@@ -45,12 +46,14 @@
 				interrupt-controller;
 			};
 		};
+
 		cpu1: cpu@1 {
 			compatible = "sifive,u74", "riscv";
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			reg = <0x1>;
-			riscv,isa = "rv64gc";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
 			hlic1: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -59,12 +62,14 @@
 				interrupt-controller;
 			};
 		};
+
 		cpu2: cpu@2 {
 			compatible = "sifive,u74", "riscv";
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			reg = <0x2>;
-			riscv,isa = "rv64gc";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
 			hlic2: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -73,12 +78,14 @@
 				interrupt-controller;
 			};
 		};
+
 		cpu3: cpu@3 {
 			compatible = "sifive,u74", "riscv";
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			reg = <0x3>;
-			riscv,isa = "rv64gc";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
 			hlic3: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -87,12 +94,14 @@
 				interrupt-controller;
 			};
 		};
+
 		cpu4: cpu@4 {
 			compatible = "sifive,u74", "riscv";
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			reg = <0x4>;
-			riscv,isa = "rv64gc";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
 			hlic4: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -130,20 +139,20 @@
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
 			interrupts-extended = <&hlic0 3 &hlic0 7
-				&hlic1 3 &hlic1 7
-				&hlic2 3 &hlic2 7
-				&hlic3 3 &hlic3 7
-				&hlic4 3 &hlic4 7>;
+					       &hlic1 3 &hlic1 7
+					       &hlic2 3 &hlic2 7
+					       &hlic3 3 &hlic3 7
+					       &hlic4 3 &hlic4 7>;
 			reg = <0x0 0x2000000 0x0 0x10000>;
 		};
 
 		mtimer: timer@200bff8 {
 			compatible = "riscv,machine-timer";
 			interrupts-extended = <&hlic0 7
-						&hlic1 7
-						&hlic2 7
-						&hlic3 7
-						&hlic4 7>;
+					       &hlic1 7
+					       &hlic2 7
+					       &hlic3 7
+					       &hlic4 7>;
 			reg = <0x0 0x200bff8 0x0 0x8 0x0 0x2004000 0x0 0x8>;
 			reg-names = "mtime", "mtimecmp";
 		};
@@ -160,10 +169,10 @@
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic0 11
-				&hlic1 11
-				&hlic2 11
-				&hlic3 11
-				&hlic4 11>;
+					       &hlic1 11
+					       &hlic2 11
+					       &hlic3 11
+					       &hlic4 11>;
 			reg = <0x0 0x0c000000 0x0 0x04000000>;
 			riscv,max-priority = <7>;
 			riscv,ndev = <52>;
@@ -219,6 +228,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+
 		dmc: dmc@100b0000 {
 			compatible = "sifive,fu740-c000-ddr";
 			reg = <0x0 0x100b0000 0x0 0x0800

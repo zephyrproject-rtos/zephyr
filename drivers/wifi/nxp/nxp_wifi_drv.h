@@ -7,7 +7,7 @@
  * Wi-Fi L2 layer
  */
 
-#ifndef ZEPHYR_DRIVERS_WIFI_NNP_WIFI_DRV_H_
+#ifndef ZEPHYR_DRIVERS_WIFI_NXP_WIFI_DRV_H_
 #define ZEPHYR_DRIVERS_WIFI_NXP_WIFI_DRV_H_
 
 #include <zephyr/kernel.h>
@@ -23,6 +23,7 @@
 #include "wlan_bt_fw.h"
 #include "wlan.h"
 #include "wm_net.h"
+#include "mlan_api.h"
 #if defined(CONFIG_NXP_WIFI_SHELL)
 #include "wifi_shell.h"
 #endif
@@ -47,6 +48,9 @@
 
 #define NXP_WIFI_SYNC_PS_GROUP                                                                     \
 	NXP_WIFI_EVENT_BIT(WLAN_REASON_PS_ENTER) | NXP_WIFI_EVENT_BIT(WLAN_REASON_PS_EXIT)
+
+#define NXP_WIFI_SAP_BEACON_PERIOD_DEFAULT 100
+#define NXP_WIFI_SAP_DTIM_PERIOD_DEFAULT 1
 
 enum nxp_wifi_ret {
 	NXP_WIFI_RET_SUCCESS,
@@ -80,4 +84,4 @@ void nxp_wifi_shell_register(struct nxp_wifi_dev *dev);
 #define nxp_wifi_shell_register(dev)
 #endif
 
-#endif
+#endif /* ZEPHYR_DRIVERS_WIFI_NXP_WIFI_DRV_H_ */

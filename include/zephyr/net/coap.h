@@ -138,10 +138,10 @@ enum coap_msgtype {
  * @brief Set of response codes available for a response packet.
  *
  * To be used when creating a response.
+ *
+ * Refer to RFC 7252, section 12.1.2 for more information.
  */
 enum coap_response_code {
-	/** 2.00 - OK */
-	COAP_RESPONSE_CODE_OK = COAP_MAKE_RESPONSE_CODE(2, 0),
 	/** 2.01 - Created */
 	COAP_RESPONSE_CODE_CREATED = COAP_MAKE_RESPONSE_CODE(2, 1),
 	/** 2.02 - Deleted */
@@ -203,6 +203,7 @@ enum coap_response_code {
 #define COAP_CODE_EMPTY (0)
 
 #define COAP_TOKEN_MAX_LEN 8UL
+#define COAP_FIXED_HEADER_SIZE 4UL
 
 /** @endcond */
 
@@ -261,7 +262,7 @@ struct coap_resource;
  */
 typedef int (*coap_method_t)(struct coap_resource *resource,
 			     struct coap_packet *request,
-			     struct sockaddr *addr, socklen_t addr_len);
+			     struct net_sockaddr *addr, net_socklen_t addr_len);
 
 /**
  * @typedef coap_notify_t
@@ -286,6 +287,8 @@ struct coap_resource {
 	const char * const *path;
 	/** User specific opaque data */
 	void *user_data;
+	/** Resource metadata for '.well-known/core' responses */
+	struct coap_core_metadata *metadata;
 	/** List of resource observers */
 	sys_slist_t observers;
 	/** Resource age */
@@ -299,7 +302,7 @@ struct coap_observer {
 	/** Observer list node */
 	sys_snode_t list;
 	/** Observer connection end point information */
-	struct sockaddr addr;
+	struct net_sockaddr addr;
 	/** Observer token */
 	uint8_t token[8];
 	/** Extended token length */
@@ -316,10 +319,10 @@ struct coap_packet {
 	uint8_t hdr_len;  /**< CoAP header length */
 	uint16_t opt_len; /**< Total options length (delta + len + value) */
 	uint16_t delta;   /**< Used for delta calculation in CoAP packet */
-#if defined(CONFIG_COAP_KEEP_USER_DATA) || defined(DOXYGEN)
+#if defined(CONFIG_COAP_KEEP_USER_DATA) || defined(__DOXYGEN__)
 	/**
 	 * Application specific user data.
-	 * Only available when @kconfig{CONFIG_COAP_KEEP_USER_DATA} is enabled.
+	 * @kconfig_dep{CONFIG_COAP_KEEP_USER_DATA}
 	 */
 	void *user_data;
 #endif
@@ -349,7 +352,7 @@ struct coap_option {
  */
 typedef int (*coap_reply_t)(const struct coap_packet *response,
 			    struct coap_reply *reply,
-			    const struct sockaddr *from);
+			    const struct net_sockaddr *from);
 
 /**
  * @brief CoAP transmission parameters.
@@ -374,7 +377,7 @@ struct coap_transmission_parameters {
  * @brief Represents a request awaiting for an acknowledgment (ACK).
  */
 struct coap_pending {
-	struct sockaddr addr; /**< Remote address */
+	struct net_sockaddr addr; /**< Remote address */
 	int64_t t0;           /**< Time when the request was sent */
 	uint32_t timeout;     /**< Timeout in ms */
 	uint16_t id;          /**< Message id */
@@ -696,7 +699,7 @@ bool coap_packet_is_request(const struct coap_packet *cpkt);
  * @param addr Peer address
  * @param addr_len Peer address length
  *
- * @retval >= 0 in case of success.
+ * @retval >=0 in case of success.
  * @retval -ENOTSUP in case of invalid request code.
  * @retval -EPERM in case resource handler is not implemented.
  * @retval -ENOENT in case the resource is not found.
@@ -706,7 +709,7 @@ int coap_handle_request_len(struct coap_packet *cpkt,
 			    size_t resources_len,
 			    struct coap_option *options,
 			    uint8_t opt_num,
-			    struct sockaddr *addr, socklen_t addr_len);
+			    struct net_sockaddr *addr, net_socklen_t addr_len);
 
 /**
  * @brief When a request is received, call the appropriate methods of
@@ -719,7 +722,7 @@ int coap_handle_request_len(struct coap_packet *cpkt,
  * @param addr Peer address
  * @param addr_len Peer address length
  *
- * @retval >= 0 in case of success.
+ * @retval >=0 in case of success.
  * @retval -ENOTSUP in case of invalid request code.
  * @retval -EPERM in case resource handler is not implemented.
  * @retval -ENOENT in case the resource is not found.
@@ -728,7 +731,7 @@ int coap_handle_request(struct coap_packet *cpkt,
 			struct coap_resource *resources,
 			struct coap_option *options,
 			uint8_t opt_num,
-			struct sockaddr *addr, socklen_t addr_len);
+			struct net_sockaddr *addr, net_socklen_t addr_len);
 
 /**
  * Represents the size of each block that will be transferred using
@@ -995,7 +998,7 @@ size_t coap_next_block(const struct coap_packet *cpkt,
  */
 void coap_observer_init(struct coap_observer *observer,
 			const struct coap_packet *request,
-			const struct sockaddr *addr);
+			const struct net_sockaddr *addr);
 
 /**
  * @brief After the observer is initialized, associate the observer
@@ -1036,7 +1039,7 @@ bool coap_remove_observer(struct coap_resource *resource,
  */
 struct coap_observer *coap_find_observer(
 	struct coap_observer *observers, size_t len,
-	const struct sockaddr *addr,
+	const struct net_sockaddr *addr,
 	const uint8_t *token, uint8_t token_len);
 
 /**
@@ -1054,7 +1057,7 @@ struct coap_observer *coap_find_observer(
  */
 struct coap_observer *coap_find_observer_by_addr(
 	struct coap_observer *observers, size_t len,
-	const struct sockaddr *addr);
+	const struct net_sockaddr *addr);
 
 /**
  * @brief Returns the observer that has token @a token.
@@ -1113,7 +1116,7 @@ void coap_reply_init(struct coap_reply *reply,
  */
 int coap_pending_init(struct coap_pending *pending,
 		      const struct coap_packet *request,
-		      const struct sockaddr *addr,
+		      const struct net_sockaddr *addr,
 		      const struct coap_transmission_parameters *params);
 
 /**
@@ -1173,7 +1176,7 @@ struct coap_pending *coap_pending_received(
  */
 struct coap_reply *coap_response_received(
 	const struct coap_packet *response,
-	const struct sockaddr *from,
+	const struct net_sockaddr *from,
 	struct coap_reply *replies, size_t len);
 
 /**

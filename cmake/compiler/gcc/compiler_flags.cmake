@@ -21,9 +21,11 @@ endif()
 set_compiler_property(PROPERTY optimization_speed -O2)
 set_compiler_property(PROPERTY optimization_size  -Os)
 set_compiler_property(PROPERTY optimization_size_aggressive -Oz)
+set_compiler_property(PROPERTY optimization_fast -Ofast)
 
 if(CMAKE_C_COMPILER_VERSION GREATER_EQUAL "4.5.0")
   set_compiler_property(PROPERTY optimization_lto -flto=auto)
+  set_compiler_property(PROPERTY optimization_lto_st -flto=1)
   set_compiler_property(PROPERTY prohibit_lto -fno-lto)
 endif()
 
@@ -45,6 +47,8 @@ check_set_compiler_property(APPEND PROPERTY warning_base -Wno-pointer-sign)
 
 # Prohibit void pointer arithmetic. Illegal in C99
 check_set_compiler_property(APPEND PROPERTY warning_base -Wpointer-arith)
+
+check_set_compiler_property(PROPERTY warning_no_misleading_indentation -Wno-misleading-indentation)
 
 # not portable
 check_set_compiler_property(APPEND PROPERTY warning_base -Wexpansion-to-defined)
@@ -112,9 +116,10 @@ set_compiler_property(PROPERTY warning_error_coding_guideline
 # GCC compiler flags for C standard. The specific standard must be appended by user.
 set_compiler_property(PROPERTY cstd -std=)
 
-if (NOT CONFIG_NEWLIB_LIBC AND
+if(NOT CONFIG_NEWLIB_LIBC AND
     NOT (CONFIG_PICOLIBC AND NOT CONFIG_PICOLIBC_USE_MODULE) AND
     NOT COMPILER STREQUAL "xcc" AND
+    NOT COMPILER STREQUAL "xt-clang" AND
     NOT CONFIG_HAS_ESPRESSIF_HAL AND
     NOT CONFIG_NATIVE_BUILD)
   set_compiler_property(PROPERTY nostdinc -nostdinc)
@@ -144,6 +149,8 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "-std=c++20"
   "-Wno-register" "-Wno-volatile")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "-std=c++2b"
   "-Wno-register" "-Wno-volatile")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp23 "-std=c++23"
+  "-Wno-register" "-Wno-volatile")
 
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)
@@ -151,6 +158,10 @@ set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)
 # Extra warning options
 set_property(TARGET compiler PROPERTY warnings_as_errors -Werror)
 set_property(TARGET asm PROPERTY warnings_as_errors -Werror -Wa,--fatal-warnings)
+
+# Deprecation warning
+set_property(TARGET compiler PROPERTY no_deprecation_warning -Wno-deprecated-declarations)
+set_property(TARGET asm PROPERTY no_deprecation_warning -Wno-deprecated-declarations)
 
 # Disable exceptions flag in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions "-fno-exceptions")
@@ -196,6 +207,10 @@ if(NOT CONFIG_NO_OPTIMIZATIONS)
   set_compiler_property(PROPERTY security_fortify_run_time _FORTIFY_SOURCE=2)
 endif()
 
+check_set_compiler_property(PROPERTY sanitizer_undefined -fsanitize=undefined)
+check_set_compiler_property(PROPERTY sanitizer_undefined_trap -fsanitize-undefined-trap-on-error)
+check_set_compiler_property(PROPERTY sanitizer_undefined_library)
+
 # gcc flag for a hosted (no-freestanding) application
 check_set_compiler_property(APPEND PROPERTY hosted -fno-freestanding)
 
@@ -231,6 +246,9 @@ set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics "-fno-threadsafe
 # Required ASM flags when using gcc
 set_property(TARGET asm PROPERTY required "-xassembler-with-cpp")
 
+# GCC compiler flags for imacros. The specific header must be appended by user.
+set_property(TARGET asm PROPERTY imacros "-imacros")
+
 # gcc flag for colourful diagnostic messages
 check_set_compiler_property(PROPERTY diagnostic -fdiagnostics-color=always)
 
@@ -246,6 +264,7 @@ set_compiler_property(PROPERTY no_position_independent
 set_compiler_property(PROPERTY no_global_merge "")
 
 set_compiler_property(PROPERTY warning_shadow_variables -Wshadow)
+set_compiler_property(PROPERTY warning_no_array_bounds -Wno-array-bounds)
 
 set_compiler_property(PROPERTY no_builtin -fno-builtin)
 set_compiler_property(PROPERTY no_builtin_malloc -fno-builtin-malloc)
@@ -253,3 +272,20 @@ set_compiler_property(PROPERTY no_builtin_malloc -fno-builtin-malloc)
 set_compiler_property(PROPERTY specs -specs=)
 
 set_compiler_property(PROPERTY include_file -include)
+
+set_compiler_property(PROPERTY cmse -mcmse)
+
+set_property(TARGET asm PROPERTY cmse -mcmse)
+
+# Compiler flag for not placing functions in their own sections:
+set_compiler_property(PROPERTY no_function_sections "-fno-function-sections")
+
+# Compiler flag for not placing variables in their own sections:
+set_compiler_property(PROPERTY no_data_sections "-fno-data-sections")
+
+# Compiler flag to enable function instrumentation
+set_compiler_property(PROPERTY func_instrumentation "-finstrument-functions")
+set_compiler_property(PROPERTY func_instrumentation_exclude_function_list
+  "-finstrument-functions-exclude-function-list=${CONFIG_INSTRUMENTATION_EXCLUDE_FUNCTION_LIST}")
+set_compiler_property(PROPERTY func_instrumentation_exclude_file_list
+  "-finstrument-functions-exclude-file-list=${CONFIG_INSTRUMENTATION_EXCLUDE_FILE_LIST}")

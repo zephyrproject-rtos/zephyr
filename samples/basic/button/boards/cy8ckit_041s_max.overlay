@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sw0 = &user_btn;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_btn: button_0 {
+			label = "SW_0";
+			gpios = <&gpio_prt11 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&gpio_prt11 {
+	status = "okay";
+};

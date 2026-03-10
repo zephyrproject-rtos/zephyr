@@ -3,16 +3,30 @@
 # Copyright (c) 2017 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menu "POSIX (native) Options"
+menu "Native (POSIX) Architecture Options"
 	depends on ARCH_POSIX
 
 config ARCH
 	default "posix"
 
+config ARCH_POSIX_UPDATE_STACK_INFO
+	bool "Update thread stack info with real pthread stack bounds"
+	depends on THREAD_STACK_INFO
+	help
+	  When enabled, the POSIX architecture will update each thread's
+	  stack_info to reflect the actual pthread stack instead of the
+	  Zephyr-allocated stack. This is useful for applications that
+	  perform their own stack overflow checking against the real
+	  stack bounds.
+
 config ARCH_POSIX_RECOMMENDED_STACK_SIZE
 	int
+	default 60 if 64BIT && ARCH_POSIX_UPDATE_STACK_INFO && STACK_SENTINEL
+	default 56 if 64BIT && ARCH_POSIX_UPDATE_STACK_INFO
 	default 44 if 64BIT && STACK_SENTINEL
 	default 40 if 64BIT
+	default 36 if ARCH_POSIX_UPDATE_STACK_INFO && STACK_SENTINEL
+	default 32 if ARCH_POSIX_UPDATE_STACK_INFO
 	default 28 if STACK_SENTINEL
 	default 24
 	help
@@ -27,7 +41,7 @@ config ARCH_POSIX_LIBFUZZER
 	help
 	  Build as an LLVM libfuzzer target. Requires
 	  support from the toolchain (currently only clang works, and
-	  only on native_{posix,sim}[//64]), and should normally be used in
+	  only on native_sim[//64]), and should normally be used in
 	  concert with some of CONFIG_ASAN/UBSAN/MSAN for validation.
 	  The application needs to implement the
 	  LLVMFuzzerTestOneInput() entry point, which runs in the host
@@ -40,5 +54,7 @@ config ARCH_POSIX_TRAP_ON_FATAL
 	help
 	  Raise a SIGTRAP signal on fatal error before exiting.
 	  This automatically suspends the target if a debugger is attached.
+
+rsource "Kconfig.natsim_optional"
 
 endmenu

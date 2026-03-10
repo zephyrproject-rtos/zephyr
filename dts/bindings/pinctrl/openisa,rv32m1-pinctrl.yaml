@@ -3,7 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  OpenISA RV32M1 pinctrl node. This node will define pin configurations in pin groups,
+  OpenISA RV32M1 Pin Controller
+
+  This node will define pin configurations in pin groups,
   and has the 'pinctrl' node identifier in the SOC's devicetree. Each group
   within the pin configuration defines the pin configuration for a peripheral,
   and each numbered subgroup in the pin group defines all the pins for that

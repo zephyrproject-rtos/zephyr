@@ -1,16 +1,30 @@
 /*
- * Copyright (c) 2023 Nordic Semiconductor
+ * Copyright (c) 2023-2025 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
+
 #include "babblekit/testcase.h"
 #include "babblekit/flags.h"
+#include "bstests.h"
 #include "common.h"
-
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/iso.h>
-#include <zephyr/sys/printk.h>
 
 #define ENQUEUE_COUNT 2
 
@@ -27,7 +41,7 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, ENQUEUE_COUNT, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_
 
 BUILD_ASSERT(CONFIG_BT_ISO_MAX_CHAN > 1, "CONFIG_BT_ISO_MAX_CHAN shall be at least 2");
 
-static DEFINE_FLAG(flag_iso_connected);
+DEFINE_FLAG_STATIC(flag_iso_connected);
 
 static void send_data_cb(struct k_work *work)
 {
@@ -104,6 +118,12 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
+	const struct bt_iso_chan_path hci_path = {
+		.pid = BT_ISO_DATA_PATH_HCI,
+		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+	};
+	int err;
+
 	printk("ISO Channel %p connected\n", chan);
 
 	seq_num = 0U;
@@ -115,16 +135,29 @@ static void iso_connected(struct bt_iso_chan *chan)
 
 		SET_FLAG(flag_iso_connected);
 	}
+
+	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
+	TEST_ASSERT(err == 0, "Failed to set ISO data path: %d", err);
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
+	int err;
+
 	printk("ISO Channel %p disconnected (reason 0x%02x)\n", chan, reason);
 
 	if (chan == default_chan) {
 		k_work_cancel_delayable(&iso_send_work);
 
 		UNSET_FLAG(flag_iso_connected);
+	}
+
+	err = bt_iso_remove_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
+	TEST_ASSERT(err == 0, "Failed to remove ISO data path: %d", err);
+
+	if (seq_num < 100) {
+		printk("Channel disconnected early, bumping seq_num to 1000 to end test\n");
+		seq_num = 1000;
 	}
 }
 
@@ -156,7 +189,6 @@ static void init(void)
 		.sdu = CONFIG_BT_ISO_TX_MTU,
 		.phy = BT_GAP_LE_PHY_2M,
 		.rtn = 1,
-		.path = NULL,
 	};
 	static struct bt_iso_chan_qos iso_qos = {
 		.tx = &iso_tx,
@@ -174,9 +206,6 @@ static void init(void)
 	for (size_t i = 0U; i < ARRAY_SIZE(iso_chans); i++) {
 		iso_chans[i].ops = &iso_ops;
 		iso_chans[i].qos = &iso_qos;
-#if defined(CONFIG_BT_SMP)
-		iso_chans[i].required_sec_level = BT_SECURITY_L2;
-#endif /* CONFIG_BT_SMP */
 	}
 }
 
@@ -435,9 +464,16 @@ static void test_main(void)
 		k_sleep(K_USEC(interval_us));
 	}
 
-	disconnect_cis();
-	disconnect_acl();
-	terminate_cig();
+	if (seq_num == 100) {
+		disconnect_cis();
+		disconnect_acl();
+		terminate_cig();
+	}
+
+	/* check that all buffers returned to pool */
+	TEST_ASSERT(atomic_get(&tx_pool.avail_count) == ENQUEUE_COUNT,
+		    "tx_pool has non returned buffers, should be %u but is %u",
+		    ENQUEUE_COUNT, atomic_get(&tx_pool.avail_count));
 
 	TEST_PASS("Test passed");
 }

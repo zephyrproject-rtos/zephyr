@@ -54,33 +54,52 @@ static int backend_init(const struct device *instance)
 	return 0;
 }
 
-#define DEFINE_BACKEND_DEVICE(i)					\
-	static const struct icmsg_config_t backend_config_##i = {	\
-		.mbox_tx = MBOX_DT_SPEC_INST_GET(i, tx),		\
-		.mbox_rx = MBOX_DT_SPEC_INST_GET(i, rx),		\
-	};								\
-									\
-	PBUF_DEFINE(tx_pb_##i,						\
-			DT_REG_ADDR(DT_INST_PHANDLE(i, tx_region)),	\
-			DT_REG_SIZE(DT_INST_PHANDLE(i, tx_region)),	\
-			DT_INST_PROP_OR(i, dcache_alignment, 0));	\
-	PBUF_DEFINE(rx_pb_##i,						\
-			DT_REG_ADDR(DT_INST_PHANDLE(i, rx_region)),	\
-			DT_REG_SIZE(DT_INST_PHANDLE(i, rx_region)),	\
-			DT_INST_PROP_OR(i, dcache_alignment, 0));	\
-									\
-	static struct icmsg_data_t backend_data_##i = {			\
-		.tx_pb = &tx_pb_##i,					\
-		.rx_pb = &rx_pb_##i,					\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(i,					\
-			 &backend_init,					\
-			 NULL,						\
-			 &backend_data_##i,				\
-			 &backend_config_##i,				\
-			 POST_KERNEL,					\
-			 CONFIG_IPC_SERVICE_REG_BACKEND_PRIORITY,	\
+#define UNBOUND_MODE(i) CONCAT(ICMSG_UNBOUND_MODE_, DT_INST_STRING_UPPER_TOKEN(i, unbound))
+
+#define DEFINE_BACKEND_DEVICE(i)						\
+	static const struct icmsg_config_t backend_config_##i = {		\
+		.mbox_tx = MBOX_DT_SPEC_INST_GET(i, tx),			\
+		.mbox_rx = MBOX_DT_SPEC_INST_GET(i, rx),			\
+		.unbound_mode = UNBOUND_MODE(i),				\
+	};									\
+										\
+	PBUF_DEFINE(tx_pb_##i,							\
+			DT_REG_ADDR(DT_INST_PHANDLE(i, tx_region)),		\
+			DT_REG_SIZE(DT_INST_PHANDLE(i, tx_region)),		\
+			DT_INST_PROP_OR(i, dcache_alignment, 0),		\
+			UNBOUND_MODE(i) != ICMSG_UNBOUND_MODE_DISABLE,		\
+			UNBOUND_MODE(i) == ICMSG_UNBOUND_MODE_DETECT);		\
+	PBUF_DEFINE(rx_pb_##i,							\
+			DT_REG_ADDR(DT_INST_PHANDLE(i, rx_region)),		\
+			DT_REG_SIZE(DT_INST_PHANDLE(i, rx_region)),		\
+			DT_INST_PROP_OR(i, dcache_alignment, 0),		\
+			UNBOUND_MODE(i) != ICMSG_UNBOUND_MODE_DISABLE,		\
+			UNBOUND_MODE(i) == ICMSG_UNBOUND_MODE_DETECT);		\
+										\
+	BUILD_ASSERT(UNBOUND_MODE(i) != ICMSG_UNBOUND_MODE_DISABLE ||		\
+		IS_ENABLED(CONFIG_IPC_SERVICE_ICMSG_UNBOUND_DISABLED_ALLOWED),	\
+		"Unbound mode \"disabled\" is was forbidden in Kconfig.");	\
+										\
+	BUILD_ASSERT(UNBOUND_MODE(i) != ICMSG_UNBOUND_MODE_ENABLE ||		\
+		IS_ENABLED(CONFIG_IPC_SERVICE_ICMSG_UNBOUND_ENABLED_ALLOWED),	\
+		"Unbound mode \"enabled\" is was forbidden in Kconfig.");	\
+										\
+	BUILD_ASSERT(UNBOUND_MODE(i) != ICMSG_UNBOUND_MODE_DETECT ||		\
+		IS_ENABLED(CONFIG_IPC_SERVICE_ICMSG_UNBOUND_DETECT_ALLOWED),	\
+		"Unbound mode \"detect\" is was forbidden in Kconfig.");	\
+										\
+	static struct icmsg_data_t backend_data_##i = {				\
+		.tx_pb = &tx_pb_##i,						\
+		.rx_pb = &rx_pb_##i,						\
+	};									\
+										\
+	DEVICE_DT_INST_DEFINE(i,						\
+			 &backend_init,						\
+			 NULL,							\
+			 &backend_data_##i,					\
+			 &backend_config_##i,					\
+			 POST_KERNEL,						\
+			 CONFIG_IPC_SERVICE_REG_BACKEND_PRIORITY,		\
 			 &backend_ops);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_BACKEND_DEVICE)

@@ -112,7 +112,7 @@ static int dai_nxp_micfil_get_config(const struct device *dev, struct dai_config
 }
 
 static int dai_nxp_micfil_set_config(const struct device *dev,
-		const struct dai_config *cfg, const void *bespoke_cfg)
+		const struct dai_config *cfg, const void *bespoke_cfg, size_t size)
 
 {
 	const struct micfil_bespoke_config *bespoke = bespoke_cfg;
@@ -159,7 +159,7 @@ static int dai_nxp_micfil_remove(const struct device *dev)
 	return 0;
 }
 
-const struct dai_driver_api dai_nxp_micfil_ops = {
+static DEVICE_API(dai, dai_nxp_micfil_ops) = {
 	.probe			= dai_nxp_micfil_probe,
 	.remove			= dai_nxp_micfil_remove,
 	.config_set		= dai_nxp_micfil_set_config,

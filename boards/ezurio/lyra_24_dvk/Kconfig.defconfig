@@ -1,0 +1,25 @@
+# Copyright (c) 2021, Sateesh Kotapati
+# Copyright (c) 2026 Ezurio LLC
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_LYRA_24_DVK_P10 || BOARD_LYRA_24_DVK_P20 || BOARD_LYRA_24_DVK_P20RF || BOARD_LYRA_24_DVK_S10
+
+config REGULATOR
+	default y
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+	depends on LOG_BACKEND_SWO
+
+config FPU
+	default y if SOC_GECKO_USE_RAIL || BT
+
+if BT
+
+config MAIN_STACK_SIZE
+	default 3072 if PM
+	default 2304
+
+endif # BT
+
+endif # BOARD_LYRA_24_DVK_P10 || BOARD_LYRA_24_DVK_P20 || BOARD_LYRA_24_DVK_P20RF || BOARD_LYRA_24_DVK_S10

@@ -25,7 +25,7 @@ int fxls8974_transceive(const struct device *dev,
 {
 		const struct fxls8974_config *cfg = dev->config;
 		const struct spi_buf buf = { .buf = data, .len = length };
-		const struct spi_buf_set s = { .bufs = &buf, .count = 1 };
+		const struct spi_buf_set s = { .buffers = &buf, .count = 1 };
 
 		return spi_transceive_dt(&cfg->bus_cfg.spi, &s, &s);
 }
@@ -43,8 +43,8 @@ int fxls8974_read_spi(const struct device *dev,
 				{ .buf = reg_buf, .len = 3 },
 				{ .buf = data, .len = length }
 		};
-		const struct spi_buf_set tx = { .bufs = buf, .count = 1 };
-		const struct spi_buf_set rx = { .bufs = buf, .count = 2 };
+		const struct spi_buf_set tx = { .buffers = buf, .count = 1 };
+		const struct spi_buf_set rx = { .buffers = buf, .count = 2 };
 
 		return spi_transceive_dt(&cfg->bus_cfg.spi, &tx, &rx);
 }
@@ -491,11 +491,10 @@ static int fxls8974_init(const struct device *dev)
 			return -EIO;
 		}
 
-		if (data->whoami == WHOAMI_ID_FXLS8974) {
-			LOG_DBG("Device ID 0x%x, FXLS8974", data->whoami);
-		} else {
+		if (data->whoami != WHOAMI_ID_FXLS8964 &&
+		data->whoami != WHOAMI_ID_FXLS8974) {
 			LOG_ERR("Unknown Device ID 0x%x", data->whoami);
-			return -EIO;
+			return -ENXIO;
 		}
 
 		if (fxls8974_get_active(dev, &regVal)) {
@@ -595,7 +594,7 @@ static DEVICE_API(sensor, fxls8974_driver_api) = {
 
 #define FXLS8974_CONFIG_SPI(n)									\
 		.bus_cfg = { .spi = SPI_DT_SPEC_INST_GET(n,					\
-						SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0) },	\
+						SPI_OP_MODE_MASTER | SPI_WORD_SET(8)) },	\
 						.ops = &fxls8974_spi_ops,			\
 						.range = DT_INST_PROP(n, range),		\
 						.inst_on_bus = FXLS8974_BUS_SPI,		\

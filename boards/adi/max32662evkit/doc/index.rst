@@ -21,7 +21,7 @@ Hardware
     - 16KB Unified Cache
     - Memory Protection Unit (MPU)
     - Dual- or Single-Supply Operation: 1.7V to 3.6V
-    - Wide Operating Temperature: -40°C to +105°C
+    - Wide Operating Temperature: -40 °C to +105 °C
 
   - Flexible Clocking Schemes
 
@@ -75,39 +75,7 @@ Hardware
 Supported Features
 ==================
 
-Below interfaces are supported by Zephyr on MAX32662EVKIT.
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock and reset control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| Watchdog  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma controller                      |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| Timer     | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| Flash     | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -136,7 +104,7 @@ Connections and IOs
 | JP4       | I2C1_SDA_PU   | +-----------+ |  +-------------------------------------------------------------------------------+               |
 |           |               | | 1-2       | |  | Connects the pull-up to I2C1A_SDA (P0.9); sourced by V_AUX.                   |               |
 |           |               | +-----------+ |  +-------------------------------------------------------------------------------+               |
-|           |               | | Oepn      | |  | Disconnects the pull-up from I2C1A_SDA (P0.9); sourced by V_AUX.              |               |
+|           |               | | Open      | |  | Disconnects the pull-up from I2C1A_SDA (P0.9); sourced by V_AUX.              |               |
 |           |               | +-----------+ |  +-------------------------------------------------------------------------------+               |
 |           |               |               |                                                                                                  |
 +-----------+---------------+---------------+--------------------------------------------------------------------------------------------------+
@@ -200,6 +168,8 @@ Connections and IOs
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========

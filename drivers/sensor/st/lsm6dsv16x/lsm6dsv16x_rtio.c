@@ -122,7 +122,8 @@ static void lsm6dsv16x_submit_sample(const struct device *dev, struct rtio_iodev
 	}
 
 	edata->header.is_fifo = false;
-	edata->header.accel_fs = data->accel_fs;
+	edata->header.accel_fs_idx =
+		LSM6DSV16X_ACCEL_FS_VAL_TO_FS_IDX(config->accel_fs_map[data->accel_fs]);
 	edata->header.gyro_fs = data->gyro_fs;
 	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 

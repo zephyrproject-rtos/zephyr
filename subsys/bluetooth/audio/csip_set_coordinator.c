@@ -44,7 +44,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "csip_crypto.h"
@@ -52,7 +51,6 @@
 #include "common/bt_str.h"
 #include "host/conn_internal.h"
 #include "host/keys.h"
-#include "host/hci_core.h"
 
 LOG_MODULE_REGISTER(bt_csip_set_coordinator, CONFIG_BT_CSIP_SET_COORDINATOR_LOG_LEVEL);
 
@@ -313,6 +311,17 @@ static void sirk_changed(struct bt_csip_set_coordinator_csis_inst *inst)
 	}
 }
 
+static void size_changed(struct bt_conn *conn, struct bt_csip_set_coordinator_csis_inst *inst)
+{
+	struct bt_csip_set_coordinator_cb *listener;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&csip_set_coordinator_cbs, listener, _node) {
+		if (listener->size_changed != NULL) {
+			listener->size_changed(conn, inst);
+		}
+	}
+}
+
 static void release_set_complete(int err)
 {
 	struct bt_csip_set_coordinator_cb *listener;
@@ -469,17 +478,19 @@ static uint8_t size_notify_func(struct bt_conn *conn,
 
 	if (svc_inst != NULL) {
 		if (length == sizeof(set_size)) {
-			struct bt_csip_set_coordinator_inst *client;
 			struct bt_csip_set_coordinator_set_info *set_info;
+			struct bt_csip_set_coordinator_csis_inst *inst;
+			struct bt_csip_set_coordinator_inst *client;
 
 			client = &client_insts[bt_conn_index(conn)];
-			set_info = &client->set_member.insts[svc_inst->idx].info;
+			inst = &client->set_member.insts[svc_inst->idx];
+			set_info = &inst->info;
 
 			(void)memcpy(&set_size, data, length);
 			LOG_DBG("Set size updated from %u to %u", set_info->set_size, set_size);
 
 			set_info->set_size = set_size;
-			/* TODO: Notify app */
+			size_changed(conn, inst);
 		} else {
 			LOG_DBG("Invalid length %u", length);
 		}
@@ -1375,13 +1386,13 @@ struct bt_csip_set_coordinator_csis_inst *bt_csip_set_coordinator_csis_inst_by_h
 {
 	const struct bt_csip_set_coordinator_svc_inst *svc_inst;
 
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
 
 		return NULL;
 	}
 
-	CHECKIF(start_handle == 0) {
+	if (start_handle == 0) {
 		LOG_DBG("start_handle is 0");
 
 		return NULL;
@@ -1405,7 +1416,7 @@ bt_csip_set_coordinator_set_member_by_conn(const struct bt_conn *conn)
 {
 	struct bt_csip_set_coordinator_inst *client;
 
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
 
 		return NULL;
@@ -1422,7 +1433,7 @@ bt_csip_set_coordinator_set_member_by_conn(const struct bt_conn *conn)
 /*************************** PUBLIC FUNCTIONS ***************************/
 int bt_csip_set_coordinator_register_cb(struct bt_csip_set_coordinator_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 
 		return -EINVAL;
@@ -1438,7 +1449,7 @@ int bt_csip_set_coordinator_discover(struct bt_conn *conn)
 	int err;
 	struct bt_csip_set_coordinator_inst *client;
 
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		LOG_DBG("NULL conn");
 		return -EINVAL;
 	}
@@ -1493,14 +1504,14 @@ static int verify_members(const struct bt_csip_set_coordinator_set_member **memb
 		struct bt_csip_set_coordinator_svc_inst *svc_inst;
 		struct bt_conn *conn;
 
-		CHECKIF(member == NULL) {
+		if (member == NULL) {
 			LOG_DBG("Invalid member[%d] was NULL", i);
 			return -EINVAL;
 		}
 
 		conn = client_inst->conn;
 
-		CHECKIF(conn == NULL) {
+		if (conn == NULL) {
 			LOG_DBG("Member[%d] conn was NULL", i);
 			return -EINVAL;
 		}
@@ -1674,7 +1685,7 @@ static bool all_members_bonded(const struct bt_csip_set_coordinator_set_member *
 		int err;
 
 		err = bt_conn_get_info(client->conn, &info);
-		if (err != 0 || !bt_addr_le_is_bonded(info.id, info.le.dst)) {
+		if (err != 0 || !bt_le_bond_exists(info.id, info.le.dst)) {
 			LOG_DBG("Member[%zu] is not bonded", i);
 
 			return false;
@@ -1692,7 +1703,7 @@ int bt_csip_set_coordinator_lock(
 	struct bt_csip_set_coordinator_svc_inst *svc_inst;
 	int err;
 
-	CHECKIF(active.in_progress) {
+	if (active.in_progress) {
 		LOG_DBG("Procedure in progress");
 		return -EBUSY;
 	}
@@ -1738,7 +1749,7 @@ int bt_csip_set_coordinator_release(const struct bt_csip_set_coordinator_set_mem
 	struct bt_csip_set_coordinator_svc_inst *svc_inst;
 	int err;
 
-	CHECKIF(active.in_progress) {
+	if (active.in_progress) {
 		LOG_DBG("Procedure in progress");
 		return -EBUSY;
 	}

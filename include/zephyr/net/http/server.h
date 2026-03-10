@@ -138,6 +138,16 @@ struct http_resource_detail_static_fs {
 	const char *fs_path;
 };
 
+/** @brief HTTP compressions */
+enum http_compression {
+	HTTP_NONE = 0,     /**< NONE */
+	HTTP_GZIP = 1,     /**< GZIP */
+	HTTP_COMPRESS = 2, /**< COMPRESS */
+	HTTP_DEFLATE = 3,  /**< DEFLATE */
+	HTTP_BR = 4,       /**< BR */
+	HTTP_ZSTD = 5      /**< ZSTD */
+};
+
 /** @cond INTERNAL_HIDDEN */
 /* Make sure that the common is the first in the struct. */
 BUILD_ASSERT(offsetof(struct http_resource_detail_static_fs, common) == 0);
@@ -161,13 +171,15 @@ struct http_content_type {
 struct http_client_ctx;
 
 /** Indicates the status of the currently processed piece of data.  */
-enum http_data_status {
+enum http_transaction_status {
 	/** Transaction aborted, data incomplete. */
-	HTTP_SERVER_DATA_ABORTED = -1,
+	HTTP_SERVER_TRANSACTION_ABORTED = -1,
 	/** Transaction incomplete, more data expected. */
-	HTTP_SERVER_DATA_MORE = 0,
+	HTTP_SERVER_REQUEST_DATA_MORE = 0,
 	/** Final data fragment in current transaction. */
-	HTTP_SERVER_DATA_FINAL = 1,
+	HTTP_SERVER_REQUEST_DATA_FINAL = 1,
+	/** Transaction completed, response sent completely. */
+	HTTP_SERVER_TRANSACTION_COMPLETE = 2,
 };
 
 /** @brief Status of captured request headers */
@@ -208,7 +220,10 @@ struct http_response_ctx {
  *        can be specified.
  *
  * @param client HTTP context information for this client connection.
- * @param status HTTP data status, indicate whether more data is expected or not.
+ * @param status HTTP transaction status, HTTP_SERVER_REQUEST_DATA_MORE and
+ *               HTTP_SERVER_REQUEST_DATA_FINAL describe the request-body delivery progress.
+ *               HTTP_SERVER_TRANSACTION_ABORTED and HTTP_SERVER_TRANSACTION_COMPLETE are
+ *               terminal notifications.
  * @param request_ctx Request context structure containing HTTP request data that was received.
  * @param response_ctx Response context structure for application to populate with response data.
  * @param user_data User specified data.
@@ -217,7 +232,7 @@ struct http_response_ctx {
  *         <0 error, close the connection.
  */
 typedef int (*http_resource_dynamic_cb_t)(struct http_client_ctx *client,
-					  enum http_data_status status,
+					  enum http_transaction_status status,
 					  const struct http_request_ctx *request_ctx,
 					  struct http_response_ctx *response_ctx,
 					  void *user_data);
@@ -475,6 +490,11 @@ struct http_client_ctx {
 	IF_ENABLED(CONFIG_WEBSOCKET, (uint8_t ws_sec_key[HTTP_SERVER_WS_MAX_SEC_KEY_LEN]));
 /** @endcond */
 
+/** @cond INTERNAL_HIDDEN */
+	/** Client supported compression. */
+	IF_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION, (uint8_t supported_compression));
+/** @endcond */
+
 	/** Flag indicating that HTTP2 preface was sent. */
 	bool preface_sent : 1;
 
@@ -492,6 +512,9 @@ struct http_client_ctx {
 
 	/** Flag indicating Websocket key is being processed. */
 	bool websocket_sec_key_next : 1;
+
+	/** Flag indicating accept encoding is being processed. */
+	IF_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION, (bool accept_encoding_next: 1));
 
 	/** The next frame on the stream is expectd to be a continuation frame. */
 	bool expect_continuation : 1;

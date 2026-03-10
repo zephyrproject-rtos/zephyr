@@ -20,27 +20,27 @@ LOG_MODULE_REGISTER(modem_context, CONFIG_MODEM_LOG_LEVEL);
 
 static struct modem_context *contexts[CONFIG_MODEM_CONTEXT_MAX_NUM];
 
-int modem_context_sprint_ip_addr(const struct sockaddr *addr, char *buf, size_t buf_size)
+int modem_context_sprint_ip_addr(const struct net_sockaddr *addr, char *buf, size_t buf_size)
 {
 	static const char unknown_str[] = "unk";
 
-	if (addr->sa_family == AF_INET6) {
+	if (addr->sa_family == NET_AF_INET6) {
 		if (buf_size < NET_IPV6_ADDR_LEN) {
 			return -ENOMEM;
 		}
 
-		if (net_addr_ntop(AF_INET6, &net_sin6(addr)->sin6_addr,
+		if (net_addr_ntop(NET_AF_INET6, &net_sin6(addr)->sin6_addr,
 					buf, buf_size) == NULL) {
 			return -ENOMEM;
 		}
 		return 0;
 	}
 
-	if (addr->sa_family == AF_INET) {
+	if (addr->sa_family == NET_AF_INET) {
 		if (buf_size < NET_IPV4_ADDR_LEN) {
 			return -ENOMEM;
 		}
-		if (net_addr_ntop(AF_INET, &net_sin(addr)->sin_addr,
+		if (net_addr_ntop(NET_AF_INET, &net_sin(addr)->sin_addr,
 					buf, buf_size) == NULL) {
 			return -ENOMEM;
 		}
@@ -56,17 +56,17 @@ int modem_context_sprint_ip_addr(const struct sockaddr *addr, char *buf, size_t 
 	return 0;
 }
 
-int modem_context_get_addr_port(const struct sockaddr *addr, uint16_t *port)
+int modem_context_get_addr_port(const struct net_sockaddr *addr, uint16_t *port)
 {
 	if (!addr || !port) {
 		return -EINVAL;
 	}
 
-	if (addr->sa_family == AF_INET6) {
-		*port = ntohs(net_sin6(addr)->sin6_port);
+	if (addr->sa_family == NET_AF_INET6) {
+		*port = net_ntohs(net_sin6(addr)->sin6_port);
 		return 0;
-	} else if (addr->sa_family == AF_INET) {
-		*port = ntohs(net_sin(addr)->sin_port);
+	} else if (addr->sa_family == NET_AF_INET) {
+		*port = net_ntohs(net_sin(addr)->sin_port);
 		return 0;
 	}
 

@@ -5,7 +5,6 @@ config UART_OPENTITAN
 	bool "OpenTitan UART"
 	default y
 	depends on DT_HAS_LOWRISC_OPENTITAN_UART_ENABLED
-	depends on !SERIAL_SUPPORT_INTERRUPT
 	select SERIAL_HAS_DRIVER
 	help
 	  Enable OpenTitan UART serial driver

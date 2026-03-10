@@ -86,12 +86,10 @@ static int cmd_stop(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_coap_service,
 	SHELL_CMD(start, NULL,
-		  "Start a CoAP Service\n"
-		  "Usage: start <service>",
+		  SHELL_HELP("Start a CoAP Service", "<service>"),
 		  cmd_start),
 	SHELL_CMD(stop, NULL,
-		  "Stop a CoAP Service\n"
-		  "Usage: stop <service>",
+		  SHELL_HELP("Stop a CoAP Service", "<service>"),
 		  cmd_stop),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );

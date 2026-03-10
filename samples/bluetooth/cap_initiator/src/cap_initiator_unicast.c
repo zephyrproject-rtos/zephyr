@@ -44,8 +44,8 @@ LOG_MODULE_REGISTER(cap_initiator_unicast, LOG_LEVEL_INF);
  */
 static struct bt_bap_lc3_preset unicast_preset_16_2_1 = BT_BAP_LC3_UNICAST_PRESET_16_2_1(
 	BT_AUDIO_LOCATION_MONO_AUDIO, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
-static struct bt_bap_unicast_group *unicast_group;
-uint64_t total_rx_iso_packet_count; /* This value is exposed to test code */
+static struct bt_cap_unicast_group *unicast_group;
+uint64_t total_unicast_rx_iso_packet_count; /* This value is exposed to test code */
 uint64_t total_unicast_tx_iso_packet_count; /* This value is exposed to test code */
 
 /** Struct to contain information for a specific peer (CAP) device */
@@ -119,8 +119,6 @@ static void unicast_stream_enabled_cb(struct bt_bap_stream *stream)
 static void unicast_stream_started_cb(struct bt_bap_stream *stream)
 {
 	LOG_INF("Started stream %p", stream);
-	total_rx_iso_packet_count = 0U;
-	total_unicast_tx_iso_packet_count = 0U;
 
 	if (is_tx_stream(stream)) {
 		struct bt_cap_stream *cap_stream =
@@ -179,11 +177,11 @@ static void unicast_stream_recv_cb(struct bt_bap_stream *stream,
 	 * (see the `info->flags` for which flags to check),
 	 */
 
-	if ((total_rx_iso_packet_count % 100U) == 0U) {
-		LOG_INF("Received %llu HCI ISO data packets", total_rx_iso_packet_count);
+	if ((total_unicast_rx_iso_packet_count % 100U) == 0U) {
+		LOG_INF("Received %llu HCI ISO data packets", total_unicast_rx_iso_packet_count);
 	}
 
-	total_rx_iso_packet_count++;
+	total_unicast_rx_iso_packet_count++;
 }
 
 static void unicast_stream_sent_cb(struct bt_bap_stream *stream)
@@ -336,16 +334,16 @@ static int discover_sources(void)
 
 static int unicast_group_create(void)
 {
-	struct bt_bap_unicast_group_stream_param source_stream_param = {
-		.qos = &unicast_preset_16_2_1.qos,
-		.stream = &peer.source_stream.bap_stream,
+	struct bt_cap_unicast_group_stream_param source_stream_param = {
+		.qos_cfg = &unicast_preset_16_2_1.qos,
+		.stream = &peer.source_stream,
 	};
-	struct bt_bap_unicast_group_stream_param sink_stream_param = {
-		.qos = &unicast_preset_16_2_1.qos,
-		.stream = &peer.sink_stream.bap_stream,
+	struct bt_cap_unicast_group_stream_param sink_stream_param = {
+		.qos_cfg = &unicast_preset_16_2_1.qos,
+		.stream = &peer.sink_stream,
 	};
-	struct bt_bap_unicast_group_stream_pair_param pair_params = {0};
-	struct bt_bap_unicast_group_param group_param = {0};
+	struct bt_cap_unicast_group_stream_pair_param pair_params = {0};
+	struct bt_cap_unicast_group_param group_param = {0};
 	int err;
 
 	if (peer.source_ep != NULL) {
@@ -359,7 +357,7 @@ static int unicast_group_create(void)
 	group_param.params_count = 1U;
 	group_param.params = &pair_params;
 
-	err = bt_bap_unicast_group_create(&group_param, &unicast_group);
+	err = bt_cap_unicast_group_create(&group_param, &unicast_group);
 	if (err != 0) {
 		LOG_ERR("Failed to create group: %d", err);
 		return err;
@@ -374,7 +372,7 @@ static int unicast_group_delete(void)
 {
 	int err;
 
-	err = bt_bap_unicast_group_delete(unicast_group);
+	err = bt_cap_unicast_group_delete(unicast_group);
 	if (err != 0) {
 		LOG_ERR("Failed to delete group: %d", err);
 		return err;
@@ -599,7 +597,8 @@ static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_
 		return false;
 	}
 
-	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT, &peer.conn);
+	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_BAP_CONN_PARAM_RELAXED,
+				&peer.conn);
 	if (err != 0) {
 		LOG_WRN("Create conn to failed: %d, restarting scan", err);
 		start_scan();
@@ -785,7 +784,6 @@ static int reset_cap_initiator(void)
 	}
 
 	if (unicast_group != NULL) {
-		int err;
 
 		err = unicast_group_delete();
 		if (err != 0) {
@@ -800,6 +798,9 @@ static int reset_cap_initiator(void)
 	k_sem_reset(&sem_proc);
 	k_sem_reset(&sem_state_change);
 	k_sem_reset(&sem_mtu_exchanged);
+
+	total_unicast_rx_iso_packet_count = 0U;
+	total_unicast_tx_iso_packet_count = 0U;
 
 	return 0;
 }

@@ -1,11 +1,14 @@
 common:
-  min_ram: 16
+  min_ram: 40
+  min_flash: 180
+  depends_on: netif
   tags:
     - net
     - coap
     - server
+    - tls
   integration_platforms:
     - native_sim
 
 tests:
-  net.coap.server.common: {}
+  net.coap.server.secure: {}

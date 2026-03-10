@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #define LOG_LEVEL       CONFIG_ETHERNET_LOG_LEVEL
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 
 #include <soc.h>
 #include <errno.h>
@@ -27,13 +27,15 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "r_ether_phy.h"
 
 /* Additional configurations to use with hal_renesas */
-#define ETHER_DEFAULT               NULL
-#define ETHER_CHANNEL0              0
-#define ETHER_BUF_SIZE              1536
-#define ETHER_PADDING_OFFSET        1
-#define ETHER_BROADCAST_FILTER      0
-#define ETHER_TOTAL_BUF_NUM         (CONFIG_ETH_RENESAS_TX_BUF_NUM + CONFIG_ETH_RENESAS_RX_BUF_NUM)
-#define ETHER_EE_RECEIVE_EVENT_MASK (0x01070000)
+#define ETHER_DEFAULT          NULL
+#define ETHER_CHANNEL0         0
+#define ETHER_BUF_SIZE         1536
+#define ETHER_PADDING_OFFSET   1
+#define ETHER_BROADCAST_FILTER 0
+#define ETHER_TOTAL_BUF_NUM    (CONFIG_ETH_RENESAS_TX_BUF_NUM + CONFIG_ETH_RENESAS_RX_BUF_NUM)
+#define ETHER_EE_RECEIVE_EVENT_MASK                                                                \
+	(ETHER_EESR_EVENT_MASK_RFOF | ETHER_EESR_EVENT_MASK_RDE | ETHER_EESR_EVENT_MASK_FR |       \
+	 ETHER_EESR_EVENT_MASK_RFCOF)
 
 BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= 1, "Invalid PHY connection setting");
 
@@ -64,11 +66,24 @@ struct renesas_ra_eth_config {
 	const struct device *phy_dev;
 };
 
+/*
+ * In some Renesas SoCs, Ethernet peripheral is always a non-secure bus master.
+ * In that case, placing the Ethernet buffer in non-secure RAM is necessary.
+ */
+#define ETHER_BUFFER_ALIGN(s) static __aligned(s)
+#if defined(CONFIG_ETH_RENESAS_RA_USE_NS_BUF)
+#define ETHER_BUFFER_PLACE_IN_SECTION __attribute__((section(".ns_buffer.eth")))
+#else
+#define ETHER_BUFFER_PLACE_IN_SECTION
+#endif
+
 #define DECLARE_ETHER_RX_BUFFER(idx, _)                                                            \
-	static __aligned(32) uint8_t g_ether0_ether_rx_buffer##idx[ETHER_BUF_SIZE];
+	ETHER_BUFFER_ALIGN(32)                                                                     \
+	uint8_t g_ether0_ether_rx_buffer##idx[ETHER_BUF_SIZE] ETHER_BUFFER_PLACE_IN_SECTION;
 
 #define DECLARE_ETHER_TX_BUFFER(idx, _)                                                            \
-	static __aligned(32) uint8_t g_ether0_ether_tx_buffer##idx[ETHER_BUF_SIZE];
+	ETHER_BUFFER_ALIGN(32)                                                                     \
+	uint8_t g_ether0_ether_tx_buffer##idx[ETHER_BUF_SIZE] ETHER_BUFFER_PLACE_IN_SECTION;
 
 #define DECLARE_ETHER_RX_BUFFER_PTR(idx, _) (uint8_t *)&g_ether0_ether_rx_buffer##idx[0]
 
@@ -79,17 +94,19 @@ LISTIFY(CONFIG_ETH_RENESAS_TX_BUF_NUM, DECLARE_ETHER_TX_BUFFER, (;));
 
 uint8_t *pp_g_ether0_ether_buffers[ETHER_TOTAL_BUF_NUM] = {
 	LISTIFY(CONFIG_ETH_RENESAS_RX_BUF_NUM, DECLARE_ETHER_RX_BUFFER_PTR, (,)),
-	LISTIFY(CONFIG_ETH_RENESAS_TX_BUF_NUM, DECLARE_ETHER_TX_BUFFER_PTR, (,))
-};
+		LISTIFY(CONFIG_ETH_RENESAS_TX_BUF_NUM, DECLARE_ETHER_TX_BUFFER_PTR, (,)) };
 
-static __aligned(16) ether_instance_descriptor_t
-	g_ether0_tx_descriptors[CONFIG_ETH_RENESAS_TX_BUF_NUM];
-static __aligned(16) ether_instance_descriptor_t
-	g_ether0_rx_descriptors[CONFIG_ETH_RENESAS_RX_BUF_NUM];
+ETHER_BUFFER_ALIGN(16)
+ether_instance_descriptor_t
+	g_ether0_tx_descriptors[CONFIG_ETH_RENESAS_TX_BUF_NUM] ETHER_BUFFER_PLACE_IN_SECTION;
+ETHER_BUFFER_ALIGN(16)
+ether_instance_descriptor_t
+	g_ether0_rx_descriptors[CONFIG_ETH_RENESAS_RX_BUF_NUM] ETHER_BUFFER_PLACE_IN_SECTION;
 
 const ether_extended_cfg_t g_ether0_extended_cfg_t = {
 	.p_rx_descriptors = g_ether0_rx_descriptors,
 	.p_tx_descriptors = g_ether0_tx_descriptors,
+	.eesr_event_filter = ETHER_EE_RECEIVE_EVENT_MASK,
 };
 
 /* Dummy configuration for ether phy as hal layer require */
@@ -134,7 +151,7 @@ static enum ethernet_hw_caps renesas_ra_eth_get_capabilities(const struct device
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
 }
 
 void renesas_ra_eth_callback(ether_callback_args_t *p_args)
@@ -142,7 +159,7 @@ void renesas_ra_eth_callback(ether_callback_args_t *p_args)
 	struct device *dev = (struct device *)p_args->p_context;
 	struct renesas_ra_eth_context *ctx = dev->data;
 
-	if (p_args->status_eesr & ETHER_EE_RECEIVE_EVENT_MASK) {
+	if (p_args->event == ETHER_EVENT_RX_COMPLETE) {
 		k_sem_give(&ctx->rx_sem);
 	}
 }
@@ -187,23 +204,23 @@ static void phy_link_state_changed(const struct device *pdev, struct phy_link_st
 
 		switch (state->speed) {
 		/* Half duplex link */
-		case LINK_HALF_100BASE_T: {
+		case LINK_HALF_100BASE: {
 			ctx->ctrl.link_speed_duplex = ETHER_PHY_LINK_SPEED_100H;
 			break;
 		}
 
-		case LINK_HALF_10BASE_T: {
+		case LINK_HALF_10BASE: {
 			ctx->ctrl.link_speed_duplex = ETHER_PHY_LINK_SPEED_10H;
 			break;
 		}
 
 		/* Full duplex link */
-		case LINK_FULL_100BASE_T: {
+		case LINK_FULL_100BASE: {
 			ctx->ctrl.link_speed_duplex = ETHER_PHY_LINK_SPEED_100F;
 			break;
 		}
 
-		case LINK_FULL_10BASE_T: {
+		case LINK_FULL_10BASE: {
 			ctx->ctrl.link_speed_duplex = ETHER_PHY_LINK_SPEED_10F;
 			break;
 		}
@@ -239,9 +256,7 @@ static void renesas_ra_eth_initialize(struct net_if *iface)
 
 	net_if_set_link_addr(iface, ctx->mac, sizeof(ctx->mac), NET_LINK_ETHERNET);
 
-	if (ctx->iface == NULL) {
-		ctx->iface = iface;
-	}
+	ctx->iface = iface;
 
 	ethernet_init(iface);
 
@@ -251,7 +266,7 @@ static void renesas_ra_eth_initialize(struct net_if *iface)
 		LOG_ERR("Failed to init ether - R_ETHER_Open fail");
 	}
 
-	err = R_ETHER_CallbackSet(&ctx->ctrl, renesas_ra_eth_callback, dev, NULL);
+	err = R_ETHER_CallbackSet(&ctx->ctrl, renesas_ra_eth_callback, (void *const)dev, NULL);
 
 	if (err != FSP_SUCCESS) {
 		LOG_ERR("Failed to init ether - R_ETHER_CallbackSet fail");
@@ -292,9 +307,17 @@ error:
 	return -1;
 }
 
+static const struct device *renesas_ra_eth_get_phy(const struct device *dev)
+{
+	const struct renesas_ra_eth_config *config = dev->config;
+
+	return config->phy_dev;
+}
+
 static const struct ethernet_api api_funcs = {
 	.iface_api.init = renesas_ra_eth_initialize,
 	.get_capabilities = renesas_ra_eth_get_capabilities,
+	.get_phy = renesas_ra_eth_get_phy,
 	.send = renesas_ra_eth_tx,
 };
 
@@ -322,7 +345,7 @@ static struct net_pkt *renesas_ra_eth_rx(const struct device *dev)
 		goto out;
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, len, AF_UNSPEC, 0, K_MSEC(100));
+	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
 		LOG_ERR("Failed to obtain RX buffer");
 		goto out;
@@ -370,7 +393,7 @@ static void renesas_ra_eth_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-#define ELC_EVENT_EDMAC_EINT(channel) ELC_EVENT_EDMAC##channel##_EINT
+#define EVENT_EDMAC_EINT(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_EDMAC, channel, _EINT))
 
 /* Bindings to the platform */
 int renesas_ra_eth_init(const struct device *dev)
@@ -391,7 +414,7 @@ int renesas_ra_eth_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	R_ICU->IELSR[DT_INST_IRQN(0)] = ELC_EVENT_EDMAC_EINT(0);
+	R_ICU->IELSR[DT_INST_IRQN(0)] = EVENT_EDMAC_EINT(0);
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), renesas_ra_eth_isr,
 		    DEVICE_DT_INST_GET(0), 0);

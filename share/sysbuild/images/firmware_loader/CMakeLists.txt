@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if(SB_CONFIG_FIRMWARE_LOADER_IMAGE_PATH)
+  ExternalZephyrProject_Add(
+    APPLICATION ${SB_CONFIG_FIRMWARE_LOADER_IMAGE_NAME}
+    SOURCE_DIR ${SB_CONFIG_FIRMWARE_LOADER_IMAGE_PATH}
+    APP_TYPE FIRMWARE_LOADER
+  )
+endif()

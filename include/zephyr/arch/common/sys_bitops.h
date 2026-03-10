@@ -25,21 +25,21 @@ static ALWAYS_INLINE void sys_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	uint32_t temp = *(volatile uint32_t *)addr;
 
-	*(volatile uint32_t *)addr = temp | (1 << bit);
+	*(volatile uint32_t *)addr = temp | (1U << bit);
 }
 
 static ALWAYS_INLINE void sys_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	uint32_t temp = *(volatile uint32_t *)addr;
 
-	*(volatile uint32_t *)addr = temp & ~(1 << bit);
+	*(volatile uint32_t *)addr = temp & ~(1U << bit);
 }
 
 static ALWAYS_INLINE int sys_test_bit(mem_addr_t addr, unsigned int bit)
 {
 	uint32_t temp = *(volatile uint32_t *)addr;
 
-	return temp & (1 << bit);
+	return temp & (1U << bit);
 }
 
 static ALWAYS_INLINE void sys_set_bits(mem_addr_t addr, unsigned int mask)

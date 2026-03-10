@@ -32,31 +32,12 @@ these NXP reference documents:
 Supported Features
 ==================
 
-The frdm_ke15z board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | uart polling;                       |
-|           |            | uart interrupt                      |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/nxp/frdm_ke15z/frdm_ke15z_defconfig`.
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 System Clock
 ============
 
-The KE15 SoC is configured to run at 48 MHz using the FIRC.
+The KE15 SoC is configured to run at 72 MHz using the LPFLL.
 
 Serial Port
 ===========
@@ -65,6 +46,8 @@ The KE15 SoC has three UARTs. UART1 is configured for the console.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -154,6 +137,8 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS v3.6.0-xxx-gxxxxxxxxxxxx *****
    Hello World! frdm_ke15z
+
+.. include:: ../../common/board-footer.rst.inc
 
 .. _KE1XZ SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/ke-series-arm-cortex-m4-m0-plus/ke1xz-arm-cortex-m0-plus-5v-main-stream-mcu-with-nxp-touch-and-can-control:KE1xZ

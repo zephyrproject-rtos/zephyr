@@ -28,7 +28,7 @@
 	miso-src = "DX0B";
 	interrupts = <84 1 85 1>;
 	interrupt-names = "tx", "rx";
-	dmas = <&dma0 1 0 XMC4XXX_SET_CONFIG(0,10)>, <&dma0 2 0 XMC4XXX_SET_CONFIG(2,11)>;
+	dmas = <&dma0 1 0 XMC4XXX_SET_CONFIG(0, 10)>, <&dma0 2 0 XMC4XXX_SET_CONFIG(2, 11)>;
 	dma-names = "tx", "rx";
 
 	#address-cells = <1>;
@@ -40,6 +40,7 @@
 		reg = <0>;
 		spi-max-frequency = <500000>;
 	};
+
 	fast@0 {
 		compatible = "test-spi-loopback-fast";
 		reg = <0>;

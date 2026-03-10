@@ -22,7 +22,7 @@
 
 LOG_MODULE_REGISTER(SX9500, CONFIG_SENSOR_LOG_LEVEL);
 
-static uint8_t sx9500_reg_defaults[] = {
+static const uint8_t sx9500_reg_defaults[] = {
 	/*
 	 * First number is register address to write to.  The chip
 	 * auto-increments the address for subsequent values in a single

@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: fpb_rx140
+name: Fast Prototyping Board for RX140
+type: mcu
+arch: rx
+toolchain:
+  - cross-compile
+supported:
+  - gpio
+  - serial
+ram: 64
+flash: 256

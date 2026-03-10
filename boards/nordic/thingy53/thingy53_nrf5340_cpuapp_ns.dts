@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf5340_cpuappns_qkaa.dtsi>
+#include <arm/nordic/nrf5340_cpuapp_ns_qkaa.dtsi>
 #include "thingy53_nrf5340_common.dtsi"
 #include <../boards/common/usb/cdc_acm_serial.dtsi>
 
@@ -40,3 +40,6 @@
 	load-capacitors = "internal";
 	load-capacitance-picofarad = <7>;
 };
+
+/* Include default memory partition configuration file */
+#include <nordic/nrf5340_cpuapp_ns_partition.dtsi>

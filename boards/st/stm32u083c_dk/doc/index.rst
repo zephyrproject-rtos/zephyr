@@ -9,7 +9,7 @@ build prototypes by choosing from the various combinations of performance and
 power consumption features. Here are some highlights of the STM32U083C_DK
 board:
 
-- Ultra-low-power STM32U083MC microcontroller based on the Arm |reg| Cortex |reg|‑M0+ core,
+- Ultra-low-power STM32U083MC microcontroller based on the Arm® Cortex®‑M0+ core,
   featuring 256 Kbytes of flash memory and 40 Kbytes of SRAM in an LQFP80 package.
 
 - Board connectors:
@@ -17,7 +17,7 @@ board:
   - ST-LINK USB Type-C connector
   - User USB Device with USB Type-C connector
   - mikroBUS connectors
-  - MIPI debug in connector (Arm |reg| Cortex |reg| 10‑pin 1.27 mm‑pitch
+  - MIPI debug in connector (Arm® Cortex® 10‑pin 1.27 mm‑pitch
     debug connector over STDC14 footprint)
   - Extension connectors for full access to all STM32 I/Os
   - VBAT dedicated connector provides the capability to power the board on a battery
@@ -39,7 +39,7 @@ Hardware
 ********
 
 The STM32U083xC devices are an ultra-low-power microcontrollers family (STM32U0
-Series) based on the high-performance Arm |reg| Cortex |reg|-M0+ 32-bit RISC core.
+Series) based on the high-performance Arm® Cortex®-M0+ 32-bit RISC core.
 They operate at a frequency of up to 56 MHz.
 
 - Includes ST state-of-the-art patented technology
@@ -59,7 +59,7 @@ They operate at a frequency of up to 56 MHz.
 
 - Core:
 
-  - 32-bit Arm |reg| Cortex |reg|-M0+ CPU, frequency up to 56 MHz
+  - 32-bit Arm® Cortex®-M0+ CPU, frequency up to 56 MHz
 
 - ART Accelerator:
 
@@ -68,7 +68,7 @@ They operate at a frequency of up to 56 MHz.
 - Benchmarks:
 
   - 1.13 DMIPS/MHz (Drystone 2.1)
-  - 134 CoreMark |reg| (2.4 CoreMark/MHz at 56 MHz)
+  - 134 CoreMark® (2.4 CoreMark/MHz at 56 MHz)
   - 407 ULPMark™-CP
   - 143 ULPMark™-PP
   - 19.7 ULPMark™-CM
@@ -102,7 +102,7 @@ They operate at a frequency of up to 56 MHz.
   - Secure boot
   - AES: 128/256-bit key encryption hardware accelerator
   - True random number generation, candidate for NIST SP 800-90B certification
-  - Candidate for Arm |reg| PSA level 1 and SESIP level 3 certifications
+  - Candidate for Arm® PSA level 1 and SESIP level 3 certifications
   - 5 passive anti-tamper pins
   - 96-bit unique ID
 
@@ -144,34 +144,7 @@ More information about STM32U083MC can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32u083c_dk board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | DAC Controller                      |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32u083c_dk/stm32u083c_dk_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -213,6 +186,8 @@ USART2. Default settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32U083C_DK board includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash the board using various tools.

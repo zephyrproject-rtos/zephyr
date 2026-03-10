@@ -13,13 +13,13 @@ Here are some highlights of the BLACK_F407VE board:
   board and easy probing
 - Flexible board power supply:
 
-       - USB VBUS or external source (3.3V, 5V)
-       - Power management access point
+  - USB VBUS or external source (3.3V, 5V)
+  - Power management access point
 
 - Three LEDs:
 
-       - 3.3 V power on (LD0)
-       - Two user LEDs: green (LD1), green (LD2)
+  - 3.3 V power on (LD0)
+  - Two user LEDs: green (LD1), green (LD2)
 
 - Four push-buttons: RESET, K0, K1 and WK_UP
 - Mini-AB connector
@@ -39,7 +39,7 @@ Hardware
 BLACK_F407VE board provides the following hardware components:
 
 - STM32F407VET6 in LQFP100 package
-- ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
+- ARM® 32-bit Cortex®-M4 CPU with FPU
 - 168 MHz max CPU frequency
 - VDD from 1.8 V to 3.6 V
 - 8MHz system crystal
@@ -76,44 +76,16 @@ BLACK_F407VE board provides the following hardware components:
 - Dimensions: 85.1mm x 72.45mm
 
 More information about STM32F407VE SOC can be found here:
-       - `STM32F407VE on www.st.com`_
+- `STM32F407VE on www.st.com`_
 
 Supported Features
 ==================
 
-The Zephyr black_f407ve board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | CAN controller                      |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 .. note:: CAN feature requires CAN transceiver.
 	  Zephyr default configuration uses CAN_2 exclusively, as
 	  simultaneous use of CAN_1 and CAN_2 is not yet supported.
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in
-:zephyr_file:`boards/others/black_f407ve/black_f407ve_defconfig`
-
 
 Pin Mapping
 ===========
@@ -180,6 +152,8 @@ it to UART1 pins (PA9/PA10).
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``black_f407ve`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and

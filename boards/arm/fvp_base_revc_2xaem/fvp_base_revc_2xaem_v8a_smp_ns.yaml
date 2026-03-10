@@ -1,0 +1,16 @@
+# Copyright (c) 2022 Arm Limited (or its affiliates). All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: fvp_base_revc_2xaem/v8a/smp/ns
+name: FVP Base RevC 2xAEM ARMv8-A (SMP Non-Secure)
+arch: arm64
+type: sim
+simulation:
+  - name: armfvp
+    exec: FVP_Base_RevC-2xAEMvA
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 2048
+flash: 64
+vendor: arm

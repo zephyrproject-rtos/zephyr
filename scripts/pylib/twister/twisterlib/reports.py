@@ -12,12 +12,12 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
+from platform import system as platform_system
 
 from colorama import Fore
 from twisterlib.statuses import TwisterStatus
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
 
 
 class ReportStatus(str, Enum):
@@ -303,7 +303,7 @@ class Reporting:
             report_options = self.env.non_default_options()
 
         report = {}
-        report["environment"] = {"os": os.name,
+        report["environment"] = {"os": platform_system(),
                                  "zephyr_version": version,
                                  "toolchain": self.env.toolchain,
                                  "commit_date": self.env.commit_date,
@@ -372,7 +372,6 @@ class Reporting:
                 suite["available_rom"] = available_rom
             if instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
                 suite['status'] = instance.status
-                suite["reason"] = instance.reason
                 # FIXME
                 if os.path.exists(pytest_log):
                     suite["log"] = self.process_log(pytest_log)
@@ -382,6 +381,11 @@ class Reporting:
                     suite["log"] = self.process_log(device_log)
                 else:
                     suite["log"] = self.process_log(build_log)
+
+                suite["reason"] = self.get_detailed_reason(instance.reason, suite["log"])
+                # update the reason to get more details also in other reports (e.g. junit)
+                # where build log is not available
+                instance.reason = suite["reason"]
             elif instance.status == TwisterStatus.FILTER:
                 suite["status"] = TwisterStatus.FILTER
                 suite["reason"] = instance.reason
@@ -395,7 +399,7 @@ class Reporting:
                 suite["reason"] = instance.reason
             else:
                 suite["status"] = TwisterStatus.NONE
-                suite["reason"] = 'Unknown Instance status.'
+                suite["reason"] = 'Unknown Instance status'
 
             if instance.status != TwisterStatus.NONE:
                 suite["execution_time"] =  f"{float(handler_time):.2f}"
@@ -614,7 +618,7 @@ class Reporting:
 
             logger.info("")
             logger.info("To rerun the tests, call twister using the following commandline:")
-            extra_parameters = '' if detailed_test_id else ' --no-detailed-test-id'
+            extra_parameters = '' if not detailed_test_id else ' --detailed-test-id'
             logger.info(f"west twister -p <PLATFORM> -s <TEST ID>{extra_parameters}, for example:")
             logger.info("")
             logger.info(
@@ -629,18 +633,11 @@ class Reporting:
             )
             logger.info("-+" * 40)
 
-    def summary(self, results, ignore_unrecognized_sections, duration):
+    def summary(self, results, duration):
         failed = 0
         run = 0
         for instance in self.instances.values():
             if instance.status == TwisterStatus.FAIL:
-                failed += 1
-            elif not ignore_unrecognized_sections and instance.metrics.get("unrecognized"):
-                logger.error(
-                    f"{Fore.RED}FAILED{Fore.RESET}:"
-                    f" {instance.name} has unrecognized binary sections:"
-                    f" {instance.metrics.get('unrecognized', [])!s}"
-                )
                 failed += 1
 
             # FIXME: need a better way to identify executed tests
@@ -738,7 +735,7 @@ class Reporting:
                     f'.'
                 )
 
-        built_only = results.total - run - results.filtered_configs
+        built_only = results.total - run - results.filtered_configs - results.skipped
         logger.info(
             f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms,"
             f" {TwisterStatus.get_color(TwisterStatus.NOTRUN)}{built_only}{Fore.RESET}"
@@ -798,3 +795,60 @@ class Reporting:
                 self.json_report(json_platform_file + "_footprint.json",
                                  version=self.env.version, platform=platform.name,
                                  filters=self.json_filters['footprint.json'])
+
+    def get_detailed_reason(self, reason: str, log: str) -> str:
+        if reason == 'CMake build failure':
+            if error_key := self._parse_cmake_build_failure(log):
+                return f"{reason} - {error_key}"
+        elif reason == 'Build failure':  # noqa SIM102
+            if error_key := self._parse_build_failure(log):
+                return f"{reason} - {error_key}"
+        return reason
+
+    @staticmethod
+    def _parse_cmake_build_failure(log: str) -> str | None:
+        last_warning = 'no warning found'
+        lines = log.splitlines()
+        for i, line in enumerate(lines):
+            if "warning: " in line:
+                last_warning = line
+            elif "devicetree error: " in line:
+                return "devicetree error"
+            elif "fatal error: " in line:
+                return line[line.index('fatal error: ') :].strip()
+            elif "error: " in line:  # error: Aborting due to Kconfig warnings
+                if "undefined symbol" in last_warning:
+                    return last_warning[last_warning.index('undefined symbol') :].strip()
+                return last_warning
+            elif "CMake Error at" in line:
+                for next_line in lines[i + 1 :]:
+                    if next_line.strip():
+                        return line + ' ' + next_line
+                return line
+        return None
+
+    @staticmethod
+    def _parse_build_failure(log: str) -> str | None:
+        last_warning = ''
+        lines = log.splitlines()
+        for i, line in enumerate(lines):
+            if "undefined reference" in line:
+                return line[line.index('undefined reference') :].strip()
+            elif "error: ld returned" in line:
+                if last_warning:
+                    return last_warning
+                elif "overflowed by" in lines[i - 1]:
+                    return "ld.bfd: region overflowed"
+                elif "ld.bfd: warning: " in lines[i - 1]:
+                    return "ld.bfd:" + lines[i - 1].split("ld.bfd:", 1)[-1]
+                return line
+            elif "error: " in line:
+                return line[line.index('error: ') :].strip()
+            elif ": in function " in line:
+                last_warning = line[line.index('in function') :].strip()
+            elif "CMake Error at" in line:
+                for next_line in lines[i + 1 :]:
+                    if next_line.strip():
+                        return line + ' ' + next_line
+                return line
+        return None

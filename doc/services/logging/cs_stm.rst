@@ -119,7 +119,7 @@ When using logs, this method has the following advantages:
 
 Proxy core is using Nordic specific peripheral (TBM) to get ETR buffer busyness and send data over
 UART. Nordic specific driver for ETR buffer is located in
-:zephyr_file:`drivers/misc/coresight/nrf_etr.c`.
+:zephyr_file:`drivers/debug/debug_nrf_etr.c`.
 
 Configuration
 -------------
@@ -175,7 +175,7 @@ in :zephyr_file:`subsys/logging/frontends/log_frontend_stmesp_demux.c`.
 
 ``Proxy`` is using Nordic specific peripheral (TBM) to get ETR buffer busyness and read and
 decode data and send human-readable data over UART. Nordic specific driver for ETR buffer is
-located in :zephyr_file:`drivers/misc/coresight/nrf_etr.c`. It is using :ref:`cs_trace_defmt` and
+located in :zephyr_file:`drivers/debug/debug_nrf_etr.c`. It is using :ref:`cs_trace_defmt` and
 :ref:`mipi_stp_decoder` and above-mentioned demultiplexer to decode messages.
 
 Logging messages contains read-only format string used in the logging macros thus they cannot be

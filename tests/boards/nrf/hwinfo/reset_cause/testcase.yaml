@@ -20,19 +20,26 @@ tests:
         - "RESET_DEBUG is supported"
         - "RESET_LOW_POWER_WAKE is supported"
         - "RESET_CPU_LOCKUP is supported"
-        - "Rebooting"
         - "HW Info reset reason test on"
+        - "This boot is due to expected software reset"
         - "PASS: RESET_SOFTWARE detected"
         - "PASS: reset causes were cleared"
         - "Watchdog shall fire"
         - "HW Info reset reason test on"
+        - "This boot is due to expected watchdog reset"
         - "PASS: RESET_WATCHDOG detected"
+        - "PASS: reset causes were cleared"
+        - "HW Info reset reason test on"
+        - "This boot is due to expected cpu lockup reset"
+        - "PASS: RESET_CPU_LOCKUP detected"
         - "PASS: reset causes were cleared"
         - "All tests done"
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp

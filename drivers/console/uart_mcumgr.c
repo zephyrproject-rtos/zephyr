@@ -1,5 +1,6 @@
 /*
  * Copyright Runtime.io 2018. All rights reserved.
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,20 +16,25 @@
 #include <zephyr/mgmt/mcumgr/transport/serial.h>
 #include <zephyr/drivers/console/uart_mcumgr.h>
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(uart_mcumgr, CONFIG_MCUMGR_TRANSPORT_LOG_LEVEL);
+
 static const struct device *const uart_mcumgr_dev =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_uart_mcumgr));
 
 /** Callback to execute when a valid fragment has been received. */
-static uart_mcumgr_recv_fn *uart_mgumgr_recv_cb;
+static uart_mcumgr_recv_fn *uart_mcumgr_recv_cb;
 
 /** Contains the fragment currently being received. */
 static struct uart_mcumgr_rx_buf *uart_mcumgr_cur_buf;
 
+#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 /**
  * Whether the line currently being read should be ignored.  This is true if
  * the line is too long or if there is no buffer available to hold it.
  */
 static bool uart_mcumgr_ignoring;
+#endif
 
 /** Contains buffers to hold incoming request fragments. */
 K_MEM_SLAB_DEFINE(uart_mcumgr_slab, sizeof(struct uart_mcumgr_rx_buf),
@@ -85,28 +91,44 @@ static struct uart_mcumgr_rx_buf *uart_mcumgr_rx_byte(uint8_t byte)
 {
 	struct uart_mcumgr_rx_buf *rx_buf;
 
+#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 	if (!uart_mcumgr_ignoring) {
+#endif
 		if (uart_mcumgr_cur_buf == NULL) {
 			uart_mcumgr_cur_buf = uart_mcumgr_alloc_rx_buf();
 			if (uart_mcumgr_cur_buf == NULL) {
-				/* Insufficient buffers; drop this fragment. */
+				LOG_WRN("Insufficient buffers, fragment dropped");
+#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 				uart_mcumgr_ignoring = true;
+#endif
 			}
 		}
+#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 	}
+#endif
 
 	rx_buf = uart_mcumgr_cur_buf;
+#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 	if (!uart_mcumgr_ignoring) {
+#endif
 		if (rx_buf->length >= sizeof(rx_buf->data)) {
-			/* Line too long; drop this fragment. */
+			LOG_WRN("Line too long, fragment dropped");
 			uart_mcumgr_free_rx_buf(uart_mcumgr_cur_buf);
 			uart_mcumgr_cur_buf = NULL;
+#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 			uart_mcumgr_ignoring = true;
+#endif
 		} else {
 			rx_buf->data[rx_buf->length++] = byte;
 		}
+#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 	}
+#endif
 
+#if defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
+	uart_mcumgr_cur_buf = NULL;
+	return rx_buf;
+#else
 	if (byte == '\n') {
 		/* Fragment complete. */
 		if (uart_mcumgr_ignoring) {
@@ -118,6 +140,7 @@ static struct uart_mcumgr_rx_buf *uart_mcumgr_rx_byte(uint8_t byte)
 	}
 
 	return NULL;
+#endif
 }
 
 #if defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
@@ -140,7 +163,7 @@ static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, 
 		for (int i = 0; i < len; i++) {
 			rx_buf = uart_mcumgr_rx_byte(p[i]);
 			if (rx_buf != NULL) {
-				uart_mgumgr_recv_cb(rx_buf);
+				uart_mcumgr_recv_cb(rx_buf);
 			}
 		}
 		break;
@@ -190,7 +213,7 @@ static void uart_mcumgr_isr(const struct device *unused, void *user_data)
 		for (i = 0; i < chunk_len; i++) {
 			rx_buf = uart_mcumgr_rx_byte(buf[i]);
 			if (rx_buf != NULL) {
-				uart_mgumgr_recv_cb(rx_buf);
+				uart_mcumgr_recv_cb(rx_buf);
 			}
 		}
 	}
@@ -214,9 +237,12 @@ static int uart_mcumgr_send_raw(const void *data, int len)
 
 int uart_mcumgr_send(const uint8_t *data, int len)
 {
+#if defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
+	return uart_mcumgr_send_raw(data, len);
+#else
 	return mcumgr_serial_tx_pkt(data, len, uart_mcumgr_send_raw);
+#endif
 }
-
 
 #if defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
 static void uart_mcumgr_setup(const struct device *uart)
@@ -239,7 +265,7 @@ static void uart_mcumgr_setup(const struct device *uart)
 
 void uart_mcumgr_register(uart_mcumgr_recv_fn *cb)
 {
-	uart_mgumgr_recv_cb = cb;
+	uart_mcumgr_recv_cb = cb;
 
 	if (device_is_ready(uart_mcumgr_dev)) {
 		uart_mcumgr_setup(uart_mcumgr_dev);

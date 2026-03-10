@@ -13,29 +13,15 @@ See <https://docs.khadas.com/linux/edge/Hardware.html#Edge-V-1>
 Supported Features
 ==================
 
-Khadas Edge-V board default configuration supports the following
-hardware features:
-
-+-----------+------------+--------------------------------------+
-| Interface | Controller | Driver/Component                     |
-+===========+============+======================================+
-| GIC-500   | on-chip    | GICv3 interrupt controller           |
-+-----------+------------+--------------------------------------+
-| ARM TIMER | on-chip    | System Clock                         |
-+-----------+------------+--------------------------------------+
-| UART      | on-chip    | Synopsys DesignWare 8250 serial port |
-+-----------+------------+--------------------------------------+
-
-Other hardware features have not been enabled yet for this board.
-
-The default configuration can be found in (NON-SMP)
-:zephyr_file:`boards/khadas/edgev/khadas_edgev_defconfig`
+.. zephyr:board-supported-hw::
 
 There are multiple serial ports on the board: Zephyr is using
 uart2 as serial console.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Use the following configuration to run basic Zephyr applications and
 kernel tests on Khadas Edge-V board. For example, with the :zephyr:code-sample:`hello_world`:

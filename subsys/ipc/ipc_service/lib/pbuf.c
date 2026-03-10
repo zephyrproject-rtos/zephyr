@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <zephyr/cache.h>
 #include <zephyr/ipc/pbuf.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/sys/byteorder.h>
 
 #if defined(CONFIG_ARCH_POSIX)
@@ -38,6 +39,7 @@ static int validate_cfg(const struct pbuf_cfg *cfg)
 	/* Validate pointer alignment. */
 	if (!IS_PTR_ALIGNED_BYTES(cfg->rd_idx_loc, MAX(cfg->dcache_alignment, _PBUF_IDX_SIZE)) ||
 	    !IS_PTR_ALIGNED_BYTES(cfg->wr_idx_loc, MAX(cfg->dcache_alignment, _PBUF_IDX_SIZE)) ||
+	    !IS_PTR_ALIGNED_BYTES(cfg->handshake_loc, _PBUF_IDX_SIZE) ||
 	    !IS_PTR_ALIGNED_BYTES(cfg->data_loc, _PBUF_IDX_SIZE)) {
 		return -EINVAL;
 	}
@@ -49,6 +51,8 @@ static int validate_cfg(const struct pbuf_cfg *cfg)
 
 	/* Validate pointer values. */
 	if (!(cfg->rd_idx_loc < cfg->wr_idx_loc) ||
+	    (cfg->handshake_loc && !(cfg->rd_idx_loc < cfg->handshake_loc)) ||
+	    !(cfg->handshake_loc < cfg->wr_idx_loc) ||
 	    !((uint8_t *)cfg->wr_idx_loc < cfg->data_loc) ||
 	    !(((uint8_t *)cfg->rd_idx_loc + MAX(_PBUF_IDX_SIZE, cfg->dcache_alignment)) ==
 	    (uint8_t *)cfg->wr_idx_loc)) {
@@ -62,6 +66,7 @@ static int validate_cfg(const struct pbuf_cfg *cfg)
 void pbuf_native_addr_remap(struct pbuf *pb)
 {
 	native_emb_addr_remap((void **)&pb->cfg->rd_idx_loc);
+	native_emb_addr_remap((void **)&pb->cfg->handshake_loc);
 	native_emb_addr_remap((void **)&pb->cfg->wr_idx_loc);
 	native_emb_addr_remap((void **)&pb->cfg->data_loc);
 }
@@ -84,7 +89,7 @@ int pbuf_tx_init(struct pbuf *pb)
 	*(pb->cfg->wr_idx_loc) = pb->data.wr_idx;
 	*(pb->cfg->rd_idx_loc) = pb->data.rd_idx;
 
-	__sync_synchronize();
+	barrier_sync_synchronize();
 
 	/* Take care cache. */
 	sys_cache_data_flush_range((void *)(pb->cfg->wr_idx_loc), sizeof(*(pb->cfg->wr_idx_loc)));
@@ -118,7 +123,7 @@ int pbuf_write(struct pbuf *pb, const char *data, uint16_t len)
 
 	/* Invalidate rd_idx only, local wr_idx is used to increase buffer security. */
 	sys_cache_data_invd_range((void *)(pb->cfg->rd_idx_loc), sizeof(*(pb->cfg->rd_idx_loc)));
-	__sync_synchronize();
+	barrier_sync_synchronize();
 
 	uint8_t *const data_loc = pb->cfg->data_loc;
 	const uint32_t blen = pb->cfg->len;
@@ -149,7 +154,7 @@ int pbuf_write(struct pbuf *pb, const char *data, uint16_t len)
 	 */
 	*((uint32_t *)(&data_loc[wr_idx])) = 0;
 	sys_put_be16(len, &data_loc[wr_idx]);
-	__sync_synchronize();
+	barrier_sync_synchronize();
 	sys_cache_data_flush_range(&data_loc[wr_idx], PBUF_PACKET_LEN_SZ);
 
 	wr_idx = idx_wrap(blen, wr_idx + PBUF_PACKET_LEN_SZ);
@@ -170,10 +175,48 @@ int pbuf_write(struct pbuf *pb, const char *data, uint16_t len)
 	/* Update wr_idx. */
 	pb->data.wr_idx = wr_idx;
 	*(pb->cfg->wr_idx_loc) = wr_idx;
-	__sync_synchronize();
+	barrier_sync_synchronize();
 	sys_cache_data_flush_range((void *)pb->cfg->wr_idx_loc, sizeof(*(pb->cfg->wr_idx_loc)));
 
 	return len;
+}
+
+int pbuf_get_initial_buf(struct pbuf *pb, volatile char **buf, uint16_t *len)
+{
+	uint32_t wr_idx;
+	uint16_t plen;
+
+	if (pb == NULL || pb->data.rd_idx != 0) {
+		/* Incorrect call. */
+		return -EINVAL;
+	}
+
+	sys_cache_data_invd_range((void *)(pb->cfg->wr_idx_loc), sizeof(*(pb->cfg->wr_idx_loc)));
+	barrier_sync_synchronize();
+
+	wr_idx = *(pb->cfg->wr_idx_loc);
+	if (wr_idx >= pb->cfg->len || wr_idx > 0xFFFF || wr_idx == 0) {
+		/* Wrong index - probably pbuf was not initialized or message was not send yet. */
+		return -EINVAL;
+	}
+
+	sys_cache_data_invd_range((void *)(pb->cfg->data_loc), PBUF_PACKET_LEN_SZ);
+	barrier_sync_synchronize();
+
+	plen = sys_get_be16(&pb->cfg->data_loc[0]);
+
+	if (plen + 4 > wr_idx) {
+		/* Wrong length - probably pbuf was not initialized or message was not send yet. */
+		return -EINVAL;
+	}
+
+	*buf = &pb->cfg->data_loc[PBUF_PACKET_LEN_SZ];
+	*len = plen;
+
+	sys_cache_data_invd_range((void *)*buf, plen);
+	barrier_sync_synchronize();
+
+	return 0;
 }
 
 int pbuf_read(struct pbuf *pb, char *buf, uint16_t len)
@@ -185,7 +228,7 @@ int pbuf_read(struct pbuf *pb, char *buf, uint16_t len)
 
 	/* Invalidate wr_idx only, local rd_idx is used to increase buffer security. */
 	sys_cache_data_invd_range((void *)(pb->cfg->wr_idx_loc), sizeof(*(pb->cfg->wr_idx_loc)));
-	__sync_synchronize();
+	barrier_sync_synchronize();
 
 	uint8_t *const data_loc = pb->cfg->data_loc;
 	const uint32_t blen = pb->cfg->len;
@@ -248,8 +291,28 @@ int pbuf_read(struct pbuf *pb, char *buf, uint16_t len)
 
 	pb->data.rd_idx = rd_idx;
 	*(pb->cfg->rd_idx_loc) = rd_idx;
-	__sync_synchronize();
+	barrier_sync_synchronize();
 	sys_cache_data_flush_range((void *)pb->cfg->rd_idx_loc, sizeof(*(pb->cfg->rd_idx_loc)));
 
 	return len;
+}
+
+uint32_t pbuf_handshake_read(struct pbuf *pb)
+{
+	volatile uint32_t *ptr = pb->cfg->handshake_loc;
+
+	__ASSERT_NO_MSG(ptr);
+	sys_cache_data_invd_range((void *)ptr, sizeof(*ptr));
+	barrier_sync_synchronize();
+	return *ptr;
+}
+
+void pbuf_handshake_write(struct pbuf *pb, uint32_t value)
+{
+	volatile uint32_t *ptr = pb->cfg->handshake_loc;
+
+	__ASSERT_NO_MSG(ptr);
+	*ptr = value;
+	barrier_sync_synchronize();
+	sys_cache_data_flush_range((void *)ptr, sizeof(*ptr));
 }

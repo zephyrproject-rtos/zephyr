@@ -23,4 +23,4 @@ properties:
   ibid-thr:
     type: int
     default: 1
-    description: IBI Data Fifo Threashold Value
+    description: IBI Data FIFO Threshold Value

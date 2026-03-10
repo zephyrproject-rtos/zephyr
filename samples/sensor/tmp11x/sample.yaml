@@ -1,0 +1,15 @@
+sample:
+  name: TI TMP11X Sensor Sample
+tests:
+  sample.sensor.tmp11x:
+    harness: console
+    platform_allow: nucleo_f401re
+    integration_platforms:
+      - nucleo_f401re
+    tags: sensors
+    depends_on: i2c
+    harness_config:
+      type: one_line
+      regex:
+        - "temp is (.*) oC"
+      fixture: fixture_i2c_tmp11x

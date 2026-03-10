@@ -206,6 +206,18 @@ int main(void)
 		return ret;
 	}
 
+	if (IS_ENABLED(CONFIG_USBD_HID_SET_POLLING_PERIOD)) {
+		ret = hid_device_set_in_polling(hid_dev, 1000);
+		if (ret) {
+			LOG_WRN("Failed to set IN report polling period, %d", ret);
+		}
+
+		ret = hid_device_set_out_polling(hid_dev, 1000);
+		if (ret != 0 && ret != -ENOTSUP) {
+			LOG_WRN("Failed to set OUT report polling period, %d", ret);
+		}
+	}
+
 	sample_usbd = sample_usbd_init_device(msg_cb);
 	if (sample_usbd == NULL) {
 		LOG_ERR("Failed to initialize USB device");
@@ -276,6 +288,18 @@ int main(void)
 
 		if (!kb_ready) {
 			LOG_INF("USB HID device is not ready");
+			continue;
+		}
+
+		if (IS_ENABLED(CONFIG_SAMPLE_USBD_REMOTE_WAKEUP) &&
+		    usbd_is_suspended(sample_usbd)) {
+			/* on a press of any button, send wakeup request */
+			if (kb_evt.value) {
+				ret = usbd_wakeup_request(sample_usbd);
+				if (ret) {
+					LOG_ERR("Remote wakeup error, %d", ret);
+				}
+			}
 			continue;
 		}
 

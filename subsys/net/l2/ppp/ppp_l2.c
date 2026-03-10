@@ -8,12 +8,14 @@
 LOG_MODULE_REGISTER(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
 #include <stdlib.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_l2.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/ppp.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/iterable_sections.h>
 
 #include "net_private.h"
@@ -180,6 +182,24 @@ static int ppp_send(struct net_if *iface, struct net_pkt *pkt)
 		return -ENETDOWN;
 	}
 
+	/* PPP drivers only support IP packet types, therefore in order to be
+	 * able to use NET_AF_PACKET family sockets with PPP, we need to translate
+	 * L2 proto type to packet family.
+	 */
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
+	    net_pkt_family(pkt) == NET_AF_PACKET) {
+		switch (net_pkt_ll_proto_type(pkt)) {
+		case ETH_P_IP:
+			net_pkt_set_family(pkt, NET_AF_INET);
+			break;
+		case ETH_P_IPV6:
+			net_pkt_set_family(pkt, NET_AF_INET6);
+			break;
+		default:
+			return -EPROTONOSUPPORT;
+		}
+	}
+
 	ret = net_l2_send(api->send, net_if_get_device(iface), iface, pkt);
 	if (!ret) {
 		ret = net_pkt_get_len(pkt);
@@ -217,6 +237,19 @@ static int ppp_up(struct net_if *iface)
 	}
 
 	return 0;
+}
+
+static void ppp_lcp_close_async(struct ppp_context *ctx)
+{
+	if (ppp_lcp == NULL) {
+		ppp_change_phase(ctx, PPP_DEAD);
+	}
+
+	if (ctx->phase == PPP_DEAD) {
+		return;
+	}
+
+	ppp_lcp->close(ctx, "L2 Disabled");
 }
 
 static int ppp_lcp_close(struct ppp_context *ctx)
@@ -311,6 +344,17 @@ static int ppp_enable(struct net_if *iface, bool state)
 	}
 
 	return ret;
+}
+
+uint32_t ppp_peer_async_control_character_map(struct net_if *iface)
+{
+	struct ppp_context *ctx;
+
+#ifndef CONFIG_ZTEST
+	__ASSERT(net_if_l2(iface) == &NET_L2_GET_NAME(PPP), "Not PPP L2");
+#endif /* !CONFIG_ZTEST */
+	ctx = net_if_l2_data(iface);
+	return ctx->lcp.peer_options.async_map;
 }
 
 NET_L2_INIT(PPP_L2, ppp_recv, ppp_send, ppp_enable, ppp_flags);
@@ -442,7 +486,7 @@ static void tx_handler(void *p1, void *p2, void *p3)
 	}
 }
 
-static void net_ppp_mgmt_evt_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+static void net_ppp_mgmt_evt_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 				     struct net_if *iface)
 {
 	struct ppp_context *ctx;
@@ -466,6 +510,10 @@ static void net_ppp_mgmt_evt_handler(struct net_mgmt_event_callback *cb, uint32_
 
 	if ((mgmt_event == NET_EVENT_IF_DOWN) && (!net_if_is_carrier_ok(iface))) {
 		ppp_lcp_lower_down_async(ctx);
+	}
+	if ((mgmt_event == NET_EVENT_IF_DOWN && net_if_is_carrier_ok(iface) &&
+	     net_if_is_dormant(iface))) {
+		ppp_lcp_close_async(ctx);
 	}
 }
 

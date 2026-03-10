@@ -46,8 +46,7 @@ Add this linker file to your application using CMake:
 
     # Support CMake linker generator
     zephyr_iterable_section(NAME coap_resource_my_service
-                            GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT}
-                            SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
+                            GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
 
 You can now define your service as part of the application:
 
@@ -75,7 +74,7 @@ The following is an example of a CoAP resource registered with our service:
     #include <zephyr/net/coap_service.h>
 
     static int my_get(struct coap_resource *resource, struct coap_packet *request,
-                      struct sockaddr *addr, socklen_t addr_len)
+                      struct net_sockaddr *addr, socklen_t addr_len)
     {
         static const char *msg = "Hello, world!";
         uint8_t data[CONFIG_COAP_SERVER_MESSAGE_SIZE];
@@ -100,14 +99,14 @@ The following is an example of a CoAP resource registered with our service:
 
         /* Append payload */
         coap_packet_append_payload_marker(&response);
-        coap_packet_append_payload(&response, (uint8_t *)msg, sizeof(msg));
+        coap_packet_append_payload(&response, (uint8_t *)msg, strlen(msg));
 
         /* Send to response back to the client */
         return coap_resource_send(resource, &response, addr, addr_len, NULL);
     }
 
     static int my_put(struct coap_resource *resource, struct coap_packet *request,
-                      struct sockaddr *addr, socklen_t addr_len)
+                      struct net_sockaddr *addr, socklen_t addr_len)
     {
         /* ... Handle the incoming request ... */
 
@@ -143,7 +142,7 @@ of CoAP services. An example using a temperature sensor can look like:
     K_WORK_DELAYABLE_DEFINE(temp_work, notify_observers);
 
     static int send_temperature(struct coap_resource *resource,
-                                const struct sockaddr *addr, socklen_t addr_len,
+                                const struct net_sockaddr *addr, socklen_t addr_len,
                                 uint16_t age, uint16_t id, const uint8_t *token, uint8_t tkl,
                                 bool is_response)
     {
@@ -188,7 +187,7 @@ of CoAP services. An example using a temperature sensor can look like:
     }
 
     static int temp_get(struct coap_resource *resource, struct coap_packet *request,
-                        struct sockaddr *addr, socklen_t addr_len)
+                        struct net_sockaddr *addr, socklen_t addr_len)
     {
         uint8_t token[COAP_TOKEN_MAX_LEN];
         uint16_t id;
@@ -243,7 +242,7 @@ following example simply prints when an event occurs.
     #define COAP_EVENTS_SET (NET_EVENT_COAP_OBSERVER_ADDED | NET_EVENT_COAP_OBSERVER_REMOVED | \
                              NET_EVENT_COAP_SERVICE_STARTED | NET_EVENT_COAP_SERVICE_STOPPED)
 
-    void coap_event_handler(uint32_t mgmt_event, struct net_if *iface,
+    void coap_event_handler(uint64_t mgmt_event, struct net_if *iface,
                             void *info, size_t info_length, void *user_data)
     {
         switch (mgmt_event) {

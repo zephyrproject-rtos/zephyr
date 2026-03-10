@@ -1,0 +1,7 @@
+tests:
+  drivers.uart.interrupt_api:
+    tags:
+      - uart
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    vendor_allow:
+      - adi

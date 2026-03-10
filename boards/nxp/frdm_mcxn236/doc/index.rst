@@ -35,63 +35,17 @@ For more information about the MCX-N236 SoC and FRDM-MCXN236 board, see:
 Supported Features
 ==================
 
-The FRDM-MCXN236 board configuration supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| I3C       | on-chip    | i3c                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | soc flash                           |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| VREF      | on-chip    | regulator                           |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| USBHS     | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| LPCMP     | on-chip    | sensor(comparator)                  |
-+-----------+------------+-------------------------------------+
-| FLEXCAN   | on-chip    | CAN                                 |
-+-----------+------------+-------------------------------------+
-| FLEXIO    | on-chip    | flexio                              |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | flexio; MIPI-DBI. Tested with       |
-|           |            | :ref:`lcd_par_s035`                 |
-+-----------+------------+-------------------------------------+
-| LPTMR     | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| MRT       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
+Shields for Supported Features
+==============================
 
-Targets available
-==================
+Some features in the table above are tested with Zephyr shields.  These shields
+are tested on this board:
 
-The default configuration file
-:zephyr_file:`boards/nxp/frdm_mcxn236/frdm_mcxn236_defconfig`
-
-Other hardware features are not currently supported by the port.
+- :ref:`lcd_par_s035` - supports the Display interface.  This board uses the
+  MIPI_DBI interface of the shield, connected to the FlexIO on-chip peripheral.
+- :ref:`dvp_20pin_ov7670` - supports the SmartDMA video interface.
 
 Connections and IOs
 ===================
@@ -121,6 +75,8 @@ Flexcomm 4 is configured as UART for the console.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -208,8 +164,9 @@ should see the following message in the terminal:
 Troubleshooting
 ===============
 
-.. include:: ../../common/segger-ecc-systemview.rst
-   :start-after: segger-ecc-systemview
+.. include:: ../../common/segger-ecc-systemview.rst.inc
+
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MCX-N236 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-n-series-microcontrollers/mcx-n23x-highly-integrated-mcus-with-on-chip-accelerators-intelligent-peripherals-and-advanced-security:MCX-N23X

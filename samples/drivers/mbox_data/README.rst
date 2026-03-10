@@ -36,15 +36,6 @@ Building the application for mimxrt1170_evk_cm7
    :goals: debug
    :west-args: --sysbuild
 
-Building the application for mimxrt1170_evkb_cm7
-================================================
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/drivers/mbox_data/
-   :board: mimxrt1170_evkb_cm7
-   :goals: debug
-   :west-args: --sysbuild
-
 Building the application for lpcxpresso55s69_cpu1
 =================================================
 
@@ -60,6 +51,15 @@ Building the application for frdm_mcxn947/mcxn947/cpu0
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/mbox_data/
    :board: frdm_mcxn947/mcxn947/cpu0
+   :goals: debug
+   :west-args: --sysbuild
+
+Building the application for ek_ra8p1/r7ka8p1kflcac/cm85
+========================================================
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/mbox_data/
+   :board: ek_ra8p1/r7ka8p1kflcac/cm85
    :goals: debug
    :west-args: --sysbuild
 

@@ -69,6 +69,9 @@ config USE_STDC_ISM330DHCX
 config USE_STDC_ISM330DLC
 	bool
 
+config USE_STDC_ISM6HG256X
+	bool
+
 config USE_STDC_L20G20IS
 	bool
 
@@ -162,7 +165,7 @@ config USE_STDC_LSM303AH
 config USE_STDC_LSM6DS3
 	bool
 
-config USE_STDC_LSM6DS3TR
+config USE_STDC_LSM6DS3TR_C
 	bool
 
 config USE_STDC_LSM6DSL
@@ -190,6 +193,12 @@ config USE_STDC_LSM6DSRX
 	bool
 
 config USE_STDC_LSM6DSV16X
+	bool
+
+config USE_STDC_LSM6DSV320X
+	bool
+
+config USE_STDC_LSM6DSV80X
 	bool
 
 config USE_STDC_LSM9DS1

@@ -132,11 +132,7 @@ int wifi_credentials_get_by_ssid_personal_struct(const char *ssid, size_t ssid_l
 		goto exit;
 	}
 
-	if (buf->header.type != WIFI_SECURITY_TYPE_NONE &&
-	    buf->header.type != WIFI_SECURITY_TYPE_PSK &&
-	    buf->header.type != WIFI_SECURITY_TYPE_PSK_SHA256 &&
-	    buf->header.type != WIFI_SECURITY_TYPE_SAE &&
-	    buf->header.type != WIFI_SECURITY_TYPE_WPA_PSK) {
+	if (buf->header.type < 0 || buf->header.type > WIFI_SECURITY_TYPE_MAX) {
 		LOG_ERR("Requested WiFi credentials entry is corrupted");
 		ret = -EPROTO;
 		goto exit;

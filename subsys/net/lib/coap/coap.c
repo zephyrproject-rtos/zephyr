@@ -136,7 +136,7 @@ static inline bool insert_be16(struct coap_packet *cpkt, uint16_t data, size_t o
 
 	memmove(&cpkt->data[offset + 2], &cpkt->data[offset], cpkt->offset - offset);
 
-	encode_be16(cpkt, cpkt->offset, data);
+	encode_be16(cpkt, offset, data);
 
 	return true;
 }
@@ -498,6 +498,7 @@ static int decode_delta(uint8_t *data, uint16_t offset, uint16_t *pos, uint16_t 
 			uint16_t opt, uint16_t *opt_ext, uint16_t *hdr_len)
 {
 	int ret = 0;
+	*hdr_len = 0;
 
 	if (opt == COAP_OPTION_EXT_13) {
 		uint8_t val;
@@ -1023,7 +1024,6 @@ uint8_t coap_header_get_code(const struct coap_packet *cpkt)
 	case COAP_METHOD_IPATCH:
 
 	/* All the defined response codes */
-	case COAP_RESPONSE_CODE_OK:
 	case COAP_RESPONSE_CODE_CREATED:
 	case COAP_RESPONSE_CODE_DELETED:
 	case COAP_RESPONSE_CODE_VALID:
@@ -1180,7 +1180,7 @@ int coap_handle_request_len(struct coap_packet *cpkt,
 			    size_t resources_len,
 			    struct coap_option *options,
 			    uint8_t opt_num,
-			    struct sockaddr *addr, socklen_t addr_len)
+			    struct net_sockaddr *addr, net_socklen_t addr_len)
 {
 	if (!coap_packet_is_request(cpkt)) {
 		return -ENOTSUP;
@@ -1214,7 +1214,7 @@ int coap_handle_request(struct coap_packet *cpkt,
 			struct coap_resource *resources,
 			struct coap_option *options,
 			uint8_t opt_num,
-			struct sockaddr *addr, socklen_t addr_len)
+			struct net_sockaddr *addr, net_socklen_t addr_len)
 {
 	size_t resources_len = 0;
 	struct coap_resource *resource;
@@ -1394,7 +1394,7 @@ int insert_option(struct coap_packet *cpkt, uint16_t code, const uint8_t *value,
 	uint16_t opt_len = 0;
 	uint16_t last_opt = 0;
 	uint16_t last_offset = cpkt->hdr_len;
-	struct coap_option option;
+	struct coap_option option = {0};
 	int r;
 
 	while (offset < cpkt->hdr_len + cpkt->opt_len) {
@@ -1468,14 +1468,19 @@ static int update_descriptive_block(struct coap_block_context *ctx,
 }
 
 static int update_control_block1(struct coap_block_context *ctx,
-				     int block, int size)
+				 int block, int size)
 {
-	size_t new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
+	size_t new_current;
 
 	if (block == -ENOENT) {
 		return 0;
 	}
 
+	if (block < 0) {
+		return -EINVAL;
+	}
+
+	new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
 	if (new_current != ctx->current) {
 		return -EINVAL;
 	}
@@ -1496,11 +1501,17 @@ static int update_control_block1(struct coap_block_context *ctx,
 static int update_control_block2(struct coap_block_context *ctx,
 				 int block, int size)
 {
-	size_t new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
+	size_t new_current;
 
 	if (block == -ENOENT) {
 		return 0;
 	}
+
+	if (block < 0) {
+		return -EINVAL;
+	}
+
+	new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
 
 	if (GET_MORE(block)) {
 		return -EINVAL;
@@ -1589,7 +1600,7 @@ size_t coap_next_block(const struct coap_packet *cpkt,
 
 int coap_pending_init(struct coap_pending *pending,
 		      const struct coap_packet *request,
-		      const struct sockaddr *addr,
+		      const struct net_sockaddr *addr,
 		      const struct coap_transmission_parameters *params)
 {
 	memset(pending, 0, sizeof(*pending));
@@ -1642,16 +1653,16 @@ struct coap_reply *coap_reply_next_unused(
 	return NULL;
 }
 
-static inline bool is_addr_unspecified(const struct sockaddr *addr)
+static inline bool is_addr_unspecified(const struct net_sockaddr *addr)
 {
-	if (addr->sa_family == AF_UNSPEC) {
+	if (addr->sa_family == NET_AF_UNSPEC) {
 		return true;
 	}
 
-	if (addr->sa_family == AF_INET6) {
+	if (addr->sa_family == NET_AF_INET6) {
 		return net_ipv6_is_addr_unspecified(
 			&(net_sin6(addr)->sin6_addr));
-	} else if (addr->sa_family == AF_INET) {
+	} else if (addr->sa_family == NET_AF_INET) {
 		return net_sin(addr)->sin_addr.s4_addr32[0] == 0U;
 	}
 
@@ -1727,14 +1738,15 @@ static uint32_t init_ack_timeout(const struct coap_transmission_parameters *para
 	const uint32_t max_ack = params->ack_timeout * random_percent / 100U;
 	const uint32_t min_ack = params->ack_timeout;
 
-	/* Randomly generated initial ACK timeout
-	 * ACK_TIMEOUT < INIT_ACK_TIMEOUT < ACK_TIMEOUT * ACK_RANDOM_FACTOR
-	 * Ref: https://tools.ietf.org/html/rfc7252#section-4.8
-	 */
-	return min_ack + (sys_rand32_get() % (max_ack - min_ack));
-#else
-	return params->ack_timeout;
+	if (max_ack > min_ack) {
+		/* Randomly generated initial ACK timeout
+		 * ACK_TIMEOUT <= INIT_ACK_TIMEOUT <= ACK_TIMEOUT * ACK_RANDOM_FACTOR
+		 * Ref: https://tools.ietf.org/html/rfc7252#section-4.8
+		 */
+		return min_ack + (sys_rand32_get() % (max_ack - min_ack + 1));
+	}
 #endif /* defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT) */
+	return params->ack_timeout;
 }
 
 bool coap_pending_cycle(struct coap_pending *pending)
@@ -1803,7 +1815,7 @@ static inline void coap_observer_increment_age(struct coap_resource *resource)
 
 struct coap_reply *coap_response_received(
 	const struct coap_packet *response,
-	const struct sockaddr *from,
+	const struct net_sockaddr *from,
 	struct coap_reply *replies, size_t len)
 {
 	struct coap_reply *r;
@@ -1945,16 +1957,16 @@ bool coap_request_is_observe(const struct coap_packet *request)
 
 void coap_observer_init(struct coap_observer *observer,
 			const struct coap_packet *request,
-			const struct sockaddr *addr)
+			const struct net_sockaddr *addr)
 {
 	observer->tkl = coap_header_get_token(request, observer->token);
 
-	net_ipaddr_copy(&observer->addr, addr);
+	memcpy(&observer->addr, addr, sizeof(*addr));
 }
 
 static inline void coap_observer_raise_event(struct coap_resource *resource,
 					     struct coap_observer *observer,
-					     uint32_t mgmt_event)
+					     uint64_t mgmt_event)
 {
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 	const struct net_event_coap_observer net_event = {
@@ -2000,8 +2012,8 @@ bool coap_remove_observer(struct coap_resource *resource,
 	return true;
 }
 
-static bool sockaddr_equal(const struct sockaddr *a,
-			   const struct sockaddr *b)
+static bool sockaddr_equal(const struct net_sockaddr *a,
+			   const struct net_sockaddr *b)
 {
 	/* FIXME: Should we consider ipv6-mapped ipv4 addresses as equal to
 	 * ipv4 addresses?
@@ -2010,9 +2022,9 @@ static bool sockaddr_equal(const struct sockaddr *a,
 		return false;
 	}
 
-	if (a->sa_family == AF_INET) {
-		const struct sockaddr_in *a4 = net_sin(a);
-		const struct sockaddr_in *b4 = net_sin(b);
+	if (a->sa_family == NET_AF_INET) {
+		const struct net_sockaddr_in *a4 = net_sin(a);
+		const struct net_sockaddr_in *b4 = net_sin(b);
 
 		if (a4->sin_port != b4->sin_port) {
 			return false;
@@ -2021,9 +2033,9 @@ static bool sockaddr_equal(const struct sockaddr *a,
 		return net_ipv4_addr_cmp(&a4->sin_addr, &b4->sin_addr);
 	}
 
-	if (b->sa_family == AF_INET6) {
-		const struct sockaddr_in6 *a6 = net_sin6(a);
-		const struct sockaddr_in6 *b6 = net_sin6(b);
+	if (b->sa_family == NET_AF_INET6) {
+		const struct net_sockaddr_in6 *a6 = net_sin6(a);
+		const struct net_sockaddr_in6 *b6 = net_sin6(b);
 
 		if (a6->sin6_port != b6->sin6_port) {
 			return false;
@@ -2038,7 +2050,7 @@ static bool sockaddr_equal(const struct sockaddr *a,
 
 struct coap_observer *coap_find_observer(
 	struct coap_observer *observers, size_t len,
-	const struct sockaddr *addr,
+	const struct net_sockaddr *addr,
 	const uint8_t *token, uint8_t token_len)
 {
 	if (token_len == 0U || token_len > COAP_TOKEN_MAX_LEN) {
@@ -2060,7 +2072,7 @@ struct coap_observer *coap_find_observer(
 
 struct coap_observer *coap_find_observer_by_addr(
 	struct coap_observer *observers, size_t len,
-	const struct sockaddr *addr)
+	const struct net_sockaddr *addr)
 {
 	size_t i;
 

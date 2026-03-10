@@ -4,14 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <mem.h>
 #include <st/f3/stm32f303.dtsi>
 
 / {
 	ccm0: memory@10000000 {
 		compatible = "zephyr,memory-region", "st,stm32-ccm";
 		reg = <0x10000000 DT_SIZE_K(8)>;
-		zephyr,memory-region = "CCM";
+		zephyr,memory-region = "DTCM";
 	};
 
 	sram0: memory@20000000 {
@@ -28,7 +27,7 @@
 		dac2: dac@40009800 {
 			compatible = "st,stm32-dac";
 			reg = <0x40009800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 26U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 26)>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};

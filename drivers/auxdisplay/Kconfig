@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig AUXDISPLAY
-	bool "Auxiliary (textual) Display Drivers"
+	bool "Auxiliary (textual) display drivers"
 	help
-	  Enable auxiliary/texual display drivers (e.g. alphanumerical displays)
+	  Enable auxiliary/textual display drivers (e.g. alphanumerical displays)
 
 if AUXDISPLAY
 
@@ -20,10 +20,14 @@ module = AUXDISPLAY
 module-str = auxdisplay
 source "subsys/logging/Kconfig.template.log_config"
 
+# zephyr-keep-sorted-start
+source "drivers/auxdisplay/Kconfig.gpio"
 source "drivers/auxdisplay/Kconfig.hd44780"
 source "drivers/auxdisplay/Kconfig.itron"
 source "drivers/auxdisplay/Kconfig.jhd1313"
 source "drivers/auxdisplay/Kconfig.pt6314"
 source "drivers/auxdisplay/Kconfig.serlcd"
+source "drivers/auxdisplay/Kconfig.tm1637"
+# zephyr-keep-sorted-stop
 
 endif # AUXDISPLAY

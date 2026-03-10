@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <zephyr/ztest.h>
 
 
@@ -48,7 +49,10 @@ __weak void ztest_post_fatal_error_hook(unsigned int reason,
 
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
-	k_tid_t curr_tid = k_current_get();
+	/* Use _current directly if pre-kernel to avoid k_current_get() assertion
+	 * failure, but use k_current_get() otherwise for proper userspace/TLS support.
+	 */
+	k_tid_t curr_tid = k_is_pre_kernel() ? _current : k_current_get();
 	bool valid_fault = (curr_tid == valid_fault_tid) || fault_in_isr;
 
 	printk("Caught system error -- reason %d %d\n", reason, valid_fault);
@@ -79,7 +83,7 @@ ZTEST_BMEM volatile k_tid_t valid_assert_tid;
 static inline void reset_stored_assert_status(void)
 {
 	valid_assert_tid = NULL;
-	assert_in_isr = 0;
+	assert_in_isr = false;
 }
 
 void z_impl_ztest_set_assert_valid(bool valid)
@@ -123,7 +127,12 @@ void assert_post_action(const char *file, unsigned int line)
 
 	printk("Caught assert failed\n");
 
-	if ((k_current_get() == valid_assert_tid) || assert_in_isr) {
+	/* Use _current directly if pre-kernel to avoid k_current_get() assertion
+	 * failure, but use k_current_get() otherwise for proper userspace/TLS support.
+	 */
+	k_tid_t curr_tid = k_is_pre_kernel() ? _current : k_current_get();
+
+	if ((curr_tid == valid_assert_tid) || assert_in_isr) {
 		printk("Assert error expected as part of test case.\n");
 
 		/* reset back to normal */

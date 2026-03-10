@@ -313,7 +313,7 @@ static int reset(void)
 
 int bap_broadcast_sink_init(void)
 {
-	const struct bt_bap_pacs_register_param pacs_param = {
+	const struct bt_pacs_register_param pacs_param = {
 		.snk_pac = true,
 		.snk_loc = true,
 	};

@@ -8,16 +8,16 @@
 #
 
 import argparse
-import sys
-import os
 import importlib
+import os
+import sys
+
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
 
 class gen_isr_log:
-
-    def __init__(self, debug = False):
+    def __init__(self, debug=False):
         self.__debug = debug
 
     def debug(self, text):
@@ -40,8 +40,8 @@ log = gen_isr_log()
 
 
 class gen_isr_config:
-    """All the constants and configuration gathered in single class for readability.
-    """
+    """All the constants and configuration gathered in single class for readability."""
+
     # Constants
     __ISR_FLAG_DIRECT = 1 << 0
     __swt_spurious_handler = "z_irq_spurious"
@@ -101,7 +101,9 @@ class gen_isr_config:
 
             self.__int_lvl_masks[0] = self.__bm(self.int_bits[0])
             self.__int_lvl_masks[1] = self.__bm(self.int_bits[1]) << self.int_bits[0]
-            self.__int_lvl_masks[2] = self.__bm(self.int_bits[2]) << (self.int_bits[0] + self.int_bits[1])
+            self.__int_lvl_masks[2] = self.__bm(self.int_bits[2]) << (
+                self.int_bits[0] + self.int_bits[1]
+            )
 
             self.__log.debug("Level    Bits        Bitmask")
             self.__log.debug("----------------------------")
@@ -112,20 +114,22 @@ class gen_isr_config:
             if self.check_sym("CONFIG_2ND_LEVEL_INTERRUPTS"):
                 num_aggregators = self.get_sym("CONFIG_NUM_2ND_LEVEL_AGGREGATORS")
                 self.__irq2_baseoffset = self.get_sym("CONFIG_2ND_LVL_ISR_TBL_OFFSET")
-                self.__irq2_offsets = [self.get_sym('CONFIG_2ND_LVL_INTR_{}_OFFSET'.
-                                                  format(str(i).zfill(2))) for i in
-                                     range(num_aggregators)]
+                self.__irq2_offsets = [
+                    self.get_sym(f'CONFIG_2ND_LVL_INTR_{str(i).zfill(2)}_OFFSET')
+                    for i in range(num_aggregators)
+                ]
 
-                self.__log.debug('2nd level offsets: {}'.format(self.__irq2_offsets))
+                self.__log.debug(f'2nd level offsets: {self.__irq2_offsets}')
 
                 if self.check_sym("CONFIG_3RD_LEVEL_INTERRUPTS"):
                     num_aggregators = self.get_sym("CONFIG_NUM_3RD_LEVEL_AGGREGATORS")
                     self.__irq3_baseoffset = self.get_sym("CONFIG_3RD_LVL_ISR_TBL_OFFSET")
-                    self.__irq3_offsets = [self.get_sym('CONFIG_3RD_LVL_INTR_{}_OFFSET'.
-                                                      format(str(i).zfill(2))) for i in
-                                         range(num_aggregators)]
+                    self.__irq3_offsets = [
+                        self.get_sym(f'CONFIG_3RD_LVL_INTR_{str(i).zfill(2)}_OFFSET')
+                        for i in range(num_aggregators)
+                    ]
 
-                    self.__log.debug('3rd level offsets: {}'.format(self.__irq3_offsets))
+                    self.__log.debug(f'3rd level offsets: {self.__irq3_offsets}')
 
     @property
     def args(self):
@@ -174,7 +178,7 @@ class gen_isr_config:
             return self.__irq2_baseoffset
         if lvl == 3:
             return self.__irq3_baseoffset
-        self.__log.error("Unsupported irq level: {}".format(lvl))
+        self.__log.error(f"Unsupported irq level: {lvl}")
 
     def get_irq_index(self, irq, lvl):
         if lvl == 2:
@@ -182,13 +186,14 @@ class gen_isr_config:
         elif lvl == 3:
             offsets = self.__irq3_offsets
         else:
-            self.__log.error("Unsupported irq level: {}".format(lvl))
+            self.__log.error(f"Unsupported irq level: {lvl}")
         try:
             return offsets.index(irq)
         except ValueError:
-            self.__log.error("IRQ {} not present in parent offsets ({}). ".
-                             format(irq, offsets) +
-                             " Recheck interrupt configuration.")
+            self.__log.error(
+                f"IRQ {irq} not present in parent offsets ({offsets}). "
+                + " Recheck interrupt configuration."
+            )
 
     def get_swt_table_index(self, offset, irq):
         if not self.check_multi_level_interrupts():
@@ -251,10 +256,10 @@ class gen_isr_config:
 def get_symbols(obj):
     for section in obj.iter_sections():
         if isinstance(section, SymbolTableSection):
-            return {sym.name: sym.entry.st_value
-                    for sym in section.iter_symbols()}
+            return {sym.name: sym.entry.st_value for sym in section.iter_symbols()}
 
     log.error("Could not find symbol table")
+
 
 def read_intList_sect(elfobj, snames):
     """
@@ -265,7 +270,7 @@ def read_intList_sect(elfobj, snames):
     for sname in snames:
         intList_sect = elfobj.get_section_by_name(sname)
         if intList_sect is not None:
-            log.debug("Found intlist section: \"{}\"".format(sname))
+            log.debug(f"Found intlist section: \"{sname}\"")
             break
 
     if intList_sect is None:
@@ -275,34 +280,47 @@ def read_intList_sect(elfobj, snames):
 
     return intdata
 
-def parse_args():
-    parser = argparse.ArgumentParser(description=__doc__,
-            formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
 
-    parser.add_argument("-e", "--big-endian", action="store_true",
-            help="Target encodes data in big-endian format (little endian is "
-                 "the default)")
-    parser.add_argument("-d", "--debug", action="store_true",
-            help="Print additional debugging information")
-    parser.add_argument("-o", "--output-source", required=True,
-            help="Output source file")
-    parser.add_argument("-l", "--linker-output-files",
-            nargs=2,
-            metavar=("vector_table_link", "software_interrupt_link"),
-            help="Output linker files. "
-                 "Used only if CONFIG_ISR_TABLES_LOCAL_DECLARATION is enabled. "
-                 "In other case empty file would be generated.")
-    parser.add_argument("-k", "--kernel", required=True,
-            help="Zephyr kernel image")
-    parser.add_argument("-s", "--sw-isr-table", action="store_true",
-            help="Generate SW ISR table")
-    parser.add_argument("-V", "--vector-table", action="store_true",
-            help="Generate vector table")
-    parser.add_argument("-i", "--intlist-section", action="append", required=True,
-            help="The name of the section to search for the interrupt data. "
-                 "This is accumulative argument. The first section found would be used.")
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+    )
+
+    parser.add_argument(
+        "-e",
+        "--big-endian",
+        action="store_true",
+        help="Target encodes data in big-endian format (little endian is the default)",
+    )
+    parser.add_argument(
+        "-d", "--debug", action="store_true", help="Print additional debugging information"
+    )
+    parser.add_argument("-o", "--output-source", required=True, help="Output source file")
+    parser.add_argument(
+        "-l",
+        "--linker-output-files",
+        nargs=2,
+        metavar=("vector_table_link", "software_interrupt_link"),
+        help="Output linker files. "
+        "Used only if CONFIG_ISR_TABLES_LOCAL_DECLARATION is enabled. "
+        "In other case empty file would be generated.",
+    )
+    parser.add_argument("-k", "--kernel", required=True, help="Zephyr kernel image")
+    parser.add_argument("-s", "--sw-isr-table", action="store_true", help="Generate SW ISR table")
+    parser.add_argument("-V", "--vector-table", action="store_true", help="Generate vector table")
+    parser.add_argument(
+        "-i",
+        "--intlist-section",
+        action="append",
+        required=True,
+        help="The name of the section to search for the interrupt data. "
+        "This is accumulative argument. The first section found would be used.",
+    )
 
     return parser.parse_args()
+
 
 def main():
     args = parse_args()
@@ -325,8 +343,10 @@ def main():
         parser.write_source(fp)
 
     if args.linker_output_files is not None:
-        with open(args.linker_output_files[0], "w") as fp_vt, \
-             open(args.linker_output_files[1], "w") as fp_swi:
+        with (
+            open(args.linker_output_files[0], "w") as fp_vt,
+            open(args.linker_output_files[1], "w") as fp_swi,
+        ):
             if hasattr(parser, 'write_linker_vt'):
                 parser.write_linker_vt(fp_vt)
             else:
@@ -337,6 +357,7 @@ def main():
             else:
                 log.debug("Chosen parser does not support software interrupt linker file")
                 fp_swi.write('/* Empty */\n')
+
 
 if __name__ == "__main__":
     main()

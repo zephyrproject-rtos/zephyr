@@ -1,7 +1,7 @@
 /*  Bluetooth Audio Broadcast Sink */
 
 /*
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,6 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
-#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -32,7 +31,6 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -63,10 +61,15 @@ struct codec_cap_lookup_id_data {
 
 static sys_slist_t sink_cbs = SYS_SLIST_STATIC_INIT(&sink_cbs);
 
+/* The mod_src_param is and shall only be used by the BT RX thread. It is statically defined due to
+ * the size of it, and that it's configurable in size, and can cause stack overflow issues otherwise
+ */
+static struct bt_bap_scan_delegator_mod_src_param mod_src_param;
+
 static void broadcast_sink_cleanup(struct bt_bap_broadcast_sink *sink);
 
-static bool find_recv_state_by_sink_cb(const struct bt_bap_scan_delegator_recv_state *recv_state,
-				       void *user_data)
+static bool find_recv_state_by_src_id_cb(const struct bt_bap_scan_delegator_recv_state *recv_state,
+					 void *user_data)
 {
 	const struct bt_bap_broadcast_sink *sink = user_data;
 
@@ -78,40 +81,42 @@ static bool find_recv_state_by_sink_cb(const struct bt_bap_scan_delegator_recv_s
 	return false;
 }
 
-static bool find_recv_state_by_pa_sync_cb(const struct bt_bap_scan_delegator_recv_state *recv_state,
-					  void *user_data)
+static bool
+find_recv_state_by_sink_fields_cb(const struct bt_bap_scan_delegator_recv_state *recv_state,
+				  void *user_data)
 {
-	struct bt_le_per_adv_sync *sync = user_data;
+	const struct bt_bap_broadcast_sink *sink = user_data;
 	struct bt_le_per_adv_sync_info sync_info;
 	int err;
 
-	err = bt_le_per_adv_sync_get_info(sync, &sync_info);
+	err = bt_le_per_adv_sync_get_info(sink->pa_sync, &sync_info);
 	if (err != 0) {
 		LOG_DBG("Failed to get sync info: %d", err);
 
 		return false;
 	}
 
-	if (bt_addr_le_eq(&recv_state->addr, &sync_info.addr) &&
-	    recv_state->adv_sid == sync_info.sid) {
-		return true;
-	}
-
-	return false;
+	/* BAP 6.5.4 states that the combined Source_Address_Type, Source_Adv_SID, and Broadcast_ID
+	 * fields are what makes a receive state unique.
+	 */
+	return recv_state->addr.type == sync_info.addr.type &&
+	       recv_state->adv_sid == sync_info.sid &&
+	       recv_state->broadcast_id == sink->broadcast_id;
 };
 
 static void update_recv_state_big_synced(const struct bt_bap_broadcast_sink *sink)
 {
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
-	struct bt_bap_scan_delegator_mod_src_param mod_src_param = {0};
 	int err;
 
-	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_sink_cb, (void *)sink);
+	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_src_id_cb, (void *)sink);
 	if (recv_state == NULL) {
 		LOG_WRN("Failed to find receive state for sink %p", sink);
 
 		return;
 	}
+
+	(void)memset(&mod_src_param, 0, sizeof(mod_src_param));
 
 	mod_src_param.num_subgroups = sink->subgroup_count;
 	for (uint8_t i = 0U; i < sink->subgroup_count; i++) {
@@ -122,7 +127,8 @@ static void update_recv_state_big_synced(const struct bt_bap_broadcast_sink *sin
 		subgroup_param->bis_sync = sink_subgroup->bis_indexes & sink->indexes_bitfield;
 	}
 
-	if (recv_state->encrypt_state == BT_BAP_BIG_ENC_STATE_BCODE_REQ) {
+	if (recv_state->encrypt_state == BT_BAP_BIG_ENC_STATE_BCODE_REQ ||
+	    recv_state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
 		mod_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_DEC;
 	} else {
 		mod_src_param.encrypt_state = recv_state->encrypt_state;
@@ -145,11 +151,11 @@ static void update_recv_state_big_synced(const struct bt_bap_broadcast_sink *sin
 static void update_recv_state_big_cleared(const struct bt_bap_broadcast_sink *sink,
 					  uint8_t reason)
 {
-	struct bt_bap_scan_delegator_mod_src_param mod_src_param = { 0 };
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
+	bool sink_is_streaming = false;
 	int err;
 
-	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_sink_cb, (void *)sink);
+	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_src_id_cb, (void *)sink);
 	if (recv_state == NULL) {
 		/* This is likely due to the receive state being removed while we are BIG synced */
 		LOG_DBG("Could not find receive state for sink %p", sink);
@@ -157,16 +163,29 @@ static void update_recv_state_big_cleared(const struct bt_bap_broadcast_sink *si
 		return;
 	}
 
+	(void)memset(&mod_src_param, 0, sizeof(mod_src_param));
+
 	if ((recv_state->encrypt_state == BT_BAP_BIG_ENC_STATE_BCODE_REQ ||
 	     recv_state->encrypt_state == BT_BAP_BIG_ENC_STATE_DEC) &&
 	    reason == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL) {
 		/* Sync failed due to bad broadcast code */
 		mod_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_BAD_CODE;
 	} else {
-		mod_src_param.encrypt_state = recv_state->encrypt_state;
+		mod_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
 	}
 
-	if (reason != BT_HCI_ERR_LOCALHOST_TERM_CONN) {
+	/* Determine if the previous receive state reported that streaming was active
+	 * If it was previously active, then we need to set the BIS_sync state to 0
+	 * (not streaming), and if not then we consider this a BIG Sync failure and
+	 * set BT_BAP_BIS_SYNC_FAILED
+	 */
+	for (uint8_t i = 0U; i < recv_state->num_subgroups && !sink_is_streaming; i++) {
+		sink_is_streaming = recv_state->subgroups[i].bis_sync != 0 &&
+				    recv_state->subgroups[i].bis_sync != BT_BAP_BIS_SYNC_FAILED;
+	}
+
+	if (!sink_is_streaming) {
+		/* BASS spec 3.1.1.5: Set Sync Failed when the server fails to sync to the BIG */
 		for (uint8_t i = 0U; i < recv_state->num_subgroups; i++) {
 			mod_src_param.subgroups[i].bis_sync = BT_BAP_BIS_SYNC_FAILED;
 		}
@@ -208,13 +227,13 @@ static struct bt_bap_broadcast_sink *broadcast_sink_lookup_iso_chan(
 	return NULL;
 }
 
-static void broadcast_sink_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
+static void broadcast_sink_set_ep_state(struct bt_bap_ep *ep, enum bt_bap_ep_state state)
 {
 	uint8_t old_state;
 
-	old_state = ep->status.state;
+	old_state = ep->state;
 
-	LOG_DBG("ep %p id 0x%02x %s -> %s", ep, ep->status.id, bt_bap_ep_state_str(old_state),
+	LOG_DBG("ep %p id 0x%02x %s -> %s", ep, ep->id, bt_bap_ep_state_str(old_state),
 		bt_bap_ep_state_str(state));
 
 	switch (old_state) {
@@ -242,16 +261,19 @@ static void broadcast_sink_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
 		return;
 	}
 
-	ep->status.state = state;
+	ep->state = state;
 
 	if (state == BT_BAP_EP_STATE_IDLE) {
 		struct bt_bap_stream *stream = ep->stream;
 
 		if (stream != NULL) {
 			bt_bap_iso_unbind_ep(ep->iso, ep);
+			stream->iso = NULL;
 			stream->ep = NULL;
 			stream->codec_cfg = NULL;
+			stream->group = NULL;
 			ep->stream = NULL;
+			ep->broadcast_sink = NULL;
 		}
 	}
 }
@@ -314,7 +336,7 @@ static bool broadcast_sink_is_in_state(struct bt_bap_broadcast_sink *sink,
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink->streams, stream, _node) {
-		if (stream->ep != NULL && stream->ep->status.state != state) {
+		if (stream->ep != NULL && stream->ep->state != state) {
 			return false;
 		}
 	}
@@ -356,10 +378,11 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 
 	broadcast_sink_set_ep_state(ep, BT_BAP_EP_STATE_STREAMING);
 
+	/* Setup the ISO data path */
+	bt_bap_setup_iso_data_path(stream);
+
 	if (ops != NULL && ops->started != NULL) {
 		ops->started(stream);
-	} else {
-		LOG_WRN("No callback for started set");
 	}
 
 	if (broadcast_sink_is_in_state(sink, BT_BAP_EP_STATE_STREAMING)) {
@@ -407,8 +430,6 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 
 	if (ops != NULL && ops->stopped != NULL) {
 		ops->stopped(stream, reason);
-	} else {
-		LOG_WRN("No callback for stopped set");
 	}
 }
 
@@ -467,6 +488,8 @@ static void broadcast_sink_add_src(struct bt_bap_broadcast_sink *sink)
 
 	bt_addr_le_copy(&add_src_param.addr, &sync_info.addr);
 	add_src_param.sid = sync_info.sid;
+	/* When a broadcast sink is created we always assume the PA sync provided is synced */
+	add_src_param.pa_state = BT_BAP_PA_STATE_SYNCED;
 	add_src_param.broadcast_id = sink->broadcast_id;
 	/* Will be updated when we receive the BASE */
 	add_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
@@ -485,7 +508,6 @@ static void broadcast_sink_add_src(struct bt_bap_broadcast_sink *sink)
 
 static bool base_subgroup_meta_cb(const struct bt_bap_base_subgroup *subgroup, void *user_data)
 {
-	struct bt_bap_scan_delegator_mod_src_param *mod_src_param = user_data;
 	struct bt_bap_bass_subgroup *subgroup_param;
 	uint8_t *meta;
 	int ret;
@@ -495,19 +517,18 @@ static bool base_subgroup_meta_cb(const struct bt_bap_base_subgroup *subgroup, v
 		return false;
 	}
 
-	subgroup_param = &mod_src_param->subgroups[mod_src_param->num_subgroups++];
+	subgroup_param = &mod_src_param.subgroups[mod_src_param.num_subgroups++];
 	subgroup_param->metadata_len = (uint8_t)ret;
 	memcpy(subgroup_param->metadata, meta, subgroup_param->metadata_len);
 
 	return true;
 }
 
-static int update_recv_state_base_copy_meta(const struct bt_bap_base *base,
-					    struct bt_bap_scan_delegator_mod_src_param *param)
+static int update_recv_state_base_copy_meta(const struct bt_bap_base *base)
 {
 	int err;
 
-	err = bt_bap_base_foreach_subgroup(base, base_subgroup_meta_cb, param);
+	err = bt_bap_base_foreach_subgroup(base, base_subgroup_meta_cb, NULL);
 	if (err != 0) {
 		LOG_DBG("Failed to parse subgroups: %d", err);
 		return err;
@@ -519,18 +540,19 @@ static int update_recv_state_base_copy_meta(const struct bt_bap_base *base,
 static void update_recv_state_base(const struct bt_bap_broadcast_sink *sink,
 				   const struct bt_bap_base *base)
 {
-	struct bt_bap_scan_delegator_mod_src_param mod_src_param = { 0 };
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
 	int err;
 
-	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_sink_cb, (void *)sink);
+	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_src_id_cb, (void *)sink);
 	if (recv_state == NULL) {
 		LOG_WRN("Failed to find receive state for sink %p", sink);
 
 		return;
 	}
 
-	err = update_recv_state_base_copy_meta(base, &mod_src_param);
+	(void)memset(&mod_src_param, 0, sizeof(mod_src_param));
+
+	err = update_recv_state_base_copy_meta(base);
 	if (err != 0) {
 		LOG_WRN("Failed to modify Receive State for sink %p: %d", sink, err);
 		return;
@@ -724,12 +746,23 @@ static void pa_recv(struct bt_le_per_adv_sync *sync,
 	bt_data_parse(buf, pa_decode_base, (void *)sink);
 }
 
+static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
+			 struct bt_le_per_adv_sync_synced_info *info)
+{
+	struct bt_bap_broadcast_sink *sink = broadcast_sink_get_by_pa(sync);
+
+	if (sink != NULL) {
+		bt_bap_scan_delegator_set_pa_state(sink->bass_src_id, BT_BAP_PA_STATE_SYNCED);
+	}
+}
+
 static void pa_term_cb(struct bt_le_per_adv_sync *sync,
 		       const struct bt_le_per_adv_sync_term_info *info)
 {
 	struct bt_bap_broadcast_sink *sink = broadcast_sink_get_by_pa(sync);
 
 	if (sink != NULL) {
+		bt_bap_scan_delegator_set_pa_state(sink->bass_src_id, BT_BAP_PA_STATE_NOT_SYNCED);
 		sink->pa_sync = NULL;
 		sink->base_size = 0U;
 	}
@@ -737,18 +770,19 @@ static void pa_term_cb(struct bt_le_per_adv_sync *sync,
 
 static void update_recv_state_encryption(const struct bt_bap_broadcast_sink *sink)
 {
-	struct bt_bap_scan_delegator_mod_src_param mod_src_param = { 0 };
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
 	int err;
 
 	__ASSERT(sink->big == NULL, "Encryption state shall not be updated while synced");
 
-	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_sink_cb, (void *)sink);
+	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_src_id_cb, (void *)sink);
 	if (recv_state == NULL) {
 		LOG_WRN("Failed to find receive state for sink %p", sink);
 
 		return;
 	}
+
+	(void)memset(&mod_src_param, 0, sizeof(mod_src_param));
 
 	/* Only change the encrypt state, and leave the rest as is */
 	if (atomic_test_bit(sink->flags,
@@ -879,7 +913,7 @@ int bt_bap_broadcast_sink_register_cb(struct bt_bap_broadcast_sink_cb *cb)
 {
 	static bool iso_big_cb_registered;
 
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 
 		return -EINVAL;
@@ -910,10 +944,10 @@ int bt_bap_broadcast_sink_register_cb(struct bt_bap_broadcast_sink_cb *cb)
 	return 0;
 }
 
-bool bt_bap_ep_is_broadcast_snk(const struct bt_bap_ep *ep)
+bool bt_bap_broadcast_sink_has_ep(const struct bt_bap_ep *ep)
 {
 	for (int i = 0; i < ARRAY_SIZE(broadcast_sink_eps); i++) {
-		if (PART_OF_ARRAY(broadcast_sink_eps[i], ep)) {
+		if (IS_ARRAY_ELEMENT(broadcast_sink_eps[i], ep)) {
 			return true;
 		}
 	}
@@ -971,14 +1005,15 @@ static int bt_bap_broadcast_sink_setup_stream(struct bt_bap_broadcast_sink *sink
 
 	bt_bap_iso_init(iso, &broadcast_sink_iso_ops);
 	bt_bap_iso_bind_ep(iso, ep);
+	stream->iso = &iso->chan;
 
 	bt_bap_qos_cfg_to_iso_qos(iso->chan.qos->rx, &sink->qos_cfg);
-	bt_bap_iso_configure_data_path(ep, codec_cfg);
 
 	bt_bap_iso_unref(iso);
 
 	bt_bap_stream_attach(NULL, stream, ep, codec_cfg);
 	stream->qos = &sink->qos_cfg;
+	stream->group = sink;
 
 	return 0;
 }
@@ -990,7 +1025,9 @@ static void broadcast_sink_cleanup_streams(struct bt_bap_broadcast_sink *sink)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sink->streams, stream, next, _node) {
 		if (stream->ep != NULL) {
 			bt_bap_iso_unbind_ep(stream->ep->iso, stream->ep);
+			stream->iso = NULL;
 			stream->ep->stream = NULL;
+			stream->ep->broadcast_sink = NULL;
 			stream->ep = NULL;
 		}
 
@@ -1020,19 +1057,19 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
 	struct bt_bap_broadcast_sink *sink;
 
-	CHECKIF(pa_sync == NULL) {
+	if (pa_sync == NULL) {
 		LOG_DBG("pa_sync is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(broadcast_id > BT_AUDIO_BROADCAST_ID_MAX) {
+	if (broadcast_id > BT_AUDIO_BROADCAST_ID_MAX) {
 		LOG_DBG("Invalid broadcast_id: 0x%X", broadcast_id);
 
 		return -EINVAL;
 	}
 
-	CHECKIF(out_sink == NULL) {
+	if (out_sink == NULL) {
 		LOG_DBG("sink was NULL");
 
 		return -EINVAL;
@@ -1048,8 +1085,8 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
 	sink->broadcast_id = broadcast_id;
 	sink->pa_sync = pa_sync;
 
-	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_pa_sync_cb,
-						      (void *)pa_sync);
+	recv_state =
+		bt_bap_scan_delegator_find_state(find_recv_state_by_sink_fields_cb, (void *)sink);
 	if (recv_state == NULL) {
 		broadcast_sink_add_src(sink);
 	} else {
@@ -1063,28 +1100,30 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
 		}
 
 		sink->bass_src_id = recv_state->src_id;
+		if (recv_state->pa_sync_state != BT_BAP_PA_STATE_SYNCED) {
+			int err;
+
+			/* When a broadcast sink is created we always assume the PA sync provided is
+			 * synced
+			 */
+			err = bt_bap_scan_delegator_set_pa_state(sink->bass_src_id,
+								 BT_BAP_PA_STATE_SYNCED);
+			if (err != 0) {
+				LOG_DBG("Failed to set PA state: %d", err);
+
+				broadcast_sink_cleanup(sink);
+
+				return err;
+			}
+		}
+
 		atomic_set_bit(sink->flags, BT_BAP_BROADCAST_SINK_FLAG_SRC_ID_VALID);
 	}
+
 	atomic_set_bit(sink->flags, BT_BAP_BROADCAST_SINK_FLAG_INITIALIZED);
 
 	*out_sink = sink;
 	return 0;
-}
-
-static uint8_t bit_count(uint32_t bitfield)
-{
-#ifdef POPCOUNT
-	return POPCOUNT(bitfield);
-#else
-	uint8_t cnt = 0U;
-
-	while (bitfield != 0U) {
-		cnt += bitfield & 1U;
-		bitfield >>= 1U;
-	}
-
-	return cnt;
-#endif
 }
 
 struct sync_base_info_data {
@@ -1232,17 +1271,17 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 	int err;
 	int ret;
 
-	CHECKIF(sink == NULL) {
+	if (sink == NULL) {
 		LOG_DBG("sink is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(indexes_bitfield == 0U || indexes_bitfield > BIT_MASK(BT_ISO_BIS_INDEX_MAX)) {
+	if (indexes_bitfield == 0U || indexes_bitfield > BIT_MASK(BT_ISO_BIS_INDEX_MAX)) {
 		LOG_DBG("Invalid indexes_bitfield: 0x%08X", indexes_bitfield);
 		return -EINVAL;
 	}
 
-	CHECKIF(streams == NULL) {
+	if (streams == NULL) {
 		LOG_DBG("streams is NULL");
 		return -EINVAL;
 	}
@@ -1271,7 +1310,7 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 	}
 
 	/* Validate that number of bits set is within supported range */
-	bis_count = bit_count(indexes_bitfield);
+	bis_count = sys_count_bits(&indexes_bitfield, sizeof(indexes_bitfield));
 	if (bis_count > CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT) {
 		LOG_DBG("Cannot sync to more than %d streams (%u was requested)",
 			CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT, bis_count);
@@ -1299,7 +1338,7 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 	stream_count = data.stream_count;
 
 	for (size_t i = 0; i < stream_count; i++) {
-		CHECKIF(streams[i] == NULL) {
+		if (streams[i] == NULL) {
 			LOG_DBG("streams[%zu] is NULL", i);
 			return -EINVAL;
 		}
@@ -1361,7 +1400,7 @@ int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 {
 	int err;
 
-	CHECKIF(sink == NULL) {
+	if (sink == NULL) {
 		LOG_DBG("sink is NULL");
 		return -EINVAL;
 	}
@@ -1388,7 +1427,7 @@ int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink)
 {
 
-	CHECKIF(sink == NULL) {
+	if (sink == NULL) {
 		LOG_DBG("sink is NULL");
 		return -EINVAL;
 	}
@@ -1407,6 +1446,7 @@ int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink)
 static int broadcast_sink_init(void)
 {
 	static struct bt_le_per_adv_sync_cb cb = {
+		.synced = pa_synced_cb,
 		.recv = pa_recv,
 		.biginfo = biginfo_recv,
 		.term = pa_term_cb,

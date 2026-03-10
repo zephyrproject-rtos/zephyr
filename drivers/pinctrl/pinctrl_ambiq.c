@@ -1,14 +1,68 @@
 /*
  * Copyright (c) 2023 Antmicro <www.antmicro.com>
- *
+ * Copyright (c) 2025 Linumiz GmbH
+
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/drivers/pinctrl.h>
 
 /* ambiq-sdk includes */
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+static void pinctrl_configure_pin(const pinctrl_soc_pin_t *cfg)
+{
+	uint32_t config = 0;
+
+	if (cfg->alt_func) {
+		config |= AM_HAL_GPIO_FUNC(cfg->alt_func);
+	}
+
+	if (cfg->input_enable) {
+		config |= AM_HAL_GPIO_INPEN;
+	}
+
+	switch (cfg->drive_strength) {
+	case 2:
+		config |= AM_HAL_GPIO_DRIVE_2MA;
+		break;
+	case 4:
+		config |= AM_HAL_GPIO_DRIVE_4MA;
+		break;
+	case 8:
+		config |= AM_HAL_GPIO_DRIVE_8MA;
+		break;
+	case 12:
+		config |= AM_HAL_GPIO_DRIVE_12MA;
+		break;
+	}
+
+	if (cfg->bias_pull_up) {
+
+		switch (cfg->ambiq_pull_up_ohms) {
+		case 1500:
+			config |= AM_HAL_GPIO_PULL1_5K;
+			break;
+		case 6000:
+			config |= AM_HAL_GPIO_PULL6K;
+			break;
+		case 12000:
+			config |= AM_HAL_GPIO_PULL12K;
+			break;
+		case 24000:
+			config |= AM_HAL_GPIO_PULL24K;
+			break;
+		}
+	}
+
+	if (cfg->open_drain) {
+		config |= AM_HAL_GPIO_OUT_OPENDRAIN;
+	}
+
+	am_hal_gpio_pin_config(cfg->pin_num, config);
+}
+#else
 static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 {
 	am_hal_gpio_pincfg_t pin_config = {0};
@@ -22,7 +76,8 @@ static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 			       : pin->tristate   ? AM_HAL_GPIO_PIN_OUTCFG_TRISTATE
 						 : AM_HAL_GPIO_PIN_OUTCFG_DISABLE;
 	pin_config.eDriveStrength = pin->drive_strength;
-	pin_config.uNCE = pin->iom_nce;
+	pin_config.uNCE = pin->nce;
+	pin_config.eCEpol = pin->nce_pol;
 #if defined(CONFIG_SOC_APOLLO3P_BLUE)
 	pin_config.bIomMSPIn = pin->iom_mspi;
 #endif
@@ -42,9 +97,40 @@ static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 					: pin->tristate   ? AM_HAL_GPIO_PIN_OUTCFG_TRISTATE
 							  : AM_HAL_GPIO_PIN_OUTCFG_DISABLE;
 	pin_config.GP.cfg_b.eDriveStrength = pin->drive_strength;
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
 	pin_config.GP.cfg_b.uSlewRate = pin->slew_rate;
-	pin_config.GP.cfg_b.uNCE = pin->iom_nce;
-	pin_config.GP.cfg_b.eIntDir = pin->interrupt_direction;
+	switch (pin->sdif_cdwp) {
+	case 1:
+		am_hal_gpio_cd_pin_config(pin->pin_num);
+		break;
+	case 2:
+		am_hal_gpio_wp_pin_config(pin->pin_num);
+		break;
+	default:
+		/* not a sdif pin */
+		break;
+	}
+#else
+	switch (pin->sdif_cdwp) {
+	case 1:
+		am_hal_gpio_cd0_pin_config(pin->pin_num);
+		break;
+	case 2:
+		am_hal_gpio_wp0_pin_config(pin->pin_num);
+		break;
+	case 3:
+		am_hal_gpio_cd1_pin_config(pin->pin_num);
+		break;
+	case 4:
+		am_hal_gpio_wp1_pin_config(pin->pin_num);
+		break;
+	default:
+		/* not a sdif pin */
+		break;
+	}
+#endif
+	pin_config.GP.cfg_b.uNCE = pin->nce;
+	pin_config.GP.cfg_b.eCEpol = pin->nce_pol;
 
 	if (pin->bias_pull_up) {
 		pin_config.GP.cfg_b.ePullup = pin->ambiq_pull_up_ohms + AM_HAL_GPIO_PIN_PULLUP_1_5K;
@@ -54,6 +140,7 @@ static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 #endif
 	am_hal_gpio_pinconfig(pin->pin_num, pin_config);
 }
+#endif
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
@@ -62,6 +149,5 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 	for (uint8_t i = 0U; i < pin_cnt; i++) {
 		pinctrl_configure_pin(pins++);
 	}
-
 	return 0;
 }

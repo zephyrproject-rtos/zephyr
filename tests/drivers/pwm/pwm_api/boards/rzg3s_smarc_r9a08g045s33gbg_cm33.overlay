@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		pwm-test = &pwm3;
+	};
+};
+
 &gpt32e3 {
 	pwm3: pwm {
 		status = "okay";

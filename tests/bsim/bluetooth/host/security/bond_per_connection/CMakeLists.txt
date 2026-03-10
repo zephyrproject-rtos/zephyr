@@ -5,11 +5,14 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(bsim_test_multi_id_bond_per_connection)
 
+add_subdirectory(${ZEPHYR_BASE}/tests/bsim/babblekit babblekit)
+target_link_libraries(app PRIVATE babblekit)
+
 target_sources(app PRIVATE
-	src/bs_bt_utils.c
-	src/central.c
-	src/main.c
-	src/peripheral.c
+  src/bs_bt_utils.c
+  src/central.c
+  src/main.c
+  src/peripheral.c
 )
 
 zephyr_include_directories(

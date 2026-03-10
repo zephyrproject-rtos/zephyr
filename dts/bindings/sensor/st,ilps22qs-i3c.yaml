@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    STMicroelectronics LPS22DF pressure and temperature sensor connected to I3C
+    STMicroelectronics ILPS22QS pressure and temperature sensor connected to I3C
     bus
 
 compatible: "st,ilps22qs"

@@ -81,47 +81,7 @@ Nucleo F746ZG provides the following hardware components:
 Supported Features
 ==================
 
-The Zephyr nucleo_f746zg board configuration supports the following hardware
-features:
-
-+-------------+------------+-------------------------------------+
-| Interface   | Controller | Driver/Component                    |
-+=============+============+=====================================+
-| NVIC        | on-chip    | nested vector interrupt controller  |
-+-------------+------------+-------------------------------------+
-| UART        | on-chip    | serial port                         |
-+-------------+------------+-------------------------------------+
-| PINMUX      | on-chip    | pinmux                              |
-+-------------+------------+-------------------------------------+
-| GPIO        | on-chip    | gpio                                |
-+-------------+------------+-------------------------------------+
-| ETHERNET    | on-chip    | ethernet                            |
-+-------------+------------+-------------------------------------+
-| USB         | on-chip    | usb_device                          |
-+-------------+------------+-------------------------------------+
-| COUNTER     | on-chip    | rtc                                 |
-+-------------+------------+-------------------------------------+
-| I2C         | on-chip    | i2c                                 |
-+-------------+------------+-------------------------------------+
-| PWM         | on-chip    | pwm                                 |
-+-------------+------------+-------------------------------------+
-| SPI         | on-chip    | spi                                 |
-+-------------+------------+-------------------------------------+
-| WATCHDOG    | on-chip    | independent watchdog                |
-+-------------+------------+-------------------------------------+
-| ADC         | on-chip    | ADC Controller                      |
-+-------------+------------+-------------------------------------+
-| DAC         | on-chip    | DAC Controller                      |
-+-------------+------------+-------------------------------------+
-| Backup SRAM | on-chip    | Backup SRAM                         |
-+-------------+------------+-------------------------------------+
-| RTC         | on-chip    | rtc                                 |
-+-------------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f746zg/nucleo_f746zg_defconfig`
+.. zephyr:board-supported-hw::
 
 For more details please refer to `STM32 Nucleo-144 board User Manual`_.
 
@@ -171,6 +131,8 @@ do it by removing ``SB156`` jumper on the back side of the board.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Nucleo F746ZG board includes an ST-LINK/V2-1 embedded debug tool interface.
 

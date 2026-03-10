@@ -5,16 +5,6 @@ description: |
     When setting the accel-range, accel-odr, properties in a .dts or .dtsi
     file you may include lis2de12.h and use the macros defined there.
 
-    Example:
-    #include <zephyr/dt-bindings/sensor/lis2de12.h>
-
-    lis2de12: lis2de12@0 {
-      ...
-
-      accel-range = <LIS2DE12_DT_FS_16G>;
-      accel-odr = <LIS2DE12_DT_ODR_AT_100Hz>;
-    };
-
 include: sensor-device.yaml
 
 properties:
@@ -76,3 +66,14 @@ properties:
     description: |
       Selects the pulsed mode for data-ready interrupt when enabled,
       and the latched mode when disabled.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/lis2de12.h>
+
+    lis2de12: lis2de12@0 {
+      /* ... */
+
+      accel-range = <LIS2DE12_DT_FS_16G>;
+      accel-odr = <LIS2DE12_DT_ODR_AT_100Hz>;
+    };

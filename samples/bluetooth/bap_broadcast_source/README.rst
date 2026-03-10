@@ -14,9 +14,6 @@ Broadcast Audio Source Endpoint (BASE) and finally the BIGinfo together with
 
 The BAP Broadcast Source will reset every 30 seconds to show the full API.
 
-This sample can be found under
-:zephyr_file:`samples/bluetooth/bap_broadcast_source` in the Zephyr tree.
-
 Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements
@@ -31,6 +28,8 @@ Building and Running
 When building targeting an nrf52 series board with the Zephyr Bluetooth Controller,
 use ``-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf`` to enable the required ISO
 feature support.
+The sample defaults to sequential packing of BIS subevents, add
+``-DCONFIG_ISO_PACKING_INTERLEAVED=y`` to use interleaved packing.
 
 Building for an nrf5340dk
 -------------------------

@@ -15,19 +15,23 @@
 
 static const struct device *dmic_dev = DEVICE_DT_GET(DT_ALIAS(dmic_dev));
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nxp_dmic)
-#define PDM_CHANNELS 4 /* Two L/R pairs of channels */
-#define SAMPLE_BIT_WIDTH 16
-#define BYTES_PER_SAMPLE sizeof(int16_t)
-#define SLAB_ALIGN 4
+#define SAMPLE_BIT_WIDTH CONFIG_SAMPLE_BIT_WIDTH
+#define PDM_CHANNELS     CONFIG_SAMPLE_PDM_CHANNELS
+#define PDM_CTL_IDX      CONFIG_HW_CHANNEL_INDEX
+#define BYTES_PER_SAMPLE SAMPLE_BIT_WIDTH / 8
+#define SLAB_ALIGN       4
 #define MAX_SAMPLE_RATE  48000
+
 /* Milliseconds to wait for a block to be read. */
 #define READ_TIMEOUT 1000
 /* Size of a block for 100 ms of audio data. */
+#if defined(CONFIG_COVERAGE)
+/* Use smaller buffer in coverage mode. */
+#define BLOCK_SIZE(_sample_rate, _number_of_channels) \
+	(BYTES_PER_SAMPLE * (_sample_rate / 100) * _number_of_channels)
+#else
 #define BLOCK_SIZE(_sample_rate, _number_of_channels) \
 	(BYTES_PER_SAMPLE * (_sample_rate / 10) * _number_of_channels)
-#else
-#error "Unsupported DMIC device"
 #endif
 
 /* Driver will allocate blocks from this slab to receive audio data into them.
@@ -132,7 +136,7 @@ ZTEST(dmic, test_single_channel)
 {
 	dmic_cfg.channel.req_num_chan = 1;
 	dmic_cfg.channel.req_chan_map_lo =
-		dmic_build_channel_map(0, 0, PDM_CHAN_LEFT);
+		dmic_build_channel_map(0, PDM_CTL_IDX, PDM_CHAN_LEFT);
 	dmic_cfg.streams[0].pcm_rate = MAX_SAMPLE_RATE;
 	dmic_cfg.streams[0].block_size =
 		BLOCK_SIZE(dmic_cfg.streams[0].pcm_rate,
@@ -146,8 +150,8 @@ ZTEST(dmic, test_stereo_channel)
 {
 	dmic_cfg.channel.req_num_chan = 2;
 	dmic_cfg.channel.req_chan_map_lo =
-		dmic_build_channel_map(0, 0, PDM_CHAN_LEFT) |
-		dmic_build_channel_map(1, 0, PDM_CHAN_RIGHT);
+		dmic_build_channel_map(0, PDM_CTL_IDX, PDM_CHAN_LEFT) |
+		dmic_build_channel_map(1, PDM_CTL_IDX, PDM_CHAN_RIGHT);
 	dmic_cfg.streams[0].pcm_rate = MAX_SAMPLE_RATE;
 	dmic_cfg.streams[0].block_size =
 		BLOCK_SIZE(dmic_cfg.streams[0].pcm_rate,
@@ -155,8 +159,9 @@ ZTEST(dmic, test_stereo_channel)
 	zassert_equal(do_pdm_transfer(dmic_dev, &dmic_cfg), 0,
 		      "L/R channel transfer failed");
 	dmic_cfg.channel.req_chan_map_lo =
-		dmic_build_channel_map(0, 0, PDM_CHAN_RIGHT) |
-		dmic_build_channel_map(1, 0, PDM_CHAN_LEFT);
+		dmic_build_channel_map(0, PDM_CTL_IDX, PDM_CHAN_RIGHT) |
+		dmic_build_channel_map(1, PDM_CTL_IDX, PDM_CHAN_LEFT);
+
 	zassert_equal(do_pdm_transfer(dmic_dev, &dmic_cfg), 0,
 		      "R/L channel transfer failed");
 }
@@ -172,7 +177,7 @@ ZTEST(dmic, test_max_channel)
 	dmic_cfg.channel.req_chan_map_hi = 0;
 	for (uint8_t i = 0; i < PDM_CHANNELS; i++) {
 		lr = ((i % 2) == 0) ? PDM_CHAN_LEFT : PDM_CHAN_RIGHT;
-		pdm_hw_chan = i >> 1;
+		pdm_hw_chan = PDM_CTL_IDX + (i >> 1);
 		if (i < 4) {
 			dmic_cfg.channel.req_chan_map_lo |=
 				dmic_build_channel_map(i, pdm_hw_chan, lr);
@@ -199,7 +204,7 @@ ZTEST(dmic, test_pause_restart)
 
 	dmic_cfg.channel.req_num_chan = 1;
 	dmic_cfg.channel.req_chan_map_lo =
-		dmic_build_channel_map(0, 0, PDM_CHAN_LEFT);
+		dmic_build_channel_map(0, PDM_CTL_IDX, PDM_CHAN_LEFT);
 	dmic_cfg.streams[0].pcm_rate = MAX_SAMPLE_RATE;
 	dmic_cfg.streams[0].block_size =
 		BLOCK_SIZE(dmic_cfg.streams[0].pcm_rate,

@@ -14,6 +14,7 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/wifi/nrf_wifi/bus/qspi_if.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include "spi_if.h"
 
@@ -24,7 +25,10 @@ LOG_MODULE_DECLARE(wifi_nrf_bus, CONFIG_WIFI_NRF70_BUSLIB_LOG_LEVEL);
 static struct qspi_config *spim_config;
 
 static const struct spi_dt_spec spi_spec =
-SPI_DT_SPEC_GET(NRF7002_NODE, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0);
+SPI_DT_SPEC_GET(NRF7002_NODE, SPI_WORD_SET(8) | SPI_TRANSFER_MSB);
+
+static struct spi_dt_spec spi_spec_8mhz =
+SPI_DT_SPEC_GET(NRF7002_NODE, SPI_WORD_SET(8) | SPI_TRANSFER_MSB);
 
 static int spim_xfer_tx(unsigned int addr, void *data, unsigned int len)
 {
@@ -48,33 +52,35 @@ static int spim_xfer_tx(unsigned int addr, void *data, unsigned int len)
 	return err;
 }
 
+#define HDR_SIZE          5
+#define MAX_DISCARD_BYTES 8
 
 static int spim_xfer_rx(unsigned int addr, void *data, unsigned int len, unsigned int discard_bytes)
 {
-	uint8_t hdr[] = {
+	uint8_t hdr[HDR_SIZE + MAX_DISCARD_BYTES] = {
 		0x0b, /* FASTREAD opcode */
 		(addr >> 16) & 0xFF,
 		(addr >> 8) & 0xFF,
 		addr & 0xFF,
 		0 /* dummy byte */
 	};
-	uint8_t discard[sizeof(hdr) + 2 * 4];
+	uint8_t discard[HDR_SIZE + MAX_DISCARD_BYTES];
 
 	const struct spi_buf tx_buf[] = {
-		{.buf = hdr,  .len = sizeof(hdr) },
+		{.buf = hdr,  .len = HDR_SIZE + discard_bytes},
 		{.buf = NULL, .len = len },
 	};
 
 	const struct spi_buf_set tx = { .buffers = tx_buf, .count = 2 };
 
 	const struct spi_buf rx_buf[] = {
-		{.buf = discard,  .len = sizeof(hdr) + discard_bytes},
+		{.buf = discard,  .len = HDR_SIZE + discard_bytes},
 		{.buf = data, .len = len },
 	};
 
 	const struct spi_buf_set rx = { .buffers = rx_buf, .count = 2 };
 
-	if (rx_buf[0].len > sizeof(discard)) {
+	if (discard_bytes > MAX_DISCARD_BYTES) {
 		LOG_ERR("Discard bytes too large, please adjust buf size");
 		return -EINVAL;
 	}
@@ -116,7 +122,7 @@ int spim_read_reg(uint32_t reg_addr, uint8_t *reg_value)
 	return err;
 }
 
-int spim_write_reg(uint32_t reg_addr, const uint8_t reg_value)
+int spim_write_reg(const struct spi_dt_spec *spi_spec, uint32_t reg_addr, const uint8_t reg_value)
 {
 	int err;
 	uint8_t tx_buffer[] = { reg_addr, reg_value };
@@ -124,7 +130,7 @@ int spim_write_reg(uint32_t reg_addr, const uint8_t reg_value)
 	const struct spi_buf tx_buf = { .buf = tx_buffer, .len = sizeof(tx_buffer) };
 	const struct spi_buf_set tx = { .buffers = &tx_buf, .count = 1 };
 
-	err = spi_transceive_dt(&spi_spec, &tx, NULL);
+	err = spi_transceive_dt(spi_spec, &tx, NULL);
 
 	if (err) {
 		LOG_ERR("SPI error: %d", err);
@@ -150,7 +156,35 @@ int spim_RDSR2(const struct device *dev, uint8_t *rdsr1)
 
 int spim_WRSR2(const struct device *dev, const uint8_t wrsr2)
 {
-	return spim_write_reg(0x3F, wrsr2);
+	return spim_write_reg(&spi_spec, 0x3F, wrsr2);
+}
+
+/**
+ * @brief Read a register via SPI (wrapper for compatibility)
+ *
+ * @param dev SPI device (unused, kept for compatibility)
+ * @param reg_addr Register address (opcode)
+ * @param reg_value Pointer to store the read value
+ * @return int 0 on success, negative error code on failure
+ */
+int spim_read_reg_wrapper(const struct device *dev, uint8_t reg_addr, uint8_t *reg_value)
+{
+	ARG_UNUSED(dev);
+	return spim_read_reg(reg_addr, reg_value);
+}
+
+/**
+ * @brief Write a register via SPI (wrapper for compatibility)
+ *
+ * @param dev SPI device (unused, kept for compatibility)
+ * @param reg_addr Register address (opcode)
+ * @param reg_value Value to write
+ * @return int 0 on success, negative error code on failure
+ */
+int spim_write_reg_wrapper(const struct device *dev, uint8_t reg_addr, uint8_t reg_value)
+{
+	ARG_UNUSED(dev);
+	return spim_write_reg(&spi_spec, reg_addr, reg_value);
 }
 
 int _spim_wait_while_rpu_awake(void)
@@ -208,7 +242,13 @@ int spim_wait_while_rpu_wake_write(void)
 
 int spim_cmd_rpu_wakeup(uint32_t data)
 {
-	return spim_write_reg(0x3F, data);
+	struct spi_dt_spec *spi_spec_tmp = (struct spi_dt_spec *)&spi_spec;
+
+	if (spi_spec.config.frequency > MHZ(8)) {
+		spi_spec_tmp = &spi_spec_8mhz;
+	}
+	/* Waking RPU works reliably only with lowest frequency (8MHz) */
+	return spim_write_reg(spi_spec_tmp, 0x3F, data);
 }
 
 unsigned int spim_cmd_sleep_rpu(void)
@@ -243,18 +283,26 @@ int spim_init(struct qspi_config *config)
 		spim_config->qspi_slave_latency = 1;
 	}
 
+	spi_spec_8mhz.config.frequency = MHZ(8);
+
 	LOG_INF("SPIM %s: freq = %d MHz", spi_spec.bus->name,
 		spi_spec.config.frequency / MHZ(1));
 	LOG_INF("SPIM %s: latency = %d", spi_spec.bus->name, spim_config->qspi_slave_latency);
 
+#ifdef CONFIG_NRF70_SPI_PM_CLAIM_WHILE_ACTIVE
+	return pm_device_runtime_get(spi_spec.bus);
+#else
 	return 0;
+#endif /* CONFIG_NRF70_SPI_PM_CLAIM_WHILE_ACTIVE */
 }
 
 int spim_deinit(void)
 {
-	LOG_DBG("TODO : %s", __func__);
+#ifdef CONFIG_NRF70_SPI_PM_CLAIM_WHILE_ACTIVE
+	(void)pm_device_runtime_put(spi_spec.bus);
+#endif /* CONFIG_NRF70_SPI_PM_CLAIM_WHILE_ACTIVE */
 
-	return 0;
+	return spi_release_dt(&spi_spec);
 }
 
 static void spim_addr_check(unsigned int addr, const void *data, unsigned int len)

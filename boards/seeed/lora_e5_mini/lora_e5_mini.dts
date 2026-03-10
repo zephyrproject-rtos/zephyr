@@ -22,6 +22,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led_1: led_1 {
 			gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
 			label = "User LED1";
@@ -30,6 +31,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		boot_button: button_0 {
 			label = "SW1";
 			gpios = <&gpiob 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -47,7 +49,7 @@
 
 stm32_lp_tick_source: &lptim1 {
 	status = "okay";
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
 		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 };
 
@@ -84,7 +86,7 @@ stm32_lp_tick_source: &lptim1 {
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
@@ -107,10 +109,12 @@ stm32_lp_tick_source: &lptim1 {
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(96)>;
 		};
+
 		slot1_partition: partition@24000 {
 			label = "image-1";
 			reg = <0x00024000 DT_SIZE_K(96)>;

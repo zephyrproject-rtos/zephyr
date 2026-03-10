@@ -1,29 +1,46 @@
 # Copyright (c) 2022 Carlo Caione <ccaione@baylibre.com>
 # SPDX-License-Identifier: Apache-2.0
 
+RISCV_ISA_BASE_PROP := riscv,isa-base
+RISCV_ISA_EXT_PROP  := riscv,isa-extensions
+RISCV_ISA_OMIT_PROP := riscv,isa-omissions
+
 config RISCV_ISA_RV32I
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_BASE_PROP),rv32i)
 	help
 	  RV32I Base Integer Instruction Set - 32bit
 
 config RISCV_ISA_RV32E
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_BASE_PROP),rv32e)
 	help
 	  RV32E Base Integer Instruction Set (Embedded) - 32bit
 
 config RISCV_ISA_RV64I
 	bool
-	default y if 64BIT
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_BASE_PROP),rv64i)
+	select 64BIT
 	help
 	  RV64I Base Integer Instruction Set - 64bit
 
 config RISCV_ISA_RV128I
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_BASE_PROP),rv128i)
 	help
 	  RV128I Base Integer Instruction Set - 128bit
 
+config RISCV_ISA_BASE_FENCE
+	bool
+	default y if !$(dt_compat_all_has_prop,riscv,$(RISCV_ISA_OMIT_PROP),fence)
+	help
+	  Standard base integer instruction set includes the fence instructon, but
+	  some implementations may lack the instruction. Barrier checks depend on
+	  this symbol to ensure the hart truly supports fence.
+
 config RISCV_ISA_EXT_M
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),m)
 	help
 	  (M) - Standard Extension for Integer Multiplication and Division
 
@@ -33,8 +50,9 @@ config RISCV_ISA_EXT_M
 
 config RISCV_ISA_EXT_A
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),a)
 	imply RISCV_ISA_EXT_ZAAMO
-	imply RISCV_ISA_EXT_ZLRSC
+	imply RISCV_ISA_EXT_ZALRSC
 	help
 	  (A) - Standard Extension for Atomic Instructions
 
@@ -45,6 +63,8 @@ config RISCV_ISA_EXT_A
 
 config RISCV_ISA_EXT_F
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),f)
+	select CPU_HAS_FPU
 	help
 	  (F) - Standard Extension for Single-Precision Floating-Point
 
@@ -55,7 +75,9 @@ config RISCV_ISA_EXT_F
 
 config RISCV_ISA_EXT_D
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),d)
 	depends on RISCV_ISA_EXT_F
+	select CPU_HAS_FPU_DOUBLE_PRECISION
 	help
 	  (D) - Standard Extension for Double-Precision Floating-Point
 
@@ -77,6 +99,7 @@ config RISCV_ISA_EXT_G
 
 config RISCV_ISA_EXT_Q
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),q)
 	depends on RISCV_ISA_RV64I
 	depends on RISCV_ISA_EXT_F
 	depends on RISCV_ISA_EXT_D
@@ -89,6 +112,10 @@ config RISCV_ISA_EXT_Q
 
 config RISCV_ISA_EXT_C
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),c)
+	select RISCV_ISA_EXT_ZCA
+	select RISCV_ISA_EXT_ZCD if RISCV_ISA_EXT_D
+	select RISCV_ISA_EXT_ZCF if RISCV_ISA_EXT_F && (RISCV_ISA_RV32I || RISCV_ISA_RV32E)
 	help
 	  (C) - Standard Extension for Compressed Instructions
 
@@ -96,16 +123,39 @@ config RISCV_ISA_EXT_C
 	  which reduces static and dynamic code size by adding short 16-bit
 	  instruction encodings for common operations.
 
+config RISCV_ISA_EXT_ZICNTR
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zicntr)
+	depends on RISCV_ISA_EXT_ZICSR
+	help
+	  (Zicntr) - Standard Extension for Base Counters and Timers
+
+	  The Zicntr standard extension comprises the three counters (CYCLE, TIME, and INSTRET),
+	  which have dedicated functions (cycle count, real-time clock and instructions retired,
+	  respectively).
+
 config RISCV_ISA_EXT_ZICSR
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zicsr)
 	help
 	  (Zicsr) - Standard Extension for Control and Status Register (CSR) Instructions
 
 	  The "Zicsr" extension introduces support for the full set of CSR
 	  instructions that operate on CSRs registers.
 
+config RISCV_ISA_EXT_SMCSRIND
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),smcsrind)
+	depends on RISCV_ISA_EXT_ZICSR
+	help
+	  (Smcsrind) - Standard Extension for Indirect CSR Access
+
+	  The Smcsrind extension provides indirect access to CSRs through
+	  the MISELECT and MIREG registers.
+
 config RISCV_ISA_EXT_ZIFENCEI
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zifencei)
 	help
 	  (Zifencei) - Standard Extension for Instruction-Fetch Fence
 
@@ -115,20 +165,88 @@ config RISCV_ISA_EXT_ZIFENCEI
 
 config RISCV_ISA_EXT_ZAAMO
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zaamo)
 	help
 	  (Zaamo) - Atomic memory operation subset of the A extension
 
 	  The Zaamo extension enables support for AMO*.W/D-style instructions.
 
-config RISCV_ISA_EXT_ZLRSC
+config RISCV_ISA_EXT_ZALRSC
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zalrsc)
 	help
-	  (Zlrsc) - Load-Reserved/Store-Conditional subset of the A extension
+	  (Zalrsc) - Load-Reserved/Store-Conditional subset of the A extension
 
-	  The Zlrsc extension enables support for LR.W/D and SC.W/D-style instructions.
+	  The Zalrsc extension enables support for LR.W/D and SC.W/D-style instructions.
+
+config RISCV_ISA_EXT_ZCA
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zca)
+	help
+	  (Zca) - Zba Extension for Compressed Instructions
+
+	  The Zca extension is a subset of the C extension that does not include
+	  the floating-point load and store instructions.
+
+config RISCV_ISA_EXT_ZCB
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zcb)
+	depends on RISCV_ISA_EXT_ZCA
+	help
+	  (Zcb) - Zcb Extension for Simple Compressed Instructions
+
+	  The Zcb extension is a set of simple code-size saving instructions
+	  which are easy to implement on all CPUs.
+
+config RISCV_ISA_EXT_ZCD
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zcd)
+	depends on RISCV_ISA_EXT_D
+	depends on RISCV_ISA_EXT_ZCA
+	help
+	  (Zcd) - Zcd Extension for Double-Precision FP Compressed Instructions
+
+	  The Zcd extension consists of compressed double-precision
+	  floating-point load and store instructions.
+
+config RISCV_ISA_EXT_ZCF
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zcf)
+	depends on RISCV_ISA_RV32I || RISCV_ISA_RV32E
+	depends on RISCV_ISA_EXT_F
+	depends on RISCV_ISA_EXT_ZCA
+	help
+	  (Zcf) - Zcf Extension for Single-Precision FP Compressed Instructions
+
+	  The Zcf extension consists of compressed single-precision
+	  floating-point load and store instructions.
+
+config RISCV_ISA_EXT_ZCMP
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zcmp)
+	depends on RISCV_ISA_EXT_ZCA
+	depends on !RISCV_ISA_EXT_ZCD
+	help
+	  (Zcmp) - Zcmp Extension for Complex Compressed Instructions
+
+	  The Zcmp extension consists of complex operations intended for
+	  embedded CPUs.
+
+config RISCV_ISA_EXT_ZCMT
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zcmt)
+	depends on RISCV_ISA_EXT_ZICSR
+	depends on RISCV_ISA_EXT_ZCA
+	depends on !RISCV_ISA_EXT_ZCD
+	help
+	  (Zcmt) - Zcmt Extension for Compressed Table Jump Instructions
+
+	  The Zcmt extension consists of compressed table jump instructions for
+	  embedded CPUs.
 
 config RISCV_ISA_EXT_ZBA
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zba)
 	help
 	  (Zba) - Zba BitManip Extension
 
@@ -139,6 +257,7 @@ config RISCV_ISA_EXT_ZBA
 
 config RISCV_ISA_EXT_ZBB
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zbb)
 	help
 	  (Zbb) - Zbb BitManip Extension (Basic bit-manipulation)
 
@@ -148,17 +267,37 @@ config RISCV_ISA_EXT_ZBB
 
 config RISCV_ISA_EXT_ZBC
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zbc)
 	help
 	  (Zbc) - Zbc BitManip Extension (Carry-less multiplication)
 
 	  The Zbc instructions can be used for carry-less multiplication that
 	  is the multiplication in the polynomial ring over GF(2).
 
+config RISCV_ISA_EXT_ZBKB
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zbkb)
+	help
+	  (Zbkb) - Zbkb BitManip Extension (Bit-manipulation for Cryptography)
+
+	  The Zbkb instructions can be used for accelerating cryptography workloads
+	  and contain rotation, reversion, packing and some advanced bit-manipulation.
+
 config RISCV_ISA_EXT_ZBS
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zbs)
 	help
 	  (Zbs) - Zbs BitManip Extension (Single-bit instructions)
 
 	  The Zbs instructions can be used for single-bit instructions that
 	  provide a mechanism to set, clear, invert, or extract a single bit in
 	  a register.
+
+config RISCV_ISA_EXT_ZMMUL
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zmmul)
+	help
+	  (Zmmul) - Zmmul Extension for Integer Multiplication
+
+	  The Zmmul extension implements the multiplication subset of the M
+	  extension.

@@ -21,13 +21,6 @@ config UART_INTERRUPT_DRIVEN
 config COAP_INIT_ACK_TIMEOUT_MS
 	default 20000
 
-# Hack: disable IPv6 for now
-config NET_IPV6
-	default n
-
-config NET_CONFIG_NEED_IPV6
-	default n
-
 endif # NETWORKING
 
 endif # SHIELD_WNC_M14A2A

@@ -136,21 +136,21 @@ static int rtc_rpi_pico_get_time(const struct device *dev, struct rtc_time *time
 	int err = 0;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	if (!rtc_get_datetime(&dt)) {
+	if (rtc_get_datetime(&dt)) {
+		timeptr->tm_sec = dt.sec;
+		timeptr->tm_min = dt.min;
+		timeptr->tm_hour = dt.hour;
+		timeptr->tm_mday = dt.day;
+		timeptr->tm_mon = dt.month - 1;
+		timeptr->tm_year = dt.year - TM_YEAR_REF;
+		timeptr->tm_wday = dt.dotw;
+		/* unknown values */
+		timeptr->tm_yday = -1;
+		timeptr->tm_isdst = -1;
+		timeptr->tm_nsec = 0;
+	} else {
 		err = -ENODATA;
 	}
-
-	timeptr->tm_sec = dt.sec;
-	timeptr->tm_min = dt.min;
-	timeptr->tm_hour = dt.hour;
-	timeptr->tm_mday = dt.day;
-	timeptr->tm_mon = dt.month - 1;
-	timeptr->tm_year = dt.year - TM_YEAR_REF;
-	timeptr->tm_wday = dt.dotw;
-	/* unknown values */
-	timeptr->tm_yday = -1;
-	timeptr->tm_isdst = -1;
-	timeptr->tm_nsec = 0;
 	k_spin_unlock(&data->lock, key);
 
 	return err;
@@ -212,12 +212,12 @@ static int rtc_rpi_pico_alarm_set_time(const struct device *dev, uint16_t id, ui
 	if (mask & RTC_ALARM_TIME_MASK_MONTH) {
 		hw_set_bits(&rtc_hw->irq_setup_0,
 			    RTC_IRQ_SETUP_0_MONTH_ENA_BITS |
-				    (alarm->tm_mon << RTC_IRQ_SETUP_0_MONTH_LSB));
+				    ((alarm->tm_mon + 1) << RTC_IRQ_SETUP_0_MONTH_LSB));
 	}
 	if (mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
 		hw_set_bits(&rtc_hw->irq_setup_0,
 			    RTC_IRQ_SETUP_0_DAY_ENA_BITS |
-				    ((alarm->tm_mday + 1) << RTC_IRQ_SETUP_0_DAY_LSB));
+				    (alarm->tm_mday << RTC_IRQ_SETUP_0_DAY_LSB));
 	}
 	if (mask & RTC_ALARM_TIME_MASK_WEEKDAY) {
 		hw_set_bits(&rtc_hw->irq_setup_1,

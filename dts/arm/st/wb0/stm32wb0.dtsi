@@ -24,6 +24,7 @@
 	chosen {
 		zephyr,flash-controller = &flash;
 		zephyr,bt-hci = &bt_hci_wb0;
+		zephyr,entropy = &rng;
 	};
 
 	cpus {
@@ -33,12 +34,29 @@
 		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m0+";
+			cpu-power-states = <&deepstop>;
 			reg = <0>;
+		};
+
+		power-states {
+			deepstop: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				substate-id = <0>;
+
+				/* One millisecond seems reasonable for now. */
+				min-residency-us = <1000>;
+
+				/* exit-latency-us property is not needed
+				 * since the same concept is applied by the hardware automatically.
+				 */
+			};
 		};
 	};
 
 	sram0: memory@20000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM0";
 	};
 
 	clocks {
@@ -113,6 +131,30 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			st_nvm_user_otp: flash@10001800 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x10001800 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			/* Undocumented/unnamed RO area */
+			flash@10001e00 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x10001e00 256>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					ts_c30_otp: c30@60 {
+						reg = <0x60 0x4>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+				};
+			};
+
 			flash0: flash@10040000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
 				write-block-size = <4>;
@@ -178,6 +220,14 @@
 			};
 		};
 
+		rtc: rtc@40004000 {
+			compatible = "st,stm32-rtc";
+			reg = <0x40004000 DT_SIZE_K(1)>;
+			interrupts = <11 0>;
+			clocks = <&rcc STM32_CLOCK(APB0, 12)>;
+			status = "disabled";
+		};
+
 		usart1: serial@41004000 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x41004000 DT_SIZE_K(1)>;
@@ -216,6 +266,7 @@
 			reg = <0x41007000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			interrupts = <7 0>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -256,7 +307,7 @@
 			#dma-cells = <3>;
 			dma-channels = <8>;
 			dma-generators = <1>;
-			dma-requests= <25>;
+			dma-requests = <25>;
 			status = "disabled";
 		};
 
@@ -275,10 +326,24 @@
 			generation-delay-ns = <1250>; /* 1.25us */
 			status = "disabled";
 		};
+
+		iwdg: watchdog@40003000 {
+			compatible = "st,stm32-watchdog";
+			reg = <0x40003000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(APB0, 14)>;
+			status = "disabled";
+		};
 	};
 
 	bt_hci_wb0: bt_hci_wb0 {
 		compatible = "st,hci-stm32wb0";
+		status = "disabled";
+	};
+
+	radio_timer: radio_timer {
+		compatible = "st,stm32wb0-radio-timer";
+		compensated-timer-freq = <409600>;
+		max-hs-startup-time = <320>;
 		status = "disabled";
 	};
 };

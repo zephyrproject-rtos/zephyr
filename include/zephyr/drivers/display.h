@@ -6,19 +6,25 @@
 
 /**
  * @file
- * @brief Public API for display drivers and applications
+ * @ingroup display_interface
+ * @brief Main header file for display driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_DISPLAY_H_
 #define ZEPHYR_INCLUDE_DRIVERS_DISPLAY_H_
 
 /**
- * @brief Display Interface
- * @defgroup display_interface Display Interface
+ * @brief Interfaces for display controllers.
+ * @defgroup display_interface Display
  * @since 1.14
  * @version 0.8.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup display_interface_ext Device-specific Display API extensions
+ * @{
+ * @}
+ *
  */
 
 #include <zephyr/device.h>
@@ -40,12 +46,109 @@ extern "C" {
  * big endian.
  */
 enum display_pixel_format {
+	/**
+	 * 24-bit RGB format with 8 bits per component.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   Byte 2
+	 *   7......0 15.....8 23....16
+	 * | Bbbbbbbb Gggggggg Rrrrrrrr | ...
+	 * @endcode
+	 *
+	 */
 	PIXEL_FORMAT_RGB_888		= BIT(0), /**< 24-bit RGB */
+
+	/**
+	 * 1-bit monochrome format with 1 bit per pixel, thus each byte represent 8 pixels
+	 * Two variants, with black being either represented by 0 or 1
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   | Byte 1   |
+	 *   7......0   7......0
+	 * | MMMMMMMM | MMMMMMMM | ...
+	 * @endcode
+	 *
+	 */
 	PIXEL_FORMAT_MONO01		= BIT(1), /**< Monochrome (0=Black 1=White) */
 	PIXEL_FORMAT_MONO10		= BIT(2), /**< Monochrome (1=Black 0=White) */
+
+	/**
+	 * 32-bit RGB format with 8 bits per component and 8 bits for alpha.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   Byte 2   Byte 3
+	 *   7......0 15.....8 23....16 31....24
+	 * | Bbbbbbbb Gggggggg Rrrrrrrr Aaaaaaaa | ...
+	 * @endcode
+	 *
+	 */
 	PIXEL_FORMAT_ARGB_8888		= BIT(3), /**< 32-bit ARGB */
-	PIXEL_FORMAT_RGB_565		= BIT(4), /**< 16-bit RGB */
-	PIXEL_FORMAT_BGR_565		= BIT(5), /**< 16-bit BGR */
+
+	/**
+	 * 16-bit RGB format packed into two bytes: 5 red bits [15:11], 6
+	 * green bits [10:5], 5 blue bits [4:0].
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   |
+	 *   7......0 15.....8
+	 * | gggBbbbb RrrrrGgg | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_RGB_565		= BIT(4),
+
+	/**
+	 * 16-bit RGB format packed into two bytes. Byte swapped version of
+	 * the PIXEL_FORMAT_RGB_565 format.
+	 *
+	 * @code{.unparsed}
+	 *   7......0 15.....8
+	 * | RrrrrGgg gggBbbbb | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_RGB_565X		= BIT(5),
+
+	/**
+	 * 8-bit Greyscale format
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   | Byte 1   |
+	 *   7......0   7......0
+	 * | Gggggggg | Gggggggg | ...
+	 * @endcode
+	 */
+	PIXEL_FORMAT_L_8		= BIT(6), /**< 8-bit Grayscale/Luminance, equivalent to */
+						  /**< GRAY, GREY, GRAY8, Y8, R8, etc...        */
+
+	/**
+	 * 16-bit Greyscale format with 8-bit luminance and 8-bit for alpha
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0    Byte 1   |
+	 *   7......0  15.....8
+	 * | Gggggggg  Aaaaaaaa | ...
+	 * @endcode
+	 */
+	PIXEL_FORMAT_AL_88		= BIT(7), /**< 8-bit Grayscale/Luminance with alpha */
+
+	/**
+	 * This and higher values are display specific.
+	 * Refer to the display header file.
+	 */
+	PIXEL_FORMAT_PRIV_START = (PIXEL_FORMAT_AL_88 << 1),
 };
 
 /**
@@ -53,7 +156,8 @@ enum display_pixel_format {
  *
  * This macro expands to the number of bits required for a given display
  * format. It can be used to allocate a framebuffer based on a given
- * display format type
+ * display format type. This does not work with any private
+ * pixel formats.
  */
 #define DISPLAY_BITS_PER_PIXEL(fmt)						\
 	((((fmt & PIXEL_FORMAT_RGB_888) >> 0) * 24U) +				\
@@ -61,7 +165,9 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_MONO10) >> 2) * 1U) +				\
 	(((fmt & PIXEL_FORMAT_ARGB_8888) >> 3) * 32U) +				\
 	(((fmt & PIXEL_FORMAT_RGB_565) >> 4) * 16U) +				\
-	(((fmt & PIXEL_FORMAT_BGR_565) >> 5) * 16U))
+	(((fmt & PIXEL_FORMAT_RGB_565X) >> 5) * 16U) +				\
+	(((fmt & PIXEL_FORMAT_L_8) >> 6) * 8U) +				\
+	(((fmt & PIXEL_FORMAT_AL_88) >> 7) * 16U))
 
 /**
  * @brief Display screen information
@@ -166,6 +272,13 @@ typedef int (*display_read_api)(const struct device *dev, const uint16_t x,
 				void *buf);
 
 /**
+ * @typedef display_clear
+ * @brief Callback API for clearing the screen of the display
+ * See display_clear() for argument description
+ */
+typedef int (*display_clear_api)(const struct device *dev);
+
+/**
  * @typedef display_get_framebuffer_api
  * @brief Callback API to get framebuffer pointer
  * See display_get_framebuffer() for argument description
@@ -224,6 +337,7 @@ __subsystem struct display_driver_api {
 	display_blanking_off_api blanking_off;
 	display_write_api write;
 	display_read_api read;
+	display_clear_api clear;
 	display_get_framebuffer_api get_framebuffer;
 	display_set_brightness_api set_brightness;
 	display_set_contrast_api set_contrast;
@@ -241,7 +355,7 @@ __subsystem struct display_driver_api {
  * @param desc Pointer to a structure describing the buffer layout
  * @param buf Pointer to buffer array
  *
- * @retval 0 on success else negative errno code.
+ * @return 0 on success else negative errno code.
  */
 static inline int display_write(const struct device *dev, const uint16_t x,
 				const uint16_t y,
@@ -263,7 +377,7 @@ static inline int display_write(const struct device *dev, const uint16_t x,
  * @param desc Pointer to a structure describing the buffer layout
  * @param buf Pointer to buffer array
  *
- * @retval 0 on success else negative errno code.
+ * @return 0 on success else negative errno code.
  * @retval -ENOSYS if not implemented.
  */
 static inline int display_read(const struct device *dev, const uint16_t x,
@@ -282,11 +396,31 @@ static inline int display_read(const struct device *dev, const uint16_t x,
 }
 
 /**
+ * @brief Clear the screen of the display device
+ *
+ * @param dev Pointer to device structure
+ *
+ * @return 0 on success else negative errno code.
+ * @retval -ENOSYS if not implemented.
+ */
+static inline int display_clear(const struct device *dev)
+{
+	struct display_driver_api *api =
+		(struct display_driver_api *)dev->api;
+
+	if (api->clear == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->clear(dev);
+}
+
+/**
  * @brief Get pointer to framebuffer for direct access
  *
  * @param dev Pointer to device structure
  *
- * @retval Pointer to frame buffer or NULL if direct framebuffer access
+ * @return Pointer to frame buffer or NULL if direct framebuffer access
  * is not supported
  *
  */
@@ -318,7 +452,7 @@ static inline void *display_get_framebuffer(const struct device *dev)
  *
  * @param dev Pointer to device structure
  *
- * @retval 0 on success else negative errno code.
+ * @return 0 on success else negative errno code.
  * @retval -ENOSYS if not implemented.
  */
 static inline int display_blanking_on(const struct device *dev)
@@ -342,7 +476,7 @@ static inline int display_blanking_on(const struct device *dev)
  *
  * @param dev Pointer to device structure
  *
- * @retval 0 on success else negative errno code.
+ * @return 0 on success else negative errno code.
  * @retval -ENOSYS if not implemented.
  */
 static inline int display_blanking_off(const struct device *dev)
@@ -366,7 +500,7 @@ static inline int display_blanking_off(const struct device *dev)
  * @param dev Pointer to device structure
  * @param brightness Brightness in steps of 1/256
  *
- * @retval 0 on success else negative errno code.
+ * @return 0 on success else negative errno code.
  * @retval -ENOSYS if not implemented.
  */
 static inline int display_set_brightness(const struct device *dev,
@@ -391,7 +525,7 @@ static inline int display_set_brightness(const struct device *dev,
  * @param dev Pointer to device structure
  * @param contrast Contrast in steps of 1/256
  *
- * @retval 0 on success else negative errno code.
+ * @return 0 on success else negative errno code.
  * @retval -ENOSYS if not implemented.
  */
 static inline int display_set_contrast(const struct device *dev, uint8_t contrast)
@@ -428,7 +562,7 @@ static inline void display_get_capabilities(const struct device *dev,
  * @param dev Pointer to device structure
  * @param pixel_format Pixel format to be used by display
  *
- * @retval 0 on success else negative errno code.
+ * @return 0 on success else negative errno code.
  * @retval -ENOSYS if not implemented.
  */
 static inline int
@@ -451,7 +585,7 @@ display_set_pixel_format(const struct device *dev,
  * @param dev Pointer to device structure
  * @param orientation Orientation to be used by display
  *
- * @retval 0 on success else negative errno code.
+ * @return 0 on success else negative errno code.
  * @retval -ENOSYS if not implemented.
  */
 static inline int display_set_orientation(const struct device *dev,

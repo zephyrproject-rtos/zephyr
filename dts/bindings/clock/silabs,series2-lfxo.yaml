@@ -1,7 +1,9 @@
 compatible: "silabs,series2-lfxo"
 
+title: Silicon Labs Series 2 LFXO (Low-Frequency Crystal Oscillator)
+
 description: |
-  Silicon Labs LFXO peripheral (low-frequency crystal oscillator).
+  Low-Frequency Crystal Oscillator peripheral.
 
 include: fixed-clock.yaml
 
@@ -10,6 +12,13 @@ properties:
     type: int
     required: true
     description: Load capacitance configuration
+  gain:
+    type: int
+    description: |
+      Gain setting for load capacitance matching. The default value is 1, matching the hardware
+      reset value.
+    default: 1
+    enum: [0, 1, 2, 3]
   precision:
     type: int
     required: true

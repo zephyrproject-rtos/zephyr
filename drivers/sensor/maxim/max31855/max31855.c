@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Christian Hirsch
+ * Copyright (c) 2025 Petr Vilím
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,7 +73,7 @@ static int max31855_channel_get(const struct device *dev, enum sensor_channel ch
 		temp = (temp >> THERMOCOUPLE_TEMPERATURE_POS) & 0x3fff;
 
 		/* if sign bit is set, make value negative */
-		if (temp & BIT(14)) {
+		if (temp & BIT(13)) {
 			temp |= THERMOCOUPLE_SIGN_BITS;
 		}
 
@@ -86,7 +87,7 @@ static int max31855_channel_get(const struct device *dev, enum sensor_channel ch
 		temp = (temp >> INTERNAL_TEMPERATURE_POS) & 0xfff;
 
 		/* if sign bit is set, make value negative */
-		if (temp & BIT(12)) {
+		if (temp & BIT(11)) {
 			temp |= INTERNAL_SIGN_BITS;
 		}
 
@@ -123,7 +124,7 @@ static int max31855_init(const struct device *dev)
 #define MAX31855_INIT(n)                                                                           \
 	static struct max31855_data max31855_data_##n;                                             \
 	static const struct max31855_config max31855_config_##n = {                                \
-		.spi = SPI_DT_SPEC_INST_GET(n, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U), 0U),         \
+		.spi = SPI_DT_SPEC_INST_GET(n, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U)),             \
 	};                                                                                         \
 	SENSOR_DEVICE_DT_INST_DEFINE(n, &max31855_init, NULL, &max31855_data_##n,                  \
 				     &max31855_config_##n, POST_KERNEL,                            \

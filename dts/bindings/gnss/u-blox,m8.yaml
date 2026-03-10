@@ -7,11 +7,4 @@ compatible: "u-blox,m8"
 
 include:
   - uart-device.yaml
-
-properties:
-  uart-baudrate:
-    type: int
-    description: |
-      Baudrate for communication on the UART port.
-    default: 115200
-    enum: [4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600]
+  - u-blox,common.yaml

@@ -23,8 +23,10 @@
 			compatible = "sifive,s7", "riscv";
 			device_type = "cpu";
 			reg = <0>;
-			riscv,isa = "rv64imac_zicsr_zifencei";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
 			status = "okay";
+
 			cpu0_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				interrupt-controller;
@@ -35,21 +37,11 @@
 		U74_1: cpu@1 {
 			compatible = "sifive,u74", "riscv";
 			device_type = "cpu";
-			d-cache-block-size = <64>;
-			d-cache-sets = <64>;
-			d-cache-size = <32768>;
-			d-tlb-sets = <1>;
-			d-tlb-size = <40>;
-			i-cache-block-size = <64>;
-			i-cache-sets = <64>;
-			i-cache-size = <32768>;
-			i-tlb-sets = <1>;
-			i-tlb-size = <40>;
 			mmu-type = "riscv,sv39";
-			next-level-cache = <&ccache>;
 			reg = <0x1>;
-			riscv,isa = "rv64imafdcg";
-			tlb-spilt;
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
+
 			cpu1_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#interrupt-cells = <1>;
@@ -60,21 +52,11 @@
 		U74_2: cpu@2 {
 			compatible = "sifive,u74", "riscv";
 			device_type = "cpu";
-			d-cache-block-size = <64>;
-			d-cache-sets = <64>;
-			d-cache-size = <32768>;
-			d-tlb-sets = <1>;
-			d-tlb-size = <40>;
-			i-cache-block-size = <64>;
-			i-cache-sets = <64>;
-			i-cache-size = <32768>;
-			i-tlb-sets = <1>;
-			i-tlb-size = <40>;
 			mmu-type = "riscv,sv39";
-			next-level-cache = <&ccache>;
 			reg = <0x2>;
-			riscv,isa = "rv64imafdcg";
-			tlb-split;
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
+
 			cpu2_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#interrupt-cells = <1>;
@@ -85,21 +67,11 @@
 		U74_3: cpu@3 {
 			compatible = "sifive,u74", "riscv";
 			device_type = "cpu";
-			d-cache-block-size = <64>;
-			d-cache-sets = <64>;
-			d-cache-size = <32768>;
-			d-tlb-sets = <1>;
-			d-tlb-size = <40>;
-			i-cache-block-size = <64>;
-			i-cache-sets = <64>;
-			i-cache-size = <32768>;
-			i-tlb-sets = <1>;
-			i-tlb-size = <40>;
 			mmu-type = "riscv,sv39";
-			next-level-cache = <&ccache>;
 			reg = <0x3>;
-			riscv,isa = "rv64imafdcg";
-			tlb-split;
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
+
 			cpu3_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#interrupt-cells = <1>;
@@ -110,21 +82,11 @@
 		U74_4: cpu@4 {
 			compatible = "sifive,u74", "riscv";
 			device_type = "cpu";
-			d-cache-block-size = <64>;
-			d-cache-sets = <64>;
-			d-cache-size = <32768>;
-			d-tlb-sets = <1>;
-			d-tlb-size = <40>;
-			i-cache-block-size = <64>;
-			i-cache-sets = <64>;
-			i-cache-size = <32768>;
-			i-tlb-sets = <1>;
-			i-tlb-size = <40>;
 			mmu-type = "riscv,sv39";
-			next-level-cache = <&ccache>;
 			reg = <0x4>;
-			riscv,isa = "rv64imafdcg";
-			tlb-split;
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
+
 			cpu4_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#interrupt-cells = <1>;
@@ -148,20 +110,20 @@
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
 			interrupts-extended = <&cpu0_intc 3 &cpu0_intc 7
-						&cpu1_intc 3 &cpu1_intc 7
-						&cpu2_intc 3 &cpu2_intc 7
-						&cpu3_intc 3 &cpu3_intc 7
-						&cpu4_intc 3 &cpu4_intc 7>;
+					       &cpu1_intc 3 &cpu1_intc 7
+					       &cpu2_intc 3 &cpu2_intc 7
+					       &cpu3_intc 3 &cpu3_intc 7
+					       &cpu4_intc 3 &cpu4_intc 7>;
 			reg = <0x0 0x2000000 0x0 0x10000>;
 		};
 
 		mtimer: timer@200bff8 {
 			compatible = "riscv,machine-timer";
 			interrupts-extended = <&cpu0_intc 7
-						&cpu1_intc 7
-						&cpu2_intc 7
-						&cpu3_intc 7
-						&cpu4_intc 7>;
+					       &cpu1_intc 7
+					       &cpu2_intc 7
+					       &cpu3_intc 7
+					       &cpu4_intc 7>;
 			reg = <0x0 0x200bff8 0x0 0x8 0x0 0x2004000 0x0 0x8>;
 			reg-names = "mtime", "mtimecmp";
 		};
@@ -184,10 +146,10 @@
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&cpu0_intc 11>,
-						<&cpu1_intc 11>, <&cpu1_intc 9>,
-						<&cpu2_intc 11>, <&cpu2_intc 9>,
-						<&cpu3_intc 11>, <&cpu3_intc 9>,
-						<&cpu4_intc 11>, <&cpu4_intc 9>;
+					      <&cpu1_intc 11>, <&cpu1_intc 9>,
+					      <&cpu2_intc 11>, <&cpu2_intc 9>,
+					      <&cpu3_intc 11>, <&cpu3_intc 9>,
+					      <&cpu4_intc 11>, <&cpu4_intc 9>;
 			reg = <0x0 0x0c000000 0x0 0x04000000>;
 			riscv,max-priority = <7>;
 			riscv,ndev = <52>;

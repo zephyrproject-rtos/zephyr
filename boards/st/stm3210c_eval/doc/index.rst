@@ -19,10 +19,12 @@ Hardware
 
 STM3210C-EVAL provides the following hardware components:
 
-- Three 5 V power supply options:
-    - Power jack
-    - USB connector
-    - daughterboard
+- Three 5 V power supply options
+
+  - Power jack
+  - USB connector
+  - Daughterboard
+
 - Boot from user Flash, system memory or SRAM.
 - I2S audio DAC, stereo audio jack.
 - 2 GByte (or more) microSD CardTM.
@@ -44,37 +46,14 @@ STM3210C-EVAL provides the following hardware components:
 - Extension connector for daughterboard or wrapping board.
 
 More information about STM32F107VCT can be found here:
-       - `STM32F107VCT reference manual`_
+
+- `STM32F107VCT reference manual`_
 
 
 Supported Features
 ==================
 
-The Zephyr stm3210c_eval board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported in this Zephyr port.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm3210c_eval/stm3210c_eval_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -99,6 +78,8 @@ Default Zephyr Peripheral Mapping:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========

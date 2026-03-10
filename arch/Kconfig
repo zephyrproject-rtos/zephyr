@@ -8,7 +8,7 @@
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
 
-source "$(ARCH_DIR)/Kconfig.$(HWM_SCHEME)"
+source "$(KCONFIG_BINARY_DIR)/arch/Kconfig"
 
 # ToDo: Generate a Kconfig.arch for loading of additional arch in HWMv2.
 osource "$(KCONFIG_BINARY_DIR)/Kconfig.arch"
@@ -33,6 +33,7 @@ config ARM
 	select ARCH_IS_SET
 	select ARCH_SUPPORTS_COREDUMP if CPU_CORTEX_M
 	select ARCH_SUPPORTS_COREDUMP_THREADS if CPU_CORTEX_M
+	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if CPU_CORTEX_M
 	# FIXME: current state of the code for all ARM requires this, but
 	# is really only necessary for Cortex-M with ARM MPU!
 	select GEN_PRIV_STACKS
@@ -56,6 +57,7 @@ config ARM64
 	select ARCH_HAS_DEMAND_MAPPING
 	select ARCH_SUPPORTS_EVICTION_TRACKING
 	select EVICTION_TRACKING if DEMAND_PAGING
+	select MEM_DOMAIN_HAS_THREAD_LIST if ARM_MPU
 	help
 	  ARM64 (AArch64) architecture
 
@@ -103,20 +105,15 @@ config X86
 	help
 	  x86 architecture
 
-config NIOS2
-	bool
-	select ARCH_IS_SET
-	select ATOMIC_OPERATIONS_C
-	imply XIP
-	select ARCH_HAS_TIMING_FUNCTIONS
-	help
-	  Nios II Gen 2 architecture
-
 config RISCV
 	bool
 	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_C if !RISCV_ISA_EXT_A
+	select ATOMIC_OPERATIONS_BUILTIN if RISCV_ISA_EXT_A
 	select ARCH_SUPPORTS_COREDUMP
 	select ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
+	select ARCH_SUPPORTS_COREDUMP_THREADS if !SMP
+	select ARCH_SUPPORTS_COREDUMP_STACK_PTR
 	select ARCH_SUPPORTS_ROM_START if !SOC_FAMILY_ESPRESSIF_ESP32
 	select ARCH_SUPPORTS_EMPTY_IRQ_SPURIOUS
 	select ARCH_HAS_CODE_DATA_RELOCATION
@@ -125,8 +122,9 @@ config RISCV
 	select USE_SWITCH
 	select SCHED_IPI_SUPPORTED if SMP
 	select ARCH_HAS_DIRECTED_IPIS
-	select BARRIER_OPERATIONS_BUILTIN
+	select BARRIER_OPERATIONS_BUILTIN if RISCV_ISA_BASE_FENCE
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
+	depends on DT_HAS_RISCV_ENABLED
 	help
 	  RISCV architecture
 
@@ -141,6 +139,9 @@ config XTENSA
 	select ARCH_HAS_DIRECTED_IPIS
 	select THREAD_STACK_INFO
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
+	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if !SMP
+	select ARCH_HAS_USERSPACE if XTENSA_MMU || XTENSA_MPU
+	imply ARCH_HAS_RESERVED_PAGE_FRAMES if XTENSA_MMU
 	help
 	  Xtensa architecture
 
@@ -157,14 +158,17 @@ config ARCH_POSIX
 	select BARRIER_OPERATIONS_BUILTIN
 	# POSIX arch based targets get their memory cleared on entry by the host OS
 	select SKIP_BSS_CLEAR
-	# Override the C standard used for compilation to C 2011
-	# This is due to some tests using _Static_assert which is a 2011 feature, but
-	# otherwise relying on compilers supporting it also when set to C99.
-	# This was in general ok, but with some host compilers and C library versions
-	# it led to problems. So we override it to 2011 for the native targets.
-	select REQUIRES_STD_C11
 	help
 	  POSIX (native) architecture
+
+config RX
+	bool
+	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_C
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  Renesas RX architecture
 
 config ARCH_IS_SET
 	bool
@@ -227,7 +231,17 @@ config SRAM_BASE_ADDRESS
 	  /chosen/zephyr,sram in devicetree. The user should generally avoid
 	  changing it via menuconfig or in configuration files.
 
-if ARC || ARM || ARM64 || NIOS2 || X86 || RISCV
+config XIP
+	bool "Execute in place"
+	help
+	  This option allows zephyr to operate with its text and read-only
+	  sections residing in ROM (or similar read-only memory). Not all boards
+	  support this option so it must be used with care; you must also
+	  supply a linker command file when building your image. Enabling this
+	  option increases both the code and data footprint of the image.
+
+
+if ARC || ARM || ARM64 || X86 || RISCV || RX || ARCH_POSIX
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -250,7 +264,7 @@ config FLASH_BASE_ADDRESS
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARM64 || ARC || NIOS2 || X86 || RISCV
+endif # ARM || ARM64 || ARC || X86 || RISCV || RX || ARCH_POSIX
 
 if ARCH_HAS_TRUSTED_EXECUTION
 
@@ -313,11 +327,21 @@ config USERSPACE
 	  privileged mode or handling a system call; to ensure these are always
 	  caught, enable CONFIG_HW_STACK_PROTECTION.
 
+config NOINIT_SNIPPET_FIRST
+	bool "Place the no-init linker script snippet first"
+	help
+	  By default the include/zephyr/linker/common-noinit.ld file inserts the
+	  snippets-noinit.ld file at the end of the section.  There are times when
+	  the directives in the snippets-noinit.ld file apply to the other directives
+	  in this file.  And in that case the include statement for the snippets-noinit.ld
+	  file needs to come at the start of the section.  This configuration option
+	  allows that to happen.
+
 config PRIVILEGED_STACK_SIZE
 	int "Size of privileged stack"
 	default 2048 if EMUL
 	default 1024
-	depends on ARCH_HAS_USERSPACE
+	depends on USERSPACE
 	help
 	  This option sets the privileged stack region size that will be used
 	  in addition to the user mode thread stack.  During normal execution,
@@ -327,18 +351,19 @@ config PRIVILEGED_STACK_SIZE
 
 config KOBJECT_TEXT_AREA
 	int "Size of kobject text area"
+	default 1024 if UBSAN
 	default 512 if COVERAGE_GCOV
 	default 512 if NO_OPTIMIZATIONS
 	default 512 if STACK_CANARIES && RISCV
 	default 256
-	depends on ARCH_HAS_USERSPACE
+	depends on USERSPACE
 	help
 	  Size of kernel object text area. Used in linker script.
 
 config KOBJECT_DATA_AREA_RESERVE_EXTRA_PERCENT
 	int "Reserve extra kobject data area (in percentage)"
 	default 100
-	depends on ARCH_HAS_USERSPACE
+	depends on USERSPACE
 	help
 	  Multiplication factor used to calculate the size of placeholder to
 	  reserve space for kobject metadata hash table. The hash table is
@@ -352,7 +377,7 @@ config KOBJECT_DATA_AREA_RESERVE_EXTRA_PERCENT
 config KOBJECT_RODATA_AREA_EXTRA_BYTES
 	int "Reserve extra bytes for kobject rodata area"
 	default 16
-	depends on ARCH_HAS_USERSPACE
+	depends on USERSPACE
 	help
 	  Reserve a few more bytes for the RODATA region for kobject metadata.
 	  This is to account for the uncertainty of tables generated by gperf.
@@ -438,19 +463,26 @@ config ARCH_STACKWALK_MAX_FRAMES
 
 menu "Interrupt Configuration"
 
+config TOOLCHAIN_SUPPORTS_ISR_TABLES_LOCAL_DECLARATION
+	bool
+	help
+	  Hidden option to signal that toolchain supports local declaration of
+	  interrupt tables.
+
 config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
 	bool
 	default y
 	# Userspace is currently not supported
 	depends on !USERSPACE
 	# List of currently supported architectures
-	depends on ARM || ARM64
+	depends on ARM || ARM64 || RISCV
 	# List of currently supported toolchains
-	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "gnuarmemb"
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "gnuarmemb" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm" || TOOLCHAIN_SUPPORTS_ISR_TABLES_LOCAL_DECLARATION
 
 config ISR_TABLES_LOCAL_DECLARATION
 	bool "ISR tables created locally and placed by linker"
 	depends on ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+	depends on GEN_IRQ_VECTOR_TABLE
 	help
 	  Enable new scheme of interrupt tables generation.
 	  This is totally different generator that would create tables entries locally
@@ -462,6 +494,7 @@ config ISR_TABLES_LOCAL_DECLARATION
 
 config DYNAMIC_INTERRUPTS
 	bool "Installation of IRQs at runtime"
+	select SRAM_SW_ISR_TABLE
 	help
 	  Enable installation of interrupts at runtime, which will move some
 	  interrupt-related data structures to RAM instead of ROM, and
@@ -512,6 +545,12 @@ config ARCH_IRQ_VECTOR_TABLE_ALIGN
 	  _irq_vector_table.  Some architecture needs an IRQ vector table
 	  to be aligned to architecture specific size.  The default
 	  size is 0 for no alignment.
+
+config ARCH_DEVICE_STATE_ALIGN
+	int "Alignment size of device state"
+	default 4
+	help
+	  This option controls alignment size of device state.
 
 choice IRQ_VECTOR_TABLE_TYPE
 	prompt "IRQ vector table type"
@@ -572,6 +611,21 @@ config IRQ_OFFLOAD
 	  Enable irq_offload() API which allows functions to be synchronously
 	  run in interrupt context. Only useful for test cases that need
 	  to validate the correctness of kernel objects in IRQ context.
+
+config SRAM_VECTOR_TABLE
+	bool "Place the vector table in SRAM instead of flash"
+	depends on ARCH_HAS_VECTOR_TABLE_RELOCATION
+	depends on XIP
+	depends on !ROMSTART_RELOCATION_ROM
+	help
+	  When XiP is enabled, this option will result in the vector table being
+	  relocated from Flash to SRAM.
+
+config SRAM_SW_ISR_TABLE
+	bool "Place the software ISR table in SRAM instead of flash"
+	help
+	  The option specifies that the software interrupts vector table will be
+	  placed inside SRAM instead of the flash.
 
 config IRQ_OFFLOAD_NESTED
 	bool "irq_offload() supports nested IRQs"
@@ -671,6 +725,9 @@ config ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 config ARCH_HAS_RAMFUNC_SUPPORT
 	bool
 
+config ARCH_HAS_VECTOR_TABLE_RELOCATION
+	bool
+
 config ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	bool
 
@@ -681,6 +738,9 @@ config ARCH_SUPPORTS_COREDUMP_THREADS
 	bool
 
 config ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
+	bool
+
+config ARCH_SUPPORTS_COREDUMP_STACK_PTR
 	bool
 
 config ARCH_SUPPORTS_ARCH_HW_INIT
@@ -704,13 +764,6 @@ config ARCH_HAS_EXTRA_EXCEPTION_INFO
 config ARCH_HAS_GDBSTUB
 	bool
 
-config ARCH_HAS_COHERENCE
-	bool
-	help
-	  When selected, the architecture supports the
-	  arch_mem_coherent() API and can link into incoherent/cached
-	  memory using the ".cached" linker section.
-
 config ARCH_HAS_THREAD_LOCAL_STORAGE
 	bool
 
@@ -731,6 +784,9 @@ config ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET
 	bool
 	help
 	  Select when the architecture implements arch_thread_priv_stack_space_get().
+
+config ARCH_HAS_HW_SHADOW_STACK
+	bool
 
 #
 # Other architecture related options
@@ -1026,10 +1082,22 @@ config ICACHE
 	help
 	  This option enables the support for the instruction cache (i-cache).
 
+config CACHE_HAS_MIRRORED_MEMORY_REGIONS
+	bool "Mirrored memory region(s) for both cached and uncached access"
+	depends on CPU_CACHE_INCOHERENT
+	help
+	  Enable this if hardware has mirrored memory regions at different
+	  addressed when accessing one would go through cache, but accessing
+	  the other would go to memory directly. A pointer can be cheaply
+	  converted to cached or uncached access.
+
+	  This applies to intra-CPU multiprocessing incoherence and makes only
+	  sense when MP_MAX_NUM_CPUS > 1.
+
 config CACHE_DOUBLEMAP
 	bool "Cache double-mapping support"
-	depends on CPU_CACHE_INCOHERENT
-	default y
+	select CACHE_HAS_MIRRORED_MEMORY_REGIONS
+	select DEPRECATED
 	help
 	  Double-mapping behavior where a pointer can be cheaply converted to
 	  point to the same cached/uncached memory at different locations.
@@ -1044,9 +1112,12 @@ config CACHE_MANAGEMENT
 	  This option enables the cache management functions backed by arch or
 	  driver code.
 
+if CACHE_MANAGEMENT
+
+if DCACHE
+
 config DCACHE_LINE_SIZE_DETECT
 	bool "Detect d-cache line size at runtime"
-	depends on CACHE_MANAGEMENT && DCACHE
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the d-cache line size at the expense of taking more memory and
@@ -1058,18 +1129,21 @@ config DCACHE_LINE_SIZE_DETECT
 
 config DCACHE_LINE_SIZE
 	int "d-cache line size"
-	depends on CACHE_MANAGEMENT && DCACHE && !DCACHE_LINE_SIZE_DETECT
+	depends on !DCACHE_LINE_SIZE_DETECT
+	default $(dt_node_int_prop_int,/cpus/cpu@0,d-cache-line-size) \
+		  if $(dt_node_has_prop,/cpus/cpu@0,d-cache-line-size)
 	default 0
 	help
-	  Size in bytes of a CPU d-cache line. If this is set to 0 the value is
-	  obtained from the 'd-cache-line-size' DT property instead if present.
-
+	  Size in bytes of a CPU d-cache line.
 
 	  Detect automatically at runtime by selecting DCACHE_LINE_SIZE_DETECT.
 
+endif # DCACHE
+
+if ICACHE
+
 config ICACHE_LINE_SIZE_DETECT
 	bool "Detect i-cache line size at runtime"
-	depends on CACHE_MANAGEMENT && ICACHE
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the i-cache line size at the expense of taking more memory and
@@ -1081,17 +1155,19 @@ config ICACHE_LINE_SIZE_DETECT
 
 config ICACHE_LINE_SIZE
 	int "i-cache line size"
-	depends on CACHE_MANAGEMENT && ICACHE && !ICACHE_LINE_SIZE_DETECT
+	depends on !ICACHE_LINE_SIZE_DETECT
+	default $(dt_node_int_prop_int,/cpus/cpu@0,i-cache-line-size) \
+		  if $(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
 	default 0
 	help
-	  Size in bytes of a CPU i-cache line. If this is set to 0 the value is
-	  obtained from the 'i-cache-line-size' DT property instead if present.
+	  Size in bytes of a CPU i-cache line.
 
 	  Detect automatically at runtime by selecting ICACHE_LINE_SIZE_DETECT.
 
+endif # ICACHE
+
 choice CACHE_TYPE
 	prompt "Cache type"
-	depends on CACHE_MANAGEMENT
 	default ARCH_CACHE
 
 config ARCH_CACHE
@@ -1099,12 +1175,30 @@ config ARCH_CACHE
 	help
 	  Integrated on-core cache controller
 
+config SOC_CACHE
+	bool "SoC specific cache controller"
+	depends on SOC_HAS_CACHE_FUNCTIONS
+	help
+	  SoC specific cache controller.
+
+	  This requires soc_cache.h file to exist in search path.
+
 config EXTERNAL_CACHE
 	bool "External cache controller"
 	help
 	  External cache controller
 
 endchoice
+
+config CACHE_CAN_SAY_MEM_COHERENCE
+	bool
+	help
+	  sys_cache_is_mem_coherent() is defined when enabled. This function can be
+	  used to determine if a pointer lies inside "coherence regions" and can be
+	  safely used in multiprocessor code without explicit flush or invalidate
+	  operations.
+
+endif # CACHE_MANAGEMENT
 
 endmenu
 
@@ -1134,9 +1228,9 @@ config ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
 config ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	bool
 	help
-	  It's possible that an architecture port cannot use _Swap() to swap to
-	  the _main() thread, but instead must do something custom. It must
-	  enable this option in that case.
+	  It's possible that an architecture port cannot use z_swap_unlocked()
+	  to swap to the main thread (bg_thread_main), but instead must do
+	  something custom. It must enable this option in that case.
 
 config ARCH_HAS_CUSTOM_BUSY_WAIT
 	bool
@@ -1150,3 +1244,9 @@ config ARCH_HAS_CUSTOM_CURRENT_IMPL
 	help
 	  Select when architecture implements arch_current_thread() &
 	  arch_current_thread_set().
+
+config ARCH_IPI_LAZY_COPROCESSORS_SAVE
+	bool
+	help
+	  Select when the architecture has multi-CPU lazy context switching
+	  of coprocessor registers.

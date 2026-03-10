@@ -16,9 +16,9 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/dt-bindings/regulator/nrf5x.h>
-#include <soc/nrfx_coredep.h>
+#include <lib/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
-#include <nrf_erratas.h>
+#include <nrfx.h>
 #include <hal/nrf_power.h>
 #include <hal/nrf_ipc.h>
 #include <helpers/nrfx_gppi.h>
@@ -38,6 +38,8 @@
 
 #include <cmsis_core.h>
 
+#include "nrf53_cpunet_mgmt.h"
+
 #define PIN_XL1 0
 #define PIN_XL2 1
 
@@ -51,23 +53,23 @@
 #define LFXO_NODE DT_NODELABEL(lfxo)
 #define HFXO_NODE DT_NODELABEL(hfxo)
 
-/* LFXO config from DT */
+/* LFXO config from DT - if the LFXO node has a status of okay, we can assign
+ * P0.00 and P0.01 to the peripheral and use the load_capacitors property set
+ * (or default to external if not present). If the LFXO node does not have a
+ * status of okay, assign the pins for use by the app core.
+ */
+#if DT_NODE_HAS_STATUS_OKAY(LFXO_NODE)
+#define LFXO_PIN_SEL NRF_GPIO_PIN_SEL_PERIPHERAL
+#if DT_NODE_HAS_PROP(LFXO_NODE, load_capacitors)
 #if DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, external)
 #define LFXO_CAP NRF_OSCILLATORS_LFXO_CAP_EXTERNAL
 #elif DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, internal)
 #define LFXO_CAP (DT_ENUM_IDX(LFXO_NODE, load_capacitance_picofarad) + 1U)
-#else
-/* LFXO config from legacy Kconfig */
-#if defined(CONFIG_SOC_LFXO_CAP_INT_6PF)
-#define LFXO_CAP NRF_OSCILLATORS_LFXO_CAP_6PF
-#elif defined(CONFIG_SOC_LFXO_CAP_INT_7PF)
-#define LFXO_CAP NRF_OSCILLATORS_LFXO_CAP_7PF
-#elif defined(CONFIG_SOC_LFXO_CAP_INT_9PF)
-#define LFXO_CAP NRF_OSCILLATORS_LFXO_CAP_9PF
+#endif /*DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, external) */
 #else
 #define LFXO_CAP NRF_OSCILLATORS_LFXO_CAP_EXTERNAL
-#endif
-#endif
+#endif /* DT_NODE_HAS_PROP(LFXO_NODE, load_capacitors) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(LFXO_NODE) */
 
 /* HFXO config from DT */
 #if DT_ENUM_HAS_VALUE(HFXO_NODE, load_capacitors, internal)
@@ -388,8 +390,8 @@ bool z_arm_on_enter_cpu_idle(void)
 /* RTC pretick - application core part. */
 static int rtc_pretick_cpuapp_init(void)
 {
-	uint8_t ch;
-	nrfx_err_t err;
+	nrfx_gppi_handle_t handle;
+	int err;
 	nrf_ipc_event_t ipc_event =
 		nrf_ipc_receive_event_get(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET);
 	nrf_ipc_task_t ipc_task =
@@ -397,19 +399,20 @@ static int rtc_pretick_cpuapp_init(void)
 	uint32_t task_ipc = nrf_ipc_task_address_get(NRF_IPC, ipc_task);
 	uint32_t evt_ipc = nrf_ipc_event_address_get(NRF_IPC, ipc_event);
 
-	err = nrfx_gppi_channel_alloc(&ch);
-	if (err != NRFX_SUCCESS) {
-		return -ENOMEM;
-	}
+	nrf_ipc_publish_clear(NRF_IPC, ipc_event);
+	nrf_ipc_subscribe_clear(NRF_IPC, ipc_task);
 
 	nrf_ipc_receive_config_set(NRF_IPC, CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET,
 				   BIT(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET));
 	nrf_ipc_send_config_set(NRF_IPC, CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET,
 				   BIT(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET));
 
-	nrfx_gppi_task_endpoint_setup(ch, task_ipc);
-	nrfx_gppi_event_endpoint_setup(ch, evt_ipc);
-	nrfx_gppi_channels_enable(BIT(ch));
+	err = nrfx_gppi_conn_alloc(evt_ipc, task_ipc, &handle);
+	if (err < 0) {
+		return err;
+	}
+
+	nrfx_gppi_conn_enable(handle);
 
 	return 0;
 }
@@ -427,7 +430,7 @@ void rtc_pretick_rtc1_isr_hook(void)
 
 static int rtc_pretick_cpunet_init(void)
 {
-	uint8_t ppi_ch;
+	nrfx_gppi_handle_t ppi_handle;
 	nrf_ipc_task_t ipc_task =
 		nrf_ipc_send_task_get(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET);
 	nrf_ipc_event_t ipc_event =
@@ -437,6 +440,7 @@ static int rtc_pretick_cpunet_init(void)
 	uint32_t task_wdt = nrf_wdt_task_address_get(NRF_WDT, NRF_WDT_TASK_START);
 	uint32_t evt_cc = nrf_rtc_event_address_get(NRF_RTC1,
 				NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN));
+	int err;
 
 	/* Configure Watchdog to allow stopping. */
 	nrf_wdt_behaviour_set(NRF_WDT, WDT_CONFIG_STOPEN_Msk | BIT(4));
@@ -449,17 +453,16 @@ static int rtc_pretick_cpunet_init(void)
 				   BIT(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET));
 
 	/* Allocate PPI channel for RTC Compare event publishers that starts WDT. */
-	nrfx_err_t err = nrfx_gppi_channel_alloc(&ppi_ch);
-
-	if (err != NRFX_SUCCESS) {
-		return -ENOMEM;
+	err = nrfx_gppi_domain_conn_alloc(0, 0, &ppi_handle);
+	if (err < 0) {
+		return err;
 	}
 
-	nrfx_gppi_event_endpoint_setup(ppi_ch, evt_cc);
-	nrfx_gppi_task_endpoint_setup(ppi_ch, task_ipc);
-	nrfx_gppi_event_endpoint_setup(ppi_ch, evt_ipc);
-	nrfx_gppi_task_endpoint_setup(ppi_ch, task_wdt);
-	nrfx_gppi_channels_enable(BIT(ppi_ch));
+	nrfx_gppi_ep_attach(evt_cc, ppi_handle);
+	nrfx_gppi_ep_attach(task_ipc, ppi_handle);
+	nrfx_gppi_ep_attach(evt_ipc, ppi_handle);
+	nrfx_gppi_ep_attach(task_wdt, ppi_handle);
+	nrfx_gppi_conn_enable(ppi_handle);
 
 	nrf_rtc_event_enable(NRF_RTC1, NRF_RTC_CHANNEL_INT_MASK(RTC1_PRETICK_CC_CHAN));
 	nrf_rtc_event_clear(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN));
@@ -478,8 +481,7 @@ static int rtc_pretick_init(void)
 }
 #endif /* CONFIG_SOC_NRF53_RTC_PRETICK */
 
-
-static int nordicsemi_nrf53_init(void)
+void soc_early_init_hook(void)
 {
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) && defined(CONFIG_NRF_ENABLE_CACHE)
 #if !defined(CONFIG_BUILD_WITH_TFM)
@@ -495,17 +497,17 @@ static int nordicsemi_nrf53_init(void)
 #endif
 
 #ifdef CONFIG_SOC_NRF5340_CPUAPP
-#if defined(LFXO_CAP)
+#if DT_NODE_HAS_STATUS_OKAY(LFXO_NODE)
 	nrf_oscillators_lfxo_cap_set(NRF_OSCILLATORS, LFXO_CAP);
 #if !defined(CONFIG_BUILD_WITH_TFM)
 	/* This can only be done from secure code.
 	 * This is handled by the TF-M platform so we skip it when TF-M is
 	 * enabled.
 	 */
-	nrf_gpio_pin_control_select(PIN_XL1, NRF_GPIO_PIN_SEL_PERIPHERAL);
-	nrf_gpio_pin_control_select(PIN_XL2, NRF_GPIO_PIN_SEL_PERIPHERAL);
+	nrf_gpio_pin_control_select(PIN_XL1, LFXO_PIN_SEL);
+	nrf_gpio_pin_control_select(PIN_XL2, LFXO_PIN_SEL);
 #endif /* !defined(CONFIG_BUILD_WITH_TFM) */
-#endif /* defined(LFXO_CAP) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(LFXO_NODE) */
 #if defined(HFXO_CAP_VAL_X2)
 	/* This register is only accessible from secure code. */
 	uint32_t xosc32mtrim = soc_secure_read_xosc32mtrim();
@@ -553,16 +555,29 @@ static int nordicsemi_nrf53_init(void)
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_HIGH, true);
 #endif
 
-	return 0;
+#if defined(CONFIG_SOC_NRF53_CPUNET_MGMT)
+	int err = nrf53_cpunet_mgmt_init();
+
+	__ASSERT_NO_MSG(err == 0);
+	(void)err;
+#endif
+}
+
+void soc_late_init_hook(void)
+{
+#ifdef CONFIG_SOC_NRF53_RTC_PRETICK
+	int err = rtc_pretick_init();
+
+	__ASSERT_NO_MSG(err == 0);
+	(void)err;
+#endif
+
+#ifdef CONFIG_SOC_NRF53_CPUNET_ENABLE
+	nrf53_cpunet_init();
+#endif
 }
 
 void arch_busy_wait(uint32_t time_us)
 {
 	nrfx_coredep_delay_us(time_us);
 }
-
-SYS_INIT(nordicsemi_nrf53_init, PRE_KERNEL_1, 0);
-
-#ifdef CONFIG_SOC_NRF53_RTC_PRETICK
-SYS_INIT(rtc_pretick_init, POST_KERNEL, 0);
-#endif

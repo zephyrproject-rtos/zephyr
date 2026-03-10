@@ -1,9 +1,11 @@
 # Copyright (c) 2024 sensry.io
 # SPDX-License-Identifier: Apache-2.0
 
+title: Sensry SY1xx Pin Controller
+
 description: |
-  The sensry SY1xx pin controller is a single node responsible for controlling
-  pin configuration, such as pull-up, pull-down, tri-state, ...
+  Singleton node responsible for controlling pin configuration, such as pull-up,
+  pull-down, tri-state, ...
 
   The node has the 'pinctrl0' node label set in your SoC's devicetree,
   so you can modify it like this:
@@ -72,3 +74,19 @@ child-binding:
       description: |
         Pin mux selection. See the SOC level pinctrl header
         for a defined list of these options.
+
+    slew-rate:
+      type: int
+      enum:
+        - 0 # 2pF
+        - 1 # 4pF
+        - 2 # 8pF
+        - 3 # 16pF
+      default: 0
+      description: |
+        Selects the output drive strength. Choices represent approximate capacitive load.
+        The default corresponds to the reset value of the register field.
+        - 0.. 2pF, Weakest drive
+        - 1.. 4pF, Low drive
+        - 2.. 8pF, Medium drive
+        - 3.. 16pF, Strongest drive

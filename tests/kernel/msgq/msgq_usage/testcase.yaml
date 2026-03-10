@@ -1,5 +1,6 @@
 tests:
   kernel.message_queue.usage:
+    min_ram: 24
     tags:
       - kernel
       - message queue

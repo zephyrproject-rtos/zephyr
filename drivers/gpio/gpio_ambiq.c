@@ -13,8 +13,9 @@
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/drivers/gpio/gpio_ambiq.h>
 
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 typedef void (*ambiq_gpio_cfg_func_t)(void);
 
@@ -488,7 +489,12 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 			 * GPIO_INT_TRIG_BOTH is not supported on Ambiq Apollo4 Plus Platform
 			 * ERR008: GPIO: Dual-edge interrupts are not vectoring
 			 */
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
 			return -ENOTSUP;
+#elif defined(CONFIG_SOC_SERIES_APOLLO5X)
+			pincfg.GP.cfg_b.eIntDir = AM_HAL_GPIO_PIN_INTDIR_BOTH;
+			break;
+#endif
 		default:
 			return -EINVAL;
 		}
@@ -567,6 +573,18 @@ static DEVICE_API(gpio, ambiq_gpio_drv_api) = {
 #endif
 };
 
+gpio_pin_t ambiq_gpio_get_pinnum(const struct device *dev, gpio_pin_t pin)
+{
+	const struct ambiq_gpio_config *const dev_cfg = dev->config;
+
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	pin += dev_cfg->offset;
+#else
+	pin += (dev_cfg->offset >> 2);
+#endif
+	return pin;
+}
+
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
 /* Apollo3 GPIO banks share the same irq number, connect irq here will cause build error, so we
  * leave this function blank here and do it in ambiq_gpio_cfg_func
@@ -587,10 +605,7 @@ static DEVICE_API(gpio, ambiq_gpio_drv_api) = {
 	static struct ambiq_gpio_data ambiq_gpio_data_##n;                                         \
 	static void ambiq_gpio_cfg_func_##n(void);                                                 \
 	static const struct ambiq_gpio_config ambiq_gpio_config_##n = {                            \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		.base = DT_REG_ADDR(DT_INST_PARENT(n)),                                            \
 		.offset = DT_INST_REG_ADDR(n),                                                     \
 		.ngpios = DT_INST_PROP(n, ngpios),                                                 \

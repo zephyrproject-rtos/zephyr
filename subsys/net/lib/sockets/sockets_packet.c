@@ -6,7 +6,6 @@
  */
 
 #include <stdbool.h>
-#include <zephyr/posix/fcntl.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_packet, CONFIG_NET_SOCKETS_LOG_LEVEL);
@@ -40,49 +39,6 @@ static inline int k_fifo_wait_non_empty(struct k_fifo *fifo,
 	return k_poll(events, ARRAY_SIZE(events), timeout);
 }
 
-static int zpacket_socket(int family, int type, int proto)
-{
-	struct net_context *ctx;
-	int fd;
-	int ret;
-
-	fd = zvfs_reserve_fd();
-	if (fd < 0) {
-		return -1;
-	}
-
-	if (proto == 0) {
-		if (type == SOCK_RAW) {
-			proto = IPPROTO_RAW;
-		}
-	} else {
-		/* For example in Linux, the protocol parameter can be given
-		 * as htons(ETH_P_ALL) to receive all the network packets.
-		 * So convert the proto field back to host byte order so that
-		 * we do not need to change the protocol field handling in
-		 * other part of the network stack.
-		 */
-		proto = ntohs(proto);
-	}
-
-	ret = net_context_get(family, type, proto, &ctx);
-	if (ret < 0) {
-		zvfs_free_fd(fd);
-		errno = -ret;
-		return -1;
-	}
-
-	/* Initialize user_data, all other calls will preserve it */
-	ctx->user_data = NULL;
-
-	/* recv_q and accept_q are in union */
-	k_fifo_init(&ctx->recv_q);
-	zvfs_finalize_typed_fd(fd, ctx, (const struct fd_op_vtable *)&packet_sock_fd_op_vtable,
-			    ZVFS_MODE_IFSOCK);
-
-	return fd;
-}
-
 static void zpacket_received_cb(struct net_context *ctx,
 				struct net_pkt *pkt,
 				union net_ip_header *ip_hdr,
@@ -94,10 +50,10 @@ static void zpacket_received_cb(struct net_context *ctx,
 		user_data);
 
 	/* if pkt is NULL, EOF */
-	if (!pkt) {
+	if (pkt == NULL) {
 		struct net_pkt *last_pkt = k_fifo_peek_tail(&ctx->recv_q);
 
-		if (!last_pkt) {
+		if (last_pkt == NULL) {
 			/* If there're no packets in the queue, recv() may
 			 * be blocked waiting on it to become non-empty,
 			 * so cancel that wait.
@@ -119,9 +75,62 @@ static void zpacket_received_cb(struct net_context *ctx,
 	k_fifo_put(&ctx->recv_q, pkt);
 }
 
+
+static int zpacket_socket(int family, int type, int proto)
+{
+	struct net_context *ctx;
+	int fd;
+	int ret;
+
+	fd = zvfs_reserve_fd();
+	if (fd < 0) {
+		return -1;
+	}
+
+	if (proto != 0) {
+		/* For example in Linux, the protocol parameter can be given
+		 * as htons(ETH_P_ALL) to receive all the network packets.
+		 * So convert the proto field back to host byte order so that
+		 * we do not need to change the protocol field handling in
+		 * other part of the network stack.
+		 */
+		proto = net_ntohs(proto);
+	}
+
+	ret = net_context_get(family, type, proto, &ctx);
+	if (ret < 0) {
+		zvfs_free_fd(fd);
+		errno = -ret;
+		return -1;
+	}
+
+	/* Initialize user_data, all other calls will preserve it */
+	ctx->user_data = NULL;
+
+	/* recv_q and accept_q are in union */
+	k_fifo_init(&ctx->recv_q);
+
+	/* Register the callback so that the socket is able to receive packets
+	 * as soon as it's created.
+	 */
+	ret = net_context_recv(ctx, zpacket_received_cb, K_NO_WAIT,
+			       ctx->user_data);
+	if (ret < 0) {
+		net_context_put(ctx);
+		zvfs_free_fd(fd);
+		errno = -ret;
+		return -1;
+	}
+
+	zvfs_finalize_typed_fd(fd, ctx, (const struct fd_op_vtable *)&packet_sock_fd_op_vtable,
+			       ZVFS_MODE_IFSOCK);
+
+	return fd;
+}
+
 static int zpacket_bind_ctx(struct net_context *ctx,
-			    const struct sockaddr *addr,
-			    socklen_t addrlen)
+			    const struct net_sockaddr *addr,
+			    net_socklen_t addrlen)
 {
 	int ret = 0;
 
@@ -145,38 +154,38 @@ static int zpacket_bind_ctx(struct net_context *ctx,
 }
 
 static void zpacket_set_eth_pkttype(struct net_if *iface,
-				    struct sockaddr_ll *addr,
+				    struct net_sockaddr_ll *addr,
 				    struct net_linkaddr *lladdr)
 {
-	if (lladdr == NULL || lladdr->addr == NULL) {
+	if (lladdr == NULL || lladdr->len == 0) {
 		return;
 	}
 
 	if (net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr)) {
-		addr->sll_pkttype = PACKET_BROADCAST;
+		addr->sll_pkttype = NET_PACKET_BROADCAST;
 	} else if (net_eth_is_addr_multicast(
 			   (struct net_eth_addr *)lladdr->addr)) {
-		addr->sll_pkttype = PACKET_MULTICAST;
+		addr->sll_pkttype = NET_PACKET_MULTICAST;
 	} else if (!net_linkaddr_cmp(net_if_get_link_addr(iface), lladdr)) {
-		addr->sll_pkttype = PACKET_HOST;
+		addr->sll_pkttype = NET_PACKET_HOST;
 	} else {
-		addr->sll_pkttype = PACKET_OTHERHOST;
+		addr->sll_pkttype = NET_PACKET_OTHERHOST;
 	}
 }
 
 static void zpacket_set_source_addr(struct net_context *ctx,
 				    struct net_pkt *pkt,
-				    struct sockaddr *src_addr,
-				    socklen_t *addrlen)
+				    struct net_sockaddr *src_addr,
+				    net_socklen_t *addrlen)
 {
-	struct sockaddr_ll addr = {0};
+	struct net_sockaddr_ll addr = {0};
 	struct net_if *iface = net_context_get_iface(ctx);
 
 	if (iface == NULL) {
 		return;
 	}
 
-	addr.sll_family = AF_PACKET;
+	addr.sll_family = NET_AF_PACKET;
 	addr.sll_ifindex = net_if_get_by_iface(iface);
 
 	if (net_pkt_is_l2_processed(pkt)) {
@@ -187,10 +196,10 @@ static void zpacket_set_source_addr(struct net_context *ctx,
 		memcpy(addr.sll_addr, pkt->lladdr_src.addr,
 		       MIN(sizeof(addr.sll_addr), pkt->lladdr_src.len));
 
-		addr.sll_protocol = net_pkt_ll_proto_type(pkt);
+		addr.sll_protocol = net_htons(net_pkt_ll_proto_type(pkt));
 
 		if (net_if_get_link_addr(iface)->type == NET_LINK_ETHERNET) {
-			addr.sll_hatype = ARPHRD_ETHER;
+			addr.sll_hatype = NET_ARPHRD_ETHER;
 			zpacket_set_eth_pkttype(iface, &addr,
 						net_pkt_lladdr_dst(pkt));
 		}
@@ -216,27 +225,27 @@ static void zpacket_set_source_addr(struct net_context *ctx,
 		memcpy(addr.sll_addr, hdr->src.addr,
 		       sizeof(struct net_eth_addr));
 
-		addr.sll_protocol = ntohs(hdr->type);
-		addr.sll_hatype = ARPHRD_ETHER;
+		addr.sll_protocol = hdr->type;
+		addr.sll_hatype = NET_ARPHRD_ETHER;
 
-		dst_addr.addr = hdr->dst.addr;
-		dst_addr.len = sizeof(struct net_eth_addr);
-		dst_addr.type = NET_LINK_ETHERNET;
+		(void)net_linkaddr_create(&dst_addr, hdr->dst.addr,
+					  sizeof(struct net_eth_addr),
+					  NET_LINK_ETHERNET);
 
 		zpacket_set_eth_pkttype(iface, &addr, &dst_addr);
 		net_pkt_cursor_restore(pkt, &cur);
 	}
 
-	/* Copy the result sockaddr_ll structure into provided buffer. If the
+	/* Copy the result net_sockaddr_ll structure into provided buffer. If the
 	 * buffer is smaller than the structure size, it will be truncated.
 	 */
-	memcpy(src_addr, &addr, MIN(sizeof(struct sockaddr_ll), *addrlen));
-	*addrlen = sizeof(struct sockaddr_ll);
+	memcpy(src_addr, &addr, MIN(sizeof(struct net_sockaddr_ll), *addrlen));
+	*addrlen = sizeof(struct net_sockaddr_ll);
 }
 
 ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
-			   int flags, const struct sockaddr *dest_addr,
-			   socklen_t addrlen)
+			   int flags, const struct net_sockaddr *dest_addr,
+			   net_socklen_t addrlen)
 {
 	k_timeout_t timeout = K_FOREVER;
 	int status;
@@ -252,17 +261,6 @@ ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		net_context_get_option(ctx, NET_OPT_SNDTIMEO, &timeout, NULL);
 	}
 
-	/* Register the callback before sending in order to receive the response
-	 * from the peer.
-	 */
-
-	status = net_context_recv(ctx, zpacket_received_cb, K_NO_WAIT,
-				  ctx->user_data);
-	if (status < 0) {
-		errno = -status;
-		return -1;
-	}
-
 	status = net_context_sendto(ctx, buf, len, dest_addr, addrlen,
 				    NULL, timeout, ctx->user_data);
 	if (status < 0) {
@@ -273,7 +271,7 @@ ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	return status;
 }
 
-ssize_t zpacket_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
+ssize_t zpacket_sendmsg_ctx(struct net_context *ctx, const struct net_msghdr *msg,
 			    int flags)
 {
 	k_timeout_t timeout = K_FOREVER;
@@ -295,8 +293,8 @@ ssize_t zpacket_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 }
 
 ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
-			     int flags, struct sockaddr *src_addr,
-			     socklen_t *addrlen)
+			     int flags, struct net_sockaddr *src_addr,
+			     net_socklen_t *addrlen)
 {
 	size_t recv_len = 0;
 	k_timeout_t timeout = K_FOREVER;
@@ -361,7 +359,7 @@ ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 }
 
 int zpacket_getsockopt_ctx(struct net_context *ctx, int level, int optname,
-			   void *optval, socklen_t *optlen)
+			   void *optval, net_socklen_t *optlen)
 {
 	if (!optval || !optlen) {
 		errno = EINVAL;
@@ -373,7 +371,7 @@ int zpacket_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 }
 
 int zpacket_setsockopt_ctx(struct net_context *ctx, int level, int optname,
-			const void *optval, socklen_t optlen)
+			const void *optval, net_socklen_t optlen)
 {
 	return sock_fd_op_vtable.setsockopt(ctx, level, optname,
 					    optval, optlen);
@@ -399,15 +397,15 @@ static int packet_sock_ioctl_vmeth(void *obj, unsigned int request,
 /*
  * TODO: A packet socket can be bound to a network device using SO_BINDTODEVICE.
  */
-static int packet_sock_bind_vmeth(void *obj, const struct sockaddr *addr,
-				  socklen_t addrlen)
+static int packet_sock_bind_vmeth(void *obj, const struct net_sockaddr *addr,
+				  net_socklen_t addrlen)
 {
 	return zpacket_bind_ctx(obj, addr, addrlen);
 }
 
 /* The connect() function is no longer necessary. */
-static int packet_sock_connect_vmeth(void *obj, const struct sockaddr *addr,
-				     socklen_t addrlen)
+static int packet_sock_connect_vmeth(void *obj, const struct net_sockaddr *addr,
+				     net_socklen_t addrlen)
 {
 	return -EOPNOTSUPP;
 }
@@ -422,42 +420,42 @@ static int packet_sock_listen_vmeth(void *obj, int backlog)
 	return -EOPNOTSUPP;
 }
 
-static int packet_sock_accept_vmeth(void *obj, struct sockaddr *addr,
-				    socklen_t *addrlen)
+static int packet_sock_accept_vmeth(void *obj, struct net_sockaddr *addr,
+				    net_socklen_t *addrlen)
 {
 	return -EOPNOTSUPP;
 }
 
 static ssize_t packet_sock_sendto_vmeth(void *obj, const void *buf, size_t len,
 					int flags,
-					const struct sockaddr *dest_addr,
-					socklen_t addrlen)
+					const struct net_sockaddr *dest_addr,
+					net_socklen_t addrlen)
 {
 	return zpacket_sendto_ctx(obj, buf, len, flags, dest_addr, addrlen);
 }
 
-static ssize_t packet_sock_sendmsg_vmeth(void *obj, const struct msghdr *msg,
+static ssize_t packet_sock_sendmsg_vmeth(void *obj, const struct net_msghdr *msg,
 					 int flags)
 {
 	return zpacket_sendmsg_ctx(obj, msg, flags);
 }
 
 static ssize_t packet_sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
-					  int flags, struct sockaddr *src_addr,
-					  socklen_t *addrlen)
+					  int flags, struct net_sockaddr *src_addr,
+					  net_socklen_t *addrlen)
 {
 	return zpacket_recvfrom_ctx(obj, buf, max_len, flags,
 				    src_addr, addrlen);
 }
 
 static int packet_sock_getsockopt_vmeth(void *obj, int level, int optname,
-					void *optval, socklen_t *optlen)
+					void *optval, net_socklen_t *optlen)
 {
 	return zpacket_getsockopt_ctx(obj, level, optname, optval, optlen);
 }
 
 static int packet_sock_setsockopt_vmeth(void *obj, int level, int optname,
-					const void *optval, socklen_t optlen)
+					const void *optval, net_socklen_t optlen)
 {
 	return zpacket_setsockopt_ctx(obj, level, optname, optval, optlen);
 }
@@ -488,20 +486,20 @@ static const struct socket_op_vtable packet_sock_fd_op_vtable = {
 static bool packet_is_supported(int family, int type, int proto)
 {
 	switch (type) {
-	case SOCK_RAW:
-		proto = ntohs(proto);
-		return proto == ETH_P_ALL
+	case NET_SOCK_RAW:
+		proto = net_ntohs(proto);
+		return proto == 0
+		  || proto == ETH_P_ALL
 		  || proto == ETH_P_ECAT
-		  || proto == ETH_P_IEEE802154
-		  || proto == IPPROTO_RAW;
+		  || proto == ETH_P_IEEE802154;
 
-	case SOCK_DGRAM:
-		return proto > 0;
+	case NET_SOCK_DGRAM:
+		return true;
 
 	default:
 		return false;
 	}
 }
 
-NET_SOCKET_REGISTER(af_packet, NET_SOCKET_DEFAULT_PRIO, AF_PACKET,
+NET_SOCKET_REGISTER(af_packet, NET_SOCKET_DEFAULT_PRIO, NET_AF_PACKET,
 		    packet_is_supported, zpacket_socket);

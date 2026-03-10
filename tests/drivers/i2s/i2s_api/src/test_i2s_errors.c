@@ -20,8 +20,8 @@ ZTEST_USER(i2s_errors, test_i2s_improper_configuration)
 					     .frame_clk_freq = FRAME_CLK_FREQ,
 					     .block_size = BLOCK_SIZE,
 					     .timeout = TIMEOUT,
-					     .options = I2S_OPT_FRAME_CLK_MASTER |
-							I2S_OPT_BIT_CLK_MASTER,
+					     .options = I2S_OPT_FRAME_CLK_CONTROLLER |
+							I2S_OPT_BIT_CLK_CONTROLLER,
 					     .mem_slab = &tx_mem_slab };
 
 
@@ -58,8 +58,8 @@ ZTEST_USER(i2s_errors, test_i2s_config_attempt_in_wrong_state)
 					      .frame_clk_freq = FRAME_CLK_FREQ,
 					      .block_size = BLOCK_SIZE,
 					      .timeout = TIMEOUT,
-					      .options = I2S_OPT_FRAME_CLK_MASTER |
-							 I2S_OPT_BIT_CLK_MASTER,
+					      .options = I2S_OPT_FRAME_CLK_CONTROLLER |
+							 I2S_OPT_BIT_CLK_CONTROLLER,
 					      .mem_slab = &tx_mem_slab };
 
 	err = i2s_configure(dev_i2s, I2S_DIR_TX, &inactive_config);
@@ -76,6 +76,9 @@ ZTEST_USER(i2s_errors, test_i2s_config_attempt_in_wrong_state)
 	err = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_STOP);
 	zassert_equal(err, 0, "I2S_TRIGGER_STOP unexpected error: %d", err);
 
+	err = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_DROP);
+	zassert_equal(err, 0, "I2S_TRIGGER_DROP unexpected error: %d", err);
+
 	zassert_not_equal(
 		config_err, 0,
 		"I2S configuration should not be possible in states other than I2S_STATE_READY");
@@ -91,8 +94,8 @@ ZTEST_USER(i2s_errors, test_i2s_incorrect_trigger)
 					  .frame_clk_freq = FRAME_CLK_FREQ,
 					  .block_size = BLOCK_SIZE,
 					  .timeout = TIMEOUT,
-					  .options =
-						  I2S_OPT_FRAME_CLK_MASTER | I2S_OPT_BIT_CLK_MASTER,
+					  .options = I2S_OPT_FRAME_CLK_CONTROLLER |
+						     I2S_OPT_BIT_CLK_CONTROLLER,
 					  .mem_slab = &tx_mem_slab };
 
 	err = i2s_configure(dev_i2s, I2S_DIR_TX, &test_config);
@@ -115,8 +118,8 @@ ZTEST_USER(i2s_errors, test_i2s_unconfigured_access)
 					      .frame_clk_freq = 0,
 					      .block_size = BLOCK_SIZE,
 					      .timeout = TIMEOUT,
-					      .options = I2S_OPT_FRAME_CLK_MASTER |
-							 I2S_OPT_BIT_CLK_MASTER,
+					      .options = I2S_OPT_FRAME_CLK_CONTROLLER |
+							 I2S_OPT_BIT_CLK_CONTROLLER,
 					      .mem_slab = &tx_mem_slab };
 
 	err = i2s_configure(dev_i2s, I2S_DIR_TX, &inactive_config);
@@ -139,8 +142,8 @@ ZTEST_USER(i2s_errors, test_i2s_improper_block_size_write)
 					  .frame_clk_freq = FRAME_CLK_FREQ,
 					  .block_size = BLOCK_SIZE,
 					  .timeout = TIMEOUT,
-					  .options =
-						  I2S_OPT_FRAME_CLK_MASTER | I2S_OPT_BIT_CLK_MASTER,
+					  .options = I2S_OPT_FRAME_CLK_CONTROLLER |
+						     I2S_OPT_BIT_CLK_CONTROLLER,
 					  .mem_slab = &tx_mem_slab };
 
 	err = i2s_configure(dev_i2s, I2S_DIR_TX, &test_config);

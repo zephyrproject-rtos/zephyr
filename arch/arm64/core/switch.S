@@ -74,6 +74,25 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldp	x0, x1, [sp], #16
 #endif
 
+#ifdef CONFIG_ARM_PAC_PER_THREAD
+	/*
+	 * Save and restore PAC keys during context switch.
+	 * This ensures each thread has its own unique PAC keys for security isolation.
+	 * Now safe to call C function since PAC key management functions are compiled
+	 * without PAC protection (branch-protection=none).
+	 */
+	stp	x0, x1, [sp, #-16]!
+	bl	z_arm64_pac_thread_context_switch
+	ldp	x0, x1, [sp], #16
+#endif
+
+#ifdef CONFIG_SMP
+	/* Write barrier: ensure all preceding writes are executed
+	* before writing the switch handle
+	*/
+	dmb sy
+#endif
+
 	/* save old thread into switch handle which is required by
 	 * z_sched_switch_spin()
 	 */
@@ -141,13 +160,33 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 GTEXT(z_arm64_sync_exc)
 SECTION_FUNC(TEXT, z_arm64_sync_exc)
 
+	/*
+	 * CFI: exception entered with SP pointing at struct arch_esf built by
+	 * z_arm64_enter_exc. Describe the interrupted context so GDB can unwind.
+	 */
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	.cfi_def_cfa sp, ___esf_t_SIZEOF
+	/* Return address (ELR_EL1) is saved at esf.spsr_elr + 8 */
+	.cfi_offset 30, (___esf_t_spsr_elr_OFFSET + 8 - ___esf_t_SIZEOF)
+#ifdef CONFIG_FRAME_POINTER
+	.cfi_offset 29, (___esf_t_fp_OFFSET - ___esf_t_SIZEOF)
+#endif
+
 	mrs	x0, esr_el1
 	lsr	x1, x0, #26
 
 #ifdef CONFIG_FPU_SHARING
 	cmp	x1, #0x07 /*Access to SIMD or floating-point */
-	bne	1f
-	mov	x0, sp
+	beq	fpu_sve_trap
+#ifdef CONFIG_ARM64_SVE
+	cmp	x1, #0x19 /*Trapped access to SVE functionality */
+	beq	fpu_sve_trap
+#endif
+	b	1f
+fpu_sve_trap:
+	mov	x0, sp  /* ESF pointer */
+	/* x1 already contains exception class (EC) - pass as second argument */
 	bl	z_arm64_fpu_trap
 	b	z_arm64_exit_exc_fpu_done
 1:
@@ -215,4 +254,5 @@ inv:
 	bl	z_arm64_fatal_error
 
 	/* Return here only in case of recoverable error */
+	.cfi_endproc
 	b	z_arm64_exit_exc

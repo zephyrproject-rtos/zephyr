@@ -1,0 +1,11 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_BEE
+	bool "Realtek Bee series GPIO driver"
+	default y
+	depends on DT_HAS_REALTEK_BEE_GPIO_ENABLED
+	select HAL_REALTEK_BEE_GPIO
+	select PINCTRL
+	help
+	  This option enables the GPIO driver for Realtek Bee SoCs.

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <signal.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -154,14 +155,4 @@ static void after(void *arg)
 	}
 }
 
-static void before(void *arg)
-{
-	ARG_UNUSED(arg);
-
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
-		/* skip redundant testing if there is no thread pool / heap allocation */
-		ztest_test_skip();
-	}
-}
-
-ZTEST_SUITE(posix_timers, NULL, NULL, before, after, NULL);
+ZTEST_SUITE(posix_timers, NULL, NULL, NULL, after, NULL);

@@ -27,7 +27,7 @@ extern "C" {
  * @brief Connection Manager Connectivity Implementation API
  * @defgroup conn_mgr_connectivity_impl Connection Manager Connectivity Implementation API
  * @since 3.4
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup conn_mgr_connectivity
  * @{
  */
@@ -56,8 +56,6 @@ struct conn_mgr_conn_api {
 	 * @brief When called, the connectivity implementation should disconnect (disassociate), or
 	 * stop any in-progress attempts to associate to a network, the bound iface pointed to by
 	 * if_conn->iface.
-	 *
-	 * Must be non-blocking.
 	 *
 	 * Called by @ref conn_mgr_if_disconnect.
 	 */
@@ -195,9 +193,22 @@ struct conn_mgr_conn_binding {
 	 */
 	int timeout;
 
+	/**
+	 * Usage timeout (seconds)
+	 *
+	 * Indicates to the connectivity implementation how long the interface can be idle
+	 * for before automatically taking the interface down.
+	 *
+	 * Set to @ref CONN_MGR_IF_NO_TIMEOUT to indicate that no idle timeout should be used.
+	 */
+	int idle_timeout;
+
 	/** @} */
 
 /** @cond INTERNAL_HIDDEN */
+	/* Internal-use work item for tracking interface idle timeouts */
+	struct k_work_delayable idle_worker;
+
 	/* Internal-use mutex for protecting access to the binding and API functions. */
 	struct k_mutex *mutex;
 /** @endcond */

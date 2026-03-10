@@ -18,5 +18,6 @@ supported:
   - counter
   - w1
   - flash
-ram: 128
+  - rtc_counter
+ram: 48
 flash: 512

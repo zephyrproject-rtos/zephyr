@@ -1,7 +1,7 @@
 /** @file
  *  @brief Bluetooth Call Control Profile (CCP) Server role.
  *
- *  Copyright 2023 NXP
+ *  Copyright 2023,2025 NXP
  *  Copyright (c) 2024 Nordic Semiconductor ASA
  *
  *  SPDX-License-Identifier: Apache-2.0
@@ -15,10 +15,6 @@
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
-
-#define URI_LIST_LEN	2
-
-static const char *uri_list[URI_LIST_LEN] = {"skype", "tel"};
 
 static bool tbs_originate_call_cb(struct bt_conn *conn, uint8_t call_index,
 				  const char *caller_id)
@@ -48,9 +44,24 @@ int ccp_call_control_server_init(void)
 {
 	int err;
 
-	bt_tbs_register_cb(&tbs_cbs);
+	const struct bt_tbs_register_param gtbs_param = {
+		.provider_name = "Generic TBS",
+		.uci = "un000",
+		.uri_schemes_supported = "tel",
+		.gtbs = true,
+		.authorization_required = false,
+		.technology = BT_TBS_TECHNOLOGY_3G,
+		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+	};
 
-	err = bt_tbs_set_uri_scheme_list(0, (const char **)&uri_list, URI_LIST_LEN);
+	err = bt_tbs_register_bearer(&gtbs_param);
+	if (err < 0) {
+		printk("Failed to register GTBS: %d\n", err);
+		return -ENOEXEC;
+	}
+
+	bt_tbs_register_cb(&tbs_cbs);
+	err = bt_tbs_set_uri_scheme_list(BT_TBS_GTBS_INDEX, "skype,tel");
 
 	return err;
 }

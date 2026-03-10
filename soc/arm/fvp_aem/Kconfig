@@ -1,0 +1,22 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_FVP_AEM
+	bool
+	help
+	  Enable support for Arm FVP AEM (Architectural Envelope Model) Series
+
+config SOC_V8A
+	bool
+	select ARM64
+	select CPU_CORTEX_A53
+
+config SOC_V9A
+	bool
+	select ARM64
+	select CPU_CORTEX_A510
+
+config SOC_A320
+	bool
+	select ARM64
+	select CPU_CORTEX_A320

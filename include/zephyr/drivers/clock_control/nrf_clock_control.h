@@ -8,9 +8,6 @@
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_
 
 #include <zephyr/device.h>
-#if defined(NRF_CLOCK) && !defined(NRF_LFRC)
-#include <hal/nrf_clock.h>
-#endif
 #include <zephyr/sys/onoff.h>
 #include <zephyr/drivers/clock_control.h>
 
@@ -20,6 +17,8 @@ extern "C" {
 
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
 
+#include <hal/nrf_clock.h>
+
 /** @brief Clocks handled by the CLOCK peripheral.
  *
  * Enum shall be used as a sys argument in clock_control API.
@@ -27,6 +26,9 @@ extern "C" {
 enum clock_control_nrf_type {
 	CLOCK_CONTROL_NRF_TYPE_HFCLK,
 	CLOCK_CONTROL_NRF_TYPE_LFCLK,
+#if NRF_CLOCK_HAS_HFCLK24M
+	CLOCK_CONTROL_NRF_TYPE_HFCLK24M,
+#endif
 #if NRF_CLOCK_HAS_HFCLK192M
 	CLOCK_CONTROL_NRF_TYPE_HFCLK192M,
 #endif
@@ -43,6 +45,8 @@ enum clock_control_nrf_type {
 	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK)
 #define CLOCK_CONTROL_NRF_SUBSYS_LF \
 	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_LFCLK)
+#define CLOCK_CONTROL_NRF_SUBSYS_HF24M \
+	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK24M)
 #define CLOCK_CONTROL_NRF_SUBSYS_HF192M \
 	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK192M)
 #define CLOCK_CONTROL_NRF_SUBSYS_HFAUDIO \
@@ -162,10 +166,14 @@ void z_nrf_clock_bt_ctlr_hf_request(void);
  */
 void z_nrf_clock_bt_ctlr_hf_release(void);
 
+/**
+ * @brief Get clock startup time
+ *
+ * @retval HFCLK startup time in microseconds
+ */
+uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void);
+
 #endif /* defined(CONFIG_CLOCK_CONTROL_NRF) */
-
-
-#if defined(CONFIG_CLOCK_CONTROL_NRF2)
 
 /* Specifies to use the maximum available frequency for a given clock. */
 #define NRF_CLOCK_CONTROL_FREQUENCY_MAX UINT32_MAX
@@ -179,6 +187,29 @@ void z_nrf_clock_bt_ctlr_hf_release(void);
 #define NRF_CLOCK_CONTROL_PRECISION_HIGH    1
 /* Specifies that default precision of the clock is sufficient. */
 #define NRF_CLOCK_CONTROL_PRECISION_DEFAULT 0
+
+/* AUXPLL devicetree takes in raw register values, these are the actual frequencies outputted */
+#define CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_MIN_HZ        80000000
+#define CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_AUDIO_44K1_HZ 11289591
+#define CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_USB24M_HZ     24000000
+#define CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_AUDIO_48K_HZ  12287963
+
+/* Internal helper macro to map DT property value to output frequency */
+#define _CLOCK_CONTROL_NRF_AUXPLL_MAP_FREQ(freq_val)			  \
+	((freq_val) == NRF_AUXPLL_FREQ_DIV_MIN ?			  \
+		       CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_MIN_HZ :	  \
+	 (freq_val) == NRF_AUXPLL_FREQ_DIV_AUDIO_44K1 ?			  \
+		       CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_AUDIO_44K1_HZ :  \
+	 (freq_val) == NRF_AUXPLL_FREQ_DIV_USB24M ?			  \
+		       CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_USB24M_HZ :	  \
+	 (freq_val) == NRF_AUXPLL_FREQ_DIV_AUDIO_48K ?			  \
+		       CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_AUDIO_48K_HZ : 0)
+
+/* Public macro to get output frequency of AUXPLL */
+#define CLOCK_CONTROL_NRF_AUXPLL_GET_FREQ(node) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node, nordic_frequency), \
+		(_CLOCK_CONTROL_NRF_AUXPLL_MAP_FREQ(DT_PROP(node, nordic_frequency))), \
+		(0))
 
 struct nrf_clock_spec {
 	uint32_t frequency;
@@ -197,6 +228,12 @@ __subsystem struct nrf_clock_control_driver_api {
 	int (*cancel_or_release)(const struct device *dev,
 				 const struct nrf_clock_spec *spec,
 				 struct onoff_client *cli);
+	int (*resolve)(const struct device *dev,
+		       const struct nrf_clock_spec *req_spec,
+		       struct nrf_clock_spec *res_spec);
+	int (*get_startup_time)(const struct device *dev,
+				const struct nrf_clock_spec *spec,
+				uint32_t *startup_time_us);
 };
 
 /**
@@ -317,6 +354,54 @@ int nrf_clock_control_cancel_or_release(const struct device *dev,
 	return api->cancel_or_release(dev, spec, cli);
 }
 
+/**
+ * @brief Resolve a requested clock spec to resulting spec.
+ *
+ * @param dev Device structure.
+ * @param req_spec The requested clock specification.
+ * @param res_spec Destination for the resulting clock specification.
+ *
+ * @retval Successful if successful.
+ * @retval -errno code if failure
+ */
+static inline int nrf_clock_control_resolve(const struct device *dev,
+					    const struct nrf_clock_spec *req_spec,
+					    struct nrf_clock_spec *res_spec)
+{
+	const struct nrf_clock_control_driver_api *api =
+		(const struct nrf_clock_control_driver_api *)dev->api;
+
+	if (api->resolve == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->resolve(dev, req_spec, res_spec);
+}
+
+/**
+ * @brief Get the startup time of a clock.
+ *
+ * @param dev Device structure.
+ * @param spec Clock specification to get startup time for.
+ * @param startup_time_us Destination for startup time in microseconds.
+ *
+ * @retval Successful if successful.
+ * @retval -errno code if failure.
+ */
+static inline int nrf_clock_control_get_startup_time(const struct device *dev,
+						     const struct nrf_clock_spec *spec,
+						     uint32_t *startup_time_us)
+{
+	const struct nrf_clock_control_driver_api *api =
+		(const struct nrf_clock_control_driver_api *)dev->api;
+
+	if (api->get_startup_time == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_startup_time(dev, spec, startup_time_us);
+}
+
 /** @brief Request the HFXO from Zero Latency Interrupt context.
  *
  * Function is optimized for use in Zero Latency Interrupt context.
@@ -340,27 +425,6 @@ void nrf_clock_control_hfxo_request(void);
  * there are no more pending requests.
  */
 void nrf_clock_control_hfxo_release(void);
-
-#endif /* defined(CONFIG_CLOCK_CONTROL_NRF2) */
-
-/** @brief Get clock frequency that is used for the given node.
- *
- * Macro checks if node has clock property and if yes then if clock has clock_frequency property
- * then it is returned. If it has supported_clock_frequency property with the list of supported
- * frequencies then the last one is returned with assumption that they are ordered and the last
- * one is the highest. If node does not have clock then 16 MHz is returned which is the default
- * frequency.
- *
- * @param node Devicetree node.
- *
- * @return Frequency of the clock that is used for the node.
- */
-#define NRF_PERIPH_GET_FREQUENCY(node) \
-	COND_CODE_1(DT_CLOCKS_HAS_IDX(node, 0),							\
-		(COND_CODE_1(DT_NODE_HAS_PROP(DT_CLOCKS_CTLR(node), clock_frequency),		\
-			     (DT_PROP(DT_CLOCKS_CTLR(node), clock_frequency)),			\
-			     (DT_PROP_LAST(DT_CLOCKS_CTLR(node), supported_clock_frequency)))),	\
-		(NRFX_MHZ_TO_HZ(16)))
 
 #ifdef __cplusplus
 }

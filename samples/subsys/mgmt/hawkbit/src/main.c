@@ -107,7 +107,7 @@ int main(void)
 		LOG_ERR("Failed to init hawkBit");
 	}
 
-#ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
+#if defined(CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME) && !defined(CONFIG_HAWKBIT_SHELL)
 	hawkbit_set_server_addr(CONFIG_HAWKBIT_SERVER);
 	hawkbit_set_server_port(CONFIG_HAWKBIT_PORT);
 #endif

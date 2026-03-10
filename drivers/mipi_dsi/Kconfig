@@ -21,9 +21,11 @@ config MIPI_DSI_INIT_PRIORITY
 	help
 	  MIPI-DSI Host Controllers initialization priority.
 
+# zephyr-keep-sorted-start
 source "drivers/mipi_dsi/Kconfig.mcux"
+source "drivers/mipi_dsi/Kconfig.renesas_ra"
 source "drivers/mipi_dsi/Kconfig.stm32"
 source "drivers/mipi_dsi/Kconfig.test"
-source "drivers/mipi_dsi/Kconfig.renesas_ra"
+# zephyr-keep-sorted-stop
 
 endif

@@ -49,15 +49,21 @@
 
 #define TIMER_STATUS_IDLE 0U
 
-#define TIMER_PRESCALER_MUL 64ULL
-#define TIMER_PRESCALER_DIV 1000ULL
+#define TIMER_PRESCALER_MUL 64
+#define TIMER_PRESCALER_DIV 1000
 #define TIMER_MAX           0xFFFFFFU
+
+/* Formula for timer value: Value = ROUND[time_ms / 15.625] - 1 */
+#define TIMER_MS_TO_TICKS(t)                                                                       \
+	(((int64_t)(t) * TIMER_PRESCALER_MUL + TIMER_PRESCALER_DIV / 2) / TIMER_PRESCALER_DIV - 1)
 
 #define EVENTS_SIZE 5U
 
-#define GPIO_USAGE_INTLO   0x01U
-#define GPIO_USAGE_INTHI   0x02U
-#define GPIO_CONFIG_OUTPUT 0x02U
+#define GPIO_USAGE_INTLO      0x01U
+#define GPIO_USAGE_INTHI      0x02U
+#define GPIO_CONFIG_OUTPUT    0x02U
+#define GPIO_CONFIG_OPENDRAIN 0x04U
+#define GPIO_CONFIG_PULLUP    0x10U
 
 #define RESET_STICKY_PWRBUT 0x04U
 
@@ -171,9 +177,16 @@ static int config_pmic_int(const struct device *dev)
 {
 	const struct mfd_npm2100_config *config = dev->config;
 	uint8_t usage = GPIO_USAGE_INTHI;
+	uint8_t gpio_config = GPIO_CONFIG_OUTPUT;
 
 	if (config->pmic_int_flags & GPIO_ACTIVE_LOW) {
 		usage = GPIO_USAGE_INTLO;
+	}
+	if ((config->pmic_int_flags & GPIO_SINGLE_ENDED) != 0U) {
+		gpio_config |= GPIO_CONFIG_OPENDRAIN;
+	}
+	if (config->pmic_int_flags & GPIO_PULL_UP) {
+		gpio_config |= GPIO_CONFIG_PULLUP;
 	}
 
 	/* Set specified PMIC pin to be interrupt output */
@@ -184,8 +197,7 @@ static int config_pmic_int(const struct device *dev)
 	}
 
 	/* Configure PMIC output pin */
-	return i2c_reg_write_byte_dt(&config->i2c, GPIO_CONFIG + config->pmic_int_pin,
-				     GPIO_CONFIG_OUTPUT);
+	return i2c_reg_write_byte_dt(&config->i2c, GPIO_CONFIG + config->pmic_int_pin, gpio_config);
 }
 
 static int config_shphold(const struct device *dev)
@@ -296,12 +308,12 @@ int mfd_npm2100_set_timer(const struct device *dev, uint32_t time_ms,
 {
 	const struct mfd_npm2100_config *config = dev->config;
 	uint8_t buff[4] = {TIMER_TARGET};
-	uint32_t ticks = (uint32_t)DIV_ROUND_CLOSEST(((uint64_t)time_ms * TIMER_PRESCALER_MUL),
-						     TIMER_PRESCALER_DIV);
+	int64_t ticks = TIMER_MS_TO_TICKS(time_ms);
+
 	uint8_t timer_status;
 	int ret;
 
-	if (ticks > TIMER_MAX) {
+	if (ticks > TIMER_MAX || ticks < 0) {
 		return -EINVAL;
 	}
 
@@ -314,7 +326,7 @@ int mfd_npm2100_set_timer(const struct device *dev, uint32_t time_ms,
 		return -EBUSY;
 	}
 
-	sys_put_be24(ticks, &buff[1]);
+	sys_put_be24((uint32_t)ticks, &buff[1]);
 
 	ret = i2c_write_dt(&config->i2c, buff, sizeof(buff));
 	if (ret < 0) {

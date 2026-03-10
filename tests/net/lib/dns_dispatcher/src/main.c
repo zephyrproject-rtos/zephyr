@@ -49,13 +49,13 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 #if defined(CONFIG_NET_IPV6)
 /* Interface 1 addresses */
-static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static struct net_in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
+					    0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 #endif
 
 #if defined(CONFIG_NET_IPV4)
 /* Interface 1 addresses */
-static struct in_addr my_addr2 = { { { 192, 0, 2, 1 } } };
+static struct net_in_addr my_addr2 = { { { 192, 0, 2, 1 } } };
 #endif
 
 static struct net_if *iface1;
@@ -175,11 +175,14 @@ static void *test_init(void)
 ZTEST(dns_dispatcher, test_dns_dispatcher)
 {
 	struct dns_resolve_context *ctx;
-	int sock1, sock2 = -1;
+	int ret, sock1, sock2 = -1;
 
 	ctx = dns_resolve_get_default();
 
-	dns_resolve_init_default(ctx);
+	dns_resolve_close(ctx);
+
+	ret = dns_resolve_init_default(ctx);
+	zassert_equal(ret, 0, "Cannot initialize DNS resolver (%d)", ret);
 
 	sock1 = ctx->servers[0].sock;
 

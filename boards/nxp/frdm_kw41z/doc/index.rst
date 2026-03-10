@@ -3,15 +3,15 @@
 Overview
 ********
 
-The FRDM-KW41Z is a development kit enabled by the Kinetis |reg| W series
-KW41Z/31Z/21Z (KW41Z) family built on ARM |reg| Cortex |reg|-M0+ processor with
-integrated 2.4 GHz transceiver supporting Bluetooth |reg| Smart/Bluetooth
-|reg| Low Energy
-(BLE) v4.2, Generic FSK, IEEE |reg| 802.15.4 and Thread.
+The FRDM-KW41Z is a development kit enabled by the Kinetis® W series
+KW41Z/31Z/21Z (KW41Z) family built on ARM® Cortex®-M0+ processor with
+integrated 2.4 GHz transceiver supporting Bluetooth® Smart/Bluetooth®
+Low Energy
+(BLE) v4.2, Generic FSK, IEEE® 802.15.4 and Thread.
 
 The FRDM-KW41Z kit contains two Freedom boards that can be used as a
 development board or a shield to connect to a host processor. The FRDM-KW41Z is
-form-factor compatible with the Arduino |trade| R3 pin layout for more expansion
+form-factor compatible with the Arduino™ R3 pin layout for more expansion
 options.
 
 The FRDM-KW41Z highly-sensitive, optimized 2.4 GHz radio features a PCB
@@ -28,8 +28,8 @@ Hardware
 - SMA RF Connector
 - RF regulatory certified
 - Serial Flash for OTA firmware upgrades
-- On board NXP FXOS8700CQ digital sensor, 3D Accelerometer ( |plusminus| 2g/
-  |plusminus| 4g/ |plusminus| 8g) + 3D
+- On board NXP FXOS8700CQ digital sensor, 3D Accelerometer (±2g/
+  ±4g/ ±8g) + 3D
   Magnetometer
 - OpenSDA and JTAG debug
 
@@ -45,46 +45,7 @@ For more information about the KW41Z SoC and FRDM-KW41Z board:
 Supported Features
 ==================
 
-The frdm_kw41z board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | soc flash                           |
-+-----------+------------+-------------------------------------+
-| SENSOR    | off-chip   | fxos8700 polling:                   |
-|           |            | fxos8700 trigger                    |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | tpm                                 |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| FTFA      | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/nxp/frdm_kw41z/frdm_kw41z_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -137,6 +98,8 @@ The KW41Z SoC has one UART, which is used for the console.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -226,6 +189,8 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
    Hello World! frdm_kw41z
+
+.. include:: ../../common/board-footer.rst.inc
 
 .. _FRDM-KW41Z Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/w-serieswireless-conn.m0-plus-m4/freedom-development-kit-for-kinetis-kw41z-31z-21z-mcus:FRDM-KW41Z

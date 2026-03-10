@@ -14,7 +14,7 @@ endif # DISPLAY
 
 if LVGL
 
-# Configure LVGL to use touchscreen with KSCAN API
+# Configure LVGL to use touchscreen
 
 config INPUT
 	default y
@@ -34,9 +34,6 @@ config LV_Z_DOUBLE_VDB
 # display refreshes, which is not necessary for the eLCDIF driver
 config LV_Z_FULL_REFRESH
 	default y
-
-config LV_Z_BITS_PER_PIXEL
-	default 16
 
 config LV_DPI_DEF
 	default 128

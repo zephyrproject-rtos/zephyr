@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Antmicro
+# SPDX-License-Identifier: Apache-2.0
+
+:name: MPFS-ICICLE-KIT
+:description: This script is prepared to run Zephyr on E51 core of PolarFire SoC Icicle Kit RISC-V board.
+
+$name?="MPFS-ICICLE-KIT"
+
+using sysbus
+mach create $name
+machine LoadPlatformDescription @platforms/boards/mpfs-icicle-kit.repl
+
+showAnalyzer mmuart0
+e51 PerformanceInMips 80
+
+# Disable U54 cores
+u54_1 IsHalted true
+u54_2 IsHalted true
+u54_3 IsHalted true
+u54_4 IsHalted true
+
+macro reset
+"""
+    sysbus LoadELF $elf
+"""
+runMacro $reset

@@ -33,7 +33,7 @@ Hardware
 The Nucleo F302R8 provides the following hardware components:
 
 - STM32F302R8T6 in QFP64 package
-- ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
+- ARM® 32-bit Cortex®-M4 CPU with FPU
 - 72 MHz max CPU frequency
 - VDD from 2.0 V to 3.6 V
 - 64 KB Flash
@@ -67,34 +67,7 @@ More information about the STM32F302R8 can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f302r8 board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f302r8/nucleo_f302r8_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -140,6 +113,8 @@ to UART2.  Default settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The Nucleo F302R8 board includes an ST-LINK/V2-1 embedded debug tool interface.
 

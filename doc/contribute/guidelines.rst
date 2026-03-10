@@ -101,15 +101,37 @@ this contributing and review process for imported components.
 
 .. _copyrights:
 
-Copyrights Notices
-*******************
+Copyright and License Notices
+=============================
 
-Please follow this `Community Best Practice`_ for Copyright Notices from the
-Linux Foundation.
+Zephyr follows SPDX/REUSE-style file headers. Add a machine-readable copyright notice and a license
+identifier at the top of each file so tooling can detect them (for example
+:ref:`west spdx <west-spdx>`, which uses the `REUSE tool`_).
 
+The Zephyr Project follows the `Community Best Practice`_ for copyright notices from the Linux
+Foundation, therefore we recommend using the following copyright notice:
+
+.. code-block:: none
+
+   SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+
+Include the license identifier alongside it:
+
+.. code-block:: none
+
+   SPDX-License-Identifier: Apache-2.0
+
+Practical guidance:
+
+- Place both lines at the very top of the file using the file's native comment syntax.
+- If you authored substantial, original content, you *may* add an additional line for yourself or
+  your organization.
 
 .. _Community Best Practice:
    https://www.linuxfoundation.org/blog/copyright-notices-in-open-source-software-projects/
+
+.. _REUSE tool:
+   https://github.com/fsfe/reuse-tool
 
 .. _DCO:
 
@@ -127,7 +149,7 @@ statement and thereby agrees to the DCO.
 
 When a developer submits a patch, it is a commitment that the contributor has
 the right to submit the patch per the license.  The DCO agreement is shown
-below and at http://developercertificate.org/.
+below and at https://developercertificate.org/.
 
 .. code-block:: none
 
@@ -171,8 +193,11 @@ For your commits, replace:
 - ``Your Name`` with your legal name (pseudonyms, hacker handles, and the
   names of groups are not allowed)
 
-- ``your.email@example.com`` with the same email address you are using to
-  author the commit (CI will fail if there is no match)
+- ``your.email@example.com`` with the real email address you are using to
+  author the commit. Pseudo or anonymized emails such as
+  ``you-id+your-username@users.noreply.github.com`` are not allowed. The
+  email must match the one you use to author the commit (CI will fail if
+  there is no match).
 
 You can automatically add the Signed-off-by: line to your commit body using
 ``git commit -s``. Use other commits in the zephyr git history as examples.
@@ -183,6 +208,56 @@ Additional requirements:
 
 - If you are altering an existing commit created by someone else, you must add
   your Signed-off-by: line without removing the existing one.
+
+.. _ai_coding_assistants:
+
+AI Coding Assistants
+********************
+
+This section provides guidance for contributors using AI tools and assistants when contributing to
+the Zephyr project.
+
+Licensing and Legal Requirements
+================================
+
+All contributions must comply with the licensing requirements of the project and be compatible with
+Zephyr's licensing (e.g. Apache-2.0, see :ref:`licensing_requirements` for more details).
+
+Signed-off-by and Developer Certificate of Origin
+=================================================
+
+AI agents **must not** add ``Signed-off-by`` tags. Only humans can legally certify the :ref:`DCO`.
+The human submitter is responsible for:
+
+- Reviewing all AI-generated code.
+- Ensuring compliance with licensing requirements.
+- Adding their own Signed-off-by tag to certify the DCO.
+- Taking full responsibility for the contribution.
+
+Usage disclosure and attribution
+================================
+
+When AI tools are being used to help write a contribution, proper attribution helps track the
+evolving role of AI in the development process. Contributions should include an ``Assisted-by:`` tag
+in the following format:
+
+.. code-block:: none
+
+   Assisted-by: [Agent Name]:[Model Version] [Tool1] [Tool2]
+
+Where:
+
+- ``[Agent Name]`` is the name of the AI tool or framework.
+- ``[Model Version]`` is the specific model version used.
+- ``[Tool1] [Tool2]`` are optional specialized analysis tools used.
+
+Basic development tools (git, gcc, make, editors) should not be listed.
+
+Example:
+
+.. code-block:: none
+
+   Assisted-by: Claude:claude-opus-4.6 coccinelle
 
 .. _source_tree_v2:
 
@@ -346,9 +421,22 @@ Pull Request Guidelines
 When opening a new Pull Request, adhere to the following guidelines to ensure
 compliance with Zephyr standards and facilitate the review process.
 
-If in doubt, it's advisible to explore existing Pull Requests within the Zephyr
+If in doubt, it's advisable to explore existing Pull Requests within the Zephyr
 repository. Use the search filters and labels to locate PRs related to changes
 similar to the ones you are proposing.
+
+.. note::
+   GitHub's default code UI uses 4-character tabs. However, Zephyr follows the
+   `Linux kernel coding style`_, which uses 8-character tabs.
+
+   To ensure your view of the code is consistent with other developers, please
+   go to your `user preferences on GitHub`_ and change the tab width to 8 spaces.
+
+.. _Linux kernel coding style:
+   https://kernel.org/doc/html/latest/process/coding-style.html#indentation
+
+.. _user preferences on GitHub:
+   https://github.com/settings/appearance
 
 .. _commit-guidelines:
 
@@ -476,31 +564,41 @@ in the Git commit's ``Author:`` field.
 See the :ref:`contributor-expectations` for a more complete discussion of
 contributor and reviewer expectations.
 
-Adding links
+Adding Links
 ------------
 
 .. _GitHub references:
    https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/autolinked-references-and-urls
 
-Do not include `GitHub references`_ in the commit message directly, as it can
-lose meaning in case the repository is forked, for example. Instead, if the
-change addresses a specific GitHub issue, include in the Pull Request message a
-line of the form:
+If your change addresses a specific GitHub issue, include a reference in the
+pull request description using the following format:
+
+.. code-block:: none
+
+   Fixes zephyrproject-rtos/zephyr#[issue number]
+
+For pull requests to the Zephyr project only, the short form can also be used,
+for example:
 
 .. code-block:: none
 
    Fixes #[issue number]
 
-Where ``[issue number]`` is the relevant GitHub issue's number. For
-example:
+Replace [issue number] with the relevant GitHub issue number. For example:
 
 .. code-block:: none
 
-   Fixes: #1234
+   Fixes zephyrproject-rtos/zephyr#1234
 
-You can point to other relevant information that can be found on the web using
-:code:`Link:` tags. This includes, for example: GitHub issues, datasheets,
-reference manuals, etc.
+This syntax ensures that the issue is automatically closed when the pull
+request is merged. Always specify the full repository path
+(zephyrproject-rtos/zephyr) to avoid ambiguity, especially when working across
+multiple repositories.
+
+The same format can also be used in commit messages.
+
+For linking to additional external resources—such as related issues,
+datasheets, or technical reference manuals—use the ``Link:`` tag:
 
 .. code-block:: none
 
@@ -549,24 +647,113 @@ Running CI Tests Locally
 check_compliance.py
 -------------------
 
-The ``check_compliance.py`` script serves as a valuable tool for assessing code
-compliance with Zephyr's established guidelines and best practices. The script
-acts as wrapper for a suite of tools that performs various checks, including
-linters and formatters.
+The :zephyr_file:`scripts/ci/check_compliance.py` script serves as a valuable
+tool for assessing code compliance with Zephyr's established guidelines and
+best practices. The script acts as wrapper for a suite of tools that performs
+various checks, including linters and formatters.
 
 Developers are encouraged to run the script locally to validate their changes
 before opening a new Pull Request:
 
 .. code-block:: bash
 
-   ./scripts/ci/check_compliance.py -c upstream/main..
+   ./scripts/ci/check_compliance.py -c <commit range>
+
+.. note::
+   On Windows if the .pl extension has not yet been associated with an
+   application, then the first time a .pl file is run without specifying an
+   interpreter, Windows will ask what application will open Perl files.
+   Set the default app to Strawberry Perl. By default the executable is
+   installed at ``C:\Strawberry\perl\bin\perl.exe``.
+
+KeepSorted Check
+^^^^^^^^^^^^^^^^
+
+The KeepSorted check ensures that specified blocks of code, configuration, or
+documentation remain in sorted order.
+
+To use the KeepSorted check, wrap your sorted content between dedicated lines
+containing start and stop markers, typically using comments:
+
+.. code-block:: c
+
+   // zephyr-keep-sorted-start
+   option_a
+   option_b
+   option_c
+   // zephyr-keep-sorted-stop
+
+KeepSorted Marker Options
+"""""""""""""""""""""""""
+
+The sorting behavior of each block can be customized in several ways.
+To do this, one or more of the following parameters can be added on
+the same line as the start marker itself:
+
+**re(regex_pattern)**
+   Enables regex mode where only lines matching the specified regular expression
+   are checked for sorting. Other lines are ignored.
+
+   Example checking sorted properties in a yaml file:
+
+   .. code-block:: yaml
+
+      # zephyr-keep-sorted-start re(^\s+\- name:)
+      projects:
+        - name: application
+          revision: main
+        - name: library1
+          revision: feature-branch
+        - name: library2
+          revision: main
+      # zephyr-keep-sorted-stop
+
+**strip(characters)**
+   Strips the specified characters from lines before performing the sort comparison.
+   This is useful when lines have optional prefixes or suffixes that should be
+   ignored during sorting.
+
+   Example stripping quotes from yaml dictionary keys:
+
+   .. code-block:: yaml
+
+      # zephyr-keep-sorted-start strip(":)
+      ACPI:
+        status: odd fixes
+      "West project: acpica":
+        status: odd fixes
+      # zephyr-keep-sorted-stop
+
+**nofold**
+   Disables line folding. By default, indented lines following a main line are
+   concatenated (folded) together for sorting comparison. The ``nofold`` option
+   disables this behavior and ignores indented lines.
+
+**ignorecase**
+   Enables case-insensitive sorting using Python's `str.casefold`_. This allows
+   mixing uppercase and lowercase items in sorted blocks without causing sort
+   order violations. Defaults to Python's string ordering if omitted.
+
+.. _str.casefold: https://docs.python.org/3/library/stdtypes.html#str.casefold
+
+Multiple options can be combined on the same marker line:
+
+.. code-block:: rst
+
+   .. zephyr-keep-sorted-start re(^\* \w) ignorecase
+   * Shell
+     Some important message about the shell.
+
+   * STM32
+     Updates for this vendor.
+   .. zephyr-keep-sorted-stop
 
 twister
 -------
 
 .. note::
    twister is only fully supported on Linux; on Windows and MacOS the execution
-   of tests is not supported, only building.
+   of tests is not supported on all target devices.
 
 If you think your change may break some test, you can submit your PR as a draft
 and let the project CI automatically run the :ref:`twister_script` for you.
@@ -576,7 +763,7 @@ for example:
 
 .. code-block:: bash
 
-   west twister -p native_sim -s tests/drivers/build_all/sensor/sensors.generic_test
+   west twister -p native_sim -s tests/drivers/build_all/sensor/drivers.sensor.generic_test
 
 .. _static_analysis:
 
@@ -737,13 +924,6 @@ workflow here:
    review.  Email will be sent as review comments are made, or you can check
    on your pull request at https://github.com/zephyrproject-rtos/zephyr/pulls.
 
-   .. note:: As more commits are merged upstream, the GitHub PR page will show
-      a ``This branch is out-of-date with the base branch`` message and a
-      ``Update branch`` button on the PR page. That message should be ignored,
-      as the commits will be rebased as part of merging anyway, and triggering
-      a branch update from the GitHub UI will cause the PR approvals to be
-      dropped.
-
 #. While you're waiting for your pull request to be accepted and merged, you
    can create another branch to work on another issue. (Be sure to make your
    new branch off of ``main`` and not the previous branch.)::
@@ -856,7 +1036,7 @@ For example, a copy of a locally maintained import::
 
       Origin: Contiki OS
       License: BSD 3-Clause
-      URL: http://www.contiki-os.org/
+      URL: https://www.contiki-os.org/
       commit: 853207acfdc6549b10eb3e44504b1a75ae1ad63a
       Purpose: Introduction of networking stack.
 
@@ -909,7 +1089,7 @@ Requirements for Treewide Changes
   pull requests that are treewide changes
 
 - The person proposing a treewide change must create an `RFC issue
-  <https://github.com/zephyrproject-rtos/zephyr/issues/new?assignees=&labels=RFC&template=003_rfc-proposal.md&title=>`_
+  <https://github.com/zephyrproject-rtos/zephyr/issues/new?assignees=&labels=RFC&template=003_rfc-proposal.yml>`_
   describing the change, its rationale and impact, etc. before any pull
   requests related to the change can be merged
 

@@ -8,12 +8,12 @@
 #include <soc.h>
 #include <zephyr/init.h>
 
-#include <stm32l4xx_ll_utils.h>
-#include <stm32l4xx_ll_bus.h>
-#include <stm32l4xx_ll_cortex.h>
-#include <stm32l4xx_ll_pwr.h>
-#include <stm32l4xx_ll_rcc.h>
-#include <stm32l4xx_ll_system.h>
+#include <stm32_ll_utils.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_cortex.h>
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_system.h>
 #include <clock_control/clock_stm32_ll_common.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
@@ -92,13 +92,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		}
 		/* need to restore the clock */
 		stm32_clock_control_init(NULL);
-
-		/*
-		 * System is now in active mode.
-		 * Reenable interrupts which were disabled
-		 * when OS started idling code.
-		 */
-		irq_unlock(0);
 		break;
 	case PM_STATE_STANDBY:
 		__fallthrough;
@@ -111,6 +104,12 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		break;
 	}
 
+	/*
+	 * System is now in active mode.
+	 * Reenable interrupts which were disabled
+	 * when OS started idling code.
+	 */
+	irq_unlock(0);
 }
 
 /* Initialize STM32 Power */

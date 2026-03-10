@@ -27,30 +27,17 @@ More information about the board can be found at the `PFM M467 User Manual`_.
 Supported Features
 ==================
 
-* The on-board 12-MHz crystal allows the device to run at its maximum operating speed of 200MHz.
+.. zephyr:board-supported-hw::
 
-The development board configuration supports the following hardware features:
-
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| NVIC      | on-chip    | nested vectored       |
-|           |            | interrupt controller  |
-+-----------+------------+-----------------------+
-| SYSTICK   | on-chip    | system clock          |
-+-----------+------------+-----------------------+
-| UART      | on-chip    | serial port           |
-+-----------+------------+-----------------------+
-| GPIO      | on-chip    | gpio                  |
-+-----------+------------+-----------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
+The on-board 12-MHz crystal allows the device to run at its maximum operating speed of 200MHz.
 
 More details about the supported peripherals are available in `M460 TRM`_
-Other hardware features are not currently supported by the Zephyr kernel.
 
 Building and Flashing
 *********************
+
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
@@ -81,6 +68,17 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
    :goals: debug
 
 Step through the application in your debugger.
+
+VS Code Support
+===============
+
+Here is to go through VS Code instead of command line.
+
+Please install Nuvoton NuMicro Cortex-M Pack and follow getting start guide of this pack.
+This pack is a complete development toolkit for Nuvoton’s NuMicro Cortex-M microcontrollers
+in Visual Studio Code.
+URL of this pack is
+https://marketplace.visualstudio.com/items?itemName=Nuvoton.nuvoton-numicro-cortex-m-pack
 
 References
 **********

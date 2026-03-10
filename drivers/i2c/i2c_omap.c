@@ -12,6 +12,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/sys/util.h>
 
 #ifdef CONFIG_I2C_OMAP_BUS_RECOVERY
 #include "i2c_bitbang.h"
@@ -20,38 +22,41 @@
 LOG_MODULE_REGISTER(omap_i2c, CONFIG_I2C_LOG_LEVEL);
 
 #define I2C_OMAP_TIMEOUT     100U
+#define I2C_OMAP_TRANSFER_TIMEOUT 1000U
 /* OCP_SYSSTATUS bit definitions */
 #define SYSS_RESETDONE_MASK  BIT(0)
 #define RETRY                -1
 #define I2C_BITRATE_FAST     400000
 #define I2C_BITRATE_STANDARD 100000
+#define I2C_BUFSTAT_RX_MASK  GENMASK(13, 8)
+#define I2C_BUFSTAT_TX_MASK  GENMASK(5, 0)
 
 /* I2C Registers */
 typedef struct {
 	uint8_t RESERVED_0[0x10]; /**< Reserved, offset: 0x0 */
 
-	__IO uint32_t SYSC;          /**< System Configuration, offset: 0x10 */
+	uint32_t SYSC;          /**< System Configuration, offset: 0x10 */
 	uint8_t RESERVED_1[0x18];    /**< Reserved, offset: 0x14 - 0x2C */
-	__IO uint32_t IRQENABLE_SET; /**< Interrupt Enable Set, offset: 0x2C */
+	uint32_t IRQENABLE_SET; /**< Interrupt Enable Set, offset: 0x2C */
 	uint8_t RESERVED_2[0x4];     /**< Reserved, offset: 0x30 - 0x34 */
-	__IO uint32_t WE;            /**< Wakeup Enable, offset: 0x34 */
+	uint32_t WE;            /**< Wakeup Enable, offset: 0x34 */
 	uint8_t RESERVED_3[0x4C];    /**< Reserved, offset: 0x38 - 0x84 */
-	__IO uint32_t IE;            /**< Interrupt Enable (Legacy), offset: 0x84 */
-	__IO uint32_t STAT;          /**< Status, offset: 0x88 */
+	uint32_t IE;            /**< Interrupt Enable (Legacy), offset: 0x84 */
+	uint32_t STAT;          /**< Status, offset: 0x88 */
 	uint8_t RESERVED_4[0x4];     /**< Reserved, offset: 0x8C - 0x90 */
-	__IO uint32_t SYSS;          /**< System Status, offset: 0x90 */
-	__IO uint32_t BUF;           /**< Buffer, offset: 0x94 */
-	__IO uint32_t CNT;           /**< Data Count, offset: 0x98 */
-	__IO uint32_t DATA;          /**< Data Access, offset: 0x9C */
+	uint32_t SYSS;          /**< System Status, offset: 0x90 */
+	uint32_t BUF;           /**< Buffer, offset: 0x94 */
+	uint32_t CNT;           /**< Data Count, offset: 0x98 */
+	uint32_t DATA;          /**< Data Access, offset: 0x9C */
 	uint8_t RESERVED_5[0x4];     /**< Reserved, offset: 0xA0 - 0xA4 */
-	__IO uint32_t CON;           /**< Configuration, offset: 0xA4 */
-	__IO uint32_t OA;            /**< Own Address, offset: 0xA8 */
-	__IO uint32_t SA;            /**< Target Address, offset: 0xAC */
-	__IO uint32_t PSC;           /**< Clock Prescaler, offset: 0xB0 */
-	__IO uint32_t SCLL;          /**< SCL Low Time, offset: 0xB4 */
-	__IO uint32_t SCLH;          /**< SCL High Time, offset: 0xB8 */
-	__IO uint32_t SYSTEST;       /**< System Test, offset: 0xBC */
-	__IO uint32_t BUFSTAT;       /**< Buffer Status, offset: 0xC0 */
+	uint32_t CON;           /**< Configuration, offset: 0xA4 */
+	uint32_t OA;            /**< Own Address, offset: 0xA8 */
+	uint32_t SA;            /**< Target Address, offset: 0xAC */
+	uint32_t PSC;           /**< Clock Prescaler, offset: 0xB0 */
+	uint32_t SCLL;          /**< SCL Low Time, offset: 0xB4 */
+	uint32_t SCLH;          /**< SCL High Time, offset: 0xB8 */
+	uint32_t SYSTEST;       /**< System Test, offset: 0xBC */
+	uint32_t BUFSTAT;       /**< Buffer Status, offset: 0xC0 */
 } i2c_omap_regs_t;
 
 /* I2C Configuration Register (I2C_OMAP_CON) */
@@ -98,12 +103,13 @@ typedef struct {
 typedef void (*init_func_t)(const struct device *dev);
 #define DEV_CFG(dev)      ((const struct i2c_omap_cfg *)(dev)->config)
 #define DEV_DATA(dev)     ((struct i2c_omap_data *)(dev)->data)
-#define DEV_I2C_BASE(dev) ((i2c_omap_regs_t *)DEVICE_MMIO_NAMED_GET(dev, base))
+#define DEV_I2C_BASE(dev) ((volatile i2c_omap_regs_t *)DEVICE_MMIO_GET(dev))
 
 struct i2c_omap_cfg {
-	DEVICE_MMIO_NAMED_ROM(base);
+	DEVICE_MMIO_ROM;
 	uint32_t irq;
 	uint32_t speed;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 enum i2c_omap_speed {
@@ -119,7 +125,7 @@ struct i2c_omap_speed_config {
 };
 
 struct i2c_omap_data {
-	DEVICE_MMIO_NAMED_RAM(base);
+	DEVICE_MMIO_RAM;
 	enum i2c_omap_speed speed;
 	struct i2c_omap_speed_config speed_config;
 	struct i2c_msg current_msg;
@@ -139,7 +145,7 @@ static void i2c_omap_init_ll(const struct device *dev)
 {
 
 	struct i2c_omap_data *data = DEV_DATA(dev);
-	i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
+	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
 
 	i2c_base_addr->CON = 0;
 	i2c_base_addr->PSC = data->speed_config.pscstate;
@@ -159,9 +165,9 @@ static void i2c_omap_init_ll(const struct device *dev)
 static int i2c_omap_reset(const struct device *dev)
 {
 	struct i2c_omap_data *data = DEV_DATA(dev);
-	i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
+	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
 	uint64_t timeout;
-	uint16_t sysc;
+	uint32_t sysc;
 
 	sysc = i2c_base_addr->SYSC;
 	i2c_base_addr->CON &= ~I2C_OMAP_CON_EN;
@@ -266,7 +272,7 @@ static int i2c_omap_configure(const struct device *dev, uint32_t dev_config)
 static void i2c_omap_transmit_receive_data(const struct device *dev, uint8_t num_bytes)
 {
 	struct i2c_omap_data *data = DEV_DATA(dev);
-	i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
+	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
 	uint8_t *buf_ptr = data->current_msg.buf;
 
 	while (num_bytes--) {
@@ -275,6 +281,7 @@ static void i2c_omap_transmit_receive_data(const struct device *dev, uint8_t num
 		} else {
 			i2c_base_addr->DATA = *(buf_ptr++);
 		}
+		data->current_msg.len--;
 	}
 }
 
@@ -291,7 +298,7 @@ static void i2c_omap_transmit_receive_data(const struct device *dev, uint8_t num
 static void i2c_omap_resize_fifo(const struct device *dev, uint8_t size)
 {
 	struct i2c_omap_data *data = DEV_DATA(dev);
-	i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
+	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
 
 	if (data->receiver) {
 		i2c_base_addr->BUF &= I2C_OMAP_BUF_RXFIF_CLR;
@@ -313,8 +320,8 @@ static void i2c_omap_resize_fifo(const struct device *dev, uint8_t size)
  */
 static int i2c_omap_get_sda(void *io_context)
 {
-	const struct i2c_omap_cfg *cfg = (const struct i2c_omap_cfg *)io_context;
-	i2c_omap_regs_t *i2c_base_addr = (i2c_omap_regs_t *)cfg->base.addr;
+	const struct device *dev = io_context;
+	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
 
 	return (i2c_base_addr->SYSTEST & I2C_OMAP_SYSTEST_SDA_I_FUNC) ? 1 : 0;
 }
@@ -329,8 +336,8 @@ static int i2c_omap_get_sda(void *io_context)
  */
 static void i2c_omap_set_sda(void *io_context, int state)
 {
-	const struct i2c_omap_cfg *cfg = (const struct i2c_omap_cfg *)io_context;
-	i2c_omap_regs_t *i2c_base_addr = (i2c_omap_regs_t *)cfg->base.addr;
+	const struct device *dev = io_context;
+	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
 
 	if (state) {
 		i2c_base_addr->SYSTEST |= I2C_OMAP_SYSTEST_SDA_O;
@@ -349,8 +356,8 @@ static void i2c_omap_set_sda(void *io_context, int state)
  */
 static void i2c_omap_set_scl(void *io_context, int state)
 {
-	const struct i2c_omap_cfg *cfg = (const struct i2c_omap_cfg *)io_context;
-	i2c_omap_regs_t *i2c_base_addr = (i2c_omap_regs_t *)cfg->base.addr;
+	const struct device *dev = io_context;
+	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
 
 	if (state) {
 		i2c_base_addr->SYSTEST |= I2C_OMAP_SYSTEST_SCL_O;
@@ -372,7 +379,7 @@ static void i2c_omap_set_scl(void *io_context, int state)
 static int i2c_omap_recover_bus(const struct device *dev)
 {
 	const struct i2c_omap_cfg *cfg = DEV_CFG(dev);
-	i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
+	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
 	struct i2c_omap_data *data = DEV_DATA(dev);
 
 	struct i2c_bitbang bitbang_omap;
@@ -386,7 +393,7 @@ static int i2c_omap_recover_bus(const struct device *dev)
 	k_sem_take(&data->lock, K_FOREVER);
 	i2c_base_addr->SYSTEST |= I2C_OMAP_SYSTEST_ST_EN | (3 << I2C_OMAP_SYSTEST_TMODE_SHIFT) |
 				  I2C_OMAP_SYSTEST_SCL_O | I2C_OMAP_SYSTEST_SDA_O;
-	i2c_bitbang_init(&bitbang_omap, &bitbang_omap_io, (void *)cfg);
+	i2c_bitbang_init(&bitbang_omap, &bitbang_omap_io, (void *)dev);
 	error = i2c_bitbang_recover_bus(&bitbang_omap);
 	if (error != 0) {
 		LOG_ERR("failed to recover bus (err %d)", error);
@@ -416,7 +423,7 @@ restore:
  */
 static int i2c_omap_wait_for_bb(const struct device *dev)
 {
-	i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
+	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
 	uint32_t timeout = k_uptime_get_32() + I2C_OMAP_TIMEOUT;
 
 	while (i2c_base_addr->STAT & I2C_OMAP_STAT_BB) {
@@ -448,8 +455,9 @@ static int i2c_omap_wait_for_bb(const struct device *dev)
 static int i2c_omap_transfer_message_ll(const struct device *dev)
 {
 	struct i2c_omap_data *data = DEV_DATA(dev);
-	i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
-	uint16_t stat = i2c_base_addr->STAT, result = 0;
+	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
+	uint32_t stat = i2c_base_addr->STAT, result = 0;
+	uint8_t num_bytes;
 
 	if (data->receiver) {
 		stat &= ~(I2C_OMAP_STAT_XDR | I2C_OMAP_STAT_XRDY);
@@ -477,9 +485,10 @@ static int i2c_omap_transfer_message_ll(const struct device *dev)
 
 	/* Handle receive logic */
 	if (stat & (I2C_OMAP_STAT_RRDY | I2C_OMAP_STAT_RDR)) {
-		int buffer =
-			(stat & I2C_OMAP_STAT_RRDY) ? i2c_base_addr->BUF : i2c_base_addr->BUFSTAT;
-		i2c_omap_transmit_receive_data(dev, buffer);
+		num_bytes = FIELD_GET(I2C_BUFSTAT_RX_MASK, i2c_base_addr->BUFSTAT);
+		if (num_bytes > 0) {
+			i2c_omap_transmit_receive_data(dev, num_bytes);
+		}
 		i2c_base_addr->STAT |=
 			(stat & I2C_OMAP_STAT_RRDY) ? I2C_OMAP_STAT_RRDY : I2C_OMAP_STAT_RDR;
 		return RETRY;
@@ -487,9 +496,10 @@ static int i2c_omap_transfer_message_ll(const struct device *dev)
 
 	/* Handle transmit logic */
 	if (stat & (I2C_OMAP_STAT_XRDY | I2C_OMAP_STAT_XDR)) {
-		int buffer =
-			(stat & I2C_OMAP_STAT_XRDY) ? i2c_base_addr->BUF : i2c_base_addr->BUFSTAT;
-		i2c_omap_transmit_receive_data(dev, buffer);
+		num_bytes = FIELD_GET(I2C_BUFSTAT_TX_MASK, i2c_base_addr->BUFSTAT);
+		if (num_bytes > 0) {
+			i2c_omap_transmit_receive_data(dev, num_bytes);
+		}
 		i2c_base_addr->STAT |=
 			(stat & I2C_OMAP_STAT_XRDY) ? I2C_OMAP_STAT_XRDY : I2C_OMAP_STAT_XDR;
 		return RETRY;
@@ -529,8 +539,8 @@ static int i2c_omap_transfer_message(const struct device *dev, struct i2c_msg *m
 				     uint16_t addr)
 {
 	struct i2c_omap_data *data = DEV_DATA(dev);
-	i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
-	unsigned long time_left = 1000;
+	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
+	k_timepoint_t end;
 	uint16_t control_reg;
 	int result = 0;
 	/* Determine message direction (read or write) and update the receiver flag */
@@ -570,10 +580,10 @@ static int i2c_omap_transfer_message(const struct device *dev, struct i2c_msg *m
 	i2c_base_addr->CON = control_reg;
 	/* Poll for status until the transfer is complete */
 	/* Call a lower-level function to continue the transfer */
+	end = sys_timepoint_calc(K_MSEC(I2C_OMAP_TRANSFER_TIMEOUT));
 	do {
 		result = i2c_omap_transfer_message_ll(dev);
-		time_left--;
-	} while (result == RETRY && time_left);
+	} while (result == RETRY && !sys_timepoint_expired(end));
 
 	/* If no errors occurred, return success */
 	if (!result) {
@@ -680,6 +690,15 @@ static int i2c_omap_init(const struct device *dev)
 {
 	struct i2c_omap_data *data = DEV_DATA(dev);
 	const struct i2c_omap_cfg *cfg = DEV_CFG(dev);
+	int ret;
+
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("failed to apply pinctrl");
+		return ret;
+	}
 
 	k_sem_init(&data->lock, 1, 1);
 	/* Set the speed for I2C */
@@ -692,17 +711,24 @@ static int i2c_omap_init(const struct device *dev)
 }
 
 #define I2C_OMAP_INIT(inst)                                                                        \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
 	LOG_INSTANCE_REGISTER(omap_i2c, inst, CONFIG_I2C_LOG_LEVEL);                               \
 	static const struct i2c_omap_cfg i2c_omap_cfg_##inst = {                                   \
-		DEVICE_MMIO_NAMED_ROM_INIT(base, DT_DRV_INST(inst)),                               \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                           \
 		.irq = DT_INST_IRQN(inst),                                                         \
 		.speed = DT_INST_PROP(inst, clock_frequency),                                      \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 	};                                                                                         \
                                                                                                    \
 	static struct i2c_omap_data i2c_omap_data_##inst;                                          \
                                                                                                    \
-	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_omap_init, NULL, &i2c_omap_data_##inst,                \
-				  &i2c_omap_cfg_##inst, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,     \
-				  &i2c_omap_api);
+	I2C_DEVICE_DT_INST_DEFINE(inst,                                                            \
+		i2c_omap_init,                                                                     \
+		NULL,                                                                              \
+		&i2c_omap_data_##inst,                                                             \
+		&i2c_omap_cfg_##inst,                                                              \
+		POST_KERNEL,                                                                       \
+		CONFIG_I2C_INIT_PRIORITY,                                                          \
+		&i2c_omap_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_OMAP_INIT)

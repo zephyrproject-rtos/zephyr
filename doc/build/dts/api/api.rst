@@ -257,6 +257,16 @@ controllers or channels, and properties related to them.
 
 .. doxygengroup:: devicetree-dmas
 
+.. _devicetree-display-api:
+
+Display
+=======
+
+These conveniences may be used for nodes which describe display
+controllers, and properties related to them.
+
+.. doxygengroup:: devicetree-display
+
 .. _devicetree-flash-api:
 
 Fixed flash partitions
@@ -278,6 +288,16 @@ and properties related to them.
 
 .. doxygengroup:: devicetree-gpio
 
+.. _devicetree-hwspinlock-api:
+
+HWSpinlock
+==========
+
+These conveniences may be used for nodes which describe hardware spinlock,
+and properties related to them.
+
+.. doxygengroup:: devicetree-hwspinlock
+
 IO channels
 ===========
 
@@ -295,6 +315,26 @@ These conveniences may be used for nodes which describe MBOX controllers/users,
 and properties related to them.
 
 .. doxygengroup:: devicetree-mbox
+
+.. _devicetree-nvmem-api:
+
+NVMEM
+=====
+
+These conveniences may be used for nodes which describe Non-Volatile
+Memory, and properties related to them.
+
+.. doxygengroup:: devicetree-nvmem
+
+.. _devicetree-ordinals-api:
+
+Ordinals
+========
+
+These conveniences may be used for nodes which describe Dependency
+tracking, and properties related to them.
+
+.. doxygengroup:: devicetree-dep-ord
 
 .. _devicetree-pinctrl-api:
 
@@ -388,15 +428,17 @@ device.
      - Sets UART device used for the Bluetooth monitor logging
    * - zephyr,bt-hci
      - Selects the HCI device used by the Bluetooth host stack
+   * - zephyr,camera
+     - Video input device, typically a camera.
    * - zephyr,canbus
      - Sets the default CAN controller
-   * - zephyr,ccm
-     - Core-Coupled Memory node on some STM32 SoCs
    * - zephyr,code-partition
      - Flash partition that the Zephyr image's text section should be linked
        into
    * - zephyr,console
      - Sets UART device used by console driver
+   * - zephyr,crc
+     - Selects the CRC device used as an accelerator by the CRC subsystem
    * - zephyr,display
      - Sets the default display controller
    * - zephyr,keyboard-scan
@@ -422,6 +464,9 @@ device.
      - A node whose ``reg`` is used by the OpenAMP subsystem to determine the
        base address and size of the shared memory (SHM) usable for
        interprocess-communication (IPC)
+   * - zephyr,ipc_rsc_table
+     - Specifies a memory region that will be used for the OpenAMP resource table.
+       Only needed if :kconfig:option:`CONFIG_OPENAMP_COPY_RSC_TABLE` is enabled.
    * - zephyr,itcm
      - Instruction Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,log-uart
@@ -451,11 +496,21 @@ device.
      - UART used for :ref:`device_mgmt`
    * - zephyr,uart-pipe
      - Sets UART device used by serial pipe driver
-   * - zephyr,usb-device
-     - USB device node. If defined and has a ``vbus-gpios`` property, these
-       will be used by the USB subsystem to enable/disable VBUS
    * - zephyr,led-strip
      - A LED-strip node which is used to determine the timings of the
        WS2812 GPIO driver
    * - zephyr,touch
-     - touchscreen controller device node.
+     - Touchscreen controller device node. When LVGL is used, if
+       :kconfig:option:`CONFIG_LV_Z_POINTER_FROM_CHOSEN_TOUCH` is enabled, an LVGL
+       pointer input device is created using the touchscreen controller
+       as its input source.
+   * - zephyr,videoenc
+     - Video encoder device, typically an H264 or MJPEG video encoder.
+   * - mcuboot,ram-load-dev
+     - When a Zephyr application is built to be loaded to RAM by MCUboot, with
+       :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD`,
+       this property is used to tell MCUboot the load address of the image, which
+       will be the ``reg`` of the chosen node.
+   * - zephyr,boot-mode
+     - Used for :ref:`boot_mode_api` selection, part of :ref:`retention_api`, which specifies
+       what image on a device should be booted.

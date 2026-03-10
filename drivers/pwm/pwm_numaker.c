@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(pwm_numaker, CONFIG_PWM_LOG_LEVEL);
 #define NUMAKER_SYSCLK_FREQ       DT_PROP(DT_NODELABEL(sysclk), clock_frequency)
 /* EPWM channel 0~5 mask */
 #define NUMAKER_PWM_CHANNEL_MASK  (0x3FU)
+#define NUMAKER_PWM_HCLK0         1U
 
 /* Device config */
 struct pwm_numaker_config {
@@ -432,6 +433,29 @@ static int pwm_numaker_clk_get_rate(EPWM_T *epwm, uint32_t *rate)
 	uint32_t clk_src;
 	uint32_t epwm_clk_src;
 
+#if defined(CONFIG_SOC_SERIES_M55M1X)
+	if (epwm == EPWM0) {
+		clk_src = CLK->EPWMSEL & CLK_EPWMSEL_EPWM0SEL_Msk;
+	} else if (epwm == EPWM1) {
+		clk_src = CLK->EPWMSEL & CLK_EPWMSEL_EPWM1SEL_Msk;
+	} else {
+		LOG_ERR("Invalid EPWM node");
+		return -EINVAL;
+	}
+
+	if (clk_src == NUMAKER_PWM_HCLK0) {
+		/* clock source is from HCLK0 clock */
+		epwm_clk_src = CLK_GetHCLK0Freq();
+	} else {
+		/* clock source is from PCLK */
+		SystemCoreClockUpdate();
+		if (epwm == EPWM0) {
+			epwm_clk_src = CLK_GetPCLK0Freq();
+		} else { /* (epwm == EPWM1) */
+			epwm_clk_src = CLK_GetPCLK2Freq();
+		}
+	}
+#else
 	if (epwm == EPWM0) {
 		clk_src = CLK->CLKSEL2 & CLK_CLKSEL2_EPWM0SEL_Msk;
 	} else if (epwm == EPWM1) {
@@ -453,6 +477,7 @@ static int pwm_numaker_clk_get_rate(EPWM_T *epwm, uint32_t *rate)
 			epwm_clk_src = CLK_GetPCLK1Freq();
 		}
 	}
+#endif
 	*rate = epwm_clk_src;
 	return 0;
 }

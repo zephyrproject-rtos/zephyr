@@ -12,11 +12,6 @@
  * - Wake-on-LAN interrupt not supported.
  * - Send function is not SMP-capable (due to single TX done semaphore).
  * - Interrupt-driven PHY management not supported - polling only.
- * - No explicit placement of the DMA memory area(s) in either a
- *   specific memory section or at a fixed memory location yet. This
- *   is not an issue as long as the controller is used in conjunction
- *   with the Cortex-R5 QEMU target or an actual R5 running without the
- *   MPU enabled.
  * - No detailed error handling when evaluating the Interrupt Status,
  *   RX Status and TX Status registers.
  */
@@ -25,6 +20,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/cache.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
@@ -37,6 +33,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+#if CONFIG_QEMU_TARGET ||\
+	DT_ANY_INST_HAS_BOOL_STATUS_OKAY(disable_rx_checksum_offload) ||\
+	DT_ANY_INST_HAS_BOOL_STATUS_OKAY(disable_tx_checksum_offload)
+#warning "xlnx_gem: at least one instance has checksum offloading to hardware disabled"
+#endif
+
 static int  eth_xlnx_gem_dev_init(const struct device *dev);
 static void eth_xlnx_gem_iface_init(struct net_if *iface);
 static void eth_xlnx_gem_isr(const struct device *dev);
@@ -48,6 +50,9 @@ static enum ethernet_hw_caps
 static int  eth_xlnx_gem_get_config(const struct device *dev,
 				    enum ethernet_config_type type,
 				    struct ethernet_config *config);
+static int eth_xlnx_gem_set_config(const struct device *dev,
+				   enum ethernet_config_type type,
+				   const struct ethernet_config *config);
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 static struct net_stats_eth *eth_xlnx_gem_stats(const struct device *dev);
 #endif
@@ -73,6 +78,7 @@ static const struct ethernet_api eth_xlnx_gem_apis = {
 	.start		  = eth_xlnx_gem_start_device,
 	.stop		  = eth_xlnx_gem_stop_device,
 	.get_config	  = eth_xlnx_gem_get_config,
+	.set_config	  = eth_xlnx_gem_set_config,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats	  = eth_xlnx_gem_stats,
 #endif
@@ -83,6 +89,25 @@ static const struct ethernet_api eth_xlnx_gem_apis = {
  * are enabled in the device tree of the current target board.
  */
 DT_INST_FOREACH_STATUS_OKAY(ETH_XLNX_GEM_INITIALIZE)
+
+/*
+ * If dcache is enabled: RX/TX buffer sizes of all enabled instances
+ * must be a multiple of the cache line size
+ */
+
+#ifdef CONFIG_DCACHE
+
+#define ETH_XLNX_GEM_BUFFER_SIZE_CHECK(port) \
+BUILD_ASSERT((DT_INST_PROP(port, rx_buffer_size) % CONFIG_DCACHE_LINE_SIZE) == 0,\
+	     "RX buffer size is not a multiple of the dcache line size for GEM "\
+	     "instance " #port);\
+BUILD_ASSERT((DT_INST_PROP(port, tx_buffer_size) % CONFIG_DCACHE_LINE_SIZE) == 0,\
+	     "TX buffer size is not a multiple of the dcache line size for GEM "\
+	     "instance " #port);
+
+DT_INST_FOREACH_STATUS_OKAY(ETH_XLNX_GEM_BUFFER_SIZE_CHECK)
+
+#endif /* CONFIG_DCACHE */
 
 /**
  * @brief GEM device initialization function
@@ -98,7 +123,6 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
 	uint32_t reg_val;
 
 	/* Precondition checks using assertions */
-
 	/* Valid PHY address and polling interval, if PHY is to be managed */
 	if (dev_conf->init_phy) {
 		__ASSERT((dev_conf->phy_mdio_addr_fix >= 0 &&
@@ -132,11 +156,6 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
 #endif
 
 	/* AMBA AHB configuration options */
-	__ASSERT((dev_conf->amba_dbus_width == AMBA_AHB_DBUS_WIDTH_32BIT ||
-		 dev_conf->amba_dbus_width == AMBA_AHB_DBUS_WIDTH_64BIT ||
-		 dev_conf->amba_dbus_width == AMBA_AHB_DBUS_WIDTH_128BIT),
-		 "%s AMBA AHB bus width configuration is invalid",
-		 dev->name);
 	__ASSERT((dev_conf->ahb_burst_length == AHB_BURST_SINGLE ||
 		 dev_conf->ahb_burst_length == AHB_BURST_INCR4 ||
 		 dev_conf->ahb_burst_length == AHB_BURST_INCR8 ||
@@ -176,16 +195,6 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
 		 "%s TX buffer size %u is invalid, should be >64, "
 		 "must be 16380 bytes maximum.", dev->name,
 		 dev_conf->tx_buffer_size);
-
-	/* Checksum offloading limitations of the QEMU GEM implementation */
-#ifdef CONFIG_QEMU_TARGET
-	__ASSERT(!dev_conf->enable_rx_chksum_offload,
-		 "TCP/UDP/IP hardware checksum offloading is not "
-		 "supported by the QEMU GEM implementation");
-	__ASSERT(!dev_conf->enable_tx_chksum_offload,
-		 "TCP/UDP/IP hardware checksum offloading is not "
-		 "supported by the QEMU GEM implementation");
-#endif
 
 	/*
 	 * Initialization procedure as described in the Zynq-7000 TRM,
@@ -241,15 +250,9 @@ static void eth_xlnx_gem_iface_init(struct net_if *iface)
 	k_work_init_delayable(&dev_data->phy_poll_delayed_work,
 			      eth_xlnx_gem_poll_phy);
 
-	/* Initialize TX completion semaphore */
+	/* Initialize TX-related semaphores */
 	k_sem_init(&dev_data->tx_done_sem, 0, 1);
-
-	/*
-	 * Initialize semaphores in the RX/TX BD rings which have not
-	 * yet been initialized
-	 */
-	k_sem_init(&dev_data->txbd_ring.ring_sem, 1, 1);
-	/* RX BD ring semaphore is not required at the time being */
+	k_sem_init(&dev_data->tx_bd_ring.ring_sem, 1, 1);
 
 	/* Initialize the device's interrupt */
 	dev_conf->config_func(dev);
@@ -395,20 +398,20 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 		   dev_conf->tx_buffer_size);
 
 	if (dev_conf->defer_txd_to_queue) {
-		k_sem_take(&(dev_data->txbd_ring.ring_sem), K_FOREVER);
+		k_sem_take(&(dev_data->tx_bd_ring.ring_sem), K_FOREVER);
 	} else {
 		sys_write32(ETH_XLNX_GEM_IXR_TX_COMPLETE_BIT,
 			    dev_conf->base_addr + ETH_XLNX_GEM_IDR_OFFSET);
 	}
 
-	if (bds_reqd > dev_data->txbd_ring.free_bds) {
+	if (bds_reqd > dev_data->tx_bd_ring.free_bds) {
 		LOG_ERR("%s cannot TX, packet length %hu requires "
 			"%hhu BDs, current free count = %hhu",
 			dev->name, tx_data_length, bds_reqd,
-			dev_data->txbd_ring.free_bds);
+			dev_data->tx_bd_ring.free_bds);
 
 		if (dev_conf->defer_txd_to_queue) {
-			k_sem_give(&(dev_data->txbd_ring.ring_sem));
+			k_sem_give(&(dev_data->tx_bd_ring.ring_sem));
 		} else {
 			sys_write32(ETH_XLNX_GEM_IXR_TX_COMPLETE_BIT,
 				    dev_conf->base_addr + ETH_XLNX_GEM_IER_OFFSET);
@@ -419,15 +422,15 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 		return -EIO;
 	}
 
-	curr_bd_idx = first_bd_idx = dev_data->txbd_ring.next_to_use;
-	reg_ctrl = (uint32_t)(&dev_data->txbd_ring.first_bd[curr_bd_idx].ctrl);
+	curr_bd_idx = first_bd_idx = dev_data->tx_bd_ring.next_to_use;
+	reg_ctrl = (uint32_t)(&dev_data->tx_bd_ring.first_bd[curr_bd_idx].ctrl);
 
-	dev_data->txbd_ring.next_to_use = (first_bd_idx + bds_reqd) %
-					  dev_conf->txbd_count;
-	dev_data->txbd_ring.free_bds -= bds_reqd;
+	dev_data->tx_bd_ring.next_to_use = (first_bd_idx + bds_reqd) %
+					  dev_conf->tx_bd_count;
+	dev_data->tx_bd_ring.free_bds -= bds_reqd;
 
 	if (dev_conf->defer_txd_to_queue) {
-		k_sem_give(&(dev_data->txbd_ring.ring_sem));
+		k_sem_give(&(dev_data->tx_bd_ring.ring_sem));
 	} else {
 		sys_write32(ETH_XLNX_GEM_IXR_TX_COMPLETE_BIT,
 			    dev_conf->base_addr + ETH_XLNX_GEM_IER_OFFSET);
@@ -449,16 +452,16 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 			     tx_data_remaining : dev_conf->tx_buffer_size);
 
 		/* Update current BD's control word */
-		reg_val = sys_read32(reg_ctrl) & (ETH_XLNX_GEM_TXBD_WRAP_BIT |
-			  ETH_XLNX_GEM_TXBD_USED_BIT);
+		reg_val = sys_read32(reg_ctrl) & (ETH_XLNX_GEM_TX_BD_WRAP_BIT |
+			  ETH_XLNX_GEM_TX_BD_USED_BIT);
 		reg_val |= (tx_data_remaining < dev_conf->tx_buffer_size) ?
 			   tx_data_remaining : dev_conf->tx_buffer_size;
 		sys_write32(reg_val, reg_ctrl);
 
 		if (tx_data_remaining > dev_conf->tx_buffer_size) {
 			/* Switch to next BD */
-			curr_bd_idx = (curr_bd_idx + 1) % dev_conf->txbd_count;
-			reg_ctrl = (uint32_t)(&dev_data->txbd_ring.first_bd[curr_bd_idx].ctrl);
+			curr_bd_idx = (curr_bd_idx + 1) % dev_conf->tx_bd_count;
+			reg_ctrl = (uint32_t)(&dev_data->tx_bd_ring.first_bd[curr_bd_idx].ctrl);
 		}
 
 		tx_data_remaining -= (tx_data_remaining < dev_conf->tx_buffer_size) ?
@@ -466,25 +469,37 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 	} while (tx_data_remaining > 0);
 
 	/* Set the 'last' bit in the current BD's control word */
-	reg_val |= ETH_XLNX_GEM_TXBD_LAST_BIT;
+	reg_val |= ETH_XLNX_GEM_TX_BD_LAST_BIT;
 
 	/*
 	 * Clear the 'used' bits of all BDs involved in the current
 	 * transmission. In accordance with chapter 16.3.8 of the
 	 * Zynq-7000 TRM, the 'used' bits shall be cleared in reverse
 	 * order, so that the 'used' bit of the first BD is cleared
-	 * last just before the transmission is started.
+	 * last just before the transmission is started. If applicable,
+	 * flush all involved TX BDs' buffers from the L1 cache to
+	 * regular memory along the way.
 	 */
-	reg_val &= ~ETH_XLNX_GEM_TXBD_USED_BIT;
+	reg_val &= ~ETH_XLNX_GEM_TX_BD_USED_BIT;
 	sys_write32(reg_val, reg_ctrl);
+#ifdef CONFIG_DCACHE
+	sys_cache_data_flush_and_invd_range((void *)(dev_data->first_tx_buffer +
+					    (dev_conf->tx_buffer_size * curr_bd_idx)),
+					    dev_conf->tx_buffer_size);
+#endif
 
 	while (curr_bd_idx != first_bd_idx) {
 		curr_bd_idx = (curr_bd_idx != 0) ? (curr_bd_idx - 1) :
-			      (dev_conf->txbd_count - 1);
-		reg_ctrl = (uint32_t)(&dev_data->txbd_ring.first_bd[curr_bd_idx].ctrl);
+			      (dev_conf->tx_bd_count - 1);
+		reg_ctrl = (uint32_t)(&dev_data->tx_bd_ring.first_bd[curr_bd_idx].ctrl);
 		reg_val = sys_read32(reg_ctrl);
-		reg_val &= ~ETH_XLNX_GEM_TXBD_USED_BIT;
+		reg_val &= ~ETH_XLNX_GEM_TX_BD_USED_BIT;
 		sys_write32(reg_val, reg_ctrl);
+#ifdef CONFIG_DCACHE
+		sys_cache_data_flush_and_invd_range((void *)(dev_data->first_tx_buffer +
+						    (dev_conf->tx_buffer_size * curr_bd_idx)),
+						    dev_conf->tx_buffer_size);
+#endif
 	}
 
 	/* Set the start TX bit in the gem.net_ctrl register */
@@ -622,38 +637,30 @@ static enum ethernet_hw_caps eth_xlnx_gem_get_capabilities(
 
 	if (dev_conf->max_link_speed == LINK_1GBIT) {
 		if (dev_conf->phy_advertise_lower) {
-			caps |= (ETHERNET_LINK_1000BASE_T |
-				ETHERNET_LINK_100BASE_T |
-				ETHERNET_LINK_10BASE_T);
+			caps |= (ETHERNET_LINK_1000BASE | ETHERNET_LINK_100BASE |
+				 ETHERNET_LINK_10BASE);
 		} else {
-			caps |= ETHERNET_LINK_1000BASE_T;
+			caps |= ETHERNET_LINK_1000BASE;
 		}
 	} else if (dev_conf->max_link_speed == LINK_100MBIT) {
 		if (dev_conf->phy_advertise_lower) {
-			caps |= (ETHERNET_LINK_100BASE_T |
-				ETHERNET_LINK_10BASE_T);
+			caps |= (ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE);
 		} else {
-			caps |= ETHERNET_LINK_100BASE_T;
+			caps |= ETHERNET_LINK_100BASE;
 		}
 	} else {
-		caps |= ETHERNET_LINK_10BASE_T;
+		caps |= ETHERNET_LINK_10BASE;
 	}
 
-	if (dev_conf->enable_rx_chksum_offload) {
+	if (!dev_conf->disable_rx_chksum_offload) {
 		caps |= ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 	}
 
-	if (dev_conf->enable_tx_chksum_offload) {
+	if (!dev_conf->disable_tx_chksum_offload) {
 		caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD;
 	}
 
-	if (dev_conf->enable_fdx) {
-		caps |= ETHERNET_DUPLEX_SET;
-	}
-
-	if (dev_conf->copy_all_frames) {
-		caps |= ETHERNET_PROMISC_MODE;
-	}
+	caps |= ETHERNET_PROMISC_MODE;
 
 	return caps;
 }
@@ -686,7 +693,7 @@ static int eth_xlnx_gem_get_config(const struct device *dev,
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT:
-		if (dev_conf->enable_rx_chksum_offload) {
+		if (!dev_conf->disable_rx_chksum_offload) {
 			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
 						 ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
 						 ETHERNET_CHECKSUM_SUPPORT_TCP |
@@ -696,7 +703,7 @@ static int eth_xlnx_gem_get_config(const struct device *dev,
 		}
 		return 0;
 	case ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT:
-		if (dev_conf->enable_tx_chksum_offload) {
+		if (!dev_conf->disable_tx_chksum_offload) {
 			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
 						 ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
 						 ETHERNET_CHECKSUM_SUPPORT_TCP |
@@ -708,6 +715,55 @@ static int eth_xlnx_gem_get_config(const struct device *dev,
 	default:
 		return -ENOTSUP;
 	};
+}
+
+/**
+ * @brief GEM hardware configuration data set function
+ * Modifies hardware configuration details of the specified device
+ * instance. Multiple hardware configuration items can be addressed
+ * depending on the type parameter. Currently supports setting the
+ * controller's MAC address and enabling/disabling promiscuous mode
+ * if this is enabled at the system level.
+ *
+ * @param dev Pointer to the device data
+ * @param type The hardware configuration item to be modified
+ * @param config Pointer to the struct containing the configuration
+ *               data to be applied.
+ * @return 0 if the specified configuration item was successfully
+ *         modified, -ENOTSUP if the specified configuration item
+ *         is not supported by this function.
+ */
+static int eth_xlnx_gem_set_config(const struct device *dev,
+				   enum ethernet_config_type type,
+				   const struct ethernet_config *config)
+{
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
+
+	switch (type) {
+#ifdef CONFIG_NET_PROMISCUOUS_MODE
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+		uint32_t reg_val = sys_read32(dev_conf->base_addr + ETH_XLNX_GEM_NWCFG_OFFSET);
+
+		if (config->promisc_mode) {
+			reg_val |= ETH_XLNX_GEM_NWCFG_COPYALLEN_BIT;
+		} else {
+			reg_val &= ~ETH_XLNX_GEM_NWCFG_COPYALLEN_BIT;
+		}
+		sys_write32(reg_val, dev_conf->base_addr + ETH_XLNX_GEM_NWCFG_OFFSET);
+		break;
+#endif
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		memcpy(dev_data->mac_addr, config->mac_address.addr, sizeof(dev_data->mac_addr));
+		eth_xlnx_gem_set_mac_address(dev);
+		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
+				     sizeof(dev_data->mac_addr), NET_LINK_ETHERNET);
+		break;
+	default:
+		return -ENOTSUP;
+	};
+
+	return 0;
 }
 
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
@@ -765,6 +821,16 @@ static void eth_xlnx_gem_reset_hw(const struct device *dev)
 		    dev_conf->base_addr + ETH_XLNX_GEM_RXQBASE_OFFSET);
 	sys_write32(0x00000000,
 		    dev_conf->base_addr + ETH_XLNX_GEM_TXQBASE_OFFSET);
+#ifdef CONFIG_SOC_XILINX_ZYNQMP
+	sys_write32(0x00000000,
+		    dev_conf->base_addr + ETH_XLNX_GEM_RX1QBASEL_OFFSET);
+	sys_write32(0x00000000,
+		    dev_conf->base_addr + ETH_XLNX_GEM_RX1QBASEH_OFFSET);
+	sys_write32(0x00000000,
+		    dev_conf->base_addr + ETH_XLNX_GEM_TX1QBASEL_OFFSET);
+	sys_write32(0x00000000,
+		    dev_conf->base_addr + ETH_XLNX_GEM_TX1QBASEH_OFFSET);
+#endif
 }
 
 /**
@@ -905,6 +971,7 @@ static void eth_xlnx_gem_set_initial_nwcfg(const struct device *dev)
 {
 	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
 	uint32_t reg_val = 0;
+	uint32_t design_cfg5_reg_val;
 
 	if (dev_conf->ignore_ipg_rxer) {
 		/* [30]     ignore IPG rx_er */
@@ -930,7 +997,7 @@ static void eth_xlnx_gem_set_initial_nwcfg(const struct device *dev)
 		/* [25]     RX half duplex while TX enable */
 		reg_val |= ETH_XLNX_GEM_NWCFG_HDRXEN_BIT;
 	}
-	if (dev_conf->enable_rx_chksum_offload) {
+	if (!dev_conf->disable_rx_chksum_offload) {
 		/* [24]     enable RX IP/TCP/UDP checksum offload */
 		reg_val |= ETH_XLNX_GEM_NWCFG_RXCHKSUMEN_BIT;
 	}
@@ -938,10 +1005,11 @@ static void eth_xlnx_gem_set_initial_nwcfg(const struct device *dev)
 		/* [23]     Do not copy pause Frames to memory */
 		reg_val |= ETH_XLNX_GEM_NWCFG_PAUSECOPYDI_BIT;
 	}
-	/* [22..21] Data bus width */
-	reg_val |= (((uint32_t)(dev_conf->amba_dbus_width) &
-		   ETH_XLNX_GEM_NWCFG_DBUSW_MASK) <<
-		   ETH_XLNX_GEM_NWCFG_DBUSW_SHIFT);
+	/* [22..21] Data bus width -> obtain from design_cfg5 register */
+	design_cfg5_reg_val = sys_read32(dev_conf->base_addr + ETH_XLNX_GEM_DESIGN_CFG5_OFFSET);
+	design_cfg5_reg_val >>= ETH_XLNX_GEM_DESIGN_CFG5_DBUSW_SHIFT;
+	design_cfg5_reg_val &= ETH_XLNX_GEM_NWCFG_DBUSW_MASK;
+	reg_val |= (design_cfg5_reg_val << ETH_XLNX_GEM_NWCFG_DBUSW_SHIFT);
 	/* [20..18] MDC clock divider */
 	reg_val |= (((uint32_t)dev_conf->mdc_divider &
 		   ETH_XLNX_GEM_NWCFG_MDC_MASK) <<
@@ -985,10 +1053,6 @@ static void eth_xlnx_gem_set_initial_nwcfg(const struct device *dev)
 	if (dev_conf->disable_bcast) {
 		/* [05]     Do not receive broadcast frames */
 		reg_val |= ETH_XLNX_GEM_NWCFG_BCASTDIS_BIT;
-	}
-	if (dev_conf->copy_all_frames) {
-		/* [04]     Copy all frames */
-		reg_val |= ETH_XLNX_GEM_NWCFG_COPYALLEN_BIT;
 	}
 	if (dev_conf->discard_non_vlan) {
 		/* [02]     Receive only VLAN frames */
@@ -1112,7 +1176,7 @@ static void eth_xlnx_gem_set_initial_dmacr(const struct device *dev)
 	reg_val |= (((dev_conf->rx_buffer_size / 64) &
 		   ETH_XLNX_GEM_DMACR_RX_BUF_MASK) <<
 		   ETH_XLNX_GEM_DMACR_RX_BUF_SHIFT);
-	if (dev_conf->enable_tx_chksum_offload) {
+	if (!dev_conf->disable_tx_chksum_offload) {
 		/* [11] TX TCP/UDP/IP checksum offload to GEM */
 		reg_val |= ETH_XLNX_GEM_DMACR_TCP_CHKSUM_BIT;
 	}
@@ -1317,71 +1381,96 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 
 	/*
 	 * Set initial RX BD data -> comp. Zynq-7000 TRM, Chapter 16.3.5,
-	 * "Receive Buffer Descriptor List". The BD ring data other than
-	 * the base RX/TX buffer pointers will be set in eth_xlnx_gem_-
-	 * iface_init()
+	 * "Receive Buffer Descriptor List". For RX BDs, the 'used' and
+	 * 'wrap' bits are located at [1:0] in the address word. The 'used'
+	 * bit must be cleared for all BDs, indicating that the controller
+	 * can place packet data in the associated buffer. In the last BD,
+	 * the 'wrap' bit must be set.
 	 */
-	bdptr = dev_data->rxbd_ring.first_bd;
+	bdptr = dev_data->rx_bd_ring.first_bd;
 
-	for (buf_iter = 0; buf_iter < (dev_conf->rxbd_count - 1); buf_iter++) {
+	for (buf_iter = 0; buf_iter < (dev_conf->rx_bd_count - 1); buf_iter++) {
+		uint32_t addr = (uint32_t)dev_data->first_rx_buffer +
+				(buf_iter * dev_conf->rx_buffer_size);
 		/* Clear 'used' bit -> BD is owned by the controller */
-		bdptr->ctrl = 0;
-		bdptr->addr = (uint32_t)dev_data->first_rx_buffer +
-			      (buf_iter * (uint32_t)dev_conf->rx_buffer_size);
+		bdptr->addr = addr & ~(ETH_XLNX_GEM_RX_BD_USED_BIT | ETH_XLNX_GEM_RX_BD_WRAP_BIT);
+		bdptr->ctrl = 0x00000000;
 		++bdptr;
 	}
 
-	/*
-	 * For the last BD, bit [1] must be OR'ed in the buffer memory
-	 * address -> this is the 'wrap' bit indicating that this is the
-	 * last BD in the ring. This location is used as bits [1..0] can't
-	 * be part of the buffer address due to alignment requirements
-	 * anyways. Watch out: TX BDs handle this differently, their wrap
-	 * bit is located in the BD's control word!
-	 */
-	bdptr->ctrl = 0; /* BD is owned by the controller */
-	bdptr->addr = ((uint32_t)dev_data->first_rx_buffer +
-		      (buf_iter * (uint32_t)dev_conf->rx_buffer_size)) |
-		      ETH_XLNX_GEM_RXBD_WRAP_BIT;
+	uint32_t last_rx_addr = (uint32_t)dev_data->first_rx_buffer +
+				(buf_iter * dev_conf->rx_buffer_size);
+	bdptr->addr = (((uint32_t)last_rx_addr) & ~ETH_XLNX_GEM_RX_BD_USED_BIT) |
+		      ETH_XLNX_GEM_RX_BD_WRAP_BIT;
+	bdptr->ctrl = 0x00000000;
 
 	/*
 	 * Set initial TX BD data -> comp. Zynq-7000 TRM, Chapter 16.3.5,
-	 * "Transmit Buffer Descriptor List". TX BD ring data has already
-	 * been set up in eth_xlnx_gem_iface_init()
+	 * "Transmit Buffer Descriptor List". For TX BDs, the 'used' and
+	 * 'wrap' bits are located at [31:30] in the control word. For TX
+	 * BDs, a set 'used' is the stop marker to iterate no further for
+	 * TX data to transmit. Indicate no data to transmit by setting
+	 * 'used' in all TX BDs. In the last BD, the 'wrap' bit must be set.
 	 */
-	bdptr = dev_data->txbd_ring.first_bd;
+	bdptr = dev_data->tx_bd_ring.first_bd;
 
-	for (buf_iter = 0; buf_iter < (dev_conf->txbd_count - 1); buf_iter++) {
-		/* Set up the control word -> 'used' flag must be set. */
-		bdptr->ctrl = ETH_XLNX_GEM_TXBD_USED_BIT;
+	for (buf_iter = 0; buf_iter < (dev_conf->tx_bd_count - 1); buf_iter++) {
 		bdptr->addr = (uint32_t)dev_data->first_tx_buffer +
-			      (buf_iter * (uint32_t)dev_conf->tx_buffer_size);
+			      (buf_iter * dev_conf->tx_buffer_size);
+		bdptr->ctrl = ETH_XLNX_GEM_TX_BD_USED_BIT;
 		++bdptr;
 	}
 
-	/*
-	 * For the last BD, set the 'wrap' bit indicating to the controller
-	 * that this BD is the last one in the ring. -> For TX BDs, the 'wrap'
-	 * bit isn't located in the address word, but in the control word
-	 * instead
-	 */
-	bdptr->ctrl = (ETH_XLNX_GEM_TXBD_WRAP_BIT | ETH_XLNX_GEM_TXBD_USED_BIT);
 	bdptr->addr = (uint32_t)dev_data->first_tx_buffer +
 		      (buf_iter * (uint32_t)dev_conf->tx_buffer_size);
+	bdptr->ctrl = (ETH_XLNX_GEM_TX_BD_WRAP_BIT | ETH_XLNX_GEM_TX_BD_USED_BIT);
+
+#ifdef CONFIG_SOC_XILINX_ZYNQMP
+	/*
+	 * On the UltraScale, configure the tie-off dummy buffer descriptors.
+	 * For both of them, set the 'wrap' bit, for the RX tie-off BD indicate
+	 * that this BD is not available for data reception, for the TX tie-off
+	 * BD indicate that there's no data to be transferred in there.
+	 */
+
+	bdptr = dev_data->rx_bd_ring.tie_off_bd;
+	bdptr->addr = (uint32_t)dev_data->rx_tie_off_buffer | ETH_XLNX_GEM_RX_BD_USED_BIT |
+		      ETH_XLNX_GEM_RX_BD_WRAP_BIT;
+	bdptr->ctrl = 0x00000000;
+
+	bdptr = dev_data->tx_bd_ring.tie_off_bd;
+	bdptr->addr = (uint32_t)dev_data->tx_tie_off_buffer;
+	bdptr->ctrl = ETH_XLNX_GEM_TX_BD_WRAP_BIT | ETH_XLNX_GEM_TX_BD_USED_BIT;
+#endif /* CONFIG_SOC_XILINX_ZYNQMP */
 
 	/* Set free count/current index in the RX/TX BD ring data */
-	dev_data->rxbd_ring.next_to_process = 0;
-	dev_data->rxbd_ring.next_to_use     = 0;
-	dev_data->rxbd_ring.free_bds        = dev_conf->rxbd_count;
-	dev_data->txbd_ring.next_to_process = 0;
-	dev_data->txbd_ring.next_to_use     = 0;
-	dev_data->txbd_ring.free_bds        = dev_conf->txbd_count;
+	dev_data->rx_bd_ring.next_to_process = 0;
+	dev_data->rx_bd_ring.next_to_use     = 0;
+	dev_data->rx_bd_ring.free_bds        = dev_conf->rx_bd_count;
+	dev_data->tx_bd_ring.next_to_process = 0;
+	dev_data->tx_bd_ring.next_to_use     = 0;
+	dev_data->tx_bd_ring.free_bds        = dev_conf->tx_bd_count;
 
-	/* Write pointers to the first RX/TX BD to the controller */
-	sys_write32((uint32_t)dev_data->rxbd_ring.first_bd,
+	/*
+	 * Write pointers to the first RX/TX BD to the controller.
+	 * On both the Zynq-7000 and the UltraScale, the legacy 32-bit
+	 * RXQBASE/TXQBASE registers are the effective registers.
+	 * On the UltraScale, the retrofitted 64-bit RXQBASE/TXQBASE
+	 * registers must point to the single dummy tie-off BD for
+	 * both the RX and TX direction.
+	 */
+	sys_write32((uint32_t)dev_data->rx_bd_ring.first_bd,
 		    dev_conf->base_addr + ETH_XLNX_GEM_RXQBASE_OFFSET);
-	sys_write32((uint32_t)dev_data->txbd_ring.first_bd,
+	sys_write32((uint32_t)dev_data->tx_bd_ring.first_bd,
 		    dev_conf->base_addr + ETH_XLNX_GEM_TXQBASE_OFFSET);
+#ifdef CONFIG_SOC_XILINX_ZYNQMP
+	sys_write32(0x00000000, dev_conf->base_addr + ETH_XLNX_GEM_RX1QBASEH_OFFSET);
+	sys_write32((uint32_t)dev_data->rx_bd_ring.tie_off_bd,
+		    dev_conf->base_addr + ETH_XLNX_GEM_RX1QBASEL_OFFSET);
+	sys_write32(0x00000000, dev_conf->base_addr + ETH_XLNX_GEM_TX1QBASEH_OFFSET);
+	sys_write32((uint32_t)dev_data->tx_bd_ring.tie_off_bd,
+		    dev_conf->base_addr + ETH_XLNX_GEM_TX1QBASEL_OFFSET);
+#endif /* CONFIG_SOC_XILINX_ZYNQMP */
 }
 
 /**
@@ -1444,17 +1533,17 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 	 */
 
 	while (1) {
-		curr_bd_idx = dev_data->rxbd_ring.next_to_process;
+		curr_bd_idx = dev_data->rx_bd_ring.next_to_process;
 		first_bd_idx = last_bd_idx = curr_bd_idx;
-		reg_addr = (uint32_t)(&dev_data->rxbd_ring.first_bd[first_bd_idx].addr);
-		reg_ctrl = (uint32_t)(&dev_data->rxbd_ring.first_bd[first_bd_idx].ctrl);
+		reg_addr = (uint32_t)(&dev_data->rx_bd_ring.first_bd[first_bd_idx].addr);
+		reg_ctrl = (uint32_t)(&dev_data->rx_bd_ring.first_bd[first_bd_idx].ctrl);
 
 		/*
 		 * Basic precondition checks for the current BD's
 		 * address and control words
 		 */
 		reg_val = sys_read32(reg_addr);
-		if ((reg_val & ETH_XLNX_GEM_RXBD_USED_BIT) == 0) {
+		if ((reg_val & ETH_XLNX_GEM_RX_BD_USED_BIT) == 0) {
 			/*
 			 * No new data contained in the current BD
 			 * -> break out of the RX loop
@@ -1462,7 +1551,7 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 			break;
 		}
 		reg_val = sys_read32(reg_ctrl);
-		if ((reg_val & ETH_XLNX_GEM_RXBD_START_OF_FRAME_BIT) == 0) {
+		if ((reg_val & ETH_XLNX_GEM_RX_BD_START_OF_FRAME_BIT) == 0) {
 			/*
 			 * Although the current BD is marked as 'used', it
 			 * doesn't contain the SOF bit.
@@ -1479,28 +1568,28 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 		 * of the received packet which spans multiple buffers.
 		 */
 		do {
-			reg_ctrl = (uint32_t)(&dev_data->rxbd_ring.first_bd[last_bd_idx].ctrl);
+			reg_ctrl = (uint32_t)(&dev_data->rx_bd_ring.first_bd[last_bd_idx].ctrl);
 			reg_val  = sys_read32(reg_ctrl);
 			rx_data_length = rx_data_remaining =
-					 (reg_val & ETH_XLNX_GEM_RXBD_FRAME_LENGTH_MASK);
-			if ((reg_val & ETH_XLNX_GEM_RXBD_END_OF_FRAME_BIT) == 0) {
-				last_bd_idx = (last_bd_idx + 1) % dev_conf->rxbd_count;
+					 (reg_val & ETH_XLNX_GEM_RX_BD_FRAME_LENGTH_MASK);
+			if ((reg_val & ETH_XLNX_GEM_RX_BD_END_OF_FRAME_BIT) == 0) {
+				last_bd_idx = (last_bd_idx + 1) % dev_conf->rx_bd_count;
 			}
-		} while ((reg_val & ETH_XLNX_GEM_RXBD_END_OF_FRAME_BIT) == 0);
+		} while ((reg_val & ETH_XLNX_GEM_RX_BD_END_OF_FRAME_BIT) == 0);
 
 		/*
 		 * Store the position of the first BD behind the end of the
 		 * frame currently being processed as 'next to process'
 		 */
-		dev_data->rxbd_ring.next_to_process = (last_bd_idx + 1) %
-						      dev_conf->rxbd_count;
+		dev_data->rx_bd_ring.next_to_process = (last_bd_idx + 1) %
+						      dev_conf->rx_bd_count;
 
 		/*
 		 * Allocate a destination packet from the network stack
 		 * now that the total frame length is known.
 		 */
 		pkt = net_pkt_rx_alloc_with_buffer(dev_data->iface, rx_data_length,
-						   AF_UNSPEC, 0, K_NO_WAIT);
+						   NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (pkt == NULL) {
 			LOG_ERR("RX packet buffer alloc failed: %u bytes",
 				rx_data_length);
@@ -1519,9 +1608,15 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 		 */
 		do {
 			if (pkt != NULL) {
+#ifdef CONFIG_DCACHE
+				sys_cache_data_invd_range(
+					(void *)(dev_data->rx_bd_ring.first_bd[curr_bd_idx].addr &
+					ETH_XLNX_GEM_RX_BD_BUFFER_ADDR_MASK),
+					dev_conf->rx_buffer_size);
+#endif
 				net_pkt_write(pkt, (const void *)
-					      (dev_data->rxbd_ring.first_bd[curr_bd_idx].addr &
-					      ETH_XLNX_GEM_RXBD_BUFFER_ADDR_MASK),
+					      (dev_data->rx_bd_ring.first_bd[curr_bd_idx].addr &
+					      ETH_XLNX_GEM_RX_BD_BUFFER_ADDR_MASK),
 					      (rx_data_remaining < dev_conf->rx_buffer_size) ?
 					      rx_data_remaining : dev_conf->rx_buffer_size);
 			}
@@ -1533,13 +1628,13 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 			 * processed, on to the next BD -> preserve the RX BD's
 			 * 'wrap' bit & address, but clear the 'used' bit.
 			 */
-			reg_addr = (uint32_t)(&dev_data->rxbd_ring.first_bd[curr_bd_idx].addr);
+			reg_addr = (uint32_t)(&dev_data->rx_bd_ring.first_bd[curr_bd_idx].addr);
 			reg_val	 = sys_read32(reg_addr);
-			reg_val &= ~ETH_XLNX_GEM_RXBD_USED_BIT;
+			reg_val &= ~ETH_XLNX_GEM_RX_BD_USED_BIT;
 			sys_write32(reg_val, reg_addr);
 
-			curr_bd_idx = (curr_bd_idx + 1) % dev_conf->rxbd_count;
-		} while (curr_bd_idx != ((last_bd_idx + 1) % dev_conf->rxbd_count));
+			curr_bd_idx = (curr_bd_idx + 1) % dev_conf->rx_bd_count;
+		} while (curr_bd_idx != ((last_bd_idx + 1) % dev_conf->rx_bd_count));
 
 		/* Propagate the received packet to the network stack */
 		if (pkt != NULL) {
@@ -1621,11 +1716,11 @@ static void eth_xlnx_gem_handle_tx_done(const struct device *dev)
 	 */
 
 	if (dev_conf->defer_txd_to_queue) {
-		k_sem_take(&(dev_data->txbd_ring.ring_sem), K_FOREVER);
+		k_sem_take(&(dev_data->tx_bd_ring.ring_sem), K_FOREVER);
 	}
 
-	curr_bd_idx = first_bd_idx = dev_data->txbd_ring.next_to_process;
-	reg_ctrl = (uint32_t)(&dev_data->txbd_ring.first_bd[curr_bd_idx].ctrl);
+	curr_bd_idx = first_bd_idx = dev_data->tx_bd_ring.next_to_process;
+	reg_ctrl = (uint32_t)(&dev_data->tx_bd_ring.first_bd[curr_bd_idx].ctrl);
 	reg_val  = sys_read32(reg_ctrl);
 
 	do {
@@ -1640,22 +1735,22 @@ static void eth_xlnx_gem_handle_tx_done(const struct device *dev)
 		 * Check if the BD we're currently looking at is the last BD
 		 * of the current transmission
 		 */
-		bd_is_last = ((reg_val & ETH_XLNX_GEM_TXBD_LAST_BIT) != 0) ? 1 : 0;
+		bd_is_last = ((reg_val & ETH_XLNX_GEM_TX_BD_LAST_BIT) != 0) ? 1 : 0;
 
 		/*
 		 * Reset control word of the current BD, clear everything but
 		 * the 'wrap' bit, then set the 'used' bit
 		 */
-		reg_val &= ETH_XLNX_GEM_TXBD_WRAP_BIT;
-		reg_val |= ETH_XLNX_GEM_TXBD_USED_BIT;
+		reg_val &= ETH_XLNX_GEM_TX_BD_WRAP_BIT;
+		reg_val |= ETH_XLNX_GEM_TX_BD_USED_BIT;
 		sys_write32(reg_val, reg_ctrl);
 
 		/* Move on to the next BD or break out of the loop */
 		if (bd_is_last == 1) {
 			break;
 		}
-		curr_bd_idx = (curr_bd_idx + 1) % dev_conf->txbd_count;
-		reg_ctrl = (uint32_t)(&dev_data->txbd_ring.first_bd[curr_bd_idx].ctrl);
+		curr_bd_idx = (curr_bd_idx + 1) % dev_conf->tx_bd_count;
+		reg_ctrl = (uint32_t)(&dev_data->tx_bd_ring.first_bd[curr_bd_idx].ctrl);
 		reg_val  = sys_read32(reg_ctrl);
 	} while (bd_is_last == 0 && curr_bd_idx != first_bd_idx);
 
@@ -1663,13 +1758,13 @@ static void eth_xlnx_gem_handle_tx_done(const struct device *dev)
 		LOG_WRN("%s TX done handling wrapped around", dev->name);
 	}
 
-	dev_data->txbd_ring.next_to_process =
-		(dev_data->txbd_ring.next_to_process + bds_processed) %
-		dev_conf->txbd_count;
-	dev_data->txbd_ring.free_bds += bds_processed;
+	dev_data->tx_bd_ring.next_to_process =
+		(dev_data->tx_bd_ring.next_to_process + bds_processed) %
+		dev_conf->tx_bd_count;
+	dev_data->tx_bd_ring.free_bds += bds_processed;
 
 	if (dev_conf->defer_txd_to_queue) {
-		k_sem_give(&(dev_data->txbd_ring.ring_sem));
+		k_sem_give(&(dev_data->tx_bd_ring.ring_sem));
 	}
 
 	/* Clear the TX status register */

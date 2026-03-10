@@ -19,6 +19,7 @@ common:
   tags:
     - mbedtls
     - psa
+
 tests:
   crypto.mbedtls_psa.with_entropy_driver:
     filter: CONFIG_CSPRNG_ENABLED
@@ -40,3 +41,5 @@ tests:
       - CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG=y
       - CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG=y
       - CONFIG_TEST_RANDOM_GENERATOR=y
+      # PSA Crypto needs some heap, but MINIMAL_LIBC has none by default.
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=2048

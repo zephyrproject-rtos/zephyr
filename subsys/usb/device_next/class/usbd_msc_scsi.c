@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/storage/disk_access.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/usb/usbd.h>
 
 #include "usbd_msc_scsi.h"
 
@@ -336,6 +337,24 @@ static int update_disk_info(struct scsi_ctx *const ctx)
 
 	if (disk_access_ioctl(ctx->disk, DISK_IOCTL_GET_SECTOR_SIZE, &ctx->sector_size) != 0) {
 		ctx->sector_size = 0;
+		status = -EIO;
+	}
+
+	if (!ctx->sector_size) {
+		status = -EIO;
+	} else if ((ctx->sector_size % USBD_MAX_BULK_MPS) &&
+		   (USBD_MAX_BULK_MPS % ctx->sector_size)) {
+		/* Zephyr MSC class implementation initially allowed any sector
+		 * size, however doing so requires bouncing which significantly
+		 * impedes throughput. To enable zero-copy and scheduling larger
+		 * transfers, the implementation is now restricted to work only
+		 * with power of two disk sizes.
+		 *
+		 * USB bulk wMaxPacketSize is 64 (Full-Speed), 512 (High-Speed)
+		 * or 1024 (Super-Speed) and most common disk sector sizes are
+		 * either 512 or 4096. Therefore the power of two limitation
+		 * shouldn't have effect on any actual application.
+		 */
 		status = -EIO;
 	}
 
@@ -707,12 +726,11 @@ validate_transfer_length(struct scsi_ctx *ctx, uint32_t lba, uint16_t length)
 	return 0;
 }
 
-static size_t fill_read_10(struct scsi_ctx *ctx,
-			   uint8_t buf[static CONFIG_USBD_MSC_SCSI_BUFFER_SIZE])
+static size_t fill_read_10(struct scsi_ctx *ctx, uint8_t *buf, size_t length)
 {
 	uint32_t sectors;
 
-	sectors = MIN(CONFIG_USBD_MSC_SCSI_BUFFER_SIZE, ctx->remaining_data) / ctx->sector_size;
+	sectors = MIN(length, ctx->remaining_data) / ctx->sector_size;
 	if (disk_access_read(ctx->disk, buf, ctx->lba, sectors) != 0) {
 		/* Terminate transfer */
 		sectors = 0;
@@ -897,15 +915,14 @@ size_t scsi_cmd_remaining_data_len(struct scsi_ctx *ctx)
 	return ctx->remaining_data;
 }
 
-size_t scsi_read_data(struct scsi_ctx *ctx,
-		      uint8_t buf[static CONFIG_USBD_MSC_SCSI_BUFFER_SIZE])
+size_t scsi_read_data(struct scsi_ctx *ctx, uint8_t *buf, size_t length)
 {
 	size_t retrieved = 0;
 
 	__ASSERT_NO_MSG(ctx->cmd_is_data_read);
 
 	if ((ctx->remaining_data > 0) && ctx->read_cb) {
-		retrieved = ctx->read_cb(ctx, buf);
+		retrieved = ctx->read_cb(ctx, buf, length);
 	}
 	ctx->remaining_data -= retrieved;
 	if (retrieved == 0) {

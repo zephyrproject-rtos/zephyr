@@ -43,6 +43,7 @@
 
 #define LOAPIC_ICR_BUSY		0x00001000	/* delivery status: 1 = busy */
 
+#define LOAPIC_ICR_IPI_SPECIFIC 0x00004000U     /* target IPI to specific CPU */
 #define LOAPIC_ICR_IPI_OTHERS	0x000C4000U	/* normal IPI to other CPUs */
 #define LOAPIC_ICR_IPI_INIT	0x00004500U
 #define LOAPIC_ICR_IPI_STARTUP	0x00004600U

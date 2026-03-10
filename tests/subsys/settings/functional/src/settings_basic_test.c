@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Laczen
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,12 +12,11 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <errno.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(settings_basic_test);
 
-#if defined(CONFIG_SETTINGS_FCB) || defined(CONFIG_SETTINGS_NVS)
+#if defined(CONFIG_SETTINGS_FCB) || defined(CONFIG_SETTINGS_NVS) || defined(CONFIG_SETTINGS_ZMS)
 #include <zephyr/storage/flash_map.h>
 #if DT_HAS_CHOSEN(zephyr_settings_partition)
 #define TEST_FLASH_AREA_ID DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
@@ -24,6 +24,32 @@ LOG_MODULE_REGISTER(settings_basic_test);
 #elif defined(CONFIG_SETTINGS_FILE)
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/littlefs.h>
+#elif defined(CONFIG_SETTINGS_TFM_PSA)
+
+#if defined(CONFIG_SETTINGS_TFM_PSA_BACKEND_PS)
+#include <psa/protected_storage.h>
+#include <zephyr/psa/ps_ids.h>
+
+#define SETTINGS_PSA_MAX_ASSET_SIZE PS_MAX_ASSET_SIZE
+#define SETTINGS_PSA_REMOVE psa_ps_remove
+#define SETTINGS_PSA_ID_RANGE_START ZEPHYR_PSA_SETTINGS_TFM_PS_UID_RANGE_BEGIN
+
+#elif defined(CONFIG_SETTINGS_TFM_PSA_BACKEND_ITS)
+#include <psa/internal_trusted_storage.h>
+#include <zephyr/psa/its_ids.h>
+
+#define SETTINGS_PSA_MAX_ASSET_SIZE ITS_MAX_ASSET_SIZE
+#define SETTINGS_PSA_REMOVE psa_its_remove
+#define SETTINGS_PSA_ID_RANGE_START ZEPHYR_PSA_SETTINGS_TFM_ITS_UID_RANGE_BEGIN
+
+#else
+#error "No PSA backend selected"
+#endif  /* CONFIG_SETTINGS_TFM_PSA_BACKEND */
+
+/* TF-M config file containing ITS_MAX_ASSET_SIZE */
+#include <config_base.h>
+
+#include <settings_tfm_psa_priv.h>
 #else
 #error "Settings backend not selected"
 #endif
@@ -38,7 +64,17 @@ LOG_MODULE_REGISTER(settings_basic_test);
  */
 ZTEST(settings_functional, test_clear_settings)
 {
-#if !defined(CONFIG_SETTINGS_FILE)
+#if defined(CONFIG_SETTINGS_TFM_PSA)
+	psa_status_t status;
+
+	/* Remove all potentially accessed entries in the UID range */
+	for (int i = 0; i < sizeof(struct setting_entry) * CONFIG_SETTINGS_TFM_PSA_NUM_ENTRIES /
+		SETTINGS_PSA_MAX_ASSET_SIZE + 1; i++) {
+		status = SETTINGS_PSA_REMOVE(SETTINGS_PSA_ID_RANGE_START + i);
+		zassert_true((status == PSA_SUCCESS) || (status == PSA_ERROR_DOES_NOT_EXIST),
+			"psa_its_remove failed");
+	}
+#elif !defined(CONFIG_SETTINGS_FILE)
 	const struct flash_area *fap;
 	int rc;
 
@@ -240,12 +276,21 @@ ZTEST(settings_functional, test_register_and_loading)
 {
 	int rc, err;
 	uint8_t val = 0;
+	ssize_t val_len = 0;
 
 	rc = settings_subsys_init();
 	zassert_true(rc == 0, "subsys init failed");
 
 
+	/* Check that key that corresponds to val2 do not exist in storage */
+	val_len = settings_get_val_len("ps/ss/ss/val2");
+	zassert_true((val_len == 0), "Failure: key should not exist");
+
 	settings_save_one("ps/ss/ss/val2", &val, sizeof(uint8_t));
+
+	/* Check that the key that corresponds to val2 exists in storage */
+	val_len = settings_get_val_len("ps/ss/ss/val2");
+	zassert_true((val_len == 1), "Failure: key should exist");
 
 	memset(&data, 0, sizeof(struct stored_data));
 
@@ -279,7 +324,16 @@ ZTEST(settings_functional, test_register_and_loading)
 	err = (data.en1) && (data.en2) && (!data.en3);
 	zassert_true(err, "wrong data enable found");
 
+	/* Check that key that corresponds to val3 do not exist in storage */
+	val_len = settings_get_val_len("ps/ss/val3");
+	zassert_true((val_len == 0), "Failure: key should not exist");
+
 	settings_save_one("ps/ss/val3", &val, sizeof(uint8_t));
+
+	/* Check that the key that corresponds to val3 exists in storage */
+	val_len = settings_get_val_len("ps/ss/val3");
+	zassert_true((val_len == 1), "Failure: key should exist");
+
 	memset(&data, 0, sizeof(struct stored_data));
 	/* when we load settings now data.val2 and data.val1 should receive a
 	 * value
@@ -310,7 +364,16 @@ ZTEST(settings_functional, test_register_and_loading)
 	err = (data.en1) && (data.en2) && (data.en3);
 	zassert_true(err, "wrong data enable found");
 
+	/* Check that key that corresponds to val1 do not exist in storage */
+	val_len = settings_get_val_len("ps/val1");
+	zassert_true((val_len == 0), "Failure: key should not exist");
+
 	settings_save_one("ps/val1", &val, sizeof(uint8_t));
+
+	/* Check that the key that corresponds to val1 exists in storage */
+	val_len = settings_get_val_len("ps/val1");
+	zassert_true((val_len == 1), "Failure: key should exist");
+
 	memset(&data, 0, sizeof(struct stored_data));
 	/* when we load settings all data should receive a value loaded */
 	rc = settings_load();
@@ -344,6 +407,17 @@ ZTEST(settings_functional, test_register_and_loading)
 	/* commit is called only for val2_settings */
 	err = (!data.en1) && (data.en2) && (!data.en3);
 	zassert_true(err, "wrong data enable found");
+
+	memset(&data, 0, sizeof(struct stored_data));
+	/* test load_one: path "ps/ss/ss/val2". Only data.val2 should
+	 * receive a value
+	 */
+	val = 2;
+	settings_save_one("ps/ss/ss/val2", &val, sizeof(uint8_t));
+	rc = settings_load_one("ps/ss/ss/val2", &data.val2, sizeof(uint8_t));
+	zassert_true(rc >= 0, "settings_load_one failed");
+	err = (data.val1 == 0) && (data.val2 == 2) && (data.val3 == 0);
+	zassert_true(err, "wrong data value found %u != 2", data.val2);
 
 	/* clean up by deregistering settings_handler */
 	rc = settings_deregister(&val1_settings);
@@ -412,7 +486,7 @@ int direct_loader(
 	zassert_is_null(key, "Unexpected key: %s", key);
 
 
-	zassert_not_null(cb_arg, NULL);
+	zassert_not_null(cb_arg);
 	rc = read_cb(cb_arg, &val, sizeof(val));
 	zassert_equal(sizeof(val), rc);
 
@@ -512,7 +586,7 @@ static int filtered_loader(
 		}
 	}
 	zassert_not_null(ldata->n, "Unexpected data name: %s", key);
-	zassert_is_null(next, NULL);
+	zassert_is_null(next);
 	zassert_equal(strlen(ldata->v) + 1, len, "e: \"%s\", a:\"%s\"", ldata->v, buf);
 	zassert_true(len <= sizeof(buf));
 
@@ -618,4 +692,637 @@ ZTEST(settings_functional, test_direct_loading_filter)
 			n, data_final[n].n);
 	}
 	settings_deregister(&filtered_loader_settings);
+}
+
+#if defined(CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION)
+struct save_single_data {
+	uint8_t first_val;
+	uint8_t second_val;
+	uint8_t third_val;
+	uint8_t forth_val;
+
+	bool first_second_export_called;
+	bool first_second_commit_called;
+	bool first_get_called;
+	bool first_set_called;
+
+	bool second_get_called;
+	bool second_set_called;
+
+	bool third_export_called;
+	bool third_commit_called;
+	bool third_get_called;
+	bool third_set_called;
+
+	bool forth_export_called;
+	bool forth_commit_called;
+	bool forth_get_called;
+	bool forth_set_called;
+};
+
+struct save_single_data single_data;
+
+int first_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg)
+{
+	const char *next;
+
+	if (settings_name_steq(name, "value1", &next) && !next) {
+		if (len != sizeof(single_data.first_val)) {
+			return -EINVAL;
+		}
+		(void)read_cb(cb_arg, &single_data.first_val, sizeof(single_data.first_val));
+		single_data.first_set_called = true;
+		return 0;
+	}
+	if (settings_name_steq(name, "value2", &next) && !next) {
+		if (len != sizeof(single_data.second_val)) {
+			return -EINVAL;
+		}
+		(void)read_cb(cb_arg, &single_data.second_val, sizeof(single_data.second_val));
+		single_data.second_set_called = true;
+		return 0;
+	}
+
+	return -ENOENT;
+}
+
+int first_get(const char *name, char *val, int val_len_max)
+{
+	const char *next;
+
+	if (val_len_max < 0) {
+		return -EINVAL;
+	}
+
+	if (settings_name_steq(name, "value1", &next) && !next) {
+		val_len_max = MIN(val_len_max, sizeof(single_data.first_val));
+		memcpy(val, &single_data.first_val, val_len_max);
+		single_data.first_get_called = true;
+		return val_len_max;
+	} else if (settings_name_steq(name, "value2", &next) && !next) {
+		val_len_max = MIN(val_len_max, sizeof(single_data.second_val));
+		memcpy(val, &single_data.second_val, val_len_max);
+		single_data.second_get_called = true;
+		return val_len_max;
+	}
+
+	return -ENOENT;
+}
+
+int first_commit(void)
+{
+	single_data.first_second_commit_called = true;
+	return 0;
+}
+
+int first_export(int (*cb)(const char *name, const void *value, size_t val_len))
+{
+	(void)cb("first/value1", &single_data.first_val, sizeof(single_data.first_val));
+	(void)cb("first/value2", &single_data.second_val, sizeof(single_data.second_val));
+
+	single_data.first_second_export_called = true;
+	return 0;
+}
+
+static struct settings_handler first_settings = {
+	.name = "first",
+	.h_set = first_set,
+	.h_get = first_get,
+	.h_commit = first_commit,
+	.h_export = first_export,
+};
+
+int third_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg)
+{
+	const char *next;
+
+	if (settings_name_steq(name, "value3", &next) && !next) {
+		if (len != sizeof(single_data.third_val)) {
+			return -EINVAL;
+		}
+		(void)read_cb(cb_arg, &single_data.third_val, sizeof(single_data.third_val));
+		single_data.third_set_called = true;
+		return 0;
+	}
+
+	return -ENOENT;
+}
+
+int third_get(const char *name, char *val, int val_len_max)
+{
+	const char *next;
+
+	if (val_len_max < 0) {
+		return -EINVAL;
+	}
+
+	if (settings_name_steq(name, "value3", &next) && !next) {
+		val_len_max = MIN(val_len_max, sizeof(single_data.third_val));
+		memcpy(val, &single_data.third_val, val_len_max);
+		single_data.third_get_called = true;
+		return val_len_max;
+	}
+
+	return -ENOENT;
+}
+
+int third_commit(void)
+{
+	single_data.third_commit_called = true;
+	return 0;
+}
+
+int third_export(int (*cb)(const char *name, const void *value, size_t val_len))
+{
+	(void)cb("first/other/value3", &single_data.third_val, sizeof(single_data.third_val));
+
+	single_data.third_export_called = true;
+	return 0;
+}
+
+static struct settings_handler third_settings = {
+	.name = "first/other",
+	.h_set = third_set,
+	.h_get = third_get,
+	.h_commit = third_commit,
+	.h_export = third_export,
+};
+
+int forth_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg)
+{
+	const char *next;
+
+	if (settings_name_steq(name, "value4", &next) && !next) {
+		if (len != sizeof(single_data.forth_val)) {
+			return -EINVAL;
+		}
+		(void)read_cb(cb_arg, &single_data.forth_val, sizeof(single_data.forth_val));
+		single_data.forth_set_called = true;
+		return 0;
+	}
+
+	return -ENOENT;
+}
+
+int forth_commit(void)
+{
+	single_data.forth_commit_called = true;
+	return 0;
+}
+
+int forth_export(int (*cb)(const char *name, const void *value, size_t val_len))
+{
+	(void)cb("first/expected_fail/value4", &single_data.forth_val,
+		 sizeof(single_data.forth_val));
+
+	single_data.forth_export_called = true;
+	return 0;
+}
+
+static struct settings_handler forth_settings = {
+	.name = "first/expected_fail",
+	.h_set = forth_set,
+	.h_get = NULL,
+	.h_commit = forth_commit,
+	.h_export = forth_export,
+};
+
+static void single_modification_reset(void)
+{
+	single_data.first_second_export_called = false;
+	single_data.first_second_commit_called = false;
+	single_data.first_get_called = false;
+	single_data.first_set_called = false;
+	single_data.second_get_called = false;
+	single_data.second_set_called = false;
+	single_data.third_export_called = false;
+	single_data.third_commit_called = false;
+	single_data.third_get_called = false;
+	single_data.third_set_called = false;
+	single_data.forth_export_called = false;
+	single_data.forth_commit_called = false;
+	single_data.forth_get_called = false;
+	single_data.forth_set_called = false;
+}
+#endif
+
+ZTEST(settings_functional, test_single_save)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION);
+
+#if defined(CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION)
+	int rc;
+	uint8_t dummy_value = 0xff;
+
+	settings_subsys_init();
+
+	rc = settings_register(&first_settings);
+	zassert_true(rc == 0);
+	rc = settings_register(&third_settings);
+	zassert_true(rc == 0);
+	rc = settings_register(&forth_settings);
+	zassert_true(rc == 0);
+
+	settings_save_one("first/value1", &dummy_value, sizeof(dummy_value));
+	settings_save_one("first/value2", &dummy_value, sizeof(dummy_value));
+	settings_save_one("first/other/value3", &dummy_value, sizeof(dummy_value));
+	settings_save_one("first/expected_fail/value4", &dummy_value, sizeof(dummy_value));
+	rc = settings_load();
+	zassert_true(rc == 0);
+
+	/* Test that options return errors with invalid parameters */
+	single_modification_reset();
+	single_data.first_val = 0x08;
+	single_data.second_val = 0x09;
+	single_data.third_val = 0x0a;
+	single_data.forth_val = 0x0b;
+	rc = settings_save_subtree_or_single_without_modification("first/value1", true, false);
+	zassert_true(rc == -EPERM);
+	zassert_equal(single_data.first_val, 0x08);
+	zassert_equal(single_data.second_val, 0x09);
+	zassert_equal(single_data.third_val, 0x0a);
+	zassert_equal(single_data.forth_val, 0x0b);
+	zassert_false(single_data.first_second_export_called);
+	zassert_false(single_data.first_second_commit_called);
+	zassert_false(single_data.first_get_called);
+	zassert_false(single_data.first_set_called);
+	zassert_false(single_data.second_get_called);
+	zassert_false(single_data.second_set_called);
+	zassert_false(single_data.third_export_called);
+	zassert_false(single_data.third_commit_called);
+	zassert_false(single_data.third_get_called);
+	zassert_false(single_data.third_set_called);
+	zassert_false(single_data.forth_export_called);
+	zassert_false(single_data.forth_commit_called);
+	zassert_false(single_data.forth_get_called);
+	zassert_false(single_data.forth_set_called);
+
+	rc = settings_save_subtree_or_single_without_modification("first", false, true);
+	zassert_true(rc == -EPERM);
+	zassert_equal(single_data.first_val, 0x08);
+	zassert_equal(single_data.second_val, 0x09);
+	zassert_equal(single_data.third_val, 0x0a);
+	zassert_equal(single_data.forth_val, 0x0b);
+	zassert_false(single_data.first_second_export_called);
+	zassert_false(single_data.first_second_commit_called);
+	zassert_false(single_data.first_get_called);
+	zassert_false(single_data.first_set_called);
+	zassert_false(single_data.second_get_called);
+	zassert_false(single_data.second_set_called);
+	zassert_false(single_data.third_export_called);
+	zassert_false(single_data.third_commit_called);
+	zassert_false(single_data.third_get_called);
+	zassert_false(single_data.third_set_called);
+	zassert_false(single_data.forth_export_called);
+	zassert_false(single_data.forth_commit_called);
+	zassert_false(single_data.forth_get_called);
+	zassert_false(single_data.forth_set_called);
+
+	rc = settings_save_subtree_or_single_without_modification("first/other/value1", true,
+								  false);
+	zassert_true(rc == -EPERM);
+	zassert_equal(single_data.first_val, 0x08);
+	zassert_equal(single_data.second_val, 0x09);
+	zassert_equal(single_data.third_val, 0x0a);
+	zassert_equal(single_data.forth_val, 0x0b);
+	zassert_false(single_data.first_second_export_called);
+	zassert_false(single_data.first_second_commit_called);
+	zassert_false(single_data.first_get_called);
+	zassert_false(single_data.first_set_called);
+	zassert_false(single_data.second_get_called);
+	zassert_false(single_data.second_set_called);
+	zassert_false(single_data.third_export_called);
+	zassert_false(single_data.third_commit_called);
+	zassert_false(single_data.third_get_called);
+	zassert_false(single_data.third_set_called);
+	zassert_false(single_data.forth_export_called);
+	zassert_false(single_data.forth_commit_called);
+	zassert_false(single_data.forth_get_called);
+	zassert_false(single_data.forth_set_called);
+
+	rc = settings_save_subtree_or_single_without_modification("first/other", false, true);
+	zassert_true(rc == -EPERM);
+	zassert_equal(single_data.first_val, 0x08);
+	zassert_equal(single_data.second_val, 0x09);
+	zassert_equal(single_data.third_val, 0x0a);
+	zassert_equal(single_data.forth_val, 0x0b);
+	zassert_false(single_data.first_second_export_called);
+	zassert_false(single_data.first_second_commit_called);
+	zassert_false(single_data.first_get_called);
+	zassert_false(single_data.first_set_called);
+	zassert_false(single_data.second_get_called);
+	zassert_false(single_data.second_set_called);
+	zassert_false(single_data.third_export_called);
+	zassert_false(single_data.third_commit_called);
+	zassert_false(single_data.third_get_called);
+	zassert_false(single_data.third_set_called);
+	zassert_false(single_data.forth_export_called);
+	zassert_false(single_data.forth_commit_called);
+	zassert_false(single_data.forth_get_called);
+	zassert_false(single_data.forth_set_called);
+
+	/* Test that it saves single values */
+	rc = settings_load();
+	zassert_true(rc == 0);
+	single_modification_reset();
+	single_data.first_val = 0x01;
+	rc = settings_save_subtree_or_single_without_modification("first/value1", false, true);
+	zassert_true(rc == 0);
+	zassert_equal(single_data.first_val, 0x01);
+	zassert_equal(single_data.second_val, 0xff);
+	zassert_equal(single_data.third_val, 0xff);
+	zassert_equal(single_data.forth_val, 0xff);
+	zassert_false(single_data.first_second_export_called);
+	zassert_false(single_data.first_second_commit_called);
+	zassert_true(single_data.first_get_called);
+	zassert_false(single_data.first_set_called);
+	zassert_false(single_data.second_get_called);
+	zassert_false(single_data.second_set_called);
+	zassert_false(single_data.third_export_called);
+	zassert_false(single_data.third_commit_called);
+	zassert_false(single_data.third_get_called);
+	zassert_false(single_data.third_set_called);
+	zassert_false(single_data.forth_export_called);
+	zassert_false(single_data.forth_commit_called);
+	zassert_false(single_data.forth_get_called);
+	zassert_false(single_data.forth_set_called);
+
+	single_modification_reset();
+	single_data.first_val = 0x02;
+	rc = settings_load_subtree("first");
+	zassert_true(rc == 0);
+	zassert_equal(single_data.first_val, 0x01);
+	zassert_equal(single_data.second_val, 0xff);
+	zassert_equal(single_data.third_val, 0xff);
+	zassert_equal(single_data.forth_val, 0xff);
+	zassert_false(single_data.first_second_export_called);
+	zassert_false(single_data.third_export_called);
+	zassert_false(single_data.forth_export_called);
+	zassert_true(single_data.first_second_commit_called);
+	zassert_true(single_data.third_commit_called);
+	zassert_true(single_data.forth_commit_called);
+	zassert_false(single_data.first_get_called);
+	zassert_false(single_data.second_get_called);
+	zassert_false(single_data.third_get_called);
+	zassert_false(single_data.forth_get_called);
+	zassert_true(single_data.first_set_called);
+	zassert_true(single_data.second_set_called);
+	zassert_true(single_data.third_set_called);
+	zassert_true(single_data.forth_set_called);
+
+	single_modification_reset();
+	single_data.first_val = 0x02;
+	rc = settings_save_subtree_or_single_without_modification("first/value1", false, true);
+	zassert_true(rc == 0);
+	zassert_equal(single_data.first_val, 0x02);
+	zassert_equal(single_data.second_val, 0xff);
+	zassert_equal(single_data.third_val, 0xff);
+	zassert_equal(single_data.forth_val, 0xff);
+	zassert_false(single_data.first_second_export_called);
+	zassert_false(single_data.first_second_commit_called);
+	zassert_true(single_data.first_get_called);
+	zassert_false(single_data.first_set_called);
+	zassert_false(single_data.second_get_called);
+	zassert_false(single_data.second_set_called);
+	zassert_false(single_data.third_export_called);
+	zassert_false(single_data.third_commit_called);
+	zassert_false(single_data.third_get_called);
+	zassert_false(single_data.third_set_called);
+	zassert_false(single_data.forth_export_called);
+	zassert_false(single_data.forth_commit_called);
+	zassert_false(single_data.forth_get_called);
+	zassert_false(single_data.forth_set_called);
+
+	single_modification_reset();
+	single_data.first_val = 0x03;
+	rc = settings_load_subtree("first");
+	zassert_true(rc == 0);
+	zassert_equal(single_data.first_val, 0x02);
+	zassert_equal(single_data.second_val, 0xff);
+	zassert_equal(single_data.third_val, 0xff);
+	zassert_equal(single_data.forth_val, 0xff);
+	zassert_false(single_data.first_second_export_called);
+	zassert_false(single_data.third_export_called);
+	zassert_false(single_data.forth_export_called);
+	zassert_true(single_data.first_second_commit_called);
+	zassert_true(single_data.third_commit_called);
+	zassert_true(single_data.forth_commit_called);
+	zassert_false(single_data.first_get_called);
+	zassert_false(single_data.second_get_called);
+	zassert_false(single_data.third_get_called);
+	zassert_false(single_data.forth_get_called);
+	zassert_true(single_data.first_set_called);
+	zassert_true(single_data.second_set_called);
+	zassert_true(single_data.third_set_called);
+	zassert_true(single_data.forth_set_called);
+
+	/* Check changing second value and doing one write */
+	single_modification_reset();
+	single_data.first_val = 0x01;
+	single_data.second_val = 0x20;
+	rc = settings_save_subtree_or_single_without_modification("first/value2", false, true);
+	zassert_true(rc == 0);
+	zassert_equal(single_data.first_val, 0x01);
+	zassert_equal(single_data.second_val, 0x20);
+	zassert_equal(single_data.third_val, 0xff);
+	zassert_equal(single_data.forth_val, 0xff);
+	zassert_false(single_data.first_second_export_called);
+	zassert_false(single_data.first_second_commit_called);
+	zassert_false(single_data.first_get_called);
+	zassert_false(single_data.first_set_called);
+	zassert_true(single_data.second_get_called);
+	zassert_false(single_data.second_set_called);
+	zassert_false(single_data.third_export_called);
+	zassert_false(single_data.third_commit_called);
+	zassert_false(single_data.third_get_called);
+	zassert_false(single_data.third_set_called);
+	zassert_false(single_data.forth_export_called);
+	zassert_false(single_data.forth_commit_called);
+	zassert_false(single_data.forth_get_called);
+	zassert_false(single_data.forth_set_called);
+
+	single_modification_reset();
+	single_data.first_val = 0x00;
+	single_data.second_val = 0x00;
+	rc = settings_load_subtree("first");
+	zassert_true(rc == 0);
+	zassert_equal(single_data.first_val, 0x02);
+	zassert_equal(single_data.second_val, 0x20);
+	zassert_equal(single_data.third_val, 0xff);
+	zassert_equal(single_data.forth_val, 0xff);
+	zassert_false(single_data.first_second_export_called);
+	zassert_false(single_data.third_export_called);
+	zassert_false(single_data.forth_export_called);
+	zassert_true(single_data.first_second_commit_called);
+	zassert_true(single_data.third_commit_called);
+	zassert_true(single_data.forth_commit_called);
+	zassert_false(single_data.first_get_called);
+	zassert_false(single_data.second_get_called);
+	zassert_false(single_data.third_get_called);
+	zassert_false(single_data.forth_get_called);
+	zassert_true(single_data.first_set_called);
+	zassert_true(single_data.second_set_called);
+	zassert_true(single_data.third_set_called);
+	zassert_true(single_data.forth_set_called);
+
+	/* Check doing a subtree update */
+	single_modification_reset();
+	single_data.first_val = 0x01;
+	single_data.second_val = 0x20;
+	single_data.third_val = 0x21;
+	single_data.forth_val = 0x22;
+	rc = settings_save_subtree_or_single_without_modification("first", true, false);
+	zassert_true(rc == 0);
+	zassert_equal(single_data.first_val, 0x01);
+	zassert_equal(single_data.second_val, 0x20);
+	zassert_equal(single_data.third_val, 0x21);
+	zassert_equal(single_data.forth_val, 0x22);
+	zassert_true(single_data.first_second_export_called);
+	zassert_false(single_data.first_second_commit_called);
+	zassert_false(single_data.first_get_called);
+	zassert_false(single_data.first_set_called);
+	zassert_false(single_data.second_get_called);
+	zassert_false(single_data.second_set_called);
+	zassert_true(single_data.third_export_called);
+	zassert_false(single_data.third_commit_called);
+	zassert_false(single_data.third_get_called);
+	zassert_false(single_data.third_set_called);
+	zassert_true(single_data.forth_export_called);
+	zassert_false(single_data.forth_commit_called);
+	zassert_false(single_data.forth_get_called);
+	zassert_false(single_data.forth_set_called);
+
+	single_modification_reset();
+	single_data.first_val = 0x00;
+	single_data.second_val = 0x00;
+	single_data.third_val = 0x00;
+	single_data.forth_val = 0x00;
+	rc = settings_load_subtree("first");
+	zassert_true(rc == 0);
+	zassert_equal(single_data.first_val, 0x01);
+	zassert_equal(single_data.second_val, 0x20);
+	zassert_equal(single_data.third_val, 0x21);
+	zassert_equal(single_data.forth_val, 0x22);
+	zassert_false(single_data.first_second_export_called);
+	zassert_false(single_data.third_export_called);
+	zassert_false(single_data.forth_export_called);
+	zassert_true(single_data.first_second_commit_called);
+	zassert_true(single_data.third_commit_called);
+	zassert_true(single_data.forth_commit_called);
+	zassert_false(single_data.first_get_called);
+	zassert_false(single_data.second_get_called);
+	zassert_false(single_data.third_get_called);
+	zassert_false(single_data.forth_get_called);
+	zassert_true(single_data.first_set_called);
+	zassert_true(single_data.second_set_called);
+	zassert_true(single_data.third_set_called);
+	zassert_true(single_data.forth_set_called);
+
+	/* Check doing a limited subtree update */
+	single_modification_reset();
+	single_data.first_val = 0x41;
+	single_data.second_val = 0x42;
+	single_data.third_val = 0x43;
+	single_data.forth_val = 0x44;
+	rc = settings_save_subtree_or_single_without_modification("first/other", true, false);
+	zassert_true(rc == 0);
+	zassert_equal(single_data.first_val, 0x41);
+	zassert_equal(single_data.second_val, 0x42);
+	zassert_equal(single_data.third_val, 0x43);
+	zassert_equal(single_data.forth_val, 0x44);
+	zassert_false(single_data.first_second_export_called);
+	zassert_false(single_data.first_second_commit_called);
+	zassert_false(single_data.first_get_called);
+	zassert_false(single_data.first_set_called);
+	zassert_false(single_data.second_get_called);
+	zassert_false(single_data.second_set_called);
+	zassert_true(single_data.third_export_called);
+	zassert_false(single_data.third_commit_called);
+	zassert_false(single_data.third_get_called);
+	zassert_false(single_data.third_set_called);
+	zassert_false(single_data.forth_export_called);
+	zassert_false(single_data.forth_commit_called);
+	zassert_false(single_data.forth_get_called);
+	zassert_false(single_data.forth_set_called);
+
+	single_modification_reset();
+	single_data.first_val = 0x00;
+	single_data.second_val = 0x00;
+	single_data.third_val = 0x00;
+	single_data.forth_val = 0x00;
+	rc = settings_load_subtree("first");
+	zassert_true(rc == 0);
+	zassert_equal(single_data.first_val, 0x01);
+	zassert_equal(single_data.second_val, 0x20);
+	zassert_equal(single_data.third_val, 0x43);
+	zassert_equal(single_data.forth_val, 0x22);
+	zassert_false(single_data.first_second_export_called);
+	zassert_false(single_data.third_export_called);
+	zassert_false(single_data.forth_export_called);
+	zassert_true(single_data.first_second_commit_called);
+	zassert_true(single_data.third_commit_called);
+	zassert_true(single_data.forth_commit_called);
+	zassert_false(single_data.first_get_called);
+	zassert_false(single_data.second_get_called);
+	zassert_false(single_data.third_get_called);
+	zassert_false(single_data.forth_get_called);
+	zassert_true(single_data.first_set_called);
+	zassert_true(single_data.second_set_called);
+	zassert_true(single_data.third_set_called);
+	zassert_true(single_data.forth_set_called);
+
+	/* Check that trying to save a single value without a get function does not work */
+	single_modification_reset();
+	single_data.first_val = 0x11;
+	single_data.second_val = 0x22;
+	single_data.third_val = 0x33;
+	single_data.forth_val = 0x44;
+	rc = settings_save_subtree_or_single_without_modification("first/expected_fail/value4",
+								  false, true);
+	zassert_true(rc == -ENOSYS);
+	zassert_equal(single_data.first_val, 0x11);
+	zassert_equal(single_data.second_val, 0x22);
+	zassert_equal(single_data.third_val, 0x33);
+	zassert_equal(single_data.forth_val, 0x44);
+	zassert_false(single_data.first_second_export_called);
+	zassert_false(single_data.first_second_commit_called);
+	zassert_false(single_data.first_get_called);
+	zassert_false(single_data.first_set_called);
+	zassert_false(single_data.second_get_called);
+	zassert_false(single_data.second_set_called);
+	zassert_false(single_data.third_export_called);
+	zassert_false(single_data.third_commit_called);
+	zassert_false(single_data.third_get_called);
+	zassert_false(single_data.third_set_called);
+	zassert_false(single_data.forth_export_called);
+	zassert_false(single_data.forth_commit_called);
+	zassert_false(single_data.forth_get_called);
+	zassert_false(single_data.forth_set_called);
+
+	single_modification_reset();
+	rc = settings_load_subtree("first");
+	zassert_true(rc == 0);
+	zassert_equal(single_data.first_val, 0x01);
+	zassert_equal(single_data.second_val, 0x20);
+	zassert_equal(single_data.third_val, 0x43);
+	zassert_equal(single_data.forth_val, 0x22);
+	zassert_false(single_data.first_second_export_called);
+	zassert_false(single_data.third_export_called);
+	zassert_false(single_data.forth_export_called);
+	zassert_true(single_data.first_second_commit_called);
+	zassert_true(single_data.third_commit_called);
+	zassert_true(single_data.forth_commit_called);
+	zassert_false(single_data.first_get_called);
+	zassert_false(single_data.second_get_called);
+	zassert_false(single_data.third_get_called);
+	zassert_false(single_data.forth_get_called);
+	zassert_true(single_data.first_set_called);
+	zassert_true(single_data.second_set_called);
+	zassert_true(single_data.third_set_called);
+	zassert_true(single_data.forth_set_called);
+
+	settings_deregister(&forth_settings);
+	settings_deregister(&third_settings);
+	settings_deregister(&first_settings);
+#endif
 }

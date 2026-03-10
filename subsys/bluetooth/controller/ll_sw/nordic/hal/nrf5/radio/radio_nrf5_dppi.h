@@ -89,7 +89,8 @@ static inline void hal_radio_disable_on_hcto_ppi_config(void)
  */
 static inline void hal_radio_end_time_capture_ppi_config(void)
 {
-	nrf_radio_publish_set(NRF_RADIO, HAL_NRF_RADIO_EVENT_END, HAL_RADIO_END_TIME_CAPTURE_PPI);
+	nrf_radio_publish_set(NRF_RADIO, HAL_NRF_RADIO_TRX_EVENT_END,
+			      HAL_RADIO_END_TIME_CAPTURE_PPI);
 	nrf_timer_subscribe_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_END_TASK,
 				HAL_RADIO_END_TIME_CAPTURE_PPI);
 }
@@ -105,17 +106,17 @@ static inline void hal_event_timer_start_ppi_config(void)
 	nrf_grtc_publish_set(NRF_GRTC, HAL_CNTR_GRTC_EVENT_COMPARE_RADIO,
 			     HAL_EVENT_TIMER_START_PPI);
 
-	/* Enable same DPPI in Peripheral domain */
-	nrf_dppi_channels_enable(NRF_DPPIC20,
-				 BIT(HAL_EVENT_TIMER_START_PPI));
+	/* Setup PPIB receive publish */
+	nrf_ppib_publish_set(NRF_PPIB11, HAL_PPIB_RECEIVE_EVENT_TIMER_START_PPI,
+			     HAL_EVENT_TIMER_START_PPI);
 
 	/* Setup PPIB send subscribe */
 	nrf_ppib_subscribe_set(NRF_PPIB21, HAL_PPIB_SEND_EVENT_TIMER_START_PPI,
 			       HAL_EVENT_TIMER_START_PPI);
 
-	/* Setup PPIB receive publish */
-	nrf_ppib_publish_set(NRF_PPIB11, HAL_PPIB_RECEIVE_EVENT_TIMER_START_PPI,
-			     HAL_EVENT_TIMER_START_PPI);
+	/* Enable same DPPI in Peripheral domain */
+	nrf_dppi_channels_enable(NRF_DPPIC20,
+				 BIT(HAL_EVENT_TIMER_START_PPI));
 
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	nrf_rtc_publish_set(NRF_RTC, NRF_RTC_EVENT_COMPARE_2, HAL_EVENT_TIMER_START_PPI);
@@ -147,22 +148,22 @@ static inline void hal_radio_ready_time_capture_ppi_config(void)
  */
 static inline void hal_trigger_crypt_ppi_config(void)
 {
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_PAYLOAD, HAL_TRIGGER_CRYPT_PPI);
 	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_START, HAL_TRIGGER_CRYPT_PPI);
 
-#if !defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
-	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_ADDRESS, HAL_TRIGGER_CRYPT_PPI);
-
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
-	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_PAYLOAD, HAL_TRIGGER_CRYPT_PPI);
-
-	/* Enable same DPPI in MCU  domain */
-	nrf_dppi_channels_enable(NRF_DPPIC00, BIT(HAL_TRIGGER_CRYPT_PPI));
+	/* Setup PPIB receive publish */
+	nrf_ppib_publish_set(NRF_PPIB00, HAL_PPIB_RECEIVE_TRIGGER_CRYPT_PPI, HAL_TRIGGER_CRYPT_PPI);
 
 	/* Setup PPIB send subscribe */
 	nrf_ppib_subscribe_set(NRF_PPIB10, HAL_PPIB_SEND_TRIGGER_CRYPT_PPI, HAL_TRIGGER_CRYPT_PPI);
 
-	/* Setup PPIB receive publish */
-	nrf_ppib_publish_set(NRF_PPIB00, HAL_PPIB_RECEIVE_TRIGGER_CRYPT_PPI, HAL_TRIGGER_CRYPT_PPI);
+	/* Enable same DPPI in MCU  domain */
+	nrf_dppi_channels_enable(NRF_DPPIC00, BIT(HAL_TRIGGER_CRYPT_PPI));
+
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_ADDRESS, HAL_TRIGGER_CRYPT_PPI);
+	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_START, HAL_TRIGGER_CRYPT_PPI);
 #endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 }
 
@@ -173,18 +174,6 @@ static inline void hal_trigger_crypt_ppi_disable(void)
 {
 	nrf_ccm_subscribe_clear(NRF_CCM, NRF_CCM_TASK_START);
 }
-
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-/*******************************************************************************
- * Trigger automatic address resolution on Bit counter match:
- * wire the RADIO EVENTS_BCMATCH event to the AAR TASKS_START task.
- */
-static inline void hal_trigger_aar_ppi_config(void)
-{
-	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_BCMATCH, HAL_TRIGGER_AAR_PPI);
-	nrf_aar_subscribe_set(NRF_AAR, NRF_AAR_TASK_START, HAL_TRIGGER_AAR_PPI);
-}
-#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 /* When hardware does not support Coded PHY we still allow the Controller
  * implementation to accept Coded PHY flags, but the Controller will use 1M
@@ -228,17 +217,59 @@ static inline void hal_trigger_crypt_by_bcmatch_ppi_config(void)
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 #endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+/*******************************************************************************
+ * Trigger automatic address resolution on Bit counter match:
+ * wire the RADIO EVENTS_BCMATCH event to the AAR TASKS_START task.
+ */
+static inline void hal_trigger_aar_ppi_config(void)
+{
+	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_BCMATCH, HAL_TRIGGER_AAR_PPI);
+	nrf_aar_subscribe_set(NRF_AAR, NRF_AAR_TASK_START, HAL_TRIGGER_AAR_PPI);
+
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+	/* Enable same DPPI in MCU  domain */
+	nrf_dppi_channels_enable(NRF_DPPIC00, BIT(HAL_TRIGGER_AAR_PPI));
+
+	/* Setup PPIB send subscribe */
+	nrf_ppib_subscribe_set(NRF_PPIB10, HAL_PPIB_SEND_TRIGGER_AAR_PPI, HAL_TRIGGER_AAR_PPI);
+
+	/* Setup PPIB receive publish */
+	nrf_ppib_publish_set(NRF_PPIB00, HAL_PPIB_RECEIVE_TRIGGER_AAR_PPI, HAL_TRIGGER_AAR_PPI);
+#endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
+}
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
 /******************************************************************************/
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 
 /* DPPI setup used for SW-based auto-switching during TIFS. */
-#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-#define HAL_NRF_RADIO_TIFS_DPPI_EVENT_END HAL_NRF_RADIO_EVENT_END
-#define HAL_RADIO_TIFS_DPPI_PUBLISH_END   HAL_RADIO_PUBLISH_END
-#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-#define HAL_NRF_RADIO_TIFS_DPPI_EVENT_END HAL_NRF_RADIO_EVENT_PHYEND
-#define HAL_RADIO_TIFS_DPPI_PUBLISH_END   HAL_RADIO_PUBLISH_PHYEND
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) && !defined(CONFIG_BT_CTLR_DF)
+/* When using single timer s/w switching and no direction finding support, end capture, timer clear
+ * and switch group enable DPPI are the same. Hence, we will ensure the EVENT_END publishes to this
+ * one DPPI.
+ */
+#define HAL_NRF_RADIO_TIMER_CLEAR_EVENT_END     HAL_NRF_RADIO_EVENT_END
+#define HAL_RADIO_GROUP_TASK_ENABLE_PUBLISH_END HAL_RADIO_PUBLISH_END
+
+#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER || CONFIG_BT_CTLR_DF */
+/* When not using single timer s/w switching, EVENT_END is published so that end timestamp is
+ * captured on the packet timer instance. To clear the tIFS switching timer we need a different
+ * publish, hence we use the EVENT_PHYEND publish for the timer clear and switch group enable.
+ *
+ * When Direction Finding is enabled with use of single timer or not, we will use EVENT_PHYEND
+ * published to end capture, timer clear and switch group enable DPPI being the same.
+ */
+#define HAL_NRF_RADIO_TIMER_CLEAR_EVENT_END     HAL_NRF_RADIO_EVENT_PHYEND
+#define HAL_RADIO_GROUP_TASK_ENABLE_PUBLISH_END HAL_RADIO_PUBLISH_PHYEND
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER || CONFIG_BT_CTLR_DF */
+
+/* Start SW-switch timer on event timer start.
+ */
+static inline void hal_sw_switch_timer_start_ppi_config(void)
+{
+	nrf_timer_subscribe_set(SW_SWITCH_TIMER, NRF_TIMER_TASK_START, HAL_EVENT_TIMER_START_PPI);
+}
 
 /* Clear SW-switch timer on packet end:
  * wire the RADIO EVENTS_END event to SW_SWITCH_TIMER TASKS_CLEAR task.
@@ -250,7 +281,7 @@ static inline void hal_trigger_crypt_by_bcmatch_ppi_config(void)
  */
 static inline void hal_sw_switch_timer_clear_ppi_config(void)
 {
-	nrf_radio_publish_set(NRF_RADIO, HAL_NRF_RADIO_TIFS_DPPI_EVENT_END,
+	nrf_radio_publish_set(NRF_RADIO, HAL_NRF_RADIO_TIMER_CLEAR_EVENT_END,
 			      HAL_SW_SWITCH_TIMER_CLEAR_PPI);
 	nrf_timer_subscribe_set(SW_SWITCH_TIMER,
 				NRF_TIMER_TASK_CLEAR, HAL_SW_SWITCH_TIMER_CLEAR_PPI);
@@ -321,7 +352,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  * a PPI to publish RADIO END event.
  */
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_EVT \
-	(NRF_RADIO->HAL_RADIO_TIFS_DPPI_PUBLISH_END)
+	(NRF_RADIO->HAL_RADIO_GROUP_TASK_ENABLE_PUBLISH_END)
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_EVT \
 	(((HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI << \
 		RADIO_PUBLISH_END_CHIDX_Pos) \
@@ -492,7 +523,6 @@ static inline void hal_radio_sw_switch_disable(void)
 	 * are subscribed to RADIO_END event, i.e on the same channel.
 	 * So we simply cancel the task subscription.
 	 */
-	nrf_timer_subscribe_clear(SW_SWITCH_TIMER, NRF_TIMER_TASK_CLEAR);
 	nrf_dppi_subscribe_clear(NRF_DPPIC,
 		HAL_SW_DPPI_TASK_EN_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(0)));
 	nrf_dppi_subscribe_clear(NRF_DPPIC,
@@ -526,10 +556,10 @@ static inline void hal_radio_sw_switch_b2b_rx_disable(uint8_t compare_reg_index)
 
 static inline void hal_radio_sw_switch_cleanup(void)
 {
+	nrf_timer_subscribe_clear(SW_SWITCH_TIMER, NRF_TIMER_TASK_CLEAR);
 	hal_radio_sw_switch_disable();
-	nrf_dppi_channels_disable(NRF_DPPIC,
-				  (BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
-				   BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI)));
+
+	nrf_dppi_channels_disable(NRF_DPPIC, BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
 	nrf_dppi_group_disable(NRF_DPPIC, SW_SWITCH_TIMER_TASK_GROUP(0));
 	nrf_dppi_group_disable(NRF_DPPIC, SW_SWITCH_TIMER_TASK_GROUP(1));
 }

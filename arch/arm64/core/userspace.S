@@ -92,6 +92,18 @@ abv_fail:
 
 GTEXT(z_arm64_do_syscall)
 SECTION_FUNC(TEXT, z_arm64_do_syscall)
+	/*
+	 * CFI: entered from z_arm64_sync_exc with SP at struct arch_esf.
+	 * Needed so GDB can unwind from syscall implementations.
+	 */
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	.cfi_def_cfa sp, ___esf_t_SIZEOF
+	.cfi_offset 30, (___esf_t_spsr_elr_OFFSET + 8 - ___esf_t_SIZEOF)
+#ifdef CONFIG_FRAME_POINTER
+	.cfi_offset 29, (___esf_t_fp_OFFSET - ___esf_t_SIZEOF)
+#endif
+
 	/* Recover the syscall parameters from the ESF */
 	ldp	x0, x1, [sp, ___esf_t_x0_x1_OFFSET]
 	ldp	x2, x3, [sp, ___esf_t_x2_x3_OFFSET]
@@ -125,4 +137,5 @@ valid_syscall_id:
 	str	x0, [sp, ___esf_t_x0_x1_OFFSET]
 
 	/* Return from exception */
+	.cfi_endproc
 	b	z_arm64_exit_exc

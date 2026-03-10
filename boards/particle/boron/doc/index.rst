@@ -12,8 +12,8 @@ It is equipped with a onboard LIPO circuit and conforms to the
 Adafruit Feather formfactor.
 
 The Particle Boron board provides support for the Nordic Semiconductor nRF52840
-ARM |reg| Cortex |reg|-M4F SoC with an integrated 2.4 GHz transceiver supporting
-Bluetooth |reg| Low Energy and IEEE |reg| 802.15.4.
+ARM® Cortex®-M4F SoC with an integrated 2.4 GHz transceiver supporting
+Bluetooth® Low Energy and IEEE® 802.15.4.
 
 For more information about the Particle Boron board:
 
@@ -37,31 +37,7 @@ It contains circuitry for LIPO usage and can be charged via the USB port.
 Supported Features
 ==================
 
-The particle_boron board configuration supports the following
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| NVIC      | on-chip    | nested vectored      |
-|           |            | interrupt controller |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial port          |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth            |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -113,6 +89,8 @@ UART
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``particle_boron`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`

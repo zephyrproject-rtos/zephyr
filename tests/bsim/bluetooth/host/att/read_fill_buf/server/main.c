@@ -10,7 +10,7 @@
 
 #include <testlib/adv.h>
 
-#include "../bs_macro.h"
+#include "babblekit/testcase.h"
 #include "../common_defs.h"
 
 LOG_MODULE_REGISTER(server, LOG_LEVEL_DBG);
@@ -34,7 +34,7 @@ BT_GATT_SERVICE_DEFINE(long_attr_svc, BT_GATT_PRIMARY_SERVICE(MTU_VALIDATION_SVC
 					      BT_GATT_PERM_READ, read_mtu_validation_chrc, NULL,
 					      NULL));
 
-void the_test(void)
+static void test_srv_main(void)
 {
 	int err;
 
@@ -48,5 +48,27 @@ void the_test(void)
 	err = bt_testlib_adv_conn(NULL, BT_ID_DEFAULT, bt_get_name());
 	__ASSERT_NO_MSG(!err);
 
-	PASS("PASS\n");
+	TEST_PASS("PASS");
+}
+
+static const struct bst_test_instance test_def[] = {
+	{
+		.test_id = "srv",
+		.test_main_f = test_srv_main,
+	},
+	BSTEST_END_MARKER,
+};
+
+static struct bst_test_list *install(struct bst_test_list *tests)
+{
+	return bst_add_tests(tests, test_def);
+};
+
+bst_test_install_t test_installers[] = {install, NULL};
+
+int main(void)
+{
+	bst_main();
+
+	return 0;
 }

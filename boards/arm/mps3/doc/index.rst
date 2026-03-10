@@ -1,7 +1,4 @@
-.. _mps3_board:
-
-ARM MPS3
-###############
+.. zephyr:board:: mps3
 
 Overview
 ********
@@ -224,31 +221,7 @@ ARM MPS3 provides the following hardware components:
 Supported Features
 ===================
 
-The ``MPS3`` board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by the port.
-See the `MPS3 FPGA Website`_ for a complete list of MPS3 AN547 board hardware
-features.
-
-The default configuration can be found in
- - For AN547: :zephyr_file:`boards/arm/mps3/mps3_corstone300_an547_defconfig`.
- - For AN552: :zephyr_file:`boards/arm/mps3/mps3_corstone300_an552_defconfig`.
- - For FVP  : :zephyr_file:`boards/arm/mps3/mps3_corstone300_fvp_defconfig`.
- - For AN555: :zephyr_file:`boards/arm/mps3/mps3_corstone310_an555_defconfig`.
-
+.. zephyr:board-supported-hw::
 
 Serial Port
 ===========
@@ -354,9 +327,6 @@ For more details refer to:
 
 .. _Corstone-310 FVP:
    https://developer.arm.com/tools-and-software/open-source-software/arm-platforms-software/arm-ecosystem-fvps
-
-.. _MPS3 FPGA Website:
-   https://developer.arm.com/tools-and-software/development-boards/fpga-prototyping-boards/mps3
 
 .. _MPS3 AN547 Technical Reference Manual (TRM):
    https://developer.arm.com/-/media/Arm%20Developer%20Community/PDF/DAI0547B_SSE300_PLUS_U55_FPGA_for_mps3.pdf

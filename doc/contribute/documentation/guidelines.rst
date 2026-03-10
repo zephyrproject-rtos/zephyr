@@ -21,14 +21,17 @@ then be viewed using a web browser. This same .rst content is served by the
 You can read details about `reStructuredText`_
 and about `Sphinx extensions`_ from their respective websites.
 
-.. _Sphinx extensions: http://www.sphinx-doc.org/en/stable/contents.html
-.. _reStructuredText: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
-.. _Sphinx Inline Markup:  http://sphinx-doc.org/markup/inline.html#inline-markup
+.. _Sphinx extensions: https://www.sphinx-doc.org/en/stable/contents.html
+.. _reStructuredText: https://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
+.. _Sphinx Inline Markup:  https://sphinx-doc.org/markup/inline.html#inline-markup
 .. _Zephyr documentation:  https://docs.zephyrproject.org
 
 This document provides a quick reference for commonly used reST and
 Sphinx-defined directives and roles used to create the documentation
 you're reading.
+
+For instructions regarding writing good C API documentation, see
+:ref:`doxygen_style`.
 
 Content Structure
 *****************
@@ -53,6 +56,8 @@ the first non-white space in the preceding line.  For example::
       first character of the directive name.
 
 Refer to the Zephyr :ref:`coding_style` for additional requirements.
+
+.. _headings:
 
 Headings
 ========
@@ -185,7 +190,7 @@ Tables
 
 There are a few ways to create tables, each with their limitations or
 quirks.  `Grid tables
-<http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables>`_
+<https://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables>`_
 offer the most capability for defining merged rows and columns, but are
 hard to maintain::
 
@@ -218,7 +223,7 @@ This example would render as:
 +------------------------+------------+----------+----------+
 
 `List tables
-<http://docutils.sourceforge.net/docs/ref/rst/directives.html#list-table>`_
+<https://docutils.sourceforge.net/docs/ref/rst/directives.html#list-table>`_
 are much easier to maintain, but don't support row or column spans::
 
    .. list-table:: Table title
@@ -343,7 +348,7 @@ reference for some of the most commonly used text formatting options in Zephyr d
 exhaustive list, refer to the `reStructuredText Quick Reference`_,
 `reStructuredText Interpreted Text Roles`_ as well as the `additional roles provided by Sphinx`_.
 
-.. _reStructuredText Quick Reference: http://docutils.sourceforge.io/docs/user/rst/quickref.html
+.. _reStructuredText Quick Reference: https://docutils.sourceforge.io/docs/user/rst/quickref.html
 .. _reStructuredText Interpreted Text Roles: https://docutils.sourceforge.io/docs/ref/rst/roles.html
 .. _additional roles provided by Sphinx: https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html
 
@@ -418,18 +423,14 @@ This would render as:
 Non-ASCII Characters
 ====================
 
-You can insert non-ASCII characters such as a Trademark symbol (|trade|),
-by using the notation ``|trade|``.
-Available replacement names are defined in an include file used during the Sphinx processing
-of the reST files.  The names of these replacement characters are the same as used in HTML
-entities used to insert characters in HTML, e.g., ``\&trade;`` and are defined in the
-file :zephyr_file:`doc/substitutions.txt` as listed below:
+Prefer plain ASCII unless a specific symbol is required for correctness or conventional typography
+(for example units like µ, or well-known marks like ™).
 
-.. literalinclude:: ../../substitutions.txt
-   :language: rst
+Avoid adding non-ASCII characters purely for aesthetic purposes.
 
-We've kept the substitutions list small but others can be added as
-needed by submitting a change to the :zephyr_file:`doc/substitutions.txt` file.
+The file :zephyr_file:`doc/substitutions.txt` contains some basic HTML substitution definitions for
+special formatting needs (e.g. to force line breaks), but Unicode characters can and should be used
+directly in the documentation source files.
 
 Code Blocks and Command Examples
 ================================
@@ -470,7 +471,7 @@ This would be rendered as:
 Other languages are of course supported (see `languages supported by Pygments`_), and in particular,
 you are encouraged to make use of the following when appropriate:
 
-.. _`languages supported by Pygments`: http://pygments.org/languages/
+.. _`languages supported by Pygments`: https://pygments.org/languages/
 
 * ``c`` for C code
 * ``cpp`` for C++ code
@@ -883,6 +884,21 @@ Application build commands
 
       If set, additional arguments to the flash invocation.
 
+   .. rst:directive:option:: debug-args
+      :type: string
+
+      If set, additional arguments to the debug invocation.
+
+   .. rst:directive:option:: debugserver-args
+      :type: string
+
+      If set, additional arguments to the debugserver invocation.
+
+   .. rst:directive:option:: attach-args
+      :type: string
+
+      If set, additional arguments to the attach invocation.
+
    .. rst:directive:option:: snippets
       :type: string
 
@@ -942,7 +958,26 @@ very file can be done using the :rst:role:`zephyr_file` role.
 
       Check out :zephyr_file:`doc/contribute/documentation/guidelines.rst` for more information.
 
-You may use the :rst:role:`zephyr_raw` role instead if you want to reference the "raw" content.
+   You can reference specific lines or line ranges in a file by appending :samp:`#L{line_number}` or
+   :samp:`#L{start_line}-L{end_line}` to the file path::
+
+      See :zephyr_file:`doc/contribute/documentation/guidelines.rst#L3` for the main heading of
+      this document.
+
+   Will render as:
+
+      See :zephyr_file:`doc/contribute/documentation/guidelines.rst#L3` for the main heading of
+      this document.
+
+   The role automatically verifies that the referenced file exists in the Zephyr tree and will
+   generate a warning during documentation build if the file is not found.
+
+   .. note::
+
+      Use the line references sparingly as keeping them accurate over time can be challenging as the
+      content of the linked file is subject to change.
+
+   You may use the :rst:role:`zephyr_raw` role instead if you want to reference the "raw" content.
 
 .. rst:role:: zephyr_raw
 
@@ -964,6 +999,7 @@ You may use the :rst:role:`zephyr_raw` role instead if you want to reference the
 
          Check out :module_file:`hal_stm32:CMakeLists.txt` for more information.
 
+   Similar to :rst:role:`zephyr_file`, you can reference specific lines or line ranges in a file.
 
 Cross-referencing GitHub issues and pull requests
 =================================================
@@ -1045,6 +1081,31 @@ Make sure to use the full name of the Kconfig option, including the ``CONFIG_`` 
    Will render as:
 
       Check out :kconfig:option:`CONFIG_GPIO` for more information.
+
+.. rst:role:: kconfig:option-regex
+
+   This role is used to create links to regex searches for Kconfig options. It generates a link to
+   the Kconfig search page with the provided regex pattern automatically filled in as the search
+   query. It is useful for referencing multiple Kconfig options that share a common prefix, or
+   belong to a common category. For example::
+
+      Check out :kconfig:option-regex:`CONFIG_SECURE_STORAGE_ITS_(STORE|TRANSFORM)_.*_CUSTOM` for
+      the various customization possibilities.
+
+   Will render as:
+
+      Check out :kconfig:option-regex:`CONFIG_SECURE_STORAGE_ITS_(STORE|TRANSFORM)_.*_CUSTOM` for
+      the various customization possibilities.
+
+   It is encouraged to provide a custom link text to make the reference more readable. For example::
+
+      Check out the :kconfig:option-regex:`ITS Kconfig options <CONFIG_SECURE_STORAGE_ITS_.*>`
+      for more information.
+
+   Will render as:
+
+      Check out the :kconfig:option-regex:`ITS Kconfig options <CONFIG_SECURE_STORAGE_ITS_.*>`
+      for more information.
 
 Devicetree bindings
 ===================
@@ -1231,6 +1292,155 @@ Boards
    This directive is used to generate a catalog of Zephyr-supported boards that can be used to
    quickly browse the list of all supported boards and filter them according to various criteria.
 
+.. rst:role:: zephyr:board-catalog
+
+   This role is used to reference the board catalog page, optionally with filter parameters.
+   For example::
+
+      Check out :zephyr:board-catalog:`` for more information.
+
+   Will render as:
+
+      Check out :zephyr:board-catalog:`` for more information.
+
+   This role can be used exactly like the built-in :rst:role:`ref` role, i.e. you may provide a
+   custom link text. For example::
+
+      Check out the :zephyr:board-catalog:`boards using this compatible <#compatibles=ti,hdc2080>`
+      for more information.
+
+   Will render as:
+
+      Check out the :zephyr:board-catalog:`boards using this compatible <#compatibles=ti,hdc2080>`
+      for more information.
+
+.. rst:directive:: .. zephyr:board-supported-hw::
+
+   This directive is used to show supported hardware features for all the targets of the board
+   documented in the current page. The tables are automatically generated based on the board's
+   Devicetree.
+
+   The directive must be used in a document that also contains a :rst:dir:`zephyr:board` directive,
+   as it relies on the board information to generate the table.
+
+   .. note::
+
+      This directive requires that the documentation is built with hardware features generation enabled
+      (``zephyr_generate_hw_features`` config option set to ``True``). If disabled, a warning message
+      will be shown instead of the hardware features tables.
+
+      It is possible to limit the hardware features generation to boards from a specific list of vendors
+      to speed up documentation builds without completely disabling the hardware features table. Set the
+      config option ``zephyr_hw_features_vendor_filter`` to the list of vendors to generate features for.
+      If the option is empty, hardware features are generated for all boards from all vendors.
+
+.. rst:directive:: .. zephyr:board-supported-runners::
+
+   This directive is used to show the supported runners for the board documented in the current
+   page, including which runner is the default for flashing and debugging.
+
+   The directive must be used in a document that also contains a :rst:dir:`zephyr:board` directive,
+   as it relies on the board information to generate the table.
+
+   .. note::
+
+      Similar to :rst:dir:`zephyr:board-supported-hw`, this directive requires hardware features
+      generation to be enabled (``zephyr_generate_hw_features`` config option set to ``True``) to
+      produce a complete table. If disabled, a warning message will be shown instead of the runners
+      tables.
+
+Accessibility Guidelines
+************************
+
+Accessibility is an important aspect of documentation, ensuring that all users, including those with
+disabilities, can access and understand the content.
+
+When writing and maintaining Zephyr Project documentation, please follow these guidelines to improve
+accessibility for everyone.
+
+Images and Figures
+==================
+
+All images and figures must include appropriate alternative text (alt text) to convey the meaning of
+the visual content to users who rely on screen readers or cannot view images.
+
+* Use the ``:alt:`` attribute when including images using the :rst:dir:`image` directive.  Example:
+
+  .. code-block:: rst
+     :emphasize-lines: 2
+
+     .. image:: image/doc-gen-flow.png
+        :alt: Documentation generation process overview
+
+* If the image contains text, ensure that the alt text includes this text verbatim.
+
+* When using the :rst:dir:`figure` directive, which allows for a caption, the ``:alt:`` text is
+  still important. The alt text should describe the image itself, while the caption provides
+  additional context or interpretation. Example:
+
+  .. code-block:: rst
+     :emphasize-lines: 4
+
+     .. figure:: ../../images/arch-diagram.png
+        :alt: High-level overview of Zephyr OS architecture showing layers and components.
+
+        High-level overview of Zephyr OS architecture.
+
+- Avoid using images as the sole method of conveying information that can be explained
+  clearly with text.
+
+.. admonition:: Best Practices for writing alt text
+   :class: tip
+
+   * **Be Accurate and Equivalent**: Present the same essential information as the image.
+   * **Be Succinct**: Convey the core message of the image concisely.
+   * **Avoid Redundancy**: Do not use phrases like "Image of..." or "Picture of..." as screen readers
+     typically announce the element as an image.
+   * **Describe, Don't Interpret**: Stick to describing what is visually present on the image.
+   * **Complex Images**: For charts, diagrams, or other complex visuals, provide a summary in the alt
+     text. If a full understanding requires more detail, consider providing a more detailed
+     description in the surrounding text or as part of the figure caption. Using text-based diagram
+     tools like :ref:`Graphviz <graphviz_diagrams>` can also improve accessibility.
+
+
+Headings and Structure
+======================
+
+Use :ref:`headings <headings>` to structure your document logically. This allows users of assistive
+technologies to understand the document's organization and navigate it efficiently.
+
+Tables
+======
+
+Tables should be used only for tabular data and must be accessible to screen readers.
+
+* Always define headers for rows and columns.
+
+* Use the :rst:dir:`list-table` directive when possible for better responsiveness and accessibility.
+
+* Include a caption for tables where context is not immediately obvious. Example:
+
+  .. code-block:: rst
+     :emphasize-lines: 1
+
+     .. list-table:: GPIO Pin Configuration Options
+        :widths: 15 30
+        :header-rows: 1
+
+        * - Field
+          - Description
+        * - GPIO_INPUT
+          - Configures pin as input
+        * - GPIO_OUTPUT
+          - Configures pin as output
+
+Additional Resources
+====================
+
+For more general guidance on web accessibility you may refer to W3C's
+`Web Content Accessibility Guidelines (WCAG)`_
+
+.. _`Web Content Accessibility Guidelines (WCAG)`: https://www.w3.org/WAI/standards-guidelines/wcag/
 
 References
 **********

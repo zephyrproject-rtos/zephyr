@@ -29,37 +29,7 @@ documents:
 Supported Features
 ==================
 
-The ``xg24_ek2703a`` board supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | stimer                              |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | semailbox                           |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| I2C(M/S)  | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | bluetooth                           |
-+-----------+------------+-------------------------------------+
-| ACMP      | on-chip    | comparator                          |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -100,6 +70,8 @@ USART0 is connected to the board controller and is used for the console.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 .. note::
    Before using the kit the first time, you should update the J-Link firmware

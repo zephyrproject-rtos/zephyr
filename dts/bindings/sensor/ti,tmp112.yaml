@@ -19,6 +19,21 @@ properties:
       - 1000
       - 4000
       - 8000
+
   extended-mode:
-    description: When true use 13-bit data format allowing measuring temperature up to 128°C
+    description: When true use 13-bit data format allowing measuring temperature up to 150°C
     type: boolean
+
+  t-low-micro-c:
+    description: |
+      Sets the default tLow threshold in micro-Celsius. The default value is the chip reset
+      value.
+    type: int
+    default: 75000000
+
+  t-high-micro-c:
+    description: |
+      Sets the default tHigh threshold in micro-Celsius. The default value is the chip reset
+      value.
+    type: int
+    default: 85000000

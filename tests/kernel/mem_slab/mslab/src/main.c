@@ -43,7 +43,7 @@ void test_slab_free_all_blocks(void **p);
 K_SEM_DEFINE(SEM_HELPERDONE, 0, 1);
 K_SEM_DEFINE(SEM_REGRESSDONE, 0, 1);
 
-K_MEM_SLAB_DEFINE(map_lgblks, 1024, NUMBLOCKS, 4);
+K_MEM_SLAB_DEFINE(map_lgblks, 1024, NUMBLOCKS, 8);
 
 
 /**
@@ -247,7 +247,7 @@ ZTEST(memory_slab_1cpu, test_mslab)
 
 	TC_PRINT("%s: start to wait for block\n", __func__);
 	k_sem_give(&SEM_REGRESSDONE);    /* Allow helper thread to run part 4 */
-	ret_value = k_mem_slab_alloc(&map_lgblks, &b, K_MSEC(50));
+	ret_value = k_mem_slab_alloc(&map_lgblks, &b, K_MSEC(180));
 	zassert_equal(0, ret_value,
 		      "Failed k_mem_slab_alloc, ret_value %d\n", ret_value);
 

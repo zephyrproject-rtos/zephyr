@@ -30,46 +30,6 @@ description: |
      |               |         |
   ---+               +---------+
 
-
-  Example dts file:
-  / {
-        cpus {
-            cpu@0 {
-                clock-frequency = <64000000>;
-            };
-        };
-
-        rgb_led: ws2812 {
-            compatible = "worldsemi,ws2812-gpio";
-            chain-length = <1>;
-            color-mapping = <LED_COLOR_ID_GREEN
-                             LED_COLOR_ID_RED
-                             LED_COLOR_ID_BLUE>;
-            gpios = <&gpio0 16 0>;
-        };
-  };
-
-  Example dts file:
-  / {
-        chosen {
-            zephyr,led-strip = &rgb_led;
-        };
-
-        rgb_led: ws2812 {
-            compatible = "worldsemi,ws2812-gpio";
-            chain-length = <1>;
-            color-mapping = <LED_COLOR_ID_GREEN
-                             LED_COLOR_ID_RED
-                             LED_COLOR_ID_BLUE>;
-            reset-delay = <50>;
-            gpios = <&gpio0 16 0>;
-            delay-t1h = <48>;
-            delay-t1l = <32>;
-            delay-t0h = <16>;
-            delay-t0l = <32>;
-        };
-  };
-
 compatible: "worldsemi,ws2812-gpio"
 
 include: [base.yaml, ws2812-gpio.yaml]
@@ -98,3 +58,43 @@ properties:
     description: |
       Number of NOP assembly operations to create a delay for a 0 bit, low
       voltage period (default 800 nsec)
+
+examples:
+  - |
+    / {
+          cpus {
+              cpu@0 {
+                  clock-frequency = <64000000>;
+              };
+          };
+
+          rgb_led: ws2812 {
+              compatible = "worldsemi,ws2812-gpio";
+              chain-length = <1>;
+              color-mapping = <LED_COLOR_ID_GREEN
+                               LED_COLOR_ID_RED
+                               LED_COLOR_ID_BLUE>;
+              gpios = <&gpio0 16 0>;
+          };
+    };n
+
+  - |
+    / {
+          chosen {
+              zephyr,led-strip = &rgb_led;
+          };
+
+          rgb_led: ws2812 {
+              compatible = "worldsemi,ws2812-gpio";
+              chain-length = <1>;
+              color-mapping = <LED_COLOR_ID_GREEN
+                               LED_COLOR_ID_RED
+                               LED_COLOR_ID_BLUE>;
+              reset-delay = <50>;
+              gpios = <&gpio0 16 0>;
+              delay-t1h = <48>;
+              delay-t1l = <32>;
+              delay-t0h = <16>;
+              delay-t0l = <32>;
+          };
+    };

@@ -20,50 +20,9 @@ Hardware
 Supported Features
 ==================
 
-The ev11l78a board configuration supports the following hardware
-features:
-
-
-.. list-table::
-    :header-rows: 1
-
-    * - Interface
-      - Controller
-      - Driver / Component
-    * - NVIC
-      - on-chip
-      - nested vector interrupt controller
-    * - Flash
-      - on-chip
-      - Can be used with LittleFS to store files
-    * - SYSTICK
-      - on-chip
-      - systick
-    * - WDT
-      - on-chip
-      - Watchdog
-    * - ADC
-      - on-chip
-      - Analog to Digital Converter
-    * - GPIO
-      - on-chip
-      - I/O ports
-    * - USART
-      - on-chip
-      - Serial ports
-    * - I2C
-      - on-chip
-      - I2C ports
-    * - SPI
-      - on-chip
-      - Serial Peripheral Interface ports
-
-Other hardware features are not currently supported by Zephyr.
+.. zephyr:board-supported-hw::
 
 Refer to the `EV11L78A Schematics`_ for a detailed hardware diagram.
-
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/microchip/ev11l78a/ev11l78a_defconfig`.
 
 Serial Port
 ===========

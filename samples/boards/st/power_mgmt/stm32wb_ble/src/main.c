@@ -122,7 +122,7 @@ int main(void)
 	/* Give time to bt_ready sequence */
 	k_sleep(K_SECONDS(6));
 
-	printk("BLE disable\n");
+	printk("Bluetooth disable\n");
 	err = bt_disable();
 	if (err) {
 		printk("Bluetooth disable failed (err %d)\n", err);
@@ -130,7 +130,7 @@ int main(void)
 
 	k_sleep(K_SECONDS(2));
 
-	printk("BLE restart\n");
+	printk("Bluetooth restart\n");
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);
 	if (err) {
@@ -140,7 +140,7 @@ int main(void)
 	/* Give time to bt_ready sequence */
 	k_sleep(K_SECONDS(6));
 
-	printk("BLE disable\n");
+	printk("Bluetooth disable\n");
 	err = bt_disable();
 	if (err) {
 		printk("Bluetooth disable failed (err %d)\n", err);

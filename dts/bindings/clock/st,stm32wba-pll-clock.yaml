@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  PLL node binding for STM32WBA devices
+  STM32WBA PLL.
 
   It can be used to describe PLL1
 
@@ -50,6 +50,13 @@ properties:
     description: |
         PLLx multiplication factor for VCO
         Valid range: 4 - 512
+
+  div-p:
+    type: int
+    required: true
+    description: |
+        PLLx DIVP division factor
+        Valid range: 1 - 128
 
   div-q:
     type: int

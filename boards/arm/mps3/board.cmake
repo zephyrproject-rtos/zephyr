@@ -1,5 +1,5 @@
 # Copyright (c) 2021 Linaro
-# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 # The FVP variant must be used to enable Ethos-U55 NPU support, but QEMU also
@@ -12,7 +12,7 @@
 #
 
 
-if(CONFIG_BOARD_MPS3_CORSTONE300_AN547 OR CONFIG_BOARD_MPS3_CORSTONE300_AN547_NS)
+if(CONFIG_BOARD_MPS3_CORSTONE300_AN547)
   set(SUPPORTED_EMU_PLATFORMS qemu)
 
   # QEMU settings
@@ -25,7 +25,11 @@ if(CONFIG_BOARD_MPS3_CORSTONE300_AN547 OR CONFIG_BOARD_MPS3_CORSTONE300_AN547_NS
     )
 elseif(CONFIG_BOARD_MPS3_CORSTONE300_FVP OR CONFIG_BOARD_MPS3_CORSTONE300_FVP_NS)
   set(SUPPORTED_EMU_PLATFORMS armfvp)
-  set(ARMFVP_BIN_NAME FVP_Corstone_SSE-300_Ethos-U55)
+  if(CONFIG_ETHOS_U65_128 OR CONFIG_ETHOS_U65_256 OR CONFIG_ETHOS_U65_512)
+    set(ARMFVP_BIN_NAME FVP_Corstone_SSE-300_Ethos-U65)
+  else()
+    set(ARMFVP_BIN_NAME FVP_Corstone_SSE-300_Ethos-U55)
+  endif()
 elseif(CONFIG_BOARD_MPS3_CORSTONE300)
   string(REPLACE "mps3/corstone300;" "" board_targets "${board_targets}")
   string(REPLACE ";" "\n" board_targets "${board_targets}")
@@ -37,17 +41,28 @@ elseif(CONFIG_BOARD_MPS3_CORSTONE310_FVP OR CONFIG_BOARD_MPS3_CORSTONE310_FVP_NS
     set(ARMFVP_FLAGS
       # default is '0x11000000' but should match cpu<i>.INITSVTOR which is 0.
       -C mps3_board.sse300.iotss3_systemcontrol.INITSVTOR_RST=0
+      # default is 0x8, this change is needed since we split flash into itcm
+      # and sram and it reduces the number of available mpu regions causing a
+      # few MPU tests to fail.
+      -C cpu0.MPU_S=16
+    )
+  endif()
+  if(CONFIG_ARM_PAC OR CONFIG_ARM_BTI)
+    set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
+      -C cpu0.CFGPACBTI=1
     )
   endif()
 endif()
 
 board_set_debugger_ifnset(qemu)
 
-if (CONFIG_BUILD_WITH_TFM)
+if(CONFIG_BUILD_WITH_TFM)
   # Override the binary used by qemu, to use the combined
   # TF-M (Secure) & Zephyr (Non Secure) image (when running
   # in-tree tests).
   set(QEMU_KERNEL_OPTION "-device;loader,file=${CMAKE_BINARY_DIR}/zephyr/tfm_merged.hex")
+
+  set(ARMFVP_FLAGS ${ARMFVP_FLAGS} -a ${APPLICATION_BINARY_DIR}/zephyr/tfm_merged.hex)
 endif()
 
 # FVP Parameters

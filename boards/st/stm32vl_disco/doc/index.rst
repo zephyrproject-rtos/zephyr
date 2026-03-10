@@ -35,50 +35,7 @@ More information about the STM32F100x can be found in the
 Supported Features
 ==================
 
-The Zephyr stm32vl_disco board configuration supports the following hardware features:
-
-.. list-table:: Supported hardware
-   :header-rows: 1
-
-   * - Interface
-     - Controller
-     - Driver/component
-   * - NVIC
-     - on-chip
-     - nested vector interrupt controller
-   * - UART
-     - on-chip
-     - serial port-polling
-       serial port-interrupt
-   * - PINMUX
-     - on-chip
-     - pinmux
-   * - GPIO
-     - on-chip
-     - gpio
-   * - CLOCK
-     - on-chip
-     - reset and clock control
-   * - FLASH
-     - on-chip
-     - flash memory
-   * - WATCHDOG
-     - on-chip
-     - window watchdog
-   * - I2C
-     - on-chip
-     - i2c
-   * - SPI
-     - on-chip
-     - spi
-   * - ADC
-     - on-chip
-     - adc
-
-Other hardware features are not yet supported in this Zephyr port.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32vl_disco/stm32vl_disco_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -116,6 +73,8 @@ For more details please refer to `STM32VLDISCOVERY board User Manual`_.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``stm32vl_disco`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and

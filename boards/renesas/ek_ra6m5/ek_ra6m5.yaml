@@ -9,3 +9,8 @@ toolchain:
   - gnuarmemb
 supported:
   - gpio
+  - usbd
+  - crc
+  - watchdog
+  - counter
+vendor: renesas

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Libre Solar Technologies GmbH
+ * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,20 +14,10 @@
 #include <errno.h>
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
-#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
-#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
-#else
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#endif
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <esp_attr.h>
-
-#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
-#define ISR_HANDLER isr_handler_t
-#else
-#define ISR_HANDLER intr_handler_t
-#endif
 
 /*
  * Timeout after which the poll_out function stops waiting for space in the tx fifo.
@@ -111,10 +102,9 @@ static int serial_esp32_usb_init(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	ret = esp_intr_alloc(config->irq_source,
-			ESP_PRIO_TO_FLAGS(config->irq_priority) |
-			ESP_INT_FLAGS_CHECK(config->irq_flags),
-			(ISR_HANDLER)serial_esp32_usb_isr,
-			(void *)dev, NULL);
+			     ESP_PRIO_TO_FLAGS(config->irq_priority) |
+				     ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
+			     (intr_handler_t)serial_esp32_usb_isr, (void *)dev, NULL);
 #endif
 	return ret;
 }
@@ -231,7 +221,7 @@ static void serial_esp32_usb_irq_callback_set(const struct device *dev,
 	data->irq_cb = cb;
 }
 
-static void serial_esp32_usb_isr(void *arg)
+static void IRAM_ATTR serial_esp32_usb_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct serial_esp32_usb_data *data = dev->data;

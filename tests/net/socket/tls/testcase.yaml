@@ -21,3 +21,6 @@ tests:
   net.socket.tls.sendmsg_no_buf:
     extra_configs:
       - CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE=0
+  net.socket.tls.no_dtls_cid:
+    extra_configs:
+      - CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID=n

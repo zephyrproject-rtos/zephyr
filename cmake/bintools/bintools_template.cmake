@@ -86,6 +86,7 @@
 #   disassembly_flag               : Flags that must always be applied when calling disassembly command
 #   disassembly_flag_final         : Flags that must always be applied last at the disassembly command
 #   disassembly_flag_inline_source : Flag to use to display source code mixed with disassembly
+#   disassembly_flag_no_aliases    : Flag to use to disassemble with raw instruction mnemonics
 #   disassembly_flag_all           : Flag to use for disassemble everything, including zeroes
 #   disassembly_flag_infile        : Flag for specifying the input file
 #   disassembly_flag_outfile       : Flag for specifying the output file
@@ -135,6 +136,7 @@ set_property(TARGET bintools PROPERTY disassembly_command ${CMAKE_COMMAND} -E ec
 set_property(TARGET bintools PROPERTY disassembly_flag "")
 set_property(TARGET bintools PROPERTY disassembly_flag_final "")
 set_property(TARGET bintools PROPERTY disassembly_flag_inline_source "")
+set_property(TARGET bintools PROPERTY disassembly_flag_no_aliases "")
 set_property(TARGET bintools PROPERTY disassembly_flag_infile "")
 set_property(TARGET bintools PROPERTY disassembly_flag_outfile "")
 

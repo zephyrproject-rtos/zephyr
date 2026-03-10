@@ -1,0 +1,6 @@
+shield:
+  name: semtech_sx1261mb2bas
+  full_name: Semtech SX1261MB2BAS LoRa Shield
+  vendor: semtech
+  supported_features:
+    - lora

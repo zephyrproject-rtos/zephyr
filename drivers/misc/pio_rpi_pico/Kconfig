@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config PIO_RPI_PICO
-	bool "RaspberryPi Pico PIO"
+	bool "Raspberry Pi Pico PIO"
 	default y
 	depends on DT_HAS_RASPBERRYPI_PICO_PIO_ENABLED
 	depends on RESET

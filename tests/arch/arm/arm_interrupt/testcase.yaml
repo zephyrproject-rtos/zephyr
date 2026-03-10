@@ -1,5 +1,5 @@
 common:
-  filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+  filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE or CONFIG_ARMV7_R
   tags:
     - arm
     - fpu
@@ -16,6 +16,8 @@ tests:
       - CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS=n
       - CONFIG_IDLE_STACK_SIZE=512
       - CONFIG_MAIN_STACK_SIZE=2048
+      - CONFIG_ZTEST_STACK_SIZE=1280
+      - CONFIG_KOBJECT_TEXT_AREA=1024
   arch.arm.interrupt.extra_exception_info:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
     extra_configs:

@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nrf7120dk/nrf7120/cpuflpr
+name: nRF7120-DK-nRF7120-Fast-Lightweight-Peripheral-Processor
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+sysbuild: true
+ram: 124
+flash: 116
+supported:
+  - counter
+  - gpio
+  - i2c
+  - spi

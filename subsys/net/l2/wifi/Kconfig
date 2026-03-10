@@ -72,6 +72,15 @@ config WIFI_SHELL_MAX_AP_STA
 	  This option defines the maximum number of APs and STAs that can be managed
 	  in Wi-Fi shell.
 
+config WIFI_P2P_MAX_PEERS
+	int "Maximum number of P2P peers that can be returned in a single query"
+	depends on WIFI_NM_WPA_SUPPLICANT_P2P
+	default 32
+	range 1 256
+	help
+	  This option defines the maximum number of P2P peers that can be returned
+	  in a single query operation.
+
 config WIFI_NM
 	bool "Wi-Fi Network manager support"
 	help
@@ -82,6 +91,7 @@ if WIFI_NM
 
 config WIFI_NM_MAX_MANAGED_INTERFACES
 	int "Maximum number of managed interfaces per Wi-Fi network manager"
+	default 2 if WIFI_USAGE_MODE_STA_AP
 	default 1
 	help
 	  This option defines the maximum number of managed interfaces per Wi-Fi
@@ -125,3 +135,48 @@ config WIFI_ENT_IDENTITY_MAX_USERS
 	default 8
 	help
 	  This option defines the maximum number of identity users allowed connection.
+
+config WIFI_CERTIFICATE_LIB
+	bool
+	help
+	  Enable this option to process certificates in enterprise mode.
+
+if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+
+config WIFI_SHELL_RUNTIME_CERTIFICATES
+	bool "Provide Wi-Fi enterprise security certificates at run-time"
+	select TLS_CREDENTIALS
+	select TLS_CREDENTIALS_SHELL
+	select BASE64
+	help
+	  This option enables providing Wi-Fi enterprise security certificates at run-time.
+	  Uses the TLS credentials subsystem to store and manage the certificates.
+
+if WIFI_SHELL_RUNTIME_CERTIFICATES
+
+config HEAP_MEM_POOL_ADD_SIZE_WIFI_CERT
+	int "Wi-Fi enterprise security certificates memory pool size"
+	# STA - 6 certs and each assume 1500 bytes
+	default 12000
+	help
+	  The size of the memory pool used by the Wi-Fi enterprise security certificates.
+
+endif # WIFI_SHELL_RUNTIME_CERTIFICATES
+
+endif # WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+
+config WIFI_MGMT_BSS_MAX_IDLE_TIME
+	int "BSS max idle timeout in seconds"
+	range 0 64000
+	default 300
+	help
+	  As per 802.11-2020: 11.21.13 BSS max idle period management
+	  If dot11WirelessManagementImplemented is true, dot11BSSMaxIdlePeriod is
+	  nonzero and dot11BSSMaxIdlePeriodIndicationByNonAPSTA is true, then a
+	  non-S1G non-AP STA shall include a BSS Max Idle Period element
+	  in the (Re)Association Request frame. If the BSS Max Idle Period
+	  element is present in the (Re)Association Request frame received
+	  by a non-S1G AP that has dot11BSSMaxIdlePeriodIndicationByNonAPSTA
+	  equal to true, then the non-S1G AP may choose the non-AP STA’s
+	  preferred maximum idle period. The non-S1G AP indicates its chosen
+	  value to the non-S1G STA in the (Re)Association Response frame.

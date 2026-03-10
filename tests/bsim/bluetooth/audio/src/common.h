@@ -72,6 +72,13 @@ static const uint8_t mock_iso_data[] = {
 	0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff,
 };
 
+/* The sample SIRK as defined by the CSIS spec Appendix A.1.
+ * Sample data is Big Endian, so we reverse it for little-endian
+ */
+#define TEST_SAMPLE_SIRK                                                                           \
+	{REVERSE_ARGS(0x45, 0x7d, 0x7d, 0x09, 0x21, 0xa1, 0xfd, 0x22, 0xce, 0xcd, 0x8c, 0x86,      \
+		      0xdd, 0x72, 0xcc, 0xcd)}
+
 #define MIN_SEND_COUNT 100
 #define WAIT_SECONDS   100                           /* seconds */
 #define WAIT_TIME (WAIT_SECONDS * USEC_PER_SEC) /* microseconds*/
@@ -133,12 +140,13 @@ extern struct bt_conn *default_conn;
 extern atomic_t flag_connected;
 extern atomic_t flag_disconnected;
 extern atomic_t flag_conn_updated;
-extern atomic_t flag_audio_received;
 extern volatile bt_security_t security_level;
 extern uint8_t csip_rsi[BT_CSIP_RSI_SIZE];
 
 void disconnected(struct bt_conn *conn, uint8_t reason);
 void setup_connectable_adv(struct bt_le_ext_adv **ext_adv);
+void setup_broadcast_adv(struct bt_le_ext_adv **adv);
+void start_broadcast_adv(struct bt_le_ext_adv *adv);
 void test_tick(bs_time_t HW_device_time);
 void test_init(void);
 uint16_t get_dev_cnt(void);
@@ -160,6 +168,9 @@ struct audio_test_stream {
 
 	struct bt_iso_recv_info last_info;
 	size_t rx_cnt;
+	size_t valid_rx_cnt;
+	atomic_t flag_audio_received;
+	bool last_rx_failed;
 };
 
 static inline struct bt_cap_stream *cap_stream_from_bap_stream(struct bt_bap_stream *bap_stream)

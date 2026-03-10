@@ -104,20 +104,6 @@ static int ism330dhcx_gyro_range_to_fs_val(int32_t range)
 	return -EINVAL;
 }
 
-static inline int ism330dhcx_reboot(const struct device *dev)
-{
-	struct ism330dhcx_data *data = dev->data;
-
-	if (ism330dhcx_boot_set(data->ctx, 1) < 0) {
-		return -EIO;
-	}
-
-	/* Wait sensor turn-on time as per datasheet */
-	k_busy_wait(35 * USEC_PER_MSEC);
-
-	return 0;
-}
-
 static int ism330dhcx_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 {
 	struct ism330dhcx_data *data = dev->data;
@@ -803,7 +789,7 @@ static int ism330dhcx_init(const struct device *dev)
 			    (.bus_init = ism330dhcx_spi_init,					\
 			     .spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER |		\
 							 SPI_MODE_CPOL | SPI_MODE_CPHA |	\
-							 SPI_WORD_SET(8), 0),),			\
+							 SPI_WORD_SET(8)),),			\
 			    ())									\
 		COND_CODE_1(DT_INST_ON_BUS(inst, i2c),						\
 			    (.bus_init = ism330dhcx_i2c_init,					\

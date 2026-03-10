@@ -1,4 +1,4 @@
-# Copyright 2023 NXP
+# Copyright 2023, 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 import pytest
 from conftest import RC_KERNEL_ELF
+
 from runners.nxp_s32dbg import NXPS32DebugProbeConfig, NXPS32DebugProbeRunner
 
 TEST_DEVICE = 's32dbg'
@@ -27,9 +28,10 @@ TEST_S32DS_CMD = 's32ds'
 TEST_SERVER_CMD = Path('S32DS') / 'tools' / 'S32Debugger' / 'Debugger' / 'Server' / 'gta' / 'gta'
 TEST_ARM_GDB_CMD = Path('S32DS') / 'tools' / 'gdb-arm' / 'arm32-eabi' / 'bin' / 'arm-none-eabi-gdb-py'
 
-TEST_S32DS_PYTHON_LIB = Path('S32DS') / 'build_tools' / 'msys32' / 'mingw32' / 'lib' / 'python2.7'
+TEST_S32DS_PYTHON_LIB = Path('S32DS') / 'build_tools' / 'msys32' / 'mingw64' / 'lib' / 'python3.10'
 TEST_S32DS_RUNTIME_ENV = {
-    'PYTHONPATH': f'{TEST_S32DS_PYTHON_LIB}{os.pathsep}{TEST_S32DS_PYTHON_LIB / "site-packages"}'
+    'PYTHONPATH': f'{TEST_S32DS_PYTHON_LIB}{os.pathsep}{TEST_S32DS_PYTHON_LIB / "site-packages"}{os.pathsep}'
+                  f'{TEST_S32DS_PYTHON_LIB / "lib-dynload"}'
 }
 
 TEST_ALL_KWARGS = {

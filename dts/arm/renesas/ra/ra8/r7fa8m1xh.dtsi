@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <arm/renesas/ra/ra8/ra8x1.dtsi>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <zephyr/dt-bindings/misc/renesas/ra-elc/ra8m1-elc.h>
 
 / {
 	clocks: clocks {
@@ -46,6 +47,7 @@
 
 		pll: pll {
 			compatible = "renesas,ra-cgc-pll";
+			status = "disabled";
 			#clock-cells = <0>;
 
 			/* PLL */
@@ -76,11 +78,11 @@
 				status = "disabled";
 				#clock-cells = <0>;
 			};
-			status = "disabled";
 		};
 
 		pll2: pll2 {
 			compatible = "renesas,ra-cgc-pll";
+			status = "disabled";
 			#clock-cells = <0>;
 
 			/* PLL2 */
@@ -110,14 +112,13 @@
 				status = "disabled";
 				#clock-cells = <0>;
 			};
-			status = "disabled";
 		};
 
 		pclkblock: pclkblock@40203000 {
 			compatible = "renesas,ra-cgc-pclk-block";
 			reg = <0x40203000 4>, <0x40203004 4>, <0x40203008 4>,
 			      <0x4020300c 4>, <0x40203010 4>;
-			reg-names = "MSTPA", "MSTPB","MSTPC",
+			reg-names = "MSTPA", "MSTPB", "MSTPC",
 				    "MSTPD", "MSTPE";
 			#clock-cells = <0>;
 			clocks = <&pllp>;
@@ -125,6 +126,7 @@
 
 			cpuclk: cpuclk {
 				compatible = "renesas,ra-cgc-pclk";
+				clock-frequency = <480000000>;
 				div = <1>;
 				#clock-cells = <2>;
 				status = "okay";
@@ -175,14 +177,15 @@
 			bclk: bclk {
 				compatible = "renesas,ra-cgc-pclk";
 				div = <4>;
+				#clock-cells = <2>;
+				status = "okay";
+
 				bclkout: bclkout {
 					compatible = "renesas,ra-cgc-busclk";
 					clk-out-div = <2>;
 					sdclk = <1>;
 					#clock-cells = <0>;
 				};
-				#clock-cells = <2>;
-				status = "okay";
 			};
 
 			fclk: fclk {
@@ -244,13 +247,15 @@
 
 	soc {
 		usbhs: usbhs@40351000 {
-			compatible = "renesas,ra-usb";
+			compatible = "renesas,ra-usbhs";
 			reg = <0x40351000 0x2000>;
-			interrupts = <54 12>, <55 12>, <56 12>;
-			interrupt-names = "usbhs-ir", "usbhs-d0", "usbhs-d1";
+			interrupts = <54 12>;
+			interrupt-names = "usbhs-ir";
 			num-bidir-endpoints = <10>;
 			phys = <&usbhs_phy>;
+			phys-clock = <&uclk>, <&u60clk>;
 			status = "disabled";
+
 			udc {
 				compatible = "renesas,ra-udc";
 				status = "disabled";
@@ -266,8 +271,8 @@
 
 &ioport0 {
 	port-irqs = <&port_irq6 &port_irq7 &port_irq8
-	&port_irq9 &port_irq10 &port_irq11
-	&port_irq12 &port_irq13 &port_irq14>;
+		     &port_irq9 &port_irq10 &port_irq11
+		     &port_irq12 &port_irq13 &port_irq14>;
 	port-irq-names = "port-irq6",
 			 "port-irq7",
 			 "port-irq8",
@@ -300,7 +305,7 @@
 
 &ioport2 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3>;
+		     &port_irq3>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -313,7 +318,7 @@
 
 &ioport3 {
 	port-irqs = <&port_irq4 &port_irq5 &port_irq6
-	&port_irq8 &port_irq9>;
+		     &port_irq8 &port_irq9>;
 	port-irq-names = "port-irq4",
 			 "port-irq5",
 			 "port-irq6",
@@ -328,8 +333,8 @@
 
 &ioport4 {
 	port-irqs = <&port_irq0 &port_irq4 &port_irq5
-	&port_irq6 &port_irq7 &port_irq8
-	&port_irq9 &port_irq14 &port_irq15>;
+		     &port_irq6 &port_irq7 &port_irq8
+		     &port_irq9 &port_irq14 &port_irq15>;
 	port-irq-names = "port-irq0",
 			 "port-irq4",
 			 "port-irq5",
@@ -352,7 +357,7 @@
 
 &ioport5 {
 	port-irqs = <&port_irq1 &port_irq2 &port_irq3
-	&port_irq14 &port_irq15>;
+		     &port_irq14 &port_irq15>;
 	port-irq-names = "port-irq1",
 			 "port-irq2",
 			 "port-irq3",
@@ -373,7 +378,7 @@
 
 &ioport7 {
 	port-irqs = <&port_irq7 &port_irq8 &port_irq10
-	&port_irq11>;
+		     &port_irq11>;
 	port-irq-names = "port-irq7",
 			 "port-irq8",
 			 "port-irq10",
@@ -386,7 +391,7 @@
 
 &ioport8 {
 	port-irqs = <&port_irq0 &port_irq11 &port_irq12
-	&port_irq14 &port_irq15>;
+		     &port_irq14 &port_irq15>;
 	port-irq-names = "port-irq0",
 			 "port-irq11",
 			 "port-irq12",
@@ -401,7 +406,7 @@
 
 &ioport9 {
 	port-irqs = <&port_irq8 &port_irq9 &port_irq10
-	&port_irq11>;
+		     &port_irq11>;
 	port-irq-names = "port-irq8",
 			 "port-irq9",
 			 "port-irq10",
@@ -420,4 +425,9 @@
 	port-irq4-pins = <10>;
 	port-irq5-pins = <9>;
 	port-irq6-pins = <8>;
+};
+
+&dac_global {
+	has-internal-output;
+	has-output-amplifier;
 };

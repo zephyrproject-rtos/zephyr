@@ -1,15 +1,21 @@
 #include <common/mem.h>
 
 / {
-	sram@2000FFE0 {
+	sram@2000ffe0 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x2000FFE0 0x20>;
+		reg = <0x2000ffe0 0x20>;
+		ranges = <0x0 0x2000ffe0 0x20>;
 		zephyr,memory-region = "Retention";
 		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		retainedmem0: retainedmem {
 			compatible = "zephyr,retained-ram";
 			status = "okay";
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 	};
 

@@ -75,8 +75,8 @@ ZTEST(fs_mgmt_hash_supported, test_supported)
 
 	/* Check that the headers seem valid */
 	struct smp_hdr *response_hdr = (struct smp_hdr *)nb->data;
-	uint16_t len = ntohs(response_hdr->nh_len);
-	uint16_t group = ntohs(response_hdr->nh_group);
+	uint16_t len = net_ntohs(response_hdr->nh_len);
+	uint16_t group = net_ntohs(response_hdr->nh_group);
 
 	zassert_equal(response_hdr->nh_op, MGMT_OP_READ_RSP,
 		      "Expected response to have rease response type");

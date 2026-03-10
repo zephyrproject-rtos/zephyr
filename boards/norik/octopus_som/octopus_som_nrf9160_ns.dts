@@ -4,7 +4,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf9160ns_sica.dtsi>
+#include <arm/nordic/nrf9160_ns_sica.dtsi>
 #include "octopus_som_common.dtsi"
 
 / {

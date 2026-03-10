@@ -34,7 +34,7 @@ Hardware
 Nucleo F207ZG provides the following hardware components:
 
 - STM32F207ZGT6 in LQFP144 package
-- ARM |reg| 32-bit Cortex |reg| -M3 CPU
+- ARM® 32-bit Cortex®-M3 CPU
 - 120 MHz max CPU frequency
 - VDD from 1.7 V to 3.6 V
 - 1 MB Flash
@@ -49,6 +49,7 @@ Nucleo F207ZG provides the following hardware components:
 - I2C (3)
 - SPI (3)
 - SDIO
+- CAN (2)
 - USB 2.0 OTG FS
 - DMA Controller
 - 10/100 Ethernet MAC with dedicated DMA
@@ -63,52 +64,7 @@ More information about STM32F207ZG can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_207zg board configuration supports the following hardware features:
-
-+-------------+------------+-------------------------------------+
-| Interface   | Controller | Driver/Component                    |
-+=============+============+=====================================+
-| NVIC        | on-chip    | nested vector interrupt controller  |
-+-------------+------------+-------------------------------------+
-| UART        | on-chip    | serial port-polling;                |
-|             |            | serial port-interrupt               |
-+-------------+------------+-------------------------------------+
-| PINMUX      | on-chip    | pinmux                              |
-+-------------+------------+-------------------------------------+
-| GPIO        | on-chip    | gpio                                |
-+-------------+------------+-------------------------------------+
-| ETHERNET    | on-chip    | Ethernet                            |
-+-------------+------------+-------------------------------------+
-| I2C         | on-chip    | i2c                                 |
-+-------------+------------+-------------------------------------+
-| USB         | on-chip    | USB device                          |
-+-------------+------------+-------------------------------------+
-| SPI         | on-chip    | spi                                 |
-+-------------+------------+-------------------------------------+
-| WATCHDOG    | on-chip    | independent watchdog                |
-+-------------+------------+-------------------------------------+
-| ADC         | on-chip    | ADC Controller                      |
-+-------------+------------+-------------------------------------+
-| DAC         | on-chip    | DAC Controller                      |
-+-------------+------------+-------------------------------------+
-| Backup SRAM | on-chip    | Backup SRAM                         |
-+-------------+------------+-------------------------------------+
-| PWM         | on-chip    | PWM                                 |
-+-------------+------------+-------------------------------------+
-| RNG         | on-chip    | Random Number Generator             |
-+-------------+------------+-------------------------------------+
-| DMA         | on-chip    | Direct Memory Access                |
-+-------------+------------+-------------------------------------+
-| die-temp    | on-chip    | die temperature sensor              |
-+-------------+------------+-------------------------------------+
-| RTC         | on-chip    | rtc                                 |
-+-------------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_f207zg/nucleo_f207zg_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -141,6 +97,8 @@ Default Zephyr Peripheral Mapping:
 - I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
 - SPI1 NSS/SCK/MISO/MOSI : PD14/PA5/PA6/PA7 (Arduino SPI)
 - ETH : PA1, PA2, PA7, PB13, PC1, PC4, PC5, PG11, PG13
+- CAN1 TX/RX : PD1/PD0
+- CAN2 TX/RX : PB6/PB5
 - USB_DM : PA11
 - USB_DP : PA12
 - USER_PB : PC13
@@ -183,6 +141,8 @@ do it by removing ``SB156`` jumper on the back side of the board.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Nucleo F207ZG board includes an ST-LINK/V2-1 embedded debug tool interface.
 

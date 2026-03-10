@@ -4,17 +4,6 @@
 description: |
     STM32 XSPI Flash controller supporting the JEDEC CFI interface
 
-    Representation of a serial flash on a xspi bus:
-
-        mx25lm51245: xspi-nor-flash@70000000 {
-                compatible = "st,stm32-xspi-nor";
-                reg = <0x70000000 DT_SIZE_M(64)>; /* 512 Mbits */
-                data-mode = <XSPI_OCTO_MODE>; /* access on 8 data lines */
-                data-rate = <XSPI_DTR_TRANSFER>; /* access in DTR */
-                ospi-max-frequency = <DT_FREQ_M(50)>;
-                status = "okay";
-        };
-
 compatible: "st,stm32-xspi-nor"
 
 include:
@@ -22,7 +11,11 @@ include:
     property-blocklist:
       - spi-bus-width
       - data-rate
+      - sfdp-bfp
 properties:
+  size:
+    required: true
+    description: Flash Memory size in bits
   spi-bus-width:
     type: int
     required: true
@@ -60,3 +53,15 @@ properties:
       - 2
     description: |
       Specifies which nCS line of the XSPI IO Manager is connected to the Flash.
+
+examples:
+  - |
+    mx25lm51245: xspi-nor-flash@0 {
+        compatible = "st,stm32-xspi-nor";
+        reg = <0>;
+        size = <DT_SIZE_M(512)>; /* 512 Mbits */
+        data-mode = <XSPI_OCTO_MODE>; /* access on 8 data lines */
+        data-rate = <XSPI_DTR_TRANSFER>; /* access in DTR */
+        ospi-max-frequency = <DT_FREQ_M(50)>;
+        status = "okay";
+    };

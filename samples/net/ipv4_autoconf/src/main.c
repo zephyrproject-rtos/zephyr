@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(net_ipv4_autoconf_sample, LOG_LEVEL_DBG);
 static struct net_mgmt_event_callback mgmt_cb;
 
 static void handler(struct net_mgmt_event_callback *cb,
-		    uint32_t mgmt_event,
+		    uint64_t mgmt_event,
 		    struct net_if *iface)
 {
 	int i = 0;
@@ -48,11 +48,11 @@ static void handler(struct net_mgmt_event_callback *cb,
 		}
 
 		LOG_INF("Your address: %s",
-			net_addr_ntop(AF_INET,
+			net_addr_ntop(NET_AF_INET,
 				    &cfg->ip.ipv4->unicast[i].ipv4.address.in_addr,
 				    buf, sizeof(buf)));
 		LOG_INF("Your netmask: %s",
-			net_addr_ntop(AF_INET,
+			net_addr_ntop(NET_AF_INET,
 				    &cfg->ip.ipv4->unicast[i].netmask,
 				    buf, sizeof(buf)));
 	}

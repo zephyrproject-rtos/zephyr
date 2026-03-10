@@ -1,9 +1,12 @@
 common:
+  tags:
+    - mqtt
+    - net
+    - userspace
+  min_ram: 16
   depends_on: netif
 tests:
-  net.mqtt.packet:
-    min_ram: 16
-    tags:
-      - mqtt
-      - net
-      - userspace
+  net.mqtt.packet: {}
+  net.mqtt.packet.mqtt_5_0:
+    extra_configs:
+      - CONFIG_MQTT_VERSION_5_0=y

@@ -5,7 +5,7 @@ Bluetooth Mesh Profile
 
 The Bluetooth Mesh profile adds secure wireless multi-hop communication for
 Bluetooth Low Energy. This module implements the
-`Bluetooth Mesh Protocol Specification v1.1 <https://www.bluetooth.com/specifications/specs/mesh-protocol/>`_.
+`Bluetooth Mesh Protocol Specification v1.1.1 <https://www.bluetooth.com/specifications/specs/mesh-protocol-1-1-1/>`_.
 
 Read more about Bluetooth Mesh on the
 `Bluetooth SIG Website <https://www.bluetooth.com/bluetooth-resources/?tags=mesh>`_.
@@ -25,3 +25,4 @@ Read more about Bluetooth Mesh on the
    mesh/statistic.rst
    mesh/shell.rst
    mesh/brg_cfg.rst
+   mesh/cdb_usage.rst

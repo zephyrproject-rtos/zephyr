@@ -23,35 +23,7 @@ Hardware
 Supported Features
 ==================
 
-The adafruit_feather_m0_basic_proto board configuration supports the
-following hardware features:
-
-+-----------+------------+------------------------------------------+
-| Interface | Controller | Driver/Component                         |
-+===========+============+==========================================+
-| NVIC      | on-chip    | Nested vector interrupt controller       |
-+-----------+------------+------------------------------------------+
-| Flash     | on-chip    | Can be used with LittleFS to store files |
-+-----------+------------+------------------------------------------+
-| SYSTICK   | on-chip    | Systick                                  |
-+-----------+------------+------------------------------------------+
-| WDT       | on-chip    | Watchdog                                 |
-+-----------+------------+------------------------------------------+
-| GPIO      | on-chip    | I/O ports                                |
-+-----------+------------+------------------------------------------+
-| USART     | on-chip    | Serial port                              |
-+-----------+------------+------------------------------------------+
-| I2C       | on-chip    | Inter-Integrated Circuit                 |
-+-----------+------------+------------------------------------------+
-| SPI       | on-chip    | Serial Peripheral Interface port         |
-+-----------+------------+------------------------------------------+
-| USB       | on-chip    | USB device                               |
-+-----------+------------+------------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/adafruit/feather_m0_basic_proto/adafruit_feather_m0_basic_proto_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -95,6 +67,8 @@ serial port that echos characters back to the host PC.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The Adafruit Feather M0 Basic Proto ships with a BOSSA compatible
 SAM-BA bootloader.  The bootloader can be entered by quickly tapping

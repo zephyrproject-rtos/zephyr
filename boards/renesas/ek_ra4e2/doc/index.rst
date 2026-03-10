@@ -1,7 +1,4 @@
-.. _ek_ra4e2:
-
-RA4E2 Evaluation Kit
-####################
+.. zephyr:board:: ek_ra4e2
 
 Overview
 ********
@@ -16,6 +13,7 @@ The MCU in this series incorporates a high-performance Arm Cortex®-M33 core run
 100 MHz with the following features:
 
 **MCU Native Pin Access**
+
 - R7FA4E2B93CFM MCU (referred to as RA MCU)
 - 100 MHz, Arm® Cortex®-M33 core
 - 128 kB Code Flash, 40 kB SRAM
@@ -23,10 +21,11 @@ The MCU in this series incorporates a high-performance Arm Cortex®-M33 core run
 - Native pin access through 2 x 14-pin and 1 x 40-pin male headers
 - MCU current measurement points for precision current consumption measurement
 - Multiple clock sources - RA MCU oscillator and sub-clock oscillator crystals, providing precision
-20.000 MHz and 32,768 Hz reference clock. Additional low-precision clocks are available internal to the
-RA MCU
+  20.000 MHz and 32,768 Hz reference clock. Additional low-precision clocks are available internal to the
+  RA MCU
 
 **System Control and Ecosystem Access**
+
 - USB Full Speed Device (micro-AB connector)
 - Three 5 V input sources
 
@@ -61,15 +60,9 @@ RA MCU
 
 - CAN FD (3-pin header)
 
-.. figure:: ek_ra4e2.webp
-	:align: center
-	:alt: RA4E2 Evaluation Kit
-
-	EK-RA4E2 Board Functional Area Definitions (Credit: Renesas Electronics Corporation)
-
 Hardware
 ********
-Detail Hardware feature for the RA4E2 MCU group can be found at `RA4E2 Group User's Manual Hardware`_
+Detailed hardware features for the RA4E2 MCU group can be found at `RA4E2 Group User's Manual Hardware`_
 
 .. figure:: ra4e2_block_diagram.webp
 	:width: 442px
@@ -78,41 +71,17 @@ Detail Hardware feature for the RA4E2 MCU group can be found at `RA4E2 Group Use
 
 	RA4E2 Block diagram (Credit: Renesas Electronics Corporation)
 
-Detail Hardware feature for the EK-RA4E2 MCU can be found at `EK-RA4E2 - User's Manual`_
+Detailed hardware features for the EK-RA4E2 MCU can be found at `EK-RA4E2 - User's Manual`_
 
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr OS for EK-RA4E2 board:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock control        |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| ENTROPY   | on-chip    | entropy              |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``ek_ra4e2`` board target configuration can be
 built, flashed, and debugged in the usual way. See
@@ -123,15 +92,15 @@ Flashing
 ========
 
 Program can be flashed to EK-RA4E2 via the on-board SEGGER J-Link debugger.
-SEGGER J-link's drivers are avaialbe at https://www.segger.com/downloads/jlink/
+SEGGER J-link's drivers are available at https://www.segger.com/downloads/jlink/
 
 To flash the program to board
 
-  1. Connect to J-Link OB via USB port to host PC
+1. Connect to J-Link OB via USB port to host PC
 
-  2. Make sure J-Link OB jumper is in default configuration as describe in `EK-RA4E2 - User's Manual`_
+2. Make sure J-Link OB jumper is in default configuration as describe in `EK-RA4E2 - User's Manual`_
 
-  3. Execute west command
+3. Execute west command
 
 	.. code-block:: console
 

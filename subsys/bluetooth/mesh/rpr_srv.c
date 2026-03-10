@@ -18,7 +18,6 @@
 #include "crypto.h"
 #include "rpr.h"
 #include "net.h"
-#include "mesh.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_MODEL_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -1359,6 +1358,12 @@ static int node_refresh_link_accept(const struct prov_bearer_cb *cb,
 	return 0;
 }
 
+static void node_refresh_link_cancel(void)
+{
+	srv.refresh.cb = NULL;
+	srv.refresh.cb_data = NULL;
+}
+
 static void node_refresh_tx_complete(int err, void *cb_data)
 {
 	if (err) {
@@ -1408,6 +1413,7 @@ const struct prov_bearer pb_remote_srv = {
 	.type = BT_MESH_PROV_REMOTE,
 
 	.link_accept = node_refresh_link_accept,
+	.link_cancel = node_refresh_link_cancel,
 	.send = node_refresh_buf_send,
 	.clear_tx = node_refresh_clear_tx,
 };

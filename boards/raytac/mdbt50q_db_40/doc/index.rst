@@ -30,13 +30,13 @@ Hardware
 ********
 - Module Demo Board build by MDBT50Q-1MV2
 - Nordic nRF52840 SoC Solution Version: 2
-- A recommnded 3rd-party module by Nordic Semiconductor.
-- BT5.2&BT5.1&BT5 Bluetooth Specification Cerified
+- A recommended 3rd-party module by Nordic Semiconductor.
+- BT5.2&BT5.1&BT5 Bluetooth Specification Certified
 - Supports BT5 Long Range Features
-- Cerifications: FCC, IC, CE, Telec(MIC), KC, SRRC, NCC, RCM, WPC
-- 32-bit ARM® Cortex™ M4F CPU
+- Certifications: FCC, IC, CE, Telec(MIC), KC, SRRC, NCC, RCM, WPC
+- 32-bit ARM® Cortex® M4F CPU
 - 1MB Flash Memory/256kB RAM
-- RoHs & Reach Compiant.
+- RoHs & Reach Compliant.
 - 48 GPIO
 - Chip Antenna
 - Interfaces: SPI, UART, I2C, I2S, PWM, ADC, NFC, and USB
@@ -44,54 +44,15 @@ Hardware
 - 3 User LEDs
 - 4 User buttons
 - 1 Mini USB connector for power supply and USB communication
-- SWD connector for FW programing
-- J-Link interface for FW programing
+- SWD connector for FW programming
+- J-Link interface for FW programming
 - UART interface for UART communication
 
 Supported Features
 ==================
 
-The raytac_mdbt50q_db_40/nrf52840 board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| QSPI(M)   | on-chip    | qspi                 |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| USB       | on-chip    | usb                  |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
 See `MDBT50Q-DB-40 website`_ and `MDBT50Q-DB-40 Specification`_
 for a complete list of Raytac MDBT50Q-DB-40 board hardware features.
 
@@ -122,6 +83,8 @@ UART
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``raytac_mdbt50q_db_40/nrf52840`` board configuration can be
 built, flashed, and debugged in the usual way. See :ref:`build_an_application` and

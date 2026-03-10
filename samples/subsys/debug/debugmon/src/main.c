@@ -25,14 +25,14 @@ int debug_mon_enable(void)
 	 * Cannot enable monitor mode if C_DEBUGEN bit is set. This bit can only be
 	 * altered from debug access port. It is cleared on power-on-reset.
 	 */
-	bool is_in_halting_mode = (CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) == 1;
+	bool is_in_halting_mode = (DCB->DHCSR & DCB_DHCSR_C_DEBUGEN_Msk) == 1;
 
 	if (is_in_halting_mode) {
 		return -1;
 	}
 
 	/* Enable monitor mode debugging by setting MON_EN bit of DEMCR */
-	CoreDebug->DEMCR |= CoreDebug_DEMCR_MON_EN_Msk;
+	DCB->DEMCR |= DCB_DEMCR_MON_EN_Msk;
 	return 0;
 }
 

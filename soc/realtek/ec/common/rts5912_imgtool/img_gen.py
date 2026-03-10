@@ -10,6 +10,7 @@ the header to original BIN and output a new BIN file.
 """
 
 import argparse
+import hashlib
 import os
 import struct
 
@@ -23,6 +24,11 @@ FREQ_6P25M = 3
 NORMAL_read = "0x03"
 DUAL_read = "0x3B"
 QUAD_read = "0x6B"
+
+TAG_MAGIC = 0x6907
+TAG_LEN = 0x0028
+TAG_TYPE_SHA = 0x0010
+TAG_SHA_LEN = 0x0020
 
 
 def parse_args():
@@ -63,7 +69,7 @@ def parse_args():
         type=int,
         dest="spi_freq",
         choices=[FREQ_50M, FREQ_25M, FREQ_12P5M, FREQ_6P25M],
-        default=FREQ_6P25M,
+        default=FREQ_50M,
         help="Specify the frequency of SPI I/F.",
     )
 
@@ -88,10 +94,10 @@ def img_gen(load_addr, spi_freq, spi_rdcmd, original_bin, signed_bin):
     To obtain the RTS5912 image header and output a new BIN file
     """
     img_size = os.path.getsize(original_bin)
-    payload = bytearray(0)
-    img_size = os.path.getsize(original_bin)
+    hdr_payload = bytearray(0)
+    tag_payload = bytearray(0)
 
-    fmt = (
+    hdr_fmt = (
         "<"
         +
         # type ImageHdr struct {
@@ -108,8 +114,8 @@ def img_gen(load_addr, spi_freq, spi_rdcmd, original_bin, signed_bin):
         + "H"  # reserved uint16
     )  # }
 
-    header = struct.pack(
-        fmt,
+    hdr = struct.pack(
+        hdr_fmt,
         IMAGE_MAGIC,
         load_addr,
         IMAGE_HDR_SIZE,
@@ -123,15 +129,37 @@ def img_gen(load_addr, spi_freq, spi_rdcmd, original_bin, signed_bin):
         0,
     )
 
-    payload[: len(header)] = header
+    hdr_payload[: len(hdr)] = hdr
+
+    tag_fmt = (
+        "<"
+        +
+        # type ImageTag struct {
+        "H"  # Magic      uint16
+        + "H"  # TagSz    uint16
+        + "H"  # TagHash  uint16
+        + "H"  # HashSz   uint16
+    )  # }
+
+    tag = struct.pack(tag_fmt, TAG_MAGIC, TAG_LEN, TAG_TYPE_SHA, TAG_SHA_LEN)
+
+    tag_payload[: len(tag)] = tag
+
+    sha = hashlib.sha256()
+    sha.update(hdr_payload)
+    with open(original_bin, "rb") as original:
+        sha.update(original.read())
+    digest = sha.digest()
 
     with open(signed_bin, "wb") as signed:
-        signed.write(payload)
+        signed.write(hdr_payload)
         signed.flush()
         signed.close()
 
     with open(signed_bin, "ab") as signed, open(original_bin, "rb") as original:
         signed.write(original.read())
+        signed.write(tag_payload)
+        signed.write(digest)
         signed.flush()
         signed.close()
         original.close()

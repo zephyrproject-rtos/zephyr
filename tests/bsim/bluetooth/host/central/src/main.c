@@ -9,6 +9,9 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
 
+/* Include hci_common_internal for the purpose of checking HCI Command counts. */
+#include "common/hci_common_internal.h"
+
 /* Include conn_internal for the purpose of checking reference counts. */
 #include "host/conn_internal.h"
 
@@ -63,7 +66,7 @@ static void test_central_connect_timeout_with_timeout(uint32_t timeout_ms, bool 
 		.window_coded = 0,
 		.timeout = timeout_ms / 10,
 	};
-	struct net_buf *bufs[CONFIG_BT_BUF_CMD_TX_COUNT];
+	struct net_buf *bufs[BT_BUF_CMD_TX_COUNT];
 
 	k_sem_reset(&sem_failed_to_connect);
 
@@ -74,15 +77,15 @@ static void test_central_connect_timeout_with_timeout(uint32_t timeout_ms, bool 
 
 	if (stack_load) {
 		/* Claim all the buffers so that the stack cannot handle the timeout */
-		for (int i = 0; i < CONFIG_BT_BUF_CMD_TX_COUNT; i++) {
-			bufs[i] = bt_hci_cmd_create(BT_HCI_LE_ADV_ENABLE, 0);
+		for (int i = 0; i < BT_BUF_CMD_TX_COUNT; i++) {
+			bufs[i] = bt_hci_cmd_alloc(K_FOREVER);
 			TEST_ASSERT(bufs[i] != NULL, "Failed to claim all command buffers");
 		}
 		/* Hold all the buffers until after we expect the connection to timeout */
 		err = k_sem_take(&sem_failed_to_connect, K_MSEC(expected_conn_timeout_ms + 50));
 		TEST_ASSERT(err == -EAGAIN, "Callback ran with no buffers available", err);
 		/* Release all the buffers back to the stack */
-		for (int i = 0; i < CONFIG_BT_BUF_CMD_TX_COUNT; i++) {
+		for (int i = 0; i < BT_BUF_CMD_TX_COUNT; i++) {
 			net_buf_unref(bufs[i]);
 		}
 	}
@@ -213,14 +216,12 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "central_connect_timeout",
 		.test_descr = "Verifies that the default connection timeout is used correctly",
-		.test_tick_f = bst_tick,
 		.test_main_f = test_central_connect_timeout,
 	},
 	{
 		.test_id = "central_connect_when_connecting",
 		.test_descr = "Verifies that the stack returns an error code when trying to connect"
 			      " while already connecting",
-		.test_tick_f = bst_tick,
 		.test_main_f = test_central_connect_when_connecting,
 	},
 	{
@@ -228,7 +229,6 @@ static const struct bst_test_instance test_def[] = {
 		.test_descr =
 			"Verifies that the stack returns an error code when trying to connect"
 			" to an existing device and does not unref the existing connection object.",
-		.test_tick_f = bst_tick,
 		.test_main_f = test_central_connect_to_existing,
 	},
 	BSTEST_END_MARKER,

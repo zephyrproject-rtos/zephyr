@@ -86,6 +86,32 @@ out:
 	return ret;
 }
 
+int i3c_ibi_work_enqueue_controller_request(struct i3c_device_desc *target)
+{
+	sys_snode_t *node;
+	struct i3c_ibi_work *ibi_node;
+	int ret;
+
+	node = sys_slist_get(&i3c_ibi_work_nodes_free);
+	if (node == NULL) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	ibi_node = (struct i3c_ibi_work *)node;
+
+	ibi_node->type = I3C_IBI_CONTROLLER_ROLE_REQUEST;
+	ibi_node->target = target;
+
+	ret = ibi_work_submit(ibi_node);
+	if (ret >= 0) {
+		ret = 0;
+	}
+
+out:
+	return ret;
+}
+
 int i3c_ibi_work_enqueue_hotjoin(const struct device *dev)
 {
 	sys_snode_t *node;
@@ -167,9 +193,13 @@ static void i3c_ibi_work_handler(struct k_work *work)
 			payload = NULL;
 		}
 
-		ret = ibi_node->target->ibi_cb(ibi_node->target, payload);
-		if ((ret != 0) && (ret != -EBUSY)) {
-			LOG_ERR("IBI work %p cb returns %d", ibi_node, ret);
+		if (ibi_node->target->ibi_cb) {
+			ret = ibi_node->target->ibi_cb(ibi_node->target, payload);
+			if ((ret != 0) && (ret != -EBUSY)) {
+				LOG_ERR("IBI work %p cb returns %d", ibi_node, ret);
+			}
+		} else {
+			LOG_ERR("No IBI callback for target %s", ibi_node->target->dev->name);
 		}
 		break;
 
@@ -178,13 +208,14 @@ static void i3c_ibi_work_handler(struct k_work *work)
 		if ((ret != 0) && (ret != -EBUSY)) {
 			LOG_ERR("i3c_do_daa returns %d", ret);
 		}
-
+#ifdef CONFIG_I3C_TARGET
 		if (i3c_bus_has_sec_controller(ibi_node->controller)) {
 			ret = i3c_bus_deftgts(ibi_node->controller);
 			if (ret != 0) {
 				LOG_ERR("Error sending DEFTGTS");
 			}
 		}
+#endif /* CONFIG_I3C_TARGET */
 		break;
 
 	case I3C_IBI_WORKQUEUE_CB:
@@ -194,8 +225,13 @@ static void i3c_ibi_work_handler(struct k_work *work)
 		break;
 
 	case I3C_IBI_CONTROLLER_ROLE_REQUEST:
-		/* TODO: Add support for controller role request */
-		__fallthrough;
+#ifdef CONFIG_I3C_TARGET
+		ret = i3c_device_controller_handoff(ibi_node->target, true);
+		if (ret != 0) {
+			LOG_ERR("i3c_device_controller_handoff returns %d", ret);
+		}
+#endif /* CONFIG_I3C_TARGET */
+		break;
 
 	default:
 		/* Unknown IBI type: do nothing */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Vitrolife A/S
+ * Copyright (c) 2025 Prevas A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -160,7 +160,7 @@ static void tsic_xx6_get_value(const struct tsic_xx6_config *config, struct tsic
 {
 	int64_t tmp;
 
-	/* Apply the datasheet formula scaled to micro celcius */
+	/* Apply the datasheet formula scaled to micro celsius */
 	tmp = (int64_t)data_bits *
 	      (config->higher_temperature_limit - config->lower_temperature_limit);
 	tmp = tmp * 1000000 / (BIT(config->data_bits) - 1);

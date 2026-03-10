@@ -1,4 +1,4 @@
-description: Texas Instrument ADS1015 I2C ADC
+description: Texas Instruments ADS1015 I2C ADC
 
 compatible: "ti,ads1015"
 

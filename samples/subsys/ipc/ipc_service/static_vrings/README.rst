@@ -47,21 +47,21 @@ Building the application for mimxrt1170_evk/mimxrt1176/cm7
    :goals: debug
    :west-args: --sysbuild
 
-Building the application for mimxrt1170_evk@B/mimxrt1176/cm7
-************************************************************
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/subsys/ipc/ipc_service/static_vrings
-   :board: mimxrt1170_evk@B/mimxrt1176/cm7
-   :goals: debug
-   :west-args: --sysbuild
-
 Building the application for frdm_mcxn947/mcxn947/cpu0
 ************************************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/ipc_service/static_vrings
    :board: frdm_mcxn947/mcxn947/cpu0
+   :goals: debug
+   :west-args: --sysbuild
+
+Building the application for ek_ra8p1/r7ka8p1kflcac/cm85
+************************************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/ipc_service/static_vrings
+   :board: ek_ra8p1/r7ka8p1kflcac/cm85
    :goals: debug
    :west-args: --sysbuild
 

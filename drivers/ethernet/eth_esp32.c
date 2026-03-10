@@ -56,7 +56,7 @@ static const struct device *eth_esp32_phy_dev = DEVICE_DT_GET(
 static enum ethernet_hw_caps eth_esp32_caps(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
 }
 
 static int eth_esp32_set_config(const struct device *dev,
@@ -111,7 +111,7 @@ static struct net_pkt *eth_esp32_rx(
 	}
 
 	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(
-		dev_data->iface, receive_len, AF_UNSPEC, 0, K_MSEC(100));
+		dev_data->iface, receive_len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (pkt == NULL) {
 		eth_stats_update_errors_rx(dev_data->iface);
 		LOG_ERR("Could not allocate rx buffer");
@@ -202,35 +202,6 @@ static void phy_link_state_changed(const struct device *phy_dev,
 	}
 }
 
-#if DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
-static int emac_config_apll_clock(void)
-{
-	uint32_t expt_freq = MHZ(50);
-	uint32_t real_freq = 0;
-	esp_err_t ret = periph_rtc_apll_freq_set(expt_freq, &real_freq);
-
-	if (ret == ESP_ERR_INVALID_ARG) {
-		LOG_ERR("Set APLL clock coefficients failed");
-		return -EIO;
-	}
-
-	if (ret == ESP_ERR_INVALID_STATE) {
-		LOG_INF("APLL is occupied already, it is working at %d Hz", real_freq);
-	}
-
-	/* If the difference of real APLL frequency
-	 * is not within 50 ppm, i.e. 2500 Hz,
-	 * the APLL is unavailable
-	 */
-	if (abs((int)real_freq - (int)expt_freq) > 2500) {
-		LOG_ERR("The APLL is working at an unusable frequency");
-		return -EIO;
-	}
-
-	return 0;
-}
-#endif /* DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios) */
-
 int eth_esp32_initialize(const struct device *dev)
 {
 	struct eth_esp32_dev_data *const dev_data = dev->data;
@@ -281,20 +252,7 @@ int eth_esp32_initialize(const struct device *dev)
 
 	if (strcmp(phy_connection_type, "rmii") == 0) {
 		emac_hal_iomux_init_rmii();
-#if DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
-		BUILD_ASSERT(DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 16 ||
-			DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 17,
-			"Only GPIO16/17 are allowed as a GPIO REF_CLK source!");
-		int ref_clk_gpio = DT_INST_GPIO_PIN(0, ref_clk_output_gpios);
-		emac_hal_iomux_rmii_clk_output(ref_clk_gpio);
-		emac_ll_clock_enable_rmii_output(dev_data->hal.ext_regs);
-		periph_rtc_apll_acquire();
-		res = emac_config_apll_clock();
-		if (res != 0) {
-			goto err;
-		}
-		rtc_clk_apll_enable(true);
-#else
+#if !DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
 		emac_hal_iomux_rmii_clk_input();
 		emac_ll_clock_enable_rmii_input(dev_data->hal.ext_regs);
 #endif
@@ -375,14 +333,14 @@ static void eth_esp32_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 
 	if (device_is_ready(eth_esp32_phy_dev)) {
+		/* Do not start the interface until PHY link is up */
+		net_if_carrier_off(iface);
+
 		phy_link_callback_set(eth_esp32_phy_dev, phy_link_state_changed,
 				      (void *)dev);
 	} else {
 		LOG_ERR("PHY device not ready");
 	}
-
-	/* Do not start the interface until PHY link is up */
-	net_if_carrier_off(iface);
 }
 
 static const struct ethernet_api eth_esp32_api = {

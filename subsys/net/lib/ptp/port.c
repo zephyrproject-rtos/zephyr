@@ -38,7 +38,7 @@ BUILD_ASSERT(CONFIG_PTP_FOREIGN_TIME_TRANSMITTER_RECORD_SIZE >= 5 * CONFIG_PTP_N
 K_MEM_SLAB_DEFINE_STATIC(foreign_tts_slab,
 			 sizeof(struct ptp_foreign_tt_clock),
 			 CONFIG_PTP_FOREIGN_TIME_TRANSMITTER_RECORD_SIZE,
-			 8);
+			 4);
 #endif
 
 char str_port_id[] = "FF:FF:FF:FF:FF:FF:FF:FF-FFFF";
@@ -162,7 +162,7 @@ static void port_delay_req_timestamp_cb(struct net_pkt *pkt)
 		return;
 	}
 
-	msg->header.src_port_id.port_number = ntohs(msg->header.src_port_id.port_number);
+	msg->header.src_port_id.port_number = net_ntohs(msg->header.src_port_id.port_number);
 
 	if (!ptp_port_id_eq(&port->port_ds.id, &msg->header.src_port_id) ||
 	    ptp_msg_type(msg) != PTP_MSG_DELAY_REQ) {
@@ -193,7 +193,7 @@ static void port_delay_req_timestamp_cb(struct net_pkt *pkt)
 
 		LOG_DBG("Port %d registered timestamp for %d Delay_Req",
 			port->port_ds.id.port_number,
-			ntohs(msg->header.sequence_id));
+			net_ntohs(msg->header.sequence_id));
 
 		if (iter == sys_slist_peek_tail(&port->delay_req_list)) {
 			net_if_unregister_timestamp_cb(&port->delay_req_ts_cb);
@@ -210,7 +210,7 @@ static void port_sync_timestamp_cb(struct net_pkt *pkt)
 		return;
 	}
 
-	msg->header.src_port_id.port_number = ntohs(msg->header.src_port_id.port_number);
+	msg->header.src_port_id.port_number = net_ntohs(msg->header.src_port_id.port_number);
 
 	if (ptp_port_id_eq(&port->port_ds.id, &msg->header.src_port_id) &&
 	    ptp_msg_type(msg) == PTP_MSG_SYNC) {
@@ -309,13 +309,13 @@ static int port_delay_req_msg_transmit(struct ptp_port *port)
 				     port->iface,
 				     port_delay_req_timestamp_cb);
 
+	sys_slist_append(&port->delay_req_list, &msg->node);
 	ret = port_msg_send(port, msg, PTP_SOCKET_EVENT);
 	if (ret < 0) {
+		sys_slist_find_and_remove(&port->delay_req_list, &msg->node);
 		ptp_msg_unref(msg);
 		return -EFAULT;
 	}
-
-	sys_slist_append(&port->delay_req_list, &msg->node);
 
 	LOG_DBG("Port %d sends Delay_Req message", port->port_ds.id.port_number);
 	return 0;
@@ -669,7 +669,7 @@ static void port_delay_resp_msg_process(struct ptp_port *port, struct ptp_msg *m
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&port->delay_req_list, req, node) {
-		if (msg->header.sequence_id == ntohs(req->header.sequence_id)) {
+		if (msg->header.sequence_id == net_ntohs(req->header.sequence_id)) {
 			break;
 		}
 		prev = &req->node;
@@ -851,15 +851,18 @@ static int port_management_set(struct ptp_port *port,
 			       struct ptp_msg *req,
 			       struct ptp_tlv_mgmt *tlv)
 {
+	static const int8_t limit = sizeof(uint64_t) * CHAR_BIT - 1;
 	bool send_resp = false;
 
 	switch (tlv->id) {
 	case PTP_MGMT_LOG_ANNOUNCE_INTERVAL:
-		port->port_ds.log_announce_interval = *tlv->data;
+		/* Use limits to protect from undefined bitwise shift operations */
+		port->port_ds.log_announce_interval = CLAMP(*tlv->data, -limit, limit);
 		send_resp = true;
 		break;
 	case PTP_MGMT_LOG_SYNC_INTERVAL:
-		port->port_ds.log_sync_interval = *tlv->data;
+		/* Use limits to protect from undefined bitwise shift operations */
+		port->port_ds.log_sync_interval = CLAMP(*tlv->data, -limit, limit);
 		send_resp = true;
 		break;
 	case PTP_MGMT_UNICAST_NEGOTIATION_ENABLE:
@@ -964,7 +967,7 @@ int port_state_update(struct ptp_port *port, enum ptp_port_event event, bool tt_
 }
 
 static void port_link_monitor(struct net_mgmt_event_callback *cb,
-			      uint32_t mgmt_event,
+			      uint64_t mgmt_event,
 			      struct net_if *iface)
 {
 	ARG_UNUSED(cb);

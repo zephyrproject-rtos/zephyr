@@ -11,7 +11,7 @@ Hardware
 STM32 Flight Controller Unit provides the following hardware components:
 
 - STM32F401CC in UFQFPN48 package
-- ARM |reg| 32-bit Cortex |reg|-M4 MCU with FPU
+- ARM® 32-bit Cortex®-M4 MCU with FPU
 - 84MHz max MCU frequency
 - VDD from 1.7 V to 3.6 V
 - 256 KB FLASH
@@ -27,7 +27,7 @@ STM32 Flight Controller Unit provides the following hardware components:
 - 2 User LEDS
 - USART/UART (1)
 - I2C (1)
-- Bluetooth LE over SPI
+- Bluetooth® Low Energy over SPI
 
 More information about the STM32 Flight Controller Unit
 can be found in these documents:
@@ -39,28 +39,7 @@ can be found in these documents:
 Supported Features
 ==================
 
-The Zephyr steval_fcu001v1 board configuration supports the following hardware features:
-
-+-----------+------------+------------------------------------+
-| Interface | Controller | Driver/Component                   |
-+===========+============+====================================+
-| NVIC      | on-chip    | nested vector interrupt controller |
-+-----------+------------+------------------------------------+
-| UART      | on-chip    | serial port-polling;               |
-|           |            | serial port-interrupt              |
-+-----------+------------+------------------------------------+
-| PINMUX    | on-chip    | pinmux                             |
-+-----------+------------+------------------------------------+
-| GPIO      | on-chip    | gpio                               |
-+-----------+------------+------------------------------------+
-| PWM       | on-chip    | pwm                                |
-+-----------+------------+------------------------------------+
-| I2C       | on-chip    | i2c                                |
-+-----------+------------+------------------------------------+
-
-
-The default configuration can be found in
-:zephyr_file:`boards/st/steval_fcu001v1/steval_fcu001v1_defconfig`
+.. zephyr:board-supported-hw::
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -94,6 +73,8 @@ The steval_fcu001v1 board has one I2C. The default I2C mapping for Zephyr is:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``steval_fcu001v1`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and

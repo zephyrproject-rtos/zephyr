@@ -59,7 +59,7 @@ The STM32L4R5ZI SoC provides the following hardware IPs:
 
 - Ultra-low-power with FlexPowerControl (down to 130 nA Standby mode
   and 100 uA/MHz run mode)
-- Core: ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU, adaptive
+- Core: ARM® 32-bit Cortex®-M4 CPU with FPU, adaptive
   real-time accelerator (ART Accelerator) allowing 0-wait-state
   execution from Flash memory, frequency up to 120 MHz, MPU, 150
   DMIPS/1.25 DMIPS/MHz (Dhrystone 2.1), and DSP instructions
@@ -85,37 +85,7 @@ More information about Swan can be found here:
 Supported Features
 ==================
 
-The Zephyr Swan board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/blues/swan_r5/swan_r5_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -188,6 +158,8 @@ assigned to LPUART.  Default settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Connect Swan to your host computer using the USB port.
 Then build and flash an application. Here is an example for the

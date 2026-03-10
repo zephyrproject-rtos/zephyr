@@ -2,12 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 DT_CHOSEN_Z_FLASH := zephyr,flash
-DT_COMPAT_FLEXSPI := nxp,imx-flexspi
 
 DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
 DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
 
-DT_FLASH_PARENT_IS_FLEXSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_FLEXSPI))
+DT_FLASH_PARENT_IS_FLEXSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_NXP_IMX_FLEXSPI))
 DT_FLASH_HAS_SIZE_PROP := $(dt_node_has_prop,$(DT_CHOSEN_FLASH_NODE),size)
 
 config FLASH_BASE_ADDRESS
@@ -23,6 +22,8 @@ config FLASH_SIZE
 config FLASH_MCUX_FLEXSPI_XIP
 	bool
 	default $(DT_FLASH_PARENT_IS_FLEXSPI)
+	depends on !(MCUBOOT_BOOTLOADER_MODE_RAM_LOAD || \
+		     MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
 	select XIP
 	help
 	  Allows REfor the soc to safely initialize the clocks for the

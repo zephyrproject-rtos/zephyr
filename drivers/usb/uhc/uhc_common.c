@@ -14,10 +14,9 @@ LOG_MODULE_REGISTER(uhc, CONFIG_UHC_DRIVER_LOG_LEVEL);
 K_MEM_SLAB_DEFINE_STATIC(uhc_xfer_pool, sizeof(struct uhc_transfer),
 			 CONFIG_UHC_XFER_COUNT, sizeof(void *));
 
-NET_BUF_POOL_VAR_DEFINE(uhc_ep_pool,
+USB_BUF_POOL_VAR_DEFINE(uhc_ep_pool,
 			CONFIG_UHC_BUF_COUNT, CONFIG_UHC_BUF_POOL_SIZE,
 			0, NULL);
-
 
 int uhc_submit_event(const struct device *dev,
 		     const enum uhc_event_type type,
@@ -101,6 +100,8 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	const struct uhc_api *api = dev->api;
 	struct uhc_transfer *xfer = NULL;
 	uint16_t mps;
+	uint16_t interval;
+	uint8_t type;
 
 	api->lock(dev);
 
@@ -109,6 +110,8 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	}
 
 	if (ep_idx == 0) {
+		interval = 0;
+		type = USB_EP_TYPE_CONTROL;
 		mps = udev->dev_desc.bMaxPacketSize0;
 	} else {
 		struct usb_ep_descriptor *ep_desc;
@@ -125,6 +128,8 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		}
 
 		mps = ep_desc->wMaxPacketSize;
+		interval = ep_desc->bInterval;
+		type = ep_desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK;
 	}
 
 	LOG_DBG("Allocate xfer, ep 0x%02x mps %u cb %p", ep, mps, cb);
@@ -137,6 +142,8 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	memset(xfer, 0, sizeof(struct uhc_transfer));
 	xfer->ep = ep;
 	xfer->mps = mps;
+	xfer->interval = interval;
+	xfer->type = type;
 	xfer->udev = udev;
 	xfer->cb = cb;
 	xfer->priv = cb_priv;

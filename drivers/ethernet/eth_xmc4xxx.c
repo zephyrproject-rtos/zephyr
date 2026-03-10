@@ -43,19 +43,25 @@ LOG_MODULE_REGISTER(eth_xmc4xxx);
 #define INFINEON_OUI_B1 0x03
 #define INFINEON_OUI_B2 0x19
 
-#define MODULO_INC_TX(val) {(val) = (++(val) < NUM_TX_DMA_DESCRIPTORS) ? (val) : 0; }
-#define MODULO_INC_RX(val) {(val) = (++(val) < NUM_RX_DMA_DESCRIPTORS) ? (val) : 0; }
+#define MODULO_INC_TX(val)                                                                         \
+	{                                                                                          \
+		(val) = (++(val) < NUM_TX_DMA_DESCRIPTORS) ? (val) : 0;                            \
+	}
+#define MODULO_INC_RX(val)                                                                         \
+	{                                                                                          \
+		(val) = (++(val) < NUM_RX_DMA_DESCRIPTORS) ? (val) : 0;                            \
+	}
 
 #define IS_OWNED_BY_DMA_TX(desc) (((desc)->status & ETH_MAC_DMA_TDES0_OWN) != 0)
 #define IS_OWNED_BY_DMA_RX(desc) (((desc)->status & ETH_MAC_DMA_RDES0_OWN) != 0)
 
 #define IS_START_OF_FRAME_RX(desc) (((desc)->status & ETH_MAC_DMA_RDES0_FS) != 0)
-#define IS_END_OF_FRAME_RX(desc) (((desc)->status & ETH_MAC_DMA_RDES0_LS) != 0)
+#define IS_END_OF_FRAME_RX(desc)   (((desc)->status & ETH_MAC_DMA_RDES0_LS) != 0)
 
 #define IS_TIMESTAMP_AVAILABLE_RX(desc) (((desc)->status & ETH_MAC_DMA_RDES0_TSA) != 0)
 #define IS_TIMESTAMP_AVAILABLE_TX(desc) (((desc)->status & ETH_MAC_DMA_TDES0_TTSS) != 0)
 
-#define TOTAL_FRAME_LENGTH(desc) (FIELD_GET(ETH_MAC_DMA_RDES0_FL, (desc)->status) - 4)
+#define TOTAL_FRAME_LENGTH(desc) (FIELD_GET(ETH_MAC_DMA_RDES0_FL, (desc)->status))
 
 #define ETH_STATUS_ERROR_TRANSMIT_EVENTS                                                           \
 	(XMC_ETH_MAC_EVENT_BUS_ERROR | XMC_ETH_MAC_EVENT_TRANSMIT_JABBER_TIMEOUT |                 \
@@ -69,23 +75,23 @@ LOG_MODULE_REGISTER(eth_xmc4xxx);
 	 XMC_ETH_MAC_EVENT_RECEIVE | XMC_ETH_MAC_EVENT_TRANSMIT | ETH_INTERRUPT_ENABLE_NIE_Msk |   \
 	 ETH_INTERRUPT_ENABLE_AIE_Msk)
 
-#define ETH_MAC_DISABLE_MMC_INTERRUPT_MSK              0x03ffffffu
-#define ETH_MAC_DISABLE_MMC_IPC_RECEIVE_INTERRUPT_MSK  0x3fff3fffu
+#define ETH_MAC_DISABLE_MMC_INTERRUPT_MSK             0x03ffffffu
+#define ETH_MAC_DISABLE_MMC_IPC_RECEIVE_INTERRUPT_MSK 0x3fff3fffu
 
 #define ETH_STATUS_CLEARABLE_BITS 0x1e7ffu
 
 #define ETH_RX_DMA_DESC_SECOND_ADDR_CHAINED_MASK BIT(14)
 
-#define ETH_RESET_TIMEOUT_USEC 200000u
+#define ETH_RESET_TIMEOUT_USEC                 200000u
 #define ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC 100000u
 
-#define ETH_LINK_SPEED_10M 0
+#define ETH_LINK_SPEED_10M  0
 #define ETH_LINK_SPEED_100M 1
 
 #define ETH_LINK_DUPLEX_HALF 0
 #define ETH_LINK_DUPLEX_FULL 1
 
-#define ETH_PTP_CLOCK_FREQUENCY 50000000
+#define ETH_PTP_CLOCK_FREQUENCY       50000000
 #define ETH_PTP_RATE_ADJUST_RATIO_MIN 0.9
 #define ETH_PTP_RATE_ADJUST_RATIO_MAX 1.1
 
@@ -103,13 +109,16 @@ struct eth_xmc4xxx_data {
 	sys_slist_t tx_frame_list;
 	struct net_buf *rx_frag_list[NUM_RX_DMA_DESCRIPTORS];
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
-	const struct device *ptp_clock;
+	uint32_t timestamp_addend;
 #endif
 };
 
 struct eth_xmc4xxx_config {
 	ETH_GLOBAL_TypeDef *regs;
 	const struct device *phy_dev;
+#if defined(CONFIG_PTP_CLOCK_XMC4XXX)
+	const struct device *ptp_clock;
+#endif
 	void (*irq_config_func)(void);
 	const struct pinctrl_dev_config *pcfg;
 	const uint8_t phy_connection_type;
@@ -221,6 +230,138 @@ static inline void eth_xmc4xxx_trigger_dma_rx(ETH_GLOBAL_TypeDef *regs)
 	regs->RECEIVE_POLL_DEMAND = 0U;
 }
 
+static inline void pkt_hexdump(struct net_pkt *pkt, const char *str)
+{
+	struct net_buf *buf = pkt->buffer;
+
+	while (buf) {
+		LOG_HEXDUMP_DBG(buf->data, buf->len, str);
+		buf = buf->frags;
+	}
+}
+
+/* Clears the checksum field of an ICMPv4 packet. */
+static int eth_xmc4xxx_clear_checksum_icmpv4(struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_DEFINE(icmpv4_access, struct net_icmp_hdr);
+	struct net_icmp_hdr *icmp_hdr;
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_HDR_OPTIONS)) {
+		if (net_pkt_skip(pkt, net_pkt_ipv4_opts_len(pkt))) {
+			return -ENOBUFS;
+		}
+	}
+
+	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmpv4_access);
+	if (!icmp_hdr) {
+		return -ENOBUFS;
+	}
+
+	icmp_hdr->chksum = 0;
+	net_pkt_set_chksum_done(pkt, true);
+
+	return net_pkt_set_data(pkt, &icmpv4_access);
+}
+
+/* Clears the checksum value in packets that will go through checksum
+ * offloading.
+ */
+static int eth_xmc4xxx_clear_checksum(struct net_pkt *pkt)
+{
+	int ret = 0;
+	uint16_t p_type = 0xFFFF;
+	uint8_t next_header = 0xFF;
+	struct net_eth_hdr *eth_hdr;
+	struct net_pkt_cursor backup;
+	bool overwrite;
+	const char *msg = NULL;
+	const char *msg_does_not_apply = "<does not apply>";
+	const char *p_type_str = msg_does_not_apply;
+	const char *next_header_str = msg_does_not_apply;
+	const char *msg_error_skipping_pkt = "Error skipping pkt";
+
+	overwrite = net_pkt_is_being_overwritten(pkt);
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	eth_hdr = NET_ETH_HDR(pkt);
+	ret = net_pkt_skip(pkt, sizeof(struct net_eth_hdr));
+	if (ret) {
+		msg = msg_error_skipping_pkt;
+		goto end;
+	}
+	p_type = net_ntohs(eth_hdr->type);
+	switch (p_type) {
+	case NET_ETH_PTYPE_IP: {
+		NET_PKT_DATA_ACCESS_DEFINE(ip_access, struct net_ipv4_hdr);
+		struct net_ipv4_hdr *ip_hdr;
+
+		p_type_str = "IPv4";
+		ip_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(pkt, &ip_access);
+		next_header = ip_hdr->proto;
+		ret = net_pkt_skip(pkt, sizeof(struct net_ipv4_hdr));
+		if (ret) {
+			msg = msg_error_skipping_pkt;
+			goto end;
+		}
+
+		break;
+	}
+	case NET_ETH_PTYPE_IPV6: {
+		NET_PKT_DATA_ACCESS_DEFINE(ip_access, struct net_ipv6_hdr);
+		struct net_ipv6_hdr *ip_hdr;
+
+		p_type_str = "IPv6";
+		ip_hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ip_access);
+		next_header = ip_hdr->nexthdr;
+		ret = net_pkt_skip(pkt, sizeof(struct net_ipv6_hdr));
+		if (ret) {
+			msg = msg_error_skipping_pkt;
+			goto end;
+		}
+
+		break;
+	}
+	case NET_ETH_PTYPE_ARP:
+		p_type_str = "ARP";
+		goto end;
+	default:
+		p_type_str = "Unknown";
+		msg = "Unknown protocol type";
+		goto end;
+	}
+
+	switch (next_header) {
+	case NET_IPPROTO_TCP:
+		next_header_str = "TCP";
+		break;
+	case NET_IPPROTO_UDP:
+		next_header_str = "UDP";
+		break;
+	case NET_IPPROTO_ICMP:
+		next_header_str = "ICMPv4";
+		ret = eth_xmc4xxx_clear_checksum_icmpv4(pkt);
+		break;
+	case NET_IPPROTO_ICMPV6:
+		next_header_str = "ICMPv6";
+		break;
+	default:
+		next_header_str = "Unknown";
+		msg = "Unknown next header";
+		break;
+	}
+
+end:
+	net_pkt_cursor_restore(pkt, &backup);
+	net_pkt_set_overwrite(pkt, overwrite);
+	if (msg) {
+		LOG_DBG("p_type = 0x%04x (%s), next_header = 0x%02x (%s)", /**/
+			p_type, p_type_str, next_header, next_header_str);
+		pkt_hexdump(pkt, msg);
+	}
+	return ret;
+}
+
 static int eth_xmc4xxx_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_xmc4xxx_data *dev_data = dev->data;
@@ -305,7 +446,7 @@ static int eth_xmc4xxx_send(const struct device *dev, struct net_pkt *pkt)
 #if defined(CONFIG_NET_GPTP)
 			struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 
-			if (ntohs(hdr->type) == NET_ETH_PTYPE_PTP) {
+			if (net_ntohs(hdr->type) == NET_ETH_PTYPE_PTP) {
 				dma_desc->status |= ETH_MAC_DMA_TDES0_TTSE;
 			}
 #endif
@@ -329,6 +470,23 @@ static int eth_xmc4xxx_send(const struct device *dev, struct net_pkt *pkt)
 #endif
 		LOG_DBG("Dropping frame. Buffered Tx frames were flushed in ISR.");
 		return -EIO;
+	}
+
+	/* Due to checksum offloading, the checksum field must be zero before
+	 * sending the packet to the ethernet controller, otherwise the computed
+	 * checksum will be incorrect.
+	 *
+	 * If the packet is bridged, it already has the correct checksum in
+	 * place, which will cause the automatically computed checksum to
+	 * incorrectly become zero.
+	 *
+	 * Here we give bridged packets the special attention they need.
+	 */
+	if (net_pkt_is_l2_bridged(pkt)) {
+		ret = eth_xmc4xxx_clear_checksum(pkt);
+		if (ret) {
+			return ret;
+		}
 	}
 
 	unsigned int key = irq_lock();
@@ -359,10 +517,11 @@ static struct net_pkt *eth_xmc4xxx_rx_pkt(const struct device *dev)
 	bool eof_found = false;
 	uint16_t tail;
 	XMC_ETH_MAC_DMA_DESC_t *dma_desc;
-	int num_frags = 0;
 	uint16_t frame_end_index;
-	struct net_buf *frag, *last_frag = NULL;
+	struct net_buf *frag, *prev_frag = NULL;
+	uint16_t remaining_length = 0;
 
+	/* tail is the index in the circular buffer of DMA descriptors */
 	tail = dev_data->dma_desc_rx_tail;
 	dma_desc = &rx_dma_desc[tail];
 
@@ -376,50 +535,88 @@ static struct net_pkt *eth_xmc4xxx_rx_pkt(const struct device *dev)
 		return NULL;
 	}
 
+	/* Search for the end of frame descriptor and get the total
+	 * frame length.
+	 */
 	while (!IS_OWNED_BY_DMA_RX(dma_desc)) {
 		eof_found = IS_END_OF_FRAME_RX(dma_desc);
-		num_frags++;
 		if (eof_found) {
+			remaining_length = TOTAL_FRAME_LENGTH(dma_desc);
 			break;
 		}
-
 		MODULO_INC_RX(tail);
-
 		if (tail == dev_data->dma_desc_rx_tail) {
-			/* wrapped */
+			/* We wrapped around the circular buffer, came back to
+			 * the starting point, and still did not find the EOF.
+			 * We could return here, but it is safer to do so after
+			 * the loop.
+			 */
 			break;
 		}
-
 		dma_desc = &rx_dma_desc[tail];
 	}
-
 	if (!eof_found) {
 		return NULL;
 	}
 
+	/* Save the index of the last frame */
 	frame_end_index = tail;
 
+	/* The DMA engine performs an extra 4 bytes transfer
+	 * corresponding to the Receive Status Word, which is sent
+	 * along the data after the end of the frame (Ref: XMC4500
+	 * Reference Manual, 15.2.2.2 Receive Path, page 15-25). For
+	 * this reason, it is necessary to subtract four from the
+	 * total frame length. The incorrect handling of this
+	 * difference was the cause of a subtle bug, in which packets
+	 * with length 125, 126 and 127 were silently dropped upon
+	 * reception.
+	 */
+	remaining_length -= 4;
+
+	/* Allocate the new fresh packet to receive the data. */
 	pkt = net_pkt_rx_alloc(K_NO_WAIT);
-	if (pkt == NULL) {
+	if (!pkt) {
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 		dev_data->stats.errors.rx++;
 		dev_data->stats.error_details.rx_no_buffer_count++;
 #endif
 		LOG_DBG("Net packet allocation error");
-		/* continue because we still need to read out the packet */
+		/* continue because we still need to read out the packet. */
 	}
 
+	/* In this loop, the following actions are taken:
+	 *
+	 * 1 - If a packet has been successfully allocated, retrieve the fresh
+	 *     fragment from the DMA descriptor and substitute it with a new one
+	 *     allocated from the pool.
+	 *
+	 * 2 - Link each retrieved fragment in a list in the newly allocated
+	 *     packet.
+	 *
+	 * 3 - Prepare the DMA descriptor for a new DMA round.
+	 *
+	 * It is imperative that this loop is not interrupted until all DMA
+	 * descriptors have been sent back to DMA ownership.
+	 */
+	/* Restart the DMA descriptor pointer */
 	tail = dev_data->dma_desc_rx_tail;
 	dma_desc = &rx_dma_desc[tail];
 	for (;;) {
-		if (pkt != NULL) {
-			uint16_t frag_len = CONFIG_NET_BUF_DATA_SIZE;
+		if (pkt) {
+			uint16_t fragment_length;
 
-			frag = dev_data->rx_frag_list[tail];
+			/* Calculate this fragment's length and update the
+			 * remaining length.
+			 */
+			if (remaining_length > CONFIG_NET_BUF_DATA_SIZE) {
+				fragment_length = CONFIG_NET_BUF_DATA_SIZE;
+				remaining_length -= CONFIG_NET_BUF_DATA_SIZE;
+			} else {
+				fragment_length = remaining_length;
+				remaining_length = 0;
+			}
 			if (tail == frame_end_index) {
-				frag_len = TOTAL_FRAME_LENGTH(dma_desc) -
-					   CONFIG_NET_BUF_DATA_SIZE * (num_frags - 1);
-
 				if (IS_TIMESTAMP_AVAILABLE_RX(dma_desc)) {
 					struct net_ptp_time timestamp = {
 						.second = dma_desc->time_stamp_seconds,
@@ -429,47 +626,72 @@ static struct net_pkt *eth_xmc4xxx_rx_pkt(const struct device *dev)
 					net_pkt_set_priority(pkt, NET_PRIORITY_CA);
 				}
 			}
-
+			/* This fragment has the fresh DMA data */
+			frag = dev_data->rx_frag_list[tail];
+			/* Due to the minus four above, the fragment length can
+			 * become zero before the last fragment is processed.
+			 */
+			if (!fragment_length) {
+				/* No need to worry about fragment substitution
+				 * for this fragment, just reset it and prepare
+				 * the DMA descriptor.
+				 */
+				net_buf_reset(frag);
+				goto prepare_dma_descriptor;
+			}
+			/* Allocate a new net fragment to substitute the current
+			 * one on the current DMA descriptor.
+			 */
 			new_frag = net_pkt_get_frag(pkt, CONFIG_NET_BUF_DATA_SIZE, K_NO_WAIT);
-			if (new_frag == NULL) {
+			if (!new_frag) {
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 				dev_data->stats.errors.rx++;
 				dev_data->stats.error_details.rx_buf_alloc_failed++;
 #endif
-				LOG_DBG("Frag allocation error. Increase CONFIG_NET_BUF_RX_COUNT.");
 				net_pkt_unref(pkt);
 				pkt = NULL;
+				LOG_DBG("Frag allocation error. Increase CONFIG_NET_BUF_RX_COUNT.");
 			} else {
-				net_buf_add(frag, frag_len);
-				if (!last_frag) {
+				/* Sets the received fragment length */
+				net_buf_add(frag, fragment_length);
+				if (!prev_frag) {
+					/* The first fragment goes to the
+					 * packet.
+					 */
 					net_pkt_frag_insert(pkt, frag);
 				} else {
-					net_buf_frag_insert(last_frag, frag);
+					/* Other fragments get added to the
+					 * previous fragment.
+					 */
+					net_buf_frag_insert(prev_frag, frag);
 				}
-
-				last_frag = frag;
-				frag = new_frag;
-				dev_data->rx_frag_list[tail] = frag;
+				prev_frag = frag;
+				dev_data->rx_frag_list[tail] = new_frag;
 			}
 		}
 
+prepare_dma_descriptor:
+		/* Prepare the current DMA descriptor for the next reception. */
 		dma_desc->buffer1 = (uint32_t)dev_data->rx_frag_list[tail]->data;
 		dma_desc->length = dev_data->rx_frag_list[tail]->size |
 				   ETH_RX_DMA_DESC_SECOND_ADDR_CHAINED_MASK;
 		dma_desc->status = ETH_MAC_DMA_RDES0_OWN;
 
 		if (tail == frame_end_index) {
+			/* Time to leave the loop. */
 			break;
 		}
-
 		MODULO_INC_RX(tail);
 		dma_desc = &rx_dma_desc[tail];
 	}
-
-
 	MODULO_INC_RX(tail);
+
+	/* Leave the device tail index pointing to the next DMA descriptor the
+	 * DMA engine will use.
+	 */
 	dev_data->dma_desc_rx_tail = tail;
 
+	/* Finally, enable a new DMA reception. */
 	eth_xmc4xxx_trigger_dma_rx(dev_cfg->regs);
 
 	return pkt;
@@ -604,12 +826,10 @@ static inline void eth_xmc4xxx_set_link(ETH_GLOBAL_TypeDef *regs, struct phy_lin
 
 	reg &= ~(ETH_MAC_CONFIGURATION_DM_Msk | ETH_MAC_CONFIGURATION_FES_Msk);
 
-	val = PHY_LINK_IS_FULL_DUPLEX(state->speed) ? ETH_LINK_DUPLEX_FULL :
-						      ETH_LINK_DUPLEX_HALF;
+	val = PHY_LINK_IS_FULL_DUPLEX(state->speed) ? ETH_LINK_DUPLEX_FULL : ETH_LINK_DUPLEX_HALF;
 	reg |= FIELD_PREP(ETH_MAC_CONFIGURATION_DM_Msk, val);
 
-	val = PHY_LINK_IS_SPEED_100M(state->speed) ? ETH_LINK_SPEED_100M :
-						     ETH_LINK_SPEED_10M;
+	val = PHY_LINK_IS_SPEED_100M(state->speed) ? ETH_LINK_SPEED_100M : ETH_LINK_SPEED_10M;
 	reg |= FIELD_PREP(ETH_MAC_CONFIGURATION_FES_Msk, val);
 
 	regs->MAC_CONFIGURATION = reg;
@@ -707,8 +927,8 @@ static int eth_xmc4xxx_rx_dma_descriptors_init(const struct device *dev)
 
 	for (int i = 0; i < NUM_RX_DMA_DESCRIPTORS; i++) {
 		XMC_ETH_MAC_DMA_DESC_t *dma_desc = &rx_dma_desc[i];
-		struct net_buf *rx_buf = net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE,
-								     K_NO_WAIT);
+		struct net_buf *rx_buf =
+			net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE, K_NO_WAIT);
 
 		if (rx_buf == NULL) {
 			eth_xmc4xxx_free_rx_bufs(dev);
@@ -732,8 +952,8 @@ static inline int eth_xmc4xxx_reset(const struct device *dev)
 	dev_cfg->regs->BUS_MODE |= ETH_BUS_MODE_SWR_Msk;
 
 	/* reset may fail if the clocks are not properly setup */
-	if (!WAIT_FOR((dev_cfg->regs->BUS_MODE & ETH_BUS_MODE_SWR_Msk) == 0,
-		      ETH_RESET_TIMEOUT_USEC,)) {
+	if (!WAIT_FOR((dev_cfg->regs->BUS_MODE & ETH_BUS_MODE_SWR_Msk) == 0, ETH_RESET_TIMEOUT_USEC,
+		      NULL)) {
 		return -ETIMEDOUT;
 	}
 
@@ -762,14 +982,14 @@ static inline void eth_xmc4xxx_mask_unused_interrupts(ETH_GLOBAL_TypeDef *regs)
 static inline int eth_xmc4xxx_init_timestamp_control_reg(ETH_GLOBAL_TypeDef *regs)
 {
 #if defined(CONFIG_NET_GPTP)
-	regs->TIMESTAMP_CONTROL = ETH_TIMESTAMP_CONTROL_TSENA_Msk |
-				  ETH_TIMESTAMP_CONTROL_TSENALL_Msk;
+	regs->TIMESTAMP_CONTROL =
+		ETH_TIMESTAMP_CONTROL_TSENA_Msk | ETH_TIMESTAMP_CONTROL_TSENALL_Msk;
 #endif
 
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
 	/* use fine control */
-	regs->TIMESTAMP_CONTROL |= ETH_TIMESTAMP_CONTROL_TSCFUPDT_Msk |
-				  ETH_TIMESTAMP_CONTROL_TSCTRLSSR_Msk;
+	regs->TIMESTAMP_CONTROL |=
+		ETH_TIMESTAMP_CONTROL_TSCFUPDT_Msk | ETH_TIMESTAMP_CONTROL_TSCTRLSSR_Msk;
 
 	/* make ptp run at 50MHz - implies 20ns increment for each increment of the */
 	/* sub_second_register */
@@ -779,20 +999,20 @@ static inline int eth_xmc4xxx_init_timestamp_control_reg(ETH_GLOBAL_TypeDef *reg
 	/* Therefore, K = ceil(f_out * 2^32 / f_cpu) */
 
 	uint32_t f_cpu = XMC_SCU_CLOCK_GetSystemClockFrequency();
-	uint32_t K = (BIT64(32) * ETH_PTP_CLOCK_FREQUENCY  + f_cpu / 2) / f_cpu;
+	uint32_t K = (BIT64(32) * ETH_PTP_CLOCK_FREQUENCY + f_cpu / 2) / f_cpu;
 
 	regs->TIMESTAMP_ADDEND = K;
 
 	/* Addend register update */
 	regs->TIMESTAMP_CONTROL |= ETH_TIMESTAMP_CONTROL_TSADDREG_Msk;
 	if (!WAIT_FOR((regs->TIMESTAMP_CONTROL & ETH_TIMESTAMP_CONTROL_TSADDREG_Msk) == 0,
-		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC,)) {
+		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC, NULL)) {
 		return -ETIMEDOUT;
 	}
 
 	regs->TIMESTAMP_CONTROL |= ETH_TIMESTAMP_CONTROL_TSINIT_Msk;
 	if (!WAIT_FOR((regs->TIMESTAMP_CONTROL & ETH_TIMESTAMP_CONTROL_TSINIT_Msk) == 0,
-		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC,)) {
+		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC, NULL)) {
 		return -ETIMEDOUT;
 	}
 #endif
@@ -807,8 +1027,7 @@ static int eth_xmc4xxx_init(const struct device *dev)
 	int ret;
 
 	sys_slist_init(&dev_data->tx_frame_list);
-	k_sem_init(&dev_data->tx_desc_sem, NUM_TX_DMA_DESCRIPTORS,
-					   NUM_TX_DMA_DESCRIPTORS);
+	k_sem_init(&dev_data->tx_desc_sem, NUM_TX_DMA_DESCRIPTORS, NUM_TX_DMA_DESCRIPTORS);
 
 	if (!device_is_ready(dev_cfg->phy_dev)) {
 		LOG_ERR("Phy device not ready");
@@ -841,7 +1060,6 @@ static int eth_xmc4xxx_init(const struct device *dev)
 	/* disable jumbo frames */
 	dev_cfg->regs->MAC_CONFIGURATION &= ~ETH_MAC_CONFIGURATION_JE_Msk;
 
-
 	/* Initialize Filter registers - disable zero quanta pause*/
 	dev_cfg->regs->FLOW_CONTROL = ETH_FLOW_CONTROL_DZPQ_Msk;
 
@@ -866,7 +1084,7 @@ static int eth_xmc4xxx_init(const struct device *dev)
 
 	eth_xmc4xxx_mask_unused_interrupts(dev_cfg->regs);
 
-#if !DT_INST_NODE_HAS_PROP(0, local_mac_address)
+#if DT_INST_PROP(0, zephyr_random_mac_address)
 	gen_random_mac(dev_data->mac_addr, INFINEON_OUI_B0, INFINEON_OUI_B1, INFINEON_OUI_B2);
 #endif
 	eth_xmc4xxx_set_mac_address(dev_cfg->regs, dev_data->mac_addr);
@@ -878,14 +1096,22 @@ static int eth_xmc4xxx_init(const struct device *dev)
 	reg |= ETH_MAC_FRAME_FILTER_PM_Msk;
 	dev_cfg->regs->MAC_FRAME_FILTER = reg;
 
-	return eth_xmc4xxx_init_timestamp_control_reg(dev_cfg->regs);
+	ret = eth_xmc4xxx_init_timestamp_control_reg(dev_cfg->regs);
+	if (ret != 0) {
+		return ret;
+	}
+
+#if defined(CONFIG_PTP_CLOCK_XMC4XXX)
+	dev_data->timestamp_addend = dev_cfg->regs->TIMESTAMP_ADDEND;
+#endif
+	return 0;
 }
 
 static enum ethernet_hw_caps eth_xmc4xxx_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	enum ethernet_hw_caps caps =  ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T |
-	       ETHERNET_HW_TX_CHKSUM_OFFLOAD | ETHERNET_HW_RX_CHKSUM_OFFLOAD;
+	enum ethernet_hw_caps caps = ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE |
+				     ETHERNET_HW_TX_CHKSUM_OFFLOAD | ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
 	caps |= ETHERNET_PTP;
@@ -893,6 +1119,10 @@ static enum ethernet_hw_caps eth_xmc4xxx_capabilities(const struct device *dev)
 
 #if defined(CONFIG_NET_VLAN)
 	caps |= ETHERNET_HW_VLAN;
+#endif
+
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	caps |= ETHERNET_PROMISC_MODE;
 #endif
 
 	return caps;
@@ -915,6 +1145,20 @@ static int eth_xmc4xxx_set_config(const struct device *dev, enum ethernet_config
 		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
 				     sizeof(dev_data->mac_addr), NET_LINK_ETHERNET);
 		return 0;
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE: {
+		uint32_t reg = dev_cfg->regs->MAC_FRAME_FILTER;
+
+		if (config->promisc_mode) {
+			reg |= ETH_MAC_FRAME_FILTER_PR_Msk;
+		} else {
+			reg &= ~ETH_MAC_FRAME_FILTER_PR_Msk;
+		}
+		dev_cfg->regs->MAC_FRAME_FILTER = reg;
+
+		return 0;
+	}
+#endif /* CONFIG_NET_PROMISCUOUS_MODE */
 	default:
 		break;
 	}
@@ -932,12 +1176,11 @@ static void eth_xmc4xxx_irq_config(void)
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
 static const struct device *eth_xmc4xxx_get_ptp_clock(const struct device *dev)
 {
-	struct eth_xmc4xxx_data *dev_data = dev->data;
+	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 
-	return dev_data->ptp_clock;
+	return dev_cfg->ptp_clock;
 }
 #endif
-
 
 #if defined(CONFIG_ETH_XMC4XXX_VLAN_HW_FILTER)
 int eth_xmc4xxx_vlan_setup(const struct device *dev, struct net_if *iface, uint16_t tag,
@@ -950,8 +1193,7 @@ int eth_xmc4xxx_vlan_setup(const struct device *dev, struct net_if *iface, uint1
 
 	if (enable) {
 		dev_cfg->regs->VLAN_TAG = FIELD_PREP(ETH_VLAN_TAG_VL_Msk, tag) |
-					  ETH_VLAN_TAG_ETV_Msk |
-					  ETH_VLAN_TAG_ESVL_Msk;
+					  ETH_VLAN_TAG_ETV_Msk | ETH_VLAN_TAG_ESVL_Msk;
 		dev_cfg->regs->MAC_FRAME_FILTER |= ETH_MAC_FRAME_FILTER_VTFE_Msk;
 	} else {
 		dev_cfg->regs->VLAN_TAG = 0;
@@ -981,25 +1223,31 @@ static const struct ethernet_api eth_xmc4xxx_api = {
 
 PINCTRL_DT_INST_DEFINE(0);
 
+#if defined(CONFIG_PTP_CLOCK_XMC4XXX)
+DEVICE_DECLARE(xmc4xxx_ptp_clock_0);
+#endif
+
 static struct eth_xmc4xxx_config eth_xmc4xxx_config = {
 	.regs = (ETH_GLOBAL_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(0)),
 	.irq_config_func = eth_xmc4xxx_irq_config,
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
+#if defined(CONFIG_PTP_CLOCK_XMC4XXX)
+	.ptp_clock = DEVICE_GET(xmc4xxx_ptp_clock_0),
+#endif
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.port_ctrl = {
-	    .rxd0 = DT_INST_ENUM_IDX(0, rxd0_port_ctrl),
-	    .rxd1 = DT_INST_ENUM_IDX(0, rxd1_port_ctrl),
-	    .rxd2 = DT_INST_ENUM_IDX_OR(0, rxd2_port_ctrl, 0),
-	    .rxd3 = DT_INST_ENUM_IDX_OR(0, rxd3_port_ctrl, 0),
-	    .clk_rmii = DT_INST_ENUM_IDX(0, rmii_rx_clk_port_ctrl),
-	    .crs_dv = DT_INST_ENUM_IDX(0, crs_rx_dv_port_ctrl),
-	    .crs = DT_INST_ENUM_IDX_OR(0, crs_port_ctrl, 0),
-	    .rxer = DT_INST_ENUM_IDX(0, rxer_port_ctrl),
-	    .col = DT_INST_ENUM_IDX_OR(0, col_port_ctrl, 0),
-	    .clk_tx = DT_INST_ENUM_IDX_OR(0, tx_clk_port_ctrl, 0),
-	    .mode = DT_INST_ENUM_IDX_OR(0, phy_connection_type, 0),
-	}
-};
+		.rxd0 = DT_INST_ENUM_IDX(0, rxd0_port_ctrl),
+		.rxd1 = DT_INST_ENUM_IDX(0, rxd1_port_ctrl),
+		.rxd2 = DT_INST_ENUM_IDX_OR(0, rxd2_port_ctrl, 0),
+		.rxd3 = DT_INST_ENUM_IDX_OR(0, rxd3_port_ctrl, 0),
+		.clk_rmii = DT_INST_ENUM_IDX(0, rmii_rx_clk_port_ctrl),
+		.crs_dv = DT_INST_ENUM_IDX(0, crs_rx_dv_port_ctrl),
+		.crs = DT_INST_ENUM_IDX_OR(0, crs_port_ctrl, 0),
+		.rxer = DT_INST_ENUM_IDX(0, rxer_port_ctrl),
+		.col = DT_INST_ENUM_IDX_OR(0, col_port_ctrl, 0),
+		.clk_tx = DT_INST_ENUM_IDX_OR(0, tx_clk_port_ctrl, 0),
+		.mode = DT_INST_ENUM_IDX_OR(0, phy_connection_type, 0),
+	}};
 
 static struct eth_xmc4xxx_data eth_xmc4xxx_data = {
 	.mac_addr = DT_INST_PROP_OR(0, local_mac_address, {0}),
@@ -1010,23 +1258,16 @@ ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_xmc4xxx_init, NULL, &eth_xmc4xxx_data, &eth
 
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
 
-struct ptp_context {
-	const struct device *eth_dev;
-};
-
-static struct ptp_context ptp_xmc4xxx_context_0;
-
 static int eth_xmc4xxx_ptp_clock_set(const struct device *dev, struct net_ptp_time *tm)
 {
-	struct ptp_context *ptp_context = dev->data;
-	const struct eth_xmc4xxx_config *dev_cfg = ptp_context->eth_dev->config;
+	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 
 	dev_cfg->regs->SYSTEM_TIME_NANOSECONDS_UPDATE = tm->nanosecond;
 	dev_cfg->regs->SYSTEM_TIME_SECONDS_UPDATE = tm->second;
 
 	dev_cfg->regs->TIMESTAMP_CONTROL |= ETH_TIMESTAMP_CONTROL_TSINIT_Msk;
 	if (!WAIT_FOR((dev_cfg->regs->TIMESTAMP_CONTROL & ETH_TIMESTAMP_CONTROL_TSINIT_Msk) == 0,
-		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC,)) {
+		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC, NULL)) {
 		return -ETIMEDOUT;
 	}
 
@@ -1035,8 +1276,7 @@ static int eth_xmc4xxx_ptp_clock_set(const struct device *dev, struct net_ptp_ti
 
 static int eth_xmc4xxx_ptp_clock_get(const struct device *dev, struct net_ptp_time *tm)
 {
-	struct ptp_context *ptp_context = dev->data;
-	const struct eth_xmc4xxx_config *dev_cfg = ptp_context->eth_dev->config;
+	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 
 	uint32_t nanosecond_0 = dev_cfg->regs->SYSTEM_TIME_NANOSECONDS;
 	uint32_t second_0 = dev_cfg->regs->SYSTEM_TIME_SECONDS;
@@ -1059,8 +1299,7 @@ static int eth_xmc4xxx_ptp_clock_get(const struct device *dev, struct net_ptp_ti
 
 static int eth_xmc4xxx_ptp_clock_adjust(const struct device *dev, int increment)
 {
-	struct ptp_context *ptp_context = dev->data;
-	const struct eth_xmc4xxx_config *dev_cfg = ptp_context->eth_dev->config;
+	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 	uint32_t increment_tmp;
 
 	if ((increment <= -(int)NSEC_PER_SEC) || (increment >= (int)NSEC_PER_SEC)) {
@@ -1079,7 +1318,7 @@ static int eth_xmc4xxx_ptp_clock_adjust(const struct device *dev, int increment)
 
 	dev_cfg->regs->TIMESTAMP_CONTROL |= ETH_TIMESTAMP_CONTROL_TSUPDT_Msk;
 	if (!WAIT_FOR((dev_cfg->regs->TIMESTAMP_CONTROL & ETH_TIMESTAMP_CONTROL_TSUPDT_Msk) == 0,
-		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC,)) {
+		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC, NULL)) {
 		return -ETIMEDOUT;
 	}
 
@@ -1088,9 +1327,9 @@ static int eth_xmc4xxx_ptp_clock_adjust(const struct device *dev, int increment)
 
 static int eth_xmc4xxx_ptp_clock_rate_adjust(const struct device *dev, double ratio)
 {
-	struct ptp_context *ptp_context = dev->data;
-	const struct eth_xmc4xxx_config *dev_cfg = ptp_context->eth_dev->config;
-	uint64_t K = dev_cfg->regs->TIMESTAMP_ADDEND;
+	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
+	struct eth_xmc4xxx_data *dev_data = dev->data;
+	uint64_t K = dev_data->timestamp_addend;
 
 	if (ratio < ETH_PTP_RATE_ADJUST_RATIO_MIN || ratio > ETH_PTP_RATE_ADJUST_RATIO_MAX) {
 		return -EINVAL;
@@ -1106,7 +1345,7 @@ static int eth_xmc4xxx_ptp_clock_rate_adjust(const struct device *dev, double ra
 	/* Addend register update */
 	dev_cfg->regs->TIMESTAMP_CONTROL |= ETH_TIMESTAMP_CONTROL_TSADDREG_Msk;
 	if (!WAIT_FOR((dev_cfg->regs->TIMESTAMP_CONTROL & ETH_TIMESTAMP_CONTROL_TSADDREG_Msk) == 0,
-		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC,)) {
+		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC, NULL)) {
 		return -ETIMEDOUT;
 	}
 
@@ -1120,20 +1359,8 @@ static DEVICE_API(ptp_clock, ptp_api_xmc4xxx) = {
 	.rate_adjust = eth_xmc4xxx_ptp_clock_rate_adjust,
 };
 
-static int ptp_clock_xmc4xxx_init(const struct device *port)
-{
-	const struct device *const eth_dev = DEVICE_DT_INST_GET(0);
-	struct eth_xmc4xxx_data *dev_data = eth_dev->data;
-	struct ptp_context *ptp_context = port->data;
-
-	dev_data->ptp_clock = port;
-	ptp_context->eth_dev = eth_dev;
-
-	return 0;
-}
-
-DEVICE_DEFINE(xmc4xxx_ptp_clock_0, PTP_CLOCK_NAME, ptp_clock_xmc4xxx_init, NULL,
-	      &ptp_xmc4xxx_context_0, NULL, POST_KERNEL, CONFIG_PTP_CLOCK_INIT_PRIORITY,
+DEVICE_DEFINE(xmc4xxx_ptp_clock_0, PTP_CLOCK_NAME, NULL,  NULL,
+	      &eth_xmc4xxx_data, &eth_xmc4xxx_config, POST_KERNEL, CONFIG_ETH_INIT_PRIORITY,
 	      &ptp_api_xmc4xxx);
 
 #endif /* CONFIG_PTP_CLOCK_XMC4XXX */

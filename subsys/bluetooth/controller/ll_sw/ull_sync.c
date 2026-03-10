@@ -65,7 +65,6 @@
 #include "ull_llcp.h"
 #include "ll.h"
 
-#include <soc.h>
 #include "hal/debug.h"
 
 /* Check that timeout_reload member is at safe offset when ll_sync_set is
@@ -152,11 +151,13 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 
 	scan->periodic.cancelled = 0U;
 	scan->periodic.state = LL_SYNC_STATE_IDLE;
+	scan->periodic.param = NULL;
 	scan->periodic.filter_policy =
 		options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		scan_coded->periodic.cancelled = 0U;
 		scan_coded->periodic.state = LL_SYNC_STATE_IDLE;
+		scan_coded->periodic.param = NULL;
 		scan_coded->periodic.filter_policy =
 			scan->periodic.filter_policy;
 	}
@@ -273,6 +274,8 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 		if (sync->skip > skip_max) {
 			sync->skip = skip_max;
 		}
+	} else {
+		sync->skip = 0U;
 	}
 
 	sync->sync_expire = CONN_ESTAB_COUNTDOWN;
@@ -320,20 +323,15 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 	conn_interval_us = conn->lll.interval * CONN_INT_UNIT_US;
 
 	/* Calculate offset and schedule sync radio events */
-	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
-
 	sync_offset_us = PDU_ADV_SYNC_INFO_OFFSET_GET(si) * lll->window_size_event_us;
 	/* offs_adjust may be 1 only if sync setup by LL_PERIODIC_SYNC_IND */
 	sync_offset_us += (PDU_ADV_SYNC_INFO_OFFS_ADJUST_GET(si) ? OFFS_ADJUST_US : 0U);
-	sync_offset_us -= EVENT_TICKER_RES_MARGIN_US;
-	sync_offset_us -= EVENT_JITTER_US;
-	sync_offset_us -= ready_delay_us;
 
 	if (conn_evt_offset) {
 		int64_t conn_offset_us = (int64_t)conn_evt_offset * conn_interval_us;
 
 		if ((int64_t)sync_offset_us + conn_offset_us < 0) {
-			uint32_t total_offset_us = abs((int64_t)sync_offset_us + conn_offset_us);
+			uint32_t total_offset_us = llabs((int64_t)sync_offset_us + conn_offset_us);
 			uint32_t sync_intervals = DIV_ROUND_UP(total_offset_us, interval_us);
 
 			lll->event_counter += sync_intervals;
@@ -385,6 +383,7 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 
 	/* Calculate event time reservation */
 	slot_us = PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE, lll->phy);
+	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 	slot_us += ready_delay_us;
 
 	/* Add implementation defined radio event overheads */
@@ -392,16 +391,9 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	}
 
-	/* TODO: active_to_start feature port */
-	sync->ull.ticks_active_to_start = 0U;
-	sync->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	sync->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	sync->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 
-	ticks_slot_offset = MAX(sync->ull.ticks_active_to_start,
-				sync->ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
@@ -416,7 +408,7 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 #if defined(CONFIG_BT_PERIPHERAL)
 	if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
 		/* Compensate for window widening */
-		ticks_anchor += HAL_TICKER_US_TO_TICKS(conn->lll.periph.window_widening_event_us);
+		sync_offset_us += conn->lll.periph.window_widening_event_us;
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
 
@@ -430,8 +422,8 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 			   (sync->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync,
 			   ticker_start_op_cb, (void *)__LINE__);
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+		      (ret == TICKER_STATUS_BUSY));
 }
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
@@ -495,7 +487,7 @@ uint8_t ll_sync_create_cancel(void **rx)
 	if (sync->timeout_reload != 0U) {
 		uint16_t sync_handle = ull_sync_handle_get(sync);
 
-		LL_ASSERT(sync_handle <= UINT8_MAX);
+		LL_ASSERT_DBG(sync_handle <= UINT8_MAX);
 
 		/* Sync is not established yet, so stop sync ticker */
 		const int err =
@@ -590,7 +582,7 @@ uint8_t ll_sync_terminate(uint16_t handle)
 		}
 
 #if !defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
-		LL_ASSERT(!aux->parent);
+		LL_ASSERT_DBG(!aux->parent);
 #endif /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 	}
 
@@ -880,12 +872,12 @@ void ull_sync_release(struct ll_sync_set *sync)
 	mem_release(sync, &sync_free);
 }
 
-void ull_sync_setup_addr_check(struct ll_sync_set *sync, struct ll_scan_set *scan,
+bool ull_sync_setup_addr_check(struct ll_sync_set *sync, uint8_t filter_policy,
 			       uint8_t addr_type, uint8_t *addr, uint8_t rl_idx)
 {
 	/* Check if Periodic Advertiser list to be used */
 	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST) &&
-	    scan->periodic.filter_policy) {
+	    filter_policy) {
 		/* Check in Periodic Advertiser List */
 		if (ull_filter_ull_pal_addr_match(addr_type, addr)) {
 			/* Remember the address, to check with
@@ -896,7 +888,7 @@ void ull_sync_setup_addr_check(struct ll_sync_set *sync, struct ll_scan_set *sca
 				     BDADDR_SIZE);
 
 			/* Address matched */
-			scan->periodic.state = LL_SYNC_STATE_ADDR_MATCH;
+			return true;
 
 		/* Check in Resolving List */
 		} else if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY) &&
@@ -911,14 +903,14 @@ void ull_sync_setup_addr_check(struct ll_sync_set *sync, struct ll_scan_set *sca
 			sync->peer_addr_resolved = 1U;
 
 			/* Address matched */
-			scan->periodic.state = LL_SYNC_STATE_ADDR_MATCH;
+			return true;
 		}
 
 	/* Check with explicitly supplied address */
 	} else if ((addr_type == sync->peer_id_addr_type) &&
 		   !memcmp(addr, sync->peer_id_addr, BDADDR_SIZE)) {
 		/* Address matched */
-		scan->periodic.state = LL_SYNC_STATE_ADDR_MATCH;
+		return true;
 
 	/* Check identity address with explicitly supplied address */
 	} else if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY) &&
@@ -930,9 +922,11 @@ void ull_sync_setup_addr_check(struct ll_sync_set *sync, struct ll_scan_set *sca
 			sync->peer_addr_resolved = 1U;
 
 			/* Identity address matched */
-			scan->periodic.state = LL_SYNC_STATE_ADDR_MATCH;
+			return true;
 		}
 	}
+
+	return false;
 }
 
 bool ull_sync_setup_sid_match(struct ll_sync_set *sync, struct ll_scan_set *scan, uint8_t sid)
@@ -1060,6 +1054,7 @@ void ull_sync_setup(struct ll_scan_set *scan, uint8_t phy,
 
 	/* Set the state to sync create */
 	scan->periodic.state = LL_SYNC_STATE_CREATED;
+	scan->periodic.param = NULL;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		struct ll_scan_set *scan_1m;
 
@@ -1069,8 +1064,10 @@ void ull_sync_setup(struct ll_scan_set *scan, uint8_t phy,
 
 			scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
 			scan_coded->periodic.state = LL_SYNC_STATE_CREATED;
+			scan_coded->periodic.param = NULL;
 		} else {
 			scan_1m->periodic.state = LL_SYNC_STATE_CREATED;
+			scan_1m->periodic.param = NULL;
 		}
 	}
 
@@ -1131,16 +1128,9 @@ void ull_sync_setup(struct ll_scan_set *scan, uint8_t phy,
 		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	}
 
-	/* TODO: active_to_start feature port */
-	sync->ull.ticks_active_to_start = 0U;
-	sync->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	sync->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	sync->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 
-	ticks_slot_offset = MAX(sync->ull.ticks_active_to_start,
-				sync->ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
@@ -1160,8 +1150,8 @@ void ull_sync_setup(struct ll_scan_set *scan, uint8_t phy,
 			   (sync->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync,
 			   ticker_start_op_cb, (void *)__LINE__);
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+		      (ret == TICKER_STATUS_BUSY));
 }
 
 void ull_sync_setup_reset(struct ll_sync_set *sync)
@@ -1349,7 +1339,7 @@ void ull_sync_done(struct node_rx_event_done *done)
 			sync->sync_expire = 0U;
 		}
 
-		elapsed_event = skip_event + lll->lazy_prepare + 1U;
+		elapsed_event = lll->lazy_prepare + 1U;
 
 		/* Reset supervision countdown */
 		if (done->extra.crc_valid) {
@@ -1425,9 +1415,9 @@ void ull_sync_done(struct node_rx_event_done *done)
 					      ticks_drift_minus, 0, 0,
 					      lazy, force,
 					      ticker_update_op_cb, sync);
-			LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-				  (ticker_status == TICKER_STATUS_BUSY) ||
-				  ((void *)sync == ull_disable_mark_get()));
+			LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+				      (ticker_status == TICKER_STATUS_BUSY) ||
+				      ((void *)sync == ull_disable_mark_get()));
 		}
 	}
 }
@@ -1442,7 +1432,7 @@ void ull_sync_chm_update(uint8_t sync_handle, uint8_t *acad, uint8_t acad_len)
 
 	/* Get reference to LLL context */
 	sync = ull_sync_set_get(sync_handle);
-	LL_ASSERT(sync);
+	LL_ASSERT_DBG(sync);
 	lll = &sync->lll;
 
 	/* Ignore if already in progress */
@@ -1619,7 +1609,7 @@ static struct ll_sync_set *ull_sync_create(uint8_t sid, uint16_t timeout, uint16
 	/* Make sure that the node_rx_sync_establ hasn't got anything assigned. It is used to
 	 * mark when sync establishment is in progress.
 	 */
-	LL_ASSERT(!sync->node_rx_sync_estab);
+	LL_ASSERT_DBG(!sync->node_rx_sync_estab);
 	sync->node_rx_sync_estab = node_rx;
 
 	/* Reporting initially enabled/disabled */
@@ -1666,7 +1656,7 @@ static struct ll_sync_set *ull_sync_create(uint8_t sid, uint16_t timeout, uint16
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	ull_df_sync_cfg_init(&lll->df_cfg);
-	LL_ASSERT(!lll->node_cte_incomplete);
+	LL_ASSERT_DBG(!lll->node_cte_incomplete);
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 	/* Initialise ULL and LLL headers */
@@ -1684,8 +1674,8 @@ static void sync_ticker_cleanup(struct ll_sync_set *sync, ticker_op_func stop_op
 	/* Stop Periodic Sync Ticker */
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			  TICKER_ID_SCAN_SYNC_BASE + sync_handle, stop_op_cb, (void *)sync);
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+		      (ret == TICKER_STATUS_BUSY));
 
 	/* Mark sync context not sync established */
 	sync->timeout_reload = 0U;
@@ -1713,7 +1703,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&sync->ull);
-	LL_ASSERT(ref);
+	LL_ASSERT_DBG(ref);
 
 	/* Append timing parameters */
 	p.ticks_at_expire = ticks_at_expire;
@@ -1727,7 +1717,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	/* Kick LLL prepare */
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0,
 			     &mfy_lll_prepare);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 
 	DEBUG_RADIO_PREPARE_O(1);
 }
@@ -1735,13 +1725,13 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 static void ticker_start_op_cb(uint32_t status, void *param)
 {
 	ARG_UNUSED(param);
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT_ERR(status == TICKER_STATUS_SUCCESS);
 }
 
 static void ticker_update_op_cb(uint32_t status, void *param)
 {
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
-		  param == ull_disable_mark_get());
+	LL_ASSERT_ERR((status == TICKER_STATUS_SUCCESS) ||
+		      (param == ull_disable_mark_get()));
 }
 
 static void ticker_stop_sync_expire_op_cb(uint32_t status, void *param)
@@ -1750,13 +1740,13 @@ static void ticker_stop_sync_expire_op_cb(uint32_t status, void *param)
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, sync_expire};
 
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT_ERR(status == TICKER_STATUS_SUCCESS);
 
 	mfy.param = param;
 
 	retval = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_ULL_HIGH,
 				0, &mfy);
-	LL_ASSERT(!retval);
+	LL_ASSERT_ERR(!retval);
 }
 
 static void sync_expire(void *param)
@@ -1796,7 +1786,7 @@ static void ticker_stop_sync_lost_op_cb(uint32_t status, void *param)
 	 * sync lost scenario, do not generate the sync lost node rx from here
 	 */
 	if (status != TICKER_STATUS_SUCCESS) {
-		LL_ASSERT(param == ull_disable_mark_get());
+		LL_ASSERT_DBG(param == ull_disable_mark_get());
 
 		return;
 	}
@@ -1805,7 +1795,7 @@ static void ticker_stop_sync_lost_op_cb(uint32_t status, void *param)
 
 	retval = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_ULL_HIGH,
 				0, &mfy);
-	LL_ASSERT(!retval);
+	LL_ASSERT_ERR(!retval);
 }
 
 static void sync_lost(void *param)
@@ -1907,8 +1897,8 @@ static struct pdu_cte_info *pdu_cte_info_get(struct pdu_adv *pdu)
 	}
 
 	/* Make sure there are no fields that are not allowed for AUX_SYNC_IND and AUX_CHAIN_IND */
-	LL_ASSERT(!hdr->adv_addr);
-	LL_ASSERT(!hdr->tgt_addr);
+	LL_ASSERT_DBG(!hdr->adv_addr);
+	LL_ASSERT_DBG(!hdr->tgt_addr);
 
 	return (struct pdu_cte_info *)hdr->data;
 }
@@ -1963,7 +1953,7 @@ void ull_sync_transfer_received(struct ll_conn *conn, uint16_t service_data,
 	conn_evt_current = ull_conn_event_counter(conn);
 
 	/* LLCP should have ensured this holds */
-	LL_ASSERT(sync_conn_event_count != conn_evt_current);
+	LL_ASSERT_DBG(sync_conn_event_count != conn_evt_current);
 
 	ull_sync_setup_from_sync_transfer(conn, service_data, sync, si,
 					  conn_event_count - conn_evt_current,

@@ -1,0 +1,30 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	aliases {
+		pwm-test = &lpe_ftm;
+	};
+};
+
+&pinctrl {
+	lpe_ftm_default: lpe_ftm_default {
+		group0 {
+			pinmux = <PK13_LPE_FTM_CH0_O>; /* GPIO173 - J318 - P4*/
+			output-enable;
+		};
+	};
+};
+
+&lpe_ftm {
+	pinctrl-0 = <&lpe_ftm_default>;
+	pinctrl-names = "default";
+	clock-source = "system";
+	prescaler = <32>;
+	status = "okay";
+};

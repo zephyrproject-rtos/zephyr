@@ -48,11 +48,14 @@ struct bt_sco_chan_ops {
 };
 
 struct bt_sco_chan {
-	struct bt_conn *sco;
+	struct bt_conn               *sco;
 	/** Channel operations reference */
-	struct bt_sco_chan_ops		*ops;
+	const struct bt_sco_chan_ops *ops;
 
-	enum bt_sco_state		state;
+	/** Voice setting for the connection */
+	uint8_t                      voice_setting;
+
+	enum bt_sco_state            state;
 };
 
 /** @brief Initiate an SCO connection to a remote device.
@@ -150,3 +153,146 @@ void bt_sco_chan_set_state_debug(struct bt_sco_chan *chan,
 #else
 void bt_sco_chan_set_state(struct bt_sco_chan *chan, enum bt_sco_state state);
 #endif /* CONFIG_BT_CONN_LOG_LEVEL_DBG */
+
+/** @brief SCO connection callback structure.
+ *
+ *  This structure is used for tracking the state of a SCO connection.
+ *  It is registered with the help of the bt_sco_conn_cb_register() API.
+ *  It's permissible to register multiple instances of this @ref bt_sco_conn_cb
+ *  type, in case different modules of an application are interested in
+ *  tracking the connection state. If a callback is not of interest for
+ *  an instance, it may be set to NULL and will as a consequence not be
+ *  used for that instance.
+ */
+struct bt_sco_conn_cb {
+	/** @brief A new SCO connection has been established.
+	 *
+	 *  This callback notifies the application of a new connection.
+	 *  In case the err parameter is non-zero it means that the
+	 *  connection establishment failed.
+	 *
+	 *  @param conn New SCO connection object.
+	 *  @param err HCI error. Zero for success, non-zero otherwise.
+	 */
+	void (*connected)(struct bt_conn *conn, uint8_t err);
+
+	/** @brief A SCO connection has been disconnected.
+	 *
+	 *  This callback notifies the application that a SCO connection
+	 *  has been disconnected.
+	 *  When this callback is called the stack still has one reference to
+	 *  the connection object.
+	 *
+	 *  @param conn SCO connection object.
+	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
+	 */
+	void (*disconnected)(struct bt_conn *conn, uint8_t reason);
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t _node;
+};
+
+/** @brief Register SCO connection callbacks.
+ *
+ *  Register callbacks to monitor the state of SCO connections.
+ *
+ *  @param cb Callback struct. Must point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL If @p cb is NULL.
+ * @retval -EEXIST if @p cb was already registered.
+ */
+int bt_sco_conn_cb_register(struct bt_sco_conn_cb *cb);
+
+/**
+ * @brief Unregister SCO connection callbacks.
+ *
+ * Unregister the state of SCO connections callbacks.
+ *
+ * @param cb Callback struct point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL If @p cb is NULL.
+ * @retval -ENOENT if @p cb was not registered.
+ */
+int bt_sco_conn_cb_unregister(struct bt_sco_conn_cb *cb);
+
+/**
+ *  @brief Register a callback structure for connection events.
+ *
+ *  @param _name Name of callback structure.
+ */
+#define BT_SCO_CONN_CB_DEFINE(_name)								\
+	static const STRUCT_SECTION_ITERABLE(bt_sco_conn_cb, _CONCAT(bt_sco_conn_cb_, _name))
+
+/**
+ * @brief SCO HCI callback structure for handling SCO connection events
+ *
+ * This structure defines callback functions that are invoked during SCO
+ * (Synchronous Connection-Oriented) connection establishment process.
+ * It allows upper layer protocols to customize HCI command parameters
+ * before they are sent to the controller.
+ *
+ * The callbacks are typically used by audio profiles like HFP/HSP to
+ * configure codec parameters, packet types, and other connection-specific
+ * settings based on negotiated audio codec and quality requirements.
+ *
+ * @note Callbacks are optional and may be NULL if default behavior is desired
+ */
+struct bt_sco_hci_cb {
+	/**
+	 * @brief Setup callback for outgoing SCO connection
+	 *
+	 * Called before sending HCI_Setup_Synchronous_Connection command to monitor the HCI
+	 * activity of SCO connections.
+	 *
+	 * @param acl_conn Pointer to the underlying ACL connection.
+	 * @param cp Pointer to HCI setup synchronous connection command parameters.
+	 */
+	void (*setup)(struct bt_conn *acl_conn, struct bt_hci_cp_setup_sync_conn *cp);
+
+	/**
+	 * @brief Accept callback for incoming SCO connection
+	 *
+	 * Called before sending HCI_Accept_Synchronous_Connection_Request command to monitor the
+	 * HCI activity of SCO connections.
+	 *
+	 * @param cp Pointer to HCI accept synchronous connection request command parameters.
+	 */
+	void (*accept)(struct bt_hci_cp_accept_sync_conn_req *cp);
+
+	sys_snode_t _node;
+};
+
+/** @brief Register SCO HCI activity callbacks.
+ *
+ *  Register callbacks to monitor the HCI activity of SCO.
+ *
+ *  @param cb Callback struct. Must point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL If @p cb is NULL.
+ * @retval -EEXIST if @p cb was already registered.
+ */
+int bt_sco_hci_cb_register(struct bt_sco_hci_cb *cb);
+
+/**
+ * @brief Unregister SCO HCI activity callbacks.
+ *
+ * Unregister the HCI activity monitor of SCO callbacks.
+ *
+ * @param cb Callback struct point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL If @p cb is NULL.
+ * @retval -ENOENT if @p cb was not registered.
+ */
+int bt_sco_hci_cb_unregister(struct bt_sco_hci_cb *cb);
+
+/**
+ *  @brief Register a callback structure for SCO HCI activity.
+ *
+ *  @param _name Name of callback structure.
+ */
+#define BT_SCO_HCI_CB_DEFINE(_name) \
+	static const STRUCT_SECTION_ITERABLE(bt_sco_hci_cb, _CONCAT(bt_sco_hci_cb_, _name))

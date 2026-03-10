@@ -9,8 +9,9 @@ small and low cost package. The MCIMX93-EVK board is an entry-level development
 board, which helps developers to get familiar with the processor before
 investing a large amount of resources in more specific designs.
 
-i.MX93 MPU is composed of one cluster of 2x Cortex-A55 cores and a single
-Cortex®-M33 core. Zephyr OS is ported to run on one of the Cortex®-A55 core.
+i.MX93 MPU is composed of one cluster of 2x Cortex®-A55 cores and a single
+Cortex®-M33 core. Zephyr OS is ported on Cortex®-A55 core and Cortex®-M33
+core.
 
 - Board features:
 
@@ -45,53 +46,19 @@ Cortex®-M33 core. Zephyr OS is ported to run on one of the Cortex®-A55 core.
 Supported Features
 ==================
 
-The Zephyr mimx93_evk board Cortex-A Core configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| GIC-v4    | on-chip    | interrupt controller                |
-+-----------+------------+-------------------------------------+
-| ARM TIMER | on-chip    | system clock                        |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | GPIO                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | can                                 |
-+-----------+------------+-------------------------------------+
-| TPM       | on-chip    | TPM Counter                         |
-+-----------+------------+-------------------------------------+
-| ENET      | on-chip    | ethernet port                       |
-+-----------+------------+-------------------------------------+
+TPM
+---
 
-The Zephyr imx93_evk board Cortex-M33 configuration supports the following
-hardware features:
+TPM2 is enabled for PWM for M33 core. Signals can be observerd with
+oscilloscope or logic analyzer.
+Connect J1005-3 and J1005-7(GND) to Oscilloscope or logic analyzer
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | interrupt controller                |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | GPIO                                |
-+-----------+------------+-------------------------------------+
+ADC
+---
+
+sar_adc1 is enabled for M33 core. Pins ADC_IN0/1/2/3 are connected to J1003-1/3/5/7
 
 Devices
 ========
@@ -107,6 +74,37 @@ Serial Port
 
 This board configuration uses a single serial communication channel with the
 CPU's UART2 for A55 core and M33 core.
+
+uSDHC (SD or eMMC Interface on A55)
+-----------------------------------
+
+i.MX 93 processor has three ultra secured digital host controller (uSDHC) modules
+for SD/eMMC interface support. On the MCIMX93-EVK board, the uSDHC2 interface of
+the processor connects to the MicroSD card slot (J1002), and uSDHC1 interface connects
+to the eMMC memory (located at the SOM board). DTS overlay file "usdhc1.overlay" and
+"usdhc2.overlay" are provided to enable specified the uSDHC controller.
+
+Currently it rely on U-boot or Linux to boot Zephyr on Cortex-A Core, so Zephyr need
+to use different uSDHC controller from U-boot or Linux to avoid resource conflict.
+For example, if EVK board boots from SD Card which uses uSDHC2, Zephyr can use MMC
+which uses uSDHC1 for testing:
+
+.. zephyr-app-commands::
+   :zephyr-app: tests/subsys/sd/mmc
+   :host-os: unix
+   :board: imx93_evk/mimx9352/a55
+   :goals: build
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE=usdhc1.overlay
+
+And if EVK board boots from MMC which uses uSDHC1, Zephyr can use SD Card which uses
+uSDHC2 for testing:
+
+.. zephyr-app-commands::
+   :zephyr-app: tests/subsys/sd/sdmmc
+   :host-os: unix
+   :board: imx93_evk/mimx9352/a55
+   :goals: build
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE=usdhc2.overlay
 
 Board MUX Control
 -----------------
@@ -162,8 +160,62 @@ Note: The overlay only supports ``mimx9352/a55``, but can be extended to support
 Programming and Debugging (A55)
 *******************************
 
-U-Boot "cpu" command is used to load and kick Zephyr to Cortex-A secondary Core, Currently
-it is supported in : `Real-Time Edge U-Boot`_ (use the branch "uboot_vxxxx.xx-y.y.y,
+.. zephyr:board-supported-runners::
+
+There are multiple method to program and debug Zephyr on the A55 core:
+
+Option 1. Boot Zephyr by Using JLink Runner
+===========================================
+
+The default runner for the board is JLink, connect the EVK board's JTAG connector to
+the host computer using a J-Link debugger, power up the board and stop the board at
+U-Boot command line, execute the following U-boot command to disable D-Cache:
+
+.. code-block:: console
+
+    dcache off
+
+then use "west flash" or "west debug" command to load the zephyr.bin
+image from the host computer and start the Zephyr application on A55 core0.
+
+Flash and Run
+-------------
+
+Here is an example for the :zephyr:code-sample:`synchronization` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: imx93_evk/mimx9352/a55
+   :goals: flash
+
+Then the following log could be found on UART2 console:
+
+.. code-block:: console
+
+    *** Booting Zephyr OS build Booting Zephyr OS build v3.7.0-2055-g630f27a5a867  ***
+    thread_a: Hello World from cpu 0 on imx93_evk!
+    thread_b: Hello World from cpu 0 on imx93_evk!
+    thread_a: Hello World from cpu 0 on imx93_evk!
+    thread_b: Hello World from cpu 0 on imx93_evk!
+
+Debug
+-----
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :host-os: unix
+   :board: imx93_evk/mimx9352/a55
+   :goals: debug
+
+Option 2. Boot Zephyr by Using U-Boot Command
+=============================================
+
+U-Boot "go" command can be used to start Zephyr on A55 core0 and U-Boot "cpu" command
+is used to load and kick Zephyr to the other A55 secondary Cores. Currently "cpu" command
+is supported in : `Real-Time Edge U-Boot`_ (use the branch "uboot_vxxxx.xx-y.y.y,
 xxxx.xx is uboot version and y.y.y is Real-Time Edge Software version, for example
 "uboot_v2023.04-2.9.0" branch is U-Boot v2023.04 used in Real-Time Edge Software release
 v2.9.0), and pre-build images and user guide can be found at `Real-Time Edge Software`_.
@@ -173,23 +225,49 @@ v2.9.0), and pre-build images and user guide can be found at `Real-Time Edge Sof
 .. _Real-Time Edge Software:
    https://www.nxp.com/rtedge
 
-Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
-plug the SD card into the board. Power it up and stop the u-boot execution at
-prompt.
+Step 1: Download Zephyr Image into DDR Memory
+---------------------------------------------
 
-Use U-Boot to load and kick zephyr.bin to Cortex-A55 Core1:
-
-.. code-block:: console
-
-    fatload mmc 1:1 0xd0000000 zephyr.bin; dcache flush; icache flush; cpu 1 release 0xd0000000
-
-
-Or use the following command to kick zephyr.bin to Cortex-A55 Core0:
+Firstly need to download Zephyr binary image into DDR memory, it can use tftp:
 
 .. code-block:: console
 
-    fatload mmc 1:1 0xd0000000 zephyr.bin; dcache flush; icache flush; go 0xd0000000
+    tftp 0xd0000000 zephyr.bin
 
+Or copy the Zephyr image ``zephyr.bin`` SD card and plug the card into the board, for example
+if copy to the FAT partition of the SD card, use the following U-Boot command to load the image
+into DDR memory (assuming the SD card is dev 1, fat partition ID is 1, they could be changed
+based on actual setup):
+
+.. code-block:: console
+
+    fatload mmc 1:1 0xd0000000 zephyr.bin;
+
+Step 2: Boot Zephyr
+-------------------
+
+Then use the following command to boot Zephyr on the core0:
+
+.. code-block:: console
+
+    dcache off; icache flush; go 0xd0000000;
+
+Or use "cpu" command to boot from secondary Core, for example Core1:
+
+.. code-block:: console
+
+    dcache flush; icache flush; cpu 1 release 0xd0000000
+
+.. note::
+
+   Use U-Boot "go" command to boot Zephyr when build with target ``imx93_evk/mimx9352/a55/smp``, since i.MX 93 only has 2 Cortex-A55 cores.
+
+Option 3. Boot Zephyr by Using Remoteproc under Linux
+=====================================================
+
+When running Linux on the A55 core, it can use the remoteproc framework to load and boot Zephyr,
+refer to Real-Time Edge user guide for more details. Pre-build images and user guide can be found
+at `Real-Time Edge Software`_.
 
 Use this configuration to run basic Zephyr applications and kernel tests,
 for example, with the :zephyr:code-sample:`synchronization` sample:
@@ -259,6 +337,34 @@ to enable this, `imx-atf`_ can to be modified in "plat/imx/imx93/trdc_config.h".
 
 .. _imx-atf:
     https://github.com/nxp-imx/imx-atf
+
+imx-atf changes:
+
+.. code-block:: console
+
+    git diff plat/imx/imx93/trdc_config.h
+    diff --git a/plat/imx/imx93/trdc_config.h b/plat/imx/imx93/trdc_config.h
+    index 6c8b8f8fa..b155f9048 100644
+    --- a/plat/imx/imx93/trdc_config.h
+    +++ b/plat/imx/imx93/trdc_config.h
+    @@ -302,7 +302,7 @@ struct trdc_mbc_config trdc_n_mbc[] = {
+     };
+
+     struct trdc_glbac_config trdc_n_mrc_glbac[] = {
+    -       { 0, 0, SP(RW)  | SU(RW)  | NP(RW)  | NU(RW)  },
+    +       { 0, 0, SP(RWX)  | SU(RW)  | NP(RW)  | NU(RW)  },
+            { 0, 1, SP(RWX) | SU(RWX) | NP(RWX) | NU(RWX) },
+     };
+
+    @@ -356,7 +356,7 @@ struct trdc_mrc_config trdc_n_mrc[] = {
+     struct trdc_mrc_config trdc_n_mrc[] = {
+            { 0, 0, 0, 0x80000000, 0x80000000, 0, false }, /* MRC0 DRAM for S400 DID0 */
+            { 0, 1, 0, 0x80000000, 0x80000000, 0, false }, /* MRC0 DRAM for MTR DID1 */
+    -       { 0, 2, 0, 0x80000000, 0x80000000, 0, true }, /* MRC0 DRAM for M33 DID2 */
+    +       { 0, 2, 0, 0x80000000, 0x80000000, 1, true }, /* MRC0 DRAM for M33 DID2 */
+            { 0, 3, 0, 0x80000000, 0x80000000, 1, false }, /* MRC0 DRAM for A55 DID3 */
+            { 0, 5, 0, 0x80000000, 0x80000000, 0, false }, /* MRC0 DRAM for USDHC1 DID5 */
+            { 0, 6, 0, 0x80000000, 0x80000000, 0, false }, /* MRC0 DRAM for USDHC2 DID6 */
 
 Use this configuration to run basic Zephyr applications and kernel tests,
 for example, with the :zephyr:code-sample:`synchronization` sample:
@@ -383,3 +489,5 @@ This board has been designed for SOF so it's only intended to be used with SOF.
 
 TODO: document the SOF build process for this board. For now, the support for
 i.MX93 is still in review and has yet to merged on SOF side.
+
+.. include:: ../../common/board-footer.rst.inc

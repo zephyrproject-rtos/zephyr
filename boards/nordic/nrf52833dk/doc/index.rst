@@ -1,7 +1,4 @@
-.. _nrf52833dk_nrf52833:
-
-nRF52833 DK
-###########
+.. zephyr:board:: nrf52833dk
 
 Overview
 ********
@@ -41,45 +38,8 @@ is 32 MHz.
 Supported Features
 ==================
 
-The ``nrf52833dk/nrf52833`` board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| USB       | on-chip    | usb                  |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
 See `nRF52833 DK website`_ and `nRF52833 DK Hardware guide`_
 for a complete list of nRF52833 Development Kit board hardware features.
 
@@ -105,6 +65,8 @@ Push buttons
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``nrf52833dk/nrf52833`` board configuration can be built,
 flashed, and debugged in the usual way. See :ref:`build_an_application` and
@@ -206,6 +168,17 @@ In the table 7.1.1 'aQFN73 ball assignments' select the pins marked
 'General purpose I/O'.  Note that pins marked as 'low frequency I/O only' can only be used
 in under-10KHz applications. They are not suitable for 115200 speed of UART.
 
+nRF52820 emulation on nRF52833 DK
+*********************************
+
+The ``nrf52833dk/nrf52820`` board variant is a modified version of the
+:zephyr:board:`nrf52833dk` that enforces the limitations imposed by the nRF52820
+IC, which is a variant of the original nRF52833. Since Nordic does not offer a
+development kit for the nRF52820 you can use this board to develop for this IC
+while using the nRF52833 Development Kit (PCA10100).
+
+See `nRF52820 website`_ for the official reference on the IC itself.
+
 References
 **********
 
@@ -215,27 +188,4 @@ References
 .. _nRF52833 Product Specification: https://docs.nordicsemi.com/bundle/ps_nrf52833/page/keyfeatures_html5.html
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
 .. _nRF52833 DK Hardware guide: https://docs.nordicsemi.com/bundle/ug_nrf52833_dk/page/UG/dk/intro.html
-
-.. _nrf52833dk_nrf52820:
-
-nRF52820 emulation on nRF52833 DK
-#################################
-
-Overview
-********
-
-The ``nrf52833dk/nrf52820`` board is a modified version of the
-:ref:`nrf52833dk_nrf52833` that enforces the limitations imposed by the nRF52820
-IC, which is a variant of the original nRF52833. Since Nordic does not offer a
-development kit for the nRF52820 you can use this board to develop for this IC
-while using the nRF52833 Development Kit (PCA10100).
-
-See :ref:`nrf52833dk_nrf52833` for more information about the development board
-and `nRF52820 website`_ for the official reference on the IC itself.
-
-References
-**********
-
-.. target-notes::
-
 .. _nRF52820 website: https://www.nordicsemi.com/Products/Low-power-short-range-wireless/nRF52820

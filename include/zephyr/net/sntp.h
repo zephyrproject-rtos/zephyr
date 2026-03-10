@@ -14,6 +14,7 @@
 #define ZEPHYR_INCLUDE_NET_SNTP_H_
 
 #include <zephyr/net/socket.h>
+#include <zephyr/net/socket_service.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,8 +66,8 @@ struct sntp_ctx {
  *
  * @return 0 if ok, <0 if error.
  */
-int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr,
-	      socklen_t addr_len);
+int sntp_init(struct sntp_ctx *ctx, struct net_sockaddr *addr,
+	      net_socklen_t addr_len);
 
 /**
  * @brief Perform SNTP query
@@ -100,6 +101,51 @@ int sntp_recv_response(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time 
 void sntp_close(struct sntp_ctx *ctx);
 
 /**
+ * @brief Initialise SNTP context for async operation
+ *
+ * Asynchronous operation is powered by @kconfig{CONFIG_NET_SOCKETS_SERVICE}.
+ *
+ * @param ctx Address of sntp context.
+ * @param addr IP address of NTP/SNTP server.
+ * @param addr_len IP address length of NTP/SNTP server.
+ * @param service Socket service defined by @ref NET_SOCKET_SERVICE_SYNC_DEFINE
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int sntp_init_async(struct sntp_ctx *ctx, struct net_sockaddr *addr, net_socklen_t addr_len,
+		    const struct net_socket_service_desc *service);
+
+/**
+ * @brief Send the SNTP query
+ *
+ * @param ctx Address of sntp context.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int sntp_send_async(struct sntp_ctx *ctx);
+
+/**
+ * @brief Read the result of the SNTP query
+ *
+ * Must be called from the callback attached to the @ref net_socket_service_desc
+ * context.
+ *
+ * @param event Event pointer extracted from the service work callback
+ * @param ts Timestamp including integer and fractional seconds since
+ * 1 Jan 1970 (output).
+ *
+ * @return 0 if ok, <0 if error
+ */
+int sntp_read_async(struct net_socket_service_event *event, struct sntp_time *ts);
+
+/**
+ * @brief Release SNTP context
+ *
+ * @param service Socket service defined by @ref NET_SOCKET_SERVICE_SYNC_DEFINE
+ */
+void sntp_close_async(const struct net_socket_service_desc *service);
+
+/**
  * @brief Convenience function to query SNTP in one-shot fashion
  *
  * Convenience wrapper which calls getaddrinfo(), sntp_init(),
@@ -130,7 +176,7 @@ int sntp_simple(const char *server, uint32_t timeout,
  *
  * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
  */
-int sntp_simple_addr(struct sockaddr *addr, socklen_t addr_len, uint32_t timeout,
+int sntp_simple_addr(struct net_sockaddr *addr, net_socklen_t addr_len, uint32_t timeout,
 		     struct sntp_time *ts);
 
 #ifdef __cplusplus

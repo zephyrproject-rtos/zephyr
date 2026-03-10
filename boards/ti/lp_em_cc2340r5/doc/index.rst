@@ -3,46 +3,28 @@
 Overview
 ********
 
-The Texas Instruments CC2340R5 LaunchPad |trade| (LP_EM_CC2340R5) is a
-development kit for the SimpleLink |trade| multi-Standard CC2340R5 wireless MCU.
+The Texas Instruments CC2340R5 LaunchPad™ (LP_EM_CC2340R5) is a
+development kit for the SimpleLink™ multi-Standard CC2340R5 wireless MCU.
 
 See the `TI CC2340R5 LaunchPad Product Page`_ for details.
 
 Hardware
 ********
 
-The CC2340R5 LaunchPad |trade| development kit features the CC2340R5 wireless MCU.
+The CC2340R5 LaunchPad™ development kit features the CC2340R5 wireless MCU.
 The board is equipped with two LEDs, two push buttons and BoosterPack connectors
 for expansion.
 
-The CC2340R5 wireless MCU has a 48 MHz Arm |reg| Cortex |reg|-M0+ SoC and an
-integrated 2.4 GHz transceiver supporting multiple protocols including Bluetooth
-|reg| Low Energy and IEEE |reg| 802.15.4.
+The CC2340R5 wireless MCU has a 48 MHz Arm® Cortex®-M0+ SoC and an
+integrated 2.4 GHz transceiver supporting multiple protocols including Bluetooth®
+Low Energy and IEEE® 802.15.4.
 
 See the `TI CC2340R5 Product Page`_ for additional details.
 
 Supported Features
 ==================
 
-The ``lp_em_cc2340r5`` board supports the following hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| PINMUX    | on-chip    | pinmux               |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial port          |
-+-----------+------------+----------------------+
-| SYSTIM    | on-chip    | system timer         |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash memory         |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -99,12 +81,56 @@ aligns with the LaunchPad standard.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The LP_EM_CC2340R5 requires an external debug probe such as the LP-XDS110 or
 LP-XDS110ET.
 
-Currently there is no debug support in Zephyr for the LP_EM_CC2340R5, and the
-built binaries for this target must be flashed/debugged using either Uniflash
-or Code Composer Studio.
+Alternatively a J-Link could be used on the J4 header, in combination with a 3.3V
+power supply over the pinheader.
+Debugging and flashing is currently only tested using a J-Link on the J4 header.
+
+To get a console, connect an external USB to UART converter with:
+
++----+-------+
+| TX | DIO22 |
++----+-------+
+| RX | DIO20 |
++----+-------+
+
+Then you can connect to it from you PC:
+
+.. code-block:: console
+
+   $ microcom -p <tty_device>
+
+Replace :code:`<tty_device>` with the port of your USB to UART converter.
+For example, :code:`/dev/ttyUSB0`.
+
+Flashing
+========
+
+Applications for the ``CC2340R5 LaunchPad`` board configuration can be built and
+flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: lp_em_cc2340r5
+   :goals: build flash
+
+Debugging
+=========
+
+You can debug an application in the usual way. Here is an example for the
+:zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: lp_em_cc2340r5
+   :goals: debug
 
 References
 **********

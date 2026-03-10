@@ -1,6 +1,8 @@
 # Copyright (c) 2021 Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
+title: GD32 AFIO (Alternate Function Input/Output)
+
 description: |
   The AFIO peripheral is used to configure pin remapping, EXTI sources and,
   when available, enable the I/O compensation cell.

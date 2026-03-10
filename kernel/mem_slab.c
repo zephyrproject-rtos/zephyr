@@ -104,6 +104,11 @@ static struct k_obj_core_stats_desc mem_slab_stats_desc = {
 static int create_free_list(struct k_mem_slab *slab)
 {
 	char *p;
+	size_t total_size;
+
+	CHECKIF(slab->info.block_size == 0U) {
+		return -EINVAL;
+	}
 
 	/* blocks must be word aligned */
 	CHECKIF(((slab->info.block_size | (uintptr_t)slab->buffer) &
@@ -111,14 +116,22 @@ static int create_free_list(struct k_mem_slab *slab)
 		return -EINVAL;
 	}
 
-	slab->free_list = NULL;
-	p = slab->buffer + slab->info.block_size * (slab->info.num_blocks - 1);
+	if (size_mul_overflow(slab->info.block_size, slab->info.num_blocks, &total_size)) {
+		return -EINVAL;
+	}
+	if (size_add_overflow((size_t)(uintptr_t)slab->buffer, total_size, &total_size)) {
+		return -EINVAL;
+	}
 
-	while (p >= slab->buffer) {
+	slab->free_list = NULL;
+	p = (char *)(total_size - slab->info.block_size);
+
+	for (uint32_t i = 0; i < slab->info.num_blocks; i++) {
 		*(char **)p = slab->free_list;
 		slab->free_list = p;
 		p -= slab->info.block_size;
 	}
+
 	return 0;
 }
 
@@ -236,7 +249,7 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 			 "slab corruption detected");
 
 #ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
-		slab->info.max_used = MAX(slab->info.num_used,
+		slab->info.max_used = max(slab->info.num_used,
 					  slab->info.max_used);
 #endif /* CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION */
 

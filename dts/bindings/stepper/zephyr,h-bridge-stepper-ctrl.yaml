@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO Stepper Controller for darlington transistor arrays or dual H-bridge
+
+compatible: "zephyr,h-bridge-stepper-ctrl"
+
+properties:
+  invert-direction:
+    type: boolean
+    description: |
+      Invert motor direction.
+
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The gpio pin array on which the stepper inputs are to be connected
+
+  lut-step-gap:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 2
+    description: |
+      Step mode selection.
+      1 - Half step mode
+      2 - Full step mode
+
+  counter:
+    type: phandle
+    description: |
+      Counter used for generating step-accurate pulse signals.
+      This should be a reference to a counter node in the device tree.
+      When this property is present, the stepper motion controller will use
+      the counter as a timing source instead of the default work queue timing.
+      This enables more precise step timing control.
+
+      Note: The counter needs to support both set_top_value functionalities:
+            - Setting a new top value
+            - Attaching an ISR to the turnaround
+
+examples:
+  - |
+    /* Lead A is connected Lead C and Lead B is connected to Lead D*/
+    h_bridge_stepper: motion-controller {
+        compatible = "zephyr,h-bridge-stepper-ctrl";
+        gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>,  /* Lead A1/A */
+                <&gpioc 7 GPIO_ACTIVE_HIGH>,  /* Lead B1/B */
+                <&gpiob 0 GPIO_ACTIVE_HIGH>,  /* Lead A2/C */
+                <&gpioa 7 GPIO_ACTIVE_HIGH>;  /* Lead B2/D */
+    };

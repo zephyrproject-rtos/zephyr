@@ -5,7 +5,7 @@
 #
 
 identifier: frdm_mcxn947/mcxn947/cpu0/qspi
-name: NXP FRDM MCXN947 QSPI (CPU0)
+name: NXP FRDM-MCXN947 (CPU0) (QSPI)
 type: mcu
 arch: arm
 ram: 320
@@ -15,6 +15,10 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
   - can
   - counter
   - dac
@@ -25,8 +29,10 @@ supported:
   - i3c
   - pwm
   - regulator
+  - rtc
   - sdhc
   - spi
   - usb_device
+  - usbd
   - watchdog
 vendor: nxp

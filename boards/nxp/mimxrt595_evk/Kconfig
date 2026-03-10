@@ -1,12 +1,9 @@
-# Copyright 2022, NXP
+# Copyright 2022, 2025 NXP
 # Copyright (c) 2023 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_INIT_PRIORITY
-	int "Board initialization priority"
-	default 45
-	help
-	  Board initialization priority.
+config BOARD_MIMXRT595_EVK
+	select BOARD_EARLY_INIT_HOOK if BOARD_MIMXRT595_EVK_MIMXRT595S_CM33
 
 DT_ADSP_RESET_MEM := $(dt_nodelabel_path,adsp_reset)
 DT_ADSP_DATA_MEM := $(dt_nodelabel_path,adsp_data)

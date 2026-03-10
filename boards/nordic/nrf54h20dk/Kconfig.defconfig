@@ -1,13 +1,38 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
 if BOARD_NRF54H20DK_NRF54H20_CPUAPP
 
 config BT_HCI_IPC
-	default y if BT
+	default y if BT_HCI
 
 config MAX_THREAD_BYTES
 	default 3 if USERSPACE
+
+config ROM_START_OFFSET
+	default 0x800 if BOOTLOADER_MCUBOOT
+
+if !USE_DT_CODE_PARTITION
+
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
+# Application core firmware must start at this offset when not using MCUboot.
+# However, the default 'zephyr,code-partition' in DT is set for MCUboot.
+config FLASH_LOAD_OFFSET
+	default $(sub_hex, $(dt_nodelabel_reg_addr_hex,cpuapp_boot_partition), \
+		$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)))
+
+# This is meant to span 'cpuapp_boot_partition' and 'cpuapp_slot0_partition'
+# in the default memory map.
+config FLASH_LOAD_SIZE
+	default $(add_hex, $(dt_nodelabel_reg_addr_hex,cpuapp_slot0_partition), \
+			   $(dt_nodelabel_reg_size_hex,cpuapp_slot0_partition), \
+			   -$(dt_nodelabel_reg_addr_hex,cpuapp_boot_partition))
+
+endif # !USE_DT_CODE_PARTITION
 
 endif # BOARD_NRF54H20DK_NRF54H20_CPUAPP
 
@@ -15,5 +40,8 @@ if BOARD_NRF54H20DK_NRF54H20_CPURAD
 
 config MAX_THREAD_BYTES
 	default 3 if USERSPACE
+
+config ROM_START_OFFSET
+	default 0x800 if BOOTLOADER_MCUBOOT
 
 endif # BOARD_NRF54H20DK_NRF54H20_CPURAD

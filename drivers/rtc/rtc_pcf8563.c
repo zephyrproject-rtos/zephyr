@@ -72,7 +72,7 @@ struct pcf8563_config {
 
 #ifdef PCF8563_INT1_GPIOS_IN_USE
 /* This work will run the user callback function */
-void callback_work_handler(struct k_work *work);
+static void callback_work_handler(struct k_work *work);
 K_WORK_DEFINE(callback_work, callback_work_handler);
 #endif
 
@@ -103,41 +103,43 @@ struct pcf8563_data {
  * the datasheet because they may contain unexpected values. Applying a mask will help us
  * to sanitize the read values
  */
-int pcf8563_set_time(const struct device *dev, const struct rtc_time *timeptr)
+static int pcf8563_set_time(const struct device *dev, const struct rtc_time *timeptr)
 {
 	const struct pcf8563_config *config = dev->config;
 	int ret;
-	uint8_t raw_time[7];
+	uint8_t raw_time[8];
 
 	if (!rtc_utils_validate_rtc_time(timeptr, PCF8563_RTC_TIME_MASK)) {
 		LOG_ERR("invalid time");
 		return -EINVAL;
 	}
 
+	/* I2C register address */
+	raw_time[0] = PCF8563_TIME_DATE_REGISTER;
+
 	/* Set seconds */
-	raw_time[0] = bin2bcd(timeptr->tm_sec);
+	raw_time[1] = bin2bcd(timeptr->tm_sec);
 
 	/* Set minutes */
-	raw_time[1] = bin2bcd(timeptr->tm_min);
+	raw_time[2] = bin2bcd(timeptr->tm_min);
 
 	/* Set hours */
-	raw_time[2] = bin2bcd(timeptr->tm_hour);
+	raw_time[3] = bin2bcd(timeptr->tm_hour);
 
 	/* Set days */
-	raw_time[3] = bin2bcd(timeptr->tm_mday);
+	raw_time[4] = bin2bcd(timeptr->tm_mday);
 
 	/* Set weekdays */
-	raw_time[4] = timeptr->tm_wday;
+	raw_time[5] = timeptr->tm_wday;
 
 	/*Set month */
-	raw_time[5] = bin2bcd(timeptr->tm_mon);
+	raw_time[6] = bin2bcd(timeptr->tm_mon);
 
 	/* Set year */
-	raw_time[6] = bin2bcd(timeptr->tm_year);
+	raw_time[7] = bin2bcd(timeptr->tm_year % 100);
 
 	/* Write to device */
-	ret = i2c_burst_write_dt(&config->i2c, PCF8563_TIME_DATE_REGISTER,
-				 raw_time, sizeof(raw_time));
+	ret = i2c_write_dt(&config->i2c, raw_time, sizeof(raw_time));
 	if (ret) {
 		LOG_ERR("Error when setting time: %i", ret);
 		return ret;
@@ -146,7 +148,7 @@ int pcf8563_set_time(const struct device *dev, const struct rtc_time *timeptr)
 	return 0;
 }
 
-int pcf8563_get_time(const struct device *dev, struct rtc_time *timeptr)
+static int pcf8563_get_time(const struct device *dev, struct rtc_time *timeptr)
 {
 	const struct pcf8563_config *config = dev->config;
 	int ret;
@@ -188,6 +190,7 @@ int pcf8563_get_time(const struct device *dev, struct rtc_time *timeptr)
 
 	/* Get year */
 	timeptr->tm_year = bcd2bin(raw_time[6]);
+	timeptr->tm_year = timeptr->tm_year + 100;
 
 	/* Day number not used */
 	timeptr->tm_yday = -1;
@@ -198,7 +201,34 @@ int pcf8563_get_time(const struct device *dev, struct rtc_time *timeptr)
 	return 0;
 }
 
+#ifdef PCF8563_INT1_GPIOS_IN_USE
 
+/* The logic related to the pin interrupt logic */
+static void callback_work_handler(struct k_work *work)
+{
+	/* This function is run as a work so the user can spend here all the necessary time */
+	struct pcf8563_data *data = CONTAINER_OF(work, struct pcf8563_data, callback_work);
+
+	if (data->alarm_callback == NULL) {
+		LOG_WRN("No PCF8563 alarm callback function provided");
+	} else {
+		data->alarm_callback(data->dev, 0, data->alarm_user_data);
+	}
+}
+
+/* The function called when the clock alarm activates the interrupt*/
+static void gpio_callback_function(const struct device *dev, struct gpio_callback *cb,
+		    uint32_t pins)
+{
+	struct pcf8563_data *data = CONTAINER_OF(cb, struct pcf8563_data, int1_callback);
+
+	LOG_DBG("PCF8563 interrupt detected");
+	/* By using a work we are able to run "heavier" code */
+	k_work_submit(&(data->callback_work));
+
+}
+
+#endif /* PCF8563_INT1_GPIOS_IN_USE */
 
 #ifdef CONFIG_RTC_ALARM
 
@@ -222,7 +252,7 @@ static int pcf8563_alarm_set_time(const struct device *dev, uint16_t id, uint16_
 				  const struct rtc_time *timeptr)
 {
 	const struct pcf8563_config *config = dev->config;
-	uint8_t regs[4];
+	uint8_t regs[5];
 	int ret;
 
 	if (id != 0) {
@@ -240,36 +270,37 @@ static int pcf8563_alarm_set_time(const struct device *dev, uint16_t id, uint16_
 		return -EINVAL;
 	}
 
+	regs[0] = PCF8563_ALARM_REGISTER;
 	/*
 	 * The first bit is used as enabled/disabled flag.
 	 * The mask will clean it and also the unused bits
 	 */
 	if ((mask & RTC_ALARM_TIME_MASK_MINUTE) != 0) {
-		regs[0] = bin2bcd(timeptr->tm_min) & PCF8563_MINUTES_MASK;
+		regs[1] = bin2bcd(timeptr->tm_min) & PCF8563_MINUTES_MASK;
 	} else {
 		/* First bit to 1 is alarm disabled */
-		regs[0] = BIT(7);
-	}
-
-	if ((mask & RTC_ALARM_TIME_MASK_HOUR) != 0) {
-		regs[1] = bin2bcd(timeptr->tm_hour) & PCF8563_HOURS_MASK;
-	} else {
 		regs[1] = BIT(7);
 	}
 
-	if ((mask & RTC_ALARM_TIME_MASK_MONTHDAY) != 0) {
-		regs[2] = bin2bcd(timeptr->tm_mday) & PCF8563_DAYS_MASK;
+	if ((mask & RTC_ALARM_TIME_MASK_HOUR) != 0) {
+		regs[2] = bin2bcd(timeptr->tm_hour) & PCF8563_HOURS_MASK;
 	} else {
 		regs[2] = BIT(7);
 	}
 
-	if ((mask & RTC_ALARM_TIME_MASK_WEEKDAY) != 0) {
-		regs[3] = bin2bcd(timeptr->tm_wday) & PCF8563_WEEKDAYS_MASK;
+	if ((mask & RTC_ALARM_TIME_MASK_MONTHDAY) != 0) {
+		regs[3] = bin2bcd(timeptr->tm_mday) & PCF8563_DAYS_MASK;
 	} else {
 		regs[3] = BIT(7);
 	}
 
-	ret = i2c_burst_write_dt(&config->i2c, PCF8563_ALARM_REGISTER, regs, sizeof(regs));
+	if ((mask & RTC_ALARM_TIME_MASK_WEEKDAY) != 0) {
+		regs[4] = bin2bcd(timeptr->tm_wday) & PCF8563_WEEKDAYS_MASK;
+	} else {
+		regs[4] = BIT(7);
+	}
+
+	ret = i2c_write_dt(&config->i2c, regs, sizeof(regs));
 	if (ret) {
 		LOG_ERR("Error when setting alarm: %i", ret);
 		return ret;
@@ -308,22 +339,22 @@ static int pcf8563_alarm_get_time(const struct device *dev, uint16_t id, uint16_
 	*mask = 0U;
 
 	/* The first bit is the enabled flag */
-	if (regs[0] & BIT(7)) {
+	if (!(regs[0] & BIT(7))) {
 		timeptr->tm_min = bcd2bin(regs[0] & GENMASK(6, 0));
 		*mask |= RTC_ALARM_TIME_MASK_MINUTE;
 	}
 
-	if (regs[1] & BIT(7)) {
+	if (!(regs[1] & BIT(7))) {
 		timeptr->tm_hour = bcd2bin(regs[1] & GENMASK(5, 0));
 		*mask |= RTC_ALARM_TIME_MASK_HOUR;
 	}
 
-	if (regs[2] & BIT(7)) {
+	if (!(regs[2] & BIT(7))) {
 		timeptr->tm_mday = bcd2bin(regs[2] & GENMASK(5, 0));
 		*mask |= RTC_ALARM_TIME_MASK_MONTHDAY;
 	}
 
-	if (regs[3] & BIT(7)) {
+	if (!(regs[3] & BIT(7))) {
 		timeptr->tm_wday = bcd2bin(regs[3] & GENMASK(2, 0));
 		*mask |= RTC_ALARM_TIME_MASK_WEEKDAY;
 	}
@@ -366,37 +397,6 @@ static int pcf8563_alarm_is_pending(const struct device *dev, uint16_t id)
 	/* No alarms */
 	return 0;
 }
-#endif
-
-#ifdef PCF8563_INT1_GPIOS_IN_USE
-/* The logic related to the pin interrupt logic */
-
-void callback_work_handler(struct k_work *work)
-{
-	/* This function is run as a work so the user can spend here all the necessary time */
-	struct pcf8563_data *data = CONTAINER_OF(work, struct pcf8563_data, callback_work);
-
-	if (data->alarm_callback == NULL) {
-		LOG_WRN("No PCF8563 alarm callback function provided");
-	} else {
-		data->alarm_callback(data->dev, 0, data->alarm_user_data);
-	}
-}
-
-
-/* The function called when the clock alarm activates the interrupt*/
-void gpio_callback_function(const struct device *dev, struct gpio_callback *cb,
-		    uint32_t pins)
-{
-	struct pcf8563_data *data = CONTAINER_OF(cb, struct pcf8563_data, int1_callback);
-
-	LOG_DBG("PCF8563 interrupt detected");
-	/* By using a work we are able to run "heavier" code */
-	k_work_submit(&(data->callback_work));
-
-}
-
-#endif
 
 static int pcf8563_alarm_set_callback(const struct device *dev, uint16_t id,
 				      rtc_alarm_callback callback, void *user_data)
@@ -408,7 +408,7 @@ static int pcf8563_alarm_set_callback(const struct device *dev, uint16_t id,
 	ARG_UNUSED(user_data);
 
 	return -ENOTSUP;
-#else
+#else /* PCF8563_INT1_GPIOS_IN_USE */
 	const struct pcf8563_config *config = dev->config;
 	struct pcf8563_data *data = dev->data;
 	int ret;
@@ -427,7 +427,7 @@ static int pcf8563_alarm_set_callback(const struct device *dev, uint16_t id,
 	data->dev = dev;
 
 	/* The PCF8563 int pin requires a pull up to work */
-	ret = gpio_pin_configure_dt(&config->int1, GPIO_INPUT | GPIO_PULL_UP);
+	ret = gpio_pin_configure_dt(&config->int1, GPIO_INPUT);
 	if (ret < 0) {
 		LOG_ERR("Error %d: failed to configure %s pin %d",
 		       ret, config->int1.port->name, config->int1.pin);
@@ -446,8 +446,10 @@ static int pcf8563_alarm_set_callback(const struct device *dev, uint16_t id,
 	gpio_add_callback(config->int1.port, &data->int1_callback);
 	LOG_DBG("Alarm set");
 	return 0;
-#endif
+#endif /* PCF8563_INT1_GPIOS_IN_USE */
 }
+
+#endif /* CONFIG_RTC_ALARM */
 
 static DEVICE_API(rtc, pcf8563_driver_api) = {
 	.set_time = pcf8563_set_time,
@@ -462,7 +464,7 @@ static DEVICE_API(rtc, pcf8563_driver_api) = {
 };
 
 
-int pcf8563_init(const struct device *dev)
+static int pcf8563_init(const struct device *dev)
 {
 	const struct pcf8563_config *config = dev->config;
 	int ret;

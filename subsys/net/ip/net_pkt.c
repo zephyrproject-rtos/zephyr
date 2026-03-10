@@ -142,8 +142,11 @@ NET_BUF_POOL_FIXED_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT, CONFIG_NET_BUF_DATA_
 
 NET_BUF_POOL_VAR_DEFINE(rx_bufs, CONFIG_NET_BUF_RX_COUNT, CONFIG_NET_PKT_BUF_RX_DATA_POOL_SIZE,
 			CONFIG_NET_PKT_BUF_USER_DATA_SIZE, NULL);
-NET_BUF_POOL_VAR_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT, CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE,
-			CONFIG_NET_PKT_BUF_USER_DATA_SIZE, NULL);
+
+NET_BUF_POOL_VAR_ALIGN_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT,
+			      CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE,
+			      CONFIG_NET_PKT_BUF_USER_DATA_SIZE, NULL,
+			      CONFIG_NET_PKT_BUF_TX_DATA_ALLOC_ALIGN_LEN);
 
 #endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
@@ -1072,7 +1075,7 @@ static size_t pkt_buffer_length(struct net_pkt *pkt,
 				enum net_ip_protocol proto,
 				size_t existing)
 {
-	sa_family_t family = net_pkt_family(pkt);
+	net_sa_family_t family = net_pkt_family(pkt);
 	size_t max_len;
 
 	if (net_pkt_iface(pkt)) {
@@ -1082,7 +1085,7 @@ static size_t pkt_buffer_length(struct net_pkt *pkt,
 	}
 
 	/* Family vs iface MTU */
-	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
 		if (IS_ENABLED(CONFIG_NET_IPV6_FRAGMENT) && (size > max_len)) {
 			/* We support larger packets if IPv6 fragmentation is
 			 * enabled.
@@ -1091,14 +1094,14 @@ static size_t pkt_buffer_length(struct net_pkt *pkt,
 		}
 
 		max_len = MAX(max_len, NET_IPV6_MTU);
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
 		if (IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT) && (size > max_len)) {
 			/* We support larger packets if IPv4 fragmentation is enabled */
 			max_len = size;
 		}
 
 		max_len = MAX(max_len, NET_IPV4_MTU);
-	} else { /* family == AF_UNSPEC */
+	} else { /* family == NET_AF_UNSPEC */
 #if defined (CONFIG_NET_L2_ETHERNET)
 		if (net_if_l2(net_pkt_iface(pkt)) ==
 		    &NET_L2_GET_NAME(ETHERNET)) {
@@ -1119,28 +1122,28 @@ static size_t pkt_buffer_length(struct net_pkt *pkt,
 }
 
 static size_t pkt_estimate_headers_length(struct net_pkt *pkt,
-					  sa_family_t family,
+					  net_sa_family_t family,
 					  enum net_ip_protocol proto)
 {
 	size_t hdr_len = 0;
 
-	if (family == AF_UNSPEC) {
+	if (family == NET_AF_UNSPEC) {
 		return  0;
 	}
 
 	/* Family header */
-	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
 		hdr_len += NET_IPV6H_LEN;
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
 		hdr_len += NET_IPV4H_LEN;
 	}
 
 	/* + protocol header */
-	if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
+	if (IS_ENABLED(CONFIG_NET_TCP) && proto == NET_IPPROTO_TCP) {
 		hdr_len += NET_TCPH_LEN + NET_TCP_MAX_OPT_SIZE;
-	} else if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
+	} else if (IS_ENABLED(CONFIG_NET_UDP) && proto == NET_IPPROTO_UDP) {
 		hdr_len += NET_UDPH_LEN;
-	} else if (proto == IPPROTO_ICMP || proto == IPPROTO_ICMPV6) {
+	} else if (proto == NET_IPPROTO_ICMP || proto == NET_IPPROTO_ICMPV6) {
 		hdr_len += NET_ICMPH_LEN;
 	}
 
@@ -1269,7 +1272,7 @@ int net_pkt_alloc_buffer_with_reserve(struct net_pkt *pkt,
 	size_t hdr_len = 0;
 	struct net_buf *buf;
 
-	if (!size && proto == 0 && net_pkt_family(pkt) == AF_UNSPEC) {
+	if (!size && proto == 0 && net_pkt_family(pkt) == NET_AF_UNSPEC) {
 		return 0;
 	}
 
@@ -1363,7 +1366,7 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 	struct net_if *iface;
 	int ret;
 
-	if (!size && proto == 0 && net_pkt_family(pkt) == AF_UNSPEC) {
+	if (!size && proto == 0 && net_pkt_family(pkt) == NET_AF_UNSPEC) {
 		return 0;
 	}
 
@@ -1646,7 +1649,7 @@ static struct net_pkt *
 pkt_alloc_with_buffer(struct k_mem_slab *slab,
 		      struct net_if *iface,
 		      size_t size,
-		      sa_family_t family,
+		      net_sa_family_t family,
 		      enum net_ip_protocol proto,
 		      k_timeout_t timeout,
 		      const char *caller,
@@ -1656,7 +1659,7 @@ static struct net_pkt *
 pkt_alloc_with_buffer(struct k_mem_slab *slab,
 		      struct net_if *iface,
 		      size_t size,
-		      sa_family_t family,
+		      net_sa_family_t family,
 		      enum net_ip_protocol proto,
 		      k_timeout_t timeout)
 #endif
@@ -1665,7 +1668,12 @@ pkt_alloc_with_buffer(struct k_mem_slab *slab,
 	struct net_pkt *pkt;
 	int ret;
 
+#ifdef CONFIG_NET_RAW_MODE
+	/* net_if_get_by_iface is not available in raw mode */
+	NET_DBG("On iface N/A (%p) size %zu", iface, size);
+#else
 	NET_DBG("On iface %d (%p) size %zu", net_if_get_by_iface(iface), iface, size);
+#endif /* CONFIG_NET_RAW_MODE */
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 	pkt = pkt_alloc_on_iface(slab, iface, timeout, caller, line);
@@ -1698,7 +1706,7 @@ pkt_alloc_with_buffer(struct k_mem_slab *slab,
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 struct net_pkt *net_pkt_alloc_with_buffer_debug(struct net_if *iface,
 						size_t size,
-						sa_family_t family,
+						net_sa_family_t family,
 						enum net_ip_protocol proto,
 						k_timeout_t timeout,
 						const char *caller,
@@ -1706,7 +1714,7 @@ struct net_pkt *net_pkt_alloc_with_buffer_debug(struct net_if *iface,
 #else
 struct net_pkt *net_pkt_alloc_with_buffer(struct net_if *iface,
 					  size_t size,
-					  sa_family_t family,
+					  net_sa_family_t family,
 					  enum net_ip_protocol proto,
 					  k_timeout_t timeout)
 #endif
@@ -1723,7 +1731,7 @@ struct net_pkt *net_pkt_alloc_with_buffer(struct net_if *iface,
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 struct net_pkt *net_pkt_rx_alloc_with_buffer_debug(struct net_if *iface,
 						   size_t size,
-						   sa_family_t family,
+						   net_sa_family_t family,
 						   enum net_ip_protocol proto,
 						   k_timeout_t timeout,
 						   const char *caller,
@@ -1731,7 +1739,7 @@ struct net_pkt *net_pkt_rx_alloc_with_buffer_debug(struct net_if *iface,
 #else
 struct net_pkt *net_pkt_rx_alloc_with_buffer(struct net_if *iface,
 					     size_t size,
-					     sa_family_t family,
+					     net_sa_family_t family,
 					     enum net_ip_protocol proto,
 					     k_timeout_t timeout)
 #endif
@@ -1831,7 +1839,7 @@ static int net_pkt_cursor_operate(struct net_pkt *pkt,
 	/* We use such variable to avoid lengthy lines */
 	struct net_pkt_cursor *c_op = &pkt->cursor;
 
-	while (c_op->buf && length) {
+	while ((c_op->buf != NULL) && (length > 0U)) {
 		size_t d_len, len;
 
 		pkt_cursor_advance(pkt, net_pkt_is_being_overwritten(pkt) ?
@@ -1841,28 +1849,27 @@ static int net_pkt_cursor_operate(struct net_pkt *pkt,
 		}
 
 		if (write && !net_pkt_is_being_overwritten(pkt)) {
-			d_len = net_buf_max_len(c_op->buf) -
-				(c_op->pos - c_op->buf->data);
+			d_len = net_buf_max_len(c_op->buf);
 		} else {
-			d_len = c_op->buf->len - (c_op->pos - c_op->buf->data);
+			d_len = c_op->buf->len;
 		}
 
-		if (!d_len) {
+		d_len -= c_op->pos - c_op->buf->data;
+
+		if (d_len == 0U) {
 			break;
 		}
 
-		if (length < d_len) {
-			len = length;
-		} else {
-			len = d_len;
-		}
+		len = MIN(length, d_len);
 
-		if (copy && data) {
-			memcpy(write ? c_op->pos : data,
-			       write ? data : c_op->pos,
-			       len);
-		} else if (data) {
-			memset(c_op->pos, *(int *)data, len);
+		if (data != NULL) {
+			if (copy) {
+				memcpy(write ? c_op->pos : data,
+				       write ? data : c_op->pos,
+				       len);
+			} else {
+				memset(c_op->pos, *(int *)data, len);
+			}
 		}
 
 		if (write && !net_pkt_is_being_overwritten(pkt)) {
@@ -1871,14 +1878,14 @@ static int net_pkt_cursor_operate(struct net_pkt *pkt,
 
 		pkt_cursor_update(pkt, len, write);
 
-		if (copy && data) {
+		if (copy && (data != NULL)) {
 			data = (uint8_t *) data + len;
 		}
 
 		length -= len;
 	}
 
-	if (length) {
+	if (length > 0U) {
 		NET_DBG("Still some length to go %zu", length);
 		return -ENOBUFS;
 	}
@@ -1909,36 +1916,72 @@ int net_pkt_read(struct net_pkt *pkt, void *data, size_t length)
 
 int net_pkt_read_be16(struct net_pkt *pkt, uint16_t *data)
 {
-	uint8_t d16[2];
+	uint8_t d16[sizeof(uint16_t)];
 	int ret;
 
 	ret = net_pkt_read(pkt, d16, sizeof(uint16_t));
 
-	*data = d16[0] << 8 | d16[1];
+	*data = sys_get_be16(d16);
 
 	return ret;
 }
 
 int net_pkt_read_le16(struct net_pkt *pkt, uint16_t *data)
 {
-	uint8_t d16[2];
+	uint8_t d16[sizeof(uint16_t)];
 	int ret;
 
 	ret = net_pkt_read(pkt, d16, sizeof(uint16_t));
 
-	*data = d16[1] << 8 | d16[0];
+	*data = sys_get_le16(d16);
 
 	return ret;
 }
 
 int net_pkt_read_be32(struct net_pkt *pkt, uint32_t *data)
 {
-	uint8_t d32[4];
+	uint8_t d32[sizeof(uint32_t)];
 	int ret;
 
 	ret = net_pkt_read(pkt, d32, sizeof(uint32_t));
 
-	*data = d32[0] << 24 | d32[1] << 16 | d32[2] << 8 | d32[3];
+	*data = sys_get_be32(d32);
+
+	return ret;
+}
+
+int net_pkt_read_le32(struct net_pkt *pkt, uint32_t *data)
+{
+	uint8_t d32[sizeof(uint32_t)];
+	int ret;
+
+	ret = net_pkt_read(pkt, d32, sizeof(uint32_t));
+
+	*data = sys_get_le32(d32);
+
+	return ret;
+}
+
+int net_pkt_read_be64(struct net_pkt *pkt, uint64_t *data)
+{
+	uint8_t d64[sizeof(uint64_t)];
+	int ret;
+
+	ret = net_pkt_read(pkt, d64, sizeof(uint64_t));
+
+	*data = sys_get_be64(d64);
+
+	return ret;
+}
+
+int net_pkt_read_le64(struct net_pkt *pkt, uint64_t *data)
+{
+	uint8_t d64[sizeof(uint64_t)];
+	int ret;
+
+	ret = net_pkt_read(pkt, d64, sizeof(uint64_t));
+
+	*data = sys_get_le64(d64);
 
 	return ret;
 }
@@ -2007,50 +2050,7 @@ int net_pkt_copy(struct net_pkt *pkt_dst,
 	return 0;
 }
 
-static int32_t net_pkt_find_offset(struct net_pkt *pkt, uint8_t *ptr)
-{
-	struct net_buf *buf;
-	uint32_t ret = -EINVAL;
-	uint16_t offset;
-
-	if (!ptr || !pkt || !pkt->buffer) {
-		return ret;
-	}
-
-	offset = 0U;
-	buf = pkt->buffer;
-
-	while (buf) {
-		if (buf->data <= ptr && ptr < (buf->data + buf->len)) {
-			ret = offset + (ptr - buf->data);
-			break;
-		}
-		offset += buf->len;
-		buf = buf->frags;
-	}
-
-	return ret;
-}
-
-static void clone_pkt_lladdr(struct net_pkt *pkt, struct net_pkt *clone_pkt,
-			     struct net_linkaddr *lladdr)
-{
-	int32_t ll_addr_offset;
-
-	if (!lladdr->addr) {
-		return;
-	}
-
-	ll_addr_offset = net_pkt_find_offset(pkt, lladdr->addr);
-
-	if (ll_addr_offset >= 0) {
-		net_pkt_cursor_init(clone_pkt);
-		net_pkt_skip(clone_pkt, ll_addr_offset);
-		lladdr->addr = net_pkt_cursor_get_pos(clone_pkt);
-	}
-}
-
-#if defined(NET_PKT_HAS_CONTROL_BLOCK)
+#if defined(CONFIG_NET_PKT_CONTROL_BLOCK)
 static inline void clone_pkt_cb(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 {
 	memcpy(net_pkt_cb(clone_pkt), net_pkt_cb(pkt), sizeof(clone_pkt->cb));
@@ -2084,6 +2084,7 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 	net_pkt_set_rx_timestamping(clone_pkt, net_pkt_is_rx_timestamping(pkt));
 	net_pkt_set_forwarding(clone_pkt, net_pkt_forwarding(pkt));
 	net_pkt_set_chksum_done(clone_pkt, net_pkt_is_chksum_done(pkt));
+	net_pkt_set_loopback(pkt, net_pkt_is_loopback(pkt));
 	net_pkt_set_ip_reassembled(pkt, net_pkt_is_ip_reassembled(pkt));
 	net_pkt_set_cooked_mode(clone_pkt, net_pkt_is_cooked_mode(pkt));
 	net_pkt_set_ipv4_pmtu(clone_pkt, net_pkt_ipv4_pmtu(pkt));
@@ -2093,7 +2094,7 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 
 #if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_L2_IPIP)
 	net_pkt_set_remote_address(clone_pkt, net_pkt_remote_address(pkt),
-				   sizeof(struct sockaddr_storage));
+				   sizeof(struct net_sockaddr_storage));
 #endif
 
 	if (pkt->buffer && clone_pkt->buffer) {
@@ -2101,25 +2102,14 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 		       sizeof(struct net_linkaddr));
 		memcpy(net_pkt_lladdr_dst(clone_pkt), net_pkt_lladdr_dst(pkt),
 		       sizeof(struct net_linkaddr));
-		/* The link header pointers are usable as-is if we
-		 * shallow-copied the buffer even if they point
-		 * into the fragment memory of the buffer,
-		 * otherwise we have to set the ll address pointer
-		 * relative to the new buffer to avoid dangling
-		 * pointers into the source packet.
-		 */
-		if (pkt->buffer != clone_pkt->buffer) {
-			clone_pkt_lladdr(pkt, clone_pkt, net_pkt_lladdr_src(clone_pkt));
-			clone_pkt_lladdr(pkt, clone_pkt, net_pkt_lladdr_dst(clone_pkt));
-		}
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET) {
 		net_pkt_set_ipv4_ttl(clone_pkt, net_pkt_ipv4_ttl(pkt));
 		net_pkt_set_ipv4_opts_len(clone_pkt,
 					  net_pkt_ipv4_opts_len(pkt));
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-		   net_pkt_family(pkt) == AF_INET6) {
+		   net_pkt_family(pkt) == NET_AF_INET6) {
 		net_pkt_set_ipv6_hop_limit(clone_pkt,
 					   net_pkt_ipv6_hop_limit(pkt));
 		net_pkt_set_ipv6_ext_len(clone_pkt, net_pkt_ipv6_ext_len(pkt));
@@ -2146,12 +2136,12 @@ static struct net_pkt *net_pkt_clone_internal(struct net_pkt *pkt,
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 	clone_pkt = pkt_alloc_with_buffer(slab, net_pkt_iface(pkt),
 					  net_pkt_get_len(pkt),
-					  AF_UNSPEC, 0, timeout,
+					  NET_AF_UNSPEC, 0, timeout,
 					  __func__, __LINE__);
 #else
 	clone_pkt = pkt_alloc_with_buffer(slab, net_pkt_iface(pkt),
 					  net_pkt_get_len(pkt),
-					  AF_UNSPEC, 0, timeout);
+					  NET_AF_UNSPEC, 0, timeout);
 #endif
 	if (!clone_pkt) {
 		return NULL;
@@ -2400,6 +2390,19 @@ int net_pkt_set_data(struct net_pkt *pkt,
 	}
 
 	return net_pkt_write(pkt, access->data, access->size);
+}
+
+void net_pkt_tx_init(struct net_pkt *pkt)
+{
+	memset(pkt, 0, sizeof(struct net_pkt));
+
+	pkt->atomic_ref = ATOMIC_INIT(1);
+	pkt->slab = &tx_pkts;
+
+	net_pkt_set_ipv6_next_hdr(pkt, 255);
+	net_pkt_set_priority(pkt, TX_DEFAULT_PRIORITY);
+	net_pkt_set_vlan_tag(pkt, NET_VLAN_TAG_UNSPEC);
+	net_pkt_cursor_init(pkt);
 }
 
 void net_pkt_init(void)

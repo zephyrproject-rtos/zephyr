@@ -1,0 +1,4 @@
+tests:
+  utilities.hex:
+    tags: hex
+    type: unit

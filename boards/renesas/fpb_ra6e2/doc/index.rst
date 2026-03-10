@@ -1,7 +1,4 @@
-.. _fpb_ra6e2:
-
-RA6E2 Fast Prototyping Board
-############################
+.. zephyr:board:: fpb_ra6e2
 
 Overview
 ********
@@ -23,7 +20,7 @@ The key features of the FPB-RA6E2 board are categorized in three groups as follo
 - MCU current measurement point for precision current consumption measurement
 - Multiple clock sources - RA6E2 MCU oscillator and sub-clock oscillator crystals,
   providing precision 24.000 MHz and 32,768 Hz reference clock.
-  Additional low precision clocks are avaialbe internal to the RA6E2 MCU
+  Additional low precision clocks are available internal to the RA6E2 MCU
 
 **System Control and Ecosystem Access**
 
@@ -50,15 +47,9 @@ The key features of the FPB-RA6E2 board are categorized in three groups as follo
 
 - MCU boot configuration jumper
 
-.. figure:: fpb_ra6e2.webp
-	:align: center
-	:alt: RA6E2 Fast Prototyping Board
-
-	FPB-RA6E2 Board Functional Area Definitions (Credit: Renesas Electronics Corporation)
-
 Hardware
 ********
-Detailed hardware feature for the RA6E2 MCU group can be found at `RA6E2 Group User's Manual Hardware`_
+Detailed hardware features for the RA6E2 MCU group can be found at `RA6E2 Group User's Manual Hardware`_
 
 .. figure:: ra6e2_block_diagram.webp
 	:width: 442px
@@ -67,39 +58,17 @@ Detailed hardware feature for the RA6E2 MCU group can be found at `RA6E2 Group U
 
 	RA6E2 Block diagram (Credit: Renesas Electronics Corporation)
 
-Detailed hardware feature for the FPB-RA6E2 MCU can be found at `FPB-RA6E2 - User's Manual`_
+Detailed hardware features for the FPB-RA6E2 MCU can be found at `FPB-RA6E2 - User's Manual`_
 
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr OS for FPB-RA6E2 board:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| ENTROPY   | on-chip    | entropy              |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``fpb_ra6e2`` board target configuration can be
 built, flashed, and debugged in the usual way. See
@@ -110,15 +79,15 @@ Flashing
 ========
 
 Program can be flashed to fpb-RA6E2 via the on-board SEGGER J-Link debugger.
-SEGGER J-link's drivers are avaialbe at https://www.segger.com/downloads/jlink/
+SEGGER J-link's drivers are available at https://www.segger.com/downloads/jlink/
 
 To flash the program to board
 
-  1. Connect to J-Link OB via USB port to host PC
+1. Connect to J-Link OB via USB port to host PC
 
-  2. Make sure J-Link OB jumper is in default configuration as describe in `FPB-RA6E2 - User's Manual`_
+2. Make sure J-Link OB jumper is in default configuration as describe in `FPB-RA6E2 - User's Manual`_
 
-  3. Execute west command
+3. Execute west command
 
 	.. code-block:: console
 

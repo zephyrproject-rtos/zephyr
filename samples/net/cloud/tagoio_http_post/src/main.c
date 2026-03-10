@@ -18,9 +18,9 @@ LOG_MODULE_REGISTER(tagoio_http_post, CONFIG_TAGOIO_HTTP_POST_LOG_LEVEL);
 
 static struct tagoio_context ctx;
 
-static void response_cb(struct http_response *rsp,
-			enum http_final_call final_data,
-			void *user_data)
+static int response_cb(struct http_response *rsp,
+		       enum http_final_call final_data,
+		       void *user_data)
 {
 	if (final_data == HTTP_DATA_MORE) {
 		LOG_DBG("Partial data received (%zd bytes)", rsp->data_len);
@@ -29,6 +29,8 @@ static void response_cb(struct http_response *rsp,
 	}
 
 	LOG_DBG("Response status %s", rsp->http_status);
+
+	return 0;
 }
 
 static int collect_data(void)

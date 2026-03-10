@@ -10,15 +10,21 @@ The following are some of the boards that can be used with TF-M:
      - NSPE board name
    * - :ref:`mps2_an521_board`
      - ``mps2/an521/cpu0/ns`` (qemu supported)
-   * - :ref:`mps3_board`
-     - ``mps3/corstone300/an547/ns`` (qemu supported)
+   * - :zephyr:board:`mps3`
+     -
+       - ``mps3/corstone300/fvp/ns`` (armfvp supported)
+       - ``mps3/corstone310/fvp/ns`` (armfvp supported)
+   * - :zephyr:board:`mps4`
+     -
+       - ``mps4/corstone315/fvp/ns`` (armfvp supported)
+       - ``mps4/corstone320/fvp/ns`` (armfvp supported)
    * - :zephyr:board:`bl5340_dvk`
      - ``bl5340_dvk/nrf5340/cpuapp/ns``
    * - :zephyr:board:`lpcxpresso55s69`
      - ``lpcxpresso55s69_ns``
-   * - :ref:`nrf9160dk_nrf9160`
+   * - :zephyr:board:`nrf9160dk_nrf9160 <nrf9160dk>`
      - ``nrf9160dk/nrf9160/ns``
-   * - :ref:`nrf5340dk_nrf5340`
+   * - :zephyr:board:`nrf5340dk`
      - ``nrf5340dk/nrf5340/cpuapp/ns``
    * - :zephyr:board:`b_u585i_iot02a`
      - ``b_u585i_iot02a/stm32u585xx/ns``
@@ -26,9 +32,9 @@ The following are some of the boards that can be used with TF-M:
      - ``nucleo_l552ze_q/stm32l552xx/ns``
    * - :zephyr:board:`stm32l562e_dk`
      - ``stm32l562e_dk/stm32l562xx/ns``
-   * - :ref:`v2m_musca_b1_board`
+   * - :zephyr:board:`v2m_musca_b1`
      - ``v2m_musca_b1/musca_b1/ns``
-   * - :ref:`v2m_musca_s1_board`
+   * - :zephyr:board:`v2m_musca_s1`
      - ``v2m_musca_s1/musca_s1/ns``
 
 To make sure TF-M is supported for a board
@@ -38,21 +44,14 @@ is set to ``y`` in that board's default configuration.
 Software Requirements
 *********************
 
-The following Python modules are required when building TF-M binaries:
-
-* cryptography
-* pyasn1
-* pyyaml
-* cbor>=1.0.0
-* imgtool>=1.9.0
-* jinja2
-* click
+The Python modules required when building TF-M binaries are listed in the
+TF-M repository under ``tools/requirements.txt``.
 
 You can install them via:
 
    .. code-block:: bash
 
-      $ pip3 install --user cryptography pyasn1 pyyaml cbor>=1.0.0 imgtool>=1.9.0 jinja2 click
+      $ pip3 install -r "$(west list trusted-firmware-m -f '{abspath}')/tools/requirements.txt"
 
 They are used by TF-M's signing utility to prepare firmware images for
 validation by the bootloader.

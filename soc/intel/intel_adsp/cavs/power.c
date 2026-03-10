@@ -11,7 +11,6 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
-#include <zephyr/device.h>
 #include <zephyr/cache.h>
 #include <cpu_init.h>
 
@@ -47,8 +46,8 @@ LOG_MODULE_REGISTER(soc);
 
 #define ALL_USED_INT_LEVELS_MASK (L2_INTERRUPT_MASK | L3_INTERRUPT_MASK)
 
-/*
- * @biref FW entry point called by ROM during normal boot flow
+/**
+ * @brief FW entry point called by ROM during normal boot flow
  */
 extern void rom_entry(void);
 void mp_resume_entry(void);

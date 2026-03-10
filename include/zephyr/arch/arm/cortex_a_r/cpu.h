@@ -89,7 +89,7 @@
 #define ICC_SRE_ELx_SRE_BIT	BIT(0)
 #define ICC_SRE_ELx_DFB_BIT	BIT(1)
 #define ICC_SRE_ELx_DIB_BIT	BIT(2)
-#define ICC_SRE_EL3_EN_BIT	BIT(3)
+#define ICC_SRE_ELx_EN_BIT	BIT(3) /**< ICC SRE Enable */
 
 /* MPIDR mask to extract Aff0, Aff1, and Aff2 */
 #define MPIDR_AFFLVL_MASK (0xffffff)

@@ -100,16 +100,26 @@ static int dac_sam0_init(const struct device *dev)
 
 	/* Reset then configure the DAC */
 	regs->CTRLA.bit.SWRST = 1;
+#if defined(DAC_STATUS_SYNCBUSY)
 	while (regs->STATUS.bit.SYNCBUSY) {
 	}
+#else
+	while (regs->SYNCBUSY.bit.SWRST) {
+	}
+#endif
 
 	regs->CTRLB.bit.REFSEL = cfg->refsel;
 	regs->CTRLB.bit.EOEN = 1;
 
 	/* Enable */
 	regs->CTRLA.bit.ENABLE = 1;
+#if defined(DAC_STATUS_SYNCBUSY)
 	while (regs->STATUS.bit.SYNCBUSY) {
 	}
+#else
+	while (regs->SYNCBUSY.bit.ENABLE) {
+	}
+#endif
 
 	return 0;
 }

@@ -1,4 +1,4 @@
-.. _arty:
+.. zephyr:board:: arty_a7
 
 Digilent Arty
 #############
@@ -44,40 +44,7 @@ following websites:
 Supported Features
 ==================
 
-The ``arty_a7/designstart_fpga_cortex_m1`` board configuration supports the following
-hardware features of the Cortex-M1 reference design:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio, non-interrupt                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| QSPI      | on-chip    | QSPI flash                          |
-+-----------+------------+-------------------------------------+
-
-The default configuration for the Cortex-M1 can be found in the defconfig file:
-:file:`boards/digilent/arty_a7/arty_a7_designstart_fpga_cortex_m1_defconfig`.
-
-In addition to the above, the ``arty_a7/designstart_fpga_cortex_m3`` board configuration
-supports the following hardware features of the Cortex-M3 reference design:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | Memory Protection Unit              |
-+-----------+------------+-------------------------------------+
-
-The default configuration for the Cortex-M3 can be found in the defconfig file:
-:file:`boards/digilent/arty_a7/arty_a7_designstart_fpga_cortex_m3_defconfig`.
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 System Clock
 ============

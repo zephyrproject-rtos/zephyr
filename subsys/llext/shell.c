@@ -19,25 +19,25 @@ LOG_MODULE_REGISTER(llext_shell, CONFIG_LLEXT_LOG_LEVEL);
 #define LLEXT_LIST_HELP "List loaded extensions and their size in memory"
 
 #define LLEXT_LOAD_HEX_HELP                                                                        \
-	"Load an elf file encoded in hex directly from the shell input. Syntax:\n"                 \
-	"<ext_name> <ext_hex_string>"
+	SHELL_HELP("Load an elf file encoded in hex directly from the shell input.",               \
+		   "<ext_name> <ext_hex_string>")
 
 #define LLEXT_UNLOAD_HELP                                                                          \
-	"Unload an extension by name. Syntax:\n"                                                   \
-	"<ext_name>"
+	SHELL_HELP("Unload an extension by name.",                                                 \
+		   "<ext_name>")
 
 #define LLEXT_LIST_SYMBOLS_HELP                                                                    \
-	"List extension symbols. Syntax:\n"                                                        \
-	"<ext_name>"
+	SHELL_HELP("List extension symbols.",                                                      \
+		   "<ext_name>")
 
 #define LLEXT_CALL_FN_HELP                                                                         \
-	"Call extension function with prototype void fn(void). Syntax:\n"                          \
-	"<ext_name> <function_name>"
+	SHELL_HELP("Call extension function with prototype void fn(void).",                        \
+		   "<ext_name> <function_name>")
 
 #ifdef CONFIG_FILE_SYSTEM
 #define LLEXT_LOAD_FS_HELP                                                                         \
-	"Load an elf file directly from filesystem. Syntax:\n"                                     \
-	"<ext_name> <ext_llext_file_name>"
+	SHELL_HELP("Load an elf file directly from filesystem.",                                   \
+		   "<ext_name> <ext_llext_file_name>")
 
 #endif /* CONFIG_FILE_SYSTEM */
 
@@ -128,17 +128,19 @@ static uint8_t llext_buf[CONFIG_LLEXT_SHELL_MAX_SIZE] __aligned(Z_KERNEL_STACK_O
 
 static int cmd_llext_load_hex(const struct shell *sh, size_t argc, char *argv[])
 {
-	char name[16];
-	size_t hex_len = strnlen(argv[2], CONFIG_LLEXT_SHELL_MAX_SIZE*2+1);
-	size_t bin_len = hex_len/2;
+	char *name = argv[1];
+	size_t hex_len = strlen(argv[2]);
 
-	if (bin_len > CONFIG_LLEXT_SHELL_MAX_SIZE) {
+	if (strlen(name) > LLEXT_MAX_NAME_LEN) {
+		shell_print(sh, "Extension name too long, max %d chars\n", LLEXT_MAX_NAME_LEN);
+		return -EINVAL;
+	}
+
+	if (hex_len > CONFIG_LLEXT_SHELL_MAX_SIZE*2) {
 		shell_print(sh, "Extension %d bytes too large to load, max %d bytes\n", hex_len/2,
 			    CONFIG_LLEXT_SHELL_MAX_SIZE);
 		return -ENOMEM;
 	}
-
-	strncpy(name, argv[1], sizeof(name));
 
 	size_t llext_buf_len = hex2bin(argv[2], hex_len, llext_buf, CONFIG_LLEXT_SHELL_MAX_SIZE);
 	struct llext_buf_loader buf_loader = LLEXT_BUF_LOADER(llext_buf, llext_buf_len);

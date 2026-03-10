@@ -12,7 +12,7 @@
  *
  *      Copyright 2003-2020 Silicon Laboratories Inc. www.silabs.com
  *
- *                   SPDX-License-Identifier: APACHE-2.0
+ *                   SPDX-License-Identifier: Apache-2.0
  *
  * This software is subject to an open source license and is distributed by
  *  Silicon Laboratories Inc. pursuant to the terms of the Apache License,
@@ -227,7 +227,7 @@ static int mbc_validate_wr_response(struct modbus_context *ctx,
 	case MODBUS_FC15_COILS_WR:
 	case MODBUS_FC16_HOLDING_REGS_WR:
 		if (req_addr != resp_addr || req_value != resp_value) {
-			err = ENXIO;
+			err = -EIO;
 		} else {
 			err = 0;
 		}

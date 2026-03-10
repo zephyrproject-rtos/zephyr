@@ -29,12 +29,10 @@ include(FindPackageHandleStandardArgs)
 if(EXISTS "${GNULD_LINKER}")
   if(NOT DEFINED GNULD_LINKER_IS_BFD)
     # ... issue warning if GNULD_LINKER_IS_BFD is not already set.
-    message(
-      WARNING
+    message(WARNING
       "GNULD_LINKER specified directly in cache, but GNULD_LINKER_IS_BFD is not "
       "defined. Assuming GNULD_LINKER_IS_BFD as OFF, please set GNULD_LINKER_IS_BFD "
-      "to correct value in cache to silence this warning"
-    )
+      "to correct value in cache to silence this warning")
     set(GNULD_LINKER_IS_BFD OFF)
   endif()
 
@@ -43,9 +41,11 @@ if(EXISTS "${GNULD_LINKER}")
 endif()
 
 # See if the compiler has a preferred linker
-execute_process(COMMAND ${CMAKE_C_COMPILER} --print-prog-name=ld.bfd
-                OUTPUT_VARIABLE GNULD_LINKER
-                OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(
+  COMMAND ${CMAKE_C_COMPILER} --print-prog-name=ld.bfd
+  OUTPUT_VARIABLE GNULD_LINKER
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
 if(EXISTS "${GNULD_LINKER}")
   cmake_path(NORMAL_PATH GNULD_LINKER)
@@ -73,12 +73,11 @@ endif()
 if(GNULD_LINKER)
   # Parse the 'ld.bfd --version' output to find the installed version.
   execute_process(
-    COMMAND
-    ${GNULD_LINKER} --version
+    COMMAND ${GNULD_LINKER} --version
     OUTPUT_VARIABLE gnuld_version_output
     ERROR_VARIABLE  gnuld_error_output
     RESULT_VARIABLE gnuld_status
-    )
+  )
 
   if(${gnuld_status} EQUAL 0)
     # Extract GNU ld version. Different distros have their
@@ -88,14 +87,15 @@ if(GNULD_LINKER)
     # - "GNU ld (Zephyr SDK 0.15.2) 2.38"
     # - "GNU ld (Gentoo 2.39 p5) 2.39.0"
     # - "GNU ld version 2.17.50.0.9 20070103"
-    string(REGEX MATCH
-           "GNU ld (\\(.+\\)|version) ([0-9]+[.][0-9]+[.]?[0-9]*).*"
-           out_var ${gnuld_version_output})
+    string(REGEX
+      MATCH "GNU ld (\\(.+\\)|version) ([0-9]+[.][0-9]+[.]?[0-9]*).*"
+      out_var ${gnuld_version_output}
+    )
     set(GNULD_VERSION_STRING ${CMAKE_MATCH_2} CACHE STRING "GNU ld version" FORCE)
   endif()
 endif()
 
 find_package_handle_standard_args(GnuLd
-                                  REQUIRED_VARS GNULD_LINKER
-                                  VERSION_VAR GNULD_VERSION_STRING
+  REQUIRED_VARS GNULD_LINKER
+  VERSION_VAR GNULD_VERSION_STRING
 )

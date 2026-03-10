@@ -4,8 +4,19 @@ arch: arm
 ram: 1024
 flash: 1024
 supported:
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
+  - adc
+  - can
+  - dma
+  - i2c
   - gpio
+  - netif:eth
+  - spi
   - uart
+  - usb_device
+  - usbd
 vendor: st
 variants:
   nucleo_n657x0_q/stm32n657xx:

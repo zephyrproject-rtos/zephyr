@@ -13,8 +13,10 @@ The scheduler determines which thread is allowed to execute
 at any point in time; this thread is known as the **current thread**.
 
 There are various points in time when the scheduler is given an
-opportunity to change the identity of the current thread.  These points
-are called **reschedule points**. Some potential reschedule points are:
+opportunity to change the identity of the current thread, meaning
+when the scheduler switches the CPU's execution from one thread
+to another. These points are called **reschedule points**.
+Some potential reschedule points are:
 
 - transition of a thread from running state to a suspended or waiting
   state, for example by :c:func:`k_sem_take` or :c:func:`k_sleep`.
@@ -59,7 +61,7 @@ The kernel can be built with one of several choices for the ready queue
 implementation, offering different choices between code size, constant factor
 runtime overhead and performance scaling when many threads are added.
 
-* Simple linked-list ready queue (:kconfig:option:`CONFIG_SCHED_DUMB`)
+* Simple linked-list ready queue (:kconfig:option:`CONFIG_SCHED_SIMPLE`)
 
   The scheduler ready queue will be implemented as a simple unordered list, with
   very fast constant time performance for single threads and very low code size.
@@ -95,7 +97,7 @@ runtime overhead and performance scaling when many threads are added.
   list of threads.
 
   Typical applications with small numbers of runnable threads probably want the
-  DUMB scheduler.
+  simple scheduler.
 
 
 The wait_q abstraction used in IPC primitives to pend threads for later wakeup
@@ -106,13 +108,13 @@ the same options.
 
   When selected, the wait_q will be implemented with a balanced tree.  Choose
   this if you expect to have many threads waiting on individual primitives.
-  There is a ~2kb code size increase over :kconfig:option:`CONFIG_WAITQ_DUMB` (which may
+  There is a ~2kb code size increase over :kconfig:option:`CONFIG_WAITQ_SIMPLE` (which may
   be shared with :kconfig:option:`CONFIG_SCHED_SCALABLE`) if the red/black tree is not
   used elsewhere in the application, and pend/unpend operations on "small"
   queues will be somewhat slower (though this is not generally a performance
   path).
 
-* Simple linked-list wait_q (:kconfig:option:`CONFIG_WAITQ_DUMB`)
+* Simple linked-list wait_q (:kconfig:option:`CONFIG_WAITQ_SIMPLE`)
 
   When selected, the wait_q will be implemented with a doubly-linked list.
   Choose this if you expect to have only a few threads blocked on any single
@@ -169,15 +171,21 @@ can be used to allow other threads of the same priority to execute.
 .. image:: timeslicing.svg
    :align: center
 
-The scheduler divides time into a series of **time slices**, where slices
-are measured in system clock ticks. The time slice size is configurable,
-but this size can be changed while the application is running.
+.. note::
+   For SMP, the behavior would be similar to the above UP image, except that
+   Thread 1 would not immediately follow Thread 4. Instead it would be
+   Thread 2, Thread 3, Thread 1, ....
+
+The scheduler divides time on each CPU into a series of **time slices**, where
+slices are measured in system clock ticks. The time slice size is configurable,
+but this size can be changed while the application is running. Scheduling a
+new thread causes the time slice timer to be reset.
 
 At the end of every time slice, the scheduler checks to see if the current
 thread is preemptible and, if so, implicitly invokes :c:func:`k_yield`
 on behalf of the thread. This gives other ready threads of the same priority
-the opportunity to execute before the current thread is scheduled again.
-If no threads of equal priority are ready, the current thread remains
+the opportunity to execute before the current thread is scheduled again. If no
+other threads of equal priority are ready, then the current thread remains
 the current thread.
 
 Threads with a priority higher than specified limit are exempt from preemptive
@@ -254,6 +262,14 @@ for a kernel object, such as a mutex.
 
 Use preemptive threads to give priority to time-sensitive processing
 over less time-sensitive processing.
+
+
+Configuration Options
+**********************
+
+* :kconfig:option:`CONFIG_TIMESLICING`
+* :kconfig:option:`CONFIG_TIMESLICE_SIZE`
+* :kconfig:option:`CONFIG_TIMESLICE_PRIORITY`
 
 .. _cpu_idle:
 

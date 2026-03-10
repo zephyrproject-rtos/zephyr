@@ -3,12 +3,13 @@
 Overview
 ********
 
-The Raspberry Pi Pico 2 is the second-generation product in the Raspberry Pi
+The Raspberry Pi Pico 2 and Pico 2W are second-generation products in the Raspberry Pi
 Pico family. From the `Raspberry Pi website <https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html>`_ is referred to as Pico 2.
 
-There are many limitations of the board currently. Including but not limited to:
-- The Zephyr build only supports configuring the RP2350A with the Cortex-M33 cores.
-- As with the Pico 1, there's no support for running any code on the second core.
+The Pico 2 supports running code on either a single Cortex-M33 or a Hazard3
+(RISC-V) core.
+
+As with the Pico 1, there's no support for running any code on the second core.
 
 Hardware
 ********
@@ -23,6 +24,7 @@ Hardware
 - 2 Timer with 4 alarms, 1 AON Timer
 - Temperature sensor
 - 3 Programmable IO (PIO) blocks, 12 state machines total for custom peripheral support
+- Infineon CYW43439 2.4 GHz Wi-Fi chip (Pico 2W only)
 
   - Flexible, user-programmable high-speed IO
   - Can emulate interfaces such as SD Card and VGA
@@ -30,51 +32,7 @@ Hardware
 Supported Features
 ==================
 
-The ``rpi_pico2/rp2350a/m33`` board target supports the following
-hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v8m-nvic`
-   * - ADC
-     - :kconfig:option:`CONFIG_ADC`
-     - :dtcompatible:`raspberrypi,pico-adc`
-   * - Clock controller
-     - :kconfig:option:`CONFIG_CLOCK_CONTROL`
-     - :dtcompatible:`raspberrypi,pico-clock-controller`
-   * - Counter
-     - :kconfig:option:`CONFIG_COUNTER`
-     - :dtcompatible:`raspberrypi,pico-timer`
-   * - DMA
-     - :kconfig:option:`CONFIG_DMA`
-     - :dtcompatible:`raspberrypi,pico-dma`
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`raspberrypi,pico-gpio`
-   * - HWINFO
-     - :kconfig:option:`CONFIG_HWINFO`
-     - N/A
-   * - I2C
-     - :kconfig:option:`CONFIG_I2C`
-     - :dtcompatible:`snps,designware-i2c`
-   * - PWM
-     - :kconfig:option:`CONFIG_PWM`
-     - :dtcompatible:`raspberrypi,pico-pwm`
-   * - SPI
-     - :kconfig:option:`CONFIG_SPI`
-     - :dtcompatible:`raspberrypi,pico-spi`
-   * - UART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`raspberrypi,pico-uart`
-   * - UART (PIO)
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`raspberrypi,pico-uart-pio`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -84,8 +42,51 @@ The default pin mapping is unchanged from the Pico 1 (see :ref:`rpi_pico_pin_map
 Programming and Debugging
 *************************
 
-As with the Pico 1, the SWD interface can be used to program and debug the
-device, e.g. using OpenOCD with the `Raspberry Pi Debug Probe <https://www.raspberrypi.com/documentation/microcontrollers/debug-probe.html>`_ .
+.. zephyr:board-supported-runners::
+
+The overall explanation regarding flashing and debugging is the same as for :zephyr:board:`rpi_pico`.
+See :ref:`rpi_pico_programming_and_debugging` in :zephyr:board:`rpi_pico` documentation. N.b. OpenOCD support requires using Raspberry Pi's forked version of OpenOCD.
+
+Below is an example of building and flashing the :zephyr:code-sample:`blinky` application.
+
+.. zephyr-app-commands::
+    :zephyr-app: samples/basic/blinky
+    :board: rpi_pico2/rp2350a/m33
+    :goals: build flash
+    :flash-args: --openocd /usr/local/bin/openocd
+
+The blinky sample is not yet supported on Pico 2W, so try the :zephyr:code-sample:`wifi-shell` application to connect to the network.
+
+Wi-Fi Firmware Setup
+=====================
+
+Before building applications for the Pico 2W variant, you must fetch the required Wi-Fi firmware blobs.
+The Infineon CYW43439 chip requires proprietary firmware and CLM (Country Localization Module) files.
+
+Run the following command to download these blobs:
+
+.. code-block:: console
+
+   west blobs fetch hal_infineon
+
+This command downloads the necessary firmware files from Infineon's repositories, including:
+
+- ``43439A0.bin`` - Wi-Fi firmware for CYW43439
+- ``43439A0.clm_blob`` - Country localization data
+
+You only need to run this command once per workspace. Without these blobs, the build will fail with
+CMake errors about missing firmware files.
+
+Building Wi-Fi Applications
+============================
+
+After fetching the blobs, you can build Wi-Fi applications:
+
+.. zephyr-app-commands::
+    :zephyr-app: samples/net/wifi/shell
+    :board: rpi_pico2/rp2350a/m33/w
+    :goals: build flash
+    :flash-args: --openocd /usr/local/bin/openocd
 
 References
 **********

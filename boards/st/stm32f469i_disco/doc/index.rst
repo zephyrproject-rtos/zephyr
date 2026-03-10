@@ -12,9 +12,9 @@ some highlights of the STM32F469I-DISCO board:
 - On-board ST-LINK/V2-1 debugger/programmer, supporting USB reenumeration capability
 - Flexible board power supply:
 
-       - ST-LINK/V2-1 USB connector
-       - User USB FS connector
-       - VIN from Arduino* compatible connectors
+  - ST-LINK/V2-1 USB connector
+  - User USB FS connector
+  - VIN from Arduino* compatible connectors
 
 - Four user LEDs
 - Two push-buttons: USER and RESET
@@ -36,7 +36,7 @@ Hardware
 STM32F469I-DISCO Discovery kit provides the following hardware components:
 
 - STM32F469NIH6 in BGA216 package
-- ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
+- ARM® 32-bit Cortex®-M4 CPU with FPU
 - 180 MHz max CPU frequency
 - VDD from 1.8 V to 3.6 V
 - 2 MB Flash
@@ -44,7 +44,7 @@ STM32F469I-DISCO Discovery kit provides the following hardware components:
 - GPIO with external interrupt capability
 - LCD parallel interface, 8080/6800 modes
 - LCD TFT controller supporting up to XGA resolution
-- MIPI |reg|  DSI host controller supporting up to 720p 30Hz resolution
+- MIPI®  DSI host controller supporting up to 720p 30Hz resolution
 - 3x12-bit ADC with 24 channels
 - 2x12-bit D/A converters
 - RTC
@@ -66,38 +66,14 @@ STM32F469I-DISCO Discovery kit provides the following hardware components:
 - DMA Controller
 
 More information about STM32F469NI can be found here:
-       - `STM32F469NI on www.st.com`_
-       - `STM32F469 reference manual`_
+
+- `STM32F469NI on www.st.com`_
+- `STM32F469 reference manual`_
 
 Supported Features
 ==================
 
-The Zephyr stm32f469i_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| SDIO      | on-chip    | SD-card controller                  |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32f469i_disco/stm32f469i_disco_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -138,6 +114,8 @@ Default settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``stm32f469i_disco`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and

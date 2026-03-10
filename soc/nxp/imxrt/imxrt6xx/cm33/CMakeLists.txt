@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, NXP
+# Copyright (c) 2020,2024 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -19,6 +19,7 @@ zephyr_library_include_directories(
 
 zephyr_compile_definitions_ifdef(CONFIG_USB_DEVICE_DRIVER USB_STACK_USE_DEDICATED_RAM=1)
 zephyr_compile_definitions_ifdef(CONFIG_UDC_DRIVER USB_STACK_USE_DEDICATED_RAM=1)
+zephyr_compile_definitions_ifdef(CONFIG_UHC_DRIVER USB_STACK_USE_DEDICATED_RAM=1)
 
 if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
   zephyr_code_relocate(FILES flash_clock_setup.c LOCATION RAM)

@@ -13,7 +13,16 @@ config NUM_IRQS
 
 rsource "Kconfig.defconfig.mec1501*"
 
-if RTOS_TIMER
+config CORTEX_M_SYSTICK
+	depends on !MCHP_XEC_RTOS_TIMER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,/soc/timer@40007400,clock-frequency) if MCHP_XEC_RTOS_TIMER
+
+if MCHP_XEC_RTOS_TIMER
+config SYS_CLOCK_TICKS_PER_SEC
+	default $(dt_node_int_prop_int,/soc/timer@40007400,clock-frequency)
 
 config SOC_HAS_TIMING_FUNCTIONS
 	default y if !CORTEX_M_DWT
@@ -21,9 +30,6 @@ config SOC_HAS_TIMING_FUNCTIONS
 config ARCH_HAS_CUSTOM_BUSY_WAIT
 	default y
 
-endif # RTOS_TIMER
-
-config CORTEX_M_SYSTICK
-	depends on !RTOS_TIMER
+endif # MCHP_XEC_RTOS_TIMER
 
 endif # SOC_SERIES_MEC15XX

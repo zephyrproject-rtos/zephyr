@@ -1,0 +1,24 @@
+/*
+ * Copyright 2025-2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/mcx/nxp_mcxa5x.dtsi>
+#include "frdm_mcxa577.dtsi"
+
+/ {
+	model = "NXP FRDM_MCXA577 board";
+	compatible = "nxp,mcxa577", "nxp,mcx";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+	};
+};

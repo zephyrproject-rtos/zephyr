@@ -79,7 +79,7 @@ ZTEST(ieee802154_custom_l2, test_send)
 	zassert_not_null(net_if_l2(iface)->send, "No send() found");
 
 	tx_pkt = net_pkt_alloc_with_buffer(iface, sizeof(TEST_PAYLOAD),
-					   AF_UNSPEC, 0, K_NO_WAIT);
+					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	zassert_not_null(tx_pkt, "Failed to allocate packet");
 
 	ret = net_pkt_write(tx_pkt, TEST_PAYLOAD, sizeof(TEST_PAYLOAD));
@@ -103,7 +103,7 @@ ZTEST(ieee802154_custom_l2, test_recv)
 	zassert_not_null(net_if_l2(iface)->recv, "No recv () found");
 
 	rx_pkt = net_pkt_rx_alloc_with_buffer(iface, sizeof(TEST_PAYLOAD),
-					      AF_UNSPEC, 0, K_NO_WAIT);
+					      NET_AF_UNSPEC, 0, K_NO_WAIT);
 	zassert_not_null(rx_pkt, "Failed to allocate packet");
 
 	ret = net_pkt_write(rx_pkt, TEST_PAYLOAD, sizeof(TEST_PAYLOAD));

@@ -249,7 +249,17 @@ class MissingProgram(FileNotFoundError):
         super().__init__(errno.ENOENT, os.strerror(errno.ENOENT), program)
 
 
-_RUNNERCAPS_COMMANDS = {'flash', 'debug', 'debugserver', 'attach', 'simulate', 'robot', 'rtt'}
+_RUNNERCAPS_COMMANDS = {
+    "flash",
+    "debug",
+    "debugserver",
+    "attach",
+    "simulate",
+    "robot",
+    "rtt",
+    "reset",
+}
+
 
 @dataclass
 class RunnerCaps:
@@ -268,6 +278,9 @@ class RunnerCaps:
       connected to a single computer, in order to select which one will be used
       with the command provided.
 
+    - mult_dev_ids: whether the runner supports multiple device identifiers
+      for a single operation, allowing for bulk flashing of devices.
+
     - flash_addr: whether the runner supports flashing to an
       arbitrary address. Default is False. If true, the runner
       must honor the --dt-flash option.
@@ -285,6 +298,19 @@ class RunnerCaps:
     - reset: whether the runner supports a --reset option, which
       resets the device after a flash operation is complete.
 
+    - reset_types: whether the runner supports a --reset-type=x option,
+      which specifies a runner specific value for selecting a specific type
+      of reset to use when resetting the device.
+
+    - reset_types_supported: a list of values allowed to be passed with the
+      --reset-type option. If the list of supported reset types is
+      dynamic/device specific, this should be omitted, allowing any value to
+      be set and passed directly to the underlying tool. In addition to these,
+      each runner implementation must always be ready to accept `None` in a
+      runner-specific fashion. For user-friendliness, it is recommended to
+      place first in the list the value which has the behavior identical or
+      most similar to `None`.
+
     - extload: whether the runner supports a --extload option, which
       must be given one time and is passed on to the underlying tool
       that the runner wraps.
@@ -301,21 +327,37 @@ class RunnerCaps:
 
     - rtt: whether the runner supports SEGGER RTT. This adds a --rtt-address
       option.
+
+    - skip_load: whether the runner supports the --load/--no-load option, which
+      allows skipping the load of image on target before starting a debug session
+      (this option only affects the 'debug' command)
     '''
 
     commands: set[str] = field(default_factory=lambda: set(_RUNNERCAPS_COMMANDS))
     dev_id: bool = False
+    mult_dev_ids: bool = False
     flash_addr: bool = False
     erase: bool = False
     reset: bool = False
+    reset_types: bool = False
+    reset_types_supported: list[str] | None = None
     extload: bool = False
     tool_opt: bool = False
     file: bool = False
     hide_load_files: bool = False
     rtt: bool = False  # This capability exists separately from the rtt command
                        # to allow other commands to use the rtt address
+    dry_run: bool = False
+    skip_load: bool = False
+    batch_debug: bool = False # In batch mode, GDB exits with status 0 after loading;
+                              # for automated debugging, add --batch with 'monitor go',
+                              # 'disconnect', and 'quit' commands (named batch_debug in west),
+                              # unlike interactive debug mode (default),
+                              # which stops and waits for user input
 
     def __post_init__(self):
+        if self.mult_dev_ids and not self.dev_id:
+            raise RuntimeError('dev_id must be set along mult_dev_ids')
         if not self.commands.issubset(_RUNNERCAPS_COMMANDS):
             raise ValueError(f'{self.commands=} contains invalid command')
 
@@ -333,6 +375,7 @@ class FileType(Enum):
     HEX = 1
     BIN = 2
     ELF = 3
+    MOT = 4
 
 
 class RunnerConfig(NamedTuple):
@@ -349,6 +392,7 @@ class RunnerConfig(NamedTuple):
     hex_file: str | None         # zephyr.hex path, or None
     bin_file: str | None         # zephyr.bin path, or None
     uf2_file: str | None         # zephyr.uf2 path, or None
+    mot_file: str | None         # zephyr.mot path
     file: str | None             # binary file path (provided by the user), or None
     file_type: FileType | None = FileType.OTHER  # binary file type
     gdb: str | None = None       # path to a usable gdb
@@ -368,11 +412,6 @@ class _DTFlashAction(argparse.Action):
         else:
             namespace.dt_flash = False
 
-
-class _ToggleAction(argparse.Action):
-
-    def __call__(self, parser, args, ignored, option):
-        setattr(args, self.dest, not option.startswith('--no-'))
 
 class DeprecatedAction(argparse.Action):
 
@@ -484,6 +523,9 @@ class ZephyrBinaryRunner(abc.ABC):
         self.logger = logging.getLogger(f'runners.{self.name()}')
         '''logging.Logger for this instance.'''
 
+        self.dry_run = _DRY_RUN
+        '''log commands instead of executing them. Can be set by subclasses'''
+
     @staticmethod
     def get_runners() -> list[type['ZephyrBinaryRunner']]:
         '''Get a list of all currently defined runner classes.'''
@@ -543,14 +585,16 @@ class ZephyrBinaryRunner(abc.ABC):
         caps = cls.capabilities()
 
         if caps.dev_id:
+            action = 'append' if caps.mult_dev_ids else 'store'
             parser.add_argument('-i', '--dev-id',
+                                action=action,
                                 dest='dev_id',
                                 help=cls.dev_id_help())
         else:
             parser.add_argument('-i', '--dev-id', help=argparse.SUPPRESS)
 
         if caps.flash_addr:
-            parser.add_argument('--dt-flash', default='n', choices=_YN_CHOICES,
+            parser.add_argument('--dt-flash', default=False, choices=_YN_CHOICES,
                                 action=_DTFlashAction,
                                 help='''If 'yes', try to use flash address
                                 information from devicetree when flash
@@ -564,7 +608,8 @@ class ZephyrBinaryRunner(abc.ABC):
                                 help="path to binary file")
             parser.add_argument('-t', '--file-type',
                                 dest='file_type',
-                                help="type of binary file")
+                                help="type of binary file. If --file is not given, "
+                                     "selects the build artifact (hex, bin, elf)")
         else:
             parser.add_argument('-f', '--file', help=argparse.SUPPRESS)
             parser.add_argument('-t', '--file-type', help=argparse.SUPPRESS)
@@ -573,6 +618,7 @@ class ZephyrBinaryRunner(abc.ABC):
             parser.add_argument('--elf-file', help=argparse.SUPPRESS)
             parser.add_argument('--hex-file', help=argparse.SUPPRESS)
             parser.add_argument('--bin-file', help=argparse.SUPPRESS)
+            parser.add_argument('--mot-file', help=argparse.SUPPRESS)
         else:
             parser.add_argument('--elf-file',
                                 metavar='FILE',
@@ -592,18 +638,27 @@ class ZephyrBinaryRunner(abc.ABC):
                                                 replacement='-f/--file') if caps.file else None),
                                 help='path to zephyr.bin'
                                 if not caps.file else 'Deprecated, use -f/--file instead.')
+            parser.add_argument('--mot-file',
+                                metavar='FILE',
+                                action=(partial(depr_action, cls=cls,
+                                                replacement='-f/--file') if caps.file else None),
+                                help='path to zephyr.mot'
+                                if not caps.file else 'Deprecated, use -f/--file instead.')
 
-        parser.add_argument('--erase', '--no-erase', nargs=0,
-                            action=_ToggleAction,
+        parser.add_argument('--erase', action=argparse.BooleanOptionalAction,
                             help=("mass erase flash before loading, or don't. "
                                   "Default action depends on each specific runner."
                                   if caps.erase else argparse.SUPPRESS))
 
-        parser.add_argument('--reset', '--no-reset', nargs=0,
-                            action=_ToggleAction,
+        parser.add_argument('--reset', action=argparse.BooleanOptionalAction,
                             help=("reset device after flashing, or don't. "
                                   "Default action depends on each specific runner."
                                   if caps.reset else argparse.SUPPRESS))
+
+        parser.add_argument('--reset-type', dest="reset_type", choices=caps.reset_types_supported,
+                            help=("reset type to use for resetting the device. "
+                                    "Default type depends on each specific runner and target."
+                                    if caps.reset_types else argparse.SUPPRESS))
 
         parser.add_argument('--extload', dest='extload',
                             help=(cls.extload_help() if caps.extload
@@ -621,6 +676,20 @@ class ZephyrBinaryRunner(abc.ABC):
                                 it will be autodetected if possible""")
         else:
             parser.add_argument('--rtt-address', help=argparse.SUPPRESS)
+
+        parser.add_argument('--dry-run', action='store_true',
+                            help=('''Print all the commands without actually
+                            executing them''' if caps.dry_run else argparse.SUPPRESS))
+
+        # by default, 'west debug' is expected to flash before starting the session
+        parser.add_argument('--load', action=argparse.BooleanOptionalAction,
+                            help=("load image on target before 'west debug' session"
+                                  if caps.skip_load else argparse.SUPPRESS),
+                            default=True)
+
+        parser.add_argument('--batch', action=argparse.BooleanOptionalAction,
+                            help="enable west debug batch mode"
+                            if caps.batch_debug else argparse.SUPPRESS)
 
         # Runner-specific options.
         cls.do_add_parser(parser)
@@ -662,12 +731,12 @@ class ZephyrBinaryRunner(abc.ABC):
             _missing_cap(cls, '--tool-opt')
         if args.file and not caps.file:
             _missing_cap(cls, '--file')
-        if args.file_type and not args.file:
-            raise ValueError("--file-type requires --file")
         if args.file_type and not caps.file:
             _missing_cap(cls, '--file-type')
         if args.rtt_address and not caps.rtt:
             _missing_cap(cls, '--rtt-address')
+        if args.dry_run and not caps.dry_run:
+            _missing_cap(cls, '--dry-run')
 
         ret = cls.do_create(cfg, args)
         if args.erase:
@@ -710,6 +779,12 @@ class ZephyrBinaryRunner(abc.ABC):
         else:
             return build_conf['CONFIG_FLASH_BASE_ADDRESS']
 
+    @staticmethod
+    def sram_address_from_build_conf(build_conf: BuildConfiguration):
+        '''return CONFIG_SRAM_BASE_ADDRESS.
+        '''
+        return build_conf['CONFIG_SRAM_BASE_ADDRESS']
+
     def run(self, command: str, **kwargs):
         '''Runs command ('flash', 'debug', 'debugserver', 'attach').
 
@@ -749,10 +824,13 @@ class ZephyrBinaryRunner(abc.ABC):
     @classmethod
     def dev_id_help(cls) -> str:
         ''' Get the ArgParse help text for the --dev-id option.'''
-        return '''Device identifier. Use it to select
+        help = '''Device identifier. Use it to select
                   which debugger, device, node or instance to
                   target when multiple ones are available or
                   connected.'''
+        addendum = '''\nThis option can be present multiple times.''' if \
+                   cls.capabilities().mult_dev_ids else ''
+        return help + addendum
 
     @classmethod
     def extload_help(cls) -> str:
@@ -834,7 +912,7 @@ class ZephyrBinaryRunner(abc.ABC):
 
     def _log_cmd(self, cmd: list[str]):
         escaped = ' '.join(shlex.quote(s) for s in cmd)
-        if not _DRY_RUN:
+        if not self.dry_run:
             self.logger.debug(escaped)
         else:
             self.logger.info(escaped)
@@ -847,7 +925,7 @@ class ZephyrBinaryRunner(abc.ABC):
         using subprocess directly, to keep accurate debug logs.
         '''
         self._log_cmd(cmd)
-        if _DRY_RUN:
+        if self.dry_run:
             return 0
         return subprocess.call(cmd, **kwargs)
 
@@ -859,7 +937,7 @@ class ZephyrBinaryRunner(abc.ABC):
         using subprocess directly, to keep accurate debug logs.
         '''
         self._log_cmd(cmd)
-        if _DRY_RUN:
+        if self.dry_run:
             return
         subprocess.check_call(cmd, **kwargs)
 
@@ -871,7 +949,7 @@ class ZephyrBinaryRunner(abc.ABC):
         using subprocess directly, to keep accurate debug logs.
         '''
         self._log_cmd(cmd)
-        if _DRY_RUN:
+        if self.dry_run:
             return b''
         return subprocess.check_output(cmd, **kwargs)
 
@@ -892,7 +970,7 @@ class ZephyrBinaryRunner(abc.ABC):
             preexec = os.setsid # type: ignore
 
         self._log_cmd(cmd)
-        if _DRY_RUN:
+        if self.dry_run:
             return _DebugDummyPopen()  # type: ignore
 
         return subprocess.Popen(cmd, creationflags=cflags, preexec_fn=preexec, **kwargs)
@@ -955,4 +1033,4 @@ class ZephyrBinaryRunner(abc.ABC):
                 elif key.fileobj == sock:
                     resp = sock.recv(2048)
                     if resp:
-                        print(resp.decode())
+                        print(resp.decode(), end='')

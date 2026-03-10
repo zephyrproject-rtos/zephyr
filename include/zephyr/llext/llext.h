@@ -53,6 +53,9 @@ enum llext_mem {
 	LLEXT_MEM_PREINIT,      /**< Array of early setup functions */
 	LLEXT_MEM_INIT,         /**< Array of setup functions */
 	LLEXT_MEM_FINI,         /**< Array of cleanup functions */
+#ifdef CONFIG_LLEXT_RODATA_NO_RELOC
+	LLEXT_MEM_RODATA_NO_RELOC,  /**< Read-only data without relocations (kept in flash) */
+#endif
 
 	LLEXT_MEM_COUNT,        /**< Number of regions managed by LLEXT */
 };
@@ -62,11 +65,41 @@ enum llext_mem {
 /* Number of memory partitions used by LLEXT */
 #define LLEXT_MEM_PARTITIONS (LLEXT_MEM_BSS+1)
 
+#ifdef CONFIG_LLEXT_RODATA_NO_RELOC
+/* Section name for read-only data kept in flash */
+#define LLEXT_SECT_RODATA_NO_RELOC llext.rodata.noreloc
+
+/* Full section name as string for comparisons */
+#define LLEXT_SECTION_RODATA_NO_RELOC ("." STRINGIFY(LLEXT_SECT_RODATA_NO_RELOC))
+
+/**
+ * Use this attribute on read-only data that should remain in flash
+ * instead of being copied to RAM.
+ */
+#define LLEXT_RODATA_NO_RELOC Z_GENERIC_DOT_SECTION(LLEXT_SECT_RODATA_NO_RELOC)
+#else
+#define LLEXT_RODATA_NO_RELOC
+#endif
+
 struct llext_loader;
 /** @endcond */
 
-/* Maximim number of dependency LLEXTs */
+/** Maximum length of an extension name */
+#define LLEXT_MAX_NAME_LEN 15
+
+/** Maximum number of dependency LLEXTs */
 #define LLEXT_MAX_DEPENDENCIES 8
+
+#ifdef CONFIG_LLEXT_HEAP_MEMBLK
+struct llext_alloc {
+	int num_blocks;
+	void *memblk_ptr;
+};
+struct llext_alloc_map {
+	int idx;
+	struct llext_alloc map[LLEXT_MEM_COUNT];
+};
+#endif
 
 /**
  * @brief Structure describing a linkable loadable extension
@@ -76,23 +109,26 @@ struct llext_loader;
  */
 struct llext {
 	/** @cond ignore */
-	sys_snode_t _llext_list;
+	sys_snode_t llext_list;
 
 #ifdef CONFIG_USERSPACE
 	struct k_mem_partition mem_parts[LLEXT_MEM_PARTITIONS];
-	struct k_mem_domain mem_domain;
 #endif
 
 	/** @endcond */
 
 	/** Name of the llext */
-	char name[16];
+	char name[LLEXT_MAX_NAME_LEN + 1];
 
 	/** Lookup table of memory regions */
 	void *mem[LLEXT_MEM_COUNT];
 
 	/** Is the memory for this region allocated on heap? */
 	bool mem_on_heap[LLEXT_MEM_COUNT];
+
+#ifdef CONFIG_LLEXT_HEAP_MEMBLK
+	struct llext_alloc_map mem_alloc_map;
+#endif
 
 	/** Size of each stored region */
 	size_t mem_size[LLEXT_MEM_COUNT];
@@ -125,6 +161,7 @@ struct llext {
 	unsigned int sect_cnt;
 	elf_shdr_t *sect_hdrs;
 	bool sect_hdrs_on_heap;
+	bool mmu_permissions_set;
 	/** @endcond */
 };
 
@@ -146,20 +183,32 @@ static inline unsigned int llext_section_count(const struct llext *ext)
 struct llext_load_param {
 	/** Perform local relocation */
 	bool relocate_local;
+
 	/**
 	 * Use the virtual symbol addresses from the ELF, not addresses within
 	 * the memory buffer, when calculating relocation targets. It also
 	 * means, that the application will take care to place the extension at
 	 * those pre-defined addresses, so the LLEXT core doesn't have to do any
-	 * allocation and copying internally.
+	 * allocation and copying internally. Any MMU permission adjustment will
+	 * be done by the application too.
 	 */
 	bool pre_located;
+
 	/**
 	 * Extensions can implement custom ELF sections to be loaded in specific
 	 * memory regions, detached from other sections of compatible types.
 	 * This optional callback checks whether a section should be detached.
 	 */
 	bool (*section_detached)(const elf_shdr_t *shdr);
+
+	/**
+	 * Keep the ELF section data in memory after loading the extension. This
+	 * is needed to use some of the functions in @ref llext_inspect_apis.
+	 *
+	 * @note Related memory must be freed by @ref llext_free_inspection_data
+	 *       before the extension can be unloaded via @ref llext_unload.
+	 */
+	bool keep_section_info;
 };
 
 /** Default initializer for @ref llext_load_param */
@@ -210,6 +259,19 @@ int llext_load(struct llext_loader *loader, const char *name, struct llext **ext
  * @param[in] ext Extension to unload
  */
 int llext_unload(struct llext **ext);
+
+/**
+ * @brief Free any inspection-related memory for the specified loader and extension.
+ *
+ * This is only required if inspection data was requested at load time by
+ * setting @ref llext_load_param.keep_section_info; otherwise, this call will
+ * be a no-op.
+ *
+ * @param[in] ldr Extension loader
+ * @param[in] ext Extension
+ * @returns 0 on success, or a negative error code.
+ */
+int llext_free_inspection_data(struct llext_loader *ldr, struct llext *ext);
 
 /** @brief Entry point function signature for an extension. */
 typedef void (*llext_entry_fn_t)(void *user_data);
@@ -330,18 +392,19 @@ int llext_add_domain(struct llext *ext, struct k_mem_domain *domain);
  * symbolic data such as a section, function, or object. These relocations
  * are architecture specific and each architecture supporting LLEXT must
  * implement this.
+ * Arguments sym_base_addr, sym_name can be computed from the sym parameter,
+ * but these parameters are provided redundantly to increase efficiency.
  *
+ * @param[in] ldr Extension loader
+ * @param[in] ext Extension being relocated refers to
  * @param[in] rel Relocation data provided by ELF
- * @param[in] loc Address of opcode to rewrite
- * @param[in] sym_base_addr Address of symbol referenced by relocation
- * @param[in] sym_name Name of symbol referenced by relocation
- * @param[in] load_bias `.text` load address
+ * @param[in] shdr Header of the ELF section currently being located
  * @retval 0 Success
  * @retval -ENOTSUP Unsupported relocation
  * @retval -ENOEXEC Invalid relocation
  */
-int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
-			     uintptr_t sym_base_addr, const char *sym_name, uintptr_t load_bias);
+int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *rel,
+		      const elf_shdr_t *shdr);
 
 /**
  * @brief Locates an ELF section in the file.
@@ -367,36 +430,94 @@ ssize_t llext_find_section(struct llext_loader *loader, const char *search_name)
  * @retval -ENOTSUP "peek" method not supported
  * @retval -ENOENT section not found
  */
-int llext_get_section_header(struct llext_loader *loader, struct llext *ext,
+int llext_get_section_header(const struct llext_loader *loader, const struct llext *ext,
 			     const char *search_name, elf_shdr_t *shdr);
 
 /**
- * @brief Architecture specific function for local binding relocations
+ * @brief Initialize LLEXT heap dynamically
  *
- * @param[in] loader Extension loader data and context
- * @param[in] ext Extension to call function in
- * @param[in] rel Relocation data provided by elf
- * @param[in] sym Corresponding symbol table entry
- * @param[in] rel_addr Address where relocation should be performed
- * @param[in] ldr_parm Loader parameters
+ * Use the provided memory block as the LLEXT heap at runtime.
+ *
+ * @param mem Pointer to memory.
+ * @param bytes Size of memory region, in bytes
+ *
+ * @returns 0 on success, or a negative error code.
+ * @retval -ENOSYS Option @kconfig{CONFIG_LLEXT_HEAP_DYNAMIC} is not enabled or supported,
+ *         or it is and option @kconfig{CONFIG_HARVARD} is enabled
  */
-void arch_elf_relocate_local(struct llext_loader *loader, struct llext *ext, const elf_rela_t *rel,
-			     const elf_sym_t *sym, uint8_t *rel_addr,
-			     const struct llext_load_param *ldr_parm);
+int llext_heap_init(void *mem, size_t bytes);
 
 /**
- * @brief Architecture specific function for global binding relocations
+ * @brief Initialize LLEXT heap dynamically for Harvard architecture
  *
- * @param[in] loader Extension loader data and context
- * @param[in] ext Extension to call function in
- * @param[in] rel Relocation data provided by elf
- * @param[in] sym Corresponding symbol table entry
- * @param[in] rel_addr Address where relocation should be performed
- * @param[in] link_addr target address for table-based relocations
+ * Use the provided memory blocks as the LLEXT heaps at runtime.
+ *
+ * @param instr_mem Pointer to instruction memory.
+ * @param instr_bytes Size of instruction memory region, in bytes
+ * @param data_mem Pointer to data memory.
+ * @param data_bytes Size of data memory region, in bytes
+ *
+ * @returns 0 on success, or a negative error code.
+ * @retval -ENOSYS Option @kconfig{CONFIG_LLEXT_HEAP_DYNAMIC} is not enabled or supported,
+ *         or it is and option @kconfig{CONFIG_HARVARD} is not enabled
  */
-void arch_elf_relocate_global(struct llext_loader *loader, struct llext *ext, const elf_rela_t *rel,
-			      const elf_sym_t *sym, uint8_t *rel_addr, const void *link_addr);
+int llext_heap_init_harvard(void *instr_mem, size_t instr_bytes, void *data_mem, size_t data_bytes);
 
+/**
+ * @brief Mark LLEXT heap as uninitialized.
+ *
+ * @returns 0 on success, or a negative error code.
+ * @retval -ENOSYS Option @kconfig{CONFIG_LLEXT_HEAP_DYNAMIC} is not enabled or supported
+ * @retval -EBUSY On heap not empty
+ */
+int llext_heap_uninit(void);
+
+/**
+ * @brief Relink dependencies to prepare for suspend
+ *
+ * For suspend-resume use-cases, when LLEXT context should be saved in a
+ * non-volatile buffer, the user can save most LLEXT support data, but they have
+ * to use @ref llext_restore() to re-allocate objects, which will also have to
+ * restore dependency pointers. To make sure dependency saving and restoring is
+ * done consistently, we provide a helper function for the former too.
+ *
+ * @warning this is a part of an experimental API, it WILL change in the future!
+ * Its availability depends on CONFIG_LLEXT_EXPERIMENTAL, which is disabled by
+ * default.
+ *
+ * @param[in] ext Extension array
+ * @param[in] n_ext Number of extensions
+ * @retval 0 Success
+ * @retval -ENOENT Some dependencies not found
+ */
+int llext_relink_dependency(struct llext *ext, unsigned int n_ext);
+
+/**
+ * @brief Restore LLEXT context from saved data
+ *
+ * During suspend the user has saved all the extension and loader descriptors
+ * and related objects and called @ref llext_relink_dependency() to prepare
+ * dependency pointers.
+ * When resuming llext_alloc_metadata() has to be used to re-allocate all the objects,
+ * therefore the user needs support from LLEXT core to accomplish that.
+ * This function takes arrays of pointers to saved copies of extensions and
+ * loaders as arguments and re-allocates all the objects, while also adding them
+ * to the global extension list. At the same time it relinks dependency pointers
+ * to newly allocated extensions.
+ *
+ * @warning this is a part of an experimental API, it WILL change in the future!
+ * Its availability depends on CONFIG_LLEXT_EXPERIMENTAL, which is disabled by
+ * default.
+ *
+ * @param[in,out] ext Extension pointer array - replaced with re-allocated copies
+ * @param[in,out] ldr Array of loader pointers to restore section maps
+ * @param[in] n_ext Number of extensions
+ * @retval 0 Success
+ * @retval -ENOMEM No memory
+ * @retval -EINVAL Stored dependency out of range
+ * @retval -EFAULT Internal algorithmic error
+ */
+int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_ext);
 /**
  * @}
  */

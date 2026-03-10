@@ -36,14 +36,25 @@ K_TIMER_DEFINE(block_ps2_timer, saturate_ps2, NULL);
 static const struct device *const ps2_0_dev =
 	DEVICE_DT_GET(DT_ALIAS(ps2_port0));
 
-static void saturate_ps2(struct k_timer *timer)
+static void saturate_ps2_handler(struct k_work *work)
 {
+	ARG_UNUSED(work);
+
 	LOG_DBG("block host\n");
 	host_blocked = true;
 	ps2_disable_callback(ps2_0_dev);
 	k_sleep(K_MSEC(500));
 	host_blocked = false;
 	ps2_enable_callback(ps2_0_dev);
+}
+
+K_WORK_DEFINE(saturate_ps2_work, saturate_ps2_handler);
+
+static void saturate_ps2(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+
+	k_work_submit(&saturate_ps2_work);
 }
 
 static void mb_callback(const struct device *dev, uint8_t value)

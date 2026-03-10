@@ -17,6 +17,12 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/util.h>
 
+#ifdef CONFIG_FLASH_SHELL_TEST_COMMANDS
+#include <zephyr/timing/timing.h>
+#endif
+
+#define SPEED_TEST_MAX_REPETITIONS 10000
+
 /* Buffer is only needed for bytes that follow command and offset */
 #define BUF_ARRAY_CNT (CONFIG_SHELL_ARGC_MAX - 2)
 
@@ -44,9 +50,8 @@ static const struct device *const zephyr_flash_controller =
 
 static uint8_t __aligned(4) test_arr[CONFIG_FLASH_SHELL_BUFFER_SIZE];
 
-static int parse_helper(const struct shell *sh, size_t *argc,
-		char **argv[], const struct device * *flash_dev,
-		uint32_t *addr)
+static int parse_helper(const struct shell *sh, size_t *argc, char **argv[],
+			const struct device **flash_dev, uint32_t *addr)
 {
 	char *endptr;
 
@@ -61,8 +66,9 @@ static int parse_helper(const struct shell *sh, size_t *argc,
 		}
 	} else if (zephyr_flash_controller != NULL) {
 		/* default to zephyr,flash-controller */
-		if (!device_is_ready(zephyr_flash_controller)) {
-			shell_error(sh, "Default flash driver not ready");
+		if (!device_is_ready(zephyr_flash_controller) ||
+		    zephyr_flash_controller->api == NULL) {
+			shell_error(sh, "Default flash driver not ready or unsupported");
 			return -ENODEV;
 		}
 		*flash_dev = zephyr_flash_controller;
@@ -103,12 +109,13 @@ static int cmd_erase(const struct shell *sh, size_t argc, char *argv[])
 	} else {
 		struct flash_pages_info info;
 
-		result = flash_get_page_info_by_offs(flash_dev, page_addr,
-						     &info);
+		result = flash_get_page_info_by_offs(flash_dev, page_addr, &info);
 
 		if (result != 0) {
-			shell_error(sh, "Could not determine page size, "
-				    "code %d.", result);
+			shell_error(sh,
+				    "Could not determine page size, "
+				    "code %d.",
+				    result);
 			return -EINVAL;
 		}
 
@@ -228,7 +235,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc > 2) {
-		cnt = strtoul(argv[2], NULL, 16);
+		cnt = strtoul(argv[2], NULL, 0);
 	} else {
 		cnt = 1;
 	}
@@ -269,8 +276,7 @@ static int cmd_test(const struct shell *sh, size_t argc, char *argv[])
 	size = strtoul(argv[2], NULL, 16);
 	repeat = strtoul(argv[3], NULL, 16);
 	if (size > CONFIG_FLASH_SHELL_BUFFER_SIZE) {
-		shell_error(sh, "<size> must be at most 0x%x.",
-			    CONFIG_FLASH_SHELL_BUFFER_SIZE);
+		shell_error(sh, "<size> must be at most 0x%x.", CONFIG_FLASH_SHELL_BUFFER_SIZE);
 		return -EINVAL;
 	}
 
@@ -326,7 +332,7 @@ static int cmd_test(const struct shell *sh, size_t argc, char *argv[])
 }
 
 #ifdef CONFIG_FLASH_SHELL_TEST_COMMANDS
-const static uint8_t speed_types[][4] = { "B", "KiB", "MiB", "GiB" };
+const static uint8_t speed_types[][4] = {"B", "KiB", "MiB", "GiB"};
 const static uint32_t speed_divisor = 1024;
 
 static int read_write_erase_validate(const struct shell *sh, size_t argc, char *argv[],
@@ -346,22 +352,23 @@ static int read_write_erase_validate(const struct shell *sh, size_t argc, char *
 		return -EINVAL;
 	}
 
-	if (*repeat == 0 || *repeat > 10) {
-		shell_error(sh, "<repeat> must be between 1 and 10.");
+	if (*repeat == 0 || *repeat > SPEED_TEST_MAX_REPETITIONS) {
+		shell_error(sh, "<repeat> must be between 1 and %d.", SPEED_TEST_MAX_REPETITIONS);
 		return -EINVAL;
 	}
 
 	return 0;
 }
 
-static void speed_output(const struct shell *sh, uint64_t total_time, double loops, double size)
+static void speed_output(const struct shell *sh, uint64_t total_time, uint32_t loops, uint32_t size)
 {
-	double time_per_loop = (double)total_time / loops;
+	uint64_t time_per_loop = timing_cycles_to_ns_avg(total_time, loops);
 	double throughput = size;
 	uint8_t speed_index = 0;
 
 	if (time_per_loop > 0) {
-		throughput /= (time_per_loop / 1000.0);
+		throughput *= NSEC_PER_SEC;
+		throughput /= time_per_loop;
 	}
 
 	while (throughput >= (double)speed_divisor && speed_index < ARRAY_SIZE(speed_types)) {
@@ -369,8 +376,9 @@ static void speed_output(const struct shell *sh, uint64_t total_time, double loo
 		++speed_index;
 	}
 
-	shell_print(sh, "Total: %llums, Per loop: ~%.0fms, Speed: ~%.1f%sps",
-		    total_time, time_per_loop, throughput, speed_types[speed_index]);
+	shell_print(sh, "Total: %llu ns, Per loop: %llu ns, Speed: ~%.1f%sps",
+		    timing_cycles_to_ns(total_time), time_per_loop, throughput,
+		    speed_types[speed_index]);
 }
 
 static int cmd_read_test(const struct shell *sh, size_t argc, char *argv[])
@@ -381,7 +389,7 @@ static int cmd_read_test(const struct shell *sh, size_t argc, char *argv[])
 	int result;
 	uint32_t addr;
 	uint32_t size;
-	uint64_t start_time;
+	timing_t start_time, stop_time;
 	uint64_t loop_time;
 	uint64_t total_time = 0;
 	uint32_t loops = 0;
@@ -396,10 +404,14 @@ static int cmd_read_test(const struct shell *sh, size_t argc, char *argv[])
 		return result;
 	}
 
+	timing_init();
+	timing_start();
+
 	while (repeat--) {
-		start_time = k_uptime_get();
+		start_time = timing_counter_get();
 		result = flash_read(flash_dev, addr, test_arr, size);
-		loop_time = k_uptime_delta(&start_time);
+		stop_time = timing_counter_get();
+		loop_time = timing_cycles_get(&start_time, &stop_time);
 
 		if (result) {
 			shell_error(sh, "Read failed: %d", result);
@@ -408,12 +420,14 @@ static int cmd_read_test(const struct shell *sh, size_t argc, char *argv[])
 
 		++loops;
 		total_time += loop_time;
-		shell_print(sh, "Loop #%u done in %llums.", loops, loop_time);
+		shell_print(sh, "Loop #%u done in %llu ns.", loops, timing_cycles_to_ns(loop_time));
 	}
 
 	if (result == 0) {
-		speed_output(sh, total_time, (double)loops, (double)size);
+		speed_output(sh, total_time, loops, size);
 	}
+
+	timing_stop();
 
 	return result;
 }
@@ -425,7 +439,7 @@ static int cmd_write_test(const struct shell *sh, size_t argc, char *argv[])
 	int result;
 	uint32_t addr;
 	uint32_t size;
-	uint64_t start_time;
+	timing_t start_time, stop_time;
 	uint64_t loop_time;
 	uint64_t total_time = 0;
 	uint32_t loops = 0;
@@ -444,10 +458,14 @@ static int cmd_write_test(const struct shell *sh, size_t argc, char *argv[])
 		test_arr[i] = (uint8_t)i;
 	}
 
+	timing_init();
+	timing_start();
+
 	while (repeat--) {
-		start_time = k_uptime_get();
+		start_time = timing_counter_get();
 		result = flash_write(flash_dev, addr, test_arr, size);
-		loop_time = k_uptime_delta(&start_time);
+		stop_time = timing_counter_get();
+		loop_time = timing_cycles_get(&start_time, &stop_time);
 
 		if (result) {
 			shell_error(sh, "Write failed: %d", result);
@@ -456,12 +474,14 @@ static int cmd_write_test(const struct shell *sh, size_t argc, char *argv[])
 
 		++loops;
 		total_time += loop_time;
-		shell_print(sh, "Loop #%u done in %llu ticks.", loops, loop_time);
+		shell_print(sh, "Loop #%u done in %llu ns.", loops, timing_cycles_to_ns(loop_time));
 	}
 
 	if (result == 0) {
-		speed_output(sh, total_time, (double)loops, (double)size);
+		speed_output(sh, total_time, loops, size);
 	}
+
+	timing_stop();
 
 	return result;
 }
@@ -473,7 +493,7 @@ static int cmd_erase_test(const struct shell *sh, size_t argc, char *argv[])
 	int result;
 	uint32_t addr;
 	uint32_t size;
-	uint64_t start_time;
+	timing_t start_time, stop_time;
 	uint64_t loop_time;
 	uint64_t total_time = 0;
 	uint32_t loops = 0;
@@ -492,10 +512,14 @@ static int cmd_erase_test(const struct shell *sh, size_t argc, char *argv[])
 		test_arr[i] = (uint8_t)i;
 	}
 
+	timing_init();
+	timing_start();
+
 	while (repeat--) {
-		start_time = k_uptime_get();
+		start_time = timing_counter_get();
 		result = flash_erase(flash_dev, addr, size);
-		loop_time = k_uptime_delta(&start_time);
+		stop_time = timing_counter_get();
+		loop_time = timing_cycles_get(&start_time, &stop_time);
 
 		if (result) {
 			shell_error(sh, "Erase failed: %d", result);
@@ -504,12 +528,14 @@ static int cmd_erase_test(const struct shell *sh, size_t argc, char *argv[])
 
 		++loops;
 		total_time += loop_time;
-		shell_print(sh, "Loop #%u done in %llums.", loops, loop_time);
+		shell_print(sh, "Loop #%u done in %llu ns.", loops, timing_cycles_to_ns(loop_time));
 	}
 
 	if (result == 0) {
-		speed_output(sh, total_time, (double)loops, (double)size);
+		speed_output(sh, total_time, loops, size);
 	}
+
+	timing_stop();
 
 	return result;
 }
@@ -522,7 +548,7 @@ static int cmd_erase_write_test(const struct shell *sh, size_t argc, char *argv[
 	int result_write = 0;
 	uint32_t addr;
 	uint32_t size;
-	uint64_t start_time;
+	timing_t start_time, stop_time;
 	uint64_t loop_time;
 	uint64_t total_time = 0;
 	uint32_t loops = 0;
@@ -541,11 +567,15 @@ static int cmd_erase_write_test(const struct shell *sh, size_t argc, char *argv[
 		test_arr[i] = (uint8_t)i;
 	}
 
+	timing_init();
+	timing_start();
+
 	while (repeat--) {
-		start_time = k_uptime_get();
+		start_time = timing_counter_get();
 		result_erase = flash_erase(flash_dev, addr, size);
 		result_write = flash_write(flash_dev, addr, test_arr, size);
-		loop_time = k_uptime_delta(&start_time);
+		stop_time = timing_counter_get();
+		loop_time = timing_cycles_get(&start_time, &stop_time);
 
 		if (result_erase) {
 			shell_error(sh, "Erase failed: %d", result_erase);
@@ -559,12 +589,14 @@ static int cmd_erase_write_test(const struct shell *sh, size_t argc, char *argv[
 
 		++loops;
 		total_time += loop_time;
-		shell_print(sh, "Loop #%u done in %llums.", loops, loop_time);
+		shell_print(sh, "Loop #%u done in %llu ns.", loops, timing_cycles_to_ns(loop_time));
 	}
 
 	if (result_erase == 0 && result_write == 0) {
-		speed_output(sh, total_time, (double)loops, (double)size);
+		speed_output(sh, total_time, loops, size);
 	}
+
+	timing_stop();
 
 	return (result_erase != 0 ? result_erase : result_write);
 }
@@ -587,16 +619,18 @@ static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 		shell_print(sh, "Loading...");
 	}
 
-	shell_set_bypass(sh, bypass);
+	shell_set_bypass(sh, bypass, NULL);
 
 	return 0;
 }
 
-static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len)
+static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len, void *user_data)
 {
 	uint32_t left_to_read = flash_load_total - flash_load_written - flash_load_boff;
 	uint32_t to_copy = MIN(len, left_to_read);
 	uint32_t copied = 0;
+
+	ARG_UNUSED(user_data);
 
 	while (copied < to_copy) {
 
@@ -611,11 +645,11 @@ static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len)
 		if (flash_load_boff == flash_load_buf_size) {
 			uint32_t addr = flash_load_addr + flash_load_written;
 			int rc = flash_write(flash_load_dev, addr, flash_load_buf,
-					flash_load_buf_size);
+					     flash_load_buf_size);
 
 			if (rc != 0) {
-				shell_error(sh, "Write to addr %x on dev %p ERROR!",
-						addr, flash_load_dev);
+				shell_error(sh, "Write to addr %x on dev %p ERROR!", addr,
+					    flash_load_dev);
 			}
 
 			shell_print(sh, "Written chunk %d", flash_load_chunk);
@@ -630,15 +664,14 @@ static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len)
 	 * at the end.
 	 */
 	if (flash_load_written < flash_load_total &&
-			flash_load_written + flash_load_boff >= flash_load_total) {
+	    flash_load_written + flash_load_boff >= flash_load_total) {
 
 		uint32_t addr = flash_load_addr + flash_load_written;
 		int rc = flash_write(flash_load_dev, addr, flash_load_buf, flash_load_boff);
 
 		if (rc != 0) {
 			set_bypass(sh, NULL);
-			shell_error(sh, "Write to addr %x on dev %p ERROR!",
-					addr, flash_load_dev);
+			shell_error(sh, "Write to addr %x on dev %p ERROR!", addr, flash_load_dev);
 			return;
 		}
 
@@ -681,7 +714,7 @@ static int cmd_load(const struct shell *sh, size_t argc, char *argv[])
 
 	if (flash_load_buf_size < write_block_size) {
 		shell_error(sh, "Size of buffer is too small to be aligned to %zu.",
-				write_block_size);
+			    write_block_size);
 		return -ENOSPC;
 	}
 
@@ -691,7 +724,7 @@ static int cmd_load(const struct shell *sh, size_t argc, char *argv[])
 
 		shell_warn(sh, "Load buffer was not aligned to %zu.", write_block_size);
 		shell_warn(sh, "Effective load buffer size was set from %d to %d",
-				FLASH_LOAD_BUF_MAX, flash_load_buf_size);
+			   FLASH_LOAD_BUF_MAX, flash_load_buf_size);
 	}
 
 	/* Prepare data for callback. */
@@ -727,10 +760,24 @@ static int cmd_page_info(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	shell_print(sh, "Page for address 0x%x:\nstart offset: 0x%lx\nsize: %zu\nindex: %d",
-			addr, info.start_offset, info.size, info.index);
+	shell_print(sh, "Page for address 0x%x:\nstart offset: 0x%lx\nsize: %zu\nindex: %d", addr,
+		    info.start_offset, info.size, info.index);
 	return 0;
 }
+
+#if DT_HAS_COMPAT_STATUS_OKAY(fixed_partitions)
+#define PRINT_PARTITION_INFO(part)                                                                 \
+	shell_print(sh, "%-32s %-15s 0x%08x %d KiB", DT_NODE_FULL_NAME(part),                      \
+		    DT_PROP_OR(part, label, ""), DT_REG_ADDR(part), DT_REG_SIZE(part) / 1024);
+#define PRINT_ALL_PARTITIONS(parts) DT_FOREACH_CHILD(parts, PRINT_PARTITION_INFO);
+
+static int cmd_partitions(const struct shell *sh, size_t argc, char *argv[])
+{
+	DT_FOREACH_STATUS_OKAY(fixed_partitions, PRINT_ALL_PARTITIONS);
+
+	return 0;
+}
+#endif
 
 static void device_name_get(size_t idx, struct shell_static_entry *entry);
 
@@ -747,50 +794,41 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
-	entry->help  = NULL;
+	entry->help = NULL;
 	entry->subcmd = &dsub_device_name;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	flash_cmds,
 	SHELL_CMD_ARG(copy, &dsub_device_name,
-		"<src_device> <dst_device> <src_offset> <dst_offset> <size>",
-		cmd_copy, 5, 5),
-	SHELL_CMD_ARG(erase, &dsub_device_name,
-		"[<device>] <page address> [<size>]",
-		cmd_erase, 2, 2),
-	SHELL_CMD_ARG(read, &dsub_device_name,
-		"[<device>] <address> [<Dword count>]",
-		cmd_read, 2, 2),
-	SHELL_CMD_ARG(test, &dsub_device_name,
-		"[<device>] <address> <size> <repeat count>",
-		cmd_test, 4, 1),
-	SHELL_CMD_ARG(write, &dsub_device_name,
-		"[<device>] <address> <dword> [<dword>...]",
-		cmd_write, 3, BUF_ARRAY_CNT),
-	SHELL_CMD_ARG(load, &dsub_device_name,
-		"[<device>] <address> <size>",
-		cmd_load, 3, 1),
-	SHELL_CMD_ARG(page_info, &dsub_device_name,
-		"[<device>] <address>",
-		cmd_page_info, 2, 1),
+		      "<src_device> <dst_device> <src_offset> <dst_offset> <size>", cmd_copy, 5, 5),
+	SHELL_CMD_ARG(erase, &dsub_device_name, "[<device>] <page address> [<size>]", cmd_erase, 2,
+		      2),
+	SHELL_CMD_ARG(read, &dsub_device_name, "[<device>] <address> [<byte count>]", cmd_read, 2,
+		      2),
+	SHELL_CMD_ARG(test, &dsub_device_name, "[<device>] <address> <size> <repeat count>",
+		      cmd_test, 4, 1),
+	SHELL_CMD_ARG(write, &dsub_device_name, "[<device>] <address> <dword> [<dword>...]",
+		      cmd_write, 3, BUF_ARRAY_CNT),
+	SHELL_CMD_ARG(load, &dsub_device_name, "[<device>] <address> <size>", cmd_load, 3, 1),
+	SHELL_CMD_ARG(page_info, &dsub_device_name, "[<device>] <address>", cmd_page_info, 2, 1),
 
-#ifdef CONFIG_FLASH_SHELL_TEST_COMMANDS
-	SHELL_CMD_ARG(read_test, &dsub_device_name,
-		"[<device>] <address> <size> <repeat count>",
-		cmd_read_test, 4, 1),
-	SHELL_CMD_ARG(write_test, &dsub_device_name,
-		"[<device>] <address> <size> <repeat count>",
-		cmd_write_test, 4, 1),
-	SHELL_CMD_ARG(erase_test, &dsub_device_name,
-		"[<device>] <address> <size> <repeat count>",
-		cmd_erase_test, 4, 1),
-	SHELL_CMD_ARG(erase_write_test, &dsub_device_name,
-		"[<device>] <address> <size> <repeat count>",
-		cmd_erase_write_test, 4, 1),
+#if DT_HAS_COMPAT_STATUS_OKAY(fixed_partitions)
+	SHELL_CMD_ARG(partitions, &dsub_device_name, "", cmd_partitions, 0, 0),
 #endif
 
-	SHELL_SUBCMD_SET_END
-);
+#ifdef CONFIG_FLASH_SHELL_TEST_COMMANDS
+	SHELL_CMD_ARG(read_test, &dsub_device_name, "[<device>] <address> <size> <repeat count>",
+		      cmd_read_test, 4, 1),
+	SHELL_CMD_ARG(write_test, &dsub_device_name, "[<device>] <address> <size> <repeat count>",
+		      cmd_write_test, 4, 1),
+	SHELL_CMD_ARG(erase_test, &dsub_device_name, "[<device>] <address> <size> <repeat count>",
+		      cmd_erase_test, 4, 1),
+	SHELL_CMD_ARG(erase_write_test, &dsub_device_name,
+		      "[<device>] <address> <size> <repeat count>", cmd_erase_write_test, 4, 1),
+#endif
+
+	SHELL_SUBCMD_SET_END);
 
 static int cmd_flash(const struct shell *sh, size_t argc, char **argv)
 {
@@ -798,5 +836,4 @@ static int cmd_flash(const struct shell *sh, size_t argc, char **argv)
 	return -EINVAL;
 }
 
-SHELL_CMD_ARG_REGISTER(flash, &flash_cmds, "Flash shell commands",
-		       cmd_flash, 2, 0);
+SHELL_CMD_ARG_REGISTER(flash, &flash_cmds, "Flash shell commands", cmd_flash, 2, 0);

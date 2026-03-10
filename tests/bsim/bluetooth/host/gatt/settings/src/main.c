@@ -13,11 +13,10 @@
 
 #include <zephyr/sys/__assert.h>
 
+#include "babblekit/testcase.h"
+
 void server_procedure(void);
 void client_procedure(void);
-
-#define BS_SECONDS(dur_sec)    ((bs_time_t)dur_sec * USEC_PER_SEC)
-#define TEST_TIMEOUT_SIMULATED BS_SECONDS(30)
 
 static int test_round;
 static int final_round;
@@ -50,33 +49,14 @@ static void test_args(int argc, char **argv)
 	bs_trace_raw(0, "Final round %u\n", final_round);
 }
 
-void test_tick(bs_time_t HW_device_time)
-{
-	bs_trace_debug_time(0, "Simulation ends now.\n");
-	if (bst_result != Passed) {
-		bst_result = Failed;
-		bs_trace_error("Test did not pass before simulation ended.\n");
-	}
-}
-
-void test_init(void)
-{
-	bst_ticker_set_next_tick_absolute(TEST_TIMEOUT_SIMULATED);
-	bst_result = In_progress;
-}
-
 static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "server",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = server_procedure,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "client",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = client_procedure,
 		.test_args_f = test_args,
 	},
@@ -141,7 +121,7 @@ void backchannel_init(void)
 	ch = bs_open_back_channel(device_number, device_numbers,
 				  channel_numbers, num_ch);
 	if (!ch) {
-		FAIL("Unable to open backchannel\n");
+		TEST_FAIL("Unable to open backchannel");
 	}
 }
 
@@ -197,7 +177,7 @@ void signal_next_test_round(void)
 		backchannel_sync_send(0);
 	}
 
-	PASS("round %d over\n", get_test_round());
+	TEST_PASS("round %d over", get_test_round());
 	stop_all_threads();
 }
 

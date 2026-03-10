@@ -87,7 +87,7 @@ This platform has the following external memories:
 |                    |            | data block, which sets up SEMC at   |
 |                    |            | boot time                           |
 +--------------------+------------+-------------------------------------+
-| IS42S16160J        | FLEXSPI    | Enabled via flash configurationn    |
+| IS42S16160J        | FLEXSPI    | Enabled via flash configuration     |
 |                    |            | block, which sets up FLEXSPI at     |
 |                    |            | boot time.                          |
 +--------------------+------------+-------------------------------------+
@@ -95,64 +95,28 @@ This platform has the following external memories:
 Supported Features
 ==================
 
-The mimxrt1060_evk board configuration supports the hardware features listed
-below.  For additional features not yet supported, please also refer to the
-:zephyr:board:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
-NXP prioritizes enabling the superset board with NXP's Full Platform Support for
-Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
-already supported, which can also be re-used on this mimxrt1060_evk board:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | eLCDIF. Tested with                 |
-|           |            | :ref:`rk043fn02h_ct`, and           |
-|           |            | :ref:`rk043fn66hs_ctg` shields      |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | QSPI flash                          |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| SDHC      | on-chip    | disk access                         |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| ENET      | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | can                                 |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| SAI       | on-chip    | i2s                                 |
-+-----------+------------+-------------------------------------+
-| GPT       | on-chip    | gpt                                 |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| FLEXSPI   | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
-| PIT       | on-chip    | pit                                 |
-+-----------+------------+-------------------------------------+
+.. note::
 
-The default configuration can be found in
-:zephyr_file:`boards/nxp/mimxrt1060_evk/mimxrt1060_evk_mimxrt1062_qspi_defconfig`
+   For additional features not yet supported, please also refer to the
+   :zephyr:board:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
+   NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+   Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
+   already supported, which can also be re-used on this mimxrt1060_evk board.
 
-Other hardware features are not currently supported by the port.
+Shields for Supported Features
+==============================
+
+Some features in the table above are tested with Zephyr shields.  These shields
+are tested on this board:
+
+- :ref:`nxp_m2_wifi_bt` - Rev C version is tested with this shield to attach any M.2 module
+  with BT HCI UART interface and Wi-Fi SDIO interface. The shield binds the required NXP
+  HCI driver or SDIO driver to perform firmware-load and other setup configurations
+  for NXP SoC IW416/IW612/IW610.
+- :ref:`rk043fn02h_ct` and :ref:`rk043fn66hs_ctg` - support the Display interface.
+- :ref:`dvp_fpc24_mt9m114` - supports the CSI video/camera interface.
 
 Connections and I/Os
 ====================
@@ -185,6 +149,10 @@ The MIMXRT1060 SoC has five pairs of pinmux/gpio controllers.
 | GPIO_AD_B1_00 | LPI2C1_SCL      | I2C                       |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B1_01 | LPI2C1_SDA      | I2C                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_04 | LPUART3_CTS     | UART BT HCI               |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_05 | LPUART3_RTS     | UART BT HCI               |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B1_06 | LPUART3_TX      | UART BT HCI               |
 +---------------+-----------------+---------------------------+
@@ -352,11 +320,13 @@ depending on which flash to set as ``zephyr,flash``:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 This board supports 3 debug host tools. Please install your preferred host
 tool, then follow the instructions in `Configuring a Debug Probe`_ to
 configure the board appropriately.
 
-* :ref:`jlink-debug-host-tools` (Default, Supported by NXP)
+* :ref:`jlink-debug-host-tools` (Supported by NXP)
 * :ref:`linkserver-debug-host-tools` (Supported by NXP)
 * :ref:`pyocd-debug-host-tools` (Not Supported by NXP)
 
@@ -367,13 +337,27 @@ details).
 Configuring a Debug Probe
 =========================
 
-Two revisions of the RT1060 EVK exist. For the RT1060 EVK, J47/J48 are the SWD
-isolation jumpers, J42 is the DFU mode jumper, and the 20 pin JTAG/SWD header
-is present on J21. For the RT1060 EVKB, J9/J10 are the SWD isolation jumpers,
-J12 is the DFU mode jumper, and the 20 pin JTAG/SWD header is present on J2.
+Three revisions of the RT1060 EVK exist. For all of them, to replace the debug firmware, short the
+DFU jumper to boot the on board debugger to ISP mode.
 
-.. include:: ../../common/rt1xxx-lpclink2-debug.rst
-   :start-after: rt1xxx-lpclink2-probes
+* RT1060 EVK (Revision A)
+
+  * SWD isolation jumpers: J47/48
+  * 20 pin JTAG/SWD header: J21
+  * DFU mode jumper: J42
+
+* RT1060 EVKB
+
+  * SWD isolation jumpers: J9/10
+  * 20 pin JTAG/SWD header: J2
+  * DFU mode jumper: J12
+
+* RT1060 EVKC
+
+  * Debugger choice jumper: JP5
+  * DFU mode jumper: JP3
+
+.. include:: ../../common/rt1xxx-lpclink2-debug.rst.inc
 
 See `Using J-Link with MIMXRT1060-EVK or MIMXRT1064-EVK`_ or `Using J-Link with
 MIMXRT1060-EVKB`_ for more details.
@@ -509,6 +493,8 @@ steps:
 If the west flash or debug commands fail, and the command hangs while executing
 runners.jlink, confirm the J-Link debug probe is configured, powered, and
 connected to the EVK properly.
+
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1060-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1060-evaluation-kit:MIMXRT1060-EVKB

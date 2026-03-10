@@ -17,7 +17,19 @@ static int32_t st_lis2duxs12_set_odr_raw(const struct device *dev, uint8_t odr)
 	struct lis2dux12_data *data = dev->data;
 	const struct lis2dux12_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	lis2duxs12_md_t mode = {.odr = odr, .fs = data->range};
+	lis2duxs12_md_t mode;
+
+	/* handle high performance mode */
+	if (cfg->pm == LIS2DUX12_OPER_MODE_HIGH_PERFORMANCE) {
+		if (odr < LIS2DUX12_DT_ODR_6Hz) {
+			odr = LIS2DUX12_DT_ODR_6Hz;
+		}
+
+		odr |= 0x10;
+	}
+
+	mode.odr = odr;
+	mode.fs = data->range;
 
 	data->odr = odr;
 	return lis2duxs12_mode_set(ctx, &mode);
@@ -101,6 +113,157 @@ static int32_t st_lis2duxs12_sample_fetch_temp(const struct device *dev)
 }
 #endif
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+static int32_t st_lis2duxs12_rtio_read_accel(const struct device *dev, int16_t *acc)
+{
+	struct lis2dux12_data *data = dev->data;
+	const struct lis2dux12_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+
+	/* fetch raw data sample */
+	lis2duxs12_md_t mode = {.fs = data->range};
+	lis2duxs12_xl_data_t xzy_data = {0};
+
+	if (lis2duxs12_xl_data_get(ctx, &mode, &xzy_data) < 0) {
+		LOG_ERR("Failed to fetch raw data sample");
+		return -EIO;
+	}
+
+	acc[0] = xzy_data.raw[0];
+	acc[1] = xzy_data.raw[1];
+	acc[2] = xzy_data.raw[2];
+
+	return 0;
+}
+
+static int32_t st_lis2duxs12_rtio_read_temp(const struct device *dev, int16_t *temp)
+{
+	const struct lis2dux12_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+
+	/* fetch raw data sample */
+	lis2duxs12_outt_data_t temp_data = {0};
+
+	if (lis2duxs12_outt_data_get(ctx, &temp_data) < 0) {
+		LOG_ERR("Failed to fetch raw temperature data sample");
+		return -EIO;
+	}
+
+	*temp = temp_data.heat.raw;
+
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_LIS2DUX12_STREAM
+static void st_lis2duxs12_stream_config_fifo(const struct device *dev,
+					     struct trigger_config trig_cfg)
+{
+	struct lis2dux12_data *lis2dux12 = dev->data;
+	const struct lis2dux12_config *config = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
+	lis2duxs12_pin_int_route_t pin_int = { 0 };
+	lis2duxs12_fifo_mode_t fifo_mode = { 0 };
+	lis2duxs12_fifo_batch_t batch = { 0 };
+	lis2duxs12_fifo_event_t fifo_event = { 0 };
+	uint16_t watermark = 0;
+
+	/* disable FIFO as first thing */
+	fifo_mode.store = LIS2DUXS12_FIFO_1X;
+	fifo_mode.xl_only = 0;
+	fifo_mode.operation = LIS2DUXS12_BYPASS_MODE;
+	batch.dec_ts = LIS2DUXS12_DEC_TS_OFF;
+	batch.bdr_xl = LIS2DUXS12_BDR_XL_ODR_OFF;
+	watermark = 0;
+
+	pin_int.fifo_th = PROPERTY_DISABLE;
+	pin_int.fifo_full = PROPERTY_DISABLE;
+
+	if (trig_cfg.int_fifo_th || trig_cfg.int_fifo_full) {
+		pin_int.fifo_th = (trig_cfg.int_fifo_th) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
+		pin_int.fifo_full = (trig_cfg.int_fifo_full) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
+
+		if (pin_int.fifo_th) {
+			fifo_event = LIS2DUXS12_FIFO_EV_WTM;
+		} else if (pin_int.fifo_full) {
+			fifo_event = LIS2DUXS12_FIFO_EV_FULL;
+		}
+
+		switch (config->fifo_mode_sel) {
+		case 0:
+			fifo_mode.store = LIS2DUXS12_FIFO_1X;
+			fifo_mode.xl_only = 0;
+			break;
+		case 1:
+			fifo_mode.store = LIS2DUXS12_FIFO_1X;
+			fifo_mode.xl_only = 1;
+			break;
+		case 2:
+			fifo_mode.store = LIS2DUXS12_FIFO_2X;
+			fifo_mode.xl_only = 1;
+			break;
+		}
+
+		fifo_mode.operation = LIS2DUXS12_STREAM_MODE;
+		batch.dec_ts = config->ts_batch;
+		batch.bdr_xl = config->accel_batch;
+		watermark = config->fifo_wtm;
+
+		/* In case each FIFO word contains 2x accelerometer samples,
+		 * then watermark can be divided by two to match user expectation.
+		 */
+		if (config->fifo_mode_sel == 2) {
+			watermark /= 2;
+		}
+	}
+
+	lis2duxs12_fifo_mode_set(ctx, fifo_mode);
+
+	/*
+	 * Set FIFO watermark (number of unread sensor data TAG + 6 bytes
+	 * stored in FIFO) to FIFO_WATERMARK samples
+	 */
+	lis2duxs12_fifo_watermark_set(ctx, watermark);
+
+	lis2duxs12_fifo_batch_set(ctx, batch);
+	lis2duxs12_fifo_stop_on_wtm_set(ctx, fifo_event);
+
+	/* Set FIFO batch rates */
+	lis2dux12->accel_batch_odr = batch.bdr_xl;
+	lis2dux12->ts_batch_odr = batch.dec_ts;
+
+	/* Set pin interrupt (fifo_th could be on or off) */
+	if (config->drdy_pin == 1) {
+		lis2duxs12_pin_int1_route_set(ctx, &pin_int);
+	} else {
+		lis2duxs12_pin_int2_route_set(ctx, &pin_int);
+	}
+}
+
+static void st_lis2duxs12_stream_config_drdy(const struct device *dev,
+					     struct trigger_config trig_cfg)
+{
+	const struct lis2dux12_config *config = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
+	lis2duxs12_pin_int_route_t pin_int = { 0 };
+
+	/* dummy read: re-trigger interrupt */
+	lis2duxs12_md_t md = {.fs = LIS2DUXS12_2g};
+	lis2duxs12_xl_data_t buf;
+
+	lis2duxs12_xl_data_get(ctx, &md, &buf);
+
+	pin_int.drdy = PROPERTY_ENABLE;
+
+	/* Set pin interrupt */
+	if (config->drdy_pin == 1) {
+		lis2duxs12_pin_int1_route_set(ctx, &pin_int);
+	} else {
+		lis2duxs12_pin_int2_route_set(ctx, &pin_int);
+	}
+}
+#endif
+
 #ifdef CONFIG_LIS2DUX12_TRIGGER
 static void st_lis2duxs12_handle_interrupt(const struct device *dev)
 {
@@ -164,6 +327,14 @@ const struct lis2dux12_chip_api st_lis2duxs12_chip_api = {
 #ifdef CONFIG_LIS2DUX12_ENABLE_TEMP
 	.sample_fetch_temp = st_lis2duxs12_sample_fetch_temp,
 #endif
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.rtio_read_accel = st_lis2duxs12_rtio_read_accel,
+	.rtio_read_temp = st_lis2duxs12_rtio_read_temp,
+#endif
+#ifdef CONFIG_LIS2DUX12_STREAM
+	.stream_config_fifo = st_lis2duxs12_stream_config_fifo,
+	.stream_config_drdy = st_lis2duxs12_stream_config_drdy,
+#endif
 #ifdef CONFIG_LIS2DUX12_TRIGGER
 	.handle_interrupt = st_lis2duxs12_handle_interrupt,
 	.init_interrupt = st_lis2duxs12_init_interrupt,
@@ -193,17 +364,18 @@ int st_lis2duxs12_init(const struct device *dev)
 	}
 
 	/* reset device */
-	ret = lis2duxs12_init_set(ctx, LIS2DUXS12_RESET);
+	ret = lis2duxs12_sw_reset(ctx);
 	if (ret < 0) {
 		return ret;
 	}
 
-	k_busy_wait(100);
-
 	LOG_INF("%s: chip id 0x%x", dev->name, chip_id);
 
 	/* Set bdu and if_inc recommended for driver usage */
-	lis2duxs12_init_set(ctx, LIS2DUXS12_SENSOR_ONLY_ON);
+	ret = lis2duxs12_init_set(ctx);
+	if (ret < 0) {
+		return ret;
+	}
 
 	lis2duxs12_timestamp_set(ctx, PROPERTY_ENABLE);
 

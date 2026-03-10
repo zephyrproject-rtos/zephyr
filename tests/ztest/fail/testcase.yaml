@@ -42,12 +42,22 @@ tests:
   testing.fail.zephyr.assert_teardown:
     extra_configs:
       - CONFIG_ZTEST_FAIL_TEST_ASSERT_TEARDOWN=y
-  testing.fail.zephyr.assume_after:
+  testing.fail.zephyr.assume_after.fail:
     extra_configs:
       - CONFIG_ZTEST_FAIL_TEST_ASSUME_AFTER=y
-  testing.fail.zephyr.assume_teardown:
+      - CONFIG_ZTEST_FAIL_ON_ASSUME=y
+  testing.fail.zephyr.assume_teardown.fail:
     extra_configs:
       - CONFIG_ZTEST_FAIL_TEST_ASSUME_TEARDOWN=y
+      - CONFIG_ZTEST_FAIL_ON_ASSUME=y
+  testing.fail.zephyr.assume_after.skip:
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSUME_AFTER=y
+      - CONFIG_ZTEST_FAIL_ON_ASSUME=n
+  testing.fail.zephyr.assume_teardown.skip:
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSUME_TEARDOWN=y
+      - CONFIG_ZTEST_FAIL_ON_ASSUME=n
   testing.fail.zephyr.pass_after:
     extra_configs:
       - CONFIG_ZTEST_FAIL_TEST_PASS_AFTER=y
@@ -58,6 +68,8 @@ tests:
     type: unit
     extra_configs:
       - CONFIG_ZTEST_FAIL_TEST_UNEXPECTED_ASSUME=y
+      - CONFIG_ZTEST_FAIL_ON_ASSUME=y
   testing.fail.zephyr.fail_on_bad_assumption:
     extra_configs:
       - CONFIG_ZTEST_FAIL_TEST_UNEXPECTED_ASSUME=y
+      - CONFIG_ZTEST_FAIL_ON_ASSUME=y

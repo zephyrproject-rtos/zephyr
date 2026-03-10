@@ -10,7 +10,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/usb/usb_ch9.h>
-#include <zephyr/drivers/usb/udc_buf.h>
+#include <zephyr/drivers/usb/usb_buf.h>
 #include "udc_common.h"
 
 #include <zephyr/logging/log.h>
@@ -20,36 +20,6 @@
 #define UDC_COMMON_LOG_LEVEL LOG_LEVEL_NONE
 #endif
 LOG_MODULE_REGISTER(udc, CONFIG_UDC_DRIVER_LOG_LEVEL);
-
-static inline uint8_t *udc_pool_data_alloc(struct net_buf *const buf,
-					   size_t *const size, k_timeout_t timeout)
-{
-	struct net_buf_pool *const buf_pool = net_buf_pool_get(buf->pool_id);
-	struct k_heap *const pool = buf_pool->alloc->alloc_data;
-	void *b;
-
-	*size = ROUND_UP(*size, UDC_BUF_GRANULARITY);
-	b = k_heap_aligned_alloc(pool, UDC_BUF_ALIGN, *size, timeout);
-	if (b == NULL) {
-		*size = 0;
-		return NULL;
-	}
-
-	return b;
-}
-
-static inline void udc_pool_data_unref(struct net_buf *buf, uint8_t *const data)
-{
-	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
-	struct k_heap *pool = buf_pool->alloc->alloc_data;
-
-	k_heap_free(pool, data);
-}
-
-const struct net_buf_data_cb net_buf_dma_cb = {
-	.alloc = udc_pool_data_alloc,
-	.unref = udc_pool_data_unref,
-};
 
 static inline void udc_buf_destroy(struct net_buf *buf);
 
@@ -65,7 +35,7 @@ void udc_set_suspended(const struct device *dev, const bool value)
 	struct udc_data *data = dev->data;
 
 	if (value == udc_is_suspended(dev)) {
-		LOG_WRN("Spurious suspend/resume event");
+		LOG_WRN("Spurious %s event", value ? "suspend" : "resume");
 	}
 
 	atomic_set_bit_to(&data->status, UDC_STATUS_SUSPENDED, value);
@@ -78,22 +48,13 @@ struct udc_ep_config *udc_get_ep_cfg(const struct device *dev, const uint8_t ep)
 	return data->ep_lut[USB_EP_LUT_IDX(ep)];
 }
 
-bool udc_ep_is_busy(const struct device *dev, const uint8_t ep)
+bool udc_ep_is_busy(const struct udc_ep_config *const ep_cfg)
 {
-	struct udc_ep_config *ep_cfg;
-
-	ep_cfg = udc_get_ep_cfg(dev, ep);
-	__ASSERT(ep_cfg != NULL, "ep 0x%02x is not available", ep);
-
 	return ep_cfg->stat.busy;
 }
 
-void udc_ep_set_busy(const struct device *dev, const uint8_t ep, const bool busy)
+void udc_ep_set_busy(struct udc_ep_config *const ep_cfg, const bool busy)
 {
-	struct udc_ep_config *ep_cfg;
-
-	ep_cfg = udc_get_ep_cfg(dev, ep);
-	__ASSERT(ep_cfg != NULL, "ep 0x%02x is not available", ep);
 	ep_cfg->stat.busy = busy;
 }
 
@@ -115,34 +76,21 @@ int udc_register_ep(const struct device *dev, struct udc_ep_config *const cfg)
 	return 0;
 }
 
-struct net_buf *udc_buf_get(const struct device *dev, const uint8_t ep)
+struct net_buf *udc_buf_get(struct udc_ep_config *const ep_cfg)
 {
-	struct udc_ep_config *ep_cfg;
-
-	ep_cfg = udc_get_ep_cfg(dev, ep);
-	if (ep_cfg == NULL) {
-		return NULL;
-	}
-
 	return k_fifo_get(&ep_cfg->fifo, K_NO_WAIT);
 }
 
-struct net_buf *udc_buf_get_all(const struct device *dev, const uint8_t ep)
+struct net_buf *udc_buf_get_all(struct udc_ep_config *const ep_cfg)
 {
-	struct udc_ep_config *ep_cfg;
 	struct net_buf *buf;
-
-	ep_cfg = udc_get_ep_cfg(dev, ep);
-	if (ep_cfg == NULL) {
-		return NULL;
-	}
 
 	buf = k_fifo_get(&ep_cfg->fifo, K_NO_WAIT);
 	if (!buf) {
 		return NULL;
 	}
 
-	LOG_DBG("ep 0x%02x dequeue %p", ep, buf);
+	LOG_DBG("ep 0x%02x dequeue %p", ep_cfg->addr, buf);
 	for (struct net_buf *n = buf; !k_fifo_is_empty(&ep_cfg->fifo); n = n->frags) {
 		n->frags = k_fifo_get(&ep_cfg->fifo, K_NO_WAIT);
 		LOG_DBG("|-> %p ", n->frags);
@@ -154,15 +102,8 @@ struct net_buf *udc_buf_get_all(const struct device *dev, const uint8_t ep)
 	return buf;
 }
 
-struct net_buf *udc_buf_peek(const struct device *dev, const uint8_t ep)
+struct net_buf *udc_buf_peek(struct udc_ep_config *const ep_cfg)
 {
-	struct udc_ep_config *ep_cfg;
-
-	ep_cfg = udc_get_ep_cfg(dev, ep);
-	if (ep_cfg == NULL) {
-		return NULL;
-	}
-
 	return k_fifo_peek_head(&ep_cfg->fifo);
 }
 
@@ -384,7 +325,6 @@ int udc_ep_enable_internal(const struct device *dev,
 	cfg->mps = mps;
 	cfg->interval = interval;
 
-	cfg->stat.odd = 0;
 	cfg->stat.halted = 0;
 	cfg->stat.data1 = false;
 	ret = api->ep_enable(dev, cfg);
@@ -660,13 +600,13 @@ struct net_buf *udc_ep_buf_alloc(const struct device *dev,
 
 	buf = net_buf_alloc_len(&udc_ep_pool, size, K_NO_WAIT);
 	if (!buf) {
-		LOG_ERR("Failed to allocate net_buf %zd", size);
+		LOG_ERR("Failed to allocate net_buf %zd, ep 0x%02x", size, ep);
 		goto ep_alloc_error;
 	}
 
 	bi = udc_get_buf_info(buf);
 	bi->ep = ep;
-	LOG_DBG("Allocate net_buf, ep 0x%02x, size %zd", ep, size);
+	LOG_DBG("Allocate net_buf %p, ep 0x%02x, size %zd", buf, ep, size);
 
 ep_alloc_error:
 	api->unlock(dev);
@@ -1010,12 +950,24 @@ void udc_ctrl_update_stage(const struct device *dev,
 	if (bi->setup && bi->ep == USB_CONTROL_EP_OUT) {
 		uint16_t length  = udc_data_stage_length(buf);
 
-		data->setup = buf;
-
 		if (data->stage != CTRL_PIPE_STAGE_SETUP) {
 			LOG_INF("Sequence %u not completed", data->stage);
+
+			if (data->stage == CTRL_PIPE_STAGE_DATA_OUT) {
+				/*
+				 * The last setup packet is "floating" because
+				 * DATA OUT stage was awaited. This setup
+				 * packet must be removed here because it will
+				 * never reach the stack.
+				 */
+				LOG_INF("Drop setup packet (%p)", (void *)data->setup);
+				net_buf_unref(data->setup);
+			}
+
 			data->stage = CTRL_PIPE_STAGE_SETUP;
 		}
+
+		data->setup = buf;
 
 		/*
 		 * Setup Stage has been completed (setup packet received),

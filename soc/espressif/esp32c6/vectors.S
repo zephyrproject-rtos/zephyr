@@ -1,4 +1,4 @@
-/* Copyright 2023 Espressif Systems (Shanghai) PTE LTD
+/* Copyright 2020-2025 Espressif Systems (Shanghai) PTE LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,12 +22,12 @@ GTEXT(_isr_wrapper)
 	 * only uses the 24 MSBs of the MTVEC, i.e. (MTVEC & 0xffffff00).
 	 */
 
-	.global  _esp32c6_vector_table
+	.global  _vector_table
 	.section .exception_vectors.text
 	.balign   0x100
-	.type     _esp32c6_vector_table, @function
+	.type     _vector_table, @function
 
-_esp32c6_vector_table:
+_vector_table:
 	.option push
 	.option norvc
 	.rept (32)

@@ -55,4 +55,27 @@
 			pinmux = <RZG_PINMUX(PORT_13, 4, 7)>; /* GTIOCA */
 		};
 	};
+
+	/omit-if-no-ref/ can0_pins: can0 {
+		can0-pinmux {
+			pinmux = <RZG_PINMUX(PORT_06, 1, 3)>, /* TX */
+				 <RZG_PINMUX(PORT_06, 2, 3)>; /* RX */
+		};
+	};
+
+	/omit-if-no-ref/ can1_pins: can1 {
+		can1-pinmux {
+			pinmux = <RZG_PINMUX(PORT_17, 0, 3)>, /* TX */
+				 <RZG_PINMUX(PORT_17, 1, 3)>; /* RX */
+		};
+	};
+
+	/omit-if-no-ref/ spi0_pins: spi0 {
+		spi0-pinmux {
+			pinmux = <RZG_PINMUX(PORT_15, 0, 1)>, /* CK */
+				 <RZG_PINMUX(PORT_15, 1, 1)>, /* MOSI */
+				 <RZG_PINMUX(PORT_15, 2, 1)>, /* MISO */
+				 <RZG_PINMUX(PORT_15, 3, 1)>; /* SSL */
+		};
+	};
 };

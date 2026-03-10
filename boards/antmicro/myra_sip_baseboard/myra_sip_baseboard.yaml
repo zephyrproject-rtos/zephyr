@@ -12,13 +12,13 @@ supported:
   - pwm
   - i2c
   - gpio
-  - usb device
   - spi
   - watchdog
   - dma
   - can
   - rtc
   - sensors
+  - eeprom
 testing:
   timeout_multiplier: 3
   renode:

@@ -3,6 +3,7 @@
 # Copyright (c) 2019 Linaro Limited
 # Copyright (c) 2020 Teslabs Engineering S.L.
 # Copyright (c) 2021 Electrolance Solutions
+# Copyright (c) 2025 Brill Power
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_STM32H7X
@@ -29,6 +30,10 @@ config SOC_STM32H730XXQ
 	select SOC_SERIES_STM32H7X
 
 config SOC_STM32H735XX
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H742XX
 	bool
 	select SOC_SERIES_STM32H7X
 
@@ -112,6 +117,7 @@ config SOC
 	default "stm32h730xx" if SOC_STM32H730XX
 	default "stm32h730xxq" if SOC_STM32H730XXQ
 	default "stm32h735xx" if SOC_STM32H735XX
+	default "stm32h742xx" if SOC_STM32H742XX
 	default "stm32h743xx" if SOC_STM32H743XX
 	default "stm32h745xx" if SOC_STM32H745XX_M7 || SOC_STM32H745XX_M4
 	default "stm32h747xx" if SOC_STM32H747XX_M7 || SOC_STM32H747XX_M4

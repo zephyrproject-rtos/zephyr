@@ -102,7 +102,7 @@ static int max22017_write_value(const struct device *dev, uint8_t channel, uint3
 
 	if (channel > config->nchannels - 1) {
 		LOG_ERR("unsupported channel %d", channel);
-		return ENOTSUP;
+		return -ENOTSUP;
 	}
 
 	if (value >= (1 << config->resolution)) {

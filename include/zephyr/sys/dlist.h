@@ -244,7 +244,7 @@ static inline bool sys_dnode_is_linked(const sys_dnode_t *node)
  * @return true if node is the head, false otherwise
  */
 
-static inline bool sys_dlist_is_head(sys_dlist_t *list, sys_dnode_t *node)
+static inline bool sys_dlist_is_head(const sys_dlist_t *list, const sys_dnode_t *node)
 {
 	return list->head == node;
 }
@@ -258,7 +258,7 @@ static inline bool sys_dlist_is_head(sys_dlist_t *list, sys_dnode_t *node)
  * @return true if node is the tail, false otherwise
  */
 
-static inline bool sys_dlist_is_tail(sys_dlist_t *list, sys_dnode_t *node)
+static inline bool sys_dlist_is_tail(const sys_dlist_t *list, const sys_dnode_t *node)
 {
 	return list->tail == node;
 }
@@ -271,7 +271,7 @@ static inline bool sys_dlist_is_tail(sys_dlist_t *list, sys_dnode_t *node)
  * @return true if empty, false otherwise
  */
 
-static inline bool sys_dlist_is_empty(sys_dlist_t *list)
+static inline bool sys_dlist_is_empty(const sys_dlist_t *list)
 {
 	return list->head == list;
 }
@@ -286,7 +286,7 @@ static inline bool sys_dlist_is_empty(sys_dlist_t *list)
  * @return true if multiple nodes, false otherwise
  */
 
-static inline bool sys_dlist_has_multiple_nodes(sys_dlist_t *list)
+static inline bool sys_dlist_has_multiple_nodes(const sys_dlist_t *list)
 {
 	return list->head != list->tail;
 }
@@ -299,7 +299,7 @@ static inline bool sys_dlist_has_multiple_nodes(sys_dlist_t *list)
  * @return a pointer to the head element, NULL if list is empty
  */
 
-static inline sys_dnode_t *sys_dlist_peek_head(sys_dlist_t *list)
+static inline sys_dnode_t *sys_dlist_peek_head(const sys_dlist_t *list)
 {
 	return sys_dlist_is_empty(list) ? NULL : list->head;
 }
@@ -314,7 +314,7 @@ static inline sys_dnode_t *sys_dlist_peek_head(sys_dlist_t *list)
  * @return a pointer to the head element
  */
 
-static inline sys_dnode_t *sys_dlist_peek_head_not_empty(sys_dlist_t *list)
+static inline sys_dnode_t *sys_dlist_peek_head_not_empty(const sys_dlist_t *list)
 {
 	return list->head;
 }
@@ -330,8 +330,8 @@ static inline sys_dnode_t *sys_dlist_peek_head_not_empty(sys_dlist_t *list)
  * @return a pointer to the next element from a node, NULL if node is the tail
  */
 
-static inline sys_dnode_t *sys_dlist_peek_next_no_check(sys_dlist_t *list,
-							sys_dnode_t *node)
+static inline sys_dnode_t *sys_dlist_peek_next_no_check(const sys_dlist_t *list,
+							const sys_dnode_t *node)
 {
 	return (node == list->tail) ? NULL : node->next;
 }
@@ -346,8 +346,8 @@ static inline sys_dnode_t *sys_dlist_peek_next_no_check(sys_dlist_t *list,
  * or NULL (when node comes from reading the head of an empty list).
  */
 
-static inline sys_dnode_t *sys_dlist_peek_next(sys_dlist_t *list,
-					       sys_dnode_t *node)
+static inline sys_dnode_t *sys_dlist_peek_next(const sys_dlist_t *list,
+					       const sys_dnode_t *node)
 {
 	return (node != NULL) ? sys_dlist_peek_next_no_check(list, node) : NULL;
 }
@@ -364,8 +364,8 @@ static inline sys_dnode_t *sys_dlist_peek_next(sys_dlist_t *list,
  *	   tail
  */
 
-static inline sys_dnode_t *sys_dlist_peek_prev_no_check(sys_dlist_t *list,
-							sys_dnode_t *node)
+static inline sys_dnode_t *sys_dlist_peek_prev_no_check(const sys_dlist_t *list,
+							const sys_dnode_t *node)
 {
 	return (node == list->head) ? NULL : node->prev;
 }
@@ -381,8 +381,8 @@ static inline sys_dnode_t *sys_dlist_peek_prev_no_check(sys_dlist_t *list,
  * 	   list).
  */
 
-static inline sys_dnode_t *sys_dlist_peek_prev(sys_dlist_t *list,
-					       sys_dnode_t *node)
+static inline sys_dnode_t *sys_dlist_peek_prev(const sys_dlist_t *list,
+					       const sys_dnode_t *node)
 {
 	return (node != NULL) ? sys_dlist_peek_prev_no_check(list, node) : NULL;
 }
@@ -395,7 +395,7 @@ static inline sys_dnode_t *sys_dlist_peek_prev(sys_dlist_t *list,
  * @return a pointer to the tail element, NULL if list is empty
  */
 
-static inline sys_dnode_t *sys_dlist_peek_tail(sys_dlist_t *list)
+static inline sys_dnode_t *sys_dlist_peek_tail(const sys_dlist_t *list)
 {
 	return sys_dlist_is_empty(list) ? NULL : list->tail;
 }
@@ -535,6 +535,68 @@ static inline void sys_dlist_remove(sys_dnode_t *node)
 }
 
 /**
+ * @brief Move a range of nodes to the head of the specified list
+ *
+ * This routine moves a range of nodes from their current list to the head of
+ * the list @a dest. The range of nodes is defined by the pointers @a start and
+ * @a last, which point to the first and last nodes in the range, respectively.
+ *
+ * This and other sys_dlist_*() functions are not thread safe.
+ *
+ * @param dest the list into which the range of nodes will be moved
+ * @param start the first node in the range to be moved
+ * @param last the last node in the range to be moved
+ */
+static inline void sys_dlist_range_prepend(sys_dlist_t *dest,
+					   sys_dnode_t *start, sys_dnode_t *last)
+{
+	sys_dnode_t *const head = dest->head;
+	sys_dnode_t *const prev = start->prev;
+	sys_dnode_t *const next = last->next;
+
+	/* Remove the range from its current list. */
+	prev->next = next;
+	next->prev = prev;
+
+	/* Prepend the range to the destination list. */
+	last->next = head;
+	start->prev = dest;
+
+	head->prev = last;
+	dest->head = start;
+}
+
+/**
+ * @brief Move a range of nodes to the end of the specified list
+ *
+ * This routine moves a range of nodes from their current list to the end of
+ * the list @a dest. The range of nodes is defined by the pointers @a start and
+ * @a last, which point to the first and last nodes in the range, respectively.
+ *
+ * @param dest the list into which the range of nodes will be moved
+ * @param start the first node in the range to be moved
+ * @param last the last node in the range to be moved
+ */
+static inline void sys_dlist_range_append(sys_dlist_t *dest,
+					  sys_dnode_t *start, sys_dnode_t *last)
+{
+	sys_dnode_t *const tail = dest->tail;
+	sys_dnode_t *const prev = start->prev;
+	sys_dnode_t *const next = last->next;
+
+	/* Remove the range from its current list. */
+	prev->next = next;
+	next->prev = prev;
+
+	/* Append the range to the destination list. */
+	last->next = dest;
+	start->prev = tail;
+
+	tail->next = start;
+	dest->tail = last;
+}
+
+/**
  * @brief get the first node in a list
  *
  * This and other sys_dlist_*() functions are not thread safe.
@@ -563,7 +625,7 @@ static inline sys_dnode_t *sys_dlist_get(sys_dlist_t *list)
  *
  * @return an integer equal to the size of the list, or 0 if empty
  */
-static inline size_t sys_dlist_len(sys_dlist_t *list)
+static inline size_t sys_dlist_len(const sys_dlist_t *list)
 {
 	size_t len = 0;
 	sys_dnode_t *node = NULL;

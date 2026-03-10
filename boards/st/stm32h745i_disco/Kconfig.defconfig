@@ -6,22 +6,11 @@
 
 if BOARD_STM32H745I_DISCO
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
-
-config ETH_STM32_HAL_MII
-	default y
-
-# STM32H745I-DISCO have PHY connected to address 1
-config ETH_STM32_HAL_PHY_ADDRESS
-	default 1
-
-endif # NETWORKING
 
 config MEMC
-	default y if DISPLAY
+	default y if STM32_LTDC
 
 
 endif # BOARD_STM32H745I_DISCO

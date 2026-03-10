@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2021 Jimmy Johnson <catch22@fastmail.net>
  * Copyright (c) 2022 T-Mobile USA, Inc.
+ * Copyright (c) 2025 Byteflies NV
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -201,6 +202,7 @@ static int tmp108_attr_set(const struct device *dev,
 			   const struct sensor_value *val)
 {
 	struct tmp108_data *drv_data = dev->data;
+	const struct tmp108_config *config = dev->config;
 	__maybe_unused uint16_t reg_value;
 	__maybe_unused int32_t uval;
 	uint16_t mode;
@@ -273,20 +275,36 @@ static int tmp108_attr_set(const struct device *dev,
 		break;
 #endif /* CONFIG_TMP108_ALERT_INTERRUPTS */
 
-	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		if (val->val1 < 1) {
-			mode = TI_TMP108_FREQ_4_SECS(dev);
-		} else if (val->val1 < 4) {
-			mode = TI_TMP108_FREQ_1_HZ(dev);
-		} else if (val->val1 < 16) {
-			mode = TI_TMP108_FREQ_4_HZ(dev);
+	case SENSOR_ATTR_SAMPLING_FREQUENCY: {
+		struct tmp_108_reg_def ams_as6212_reg_def = AMS_AS6212_CONF;
+
+		if (memcmp(&config->reg_def, &ams_as6212_reg_def, sizeof(struct tmp_108_reg_def)) ==
+		    0) {
+			if (val->val1 < 1) {
+				mode = TI_TMP108_FREQ_4_SECS(dev);
+			} else if (val->val1 < 4) {
+				mode = TI_TMP108_FREQ_1_HZ(dev);
+			} else if (val->val1 < 8) {
+				mode = TI_TMP108_FREQ_4_HZ(dev);
+			} else {
+				mode = AMS_AS6212_FREQ_8_HZ(dev);
+			}
 		} else {
-			mode = TI_TMP108_FREQ_16_HZ(dev);
+			if (val->val1 < 1) {
+				mode = TI_TMP108_FREQ_4_SECS(dev);
+			} else if (val->val1 < 4) {
+				mode = TI_TMP108_FREQ_1_HZ(dev);
+			} else if (val->val1 < 16) {
+				mode = TI_TMP108_FREQ_4_HZ(dev);
+			} else {
+				mode = TI_TMP108_FREQ_16_HZ(dev);
+			}
 		}
 		result = tmp108_write_config(dev,
 					     TI_TMP108_FREQ_MASK(dev),
 					     mode);
 		break;
+	}
 
 	case SENSOR_ATTR_TMP108_SHUTDOWN_MODE:
 		result = tmp108_write_config(dev,
@@ -421,3 +439,8 @@ DT_INST_FOREACH_STATUS_OKAY(TMP108_INIT)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ams_as6212
 DT_INST_FOREACH_STATUS_OKAY(AS6212_INIT)
+
+#define AS6221_INIT(n) TMP108_DEFINE(n, AMS_AS6221)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ams_as6221
+DT_INST_FOREACH_STATUS_OKAY(AS6221_INIT)

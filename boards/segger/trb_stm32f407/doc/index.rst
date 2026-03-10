@@ -19,28 +19,7 @@ and the datasheet.
 Supported Features
 ==================
 
-The SEGGER-TRB-STM32F407 board configuration supports the following
-hardware features:
-
-+------------+------------+------------------------------+
-| Interface  | Controller | Driver/Component             |
-+============+============+==============================+
-| NVIC       | on-chip    | nested vectored              |
-|            |            | interrupt controller         |
-+------------+------------+------------------------------+
-| SYSTICK    | on-chip    | system clock                 |
-+------------+------------+------------------------------+
-| GPIO       | on-chip    | gpio                         |
-+------------+------------+------------------------------+
-| WATCHDOG   | on-chip    | independent watchdog         |
-+------------+------------+------------------------------+
-| COUNTER    | on-chip    | rtc                          |
-+------------+------------+------------------------------+
-| RNG        | on-chip    | True Random number generator |
-+------------+------------+------------------------------+
-
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -91,6 +70,9 @@ master clock, which can be set as high as 168 MHz.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
+
 The SEGGER-TRB-STM32F407 board is specially designed to test the SEGGER
 Trace-Pro debuggers, so this example assumes a J-Trace or J-Link is used.
 

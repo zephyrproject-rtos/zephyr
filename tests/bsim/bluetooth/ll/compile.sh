@@ -24,7 +24,8 @@ app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_privacy.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_low_lat.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_single_timer.conf compile
 
-app=tests/bsim/bluetooth/ll/bis compile
+app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-sequential.conf compile
+app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-interleaved.conf  compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-ll_interface.conf compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-ticker_expire_info.conf compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-scan_aux_use_chains.conf compile
@@ -40,5 +41,6 @@ app=tests/bsim/bluetooth/ll/edtt/gatt_test_app \
 
 app=tests/bsim/bluetooth/ll/multiple_id compile
 app=tests/bsim/bluetooth/ll/throughput compile
+app=tests/bsim/bluetooth/ll/throughput conf_overlay=overlay-no_phy_update.conf compile
 
 wait_for_background_jobs

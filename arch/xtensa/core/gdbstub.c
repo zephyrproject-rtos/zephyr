@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/arch/xtensa/cache.h>
 #include <zephyr/debug/gdbstub.h>
 
 #include <xtensa_asm2_context.h>
@@ -178,11 +179,20 @@ static void read_sreg(struct gdb_ctx *ctx, struct xtensa_register *reg)
 		break;
 #endif
 #if XCHAL_HAVE_WINDOWED
+	/*
+	 * Returning 0 for WINDOWBASE and 1 for WINDOWSTART. This is
+	 * effectively telling GDB that only A0-A3 and AR0-AR3 contain
+	 * active data and other physical registers do not. GDB then
+	 * must rely on spilled values on stack. Otherwise, GDB will try
+	 * to look at all AR* registers for previous frame(s). Since we
+	 * do not save all AR* register values, there is nothing for
+	 * GDB to look at, and thus failing to unwind stack.
+	 */
 	case WINDOWBASE:
-		val = get_one_sreg(WINDOWBASE);
+		val = 0;
 		break;
 	case WINDOWSTART:
-		val = get_one_sreg(WINDOWSTART);
+		val = 1;
 		break;
 #endif
 #if XCHAL_NUM_INTLEVELS > 0
@@ -426,15 +436,25 @@ static void copy_to_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 {
 	struct xtensa_register *reg;
 	int idx, num_laddr_regs;
+	int32_t a0save;
 
-	uint32_t *bsa = *(int **)stack;
+	/* Need to spill all registers so their values are on the stack instead of
+	 * the physical register file. This is required for GDB backtracing to
+	 * walk through stack.
+	 */
+	__asm__ volatile("mov %0, a0;"
+			 "call0 xtensa_spill_reg_windows;"
+			 "mov a0, %0"
+			 : "=r"(a0save));
 
-	if ((int *)bsa - stack > 4) {
-		num_laddr_regs = 8;
-	} else if ((int *)bsa - stack > 8) {
-		num_laddr_regs = 12;
-	} else if ((int *)bsa - stack > 12) {
+	const uint32_t *bsa = *(const int **)stack;
+
+	if (bsa - (const uint32_t *)stack > 12) {
 		num_laddr_regs = 16;
+	} else if (bsa - (const uint32_t *)stack > 8) {
+		num_laddr_regs = 12;
+	} else if (bsa - (const uint32_t *)stack > 4) {
+		num_laddr_regs = 8;
 	} else {
 		num_laddr_regs = 4;
 	}
@@ -445,13 +465,11 @@ static void copy_to_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 
 		if (reg->regno == SOC_GDB_REGNO_A1) {
 			/* A1 is calculated */
-			reg->val = POINTER_TO_UINT(
-					((char *)bsa) + BASE_SAVE_AREA_SIZE);
-			reg->seqno = ctx->seqno;
+			reg->val = POINTER_TO_UINT(((char *)bsa) + sizeof(_xtensa_irq_bsa_t));
 		} else {
 			reg->val = bsa[reg->stack_offset / 4];
-			reg->seqno = ctx->seqno;
 		}
+		reg->seqno = ctx->seqno;
 	}
 
 	/* For registers other than logical address registers */
@@ -471,26 +489,13 @@ static void copy_to_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 	}
 
 #if XCHAL_HAVE_WINDOWED
-	uint8_t a0_idx, ar_idx, wb_start;
+	uint8_t a0_idx, ar_idx;
 
-	wb_start = (uint8_t)xtensa_gdb_ctx.regs[xtensa_gdb_ctx.wb_idx].val;
-
-	/*
-	 * Copied the logical registers A0-A15 to physical registers (AR*)
-	 * according to WINDOWBASE.
-	 */
+	/* Copied the logical registers A0-A15 to physical registers AR0-AR15. */
 	for (idx = 0; idx < num_laddr_regs; idx++) {
-		/* Index to register description array for A */
+		/* Index to register description array for A and AR */
 		a0_idx = xtensa_gdb_ctx.a0_idx + idx;
-
-		/* Find the start of window (== WINDOWBASE * 4) */
-		ar_idx = wb_start * 4;
-		/* Which logical register we are working on... */
-		ar_idx += idx;
-		/* Wrap around A64 (or A32) -> A0 */
-		ar_idx %= XCHAL_NUM_AREGS;
-		/* Index to register description array for AR */
-		ar_idx += xtensa_gdb_ctx.ar_idx;
+		ar_idx = xtensa_gdb_ctx.ar_idx + idx;
 
 		xtensa_gdb_ctx.regs[ar_idx].val = xtensa_gdb_ctx.regs[a0_idx].val;
 		xtensa_gdb_ctx.regs[ar_idx].seqno = xtensa_gdb_ctx.regs[a0_idx].seqno;
@@ -518,14 +523,14 @@ static void restore_from_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 	struct xtensa_register *reg;
 	int idx, num_laddr_regs;
 
-	_xtensa_irq_bsa_t *bsa = (void *)*(int **)stack;
+	_xtensa_irq_bsa_t *bsa = (void *)*(const int **)stack;
 
-	if ((int *)bsa - stack > 4) {
-		num_laddr_regs = 8;
-	} else if ((int *)bsa - stack > 8) {
-		num_laddr_regs = 12;
-	} else if ((int *)bsa - stack > 12) {
+	if ((uint32_t *)bsa - (const uint32_t *)stack > 12) {
 		num_laddr_regs = 16;
+	} else if ((uint32_t *)bsa - (const uint32_t *)stack > 8) {
+		num_laddr_regs = 12;
+	} else if ((uint32_t *)bsa - (const uint32_t *)stack > 4) {
+		num_laddr_regs = 8;
 	} else {
 		num_laddr_regs = 4;
 	}
@@ -547,7 +552,7 @@ static void restore_from_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 			/* Shouldn't be changing stack pointer */
 			continue;
 		} else {
-			bsa[reg->stack_offset / 4] = reg->val;
+			((uint32_t *)bsa)[reg->stack_offset / 4] = reg->val;
 		}
 	}
 
@@ -559,7 +564,7 @@ static void restore_from_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 			continue;
 		} else if (reg->stack_offset != 0) {
 			/* For those registers stashed in stack */
-			bsa[reg->stack_offset / 4] = reg->val;
+			((uint32_t *)bsa)[reg->stack_offset / 4] = reg->val;
 		} else if (gdb_xtensa_is_special_reg(reg)) {
 			/*
 			 * Currently not writing back any special
@@ -593,8 +598,52 @@ void arch_gdb_continue(void)
 
 void arch_gdb_step(void)
 {
+	uint32_t ps = xtensa_gdb_ctx.regs[xtensa_gdb_ctx.ps_idx].val;
+	uint32_t intlevel = ps & PS_INTLEVEL_MASK;
+	bool excm = (ps & PS_EXCM_MASK) != 0;
+	uint32_t icountlevel;
+
+	/* Avoid counting while in this function. */
+	set_one_sreg(ICOUNT, 0);
+	set_one_sreg(ICOUNTLEVEL, 0);
+
+	/*
+	 * Note that ICOUNT only increments when current interrupt level
+	 * is less then ICOUNTLEVEL, and that ICOUNT interrupt is triggered
+	 * when it reaches zero.
+	 */
+	if (excm) {
+		icountlevel = XCHAL_EXCM_LEVEL + 1;
+	} else if (arch_curr_cpu()->nested > 1) {
+		/*
+		 * ICOUNT, IBREAK and DBREAK all trigger interrupts.
+		 * So we need to account for nested being 1 when we
+		 * are running GDB stub. If nested is higher than one,
+		 * this means we are debugging inside ISRs.
+		 */
+		icountlevel = intlevel + 1;
+
+		/*
+		 * PS.INTLEVEL would be zero when it is level-1 interrupts.
+		 * A simple +1 does not work as ICOUNT would not stop inside
+		 * the ISR. So we need to up the ICOUNTLEVEL.
+		 */
+		icountlevel = MAX(icountlevel, 2);
+
+		/*
+		 * Make sure instructions are only counted below debug
+		 * interrupt level, or else ICOUNT would increment while
+		 * we are working in this function.
+		 */
+		icountlevel = MIN(icountlevel, XCHAL_DEBUGLEVEL);
+	} else {
+		/* Will break in non-ISR, normal code execution. */
+		icountlevel = 1;
+	}
+
 	set_one_sreg(ICOUNT, 0xFFFFFFFEU);
-	set_one_sreg(ICOUNTLEVEL, XCHAL_DEBUGLEVEL);
+	set_one_sreg(ICOUNTLEVEL, icountlevel);
+
 	__asm__ volatile("isync");
 }
 
@@ -705,13 +754,18 @@ size_t arch_gdb_reg_readone(struct gdb_ctx *ctx, uint8_t *buf, size_t buflen,
 	int idx;
 	size_t ret;
 
-	ret = 0;
+	buf[0] = 'x';
+	buf[1] = 'x';
+	ret = 2;
 	for (idx = 0; idx < ctx->num_regs; idx++) {
 		reg = &ctx->regs[idx];
 
 		/*
-		 * GDB sends the G-packet index as register number
-		 * instead of the actual Xtensa register number.
+		 * Some GDB versions send the G-packet index as register number
+		 * instead of the actual Xtensa register number. After checking
+		 * 4 GDB versions one of them (Zephyr SDK for ESP32) sent the
+		 * index while the others (Zephyr SDK for TGL and Cadence
+		 * toolchain for TGL and MTL) sent register numbers.
 		 */
 		if (reg->idx == regno) {
 			if (reg->seqno != ctx->seqno) {
@@ -762,9 +816,8 @@ size_t arch_gdb_reg_writeone(struct gdb_ctx *ctx, uint8_t *hex, size_t hexlen,
 		reg = &ctx->regs[idx];
 
 		/*
-		 * Remember GDB sends index number instead of
-		 * actual register number (as defined in Xtensa
-		 * architecture).
+		 * Remember some GDB versions send index number instead of
+		 * actual register number (as defined in Xtensa architecture).
 		 */
 		if (reg->idx != regno) {
 			continue;
@@ -956,10 +1009,9 @@ void arch_gdb_init(void)
 			/* AR0: 0x0100 */
 			xtensa_gdb_ctx.ar_idx = idx;
 			break;
-		case (XTREG_GRP_SPECIAL + WINDOWBASE):
-			/* WINDOWBASE (Special Register) */
-			xtensa_gdb_ctx.wb_idx = idx;
-			break;
+		case 0x02E6:
+			/* PS: 0x02E6 */
+			xtensa_gdb_ctx.ps_idx = idx;
 		default:
 			break;
 		};
@@ -985,4 +1037,36 @@ void arch_gdb_init(void)
 	 * won't go forward.
 	 */
 	__asm__ volatile ("_break.n 0");
+}
+
+void arch_gdb_post_memory_write(uintptr_t addr, size_t len, uint8_t align)
+{
+	ARG_UNUSED(addr);
+	ARG_UNUSED(len);
+	ARG_UNUSED(align);
+
+#if defined(CONFIG_ICACHE) && defined(CONFIG_DCACHE)
+	/*
+	 * Note that a GDB memory write can write to code memory to
+	 * insert breakpoints. We need to deal with this here so
+	 * that the instruction cache can actually see the modified
+	 * instructions.
+	 *
+	 * According to the ISA manual, after writing the instructions:
+	 * 1. Flush the data cache so the modified instructions are
+	 *    in the main memory.
+	 * 2. Do ISYNC or MEMW or both (depending on which part of
+	 *    manual you are reading).
+	 * 3. Invalidate the instruction cache corresponding to
+	 *    the modified memory.
+	 * 4. Do another ISYNC.
+	 */
+	arch_dcache_flush_range((__sparse_force void __sparse_cache *)addr, len);
+
+	__asm__ volatile("isync; memw");
+
+	arch_icache_invd_range((__sparse_force void __sparse_cache *)addr, len);
+
+	__asm__ volatile("isync");
+#endif /* CONFIG_ICACHE && CONFIG_DCACHE */
 }

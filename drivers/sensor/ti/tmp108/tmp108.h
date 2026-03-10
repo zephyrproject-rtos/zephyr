@@ -32,6 +32,8 @@
 	 .TEMP_DIV = 2,                                                                            \
 	 IF_ENABLED(CONFIG_TMP108_ALERT_INTERRUPTS, (.CONF_POL = 0x0400))}
 
+#define AMS_AS6221_CONF AMS_AS6212_CONF
+
 #define TI_TMP108_CONF                                                                             \
 	{.CONF_M0 = 0x0100,                                                                        \
 	 .CONF_M1 = 0x0200,                                                                        \
@@ -56,6 +58,7 @@
 #define TI_TMP108_FREQ_4_HZ(x) TI_TMP108_GET_CONF(x, CONF_CR1)
 #define TI_TMP108_FREQ_16_HZ(x)	(TI_TMP108_GET_CONF(x, CONF_CR1) | \
 				TI_TMP108_GET_CONF(x, CONF_CR0))
+#define AMS_AS6212_FREQ_8_HZ(x) (TI_TMP108_GET_CONF(x, CONF_CR1) | TI_TMP108_GET_CONF(x, CONF_CR0))
 #define TI_TMP108_FREQ_MASK(x)	~(TI_TMP108_GET_CONF(x, CONF_CR1) | \
 				TI_TMP108_GET_CONF(x, CONF_CR0))
 

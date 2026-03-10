@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 if(CONFIG_BOARD_MPS2_AN385)
   set(SUPPORTED_EMU_PLATFORMS qemu armfvp)
@@ -15,13 +15,20 @@ elseif(CONFIG_BOARD_MPS2_AN383)
   set(SUPPORTED_EMU_PLATFORMS armfvp)
   set(ARMFVP_BIN_NAME FVP_MPS2_Cortex-M0plus)
   set(ARMFVP_FLAGS
-  -C armcortexm0plusct.NUM_MPU_REGION=8
-  -C armcortexm0plusct.USER=1
-  -C armcortexm0plusct.VTOR=1
-  )
+    -C armcortexm0plusct.NUM_MPU_REGION=8
+    -C armcortexm0plusct.USER=1
+    -C armcortexm0plusct.VTOR=1
+    )
 elseif(CONFIG_BOARD_MPS2_AN386)
-  set(SUPPORTED_EMU_PLATFORMS armfvp)
+  set(SUPPORTED_EMU_PLATFORMS qemu armfvp)
   set(ARMFVP_BIN_NAME FVP_MPS2_Cortex-M4)
+  set(QEMU_CPU_TYPE_${ARCH} cortex-m4)
+  set(QEMU_FLAGS_${ARCH}
+    -cpu ${QEMU_CPU_TYPE_${ARCH}}
+    -machine mps2-an386
+    -nographic
+    -vga none
+    )
 elseif(CONFIG_BOARD_MPS2_AN500)
   set(SUPPORTED_EMU_PLATFORMS armfvp)
   set(ARMFVP_BIN_NAME FVP_MPS2_Cortex-M7)
@@ -48,6 +55,8 @@ elseif(CONFIG_BOARD_MPS2_AN521_CPU0 OR CONFIG_BOARD_MPS2_AN521_CPU0_NS OR CONFIG
     # TF-M (Secure) & Zephyr (Non Secure) image (when running
     # in-tree tests).
     set(QEMU_KERNEL_OPTION "-device;loader,file=${CMAKE_BINARY_DIR}/zephyr/tfm_merged.hex")
+
+    set(ARMFVP_FLAGS ${ARMFVP_FLAGS} -a ${APPLICATION_BINARY_DIR}/zephyr/tfm_merged.hex)
   elseif(CONFIG_OPENAMP)
     set(QEMU_EXTRA_FLAGS "-device;loader,file=${REMOTE_ZEPHYR_DIR}/zephyr.elf")
   elseif(CONFIG_BOARD_MPS2_AN521_CPU1)

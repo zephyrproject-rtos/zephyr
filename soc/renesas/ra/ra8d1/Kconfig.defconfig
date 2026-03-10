@@ -6,8 +6,36 @@ if SOC_SERIES_RA8D1
 config NUM_IRQS
 	default 96
 
+config BUILD_OUTPUT_HEX
+	default y
+
+config CLOCK_CONTROL
+	default y
+
 # Set to the minimal size of data which can be written.
 config FLASH_FILL_BUFFER_SIZE
 	default 128
+
+config DCACHE
+	default n
+
+config CACHE_MANAGEMENT
+	default n
+
+config CORTEX_M_SYSTICK
+	default n if RENESAS_RA_ULPT_TIMER
+
+DT_ICLK_PATH := $(dt_nodelabel_path,cpuclk)
+DT_LOCO_PATH := $(dt_nodelabel_path,loco)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(DT_ICLK_PATH),clock-frequency) if CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,$(DT_LOCO_PATH),clock-frequency) if RENESAS_RA_ULPT_TIMER
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4096 if RENESAS_RA_ULPT_TIMER
+
+config PM_DEVICE
+	default y if PM
 
 endif # SOC_SERIES_RA8D1

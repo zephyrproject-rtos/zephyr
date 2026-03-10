@@ -30,6 +30,9 @@ instances.
   devicetree. This could include configuration such as the RX IRQ line's
   priority and the UART baud rate. These may be modifiable at runtime, but
   their boot-time configuration is described in devicetree.
+* From the application code, both UART are interchangeable and using one or the
+  other has no impact, it is only a matter of board design. It is pure
+  **hardware configuration** and should be done with devicetree.
 * Whether or not to include **software support** for UART in the build is
   controlled via Kconfig. Applications which do not need to use the UARTs can
   remove the driver source code from the build using Kconfig, even though the
@@ -42,6 +45,9 @@ supporting both the Bluetooth Low Energy and 802.15.4 wireless technologies.
   what driver or drivers it's compatible with, etc.
 * **Boot-time configuration** for the radio, such as TX power in dBm, should
   also be specified using devicetree.
+* On the application, using one or the other protocol will not get the same code
+  into play, but the same hardware will be used. This is relevant to **software
+  configuration**.
 * Kconfig should determine which **software features** should be built for the
   radio, such as selecting a BLE or 802.15.4 protocol stack.
 
@@ -63,3 +69,47 @@ There are **exceptions** to these rules:
 * Devicetree's ``chosen`` keyword, which allows the user to select a specific
   instance of a hardware device to be used for a particular purpose. An example
   of this is selecting a particular UART for use as the system's console.
+
+.. _auto-dts-kconfig:
+
+Automatic Kconfig symbols from devicetree
+*****************************************
+
+During the devicetree processing step, CMake runs
+:zephyr_file:`scripts/dts/gen_driver_kconfig_dts.py`, which scans all
+:ref:`DTS root <dts_root>` directories, including :zephyr_file:`dts/bindings` and
+writes ``Kconfig.dts`` into the build's ``KCONFIG_BINARY_DIR`` (for example
+``<build>/zephyr`` or ``<build>/<image>/zephyr`` in case of :ref:`sysbuild`).
+For each ``compatible = "vendor,chip"`` that appears in a binding, the generated
+file contains:
+
+.. code-block:: kconfig
+
+   DT_COMPAT_VENDOR_CHIP := vendor,chip
+
+   config DT_HAS_VENDOR_CHIP_ENABLED
+           def_bool $(dt_compat_enabled,$(DT_COMPAT_VENDOR_CHIP))
+
+The assignment keeps the literal ``compatible`` string available to the
+preprocessor functions described in :ref:`kconfig-functions`, so that Kconfig
+files can call helpers such as ``$(dt_compat_on_bus,$(DT_COMPAT_<compatible>),i2c)``.
+Characters like ``-``, ``,`` and ``@`` are converted to underscores when the
+symbol names are created.
+
+The hidden boolean symbol becomes ``CONFIG_DT_HAS_<compatible>_ENABLED`` after
+Kconfig runs. Its value tracks whether the current devicetree contains at least
+one node with that ``compatible`` whose :ref:`status <dt-important-props>` is
+``okay``. Symbols for enabling drivers should almost certainly be ``default y``
+and have ``depends on CONFIG_DT_HAS_<compatible>_ENABLED``, for example:
+
+.. code-block:: kconfig
+
+   config SENSOR_VENDOR_CHIP
+           bool "Vendor Chip sensor"
+           default y
+           depends on DT_HAS_VENDOR_CHIP_ENABLED
+
+Because these symbols are generated automatically, adding a new binding with
+a ``compatible`` property is all that is required to make the corresponding
+``DT_HAS_<compatible>_ENABLED`` and ``DT_COMPAT_<compatible>`` constructs
+available to Kconfig.

@@ -27,7 +27,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
@@ -242,7 +241,6 @@ static void micp_mic_ctlr_aics_discover_cb(struct bt_aics *inst, int err)
 
 	if (mic_ctlr == NULL) {
 		LOG_ERR("Could not lookup mic_ctlr from aics");
-		micp_mic_ctlr_discover_complete(mic_ctlr, BT_GATT_ERR(BT_ATT_ERR_UNLIKELY));
 
 		return;
 	}
@@ -535,7 +533,7 @@ int bt_micp_mic_ctlr_discover(struct bt_conn *conn, struct bt_micp_mic_ctlr **mi
 	 * 5) When everything above have been discovered, the callback is called
 	 */
 
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		LOG_DBG("NULL conn");
 		return -EINVAL;
 	}
@@ -606,7 +604,7 @@ int bt_micp_mic_ctlr_cb_register(struct bt_micp_mic_ctlr_cb *cb)
 {
 	struct bt_micp_mic_ctlr_cb *tmp;
 
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -626,12 +624,12 @@ int bt_micp_mic_ctlr_cb_register(struct bt_micp_mic_ctlr_cb *cb)
 int bt_micp_mic_ctlr_included_get(struct bt_micp_mic_ctlr *mic_ctlr,
 				  struct bt_micp_included *included)
 {
-	CHECKIF(mic_ctlr == NULL) {
+	if (mic_ctlr == NULL) {
 		LOG_DBG("NULL mic_ctlr");
 		return -EINVAL;
 	}
 
-	CHECKIF(included == NULL) {
+	if (included == NULL) {
 		return -EINVAL;
 	}
 
@@ -646,7 +644,7 @@ struct bt_micp_mic_ctlr *bt_micp_mic_ctlr_get_by_conn(const struct bt_conn *conn
 {
 	struct bt_micp_mic_ctlr *mic_ctlr;
 
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		LOG_DBG("NULL conn pointer");
 		return NULL;
 	}
@@ -663,7 +661,7 @@ struct bt_micp_mic_ctlr *bt_micp_mic_ctlr_get_by_conn(const struct bt_conn *conn
 
 int bt_micp_mic_ctlr_conn_get(const struct bt_micp_mic_ctlr *mic_ctlr, struct bt_conn **conn)
 {
-	CHECKIF(mic_ctlr == NULL) {
+	if (mic_ctlr == NULL) {
 		LOG_DBG("NULL mic_ctlr pointer");
 		return -EINVAL;
 	}
@@ -682,7 +680,7 @@ int bt_micp_mic_ctlr_mute_get(struct bt_micp_mic_ctlr *mic_ctlr)
 {
 	int err;
 
-	CHECKIF(mic_ctlr == NULL) {
+	if (mic_ctlr == NULL) {
 		LOG_DBG("NULL mic_ctlr");
 		return -EINVAL;
 	}
@@ -713,7 +711,7 @@ static int bt_micp_mic_ctlr_write_mute(struct bt_micp_mic_ctlr *mic_ctlr, bool m
 {
 	int err;
 
-	CHECKIF(mic_ctlr == NULL) {
+	if (mic_ctlr == NULL) {
 		LOG_DBG("NULL mic_ctlr");
 		return -EINVAL;
 	}

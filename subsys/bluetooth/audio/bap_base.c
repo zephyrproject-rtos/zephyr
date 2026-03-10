@@ -21,7 +21,6 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
@@ -101,6 +100,74 @@ static bool check_pull_ltv(struct net_buf_simple *net_buf)
 	return true;
 }
 
+static struct bt_bap_base_subgroup *base_pull_subgroup(struct net_buf_simple *net_buf,
+						       uint8_t index)
+{
+	struct bt_bap_base_subgroup *subgroup = (struct bt_bap_base_subgroup *)net_buf->data;
+	uint8_t bis_count;
+
+	if (net_buf->len < sizeof(bis_count)) {
+		LOG_DBG("Invalid BASE length when pulling bis_count: %u", net_buf->size);
+
+		return NULL;
+	}
+
+	bis_count = base_pull_bis_count(net_buf);
+	if (!IN_RANGE(bis_count, 1U, BT_ISO_MAX_GROUP_ISO_COUNT)) {
+		LOG_DBG("Subgroup[%u]: Invalid BIS count: %u", index, bis_count);
+
+		return NULL;
+	}
+
+	if (net_buf->len < BASE_CODEC_ID_SIZE) {
+		LOG_DBG("Invalid BASE length when pulling codec: %u", net_buf->size);
+
+		return NULL;
+	}
+
+	base_pull_codec_id(net_buf, NULL);
+
+	/* Pull CC */
+	if (!check_pull_ltv(net_buf)) {
+		LOG_DBG("Invalid BASE length when pulling CC LTV: %u", net_buf->size);
+
+		return NULL;
+	}
+
+	/* Pull meta */
+	if (!check_pull_ltv(net_buf)) {
+		LOG_DBG("Invalid BASE length when pulling meta LTV: %u", net_buf->size);
+
+		return NULL;
+	}
+
+	for (uint8_t i = 0U; i < bis_count; i++) {
+		uint8_t bis_index;
+
+		if (net_buf->len < sizeof(bis_index)) {
+			LOG_DBG("Invalid BASE length when pulling bis_index: %u", net_buf->size);
+
+			return NULL;
+		}
+
+		bis_index = net_buf_simple_pull_u8(net_buf);
+		if (!IN_RANGE(bis_index, 1U, BT_ISO_BIS_INDEX_MAX)) {
+			LOG_DBG("Subgroup[%u]: Invalid BIS index: %u", index, bis_index);
+
+			return NULL;
+		}
+
+		/* Pull BIS CC data */
+		if (!check_pull_ltv(net_buf)) {
+			LOG_DBG("Invalid BASE length when pulling BIS CC LTV: %u", net_buf->size);
+
+			return NULL;
+		}
+	}
+
+	return subgroup;
+}
+
 const struct bt_bap_base *bt_bap_base_get_base_from_ad(const struct bt_data *ad)
 {
 	struct bt_uuid_16 broadcast_uuid;
@@ -109,7 +176,7 @@ const struct bt_bap_base *bt_bap_base_get_base_from_ad(const struct bt_data *ad)
 	uint8_t subgroup_count;
 	void *uuid;
 
-	CHECKIF(ad == NULL) {
+	if (ad == NULL) {
 		LOG_DBG("data is NULL");
 
 		return NULL;
@@ -148,72 +215,19 @@ const struct bt_bap_base *bt_bap_base_get_base_from_ad(const struct bt_data *ad)
 	/* Pull all data to verify that the result BASE is valid */
 	base_pull_pd(&net_buf);
 	subgroup_count = net_buf_simple_pull_u8(&net_buf);
-	if (subgroup_count == 0 || subgroup_count > BASE_SUBGROUP_MAX_COUNT) {
+	if (!IN_RANGE(subgroup_count, 1U, BASE_SUBGROUP_MAX_COUNT)) {
 		LOG_DBG("Invalid subgroup count: %u", subgroup_count);
 
 		return NULL;
 	}
 
 	for (uint8_t i = 0U; i < subgroup_count; i++) {
-		uint8_t bis_count;
+		const struct bt_bap_base_subgroup *subgroup = base_pull_subgroup(&net_buf, i);
 
-		if (net_buf.len < sizeof(bis_count)) {
-			LOG_DBG("Invalid BASE length: %u", ad->data_len);
-
-			return NULL;
-		}
-
-		bis_count = base_pull_bis_count(&net_buf);
-		if (bis_count == 0 || bis_count > BT_ISO_MAX_GROUP_ISO_COUNT) {
-			LOG_DBG("Subgroup[%u]: Invalid BIS count: %u", i, bis_count);
+		if (subgroup == NULL) {
+			LOG_DBG("Subgroup[%u] is invalid", i);
 
 			return NULL;
-		}
-
-		if (net_buf.len < BASE_CODEC_ID_SIZE) {
-			LOG_DBG("Invalid BASE length: %u", ad->data_len);
-
-			return NULL;
-		}
-
-		base_pull_codec_id(&net_buf, NULL);
-
-		/* Pull CC */
-		if (!check_pull_ltv(&net_buf)) {
-			LOG_DBG("Invalid BASE length: %u", ad->data_len);
-
-			return NULL;
-		}
-
-		/* Pull meta */
-		if (!check_pull_ltv(&net_buf)) {
-			LOG_DBG("Invalid BASE length: %u", ad->data_len);
-
-			return NULL;
-		}
-
-		for (uint8_t j = 0U; j < bis_count; j++) {
-			uint8_t bis_index;
-
-			if (net_buf.len < sizeof(bis_index)) {
-				LOG_DBG("Invalid BASE length: %u", ad->data_len);
-
-				return NULL;
-			}
-
-			bis_index = net_buf_simple_pull_u8(&net_buf);
-			if (bis_index == 0 || bis_index > BT_ISO_BIS_INDEX_MAX) {
-				LOG_DBG("Subgroup[%u]: Invalid BIS index: %u", i, bis_index);
-
-				return NULL;
-			}
-
-			/* Pull BIS CC data */
-			if (!check_pull_ltv(&net_buf)) {
-				LOG_DBG("Invalid BASE length: %u", ad->data_len);
-
-				return NULL;
-			}
 		}
 	}
 
@@ -226,7 +240,7 @@ int bt_bap_base_get_size(const struct bt_bap_base *base)
 	uint8_t subgroup_count;
 	size_t size = 0;
 
-	CHECKIF(base == NULL) {
+	if (base == NULL) {
 		LOG_DBG("base is NULL");
 
 		return -EINVAL;
@@ -277,7 +291,7 @@ int bt_bap_base_get_pres_delay(const struct bt_bap_base *base)
 	struct net_buf_simple net_buf;
 	uint32_t pd;
 
-	CHECKIF(base == NULL) {
+	if (base == NULL) {
 		LOG_DBG("base is NULL");
 
 		return -EINVAL;
@@ -294,7 +308,7 @@ int bt_bap_base_get_subgroup_count(const struct bt_bap_base *base)
 	struct net_buf_simple net_buf;
 	uint8_t subgroup_count;
 
-	CHECKIF(base == NULL) {
+	if (base == NULL) {
 		LOG_DBG("base is NULL");
 
 		return -EINVAL;
@@ -312,17 +326,16 @@ int bt_bap_base_foreach_subgroup(const struct bt_bap_base *base,
 					      void *user_data),
 				 void *user_data)
 {
-	struct bt_bap_base_subgroup *subgroup;
 	struct net_buf_simple net_buf;
 	uint8_t subgroup_count;
 
-	CHECKIF(base == NULL) {
+	if (base == NULL) {
 		LOG_DBG("base is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(func == NULL) {
+	if (func == NULL) {
 		LOG_DBG("func is NULL");
 
 		return -EINVAL;
@@ -333,32 +346,18 @@ int bt_bap_base_foreach_subgroup(const struct bt_bap_base *base,
 	subgroup_count = net_buf_simple_pull_u8(&net_buf);
 
 	for (uint8_t i = 0U; i < subgroup_count; i++) {
-		subgroup = (struct bt_bap_base_subgroup *)net_buf.data;
+		const struct bt_bap_base_subgroup *subgroup = base_pull_subgroup(&net_buf, i);
+
+		if (subgroup == NULL) {
+			LOG_DBG("Subgroup[%u] is invalid", i);
+
+			return -EINVAL;
+		}
+
 		if (!func(subgroup, user_data)) {
 			LOG_DBG("user stopped parsing");
 
 			return -ECANCELED;
-		}
-
-		/* Parse subgroup data to get next subgroup pointer */
-		if (subgroup_count > 1) { /* Only parse data if it isn't the last one */
-			uint8_t bis_count;
-
-			bis_count = base_pull_bis_count(&net_buf);
-			base_pull_codec_id(&net_buf, NULL);
-
-			/* Codec config */
-			base_pull_ltv(&net_buf, NULL);
-
-			/* meta */
-			base_pull_ltv(&net_buf, NULL);
-
-			for (uint8_t j = 0U; j < bis_count; j++) {
-				net_buf_simple_pull_u8(&net_buf); /* index */
-
-				/* Codec config */
-				base_pull_ltv(&net_buf, NULL);
-			}
 		}
 	}
 
@@ -370,13 +369,13 @@ int bt_bap_base_get_subgroup_codec_id(const struct bt_bap_base_subgroup *subgrou
 {
 	struct net_buf_simple net_buf;
 
-	CHECKIF(subgroup == NULL) {
+	if (subgroup == NULL) {
 		LOG_DBG("subgroup is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(codec_id == NULL) {
+	if (codec_id == NULL) {
 		LOG_DBG("codec_id is NULL");
 
 		return -EINVAL;
@@ -393,13 +392,13 @@ int bt_bap_base_get_subgroup_codec_data(const struct bt_bap_base_subgroup *subgr
 {
 	struct net_buf_simple net_buf;
 
-	CHECKIF(subgroup == NULL) {
+	if (subgroup == NULL) {
 		LOG_DBG("subgroup is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(data == NULL) {
+	if (data == NULL) {
 		LOG_DBG("data is NULL");
 
 		return -EINVAL;
@@ -417,13 +416,13 @@ int bt_bap_base_get_subgroup_codec_meta(const struct bt_bap_base_subgroup *subgr
 {
 	struct net_buf_simple net_buf;
 
-	CHECKIF(subgroup == NULL) {
+	if (subgroup == NULL) {
 		LOG_DBG("subgroup is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(meta == NULL) {
+	if (meta == NULL) {
 		LOG_DBG("meta is NULL");
 
 		return -EINVAL;
@@ -448,13 +447,13 @@ int bt_bap_base_subgroup_codec_to_codec_cfg(const struct bt_bap_base_subgroup *s
 	uint8_t *ltv_data;
 	uint8_t ltv_len;
 
-	CHECKIF(subgroup == NULL) {
+	if (subgroup == NULL) {
 		LOG_DBG("subgroup is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(codec_cfg == NULL) {
+	if (codec_cfg == NULL) {
 		LOG_DBG("codec_cfg is NULL");
 
 		return -EINVAL;
@@ -500,7 +499,7 @@ int bt_bap_base_get_subgroup_bis_count(const struct bt_bap_base_subgroup *subgro
 {
 	struct net_buf_simple net_buf;
 
-	CHECKIF(subgroup == NULL) {
+	if (subgroup == NULL) {
 		LOG_DBG("subgroup is NULL");
 
 		return -EINVAL;
@@ -519,13 +518,13 @@ int bt_bap_base_subgroup_foreach_bis(const struct bt_bap_base_subgroup *subgroup
 	struct net_buf_simple net_buf;
 	uint8_t bis_count;
 
-	CHECKIF(subgroup == NULL) {
+	if (subgroup == NULL) {
 		LOG_DBG("subgroup is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(func == NULL) {
+	if (func == NULL) {
 		LOG_DBG("func is NULL");
 
 		return -EINVAL;
@@ -563,13 +562,13 @@ int bt_bap_base_subgroup_foreach_bis(const struct bt_bap_base_subgroup *subgroup
 int bt_bap_base_subgroup_bis_codec_to_codec_cfg(const struct bt_bap_base_subgroup_bis *bis,
 						struct bt_audio_codec_cfg *codec_cfg)
 {
-	CHECKIF(bis == NULL) {
+	if (bis == NULL) {
 		LOG_DBG("bis is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(codec_cfg == NULL) {
+	if (codec_cfg == NULL) {
 		LOG_DBG("codec_cfg is NULL");
 
 		return -EINVAL;
@@ -612,13 +611,13 @@ static bool base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup, void *
 int bt_bap_base_subgroup_get_bis_indexes(const struct bt_bap_base_subgroup *subgroup,
 					 uint32_t *bis_indexes)
 {
-	CHECKIF(subgroup == NULL) {
+	if (subgroup == NULL) {
 		LOG_DBG("subgroup is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(bis_indexes == NULL) {
+	if (bis_indexes == NULL) {
 		LOG_DBG("bis_indexes is NULL");
 
 		return -EINVAL;
@@ -631,13 +630,13 @@ int bt_bap_base_subgroup_get_bis_indexes(const struct bt_bap_base_subgroup *subg
 
 int bt_bap_base_get_bis_indexes(const struct bt_bap_base *base, uint32_t *bis_indexes)
 {
-	CHECKIF(base == NULL) {
+	if (base == NULL) {
 		LOG_DBG("base is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(bis_indexes == NULL) {
+	if (bis_indexes == NULL) {
 		LOG_DBG("bis_indexes is NULL");
 
 		return -EINVAL;

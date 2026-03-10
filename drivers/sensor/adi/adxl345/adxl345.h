@@ -14,6 +14,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
+#include <zephyr/dt-bindings/sensor/adxl345.h>
+
 #ifdef CONFIG_ADXL345_STREAM
 #include <zephyr/rtio/rtio.h>
 #endif /* CONFIG_ADXL345_STREAM */
@@ -26,7 +28,6 @@
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <zephyr/drivers/spi.h>
 #endif
-#include <zephyr/sys/util.h>
 
 /* ADXL345 communication commands */
 #define ADXL345_WRITE_CMD          0x00
@@ -44,10 +45,13 @@
 #define ADXL345_RATE_REG                0x2c
 #define ADXL345_POWER_CTL_REG           0x2d
 #define ADXL345_DATA_FORMAT_REG         0x31
-#define ADXL345_DATA_FORMAT_FULL_RES    0x08
 #define ADXL345_X_AXIS_DATA_0_REG       0x32
 #define ADXL345_FIFO_CTL_REG            0x38
 #define ADXL345_FIFO_STATUS_REG         0x39
+#define ADXL345_THRESH_ACT_REG          0x24
+#define ADXL345_THRESH_INACT_REG        0x25
+#define ADXL345_TIME_INACT_REG          0x26
+#define ADXL345_ACT_INACT_CTL_REG       0x27
 
 #define ADXL345_PART_ID            0xe5
 
@@ -68,10 +72,17 @@
 #define ADXL345_INT_MAP    0x2Fu
 #define ADXL345_INT_SOURCE 0x30u
 
+#define ADXL345_ACT_AC_DC         BIT(7)
+#define ADXL345_ACT_X_EN          BIT(6)
+#define ADXL345_ACT_Y_EN          BIT(5)
+#define ADXL345_ACT_Z_EN          BIT(4)
+#define ADXL345_ACT_INT_EN        BIT(4)
+
 /* ADXL345_STATUS_1 */
 #define ADXL345_STATUS_DOUBLE_TAP(x) (((x) >> 5) & 0x1)
 #define ADXL345_STATUS_SINGLE_TAP(x) (((x) >> 6) & 0x1)
 #define ADXL345_STATUS_DATA_RDY(x)   (((x) >> 7) & 0x1)
+#define ADXL345_STATUS_ACTIVITY(x)   (((x) >> 4) & 0x1)
 
 /* ADXL345_INT_MAP */
 #define ADXL345_INT_MAP_OVERRUN_MSK        BIT(0)
@@ -110,6 +121,13 @@
 #define ADXL345_FIFO_CTL_SAMPLES_MSK     BIT(0)
 #define ADXL345_FIFO_CTL_SAMPLES_MODE(x) ((x) & 0x1F)
 
+/* ADXL345_DATA_FORMAT */
+#define ADXL345_DATA_FORMAT_RANGE_MSK GENMASK(1, 0)
+#define ADXL345_DATA_FORMAT_JUSTIFY   BIT(2)
+#define ADXL345_DATA_FORMAT_FULL_RES  BIT(3)
+#define ADXL345_DATA_FORMAT_SPI_3WIRE BIT(6)
+#define ADXL345_DATA_FORMAT_SELF_TEST BIT(7)
+
 #define ADXL345_ODR_MSK     GENMASK(3, 0)
 #define ADXL345_ODR_MODE(x) ((x) & 0xF)
 
@@ -117,12 +135,12 @@
 #define ADXL345_BUS_SPI 1
 
 enum adxl345_odr {
-	ADXL345_ODR_12HZ = 0x7,
-	ADXL345_ODR_25HZ,
-	ADXL345_ODR_50HZ,
-	ADXL345_ODR_100HZ,
-	ADXL345_ODR_200HZ,
-	ADXL345_ODR_400HZ
+	ADXL345_ODR_12_5HZ = ADXL345_DT_ODR_12_5,
+	ADXL345_ODR_25HZ = ADXL345_DT_ODR_25,
+	ADXL345_ODR_50HZ = ADXL345_DT_ODR_50,
+	ADXL345_ODR_100HZ = ADXL345_DT_ODR_100,
+	ADXL345_ODR_200HZ = ADXL345_DT_ODR_200,
+	ADXL345_ODR_400HZ = ADXL345_DT_ODR_400,
 };
 
 enum adxl345_fifo_trigger {
@@ -149,14 +167,16 @@ enum adxl345_op_mode {
 };
 
 struct adxl345_dev_data {
-	unsigned int sample_number;
-	int16_t bufx[ADXL345_MAX_FIFO_SIZE];
-	int16_t bufy[ADXL345_MAX_FIFO_SIZE];
-	int16_t bufz[ADXL345_MAX_FIFO_SIZE];
+	struct {
+		int16_t x;
+		int16_t y;
+		int16_t z;
+	} samples;
 	struct adxl345_fifo_config fifo_config;
 	uint8_t is_full_res;
 	uint8_t selected_range;
 	enum adxl345_odr odr;
+	enum adxl345_op_mode op_mode;
 #ifdef CONFIG_ADXL345_TRIGGER
 	struct gpio_callback gpio_cb;
 
@@ -164,6 +184,8 @@ struct adxl345_dev_data {
 	const struct sensor_trigger *th_trigger;
 	sensor_trigger_handler_t drdy_handler;
 	const struct sensor_trigger *drdy_trigger;
+	sensor_trigger_handler_t act_handler;
+	const struct sensor_trigger *act_trigger;
 	const struct device *dev;
 
 #if defined(CONFIG_ADXL345_TRIGGER_OWN_THREAD)
@@ -228,12 +250,14 @@ struct adxl345_dev_config {
 	const union adxl345_bus bus;
 	adxl345_bus_is_ready_fn bus_is_ready;
 	adxl345_reg_access_fn reg_access;
+	uint8_t range;
 	enum adxl345_odr odr;
 	bool op_mode;
 	struct adxl345_fifo_config fifo_config;
 	uint8_t bus_type;
 #ifdef CONFIG_ADXL345_TRIGGER
 	struct gpio_dt_spec interrupt;
+	bool route_to_int2;
 #endif
 };
 
@@ -271,11 +295,10 @@ int adxl345_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val);
 int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf);
 
 int adxl345_set_op_mode(const struct device *dev, enum adxl345_op_mode op_mode);
-#ifdef CONFIG_SENSOR_ASYNC_API
 int adxl345_read_sample(const struct device *dev, struct adxl345_sample *sample);
+#ifdef CONFIG_SENSOR_ASYNC_API
 void adxl345_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 int adxl345_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
-void adxl345_accel_convert(struct sensor_value *val, int16_t sample);
 #endif /* CONFIG_SENSOR_ASYNC_API */
 
 #ifdef CONFIG_ADXL345_STREAM

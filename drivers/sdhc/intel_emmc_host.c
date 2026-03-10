@@ -417,7 +417,7 @@ static int emmc_dma_init(const struct device *dev, struct sdhc_data *data, bool 
 	if (IS_ENABLED(CONFIG_INTEL_EMMC_HOST_ADMA)) {
 		uint8_t *buff = data->data;
 
-		/* Setup DMA trasnfer using ADMA2 */
+		/* Setup DMA transfer using ADMA2 */
 		memset(emmc->desc_table, 0, sizeof(emmc->desc_table));
 
 #if defined(CONFIG_INTEL_EMMC_HOST_ADMA_DESC_SIZE)
@@ -446,7 +446,7 @@ static int emmc_dma_init(const struct device *dev, struct sdhc_data *data, bool 
 		LOG_DBG("adma: %llx %x %p", emmc->desc_table[0], regs->adma_sys_addr1,
 			emmc->desc_table);
 	} else {
-		/* Setup DMA trasnfer using SDMA */
+		/* Setup DMA transfer using SDMA */
 		regs->sdma_sysaddr = (uint32_t)((uintptr_t)data->data);
 		LOG_DBG("sdma_sysaddr: %x", regs->sdma_sysaddr);
 	}
@@ -1168,9 +1168,9 @@ static int emmc_get_host_props(const struct device *dev, struct sdhc_host_props 
 	props->host_caps.sdr104_support = (bool)(cap & BIT(33u));
 	props->host_caps.sdr50_support = (bool)(cap & BIT(32u));
 	props->host_caps.bus_8_bit_support = true;
-	props->host_caps.bus_4_bit_support = true;
-	props->host_caps.hs200_support = (bool)config->hs200_mode;
-	props->host_caps.hs400_support = (bool)config->hs400_mode;
+	props->bus_4_bit_support = true;
+	props->hs200_support = (bool)config->hs200_mode;
+	props->hs400_support = (bool)config->hs400_mode;
 
 	emmc->props = *props;
 

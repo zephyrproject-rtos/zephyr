@@ -43,7 +43,8 @@ struct udc_skeleton_config {
 	size_t num_of_eps;
 	struct udc_ep_config *ep_cfg_in;
 	struct udc_ep_config *ep_cfg_out;
-	void (*make_thread)(const struct device *dev);
+	k_thread_stack_t *thread_stk;
+	size_t thread_stk_sz;
 	int speed_idx;
 };
 
@@ -62,9 +63,12 @@ struct udc_skeleton_data {
  * enable Kconfig option UDC_WORKQUEUE and remove the handler below and
  * caller from the UDC_SKELETON_DEVICE_DEFINE macro.
  */
-static ALWAYS_INLINE void skeleton_thread_handler(void *const arg)
+static void skeleton_thread_handler(void *arg1, void *arg2, void *arg3)
 {
-	const struct device *dev = (const struct device *)arg;
+	const struct device *dev = (const struct device *)arg1;
+
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
 
 	LOG_DBG("Driver %p thread started", dev);
 	while (true) {
@@ -119,7 +123,7 @@ static int udc_skeleton_ep_dequeue(const struct device *dev,
 
 	lock_key = irq_lock();
 
-	buf = udc_buf_get_all(dev, cfg->addr);
+	buf = udc_buf_get_all(cfg);
 	if (buf) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
@@ -160,7 +164,27 @@ static int udc_skeleton_ep_set_halt(const struct device *dev,
 {
 	LOG_DBG("Set halt ep 0x%02x", cfg->addr);
 
-	cfg->stat.halted = true;
+	/*
+	 * NOTE: udc_ep_clear_halt() is not called for control endpoints.
+	 *
+	 * When an endpoint is halted or a control pipe request is not
+	 * supported, endpoint responds with a STALL handshake packet. The
+	 * specification distinguishes between a functional stall and a
+	 * protocol stall. The stack calls udc_ep_set_halt() to set a
+	 * functional or protocol stall. A protocol stall is unique to control
+	 * pipes and terminates at the beginning of the next control transfer.
+	 * Although a control pipe may support functional stall, it is not
+	 * recommended by the specification. The stack does not call
+	 * udc_ep_clear_halt() for control endpoints.
+	 *
+	 * How a driver clears a protocol stall depends on the implementation.
+	 * Some controllers automatically clear the protocol stall condition
+	 * when the next setup packet arrives, while others require software
+	 * intervention.
+	 */
+	if (USB_EP_GET_IDX(cfg->addr) != 0U) {
+		cfg->stat.halted = true;
+	}
 
 	return 0;
 }
@@ -209,7 +233,7 @@ static int udc_skeleton_enable(const struct device *dev)
 
 static int udc_skeleton_disable(const struct device *dev)
 {
-	LOG_DBG("Enable device %p", dev);
+	LOG_DBG("Disable device %p", dev);
 
 	return 0;
 }
@@ -231,6 +255,10 @@ static int udc_skeleton_init(const struct device *dev)
 				   USB_EP_TYPE_CONTROL, 64, 0)) {
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
+	}
+
+	if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF)) {
+		LOG_INF("Enable SOF interrupt");
 	}
 
 	return 0;
@@ -259,6 +287,7 @@ static int udc_skeleton_shutdown(const struct device *dev)
 static int udc_skeleton_driver_preinit(const struct device *dev)
 {
 	const struct udc_skeleton_config *config = dev->config;
+	struct udc_skeleton_data *priv = udc_get_private(dev);
 	struct udc_data *data = dev->data;
 	uint16_t mps = 1023;
 	int err;
@@ -317,20 +346,29 @@ static int udc_skeleton_driver_preinit(const struct device *dev)
 		}
 	}
 
-	config->make_thread(dev);
+	k_thread_create(&priv->thread_data,
+			config->thread_stk,
+			config->thread_stk_sz,
+			skeleton_thread_handler,
+			(void *)dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_UDC_SKELETON_THREAD_PRIORITY),
+			K_ESSENTIAL,
+			K_NO_WAIT);
+	k_thread_name_set(&priv->thread_data, dev->name);
+
 	LOG_INF("Device %p (max. speed %d)", dev, config->speed_idx);
 
 	return 0;
 }
 
-static int udc_skeleton_lock(const struct device *dev)
+static void udc_skeleton_lock(const struct device *dev)
 {
-	return udc_lock_internal(dev, K_FOREVER);
+	udc_lock_internal(dev, K_FOREVER);
 }
 
-static int udc_skeleton_unlock(const struct device *dev)
+static void udc_skeleton_unlock(const struct device *dev)
 {
-	return udc_unlock_internal(dev);
+	udc_unlock_internal(dev);
 }
 
 /*
@@ -363,27 +401,8 @@ static const struct udc_api udc_skeleton_api = {
  * driver, even if your platform does not require it.
  */
 #define UDC_SKELETON_DEVICE_DEFINE(n)						\
-	K_THREAD_STACK_DEFINE(udc_skeleton_stack_##n, CONFIG_UDC_SKELETON);	\
-										\
-	static void udc_skeleton_thread_##n(void *dev, void *arg1, void *arg2)	\
-	{									\
-		skeleton_thread_handler(dev);					\
-	}									\
-										\
-	static void udc_skeleton_make_thread_##n(const struct device *dev)	\
-	{									\
-		struct udc_skeleton_data *priv = udc_get_private(dev);		\
-										\
-		k_thread_create(&priv->thread_data,				\
-				udc_skeleton_stack_##n,				\
-				K_THREAD_STACK_SIZEOF(udc_skeleton_stack_##n),	\
-				udc_skeleton_thread_##n,			\
-				(void *)dev, NULL, NULL,			\
-				K_PRIO_COOP(CONFIG_UDC_SKELETON_THREAD_PRIORITY),\
-				K_ESSENTIAL,					\
-				K_NO_WAIT);					\
-		k_thread_name_set(&priv->thread_data, dev->name);		\
-	}									\
+	K_THREAD_STACK_DEFINE(udc_skeleton_stack_##n,				\
+			      CONFIG_UDC_SKELETON_STACK_SIZE);			\
 										\
 	static struct udc_ep_config						\
 		ep_cfg_out[DT_INST_PROP(n, num_bidir_endpoints)];		\
@@ -394,7 +413,8 @@ static const struct udc_api udc_skeleton_api = {
 		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),		\
 		.ep_cfg_in = ep_cfg_out,					\
 		.ep_cfg_out = ep_cfg_in,					\
-		.make_thread = udc_skeleton_make_thread_##n,			\
+		.thread_stk = udc_skeleton_stack_##n,				\
+		.thread_stk_sz = K_THREAD_STACK_SIZEOF(udc_skeleton_stack_##n),	\
 		.speed_idx = DT_ENUM_IDX(DT_DRV_INST(n), maximum_speed),	\
 	};									\
 										\

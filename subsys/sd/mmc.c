@@ -102,24 +102,15 @@ int mmc_card_init(struct sd_card *card)
 {
 	int ret = 0;
 	uint32_t ocr_arg = 0U;
-	/* Keep CSDs on stack for reduced RAM usage */
+	/* Keep CSDs/CID on stack for reduced RAM usage */
 	struct sd_csd card_csd = {0};
 	struct mmc_ext_csd card_ext_csd = {0};
+	uint32_t cid[4] = {0};
 
 	/* SPI is not supported for MMC */
 	if (card->host_props.is_spi) {
 		return -EINVAL;
 	}
-
-	/* Probe to see if card is an MMC card */
-	ret = mmc_send_op_cond(card, ocr_arg);
-	if (ret) {
-		return ret;
-	}
-	/* Card is MMC card if no error
-	 * (Only MMC protocol supports CMD1)
-	 */
-	card->type = CARD_MMC;
 
 	/* Set OCR Arguments */
 	if (card->host_props.host_caps.vol_180_support) {
@@ -137,12 +128,12 @@ int mmc_card_init(struct sd_card *card)
 	/* CMD1 */
 	ret = mmc_send_op_cond(card, ocr_arg);
 	if (ret) {
-		LOG_ERR("Failed to query card OCR");
+		LOG_DBG("Failed to query card OCR");
 		return ret;
 	}
 
 	/* CMD2 */
-	ret = card_read_cid(card);
+	ret = card_read_cid(card, cid);
 	if (ret) {
 		return ret;
 	}
@@ -221,9 +212,11 @@ static int mmc_send_op_cond(struct sd_card *card, int ocr)
 			/* OCR failed */
 			return ret;
 		}
-		if (ocr == 0) {
-			/* Just probing */
-			return 0;
+		if (retries == 0) {
+			/* Card is MMC card if no error
+			 * (Only MMC protocol supports CMD1)
+			 */
+			card->type = CARD_MMC;
 		}
 		sd_delay(10);
 	}
@@ -383,7 +376,7 @@ static int mmc_set_bus_width(struct sd_card *card)
 	if (card->host_props.host_caps.bus_8_bit_support && card->bus_width == 8) {
 		cmd.arg = MMC_SWITCH_8_BIT_BUS_ARG;
 		card->bus_io.bus_width = SDHC_BUS_WIDTH8BIT;
-	} else if (card->host_props.host_caps.bus_4_bit_support && card->bus_width >= 4) {
+	} else if (card->host_props.bus_4_bit_support && card->bus_width >= 4) {
 		cmd.arg = MMC_SWITCH_4_BIT_BUS_ARG;
 		card->bus_io.bus_width = SDHC_BUS_WIDTH4BIT;
 	} else {
@@ -462,7 +455,7 @@ static int mmc_set_timing(struct sd_card *card, struct mmc_ext_csd *ext)
 
 	/* Timing depends on EXT_CSD register information */
 	if ((ext->device_type.MMC_HS200_SDR_1200MV || ext->device_type.MMC_HS200_SDR_1800MV) &&
-	    (card->host_props.host_caps.hs200_support) &&
+	    (card->host_props.hs200_support) &&
 	    (card->bus_io.signal_voltage == SD_VOL_1_8_V) &&
 	    (card->bus_io.bus_width >= SDHC_BUS_WIDTH4BIT)) {
 		ret = mmc_set_hs_timing(card);
@@ -521,7 +514,7 @@ static int mmc_set_timing(struct sd_card *card, struct mmc_ext_csd *ext)
 
 	/* Switch to HS400 if applicable */
 	if ((ext->device_type.MMC_HS400_DDR_1200MV || ext->device_type.MMC_HS400_DDR_1800MV) &&
-	    (card->host_props.host_caps.hs400_support) &&
+	    (card->host_props.hs400_support) &&
 	    (card->bus_io.bus_width == SDHC_BUS_WIDTH8BIT)) {
 		/* Switch back to regular HS timing */
 		ret = mmc_set_hs_timing(card);

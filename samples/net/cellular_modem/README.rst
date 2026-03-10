@@ -55,3 +55,16 @@ Next, the UART API must be specified using ``CONFIG_UART_INTERRUPT_DRIVEN=y`` or
 ``CONFIG_UART_ASYNC_API=y``. The driver doesn't support UART polling.
 
 Lastly, the APN must be configured using ``CONFIG_MODEM_CELLULAR_APN=""``.
+
+Server setup
+************
+
+Deploy the server on a publicly accessible host, then set the
+:kconfig:option:`CONFIG_SAMPLE_CELLULAR_MODEM_ENDPOINT_HOSTNAME` variable in ``prj.conf`` to the
+server's hostname.
+
+.. code-block:: shell
+
+   git clone --depth=1 https://github.com/zephyrproject-rtos/zephyr.git
+   cd zephyr/samples/net/cellular_modem/server
+   python te.py

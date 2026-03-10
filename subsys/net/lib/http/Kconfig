@@ -29,19 +29,44 @@ config HTTP_CLIENT
 	help
 	  HTTP client API
 
-config HTTP_SERVER
+menuconfig HTTP_SERVER
 	bool "HTTP Server [EXPERIMENTAL]"
 	select HTTP_PARSER
 	select HTTP_PARSER_URL
 	select EXPERIMENTAL
+	select NET_SOCKETS
+	select ZVFS
+	select ZVFS_EVENTFD
 	imply NET_IPV4_MAPPING_TO_IPV6 if NET_IPV4 && NET_IPV6
 	help
 	  HTTP1 and HTTP2 server support.
 
 if HTTP_SERVER
 
+config HTTP_SERVER_VERSION_1
+	bool "HTTP/1.x support"
+	default y
+	help
+	  Support HTTP 1.x version.
+
+config HTTP_SERVER_VERSION_2
+	bool "HTTP/2 support"
+	default y
+	help
+	  Support HTTP/2 version.
+
+config HTTP_SERVER_VERSION
+	int
+	default 12 if HTTP_SERVER_VERSION_1 && HTTP_SERVER_VERSION_2
+	default 2 if !HTTP_SERVER_VERSION_1 && HTTP_SERVER_VERSION_2
+	default 1 if HTTP_SERVER_VERSION_1 && !HTTP_SERVER_VERSION_2
+	default 0
+	help
+	  What HTTP version is supported in HTTP server.
+
 config HTTP_SERVER_STACK_SIZE
 	int "HTTP server thread stack size"
+	default 4096 if FILE_SYSTEM
 	default 3072
 	help
 	  HTTP server thread stack size for processing RX/TX events.
@@ -163,7 +188,8 @@ config HTTP_SERVER_WEBSOCKET
 
 config HTTP_SERVER_RESOURCE_WILDCARD
 	bool "Allow wildcard matching of resources"
-	select FNMATCH
+	# The POSIX_C_LIB_EXT will get fnmatch() support
+	select POSIX_C_LIB_EXT
 	help
 	  Allow user to specify wildcards when setting up resource strings.
 	  This means that instead of specifying multiple resources with exact
@@ -175,7 +201,7 @@ config HTTP_SERVER_RESTART_DELAY
 	range 1 60000
 	help
 	  In case server restarts for any reason, the server re-initialization
-	  will be delayed by this value (miliseconds). The delay is needed to
+	  will be delayed by this value (milliseconds). The delay is needed to
 	  allow any existing connections to finalize to avoid binding errors
 	  during initialization.
 
@@ -201,6 +227,41 @@ config WEBSOCKET_CONSOLE
 	help
 	  Hidden option that is enabled only when all the necessary options
 	  needed by websocket console are set.
+
+config HTTP_SERVER_COMPRESSION
+	bool "Compression support in HTTP fileserver"
+	help
+	  If enabled, the fileserver will parse the accept-encoding header
+	  from the client and extract the supported compression methods.
+	  Afterwards it will try to serve the first compressed file available
+	  by using the file ending as compression indicator in this order:
+	    1. brotli   -> .br
+	    2. gzip     -> .gz
+	    3. zstd     -> .zst
+	    4. compress -> .lzw
+	    5. deflate  -> .zz
+	    6. File without compression
+
+config HTTP_SERVER_STATIC_FS_RESPONSE_SIZE
+	int "Size of static file system response buffer"
+	depends on FILE_SYSTEM
+	default 1024
+	help
+	  The size of a single chunk when serving static files from the file system.
+	  This config value must be large enough to hold the headers in a single chunk.
+	  If set to 0, the server will use the minimal viable buffer size for the response.
+	  Please note that it is allocated on the stack of the HTTP server thread,
+	  so CONFIG_HTTP_SERVER_STACK_SIZE has to be sufficiently large.
+
+config HTTP_SERVER_COMPLETE_STATUS_PHRASES
+	bool "Complete HTTP status reason phrases"
+	help
+	  Include reason phrases for HTTP status codes in server responses.
+	  When disabled, HTTP responses will not include reason phrases,
+	  reducing code size. Note that reason phrases are optional per
+	  HTTP specification and their absence does not affect protocol
+	  compliance or client behavior.
+
 endif
 
 # Hidden option to avoid having multiple individual options that are ORed together

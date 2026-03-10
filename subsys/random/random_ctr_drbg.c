@@ -24,7 +24,7 @@
 static const struct device *entropy_dev;
 static const unsigned char drbg_seed[] = CONFIG_CS_CTR_DRBG_PERSONALIZATION;
 static bool ctr_initialised;
-static struct k_mutex ctr_lock;
+static K_MUTEX_DEFINE(ctr_lock);
 
 static mbedtls_ctr_drbg_context ctr_ctx;
 
@@ -62,7 +62,7 @@ static int ctr_drbg_initialize(void)
 }
 
 
-int z_impl_sys_csrand_get(void *dst, uint32_t outlen)
+int z_impl_sys_csrand_get(void *dst, size_t outlen)
 {
 	int ret;
 

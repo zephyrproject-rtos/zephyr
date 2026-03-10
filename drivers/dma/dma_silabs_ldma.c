@@ -15,6 +15,7 @@
 #include <zephyr/sys/mem_blocks.h>
 
 #include "em_ldma.h"
+#include "dmadrv.h"
 
 #define DT_DRV_COMPAT silabs_ldma
 
@@ -88,9 +89,12 @@ static int dma_silabs_get_blocksize(uint32_t src_blen, uint32_t dst_blen, uint32
 
 static int dma_silabs_block_to_descriptor(struct dma_config *config,
 					  struct dma_silabs_channel *chan_conf,
-					  struct dma_block_config *block, LDMA_Descriptor_t *desc)
+					  struct dma_block_config *block, LDMA_Descriptor_t *desc,
+					  int *offset)
 {
-	int ret, src_size, xfer_count;
+	int ret, src_size, xfer_count, loc_offset, mod, rem_bsize;
+
+	loc_offset = *offset;
 
 	if (block->dest_scatter_count || block->source_gather_count ||
 	    block->source_gather_interval || block->dest_scatter_interval ||
@@ -122,17 +126,27 @@ static int dma_silabs_block_to_descriptor(struct dma_config *config,
 	src_size = config->source_data_size;
 	desc->xfer.size = LOG2(src_size);
 
-	if (block->block_size % config->source_data_size) {
-		xfer_count = block->block_size / config->source_data_size;
+	if (loc_offset) {
+		rem_bsize = block->block_size - loc_offset * config->source_data_size;
 	} else {
-		xfer_count = block->block_size / config->source_data_size - 1;
+		rem_bsize = block->block_size;
 	}
+
+	xfer_count = rem_bsize / config->source_data_size;
+	mod = rem_bsize % config->source_data_size;
 
 	if (xfer_count > LDMA_DESCRIPTOR_MAX_XFER_SIZE) {
-		return -ENOTSUP;
-	}
+		desc->xfer.xferCnt = LDMA_DESCRIPTOR_MAX_XFER_SIZE - 1;
+		*offset = loc_offset + LDMA_DESCRIPTOR_MAX_XFER_SIZE;
 
-	desc->xfer.xferCnt = xfer_count;
+	} else {
+		if (!mod || xfer_count == LDMA_DESCRIPTOR_MAX_XFER_SIZE) {
+			xfer_count--;
+		}
+
+		desc->xfer.xferCnt = xfer_count;
+		*offset = 0;
+	}
 
 	/* Warning : High LDMA blockSize (high burst) mean a large transfer
 	 *           without LDMA controller re-arbitration.
@@ -194,8 +208,8 @@ static int dma_silabs_block_to_descriptor(struct dma_config *config,
 		LOG_WRN("dest_buffer address is null.");
 	}
 
-	desc->xfer.srcAddr = block->source_address;
-	desc->xfer.dstAddr = block->dest_address;
+	desc->xfer.srcAddr = block->source_address + loc_offset * config->source_data_size;
+	desc->xfer.dstAddr = block->dest_address + loc_offset * config->dest_data_size;
 
 	return 0;
 }
@@ -228,7 +242,7 @@ static int dma_silabs_configure_descriptor(struct dma_config *config, struct dma
 	struct dma_block_config *head_block = config->head_block;
 	struct dma_block_config *block = config->head_block;
 	LDMA_Descriptor_t *desc, *prev_desc;
-	int ret;
+	int ret, offset;
 
 	/* Descriptors configuration
 	 * block refers to user configured block (dma_block_config structure from dma.h)
@@ -236,13 +250,14 @@ static int dma_silabs_configure_descriptor(struct dma_config *config, struct dma
 	 * hal)
 	 */
 	prev_desc = NULL;
+	offset = 0;
 	while (block) {
 		ret = sys_mem_blocks_alloc(data->dma_desc_pool, 1, (void **)&desc);
 		if (ret) {
 			goto err;
 		}
 
-		ret = dma_silabs_block_to_descriptor(config, chan_conf, block, desc);
+		ret = dma_silabs_block_to_descriptor(config, chan_conf, block, desc, &offset);
 		if (ret) {
 			goto err;
 		}
@@ -256,13 +271,15 @@ static int dma_silabs_configure_descriptor(struct dma_config *config, struct dma
 		}
 
 		prev_desc = desc;
-		block = block->next_block;
-		if (block == head_block) {
-			block = NULL;
-			prev_desc->xfer.linkAddr =
-				LDMA_DESCRIPTOR_LINKABS_ADDR_TO_LINKADDR(chan_conf->desc);
-			prev_desc->xfer.linkMode = ldmaLinkModeAbs;
-			prev_desc->xfer.link = 1;
+		if (!offset) {
+			block = block->next_block;
+			if (block == head_block) {
+				block = NULL;
+				prev_desc->xfer.linkAddr =
+					LDMA_DESCRIPTOR_LINKABS_ADDR_TO_LINKADDR(chan_conf->desc);
+				prev_desc->xfer.linkMode = ldmaLinkModeAbs;
+				prev_desc->xfer.link = 1;
+			}
 		}
 	}
 
@@ -328,7 +345,7 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 	LDMA_TransferCfg_t *xfer_config = &chan_conf->xfer_config;
 	int ret;
 
-	if (channel > data->dma_ctx.dma_channels) {
+	if (channel >= data->dma_ctx.dma_channels) {
 		return -EINVAL;
 	}
 
@@ -480,17 +497,27 @@ static int dma_silabs_get_status(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
+bool dma_silabs_chan_filter(const struct device *dev, int channel, void *filter_param)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(filter_param);
+	return (DMADRV_AllocateChannelById(channel, 0) == ECODE_EMDRV_DMADRV_OK);
+}
+
+void dma_silabs_chan_release(const struct device *dev, uint32_t channel)
+{
+	ARG_UNUSED(dev);
+	Ecode_t __maybe_unused err = DMADRV_FreeChannel(channel);
+
+	__ASSERT_NO_MSG(err == ECODE_EMDRV_DMADRV_OK);
+}
+
 static int dma_silabs_init(const struct device *dev)
 {
 	const struct dma_silabs_config *config = dev->config;
-	LDMA_Init_t dmaInit = {
-		/*  0x7 indicate that the 8 channels have round robin priority. */
-		.ldmaInitCtrlNumFixed = 0x7,
-		.ldmaInitIrqPriority = DMA_IRQ_PRIORITY,
-	};
 
 	/* Clock is managed by em_ldma */
-	LDMA_Init(&dmaInit);
+	DMADRV_Init();
 
 	/* LDMA_Init configure IRQ but we want IRQ to match with configured one in the dts*/
 	config->config_irq(dev);
@@ -502,7 +529,9 @@ static DEVICE_API(dma, dma_funcs) = {
 	.config = dma_silabs_configure,
 	.start = dma_silabs_start,
 	.stop = dma_silabs_stop,
-	.get_status = dma_silabs_get_status
+	.get_status = dma_silabs_get_status,
+	.chan_filter = dma_silabs_chan_filter,
+	.chan_release = dma_silabs_chan_release
 };
 
 int silabs_ldma_append_block(const struct device *dev, uint32_t channel, struct dma_config *config)
@@ -512,7 +541,9 @@ int silabs_ldma_append_block(const struct device *dev, uint32_t channel, struct 
 	struct dma_block_config *block_config = config->head_block;
 	LDMA_Descriptor_t *desc = data->dma_chan_table[channel].desc;
 	unsigned int key;
-	int ret;
+	int ret, offset;
+
+	offset = 0;
 
 	__ASSERT(!((uintptr_t)desc & ~_LDMA_CH_LINK_LINKADDR_MASK),
 		 "DMA Descriptor is not 32 bits aligned");
@@ -539,9 +570,15 @@ int silabs_ldma_append_block(const struct device *dev, uint32_t channel, struct 
 		return -EINVAL;
 	}
 
-	ret = dma_silabs_block_to_descriptor(config, chan_conf, block_config, desc);
+	ret = dma_silabs_block_to_descriptor(config, chan_conf, block_config, desc, &offset);
 	if (ret) {
 		return ret;
+	} else if (offset) {
+		/* If the offset is not 0, it means that the block size is larger than the transfer
+		 * capacity of a single hardware LDMA descriptor. It is not supported with the
+		 * append function.
+		 */
+		return -EINVAL;
 	}
 
 	key = irq_lock();
@@ -598,7 +635,7 @@ int silabs_ldma_append_block(const struct device *dev, uint32_t channel, struct 
 		.dma_desc_pool = &desc_pool_##inst                                                 \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &dma_silabs_init, NULL, &dma_silabs_data_##inst,               \
+	DEVICE_DT_INST_DEFINE(inst, dma_silabs_init, NULL, &dma_silabs_data_##inst,                \
 			      &dma_silabs_config_##inst, PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,   \
 			      &dma_funcs);
 

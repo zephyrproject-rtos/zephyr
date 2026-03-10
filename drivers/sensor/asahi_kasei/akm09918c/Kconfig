@@ -7,6 +7,7 @@ config AKM09918C
 	default y
 	depends on DT_HAS_ASAHI_KASEI_AKM09918C_ENABLED
 	select I2C
+	select I2C_RTIO if SENSOR_ASYNC_API
 	select RTIO_WORKQ if SENSOR_ASYNC_API
 	help
 	  Enable driver for AK8975 magnetometer.

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Lingao Meng
+ * Copyright (c) 2025 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,15 +10,10 @@
 #include "mesh/access.h"
 #include "mesh/net.h"
 #include "mesh/crypto.h"
+#include "mesh/prov.h"
 #include "argparse.h"
 #include <bs_pc_backchannel.h>
 #include <time_machine.h>
-
-#if defined CONFIG_BT_MESH_USES_MBEDTLS_PSA
-#include <psa/crypto.h>
-#else
-#error "Unknown crypto library has been chosen"
-#endif
 
 #include <zephyr/sys/byteorder.h>
 
@@ -38,6 +34,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define WAIT_TIME 120 /*seconds*/
 #define IS_RPR_PRESENT  (CONFIG_BT_MESH_RPR_SRV && CONFIG_BT_MESH_RPR_CLI)
 #define IMPOSTER_MODEL_ID 0xe000
+/* Rough estimate of the time it should take the provisionee to stop sending unprov beacons. */
+#define PROV_DELTA_THRESH_MS 100
 
 enum test_flags {
 	IS_PROVISIONER,
@@ -67,15 +65,19 @@ static struct oob_auth_test_vector_s {
 	{static_key1, sizeof(static_key1), 0, 0, 0, 0},
 	{static_key2, sizeof(static_key2), 0, 0, 0, 0},
 	{static_key3, sizeof(static_key3), 0, 0, 0, 0},
-	{NULL, 0, 3, BT_MESH_BLINK, 0, 0},
+	{NULL, 0, 1, BT_MESH_BLINK, 0, 0},
 	{NULL, 0, 5, BT_MESH_BEEP, 0, 0},
-	{NULL, 0, 6, BT_MESH_VIBRATE, 0, 0},
-	{NULL, 0, 7, BT_MESH_DISPLAY_NUMBER, 0, 0},
-	{NULL, 0, 8, BT_MESH_DISPLAY_STRING, 0, 0},
-	{NULL, 0, 0, 0, 4, BT_MESH_PUSH},
+	{NULL, 0, 8, BT_MESH_VIBRATE, 0, 0},
+	{NULL, 0, 15, BT_MESH_DISPLAY_NUMBER, 0, 0},
+	{NULL, 0, 19, BT_MESH_DISPLAY_STRING, 0, 0},
+	{NULL, 0, 32, BT_MESH_DISPLAY_NUMBER, 0, 0},
+	{NULL, 0, 32, BT_MESH_DISPLAY_STRING, 0, 0},
+	{NULL, 0, 0, 0, 1, BT_MESH_PUSH},
 	{NULL, 0, 0, 0, 5, BT_MESH_TWIST},
-	{NULL, 0, 0, 0, 8, BT_MESH_ENTER_NUMBER},
-	{NULL, 0, 0, 0, 7, BT_MESH_ENTER_STRING},
+	{NULL, 0, 0, 0, 13, BT_MESH_ENTER_NUMBER},
+	{NULL, 0, 0, 0, 27, BT_MESH_ENTER_STRING},
+	{NULL, 0, 0, 0, 32, BT_MESH_ENTER_NUMBER},
+	{NULL, 0, 0, 0, 32, BT_MESH_ENTER_STRING},
 };
 
 static ATOMIC_DEFINE(test_flags, TEST_FLAGS);
@@ -97,6 +99,7 @@ static uint32_t link_close_timestamp;
 
 /* Set prov_bearer to non-zero invalid value. */
 static bt_mesh_prov_bearer_t prov_bearer = 0xF8;
+static bt_mesh_prov_bearer_t prov_to_use;
 
 static void test_args_parse(int argc, char *argv[])
 {
@@ -104,9 +107,17 @@ static void test_args_parse(int argc, char *argv[])
 		{
 			.dest = &prov_bearer,
 			.type = 'i',
-			.name = "{invalid, PB-ADV, PB-GATT}",
-			.option = "prov-brearer",
+			.name = "{invalid, PB-ADV, PB-GATT, (PB-ADV | PB-GATT)}",
+			.option = "prov-bearer",
 			.descript = "Provisioning bearer that is to be used."
+		},
+		{
+			.dest = &prov_to_use,
+			.type = 'i',
+			.name = "{PB-ADV, PB-GATT}",
+			.option = "prov-to-use",
+			.descript = "Provisioning bearer that is to be used in the case that "
+				    "multiple provisioning bearers are enabled in prov_bearer."
 		},
 	};
 
@@ -275,6 +286,42 @@ static void test_terminate(void)
 	}
 }
 
+static uint64_t prov_started_time_ms;
+static uint8_t prov_uuid[16];
+
+static void provision(uint8_t uuid[16], bt_mesh_prov_bearer_t bearer)
+{
+	int err;
+
+	switch (bearer) {
+	case BT_MESH_PROV_ADV:
+		err = bt_mesh_provision_adv(uuid, 0, prov_addr, 0);
+		break;
+	case BT_MESH_PROV_GATT:
+		err = bt_mesh_provision_gatt(uuid, 0, prov_addr, 0);
+		break;
+	default:
+		err = -ENOTSUP;
+	}
+
+	if (!err) {
+		LOG_INF("Provisioning over %s started.",
+			bearer == BT_MESH_PROV_ADV ? "PB-ADV" : "PB-GATT");
+		prov_started_time_ms = k_uptime_get();
+		memcpy(prov_uuid, uuid, 16);
+	}
+}
+
+static void provisionee_beacon_check(uint8_t uuid[16], bt_mesh_prov_bearer_t bearer)
+{
+	if (memcmp(uuid, prov_uuid, 16) == 0) {
+		ASSERT_FALSE_MSG((prov_started_time_ms &&
+				  (k_uptime_delta(&prov_started_time_ms) > PROV_DELTA_THRESH_MS)),
+				 "Received %s beacon from provisionee after provisioning started.",
+				 bearer == BT_MESH_PROV_ADV ? "PB-ADV" : "PB-GATT");
+	}
+}
+
 static void unprovisioned_beacon(uint8_t uuid[16],
 				 bt_mesh_prov_oob_info_t oob_info,
 				 uint32_t *uri_hash)
@@ -286,7 +333,12 @@ static void unprovisioned_beacon(uint8_t uuid[16],
 	if (uuid_to_provision && memcmp(uuid, uuid_to_provision, 16)) {
 		return;
 	}
-	bt_mesh_provision_adv(uuid, 0, prov_addr, 0);
+
+	provisionee_beacon_check(uuid, BT_MESH_PROV_ADV);
+
+	if (!prov_to_use || prov_to_use == BT_MESH_PROV_ADV) {
+		provision(uuid, BT_MESH_PROV_ADV);
+	}
 }
 
 static void unprovisioned_beacon_gatt(uint8_t uuid[16], bt_mesh_prov_oob_info_t oob_info)
@@ -299,7 +351,11 @@ static void unprovisioned_beacon_gatt(uint8_t uuid[16], bt_mesh_prov_oob_info_t 
 		return;
 	}
 
-	bt_mesh_provision_gatt(uuid, 0, prov_addr, 0);
+	provisionee_beacon_check(uuid, BT_MESH_PROV_GATT);
+
+	if (!prov_to_use || prov_to_use == BT_MESH_PROV_GATT) {
+		provision(uuid, BT_MESH_PROV_GATT);
+	}
 }
 
 static void prov_complete(uint16_t net_idx, uint16_t addr)
@@ -324,6 +380,8 @@ static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr,
 {
 	LOG_INF("Device 0x%04x provisioned", prov_addr);
 	current_dev_addr = prov_addr++;
+	prov_started_time_ms = 0;
+	memset(prov_uuid, 0, 16);
 	k_sem_give(&prov_sem);
 }
 
@@ -340,6 +398,7 @@ static void prov_reset(void)
 
 static bt_mesh_input_action_t gact;
 static uint8_t gsize;
+static bool oob_wait_unprov_int;
 static int input(bt_mesh_input_action_t act, uint8_t size)
 {
 	/* The test system requests the input OOB data earlier than
@@ -350,32 +409,32 @@ static int input(bt_mesh_input_action_t act, uint8_t size)
 	gact = act;
 	gsize = size;
 
-	k_work_reschedule(&oob_timer, K_SECONDS(1));
+	k_work_reschedule(&oob_timer, oob_wait_unprov_int
+					      ? K_SECONDS(CONFIG_BT_MESH_UNPROV_BEACON_INT + 1)
+					      : K_SECONDS(1));
 
 	return 0;
 }
 
 static void delayed_input(struct k_work *work)
 {
-	char oob_str[16];
-	uint32_t oob_number;
+	uint8_t oob_data[PROV_IO_OOB_SIZE_MAX + 1] = {0};
 	int size = bs_bc_is_msg_received(*oob_channel_id);
 
-	if (size <= 0) {
-		FAIL("OOB data is not gotten");
-	}
+	ASSERT_TRUE_MSG(size > 0, "OOB data is not gotten");
+	ASSERT_TRUE_MSG(size <= PROV_IO_OOB_SIZE_MAX, "OOB data size %d exceeds max %d",
+			size, PROV_IO_OOB_SIZE_MAX);
+
+	bs_bc_receive_msg(*oob_channel_id, oob_data, size);
 
 	switch (gact) {
 	case BT_MESH_PUSH:
 	case BT_MESH_TWIST:
 	case BT_MESH_ENTER_NUMBER:
-		ASSERT_TRUE(size == sizeof(uint32_t));
-		bs_bc_receive_msg(*oob_channel_id, (uint8_t *)&oob_number, size);
-		ASSERT_OK(bt_mesh_input_number(oob_number));
+		ASSERT_OK(bt_mesh_input_numeric(oob_data, size));
 		break;
 	case BT_MESH_ENTER_STRING:
-		bs_bc_receive_msg(*oob_channel_id, (uint8_t *)oob_str, size);
-		ASSERT_OK(bt_mesh_input_string(oob_str));
+		ASSERT_OK(bt_mesh_input_string((const char *)oob_data));
 		break;
 	default:
 		FAIL("Unknown input action %u (size %u) requested!", gact, gsize);
@@ -387,7 +446,7 @@ static void prov_input_complete(void)
 	LOG_INF("Input OOB data completed");
 }
 
-static int output_number(bt_mesh_output_action_t action, uint32_t number);
+static int output_numeric(bt_mesh_output_action_t act, uint8_t *numeric, size_t size);
 static int output_string(const char *str);
 static void capabilities(const struct bt_mesh_dev_capabilities *cap);
 static struct bt_mesh_prov prov = {
@@ -399,7 +458,7 @@ static struct bt_mesh_prov prov = {
 	.link_close = prov_link_close,
 	.reprovisioned = prov_reprovisioned,
 	.node_added = prov_node_added,
-	.output_number = output_number,
+	.output_numeric = output_numeric,
 	.output_string = output_string,
 	.input = input,
 	.input_complete = prov_input_complete,
@@ -407,11 +466,48 @@ static struct bt_mesh_prov prov = {
 	.reset = prov_reset,
 };
 
-static int output_number(bt_mesh_output_action_t action, uint32_t number)
+static void binary_to_ascii_digits(const uint8_t *in, size_t in_len, char *out_str)
 {
-	LOG_INF("OOB Number: %u", number);
+	uint8_t temp[PROV_IO_OOB_SIZE_MAX];
+	size_t digit_count = 0;
 
-	bs_bc_send_msg(*oob_channel_id, (uint8_t *)&number, sizeof(uint32_t));
+	memcpy(temp, in, in_len);
+
+	while (in_len > 0) {
+		uint16_t remainder = 0;
+
+		/* Divide the number in `temp` by 10, store quotient back in `temp` */
+		for (ssize_t i = in_len - 1; i >= 0; --i) {
+			uint16_t acc = ((uint16_t)remainder << 8) | temp[i];
+
+			temp[i] = acc / 10;
+			remainder = acc % 10;
+		}
+
+		/* Store ASCII digit */
+		out_str[digit_count++] = '0' + remainder;
+
+		/* Trim leading zeros */
+		while (in_len > 0 && temp[in_len - 1] == 0) {
+			in_len--;
+		}
+	}
+
+	/* Digits are in reverse order, reverse them to get correct string */
+	sys_mem_swap(out_str, digit_count);
+
+	/* Null-terminate the string */
+	out_str[digit_count] = '\0';
+}
+
+static int output_numeric(bt_mesh_output_action_t act, uint8_t *numeric, size_t size)
+{
+	uint8_t numeric_ascii[PROV_IO_OOB_SIZE_MAX + 1];
+
+	binary_to_ascii_digits(numeric, size, numeric_ascii);
+	LOG_INF("OOB Number: %s", numeric_ascii);
+
+	bs_bc_send_msg(*oob_channel_id, numeric, size);
 	return 0;
 }
 
@@ -419,7 +515,7 @@ static int output_string(const char *str)
 {
 	LOG_INF("OOB String: %s", str);
 
-	bs_bc_send_msg(*oob_channel_id, (uint8_t *)str, strlen(str) + 1);
+	bs_bc_send_msg(*oob_channel_id, (uint8_t *)str, strlen(str));
 	return 0;
 }
 
@@ -730,6 +826,49 @@ static void test_provisioner_oob_public_key(void)
 static void test_provisioner_oob_auth_no_oob_public_key(void)
 {
 	oob_provisioner(true, false);
+
+	PASS();
+}
+
+static void test_provisioner_pb_cancel(void)
+{
+	k_sem_init(&prov_sem, 0, 1);
+
+	bt_mesh_device_setup(&prov, &comp);
+
+	ASSERT_OK(bt_mesh_cdb_create(test_net_key));
+
+	ASSERT_OK(bt_mesh_provision(test_net_key, 0, 0, 0, 0x0001, dev_key));
+
+	prov.static_val = 0;
+	prov.static_val_len = 0;
+	prov.output_size = 0;
+	prov.output_actions = 0;
+	prov.input_size = 8;
+	prov.input_actions = BT_MESH_ENTER_NUMBER;
+
+	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(20)));
+
+	PASS();
+}
+
+static void test_device_pb_cancel(void)
+{
+	oob_wait_unprov_int = true;
+	k_sem_init(&prov_sem, 0, 1);
+
+	bt_mesh_device_setup(&prov, &comp);
+
+	prov.static_val = 0;
+	prov.static_val_len = 0;
+	prov.output_size = 0;
+	prov.output_actions = 0;
+	prov.input_size = 8;
+	prov.input_actions = BT_MESH_ENTER_NUMBER;
+
+	ASSERT_OK(bt_mesh_prov_enable(prov_bearer));
+
+	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(20)));
 
 	PASS();
 }
@@ -1798,6 +1937,7 @@ static const struct bst_test_instance test_connect[] = {
 	TEST_CASE_WBACKCHANNEL(device, oob_public_key,
 			       "Device: provisioning use oob public key"),
 	TEST_CASE(device, reprovision, "Device: provisioning, reprovision"),
+	TEST_CASE_WBACKCHANNEL(device, pb_cancel, "Device: provisioning, cancel prov bearers."),
 #if IS_RPR_PRESENT
 	TEST_CASE(device, pb_remote_server_unproved,
 		  "Device: used for remote provisioning, starts unprovisioned"),
@@ -1828,6 +1968,8 @@ static const struct bst_test_instance test_connect[] = {
 	TEST_CASE(
 		provisioner, reprovision,
 		"Provisioner: provisioning, resetting and reprovisioning multiple times."),
+	TEST_CASE_WBACKCHANNEL(
+		provisioner, pb_cancel, "Provisioner: provisioning, cancel prov bearers."),
 #if IS_RPR_PRESENT
 	TEST_CASE(provisioner, pb_remote_client_reprovision,
 		  "Provisioner: pb-remote provisioning, resetting and reprov-ing multiple times."),

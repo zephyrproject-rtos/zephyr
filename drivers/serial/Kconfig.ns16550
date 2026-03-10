@@ -5,7 +5,7 @@ menuconfig UART_NS16550
 	default y
 	depends on DT_HAS_NS16550_ENABLED
 	select SERIAL_HAS_DRIVER
-	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_SUPPORT_INTERRUPT if $(dt_compat_any_has_prop,$(DT_COMPAT_NS16550),interrupts)
 	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_NS16550),pinctrl-0)
 	help
 	  This option enables the NS16550 serial driver.
@@ -102,6 +102,17 @@ config UART_NS16550_WA_ISR_REENABLE_INTERRUPT
 	  interrupt controller may not see this new event. So if needed,
 	  the IER is being toggled to re-assert interrupts at the end of ISR
 	  to nudge the host interrupt controller to fire the ISR again.
+
+config UART_NS16550_WA_TX_FIFO_EMPTY_INTERRUPT
+	bool "Callback directly when the TX FIFO is already empty"
+	depends on UART_INTERRUPT_DRIVEN
+	default y if (SHELL_BACKEND_SERIAL && SOC_EGIS_ET171)
+	help
+	  When calling uart_ns16550_irq_tx_enable() to wait for the TX FIFO
+	  ready interrupt, but this interrupt will only be triggered if the
+	  current state is not empty. Therefore, if the current state is
+	  empty, you need to solve this problem by calling the callback
+	  function directly.
 
 endmenu
 

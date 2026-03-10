@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/sys/barrier.h>
 #include <zephyr/init.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_system.h>
 
 #include "flash_stm32.h"
@@ -246,7 +247,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	int i, rc = 0;
 
 	for (i = 0; i < len; i += 8, offset += 8) {
-		rc = write_dword(dev, offset, ((const uint64_t *) data)[i>>3]);
+		rc = write_dword(dev, offset, UNALIGNED_GET((const uint64_t *) data + (i>>3)));
 		if (rc < 0) {
 			return rc;
 		}
@@ -369,7 +370,7 @@ void flash_stm32_page_layout(const struct device *dev,
 int  flash_stm32_check_configuration(void)
 {
 #if defined(FLASH_STM32_DBANK)
-	if (READ_BIT(FLASH->OPTR, FLASH_STM32_DBANK) == 0U) {
+	if (stm32_reg_read_bits(&FLASH->OPTR, FLASH_STM32_DBANK) == 0U) {
 		/* Single bank not supported when dualbank is possible */
 		LOG_ERR("Single bank configuration not supported");
 		return -ENOTSUP;

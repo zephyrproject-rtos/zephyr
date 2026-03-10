@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2026 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect both I2C and GPIOs:
+ *  - I2C0_SCL to I2C2_SCL
+ *  - I2C0_SDA to I2C2_SDA
+ *  - GPIO44 to GPIO43
+ * Note that there are different form factors of the board, so the actual pin
+ * numbers may vary. Check the relevant schematics for details.
+ */
+&i2c_ctrl2 {
+	status = "okay";
+};
+
+&i2c2_0 {
+	status = "okay";
+	pinctrl-0 = <&i2c2_0_sda_scl_gp91_92>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+/ {
+	mctp_i2c: mctp_i2c {
+		compatible = "zephyr,mctp-i2c-gpio-controller";
+		i2c = <&i2c0_0>;
+		endpoint-ids = <11>;
+		endpoint-addrs = <70>;
+		endpoint-gpios = <&gpio4 3 GPIO_ACTIVE_HIGH>;
+	};
+
+	mctp_i2c_target: mctp_i2c_target {
+		compatible = "zephyr,mctp-i2c-gpio-target";
+		i2c = <&i2c2_0>;
+		i2c-addr = <70>;
+		endpoint-id = <11>;
+		endpoint-gpios = <&gpio4 4 GPIO_ACTIVE_HIGH>;
+	};
+};

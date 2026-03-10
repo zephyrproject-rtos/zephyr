@@ -3,16 +3,18 @@ common:
   tags:
     - drivers
     - display
-  depends_on: display
 
 tests:
   drivers.display.build.default:
     integration_platforms:
       - native_sim
       - native_sim/native/64
+    depends_on: display
 
-  drivers.display.build.rk055hdmipi4ma0:
+  drivers.display.build.bflb_dbi:
     platform_allow:
-      - mimxrt1170_evk/mimxrt1176/cm7
-    extra_args:
-      - SHIELD=rk055hdmipi4ma0
+      - ai_m62_12f_kit
+
+  drivers.display.build.sf32lb_dbi:
+    platform_allow:
+      - sf32lb52_devkit_lcd

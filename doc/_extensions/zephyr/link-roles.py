@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# based on http://protips.readthedocs.io/link-roles.html
+# based on https://protips.readthedocs.io/link-roles.html
 
 import re
 import subprocess
@@ -76,13 +76,19 @@ def modulelink(default_module=None, format="blob"):
         source, line = inliner.reporter.get_source_and_line(lineno)
         trace = f"at '{source}:{line}'"
 
-        m = re.search(r"(.*)\s*<(.*)>", text)
+        m = re.search(r"(.*?)\s*<(.*)>", text)
         if m:
             link_text = m.group(1)
             link = m.group(2)
         else:
             link_text = text
             link = text
+
+        line_ref = ""
+        line_match = re.search(r"(.+?)(?:#(L\d+(?:-L\d+)?))?$", link)
+        if line_match and line_match.group(2):
+            link = line_match.group(1)
+            line_ref = f"?plain=1#{line_match.group(2)}"
 
         module_match = re.search(r"(.+?):\s*(.+)", link)
         if module_match:
@@ -102,9 +108,7 @@ def modulelink(default_module=None, format="blob"):
             rev = project.revision
         # No module provided
         elif module is None:
-            raise ValueError(
-                f"Role 'module_file' must take a module as an argument\n\t{trace}"
-            )
+            raise ValueError(f"Role 'module_file' must take a module as an argument\n\t{trace}")
         # Invalid module provided
         elif module != config.link_roles_manifest_project:
             logger.debug(f"Module {module} not found in the west manifest")
@@ -115,16 +119,18 @@ def modulelink(default_module=None, format="blob"):
             )
 
         if module == config.link_roles_manifest_project:
-            p = Path(source).relative_to(inliner.document.settings.env.srcdir)
-            if not any(
-                p.match(glob)
-                for glob in config.link_roles_manifest_project_broken_links_ignore_globs
-            ) and not Path(ZEPHYR_BASE, link).exists():
-                logger.warning(
-                    f"{link} not found in {config.link_roles_manifest_project} {trace}"
+            docname = inliner.document.settings.env.docname
+            p = Path(docname)
+            if (
+                not any(
+                    p.match(glob)
+                    for glob in config.link_roles_manifest_project_broken_links_ignore_globs
                 )
+                and not Path(ZEPHYR_BASE, link).exists()
+            ):
+                logger.warning(f"{link} not found in {config.link_roles_manifest_project} {trace}")
 
-        url = f"{baseurl}/{format}/{rev}/{link}"
+        url = f"{baseurl}/{format}/{rev}/{link}{line_ref}"
         node = nodes.reference(rawtext, link_text, refuri=url, **options)
         return [node], []
 

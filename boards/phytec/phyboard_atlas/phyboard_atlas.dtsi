@@ -1,0 +1,211 @@
+/*
+ * Copyright (c) 2025 PHYTEC America LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "phyboard_atlas-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		accel0 = &icm40627;
+		eeprom0 = &eeprom0;
+		i2s-codec-tx = &sai1;
+		led0 = &som_green_led;
+		led1 = &som_red_led;
+		led3 = &board_red_led;
+		led4 = &board_green_led;
+		sdhc0 = &usdhc1;
+		sdram0 = &sdram0;
+		sw0 = &user_button;
+		watchdog0 = &wdog1;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button-1 {
+			label = "User Button";
+			gpios = <&gpio4 2 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		board_red_led: led-3 {
+			label = "Red LED1 D4";
+			gpios = <&gpio9 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		board_green_led: led-4 {
+			label = "Green LED2 D11";
+			gpios = <&gpio12 13 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	expansion_header: connector {
+		compatible = "gpio-nexus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <11 0 &gpio4 1 0>,  /* Pin 11, GPIO_AD_34 */
+			   <27 0 &gpio3 25 0>, /* Pin 27, EXP_AD_26 */
+			   <29 0 &gpio3 26 0>, /* Pin 29, EXP_AD_27 */
+			   <31 0 &gpio5 1 0>,  /* Pin 31, GPIO_DISP_B2_00 */
+			   <33 0 &gpio13 3 0>, /* Pin 33, GPIO_SNVS_00 */
+			   <35 0 &gpio13 4 0>, /* Pin 35, GPIO_SNVS_01 */
+			   <36 0 &gpio13 5 0>, /* Pin 36, GPIO_SNVS_02 */
+			   <37 0 &gpio13 6 0>, /* Pin 37, GPIO_SNVS_03 */
+			   <38 0 &gpio13 7 1>, /* Pin 38, GPIO_SNVS_04 */
+			   <40 0 &gpio13 8 1>; /* Pin 40, GPIO_SNVS_05 */
+	};
+
+	transceiver0: can-phy0 {
+		compatible = "can-transceiver-gpio";
+		standby-gpios = <&gpio6 10 GPIO_ACTIVE_HIGH>;
+		#phy-cells = <0>;
+		max-bitrate = <5000000>;
+	};
+};
+
+&enet_mac {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	phy-handle = <&phy>;
+	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
+};
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet_mdio>;
+	pinctrl-names = "default";
+
+	phy: phy@1 {
+		compatible = "microchip,ksz8081";
+		reg = <1>;
+		status = "okay";
+		microchip,interface-type = "rmii";
+	};
+};
+
+&enet_ptp_clock {
+	status = "okay";
+};
+
+&csi {
+	pinctrl-0 = <&pinmux_csi>;
+	pinctrl-names = "default";
+};
+
+&flexcan3 {
+	pinctrl-0 = <&pinmux_flexcan3>;
+	pinctrl-names = "default";
+};
+
+&lcdif {
+	pinctrl-0 = <&pinmux_lcdif>;
+	pinctrl-names = "default";
+};
+
+&lpi2c1 {
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+};
+
+&lpi2c2 {
+	pinctrl-0 = <&pinmux_lpi2c2>;
+	pinctrl-names = "default";
+};
+
+&lpi2c5 {
+	pinctrl-0 = <&pinmux_lpi2c5>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	audio_codec: tlv320aic3110@18 {
+		compatible = "ti,tlv320aic3110";
+		reg = <0x18>;
+		status = "okay";
+		clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
+		clock-names = "mclk";
+	};
+
+	icm40627: icm40627@6b {
+		compatible = "invensense,icm40627";
+		reg = <0x6b>;
+		status = "okay";
+		accel-hz = <1000>;
+		accel-fs = <16>;
+		gyro-hz = <1000>;
+		gyro-fs = <2000>;
+		int-gpios = <&gpio3 25 GPIO_ACTIVE_HIGH>,
+			    <&gpio3 26 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&lpspi1 {
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+};
+
+&lpspi5 {
+	pinctrl-0 = <&pinmux_lpspi5>;
+	pinctrl-names = "default";
+};
+
+&lpuart1 {
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart2 {
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-1 = <&pinmux_lpuart2_sleep>;
+	pinctrl-names = "default", "sleep";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&lpuart5 {
+	pinctrl-0 = <&pinmux_lpuart5>;
+	pinctrl-1 = <&pinmux_lpuart5_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart6 {
+	pinctrl-0 = <&pinmux_lpuart6>;
+	pinctrl-1 = <&pinmux_lpuart6_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart8 {
+	pinctrl-0 = <&pinmux_lpuart8_flowcontrol>;
+	pinctrl-1 = <&pinmux_lpuart8_sleep>;
+	pinctrl-names = "default", "sleep";
+	hw-flow-control;
+};
+
+&pxp {
+	status = "okay";
+};
+
+&sai1 {
+	pinctrl-0 = <&pinmux_sai1>;
+	pinctrl-names = "default";
+	clock-mux = <1>;
+	pre-div = <0>;
+	podf = <2>;
+	nxp,tx-dma-channel = <8>;
+	nxp,rx-dma-channel = <9>;
+};
+
+&usdhc1 {
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_dat3_nopull>;
+	pinctrl-names = "default", "nopull";
+};

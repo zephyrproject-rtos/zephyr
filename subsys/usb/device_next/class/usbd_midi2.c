@@ -344,7 +344,11 @@ static void *usbd_midi_class_get_desc(struct usbd_class_data *const class_data,
 
 	LOG_DBG("Get descriptors for %s", dev->name);
 
-	return (speed == USBD_SPEED_HS) ? config->hs_descs : config->fs_descs;
+	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
+		return config->hs_descs;
+	}
+
+	return config->fs_descs;
 }
 
 
@@ -382,7 +386,8 @@ static uint8_t usbd_midi_get_bulk_in(struct usbd_class_data *const class_data)
 	const struct device *dev = usbd_class_get_private(class_data);
 	const struct usbd_midi_config *cfg = dev->config;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return cfg->desc->if1_1_in_ep_hs.bEndpointAddress;
 	}
 
@@ -395,7 +400,8 @@ static uint8_t usbd_midi_get_bulk_out(struct usbd_class_data *const class_data)
 	const struct device *dev = usbd_class_get_private(class_data);
 	const struct usbd_midi_config *cfg = dev->config;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return cfg->desc->if1_1_out_ep_hs.bEndpointAddress;
 	}
 
@@ -549,19 +555,19 @@ void usbd_midi_set_ops(const struct device *dev, const struct usbd_midi_ops *ops
 #define USBD_MIDI_VALIDATE_INSTANCE(n) \
 	DT_INST_FOREACH_CHILD(n, USBD_MIDI_VALIDATE_GRPTRM_BLOCK)
 
-#define USBD_MIDI2_INIT_GRPTRM_BLOCK_DESCRIPTOR(node)                       \
-	{                                                                   \
-		.bLength = sizeof(struct usb_midi_grptrm_block_descriptor), \
-		.bDescriptorType = CS_GR_TRM_BLOCK,                         \
-		.bDescriptorSubtype = GR_TRM_BLOCK,                         \
-		.bGrpTrmBlkID = GRPTRM_BLOCK_ID(node),                      \
-		.bGrpTrmBlkType = GRPTRM_BLOCK_TYPE(node),                  \
-		.nGroupTrm = DT_REG_ADDR(node),                             \
-		.nNumGroupTrm = DT_REG_SIZE(node),                          \
-		.iBlockItem = 0,                                            \
-		.bMIDIProtocol = GRPTRM_PROTOCOL(node),                     \
-		.wMaxInputBandwidth = 0x0000,                               \
-		.wMaxOutputBandwidth = 0x0000,                              \
+#define USBD_MIDI2_INIT_GRPTRM_BLOCK_DESCRIPTOR(node)                                   \
+	{                                                                               \
+		.bLength = sizeof(struct usb_midi_grptrm_block_descriptor),             \
+		.bDescriptorType = CS_GR_TRM_BLOCK,                                     \
+		.bDescriptorSubtype = GR_TRM_BLOCK,                                     \
+		.bGrpTrmBlkID = GRPTRM_BLOCK_ID(node),                                  \
+		.bGrpTrmBlkType = GRPTRM_BLOCK_TYPE(node),                              \
+		.nGroupTrm = DT_REG_ADDR(node),                                         \
+		.nNumGroupTrm = DT_REG_SIZE(node),                                      \
+		.iBlockItem = 0,                                                        \
+		.bMIDIProtocol = GRPTRM_PROTOCOL(node),                                 \
+		.wMaxInputBandwidth = sys_cpu_to_le16(DT_PROP(node, serial_31250bps)),  \
+		.wMaxOutputBandwidth = sys_cpu_to_le16(DT_PROP(node, serial_31250bps)), \
 	}
 
 #define USBD_MIDI2_GRPTRM_TOTAL_LEN(n)                    \

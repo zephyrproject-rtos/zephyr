@@ -1,0 +1,22 @@
+{
+  "firmware_config": {
+    "peripheral": "QSPI"
+  },
+  "pins": {
+    "sck": 17,
+    "csn": 18,
+    "io0": 13,
+    "io1": 14,
+    "io2": 15,
+    "io3": 16
+  },
+  "flash_size": 8388608,
+  "sck_frequency": 8000000,
+  "address_mode": "MODE24BIT",
+  "readoc": "READ2IO",
+  "writeoc": "PP",
+  "pp_size": "PPSIZE256",
+  "sck_delay": 128,
+  "rx_delay": 2,
+  "page_size": 4096
+}

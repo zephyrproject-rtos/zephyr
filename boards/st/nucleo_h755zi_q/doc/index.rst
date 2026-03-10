@@ -77,40 +77,9 @@ Nucleo H755ZI-Q provides the following hardware components:
 Supported Features
 ==================
 
-The Zephyr nucleo_h755zi_q board configuration supports the following hardware
-features:
+.. zephyr:board-supported-hw::
 
-+-------------+------------+-------------------------------------+
-| Interface   | Controller | Driver/Component                    |
-+=============+============+=====================================+
-| NVIC        | on-chip    | nested vector interrupt controller  |
-+-------------+------------+-------------------------------------+
-| UART/USART  | on-chip    | serial port                         |
-+-------------+------------+-------------------------------------+
-| PINMUX      | on-chip    | pinmux                              |
-+-------------+------------+-------------------------------------+
-| GPIO        | on-chip    | gpio                                |
-+-------------+------------+-------------------------------------+
-| RTC         | on-chip    | counter                             |
-+-------------+------------+-------------------------------------+
-| I2C         | on-chip    | i2c                                 |
-+-------------+------------+-------------------------------------+
-| PWM         | on-chip    | pwm                                 |
-+-------------+------------+-------------------------------------+
-| ETHERNET    | on-chip    | ethernet                            |
-+-------------+------------+-------------------------------------+
-| RNG         | on-chip    | True Random number generator        |
-+-------------+------------+-------------------------------------+
-| USB OTG FS  | on-chip    | USB device                          |
-+-------------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration per core can be found in the defconfig files:
-:zephyr_file:`boards/st/nucleo_h755zi_q/nucleo_h755zi_q_stm32h755xx_m7_defconfig` and
-:zephyr_file:`boards/st/nucleo_h755zi_q/nucleo_h755zi_q_stm32h755xx_m4_defconfig`
-
-For mode details please refer to `STM32 Nucleo-144 board User Manual`_.
+For more details please refer to `STM32 Nucleo-144 board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -124,6 +93,7 @@ and a ST morpho connector. Board is configured as follows:
 - LD2 : PE1
 - LD3 : PB14
 - I2C : PB8, PB9
+- CAN/CANFD : PD0, PD1
 
 System Clock
 ------------
@@ -137,6 +107,11 @@ Serial Port
 
 Nucleo H755ZI-Q board has 4 UARTs and 4 USARTs. The Zephyr console output is
 assigned to USART3. Default settings are 115200 8N1.
+
+CAN, CANFD
+----------
+
+Requires an external CAN or CANFD transceiver.
 
 Resources sharing
 -----------------
@@ -155,6 +130,8 @@ two cores. This is done in 3 ways:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Nucleo H755ZI-Q board includes an ST-LINK/V3 embedded debug tool interface.
 

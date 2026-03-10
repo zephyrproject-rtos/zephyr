@@ -71,6 +71,37 @@ ZTEST(policy_api, test_pm_policy_next_state_default)
 	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM);
 }
 
+ZTEST(policy_api, test_pm_policy_state_all_lock)
+{
+	/* initial state: PM_STATE_RUNTIME_IDLE allowed */
+	zassert_false(pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES));
+	zassert_true(pm_policy_state_is_available(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES));
+	zassert_true(pm_policy_state_any_active());
+
+	/* Locking all states. */
+	pm_policy_state_all_lock_get();
+	pm_policy_state_all_lock_get();
+
+	/* States are locked. */
+	zassert_true(pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES));
+	zassert_false(pm_policy_state_is_available(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES));
+	zassert_false(pm_policy_state_any_active());
+
+	pm_policy_state_all_lock_put();
+
+	/* States are still locked due to reference counter. */
+	zassert_true(pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES));
+	zassert_false(pm_policy_state_is_available(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES));
+	zassert_false(pm_policy_state_any_active());
+
+	pm_policy_state_all_lock_put();
+
+	/* States are available again. */
+	zassert_false(pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES));
+	zassert_true(pm_policy_state_is_available(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES));
+	zassert_true(pm_policy_state_any_active());
+}
+
 /**
  * @brief Test the behavior of pm_policy_next_state() when
  * states are allowed/disallowed and CONFIG_PM_POLICY_DEFAULT=y.
@@ -193,6 +224,17 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 
+	/* update latency requirement to exactly PM_STATE_RUNTIME_IDLE latency,
+	 * so PM_STATE_RUNTIME_IDLE should remain available.
+	 */
+	pm_policy_latency_request_update(&req1, 10000);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
+
+	/* restore intermediate latency requirement for subsequent checks. */
+	pm_policy_latency_request_update(&req1, 50000);
+
 	/* add a new latency requirement with a maximum value below the
 	 * latency given by any state, so we should stay active all the time
 	 * since it overrides the previous one.
@@ -258,6 +300,132 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	pm_policy_latency_request_remove(&req1);
 	zassert_equal(latency_cb_call_cnt, 1);
 }
+
+ZTEST(policy_api, test_pm_policy_latency_subscribe_null_disables)
+{
+	struct pm_policy_latency_request req;
+	struct pm_policy_latency_subscription sreq;
+
+	pm_policy_latency_changed_subscribe(&sreq, on_pm_policy_latency_changed);
+
+	latency_cb_call_cnt = 0;
+	expected_latency = 10000;
+	pm_policy_latency_request_add(&req, 10000);
+	zassert_equal(latency_cb_call_cnt, 1);
+
+	pm_policy_latency_changed_subscribe(&sreq, NULL);
+
+	latency_cb_call_cnt = 0;
+	expected_latency = SYS_FOREVER_US;
+	pm_policy_latency_request_remove(&req);
+	zassert_equal(latency_cb_call_cnt, 0);
+}
+
+/**
+ * @brief Test pm_policy_state_constraints_get/put functions using devicetree
+ * test-states property and PM_STATE_CONSTRAINTS macros.
+ */
+ZTEST(policy_api, test_pm_policy_state_constraints)
+{
+	/* Define constraints list from the zephyr,user test-states property */
+	PM_STATE_CONSTRAINTS_LIST_DEFINE(DT_PATH(zephyr_user), test_states);
+
+	/* Get the constraints structure from devicetree */
+	struct pm_state_constraints test_constraints =
+		PM_STATE_CONSTRAINTS_GET(DT_PATH(zephyr_user), test_states);
+
+	/* Verify the constraints were parsed correctly from devicetree
+	 * test-states = <&state0 &state2> from app.overlay
+	 */
+	zassert_equal(test_constraints.count, 2,
+		      "Expected 2 constraints from test-states property");
+
+	/* Check that the constraints contain the expected states:
+	 * state0 (runtime-idle, substate 1) and state2 (suspend-to-ram, substate 100)
+	 */
+	bool found_runtime_idle = false;
+	bool found_suspend_to_ram = false;
+
+	for (size_t i = 0; i < test_constraints.count; i++) {
+		TC_PRINT("Constraint %zu: state=%d, substate_id=%d\n",
+			 i, test_constraints.list[i].state, test_constraints.list[i].substate_id);
+
+		if (test_constraints.list[i].state == PM_STATE_RUNTIME_IDLE &&
+		    test_constraints.list[i].substate_id == 1) {
+			found_runtime_idle = true;
+		}
+		if (test_constraints.list[i].state == PM_STATE_SUSPEND_TO_RAM &&
+		    test_constraints.list[i].substate_id == 100) {
+			found_suspend_to_ram = true;
+		}
+	}
+
+	zassert_true(found_runtime_idle,
+		     "Expected runtime-idle state with substate 1 in constraints");
+	zassert_true(found_suspend_to_ram,
+		     "Expected suspend-to-ram state with substate 100 in constraints");
+
+	/* Test that states are initially available */
+	zassert_false(pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, 1),
+		      "runtime-idle substate 1 should be initially available");
+	zassert_false(pm_policy_state_lock_is_active(PM_STATE_SUSPEND_TO_RAM, 100),
+		      "suspend-to-ram substate 100 should be initially available");
+
+	/* Apply the constraints - this should lock the specified states */
+	pm_policy_state_constraints_get(&test_constraints);
+
+	/* Verify that the constrained states are now locked */
+	zassert_true(pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, 1),
+		     "runtime-idle substate 1 should be locked after applying constraints");
+	zassert_true(pm_policy_state_lock_is_active(PM_STATE_SUSPEND_TO_RAM, 100),
+		     "suspend-to-ram substate 100 should be locked after applying constraints");
+
+	/* Verify that non-constrained states are still available */
+	zassert_false(pm_policy_state_lock_is_active(PM_STATE_SUSPEND_TO_RAM, 10),
+		      "suspend-to-ram substate 10 should not be locked");
+
+	/* Test that policy respects the constraints */
+	const struct pm_state_info *next;
+
+	/* This should not return the locked runtime-idle state,
+	 * but should return suspend-to-ram substate 10
+	 */
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
+	zassert_not_null(next, "Policy should return an available state");
+	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM);
+	zassert_equal(next->substate_id, 10);
+
+	/* Remove the constraints - this should unlock the states */
+	pm_policy_state_constraints_put(&test_constraints);
+
+	/* Verify that the previously constrained states are now unlocked */
+	zassert_false(pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, 1),
+		      "runtime-idle substate 1 should be unlocked after removing constraints");
+	zassert_false(pm_policy_state_lock_is_active(PM_STATE_SUSPEND_TO_RAM, 100),
+		      "suspend-to-ram substate 100 should be unlocked after removing constraints");
+
+	/* Verify policy works normally again */
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
+	zassert_not_null(next, "Policy should return a state after removing constraints");
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
+
+	/* Test multiple get/put cycles to verify reference counting */
+	pm_policy_state_constraints_get(&test_constraints);
+	pm_policy_state_constraints_get(&test_constraints);
+
+	zassert_true(pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, 1),
+		     "runtime-idle substate 1 should remain locked with multiple gets");
+
+	/* First put should not unlock (reference count > 1) */
+	pm_policy_state_constraints_put(&test_constraints);
+	zassert_true(pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, 1),
+		     "runtime-idle substate 1 should remain locked after first put");
+
+	/* Second put should unlock (reference count = 0) */
+	pm_policy_state_constraints_put(&test_constraints);
+	zassert_false(pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, 1),
+		      "runtime-idle substate 1 should be unlocked after final put");
+}
 #else
 ZTEST(policy_api, test_pm_policy_next_state_default)
 {
@@ -270,6 +438,16 @@ ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 }
 
 ZTEST(policy_api, test_pm_policy_next_state_default_latency)
+{
+	ztest_test_skip();
+}
+
+ZTEST(policy_api, test_pm_policy_latency_subscribe_null_disables)
+{
+	ztest_test_skip();
+}
+
+ZTEST(policy_api, test_pm_policy_state_constraints)
 {
 	ztest_test_skip();
 }
@@ -309,31 +487,58 @@ ZTEST(policy_api, test_pm_policy_events)
 	struct pm_policy_event evt1;
 	struct pm_policy_event evt2;
 	int64_t now_uptime_ticks;
-	int64_t evt1_1_uptime_ticks;
-	int64_t evt1_2_uptime_ticks;
+	int64_t evt1_short_uptime_ticks;
+	int64_t evt1_long_uptime_ticks;
 	int64_t evt2_uptime_ticks;
+	int64_t short_delta;
+	int64_t mid_delta;
+	int64_t long_delta;
+	int64_t tol;
 
 	now_uptime_ticks = k_uptime_ticks();
-	evt1_1_uptime_ticks = now_uptime_ticks + 100;
-	evt1_2_uptime_ticks = now_uptime_ticks + 200;
-	evt2_uptime_ticks = now_uptime_ticks + 2000;
+	short_delta = (int64_t)k_ms_to_ticks_ceil32(500);
+	mid_delta = (int64_t)k_ms_to_ticks_ceil32(1500);
+	long_delta = (int64_t)k_ms_to_ticks_ceil32(5000);
+	tol = (int64_t)k_ms_to_ticks_ceil32(250);
+
+	evt1_short_uptime_ticks = now_uptime_ticks + short_delta;
+	evt1_long_uptime_ticks = now_uptime_ticks + long_delta;
+	evt2_uptime_ticks = now_uptime_ticks + mid_delta;
 
 	zassert_equal(pm_policy_next_event_ticks(), -1);
-	pm_policy_event_register(&evt1, evt1_1_uptime_ticks);
-	pm_policy_event_register(&evt2, evt2_uptime_ticks);
-	zassert_within(pm_policy_next_event_ticks(), 100, 50);
+
+	/* update/unregister on an unregistered event are no-ops */
+	pm_policy_event_update(&evt1, evt1_short_uptime_ticks);
+	zassert_equal(pm_policy_next_event_ticks(), -1);
 	pm_policy_event_unregister(&evt1);
-	zassert_within(pm_policy_next_event_ticks(), 2000, 50);
+	zassert_equal(pm_policy_next_event_ticks(), -1);
+
+	/* Register one event far in the future */
+	pm_policy_event_register(&evt1, evt1_long_uptime_ticks);
+	zassert_within(pm_policy_next_event_ticks(), long_delta, tol);
+
+	/* Re-registering an already registered event behaves like an update */
+	pm_policy_event_register(&evt1, evt1_short_uptime_ticks);
+	zassert_within(pm_policy_next_event_ticks(), short_delta, tol);
+
+	/* Register another event and ensure the earliest one is selected */
+	pm_policy_event_register(&evt2, evt2_uptime_ticks);
+	zassert_within(pm_policy_next_event_ticks(), short_delta, tol);
+
+	/* Unregister evt1: evt2 becomes the earliest */
+	pm_policy_event_unregister(&evt1);
+	zassert_within(pm_policy_next_event_ticks(), mid_delta, tol);
+
+	/* Unregistering an already unregistered event is a no-op */
+	pm_policy_event_unregister(&evt1);
+	zassert_within(pm_policy_next_event_ticks(), mid_delta, tol);
+
+	/* Update evt2 still works */
+	pm_policy_event_update(&evt2, now_uptime_ticks + long_delta);
+	zassert_within(pm_policy_next_event_ticks(), long_delta, tol);
+
 	pm_policy_event_unregister(&evt2);
 	zassert_equal(pm_policy_next_event_ticks(), -1);
-	pm_policy_event_register(&evt2, evt2_uptime_ticks);
-	zassert_within(pm_policy_next_event_ticks(), 2000, 50);
-	pm_policy_event_register(&evt1, evt1_1_uptime_ticks);
-	zassert_within(pm_policy_next_event_ticks(), 100, 50);
-	pm_policy_event_update(&evt1, evt1_2_uptime_ticks);
-	zassert_within(pm_policy_next_event_ticks(), 200, 50);
-	pm_policy_event_unregister(&evt1);
-	pm_policy_event_unregister(&evt2);
 }
 
 ZTEST_SUITE(policy_api, NULL, NULL, NULL, NULL, NULL);

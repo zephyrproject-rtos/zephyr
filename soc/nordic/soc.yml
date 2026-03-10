@@ -25,9 +25,6 @@ family:
             cpuclusters:
               - name: cpuapp
               - name: cpuflpr
-          - name: nrf54l09
-            cpuclusters:
-              - name: cpuapp
           - name: nrf54l10
             cpuclusters:
               - name: cpuapp
@@ -36,9 +33,14 @@ family:
             cpuclusters:
               - name: cpuapp
               - name: cpuflpr
-          - name: nrf54l20
+          - name: nrf54lm20a
             cpuclusters:
               - name: cpuapp
+              - name: cpuflpr
+          - name: nrf54lm20b
+            cpuclusters:
+              - name: cpuapp
+              - name: cpuflpr
       - name: nrf54h
         socs:
           - name: nrf54h20
@@ -46,6 +48,12 @@ family:
               - name: cpuapp
               - name: cpurad
               - name: cpuppr
+              - name: cpuflpr
+      - name: nrf71
+        socs:
+          - name: nrf7120
+            cpuclusters:
+              - name: cpuapp
               - name: cpuflpr
       - name: nrf91
         socs:
@@ -109,15 +117,19 @@ runners:
               - nrf54l05/cpuapp
               - nrf54l05/cpuflpr
           - qualifiers:
-              - nrf54l09/cpuapp
-          - qualifiers:
               - nrf54l10/cpuapp
+              - nrf54l10/cpuapp/ns
               - nrf54l10/cpuflpr
           - qualifiers:
               - nrf54l15/cpuapp
+              - nrf54l15/cpuapp/ns
               - nrf54l15/cpuflpr
           - qualifiers:
-              - nrf54l20/cpuapp
+              - nrf54lm20a/cpuapp
+              - nrf54lm20a/cpuflpr
+          - qualifiers:
+              - nrf54lm20b/cpuapp
+              - nrf54lm20b/cpuflpr
           - qualifiers:
               - nrf54h20/cpuapp
               - nrf54h20/cpurad
@@ -171,15 +183,19 @@ runners:
               - nrf54l05/cpuapp
               - nrf54l05/cpuflpr
           - qualifiers:
-              - nrf54l09/cpuapp
-          - qualifiers:
               - nrf54l10/cpuapp
+              - nrf54l10/cpuapp/ns
               - nrf54l10/cpuflpr
           - qualifiers:
               - nrf54l15/cpuapp
+              - nrf54l15/cpuapp/ns
               - nrf54l15/cpuflpr
           - qualifiers:
-              - nrf54l20/cpuapp
+              - nrf54lm20a/cpuapp
+              - nrf54lm20a/cpuflpr
+          - qualifiers:
+              - nrf54lm20b/cpuapp
+              - nrf54lm20b/cpuflpr
           - qualifiers:
               - nrf54h20/cpuapp
               - nrf54h20/cpurad
@@ -234,15 +250,27 @@ runners:
               - nrf54l05/cpuflpr
           - qualifiers:
               - nrf54l10/cpuapp
+              - nrf54l10/cpuapp/ns
               - nrf54l10/cpuflpr
           - qualifiers:
               - nrf54l15/cpuapp
+              - nrf54l15/cpuapp/ns
               - nrf54l15/cpuflpr
+          - qualifiers:
+              - nrf54lm20a/cpuapp
+              - nrf54lm20a/cpuflpr
+          - qualifiers:
+              - nrf54lm20b/cpuapp
+              - nrf54lm20b/cpuflpr
           - qualifiers:
               - nrf54h20/cpuapp
               - nrf54h20/cpurad
               - nrf54h20/cpuppr
               - nrf54h20/cpuflpr
+          - qualifiers:
+              - nrf7120/cpuapp
+              - nrf7120/cpuapp/ns
+              - nrf7120/cpuflpr
           - qualifiers:
               - nrf9280/cpuapp
               - nrf9280/cpurad

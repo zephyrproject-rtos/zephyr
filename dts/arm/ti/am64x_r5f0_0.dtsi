@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <ti/am64x_r5.dtsi>
+
+&main_mbox2 {
+	usr-id = <0>;
+	status = "okay";
+};
+
+&main_rti8 {
+	interrupts = <0 0 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};

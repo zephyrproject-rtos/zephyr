@@ -6,6 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <stm32_ll_rcc.h>
@@ -38,19 +39,19 @@ ZTEST(stm32_sysclck_config, test_sysclk_src)
 #if STM32_SYSCLK_SRC_PLL
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_PLLCLK, sys_clk_src,
 			"Expected sysclk src: PLL (0x%x). Actual: 0x%x",
-			RCC_SYSCLKSOURCE_STATUS_PLLCLK, sys_clk_src);
+			(int)RCC_SYSCLKSOURCE_STATUS_PLLCLK, sys_clk_src);
 #elif STM32_SYSCLK_SRC_HSE
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_HSE, sys_clk_src,
 			"Expected sysclk src: HSE (0x%x). Actual: 0x%x",
-			RCC_SYSCLKSOURCE_STATUS_HSE, sys_clk_src);
+			(int)RCC_SYSCLKSOURCE_STATUS_HSE, sys_clk_src);
 #elif STM32_SYSCLK_SRC_HSI
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_HSI, sys_clk_src,
 			"Expected sysclk src: HSI (0x%x). Actual: 0x%x",
-			RCC_SYSCLKSOURCE_STATUS_HSI, sys_clk_src);
+			(int)RCC_SYSCLKSOURCE_STATUS_HSI, sys_clk_src);
 #elif STM32_SYSCLK_SRC_MSI
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_MSI, sys_clk_src,
 			"Expected sysclk src: MSI (0x%x). Actual: 0x%x",
-			RCC_SYSCLKSOURCE_STATUS_MSI, sys_clk_src);
+			(int)RCC_SYSCLKSOURCE_STATUS_MSI, sys_clk_src);
 #else
 	/* Case not expected */
 	zassert_true((STM32_SYSCLK_SRC_PLL ||
@@ -69,21 +70,21 @@ ZTEST(stm32_sysclck_config, test_pll_src)
 #if STM32_PLL_SRC_HSE
 	zassert_equal(RCC_PLLSOURCE_HSE, pll_src,
 			"Expected PLL src: HSE (%d). Actual PLL src: %d",
-			RCC_PLLSOURCE_HSE, pll_src);
+			(uint32_t)RCC_PLLSOURCE_HSE, pll_src);
 #elif STM32_PLL_SRC_HSI
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
 	zassert_equal(RCC_PLLSOURCE_HSI_DIV2, pll_src,
 			"Expected PLL src: HSI (%d). Actual PLL src: %d",
-			RCC_PLLSOURCE_HSI_DIV2, pll_src);
+			(uint32_t)RCC_PLLSOURCE_HSI_DIV2, pll_src);
 #else
 	zassert_equal(RCC_PLLSOURCE_HSI, pll_src,
 			"Expected PLL src: HSI (%d). Actual PLL src: %d",
-			RCC_PLLSOURCE_HSI, pll_src);
+			(uint32_t)RCC_PLLSOURCE_HSI, pll_src);
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 #elif STM32_PLL_SRC_MSI
 	zassert_equal(RCC_PLLSOURCE_MSI, pll_src,
 			"Expected PLL src: MSI (%d). Actual PLL src: %d",
-			RCC_PLLSOURCE_MSI, pll_src);
+			(uint32_t)RCC_PLLSOURCE_MSI, pll_src);
 #else /* --> RCC_PLLSOURCE_NONE */
 #if defined(CONFIG_SOC_SERIES_STM32L0X) || defined(CONFIG_SOC_SERIES_STM32L1X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F1X) || \
@@ -91,7 +92,7 @@ ZTEST(stm32_sysclck_config, test_pll_src)
 	defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32F7X)
 #define RCC_PLLSOURCE_NONE 0
 	/* check RCC_CR_PLLON bit to enable/disable the PLL, but no status function exist */
-	if (READ_BIT(RCC->CR, RCC_CR_PLLON) == RCC_CR_PLLON) {
+	if (stm32_reg_read_bits(&RCC->CR, RCC_CR_PLLON) == RCC_CR_PLLON) {
 		/* should not happen : PLL must be disabled when not used */
 		pll_src = 0xFFFF; /* error code */
 	} else {
@@ -111,9 +112,11 @@ ZTEST(stm32_sysclck_config, test_hse_css)
 {
 	/* there is no function to read CSS status, so read directly from the register */
 #if STM32_HSE_CSS
-	zassert_true(READ_BIT(RCC->CR, RCC_CR_CSSON), "HSE CSS is not enabled");
+	zassert_true(stm32_reg_read_bits(&RCC->CR, RCC_CR_CSSON) == RCC_CR_CSSON,
+		     "HSE CSS is not enabled");
 #else
-	zassert_false(READ_BIT(RCC->CR, RCC_CR_CSSON), "HSE CSS unexpectedly enabled");
+	zassert_false(stm32_reg_read_bits(&RCC->CR, RCC_CR_CSSON) == RCC_CR_CSSON,
+		      "HSE CSS unexpectedly enabled");
 #endif /* STM32_HSE_CSS */
 
 }

@@ -11,6 +11,7 @@ config IPM_CONSOLE_STACK_SIZE
 
 # Must match XCHAL_DCACHE_LINESIZE form core-isa.h
 config DCACHE_LINE_SIZE
+	default 4 if BOARD_QEMU_XTENSA_SAMPLE_CONTROLLER32_MPU
 	default 32
 
 endif # BOARD_QEMU_XTENSA

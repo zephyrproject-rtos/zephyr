@@ -2,7 +2,7 @@ include: [adc-controller.yaml, spi-device.yaml]
 
 compatible: "adi,ad4114-adc"
 
-description: Binding for the ADI AD4114 ADC.
+description: ADI AD4114 ADC Controller
 
 properties:
   map-inputs:

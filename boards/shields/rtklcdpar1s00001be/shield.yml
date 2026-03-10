@@ -1,0 +1,7 @@
+shield:
+  name: rtklcdpar1s00001be
+  full_name: RTKLCDPAR1S00001BE Display
+  vendor: renesas
+  supported_features:
+    - input
+    - display

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,14 +45,14 @@ struct ra_spi_data {
 	/* RX */
 	struct st_transfer_instance rx_transfer;
 	struct st_dtc_instance_ctrl rx_transfer_ctrl;
-	struct st_transfer_info rx_transfer_info;
+	struct st_transfer_info rx_transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	struct st_transfer_cfg rx_transfer_cfg;
 	struct st_dtc_extended_cfg rx_transfer_cfg_extend;
 
 	/* TX */
 	struct st_transfer_instance tx_transfer;
 	struct st_dtc_instance_ctrl tx_transfer_ctrl;
-	struct st_transfer_info tx_transfer_info;
+	struct st_transfer_info tx_transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	struct st_transfer_cfg tx_transfer_cfg;
 	struct st_dtc_extended_cfg tx_transfer_cfg_extend;
 #endif
@@ -86,6 +86,7 @@ static int ra_spi_b_configure(const struct device *dev, const struct spi_config 
 {
 	struct ra_spi_data *data = dev->data;
 	fsp_err_t fsp_err;
+	uint8_t word_size = SPI_WORD_SIZE_GET(config->operation);
 
 	if (spi_context_configured(&data->ctx, config)) {
 		/* Nothing to do */
@@ -97,6 +98,11 @@ static int ra_spi_b_configure(const struct device *dev, const struct spi_config 
 	}
 
 	if ((config->operation & SPI_FRAME_FORMAT_TI) == SPI_FRAME_FORMAT_TI) {
+		return -ENOTSUP;
+	}
+
+	if (word_size < 4 || word_size > 32) {
+		LOG_ERR("Unsupported SPI word size: %u", word_size);
 		return -ENOTSUP;
 	}
 
@@ -142,7 +148,7 @@ static int ra_spi_b_configure(const struct device *dev, const struct spi_config 
 	data->fsp_config.p_extend = &data->fsp_config_extend;
 
 	data->fsp_config.p_callback = spi_cb;
-	data->fsp_config.p_context = dev;
+	data->fsp_config.p_context = (void *)dev;
 	fsp_err = R_SPI_B_Open(&data->spi, &data->fsp_config);
 	if (fsp_err != FSP_SUCCESS) {
 		LOG_ERR("R_SPI_B_Open error: %d", fsp_err);
@@ -155,15 +161,7 @@ static int ra_spi_b_configure(const struct device *dev, const struct spi_config 
 
 static bool ra_spi_b_transfer_ongoing(struct ra_spi_data *data)
 {
-#if defined(CONFIG_SPI_B_INTERRUPT)
 	return (spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx));
-#else
-	if (spi_context_total_tx_len(&data->ctx) < spi_context_total_rx_len(&data->ctx)) {
-		return (spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx));
-	} else {
-		return (spi_context_tx_on(&data->ctx) && spi_context_rx_on(&data->ctx));
-	}
-#endif
 }
 
 #ifndef CONFIG_SPI_B_INTERRUPT
@@ -235,26 +233,28 @@ static int ra_spi_b_transceive_master(struct ra_spi_data *data)
 
 	while (!p_spi_reg->SPSR_b.SPTEF) {
 	}
-
 	p_spi_reg->SPDR = tx;
 
 	/* Clear Transmit Empty flag */
 	p_spi_reg->SPSRC = R_SPI_B0_SPSRC_SPTEFC_Msk;
 	spi_context_update_tx(&data->ctx, data->dfs, 1);
 
-	/* Rx receive */
-	if (spi_context_rx_on(&data->ctx)) {
+	if (p_spi_reg->SPCR_b.TXMD == 0x0) {
 		while (!p_spi_reg->SPSR_b.SPRF) {
 		}
 		rx = p_spi_reg->SPDR;
 		/* Clear Receive Full flag */
 		p_spi_reg->SPSRC = R_SPI_B0_SPSRC_SPRFC_Msk;
-		if (data->dfs > 2) {
-			UNALIGNED_PUT(rx, (uint32_t *)data->ctx.rx_buf);
-		} else if (data->dfs > 1) {
-			UNALIGNED_PUT(rx, (uint16_t *)data->ctx.rx_buf);
-		} else {
-			UNALIGNED_PUT(rx, (uint8_t *)data->ctx.rx_buf);
+
+		/* Rx receive */
+		if (spi_context_rx_buf_on(&data->ctx)) {
+			if (data->dfs > 2) {
+				UNALIGNED_PUT(rx, (uint32_t *)data->ctx.rx_buf);
+			} else if (data->dfs > 1) {
+				UNALIGNED_PUT(rx, (uint16_t *)data->ctx.rx_buf);
+			} else {
+				UNALIGNED_PUT(rx, (uint8_t *)data->ctx.rx_buf);
+			}
 		}
 		spi_context_update_rx(&data->ctx, data->dfs, 1);
 	}
@@ -307,6 +307,11 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 
 	spi_context_cs_control(&data->ctx, true);
 
+	if ((!spi_context_tx_buf_on(&data->ctx)) && (!spi_context_rx_buf_on(&data->ctx))) {
+		/* If current buffer has no data, do nothing */
+		goto end;
+	}
+
 #ifdef CONFIG_SPI_B_INTERRUPT
 	spi_bit_width_t spi_width =
 		(spi_bit_width_t)(SPI_WORD_SIZE_GET(data->ctx.config->operation) - 1);
@@ -338,9 +343,6 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 
 #else
 	p_spi_reg->SPCR_b.TXMD = 0x0; /* tx - rx*/
-	if (!spi_context_tx_on(&data->ctx)) {
-		p_spi_reg->SPCR_b.TXMD = 0x2; /* rx only */
-	}
 	if (!spi_context_rx_on(&data->ctx)) {
 		p_spi_reg->SPCR_b.TXMD = 0x1; /* tx only */
 	}
@@ -362,6 +364,8 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 
 	/* Disable the SPI Transfer. */
 	p_spi_reg->SPCR_b.SPE = 0;
+
+	spi_context_cs_control(&data->ctx, false);
 #endif
 #ifdef CONFIG_SPI_SLAVE
 	if (spi_context_is_slave(&data->ctx) && !ret) {
@@ -402,10 +406,9 @@ static int ra_spi_b_release(const struct device *dev, const struct spi_config *c
 
 static DEVICE_API(spi, ra_spi_driver_api) = {.transceive = ra_spi_b_transceive,
 #ifdef CONFIG_SPI_ASYNC
-							.transceive_async =
-								ra_spi_b_transceive_async,
+					     .transceive_async = ra_spi_b_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
-							.release = ra_spi_b_release};
+					     .release = ra_spi_b_release};
 
 static spi_b_clock_source_t ra_spi_b_clock_name(const struct device *clock_dev)
 {
@@ -604,15 +607,10 @@ static void ra_spi_eri_isr(const struct device *dev)
 }
 #endif
 
-#define _ELC_EVENT_SPI_RXI(channel) ELC_EVENT_SPI##channel##_RXI
-#define _ELC_EVENT_SPI_TXI(channel) ELC_EVENT_SPI##channel##_TXI
-#define _ELC_EVENT_SPI_TEI(channel) ELC_EVENT_SPI##channel##_TEI
-#define _ELC_EVENT_SPI_ERI(channel) ELC_EVENT_SPI##channel##_ERI
-
-#define ELC_EVENT_SPI_RXI(channel) _ELC_EVENT_SPI_RXI(channel)
-#define ELC_EVENT_SPI_TXI(channel) _ELC_EVENT_SPI_TXI(channel)
-#define ELC_EVENT_SPI_TEI(channel) _ELC_EVENT_SPI_TEI(channel)
-#define ELC_EVENT_SPI_ERI(channel) _ELC_EVENT_SPI_ERI(channel)
+#define EVENT_SPI_RXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SPI, channel, _RXI))
+#define EVENT_SPI_TXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SPI, channel, _TXI))
+#define EVENT_SPI_TEI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SPI, channel, _TEI))
+#define EVENT_SPI_ERI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SPI, channel, _ERI))
 
 #if defined(CONFIG_SPI_B_INTERRUPT)
 
@@ -621,13 +619,18 @@ static void ra_spi_eri_isr(const struct device *dev)
 		ARG_UNUSED(dev);                                                                   \
                                                                                                    \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, rxi, irq)] =                               \
-			ELC_EVENT_SPI_RXI(DT_INST_PROP(index, channel));                           \
+			EVENT_SPI_RXI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, txi, irq)] =                               \
-			ELC_EVENT_SPI_TXI(DT_INST_PROP(index, channel));                           \
+			EVENT_SPI_TXI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, tei, irq)] =                               \
-			ELC_EVENT_SPI_TEI(DT_INST_PROP(index, channel));                           \
+			EVENT_SPI_TEI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, eri, irq)] =                               \
-			ELC_EVENT_SPI_ERI(DT_INST_PROP(index, channel));                           \
+			EVENT_SPI_ERI(DT_INST_PROP(index, channel));                               \
+                                                                                                   \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SPI_RXI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SPI_TXI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SPI_TEI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SPI_ERI(DT_INST_PROP(index, channel)));     \
                                                                                                    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rxi, irq),                                  \
 			    DT_INST_IRQ_BY_NAME(index, rxi, priority), ra_spi_rxi_isr,             \

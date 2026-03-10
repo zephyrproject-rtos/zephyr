@@ -12,13 +12,13 @@ easy expansion of the functionality of the STM32 Nucleo open development
 platform with a wide choice of specialized shields.
 
 - Ultra-low-power wireless STM32WBA55CG microcontroller based on the Arm®
-  Cortex®‑M33 core, featuring 1 Mbyte of flash memory and 128 Kbytes of SRAM in
+  Cortex®-M33 core, featuring 1 Mbyte of flash memory and 128 Kbytes of SRAM in
   a UFQFPN48 package
 
 - MCU RF board (MB1863):
 
   - 2.4 GHz RF transceiver supporting Bluetooth® specification v5.3
-  - Arm® Cortex® M33 CPU with TrustZone®, MPU, DSP, and FPU
+  - Arm® Cortex®-M33 CPU with TrustZone®, MPU, DSP, and FPU
   - Integrated PCB antenna
 
 - Three user LEDs
@@ -144,45 +144,13 @@ More information about STM32WBA series can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_wba55cg board configuration supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | Bluetooth Low Energy                |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
+Bluetooth® support
+------------------
 
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_wba55cg/nucleo_wba55cg_defconfig`
-
-Bluetooh support
-----------------
-
-BLE support is enabled on nucleo_wba55cg. To build a zephyr sample using this board
-you first need to install Bluetooth Controller libraries available in Zephyr as binary
+Bluetooth® Low Energy support is enabled on nucleo_wba55cg. To build a zephyr sample using this board
+you first need to install Bluetooth® Controller libraries available in Zephyr as binary
 blobs.
 
 To fetch Binary Blobs:
@@ -228,6 +196,8 @@ Default settings are 115500 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo WBA55CG board includes an ST-LINK/V3 embedded debug tool interface.
 It could be used for flash and debug using either OpenOCD or STM32Cube ecosystem tools.
 
@@ -262,7 +232,11 @@ Debugging
 Debugging using OpenOCD
 -----------------------
 
-You can debug an application in the usual way using OpenOCD. Here is an example for the
+OpenOCD added STM32WB6xx full support in September 2023 (`OpenOCD WBA5xx commit`_),
+after v0.12.0 release tag. Zephyr SDK fork of OpenOCD includes this STM32WBA5x support.
+
+Assuming your OpenOCD tool (local or from the Zephyr SDK) supports STM32WBA5x,
+you can debug an application in the usual way using OpenOCD. Here is an example for the
 :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
@@ -294,3 +268,6 @@ For that:
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _OpenOCD WBA5xx commit:
+   https://github.com/openocd-org/openocd/commit/870769b0ba9f4dae6ada9d8b1a40d75bd83aaa06

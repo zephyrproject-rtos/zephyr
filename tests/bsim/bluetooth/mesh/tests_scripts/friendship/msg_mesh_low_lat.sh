@@ -10,9 +10,3 @@ RunTest mesh_friendship_msg_mesh_low_lat \
 	friendship_lpn_msg_mesh \
 	friendship_other_msg \
 	friendship_friend_est
-
-overlay="overlay_low_lat_conf_overlay_psa_conf"
-RunTest mesh_friendship_msg_mesh_low_lat_psa \
-	friendship_lpn_msg_mesh \
-	friendship_other_msg \
-	friendship_friend_est

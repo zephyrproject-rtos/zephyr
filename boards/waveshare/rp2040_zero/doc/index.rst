@@ -25,56 +25,7 @@ Hardware
 Supported Features
 ==================
 
-The ``rp2040_zero`` board target supports the following hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v6m-nvic`
-   * - UART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`raspberrypi,pico-uart`
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`raspberrypi,pico-gpio`
-   * - ADC
-     - :kconfig:option:`CONFIG_ADC`
-     - :dtcompatible:`raspberrypi,pico-adc`
-   * - I2C
-     - :kconfig:option:`CONFIG_I2C`
-     - :dtcompatible:`snps,designware-i2c`
-   * - SPI
-     - :kconfig:option:`CONFIG_SPI`
-     - :dtcompatible:`raspberrypi,pico-spi`
-   * - USB Device
-     - :kconfig:option:`CONFIG_USB_DEVICE_STACK`
-     - :dtcompatible:`raspberrypi,pico-usbd`
-   * - HWINFO
-     - :kconfig:option:`CONFIG_HWINFO`
-     - N/A
-   * - Watchdog Timer (WDT)
-     - :kconfig:option:`CONFIG_WATCHDOG`
-     - :dtcompatible:`raspberrypi,pico-watchdog`
-   * - PWM
-     - :kconfig:option:`CONFIG_PWM`
-     - :dtcompatible:`raspberrypi,pico-pwm`
-   * - Flash
-     - :kconfig:option:`CONFIG_FLASH`
-     - :dtcompatible:`raspberrypi,pico-flash`
-   * - Clock controller
-     - :kconfig:option:`CONFIG_CLOCK_CONTROL`
-     - :dtcompatible:`raspberrypi,pico-clock-controller`
-   * - UART (PIO)
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`raspberrypi,pico-uart-pio`
-   * - SPI (PIO)
-     - :kconfig:option:`CONFIG_SPI`
-     - :dtcompatible:`raspberrypi,pico-spi-pio`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -88,17 +39,23 @@ Default Zephyr Peripheral Mapping:
 
 - UART0_TX : P0
 - UART0_RX : P1
-- I2C0_SDA : P4
-- I2C0_SCL : P5
-- I2C1_SDA : P6
-- I2C1_SCL : P7
+- I2C0_SDA : P24
+- I2C0_SCL : P25
+- I2C1_SDA : P22
+- I2C1_SCL : P23
+- SPI0_TX : P3
+- SPI0_RX : P4
+- SPI0_SCK : P6
 - ADC_CH0 : P26
 - ADC_CH1 : P27
 - ADC_CH2 : P28
 - ADC_CH3 : P29
+- RGB LED (WS2812): P16
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========

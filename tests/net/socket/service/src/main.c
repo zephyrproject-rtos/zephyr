@@ -64,8 +64,8 @@ void run_test_service(const struct net_socket_service_desc *udp_service,
 	int c_sock_tcp;
 	int s_sock_tcp;
 	int new_sock;
-	struct sockaddr_in6 c_addr;
-	struct sockaddr_in6 s_addr;
+	struct net_sockaddr_in6 c_addr;
+	struct net_sockaddr_in6 s_addr;
 	ssize_t len;
 	char buf[10];
 	struct zsock_pollfd sock[2] = {
@@ -93,10 +93,10 @@ void run_test_service(const struct net_socket_service_desc *udp_service,
 	ret = net_socket_service_register(tcp_service, sock, ARRAY_SIZE(sock), NULL);
 	zassert_equal(ret, 0, "Cannot register tcp service (%d)", ret);
 
-	ret = bind(s_sock_udp, (struct sockaddr *)&s_addr, sizeof(s_addr));
+	ret = bind(s_sock_udp, (struct net_sockaddr *)&s_addr, sizeof(s_addr));
 	zassert_equal(ret, 0, "bind failed");
 
-	ret = connect(c_sock_udp, (struct sockaddr *)&s_addr, sizeof(s_addr));
+	ret = connect(c_sock_udp, (struct net_sockaddr *)&s_addr, sizeof(s_addr));
 	zassert_equal(ret, 0, "connect failed");
 
 	/* Send pkt for s_sock_udp and poll with timeout of 10 */
@@ -111,12 +111,12 @@ void run_test_service(const struct net_socket_service_desc *udp_service,
 	len = recv(s_sock_udp, BUF_AND_SIZE(buf), 0);
 	zassert_equal(len, STRLEN(TEST_STR_SMALL), "invalid recv len");
 
-	ret = bind(s_sock_tcp, (struct sockaddr *)&s_addr, sizeof(s_addr));
+	ret = bind(s_sock_tcp, (struct net_sockaddr *)&s_addr, sizeof(s_addr));
 	zassert_equal(ret, 0, "bind failed (%d)", -errno);
 	ret = listen(s_sock_tcp, 0);
 	zassert_equal(ret, 0, "");
 
-	ret = connect(c_sock_tcp, (const struct sockaddr *)&s_addr,
+	ret = connect(c_sock_tcp, (const struct net_sockaddr *)&s_addr,
 		      sizeof(s_addr));
 	zassert_equal(ret, 0, "");
 

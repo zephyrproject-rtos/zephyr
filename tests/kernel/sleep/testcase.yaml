@@ -3,11 +3,19 @@ tests:
     tags:
       - kernel
       - sleep
+    platform_exclude:
+      - npcx4m8f_evb
+      - npcx7m6fb_evb
+      - npcx9m6f_evb
   kernel.common.timing.minimallibc:
     filter: CONFIG_MINIMAL_LIBC_SUPPORTED
     tags:
       - kernel
       - sleep
       - libc
+    platform_exclude:
+      - npcx4m8f_evb
+      - npcx7m6fb_evb
+      - npcx9m6f_evb
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y

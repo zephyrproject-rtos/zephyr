@@ -12,6 +12,7 @@ flash: 1024
 ram: 256
 supported:
   - adc
+  - dac
   - dma
   - flash
   - gpio
@@ -22,4 +23,5 @@ supported:
   - spi
   - uart
   - usb_device
+  - usbd
 vendor: atmel

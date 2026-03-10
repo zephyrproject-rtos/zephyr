@@ -1,11 +1,14 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
+# pylint: disable=duplicate-code
 
 import logging
 import os
 import subprocess
 from twister_harness import DeviceAdapter
+
+import pytest
 
 logger = logging.getLogger(__name__)
 
@@ -14,18 +17,17 @@ def get_arguments_from_server_type(server_type, port):
     certs_path = os.path.join(this_path, "..", "credentials")
 
     args = ["openssl", "s_server"]
-    if server_type == "1.2-rsa":
-        args.extend(["-cert", "{}/rsa.crt".format(certs_path),
-                     "-key", "{}/rsa-priv.key".format(certs_path),
-                     "-certform", "PEM",
-                     "-tls1_2",
-                     "-cipher", "AES128-SHA256,AES256-SHA256"])
+    if server_type == "1.2-psk":
+        args.extend(["-tls1_2",
+                     "-cipher", "PSK-AES256-CBC-SHA384",
+                     "-psk_identity", "PSK_identity", "-psk", "0102030405",
+                     "-nocert"])
     elif server_type == "1.2-ec":
         args.extend(["-cert", "{}/ec.crt".format(certs_path),
                      "-key", "{}/ec-priv.key".format(certs_path),
                      "-certform", "PEM",
                      "-tls1_2",
-                     "-cipher", "ECDHE-ECDSA-AES128-SHA256"])
+                     "-cipher", "ECDHE-ECDSA-AES128-GCM-SHA256"])
     elif server_type == "1.3-ephemeral":
         args.extend(["-cert", "{}/ec.crt".format(certs_path),
                      "-key", "{}/ec-priv.key".format(certs_path),
@@ -51,11 +53,12 @@ def get_arguments_from_server_type(server_type, port):
                  "-accept", "{}".format(port)])
     return args
 
-def start_server(server_type, port):
+@pytest.fixture()
+def openssl_server(server_type, port):
     logger.info("Server type: " + server_type)
     args = get_arguments_from_server_type(server_type, port)
     logger.info("Launch command:")
-    print(" ".join(args))
+    logger.info(" ".join(args))
     openssl = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     try:
@@ -67,14 +70,12 @@ def start_server(server_type, port):
     except subprocess.TimeoutExpired:
         logger.info("Server is up")
 
-    return openssl
-
-def test_app_vs_openssl(dut: DeviceAdapter, server_type, port):
-    server = start_server(server_type, port)
-
-    logger.info("Launch Zephyr application")
-    dut.launch()
-    dut.readlines_until("Test PASSED", timeout=3.0)
+    yield
 
     logger.info("Kill server")
-    server.kill()
+    openssl.kill()
+
+def test_app_vs_openssl(dut: DeviceAdapter, openssl_server):
+    logger.info("Launch Zephyr application")
+    dut.launch()
+    dut.readlines_until(regex="Test PASSED", timeout=3.0)

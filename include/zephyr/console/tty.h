@@ -22,13 +22,13 @@ struct tty_serial {
 	uint8_t *rx_ringbuf;
 	uint32_t rx_ringbuf_sz;
 	uint16_t rx_get, rx_put;
-	int32_t rx_timeout;
+	k_timeout_t rx_timeout;
 
 	struct k_sem tx_sem;
 	uint8_t *tx_ringbuf;
 	uint32_t tx_ringbuf_sz;
 	uint16_t tx_get, tx_put;
-	int32_t tx_timeout;
+	k_timeout_t tx_timeout;
 };
 
 /**
@@ -62,7 +62,7 @@ int tty_init(struct tty_serial *tty, const struct device *uart_dev);
  */
 static inline void tty_set_rx_timeout(struct tty_serial *tty, int32_t timeout)
 {
-	tty->rx_timeout = timeout;
+	tty->rx_timeout = SYS_TIMEOUT_MS(timeout);
 }
 
 /**
@@ -76,7 +76,7 @@ static inline void tty_set_rx_timeout(struct tty_serial *tty, int32_t timeout)
  */
 static inline void tty_set_tx_timeout(struct tty_serial *tty, int32_t timeout)
 {
-	tty->tx_timeout = timeout;
+	tty->tx_timeout = SYS_TIMEOUT_MS(timeout);
 }
 
 /**

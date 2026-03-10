@@ -196,11 +196,16 @@ static int mmc56x3_chip_init(const struct device *dev)
 	const struct mmc56x3_config *config = &data->config;
 
 	ret = mmc56x3_chip_set_continuous_mode(dev, config->magn_odr);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ret = mmc56x3_chip_set_decimation_filter(dev, config->bw0, config->bw1);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ret = mmc56x3_chip_set_auto_self_reset(dev, config->auto_sr);
-
 	if (ret < 0) {
 		return ret;
 	}

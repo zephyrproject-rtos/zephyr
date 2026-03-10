@@ -48,6 +48,19 @@ config MODEM_BACKEND_UART_ASYNC_RECEIVE_IDLE_TIMEOUT_MS
 	int "Modem async UART receive idle timeout in milliseconds"
 	default 30
 
-endif
+config MODEM_BACKEND_UART_ASYNC_HWFC
+	bool "Hardware flow control (HWFC) for the modem async UART backend"
+	select EXPERIMENTAL
+
+if MODEM_BACKEND_UART_ASYNC_HWFC
+
+config MODEM_BACKEND_UART_ASYNC_HWFC_BUFFER_COUNT
+	int "Modem async UART HWFC buffer count"
+	range 2 4
+	default 3
+
+endif # MODEM_BACKEND_UART_ASYNC_HWFC
+
+endif # MODEM_BACKEND_UART_ASYNC
 
 endif # MODEM_BACKEND_UART

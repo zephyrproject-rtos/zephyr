@@ -112,10 +112,7 @@ SECTIONS
 {
 
 #include <zephyr/linker/rel-sections.ld>
-
-#ifdef CONFIG_LLEXT
 #include <zephyr/linker/llext-sections.ld>
-#endif
 
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <zephyr/linker/intlist.ld>
@@ -162,7 +159,6 @@ SECTIONS
 
     /* Userspace related stuff */
     LIB_OBJ_FUNC_IN_SECT(libarch__xtensa__core.a,userspace.S.obj,xtensa_do_syscall)
-    LIB_OBJ_FUNC_IN_SECT(libarch__xtensa__core.a,ptables.c.obj,xtensa_swap_update_page_tables)
 
     /* Below are to speed up execution by avoiding TLB misses
      * on frequently used functions.
@@ -211,6 +207,8 @@ SECTIONS
     *(.fini.literal)
     KEEP(*(.fini))
     *(.gnu.version)
+
+    #include <snippets-text-sections.ld>
 
     #include <zephyr/linker/kobject-text.ld>
 

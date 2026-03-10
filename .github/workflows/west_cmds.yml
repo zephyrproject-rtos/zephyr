@@ -23,53 +23,37 @@ on:
     - 'scripts/west_commands/**'
     - '.github/workflows/west_cmds.yml'
 
+permissions:
+  contents: read
+
 jobs:
-  west-commnads:
+  west-commands:
     name: West Command Tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13']
-        os: [ubuntu-22.04, macos-14, windows-2022]
+        python-version: ['3.12', '3.13']
+        os: [ubuntu-24.04, macos-14, windows-2022]
     steps:
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: ${{ matrix.python-version }}
-    - name: cache-pip-linux
-      if: startsWith(runner.os, 'Linux')
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}
-        restore-keys: |
-          ${{ runner.os }}-pip-${{ matrix.python-version }}
-    - name: cache-pip-mac
-      if: startsWith(runner.os, 'macOS')
-      uses: actions/cache@v4
-      with:
-        path: ~/Library/Caches/pip
-        # Trailing '-' was just to get a different cache name
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-
-        restore-keys: |
-          ${{ runner.os }}-pip-${{ matrix.python-version }}-
-    - name: cache-pip-win
-      if: startsWith(runner.os, 'Windows')
-      uses: actions/cache@v4
-      with:
-        path: ~\AppData\Local\pip\Cache
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}
-        restore-keys: |
-          ${{ runner.os }}-pip-${{ matrix.python-version }}
-    - name: install pytest
+        cache: pip
+        cache-dependency-path: scripts/requirements-actions.txt
+
+    - name: Install Python packages
       run: |
-        pip install pytest west pyelftools canopen natsort progress mypy intelhex psutil ply pyserial anytree junitparser
+        pip install -r scripts/requirements-actions.txt --require-hashes
+
     - name: run pytest-win
       if: runner.os == 'Windows'
       run: |
         python ./scripts/west_commands/run_tests.py
+
     - name: run pytest-mac-linux
       if: runner.os != 'Windows'
       run: |

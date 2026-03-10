@@ -74,7 +74,7 @@ This platform has the following external memories:
 |                |            | data block, which sets up SEMC at   |
 |                |            | boot time                           |
 +----------------+------------+-------------------------------------+
-| W25Q64JVSSIQ   | FLEXSPI    | Enabled via flash configurationn    |
+| W25Q64JVSSIQ   | FLEXSPI    | Enabled via flash configuration     |
 |                |            | block, which sets up FLEXSPI at     |
 |                |            | boot time. Supported for XIP only.  |
 +----------------+------------+-------------------------------------+
@@ -82,49 +82,34 @@ This platform has the following external memories:
 Supported Features
 ==================
 
-The mimxrt1040_evk board configuration supports the hardware features listed
-below.  For additional features not yet supported, please also refer to the
-:zephyr:board:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
-NXP prioritizes enabling the superset board with NXP's Full Platform Support for
-Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
-already supported, which can also be re-used on this mimxrt1040_evk board:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------------------+
-| Interface | Controller | Driver/Component                                |
-+===========+============+=================================================+
-| NVIC      | on-chip    | nested vector interrupt controller              |
-+-----------+------------+-------------------------------------------------+
-| SYSTICK   | on-chip    | systick                                         |
-+-----------+------------+-------------------------------------------------+
-| GPIO      | on-chip    | gpio                                            |
-+-----------+------------+-------------------------------------------------+
-| UART      | on-chip    | serial port-polling;                            |
-|           |            | serial port-interrupt                           |
-+-----------+------------+-------------------------------------------------+
-| PWM       | on-chip    | pwm                                             |
-+-----------+------------+-------------------------------------------------+
-| ADC       | on-chip    | adc                                             |
-+-----------+------------+-------------------------------------------------+
-| SPI       | on-chip    | spi                                             |
-+-----------+------------+-------------------------------------------------+
-| DMA       | on-chip    | dma                                             |
-+-----------+------------+-------------------------------------------------+
-| I2C       | on-chip    | i2c                                             |
-+-----------+------------+-------------------------------------------------+
-| GPT       | on-chip    | gpt                                             |
-+-----------+------------+-------------------------------------------------+
-| DISPLAY   | on-chip    | eLCDIF. Tested with                             |
-|           |            | :ref:`rk043fn02h_ct`, and                       |
-|           |            | :ref:`rk043fn66hs_ctg` shields                  |
-+-----------+------------+-------------------------------------------------+
-| UART      | NXP IW61x  | M.2 WIFI/BT module                              |
-|           |            | (select :kconfig:option:`CONFIG_BT_NXP_NW612`)  |
-+-----------+------------+-------------------------------------------------+
+.. note::
 
-The default configuration can be found in
-:zephyr_file:`boards/nxp/mimxrt1040_evk/mimxrt1040_evk_defconfig`
+   For additional features not yet supported, please also refer to the
+   :zephyr:board:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
+   NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+   Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
+   already supported, which can also be re-used on this mimxrt1040_evk board.
 
-Other hardware features are not currently supported by the port.
+Shields for Supported Features
+==============================
+
+Some features in the table above are tested with Zephyr shields.  These shields
+are tested on this board:
+
+- :ref:`rk043fn02h_ct` and :ref:`rk043fn66hs_ctg` - support the Display interface.
+- :ref:`nxp_m2_wifi_bt` - Rev C version is tested with this shield to attach any M.2 module
+  with BT HCI UART interface and Wi-Fi SDIO interface. The shield binds the required NXP
+  HCI driver or SDIO driver to perform firmware-load and other setup configurations
+  for NXP SoC IW416/IW612/IW610.
+
+For the :ref:`nxp_m2_wifi_bt` shield, the following hardware rework needs to be applied,
+
+- Solder 0 ohm resistors for R96, and R93.
+- Remove resistors from R497, R498, R456 and R457.
+
+And due to pin conflict issue, the PCM interface of Bluetooth module cannot be supported.
 
 Connections and IOs
 ===================
@@ -206,6 +191,8 @@ that run the command:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 This board supports 3 debug host tools. Please install your preferred host
 tool, then follow the instructions in `Configuring a Debug Probe`_ to
 configure the board appropriately.
@@ -224,8 +211,7 @@ Configuring a Debug Probe
 For the RT1040, J9/J10 are the SWD isolation jumpers, J12 is the DFU
 mode jumper, and J2 is the 20 pin JTAG/SWD header.
 
-.. include:: ../../common/rt1xxx-lpclink2-debug.rst
-   :start-after: rt1xxx-lpclink2-probes
+.. include:: ../../common/rt1xxx-lpclink2-debug.rst.inc
 
 Configuring a Console
 =====================
@@ -325,12 +311,6 @@ steps:
 Bluetooth Module
 ----------------
 
-For Murate 2EL M.2 Mdoule, the following hardware rework needs to be applied,
-Solder 0 ohm resistors for R96, and R93.
-Remove resistors from R497, R498, R456 and R457.
-
-And due to pin conflict issue, the PCM interface of Bluetooth module cannot be supported.
-
 For the debugger fails to connect with the following error, please refer to the next section.
 
 WiFi Module
@@ -352,6 +332,7 @@ the M.2 WiFi module is interfering with the debug signals
 To resolve this, you may remove the M.2 WiFi module from the board when
 flashing or debugging it, or remove jumper J80.
 
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1040-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1040-evaluation-kit:MIMXRT1040-EVK

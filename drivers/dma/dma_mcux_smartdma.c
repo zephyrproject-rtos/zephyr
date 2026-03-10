@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,6 @@
 #include <soc.h>
 #include <fsl_smartdma.h>
 #include <fsl_inputmux.h>
-#include <fsl_power.h>
 
 #define DT_DRV_COMPAT nxp_smartdma
 
@@ -153,7 +152,7 @@ static DEVICE_API(dma, dma_mcux_smartdma_api) = {
 	static struct dma_mcux_smartdma_data smartdma_##n##_data;		\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
-				&dma_mcux_smartdma_init,			\
+				dma_mcux_smartdma_init,				\
 				NULL,						\
 				&smartdma_##n##_data, &smartdma_##n##_config,	\
 				POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,		\

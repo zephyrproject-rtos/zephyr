@@ -9,17 +9,27 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <sl_rail.h>
 #include <sl_status.h>
 
-struct RAIL_TxPowerCurvesConfigAlt {
-};
+sl_rail_status_t sl_rail_verify_tx_power_conversion(const struct sl_rail_tx_power_table_config *cfg)
+{
+	return SL_RAIL_STATUS_NO_ERROR;
+}
 
-void RAIL_VerifyTxPowerCurves(const struct RAIL_TxPowerCurvesConfigAlt *config)
+void sl_rail_enable_pa_cal(sl_rail_handle_t rail_handle, bool enable)
 {
 }
 
-void RAIL_EnablePaCal(bool enable)
+sl_rail_status_t sl_rail_config_sleep(sl_rail_handle_t handle,
+				      const sl_rail_timer_sync_config_t *config)
 {
+	return SL_RAIL_STATUS_NO_ERROR;
+}
+
+sl_rail_status_t sl_rail_init_power_manager(void)
+{
+	return SL_RAIL_STATUS_NO_ERROR;
 }
 
 int16_t sl_btctrl_hci_receive(uint8_t *data, int16_t len, bool lastFragment)
@@ -31,86 +41,23 @@ void BTLE_LL_Process(uint32_t events)
 {
 }
 
-void sl_btctrl_disable_2m_phy(void)
-{
-}
-
-void sl_btctrl_disable_coded_phy(void)
-{
-}
-
-uint32_t sl_btctrl_init_mem(uint32_t memsize)
+int16_t BTLE_LL_SetMaxPower(int16_t power)
 {
 	return 0;
 }
 
-void sl_btctrl_configure_le_buffer_size(uint8_t count)
+sl_status_t sl_btctrl_init(void)
+{
+	return SL_STATUS_OK;
+}
+
+void sl_btctrl_deinit(void)
 {
 }
 
-sl_status_t sl_btctrl_init_ll(void)
+void *sli_btctrl_get_radio_context_handle(void)
 {
-	return SL_STATUS_NOT_AVAILABLE;
-}
-
-void sli_btctrl_deinit_mem(void)
-{
-}
-
-void sl_btctrl_init_adv(void)
-{
-}
-
-void sl_btctrl_init_adv_ext(void)
-{
-}
-
-void sl_btctrl_init_scan(void)
-{
-}
-
-void sl_btctrl_init_scan_ext(void)
-{
-}
-
-void sl_btctrl_init_conn(void)
-{
-}
-
-void sl_btctrl_init_phy(void)
-{
-}
-
-void sl_btctrl_init_basic(void)
-{
-}
-
-void sl_btctrl_configure_completed_packets_reporting(uint8_t packets, uint8_t events)
-{
-}
-
-void sl_bthci_init_upper(void)
-{
-}
-
-void sl_btctrl_hci_parser_init_default(void)
-{
-}
-
-void sl_btctrl_hci_parser_init_conn(void)
-{
-}
-
-void sl_btctrl_hci_parser_init_adv(void)
-{
-}
-
-void sl_btctrl_hci_parser_init_phy(void)
-{
-}
-
-void sl_bthci_init_vs(void)
-{
+	return 0;
 }
 
 void AGC_IRQHandler(void)
@@ -122,6 +69,10 @@ void BUFC_IRQHandler(void)
 }
 
 void FRC_IRQHandler(void)
+{
+}
+
+void FRC_PRI_IRQHandler(void)
 {
 }
 
@@ -142,6 +93,10 @@ void RAC_SEQ_IRQHandler(void)
 }
 
 void SYNTH_IRQHandler(void)
+{
+}
+
+void HOSTMAILBOX_IRQHandler(void)
 {
 }
 

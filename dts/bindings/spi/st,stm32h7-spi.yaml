@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-        STM32H7 SPI controller
+        STM32H7 SPI controller.
+
         This compatible stands for all SPI hardware blocks matching the
         version available in STM32H7 SoCs.
         This version of STM32 SPI hardware block could be identified by the
@@ -31,3 +32,13 @@ properties:
   fifo-enable:
     type: boolean
     description: Enable the SPI FIFO usage for performance improvement.
+
+  fifo-size:
+    type: int
+    required: true
+    description: Size of the Tx and Rx FIFOs (in bytes).
+
+  fifo-max-transfer-size:
+    type: int
+    required: true
+    description: Maximal transfer size (in bytes) when FIFO is used.

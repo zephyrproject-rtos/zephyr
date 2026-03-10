@@ -3,6 +3,9 @@
 
 if BOARD_XG24_EK2703A
 
+configdefault LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+
 config CMU_HFXO_FREQ
 	default 39000000
 
@@ -15,12 +18,5 @@ config FPU
 	default y
 
 endif # SOC_GECKO_USE_RAIL
-
-if BT
-
-config COMMON_LIBC_MALLOC_ARENA_SIZE
-	default 8192
-
-endif # BT
 
 endif # BOARD_XG24_EK2703A

@@ -16,7 +16,6 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util_macro.h>
 
 #include "cap_internal.h"
@@ -36,13 +35,25 @@ int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *par
 	static struct bt_gatt_service cas;
 	int err;
 
-	CHECKIF(param->set_size == 0U) {
+	if (param == NULL) {
+		LOG_DBG("param is NULL");
+
+		return -EINVAL;
+	}
+
+	if (param->set_size == 0U) {
 		LOG_DBG("param->set_size shall be non-zero");
 		return -EINVAL;
 	}
 
-	CHECKIF(param->rank == 0U) {
+	if (param->rank == 0U) {
 		LOG_DBG("param->rank shall be non-zero");
+		return -EINVAL;
+	}
+
+	if (svc_inst == NULL) {
+		LOG_DBG("svc_inst is NULL");
+
 		return -EINVAL;
 	}
 
@@ -93,4 +104,30 @@ bool bt_cap_acceptor_ccid_exist(const struct bt_conn *conn, uint8_t ccid)
 	/* TODO: check mcs */
 
 	return false;
+}
+
+bool bt_cap_acceptor_ccids_exist(const struct bt_conn *conn, const uint8_t ccids[],
+				 uint8_t ccid_cnt)
+{
+	for (uint8_t i = 0; i < ccid_cnt; i++) {
+		const uint8_t ccid = ccids[i];
+
+		if (!bt_cap_acceptor_ccid_exist(conn, ccid)) {
+			LOG_DBG("CCID %u is unknown", ccid);
+
+			/* TBD:
+			 * Should we reject the Metadata?
+			 *
+			 * Should unknown CCIDs trigger a
+			 * discovery procedure for TBS or MCS?
+			 *
+			 * Or should we just accept as is, and
+			 * then let the application decide?
+			 */
+			return false;
+		}
+	}
+
+	/* This will also return true if the ccid_cnt is 0 which is intended */
+	return true;
 }

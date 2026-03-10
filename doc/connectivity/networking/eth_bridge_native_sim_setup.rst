@@ -8,12 +8,12 @@ Ethernet bridge with native_sim board
     :depth: 2
 
 This document describes how to set up a bridged Ethernet network between a (Linux) host
-and a Zephyr application running in a :ref:`native_sim <native_sim>` board.
+and a Zephyr application running in a :zephyr:board:`native_sim <native_sim>` board.
 
 This setup is useful when testing the Ethernet bridging feature that can be enabled with
 :kconfig:option:`CONFIG_NET_ETHERNET_BRIDGE` Kconfig option. In this setup, the net-tools
 configuration creates two host network interfaces ``zeth0`` and ``zeth1`` and connects them
-to Zephyr's :ref:`native_sim <native_sim>` application.
+to Zephyr's :zephyr:board:`native_sim <native_sim>` application.
 
 First create the host interfaces. In this example two interfaces are created.
 
@@ -58,10 +58,10 @@ Then create a sample and enable Ethernet bridging support. In this example we cr
 
    west build -p -b native_sim -d ../build/echo-server \
       samples/net/sockets/echo_server -- \
-      -DCONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD="\"gnome-terminal -- screen %s\"" \
+      -DCONFIG_UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD="\"gnome-terminal -- screen %s\"" \
       -DCONFIG_NET_ETHERNET_BRIDGE=y \
       -DCONFIG_NET_ETHERNET_BRIDGE_SHELL=y \
-      -DCONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT=2 \
+      -DCONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT=2 \
       -DCONFIG_NET_IF_MAX_IPV6_COUNT=2 \
       -DCONFIG_NET_IF_MAX_IPV4_COUNT=2
    ../build/echo-server/zephyr/zephyr.exe -attach_uart

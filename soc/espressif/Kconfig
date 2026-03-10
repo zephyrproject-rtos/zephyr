@@ -19,6 +19,9 @@ config ESP_MAC_ADDR_UNIVERSE_ETH
 config ESP_MAC_ADDR_UNIVERSE_BT
 	bool
 
+config ESP_MAC_ADDR_UNIVERSE_IEEE802154
+	bool
+
 config ESP_MAC_UNIVERSAL_MAC_ADDRESSES_ONE
 	bool
 
@@ -34,6 +37,12 @@ rsource "*/Kconfig.mac"
 endmenu
 
 menu "RTC Clock Config"
+
+config RESERVE_RTC_MEM
+	int
+	default 0
+	help
+	  This option reserves an area in RTC FAST memory.
 
 config RTC_CLK_CAL_CYCLES
 	int "Number of cycles for RTC_SLOW_CLK calibration"
@@ -55,5 +64,7 @@ config RTC_CLK_CAL_CYCLES
 	    In case more value will help improve the definition of the launch of the crystal.
 	    If the crystal could not start, it will be switched to internal RC.
 endmenu
+
+rsource "Kconfig.ulp"
 
 endif # SOC_FAMILY_ESPRESSIF_ESP32

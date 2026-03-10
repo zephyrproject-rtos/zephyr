@@ -59,3 +59,11 @@ Override ``west update`` to check a local cache:
 .. code-block:: shell
 
    west config alias.update "update --path-cache $HOME/.cache/zephyrproject"
+
+Automatically exclude the 32-bit native simulator target when running :ref:`Twister
+<twister_script>` via west. This is especially useful when running on hosts systems without a 32-bit
+host C library (i.e. Linux/AArch64):
+
+.. code-block:: shell
+
+   west config alias.twister "twister --exclude-platform native_sim/native"

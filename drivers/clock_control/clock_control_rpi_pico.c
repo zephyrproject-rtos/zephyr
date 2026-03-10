@@ -266,7 +266,7 @@ uint64_t rpi_pico_frequency_count(const struct device *dev, clock_control_subsys
 		fc0_id = CLOCKS_FC0_SRC_VALUE_CLKSRC_GPIN0;
 		break;
 	case rpi_pico_clkid_gpin1:
-		fc0_id = CLOCKS_FC0_SRC_VALUE_CLKSRC_GPIN0;
+		fc0_id = CLOCKS_FC0_SRC_VALUE_CLKSRC_GPIN1;
 		break;
 	default:
 		return -1;
@@ -675,12 +675,10 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 			     RESETS_RESET_UART0_BITS | RESETS_RESET_UART1_BITS |
 			     RESETS_RESET_USBCTRL_BITS));
 
-	/* Start tick in watchdog */
-	watchdog_start_tick(cycles_per_tick);
-#if defined(CONFIG_SOC_SERIES_RP2350)
-	tick_start(TICK_TIMER0, cycles_per_tick);
-	tick_start(TICK_TIMER1, cycles_per_tick);
-#endif
+	/* Start all the tick generators. */
+	for (tick_gen_num_t i = 0; i < TICK_COUNT; i++) {
+		tick_start(i, cycles_per_tick);
+	}
 
 	clocks_regs->resus.ctrl = 0;
 

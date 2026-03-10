@@ -1,7 +1,4 @@
-.. _litex-vexriscv:
-
-LiteX VexRiscv
-##############
+.. zephyr:board:: litex_vexriscv
 
 LiteX VexRiscv is an example of a system on a chip (SoC) that consists of
 a `VexRiscv processor <https://github.com/SpinalHDL/VexRiscv>`_
@@ -19,10 +16,6 @@ LiteX VexRiscv SoC implementation generated for the
 `Digilent Arty A7-35T or A7-100T Development Boards
 <https://store.digilentinc.com/arty-a7-artix-7-fpga-development-board-for-makers-and-hobbyists>`_
 or `SDI-MIPI Video Converter <https://github.com/antmicro/sdi-mipi-video-converter>`_.
-
-.. image:: img/litex_vexriscv.jpg
-   :align: center
-   :alt: LiteX VexRiscv on Digilent Arty 35T Board
 
 LiteX is based on
 `Migen <https://m-labs.hk/gateware/migen/>`_/`MiSoC SoC builder <https://github.com/m-labs/misoc>`_
@@ -48,6 +41,11 @@ bitstream for the FPGA on a Digilent Arty A7-35 Board or SDI-MIPI Video Converte
 using the
 `Zephyr on LiteX VexRiscv <https://github.com/litex-hub/zephyr-on-litex-vexriscv>`_
 reference platform. You can also use the official LiteX SoC Builder.
+
+Supported Features
+******************
+
+.. zephyr:board-supported-hw::
 
 Bitstream generation
 ********************

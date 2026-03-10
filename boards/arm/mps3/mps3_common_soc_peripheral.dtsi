@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019-2021 Linaro Limited
- * Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ * Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,6 +85,8 @@ spi_shield0: spi@9203000 {
 	clocks = <&sysclk>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-names = "default";
 };
 
 spi_shield1: spi@9204000 {
@@ -95,6 +97,8 @@ spi_shield1: spi@9204000 {
 	clocks = <&sysclk>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+	pinctrl-0 = <&spi4_default>;
+	pinctrl-names = "default";
 };
 
 i2c_shield0: i2c@9205000 {
@@ -103,6 +107,8 @@ i2c_shield0: i2c@9205000 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x9205000 0x1000>;
+	pinctrl-0 = <&sbcon2_default>;
+	pinctrl-names = "default";
 };
 
 i2c_shield1: i2c@9206000 {
@@ -111,6 +117,8 @@ i2c_shield1: i2c@9206000 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x9206000 0x1000>;
+	pinctrl-0 = <&sbcon3_default>;
+	pinctrl-names = "default";
 };
 
 i2c_ddr4_eeprom: i2c@9208000 {
@@ -122,7 +130,7 @@ i2c_ddr4_eeprom: i2c@9208000 {
 };
 
 gpio_led0: mps3_fpgaio@9302000 {
-	compatible = "arm,mps3-fpgaio-gpio";
+	compatible = "arm,mmio32-gpio";
 
 	reg = <0x9302000 0x4>;
 	gpio-controller;
@@ -131,16 +139,17 @@ gpio_led0: mps3_fpgaio@9302000 {
 };
 
 gpio_button: mps3_fpgaio@9302008 {
-	compatible = "arm,mps3-fpgaio-gpio";
+	compatible = "arm,mmio32-gpio";
 
 	reg = <0x9302008 0x4>;
 	gpio-controller;
 	#gpio-cells = <1>;
 	ngpios = <2>;
+	direction-input;
 };
 
 gpio_misc: mps3_fpgaio@930204c {
-	compatible = "arm,mps3-fpgaio-gpio";
+	compatible = "arm,mmio32-gpio";
 
 	reg = <0x930204c 0x4>;
 	gpio-controller;
@@ -182,6 +191,8 @@ uart3: uart@9306000 {
 	interrupt-names = "tx", "rx";
 	clocks = <&sysclk>;
 	current-speed = <115200>;
+	pinctrl-0 = <&uart3_default>;
+	pinctrl-names = "default";
 };
 
 uart4: uart@9307000 {
@@ -191,6 +202,8 @@ uart4: uart@9307000 {
 	interrupt-names = "tx", "rx";
 	clocks = <&sysclk>;
 	current-speed = <115200>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
 };
 
 uart5: uart@9308000 {
@@ -201,4 +214,9 @@ uart5: uart@9308000 {
 	interrupts = <126 3 125 3>;
 	clocks = <&sysclk>;
 	current-speed = <115200>;
+};
+
+pinctrl: pinctrl {
+	compatible = "arm,mps3-pinctrl";
+	status = "okay";
 };

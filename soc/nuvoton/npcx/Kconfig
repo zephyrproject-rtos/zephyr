@@ -31,6 +31,7 @@ config NPCX_IMAGE_OUTPUT_HEX
 
 config NPCX_HEADER_CHIP
 	string
+	default "npck3m8" if SOC_NPCK3M8K
 	default "npcx7m6" if SOC_NPCX7M6FB || SOC_NPCX7M6FC
 	default "npcx7m7" if SOC_NPCX7M7FC
 	default "npcx9m3" if SOC_NPCX9M3F
@@ -136,7 +137,8 @@ config NPCX_HEADER_ENABLE_FIRMWARE_CRC
 choice NPCX_HEADER_FLASH_SIZE_CHOICE
 	prompt "Flash size"
 	default NPCX_HEADER_FLASH_SIZE_0P5M_1M if SOC_SERIES_NPCX7 || \
-						  SOC_SERIES_NPCX9
+						  SOC_SERIES_NPCX9 || \
+						  SOC_SERIES_NPCK3
 	default NPCX_HEADER_FLASH_SIZE_16M
 	help
 	  This sets the SPI flash size.

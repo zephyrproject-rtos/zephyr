@@ -8,10 +8,12 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/logging/log.h>
 
 #include <stm32_ll_pwr.h>
 
-#include <zephyr/logging/log.h>
+#include <stm32_backup_domain.h>
+
 LOG_MODULE_REGISTER(stm32_backup_sram, CONFIG_SOC_LOG_LEVEL);
 
 struct stm32_backup_sram_config {
@@ -38,25 +40,34 @@ static int stm32_backup_sram_init(const struct device *dev)
 		return ret;
 	}
 
-	/* enable write access to backup domain */
-	LL_PWR_EnableBkUpAccess();
-	while (!LL_PWR_IsEnabledBkUpAccess()) {
-	}
+	/* Add a refcount to backup domain access and never remove it */
+	stm32_backup_domain_enable_access();
 
-	/* enable backup sram regulator (required to retain backup SRAM content
-	 * while in standby or VBAT modes).
-	 */
-	LL_PWR_EnableBkUpRegulator();
-	while (!LL_PWR_IsEnabledBkUpRegulator()) {
+	if (IS_ENABLED(CONFIG_SOC_SERIES_STM32U5X)) {
+		/*
+		 * On STM32U5 series, backup RAM retention can only be enabled
+		 * when the LDO is selected as voltage regulator. However, the
+		 * SMPS regulator may have been selected by the time this code
+		 * executes, which results in a deadlock. To avoid this, the
+		 * SoC initialization code is modified to enable the regulator
+		 * on our behalf, before switching regulators - don't try to
+		 * enable the regulator again.
+		 */
+	} else {
+		/* enable backup sram regulator (required to retain backup SRAM content
+		 * while in standby or VBAT modes).
+		 */
+		LL_PWR_EnableBkUpRegulator();
+		while (!LL_PWR_IsEnabledBkUpRegulator()) {
+		}
 	}
 
 	return 0;
 }
 
 static const struct stm32_backup_sram_config config = {
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(0, bus),
-		    .enr = DT_INST_CLOCKS_CELL(0, bits) },
+	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 };
 
 DEVICE_DT_INST_DEFINE(0, stm32_backup_sram_init, NULL, NULL, &config,
-		      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY, NULL);
+		      POST_KERNEL, CONFIG_STM32_BACKUP_SRAM_INIT_PRIORITY, NULL);

@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2025 Aleksandr Senin <al@meshium.net>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,entropy = &trng0;
+	};
+};
+
+&rcu {
+	gd,ck48m-source = "irc48m";
+};
+
+&trng0 {
+	status = "okay";
+};

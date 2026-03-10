@@ -146,7 +146,7 @@ static int phy_dm8806_write_reg(const struct device *dev, uint8_t phyad, uint8_t
 					repetition);
 				if (repetition >= CONFIG_PHY_DM8806_SMI_BUS_CHECK_REPETITION) {
 					LOG_ERR("Maximum number of PHY write repetition exceed.");
-					res = (-EIO);
+					res = -EIO;
 				}
 			} else {
 				break;
@@ -158,7 +158,7 @@ static int phy_dm8806_write_reg(const struct device *dev, uint8_t phyad, uint8_t
 		} else {
 			if (checksum_mismatch) {
 				LOG_ERR("Wrong checksum, during PHY write procedure.");
-				res = (-EIO);
+				res = -EIO;
 				break;
 			}
 		}
@@ -217,20 +217,18 @@ static int phy_dm8806_read_reg(const struct device *dev, uint8_t phyad, uint8_t 
 
 		if (CONFIG_PHY_DM8806_SMI_BUS_CHECK_REPETITION > 0) {
 			repetition++;
-			if (hw_checksum != sw_checksum) {
-				LOG_WRN("%d repeat of PHY read procedure due to checksum error.",
-					repetition);
-				if (repetition >= CONFIG_PHY_DM8806_SMI_BUS_CHECK_REPETITION) {
-					LOG_ERR("Maximum number of PHY read repetition exceed.");
-					res = (-EIO);
-				}
-			} else {
+			if (hw_checksum == sw_checksum) {
 				break;
+			}
+			LOG_WRN("%d repeat PHY read procedure due to checksum error.", repetition);
+			if (repetition >= CONFIG_PHY_DM8806_SMI_BUS_CHECK_REPETITION) {
+				LOG_ERR("Maximum number of PHY read repetition exceed.");
+				res = -EIO;
 			}
 		} else {
 			if (hw_checksum != sw_checksum) {
 				LOG_ERR("Wrong checksum, during PHY read procedure.");
-				res = (-EIO);
+				res = -EIO;
 				break;
 			}
 		}
@@ -257,6 +255,7 @@ static void phy_dm8806_thread_cb(const struct device *dev, struct phy_link_state
 	uint16_t data;
 	struct phy_dm8806_data *drv_data = dev->data;
 	const struct phy_dm8806_config *cfg = dev->config;
+	int res;
 
 	if (drv_data->link_speed_chenge_cb != NULL) {
 		drv_data->link_speed_chenge_cb(dev, state, cb_data);
@@ -264,9 +263,18 @@ static void phy_dm8806_thread_cb(const struct device *dev, struct phy_link_state
 	/* Clear the interrupt flag, by writing "1" to LNKCHG bit of Interrupt Status
 	 * Register (318h)
 	 */
-	mdio_read(cfg->mdio, DM8806_INT_STAT_PHY_ADDR, DM8806_INT_STAT_REG_ADDR, &data);
+	res = mdio_read(cfg->mdio, DM8806_INT_STAT_PHY_ADDR, DM8806_INT_STAT_REG_ADDR, &data);
+	if (res < 0) {
+		LOG_ERR("Failed to read regad: %d, error: %d", DM8806_INT_STAT_REG_ADDR, res);
+	}
+
 	data |= 0x1;
-	mdio_write(cfg->mdio, DM8806_INT_STAT_PHY_ADDR, DM8806_INT_STAT_REG_ADDR, data);
+
+	res = mdio_write(cfg->mdio, DM8806_INT_STAT_PHY_ADDR, DM8806_INT_STAT_REG_ADDR, data);
+	if (res < 0) {
+		LOG_ERR("Failed to write regad: %d, error: %d", DM8806_INT_STAT_REG_ADDR, res);
+	}
+
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
@@ -293,7 +301,7 @@ int phy_dm8806_port_init(const struct device *dev)
 		return res;
 	}
 	/* Hardware reset of the PHY DM8806 */
-	gpio_pin_set_dt(&cfg->gpio_rst, true);
+	res = gpio_pin_set_dt(&cfg->gpio_rst, true);
 	if (res < 0) {
 		LOG_ERR("Failed to assert gpio reset pin of the PHY DM886 to physical 0");
 		return res;
@@ -325,14 +333,14 @@ int phy_dm8806_init_interrupt(const struct device *dev)
 	 */
 	res = mdio_read(cfg->mdio, DM8806_INT_MASK_CTRL_PHY_ADDR, DM8806_INT_MASK_CTRL_REG_ADDR,
 			&data);
-	if (res) {
+	if (res < 0) {
 		LOG_ERR("Failed to read IRQ_LED_CONTROL, %i", res);
 		return res;
 	}
 	data |= 0x1;
 	res = mdio_write(cfg->mdio, DM8806_INT_MASK_CTRL_PHY_ADDR, DM8806_INT_MASK_CTRL_REG_ADDR,
 			 data);
-	if (res) {
+	if (res < 0) {
 		LOG_ERR("Failed to read IRQ_LED_CONTROL, %i", res);
 		return res;
 	}
@@ -342,14 +350,14 @@ int phy_dm8806_init_interrupt(const struct device *dev)
 	 */
 	res = mdio_read(cfg->mdio, DM8806_WOLL_CTRL_REG_PHY_ADDR, DM8806_WOLL_CTRL_REG_REG_ADDR,
 			&data);
-	if (res) {
+	if (res < 0) {
 		LOG_ERR("Failed to read IRQ_LED_CONTROL, %i", res);
 		return res;
 	}
 	data |= 0xF;
 	res = mdio_write(cfg->mdio, DM8806_WOLL_CTRL_REG_PHY_ADDR, DM8806_WOLL_CTRL_REG_REG_ADDR,
 			 data);
-	if (res) {
+	if (res < 0) {
 		LOG_ERR("Failed to read IRQ_LED_CONTROL, %i", res);
 		return res;
 	}
@@ -384,7 +392,7 @@ int phy_dm8806_init_interrupt(const struct device *dev)
 	/* Configure GPIO interrupt to be triggered on pin state change to logical
 	 * level 1 asserted by Davicom PHY DM8806 interrupt Pin
 	 */
-	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
+	res = gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 	if (res < 0) {
 		LOG_ERR("Failed to configure PHY DM886 gpio interrupt pin trigger for "
 			"active edge");
@@ -498,16 +506,16 @@ static int phy_dm8806_get_link_state(const struct device *dev, struct phy_link_s
 	status >>= DM8806_SPEED_AND_DUPLEX_OFFSET;
 	switch (status & DM8806_SPEED_AND_DUPLEX_MASK) {
 	case DM8806_SPEED_10MBPS_HALF_DUPLEX:
-		state->speed = LINK_HALF_10BASE_T;
+		state->speed = LINK_HALF_10BASE;
 		break;
 	case DM8806_SPEED_10MBPS_FULL_DUPLEX:
-		state->speed = LINK_FULL_10BASE_T;
+		state->speed = LINK_FULL_10BASE;
 		break;
 	case DM8806_SPEED_100MBPS_HALF_DUPLEX:
-		state->speed = LINK_HALF_100BASE_T;
+		state->speed = LINK_HALF_100BASE;
 		break;
 	case DM8806_SPEED_100MBPS_FULL_DUPLEX:
-		state->speed = LINK_FULL_100BASE_T;
+		state->speed = LINK_FULL_100BASE;
 		break;
 	}
 	/* Extract link status from Switch Per-Port Register: Per Port Status Data
@@ -522,30 +530,37 @@ static int phy_dm8806_get_link_state(const struct device *dev, struct phy_link_s
 	return ret;
 }
 
-static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds)
+static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
+			       enum phy_cfg_link_flag flags)
 {
-	uint8_t ret;
+	int ret;
 	uint16_t data;
 	uint16_t req_speed;
 	const struct phy_dm8806_config *cfg = dev->config;
 
+	ARG_UNUSED(flags);
+
 	req_speed = adv_speeds;
 	switch (req_speed) {
-	case LINK_HALF_10BASE_T:
+	case LINK_HALF_10BASE:
 		req_speed = DM8806_MODE_10_BASET_HALF_DUPLEX;
 		break;
 
-	case LINK_FULL_10BASE_T:
+	case LINK_FULL_10BASE:
 		req_speed = DM8806_MODE_10_BASET_FULL_DUPLEX;
 		break;
 
-	case LINK_HALF_100BASE_T:
+	case LINK_HALF_100BASE:
 		req_speed = DM8806_MODE_100_BASET_HALF_DUPLEX;
 		break;
 
-	case LINK_FULL_100BASE_T:
+	case LINK_FULL_100BASE:
 		req_speed = DM8806_MODE_100_BASET_FULL_DUPLEX;
 		break;
+
+	default:
+		LOG_ERR("Invalid speed %d for PHY (%d)", adv_speeds, cfg->phy_addr);
+		return -EINVAL;
 	}
 
 	/* Power down */
@@ -617,7 +632,7 @@ static int phy_dm8806_reg_read(const struct device *dev, uint16_t reg_addr, uint
 	const struct phy_dm8806_config *cfg = dev->config;
 
 	res = mdio_read(cfg->mdio, cfg->switch_addr, reg_addr, (uint16_t *)data);
-	if (res) {
+	if (res < 0) {
 		LOG_ERR("Failed to read data from DM8806");
 		return res;
 	}
@@ -630,7 +645,7 @@ static int phy_dm8806_reg_write(const struct device *dev, uint16_t reg_addr, uin
 	const struct phy_dm8806_config *cfg = dev->config;
 
 	res = mdio_write(cfg->mdio, cfg->switch_addr, reg_addr, data);
-	if (res) {
+	if (res < 0) {
 		LOG_ERR("Failed to write data to DM8806");
 		return res;
 	}
@@ -650,7 +665,7 @@ static int phy_dm8806_link_cb_set(const struct device *dev, phy_callback_t cb, v
 	}
 	data->link_speed_chenge_cb = cb;
 	data->cb_data = user_data;
-	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
+	res = gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 	if (res < 0) {
 		LOG_WRN("Failed to enable DM8806 interrupt: %i", res);
 		return res;
@@ -673,9 +688,9 @@ static DEVICE_API(ethphy, phy_dm8806_api) = {
 	static const struct phy_dm8806_config phy_dm8806_config_##n = {                            \
 		.mdio = DEVICE_DT_GET(DT_INST_BUS(n)),                                             \
 		.phy_addr = DT_INST_REG_ADDR(n),                                                   \
-		.switch_addr = DT_PROP(DT_NODELABEL(dm8806_phy##n), reg_switch),                   \
-		.gpio_int = GPIO_DT_SPEC_INST_GET(n, interrupt_gpio),                              \
-		.gpio_rst = GPIO_DT_SPEC_INST_GET(n, reset_gpio),                                  \
+		.switch_addr = DT_INST_PROP(n, reg_switch),                                        \
+		.gpio_int = GPIO_DT_SPEC_INST_GET(n, int_gpios),                                   \
+		.gpio_rst = GPIO_DT_SPEC_INST_GET(n, reset_gpios),                                 \
 	}
 
 #define DM8806_PHY_INITIALIZE(n)                                                                   \

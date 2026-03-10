@@ -35,7 +35,7 @@ Hardware
 STM32F072B-DISCO Discovery kit provides the following hardware components:
 
 - STM32F072RBTT6 in LQFP64 package
-- ARM |reg| 32-bit Cortex |reg| -M0 CPU
+- ARM® 32-bit Cortex®-M0 CPU
 - 48 MHz max CPU frequency
 - VDD from 2.0 V to 3.6 V
 - 128 KB Flash
@@ -54,45 +54,16 @@ STM32F072B-DISCO Discovery kit provides the following hardware components:
 - 24 capacitive sensing channels for touchkey, linear and rotary touch sensors
 
 More information about STM32F072RB can be found here:
-       - `STM32F072RB on www.st.com`_
-       - `STM32F072xB reference manual`_
+
+- `STM32F072RB on www.st.com`_
+- `STM32F072xB reference manual`_
 
 Supported Features
 ==================
 
-The Zephyr stm32f072b_disco board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c controller                      |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | SPI controller                      |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | CAN controller                      |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 .. note:: CAN feature requires CAN transceiver, such as `SK Pang CAN breakout board`_.
-
-Other hardware features are not yet supported in this Zephyr port.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32f072b_disco/stm32f072b_disco_defconfig`
-
 
 Pin Mapping
 ===========
@@ -136,6 +107,8 @@ is assigned to UART 1. Default settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32F072B-DISCO board includes an ST-LINK/V2 embedded debug tool interface.
 

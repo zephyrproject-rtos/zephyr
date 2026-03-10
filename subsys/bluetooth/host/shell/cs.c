@@ -9,23 +9,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <zephyr/kernel.h>
-#include <zephyr/shell/shell.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/util.h>
+#include <string.h>
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/cs.h>
-#include <errno.h>
+#include <zephyr/kernel.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
-#include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
+#include "host/shell/bt.h"
 
 static int check_cs_sync_antenna_selection_input(uint16_t input)
 {
@@ -137,6 +140,7 @@ static int cmd_read_remote_fae_table(const struct shell *sh, size_t argc, char *
 	return 0;
 }
 
+#if defined(CONFIG_BT_CHANNEL_SOUNDING_TEST)
 static bool process_step_data(struct bt_le_cs_subevent_step *step, void *user_data)
 {
 	bt_shell_print("Subevent results contained step data: ");
@@ -188,8 +192,7 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 	int err = 0;
 	struct bt_le_cs_test_param params;
 
-	params.main_mode = BT_CONN_LE_CS_MAIN_MODE_1;
-	params.sub_mode = BT_CONN_LE_CS_SUB_MODE_UNUSED;
+	params.mode = BT_CONN_LE_CS_MAIN_MODE_1_NO_SUB_MODE;
 	params.main_mode_repetition = 0;
 	params.mode_0_steps = 2;
 
@@ -220,7 +223,7 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 	params.t_fcs_time = 120;
 	params.t_pm_time = 20;
 	params.t_sw_time = 0;
-	params.tone_antenna_config_selection = BT_LE_CS_TONE_ANTENNA_CONFIGURATION_INDEX_ONE;
+	params.tone_antenna_config_selection = BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A1_B1;
 	params.initiator_snr_control = BT_LE_CS_SNR_CONTROL_NOT_USED;
 	params.reflector_snr_control = BT_LE_CS_SNR_CONTROL_NOT_USED;
 	params.drbg_nonce = 0x1234;
@@ -254,6 +257,7 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+#endif /* CONFIG_BT_CHANNEL_SOUNDING_TEST */
 
 static int cmd_remove_config(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -308,8 +312,7 @@ static int cmd_create_config(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	/* Set the default values */
-	params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_2;
-	params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_1;
+	params.mode = BT_CONN_LE_CS_MAIN_MODE_2_SUB_MODE_1;
 	params.min_main_mode_steps = 0x05;
 	params.max_main_mode_steps = 0x0A;
 	params.main_mode_repetition = 0;
@@ -325,23 +328,17 @@ static int cmd_create_config(const struct shell *sh, size_t argc, char *argv[])
 
 	for (int j = 4; j < argc; j++) {
 		if (!strcmp(argv[j], "rtt-none")) {
-			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_1;
-			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_UNUSED;
+			params.mode = BT_CONN_LE_CS_MAIN_MODE_1_NO_SUB_MODE;
 		} else if (!strcmp(argv[j], "pbr-none")) {
-			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_2;
-			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_UNUSED;
+			params.mode = BT_CONN_LE_CS_MAIN_MODE_2_NO_SUB_MODE;
 		} else if (!strcmp(argv[j], "both-none")) {
-			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_3;
-			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_UNUSED;
+			params.mode = BT_CONN_LE_CS_MAIN_MODE_3_NO_SUB_MODE;
 		} else if (!strcmp(argv[j], "pbr-rtt")) {
-			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_2;
-			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_1;
+			params.mode = BT_CONN_LE_CS_MAIN_MODE_2_SUB_MODE_1;
 		} else if (!strcmp(argv[j], "pbr-both")) {
-			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_2;
-			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_3;
+			params.mode = BT_CONN_LE_CS_MAIN_MODE_2_SUB_MODE_3;
 		} else if (!strcmp(argv[j], "both-pbr")) {
-			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_3;
-			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_2;
+			params.mode = BT_CONN_LE_CS_MAIN_MODE_3_SUB_MODE_2;
 		} else if (!strcmp(argv[j], "steps")) {
 			if (++j == argc) {
 				shell_help(sh);
@@ -430,6 +427,7 @@ static int cmd_create_config(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BT_CHANNEL_SOUNDING_TEST)
 static int cmd_cs_stop_test(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = 0;
@@ -442,6 +440,7 @@ static int cmd_cs_stop_test(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+#endif /* CONFIG_BT_CHANNEL_SOUNDING_TEST */
 
 static int cmd_read_local_supported_capabilities(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -638,7 +637,7 @@ static int cmd_set_procedure_parameters(const struct shell *sh, size_t argc, cha
 	params.max_procedure_count = 1;
 	params.min_subevent_len = 5000;
 	params.max_subevent_len = 4000000;
-	params.tone_antenna_config_selection = BT_LE_CS_TONE_ANTENNA_CONFIGURATION_INDEX_ONE;
+	params.tone_antenna_config_selection = BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A1_B1;
 	params.phy = 0x01;
 	params.tx_power_delta = 0x80;
 	params.preferred_peer_antenna = 1;
@@ -702,9 +701,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		" <CS_SYNC antenna selection: 0x01 - 0x04, 0xFE, 0xFF> <Max TX power: -127 - 20>",
 		cmd_set_default_settings, 5, 0),
 	SHELL_CMD_ARG(read_remote_fae_table, NULL, "<None>", cmd_read_remote_fae_table, 1, 0),
+#if defined(CONFIG_BT_CHANNEL_SOUNDING_TEST)
 	SHELL_CMD_ARG(start_simple_cs_test, NULL, "<Role selection (initiator, reflector): 0, 1>",
 		      cmd_cs_test_simple, 2, 0),
 	SHELL_CMD_ARG(stop_cs_test, NULL, "<None>", cmd_cs_stop_test, 1, 0),
+#endif /* CONFIG_BT_CHANNEL_SOUNDING_TEST */
 	SHELL_CMD_ARG(
 		create_config, NULL,
 		"<id> <context: local-only, local-remote> <role: initiator, reflector> "

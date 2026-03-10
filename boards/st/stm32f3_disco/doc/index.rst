@@ -18,10 +18,10 @@ started quickly. Here are some highlights of the STM32F3DISCOVERY board:
 
 - Ten LEDs:
 
-       - 3.3 V power on (LD1)
-       - USB communication (LD2)
-       - Eight user LEDs: red (LD3/LD10), blue (LD4/LD9), orange (LD5/LD9)
-         and green (LD6/LD7)
+  - 3.3 V power on (LD1)
+  - USB communication (LD2)
+  - Eight user LEDs: red (LD3/LD10), blue (LD4/LD9), orange (LD5/LD9)
+    and green (LD6/LD7)
 
 - Two push-buttons: USER and RESET
 - USB USER with Mini-B connector
@@ -41,7 +41,7 @@ Hardware
 STM32F3DISCOVERY Discovery kit provides the following hardware components:
 
 - STM32F303VCT6 in LQFP100 package
-- ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
+- ARM® 32-bit Cortex®-M4 CPU with FPU
 - 72 MHz max CPU frequency
 - VDD from 2.0 V to 3.6 V
 - 256 KB Flash
@@ -61,55 +61,14 @@ STM32F3DISCOVERY Discovery kit provides the following hardware components:
 - DMA Controller
 
 More information about STM32F303VC can be found here:
-       - `STM32F303VC on www.st.com`_
-       - `STM32F303xC reference manual`_
+
+- `STM32F303VC on www.st.com`_
+- `STM32F303xC reference manual`_
 
 Supported Features
 ==================
 
-The Zephyr stm32f3_disco board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | CAN                                 |
-+-----------+------------+-------------------------------------+
-| IWDG      | on-chip    | Independent WatchDoG                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | dac                                 |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | Direct Memory Access                |
-+-----------+------------+-------------------------------------+
-| die-temp  | on-chip    | die temperature sensor              |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32f3_disco/stm32f3_disco_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -193,6 +152,8 @@ transceiver must be connected to ``PD0`` (``CAN1_RX``) and ``PD1``
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32F3DISCOVERY Discovery kit includes a ST-LINK/V2 or ST-LINK/V2-B embedded
 debug tool interface.

@@ -114,6 +114,13 @@ config NET_STATISTICS_DNS
 	help
 	  Keep track of DNS related statistics
 
+config NET_STATISTICS_PKT_FILTER
+	bool "Network packet filter statistics"
+	depends on NET_PKT_FILTER
+	default y
+	help
+	  Keep track of network packet filter related statistics
+
 config NET_STATISTICS_PPP
 	bool "Point-to-point (PPP) statistics"
 	depends on NET_L2_PPP
@@ -161,5 +168,12 @@ config NET_STATISTICS_VIA_PROMETHEUS
 	help
 	  Enable this option to expose the network statistics
 	  to Prometheus monitoring system.
+
+config NET_STATISTICS_VPN
+	bool "VPN statistics"
+	depends on NET_VPN
+	default y
+	help
+	  Keep track of VPN related statistics
 
 endif # NET_STATISTICS

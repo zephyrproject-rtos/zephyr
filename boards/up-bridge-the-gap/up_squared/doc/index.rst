@@ -1,28 +1,19 @@
-.. _up_squared:
-
-UP Squared
-##########
+.. zephyr:board:: up_squared
 
 Overview
 ********
 
-UP |sup2| (UP Squared) is an ultra compact single board computer with high
-performance and low power consumption. It features the latest Intel |reg| Apollo
-Lake Celeron |trade| and Pentium |trade| Processors with only 4W of Scenario Design Power and
-a powerful and flexible Intel |reg| FPGA Altera MAX 10 onboard.
-
-.. figure:: img/up_squared.jpg
-   :align: center
-   :alt: UP Squared
-
-   Up Squared (Credit: https://up-board.org)
+UP² (UP Squared) is an ultra compact single board computer with high
+performance and low power consumption. It features the latest Intel® Apollo
+Lake Celeron™ and Pentium™ Processors with only 4W of Scenario Design Power and
+a powerful and flexible Intel® FPGA Altera MAX 10 onboard.
 
 This board configuration enables kernel support for the `UP Squared`_ board.
 
 .. note::
    This board configuration works on all three variants of `UP Squared`_
-   boards containing Intel |reg| Pentium |trade| SoC,
-   Intel |reg| Celeron |trade| SoC, or Intel |reg| Atom |trade| SoC.
+   boards containing Intel® Pentium™ SoC,
+   Intel® Celeron™ SoC, or Intel® Atom™ SoC.
 
 Hardware
 ********
@@ -52,6 +43,8 @@ for connection diagrams.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Use the following procedures for booting an image on a UP Squared board.
 

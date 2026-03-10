@@ -25,6 +25,26 @@
 #define NET_IPV4_DSCP_OFFSET 2
 #define NET_IPV4_ECN_MASK 0x03
 
+/* IPv4 DiffServ code points (DSCP) for Assured Forwarding (AF) group.
+ * See https://tools.ietf.org/html/rfc2597
+ *     https://en.wikipedia.org/wiki/Differentiated_services
+ */
+/* Drop probability low */
+#define NET_IPV4_DSCP_AF11 10 /* 001010 */ /* Class 1 */
+#define NET_IPV4_DSCP_AF21 18 /* 010010 */ /* Class 2 */
+#define NET_IPV4_DSCP_AF31 26 /* 011010 */ /* Class 3 */
+#define NET_IPV4_DSCP_AF41 34 /* 100010 */ /* Class 4 */
+/* Drop probability medium */
+#define NET_IPV4_DSCP_AF12 12 /* 001100 */ /* Class 1 */
+#define NET_IPV4_DSCP_AF22 20 /* 010100 */ /* Class 2 */
+#define NET_IPV4_DSCP_AF32 28 /* 011100 */ /* Class 3 */
+#define NET_IPV4_DSCP_AF42 36 /* 100100 */ /* Class 4 */
+/* Drop probability high */
+#define NET_IPV4_DSCP_AF13 14 /* 001110 */ /* Class 1 */
+#define NET_IPV4_DSCP_AF23 22 /* 010110 */ /* Class 2 */
+#define NET_IPV4_DSCP_AF33 30 /* 011110 */ /* Class 3 */
+#define NET_IPV4_DSCP_AF43 38 /* 100110 */ /* Class 4 */
+
 /* IPv4 Options */
 #define NET_IPV4_OPTS_EO   0   /* End of Options */
 #define NET_IPV4_OPTS_NOP  1   /* No operation */
@@ -57,7 +77,7 @@ struct net_ipv4_igmp_v2_query {
 	/* 16-bit ones' complement of the entire message */
 	uint16_t chksum;
 	/* The multicast address being queried */
-	struct in_addr address;
+	struct net_in_addr address;
 } __packed;
 
 struct net_ipv4_igmp_v2_report {
@@ -68,7 +88,7 @@ struct net_ipv4_igmp_v2_report {
 	/* 16-bit ones' complement of the entire message */
 	uint16_t chksum;
 	/* The multicast address being queried */
-	struct in_addr address;
+	struct net_in_addr address;
 } __packed;
 
 struct net_ipv4_igmp_v3_query {
@@ -79,7 +99,7 @@ struct net_ipv4_igmp_v3_query {
 	/* 16-bit ones' complement of the entire message */
 	uint16_t chksum;
 	/* The multicast address being queried */
-	struct in_addr address;
+	struct net_in_addr address;
 	/* Reserved field, ignore */
 	uint8_t reserved: 4;
 	/* Suppress Router-side Processing Flag */
@@ -100,7 +120,7 @@ struct net_ipv4_igmp_v3_group_record {
 	/* Number of Source Addresses */
 	uint16_t sources_len;
 	/* The multicast address to report to*/
-	struct in_addr address;
+	struct net_in_addr address;
 } __packed;
 
 struct net_ipv4_igmp_v3_report {
@@ -132,16 +152,16 @@ struct net_ipv4_igmp_v3_report {
  */
 #if defined(CONFIG_NET_NATIVE_IPV4)
 int net_ipv4_create_full(struct net_pkt *pkt,
-			 const struct in_addr *src,
-			 const struct in_addr *dst,
+			 const struct net_in_addr *src,
+			 const struct net_in_addr *dst,
 			 uint8_t tos,
 			 uint16_t id,
 			 uint8_t flags,
 			 uint16_t offset);
 #else
 static inline int net_ipv4_create_full(struct net_pkt *pkt,
-				       const struct in_addr *src,
-				       const struct in_addr *dst,
+				       const struct net_in_addr *src,
+				       const struct net_in_addr *dst,
 				       uint8_t tos,
 				       uint16_t id,
 				       uint8_t flags,
@@ -170,12 +190,12 @@ static inline int net_ipv4_create_full(struct net_pkt *pkt,
  */
 #if defined(CONFIG_NET_NATIVE_IPV4)
 int net_ipv4_create(struct net_pkt *pkt,
-		    const struct in_addr *src,
-		    const struct in_addr *dst);
+		    const struct net_in_addr *src,
+		    const struct net_in_addr *dst);
 #else
 static inline int net_ipv4_create(struct net_pkt *pkt,
-				  const struct in_addr *src,
-				  const struct in_addr *dst)
+				  const struct net_in_addr *src,
+				  const struct net_in_addr *dst)
 {
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(src);
@@ -318,10 +338,10 @@ static inline void net_ipv4_set_ecn(uint8_t *tos, uint8_t ecn)
 /** Store pending IPv4 fragment information that is needed for reassembly. */
 struct net_ipv4_reassembly {
 	/** IPv4 source address of the fragment */
-	struct in_addr src;
+	struct net_in_addr src;
 
 	/** IPv4 destination address of the fragment */
-	struct in_addr dst;
+	struct net_in_addr dst;
 
 	/**
 	 * Timeout for cancelling the reassembly. The timer is used
@@ -430,7 +450,16 @@ int net_ipv4_acd_start(struct net_if *iface, struct net_if_addr *ifaddr);
  * @param iface Network interface the address belongs to.
  * @param ifaddr IPv4 address to probe.
  */
+#if defined(CONFIG_NET_IPV4_ACD)
 void net_ipv4_acd_cancel(struct net_if *iface, struct net_if_addr *ifaddr);
+#else
+static inline void net_ipv4_acd_cancel(struct net_if *iface,
+				       struct net_if_addr *ifaddr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(ifaddr);
+}
+#endif /* CONFIG_NET_IPV4_ACD */
 
 /**
  * @brief Notify no conflict was detected for an IPv4 address.

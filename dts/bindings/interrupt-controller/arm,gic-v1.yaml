@@ -2,6 +2,6 @@
 
 description: ARM Generic Interrupt Controller v1
 
-compatible: arm,gic-v1
+compatible: "arm,gic-v1"
 
 include: arm,gic.yaml

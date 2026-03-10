@@ -22,6 +22,8 @@
 struct uart_stm32_config {
 	/* USART instance */
 	USART_TypeDef *usart;
+	/* clock device */
+	const struct device *clock;
 	/* Reset controller device configuration */
 	const struct reset_dt_spec reset;
 	/* clock subsystem driving this peripheral */
@@ -81,8 +83,6 @@ struct uart_dma_stream {
 
 /* driver data */
 struct uart_stm32_data {
-	/* clock device */
-	const struct device *clock;
 	/* uart config */
 	struct uart_config *uart_cfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -103,6 +103,7 @@ struct uart_stm32_data {
 	bool tx_poll_stream_on;
 	bool tx_int_stream_on;
 	bool pm_policy_state_on;
+	bool rx_woken;
 #endif
 };
 

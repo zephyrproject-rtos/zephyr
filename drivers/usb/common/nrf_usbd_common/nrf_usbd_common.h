@@ -276,10 +276,10 @@ typedef struct {
  *
  * @param[in] event_handler Event handler provided by the user. Cannot be null.
  *
- * @retval NRFX_SUCCESS             Initialization successful.
- * @retval NRFX_ERROR_INVALID_STATE Driver was already initialized.
+ * @retval 0         Initialization successful.
+ * @retval -EALREADY Driver was already initialized.
  */
-nrfx_err_t nrf_usbd_common_init(nrf_usbd_common_event_handler_t event_handler);
+int nrf_usbd_common_init(nrf_usbd_common_event_handler_t event_handler);
 
 /**
  * @brief Driver deinitialization.
@@ -503,11 +503,11 @@ void nrf_usbd_common_ep_disable(nrf_usbd_common_ep_t ep);
  *                       For OUT endpoint receiving would be initiated.
  * @param[in] p_transfer Transfer parameters.
  *
- * @retval NRFX_SUCCESS             Transfer queued or started.
- * @retval NRFX_ERROR_BUSY          Selected endpoint is pending.
- * @retval NRFX_ERROR_INVALID_ADDR  Unexpected transfer on EPIN0 or EPOUT0.
+ * @retval 0                        Transfer queued or started.
+ * @retval -EBUSY                   Selected endpoint is pending.
+ * @retval -EFAULT                  Unexpected transfer on EPIN0 or EPOUT0.
  */
-nrfx_err_t nrf_usbd_common_ep_transfer(nrf_usbd_common_ep_t ep,
+int nrf_usbd_common_ep_transfer(nrf_usbd_common_ep_t ep,
 				       nrf_usbd_common_transfer_t const *p_transfer);
 
 /**

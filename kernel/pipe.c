@@ -113,7 +113,7 @@ static size_t copy_to_pending_readers(struct k_pipe *pipe, bool *need_resched,
 			}
 
 			reader_buf = reader->base.swap_data;
-			copy_size = MIN(len - written,
+			copy_size = min(len - written,
 					reader_buf->len - reader_buf->used);
 			memcpy(&reader_buf->data[reader_buf->used],
 			       &data[written], copy_size);
@@ -186,11 +186,12 @@ int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_
 					break;
 				}
 			}
-#ifdef CONFIG_POLL
-			z_handle_obj_poll_events(&pipe->poll_events,
-						 K_POLL_STATE_PIPE_DATA_AVAILABLE);
-#endif /* CONFIG_POLL */
 		}
+
+#ifdef CONFIG_POLL
+		need_resched |= z_handle_obj_poll_events(&pipe->poll_events,
+							 K_POLL_STATE_PIPE_DATA_AVAILABLE);
+#endif /* CONFIG_POLL */
 
 		written += ring_buf_put(&pipe->buf, &data[written], len - written);
 		if (likely(written == len)) {

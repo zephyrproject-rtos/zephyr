@@ -12,7 +12,7 @@ This board configuration enables kernel support for the `EHL`_ board.
 
 .. note::
    This board configuration works on the variant of `EHL`_
-   boards containing Intel |reg| Atom |trade| SoC.
+   boards containing Intel® Atom™ SoC.
 
 Hardware
 ********

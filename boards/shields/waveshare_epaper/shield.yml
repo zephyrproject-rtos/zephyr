@@ -1,0 +1,48 @@
+shields:
+  - name: waveshare_epaper_gdeh029a1
+    full_name: WAVESHARE e-Paper GDEH029A1
+    vendor: waveshare
+    supported_features:
+      - display
+
+  - name: waveshare_epaper_gdeh0154a07
+    full_name: WAVESHARE e-Paper GDEH0154A07
+    vendor: waveshare
+    supported_features:
+      - display
+
+  - name: waveshare_epaper_gdeh0213b1
+    full_name: WAVESHARE e-Paper GDEH0213B1
+    vendor: waveshare
+    supported_features:
+      - display
+
+  - name: waveshare_epaper_gdeh0213b72
+    full_name: WAVESHARE e-Paper GDEH0213B72
+    vendor: waveshare
+    supported_features:
+      - display
+
+  - name: waveshare_epaper_gdew042t2-p
+    full_name: WAVESHARE e-Paper GDEW042T2-P
+    vendor: waveshare
+    supported_features:
+      - display
+
+  - name: waveshare_epaper_gdew042t2
+    full_name: WAVESHARE e-Paper GDEW042T2
+    vendor: waveshare
+    supported_features:
+      - display
+
+  - name: waveshare_epaper_gdew075t7
+    full_name: WAVESHARE e-Paper GDEW075T7
+    vendor: waveshare
+    supported_features:
+      - display
+
+  - name: waveshare_epaper_gdey0213b74
+    full_name: WAVESHARE e-Paper GDEY0213B74
+    vendor: waveshare
+    supported_features:
+      - display

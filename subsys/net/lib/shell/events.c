@@ -20,13 +20,13 @@ LOG_MODULE_DECLARE(net_shell);
 #if defined(CONFIG_NET_MGMT_EVENT_MONITOR)
 #define THREAD_PRIORITY K_PRIO_COOP(2)
 #define MAX_EVENT_INFO_SIZE NET_EVENT_INFO_MAX_SIZE
-#define MONITOR_L2_MASK (_NET_EVENT_IF_BASE)
-#define MONITOR_L3_IPV4_MASK (_NET_EVENT_IPV4_BASE | NET_MGMT_COMMAND_MASK)
-#define MONITOR_L3_IPV6_MASK (_NET_EVENT_IPV6_BASE | NET_MGMT_COMMAND_MASK)
-#define MONITOR_L4_MASK (_NET_EVENT_L4_BASE | NET_MGMT_COMMAND_MASK)
+#define MONITOR_L2_MASK (NET_EVENT_IF_BASE)
+#define MONITOR_L3_IPV4_MASK (NET_EVENT_IPV4_BASE | NET_MGMT_COMMAND_MASK)
+#define MONITOR_L3_IPV6_MASK (NET_EVENT_IPV6_BASE | NET_MGMT_COMMAND_MASK)
+#define MONITOR_L4_MASK (NET_EVENT_L4_BASE | NET_MGMT_COMMAND_MASK)
 
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
-#define MONITOR_L2_ETHERNET_MASK (_NET_ETHERNET_BASE)
+#define MONITOR_L2_ETHERNET_MASK (NET_ETHERNET_BASE)
 static struct net_mgmt_event_callback l2_ethernet_cb;
 #endif
 
@@ -44,7 +44,7 @@ static const char unknown_event_str[] = "<unknown event>";
 struct event_msg {
 	struct net_if *iface;
 	size_t len;
-	uint32_t event;
+	uint64_t event;
 	uint8_t data[MAX_EVENT_INFO_SIZE];
 };
 
@@ -52,7 +52,7 @@ K_MSGQ_DEFINE(event_mon_msgq, sizeof(struct event_msg),
 	      CONFIG_NET_MGMT_EVENT_QUEUE_SIZE, sizeof(intptr_t));
 
 static void event_handler(struct net_mgmt_event_callback *cb,
-			  uint32_t mgmt_event, struct net_if *iface)
+			  uint64_t mgmt_event, struct net_if *iface)
 {
 	struct event_msg msg;
 	int ret;
@@ -161,103 +161,103 @@ static char *get_l3_desc(struct event_msg *msg,
 	case NET_EVENT_IPV6_ADDR_ADD:
 		*desc = "IPv6 address";
 		*desc2 = "add";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_ADDR_DEPRECATED:
 		*desc = "IPv6 address";
 		*desc2 = "deprecated";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_ADDR_DEL:
 		*desc = "IPv6 address";
 		*desc2 = "del";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_MADDR_ADD:
 		*desc = "IPv6 mcast address";
 		*desc2 = "add";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_MADDR_DEL:
 		*desc = "IPv6 mcast address";
 		*desc2 = "del";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_PREFIX_ADD:
 		*desc = "IPv6 prefix";
 		*desc2 = "add";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_PREFIX_DEL:
 		*desc = "IPv6 prefix";
 		*desc2 = "del";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_MCAST_JOIN:
 		*desc = "IPv6 mcast";
 		*desc2 = "join";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_MCAST_LEAVE:
 		*desc = "IPv6 mcast";
 		*desc2 = "leave";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_ROUTER_ADD:
 		*desc = "IPv6 router";
 		*desc2 = "add";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_ROUTER_DEL:
 		*desc = "IPv6 router";
 		*desc2 = "del";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_ROUTE_ADD:
 		*desc = "IPv6 route";
 		*desc2 = "add";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_ROUTE_DEL:
 		*desc = "IPv6 route";
 		*desc2 = "del";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_DAD_SUCCEED:
 		*desc = "IPv6 DAD";
 		*desc2 = "ok";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_DAD_FAILED:
 		*desc = "IPv6 DAD";
 		*desc2 = "fail";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_NBR_ADD:
 		*desc = "IPv6 neighbor";
 		*desc2 = "add";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_NBR_DEL:
 		*desc = "IPv6 neighbor";
 		*desc2 = "del";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_PE_ENABLED:
@@ -271,49 +271,49 @@ static char *get_l3_desc(struct event_msg *msg,
 	case NET_EVENT_IPV6_PE_FILTER_ADD:
 		*desc = "IPv6 PE filter";
 		*desc2 = "add";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV6_PE_FILTER_DEL:
 		*desc = "IPv6 PE filter";
 		*desc2 = "del";
-		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV4_ADDR_ADD:
 		*desc = "IPv4 address";
 		*desc2 = "add";
-		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV4_ADDR_DEL:
 		*desc = "IPv4 address";
 		*desc2 = "del";
-		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV4_MADDR_ADD:
 		*desc = "IPv4 mcast address";
 		*desc2 = "add";
-		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV4_MADDR_DEL:
 		*desc = "IPv4 mcast address";
 		*desc2 = "del";
-		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV4_ROUTER_ADD:
 		*desc = "IPv4 router";
 		*desc2 = "add";
-		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV4_ROUTER_DEL:
 		*desc = "IPv4 router";
 		*desc2 = "del";
-		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV4_DHCP_START:
@@ -326,7 +326,7 @@ static char *get_l3_desc(struct event_msg *msg,
 #if defined(CONFIG_NET_DHCPV4)
 		struct net_if_dhcpv4 *data = (struct net_if_dhcpv4 *)msg->data;
 
-		info = net_addr_ntop(AF_INET, &data->requested_ip, extra_info,
+		info = net_addr_ntop(NET_AF_INET, &data->requested_ip, extra_info,
 				     extra_info_len);
 #endif
 		break;
@@ -337,25 +337,25 @@ static char *get_l3_desc(struct event_msg *msg,
 	case NET_EVENT_IPV4_MCAST_JOIN:
 		*desc = "IPv4 mcast";
 		*desc2 = "join";
-		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV4_MCAST_LEAVE:
 		*desc = "IPv4 mcast";
 		*desc2 = "leave";
-		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV4_ACD_SUCCEED:
 		*desc = "IPv4 ACD";
 		*desc2 = "ok";
-		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV4_ACD_FAILED:
 		*desc = "IPv4 ACD";
 		*desc2 = "fail";
-		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+		info = net_addr_ntop(NET_AF_INET, msg->data, extra_info,
 				     extra_info_len);
 		break;
 	case NET_EVENT_IPV4_PMTU_CHANGED: {
@@ -367,7 +367,7 @@ static char *get_l3_desc(struct event_msg *msg,
 		*desc2 = pmtu_buf;
 		snprintk(pmtu_buf, MAX_PMTU_INFO_STR_LEN,
 			 "changed MTU %u for", (uint16_t)pmtu_info->mtu);
-		info = net_addr_ntop(AF_INET, &pmtu_info->dst, extra_info,
+		info = net_addr_ntop(NET_AF_INET, &pmtu_info->dst, extra_info,
 				     extra_info_len);
 #endif
 		break;
@@ -381,7 +381,7 @@ static char *get_l3_desc(struct event_msg *msg,
 		*desc2 = pmtu_buf;
 		snprintk(pmtu_buf, MAX_PMTU_INFO_STR_LEN,
 			 "changed MTU %u for", (uint16_t)pmtu_info->mtu);
-		info = net_addr_ntop(AF_INET6, &pmtu_info->dst, extra_info,
+		info = net_addr_ntop(NET_AF_INET6, &pmtu_info->dst, extra_info,
 				     extra_info_len);
 #endif
 		break;
@@ -391,12 +391,12 @@ static char *get_l3_desc(struct event_msg *msg,
 	return info;
 }
 
-static char *sockaddr_ntop(const struct sockaddr *addr, char *dst, size_t size)
+static char *sockaddr_ntop(const struct net_sockaddr *addr, char *dst, size_t size)
 {
-	if (addr->sa_family == AF_INET) {
-		return net_addr_ntop(AF_INET, &net_sin(addr)->sin_addr, dst, size);
-	} else if (addr->sa_family == AF_INET6) {
-		return net_addr_ntop(AF_INET6, &net_sin6(addr)->sin6_addr, dst, size);
+	if (addr->sa_family == NET_AF_INET) {
+		return net_addr_ntop(NET_AF_INET, &net_sin(addr)->sin_addr, dst, size);
+	} else if (addr->sa_family == NET_AF_INET6) {
+		return net_addr_ntop(NET_AF_INET6, &net_sin6(addr)->sin6_addr, dst, size);
 	}
 
 	return NULL;
@@ -435,7 +435,7 @@ static char *get_l4_desc(struct event_msg *msg,
 		*desc2 = "lost";
 		break;
 	case NET_EVENT_DNS_SERVER_ADD: {
-		struct sockaddr *addr = (struct sockaddr *)msg->data;
+		struct net_sockaddr *addr = (struct net_sockaddr *)msg->data;
 
 		*desc = "DNS server";
 		*desc2 = "add";
@@ -445,7 +445,7 @@ static char *get_l4_desc(struct event_msg *msg,
 		break;
 	}
 	case NET_EVENT_DNS_SERVER_DEL: {
-		struct sockaddr *addr = (struct sockaddr *)msg->data;
+		struct net_sockaddr *addr = (struct net_sockaddr *)msg->data;
 
 		*desc = "DNS server";
 		*desc2 = "del";
@@ -481,6 +481,22 @@ static char *get_l4_desc(struct event_msg *msg,
 		*desc = "Capture";
 		*desc2 = "stopped";
 		break;
+	case NET_EVENT_VPN_PEER_ADD:
+		*desc = "VPN peer";
+		*desc2 = "add";
+		break;
+	case NET_EVENT_VPN_PEER_DEL:
+		*desc = "VPN peer";
+		*desc2 = "del";
+		break;
+	case NET_EVENT_VPN_CONNECTED:
+		*desc = "VPN";
+		*desc2 = "connected";
+		break;
+	case NET_EVENT_VPN_DISCONNECTED:
+		*desc = "VPN";
+		*desc2 = "disconnected";
+		break;
 	}
 
 	return info;
@@ -491,7 +507,7 @@ static char *get_l4_desc(struct event_msg *msg,
  */
 static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 {
-	char extra_info[NET_IPV6_ADDR_LEN];
+	char extra_info[NET_IPV6_ADDR_LEN + sizeof("id 0123456789 ")];
 	struct event_msg msg;
 
 	ARG_UNUSED(p2);
@@ -535,19 +551,19 @@ static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 		if (layer == NET_MGMT_LAYER_L2) {
 			layer_str = "L2";
 			info = get_l2_desc(&msg, &desc, &desc2,
-					   extra_info, NET_IPV6_ADDR_LEN);
+					   extra_info, sizeof(extra_info));
 		} else if (layer == NET_MGMT_LAYER_L3) {
 			layer_str = "L3";
 			info = get_l3_desc(&msg, &desc, &desc2,
-					   extra_info, NET_IPV6_ADDR_LEN);
+					   extra_info, sizeof(extra_info));
 		} else if (layer == NET_MGMT_LAYER_L4) {
 			layer_str = "L4";
 			info = get_l4_desc(&msg, &desc, &desc2,
-					   extra_info, NET_IPV6_ADDR_LEN);
+					   extra_info, sizeof(extra_info));
 		}
 
 		if (desc == unknown_event_str) {
-			PR_INFO("EVENT: %s [%d] %s%s%s%s%s (0x%08x)\n", layer_str,
+			PR_INFO("EVENT: %s [%d] %s%s%s%s%s (0x%" PRIx64 ")\n", layer_str,
 				net_if_get_by_iface(msg.iface), desc,
 				desc2 ? " " : "", desc2 ? desc2 : "",
 				info ? " " : "", info ? info : "", msg.event);
@@ -647,7 +663,7 @@ static int cmd_net_events(const struct shell *sh, size_t argc, char *argv[])
 	PR("Network event monitoring is %s.\n",
 	   net_event_monitoring ? "enabled" : "disabled");
 
-	if (!argv[1]) {
+	if (argv[1] == NULL) {
 		PR_INFO("Give 'on' to enable event monitoring and "
 			"'off' to disable it.\n");
 	}
@@ -670,9 +686,11 @@ void events_enable(void)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_events,
-	SHELL_CMD(on, NULL, "Turn on network event monitoring.",
+	SHELL_CMD(on, NULL,
+		  SHELL_HELP("Turn on network event monitoring", ""),
 		  cmd_net_events_on),
-	SHELL_CMD(off, NULL, "Turn off network event monitoring.",
+	SHELL_CMD(off, NULL,
+		  SHELL_HELP("Turn off network event monitoring", ""),
 		  cmd_net_events_off),
 	SHELL_SUBCMD_SET_END
 );

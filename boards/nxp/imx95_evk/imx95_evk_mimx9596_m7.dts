@@ -1,12 +1,12 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include <nxp/nxp_imx95_m7.dtsi>
+#include <nxp/imx/nxp_imx95_m7.dtsi>
 #include "imx95_evk-pinctrl.dtsi"
 
 / {
@@ -18,8 +18,84 @@
 		zephyr,flash = &itcm;
 		zephyr,sram = &dtcm;
 
+		zephyr,flash-controller = &mt35xu01gbba;
 		zephyr,console = &lpuart3;
 		zephyr,shell-uart = &lpuart3;
+	};
+};
+
+&emdio {
+	pinctrl-0 = <&emdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy0: phy@1 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x1>;
+		status = "okay";
+	};
+};
+
+&enetc_psi0 {
+	local-mac-address = [00 00 00 01 02 00];
+	pinctrl-0 = <&eth0_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy0>;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+&enetc_ptp_clock {
+	status = "okay";
+};
+
+&flexspi {
+	status = "okay";
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
+	pinctrl-0 = <&flexspi_default>;
+	pinctrl-names = "default";
+
+	mt35xu01gbba: mt35xu01gbba@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		size = <DT_SIZE_M(1024)>;
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(200)>;
+		status = "okay";
+		jedec-id = [2c 5b 1b];
+		erase-block-size = <DT_SIZE_K(4)>;
+		write-block-size = <2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 4KB.
+			 */
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 DT_SIZE_M(7)>;
+			};
+
+			slot1_partition: partition@720000 {
+				label = "image-1";
+				reg = <0x00720000 DT_SIZE_M(7)>;
+			};
+
+			storage_partition: partition@e20000 {
+				label = "storage";
+				reg = <0x00e20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+			};
+		};
 	};
 };
 
@@ -48,6 +124,13 @@
 	pinctrl-names = "default";
 };
 
+&lpuart5 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart5_default>;
+	pinctrl-names = "default";
+};
+
 &sai3 {
 	pinctrl-0 = <&sai3_default>;
 	pinctrl-names = "default";
@@ -56,5 +139,13 @@
 &tpm2 {
 	pinctrl-0 = <&tpm2_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lptmr1 {
+	status = "okay";
+};
+
+&edma2 {
 	status = "okay";
 };

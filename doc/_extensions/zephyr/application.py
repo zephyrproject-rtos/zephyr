@@ -11,6 +11,7 @@ from docutils.parsers.rst import Directive, directives
 
 ZEPHYR_BASE = Path(__file__).parents[3]
 
+
 # TODO: extend and modify this for Windows.
 #
 # This could be as simple as generating a couple of sets of instructions, one
@@ -20,6 +21,7 @@ class ZephyrAppCommandsDirective(Directive):
     This is a Zephyr directive for generating consistent documentation
     of the shell commands needed to manage (build, flash, etc.) an application.
     '''
+
     has_content = False
     required_arguments = 0
     optional_arguments = 0
@@ -44,6 +46,9 @@ class ZephyrAppCommandsDirective(Directive):
         'compact': directives.flag,
         'west-args': directives.unchanged,
         'flash-args': directives.unchanged,
+        'debug-args': directives.unchanged,
+        'debugserver-args': directives.unchanged,
+        'attach-args': directives.unchanged,
     }
 
     TOOLS = ['cmake', 'west', 'all']
@@ -76,6 +81,9 @@ class ZephyrAppCommandsDirective(Directive):
         compact = 'compact' in self.options
         west_args = self.options.get('west-args', None)
         flash_args = self.options.get('flash-args', None)
+        debug_args = self.options.get('debug-args', None)
+        debugserver_args = self.options.get('debugserver-args', None)
+        attach_args = self.options.get('attach-args', None)
 
         if tool not in self.TOOLS:
             raise self.error(f'Unknown tool {tool}; choose from: {self.TOOLS}')
@@ -113,10 +121,8 @@ class ZephyrAppCommandsDirective(Directive):
         build_dir = ('build' + '/' + build_dir_append).rstrip('/')
 
         # Prepare repeatable arguments
-        host_os = [host_os] if host_os != "all" else [v for v in self.HOST_OS
-                                                        if v != 'all']
-        tools = [tool] if tool != "all" else [v for v in self.TOOLS
-                                                if v != 'all']
+        host_os = [host_os] if host_os != "all" else [v for v in self.HOST_OS if v != 'all']
+        tools = [tool] if tool != "all" else [v for v in self.TOOLS if v != 'all']
         build_args_list = build_args.split(' ') if build_args is not None else None
         snippet_list = snippets.split(',') if snippets is not None else None
         shield_list = shield.split(',') if shield is not None else None
@@ -146,7 +152,10 @@ class ZephyrAppCommandsDirective(Directive):
             'generator': generator,
             'west_args': west_args,
             'flash_args': flash_args,
-            }
+            'debug_args': debug_args,
+            'debugserver_args': debugserver_args,
+            'attach_args': attach_args,
+        }
 
         if 'west' in tools:
             w = self._generate_west(**run_config)
@@ -162,8 +171,7 @@ class ZephyrAppCommandsDirective(Directive):
             c = self._generate_cmake(**run_config)
             if tool_comment:
                 paragraph = nodes.paragraph()
-                paragraph += nodes.Text(tool_comment.format(
-                    f'CMake and {generator}'))
+                paragraph += nodes.Text(tool_comment.format(f'CMake and {generator}'))
                 content.append(paragraph)
                 content.append(self._lit_block(c))
             else:
@@ -199,6 +207,9 @@ class ZephyrAppCommandsDirective(Directive):
         build_args = kwargs["build_args"]
         west_args = kwargs['west_args']
         flash_args = kwargs['flash_args']
+        debug_args = kwargs['debug_args']
+        debugserver_args = kwargs['debugserver_args']
+        attach_args = kwargs['attach_args']
         kwargs['board'] = None
         # west always defaults to ninja
         gen_arg = ' -G\'Unix Makefiles\'' if generator == 'make' else ''
@@ -207,6 +218,9 @@ class ZephyrAppCommandsDirective(Directive):
         build_args = "".join(f" -o {b}" for b in build_args) if build_args else ""
         west_args = f' {west_args}' if west_args else ''
         flash_args = f' {flash_args}' if flash_args else ''
+        debug_args = f' {debug_args}' if debug_args else ''
+        debugserver_args = f' {debugserver_args}' if debugserver_args else ''
+        attach_args = f' {attach_args}' if attach_args else ''
         snippet_args = ''.join(f' -S {s}' for s in snippets) if snippets else ''
         shield_args = ''.join(f' --shield {s}' for s in shield) if shield else ''
         # ignore zephyr_app since west needs to run within
@@ -255,11 +269,11 @@ class ZephyrAppCommandsDirective(Directive):
             elif goal == 'flash':
                 content.append(f'west flash{flash_args}{dst}')
             elif goal == 'debug':
-                content.append(f'west debug{dst}')
+                content.append(f'west debug{debug_args}{dst}')
             elif goal == 'debugserver':
-                content.append(f'west debugserver{dst}')
+                content.append(f'west debugserver{debugserver_args}{dst}')
             elif goal == 'attach':
-                content.append(f'west attach{dst}')
+                content.append(f'west attach{attach_args}{dst}')
             else:
                 content.append(f'west build -t {goal}{dst}')
 
@@ -269,8 +283,10 @@ class ZephyrAppCommandsDirective(Directive):
     def _mkdir(mkdir, build_dir, host_os, skip_config):
         content = []
         if skip_config:
-            content.append(f"# If you already made a build directory ({build_dir}) and ran cmake, "
-                           f"just 'cd {build_dir}' instead.")
+            content.append(
+                f"# If you already made a build directory ({build_dir}) and ran cmake, "
+                f"just 'cd {build_dir}' instead."
+            )
         if host_os == 'all':
             content.append(f'mkdir {build_dir} && cd {build_dir}')
         if host_os == "unix":
@@ -305,8 +321,7 @@ class ZephyrAppCommandsDirective(Directive):
             if not app and mkdir and num_slashes == 0:
                 # When there's no app and a single level deep build dir,
                 # simplify output
-                content.extend(self._mkdir(mkdir, build_dir, 'all',
-                               skip_config))
+                content.extend(self._mkdir(mkdir, build_dir, 'all', skip_config))
                 if not compact:
                     content.append('')
                 return content
@@ -368,16 +383,20 @@ class ZephyrAppCommandsDirective(Directive):
 
         if not compact:
             if not cd_into and skip_config:
-                content.append(f'# If you already ran cmake with -B{build_dir}, you '
-                               f'can skip this step and run {generator} directly.')
+                content.append(
+                    f'# If you already ran cmake with -B{build_dir}, you '
+                    f'can skip this step and run {generator} directly.'
+                )
             else:
-                content.append(f'# Use cmake to configure a {generator.capitalize()}-based build'
-                                'system:')
+                content.append(
+                    f'# Use cmake to configure a {generator.capitalize()}-based buildsystem:'
+                )
 
-        content.append(f'cmake{cmake_build_dir}{gen_arg}{cmake_args}{snippet_args}{shield_args}{source_dir}')
+        content.append(
+            f'cmake{cmake_build_dir}{gen_arg}{cmake_args}{snippet_args}{shield_args}{source_dir}'
+        )
         if not compact:
-            content.extend(['',
-                            '# Now run the build tool on the generated build system:'])
+            content.extend(['', '# Now run the build tool on the generated build system:'])
 
         if 'build' in goals:
             content.append(f'{generator}{tool_build_dir}{build_args}')
@@ -392,8 +411,4 @@ class ZephyrAppCommandsDirective(Directive):
 def setup(app):
     app.add_directive('zephyr-app-commands', ZephyrAppCommandsDirective)
 
-    return {
-        'version': '1.0',
-        'parallel_read_safe': True,
-        'parallel_write_safe': True
-    }
+    return {'version': '1.0', 'parallel_read_safe': True, 'parallel_write_safe': True}

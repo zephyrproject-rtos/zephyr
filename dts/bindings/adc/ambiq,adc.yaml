@@ -5,7 +5,7 @@ description: Ambiq ADC node
 
 compatible: "ambiq,adc"
 
-include: [adc-controller.yaml, pinctrl-device.yaml, ambiq-pwrcfg.yaml]
+include: [adc-controller.yaml, pinctrl-device.yaml]
 properties:
   reg:
     required: true
@@ -22,6 +22,20 @@ properties:
     type: int
     required: true
     description: Indicates the reference voltage of the ADC in mV.
+
+  dma-mode:
+    description: Enables DMA over ADC.
+    type: boolean
+
+  dma-buffer-location:
+    type: string
+    description: |
+      Define the DMA buffer location section
+
+  dma-buffer-size:
+    type: int
+    description: |
+      Define the DMA buffer size in (4-byte) words
 
 io-channel-cells:
   - input

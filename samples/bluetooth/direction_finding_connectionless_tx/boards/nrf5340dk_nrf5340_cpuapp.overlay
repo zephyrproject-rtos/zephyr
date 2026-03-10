@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- /* Enable pin forwarding to network core. The selected pins will be used by
-  * Radio Direction Finding Extension for antenna switching purposes.
-  *
-  * Note: Pay attention to assign the same GPIO pins as those provided in
-  * network core DTS overlay.
-  */
+/* Enable pin forwarding to network core. The selected pins will be used by
+ * Radio Direction Finding Extension for antenna switching purposes.
+ *
+ * Note: Pay attention to assign the same GPIO pins as those provided in
+ * network core DTS overlay.
+ */
 &gpio_fwd {
 	dfe-gpio-if {
 		gpios = <&gpio0 4 0>,
 			<&gpio0 5 0>,
 			<&gpio0 6 0>,
 			<&gpio0 7 0>;
-		};
+	};
 };

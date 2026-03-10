@@ -5,8 +5,8 @@ Overview
 
 BLE400 is a motherboard designed for BLE Bluetooth 2.4G Wireless Module. Used together with core board -- Core51822.
 
-Supported Features
-==================
+Hardware
+========
 
 Motherboard
 ------------
@@ -28,11 +28,16 @@ Core board
 - Pinheader pitch: 2.00mm
 - Antenna: onboard antenna
 
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
+
 Features
 ========
 
 - 2.4 GHz multiprotocol RF transceiver
-- ARM® Cortex™-M0 32 bit processor
+- ARM® Cortex®-M0 32 bit processor
 - 128 bit AES HW encryption
 - 256kB flash & 32kB RAM
 - Programmable Peripheral Interconnect (PPI)
@@ -155,6 +160,8 @@ UART (USB)
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========

@@ -34,7 +34,7 @@ endif()
 
 file(GLOB build_dir_contents ${BINARY_DIR}/*)
 foreach(file ${build_dir_contents})
-  if (EXISTS ${file})
+  if(EXISTS ${file})
      file(REMOVE_RECURSE ${file})
   endif()
 endforeach(file)

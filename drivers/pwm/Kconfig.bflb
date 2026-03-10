@@ -1,0 +1,16 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_BFLB_1
+	bool "BFLB PWM 1 (BL60x, BL70x)"
+	default y
+	depends on DT_HAS_BFLB_PWM_1_ENABLED
+	help
+	  This option enables the PWM driver for Bouffalolab BL60x and BL70x
+
+config PWM_BFLB_2
+	bool "BFLB PWM 2 (BL61x)"
+	default y
+	depends on DT_HAS_BFLB_PWM_2_ENABLED
+	help
+	  This option enables the PWM driver for Bouffalolab BL61x

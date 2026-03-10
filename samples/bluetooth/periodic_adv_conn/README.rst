@@ -7,7 +7,7 @@
 Overview
 ********
 
-A simple application demonstrating the initiator side of the BLE
+A simple application demonstrating the initiator side of the Bluetooth LE
 Periodic Advertising Connection Procedure.
 
 How the initiator decides the address of the synced device to connect to
@@ -23,9 +23,6 @@ Requirements
 
 Building and Running
 ********************
-
-This sample can be found under :zephyr_file:`samples/bluetooth/periodic_adv_conn` in
-the Zephyr tree.
 
 Use the sample found under :zephyr_file:`samples/bluetooth/periodic_sync_conn` in the
 Zephyr tree that will synchronize and respond to this sample.

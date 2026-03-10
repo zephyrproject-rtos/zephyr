@@ -1,7 +1,4 @@
-.. _nrf52840dongle_nrf52840:
-
-nRF52840 Dongle
-###############
+.. zephyr:board:: nrf52840dongle
 
 Overview
 ********
@@ -24,12 +21,6 @@ Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/nrf52840dongle_nrf52840.jpg
-     :align: center
-     :alt: nRF52840 Dongle
-
-     nRF52840 Dongle
-
 More information about the board can be found at the
 `nRF52840 Dongle website`_. The `nRF52840 Dongle guide`_
 contains the processor's information and the datasheet.
@@ -45,43 +36,8 @@ is 32 MHz.
 Supported Features
 ==================
 
-The ``nrf52840dongle/nrf52840`` board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| USB       | on-chip    | usb                  |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
 See `nRF52840 Dongle website`_ and `nRF52840 Dongle Hardware description`_
 for a complete list of nRF52840 Dongle board hardware features.
 
@@ -104,6 +60,8 @@ Push buttons
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``nrf52840dongle/nrf52840`` board configuration can be
 built in the usual way (see :ref:`build_an_application` for more details).
@@ -296,13 +254,9 @@ For Segger J-Link debug probes, follow the instructions in the
 :ref:`nordic_segger` page to install and configure all the necessary
 software. Further information can be found in :ref:`nordic_segger_flashing`.
 
-Locate the DTS file: :zephyr_file:`boards/nordic/nrf52840dongle/nrf52840dongle_nrf52840.dts`.
-This file requires a small modification to use a different partition table.
-Edit the include directive to include "fstab-debugger" instead of "fstab-stock".
-
-In addition, the Kconfig file in the same directory must be modified by setting
-``BOARD_HAS_NRF5_BOOTLOADER`` to be default ``n``, otherwise the code will be
-flashed with an offset.
+Use the ``nrf52840dongle/nrf52840/bare`` board variant to build your application.
+This variant uses a modified partition table, which does not reserve space for
+the onboard USB bootloader.
 
 Then build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -311,7 +265,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nrf52840dongle/nrf52840
+   :board: nrf52840dongle/nrf52840/bare
    :goals: build flash
 
 Observe the LED on the board blinking.

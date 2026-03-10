@@ -13,15 +13,15 @@ some highlights of the STM32F4DISCOVERY board:
 - On-board ST-LINK/V2 debugger/programmer with SWD connector
 - Flexible board power supply:
 
-       - USB VBUS or external source(3.3V, 5V, 7 - 12V)
-       - Power management access point
+  - USB VBUS or external source(3.3V, 5V, 7 - 12V)
+  - Power management access point
 
 - Eight LEDs:
 
-       - USB communication (LD1)
-       - 3.3 V power on (LD2)
-       - Four user LEDs: orange (LD3), green (LD4), red (LD5), and blue (LD6)
-       - 2 USB OTG LEDs for VBUS (LD7) and over-current (LD8)
+  - USB communication (LD1)
+  - 3.3 V power on (LD2)
+  - Four user LEDs: orange (LD3), green (LD4), red (LD5), and blue (LD6)
+  - 2 USB OTG LEDs for VBUS (LD7) and over-current (LD8)
 
 - Two push-buttons: USER and RESET
 - USB OTG FS with micro-AB connector
@@ -37,7 +37,7 @@ Hardware
 STM32F4DISCOVERY Discovery kit provides the following hardware components:
 
 - STM32F407VGT6 in LQFP100 package
-- ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
+- ARM® 32-bit Cortex®-M4 CPU with FPU
 - 168 MHz max CPU frequency
 - VDD from 1.8 V to 3.6 V
 - 1 MB Flash
@@ -63,42 +63,18 @@ STM32F4DISCOVERY Discovery kit provides the following hardware components:
 - DMA Controller
 
 More information about STM32F407VG can be found here:
-       - `STM32F407VG on www.st.com`_
-       - `STM32F407 reference manual`_
+
+- `STM32F407VG on www.st.com`_
+- `STM32F407 reference manual`_
 
 Supported Features
 ==================
 
-The Zephyr stm32f4_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | CAN controller                      |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 .. note:: CAN feature requires CAN transceiver, such as `SK Pang CAN breakout board`_.
           Zephyr default configuration uses CAN_2 exclusively, as simultaneous use
           of CAN_1 and CAN_2 is not yet supported.
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32f4_disco/stm32f4_disco_defconfig`
-
 
 Pin Mapping
 ===========
@@ -113,8 +89,6 @@ Default Zephyr Peripheral Mapping:
 
 .. rst-class:: rst-columns
 
-- UART_1_TX : PB6
-- UART_1_RX : PB7
 - UART_2_TX : PA2
 - UART_2_RX : PA3
 - USER_PB : PA0
@@ -124,10 +98,14 @@ Default Zephyr Peripheral Mapping:
 - LD6 : PD15
 - USB DM : PA11
 - USB DP : PA12
-- CAN1_RX : PB8
-- CAN1_TX : PB9
 - CAN2_RX : PB5
 - CAN2_TX : PB13
+- I2C1_SDA : PB9
+- I2C1_SCL : PB6
+- I2S3_MCK : PC7
+- I2S3_CK : PC10
+- I2S3_SD : PC12
+- I2S3_WS : PA4
 
 System Clock
 ============
@@ -147,6 +125,8 @@ enable console output you should use a serial cable and connect it to UART2 pins
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32F4DISCOVERY Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
 

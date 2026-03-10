@@ -57,7 +57,6 @@
 			reg = <0x10000000 0x8000000>;
 		};
 
-
 		i2c0: i2c@f0004000 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -122,7 +121,7 @@
 
 		gpio2: gpio@f0002018 {
 			compatible = "snps,designware-gpio";
-			reg = <0xF0002018 0xc>;
+			reg = <0xf0002018 0xc>;
 			ngpios = <32>;
 
 			interrupt-parent = <&intc>;
@@ -133,7 +132,7 @@
 
 		gpio3: gpio@f0002024 {
 			compatible = "snps,designware-gpio";
-			reg = <0xF0002024 0xc>;
+			reg = <0xf0002024 0xc>;
 			ngpios = <12>;
 
 			interrupt-parent = <&intc>;
@@ -151,7 +150,6 @@
 			max-xfer-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-
 		};
 
 		spi1: spi@f0007000 {
@@ -163,8 +161,6 @@
 			max-xfer-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-
 		};
-
 	};
 };

@@ -1,7 +1,4 @@
-.. _opentitan_earlgrey:
-
-OpenTitan Earl Grey
-###################
+.. zephyr:board:: opentitan_earlgrey
 
 Overview
 ********
@@ -29,27 +26,12 @@ Detailed specification is on the `OpenTitan Earl Grey Chip Datasheet`_.
 Supported Features
 ==================
 
-The ``opentitan_earlgrey`` board configuration is designed and tested to run on
-the Earl Grey chip simulated in Verilator, a cycle-accurate HDL simulation tool.
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| Timer     | on-chip    | RISC-V Machine Timer                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | SPI host                            |
-+-----------+------------+-------------------------------------+
-| WDT       | on-chip    | Always-On Timer (Watchdog)          |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 First, build and install Verilator as described in the `OpenTitan Verilator
 Setup`_ guide .

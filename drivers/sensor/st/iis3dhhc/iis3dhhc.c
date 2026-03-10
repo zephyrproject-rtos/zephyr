@@ -26,7 +26,7 @@ static int iis3dhhc_sample_fetch(const struct device *dev,
 	struct iis3dhhc_data *data = dev->data;
 	int16_t raw_accel[3];
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ACCEL_XYZ || chan == SENSOR_CHAN_ALL);
 
 	iis3dhhc_acceleration_raw_get(data->ctx, raw_accel);
 	data->acc[0] = raw_accel[0];
@@ -233,7 +233,7 @@ static int iis3dhhc_init(const struct device *dev)
 		.bus_init = iis3dhhc_spi_init,							\
 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER |				\
 					    SPI_MODE_CPOL | SPI_MODE_CPHA |			\
-					    SPI_WORD_SET(8), 0U),				\
+					    SPI_WORD_SET(8)),					\
 	};											\
 												\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis3dhhc_init, NULL,					\

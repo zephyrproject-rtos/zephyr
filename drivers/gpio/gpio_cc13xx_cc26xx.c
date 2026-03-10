@@ -32,6 +32,9 @@
 /* the rest are for general (non-interrupt) config */
 #define IOCFG_GEN_MASK    (~IOCFG_INT_MASK)
 
+/* GPIO all DIOs mask */
+#define GPIO_DIO_ALL_MASK 0xFFFFFFFF
+
 struct gpio_cc13xx_cc26xx_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
@@ -40,9 +43,8 @@ struct gpio_cc13xx_cc26xx_data {
 
 static struct gpio_cc13xx_cc26xx_data gpio_cc13xx_cc26xx_data_0;
 
-static const struct gpio_driver_config gpio_cc13xx_cc26xx_cfg_0 = {
-	.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
-};
+static const struct gpio_driver_config gpio_cc13xx_cc26xx_cfg_0 =
+	GPIO_COMMON_CONFIG_FROM_DT_INST(0);
 
 static int gpio_cc13xx_cc26xx_port_set_bits_raw(const struct device *port,
 						uint32_t mask);
@@ -128,7 +130,7 @@ static int gpio_cc13xx_cc26xx_port_get_raw(const struct device *port,
 {
 	__ASSERT_NO_MSG(value != NULL);
 
-	*value = GPIO_readMultiDio(GPIO_DIO_ALL_MASK);
+	*value = HWREG(GPIO_BASE + GPIO_O_DIN31_0) & GPIO_DIO_ALL_MASK;
 
 	return 0;
 }
@@ -137,8 +139,8 @@ static int gpio_cc13xx_cc26xx_port_set_masked_raw(const struct device *port,
 						  uint32_t mask,
 						  uint32_t value)
 {
-	GPIO_setMultiDio(mask & value);
-	GPIO_clearMultiDio(mask & ~value);
+	gpio_cc13xx_cc26xx_port_set_bits_raw(port, mask & value);
+	gpio_cc13xx_cc26xx_port_clear_bits_raw(port, mask & ~value);
 
 	return 0;
 }
@@ -146,7 +148,7 @@ static int gpio_cc13xx_cc26xx_port_set_masked_raw(const struct device *port,
 static int gpio_cc13xx_cc26xx_port_set_bits_raw(const struct device *port,
 						uint32_t mask)
 {
-	GPIO_setMultiDio(mask);
+	HWREG(GPIO_BASE + GPIO_O_DOUTSET31_0) = mask;
 
 	return 0;
 }
@@ -154,7 +156,7 @@ static int gpio_cc13xx_cc26xx_port_set_bits_raw(const struct device *port,
 static int gpio_cc13xx_cc26xx_port_clear_bits_raw(const struct device *port,
 						  uint32_t mask)
 {
-	GPIO_clearMultiDio(mask);
+	HWREG(GPIO_BASE + GPIO_O_DOUTCLR31_0) = mask;
 
 	return 0;
 }
@@ -162,7 +164,7 @@ static int gpio_cc13xx_cc26xx_port_clear_bits_raw(const struct device *port,
 static int gpio_cc13xx_cc26xx_port_toggle_bits(const struct device *port,
 					       uint32_t mask)
 {
-	GPIO_toggleMultiDio(mask);
+	HWREG(GPIO_BASE + GPIO_O_DOUTTGL31_0) = mask;
 
 	return 0;
 }
@@ -209,16 +211,16 @@ static int gpio_cc13xx_cc26xx_manage_callback(const struct device *port,
 
 static uint32_t gpio_cc13xx_cc26xx_get_pending_int(const struct device *dev)
 {
-	return GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);
+	return HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_DIO_ALL_MASK;
 }
 
 static void gpio_cc13xx_cc26xx_isr(const struct device *dev)
 {
 	struct gpio_cc13xx_cc26xx_data *data = dev->data;
 
-	uint32_t status = GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);
+	uint32_t status = HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_DIO_ALL_MASK;
 
-	GPIO_clearEventMultiDio(status);
+	HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = status;
 
 	gpio_fire_callbacks(&data->callbacks, dev, status);
 }

@@ -249,7 +249,8 @@ static uint8_t cdc_ncm_get_int_in(struct usbd_class_data *const c_data)
 	struct cdc_ncm_eth_data *data = dev->data;
 	struct usbd_cdc_ncm_desc *desc = data->desc;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_int_ep.bEndpointAddress;
 	}
 
@@ -263,7 +264,8 @@ static uint8_t cdc_ncm_get_bulk_in(struct usbd_class_data *const c_data)
 	struct cdc_ncm_eth_data *data = dev->data;
 	struct usbd_cdc_ncm_desc *desc = data->desc;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if1_1_hs_in_ep.bEndpointAddress;
 	}
 
@@ -274,7 +276,8 @@ static uint16_t cdc_ncm_get_bulk_in_mps(struct usbd_class_data *const c_data)
 {
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return 512U;
 	}
 
@@ -288,7 +291,8 @@ static uint8_t cdc_ncm_get_bulk_out(struct usbd_class_data *const c_data)
 	struct cdc_ncm_eth_data *data = dev->data;
 	struct usbd_cdc_ncm_desc *desc = data->desc;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if1_1_hs_out_ep.bEndpointAddress;
 	}
 
@@ -567,7 +571,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 			break;
 		}
 
-		pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, AF_UNSPEC, 0, K_FOREVER);
+		pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_FOREVER);
 		if (!pkt) {
 			LOG_ERR("No memory for net_pkt");
 			goto unref_packet;
@@ -861,6 +865,7 @@ static void usbd_cdc_ncm_disable(struct usbd_class_data *const c_data)
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ncm_eth_data *data = dev->data;
 
+	atomic_clear_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED);
 	atomic_clear_bit(&data->state, CDC_NCM_CLASS_SUSPENDED);
 
 	LOG_INF("Disabled %s", c_data->name);
@@ -984,10 +989,12 @@ static int usbd_cdc_ncm_init(struct usbd_class_data *const c_data)
 
 	LOG_DBG("CDC NCM class initialized");
 
-	if (usbd_add_descriptor(uds_ctx, data->mac_desc_data)) {
-		LOG_ERR("Failed to add iMACAddress string descriptor");
-	} else {
-		desc->if0_ecm.iMACAddress = usbd_str_desc_get_idx(data->mac_desc_data);
+	if (desc->if0_ecm.iMACAddress == 0) {
+		if (usbd_add_descriptor(uds_ctx, data->mac_desc_data)) {
+			LOG_ERR("Failed to add iMACAddress string descriptor");
+		} else {
+			desc->if0_ecm.iMACAddress = usbd_str_desc_get_idx(data->mac_desc_data);
+		}
 	}
 
 	return 0;
@@ -1009,7 +1016,7 @@ static void *usbd_cdc_ncm_get_desc(struct usbd_class_data *const c_data,
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ncm_eth_data *const data = dev->data;
 
-	if (speed == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		return data->hs_desc;
 	}
 
@@ -1092,21 +1099,24 @@ static int cdc_ncm_set_config(const struct device *dev,
 {
 	struct cdc_ncm_eth_data *data = dev->data;
 
-	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(data->mac_addr, config->mac_address.addr,
 		       sizeof(data->mac_addr));
-
 		return 0;
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		/* nothing to do */
+		return 0;
+	default:
+		return -ENOTSUP;
 	}
-
-	return -ENOTSUP;
 }
 
 static enum ethernet_hw_caps cdc_ncm_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T;
+	return ETHERNET_LINK_10BASE | ETHERNET_PROMISC_MODE;
 }
 
 static int cdc_ncm_iface_start(const struct device *dev)
@@ -1238,7 +1248,7 @@ static struct usbd_cdc_ncm_desc cdc_ncm_desc_##n = {				\
 		.bFunctionLength = sizeof(struct cdc_ecm_descriptor),		\
 		.bDescriptorType = USB_DESC_CS_INTERFACE,			\
 		.bDescriptorSubtype = ETHERNET_FUNC_DESC,			\
-		.iMACAddress = 4,						\
+		.iMACAddress = 0,						\
 		.bmEthernetStatistics = sys_cpu_to_le32(0),			\
 		.wMaxSegmentSize = sys_cpu_to_le16(NET_ETH_MAX_FRAME_SIZE),	\
 		.wNumberMCFilters = sys_cpu_to_le16(0),				\

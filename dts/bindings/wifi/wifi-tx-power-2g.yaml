@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  This is a representation of the Wi-Fi transmit power ceilings
+  Wi-Fi transmit power ceilings
   i.e., maximum transmit power allowed for 2.4GHz band. Based on the
   RF performance of the device, the transmit power can be limited
   for different data rates and sub-bands to get the best performance.

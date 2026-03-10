@@ -28,7 +28,6 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -36,6 +35,7 @@
 #include "../host/iso_internal.h"
 
 #include "audio_internal.h"
+#include "bap_internal.h"
 #include "bap_iso.h"
 #include "bap_endpoint.h"
 #include "bap_unicast_client_internal.h"
@@ -112,13 +112,13 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 {
 	enum bt_audio_dir dir;
 
-	CHECKIF(ep == NULL) {
+	if (ep == NULL) {
 		LOG_DBG("ep is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(info == NULL) {
+	if (info == NULL) {
 		LOG_DBG("info is NULL");
 
 		return -EINVAL;
@@ -126,8 +126,8 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 
 	dir = ep->dir;
 
-	info->id = ep->status.id;
-	info->state = ep->status.state;
+	info->id = ep->id;
+	info->state = ep->state;
 	info->dir = dir;
 	info->qos_pref = &ep->qos_pref;
 
@@ -142,28 +142,59 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 	info->can_send = false;
 	info->can_recv = false;
 	if (IS_ENABLED(CONFIG_BT_AUDIO_TX) && ep->stream != NULL) {
-		if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) && bt_bap_ep_is_broadcast_src(ep)) {
+		if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) &&
+		    bt_bap_broadcast_source_has_ep(ep)) {
 			info->can_send = true;
 		} else if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) &&
-			   bt_bap_ep_is_broadcast_snk(ep)) {
+			   bt_bap_broadcast_sink_has_ep(ep)) {
 			info->can_recv = true;
 		} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&
-			   bt_bap_ep_is_unicast_client(ep)) {
+			   bt_bap_unicast_client_has_ep(ep)) {
 			/* dir is not initialized before the connection is set */
 			if (ep->stream->conn != NULL) {
 				info->can_send = dir == BT_AUDIO_DIR_SINK;
 				info->can_recv = dir == BT_AUDIO_DIR_SOURCE;
 			}
-		} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER)) {
+		} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) &&
+			   bt_bap_unicast_server_has_ep(ep)) {
 			/* dir is not initialized before the connection is set */
 			if (ep->stream->conn != NULL) {
 				info->can_send = dir == BT_AUDIO_DIR_SOURCE;
 				info->can_recv = dir == BT_AUDIO_DIR_SINK;
 			}
+		} else {
+			LOG_DBG("Invalid endpoint");
+
+			return -EINVAL;
 		}
 	}
 
 	return 0;
+}
+
+struct bt_conn *bt_bap_ep_get_conn(const struct bt_bap_ep *ep)
+{
+	struct bt_conn *conn;
+
+	if (ep == NULL) {
+		LOG_DBG("ep is NULL");
+
+		return NULL;
+	}
+
+	if ((IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) && bt_bap_broadcast_source_has_ep(ep)) ||
+	    (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) && bt_bap_broadcast_sink_has_ep(ep))) {
+		conn = NULL;
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_unicast_client_has_ep(ep)) {
+		conn = bt_bap_unicast_client_ep_get_conn(ep);
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && bt_bap_unicast_server_has_ep(ep)) {
+		conn = bt_bap_unicast_server_ep_get_conn(ep);
+	} else {
+		LOG_DBG("Invalid endpoint %p", ep);
+		conn = NULL;
+	}
+
+	return conn;
 }
 
 enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_bap_qos_cfg *qos)
@@ -298,14 +329,13 @@ bool bt_bap_valid_qos_pref(const struct bt_bap_qos_cfg_pref *qos_pref)
 		return false;
 	}
 
-	if (qos_pref->pref_pd_min != BT_AUDIO_PD_PREF_NONE) {
 		/* If pref_pd_min != BT_AUDIO_PD_PREF_NONE then pd_min <= pref_pd_min <= pd_max */
-		if (!IN_RANGE(qos_pref->pref_pd_min, qos_pref->pd_min, qos_pref->pd_max)) {
-			LOG_DBG("Invalid combination of pref_pd_min %u, pd_min %u and pd_max: %u",
-				qos_pref->pref_pd_min, qos_pref->pd_min, qos_pref->pd_max);
+	if (qos_pref->pref_pd_min != BT_AUDIO_PD_PREF_NONE &&
+	    !IN_RANGE(qos_pref->pref_pd_min, qos_pref->pd_min, qos_pref->pd_max)) {
+		LOG_DBG("Invalid combination of pref_pd_min %u, pd_min %u and pd_max: %u",
+			qos_pref->pref_pd_min, qos_pref->pd_min, qos_pref->pd_max);
 
-			return false;
-		}
+		return false;
 	}
 
 	if (qos_pref->pref_pd_max != BT_AUDIO_PD_PREF_NONE) {
@@ -380,9 +410,9 @@ static int bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf, ui
 
 	ep = stream->ep;
 
-	if (ep->status.state != BT_BAP_EP_STATE_STREAMING) {
+	if (ep->state != BT_BAP_EP_STATE_STREAMING) {
 		LOG_DBG("Channel %p not ready for streaming (state: %s)", stream,
-			bt_bap_ep_state_str(ep->status.state));
+			bt_bap_ep_state_str(ep->state));
 		return -EBADMSG;
 	}
 
@@ -426,13 +456,13 @@ int bt_bap_stream_get_tx_sync(struct bt_bap_stream *stream, struct bt_iso_tx_inf
 {
 	struct bt_iso_chan *iso_chan;
 
-	CHECKIF(stream == NULL) {
+	if (stream == NULL) {
 		LOG_DBG("stream is null");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(info == NULL) {
+	if (info == NULL) {
 		LOG_DBG("info is null");
 
 		return -EINVAL;
@@ -483,10 +513,11 @@ bool bt_bap_stream_can_disconnect(const struct bt_bap_stream *stream)
 
 		pair_ep = bt_bap_iso_get_paired_ep(stream_ep);
 
-		/* If there are no paired endpoint, or the paired endpoint is
-		 * not in the streaming state, we can disconnect the CIS
+		/* If there are no paired endpoint, or the paired endpoint is in the QoS Configured
+		 * or Codec Configured state, we can disconnect the CIS
 		 */
-		if (pair_ep == NULL || pair_ep->status.state != BT_BAP_EP_STATE_STREAMING) {
+		if (pair_ep == NULL || pair_ep->state == BT_BAP_EP_STATE_QOS_CONFIGURED ||
+		    pair_ep->state == BT_BAP_EP_STATE_CODEC_CONFIGURED) {
 			return true;
 		}
 	}
@@ -497,8 +528,9 @@ bool bt_bap_stream_can_disconnect(const struct bt_bap_stream *stream)
 static bool bt_bap_stream_is_broadcast(const struct bt_bap_stream *stream)
 {
 	return (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) &&
-		bt_bap_ep_is_broadcast_src(stream->ep)) ||
-	       (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) && bt_bap_ep_is_broadcast_snk(stream->ep));
+		bt_bap_broadcast_source_has_ep(stream->ep)) ||
+	       (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) &&
+		bt_bap_broadcast_sink_has_ep(stream->ep));
 }
 
 enum bt_bap_ascs_reason bt_bap_stream_verify_qos(const struct bt_bap_stream *stream,
@@ -531,8 +563,11 @@ void bt_bap_stream_detach(struct bt_bap_stream *stream)
 		stream->conn = NULL;
 	}
 	stream->codec_cfg = NULL;
-	stream->ep->stream = NULL;
-	stream->ep = NULL;
+
+	if (stream->ep != NULL) {
+		stream->ep->stream = NULL;
+		stream->ep = NULL;
+	}
 
 	if (!is_broadcast) {
 		const int err = bt_bap_stream_disconnect(stream);
@@ -602,7 +637,7 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
 	       codec_cfg, codec_cfg ? codec_cfg->id : 0, codec_cfg ? codec_cfg->cid : 0,
 	       codec_cfg ? codec_cfg->vid : 0);
 
-	CHECKIF(conn == NULL || stream == NULL || codec_cfg == NULL || ep == NULL) {
+	if (conn == NULL || stream == NULL || codec_cfg == NULL || ep == NULL) {
 		LOG_DBG("NULL value(s) supplied)");
 		return -EINVAL;
 	}
@@ -613,12 +648,12 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
 	}
 
 	role = conn_get_role(conn);
-	if (role != BT_HCI_ROLE_CENTRAL) {
+	if (role != BT_CONN_ROLE_CENTRAL) {
 		LOG_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
 
-	switch (ep->status.state) {
+	switch (ep->state) {
 	/* Valid only if ASE_State field = 0x00 (Idle) */
 	case BT_BAP_EP_STATE_IDLE:
 		/* or 0x01 (Codec Configured) */
@@ -627,15 +662,34 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->status.state));
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EBADMSG;
 	}
 
+	if (ep->stream != NULL) {
+		LOG_DBG("Endpoint %p already configured for stream %p", ep, stream);
+
+		return -EINVAL;
+	}
+	__ASSERT(ep->iso == NULL, "endpoint %p already bound to iso %p", ep, ep->iso);
+
 	bt_bap_stream_attach(conn, stream, ep, codec_cfg);
+
+	/* If a stream has been added to a group at this point, then it has a reference to a CIS.
+	 * and we can bind the ep to the CIS
+	 */
+	if (stream->iso != NULL) {
+		struct bt_bap_iso *bap_iso = CONTAINER_OF(stream->iso, struct bt_bap_iso, chan);
+
+		/* Not yet bound with the bap_iso */
+		bt_bap_iso_bind_ep(bap_iso, ep);
+	}
 
 	err = bt_bap_unicast_client_config(stream, codec_cfg);
 	if (err != 0) {
 		LOG_DBG("Failed to configure stream: %d", err);
+
+		bt_bap_stream_reset(stream);
 		return err;
 	}
 
@@ -649,12 +703,12 @@ int bt_bap_stream_qos(struct bt_conn *conn, struct bt_bap_unicast_group *group)
 
 	LOG_DBG("conn %p group %p", (void *)conn, group);
 
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(group == NULL) {
+	if (group == NULL) {
 		LOG_DBG("group is NULL");
 		return -EINVAL;
 	}
@@ -665,7 +719,7 @@ int bt_bap_stream_qos(struct bt_conn *conn, struct bt_bap_unicast_group *group)
 	}
 
 	role = conn_get_role(conn);
-	if (role != BT_HCI_ROLE_CENTRAL) {
+	if (role != BT_CONN_ROLE_CENTRAL) {
 		LOG_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
@@ -692,14 +746,14 @@ int bt_bap_stream_enable(struct bt_bap_stream *stream, const uint8_t meta[], siz
 	}
 
 	role = conn_get_role(stream->conn);
-	if (role != BT_HCI_ROLE_CENTRAL) {
+	if (role != BT_CONN_ROLE_CENTRAL) {
 		LOG_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
 
 	/* Valid for an ASE only if ASE_State field = 0x02 (QoS Configured) */
-	if (stream->ep->status.state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(stream->ep->status.state));
+	if (stream->ep->state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(stream->ep->state));
 		return -EBADMSG;
 	}
 
@@ -724,19 +778,19 @@ int bt_bap_stream_stop(struct bt_bap_stream *stream)
 	}
 
 	role = conn_get_role(stream->conn);
-	if (role != BT_HCI_ROLE_CENTRAL) {
+	if (role != BT_CONN_ROLE_CENTRAL) {
 		LOG_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
 
 	ep = stream->ep;
 
-	switch (ep->status.state) {
+	switch (ep->state) {
 	/* Valid only if ASE_State field = 0x03 (Disabling) */
 	case BT_BAP_EP_STATE_DISABLING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->status.state));
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EBADMSG;
 	}
 
@@ -753,23 +807,23 @@ int bt_bap_stream_stop(struct bt_bap_stream *stream)
 int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
 			     struct bt_audio_codec_cfg *codec_cfg)
 {
-	uint8_t state;
+	enum bt_bap_ep_state state;
 	uint8_t role;
 	int err;
 
 	LOG_DBG("stream %p codec_cfg %p", stream, codec_cfg);
 
-	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
+	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
 		LOG_DBG("Invalid stream");
 		return -EINVAL;
 	}
 
-	CHECKIF(codec_cfg == NULL) {
+	if (codec_cfg == NULL) {
 		LOG_DBG("codec_cfg is NULL");
 		return -EINVAL;
 	}
 
-	state = stream->ep->status.state;
+	state = stream->ep->state;
 	switch (state) {
 	/* Valid only if ASE_State field = 0x00 (Idle) */
 	case BT_BAP_EP_STATE_IDLE:
@@ -784,9 +838,9 @@ int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
 	}
 
 	role = conn_get_role(stream->conn);
-	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_HCI_ROLE_CENTRAL) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_CONN_ROLE_CENTRAL) {
 		err = bt_bap_unicast_client_config(stream, codec_cfg);
-	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_HCI_ROLE_PERIPHERAL) {
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_CONN_ROLE_PERIPHERAL) {
 		err = bt_bap_unicast_server_reconfig(stream, codec_cfg);
 	} else {
 		err = -EOPNOTSUPP;
@@ -804,11 +858,11 @@ int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 int bt_bap_stream_connect(struct bt_bap_stream *stream)
 {
-	uint8_t state;
+	enum bt_bap_ep_state state;
 
 	LOG_DBG("stream %p ep %p", stream, stream == NULL ? NULL : stream->ep);
 
-	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
+	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
 		LOG_DBG("Invalid stream");
 		return -EINVAL;
 	}
@@ -816,7 +870,7 @@ int bt_bap_stream_connect(struct bt_bap_stream *stream)
 	/* Valid only after the CIS ID has been assigned in QoS configured state and while we are
 	 * not streaming
 	 */
-	state = stream->ep->status.state;
+	state = stream->ep->state;
 	switch (state) {
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 	case BT_BAP_EP_STATE_ENABLING:
@@ -827,7 +881,7 @@ int bt_bap_stream_connect(struct bt_bap_stream *stream)
 	}
 
 	/* Only a unicast client can connect a stream */
-	if (conn_get_role(stream->conn) == BT_HCI_ROLE_CENTRAL) {
+	if (conn_get_role(stream->conn) == BT_CONN_ROLE_CENTRAL) {
 		return bt_bap_unicast_client_connect(stream);
 	} else {
 		return -EOPNOTSUPP;
@@ -837,18 +891,18 @@ int bt_bap_stream_connect(struct bt_bap_stream *stream)
 
 int bt_bap_stream_start(struct bt_bap_stream *stream)
 {
-	uint8_t state;
+	enum bt_bap_ep_state state;
 	uint8_t role;
 	int err;
 
 	LOG_DBG("stream %p ep %p", stream, stream == NULL ? NULL : stream->ep);
 
-	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
+	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
 		LOG_DBG("Invalid stream");
 		return -EINVAL;
 	}
 
-	state = stream->ep->status.state;
+	state = stream->ep->state;
 	switch (state) {
 	/* Valid only if ASE_State field = 0x03 (Enabling) */
 	case BT_BAP_EP_STATE_ENABLING:
@@ -859,9 +913,9 @@ int bt_bap_stream_start(struct bt_bap_stream *stream)
 	}
 
 	role = conn_get_role(stream->conn);
-	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_HCI_ROLE_CENTRAL) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_CONN_ROLE_CENTRAL) {
 		err = bt_bap_unicast_client_start(stream);
-	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_HCI_ROLE_PERIPHERAL) {
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_CONN_ROLE_PERIPHERAL) {
 		err = bt_bap_unicast_server_start(stream);
 	} else {
 		err = -EOPNOTSUPP;
@@ -877,23 +931,23 @@ int bt_bap_stream_start(struct bt_bap_stream *stream)
 
 int bt_bap_stream_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len)
 {
-	uint8_t state;
+	enum bt_bap_ep_state state;
 	uint8_t role;
 	int err;
 
 	LOG_DBG("stream %p meta_len %zu", stream, meta_len);
 
-	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
+	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
 		LOG_DBG("Invalid stream");
 		return -EINVAL;
 	}
 
-	CHECKIF((meta == NULL && meta_len != 0U) || (meta != NULL && meta_len == 0U)) {
+	if ((meta == NULL && meta_len != 0U) || (meta != NULL && meta_len == 0U)) {
 		LOG_DBG("Invalid meta (%p) or len (%zu)", meta, meta_len);
 		return -EINVAL;
 	}
 
-	state = stream->ep->status.state;
+	state = stream->ep->state;
 	switch (state) {
 	/* Valid for an ASE only if ASE_State field = 0x03 (Enabling) */
 	case BT_BAP_EP_STATE_ENABLING:
@@ -906,9 +960,9 @@ int bt_bap_stream_metadata(struct bt_bap_stream *stream, const uint8_t meta[], s
 	}
 
 	role = conn_get_role(stream->conn);
-	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_HCI_ROLE_CENTRAL) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_CONN_ROLE_CENTRAL) {
 		err = bt_bap_unicast_client_metadata(stream, meta, meta_len);
-	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_HCI_ROLE_PERIPHERAL) {
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_CONN_ROLE_PERIPHERAL) {
 		err = bt_bap_unicast_server_metadata(stream, meta, meta_len);
 	} else {
 		err = -EOPNOTSUPP;
@@ -924,18 +978,18 @@ int bt_bap_stream_metadata(struct bt_bap_stream *stream, const uint8_t meta[], s
 
 int bt_bap_stream_disable(struct bt_bap_stream *stream)
 {
-	uint8_t state;
+	enum bt_bap_ep_state state;
 	uint8_t role;
 	int err;
 
 	LOG_DBG("stream %p", stream);
 
-	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
+	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
 		LOG_DBG("Invalid stream");
 		return -EINVAL;
 	}
 
-	state = stream->ep->status.state;
+	state = stream->ep->state;
 	switch (state) {
 	/* Valid only if ASE_State field = 0x03 (Enabling) */
 	case BT_BAP_EP_STATE_ENABLING:
@@ -948,9 +1002,9 @@ int bt_bap_stream_disable(struct bt_bap_stream *stream)
 	}
 
 	role = conn_get_role(stream->conn);
-	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_HCI_ROLE_CENTRAL) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_CONN_ROLE_CENTRAL) {
 		err = bt_bap_unicast_client_disable(stream);
-	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_HCI_ROLE_PERIPHERAL) {
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_CONN_ROLE_PERIPHERAL) {
 		err = bt_bap_unicast_server_disable(stream);
 	} else {
 		err = -EOPNOTSUPP;
@@ -966,18 +1020,18 @@ int bt_bap_stream_disable(struct bt_bap_stream *stream)
 
 int bt_bap_stream_release(struct bt_bap_stream *stream)
 {
-	uint8_t state;
+	enum bt_bap_ep_state state;
 	uint8_t role;
 	int err;
 
 	LOG_DBG("stream %p", stream);
 
-	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
-		LOG_DBG("Invalid stream (ep %p, conn %p)", stream->ep, (void *)stream->conn);
+	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
+		LOG_DBG("Invalid stream");
 		return -EINVAL;
 	}
 
-	state = stream->ep->status.state;
+	state = stream->ep->state;
 	switch (state) {
 	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
 	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
@@ -996,9 +1050,9 @@ int bt_bap_stream_release(struct bt_bap_stream *stream)
 	}
 
 	role = conn_get_role(stream->conn);
-	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_HCI_ROLE_CENTRAL) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_CONN_ROLE_CENTRAL) {
 		err = bt_bap_unicast_client_release(stream);
-	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_HCI_ROLE_PERIPHERAL) {
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_CONN_ROLE_PERIPHERAL) {
 		err = bt_bap_unicast_server_release(stream);
 	} else {
 		err = -EOPNOTSUPP;

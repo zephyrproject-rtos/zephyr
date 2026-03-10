@@ -7,7 +7,7 @@ Blackbox tests for twister's command line functions related to the quarantine.
 """
 
 import importlib
-import mock
+from unittest import mock
 import os
 import pytest
 import re
@@ -15,7 +15,8 @@ import sys
 import json
 
 # pylint: disable=duplicate-code
-from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
+# pylint: disable=no-name-in-module
+from conftest import ZEPHYR_BASE, TEST_DATA, suite_filename_mock
 from twisterlib.testplan import TestPlan
 
 
@@ -31,7 +32,7 @@ class TestQuarantine:
     def teardown_class(cls):
         pass
 
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
     def test_quarantine_verify(self, out_path):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
@@ -49,10 +50,15 @@ class TestQuarantine:
 
         with open(os.path.join(out_path, 'testplan.json')) as f:
             j = json.load(f)
+
+        # Quarantine-verify "swaps" statuses. The ones that are in quarantine list
+        # should no longer be quarantined, and the ones that are not in the list
+        # should be quarantined. Remove "quarantined" tests from "verify" testplan
+        # to count what should be verified.
         filtered_j = [
-           (ts['platform'], ts['name'], tc['identifier']) \
+           (ts['platform'], ts['name']) \
                for ts in j['testsuites'] \
-               for tc in ts['testcases'] if 'reason' not in tc
+               if ts['status'] != "skipped"
         ]
 
         assert str(sys_exit.value) == '0'
@@ -72,9 +78,9 @@ class TestQuarantine:
             'quarantine',
         ],
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
     def test_quarantine_list(self, capfd, out_path, test_path, test_platforms, quarantine_directory):
-        args = ['--outdir', out_path, '-T', test_path] +\
+        args = ['--detailed-test-id', '--outdir', out_path, '-T', test_path] +\
                ['--quarantine-list', quarantine_directory] + \
                ['-vv', '-ll', 'DEBUG'] + \
                [val for pair in zip(
@@ -89,27 +95,22 @@ class TestQuarantine:
         sys.stdout.write(out)
         sys.stderr.write(err)
 
-        board1_match1 = re.search('agnostic/group2/dummy.agnostic.group2 FILTERED: Quarantine: test '
-                               'intel_adl_crb', err)
+        board1_match1 = re.search('agnostic/group2/dummy.agnostic.group2 SKIPPED: Quarantined',
+                    err)
         board1_match2 = re.search(
-            'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 FILTERED: Quarantine: test '
-            'intel_adl_crb',
+            'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 SKIPPED: Quarantined',
             err)
         qemu_64_match = re.search(
-            'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 FILTERED: Quarantine: test '
-            'qemu_x86_64',
+            'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 SKIPPED: Quarantined',
             err)
         all_platforms_match = re.search(
-            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 FILTERED: Quarantine: test '
-            'all platforms',
+            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 SKIPPED: Quarantined',
             err)
         all_platforms_match2 = re.search(
-            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 FILTERED: Quarantine: test '
-            'all platforms',
+            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 SKIPPED: Quarantined',
             err)
         all_platforms_match3 = re.search(
-            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 FILTERED: Quarantine: test '
-            'all platforms',
+            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 SKIPPED: Quarantined',
             err)
 
         assert board1_match1 and board1_match2, 'platform quarantine not working properly'

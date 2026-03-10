@@ -5,9 +5,11 @@ common:
   timeout: 120
   tags: jwt
   integration_platforms:
-    - frdm_k64f
+    - qemu_x86
   extra_configs:
     - CONFIG_TEST_RANDOM_GENERATOR=y
+  platform_exclude:
+    - max32657evkit/max32657/ns
 tests:
   libraries.encoding.jwt.ecdsa.psa:
     extra_configs:
@@ -17,10 +19,6 @@ tests:
       # source.
       - CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG=y
       - CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG=y
-  libraries.encoding.jwt.rsa.legacy:
-    filter: CSPRNG_ENABLED
-    extra_configs:
-      - CONFIG_JWT_SIGN_RSA_LEGACY=y
   libraries.encoding.jwt.rsa.psa:
     extra_configs:
       - CONFIG_JWT_SIGN_RSA_PSA=y

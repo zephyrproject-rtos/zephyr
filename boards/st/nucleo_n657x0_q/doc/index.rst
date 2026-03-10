@@ -60,27 +60,37 @@ For more details, please refer to:
 Supported Features
 ==================
 
-The Zephyr ``nucleo_n657x0_q`` board supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
+USB
+===
 
+The USB pin assignments on the STM32N657XX microcontroller are immutable. This means that the specific
+pins designated for USB functionality are fixed and cannot be changed or reassigned to other functions,
+ensuring consistent and reliable USB communication.
 
-Other hardware features are not yet supported on this Zephyr port.
+USB PIN (IOs)
+=============
 
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_n657x0_q/nucleo_n657x0_q_defconfig`
-
++------------------+--------------------------------------+
+| Name             | Description                          |
++==================+======================================+
+| OTG1_HSDM        | USB OTG1 High-Speed Data- (negative) |
++------------------+--------------------------------------+
+| OTG1_HSDP        | USB OTG1 High-Speed Data+ (positive) |
++------------------+--------------------------------------+
+| OTG1_ID          | USB OTG1 ID Pin                      |
++------------------+--------------------------------------+
+| OTG1_TXRTUNE     | USB OTG1 Transmit Retune             |
++------------------+--------------------------------------+
+| OTG2_HSDM        | USB OTG2 High-Speed Data- (negative) |
++------------------+--------------------------------------+
+| OTG2_HSDP        | USB OTG2 High-Speed Data+ (positive) |
++------------------+--------------------------------------+
+| OTG2_ID          | USB OTG2 ID Pin                      |
++------------------+--------------------------------------+
+| OTG2_TXRTUNE     | USB OTG2 Transmit Retune             |
++------------------+--------------------------------------+
 
 Connections and IOs
 ===================
@@ -93,10 +103,35 @@ For more details please refer to `NUCLEO-N657X0-Q User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
+- ADC1_INP10 : PA9
+- ADC1_INP11 : PA10
+- FDCAN1_TX : PH2
+- FDCAN1_RX : PD0
+- I2C1_SCL : PH9
+- I2C1_SDA : PC1
+- I2C4_SCL : PE13
+- I2C4_SDA : PE14
 - LD1 : PO1
 - LD2 : PG10
+- SPI5_SCK : PE15
+- SPI5_MOSI : PG2
+- SPI5_MISO : PG1
+- SPI5_NSS : PA3
 - USART_1_TX : PE5
 - USART_1_RX : PE6
+- USART_3_TX : PD8
+- USART_3_RX : PD9
+- XSPI2_NCS1 : PN1
+- XSPI2_DQS0 : PN0
+- XSPI2_CLK : PN6
+- XSPI2_IO0 : PN2
+- XSPI2_IO1 : PN3
+- XSPI2_IO2 : PN4
+- XSPI2_IO3 : PN5
+- XSPI2_IO4 : PN8
+- XSPI2_IO5 : PN9
+- XSPI2_IO6 : PN10
+- XSPI2_IO7 : PN11
 
 System Clock
 ------------
@@ -114,6 +149,8 @@ USART1. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 NUCLEO-N657X0-Q board includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash and debug the board using various tools.
 
@@ -126,13 +163,20 @@ The board is configured to be programmed using west `STM32CubeProgrammer`_ runne
 so its :ref:`installation <stm32cubeprog-flash-host-tools>` is needed.
 Version 2.18.0 or later of `STM32CubeProgrammer`_ is required.
 
+.. note::
+   Firmware is run in secure mode of execution, which requires a signature.
+   After build, the build system  will automatically generate a signed version of the
+   binary using `STM32CubeProgrammer`_ utility ``STM32_SigningTool_CLI``.
+   This utility is installed along with `STM32CubeProgrammer`_, but make sure it is
+   available in your ``PATH`` variable.
+
 To program the board, there are two options:
 
 - Program the firmware in external flash. At boot, it will then be loaded on RAM
   and executed from there.
 - Optionally, it can also be taken advantage from the serial boot interface provided
   by the boot ROM. In that case, firmware is directly loaded in RAM and executed from
-  there. It is not retained.
+  there. It is not retained in persistent memory.
 
 Programming an application to NUCLEO-N657X0-Q
 ---------------------------------------------
@@ -152,43 +196,42 @@ First, connect the NUCLEO-N657X0-Q to your host computer using the ST-Link USB p
             :board: nucleo_n657x0_q
             :goals: build flash
 
-.. note::
+         .. note::
             For flashing, before powering the board, set the boot pins in the following configuration:
 
-            * BOOT0: 0
-            * BOOT1: 1
+            * BOOT0: 0 (jumper JP1 in position 1, printed on PCB)
+            * BOOT1: 1 (jumper JP2 in position 2, not-printed on PCB)
 
             After flashing, to run the application, set the boot pins in the following configuration:
 
-            * BOOT1: 0
+            * BOOT0: 0 (jumper JP1 in position 1, printed on PCB)
+            * BOOT1: 0 (jumper JP2 in position 1, printed on PCB)
 
-	    Power off and on the board again.
-
-         Run a serial host program to connect to your board:
-
-.. code-block:: console
-
-   $ minicom -D /dev/ttyACM0
+            Power off and on the board again.
 
       .. group-tab:: Serial Boot Loader (USB)
 
-         Additionally, connect the NUCLEO-N657X0-Q to your host computer using the USB port.
-         In this configuration, ST-Link is used to power the board and for serial communication
-         over the Virtual COM Port.
+         Additionally to the USB/ST-Link, connect the NUCLEO-N657X0-Q to your
+         host computer using the USB port (USB/CN8).
+
+         In this configuration, ST-Link (USB connector CN10) is used to power
+         the board and for serial communication over the Virtual COM Port,
+         while USB/CN8 is used to send the Zephyr image to Boot ROM for loading
+         it in RAM and executing it.
 
          .. note::
             Before powering the board, set the boot pins in the following configuration:
 
-            * BOOT0: 1
-            * BOOT1: 0
+            * BOOT0: 1 (jumper JP1 in position 2, not-printed on PCB)
+            * BOOT1: 0 (jumper JP2 in position 1, printed on PCB)
 
          Build and load an application using ``nucleo_n657x0_q/stm32n657xx/sb`` target (you
          can also use the shortened form: ``nucleo_n657x0_q//sb``)
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: nucleo_n657x0_q
-   :goals: build flash
+         .. zephyr-app-commands::
+            :zephyr-app: samples/hello_world
+            :board: nucleo_n657x0_q//sb
+            :goals: build flash
 
 
 Run a serial host program to connect to your board:
@@ -207,20 +250,28 @@ You should see the following message on the console:
 Debugging
 =========
 
-For now debugging is only available through STM32CubeIDE:
+You can debug an application in the usual way using the :ref:`ST-LINK GDB Server <runner_stlink_gdbserver>`.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
-* Go to File > Import and select C/C++ > STM32 Cortex-M Executable.
-* In Executable field, browse to your <ZEPHYR_PATH>/build/zephyr/zephyr.elf.
-* In MCU field, select STM32N657X0HxQ.
-* Click on Finish.
-* Finally, click on Debug to start the debugging session.
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: nucleo_n657x0_q
+   :maybe-skip-config:
+   :goals: debug
 
 .. note::
-   For debugging, before powering on the board, set the boot pins in the following configuration:
+   To enable debugging, before powering on the board, set the boot pins in the following configuration:
 
    * BOOT0: 0
    * BOOT1: 1
 
+Another solution for debugging is to use STM32CubeIDE:
+
+* Go to :menuselection:`File --> Import` and select :menuselection:`C/C++ --> STM32 Cortex-M Executable`.
+* In the :guilabel:`Executable` field, browse to your ``<ZEPHYR_PATH>/build/zephyr/zephyr.elf``.
+* In :guilabel:`MCU` field, select ``STM32N657X0HxQ``.
+* Click on :guilabel:`Finish`.
+* Finally, click on :guilabel:`Debug` to start the debugging session.
 
 Running tests with twister
 ==========================
@@ -242,6 +293,7 @@ To do so, it is advised to use Twister's hardware map feature with the following
 
 .. _NUCLEO-N657X0-Q User Manual:
    https://www.st.com/resource/en/user_manual/um3417-stm32n6-nucleo144-board-mb1940-stmicroelectronics.pdf
+
 .. _STM32N657X0 on www.st.com:
    https://www.st.com/en/microcontrollers-microprocessors/stm32n657x0.html
 

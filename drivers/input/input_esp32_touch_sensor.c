@@ -136,7 +136,7 @@ static void esp32_touch_sensor_interrupt_cb(void *arg)
 	}
 }
 
-static void esp32_touch_rtc_isr(void *arg)
+static void IRAM_ATTR esp32_touch_rtc_isr(void *arg)
 {
 	uint32_t status = REG_READ(RTC_CNTL_INT_ST_REG);
 
@@ -186,7 +186,7 @@ static int esp32_touch_sensor_init(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_ESP32)
 	touch_hal_volt_t volt = {
 		.refh = dev_cfg->href_microvolt_enum_idx,
-		.refh = dev_cfg->href_microvolt_enum_idx,
+		.refl = dev_cfg->lref_microvolt_enum_idx,
 		.atten = dev_cfg->href_atten_microvolt_enum_idx
 	};
 
@@ -254,7 +254,7 @@ static int esp32_touch_sensor_init(const struct device *dev)
 		uint16_t touch_value = touch_hal_read_raw_data(channel_cfg->channel_num);
 
 		touch_hal_set_threshold(channel_cfg->channel_num,
-					touch_value * (100 - channel_cfg->channel_num) / 100);
+					touch_value * (100 - channel_cfg->channel_sens) / 100);
 	}
 
 #elif defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3)
@@ -274,7 +274,7 @@ static int esp32_touch_sensor_init(const struct device *dev)
 
 	flags = ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, priority)) |
 		ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, flags)) |
-		ESP_INTR_FLAG_SHARED;
+		ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM;
 	err = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, irq), flags, esp32_touch_rtc_isr,
 			     (void *)dev, NULL);
 	if (err) {

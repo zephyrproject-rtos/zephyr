@@ -7,3 +7,16 @@ config PINCTRL_ENE_KB1200
 	depends on DT_HAS_ENE_KB1200_PINCTRL_ENABLED
 	help
 	  Enable pin controller driver for ENE KB1200 MCUs
+
+config PINCTRL_ENE_KB106X
+	bool "ENE KB106X Pin controller driver"
+	default y
+	depends on DT_HAS_ENE_KB106X_PINCTRL_ENABLED
+	help
+	  Enable pin controller driver for ENE KB106X MCUs
+
+config PINCTRL_ENE_KB106X_ALT_OUTPUT_LOOKBACK
+	bool "ENE KB106X Pin controller alt-output lookback"
+	depends on PINCTRL_ENE_KB106X
+	help
+	  Enable alt-output lookback for ENE KB106X MCUs

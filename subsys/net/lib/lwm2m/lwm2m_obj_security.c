@@ -139,7 +139,7 @@ static struct lwm2m_engine_obj_inst *security_create(uint16_t obj_inst_id)
 	/* default values */
 	security_uri[index][0] = '\0';
 	client_identity[index][0] = '\0';
-	bootstrap_flag[index] = 0;
+	bootstrap_flag[index] = false;
 	security_mode[index] = 0U;
 	short_server_id[index] = 0U;
 

@@ -404,9 +404,7 @@ static DEVICE_API(gpio, gpio_fxl_driver) = {
 
 #define GPIO_FXL6408_DEVICE_INSTANCE(inst)                                     \
 	static const struct gpio_fxl6408_config gpio_fxl6408_##inst##_cfg = {  \
-		.common = {                                                    \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),\
-		},                                                             \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                \
 		.i2c = I2C_DT_SPEC_INST_GET(inst)                              \
 	};                                                                     \
 \

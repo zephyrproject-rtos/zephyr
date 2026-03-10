@@ -9,3 +9,10 @@ config GPIO_ESP32
 	depends on DT_HAS_ESPRESSIF_ESP32_GPIO_ENABLED
 	help
 	  Enables the ESP32 GPIO driver
+
+config LPGPIO_ESP32
+	bool "ESP32 Low Power GPIO"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_LPGPIO_ENABLED
+	help
+	  Enables the ESP32 GPIO driver

@@ -10,9 +10,15 @@
 #include <zephyr/sys/byteorder.h>
 
 /**
- * @addtogroup kernel_common_tests
+ * @defgroup kernel_byteorder_tests Byteorder Operations
+ * @ingroup all_tests
+ * @{
+ * @}
+ *
+ * @addtogroup kernel_byteorder_tests
  * @{
  */
+
 /**
  * @brief Test swapping for memory contents
  *
@@ -704,9 +710,10 @@ ZTEST(byteorder, test_sys_get_be)
 	zassert_mem_equal(host, exp, sizeof(exp), "sys_get_be() failed");
 }
 
-extern void *common_setup(void);
-ZTEST_SUITE(byteorder, NULL, common_setup, NULL, NULL, NULL);
-
 /**
  * @}
  */
+
+
+extern void *common_setup(void);
+ZTEST_SUITE(byteorder, NULL, common_setup, NULL, NULL, NULL);

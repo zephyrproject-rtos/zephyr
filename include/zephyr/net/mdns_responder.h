@@ -17,6 +17,10 @@
 #include <stddef.h>
 #include <zephyr/net/dns_sd.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Register continuous memory of @ref dns_sd_rec records.
  *
@@ -30,5 +34,9 @@
  * @return 0 for OK; -EINVAL for invalid parameters.
  */
 int mdns_responder_set_ext_records(const struct dns_sd_rec *records, size_t count);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_NET_MDNS_RESPONDER_H_ */

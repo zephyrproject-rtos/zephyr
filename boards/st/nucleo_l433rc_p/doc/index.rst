@@ -26,16 +26,16 @@ Hardware
 The STM32L433RC SoC provides the following hardware IPs:
 
 - Ultra-low-power with FlexPowerControl (down to 28 nA Standby mode and 84
-  |micro| A/MHz run mode)
-- Core: ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU, frequency up to 80 MHz,
+  µA/MHz run mode)
+- Core: ARM® 32-bit Cortex®-M4 CPU with FPU, frequency up to 80 MHz,
   100DMIPS/1.25DMIPS/MHz (Dhrystone 2.1)
 - Clock Sources:
 
   - 32 kHz crystal oscillator for RTC (LSE)
-  - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
-  - Internal low-power 32 kHz RC ( |plusminus| 5%)
+  - Internal 16 MHz factory-trimmed RC (±1%)
+  - Internal low-power 32 kHz RC (±5%)
   - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by
-    LSE (better than |plusminus| 0.25 % accuracy)
+    LSE (better than ±0.25 % accuracy)
   - 2 PLLs for system clock, USB, audio, ADC
 
 - RTC with HW calendar, alarms and calibration
@@ -59,7 +59,7 @@ The STM32L433RC SoC provides the following hardware IPs:
 - Rich analog peripherals (independent supply)
 
   - 1x 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200
-    |micro| A/MSPS
+    µA/MSPS
   - 2x 12-bit DAC output channels, low-power sample and hold
   - 1x operational amplifiers with built-in PGA
   - 2x ultra-low-power comparators
@@ -90,36 +90,9 @@ More information about STM32L433RC can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_l433rc_p board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | can                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 .. note:: CAN feature requires CAN transceiver
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_l433rc_p/nucleo_l433rc_p_defconfig`
-
 
 Connections and IOs
 ===================
@@ -165,6 +138,8 @@ to LPUART1. Default settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Nucleo L433RC-P board includes an ST-LINK/V2-1 embedded debug tool interface.
 

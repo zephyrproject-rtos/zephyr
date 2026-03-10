@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
+#include "bap_stream_rx.h"
+#include "bap_stream_tx.h"
 #include "bstests.h"
 #include "common.h"
 #include "bap_common.h"
@@ -35,6 +37,7 @@ extern enum bst_result_t bst_result;
 
 #define CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_GAME)
 #define LOCATION (BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT)
+#define GMAP_UGG_DEV_ID 0 /* GMAP UGG shall be ID 0 for these tests */
 
 static uint8_t csis_rank = 1;
 
@@ -47,8 +50,9 @@ static const struct bt_bap_qos_cfg_pref unicast_qos_pref =
 
 #define UNICAST_CHANNEL_COUNT_1 BIT(0)
 
-static struct bt_cap_stream
+static struct audio_test_stream
 	unicast_streams[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT + CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
+static bool expect_rx;
 
 CREATE_FLAG(flag_unicast_stream_started);
 CREATE_FLAG(flag_gmap_discovered);
@@ -79,13 +83,53 @@ static void unicast_stream_enabled_cb(struct bt_bap_stream *stream)
 
 static void unicast_stream_started_cb(struct bt_bap_stream *stream)
 {
-	printk("Started: stream %p\n", stream);
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
+	memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
+	test_stream->rx_cnt = 0U;
+	test_stream->valid_rx_cnt = 0U;
+	test_stream->seq_num = 0U;
+	test_stream->tx_cnt = 0U;
+	UNSET_FLAG(test_stream->flag_audio_received);
+
+	printk("Started stream %p\n", stream);
+
+	if (bap_stream_tx_can_send(stream)) {
+		int err;
+
+		err = bap_stream_tx_register(stream);
+		if (err != 0) {
+			FAIL("Failed to register stream %p for TX: %d\n", stream, err);
+			return;
+		}
+	} else if (bap_stream_rx_can_recv(stream)) {
+		expect_rx = true;
+	}
+
 	SET_FLAG(flag_unicast_stream_started);
+}
+
+static void unicast_stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
+{
+	printk("Stopped stream %p with reason 0x%02X\n", stream, reason);
+
+	if (bap_stream_tx_can_send(stream)) {
+		int err;
+
+		err = bap_stream_tx_unregister(stream);
+		if (err != 0) {
+			FAIL("Failed to unregister stream %p for TX: %d\n", stream, err);
+			return;
+		}
+	}
 }
 
 static struct bt_bap_stream_ops unicast_stream_ops = {
 	.enabled = unicast_stream_enabled_cb,
 	.started = unicast_stream_started_cb,
+	.stopped = unicast_stream_stopped,
+	.sent = bap_stream_tx_sent_cb,
+	.recv = bap_stream_rx_recv_cb,
 };
 
 static struct bt_csip_set_member_svc_inst *csip_set_member;
@@ -93,7 +137,8 @@ static struct bt_csip_set_member_svc_inst *csip_set_member;
 static struct bt_bap_stream *unicast_stream_alloc(void)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
-		struct bt_bap_stream *stream = &unicast_streams[i].bap_stream;
+		struct bt_bap_stream *stream =
+			bap_stream_from_audio_test_stream(&unicast_streams[i]);
 
 		if (!stream->conn) {
 			return stream;
@@ -349,6 +394,22 @@ static void discover_gmas(struct bt_conn *conn)
 	WAIT_FOR_FLAG(flag_gmap_discovered);
 }
 
+static void wait_for_data(void)
+{
+	printk("Waiting for data\n");
+
+	ARRAY_FOR_EACH_PTR(unicast_streams, test_stream) {
+		if (bap_stream_rx_can_recv(&test_stream->stream.bap_stream) &&
+		    audio_test_stream_is_streaming(test_stream)) {
+			WAIT_FOR_FLAG(test_stream->flag_audio_received);
+		}
+	}
+
+	printk("Data received\n");
+	/* let initiator know we have received what we wanted */
+	backchannel_sync_send(GMAP_UGG_DEV_ID);
+}
+
 static void test_main(void)
 {
 	/* TODO: Register all GMAP codec capabilities */
@@ -363,7 +424,7 @@ static void test_main(void)
 		.codec_cap = &codec_cap,
 	};
 	struct bt_le_ext_adv *ext_adv;
-	const struct bt_bap_pacs_register_param pacs_param = {
+	const struct bt_pacs_register_param pacs_param = {
 #if defined(CONFIG_BT_PAC_SNK)
 		.snk_pac = true,
 #endif /* CONFIG_BT_PAC_SNK */
@@ -374,7 +435,7 @@ static void test_main(void)
 		.src_pac = true,
 #endif /* CONFIG_BT_PAC_SRC */
 #if defined(CONFIG_BT_PAC_SRC_LOC)
-		.src_loc = true
+		.src_loc = true,
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 	};
 	int err;
@@ -386,6 +447,7 @@ static void test_main(void)
 	}
 
 	printk("Bluetooth initialized\n");
+	bap_stream_tx_init();
 
 	err = bt_pacs_register(&pacs_param);
 	if (err) {
@@ -399,8 +461,7 @@ static void test_main(void)
 			.rank = csis_rank,
 			.lockable = true,
 			/* Using the CSIP_SET_MEMBER test sample SIRK */
-			.sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
-				  0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
+			.sirk = TEST_SAMPLE_SIRK,
 		};
 
 		err = bt_cap_acceptor_register(&csip_set_member_param, &csip_set_member);
@@ -439,7 +500,8 @@ static void test_main(void)
 	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
-		bt_cap_stream_ops_register(&unicast_streams[i], &unicast_stream_ops);
+		bt_cap_stream_ops_register(cap_stream_from_audio_test_stream(&unicast_streams[i]),
+					   &unicast_stream_ops);
 	}
 
 	set_supported_contexts();
@@ -466,6 +528,11 @@ static void test_main(void)
 
 	discover_gmas(default_conn);
 	discover_gmas(default_conn); /* test that we can discover twice */
+
+	/* Wait until the UGG is done starting streams */
+	backchannel_sync_wait(GMAP_UGG_DEV_ID);
+
+	wait_for_data();
 
 	WAIT_FOR_FLAG(flag_disconnected);
 

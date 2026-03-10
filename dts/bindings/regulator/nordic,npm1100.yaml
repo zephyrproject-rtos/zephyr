@@ -5,15 +5,7 @@ description: |
   Nordic nPM1100 PMIC
 
   The PMIC has one buck converter. It needs to be defined as a child node,
-  strictly following the BUCK node name. For example:
-
-  pmic {
-    compatible = "nordic,npm1100";
-
-    BUCK {
-      /* all properties for BUCK */
-    };
-  };
+  strictly following the BUCK node name.
 
   Note that only mode can be controlled (via GPIO pin MODE).
 
@@ -39,3 +31,13 @@ child-binding:
       property-allowlist:
         - regulator-allowed-modes
         - regulator-initial-mode
+
+examples:
+  - |
+    pmic {
+      compatible = "nordic,npm1100";
+
+      BUCK {
+        /* all properties for BUCK */
+      };
+    };

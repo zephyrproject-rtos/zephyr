@@ -82,6 +82,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/sys/bitarray.h>
 #include <zephyr/ipc/icmsg.h>
 #include <zephyr/ipc/ipc_service_backend.h>
@@ -118,7 +119,8 @@ LOG_MODULE_REGISTER(ipc_icbmsg,
 #define FLAG_EPT_COUNT_MASK 0xFFFF
 
 /** Workqueue stack size for bounding processing (this configuration is not optimized). */
-#define EP_BOUND_WORK_Q_STACK_SIZE (512U)
+#define EP_BOUND_WORK_Q_STACK_SIZE \
+	(CONFIG_IPC_SERVICE_BACKEND_ICBMSG_EP_BOUND_WORK_Q_STACK_SIZE)
 
 /** Workqueue priority for bounding processing. */
 #define EP_BOUND_WORK_Q_PRIORITY (CONFIG_SYSTEM_WORKQUEUE_PRIORITY)
@@ -266,7 +268,7 @@ static uint8_t *buffer_from_index_validate(const struct channel_config *ch_conf,
 	if (size != NULL) {
 		if (invalidate_cache) {
 			sys_cache_data_invd_range(block, BLOCK_HEADER_SIZE);
-			__sync_synchronize();
+			barrier_sync_synchronize();
 		}
 		allocable_size = ch_conf->block_count * ch_conf->block_size;
 		end_ptr = ch_conf->blocks_ptr + allocable_size;
@@ -281,7 +283,7 @@ static uint8_t *buffer_from_index_validate(const struct channel_config *ch_conf,
 		*size = buffer_size;
 		if (invalidate_cache) {
 			sys_cache_data_invd_range(block->data, buffer_size);
-			__sync_synchronize();
+			barrier_sync_synchronize();
 		}
 	}
 
@@ -586,7 +588,7 @@ static int send_block(struct backend_data *dev_data, enum msg_type msg_type,
 	block = block_from_index(&dev_data->conf->tx, tx_block_index);
 
 	block->header.size = size;
-	__sync_synchronize();
+	barrier_sync_synchronize();
 	sys_cache_data_flush_range(block, size + BLOCK_HEADER_SIZE);
 
 	r = send_control_message(dev_data, msg_type, ept_addr, tx_block_index);
@@ -1087,7 +1089,6 @@ static int register_ept(const struct device *instance, void **token,
 	struct ept_data *ept = NULL;
 	bool matching_state;
 	int ept_index;
-	int r = 0;
 
 	/* Try to find endpoint to rebound */
 	for (ept_index = 0; ept_index < NUM_EPT; ept_index++) {
@@ -1134,7 +1135,7 @@ static int register_ept(const struct device *instance, void **token,
 	ept_bound_process(dev_data);
 #endif
 
-	return r;
+	return 0;
 }
 
 /**
@@ -1237,8 +1238,13 @@ static int hold_rx_buffer(const struct device *instance, void *token, void *data
 static int release_rx_buffer(const struct device *instance, void *token, void *data)
 {
 	struct backend_data *dev_data = instance->data;
+	int r;
 
-	return send_release(dev_data, (uint8_t *)data, MSG_RELEASE_DATA, 0);
+	r = send_release(dev_data, (uint8_t *)data, MSG_RELEASE_DATA, 0);
+	if (r < 0) {
+		return r;
+	}
+	return 0;
 }
 
 /**
@@ -1251,6 +1257,7 @@ static int backend_init(const struct device *instance)
 #ifdef CONFIG_MULTITHREADING
 	static K_THREAD_STACK_DEFINE(ep_bound_work_q_stack, EP_BOUND_WORK_Q_STACK_SIZE);
 	static bool is_work_q_started;
+	struct k_work_queue_config work_q_cfg = { .name = "icbmsg_workq" };
 
 #if defined(CONFIG_ARCH_POSIX)
 	native_emb_addr_remap((void **)&conf->tx.blocks_ptr);
@@ -1261,7 +1268,7 @@ static int backend_init(const struct device *instance)
 		k_work_queue_init(&ep_bound_work_q);
 		k_work_queue_start(&ep_bound_work_q, ep_bound_work_q_stack,
 				   K_THREAD_STACK_SIZEOF(ep_bound_work_q_stack),
-				   EP_BOUND_WORK_Q_PRIORITY, NULL);
+				   EP_BOUND_WORK_Q_PRIORITY, &work_q_cfg);
 
 		is_work_q_started = true;
 	}
@@ -1408,11 +1415,11 @@ const static struct ipc_service_backend backend_ops = {
 	PBUF_DEFINE(tx_icbmsg_pb_##i,							\
 			GET_MEM_ADDR_INST(i, tx),					\
 			GET_ICMSG_SIZE_INST(i, tx, rx),					\
-			GET_CACHE_ALIGNMENT(i));					\
+			GET_CACHE_ALIGNMENT(i), 0, 0);					\
 	PBUF_DEFINE(rx_icbmsg_pb_##i,							\
 			GET_MEM_ADDR_INST(i, rx),					\
 			GET_ICMSG_SIZE_INST(i, rx, tx),					\
-			GET_CACHE_ALIGNMENT(i));					\
+			GET_CACHE_ALIGNMENT(i), 0, 0);					\
 	static struct backend_data backend_data_##i = {					\
 		.control_data = {							\
 			.tx_pb = &tx_icbmsg_pb_##i,					\
@@ -1424,6 +1431,7 @@ const static struct ipc_service_backend backend_ops = {
 		.control_config = {							\
 			.mbox_tx = MBOX_DT_SPEC_INST_GET(i, tx),			\
 			.mbox_rx = MBOX_DT_SPEC_INST_GET(i, rx),			\
+			.unbound_mode = ICMSG_UNBOUND_MODE_DISABLE,			\
 		},									\
 		.tx = {									\
 			.blocks_ptr = (uint8_t *)GET_BLOCKS_ADDR_INST(i, tx, rx),	\

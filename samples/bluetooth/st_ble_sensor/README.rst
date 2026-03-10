@@ -2,7 +2,7 @@
    :name: ST Bluetooth LE Sensor Demo
    :relevant-api: bt_gatt bluetooth
 
-   Export vendor-specific GATT services over BLE.
+   Export vendor-specific GATT services over Bluetooth.
 
 Overview
 ********
@@ -20,9 +20,6 @@ Requirements
 
 Building and Running
 ********************
-
-This sample can be found under :zephyr_file:`samples/bluetooth/st_ble_sensor` in the
-Zephyr tree.
 
 Open ST Bluetooth LE Sensor app and click on "CONNECT TO A DEVICE" button to scan Bluetooth LE devices.
 To connect click on the device shown in the Device List.

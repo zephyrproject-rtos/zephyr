@@ -27,10 +27,9 @@ target_compile_options(app
   -DCONFIG_WIFI_CREDENTIALS_MAX_ENTRIES=2
   -DCONFIG_WIFI_CREDENTIALS_SAE_PASSWORD_LENGTH=128
   -DCONFIG_WIFI_CREDENTIALS_LOG_LEVEL=4
-  -DCONFIG_WIFI_CREDENTIALS_BACKEND_PSA_OFFSET=5
 )
 
 set_property(
-	SOURCE ${ZEPHYR_BASE}/subsys/net/lib/wifi_credentials/wifi_credentials_backend_psa.c
-	PROPERTY COMPILE_FLAGS "-include ${CMAKE_CURRENT_SOURCE_DIR}/src/normalized_crypto.h"
+  SOURCE ${ZEPHYR_BASE}/subsys/net/lib/wifi_credentials/wifi_credentials_backend_psa.c
+  PROPERTY COMPILE_FLAGS "-include ${CMAKE_CURRENT_SOURCE_DIR}/src/normalized_crypto.h"
 )

@@ -12,7 +12,6 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/kernel.h>
 #include <zephyr/rtio/rtio.h>
-#include <zephyr/drivers/sensor.h>
 
 #define ACCEL_ALIAS(i) DT_ALIAS(_CONCAT(accel, i))
 #define ACCELEROMETER_DEVICE(i, _)                                                           \
@@ -29,7 +28,7 @@ static const struct device *const sensors[] = {LISTIFY(10, ACCELEROMETER_DEVICE,
 
 #define ACCEL_TRIGGERS                                   \
 	{SENSOR_TRIG_FIFO_FULL, SENSOR_STREAM_DATA_INCLUDE}, \
-	{SENSOR_TRIG_FIFO_WATERMARK, SENSOR_STREAM_DATA_DROP}
+	{SENSOR_TRIG_FIFO_WATERMARK, SENSOR_STREAM_DATA_INCLUDE}
 
 #define ACCEL_DEFINE_IODEV(id, _)         \
 	SENSOR_DT_STREAM_IODEV(               \

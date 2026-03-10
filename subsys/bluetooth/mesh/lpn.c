@@ -13,7 +13,6 @@
 #include <zephyr/bluetooth/mesh.h>
 
 #include "crypto.h"
-#include "mesh.h"
 #include "net.h"
 #include "transport.h"
 #include "heartbeat.h"
@@ -254,7 +253,7 @@ static void clear_friendship(bool force, bool disable)
 	/* The timer handler returns without any actions if this fails. */
 	(void)k_work_cancel_delayable(&lpn->timer);
 
-	if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT) || disable) {
+	if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
 		bt_mesh_scan_disable();
 	}
 

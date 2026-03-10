@@ -437,7 +437,7 @@ static void smsc_recv_pkt(struct eth_context *data)
 				rx_buffer[len - 1] = smsc_read_1(sc, DATA0);
 			}
 
-			pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, AF_UNSPEC, 0,
+			pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0,
 							   K_NO_WAIT);
 			if (!pkt) {
 				LOG_ERR("Failed to obtain RX buffer");
@@ -688,8 +688,8 @@ static enum ethernet_hw_caps eth_smsc_get_caps(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return (ETHERNET_LINK_10BASE_T
-		| ETHERNET_LINK_100BASE_T
+	return (ETHERNET_LINK_10BASE
+		| ETHERNET_LINK_100BASE
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE
 #endif
@@ -846,16 +846,6 @@ struct mdio_smsc_config {
 	const struct device *eth_dev;
 };
 
-static void mdio_smsc_bus_disable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-
-static void mdio_smsc_bus_enable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-
 static int mdio_smsc_read(const struct device *dev, uint8_t prtad, uint8_t devad, uint16_t *data)
 {
 	const struct mdio_smsc_config *cfg = dev->config;
@@ -881,8 +871,6 @@ static int mdio_smsc_write(const struct device *dev, uint8_t prtad, uint8_t deva
 }
 
 static DEVICE_API(mdio, mdio_smsc_api) = {
-	.bus_disable = mdio_smsc_bus_disable,
-	.bus_enable = mdio_smsc_bus_enable,
 	.read = mdio_smsc_read,
 	.write = mdio_smsc_write,
 };

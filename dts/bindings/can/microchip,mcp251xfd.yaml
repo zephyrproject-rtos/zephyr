@@ -4,24 +4,6 @@
 description: |
   Microchip MCP251XFD SPI CAN FD controller
 
-  The MCP251XFD node is defined on an SPI bus. An example
-  configuration is:
-
-  &mikrobus_spi {
-      cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
-
-      mcp2518fd_mikroe_mcp2518fd_click: mcp2518fd@0 {
-          compatible = "microchip,mcp251xfd";
-          status = "okay";
-
-          spi-max-frequency = <18000000>;
-          int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
-          reg = <0x0>;
-          osc-freq = <40000000>;
-
-      };
-  };
-
 compatible: "microchip,mcp251xfd"
 
 include: [spi-device.yaml, can-fd-controller.yaml]
@@ -65,6 +47,10 @@ properties:
       is not set, then an internal clock (typically 40MHz or 20MHz) will be
       output on CLKO pin instead.
 
+  xstby-enable:
+    type: boolean
+    description: Enables standby pin control on GPIO0.
+
   clko-div:
     type: int
     description: The factor to divide the system clock for CLKO pin.
@@ -74,3 +60,20 @@ properties:
       - 2
       - 4
       - 10
+
+examples:
+  - |
+    &mikrobus_spi {
+        cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+
+        mcp2518fd_mikroe_mcp2518fd_click: mcp2518fd@0 {
+            compatible = "microchip,mcp251xfd";
+            status = "okay";
+
+            spi-max-frequency = <18000000>;
+            int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+            reg = <0x0>;
+            osc-freq = <40000000>;
+
+        };
+    };

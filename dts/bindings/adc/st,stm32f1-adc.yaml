@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-        ST STM32F1 family ADC
+        STM32F1 ADC
+
         This compatible stands for all ADC blocks similar to the one on STM32F1,
         like STM32F37x.
         Remove the st,adc-clock-source and st,adc-prescaler property.

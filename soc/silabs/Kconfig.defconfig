@@ -3,7 +3,7 @@
 
 rsource "*/Kconfig.defconfig"
 
-if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
+if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1
 
 config SOC_GECKO_EMU
 	default y
@@ -12,14 +12,5 @@ config SOC_GECKO_EMU
 
 config CORTEX_M_SYSTICK
 	default n if GECKO_BURTC_TIMER
-
-# With sl_power_manager, pm_state_set()'s stack footrpting is noticeably
-# large, especially with logs enabled. Since it is called from IDLE task,
-# its stack size has to be increased
-config IDLE_STACK_SIZE
-	default 512 if SOC_GECKO_PM_BACKEND_PMGR
-
-configdefault NUM_METAIRQ_PRIORITIES
-	default 1 if BT_SILABS_EFR32
 
 endif

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-board_runner_args(openocd "--use-elf")
+board_runner_args(openocd "--file-type=elf")
 
 if(${CONFIG_MP_MAX_NUM_CPUS} EQUAL 2)
   board_runner_args(openocd "--config=${CMAKE_CURRENT_LIST_DIR}/support/openocd-2-cores.cfg")

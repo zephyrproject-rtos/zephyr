@@ -4,8 +4,8 @@ Overview
 ********
 
 UDOO Neo Full is an open source Arduino Uno compatible single board computer.
-It is equipped with an NXP |reg| i.MX 6SoloX hybrid multicore processor
-composed of one ARM |reg| Cortex-A9 core running up to 1 GHz and one Cortex-M4
+It is equipped with an NXP® i.MX 6SoloX hybrid multicore processor
+composed of one ARM® Cortex-A9 core running up to 1 GHz and one Cortex-M4
 core running up to 227 MHz for high CPU performance and real-time response.
 Zephyr was ported to run on the Cortex-M4 core only. In a future release, it
 will also communicate with the Cortex-A9 core (running Linux) via OpenAMP.
@@ -106,29 +106,7 @@ see these references:
 Supported Features
 ==================
 
-The UDOO Neo Full board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | general purpose input/output        |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-
-	:zephyr_file:`boards/udoo/udoo_neo_full/udoo_neo_full_mcimx6x_m4_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -159,6 +137,8 @@ remaining are used by the A9 core or not used.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The M4 core does not have a flash memory and is not provided a clock
 at power-on-reset. Therefore it needs to be started by the A9 core.

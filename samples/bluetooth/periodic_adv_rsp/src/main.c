@@ -36,7 +36,7 @@ static const struct bt_le_per_adv_param per_adv_params = {
 	.options = 0,
 	.num_subevents = NUM_SUBEVENTS,
 	.subevent_interval = 0x30,
-	.response_slot_delay = 0x5,
+	.response_slot_delay = 0x8,
 	.response_slot_spacing = 0x50,
 	.num_response_slots = NUM_RSP_SLOTS,
 };
@@ -377,7 +377,7 @@ int main(void)
 		printk("PAwR config written to sync %d, disconnecting\n", num_synced - 1);
 
 disconnect:
-		/* Adding delay (2ms * interval value, using 2ms intead of the 1.25ms
+		/* Adding delay (2ms * interval value, using 2ms instead of the 1.25ms
 		 * used by controller) to ensure sync is established before
 		 * disconnection.
 		 */

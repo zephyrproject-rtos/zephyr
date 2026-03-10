@@ -4,25 +4,28 @@ type: mcu
 arch: arm
 toolchain:
   - zephyr
-ram: 640
+ram: 256
 flash: 2048
 supported:
-  - arduino_gpio
-  - gpio
-  - uart
-  - watchdog
-  - entropy
-  - dma
   - adc
-  - dac
-  - netif:eth
-  - pwm
-  - counter
-  - spi
-  - octospi
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
   - can
-  - usb_device
+  - counter
+  - dac
+  - dma
+  - entropy
+  - gpio
   - i2c
+  - netif:eth
+  - octospi
+  - pwm
   - rtc
+  - spi
+  - uart
+  - usb_device
   - usbd
+  - watchdog
 vendor: st

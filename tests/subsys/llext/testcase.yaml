@@ -14,9 +14,9 @@ common:
     - qemu_cortex_r5          # ARM Cortex-R5 (ARMv7-R ISA)
     - mps2/an385              # ARM Cortex-M3 (ARMv7-M ISA)
     - mps2/an521/cpu0         # ARM Cortex-M33 (ARMv8-M ISA)
-  filter: not CONFIG_HARVARD
   extra_configs:
     - arch:arm64:CONFIG_LLEXT_HEAP_SIZE=128
+    - arch:arm64:CONFIG_LLEXT_EXT_HEAP_SIZE=64
   extra_conf_files:
     - prj.conf
   min_ram: 172                # Size on arm: max: 145, min: 79
@@ -39,50 +39,123 @@ tests:
       - arm
       - riscv
       - arc
+      - x86
     filter: not CONFIG_MPU and not CONFIG_MMU
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_RODATA_NO_RELOC=y
+  llext.readonly.memblk:
+    arch_allow:               # Xtensa needs writable storage
+      - arm
+      - riscv
+      - arc
+      - x86
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_RODATA_NO_RELOC=y
+      - CONFIG_LLEXT_HEAP_MEMBLK=y
+      - arch:arc:CONFIG_LLEXT_EXT_HEAP_SIZE=64
+      - arch:arc:CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE=2048
   llext.readonly_mpu:
-    arch_allow: arm # Xtensa needs writable storage, currently not supported on RISC-V
+    arch_allow:
+      - arm # Xtensa needs writable storage, currently not supported on RISC-V
+      - arc
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_configs:
       - CONFIG_USERSPACE=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
+  llext.readonly_mpu.memblk:
+    arch_allow:
+      - arm # Xtensa needs writable storage, currently not supported on RISC-V
+      - arc
+    filter: CONFIG_ARCH_HAS_USERSPACE and not CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+    extra_configs:
+      - CONFIG_USERSPACE=y
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_HEAP_MEMBLK=y
+  llext.readonly_mpu.memblk.power_of_two_alignment:
+    arch_allow:
+      - arm # Xtensa needs writable storage, currently not supported on RISC-V
+      - arc
+    filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+    extra_configs:
+      - CONFIG_USERSPACE=y
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_HEAP_MEMBLK=y
+      - CONFIG_LLEXT_EXT_HEAP_SIZE=64
+      - CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE=8192
   llext.readonly_mmu:
     arch_allow:
       - arm64
       - arm
       - riscv
+      - x86
     filter: CONFIG_MMU or CONFIG_RISCV_PMP
     integration_platforms:
       - qemu_cortex_a53         # ARM Cortex-A53 (ARMv8-A ISA)
     extra_configs:
       - CONFIG_LLEXT_HEAP_SIZE=128 # qemu_cortex_a9 requires larger heap
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_RODATA_NO_RELOC=y
+  llext.readonly_mmu.memblk:
+    arch_allow:
+      - arm64
+      - arm
+      - riscv
+      - x86
+    filter: CONFIG_MMU or CONFIG_RISCV_PMP
+    integration_platforms:
+      - qemu_cortex_a53         # ARM Cortex-A53 (ARMv8-A ISA)
+    extra_configs:
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_RODATA_NO_RELOC=y
+      - CONFIG_LLEXT_HEAP_MEMBLK=y
+      - CONFIG_LLEXT_EXT_HEAP_SIZE=64
+      - CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE=4096
   llext.writable:
     arch_allow:
       - arm
       - xtensa
       - riscv
       - arc
+      - x86
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
+  llext.writable.memblk:
+    arch_allow:
+      - arm
+      - xtensa
+      - riscv
+      - arc
+      - x86
+    platform_exclude:
+      - qemu_arc/qemu_arc_hs5x     # See #80949
+      - nsim/nsim_hs5x             # See #80949
+      - nsim/nsim_hs5x/smp         # See #80949
+      - nsim/nsim_hs5x/smp/12cores # See #80949
+    integration_platforms:
+      - qemu_xtensa/dc233c      # Xtensa ISA
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT_STORAGE_WRITABLE=y
+      - CONFIG_LLEXT_HEAP_MEMBLK=y
+      - arch:arc:CONFIG_LLEXT_EXT_HEAP_SIZE=64
+      - arch:arc:CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE=2048
   llext.writable_relocatable:
     arch_allow:
       - arm
       - xtensa
       - riscv
       - arc
-    platform_exclude:
-      - qemu_arc/qemu_arc_hs5x     # See #80949
-      - nsim/nsim_hs5x             # See #80949
-      - nsim/nsim_hs5x/smp         # See #80949
-      - nsim/nsim_hs5x/smp/12cores # See #80949
+      - x86
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
@@ -99,6 +172,7 @@ tests:
       - xtensa
       - riscv
       - arc
+      - x86
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
@@ -112,11 +186,7 @@ tests:
       - xtensa
       - riscv
       - arc
-    platform_exclude:
-      - qemu_arc/qemu_arc_hs5x     # See #80949
-      - nsim/nsim_hs5x             # See #80949
-      - nsim/nsim_hs5x/smp         # See #80949
-      - nsim/nsim_hs5x/smp/12cores # See #80949
+      - x86
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
@@ -143,3 +213,13 @@ tests:
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
       - CONFIG_LLEXT_EXPORT_DEV_IDS_BY_HASH=y
       - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
+
+  # Test dynamic heap allocation
+  llext.dynamic_heap:
+    arch_allow:
+      - arm
+      - arc
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT_HEAP_DYNAMIC=y

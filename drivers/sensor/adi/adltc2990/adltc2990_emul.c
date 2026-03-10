@@ -1,6 +1,6 @@
 /*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
  * SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
- * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -20,7 +20,7 @@
 
 LOG_MODULE_DECLARE(adltc2990, CONFIG_SENSOR_LOG_LEVEL);
 
-#define ADLTC2990_NUM_REGS ADLTC2990_REG_VCC_LSB
+#define ADLTC2990_NUM_REGS ADLTC2990_REG_VCC_LSB + 1
 
 struct adltc2990_emul_data {
 	uint8_t reg[ADLTC2990_NUM_REGS];
@@ -75,6 +75,7 @@ static int adltc2990_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 				       int num_msgs, int addr)
 {
 	struct adltc2990_emul_data *data = target->data;
+	uint8_t regn = msgs->buf[0];
 
 	i2c_dump_msgs_rw(target->dev, msgs, num_msgs, addr, false);
 
@@ -91,7 +92,6 @@ static int adltc2990_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 		return -EIO;
 	}
 
-	uint8_t regn = msgs->buf[0];
 	bool is_read = FIELD_GET(I2C_MSG_READ, msgs->flags) == 1;
 	bool is_stop = FIELD_GET(I2C_MSG_STOP, msgs->flags) == 1;
 

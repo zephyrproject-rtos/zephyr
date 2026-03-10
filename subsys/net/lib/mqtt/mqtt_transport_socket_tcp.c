@@ -20,19 +20,39 @@ LOG_MODULE_REGISTER(net_mqtt_sock_tcp, CONFIG_MQTT_LOG_LEVEL);
 
 int mqtt_client_tcp_connect(struct mqtt_client *client)
 {
-	const struct sockaddr *broker = client->broker;
+	const struct net_sockaddr *broker = client->broker;
 	int ret;
 
-	client->transport.tcp.sock = zsock_socket(broker->sa_family, SOCK_STREAM,
-						  IPPROTO_TCP);
+	client->transport.tcp.sock = zsock_socket(broker->sa_family, NET_SOCK_STREAM,
+						  NET_IPPROTO_TCP);
 	if (client->transport.tcp.sock < 0) {
 		return -errno;
+	}
+
+	NET_DBG("Created socket %d", client->transport.tcp.sock);
+
+	if (client->transport.if_name != NULL) {
+		struct net_ifreq ifname = { 0 };
+
+		strncpy(ifname.ifr_name, client->transport.if_name,
+			sizeof(ifname.ifr_name) - 1);
+
+		ret = zsock_setsockopt(client->transport.tcp.sock, ZSOCK_SOL_SOCKET,
+				       ZSOCK_SO_BINDTODEVICE, &ifname,
+				       sizeof(struct net_ifreq));
+		if (ret < 0) {
+			NET_ERR("Failed to bind ot interface %s error (%d)",
+				ifname.ifr_name, -errno);
+			goto error;
+		}
+
+		NET_DBG("Bound to interface %s", ifname.ifr_name);
 	}
 
 #if defined(CONFIG_SOCKS)
 	if (client->transport.proxy.addrlen != 0) {
 		ret = setsockopt(client->transport.tcp.sock,
-				 SOL_SOCKET, SO_SOCKS5,
+				 ZSOCK_SOL_SOCKET, ZSOCK_SO_SOCKS5,
 				 &client->transport.proxy.addr,
 				 client->transport.proxy.addrlen);
 		if (ret < 0) {
@@ -41,12 +61,10 @@ int mqtt_client_tcp_connect(struct mqtt_client *client)
 	}
 #endif
 
-	NET_DBG("Created socket %d", client->transport.tcp.sock);
+	size_t peer_addr_size = sizeof(struct net_sockaddr_in6);
 
-	size_t peer_addr_size = sizeof(struct sockaddr_in6);
-
-	if (broker->sa_family == AF_INET) {
-		peer_addr_size = sizeof(struct sockaddr_in);
+	if (broker->sa_family == NET_AF_INET) {
+		peer_addr_size = sizeof(struct net_sockaddr_in);
 	}
 
 	ret = zsock_connect(client->transport.tcp.sock, client->broker,
@@ -83,7 +101,7 @@ int mqtt_client_tcp_write(struct mqtt_client *client, const uint8_t *data,
 }
 
 int mqtt_client_tcp_write_msg(struct mqtt_client *client,
-			      const struct msghdr *message)
+			      const struct net_msghdr *message)
 
 {
 	int ret, i;
@@ -105,7 +123,7 @@ int mqtt_client_tcp_write_msg(struct mqtt_client *client,
 			break;
 		}
 
-		/* Update msghdr for the next iteration. */
+		/* Update net_msghdr for the next iteration. */
 		for (i = 0; i < message->msg_iovlen; i++) {
 			if (ret < message->msg_iov[i].iov_len) {
 				message->msg_iov[i].iov_len -= ret;

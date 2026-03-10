@@ -24,10 +24,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		blue_led: led_2 {
 			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
@@ -114,12 +116,12 @@
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	lora: lora@0 {
 		compatible = "semtech,sx1262";
 		reg = <0>;
 		reset-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
 		busy-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
-		tx-enable-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 		rx-enable-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 		dio1-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
 		dio2-tx-enable;

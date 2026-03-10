@@ -5,14 +5,15 @@
  */
 
 /dts-v1/;
-#include <renesas/ra/r7fa4m1ab3cfm.dtsi>
+#include <renesas/ra/ra4/r7fa4m1ab3cfm.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
+
+#include "mikroe_clicker_ra4m1-pinctrl.dtsi"
 
 / {
 	model = "Mikroe Clicker RA4M1";
-	compatible = "renesas,r7fa4m1ab3cfm";
+	compatible = "renesas,ra4m1", "renesas,ra";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -23,10 +24,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		ld1: led_1 {
 			gpios = <&ioport4 9 GPIO_ACTIVE_HIGH>;
 			label = "User LED 1";
 		};
+
 		ld2: led_2 {
 			gpios = <&ioport4 8 GPIO_ACTIVE_HIGH>;
 			label = "User LED 2";
@@ -35,10 +38,17 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		btn1: button_1 {
 			gpios = <&ioport3 4 GPIO_ACTIVE_LOW>;
 			label = "User Button 1";
 			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		btn2: button_2 {
+			gpios = <&ioport3 1 GPIO_ACTIVE_LOW>;
+			label = "User Button 2";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 
@@ -47,41 +57,29 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &ioport0 0 0>,	/* AN  */
-				<1 0 &ioport4 7 0>,		/* RST */
-				<2 0 &ioport1 3 0>,		/* CS   */
-				<3 0 &ioport1 2 0>,		/* SCK  */
-				<4 0 &ioport1 0 0>,		/* MISO */
-				<5 0 &ioport1 1 0>,		/* MOSI */
-							/* +3.3V */
-							/* GND */
-				<6 0 &ioport1 7 0>,		/* PWM  */
-				<7 0 &ioport3 2 0>,		/* INT  */
-				<8 0 &ioport4 10 0>,	/* RX   */
-				<9 0 &ioport4 11 0>,	/* TX   */
-				<10 0 &ioport2 5 0>,	/* SCL  */
-				<11 0 &ioport2 6 0>;	/* SDA  */
-							/* +5V */
-							/* GND */
+		gpio-map = <0 0 &ioport0 0 0>,	/* AN  */
+			   <1 0 &ioport4 7 0>,		/* RST */
+			   <2 0 &ioport1 3 0>,		/* CS   */
+			   <3 0 &ioport1 2 0>,		/* SCK  */
+			   <4 0 &ioport1 0 0>,		/* MISO */
+			   <5 0 &ioport1 1 0>,		/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &ioport1 7 0>,		/* PWM  */
+			   <7 0 &ioport3 2 0>,		/* INT  */
+			   <8 0 &ioport4 10 0>,	/* RX   */
+			   <9 0 &ioport4 11 0>,	/* TX   */
+			   <10 0 &ioport2 5 0>,	/* SCL  */
+			   <11 0 &ioport2 6 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
 	};
 
 	aliases {
 		led0 = &ld1;
 		led1 = &ld2;
 		sw0 = &btn1;
-	};
-};
-
-&pinctrl {
-	sci0_default: sci0_default {
-		group1 {
-			/* tx */
-			psels = <RA_PSEL(RA_PSEL_SCI_0, 4, 11)>;
-		};
-		group2 {
-			/* rx */
-			psels = <RA_PSEL(RA_PSEL_SCI_0, 4, 10)>;
-		};
+		sw1 = &btn2;
 	};
 };
 
@@ -89,10 +87,30 @@
 	status = "okay";
 	pinctrl-0 = <&sci0_default>;
 	pinctrl-names = "default";
+
 	uart0: uart {
 		current-speed = <115200>;
 		status = "okay";
 	};
+};
+
+&iic1 {
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_K(400)>;
+	interrupts = <10 1>, <11 1>, <12 1>, <13 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	interrupts = <23 1>, <24 1>, <25 1>, <26 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
 };
 
 &ioport0 {
@@ -115,7 +133,13 @@
 	status = "okay";
 };
 
-&fcu {
+&port_irq6 {
+	interrupts = <28 12>;
+	status = "okay";
+};
+
+&port_irq9 {
+	interrupts = <27 12>;
 	status = "okay";
 };
 
@@ -129,6 +153,7 @@
 };
 
 &iclk {
+	clock-frequency = <12000000>;
 	div = <1>;
 };
 
@@ -151,3 +176,9 @@
 &fclk {
 	div = <2>;
 };
+
+mikrobus_serial: &uart0 {};
+
+mikrobus_i2c: &iic1 {};
+
+mikrobus_spi: &spi0 {};

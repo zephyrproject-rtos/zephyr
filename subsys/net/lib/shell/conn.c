@@ -38,20 +38,19 @@ static void context_cb(struct net_context *context, void *user_data)
 	PR("[%2d] %p\t%d      %c%c%c   %16s\t%16s\n",
 	   (*count) + 1, context,
 	   net_if_get_by_iface(net_context_get_iface(context)),
-	   net_context_get_family(context) == AF_INET6 ? '6' :
-	   (net_context_get_family(context) == AF_INET ? '4' : ' '),
-	   net_context_get_type(context) == SOCK_DGRAM ? 'D' :
-	   (net_context_get_type(context) == SOCK_STREAM ? 'S' :
-	    (net_context_get_type(context) == SOCK_RAW ? 'R' : ' ')),
-	   net_context_get_proto(context) == IPPROTO_UDP ? 'U' :
-	   (net_context_get_proto(context) == IPPROTO_TCP ? 'T' : ' '),
+	   net_context_get_family(context) == NET_AF_INET6 ? '6' :
+	   (net_context_get_family(context) == NET_AF_INET ? '4' : ' '),
+	   net_context_get_type(context) == NET_SOCK_DGRAM ? 'D' :
+	   (net_context_get_type(context) == NET_SOCK_STREAM ? 'S' :
+	    (net_context_get_type(context) == NET_SOCK_RAW ? 'R' : ' ')),
+	   net_context_get_proto(context) == NET_IPPROTO_UDP ? 'U' :
+	   (net_context_get_proto(context) == NET_IPPROTO_TCP ? 'T' : ' '),
 	   addr_local, addr_remote);
 
 	(*count)++;
 }
 #endif /* CONFIG_NET_OFFLOAD || CONFIG_NET_NATIVE */
 
-#if CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG
 static void conn_handler_cb(struct net_conn *conn, void *user_data)
 {
 #if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
@@ -68,41 +67,42 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 	char addr_local[ADDR_LEN + 7];
 	char addr_remote[ADDR_LEN + 7] = "";
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && conn->local_addr.sa_family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && conn->local_addr.sa_family == NET_AF_INET6) {
 		snprintk(addr_local, sizeof(addr_local), "[%s]:%u",
 			 net_sprint_ipv6_addr(
 				 &net_sin6(&conn->local_addr)->sin6_addr),
-			 ntohs(net_sin6(&conn->local_addr)->sin6_port));
+			 net_ntohs(net_sin6(&conn->local_addr)->sin6_port));
 		snprintk(addr_remote, sizeof(addr_remote), "[%s]:%u",
 			 net_sprint_ipv6_addr(
 				 &net_sin6(&conn->remote_addr)->sin6_addr),
-			 ntohs(net_sin6(&conn->remote_addr)->sin6_port));
+			 net_ntohs(net_sin6(&conn->remote_addr)->sin6_port));
 
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && conn->local_addr.sa_family == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && conn->local_addr.sa_family == NET_AF_INET) {
 		snprintk(addr_local, sizeof(addr_local), "%s:%d",
 			 net_sprint_ipv4_addr(
 				 &net_sin(&conn->local_addr)->sin_addr),
-			 ntohs(net_sin(&conn->local_addr)->sin_port));
+			 net_ntohs(net_sin(&conn->local_addr)->sin_port));
 		snprintk(addr_remote, sizeof(addr_remote), "%s:%d",
 			 net_sprint_ipv4_addr(
 				 &net_sin(&conn->remote_addr)->sin_addr),
-			 ntohs(net_sin(&conn->remote_addr)->sin_port));
+			 net_ntohs(net_sin(&conn->remote_addr)->sin_port));
 
-	} else if (conn->local_addr.sa_family == AF_UNSPEC) {
+	} else if (conn->local_addr.sa_family == NET_AF_UNSPEC) {
 		snprintk(addr_local, sizeof(addr_local), "AF_UNSPEC");
+	} else if (conn->local_addr.sa_family == NET_AF_PACKET) {
+		snprintk(addr_local, sizeof(addr_local), "AF_PACKET");
 	} else {
 		snprintk(addr_local, sizeof(addr_local), "AF_UNK(%d)",
 			 conn->local_addr.sa_family);
 	}
 
-	PR("[%2d] %p %p\t%s\t%16s\t%16s\n",
+	PR("[%2d] %p %p  %s\t%16s\t%16s\n",
 	   (*count) + 1, conn, conn->cb,
 	   net_proto2str(conn->local_addr.sa_family, conn->proto),
 	   addr_local, addr_remote);
 
 	(*count)++;
 }
-#endif /* CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 #if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
 struct tcp_detail_info {
@@ -123,8 +123,8 @@ static void tcp_cb(struct tcp *conn, void *user_data)
 
 	PR("%p %p   %5u    %5u %10u %10u %5u   %s\n",
 	   conn, conn->context,
-	   ntohs(net_sin6_ptr(&conn->context->local)->sin6_port),
-	   ntohs(net_sin6(&conn->context->remote)->sin6_port),
+	   net_ntohs(net_sin6_ptr(&conn->context->local)->sin6_port),
+	   net_ntohs(net_sin6(&conn->context->remote)->sin6_port),
 	   conn->seq, conn->ack, recv_mss,
 	   net_tcp_state_str(net_tcp_get_state(conn)));
 
@@ -147,11 +147,11 @@ static void tcp_sent_list_cb(struct tcp *conn, void *user_data)
 			details->printed_details = true;
 		}
 
-		PR("%p   %ld    %u\t %u\t  %zd\t  %d\t  %d/%d/%d %s\n",
-		   conn, atomic_get(&conn->ref_count), conn->recv_win,
-		   conn->send_win, conn->send_data_total, conn->unacked_len,
-		   conn->in_retransmission, conn->in_connect, conn->in_close,
-		   sys_slist_is_empty(&conn->send_queue) ? "empty" : "data");
+		PR("%p   %ld    %u\t %u\t  %zd\t  %d\t  %d/%d/%d %s\n", conn,
+		   atomic_get(&conn->ref_count), conn->recv_win, conn->send_win,
+		   conn->send_data_total, conn->unacked_len,
+		   conn->data_mode == TCP_DATA_MODE_RESEND ? 1 : 0, conn->in_connect,
+		   conn->in_close, sys_slist_is_empty(&conn->send_queue) ? "empty" : "data");
 
 		details->count++;
 	}
@@ -227,8 +227,7 @@ static int cmd_net_conn(const struct shell *sh, size_t argc, char *argv[])
 		PR("No connections\n");
 	}
 
-#if CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG
-	PR("\n     Handler    Callback  \tProto\tLocal           \tRemote\n");
+	PR("\n     Handler    Callback  Proto            Local                  Remote\n");
 
 	count = 0;
 
@@ -237,7 +236,6 @@ static int cmd_net_conn(const struct shell *sh, size_t argc, char *argv[])
 	if (count == 0) {
 		PR("No connection handlers found.\n");
 	}
-#endif
 
 #if defined(CONFIG_NET_TCP)
 	PR("\nTCP        Context   Src port Dst port   "

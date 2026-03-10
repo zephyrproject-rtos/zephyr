@@ -23,25 +23,20 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   )
 
   if(CONFIG_CMAKE_LINKER_GENERATOR)
-    file(GENERATE OUTPUT ${cmake_linker_script_settings} CONTENT
-         "set(FORMAT \"$<TARGET_PROPERTY:linker,FORMAT>\" CACHE INTERNAL \"\")\n
-          set(ENTRY \"$<TARGET_PROPERTY:linker,ENTRY>\" CACHE INTERNAL \"\")\n
-          set(MEMORY_REGIONS \"$<TARGET_PROPERTY:linker,MEMORY_REGIONS>\" CACHE INTERNAL \"\")\n
-          set(GROUPS \"$<TARGET_PROPERTY:linker,GROUPS>\" CACHE INTERNAL \"\")\n
-          set(SECTIONS \"$<TARGET_PROPERTY:linker,SECTIONS>\" CACHE INTERNAL \"\")\n
-          set(SECTION_SETTINGS \"$<TARGET_PROPERTY:linker,SECTION_SETTINGS>\" CACHE INTERNAL \"\")\n
-          set(SYMBOLS \"$<TARGET_PROPERTY:linker,SYMBOLS>\" CACHE INTERNAL \"\")\n
-         "
-    )
+
+    zephyr_linker_generate_linker_settings_file(${cmake_linker_script_settings})
+
     add_custom_command(
       OUTPUT ${linker_script_gen}
+      DEPENDS
+        ${extra_dependencies}
+        ${cmake_linker_script_settings}
+        ${DEVICE_API_LD_TARGET}
       COMMAND ${CMAKE_COMMAND}
-        -C ${DEVICE_API_LINKER_SECTIONS_CMAKE}
         -C ${cmake_linker_script_settings}
         -DPASS="${linker_pass_define}"
         -DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}
         -P ${ZEPHYR_BASE}/cmake/linker/ld/ld_script.cmake
-      DEPENDS ${DEVICE_API_LD_TARGET}
     )
   else()
     set(template_script_defines ${linker_pass_define})
@@ -129,7 +124,7 @@ function(toolchain_ld_link_elf)
     ${TOOLCHAIN_LD_LINK_ELF_LINKER_SCRIPT}
     ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_POST_SCRIPT}
 
-    ${LINKERFLAGPREFIX},-Map=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
+    ${LINKERFLAGPREFIX},-Map,${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
     ${LINKERFLAGPREFIX},--whole-archive
     ${WHOLE_ARCHIVE_LIBS}
     ${LINKERFLAGPREFIX},--no-whole-archive
@@ -164,14 +159,24 @@ macro(toolchain_linker_finalize)
 
   set(cpp_link "${common_link}")
   if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "host")
-    if(CONFIG_CPP_EXCEPTIONS AND LIBGCC_DIR)
+    compiler_file_path(crtbegin.o CRTBEGIN_PATH)
+    compiler_file_path(crtend.o CRTEND_PATH)
+    if(CONFIG_CPP_EXCEPTIONS AND CRTBEGIN_PATH AND CRTEND_PATH)
       # When building with C++ Exceptions, it is important that crtbegin and crtend
       # are linked at specific locations.
-      set(cpp_link "<LINK_FLAGS> ${LIBGCC_DIR}/crtbegin.o ${link_libraries} ${LIBGCC_DIR}/crtend.o")
+      set(cpp_link "<LINK_FLAGS> ${CRTBEGIN_PATH} ${link_libraries} ${CRTEND_PATH}")
     endif()
   endif()
   set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> ${cpp_link}")
 endmacro()
+
+# Function to map compiler flags into suitable linker flags
+# When using the compiler driver to run the linker, just pass
+# them all through
+
+function(toolchain_linker_add_compiler_options)
+  add_link_options(${ARGV})
+endfunction()
 
 # Load toolchain_ld-family macros
 include(${ZEPHYR_BASE}/cmake/linker/${LINKER}/target_relocation.cmake)

@@ -10,6 +10,7 @@ supported:
   - dma
   - i2c
   - gpio
+  - display
   - serial
   - trng
   - watchdog
@@ -19,5 +20,5 @@ supported:
   - pwm
   - w1
   - flash
-ram: 560
+ram: 128
 flash: 1024

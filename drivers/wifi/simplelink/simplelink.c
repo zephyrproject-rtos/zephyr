@@ -192,7 +192,7 @@ static int simplelink_mgmt_disconnect(const struct device *dev)
 	return ret ? -EIO : ret;
 }
 
-static int simplelink_dummy_get(sa_family_t family,
+static int simplelink_dummy_get(net_sa_family_t family,
 				enum net_sock_type type,
 				enum net_ip_protocol ip_proto,
 				struct net_context **context)

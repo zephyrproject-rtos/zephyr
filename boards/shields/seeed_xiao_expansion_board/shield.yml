@@ -1,0 +1,9 @@
+shield:
+  name: seeed_xiao_expansion_board
+  full_name: Expansion Board Base for XIAO
+  vendor: seeed
+  supported_features:
+    - input
+    - rtc
+    - display
+    - sdhc

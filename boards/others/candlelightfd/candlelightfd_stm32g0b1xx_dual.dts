@@ -21,7 +21,7 @@
 };
 
 &fdcan2 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00001000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 12)>,
 		 <&rcc STM32_SRC_PLL_Q FDCAN_SEL(1)>;
 	pinctrl-0 = <&fdcan2_rx_pb0 &fdcan2_tx_pb1>;
 	pinctrl-names = "default";

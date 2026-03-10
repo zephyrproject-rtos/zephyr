@@ -1,4 +1,4 @@
-/* Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com> */
+/* Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com> */
 /* SPDX-License-Identifier: Apache-2.0 */
 
 / {
@@ -25,6 +25,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led_0: led_0 {
 			gpios = <&gpio_led0 0>;
 			label = "USERLED0";
@@ -38,6 +39,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_0: button_0 {
 			label = "USERPB0";
 			gpios = <&gpio_button 0>;
@@ -145,6 +147,8 @@
 			interrupt-names = "tx", "rx";
 			clocks = <&sysclk>;
 			current-speed = <115200>;
+			pinctrl-0 = <&uart3_default>;
+			pinctrl-names = "default";
 		};
 
 		wdog0: wdog@40008000 {
@@ -160,6 +164,8 @@
 			interrupt-names = "tx", "rx";
 			clocks = <&sysclk>;
 			current-speed = <115200>;
+			pinctrl-0 = <&uart4_default>;
+			pinctrl-names = "default";
 		};
 
 		gpio0: gpio@40010000 {
@@ -225,6 +231,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40029000 0x1000>;
+			pinctrl-0 = <&sbcon0_default>;
+			pinctrl-names = "default";
 		};
 
 		i2c_shield1: i2c@4002a000 {
@@ -233,10 +241,12 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x4002a000 0x1000>;
+			pinctrl-0 = <&sbcon1_default>;
+			pinctrl-names = "default";
 		};
 
 		gpio_led0: mps2_fpgaio@40028000 {
-			compatible = "arm,mps2-fpgaio-gpio";
+			compatible = "arm,mmio32-gpio";
 			reg = <0x40028000 0x4>;
 			gpio-controller;
 			#gpio-cells = <1>;
@@ -244,23 +254,31 @@
 		};
 
 		gpio_button: mps2_fpgaio@40028008 {
-			compatible = "arm,mps2-fpgaio-gpio";
+			compatible = "arm,mmio32-gpio";
 			reg = <0x40028008 0x4>;
 			gpio-controller;
 			#gpio-cells = <1>;
 			ngpios = <2>;
+			direction-input;
 		};
 
 		gpio_misc: mps2_fpgaio@4002804c {
-			compatible = "arm,mps2-fpgaio-gpio";
+			compatible = "arm,mmio32-gpio";
 			reg = <0x4002804c 0x4>;
 			gpio-controller;
 			#gpio-cells = <1>;
 			ngpios = <10>;
 		};
 	};
+
+	pinctrl: pinctrl {
+		compatible = "arm,mps2-pinctrl";
+		status = "okay";
+	};
 };
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+
+#include "mps2-pinctrl.dtsi"

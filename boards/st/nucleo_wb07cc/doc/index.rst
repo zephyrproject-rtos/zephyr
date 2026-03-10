@@ -3,9 +3,9 @@
 Overview
 ********
 
-The Nucleo WB07CC board is a Bluetooth |reg| Low Energy wireless and ultra-low-power
-board featuring an ARM Cortex |reg|-M0+ based STM32WB07CCV MCU, embedding a
-powerful and ultra-low-power radio compliant with the Bluetooth |reg| Low Energy
+The Nucleo WB07CC board is a Bluetooth® Low Energy wireless and ultra-low-power
+board featuring an ARM Cortex®-M0+ based STM32WB07CCV MCU, embedding a
+powerful and ultra-low-power radio compliant with the Bluetooth® Low Energy
 SIG specification v5.4.
 
 More information about the board can be found on the `Nucleo WB07CC webpage`_.
@@ -16,7 +16,7 @@ Hardware
 Nucleo WB07CC provides the following hardware components:
 
 - STM32WB07CCV in VFQFPN32 package
-- ARM |reg| 32-bit Cortex |reg|-M0+ CPU
+- ARM® 32-bit Cortex®-M0+ CPU
 - 64 MHz maximal CPU frequency
 - 256 KB Flash
 - 64 KB SRAM
@@ -30,50 +30,19 @@ More information about STM32WB07CCV can be found here:
 Supported Features
 ==================
 
-The Zephyr ``nucleo_wb07cc`` board target supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | internal flash memory               |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| TIMER     | on-chip    | counter, pwm                        |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | Bluetooth Low Energy                |
-+-----------+------------+-------------------------------------+
+Bluetooth® support
+------------------
 
+Bluetooth® Low Energy support is enabled; however, to build a Zephyr sample using this board,
+you first need to fetch the Bluetooth® controller library into Zephyr as a binary BLOB.
 
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_wb07cc/nucleo_wb07cc_defconfig`
-
-Bluetooth support
------------------
-
-BLE support is enabled; however, to build a Zephyr sample using this board,
-the Bluetooth controller library must be fetched into Zephyr as a binary blob.
-
-To fetch the binary blobs:
+To fetch binary BLOBs:
 
 .. code-block:: console
 
-   $ west blobs fetch hal_stm32
+   west blobs fetch hal_stm32
 
 Connections and IOs
 ===================
@@ -93,6 +62,8 @@ For more details, please refer to the `Nucleo WB07CC board User Manual`_.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Nucleo WB07CC board includes an ST-LINK-V3EC embedded debug tool interface.
 
@@ -137,6 +108,13 @@ You should see the following message on the console:
 
    Hello World! nucleo_wb07cc/stm32wb07
 
+Usage of the pyOCD runner requires installation of an additional target pack.
+This can be done using the following commands:
+
+.. code-block:: console
+
+   $ pyocd pack update
+   $ pyocd pack install stm32wb0
 
 Debugging
 =========

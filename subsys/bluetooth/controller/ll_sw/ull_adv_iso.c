@@ -260,9 +260,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	if (aux && aux->is_started) {
 		ticks_slot_aux = aux->ull.ticks_slot;
 		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-			ticks_slot_overhead =
-				MAX(aux->ull.ticks_active_to_start,
-				    aux->ull.ticks_prepare_to_start);
+			ticks_slot_overhead = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 		} else {
 			ticks_slot_overhead = 0U;
 		}
@@ -275,9 +273,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		ticks_slot_aux = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 			/* Assume primary overheads may be inherited by aux */
-			ticks_slot_overhead =
-				MAX(adv->ull.ticks_active_to_start,
-				    adv->ull.ticks_prepare_to_start);
+			ticks_slot_overhead = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 		} else {
 			ticks_slot_overhead = 0U;
 		}
@@ -299,8 +295,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead = MAX(sync->ull.ticks_active_to_start,
-					  sync->ull.ticks_prepare_to_start);
+		ticks_slot_overhead = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	} else {
 		ticks_slot_overhead = 0U;
 	}
@@ -483,15 +478,25 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	}
 
 	/* Based on packing requested, sequential or interleaved */
-	if (packing) {
+	if (false) {
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED)
+	} else if (packing) {
 		/* Interleaved Packing */
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval;
 		lll_adv_iso->sub_interval = lll_adv_iso->bis_spacing *
-					lll_adv_iso->nse;
-	} else {
+					    lll_adv_iso->num_bis;
+#endif /* CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL)
+	} else if (true) {
 		/* Sequential Packing */
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval *
-					lll_adv_iso->nse;
+					   lll_adv_iso->nse;
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL */
+
+	} else {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
 	/* TODO: Group count, GC = NSE / BN; PTO = GC - IRC;
@@ -502,7 +507,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	lll_adv_iso->max_sdu = max_sdu;
 
 	res = util_saa_le32(lll_adv_iso->seed_access_addr, big_handle);
-	LL_ASSERT(!res);
+	LL_ASSERT_DBG(!res);
 
 	(void)lll_csrand_get(lll_adv_iso->base_crc_init,
 			     sizeof(lll_adv_iso->base_crc_init));
@@ -599,11 +604,11 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 
 		/* Calculate GSK */
 		err = bt_crypto_h7(BIG1, bcode, igltk);
-		LL_ASSERT(!err);
+		LL_ASSERT_DBG(!err);
 		err = bt_crypto_h6(igltk, BIG2, gltk);
-		LL_ASSERT(!err);
+		LL_ASSERT_DBG(!err);
 		err = bt_crypto_h8(gltk, big_info->gskd, BIG3, gsk);
-		LL_ASSERT(!err);
+		LL_ASSERT_DBG(!err);
 
 		/* Prepare the CCM parameters */
 		ccm_tx = &lll_adv_iso->ccm_tx;
@@ -815,7 +820,7 @@ int ull_adv_iso_reset(void)
 		}
 
 		mark = ull_disable_mark(adv_iso);
-		LL_ASSERT(mark == adv_iso);
+		LL_ASSERT_DBG(mark == adv_iso);
 
 		/* Stop event scheduling */
 		ret_cb = TICKER_STATUS_BUSY;
@@ -825,20 +830,20 @@ int ull_adv_iso_reset(void)
 		ret = ull_ticker_status_take(ret, &ret_cb);
 		if (ret) {
 			mark = ull_disable_unmark(adv_iso);
-			LL_ASSERT(mark == adv_iso);
+			LL_ASSERT_DBG(mark == adv_iso);
 
 			/* Assert as there shall be a ticker instance active */
-			LL_ASSERT(false);
+			LL_ASSERT_DBG(false);
 
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
 		/* Abort any events in LLL pipeline */
 		err = ull_disable(adv_iso_lll);
-		LL_ASSERT(!err || (err == -EALREADY));
+		LL_ASSERT_ERR(!err || (err == -EALREADY));
 
 		mark = ull_disable_unmark(adv_iso);
-		LL_ASSERT(mark == adv_iso);
+		LL_ASSERT_DBG(mark == adv_iso);
 
 		/* Reset associated streams */
 		while (adv_iso_lll->num_bis--) {
@@ -965,7 +970,7 @@ void ull_adv_iso_offset_get(struct ll_adv_sync_set *sync)
 	mfy.param = sync;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1,
 			     &mfy);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 }
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
@@ -1066,8 +1071,8 @@ void ull_adv_iso_done_terminate(struct node_rx_event_done *done)
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			  (TICKER_ID_ADV_ISO_BASE + lll->handle),
 			  ticker_stop_op_cb, adv_iso);
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+		      (ret == TICKER_STATUS_BUSY));
 
 	/* Invalidate the handle */
 	lll->handle = LLL_ADV_HANDLE_INVALID;
@@ -1110,10 +1115,10 @@ void ull_adv_iso_stream_release(struct ll_adv_iso_set *adv_iso)
 		stream_handle = lll->stream_handle[lll->num_bis];
 		stream = ull_adv_iso_stream_get(stream_handle);
 
-		LL_ASSERT(!stream->link_tx_free);
+		LL_ASSERT_DBG(!stream->link_tx_free);
 		link = memq_deinit(&stream->memq_tx.head,
 				   &stream->memq_tx.tail);
-		LL_ASSERT(link);
+		LL_ASSERT_DBG(link);
 		stream->link_tx_free = link;
 
 		dp = stream->dp;
@@ -1215,7 +1220,7 @@ static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t event_spacing,
 		 *        running buffer offset related to nse. Fix ptc and ptc_curr definitions,
 		 *        until then lets have an assert check here.
 		 */
-		LL_ASSERT(ptc <= BIT_MASK(4));
+		LL_ASSERT_DBG(ptc <= BIT_MASK(4));
 
 		return ptc;
 	}
@@ -1250,11 +1255,26 @@ static uint32_t adv_iso_time_get(const struct ll_adv_iso_set *adv_iso, bool max)
 	 */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO_RESERVE_MAX) || max) {
+		/* Maximum time reservation for both sequential and interleaved
+		 * packing.
+		 */
 		time_us = (pdu_spacing * lll_iso->nse * lll_iso->num_bis) +
 			  ctrl_spacing;
-	} else {
+
+	} else if (lll_iso->bis_spacing >=
+		   (lll_iso->sub_interval * lll_iso->nse)) {
+		/* Time reservation omitting PTC subevents in sequetial
+		 * packing.
+		 */
 		time_us = pdu_spacing * ((lll_iso->nse * lll_iso->num_bis) -
 					 lll_iso->ptc);
+
+	} else {
+		/* Time reservation omitting PTC subevents in interleaved
+		 * packing.
+		 */
+		time_us = pdu_spacing * ((lll_iso->nse - lll_iso->ptc) *
+					 lll_iso->num_bis);
 	}
 
 	/* Add implementation defined radio event overheads */
@@ -1279,15 +1299,9 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 
 	slot_us = adv_iso_time_get(adv_iso, false);
 
-	adv_iso->ull.ticks_active_to_start = 0U;
-	adv_iso->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	adv_iso->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	adv_iso->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 
-	ticks_slot_offset = MAX(adv_iso->ull.ticks_active_to_start,
-				adv_iso->ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
@@ -1364,11 +1378,11 @@ static void adv_iso_chm_complete_commit(struct lll_adv_iso *lll_iso)
 	adv = HDR_LLL2ULL(lll_iso->adv);
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
 				     &pdu_prev, &pdu, NULL, NULL, &ter_idx);
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 
 	/* Copy content */
 	err = ull_adv_sync_duplicate(pdu_prev, pdu);
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 
 	/* Get the current ACAD */
 	acad = ull_adv_sync_get_acad(pdu, &acad_len);
@@ -1376,7 +1390,7 @@ static void adv_iso_chm_complete_commit(struct lll_adv_iso *lll_iso)
 	lll_sync = adv->lll.sync;
 
 	/* Dev assert if ACAD empty */
-	LL_ASSERT(acad_len);
+	LL_ASSERT_DBG(acad_len);
 
 	/* Find the BIGInfo */
 	len = acad_len;
@@ -1390,12 +1404,13 @@ static void adv_iso_chm_complete_commit(struct lll_adv_iso *lll_iso)
 
 		ad_len += 1U;
 
-		LL_ASSERT(ad_len <= len);
+		LL_ASSERT_DBG(ad_len <= len);
 
 		ad += ad_len;
 		len -= ad_len;
 	} while (len);
-	LL_ASSERT(len);
+
+	LL_ASSERT_DBG(len);
 
 	/* Get reference to BIGInfo */
 	bi = (void *)&ad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
@@ -1460,11 +1475,11 @@ static void mfy_iso_offset_get(void *param)
 		}
 
 		success = (ret_cb == TICKER_STATUS_SUCCESS);
-		LL_ASSERT(success);
+		LL_ASSERT_ERR(success);
 
-		LL_ASSERT((ticks_current == ticks_previous) || retry--);
+		LL_ASSERT_ERR((ticks_current == ticks_previous) || retry--);
 
-		LL_ASSERT(id != TICKER_NULL);
+		LL_ASSERT_ERR(id != TICKER_NULL);
 	} while (id != ticker_id);
 
 	payload_count = lll_iso->payload_count +
@@ -1579,7 +1594,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&adv_iso->ull);
-	LL_ASSERT(ref);
+	LL_ASSERT_DBG(ref);
 
 	/* Append timing parameters */
 	p.ticks_at_expire = ticks_at_expire;
@@ -1592,7 +1607,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	/* Kick LLL prepare */
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0,
 			     &mfy_lll_prepare);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 
 	/* Calculate the BIG reference point of current BIG event */
 	remainder_us = remainder;
@@ -1616,13 +1631,13 @@ static void ticker_stop_op_cb(uint32_t status, void *param)
 	static struct mayfly mfy = {0U, 0U, &link, NULL, adv_iso_disable};
 	uint32_t ret;
 
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT_ERR(status == TICKER_STATUS_SUCCESS);
 
 	/* Check if any pending LLL events that need to be aborted */
 	mfy.param = param;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
 			     TICKER_USER_ID_ULL_HIGH, 0U, &mfy);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 }
 
 static void adv_iso_disable(void *param)
@@ -1643,14 +1658,14 @@ static void adv_iso_disable(void *param)
 		/* Setup disabled callback to be called when ref count
 		 * returns to zero.
 		 */
-		LL_ASSERT(!hdr->disabled_cb);
+		LL_ASSERT_ERR(!hdr->disabled_cb);
 		hdr->disabled_param = mfy.param;
 		hdr->disabled_cb = disabled_cb;
 
 		/* Trigger LLL disable */
 		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 				     TICKER_USER_ID_LLL, 0U, &mfy);
-		LL_ASSERT(!ret);
+		LL_ASSERT_ERR(!ret);
 	} else {
 		/* No pending LLL events */
 		disabled_cb(&adv_iso->lll);
@@ -1666,7 +1681,7 @@ static void disabled_cb(void *param)
 	mfy.param = param;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 			     TICKER_USER_ID_LLL, 0U, &mfy);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 }
 
 static void tx_lll_flush(void *param)
@@ -1712,7 +1727,7 @@ static void tx_lll_flush(void *param)
 	adv_iso = HDR_LLL2ULL(lll);
 	rx = (void *)&adv_iso->node_rx_terminate;
 	link = rx->hdr.link;
-	LL_ASSERT(link);
+	LL_ASSERT_DBG(link);
 	rx->hdr.link = NULL;
 
 	/* Enqueue the terminate towards ULL context */

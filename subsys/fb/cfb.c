@@ -69,16 +69,24 @@ static struct char_framebuffer char_fb;
 
 static inline uint8_t *get_glyph_ptr(const struct cfb_font *fptr, uint8_t c)
 {
+	if (c < fptr->first_char || c > fptr->last_char) {
+		return NULL;
+	}
+
 	return (uint8_t *)fptr->data +
 	       (c - fptr->first_char) *
 	       (fptr->width * fptr->height / 8U);
 }
 
 static inline uint8_t get_glyph_byte(uint8_t *glyph_ptr, const struct cfb_font *fptr,
-				     uint8_t x, uint8_t y)
+				     uint8_t x, uint8_t y, bool vtiled)
 {
 	if (fptr->caps & CFB_FONT_MONO_VPACKED) {
-		return glyph_ptr[x * (fptr->height / 8U) + y];
+		if (vtiled) {
+			return glyph_ptr[x * (fptr->height / 8U) + y];
+		} else {
+			return glyph_ptr[(x * fptr->height + y) / 8];
+		}
 	} else if (fptr->caps & CFB_FONT_MONO_HPACKED) {
 		return glyph_ptr[y * (fptr->width) + x];
 	}
@@ -140,10 +148,11 @@ static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
 				 * So, we process assume that nothing is drawn above.
 				 */
 				byte = 0;
-				next_byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8);
+				next_byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8, true);
 			} else {
-				byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8);
-				next_byte = get_glyph_byte(glyph_ptr, fptr, g_x, (g_y + 8) / 8);
+				byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8, true);
+				next_byte =
+					get_glyph_byte(glyph_ptr, fptr, g_x, (g_y + 8) / 8, true);
 			}
 
 			if (font_is_msbfirst) {
@@ -209,11 +218,74 @@ static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
 	return fptr->width;
 }
 
+/*
+ * Draw the monochrome character in the monochrome tiled framebuffer,
+ * a byte is interpreted as 8 pixels ordered horizontally among each other.
+ */
+static uint8_t draw_char_htmono(const struct char_framebuffer *fb,
+				uint8_t c, uint16_t x, uint16_t y,
+				bool draw_bg)
+{
+	const struct cfb_font *fptr = &(fb->fonts[fb->font_idx]);
+	const bool font_is_msbfirst = (fptr->caps & CFB_FONT_MSB_FIRST) != 0;
+	const bool display_is_msbfirst = (fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0;
+	uint8_t *glyph_ptr;
+
+	if (c < fptr->first_char || c > fptr->last_char) {
+		c = ' ';
+	}
+
+	glyph_ptr = get_glyph_ptr(fptr, c);
+	if (!glyph_ptr) {
+		return 0;
+	}
+
+	for (size_t g_y = 0; g_y < fptr->height; g_y++) {
+		const int16_t fb_y = y + g_y;
+
+		for (size_t g_x = 0; g_x < fptr->width; g_x++) {
+			const int16_t fb_x = x + g_x;
+			const size_t fb_pixel_index = fb_y * fb->x_res + fb_x;
+			const size_t fb_byte_index = fb_pixel_index / 8;
+			uint8_t byte;
+			uint8_t pixel_value;
+
+			if (fb_x < 0 || fb->x_res <= fb_x || fb_y < 0 || fb->y_res <= fb_y) {
+				continue;
+			}
+
+			byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y, false);
+			if (font_is_msbfirst) {
+				byte = byte_reverse(byte);
+			}
+			pixel_value = byte & BIT(g_y % 8);
+
+			if (pixel_value) {
+				if (display_is_msbfirst) {
+					fb->buf[fb_byte_index] |= BIT(7 - (fb_x % 8));
+				} else {
+					fb->buf[fb_byte_index] |= BIT(fb_x % 8);
+				}
+			}
+		}
+	}
+
+	return fptr->width;
+}
+
 static inline void draw_point(struct char_framebuffer *fb, int16_t x, int16_t y)
 {
 	const bool need_reverse = ((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0);
-	const size_t index = ((y / 8) * fb->x_res);
-	uint8_t m = BIT(y % 8);
+	size_t index;
+	uint8_t m;
+
+	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED) != 0) {
+		index = (x + (y / 8) * fb->x_res);
+		m = BIT(y % 8);
+	} else {
+		index = ((x / 8) + y * (fb->x_res / 8));
+		m = BIT(x % 8);
+	}
 
 	if (x < 0 || x >= fb->x_res) {
 		return;
@@ -227,7 +299,7 @@ static inline void draw_point(struct char_framebuffer *fb, int16_t x, int16_t y)
 		m = byte_reverse(m);
 	}
 
-	fb->buf[index + x] |= m;
+	fb->buf[index] |= m;
 }
 
 static void draw_line(struct char_framebuffer *fb, int16_t x0, int16_t y0, int16_t x1, int16_t y1)
@@ -277,21 +349,20 @@ static int draw_text(const struct device *dev, const char *const str, int16_t x,
 		return -EINVAL;
 	}
 
-	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED)) {
-		const size_t len = strlen(str);
+	const size_t len = strlen(str);
 
-		for (size_t i = 0; i < len; i++) {
-			if ((x + fptr->width > fb->x_res) && wrap) {
-				x = 0U;
-				y += fptr->height;
-			}
-			x += fb->kerning + draw_char_vtmono(fb, str[i], x, y, wrap);
+	for (size_t i = 0; i < len; i++) {
+		if ((x + fptr->width > fb->x_res) && wrap) {
+			x = 0U;
+			y += fptr->height;
 		}
-		return 0;
+		if (fb->screen_info & SCREEN_INFO_MONO_VTILED) {
+			x += fb->kerning + draw_char_vtmono(fb, str[i], x, y, wrap);
+		} else {
+			x += fb->kerning + draw_char_htmono(fb, str[i], x, y, wrap);
+		}
 	}
-
-	LOG_ERR("Unsupported framebuffer configuration");
-	return -EINVAL;
+	return 0;
 }
 
 int cfb_draw_point(const struct device *dev, const struct cfb_position *pos)
@@ -326,6 +397,36 @@ int cfb_draw_rect(const struct device *dev, const struct cfb_position *start,
 	return 0;
 }
 
+int cfb_draw_circle(const struct device *dev, const struct cfb_position *center, uint16_t radius)
+{
+	struct char_framebuffer *fb = &char_fb;
+	uint16_t x = 0;
+	int16_t y = -radius;
+	int16_t p = -radius;
+
+	/* Using the Midpoint Circle Algorithm */
+	while (x < -y) {
+		if (p > 0) {
+			p += 2 * (x + ++y) + 1;
+		} else {
+			p += 2 * x + 1;
+		}
+
+		draw_point(fb, center->x + x, center->y + y);
+		draw_point(fb, center->x - x, center->y + y);
+		draw_point(fb, center->x + x, center->y - y);
+		draw_point(fb, center->x - x, center->y - y);
+		draw_point(fb, center->x + y, center->y + x);
+		draw_point(fb, center->x + y, center->y - x);
+		draw_point(fb, center->x - y, center->y + x);
+		draw_point(fb, center->x - y, center->y - x);
+
+		x++;
+	}
+
+	return 0;
+}
+
 int cfb_draw_text(const struct device *dev, const char *const str, int16_t x, int16_t y)
 {
 	return draw_text(dev, str, x, y, false);
@@ -348,23 +449,23 @@ int cfb_invert_area(const struct device *dev, uint16_t x, uint16_t y,
 		return -EINVAL;
 	}
 
+	if (x > fb->x_res) {
+		x = fb->x_res;
+	}
+
+	if (y > fb->y_res) {
+		y = fb->y_res;
+	}
+
+	if (x + width > fb->x_res) {
+		width = fb->x_res - x;
+	}
+
+	if (y + height > fb->y_res) {
+		height = fb->y_res - y;
+	}
+
 	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED)) {
-		if (x > fb->x_res) {
-			x = fb->x_res;
-		}
-
-		if (y > fb->y_res) {
-			y = fb->y_res;
-		}
-
-		if (x + width > fb->x_res) {
-			width = fb->x_res - x;
-		}
-
-		if (y + height > fb->y_res) {
-			height = fb->y_res - y;
-		}
-
 		for (size_t i = x; i < x + width; i++) {
 			for (size_t j = y; j < (y + height); j++) {
 				/*
@@ -415,12 +516,37 @@ int cfb_invert_area(const struct device *dev, uint16_t x, uint16_t y,
 				}
 			}
 		}
+	} else {
+		const size_t bytes_per_row = fb->x_res / 8U;
 
-		return 0;
+		for (uint16_t j = y; j < (y + height); j++) {
+			const uint16_t start_byte = x / 8U;
+			const uint16_t end_byte = (x + width - 1U) / 8U;
+
+			for (uint16_t b = start_byte; b <= end_byte; b++) {
+				const size_t index = j * bytes_per_row + b;
+				const uint8_t bit_start = (b == start_byte) ? (x % 8U) : 0U;
+				const uint8_t bit_end =
+					(b == end_byte) ? ((x + width - 1U) % 8U) : 7U;
+				uint8_t m;
+
+				if (bit_end >= bit_start) {
+					m = BIT_MASK(bit_end - bit_start + 1U) << bit_start;
+				} else {
+					m = 0U;
+				}
+
+				if (need_reverse) {
+					m = byte_reverse(m);
+				}
+
+				/* invert byte with computed mask */
+				fb->buf[index] ^= m;
+			}
+		}
 	}
 
-	LOG_ERR("Unsupported framebuffer configuration");
-	return -EINVAL;
+	return 0;
 }
 
 static int cfb_invert(const struct char_framebuffer *fb)
@@ -477,7 +603,7 @@ int cfb_framebuffer_finalize(const struct device *dev)
 		.pitch = fb->x_res,
 	};
 
-	if (!(fb->pixel_format & PIXEL_FORMAT_MONO10) != !(fb->inverted)) {
+	if ((fb->pixel_format == PIXEL_FORMAT_MONO10) != fb->inverted) {
 		cfb_invert(fb);
 		err = api->write(dev, 0, 0, &desc, fb->buf);
 		cfb_invert(fb);
@@ -493,7 +619,7 @@ int cfb_get_display_parameter(const struct device *dev,
 	const struct char_framebuffer *fb = &char_fb;
 
 	switch (param) {
-	case CFB_DISPLAY_HEIGH:
+	case CFB_DISPLAY_HEIGHT:
 		return fb->y_res;
 	case CFB_DISPLAY_WIDTH:
 		return fb->x_res;

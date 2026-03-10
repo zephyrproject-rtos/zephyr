@@ -7,7 +7,7 @@ Hardware
 ********
 
 - EFR32BG27 Blue Gecko Wireless SoC with up to 76.8 MHz operating frequency
-- ARM® Cortex® M33 core with 64 kB RAM and 768 kB Flash
+- ARM® Cortex®-M33 core with 64 kB RAM and 768 kB Flash
 - Macronix ultra low power 8-Mbit SPI flash (MX25R8035F)
 - 2.4 GHz ceramic antenna for wireless transmission
 - Silicon Labs Si7021 relative humidity and temperature sensor
@@ -32,25 +32,7 @@ For more information, refer to these documents:
 Supported Features
 ==================
 
-The xg27_dk2602a board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | ldma                                |
-+-----------+------------+-------------------------------------+
-| ACMP      | on-chip    | comparator                          |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Flashing
 ========
@@ -98,6 +80,8 @@ Commander in unattended mode and passes all the necessary arguments to it.
 
 Programming and Debugging
 =========================
+
+.. zephyr:board-supported-runners::
 
 The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application:

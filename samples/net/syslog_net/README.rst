@@ -9,8 +9,7 @@ Overview
 
 This sample application enables a remote syslog service that will
 send syslog messages to a remote server, as configured in ``prj.conf``.
-See https://tools.ietf.org/html/rfc5424 and https://tools.ietf.org/html/rfc5426
-for more details about syslog protocol over UDP.
+See :rfc:`5424` and :rfc:`5426` for more details about syslog protocol over UDP.
 
 The source code for this sample application can be found at:
 :zephyr_file:`samples/net/syslog_net`.
@@ -31,7 +30,8 @@ variables in prj.conf file:
 	CONFIG_LOG_BACKEND_NET=y
 	CONFIG_LOG_BACKEND_NET_SERVER="[2001:db8::2]:514"
 
-Default port number is 514 if user does not specify a value.
+Default port number is 514 and the default protocol is UDP
+if user does not explicitly specify otherwise.
 The following syntax is supported for the server address
 and port:
 
@@ -42,6 +42,15 @@ and port:
 	[2001:db8::1]:514
 	[2001:db8::2]
 	2001:db::42
+
+To change the protocol to TCP, prefix the server address with ``tcp://``
+
+.. code-block:: console
+
+   tcp://192.0.2.1:514
+   tcp://192.0.2.42
+   tcp://[2001:db8::1]:514
+
 
 Build syslog_net sample application like this:
 

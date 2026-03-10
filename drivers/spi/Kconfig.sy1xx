@@ -1,0 +1,17 @@
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_SY1XX
+	bool "Sensry SY1xx SPI driver"
+	default y
+	depends on DT_HAS_SENSRY_SY1XX_SPI_ENABLED
+	help
+	  Driver for Sensry SY1xx series spi.
+
+config SPI_SY1XX_BUFFER_SIZE
+	int "SY1XX SPI buffer size"
+	default 128
+	depends on SPI_SY1XX
+	help
+	  Default buffer size in bytes for the SY1XX SPI driver used for chunked transfers.
+	  It is required to be a multiple of 4.

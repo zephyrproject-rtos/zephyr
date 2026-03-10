@@ -11,8 +11,7 @@
 
 static uint32_t store_value;
 
-static int dummy_transfer(const struct device *dev, uint32_t cmd,
-			  uint32_t *val)
+static int dummy_transfer(const struct device *dev, uint32_t cmd, uint32_t *val)
 {
 	if (cmd == DUMMY_PARENT_WR) {
 		store_value = *val;
@@ -23,8 +22,7 @@ static int dummy_transfer(const struct device *dev, uint32_t cmd,
 	return 0;
 }
 
-static int dummy_parent_pm_action(const struct device *dev,
-				  enum pm_device_action action)
+static int dummy_parent_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -46,11 +44,10 @@ static const struct dummy_parent_api funcs = {
 
 int dummy_parent_init(const struct device *dev)
 {
-	return pm_device_runtime_enable(dev);
+	return pm_device_driver_init(dev, dummy_parent_pm_action);
 }
 
 PM_DEVICE_DEFINE(dummy_parent, dummy_parent_pm_action);
 
-DEVICE_DEFINE(dummy_parent, DUMMY_PARENT_NAME, &dummy_parent_init,
-		    PM_DEVICE_GET(dummy_parent), NULL, NULL, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);
+DEVICE_DEFINE(dummy_parent, DUMMY_PARENT_NAME, &dummy_parent_init, PM_DEVICE_GET(dummy_parent),
+	      NULL, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);

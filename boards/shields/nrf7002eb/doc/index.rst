@@ -36,7 +36,7 @@ below to retrieve those files.
 .. code-block:: console
 
    west update
-   west blobs fetch hal_nordic
+   west blobs fetch nrf_wifi
 
 Usage
 *****
@@ -44,16 +44,17 @@ Usage
 The shield can be used in any application by setting ``--shield nrf7002eb`` when invoking ``west build``.
 
 Shield Variants
-###############
+***************
 
 The nRF7002 EB has a variant which includes the COEX pins. These pins are not be routed to the
 edge-connector on some boards, like earlier revisions of the Thingy53 than v1.0.0.
 
 - ``nrf7002eb``: The default variant.
 - ``nrf7002eb_coex``: Variant which includes the COEX pins.
+- ``nrf7002eb_coex_sa``: Variant which includes the COEX pins and is standalone.
 
 SR Co-existence
-###############
+***************
 
 The nRF7002 EB supports SR co-existence provided the host board supports it. The SR co-existence
 pins are connected to the host board's GPIO pins.

@@ -18,29 +18,26 @@
 	};
 
 	leds {
-		 compatible = "gpio-leds";
-		 led1: led_1 {
-			 gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
-			 label = "LED 1";
-		 };
-		 led2: led_2 {
-			 gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
-			 label = "LED 2";
-		 };
+		compatible = "gpio-leds";
+
+		led1: led_1 {
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+			label = "LED 1";
+		};
+
+		led2: led_2 {
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+			label = "LED 2";
+		};
 	};
 
 	aliases {
 		led0 = &led1;
 		led1 = &led2;
 		mcuboot-led0 = &led1;
-		bootloader-led0 = &led1;
 		watchdog0 = &wdt0;
 		spi-flash0 = &mx25r6435;
 	};
-};
-
-&adc {
-	status = "okay";
 };
 
 &gpiote {
@@ -56,14 +53,6 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
-	pinctrl-names = "default", "sleep";
-};
-
-&uart1 {
-	status = "okay";
-	current-speed = <115200>;
-	pinctrl-0 = <&uart1_default>;
-	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 
@@ -88,4 +77,4 @@
 };
 
 /* Include default memory partition configuration file */
-#include <common/nordic/nrf91xx_partition.dtsi>
+#include <nordic/nrf91xx_partition.dtsi>

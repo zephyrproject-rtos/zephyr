@@ -150,12 +150,12 @@ Changes in this release
   * ``gpio_keys``: moved out of ``gpio``, replaced the custom API to use input
     events instead, the :dtcompatible:`zephyr,gpio-keys` binding is unchanged
     but now requires ``zephyr,code`` to be set.
-  * ``ft5336``: moved from :ref:`kscan_api` to :ref:`input`, renamed the Kconfig
+  * ``ft5336``: moved from ``kscan_api`` to :ref:`input`, renamed the Kconfig
     options from ``CONFIG_KSCAN_FT5336``, ``CONFIG_KSCAN_FT5336_PERIOD`` and
     ``KSCAN_FT5336_INTERRUPT`` to :kconfig:option:`CONFIG_INPUT_FT5336`,
     :kconfig:option:`CONFIG_INPUT_FT5336_PERIOD` and
     :kconfig:option:`CONFIG_INPUT_FT5336_INTERRUPT`.
-  * ``kscan_sdl``: moved from :ref:`kscan_api` to :ref:`input`, renamed the Kconfig
+  * ``kscan_sdl``: moved from ``kscan_api`` to :ref:`input`, renamed the Kconfig
     option from ``KSCAN_SDL`` to :kconfig:option:`CONFIG_INPUT_SDL_TOUCH` and the
     compatible from ``zephyr,sdl-kscan`` to
     :dtcompatible:`zephyr,input-sdl-touch`.
@@ -489,7 +489,7 @@ Bluetooth
     ``ticks_slot_window``. Implement continuous scanning with it.
   * Added support for considering the SDU interval, along with the packet
     sequence number and time stamps, in SDU fragmentation.
-  * Added a new ``BT_CTRL_TX_PWR_DBM`` option to set the TX power directly in
+  * Added a new ``BT_CTLR_TX_PWR_DBM`` option to set the TX power directly in
     dBm.
   * Optimized the RX path with support for piggy-backing notifications on
     already-allocated RX nodes.

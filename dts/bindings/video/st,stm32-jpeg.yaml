@@ -1,0 +1,28 @@
+#
+# Copyright (c) 2025 STMicroelectronics.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: STM32 JPEG HW Codec
+
+description: |
+    The STM32 JPEG HW codec can decode JPEG compressed frames
+    and encode uncompressed frames to the JPEG format.
+
+compatible: "st,stm32-jpeg"
+
+include: [base.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  resets:
+    required: true

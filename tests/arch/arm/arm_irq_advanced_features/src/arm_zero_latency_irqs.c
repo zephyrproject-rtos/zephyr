@@ -9,6 +9,12 @@
 #include <cmsis_core.h>
 #include <zephyr/sys/barrier.h>
 
+#if CONFIG_2ND_LVL_ISR_TBL_OFFSET > 0
+#define TEST_1ST_LEVEL_INTERRUPTS_MAX (CONFIG_2ND_LVL_ISR_TBL_OFFSET - 1)
+#else
+#define TEST_1ST_LEVEL_INTERRUPTS_MAX (CONFIG_NUM_IRQS - 1)
+#endif
+
 static volatile int test_flag;
 
 void arm_zero_latency_isr_handler(const void *args)
@@ -18,6 +24,10 @@ void arm_zero_latency_isr_handler(const void *args)
 	test_flag = 1;
 }
 
+/**
+ * @brief Test ARM Zero latency Interrupt functionality.
+ * @ingroup kernel_arch_interrupt_tests
+ */
 ZTEST(arm_irq_advanced_features, test_arm_zero_latency_irqs)
 {
 
@@ -35,7 +45,7 @@ ZTEST(arm_irq_advanced_features, test_arm_zero_latency_irqs)
 
 	zassert_false(init_flag, "Test flag not initialized to zero\n");
 
-	for (i = CONFIG_NUM_IRQS - 1; i >= 0; i--) {
+	for (i = TEST_1ST_LEVEL_INTERRUPTS_MAX; i >= 0; i--) {
 		if (NVIC_GetEnableIRQ(i) == 0) {
 			/*
 			 * Interrupts configured statically with IRQ_CONNECT(.)
@@ -70,17 +80,14 @@ ZTEST(arm_irq_advanced_features, test_arm_zero_latency_irqs)
 		}
 	}
 
-	zassert_true(i >= 0,
-		"No available IRQ line to configure as zero-latency\n");
+	zassert_true(i >= 0, "No available IRQ line to configure as zero-latency\n");
 
 	TC_PRINT("Available IRQ line: %u\n", i);
 
 	/* Configure the available IRQ line as zero-latency. */
 
-	arch_irq_connect_dynamic(i, 0 /* Unused */,
-		arm_zero_latency_isr_handler,
-		NULL,
-		IRQ_ZERO_LATENCY);
+	arch_irq_connect_dynamic(i, 0 /* Unused */, arm_zero_latency_isr_handler, NULL,
+				 IRQ_ZERO_LATENCY);
 
 	NVIC_ClearPendingIRQ(i);
 	NVIC_EnableIRQ(i);
@@ -104,7 +111,3 @@ ZTEST(arm_irq_advanced_features, test_arm_zero_latency_irqs)
 
 	irq_unlock(key);
 }
-
-/**
- * @}
- */

@@ -1,6 +1,7 @@
 # IPv6 Options
 
 # Copyright (c) 2016 Intel Corporation.
+# Copyright (c) 2025 Aerlync Labs Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NET_IPV6
@@ -15,6 +16,7 @@ if NET_IPV6
 config NET_IF_MAX_IPV6_COUNT
 	int "Max number of IPv6 network interfaces in the system"
 	default NET_VLAN_COUNT if NET_VLAN && NET_VLAN_COUNT > 0
+	default 2 if NRF70_ENABLE_DUAL_VIF
 	default 2 if NET_LOOPBACK
 	default 1
 	help
@@ -80,6 +82,13 @@ config NET_INITIAL_MCAST_HOP_LIMIT
 	  The default is 1 (same as in IPv4) which means that multicast packets
 	  don't leave the local network unless the application explicitly
 	  requests it.
+
+config NET_INITIAL_IPV6_MCAST_LOOP
+	bool "Control whether the socket sees multicast packets sent by itself"
+	default y
+	help
+	  Assign initial value to IPV6_MULTICAST_LOOP in socket options,
+	  if not set by the user using setsockopt().
 
 config NET_IPV6_MAX_NEIGHBORS
 	int "How many IPv6 neighbors are supported"
@@ -168,6 +177,14 @@ config NET_IPV6_DAD
 	  The value depends on your network needs. DAD should normally
 	  be active.
 
+config NET_IPV6_NS_TIMEOUT
+	int "Timeout of Neighbor Solicitation messaging (in ms)"
+	depends on NET_IPV6_NBR_CACHE
+	default 1000
+	help
+	  The timeout in milliseconds between attempts to send a Neighbor
+	  Solicitation message.
+
 config NET_IPV6_RS_TIMEOUT
 	int "Timeout of Router Solicitation messaging"
 	depends on NET_IPV6_ND
@@ -206,8 +223,10 @@ config NET_IPV6_IID_EUI_64
 
 config NET_IPV6_IID_STABLE
 	bool "Generate stable IID [EXPERIMENTAL]"
-	select MBEDTLS
-	select MBEDTLS_MD
+	select PSA_CRYPTO
+	select PSA_WANT_KEY_TYPE_HMAC
+	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_ALG_SHA_256
 	select EXPERIMENTAL
 	depends on !NET_6LO
 	help
@@ -228,8 +247,10 @@ endchoice
 
 config NET_IPV6_PE
 	bool "Privacy extension (RFC 8981) support [EXPERIMENTAL]"
-	select MBEDTLS
-	select MBEDTLS_MD
+	select PSA_CRYPTO
+	select PSA_WANT_KEY_TYPE_HMAC
+	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_ALG_SHA_256
 	select EXPERIMENTAL
 	select NET_MGMT
 	select NET_MGMT_EVENT

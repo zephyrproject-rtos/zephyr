@@ -35,29 +35,7 @@ Hardware
 Supported Features
 ==================
 
-The nRF52 Adafruit Feather board configuration supports the following
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| NVIC      | on-chip    | nested vectored      |
-|           |            | interrupt controller |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial port          |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth            |
-+-----------+------------+----------------------+
-| RTT       | on-chip    | console              |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -80,14 +58,16 @@ Push buttons
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The ``nrf52_adafruit_feather`` board is available in two different versions:
 
-- `Adafruit Feather nRF52 Pro with myNewt Bootloader`_
+`Adafruit Feather nRF52 Pro with myNewt Bootloader`_
    This board version is the recommended one to use. It has the SWD header
    already populated and comes with the  Mynewt serial bootloader installed by
    default.
 
-- `Adafruit Feather nRF52 Bluefruit LE`_
+`Adafruit Feather nRF52 Bluefruit LE`_
    This board is identical to the board above, but the SWD header is not
    populated and ships with an Arduino friendly bootloader. To be able to work
    with this version a 2*5pin 0.5" SWD header (e.g. `Adafruit SWD connector`_)

@@ -12,6 +12,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include <zephyr/pm/device.h>
 
 #include <driverlib/clkctl.h>
 #include <driverlib/gpio.h>
@@ -47,6 +48,10 @@ static int gpio_cc23x0_config(const struct device *port, gpio_pin_t pin, gpio_fl
 		config |= IOC_IOC0_PULLCTL_PULL_DOWN;
 	} else {
 		config |= IOC_IOC0_PULLCTL_PULL_DIS;
+	}
+
+	if (flags & GPIO_INT_WAKEUP) {
+		config |= IOC_IOC0_WUENSB;
 	}
 
 	if (!(flags & GPIO_SINGLE_ENDED)) {
@@ -180,7 +185,7 @@ static int gpio_cc23x0xx_pin_interrupt_configure(const struct device *port, gpio
 						 enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	if (mode == GPIO_INT_MODE_LEVEL) {
-		return ENOTSUP;
+		return -ENOTSUP;
 	}
 
 	uint32_t config = GPIOGetConfigDio(IOC_ADDR(pin)) & ~IOC_IOC0_EDGEDET_M;
@@ -205,7 +210,7 @@ static int gpio_cc23x0xx_pin_interrupt_configure(const struct device *port, gpio
 			config |= IOC_IOC1_EDGEDET_EDGE_BOTH;
 			break;
 		default:
-			return ENOTSUP;
+			return -ENOTSUP;
 		}
 
 		GPIOSetConfigDio(IOC_ADDR(pin), config);
@@ -242,6 +247,24 @@ static void gpio_cc23x0_isr(const struct device *dev)
 	gpio_fire_callbacks(&data->callbacks, dev, status);
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int gpio_cc23x0_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		CLKCTLEnable(CLKCTL_BASE, CLKCTL_GPIO);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		CLKCTLDisable(CLKCTL_BASE, CLKCTL_GPIO);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static int gpio_cc23x0_init(const struct device *dev)
 {
 	/* Enable GPIO domain clock */
@@ -256,7 +279,7 @@ static int gpio_cc23x0_init(const struct device *dev)
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_cc23x0_driver_api = {
+static DEVICE_API(gpio, gpio_cc23x0_driver_api) = {
 	.pin_configure = gpio_cc23x0_config,
 #ifdef CONFIG_GPIO_GET_CONFIG
 	.pin_get_config = gpio_cc23x0_get_config,
@@ -272,10 +295,13 @@ static const struct gpio_driver_api gpio_cc23x0_driver_api = {
 };
 
 static const struct gpio_cc23x0_config gpio_cc23x0_config_0 = {
-	.common = {/* Read ngpios from DT */
-		   .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0)}};
+	.common = GPIO_COMMON_CONFIG_FROM_DT_INST(0),
+};
 
 static struct gpio_cc23x0_data gpio_cc23x0_data_0;
 
-DEVICE_DT_INST_DEFINE(0, gpio_cc23x0_init, NULL, &gpio_cc23x0_data_0, &gpio_cc23x0_config_0,
-		      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_cc23x0_driver_api);
+PM_DEVICE_DT_DEFINE(0, gpio_cc23x0_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, gpio_cc23x0_init, PM_DEVICE_DT_GET(0), &gpio_cc23x0_data_0,
+		      &gpio_cc23x0_config_0, PRE_KERNEL_1,
+		      CONFIG_GPIO_INIT_PRIORITY, &gpio_cc23x0_driver_api);

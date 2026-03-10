@@ -905,8 +905,28 @@ static int json_append_bytes_base64(const char *bytes, size_t len, void *data)
 			/* No space available for base64 data */
 			return -ENOMEM;
 		}
+
+		/* Change base64 data to URL-safe BASE64 data without padding */
+		int padding_removed = 0;
+
+		for (int i = 0; i < temp_length; i++) {
+			switch (CPKT_BUF_W_PTR(out->out_cpkt)[i]) {
+			case '+':
+				CPKT_BUF_W_PTR(out->out_cpkt)[i] = '-';
+				break;
+			case '/':
+				CPKT_BUF_W_PTR(out->out_cpkt)[i] = '_';
+				break;
+			case '=':
+				CPKT_BUF_W_PTR(out->out_cpkt)[i] = 0;
+				padding_removed++;
+				break;
+			default:
+				break;
+			}
+		}
 		/* Update Data offset */
-		out->out_cpkt->offset += temp_length;
+		out->out_cpkt->offset += (temp_length - padding_removed);
 	} else {
 		if (buf_append(CPKT_BUF_WRITE(fd->out->out_cpkt), bytes, len) < 0) {
 			return -ENOMEM;
@@ -1096,9 +1116,9 @@ static int get_string(struct lwm2m_input_context *in, uint8_t *buf, size_t bufle
 
 	string_length = strlen(fd->senml_object.val_string);
 
-	if (string_length > buflen) {
-		LOG_WRN("Buffer too small to accommodate string, truncating");
-		string_length = buflen - 1;
+	if (string_length >= buflen) {
+		LOG_WRN("Buffer too small to accommodate string");
+		return -ENOMEM;
 	}
 	memcpy(buf, fd->senml_object.val_string, string_length);
 

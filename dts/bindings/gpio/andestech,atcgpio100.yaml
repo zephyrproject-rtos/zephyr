@@ -1,8 +1,7 @@
 # Copyright (c) 2021, Andes Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-description:
-  This is a representation of Andes Technology atcgpio100 GPIO node
+description: Andes Technology ATCGPIO100 GPIO Controller.
 
 compatible: "andestech,atcgpio100"
 

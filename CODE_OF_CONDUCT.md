@@ -1,4 +1,4 @@
-# Contributor Covenant Code of Conduct
+# Zephyr Project Code of Conduct
 
 ## Our Pledge
 

@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ek_rx261
+name: Renesas EK-RX261
+type: mcu
+arch: rx
+toolchain:
+  - cross-compile
+supported:
+  - gpio
+  - serial
+  - timer
+ram: 128
+flash: 512
+testing:
+  timeout_multiplier: 5

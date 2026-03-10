@@ -6,16 +6,8 @@
  * Shim for sl_btctrl_hci_reset API
  */
 
-#include <stdbool.h>
-
-bool sl_btctrl_hci_reset_reason_is_sys_reset(void)
-{
-	/* If this function returns true, the LL will emit command complete for HCI Reset during
-	 * init. This only makes sense when the LL runs on a separate device from the host stack.
-	 * Always return false.
-	 */
-	return false;
-}
+#include <zephyr/sys/util.h>
+#include <stdint.h>
 
 void sl_btctrl_hci_reset(void)
 {
@@ -23,4 +15,18 @@ void sl_btctrl_hci_reset(void)
 	 * for custom processing (such as fully resetting the device). This only makes sense when
 	 * the LL runs on a separate device from the host stack. Do nothing.
 	 */
+}
+
+void sl_btctrl_reset_set_custom_reason(uint32_t reason)
+{
+	ARG_UNUSED(reason);
+}
+
+uint32_t sl_btctrl_reset_get_custom_reason(void)
+{
+	return 0;
+}
+
+void sl_btctrl_reset_clear_custom_reason(void)
+{
 }

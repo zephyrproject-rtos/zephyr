@@ -26,8 +26,7 @@
 extern "C" {
 #endif
 
-K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
-			     CONFIG_ISR_STACK_SIZE);
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS, CONFIG_ISR_STACK_SIZE);
 
 /**
  *
@@ -39,9 +38,8 @@ K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
  */
 static ALWAYS_INLINE void z_arm_interrupt_stack_setup(void)
 {
-	uint32_t msp =
-		(uint32_t)(K_KERNEL_STACK_BUFFER(z_interrupt_stacks[0])) +
-			   K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[0]);
+	uint32_t msp = (uint32_t)(K_KERNEL_STACK_BUFFER(z_interrupt_stacks[0])) +
+		       K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[0]);
 
 	__set_MSP(msp);
 #if defined(CONFIG_BUILTIN_STACK_GUARD)

@@ -1,0 +1,33 @@
+# Copyright (c) 2026 SiFli Technologies(Nanjing) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: SiFli SF32LB series eFuse OTP memory controller
+
+compatible: "sifli,sf32lb-efuse"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  sifli,pmuc:
+    type: phandle
+    required: true
+    description: |
+      Reference to the PMUC syscon node. Required for adjusting LDO voltage
+      before reading eFuse.
+
+  sifli,bank-size:
+    type: int
+    default: 32
+    description: |
+      Size of each eFuse bank in bytes.
+
+  sifli,bank-offsets:
+    type: array
+    required: true
+    description: |
+      Register offsets for each bank's data registers. The number of elements
+      determines the number of banks. Each offset points to the first data
+      register (e.g., BANK0_DATA0) of the corresponding bank.

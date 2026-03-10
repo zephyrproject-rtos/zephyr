@@ -22,7 +22,6 @@ static int nrf53_cpu_boost(void)
 
 	/* For optimal performance, the CPU frequency should be set to 128 MHz */
 	err = nrfx_clock_divider_set(NRF_CLOCK_DOMAIN_HFCLK, NRF_CLOCK_HFCLK_DIV_1);
-	err -= NRFX_ERROR_BASE_NUM;
 	if (err != 0) {
 		LOG_WRN("Failed to set 128 MHz: %d", err);
 	}

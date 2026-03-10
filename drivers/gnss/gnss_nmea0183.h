@@ -21,7 +21,13 @@
 uint8_t gnss_nmea0183_checksum(const char *str);
 
 /**
- * @brief Encapsulate str in NMEA0183 message format
+ * @brief Format a NMEA 0183 message string with checksum.
+ *
+ * This function formats a string according to the NMEA 0183 protocol. It takes
+ * a printf-like format string and arguments, prefixes the result with '$',
+ * computes and appends the NMEA checksum, and null-terminates the resulting string.
+ *
+ * The output string is of the form: `$<payload>*<checksum>`.
  *
  * @example "PAIR%03u", 2 -> "$PAIR002*38"
  *
@@ -30,7 +36,9 @@ uint8_t gnss_nmea0183_checksum(const char *str);
  * @param fmt Format of string to encapsulate
  * @param ... Arguments
  *
- * @retval checksum
+ * @return >0 Length of the resulting string.
+ * @retval -ENOMEM Size of str is too small.
+ * @retval -EINVAL Formatting error.
  */
 int gnss_nmea0183_snprintk(char *str, size_t size, const char *fmt, ...);
 

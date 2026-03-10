@@ -9,7 +9,7 @@ include_directories(${BASE_PATH}/headers)
 
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 
-if (${CONFIG_TLS_CREDENTIALS})
+if(${CONFIG_TLS_CREDENTIALS})
   generate_inc_file_for_target(
     app
     ${ZEPHYR_BASE}/samples/net/sockets/http_server/src/certs/ca_cert.der
@@ -51,4 +51,4 @@ FILE(GLOB app_sources src/main.c)
 target_sources(app PRIVATE ${app_sources})
 
 zephyr_linker_sources(SECTIONS sections-rom.ld)
-zephyr_iterable_section(NAME http_resource_desc_test_http_service KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
+zephyr_iterable_section(NAME http_resource_desc_test_http_service KVMA RAM_REGION GROUP RODATA_REGION)

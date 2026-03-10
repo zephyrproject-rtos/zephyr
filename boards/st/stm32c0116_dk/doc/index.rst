@@ -39,43 +39,7 @@ More information about STM32C011F6 can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32c0116_dk board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| IWDG      | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| WWDG      | on-chip    | window watchdog                     |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| die-temp  | on-chip    | die temperature sensor              |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | Direct Memory Access                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32c0116_dk/stm32c0116_dk_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -98,6 +62,8 @@ The STM32C0116 Discovery board is configured as follows:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32C0116-DK Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
 

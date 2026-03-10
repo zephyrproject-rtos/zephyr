@@ -398,7 +398,7 @@ void test_multiple_alarms_instance(const struct device *dev)
 
 	err = counter_set_top_value(dev, &top_cfg);
 	zassert_equal(-ENOTSUP, err,
-		      "%s: Counter failed to set top value: %d", dev->name);
+		      "%s: Counter failed to set top value: %d", dev->name, err);
 
 	k_sleep(K_USEC(3 * (uint32_t)counter_ticks_to_us(dev, alarm_cfg.ticks)));
 

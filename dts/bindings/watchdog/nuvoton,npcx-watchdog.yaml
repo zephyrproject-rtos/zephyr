@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nuvoton, NPCX-TWD node
+description: Nuvoton, NPCX-TWD
 
 compatible: "nuvoton,npcx-watchdog"
 
@@ -16,4 +16,8 @@ properties:
     description: |
         Mapping table between Wake-Up Input (WUI) and t0-out timer expired signal.
         For example, the WUI mapping on NPCX7 t0-out timer would be
-           t0-out = <&wui_t0out>;
+        t0-out = <&wui_t0out>;
+  support-npckn-v1:
+    type: boolean
+    description: |
+        This option enables the extended Watchdog Timer driver for NPCKn.

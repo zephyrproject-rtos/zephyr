@@ -5,6 +5,7 @@
  */
 
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
@@ -74,11 +75,11 @@ BUILD_ASSERT(!IS_ENABLED(STM32_SYSCLK_SRC_HSE) || STM32_WB0_CLKSYS_PRESCALER != 
 		 * the RC64M generator is imprecise. In this configuration, MR_BLE is broken.
 		 * The CPU and MR_BLE must be running at 32MHz for MR_BLE to work with HSI.
 		 */
-		BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= CLOCK_FREQ_32MHZ,
+		BUILD_ASSERT(STM32_HCLK_FREQUENCY >= CLOCK_FREQ_32MHZ,
 			"System clock frequency must be at least 32MHz to use LSI");
 #	else
 		/* In PLL or Direct HSE mode, the clock is stable, so 16MHz can be used. */
-		BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= CLOCK_FREQ_16MHZ,
+		BUILD_ASSERT(STM32_HCLK_FREQUENCY >= CLOCK_FREQ_16MHZ,
 			"System clock frequency must be at least 16MHz to use LSI");
 #	endif /* STM32_SYSCLK_SRC_HSI */
 
@@ -206,8 +207,7 @@ int enabled_clock(uint32_t src_clk)
 	return r;
 }
 
-static inline int stm32_clock_control_on(const struct device *dev,
-					 clock_control_subsys_t sub_system)
+static int stm32_clock_control_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	const mem_addr_t reg = RCC_REG(pclken->bus);
@@ -230,8 +230,7 @@ static inline int stm32_clock_control_on(const struct device *dev,
 	return 0;
 }
 
-static inline int stm32_clock_control_off(const struct device *dev,
-					  clock_control_subsys_t sub_system)
+static int stm32_clock_control_off(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	const mem_addr_t reg = RCC_REG(pclken->bus);
@@ -247,13 +246,14 @@ static inline int stm32_clock_control_off(const struct device *dev,
 	return 0;
 }
 
-static inline int stm32_clock_control_configure(const struct device *dev,
-						clock_control_subsys_t sub_system,
-						void *data)
+static int stm32_clock_control_configure(const struct device *dev,
+					 clock_control_subsys_t sub_system,
+					 void *data)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)sub_system;
-	const uint32_t shift = STM32_CLOCK_SHIFT_GET(pclken->enr);
-	mem_addr_t reg = RCC_REG(STM32_CLOCK_REG_GET(pclken->enr));
+	uint32_t enr = pclken->enr;
+	uint32_t reg = STM32_DT_CLKSEL_REG_GET(enr);
+	uint32_t shift = STM32_DT_CLKSEL_SHIFT_GET(enr);
 	int err;
 
 	ARG_UNUSED(dev);
@@ -265,13 +265,19 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 		return err;
 	}
 
-	sys_clear_bits(reg, STM32_CLOCK_MASK_GET(pclken->enr) << shift);
-	sys_set_bits(reg, STM32_CLOCK_VAL_GET(pclken->enr) << shift);
+	if (pclken->enr == NO_SEL) {
+		/* Domain clock is fixed. Nothing to set. Exit */
+		return 0;
+	}
+
+	stm32_reg_modify_bits((uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + reg),
+			      STM32_DT_CLKSEL_MASK_GET(enr) << shift,
+			      STM32_DT_CLKSEL_VAL_GET(enr) << shift);
 
 	return 0;
 }
 
-static inline int get_apb0_periph_clkrate(struct stm32_pclken *pclken,
+static int get_apb0_periph_clkrate(struct stm32_pclken *pclken,
 	uint32_t *rate, uint32_t slow_clock, uint32_t sysclk, uint32_t clk_sys)
 {
 	switch (pclken->enr) {
@@ -312,8 +318,7 @@ static inline int get_apb0_periph_clkrate(struct stm32_pclken *pclken,
 	return 0;
 }
 
-static inline int get_apb1_periph_clkrate(struct stm32_pclken *pclken,
-	uint32_t *rate, uint32_t clk_sys)
+static int get_apb1_periph_clkrate(struct stm32_pclken *pclken, uint32_t *rate, uint32_t clk_sys)
 {
 	switch (pclken->enr) {
 #if defined(SPI1)
@@ -603,7 +608,7 @@ static void set_up_fixed_clock_sources(void)
  * @brief Converts the Kconfig STM32_WB0_CLKSYS_PRESCALER option
  * to a LL_RCC_RC64MPLL_DIV_x value understandable by the LL.
  */
-static inline uint32_t kconfig_to_ll_prescaler(uint32_t kcfg_pre)
+static uint32_t kconfig_to_ll_prescaler(uint32_t kcfg_pre)
 {
 	switch (kcfg_pre) {
 	case 1:
@@ -714,7 +719,7 @@ int stm32_clock_control_init(const struct device *dev)
 	 *  - 0 wait states otherwise (CLK_SYS <= 32MHz)
 	 */
 	LL_FLASH_SetLatency(
-	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= CLOCK_FREQ_32MHZ)
+	(STM32_HCLK_FREQUENCY >= CLOCK_FREQ_32MHZ)
 			? LL_FLASH_LATENCY_1
 			: LL_FLASH_LATENCY_0
 	);
@@ -758,7 +763,7 @@ BUILD_ASSERT(IS_ENABLED(STM32_HSE_ENABLED),
 	LL_RCC_SetRC64MPLLPrescaler(
 		kconfig_to_ll_prescaler(STM32_WB0_CLKSYS_PRESCALER));
 
-	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+	SystemCoreClock = STM32_HCLK_FREQUENCY;
 
 #if defined(STM32_LSI_ENABLED)
 	/* Enable MR_BLE clock for LSI measurement.

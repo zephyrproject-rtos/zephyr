@@ -16,15 +16,15 @@
 /delete-node/ &storage_partition;
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		slot0_partition: partition@c000 {
-			reg = <0x0000C000 0x00066000>;
+			reg = <0x0000c000 0x00066000>;
 		};
+
 		slot1_partition: partition@72000 {
 			reg = <0x00072000 0x00066000>;
 		};
@@ -38,7 +38,7 @@
 
 / {
 	msc_disk0 {
-		status="okay";
+		status = "okay";
 		compatible = "zephyr,flash-disk";
 		partition = <&storage_partition>;
 		disk-name = "SD";

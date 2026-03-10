@@ -21,8 +21,8 @@
  * must eventually pull in full definitions for all of them (the actual macro
  * defines and inline function bodies)
  *
- * include/kernel.h and other public headers depend on definitions in this
- * header.
+ * include/zephyr/kernel.h and other public headers depend on definitions in
+ * this header.
  */
 #ifndef ZEPHYR_INCLUDE_ARCH_ARCH_INTERFACE_H_
 #define ZEPHYR_INCLUDE_ARCH_ARCH_INTERFACE_H_
@@ -279,6 +279,28 @@ static inline void arch_irq_unlock(unsigned int key);
  * call that produced the key argument.
  */
 static inline bool arch_irq_unlocked(unsigned int key);
+
+#ifdef CONFIG_ZERO_LATENCY_IRQS
+
+/**
+ * @brief Lock all interrupts including zero latency interrupts on the current CPU.
+ *
+ * @details Intended to be used when breaking the promise of zero latency interrupts is
+ * unavoidable and necessary, like accessing shared core peripherals or powering down the
+ * SoC.
+ *
+ * @warning This lock breaks the promise of zero latency interrupts.
+ */
+static inline unsigned int arch_zli_lock(void);
+
+/**
+ * @brief Unlock all interrupts including zero latency interrupts on the current CPU
+ *
+ * @see arch_zli_lock()
+ */
+static inline void arch_zli_unlock(unsigned int key);
+
+#endif
 
 /**
  * Disable the specified interrupt line
@@ -699,6 +721,25 @@ int arch_mem_domain_max_partitions_get(void);
 int arch_mem_domain_init(struct k_mem_domain *domain);
 #endif /* CONFIG_ARCH_MEM_DOMAIN_DATA */
 
+/**
+ * @brief Architecture-specific hook for memory domain de-initialization
+ *
+ * Perform any tasks needed to de-initialize architecture-specific data within
+ * the memory domain, such as releasing memory for page tables.
+ *
+ * The associated function k_mem_domain_deinit() documents that making
+ * multiple de-init calls to the same memory domain is undefined behavior,
+ * but has no assertions in place to check this. If this matters, it may be
+ * desirable to add checks for this in the implementation of this function.
+ *
+ * This assumes the memory domain has been initialized properly and is valid.
+ *
+ * @param domain The memory domain to be de-initialized
+ * @retval 0 Success
+ * @retval -ENOMEM Insufficient memory
+ */
+int arch_mem_domain_deinit(struct k_mem_domain *domain);
+
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 /**
  * @brief Add a thread to a memory domain (arch-specific)
@@ -871,31 +912,9 @@ size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err);
 #endif /* CONFIG_USERSPACE */
 
 /**
- * @brief Detect memory coherence type
- *
- * Required when ARCH_HAS_COHERENCE is true.  This function returns
- * true if the byte pointed to lies within an architecture-defined
- * "coherence region" (typically implemented with uncached memory) and
- * can safely be used in multiprocessor code without explicit flush or
- * invalidate operations.
- *
- * @note The result is for only the single byte at the specified
- * address, this API is not required to check region boundaries or to
- * expect aligned pointers.  The expectation is that the code above
- * will have queried the appropriate address(es).
- */
-#ifndef CONFIG_ARCH_HAS_COHERENCE
-static inline bool arch_mem_coherent(void *ptr)
-{
-	ARG_UNUSED(ptr);
-	return true;
-}
-#endif
-
-/**
  * @brief Ensure cache coherence prior to context switch
  *
- * Required when ARCH_HAS_COHERENCE is true.  On cache-incoherent
+ * Required when CONFIG_KERNEL_COHERENCE is true.  On cache-incoherent
  * multiprocessor architectures, thread stacks are cached by default
  * for performance reasons.  They must therefore be flushed
  * appropriately on context switch.  The rules are:
@@ -1068,6 +1087,15 @@ int arch_gdb_add_breakpoint(struct gdb_ctx *ctx, uint8_t type,
  */
 int arch_gdb_remove_breakpoint(struct gdb_ctx *ctx, uint8_t type,
 			       uintptr_t addr, uint32_t kind);
+
+/**
+ * @brief Post processing after memory write.
+ *
+ * @param[in] addr  Starting address of the memory region
+ * @param[in] len   Size of the memory region
+ * @param[in] align Write alignment of memory region
+ */
+void arch_gdb_post_memory_write(uintptr_t addr, size_t len, uint8_t align);
 
 #endif
 /** @} */
@@ -1259,6 +1287,7 @@ void arch_spin_relax(void);
 /**
  * @defgroup arch-stackwalk Architecture-specific Stack Walk APIs
  * @ingroup arch-interface
+ * @brief Architecture-specific Stack Walk APIs
  *
  * To add API support to an architecture, `arch_stack_walk()` should be implemented and a non-user
  * configurable Kconfig `ARCH_HAS_STACKWALK` that is default to `y` should be created in the

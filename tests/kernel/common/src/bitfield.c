@@ -19,7 +19,12 @@
 #define BITFIELD_SIZE   512
 
 /**
- * @addtogroup kernel_common_tests
+ * @defgroup kernel_bitfield_tests Bit Fields
+ * @ingroup all_tests
+ * @{
+ * @}
+ *
+ * @addtogroup kernel_bitfield_tests
  * @{
  */
 
@@ -131,10 +136,10 @@ ZTEST(bitfield, test_bitfield)
 
 }
 
-extern void *common_setup(void);
-
-ZTEST_SUITE(bitfield, NULL, common_setup, NULL, NULL, NULL);
-
 /**
  * @}
  */
+
+extern void *common_setup(void);
+
+ZTEST_SUITE(bitfield, NULL, common_setup, NULL, NULL, NULL);

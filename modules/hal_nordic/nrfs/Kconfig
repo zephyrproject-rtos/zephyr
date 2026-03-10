@@ -7,6 +7,9 @@ config HAS_NRFS
 menu "nRF Services"
 	depends on HAS_NRFS
 
+config NRFS_HAS_AUDIOPLL_SERVICE
+	bool
+
 config NRFS_HAS_CLOCK_SERVICE
 	bool
 
@@ -34,10 +37,16 @@ config NRFS_HAS_PMIC_SERVICE
 config NRFS_HAS_RESET_SERVICE
 	bool
 
+config NRFS_HAS_SWEXT_SERVICE
+	bool
+
 config NRFS_HAS_TEMP_SERVICE
 	bool
 
 config NRFS_HAS_VBUS_DETECTOR_SERVICE
+	bool
+
+config NRFS_TEMP_SERVICE_HAS_SUBSCRIPTION_SERVICE
 	bool
 
 config NRFS
@@ -87,6 +96,11 @@ config NRFS_TEMP_SERVICE_ENABLED
 	depends on NRFS_HAS_TEMP_SERVICE
 	default y
 
+config NRFS_TEMP_SERVICE_SUBSCRIPTION_ENABLED
+	bool "Subscription feature for the temperature service"
+	depends on NRFS_TEMP_SERVICE_HAS_SUBSCRIPTION_SERVICE
+	default y
+
 config NRFS_VBUS_DETECTOR_SERVICE_ENABLED
 	bool "VBUS detector for the USB peripheral"
 	depends on NRFS_HAS_VBUS_DETECTOR_SERVICE
@@ -124,6 +138,16 @@ config NRFS_GDFS_SERVICE_ENABLED
 	bool "Global domain frequency scaling service"
 	depends on NRFS_HAS_GDFS_SERVICE
 	default y
+
+config NRFS_SWEXT_SERVICE_ENABLED
+	bool "SWEXT peripheral control service"
+	depends on NRFS_HAS_SWEXT_SERVICE
+	default y
+
+config NRFS_AUDIOPLL_SERVICE_ENABLED
+	bool "Audio PLL service"
+	depends on NRFS_HAS_AUDIOPLL_SERVICE
+	default y if SOC_NRF54H20_CPUAPP
 
 endmenu
 

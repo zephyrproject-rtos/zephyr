@@ -52,6 +52,47 @@ struct rtio_sqe *i2c_rtio_copy(struct rtio *r, struct rtio_iodev *iodev, const s
 	return sqe;
 }
 
+struct rtio_sqe *i2c_rtio_copy_reg_write_byte(struct rtio *r, struct rtio_iodev *iodev,
+					      uint8_t reg_addr, uint8_t data)
+{
+	uint8_t msg[2];
+
+	struct rtio_sqe *sqe = rtio_sqe_acquire(r);
+
+	if (sqe == NULL) {
+		rtio_sqe_drop_all(r);
+		return NULL;
+	}
+	msg[0] = reg_addr;
+	msg[1] = data;
+	rtio_sqe_prep_tiny_write(sqe, iodev, RTIO_PRIO_NORM, msg, sizeof(msg), NULL);
+	sqe->iodev_flags = RTIO_IODEV_I2C_STOP;
+	return sqe;
+}
+
+struct rtio_sqe *i2c_rtio_copy_reg_burst_read(struct rtio *r, struct rtio_iodev *iodev,
+					      uint8_t start_addr, void *buf, size_t num_bytes)
+{
+	struct rtio_sqe *sqe = rtio_sqe_acquire(r);
+
+	if (sqe == NULL) {
+		rtio_sqe_drop_all(r);
+		return NULL;
+	}
+	rtio_sqe_prep_tiny_write(sqe, iodev, RTIO_PRIO_NORM, &start_addr, 1, NULL);
+	sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	sqe = rtio_sqe_acquire(r);
+	if (sqe == NULL) {
+		rtio_sqe_drop_all(r);
+		return NULL;
+	}
+	rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM, buf, num_bytes, NULL);
+	sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+
+	return sqe;
+}
+
 void i2c_rtio_init(struct i2c_rtio *ctx, const struct device *dev)
 {
 	k_sem_init(&ctx->lock, 1, 1);
@@ -172,14 +213,19 @@ int i2c_rtio_configure(struct i2c_rtio *ctx, uint32_t i2c_config)
 	}
 
 	sqe->op = RTIO_OP_I2C_CONFIGURE;
+	sqe->flags = 0;
 	sqe->iodev = iodev;
 	sqe->i2c_config = i2c_config;
 
 	rtio_submit(r, 1);
 
 	cqe = rtio_cqe_consume(r);
-	res = cqe->result;
-	rtio_cqe_release(r, cqe);
+	if (unlikely(cqe != NULL)) {
+		res = cqe->result;
+		rtio_cqe_release(r, cqe);
+	} else {
+		res = -EIO;
+	}
 
 out:
 	k_sem_give(&ctx->lock);
@@ -204,13 +250,18 @@ int i2c_rtio_recover(struct i2c_rtio *ctx)
 	}
 
 	sqe->op = RTIO_OP_I2C_RECOVER;
+	sqe->flags = 0;
 	sqe->iodev = iodev;
 
 	rtio_submit(r, 1);
 
 	cqe = rtio_cqe_consume(r);
-	res = cqe->result;
-	rtio_cqe_release(r, cqe);
+	if (unlikely(cqe != NULL)) {
+		res = cqe->result;
+		rtio_cqe_release(r, cqe);
+	} else {
+		res = -EIO;
+	}
 
 out:
 	k_sem_give(&ctx->lock);

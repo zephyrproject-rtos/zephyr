@@ -9,7 +9,6 @@
 #include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 / {
-
 	chosen {
 		zephyr,bt-hci = &bt_hci_controller;
 		zephyr,entropy = &rng;
@@ -35,6 +34,15 @@
 		};
 	};
 
+	clocks {
+		hfxo: hfxo {
+			compatible = "nordic,nrf52-hfxo";
+			clock-frequency = <64000000>;
+			startup-time-us = <1400>;
+			#clock-cells = <0>;
+		};
+	};
+
 	soc {
 		ficr: ficr@10000000 {
 			compatible = "nordic,nrf-ficr";
@@ -51,6 +59,8 @@
 
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		clock: clock@40000000 {
@@ -108,7 +118,7 @@
 			ieee802154-supported;
 			ble-2mbps-supported;
 			ble-coded-phy-supported;
-			tx-high-power-supported;
+			radio-tx-high-power-supported;
 
 			ieee802154: ieee802154 {
 				compatible = "nordic,nrf-ieee802154";
@@ -379,7 +389,6 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";

@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2022 Codecoup
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +23,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
 #include "audio_internal.h"
@@ -32,13 +33,13 @@ LOG_MODULE_REGISTER(bt_audio, CONFIG_BT_AUDIO_LOG_LEVEL);
 int bt_audio_data_parse(const uint8_t ltv[], size_t size,
 			bool (*func)(struct bt_data *data, void *user_data), void *user_data)
 {
-	CHECKIF(ltv == NULL) {
+	if (ltv == NULL) {
 		LOG_DBG("ltv is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(func == NULL) {
+	if (func == NULL) {
 		LOG_DBG("func is NULL");
 
 		return -EINVAL;
@@ -110,12 +111,12 @@ int bt_audio_data_get_val(const uint8_t ltv_data[], size_t size, uint8_t type, c
 	};
 	int err;
 
-	CHECKIF(ltv_data == NULL) {
+	if (ltv_data == NULL) {
 		LOG_DBG("ltv_data is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(data == NULL) {
+	if (data == NULL) {
 		LOG_DBG("data is NULL");
 		return -EINVAL;
 	}
@@ -146,18 +147,7 @@ uint8_t bt_audio_get_chan_count(enum bt_audio_location chan_allocation)
 		return 1;
 	}
 
-#ifdef POPCOUNT
-	return POPCOUNT(chan_allocation);
-#else
-	uint8_t cnt = 0U;
-
-	while (chan_allocation != 0U) {
-		cnt += chan_allocation & 1U;
-		chan_allocation >>= 1U;
-	}
-
-	return cnt;
-#endif
+	return sys_count_bits(&chan_allocation, sizeof(chan_allocation));
 }
 
 static bool valid_ltv_cb(struct bt_data *data, void *user_data)
@@ -256,5 +246,17 @@ ssize_t bt_audio_ccc_cfg_write(struct bt_conn *conn, const struct bt_gatt_attr *
 	}
 
 	return sizeof(value);
+}
+
+uint16_t bt_audio_get_max_ntf_size(struct bt_conn *conn)
+{
+	const uint8_t att_ntf_header_size = 3; /* opcode (1) + handle (2) */
+	const uint16_t mtu = conn == NULL ? 0 : bt_gatt_get_mtu(conn);
+
+	if (mtu > att_ntf_header_size) {
+		return mtu - att_ntf_header_size;
+	}
+
+	return 0U;
 }
 #endif /* CONFIG_BT_CONN */

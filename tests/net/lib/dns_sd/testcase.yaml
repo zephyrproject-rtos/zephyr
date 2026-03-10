@@ -3,9 +3,6 @@ common:
     - dns
     - net
   depends_on: netif
-  platform_exclude:
-    - native_posix
-    - native_posix/native/64
 tests:
   net.dns.sd:
     min_ram: 21

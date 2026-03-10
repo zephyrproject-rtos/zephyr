@@ -121,7 +121,9 @@ struct ticker_node {
 
 struct ticker_expire_info_internal {
 	uint32_t ticks_to_expire;
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 	uint32_t remainder;
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 	uint16_t lazy;
 	uint8_t ticker_id;
 	uint8_t outdated:1;
@@ -361,8 +363,9 @@ static struct ticker_instance _instance[TICKER_INSTANCE_MAX];
 /*****************************************************************************
  * Static Functions
  ****************************************************************************/
-
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 static inline uint8_t ticker_add_to_remainder(uint32_t *remainder, uint32_t to_add);
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 
 /**
  * @brief Update elapsed index
@@ -1101,7 +1104,9 @@ static void ticker_get_expire_info(struct ticker_instance *instance, uint8_t to_
 		}
 
 		expire_info->ticks_to_expire = to_ticks - from_ticks;
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 		expire_info->remainder = to_remainder;
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 		expire_info->lazy = to_ticker->lazy_current;
 		expire_info->found = 1;
 	} else {
@@ -1375,6 +1380,7 @@ void ticker_worker(void *param)
 			 * ticker_job_reschedule_in_window when completed.
 			 */
 			ticker->lazy_current++;
+			ticker->force = 0U;
 
 			if ((ticker->must_expire == 0U) ||
 			    (ticker->lazy_periodic >= ticker->lazy_current) ||
@@ -1442,7 +1448,7 @@ void ticker_worker(void *param)
 				timeout_func = ticker->ext_data->ext_timeout_func;
 				expire_info = ticker->ext_data->other_expire_info;
 				if (ticker->ext_data->expire_info_id != TICKER_NULL) {
-					LL_ASSERT(expire_info && !expire_info->outdated);
+					LL_ASSERT_DBG(expire_info && !expire_info->outdated);
 				}
 
 				ext_context.context = ticker->context;
@@ -1576,6 +1582,7 @@ static void ticks_to_expire_prep(struct ticker_node *ticker,
 	ticker->ticks_to_expire_minus = ticks_to_expire_minus;
 }
 
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 /**
  * @brief Add to remainder
  *
@@ -1605,7 +1612,6 @@ static inline uint8_t ticker_add_to_remainder(uint32_t *remainder, uint32_t to_a
 	return 0;
 }
 
-#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 /**
  * @brief Increment remainder
  *
@@ -2245,7 +2251,9 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 			count = 1 + ticker->lazy_periodic;
 			while (count--) {
 				ticks_to_expire += ticker->ticks_periodic;
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 				ticks_to_expire += ticker_remainder_inc(ticker);
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 			}
 
 			/* Skip intervals that have elapsed w.r.t. current
@@ -2256,7 +2264,9 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 			/* Schedule to a tick in the future */
 			while (ticks_to_expire < ticks_latency) {
 				ticks_to_expire += ticker->ticks_periodic;
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 				ticks_to_expire += ticker_remainder_inc(ticker);
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 				lazy++;
 			}
 
@@ -2317,7 +2327,7 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 
 #if defined(CONFIG_BT_TICKER_LOW_LAT)
 	/* Must expire is not supported in compatibility mode */
-	LL_ASSERT(start->lazy < TICKER_LAZY_MUST_EXPIRE_KEEP);
+	LL_ASSERT_DBG(start->lazy < TICKER_LAZY_MUST_EXPIRE_KEEP);
 #else
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 	if (start->lazy != TICKER_LAZY_MUST_EXPIRE_KEEP) {
@@ -2482,7 +2492,7 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 		}
 
 		/* Ensure that resched ticker is expired */
-		LL_ASSERT(ticker_resched->ticks_to_expire == 0U);
+		LL_ASSERT_DBG(ticker_resched->ticks_to_expire == 0U);
 
 		/* Use ticker's reserved time ticks_slot, else for unreserved
 		 * tickers use the reschedule margin as ticks_slot.
@@ -2490,7 +2500,7 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 		if (ticker_resched->ticks_slot) {
 			ticks_slot = ticker_resched->ticks_slot;
 		} else {
-			LL_ASSERT(TICKER_HAS_SLOT_WINDOW(ticker_resched));
+			LL_ASSERT_DBG(TICKER_HAS_SLOT_WINDOW(ticker_resched));
 
 			ticks_slot = HAL_TICKER_RESCHEDULE_MARGIN;
 		}
@@ -2566,6 +2576,14 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 					    ticks_start_offset +
 					    ticks_to_expire_offset -
 					    HAL_TICKER_RESCHEDULE_MARGIN);
+
+			} else if ((ticker_resched->ticks_slot == 0U) ||
+				   ext_data->is_drift_in_window) {
+				/* Next expiry is too close - hop over after
+				 * next node
+				 */
+				goto reschedule_in_window_hop_over;
+
 			} else {
 				/* Next expiry is too close - try the next
 				 * node
@@ -2623,6 +2641,7 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 				continue;
 			}
 
+reschedule_in_window_hop_over:
 			/* We din't find a valid slot for re-scheduling - try
 			 * the next node
 			 */
@@ -2792,8 +2811,10 @@ static inline uint8_t ticker_job_insert(struct ticker_instance *instance,
 
 		/* occupied, try next interval */
 		if (ticker->ticks_periodic != 0U) {
-			ticker->ticks_to_expire += ticker->ticks_periodic +
-						   ticker_remainder_inc(ticker);
+			ticker->ticks_to_expire += ticker->ticks_periodic;
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
+			ticker->ticks_to_expire += ticker_remainder_inc(ticker);
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 			ticker->lazy_current++;
 
 			/* No. of times ticker has skipped its interval */
@@ -3160,7 +3181,7 @@ ticker_job_compare_update(struct ticker_instance *instance,
 		uint32_t ticks_elapsed;
 		uint32_t ticks_diff;
 
-		LL_ASSERT(i);
+		LL_ASSERT_ERR(i);
 		i--;
 
 		cc = instance->ticks_current;
@@ -3462,6 +3483,30 @@ uint8_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
 #endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 	return TICKER_STATUS_SUCCESS;
+}
+
+/**
+ * @brief Deinitialize ticker instance
+ *
+ * @param instance_index Index of ticker instance
+ */
+int ticker_deinit(uint8_t instance_index)
+{
+	struct ticker_instance *instance;
+
+	if (instance_index >= TICKER_INSTANCE_MAX) {
+		return -EINVAL;
+	}
+
+	instance = &_instance[instance_index];
+
+	if (instance->ticker_id_head != TICKER_NULL) {
+		return -EBUSY;
+	}
+
+	instance->count_node = 0U;
+
+	return 0;
 }
 
 /**

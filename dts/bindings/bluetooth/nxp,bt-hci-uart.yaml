@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024,2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -48,3 +48,11 @@ properties:
     type: boolean
     description: |
       Flow control setting for secondary speed.
+
+  wakeup-bt-gpios:
+    type: phandle-array
+    description: |
+      BT wakeup host pin
+      This pin defaults to active low when consumed by the SDK card. The
+      property value should ensure the flags properly describe the signal
+      that is presented to the driver.

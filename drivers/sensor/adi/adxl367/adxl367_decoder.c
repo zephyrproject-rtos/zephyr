@@ -75,7 +75,7 @@ static inline void adxl367_temp_convert_q31(q31_t *out, const uint8_t *buff,
 		}
 		break;
 
-	case ADXL367_14B_CHID:
+	case ADXL367_14B_CHID: {
 		uint16_t *tmp_buf = (uint16_t *)buff;
 
 		data_in = (int16_t)(((*tmp_buf >> 8) & 0xFF) | ((*tmp_buf << 8) & 0xFF00));
@@ -85,6 +85,7 @@ static inline void adxl367_temp_convert_q31(q31_t *out, const uint8_t *buff,
 			convert_value = 1;
 		}
 		break;
+	}
 
 	default:
 		break;
@@ -136,7 +137,7 @@ static inline void adxl367_accel_convert_q31(q31_t *out, const uint8_t *buff,
 		}
 		break;
 
-	case ADXL367_14B_CHID:
+	case ADXL367_14B_CHID: {
 		uint16_t *tmp_buf = (uint16_t *)buff;
 
 		data_in = (int16_t)(((*tmp_buf >> 8) & 0xFF) | ((*tmp_buf << 8) & 0xFF00));
@@ -146,6 +147,7 @@ static inline void adxl367_accel_convert_q31(q31_t *out, const uint8_t *buff,
 			convert_value = 1;
 		}
 		break;
+	}
 
 	default:
 		break;
@@ -528,8 +530,8 @@ static int adxl367_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 			data_out, enc_data);
 	} else {
 		/* Calculate which sample is decoded. */
-		if ((uint8_t *)*fit >= buffer) {
-			sample_num = ((uint8_t *)*fit - buffer) / packet_size;
+		if (*fit >= (uintptr_t)buffer) {
+			sample_num = (*fit - (uintptr_t)buffer) / packet_size;
 		}
 
 		while (count < max_count && buffer < buffer_end) {

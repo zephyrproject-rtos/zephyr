@@ -21,6 +21,8 @@
 #define NSI_MAX(a, b)  (((a) > (b)) ? (a) : (b))
 #define NSI_MIN(a, b) (((a) < (b)) ? (a) : (b))
 
+#define NSI_ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
+
 #ifndef NSI_ARG_UNUSED
 #define NSI_ARG_UNUSED(x) (void)(x)
 #endif
@@ -29,6 +31,7 @@
 
 #define NSI_FUNC_NORETURN __attribute__((__noreturn__))
 #define NSI_WEAK __attribute__((__weak__))
+#define NSI_INLINE static __attribute__((__always_inline__)) inline
 
 #if defined(__clang__)
   /* The address sanitizer in llvm adds padding (redzones) after data

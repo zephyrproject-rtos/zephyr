@@ -38,44 +38,12 @@ The TLSR9518ADK80D default board configuration provides the following hardware c
 Supported Features
 ==================
 
-The Zephyr TLSR9518ADK80D board configuration supports the following hardware features:
-
-+----------------+------------+------------------------------+
-| Interface      | Controller | Driver/Component             |
-+================+============+==============================+
-| PLIC           | on-chip    | interrupt_controller         |
-+----------------+------------+------------------------------+
-| RISC-V Machine | on-chip    | timer                        |
-| Timer (32 KHz) |            |                              |
-+----------------+------------+------------------------------+
-| PINCTRL        | on-chip    | pinctrl                      |
-+----------------+------------+------------------------------+
-| GPIO           | on-chip    | gpio                         |
-+----------------+------------+------------------------------+
-| UART           | on-chip    | serial                       |
-+----------------+------------+------------------------------+
-| PWM            | on-chip    | pwm                          |
-+----------------+------------+------------------------------+
-| TRNG           | on-chip    | entropy                      |
-+----------------+------------+------------------------------+
-| FLASH (MSPI)   | on-chip    | flash                        |
-+----------------+------------+------------------------------+
-| RADIO          | on-chip    | Bluetooth,                   |
-|                |            | ieee802154, OpenThread       |
-+----------------+------------+------------------------------+
-| SPI (Master)   | on-chip    | spi                          |
-+----------------+------------+------------------------------+
-| I2C (Master)   | on-chip    | i2c                          |
-+----------------+------------+------------------------------+
-| ADC            | on-chip    | adc                          |
-+----------------+------------+------------------------------+
+.. zephyr:board-supported-hw::
 
 .. note::
    To support "button" example project PC3-KEY3 (J20-19, J20-20) jumper needs to be removed and KEY3 (J20-19) should be connected to VDD3_DCDC (J51-13) externally.
 
    For the rest example projects use the default jumpers configuration.
-
-Other hardware features and example projects are not supported yet.
 
 Limitations
 -----------
@@ -137,6 +105,8 @@ The default settings are 115200 8N1.
 
 Programming and debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Building
 ========

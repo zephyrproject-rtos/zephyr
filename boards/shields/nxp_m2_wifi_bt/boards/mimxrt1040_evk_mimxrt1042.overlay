@@ -1,0 +1,26 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&m2_hci_bt_uart {
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-1;
+	/delete-property/ pinctrl-2;
+	/delete-property/ pinctrl-names;
+	pinctrl-0 = <&pinmux_lpuart3_flowcontrol>;
+	pinctrl-1 = <&pinmux_lpuart3_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	bt_hci_uart: bt_hci_uart {
+		m2_bt_module: m2_bt_module {
+			sdio-reset-gpios = <&gpio3 4 GPIO_ACTIVE_HIGH>;
+			w-disable-gpios = <&gpio3 2 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&m2_wifi_sdio {
+	/* TODO: Unsupported; Fix pinctrl */
+};

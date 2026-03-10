@@ -1,0 +1,63 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: IT51XXX I3CS controller
+
+compatible: "ite,it51xxx-i3cs"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+bus: [i3c, i2c]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  extern-enable:
+    required: true
+    type: array
+    description: Extern enable configuration defined as <reg_address bit_mask>
+
+  io-channel:
+    required: true
+    type: int
+    enum: [0, 1, 2, 3]
+    description: |
+      The it51xxx chip features four i3c io channels and two i3c target (i3cs)
+      engines. This property allows the i3cs engine to select the desired i3c
+      io channel. To ensure proper i3c functionality, make sure that multiple
+      controllers (including the i3cm controller and i3cs target engines) are
+      not assigned the same io channel.
+
+  static-address:
+    type: int
+    description: |
+      Target static address.(default: 0x00)
+
+  vendor-info-fields:
+    type: int
+    description: |
+      The vendor info fields(MSB) of get device status(GETSTATUS) CCC.
+      (default: 0x00)
+
+  pid-random-value:
+    type: int
+    description: |
+      Set pid[31:0] to a random value. If this property is not set, pid[31:0]
+      defaults to a fixed vendor value.
+
+  bcr:
+    type: int
+    description: |
+      Bus Characteristics Register, used for bus enumeration with ENTDAA and
+      determine device role and capabilities of the device on the bus.
+      (default: 0x0F)
+
+  dcr:
+    type: int
+    description: |
+      Device Characteristics Register, used for bus enumeration with ENTDAA.
+      (default: 0x00)

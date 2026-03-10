@@ -1,11 +1,11 @@
 identifier: adi_eval_adin1110ebz
-name: ADI EVAL-ADIN1110EBZ evaulation board
+name: ADI EVAL-ADIN1110EBZ evaluation board
 type: mcu
 arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-ram: 640
+ram: 192
 flash: 2048
 supported:
   - arduino_gpio

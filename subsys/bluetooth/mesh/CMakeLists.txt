@@ -13,6 +13,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH
     app_keys.c
     heartbeat.c
     crypto.c
+    crypto_psa.c
     access.c
     msg.c
     cfg_srv.c
@@ -122,12 +123,6 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_SOLICITATION solicitation.c)
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_STATISTIC statistic.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG delayable_msg.c)
-
-if (CONFIG_BT_MESH_USES_TINYCRYPT)
-    zephyr_library_sources(crypto_tc.c)
-else()
-    zephyr_library_sources(crypto_psa.c)
-endif()
 
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
 

@@ -10,8 +10,11 @@ menuconfig PS2
 
 if PS2
 
-source "drivers/ps2/Kconfig.xec"
+# zephyr-keep-sorted-start
+source "drivers/ps2/Kconfig.it51xxx"
 source "drivers/ps2/Kconfig.npcx"
+source "drivers/ps2/Kconfig.xec"
+# zephyr-keep-sorted-stop
 
 module = PS2
 module-str = ps2

@@ -34,6 +34,11 @@ static void adxl345_thread_cb(const struct device *dev)
 		drv_data->drdy_handler(dev, drv_data->drdy_trigger);
 	}
 
+	if ((drv_data->act_handler != NULL) &&
+		ADXL345_STATUS_ACTIVITY(status1)) {
+		drv_data->act_handler(dev, drv_data->act_trigger);
+	}
+
 	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
 					      GPIO_INT_EDGE_TO_ACTIVE);
 	__ASSERT(ret == 0, "Interrupt configuration failed");
@@ -90,7 +95,9 @@ int adxl345_trigger_set(const struct device *dev,
 {
 	const struct adxl345_dev_config *cfg = dev->config;
 	struct adxl345_dev_data *drv_data = dev->data;
-	uint8_t int_mask, int_en, status1;
+	struct adxl345_sample sample;
+	uint8_t int_mask, int_en;
+	uint8_t samples_count;
 	int ret;
 
 	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
@@ -103,7 +110,28 @@ int adxl345_trigger_set(const struct device *dev,
 	case SENSOR_TRIG_DATA_READY:
 		drv_data->drdy_handler = handler;
 		drv_data->drdy_trigger = trig;
-		int_mask = ADXL345_INT_MAP_DATA_RDY_MSK;
+		/** Enabling DRDY means not using Watermark interrupt as both
+		 * are served by reading data-register: two clients can't be
+		 * served simultaneously.
+		 */
+		int_mask = ADXL345_INT_MAP_DATA_RDY_MSK |
+			   ADXL345_INT_MAP_OVERRUN_MSK |
+			   ADXL345_INT_MAP_WATERMARK_MSK;
+		break;
+	case SENSOR_TRIG_MOTION:
+		drv_data->act_handler = handler;
+		drv_data->act_trigger = trig;
+		int_mask = ADXL345_INT_MAP_ACT_MSK;
+		/* ACT_AC_DC=1: AC-coupled mode compares delta from reference value
+		 * ACT_AC_DC=0: DC-coupled mode compares absolute acceleration with threshold
+		 * Setting AC-coupled (bit D7=1) for activity detection
+		 */
+		ret = adxl345_reg_write_byte(dev, ADXL345_ACT_INACT_CTL_REG,
+					ADXL345_ACT_AC_DC | ADXL345_ACT_X_EN |
+					ADXL345_ACT_Y_EN | ADXL345_ACT_Z_EN);
+		if (ret < 0) {
+			return ret;
+		}
 		break;
 	default:
 		LOG_ERR("Unsupported sensor trigger");
@@ -111,23 +139,60 @@ int adxl345_trigger_set(const struct device *dev,
 	}
 
 	if (handler) {
-		int_en = int_mask;
+		switch (trig->type) {
+		case SENSOR_TRIG_DATA_READY:
+			/* Only enable DATA_RDY in INT_ENABLE. Watermark and overrun
+			 * are included in int_mask to route them away in INT_MAP,
+			 * but must not be enabled: with FIFO samples=0 the watermark
+			 * bit in INT_SOURCE is permanently asserted and would cause
+			 * the interrupt pin to stick high.
+			 */
+			int_en = ADXL345_INT_MAP_DATA_RDY_MSK;
+			break;
+		default:
+			int_en = int_mask;
+			break;
+		}
 	} else {
 		int_en = 0U;
 	}
 
-	ret = adxl345_reg_write_mask(dev, ADXL345_INT_MAP, int_mask, int_en);
+#ifdef CONFIG_ADXL345_STREAM
+	(void)adxl345_configure_fifo(dev, ADXL345_FIFO_BYPASSED, ADXL345_INT2, 0);
+#endif
+
+	ret = adxl345_reg_write_mask(dev, ADXL345_INT_ENABLE, int_mask, 0);
 	if (ret < 0) {
 		return ret;
 	}
-	/* Clear status */
-	ret = adxl345_get_status(dev, &status1, NULL);
+
+	/* INT_MAP register: 0=route to INT1, 1=route to INT2
+	 * Logic: if route_to_int2, set bits (send to INT2), else clear bits (send to INT1)
+	 */
+	ret = adxl345_reg_write_mask(dev, ADXL345_INT_MAP, int_mask,
+				     cfg->route_to_int2 ? int_en : ~int_en);
 	if (ret < 0) {
+		return ret;
+	}
+
+	/* Clear status and read sample-set to clear interrupt flag
+	 * Per datasheet: interrupt functions are cleared by reading data registers (0x32-0x37)
+	 */
+	(void)adxl345_read_sample(dev, &sample);
+
+	ret = adxl345_reg_read_byte(dev, ADXL345_FIFO_STATUS_REG, &samples_count);
+	if (ret < 0) {
+		LOG_ERR("Failed to read FIFO status rc = %d\n", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
 					      GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = adxl345_reg_write_mask(dev, ADXL345_INT_ENABLE, int_mask, int_en);
 	if (ret < 0) {
 		return ret;
 	}
@@ -171,6 +236,8 @@ int adxl345_init_interrupt(const struct device *dev)
 			adxl345_thread, drv_data,
 			NULL, NULL, K_PRIO_COOP(CONFIG_ADXL345_THREAD_PRIORITY),
 			0, K_NO_WAIT);
+
+	k_thread_name_set(&drv_data->thread, dev->name);
 #elif defined(CONFIG_ADXL345_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adxl345_work_cb;
 #endif

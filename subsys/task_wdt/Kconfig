@@ -13,6 +13,14 @@ menuconfig TASK_WDT
 	  per thread, even if the hardware supports only a single watchdog.
 
 if TASK_WDT
+
+config TASK_WDT_DUMMY
+	bool "Dummy implementation for testing"
+	help
+	  Allows the code to use all Task Watchdog APIs, but does nothing.
+	  This can be useful to temporarily disable the Task Watchdog while
+	  debugging.
+
 config TASK_WDT_CHANNELS
 	int "Maximum number of task watchdog channels"
 	default 5
@@ -57,6 +65,16 @@ config TASK_WDT_HW_FALLBACK_DELAY
 	  between different clock sources for the hardware watchdog and the
 	  kernel timer. This is especially important if the hardware watchdog
 	  is clocked by an inaccurate low-speed RC oscillator.
+
+config TASK_WDT_HW_FALLBACK_PAUSE_IN_SLEEP
+	bool "Pause the hardware watchdog in system sleep"
+	depends on TASK_WDT_HW_FALLBACK
+	help
+	  Configure the hardware watchdog to automatically pause when the
+	  system reaches a sleep power state. When the system is resumed, the
+	  watchdog is also automatically resumed.
+	  Note that this feature is supported only by a subset of hardware
+	  watchdogs.
 
 config TASK_WDT_SHELL
 	bool "Task watchdog shell utilities"

@@ -1,5 +1,7 @@
 description: |
-  Zephyr MMC disk node. A binding with this compatible present within an SD
+  Zephyr MMC disk.
+
+  A binding with this compatible present within an SD
   host controller device node indicates that an MMC chip is attached to that
   SD bus. This binding will enable that to be used with the disk driver
   API and any subsystems that utilize it.

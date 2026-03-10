@@ -37,20 +37,31 @@
 #error "No disk device defined, is your board supported?"
 #endif
 
+#if CONFIG_SRAM_SIZE >= 512
+/* Cap buffer size at 128 KiB */
+#define MAX_TOTAL_BUF_SIZE 128
+#elif CONFIG_SOC_POSIX
+/* Posix does not define SRAM size */
+#define MAX_TOTAL_BUF_SIZE 128
+#else
+/* Use half of all SRAM */
+#define MAX_TOTAL_BUF_SIZE (CONFIG_SRAM_SIZE / 2)
+#endif
+
+#define BUF_SIZE ((MAX_TOTAL_BUF_SIZE * 1024) / 2)
+
 #ifdef CONFIG_DISK_DRIVER_LOOPBACK
 #define DISK_NAME "loopback0"
 #else
 #define DISK_NAME DISK_NAME_PHYS
 #endif
 
-/* Assume the largest sector we will encounter is 512 bytes */
-#define SECTOR_SIZE 512
-
 /* Sector counts to read */
-#define SECTOR_COUNT1 8
-#define SECTOR_COUNT2 1
-#define SECTOR_COUNT3 29
-#define SECTOR_COUNT4 31
+#define SECTOR_COUNT1    8
+#define SECTOR_COUNT2    1
+#define SECTOR_COUNT3    29
+#define SECTOR_COUNT4    31
+#define SECTOR_COUNT_MAX 32
 
 #define OVERFLOW_CANARY 0xDE
 
@@ -59,10 +70,10 @@ static uint32_t disk_sector_count;
 static uint32_t disk_sector_size;
 
 /* + 4 to make sure the second buffer is dword-aligned for NVME */
-static uint8_t scratch_buf[2][SECTOR_COUNT4 * SECTOR_SIZE + 4];
+static uint8_t scratch_buf[2][BUF_SIZE + 4];
 
 #ifdef CONFIG_DISK_DRIVER_LOOPBACK
-#define BACKING_PATH "/"DISK_NAME_PHYS":"
+#define BACKING_PATH "/" DISK_NAME_PHYS ":"
 
 static struct loopback_disk_access lo_access;
 static FATFS fat_fs;
@@ -125,8 +136,9 @@ static void test_setup(void)
 	/* We could allocate memory once we know the sector size, but instead
 	 * just verify our assumed maximum size
 	 */
-	zassert_true(cmd_buf <= SECTOR_SIZE,
-		"Test will fail, SECTOR_SIZE definition must be increased");
+	zassert_true(
+		(disk_sector_size * SECTOR_COUNT_MAX) <= BUF_SIZE,
+		"Test will fail, sector does not fit in buffer, buffer size must be increased");
 }
 
 /* Reads sectors, verifying overflow does not occur */
@@ -139,7 +151,7 @@ static int read_sector(uint8_t *buf, uint32_t start, uint32_t num_sectors)
 	rc = disk_access_read(disk_pdrv, buf, start, num_sectors);
 	/* Check canary */
 	zassert_equal(buf[num_sectors * disk_sector_size], OVERFLOW_CANARY,
-		"Read overflowed requested length");
+		      "Read overflowed requested length");
 	return rc; /* Let calling function check return code */
 }
 
@@ -173,8 +185,7 @@ static void test_sector_read(uint8_t *buf, uint32_t num_sectors)
 /* Write sector of disk, and check the data to ensure it is valid
  * WARNING: this test is destructive- it will overwrite data on the disk!
  */
-static int write_sector_checked(uint8_t *wbuf, uint8_t *rbuf,
-			uint32_t start, uint32_t num_sectors)
+static int write_sector_checked(uint8_t *wbuf, uint8_t *rbuf, uint32_t start, uint32_t num_sectors)
 {
 	int rc, i;
 
@@ -195,8 +206,32 @@ static int write_sector_checked(uint8_t *wbuf, uint8_t *rbuf,
 	}
 	/* Check the read data versus the written data */
 	zassert_mem_equal(wbuf, rbuf, num_sectors * disk_sector_size,
-		"Read data did not match data written to disk");
+			  "Read data did not match data written to disk");
 	return rc;
+}
+
+static int erase_sector_checked(uint8_t *rbuf, uint32_t start, uint32_t num_sectors)
+{
+	int rc, i;
+
+	/* Erase the specified sectors */
+	rc = disk_access_erase(disk_pdrv, start, num_sectors, DISK_ACCESS_ERASE_PHYSICAL);
+	if (rc) {
+		return rc; /* Let calling function handle disk error */
+	}
+
+	/* Read the erased sectors */
+	rc = read_sector(rbuf, start, num_sectors);
+	if (rc) {
+		return rc;
+	}
+
+	/* All data should be equal 0x00 or 0xFF */
+	for (i = 0; i < num_sectors * disk_sector_size; i++) {
+		zassert_true((rbuf[i] == 0x00) || (rbuf[i] == 0xFF),
+			     "Data not erased from disk sector %u", start + i);
+	}
+	return 0;
 }
 
 /* Tests writing to a variety of sectors
@@ -228,6 +263,46 @@ static void test_sector_write(uint8_t *wbuf, uint8_t *rbuf, uint32_t num_sectors
 	}
 }
 
+/* Tests erasing a variety of sectors
+ * WARNING: this test is destructive- it will overwrite data on the disk!
+ */
+static void test_sector_erase(uint8_t *wbuf, uint8_t *rbuf, uint32_t num_sectors)
+{
+	int rc, sector;
+
+	TC_PRINT("Testing erase of %u sectors\n", num_sectors);
+	/* Write and erase disk sector zero */
+	rc = write_sector_checked(wbuf, rbuf, 0, num_sectors);
+	zassert_equal(rc, 0, "Failed to write to sector zero");
+	rc = erase_sector_checked(rbuf, 0, num_sectors);
+	zassert_equal(rc, 0, "Failed to erase sector zero");
+
+	/* Write and erase sectors in the "middle" of the disk */
+	if (disk_sector_count / 2 > num_sectors) {
+		sector = disk_sector_count / 2 - num_sectors;
+	} else {
+		sector = 0;
+	}
+	rc = write_sector_checked(wbuf, rbuf, sector, num_sectors);
+	zassert_equal(rc, 0, "Failed to write to mid disk sector");
+	rc = erase_sector_checked(rbuf, sector, num_sectors);
+	zassert_equal(rc, 0, "Failed to erase mid disk sector");
+
+	/* Write and erase the last sector */
+	rc = write_sector_checked(wbuf, rbuf, disk_sector_count - num_sectors, num_sectors);
+	zassert_equal(rc, 0, "Failed to write to last sector");
+	rc = erase_sector_checked(rbuf, disk_sector_count - num_sectors, num_sectors);
+	zassert_equal(rc, 0, "Failed to erase last sector");
+
+	/* Try and erase past the last sector */
+	rc = erase_sector_checked(rbuf, disk_sector_count - num_sectors + 1, num_sectors);
+	zassert_not_equal(rc, 0, "Should fail when attempting to erase past end of disk");
+	rc = erase_sector_checked(rbuf, disk_sector_count + 1, num_sectors);
+	zassert_not_equal(rc, 0, "Should fail when attempting to erase past end of disk");
+	rc = erase_sector_checked(rbuf, UINT32_MAX, num_sectors);
+	zassert_not_equal(rc, 0, "Should fail when attempting to erase past end of disk");
+}
+
 /* Test multiple reads in series, and reading from a variety of blocks */
 ZTEST(disk_driver, test_read)
 {
@@ -248,9 +323,8 @@ ZTEST(disk_driver, test_read)
 		memset(scratch_buf[1], 0xff, SECTOR_COUNT1 * disk_sector_size);
 		rc = read_sector(scratch_buf[1], 0, SECTOR_COUNT1);
 		zassert_equal(rc, 0, "Failed to read from disk at same sector location");
-		zassert_mem_equal(scratch_buf[1], scratch_buf[0],
-				SECTOR_COUNT1 * disk_sector_size,
-				"Multiple reads mismatch");
+		zassert_mem_equal(scratch_buf[1], scratch_buf[0], SECTOR_COUNT1 * disk_sector_size,
+				  "Multiple reads mismatch");
 	}
 }
 
@@ -275,6 +349,34 @@ ZTEST(disk_driver, test_write)
 	}
 }
 
+/* Test multiple erases in series, and erasing from a variety of blocks */
+ZTEST(disk_driver, test_erase)
+{
+	int rc, i;
+
+	/* Skip the test if erasing not supported by the driver */
+	if (disk_access_erase(disk_pdrv, 0, 1, DISK_ACCESS_ERASE_PHYSICAL) == -EINVAL) {
+		ztest_test_skip();
+		return;
+	}
+
+	/* Test erasing with a bad erase type */
+	rc = disk_access_erase(disk_pdrv, 0, 1, DISK_ACCESS_ERASE_PHYSICAL + 1);
+	zassert_equal(-EINVAL, rc);
+
+	/* Verify a range of erase sizes work */
+	test_sector_erase(scratch_buf[0], scratch_buf[1], 8);
+	test_sector_erase(scratch_buf[0], scratch_buf[1], 16);
+	test_sector_erase(scratch_buf[0], scratch_buf[1], 24);
+	test_sector_erase(scratch_buf[0], scratch_buf[1], 32);
+
+	/* Verify that multiple erases to the same location work */
+	for (i = 0; i < 10; i++) {
+		rc = erase_sector_checked(scratch_buf[1], 0, 16);
+		zassert_equal(0, rc, "Failed to erase sector zero");
+	}
+}
+
 static void *disk_driver_setup(void)
 {
 #ifdef CONFIG_DISK_DRIVER_LOOPBACK
@@ -285,4 +387,11 @@ static void *disk_driver_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(disk_driver, NULL, disk_driver_setup, NULL, NULL, NULL);
+static void disk_driver_teardown(void *fixture)
+{
+#ifdef CONFIG_DISK_DRIVER_LOOPBACK
+	(void)loopback_disk_access_unregister(&lo_access);
+#endif
+}
+
+ZTEST_SUITE(disk_driver, NULL, disk_driver_setup, NULL, NULL, disk_driver_teardown);

@@ -1,0 +1,13 @@
+# AS5048 Angular position sensor configuration option
+
+# Copyright (c) 2025, Felipe Neves.
+# SPDX-License-Identifier: Apache-2.0
+
+config AMS_AS5048
+	bool "AMS AS5048 magnetic angle sensor"
+	default y
+	depends on DT_HAS_AMS_AS5048_ENABLED
+	select SPI
+	help
+	  Enable driver for the AMS AS5048 magnetic rotary encoder. The driver
+	  supports reading the absolute angle via the SPI interface.

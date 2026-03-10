@@ -16,6 +16,12 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config BUILD_OUTPUT_HEX
 	default y
 
+config MAIN_STACK_SIZE
+	default 2048
+
+config IDLE_STACK_SIZE
+	default 1024 if PM
+
 # add additional die specific params
 
 endif # SOC_DIE_PSOC6_02

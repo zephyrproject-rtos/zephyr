@@ -90,4 +90,10 @@ config PLIC_SHELL_IRQ_AFFINITY
 
 endif # PLIC_SHELL
 
+config PLIC_WARM_BOOT
+	bool "PLIC warm boot"
+	help
+	  Disable part of the initialisation in case of a warm boot, for example
+	  in case of Assymetric Multi Processing
+
 endif # PLIC

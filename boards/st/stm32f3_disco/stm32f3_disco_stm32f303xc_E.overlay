@@ -24,12 +24,13 @@
 		compatible = "st,lis2dh", "st,lsm303agr-accel";
 		reg = <0x19>;
 		irq-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>,
-			  <&gpioe 5 GPIO_ACTIVE_HIGH>;
+			    <&gpioe 5 GPIO_ACTIVE_HIGH>;
 	};
 };
 
 &spi1 {
 	cs-gpios = <&gpioe 3 GPIO_ACTIVE_LOW>;
+
 	i3g4250d@0 {
 		compatible = "st,i3g4250d";
 		reg = <0>;

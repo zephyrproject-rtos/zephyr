@@ -73,9 +73,7 @@ static struct net_icmpv6_context net_icmpv6_context_data;
 
 static int net_icmpv6_dev_init(const struct device *dev)
 {
-	struct net_icmpv6_context *net_icmpv6_context = dev->data;
-
-	net_icmpv6_context = net_icmpv6_context;
+	ARG_UNUSED(dev);
 
 	return 0;
 }
@@ -122,11 +120,11 @@ NET_DEVICE_INIT(net_icmpv6_test, "net_icmpv6_test",
 		&net_icmpv6_if_api, DUMMY_L2,
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
-static int handle_test_msg(struct net_icmp_ctx *ctx,
-			   struct net_pkt *pkt,
-			   struct net_icmp_ip_hdr *hdr,
-			   struct net_icmp_hdr *icmp_hdr,
-			   void *user_data)
+static enum net_verdict handle_test_msg(struct net_icmp_ctx *ctx,
+					struct net_pkt *pkt,
+					struct net_icmp_ip_hdr *hdr,
+					struct net_icmp_hdr *icmp_hdr,
+					void *user_data)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(hdr);
@@ -134,19 +132,17 @@ static int handle_test_msg(struct net_icmp_ctx *ctx,
 	ARG_UNUSED(user_data);
 
 	struct net_buf *last = net_buf_frag_last(pkt->buffer);
-	int ret;
 
 	if (last->len != ICMPV6_MSG_SIZE) {
 		handler_status = -EINVAL;
-		ret = -EINVAL;
-	} else {
-		handler_status = 0;
-		ret = 0;
+		handler_called++;
+		return NET_DROP;
 	}
 
+	handler_status = 0;
 	handler_called++;
 
-	return ret;
+	return NET_OK;
 }
 
 static struct net_pkt *create_pkt(uint8_t *data, int len,
@@ -155,11 +151,11 @@ static struct net_pkt *create_pkt(uint8_t *data, int len,
 	struct net_pkt *pkt;
 
 	pkt = net_pkt_alloc_with_buffer(NULL, ICMPV6_MSG_SIZE,
-					AF_UNSPEC, 0, K_SECONDS(1));
+					NET_AF_UNSPEC, 0, K_SECONDS(1));
 	zassert_not_null(pkt, "Allocation failed");
 
 	net_pkt_set_iface(pkt, test_iface);
-	net_pkt_set_family(pkt, AF_INET6);
+	net_pkt_set_family(pkt, NET_AF_INET6);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
 	net_pkt_write(pkt, data, len);
@@ -182,12 +178,12 @@ ZTEST(icmpv6_fn, test_icmpv6)
 	struct net_pkt *pkt;
 	int ret;
 
-	ret = net_icmp_init_ctx(&ctx1, NET_ICMPV6_ECHO_REPLY,
+	ret = net_icmp_init_ctx(&ctx1, NET_AF_INET6, NET_ICMPV6_ECHO_REPLY,
 				0, handle_test_msg);
 	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
 		      STRINGIFY(NET_ICMPV6_ECHO_REPLY), ret);
 
-	ret = net_icmp_init_ctx(&ctx2, NET_ICMPV6_ECHO_REQUEST,
+	ret = net_icmp_init_ctx(&ctx2, NET_AF_INET6, NET_ICMPV6_ECHO_REQUEST,
 				0, handle_test_msg);
 	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
 		      STRINGIFY(NET_ICMPV6_ECHO_REQUEST), ret);

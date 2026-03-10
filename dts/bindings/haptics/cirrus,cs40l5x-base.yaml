@@ -1,0 +1,36 @@
+# Copyright (c) 2025 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: CS40L5x Haptic Driver
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: Host GPIO pin mapped to CS40L5x reset pin.
+
+  int-gpios:
+    type: phandle-array
+    description: Host GPIO pin mapped to CS40L5x interrupt pin.
+
+  trigger-gpios:
+    type: phandle-array
+    description: Host GPIOs used to trigger haptic effects.
+
+  trigger-mapping:
+    type: array
+    description: For each host GPIO provided to 'trigger-gpios',
+      provide the corresponding CS40L5x GPIO pin number.
+
+  external-boost:
+    type: phandle
+    description: External boost source. Must be a phandle to a regulator.
+
+  flash-storage:
+    type: phandle
+    description: Flash storage for CS40L5x data. Must be a phandle to
+      a flash device or fixed partition.
+
+  flash-offset:
+    type: int
+    description: Register offset to store and load CS40L5x data.

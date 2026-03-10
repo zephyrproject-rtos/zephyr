@@ -18,11 +18,11 @@
 #include "dns_pack.h"
 
 /* TODO: Move these into Kconfig */
-#define DNS_SD_PTR_TTL 4500
-#define DNS_SD_TXT_TTL 4500
-#define DNS_SD_SRV_TTL 120
-#define DNS_SD_A_TTL 120
-#define DNS_SD_AAAA_TTL 120
+#define DNS_SD_PTR_TTL 4500u
+#define DNS_SD_TXT_TTL 4500u
+#define DNS_SD_SRV_TTL 120u
+#define DNS_SD_A_TTL 120u
+#define DNS_SD_AAAA_TTL 120u
 
 #define DNS_SD_PTR_MASK (NS_CMPRSFLGS << 8)
 
@@ -127,6 +127,7 @@ bool dns_sd_rec_match(const struct dns_sd_rec *record,
  * If there is no IPv6 address to advertise, then @p addr6 should be
  * NULL.
  *
+ * @param iface the network interface the query was received on
  * @param inst the DNS-SD record to advertise
  * @param addr4 pointer to the IPv4 address
  * @param addr6 pointer to the IPv6 address
@@ -136,8 +137,8 @@ bool dns_sd_rec_match(const struct dns_sd_rec *record,
  * @return on success, number of bytes written to @p buf
  * @return on failure, a negative errno value
  */
-int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst,
-	const struct in_addr *addr4, const struct in6_addr *addr6,
+int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
+	const struct net_in_addr *addr4, const struct net_in6_addr *addr6,
 	uint8_t *buf, uint16_t buf_size);
 
 /**
@@ -155,8 +156,15 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst,
  * @return on failure, a negative errno value
  */
 int dns_sd_handle_service_type_enum(const struct dns_sd_rec *service,
-	const struct in_addr *addr4, const struct in6_addr *addr6,
+	const struct net_in_addr *addr4, const struct net_in6_addr *addr6,
 	uint8_t *buf, uint16_t buf_size);
+
+/**
+ * @brief Check if DNS-SD record is a valid one.
+ *
+ * @param rec the record to check
+ */
+bool dns_sd_rec_is_valid(const struct dns_sd_rec *rec);
 
 #ifdef __cplusplus
 };

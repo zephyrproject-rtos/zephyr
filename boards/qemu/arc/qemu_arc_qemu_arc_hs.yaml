@@ -13,4 +13,5 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+ram: 4096
 vendor: snps

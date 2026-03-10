@@ -14,6 +14,9 @@ supported:
   - gpio
   - i2c
   - pwm
+  - tsc
   - usart
-ram: 40
+  - usb_device
+  - usbd
+ram: 32
 flash: 256

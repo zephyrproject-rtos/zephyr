@@ -10,6 +10,8 @@
 #include <zephyr/sys/util_macro.h>
 #include <stdbool.h>
 
+/** @cond INTERNAL_HIDDEN */
+
 #define DAIFSET_FIQ_BIT		BIT(0)
 #define DAIFSET_IRQ_BIT		BIT(1)
 #define DAIFSET_ABT_BIT		BIT(2)
@@ -53,8 +55,12 @@
 #define SCTLR_SA_BIT		BIT(3)
 #define SCTLR_I_BIT		BIT(12)
 #define SCTLR_BR_BIT		BIT(17)
+#define SCTLR_EnIA_BIT		BIT(31)	/* Enable Instruction address signing using key A */
+#define SCTLR_BT0_BIT		BIT(35)	/* PAC Branch Type compatibility for EL0 */
+#define SCTLR_BT1_BIT		BIT(36)	/* PAC Branch Type compatibility for EL1 */
 
-#define CPACR_EL1_FPEN_NOTRAP	(0x3 << 20)
+#define CPACR_EL1_FPEN		GENMASK(21, 20)
+#define CPACR_EL1_ZEN		GENMASK(17, 16)
 
 #define SCR_NS_BIT		BIT(0)
 #define SCR_IRQ_BIT		BIT(1)
@@ -64,6 +70,8 @@
 #define SCR_HCE_BIT		BIT(8)
 #define SCR_RW_BIT		BIT(10)
 #define SCR_ST_BIT		BIT(11)
+#define SCR_APK_BIT		BIT(16)	/* Do not trap pointer authentication key accesses */
+#define SCR_API_BIT		BIT(17)	/* Do not trap pointer authentication instructions */
 #define SCR_EEL2_BIT		BIT(18)
 
 #define SCR_RES1		(BIT(4) | BIT(5))
@@ -113,6 +121,12 @@
 #define ID_AA64PFR0_EL2_SHIFT	(8)
 #define ID_AA64PFR0_EL3_SHIFT	(12)
 #define ID_AA64PFR0_ELX_MASK	(0xf)
+#define ID_AA64PFR0_FP_SHIFT	(16)
+#define ID_AA64PFR0_FP_MASK	(0xf)
+#define ID_AA64PFR0_ADVSIMD_SHIFT	(20)
+#define ID_AA64PFR0_ADVSIMD_MASK	(0xf)
+#define ID_AA64PFR0_SVE_SHIFT	(32)
+#define ID_AA64PFR0_SVE_MASK	(0xf)
 #define ID_AA64PFR0_SEL2_SHIFT	(36)
 #define ID_AA64PFR0_SEL2_MASK	(0xf)
 
@@ -132,13 +146,43 @@
 #define CPTR_TTA_BIT		BIT(20)
 #define CPTR_TCPAC_BIT		BIT(31)
 
+/* SVE-specific CPTR_EL2 bits */
+#define CPTR_EL2_TZ_BIT		BIT(8)
+#define CPTR_EL2_ZEN_SHIFT	16
+#define CPTR_EL2_ZEN_MASK	(0x3 << CPTR_EL2_ZEN_SHIFT)
+#define CPTR_EL2_ZEN_EL1_EN	BIT(16)
+#define CPTR_EL2_ZEN_EL0_EN	BIT(17)
+
 #define CPTR_EL2_RES1		BIT(13) | BIT(12) | BIT(9) | (0xff)
+
+/* SVE Control Register (ZCR) */
+#define ZCR_EL1			S3_0_C1_C2_0
+#define ZCR_EL2			S3_4_C1_C2_0
+#define ZCR_EL3			S3_6_C1_C2_0
 
 #define HCR_FMO_BIT		BIT(3)
 #define HCR_IMO_BIT		BIT(4)
 #define HCR_AMO_BIT		BIT(5)
 #define HCR_TGE_BIT		BIT(27)
 #define HCR_RW_BIT		BIT(31)
+#define HCR_APK_BIT		BIT(40)	/* Trap pointer authentication key registers */
+#define HCR_API_BIT		BIT(41)	/* Trap pointer authentication instructions */
+
+/* CNTHCTL_EL2: Counter-timer Hypervisor Control register */
+#define CNTHCTL_EL2_EL1PCTEN	BIT(0)	/* Enable EL1 access to physical counter timer */
+#define CNTHCTL_EL2_EL1PCEN	BIT(1)	/* Enable EL1 access to physical counter */
+
+/* PAC Key Registers - System register encodings */
+#define APIAKeyLo_EL1		S3_0_C2_C1_0
+#define APIAKeyHi_EL1		S3_0_C2_C1_1
+#define APIBKeyLo_EL1		S3_0_C2_C1_2
+#define APIBKeyHi_EL1		S3_0_C2_C1_3
+#define APDAKeyLo_EL1		S3_0_C2_C2_0
+#define APDAKeyHi_EL1		S3_0_C2_C2_1
+#define APDBKeyLo_EL1		S3_0_C2_C2_2
+#define APDBKeyHi_EL1		S3_0_C2_C2_3
+#define APGAKeyLo_EL1		S3_0_C2_C3_0
+#define APGAKeyHi_EL1		S3_0_C2_C3_1
 
 /* System register interface to GICv3 */
 #define ICC_IGRPEN1_EL1		S3_0_C12_C12_7
@@ -164,7 +208,7 @@
 #define ICC_SRE_ELx_SRE_BIT	BIT(0)
 #define ICC_SRE_ELx_DFB_BIT	BIT(1)
 #define ICC_SRE_ELx_DIB_BIT	BIT(2)
-#define ICC_SRE_EL3_EN_BIT	BIT(3)
+#define ICC_SRE_ELx_EN_BIT	BIT(3) /**< ICC SRE Enable */
 
 /* ICC SGI macros */
 #define SGIR_TGT_MASK		(0xffff)
@@ -211,5 +255,7 @@
 #define L1_CACHE_SHIFT		(6)
 #define L1_CACHE_BYTES		BIT(L1_CACHE_SHIFT)
 #define ARM64_CPU_INIT_SIZE	L1_CACHE_BYTES
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM64_CPU_H_ */

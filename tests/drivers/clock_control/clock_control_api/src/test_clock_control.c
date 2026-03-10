@@ -10,10 +10,12 @@ LOG_MODULE_REGISTER(test);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_clock)
 #include "nrf_device_subsys.h"
-#elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_rtc)
+#elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_clock)
 #include "esp32_device_subsys.h"
 #elif DT_HAS_COMPAT_STATUS_OKAY(silabs_series_clock)
 #include "silabs_device_subsys.h"
+#elif DT_HAS_COMPAT_STATUS_OKAY(microchip_sam_d5x_e5x_clock)
+#include "mchp_device_subsys.h"
 #else
 #error "Unsupported board"
 #endif

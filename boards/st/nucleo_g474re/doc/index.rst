@@ -26,14 +26,14 @@ Hardware
 The STM32G474RE SoC provides the following hardware IPs:
 
 - Ultra-low-power with FlexPowerControl (down to 28 nA Standby mode and 84
-  |micro| A/MHz run mode)
-- Core: ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU, frequency up to 170 MHz
+  µA/MHz run mode)
+- Core: ARM® 32-bit Cortex®-M4 CPU with FPU, frequency up to 170 MHz
 - Clock Sources:
 
   - 4 to 48 MHz crystal oscillator (HSE)
   - 32 kHz crystal oscillator for RTC (LSE)
-  - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
-  - Internal low-power 32 kHz RC ( |plusminus| 5%)
+  - Internal 16 MHz factory-trimmed RC (±1%)
+  - Internal low-power 32 kHz RC (±5%)
   - 2 PLLs for system clock, USB, audio, ADC
 
 - RTC with HW calendar, alarms and calibration
@@ -51,13 +51,13 @@ The STM32G474RE SoC provides the following hardware IPs:
 - Up to 86 fast I/Os, most 5 V-tolerant
 - Memories
 
-  - Up to 128 KB single bank Flash, proprietary code readout protection
-  - Up to 22 KB of SRAM including 16 KB with hardware parity check
+  - Up to 512 KB single bank Flash, proprietary code readout protection
+  - Up to 128 KB of SRAM including 32 KB with hardware parity check
 
 - Rich analog peripherals (independent supply)
 
   - 2x 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200
-    |micro| A/MSPS
+    µA/MSPS
   - 4x 12-bit DAC, low-power sample and hold
   - 3x operational amplifiers with built-in PGA
   - 4x ultra-fast rail-to-rail analog comparators
@@ -72,7 +72,7 @@ The STM32G474RE SoC provides the following hardware IPs:
   - 1x SAI (serial audio interface)
   - USB 2.0 full-speed interface with LPM and BCD support
   - IRTIM (Infrared interface)
-  - USB Type-C™ /USB power delivery controller (UCPD)
+  - USB Type-C® /USB power delivery controller (UCPD)
 
 - 12-channel DMA controller
 - True random number generator (RNG)
@@ -88,48 +88,7 @@ More information about STM32G474RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_g474re board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | DAC Controller                      |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| die-temp  | on-chip    | die temperature sensor              |
-+-----------+------------+-------------------------------------+
-| FDCAN1    | on-chip    | CAN controller                      |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_g474re/nucleo_g474re_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -190,6 +149,8 @@ low power mode.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Nucleo G474RE board includes an ST-LINK/V3E embedded debug tool interface.
 

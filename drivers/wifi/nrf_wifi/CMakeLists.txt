@@ -62,24 +62,21 @@ zephyr_library_sources_ifdef(CONFIG_NRF70_UTIL
   src/wifi_util.c
 )
 
-zephyr_compile_definitions_ifdef(CONFIG_NRF70_ON_QSPI
-# These are XIP related anomalies and aren't applicable for nRF7002 and cause
-# throughput issues.
-  -DNRF53_ERRATA_43_ENABLE_WORKAROUND=0
-  -DNRF52_ERRATA_215_ENABLE_WORKAROUND=0
-# nRF70 QSPI doesn't use 192MHz clock and most samples use 128MHz, this can cause anomaly 159
-# but as its rare and not seen in most cases, we can disable it.
-# Alternative is 128MHz CPU should be disabled that impacts Wi-Fi performance.
-  -DNRF53_ERRATA_159_ENABLE_WORKAROUND=0
+if(CONFIG_NRF70_UTIL OR CONFIG_NRF70_DEBUG_SHELL)
+  zephyr_library_sources(src/shell.c)
+endif()
+
+zephyr_library_sources_ifdef(CONFIG_NRF70_DEBUG_SHELL
+  src/debug_shell.c
 )
 
 zephyr_library_link_libraries(nrf70-buslib nrf-wifi-shim)
 
-if (CONFIG_NRF_WIFI_PATCHES_BUILTIN)
+if(CONFIG_NRF_WIFI_PATCHES_BUILTIN)
   zephyr_blobs_verify(MODULE nrf_wifi REQUIRED)
   # RPU FW patch binaries based on the selected configuration
   if(CONFIG_NRF70_SYSTEM_MODE)
-    if (CONFIG_NRF70_SYSTEM_WITH_RAW_MODES)
+    if(CONFIG_NRF70_SYSTEM_WITH_RAW_MODES)
       set(NRF70_PATCH ${FW_BINS_BASE}/system_with_raw/nrf70.bin)
     else()
       set(NRF70_PATCH ${FW_BINS_BASE}/default/nrf70.bin)
@@ -103,4 +100,8 @@ if (CONFIG_NRF_WIFI_PATCHES_BUILTIN)
     ${NRF70_PATCH}
     ${gen_dir}/nrf70.bin.inc
   )
+endif()
+
+if(CONFIG_WIFI_NRF7000 AND NOT CONFIG_WIFI_USAGE_MODE_SCAN_ONLY)
+  message(WARNING "nRF7000 only supports WIFI_USAGE_MODE_SCAN_ONLY")
 endif()

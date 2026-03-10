@@ -45,7 +45,7 @@ Hardware
 The STM32F769I Discovery kit provides the following hardware components:
 
 - STM32F769NIH6 in BGA216 package
-- ARM |reg| 32-bit Cortex |reg| -M7 CPU with FPU
+- ARM® 32-bit Cortex®-M7 CPU with FPU
 - 216 MHz max CPU frequency
 - VDD from 1.7 V to 3.6 V
 - 2 MB Flash
@@ -55,7 +55,7 @@ The STM32F769I Discovery kit provides the following hardware components:
 - Chrom-ART Accelerator(DMA2D), graphical hardware accelerator enabling enhanced graphical user interface
 - Hardware JPEG codec
 - LCD-TFT controller supporting up to XGA resolution
-- MIPI |reg|  DSI host controller supporting up to 720p 30Hz resolution
+- MIPI®  DSI host controller supporting up to 720p 30Hz resolution
 - 3x12-bit ADC with 24 channels
 - 2x12-bit D/A converters
 - DMA Controller
@@ -87,37 +87,7 @@ More information about STM32F769NIH6 can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f769i_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | Ethernet                            |
-+-----------+------------+-------------------------------------+
-| QSPI NOR  | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| FMC       | on-chip    | memc (SDRAM)                        |
-+-----------+------------+-------------------------------------+
-| TOUCH     | off-chip   | ft5336(FT6202)                      |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32f769i_disco/stm32f769i_disco_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -157,6 +127,8 @@ settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32F769I Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
 

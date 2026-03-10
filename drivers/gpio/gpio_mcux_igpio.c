@@ -17,6 +17,7 @@
 #include <fsl_gpio.h>
 
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/dt-bindings/gpio/nxp-imx-igpio.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
@@ -90,8 +91,13 @@ static int mcux_igpio_configure(const struct device *dev,
 	if (((flags & GPIO_PULL_UP) != 0) || ((flags & GPIO_PULL_DOWN) != 0)) {
 		reg |= IOMUXC_SW_PAD_CTL_PAD_PUE_MASK;
 		if (((flags & GPIO_PULL_UP) != 0)) {
-			/* Use 100K pullup */
-			reg |= IOMUXC_SW_PAD_CTL_PAD_PUS(2);
+			if ((flags & NXP_IGPIO_PULL_STRONG) != 0) {
+				/* Use 22K pullup */
+				reg |= IOMUXC_SW_PAD_CTL_PAD_PUS(3);
+			} else {
+				/* Use 100K pullup */
+				reg |= IOMUXC_SW_PAD_CTL_PAD_PUS(2);
+			}
 		} else {
 			/* 100K pulldown */
 			reg &= ~IOMUXC_SW_PAD_CTL_PAD_PUS_MASK;
@@ -194,6 +200,9 @@ static int mcux_igpio_configure(const struct device *dev,
 	}
 #endif /* CONFIG_SOC_SERIES_IMXRT10XX */
 
+	/* Enable input buffer via Software Input On (SION). */
+	reg |= 0x1 << MCUX_IMX_INPUT_ENABLE_SHIFT;
+
 	memcpy(&pin_cfg.pinmux, &config->pin_muxes[cfg_idx], sizeof(pin_cfg.pinmux));
 	/* cfg register will be set by pinctrl_configure_pins */
 	pin_cfg.pin_ctrl_flags = reg;
@@ -220,7 +229,8 @@ static int mcux_igpio_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	GPIO_Type *base = get_base(dev);
 
-	*value = base->DR;
+	/* Read the Pad Status Register to get current input value */
+	*value = base->PSR;
 
 	return 0;
 }
@@ -282,6 +292,10 @@ static int mcux_igpio_pin_interrupt_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (pin >= 32) {
+		return -EINVAL;
+	}
+
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		key = irq_lock();
 
@@ -304,17 +318,15 @@ static int mcux_igpio_pin_interrupt_configure(const struct device *dev,
 		icr = 0;
 	}
 
+	key = irq_lock();
+
 	if (pin < 16) {
 		shift = 2 * pin;
 		base->ICR1 = (base->ICR1 & ~(3 << shift)) | (icr << shift);
-	} else if (pin < 32) {
+	} else {
 		shift = 2 * (pin - 16);
 		base->ICR2 = (base->ICR2 & ~(3 << shift)) | (icr << shift);
-	} else {
-		return -EINVAL;
 	}
-
-	key = irq_lock();
 
 	WRITE_BIT(base->EDGE_SEL, pin, trig == GPIO_INT_TRIG_BOTH);
 	WRITE_BIT(base->ISR, pin, 1);

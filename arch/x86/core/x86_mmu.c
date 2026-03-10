@@ -20,7 +20,6 @@
 #include <kernel_internal.h>
 #include <mmu.h>
 #include <zephyr/drivers/interrupt_controller/loapic.h>
-#include <mmu.h>
 #include <zephyr/arch/x86/memmap.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -1267,6 +1266,7 @@ static pentry_t flags_to_entry(uint32_t flags)
 		break;
 	default:
 		__ASSERT(false, "bad memory mapping flags 0x%x", flags);
+		break;
 	}
 
 	if ((flags & K_MEM_PERM_RW) != 0U) {

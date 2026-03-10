@@ -16,6 +16,7 @@ enum {
 	REP_SOC         = 0x6,
 	INT_TEMP        = 0x8,
 	VCELL           = 0x9,
+	CURRENT         = 0xa,
 	AVG_CURRENT     = 0xb,
 	FULL_CAP_REP    = 0x10,
 	TTE             = 0x11,
@@ -49,6 +50,8 @@ struct max17055_data {
 	uint16_t voltage;
 	/* Current cell open circuit voltage in units of 1.25/16mV */
 	uint16_t ocv;
+	/* Current in units of 1.5625uV / Rsense */
+	int16_t current;
 	/* Average current in units of 1.5625uV / Rsense */
 	int16_t avg_current;
 	/* Remaining capacity as a %age */

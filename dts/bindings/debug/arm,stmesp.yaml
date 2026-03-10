@@ -3,4 +3,8 @@
 
 # Common fields for ARM instrumentation System Trace Macrocell Extended Stimulus Port (STMESP)
 
+description: System Trace Macrocell Extended Stimulus Port (STMESP)
+
+compatible: "arm,stmesp"
+
 include: base.yaml

@@ -13,27 +13,60 @@
 # https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated,
 # so these aliases are eventually removed
 
-set(adafruit_feather_DEPRECATED
-    adafruit_feather_nrf52840/nrf52840
+set(arduino_uno_r4_minima_DEPRECATED
+    arduino_uno_r4@minima
 )
-set(qemu_xtensa_DEPRECATED
-    qemu_xtensa/dc233c
+set(arduino_uno_r4_wifi_DEPRECATED
+    arduino_uno_r4@wifi
 )
-set(mimx8mp_phyboard_pollux/mimx8ml8/m7_DEPRECATED
-    phyboard_pollux/mimx8ml8/m7
+set(esp32c6_devkitc_DEPRECATED
+    esp32c6_devkitc/esp32c6/hpcore
 )
-set(mimx8mm_phyboard_polis/mimx8mm6/m4_DEPRECATED
-    phyboard_polis/mimx8mm6/m4
+set(neorv32_DEPRECATED
+    neorv32/neorv32/up5kdemo
 )
-set(mimxrt1050_evk_DEPRECATED
-    mimxrt1050_evk/mimxrt1052/hyperflash
+set(panb511evb_DEPRECATED
+    panb611evb
 )
-set(mimxrt1060_evk_DEPRECATED
-    mimxrt1060_evk/mimxrt1064/hyperflash
+set(xiao_esp32c6_DEPRECATED
+    xiao_esp32c6/esp32c6/hpcore
 )
-set(mimxrt1060_evk_DEPRECATED
-     mimxrt1060_evk/mimxrt1062/qspi
+set(esp32_devkitc_wroom/esp32/procpu_DEPRECATED
+    esp32_devkitc/esp32/procpu
 )
-set(mimxrt1060_evkb_DEPRECATED
-    mimxrt1060_evk@B/mimxrt1062/qspi
+set(esp32_devkitc_wrover/esp32/procpu_DEPRECATED
+    esp32_devkitc/esp32/procpu
+)
+set(esp32_devkitc_wroom/esp32/appcpu_DEPRECATED
+    esp32_devkitc/esp32/appcpu
+)
+set(esp32_devkitc_wrover/esp32/appcpu_DEPRECATED
+    esp32_devkitc/esp32/appcpu
+)
+set(scobc_module1_DEPRECATED
+    scobc_a1
+)
+set(raytac_an54l15q_db/nrf54l15/cpuapp_DEPRECATED
+    raytac_an54lq_db_15/nrf54l15/cpuapp
+)
+set(fvp_base_revc_2xaemv8a_DEPRECATED
+    fvp_base_revc_2xaem/v8a
+)
+set(fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp_DEPRECATED
+    fvp_base_revc_2xaem/v8a/smp
+)
+set(fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp/ns_DEPRECATED
+    fvp_base_revc_2xaem/v8a/smp/ns
+)
+set(esp32s3_devkitm/esp32s3/procpu_DEPRECATED
+    esp32s3_devkitc/esp32s3/procpu
+)
+set(esp32s3_devkitm/esp32s3/appcpu_DEPRECATED
+    esp32s3_devkitc/esp32s3/appcpu
+)
+set(ubx_evk_iris_w1_fidelex/rw612_DEPRECATED
+    ubx_evk_iris_w1@fidelix/rw612
+)
+set(it51xxx_evb_DEPRECATED
+    it515xx_evb/it51526aw
 )

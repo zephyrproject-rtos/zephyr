@@ -18,26 +18,26 @@ LOG_MODULE_DECLARE(net_shell);
 #define DEFAULT_DEV_NAME "NET_CAPTURE0"
 static const struct device *capture_dev;
 
-static void get_address_str(const struct sockaddr *addr,
+static void get_address_str(const struct net_sockaddr *addr,
 			    char *str, int str_len)
 {
-	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6) {
 		snprintk(str, str_len, "[%s]:%u",
 			 net_sprint_ipv6_addr(&net_sin6(addr)->sin6_addr),
-			 ntohs(net_sin6(addr)->sin6_port));
+			 net_ntohs(net_sin6(addr)->sin6_port));
 
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) {
 		snprintk(str, str_len, "%s:%d",
 			 net_sprint_ipv4_addr(&net_sin(addr)->sin_addr),
-			 ntohs(net_sin(addr)->sin_port));
+			 net_ntohs(net_sin(addr)->sin_port));
 
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
-		   addr->sa_family == AF_PACKET) {
+		   addr->sa_family == NET_AF_PACKET) {
 		snprintk(str, str_len, "AF_PACKET");
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
-		   addr->sa_family == AF_CAN) {
+		   addr->sa_family == NET_AF_CAN) {
 		snprintk(str, str_len, "AF_CAN");
-	} else if (addr->sa_family == AF_UNSPEC) {
+	} else if (addr->sa_family == NET_AF_UNSPEC) {
 		snprintk(str, str_len, "AF_UNSPEC");
 	} else {
 		snprintk(str, str_len, "AF_UNK(%d)", addr->sa_family);
@@ -250,21 +250,24 @@ static int cmd_net_capture_disable(const struct shell *sh, size_t argc, char *ar
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_capture,
-	SHELL_CMD(setup, NULL, "Setup network packet capture.\n"
-		  "'net capture setup <remote-ip-addr> <local-addr> <peer-addr>'\n"
-		  "<remote> is the (outer) endpoint IP address,\n"
-		  "<local> is the (inner) local IP address,\n"
-		  "<peer> is the (inner) peer IP address\n"
-		  "Local and Peer addresses can have UDP port number in them (optional)\n"
-		  "like 198.0.51.2:9000 or [2001:db8:100::2]:4242",
+	SHELL_CMD(setup, NULL,
+		  SHELL_HELP("Setup network packet capture",
+			"<remote-ip-addr> <local-addr> <peer-addr>\n"
+			"<remote> is the (outer) endpoint IP address,\n"
+			"<local> is the (inner) local IP address,\n"
+			"<peer> is the (inner) peer IP address\n"
+			"Local and Peer addresses can have UDP port number in them (optional)\n"
+			"like 198.0.51.2:9000 or [2001:db8:100::2]:4242"),
 		  cmd_net_capture_setup),
-	SHELL_CMD(cleanup, NULL, "Cleanup network packet capture.",
+	SHELL_CMD(cleanup, NULL,
+		  SHELL_HELP("Cleanup network packet capture", ""),
 		  cmd_net_capture_cleanup),
-	SHELL_CMD(enable, NULL, "Enable network packet capture for a given "
-		  "network interface.\n"
-		  "'net capture enable <interface index>'",
+	SHELL_CMD(enable, NULL,
+		  SHELL_HELP("Enable network packet capture for a given network interface",
+			     "<index>"),
 		  cmd_net_capture_enable),
-	SHELL_CMD(disable, NULL, "Disable network packet capture.",
+	SHELL_CMD(disable, NULL,
+		  SHELL_HELP("Disable network packet capture", ""),
 		  cmd_net_capture_disable),
 	SHELL_SUBCMD_SET_END
 );

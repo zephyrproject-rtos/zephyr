@@ -35,7 +35,7 @@ int send_set_cl_cte_tx_enable(uint8_t adv_handle, atomic_t *adv_flags,
 	struct bt_hci_cmd_state_set state;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CL_CTE_TX_ENABLE, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}

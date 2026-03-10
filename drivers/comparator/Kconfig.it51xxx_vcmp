@@ -1,0 +1,15 @@
+# ITE Voltage Comparator driver configuration options
+
+# Copyright (c) 2025 ITE Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_IT51XXX_VCMP
+	bool "ITE it51xxx Voltage Comparator"
+	default y
+	depends on ADC_ITE_IT51XXX
+	depends on DT_HAS_ITE_IT51XXX_VCMP_ENABLED
+	depends on DYNAMIC_INTERRUPTS
+	help
+	  This option enables the ITE it51xxx voltage comparator,
+	  it51xxx supports three 10-bit threshold voltage comparator
+	  channels, and the input of each comparator comes from ADC pin.

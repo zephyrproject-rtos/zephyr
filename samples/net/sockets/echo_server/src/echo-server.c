@@ -82,7 +82,7 @@ static void stop_udp_and_tcp(void)
 }
 
 static void event_handler(struct net_mgmt_event_callback *cb,
-			  uint32_t mgmt_event, struct net_if *iface)
+			  uint64_t mgmt_event, struct net_if *iface)
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(cb);
@@ -153,7 +153,7 @@ static void init_app(void)
 #endif /* defined(CONFIG_NET_SAMPLE_CERTS_WITH_SC) */
 
 	err = tls_credential_add(SERVER_CERTIFICATE_TAG,
-				 TLS_CREDENTIAL_SERVER_CERTIFICATE,
+				 TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 				 server_certificate,
 				 sizeof(server_certificate));
 	if (err < 0) {

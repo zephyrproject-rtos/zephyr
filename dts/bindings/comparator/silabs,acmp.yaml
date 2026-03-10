@@ -1,7 +1,10 @@
 # Copyright (c) 2025 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs Series 2 ACMP (Analog Comparator)
+
 description: |
-  Silabs ACMP (Analog Comparator)
+  Analog Comparator peripheral.
 
   The minimal default configuration for the silabs acmp node is as follows:
 

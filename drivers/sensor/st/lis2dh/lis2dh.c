@@ -12,6 +12,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/drivers/sensor/lis2dh.h>
 
 LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"
@@ -286,6 +287,16 @@ static int lis2dh_acc_hp_filter_set(const struct device *dev, int32_t val)
 }
 #endif
 
+#ifdef CONFIG_LIS2DH_SELF_TEST
+static int lis2dh_self_test_set(const struct device *dev, int32_t val)
+{
+	struct lis2dh_data *lis2dh = dev->data;
+	uint8_t value = (val << LIS2DH_CTRL4_ST_SHIFT) & LIS2DH_CTRL4_ST_MASK;
+
+	return lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL4, LIS2DH_CTRL4_ST_MASK, value);
+}
+#endif
+
 static int lis2dh_acc_config(const struct device *dev,
 			     enum sensor_channel chan,
 			     enum sensor_attribute attr,
@@ -308,6 +319,10 @@ static int lis2dh_acc_config(const struct device *dev,
 #ifdef CONFIG_LIS2DH_ACCEL_HP_FILTERS
 	case SENSOR_ATTR_CONFIGURATION:
 		return lis2dh_acc_hp_filter_set(dev, val->val1);
+#endif
+#ifdef CONFIG_LIS2DH_SELF_TEST
+	case SENSOR_ATTR_LIS2DH_SELF_TEST:
+		return lis2dh_self_test_set(dev, val->val1);
 #endif
 	default:
 		LOG_DBG("Accel attribute not supported.");
@@ -344,7 +359,7 @@ static DEVICE_API(sensor, lis2dh_driver_api) = {
 	.channel_get = lis2dh_channel_get,
 };
 
-int lis2dh_init(const struct device *dev)
+int lis2dh_init_chip(const struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->data;
 	const struct lis2dh_config *cfg = dev->config;
@@ -352,10 +367,8 @@ int lis2dh_init(const struct device *dev)
 	uint8_t id;
 	uint8_t raw[6];
 
-	status = cfg->bus_init(dev);
-	if (status < 0) {
-		return status;
-	}
+	/* AN5005: LIS2DH needs 5ms delay to boot */
+	k_sleep(K_MSEC(LIS2DH_POR_WAIT_MS));
 
 	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_WAI, &id);
 	if (status < 0) {
@@ -441,20 +454,21 @@ int lis2dh_init(const struct device *dev)
 		(uint8_t)LIS2DH_LP_EN_BIT, lis2dh->scale);
 
 	/* enable accel measurements and set power mode and data rate */
-	return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
-					LIS2DH_ACCEL_EN_BITS | LIS2DH_LP_EN_BIT |
-					LIS2DH_ODR_BITS);
+	lis2dh->reg_ctrl1_active_val = LIS2DH_ACCEL_EN_BITS | LIS2DH_LP_EN_BIT | LIS2DH_ODR_BITS;
+	return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, lis2dh->reg_ctrl1_active_val);
 }
 
-#ifdef CONFIG_PM_DEVICE
 static int lis2dh_pm_action(const struct device *dev,
 			    enum pm_device_action action)
 {
-	int status;
+	int status = 0;
 	struct lis2dh_data *lis2dh = dev->data;
 	uint8_t regdata;
 
 	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		status = lis2dh_init_chip(dev);
+		break;
 	case PM_DEVICE_ACTION_RESUME:
 		/* read REFERENCE register (see datasheet rev 6 section 8.9 footnote 1) */
 		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_REFERENCE, &regdata);
@@ -467,7 +481,7 @@ static int lis2dh_pm_action(const struct device *dev,
 		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
 						  lis2dh->reg_ctrl1_active_val);
 		if (status < 0) {
-			LOG_ERR("failed to write reg_crtl1");
+			LOG_ERR("failed to write reg_ctrl1");
 			return status;
 		}
 		break;
@@ -476,23 +490,38 @@ static int lis2dh_pm_action(const struct device *dev,
 		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL1,
 						 &lis2dh->reg_ctrl1_active_val);
 		if (status < 0) {
-			LOG_ERR("failed to read reg_crtl1");
+			LOG_ERR("failed to read reg_ctrl1");
 			return status;
 		}
 		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
 						  LIS2DH_SUSPEND);
 		if (status < 0) {
-			LOG_ERR("failed to write reg_crtl1");
+			LOG_ERR("failed to write reg_ctrl1");
 			return status;
 		}
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return status;
 }
-#endif /* CONFIG_PM_DEVICE */
+
+static int lis2dh_init(const struct device *dev)
+{
+	const struct lis2dh_config *cfg = dev->config;
+	int status;
+
+	status = cfg->bus_init(dev);
+	if (status < 0) {
+		LOG_ERR("Failed to initialize the bus.");
+		return status;
+	}
+
+	return pm_device_driver_init(dev, lis2dh_pm_action);
+}
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
 #warning "LIS2DH driver enabled without any devices"
@@ -581,8 +610,7 @@ static int lis2dh_pm_action(const struct device *dev,
 					SPI_WORD_SET(8) |		\
 					SPI_OP_MODE_MASTER |		\
 					SPI_MODE_CPOL |			\
-					SPI_MODE_CPHA,			\
-					0) },				\
+					SPI_MODE_CPHA)},		\
 		.hw = { .is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),	\
 			.disc_pull_up = DISC_PULL_UP(inst),		\
 			.anym_on_int1 = ANYM_ON_INT1(inst),		\

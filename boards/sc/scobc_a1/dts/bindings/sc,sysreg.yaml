@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Space Cubics Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: SC-OBC Module A1 System Register
+
+compatible: "sc,sysreg"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

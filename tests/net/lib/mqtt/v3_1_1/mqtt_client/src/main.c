@@ -27,7 +27,7 @@ static uint8_t broker_topic[32];
 static uint8_t rx_buffer[BUFFER_SIZE];
 static uint8_t tx_buffer[BUFFER_SIZE];
 static struct mqtt_client client_ctx;
-static struct sockaddr broker;
+static struct net_sockaddr broker;
 int s_sock = -1, c_sock = -1;
 static struct zsock_pollfd client_fds[1];
 static int client_nfds;
@@ -108,34 +108,34 @@ static void client_wait(bool timeout_allowed)
 
 static void broker_init(void)
 {
-	struct sockaddr_in6 *broker6 = net_sin6(&broker);
-	struct sockaddr_in6 bind_addr = {
-		.sin6_family = AF_INET6,
-		.sin6_port = htons(SERVER_PORT),
-		.sin6_addr = IN6ADDR_ANY_INIT,
+	struct net_sockaddr_in6 *broker6 = net_sin6(&broker);
+	struct net_sockaddr_in6 bind_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(SERVER_PORT),
+		.sin6_addr = NET_IN6ADDR_ANY_INIT,
 	};
 	int reuseaddr = 1;
 	int ret;
 
-	broker6->sin6_family = AF_INET6;
-	broker6->sin6_port = htons(SERVER_PORT);
-	zsock_inet_pton(AF_INET6, SERVER_ADDR, &broker6->sin6_addr);
+	broker6->sin6_family = NET_AF_INET6;
+	broker6->sin6_port = net_htons(SERVER_PORT);
+	zsock_inet_pton(NET_AF_INET6, SERVER_ADDR, &broker6->sin6_addr);
 
 	memset(broker_topic, 0, sizeof(broker_topic));
 	broker_offset = 0;
 
-	s_sock = zsock_socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	s_sock = zsock_socket(NET_AF_INET6, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	if (s_sock < 0) {
 		printk("Failed to create server socket\n");
 	}
 
-	ret = zsock_setsockopt(s_sock, SOL_SOCKET, SO_REUSEADDR, &reuseaddr,
+	ret = zsock_setsockopt(s_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR, &reuseaddr,
 			       sizeof(reuseaddr));
 	if (ret < 0) {
 		printk("Failed to set SO_REUSEADDR on server socket, %d\n", errno);
 	}
 
-	ret = zsock_bind(s_sock, (struct sockaddr *)&bind_addr, sizeof(bind_addr));
+	ret = zsock_bind(s_sock, (struct net_sockaddr *)&bind_addr, sizeof(bind_addr));
 	if (ret < 0) {
 		printk("Failed to bind server socket, %d\n", errno);
 	}
@@ -693,7 +693,7 @@ static void test_disconnect(void)
 {
 	int ret;
 
-	ret = mqtt_disconnect(&client_ctx);
+	ret = mqtt_disconnect(&client_ctx, NULL);
 	zassert_ok(ret, "MQTT client failed to disconnect (%d)", ret);
 	broker_process(MQTT_PKT_TYPE_DISCONNECT);
 
@@ -704,6 +704,23 @@ static void test_disconnect(void)
 
 ZTEST(mqtt_client, test_mqtt_connect)
 {
+	test_connect();
+	zassert_true(test_ctx.connected, "MQTT client should be connected");
+	test_disconnect();
+	zassert_false(test_ctx.connected, "MQTT client should be disconnected");
+}
+
+ZTEST(mqtt_client, test_mqtt_connect_with_binding)
+{
+	char name_buf[NET_IFNAMSIZ] = { 0 };
+	int ret = net_if_get_name(net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)),
+				  name_buf, sizeof(name_buf));
+
+
+	zassert_true(ret > 0, "Failed to get loopback interface name");
+
+	client_ctx.transport.if_name = name_buf;
+
 	test_connect();
 	zassert_true(test_ctx.connected, "MQTT client should be connected");
 	test_disconnect();

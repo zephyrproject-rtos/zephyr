@@ -16,8 +16,9 @@
 #include <zephyr/toolchain/gcc.h>
 #include <zephyr/types.h>
 #include <zephyr/linker/linker-defs.h>
-#include <kernel_internal.h>
+#include <zephyr/arch/common/init.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/zsr.h>
 
 #include <esp_private/system_internal.h>
 #include <esp32s3/rom/cache.h>
@@ -38,7 +39,7 @@
 void __appcpu_start(void);
 static HDR_ATTR void (*_entry_point)(void) = &__appcpu_start;
 
-extern void z_prep_c(void);
+extern FUNC_NORETURN void z_prep_c(void);
 
 static void core_intr_matrix_clear(void)
 {
@@ -57,7 +58,7 @@ void IRAM_ATTR __appcpu_start(void)
 	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
 
 	/* Zero out BSS.  Clobber _bss_start to avoid memset() elision. */
-	z_bss_zero();
+	arch_bss_zero();
 
 	__asm__ __volatile__("" : : "g"(&__bss_start) : "memory");
 
@@ -68,11 +69,9 @@ void IRAM_ATTR __appcpu_start(void)
 	 * initialization code wants a valid _current before
 	 * arch_kernel_init() is invoked.
 	 */
-	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[1]));
+	__asm__ __volatile__("wsr %0, " ZSR_CPU_STR "; rsync" : : "r"(&_kernel.cpus[1]));
 
 	core_intr_matrix_clear();
-
-	esp_intr_initialize();
 
 	/* Start Zephyr */
 	z_prep_c();
@@ -89,5 +88,5 @@ int IRAM_ATTR arch_printk_char_out(int c)
 
 void sys_arch_reboot(int type)
 {
-	esp_restart_noos();
+	esp_restart();
 }

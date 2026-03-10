@@ -2,7 +2,7 @@
 # Copyright (c) 2021, Laird Connectivity
 # SPDX-License-Identifier: Apache-2.0
 
-description: TCA9538 GPIO node
+description: TCA9538 GPIO
 
 compatible: "ti,tca9538"
 
@@ -37,6 +37,10 @@ properties:
       Interrupt mask register is set to logic 1 by default without
       enabling interrupts. Setting corresponding mask bits to logic
       0 to enable the interrupts.
+
+  has-pud:
+    type: boolean
+    description: Supports pull-up/pull-down resistors
 
 gpio-cells:
   - pin

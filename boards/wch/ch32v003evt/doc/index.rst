@@ -3,7 +3,7 @@
 Overview
 ********
 
-The `WCH`_ CH32V003EVT hardware provides support for QingKe 32-bit RISC-V2A
+The `WCH`_ CH32V003EVT hardware provides support for QingKe V2A 32-bit RISC-V
 processor and the following devices:
 
 * CLOCK
@@ -16,31 +16,13 @@ the processor's information and the datasheet.
 Hardware
 ********
 
-The QingKe 32-bit RISC-V2A processor of the WCH CH32V003EVT is clocked by an
+The QingKe V2A 32-bit RISC-V processor of the WCH CH32V003EVT is clocked by an
 external crystal and runs at 48 MHz.
 
 Supported Features
 ==================
 
-The ``ch32v003evt`` board target supports the following hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| PINCTRL   | on-chip    | pinctrl              |
-+-----------+------------+----------------------+
-| TIMER     | on-chip    | timer                |
-+-----------+------------+----------------------+
-| UART      | on-chip    | uart                 |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -52,6 +34,8 @@ LED
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``ch32v003evt`` board target can be built and flashed
 in the usual way (see :ref:`build_an_application` and :ref:`application_run`

@@ -5,10 +5,10 @@
 config CACHE_ANDES
 bool "ANDES external cache driver"
 	default y
-	depends on SOC_FAMILY_ANDES_V5
+	depends on DT_HAS_ANDESTECH_ANDESCORE_V5_ENABLED
 	select CACHE_HAS_DRIVER
 	help
-	  This option enables the CACHE driver for ANDES V5 series SOC.
+	  This option enables the CACHE driver for SoC based on Andes V5 core.
 
 if CACHE_ANDES
 

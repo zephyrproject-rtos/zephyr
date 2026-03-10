@@ -2,7 +2,9 @@ sample:
   name: STM32 Single Wire UART sample
 tests:
   sample.boards.stm32.uart.single_wire:
-    platform_allow: stm32f3_disco
+    platform_allow:
+      - stm32f3_disco
+      - nucleo_wba55cg
     tags:
       - drivers
       - uart

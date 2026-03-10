@@ -1,0 +1,19 @@
+identifier: esp32c6_devkitc/esp32c6/lpcore
+name: ESP32-C6-DevKitC LP Core
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - cpu
+  - uart
+  - serial
+testing:
+  only_tags:
+    - introduction
+  ignore_tags:
+    - kernel
+    - posix
+    - chre
+    - cpp
+vendor: espressif

@@ -179,6 +179,14 @@ extern "C" {
  */
 #define I3C_CCC_VENDOR(broadcast, id)		((id) + ((broadcast) ? 0x61U : 0xE0U))
 
+/**
+ * Reset Dynamic Address (Direct)
+ *
+ * @note This should not be used by devices that support I3C v1.0 and this
+ * shall not be used for devices that support I3C v1.1 or later.
+ */
+#define I3C_CCC_RSTDAA_DC			0x86U
+
 /** Set Dynamic Address from Static Address (Direct) */
 #define I3C_CCC_SETDASA				0x87U
 
@@ -515,7 +523,7 @@ struct i3c_ccc_address {
 	 * @note For SETDATA, SETNEWDA and SETGRPA,
 	 * the address is left-shift by 1, and bit[0] is always 0.
 	 *
-	 * @note Fpr SET GETACCCR, the address is left-shift by 1,
+	 * @note For SET GETACCCR, the address is left-shift by 1,
 	 * and bit[0] is the calculated odd parity bit.
 	 */
 	uint8_t addr;
@@ -638,6 +646,9 @@ union i3c_ccc_getstatus {
  */
 #define I3C_CCC_GETSTATUS_ACTIVITY_MODE(status)			\
 	FIELD_GET(I3C_CCC_GETSTATUS_ACTIVITY_MODE_MASK, (status))
+
+/** GETSTATUS Format 1 - Activity Mode Unable to participate in Controller Handoff */
+#define I3C_CCC_GETSTATUS_ACTIVITY_MODE_NCH			0x3
 
 /** GETSTATUS Format 1 - Number of Pending Interrupts bitmask. */
 #define I3C_CCC_GETSTATUS_NUM_INT_MASK				GENMASK(3U, 0U)
@@ -869,7 +880,7 @@ union i3c_ccc_getmxds {
  * @param crhdly1 GETMXDS value.
  */
 #define I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE(crhdly1)	\
-	FIELD_GET(I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_MASK, (chrdly1))
+	FIELD_GET(I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_MASK, (crhdly1))
 
 /**
  * @brief Indicate which format of GETCAPS to use.
@@ -1500,6 +1511,21 @@ static inline int i3c_ccc_do_rstact_fmt3(const struct i3c_device_desc *target,
 }
 
 /**
+ * @brief Reset dynamic addresses for a targets.
+ *
+ * Helper function to reset a dynamic addresses of a targets.
+ *
+ * @note This should not be used by devices that support I3C v1.0 and this
+ * shall not be used for devices that support I3C v1.1 or later.
+ *
+ * @param[in] target Pointer to the target device descriptor where
+ *                   the device is configured with a dynamic address.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_rstdaa(struct i3c_device_desc *target);
+
+/**
  * @brief Broadcast RSTDAA to reset dynamic addresses for all targets.
  *
  * Helper function to reset dynamic addresses of all connected targets.
@@ -1535,7 +1561,7 @@ int i3c_ccc_do_setdasa(const struct i3c_device_desc *target,
  * Note this does not update @p target with the new dynamic address.
  *
  * @param[in] target Pointer to the target device descriptor where
- *                   the device is configured with a static address.
+ *                   the device is configured with a dynamic address.
  * @param[in] new_da Struct of the Dynamic address
  *
  * @return @see i3c_do_ccc
@@ -2134,6 +2160,24 @@ int i3c_ccc_do_deftgts_all(const struct device *controller,
  */
 int i3c_ccc_do_setbuscon(const struct device *controller,
 				uint8_t *context, uint16_t length);
+
+/**
+ * @brief Direct GETACCCR for Controller Handoff
+ *
+ * Helper function to allow for the Active Controller to pass the
+ * Controller Role to a Secondary Controller. The returned address
+ * should match it's dynamic address along with odd parity.
+ *
+ * Note it is up to the caller to verify the correct returned address
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[out] handoff_address Pointer to the address returned by the secondary
+ * controller.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_getacccr(const struct i3c_device_desc *target,
+			   struct i3c_ccc_address *handoff_address);
 
 #ifdef __cplusplus
 }

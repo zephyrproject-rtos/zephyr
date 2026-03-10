@@ -5,14 +5,12 @@
  */
 
 ipc0: ipc0 {
-	compatible = "zephyr,ipc-icbmsg";
-	status = "okay";
+	compatible = "zephyr,ipc-openamp-static-vrings";
+	memory-region = <&sram0_shared>;
 	mboxes = <&mbox 0>, <&mbox 1>;
 	mbox-names = "tx", "rx";
-	tx-region = <&cpuapp_cpunet_ipc_shm>;
-	rx-region = <&cpunet_cpuapp_ipc_shm>;
-	tx-blocks = <32>;
-	rx-blocks = <32>;
+	role = "host";
+	status = "okay";
 
 	bt_hci_ipc0: bt_hci_ipc0 {
 		compatible = "zephyr,bt-hci-ipc";

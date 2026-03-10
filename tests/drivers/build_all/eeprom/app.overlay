@@ -10,8 +10,8 @@
  * (and be extended to test) real hardware.
  */
 
- #include <freq.h>
- #include <mem.h>
+#include <freq.h>
+#include <mem.h>
 
 / {
 	test {
@@ -55,15 +55,15 @@
 				/* read-only; */
 			};
 
-			test_i2c_tmp116: tmp116@2 {
+			test_i2c_tmp11x: tmp11x@2 {
 				status = "okay";
-				compatible = "ti,tmp116";
+				compatible = "ti,tmp11x";
 				reg = <0x2>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 
-				test_tmp116_eeprom: ti_tmp116_eeprom@0 {
-					compatible = "ti,tmp116-eeprom";
+				test_tmp11x_eeprom: ti_tmp11x_eeprom@0 {
+					compatible = "ti,tmp11x-eeprom";
 					reg = <0x0>;
 					read-only;
 				};
@@ -98,6 +98,13 @@
 				reg = <0x1>;
 				spi-max-frequency = <DT_FREQ_M(25)>;
 				size = <DT_SIZE_K(128)>;
+			};
+
+			test_spi_fm25xxx: fm25xxx@2 {
+				compatible = "infineon,fm25xxx";
+				reg = <0x2>;
+				spi-max-frequency = <DT_FREQ_M(20)>;
+				size = <8000>;
 			};
 		};
 	};

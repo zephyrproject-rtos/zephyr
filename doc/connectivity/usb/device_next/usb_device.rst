@@ -1,7 +1,7 @@
 .. _usb_device_stack_next:
 
-New USB device support
-######################
+USB device support
+##################
 
 Overview
 ********
@@ -10,18 +10,15 @@ USB device support consists of the USB device controller (UDC) drivers
 , :ref:`udc_api`, and USB device stack, :ref:`usbd_api`.
 The :ref:`udc_api` provides a generic and vendor independent interface to USB
 device controllers, and although, there a is clear separation between these
-layers, the purpose of :ref:`udc_api` is to serve new Zephyr's USB device stack
+layers, the purpose of :ref:`udc_api` is to serve Zephyr's USB device stack
 exclusively.
 
-The new device stack supports multiple device controllers, meaning that if a
+The device stack supports multiple device controllers, meaning that if a
 SoC has multiple controllers, they can be used simultaneously. Full and
 high-speed device controllers are supported. It also provides support for
 registering multiple function or class instances to a configuration at runtime,
 or changing the configuration later. It has built-in support for several USB
 classes and provides an API to implement custom USB functions.
-
-The new USB device support is considered experimental and will replace
-:ref:`usb_device_stack`.
 
 Samples
 =======
@@ -32,12 +29,7 @@ Samples
 
 * :zephyr:code-sample:`uac2-implicit-feedback`
 
-Samples ported to new USB device support
-----------------------------------------
-
-To build a sample that supports both the old and new USB device stack, set the
-configuration ``-DCONF_FILE=usbd_next_prj.conf`` either directly or via
-``west``.
+* :zephyr:code-sample:`uvc`
 
 * :zephyr:code-sample:`bluetooth_hci_usb`
 
@@ -49,10 +41,12 @@ configuration ``-DCONF_FILE=usbd_next_prj.conf`` either directly or via
 
 * :zephyr:code-sample:`usb-hid-mouse`
 
-* :zephyr:code-sample:`zperf` To build the sample for the new device support,
+* :zephyr:code-sample:`zperf` To build the sample for the device support,
   set the configuration overlay file
   ``-DDEXTRA_CONF_FILE=overlay-usbd_next_ecm.conf`` and devicetree overlay file
   ``-DDTC_OVERLAY_FILE="usbd_next_ecm.overlay`` either directly or via ``west``.
+
+.. _usb_device_next_howto_configure:
 
 How to configure and enable USB device support
 **********************************************
@@ -223,69 +217,5 @@ instance (``n``) and is used as an argument to the :c:func:`usbd_register_class`
 +-----------------------------------+-------------------------+-------------------------+
 | Bluetooth HCI USB transport layer | :ref:`bt_hci_raw`       | :samp:`bt_hci_{n}`      |
 +-----------------------------------+-------------------------+-------------------------+
-
-CDC ACM UART
-============
-
-CDC ACM implements a virtual UART controller and provides Interrupt-driven UART
-API and Polling UART API.
-
-Interrupt-driven UART API
--------------------------
-
-Internally the implementation uses two ringbuffers, these take over the
-function of the TX/RX FIFOs (TX/RX buffers) from the :ref:`uart_interrupt_api`.
-
-As described in the :ref:`uart_interrupt_api`, the functions
-:c:func:`uart_irq_update()`, :c:func:`uart_irq_is_pending`,
-:c:func:`uart_irq_rx_ready()`, :c:func:`uart_irq_tx_ready()`
-:c:func:`uart_fifo_read()`, and :c:func:`uart_fifo_fill()`
-should be called from the interrupt handler, see
-:c:func:`uart_irq_callback_user_data_set()`. To prevent undefined behaviour,
-the implementation of these functions checks in what context they are called
-and fails if it is not an interrupt handler.
-
-Also, as described in the UART API, :c:func:`uart_irq_is_pending`
-:c:func:`uart_irq_rx_ready()`, and :c:func:`uart_irq_tx_ready()`
-can only be called after :c:func:`uart_irq_update()`.
-
-Simplified, the interrupt handler should look something like:
-
-.. code-block:: c
-
-   static void interrupt_handler(const struct device *dev, void *user_data)
-   {
-      while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
-         if (uart_irq_rx_ready(dev)) {
-            int len;
-            int n;
-
-            /* ... */
-            n = uart_fifo_read(dev, buffer, len);
-            /* ... */
-         }
-
-         if (uart_irq_tx_ready(dev)) {
-            int len;
-            int n;
-
-            /* ... */
-            n = uart_fifo_fill(dev, buffer, len);
-           /* ... */
-         }
-   }
-
-All these functions are not directly dependent on the status of the USB device.
-Filling the TX FIFO does not mean that data is being sent to the host. And
-successfully reading the RX FIFO does not mean that the device is still
-connected to the host. If there is space in the TX FIFO, and the TX interrupt
-is enabled, :c:func:`uart_irq_tx_ready()` will succeed. If there is data in the
-RX FIFO, and the RX interrupt is enabled, :c:func:`uart_irq_rx_ready()` will
-succeed. Function :c:func:`uart_irq_tx_complete()` is not implemented yet.
-
-Polling UART API
-----------------
-
-The CDC ACM poll out implementation follows :ref:`uart_polling_api` and
-blocks when the TX FIFO is full only if the hw-flow-control property is enabled
-and called from a non-ISR context.
+| USB Video Class (UVC)             | Video device            | :samp:`uvc_{n}`         |
++-----------------------------------+-------------------------+-------------------------+

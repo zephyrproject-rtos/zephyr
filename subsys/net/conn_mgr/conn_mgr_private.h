@@ -40,10 +40,12 @@
 					 NET_EVENT_IF_UP)
 
 #define CONN_MGR_CONN_IFACE_EVENTS_MASK	(NET_EVENT_IF_ADMIN_UP		|\
+					 NET_EVENT_IF_UP		|\
 					 NET_EVENT_IF_DOWN)
 
 #define CONN_MGR_CONN_SELF_EVENTS_MASK	(NET_EVENT_CONN_IF_TIMEOUT	| \
-					 NET_EVENT_CONN_IF_FATAL_ERROR)
+					 NET_EVENT_CONN_IF_FATAL_ERROR	| \
+					 NET_EVENT_CONN_IF_IDLE_TIMEOUT)
 
 #define CONN_MGR_IPV6_EVENTS_MASK	(NET_EVENT_IPV6_ADDR_ADD	| \
 					 NET_EVENT_IPV6_ADDR_DEL	| \
@@ -62,6 +64,9 @@ void conn_mgr_init_events_handler(void);
 
 /* Cause conn_mgr_connectivity to Initialize all connectivity implementation bindings */
 void conn_mgr_conn_init(void);
+
+/* Retrieve the raw pointer to the state array of size CONN_MGR_IFACE_MAX */
+uint16_t *conn_mgr_if_state_internal(void);
 
 /* Internal helper function to allow the shell net cm command to safely read conn_mgr state. */
 uint16_t conn_mgr_if_state(struct net_if *iface);

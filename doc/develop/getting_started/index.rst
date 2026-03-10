@@ -22,7 +22,7 @@ Click the operating system you are using.
 
    .. group-tab:: Ubuntu
 
-      This guide covers Ubuntu version 20.04 LTS and later.
+      This guide covers Ubuntu version 24.04 LTS and later.
       If you are using a different Linux distribution see :ref:`installation_linux`.
 
       .. code-block:: bash
@@ -62,7 +62,7 @@ The current minimum required version for the main dependencies are:
      - 3.20.5
 
    * - `Python <https://www.python.org/>`_
-     - 3.10
+     - 3.12
 
    * - `Devicetree compiler <https://www.devicetree.org/>`_
      - 1.4.6
@@ -73,32 +73,18 @@ The current minimum required version for the main dependencies are:
 
       .. _install_dependencies_ubuntu:
 
-      #. If using an Ubuntu version older than 22.04, it is necessary to add extra
-         repositories to meet the minimum required versions for the main
-         dependencies listed above. In that case, download, inspect and execute
-         the Kitware archive script to add the Kitware APT repository to your
-         sources list.
-         A detailed explanation of ``kitware-archive.sh`` can be found here
-         `kitware third-party apt repository <https://apt.kitware.com/>`_:
-
-         .. code-block:: bash
-
-            wget https://apt.kitware.com/kitware-archive.sh
-            sudo bash kitware-archive.sh
-
       #. Use ``apt`` to install the required dependencies:
 
          .. code-block:: bash
 
             sudo apt install --no-install-recommends git cmake ninja-build gperf \
-              ccache dfu-util device-tree-compiler wget \
-              python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
-              make gcc gcc-multilib g++-multilib libsdl2-dev libmagic1
+              ccache dfu-util device-tree-compiler wget python3-dev python3-venv python3-tk \
+              xz-utils file make gcc gcc-multilib g++-multilib libsdl2-dev libmagic1
 
          .. note::
 
             Due to the unavailability of ``gcc-multilib`` and ``g++-multilib`` on AArch64
-            (ARM64) systems, you may need to remove them from the list of packages to install.
+            (ARM64) systems, you may need to omit them from the list of packages to install.
 
       #. Verify the versions of the main dependencies installed on your system by entering:
 
@@ -160,48 +146,42 @@ The current minimum required version for the main dependencies are:
 
          Therefore, we don't recommend using WSL when getting started.
 
-      These instructions must be run in a ``cmd.exe`` command prompt terminal window.
       In modern version of Windows (10 and later) it is recommended to install the Windows Terminal
-      application from the Microsoft Store. The required commands differ on PowerShell.
+      application from the Microsoft Store. Instructions are provided for a ``cmd.exe`` or
+      PowerShell command prompts.
 
-      These instructions rely on `Chocolatey`_. If Chocolatey isn't an option,
-      you can install dependencies from their respective websites and ensure
-      the command line tools are on your :envvar:`PATH` :ref:`environment
-      variable <env_vars>`.
+      These instructions rely on Windows' official package manager, `winget`_.
+      If using winget isn't an option, you can install dependencies from their
+      respective websites and ensure the command line tools are on your
+      :envvar:`PATH` :ref:`environment variable <env_vars>`.
 
       |p|
 
       .. _install_dependencies_windows:
 
-      #. `Install chocolatey`_.
+      #. In modern Windows versions, winget is already pre-installed by default.
+         You can verify that this is the case by typing ``winget`` in a terminal
+         window. If that fails, you can then `install winget`_.
 
-      #. Open a ``cmd.exe`` terminal window as **Administrator**. To do so, press the Windows key,
-         type ``cmd.exe``, right-click the :guilabel:`Command Prompt` search result, and choose
-         :guilabel:`Run as Administrator`.
+      #. Open a Command Prompt (``cmd.exe``) or PowerShell terminal window.
+         To do so, press the Windows key, type ``cmd.exe`` or PowerShell and
+         click on the result.
 
-      #. Disable global confirmation to avoid having to confirm the
-         installation of individual programs:
-
-         .. code-block:: bat
-
-            choco feature enable -n allowGlobalConfirmation
-
-      #. Use ``choco`` to install the required dependencies:
+      #. Use ``winget`` to install the required dependencies:
 
          .. code-block:: bat
 
-            choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-            choco install ninja gperf python311 git dtc-msys2 wget 7zip
-
-         .. warning::
-
-            As of November 2024, Python 3.13 is not recommended for Zephyr development on Windows,
-            as some required Python dependencies may be difficult to install.
+            winget install Kitware.CMake Ninja-build.Ninja oss-winget.gperf Python.Python.3.12 Git.Git oss-winget.dtc wget 7zip.7zip
 
       #. Close the terminal window.
 
-.. _Chocolatey: https://chocolatey.org/
-.. _Install chocolatey: https://chocolatey.org/install
+      .. note::
+
+         You may need to add the 7zip installation folder to your ``PATH``.
+
+
+.. _winget: https://learn.microsoft.com/en-us/windows/package-manager/
+.. _install winget: https://aka.ms/getwinget
 
 .. _get_the_code:
 .. _clone-zephyr:
@@ -222,12 +202,6 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 .. tabs::
 
    .. group-tab:: Ubuntu
-
-      #. Use ``apt`` to install Python ``venv`` package:
-
-         .. code-block:: bash
-
-            sudo apt install python3-venv
 
       #. Create a new virtual environment:
 
@@ -258,11 +232,25 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
       #. Get the Zephyr source code:
 
-         .. code-block:: bash
+         .. only:: not release
 
-           west init ~/zephyrproject
-           cd ~/zephyrproject
-           west update
+            .. code-block:: bash
+
+               west init ~/zephyrproject
+               cd ~/zephyrproject
+               west update
+
+         .. only:: release
+
+            .. We need to use a parsed-literal here because substitutions do not work in code
+               blocks. This means users can't copy-paste these lines as easily as other blocks but
+               should be good enough still :)
+
+            .. parsed-literal::
+
+               west init ~/zephyrproject --mr v |zephyr-version-ltrim|
+               cd ~/zephyrproject
+               west update
 
       #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
          automatically load boilerplate code required for building Zephyr
@@ -272,12 +260,15 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
             west zephyr-export
 
-      #. The Zephyr west extension command, ``west packages`` can be used to install Python
-         dependencies.
+      #. Install Python dependencies using ``west packages``.
 
          .. code-block:: bash
 
             west packages pip --install
+
+         .. note::
+
+            This could downgrade or upgrade west itself.
 
    .. group-tab:: macOS
 
@@ -324,29 +315,54 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
             west zephyr-export
 
-      #. The Zephyr west extension command, ``west packages`` can be used to install Python
-         dependencies.
+      #. Install Python dependencies using ``west packages``.
 
          .. code-block:: bash
 
             west packages pip --install
 
+         .. note::
+
+            This could downgrade or upgrade west itself.
+
    .. group-tab:: Windows
 
-      #. Open a ``cmd.exe`` terminal window **as a regular user**
+      #. Open a ``cmd.exe`` or PowerShell terminal window **as a regular user**
 
       #. Create a new virtual environment:
 
-         .. code-block:: bat
+         .. tabs::
 
-            cd %HOMEPATH%
-            python -m venv zephyrproject\.venv
+            .. code-tab:: bat
+
+               cd %HOMEPATH%
+               python -m venv zephyrproject\.venv
+
+            .. code-tab:: powershell
+
+               cd $Env:HOMEPATH
+               python -m venv zephyrproject\.venv
 
       #. Activate the virtual environment:
 
-         .. code-block:: bat
+         .. note::
 
-            zephyrproject\.venv\Scripts\activate.bat
+            Python's virtual environment activation in PowerShell requires
+            running a script itself, which needs to be allowed.
+
+            .. code-block:: powershell
+
+               Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+         .. tabs::
+
+            .. code-tab:: bat
+
+               zephyrproject\.venv\Scripts\activate.bat
+
+            .. code-tab:: powershell
+
+               zephyrproject\.venv\Scripts\Activate.ps1
 
          Once activated your shell will be prefixed with ``(.venv)``. The
          virtual environment can be deactivated at any time by running
@@ -379,12 +395,21 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
             west zephyr-export
 
-      #. The Zephyr west extension command, ``west packages`` can be used to install Python
-         dependencies.
+      #. Install Python dependencies using ``west packages``.
 
-         .. code-block:: bat
+         .. tabs::
 
-            west packages pip --install
+            .. code-tab:: bat
+
+               cmd /c zephyr\scripts\utils\west-packages-pip-install.cmd
+
+            .. code-tab:: powershell
+
+               python -m pip install @((west packages pip) -split ' ')
+
+         .. note::
+
+            This could downgrade or upgrade west itself.
 
 Install the Zephyr SDK
 **********************
@@ -434,10 +459,17 @@ that are used to emulate, flash and debug Zephyr applications.
 
       Install the Zephyr SDK using the ``west sdk install``.
 
-         .. code-block:: bat
+         .. tabs::
 
-            cd %HOMEPATH%\zephyrproject\zephyr
-            west sdk install
+            .. code-tab:: bat
+
+               cd %HOMEPATH%\zephyrproject\zephyr
+               west sdk install
+
+            .. code-tab:: powershell
+
+               cd $Env:HOMEPATH\zephyrproject\zephyr
+               west sdk install
 
       .. tip::
 
@@ -485,10 +517,17 @@ Build the :zephyr:code-sample:`blinky` with :ref:`west build <west-building>`, c
 
    .. group-tab:: Windows
 
-      .. code-block:: bat
+      .. tabs::
 
-         cd %HOMEPATH%\zephyrproject\zephyr
-         west build -p always -b <your-board-name> samples\basic\blinky
+         .. code-tab:: bat
+
+            cd %HOMEPATH%\zephyrproject\zephyr
+            west build -p always -b <your-board-name> samples\basic\blinky
+
+         .. code-tab:: powershell
+
+            cd $Env:HOMEPATH\zephyrproject\zephyr
+            west build -p always -b <your-board-name> samples\basic\blinky
 
 The ``-p always`` option forces a pristine build, and is recommended for new
 users. Users may also use the ``-p auto`` option, which will use
@@ -502,7 +541,7 @@ another sample.
    When building for such boards it is necessary to specify the SoC or CPU
    cluster for which the sample must be built.
    For example to build :zephyr:code-sample:`blinky` for the ``cpuapp`` core on
-   the :ref:`nRF5340DK <nrf5340dk_nrf5340>` the board must be provided as:
+   the :zephyr:board:`nrf5340dk` the board must be provided as:
    ``nrf5340dk/nrf5340/cpuapp``. See also :ref:`board_terminology` for more
    details.
 
@@ -532,11 +571,11 @@ Then flash the sample using :ref:`west flash <west-flashing>`:
 
 If you're using blinky, the LED will start to blink as shown in this figure:
 
-.. figure:: img/ReelBoard-Blinky.png
+.. figure:: img/ReelBoard-Blinky.webp
    :width: 400px
    :name: reelboard-blinky
 
-   Phytec :ref:`reel_board <reel_board>` running blinky
+   Phytec :zephyr:board:`reel_board <reel_board>` running blinky
 
 Next Steps
 **********

@@ -5,7 +5,7 @@ description: Emulated DMA Controller
 
 include: dma-controller.yaml
 
-compatible: zephyr,dma-emul
+compatible: "zephyr,dma-emul"
 
 properties:
   stack-size:

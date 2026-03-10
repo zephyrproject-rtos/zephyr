@@ -15,4 +15,9 @@
 
 #define NU_ETH_MTU_SIZE              1500
 
+/* NuMaker chip's OUI*/
+#define NUMAKER_OUI_B0 0xDA
+#define NUMAKER_OUI_B1 0x00
+#define NUMAKER_OUI_B2 0x53
+
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_NUMAKER_PRIV_H_ */

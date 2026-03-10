@@ -25,8 +25,8 @@
 
 LOG_MODULE_REGISTER(peer, LOG_LEVEL_DBG);
 
-static DEFINE_FLAG(is_subscribed);
-static DEFINE_FLAG(got_notification_1);
+DEFINE_FLAG_STATIC(is_subscribed);
+DEFINE_FLAG_STATIC(got_notification_1);
 
 extern unsigned long runtime_log_level;
 

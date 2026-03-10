@@ -54,16 +54,16 @@ ZTEST_USER_F(net_socketpair, test_poll_timeout_nonblocking)
 {
 	int res;
 
-	res = zsock_fcntl(fixture->sv[0], F_GETFL, 0);
-	zassert_not_equal(res, -1, "fcntl failed: %d", errno);
+	res = zsock_fcntl(fixture->sv[0], ZVFS_F_GETFL, 0);
+	zassert_not_equal(res, -1, "zsock_fcntl() failed: %d", errno);
 
 	int flags = res;
 
-	res = zsock_fcntl(fixture->sv[0], F_SETFL, O_NONBLOCK | flags);
-	zassert_not_equal(res, -1, "fcntl failed: %d", errno);
+	res = zsock_fcntl(fixture->sv[0], ZVFS_F_SETFL, ZVFS_O_NONBLOCK | flags);
+	zassert_not_equal(res, -1, "zsock_fcntl() failed: %d", errno);
 
-	res = zsock_fcntl(fixture->sv[1], F_SETFL, O_NONBLOCK | flags);
-	zassert_not_equal(res, -1, "fcntl failed: %d", errno);
+	res = zsock_fcntl(fixture->sv[1], ZVFS_F_SETFL, ZVFS_O_NONBLOCK | flags);
+	zassert_not_equal(res, -1, "zsock_fcntl() failed: %d", errno);
 
 	test_socketpair_poll_timeout_common(fixture);
 }
@@ -130,7 +130,7 @@ ZTEST_F(net_socketpair, test_poll_close_remote_end_POLLOUT)
 	 * But rather than reading, close the other end of the channel
 	 */
 
-	res = zsock_socketpair(AF_UNIX, SOCK_STREAM, 0, fixture->sv);
+	res = zsock_socketpair(NET_AF_UNIX, NET_SOCK_STREAM, 0, fixture->sv);
 	zassert_not_equal(res, -1, "socketpair() failed: %d", errno);
 
 	for (size_t i = 0; i < CONFIG_NET_SOCKETPAIR_BUFFER_SIZE; ++i) {

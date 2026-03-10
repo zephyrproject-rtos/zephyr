@@ -9,6 +9,6 @@ board_runner_args(linkserver  "--device=LPC55S16:LPCXpresso55S16")
 board_runner_args(jlink "--device=LPC55S16" "--reset-after-load")
 board_runner_args(pyocd "--target=lpc55s16")
 
-include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/linkserver.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)

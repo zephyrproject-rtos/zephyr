@@ -4,13 +4,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path, PurePath
-import pykwalify.core
-import sys
-from typing import List
+
+import jsonschema
 import yaml
-import re
+from jsonschema.exceptions import best_match
 
 try:
     from yaml import CSafeLoader as SafeLoader
@@ -18,13 +19,21 @@ except ImportError:
     from yaml import SafeLoader
 
 
-SOC_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'soc-schema.yml')
-with open(SOC_SCHEMA_PATH, 'r') as f:
+SOC_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'soc-schema.yaml')
+with open(SOC_SCHEMA_PATH) as f:
     soc_schema = yaml.load(f.read(), Loader=SafeLoader)
 
-ARCH_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'arch-schema.yml')
-with open(ARCH_SCHEMA_PATH, 'r') as f:
+ARCH_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'arch-schema.yaml')
+with open(ARCH_SCHEMA_PATH) as f:
     arch_schema = yaml.load(f.read(), Loader=SafeLoader)
+
+validator_class = jsonschema.validators.validator_for(soc_schema)
+validator_class.check_schema(soc_schema)
+soc_validator = validator_class(soc_schema)
+
+validator_class = jsonschema.validators.validator_for(arch_schema)
+validator_class.check_schema(arch_schema)
+arch_validator = validator_class(arch_schema)
 
 SOC_YML = 'soc.yml'
 ARCHS_YML_PATH = PurePath('arch/archs.yml')
@@ -40,12 +49,12 @@ class Systems:
         if soc_yaml is None:
             return
 
-        try:
-            data = yaml.load(soc_yaml, Loader=SafeLoader)
-            pykwalify.core.Core(source_data=data,
-                                schema_data=soc_schema).validate()
-        except (yaml.YAMLError, pykwalify.errors.SchemaError) as e:
-            sys.exit(f'ERROR: Malformed yaml {soc_yaml.as_posix()}', e)
+        data = yaml.load(soc_yaml, Loader=SafeLoader)
+        errors = list(soc_validator.iter_errors(data))
+        if errors:
+            sys.exit('ERROR: Malformed soc YAML file: \n'
+                        f'{soc_yaml}\n'
+                        f'{best_match(errors).message} in {best_match(errors).json_path}')
 
         for f in data.get('family', []):
             family = Family(f['name'], [folder], [], [])
@@ -78,10 +87,6 @@ class Systems:
             self._socs.extend(socs)
 
         for soc in data.get('socs', []):
-            mutual_exclusive = {'name', 'extend'}
-            if len(mutual_exclusive - soc.keys()) < 1:
-                sys.exit(f'ERROR: Malformed content in SoC file: {soc_yaml}\n'
-                         f'{mutual_exclusive} are mutual exclusive at this level.')
             if soc.get('name') is not None:
                 self._socs.append(Soc(soc['name'], [c['name'] for c in soc.get('cpuclusters', [])],
                                   [folder], '', ''))
@@ -90,8 +95,9 @@ class Systems:
                                            [c['name'] for c in soc.get('cpuclusters', [])],
                                            [folder], '', ''))
             else:
+                # This should not happen if schema validation passed
                 sys.exit(f'ERROR: Malformed "socs" section in SoC file: {soc_yaml}\n'
-                         f'Cannot find one of required keys {mutual_exclusive}.')
+                         f'SoC entry must have either "name" or "extend" property.')
 
         # Ensure that any runner configuration matches socs and cpuclusters declared in the same
         # soc.yml file
@@ -116,7 +122,7 @@ class Systems:
         '''Load SoCs from a soc.yml file.
         '''
         try:
-            with open(socs_file, 'r') as f:
+            with open(socs_file) as f:
                 socs_yaml = f.read()
         except FileNotFoundError as e:
             sys.exit(f'ERROR: socs.yml file not found: {socs_file.as_posix()}', e)
@@ -172,8 +178,8 @@ class Systems:
 @dataclass
 class Soc:
     name: str
-    cpuclusters: List[str]
-    folder: List[str]
+    cpuclusters: list[str]
+    folder: list[str]
     series: str = ''
     family: str = ''
 
@@ -186,17 +192,17 @@ class Soc:
 @dataclass
 class Series:
     name: str
-    folder: List[str]
+    folder: list[str]
     family: str
-    socs: List[Soc]
+    socs: list[Soc]
 
 
 @dataclass
 class Family:
     name: str
-    folder: List[str]
-    series: List[Series]
-    socs: List[Soc]
+    folder: list[str]
+    series: list[Series]
+    socs: list[Soc]
 
 
 def unique_paths(paths):
@@ -213,11 +219,11 @@ def find_v2_archs(args):
             with Path(archs_yml).open('r', encoding='utf-8') as f:
                 archs = yaml.load(f.read(), Loader=SafeLoader)
 
-            try:
-                pykwalify.core.Core(source_data=archs, schema_data=arch_schema).validate()
-            except pykwalify.errors.SchemaError as e:
-                sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
-                         .format(archs_yml.as_posix(), e))
+            errors = list(arch_validator.iter_errors(archs))
+            if errors:
+                sys.exit('ERROR: Malformed arch YAML file: '
+                         f'{archs_yml.as_posix()}\n'
+                         f'{best_match(errors).message} in {best_match(errors).json_path}')
 
             if args.arch is not None:
                 archs = {'archs': list(filter(

@@ -18,24 +18,28 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,ccm = &ccm0;
+		zephyr,dtcm = &ccm0;
 		zephyr,canbus = &can2;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		orange_led_3: led_3 {
 			gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
+
 		green_led_4: led_4 {
 			gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
 		};
+
 		red_led_5: led_5 {
 			gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
 			label = "User LD5";
 		};
+
 		blue_led_6: led_6 {
 			gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
 			label = "User LD6";
@@ -44,6 +48,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "Key";
 			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
@@ -81,13 +86,6 @@
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
 	};
-};
-
-&usart1 {
-	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
-	pinctrl-names = "default";
-	current-speed = <115200>;
-	status = "okay";
 };
 
 &clk_lsi {
@@ -144,7 +142,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 
@@ -160,9 +158,9 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &can1 {
-	pinctrl-0 = <&can1_rx_pb8 &can1_tx_pb9>;
+	pinctrl-0 = <&can1_rx_pd0 &can1_tx_pd1>;
 	pinctrl-names = "default";
-	status = "disabled";
+	status = "okay";
 };
 
 &can2 {
@@ -172,6 +170,8 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &adc1 {
+	pinctrl-0 = <&adc1_in1_pa1 &adc1_in6_pa6>;
+	pinctrl-names = "default";
 	st,adc-prescaler = <2>;
 	status = "okay";
 };
@@ -186,4 +186,45 @@ zephyr_udc0: &usbotg_fs {
 
 &vbat {
 	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&plli2s {
+	/* Minimize audio clock error (with i2s mck-enabled) for all of:
+	 * - 22.05kHz / 16b, 24b or 32b
+	 * - 44.1kHz  / 16b, 24b or 32b
+	 * - 88.2kHz  / 16b or 24b
+	 * Note: because the PLLI2S is dependent on the main PLL, the latter
+	 *       should not be changed without checking impact on PLLI2S
+	 */
+	div-m = <8>;
+	mul-n = <271>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&i2s3 {
+	mck-enabled;
+	pinctrl-0 = <&i2s3_ws_pa4 &i2s3_ck_pc10 &i2s3_sd_pc12 &i2s3_mck_pc7>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK(APB1, 15)>,
+		 <&rcc STM32_SRC_PLLI2S_R I2S_SEL(0)>;
+	status = "okay";
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	audio_codec: cs43l22@4a {
+		compatible = "cirrus,cs43l22";
+		reg = <0x4a>;
+		reset-gpios = <&gpiod 4 0>;
+	};
 };

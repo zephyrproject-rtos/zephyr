@@ -7,7 +7,7 @@ The STEVAL-MKSBOX1V1 (SensorTile.box) is a ready-to-use box kit for wireless
 IoT and wearable sensor platforms to help you use and develop apps based on
 remote motion and environmental sensor data.
 The SensorTile.box board fits into a small plastic box with a long-life rechargeable
-battery, and communicates with a standard smartphone through its Bluetooth interface,
+battery, and communicates with a standard smartphone through its Bluetooth® interface,
 providing data coming from the sensors.
 
 More information about the board can be found at the `SensorTile.box website`_.
@@ -20,7 +20,7 @@ SensorTile.box provides the following hardware components:
 - Ultra low-power STM32L4R9ZI System on Chip
 
   - LQFP144 package
-  - Core: ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU, adaptive
+  - Core: ARM® 32-bit Cortex®-M4 CPU with FPU, adaptive
     real-time accelerator (ART Accelerator) allowing 0-wait-state
     execution from Flash memory, frequency up to 120 MHz, MPU, 150
     DMIPS/1.25 DMIPS/MHz (Dhrystone 2.1), and DSP instructions
@@ -31,7 +31,7 @@ SensorTile.box provides the following hardware components:
 
 - Communication
 
-  - Bluetooth Smart connectivity v4.2 (SPBTLE-1S)
+  - Bluetooth® Smart connectivity v4.2 (SPBTLE-1S)
   - 1 x USB OTG FS (SoC) with micro-B connector
     (USB device role only)
 
@@ -69,6 +69,8 @@ on a smartphone/PC to implement applications such as:
 - Vibration monitoring
 - Compass and inclinometer
 - Sensor data logger
+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -120,6 +122,8 @@ functions.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 There are 2 main entry points for flashing STM32FL4Rx SoCs, one using the ROM
 bootloader, and another by using the SWD debug port (which requires additional

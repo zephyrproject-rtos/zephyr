@@ -65,6 +65,7 @@ static struct ll_conn *ll_cis_get_acl_awaiting_reply(uint16_t handle, uint8_t *e
 	}
 
 	for (int h = 0; h < CONFIG_BT_MAX_CONN; h++) {
+		/* Handle h in valid range, hence conn will be non-NULL */
 		struct ll_conn *conn = ll_conn_get(h);
 		uint16_t cis_handle = ull_cp_cc_ongoing_handle(conn);
 
@@ -157,7 +158,7 @@ void ull_peripheral_iso_release(uint16_t cis_handle)
 	struct ll_conn_iso_group *cig;
 
 	cis = ll_conn_iso_stream_get(cis_handle);
-	LL_ASSERT(cis);
+	LL_ASSERT_DBG(cis);
 
 	cig = cis->group;
 
@@ -257,6 +258,11 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 				    req->p_max_sdu[0];
 
 	cis->lll.active = 0U;
+
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	cis->lll.prepared = 0U;
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
 	cis->lll.handle = LLL_HANDLE_INVALID;
 	cis->lll.acl_handle = acl->lll.handle;
 	cis->lll.sub_interval = sys_get_le24(req->sub_interval);
@@ -312,6 +318,7 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	}
 
 	conn = ll_conn_get(cis->lll.acl_handle);
+	LL_ASSERT_DBG(conn != NULL);
 
 	cis_offset = sys_get_le24(ind->cis_offset);
 
@@ -359,7 +366,7 @@ static void ticker_op_cb(uint32_t status, void *param)
 {
 	ARG_UNUSED(param);
 
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT_ERR(status == TICKER_STATUS_SUCCESS);
 }
 
 void ull_peripheral_iso_update_ticker(struct ll_conn_iso_group *cig,
@@ -371,8 +378,8 @@ void ull_peripheral_iso_update_ticker(struct ll_conn_iso_group *cig,
 	uint8_t ticker_id_cig = TICKER_ID_CONN_ISO_BASE + ll_conn_iso_group_handle_get(cig);
 	uint32_t ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 				    ticker_id_cig, ticker_op_cb, NULL);
-	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+		      (ticker_status == TICKER_STATUS_BUSY));
 
 	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
 				     TICKER_USER_ID_ULL_HIGH,
@@ -386,8 +393,8 @@ void ull_peripheral_iso_update_ticker(struct ll_conn_iso_group *cig,
 				     ull_conn_iso_ticker_cb, cig,
 				     ticker_op_cb, NULL);
 
-	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+		      (ticker_status == TICKER_STATUS_BUSY));
 
 }
 
@@ -405,8 +412,9 @@ void ull_peripheral_iso_update_peer_sca(struct ll_conn *acl)
 		if (!cig || !cig->lll.num_cis) {
 			continue;
 		}
+
 		cis = ll_conn_iso_stream_get_by_group(cig, NULL);
-		LL_ASSERT(cis);
+		LL_ASSERT_DBG(cis);
 
 		uint16_t cis_handle = cis->lll.handle;
 

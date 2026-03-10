@@ -7,15 +7,17 @@ flash: 1024
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
+  - adc
   - bluetooth
-  - gpio
-  - uart
-  - dma
-  - watchdog
   - comparator
-testing:
-  ignore_tags:
-    - pm
+  - counter
+  - dma
+  - entropy
+  - gpio
+  - flash
+  - pwm
+  - spi
+  - uart
+  - watchdog
 vendor: silabs

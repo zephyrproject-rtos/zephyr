@@ -32,16 +32,17 @@
 		led0 = &blue_led;
 		led1 = &green_led;
 		lora0 = &lora;
-		bootloader-led0 = &blue_led;
 		mcuboot-led0 = &blue_led;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		blue_led: led_2 {
 			gpios = <&gpio32_63 13 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpio32_63 12 GPIO_ACTIVE_HIGH>;
 			label = "Green LED";
@@ -67,10 +68,12 @@
 			label = "mcuboot";
 			reg = <0x0000c000 0xc000>;
 		};
+
 		slot0_partition: partition@18000 {
 			label = "image-0";
 			reg = <0x00018000 0x72000>;
 		};
+
 		slot1_partition: partition@8a000 {
 			label = "image-1";
 			reg = <0x0008a000 0x72000>;
@@ -105,75 +108,91 @@
 	status = "okay";
 };
 
-&i2c2 {
-	compatible = "ambiq,i2c";
-	pinctrl-0 = <&i2c2_default>;
-	pinctrl-names = "default";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
-	status = "okay";
-};
-
-&spi0 {
-	compatible = "ambiq,spi";
-	pinctrl-0 = <&spi0_default>;
-	pinctrl-names = "default";
-	cs-gpios = <&gpio0_31 1 GPIO_ACTIVE_LOW>;
-	clock-frequency = <DT_FREQ_M(1)>;
-	status = "okay";
-};
-
-&spi1 {
-	compatible = "ambiq,spi";
-	status = "okay";
-	pinctrl-0 = <&spi1_default>;
-	pinctrl-names = "default";
-	clock-frequency = <DT_FREQ_M(1)>;
-	cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
-
-	lora: lora@0 {
-		compatible = "semtech,sx1262";
-		reg = <0>;
-		reset-gpios = <&gpio0_31 17 GPIO_ACTIVE_LOW>;
-		busy-gpios = <&gpio0_31 16 GPIO_ACTIVE_HIGH>;
-		dio1-gpios = <&gpio0_31 15 GPIO_ACTIVE_HIGH>;
-		antenna-enable-gpios = <&gpio0_31 18 GPIO_ACTIVE_LOW>;
-		dio2-tx-enable;
-		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_3V3>;
-		tcxo-power-startup-delay-ms = <5>;
-		spi-max-frequency = <DT_FREQ_M(1)>;
+&iom2 {
+	i2c2: i2c {
+		compatible = "ambiq,i2c";
+		pinctrl-0 = <&i2c2_default>;
+		pinctrl-names = "default";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		status = "okay";
 	};
 };
 
-&counter0 {
-	status = "okay";
+&iom0 {
+	spi0: spi {
+		compatible = "ambiq,spi";
+		pinctrl-0 = <&spi0_default>;
+		pinctrl-names = "default";
+		cs-gpios = <&gpio0_31 1 GPIO_ACTIVE_LOW>;
+		clock-frequency = <DT_FREQ_M(1)>;
+		status = "okay";
+	};
 };
 
-&counter1 {
-	status = "okay";
+&iom1 {
+	spi1: spi {
+		compatible = "ambiq,spi";
+		status = "okay";
+		pinctrl-0 = <&spi1_default>;
+		pinctrl-names = "default";
+		clock-frequency = <DT_FREQ_M(1)>;
+		cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
+
+		lora: lora@0 {
+			compatible = "semtech,sx1262";
+			reg = <0>;
+			reset-gpios = <&gpio0_31 17 GPIO_ACTIVE_LOW>;
+			busy-gpios = <&gpio0_31 16 GPIO_ACTIVE_HIGH>;
+			dio1-gpios = <&gpio0_31 15 GPIO_ACTIVE_HIGH>;
+			antenna-enable-gpios = <&gpio0_31 18 GPIO_ACTIVE_LOW>;
+			dio2-tx-enable;
+			dio3-tcxo-voltage = <SX126X_DIO3_TCXO_3V3>;
+			tcxo-power-startup-delay-ms = <5>;
+			spi-max-frequency = <DT_FREQ_M(1)>;
+		};
+	};
 };
 
-&counter2 {
-	status = "okay";
+&timer0 {
+	counter0: counter {
+		status = "okay";
+	};
 };
 
-&counter3 {
-	status = "okay";
+&timer1 {
+	counter1: counter {
+		status = "okay";
+	};
 };
 
-&counter4 {
-	status = "okay";
+&timer2 {
+	counter2: counter {
+		status = "okay";
+	};
 };
 
-&counter5 {
-	status = "okay";
+&timer4 {
+	counter4: counter {
+		status = "okay";
+	};
 };
 
-&counter6 {
-	status = "okay";
+&timer5 {
+	counter5: counter {
+		status = "okay";
+	};
 };
 
-&counter7 {
-	status = "okay";
+&timer6 {
+	counter6: counter {
+		status = "okay";
+	};
+};
+
+&timer7 {
+	counter7: counter {
+		status = "okay";
+	};
 };
 
 &gpio0_31 {

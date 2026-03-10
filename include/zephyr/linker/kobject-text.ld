@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: Apache-2.0 */
+/* Plase keep in sync with cmake/linker_script/common/kobject-text.cmake */
 
 #ifdef CONFIG_USERSPACE
 	/* We need to reserve room for the gperf generated hash functions.
@@ -8,20 +9,11 @@
 	 * The linker will error out complaining that the location pointer
 	 * is moving backwards if the reserved room isn't large enough.
 	 */
-	_kobject_text_area_start = .;
+	PLACE_SYMBOL_HERE(_kobject_text_area_start);
 	*(".kobject_data.literal*")
 	*(".kobject_data.text*")
-	_kobject_text_area_end = .;
+	PLACE_SYMBOL_HERE(_kobject_text_area_end);
 	_kobject_text_area_used = _kobject_text_area_end - _kobject_text_area_start;
-#ifndef LINKER_ZEPHYR_FINAL
-#ifdef CONFIG_DYNAMIC_OBJECTS
-	PROVIDE(z_object_gperf_find = .);
-	PROVIDE(z_object_gperf_wordlist_foreach = .);
-#else
-	PROVIDE(k_object_find = .);
-	PROVIDE(k_object_wordlist_foreach = .);
-#endif
-#endif
 
 	/* In a valid build the MAX function will always evaluate to the
 	second argument below, but to give the user a good error message

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 NXP
+ * Copyright 2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -172,11 +172,16 @@ EXTERN(ext_man_fw_ver)
 SECTIONS
 {
 
-#include <zephyr/linker/rel-sections.ld>
-
-#ifdef CONFIG_LLEXT
-#include <zephyr/linker/llext-sections.ld>
+#ifdef CONFIG_OPENAMP_RSC_TABLE
+    SECTION_PROLOGUE(.resource_table,, SUBALIGN(4))
+    {
+      KEEP(*(.resource_table*))
+    } GROUP_LINK_IN(ROMABLE_REGION)
 #endif
+
+#include <zephyr/linker/rel-sections.ld>
+#include <zephyr/linker/llext-sections.ld>
+
   .ResetVector.text : ALIGN(4)
   {
     _ResetVector_text_start = ABSOLUTE(.);

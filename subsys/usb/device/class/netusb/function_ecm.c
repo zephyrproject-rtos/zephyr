@@ -227,13 +227,13 @@ static size_t ecm_eth_size(void *ecm_pkt, size_t len)
 		return 0;
 	}
 
-	switch (ntohs(hdr->type)) {
+	switch (net_ntohs(hdr->type)) {
 	case NET_ETH_PTYPE_IP:
 	case NET_ETH_PTYPE_ARP:
-		ip_len = ntohs(((struct net_ipv4_hdr *)ip_data)->len);
+		ip_len = net_ntohs(((struct net_ipv4_hdr *)ip_data)->len);
 		break;
 	case NET_ETH_PTYPE_IPV6:
-		ip_len = ntohs(((struct net_ipv6_hdr *)ip_data)->len);
+		ip_len = net_ntohs(((struct net_ipv6_hdr *)ip_data)->len);
 		break;
 	default:
 		LOG_DBG("Unknown hdr type 0x%04x", hdr->type);
@@ -292,7 +292,7 @@ static void ecm_read_cb(uint8_t ep, int size, void *priv)
 		}
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(netusb_net_iface(), size, AF_UNSPEC,
+	pkt = net_pkt_rx_alloc_with_buffer(netusb_net_iface(), size, NET_AF_UNSPEC,
 					   0, K_FOREVER);
 	if (!pkt) {
 		LOG_ERR("no memory for network packet");

@@ -7,7 +7,7 @@ if BUILD_WITH_TFM
 
 config TFM_PARTITION_PROTECTED_STORAGE
 	bool "Secure partition 'Protected Storage'"
-	depends on TFM_PARTITION_PLATFORM # Specfically TFM_SP_PLATFORM_NV_COUNTER service
+	depends on TFM_PARTITION_PLATFORM # Specifically TFM_SP_PLATFORM_NV_COUNTER service
 	depends on TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
 	depends on TFM_PARTITION_CRYPTO
 	default y
@@ -65,7 +65,7 @@ config TFM_PARTITION_PLATFORM
 	  repository.
 
 config TFM_PARTITION_FIRMWARE_UPDATE
-	bool "Include the secure parition 'Firmware Update'"
+	bool "Include the secure partition 'Firmware Update'"
 	select TFM_MCUBOOT_DATA_SHARING
 	default n
 	help

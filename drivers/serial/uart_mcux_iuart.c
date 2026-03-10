@@ -89,7 +89,7 @@ static int mcux_iuart_fifo_fill(const struct device *dev,
 	int num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
-	       (UART_GetStatusFlag(config->base, kUART_TxEmptyFlag))) {
+	       !(config->base->UTS & UART_UTS_TXFULL_MASK)) {
 
 		UART_WriteByte(config->base, tx_data[num_tx++]);
 	}

@@ -6,7 +6,6 @@
 
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/dac.h>
-#include <zephyr/drivers/adc.h>
 #include <zephyr/ztest.h>
 
 #define DIV 2
@@ -18,7 +17,7 @@ extern const struct adc_dt_spec *get_adc_channel(void);
 static const struct dac_channel_cfg dac_ch_cfg = {
 	.channel_id = DT_PROP(DT_PATH(zephyr_user), dac_channel_id),
 	.resolution = DT_PROP(DT_PATH(zephyr_user), dac_resolution),
-	.buffered = true
+	.buffered = !IS_ENABLED(CONFIG_DAC_BUFFER_NOT_SUPPORTED),
 };
 
 static const struct device *init_dac(void)
@@ -43,6 +42,9 @@ static int test_dac_to_adc(void)
 	struct adc_sequence sequence = {
 		.buffer      = &sample_buffer,
 		.buffer_size = sizeof(sample_buffer),
+#if CONFIG_TEST_ADC_CALIBRATE_REQUIRED
+		.calibrate = true,
+#endif
 	};
 
 	const struct device *dac_dev = init_dac();

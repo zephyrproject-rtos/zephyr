@@ -14,9 +14,6 @@ Starts by scanning for a CCP Call Control Server to connect and set up calls.
 The profile works for both GAP Central and GAP Peripheral devices, but this sample only assumes the
 GAP Central role.
 
-This sample can be found under :zephyr_file:`samples/bluetooth/ccp_call_control_client`
-in the Zephyr tree.
-
 Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements
@@ -29,7 +26,7 @@ Building and Running
 ********************
 
 When building targeting an nrf52 series board with the Zephyr Bluetooth Controller,
-use ``-DOVERLAY_CONFIG=overlay-bt_ll_sw_split.conf`` to enable the required feature support.
+use ``-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf`` to enable the required feature support.
 
 Building for an nrf5340dk
 -------------------------
@@ -75,4 +72,4 @@ Building for a simulated nrf52_bsim
    :zephyr-app: samples/bluetooth/ccp_call_control_client/
    :board: nrf52_bsim
    :goals: build
-   :gen-args: -DOVERLAY_CONFIG=overlay-bt_ll_sw_split.conf
+   :gen-args: -DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf

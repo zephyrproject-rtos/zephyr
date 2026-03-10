@@ -193,7 +193,7 @@ static struct net_pkt *frame_get(const struct device *dev)
 	if (eofIdx != UINT32_MAX) {
 		/* Allocate room for full frame */
 		rx_frame = net_pkt_rx_alloc_with_buffer(dev_data->iface,
-					total_len, AF_UNSPEC, 0, K_NO_WAIT);
+					total_len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!rx_frame) {
 			LOG_ERR("Failed to obtain RX buffer");
 			ETH_RX_DISABLE(eth);
@@ -631,8 +631,7 @@ static enum ethernet_hw_caps eth_gecko_get_capabilities(const struct device *dev
 {
 	ARG_UNUSED(dev);
 
-	return (ETHERNET_AUTO_NEGOTIATION_SET | ETHERNET_LINK_10BASE_T |
-			ETHERNET_LINK_100BASE_T | ETHERNET_DUPLEX_SET);
+	return (ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE);
 }
 
 static const struct ethernet_api eth_api = {

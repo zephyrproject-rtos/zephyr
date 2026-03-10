@@ -4,12 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+ #define DT_DRV_COMPAT nordic_nrf_spis
+
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/gpio.h>
+#include <dmm.h>
 #include <soc.h>
 #include <nrfx_spis.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -18,19 +23,24 @@ LOG_MODULE_REGISTER(spi_nrfx_spis, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 
 struct spi_nrfx_data {
+	nrfx_spis_t spis;
 	struct spi_context ctx;
 	const struct device *dev;
+#ifdef CONFIG_MULTITHREADING
 	struct k_sem wake_sem;
+#else
+	atomic_t woken_up;
+#endif
 	struct gpio_callback wake_cb_data;
 };
 
 struct spi_nrfx_config {
-	nrfx_spis_t spis;
 	nrfx_spis_config_t config;
 	void (*irq_connect)(void);
 	uint16_t max_buf_len;
 	const struct pinctrl_dev_config *pcfg;
 	struct gpio_dt_spec wake_gpio;
+	void *mem_reg;
 };
 
 static inline nrf_spis_mode_t get_nrf_spis_mode(uint16_t operation)
@@ -62,7 +72,6 @@ static inline nrf_spis_bit_order_t get_nrf_spis_bit_order(uint16_t operation)
 static int configure(const struct device *dev,
 		     const struct spi_config *spi_cfg)
 {
-	const struct spi_nrfx_config *dev_config = dev->config;
 	struct spi_nrfx_data *dev_data = dev->data;
 	struct spi_context *ctx = &dev_data->ctx;
 
@@ -104,7 +113,7 @@ static int configure(const struct device *dev,
 
 	ctx->config = spi_cfg;
 
-	nrf_spis_configure(dev_config->spis.p_reg,
+	nrf_spis_configure(dev_data->spis.p_reg,
 			   get_nrf_spis_mode(spi_cfg->operation),
 			   get_nrf_spis_bit_order(spi_cfg->operation));
 
@@ -116,7 +125,10 @@ static int prepare_for_transfer(const struct device *dev,
 				uint8_t *rx_buf, size_t rx_buf_len)
 {
 	const struct spi_nrfx_config *dev_config = dev->config;
-	nrfx_err_t result;
+	struct spi_nrfx_data *dev_data = dev->data;
+	uint8_t *dmm_tx_buf;
+	uint8_t *dmm_rx_buf;
+	int err;
 
 	if (tx_buf_len > dev_config->max_buf_len ||
 	    rx_buf_len > dev_config->max_buf_len) {
@@ -125,14 +137,35 @@ static int prepare_for_transfer(const struct device *dev,
 		return -EINVAL;
 	}
 
-	result = nrfx_spis_buffers_set(&dev_config->spis,
-				       tx_buf, tx_buf_len,
-				       rx_buf, rx_buf_len);
-	if (result != NRFX_SUCCESS) {
-		return -EIO;
+	err = dmm_buffer_out_prepare(dev_config->mem_reg, tx_buf, tx_buf_len, (void **)&dmm_tx_buf);
+	if (err != 0) {
+		LOG_ERR("DMM TX allocation failed err=%d", err);
+		goto out_alloc_failed;
+	}
+
+	/* Keep user RX buffer address to copy data from DMM RX buffer on transfer completion. */
+	dev_data->ctx.rx_buf = rx_buf;
+	err = dmm_buffer_in_prepare(dev_config->mem_reg, rx_buf, rx_buf_len, (void **)&dmm_rx_buf);
+	if (err != 0) {
+		LOG_ERR("DMM RX allocation failed err=%d", err);
+		goto in_alloc_failed;
+	}
+
+	err = nrfx_spis_buffers_set(&dev_data->spis,
+				       dmm_tx_buf, tx_buf_len,
+				       dmm_rx_buf, rx_buf_len);
+	if (err != 0) {
+		goto buffers_set_failed;
 	}
 
 	return 0;
+
+buffers_set_failed:
+	dmm_buffer_in_release(dev_config->mem_reg, rx_buf, rx_buf_len, dmm_rx_buf);
+in_alloc_failed:
+	dmm_buffer_out_release(dev_config->mem_reg, (void *)dmm_tx_buf);
+out_alloc_failed:
+	return err;
 }
 
 static void wake_callback(const struct device *dev, struct gpio_callback *cb,
@@ -144,7 +177,11 @@ static void wake_callback(const struct device *dev, struct gpio_callback *cb,
 
 	(void)gpio_pin_interrupt_configure_dt(&dev_config->wake_gpio,
 					      GPIO_INT_DISABLE);
+#ifdef CONFIG_MULTITHREADING
 	k_sem_give(&dev_data->wake_sem);
+#else
+	atomic_set(&dev_data->woken_up, 1);
+#endif /* CONFIG_MULTITHREADING */
 }
 
 static void wait_for_wake(struct spi_nrfx_data *dev_data,
@@ -157,7 +194,19 @@ static void wait_for_wake(struct spi_nrfx_data *dev_data,
 			     dev_config->wake_gpio.pin) == 0) {
 		(void)gpio_pin_interrupt_configure_dt(&dev_config->wake_gpio,
 						      GPIO_INT_LEVEL_HIGH);
+#ifdef CONFIG_MULTITHREADING
 		(void)k_sem_take(&dev_data->wake_sem, K_FOREVER);
+#else
+		unsigned int key = irq_lock();
+
+		while (!atomic_get(&dev_data->woken_up)) {
+			k_cpu_atomic_idle(key);
+			key = irq_lock();
+		}
+
+		dev_data->woken_up = 0;
+		irq_unlock(key);
+#endif /* CONFIG_MULTITHREADING */
 	}
 }
 
@@ -175,6 +224,8 @@ static int transceive(const struct device *dev,
 	const struct spi_buf *rx_buf = rx_bufs ? rx_bufs->buffers : NULL;
 	int error;
 
+	pm_device_runtime_get(dev);
+
 	spi_context_lock(&dev_data->ctx, asynchronous, cb, userdata, spi_cfg);
 
 	error = configure(dev, spi_cfg);
@@ -191,7 +242,7 @@ static int transceive(const struct device *dev,
 		if (dev_config->wake_gpio.port) {
 			wait_for_wake(dev_data, dev_config);
 
-			nrf_spis_enable(dev_config->spis.p_reg);
+			nrf_spis_enable(dev_data->spis.p_reg);
 		}
 
 		error = prepare_for_transfer(dev,
@@ -221,7 +272,7 @@ static int transceive(const struct device *dev,
 		}
 
 		if (dev_config->wake_gpio.port) {
-			nrf_spis_disable(dev_config->spis.p_reg);
+			nrf_spis_disable(dev_data->spis.p_reg);
 		}
 	}
 
@@ -275,38 +326,99 @@ static DEVICE_API(spi, spi_nrfx_driver_api) = {
 	.release = spi_nrfx_release,
 };
 
-static void event_handler(const nrfx_spis_evt_t *p_event, void *p_context)
+static void event_handler(const nrfx_spis_event_t *p_event, void *p_context)
 {
-	struct spi_nrfx_data *dev_data = p_context;
+	const struct device *dev = p_context;
+	struct spi_nrfx_data *dev_data = dev->data;
+	const struct spi_nrfx_config *dev_config = dev->config;
 
 	if (p_event->evt_type == NRFX_SPIS_XFER_DONE) {
+		int err;
+
+
+		err = dmm_buffer_out_release(dev_config->mem_reg, p_event->p_tx_buf);
+		(void)err;
+		__ASSERT_NO_MSG(err == 0);
+
+		err = dmm_buffer_in_release(dev_config->mem_reg, dev_data->ctx.rx_buf,
+				      p_event->rx_amount, p_event->p_rx_buf);
+		__ASSERT_NO_MSG(err == 0);
+
 		spi_context_complete(&dev_data->ctx, dev_data->dev,
 				     p_event->rx_amount);
+
+		pm_device_runtime_put_async(dev_data->dev, K_NO_WAIT);
 	}
+}
+
+static void spi_nrfx_suspend(const struct device *dev)
+{
+	const struct spi_nrfx_config *dev_config = dev->config;
+	struct spi_nrfx_data *dev_data = dev->data;
+
+	if (dev_config->wake_gpio.port == NULL) {
+		nrf_spis_disable(dev_data->spis.p_reg);
+	}
+
+	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
+}
+
+static void spi_nrfx_resume(const struct device *dev)
+{
+	const struct spi_nrfx_config *dev_config = dev->config;
+	struct spi_nrfx_data *dev_data = dev->data;
+
+	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
+
+	if (dev_config->wake_gpio.port == NULL) {
+		nrf_spis_enable(dev_data->spis.p_reg);
+	}
+}
+
+static int spi_nrfx_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		spi_nrfx_suspend(dev);
+		return 0;
+
+	case PM_DEVICE_ACTION_RESUME:
+		spi_nrfx_resume(dev);
+		return 0;
+
+	default:
+		break;
+	}
+
+	return -ENOTSUP;
 }
 
 static int spi_nrfx_init(const struct device *dev)
 {
 	const struct spi_nrfx_config *dev_config = dev->config;
 	struct spi_nrfx_data *dev_data = dev->data;
-	nrfx_err_t result;
 	int err;
-
-	err = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0) {
-		return err;
-	}
 
 	/* This sets only default values of mode and bit order. The ones to be
 	 * actually used are set in configure() when a transfer is prepared.
 	 */
-	result = nrfx_spis_init(&dev_config->spis, &dev_config->config,
-				event_handler, dev_data);
+	err = nrfx_spis_init(&dev_data->spis, &dev_config->config,
+				event_handler, (void *)dev);
 
-	if (result != NRFX_SUCCESS) {
+	if (err != 0) {
 		LOG_ERR("Failed to initialize device: %s", dev->name);
-		return -EBUSY;
+		return err;
 	}
+
+	/* When the WAKE line is used, the SPIS peripheral is enabled
+	 * only after the master signals that it wants to perform a
+	 * transfer and it is disabled right after the transfer is done.
+	 * Waiting for the WAKE line to go high, what can be done using
+	 * the GPIO PORT event, instead of just waiting for the transfer
+	 * with the SPIS peripheral enabled, significantly reduces idle
+	 * power consumption.
+	 */
+	nrf_spis_disable(dev_data->spis.p_reg);
 
 	if (dev_config->wake_gpio.port) {
 		if (!gpio_is_ready_dt(&dev_config->wake_gpio)) {
@@ -332,80 +444,61 @@ static int spi_nrfx_init(const struct device *dev)
 		if (err < 0) {
 			return err;
 		}
-
-		/* When the WAKE line is used, the SPIS peripheral is enabled
-		 * only after the master signals that it wants to perform a
-		 * transfer and it is disabled right after the transfer is done.
-		 * Waiting for the WAKE line to go high, what can be done using
-		 * the GPIO PORT event, instead of just waiting for the transfer
-		 * with the SPIS peripheral enabled, significantly reduces idle
-		 * power consumption.
-		 */
-		nrf_spis_disable(dev_config->spis.p_reg);
 	}
 
 	spi_context_unlock_unconditionally(&dev_data->ctx);
 
-	return 0;
+	return pm_device_driver_init(dev, spi_nrfx_pm_action);
 }
 
-/*
- * Current factors requiring use of DT_NODELABEL:
- *
- * - HAL design (requirement of drv_inst_idx in nrfx_spis_t)
- * - Name-based HAL IRQ handlers, e.g. nrfx_spis_0_irq_handler
- */
-
-#define SPIS(idx) DT_NODELABEL(spi##idx)
-#define SPIS_PROP(idx, prop) DT_PROP(SPIS(idx), prop)
-
-#define SPI_NRFX_SPIS_DEFINE(idx)					       \
-	static void irq_connect##idx(void)				       \
-	{								       \
-		IRQ_CONNECT(DT_IRQN(SPIS(idx)), DT_IRQ(SPIS(idx), priority),   \
-			    nrfx_isr, nrfx_spis_##idx##_irq_handler, 0);       \
-	}								       \
-	static struct spi_nrfx_data spi_##idx##_data = {		       \
-		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
-		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
-		.dev  = DEVICE_DT_GET(SPIS(idx)),			       \
-		.wake_sem = Z_SEM_INITIALIZER(				       \
-			spi_##idx##_data.wake_sem, 0, 1),		       \
+#define SPI_NRFX_SPIS_DEFINE(inst)					       \
+	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(DT_DRV_INST(inst));      \
+	static struct spi_nrfx_data spi_##inst##_data = {		       \
+		.spis = NRFX_SPIS_INSTANCE(DT_INST_REG_ADDR(inst)),	       \
+		IF_ENABLED(CONFIG_MULTITHREADING,			       \
+			(SPI_CONTEXT_INIT_LOCK(spi_##inst##_data, ctx),))      \
+		IF_ENABLED(CONFIG_MULTITHREADING,			       \
+			(SPI_CONTEXT_INIT_SYNC(spi_##inst##_data, ctx),))      \
+		.dev  = DEVICE_DT_GET(DT_DRV_INST(inst)),		       \
+		IF_ENABLED(CONFIG_MULTITHREADING,			       \
+			(.wake_sem = Z_SEM_INITIALIZER(			       \
+				spi_##inst##_data.wake_sem, 0, 1),))	       \
 	};								       \
-	PINCTRL_DT_DEFINE(SPIS(idx));					       \
-	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
-		.spis = {						       \
-			.p_reg = (NRF_SPIS_Type *)DT_REG_ADDR(SPIS(idx)),      \
-			.drv_inst_idx = NRFX_SPIS##idx##_INST_IDX,	       \
-		},							       \
+	static void irq_connect##inst(void)				       \
+	{								       \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),   \
+			nrfx_spis_irq_handler, &spi_##inst##_data.spis, 0);    \
+	}								       \
+	PINCTRL_DT_INST_DEFINE(inst);					       \
+	static const struct spi_nrfx_config spi_##inst##z_config = {	       \
 		.config = {						       \
 			.skip_gpio_cfg = true,				       \
 			.skip_psel_cfg = true,				       \
 			.mode      = NRF_SPIS_MODE_0,			       \
 			.bit_order = NRF_SPIS_BIT_ORDER_MSB_FIRST,	       \
-			.orc       = SPIS_PROP(idx, overrun_character),	       \
-			.def       = SPIS_PROP(idx, def_char),		       \
+			.orc       = DT_INST_PROP(inst, overrun_character),    \
+			.def       = DT_INST_PROP(inst, def_char),	       \
 		},							       \
-		.irq_connect = irq_connect##idx,			       \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIS(idx)),		       \
-		.max_buf_len = BIT_MASK(SPIS_PROP(idx, easydma_maxcnt_bits)),  \
-		.wake_gpio = GPIO_DT_SPEC_GET_OR(SPIS(idx), wake_gpios, {0}),  \
+		.irq_connect = irq_connect##inst,			       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		       \
+		.max_buf_len = BIT_MASK(DT_INST_PROP(inst,		       \
+						     easydma_maxcnt_bits)),    \
+		.wake_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(inst),	       \
+						 wake_gpios, {0}),	       \
+		.mem_reg = DMM_DEV_TO_REG(DT_DRV_INST(inst)),		       \
 	};								       \
-	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPIS(idx), wake_gpios) ||	       \
-		     !(DT_GPIO_FLAGS(SPIS(idx), wake_gpios) & GPIO_ACTIVE_LOW),\
+	BUILD_ASSERT(!DT_INST_NODE_HAS_PROP(inst, wake_gpios) ||	       \
+		     !(DT_GPIO_FLAGS(DT_DRV_INST(inst), wake_gpios) &	       \
+		     GPIO_ACTIVE_LOW),					       \
 		     "WAKE line must be configured as active high");	       \
-	SPI_DEVICE_DT_DEFINE(SPIS(idx),					       \
-			    spi_nrfx_init,				       \
-			    NULL,					       \
-			    &spi_##idx##_data,				       \
-			    &spi_##idx##z_config,			       \
-			    POST_KERNEL,				       \
-			    CONFIG_SPI_INIT_PRIORITY,			       \
-			    &spi_nrfx_driver_api)
+	PM_DEVICE_DT_INST_DEFINE(inst, spi_nrfx_pm_action, PM_DEVICE_ISR_SAFE);\
+	SPI_DEVICE_DT_INST_DEFINE(inst,					       \
+				  spi_nrfx_init,			       \
+				  PM_DEVICE_DT_INST_GET(inst),		       \
+				  &spi_##inst##_data,			       \
+				  &spi_##inst##z_config,		       \
+				  POST_KERNEL,				       \
+				  CONFIG_SPI_INIT_PRIORITY,		       \
+				  &spi_nrfx_driver_api)
 
-/* Macro creates device instance if it is enabled in devicetree. */
-#define SPIS_DEVICE(periph, prefix, id, _) \
-	IF_ENABLED(CONFIG_HAS_HW_NRF_SPIS##prefix##id, (SPI_NRFX_SPIS_DEFINE(prefix##id);))
-
-/* Macro iterates over nrfx_spis instances enabled in the nrfx_config.h. */
-NRFX_FOREACH_ENABLED(SPIS, SPIS_DEVICE, (), (), _)
+DT_INST_FOREACH_STATUS_OKAY(SPI_NRFX_SPIS_DEFINE)

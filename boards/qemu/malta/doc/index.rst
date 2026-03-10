@@ -22,20 +22,7 @@ Hardware
 Supported Features
 ==================
 
-The following hardware features are supported:
-
-+----------------+------------+----------------------+
-| Interface      | Controller | Driver/Component     |
-+================+============+======================+
-| CP0 IntC       | on-chip    | interrupt controller |
-+----------------+------------+----------------------+
-| CP0 Core Timer | on-chip    | system clock         |
-+----------------+------------+----------------------+
-| NS16550        | FPGA       | serial port          |
-| UART           |            |                      |
-+----------------+------------+----------------------+
-
-The kernel currently does not support other hardware features on this platform.
+.. zephyr:board-supported-hw::
 
 Devices
 ========
@@ -53,6 +40,8 @@ with the FPGA UART2.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Use this configuration to run basic Zephyr applications and kernel tests in the QEMU
 emulated environment, for example, with the :zephyr:code-sample:`synchronization` sample:
