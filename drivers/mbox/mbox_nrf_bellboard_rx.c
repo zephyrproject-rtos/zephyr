@@ -161,12 +161,6 @@ static int bellboard_rx_init(const struct device *dev)
 	nrf_bellboard_int_disable(bellboard, 2, evt_mappings[2]);
 	nrf_bellboard_int_disable(bellboard, 3, evt_mappings[3]);
 
-	for (uint8_t i = 0U; i < NRF_BELLBOARD_EVENTS_TRIGGERED_COUNT; i++) {
-		if ((evt_all_mappings & BIT(i)) != 0U) {
-			nrf_bellboard_event_clear(bellboard, nrf_bellboard_triggered_event_get(i));
-		}
-	}
-
 	BELLBOARD_IRQ_CONFIGURE(irq0, 0);
 	BELLBOARD_IRQ_CONFIGURE(irq1, 1);
 	BELLBOARD_IRQ_CONFIGURE(irq2, 2);
