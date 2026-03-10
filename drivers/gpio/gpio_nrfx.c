@@ -73,9 +73,9 @@ void *gpio_nrf_gpiote_by_port_get(const struct device *port)
 	return cfg->gpiote;
 }
 
-static bool has_gpiote(const struct gpio_nrfx_cfg *cfg)
+static bool use_gpiote(const struct gpio_nrfx_cfg *cfg)
 {
-	return cfg->gpiote != NULL;
+	return IS_ENABLED(CONFIG_GPIO_NRFX_INTERRUPT) && (cfg->gpiote != NULL);
 }
 
 #if NRF_GPIO_HAS_RETENTION_SETCLEAR
@@ -166,7 +166,7 @@ static int gpio_nrfx_pin_configure(const struct device *port, gpio_pin_t pin,
 		nrf_gpio_port_out_clear(cfg->port, BIT(pin));
 	}
 
-	if (!has_gpiote(cfg)) {
+	if (!use_gpiote(cfg)) {
 		nrf_gpio_pin_dir_t dir = (flags & GPIO_OUTPUT)
 				       ? NRF_GPIO_PIN_DIR_OUTPUT
 				       : NRF_GPIO_PIN_DIR_INPUT;
@@ -439,7 +439,7 @@ static int gpio_nrfx_pin_interrupt_configure(const struct device *port,
 	int err;
 	uint8_t ch;
 
-	if (!has_gpiote(cfg)) {
+	if (!use_gpiote(cfg)) {
 		return -ENOTSUP;
 	}
 
@@ -625,7 +625,7 @@ static int gpio_nrfx_init(const struct device *port)
 	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
 	int err;
 
-	if (!has_gpiote(cfg)) {
+	if (!use_gpiote(cfg)) {
 		goto pm_init;
 	}
 
@@ -671,16 +671,19 @@ static DEVICE_API(gpio, gpio_nrfx_drv_api_funcs) = {
  * DT_INST APIs here without wider changes.
  */
 
-#define HAS_GPIOTE(id) DT_INST_NODE_HAS_PROP(id, gpiote_instance)
+#define USE_GPIOTE(id)						  \
+	COND_CODE_1(CONFIG_GPIO_NRFX_INTERRUPT,			  \
+		    (DT_INST_NODE_HAS_PROP(id, gpiote_instance)), \
+		    (0))
 
 #define GPIOTE_CHECK(id)						       \
-	COND_CODE_1(HAS_GPIOTE(id),					       \
+	COND_CODE_1(USE_GPIOTE(id),					       \
 		(BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(GPIOTE_PHANDLE(id)),     \
 			"Please enable GPIOTE instance for used GPIO port!")), \
 		())
 
 #define GPIOTE_REF(id) \
-	COND_CODE_1(HAS_GPIOTE(id),				     \
+	COND_CODE_1(USE_GPIOTE(id),				     \
 		    (&GPIOTE_NRFX_INST_BY_NODE(GPIOTE_PHANDLE(id))), \
 		    (NULL))
 
