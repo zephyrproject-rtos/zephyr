@@ -462,6 +462,8 @@ static void eth_intel_igc_iface_init(struct net_if *iface)
 
 	eth_intel_igc_set_mac_filter(dev, DEST_ADDR, data->mac_addr, 0, 0);
 
+	net_if_carrier_off(iface);
+
 	if (device_is_ready(cfg->phy)) {
 		phy_link_callback_set(cfg->phy, eth_intel_igc_phylink_cb, (void *)iface);
 	} else {
