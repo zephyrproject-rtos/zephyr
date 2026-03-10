@@ -32,67 +32,58 @@ struct ws2812_gpio_cfg {
 	size_t length;
 };
 
-/*
- * GPIO set/clear (these make assumptions about assembly details
- * below).
- *
- * This uses OUTCLR == OUTSET+4.
- *
- * We should be able to make this portable using the results of
- * https://github.com/zephyrproject-rtos/zephyr/issues/11917.
- *
- * We already have the GPIO device stashed in ws2812_gpio_config, so
- * this driver can be used as a test case for the optimized API.
- *
- * Per Arm docs, both Rd and Rn must be r0-r7, so we use the "l"
- * constraint in the below assembly.
- */
-#define SET_HIGH "str %[p], [%[r], #0]\n" /* OUTSET = BIT(LED_PIN) */
-#define SET_LOW "str %[p], [%[r], #4]\n"  /* OUTCLR = BIT(LED_PIN) */
-
 #define NOPS(i, _) "nop\n"
 #define NOP_N_TIMES(n) LISTIFY(n, NOPS, ())
 
-/* Send out a 1 bit's pulse */
-#define ONE_BIT(base, pin) do {					\
-	__asm volatile (SET_HIGH				\
-			NOP_N_TIMES(CONFIG_DELAY_T1H)		\
-			SET_LOW					\
-			NOP_N_TIMES(CONFIG_DELAY_T1L)		\
-			::					\
-			[r] "l" (base),				\
-			[p] "l" (pin)); } while (false)
+static void one_bit(const struct gpio_raw_regs regs, uint32_t pin)
+{
+	sys_write32(pin, regs.set);
+	__asm volatile (NOP_N_TIMES(CONFIG_DELAY_T1H));
+	sys_write32(pin, regs.clear);
+	__asm volatile (NOP_N_TIMES(CONFIG_DELAY_T1L));
+}
 
-/* Send out a 0 bit's pulse */
-#define ZERO_BIT(base, pin) do {				\
-	__asm volatile (SET_HIGH				\
-			NOP_N_TIMES(CONFIG_DELAY_T0H)		\
-			SET_LOW					\
-			NOP_N_TIMES(CONFIG_DELAY_T0L)		\
-			::					\
-			[r] "l" (base),				\
-			[p] "l" (pin)); } while (false)
+static void zero_bit(const struct gpio_raw_regs regs, uint32_t pin)
+{
+	sys_write32(pin, regs.set);
+	__asm volatile (NOP_N_TIMES(CONFIG_DELAY_T0H));
+	sys_write32(pin, regs.clear);
+	__asm volatile (NOP_N_TIMES(CONFIG_DELAY_T0L));
+}
 
 static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
 {
+	struct gpio_raw_regs regs;
 	const struct ws2812_gpio_cfg *config = dev->config;
-	volatile uint32_t *base = (uint32_t *)&NRF_GPIO->OUTSET;
 	const uint32_t val = BIT(config->gpio.pin);
+	unsigned int key;
+	int rc;
+#ifdef CLOCK_CONTROL_NRF_SUBSYS_HF
 	struct onoff_manager *mgr =
 		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 	struct onoff_client cli;
-	unsigned int key;
-	int rc;
+#endif /* CLOCK_CONTROL_NRF_SUBSYS_HF */
 
-	sys_notify_init_spinwait(&cli.notify);
-	rc = onoff_request(mgr, &cli);
+	rc = gpio_port_get_raw_regs(config->gpio.port, &regs);
 	if (rc < 0) {
 		return rc;
 	}
 
-	while (sys_notify_fetch_result(&cli.notify, &rc)) {
+	if (regs.set == 0 || regs.clear == 0) {
+		return -ENOTSUP;
+	}
+
+#ifdef CLOCK_CONTROL_NRF_SUBSYS_HF
+	sys_notify_init_spinwait(&cli.notify);
+	ret = onoff_request(mgr, &cli);
+	if (ret < 0) {
+		return ret;
+	}
+
+	while (sys_notify_fetch_result(&cli.notify, &ret)) {
 		/* pend until clock is up and running */
 	}
+#endif /* CLOCK_CONTROL_NRF_SUBSYS_HF */
 
 	key = irq_lock();
 
@@ -113,22 +104,23 @@ static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
 		 */
 		for (i = 7; i >= 0; i--) {
 			if (b & BIT(i)) {
-				ONE_BIT(base, val);
+				one_bit(regs, val);
 			} else {
-				ZERO_BIT(base, val);
+				zero_bit(regs, val);
 			}
 		}
 	}
 
 	irq_unlock(key);
 
+#ifdef CLOCK_CONTROL_NRF_SUBSYS_HF
 	rc = onoff_release(mgr);
 	/* Returns non-negative value on success. Cap to 0 as API states. */
-	rc = MIN(rc, 0);
+	return MIN(rc, 0);
+#endif /* CLOCK_CONTROL_NRF_SUBSYS_HF */
 
-	return rc;
+	return 0;
 }
-
 static int ws2812_gpio_update_rgb(const struct device *dev,
 				  struct led_rgb *pixels,
 				  size_t num_pixels)
