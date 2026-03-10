@@ -86,11 +86,11 @@ static struct bt_iso_chan bis_iso_chan = {
 };
 
 #define BIS_ISO_CHAN_COUNT 1
+#define SDU_SIZE           247U
 static struct bt_iso_chan *bis_channels[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
 static uint16_t seq_num;
 
-NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT, BT_ISO_SDU_BUF_SIZE(SDU_SIZE),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 #if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
@@ -156,17 +156,16 @@ bool ll_data_path_sink_create(uint16_t handle, struct ll_iso_datapath *datapath,
 #define BUF_ALLOC_RETRY_TIMEOUT_US (1000) /* microseconds */
 #define BUF_ALLOC_RETRY_COUNT      (10U)
 
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT, BT_ISO_SDU_BUF_SIZE(SDU_SIZE),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static struct k_work_delayable iso_send_work;
 
-BUILD_ASSERT(sizeof(seq_num) <= CONFIG_BT_ISO_TX_MTU);
+BUILD_ASSERT(sizeof(seq_num) <= SDU_SIZE);
 
 static void iso_send(struct k_work *work)
 {
-	static uint8_t iso_data[CONFIG_BT_ISO_TX_MTU];
+	static uint8_t iso_data[SDU_SIZE];
 	static bool data_initialized;
 	static uint8_t retry_yield_wq;
 	struct net_buf *buf;
@@ -201,7 +200,7 @@ static void iso_send(struct k_work *work)
 
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	sys_put_le16(seq_num, iso_data);
-	iso_data_len = MAX(sizeof(seq_num), ((seq_num % CONFIG_BT_ISO_TX_MTU) + 1));
+	iso_data_len = MAX(sizeof(seq_num), ((seq_num % SDU_SIZE) + 1));
 	net_buf_add_mem(buf, iso_data, iso_data_len);
 
 	bs_trace_info_time(4, "ISO send: seq_num %u\n", seq_num);
@@ -352,7 +351,7 @@ static void create_big(struct bt_le_ext_adv *adv, struct bt_iso_big **big)
 				    BT_ISO_PACKING_INTERLEAVED :
 				    BT_ISO_PACKING_SEQUENTIAL);
 	big_create_param.framing = 0; /* 0 - unframed; 1 - framed */
-	iso_tx_qos.sdu = CONFIG_BT_ISO_TX_MTU; /* bytes */
+	iso_tx_qos.sdu = SDU_SIZE;    /* bytes */
 	iso_tx_qos.rtn = 2;
 	iso_tx_qos.phy = BT_GAP_LE_PHY_2M;
 	bis_iso_qos.tx = &iso_tx_qos;
