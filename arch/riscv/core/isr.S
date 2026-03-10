@@ -326,19 +326,13 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 * is the result of an interrupt or an exception/fault.
 	 */
 	csrr t0, mcause
-	srli t0, t0, RISCV_MCAUSE_IRQ_POS
-	bnez t0, is_interrupt
+	bltz t0, is_interrupt
 
 	/*
 	 * If the exception is the result of an ECALL, check whether to
 	 * perform a context-switch or an IRQ offload. Otherwise call z_riscv_fault
 	 * to report the exception.
-	 */
-	csrr t0, mcause
-	li t2, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
-	and t0, t0, t2
-
-	/*
+	 *
 	 * If mcause == RISCV_EXC_ECALLM, handle system call from
 	 * kernel thread.
 	 */
