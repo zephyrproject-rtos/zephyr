@@ -447,20 +447,18 @@ static int xilinx_axienet_set_config(const struct device *dev, enum ethernet_con
 	}
 }
 
-static void phy_link_state_changed(const struct device *dev, struct phy_link_state *state,
+static void phy_link_state_changed(const struct device *dev __unused, struct phy_link_state *state,
 				   void *user_data)
 {
-	struct xilinx_axienet_data *data = user_data;
-
-	ARG_UNUSED(dev);
+	struct net_if *iface = (struct net_if *)user_data;
 
 	LOG_INF("Link state changed to: %s (speed %x)", state->is_up ? "up" : "down", state->speed);
 
 	/* inform the L2 driver about link event */
 	if (state->is_up) {
-		net_eth_carrier_on(data->interface);
+		net_eth_carrier_on(iface);
 	} else {
-		net_eth_carrier_off(data->interface);
+		net_eth_carrier_off(iface);
 	}
 }
 
@@ -479,7 +477,7 @@ static void xilinx_axienet_iface_init(struct net_if *iface)
 	/* carrier is initially off */
 	net_eth_carrier_off(iface);
 
-	err = phy_link_callback_set(config->phy, phy_link_state_changed, data);
+	err = phy_link_callback_set(config->phy, phy_link_state_changed, iface);
 
 	if (err) {
 		LOG_ERR("Could not set PHY link state changed handler : %d",
