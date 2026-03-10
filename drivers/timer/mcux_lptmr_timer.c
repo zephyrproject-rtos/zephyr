@@ -15,30 +15,61 @@
 #include <fsl_lptmr.h>
 #include <zephyr/irq.h>
 
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
-	     "No LPTMR instance enabled in devicetree");
+/* Count enabled `nxp,lptmr` instances with `role = "timer"`. */
+#define LPTMR_TIMER_ROLE_COUNT(n) + DT_INST_ENUM_HAS_VALUE(n, role, timer)
+BUILD_ASSERT((0 DT_INST_FOREACH_STATUS_OKAY(LPTMR_TIMER_ROLE_COUNT)) == 1,
+	     "Exactly one enabled `nxp,lptmr` node must have `role = \"timer\"`");
 
-/* Prescaler clock mapping */
-#define TO_LPTMR_CLK_SEL(val) _DO_CONCAT(kLPTMR_PrescalerClock_, val)
-
-/* Devicetree properties */
-#define LPTMR_BASE ((LPTMR_Type *)(DT_INST_REG_ADDR(0)))
-#define LPTMR_CLK_SOURCE TO_LPTMR_CLK_SEL(DT_INST_PROP_OR(0, clk_source, 0))
-#define LPTMR_PRESCALER DT_INST_PROP_OR(0, prescale_glitch_filter, 0)
 /*
- * Default must be false so prescale-glitch-filter can be used without requiring
- * an explicit bypass property.
+ * Collect devicetree properties from the timer-role instance.
+ *
+ * COND_CODE_1 expands to the property value for the `role = "timer"` instance
+ * and to nothing for all others. The BUILD_ASSERT above guarantees exactly one
+ * timer-role node, so DT_INST_FOREACH_STATUS_OKAY produces a single value.
  */
-#define LPTMR_PRESCALER_BYPASS DT_INST_PROP_OR(0, prescale_glitch_filter_bypass, false)
-#define LPTMR_IRQN DT_INST_IRQN(0)
-#define LPTMR_IRQ_PRIORITY DT_INST_IRQ(0, priority)
+#define LPTMR_TIMER_REG(n) \
+	COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, role, timer), \
+			(DT_INST_REG_ADDR(n)), ())
+#define LPTMR_BASE \
+	((LPTMR_Type *)(uintptr_t)(DT_INST_FOREACH_STATUS_OKAY(LPTMR_TIMER_REG)))
+
+#define LPTMR_CLK_SRC(n) \
+	COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, role, timer), \
+			(DT_INST_PROP_OR(n, clk_source, 0)), ())
+#define LPTMR_CLK_SOURCE \
+	((lptmr_prescaler_clock_select_t) \
+	 (DT_INST_FOREACH_STATUS_OKAY(LPTMR_CLK_SRC)))
+
+#define LPTMR_PRESCALER_VAL(n) \
+	COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, role, timer), \
+			(DT_INST_PROP_OR(n, prescale_glitch_filter, 0)), ())
+#define LPTMR_PRESCALER (DT_INST_FOREACH_STATUS_OKAY(LPTMR_PRESCALER_VAL))
+
+#define LPTMR_BYPASS_VAL(n) \
+	COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, role, timer), \
+			(DT_INST_PROP_OR(n, prescale_glitch_filter_bypass, 0)), ())
+#define LPTMR_PRESCALER_BYPASS ((bool)(DT_INST_FOREACH_STATUS_OKAY(LPTMR_BYPASS_VAL)))
+
+#define LPTMR_TIMER_IRQN(n) \
+	COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, role, timer), \
+			(DT_INST_IRQN(n)), ())
+#define LPTMR_IRQN (DT_INST_FOREACH_STATUS_OKAY(LPTMR_TIMER_IRQN))
+
+#define LPTMR_IRQ_PRI(n) \
+	COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, role, timer), \
+			(DT_INST_IRQ(n, priority)), ())
+#define LPTMR_IRQ_PRIORITY (DT_INST_FOREACH_STATUS_OKAY(LPTMR_IRQ_PRI))
+
+#define LPTMR_RESOLUTION_VAL(n) \
+	COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, role, timer), \
+			(DT_INST_PROP(n, resolution)), ())
+#define LPTMR_RESOLUTION (DT_INST_FOREACH_STATUS_OKAY(LPTMR_RESOLUTION_VAL))
 
 /* Timer cycles per tick */
 #define CYCLES_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() \
 			/ (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 
 /* Counter maximum value based on resolution */
-#define LPTMR_RESOLUTION DT_INST_PROP(0, resolution)
 #define COUNTER_MAX GENMASK(LPTMR_RESOLUTION - 1, 0)
 
 #define MAX_TICKS ((COUNTER_MAX / CYCLES_PER_TICK) - 1)

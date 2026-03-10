@@ -423,4 +423,12 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 		POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,			\
 		&mcux_lptmr_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_LPTMR_DEVICE_INIT)
+/*
+ * Skip instances with role = "timer"; those are managed exclusively by the
+ * MCUX_LPTMR_TIMER system timer driver.
+ */
+#define COUNTER_MCUX_LPTMR_DEVICE_INIT_WRAPPER(n) \
+	COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, role, counter), \
+		    (COUNTER_MCUX_LPTMR_DEVICE_INIT(n)), ())
+
+DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_LPTMR_DEVICE_INIT_WRAPPER)
