@@ -87,5 +87,6 @@ config ARM_SCMI_CHAN_SEM_TIMEOUT_USEC
 	  scmi platform.
 
 source "drivers/firmware/scmi/nxp/Kconfig"
+source "drivers/firmware/scmi/shell/Kconfig"
 
 endif # ARM_SCMI
