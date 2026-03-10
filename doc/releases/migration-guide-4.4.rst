@@ -374,6 +374,10 @@ Counter
            resolution = <16>;
        };
 
+* A new ``role`` property has been added to :dtcompatible:`nxp,lptmr` to
+  distinguish the system timer role from the counter role. See the Timer section
+  for migration details. (:github:`104445`)
+
 * The NXP i.MX GPT counter driver (:dtcompatible:`nxp,imx-gpt`) now
   defaults to ``run-mode = "restart"`` instead of the previous hardcoded free-run behavior.
 
@@ -879,6 +883,21 @@ Timer
 * :dtcompatible:`renesas,rza2m-ostm` name has been replaced by :dtcompatible:`renesas,rza2m-ostm-timer`.
   The choice :kconfig:option:`DT_HAS_RENESAS_RZA2M_OSTM_ENABLED` has been replaced with
   :kconfig:option:`DT_HAS_RENESAS_RZA2M_OSTM_TIMER_ENABLED` (:github:`100934`)
+
+* :dtcompatible:`nxp,lptmr` nodes used as the system timer must now declare
+  ``role = "timer"`` in the board DTS overlay:
+
+  .. code-block:: devicetree
+
+     &lptmr0 {
+         role = "timer";
+     };
+
+  Boards based on i.MX95 and MCX-W SoCs already have this set in the SoC DTSI
+  and require no change. All other boards using
+  :kconfig:option:`CONFIG_MCUX_LPTMR_TIMER` must add the overlay above.
+  On Kinetis KE1xF, this overlay is also required when
+  :kconfig:option:`CONFIG_PM` is enabled.
 
 USB
 ===
