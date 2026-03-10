@@ -61,8 +61,11 @@ struct mux_control {
 };
 
 /** @cond INTERNAL_HIDDEN */
-#define ZPRIV_MUX_PROP_TYPE(node_id) \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, mux_states), (MUX_STATES_SPEC), (MUX_CONTROLS_SPEC))
+#define ZPRIV_MUX_PROP_SPEC_TYPE_mux_controls MUX_CONTROLS_SPEC
+#define ZPRIV_MUX_PROP_SPEC_TYPE_mux_states MUX_STATES_SPEC
+
+#define ZPRIV_MUX_PROP_TYPE(prop) \
+	DT_CAT(ZPRIV_MUX_PROP_SPEC_TYPE_, prop)
 
 #define ZPRIV_MUX_CONTROL_DT_IDX_BY_NAME(node_id, name)				\
 	DT_PHA_ELEM_IDX_BY_NAME(node_id, DT_MUX_PROP_STRING(node_id), name)
@@ -75,7 +78,7 @@ struct mux_control {
 	static struct mux_control zpriv_mux_control_##node_id##_##idx = {	\
 		.cells = zpriv_mux_control_cells_##node_id##_##idx,		\
 		.len = DT_PHA_NUM_CELLS_BY_IDX(node_id, prop, idx),		\
-		.type = ZPRIV_MUX_PROP_TYPE(node_id)				\
+		.type = ZPRIV_MUX_PROP_TYPE(prop)				\
 	};
 /** @endcond */
 
@@ -151,6 +154,140 @@ struct mux_control {
  */
 #define MUX_CONTROL_DT_GET_BY_NAME(node_id, name) \
 	MUX_CONTROL_DT_GET_BY_IDX(node_id, ZPRIV_MUX_CONTROL_DT_IDX_BY_NAME(node_id, name))
+
+/** @cond INTERNAL_HIDDEN */
+/* Callback for DT_INST_FOREACH_PROP_ELEM: define one mux_control spec */
+#define ZPRIV_MUX_CONTROL_DT_INST_DEFINE_ELEM(node_id, prop, idx) \
+	ZPRIV_MUX_CONTROL_DT_DEFINE_BY_IDX(node_id, idx, prop)
+/* Callback for DT_INST_FOREACH_PROP_ELEM_SEP: get one mux_control pointer */
+#define ZPRIV_MUX_CONTROL_DT_INST_GET_ELEM(node_id, prop, idx) \
+	MUX_CONTROL_DT_GET_BY_IDX(node_id, idx)
+/** @endcond */
+
+/**
+ * @brief Define mux_control specs for all entries of a devicetree node.
+ *
+ * Iterates over every entry in a node's @c mux-states (or @c mux-controls)
+ * property and defines a static @c mux_control object for each one.
+ * Equivalent to calling MUX_CONTROL_DT_SPEC_DEFINE_BY_IDX() for every valid
+ * index, but without repeating the index by hand.
+ *
+ * After calling this macro, retrieve individual specs with
+ * MUX_CONTROL_DT_GET_BY_IDX() or MUX_CONTROL_DT_GET_BY_NAME().
+ *
+ * @param node_id Devicetree node identifier
+ */
+#define MUX_CONTROL_DT_SPEC_DEFINE_ALL(node_id)				\
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, mux_states),			\
+		(DT_FOREACH_PROP_ELEM(node_id, mux_states,			\
+			ZPRIV_MUX_CONTROL_DT_INST_DEFINE_ELEM)),		\
+		(DT_FOREACH_PROP_ELEM(node_id, mux_controls,			\
+			ZPRIV_MUX_CONTROL_DT_INST_DEFINE_ELEM)))
+
+/**
+ * @brief Define all mux_control specs and the pointer array for one DT instance.
+ *
+ * Eliminates the repetitive boilerplate that drivers need to iterate over
+ * a MUX phandle-array property. Expands to static storage at file scope —
+ * place it
+ * inside a per-instance @c INIT macro or wrap it with a one-line
+ * @c DT_INST_FOREACH_STATUS_OKAY helper.
+ *
+ * When the instance has no selected property the macro still emits an empty
+ * pointer array so that MUX_CONTROL_DT_INST_ARRAY_GET() and
+ * MUX_CONTROL_DT_INST_COUNT_BY_PROP() remain usable without a build error.
+ *
+ * After calling this macro for instance @p n with token @p prefix, use:
+ *  - MUX_CONTROL_DT_INST_ARRAY_GET(prefix, n) to retrieve the pointer array
+ *  - MUX_CONTROL_DT_INST_DEV_GET(n)           to get the MUX controller device
+ *  - MUX_CONTROL_DT_INST_COUNT(n)             to get the entry count (0 if absent)
+ *
+ * @param prefix Unique token to avoid name collisions (e.g. the driver name)
+ * @param n      DT instance number
+ */
+#define MUX_CONTROL_DT_INST_DEFINE_BY_PROP(prefix, n, prop)			\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, prop),				\
+	(									\
+		DT_INST_FOREACH_PROP_ELEM(n, prop,				\
+			ZPRIV_MUX_CONTROL_DT_INST_DEFINE_ELEM)			\
+		static struct mux_control *prefix##_##n##_muxes[] = {		\
+			DT_INST_FOREACH_PROP_ELEM_SEP(n, prop,			\
+				ZPRIV_MUX_CONTROL_DT_INST_GET_ELEM, (,))	\
+		};								\
+	),									\
+	(static struct mux_control *prefix##_##n##_muxes[] = {};))
+
+/**
+ * @brief Define all mux_control specs and the pointer array for one DT instance.
+ *
+ * Uses @c mux-states if present, otherwise falls back to @c mux-controls.
+ * Use MUX_CONTROL_DT_INST_DEFINE_BY_PROP() when the property must be explicit.
+ *
+ * @param prefix Unique token to avoid name collisions (e.g. the driver name)
+ * @param n      DT instance number
+ */
+#define MUX_CONTROL_DT_INST_DEFINE(prefix, n)					\
+	MUX_CONTROL_DT_INST_DEFINE_BY_PROP(prefix, n, DT_MUX_PROP_STRING(DT_DRV_INST(n)))
+
+/**
+ * @brief Get the mux_control pointer array for a DT instance.
+ *
+ * Returns the array name created by MUX_CONTROL_DT_INST_DEFINE().
+ *
+ * @param prefix Same token used in MUX_CONTROL_DT_INST_DEFINE()
+ * @param n      DT instance number
+ */
+#define MUX_CONTROL_DT_INST_ARRAY_GET(prefix, n) prefix##_##n##_muxes
+
+/**
+ * @brief Get the MUX controller device handle for a DT instance.
+ *
+ * Returns the device for the first controller referenced by the
+ * @c mux-states (or @c mux-controls) property of instance @p n.
+ *
+ * @param n DT instance number
+ * @return Pointer to the MUX controller @c struct device
+ */
+#define MUX_CONTROL_DT_INST_DEV_GET_BY_PROP(n, prop) \
+	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(DT_DRV_INST(n), prop, 0))
+
+/**
+ * @brief Get the MUX controller device handle for a DT instance.
+ *
+ * Uses @c mux-states if present, otherwise falls back to @c mux-controls.
+ * Use MUX_CONTROL_DT_INST_DEV_GET_BY_PROP() when the property must be explicit.
+ *
+ * @param n DT instance number
+ * @return Pointer to the MUX controller @c struct device
+ */
+#define MUX_CONTROL_DT_INST_DEV_GET(n) \
+	MUX_CONTROL_DT_INST_DEV_GET_BY_PROP(n, DT_MUX_PROP_STRING(DT_DRV_INST(n)))
+
+/**
+ * @brief Get the number of entries in a selected MUX property for a DT instance.
+ *
+ * Returns 0 when the instance has no selected property.
+ *
+ * @param n DT instance number
+ * @param prop MUX property token, for example @c mux_states or @c mux_controls
+ * @return Number of entries in the selected MUX property, or 0 if absent
+ */
+#define MUX_CONTROL_DT_INST_COUNT_BY_PROP(n, prop)				\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, prop),				\
+		(DT_INST_PROP_LEN(n, prop)),				\
+		(0))
+
+/**
+ * @brief Get the number of MUX entries for a DT instance.
+ *
+ * Uses @c mux-states if present, otherwise falls back to @c mux-controls.
+ * Use MUX_CONTROL_DT_INST_COUNT_BY_PROP() when the property must be explicit.
+ *
+ * @param n DT instance number
+ * @return Number of entries in the selected MUX property, or 0 if absent
+ */
+#define MUX_CONTROL_DT_INST_COUNT(n)					\
+	MUX_CONTROL_DT_INST_COUNT_BY_PROP(n, DT_MUX_PROP_STRING(DT_DRV_INST(n)))
 
 
 /**
