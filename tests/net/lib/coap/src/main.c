@@ -839,7 +839,7 @@ static void server_resource_1_callback(struct coap_resource *resource,
 {
 	bool r;
 
-	r = ipaddr_cmp(&observer->addr, (const struct net_sockaddr *)&dummy_addr);
+	r = ipaddr_cmp(net_sad(&observer->addr), (struct net_sockaddr *)&dummy_addr);
 	zassert_true(r, "The address of the observer doesn't match");
 
 	coap_remove_observer(resource, observer);
@@ -849,7 +849,7 @@ static void server_resource_2_callback(struct coap_resource *resource,
 {
 	bool r;
 
-	r = ipaddr_cmp(&observer->addr, (const struct net_sockaddr *)&dummy_addr);
+	r = ipaddr_cmp(net_sad(&observer->addr), (const struct net_sockaddr *)&dummy_addr);
 	zassert_true(r, "The address of the observer doesn't match");
 }
 

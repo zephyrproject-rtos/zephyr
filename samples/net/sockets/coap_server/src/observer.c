@@ -116,8 +116,8 @@ static void obs_notify(struct coap_resource *resource,
 		       struct coap_observer *observer)
 {
 	send_notification_packet(resource,
-				 &observer->addr,
-				 sizeof(observer->addr),
+				 net_sad(&observer->addr),
+				 net_family2size(observer->addr.ss_family),
 				 resource->age, 0,
 				 observer->token, observer->tkl, false);
 }
