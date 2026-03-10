@@ -58,10 +58,6 @@ rsource "Kconfig.mbedtls"
 rsource "Kconfig.ciphersuites"
 rsource "Kconfig.deprecated"
 
-module = MBEDTLS
-module-str = Log level mbedTLS library debug hook
-source "subsys/logging/Kconfig.template.log_config"
-
 config MBEDTLS_DEBUG
 	bool "mbed TLS debug activation"
 	imply MBEDTLS_DEBUG_C
@@ -77,6 +73,10 @@ config MBEDTLS_DEBUG
 	  hook function if zephyr_mbedtls_debug() doesn't suit your needs.
 
 if MBEDTLS_DEBUG
+
+module = MBEDTLS
+module-str = Log level mbedTLS library debug hook
+source "subsys/logging/Kconfig.template.log_config"
 
 config MBEDTLS_DEBUG_LEVEL
 	int
