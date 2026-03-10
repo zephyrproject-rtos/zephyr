@@ -437,6 +437,9 @@ Devicetree
   explicitly specify the values in your devicetree source to fix these build
   errors.
 
+* The devicetree compatible ``ilitek,ili9806e-dsi`` was renamed.
+  Use :dtcompatible:`ilitek,ili9806e` instead.
+
 Display
 =======
 

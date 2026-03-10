@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ilitek_ili9806e_dsi
+#define DT_DRV_COMPAT ilitek_ili9806e
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/display.h>
