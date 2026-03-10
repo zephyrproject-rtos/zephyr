@@ -1,11 +1,14 @@
 /*
  * Copyright (c) 2023 The Chromium OS Authors
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _POWER_CTRL_H_
-#define _POWER_CTRL_H_
+#ifndef ZEPHYR_SAMPLES_SUBSYS_USBC_COMMON_POWER_CTRL_H
+#define ZEPHYR_SAMPLES_SUBSYS_USBC_COMMON_POWER_CTRL_H
+
+#include <zephyr/device.h>
 
 /**
  * @brief VBUS levels
@@ -36,11 +39,11 @@ enum vconn_t {
 /**
  * @brief Control VCONN
  */
-int vconn_ctrl_set(enum vconn_t v);
+int vconn_ctrl_set(const struct device *dev, enum vconn_t v);
 
 /**
  * @brief Control VBUS
  */
-int source_ctrl_set(enum source_t v);
+int source_ctrl_set(const struct device *dev, enum source_t v);
 
-#endif /* _POWER_CTRL_H_ */
+#endif /* ZEPHYR_SAMPLES_SUBSYS_USBC_COMMON_POWER_CTRL_H */
