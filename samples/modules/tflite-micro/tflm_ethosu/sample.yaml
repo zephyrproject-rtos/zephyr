@@ -9,6 +9,57 @@ tests:
       - tflite-micro
     filter: dt_compat_enabled("arm,ethos-u")
     build_only: true
+    platform_allow:
+      - mps3/corstone300/fvp
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
     integration_platforms:
       - mps3/corstone300/fvp
       - kit_pse84_ai/pse846gps2dbzc4a/m55
+  sample.drivers.tflm_ethosu_sram_only:
+    tags:
+      - NPU
+    modules:
+      - tflite-micro
+    filter: dt_compat_enabled("arm,ethos-u")
+    build_only: true
+    platform_allow:
+      - mps3/corstone300/fvp
+    integration_platforms:
+      - mps3/corstone300/fvp
+    extra_configs:
+      - CONFIG_SAMPLE_TFLM_ETHOSU_MEM_MODE_SRAM_ONLY=y
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/mps3_corstone300_fvp.sram_only.overlay
+  sample.drivers.tflm_ethosu_dedicated_sram:
+    tags:
+      - NPU
+    modules:
+      - tflite-micro
+    filter: dt_compat_enabled("arm,ethos-u")
+    build_only: true
+    platform_allow:
+      - mps3/corstone300/fvp
+    integration_platforms:
+      - mps3/corstone300/fvp
+    extra_configs:
+      - CONFIG_SAMPLE_TFLM_ETHOSU_MEM_MODE_DEDICATED_SRAM=y
+    extra_args:
+      - CONFIG_ETHOS_U65_256=y
+      - DTC_OVERLAY_FILE=boards/mps3_corstone300_fvp.dedicated_sram.overlay
+  sample.drivers.tflm_ethosu_mps4_u85_pmu:
+    tags:
+      - NPU
+    modules:
+      - tflite-micro
+    filter: dt_compat_enabled("arm,ethos-u")
+    build_only: true
+    platform_allow:
+      - mps4/corstone320/fvp
+    integration_platforms:
+      - mps4/corstone320/fvp
+    extra_configs:
+      - CONFIG_SAMPLE_TFLM_ETHOSU_MEM_MODE_SRAM_ONLY=y
+    extra_args:
+      - CONFIG_ETHOS_U85_2048=y
+      - CONFIG_SAMPLE_TFLM_ETHOSU_PMU=y
+      - DTC_OVERLAY_FILE="boards/mps4_corstone320_fvp.ta.overlay;boards/mps4_corstone320_fvp.sram_only.overlay"
