@@ -1,0 +1,59 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Test overlay for the reg-mux driver on frdm_mcxa153.
+ *
+ * The reg-mux controller is mapped to sramx (0x04000000, 8 KB), which is a
+ * tightly-coupled instruction/data SRAM that is always powered on after reset
+ * and is not assigned to zephyr,sram.  Using it as the backing store for
+ * register read-write tests guarantees that every write is immediately visible
+ * on a subsequent read without any hardware side-effects.
+ *
+ * Four logical mux channels are defined across two 32-bit words:
+ *
+ *   ch0  word[0] bits [1:0]   mask = 0x00000003   max state = 3
+ *   ch1  word[0] bits [7:4]   mask = 0x000000f0   max state = 15
+ *   ch2  word[1] bits [7:0]   mask = 0x000000ff   max state = 255
+ *   ch3  word[1] bits[11:8]   mask = 0x00000f00   max state = 15
+ *
+ * Two test consumer nodes exercise both property styles supported by the
+ * mux API:
+ *   test_mux_ctrl_node  -- mux-controls (no embedded default state)
+ *   test_mux_state_node -- mux-states   (default state encoded in DT)
+ */
+
+/ {
+	test_mux: mux-controller@4000000 {
+		compatible = "reg-mux";
+		reg = <0x4000000 0x10>;
+		#mux-control-cells = <1>;
+		#mux-state-cells = <2>;
+
+		mux-reg-masks = <0x00 0x00000003>,   /* ch0: word[0] bits[1:0]  */
+				<0x00 0x000000f0>,   /* ch1: word[0] bits[7:4]  */
+				<0x04 0x000000ff>,   /* ch2: word[1] bits[7:0]  */
+				<0x04 0x00000f00>;   /* ch3: word[1] bits[11:8] */
+	};
+
+	/*
+	 * Consumer that uses mux-controls (runtime state, no DT default).
+	 * Exposes channel 0 at index 0 and channel 2 at index 1.
+	 */
+	test_mux_ctrl_node: test-mux-ctrl {
+		compatible = "test-reg-mux-consumer";
+		mux-controls = <&test_mux 0>, <&test_mux 2>;
+		mux-control-names = "ch0", "ch2";
+	};
+
+	/*
+	 * Consumer that uses mux-states (state value embedded in DT).
+	 * ch1 default = 10, ch3 default = 7.
+	 */
+	test_mux_state_node: test-mux-state {
+		compatible = "test-reg-mux-consumer";
+		mux-states = <&test_mux 1 10>, <&test_mux 3 7>;
+		mux-state-names = "ch1-state", "ch3-state";
+	};
+};

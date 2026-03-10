@@ -1,0 +1,18 @@
+common:
+  tags:
+    - drivers
+    - mux
+  harness: ztest
+
+tests:
+  drivers.mux.reg_mux:
+    platform_allow:
+      - frdm_mcxa153
+    integration_platforms:
+      - frdm_mcxa153
+
+  drivers.mux.reg_mux.native_sim:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim

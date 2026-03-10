@@ -1,0 +1,10 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test consumer node for the reg-mux driver test suite.
+
+compatible: "test-reg-mux-consumer"
+
+include:
+  - base.yaml
+  - mux-consumer.yaml

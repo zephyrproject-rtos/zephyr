@@ -1,0 +1,54 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Test overlay for the reg-mux driver on native_sim (Linux only).
+ *
+ * native_sim is a plain Linux process.  Without an MMU, DEVICE_MMIO_GET()
+ * returns the DT reg address directly as a C pointer, so that address must
+ * be a valid, writable host virtual address at the time the driver accesses
+ * it.
+ *
+ * The test suite's setup function (see src/main.c) calls
+ *   mmap(MAP_FIXED_NOREPLACE | MAP_PRIVATE | MAP_ANONYMOUS)
+ * to back the 16-byte window at TEST_MUX_BASE before any test case runs.
+ * MAP_FIXED_NOREPLACE (Linux 4.17+) guarantees we never silently clobber an
+ * existing mapping; the suite setup fails loudly if the address is occupied.
+ *
+ * Address choice: 0x40000000 (1 GB) sits above the typical ELF text/data
+ * region (~4 MB) and below the shared-library region (~0x7f... on x86-64).
+ * It is almost always unmapped in a fresh process.
+ *
+ * Channel layout — identical to frdm_mcxa153.overlay:
+ *   ch0  word[0] bits[1:0]   mask = 0x00000003   max state = 3
+ *   ch1  word[0] bits[7:4]   mask = 0x000000f0   max state = 15
+ *   ch2  word[1] bits[7:0]   mask = 0x000000ff   max state = 255
+ *   ch3  word[1] bits[11:8]  mask = 0x00000f00   max state = 15
+ */
+
+/ {
+	test_mux: mux-controller@40000000 {
+		compatible = "reg-mux";
+		reg = <0x40000000 0x10>;
+		#mux-control-cells = <1>;
+		#mux-state-cells = <2>;
+
+		mux-reg-masks = <0x00 0x00000003>,   /* ch0: word[0] bits[1:0]  */
+				<0x00 0x000000f0>,   /* ch1: word[0] bits[7:4]  */
+				<0x04 0x000000ff>,   /* ch2: word[1] bits[7:0]  */
+				<0x04 0x00000f00>;   /* ch3: word[1] bits[11:8] */
+	};
+
+	test_mux_ctrl_node: test-mux-ctrl {
+		compatible = "test-reg-mux-consumer";
+		mux-controls = <&test_mux 0>, <&test_mux 2>;
+		mux-control-names = "ch0", "ch2";
+	};
+
+	test_mux_state_node: test-mux-state {
+		compatible = "test-reg-mux-consumer";
+		mux-states = <&test_mux 1 10>, <&test_mux 3 7>;
+		mux-state-names = "ch1-state", "ch3-state";
+	};
+};
