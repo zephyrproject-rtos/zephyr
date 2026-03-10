@@ -22,6 +22,7 @@
  */
 #define CAP_STREAM_TX_MAX                                                                          \
 	(MIN(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT, CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT))
+#define CAP_HANDOVER_MAX_SDU 40U
 
 struct tx_stream {
 	/** Reference to a stream */
