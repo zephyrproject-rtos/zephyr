@@ -9,6 +9,9 @@
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/conn.h>
 
+/** Both broadcast and unicast use the 16_2_1 preset, which uses SDU size 40 */
+#define CAP_INITIATOR_MAX_SDU 40U
+
 struct tx_stream {
 	struct bt_cap_stream *stream;
 	uint16_t seq_num;

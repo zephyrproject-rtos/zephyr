@@ -36,10 +36,11 @@
 /* PBS ASCII text */
 #define PBS_DEMO                'P', 'B', 'P'
 
+#define MAX_SDU 100U /* Shall match the SDU size of broadcast_preset_48_2_1 */
+
 NET_BUF_POOL_FIXED_DEFINE(tx_pool,
 			  (BROADCAST_ENQUEUE_COUNT * CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT),
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+			  BT_ISO_SDU_BUF_SIZE(MAX_SDU), CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static K_SEM_DEFINE(sem_broadcast_started, 0, 1);
 static K_SEM_DEFINE(sem_broadcast_stopped, 0, 1);
@@ -94,15 +95,15 @@ static void broadcast_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 
 static void broadcast_sent_cb(struct bt_bap_stream *stream)
 {
-	static uint8_t mock_data[CONFIG_BT_ISO_TX_MTU];
+	static uint8_t mock_data[MAX_SDU];
 	static bool mock_data_initialized;
 	static uint32_t seq_num;
 	struct net_buf *buf;
 	int ret;
 
-	if (broadcast_preset_48_2_1.qos.sdu > CONFIG_BT_ISO_TX_MTU) {
-		printk("Invalid SDU %u for the MTU: %d", broadcast_preset_48_2_1.qos.sdu,
-			CONFIG_BT_ISO_TX_MTU);
+	if (broadcast_preset_48_2_1.qos.sdu > MAX_SDU) {
+		printk("Invalid SDU %u for the codec configured: Shall be <= %u\n",
+		       broadcast_preset_48_2_1.qos.sdu, MAX_SDU);
 
 		return;
 	}

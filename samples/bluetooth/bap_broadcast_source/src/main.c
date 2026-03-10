@@ -62,6 +62,7 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_16_2
 	BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 #define BROADCAST_SAMPLE_RATE 16000
+#define BROADCAST_SDU_SIZE    40U
 
 #elif defined(CONFIG_BAP_BROADCAST_24_2_1)
 
@@ -70,6 +71,7 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_24_2
 	BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 #define BROADCAST_SAMPLE_RATE 24000
+#define BROADCAST_SDU_SIZE    60U
 
 #elif defined(CONFIG_BAP_BROADCAST_48_2_1)
 
@@ -78,6 +80,7 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_48_2
 	BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 #define BROADCAST_SAMPLE_RATE 48000
+#define BROADCAST_SDU_SIZE    100U
 
 #endif
 
@@ -169,7 +172,7 @@ static struct broadcast_source_stream {
 } streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 static struct bt_bap_broadcast_source *broadcast_source;
 
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, TOTAL_BUF_NEEDED, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, TOTAL_BUF_NEEDED, BT_ISO_SDU_BUF_SIZE(BROADCAST_SDU_SIZE),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static int16_t send_pcm_data[MAX_NUM_SAMPLES];

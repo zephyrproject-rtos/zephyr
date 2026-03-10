@@ -353,9 +353,9 @@ static void unicast_stream_sent_cb(struct bt_bap_stream *stream)
 static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 {
 	NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-				  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+				  BT_ISO_SDU_BUF_SIZE(CAP_ACCEPTOR_MAX_SDU),
 				  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
-	static uint8_t data[CONFIG_BT_ISO_TX_MTU];
+	static uint8_t data[CAP_ACCEPTOR_MAX_SDU];
 	struct peer_config *peer = arg1;
 	struct bt_cap_stream *cap_stream = &peer->source_stream;
 	struct bt_bap_stream *bap_stream = &cap_stream->bap_stream;
