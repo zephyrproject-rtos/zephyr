@@ -14,6 +14,8 @@
 #include <zephyr/sys/util_macro.h>
 #include <sys/types.h>
 
+#define ISO_MAX_SDU_SIZE 310U /* enough for stereo in a single stream with BAP 48_6_1 */
+
 static inline void tester_set_bit(uint8_t *addr, unsigned int bit)
 {
 	uint8_t *p = addr + (bit / 8U);
