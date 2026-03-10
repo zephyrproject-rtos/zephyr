@@ -49,8 +49,8 @@ static ALWAYS_INLINE void set_px_at_pos(uint8_t *dst_buf, uint32_t x, uint32_t y
 #endif
 }
 
-static void lvgl_transform_buffer(uint8_t **px_map, uint32_t width, uint32_t height,
-				  const struct display_capabilities *caps)
+static uint8_t *lvgl_transform_buffer(uint8_t *px_map, uint32_t width, uint32_t height,
+				      const struct display_capabilities *caps)
 {
 #ifdef CONFIG_LV_Z_COLOR_MONO_HW_INVERSION
 	uint8_t clear_color = 0x00;
@@ -61,9 +61,7 @@ static void lvgl_transform_buffer(uint8_t **px_map, uint32_t width, uint32_t hei
 	memset(mono_conv_buf, clear_color, mono_conv_buf_size);
 
 	/* Needed because LVGL reserves some bytes in the buffer for the color palette. */
-	*px_map += COLOR_PALETTE_HEADER_SIZE;
-
-	uint8_t *src_buf = *px_map;
+	uint8_t *src_buf = px_map + COLOR_PALETTE_HEADER_SIZE;
 	uint32_t stride = (width + CONFIG_LV_DRAW_BUF_STRIDE_ALIGN - 1) &
 			  ~(CONFIG_LV_DRAW_BUF_STRIDE_ALIGN - 1);
 
@@ -78,52 +76,81 @@ static void lvgl_transform_buffer(uint8_t **px_map, uint32_t width, uint32_t hei
 		}
 	}
 
-	memcpy(src_buf, mono_conv_buf, mono_conv_buf_size - COLOR_PALETTE_HEADER_SIZE);
+	return mono_conv_buf;
 }
 
 void lvgl_flush_cb_mono(lv_display_t *display, const lv_area_t *area, uint8_t *px_map)
 {
-	uint16_t w = area->x2 - area->x1 + 1;
-	uint16_t h = area->y2 - area->y1 + 1;
 	struct lvgl_disp_data *data = (struct lvgl_disp_data *)lv_display_get_user_data(display);
 	const struct device *display_dev = data->display_dev;
-	const bool is_epd = data->cap.screen_info & SCREEN_INFO_EPD;
 	const bool is_last = lv_display_flush_is_last(display);
 
-	lvgl_transform_buffer(&px_map, w, h, &data->cap);
+	uint16_t w, h, x, y;
+	uint8_t *dst;
+
+#ifdef CONFIG_LV_Z_DIRECT_RENDERING
+	/* Ignore partial flushes in direct rendering mode */
+	if (!is_last) {
+		lv_display_flush_ready(display);
+		return;
+	}
+
+	/* Direct rendering: flush entire buffer */
+	w = lv_display_get_original_horizontal_resolution(display);
+	h = lv_display_get_original_vertical_resolution(display);
+	x = 0;
+	y = 0;
+#else
+	/* Partial rendering: flush only changed area */
+	w = area->x2 - area->x1 + 1;
+	h = area->y2 - area->y1 + 1;
+	x = area->x1;
+	y = area->y1;
+
+	const bool is_epd = data->cap.screen_info & SCREEN_INFO_EPD;
 
 	if (is_epd && !data->blanking_on && !is_last) {
 		/*
-		 * Turn on display blanking when using an EPD
-		 * display. This prevents updates and the associated
-		 * flicker if the screen is rendered in multiple
-		 * steps.
+		 * Turn on display blanking when using an EPD display. This prevents
+		 * updates and the associated flicker if the screen is rendered in
+		 * multiple steps.
 		 */
 		display_blanking_on(display_dev);
 		data->blanking_on = true;
 	}
+#endif
+
+	/* Transform buffer from LVGL format to hardware format */
+	dst = lvgl_transform_buffer(px_map, w, h, &data->cap);
 
 	struct display_buffer_descriptor desc = {
 		.buf_size = (w * h) / 8U,
 		.width = w,
 		.pitch = w,
 		.height = h,
+#ifdef CONFIG_LV_Z_DIRECT_RENDERING
+		.frame_incomplete = false,
+#else
 		.frame_incomplete = !is_last,
+#endif
 	};
 
-	display_write(display_dev, area->x1, area->y1, &desc, (void *)px_map);
+	display_write(display_dev, x, y, &desc, (void *)dst);
+
+#ifndef CONFIG_LV_Z_DIRECT_RENDERING
 	if (data->cap.screen_info & SCREEN_INFO_DOUBLE_BUFFER) {
-		display_write(display_dev, area->x1, area->y1, &desc, (void *)px_map);
+		display_write(display_dev, x, y, &desc, (void *)dst);
 	}
 
 	if (is_epd && is_last && data->blanking_on) {
 		/*
-		 * The entire screen has now been rendered. Update the
-		 * display by disabling blanking.
+		 * The entire screen has now been rendered. Update the display by
+		 * disabling blanking.
 		 */
 		display_blanking_off(display_dev);
 		data->blanking_on = false;
 	}
+#endif
 
 	lv_display_flush_ready(display);
 }
