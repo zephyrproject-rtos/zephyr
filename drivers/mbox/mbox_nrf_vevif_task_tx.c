@@ -20,11 +20,42 @@ struct mbox_vevif_task_tx_conf {
 	uint8_t tasks;
 };
 
+struct mbox_vevif_task_tx_data {
+	bool ready;
+};
+
 static inline bool vevif_task_tx_is_valid(const struct device *dev, uint32_t id)
 {
 	const struct mbox_vevif_task_tx_conf *config = dev->config;
 
 	return ((id <= TASKS_IDX_MAX) && ((config->tasks_mask & BIT(id)) != 0U));
+}
+
+static bool is_remote_core_ready(const struct device *dev)
+{
+	struct mbox_vevif_task_tx_data *data = dev->data;
+
+	if (data->ready) {
+		return true;
+	} else {
+#ifdef NRF_VPR130
+		const struct mbox_vevif_task_tx_conf *config = dev->config;
+
+		/* VEVIF Event 15 is used to signal to the parent core that PPR is running. */
+		if (config->vpr == NRF_VPR130) {
+			if (nrfy_vpr_event_check(config->vpr, NRF_VPR_EVENT_TRIGGERED_15)) {
+				data->ready = true;
+				return true;
+			} else {
+				return false;
+			}
+		} else
+#endif
+		{
+			data->ready = true;
+			return true;
+		}
+	}
 }
 
 static int vevif_task_tx_send(const struct device *dev, uint32_t id, const struct mbox_msg *msg)
@@ -39,6 +70,12 @@ static int vevif_task_tx_send(const struct device *dev, uint32_t id, const struc
 		return -EMSGSIZE;
 	}
 
+
+	/* Trigger task in the remote core only if core is ready to accept it.
+	 * PPR core starts with unknown delay and it signals when it is ready.
+	 */
+	while (is_remote_core_ready(dev) == false) {
+	}
 	nrfy_vpr_task_trigger(config->vpr, nrfy_vpr_trigger_task_get(id));
 
 #ifdef CONFIG_SOC_NRF54H20
@@ -74,6 +111,7 @@ static DEVICE_API(mbox, vevif_task_tx_driver_api) = {
 	BUILD_ASSERT(DT_INST_PROP(inst, nordic_tasks) <= VPR_TASKS_TRIGGER_MaxCount,               \
 		     "Number of tasks exceeds maximum");                                           \
                                                                                                    \
+	static struct mbox_vevif_task_tx_data data##inst;                                          \
 	static const struct mbox_vevif_task_tx_conf conf##inst = {                                 \
 		.vpr = (NRF_VPR_Type *)DT_INST_REG_ADDR(inst),                                     \
 		.tasks = DT_INST_PROP(inst, nordic_tasks),                                         \
