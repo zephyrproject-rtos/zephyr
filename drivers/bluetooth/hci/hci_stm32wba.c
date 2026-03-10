@@ -66,7 +66,6 @@ struct aci_reset {
 #define BT_HCI_STATE_CLOSED                   2
 
 static uint8_t bt_hci_state = BT_HCI_STATE_DEINIT;
-
 extern uint8_t ll_state_busy;
 
 static bool is_hci_event_discardable(const uint8_t *evt_data)
@@ -357,11 +356,49 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 	return 0;
 }
 
+static void stm32wba_set_stack_options(BleStack_init_t *init_params_p)
+{
+	init_params_p->options = 0;
+
+	/* - bit 0:   1: LL only                   0: LL + host */
+	init_params_p->options = BLE_OPTIONS_LL_ONLY;
+
+	/* - bit 1:   1: no service change desc.   0: with service change desc. */
+	/* NA for LL only */
+
+	/* - bit 2:   1: device name Read-Only     0: device name R/W */
+	/* NA for LL only */
+
+	/* - bit 3:   1: extended adv supported    0: extended adv not supported */
+#if defined(CONFIG_BT_EXT_ADV)
+	init_params_p->options |= BLE_OPTIONS_EXTENDED_ADV;
+#endif
+
+	/* - bit 5:   1: Reduced GATT db in NVM    0: Full GATT db in NVM */
+	/* NA for LL only */
+
+	/* - bit 6:   1: GATT caching is used      0: GATT caching is not used */
+	/* NA for LL only */
+
+	/* - bit 7:   1: LE Power Class 1          0: Other LE Power Classes */
+	/* Set to 0: Other LE Power Classes */
+
+	/* - bit 8:   1: appearance Writable       0: appearance Read-Only */
+	/* NA for LL only */
+
+	/* - bit 9:   1: Enhanced ATT supported    0: Enhanced ATT not supported */
+	/* NA for LL only */
+}
+
 static int bt_ble_ctlr_init(void)
 {
 	BleStack_init_t init_params_p = {0};
 
-	init_params_p.options = BLE_OPTIONS_LL_ONLY | BLE_OPTIONS_EXTENDED_ADV;
+	/**
+	 * Set BLE Options, Options_extension, max_adv_set_nbr,
+	 * max_adv_data_len and MaxAddEattBearers according zephyr KConfig
+	 */
+	stm32wba_set_stack_options(&init_params_p);
 
 	if (BleStack_Init(&init_params_p) != BLE_STATUS_SUCCESS) {
 		return -EIO;
