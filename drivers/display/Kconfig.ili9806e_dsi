@@ -4,7 +4,7 @@
 config ILI9806E_DSI
 	bool "ILI9806E_DSI display driver"
 	default y
-	depends on DT_HAS_ILITEK_ILI9806E_DSI_ENABLED
+	depends on DT_HAS_ILITEK_ILI9806E_ENABLED
 	select MIPI_DSI
 	help
 	  Enable driver for ILI9806E_DSI display driver.

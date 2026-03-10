@@ -29,7 +29,7 @@
 
 	ili9806e: ili9806e@0 {
 		status = "okay";
-		compatible = "ilitek,ili9806e-dsi";
+		compatible = "ilitek,ili9806e";
 		reg = <0x0>;
 		height = <854>;
 		width = <480>;
