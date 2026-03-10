@@ -472,6 +472,9 @@ device.
        If defined, the UART log backend would output to the devices listed in this node.
    * - zephyr,ocm
      - On-chip memory node on Xilinx Zynq-7000 and ZynqMP SoCs
+   * - zephyr,openthread-counter
+     - Selects the counter device used by the OpenThread platform for microsecond alarm
+       timers when :kconfig:option:`CONFIG_OPENTHREAD_ALARM_COUNTER` is enabled.
    * - zephyr,osdp-uart
      - Sets UART device used by OSDP subsystem
    * - zephyr,ot-uart
