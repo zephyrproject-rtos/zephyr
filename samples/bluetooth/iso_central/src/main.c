@@ -42,7 +42,7 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(SDU_SIZE),
  * Second iteration: 0x00 0x01
  * Third iteration : 0x00 0x01 0x02
  *
- * And so on, until it wraps around the configured ISO TX SDU_SIZE
+ * And so on, until it wraps around the configured ISO TX SDU size
  *
  * @param work Pointer to the work structure
  */
