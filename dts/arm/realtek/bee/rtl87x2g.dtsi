@@ -10,6 +10,7 @@
 #include <dt-bindings/pinctrl/rtl87x2g-pinctrl.h>
 #include <dt-bindings/clock/rtl87x2g-clocks.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	cpus {
@@ -385,6 +386,16 @@
 			interrupts = <58 0>;
 			clocks = <&cctl APB_CLK(KEYSCAN)>;
 			status = "disabled";
+		};
+
+		adc: adc@40032000 {
+			compatible = "realtek,bee-adc";
+			reg = <0x40032000 0x60>;
+			interrupts = <57 0>;
+			clocks = <&cctl APB_CLK(ADC)>;
+			channels = <9>;
+			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 	};
 };
