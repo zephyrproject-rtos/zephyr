@@ -411,6 +411,8 @@ New Drivers
 
   * Added new stm32 BSEC driver that provides means to program and read OTP fuses
     (:dtcompatible:`st,stm32-bsec`). (:github:`102403`)
+  * Added new driver that allows reading from OTP/read-only areas of STM32 embedded NVM
+    (:dtcompatible:`st,stm32-nvm-otp`) (:github:`102976`)
   * Added SiFli SF32LB eFuse OTP driver (:dtcompatible:`sifli,sf32lb-efuse`).
     (:github:`101926`)
   * :dtcompatible:`nxp,ocotp` (:github:`102567` & :github:`103089`)
