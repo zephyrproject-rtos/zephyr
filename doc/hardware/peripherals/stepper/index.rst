@@ -116,7 +116,7 @@ Stepper motion controller specific APIs
 Trinamic
 ========
 
-.. doxygengroup:: trinamic_stepper_interface
+.. doxygengroup:: trinamic_stepper_ctrl
 
 .. _stepper discord:
    https://discord.com/channels/720317445772017664/1278263869982375946
