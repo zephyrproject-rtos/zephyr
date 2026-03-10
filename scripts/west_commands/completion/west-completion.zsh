@@ -299,6 +299,7 @@ _west_boards() {
   local -a opts=(
   {-f,--format}'[format string]:format string:'
   {-n,--name}'[name regex]:regex:'
+  '(-a --all-targets)'{-a,--all-targets}'[output all board target combinations]'
   '*--arch-root[Add an arch root]:arch root:_directories'
   '*--board-root[Add a board root]:board root:_directories'
   '*--soc-root[Add a soc root]:soc root:_directories'
