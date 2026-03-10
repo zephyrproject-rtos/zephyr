@@ -1467,6 +1467,17 @@ Bluetooth Host
   deprecated since Zephyr 4.2, and the number of pending TX buffers with a callback always
   follows :kconfig:option:`CONFIG_BT_BUF_ACL_TX_COUNT`.
 
+* ``CONFIG_BT_ISO_TX_MTU`` has been removed. Applications should define their own SDU buffer sizes.
+  The ISO HCI data buffer size can be configured for the Controller with
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE`, and the SDU size with
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX`.
+  In most cases :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE` should be set to 4
+  (if timestamps are not used) or 8 (if timestamps are used) above
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX`. For larger values of
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX` it may be better to increase
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFERS` instead of
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE`.
+
 Bluetooth Mesh
 ==============
 
@@ -1474,6 +1485,7 @@ Bluetooth Mesh
   ``CONFIG_BT_MESH_BLOB_IO_FLASH_WITHOUT_ERASE`` Kconfig options have been removed, with no
   replacement. They have been deprecated since Zephyr 4.3, where the BLOB IO Flash module
   started querying the erase capability at runtime, and have had no effect since.
+
 
 Bluetooth Services
 ==================
