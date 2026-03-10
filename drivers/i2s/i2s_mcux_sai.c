@@ -1097,11 +1097,11 @@ static void i2s_mcux_isr(void *arg)
 	struct device *dev = (struct device *)arg;
 	I2S_Type *base = get_base(dev);
 
-	if ((base->RCSR & I2S_TCSR_FEF_MASK) == I2S_TCSR_FEF_MASK) {
+	if ((base->TCSR & I2S_TCSR_FEF_MASK) == I2S_TCSR_FEF_MASK) {
 		sai_driver_irq(dev);
 	}
 
-	if ((base->TCSR & I2S_RCSR_FEF_MASK) == I2S_RCSR_FEF_MASK) {
+	if ((base->RCSR & I2S_RCSR_FEF_MASK) == I2S_RCSR_FEF_MASK) {
 		sai_driver_irq(dev);
 	}
 	/*
