@@ -39,9 +39,9 @@ struct tx_stream tx_streams[CAP_STREAM_TX_MAX];
 static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 {
 	NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-				  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+				  BT_ISO_SDU_BUF_SIZE(CAP_HANDOVER_MAX_SDU),
 				  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
-	static uint8_t data[CONFIG_BT_ISO_TX_MTU];
+	static uint8_t data[CAP_HANDOVER_MAX_SDU];
 
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
