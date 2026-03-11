@@ -143,7 +143,7 @@ size_t flash_img_bytes_written(struct flash_img_context *ctx)
 	return stream_flash_bytes_written(&ctx->stream);
 }
 
-#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET)
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET) && defined(CONFIG_STREAM_FLASH_ERASE)
 /**
  * Determines if the specified area of flash is completely unwritten.
  *
@@ -204,6 +204,10 @@ int flash_img_init_id(struct flash_img_context *ctx, uint8_t area_id)
 	struct flash_sector sector_data;
 #endif
 
+#ifdef CONFIG_STREAM_FLASH_ERASE
+	const struct flash_parameters *fparams;
+#endif
+
 	rc = flash_area_open(area_id,
 			       (const struct flash_area **)&(ctx->flash_area));
 	if (rc) {
@@ -233,7 +237,11 @@ int flash_img_init_id(struct flash_img_context *ctx, uint8_t area_id)
 	sector_data.fs_size = CONFIG_IMG_CUSTOM_SECTOR_SIZE;
 #endif
 
-	if (!flash_check_erased((const struct flash_area *)ctx->flash_area)) {
+#ifdef CONFIG_STREAM_FLASH_ERASE
+	fparams = flash_get_parameters(flash_area_get_device(ctx->flash_area));
+
+	if (!flash_check_erased((const struct flash_area *)ctx->flash_area) &&
+	    (flash_params_get_erase_cap(fparams) & FLASH_ERASE_C_EXPLICIT)) {
 		/* Flash is not empty, therefore flatten/erase the area to prevent issues when
 		 * the firmware update process begins
 		 */
@@ -246,6 +254,7 @@ int flash_img_init_id(struct flash_img_context *ctx, uint8_t area_id)
 			return rc;
 		}
 	}
+#endif
 
 	return stream_flash_init(&ctx->stream, flash_dev, ctx->buf, CONFIG_IMG_BLOCK_BUF_SIZE,
 				 (ctx->flash_area->fa_off + sector_data.fs_size),
