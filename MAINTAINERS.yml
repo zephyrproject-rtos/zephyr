@@ -6447,7 +6447,7 @@ West:
     - crypto.mbedtls
     - psa.secure_storage
 
-"West project: mbedtls-framework":
+"West project: mbedtls-3.6":
   status: maintained
   maintainers:
     - ceolin
@@ -6478,6 +6478,16 @@ West:
     - modules/Kconfig.syst
   labels:
     - "area: Tracing"
+
+"West project: mldsa-native":
+  status: maintained
+  maintainers:
+    - ceolin
+    - valeriosetti
+    - tomi-font
+  files: []
+  labels:
+    - "area: TF-PSA-Crypto"
 
 "West project: nanopb":
   status: maintained
