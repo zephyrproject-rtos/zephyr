@@ -16,7 +16,6 @@
 };
 
 &peri_clk_div3 {
-	resource-channel = <1>;
 	clock-div = <11519>;
 	status = "okay";
 };

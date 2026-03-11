@@ -64,15 +64,11 @@
 
 &peri1_group2_8bit_0 {
 	status = "okay";
-	resource-type = <IFX_RSC_SDHC>;
-	resource-instance = <0>;
 	clock-div = <2>;
 };
 
 &peri1_group3_8bit_0 {
 	status = "okay";
-	resource-type = <IFX_RSC_SDHC>;
-	resource-instance = <1>;
 	clock-div = <2>;
 };
 

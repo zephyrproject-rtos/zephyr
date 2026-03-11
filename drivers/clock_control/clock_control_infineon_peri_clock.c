@@ -22,12 +22,10 @@
 #include <cy_systick.h>
 
 struct ifx_peri_clock_data {
-	struct ifx_cat1_resource_inst hw_resource;
 	struct ifx_cat1_clock clock;
 	uint16_t divider;
 	uint8_t frac_divider;
 	uint8_t div_type;
-	CySCB_Type *reg_addr;
 };
 
 static inline en_clk_dst_t peri_pclk_build_en_clk_dst(uint8_t output, uint8_t group,
@@ -122,9 +120,6 @@ static int ifx_cat1_peri_clock_init(const struct device *dev)
 		.div_type = DT_INST_PROP(n, div_type),                                             \
 		.divider = DT_INST_PROP(n, clock_div),                                             \
 		.frac_divider = DT_INST_PROP_OR(n, div_frac_value, 0),                             \
-		.hw_resource = {.type = DT_INST_PROP(n, resource_type),                            \
-				.block_num = DT_INST_PROP(n, resource_instance),                   \
-				.channel_num = DT_INST_PROP_OR(n, resource_channel, 0)},           \
 		PERI_CLOCK_INIT(n)};                                                               \
                                                                                                    \
 	static int ifx_cat1_peri_clock_init_##n(const struct device *dev)                          \

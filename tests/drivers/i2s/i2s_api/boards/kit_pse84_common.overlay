@@ -33,9 +33,6 @@
 
 &peri1_group1_16_5bit_0 {
 	status = "okay";
-	resource-type = <IFX_RSC_TDM>;
-	resource-instance = <0>;
-	resource-channel = <0>;
 	clock-div = <4>;
 	div-frac-value = <28>;
 };

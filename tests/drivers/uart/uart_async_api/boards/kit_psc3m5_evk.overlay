@@ -33,7 +33,5 @@ dut: &scb4 {
 
 &peri0_group4_8bit_1 {
 	status = "okay";
-	resource-type = <IFX_RSC_SCB>;
-	resource-instance = <4>;
 	clock-div = <109>;
 };

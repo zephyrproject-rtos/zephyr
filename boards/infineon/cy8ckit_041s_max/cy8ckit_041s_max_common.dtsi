@@ -35,33 +35,23 @@ spi1: &scb1 {
 
 &peri_clk_div0 {
 	status = "okay";
-	resource-type = <IFX_RSC_SCB>;
-	resource-instance = <0>;
 };
 
 &peri_clk_div1 {
 	status = "okay";
-	resource-type = <IFX_RSC_SCB>;
-	resource-instance = <2>;
 };
 
 &peri_clk_div2 {
 	status = "okay";
-	resource-type = <IFX_RSC_SCB>;
-	resource-instance = <1>;
 };
 
 &peri_clk_div3 {
 	status = "okay";
-	resource-type = <IFX_RSC_TCPWM>;
-	resource-instance = <0>;
 	clock-div = <11500>;
 };
 
 &peri_clk_div4 {
 	status = "okay";
-	resource-type = <IFX_RSC_ADC>;
-	resource-instance = <0>;
 	clock-div = <4>;
 };
 
