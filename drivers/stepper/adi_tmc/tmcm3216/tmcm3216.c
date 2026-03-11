@@ -141,7 +141,7 @@ static int tmcm3216_init(const struct device *dev)
 	};                                                                                         \
 	static const struct tmcm3216_config tmcm3216_config_##inst = {                             \
 		.rs485 = DEVICE_DT_GET(DT_INST_BUS(inst)),                                         \
-		.rs485_addr = DT_INST_PROP(inst, module_address),                                  \
+		.rs485_addr = DT_INST_REG_ADDR(inst),                                              \
 		.de_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, de_gpios, {0}),                          \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, tmcm3216_init, NULL, &tmcm3216_data_##inst,                    \
