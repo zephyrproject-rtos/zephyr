@@ -354,6 +354,9 @@ uint32_t ppp_peer_async_control_character_map(struct net_if *iface)
 	__ASSERT(net_if_l2(iface) == &NET_L2_GET_NAME(PPP), "Not PPP L2");
 #endif /* !CONFIG_ZTEST */
 	ctx = net_if_l2_data(iface);
+	if (ctx->phase < PPP_NETWORK) {
+		return NET_PPP_DEFAULT_ASYNC_MAP;
+	}
 	return ctx->lcp.peer_options.async_map;
 }
 
