@@ -42,18 +42,15 @@ config 3RD_LEVEL_INTERRUPTS
 config NUM_IRQS
 	default 250 # 2ND_LVL_ISR_TBL_OFFSET + MAX_IRQ_PER_AGGREGATOR * NUM_2ND_LEVEL_AGGREGATORS
 
-# LPTMR cannot be shared with both the system timer and the counter simultaneously
-# as they now share the same compatible resource.
-# By default, when LPTMR is not used as a counter, it shows enabling LPTMR as the system clock.
-config MCUX_LPTMR_TIMER
-	default y if !COUNTER_MCUX_LPTMR
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
 
 config CORTEX_M_SYSTICK
 	default n if MCUX_LPTMR_TIMER
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
-	default $(dt_node_int_prop_int,/soc/timer@44300000,clock-frequency) if MCUX_LPTMR_TIMER
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),clock-frequency) if MCUX_LPTMR_TIMER
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1024 if MCUX_LPTMR_TIMER
