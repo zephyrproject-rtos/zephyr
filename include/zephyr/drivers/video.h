@@ -1941,6 +1941,8 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
  */
 #define VIDEO_PIX_FMT_JPEG VIDEO_FOURCC('J', 'P', 'E', 'G')
 
+#define VIDEO_PIX_FMT_PNG VIDEO_FOURCC('P', 'N', 'G', 'X')
+
 /**
  * H264 with start code
  */
