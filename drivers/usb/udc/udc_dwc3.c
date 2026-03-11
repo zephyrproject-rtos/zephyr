@@ -1803,6 +1803,8 @@ int udc_dwc3_enable(const struct device *const dev)
 
 	LOG_DBG("Enabling DWC3 driver");
 
+	priv->evt_next = 0;
+
 	ret = udc_dwc3_quirk_enable(dev);
 	if (ret != 0) {
 		return ret;
