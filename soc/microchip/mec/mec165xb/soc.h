@@ -39,6 +39,7 @@ typedef enum {
 
 /* common peripheral register defines */
 #include <soc_common.h>
+#include <soc_espi_saf_v2.h>
 
 #endif
 #endif
