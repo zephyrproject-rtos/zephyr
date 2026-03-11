@@ -13,6 +13,9 @@
 #include <freq.h>
 #include <mem.h>
 
+/* eSPI */
+#include "mec5/mec5-vw-routing.dtsi"
+
 / {
 	cpus {
 		#address-cells = <1>;
@@ -654,6 +657,7 @@
 		};
 
 		espi0: espi@400f3400 {
+			compatible = "microchip,xec-espi-v2";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x400f3400 0x400
@@ -665,117 +669,15 @@
 				     <156 3>, <15 3>, <16 3>;
 			interrupt-names = "pc", "bm1", "bm2", "ltr", "oob_up",
 					  "oob_dn", "fc", "erst", "vw_chan_en",
-					  "vwct_0_6", "vwct_7_10";
-			girqs = <19 0>, <19 1>, <19 2>, <19 3>, <19 4>, <19 5>,
-				<19 6>, <19 7>, <19 8>, <24 255>, <25 255>;
+					  "ht_vw_bank0", "ht_vw_bank1";
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(19, 0) MCHP_XEC_ECIA_GIRQ_ENC(19, 1)
+				 MCHP_XEC_ECIA_GIRQ_ENC(19, 2) MCHP_XEC_ECIA_GIRQ_ENC(19, 3)
+				 MCHP_XEC_ECIA_GIRQ_ENC(19, 4) MCHP_XEC_ECIA_GIRQ_ENC(19, 5)
+				 MCHP_XEC_ECIA_GIRQ_ENC(19, 6) MCHP_XEC_ECIA_GIRQ_ENC(19, 7)
+				 MCHP_XEC_ECIA_GIRQ_ENC(19, 8) MCHP_XEC_ECIA_GIRQ_ENC(24, 31)
+				 MCHP_XEC_ECIA_GIRQ_ENC(25, 31)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(2, 19)>;
 			status = "disabled";
-
-			/* Devices accessible to the Host via Logical Device mechanism.
-			 * Some devices are capable of having their registers mapped to
-			 * Host I/O or memory address space. Some devices are capable
-			 * of generating Serial IRQ to the Host over eSPI.
-			 */
-			mbox0: mbox@400f0000 {
-				reg = <0x400f0000 0x200>;
-				interrupts = <60 3>;
-				girqs = <15 20>;
-				status = "disabled";
-			};
-
-			kbc0: kbc@400f0400 {
-				reg = <0x400f0400 0x400>, <0x400f2000 0x400>;
-				interrupts = <59 3>, <58 3>;
-				interrupt-names = "ibf", "obe";
-				girqs = <15 19>, <15 18>;
-				status = "disabled";
-			};
-
-			acpi_ec0: acpi_ec@400f0800 {
-				reg = <0x400f0800 0x400>;
-				interrupts = <45 3>, <46 3>;
-				interrupt-names = "ibf", "obe";
-				girqs = <15 5>, <15 6>;
-				status = "disabled";
-			};
-
-			acpi_ec1: acpi_ec@400f0c00 {
-				reg = <0x400f0c00 0x400>;
-				interrupts = <47 3>, <48 3>;
-				interrupt-names = "ibf", "obe";
-				girqs = <15 7>, <15 8>;
-				status = "disabled";
-			};
-
-			acpi_ec2: acpi_ec@400f1000 {
-				reg = <0x400f1000 0x400>;
-				interrupts = <49 3>, <50 3>;
-				interrupt-names = "ibf", "obe";
-				girqs = <15 9>, <15 10>;
-				status = "disabled";
-			};
-
-			acpi_ec3: acpi_ec@400f1400 {
-				reg = <0x400f1400 0x400>;
-				interrupts = <51 3>, <52 3>;
-				interrupt-names = "ibf", "obe";
-				girqs = <15 11>, <15 12>;
-				status = "disabled";
-			};
-
-			acpi_ec4: acpi_ec@400f1800 {
-				reg = <0x400f1800 0x400>;
-				interrupts = <53 3>, <54 3>;
-				interrupt-names = "ibf", "obe";
-				girqs = <15 13>, <15 14>;
-				status = "disabled";
-			};
-
-			acpi_pm1: acpi_pm1@400f1c00 {
-				reg = <0x400f1c00 0x400>;
-				interrupts = <55 3>, <56 3>, <57 3>;
-				interrupt-names = "ctl", "en", "sts";
-				girqs = <15 15>, <15 16>, <15 17>;
-				status = "disabled";
-			};
-
-			glue: glue_logic@400f3c00 {
-				reg = <0x400f3c00 0x200>;
-				interrupts = <172 1>;
-				girqs = <21 26>;
-				status = "disabled";
-			};
-
-			emi0: emi@400f4000 {
-				reg = <0x400f4000 0x400>;
-				interrupts = <42 3>;
-				girqs = <15 2>;
-				status = "disabled";
-			};
-
-			emi1: emi@400f4400 {
-				reg = <0x400f4400 0x400>;
-				interrupts = <43 3>;
-				girqs = <15 3>;
-				status = "disabled";
-			};
-
-			emi2: emi@400f4800 {
-				reg = <0x400f4800 0x400>;
-				interrupts = <44 3>;
-				girqs = <15 4>;
-				status = "disabled";
-			};
-
-			/* Capture Host writes to a 4-byte I/O range
-			 * plus a one byte alias I/O location which maps
-			 * to one of the 4-byte locations.
-			 */
-			p80bd0: p80bd@400f8000 {
-				reg = <0x400f8000 0x400>;
-				interrupts = <62 0>;
-				girqs = <15 22>;
-				status = "disabled";
-			};
 
 			/* eSPI target attached flash controller.
 			 * When this device is fully activated via its driver, it takes
@@ -788,6 +690,166 @@
 				interrupts = <166 3>, <167 3>;
 				interrupt-names = "done", "err";
 				girqs = <19 9>, <19 10>;
+				pcrs = <2 27>;
+				status = "disabled";
+			};
+
+			/* Devices accessible to the Host via Logical Device mechanism.
+			 * Some devices are capable of having their registers mapped to
+			 * Host I/O or memory address space. Some devices are capable
+			 * of generating Serial IRQ to the Host over eSPI.
+			 */
+			mbox0: mbox@400f0000 {
+				compatible = "microchip,xec-espi-host-dev";
+				reg = <0x400f0000 0x200>;
+				interrupts = <60 3>;
+				girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 20)>;
+				ldn = <0>;
+				status = "disabled";
+			};
+
+			kbc0: kbc@400f0400 {
+				compatible = "microchip,xec-espi-host-dev";
+				reg = <0x400f0400 0x400>;
+				interrupts = <59 3>, <58 3>;
+				interrupt-names = "ibf", "obe";
+				girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 19)
+					 MCHP_XEC_ECIA_GIRQ_ENC(15, 18)>;
+				ldn = <1>;
+				status = "disabled";
+			};
+
+			acpi_ec0: acpi_ec@400f0800 {
+				compatible = "microchip,xec-espi-host-dev";
+				reg = <0x400f0800 0x400>;
+				interrupts = <45 3>, <46 3>;
+				interrupt-names = "ibf", "obe";
+				girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 5)
+					 MCHP_XEC_ECIA_GIRQ_ENC(15, 6)>;
+				ldn = <2>;
+				status = "disabled";
+			};
+
+			acpi_ec1: acpi_ec@400f0c00 {
+				compatible = "microchip,xec-espi-host-dev";
+				reg = <0x400f0c00 0x400>;
+				interrupts = <47 3>, <48 3>;
+				interrupt-names = "ibf", "obe";
+				girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 7)
+					 MCHP_XEC_ECIA_GIRQ_ENC(15, 8)>;
+				ldn = <3>;
+				status = "disabled";
+			};
+
+			acpi_ec2: acpi_ec@400f1000 {
+				compatible = "microchip,xec-espi-host-dev";
+				reg = <0x400f1000 0x400>;
+				interrupts = <49 3>, <50 3>;
+				interrupt-names = "ibf", "obe";
+				girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 9)
+					 MCHP_XEC_ECIA_GIRQ_ENC(15, 10)>;
+				ldn = <4>;
+				status = "disabled";
+			};
+
+			acpi_ec3: acpi_ec@400f1400 {
+				compatible = "microchip,xec-espi-host-dev";
+				reg = <0x400f1400 0x400>;
+				interrupts = <51 3>, <52 3>;
+				interrupt-names = "ibf", "obe";
+				girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 11)
+					 MCHP_XEC_ECIA_GIRQ_ENC(15, 12)>;
+				ldn = <5>;
+				status = "disabled";
+			};
+
+			acpi_ec4: acpi_ec@400f1800 {
+				compatible = "microchip,xec-espi-host-dev";
+				reg = <0x400f1800 0x400>;
+				interrupts = <53 3>, <54 3>;
+				interrupt-names = "ibf", "obe";
+				girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 13)
+					 MCHP_XEC_ECIA_GIRQ_ENC(15, 14)>;
+				ldn = <6>;
+				status = "disabled";
+			};
+
+			acpi_pm1: acpi_pm1@400f1c00 {
+				compatible = "microchip,xec-espi-host-dev";
+				reg = <0x400f1c00 0x400>;
+				interrupts = <55 3>, <56 3>, <57 3>;
+				interrupt-names = "ctl", "en", "sts";
+				girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 5)
+					 MCHP_XEC_ECIA_GIRQ_ENC(15, 16)
+					 MCHP_XEC_ECIA_GIRQ_ENC(15, 17)>;
+				ldn = <7>;
+				status = "disabled";
+			};
+
+			port92: port92@400f2000 {
+				compatible = "microchip,xec-espi-host-dev";
+				reg = <0x400f2000 0x400>;
+				ldn = <8>;
+				status = "disabled";
+			};
+
+			glue: glue_logic@400f3c00 {
+				compatible = "microchip,xec-espi-host-dev";
+				reg = <0x400f3c00 0x200>;
+				interrupts = <172 1>;
+				girqs = <MCHP_XEC_ECIA_GIRQ_ENC(21, 26)>;
+				ldn = <0xf>;
+				status = "disabled";
+			};
+
+			emi0: emi@400f4000 {
+				compatible = "microchip,xec-espi-host-dev";
+				reg = <0x400f4000 0x400>;
+				interrupts = <42 3>;
+				girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 2)>;
+				ldn = <0x10>;
+				status = "disabled";
+			};
+
+			emi1: emi@400f4400 {
+				compatible = "microchip,xec-espi-host-dev";
+				reg = <0x400f4400 0x400>;
+				interrupts = <43 3>;
+				girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 3)>;
+				ldn = <0x11>;
+				status = "disabled";
+			};
+
+			emi2: emi@400f4800 {
+				compatible = "microchip,xec-espi-host-dev";
+				reg = <0x400f4800 0x400>;
+				interrupts = <44 3>;
+				girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 4)>;
+				ldn = <0x12>;
+				status = "disabled";
+			};
+
+			/* Capture Host writes to a 4-byte I/O range
+			 * plus a one byte alias I/O location which maps
+			 * to one of the 4-byte locations.
+			 */
+			p80bd0: p80bd@400f8000 {
+				compatible = "microchip,xec-espi-host-dev";
+				reg = <0x400f8000 0x400>;
+				interrupts = <62 0>;
+				girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 22)>;
+				ldn = <0x20>;
+				status = "disabled";
+			};
+
+			/* Capture writes to an 8-bit I/O and map to one of 0x80 to 0x83 */
+			p80bd0_alias: p80bd@400f8400 {
+				compatible = "microchip,xec-espi-host-dev";
+				reg = <0x400f8400 0x400>;
+				ldn = <0x21>;
+				host-io = <0x90>;
+				/* map 0x90 to 0x80 */
+				host-io-addr-mask = <0x01>;
 				status = "disabled";
 			};
 		};
