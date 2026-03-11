@@ -7,6 +7,8 @@
  **************************************
  */
 
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
 adi_tmc51xx_uart: adi-tmc51xx {
 	compatible = "adi,tmc51xx";
 	status = "okay";
@@ -49,5 +51,30 @@ adi_tmc51xx_uart: adi-tmc51xx {
 		ihold = <1>;
 		irun = <2>;
 		iholddelay = <3>;
+	};
+};
+
+adi_tmcm3216 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	adi_tmcm3216_uart: adi-tmcm3216@1 {
+		compatible = "adi,tmcm3216";
+		status = "okay";
+		reg = <0x1>;
+		de-gpios = <&test_gpio 0x01 GPIO_ACTIVE_HIGH>;
+
+		stepper_driver_0: stepper-driver {
+			compatible = "adi,tmcm3216-stepper-driver";
+			status = "okay";
+			idx = <0>;
+			micro-step-res = <16>;
+		};
+
+		stepper_ctrl_0: stepper-ctrl {
+			compatible = "adi,tmcm3216-stepper-ctrl";
+			status = "okay";
+			idx = <0>;
+		};
 	};
 };
