@@ -11,6 +11,10 @@
 #include <soc.h>
 #include <zephyr/devicetree.h>
 
+#if defined(CONFIG_NVMEM)
+#include <zephyr/nvmem.h>
+#endif
+
 #include <stm32_ll_system.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_bitops.h>
@@ -21,13 +25,14 @@ LOG_MODULE_REGISTER(iocell, CONFIG_SOC_LOG_LEVEL);
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 #include <zephyr/dt-bindings/power/stm32h5_iocell.h>
+#define STM32_IOCELL_DOMAIN_COUNT 2
 #elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #include <zephyr/dt-bindings/power/stm32h7rs_iocell.h>
+#define STM32_IOCELL_DOMAIN_COUNT 3
 #elif defined(CONFIG_SOC_SERIES_STM32N6X)
 #include <zephyr/dt-bindings/power/stm32n6_iocell.h>
-#include <zephyr/nvmem.h>
-#define STM32_IOCELL_USE_NVMEM          1
 #define STM32_IOCELL_OTP_HCONF1_DEFAULT 0x0
+#define STM32_IOCELL_DOMAIN_COUNT 5
 #endif /* CONFIG_SOC_SERIES_... */
 
 #define DT_DRV_COMPAT     st_stm32_iocell
@@ -45,9 +50,14 @@ LOG_MODULE_REGISTER(iocell, CONFIG_SOC_LOG_LEVEL);
 	"Enabling it while the voltage is higher can damage the device"
 
 struct stm32_iocell_config {
-#if defined(STM32_IOCELL_USE_NVMEM)
-	struct nvmem_cell cell;
-#endif
+#if defined(CONFIG_NVMEM)
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	struct nvmem_cell safeguard_cell;
+#endif /* CONFIG_SOC_SERIES_STM32N6X */
+#if !defined(CONFIG_SOC_SERIES_STM32N6X)
+	const struct nvmem_cell *iocomp_cells;
+#endif /* !CONFIG_SOC_SERIES_STM32N6X */
+#endif /* CONFIG_NVMEM */
 };
 
 struct stm32_iocell_data {
@@ -57,10 +67,28 @@ struct stm32_iocell_data {
 #endif
 };
 
+#if defined(CONFIG_NVMEM)
+#if !defined(CONFIG_SOC_SERIES_STM32N6X)
+#define STM32_IOCELL_IOCOMP_CELL(node_id)                                                          \
+	[DT_PROP(node_id, domain)] =                                                               \
+		NVMEM_CELL_GET_BY_NAME_OR(STM32_IOCELL_NODE,                                       \
+					  CONCAT(DT_NODE_FULL_NAME_TOKEN(node_id), _comp), {0}),
+
+const struct nvmem_cell iocomp_cells[STM32_IOCELL_DOMAIN_COUNT] = {
+	DT_FOREACH_CHILD_STATUS_OKAY(STM32_IOCELL_NODE, STM32_IOCELL_IOCOMP_CELL)
+};
+#endif /* !CONFIG_SOC_SERIES_STM32N6X */
+#endif /* CONFIG_NVMEM */
+
 static const struct stm32_iocell_config iocell_config = {
-#if defined(STM32_IOCELL_USE_NVMEM)
-	.cell = NVMEM_CELL_GET_BY_NAME_OR(STM32_IOCELL_NODE, safeguard, {0}),
-#endif
+#if defined(CONFIG_NVMEM)
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	.safeguard_cell = NVMEM_CELL_GET_BY_NAME_OR(STM32_IOCELL_NODE, safeguard, {0}),
+#endif /* CONFIG_SOC_SERIES_STM32N6X */
+#if !defined(CONFIG_SOC_SERIES_STM32N6X)
+	.iocomp_cells = iocomp_cells,
+#endif /* !CONFIG_SOC_SERIES_STM32N6X */
+#endif /* CONFIG_NVMEM */
 };
 
 static struct stm32_iocell_data iocell_data = {
@@ -171,68 +199,124 @@ static int iocell_config_domain_auto(uint16_t domain, const char *domain_name)
 	return 0;
 }
 
-static int iocell_enable_compensation(uint16_t domain)
+__maybe_unused static int stm32_iocell_domain_to_shift(uint16_t domain)
 {
-#if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32H7RSX)
-	uint32_t shift;
-
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 	switch (domain) {
 	case STM32_DT_IOCELL_VDDIO:
-		shift = 0;
-		break;
+		return 0;
 	case STM32_DT_IOCELL_VDDIO2:
-		shift = 1;
-		break;
+		return 1;
 	default:
 		return -EINVAL;
 	}
 #elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	switch (domain) {
 	case STM32_DT_IOCELL_VDDIO:
-		shift = 0;
-		break;
+		return 0;
 	case STM32_DT_IOCELL_XSPI1:
-		shift = 1;
-		break;
+		return 1;
 	case STM32_DT_IOCELL_XSPI2:
-		shift = 2;
-		break;
+		return 2;
 	default:
 		return -EINVAL;
 	}
+#else
+	return -EINVAL;
 #endif /* CONFIG_SOC_SERIES_... */
+}
 
-	uint32_t codesel_bit = BIT((shift * 2) + 1);
-	uint32_t en_bit = BIT(shift * 2);
+__maybe_unused static int stm32_iocell_load_calibration_data(uint16_t domain,
+							     const char *domain_name,
+							     uint32_t *nmos, uint32_t *pmos)
+{
+#if defined(CONFIG_NVMEM)
+#if !defined(CONFIG_SOC_SERIES_STM32N6X)
+	if (iocell_config.iocomp_cells[domain].dev != 0) {
+		uint8_t comp_otp_value = 0xff;
+		int ret =
+			nvmem_cell_read(&iocell_config.iocomp_cells[domain], &comp_otp_value, 0, 1);
+		if (ret != 0) {
+			LOG_ERR("Failed to read OTP data for domain \"%s\"", domain_name);
+			return ret;
+		}
+
+		if (comp_otp_value == 0xff) {
+			LOG_WRN("No factory calibration data found for domain %s!",
+				domain_name);
+			ret = -ENODATA;
+		} else {
+			*nmos = comp_otp_value & 0xf;
+			*pmos = (comp_otp_value >> 4) & 0xf;
+			LOG_DBG("Calibrated PMOS/NMOS values for domain %s: PMOS=%u, NMOS=%u",
+				domain_name, *pmos, *nmos);
+			return 0;
+		}
+	}
+#endif /* !CONFIG_SOC_SERIES_STM32N6X */
+#endif /* CONFIG_NVMEM */
+
+	return -ENODATA;
+}
+
+static int iocell_enable_compensation(uint16_t domain, const char *domain_name)
+{
+#if !defined(CONFIG_SOC_SERIES_STM32N6X)
+	int ret;
+	int shift;
+	uint32_t codesel_bit;
+	uint32_t en_bit;
+	uint32_t nmos, pmos;
+
+	shift = stm32_iocell_domain_to_shift(domain);
+	if (shift < 0) {
+		return shift;
+	}
+
+	codesel_bit = BIT((shift * 2) + 1);
+	en_bit = BIT(shift * 2);
 
 	if (SBS->CCCSR & en_bit) {
 		/* Compensation cell already enabled */
 		return 0;
 	}
 
-	/* Configure Cell selection for domain and enable.
-	 * Clear COMP_CODESEL bit and set COMP_EN bit.
-	 */
-	stm32_reg_modify_bits(&SBS->CCCSR, codesel_bit, en_bit);
+	ret = stm32_iocell_load_calibration_data(domain, domain_name, &nmos, &pmos);
 
-	/* Wait for ready flag */
-	while ((SBS->CCCSR & BIT(shift + 8)) == 0) {
+	if (ret == -ENODATA) {
+		/* Configure Cell selection for domain and enable.
+		 * Clear COMP_CODESEL bit and set COMP_EN bit.
+		 */
+		stm32_reg_modify_bits(&SBS->CCCSR, codesel_bit, en_bit);
+
+		/* Wait for ready flag */
+		while ((SBS->CCCSR & BIT(shift + 8)) == 0) {
+		}
+
+		/* Read PMOS and NMOS values */
+		nmos = (SBS->CCVALR >> (8 * shift)) & 0xF;
+		pmos = (SBS->CCVALR >> (8 * shift + 4)) & 0xF;
+
+		ret = 0;
+		LOG_DBG("Measured PMOS/NMOS values for domain %s: PMOS=%u, NMOS=%u",
+			domain_name, pmos, nmos);
 	}
 
+	if (ret != 0) {
+		return ret;
+	}
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	/* This implements workaround described in ES0596 for revisions Y & B of STM32H7RS:
 	 * 2.2.15. I/O compensation could alter duty-cycle of high-frequency output signal
 	 *
 	 * STM32H5 series is also affected by this issue.
 	 */
-	uint32_t nmos, pmos;
 
-	/* Read and adjust PMOS and NMOS values*/
-	nmos = (SBS->CCVALR >> (8 * shift)) & 0xF;
-	pmos = (SBS->CCVALR >> (8 * shift + 4)) & 0xF;
 	/* Add/subtract 2 from values, preventing overflow/underflow */
 	nmos = (nmos < 0xD) ? (nmos + 2) : 0xF;
 	pmos = (pmos > 0x2) ? (pmos - 2) : 0x0;
+#endif /* CONFIG_SOC_SERIES_... */
 
 	/* Write modified values back */
 	stm32_reg_modify_bits(
@@ -246,8 +330,8 @@ static int iocell_enable_compensation(uint16_t domain)
 	/* Configure Cell selection for register
 	 * Set COMP_CODESEL bit.
 	 */
-	stm32_reg_set_bits(&SBS->CCCSR, codesel_bit);
-#elif defined(CONFIG_SOC_SERIES_STM32N6X)
+	stm32_reg_set_bits(&SBS->CCCSR, codesel_bit | en_bit);
+#else
 	/* There is a global workaround implemnted in SystemInit.
 	 * For N6 IO compensation cell is always active.
 	 */
@@ -295,7 +379,8 @@ __maybe_unused static void iocell_hslv_check_log(int domain_id, int is_allowed, 
 	BUILD_ASSERT(STM32_DT_IOCELL_DOMAIN_VALID(DT_PROP(node_id, domain)),                       \
 		     "Invalid domain ID for: " DT_NODE_FULL_NAME(node_id));                        \
 	if (DT_PROP(node_id, compensation_enabled)) {                                              \
-		result = iocell_enable_compensation(DT_PROP(node_id, domain));                     \
+		result = iocell_enable_compensation(DT_PROP(node_id, domain),                      \
+						    DT_NODE_FULL_NAME(node_id));                   \
 	}                                                                                          \
 	if (result < 0)                                                                            \
 		ret = result;                                                                      \
@@ -314,7 +399,8 @@ static int iocell_init(const struct device *dev)
 #elif defined(CONFIG_SOC_SERIES_STM32N6X)
 	/* PWR & BSEC clocks enabled by default */
 
-	if (nvmem_cell_read(&iocell_config.cell, &iocell_data.otp_hconf1_value, 0, 4) != 0) {
+	if (nvmem_cell_read(&iocell_config.safeguard_cell, &iocell_data.otp_hconf1_value, 0, 4) !=
+	    0) {
 		iocell_data.otp_hconf1_value = STM32_IOCELL_OTP_HCONF1_DEFAULT;
 		iocell_data.otp_correct = 0;
 	} else {

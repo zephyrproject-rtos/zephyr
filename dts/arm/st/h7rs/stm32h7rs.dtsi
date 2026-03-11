@@ -222,6 +222,42 @@
 						#nvmem-cell-cells = <0>;
 						read-only;
 					};
+
+					iocomp_vddio_3v3_otp: iocomp-vddio-3v3@40 {
+						reg = <0x40 0x1>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					iocomp_vddxspi1_3v3_otp: iocomp-vddxspi1-3v3@41 {
+						reg = <0x41 0x1>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					iocomp_vddxspi2_3v3_otp: iocomp-vddxspi2-3v3@42 {
+						reg = <0x42 0x1>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					iocomp_vddio_1v8_otp: iocomp-vddio-1v8@44 {
+						reg = <0x44 0x1>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					iocomp_vddxspi1_1v8_otp: iocomp-vddxspi1-1v8@45 {
+						reg = <0x45 0x1>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					iocomp_vddxspi2_1v8_otp: iocomp-vddxspi2-1v8@46 {
+						reg = <0x46 0x1>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
 				};
 			};
 		};
