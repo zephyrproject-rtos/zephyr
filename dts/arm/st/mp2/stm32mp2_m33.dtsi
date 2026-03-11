@@ -13,6 +13,10 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
+	chosen {
+		zephyr,crc = &crc;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -312,6 +316,13 @@
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x44050000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(WWDG1, STM32_CLK)>;
+			status = "disabled";
+		};
+
+		crc: crc@504c0000 {
+			compatible = "st,stm32-crc";
+			reg = <0x504c0000 0x400>;
+			clocks = <&rcc STM32_CLOCK(CRC, STM32_CLK)>;
 			status = "disabled";
 		};
 	};
