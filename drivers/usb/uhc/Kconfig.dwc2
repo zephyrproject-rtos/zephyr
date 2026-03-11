@@ -6,6 +6,7 @@ config UHC_DWC2
 	depends on DT_HAS_SNPS_DWC2_ENABLED
 	default y
 	select EVENTS
+	select REGULATOR
 	help
 	  DWC2 USB host controller driver.
 
@@ -78,5 +79,13 @@ config UHC_DWC2_SET_ADDR_DELAY_MS
 
 	  The default value is set to 10 ms to be safe.
 
+config UHC_DWC2_USBHS_VBUS_READY_TIMEOUT
+	int "USBHS VBUS ready event timeout in ms"
+	depends on SOC_SERIES_NRF54L
+	default 0
+	help
+	  VBUS ready event timeout for the USBHS variant of DWC2 found on nRF MCUs.
+	  If the VBUS is not ready and the Nordic USBHS controller is used, the udc_enable() is
+	  blocked for this amount of time. Set it to zero to wait forever.
 
 endif # UHC_DWC2
