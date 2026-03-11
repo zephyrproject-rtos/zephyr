@@ -547,6 +547,10 @@ void bt_hci_le_cs_read_remote_supported_capabilities_complete_v2(struct net_buf 
 		sys_le16_to_cpu(evt->subfeatures_supported) &
 		BT_HCI_LE_CS_SUBFEATURE_PBR_FROM_RTT_SOUNDING_SEQ_MASK;
 
+	remote_cs_capabilities.cs_ipt_reflector =
+		sys_le16_to_cpu(evt->subfeatures_supported) &
+		BT_HCI_LE_CS_SUBFEATURE_CS_IPT_REFLECTOR_MASK;
+
 	remote_cs_capabilities.t_ip1_times_supported =
 		sys_le16_to_cpu(evt->t_ip1_times_supported);
 	remote_cs_capabilities.t_ip2_times_supported =
@@ -1347,6 +1351,10 @@ int bt_le_cs_read_local_supported_capabilities_v2(struct bt_conn_le_cs_capabilit
 		sys_le16_to_cpu(rp->subfeatures_supported) &
 		BT_HCI_LE_CS_SUBFEATURE_PBR_FROM_RTT_SOUNDING_SEQ_MASK;
 
+	ret->cs_ipt_reflector =
+		sys_le16_to_cpu(rp->subfeatures_supported) &
+		BT_HCI_LE_CS_SUBFEATURE_CS_IPT_REFLECTOR_MASK;
+
 	ret->t_ip1_times_supported = sys_le16_to_cpu(rp->t_ip1_times_supported);
 	ret->t_ip2_times_supported = sys_le16_to_cpu(rp->t_ip2_times_supported);
 	ret->t_fcs_times_supported = sys_le16_to_cpu(rp->t_fcs_times_supported);
@@ -1545,6 +1553,10 @@ int bt_le_cs_write_cached_remote_supported_capabilities_v2(struct bt_conn *conn,
 	if (params->pbr_from_rtt_sounding_seq_supported) {
 		cp->subfeatures_supported |=
 			sys_cpu_to_le16(BT_HCI_LE_CS_SUBFEATURE_PBR_FROM_RTT_SOUNDING_SEQ_MASK);
+	}
+	if (params->cs_ipt_reflector) {
+		cp->subfeatures_supported |=
+			sys_cpu_to_le16(BT_HCI_LE_CS_SUBFEATURE_CS_IPT_REFLECTOR_MASK);
 	}
 
 	cp->t_ip1_times_supported = sys_cpu_to_le16(params->t_ip1_times_supported);
