@@ -441,8 +441,6 @@ device.
      - Selects the CRC device used as an accelerator by the CRC subsystem
    * - zephyr,display
      - Sets the default display controller
-   * - zephyr,keyboard-scan
-     - Sets the default keyboard scan controller
    * - zephyr,dtcm
      - Data Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,entropy
