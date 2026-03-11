@@ -53,6 +53,26 @@
 			reg = <0x10003020 0x00074000>;
 		};
 
+		spi1: spi@4000e000 {
+			compatible = "realtek,ameba-spi";
+			reg = <0x4000e000 0x100>;
+			interrupts = <37 0>;
+			clocks = <&rcc AMEBA_SPI1_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi0: spi@40078000 {
+			compatible = "realtek,ameba-spi";
+			reg = <0x40078000 0x100>;
+			interrupts = <36 0>;
+			clocks = <&rcc AMEBA_SPI0_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@48000400 {
 			compatible = "realtek,ameba-pinctrl";
 			reg = <0x48000400 0x200>;
