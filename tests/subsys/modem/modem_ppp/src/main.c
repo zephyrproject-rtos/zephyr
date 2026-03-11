@@ -107,7 +107,8 @@ static struct net_l2 test_net_l2 = {
 	.recv = test_net_l2_recv,
 };
 static struct ppp_context test_net_l2_data = {
-	.lcp.peer_options.async_map = 0xffffffff,
+	.phase = PPP_RUNNING,
+	.lcp.peer_options.async_map = NET_PPP_DEFAULT_ASYNC_MAP,
 };
 
 /* This emulates the network interface device which will receive unwrapped network packets */
