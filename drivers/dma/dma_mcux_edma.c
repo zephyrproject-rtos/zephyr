@@ -508,7 +508,7 @@ static int dma_mcux_edma_configure_hardware(const struct device *dev, uint32_t c
 
 	dma_mcux_edma_configure_muxes(dev, channel, config);
 
-#if defined(CONFIG_DMA_MCUX_EDMA_V3) && \
+#if (defined(CONFIG_DMA_MCUX_EDMA_V3) || defined(CONFIG_DMA_MCUX_EDMA_V4)) && \
 	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
 	if (transfer_type == kEDMA_MemoryToMemory && (sg_mode || config->block_count > 1)) {
 		LOG_WRN("mem2mem xfer scatter gather not supported");
@@ -613,13 +613,13 @@ static inline void dma_mcux_edma_set_xfer_settings(const struct device *dev, uin
 	struct dma_mcux_channel_transfer_edma_settings *xfer_settings = &data->transfer_settings;
 
 	xfer_settings->source_burst_length = config->source_burst_length;
-#if defined(CONFIG_DMA_MCUX_EDMA_V3) && \
+#if (defined(CONFIG_DMA_MCUX_EDMA_V3) || defined(CONFIG_DMA_MCUX_EDMA_V4)) && \
 	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
 	struct dma_block_config *block_config = config->head_block;
 
-	if (xfer_settings->transfer_type == kEDMA_MemoryToMemory) {
+	if (xfer_settings->transfer_type == kEDMA_MemoryToMemory &&
+	    !config->source_chaining_en) {
 		xfer_settings->source_burst_length = block_config->block_size;
-
 	}
 #endif
 	xfer_settings->source_data_size = config->source_data_size;
@@ -741,7 +741,7 @@ static int dma_mcux_edma_suspend(const struct device *dev, uint32_t channel)
 {
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 
-#if defined(CONFIG_DMA_MCUX_EDMA_V3) && \
+#if (defined(CONFIG_DMA_MCUX_EDMA_V3) || defined(CONFIG_DMA_MCUX_EDMA_V4)) && \
 	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
 	struct dma_mcux_channel_transfer_edma_settings *xfer_settings = &data->transfer_settings;
 
