@@ -1399,7 +1399,8 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session,
 			      struct net_buf *buf)
 {
 	struct bt_rfcomm_msg_hdr *hdr;
-	uint8_t msg_type, len, cr;
+	uint8_t msg_type, cr;
+	__maybe_unused uint8_t len;
 
 	if (buf->len < sizeof(*hdr)) {
 		LOG_ERR("Too small RFCOMM message");
