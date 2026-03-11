@@ -62,15 +62,6 @@
 	status = "okay";
 };
 
-/* Enable aggregated GIRQ24 and GIRQ25 for eSPI virtual wires interrupts */
-&girq24 {
-	status = "okay";
-};
-
-&girq25 {
-	status = "okay";
-};
-
 &rtimer {
 	status = "okay";
 };
