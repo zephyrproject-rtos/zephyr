@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CRC_STM32
+	bool "STM32 CRC driver"
+	default y
+	depends on DT_HAS_ST_STM32_CRC_ENABLED
+	select CRC_DRIVER_HAS_CRC7_BE
+	select CRC_DRIVER_HAS_CRC8
+	select CRC_DRIVER_HAS_CRC16
+	select CRC_DRIVER_HAS_CRC16_CCITT
+	select CRC_DRIVER_HAS_CRC16_REFLECT
+	select CRC_DRIVER_HAS_CRC32_C
+	select CRC_DRIVER_HAS_CRC32_IEEE
+	help
+	  Enables STM32 family CRC driver.
+
+if CRC_STM32
+
+config CRC_STM32_DMA
+	bool "DMA support"
+	select DMA
+	help
+	  Enable the DMA transfer for CRC instance
+	  That enables dma channel in their device tree node
+	  for transferring data to the CRC input
+
+endif # CRC_STM32

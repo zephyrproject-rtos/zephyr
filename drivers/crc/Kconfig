@@ -25,6 +25,7 @@ source "drivers/crc/Kconfig.nxp"
 source "drivers/crc/Kconfig.renesas_ra"
 source "drivers/crc/Kconfig.sf32lb"
 source "drivers/crc/Kconfig.silabs"
+source "drivers/crc/Kconfig.stm32"
 # zephyr-keep-sorted-stop
 
 config CRC_DRIVER_HAS_CRC4
