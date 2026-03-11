@@ -128,6 +128,7 @@ endif # I2C_RTIO
 source "drivers/i2c/target/Kconfig"
 # zephyr-keep-sorted-start
 source "drivers/i2c/Kconfig.ambiq"
+source "drivers/i2c/Kconfig.ameba"
 source "drivers/i2c/Kconfig.andes_atciic100"
 source "drivers/i2c/Kconfig.b91"
 source "drivers/i2c/Kconfig.bcm_iproc"
