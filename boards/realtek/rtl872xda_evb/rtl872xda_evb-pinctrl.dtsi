@@ -17,4 +17,21 @@
 			bias-pull-up;
 		};
 	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('A', 20, AMEBA_I2C0_SDA)>,
+				 <AMEBA_PINMUX('A', 23, AMEBA_I2C0_SCL)>;
+			bias-pull-up;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('A', 22, AMEBA_I2C1_SDA)>,
+				 <AMEBA_PINMUX('B',  1, AMEBA_I2C1_SCL)>;
+			bias-pull-up;
+		};
+	};
+
 };
