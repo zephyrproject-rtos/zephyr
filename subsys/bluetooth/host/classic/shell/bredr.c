@@ -26,6 +26,7 @@
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/classic/rfcomm.h>
 #include <zephyr/bluetooth/classic/sdp.h>
+#include <zephyr/bluetooth/classic/classic.h>
 #include <zephyr/bluetooth/classic/l2cap_br.h>
 
 #include <zephyr/shell/shell.h>
@@ -2007,6 +2008,25 @@ static int cmd_l2cap_connless_send(const struct shell *sh, size_t argc, char *ar
 }
 #endif /* CONFIG_BT_L2CAP_CONNLESS */
 
+static int cmd_write_eir_name(const struct shell *sh, size_t argc, char *argv[])
+{
+	const char *name = bt_get_name();
+	size_t len = strlen(name);
+	struct bt_data eir[] = {
+		BT_DATA(BT_DATA_NAME_COMPLETE, name, len),
+	};
+	int err;
+
+	err = bt_br_write_eir(eir, ARRAY_SIZE(eir), true);
+	if (err != 0) {
+		shell_error(sh, "Failed to write EIR (err %d)", err);
+		return err;
+	}
+
+	shell_print(sh, "EIR written with device name: %s", name);
+	return 0;
+}
+
 static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc == 1) {
@@ -2108,6 +2128,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 #endif
 	SHELL_CMD_ARG(cod-get, NULL, HELP_NONE, cmd_get_class_of_device, 1, 0),
 	SHELL_CMD_ARG(cod-set, NULL, "<cod>", cmd_set_class_of_device, 2, 0),
+	SHELL_CMD_ARG(write-eir-name, NULL, HELP_NONE, cmd_write_eir_name, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 
