@@ -39,3 +39,7 @@ add_subdirectory_ifdef(CONFIG_BT_AUDIO src/audio)
 if(CONFIG_BT_CLASSIC)
     target_sources(app PRIVATE src/btp_sdp.c)
 endif()
+
+if(CONFIG_BT_PBAP)
+    target_sources(app PRIVATE src/btp_pbap.c)
+endif()
