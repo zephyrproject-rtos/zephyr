@@ -34,6 +34,15 @@ LOG_MODULE_REGISTER(bt_driver);
 #define DT_DRV_COMPAT zephyr_bt_hci_uart
 
 struct h4_data {
+
+	struct {
+		uint8_t         type;
+		struct net_buf *buf;
+		struct k_fifo   fifo;
+	} tx;
+
+	bt_hci_recv_t recv;
+
 	struct {
 		struct net_buf *buf;
 		struct k_fifo   fifo;
@@ -56,14 +65,6 @@ struct h4_data {
 			uint8_t hdr[4];
 		};
 	} rx;
-
-	struct {
-		uint8_t         type;
-		struct net_buf *buf;
-		struct k_fifo   fifo;
-	} tx;
-
-	bt_hci_recv_t recv;
 };
 
 struct h4_config {
