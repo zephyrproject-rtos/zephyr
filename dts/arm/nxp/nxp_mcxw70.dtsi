@@ -23,6 +23,7 @@
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,entropy = &trng_0;
 		zephyr,nbu = &nbu;
+		zephyr,system-timer = &lptmr_0;
 	};
 
 	cpus {
