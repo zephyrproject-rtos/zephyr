@@ -267,6 +267,17 @@
 		.r_limit = REGION_LIMIT_ADDR(base, size),               /* Region Limit */         \
 		IF_ENABLED(CONFIG_ARM_MPU_PXN, (.pxn = PRIV_EXEC_NEVER,))                          \
 	}
+
+/** This attribute allows for execution from RAM region even when CONFIG_XIP=y in
+ * case the region is used for code relocation.
+ */
+#define REGION_RAM_ATTR_WITH_EXEC(base, size)                                  \
+	{                                                                          \
+		.rbar =  P_RW_U_NA_Msk | NON_SHAREABLE_Msk,    /* AP, SH */            \
+		.mair_idx = MPU_MAIR_INDEX_SRAM,               /* Cache-ability */     \
+		.r_limit = REGION_LIMIT_ADDR(base, size),      /* Region Limit */      \
+		IF_ENABLED(CONFIG_ARM_MPU_PXN, (.pxn = !PRIV_EXEC_NEVER,))             \
+	}
 /** @endcond */
 
 #if defined(CONFIG_ARM_MPU_PXN)
