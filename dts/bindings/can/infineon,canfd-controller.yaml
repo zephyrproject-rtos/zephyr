@@ -1,0 +1,50 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: |
+  Infineon CAN FD controller wrapper.
+
+description: |
+  This node represents the top-level Infineon CANFD IP block that contains
+  shared resources (global control register, Message RAM, ECC) common to all
+  CAN FD channels.  Individual CAN channels are child nodes of this controller.
+
+  The controller driver powers on the Message RAM and configures optional
+  wrapper-level features (timestamp counter, ECC) before any channel can
+  operate.
+
+compatible: "infineon,canfd-controller"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Two register regions:
+        - wrapper: Base address and size of the CANFD controller wrapper
+          registers (CTL, STATUS, TS_CTL, ECC_CTL).
+        - mram: Base address and size of the shared Message RAM.
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1
+
+  shared-timestamp-counter:
+    type: boolean
+    description: |
+      Enable the shared timestamp counter in the CAN FD wrapper.
+      When set, the driver enables the wrapper's TS_CTL counter and
+      configures each child M_CAN channel to use it as an external
+      timestamp source.
+
+  ecc-enabled:
+    type: boolean
+    description: |
+      Enable ECC on the shared Message RAM.  When set, the driver
+      activates single-bit error correction and double-bit error
+      detection for all Message RAM accesses.
