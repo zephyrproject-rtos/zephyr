@@ -3927,6 +3927,8 @@ struct bt_hci_evt_le_read_all_remote_feat_complete {
 #define BT_HCI_LE_CS_SUBFEATURE_NO_TX_FAE_MASK BIT(1)
 #define BT_HCI_LE_CS_SUBFEATURE_CHSEL_ALG_3C_MASK BIT(2)
 #define BT_HCI_LE_CS_SUBFEATURE_PBR_FROM_RTT_SOUNDING_SEQ_MASK BIT(3)
+/** Subfeature: CS with IPT in the reflector. */
+#define BT_HCI_LE_CS_SUBFEATURE_CS_IPT_REFLECTOR_MASK BIT(4)
 
 #define BT_HCI_LE_CS_T_IP1_TIME_10US_MASK BIT(0)
 #define BT_HCI_LE_CS_T_IP1_TIME_20US_MASK BIT(1)
