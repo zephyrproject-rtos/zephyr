@@ -537,6 +537,12 @@ dvp_20pin_interface: &ceu {};
 	};
 };
 
+&drw {
+	interrupts = <90 12>;
+	interrupt-names = "drw";
+	status = "okay";
+};
+
 &crc {
 	status = "okay";
 };

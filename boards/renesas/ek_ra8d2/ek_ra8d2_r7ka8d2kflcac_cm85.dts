@@ -244,3 +244,9 @@ arducam_ffc_40pin_dvp_xclk: &cam_clock {};
 		status = "okay";
 	};
 };
+
+&drw {
+	interrupt-names = "drw";
+	interrupts = <28 12>;
+	status = "okay";
+};
