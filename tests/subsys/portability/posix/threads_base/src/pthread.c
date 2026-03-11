@@ -71,7 +71,7 @@ static void *thread_top_exec(void *p1)
 	 */
 	pthread_mutex_lock(&lock);
 
-	if (!pthread_mutex_trylock(&lock)) {
+	if (!pthread_mutex_trylock(&lock)) { /* NOSONAR */
 		printk("pthread_mutex_trylock inexplicably succeeded\n");
 		bounce_failed = 1;
 	}
