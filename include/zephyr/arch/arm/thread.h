@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
- * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ * Copyright 2025-2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,6 @@
 #endif
 
 struct _callee_saved {
-#ifndef _ARM_M_SWITCH
 	uint32_t v1;  /* r4 */
 	uint32_t v2;  /* r5 */
 	uint32_t v3;  /* r6 */
@@ -44,7 +43,6 @@ struct _callee_saved {
 #ifdef CONFIG_USE_SWITCH
 	uint32_t lr;  /* lr */
 #endif
-#endif /* !_ARM_M_SWITCH */
 };
 
 typedef struct _callee_saved _callee_saved_t;
