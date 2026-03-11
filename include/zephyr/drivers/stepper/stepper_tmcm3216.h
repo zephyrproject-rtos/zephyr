@@ -12,7 +12,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_STEPPER_TMCM3216_H_
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/stepper.h>
+#include <zephyr/drivers/stepper/stepper.h>
 
 #ifdef __cplusplus
 extern "C" {
