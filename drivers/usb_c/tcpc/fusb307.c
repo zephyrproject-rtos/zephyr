@@ -38,6 +38,7 @@ struct fusb307_data {
 
 	tcpc_vconn_discharge_cb_t vconn_discharge_cb;
 	tcpc_vconn_control_cb_t vconn_cb;
+	const struct device *usbc_dev;
 
 	bool cc_changed;
 	enum tc_cc_voltage_state cc1;
@@ -153,18 +154,22 @@ static int fusb307_tcpc_set_cc(const struct device *dev, enum tc_cc_pull pull)
 }
 
 static void fusb307_tcpc_set_vconn_discharge_cb(const struct device *dev,
-						tcpc_vconn_discharge_cb_t cb)
+						tcpc_vconn_discharge_cb_t cb,
+						const struct device *usbc_dev)
 {
 	struct fusb307_data *data = dev->data;
 
 	data->vconn_discharge_cb = cb;
+	data->usbc_dev = usbc_dev;
 }
 
-static void fusb307_tcpc_set_vconn_cb(const struct device *dev, tcpc_vconn_control_cb_t vconn_cb)
+static void fusb307_tcpc_set_vconn_cb(const struct device *dev, tcpc_vconn_control_cb_t vconn_cb,
+				      const struct device *usbc_dev)
 {
 	struct fusb307_data *data = dev->data;
 
 	data->vconn_cb = vconn_cb;
+	data->usbc_dev = usbc_dev;
 }
 
 static int fusb307_tcpc_vconn_discharge(const struct device *dev, bool enable)
@@ -198,7 +203,7 @@ static int fusb307_tcpc_set_vconn(const struct device *dev, bool enable)
 	}
 
 	if (data->vconn_cb != NULL) {
-		ret = data->vconn_cb(dev, data->cc_polarity, enable);
+		ret = data->vconn_cb(dev, data->usbc_dev, data->cc_polarity, enable);
 	}
 
 	return ret;

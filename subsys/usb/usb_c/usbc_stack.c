@@ -318,7 +318,7 @@ void usbc_set_vconn_control_cb(const struct device *dev, const tcpc_vconn_contro
 	struct usbc_port_data *data = dev->data;
 	const struct device *tcpc = data->tcpc;
 
-	tcpc_set_vconn_cb(tcpc, cb);
+	tcpc_set_vconn_cb(tcpc, cb, dev);
 }
 
 /**
@@ -330,7 +330,7 @@ void usbc_set_vconn_discharge(const struct device *dev, const tcpc_vconn_dischar
 	struct usbc_port_data *data = dev->data;
 	const struct device *tcpc = data->tcpc;
 
-	tcpc_set_vconn_discharge_cb(tcpc, cb);
+	tcpc_set_vconn_discharge_cb(tcpc, cb, dev);
 }
 
 #endif /* CONFIG_USBC_CSM_SUPPORTS_SOURCE */
