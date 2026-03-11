@@ -89,6 +89,7 @@ extensions = [
     "zephyr.doxytooltip",
     "zephyr.gh_utils",
     "zephyr.manifest_projects_table",
+    "zephyr.wifi_shell_commands",
     "notfound.extension",
     "sphinx_copybutton",
     "sphinx_togglebutton",
@@ -310,6 +311,12 @@ link_roles_manifest_baseurl = "https://github.com/zephyrproject-rtos/zephyr"
 # -- Options for notfound.extension ---------------------------------------
 
 notfound_urls_prefix = f"/{version}/" if is_release else "/latest/"
+
+# -- Options for zephyr.wifi_shell_commands --------------------------------
+
+wifi_shell_commands_source = str(
+    ZEPHYR_BASE / "subsys" / "net" / "l2" / "wifi" / "wifi_shell.c"
+)
 
 # -- Options for zephyr.gh_utils ------------------------------------------
 

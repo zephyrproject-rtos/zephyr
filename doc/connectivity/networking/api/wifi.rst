@@ -242,6 +242,12 @@ To enable and build with Wi-Fi P2P support:
 
     $ west build -p -b <board> samples/net/wifi/shell -- -DCONFIG_WIFI_NM_WPA_SUPPLICANT_P2P=y
 
+Wi-Fi shell commands
+********************
+
+For a full list of ``wifi`` shell commands with filters by group (STA, AP, DPP,
+P2P, TWT), see :ref:`wifi_shell_commands`.
+
 API Reference
 *************
 

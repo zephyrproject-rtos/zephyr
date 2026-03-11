@@ -11,4 +11,5 @@ Networking Technologies
    thread.rst
    ppp.rst
    wifi.rst
+   wifi_shell_commands.rst
    wifi_credentials.rst
