@@ -3,7 +3,6 @@
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-if USERSPACE
 menu "Memory Domains"
 
 config MAX_DOMAIN_PARTITIONS
@@ -77,4 +76,3 @@ config MEM_DOMAIN_HAS_THREAD_LIST
 	  This is selected by architecture needing this to function.
 
 endmenu
-endif
