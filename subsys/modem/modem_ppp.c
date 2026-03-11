@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(modem_ppp, CONFIG_MODEM_MODULES_LOG_LEVEL);
 #define MODEM_PPP_CODE_DELIMITER	(0x7E)
 #define MODEM_PPP_CODE_ESCAPE		(0x7D)
 #define MODEM_PPP_VALUE_ESCAPE		(0x20)
+#define MODEM_PPP_CODE_CONTROL		(0x03)
 
 static uint16_t modem_ppp_fcs_init(uint8_t byte)
 {
@@ -215,22 +216,23 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 			break;
 		}
 		if (modem_ppp_is_byte_expected(byte, 0xFF)) {
-			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_7D;
+			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_CTRL;
 		} else {
 			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
 		}
 		break;
 
-	case MODEM_PPP_RECEIVE_STATE_HDR_7D:
-		if (modem_ppp_is_byte_expected(byte, MODEM_PPP_CODE_ESCAPE)) {
-			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_23;
-		} else {
-			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
-		}
-		break;
+	case MODEM_PPP_RECEIVE_STATE_HDR_CTRL_UNESCAPE:
+		byte ^= MODEM_PPP_VALUE_ESCAPE;
+		ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_CTRL;
+		__fallthrough;
 
-	case MODEM_PPP_RECEIVE_STATE_HDR_23:
-		if (modem_ppp_is_byte_expected(byte, 0x23)) {
+	case MODEM_PPP_RECEIVE_STATE_HDR_CTRL:
+		if (byte == MODEM_PPP_CODE_ESCAPE) {
+			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_CTRL_UNESCAPE;
+			break;
+		}
+		if (modem_ppp_is_byte_expected(byte, MODEM_PPP_CODE_CONTROL)) {
 			ppp->rx_pkt = net_pkt_rx_alloc_with_buffer(ppp->iface,
 				CONFIG_MODEM_PPP_NET_BUF_FRAG_SIZE, NET_AF_UNSPEC, 0, K_NO_WAIT);
 
