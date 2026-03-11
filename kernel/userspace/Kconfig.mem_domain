@@ -3,19 +3,18 @@
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+if USERSPACE
 menu "Memory Domains"
 
 config MAX_DOMAIN_PARTITIONS
 	int "Maximum number of partitions per memory domain"
 	default 16
 	range 0 $(UINT8_MAX)
-	depends on USERSPACE
 	help
 	  Configure the maximum number of partitions per memory domain.
 
 config ARCH_MEM_DOMAIN_DATA
 	bool
-	depends on USERSPACE
 	help
 	  This hidden option is selected by the target architecture if
 	  architecture-specific data is needed on a per memory domain basis.
@@ -28,7 +27,6 @@ config ARCH_MEM_DOMAIN_DATA
 
 config ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	bool
-	depends on USERSPACE
 	help
 	  This hidden option is selected by the target architecture if
 	  modifying a memory domain's partitions at runtime, or changing
@@ -53,20 +51,6 @@ config ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	  tables, these APIs don't need to be implemented as the underlying
 	  memory management hardware will be reprogrammed on context switch
 	  anyway.
-
-config ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS
-	bool
-	help
-	  This hidden option is selected by the target architecture if
-	  the architecture supports isolating thread stacks for threads
-	  within the same memory domain.
-
-config ARCH_MEM_DOMAIN_SUPPORTS_DEINIT
-	bool
-	select MEM_DOMAIN_HAS_THREAD_LIST
-	help
-	  This hidden option is selected by the target architecture if
-	  the architecture supports de-initializing a memory domain.
 
 config MEM_DOMAIN_ISOLATED_STACKS
 	bool
@@ -93,3 +77,4 @@ config MEM_DOMAIN_HAS_THREAD_LIST
 	  This is selected by architecture needing this to function.
 
 endmenu
+endif

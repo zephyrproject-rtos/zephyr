@@ -1082,7 +1082,7 @@ config HW_SHADOW_STACK_ALLOW_REUSE
 
 endmenu
 
-rsource "Kconfig.mem_domain"
+rsource "userspace/Kconfig.mem_domain"
 rsource "Kconfig.smp"
 
 config TICKLESS_KERNEL
