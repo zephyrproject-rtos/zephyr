@@ -18,10 +18,7 @@ LOG_MODULE_REGISTER(ICM45686_DECODER, CONFIG_SENSOR_LOG_LEVEL);
 
 #define DT_DRV_COMPAT invensense_icm45686
 
-static int icm45686_get_shift(enum sensor_channel channel,
-			      int accel_fs,
-			      int gyro_fs,
-			      int8_t *shift)
+static int icm45686_get_shift(enum sensor_channel channel, int accel_fs, int gyro_fs, int8_t *shift)
 {
 	switch (channel) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -87,10 +84,8 @@ static int icm45686_get_shift(enum sensor_channel channel,
 	}
 }
 
-int icm45686_convert_raw_to_q31(struct icm45686_encoded_data *edata,
-				enum sensor_channel chan,
-				int32_t reading,
-				q31_t *out)
+int icm45686_convert_raw_to_q31(struct icm45686_encoded_data *edata, enum sensor_channel chan,
+				int32_t reading, q31_t *out)
 {
 	int32_t whole;
 	int32_t fraction;
@@ -190,10 +185,8 @@ static uint8_t icm45686_encode_channel(enum sensor_channel chan)
 	return encode_bmask;
 }
 
-int icm45686_encode(const struct device *dev,
-		    const struct sensor_chan_spec *const channels,
-		    const size_t num_channels,
-		    uint8_t *buf)
+int icm45686_encode(const struct device *dev, const struct sensor_chan_spec *const channels,
+		    const size_t num_channels, uint8_t *buf)
 {
 	struct icm45686_encoded_data *edata = (struct icm45686_encoded_data *)buf;
 	const struct icm45686_config *dev_config = dev->config;
@@ -202,7 +195,7 @@ int icm45686_encode(const struct device *dev,
 
 	edata->header.channels = 0;
 
-	for (size_t i = 0 ; i < num_channels ; i++) {
+	for (size_t i = 0; i < num_channels; i++) {
 		edata->header.channels |= icm45686_encode_channel(channels[i].chan_type);
 	}
 
@@ -235,8 +228,7 @@ static int icm45686_decoder_get_frame_count(const uint8_t *buffer,
 		return -ENODATA;
 	}
 
-	if (!edata->header.events ||
-	    (edata->header.events & REG_INT1_STATUS0_DRDY(true))) {
+	if (!edata->header.events || (edata->header.events & REG_INT1_STATUS0_DRDY(true))) {
 		switch (chan_spec.chan_type) {
 		case SENSOR_CHAN_ACCEL_X:
 		case SENSOR_CHAN_ACCEL_Y:
@@ -271,8 +263,7 @@ static int icm45686_decoder_get_frame_count(const uint8_t *buffer,
 	return -1;
 }
 
-static int icm45686_decoder_get_size_info(struct sensor_chan_spec chan_spec,
-					  size_t *base_size,
+static int icm45686_decoder_get_size_info(struct sensor_chan_spec chan_spec, size_t *base_size,
 					  size_t *frame_size)
 {
 	switch (chan_spec.chan_type) {
@@ -296,11 +287,8 @@ static int icm45686_decoder_get_size_info(struct sensor_chan_spec chan_spec,
 	}
 }
 
-static int icm45686_one_shot_decode(const uint8_t *buffer,
-				    struct sensor_chan_spec chan_spec,
-				    uint32_t *fit,
-				    uint16_t max_count,
-				    void *data_out)
+static int icm45686_one_shot_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+				    uint32_t *fit, uint16_t max_count, void *data_out)
 {
 	struct icm45686_encoded_data *edata = (struct icm45686_encoded_data *)buffer;
 	uint8_t channel_request;
@@ -332,17 +320,14 @@ static int icm45686_one_shot_decode(const uint8_t *buffer,
 		out->header.base_timestamp_ns = edata->header.timestamp;
 		out->header.reading_count = 1;
 
-		err = icm45686_get_shift(chan_spec.chan_type,
-					 edata->header.accel_fs,
-					 edata->header.gyro_fs,
-					 &out->shift);
+		err = icm45686_get_shift(chan_spec.chan_type, edata->header.accel_fs,
+					 edata->header.gyro_fs, &out->shift);
 		if (err != 0) {
 			return -EINVAL;
 		}
 
 		icm45686_convert_raw_to_q31(
-			edata,
-			chan_spec.chan_type,
+			edata, chan_spec.chan_type,
 			edata->payload.readings[icm45686_get_channel_position(chan_spec.chan_type)],
 			&out->readings[0].value);
 		*fit = 1;
@@ -361,27 +346,22 @@ static int icm45686_one_shot_decode(const uint8_t *buffer,
 		out->header.base_timestamp_ns = edata->header.timestamp;
 		out->header.reading_count = 1;
 
-		err = icm45686_get_shift(chan_spec.chan_type,
-					 edata->header.accel_fs,
-					 edata->header.gyro_fs,
-					 &out->shift);
+		err = icm45686_get_shift(chan_spec.chan_type, edata->header.accel_fs,
+					 edata->header.gyro_fs, &out->shift);
 		if (err != 0) {
 			return -EINVAL;
 		}
 
 		icm45686_convert_raw_to_q31(
-			edata,
-			chan_spec.chan_type - 3,
+			edata, chan_spec.chan_type - 3,
 			payload->readings[icm45686_get_channel_position(chan_spec.chan_type - 3)],
 			&out->readings[0].x);
 		icm45686_convert_raw_to_q31(
-			edata,
-			chan_spec.chan_type - 2,
+			edata, chan_spec.chan_type - 2,
 			payload->readings[icm45686_get_channel_position(chan_spec.chan_type - 2)],
 			&out->readings[0].y);
 		icm45686_convert_raw_to_q31(
-			edata,
-			chan_spec.chan_type - 1,
+			edata, chan_spec.chan_type - 1,
 			payload->readings[icm45686_get_channel_position(chan_spec.chan_type - 1)],
 			&out->readings[0].z);
 		*fit = 1;
@@ -421,14 +401,12 @@ static q31_t icm45686_fifo_read_temp_from_packet(const uint8_t *pkt)
 	return CLAMP(intermediate, INT32_MIN, INT32_MAX);
 }
 
-static int icm45686_fifo_read_imu_from_packet(const uint8_t *pkt,
-					      bool is_accel,
-					      uint8_t axis_offset,
-					      q31_t *out)
+static int icm45686_fifo_read_imu_from_packet(const uint8_t *pkt, bool is_accel,
+					      uint8_t axis_offset, q31_t *out)
 {
 	uint32_t unsigned_value;
 	int32_t signed_value;
-	int offset = 1 + (axis_offset * 2)  + (is_accel ? 0 : 6);
+	int offset = 1 + (axis_offset * 2) + (is_accel ? 0 : 6);
 	uint32_t mask = is_accel ? GENMASK(7, 4) : GENMASK(3, 0);
 	uint8_t accel_fs = ICM45686_DT_ACCEL_FS_32;
 	uint8_t gyro_fs = ICM45686_DT_GYRO_FS_4000;
@@ -443,8 +421,8 @@ static int icm45686_fifo_read_imu_from_packet(const uint8_t *pkt,
 		return -ENODATA;
 	}
 
-	unsigned_value = (unsigned_value << 4) |
-			 ((pkt[17 + axis_offset] & mask) >> (is_accel ? 4 : 0));
+	unsigned_value =
+		(unsigned_value << 4) | ((pkt[17 + axis_offset] & mask) >> (is_accel ? 4 : 0));
 	signed_value = sign_extend(unsigned_value, 19);
 
 	if (!is_accel) {
@@ -469,11 +447,8 @@ static int icm45686_fifo_read_imu_from_packet(const uint8_t *pkt,
 	return 0;
 }
 
-static int icm45686_fifo_decode(const uint8_t *buffer,
-				struct sensor_chan_spec chan_spec,
-				uint32_t *fit,
-				uint16_t max_count,
-				void *data_out)
+static int icm45686_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+				uint32_t *fit, uint16_t max_count, void *data_out)
 {
 	struct icm45686_encoded_data *edata = (struct icm45686_encoded_data *)buffer;
 	struct icm45686_encoded_fifo_payload *frame_begin = edata->fifo_payload;
@@ -491,9 +466,9 @@ static int icm45686_fifo_decode(const uint8_t *buffer,
 		 * and no auxiliary sensors.
 		 */
 		CHECKIF(!(!(fdata->header & FIFO_HEADER_EXT_HEADER_EN(true)) &&
-			(fdata->header & FIFO_HEADER_ACCEL_EN(true)) &&
-			(fdata->header & FIFO_HEADER_GYRO_EN(true)) &&
-			(fdata->header & FIFO_HEADER_HIRES_EN(true)))) {
+			  (fdata->header & FIFO_HEADER_ACCEL_EN(true)) &&
+			  (fdata->header & FIFO_HEADER_GYRO_EN(true)) &&
+			  (fdata->header & FIFO_HEADER_HIRES_EN(true)))) {
 			LOG_ERR("Unsupported FIFO packet format 0x%02x", fdata->header);
 			return -ENOTSUP;
 		}
@@ -504,24 +479,16 @@ static int icm45686_fifo_decode(const uint8_t *buffer,
 			struct sensor_three_axis_data *out = data_out;
 			bool is_accel = chan_spec.chan_type == SENSOR_CHAN_ACCEL_XYZ;
 
-			icm45686_get_shift(chan_spec.chan_type,
-					   edata->header.accel_fs,
-					   edata->header.gyro_fs,
-					   &out->shift);
+			icm45686_get_shift(chan_spec.chan_type, edata->header.accel_fs,
+					   edata->header.gyro_fs, &out->shift);
 
 			out->header.base_timestamp_ns = edata->header.timestamp;
 
-			err = icm45686_fifo_read_imu_from_packet((uint8_t *)fdata,
-								 is_accel,
-								 0,
+			err = icm45686_fifo_read_imu_from_packet((uint8_t *)fdata, is_accel, 0,
 								 &out->readings[count].x);
-			err |= icm45686_fifo_read_imu_from_packet((uint8_t *)fdata,
-								  is_accel,
-								  1,
+			err |= icm45686_fifo_read_imu_from_packet((uint8_t *)fdata, is_accel, 1,
 								  &out->readings[count].y);
-			err |= icm45686_fifo_read_imu_from_packet((uint8_t *)fdata,
-								  is_accel,
-								  2,
+			err |= icm45686_fifo_read_imu_from_packet((uint8_t *)fdata, is_accel, 2,
 								  &out->readings[count].z);
 			if (err != 0) {
 				count--;
@@ -531,10 +498,8 @@ static int icm45686_fifo_decode(const uint8_t *buffer,
 		case SENSOR_CHAN_DIE_TEMP: {
 			struct sensor_q31_data *out = data_out;
 
-			icm45686_get_shift(chan_spec.chan_type,
-					edata->header.accel_fs,
-					edata->header.gyro_fs,
-					&out->shift);
+			icm45686_get_shift(chan_spec.chan_type, edata->header.accel_fs,
+					   edata->header.gyro_fs, &out->shift);
 
 			out->header.base_timestamp_ns = edata->header.timestamp;
 			out->readings[count].temperature =
@@ -551,11 +516,8 @@ static int icm45686_fifo_decode(const uint8_t *buffer,
 	return count;
 }
 
-static int icm45686_decoder_decode(const uint8_t *buffer,
-				   struct sensor_chan_spec chan_spec,
-				   uint32_t *fit,
-				   uint16_t max_count,
-				   void *data_out)
+static int icm45686_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+				   uint32_t *fit, uint16_t max_count, void *data_out)
 {
 	struct icm45686_encoded_data *edata = (struct icm45686_encoded_data *)buffer;
 
@@ -592,8 +554,7 @@ SENSOR_DECODER_API_DT_DEFINE() = {
 	.has_trigger = icm45686_decoder_has_trigger,
 };
 
-int icm45686_get_decoder(const struct device *dev,
-			 const struct sensor_decoder_api **decoder)
+int icm45686_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder)
 {
 	ARG_UNUSED(dev);
 	*decoder = &SENSOR_DECODER_NAME();

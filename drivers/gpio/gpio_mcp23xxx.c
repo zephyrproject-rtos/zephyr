@@ -180,10 +180,18 @@ static int mcp23xxx_pin_cfg(const struct device *dev, gpio_pin_t pin, gpio_flags
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
-	if ((bool)(flags & GPIO_SINGLE_ENDED) != config->is_open_drain ||
-	    (bool)(flags & GPIO_LINE_OPEN_DRAIN) != config->is_open_drain) {
-		ret = -ENOTSUP;
-		goto done;
+	/* Validate drive mode flags for output pins only.
+	 * The MCP23xxx hardware has a fixed drive mode per chip variant:
+	 * - MCP23x08/x17: Push-pull outputs only
+	 * - MCP23x09/x18: Open-drain outputs only
+	 * Input pins don't have a drive mode, so skip validation for them.
+	 */
+	if (flags & GPIO_OUTPUT) {
+		if ((bool)(flags & GPIO_SINGLE_ENDED) != config->is_open_drain ||
+		    (bool)(flags & GPIO_LINE_OPEN_DRAIN) != config->is_open_drain) {
+			ret = -ENOTSUP;
+			goto done;
+		}
 	}
 
 	ret = setup_pin_dir(dev, pin, flags);

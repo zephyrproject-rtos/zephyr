@@ -78,8 +78,7 @@ static int dummy_close(const struct device *dev)
 	return ret;
 }
 
-static int dummy_device_pm_action(const struct device *dev,
-				  enum pm_device_action action)
+static int dummy_device_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -109,11 +108,10 @@ int dummy_init(const struct device *dev)
 		printk("parent not found\n");
 	}
 
-	return pm_device_runtime_enable(dev);
+	return pm_device_driver_init(dev, dummy_device_pm_action);
 }
 
 PM_DEVICE_DEFINE(dummy_driver, dummy_device_pm_action);
 
-DEVICE_DEFINE(dummy_driver, DUMMY_DRIVER_NAME, &dummy_init,
-		    PM_DEVICE_GET(dummy_driver), NULL, NULL, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &funcs);
+DEVICE_DEFINE(dummy_driver, DUMMY_DRIVER_NAME, &dummy_init, PM_DEVICE_GET(dummy_driver), NULL, NULL,
+	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &funcs);

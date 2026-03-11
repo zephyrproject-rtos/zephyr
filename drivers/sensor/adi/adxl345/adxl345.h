@@ -48,6 +48,10 @@
 #define ADXL345_X_AXIS_DATA_0_REG       0x32
 #define ADXL345_FIFO_CTL_REG            0x38
 #define ADXL345_FIFO_STATUS_REG         0x39
+#define ADXL345_THRESH_ACT_REG          0x24
+#define ADXL345_THRESH_INACT_REG        0x25
+#define ADXL345_TIME_INACT_REG          0x26
+#define ADXL345_ACT_INACT_CTL_REG       0x27
 
 #define ADXL345_PART_ID            0xe5
 
@@ -67,11 +71,6 @@
 #define ADXL345_INT_ENABLE 0x2Eu
 #define ADXL345_INT_MAP    0x2Fu
 #define ADXL345_INT_SOURCE 0x30u
-
-#define ADXL345_THRESH_ACT_REG 0x24
-#define ADXL345_THRESH_INACT_REG 0x25
-#define ADXL345_TIME_INACT_REG 0x26
-#define ADXL345_ACT_INACT_CTL_REG 0x27
 
 #define ADXL345_ACT_AC_DC         BIT(7)
 #define ADXL345_ACT_X_EN          BIT(6)

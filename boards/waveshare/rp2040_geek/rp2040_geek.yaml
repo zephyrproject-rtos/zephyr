@@ -16,6 +16,5 @@ supported:
   - gpio
   - hwinfo
   - i2c
-  - usb
   - watchdog
   - zephyr_i2c

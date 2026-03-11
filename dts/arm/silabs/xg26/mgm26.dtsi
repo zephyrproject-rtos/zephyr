@@ -7,6 +7,8 @@
 #include <silabs/xg26/efr32xg26.dtsi>
 
 &radio {
+	pa-2p4ghz = "highest";
+
 	bt_hci_silabs: bt_hci_silabs {
 		compatible = "silabs,bt-hci-efr32";
 		status = "disabled";

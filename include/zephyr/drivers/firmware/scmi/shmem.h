@@ -43,12 +43,14 @@ struct scmi_message;
  *
  * @param shmem pointer to shmem device
  * @param msg message to write
+ * @param use_polling true if polling should be used, false otherwise
  *
  * @retval 0 if successful
  * @retval negative errno if failure
  */
 int scmi_shmem_write_message(const struct device *shmem,
-			     struct scmi_message *msg);
+			     struct scmi_message *msg,
+			     bool use_polling);
 
 /**
  * @brief Read a message from a SHMEM area

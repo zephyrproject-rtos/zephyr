@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/pwm_ifx_tcpwm.h>
+
+/ {
+	zephyr,user {
+		/* PWM out on P2.0, GPIO in on P2.1.
+		 * These pins must be physically connected for the test to pass.
+		 */
+		pwms = <&pwm0_4 0 PWM_MSEC(2) (PWM_POLARITY_NORMAL | PWM_IFX_TCPWM_OUTPUT_HIGHZ)>;
+		gpios = <&gpio_prt2 1 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&tcpwm0_4 {
+	status = "okay";
+
+	pwm0_4: pwm0_4 {
+		compatible = "infineon,tcpwm-pwm";
+		status = "okay";
+		clocks = <&peri_clk_div3>;
+		pinctrl-0 = <&p2_0_pwm0_4>;
+		pinctrl-names = "default";
+	};
+};
+
+&peri_clk_div3 {
+	status = "okay";
+	resource-type = <IFX_RSC_TCPWM>;
+	resource-instance = <0>;
+	resource-channel = <4>;
+	clock-div = <24>;
+};
+
+&pinctrl {
+	p2_0_pwm0_4: p2_0_pwm0_4 {
+		drive-push-pull;
+	};
+};
+
+&gpio_prt2 {
+	status = "okay";
+};

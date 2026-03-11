@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020 Lemonbeat GmbH
- * Copyright 2024 NXP
+ * Copyright 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -160,6 +160,22 @@
 			#gpio-cells = <2>;
 			reg = <1>;
 		};
+	};
+
+	gint0: gint@2000 {
+		compatible = "nxp,gint";
+		reg = <0x2000 0x1000>;
+		interrupts = <2 2>;
+		resets = <&reset NXP_SYSCON_RESET(0, 19)>;
+		status = "disabled";
+	};
+
+	gint1: gint@3000 {
+		compatible = "nxp,gint";
+		reg = <0x3000 0x1000>;
+		interrupts = <3 2>;
+		resets = <&reset NXP_SYSCON_RESET(0, 19)>;
+		status = "disabled";
 	};
 
 	pint: pint@4000 {

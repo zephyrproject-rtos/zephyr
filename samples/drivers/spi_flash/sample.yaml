@@ -15,6 +15,7 @@ tests:
       - hifive_unmatched/fu740/s7
       - hifive_unmatched/fu740/u74
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
       - stm32n6570_dk/stm32n657xx/sb
     harness: console
     harness_config:
@@ -47,6 +48,7 @@ tests:
   sample.drivers.spi.flash.nrf54lm20:
     platform_allow:
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
     integration_platforms:
       - nrf54lm20dk/nrf54lm20a/cpuapp
     harness: console

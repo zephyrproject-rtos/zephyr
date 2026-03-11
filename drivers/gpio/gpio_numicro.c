@@ -262,9 +262,7 @@ static DEVICE_API(gpio, gpio_numicro_driver_api) = {
 	static struct gpio_numicro_data gpio_numicro_port##n##_data;	\
 									\
 	static const struct gpio_numicro_config gpio_numicro_port##n##_config = {\
-		.common = {						\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),\
-		},							\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),		\
 		.regs = (GPIO_T *)DT_INST_REG_ADDR(n),			\
 	};								\
 									\

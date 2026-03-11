@@ -122,6 +122,7 @@ ZTEST_F(counter_pico_pit, test_counter_wraps)
 
 	top_cfg.ticks = freq / 10U;
 	zassert_ok(counter_set_top_value(fixture->pit_channel_1, &top_cfg));
+	zassert_ok(counter_start(fixture->pit_channel_1));
 	k_msleep(70);
 	zassert_ok(counter_get_value(fixture->pit_channel_1, &value_1));
 	k_msleep(40);
@@ -150,6 +151,7 @@ ZTEST_F(counter_pico_pit, test_top_value_interrupt_set)
 
 	top_cfg.ticks = freq / 10U;
 	zassert_ok(counter_set_top_value(fixture->pit_channel_1, &top_cfg));
+	zassert_ok(counter_start(fixture->pit_channel_1));
 	k_msleep(200);
 	zassert_equal(data, 1, "Counter top callback did not fire");
 }
@@ -164,6 +166,7 @@ ZTEST_F(counter_pico_pit, test_top_value_interrupt_unset)
 
 	top_cfg.ticks = freq / 10U;
 	zassert_ok(counter_set_top_value(fixture->pit_channel_1, &top_cfg));
+	zassert_ok(counter_start(fixture->pit_channel_1));
 	k_msleep(120);
 	top_cfg.callback = NULL;
 
@@ -222,6 +225,8 @@ ZTEST_F(counter_pico_pit, test_two_pit_channels_top_interrupts)
 	data_1 = 0;
 	zassert_ok(counter_set_top_value(fixture->pit_channel_1, &top_cfg_1));
 	zassert_ok(counter_set_top_value(fixture->pit_channel_2, &top_cfg_2));
+	zassert_ok(counter_start(fixture->pit_channel_1));
+	zassert_ok(counter_start(fixture->pit_channel_2));
 
 	k_msleep(210);
 	zassert_ok(counter_stop(fixture->pit_channel_1));

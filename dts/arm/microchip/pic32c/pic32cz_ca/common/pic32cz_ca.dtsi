@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/mchp_pic32cz_ca_clock.h>
 
 / {
 	cpus {
@@ -34,6 +35,65 @@
 
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
+		};
+
+		clock: clock@44052000 {
+			compatible = "microchip,pic32cz-ca-clock";
+			reg = <0x44052000 0x60>, <0x44040000 0x8c>,
+			      <0x44042000 0x20>, <0x44050000 0x180>, <0x44020000 0x30>;
+			reg-names = "mclk", "oscctrl",
+				    "osc32kctrl", "gclk", "supc";
+			interrupts = <5 0>, <6 0>, <7 0>, <8 0>,
+				     <9 0>, <10 0>, <11 0>, <12 0>;
+			interrupt-names = "xosc-fail", "xosc-rdy", "dfll-rdy", "dfll-status",
+					  "pll-lock", "xosc32k-fail", "xosc32k-rdy", "mclk-rdy";
+
+			xosc: xosc {
+				compatible = "microchip,pic32cz-ca-xosc";
+			};
+
+			dfll48m: dfll48m {
+				compatible = "microchip,pic32cz-ca-dfll48m";
+			};
+
+			dpll: dpll {
+				compatible = "microchip,pic32cz-ca-dpll";
+
+				dpll0: dpll0 {
+					subsystem = <CLOCK_MCHP_DPLL_ID_DPLL0>;
+				};
+
+				dpll1: dpll1 {
+					subsystem = <CLOCK_MCHP_DPLL_ID_DPLL1>;
+				};
+			};
+
+			rtcclock: rtcclock {
+				compatible = "microchip,pic32cz-ca-rtc";
+				#clock-cells = <1>;
+			};
+
+			xosc32k: xosc32k {
+				compatible = "microchip,pic32cz-ca-xosc32k";
+			};
+
+			gclkgen: gclkgen {
+				compatible = "microchip,pic32cz-ca-gclkgen";
+			};
+
+			gclkperiph: gclkperiph {
+				compatible = "microchip,pic32cz-ca-gclkperiph";
+				#clock-cells = <1>;
+			};
+
+			mclkdomain: mclkdomain {
+				compatible = "microchip,pic32cz-ca-mclkdomain";
+			};
+
+			mclkperiph: mclkperiph {
+				compatible = "microchip,pic32cz-ca-mclkperiph";
+				#clock-cells = <1>;
+			};
 		};
 
 		pinctrl: pinctrl@44840000 {

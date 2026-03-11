@@ -98,17 +98,20 @@ class PeriphconfBuilder:
         self,
         dt: EDT,
         lookup_tables: SocLookupTables,
+        lock_value: bool = True,
     ) -> None:
         """Builder class used to generate a PERIPHCONF C source file based on the devicetree.
 
         :param dt: Devicetree object.
         :param lookup_tables: Lookup table object containing soc-specific information.
+        :param lock_value: Lock bit value to set in the registers that support it.
         """
 
         self._dt = dt
         self._hw_tables = lookup_tables
         self._processor_id = dt_processor_id(dt)
         self._owner_id = self._processor_id.default_owner_id
+        self._lock_value = lock_value
 
         self._macros = []
         self._ipcmap_idx = 0
@@ -277,6 +280,7 @@ class PeriphconfBuilder:
                     secure,
                     dma_secure,
                     self._owner_id.c_enum,
+                    self._lock_value,
                 ],
                 comment=f"{spu_name}: {periph_label} permissions",
             )
@@ -346,6 +350,7 @@ class PeriphconfBuilder:
                         num,
                         secure,
                         self._owner_id.c_enum,
+                        self._lock_value,
                     ],
                     comment=f"{spu_name}: {instance_name} ch. {num} permissions",
                 )
@@ -376,6 +381,7 @@ class PeriphconfBuilder:
                         num,
                         secure,
                         self._owner_id.c_enum,
+                        self._lock_value,
                     ],
                     comment=f"{spu_name}: {instance_name} ch. {num} permissions",
                 )
@@ -390,6 +396,7 @@ class PeriphconfBuilder:
                         num,
                         secure,
                         self._owner_id.c_enum,
+                        self._lock_value,
                     ],
                     comment=f"{spu_name}: {instance_name} ch. group {num} permissions",
                 )
@@ -439,6 +446,7 @@ class PeriphconfBuilder:
                 [
                     Address(sub_ppib_addr),
                     sub_ppib_ch,
+                    True,
                 ],
                 comment=(
                     f"SUB: {sub_ppib_name} ch. {sub_ppib_ch} => {pub_ppib_name} ch. {pub_ppib_ch}"
@@ -451,6 +459,7 @@ class PeriphconfBuilder:
                 [
                     Address(pub_ppib_addr),
                     pub_ppib_ch,
+                    True,
                 ],
                 comment=(
                     f"PUB: {sub_ppib_name} ch. {sub_ppib_ch} => {pub_ppib_name} ch. {pub_ppib_ch}"
@@ -476,6 +485,7 @@ class PeriphconfBuilder:
                         num,
                         secure,
                         self._owner_id.c_enum,
+                        self._lock_value,
                     ],
                     comment=f"{spu_name}: {instance_name} ch. {num} permissions",
                 )
@@ -537,7 +547,7 @@ class PeriphconfBuilder:
         self._macros.append(
             MacroCall(
                 "PERIPHCONF_IPCMAP_CHANNEL_SOURCE",
-                [self._ipcmap_idx, source_domain.c_enum, source_ch],
+                [self._ipcmap_idx, source_domain.c_enum, source_ch, True],
                 comment=(
                     f"{source_domain.name} IPCT ch. {source_ch} => "
                     f"{sink_domain.name} IPCT ch. {sink_ch}"
@@ -573,6 +583,7 @@ class PeriphconfBuilder:
                         num,
                         secure,
                         self._owner_id.c_enum,
+                        self._lock_value,
                     ],
                     comment=f"{spu_name}: GRTC CC{num} permissions",
                 )
@@ -696,6 +707,7 @@ class PeriphconfBuilder:
                     num,
                     secure,
                     self._owner_id.c_enum,
+                    self._lock_value,
                 ],
                 comment=f"{spu_name}: P{gpio_port}.{num} permissions",
             )

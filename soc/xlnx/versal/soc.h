@@ -11,6 +11,4 @@
 #define __GIC_PRESENT 0
 #define __TIM_PRESENT 0
 
-#define CRL_RST_TTC 0x00FF5E0344
-
 #endif /* _SOC_XLNX_VERSAL_SOC_H_ */

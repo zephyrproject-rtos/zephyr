@@ -4,7 +4,7 @@
  */
 
 #include <stepper_timing_source.h>
-#include "gpio_stepper_common.h"
+#include <gpio_stepper_common.h>
 
 static k_timeout_t stepper_movement_delay(const struct device *dev)
 {
@@ -22,9 +22,10 @@ static void stepper_work_step_handler(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct gpio_stepper_common_data *data =
 		CONTAINER_OF(dwork, struct gpio_stepper_common_data, stepper_dwork);
-	const struct gpio_stepper_common_config *config = data->dev->config;
+	const struct device *ctrl_dev = gpio_stepper_common_get_stepper_ctrl_dev(data);
+	const struct gpio_stepper_common_config *config = ctrl_dev->config;
 
-	config->timing_source_cb(data->dev);
+	config->timing_source_cb(ctrl_dev);
 }
 
 int step_work_timing_source_init(const struct device *dev)

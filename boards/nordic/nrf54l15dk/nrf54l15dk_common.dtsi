@@ -85,6 +85,28 @@
 		sw3 = &button3;
 		watchdog0 = &wdt31;
 	};
+
+	/*
+	 * Note the header is marked "PORT P1" on the DK and only
+	 * a subset of the pins are available.
+	 */
+	nordic_expansion_header: nordic_expansion_header {
+		compatible = "nordic,expansion-board-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <4 0 &gpio1 4 0>,
+			   <5 0 &gpio1 5 0>,
+			   <6 0 &gpio1 6 0>,
+			   <7 0 &gpio1 7 0>,
+			   <8 0 &gpio1 8 0>,
+			   <9 0 &gpio1 9 0>,
+			   <10 0 &gpio1 10 0>,
+			   <11 0 &gpio1 11 0>,
+			   <12 0 &gpio1 12 0>,
+			   <13 0 &gpio1 13 0>,
+			   <14 0 &gpio1 14 0>;
+	};
 };
 
 &uart20 {
@@ -107,6 +129,3 @@
 	pinctrl-1 = <&pwm20_sleep>;
 	pinctrl-names = "default", "sleep";
 };
-
-/* Get a node label for wi-fi spi to use in shield files */
-wifi_spi: &spi22 {};

@@ -105,7 +105,6 @@ void z_arm64_el3_init(void)
 #endif
 	reg |= (SCR_RES1 |		/* RES1 */
 		SCR_RW_BIT |		/* EL2 execution state is AArch64 */
-		SCR_ST_BIT |		/* Do not trap EL1 accesses to timer */
 		SCR_HCE_BIT |		/* Do not trap HVC */
 		SCR_SMD_BIT);		/* Do not trap SMC */
 #ifdef CONFIG_ARM_PAC
@@ -113,13 +112,19 @@ void z_arm64_el3_init(void)
 		SCR_API_BIT);		/* Do not trap pointer authentication instructions */
 #endif
 	write_scr_el3(reg);
+	/*
+	 * With SCR_ST_BIT == 0, a CNTPS interrupt is taken to Secure EL1 when
+	 * CNTPS_CTL_EL1.ENABLE = 1. Program CVAL to the maximum 64-bit value
+	 * first to prevent an immediate interrupt on enable.
+	 */
+	write_cntps_cval_el1(~(uint64_t)0);
 
 #if defined(CONFIG_GIC_V3)
 	reg = read_sysreg(ICC_SRE_EL3);
 	reg |= (ICC_SRE_ELx_DFB_BIT |	/* Disable FIQ bypass */
 		ICC_SRE_ELx_DIB_BIT |	/* Disable IRQ bypass */
 		ICC_SRE_ELx_SRE_BIT |	/* System register interface is used */
-		ICC_SRE_EL3_EN_BIT);	/* Enables lower Exception level access to ICC_SRE_EL1 */
+		ICC_SRE_ELx_EN_BIT);	/* Enables lower Exception level access to ICC_SRE_EL1 */
 	write_sysreg(reg, ICC_SRE_EL3);
 #endif
 
@@ -162,6 +167,17 @@ void z_arm64_el2_init(void)
 		SCTLR_SA_BIT);		/* Enable SP alignment check */
 	write_sctlr_el2(reg);
 
+#if defined(CONFIG_GIC_V3)
+	if (!is_in_secure_state() || is_el2_sec_supported()) {
+		reg = read_sysreg(ICC_SRE_EL2);
+		reg |= (ICC_SRE_ELx_DFB_BIT |   /* Disable FIQ bypass */
+			ICC_SRE_ELx_DIB_BIT |   /* Disable IRQ bypass */
+			ICC_SRE_ELx_SRE_BIT |   /* System register interface is used */
+			ICC_SRE_ELx_EN_BIT);    /* Enables Exception access to ICC_SRE_EL1 */
+		write_sysreg(reg, ICC_SRE_EL2);
+	}
+#endif
+
 	reg = read_hcr_el2();
 	/* when EL2 is enable in current security status:
 	 * Clear TGE bit: All exceptions that would not be routed to EL2;
@@ -201,7 +217,8 @@ void z_arm64_el2_init(void)
 #endif
 
 	zero_cntvoff_el2();		/* Set 64-bit virtual timer offset to 0 */
-	zero_cnthctl_el2();
+	reg = CNTHCTL_EL2_EL1PCEN | CNTHCTL_EL2_EL1PCTEN;
+	write_cnthctl_el2(reg);
 #ifdef CONFIG_CPU_AARCH64_CORTEX_R
 	zero_cnthps_ctl_el2();
 #else
@@ -276,11 +293,7 @@ void z_arm64_el1_init(void)
 	barrier_isync_fence_full();
 
 	write_cntv_cval_el0(~(uint64_t)0);
-	/*
-	 * Enable these if/when we use the corresponding timers.
-	 * write_cntp_cval_el0(~(uint64_t)0);
-	 * write_cntps_cval_el1(~(uint64_t)0);
-	 */
+	write_cntp_cval_el0(~(uint64_t)0);
 
 	z_arm64_el1_plat_init();
 

@@ -408,7 +408,7 @@ void cmd_alloc_free_call(unsigned long a0, unsigned long a1, unsigned long a2, u
 	switch (t_call.num) {
 	case 0:
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_ALLOC;
-		res->a1 = 1;
+		res->a1 = OPTEE_MSG_GET_ARG_SIZE(1); /* size */
 		break;
 	case 1:
 		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
@@ -428,6 +428,7 @@ void cmd_alloc_free_call(unsigned long a0, unsigned long a1, unsigned long a2, u
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_CMD;
 		printk("a1 %lx, a2 %lx a4 %lx a5 %lx\n", a1, a2);
 		shm = (struct tee_shm *)regs_to_u64(a1, a2);
+		zassert_true(shm->size >= OPTEE_MSG_GET_ARG_SIZE(1), "shm size too small");
 		arg = (struct optee_msg_arg *)shm->addr;
 		arg->cmd = OPTEE_RPC_CMD_SHM_FREE;
 		arg->num_params = 1;
@@ -523,7 +524,7 @@ void cmd_rpc_call(unsigned long a0, unsigned long a1, unsigned long a2, unsigned
 	switch (t_call.num) {
 	case 0:
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_ALLOC;
-		res->a1 = 1;
+		res->a1 = OPTEE_MSG_GET_ARG_SIZE(2); /* size */
 		break;
 	case 1:
 		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
@@ -543,6 +544,7 @@ void cmd_rpc_call(unsigned long a0, unsigned long a1, unsigned long a2, unsigned
 		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
 		shm = (struct tee_shm *)regs_to_u64(a1, a2);
 		arg = (struct optee_msg_arg *)shm->addr;
+		zassert_true(shm->size >= OPTEE_MSG_GET_ARG_SIZE(2), "shm size too small");
 		zassert_equal(arg->params[1].attr, OPTEE_MSG_ATTR_TYPE_VALUE_OUTPUT,
 			      "%s failed wrong attr %lx", __func__, arg->params[0].attr);
 		zassert_equal(arg->params[1].u.value.a, 0x1234, "%s failed wrong a %lx",
@@ -666,7 +668,7 @@ void cmd_shm_alloc_appl(unsigned long a0, unsigned long a1, unsigned long a2, un
 	switch (t_call.num) {
 	case 0:
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_ALLOC;
-		res->a1 = 1;
+		res->a1 = OPTEE_MSG_GET_ARG_SIZE(1); /* size */
 		break;
 	case 1:
 		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
@@ -689,6 +691,7 @@ void cmd_shm_alloc_appl(unsigned long a0, unsigned long a1, unsigned long a2, un
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_CMD;
 		shm = (struct tee_shm *)regs_to_u64(a1, a2);
 		arg = (struct optee_msg_arg *)shm->addr;
+		zassert_true(shm->size >= OPTEE_MSG_GET_ARG_SIZE(1), "shm size too small");
 		arg->cmd = OPTEE_RPC_CMD_SHM_FREE;
 		arg->num_params = 1;
 		arg->params[0].attr = OPTEE_MSG_ATTR_TYPE_VALUE_INPUT;
@@ -835,7 +838,7 @@ void cmd_gettime_call(unsigned long a0, unsigned long a1, unsigned long a2, unsi
 	switch (t_call.num) {
 	case 0:
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_ALLOC;
-		res->a1 = 1;
+		res->a1 = OPTEE_MSG_GET_ARG_SIZE(1); /* size */
 		break;
 	case 1:
 		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
@@ -853,6 +856,7 @@ void cmd_gettime_call(unsigned long a0, unsigned long a1, unsigned long a2, unsi
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_FREE;
 		shm = (struct tee_shm *)regs_to_u64(a1, a2);
 		arg = (struct optee_msg_arg *)shm->addr;
+		zassert_true(shm->size >= OPTEE_MSG_GET_ARG_SIZE(1), "shm size too small");
 
 		t_call.a6 = arg->params[0].u.value.a;
 		t_call.a7 = arg->params[0].u.value.b;
@@ -935,7 +939,7 @@ void cmd_suspend_call(unsigned long a0, unsigned long a1, unsigned long a2, unsi
 	switch (t_call.num) {
 	case 0:
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_ALLOC;
-		res->a1 = 1;
+		res->a1 = OPTEE_MSG_GET_ARG_SIZE(1); /* size */
 		break;
 	case 1:
 		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
@@ -953,6 +957,7 @@ void cmd_suspend_call(unsigned long a0, unsigned long a1, unsigned long a2, unsi
 		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_FREE;
 		shm = (struct tee_shm *)regs_to_u64(a1, a2);
+		zassert_true(shm->size >= OPTEE_MSG_GET_ARG_SIZE(1), "shm size too small");
 		arg = (struct optee_msg_arg *)shm->addr;
 
 		t_call.a6 = arg->params[0].u.value.a;
@@ -1024,7 +1029,7 @@ void cmd_notify_alloc_call(unsigned long a0, unsigned long a1, unsigned long a2,
 	switch (t_call.num) {
 	case 0:
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_ALLOC;
-		res->a1 = 1;
+		res->a1 = OPTEE_MSG_GET_ARG_SIZE(1); /* size */
 		break;
 	case 1:
 		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
@@ -1093,6 +1098,7 @@ void cmd_notify_wait_call(unsigned long a0, unsigned long a1, unsigned long a2, 
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_CMD;
 		shm = (struct tee_shm *)g_shm_ref;
 		arg = (struct optee_msg_arg *)shm->addr;
+		zassert_true(shm->size >= OPTEE_MSG_GET_ARG_SIZE(1), "shm size too small");
 		arg->cmd = OPTEE_RPC_CMD_NOTIFICATION;
 		arg->num_params = 1;
 		arg->params[0].attr = OPTEE_MSG_ATTR_TYPE_VALUE_INPUT;
@@ -1128,6 +1134,7 @@ void cmd_notify_send_call(unsigned long a0, unsigned long a1, unsigned long a2, 
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_CMD;
 		shm = (struct tee_shm *)g_shm_ref;
 		arg = (struct optee_msg_arg *)shm->addr;
+		zassert_true(shm->size >= OPTEE_MSG_GET_ARG_SIZE(1), "shm size too small");
 		arg->cmd = OPTEE_RPC_CMD_NOTIFICATION;
 		arg->num_params = 1;
 		arg->params[0].attr = OPTEE_MSG_ATTR_TYPE_VALUE_INPUT;

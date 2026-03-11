@@ -40,7 +40,6 @@ config BT_HCI_HOST
 	bool
 	default y
 	depends on !BT_HCI_RAW
-	select POLL
 
 config BT_HCI_TX_STACK_SIZE
 	# NOTE: This value is derived from other symbols and should only be
@@ -1203,5 +1202,14 @@ config BT_HCI_VS_EVT_USER
 	help
 	  Enable registering a callback for delegating to the user the handling of
 	  VS events that are not known to the stack
+
+config BT_BUF_SYNC_EVT_POOL_COUNT
+	int "Num of Sync event buffer pool count"
+	range 1 $(UINT8_MAX)
+	default 1
+	help
+	  This option enables vendor to configure number of sync event buffer count
+	  based on application needs. The default value for sync event buf pool
+	  count would be 1.
 
 endmenu

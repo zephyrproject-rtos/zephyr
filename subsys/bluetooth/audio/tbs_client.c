@@ -1,7 +1,7 @@
 /*  Bluetooth TBS - Telephone Bearer Service - Client
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,8 +31,8 @@
 #include <zephyr/sys/util_utf8.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <zephyr/sys/check.h>
 
+#include "common/bt_str.h"
 #include "tbs_internal.h"
 
 LOG_MODULE_REGISTER(bt_tbs_client, CONFIG_BT_TBS_CLIENT_LOG_LEVEL);
@@ -55,7 +55,13 @@ LOG_MODULE_REGISTER(bt_tbs_client, CONFIG_BT_TBS_CLIENT_LOG_LEVEL);
 
 BUILD_ASSERT(CONFIG_BT_ATT_TX_COUNT >= TBS_CLIENT_BUF_COUNT, "Too few ATT buffers");
 
-#include "common/bt_str.h"
+/* The maximum size of all supported string values */
+#define MAX_STR_LEN                                                                                \
+	MAX(CONFIG_BT_TBS_MAX_URI_LENGTH,                                                          \
+	    (MAX(COND_CODE_1(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME,                            \
+			     (CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH), (0U)),                      \
+		 COND_CODE_1(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME,                              \
+			     (CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH), (0U)))))
 
 struct bt_tbs_server_inst {
 #if defined(CONFIG_BT_TBS_CLIENT_TBS)
@@ -96,7 +102,7 @@ static struct bt_tbs_instance *tbs_instance_find(struct bt_tbs_server_inst *serv
 	return NULL;
 }
 
-static struct bt_tbs_instance *tbs_inst_by_index(struct bt_conn *conn, uint8_t index)
+static struct bt_tbs_instance *tbs_inst_by_index(const struct bt_conn *conn, uint8_t index)
 {
 	struct bt_tbs_server_inst *server;
 
@@ -354,10 +360,10 @@ static void call_cp_callback_handler(struct bt_conn *conn, int err,
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_OPTIONAL_OPCODES) */
 
-const char *parse_string_value(const void *data, uint16_t length,
-				      uint16_t max_len)
+__maybe_unused static const char *parse_string_value(const void *data, uint16_t length,
+						     uint16_t max_len)
 {
-	static char string_val[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
+	static char string_val[MAX_STR_LEN + 1];
 	const size_t len = MIN(length, max_len);
 
 	if (len != 0) {
@@ -672,8 +678,7 @@ static void friendly_name_notify_handler(struct bt_conn *conn,
 					 const struct bt_tbs_instance *tbs_inst,
 					 const void *data, uint16_t length)
 {
-	const char *name = parse_string_value(data, length,
-					      CONFIG_BT_TBS_MAX_URI_LENGTH);
+	const char *name = parse_string_value(data, length, CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH);
 
 	LOG_DBG("%s", name);
 
@@ -761,8 +766,13 @@ static uint8_t notify_handler(struct bt_conn *conn,
 
 static void initialize_net_buf_read_buffer(struct bt_tbs_instance *inst)
 {
-	net_buf_simple_init_with_data(&inst->net_buf, &inst->read_buf,
-				      sizeof(inst->read_buf));
+	if (inst->net_buf.data == NULL) {
+		net_buf_simple_init_with_data(&inst->net_buf, &inst->read_buf,
+					      sizeof(inst->read_buf));
+	} else {
+		(void)memset(inst->net_buf.data, 0, inst->net_buf.len);
+	}
+
 	net_buf_simple_reset(&inst->net_buf);
 }
 
@@ -2472,7 +2482,7 @@ int bt_tbs_client_discover(struct bt_conn *conn)
 
 int bt_tbs_client_register_cb(struct bt_tbs_client_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 
 		return -EINVAL;
@@ -2500,7 +2510,7 @@ struct bt_tbs_instance *bt_tbs_client_get_by_ccid(const struct bt_conn *conn,
 {
 	struct bt_tbs_server_inst *server;
 
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		LOG_DBG("conn was NULL");
 		return NULL;
 	}
@@ -2508,5 +2518,16 @@ struct bt_tbs_instance *bt_tbs_client_get_by_ccid(const struct bt_conn *conn,
 	server = &srv_insts[bt_conn_index(conn)];
 
 	return tbs_instance_find(server, tbs_instance_ccid_is_eq, UINT_TO_POINTER(ccid));
+}
+
+struct bt_tbs_instance *bt_tbs_client_get_by_index(const struct bt_conn *conn, uint8_t index)
+
+{
+	if (conn == NULL) {
+		LOG_DBG("conn was NULL");
+		return NULL;
+	}
+
+	return tbs_inst_by_index(conn, index);
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_CCID) */

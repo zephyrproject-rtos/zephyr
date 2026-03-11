@@ -225,8 +225,6 @@ SECTIONS
 		*(.pinned_rodata)
 		*(.pinned_rodata.*)
 
-#include <snippets-rodata.ld>
-
 #include <zephyr/linker/kobject-rom.ld>
 
 		MMU_PAGE_ALIGN_PERM
@@ -372,12 +370,12 @@ SECTIONS
 #endif /* !CONFIG_LINKER_USE_PINNED_SECTION */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 
-#ifndef CONFIG_LINKER_USE_PINNED_SECTION
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rodata.ld>
 
+#ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <zephyr/linker/kobject-rom.ld>
 #endif
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)

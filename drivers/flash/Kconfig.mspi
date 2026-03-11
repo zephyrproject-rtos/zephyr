@@ -79,6 +79,26 @@ config FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE
 	  Other options include the 32K-byte erase size (32768), the sector
 	  size (4096), or any non-zero multiple of the sector size.
 
+config FLASH_MSPI_NOR_DMA_DATA_XFER
+	bool "Use DMA for Flash MSPI NOR data transfers"
+	depends on MSPI_DMA
+	default y
+	help
+	  Transfer mode for MSPI read/write data transactions. Since read/write tends
+	  to involve larger data transfers, it is generally recommended to use MSPI_DMA
+	  to reduce CPU load and improve throughput. Will default to MSPI_DMA if
+	  CONFIG_MSPI_DMA is enabled, otherwise it will default to MSPI_PIO.
+
+config FLASH_MSPI_NOR_DMA_CONTROL_XFER
+	bool "Use DMA for Flash MSPI NOR control transfers"
+	depends on MSPI_DMA
+	default n
+	help
+	  Transfer mode for register reads/writes and command MSPI transactions.
+	  Since these are shorter transfers, it is generally recommended to use MSPI_PIO
+	  (programmed I/O) due to there being less overhead compared to setting up a
+	  DMA transfer.
+
 endif # FLASH_MSPI_NOR
 
 endmenu

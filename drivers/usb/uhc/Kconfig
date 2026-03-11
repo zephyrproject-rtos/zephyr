@@ -32,6 +32,13 @@ config UHC_BUF_POOL_SIZE
 	help
 	  Total amount of memory available for UHC buffers.
 
+config UHC_BUF_FORCE_NOCACHE
+	bool
+	depends on NOCACHE_MEMORY && DCACHE
+	help
+	  Place the buffer pools in the nocache memory region if the driver
+	  cannot handle buffers in cached memory.
+
 module = UHC_DRIVER
 module-str = uhc drv
 source "subsys/logging/Kconfig.template.log_config"

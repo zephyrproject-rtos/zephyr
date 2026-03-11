@@ -6,6 +6,7 @@ zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_ADC adc_common.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_SHELL adc_shell.c)
+zephyr_library_sources_ifdef(CONFIG_ADC_EMUL_SHELL adc_emul_shell.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE adc_handlers.c)
 
 # zephyr-keep-sorted-start
@@ -38,6 +39,7 @@ zephyr_library_sources_ifdef(CONFIG_ADC_GECKO_ADC adc_gecko.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_INFINEON_AUTANALOG_SAR adc_infineon_autanalog_sar.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_INFINEON_CAT1 adc_infineon.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_INFINEON_HPPASS_SAR adc_infineon_hppass_sar.c)
+zephyr_library_sources_ifdef(CONFIG_ADC_INFINEON_SAR adc_infineon_sar.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_ITE_IT51XXX adc_ite_it51xxx.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_ITE_IT8XXX2 adc_ite_it8xxx2.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_LMP90XXX adc_lmp90xxx.c)

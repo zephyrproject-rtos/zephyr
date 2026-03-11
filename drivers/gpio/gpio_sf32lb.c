@@ -316,10 +316,7 @@ static int gpio_sf32lb_init(const struct device *dev)
 
 #define GPIO_SF32LB_DEFINE(n)                                                                      \
 	static const struct gpio_sf32lb_config gpio_sf32lb_config##n = {                           \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		.gpio = DT_INST_REG_ADDR(n),                                                       \
 		.pinmux = DT_REG_ADDR_BY_IDX(DT_INST_PHANDLE(n, sifli_pinmuxs),                    \
 					     DT_INST_PHA(n, sifli_pinmuxs, port)) +                \

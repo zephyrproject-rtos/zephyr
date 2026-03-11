@@ -5,19 +5,42 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-i2c1: &scb1 {
+/*
+ * SCB1 configured as SPI master for BME280 sensor
+ * Only SCB[0] and SCB[1] support both SPI and I2C
+ * protocols (SCB[2-4] are UART only)
+ */
+&spi1 {
 	status = "okay";
-	compatible = "infineon,i2c";
-	clocks = <&peri_clk_div2>;
-	pinctrl-0 = <&p6_3_scb1_i2c_scl &p6_4_scb1_i2c_sda>;
-	pinctrl-names = "default";
-	#address-cells = <1>;
-	#size-cells = <0>;
+	cs-gpios = <&gpio_prt4 0 GPIO_ACTIVE_LOW>;
 
-	bme280@76 {
-		status = "okay";
+	bme280@0 {
 		compatible = "bosch,bme280";
-		reg = <0x76>;
-		label = "BME280_I2C";
+		reg = <0>;
+		spi-max-frequency = <100000>;
 	};
 };
+
+/*
+ * SCB1 is being configured as SPI in this overlay.
+ * SCB hardware blocks can only operate in one mode at a time (SPI, I2C, or UART).
+ * Since SPI is configured above, we are not including I2C configuration for SCB1.
+ */
+/*
+ * i2c1: &scb1 {
+ *       status = "disabled";
+ *       compatible = "infineon,i2c";
+ *       clocks = <&peri_clk_div2>;
+ *       pinctrl-0 = <&p6_3_scb1_i2c_scl &p6_4_scb1_i2c_sda>;
+ *       pinctrl-names = "default";
+ *       #address-cells = <1>;
+ *       #size-cells = <0>;
+ *
+ *       bme280@76 {
+ *               status = "disabled";
+ *               compatible = "bosch,bme280";
+ *               reg = <0x76>;
+ *               label = "BME280_I2C";
+ *       };
+ * };
+ */

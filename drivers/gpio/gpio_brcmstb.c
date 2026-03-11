@@ -129,7 +129,7 @@ int gpio_brcmstb_init(const struct device *port)
 	static struct gpio_brcmstb_data gpio_brcmstb_data_##n;                                     \
                                                                                                    \
 	static const struct gpio_brcmstb_config gpio_brcmstb_cfg_##n = {                           \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0)},                   \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(0),                                      \
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_INST_PARENT(n)),                           \
 		.offset = DT_INST_REG_ADDR(n),                                                     \
 	};                                                                                         \

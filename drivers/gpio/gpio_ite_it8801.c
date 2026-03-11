@@ -443,7 +443,7 @@ static int gpio_it8801_init(const struct device *dev)
 #define GPIO_IT8801_DEVICE_INST(inst)                                                              \
 	static struct gpio_it8801_data gpio_it8801_data_##inst;                                    \
 	static const struct gpio_it8801_config gpio_it8801_cfg_##inst = {                          \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst)},                \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
 		.i2c_dev = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),                                  \
 		.reg_ipsr = DT_INST_REG_ADDR_BY_IDX(inst, 0),                                      \

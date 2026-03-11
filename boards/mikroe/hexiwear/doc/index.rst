@@ -1,4 +1,4 @@
-.. _hexiwear:
+.. zephyr:board:: hexiwear
 
 Hexiwear
 ########
@@ -56,47 +56,7 @@ For more information about the K64F SoC and Hexiwear board:
 Supported Features
 ==================
 
-The hexiwear/mk64f12 board variant supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | soc flash                           |
-+-----------+------------+-------------------------------------+
-| SENSOR    | off-chip   | fxos8700 polling;                   |
-|           |            | fxos8700 trigger;                   |
-|           |            | fxas21002 polling;                  |
-|           |            | fxas21002 trigger;                  |
-|           |            | max30101 polling                    |
-+-----------+------------+-------------------------------------+
-| RNGA      | on-chip    | entropy;                            |
-|           |            | random                              |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-
-	:zephyr_file:`boards/mikroe/hexiwear/hexiwear_mk64f12_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -354,36 +314,7 @@ For more information about the KW40Z SoC:
 Supported Features
 ==================
 
-The hexiwear/mkw40z4 board variant supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| RTT       | on-chip    | console                             |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | soc flash                           |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-
-	:zephyr_file:`boards/mikroe/hexiwear/hexiwear_mkw40z4_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

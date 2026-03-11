@@ -54,8 +54,8 @@ Example building for NXP's MCXW72 FRDM (host).
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/openthread/shell
-   :board: frdm_mcxw72
-   :conf: "prj-ot-host.conf"
+   :board: frdm_mcxw72/mcxw727c
+   :gen-args: -DEXTRA_CONF_FILE="prj-ot-host.conf"
    :goals: build
    :compact:
 

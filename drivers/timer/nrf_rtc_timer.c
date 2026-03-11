@@ -736,10 +736,10 @@ static void int_event_disable_rtc(void)
 #if !CUSTOM_COUNTER_BIT_WIDTH
 			NRF_RTC_INT_OVERFLOW_MASK |
 #endif
-			NRF_RTC_INT_COMPARE0_MASK |
-			NRF_RTC_INT_COMPARE1_MASK |
-			NRF_RTC_INT_COMPARE2_MASK |
-			NRF_RTC_INT_COMPARE3_MASK;
+			NRF_RTC_INT_COMPARE_0_MASK |
+			NRF_RTC_INT_COMPARE_1_MASK |
+			NRF_RTC_INT_COMPARE_2_MASK |
+			NRF_RTC_INT_COMPARE_3_MASK;
 
 	/* Reset interrupt enabling to expected reset values */
 	nrfy_rtc_int_disable(RTC, mask);

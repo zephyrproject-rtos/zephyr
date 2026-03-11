@@ -4,13 +4,19 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig WIFI_WINC1500
-	bool "WINC1500 driver support"
+	bool "WINC1500 driver support [DEPRECATED]"
 	default y
 	depends on DT_HAS_ATMEL_WINC1500_ENABLED
 	select SPI
 	select ATMEL_WINC1500
 	select WIFI_OFFLOAD
 	select NET_L2_WIFI_MGMT
+	select DEPRECATED
+	help
+	  This offloaded wifi driver is deprecated and will be removed
+	  in a future release. It is currently scheduled to be removed in
+	  Zephyr 4.6. The reason for deprecation is that there is no
+	  maintainer for this driver.
 
 if WIFI_WINC1500
 

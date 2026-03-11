@@ -16,6 +16,5 @@ module = USBD_CDC_ECM
 module-str = usbd cdc_ecm
 default-count = 1
 source "subsys/logging/Kconfig.template.log_config"
-rsource "Kconfig.template.instances_count"
 
 endif

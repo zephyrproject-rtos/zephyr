@@ -177,9 +177,7 @@ static int gpio_davinci_init(const struct device *dev)
 	GPIO_DAVINCI_INIT_FUNC(n);						  \
 	static const struct gpio_davinci_config gpio_davinci_##n##_config = {	  \
 		.bank_config = gpio_davinci_bank_##n##_config,			  \
-		.common = {							  \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	  \
-		},								  \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),			  \
 		DEVICE_MMIO_NAMED_ROM_INIT(port_base, DT_DRV_INST(n)),		  \
 		.port_num = n,							  \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			  \

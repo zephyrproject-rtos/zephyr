@@ -8,3 +8,6 @@ properties:
   mdm-power-gpios:
     type: phandle-array
     required: true
+
+  zephyr,mdm-reset-behavior:
+    default: ["toggle_on_recovery"]

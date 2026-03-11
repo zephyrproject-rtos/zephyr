@@ -26,6 +26,9 @@
 
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/arch/common/init.h>
+#ifdef CONFIG_XTENSA
+#include <zephyr/zsr.h>
+#endif
 
 #if CONFIG_SOC_SERIES_ESP32C6
 #include <soc/hp_apm_reg.h>
@@ -307,10 +310,10 @@ void __start(void)
 	__asm__ __volatile__("wsr %0, PS" : : "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
 
 	/* Initialize the architecture CPU pointer.  Some of the
-	 * initialization code wants a valid arch_current_thread() before
+	 * initialization code wants a valid arch_curr_cpu() before
 	 * arch_kernel_init() is invoked.
 	 */
-	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
+	__asm__ __volatile__("wsr %0, " ZSR_CPU_STR "; rsync" : : "r"(&_kernel.cpus[0]));
 
 #endif /* CONFIG_RISCV_GP */
 

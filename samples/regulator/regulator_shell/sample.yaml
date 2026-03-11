@@ -1,0 +1,15 @@
+sample:
+  name: Regulator Shell Sample
+common:
+  tags:
+    - drivers
+    - regulator
+tests:
+  sample.regulator.regulator_shell:
+    platform_allow:
+      - arduino_nano_matter
+    depends_on: zephyr_i2c
+    tags:
+      - shield
+      - regulator
+    extra_args: SHIELD=arduino_modulino_latch_relay

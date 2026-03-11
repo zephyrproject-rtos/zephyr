@@ -36,10 +36,8 @@ bool usbh_class_is_matching(const struct usbh_class_filter *const filter_rules,
 
 /**
  * @brief Initialize all available host class instances.
- *
- * @param[in] uhs_ctx USB Host context to pass to the class.
  */
-void usbh_class_init_all(struct usbh_context *const uhs_ctx);
+void usbh_class_init_all(void);
 
 /**
  * @brief Probe an USB device function against all available host class instances.

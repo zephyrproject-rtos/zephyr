@@ -136,7 +136,7 @@ static int rts_fp_wdt_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api rts_fp_wdt_driver_api = {
+static DEVICE_API(wdt, rts_fp_wdt_driver_api) = {
 	.setup = rts_fp_wdt_setup,
 	.disable = rts_fp_wdt_disable,
 	.install_timeout = rts_fp_wdt_install_timeout,

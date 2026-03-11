@@ -19,6 +19,57 @@
 extern uint32_t SystemCoreClock;
 extern void nxp_nbu_init(void);
 
+#ifdef CONFIG_NXP_MCXW7XX_BOOT_HEADER
+extern char z_main_stack[];
+extern char _flash_used[];
+
+extern void z_arm_reset(void);
+extern void z_arm_nmi(void);
+extern void z_arm_hard_fault(void);
+extern void z_arm_mpu_fault(void);
+extern void z_arm_bus_fault(void);
+extern void z_arm_usage_fault(void);
+extern void z_arm_secure_fault(void);
+extern void z_arm_svc(void);
+extern void z_arm_debug_monitor(void);
+extern void z_arm_pendsv(void);
+extern void sys_clock_isr(void);
+extern void z_arm_exc_spurious(void);
+
+#ifdef CONFIG_USE_SWITCH
+#define PENDSV_VEC z_arm_exc_spurious
+#else
+#define PENDSV_VEC z_arm_pendsv
+#endif
+
+__imx_boot_ivt_section void (*const image_vector_table[])(void) = {
+	(void (*)())(z_main_stack + CONFIG_MAIN_STACK_SIZE), /* 0x00 */
+	z_arm_reset,                                         /* 0x04 */
+	z_arm_nmi,                                           /* 0x08 */
+	z_arm_hard_fault,                                    /* 0x0C */
+	z_arm_mpu_fault,                                     /* 0x10 */
+	z_arm_bus_fault,                                     /* 0x14 */
+	z_arm_usage_fault,                                   /* 0x18 */
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+	z_arm_secure_fault, /* 0x1C */
+#else
+	z_arm_exc_spurious,
+#endif                                               /* CONFIG_ARM_SECURE_FIRMWARE */
+	(void (*)())((uintptr_t)_flash_used),        /* 0x20, imageLength. */
+	0,                                           /* 0x24, imageType (Plain Image) */
+	0,                                           /* 0x28, authBlockOffset/crcChecksum */
+	z_arm_svc,                                   /* 0x2C */
+	z_arm_debug_monitor,                         /* 0x30 */
+	(void (*)())((uintptr_t)image_vector_table), /* 0x34, imageLoadAddress. */
+	PENDSV_VEC,                                /* 0x38 */
+#if defined(CONFIG_SYS_CLOCK_EXISTS) && defined(CONFIG_CORTEX_M_SYSTICK_INSTALL_ISR)
+	sys_clock_isr, /* 0x3C */
+#else
+	z_arm_exc_spurious,
+#endif
+};
+#endif /* CONFIG_NXP_MCXW7XX_BOOT_HEADER */
+
 __weak void clock_init(void)
 {
 #if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
@@ -60,11 +111,20 @@ __weak void clock_init(void)
 
 	CLOCK_SetXtal32Freq(32768U);
 
+	const scg_firc_trim_config_t scg_firc_trim_config = {
+		.trimMode = kSCG_FircTrimUpdate,   /* FIRC trim is enabled and */
+						   /* trim value update is enabled */
+		.trimSrc = kSCG_FircTrimSrcSysOsc, /* Trim source is System OSC */
+		.trimDiv = 31U,                    /* Divided by 32 */
+		.trimCoar = 0U, /* Trim value, see Reference Manual for more information */
+		.trimFine = 0U, /* Trim value, see Reference Manual for more information */
+	};
+
 	/* Configuration to set FIRC to maximum frequency */
 	scg_firc_config_t scg_firc_config = {
 		.enableMode = kSCG_FircEnable, /* Fast IRC is enabled */
 		.range = kSCG_FircRange96M,    /* 96 Mhz FIRC clock selected */
-		.trimConfig = NULL,
+		.trimConfig = &scg_firc_trim_config,
 	};
 
 	scg_sys_clk_config_t sys_clk_safe_config_source = {
@@ -258,8 +318,39 @@ void soc_early_init_hook(void)
 
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
+}
 
+static int soc_nbu_init(void)
+{
 #if defined(CONFIG_NXP_NBU)
 	nxp_nbu_init();
+#else
+	/* Shutdown NBU as not used */
+
+	/* Reset all RFMC registers and put the NBU CM3 in reset */
+	RFMC->CTRL |= RFMC_CTRL_RFMC_RST(0x1U);
+	/* Wait for a few microseconds before releasing the NBU reset,
+	 * without this the system may hang in the loop waiting for FRO clock valid
+	 */
+	k_busy_wait(31U);
+	/* Release NBU reset */
+	RFMC->CTRL &= ~RFMC_CTRL_RFMC_RST_MASK;
+
+	/* NBU was probably in low power before the RFMC reset, so we need to wait for the FRO clock
+	 * to be valid before accessing RF_CMC
+	 */
+	while ((RFMC->RF2P4GHZ_STAT & RFMC_RF2P4GHZ_STAT_FRO_CLK_VLD_STAT_MASK) == 0U) {
+		;
+	}
+
+	/* Force low power entry request to the radio domain */
+	RF_CMC1->RADIO_LP |= RF_CMC1_RADIO_LP_CK(0x2);
+	RFMC->RF2P4GHZ_CTRL |= RFMC_RF2P4GHZ_CTRL_LP_ENTER(0x1U);
 #endif
+	return 0;
 }
+
+/* soc_nbu_init may call k_busy_wait, which requires the system timer to be initialized
+ * (available by early PRE_KERNEL_2).
+ */
+SYS_INIT(soc_nbu_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

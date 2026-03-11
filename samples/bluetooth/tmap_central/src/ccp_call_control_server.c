@@ -16,10 +16,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 
-#define URI_LIST_LEN	2
-
-static const char *uri_list[URI_LIST_LEN] = {"skype", "tel"};
-
 static bool tbs_originate_call_cb(struct bt_conn *conn, uint8_t call_index,
 				  const char *caller_id)
 {
@@ -65,7 +61,7 @@ int ccp_call_control_server_init(void)
 	}
 
 	bt_tbs_register_cb(&tbs_cbs);
-	err = bt_tbs_set_uri_scheme_list(BT_TBS_GTBS_INDEX, (const char **)&uri_list, URI_LIST_LEN);
+	err = bt_tbs_set_uri_scheme_list(BT_TBS_GTBS_INDEX, "skype,tel");
 
 	return err;
 }

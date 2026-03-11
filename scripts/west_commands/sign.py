@@ -430,8 +430,10 @@ class RimageSigner(Signer):
             conf_dir = pathlib.Path(args.tool_data)
         elif self.cmake_cache.get('RIMAGE_CONFIG_PATH'):
             conf_dir = pathlib.Path(self.cmake_cache['RIMAGE_CONFIG_PATH'])
-        else:
+        elif self.sof_src_dir:
             conf_dir = self.sof_src_dir / 'tools' / 'rimage' / 'config'
+        else:
+            conf_dir = pathlib.Path(self.cmake_cache['BOARD_DIR']) / 'support'
         self.command.dbg(f'rimage config directory={conf_dir}')
         return conf_dir
 
@@ -554,33 +556,23 @@ class RimageSigner(Signer):
         if not args.quiet:
             command.inf('Signing with tool {}'.format(tool_path))
 
-        try:
-            sof_proj = command.manifest.get_projects(['sof'], allow_paths=False)
-            sof_src_dir = pathlib.Path(sof_proj[0].abspath)
-        except ValueError: # sof is the manifest
-            sof_src_dir = pathlib.Path(manifest.manifest_path()).parent
+        # CONFIG_RIMAGE_SIGNING_SCHEMA is only defined in SOF tree.
+        # If this does not exist, we assume that we are not building SOF.
+        rimage_schema = build_conf.get('CONFIG_RIMAGE_SIGNING_SCHEMA', None)
+        if rimage_schema:
+            self.sof_src_dir = pathlib.Path(manifest.manifest_path()).parent
+            self.generate_uuid_registry()
 
-        self.sof_src_dir = sof_src_dir
+            no_manifest = False
+        else:
+            self.sof_src_dir = None
 
+            # Non-SOF build does not have extended manifest data for
+            # rimage to process, which might result in rimage error.
+            # So skip it when not doing SOF builds.
+            no_manifest = True
 
         command.inf('Signing for SOC target ' + target)
-
-        # FIXME: deprecate --no-manifest and replace it with a much
-        # simpler and more direct `-- -e` which the user can _already_
-        # pass today! With unclear consequences right now...
-        if '--no-manifest' in args.tool_args:
-            no_manifest = True
-            args.tool_args.remove('--no-manifest')
-        else:
-            no_manifest = False
-
-        # Non-SOF build does not have extended manifest data for
-        # rimage to process, which might result in rimage error.
-        # So skip it when not doing SOF builds.
-        rimage_schema = build_conf.get('CONFIG_RIMAGE_SIGNING_SCHEMA', None)
-        if rimage_schema is None:
-            no_manifest = True
-            self.generate_uuid_registry()
 
         if no_manifest:
             extra_ri_args = [ ]
@@ -605,7 +597,14 @@ class RimageSigner(Signer):
         if '-k' not in sign_config_extra_args + args.tool_args:
             # rimage requires a key argument even when it does not sign
             cmake_default_key = cache.get('RIMAGE_SIGN_KEY', 'key placeholder from sign.py')
-            extra_ri_args += [ '-k', str(sof_src_dir / 'keys' / cmake_default_key) ]
+            if os.path.exists(cmake_default_key):
+                extra_ri_args += [ '-k', str(cmake_default_key) ]
+            else:
+                if self.sof_src_dir:
+                    key_path = self.sof_src_dir / 'keys'
+                else:
+                    key_path = self.rimage_config_dir()
+                extra_ri_args += [ '-k', str(key_path / cmake_default_key) ]
 
         if args.tool_data and '-c' in args.tool_args:
             command.wrn('--tool-data ' + args.tool_data + ' ignored! Overridden by: -- -c ... ')

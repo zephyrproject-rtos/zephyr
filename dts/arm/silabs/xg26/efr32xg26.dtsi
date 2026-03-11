@@ -20,8 +20,9 @@
 					  "rfeca1";
 			interrupts = <46 1>, <47 1>, <48 1>, <49 1>, <50 1>, <51 1>, <52 1>,
 				     <53 1>, <54 1>, <55 1>, <86 1>, <87 1>;
-			pa-2p4ghz = "highest";
+			pa-2p4ghz = "auto";
 			pa-initial-power-dbm = <10>;
+			pa-max-power-dbm = <20>;
 			pa-ramp-time-us = <10>;
 			pa-voltage-mv = <3300>;
 			radio-tx-high-power-supported;

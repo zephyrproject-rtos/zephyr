@@ -43,9 +43,10 @@ LOG_MODULE_REGISTER(stm32, CONFIG_GPIO_LOG_LEVEL);
  */
 static void gpio_stm32_isr(gpio_port_pins_t pin, void *arg)
 {
-	struct gpio_stm32_data *data = arg;
+	const struct device *dev = arg;
+	struct gpio_stm32_data *data = dev->data;
 
-	gpio_fire_callbacks(&data->cb, data->dev, pin);
+	gpio_fire_callbacks(&data->cb, dev, pin);
 }
 
 /**
@@ -609,7 +610,6 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 					      enum gpio_int_trig trig)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
-	struct gpio_stm32_data *data = dev->data;
 	const stm32_gpio_irq_line_t irq_line = stm32_gpio_intc_get_pin_irq_line(cfg->port, pin);
 	uint32_t irq_trigger = 0;
 	int err = 0;
@@ -664,7 +664,7 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 		}
 	}
 
-	if (stm32_gpio_intc_set_irq_callback(irq_line, gpio_stm32_isr, data) != 0) {
+	if (stm32_gpio_intc_set_irq_callback(irq_line, gpio_stm32_isr, (void *)dev) != 0) {
 		err = -EBUSY;
 		goto exit;
 	}
@@ -735,14 +735,6 @@ static int gpio_stm32_pm_action(const struct device *dev,
  */
 __maybe_unused static int gpio_stm32_init(const struct device *dev)
 {
-	struct gpio_stm32_data *data = dev->data;
-
-	data->dev = dev;
-
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		return -ENODEV;
-	}
-
 #if (defined(PWR_CR2_IOSV) || defined(PWR_SVMCR_IO2SV)) && \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpiog))
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
@@ -799,10 +791,10 @@ __maybe_unused static int gpio_stm32_init(const struct device *dev)
  * !!!Keep both lists in sync!!!
  */
 #define GPIO_PORTS_LWR \
-	a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, x, y, z
+	a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z
 
 #define GPIO_PORTS_UPR \
-	A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, X, Y, Z
+	A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
 
 #define DEVICE_INIT_IF_OKAY(idx, __suffix) \
 	GPIO_DEVICE_INIT_STM32_IF_OKAY(__suffix, GET_ARG_N(UTIL_INC(idx), GPIO_PORTS_UPR))

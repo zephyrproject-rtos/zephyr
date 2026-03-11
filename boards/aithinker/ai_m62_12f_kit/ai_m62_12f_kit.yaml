@@ -24,4 +24,5 @@ supported:
   - input
   - pwm
   - adc
+  - entropy
 vendor: bflb

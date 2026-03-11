@@ -9,7 +9,10 @@ BLE 5.0 specifications. With excellent ultra-low power consumption, enhanced enc
 line controller, smart door lock, battery camera, smart remote controller, Wi-Fi Speaker, Wi-Fi
 Full MAC NIC, BLE gateway, and smart POS, etc. For more information, check `RTL872XDA-EVB`_.
 
-The features include the following:
+Hardware
+********
+
+The features of RTL8721Dx include the following:
 
 - Dual cores: Real-M300 and Real-M200
 - 512KB on-chip SRAM
@@ -35,15 +38,19 @@ The features include the following:
 
 - Cryptographic hardware acceleration (TRNG, ECC, SHA-2, AES)
 
-For more information, Get application note and datasheet at `RTL8721Dx Series`_ depending on chip you use.
+For more information, refer to the `RTL8721Dx Application Note`_, the `RTL8721Dx Datasheet`_, and
+the `RTL8721Dx Pinmux Table`_, depending on the chip you are using.
 
 Supported Features
 ==================
 
 .. zephyr:board-supported-hw::
 
-Prerequisites
-*************
+System Requirements
+*******************
+
+Binary Blobs
+============
 
 Realtek HAL requires binary blobs in order work. Run the command below to retrieve those files.
 
@@ -55,42 +62,76 @@ Realtek HAL requires binary blobs in order work. Run the command below to retrie
 
    It is recommended running the command above after ``west update``.
 
-Building
-********
+Programming and Debugging
+*************************
 
-Here is an example for building the :zephyr:code-sample:`hello_world` application.
+.. zephyr:board-supported-runners::
+
+Building
+========
+
+An example of building the :zephyr:code-sample:`hello_world` application is shown below:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: rtl872xda_evb
-   :goals: buil
+   :goals: build
 
 Flashing
-********
+========
 
-When the build finishes, downloading images into flash by `AmebaImageTool`_:
+The standard ``flash`` target is supported by the board configuration.
 
-See the ApplicationNote chapter Image Tool from documentation links for more details.
+**Enter Download Mode**
 
-#. Environment Requirements: EX. WinXP, Win 7 or later, Microsoft .NET Framework 4.0.
-#. Connect chip and PC with USB wire.
-#. Choose the Device profiles according to the chip you use.
-#. Select the corresponding serial port and transmission baud rate. The default baud rate is 1500000.
-#. Select the images to be programmed and set the start address and end address according to the flash layout, refer to [ameba_flashcfg.c/Flash_layout].
-#. Click the Download button and start. The progress bar will show the download progress of each image and the log window will show the operation status.
+To flash the device, you must first put the SoC into download mode using the on-board FT232RL
+USB-to-UART converter. Follow these steps:
+
+1. USB Connection: Connect a USB cable to the ``USB2UART`` port.
+2. Enter Download Mode:
+
+   - Press and hold the ``Download`` button.
+   - While holding it, briefly press the ``Chip_En`` button to reset the SoC.
+   - Release the ``Download`` button after the reset.
+
+The SoC is now in download mode and ready to receive firmware.
 
 .. note::
 
-   For an empty chip, the bootloader and app image shall be downloaded.
+   The ``<port_name>`` placeholder in the flash command must be replaced with the actual serial port
+   (e.g., ``/dev/ttyUSB0`` on Linux or ``COM3`` on Windows).
+
+An example for flashing the :zephyr:code-sample:`hello_world` application is shown below:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: rtl872xda_evb
+   :goals: flash
+   :flash-args: --port <port_name>
+
+**Enter Normal Mode**
+
+After flashing completes successfully, press the ``Chip_En`` button once to reboot the SoC.
+The device then boots into normal mode and executes the flashed Zephyr firmware.
 
 Debugging
-*********
+=========
 
-Using SWD through PA30(SWD_CLK) and PA31(SWD_DAT).
+Debugging is supported via SWD using a J-Link debug probe connected to PA30 (SWD_CLK) and PA31 (SWD_DAT).
+An example debug command for the :zephyr:code-sample:`hello_world` application:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: rtl872xda_evb
+   :maybe-skip-config:
+   :goals: debug
 
 References
 **********
 
-.. _`RTL872XDA-EVB`: https://www.realmcu.com/en/Home/Product/add965ea-d661-4a63-9514-d18b6912f8ab#
-.. _`RTL8721Dx Series`: https://www.realmcu.com
-.. _`AmebaImageTool`: https://github.com/Ameba-AIoT/ameba-rtos/blob/master/tools/ameba/ImageTool/AmebaImageTool.exe
+.. target-notes::
+
+.. _`RTL872XDA-EVB`: https://aiot.realmcu.com/en/product/rtl8721dx.html
+.. _`RTL8721Dx Application Note`: https://aiot.realmcu.com/cn/latest/
+.. _`RTL8721Dx Datasheet`: https://aiot.realmcu.com/en/datasheet/index.html
+.. _`RTL8721Dx Pinmux Table`: https://aiot.realmcu.com/en/pinmux/pinmux_table.html

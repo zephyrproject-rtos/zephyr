@@ -171,7 +171,7 @@ int codec_init(uint8_t air_mode)
 	audio_cfg.dai_cfg.i2s.word_size = word_size;
 	audio_cfg.dai_cfg.i2s.channels = channels;
 	audio_cfg.dai_cfg.i2s.format = I2S_FMT_DATA_FORMAT_I2S;
-	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_SLAVE | I2S_OPT_BIT_CLK_SLAVE;
+	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_TARGET | I2S_OPT_BIT_CLK_TARGET;
 	audio_cfg.dai_cfg.i2s.frame_clk_freq = sample_rate;
 	audio_cfg.dai_cfg.i2s.mem_slab = &rx_mem_slab;
 	audio_cfg.dai_cfg.i2s.block_size = BLOCK_SIZE;
@@ -184,7 +184,7 @@ int codec_init(uint8_t air_mode)
 	config.word_size = word_size;
 	config.channels = channels;
 	config.format = I2S_FMT_DATA_FORMAT_I2S;
-	config.options = I2S_OPT_FRAME_CLK_MASTER | I2S_OPT_BIT_CLK_MASTER;
+	config.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER;
 	config.frame_clk_freq = sample_rate;
 	config.block_size = BLOCK_SIZE;
 	config.timeout = TIMEOUT;

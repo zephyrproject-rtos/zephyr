@@ -14,6 +14,22 @@ properties:
     type: phandle-array
     description: GPIO for modem reset
 
+  zephyr,mdm-reset-behavior:
+    type: string-array
+    enum:
+      - "hold_on_suspend"
+      - "toggle_on_resume"
+      - "toggle_on_recovery"
+    description: |
+      Behavior of modem reset GPIOs. Supported values are:
+      - hold_on_suspend: Hold the reset GPIOs asserted (logical high) when the modem is suspended.
+                         Release the reset GPIOs (logical low) when the modem is resumed from idle.
+      - toggle_on_resume: Toggle the modem reset GPIOs during resume from suspend.
+      - toggle_on_recovery: Toggle the modem reset GPIOs when a modem recovery is triggered,
+                            for example when modem fails to respond to initialization AT commands.
+
+      Multiple behaviors can be specified as a string array.
+
   mdm-wake-gpios:
     type: phandle-array
     description: GPIO for modem wake
@@ -48,3 +64,28 @@ properties:
     type: int
     description: Time in milliseconds after which CMUX will enter power save mode.
     default: 10000
+
+  zephyr,use-default-pdp-ctx:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Modem automatically configures and connects the default PDP context (cid=0) when
+      registered to the network.
+      If this is set to 1, the modem driver will not configure any APN or activate any
+      PDP contexts with AT+CGACT command.
+
+      Use enum to allow specific device bindings to override the default value.
+
+  zephyr,use-default-apn:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Modem automatically configures the APN name when registering to the network.
+      If this is set to 1, the modem driver will supply empty string as APN name when
+      configuring the PDP context with AT+CGDCONT=1,"IP","" command.
+
+      Use enum to allow specific device bindings to override the default value.

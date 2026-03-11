@@ -370,7 +370,8 @@ struct uvc_frame_still_image_descriptor {
 	uint8_t bCompression[1];
 } __packed;
 
-struct uvc_format_descriptor {
+/* This is not part of the standard */
+struct uvc_format_common_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
 	uint8_t bDescriptorSubtype;
@@ -409,7 +410,43 @@ struct uvc_format_mjpeg_descriptor {
 	uint8_t bCopyProtect;
 } __packed;
 
-struct uvc_format_frame_based_descriptor {
+struct uvc_format_h264_descriptor {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint8_t bFormatIndex;
+	uint8_t bNumFrameDescriptors;
+	uint8_t bDefaultFrameIndex;
+	uint8_t bMaxCodecConfigDelay;
+	uint8_t bmSupportedSliceModes;
+	uint8_t bmSuportedSyncFrameTypes;
+	uint8_t bResolutionScaling;
+	uint8_t bReserved1;
+	uint8_t bmSuportedRateControlModes;
+	/* NoScalability */
+	uint8_t wMaxMBperSecOneResolutionNoScalability;
+	uint8_t wMaxMBperSecTwoResolutionsNoScalability;
+	uint8_t wMaxMBperSecThreeResolutionsNoScalability;
+	uint8_t wMaxMBperSecFourResolutionsNoScalability;
+	/* TemporalScalability */
+	uint8_t wMaxMBperSecOneResolutionTemporalScalability;
+	uint8_t wMaxMBperSecTwoResolutionsTemporalScalability;
+	uint8_t wMaxMBperSecThreeResolutionsTemporalScalability;
+	uint8_t wMaxMBperSecFourResolutionsTemporalScalability;
+	/* TemporalSpatialScalability */
+	uint8_t wMaxMBperSecOneResolutionTemporalSpacialScalability;
+	uint8_t wMaxMBperSecTwoResolutionsTemporalSpacialScalability;
+	uint8_t wMaxMBperSecThreeResolutionsTemporalSpacialScalability;
+	uint8_t wMaxMBperSecFourResolutionsTemporalSpacialScalability;
+	/* FullScalability */
+	uint8_t wMaxMBperSecOneResolutionFullScalability;
+	uint8_t wMaxMBperSecTwoResolutionsFullScalability;
+	uint8_t wMaxMBperSecThreeResolutionsFullScalability;
+	uint8_t wMaxMBperSecFourResolutionsFullScalability;
+} __packed;
+
+/* For vendor-specific formats */
+struct uvc_format_framebased_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
 	uint8_t bDescriptorSubtype;
@@ -425,7 +462,8 @@ struct uvc_format_frame_based_descriptor {
 	uint8_t bVariableSize;
 } __packed;
 
-struct uvc_frame_descriptor {
+/* Not part of the standard, not matching H.264 descriptors */
+struct uvc_frame_common_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
 	uint8_t bDescriptorSubtype;
@@ -438,7 +476,7 @@ struct uvc_frame_descriptor {
 	/* Other fields depending on bDescriptorSubtype value */
 } __packed;
 
-struct uvc_frame_continuous_descriptor {
+struct uvc_frame_uncomp_continuous_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
 	uint8_t bDescriptorSubtype;
@@ -456,7 +494,7 @@ struct uvc_frame_continuous_descriptor {
 	uint32_t dwFrameIntervalStep;
 } __packed;
 
-struct uvc_frame_discrete_descriptor {
+struct uvc_frame_uncomp_discrete_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
 	uint8_t bDescriptorSubtype;
@@ -472,7 +510,7 @@ struct uvc_frame_discrete_descriptor {
 	uint32_t dwFrameInterval[USB_VIDEO_MAX_FRMIVAL];
 } __packed;
 
-struct uvc_frame_based_continuous_descriptor {
+struct uvc_frame_mjpeg_continuous_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
 	uint8_t bDescriptorSubtype;
@@ -482,6 +520,7 @@ struct uvc_frame_based_continuous_descriptor {
 	uint16_t wHeight;
 	uint32_t dwMinBitRate;
 	uint32_t dwMaxBitRate;
+	uint32_t dwMaxVideoFrameBufferSize;
 	uint32_t dwDefaultFrameInterval;
 	uint8_t bFrameIntervalType;
 	uint32_t dwMinFrameInterval;
@@ -489,7 +528,47 @@ struct uvc_frame_based_continuous_descriptor {
 	uint32_t dwFrameIntervalStep;
 } __packed;
 
-struct uvc_frame_based_discrete_descriptor {
+struct uvc_frame_mjpeg_discrete_descriptor {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint8_t bFrameIndex;
+	uint8_t bmCapabilities;
+	uint16_t wWidth;
+	uint16_t wHeight;
+	uint32_t dwMinBitRate;
+	uint32_t dwMaxBitRate;
+	uint32_t dwMaxVideoFrameBufferSize;
+	uint32_t dwDefaultFrameInterval;
+	uint8_t bFrameIntervalType;
+	uint32_t dwFrameInterval[USB_VIDEO_MAX_FRMIVAL];
+} __packed;
+
+struct uvc_frame_h264_descriptor {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint8_t bFrameIndex;
+	uint16_t wWidth;
+	uint16_t wHeight;
+	uint16_t wSARwidth;
+	uint16_t wSARheight;
+	uint16_t wProfile;
+	uint8_t bLevelIDC;
+	uint16_t wConstrainedToolset;
+	uint32_t bmSupportedUsages;
+	uint16_t bmCapabilities;
+	uint32_t bmSVCCapabilities;
+	uint32_t bmMVCCapabilities;
+	uint32_t dwMinBitRate;
+	uint32_t dwMaxBitRate;
+	uint32_t dwDefaultFrameInterval;
+	uint8_t bNumFrameIntervals;
+	uint32_t dwFrameInterval[USBD_VIDEO_MAX_FRMIVAL];
+} __packed;
+
+/* For vendor-specific formats */
+struct uvc_frame_framebased_continuous_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
 	uint8_t bDescriptorSubtype;
@@ -501,6 +580,26 @@ struct uvc_frame_based_discrete_descriptor {
 	uint32_t dwMaxBitRate;
 	uint32_t dwDefaultFrameInterval;
 	uint8_t bFrameIntervalType;
+	uint32_t dwBytesPerLine;
+	uint32_t dwMinFrameInterval;
+	uint32_t dwMaxFrameInterval;
+	uint32_t dwFrameIntervalStep;
+} __packed;
+
+/* For vendor-specific formats */
+struct uvc_frame_framebased_discrete_descriptor {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint8_t bFrameIndex;
+	uint8_t bmCapabilities;
+	uint16_t wWidth;
+	uint16_t wHeight;
+	uint32_t dwMinBitRate;
+	uint32_t dwMaxBitRate;
+	uint32_t dwDefaultFrameInterval;
+	uint8_t bFrameIntervalType;
+	uint32_t dwBytesPerLine;
 	uint32_t dwFrameInterval[USB_VIDEO_MAX_FRMIVAL];
 } __packed;
 

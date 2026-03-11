@@ -23,7 +23,7 @@ Building and measuring ROM size
 *******************************
 
 The following combinations are suggested for comparing ROM sizes in different
-configurations. They all target the :ref:`reel_board` (Arm Aarch32 architecture).
+configurations. They all target the :zephyr:board:`reel_board` (Arm Aarch32 architecture).
 
 * Multithreading enabled
 

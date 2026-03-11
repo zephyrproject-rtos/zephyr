@@ -10,3 +10,8 @@
 	usr-id = <1>;
 	status = "okay";
 };
+
+&main_rti9 {
+	interrupts = <0 0 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};

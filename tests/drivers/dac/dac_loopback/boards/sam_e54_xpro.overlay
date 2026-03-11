@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* DAC0 internally connected to ADC channel 30 */
+
+&dac {
+	refsel = "vdd_ana";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	dac0: channel@0 {
+		reg = <0>;
+		rate = <100>;
+		data-adj = "right";
+		refresh-period = <30>;
+		sampling-ratio = <1>;
+	};
+};
+
+&adc0 {
+	prescaler = <16>;
+	status = "okay";
+};

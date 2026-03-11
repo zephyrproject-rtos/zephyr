@@ -1365,7 +1365,8 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 			return -EALREADY;
 		}
 
-		if (addr->type == BT_ADDR_LE_PUBLIC && IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR)) {
+		if (addr->type == BT_ADDR_LE_PUBLIC &&
+		    (IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR) || IS_ENABLED(CONFIG_BT_HCI_VS))) {
 			/* set the single public address */
 			if (bt_dev.id_count != 0) {
 				return -EALREADY;

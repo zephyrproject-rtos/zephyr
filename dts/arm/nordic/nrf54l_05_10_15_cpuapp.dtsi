@@ -13,11 +13,6 @@ nvic: &cpuapp_nvic {};
 /delete-node/ &cpuflpr;
 /delete-node/ &cpuflpr_clic;
 
-#ifndef USE_NON_SECURE_ADDRESS_MAP
-/delete-node/ &cpuflpr_rram;
-/delete-node/ &cpuflpr_sram;
-#endif
-
 / {
 	chosen {
 		zephyr,bt-hci = &bt_hci_controller;

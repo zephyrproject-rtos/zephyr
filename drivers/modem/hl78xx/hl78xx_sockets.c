@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* Required for strnlen() */
+#include <string.h>
+#include <stdlib.h>
+#include <stddef.h>
+
 #include <zephyr/modem/chat.h>
 #include <zephyr/modem/backend/uart.h>
 #include <zephyr/kernel.h>
@@ -20,9 +27,6 @@
 #include <zephyr/net/tls_credentials.h>
 #endif
 
-#include <string.h>
-#include <stdlib.h>
-#include <stddef.h>
 #include "hl78xx.h"
 #include "hl78xx_chat.h"
 #include "hl78xx_cfg.h"
@@ -1215,8 +1219,8 @@ int dns_work_cb(const struct device *dev, bool hard_reset)
 	if (strlen(socket_data->dns.v4_string) > 0) {
 		struct net_sockaddr_in *addr4 = (struct net_sockaddr_in *)&dns_addr;
 
-		if (net_addr_pton(AF_INET, socket_data->dns.v4_string, &addr4->sin_addr) == 0) {
-			addr4->sin_family = AF_INET;
+		if (net_addr_pton(NET_PF_INET, socket_data->dns.v4_string, &addr4->sin_addr) == 0) {
+			addr4->sin_family = NET_PF_INET;
 			addr4->sin_port = 0;
 			valid_address = true;
 		}
@@ -1226,8 +1230,9 @@ int dns_work_cb(const struct device *dev, bool hard_reset)
 	if (!valid_address && strlen(socket_data->dns.v6_string) > 0) {
 		struct net_sockaddr_in6 *addr6 = (struct net_sockaddr_in6 *)&dns_addr;
 
-		if (net_addr_pton(AF_INET6, socket_data->dns.v6_string, &addr6->sin6_addr) == 0) {
-			addr6->sin6_family = AF_INET6;
+		if (net_addr_pton(NET_PF_INET6, socket_data->dns.v6_string, &addr6->sin6_addr)
+		    == 0) {
+			addr6->sin6_family = NET_PF_INET6;
 			addr6->sin6_port = 0;
 			valid_address = true;
 		}
@@ -2115,7 +2120,7 @@ static int handle_tls_sockopts(void *obj, int optname, const void *optval, net_s
 		return 0;
 
 	case ZSOCK_TLS_PEER_VERIFY:
-		if (*(const uint32_t *)optval != TLS_PEER_VERIFY_REQUIRED) {
+		if (*(const uint32_t *)optval != ZSOCK_TLS_PEER_VERIFY_REQUIRED) {
 			LOG_WRN("Disabling peer verification is not supported");
 		}
 		return 0;

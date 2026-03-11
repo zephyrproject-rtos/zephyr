@@ -713,6 +713,26 @@ static uint8_t get_ipaddr_diff(const uint8_t *src, const uint8_t *dst, int addr_
 
 	return len;
 }
+
+static void net_if_maddr_ref_init(struct net_if_mcast_addr *maddr)
+{
+	maddr->atomic_ref = ATOMIC_INIT(1);
+}
+
+static void net_if_maddr_ref(struct net_if_mcast_addr *maddr)
+{
+	atomic_inc(&maddr->atomic_ref);
+}
+
+static int net_if_maddr_unref(struct net_if_mcast_addr *maddr)
+{
+	if (atomic_get(&maddr->atomic_ref) <= 0) {
+		NET_ERR("Multicast address %p is freed already", maddr);
+		return -EINVAL;
+	}
+
+	return atomic_dec(&maddr->atomic_ref) - 1;
+}
 #endif /* CONFIG_NET_IP */
 
 #if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
@@ -865,9 +885,9 @@ static struct net_if_router *iface_router_add(struct net_if *iface,
 		routers[i].is_used = true;
 		routers[i].iface = iface;
 		routers[i].address.family = family;
+		routers[i].is_default = is_default;
 
 		if (lifetime) {
-			routers[i].is_default = true;
 			routers[i].is_infinite = false;
 			routers[i].lifetime = lifetime;
 			routers[i].life_start = k_uptime_get_32();
@@ -877,7 +897,6 @@ static struct net_if_router *iface_router_add(struct net_if *iface,
 
 			iface_router_update_timer(routers[i].life_start);
 		} else {
-			routers[i].is_default = false;
 			routers[i].is_infinite = true;
 			routers[i].lifetime = 0;
 		}
@@ -897,8 +916,6 @@ static struct net_if_router *iface_router_add(struct net_if *iface,
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
 			memcpy(net_if_router_ipv4(&routers[i]), addr,
 			       sizeof(struct net_in_addr));
-			routers[i].is_default = is_default;
-
 			net_mgmt_event_notify_with_info(
 					NET_EVENT_IPV4_ROUTER_ADD, iface,
 					&routers[i].address.in_addr,
@@ -1139,6 +1156,7 @@ out:
 #if defined(CONFIG_NET_IPV6_MLD)
 static void join_mcast_allnodes(struct net_if *iface)
 {
+	struct net_if_mcast_addr *maddr;
 	struct net_in6_addr addr;
 	int ret;
 
@@ -1148,8 +1166,14 @@ static void join_mcast_allnodes(struct net_if *iface)
 
 	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
 
+	maddr = net_if_ipv6_maddr_lookup(&addr, &iface);
+	if (maddr != NULL) {
+		/* Address already present. */
+		return;
+	}
+
 	ret = net_ipv6_mld_join(iface, &addr);
-	if (ret < 0 && ret != -EALREADY && ret != -ENETDOWN) {
+	if (ret < 0 && ret != -ENETDOWN) {
 		NET_ERR("Cannot join all nodes address %s for %d (%d)",
 			net_sprint_ipv6_addr(&addr),
 			net_if_get_by_iface(iface), ret);
@@ -1159,6 +1183,7 @@ static void join_mcast_allnodes(struct net_if *iface)
 static void join_mcast_solicit_node(struct net_if *iface,
 				    struct net_in6_addr *my_addr)
 {
+	struct net_if_mcast_addr *maddr;
 	struct net_in6_addr addr;
 	int ret;
 
@@ -1169,9 +1194,15 @@ static void join_mcast_solicit_node(struct net_if *iface,
 	/* Join to needed multicast groups, RFC 4291 ch 2.8 */
 	net_ipv6_addr_create_solicited_node(my_addr, &addr);
 
+	maddr = net_if_ipv6_maddr_lookup(&addr, &iface);
+	if (maddr != NULL) {
+		/* Address already present. */
+		return;
+	}
+
 	ret = net_ipv6_mld_join(iface, &addr);
 	if (ret < 0) {
-		if (ret != -EALREADY && ret != -ENETDOWN) {
+		if (ret != -ENETDOWN) {
 			NET_ERR("Cannot join solicit node address %s for %d (%d)",
 				net_sprint_ipv6_addr(&addr),
 				net_if_get_by_iface(iface), ret);
@@ -1690,7 +1721,7 @@ static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 					  ifaddr, next, rejoin_node) {
 		int ret;
 
-		ret = net_ipv6_mld_join(iface, &ifaddr->address.in6_addr);
+		ret = net_ipv6_mld_rejoin(iface, &ifaddr->address.in6_addr);
 		if (ret < 0) {
 			NET_ERR("Cannot join mcast address %s for %d (%d)",
 				net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
@@ -2256,9 +2287,11 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 		goto out;
 	}
 
-	if (net_if_ipv6_maddr_lookup(addr, &iface)) {
-		NET_WARN("Multicast address %s is already registered.",
-			net_sprint_ipv6_addr(addr));
+	ifmaddr = net_if_ipv6_maddr_lookup(addr, &iface);
+	if (ifmaddr != NULL) {
+		net_if_maddr_ref(ifmaddr);
+		NET_DBG("Multicast address %s is already registered (ref %ld).",
+			net_sprint_ipv6_addr(addr), atomic_get(&ifmaddr->atomic_ref));
 		goto out;
 	}
 
@@ -2268,7 +2301,10 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 		}
 
 		ipv6->mcast[i].is_used = true;
+		ipv6->mcast[i].is_joined = false;
 		ipv6->mcast[i].address.family = NET_AF_INET6;
+		net_if_maddr_ref_init(&ipv6->mcast[i]);
+
 		memcpy(&ipv6->mcast[i].address.in6_addr, addr, 16);
 
 		NET_DBG("[%zu] interface %d (%p) address %s added", i,
@@ -2294,6 +2330,7 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct net_in6_addr *addr)
 {
 	bool ret = false;
 	struct net_if_ipv6 *ipv6;
+	int refcount;
 
 	net_if_lock(iface);
 
@@ -2310,6 +2347,19 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct net_in6_addr *addr)
 		if (!net_ipv6_addr_cmp(&ipv6->mcast[i].address.in6_addr,
 				       addr)) {
 			continue;
+		}
+
+		refcount = net_if_maddr_unref(&ipv6->mcast[i]);
+		if (refcount > 0) {
+			NET_DBG("[%zu] interface %d (%p) address %s still in use (ref %ld)",
+				i, net_if_get_by_iface(iface), iface,
+				net_sprint_ipv6_addr(addr), atomic_get(&ipv6->mcast[i].atomic_ref));
+			goto out;
+		}
+		if (refcount < 0) {
+			/* Already released. */
+			ret = true;
+			goto out;
 		}
 
 		ipv6->mcast[i].is_used = false;
@@ -3017,9 +3067,10 @@ void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
 
 struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 					     const struct net_in6_addr *addr,
+					     bool is_default,
 					     uint16_t lifetime)
 {
-	return iface_router_add(iface, NET_AF_INET6, addr, false, lifetime);
+	return iface_router_add(iface, NET_AF_INET6, addr, is_default, lifetime);
 }
 
 bool net_if_ipv6_router_rm(struct net_if_router *router)
@@ -4836,11 +4887,24 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
 		goto out;
 	}
 
+	maddr = net_if_ipv4_maddr_lookup(addr, &iface);
+	if (maddr != NULL) {
+		NET_DBG("Multicast address %s is already registered (ref %ld).",
+			net_sprint_ipv4_addr(addr), atomic_get(&maddr->atomic_ref));
+		net_if_maddr_ref(maddr);
+		goto out;
+	}
+
 	maddr = ipv4_maddr_find(iface, false, NULL);
 	if (maddr) {
 		maddr->is_used = true;
+		maddr->is_joined = false;
 		maddr->address.family = NET_AF_INET;
 		maddr->address.in_addr.s4_addr32[0] = addr->s4_addr32[0];
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+		maddr->sources_len = 0;
+#endif
+		net_if_maddr_ref_init(maddr);
 
 		NET_DBG("interface %d (%p) address %s added",
 			net_if_get_by_iface(iface), iface,
@@ -4862,25 +4926,40 @@ bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct net_in_addr *addr)
 {
 	struct net_if_mcast_addr *maddr;
 	bool ret = false;
+	int refcount;
 
 	net_if_lock(iface);
 
 	maddr = ipv4_maddr_find(iface, true, addr);
-	if (maddr) {
-		maddr->is_used = false;
-
-		NET_DBG("interface %d (%p) address %s removed",
-			net_if_get_by_iface(iface), iface,
-			net_sprint_ipv4_addr(addr));
-
-		net_mgmt_event_notify_with_info(
-			NET_EVENT_IPV4_MADDR_DEL, iface,
-			&maddr->address.in_addr,
-			sizeof(struct net_in_addr));
-
-		ret = true;
+	if (maddr == NULL) {
+		goto out;
 	}
 
+	refcount = net_if_maddr_unref(maddr);
+	if (refcount > 0) {
+		NET_DBG("interface %d (%p) address %s still in use (ref %ld)",
+			net_if_get_by_iface(iface), iface, net_sprint_ipv4_addr(addr),
+			atomic_get(&maddr->atomic_ref));
+		goto out;
+	}
+	if (refcount < 0) {
+		/* Already released. */
+		ret = true;
+		goto out;
+	}
+
+	maddr->is_used = false;
+
+	NET_DBG("interface %d (%p) address %s removed",
+		net_if_get_by_iface(iface), iface, net_sprint_ipv4_addr(addr));
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_MADDR_DEL, iface,
+					&maddr->address.in_addr,
+					sizeof(struct net_in_addr));
+
+	ret = true;
+
+out:
 	net_if_unlock(iface);
 
 	return ret;
@@ -5151,7 +5230,7 @@ static void rejoin_ipv4_mcast_groups(struct net_if *iface)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&rejoin_needed, ifaddr, next, rejoin_node) {
 		int ret;
 
-		ret = net_ipv4_igmp_join(iface, &ifaddr->address.in_addr, NULL);
+		ret = net_ipv4_igmp_rejoin(iface, &ifaddr->address.in_addr);
 		if (ret < 0) {
 			NET_ERR("Cannot join mcast address %s for %d (%d)",
 				net_sprint_ipv4_addr(&ifaddr->address.in_addr),

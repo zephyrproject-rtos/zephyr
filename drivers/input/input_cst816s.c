@@ -19,9 +19,10 @@
 
 LOG_MODULE_REGISTER(cst816s, CONFIG_INPUT_LOG_LEVEL);
 
-#define CST816S_CHIP_ID1 0xB4
-#define CST816S_CHIP_ID2 0xB5
-#define CST816S_CHIP_ID3 0xB6
+#define CST816S_CHIP_ID 0xB4
+#define CST816T_CHIP_ID 0xB5
+#define CST816D_CHIP_ID 0xB6
+#define CST820_CHIP_ID  0xB7
 
 #define CST816S_REG_DATA                0x00
 #define CST816S_REG_GESTURE_ID          0x01
@@ -243,15 +244,23 @@ static int cst816s_chip_init(const struct device *dev)
 		LOG_ERR("I2C bus %s not ready", cfg->i2c.bus->name);
 		return -ENODEV;
 	}
+
 	ret = i2c_reg_read_byte_dt(&cfg->i2c, CST816S_REG_CHIP_ID, &chip_id);
 	if (ret < 0) {
 		LOG_ERR("Failed reading chip id (%d)", ret);
 		return ret;
 	}
 
-	if ((chip_id != CST816S_CHIP_ID1) && (chip_id != CST816S_CHIP_ID2) &&
-	    (chip_id != CST816S_CHIP_ID3)) {
-		LOG_ERR("Wrong chip id: returned 0x%x", chip_id);
+	switch (chip_id) {
+	case CST816S_CHIP_ID:
+	case CST816T_CHIP_ID:
+	case CST816D_CHIP_ID:
+	case CST820_CHIP_ID:
+		/* Valid chip IDs */
+		break;
+
+	default:
+		LOG_ERR("CST8XXX unsupported chip id: returned 0x%x", chip_id);
 		return -ENODEV;
 	}
 

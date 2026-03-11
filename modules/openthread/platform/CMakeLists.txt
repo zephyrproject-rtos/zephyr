@@ -44,3 +44,5 @@ if(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
   zephyr_include_directories(${ZEPHYR_BASE}/subsys/net/l2/openthread)
   zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/lib/dns)
 endif()
+
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)

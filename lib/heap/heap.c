@@ -13,6 +13,9 @@
 #include <sanitizer/msan_interface.h>
 #endif
 
+/* Validate the `kernel.h` macro */
+BUILD_ASSERT(_Z_HEAP_SIZE == sizeof(struct z_heap), "Incorrect _Z_HEAP_SIZE value");
+
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 static inline void increase_allocated_bytes(struct z_heap *h, size_t num_bytes)
 {

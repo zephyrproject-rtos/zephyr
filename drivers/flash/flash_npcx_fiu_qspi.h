@@ -109,6 +109,15 @@ void qspi_npcx_fiu_mutex_lock(const struct device *dev);
 void qspi_npcx_fiu_mutex_unlock(const struct device *dev);
 
 /**
+ * @brief Check if the npcx qspi bus controller is locked.
+ *
+ * @param dev Pointer to the device structure for qspi bus controller instance.
+ *
+ * @return true if the mutex is locked, false otherwise.
+ */
+bool qspi_npcx_fiu_mutex_is_locked(const struct device *dev);
+
+/**
  * @brief Apply qspi configuration
  *
  * @param dev Pointer to the device structure for qspi bus controller instance.

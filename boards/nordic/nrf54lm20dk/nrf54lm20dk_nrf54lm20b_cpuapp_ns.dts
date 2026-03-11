@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#define USE_NON_SECURE_ADDRESS_MAP 1
+
+#include <nordic/nrf54lm20b_cpuapp.dtsi>
+#include "nrf54lm20_a_b_cpuapp_common.dtsi"
+
+/ {
+	compatible = "nordic,nrf54lm20dk_nrf54lm20b-cpuapp-ns";
+	model = "Nordic nRF54LM20 DK nRF54LM20B Application MCU Non-Secure";
+
+	chosen {
+		zephyr,code-partition = &slot0_ns_partition;
+		zephyr,sram = &sram0_ns;
+		zephyr,entropy = &psa_rng;
+	};
+
+	/delete-node/ rng;
+
+	psa_rng: psa-rng {
+		status = "okay";
+	};
+};
+
+&bt_hci_controller {
+	status = "disabled";
+};
+
+&uart30 {
+	/* Disable so that TF-M can use this UART */
+	status = "disabled";
+};
+
+/* Include default memory partition configuration file */
+#include <vendor/nordic/nrf54lm20b_cpuapp_ns_partition.dtsi>

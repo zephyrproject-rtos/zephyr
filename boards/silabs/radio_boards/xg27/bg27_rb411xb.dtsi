@@ -5,6 +5,8 @@
  */
 
 #include <silabs/xg27/efr32bg27c320f768gj39.dtsi>
+#include <silabs/xg27/clock-hfrcodpll.dtsi>
+#include <silabs/xg27/clock-lfxo.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
@@ -86,14 +88,9 @@
 	};
 };
 
-&cpu0 {
-	clock-frequency = <76800000>;
-};
-
 &itm {
 	pinctrl-0 = <&itm_default>;
 	pinctrl-names = "default";
-	swo-ref-frequency = <DT_FREQ_K(76800)>;
 };
 
 &hfxo {
@@ -106,32 +103,6 @@
 	ctune = <63>;
 	precision = <50>;
 	status = "okay";
-};
-
-&hfrcodpll {
-	clock-frequency = <DT_FREQ_K(76800)>;
-	clocks = <&hfxo>;
-	dpll-autorecover;
-	dpll-edge = "fall";
-	dpll-lock = "phase";
-	dpll-m = <1919>;
-	dpll-n = <3839>;
-};
-
-&em23grpaclk {
-	clocks = <&lfxo>;
-};
-
-&em4grpaclk {
-	clocks = <&lfxo>;
-};
-
-&rtccclk {
-	clocks = <&lfxo>;
-};
-
-&wdog0clk {
-	clocks = <&lfxo>;
 };
 
 &usart1 {

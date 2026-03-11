@@ -284,7 +284,7 @@ static int hub12_set_orientation(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static const struct display_driver_api hub12_api = {
+static DEVICE_API(display, hub12_api) = {
 	.blanking_on = hub12_blanking_on,
 	.blanking_off = hub12_blanking_off,
 	.write = hub12_write,

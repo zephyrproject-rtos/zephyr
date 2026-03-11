@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020 TriaGnoSys GmbH
  * Copyright (c) 2025 Silicon Laboratories Inc.
+ * Copyright (c) 2026 Phuc Hoang <donp172748@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -364,6 +365,11 @@
 			interrupts = <4 2>;
 			status = "disabled";
 
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "silabs,timer-pwm";
 				#pwm-cells = <3>;
@@ -380,6 +386,11 @@
 			interrupt-names = "timer1";
 			interrupts = <5 2>;
 			status = "disabled";
+
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
 
 			pwm {
 				compatible = "silabs,timer-pwm";
@@ -398,6 +409,11 @@
 			interrupts = <6 2>;
 			status = "disabled";
 
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "silabs,timer-pwm";
 				#pwm-cells = <3>;
@@ -414,6 +430,11 @@
 			interrupt-names = "timer3";
 			interrupts = <7 2>;
 			status = "disabled";
+
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
 
 			pwm {
 				compatible = "silabs,timer-pwm";
@@ -432,6 +453,11 @@
 			interrupts = <8 2>;
 			status = "disabled";
 
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "silabs,timer-pwm";
 				#pwm-cells = <3>;
@@ -449,7 +475,7 @@
 		};
 
 		burtc0: burtc@50064000 {
-			compatible = "silabs,gecko-burtc";
+			compatible = "silabs,burtc-counter";
 			reg = <0x50064000 0x4000>;
 			clocks = <&cmu CLOCK_BURTC CLOCK_BRANCH_EM4GRPACLK>;
 			interrupt-names = "burtc";

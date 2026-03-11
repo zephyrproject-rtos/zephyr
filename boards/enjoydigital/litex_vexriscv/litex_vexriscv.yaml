@@ -15,6 +15,7 @@ supported:
   - gpio
   - uart
   - spi
+  - sdhc
   - i2s
   - i2c
   - netif:eth

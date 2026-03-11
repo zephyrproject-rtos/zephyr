@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <silabs/xg22/efr32mg22c224f512im40.dtsi>
+#include <silabs/xg22/clock-lfxo.dtsi>
 #include "xg22_radio_board.dtsi"
 
 / {
@@ -81,26 +82,6 @@
 	ctune = <37>;
 	precision = <50>;
 	status = "okay";
-};
-
-&prortcclk {
-	clocks = <&lfxo>;
-};
-
-&rtccclk {
-	clocks = <&lfxo>;
-};
-
-&wdog0clk {
-	clocks = <&lfxo>;
-};
-
-&em23grpaclk {
-	clocks = <&lfxo>;
-};
-
-&em4grpaclk {
-	clocks = <&lfxo>;
 };
 
 &radio {

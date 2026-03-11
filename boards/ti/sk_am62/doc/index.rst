@@ -4,7 +4,12 @@ Overview
 ********
 
 The SK-AM62 board configuration is used by Zephyr applications that run on
-the TI AM62x platform. The board configuration provides support for:
+the TI AM62x platform. This configuration supports two board variants:
+
+- SK-AM62 (base variant)
+- SK-AM62B-P1 (variant with integrated PMIC)
+
+Both variants use the AM6254 SoC. The board configuration provides support for:
 
 - ARM Cortex-M4F MCU core and the following features:
 
@@ -25,7 +30,7 @@ See the `TI AM62X Product Page`_ for details.
 
 Hardware
 ********
-The SK-AM62 EVM features the AM62x SoC, which is composed of a quad Cortex-A53
+The SK-AM62 EVM features the AM6254 SoC, which is composed of a quad Cortex-A53
 cluster and a single Cortex-M4 core in the MCU domain. Zephyr is ported to run on
 the M4F and A53 cores. The following listed hardware specifications are used:
 
@@ -83,7 +88,7 @@ To test the M4F core, we build the :zephyr:code-sample:`hello_world` sample with
 .. code-block:: console
 
    # From the root of the Zephyr repository
-   west build -p -b sk_am62/am6234/m4 samples/hello_world
+   west build -p -b sk_am62/am6254/m4 samples/hello_world
 
 This builds the program and the binary is present in the :file:`build/zephyr` directory as
 :file:`zephyr.elf`.
@@ -118,7 +123,18 @@ Use U-Boot to load and kick zephyr.bin:
 
     fatload mmc 1:1 0x82000000 zephyr.bin; go 0x82000000
 
-The Zephyr application should start running on the A53 core.
+The Zephyr application should start running on the A53 core. When running the
+hello_world sample, you should see output similar to:
+
+.. code-block:: console
+
+    *** Booting Zephyr OS build v4.3.0-4646-g13fc152f3546 ***
+    Secondary CPU core 1 (MPID:0x1) is up
+    Secondary CPU core 2 (MPID:0x2) is up
+    Secondary CPU core 3 (MPID:0x3) is up
+    Hello World! sk_am62/am6254/a53
+
+This indicates that all four A53 cores have successfully booted.
 
 Debugging
 *********
@@ -129,7 +145,7 @@ The board is equipped with an XDS110 JTAG debugger. To debug a binary, utilize t
 
 .. zephyr-app-commands::
    :app: <my_app>
-   :board: sk_am62/am6234/m4
+   :board: sk_am62/am6254/m4
    :maybe-skip-config:
    :goals: debug
 
@@ -137,7 +153,7 @@ The board is equipped with an XDS110 JTAG debugger. To debug a binary, utilize t
 
 .. zephyr-app-commands::
    :app: <my_app>
-   :board: sk_am62/am6234/a53
+   :board: sk_am62/am6254/a53
    :maybe-skip-config:
    :goals: debug
 

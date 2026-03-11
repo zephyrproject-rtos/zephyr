@@ -884,7 +884,8 @@ static int on_header_value(struct http_parser *parser,
 			}
 
 			if (ctx->has_upgrade_header) {
-				if (strcasecmp(ctx->header_buffer, "h2c") == 0) {
+				if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) &&
+				    strcasecmp(ctx->header_buffer, "h2c") == 0) {
 					ctx->http2_upgrade = true;
 				} else if (strcasecmp(ctx->header_buffer, "websocket") == 0) {
 					ctx->websocket_upgrade = true;
@@ -1081,7 +1082,7 @@ int handle_http1_request(struct http_client_ctx *client)
 			goto upgrade_not_found;
 		}
 
-		if (client->http2_upgrade) {
+		if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) && client->http2_upgrade) {
 			ret = handle_http1_to_http2_upgrade(client);
 			if (ret < 0) {
 				goto error;

@@ -223,6 +223,10 @@
 	status = "okay";
 };
 
+&dac2 {
+	status = "okay";
+};
+
 &enet {
 	status = "okay";
 };

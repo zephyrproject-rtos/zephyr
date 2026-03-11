@@ -6,11 +6,11 @@
 config CPU_CORTEX_M
 	bool
 	select CPU_CORTEX
-	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN if !USE_SWITCH
 	select HAS_CMSIS_CORE
 	select HAS_FLASH_LOAD_OFFSET
 	select ARCH_HAS_SINGLE_THREAD_SUPPORT
-	select ARCH_HAS_THREAD_ABORT
+	select ARCH_HAS_THREAD_ABORT if  !USE_SWITCH
 	select ARCH_HAS_TRUSTED_EXECUTION if ARM_TRUSTZONE_M
 	select ARCH_HAS_STACK_PROTECTION if (ARM_MPU && !ARMV6_M_ARMV8_M_BASELINE) || CPU_CORTEX_M_HAS_SPLIM
 	select ARCH_HAS_USERSPACE if ARM_MPU
@@ -156,6 +156,22 @@ config STACK_ALIGN_DOUBLE_WORD
 	  of stack upon exception entry on Cortex-M3 and Cortex-M4 (ARMv7-M).
 	  Note that for ARMv6-M, ARMv8-M, and Cortex-M7 MCUs stack alignment
 	  on exception entry is enabled by default and it is not configurable.
+
+config SLOW_FLASH_DATA
+	bool
+	depends on !ARMV6_M_ARMV8_M_BASELINE
+	help
+	 On some SoC, accessing the rodata is slower than accessing the instructions (generally
+	 because data cache is missing). Therefore, all accesses to data stored in flash penalize
+	 performance. Use this option to use assembly instructions rather than literal pools (data
+	 interleaved with code).
+
+	 With current GCC versions (14.x), this option is incompatible with Thread Local Storage
+	 (TLS). User may either:
+	   - Use a patched version of gcc (preferred option), or
+	   - Rebuild libc (CONFIG_PICOLIBC_USE_MODULE=y) without TLS support
+	     (CONFIG_THREAD_LOCAL_STORAGE=n). In this case, access to "errno" will no longer be
+	     thread-safe.
 
 config RUNTIME_NMI
 	bool "Attach an NMI handler at runtime"

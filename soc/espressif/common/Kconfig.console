@@ -56,6 +56,7 @@ config ESP_CONSOLE_USB_SERIAL_JTAG
 
 config ESP_CONSOLE_UART_NUM
 	int
+	default 0 if ESP32_ULP_HP_UART_CONSOLE_PRINT
 	default 0 if $(dt_nodelabel_enabled,uart0) && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CONSOLE)) = $(dt_nodelabel_reg_addr_hex,uart0)
 	default 1 if $(dt_nodelabel_enabled,uart1) && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CONSOLE)) = $(dt_nodelabel_reg_addr_hex,uart1)
 	default 2 if $(dt_nodelabel_enabled,uart2) && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CONSOLE)) = $(dt_nodelabel_reg_addr_hex,uart2)

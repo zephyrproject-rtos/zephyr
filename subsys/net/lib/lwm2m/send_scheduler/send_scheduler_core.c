@@ -54,11 +54,6 @@ static void send_sched_age_work_handler(struct k_work *work);
 static void send_sched_clear_cached_rules(struct send_sched_rule_entry *entry);
 static void send_sched_refresh_cached_rules(struct send_sched_rule_entry *entry);
 
-static void send_sched_log_decision(const char *verb, const char *path_str, const char *reason)
-{
-	LOG_DBG("%s %s: %s", verb, path_str, reason);
-}
-
 /* Compare two LwM2M paths for equality */
 static bool send_sched_paths_equal(const struct lwm2m_obj_path *lhs,
 				   const struct lwm2m_obj_path *rhs)
@@ -354,7 +349,6 @@ void send_sched_pmax_work_handler(struct k_work *work)
 	struct lwm2m_time_series_resource *cache_entry;
 	int ret;
 	int64_t now_ms;
-	char path_buf[LWM2M_MAX_PATH_STR_SIZE];
 
 	entry->pmax_timer_active = false;
 
@@ -378,7 +372,6 @@ void send_sched_pmax_work_handler(struct k_work *work)
 
 	if (entry->has_last_reported) {
 		struct lwm2m_time_series_elem elem = entry->last_reported;
-		const char *path_str = lwm2m_path_log_buf(path_buf, &path);
 		char reason[64];
 		time_t ts = time(NULL);
 
@@ -396,8 +389,13 @@ void send_sched_pmax_work_handler(struct k_work *work)
 			entry->has_last_reported = true;
 			snprintk(reason, sizeof(reason), "pmax %d expired (cached)",
 				 entry->pmax_seconds);
-			send_sched_log_decision("Cache", path_str, reason);
-			send_sched_schedule_age_check();
+#if IS_ENABLED(CONFIG_LWM2M_SEND_SCHEDULER_LOG_LEVEL_DBG)
+				char path_buf[LWM2M_MAX_PATH_STR_SIZE];
+
+					LOG_DBG("%s %s: %s", "Cache",
+						lwm2m_path_log_buf(path_buf, &path), reason);
+#endif
+				send_sched_schedule_age_check();
 		}
 	} else {
 		LOG_DBG("pmax timer fired for %s before any sample cached", entry->path);
@@ -714,9 +712,10 @@ bool lwm2m_send_sched_cache_filter(const struct lwm2m_obj_path *path,
 	double sample_value;
 	bool trigger = false;
 	bool trigger_due_to_pmin_expiry = false;
+#if IS_ENABLED(CONFIG_LWM2M_SEND_SCHEDULER_LOG_LEVEL_DBG)
 	char path_buf[LWM2M_MAX_PATH_STR_SIZE];
 	struct lwm2m_obj_path path_copy;
-	const char *path_str = "unknown";
+#endif
 	char keep_reason[96] = {0};
 	char drop_reason[96] = {0};
 	bool drop_reason_set = false;
@@ -726,19 +725,25 @@ bool lwm2m_send_sched_cache_filter(const struct lwm2m_obj_path *path,
 		return true;
 	}
 
-	path_copy = *path;
-	path_str = lwm2m_path_log_buf(path_buf, &path_copy);
 	sample_value = element->f;
 	now_ms = k_uptime_get();
 
 	if (scheduler_paused) {
-		send_sched_log_decision("Drop", path_str, "scheduler paused");
+#if IS_ENABLED(CONFIG_LWM2M_SEND_SCHEDULER_LOG_LEVEL_DBG)
+		path_copy = *path;
+		LOG_DBG("%s %s: %s", "Drop", lwm2m_path_log_buf(path_buf, &path_copy),
+			"scheduler paused");
+#endif
 		return false;
 	}
 
 	entry_idx = send_sched_find_rule_entry(path, &entry_path);
 	if (entry_idx < 0) {
-		send_sched_log_decision("Drop", path_str, "no rule entry");
+#if IS_ENABLED(CONFIG_LWM2M_SEND_SCHEDULER_LOG_LEVEL_DBG)
+		path_copy = *path;
+		LOG_DBG("%s %s: %s", "Drop", lwm2m_path_log_buf(path_buf, &path_copy),
+			"no rule entry");
+#endif
 		return false;
 	}
 
@@ -877,7 +882,10 @@ bool lwm2m_send_sched_cache_filter(const struct lwm2m_obj_path *path,
 		if (!drop_reason_set) {
 			snprintk(drop_reason, sizeof(drop_reason), "no rule triggered");
 		}
-		send_sched_log_decision("Drop", path_str, drop_reason);
+#if IS_ENABLED(CONFIG_LWM2M_SEND_SCHEDULER_LOG_LEVEL_DBG)
+		path_copy = *path;
+		LOG_DBG("%s %s: %s", "Drop", lwm2m_path_log_buf(path_buf, &path_copy), drop_reason);
+#endif
 		return false;
 	}
 
@@ -893,7 +901,11 @@ bool lwm2m_send_sched_cache_filter(const struct lwm2m_obj_path *path,
 			snprintk(drop_reason, sizeof(drop_reason),
 				 "pmin %d active (%lld ms remaining)", pmin_seconds,
 				 (long long)remaining_ms);
-			send_sched_log_decision("Defer", path_str, drop_reason);
+#if IS_ENABLED(CONFIG_LWM2M_SEND_SCHEDULER_LOG_LEVEL_DBG)
+			path_copy = *path;
+			LOG_DBG("%s %s: %s", "Defer", lwm2m_path_log_buf(path_buf, &path_copy),
+				drop_reason);
+#endif
 			return false;
 		}
 	}
@@ -924,7 +936,10 @@ bool lwm2m_send_sched_cache_filter(const struct lwm2m_obj_path *path,
 		snprintk(keep_reason, sizeof(keep_reason), "rule triggered");
 	}
 
-	send_sched_log_decision("Keep", path_str, keep_reason);
+#if IS_ENABLED(CONFIG_LWM2M_SEND_SCHEDULER_LOG_LEVEL_DBG)
+	path_copy = *path;
+	LOG_DBG("%s %s: %s", "Keep", lwm2m_path_log_buf(path_buf, &path_copy), keep_reason);
+#endif
 	send_sched_record_cached_sample();
 	send_sched_maybe_flush_on_full(entry);
 	send_sched_schedule_age_check();

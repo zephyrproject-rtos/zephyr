@@ -31,7 +31,6 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
@@ -1714,7 +1713,7 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 	struct bt_bap_ep *ep;
 	int err;
 
-	CHECKIF(conn == NULL || stream == NULL || codec_cfg == NULL || qos_pref == NULL) {
+	if (conn == NULL || stream == NULL || codec_cfg == NULL || qos_pref == NULL) {
 		LOG_DBG("NULL value(s) supplied)");
 		return -EINVAL;
 	}
@@ -3184,7 +3183,6 @@ static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t
 }
 
 static struct bt_iso_server iso_server = {
-	.sec_level = BT_SECURITY_L2,
 	.accept = ascs_iso_accept,
 };
 

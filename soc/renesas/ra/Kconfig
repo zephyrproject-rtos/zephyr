@@ -46,4 +46,12 @@ config RENESAS_RA_BATTERY_BACKUP_MANUAL_CONFIGURE
 	  Enable if this SoC's battery backup domain allows switching to VBAT manually.
 	  Leave disabled if switching is automatic.
 
+# Promptless (non-user) config options
+
+config SOC_RA_DYNAMIC_INTERRUPT_NUMBER
+	bool
+	help
+	  Indicates that the interrupt numbers are not fixed and can be assigned dynamically
+	  when the SoC selects this configuration
+
 endif # SOC_FAMILY_RENESAS_RA

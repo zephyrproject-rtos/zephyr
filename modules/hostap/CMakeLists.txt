@@ -47,6 +47,8 @@ zephyr_library_compile_definitions(
   CONFIG_CTRL_IFACE_ZEPHYR
   CONFIG_SUITEB192
   CONFIG_SUITEB
+  # Though MbedTLS is not FIPS compliant, we don't want to use broken crypto algorithms
+  CONFIG_FIPS
 )
 
 
@@ -297,8 +299,6 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
   ${HOSTAP_SRC_BASE}/crypto/aes-internal-enc.c
   ${HOSTAP_SRC_BASE}/crypto/aes-internal-dec.c
   ${HOSTAP_SRC_BASE}/crypto/aes-omac1.c
-  ${HOSTAP_SRC_BASE}/crypto/md5.c
-  ${HOSTAP_SRC_BASE}/crypto/md5-internal.c
   ${HOSTAP_SRC_BASE}/crypto/sha1.c
   ${HOSTAP_SRC_BASE}/crypto/sha1-internal.c
   ${HOSTAP_SRC_BASE}/crypto/sha1-pbkdf2.c
@@ -448,14 +448,6 @@ zephyr_library_compile_definitions_ifdef(CONFIG_EAP_PEAP
   EAP_PEAP
 )
 
-zephyr_library_sources_ifdef(CONFIG_EAP_MD5
-  ${HOSTAP_SRC_BASE}/eap_peer/eap_md5.c
-)
-
-zephyr_library_compile_definitions_ifdef(CONFIG_EAP_MD5
-  EAP_MD5
-)
-
 zephyr_library_sources_ifdef(CONFIG_EAP_GTC
   ${HOSTAP_SRC_BASE}/eap_peer/eap_gtc.c
 )
@@ -471,18 +463,6 @@ zephyr_library_sources_ifdef(CONFIG_EAP_MSCHAPV2
 
 zephyr_library_compile_definitions_ifdef(CONFIG_EAP_MSCHAPV2
   EAP_MSCHAPv2
-)
-
-if(CONFIG_EAP_TTLS OR CONFIG_EAP_MSCHAPV2 OR CONFIG_EAP_MD5)
-  zephyr_library_sources(${HOSTAP_SRC_BASE}/eap_common/chap.c)
-endif()
-
-zephyr_library_sources_ifdef(CONFIG_EAP_LEAP
-  ${HOSTAP_SRC_BASE}/eap_peer/eap_leap.c
-)
-
-zephyr_library_compile_definitions_ifdef(CONFIG_EAP_LEAP
-  EAP_LEAP
 )
 
 zephyr_library_sources_ifdef(CONFIG_EAP_PSK
@@ -665,14 +645,6 @@ zephyr_library_compile_definitions_ifdef(CONFIG_EAP_SERVER_TLS
   EAP_SERVER_TLS
 )
 
-zephyr_library_sources_ifdef(CONFIG_EAP_SERVER_MD5
-  ${HOSTAP_SRC_BASE}/eap_server/eap_server_md5.c
-)
-
-zephyr_library_compile_definitions_ifdef(CONFIG_EAP_SERVER_MD5
-  EAP_SERVER_MD5
-)
-
 zephyr_library_sources_ifdef(CONFIG_EAP_SERVER_MSCHAPV2
   ${HOSTAP_SRC_BASE}/eap_server/eap_server_mschapv2.c
 )
@@ -733,7 +705,6 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_TEST
   ${HOSTAP_SRC_BASE}/crypto/crypto_module_tests.c
   ${HOSTAP_SRC_BASE}/crypto/fips_prf_internal.c
   ${HOSTAP_SRC_BASE}/crypto/sha1-internal.c
-  ${HOSTAP_SRC_BASE}/crypto/sha1-tlsprf.c
 )
 endif()
 

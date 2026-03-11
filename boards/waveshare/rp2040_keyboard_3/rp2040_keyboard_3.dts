@@ -63,11 +63,13 @@
 
 &flash0 {
 	reg = <0x10000000 DT_SIZE_M(2)>;
+	ranges = <0x0 0x10000000 DT_SIZE_M(2)>;
 
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Reserved memory for the second stage bootloader */
 		second_stage_bootloader: partition@0 {

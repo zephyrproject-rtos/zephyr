@@ -84,9 +84,14 @@ void mcux_lpc_ostick_isr(const void *arg)
 	uint64_t now = mcux_lpc_ostick_get_compensated_timer_value();
 	uint32_t elapsed_ticks = mcux_os_timer_calc_elapsed_ticks(now);
 
-	last_count = now;
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		/*
+		 * Advance in whole ticks to avoid accumulating sub-tick latency in
+		 * last_count (which would otherwise show up as long-term drift).
+		 */
+		last_count += (uint64_t)elapsed_ticks * CYC_PER_TICK;
+	} else {
+		last_count = now;
 		mcux_os_timer_set_next_tick_match();
 	}
 

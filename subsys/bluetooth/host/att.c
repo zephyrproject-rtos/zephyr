@@ -2431,6 +2431,11 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 					    &chan->att->prep_queue,
 					    &reassembled_data);
 		if (err != BT_ATT_ERR_SUCCESS) {
+			/* Discard queued buffers */
+			do {
+				net_buf_unref(buf);
+				buf = net_buf_slist_get(&chan->att->prep_queue);
+			} while (buf != NULL);
 			send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ,
 				     handle, err);
 			return 0;

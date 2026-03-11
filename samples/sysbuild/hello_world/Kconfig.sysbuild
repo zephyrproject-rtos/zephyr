@@ -34,3 +34,7 @@ config REMOTE_BOARD
 	default "$(BOARD)/nrf54h20/cpuppr/xip" if SOC_NRF54H20_CPUAPP && REMOTE_NRF54H20_CPUPPR_XIP_CORE
 	default "$(BOARD)/nrf54h20/cpuflpr" if SOC_NRF54H20_CPUAPP && REMOTE_NRF54H20_CPUFLPR_CORE
 	default "$(BOARD)/nrf54h20/cpuflpr/xip" if SOC_NRF54H20_CPUAPP && REMOTE_NRF54H20_CPUFLPR_XIP_CORE
+	default "$(BOARD)/nrf7120/cpuflpr" if SOC_NRF7120_CPUAPP
+	default "$(BOARD)/max32655/rv32" if SOC_MAX32655_M4
+	default "$(BOARD)/max32690/rv32" if SOC_MAX32690_M4
+	default "$(BOARD)/max78002/rv32" if SOC_MAX78002_M4

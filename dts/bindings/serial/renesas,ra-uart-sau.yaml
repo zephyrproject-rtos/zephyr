@@ -1,0 +1,54 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA SAU UART
+
+compatible: "renesas,ra-uart-sau"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  reg:
+    required: true
+    description: |
+      SAU UART channel index.
+
+  msb-first:
+    type: boolean
+    description: |
+      Transfer MSB first.
+
+  tx-signal-inversion:
+    type: boolean
+    description: |
+      Inverse the level of transmitted signal.
+
+  sau-channels:
+    required: true
+    type: phandle-array
+    description: |
+      SAU channel phandles [TX, RX].
+      Must contain exactly 2 phandles: first for TX, second RX.
+      These shouldn't be changed to other sau channels.
+      Both must use the same clock-source (both "CKm0" or "CKm1").
+
+  stop-bits:
+    default: "1"
+    description: |
+      Sets the number of stop bits. Defaults to standard of 1 if not specified.
+
+  data-bits:
+    default: 8
+    description: |
+      Sets the number of data bits. Defaults to standard of 8 if not specified.
+
+  current-speed:
+    default: 115200
+    description: |
+      Initial baud rate setting for UART. Defaults to standard baudrate of 115200 if not specified.

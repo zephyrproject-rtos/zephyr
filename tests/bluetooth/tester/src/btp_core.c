@@ -38,7 +38,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #define CAP_SUPPORTED 1
 #endif
 
-static ATOMIC_DEFINE(registered_services, BTP_SERVICE_ID_MAX);
+static ATOMIC_DEFINE(registered_services, BTP_SERVICE_ID_COUNT);
 
 static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
@@ -300,6 +300,11 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_sdp();
 		break;
 #endif /* CONFIG_BT_CLASSIC */
+#if defined(CONFIG_BT_RFCOMM)
+	case BTP_SERVICE_ID_RFCOMM:
+		status = tester_init_rfcomm();
+		break;
+#endif /* CONFIG_BT_RFCOMM */
 	default:
 		LOG_WRN("unknown id: 0x%02x", cp->id);
 		status = BTP_STATUS_FAILED;
@@ -460,6 +465,11 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_sdp();
 		break;
 #endif /* CONFIG_BT_CLASSIC */
+#if defined(CONFIG_BT_RFCOMM)
+	case BTP_SERVICE_ID_RFCOMM:
+		status = tester_unregister_rfcomm();
+		break;
+#endif /* CONFIG_BT_RFCOMM */
 	default:
 		LOG_WRN("unknown id: 0x%x", cp->id);
 		status = BTP_STATUS_FAILED;

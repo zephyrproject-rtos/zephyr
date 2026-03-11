@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/init.h>
@@ -604,6 +604,18 @@ void board_early_init_hook(void)
 	POWER_DisablePD(kPDRUNCFG_APD_XSPI2);
 	POWER_DisablePD(kPDRUNCFG_PPD_XSPI2);
 	POWER_ApplyPD();
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sema420))
+	RESET_ReleasePeripheralReset(kSEMA420_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sema423))
+	RESET_ReleasePeripheralReset(kSEMA423_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sema424))
+	RESET_ReleasePeripheralReset(kSEMA424_RST_SHIFT_RSTn);
 #endif
 }
 

@@ -83,7 +83,7 @@ struct i2c_stm32_data {
 #ifdef CONFIG_I2C_STM32_V1
 	size_t msg_len;
 	uint8_t is_restart;
-	uint16_t slave_address;
+	uint16_t target_address;
 #else
 	uint8_t burst_flags;
 	uint8_t burst_len;
@@ -99,7 +99,7 @@ struct i2c_stm32_data {
 	struct i2c_config_timing current_timing;
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2) */
 #ifdef CONFIG_I2C_STM32_V1
-	uint16_t slave_address;
+	uint16_t target_address;
 #endif /* CONFIG_I2C_STM32_V1 */
 	struct {
 #ifdef CONFIG_I2C_STM32_V1
@@ -130,11 +130,11 @@ struct i2c_stm32_data {
 #endif /* CONFIG_I2C_RTIO */
 
 #ifdef CONFIG_I2C_TARGET
-	bool master_active;
-	bool slave_attached;
-	struct i2c_target_config *slave_cfg;
+	bool controller_active;
+	bool target_attached;
+	struct i2c_target_config *target_cfg;
 #ifdef CONFIG_I2C_STM32_V2
-	struct i2c_target_config *slave2_cfg;
+	struct i2c_target_config *target2_cfg;
 #endif /* CONFIG_I2C_STM32_V2 */
 #endif /* CONFIG_I2C_TARGET */
 };

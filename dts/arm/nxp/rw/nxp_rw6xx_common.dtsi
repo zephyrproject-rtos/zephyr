@@ -39,11 +39,12 @@
 		};
 
 		power-states {
-			/* Idle mode maps to Power Mode 1 */
+			/* exit-latency-us is the wake time of the SOC
+			 * Idle mode maps to Power Mode 1
+			 */
 			idle: idle {
 				compatible = "zephyr,power-state";
 				power-state-name = "runtime-idle";
-				min-residency-us = <60>;
 				exit-latency-us = <38>;
 			};
 
@@ -51,7 +52,6 @@
 			suspend: suspend {
 				compatible = "nxp,pdcfg-power", "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
-				min-residency-us = <600>;
 				exit-latency-us = <38>;
 				deep-sleep-config = <0x180000>,
 						    <0x0>,
@@ -64,8 +64,7 @@
 			standby: standby {
 				compatible = "nxp,pdcfg-power", "zephyr,power-state";
 				power-state-name = "standby";
-				min-residency-us = <336000>;
-				exit-latency-us = <14000>;
+				exit-latency-us = <4360>;
 				deep-sleep-config = <0x180000>,
 						    <0x0>,
 						    <0x4>,

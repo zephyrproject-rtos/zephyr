@@ -10,9 +10,6 @@ config INPUT
 
 if LVGL
 
-config LV_Z_BITS_PER_PIXEL
-	default 16
-
 choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_16
 endchoice

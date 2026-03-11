@@ -1,4 +1,4 @@
-.. _phyboard_pollux:
+.. zephyr:board:: phyboard_pollux
 
 phyBOARD-Pollux i.MX8M Plus
 ###########################
@@ -52,37 +52,10 @@ More information about the board can be found at the `PHYTEC website`_.
 Supported Features
 ==================
 
-The ``phyboard_pollux/mimx8ml8/m7`` board configuration supports the following hardware
-features:
-
-+-----------+------------+------------------------------------+
-| Interface | Controller | Driver/Component                   |
-+===========+============+====================================+
-| NVIC      | on-chip    | nested vector interrupt controller |
-+-----------+------------+------------------------------------+
-| SYSTICK   | on-chip    | systick                            |
-+-----------+------------+------------------------------------+
-| CLOCK     | on-chip    | clock_control                      |
-+-----------+------------+------------------------------------+
-| PINMUX    | on-chip    | pinmux                             |
-+-----------+------------+------------------------------------+
-| UART      | on-chip    | serial port-polling;               |
-|           |            | serial port-interrupt              |
-+-----------+------------+------------------------------------+
-| GPIO      | on-chip    | GPIO output                        |
-|           |            | GPIO input                         |
-+-----------+------------+------------------------------------+
-| I2C       | on-chip    | ii2c                               |
-+-----------+------------+------------------------------------+
-| PCA95533  | I2C        | RGB LED via I2C2                   |
-+-----------+------------+------------------------------------+
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/phytec/phyboard_pollux/phyboard_pollux_mimx8ml8_m7_defconfig`.
+.. zephyr:board-supported-hw::
 
 It's recommended to disable peripherals used by the M7-Core on the host running
-on the Linux host. Other hardware features are not currently supported with
-Zephyr on the M7-Core.
+on the Linux host.
 
 Connections and IOs
 ===================

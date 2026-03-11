@@ -358,9 +358,7 @@ static void eth_ivshmem_iface_init(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_ivshmem_dev_data *dev_data = dev->data;
 
-	if (dev_data->iface == NULL) {
-		dev_data->iface = iface;
-	}
+	dev_data->iface = iface;
 
 	net_if_set_link_addr(
 		iface, dev_data->mac_addr,

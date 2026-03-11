@@ -33,6 +33,7 @@ Configuration
 *************
 
 * :kconfig:option:`CONFIG_NVMEM`: Enables the NVMEM subsystem.
+* :kconfig:option:`CONFIG_NVMEM_BBRAM`: Enables NVMEM support for Battery Backed RAM.
 * :kconfig:option:`CONFIG_NVMEM_EEPROM`: Enables NVMEM support for EEPROM devices.
 * :kconfig:option-regex:`CONFIG_NVMEM_FLASH.*`: Configure NVMEM support for flash devices.
 * :kconfig:option-regex:`CONFIG_NVMEM_OTP.*`: Configure NVMEM support for OTP devices.

@@ -19,6 +19,7 @@
 		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m7";
+			clock-frequency = <DT_FREQ_M(800)>;
 			cpu-power-states = <&wait &stop &suspend>;
 			reg = <0>;
 
@@ -609,6 +610,18 @@
 			reg = <0x44390000 DT_SIZE_K(64)>;
 			interrupts = <20 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPUART2>;
+			status = "disabled";
+		};
+
+		lptmr1: timer@44300000 {
+			compatible = "nxp,lptmr";
+			reg = <0x44300000 DT_SIZE_K(4)>;
+			interrupts = <18 0>;
+			clocks = <&scmi_clk IMX95_CLK_LPTMR1>;
+			clock-frequency = <32768>;
+			clk-source = <2>;
+			prescale-glitch-filter-bypass;
+			resolution = <32>;
 			status = "disabled";
 		};
 

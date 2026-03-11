@@ -272,12 +272,6 @@ static int stm32_sai_enable_clock(const struct device *dev)
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	int err;
 
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-	LOG_DBG("Clock Control Device: <OK>");
-
 	/* Turn on SAI peripheral clock */
 	err = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (err != 0) {
@@ -534,8 +528,8 @@ static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 	memcpy(&stream->i2s_cfg, i2s_cfg, sizeof(struct i2s_config));
 
 	stream->master = true;
-	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE ||
-	    i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) {
+	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_TARGET ||
+	    i2s_cfg->options & I2S_OPT_BIT_CLK_TARGET) {
 		stream->master = false;
 	}
 

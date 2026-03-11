@@ -43,7 +43,7 @@ void test_slab_free_all_blocks(void **p);
 K_SEM_DEFINE(SEM_HELPERDONE, 0, 1);
 K_SEM_DEFINE(SEM_REGRESSDONE, 0, 1);
 
-K_MEM_SLAB_DEFINE(map_lgblks, 1024, NUMBLOCKS, 4);
+K_MEM_SLAB_DEFINE(map_lgblks, 1024, NUMBLOCKS, 8);
 
 
 /**

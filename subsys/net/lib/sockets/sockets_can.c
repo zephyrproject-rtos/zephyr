@@ -256,7 +256,9 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		dest_addr = (struct net_sockaddr *)&can_addr;
 	}
 
-	NET_ASSERT(len == sizeof(struct socketcan_frame));
+	if (len != sizeof(struct socketcan_frame)) {
+		return -EINVAL;
+	}
 
 	socketcan_to_can_frame((struct socketcan_frame *)buf, &zframe);
 

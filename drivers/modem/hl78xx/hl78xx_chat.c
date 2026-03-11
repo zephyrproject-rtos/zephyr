@@ -65,6 +65,10 @@ void hl78xx_on_csq(struct modem_chat *chat, char **argv, uint16_t argc, void *us
 void hl78xx_on_cesq(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_cfun(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_cops(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
+#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+void hl78xx_on_kntn_posreq(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
+void hl78xx_on_kntncfg(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 void hl78xx_on_ksup(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_imei(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_cgmm(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
@@ -167,18 +171,21 @@ MODEM_CHAT_MATCHES_DEFINE(hl78xx_unsol_matches,
 			  MODEM_CHAT_MATCH("+KSUP: ", "", hl78xx_on_ksup),
 			  MODEM_CHAT_MATCH("+CREG: ", ",", hl78xx_on_cxreg),
 			  MODEM_CHAT_MATCH("+CEREG: ", ",", hl78xx_on_cxreg),
-#if defined(CONFIG_MODEM_HL78XX_12)
+#ifdef CONFIG_MODEM_HL78XX_12
 			  MODEM_CHAT_MATCH("+KSTATEV: ", ",", hl78xx_on_kstatev),
 #ifdef CONFIG_MODEM_HL78XX_RAT_GSM
 			  MODEM_CHAT_MATCH("+CGACT: ", ",", hl78xx_on_cgact),
 #endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
+#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+			  MODEM_CHAT_MATCH("+KNTNEV: \"POSREQ\"", "", hl78xx_on_kntn_posreq),
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 #endif /* CONFIG_MODEM_HL78XX_12 */
 			  MODEM_CHAT_MATCH("+KUDP_DATA: ", ",", hl78xx_on_socknotifydata),
 			  MODEM_CHAT_MATCH("+KTCP_DATA: ", ",", hl78xx_on_socknotifydata),
 			  MODEM_CHAT_MATCH("+KTCP_NOTIF: ", ",", hl78xx_on_ktcpnotif),
 #ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
 			  MODEM_CHAT_MATCH("+KUDP_RCV: ", ",", hl78xx_on_udprcv),
-#endif
+#endif /* CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG */
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 			  MODEM_CHAT_MATCH("+WDSI: ", ",", hl78xx_on_wdsi),
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
@@ -218,6 +225,9 @@ MODEM_CHAT_MATCH_DEFINE(hl78xx_iccid_match, "+CCID: ", "", hl78xx_on_iccid);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_ksrep_match, "+KSREP: ", ",", hl78xx_on_ksrep);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_ksrat_match, "+KSRAT: ", "", hl78xx_on_ksrat);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_kselacq_match, "+KSELACQ: ", ",", hl78xx_on_kselacq);
+#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+MODEM_CHAT_MATCH_DEFINE(hl78xx_kntncfg_match, "+KNTNCFG: ", ",", hl78xx_on_kntncfg);
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 #ifdef CONFIG_HL78XX_GNSS
 MODEM_CHAT_MATCH_DEFINE(hl78xx_gnssnmea_match, "+GNSSNMEA: ", ",", hl78xx_on_gnssnmea);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_gnssconf_enabledsys_match, "+GNSSCONF: 10,", "",
@@ -262,6 +272,10 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
 #if defined(CONFIG_MODEM_HL78XX_12)
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSTATEV=1", hl78xx_ok_match),
+#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KNTNCFG=\"POS\"",
+							 hl78xx_kntncfg_match),
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 #endif
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGEREP=2", hl78xx_ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSELACQ?", hl78xx_kselacq_match),
@@ -374,8 +388,8 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_gnss_gnssloc_script, hl78xx_gnss_gnssloc_script_
 			 HL78XX_SCRIPT_TIMEOUT_GNSS);
 
 #endif
-#if defined(CONFIG_MODEM_HL78XX_12) &&                                                             \
-	(defined(CONFIG_MODEM_HL78XX_RAT_GSM) || defined(CONFIG_MODEM_HL78XX_AUTORAT))
+#if defined(CONFIG_MODEM_HL78XX_12)
+#if defined(CONFIG_MODEM_HL78XX_RAT_GSM) || defined(CONFIG_MODEM_HL78XX_AUTORAT)
 /* LTE registration status disable / GSM registration status enable script */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_lte_dis_gsm_en_reg_status_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=0", hl78xx_ok_match),
@@ -383,6 +397,21 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_lte_dis_gsm_en_reg_status_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_lte_dis_gsm_en_reg_status_script,
 			 hl78xx_lte_dis_gsm_en_reg_status_script_cmds, hl78xx_abort_matches, NULL,
 			 HL78XX_SCRIPT_TIMEOUT_PERIODIC);
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM || CONFIG_MODEM_HL78XX_AUTORAT */
+#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+#ifdef CONFIG_NTN_POSITION_SOURCE_MANUAL
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	hl78xx_ntn_pos_cmds,
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KNTNCMD=\"POS\",\"" CONFIG_NTN_MANUAL_LATITUDE
+				   "\",\"" CONFIG_NTN_MANUAL_LONGITUDE
+				   "\",\"" CONFIG_NTN_MANUAL_ALTITUDE "\"",
+				   hl78xx_ok_match));
+MODEM_CHAT_SCRIPT_DEFINE(hl78xx_ntn_pos_script, hl78xx_ntn_pos_cmds, hl78xx_abort_matches,
+			 hl78xx_chat_callback_handler, 10);
+
+#endif /* CONFIG_NTN_POSITION_SOURCE_MANUAL */
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 #endif /* CONFIG_MODEM_HL78XX_12 */
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 /* AirVantage script connect accept  */
@@ -637,8 +666,8 @@ int hl78xx_run_pwroff_script_async(struct hl78xx_data *data)
 	}
 	return modem_chat_run_script_async(&data->chat, &hl78xx_pwroff_script);
 }
-#if defined(CONFIG_MODEM_HL78XX_12) &&                                                             \
-	(defined(CONFIG_MODEM_HL78XX_RAT_GSM) || defined(CONFIG_MODEM_HL78XX_AUTORAT))
+#ifdef CONFIG_MODEM_HL78XX_12
+#if defined(CONFIG_MODEM_HL78XX_RAT_GSM) || defined(CONFIG_MODEM_HL78XX_AUTORAT)
 /* Run the LTE disable GSM enable registration status script */
 int hl78xx_run_lte_dis_gsm_en_reg_status_script(struct hl78xx_data *data)
 {
@@ -647,7 +676,26 @@ int hl78xx_run_lte_dis_gsm_en_reg_status_script(struct hl78xx_data *data)
 	}
 	return modem_chat_run_script(&data->chat, &hl78xx_lte_dis_gsm_en_reg_status_script);
 }
-#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM || CONFIG_MODEM_HL78XX_AUTORAT */
+#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+
+const struct modem_chat_match *hl78xx_get_kntncfg_match(void)
+{
+	return &hl78xx_kntncfg_match;
+}
+
+#ifdef CONFIG_NTN_POSITION_SOURCE_MANUAL
+/* Run the NTN position setting script */
+int hl78xx_run_ntn_pos_script_async(struct hl78xx_data *data)
+{
+	if (!data) {
+		return -EINVAL;
+	}
+	return modem_chat_run_script_async(&data->chat, &hl78xx_ntn_pos_script);
+}
+#endif /* CONFIG_NTN_POSITION_SOURCE_MANUAL */
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
+#endif /* CONFIG_MODEM_HL78XX_12 */
 /* Run the GSM disable LTE enable registration status script */
 int hl78xx_run_gsm_dis_lte_en_reg_status_script(struct hl78xx_data *data)
 {

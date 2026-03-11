@@ -336,10 +336,12 @@ static int flash_flexspi_nor_wait_bus_busy(struct flash_flexspi_nor_data *data)
 	return 0;
 }
 
-static int flash_flexspi_nor_read(const struct device *dev, off_t offset,
-		void *buffer, size_t len)
+static int flash_flexspi_nor_read(const struct device *dev, off_t offset, void *buffer, size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
+	int ret;
+	unsigned int key = 0U;
+	bool xip;
 
 	if (len == 0) {
 		return 0;
@@ -353,15 +355,54 @@ static int flash_flexspi_nor_read(const struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
-	uint8_t *src = memc_flexspi_get_ahb_address(&data->controller,
-						    data->port,
-						    offset);
+	xip = memc_flexspi_is_running_xip(&data->controller);
 
-	memcpy(buffer, src, len);
+	if (xip) {
+		key = irq_lock();
+		memc_flexspi_wait_bus_idle(&data->controller);
+	}
+
+	uint8_t *dst = (uint8_t *)buffer;
+	size_t remaining = len;
+	off_t current_offset = offset;
+	uint8_t ip_read_buf[SPI_NOR_PAGE_SIZE];
+
+	while (remaining > 0U) {
+		off_t aligned_offset = ROUND_DOWN(current_offset, sizeof(uint32_t));
+		size_t byte_offset = current_offset - aligned_offset;
+		size_t required = MIN(remaining + byte_offset, sizeof(ip_read_buf));
+		size_t read_size = MAX(ROUND_UP(required, sizeof(uint32_t)), sizeof(uint32_t));
+		size_t copy_size = MIN(remaining, read_size - byte_offset);
+		flexspi_transfer_t transfer = {
+			.deviceAddress = aligned_offset,
+			.port = data->port,
+			.cmdType = kFLEXSPI_Read,
+			.SeqNumber = 1,
+			.seqIndex = READ,
+			.data = (uint32_t *)ip_read_buf,
+			.dataSize = read_size,
+		};
+
+		ret = memc_flexspi_transfer(&data->controller, &transfer);
+		if (ret < 0) {
+			if (xip) {
+				irq_unlock(key);
+			}
+			return ret;
+		}
+
+		memcpy(dst, &ip_read_buf[byte_offset], copy_size);
+		dst += copy_size;
+		current_offset += copy_size;
+		remaining -= copy_size;
+	}
+
+	if (xip) {
+		irq_unlock(key);
+	}
 
 	return 0;
 }
-
 static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		const void *buffer, size_t len)
 {

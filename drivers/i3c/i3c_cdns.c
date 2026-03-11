@@ -29,7 +29,7 @@
 #define CONF_STATUS0_PROT_FAULTS_CHK      BIT(24)
 #define CONF_STATUS0_GPO_NUM(x)           (((x) & GENMASK(23, 16)) >> 16)
 #define CONF_STATUS0_GPI_NUM(x)           (((x) & GENMASK(15, 8)) >> 8)
-#define CONF_STATUS0_IBIR_DEPTH(x)        (4 << (((x) & GENMASK(7, 6)) >> 7))
+#define CONF_STATUS0_IBIR_DEPTH(x)        (4 << (((x) & GENMASK(7, 6)) >> 6))
 /* CONF_STATUS0_SUPPORTS_DDR moved to CONF_STATUS1 in rev >= 1p7 */
 #define CONF_STATUS0_SUPPORTS_DDR         BIT(5)
 #define CONF_STATUS0_SEC_MASTER           BIT(4)
@@ -55,7 +55,7 @@
 #define REV_ID_VID(id)       (((id) & GENMASK(31, 20)) >> 20)
 #define REV_ID_PID(id)       (((id) & GENMASK(19, 8)) >> 8)
 #define REV_ID_REV(id)       ((id) & GENMASK(7, 0))
-#define REV_ID_VERSION(m, n) ((m << 5) | (n))
+#define REV_ID_VERSION(m, n) (((m) << 5) | (n))
 #define REV_ID_REV_MAJOR(id) (((id) & GENMASK(7, 5)) >> 5)
 #define REV_ID_REV_MINOR(id) ((id) & GENMASK(4, 0))
 
@@ -267,7 +267,7 @@
 
 #define CMD1_FIFO            0x64
 #define CMD1_FIFO_CMDID(id)  ((id) << 24)
-#define CMD1_FIFO_DB(db)     (((db) & GENMASK(15, 8)) << 8)
+#define CMD1_FIFO_DB(db)     FIELD_PREP(GENMASK(15, 8), (db))
 #define CMD1_FIFO_CSRADDR(a) (a)
 #define CMD1_FIFO_CCC(id)    (id)
 
@@ -289,9 +289,9 @@
 #define SLV_DDR_TX_FIFO             0x88
 #define SLV_DDR_RX_FIFO             0x8c
 #define DDR_PREAMBLE_MASK           GENMASK(19, 18)
-#define DDR_PREAMBLE_CMD_CRC        0x1 << 18
-#define DDR_PREAMBLE_DATA_ABORT     0x2 << 18
-#define DDR_PREAMBLE_DATA_ABORT_ALT 0x3 << 18
+#define DDR_PREAMBLE_CMD_CRC        (0x1 << 18)
+#define DDR_PREAMBLE_DATA_ABORT     (0x2 << 18)
+#define DDR_PREAMBLE_DATA_ABORT_ALT (0x3 << 18)
 #define DDR_DATA(x)                 (((x) & GENMASK(17, 2)) >> 2)
 #define DDR_EVEN_PARITY             BIT(0)
 #define DDR_ODD_PARITY              BIT(1)
@@ -1318,7 +1318,6 @@ static void cdns_i3c_cancel_transfer(const struct device *dev)
 	struct cdns_i3c_data *data = dev->data;
 	const struct cdns_i3c_config *config = dev->config;
 	uint32_t val;
-	uint32_t retry_count;
 
 	/* Disable further interrupts */
 	sys_write32(MST_INT_CMDD_EMP, config->base + MST_IDR);
@@ -1338,15 +1337,17 @@ static void cdns_i3c_cancel_transfer(const struct device *dev)
 	 * actually take any time since we only get here if a transaction didn't
 	 * complete in a long time.
 	 */
-	retry_count = I3C_MAX_IDLE_CANCEL_WAIT_RETRIES;
-	while (retry_count--) {
+	bool idle = false;
+
+	for (uint32_t i = 0; i < I3C_MAX_IDLE_CANCEL_WAIT_RETRIES; i++) {
 		val = sys_read32(config->base + MST_STATUS0);
 		if (val & MST_STATUS0_IDLE) {
+			idle = true;
 			break;
 		}
 		k_msleep(10);
 	}
-	if (retry_count == 0) {
+	if (!idle) {
 		data->xfer.ret = -ETIMEDOUT;
 	}
 
@@ -3046,7 +3047,7 @@ static void cdns_i3c_read_hw_cfg(const struct device *dev)
 	data->hw_cfg.ddr_rx_mem_depth = CONF_STATUS1_SLV_DDR_RX_DEPTH(cfg1) * 4;
 	data->hw_cfg.ddr_tx_mem_depth = CONF_STATUS1_SLV_DDR_TX_DEPTH(cfg1) * 4;
 	data->hw_cfg.ibir_mem_depth = CONF_STATUS0_IBIR_DEPTH(cfg0) * 4;
-	data->hw_cfg.ibi_mem_depth = CONF_STATUS1_IBI_DEPTH(cfg0) * 4;
+	data->hw_cfg.ibi_mem_depth = CONF_STATUS1_IBI_DEPTH(cfg1) * 4;
 
 	LOG_DBG("%s: FIFO info:\r\n"
 		"  cmd_mem_depth = %u\r\n"
@@ -3588,9 +3589,9 @@ static int cdns_i3c_bus_init(const struct device *dev)
 	k_sem_init(&data->ibi_hj_complete, 0, 1);
 #ifdef CONFIG_I3C_CONTROLLER
 	k_sem_init(&data->ibi_cr_complete, 0, 1);
-#endif /* CONFIG_I3C_TARGET */
 #endif /* CONFIG_I3C_CONTROLLER */
-#endif
+#endif /* CONFIG_I3C_TARGET */
+#endif /* CONFIG_I3C_USE_IBI */
 
 	cdns_i3c_interrupts_disable(config);
 	cdns_i3c_interrupts_clear(config);

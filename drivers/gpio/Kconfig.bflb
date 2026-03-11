@@ -14,3 +14,21 @@ config GPIO_BFLB_BL61X
 	default y
 	help
 	  Bouffalo Lab BL61X GPIO driver
+
+if GPIO_BFLB_BL61X
+
+config GPIO_BFLB_BL61X_CACHE_WRITE
+	bool "Cache BL61x GPIO writes"
+	default y
+	help
+	  Cache last written value to GPIO register, this doubles GPIO toggle speed by
+	  avoiding a nonrequired read operation on the speed-limited peripheral.
+
+config GPIO_BL61X_WO
+	bool "Bouffalolab BL61x GPIO FIFO"
+	depends on CLOCK_CONTROL
+	help
+	  The GPIO FIFO / WO is an extension of the GPIO device, it enables outputting arbitrary
+	  toggle waveforms over 16 pins at up to XCLK Hz (32MHz or crystal value).
+
+endif # GPIO_BFLB_BL61X

@@ -48,9 +48,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, device, dev_id=None,
                  commander=DEFAULT_JLINK_EXE,
-                 dt_flash=True, erase=True, reset=False,
-                 iface='swd', speed='auto', flash_script = None,
-                 loader=None, flash_sram=False,
+                 dt_flash=True, erase=True, reset=False, reset_type=None,
+                 iface='swd', speed='auto',
+                 flash_script = None, loader=None, flash_sram=False,
                  gdbserver='JLinkGDBServer',
                  gdb_host='',
                  gdb_port=DEFAULT_JLINK_GDB_PORT,
@@ -72,6 +72,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.flash_sram = flash_sram
         self.erase = erase
         self.reset = reset
+        self.reset_type = reset_type
         self.gdbserver = gdbserver
         self.iface = iface
         self.speed = speed
@@ -120,7 +121,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt', 'reset'},
-                          dev_id=True, flash_addr=True, erase=True, reset=True,
+                          dev_id=True, flash_addr=True, erase=True, reset=True, reset_types=True,
                           tool_opt=True, file=True, rtt=True, batch_debug=True)
 
     @classmethod
@@ -215,6 +216,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  erase=args.erase,
                                  reset=args.reset,
                                  iface=args.iface, speed=args.speed,
+                                 reset_type=args.reset_type,
                                  flash_script=args.flash_script,
                                  gdbserver=args.gdbserver,
                                  loader=args.loader,
@@ -437,6 +439,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             'r',  # Reset and halt the target
             'BE' if self.build_conf.getboolean('CONFIG_BIG_ENDIAN') else 'LE'
         ]
+
+        if self.reset_type:
+            lines.insert(0, f"RSetType {self.reset_type}")
 
         if self.erase:
             lines.append('erase') # Erase all flash sectors

@@ -580,6 +580,40 @@ drop:
 }
 #endif
 
+int net_ipv4_igmp_rejoin(struct net_if *iface, const struct net_in_addr *addr)
+{
+	struct net_if_mcast_addr *maddr;
+	int ret = 0;
+
+	maddr = net_if_ipv4_maddr_lookup(addr, &iface);
+	if (maddr == NULL) {
+		return -ENOENT;
+	}
+
+	if (net_if_is_offloaded(iface)) {
+		goto out;
+	}
+
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+	ret = igmpv3_send_generic(iface, maddr);
+#else
+	ret = igmp_send_generic(iface, addr, true);
+#endif
+	if (ret < 0) {
+		return ret;
+	}
+
+out:
+	net_if_ipv4_maddr_join(iface, maddr);
+
+	net_if_mcast_monitor(iface, &maddr->address, true);
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_MCAST_JOIN, iface, &maddr->address.in_addr,
+					sizeof(struct net_in_addr));
+
+	return ret;
+}
+
 int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 		       const struct igmp_param *param)
 {
@@ -587,6 +621,16 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 	int ret = 0;
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
+	maddr = net_if_ipv4_maddr_lookup(addr, &iface);
+	if (maddr != NULL && maddr->sources_len > 0) {
+		/* For IGMPv3 specifically, if the address with non-empty
+		 * include/exclude list was registered, return an error as
+		 * registering lists from different sources is currently
+		 * not supported.
+		 */
+		return -EEXIST;
+	}
+
 	if (param != NULL) {
 		if (param->sources_len > CONFIG_NET_IF_MCAST_IPV4_SOURCE_COUNT) {
 			return -ENOMEM;
@@ -594,16 +638,19 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 	}
 #endif
 
-	maddr = net_if_ipv4_maddr_lookup(addr, &iface);
-	if (maddr && net_if_ipv4_maddr_is_joined(maddr)) {
-		return -EALREADY;
+	maddr = net_if_ipv4_maddr_add(iface, addr);
+	if (maddr == NULL) {
+		return -ENOMEM;
 	}
 
-	if (!maddr) {
-		maddr = net_if_ipv4_maddr_add(iface, addr);
-		if (!maddr) {
-			return -ENOMEM;
+	if (net_if_ipv4_maddr_is_joined(maddr)) {
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+		if (param == NULL) {
+			return 0;
 		}
+#else
+		return 0;
+#endif
 	}
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
@@ -633,6 +680,16 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 #endif
 	if (ret < 0) {
 		net_if_ipv4_maddr_leave(iface, maddr);
+
+		/* -ENETDOWN Indicate that network interface is down - this may
+		 * happen and should not be considered fatal, address group will
+		 * be joined when the interface goes up. Any other error should
+		 * be considered fatal though and address should be cleaned up.
+		 */
+		if (ret != -ENETDOWN) {
+			net_if_ipv4_maddr_rm(iface, addr);
+		}
+
 		return ret;
 	}
 
@@ -655,12 +712,19 @@ out:
 
 int net_ipv4_igmp_leave(struct net_if *iface, const struct net_in_addr *addr)
 {
+	struct net_if_mcast_addr removed_addr;
 	struct net_if_mcast_addr *maddr;
 	int ret = 0;
 
 	maddr = net_if_ipv4_maddr_lookup(addr, &iface);
-	if (!maddr) {
+	if (maddr == NULL) {
 		return -ENOENT;
+	}
+
+	removed_addr = *maddr;
+	if (!net_if_ipv4_maddr_rm(iface, addr)) {
+		/* Address still in use */
+		return 0;
 	}
 
 	if (net_if_is_offloaded(iface)) {
@@ -668,10 +732,10 @@ int net_ipv4_igmp_leave(struct net_if *iface, const struct net_in_addr *addr)
 	}
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
-	maddr->record_type = IGMPV3_CHANGE_TO_INCLUDE_MODE;
-	maddr->sources_len = 0;
+	removed_addr.record_type = IGMPV3_CHANGE_TO_INCLUDE_MODE;
+	removed_addr.sources_len = 0;
 
-	ret = igmpv3_send_generic(iface, maddr);
+	ret = igmpv3_send_generic(iface, &removed_addr);
 #else
 	ret = igmp_send_generic(iface, addr, false);
 #endif
@@ -680,15 +744,10 @@ int net_ipv4_igmp_leave(struct net_if *iface, const struct net_in_addr *addr)
 	}
 
 out:
-	if (!net_if_ipv4_maddr_rm(iface, addr)) {
-		return -EINVAL;
-	}
+	net_if_mcast_monitor(iface, &removed_addr.address, false);
 
-	net_if_ipv4_maddr_leave(iface, maddr);
-
-	net_if_mcast_monitor(iface, &maddr->address, false);
-
-	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_MCAST_LEAVE, iface, &maddr->address.in_addr,
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_MCAST_LEAVE, iface,
+					&removed_addr.address.in_addr,
 					sizeof(struct net_in_addr));
 	return ret;
 }

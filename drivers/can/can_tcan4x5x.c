@@ -206,13 +206,14 @@ LOG_MODULE_REGISTER(can_tcan4x5x, CONFIG_CAN_LOG_LEVEL);
 #define CAN_TCAN4X5X_READ_B_FL  0x41
 
 /* TCAN4x5x timing requirements */
-#define CAN_TCAN4X5X_T_MODE_STBY_NOM_US 70
-#define CAN_TCAN4X5X_T_MODE_NOM_SLP_US  200
-#define CAN_TCAN4X5X_T_MODE_NOM_STBY_US 200
-#define CAN_TCAN4X5X_T_MODE_SLP_STBY_US 200
-#define CAN_TCAN4X5X_T_WAKE_US          50
-#define CAN_TCAN4X5X_T_PULSE_WIDTH_US   30
-#define CAN_TCAN4X5X_T_RESET_US         1000
+#define CAN_TCAN4X5X_T_MODE_STBY_NOM_US           70
+#define CAN_TCAN4X5X_T_MODE_NOM_SLP_US            200
+#define CAN_TCAN4X5X_T_MODE_NOM_STBY_US           200
+#define CAN_TCAN4X5X_T_MODE_SLP_STBY_US           200
+#define CAN_TCAN4X5X_T_MODE_SLP_STBY_VCCOUT_ON_US 1500
+#define CAN_TCAN4X5X_T_WAKE_US                    50
+#define CAN_TCAN4X5X_T_PULSE_WIDTH_US             30
+#define CAN_TCAN4X5X_T_RESET_US                   1000
 
 /*
  * Only compile in support for the optional GPIOs if at least one enabled tcan4x5x device tree node
@@ -235,6 +236,7 @@ struct tcan4x5x_config {
 #endif /* TCAN4X5X_WAKE_GPIO_SUPPORT */
 	struct gpio_dt_spec int_gpio;
 	uint32_t clk_freq;
+	bool nwkrq_voltage_vio;
 };
 
 struct tcan4x5x_data {
@@ -509,6 +511,8 @@ static int tcan4x5x_wake(const struct device *dev)
 			LOG_ERR("failed to deassert WAKE GPIO (err %d)", err);
 			return err;
 		}
+
+		k_usleep(CAN_TCAN4X5X_T_MODE_SLP_STBY_VCCOUT_ON_US);
 	}
 #endif /* TCAN4X5X_WAKE_GPIO_SUPPORT*/
 
@@ -555,7 +559,7 @@ static int tcan4x5x_reset(const struct device *dev)
 	}
 #endif /* TCAN4X5X_RST_GPIO_SUPPORT */
 
-	k_busy_wait(CAN_TCAN4X5X_T_RESET_US);
+	k_usleep(CAN_TCAN4X5X_T_RESET_US);
 
 	return 0;
 }
@@ -636,8 +640,13 @@ static int tcan4x5x_init_normal_mode(const struct device *dev)
 		reg |= CAN_TCAN4X5X_MODE_CONFIG_CLK_REF;
 	}
 
-	/* Set nWKRQ voltage to VIO */
-	reg |= CAN_TCAN4X5X_MODE_CONFIG_NWKRQ_VOLTAGE;
+	if (tcan_config->nwkrq_voltage_vio) {
+		/* Set nWKRQ voltage to VIO, open-drain */
+		reg |= CAN_TCAN4X5X_MODE_CONFIG_NWKRQ_VOLTAGE;
+	} else {
+		/* Set nWKRQ voltage to use internal voltage rail, push-pull */
+		reg &= ~(CAN_TCAN4X5X_MODE_CONFIG_NWKRQ_VOLTAGE);
+	}
 
 	/* Write remaining configuration to the device */
 	err = tcan4x5x_write_tcan_reg(dev, CAN_TCAN4X5X_MODE_CONFIG, reg);
@@ -662,7 +671,6 @@ static int tcan4x5x_init_normal_mode(const struct device *dev)
 	return err;
 }
 
-#ifdef CONFIG_PM_DEVICE
 static int tcan4x5x_pm_control(const struct device *dev, enum pm_device_action action)
 {
 	int err = 0;
@@ -706,7 +714,6 @@ static int tcan4x5x_pm_control(const struct device *dev, enum pm_device_action a
 
 	return -ENOTSUP;
 }
-#endif /* CONFIG_PM_DEVICE */
 
 static int tcan4x5x_init(const struct device *dev)
 {
@@ -827,7 +834,7 @@ static int tcan4x5x_init(const struct device *dev)
 		FIELD_GET(GENMASK(15, 8), info[2]), FIELD_GET(GENMASK(7, 0), info[2]));
 #endif /* CONFIG_CAN_LOG_LEVEL >= LOG_LEVEL_DBG */
 
-	return tcan4x5x_init_normal_mode(dev);
+	return pm_device_driver_init(dev, tcan4x5x_pm_control);
 }
 
 static DEVICE_API(can, tcan4x5x_driver_api) = {
@@ -896,6 +903,7 @@ static const struct can_mcan_ops tcan4x5x_ops = {
 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),                                \
 		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                                \
 		.clk_freq = DT_INST_PROP(inst, clock_frequency),                                   \
+		.nwkrq_voltage_vio = DT_INST_PROP(inst, ti_nwkrq_voltage_vio),                     \
 		TCAN4X5X_RST_GPIO_INIT(inst)                                                       \
 		TCAN4X5X_NWKRQ_GPIO_INIT(inst)                                                     \
 		TCAN4X5X_WAKE_GPIO_INIT(inst)                                                      \

@@ -30,4 +30,14 @@ config STM32_LTDC_FB_SMH_ALIGN
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 
+if STM32_IOCELL
+
+configdefault OTP
+	default y
+
+configdefault NVMEM
+	default y
+
+endif # STM32_IOCELL
+
 endif # SOC_SERIES_STM32N6X

@@ -385,10 +385,7 @@ static DEVICE_API(gpio, pcf857x_drv_api) = {
 
 #define GPIO_PCF857X_INST(idx)                                                                     \
 	static const struct pcf857x_drv_cfg pcf857x_cfg##idx = {                                   \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),             \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx),                                    \
 		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(idx, int_gpios, {0}),                         \
 		.i2c = I2C_DT_SPEC_INST_GET(idx),                                                  \
 	};                                                                                         \

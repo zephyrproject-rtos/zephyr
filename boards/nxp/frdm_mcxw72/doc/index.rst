@@ -51,33 +51,32 @@ Configuring a Debug Probe
 =========================
 
 A debug probe is used for both flashing and debugging the board. This board is
-configured by default to use the MCU-Link CMSIS-DAP Onboard Debug Probe.
-
-Using LinkServer
-----------------
-
-Linkserver is the default runner for this board, and supports the factory
-default MCU-Link firmware. Follow the instructions in
-:ref:`mcu-link-cmsis-onboard-debug-probe` to reprogram the default MCU-Link
-firmware. This only needs to be done if the default onboard debug circuit
-firmware was changed. To put the board in ``DFU mode`` to program the firmware,
-short jumper JP5.
+configured by default to use the J-Link Onboard Debug Probe.
 
 Using J-Link
 ------------
 
-There are two options. The onboard debug circuit can be updated with Segger
-J-Link firmware by following the instructions in
-:ref:`mcu-link-jlink-onboard-debug-probe`.
-To be able to program the firmware, you need to put the board in ``DFU mode``
-by shortening the jumper JP5.
+J-Link is the default runner for this board.
+Follow the instructions in :ref:`mcu-link-jlink-onboard-debug-probe`
+to reprogram the default MCU-Link firmware. This only needs to be done if
+the default onboard debug circuit firmware was changed. To put the board
+in ``DFU mode`` to program the firmware, short jumper JP5.
 The second option is to attach a :ref:`jlink-external-debug-probe` to the
 10-pin SWD connector (J12) of the board.
-For both options use the ``-r jlink`` option with west to use the jlink runner.
+
+Using LinkServer
+----------------
+
+The onboard debug circuit can be updated with Linkserver firmware by following
+the instructions in :ref:`mcu-link-cmsis-onboard-debug-probe`.
+To be able to program the firmware, you need to put the board in ``DFU mode``
+by shortening the jumper JP5.
+
+Use the ``-r linkserver`` option with west to use the linkserver runner.
 
 .. code-block:: console
 
-   west flash -r jlink
+   west flash -r linkserver
 
 Configuring a Console
 =====================

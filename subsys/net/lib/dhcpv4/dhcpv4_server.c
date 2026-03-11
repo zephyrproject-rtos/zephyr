@@ -799,11 +799,11 @@ static int dhcpv4_probe_address(struct dhcpv4_server_ctx *ctx,
 	return ret;
 }
 
-static int echo_reply_handler(struct net_icmp_ctx *icmp_ctx,
-			      struct net_pkt *pkt,
-			      struct net_icmp_ip_hdr *ip_hdr,
-			      struct net_icmp_hdr *icmp_hdr,
-			      void *user_data)
+static enum net_verdict echo_reply_handler(struct net_icmp_ctx *icmp_ctx,
+					   struct net_pkt *pkt,
+					   struct net_icmp_ip_hdr *ip_hdr,
+					   struct net_icmp_hdr *icmp_hdr,
+					   void *user_data)
 {
 	struct dhcpv4_server_ctx *ctx = user_data;
 	struct dhcpv4_server_probe_ctx *probe_ctx;
@@ -879,7 +879,7 @@ static int echo_reply_handler(struct net_icmp_ctx *icmp_ctx,
 out:
 	k_mutex_unlock(&server_lock);
 
-	return 0;
+	return NET_CONTINUE;
 }
 
 static int dhcpv4_server_probing_init(struct dhcpv4_server_ctx *ctx)

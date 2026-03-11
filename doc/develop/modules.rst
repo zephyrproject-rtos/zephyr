@@ -1023,6 +1023,14 @@ maps, each of which has the following entries:
 - ``doc-url``: A URL pointing to the location of the official documentation for
   this blob
 
+The following entries may also be present:
+
+- ``click-through``: A boolean indicating if a click-through license must be
+  accepted to download this blob
+- ``size``: Size of the blob in bytes. May be required by some fetchers
+- ``fetcher``: The method used to download the blob. If not set, the method is
+  inferred from the URL
+
 Package manager dependencies
 ============================
 

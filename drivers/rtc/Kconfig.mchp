@@ -7,3 +7,11 @@ config RTC_MCHP_G1
 	depends on DT_HAS_MICROCHIP_RTC_G1_ENABLED
 	help
 	  Enable RTC driver for Microchip G1.
+
+config RTC_MCHP_G2
+	bool "Microchip RTC G2 driver"
+	default y
+	depends on DT_HAS_MICROCHIP_RTC_G2_ENABLED
+	select SYSCON
+	help
+	  Microchip Real-Time Clock (RTC) G2 driver used on SAM SoC series.

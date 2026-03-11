@@ -251,7 +251,6 @@ static uint8_t draw_char_htmono(const struct char_framebuffer *fb,
 			uint8_t pixel_value;
 
 			if (fb_x < 0 || fb->x_res <= fb_x || fb_y < 0 || fb->y_res <= fb_y) {
-				g_y++;
 				continue;
 			}
 
@@ -450,23 +449,23 @@ int cfb_invert_area(const struct device *dev, uint16_t x, uint16_t y,
 		return -EINVAL;
 	}
 
+	if (x > fb->x_res) {
+		x = fb->x_res;
+	}
+
+	if (y > fb->y_res) {
+		y = fb->y_res;
+	}
+
+	if (x + width > fb->x_res) {
+		width = fb->x_res - x;
+	}
+
+	if (y + height > fb->y_res) {
+		height = fb->y_res - y;
+	}
+
 	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED)) {
-		if (x > fb->x_res) {
-			x = fb->x_res;
-		}
-
-		if (y > fb->y_res) {
-			y = fb->y_res;
-		}
-
-		if (x + width > fb->x_res) {
-			width = fb->x_res - x;
-		}
-
-		if (y + height > fb->y_res) {
-			height = fb->y_res - y;
-		}
-
 		for (size_t i = x; i < x + width; i++) {
 			for (size_t j = y; j < (y + height); j++) {
 				/*
@@ -517,12 +516,37 @@ int cfb_invert_area(const struct device *dev, uint16_t x, uint16_t y,
 				}
 			}
 		}
+	} else {
+		const size_t bytes_per_row = fb->x_res / 8U;
 
-		return 0;
+		for (uint16_t j = y; j < (y + height); j++) {
+			const uint16_t start_byte = x / 8U;
+			const uint16_t end_byte = (x + width - 1U) / 8U;
+
+			for (uint16_t b = start_byte; b <= end_byte; b++) {
+				const size_t index = j * bytes_per_row + b;
+				const uint8_t bit_start = (b == start_byte) ? (x % 8U) : 0U;
+				const uint8_t bit_end =
+					(b == end_byte) ? ((x + width - 1U) % 8U) : 7U;
+				uint8_t m;
+
+				if (bit_end >= bit_start) {
+					m = BIT_MASK(bit_end - bit_start + 1U) << bit_start;
+				} else {
+					m = 0U;
+				}
+
+				if (need_reverse) {
+					m = byte_reverse(m);
+				}
+
+				/* invert byte with computed mask */
+				fb->buf[index] ^= m;
+			}
+		}
 	}
 
-	LOG_ERR("Unsupported framebuffer configuration");
-	return -EINVAL;
+	return 0;
 }
 
 static int cfb_invert(const struct char_framebuffer *fb)
@@ -579,7 +603,7 @@ int cfb_framebuffer_finalize(const struct device *dev)
 		.pitch = fb->x_res,
 	};
 
-	if ((fb->pixel_format == PIXEL_FORMAT_MONO10) == fb->inverted) {
+	if ((fb->pixel_format == PIXEL_FORMAT_MONO10) != fb->inverted) {
 		cfb_invert(fb);
 		err = api->write(dev, 0, 0, &desc, fb->buf);
 		cfb_invert(fb);

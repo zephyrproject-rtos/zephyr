@@ -88,6 +88,12 @@ static int clock_control_renesas_rza2m_init(const struct device *dev)
 	rza2m_cpg_set_sub_clock_divider(dev, CPG_SUB_CLOCK_BCLK, config->cpg_bclk_freq_hz_cfg);
 	rza2m_cpg_set_sub_clock_divider(dev, CPG_SUB_CLOCK_P1CLK, config->cpg_p1clk_freq_hz_cfg);
 
+	/* Select P1φ Clock output for SPI multi I/O bus controller */
+	reg_val = sys_read16(CPG_REG_ADDR(CPG_SCLKSEL_OFFSET));
+	reg_val &= ~(CPG_SCLKSEL_SPICR << CPG_SCLKSEL_SPICR_SHIFT);
+	reg_val |= 1 << CPG_SCLKSEL_SPICR_SHIFT;
+	sys_write16(reg_val, CPG_REG_ADDR(CPG_SCLKSEL_OFFSET));
+
 	return 0;
 }
 static DEVICE_API(clock_control, rza2m_clock_control_driver_api) = {

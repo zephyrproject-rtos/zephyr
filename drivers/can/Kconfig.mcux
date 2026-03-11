@@ -1,4 +1,4 @@
-# MCUX CAN configuration options
+# NXP MCUX CAN configuration options
 
 # Copyright (c) 2019 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
@@ -29,24 +29,17 @@ config CAN_MCUX_FLEXCAN_WAIT_TIMEOUT
 	  freeze mode.
 
 config CAN_MCUX_FLEXCAN_MAX_FILTERS
-	int "Maximum number of concurrent active RX filters"
+	int "Maximum number of concurrently active RX filters"
+	range 0 128
 	default 5 if CAN_MCUX_FLEXCAN_FD
 	default 13
 	help
-	  Defines maximum number of concurrent active RX filters
-	  The maximum value depends on the number of available message
-	  buffers for each FlexCAN instance. CAN FD mode uses larger
-	  message buffers, resulting in fewer available filters.
+	  Default maximum number of concurrently active RX filters. The maximum value depends on the
+	  number of available message buffers for each FlexCAN instance.
+
+	  This default can be overridden on a per-instance basis via the "max-filters" devicetree
+	  property.
+
+	  CAN FD mode uses larger message buffers, resulting in fewer available filters.
 
 endif # CAN_MCUX_FLEXCAN
-
-config CAN_MCUX_MCAN
-	bool "MCUX MCAN driver"
-	default y
-	depends on DT_HAS_NXP_LPC_MCAN_ENABLED
-	depends on CLOCK_CONTROL
-	select CAN_MCAN
-	select PINCTRL
-	select RESET
-	help
-	  Enable support for mcux mcan driver.

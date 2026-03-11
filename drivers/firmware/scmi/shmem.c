@@ -110,7 +110,9 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 	return 0;
 }
 
-int scmi_shmem_write_message(const struct device *shmem, struct scmi_message *msg)
+int scmi_shmem_write_message(const struct device *shmem,
+			     struct scmi_message *msg,
+			     bool use_polling)
 {
 	struct scmi_shmem_layout *layout;
 	struct scmi_shmem_data *data;
@@ -148,6 +150,8 @@ int scmi_shmem_write_message(const struct device *shmem, struct scmi_message *ms
 	if (scmi_shmem_vendor_write_message(layout) < 0) {
 		return -EINVAL;
 	}
+
+	layout->chan_flags = !use_polling ? SCMI_SHMEM_CHAN_FLAG_IRQ_BIT : 0;
 
 	/* done, mark channel as busy and proceed */
 	layout->chan_status &= ~SCMI_SHMEM_CHAN_STATUS_BUSY_BIT;

@@ -501,7 +501,7 @@ int bindesc_find_bytes(struct bindesc_handle *handle, uint16_t id, const uint8_t
  * @brief Get the size of an image's binary descriptors
  *
  * @details
- * Walks the binary descriptor structure to caluculate the total size of the structure
+ * Walks the binary descriptor structure to calculate the total size of the structure
  * in bytes. This is useful, for instance, if the whole structure is to be copied to RAM.
  *
  * @param handle An initialized bindesc handle

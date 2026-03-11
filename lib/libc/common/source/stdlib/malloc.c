@@ -262,6 +262,23 @@ void free(void *ptr)
 	malloc_unlock();
 }
 
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+
+int malloc_runtime_stats_get(struct sys_memory_stats *stats)
+{
+	int ret;
+
+	malloc_lock();
+
+	ret = sys_heap_runtime_stats_get(&z_malloc_heap, stats);
+
+	malloc_unlock();
+
+	return ret;
+}
+
+#endif /* CONFIG_SYS_HEAP_RUNTIME_STATS */
+
 SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_LIBC);
 #else /* No malloc arena */
 void *malloc(size_t size)

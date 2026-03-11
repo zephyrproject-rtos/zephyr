@@ -9,14 +9,14 @@ description: |
   communication (IPC) framework. When used in the tx mode, the BELLBOARD
   instance is used to trigger events to another core.
 
-  Example definition:
+compatible: "nordic,nrf-bellboard-tx"
 
+include: "nordic,nrf-bellboard-common.yaml"
+
+examples:
+  - |
     bellboard: mailbox@deadbeef {
       compatible = "nordic,nrf-bellboard-tx";
       reg = <0xdeadbeef 0x1000>;
       #mbox-cells = <1>;
     };
-
-compatible: "nordic,nrf-bellboard-tx"
-
-include: "nordic,nrf-bellboard-common.yaml"

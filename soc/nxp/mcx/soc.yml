@@ -32,14 +32,24 @@ family:
     - name: mcxe317
     - name: mcxe31b
 - name: mcxa
-  socs:
-  - name: mcxa153
-  - name: mcxa156
-  - name: mcxa346
-  - name: mcxa266
-  - name: mcxa366
-  - name: mcxa344
-  - name: mcxa577
+  series:
+  - name: mcxa1x3
+    socs:
+    - name: mcxa153
+  - name: mcxa1x6
+    socs:
+    - name: mcxa156
+  - name: mcxaxx6
+    socs:
+    - name: mcxa346
+    - name: mcxa266
+    - name: mcxa366
+  - name: mcxaxx4
+    socs:
+    - name: mcxa344
+  - name: mcxaxx7
+    socs:
+    - name: mcxa577
 - name: mcxw
   series:
   - name: mcxw2xx
@@ -62,6 +72,9 @@ runners:
         - mcxn947/cpu0
         - mcxn947/cpu1
       - qualifiers:
+        - mcxn547/cpu0
+        - mcxn547/cpu1
+      - qualifiers:
         - mcxn236
       - qualifiers:
         - mcxc141
@@ -71,6 +84,20 @@ runners:
         - mcxc242
       - qualifiers:
         - mcxc444
+      - qualifiers:
+        - mcxe245
+      - qualifiers:
+        - mcxe246
+      - qualifiers:
+        - mcxe247
+      - qualifiers:
+        - mcxe315
+      - qualifiers:
+        - mcxe316
+      - qualifiers:
+        - mcxe317
+      - qualifiers:
+        - mcxe31b
       - qualifiers:
         - mcxa153
       - qualifiers:
@@ -86,9 +113,17 @@ runners:
       - qualifiers:
         - mcxw716c
       - qualifiers:
+        - mcxw235
+      - qualifiers:
         - mcxw236
       - qualifiers:
         - mcxa344
+      - qualifiers:
+        - mcxw70ac
+      - qualifiers:
+        - mcxw716c
+      - qualifiers:
+        - mcxw727c
     '--reset':
     - run: last
       runners:
@@ -98,6 +133,9 @@ runners:
         - mcxn947/cpu0
         - mcxn947/cpu1
       - qualifiers:
+        - mcxn547/cpu0
+        - mcxn547/cpu1
+      - qualifiers:
         - mcxn236
       - qualifiers:
         - mcxc141
@@ -107,6 +145,20 @@ runners:
         - mcxc242
       - qualifiers:
         - mcxc444
+      - qualifiers:
+        - mcxe245
+      - qualifiers:
+        - mcxe246
+      - qualifiers:
+        - mcxe247
+      - qualifiers:
+        - mcxe315
+      - qualifiers:
+        - mcxe316
+      - qualifiers:
+        - mcxe317
+      - qualifiers:
+        - mcxe31b
       - qualifiers:
         - mcxa153
       - qualifiers:
@@ -122,6 +174,14 @@ runners:
       - qualifiers:
         - mcxw716c
       - qualifiers:
+        - mcxw235
+      - qualifiers:
         - mcxw236
       - qualifiers:
         - mcxa344
+      - qualifiers:
+        - mcxw70ac
+      - qualifiers:
+        - mcxw716c
+      - qualifiers:
+        - mcxw727c

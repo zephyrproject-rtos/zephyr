@@ -432,7 +432,12 @@ static void write_explicit_feedback(struct usbd_class_data *const c_data,
 	fb_value = ctx->ops->feedback_cb(dev, terminal, ctx->user_data);
 
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_FS) {
-		net_buf_add_le24(buf, fb_value);
+		if (IS_ENABLED(CONFIG_USBD_UAC2_FS_WINDOWS_WORKAROUND)) {
+			/* Convert Q10.14 to Q16.16 */
+			net_buf_add_le32(buf, fb_value << 2);
+		} else {
+			net_buf_add_le24(buf, fb_value);
+		}
 	} else {
 		net_buf_add_le32(buf, fb_value);
 	}

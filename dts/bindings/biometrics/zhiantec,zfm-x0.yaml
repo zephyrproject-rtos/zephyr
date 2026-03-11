@@ -5,8 +5,9 @@ description: |
   ZFM-x0 Series Optical Fingerprint Sensor
 
   This binding supports fingerprint sensor modules using the Zhiantec/Synochip
-  ZFM protocol, including ZFM-20, ZFM-60, ZFM-70, R30x, JM-101, DY-50, FPM10A,
-  and other compatible modules.
+  ZFM protocol, including optical sensors like ZFM-20, ZFM-60, ZFM-70, R30x,
+  JM-101, DY-50, FPM10A, capacitive sensors like Hi-Link HLK-ZW3021, HLK-ZW0623,
+  HLK-ZW0642 and other compatible modules.
 
 compatible: "zhiantec,zfm-x0"
 

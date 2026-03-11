@@ -247,12 +247,12 @@ static int gpio_bflb_config(const struct device *dev, gpio_pin_t pin,
 		outputcfg |= BIT(pin);
 		if (flags & GPIO_OUTPUT_INIT_HIGH) {
 			tmp = sys_read32(cfg->base_reg + GLB_GPIO_CFGCTL32_OFFSET);
-			tmp = tmp | pin;
+			tmp |= BIT(pin);
 			sys_write32(tmp, cfg->base_reg + GLB_GPIO_CFGCTL32_OFFSET);
 		}
 		if (flags & GPIO_OUTPUT_INIT_LOW) {
 			tmp = sys_read32(cfg->base_reg + GLB_GPIO_CFGCTL32_OFFSET);
-			tmp = tmp & ~pin;
+			tmp &= ~BIT(pin);
 			sys_write32(tmp, cfg->base_reg + GLB_GPIO_CFGCTL32_OFFSET);
 		}
 	} else {
@@ -309,6 +309,12 @@ int gpio_bflb_init(const struct device *dev)
 {
 	const struct gpio_bflb_config * const cfg = dev->config;
 
+#if defined(CONFIG_SOC_SERIES_BL70X) && !DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(psram))
+	/* Pins 23-28 are output-only (no high-Z). Route them through the PSRAM IO pads. */
+	sys_write32(GLB_CFG_GPIO_USE_PSRAM_IO_MSK,
+		    GLB_BASE + GLB_GPIO_USE_PSRAM__IO_OFFSET);
+#endif
+
 	cfg->irq_config_func(dev);
 
 	return 0;
@@ -352,9 +358,7 @@ static DEVICE_API(gpio, gpio_bflb_api) = {
 	static void port_##n##_bflb_irq_enable_func(const struct device *dev);	\
 										\
 	static const struct gpio_bflb_config port_##n##_bflb_config = {		\
-		.common = {							\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
-		},								\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),			\
 		.base_reg = DT_INST_REG_ADDR(n),				\
 		.irq_config_func = port_##n##_bflb_irq_config_func,		\
 		.irq_enable_func = port_##n##_bflb_irq_enable_func,		\

@@ -3,7 +3,7 @@
 # Copyright (c) 2021 Nordic Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
-menu "Miscellaneous Drivers"
+menu "Miscellaneous drivers"
 
 # zephyr-keep-sorted-start
 source "drivers/misc/devmux/Kconfig"

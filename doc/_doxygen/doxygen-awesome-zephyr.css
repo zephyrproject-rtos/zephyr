@@ -109,3 +109,23 @@ dl.section dd, dl.bug dd, dl.deprecated dd {
     padding-top: 25px;
     text-align: center;
 }
+
+/* Driver ops "badges" */
+.op-badge {
+    font-size: 12px;
+    font-weight: bold;
+    padding: 2px 4px ;
+    border-radius: 6px;
+    vertical-align: top;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.op-req {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.op-opt {
+    background-color: #3498db;
+    color: white;
+}

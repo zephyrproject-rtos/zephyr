@@ -9,6 +9,8 @@
 #include "pic32cx_sg61_cult-pinctrl.dtsi"
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/mchp_sam_d5x_e5x_adc.h>
 
 / {
 	model = "PIC32CX SG61 Curiosity Ultra";
@@ -35,13 +37,13 @@
 		compatible = "gpio-leds";
 
 		led1: led_1 {
-			gpios = <&portc 21 GPIO_ACTIVE_HIGH>;
-			label = "Yellow LED";
+			gpios = <&portc 21 GPIO_ACTIVE_LOW>;
+			label = "LED1";
 		};
 
 		led2: led_2 {
-			gpios = <&porta 16 GPIO_ACTIVE_HIGH>;
-			label = "Yellow LED";
+			gpios = <&porta 16 GPIO_ACTIVE_LOW>;
+			label = "LED2";
 		};
 	};
 
@@ -58,9 +60,15 @@
 		compatible = "gpio-keys";
 
 		button0: button_0 {
-			gpios = <&portb 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "SW1";
+			gpios = <&portd 00 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW 1";
 			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&portd 01 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW 2";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 };
@@ -153,11 +161,37 @@
 			gclkgen-src = "fdpll0";
 			gclkgen-en = <1>;
 		};
+
+		gclkgen1 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN1>;
+			gclkgen-div-factor = <2>;
+			gclkgen-src = "fdpll0";
+			gclkgen-run-in-standby-en = <1>;
+			gclkgen-en = <1>;
+		};
 	};
 
 	gclkperiph: gclkperiph {
 		compatible = "microchip,sam-d5x-e5x-gclkperiph";
 		#clock-cells = <1>;
+
+		adc0 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_ADC0>;
+			gclkperiph-src = "gclk1";
+			gclkperiph-en = <0>;
+		};
+
+		adc1 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_ADC1>;
+			gclkperiph-src = "gclk1";
+			gclkperiph-en = <0>;
+		};
+
+		dac {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_DAC>;
+			gclkperiph-src = "gclk1";
+			gclkperiph-en = <0>;
+		};
 	};
 
 	mclkperiph: mclkperiph {
@@ -176,6 +210,13 @@
 	status = "okay";
 };
 
+&tcc1 {
+	compatible = "microchip,tcc-g1-counter";
+	max-bit-width = <24>;
+	prescaler = <8>;
+	status = "okay";
+};
+
 &porta {
 	status = "okay";
 };
@@ -185,6 +226,10 @@
 };
 
 &portc {
+	status = "okay";
+};
+
+&portd {
 	status = "okay";
 };
 
@@ -227,4 +272,34 @@
 	max-bit-width = <16>;
 	prescaler = <64>;
 	status = "okay";
+};
+
+&adc0 {
+	/* ADC clock = GCLK / prescaler (60 MHz / 4 = 15 MHz) */
+	prescaler = <4>;
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc1 {
+	/* ADC clock = GCLK / prescaler (60 MHz / 4 = 15 MHz) */
+	prescaler = <4>;
+	pinctrl-0 = <&adc1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dac {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&dac_default>;
+	pinctrl-names = "default";
+	refsel = "int_ref";
+	status = "okay";
+
+	dac0: channel@0 {
+		reg = <0>;
+		rate = <1000>;
+	};
 };

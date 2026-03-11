@@ -8,6 +8,7 @@ common:
     - nrf5340dk/nrf5340/cpuapp/ns
     - nrf54l15dk/nrf54l15/cpuapp/ns
     - nrf54lm20dk/nrf54lm20a/cpuapp/ns
+    - nrf7120dk/nrf7120/cpuapp/ns
     - mps2/an521/cpu0/ns
     - lpcxpresso55s69/lpc55s69/cpu0/ns
   tags:

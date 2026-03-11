@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2025-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,6 +66,18 @@ static int gpio_esp32_lp_configure(const struct device *dev, gpio_pin_t pin, gpi
 		}
 	} else if (flags & GPIO_INPUT) {
 		rtcio_hal_set_direction(pin, RTC_GPIO_MODE_INPUT_ONLY);
+	}
+
+	if (flags & GPIO_PULL_UP) {
+		rtcio_ll_pullup_enable(pin);
+	} else {
+		rtcio_ll_pullup_disable(pin);
+	}
+
+	if (flags & GPIO_PULL_DOWN) {
+		rtcio_ll_pulldown_enable(pin);
+	} else {
+		rtcio_ll_pulldown_disable(pin);
 	}
 
 	return 0;
@@ -159,6 +171,7 @@ static int gpio_esp32_lp_pin_interrupt_configure(const struct device *dev, gpio_
 	ulp_lp_core_intr_enable();
 
 	rtcio_ll_intr_enable(pin, intr_trig_mode);
+	rtcio_ll_wakeup_enable(pin, intr_trig_mode);
 
 	return 0;
 }
@@ -197,9 +210,7 @@ static DEVICE_API(gpio, gpio_esp32_lp_driver_api) = {
 
 static struct gpio_esp32_lp_data gpio_esp32_lp_data_0;
 static struct gpio_esp32_lp_config gpio_esp32_lp_cfg = {
-	.drv_cfg = {
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(DT_NODELABEL(lp_gpio)),
-		},
+	.drv_cfg = GPIO_COMMON_CONFIG_FROM_DT_NODE(DT_NODELABEL(lp_gpio)),
 	.lp_io_dev = (lp_io_dev_t *)DT_REG_ADDR(DT_NODELABEL(lp_gpio)),
 };
 

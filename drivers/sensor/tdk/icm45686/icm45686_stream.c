@@ -42,12 +42,10 @@ static struct sensor_stream_trigger *get_read_config_trigger(const struct sensor
 	return NULL;
 }
 
-static inline bool should_flush_fifo(const struct sensor_read_config *read_cfg,
-				     uint8_t int_status)
+static inline bool should_flush_fifo(const struct sensor_read_config *read_cfg, uint8_t int_status)
 {
-	struct sensor_stream_trigger *trig_fifo_ths = get_read_config_trigger(
-		read_cfg,
-		SENSOR_TRIG_FIFO_WATERMARK);
+	struct sensor_stream_trigger *trig_fifo_ths =
+		get_read_config_trigger(read_cfg, SENSOR_TRIG_FIFO_WATERMARK);
 
 	bool fifo_ths = int_status & REG_INT1_STATUS0_FIFO_THS(true);
 	bool fifo_full = int_status & REG_INT1_STATUS0_FIFO_FULL(true);
@@ -62,12 +60,10 @@ static inline bool should_flush_fifo(const struct sensor_read_config *read_cfg,
 
 static inline bool should_read_fifo(const struct sensor_read_config *read_cfg)
 {
-	struct sensor_stream_trigger *trig_fifo_ths = get_read_config_trigger(
-		read_cfg,
-		SENSOR_TRIG_FIFO_WATERMARK);
-	struct sensor_stream_trigger *trig_fifo_full = get_read_config_trigger(
-		read_cfg,
-		SENSOR_TRIG_FIFO_FULL);
+	struct sensor_stream_trigger *trig_fifo_ths =
+		get_read_config_trigger(read_cfg, SENSOR_TRIG_FIFO_WATERMARK);
+	struct sensor_stream_trigger *trig_fifo_full =
+		get_read_config_trigger(read_cfg, SENSOR_TRIG_FIFO_FULL);
 
 	if ((trig_fifo_ths && trig_fifo_ths->opt == SENSOR_STREAM_DATA_INCLUDE) ||
 	    (trig_fifo_full && trig_fifo_full->opt == SENSOR_STREAM_DATA_INCLUDE)) {
@@ -79,18 +75,16 @@ static inline bool should_read_fifo(const struct sensor_read_config *read_cfg)
 
 static inline bool should_read_all_fifo(const struct sensor_read_config *read_cfg)
 {
-	struct sensor_stream_trigger *trig_fifo_full = get_read_config_trigger(
-		read_cfg,
-		SENSOR_TRIG_FIFO_FULL);
+	struct sensor_stream_trigger *trig_fifo_full =
+		get_read_config_trigger(read_cfg, SENSOR_TRIG_FIFO_FULL);
 
-	return (trig_fifo_full && trig_fifo_full->opt == SENSOR_STREAM_DATA_INCLUDE);
+	return trig_fifo_full && trig_fifo_full->opt == SENSOR_STREAM_DATA_INCLUDE;
 }
 
 static inline bool should_read_data(const struct sensor_read_config *read_cfg)
 {
-	struct sensor_stream_trigger *trig_drdy = get_read_config_trigger(
-		read_cfg,
-		SENSOR_TRIG_DATA_READY);
+	struct sensor_stream_trigger *trig_drdy =
+		get_read_config_trigger(read_cfg, SENSOR_TRIG_DATA_READY);
 
 	if (trig_drdy && trig_drdy->opt == SENSOR_STREAM_DATA_INCLUDE) {
 		return true;
@@ -99,8 +93,7 @@ static inline bool should_read_data(const struct sensor_read_config *read_cfg)
 	return false;
 }
 
-static inline void icm45686_stream_result(const struct device *dev,
-					  int result)
+static inline void icm45686_stream_result(const struct device *dev, int result)
 {
 	struct icm45686_data *data = dev->data;
 	const struct icm45686_config *cfg = dev->config;
@@ -120,8 +113,7 @@ static inline void icm45686_stream_result(const struct device *dev,
 	}
 }
 
-static void icm45686_complete_handler(struct rtio *ctx,
-				      const struct rtio_sqe *sqe, int result,
+static void icm45686_complete_handler(struct rtio *ctx, const struct rtio_sqe *sqe, int result,
 				      void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
@@ -162,8 +154,8 @@ static void icm45686_complete_handler(struct rtio *ctx,
 				    REG_FIFO_CONFIG2_FIFO_WM_GT_THS(wm_gt_ths);
 		LOG_WRN("Flushing FIFO: %d", int_status);
 
-		err = icm45686_prep_reg_write_rtio_async(&data->bus, REG_FIFO_CONFIG2, &write_reg,
-							 1, NULL);
+		err = icm45686_prep_reg_write_rtio_async(&data->bus, FIFO_CONFIG2, &write_reg, 1,
+							 NULL);
 		if (err < 0) {
 			LOG_ERR("Failed to acquire RTIO SQE");
 			icm45686_stream_result(dev, -ENOMEM);
@@ -203,8 +195,7 @@ static void icm45686_event_handler(const struct device *dev)
 		LOG_WRN("Callback triggered with no streaming submission - Disabling interrupts");
 		(void)atomic_set(&data->stream.state, ICM45686_STREAM_OFF);
 		(void)gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_DISABLE);
-		err = icm45686_prep_reg_write_rtio_async(&data->bus, REG_INT1_CONFIG0, &val, 1,
-							 NULL);
+		err = icm45686_prep_reg_write_rtio_async(&data->bus, INT1_CONFIG0, &val, 1, NULL);
 		if (err < 0) {
 			LOG_ERR("Failed to prepare write to disable interrupts: %d", err);
 			rtio_sqe_drop_all(data->bus.rtio.ctx);
@@ -238,7 +229,7 @@ static void icm45686_event_handler(const struct device *dev)
 	struct rtio_sqe *data_rd_sqe;
 
 	/** Directly read Status Register to determine what triggered the event */
-	err = icm45686_prep_reg_read_rtio_async(&data->bus, REG_INT1_STATUS0 | REG_READ_BIT,
+	err = icm45686_prep_reg_read_rtio_async(&data->bus, INT1_STATUS0 | REG_READ_BIT,
 						&data->stream.data.int_status, 1, &read_sqe);
 	if (err < 0) {
 		LOG_ERR("Failed to prepare Status-reg read: %d", err);
@@ -255,11 +246,12 @@ static void icm45686_event_handler(const struct device *dev)
 	 * this SQE. Only include more data if the associated trigger needs it.
 	 */
 	if (should_read_fifo(read_cfg)) {
-		size_t num_frames_to_read = should_read_all_fifo(read_cfg) ?
-					    FIFO_COUNT_MAX_HIGH_RES : cfg->settings.fifo_watermark;
+		size_t num_frames_to_read = should_read_all_fifo(read_cfg)
+						    ? FIFO_COUNT_MAX_HIGH_RES
+						    : cfg->settings.fifo_watermark;
 
-		buf_len_required += (num_frames_to_read *
-				     sizeof(struct icm45686_encoded_fifo_payload));
+		buf_len_required +=
+			(num_frames_to_read * sizeof(struct icm45686_encoded_fifo_payload));
 	} else if (should_read_data(read_cfg)) {
 		buf_len_required += sizeof(struct icm45686_encoded_payload);
 	} else {
@@ -285,11 +277,12 @@ static void icm45686_event_handler(const struct device *dev)
 		buf->header.accel_fs = ICM45686_DT_ACCEL_FS_32;
 		buf->header.gyro_fs = ICM45686_DT_GYRO_FS_4000;
 		buf->header.channels = 0x7F; /* Signal all channels are available */
-		buf->header.fifo_count = should_read_all_fifo(read_cfg) ? FIFO_COUNT_MAX_HIGH_RES :
-					 cfg->settings.fifo_watermark;
+		buf->header.fifo_count = should_read_all_fifo(read_cfg)
+						 ? FIFO_COUNT_MAX_HIGH_RES
+						 : cfg->settings.fifo_watermark;
 
 		err = icm45686_prep_reg_read_rtio_async(
-			&data->bus, REG_FIFO_DATA | REG_READ_BIT, (uint8_t *)&buf->fifo_payload,
+			&data->bus, FIFO_DATA | REG_READ_BIT, (uint8_t *)&buf->fifo_payload,
 			buf->header.fifo_count * sizeof(struct icm45686_encoded_fifo_payload),
 			&data_rd_sqe);
 		if (err < 0) {
@@ -303,8 +296,7 @@ static void icm45686_event_handler(const struct device *dev)
 		buf->header.gyro_fs = data->edata.header.gyro_fs;
 		buf->header.channels = 0x7F; /* Signal all channels are available */
 
-		err = icm45686_prep_reg_read_rtio_async(&data->bus,
-							REG_ACCEL_DATA_X1_UI | REG_READ_BIT,
+		err = icm45686_prep_reg_read_rtio_async(&data->bus, ACCEL_DATA_X1_UI | REG_READ_BIT,
 							buf->payload.buf, sizeof(buf->payload.buf),
 							&data_rd_sqe);
 		if (err < 0) {
@@ -327,17 +319,14 @@ static void icm45686_event_handler(const struct device *dev)
 		icm45686_stream_result(dev, -ENOMEM);
 		return;
 	}
-	rtio_sqe_prep_callback_no_cqe(complete_sqe,
-				      icm45686_complete_handler,
-				      (void *)dev,
+	rtio_sqe_prep_callback_no_cqe(complete_sqe, icm45686_complete_handler, (void *)dev,
 				      data->stream.iodev_sqe);
 
 	rtio_submit(data->bus.rtio.ctx, 0);
 }
 
 #if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(invensense_icm45686, i3c)
-static int icm45686_ibi_cb(struct i3c_device_desc *target,
-			   struct i3c_ibi_payload *payload)
+static int icm45686_ibi_cb(struct i3c_device_desc *target, struct i3c_ibi_payload *payload)
 {
 	icm45686_event_handler(target->dev);
 
@@ -345,13 +334,10 @@ static int icm45686_ibi_cb(struct i3c_device_desc *target,
 }
 #endif
 
-static void icm45686_gpio_callback(const struct device *gpio_dev,
-				   struct gpio_callback *cb,
+static void icm45686_gpio_callback(const struct device *gpio_dev, struct gpio_callback *cb,
 				   uint32_t pins)
 {
-	struct icm45686_stream *stream = CONTAINER_OF(cb,
-						      struct icm45686_stream,
-						      cb);
+	struct icm45686_stream *stream = CONTAINER_OF(cb, struct icm45686_stream, cb);
 	const struct device *dev = stream->dev;
 
 	icm45686_event_handler(dev);
@@ -360,7 +346,7 @@ static void icm45686_gpio_callback(const struct device *gpio_dev,
 static inline bool settings_changed(const struct icm45686_stream *a,
 				    const struct icm45686_stream *b)
 {
-	return (a->settings.enabled.drdy != b->settings.enabled.drdy) ||
+	return a->settings.enabled.drdy != b->settings.enabled.drdy ||
 	       (a->settings.opt.drdy != b->settings.opt.drdy) ||
 	       (a->settings.enabled.fifo_ths != b->settings.enabled.fifo_ths) ||
 	       (a->settings.opt.fifo_ths != b->settings.opt.fifo_ths) ||
@@ -368,8 +354,7 @@ static inline bool settings_changed(const struct icm45686_stream *a,
 	       (a->settings.opt.fifo_full != b->settings.opt.fifo_full);
 }
 
-void icm45686_stream_submit(const struct device *dev,
-			    struct rtio_iodev_sqe *iodev_sqe)
+void icm45686_stream_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *read_cfg = iodev_sqe->sqe.iodev->data;
 	struct icm45686_data *data = dev->data;
@@ -387,7 +372,7 @@ void icm45686_stream_submit(const struct device *dev,
 	 */
 	struct icm45686_stream stream = {0};
 
-	for (size_t i = 0 ; i  < read_cfg->count ; i++) {
+	for (size_t i = 0; i < read_cfg->count; i++) {
 		switch (read_cfg->triggers[i].trigger) {
 		case SENSOR_TRIG_DATA_READY:
 			stream.settings.enabled.drdy = true;
@@ -409,11 +394,11 @@ void icm45686_stream_submit(const struct device *dev,
 	}
 
 	__ASSERT(stream.settings.enabled.drdy ^
-		 ((stream.settings.enabled.fifo_ths || stream.settings.enabled.fifo_full)),
+			 ((stream.settings.enabled.fifo_ths || stream.settings.enabled.fifo_full)),
 		 "DRDY should not be enabled alongside FIFO triggers");
 
 	__ASSERT(!stream.settings.enabled.fifo_ths ||
-		 (stream.settings.enabled.fifo_ths && cfg->settings.fifo_watermark),
+			 (stream.settings.enabled.fifo_ths && cfg->settings.fifo_watermark),
 		 "FIFO watermark trigger requires a watermark level. Please "
 		 "configure it on the device-tree");
 
@@ -426,7 +411,7 @@ void icm45686_stream_submit(const struct device *dev,
 		data->stream.settings = stream.settings;
 
 		/* Disable all interrupts before re-configuring */
-		err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG0, &val, 1);
+		err = icm45686_reg_write_rtio(&data->bus, INT1_CONFIG0, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to disable interrupts on INT1_CONFIG0: %d", err);
 			icm45686_stream_result(dev, err);
@@ -434,18 +419,16 @@ void icm45686_stream_submit(const struct device *dev,
 		}
 
 		/* Read flags to clear them */
-		err = icm45686_reg_read_rtio(&data->bus, REG_INT1_STATUS0 | REG_READ_BIT, &val, 1);
+		err = icm45686_reg_read_rtio(&data->bus, INT1_STATUS0 | REG_READ_BIT, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to read INT1_STATUS0: %d", err);
 			icm45686_stream_result(dev, err);
 			return;
 		}
 
-		val = REG_FIFO_CONFIG3_FIFO_EN(false) |
-		      REG_FIFO_CONFIG3_FIFO_ACCEL_EN(false) |
-		      REG_FIFO_CONFIG3_FIFO_GYRO_EN(false) |
-		      REG_FIFO_CONFIG3_FIFO_HIRES_EN(false);
-		err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG3, &val, 1);
+		val = REG_FIFO_CONFIG3_FIFO_EN(false) | REG_FIFO_CONFIG3_FIFO_ACCEL_EN(false) |
+		      REG_FIFO_CONFIG3_FIFO_GYRO_EN(false) | REG_FIFO_CONFIG3_FIFO_HIRES_EN(false);
+		err = icm45686_reg_write_rtio(&data->bus, FIFO_CONFIG3, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to disable all FIFO settings: %d", err);
 			icm45686_stream_result(dev, err);
@@ -455,7 +438,7 @@ void icm45686_stream_submit(const struct device *dev,
 		val = REG_INT1_CONFIG0_STATUS_EN_DRDY(data->stream.settings.enabled.drdy) |
 		      REG_INT1_CONFIG0_STATUS_EN_FIFO_THS(data->stream.settings.enabled.fifo_ths) |
 		      REG_INT1_CONFIG0_STATUS_EN_FIFO_FULL(data->stream.settings.enabled.fifo_full);
-		err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG0, &val, 1);
+		err = icm45686_reg_write_rtio(&data->bus, INT1_CONFIG0, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to configure INT1_CONFIG0: %d", err);
 			icm45686_stream_result(dev, err);
@@ -464,7 +447,7 @@ void icm45686_stream_submit(const struct device *dev,
 
 		val = REG_FIFO_CONFIG0_FIFO_MODE(REG_FIFO_CONFIG0_FIFO_MODE_BYPASS) |
 		      REG_FIFO_CONFIG0_FIFO_DEPTH(REG_FIFO_CONFIG0_FIFO_DEPTH_2K);
-		err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG0, &val, 1);
+		err = icm45686_reg_write_rtio(&data->bus, FIFO_CONFIG0, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to disable FIFO: %d", err);
 			icm45686_stream_result(dev, err);
@@ -481,19 +464,20 @@ void icm45686_stream_submit(const struct device *dev,
 			 * To avoid the case where M == 1 and M-- would be 0,
 			 * M + 1 threshold is used so M count is read.
 			 */
-			uint16_t fifo_ths = data->stream.settings.enabled.fifo_ths ?
-					    cfg->settings.fifo_watermark + 1 : 0;
+			uint16_t fifo_ths = data->stream.settings.enabled.fifo_ths
+						    ? cfg->settings.fifo_watermark + 1
+						    : 0;
 
 			val = REG_FIFO_CONFIG2_FIFO_WM_GT_THS(wm_gt_ths) |
 			      REG_FIFO_CONFIG2_FIFO_FLUSH(true);
-			err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG2, &val, 1);
+			err = icm45686_reg_write_rtio(&data->bus, FIFO_CONFIG2, &val, 1);
 			if (err) {
 				LOG_ERR("Failed to configure greater-than FIFO threshold: %d", err);
 				icm45686_stream_result(dev, err);
 				return;
 			}
 
-			err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG1_0,
+			err = icm45686_reg_write_rtio(&data->bus, FIFO_CONFIG1_0,
 						      (uint8_t *)&fifo_ths, 2);
 			if (err) {
 				LOG_ERR("Failed to configure FIFO watermark: %d", err);
@@ -503,7 +487,7 @@ void icm45686_stream_submit(const struct device *dev,
 
 			val = REG_FIFO_CONFIG0_FIFO_MODE(REG_FIFO_CONFIG0_FIFO_MODE_STREAM) |
 			      REG_FIFO_CONFIG0_FIFO_DEPTH(REG_FIFO_CONFIG0_FIFO_DEPTH_2K);
-			err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG0, &val, 1);
+			err = icm45686_reg_write_rtio(&data->bus, FIFO_CONFIG0, &val, 1);
 			if (err) {
 				LOG_ERR("Failed to disable FIFO: %d", err);
 				icm45686_stream_result(dev, err);
@@ -514,7 +498,7 @@ void icm45686_stream_submit(const struct device *dev,
 			      REG_FIFO_CONFIG3_FIFO_ACCEL_EN(true) |
 			      REG_FIFO_CONFIG3_FIFO_GYRO_EN(true) |
 			      REG_FIFO_CONFIG3_FIFO_HIRES_EN(true);
-			err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG3, &val, 1);
+			err = icm45686_reg_write_rtio(&data->bus, FIFO_CONFIG3, &val, 1);
 			if (err) {
 				LOG_ERR("Failed to enable FIFO: %d", err);
 				icm45686_stream_result(dev, err);
@@ -529,7 +513,8 @@ int icm45686_stream_init(const struct device *dev)
 {
 	const struct icm45686_config *cfg = dev->config;
 	struct icm45686_data *data = dev->data;
-	uint8_t val = 0;
+	inv_imu_int_state_t int_config;
+	inv_imu_int_pin_config_t int_pin_config;
 	int err;
 
 	/** Needed to get back the device handle from the callback context */
@@ -549,8 +534,7 @@ int icm45686_stream_init(const struct device *dev)
 			return -EIO;
 		}
 
-		gpio_init_callback(&data->stream.cb,
-				   icm45686_gpio_callback,
+		gpio_init_callback(&data->stream.cb, icm45686_gpio_callback,
 				   BIT(cfg->int_gpio.pin));
 
 		err = gpio_add_callback(cfg->int_gpio.port, &data->stream.cb);
@@ -559,20 +543,26 @@ int icm45686_stream_init(const struct device *dev)
 			return -EIO;
 		}
 
-		err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG0, &val, 1);
+		err = gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+		if (err) {
+			LOG_ERR("Failed to configure interrupt");
+		}
+
+		err = icm456xx_set_config_int(&data->driver, INV_IMU_INT1, &int_config);
 		if (err) {
 			LOG_ERR("Failed to disable all INTs");
 		}
 
-		val = REG_INT1_CONFIG2_EN_OPEN_DRAIN(false) |
-		      REG_INT1_CONFIG2_EN_ACTIVE_HIGH(true);
+		int_pin_config.int_polarity = INTX_CONFIG2_INTX_POLARITY_HIGH;
+		int_pin_config.int_mode = INTX_CONFIG2_INTX_MODE_PULSE;
+		int_pin_config.int_drive = INTX_CONFIG2_INTX_DRIVE_OD;
+		err = icm456xx_set_pin_config_int(&data->driver, INV_IMU_INT1, &int_pin_config);
 
-		err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG2, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to configure INT as push-pull: %d", err);
 		}
 #if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(invensense_icm45686, i3c)
-	/** I3C devices use IBI only if no GPIO INT pin is defined. */
+		/** I3C devices use IBI only if no GPIO INT pin is defined. */
 	} else if (data->bus.rtio.type == ICM45686_BUS_I3C) {
 		const struct i3c_iodev_data *iodev_data = data->bus.rtio.iodev->data;
 

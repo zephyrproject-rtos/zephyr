@@ -1,4 +1,4 @@
-.. _intel_socfpga_agilex_socdk:
+.. zephyr:board:: intel_socfpga_agilex_socdk
 
 Intel Agilex SoC Development Kit
 #################################
@@ -25,23 +25,8 @@ The Intel Agilex SoC Development Kit supports the following physical features:
 
 Supported Features
 ==================
-The Intel Agilex SoC Development Kit configuration supports the following
-hardware features:
 
-+-----------+------------+--------------------------------------+
-| Interface | Controller | Driver/Component                     |
-+===========+============+======================================+
-| GIC-400   | on-chip    | GICv2 interrupt controller           |
-+-----------+------------+--------------------------------------+
-| ARM TIMER | on-chip    | System Clock                         |
-+-----------+------------+--------------------------------------+
-| UART      | on-chip    | NS16550 compatible serial port       |
-+-----------+------------+--------------------------------------+
-
-Other hardware features have not been enabled yet for this board.
-
-The default configuration can be found in
-:zephyr_file:`boards/intel/socfpga/agilex_socdk/intel_socfpga_agilex_socdk_defconfig`
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************

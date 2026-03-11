@@ -1,6 +1,7 @@
 # interrupt controller configuration options
 
 # Copyright (c) 2015 Intel Corporation
+# Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 menu "Interrupt controller drivers"
@@ -80,9 +81,12 @@ source "drivers/interrupt_controller/Kconfig.intel_vtd"
 source "drivers/interrupt_controller/Kconfig.it51xxx"
 source "drivers/interrupt_controller/Kconfig.it8xxx2"
 source "drivers/interrupt_controller/Kconfig.loapic"
+source "drivers/interrupt_controller/Kconfig.max32_rv32"
+source "drivers/interrupt_controller/Kconfig.mchp"
 source "drivers/interrupt_controller/Kconfig.mtk_adsp"
 source "drivers/interrupt_controller/Kconfig.multilevel"
 source "drivers/interrupt_controller/Kconfig.npcx"
+source "drivers/interrupt_controller/Kconfig.nxp_gint"
 source "drivers/interrupt_controller/Kconfig.nxp_irqsteer"
 source "drivers/interrupt_controller/Kconfig.nxp_pint"
 source "drivers/interrupt_controller/Kconfig.nxp_s32"

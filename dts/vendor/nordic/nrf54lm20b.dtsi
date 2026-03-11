@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf54lm20_a_b.dtsi"
+
+&global_peripherals {
+	axon: axon@56000 {
+		compatible = "nordic,axon";
+		reg = <0x56000 0x1000>;
+		interrupts = <86 NRF_DEFAULT_IRQ_PRIORITY>;
+		status = "disabled";
+	};
+};

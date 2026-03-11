@@ -456,11 +456,6 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 	const struct mipi_dsi_stm32_config *config = dev->config;
 	int ret;
 
-	if (!device_is_ready(config->rcc)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	ret = clock_control_on(config->rcc, (clock_control_subsys_t)&config->dsi_clk);
 	if (ret < 0) {
 		LOG_ERR("Enable DSI peripheral clock failed! (%d)", ret);

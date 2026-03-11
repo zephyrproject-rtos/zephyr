@@ -383,6 +383,13 @@ void qspi_npcx_fiu_mutex_unlock(const struct device *dev)
 	k_sem_give(&data->lock_sem);
 }
 
+bool qspi_npcx_fiu_mutex_is_locked(const struct device *dev)
+{
+	struct npcx_qspi_fiu_data *const data = dev->data;
+
+	return (k_sem_count_get(&data->lock_sem) == 0);
+}
+
 void qspi_npcx_fiu_apply_cfg(const struct device *dev,
 			     const struct npcx_qspi_cfg *cfg,
 			     const uint32_t operation)

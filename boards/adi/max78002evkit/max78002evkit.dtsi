@@ -1,0 +1,172 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <adi/max32/max78002-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Analog Devices MAX78002EVKIT";
+	compatible = "adi,max78002evkit";
+
+	chosen {
+		zephyr,flash = &flash0;
+	};
+
+	soc {
+		/*
+		 * Concatenate SRAM2 through SRAM3 for the M4.
+		 * Avoid SRAM0 since it will not work for noinit data.
+		 */
+		m4_sram: memory@20010000 {
+			compatible = "mmio-sram";
+			reg = <0x20010000 DT_SIZE_K(48 + 16)>;
+		};
+
+		/*
+		 * Concatenate SRAM4 through SRAM6 for the RV32
+		 */
+		rv32_sram: memory@20030000 {
+			compatible = "mmio-sram";
+			reg = <0x20030000 DT_SIZE_K(176)>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led_1 {
+			gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+
+		led2: led_2 {
+			gpios = <&gpio2 5 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		pb1: pb1 {
+			gpios = <&gpio2 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		pb2: pb2 {
+			gpios = <&gpio2 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW3";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		pb_wakeup: pb_wakeup {
+			gpios = <&gpio3 1
+				 (GPIO_PULL_UP | GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+			label = "Wakeup";
+			zephyr,code = <INPUT_KEY_WAKEUP>;
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		sw0 = &pb1;
+		sw1 = &pb2;
+		watchdog0 = &wdt0;
+	};
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+&clk_ibro {
+	status = "okay";
+};
+
+&uart0 {
+	pinctrl-0 = <&uart0a_tx_p0_1 &uart0a_rx_p0_0>;
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+};
+
+&uart1 {
+	pinctrl-0 = <&uart1_tx_p0_13 &uart1_rx_p0_12>;
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+};
+
+rv32_uart: &uart1 {};
+
+m4_uart: &uart0 {};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_scl_p0_10 &i2c0_sda_p0_11>;
+	pinctrl-names = "default";
+};
+
+&rtc_counter {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		m4_partition: partition@0 {
+			label = "image-m4";
+			reg = <0x0 DT_SIZE_M(1)>;
+		};
+
+		m4_storage_partition: partition@100000 {
+			label = "storage-m4";
+			reg = <0x100000 DT_SIZE_K(256)>;
+		};
+
+		rv32_partition: partition@140000 {
+			label = "image-rv32";
+			reg = <0x140000 DT_SIZE_M(1)>;
+		};
+
+		rv32_storage_partition: partition@240000 {
+			label = "storage-rv32";
+			reg = <0x240000 DT_SIZE_K(256)>;
+		};
+	};
+};

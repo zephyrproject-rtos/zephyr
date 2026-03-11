@@ -259,6 +259,21 @@
 #ifdef CONFIG_NRFX_PRS_BOX_4
 #define NRFX_PRS_BOX_4_ENABLED 1
 #endif
+#ifdef CONFIG_NRFX_PRS_BOX_5
+#define NRFX_PRS_BOX_5_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PRS_BOX_6
+#define NRFX_PRS_BOX_6_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PRS_BOX_7
+#define NRFX_PRS_BOX_7_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PRS_BOX_8
+#define NRFX_PRS_BOX_8_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PRS_BOX_9
+#define NRFX_PRS_BOX_9_ENABLED 1
+#endif
 
 #ifdef CONFIG_NRFX_PWM
 #define NRFX_PWM_ENABLED 1
@@ -298,21 +313,6 @@
 #ifdef CONFIG_NRFX_RTC_LOG
 #define NRFX_RTC_CONFIG_LOG_ENABLED 1
 #endif
-#ifdef CONFIG_NRFX_RTC0
-#define NRFX_RTC0_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_RTC1
-#define NRFX_RTC1_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_RTC2
-#define NRFX_RTC2_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_RTC130
-#define NRFX_RTC130_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_RTC131
-#define NRFX_RTC131_ENABLED 1
-#endif
 
 #ifdef CONFIG_NRFX_SAADC
 #define NRFX_SAADC_ENABLED 1
@@ -326,15 +326,6 @@
 #endif
 #ifdef CONFIG_NRFX_SPI_LOG
 #define NRFX_SPI_CONFIG_LOG_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_SPI0
-#define NRFX_SPI0_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_SPI1
-#define NRFX_SPI1_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_SPI2
-#define NRFX_SPI2_ENABLED 1
 #endif
 
 #ifdef CONFIG_NRFX_SPIM
@@ -393,12 +384,6 @@
 #ifdef CONFIG_NRFX_TWI_LOG
 #define NRFX_TWI_CONFIG_LOG_ENABLED 1
 #endif
-#ifdef CONFIG_NRFX_TWI0
-#define NRFX_TWI0_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_TWI1
-#define NRFX_TWI1_ENABLED 1
-#endif
 
 #ifdef CONFIG_NRFX_TWIM
 #define NRFX_TWIM_ENABLED 1
@@ -425,9 +410,6 @@
 #endif
 #ifdef CONFIG_NRFX_UART_LOG
 #define NRFX_UART_CONFIG_LOG_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_UART0
-#define NRFX_UART0_ENABLED 1
 #endif
 
 #ifdef CONFIG_NRFX_UARTE

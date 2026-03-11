@@ -30,7 +30,7 @@ ZTEST(can_utilities, test_can_dlc_to_bytes)
 	}
 
 	/* CAN FD DLC, 12 to 64 data bytes in steps */
-	zassert_equal(can_dlc_to_bytes(9),  12, "wrong number of bytes for DLC 9");
+	zassert_equal(can_dlc_to_bytes(9), 12, "wrong number of bytes for DLC 9");
 	zassert_equal(can_dlc_to_bytes(10), 16, "wrong number of bytes for DLC 10");
 	zassert_equal(can_dlc_to_bytes(11), 20, "wrong number of bytes for DLC 11");
 	zassert_equal(can_dlc_to_bytes(12), 24, "wrong number of bytes for DLC 12");
@@ -52,7 +52,7 @@ ZTEST(can_utilities, test_can_bytes_to_dlc)
 	}
 
 	/* CAN FD DLC, 12 to 64 data bytes in steps */
-	zassert_equal(can_bytes_to_dlc(12), 9,  "wrong DLC for 12 bytes");
+	zassert_equal(can_bytes_to_dlc(12), 9, "wrong DLC for 12 bytes");
 	zassert_equal(can_bytes_to_dlc(16), 10, "wrong DLC for 16 bytes");
 	zassert_equal(can_bytes_to_dlc(20), 11, "wrong DLC for 20 bytes");
 	zassert_equal(can_bytes_to_dlc(24), 12, "wrong DLC for 24 bytes");
@@ -69,7 +69,7 @@ ZTEST(can_utilities, test_can_frame_matches_filter)
 	const struct can_filter test_ext_filter_std_id_1 = {
 		.flags = CAN_FILTER_IDE,
 		.id = TEST_CAN_STD_ID_1,
-		.mask = CAN_EXT_ID_MASK
+		.mask = CAN_EXT_ID_MASK,
 	};
 
 	/* Standard (11-bit) frames and filters */

@@ -48,7 +48,17 @@ config SOC_NRF54L15_CPUAPP
 	select CPU_HAS_FPU
 	select HAS_SWO
 
-config SOC_NRF54LM20A_ENGA_CPUAPP
+config SOC_NRF54LM20A_CPUAPP
+	select SOC_NRF54L_CPUAPP_COMMON
+	select SOC_COMPATIBLE_NRF54LM20A
+	select SOC_COMPATIBLE_NRF54LM20A_CPUAPP
+	select ARMV8_M_DSP
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_FPU
+	select HAS_SWO
+
+config SOC_NRF54LM20B_CPUAPP
 	select SOC_NRF54L_CPUAPP_COMMON
 	select SOC_COMPATIBLE_NRF54LM20A
 	select SOC_COMPATIBLE_NRF54LM20A_CPUAPP
@@ -68,7 +78,10 @@ config SOC_NRF54L15_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
 	select SOC_COMPATIBLE_NRF54L15
 
-config SOC_NRF54LM20A_ENGA_CPUFLPR
+config SOC_NRF54LM20A_CPUFLPR
+	select RISCV_CORE_NORDIC_VPR
+
+config SOC_NRF54LM20B_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
 
 if SOC_SERIES_NRF54L
@@ -93,5 +106,26 @@ config SOC_NRF54L_ANOMALY_56_WORKAROUND
 	default y
 	help
 	   This option enables configuration workaround 56 for nRF54L Series SoCs.
+
+config SOC_NRF54LM20A_DEVELOP_IN_NRF54LM20B
+	bool
+	help
+	  The nrf54lm20dk board can be used to develop the nRF54LM20A or nRF54LM20B SoCs
+	  onto the nRF54LM20B DK. This symbol needs to be considered by certain system
+	  initialization functionality residing in SoC erratas.
+
+config SOC_NRF54L10_DEVELOP_IN_NRF54L15
+	bool
+	help
+	  The nrf54l15dk board can be used to develop the nRF54L10 SoC onto the nRF54L15 DK.
+	  This symbol needs to be considered by certain system initialization functionality
+	  residing in system_nrf54l.c and SoC erratas.
+
+config SOC_NRF54L05_DEVELOP_IN_NRF54L15
+	bool
+	help
+	  The nrf54l15dk board can be used to develop the nRF54L05 SoC onto the nRF54L15 DK.
+	  This symbol needs to be considered by certain system initialization functionality
+	  residing in system_nrf54l.c and SoC erratas.
 
 endif # SOC_SERIES_NRF54L

@@ -419,6 +419,109 @@ ZTEST(dlist_api, test_dlist2)
 				&test_node[4].node) == &insert_node2.node, " ");
 }
 
+static void verify_list_order(sys_dlist_t *list, unsigned int count, ...)
+{
+	unsigned int i;
+	sys_dnode_t *n;
+	sys_dnode_t *expected;
+	va_list ap;
+
+	va_start(ap, count);
+
+	n = sys_dlist_peek_head(list);
+	i = 0;
+
+	while (n != NULL) {
+		zassert_true(i < count, "list has too much content");
+
+		expected = va_arg(ap, sys_dnode_t *);
+		zassert_true(expected == n, "list has wrong content");
+
+		n = sys_dlist_peek_next(list, n);
+		i++;
+	}
+
+	va_end(ap);
+	zassert_true(i == count, "list has too little content");
+}
+
+/**
+ * Test prepending a range of nodes
+ */
+ZTEST(dlist_api, test_dlist_range_prepend)
+{
+	sys_dlist_t list1;
+	sys_dlist_t list2;
+	sys_dnode_t nodes[6];
+	int i;
+
+	sys_dlist_init(&list1);
+	sys_dlist_init(&list2);
+
+	for (i = 0; i < 6; i++) {
+		sys_dlist_prepend(&list1, &nodes[i]);
+	}
+
+	TC_PRINT("Move all nodes from list1 to list2\n");
+	sys_dlist_range_prepend(&list2, list1.head, list1.tail);
+	zassert_true(sys_dlist_is_empty(&list1), "list1 should be empty");
+	verify_list_order(&list2, 6, &nodes[5], &nodes[4], &nodes[3],
+			  &nodes[2], &nodes[1], &nodes[0]);
+
+	TC_PRINT("Prepend first two nodes from list2 to list1\n");
+	sys_dlist_range_prepend(&list1, &nodes[5], &nodes[4]);
+	verify_list_order(&list1, 2, &nodes[5], &nodes[4]);
+	verify_list_order(&list2, 4, &nodes[3], &nodes[2], &nodes[1], &nodes[0]);
+
+	TC_PRINT("Prepend middle two nodes from list2 to list1\n");
+	sys_dlist_range_prepend(&list1, &nodes[2], &nodes[1]);
+	verify_list_order(&list1, 4, &nodes[2], &nodes[1], &nodes[5], &nodes[4]);
+	verify_list_order(&list2, 2, &nodes[3], &nodes[0]);
+
+	TC_PRINT("Append last node from list2 to list1\n");
+	sys_dlist_range_prepend(&list1, &nodes[0], &nodes[0]);
+	verify_list_order(&list1, 5, &nodes[0], &nodes[2], &nodes[1], &nodes[5],
+			  &nodes[4]);
+	verify_list_order(&list2, 1, &nodes[3]);
+}
+
+ZTEST(dlist_api, test_dlist_range_append)
+{
+	sys_dlist_t list1;
+	sys_dlist_t list2;
+	sys_dnode_t nodes[6];
+	int i;
+
+	sys_dlist_init(&list1);
+	sys_dlist_init(&list2);
+
+	for (i = 0; i < 6; i++) {
+		sys_dlist_append(&list1, &nodes[i]);
+	}
+
+	TC_PRINT("Move all nodes from list1 to list2\n");
+	sys_dlist_range_append(&list2, list1.head, list1.tail);
+	zassert_true(sys_dlist_is_empty(&list1), "list1 should be empty");
+	verify_list_order(&list2, 6, &nodes[0], &nodes[1], &nodes[2],
+			  &nodes[3], &nodes[4], &nodes[5]);
+
+	TC_PRINT("Append first two nodes from list2 to list1\n");
+	sys_dlist_range_append(&list1, &nodes[0], &nodes[1]);
+	verify_list_order(&list1, 2, &nodes[0], &nodes[1]);
+	verify_list_order(&list2, 4, &nodes[2], &nodes[3], &nodes[4], &nodes[5]);
+
+	TC_PRINT("Append middle two nodes from list2 to list1\n");
+	sys_dlist_range_append(&list1, &nodes[3], &nodes[4]);
+	verify_list_order(&list1, 4, &nodes[0], &nodes[1], &nodes[3], &nodes[4]);
+	verify_list_order(&list2, 2, &nodes[2], &nodes[5]);
+
+	TC_PRINT("Append last node from list2 to list1\n");
+	sys_dlist_range_append(&list1, &nodes[5], &nodes[5]);
+	verify_list_order(&list1, 5, &nodes[0], &nodes[1], &nodes[3], &nodes[4],
+			  &nodes[5]);
+	verify_list_order(&list2, 1, &nodes[2]);
+}
+
 /**
  * @}
  */

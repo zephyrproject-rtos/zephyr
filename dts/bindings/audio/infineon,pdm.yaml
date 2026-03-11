@@ -1,0 +1,161 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon PDM (Pulse Density Modulation) Controller
+
+compatible: "infineon,pdm"
+
+include: ["base.yaml", "pinctrl-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clk-dst:
+    type: int
+    required: true
+    description: Peripheral clock destination ID for this PDM instance
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  dmas:
+    description: |
+      DMA specifier which includes the phandle reference to the
+      DMA controller and the channel number.
+
+      Example:
+        dmas = <&dma0 0>;
+    required: true
+
+  dma-names:
+    description: |
+      Required if the dmas property exists. This should be "rx".
+
+      Example:
+        dma-names = "rx";
+    required: true
+
+  fir0-coefficients:
+    type: array
+    description: |
+      FIR filter coefficients for the PDM. This array has 8 elements.
+
+  fir1-coefficients:
+    type: array
+    description: |
+      FIR filter coefficients for the PDM. This array has 14 elements.
+
+child-binding:
+  description: PDM channel specific configuration.
+  include:
+    - name: base.yaml
+      property-allowlist:
+        - reg
+  properties:
+    reg:
+      required: true
+
+    channel:
+      type: int
+      description: |
+        Channel number for this PDM channel.
+      required: true
+
+    use-alt-io:
+      type: boolean
+      description: |
+        If true, use the pdm data pin from the alternate channel
+        as specified in the ROUTE_CTL register.
+
+    cic-decimation-code:
+      type: int
+      enum: [0, 1, 2, 3, 4]
+      description: |
+        The CIC filter decimation code should be set according to the
+        relative frequency of the PDM and PCM frequencies.
+          0: DECIM_2
+          1: DECIM_4
+          2: DECIM_8
+          3: DECIM_16
+          4: DECIM_32 (default)
+
+    dc-block-disable:
+      type: boolean
+      description: |
+        Disable the DC blocker filter. For debug purposes.
+
+    dc-block-code:
+      type: int
+      enum: [0, 1, 2, 3, 4, 5, 6, 7]
+      description: |
+        Specifies the DC blocker coefficient:
+          0: alpha = 0.999755859
+          1: alpha = 0.999511719 (default)
+          2: alpha = 0.999023438
+          3: alpha = 0.998046875
+          4: alpha = 0.99609375
+          5: alpha = 0.9921875
+          6: alpha = 0.984375
+          7: alpha = 0.96875
+
+    fir0-enable:
+      type: boolean
+      description: |
+        Enable FIR0 filter for the channel. Disabled by default
+        and typically only used for sample frequencies of 8 and 16 kHz.
+
+    fir0-scale:
+      type: int
+      description: |
+        FIR0 filter PCM scaling. FIR0 filter PCM values are scaled
+        (right shifted, rounded and clipped) to 26bit signed PCM
+        values. This parameter specifies the right shift amount:
+          0: no shift
+          1: shift right by 1
+          ...
+          31: shift right by 31
+
+    fir0-decimation:
+      type: int
+      enum: [0, 1, 2, 3, 4]
+      description: |
+        Sets the FIR0 filter PCM frequency relative to the CIC filter PCM frequency:
+          0: PCM frequency is the same as CIC frequency (default)
+          1: PCM frequency is 1/2 of CIC frequency
+          2: PCM frequency is 1/3 of CIC frequency
+          3: PCM frequency is 1/4 of CIC frequency
+          4: PCM frequency is 1/5 of CIC frequency
+
+    fir1-scale:
+      type: int
+      description: |
+        FIR1 filter PCM scaling. FIR1 filter PCM values are scaled
+        (right shifted, rounded and clipped) to 26bit signed PCM
+        values. This parameter specifies the right shift amount:
+          0: no shift
+          1: shift right by 1
+          ...
+          31: shift right by 31
+
+    fir1-decimation:
+      type: int
+      enum: [0, 1, 2, 3, 4]
+      description: |
+        Sets the FIR1 filter PCM frequency relative to the CIC filter PCM frequency:
+          0: PCM frequency is the same as CIC frequency (default)
+          1: PCM frequency is 1/2 of CIC frequency
+          2: PCM frequency is 1/3 of CIC frequency
+          3: PCM frequency is 1/4 of CIC frequency
+          4: PCM frequency is 1/5 of CIC frequency

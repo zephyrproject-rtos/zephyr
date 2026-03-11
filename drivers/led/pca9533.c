@@ -397,7 +397,7 @@ static int pca9533_led_init(const struct device *dev)
 	return pm_device_driver_init(dev, pca9533_pm_action);
 }
 
-static const struct led_driver_api pca9533_led_api = {
+static DEVICE_API(led, pca9533_led_api) = {
 	.blink = pca9533_led_blink,
 	.set_brightness = pca9533_led_set_brightness,
 };

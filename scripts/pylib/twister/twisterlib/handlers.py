@@ -28,7 +28,8 @@ from queue import Empty, Queue
 
 import psutil
 from serial.tools import list_ports
-from twisterlib.environment import ZEPHYR_BASE, strip_ansi_sequences
+from twisterlib.constants import ZEPHYR_BASE
+from twisterlib.environment import strip_ansi_sequences
 from twisterlib.error import TwisterException
 from twisterlib.hardwaremap import DUT
 from twisterlib.platform import Platform
@@ -587,10 +588,14 @@ class DeviceHandler(Handler):
             return self._create_flash_command(hardware)
 
         command = ["west"]
+        command_extra_args = []
         if self.options.verbose > 2:
             command.append(f"-{'v' * (self.options.verbose - 2)}")
-        command += ["flash", "--no-rebuild", "-d", self.build_dir]
-        command_extra_args = []
+
+        west_flash_cmd = self.options.west_flash_cmd or hardware.west_flash_cmd or "flash"
+        if west_flash_cmd == "debug":
+            command_extra_args.append('--batch')
+        command.extend([west_flash_cmd, "--no-rebuild", "-d", self.build_dir])
 
         # There are three ways this option is used.
         # 1) bare: default flags
@@ -680,7 +685,6 @@ class DeviceHandler(Handler):
 
         return ser
 
-
     def _handle_serial_exception(self, exception, dut, serial_pty, ser_pty_process):
         self.instance.status = TwisterStatus.FAIL
         self.instance.reason = "Serial Device Error"
@@ -692,13 +696,18 @@ class DeviceHandler(Handler):
 
         self.make_dut_available(dut)
 
-    def get_more_serials_from_device(self, hardware: DUT) -> list[str]:
-        serials = set()
-        dut_shared_hw = [_d for _d in self.duts if _d.id == hardware.id]
-        for d in dut_shared_hw:
-            if d.serial and d.serial != hardware.serial:
+    def get_other_duts_with_same_id(self, hardware: DUT) -> list[DUT]:
+        """Get all DUTs that share the same hardware ID as the provided DUT,
+        excluding the provided DUT itself."""
+        duts: list[DUT] = []
+        # get all DUTs with the same id
+        duts_shared_hw = [_d for _d in self.duts if _d.id == hardware.id]
+        serials = {hardware.serial}
+        for d in duts_shared_hw:
+            if d.serial and d.serial not in serials:
+                duts.append(d)
                 serials.add(d.serial)
-        return list(serials)
+        return duts
 
     def get_hardware(self) -> DUT | None:
         hardware = None

@@ -1,0 +1,15 @@
+# NXP LPC family MCAN configuration options
+
+# Copyright (c) 2019-2026 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_NXP_LPC_MCAN
+	bool "NXP LPC family MCAN driver"
+	default y
+	depends on DT_HAS_NXP_LPC_MCAN_ENABLED
+	depends on CLOCK_CONTROL
+	select CAN_MCAN
+	select PINCTRL
+	select RESET
+	help
+	  Enable support for the NXP LPC family MCAN driver.

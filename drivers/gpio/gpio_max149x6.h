@@ -25,14 +25,14 @@
  * @brief Compute the CRC5 value for an array of bytes when writing to MAX149X6
  * @param data - array of data to encode
  * @param encode - action to be performed - true(encode), false(decode)
+ * @param check_byte - SDO check byte masked to top 3 bits (A1|A0|ThrErr); for encode pass 0
  * @return the resulted CRC5
  */
-static uint8_t max149x6_crc(uint8_t *data, bool encode)
+static uint8_t max149x6_crc(uint8_t *data, bool encode, uint8_t check_byte)
 {
 	uint8_t crc5_start = 0x1f;
 	uint8_t crc5_poly = 0x15;
 	uint8_t crc5_result = crc5_start;
-	uint8_t extra_byte = 0x00;
 	uint8_t data_bit;
 	uint8_t result_bit;
 	int i;
@@ -64,7 +64,7 @@ static uint8_t max149x6_crc(uint8_t *data, bool encode)
 	}
 
 	for (i = 0; i < 3; i++) {
-		data_bit = (extra_byte >> (7 - i)) & 0x01;
+		data_bit = (check_byte >> (7 - i)) & 0x01;
 		result_bit = (crc5_result & 0x10) >> 4;
 		if (data_bit ^ result_bit) {
 			crc5_result = crc5_poly ^ ((crc5_result << 1) & 0x1f);
@@ -114,7 +114,7 @@ static int max149x6_reg_transceive(const struct device *dev, uint8_t addr, uint8
 
 	/* If CRC enabled calculate it */
 	if (config->crc_en) {
-		local_tx_buff[2] = max149x6_crc(&local_tx_buff[0], true);
+		local_tx_buff[2] = max149x6_crc(&local_tx_buff[0], true, 0);
 	}
 
 	/* write cmd & read resp at once */
@@ -127,7 +127,7 @@ static int max149x6_reg_transceive(const struct device *dev, uint8_t addr, uint8
 
 	/* if CRC enabled check readed */
 	if (config->crc_en) {
-		crc = max149x6_crc(&local_rx_buff[0], false);
+		crc = max149x6_crc(&local_rx_buff[0], false, local_rx_buff[2] & 0xE0);
 		if (crc != (local_rx_buff[2] & 0x1F)) {
 			LOG_ERR("READ CRC ERR (%d)-(%d)\n", crc, (local_rx_buff[2] & 0x1F));
 			return -EINVAL;

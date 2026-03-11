@@ -82,6 +82,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/sys/bitarray.h>
 #include <zephyr/ipc/icmsg.h>
 #include <zephyr/ipc/ipc_service_backend.h>
@@ -267,7 +268,7 @@ static uint8_t *buffer_from_index_validate(const struct channel_config *ch_conf,
 	if (size != NULL) {
 		if (invalidate_cache) {
 			sys_cache_data_invd_range(block, BLOCK_HEADER_SIZE);
-			__sync_synchronize();
+			barrier_sync_synchronize();
 		}
 		allocable_size = ch_conf->block_count * ch_conf->block_size;
 		end_ptr = ch_conf->blocks_ptr + allocable_size;
@@ -282,7 +283,7 @@ static uint8_t *buffer_from_index_validate(const struct channel_config *ch_conf,
 		*size = buffer_size;
 		if (invalidate_cache) {
 			sys_cache_data_invd_range(block->data, buffer_size);
-			__sync_synchronize();
+			barrier_sync_synchronize();
 		}
 	}
 
@@ -587,7 +588,7 @@ static int send_block(struct backend_data *dev_data, enum msg_type msg_type,
 	block = block_from_index(&dev_data->conf->tx, tx_block_index);
 
 	block->header.size = size;
-	__sync_synchronize();
+	barrier_sync_synchronize();
 	sys_cache_data_flush_range(block, size + BLOCK_HEADER_SIZE);
 
 	r = send_control_message(dev_data, msg_type, ept_addr, tx_block_index);

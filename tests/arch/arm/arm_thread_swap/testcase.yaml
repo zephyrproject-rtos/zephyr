@@ -1,5 +1,6 @@
 common:
   filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+          and not CONFIG_USE_SWITCH
   tags:
     - arm
     - fpu
@@ -14,7 +15,6 @@ tests:
       - CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS=n
       - CONFIG_IDLE_STACK_SIZE=512
       - CONFIG_MAIN_STACK_SIZE=2048
-      - CONFIG_KOBJECT_TEXT_AREA=32768
     min_flash: 192
   arch.arm.swap.common.fpu_sharing:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_ARMV7_M_ARMV8_M_FP
@@ -30,5 +30,4 @@ tests:
       - CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS=n
       - CONFIG_IDLE_STACK_SIZE=512
       - CONFIG_MAIN_STACK_SIZE=2048
-      - CONFIG_KOBJECT_TEXT_AREA=32768
     min_flash: 192

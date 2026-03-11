@@ -19,11 +19,8 @@
 #if defined(STM32_PLL_ENABLED)
 
 /* Macros to fill up multiplication and division factors values */
-#define z_pll_mul(v) LL_RCC_PLL_MUL_ ## v
-#define pll_mul(v) z_pll_mul(v)
-
-#define z_pll_div(v) LL_RCC_PLL_DIV_ ## v
-#define pll_div(v) z_pll_div(v)
+#define pll_mul(v) CONCAT(LL_RCC_PLL_MUL_, v)
+#define pll_div(v) CONCAT(LL_RCC_PLL_DIV_, v)
 
 /**
  * @brief Return PLL source

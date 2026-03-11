@@ -11,4 +11,5 @@ supported:
   - arduino_gpio
   - watchdog
   - gpio
+  - counter
 vendor: nordic

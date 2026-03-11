@@ -1021,7 +1021,21 @@ static ALWAYS_INLINE void l2_page_tables_counter_inc(uint32_t *l2_table)
 static ALWAYS_INLINE void l2_page_tables_counter_dec(uint32_t *l2_table)
 {
 	if (is_l2_table_inside_array(l2_table)) {
-		l2_page_tables_counter[l2_table_to_counter_pos(l2_table)]--;
+		int pos = l2_table_to_counter_pos(l2_table);
+
+		l2_page_tables_counter[pos]--;
+
+		/* When the L2 table is no longer being referenced,
+		 * we should mark all PTEs to be illegal just to be
+		 * safe.
+		 */
+		if (l2_page_tables_counter[pos] == 0) {
+			init_page_table(l2_table, L2_PAGE_TABLE_NUM_ENTRIES, PTE_L2_ILLEGAL);
+		}
+
+		if (IS_ENABLED(PAGE_TABLE_IS_CACHED)) {
+			sys_cache_data_flush_and_invd_range((void *)l2_table, L2_PAGE_TABLE_SIZE);
+		}
 	}
 }
 
@@ -1314,6 +1328,64 @@ err:
 	k_spin_unlock(&xtensa_mmu_lock, key);
 
 	return ret;
+}
+
+/**
+ * @brief Find the L1 table tracking index from L1 table pointer.
+ *
+ * @param[in] l1_table Pointer to L1 table.
+ *
+ * @note This does not check if the incoming L1 table pointer is a valid
+ *       L1 table.
+ *
+ * @return Index to the L1 table counter array.
+ */
+static inline int l1_table_to_track_pos(uint32_t *l1_table)
+{
+	return (l1_table - (uint32_t *)l1_page_tables) / (L1_PAGE_TABLE_NUM_ENTRIES);
+}
+
+int arch_mem_domain_deinit(struct k_mem_domain *domain)
+{
+	k_spinlock_key_t key;
+	uint32_t *l1_table = domain->arch.ptables;
+	uint32_t *l2_table;
+
+	if (l1_table == NULL) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&xtensa_mmu_lock);
+
+	for (uint32_t l1_pos = 0; l1_pos < L1_PAGE_TABLE_NUM_ENTRIES; l1_pos++) {
+		if (!is_pte_illegal(l1_table[l1_pos])) {
+			/* Since the L1 PTE points to a valid L2 table,
+			 * we need to decrement the usage counter for
+			 * that L2 table.
+			 */
+			l2_table = (uint32_t *)PTE_PPN_GET(l1_table[l1_pos]);
+
+			l2_page_tables_counter_dec(l2_table);
+		}
+
+		l1_table[l1_pos] = PTE_L1_ILLEGAL;
+	}
+
+	if (IS_ENABLED(PAGE_TABLE_IS_CACHED)) {
+		sys_cache_data_flush_range((void *)l1_table, L1_PAGE_TABLE_SIZE);
+	}
+
+	atomic_clear_bit(l1_page_tables_track, l1_table_to_track_pos(l1_table));
+
+	domain->arch.ptables = NULL;
+
+	k_spin_unlock(&xtensa_mmu_lock, key);
+
+	K_SPINLOCK(&xtensa_counter_lock) {
+		calc_l2_page_tables_usage();
+	}
+
+	return 0;
 }
 
 /**

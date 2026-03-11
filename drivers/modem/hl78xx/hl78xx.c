@@ -160,6 +160,10 @@ static const char *hl78xx_event_str(enum hl78xx_event event)
 		return "bus closed";
 	case MODEM_HL78XX_EVENT_SOCKET_READY:
 		return "socket ready";
+#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+	case MODEM_HL78XX_EVENT_NTN_POSREQ:
+		return "ntn posreq";
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 	case MODEM_HL78XX_EVENT_PHONE_FUNCTIONALITY_CHANGED:
 		return "phone functionality changed";
 #ifdef CONFIG_HL78XX_GNSS
@@ -650,6 +654,31 @@ void hl78xx_on_kbndcfg(struct modem_chat *chat, char **argv, uint16_t argc, void
 	strncpy(data->status.kbndcfg[rat_id].bnd_bitmap, argv[2], kbnd_bitmap_size);
 	data->status.kbndcfg[rat_id].bnd_bitmap[kbnd_bitmap_size] = '\0';
 }
+#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+
+void hl78xx_on_kntncfg(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
+{
+	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
+
+	if (argc < 2) {
+		return;
+	}
+	safe_strncpy((char *)data->status.ntn_rat.pos_mode, argv[1],
+		     sizeof(data->status.ntn_rat.pos_mode));
+	data->status.ntn_rat.is_dynamic = ATOI(argv[2], 0, "is_dynamic");
+}
+
+void hl78xx_on_kntn_posreq(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
+{
+	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
+
+	if (argc < 1) {
+		return;
+	}
+	hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_NTN_POSREQ);
+}
+
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 
 void hl78xx_on_csq(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
 {
@@ -1320,6 +1349,14 @@ static int hl78xx_on_rat_cfg_script_state_enter(struct hl78xx_data *data)
 		goto error;
 	}
 
+#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+
+	ret = hl78xx_rat_ntn_cfg(data, &modem_require_restart, rat_config_request);
+	if (ret < 0) {
+		goto error;
+	}
+
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 	if (modem_require_restart) {
 		HL78XX_LOG_DBG("Modem restart required to apply new RAT/Band settings");
 		ret = modem_dynamic_cmd_send(data, NULL, cmd_restart, strlen(cmd_restart),
@@ -1496,7 +1533,13 @@ static void hl78xx_await_registered_event_handler(struct hl78xx_data *data, enum
 	case MODEM_HL78XX_EVENT_SUSPEND:
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_INIT_POWER_OFF);
 		break;
-
+#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+#ifdef CONFIG_NTN_POSITION_SOURCE_MANUAL
+	case MODEM_HL78XX_EVENT_NTN_POSREQ:
+		hl78xx_run_ntn_pos_script_async(data);
+		break;
+#endif /* CONFIG_NTN_POSITION_SOURCE_MANUAL */
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 	default:
 		break;
 	}

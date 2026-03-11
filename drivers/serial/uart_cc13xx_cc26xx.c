@@ -168,10 +168,8 @@ static int uart_cc13xx_cc26xx_configure(const struct device *dev,
 			    line_ctrl);
 
 	/* Clear all UART interrupts */
-	UARTIntClear(config->reg,
-		UART_INT_OE | UART_INT_BE | UART_INT_PE |
-		UART_INT_FE | UART_INT_RT | UART_INT_TX |
-		UART_INT_RX | UART_INT_CTS);
+	UARTIntClear(config->reg, UART_INT_OE | UART_INT_BE | UART_INT_PE | UART_INT_FE |
+					  UART_INT_RT | UART_INT_RX | UART_INT_CTS);
 
 	if (flow_ctrl) {
 		UARTHwFlowControlEnable(config->reg);

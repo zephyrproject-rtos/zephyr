@@ -2146,3 +2146,32 @@ This has been fixed in main for v4.3.0
 
 - `PR 98985 fix for 3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/98985>`_
+
+:cve:`2026-1678`
+----------------
+
+dns: memory‑safety issue in the DNS name parser
+
+``dns_unpack_name()`` caches the buffer tailroom once and reuses it while appending
+DNS labels. As the buffer grows, the cached size becomes incorrect, and the final
+null terminator can be written past the buffer. With assertions disabled (default),
+a malicious DNS response can trigger an out-of-bounds write when ``CONFIG_DNS_RESOLVER``
+is enabled.
+
+
+- `Zephyr project bug tracker GHSA-536f-h63g-hj42
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-536f-h63g-hj42>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 99683 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/99683>`_
+
+- `PR 99830 fix for 4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/99830>`_
+
+- `PR 99829 fix for 4.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/99829>`_
+
+- `PR 99828 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/99828>`_

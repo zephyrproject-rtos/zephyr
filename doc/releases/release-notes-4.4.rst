@@ -46,6 +46,9 @@ The following CVEs are addressed by this release:
 * :cve:`2025-53022` `(TF-M) FWU does not check the length of the TLV’s payload
   <https://trustedfirmware-m.readthedocs.io/en/latest/security/security_advisories/fwu_tlv_payload_out_of_bounds_vulnerability.html>`_
 
+* :cve:`2026-1678` `Zephyr project bug tracker GHSA-536f-h63g-hj42
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-536f-h63g-hj42>`_
+
 API Changes
 ***********
 
@@ -84,11 +87,40 @@ Deprecated APIs and options
     * :c:member:`bt_conn_le_info.interval` has been deprecated. Use
       :c:member:`bt_conn_le_info.interval_us` instead. Note that the units have changed:
       ``interval`` was in units of 1.25 milliseconds, while ``interval_us`` is in microseconds.
+    * The :kconfig:option:`CONFIG_DEVICE_NAME_GATT_WRITABLE_NONE` option has been deprecated.
+      Applications should use :kconfig:option:`CONFIG_BT_DEVICE_NAME_GATT_WRITABLE_NONE`
+      option instead.
+    * The :kconfig:option:`CONFIG_DEVICE_NAME_GATT_WRITABLE_ENCRYPT` option has been deprecated.
+      Applications should use :kconfig:option:`CONFIG_BT_DEVICE_NAME_GATT_WRITABLE_ENCRYPT`
+      option instead.
+    * The :kconfig:option:`CONFIG_DEVICE_NAME_GATT_WRITABLE_AUTHEN` option has been deprecated.
+      Applications should use :kconfig:option:`CONFIG_BT_DEVICE_NAME_GATT_WRITABLE_AUTHEN`
+      option instead.
+    * The :kconfig:option:`CONFIG_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN` option has been
+      deprecated.
+      Applications should use :kconfig:option:`CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN`
+      option instead.
+
+  * HCI
+
+    * :c:macro:`BT_HCI_LE_SUPERVISON_TIMEOUT_MIN` and :c:macro:`BT_HCI_LE_SUPERVISON_TIMEOUT_MAX` have been deprecated.
+      Use :c:macro:`BT_HCI_LE_SUPERVISION_TIMEOUT_MIN` and :c:macro:`BT_HCI_LE_SUPERVISION_TIMEOUT_MAX` instead.
+
+* I2S
+
+  * The following macros have been deprecated and are replaced with equivalent macros whose names
+    are aligned with the `latest revision of the I2S specification`_.
+
+    * :c:macro:`I2S_OPT_BIT_CLK_MASTER` -> :c:macro:`I2S_OPT_BIT_CLK_CONTROLLER`
+    * :c:macro:`I2S_OPT_FRAME_CLK_MASTER` -> :c:macro:`I2S_OPT_FRAME_CLK_CONTROLLER`
+    * :c:macro:`I2S_OPT_BIT_CLK_SLAVE` -> :c:macro:`I2S_OPT_BIT_CLK_TARGET`
+    * :c:macro:`I2S_OPT_FRAME_CLK_SLAVE` -> :c:macro:`I2S_OPT_FRAME_CLK_TARGET`
+
+.. _latest revision of the I2S specification: https://www.nxp.com/docs/en/user-manual/UM11732.pdf
 
 * POSIX
 
   * :kconfig:option:`CONFIG_XOPEN_STREAMS` was deprecated. Instead, use :kconfig:option:`CONFIG_XSI_STREAMS`
-
 * Sensors
 
   * NXP
@@ -133,11 +165,20 @@ New APIs and options
 
     * :c:func:`bt_bap_ep_get_conn`
     * :c:member:`bt_ccp_call_control_client_cb.user_data`
+    * :kconfig:option:`CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH`
+    * :c:member:`bt_cap_handover_cb.unicast_to_broadcast_created`
+    * :c:func:`bt_tbs_client_get_by_index`
 
   * Host
 
     * :c:func:`bt_gatt_cb_unregister` Added an API to unregister GATT callback handlers.
     * :c:func:`bt_le_per_adv_sync_cb_unregister`
+
+  * ISO
+
+    * :c:member:`bt_iso_chan_ops.disconnected` will now always be called before
+      :c:member:`bt_conn_cb.disconnected` for unicast (CIS) channels,
+      to provide a more deterministic order of callback events. (:github:`104695`).
 
   * Mesh
 
@@ -274,6 +315,10 @@ New APIs and options
   * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION`
   * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION_VALUE_SIZE`
 
+* Shell
+
+  * :c:func:`shell_readline` for :ref:`user input <shell-readline>`
+
 * Sys
 
   * :c:macro:`COND_CASE_1`
@@ -323,6 +368,11 @@ New Shields
 ..
   Same as above, this will also be recomputed at the time of the release.
 
+
+* Nordic Semiconductor ASA
+
+  * :ref:`nrf7002eb2 <nrf7002eb2>` (nRF7002 EB II)
+
 New Drivers
 ***********
 
@@ -347,6 +397,8 @@ New Drivers
 
   * Added new stm32 BSEC driver that provides means to program and read OTP fuses
     (:dtcompatible:`st,stm32-bsec`). (:github:`102403`)
+  * Added SiFli SF32LB eFuse OTP driver (:dtcompatible:`sifli,sf32lb-efuse`).
+    (:github:`101926`)
   * :dtcompatible:`nxp,ocotp` (:github:`102567` & :github:`103089`)
 
 New Samples
@@ -354,6 +406,9 @@ New Samples
 
 * :zephyr:code-sample:`ble_peripheral_ans`
 * :zephyr:code-sample:`cpu_freq_pressure`
+* :zephyr:code-sample:`6dof_fifo_stream` (renamed from ``stream_fifo``)
+* :zephyr:code-sample:`accel_stream` (renamed from ``accel_polling``)
+* :zephyr:code-sample:`accel_polling` (it uses sensor_read() API)
 
 ..
   Same as above, this will also be recomputed at the time of the release.
@@ -362,8 +417,27 @@ New Samples
 DeviceTree
 **********
 
+* Migration guide: :ref:`migration_4.4_devicetree`
+* Bindings are no longer allowed to specify any default values for the
+  ``#address-cells`` and ``#size-cells`` properties.
 * :c:macro:`DT_CHILD_BY_UNIT_ADDR_INT`
 * :c:macro:`DT_INST_CHILD_BY_UNIT_ADDR_INT`
+
+Kernel
+******
+
+* Dropped CONFIG_SCHED_DUMB and CONFIG_WAITQ_DUMB options which were deprecated
+  in Zephyr 4.2.0
+
+* :ref:`cleanup_api`
+
+  * :c:macro:`SCOPE_VAR_DEFINE`
+  * :c:macro:`SCOPE_GUARD_DEFINE`
+  * :c:macro:`SCOPE_DEFER_DEFINE`
+  * :c:macro:`scope_var`
+  * :c:macro:`scope_var_init`
+  * :c:macro:`scope_guard`
+  * :c:macro:`scope_defer`
 
 Libraries / Subsystems
 **********************

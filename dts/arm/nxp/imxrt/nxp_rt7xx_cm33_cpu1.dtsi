@@ -369,6 +369,15 @@
 		interrupts = <18 0>;
 		status = "disabled";
 	};
+
+	sema423: hwspinlock@31b000 {
+		compatible = "nxp,sema42";
+		reg = <0x31b000 0x1000>;
+		clocks = <&clkctl1 MCUX_SEMA42_CLK>;
+		#hwlock-cells = <1>;
+		num-locks = <64>;
+		status = "disabled";
+	};
 };
 
 &xspi2 {

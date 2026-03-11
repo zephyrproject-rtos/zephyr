@@ -6,7 +6,7 @@
 
 / {
 	chosen {
-		zephyr,ipc_shm = &shmlp;
+		zephyr,ipc_shm = &ipc_shm;
 		zephyr,ipc = &mbox0;
 	};
 
@@ -15,10 +15,6 @@
 		mboxes = <&mbox0 0>, <&mbox0 1>;
 		mbox-names = "tx", "rx";
 	};
-};
-
-&mbox0 {
-	status = "okay";
 };
 
 &lp_uart {

@@ -360,7 +360,10 @@ static int modem_backend_uart_async_hwfc_close(void *data)
 	struct modem_backend_uart *backend = (struct modem_backend_uart *)data;
 	int ret;
 
-	atomic_clear_bit(&backend->async.common.state, MODEM_BACKEND_UART_ASYNC_STATE_OPEN_BIT);
+	if (!atomic_test_and_clear_bit(&backend->async.common.state,
+				       MODEM_BACKEND_UART_ASYNC_STATE_OPEN_BIT)) {
+		return 0;
+	}
 	uart_tx_abort(backend->uart);
 
 	if (!atomic_test_and_clear_bit(&backend->async.common.state,
@@ -377,7 +380,6 @@ static int modem_backend_uart_async_hwfc_close(void *data)
 		LOG_ERR("Failed to power off UART: %d", ret);
 		return ret;
 	}
-	modem_pipe_notify_closed(&backend->pipe);
 
 	return 0;
 }

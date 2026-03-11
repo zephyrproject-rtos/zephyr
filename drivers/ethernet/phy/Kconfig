@@ -5,7 +5,7 @@
 
 menuconfig ETH_PHY_DRIVER
 	bool "Ethernet PHY drivers"
-	default y if NET_L2_ETHERNET || ETH_DRIVER
+	default y
 
 if ETH_PHY_DRIVER
 
@@ -21,7 +21,7 @@ source "drivers/ethernet/phy/Kconfig.microchip_t1s"
 
 config PHY_INIT_PRIORITY
 	int "Ethernet PHY driver init priority"
-	default 70
+	default ETH_INIT_PRIORITY
 	help
 	  Ethernet PHY device driver initialization priority.
 	  Do not mess with it unless you know what you are doing.
@@ -133,6 +133,16 @@ config PHY_QUALCOMM_AR8031
 	select MDIO
 	help
 	  Enable Qualcomm Atheros AR8031 Ethernet PHY Driver
+
+config PHY_MAXLINEAR_GPY111
+	bool "Maxlinear GPY111 PHY Driver"
+	default y
+	depends on DT_HAS_MAXLINEAR_GPY111_ENABLED
+	select MDIO
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_MAXLINEAR_GPY111),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_MAXLINEAR_GPY111),int-gpios))
+	help
+	  Enable Maxlinear GPY111 Ethernet PHY Driver
 
 config PHY_AUTONEG_TIMEOUT_MS
 	int "Auto-negotiation timeout value in milliseconds"

@@ -9,7 +9,8 @@
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
-#include <zephyr/drivers/stepper.h>
+#include <zephyr/drivers/stepper/stepper.h>
+#include <zephyr/drivers/stepper/stepper_ctrl.h>
 
 /*
  * @brief Write a value to a TMC50XX register.
@@ -35,7 +36,7 @@ int tmc50xx_read(const struct device *dev, const uint8_t reg_addr, uint32_t *reg
  * @param dev Pointer to the TMC50XX stepper device.
  * @param event The stepper event that occurred.
  */
-void tmc50xx_stepper_trigger_cb(const struct device *dev, const enum stepper_event event);
+void tmc50xx_stepper_ctrl_trigger_cb(const struct device *dev, const enum stepper_ctrl_event event);
 
 /**
  * @brief Trigger the registered callback for stepper driver events.
@@ -43,7 +44,7 @@ void tmc50xx_stepper_trigger_cb(const struct device *dev, const enum stepper_eve
  * @param dev Pointer to the TMC50XX stepper driver device.
  * @param event The stepper driver event that occurred.
  */
-void tmc50xx_stepper_drv_trigger_cb(const struct device *dev, const enum stepper_drv_event event);
+void tmc50xx_stepper_driver_trigger_cb(const struct device *dev, const enum stepper_event event);
 
 /**
  * @brief Enable or disable stallguard feature.
@@ -52,7 +53,7 @@ void tmc50xx_stepper_drv_trigger_cb(const struct device *dev, const enum stepper
  * @param enable true to enable, false to disable
  * @retval -EIO on failure, -EAGAIN if velocity is too low, 0 on success
  */
-int tmc50xx_stepper_stallguard_enable(const struct device *dev, const bool enable);
+int tmc50xx_stepper_ctrl_stallguard_enable(const struct device *dev, const bool enable);
 
 /**
  * @brief Read the actual position from the TMC50XX device.
@@ -78,7 +79,7 @@ int tmc50xx_get_clock_frequency(const struct device *dev);
  * @param dev Pointer to the TMC50XX stepper device.
  * @return Index of the stepper (0 or 1)
  */
-int tmc50xx_stepper_index(const struct device *dev);
+int tmc50xx_stepper_ctrl_index(const struct device *dev);
 
 /**
  * @brief Reschedule the ramp status work for the TMC50XX device.

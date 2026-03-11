@@ -61,6 +61,13 @@ config ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS
 	  the architecture supports isolating thread stacks for threads
 	  within the same memory domain.
 
+config ARCH_MEM_DOMAIN_SUPPORTS_DEINIT
+	bool
+	select MEM_DOMAIN_HAS_THREAD_LIST
+	help
+	  This hidden option is selected by the target architecture if
+	  the architecture supports de-initializing a memory domain.
+
 config MEM_DOMAIN_ISOLATED_STACKS
 	bool
 	default y

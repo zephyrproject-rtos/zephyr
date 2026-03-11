@@ -56,3 +56,10 @@ properties:
     description: |
       Load capacitance in femtofarads. This property is only used when
       load-capacitors is set to "internal".
+
+  external-clock-source:
+    type: boolean
+    description: |
+      The LFXO is designed to work with an external rail-to-rail 32768
+      Hz clock source applied directly to the XL1 pin, leaving the XL2
+      unconnected, and internal load capacitor disabled.

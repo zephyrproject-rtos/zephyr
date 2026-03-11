@@ -26,6 +26,15 @@
 		#io-channel-cells = <1>;
 	};
 
+	dac2: dac@114000 {
+		compatible = "nxp,hpdac";
+		reg = <0x114000 0x1000>;
+		interrupts = <108 0>;
+		status = "disabled";
+		#io-channel-cells = <1>;
+		resolution = <14>;
+	};
+
 	flexpwm1: flexpwm@d0000 {
 		compatible = "nxp,flexpwm";
 		reg = <0xd0000 0x1000>;

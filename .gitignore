@@ -90,11 +90,12 @@ tags
 .idea
 
 # from check_compliance.py
-# zephyr-keep-sorted-start
+# zephyr-keep-sorted-start ignorecase
 BinaryFiles.txt
 BoardYml.txt
 Checkpatch.txt
 ClangFormat.txt
+CMakeStyle.txt
 DevicetreeBindings.txt
 DevicetreeLinting.txt
 GitDiffCheck.txt

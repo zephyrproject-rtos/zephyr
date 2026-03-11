@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_PIC32CM_PL10
+	bool
+	select SOC_FAMILY_MICROCHIP_PIC32CM_PL
+	help
+	  Enable support for Microchip PIC32CM PL10 Cortex-M0+ microcontrollers.
+
+config SOC_SERIES
+	default "pic32cm_pl10" if SOC_SERIES_PIC32CM_PL10
+
+config SOC_PIC32CM6408PL10028
+	bool
+	select SOC_SERIES_PIC32CM_PL10
+
+config SOC_PIC32CM6408PL10032
+	bool
+	select SOC_SERIES_PIC32CM_PL10
+
+config SOC_PIC32CM6408PL10048
+	bool
+	select SOC_SERIES_PIC32CM_PL10
+
+config SOC_PIC32CM6408PL10064
+	bool
+	select SOC_SERIES_PIC32CM_PL10
+
+config SOC
+	default "pic32cm6408pl10028" if SOC_PIC32CM6408PL10028
+	default "pic32cm6408pl10032" if SOC_PIC32CM6408PL10032
+	default "pic32cm6408pl10048" if SOC_PIC32CM6408PL10048
+	default "pic32cm6408pl10064" if SOC_PIC32CM6408PL10064

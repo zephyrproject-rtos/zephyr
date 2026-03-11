@@ -12,3 +12,7 @@
 	pinctrl-0 = <&pinmux_flexpwm1_pwm0>;
 	pinctrl-names = "default";
 };
+
+&dac2 {
+	status = "okay";
+};

@@ -1469,7 +1469,7 @@ static void flash_stm32_qspi_gpio_reset(const struct device *dev)
 
 	/* Generate RESETn pulse for the flash memory */
 	gpio_pin_configure_dt(&dev_cfg->reset, GPIO_OUTPUT_ACTIVE);
-	k_msleep(DT_INST_PROP(0, reset_gpios_duration));
+	k_msleep(DT_INST_PROP_OR(0, reset_gpios_duration, 1));
 	gpio_pin_set_dt(&dev_cfg->reset, 0);
 }
 #endif
@@ -1784,9 +1784,6 @@ static int flash_stm32_qspi_init(const struct device *dev)
 			(QSPI_DMA_CHANNEL_INIT(node, dir)),		\
 			(NULL))						\
 		},
-
-#define QSPI_FLASH_MODULE(drv_id, flash_id) 				\
-		(DT_DRV_INST(drv_id), qspi_nor_flash_##flash_id)
 
 static void flash_stm32_qspi_irq_config_func(const struct device *dev);
 

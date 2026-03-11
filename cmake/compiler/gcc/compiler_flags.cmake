@@ -48,6 +48,8 @@ check_set_compiler_property(APPEND PROPERTY warning_base -Wno-pointer-sign)
 # Prohibit void pointer arithmetic. Illegal in C99
 check_set_compiler_property(APPEND PROPERTY warning_base -Wpointer-arith)
 
+check_set_compiler_property(PROPERTY warning_no_misleading_indentation -Wno-misleading-indentation)
+
 # not portable
 check_set_compiler_property(APPEND PROPERTY warning_base -Wexpansion-to-defined)
 

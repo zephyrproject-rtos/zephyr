@@ -401,6 +401,12 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
 
         self.op_program(self.hex_, erase_arg, ext_mem_erase_opt, defer=True, core=core)
 
+        # provision relevant slots if prot_ram_inv_slots.json exists in the build directory
+        prot_ram_inv_slots = Path(self.cfg.build_dir).parent / 'prot_ram_inv_slots.json'
+        if prot_ram_inv_slots.exists():
+            self.logger.info(f'Provisioning key file: {prot_ram_inv_slots}')
+            self.exec_op('x-provision-keys', keyfile=str(prot_ram_inv_slots), defer=True)
+
         if self.erase or self.recover:
             # provision keys if keyfile.json exists in the build directory
             keyfile = Path(self.cfg.build_dir).parent / 'keyfile.json'

@@ -4,37 +4,8 @@
 description: |
   Nordic nRF LPCOMP (analog Low-Power COMParator)
 
-  The following example displays the minimum node layout:
-
-    comp: comp@deadbeef {
-            compatible = "nordic,nrf-lpcomp";
-            reg = <0xdeadbeef 0x1000>;
-            interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>;
-            status = "disabled";
-    };
-
   Enabling the comparator node requires setting the default
   configuration of the comparator.
-
-  The following example displays enabling the comparator
-  using an internal reference:
-
-    &comp {
-            status = "okay";
-            psel = <NRF_COMP_AIN0>;
-            refsel = "VDD_4_8";
-            enable-hyst;
-    };
-
-  To select an external reference, select the "AREF"
-  reference and add the external reference:
-
-    &comp {
-            ...
-            refsel = "AREF";
-            extrefsel = <NRF_COMP_AIN1>;
-            ...
-    };
 
 compatible: "nordic,nrf-lpcomp"
 
@@ -69,3 +40,36 @@ properties:
 
   enable-hyst:
     type: boolean
+
+examples:
+  - |
+    /*
+     * The following example displays the minimum node layout:
+     */
+    comp: comp@deadbeef {
+            compatible = "nordic,nrf-lpcomp";
+            reg = <0xdeadbeef 0x1000>;
+            interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>;
+            status = "disabled";
+    };
+  - |
+    /*
+     * The following example displays enabling the comparator using an internal reference:
+     */
+    &comp {
+            status = "okay";
+            psel = <NRF_COMP_AIN0>;
+            refsel = "VDD_4_8";
+            enable-hyst;
+    };
+  - |
+    /*
+     * To select an external reference, select the "AREF" reference and add the external
+     * reference:
+     */
+    &comp {
+            ...
+            refsel = "AREF";
+            extrefsel = <NRF_COMP_AIN1>;
+            ...
+    };

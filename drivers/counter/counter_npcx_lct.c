@@ -330,7 +330,7 @@ static uint32_t counter_npcx_get_pending_int(const struct device *dev)
 	return reg_base->LCTSTAT & NPCX_LCT_STAT_EV_MASK;
 }
 
-static const struct counter_driver_api counter_npcx_lct_api = {
+static DEVICE_API(counter, counter_npcx_lct_api) = {
 	.start = counter_npcx_lct_start,
 	.stop = counter_npcx_lct_stop,
 	.get_value = counter_npcx_lct_get_value,

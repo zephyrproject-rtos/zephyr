@@ -913,7 +913,7 @@ static int stm32_ospi_mem_reset(const struct device *dev)
 
 	/* Generate RESETn pulse for the flash memory */
 	gpio_pin_configure_dt(&dev_cfg->reset, GPIO_OUTPUT_ACTIVE);
-	k_msleep(DT_INST_PROP(0, reset_gpios_duration));
+	k_msleep(DT_INST_PROP_OR(0, reset_gpios_duration, 1));
 	gpio_pin_set_dt(&dev_cfg->reset, 0);
 #else
 
@@ -2196,11 +2196,6 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	uint32_t prescaler = STM32_OSPI_CLOCK_PRESCALER_MIN;
 	int ret;
 
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 #ifdef CONFIG_STM32_MEMMAP
 	/* If MemoryMapped then configure skip init */
 	if (stm32_ospi_is_memorymap(dev)) {
@@ -2623,9 +2618,6 @@ static int flash_stm32_ospi_init(const struct device *dev)
 #else
 #define OSPI_DMA_CHANNEL(node, dir)
 #endif /* CONFIG_USE_STM32_HAL_DMA */
-
-#define OSPI_FLASH_MODULE(drv_id, flash_id)				\
-		(DT_DRV_INST(drv_id), ospi_nor_flash_##flash_id)
 
 #define DT_WRITEOC_PROP_OR(inst, default_value)							\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, writeoc),					\

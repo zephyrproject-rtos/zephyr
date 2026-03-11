@@ -19,6 +19,9 @@
 
 #include <zephyr/sw_isr_table.h>
 #include <stdbool.h>
+#if !defined(_ASMLANGUAGE) && defined(CONFIG_CPU_CORTEX_M)
+#include <zephyr/arch/arm/arm-m-switch.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +37,9 @@ extern "C" {
 #define arch_irq_disable                    arm_irq_disable
 #define arch_irq_is_enabled                 arm_irq_is_enabled
 #endif
+#ifndef CONFIG_USE_SWITCH
 GTEXT(z_arm_int_exit);
+#endif
 GTEXT(arch_irq_enable)
 GTEXT(arch_irq_disable)
 GTEXT(arch_irq_is_enabled)
@@ -84,7 +89,14 @@ void z_soc_irq_eoi(unsigned int irq);
 
 #endif
 
+#if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_USE_SWITCH)
+static inline void z_arm_int_exit(void)
+{
+	arm_m_exc_tail();
+}
+#else
 extern void z_arm_int_exit(void);
+#endif
 
 extern void z_arm_interrupt_init(void);
 
@@ -153,9 +165,6 @@ extern void _arch_isr_direct_pm(void);
 
 #define ARCH_ISR_DIRECT_HEADER() arch_isr_direct_header()
 #define ARCH_ISR_DIRECT_FOOTER(swap) arch_isr_direct_footer(swap)
-
-/* arch/arm/core/exc_exit.S */
-extern void z_arm_int_exit(void);
 
 #ifdef CONFIG_TRACING_ISR
 extern void sys_trace_isr_enter(void);

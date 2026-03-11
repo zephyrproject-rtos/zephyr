@@ -143,6 +143,12 @@ enum display_pixel_format {
 	 * @endcode
 	 */
 	PIXEL_FORMAT_AL_88		= BIT(7), /**< 8-bit Grayscale/Luminance with alpha */
+
+	/**
+	 * This and higher values are display specific.
+	 * Refer to the display header file.
+	 */
+	PIXEL_FORMAT_PRIV_START = (PIXEL_FORMAT_AL_88 << 1),
 };
 
 /**
@@ -150,7 +156,8 @@ enum display_pixel_format {
  *
  * This macro expands to the number of bits required for a given display
  * format. It can be used to allocate a framebuffer based on a given
- * display format type
+ * display format type. This does not work with any private
+ * pixel formats.
  */
 #define DISPLAY_BITS_PER_PIXEL(fmt)						\
 	((((fmt & PIXEL_FORMAT_RGB_888) >> 0) * 24U) +				\

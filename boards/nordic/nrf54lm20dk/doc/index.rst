@@ -3,8 +3,13 @@
 Overview
 ********
 
+.. note::
+   You can find more information about the nRF54LM20B SoC on the `nRF54LM20B website`_.
+   For the nRF54LM20B technical documentation and other resources (such as
+   SoC Datasheet), see the `nRF54L documentation`_ page.
+
 The nRF54LM20 Development Kit hardware provides support for the Nordic Semiconductor
-nRF54LM20A Arm Cortex-M33 CPU and the following devices:
+nRF54LM20B Arm Cortex-M33 CPU and the following devices:
 
 * :abbr:`SAADC (Successive Approximation Analog to Digital Converter)`
 * CLOCK
@@ -42,19 +47,19 @@ Programming and Debugging
 
 .. zephyr:board-supported-runners::
 
-Applications for the ``nrf54lm20dk/nrf54lm20a/cpuapp`` board target can be
+Applications for the ``nrf54lm20dk/nrf54lm20b/cpuapp`` board target can be
 built, flashed, and debugged in the usual way. See
 :ref:`build_an_application` and :ref:`application_run` for more details on
 building and running.
 
-Applications for the ``nrf54lm20dk/nrf54lm20a/cpuflpr`` board target need
+Applications for the ``nrf54lm20dk/nrf54lm20b/cpuflpr`` board target need
 to be built using sysbuild to include the ``vpr_launcher`` image for the application core.
 
 Enter the following command to compile ``hello_world`` for the FLPR core:
 
 .. code-block:: console
 
-   west build -p -b nrf54lm20dk/nrf54lm20a/cpuflpr --sysbuild
+   west build -p -b nrf54lm20dk/nrf54lm20b/cpuflpr --sysbuild
 
 
 Flashing
@@ -93,10 +98,33 @@ Next, build the sample by running the following command:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf54lm20dk/nrf54lm20a/cpuapp
+   :board: nrf54lm20dk/nrf54lm20b/cpuapp
    :goals: build flash
 
 Testing the LEDs and buttons in the nRF54LM20 DK
 ************************************************
 
 Test the nRF54LM20 DK with a :zephyr:code-sample:`blinky` sample.
+
+
+.. _nrf54lm20dk_nrf54lm20a:
+
+nRF54LM20A emulation on nRF54LM20 DK
+************************************
+
+The ``nrf54lm20dk/nrf54lm20a`` board is a modified version of the :zephyr:board:`nrf54lm20dk`
+that enforces the limitations imposed by the nRF54LM20A IC, which is the NPU-less variant
+of the original nRF54LM20B IC. Since Nordic does not offer a development kit for the nRF54LM20A,
+you can use this board to develop for this IC while using the nRF54LM20 Development Kit (PCA10184).
+
+See `nRF54LM20A website`_ for the official reference on the IC itself.
+
+
+References
+**********
+
+.. target-notes::
+
+.. _nRF54LM20B website: https://www.nordicsemi.com/Products/nRF54LM20B
+.. _nRF54L documentation: https://docs.nordicsemi.com/bundle/ncs-latest/page/nrf/app_dev/device_guides/nrf54l/index.html
+.. _nRF54LM20A website: https://www.nordicsemi.com/Products/nRF54LM20A

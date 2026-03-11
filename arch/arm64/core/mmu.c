@@ -879,9 +879,15 @@ static inline void add_arm_mmu_region(struct arm_mmu_ptables *ptables,
 				      uint32_t extra_flags)
 {
 	if (region->size || region->attrs) {
+		uintptr_t pa = ROUND_DOWN(region->base_pa, CONFIG_MMU_PAGE_SIZE);
+		uintptr_t va = ROUND_DOWN(region->base_va, CONFIG_MMU_PAGE_SIZE);
+		size_t pa_offset = region->base_pa - pa;
+		size_t size = ROUND_UP(region->size + pa_offset,
+				       CONFIG_MMU_PAGE_SIZE);
+
 		/* MMU not yet active: must use unlocked version */
-		__add_map(ptables, region->name, region->base_pa, region->base_va,
-			  region->size, region->attrs | extra_flags);
+		__add_map(ptables, region->name, pa, va,
+			  size, region->attrs | extra_flags);
 	}
 }
 
@@ -1231,6 +1237,30 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 		((uint64_t)(uintptr_t)domain_ptables->base_xlat_table);
 
 	sys_slist_append(&domain_list, &domain->arch.node);
+	return 0;
+}
+
+int arch_mem_domain_deinit(struct k_mem_domain *domain)
+{
+	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
+	k_spinlock_key_t key;
+
+	if (domain_ptables->base_xlat_table == NULL) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&xlat_lock);
+
+	sys_slist_find_and_remove(&domain_list, &domain->arch.node);
+
+	discard_table(domain_ptables->base_xlat_table, BASE_XLAT_LEVEL);
+	dec_table_ref(domain_ptables->base_xlat_table);
+
+	domain_ptables->base_xlat_table = NULL;
+	domain_ptables->ttbr0 = 0;
+
+	k_spin_unlock(&xlat_lock, key);
+
 	return 0;
 }
 

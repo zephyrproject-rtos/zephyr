@@ -535,6 +535,68 @@ static inline void sys_dlist_remove(sys_dnode_t *node)
 }
 
 /**
+ * @brief Move a range of nodes to the head of the specified list
+ *
+ * This routine moves a range of nodes from their current list to the head of
+ * the list @a dest. The range of nodes is defined by the pointers @a start and
+ * @a last, which point to the first and last nodes in the range, respectively.
+ *
+ * This and other sys_dlist_*() functions are not thread safe.
+ *
+ * @param dest the list into which the range of nodes will be moved
+ * @param start the first node in the range to be moved
+ * @param last the last node in the range to be moved
+ */
+static inline void sys_dlist_range_prepend(sys_dlist_t *dest,
+					   sys_dnode_t *start, sys_dnode_t *last)
+{
+	sys_dnode_t *const head = dest->head;
+	sys_dnode_t *const prev = start->prev;
+	sys_dnode_t *const next = last->next;
+
+	/* Remove the range from its current list. */
+	prev->next = next;
+	next->prev = prev;
+
+	/* Prepend the range to the destination list. */
+	last->next = head;
+	start->prev = dest;
+
+	head->prev = last;
+	dest->head = start;
+}
+
+/**
+ * @brief Move a range of nodes to the end of the specified list
+ *
+ * This routine moves a range of nodes from their current list to the end of
+ * the list @a dest. The range of nodes is defined by the pointers @a start and
+ * @a last, which point to the first and last nodes in the range, respectively.
+ *
+ * @param dest the list into which the range of nodes will be moved
+ * @param start the first node in the range to be moved
+ * @param last the last node in the range to be moved
+ */
+static inline void sys_dlist_range_append(sys_dlist_t *dest,
+					  sys_dnode_t *start, sys_dnode_t *last)
+{
+	sys_dnode_t *const tail = dest->tail;
+	sys_dnode_t *const prev = start->prev;
+	sys_dnode_t *const next = last->next;
+
+	/* Remove the range from its current list. */
+	prev->next = next;
+	next->prev = prev;
+
+	/* Append the range to the destination list. */
+	last->next = dest;
+	start->prev = tail;
+
+	tail->next = start;
+	dest->tail = last;
+}
+
+/**
  * @brief get the first node in a list
  *
  * This and other sys_dlist_*() functions are not thread safe.

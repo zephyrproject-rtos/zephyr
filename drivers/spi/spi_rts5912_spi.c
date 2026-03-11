@@ -141,7 +141,7 @@ static inline void rts5912_spi_tx(const struct device *dev)
 	struct spi_rts5912_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	volatile struct spi_reg *const spi = spi_config->spi_reg_base;
-	uint32_t timeout_cnt = 0;
+	uint32_t timeout_cnt = 0, spi_frequency = 0, sleep_time = 0;
 
 	if (ctx->tx_len == 1) {
 		spi->TRSF = ((spi->TRSF & ~RTS5912_SPI_TRSF_MODE_MASK) |
@@ -159,16 +159,27 @@ static inline void rts5912_spi_tx(const struct device *dev)
 		spi->TX = ctx->tx_buf[i];
 	}
 	spi->TRSF |= RTS5912_SPI_TRSF_START_MASK;
+
+	/* calculate the transfer time of the spi driver
+	 * bit_num * single_bit_time =>
+	 * (tx_len * 8) * (1 sec / spi_frequency) =>
+	 * (tx_len * 8) * (1000000 usec / spi_frequency) =>
+	 * tx_len * 8000000 / spi_frequency
+	 */
+
+	spi_frequency = ((data->spi_input_clock_rate / 2) / (spi->CKDV + 1));
+	sleep_time = ((8000000 * ctx->tx_len) / spi_frequency) + 1;
+
 	while ((!(spi->TRSF & RTS5912_SPI_TRSF_END_MASK)) &&
 	       (timeout_cnt < RTS5912_SPI_TIMEOUT_ROUND)) {
-		k_msleep(10);
+		k_usleep(sleep_time);
 		timeout_cnt++;
 	}
 	spi->CTRL |= RTS5912_SPI_CTRL_RST_MASK;
 	timeout_cnt = 0;
 	while ((spi->CTRL & RTS5912_SPI_CTRL_RST_MASK) &&
 	       (timeout_cnt < RTS5912_SPI_TIMEOUT_ROUND)) {
-		k_msleep(10);
+		k_usleep(sleep_time);
 		timeout_cnt++;
 	}
 }

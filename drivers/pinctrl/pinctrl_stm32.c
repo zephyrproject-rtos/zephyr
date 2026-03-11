@@ -129,39 +129,6 @@ SYS_INIT(stm32_pinmux_init_remap, PRE_KERNEL_1,
 #endif /* REMAP_PA11 || REMAP_PA12 || REMAP_PA11_PA12 */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
-
-/* ignore swj-cfg reset state (default value) */
-#if ((DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg)) && \
-	(DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) != 0))
-
-static int stm32f1_swj_cfg_init(void)
-{
-
-	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
-
-	/* reset state is '000' (Full SWJ, (JTAG-DP + SW-DP)) */
-	/* only one of the 3 bits can be set */
-#if (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 1)
-	/* 001: Full SWJ (JTAG-DP + SW-DP) but without NJTRST */
-	/* releases: PB4 */
-	LL_GPIO_AF_Remap_SWJ_NONJTRST();
-#elif (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 2)
-	/* 010: JTAG-DP Disabled and SW-DP Enabled */
-	/* releases: PB4 PB3 PA15 */
-	LL_GPIO_AF_Remap_SWJ_NOJTAG();
-#elif (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 3)
-	/* 100: JTAG-DP Disabled and SW-DP Disabled */
-	/* releases: PB4 PB3 PA13 PA14 PA15 */
-	LL_GPIO_AF_DisableRemap_SWJ();
-#endif
-
-	return 0;
-}
-
-SYS_INIT(stm32f1_swj_cfg_init, PRE_KERNEL_1, 0);
-
-#endif /* DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg) */
-
 /**
  * @brief Helper function to check and apply provided pinctrl remap
  * configuration.

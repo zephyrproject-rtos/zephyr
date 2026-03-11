@@ -1,4 +1,4 @@
-.. _96b_aerocore2_board:
+.. zephyr:board:: 96b_aerocore2
 
 96Boards Aerocore2
 ##################
@@ -49,39 +49,7 @@ More information about STM32F427VIT6 can be found here:
 Supported Features
 ==================
 
-The Zephyr 96b_aerocore2 board configuration supports the following hardware
-features:
-
-+------------+------------+-------------------------------------+
-| Interface  | Controller | Driver/Component                    |
-+============+============+=====================================+
-| NVIC       | on-chip    | nested vector interrupt controller  |
-+------------+------------+-------------------------------------+
-| SYSTICK    | on-chip    | system clock                        |
-+------------+------------+-------------------------------------+
-| UART       | on-chip    | serial port                         |
-+------------+------------+-------------------------------------+
-| GPIO       | on-chip    | gpio                                |
-+------------+------------+-------------------------------------+
-| PINMUX     | on-chip    | pinmux                              |
-+------------+------------+-------------------------------------+
-| FLASH      | on-chip    | flash                               |
-+------------+------------+-------------------------------------+
-| SPI        | on-chip    | spi                                 |
-+------------+------------+-------------------------------------+
-| I2C        | on-chip    | i2c                                 |
-+------------+------------+-------------------------------------+
-| PWM        | on-chip    | timers / pwm                        |
-+------------+------------+-------------------------------------+
-| USB OTG FS | on-chip    | USB device                          |
-+------------+------------+-------------------------------------+
-| ADC        | on-chip    | adc                                 |
-+------------+------------+-------------------------------------+
-
-More details about the board can be found at `96Boards website`_.
-
-The default configuration can be found in
-:zephyr_file:`boards/96boards/aerocore2/96b_aerocore2_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -336,9 +304,6 @@ terminal:
 .. code-block:: console
 
    Hello World! arm
-
-.. _96Boards website:
-   https://www.96boards.org/product/aerocore2/
 
 .. _STM32F427 on www.st.com:
    https://www.st.com/en/microcontrollers-microprocessors/stm32f427vi.html

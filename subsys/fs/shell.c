@@ -306,8 +306,7 @@ static int cmd_cp(const struct shell *sh, size_t argc, char **argv)
 	err = fs_open(&file_src, path_src, FS_O_READ);
 	if (err != 0) {
 		shell_error(sh, "Failed to open %s (%d)", path_src, err);
-		err = -EIO;
-		goto exit;
+		return -EIO;
 	}
 
 	err = fs_open(&file_dst, path_dst, FS_O_CREATE | FS_O_TRUNC | FS_O_WRITE);
@@ -322,26 +321,20 @@ static int cmd_cp(const struct shell *sh, size_t argc, char **argv)
 		if (buf_len < 0) {
 			shell_error(sh, "Failed to read %s (%d)", path_src, (int)buf_len);
 			err = -EIO;
-			goto close;
+			break;
 		}
 		if (buf_len == 0) {
 			break;
 		}
 
 		num_written = fs_write(&file_dst, buf, buf_len);
-		if (num_written < 0) {
+		if (num_written != buf_len) {
 			shell_error(sh, "Failed to write %s (%d)", path_dst, (int)num_written);
 			err = -EIO;
-			goto close;
-		}
-		if (num_written != buf_len) {
-			shell_error(sh, "Failed to write %s", path_dst);
-			err = -EIO;
-			goto close;
+			break;
 		}
 	}
 
-close:
 	close_err = fs_close(&file_dst);
 	if (close_err != 0) {
 		shell_error(sh, "Failed to close %s", path_dst);
@@ -355,7 +348,24 @@ close_src:
 		err = -EIO;
 	}
 
-exit:
+	return err;
+}
+
+static int cmd_mv(const struct shell *sh, size_t argc, char **argv)
+{
+	int err;
+	char path_src[MAX_PATH_LEN];
+	char path_dst[MAX_PATH_LEN];
+
+	create_abs_path(argv[1], path_src, sizeof(path_src));
+	create_abs_path(argv[2], path_dst, sizeof(path_dst));
+
+	err = fs_rename(path_src, path_dst);
+	if (err != 0) {
+		shell_error(sh, "Failed to move/rename %s to %s (%d)", path_src, path_dst, err);
+		err = -EIO;
+	}
+
 	return err;
 }
 
@@ -641,11 +651,6 @@ static int cmd_read_test(const struct shell *sh, size_t argc, char **argv)
 	uint32_t loops = 0;
 	uint32_t size;
 
-	if (argc < 3) {
-		shell_error(sh, "Missing parameters: read_test <path> <repeat>");
-		return -EINVAL;
-	}
-
 	create_abs_path(argv[1], path, sizeof(path));
 	repeat = strtol(argv[2], NULL, 0);
 
@@ -731,11 +736,6 @@ static int cmd_erase_write_test(const struct shell *sh, size_t argc, char **argv
 	uint64_t loop_time;
 	uint64_t total_time = 0;
 	uint32_t loops = 0;
-
-	if (argc < 4) {
-		shell_error(sh, "Missing parameters: erase_write_test <path> <size> <repeat>");
-		return -EINVAL;
-	}
 
 	create_abs_path(argv[1], path, sizeof(path));
 	size = strtol(argv[2], NULL, 0);
@@ -842,25 +842,30 @@ static char *mntpt_prepare(char *mntpt)
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
 static int cmd_mount_fat(const struct shell *sh, size_t argc, char **argv)
 {
-	char *mntpt;
-	int res;
+	if (fatfs_mnt.mnt_point != NULL) {
+		shell_error(sh, "%s already mounted at %s", "FAT fs", fatfs_mnt.mnt_point);
+		return -EBUSY;
+	}
 
-	mntpt = mntpt_prepare(argv[1]);
+	char *mntpt = mntpt_prepare(argv[1]);
+
 	if (mntpt == NULL) {
 		shell_error(sh, "Failed to allocate buffer for mount point");
 		return -EIO;
 	}
 
-	fatfs_mnt.mnt_point = (const char *)mntpt;
-	res = fs_mount(&fatfs_mnt);
+	fatfs_mnt.mnt_point = mntpt;
+
+	int res = fs_mount(&fatfs_mnt);
+
 	if (res != 0) {
-		shell_error(sh, "Error mounting FAT fs. Error Code [%d]", res);
+		shell_error(sh, "Error mounting %s: %d", "FAT fs", res);
 		k_free((void *)fatfs_mnt.mnt_point);
 		fatfs_mnt.mnt_point = NULL;
 		return -EIO;
 	}
 
-	shell_print(sh, "Successfully mounted fat fs:%s", fatfs_mnt.mnt_point);
+	shell_print(sh, "Successfully mounted %s at %s", "FAT fs", fatfs_mnt.mnt_point);
 
 	return 0;
 }
@@ -870,41 +875,44 @@ static int cmd_mount_fat(const struct shell *sh, size_t argc, char **argv)
 static int cmd_mount_littlefs(const struct shell *sh, size_t argc, char **argv)
 {
 	if (littlefs_mnt.mnt_point != NULL) {
+		shell_error(sh, "%s already mounted at %s", "littlefs", littlefs_mnt.mnt_point);
 		return -EBUSY;
 	}
 
 	char *mntpt = mntpt_prepare(argv[1]);
 
 	if (mntpt == NULL) {
-		shell_error(sh, "Failed to allocate mount point");
+		shell_error(sh, "Failed to allocate buffer for mount point");
 		return -EIO;
 	}
 
 	littlefs_mnt.mnt_point = mntpt;
 
-	int rc = fs_mount(&littlefs_mnt);
+	int res = fs_mount(&littlefs_mnt);
 
-	if (rc != 0) {
-		shell_error(sh, "Error mounting as littlefs: %d", rc);
+	if (res != 0) {
+		shell_error(sh, "Error mounting %s: %d", "littlefs", res);
 		k_free((void *)littlefs_mnt.mnt_point);
 		littlefs_mnt.mnt_point = NULL;
 		return -EIO;
 	}
 
-	return rc;
+	shell_print(sh, "Successfully mounted %s at %s", "littlefs", littlefs_mnt.mnt_point);
+
+	return 0;
 }
 #endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs_mount,
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
 	SHELL_CMD_ARG(fat, NULL,
-		      "Mount fatfs. fs mount fat <mount-point>",
+		      SHELL_HELP("Mount fatfs", "<mount-point>"),
 		      cmd_mount_fat, 2, 0),
 #endif
 
 #if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
 	SHELL_CMD_ARG(littlefs, NULL,
-		      "Mount littlefs. fs mount littlefs <mount-point>",
+		      SHELL_HELP("Mount littlefs", "<mount-point>"),
 		      cmd_mount_littlefs, 2, 0),
 #endif
 
@@ -913,26 +921,35 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs_mount,
 #endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
-	SHELL_CMD(cd, NULL, "Change working directory", cmd_cd),
-	SHELL_CMD(ls, NULL, "List files in current directory", cmd_ls),
-	SHELL_CMD_ARG(mkdir, NULL, "Create directory", cmd_mkdir, 2, 0),
+	SHELL_CMD(cd, NULL, SHELL_HELP("Change working directory", "[<path>]"), cmd_cd),
+	SHELL_CMD(ls, NULL, SHELL_HELP("List files in current directory", "[<path>]"), cmd_ls),
+	SHELL_CMD_ARG(mkdir, NULL, SHELL_HELP("Create directory", "<path>"), cmd_mkdir, 2, 0),
 #ifdef CONFIG_FILE_SYSTEM_SHELL_MOUNT_COMMAND
 	SHELL_CMD(mount, &sub_fs_mount,
-		  "<Mount fs, syntax:- fs mount <fs type> <mount-point>", NULL),
+		  SHELL_HELP("Mount filesystem", "<fs type> <mount-point>"), NULL),
 #endif
-	SHELL_CMD(pwd, NULL, "Print current working directory", cmd_pwd),
-	SHELL_CMD_ARG(read, NULL, "Read from file", cmd_read, 2, 255),
+	SHELL_CMD(pwd, NULL, SHELL_HELP("Print current working directory", NULL), cmd_pwd),
+	SHELL_CMD_ARG(read, NULL, SHELL_HELP("Read from file", "<path> [<count> [<offset>]]"),
+		      cmd_read, 2, 255),
 	SHELL_CMD_ARG(cat, NULL,
-		"Concatenate files and print on the standard output",
-		cmd_cat, 2, 255),
-	SHELL_CMD_ARG(rm, NULL, "Remove file", cmd_rm, 2, 0),
-	SHELL_CMD_ARG(cp, NULL, "Copy file", cmd_cp, 3, 0),
-	SHELL_CMD_ARG(statvfs, NULL, "Show file system state", cmd_statvfs, 2, 0),
-	SHELL_CMD_ARG(trunc, NULL, "Truncate file", cmd_trunc, 2, 255),
-	SHELL_CMD_ARG(write, NULL, "Write file", cmd_write, 3, 255),
+		      SHELL_HELP("Concatenate files and print on the standard output",
+				 "<path> [<path> ...]"),
+		      cmd_cat, 2, 255),
+	SHELL_CMD_ARG(rm, NULL, SHELL_HELP("Remove file", "<path>"), cmd_rm, 2, 0),
+	SHELL_CMD_ARG(cp, NULL, SHELL_HELP("Copy file", "<source> <dest>"), cmd_cp, 3, 0),
+	SHELL_CMD_ARG(mv, NULL, SHELL_HELP("Move file", "<source> <dest>"), cmd_mv, 3, 0),
+	SHELL_CMD_ARG(statvfs, NULL, SHELL_HELP("Show file system state", "<path>"),
+		      cmd_statvfs, 2, 0),
+	SHELL_CMD_ARG(trunc, NULL, SHELL_HELP("Truncate file", "<path> [<length>]"),
+		      cmd_trunc, 2, 255),
+	SHELL_CMD_ARG(write, NULL, SHELL_HELP("Write file", "<path> <data> [<data> ...]"),
+		      cmd_write, 3, 255),
 #ifdef CONFIG_FILE_SYSTEM_SHELL_TEST_COMMANDS
-	SHELL_CMD_ARG(read_test, NULL, "Read file test", cmd_read_test, 2, 2),
-	SHELL_CMD_ARG(erase_write_test, NULL, "Erase/write file test", cmd_erase_write_test, 3, 3),
+	SHELL_CMD_ARG(read_test, NULL, SHELL_HELP("Read file test", "<path> <repeat>"),
+		      cmd_read_test, 3, 0),
+	SHELL_CMD_ARG(erase_write_test, NULL,
+		      SHELL_HELP("Erase/write file test", "<path> <size> <repeat>"),
+		      cmd_erase_write_test, 4, 0),
 #endif
 	SHELL_SUBCMD_SET_END
 );

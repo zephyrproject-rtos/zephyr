@@ -19,6 +19,7 @@ tests:
       - stm32h735g_disco
       - nrf51dk/nrf51822
       - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l15dk/nrf54l15/cpuapp
@@ -52,9 +53,11 @@ tests:
       - frdm_mcxa366
       - frdm_mcxa344
       - frdm_mcxe247
+      - frdm_mcxa577
       - s32k148_evb
       - raytac_an54lq_db_15/nrf54l15/cpuapp
       - mck_ra4t1
+      - fpb_ra8e1
     integration_platforms:
       - nucleo_l073rz
       - nrf52840dk/nrf52840

@@ -37,6 +37,10 @@ family:
             cpuclusters:
               - name: cpuapp
               - name: cpuflpr
+          - name: nrf54lm20b
+            cpuclusters:
+              - name: cpuapp
+              - name: cpuflpr
       - name: nrf54h
         socs:
           - name: nrf54h20
@@ -124,6 +128,9 @@ runners:
               - nrf54lm20a/cpuapp
               - nrf54lm20a/cpuflpr
           - qualifiers:
+              - nrf54lm20b/cpuapp
+              - nrf54lm20b/cpuflpr
+          - qualifiers:
               - nrf54h20/cpuapp
               - nrf54h20/cpurad
               - nrf54h20/cpuppr
@@ -187,6 +194,9 @@ runners:
               - nrf54lm20a/cpuapp
               - nrf54lm20a/cpuflpr
           - qualifiers:
+              - nrf54lm20b/cpuapp
+              - nrf54lm20b/cpuflpr
+          - qualifiers:
               - nrf54h20/cpuapp
               - nrf54h20/cpurad
               - nrf54h20/cpuppr
@@ -249,6 +259,9 @@ runners:
           - qualifiers:
               - nrf54lm20a/cpuapp
               - nrf54lm20a/cpuflpr
+          - qualifiers:
+              - nrf54lm20b/cpuapp
+              - nrf54lm20b/cpuflpr
           - qualifiers:
               - nrf54h20/cpuapp
               - nrf54h20/cpurad
