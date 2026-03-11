@@ -250,22 +250,18 @@ typedef enum {
 #include "reg/mec172x_defs.h"
 #include "reg/mec172x_ecia.h"
 #include "reg/mec172x_ecs.h"
-#include "reg/mec172x_espi_iom.h"
-#include "reg/mec172x_espi_saf.h"
-#include "reg/mec172x_espi_vw.h"
 #include "reg/mec172x_gpio.h"
 #include "reg/mec172x_i2c_smb.h"
 #include "reg/mec172x_p80bd.h"
 #include "reg/mec172x_pcr.h"
-#include "reg/mec172x_qspi.h"
 #include "reg/mec172x_vbat.h"
 #include "reg/mec172x_emi.h"
 
+/* temporary until eSPI and eSPI TAF driver conversion are complete */
+#include "reg/mec172x_qspi.h"
+
 /* common peripheral register defines */
 #include <soc_common.h>
-
-/* MEC172x SAF V2 */
-#include "soc_espi_saf_v2.h"
 
 #endif
 #endif

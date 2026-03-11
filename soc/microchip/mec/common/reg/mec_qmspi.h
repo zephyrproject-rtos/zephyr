@@ -72,6 +72,7 @@
 #define XEC_QSPI_CR_RXDMA_CD1B     1u
 #define XEC_QSPI_CR_RXDMA_CD2B     2u
 #define XEC_QSPI_CR_RXDMA_CD4B     3u
+#define XEC_QSPI_CR_RXDMA_DIS      0
 #define XEC_QSPI_CR_RXDMA_RLDCH0   1u
 #define XEC_QSPI_CR_RXDMA_RLDCH1   2u
 #define XEC_QSPI_CR_RXDMA_RLDCH2   3u
