@@ -141,6 +141,7 @@ void z_do_kernel_oops(const struct arch_esf *esf, _callee_saved_t *callee_regs, 
 
 	esf_copy.extra_info = (struct __extra_esf_info) {
 		.callee = callee_regs,
+		.exc_return = exc_return,
 	};
 
 	z_arm_fatal_error(reason, &esf_copy);
