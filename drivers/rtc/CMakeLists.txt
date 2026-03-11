@@ -12,6 +12,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE rtc_handlers.c)
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_RTC_AM1805 rtc_am1805.c)
 zephyr_library_sources_ifdef(CONFIG_RTC_AMBIQ rtc_ambiq.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_AMEBA rtc_ameba.c)
 zephyr_library_sources_ifdef(CONFIG_RTC_ATMEL_SAM rtc_sam.c)
 zephyr_library_sources_ifdef(CONFIG_RTC_ATMEL_SAM0 rtc_sam0.c)
 zephyr_library_sources_ifdef(CONFIG_RTC_BQ32002 rtc_bq32002.c)
