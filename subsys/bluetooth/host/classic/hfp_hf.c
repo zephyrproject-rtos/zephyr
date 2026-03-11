@@ -1916,7 +1916,7 @@ static const struct unsolicited *hfp_hf_unsol_lookup(struct at_client *hf_at)
 		size_t len = strlen(handlers[i].cmd);
 
 		if ((hf_at->rsp_buf.len >= len) &&
-		    (strncmp(hf_at->rsp_buf.data, handlers[i].cmd, len) == 0)) {
+		    (strncmp((char *)hf_at->rsp_buf.data, handlers[i].cmd, len) == 0)) {
 			return &handlers[i];
 		}
 	}

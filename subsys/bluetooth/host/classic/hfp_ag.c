@@ -3027,7 +3027,7 @@ static int bt_hfp_ag_atd_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 
 	if (is_memory_dial) {
 		if ((bt_ag != NULL) && (bt_ag->memory_dial != NULL)) {
-			err = bt_ag->memory_dial(ag, data, &number);
+			err = bt_ag->memory_dial(ag, (char *)data, &number);
 			if ((err != 0) || (number == NULL)) {
 				return -ENOTSUP;
 			}
