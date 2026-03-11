@@ -8,6 +8,7 @@
 #include <freq.h>
 #include <arm/armv8.1-m.dtsi>
 #include <zephyr/dt-bindings/clock/amebag2_clock.h>
+#include <zephyr/dt-bindings/dma/ameba_dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
@@ -69,6 +70,19 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
+		};
+
+		dma: dma@40120000 {
+			compatible = "realtek,ameba-gdma";
+			reg = <0x40120000 0x3c0>;
+			clocks = <&rcc AMEBA_DMAC_CLK>;
+			interrupts = <30 0>, <31 0>, <32 0>, <33 0>, <34 0>, <35 0>, <36 0>, <37 0>;
+			interrupt-names = "CH0", "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7";
+			#dma-cells = <3>;
+			dma-channels = <8>;
+			dma-buf-addr-alignment = <32>;
+			dma-buf-size-alignment = <32>;
+			status = "disabled";
 		};
 
 		pinctrl: pinctrl@4080a800 {
