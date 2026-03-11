@@ -20,8 +20,6 @@
 
 #include "pse84_boot.h"
 
-#define CY_IPC_MAX_ENDPOINTS (8UL)
-
 static void systeminit_enable_clocks(void)
 {
 	/* Void all return types to suppress compiler warnings about unused return values */
