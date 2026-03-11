@@ -701,6 +701,23 @@ NXP
 
     git grep "#include <nxp/nxp_" -- '*.dtsi' '*.dts' '*.overlay'
 
+* :dtcompatible:`nxp,lptmr` nodes used as the system timer must now be
+  designated via the ``zephyr,system-timer`` chosen property. Boards based on
+  i.MX95 and MCX-W SoCs already have this set in the SoC DTSI and require no
+  change. All other boards using :kconfig:option:`CONFIG_MCUX_LPTMR_TIMER`
+  must add a board overlay:
+
+  .. code-block:: devicetree
+
+     / {
+         chosen {
+             zephyr,system-timer = &lptmr0;
+         };
+     };
+
+  On Kinetis KE1xF, this overlay is also required when
+  :kconfig:option:`CONFIG_PM` is enabled.
+
 QSPI
 ====
 
