@@ -92,3 +92,17 @@ npm10xx@8 {
 		compatible = "nordic,npm10xx-charger";
 	};
 };
+
+adp5360@9 {
+	compatible = "adi,adp5360";
+	reg = <0x9>;
+
+	charger {
+		compatible = "adi,adp5360-charger";
+		battery-name = "dummy-charger";
+		device-chemistry = "lithium-ion";
+		constant-charge-current-max-microamp = <20000>;
+		constant-charge-voltage-max-microvolt = <4160000>;
+		charge-term-current-microamp = <5000>;
+	};
+};
