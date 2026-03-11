@@ -50,6 +50,9 @@ class SerialReader:
         finally:
             self.serial.close()
 
+    def has_fileno(self):
+        return os.name == 'posix'
+
     def fileno(self):
         return self.serial.fileno()
 
@@ -75,6 +78,9 @@ class FileReader:
             sys.stdin = os.fdopen(sys.stdin.fileno(), 'rb', 0)
             self.file = sys.stdin
             yield
+
+    def has_fileno(self):
+        return True
 
     def fileno(self):
         return self.file.fileno()
@@ -143,6 +149,9 @@ class JLinkRTTReader:
     def close(self):
         # JLink closes the connection through the __del__ method.
         del self.jlink
+
+    def has_fileno(self):
+        return False
 
     def read_non_blocking(self):
         return bytes(self.jlink.rtt_read(self.channel, 1024))
@@ -222,7 +231,7 @@ def main():
 
     with reader.open():
         while True:
-            if hasattr(reader, 'fileno'):
+            if reader.has_fileno():
                 _, _, _ = select.select([reader], [], [])
             else:
                 time.sleep(args.polling_interval)
