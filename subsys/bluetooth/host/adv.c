@@ -1650,13 +1650,14 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv)
 static void adv_timeout(struct k_work *work)
 {
 	int err = 0;
+
+#if defined(CONFIG_BT_EXT_ADV)
 	struct k_work_delayable *dwork;
 	struct bt_le_ext_adv *adv;
 
 	dwork = k_work_delayable_from_work(work);
 	adv = CONTAINER_OF(dwork, struct bt_le_ext_adv, lim_adv_timeout_work);
 
-#if defined(CONFIG_BT_EXT_ADV)
 	if (adv == bt_dev.adv) {
 		err = bt_le_adv_stop();
 	} else {
