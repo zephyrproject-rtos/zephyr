@@ -23,13 +23,26 @@ properties:
     description: |
       Array of encoded interrupt information
 
-  pcrs:
-    type: array
+  pcr-scr:
+    type: int
     required: true
-    description: eSPI PCR register index and bit position
+    description: |
+      Encoded PCR sleep, clock required, reset register index and bit position.
 
   pinctrl-0:
     required: true
 
   pinctrl-names:
     required: true
+
+  host-memmap-addr-high:
+    type: int
+    description: |
+      Contains bits [47:32] of the Host address range where all memory mapped
+      host (logical) devices are located in Host memory address space.
+
+  sram-bar-addr-high:
+    type: int
+    description: |
+      Contains Host address bits [47:32] where both SRAM BAR's are mapped
+      to Host memory address space.
