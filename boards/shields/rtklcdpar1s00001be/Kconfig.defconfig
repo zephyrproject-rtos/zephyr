@@ -22,6 +22,9 @@ config LV_Z_DOUBLE_VDB
 config LV_Z_FLUSH_THREAD
 	default n
 
+config LV_Z_FULL_REFRESH
+	default y
+
 choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_16
 endchoice
