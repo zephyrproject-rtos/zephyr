@@ -423,4 +423,18 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 		POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,			\
 		&mcux_lptmr_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_LPTMR_DEVICE_INIT)
+/*
+ * Skip the instance reserved as the system timer via zephyr,system-timer.
+ * When both drivers are enabled, they must operate on separate hardware.
+ */
+#define COUNTER_MCUX_LPTMR_IS_SYSTEM_TIMER(n)				\
+	COND_CODE_1(DT_HAS_CHOSEN(zephyr_system_timer),			\
+		(DT_SAME_NODE(DT_INST(n, nxp_lptmr),			\
+			      DT_CHOSEN(zephyr_system_timer))),		\
+		(0))
+
+#define COUNTER_MCUX_LPTMR_DEVICE_INIT_COND(n)				\
+	COND_CODE_0(COUNTER_MCUX_LPTMR_IS_SYSTEM_TIMER(n),		\
+		(COUNTER_MCUX_LPTMR_DEVICE_INIT(n)), ())
+
+DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_LPTMR_DEVICE_INIT_COND)
