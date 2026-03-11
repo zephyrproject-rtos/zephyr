@@ -72,6 +72,7 @@
 #define XEC_QSPI_CR_RXDMA_CD1B     1u
 #define XEC_QSPI_CR_RXDMA_CD2B     2u
 #define XEC_QSPI_CR_RXDMA_CD4B     3u
+#define XEC_QSPI_CR_RXDMA_DIS      0
 #define XEC_QSPI_CR_RXDMA_RLDCH0   1u
 #define XEC_QSPI_CR_RXDMA_RLDCH1   2u
 #define XEC_QSPI_CR_RXDMA_RLDCH2   3u
@@ -282,5 +283,193 @@
 
 /* Local DMA channel data length in bytes register b[31:0] */
 #define XEC_QSPI_LDMA_CHX_LR_OFS(x) (0x118u + ((uint32_t)(x) * 0x10u))
+
+/* ---- Compatibility for SAF(TAF). Will be removed once all code is migrated to the above macros */
+#define MCHP_QMSPI_COMPAT_REGS 1
+
+#define MCHP_QMSPI_MAX_DESCR 16u
+
+/* Mode register */
+#define MCHP_QMSPI_M_ACTIVATE        BIT(0)
+#define MCHP_QMSPI_M_SRST            BIT(1)
+#define MCHP_QMSPI_M_SAF_DMA_MODE_EN BIT(2)
+#define MCHP_QMSPI_M_LDMA_RX_EN      BIT(3)
+#define MCHP_QMSPI_M_LDMA_TX_EN      BIT(4)
+#define MCHP_QMSPI_M_SIG_POS         8U
+#define MCHP_QMSPI_M_SIG_MASK0       0x07U
+#define MCHP_QMSPI_M_SIG_MASK        0x0700U
+#define MCHP_QMSPI_M_SIG_MODE0_VAL   0u
+#define MCHP_QMSPI_M_SIG_MODE1_VAL   0x06U
+#define MCHP_QMSPI_M_SIG_MODE2_VAL   0x01U
+#define MCHP_QMSPI_M_SIG_MODE3_VAL   0x07U
+#define MCHP_QMSPI_M_SIG_MODE0       0
+#define MCHP_QMSPI_M_SIG_MODE1       (6U << MCHP_QMSPI_M_SIG_POS)
+#define MCHP_QMSPI_M_SIG_MODE2       (1U << MCHP_QMSPI_M_SIG_POS)
+#define MCHP_QMSPI_M_SIG_MODE3       (7U << MCHP_QMSPI_M_SIG_POS)
+#define MCHP_QMSPI_M_CS_POS          12U
+#define MCHP_QMSPI_M_CS_MASK0        0x03U
+#define MCHP_QMSPI_M_CS_MASK         (3u << MCHP_QMSPI_M_CS_POS)
+#define MCHP_QMSPI_M_CS0             (0u << MCHP_QMSPI_M_CS_POS)
+#define MCHP_QMSPI_M_CS1             (1u << MCHP_QMSPI_M_CS_POS)
+#define MCHP_QMSPI_M_FDIV_POS        16U
+#define MCHP_QMSPI_M_FDIV_MASK0      0xffffU
+#define MCHP_QMSPI_M_FDIV_MASK       0xffff0000U
+
+/* Control/Descriptors */
+#define MCHP_QMSPI_C_IFM_MASK    0x03U
+#define MCHP_QMSPI_C_IFM_1X      0
+#define MCHP_QMSPI_C_IFM_2X      1U
+#define MCHP_QMSPI_C_IFM_4X      2U
+#define MCHP_QMSPI_C_TX_POS      2U
+#define MCHP_QMSPI_C_TX_MASK     GENMASK(3, 2)
+#define MCHP_QMSPI_C_TX_DIS      0
+#define MCHP_QMSPI_C_TX_DATA     (1U << MCHP_QMSPI_C_TX_POS)
+#define MCHP_QMSPI_C_TX_ZEROS    (2U << MCHP_QMSPI_C_TX_POS)
+#define MCHP_QMSPI_C_TX_ONES     (3U << MCHP_QMSPI_C_TX_POS)
+#define MCHP_QMSPI_C_TX_DMA_POS  4U
+#define MCHP_QMSPI_C_TX_DMA_MASK GENMASK(5, 4)
+#define MCHP_QMSPI_C_TX_DMA_DIS  0
+#define MCHP_QMSPI_C_TX_DMA_1B   (1U << MCHP_QMSPI_C_TX_DMA_POS)
+#define MCHP_QMSPI_C_TX_DMA_2B   (2U << MCHP_QMSPI_C_TX_DMA_POS)
+#define MCHP_QMSPI_C_TX_DMA_4B   (3U << MCHP_QMSPI_C_TX_DMA_POS)
+#define MCHP_QMSPI_C_TX_LDMA_CH0 (1U << MCHP_QMSPI_C_TX_DMA_POS)
+#define MCHP_QMSPI_C_TX_LDMA_CH1 (2U << MCHP_QMSPI_C_TX_DMA_POS)
+#define MCHP_QMSPI_C_TX_LDMA_CH2 (3U << MCHP_QMSPI_C_TX_DMA_POS)
+#define MCHP_QMSPI_C_RX_POS      6U
+#define MCHP_QMSPI_C_RX_DIS      0
+#define MCHP_QMSPI_C_RX_EN       BIT(MCHP_QMSPI_C_RX_POS)
+#define MCHP_QMSPI_C_RX_DMA_POS  7U
+#define MCHP_QMSPI_C_RX_DMA_MASK GENMASK(8, 7)
+#define MCHP_QMSPI_C_RX_DMA_DIS  0
+#define MCHP_QMSPI_C_RX_DMA_1B   (1U << MCHP_QMSPI_C_RX_DMA_POS)
+#define MCHP_QMSPI_C_RX_DMA_2B   (2U << MCHP_QMSPI_C_RX_DMA_POS)
+#define MCHP_QMSPI_C_RX_DMA_4B   (3U << MCHP_QMSPI_C_RX_DMA_POS)
+#define MCHP_QMSPI_C_RX_LDMA_CH0 (1U << MCHP_QMSPI_C_RX_DMA_POS)
+#define MCHP_QMSPI_C_RX_LDMA_CH1 (2U << MCHP_QMSPI_C_RX_DMA_POS)
+#define MCHP_QMSPI_C_RX_lDMA_CH2 (3U << MCHP_QMSPI_C_RX_DMA_POS)
+
+#define MCHP_QMSPI_C_CLOSE_POS        9U
+#define MCHP_QMSPI_C_NO_CLOSE         0
+#define MCHP_QMSPI_C_CLOSE            BIT(MCHP_QMSPI_C_CLOSE_POS)
+#define MCHP_QMSPI_C_XFR_UNITS_POS    10
+#define MCHP_QMSPI_C_XFR_UNITS_MASK   GENMASK(11, 10)
+#define MCHP_QMSPI_C_XFR_UNITS_BITS   0
+#define MCHP_QMSPI_C_XFR_UNITS_1      (1U << MCHP_QMSPI_C_XFR_UNITS_POS)
+#define MCHP_QMSPI_C_XFR_UNITS_4      (2U << MCHP_QMSPI_C_XFR_UNITS_POS)
+#define MCHP_QMSPI_C_XFR_UNITS_16     (3U << MCHP_QMSPI_C_XFR_UNITS_POS)
+#define MCHP_QMSPI_C_NEXT_DESCR_POS   12
+#define MCHP_QMSPI_C_NEXT_DESCR_MASK0 0x0fU
+#define MCHP_QMSPI_C_NEXT_DESCR_MASK  0xf000U
+#define MCHP_QMSPI_C_DESCR0           0u
+#define MCHP_QMSPI_C_DESCR1           0x1000U
+#define MCHP_QMSPI_C_DESCR2           0x2000U
+#define MCHP_QMSPI_C_DESCR3           0x3000U
+#define MCHP_QMSPI_C_DESCR4           0x4000U
+/* Control register start descriptor field */
+#define MCHP_QMSPI_C_DESCR(n)         (((uint32_t)(n) & 0xfU) << MCHP_QMSPI_C_NEXT_DESCR_POS)
+/* Descriptor registers next descriptor field */
+#define MCHP_QMSPI_C_NEXT_DESCR(n)    (((uint32_t)(n) & 0xfU) << MCHP_QMSPI_C_NEXT_DESCR_POS)
+/* Control register descriptor mode enable */
+#define MCHP_QMSPI_C_DESCR_EN_POS     16
+#define MCHP_QMSPI_C_DESCR_EN         BIT(MCHP_QMSPI_C_DESCR_EN_POS)
+/* Descriptor registers last descriptor flag */
+#define MCHP_QMSPI_C_DESCR_LAST       BIT(MCHP_QMSPI_C_DESCR_EN_POS)
+#define MCHP_QMSPI_C_MAX_UNITS        0x7fffU
+#define MCHP_QMSPI_C_MAX_UNITS_MASK   0x7fffU
+#define MCHP_QMSPI_C_XFR_NUNITS_POS   17U
+#define MCHP_QMSPI_C_XFR_NUNITS_MASK0 0x7fffU
+#define MCHP_QMSPI_C_XFR_NUNITS_MASK  0xfffe0000U
+
+#define MCHP_QMSPI_C_XFR_NUNITS(n) (((uint32_t)(n) & 0x7fffU) << MCHP_QMSPI_C_XFR_NUNITS_POS)
+#define MCHP_QMSPI_C_XFR_NUNITS_GET(descr)                                                         \
+	(((uint32_t)(descr) & MCHP_QMSPI_C_XFR_NUNITS_MASK) >> 17)
+
+/* Interface Control */
+#define MCHP_QMSPI_IFC_DFLT        0u
+#define MCHP_QMSPI_IFC_WP_OUT_HI   BIT(0)
+#define MCHP_QMSPI_IFC_WP_OUT_EN   BIT(1)
+#define MCHP_QMSPI_IFC_HOLD_OUT_HI BIT(2)
+#define MCHP_QMSPI_IFC_HOLD_OUT_EN BIT(3)
+#define MCHP_QMSPI_IFC_PD_ON_NS    BIT(4)
+#define MCHP_QMSPI_IFC_PU_ON_NS    BIT(5)
+#define MCHP_QMSPI_IFC_PD_ON_ND    BIT(6)
+#define MCHP_QMSPI_IFC_PU_ON_ND    BIT(7)
+
+/* Status Register */
+#define MCHP_QMSPI_STS_REG_MASK  0x0f01ff1fU
+#define MCHP_QMSPI_STS_RO_MASK   0x0f013300U
+#define MCHP_QMSPI_STS_RW1C_MASK 0x0000cc7fU
+
+/* Interrupt Enable Register */
+#define MCHP_QMSPI_IEN_XFR_DONE    BIT(0)
+#define MCHP_QMSPI_IEN_DMA_DONE    BIT(1)
+#define MCHP_QMSPI_IEN_TXB_ERR     BIT(2)
+#define MCHP_QMSPI_IEN_RXB_ERR     BIT(3)
+#define MCHP_QMSPI_IEN_PROG_ERR    BIT(4)
+#define MCHP_QMSPI_IEN_LDMA_RX_ERR BIT(5)
+#define MCHP_QMSPI_IEN_LDMA_TX_ERR BIT(6)
+#define MCHP_QMSPI_IEN_TXB_FULL    BIT(8)
+#define MCHP_QMSPI_IEN_TXB_EMPTY   BIT(9)
+#define MCHP_QMSPI_IEN_TXB_REQ     BIT(10)
+#define MCHP_QMSPI_IEN_RXB_FULL    BIT(12)
+#define MCHP_QMSPI_IEN_RXB_EMPTY   BIT(13)
+#define MCHP_QMSPI_IEN_RXB_REQ     BIT(14)
+
+/* LDMA Channel Control register */
+#define MCHP_QMSPI_LDC_MASK    0x7fU
+/* enable channel */
+#define MCHP_QMSPI_LDC_EN      BIT(0)
+/* re-enable channel upon done */
+#define MCHP_QMSPI_LDC_RS_EN   BIT(1)
+/* on restart put memory start address back to its original value */
+#define MCHP_QMSPI_LDC_RSA_EN  BIT(2)
+/* use channel length not length in descriptor */
+#define MCHP_QMSPI_LDC_UCHL_EN BIT(3)
+/* LDMA unit(access) size: 1, 2, or 4 bytes */
+#define MCHP_QMSPI_LDC_ASZ_POS 4
+#define MCHP_QMSPI_LDC_ASZ_MSK 0x30U
+#define MCHP_QMSPI_LDC_ASZ_1   0
+#define MCHP_QMSPI_LDC_ASZ_2   0x10U
+#define MCHP_QMSPI_LDC_ASZ_4   0x20U
+/* LDMA increment memory start address by access size */
+#define MCHP_QMSPI_LDC_INCR_EN BIT(6)
+
+struct qldma_chan {
+	volatile uint32_t CTRL;
+	volatile uint32_t MSTART;
+	volatile uint32_t LEN;
+	uint32_t RSVD1[1];
+};
+
+struct qmspi_regs {
+	volatile uint32_t MODE;
+	volatile uint32_t CTRL;
+	volatile uint32_t EXE;
+	volatile uint32_t IFCTRL;
+	volatile uint32_t STS;
+	volatile uint32_t BCNT_STS;
+	volatile uint32_t IEN;
+	volatile uint32_t BCNT_TRIG;
+	volatile uint32_t TX_FIFO;
+	volatile uint32_t RX_FIFO;
+	volatile uint32_t CSTM;
+	uint32_t RSVD1[1];
+	volatile uint32_t DESCR[16];
+	uint32_t RSVD2[16];
+	volatile uint32_t ALIAS_CTRL;
+	uint32_t RSVD3[3];
+	volatile uint32_t MODE_ALT1;
+	uint32_t RSVD4[3];
+	volatile uint32_t TM_TAPS;
+	volatile uint32_t TM_TAPS_ADJ;
+	volatile uint32_t TM_TAPS_CTRL;
+	uint32_t RSVD5[9];
+	volatile uint32_t LDMA_RX_DESCR_BM;
+	volatile uint32_t LDMA_TX_DESCR_BM;
+	uint32_t RSVD6[2];
+	struct qldma_chan LDRX[3];
+	struct qldma_chan LDTX[3];
+};
+/* End Compatibility */
 
 #endif /* ZEPHYR_SOC_MICROCHIP_MEC_COMMON_REG_QMSPI_H */
