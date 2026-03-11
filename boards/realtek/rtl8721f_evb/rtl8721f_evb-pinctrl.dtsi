@@ -17,4 +17,30 @@
 			bias-pull-up;
 		};
 	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('A', 29, AMEBA_SPI0_CLK)>,
+				 <AMEBA_PINMUX('A', 30, AMEBA_SPI0_MOSI)>,
+				 <AMEBA_PINMUX('A', 31, AMEBA_SPI0_MISO)>;
+			bias-pull-up;
+		};
+		group2 {
+			pinmux = <AMEBA_PINMUX('B', 0, AMEBA_SPI0_CS)>;
+			bias-pull-up;
+		};
+	};
+
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('B', 29, AMEBA_SPI1_CLK)>,
+				 <AMEBA_PINMUX('B', 30, AMEBA_SPI1_MOSI)>,
+				 <AMEBA_PINMUX('B', 31, AMEBA_SPI1_MISO)>;
+			bias-pull-up;
+		};
+		group2 {
+			pinmux = <AMEBA_PINMUX('C', 0, AMEBA_SPI1_CS)>;
+			bias-pull-up;
+		};
+	};
 };
