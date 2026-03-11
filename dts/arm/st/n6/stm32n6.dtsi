@@ -22,6 +22,7 @@
 
 / {
 	chosen {
+		zephyr,crc = &crc;
 		zephyr,entropy = &rng;
 	};
 
@@ -1496,6 +1497,14 @@
 			reg = <0x50002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
 			interrupts = <19 0>;
+			status = "disabled";
+		};
+
+		crc: crc@56024c00 {
+			compatible = "st,stm32-crc";
+			reg = <0x56024c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB4, 19)>;
+			resets = <&rctl STM32_RESET(AHB4, 19)>;
 			status = "disabled";
 		};
 	};

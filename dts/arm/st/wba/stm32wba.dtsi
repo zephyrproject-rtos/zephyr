@@ -54,6 +54,7 @@
 
 / {
 	chosen {
+		zephyr,crc = &crc;
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
 		st,lptim-stdby-timer = &rtc;
@@ -631,6 +632,14 @@
 			dma-channels = <8>;
 			dma-requests = <52>;
 			dma-offset = <0>;
+			status = "disabled";
+		};
+
+		crc: crc@40023000 {
+			compatible = "st,stm32-crc";
+			reg = <0x40023000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 12)>;
+			resets = <&rctl STM32_RESET(AHB1, 12)>;
 			status = "disabled";
 		};
 	};

@@ -21,6 +21,7 @@
 
 / {
 	chosen {
+		zephyr,crc = &crc;
 		zephyr,flash-controller = &flash;
 	};
 
@@ -442,6 +443,14 @@
 			reg = <0x40020000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
+			status = "disabled";
+		};
+
+		crc: crc@40023000 {
+			compatible = "st,stm32-crc";
+			reg = <0x40023000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 6)>;
+			resets = <&rctl STM32_RESET(AHB1, 6)>;
 			status = "disabled";
 		};
 	};

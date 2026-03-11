@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 
 /delete-node/ &adc3;
+/delete-node/ &crc;
 
 / {
 	soc {
@@ -142,6 +143,14 @@
 			interrupts = <147 0>;
 			interrupt-names = "digi_temp";
 			clocks = <&rcc STM32_CLOCK(APB4, 26)>;
+			status = "disabled";
+		};
+
+		crc: crc@40023000 {
+			compatible = "st,stm32-crc";
+			reg = <0x40023000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 9)>;
+			resets = <&rctl STM32_RESET(AHB1, 9)>;
 			status = "disabled";
 		};
 	};

@@ -24,6 +24,7 @@
 
 / {
 	chosen {
+		zephyr,crc = &crc;
 		zephyr,flash-controller = &flash;
 	};
 
@@ -562,6 +563,14 @@
 				reg = <0x6>;
 				wkup-gpios = <&gpiob 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 			};
+		};
+
+		crc: crc@40023000 {
+			compatible = "st,stm32-crc";
+			reg = <0x40023000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 12)>;
+			resets = <&rctl STM32_RESET(AHB1, 12)>;
+			status = "disabled";
 		};
 	};
 

@@ -22,6 +22,7 @@
  */
 / {
 	chosen {
+		zephyr,crc = &crc;
 		zephyr,flash-controller = &flash;
 		zephyr,bt-hci = &bt_hci_wb0;
 		zephyr,entropy = &rng;
@@ -331,6 +332,14 @@
 			compatible = "st,stm32-watchdog";
 			reg = <0x40003000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(APB0, 14)>;
+			status = "disabled";
+		};
+
+		crc: crc@48200000 {
+			compatible = "st,stm32-crc";
+			reg = <0x48200000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(AHB0, 12)>;
+			resets = <&rctl STM32_RESET(AHB0, 12)>;
 			status = "disabled";
 		};
 	};
