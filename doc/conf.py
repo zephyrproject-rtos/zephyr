@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2015-2026 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+#
 # Zephyr documentation build configuration file.
 # Reference: https://www.sphinx-doc.org/en/master/usage/configuration.html
 
