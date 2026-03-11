@@ -290,7 +290,7 @@ static int ucpd_set_vconn(const struct device *dev, bool enable)
 				TC_POLARITY_CC2 : TC_POLARITY_CC1;
 
 	/* Call user supplied callback to set vconn */
-	ret = data->vconn_cb(dev, data->ucpd_vconn_cc, enable);
+	ret = data->vconn_cb(dev, data->usbc_dev, data->ucpd_vconn_cc, enable);
 
 	return ret;
 }
@@ -314,7 +314,8 @@ static int ucpd_vconn_discharge(const struct device *dev, bool enable)
 
 	if (data->vconn_discharge_cb) {
 		/* Use DPM supplied VCONN Discharge */
-		return data->vconn_discharge_cb(dev, data->ucpd_vconn_cc, enable);
+		return data->vconn_discharge_cb(dev, data->usbc_dev,
+						data->ucpd_vconn_cc, enable);
 	}
 
 	/* Use TCPC VCONN Discharge */
@@ -1268,12 +1269,13 @@ static int ucpd_set_alert_handler_cb(const struct device *dev,
  *        the VCONN control capabilities of the TCPC
  *
  */
-static void ucpd_set_vconn_cb(const struct device *dev,
-			      tcpc_vconn_control_cb_t vconn_cb)
+static void ucpd_set_vconn_cb(const struct device *dev, tcpc_vconn_control_cb_t vconn_cb,
+			      const struct device *usbc_dev)
 {
 	struct tcpc_data *data = dev->data;
 
 	data->vconn_cb = vconn_cb;
+	data->usbc_dev = usbc_dev;
 }
 
 /**
@@ -1282,12 +1284,13 @@ static void ucpd_set_vconn_cb(const struct device *dev,
  *        the VCONN discharge capabilities of the TCPC
  *
  */
-static void ucpd_set_vconn_discharge_cb(const struct device *dev,
-					tcpc_vconn_discharge_cb_t cb)
+static void ucpd_set_vconn_discharge_cb(const struct device *dev, tcpc_vconn_discharge_cb_t cb,
+					const struct device *usbc_dev)
 {
 	struct tcpc_data *data = dev->data;
 
 	data->vconn_discharge_cb = cb;
+	data->usbc_dev = usbc_dev;
 }
 
 /**

@@ -120,10 +120,43 @@ struct tcpc_chip_info {
 	};
 };
 
-typedef int (*tcpc_vconn_control_cb_t)(const struct device *dev, enum tc_cc_polarity pol,
-				       bool enable);
-typedef int (*tcpc_vconn_discharge_cb_t)(const struct device *dev, enum tc_cc_polarity pol,
-					 bool enable);
+/**
+ * @brief Callback type for VCONN control
+ *
+ * @param tcpc_dev  Runtime tcpc device structure
+ * @param usbc_dev  Runtime usbc device structure
+ * @param pol       CC polarity indicating which CC line carries VCONN
+ * @param enable    VCONN is enabled when true, disabled when false
+ *
+ * @retval 0 on success
+ * @retval -EIO on failure
+ */
+typedef int (*tcpc_vconn_control_cb_t)(const struct device *tcpc_dev,
+				       const struct device *usbc_dev,
+				       enum tc_cc_polarity pol, bool enable);
+
+/**
+ * @brief Callback type for discharging VCONN
+ *
+ * @param tcpc_dev  Runtime tcpc device structure
+ * @param usbc_dev  Runtime usbc device structure
+ * @param pol       CC polarity indicating which CC line carries VCONN
+ * @param enable    VCONN discharge is enabled when true, disabled when false
+ *
+ * @retval 0 on success
+ * @retval -EIO on failure
+ */
+typedef int (*tcpc_vconn_discharge_cb_t)(const struct device *tcpc_dev,
+					 const struct device *usbc_dev,
+					 enum tc_cc_polarity pol, bool enable);
+
+/**
+ * @brief Callback type for handling TCPC alert events
+ *
+ * @param dev    Runtime device structure
+ * @param data   User data passed when registering the callback via tcpc_set_alert_handler_cb
+ * @param alert  The alert type that was triggered
+ */
 typedef void (*tcpc_alert_handler_cb_t)(const struct device *dev, void *data,
 					enum tcpc_alert alert);
 
@@ -134,8 +167,10 @@ __subsystem struct tcpc_driver_api {
 	int (*select_rp_value)(const struct device *dev, enum tc_rp_value rp);
 	int (*get_rp_value)(const struct device *dev, enum tc_rp_value *rp);
 	int (*set_cc)(const struct device *dev, enum tc_cc_pull pull);
-	void (*set_vconn_discharge_cb)(const struct device *dev, tcpc_vconn_discharge_cb_t cb);
-	void (*set_vconn_cb)(const struct device *dev, tcpc_vconn_control_cb_t vconn_cb);
+	void (*set_vconn_discharge_cb)(const struct device *dev, tcpc_vconn_discharge_cb_t cb,
+				       const struct device *usbc_dev);
+	void (*set_vconn_cb)(const struct device *dev, tcpc_vconn_control_cb_t vconn_cb,
+			     const struct device *usbc_dev);
 	int (*vconn_discharge)(const struct device *dev, bool enable);
 	int (*set_vconn)(const struct device *dev, bool enable);
 	int (*set_roles)(const struct device *dev, enum tc_power_role power_role,
@@ -334,14 +369,16 @@ static inline int tcpc_set_cc(const struct device *dev, enum tc_cc_pull pull)
  *
  * @param dev       Runtime device structure
  * @param vconn_cb  pointer to the callback function that controls vconn
+ * @param usbc_dev  USB-C connector device
  */
-static inline void tcpc_set_vconn_cb(const struct device *dev, tcpc_vconn_control_cb_t vconn_cb)
+static inline void tcpc_set_vconn_cb(const struct device *dev, tcpc_vconn_control_cb_t vconn_cb,
+				     const struct device *usbc_dev)
 {
 	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
 
 	__ASSERT(api->set_vconn_cb != NULL, "Callback pointer should not be NULL");
 
-	api->set_vconn_cb(dev, vconn_cb);
+	api->set_vconn_cb(dev, vconn_cb, usbc_dev);
 }
 
 /**
@@ -352,16 +389,18 @@ static inline void tcpc_set_vconn_cb(const struct device *dev, tcpc_vconn_contro
  * The callback is called in the tcpc_vconn_discharge function if cb isn't NULL
  *
  * @param dev       Runtime device structure
- * @param cb  pointer to the callback function that discharges vconn
+ * @param cb        pointer to the callback function that discharges vconn
+ * @param usbc_dev  USB-C connector device
  */
 static inline void tcpc_set_vconn_discharge_cb(const struct device *dev,
-					       tcpc_vconn_discharge_cb_t cb)
+					       tcpc_vconn_discharge_cb_t cb,
+					       const struct device *usbc_dev)
 {
 	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
 
 	__ASSERT(api->set_vconn_discharge_cb != NULL, "Callback pointer should not be NULL");
 
-	api->set_vconn_discharge_cb(dev, cb);
+	api->set_vconn_discharge_cb(dev, cb, usbc_dev);
 }
 
 /**

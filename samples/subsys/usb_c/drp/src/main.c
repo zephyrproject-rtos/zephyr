@@ -221,9 +221,10 @@ int port0_policy_cb_src_en(const struct device *dev, bool en)
 /**
  * @brief PE calls this function to Enable or Disable VCONN
  */
-int port0_policy_cb_vconn_en(const struct device *dev, enum tc_cc_polarity pol, bool en)
+int port0_policy_cb_vconn_en(const struct device *tcpc_dev, const struct device *usbc_dev,
+			     enum tc_cc_polarity pol, bool en)
 {
-	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
+	struct port0_data_t *dpm_data = usbc_get_dpm_data(usbc_dev);
 
 	dpm_data->vconn_pol = pol;
 

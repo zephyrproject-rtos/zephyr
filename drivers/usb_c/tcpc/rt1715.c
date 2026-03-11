@@ -46,8 +46,10 @@ struct rt1715_data {
 
 	/** VCONN discharge callback set by USB-C stack */
 	tcpc_vconn_discharge_cb_t vconn_discharge_cb;
-	/** VCONN discharge callback data set by USB-C stack */
+	/** VCONN control callback set by USB-C stack */
 	tcpc_vconn_control_cb_t vconn_cb;
+	/** USB-C connector device passed to VCONN callbacks */
+	const struct device *usbc_dev;
 	/** Polarity of CC lines for PD and VCONN */
 	enum tc_cc_polarity cc_polarity;
 
@@ -172,18 +174,22 @@ static int rt1715_tcpc_set_cc(const struct device *dev, enum tc_cc_pull pull)
 }
 
 static void rt1715_tcpc_set_vconn_discharge_cb(const struct device *dev,
-					       tcpc_vconn_discharge_cb_t cb)
+					       tcpc_vconn_discharge_cb_t cb,
+					       const struct device *usbc_dev)
 {
 	struct rt1715_data *data = dev->data;
 
 	data->vconn_discharge_cb = cb;
+	data->usbc_dev = usbc_dev;
 }
 
-static void rt1715_tcpc_set_vconn_cb(const struct device *dev, tcpc_vconn_control_cb_t vconn_cb)
+static void rt1715_tcpc_set_vconn_cb(const struct device *dev, tcpc_vconn_control_cb_t vconn_cb,
+				     const struct device *usbc_dev)
 {
 	struct rt1715_data *data = dev->data;
 
 	data->vconn_cb = vconn_cb;
+	data->usbc_dev = usbc_dev;
 }
 
 static int rt1715_tcpc_vconn_discharge(const struct device *dev, bool enable)
@@ -227,7 +233,7 @@ static int rt1715_tcpc_set_vconn(const struct device *dev, bool enable)
 	}
 
 	if (data->vconn_cb != NULL) {
-		ret = data->vconn_cb(dev, data->cc_polarity, enable);
+		ret = data->vconn_cb(dev, data->usbc_dev, data->cc_polarity, enable);
 	}
 
 	return ret;
