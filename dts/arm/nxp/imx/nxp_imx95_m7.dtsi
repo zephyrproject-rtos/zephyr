@@ -12,6 +12,10 @@
 #include <freq.h>
 
 / {
+	chosen {
+		zephyr,system-timer = &lptmr1;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
