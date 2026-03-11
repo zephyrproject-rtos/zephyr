@@ -19,3 +19,12 @@
 &p6_0_scb3_uart_cts {
 	input-enable;
 };
+
+/* Configure pin drive mode for can pins */
+&p5_2_can1_rx {
+	input-enable;
+};
+
+&p5_3_can1_tx {
+	drive-push-pull;
+};
