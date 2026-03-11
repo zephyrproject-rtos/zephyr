@@ -73,6 +73,10 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* Audio
+
+  * :c:member:`pcm_stream_cfg.gain_db`
+
 * :c:func:`lora_recv_duty_cycle_async`
 
 .. zephyr-keep-sorted-stop

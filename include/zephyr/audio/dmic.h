@@ -148,6 +148,8 @@ struct pcm_stream_cfg {
 	uint8_t pcm_width;
 	/** PCM sample block size per transfer */
 	uint16_t block_size;
+	/** Gain to apply to the channel (dB) */
+	int8_t gain_db;
 	/** SLAB for DMIC driver to allocate buffers for stream */
 	struct k_mem_slab *mem_slab;
 };
