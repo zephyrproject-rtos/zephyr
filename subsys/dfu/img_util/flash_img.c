@@ -198,7 +198,9 @@ int flash_img_init_id(struct flash_img_context *ctx, uint8_t area_id)
 	int rc;
 	const struct device *flash_dev;
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET)
+#if CONFIG_IMG_CUSTOM_SECTOR_SIZE == 0
 	uint32_t sector_count = SWAP_USING_OFFSET_SECTOR_UPDATE_BEGIN;
+#endif
 	struct flash_sector sector_data;
 #endif
 
@@ -214,6 +216,7 @@ int flash_img_init_id(struct flash_img_context *ctx, uint8_t area_id)
 	/* Query size of first sector in flash for upgrade slot, so it can be erased, and begin
 	 * upload started at the second sector
 	 */
+#if CONFIG_IMG_CUSTOM_SECTOR_SIZE == 0
 	rc = flash_area_sectors((const struct flash_area *)ctx->flash_area, &sector_count,
 				&sector_data);
 
@@ -226,6 +229,9 @@ int flash_img_init_id(struct flash_img_context *ctx, uint8_t area_id)
 		ctx->flash_area = NULL;
 		return -ENOENT;
 	}
+#else
+	sector_data.fs_size = CONFIG_IMG_CUSTOM_SECTOR_SIZE;
+#endif
 
 	if (!flash_check_erased((const struct flash_area *)ctx->flash_area)) {
 		/* Flash is not empty, therefore flatten/erase the area to prevent issues when
