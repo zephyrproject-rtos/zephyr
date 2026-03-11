@@ -1956,8 +1956,8 @@ function(zephyr_constants_library)
 
   add_dependencies(zephyr_generated_headers ${target_name})
 
-  foreach(_dep IN LISTS ARG_DEPENDS)
-    add_dependencies(${lib_name} ${_dep}_h)
+  foreach(dep IN LISTS ARG_DEPENDS)
+    add_dependencies(${lib_name} ${dep}_h)
   endforeach()
 endfunction()
 
