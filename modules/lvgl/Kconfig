@@ -220,6 +220,28 @@ config LV_Z_PXP_INTERRUPT_PRIORITY
 	help
 	  Sets the interrupt priority for PXP
 
+config LV_USE_DRAW_VG_LITE
+	bool
+
+config LV_USE_GPU_VG_LITE
+	bool
+	default y if LV_USE_DRAW_VG_LITE
+
+config LV_Z_VG_LITE_INTERRUPT_PRIORITY
+	int "VG Lite interrupt priority"
+	depends on LV_USE_DRAW_VG_LITE
+	default 3
+	help
+	  Sets the interrupt priority for VG-Lite driver.
+
+config LV_Z_VGLITE_HEAP_SIZE
+	int "VG Lite driver internal heap bytes"
+	depends on LV_USE_DRAW_VG_LITE
+	default 2097152
+	help
+	  Sets the internal heap for VG Lite driver allocations
+	  This area is separated from LVGL heap.
+
 rsource "Kconfig.memory"
 rsource "Kconfig.input"
 rsource "Kconfig.shell"
