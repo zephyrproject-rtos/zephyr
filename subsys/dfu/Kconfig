@@ -86,6 +86,18 @@ config IMG_ENABLE_IMAGE_CHECK
 	  Another use is to ensure that firmware upgrade routines from internet
 	  server to flash slot are performing properly.
 
+config IMG_CUSTOM_SECTOR_SIZE
+	int "Sector size for MCUboot images"
+	depends on MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET
+	default 0
+	range 0 $(UINT32_MAX)
+	help
+	  Use this to set a custom sector size for swap-using-offset images to be offset by, a
+	  value of 0 means to use the default sector size of the flash area by querying it.
+	  This should only be manually set by advanced users that are using a different erase
+	  sector size in the MCUboot image for optimisation reasons (e.g. to reduce the size of
+	  the swap status area).
+
 endif # MCUBOOT_IMG_MANAGER
 
 module = IMG_MANAGER
