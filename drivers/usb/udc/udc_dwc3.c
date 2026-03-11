@@ -1825,11 +1825,19 @@ int udc_dwc3_enable(const struct device *const dev)
 
 int udc_dwc3_disable(const struct device *const dev)
 {
+	const struct udc_dwc3_config *cfg = dev->config;
+	struct udc_dwc3_ep_data *const ep_data = &cfg->ep_data_out[0];
 	mm_reg_t base = DEVICE_MMIO_NAMED_GET(dev, base);
+	struct net_buf *buf = ep_data->net_buf[0];
 
 	LOG_DBG("Disabling DWC3 driver");
 
 	sys_clear_bits(base + UDC_DWC3_DCTL, UDC_DWC3_DCTL_RUNSTOP);
+
+	if (buf) {
+		net_buf_unref(buf);
+		ep_data->net_buf[0] = NULL;
+	}
 
 	return 0;
 }
