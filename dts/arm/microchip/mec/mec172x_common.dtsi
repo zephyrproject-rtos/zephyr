@@ -893,9 +893,10 @@ espi0: espi@400f3400 {
 	reg-names = "io", "mem", "vw";
 	interrupts = <103 3>, <104 3>, <105 3>, <106 3>,
 		     <107 3>, <108 3>, <109 3>, <110 2>,
-		     <156 3>;
+		     <156 3>, <15 3>, <16 3>;
 	interrupt-names = "pc", "bm1", "bm2", "ltr", "oob_up",
-			  "oob_dn", "fc", "rst", "vw_chan_en";
+			  "oob_dn", "fc", "erst", "vw_chan_en",
+			  "ht_vw_bank0", "ht_vw_bank1";
 	girqs = <MCHP_XEC_ECIA(19, 0, 11, 103)
 		 MCHP_XEC_ECIA(19, 1, 11, 104)
 		 MCHP_XEC_ECIA(19, 2, 11, 105)
@@ -904,15 +905,16 @@ espi0: espi@400f3400 {
 		 MCHP_XEC_ECIA(19, 5, 11, 108)
 		 MCHP_XEC_ECIA(19, 6, 11, 109)
 		 MCHP_XEC_ECIA(19, 7, 11, 110)
-		 MCHP_XEC_ECIA(19, 8, 11, 156)>;
-	pcrs = <2 19>;
+		 MCHP_XEC_ECIA(19, 8, 11, 156)
+		 MCHP_XEC_ECIA_GIRQ_ENC(24, 31)
+		 MCHP_XEC_ECIA_GIRQ_ENC(25, 31)>;
+	pcr-scr = <MCHP_XEC_SCR_ENCODE(2, 19)>;
 	status = "disabled";
 
 	espi_saf0: espi_saf@40008000 {
 		compatible = "microchip,xec-espi-saf-v2";
-		reg = <0x40008000 0x400>, <0x40070000 0x400>,
-		      <0x40071000 0x400>;
-		reg-names = "safbr", "safqspi", "safcomm";
+		reg = <0x40008000 0x400>, <0x40070000 0x400>, <0x40071000 0x400>;
+		reg-names = "tafbr", "tafqspi", "tafcomm";
 		interrupts = <166 3>, <167 3>;
 		interrupt-names = "done", "err";
 		girqs = <MCHP_XEC_ECIA(19, 9, 11, 166)>,
@@ -935,7 +937,7 @@ espi0: espi@400f3400 {
 		compatible = "microchip,xec-espi-host-dev";
 		reg = <0x400f0400 0x400>;
 		interrupts = <58 3>, <59 3>;
-		interrupt-names = "kbc_obe", "kbc_ibf";
+		interrupt-names = "obe", "ibf";
 		girqs = <MCHP_XEC_ECIA(15, 18, 7, 58)
 			 MCHP_XEC_ECIA(15, 19, 7, 59)>;
 		ldn = <1>;
@@ -946,7 +948,7 @@ espi0: espi@400f3400 {
 		compatible = "microchip,xec-espi-host-dev";
 		reg = <0x400f0800 0x400>;
 		interrupts = <45 3>, <46 3>;
-		interrupt-names = "acpi_ibf", "acpi_obe";
+		interrupt-names = "ibf", "obe";
 		girqs = <MCHP_XEC_ECIA(15, 5, 7, 45)
 			 MCHP_XEC_ECIA(15, 6, 7, 46)>;
 		ldn = <2>;
@@ -957,7 +959,7 @@ espi0: espi@400f3400 {
 		compatible = "microchip,xec-espi-host-dev";
 		reg = <0x400f0c00 0x400>;
 		interrupts = <47 3>, <48 3>;
-		interrupt-names = "acpi_ibf", "acpi_obe";
+		interrupt-names = "ibf", "obe";
 		girqs = <MCHP_XEC_ECIA(15, 7, 7, 47)
 			 MCHP_XEC_ECIA(15, 8, 7, 48)>;
 		ldn = <3>;
@@ -968,7 +970,7 @@ espi0: espi@400f3400 {
 		compatible = "microchip,xec-espi-host-dev";
 		reg = <0x400f1000 0x400>;
 		interrupts = <49 3>, <50 3>;
-		interrupt-names = "acpi_ibf", "acpi_obe";
+		interrupt-names = "ibf", "obe";
 		girqs = <MCHP_XEC_ECIA(15, 9, 7, 49)
 			 MCHP_XEC_ECIA(15, 10, 7, 50)>;
 		ldn = <4>;
@@ -979,7 +981,7 @@ espi0: espi@400f3400 {
 		compatible = "microchip,xec-espi-host-dev";
 		reg = <0x400f1400 0x400>;
 		interrupts = <51 3>, <52 3>;
-		interrupt-names = "acpi_ibf", "acpi_obe";
+		interrupt-names = "ibf", "obe";
 		girqs = <MCHP_XEC_ECIA(15, 11, 7, 51)
 			 MCHP_XEC_ECIA(15, 12, 7, 52)>;
 		ldn = <5>;
@@ -990,7 +992,7 @@ espi0: espi@400f3400 {
 		compatible = "microchip,xec-espi-host-dev";
 		reg = <0x400f1800 0x400>;
 		interrupts = <53 3>, <54 3>;
-		interrupt-names = "acpi_ibf", "acpi_obe";
+		interrupt-names = "ibf", "obe";
 		girqs = <MCHP_XEC_ECIA(15, 13, 7, 53)
 			 MCHP_XEC_ECIA(15, 14, 7, 54)>;
 		ldn = <6>;
