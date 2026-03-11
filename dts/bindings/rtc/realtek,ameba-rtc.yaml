@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: AMEBA RTC
+
+compatible: "realtek,ameba-rtc"
+
+include: [rtc.yaml, rtc-device.yaml]
+
+properties:
+  reg:
+    required: true
+  alarms-count:
+    enum:
+      - 0
+      - 1
+  async-prescaler:
+    type: int
+    default: 127
+    description: Asynchronous prescaler value (0x7F)
+  sync-prescaler:
+    type: int
+    default: 255
+    description: Synchronous prescaler value (0xFF)
