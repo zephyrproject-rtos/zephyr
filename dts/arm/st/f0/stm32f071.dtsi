@@ -7,6 +7,10 @@
 #include <st/f0/stm32f051.dtsi>
 
 / {
+	chosen {
+		zephyr,crc = &crc;
+	};
+
 	clocks {
 		clk_hsi48: clk-hsi48 {
 			#clock-cells = <0>;
@@ -78,6 +82,18 @@
 
 		dma1: dma@40020000 {
 			interrupts = <9 0 10 0 10 0 11 0 11 0 11 0 11 0>;
+		};
+
+		/*
+		 * Programmable CRC is only present on STM32F07x/F09x (x=1/2/8).
+		 * Other SoCs of the STM32F0 series have a version of the CRC unit
+		 * which is not compatible with `st,stm32-crc`.
+		 */
+		crc: crc@40023000 {
+			compatible = "st,stm32-crc";
+			reg = <0x40023000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 6)>;
+			status = "disabled";
 		};
 	};
 };
