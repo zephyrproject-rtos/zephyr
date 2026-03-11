@@ -70,6 +70,23 @@ ZTEST(sys_util, test_NUM_VA_ARGS_LESS_1)
 	/* support up to 64 args */
 	zassert_equal(63, NUM_VA_ARGS_LESS_1(LISTIFY(64, ~, (,))));
 }
+
+/**
+ * @brief Test WRITE_BIT works as expected with typical use cases
+ *
+ * @see WRITE_BIT()
+ */
+ZTEST(sys_util, test_WRITE_BIT)
+{
+	uint64_t bit_field = 0;
+
+	for (size_t i = 0; i < 64; i++) {
+		WRITE_BIT(bit_field, i, true);
+		zassert_true(IS_BIT_SET(bit_field, i), "Bit %zu not set, but it shall.", i);
+		WRITE_BIT(bit_field, i, false);
+		zassert_false(IS_BIT_SET(bit_field, i), "Bit %zu set, but it shall not.", i);
+	}
+}
 /**
  * @}
  */
