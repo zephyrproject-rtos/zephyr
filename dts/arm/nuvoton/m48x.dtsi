@@ -188,6 +188,14 @@
 			resets = <&rst NUMICRO_UART7_RST>;
 			status = "disabled";
 		};
+
+		wdt: watchdog@40040000 {
+			compatible = "nuvoton,numaker-wdt";
+			reg = <0x40040000 0x0c>;
+			interrupts = <8 0>;
+			clocks = <&pcc NUMAKER_WDT_MODULE NUMAKER_CLK_CLKSEL1_WDTSEL_LIRC 0>;
+			status = "disabled";
+		};
 	};
 };
 
