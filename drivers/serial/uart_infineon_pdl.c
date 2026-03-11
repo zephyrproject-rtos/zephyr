@@ -210,64 +210,6 @@ static inline uint32_t ifx_uart_mem_width(uint32_t data_width)
 #endif
 }
 
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-#define IFX_CAT1_INSTANCE_GROUP(instance, group) (((instance) << 4) | (group))
-#endif
-
-#if !defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
-static uint8_t ifx_cat1_get_hfclk_for_peri_group(uint8_t peri_group)
-{
-#if defined(CONFIG_SOC_SERIES_PSE84)
-	switch (peri_group) {
-	case IFX_CAT1_INSTANCE_GROUP(0, 0):
-	case IFX_CAT1_INSTANCE_GROUP(1, 4):
-		return 0;
-	case IFX_CAT1_INSTANCE_GROUP(0, 7):
-	case IFX_CAT1_INSTANCE_GROUP(1, 0):
-		return 1;
-	case IFX_CAT1_INSTANCE_GROUP(0, 3):
-	case IFX_CAT1_INSTANCE_GROUP(1, 2):
-		return 5;
-	case IFX_CAT1_INSTANCE_GROUP(0, 4):
-	case IFX_CAT1_INSTANCE_GROUP(1, 3):
-		return 6;
-	case IFX_CAT1_INSTANCE_GROUP(1, 1):
-		return 7;
-	case IFX_CAT1_INSTANCE_GROUP(0, 2):
-		return 9;
-	case IFX_CAT1_INSTANCE_GROUP(0, 1):
-	case IFX_CAT1_INSTANCE_GROUP(0, 5):
-		return 10;
-	case IFX_CAT1_INSTANCE_GROUP(0, 8):
-		return 11;
-	case IFX_CAT1_INSTANCE_GROUP(0, 6):
-	case IFX_CAT1_INSTANCE_GROUP(0, 9):
-		return 13;
-	default:
-		break;
-	}
-#elif defined(CONFIG_SOC_SERIES_PSC3)
-	switch (peri_group) {
-	case 0:
-	case 2:
-		return 0;
-	case 1:
-	case 3:
-		return 1;
-	case 4:
-		return 2;
-	case 5:
-		return 3;
-	case 6:
-		return 4;
-	default:
-		break;
-	}
-#endif
-	return -EINVAL;
-}
-#endif
-
 cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 {
 	cy_rslt_t status;
@@ -290,7 +232,7 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 	peri_frequency = Cy_SysClk_ClkPeriGetFrequency();
 #elif defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) ||                                      \
 	defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-	uint8_t hfclk = ifx_cat1_get_hfclk_for_peri_group(data->clock_peri_group);
+	uint8_t hfclk = ifx_cat1_utils_peri_pclk_get_hfclk(data->clock_peri_group);
 
 	peri_frequency = Cy_SysClk_ClkHfGetFrequency(hfclk);
 #else
