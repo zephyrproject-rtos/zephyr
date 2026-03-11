@@ -35,8 +35,6 @@ spi1: &scb10 {
 
 &peri0_group1_16bit_2 {
 	status = "okay";
-	resource-type = <IFX_RSC_SCB>;
-	resource-instance = <10>;
 };
 
 &p16_1_scb10_spi_m_mosi {

@@ -212,6 +212,12 @@ Clock Control
   ``bflb,bl70x-root-clk`` and ``bflb,bl61x-flash-clk`` got respectively replaced with
   :dtcompatible:`bflb,flash-clk`, :dtcompatible:`bflb,pll` and :dtcompatible:`bflb,root-clk`.
 
+* The :dtcompatible:`infineon,peri-div` clock control binding has removed the ``resource-type``,
+  ``resource-instance``, and ``resource-channel`` properties. These properties are no longer used by
+  the driver and the corresponding fields have been removed from the driver's internal data structures.
+  Out-of-tree boards using this compatible must remove these properties from their devicetree nodes.
+  (:github:`105393`)
+
 Controller Area Network (CAN)
 =============================
 

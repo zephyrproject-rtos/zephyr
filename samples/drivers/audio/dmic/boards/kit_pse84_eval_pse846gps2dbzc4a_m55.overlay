@@ -35,9 +35,6 @@ dmic_dev: &dmic0 {
 
 &peri1_group1_16_5bit_2 {
 	status = "okay";
-	resource-type = <IFX_RSC_PDM>;
-	resource-instance = <0>;
-	resource-channel = <0>;
 	clock-div = <2>;
 	div-frac-value = <7>;
 };
