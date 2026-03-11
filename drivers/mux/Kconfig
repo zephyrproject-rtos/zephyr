@@ -16,6 +16,16 @@ config MUX_CONTROL_INIT_PRIORITY
 	help
 	  Mux control device driver init priority.
 
+config MUX_CONTROL_MAX_CELLS
+	int "Maximum number of cells in a mux control specifier"
+	default 4
+	help
+	  Upper bound on the number of cells in a single mux-controls or
+	  mux-states specifier.  Used by the syscall handler to allocate a
+	  fixed-size kernel-side copy of the cells array, avoiding VLAs in
+	  syscall context.  Increase this value if your MUX binding requires
+	  more than 4 cells per specifier.
+
 module = MUX_CONTROL
 module-str = mux control
 source "subsys/logging/Kconfig.template.log_config"

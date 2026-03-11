@@ -367,9 +367,13 @@ __subsystem struct mux_control_driver_api {
  * @param state The desired state value to configure
  * @return 0 on success, negative errno code on failure
  */
-static inline int mux_configure(const struct device *dev,
-				struct mux_control *control,
-				uint32_t state)
+__syscall int mux_configure(const struct device *dev,
+			    struct mux_control *control,
+			    uint32_t state);
+
+static inline int z_impl_mux_configure(const struct device *dev,
+				       struct mux_control *control,
+				       uint32_t state)
 {
 	return DEVICE_API_GET(mux_control, dev)->configure(dev, control, state);
 }
@@ -395,9 +399,6 @@ static inline int mux_configure(const struct device *dev,
 static inline int mux_configure_default(const struct device *dev,
 					struct mux_control *control)
 {
-	const struct mux_control_driver_api *api =
-		(const struct mux_control_driver_api *)dev->api;
-
 	/* mux-controls properties do not contain a default state */
 	if (control->type != MUX_STATES_SPEC) {
 		return -ESRCH;
@@ -410,8 +411,8 @@ static inline int mux_configure_default(const struct device *dev,
 		return -ENOENT;
 	}
 
-	/* the state cell is the last cell */
-	return api->configure(dev, control, control->cells[control->len - 1]);
+	/* the state cell is the last cell; delegate to the syscall-able API */
+	return mux_configure(dev, control, control->cells[control->len - 1]);
 }
 
 /**
@@ -429,12 +430,16 @@ static inline int mux_configure_default(const struct device *dev,
  * @retval -ENOSYS If the driver does not implement this function
  * @retval Negative errno code on other failures
  */
-static inline int mux_state_get(const struct device *dev,
-				struct mux_control *control,
-				uint32_t *state)
+__syscall int mux_state_get(const struct device *dev,
+			    struct mux_control *control,
+			    uint32_t *state);
+
+static inline int z_impl_mux_state_get(const struct device *dev,
+				       struct mux_control *control,
+				       uint32_t *state)
 {
 	const struct mux_control_driver_api *api =
-		(const struct mux_control_driver_api *)dev->api;
+		DEVICE_API_GET(mux_control, dev);
 
 	if (api->state_get == NULL) {
 		return -ENOSYS;
@@ -460,22 +465,28 @@ static inline int mux_state_get(const struct device *dev,
  * @retval -ENOSYS If the driver does not implement this function
  * @retval Negative errno code on other failures
  */
-static inline int mux_lock(const struct device *dev, struct mux_control *control, bool lock)
+__syscall int mux_lock(const struct device *dev, struct mux_control *control, bool lock);
+
+static inline int z_impl_mux_lock(const struct device *dev,
+				  struct mux_control *control,
+				  bool lock)
 {
 	const struct mux_control_driver_api *api =
-		(const struct mux_control_driver_api *)dev->api;
+		DEVICE_API_GET(mux_control, dev);
 
 	if (api->lock == NULL) {
 		return -ENOSYS;
 	}
 
 	return api->lock(dev, control, lock);
-};
+}
 
 #ifdef __cplusplus
 }
 #endif
 
 /** @} */
+
+#include <zephyr/syscalls/mux.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_MUX_CONTROL_H_ */
