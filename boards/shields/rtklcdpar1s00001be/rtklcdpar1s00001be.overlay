@@ -33,18 +33,19 @@
 	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 	output-pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 	backlight-gpios = <&renesas_parallel_graphics_connector 1 GPIO_ACTIVE_HIGH>;
+	output-signal-sync-edge = "RISING";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
-		hsync-len = <1>;
-		hback-porch = <140>;
-		vsync-len = <1>;
-		vback-porch = <20>;
+		hsync-len = <4>;
+		hback-porch = <160>;
+		vsync-len = <3>;
+		vback-porch = <23>;
 		hsync-active = <0>;
 		vsync-active = <0>;
 		de-active = <1>;
 		pixelclk-active = <0>;
-		hfront-porch = <179>;
-		vfront-porch = <403>;
+		hfront-porch = <156>;
+		vfront-porch = <9>;
 	};
 };
