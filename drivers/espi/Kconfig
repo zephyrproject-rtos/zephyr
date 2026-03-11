@@ -202,6 +202,21 @@ config ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM
 	  accessing these package data. Also, ensure the port number selected
 	  doesn't clash with the existing ports.
 
+config ESPI_PERIPHERAL_MAILBOX
+	bool "Mailbox peripheral"
+	help
+	  Enables Mailbox over eSPI peripheral channel.
+
+config ESPI_PERIPHERAL_MAILBOX_PORT_NUM
+	hex "Host I/O peripheral port for Mailbox"
+	depends on ESPI_PERIPHERAL_MAILBOX
+	default 0x0360
+	help
+	  This is the port number used by the Host and EC to communicate over
+	  the eSPI peripheral channel to access the Mailbox peripheral. Please
+	  ensure the Host code is configured to use for accessing this data.
+	  Also, ensure the port number selected doesn't clash with the existing ports.
+
 endif # ESPI_PERIPHERAL_CHANNEL
 
 config ESPI_OOB_CHANNEL_RX_ASYNC

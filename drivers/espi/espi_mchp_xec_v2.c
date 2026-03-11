@@ -7,71 +7,59 @@
 
 #define DT_DRV_COMPAT microchip_xec_espi_v2
 
-#include <zephyr/kernel.h>
 #include <soc.h>
-#include <errno.h>
 #include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/espi/mchp_xec_espi.h>
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/irq.h>
 #include "espi_utils.h"
 #include "espi_mchp_xec_v2.h"
 
+LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
+
 /* Minimum delay before acknowledging a virtual wire */
-#define ESPI_XEC_VWIRE_ACK_DELAY	10ul
+#define ESPI_XEC_VWIRE_ACK_DELAY 10ul
 
 /* Maximum timeout to transmit a virtual wire packet.
  * 1 ms expressed in multiples of 1us
  */
-#define ESPI_XEC_VWIRE_SEND_TIMEOUT	1000ul
+#define ESPI_XEC_VWIRE_SEND_TIMEOUT 1000ul
 
-#define VW_MAX_GIRQS			2ul
+#define VW_MAX_GIRQS 2ul
 
 /* 200ms */
-#define MAX_OOB_TIMEOUT			200ul
+#define MAX_OOB_TIMEOUT   200ul
 /* 1s */
-#define MAX_FLASH_TIMEOUT		1000ul
+#define MAX_FLASH_TIMEOUT 1000ul
 
 /* While issuing flash erase command, it should be ensured that the transfer
  * length specified is non-zero.
  */
-#define ESPI_FLASH_ERASE_DUMMY		0x01ul
+#define ESPI_FLASH_ERASE_DUMMY 0x01ul
 
 /* OOB maximum address configuration */
-#define ESPI_XEC_OOB_ADDR_MSW		0x1ffful
-#define ESPI_XEC_OOB_ADDR_LSW		0xfffful
+#define ESPI_XEC_OOB_ADDR_MSW 0x1ffful
+#define ESPI_XEC_OOB_ADDR_LSW 0xfffful
 
 /* OOB Rx length */
-#define ESPI_XEC_OOB_RX_LEN		0x7f00ul
+#define ESPI_XEC_OOB_RX_LEN 0x7f00ul
 
 /* Espi peripheral has 3 uart ports */
-#define ESPI_PERIPHERAL_UART_PORT0	0
-#define ESPI_PERIPHERAL_UART_PORT1	1
+#define ESPI_PERIPHERAL_UART_PORT0 0
+#define ESPI_PERIPHERAL_UART_PORT1 1
 
-#define UART_DEFAULT_IRQ_POS		2u
-#define UART_DEFAULT_IRQ		BIT(UART_DEFAULT_IRQ_POS)
+#define UART_DEFAULT_IRQ_POS 2u
+#define UART_DEFAULT_IRQ     BIT(UART_DEFAULT_IRQ_POS)
 
-LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
-
-#define ESPI_XEC_REG_BASE(dev)						\
-	((struct espi_iom_regs *)ESPI_XEC_CONFIG(dev)->base_addr)
-
-#define ESPI_XEC_MSVW_REG_BASE(dev)					\
-	((struct espi_msvw_ar_regs *)(ESPI_XEC_CONFIG(dev)->vw_base_addr))
-
-#define ESPI_XEC_SMVW_REG_OFS	0x200
-
-#define ESPI_XEC_SMVW_REG_BASE(dev)					\
-	((struct espi_smvw_ar_regs *)					\
-	(ESPI_XEC_CONFIG(dev)->vw_base_addr + ESPI_XEC_SMVW_REG_OFS))
+#define ESPI_XEC_SMVW_REG_OFS 0x200
 
 /* PCR */
-#define XEC_PCR_REG_BASE						\
-	((struct pcr_regs *)(DT_REG_ADDR(DT_NODELABEL(pcr))))
+#define XEC_PCR_REG_BASE DT_REG_ADDR(DT_NODELABEL(pcr))
 
 /* Microchip canonical virtual wire mapping
  * ------------------------------------------------------------------------|
@@ -155,18 +143,18 @@ static uint32_t target_tx_mem[CONFIG_ESPI_OOB_BUFFER_SIZE >> 2];
 static uint32_t target_mem[CONFIG_ESPI_FLASH_BUFFER_SIZE >> 2];
 #endif
 
-static inline uintptr_t xec_msvw_addr(const struct device *dev,
-				      uint8_t vw_index)
+static inline uintptr_t xec_msvw_addr(const struct device *dev, uint8_t vw_index)
 {
-	uintptr_t vwbase = ESPI_XEC_CONFIG(dev)->vw_base_addr;
+	const struct espi_xec_config *devcfg = dev->config;
+	uintptr_t vwbase = (uintptr_t)devcfg->vw_base_addr;
 
 	return vwbase + vw_index * sizeof(struct espi_msvw_reg);
 }
 
-static inline uintptr_t xec_smvw_addr(const struct device *dev,
-				      uint8_t vw_index)
+static inline uintptr_t xec_smvw_addr(const struct device *dev, uint8_t vw_index)
 {
-	uintptr_t vwbase = ESPI_XEC_CONFIG(dev)->vw_base_addr;
+	const struct espi_xec_config *devcfg = dev->config;
+	uintptr_t vwbase = (uintptr_t)devcfg->vw_base_addr;
 
 	vwbase += ESPI_XEC_SMVW_REG_OFS;
 	return vwbase + vw_index * sizeof(struct espi_smvw_reg);
@@ -174,12 +162,16 @@ static inline uintptr_t xec_smvw_addr(const struct device *dev,
 
 static int espi_xec_configure(const struct device *dev, struct espi_cfg *cfg)
 {
-	struct espi_iom_regs *iom_regs = ESPI_XEC_REG_BASE(dev);
+	const struct espi_xec_config *devcfg = dev->config;
+	struct xec_espi_cap_regs *cap_regs =
+		(struct xec_espi_cap_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_CAP_OFS);
+	struct xec_espi_ioc_cfg_regs *cfg_regs =
+		(struct xec_espi_ioc_cfg_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_CFG_OFS);
 	uint8_t iomode = 0;
-	uint8_t cap0 = iom_regs->CAP0;
-	uint8_t cap1 = iom_regs->CAP1;
-	uint8_t cur_iomode = (cap1 & MCHP_ESPI_GBL_CAP1_IO_MODE_MASK) >>
-			   MCHP_ESPI_GBL_CAP1_IO_MODE_POS;
+	uint8_t cap0 = cap_regs->CAP0;
+	uint8_t cap1 = cap_regs->CAP1;
+	uint8_t cur_iomode =
+		(cap1 & MCHP_ESPI_GBL_CAP1_IO_MODE_MASK) >> MCHP_ESPI_GBL_CAP1_IO_MODE_POS;
 
 	/* Set frequency */
 	cap1 &= ~MCHP_ESPI_GBL_CAP1_MAX_FREQ_MASK;
@@ -211,8 +203,7 @@ static int espi_xec_configure(const struct device *dev, struct espi_cfg *cfg)
 	}
 
 	if (iomode != cur_iomode) {
-		cap1 &= ~(MCHP_ESPI_GBL_CAP1_IO_MODE_MASK0 <<
-			MCHP_ESPI_GBL_CAP1_IO_MODE_POS);
+		cap1 &= ~(MCHP_ESPI_GBL_CAP1_IO_MODE_MASK0 << MCHP_ESPI_GBL_CAP1_IO_MODE_POS);
 		cap1 |= (iomode << MCHP_ESPI_GBL_CAP1_IO_MODE_POS);
 	}
 
@@ -251,37 +242,38 @@ static int espi_xec_configure(const struct device *dev, struct espi_cfg *cfg)
 		}
 	}
 
-	iom_regs->CAP0 = cap0;
-	iom_regs->CAP1 = cap1;
+	cap_regs->CAP0 = cap0;
+	cap_regs->CAP1 = cap1;
 
 	/* Activate the eSPI block *.
 	 * Need to guarantee that this register is configured before RSMRST#
 	 * de-assertion and after pinmux
 	 */
-	iom_regs->ACTV = 1;
+	cfg_regs->ACTV = 1;
 	LOG_DBG("eSPI block activated successfully");
 
 	return 0;
 }
 
-static bool espi_xec_channel_ready(const struct device *dev,
-				   enum espi_channel ch)
+static bool espi_xec_channel_ready(const struct device *dev, enum espi_channel ch)
 {
-	struct espi_iom_regs *iom_regs = ESPI_XEC_REG_BASE(dev);
-	bool sts;
+	const struct espi_xec_config *devcfg = dev->config;
+	struct xec_espi_cap_regs *cap_regs =
+		(struct xec_espi_cap_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_CAP_OFS);
+	bool sts = false;
 
 	switch (ch) {
 	case ESPI_CHANNEL_PERIPHERAL:
-		sts = iom_regs->PCRDY & MCHP_ESPI_PC_READY;
+		sts = cap_regs->PCRDY & MCHP_ESPI_PC_READY;
 		break;
 	case ESPI_CHANNEL_VWIRE:
-		sts = iom_regs->VWRDY & MCHP_ESPI_VW_READY;
+		sts = cap_regs->VWRDY & MCHP_ESPI_VW_READY;
 		break;
 	case ESPI_CHANNEL_OOB:
-		sts = iom_regs->OOBRDY & MCHP_ESPI_OOB_READY;
+		sts = cap_regs->OOBRDY & MCHP_ESPI_OOB_READY;
 		break;
 	case ESPI_CHANNEL_FLASH:
-		sts = iom_regs->FCRDY & MCHP_ESPI_FC_READY;
+		sts = cap_regs->FCRDY & MCHP_ESPI_FC_READY;
 		break;
 	default:
 		sts = false;
@@ -291,17 +283,35 @@ static bool espi_xec_channel_ready(const struct device *dev,
 	return sts;
 }
 
-static int espi_xec_send_vwire(const struct device *dev,
-			       enum espi_vwire_signal signal, uint8_t level)
+/* Set state of VWire in VWire group
+ * eSPI groups virtual wires into groups of 4. XEC hardware implements an 80-bit register
+ * for each Controller-to-Target group and a 64-bit register for each Target-to-Controller group.
+ * Updating VWire state(s) to new values results in XEC eSPI hardware actions:
+ * VWire changes(s)
+ *   If Target-to-Host VWire changes(s):
+ *     XEC HW sets the read-only change bit in the VW group register for each changed VWire.
+ *   endif
+ *   XEC HW updates the VWires Available status bit in the 16-bit eSPI status word and if enabled,
+ *   asserts the configured ESPI_nALERT signal (in-band or pin).
+ *
+ * The Host responds to ESPI_nALERT assertion by issueing GET_STATUS to read the 16-bit ESPI status
+ * word. If the Host sees VWires Available status is set it issues GET_VW with the number of VWire
+ * groups it has configured when eSPI was initialized. When GET_VW reads any XEC
+ * Target-to-Controller group, XEC HW clears the read-only changed bit(s). The timing of this
+ * overall protocol is not bounded therefore should not implement a timeout. Per request of the
+ * eSPI design owner we will not implement a timeout.
+ */
+static int espi_xec_send_vwire(const struct device *dev, enum espi_vwire_signal signal,
+			       uint8_t level)
 {
 	struct xec_signal signal_info = vw_tbl[signal];
 	uint8_t xec_id = signal_info.xec_reg_idx;
 	uint8_t src_id = signal_info.bit;
-	uint8_t dir;
-	uintptr_t regaddr;
+	uint8_t dir = 0;
+	uintptr_t regaddr = 0;
+	int rc = 0;
 
-	if ((src_id >= ESPI_VWIRE_SRC_ID_MAX) ||
-	    (xec_id >= ESPI_MSVW_IDX_MAX)) {
+	if ((src_id >= ESPI_VWIRE_SRC_ID_MAX) || (xec_id >= ESPI_MSVW_IDX_MAX)) {
 		return -EINVAL;
 	}
 
@@ -313,35 +323,21 @@ static int espi_xec_send_vwire(const struct device *dev,
 
 	if (dir == ESPI_CONTROLLER_TO_TARGET) {
 		regaddr = xec_msvw_addr(dev, xec_id);
-
 		sys_write8(level, regaddr + MSVW_BI_SRC0 + src_id);
-	}
-
-	if (dir == ESPI_TARGET_TO_CONTROLLER) {
+	} else {
 		regaddr = xec_smvw_addr(dev, xec_id);
-
 		sys_write8(level, regaddr + SMVW_BI_SRC0 + src_id);
 
-		/* Ensure eSPI virtual wire packet is transmitted
-		 * There is no interrupt, so need to poll register
-		 */
-		uint16_t rd_cnt = ESPI_XEC_VWIRE_SEND_TIMEOUT;
-
-		while (sys_read8(regaddr + SMVW_BI_SRC_CHG) && rd_cnt--) {
-			k_busy_wait(1);
+		while (sys_read8(regaddr + SMVW_BI_SRC_CHG)) {
 		}
 
-		if (rd_cnt == 0) {
-			LOG_ERR("VW %d send timeout", signal);
-			return -ETIMEDOUT;
-		}
+		LOG_DBG("XEC T2C VWire %u read by Host", signal);
 	}
 
-	return 0;
+	return rc;
 }
 
-static int espi_xec_receive_vwire(const struct device *dev,
-				  enum espi_vwire_signal signal,
+static int espi_xec_receive_vwire(const struct device *dev, enum espi_vwire_signal signal,
 				  uint8_t *level)
 {
 	struct xec_signal signal_info = vw_tbl[signal];
@@ -350,8 +346,7 @@ static int espi_xec_receive_vwire(const struct device *dev,
 	uint8_t dir;
 	uintptr_t regaddr;
 
-	if ((src_id >= ESPI_VWIRE_SRC_ID_MAX) ||
-	    (xec_id >= ESPI_SMVW_IDX_MAX) || (level == NULL)) {
+	if ((src_id >= ESPI_VWIRE_SRC_ID_MAX) || (xec_id >= ESPI_SMVW_IDX_MAX) || (level == NULL)) {
 		return -EINVAL;
 	}
 
@@ -375,15 +370,15 @@ static int espi_xec_receive_vwire(const struct device *dev,
 }
 
 #ifdef CONFIG_ESPI_OOB_CHANNEL
-static int espi_xec_send_oob(const struct device *dev,
-			     struct espi_oob_packet *pckt)
+static int espi_xec_send_oob(const struct device *dev, struct espi_oob_packet *pckt)
 {
-	int ret;
-	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
-	struct espi_xec_data *const data = ESPI_XEC_DATA(dev);
-	uint8_t err_mask = MCHP_ESPI_OOB_TX_STS_IBERR |
-			MCHP_ESPI_OOB_TX_STS_OVRUN |
-			MCHP_ESPI_OOB_TX_STS_BADREQ;
+	struct espi_xec_data *const data = dev->data;
+	const struct espi_xec_config *devcfg = dev->config;
+	struct xec_espi_ioc_oob_regs *regs =
+		(struct xec_espi_ioc_oob_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_OOB_OFS);
+	uint8_t err_mask = (MCHP_ESPI_OOB_TX_STS_IBERR | MCHP_ESPI_OOB_TX_STS_OVRUN |
+			    MCHP_ESPI_OOB_TX_STS_BADREQ);
+	int ret = 0;
 
 	LOG_DBG("%s", __func__);
 
@@ -423,12 +418,12 @@ static int espi_xec_send_oob(const struct device *dev,
 	return 0;
 }
 
-static int espi_xec_receive_oob(const struct device *dev,
-				struct espi_oob_packet *pckt)
+static int espi_xec_receive_oob(const struct device *dev, struct espi_oob_packet *pckt)
 {
-	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
-	uint8_t err_mask = MCHP_ESPI_OOB_RX_STS_IBERR |
-			MCHP_ESPI_OOB_RX_STS_OVRUN;
+	const struct espi_xec_config *devcfg = dev->config;
+	struct xec_espi_ioc_oob_regs *regs =
+		(struct xec_espi_ioc_oob_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_OOB_OFS);
+	uint8_t err_mask = MCHP_ESPI_OOB_RX_STS_IBERR | MCHP_ESPI_OOB_RX_STS_OVRUN;
 
 	if (regs->OOBRXSTS & err_mask) {
 		return -EIO;
@@ -466,16 +461,15 @@ static int espi_xec_receive_oob(const struct device *dev,
 #endif /* CONFIG_ESPI_OOB_CHANNEL */
 
 #ifdef CONFIG_ESPI_FLASH_CHANNEL
-static int espi_xec_flash_read(const struct device *dev,
-			       struct espi_flash_packet *pckt)
+static int espi_xec_flash_read(const struct device *dev, struct espi_flash_packet *pckt)
 {
-	int ret;
-	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
-	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
-	uint32_t err_mask = MCHP_ESPI_FC_STS_IBERR |
-			MCHP_ESPI_FC_STS_FAIL |
-			MCHP_ESPI_FC_STS_OVFL |
-			MCHP_ESPI_FC_STS_BADREQ;
+	struct espi_xec_data *data = (struct espi_xec_data *)dev->data;
+	const struct espi_xec_config *devcfg = dev->config;
+	struct xec_espi_ioc_fc_regs *regs =
+		(struct xec_espi_ioc_fc_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_FC_OFS);
+	uint32_t err_mask = (MCHP_ESPI_FC_STS_IBERR | MCHP_ESPI_FC_STS_FAIL |
+			     MCHP_ESPI_FC_STS_OVFL | MCHP_ESPI_FC_STS_BADREQ);
+	int ret = 0;
 
 	LOG_DBG("%s", __func__);
 
@@ -494,7 +488,7 @@ static int espi_xec_flash_read(const struct device *dev,
 	regs->FCBA[1] = 0;
 	regs->FCBA[0] = (uint32_t)&target_mem[0];
 	regs->FCLEN = pckt->len;
-	regs->FCCTL = MCHP_ESPI_FC_CTRL_FUNC(MCHP_ESPI_FC_CTRL_RD0);
+	regs->FCCTL = MCHP_ESPI_FC_CTRL_FUNC_SET(MCHP_ESPI_FC_CTRL_RD0);
 	regs->FCCTL |= MCHP_ESPI_FC_CTRL_START;
 
 	/* Wait until ISR or timeout */
@@ -515,17 +509,15 @@ static int espi_xec_flash_read(const struct device *dev,
 	return 0;
 }
 
-static int espi_xec_flash_write(const struct device *dev,
-				struct espi_flash_packet *pckt)
+static int espi_xec_flash_write(const struct device *dev, struct espi_flash_packet *pckt)
 {
-	int ret;
-	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
-	uint32_t err_mask = MCHP_ESPI_FC_STS_IBERR |
-			MCHP_ESPI_FC_STS_OVRUN |
-			MCHP_ESPI_FC_STS_FAIL |
-			MCHP_ESPI_FC_STS_BADREQ;
-
-	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
+	struct espi_xec_data *data = (struct espi_xec_data *)dev->data;
+	const struct espi_xec_config *devcfg = dev->config;
+	struct xec_espi_ioc_fc_regs *regs =
+		(struct xec_espi_ioc_fc_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_FC_OFS);
+	uint32_t err_mask = MCHP_ESPI_FC_STS_IBERR | MCHP_ESPI_FC_STS_OVRUN |
+			    MCHP_ESPI_FC_STS_FAIL | MCHP_ESPI_FC_STS_BADREQ;
+	int ret = 0;
 
 	LOG_DBG("%s", __func__);
 
@@ -551,7 +543,7 @@ static int espi_xec_flash_write(const struct device *dev,
 	regs->FCBA[1] = 0;
 	regs->FCBA[0] = (uint32_t)&target_mem[0];
 	regs->FCLEN = pckt->len;
-	regs->FCCTL = MCHP_ESPI_FC_CTRL_FUNC(MCHP_ESPI_FC_CTRL_WR0);
+	regs->FCCTL = MCHP_ESPI_FC_CTRL_FUNC_SET(MCHP_ESPI_FC_CTRL_WR0);
 	regs->FCCTL |= MCHP_ESPI_FC_CTRL_START;
 
 	/* Wait until ISR or timeout */
@@ -570,18 +562,16 @@ static int espi_xec_flash_write(const struct device *dev,
 	return 0;
 }
 
-static int espi_xec_flash_erase(const struct device *dev,
-				struct espi_flash_packet *pckt)
+static int espi_xec_flash_erase(const struct device *dev, struct espi_flash_packet *pckt)
 {
-	int ret;
-	uint32_t status;
-	uint32_t err_mask = MCHP_ESPI_FC_STS_IBERR |
-			MCHP_ESPI_FC_STS_OVRUN |
-			MCHP_ESPI_FC_STS_FAIL |
-			MCHP_ESPI_FC_STS_BADREQ;
-
-	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
-	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
+	struct espi_xec_data *data = (struct espi_xec_data *)dev->data;
+	const struct espi_xec_config *devcfg = dev->config;
+	struct xec_espi_ioc_fc_regs *regs =
+		(struct xec_espi_ioc_fc_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_FC_OFS);
+	uint32_t err_mask = (MCHP_ESPI_FC_STS_IBERR | MCHP_ESPI_FC_STS_OVRUN |
+			     MCHP_ESPI_FC_STS_FAIL | MCHP_ESPI_FC_STS_BADREQ);
+	uint32_t status = 0;
+	int ret = 0;
 
 	LOG_DBG("%s", __func__);
 
@@ -602,7 +592,7 @@ static int espi_xec_flash_erase(const struct device *dev,
 	regs->FCFA[1] = 0;
 	regs->FCFA[0] = pckt->flash_addr;
 	regs->FCLEN = ESPI_FLASH_ERASE_DUMMY;
-	regs->FCCTL = MCHP_ESPI_FC_CTRL_FUNC(MCHP_ESPI_FC_CTRL_ERS0);
+	regs->FCCTL = MCHP_ESPI_FC_CTRL_FUNC_SET(MCHP_ESPI_FC_CTRL_ERS0);
 	regs->FCCTL |= MCHP_ESPI_FC_CTRL_START;
 
 	/* Wait until ISR or timeout */
@@ -622,23 +612,21 @@ static int espi_xec_flash_erase(const struct device *dev,
 }
 #endif /* CONFIG_ESPI_FLASH_CHANNEL */
 
-static int espi_xec_manage_callback(const struct device *dev,
-				    struct espi_callback *callback, bool set)
+static int espi_xec_manage_callback(const struct device *dev, struct espi_callback *cb, bool set)
 {
-	struct espi_xec_data *const data = ESPI_XEC_DATA(dev);
+	struct espi_xec_data *const data = dev->data;
 
-	return espi_manage_callback(&data->callbacks, callback, set);
+	return espi_manage_callback(&data->callbacks, cb, set);
 }
 
 #ifdef CONFIG_ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
 static void send_slave_bootdone(const struct device *dev)
 {
-	int ret;
-	uint8_t boot_done;
+	int ret = 0;
+	uint8_t boot_done = false;
 
-	ret = espi_xec_receive_vwire(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE,
-				     &boot_done);
-	if (!ret && !boot_done) {
+	ret = espi_xec_receive_vwire(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, &boot_done);
+	if ((ret == 0) && (boot_done == true)) {
 		/* SLAVE_BOOT_DONE & SLAVE_LOAD_STS have to be sent together */
 		espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS, 1);
 		espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, 1);
@@ -649,14 +637,15 @@ static void send_slave_bootdone(const struct device *dev)
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 static void espi_init_oob(const struct device *dev)
 {
-	struct espi_xec_config *const cfg = ESPI_XEC_CONFIG(dev);
-	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
+	const struct espi_xec_config *cfg = dev->config;
+	struct xec_espi_ioc_oob_regs *regs =
+		(struct xec_espi_ioc_oob_regs *)(cfg->ioc_base_addr + MCHP_ESPI_IO_OOB_OFS);
 
 	/* Enable OOB Tx/Rx interrupts */
-	mchp_xec_ecia_girq_src_en(cfg->irq_info_list[oob_up_girq_idx].gid,
-				  cfg->irq_info_list[oob_up_girq_idx].gpos);
-	mchp_xec_ecia_girq_src_en(cfg->irq_info_list[oob_dn_girq_idx].gid,
-				  cfg->irq_info_list[oob_dn_girq_idx].gpos);
+	soc_ecia_girq_ctrl(cfg->irq_info_list[oob_up_girq_idx].gid,
+			   cfg->irq_info_list[oob_up_girq_idx].gpos, 1u);
+	soc_ecia_girq_ctrl(cfg->irq_info_list[oob_dn_girq_idx].gid,
+			   cfg->irq_info_list[oob_dn_girq_idx].gpos, 1u);
 
 	regs->OOBTXA[1] = 0;
 	regs->OOBRXA[1] = 0;
@@ -665,8 +654,7 @@ static void espi_init_oob(const struct device *dev)
 	regs->OOBRXL = 0x00FF0000;
 
 	/* Enable OOB Tx channel enable change status interrupt */
-	regs->OOBTXIEN |= MCHP_ESPI_OOB_TX_IEN_CHG_EN |
-			  MCHP_ESPI_OOB_TX_IEN_DONE;
+	regs->OOBTXIEN |= MCHP_ESPI_OOB_TX_IEN_CHG_EN | MCHP_ESPI_OOB_TX_IEN_DONE;
 
 	/* Enable Rx channel to receive data any time
 	 * there are case where OOB is not initiated by a previous OOB Tx
@@ -679,8 +667,9 @@ static void espi_init_oob(const struct device *dev)
 #ifdef CONFIG_ESPI_FLASH_CHANNEL
 static void espi_init_flash(const struct device *dev)
 {
-	struct espi_xec_config *const cfg = ESPI_XEC_CONFIG(dev);
-	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
+	const struct espi_xec_config *cfg = dev->config;
+	struct xec_espi_ioc_fc_regs *regs =
+		(struct xec_espi_ioc_fc_regs *)(cfg->ioc_base_addr + MCHP_ESPI_IO_FC_OFS);
 
 	LOG_DBG("%s", __func__);
 
@@ -689,8 +678,9 @@ static void espi_init_flash(const struct device *dev)
 	regs->FCSTS = MCHP_ESPI_FC_STS_DONE;
 
 	/* Enable interrupts */
-	mchp_xec_ecia_girq_src_en(cfg->irq_info_list[fc_girq_idx].gid,
-				  cfg->irq_info_list[fc_girq_idx].gpos);
+	soc_ecia_girq_ctrl(cfg->irq_info_list[fc_girq_idx].gid,
+			   cfg->irq_info_list[fc_girq_idx].gpos, 1u);
+
 	regs->FCIEN |= MCHP_ESPI_FC_IEN_CHG_EN;
 	regs->FCIEN |= MCHP_ESPI_FC_IEN_DONE;
 }
@@ -698,61 +688,53 @@ static void espi_init_flash(const struct device *dev)
 
 static void espi_bus_init(const struct device *dev)
 {
-	struct espi_xec_config *const cfg = ESPI_XEC_CONFIG(dev);
+	const struct espi_xec_config *cfg = dev->config;
 
 	/* Enable bus interrupts */
-	mchp_xec_ecia_girq_src_en(cfg->irq_info_list[pc_girq_idx].gid,
-				  cfg->irq_info_list[pc_girq_idx].gpos);
-	mchp_xec_ecia_girq_src_en(cfg->irq_info_list[rst_girq_idx].gid,
-				  cfg->irq_info_list[rst_girq_idx].gpos);
-	mchp_xec_ecia_girq_src_en(cfg->irq_info_list[vw_ch_en_girq_idx].gid,
-				  cfg->irq_info_list[vw_ch_en_girq_idx].gpos);
+	soc_ecia_girq_ctrl(cfg->irq_info_list[pc_girq_idx].gid,
+			   cfg->irq_info_list[pc_girq_idx].gpos, 1u);
+	soc_ecia_girq_ctrl(cfg->irq_info_list[rst_girq_idx].gid,
+			   cfg->irq_info_list[rst_girq_idx].gpos, 1u);
+	soc_ecia_girq_ctrl(cfg->irq_info_list[vw_ch_en_girq_idx].gid,
+			   cfg->irq_info_list[vw_ch_en_girq_idx].gpos, 1u);
 }
 
 /* Clear specified eSPI bus GIRQ status */
-static int xec_espi_bus_intr_clr(const struct device *dev,
-				 enum xec_espi_girq_idx idx)
+static int xec_espi_bus_intr_clr(const struct device *dev, enum xec_espi_girq_idx idx)
 {
-	struct espi_xec_config *const cfg = ESPI_XEC_CONFIG(dev);
+	const struct espi_xec_config *cfg = dev->config;
 
 	if (idx >= max_girq_idx) {
 		return -EINVAL;
 	}
 
-	mchp_xec_ecia_girq_src_clr(cfg->irq_info_list[idx].gid,
-				   cfg->irq_info_list[idx].gpos);
+	soc_ecia_girq_status_clear(cfg->irq_info_list[idx].gid, cfg->irq_info_list[idx].gpos);
 
 	return 0;
 }
 
 /* Enable/disable specified eSPI bus GIRQ */
-static int xec_espi_bus_intr_ctl(const struct device *dev,
-				 enum xec_espi_girq_idx idx,
-				 uint8_t enable)
+static int xec_espi_bus_intr_ctl(const struct device *dev, enum xec_espi_girq_idx idx, uint8_t en)
 {
-	struct espi_xec_config *const cfg = ESPI_XEC_CONFIG(dev);
+	const struct espi_xec_config *cfg = dev->config;
 
 	if (idx >= max_girq_idx) {
 		return -EINVAL;
 	}
 
-	if (enable) {
-		mchp_xec_ecia_girq_src_en(cfg->irq_info_list[idx].gid,
-					  cfg->irq_info_list[idx].gpos);
-	} else {
-		mchp_xec_ecia_girq_src_dis(cfg->irq_info_list[idx].gid,
-					   cfg->irq_info_list[idx].gpos);
-	}
+	soc_ecia_girq_ctrl(cfg->irq_info_list[idx].gid, cfg->irq_info_list[idx].gpos, en);
 
 	return 0;
 }
 
 static void espi_rst_isr(const struct device *dev)
 {
-	uint8_t rst_sts;
-	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
-	struct espi_xec_data *const data = ESPI_XEC_DATA(dev);
-	struct espi_event evt = { ESPI_BUS_RESET, 0, 0 };
+	struct espi_xec_data *const data = dev->data;
+	const struct espi_xec_config *devcfg = dev->config;
+	struct xec_espi_cap_regs *regs =
+		(struct xec_espi_cap_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_CAP_OFS);
+	struct espi_event evt = {ESPI_BUS_RESET, 0, 0};
+	uint8_t rst_sts = 0;
 
 #ifdef ESPI_XEC_V2_DEBUG
 	data->espi_rst_count++;
@@ -783,67 +765,44 @@ static void espi_rst_isr(const struct device *dev)
 	}
 }
 
-/* Configure sub devices BAR address if not using default I/O based address
- * then make its BAR valid.
- * Refer to microchip eSPI I/O base addresses for default values
- */
-static void config_sub_devices(const struct device *dev)
+static void setup_espi_io_config(const struct device *dev, uint16_t host_address)
 {
+	const struct espi_xec_config *devcfg = dev->config;
+	struct xec_espi_ioc_pc_regs *pcregs =
+		(struct xec_espi_ioc_pc_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_PC_OFS);
+	struct xec_espi_ioc_cfg_regs *cfgregs =
+		(struct xec_espi_ioc_cfg_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_CFG_OFS);
+	struct xec_espi_cap_regs *capregs =
+		(struct xec_espi_cap_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_CAP_OFS);
+
+	cfgregs->IOHBAR[IOB_IOC] = (host_address << 16) | MCHP_ESPI_IO_BAR_HOST_VALID;
+
+	/* configure peripheral channel devices: BARs, Serial-IRQ, etc. */
 	xec_host_dev_init(dev);
-}
 
-static void configure_sirq(const struct device *dev)
-{
-	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
+	pcregs->PCSTS = MCHP_ESPI_PC_STS_EN_CHG | MCHP_ESPI_PC_STS_BM_EN_CHG_POS;
+	pcregs->PCIEN |= MCHP_ESPI_PC_IEN_EN_CHG;
+	capregs->PCRDY = 1;
 
-#ifdef CONFIG_ESPI_PERIPHERAL_UART
-	switch (CONFIG_ESPI_PERIPHERAL_UART_SOC_MAPPING) {
-	case ESPI_PERIPHERAL_UART_PORT0:
-		regs->SIRQ[SIRQ_UART0] = UART_DEFAULT_IRQ;
-		break;
-	case ESPI_PERIPHERAL_UART_PORT1:
-		regs->SIRQ[SIRQ_UART1] = UART_DEFAULT_IRQ;
-		break;
-	}
-#endif
-#ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
-	regs->SIRQ[SIRQ_KBC_KIRQ] = 1;
-	regs->SIRQ[SIRQ_KBC_MIRQ] = 12;
-#endif
-}
-
-static void setup_espi_io_config(const struct device *dev,
-				 uint16_t host_address)
-{
-	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
-
-	regs->IOHBAR[IOB_IOC] = (host_address << 16) |
-				MCHP_ESPI_IO_BAR_HOST_VALID;
-
-	config_sub_devices(dev);
-	configure_sirq(dev);
-
-	regs->PCSTS = MCHP_ESPI_PC_STS_EN_CHG |
-		      MCHP_ESPI_PC_STS_BM_EN_CHG_POS;
-	regs->PCIEN |= MCHP_ESPI_PC_IEN_EN_CHG;
-	regs->PCRDY = 1;
+	LOG_DBG("PC Ready set to 1");
 }
 
 /*
  * Write the interrupt select field of the specified MSVW source.
  * Each MSVW controls 4 virtual wires.
  */
-static int xec_espi_vw_intr_ctrl(const struct device *dev, uint8_t msvw_idx,
-				 uint8_t src_id, uint8_t intr_mode)
+static int xec_espi_vw_intr_ctrl(const struct device *dev, uint8_t msvw_idx, uint8_t src_id,
+				 uint8_t intr_mode)
 {
-	struct espi_msvw_ar_regs *regs = ESPI_XEC_MSVW_REG_BASE(dev);
-
+	const struct espi_xec_config *devcfg = dev->config;
+	struct espi_msvw_ar_regs *regs = (struct espi_msvw_ar_regs *)devcfg->vw_base_addr;
+	uintptr_t msvw_addr = 0;
 
 	if ((msvw_idx >= ESPI_NUM_MSVW) || (src_id > 3)) {
 		return -EINVAL;
 	}
 
-	uintptr_t msvw_addr = (uintptr_t)&regs->MSVW[msvw_idx];
+	msvw_addr = (uintptr_t)&regs->MSVW[msvw_idx];
 
 	sys_write8(intr_mode, msvw_addr + MSVW_BI_IRQ_SEL0 + src_id);
 
@@ -852,12 +811,14 @@ static int xec_espi_vw_intr_ctrl(const struct device *dev, uint8_t msvw_idx,
 
 static void espi_pc_isr(const struct device *dev)
 {
-	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
+	struct espi_xec_data *const data = dev->data;
+	const struct espi_xec_config *devcfg = dev->config;
+	struct xec_espi_ioc_pc_regs *regs =
+		(struct xec_espi_ioc_pc_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_PC_OFS);
+	struct espi_event evt = {.evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
+				 .evt_details = ESPI_CHANNEL_PERIPHERAL,
+				 .evt_data = 0};
 	uint32_t status = regs->PCSTS;
-	struct espi_event evt = { .evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
-				  .evt_details = ESPI_CHANNEL_PERIPHERAL,
-				  .evt_data = 0 };
-	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
 
 	LOG_DBG("%s %x", __func__, status);
 	if (status & MCHP_ESPI_PC_STS_BUS_ERR) {
@@ -866,7 +827,9 @@ static void espi_pc_isr(const struct device *dev)
 	}
 
 	if (status & MCHP_ESPI_PC_STS_EN_CHG) {
+		LOG_DBG("PC enable change");
 		if (status & MCHP_ESPI_PC_STS_EN) {
+			LOG_DBG("PC dis to en");
 			setup_espi_io_config(dev, MCHP_ESPI_IOBAR_INIT_DFLT);
 		}
 
@@ -888,12 +851,14 @@ static void espi_pc_isr(const struct device *dev)
 
 static void espi_vw_chan_en_isr(const struct device *dev)
 {
-	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
-	struct espi_xec_data *const data = ESPI_XEC_DATA(dev);
-	struct espi_event evt = { .evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
-				  .evt_details = ESPI_CHANNEL_VWIRE,
-				  .evt_data = 0 };
-	uint32_t status = regs->VWSTS;
+	struct espi_xec_data *const data = dev->data;
+	const struct espi_xec_config *devcfg = dev->config;
+	struct xec_espi_cap_regs *regs =
+		(struct xec_espi_cap_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_CAP_OFS);
+	struct espi_event evt = {.evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
+				 .evt_details = ESPI_CHANNEL_VWIRE,
+				 .evt_data = 0};
+	uint32_t status = regs->VW_CHEN_SR;
 
 	if (status & MCHP_ESPI_VW_EN_STS_RO) {
 		regs->VWRDY = 1;
@@ -914,16 +879,15 @@ static void espi_vw_chan_en_isr(const struct device *dev)
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 static void espi_oob_down_isr(const struct device *dev)
 {
-	uint32_t status;
-	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
-	struct espi_xec_data *const data = ESPI_XEC_DATA(dev);
+	struct espi_xec_data *const data = dev->data;
+	const struct espi_xec_config *devcfg = dev->config;
+	struct xec_espi_ioc_oob_regs *regs =
+		(struct xec_espi_ioc_oob_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_OOB_OFS);
 #ifdef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
-	struct espi_event evt = { .evt_type = ESPI_BUS_EVENT_OOB_RECEIVED,
-				  .evt_details = 0,
-				  .evt_data = 0 };
+	struct espi_event evt = {
+		.evt_type = ESPI_BUS_EVENT_OOB_RECEIVED, .evt_details = 0, .evt_data = 0};
 #endif
-
-	status = regs->OOBRXSTS;
+	uint32_t status = regs->OOBRXSTS;
 
 	LOG_DBG("%s %x", __func__, status);
 	if (status & MCHP_ESPI_OOB_RX_STS_DONE) {
@@ -933,8 +897,7 @@ static void espi_oob_down_isr(const struct device *dev)
 #ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
 		k_sem_give(&data->rx_lock);
 #else
-		evt.evt_details = regs->OOBRXL &
-				  MCHP_ESPI_OOB_RX_LEN_MASK;
+		evt.evt_details = regs->OOBRXL & MCHP_ESPI_OOB_RX_LEN_MASK;
 		espi_send_callbacks(&data->callbacks, dev, evt);
 #endif
 	}
@@ -944,15 +907,17 @@ static void espi_oob_down_isr(const struct device *dev)
 
 static void espi_oob_up_isr(const struct device *dev)
 {
-	uint32_t status;
-	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
-	struct espi_xec_data *const data = ESPI_XEC_DATA(dev);
-	struct espi_event evt = { .evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
-				  .evt_details = ESPI_CHANNEL_OOB,
-				  .evt_data = 0
-				};
+	struct espi_xec_data *const data = dev->data;
+	const struct espi_xec_config *devcfg = dev->config;
+	struct xec_espi_ioc_oob_regs *regs =
+		(struct xec_espi_ioc_oob_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_OOB_OFS);
+	struct xec_espi_cap_regs *capregs =
+		(struct xec_espi_cap_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_CAP_OFS);
+	struct espi_event evt = {.evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
+				 .evt_details = ESPI_CHANNEL_OOB,
+				 .evt_data = 0};
+	uint32_t status = regs->OOBTXSTS;
 
-	status = regs->OOBTXSTS;
 	LOG_DBG("%s sts:%x", __func__, status);
 
 	if (status & MCHP_ESPI_OOB_TX_STS_DONE) {
@@ -965,7 +930,7 @@ static void espi_oob_up_isr(const struct device *dev)
 		if (status & MCHP_ESPI_OOB_TX_STS_CHEN) {
 			espi_init_oob(dev);
 			/* Indicate OOB channel is ready to eSPI host */
-			regs->OOBRDY = 1;
+			capregs->OOBRDY = 1;
 			evt.evt_data = 1;
 		}
 
@@ -980,15 +945,19 @@ static void espi_oob_up_isr(const struct device *dev)
 #ifdef CONFIG_ESPI_FLASH_CHANNEL
 static void espi_flash_isr(const struct device *dev)
 {
-	uint32_t status;
-	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
-	struct espi_xec_data *const data = ESPI_XEC_DATA(dev);
-	struct espi_event evt = { .evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
-				  .evt_details = ESPI_CHANNEL_FLASH,
-				  .evt_data = 0,
-				};
+	struct espi_xec_data *const data = dev->data;
+	const struct espi_xec_config *devcfg = dev->config;
+	struct xec_espi_ioc_fc_regs *regs =
+		(struct xec_espi_ioc_fc_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_FC_OFS);
+	struct xec_espi_cap_regs *capregs =
+		(struct xec_espi_cap_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_CAP_OFS);
+	struct espi_event evt = {
+		.evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
+		.evt_details = ESPI_CHANNEL_FLASH,
+		.evt_data = 0,
+	};
+	uint32_t status = regs->FCSTS;
 
-	status = regs->FCSTS;
 	LOG_DBG("%s %x", __func__, status);
 
 	if (status & MCHP_ESPI_FC_STS_DONE) {
@@ -1005,7 +974,7 @@ static void espi_flash_isr(const struct device *dev)
 		if (status & MCHP_ESPI_FC_STS_CHAN_EN) {
 			espi_init_flash(dev);
 			/* Indicate flash channel is ready to eSPI master */
-			regs->FCRDY = MCHP_ESPI_FC_READY;
+			capregs->FCRDY = MCHP_ESPI_FC_READY;
 			evt.evt_data = 1;
 		}
 
@@ -1017,11 +986,10 @@ static void espi_flash_isr(const struct device *dev)
 #endif
 
 /* Send callbacks if enabled and track eSPI host system state */
-static void notify_system_state(const struct device *dev,
-				enum espi_vwire_signal signal)
+static void notify_system_state(const struct device *dev, enum espi_vwire_signal signal)
 {
-	struct espi_xec_data *const data = ESPI_XEC_DATA(dev);
-	struct espi_event evt = { ESPI_BUS_EVENT_VWIRE_RECEIVED, 0, 0 };
+	struct espi_xec_data *const data = dev->data;
+	struct espi_event evt = {ESPI_BUS_EVENT_VWIRE_RECEIVED, 0, 0};
 	uint8_t status = 0;
 
 	espi_xec_receive_vwire(dev, signal, &status);
@@ -1030,16 +998,15 @@ static void notify_system_state(const struct device *dev,
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
-static void notify_host_warning(const struct device *dev,
-				enum espi_vwire_signal signal)
+static void notify_host_warning(const struct device *dev, enum espi_vwire_signal signal)
 {
-	uint8_t status;
+	uint8_t status = 0;
 
 	espi_xec_receive_vwire(dev, signal, &status);
 
 	if (!IS_ENABLED(CONFIG_ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE)) {
-		struct espi_xec_data *const data = ESPI_XEC_DATA(dev);
-		struct espi_event evt = {ESPI_BUS_EVENT_VWIRE_RECEIVED, 0, 0 };
+		struct espi_xec_data *const data = dev->data;
+		struct espi_event evt = {ESPI_BUS_EVENT_VWIRE_RECEIVED, 0, 0};
 
 		evt.evt_details = signal;
 		evt.evt_data = status;
@@ -1052,21 +1019,16 @@ static void notify_host_warning(const struct device *dev,
 		 */
 		switch (signal) {
 		case ESPI_VWIRE_SIGNAL_HOST_RST_WARN:
-			espi_xec_send_vwire(dev,
-					    ESPI_VWIRE_SIGNAL_HOST_RST_ACK,
-					    status);
+			espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_HOST_RST_ACK, status);
 			break;
 		case ESPI_VWIRE_SIGNAL_SUS_WARN:
-			espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_SUS_ACK,
-					    status);
+			espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_SUS_ACK, status);
 			break;
 		case ESPI_VWIRE_SIGNAL_OOB_RST_WARN:
-			espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_OOB_RST_ACK,
-					    status);
+			espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_OOB_RST_ACK, status);
 			break;
 		case ESPI_VWIRE_SIGNAL_DNX_WARN:
-			espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_DNX_ACK,
-					    status);
+			espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_DNX_ACK, status);
 			break;
 		default:
 			break;
@@ -1074,11 +1036,10 @@ static void notify_host_warning(const struct device *dev,
 	}
 }
 
-static void notify_vw_status(const struct device *dev,
-				enum espi_vwire_signal signal)
+static void notify_vw_status(const struct device *dev, enum espi_vwire_signal signal)
 {
-	struct espi_xec_data *const data = ESPI_XEC_DATA(dev);
-	struct espi_event evt = { ESPI_BUS_EVENT_VWIRE_RECEIVED, 0, 0 };
+	struct espi_xec_data *const data = dev->data;
+	struct espi_event evt = {ESPI_BUS_EVENT_VWIRE_RECEIVED, 0, 0};
 	uint8_t status = 0;
 
 	espi_xec_receive_vwire(dev, signal, &status);
@@ -1095,163 +1056,199 @@ static void notify_vw_status(const struct device *dev,
  * ECIA driver.
  */
 
-static void vw_slp3_handler(int girq_id, int src, void *user)
+static void vw_slp3_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)user;
-
 	notify_system_state(dev, ESPI_VWIRE_SIGNAL_SLP_S3);
 }
 
-static void vw_slp4_handler(int girq_id, int src, void *user)
+static void vw_slp4_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)user;
-
 	notify_system_state(dev, ESPI_VWIRE_SIGNAL_SLP_S4);
 }
 
-static void vw_slp5_handler(int girq_id, int src, void *user)
+static void vw_slp5_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)user;
-
 	notify_system_state(dev, ESPI_VWIRE_SIGNAL_SLP_S5);
 }
 
-static void vw_host_rst_warn_handler(int girq_id, int src, void *user)
+static void vw_host_rst_warn_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)user;
-
 	notify_host_warning(dev, ESPI_VWIRE_SIGNAL_HOST_RST_WARN);
 }
 
-static void vw_sus_warn_handler(int girq_id, int src, void *user)
+static void vw_sus_warn_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)user;
-
 	notify_host_warning(dev, ESPI_VWIRE_SIGNAL_SUS_WARN);
 }
 
-static void vw_oob_rst_handler(int girq_id, int src, void *user)
+static void vw_oob_rst_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)user;
-
 	notify_host_warning(dev, ESPI_VWIRE_SIGNAL_OOB_RST_WARN);
 }
 
-static void vw_sus_pwrdn_ack_handler(int girq_id, int src, void *user)
+static void vw_sus_pwrdn_ack_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)user;
-
 	notify_vw_status(dev, ESPI_VWIRE_SIGNAL_SUS_PWRDN_ACK);
 }
 
-static void vw_sus_slp_a_handler(int girq_id, int src, void *user)
+static void vw_slp_a_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)user;
-
 	notify_vw_status(dev, ESPI_VWIRE_SIGNAL_SLP_A);
 }
 
-static void vw_sus_dnx_warn_handler(int girq_id, int src, void *user)
+static void vw_dnx_warn_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)user;
-
 	notify_host_warning(dev, ESPI_VWIRE_SIGNAL_DNX_WARN);
 }
 
-static void vw_pltrst_handler(int girq_id, int src, void *user)
+static void vw_pltrst_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)user;
-	struct espi_xec_data *const data = ESPI_XEC_DATA(dev);
-	struct espi_event evt = { ESPI_BUS_EVENT_VWIRE_RECEIVED,
-		ESPI_VWIRE_SIGNAL_PLTRST, 0
-	};
+	struct espi_xec_data *const data = dev->data;
+	struct espi_event evt = {ESPI_BUS_EVENT_VWIRE_RECEIVED, ESPI_VWIRE_SIGNAL_PLTRST, 0};
 	uint8_t status = 0;
 
 	espi_xec_receive_vwire(dev, ESPI_VWIRE_SIGNAL_PLTRST, &status);
-	if (status) {
+	if (status != 0) {
+		LOG_DBG("VW nPLTRST de-asserted");
 		setup_espi_io_config(dev, MCHP_ESPI_IOBAR_INIT_DFLT);
+	} else {
+		LOG_DBG("VW nPLTRST asserted");
 	}
 
 	evt.evt_data = status;
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
-static void vw_sus_stat_handler(int girq_id, int src, void *user)
+static void vw_sus_stat_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)user;
-
 	notify_host_warning(dev, ESPI_VWIRE_SIGNAL_SUS_STAT);
 }
 
-static void vw_slp_wlan_handler(int girq_id, int src, void *user)
+static void vw_slp_wlan_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)user;
-
 	notify_vw_status(dev, ESPI_VWIRE_SIGNAL_SLP_WLAN);
 }
 
-static void vw_slp_lan_handler(int girq_id, int src, void *user)
+static void vw_slp_lan_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)user;
-
 	notify_vw_status(dev, ESPI_VWIRE_SIGNAL_SLP_LAN);
 }
 
-static void vw_host_c10_handler(int girq_id, int src, void *user)
+static void vw_host_c10_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)user;
-
 	notify_vw_status(dev, ESPI_VWIRE_SIGNAL_HOST_C10);
 }
 
-static void vw_nmiout_handler(int girq_id, int src, void *user)
+static void vw_nmiout_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)user;
-
 	notify_vw_status(dev, ESPI_VWIRE_SIGNAL_NMIOUT);
 }
 
-static void vw_smiout_handler(int girq_id, int src, void *user)
+static void vw_smiout_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)user;
-
 	notify_vw_status(dev, ESPI_VWIRE_SIGNAL_SMIOUT);
 }
 
-const struct espi_vw_isr m2s_vwires_isr[] = {
-	{ESPI_VWIRE_SIGNAL_SLP_S3, MCHP_MSVW00_GIRQ,
-	 MCHP_MSVW00_SRC0_GIRQ_POS, vw_slp3_handler},
-	{ESPI_VWIRE_SIGNAL_SLP_S4, MCHP_MSVW00_GIRQ,
-	 MCHP_MSVW00_SRC1_GIRQ_POS, vw_slp4_handler},
-	{ESPI_VWIRE_SIGNAL_SLP_S5, MCHP_MSVW00_GIRQ,
-	 MCHP_MSVW00_SRC2_GIRQ_POS, vw_slp5_handler},
-	{ESPI_VWIRE_SIGNAL_OOB_RST_WARN, MCHP_MSVW01_GIRQ,
-	 MCHP_MSVW01_SRC2_GIRQ_POS, vw_oob_rst_handler},
-	{ESPI_VWIRE_SIGNAL_PLTRST, MCHP_MSVW01_GIRQ,
-	 MCHP_MSVW01_SRC1_GIRQ_POS, vw_pltrst_handler},
-	{ESPI_VWIRE_SIGNAL_SUS_STAT, MCHP_MSVW01_GIRQ,
-	 MCHP_MSVW01_SRC0_GIRQ_POS, vw_sus_stat_handler},
-	{ESPI_VWIRE_SIGNAL_HOST_RST_WARN, MCHP_MSVW02_GIRQ,
-	 MCHP_MSVW02_SRC0_GIRQ_POS, vw_host_rst_warn_handler},
-	{ESPI_VWIRE_SIGNAL_NMIOUT, MCHP_MSVW02_GIRQ,
-	 MCHP_MSVW02_SRC1_GIRQ_POS, vw_nmiout_handler},
-	{ESPI_VWIRE_SIGNAL_SMIOUT, MCHP_MSVW02_GIRQ,
-	 MCHP_MSVW02_SRC2_GIRQ_POS, vw_smiout_handler},
-	{ESPI_VWIRE_SIGNAL_SLP_A, MCHP_MSVW03_GIRQ,
-	 MCHP_MSVW03_SRC3_GIRQ_POS, vw_sus_slp_a_handler},
-	{ESPI_VWIRE_SIGNAL_SUS_PWRDN_ACK, MCHP_MSVW03_GIRQ,
-	 MCHP_MSVW03_SRC1_GIRQ_POS, vw_sus_pwrdn_ack_handler},
-	{ESPI_VWIRE_SIGNAL_SUS_WARN, MCHP_MSVW03_GIRQ,
-	 MCHP_MSVW03_SRC0_GIRQ_POS, vw_sus_warn_handler},
-	{ESPI_VWIRE_SIGNAL_SLP_WLAN, MCHP_MSVW04_GIRQ,
-	 MCHP_MSVW04_SRC1_GIRQ_POS, vw_slp_wlan_handler},
-	{ESPI_VWIRE_SIGNAL_SLP_LAN, MCHP_MSVW04_GIRQ,
-	 MCHP_MSVW04_SRC0_GIRQ_POS, vw_slp_lan_handler},
-	{ESPI_VWIRE_SIGNAL_HOST_C10, MCHP_MSVW07_GIRQ,
-	 MCHP_MSVW07_SRC0_GIRQ_POS, vw_host_c10_handler},
-	{ESPI_VWIRE_SIGNAL_DNX_WARN, MCHP_MSVW08_GIRQ,
-	 MCHP_MSVW08_SRC1_GIRQ_POS, vw_sus_dnx_warn_handler},
+struct espi_ht_sig_handler {
+	void (*vw_handler)(const struct device *dev);
 };
+
+const struct espi_ht_sig_handler espi_ht_vw_bank0_sh_tbl[] = {
+	{vw_slp3_handler}, /* MSVW00 b[0] */
+	{vw_slp4_handler},
+	{vw_slp5_handler},
+	{NULL},
+	{vw_sus_stat_handler}, /* MSVW01 b[0] */
+	{vw_pltrst_handler},
+	{vw_oob_rst_handler},
+	{NULL},
+	{vw_host_rst_warn_handler}, /* MSVW02 b[0] */
+	{vw_nmiout_handler},
+	{vw_smiout_handler},
+	{NULL},
+	{vw_sus_warn_handler}, /* MSVW03 b[0] */
+	{vw_sus_pwrdn_ack_handler},
+	{NULL},
+	{vw_slp_a_handler},
+	{vw_slp_lan_handler}, /* MSVW04 b[0] */
+	{vw_slp_wlan_handler},
+	{NULL},
+	{NULL},
+	{NULL}, /* MSVW05 b[0] */
+	{NULL},
+	{NULL},
+	{NULL},
+	{NULL}, /* MSVW06 b[0] */
+	{NULL},
+	{NULL},
+	{NULL},
+};
+
+const struct espi_ht_sig_handler espi_ht_vw_bank1_sh_tbl[] = {
+	{vw_host_c10_handler}, /* MSVW07 b[0] */
+	{NULL},
+	{NULL},
+	{NULL},
+	{NULL}, /* MSVW08 b[0] */
+	{vw_dnx_warn_handler},
+	{NULL},
+	{NULL},
+	{NULL}, /* MSVW09 b[0] */
+	{NULL},
+	{NULL},
+	{NULL},
+	{NULL}, /* MSVW10 b[0] */
+	{NULL},
+	{NULL},
+	{NULL},
+};
+
+static void espi_ht_vw_bank0_isr(const struct device *dev)
+{
+	const struct espi_xec_config *drvcfg = dev->config;
+	uint32_t result = 0, bitpos = 0;
+	uint8_t girq = drvcfg->irq_info_list[ht_vw_bank0_idx].gid;
+
+	soc_ecia_girq_result(girq, &result);
+
+	/* returns 0 if result is 0 else (bit position + 1) */
+	bitpos = (uint32_t)find_lsb_set(result);
+	while (bitpos != 0) {
+		bitpos -= 1U; /* make zero based */
+		result &= ~BIT(bitpos);
+
+		soc_ecia_girq_status_clear(girq, bitpos);
+
+		if (espi_ht_vw_bank0_sh_tbl[bitpos].vw_handler != NULL) {
+			espi_ht_vw_bank0_sh_tbl[bitpos].vw_handler(dev);
+		}
+
+		bitpos = (uint32_t)find_lsb_set(result);
+	}
+}
+
+static void espi_ht_vw_bank1_isr(const struct device *dev)
+{
+	const struct espi_xec_config *drvcfg = dev->config;
+	uint32_t result = 0, bitpos = 0;
+	uint8_t girq = drvcfg->irq_info_list[ht_vw_bank1_idx].gid;
+
+	soc_ecia_girq_result(girq, &result);
+
+	/* returns 0 if result is 0 else (bit position + 1) */
+	bitpos = (uint32_t)find_lsb_set(result);
+	while (bitpos != 0) {
+		result &= ~BIT(--bitpos);
+
+		soc_ecia_girq_status_clear(girq, bitpos);
+
+		if (espi_ht_vw_bank1_sh_tbl[bitpos].vw_handler != NULL) {
+			espi_ht_vw_bank1_sh_tbl[bitpos].vw_handler(dev);
+		}
+
+		bitpos = (uint32_t)find_lsb_set(result);
+	}
+}
 
 static int espi_xec_init(const struct device *dev);
 
@@ -1277,35 +1274,43 @@ static DEVICE_API(espi, espi_xec_driver_api) = {
 static struct espi_xec_data espi_xec_data_var;
 
 /* n = node-id, p = property, i = index */
-#define XEC_IRQ_INFO(n, p, i)						    \
-	{								    \
-		.gid = MCHP_XEC_ECIA_GIRQ(DT_PROP_BY_IDX(n, p, i)),	    \
-		.gpos = MCHP_XEC_ECIA_GIRQ_POS(DT_PROP_BY_IDX(n, p, i)),    \
-		.anid = MCHP_XEC_ECIA_NVIC_AGGR(DT_PROP_BY_IDX(n, p, i)),   \
-		.dnid = MCHP_XEC_ECIA_NVIC_DIRECT(DT_PROP_BY_IDX(n, p, i)), \
+#define XEC_IRQ_INFO(n, p, i)                                                                      \
+	{                                                                                          \
+		.gid = MCHP_XEC_ECIA_GIRQ(DT_PROP_BY_IDX(n, p, i)),                                \
+		.gpos = MCHP_XEC_ECIA_GIRQ_POS(DT_PROP_BY_IDX(n, p, i)),                           \
+		.anid = MCHP_XEC_ECIA_NVIC_AGGR(DT_PROP_BY_IDX(n, p, i)),                          \
+		.dnid = MCHP_XEC_ECIA_NVIC_DIRECT(DT_PROP_BY_IDX(n, p, i)),                        \
 	},
 
 static const struct espi_xec_irq_info espi_xec_irq_info_0[] = {
-	DT_FOREACH_PROP_ELEM(DT_NODELABEL(espi0), girqs, XEC_IRQ_INFO)
-};
+	DT_FOREACH_PROP_ELEM(DT_NODELABEL(espi0), girqs, XEC_IRQ_INFO)};
 
 /* pin control structure(s) */
 PINCTRL_DT_INST_DEFINE(0);
 
 static const struct espi_xec_config espi_xec_config = {
-	.base_addr = DT_INST_REG_ADDR(0),
+	.ioc_base_addr = DT_INST_REG_ADDR_BY_NAME(0, io),
+	.mc_base_addr = DT_INST_REG_ADDR_BY_NAME(0, mem),
 	.vw_base_addr = DT_INST_REG_ADDR_BY_NAME(0, vw),
-	.pcr_idx = DT_INST_PROP_BY_IDX(0, pcrs, 0),
-	.pcr_bitpos = DT_INST_PROP_BY_IDX(0, pcrs, 1),
+	.pcr_scr = DT_INST_PROP(0, pcr_scr),
 	.irq_info_size = ARRAY_SIZE(espi_xec_irq_info_0),
 	.irq_info_list = espi_xec_irq_info_0,
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, &espi_xec_init, NULL,
-		    &espi_xec_data_var, &espi_xec_config,
-		    PRE_KERNEL_2, CONFIG_ESPI_INIT_PRIORITY,
-		    &espi_xec_driver_api);
+DEVICE_DT_INST_DEFINE(0, &espi_xec_init, NULL, &espi_xec_data_var, &espi_xec_config, PRE_KERNEL_2,
+		      CONFIG_ESPI_INIT_PRIORITY, &espi_xec_driver_api);
+
+#define XEC_GIRQ24_NODE DT_NODELABEL(girq24)
+#define XEC_GIRQ25_NODE DT_NODELABEL(girq25)
+
+#define XEC_GIRQ_EN(girq_node_id) DT_NODE_HAS_STATUS_OKAY(node_id)
+
+#define XEC_HAS_IDRV_GIRQ_24_25                                                                    \
+	((DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_ecia) != 0) &&                                   \
+	 ((XEC_GIRQ_EN(XEC_GIRQ24_NODE) != 0) || (XEC_GIRQ_EN(XEC_GIRQ25_NODE) != 0)))
+
+BUILD_ASSERT(XEC_HAS_IDRV_GIRQ_24_25 == 0, "GIRQ24/25 cannot be owned by another driver!");
 
 /*
  * Connect ESPI bus interrupt handlers: ESPI_RESET and channels.
@@ -1314,51 +1319,69 @@ DEVICE_DT_INST_DEFINE(0, &espi_xec_init, NULL,
  */
 static void espi_xec_connect_irqs(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	const struct espi_xec_config *drvcfg = dev->config;
 
 	/* eSPI Reset */
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 7, irq),
-		    DT_INST_IRQ_BY_IDX(0, 7, priority),
-		    espi_rst_isr,
-		    DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 7, irq));
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, erst, irq), DT_INST_IRQ_BY_NAME(0, erst, priority),
+		    espi_rst_isr, DEVICE_DT_INST_GET(0), 0);
+	irq_enable(DT_INST_IRQ_BY_NAME(0, erst, irq));
+	soc_ecia_girq_ctrl(drvcfg->irq_info_list[rst_girq_idx].gid,
+			   drvcfg->irq_info_list[rst_girq_idx].gpos, 1u);
 
 	/* eSPI Virtual wire channel enable change ISR */
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 8, irq),
-		    DT_INST_IRQ_BY_IDX(0, 8, priority),
-		    espi_vw_chan_en_isr,
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, vw_chan_en, irq),
+		    DT_INST_IRQ_BY_NAME(0, vw_chan_en, priority), espi_vw_chan_en_isr,
 		    DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 8, irq));
+	irq_enable(DT_INST_IRQ_BY_NAME(0, vw_chan_en, irq));
+	soc_ecia_girq_ctrl(drvcfg->irq_info_list[vw_ch_en_girq_idx].gid,
+			   drvcfg->irq_info_list[vw_ch_en_girq_idx].gpos, 1u);
+
+	/* aggregated GIRQ for VWire bank 0 */
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, ht_vw_bank0, irq),
+		    DT_INST_IRQ_BY_NAME(0, ht_vw_bank0, priority), espi_ht_vw_bank0_isr,
+		    DEVICE_DT_INST_GET(0), 0);
+	irq_enable(DT_INST_IRQ_BY_NAME(0, ht_vw_bank0, irq));
+	soc_ecia_girq_ctrl(drvcfg->irq_info_list[ht_vw_bank0_idx].gid,
+			   drvcfg->irq_info_list[ht_vw_bank0_idx].gpos, 1u);
+
+	/* aggregated GIRQ for VWire bank 1 */
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, ht_vw_bank1, irq),
+		    DT_INST_IRQ_BY_NAME(0, ht_vw_bank1, priority), espi_ht_vw_bank1_isr,
+		    DEVICE_DT_INST_GET(0), 0);
+	irq_enable(DT_INST_IRQ_BY_NAME(0, ht_vw_bank1, irq));
+	soc_ecia_girq_ctrl(drvcfg->irq_info_list[ht_vw_bank1_idx].gid,
+			   drvcfg->irq_info_list[ht_vw_bank1_idx].gpos, 1u);
 
 	/* eSPI Peripheral Channel */
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 0, irq),
-		    DT_INST_IRQ_BY_IDX(0, 0, priority),
-		    espi_pc_isr,
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 0, irq), DT_INST_IRQ_BY_IDX(0, 0, priority), espi_pc_isr,
 		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_IDX(0, 0, irq));
+	soc_ecia_girq_ctrl(drvcfg->irq_info_list[pc_girq_idx].gid,
+			   drvcfg->irq_info_list[pc_girq_idx].gpos, 1u);
 
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 	/* eSPI OOB Upstream direction */
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 4, irq),
-		    DT_INST_IRQ_BY_IDX(0, 4, priority),
-		    espi_oob_up_isr,
-		    DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 4, irq), DT_INST_IRQ_BY_IDX(0, 4, priority),
+		    espi_oob_up_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_IDX(0, 4, irq));
 
 	/* eSPI OOB Channel Downstream direction */
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 5, irq),
-		    DT_INST_IRQ_BY_IDX(0, 5, priority),
-		    espi_oob_down_isr,
-		    DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 5, irq), DT_INST_IRQ_BY_IDX(0, 5, priority),
+		    espi_oob_down_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_IDX(0, 5, irq));
+
+	soc_ecia_girq_ctrl(drvcfg->irq_info_list[oob_up_girq_idx].gid,
+			   drvcfg->irq_info_list[oob_up_girq_idx].gpos, 1u);
+	soc_ecia_girq_ctrl(drvcfg->irq_info_list[oob_dn_girq_idx].gid,
+			   drvcfg->irq_info_list[oob_dn_girq_idx].gpos, 1u);
 #endif
 
 #ifdef CONFIG_ESPI_FLASH_CHANNEL
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 6, irq),
-		    DT_INST_IRQ_BY_IDX(0, 6, priority),
-		    espi_flash_isr,
-		    DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 6, irq), DT_INST_IRQ_BY_IDX(0, 6, priority),
+		    espi_flash_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_IDX(0, 6, irq));
+	soc_ecia_girq_ctrl(drvcfg->irq_info_list[fc_girq_idx].gid,
+			   drvcfg->irq_info_list[fc_girq_idx].gpos, 1u);
 #endif
 }
 
@@ -1374,16 +1397,16 @@ static void xec_vw_cfg_properties(const struct xec_signal *p, uint32_t regaddr, 
 {
 	uint32_t src_ofs = 4u;
 	uint8_t src_pos = (8u * p->bit);
-	uint8_t rst_state = (p->flags >> MCHP_DT_ESPI_VW_FLAG_RST_STATE_POS)
-				& MCHP_DT_ESPI_VW_FLAG_RST_STATE_MSK0;
-	uint8_t rst_src = (p->flags >> MCHP_DT_ESPI_VW_FLAG_RST_SRC_POS)
-				& MCHP_DT_ESPI_VW_FLAG_RST_SRC_MSK0;
+	uint8_t rst_state = (p->flags >> MCHP_DT_ESPI_VW_FLAG_RST_STATE_POS) &
+			    MCHP_DT_ESPI_VW_FLAG_RST_STATE_MSK0;
+	uint8_t rst_src =
+		(p->flags >> MCHP_DT_ESPI_VW_FLAG_RST_SRC_POS) & MCHP_DT_ESPI_VW_FLAG_RST_SRC_MSK0;
 
 	if (dir) {
 		src_ofs = 8u;
 	}
 
-	if (rst_state || rst_src) { /* change reset source or state ? */
+	if (rst_state || rst_src) {     /* change reset source or state ? */
 		sys_write8(0, regaddr); /* disable register */
 
 		uint8_t temp = sys_read8(regaddr + 1u);
@@ -1435,34 +1458,46 @@ static void xec_vw_config(const struct device *dev)
 	}
 }
 
-static int xec_register_vw_handlers(const struct device *dev)
+/* The tables are by bit position in the VW GIRQ registers.
+ * first table entry is bit[0] of GIRQ registers, etc.
+ * Each four consecutive table entries are source 0, 1, 2, 3 of
+ * the Host-to-Target VW 96-bit register.
+ * The 96-bit VWire register index is table_idx / 4
+ * Source position is table_idx % 4
+ */
+static void xec_vw_bank_isel_cfg(const struct device *dev, const struct espi_ht_sig_handler *tbl,
+				 size_t max_tbl_entries, uint8_t bank_num)
 {
-	for (int i = 0; i < ARRAY_SIZE(m2s_vwires_isr); i++) {
-		const struct espi_vw_isr *vwi = &m2s_vwires_isr[i];
-		struct xec_signal signal_info = vw_tbl[vwi->signal];
-		uint8_t xec_id = signal_info.xec_reg_idx;
-		uint8_t en = (signal_info.flags & BIT(MCHP_DT_ESPI_VW_FLAG_STATUS_POS));
+	const struct espi_xec_config *drvcfg = dev->config;
+	uint32_t girq_bm = 0;
+	uint8_t girq = 0, vw_reg_idx = 0, vw_src_id = 0;
 
-		if (!en) {
-			LOG_INF("VW %d not enabled, skipping", vwi->signal);
+	if (bank_num == 0) {
+		girq = drvcfg->irq_info_list[ht_vw_bank0_idx].gid;
+	} else {
+		girq = drvcfg->irq_info_list[ht_vw_bank1_idx].gid;
+	}
+
+	for (size_t n = 0; n < max_tbl_entries; n++) {
+		if (tbl[n].vw_handler == NULL) {
 			continue;
 		}
 
-		/* enables interrupt in eSPI MSVWn register */
-		xec_espi_vw_intr_ctrl(dev, xec_id, signal_info.bit,
-				      MSVW_IRQ_SEL_EDGE_BOTH);
+		girq_bm |= BIT(n);
 
-		/* register handler */
-		int ret = mchp_xec_ecia_set_callback(vwi->girq_id, vwi->girq_pos,
-						     vwi->the_isr, (void *)dev);
-		if (ret) {
-			return -EIO;
-		}
+		vw_reg_idx = n / 4u;
+		vw_src_id = n % 4u;
 
-		mchp_xec_ecia_girq_src_en(vwi->girq_id, vwi->girq_pos);
+		xec_espi_vw_intr_ctrl(dev, vw_reg_idx, vw_src_id, MSVW_IRQ_SEL_EDGE_BOTH);
 	}
 
-	return 0;
+	soc_ecia_girq_ctrl_bm(girq, girq_bm, 1u);
+}
+
+static void xec_register_vw_handlers(const struct device *dev)
+{
+	xec_vw_bank_isel_cfg(dev, espi_ht_vw_bank0_sh_tbl, ARRAY_SIZE(espi_ht_vw_bank0_sh_tbl), 0);
+	xec_vw_bank_isel_cfg(dev, espi_ht_vw_bank1_sh_tbl, ARRAY_SIZE(espi_ht_vw_bank1_sh_tbl), 1);
 }
 
 /*
@@ -1482,11 +1517,14 @@ static int xec_register_vw_handlers(const struct device *dev)
  */
 static int espi_xec_init(const struct device *dev)
 {
-	struct espi_xec_config *const cfg = ESPI_XEC_CONFIG(dev);
-	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
-	struct espi_xec_data *const data = ESPI_XEC_DATA(dev);
-	struct pcr_regs *pcr = XEC_PCR_REG_BASE;
-	int ret;
+	struct espi_xec_data *const data = dev->data;
+	const struct espi_xec_config *cfg = dev->config;
+	struct xec_espi_ioc_pc_regs *pcregs =
+		(struct xec_espi_ioc_pc_regs *)(cfg->ioc_base_addr + MCHP_ESPI_IO_PC_OFS);
+	struct xec_espi_cap_regs *capregs =
+		(struct xec_espi_cap_regs *)(cfg->ioc_base_addr + MCHP_ESPI_IO_CAP_OFS);
+	mm_reg_t pcr_base = XEC_PCR_REG_BASE;
+	int ret = 0;
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
@@ -1498,66 +1536,58 @@ static int espi_xec_init(const struct device *dev)
 	data->espi_rst_count = 0;
 #endif
 	/* clear eSPI PCR sleep enable */
-	z_mchp_xec_pcr_periph_sleep(cfg->pcr_idx, cfg->pcr_bitpos, 0);
+	soc_xec_pcr_sleep_en_clear(cfg->pcr_scr);
 
 	/* Configure eSPI_PLTRST# to cause nSIO_RESET reset
 	 * NOTE: this is also clearing bit 0(PWR_INV) causing the internal
 	 * RESET_VCC to de-assert. Host facing peripherals will no longer
 	 * be held in reset.
 	 */
-	pcr->PWR_RST_CTRL = MCHP_PCR_PR_CTRL_USE_ESPI_PLTRST;
-	regs->PLTSRC = MCHP_ESPI_PLTRST_SRC_IS_VW;
+	sys_set_bit(pcr_base + XEC_PCR_PRC_OFS, XEC_PCR_PRC_HRST_PIN_POS);
+	sys_clear_bit(pcr_base + XEC_PCR_PRC_OFS, XEC_PCR_PRC_PWR_INV_POS);
+
+	capregs->PLTSRC = MCHP_ESPI_PLTRST_SRC_IS_VW;
 
 	/* Configure the channels and its capabilities based on build config */
-	regs->CAP0 |= MCHP_ESPI_GBL_CAP0_VW_SUPP | MCHP_ESPI_GBL_CAP0_PC_SUPP;
+	capregs->CAP0 |= MCHP_ESPI_GBL_CAP0_VW_SUPP | MCHP_ESPI_GBL_CAP0_PC_SUPP;
 
-	regs->CAPVW = MAX(ESPI_NUM_MSVW, ESPI_NUM_SMVW);
-	regs->CAPPC |= MCHP_ESPI_PC_CAP_MAX_PLD_SZ_64;
+	capregs->CAPVW = MAX(ESPI_NUM_MSVW, ESPI_NUM_SMVW);
+	capregs->CAPPC |= MCHP_ESPI_PC_CAP_MAX_PLD_SZ_64;
 
 #ifdef CONFIG_ESPI_OOB_CHANNEL
-	regs->CAP0 |= MCHP_ESPI_GBL_CAP0_OOB_SUPP;
-	regs->CAPOOB |= MCHP_ESPI_OOB_CAP_MAX_PLD_SZ_73;
+	capregs->CAP0 |= MCHP_ESPI_GBL_CAP0_OOB_SUPP;
+	capregs->CAPOOB |= MCHP_ESPI_OOB_CAP_MAX_PLD_SZ_73;
 
 	k_sem_init(&data->tx_lock, 0, 1);
 #ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
 	k_sem_init(&data->rx_lock, 0, 1);
 #endif /* CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC */
 #else
-	regs->CAP0 &= ~MCHP_ESPI_GBL_CAP0_OOB_SUPP;
+	capregs->CAP0 &= ~MCHP_ESPI_GBL_CAP0_OOB_SUPP;
 #endif
 
 #ifdef CONFIG_ESPI_FLASH_CHANNEL
-	regs->CAP0 |= MCHP_ESPI_GBL_CAP0_FC_SUPP |
-		      MCHP_ESPI_FC_CAP_MAX_PLD_SZ_64;
-	regs->CAPFC |= MCHP_ESPI_FC_CAP_SHARE_MAF_SAF |
-		       MCHP_ESPI_FC_CAP_MAX_RD_SZ_64;
+	capregs->CAP0 |= MCHP_ESPI_GBL_CAP0_FC_SUPP | MCHP_ESPI_FC_CAP_MAX_PLD_SZ_64;
+	capregs->CAPFC |= MCHP_ESPI_FC_CAP_SHARE_CAF_TAF | MCHP_ESPI_FC_CAP_MAX_RD_SZ_64;
 
 	k_sem_init(&data->flash_lock, 0, 1);
 #else
-	regs->CAP0 &= ~MCHP_ESPI_GBL_CAP0_FC_SUPP;
+	capregs->CAP0 &= ~MCHP_ESPI_GBL_CAP0_FC_SUPP;
 #endif
 
 	/* Clear reset interrupt status and enable interrupts */
-	regs->ERIS = MCHP_ESPI_RST_ISTS;
-	regs->ERIE |= MCHP_ESPI_RST_IEN;
-	regs->PCSTS = MCHP_ESPI_PC_STS_EN_CHG;
-	regs->PCIEN |= MCHP_ESPI_PC_IEN_EN_CHG;
+	capregs->ERIS = MCHP_ESPI_RST_ISTS;
+	capregs->ERIE |= MCHP_ESPI_RST_IEN;
+
+	pcregs->PCSTS = MCHP_ESPI_PC_STS_EN_CHG;
+	pcregs->PCIEN |= MCHP_ESPI_PC_IEN_EN_CHG;
 
 	xec_vw_config(dev);
 
 	/* register VWire handlers with their aggregated GIRQs
 	 * in the ECIA driver
 	 */
-	ret = xec_register_vw_handlers(dev);
-	if (ret) {
-		LOG_ERR("XEX eSPI V2 register VW handlers error %d", ret);
-		return ret;
-	}
-
-	/* Enable interrupts for each logical channel enable assertion */
-	xec_espi_bus_intr_ctl(dev, pc_girq_idx, 1);
-	xec_espi_bus_intr_ctl(dev, vw_ch_en_girq_idx, 1);
-	xec_espi_bus_intr_ctl(dev, rst_girq_idx, 1);
+	xec_register_vw_handlers(dev);
 
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 	espi_init_oob(dev);

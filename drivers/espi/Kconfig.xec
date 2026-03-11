@@ -39,10 +39,13 @@ config ESPI_PERIPHERAL_DEBUG_PORT_80
 config ESPI_PERIPHERAL_UART
 	default y
 
+config ESPI_PERIPHERAL_MAILBOX
+	default n
+
 config ESPI_PERIPHERAL_UART_SOC_MAPPING
 	int "SoC port exposed as logical eSPI UART"
 	default 2 if SOC_SERIES_MEC15XX
-	default 1 if SOC_SERIES_MEC172X
+	default 1 if !SOC_SERIES_MEC15XX
 	depends on ESPI_PERIPHERAL_UART
 	help
 	  This tells the driver to which SoC UART to direct the UART traffic
@@ -73,13 +76,14 @@ config ESPI_TAF_XEC
 	help
 	  Enable the Microchip XEC TAF ESPI driver for MEC15xx family.
 
+if SOC_SERIES_MEC172X || SOC_SERIES_MEC174X || SOC_SERIES_MEC175X || SOC_SERIES_MEC165XB
 config ESPI_TAF_XEC_V2
 	bool "XEC Microchip ESPI TAF V2 driver"
 	default y
-	depends on SOC_SERIES_MEC172X
 	depends on DT_HAS_MICROCHIP_XEC_ESPI_SAF_V2_ENABLED
 	help
 	  Enable the Microchip XEC TAF ESPI driver for MEC172x series.
+endif #SOC_SERIES_MEC172X || SOC_SERIES_MEC174X || SOC_SERIES_MEC175X || SOC_SERIES_MEC165XB
 
 endif #ESPI_XEC
 
@@ -112,12 +116,6 @@ config ESPI_XEC_P80_MULTIBYTE
 	  eSPI transaction.
 
 if ESPI_PERIPHERAL_CHANNEL
-
-config ESPI_PERIPHERAL_XEC_MAILBOX
-	bool "SoC Mailbox over eSPI"
-	help
-	  Enable a 32 byte mailbox interface accessible via Host I/O over the
-	  ESPI Peripheral Channel.
 
 config ESPI_PERIPHERAL_XEC_ACPI_EC2
 	bool "SoC ACPI EC 2 over eSPI"
@@ -160,6 +158,28 @@ config ESPI_PERIPHERAL_XEC_EMI2
 	help
 	  Enable EMI 2 interface accessible via Host I/O over the
 	  ESPI Peripheral Channel.
+
+config ESPI_PERIPHERAL_8042_FAST_KBC_PORT92
+	bool "8042 keyboard fast alternate GATE A20 support at Host I/O 92h"
+	help
+	  The 8042 Keyboard support of fast, alternate GATE A20 control
+	  using I/O port 92h.
+
+config ESPI_PERIPHERAL_MAILBOX_SIRQ_SLOT
+	int "Mailbox peripheral Serial-IRQ slot number"
+	default 255
+	depends on ESPI_PERIPHERAL_MAILBOX
+	help
+	  Serial-IRQ slot number for a non-SMI interrupt to the Host.
+	  Range is 0 - 255 where 255 is disabled.
+
+config ESPI_PERIPHERAL_MAILBOX_SMI_SIRQ_SLOT
+	int "Mailbox peripheral SMI Serial-IRQ slot number"
+	default 255
+	depends on ESPI_PERIPHERAL_MAILBOX
+	help
+	  Serial-IRQ slot number for a SMI interrupt to the Host.
+	  Range is 0 - 255 where 255 is disabled.
 
 endif #ESPI_PERIPHERAL_CHANNEL
 
