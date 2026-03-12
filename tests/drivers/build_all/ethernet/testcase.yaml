@@ -34,3 +34,4 @@ tests:
       - stm32h735g_disco
       - nucleo_h753zi
       - stm32h7s78_dk/stm32h7s7xx/ext_flash_app
+      - stm32h573i_dk

@@ -27,7 +27,8 @@ config ETH_DWMAC
 config ETH_DWMAC_STM32H7X
 	bool "Synopsys DesignWare MAC driver for STM32 series"
 	depends on !ETH_STM32_HAL
-	depends on SOC_SERIES_STM32H7X \
+	depends on SOC_SERIES_STM32H5X \
+		   || SOC_SERIES_STM32H7X \
 		   || SOC_SERIES_STM32H7RSX
 	depends on DT_HAS_ST_STM32_ETHERNET_ENABLED
 	select ETH_DWMAC
@@ -37,7 +38,7 @@ config ETH_DWMAC_STM32H7X
 	select CRC
 	default y
 	help
-	  This enables the Synopsys DesignWare MAC driver on STM32 H7/H7RS
+	  This enables the Synopsys DesignWare MAC driver on STM32 H5/H7/H7RS
 	  series SoCs.
 
 config ETH_DWMAC_MMU
