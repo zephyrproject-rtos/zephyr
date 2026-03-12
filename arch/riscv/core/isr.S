@@ -22,6 +22,34 @@
 #include <soc_isr_stacking.h>
 #endif
 
+/*
+* Privilege-level abstractions. When CONFIG_RISCV_S_MODE is set the
+* kernel runs in Supervisor mode and must use S-mode CSRs. Otherwise
+* it runs in Machine mode and uses M-mode CSRs.
+*/
+#ifdef CONFIG_RISCV_S_MODE
+#define RV_SCRATCH   sscratch
+#define RV_CAUSE     scause
+#define RV_EPC       sepc
+#define RV_STATUS    sstatus
+#define RV_TVAL      stval
+#define STATUS_IE    SSTATUS_SIE
+#define STATUS_PP    SSTATUS_SPP
+#define TRAP_RET     sret
+#define EXC_SYSCALL  RISCV_EXC_ECALLS
+#else
+#define RV_SCRATCH   mscratch
+#define RV_CAUSE     mcause
+#define RV_EPC       mepc
+#define RV_STATUS    mstatus
+#define RV_TVAL      mtval
+#define STATUS_IE    MSTATUS_IEN
+#define STATUS_PP    MSTATUS_MPP
+#define TRAP_RET     mret
+#define EXC_SYSCALL  RISCV_EXC_ECALLM
+#endif
+
+
 /* Convenience macro for loading/storing register states. */
 #define DO_CALLER_SAVED(op) \
 	RV_E(	op t0, __struct_arch_esf_t0_OFFSET(sp)	);\
@@ -67,7 +95,7 @@
 
 	.macro get_current_cpu dst
 #if defined(CONFIG_SMP) || defined(CONFIG_USERSPACE)
-	csrr \dst, mscratch
+	csrr \dst, RV_SCRATCH
 #else
 	la \dst, _kernel + ___kernel_t_cpus_OFFSET
 #endif
@@ -90,6 +118,9 @@ GTEXT(z_riscv_fatal_error)
 GTEXT(z_get_next_switch_handle)
 GTEXT(z_riscv_switch)
 GTEXT(z_riscv_thread_start)
+#ifdef CONFIG_RISCV_MMU
+GTEXT(z_riscv_userspace_enter)
+#endif
 
 #ifdef CONFIG_TRACING
 GTEXT(sys_trace_isr_enter)
@@ -141,15 +172,15 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 
 #ifdef CONFIG_USERSPACE
 	/* retrieve address of _current_cpu preserving s0 */
-	csrrw s0, mscratch, s0
+	csrrw s0, RV_SCRATCH, s0
 
 	/* preserve t0 and t1 temporarily */
 	sr t0, _curr_cpu_arch_user_exc_tmp0(s0)
 	sr t1, _curr_cpu_arch_user_exc_tmp1(s0)
 
 	/* determine if we come from user space */
-	csrr t0, mstatus
-	li t1, MSTATUS_MPP
+	csrr t0, RV_STATUS
+	li t1, STATUS_PP
 	and t0, t0, t1
 	bnez t0, 1f
 
@@ -161,6 +192,14 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	 * can't overflow the privileged stack. The esf will be allocated
 	 * later but it is safe to store our saved user sp here. */
 	sr t0, (-__struct_arch_esf_SIZEOF + __struct_arch_esf_sp_OFFSET)(sp)
+
+#ifdef CONFIG_RISCV_MMU
+	/* Switch to kernel address space before touching any kernel data. */
+	la	t1, z_riscv_kernel_satp_val
+	lr	t1, 0(t1)
+	csrw	satp, t1
+	sfence.vma
+#endif /* CONFIG_RISCV_MMU */
 
 	/* Make sure tls pointer is sane */
 	lr t0, ___cpu_t_current_OFFSET(s0)
@@ -185,8 +224,8 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	lr t0, _curr_cpu_arch_user_exc_tmp0(s0)
 	lr t1, _curr_cpu_arch_user_exc_tmp1(s0)
 
-	/* retrieve original s0 and restore _current_cpu in mscratch */
-	csrrw s0, mscratch, s0
+	/* retrieve original s0 and restore _current_cpu in RV_SCRATCH */
+	csrrw s0, RV_SCRATCH, s0
 #endif
 
 #ifdef CONFIG_RISCV_SOC_HAS_ISR_STACKING
@@ -202,17 +241,17 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	get_current_cpu s0
 
 #ifdef CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL
-	/* Save mcause register */
-	csrr t0, mcause
+	/* Save RV_CAUSE register */
+	csrr t0, RV_CAUSE
 	sr t0, __struct_arch_esf_mcause_OFFSET(sp)
 #endif /* CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL */
 
-	/* Save MEPC register */
-	csrr t0, mepc
+	/* Save RV_EPC register */
+	csrr t0, RV_EPC
 	sr t0, __struct_arch_esf_mepc_OFFSET(sp)
 
-	/* Save MSTATUS register */
-	csrr t2, mstatus
+	/* Save RV_STATUS register */
+	csrr t2, RV_STATUS
 	sr t2, __struct_arch_esf_mstatus_OFFSET(sp)
 
 #if defined(CONFIG_FPU_SHARING)
@@ -221,20 +260,20 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	and t1, t1, t2
 	bnez t1, no_fp
 	/* determine if this is an Illegal Instruction exception */
-	csrr t2, mcause
+	csrr t2, RV_CAUSE
 	li t1, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
 	and t2, t2, t1
 	li t1, 2		/* 2 = illegal instruction */
 	bne t1, t2, no_fp
 	/* determine if we trapped on an FP instruction. */
-	csrr t2, mtval		/* get faulting instruction */
+	csrr t2, RV_TVAL	/* get faulting instruction */
 #ifdef CONFIG_RISCV_NO_MTVAL_ON_FP_TRAP
 	/*
 	 * Some implementations may not support MTVAL in this capacity.
 	 * Notably QEMU when a CSR instruction is involved.
 	 */
 	bnez t2, 1f
-	lw t2, 0(t0)		/* t0 = mepc */
+	lw t2, 0(t0)		/* t0 = RV_EPC */
 1:
 #endif
 	andi t0, t2, 0x7f	/* keep only the opcode bits */
@@ -327,7 +366,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 	/*
 	 * Check if exception is the result of an interrupt or not.
 	 * (SOC dependent). Following the RISC-V architecture spec, the MSB
-	 * of the mcause register is used to indicate whether an exception
+	 * of the RV_CAUSE register is used to indicate whether an exception
 	 * is the result of an interrupt or an exception/fault. But for some
 	 * SOCs (like pulpino or riscv-qemu), the MSB is never set to indicate
 	 * interrupt. Hence, check for interrupt/exception via the __soc_is_irq
@@ -339,7 +378,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 	jal ra, __soc_is_irq
 	bnez a0, is_interrupt
 #else
-	csrr t0, mcause
+	csrr t0, RV_CAUSE
 	srli t0, t0, RISCV_MCAUSE_IRQ_POS
 	bnez t0, is_interrupt
 #endif
@@ -349,20 +388,20 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 * perform a context-switch or an IRQ offload. Otherwise call z_riscv_fault
 	 * to report the exception.
 	 */
-	csrr t0, mcause
+	csrr t0, RV_CAUSE
 	li t2, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
 	and t0, t0, t2
 
 	/*
-	 * If mcause == RISCV_EXC_ECALLM, handle system call from
+	 * If RV_CAUSE == RISCV_EXC_ECALLM, handle system call from
 	 * kernel thread.
 	 */
-	li t1, RISCV_EXC_ECALLM
+	li t1, EXC_SYSCALL
 	beq t0, t1, is_kernel_syscall
 
 #ifdef CONFIG_USERSPACE
 	/*
-	 * If mcause == RISCV_EXC_ECALLU, handle system call
+	 * If RV_CAUSE == RISCV_EXC_ECALLU, handle system call
 	 * for user mode thread.
 	 */
 	li t1, RISCV_EXC_ECALLU
@@ -373,8 +412,8 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 * Determine if we come from user space. If so, reconfigure the PMP for
 	 * kernel mode configuration.
 	 */
-	csrr t0, mstatus
-	li t1, MSTATUS_MPP
+	csrr t0, RV_STATUS
+	li t1, STATUS_PP
 	and t0, t0, t1
 	bnez t0, 1f
 	lr a0, ___cpu_t_current_OFFSET(s0)
@@ -411,8 +450,8 @@ no_fp:	/* increment _current->arch.exception_depth */
 is_kernel_syscall:
 	/*
 	 * A syscall is the result of an ecall instruction, in which case the
-	 * MEPC will contain the address of the ecall instruction.
-	 * Increment saved MEPC by 4 to prevent triggering the same ecall
+	 * RV_EPC will contain the address of the ecall instruction.
+	 * Increment saved RV_EPC by 4 to prevent triggering the same ecall
 	 * again upon exiting the ISR.
 	 *
 	 * It's safe to always increment by 4, even with compressed
@@ -424,10 +463,10 @@ is_kernel_syscall:
 
 #ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 	/* Re-activate PMP for m-mode */
-	li t1, MSTATUS_MPP
-	csrc mstatus, t1
+	li t1, STATUS_PP
+	csrc RV_STATUS, t1
 	li t1, MSTATUS_MPRV
-	csrs mstatus, t1
+	csrs RV_STATUS, t1
 #endif
 
 	/* Determine what to do. Operation code is in t0. */
@@ -526,10 +565,10 @@ is_user_syscall:
 #endif
 
 	/* It is safe to re-enable IRQs now */
-	csrs mstatus, MSTATUS_IEN
+	csrs RV_STATUS, STATUS_IE
 
 	/*
-	 * Same as for is_kernel_syscall: increment saved MEPC by 4 to
+	 * Same as for is_kernel_syscall: increment saved RV_EPC by 4 to
 	 * prevent triggering the same ecall again upon exiting the ISR.
 	 */
 	lr t1, __struct_arch_esf_mepc_OFFSET(sp)
@@ -580,7 +619,7 @@ valid_syscall_id:
 	sr a0, __struct_arch_esf_a0_OFFSET(sp)
 
 	/* Disable IRQs again before leaving */
-	csrc mstatus, MSTATUS_IEN
+	csrc RV_STATUS, STATUS_IE
 	j might_have_rescheduled
 #endif /* CONFIG_USERSPACE */
 
@@ -593,18 +632,22 @@ is_interrupt:
 	 * PMP for kernel mode configuration.
 	 */
 	lr t0, __struct_arch_esf_mstatus_OFFSET(sp)
-	li t1, MSTATUS_MPP
+	li t1, STATUS_PP
 	and t0, t0, t1
 	bnez t0, 1f
 	lr a0, ___cpu_t_current_OFFSET(s0)
 	call z_riscv_pmp_kernelmode_enable
 	j 2f
 #endif /* CONFIG_USERSPACE */
+#ifndef CONFIG_RISCV_S_MODE
 1:	/* Re-activate PMP for m-mode */
-	li t1, MSTATUS_MPP
-	csrc mstatus, t1
+	li t1, STATUS_PP
+	csrc RV_STATUS, t1
 	li t1, MSTATUS_MPRV
-	csrs mstatus, t1
+	csrs RV_STATUS, t1
+#else
+1:
+#endif
 2:
 #endif
 
@@ -636,7 +679,7 @@ on_irq_stack:
 #endif
 
 	/* Get IRQ causing interrupt */
-	csrr a0, mcause
+	csrr a0, RV_CAUSE
 	li t0, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
 	and a0, a0, t0
 
@@ -720,6 +763,7 @@ reschedule:
 	call z_riscv_switch
 
 z_riscv_thread_start:
+
 might_have_rescheduled:
 	/* reload s0 with &_current_cpu as it might have changed or be unset */
 	get_current_cpu s0
@@ -747,18 +791,18 @@ no_reschedule:
 fp_trap_exit:
 #endif
 
-	/* Restore MEPC and MSTATUS registers */
+	/* Restore RV_EPC and MSTATUS registers */
 	lr t0, __struct_arch_esf_mepc_OFFSET(sp)
 	lr t2, __struct_arch_esf_mstatus_OFFSET(sp)
 
 #ifdef CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL
-	/* Restore MCAUSE register for previous interrupt level. */
+	/* Restore RV_CAUSE register for previous interrupt level. */
 	lr t1, __struct_arch_esf_mcause_OFFSET(sp)
-	csrw mcause, t1
+	csrw RV_CAUSE, t1
 #endif /* CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL */
 
-	csrw mepc, t0
-	csrw mstatus, t2
+	csrw RV_EPC, t0
+	csrw RV_STATUS, t2
 
 #ifdef CONFIG_USERSPACE
 	/*
@@ -766,7 +810,7 @@ fp_trap_exit:
 	 * set is_user_mode to true and preserve our kernel mode stack for
 	 * the next exception to come.
 	 */
-	li t1, MSTATUS_MPP
+	li t1, STATUS_PP
 	and t0, t2, t1
 	bnez t0, 1f
 
@@ -785,6 +829,16 @@ fp_trap_exit:
 	/* preserve stack pointer for next exception entry */
 	add t0, sp, __struct_arch_esf_SIZEOF
 	sr t0, _curr_cpu_arch_user_exc_sp(s0)
+
+#ifdef CONFIG_RISCV_MMU
+	/* Switch to the thread's domain SATP before returning to user mode.
+	 * This code runs from the exception.entry section which has PTE_USER=0
+	 * in the domain page tables, so S-mode can safely execute it. */
+	lr	t0, ___cpu_t_current_OFFSET(s0)
+	lr	t0, _thread_offset_to_satp(t0)
+	csrw	satp, t0
+	sfence.vma
+#endif /* CONFIG_RISCV_MMU */
 
 	j 2f
 1:
@@ -816,4 +870,26 @@ fp_trap_exit:
 
 #endif /* CONFIG_RISCV_SOC_HAS_ISR_STACKING */
 
-	mret
+	TRAP_RET
+
+#ifdef CONFIG_RISCV_MMU
+/*
+ * z_riscv_userspace_enter - switch to domain SATP and SRET to user mode
+ *
+ * Called from arch_user_mode_enter() once sepc and sstatus are configured.
+ * Prototype:
+ *   void z_riscv_userspace_enter(k_thread_entry_t entry, void *p1,
+ *                                void *p2, void *p3,
+ *                                unsigned long user_sp,
+ *                                uintptr_t domain_satp);
+ * Arguments: a0=entry, a1=p1, a2=p2, a3=p3, a4=user_sp, a5=domain_satp
+ *
+ * MUST live in exception.entry so that the csrw+sfence.vma+sret sequence
+ * executes from a page with PTE_USER=0 in the domain SATP.
+ */
+SECTION_FUNC(exception.entry, z_riscv_userspace_enter)
+	csrw	satp, a5
+	sfence.vma
+	mv	sp, a4
+	TRAP_RET
+#endif /* CONFIG_RISCV_MMU */

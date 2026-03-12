@@ -73,11 +73,40 @@
  */
 #define ARCH_KERNEL_STACK_RESERVED	Z_RISCV_STACK_GUARD_SIZE
 
-#else /* !CONFIG_PMP_STACK_GUARD */
+#elif defined(CONFIG_RISCV_MMU)
+/* MMU guard page: one page unmapped at the bottom of every stack object */
+#define Z_RISCV_STACK_GUARD_SIZE	CONFIG_MMU_PAGE_SIZE
+#define ARCH_KERNEL_STACK_OBJ_ALIGN	CONFIG_MMU_PAGE_SIZE
+#define ARCH_KERNEL_STACK_RESERVED	Z_RISCV_STACK_GUARD_SIZE
+
+#else /* !CONFIG_PMP_STACK_GUARD && !CONFIG_RISCV_MMU */
 #define Z_RISCV_STACK_GUARD_SIZE 0
 #endif
 
-#ifdef CONFIG_PMP_POWER_OF_TWO_ALIGNMENT
+#ifdef CONFIG_RISCV_MMU
+
+/* MMU thread stack layout:
+ *
+ * +------------+ <- thread.stack_obj
+ * | Guard page | } PAGE_SIZE (unmapped in kernel page tables)
+ * +------------+
+ * | Priv Stack | } CONFIG_PRIVILEGED_STACK_SIZE
+ * +------------+ <- thread.stack_info.start
+ * | Thread     |
+ * | stack      |
+ * |            |
+ * +............|
+ * | TLS        | } thread.stack_info.delta
+ * +------------+ <- thread.stack_info.start + thread.stack_info.size
+ */
+#define ARCH_THREAD_STACK_RESERVED \
+	ROUND_UP(Z_RISCV_STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE, \
+		 CONFIG_MMU_PAGE_SIZE)
+#define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
+	ROUND_UP(size, CONFIG_MMU_PAGE_SIZE)
+#define ARCH_THREAD_STACK_OBJ_ALIGN(size)	CONFIG_MMU_PAGE_SIZE
+
+#elif defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)
 /* The privilege elevation stack is located in another area of memory
  * generated at build time by gen_kobject_list.py
  *
@@ -121,7 +150,7 @@
 #define ARCH_THREAD_STACK_OBJ_ALIGN(size) \
 		ARCH_THREAD_STACK_SIZE_ADJUST(size)
 
-#else /* !CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
+#else /* !CONFIG_RISCV_MMU && !CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
 
 /* The stack object will contain the PMP guard, the privilege stack, and then
  * the usermode stack buffer in that order:
@@ -144,7 +173,7 @@
 #define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
 	ROUND_UP(size, Z_RISCV_STACK_PMP_ALIGN)
 #define ARCH_THREAD_STACK_OBJ_ALIGN(size)	Z_RISCV_STACK_PMP_ALIGN
-#endif /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
+#endif /* CONFIG_RISCV_MMU / CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
 
 #ifdef CONFIG_64BIT
 #define RV_REGSIZE 8
@@ -159,7 +188,11 @@
  */
 
 #define MSTATUS_IEN     (1UL << 3)
-#define MSTATUS_MPP_M   (3UL << 11)
+/** @brief mstatus MPP field value for User mode */
+#define MSTATUS_MPP_U   (PRV_U << 11)
+/** @brief mstatus MPP field value for Supervisor mode */
+#define MSTATUS_MPP_S   (PRV_S << 11)
+#define MSTATUS_MPP_M   (PRV_M << 11)
 #define MSTATUS_MPIE_EN (1UL << 7)
 
 #define MSTATUS_FS_OFF   (0UL << 13)
@@ -174,11 +207,40 @@
  *   lies.
  * - Enable interrupts when exiting from exception into a new thread
  *   by setting MPIE now, so it will be copied into IE on mret.
+ *
+ * In S-mode (CONFIG_RISCV_S_MODE), use the sstatus equivalents:
+ * - SPP=1 so that sret returns to S-mode (not U-mode)
+ * - SPIE=1 so that interrupts are enabled after sret
  */
+#ifdef CONFIG_RISCV_S_MODE
+/* When MMU is enabled, set SUM so S-mode can access user-mapped pages */
+#if defined(CONFIG_RISCV_MMU)
+#define MSTATUS_DEF_RESTORE (SSTATUS_SPP | SSTATUS_SPIE | SSTATUS_SUM)
+#else
+#define MSTATUS_DEF_RESTORE (SSTATUS_SPP | SSTATUS_SPIE)
+#endif
+#else
 #define MSTATUS_DEF_RESTORE (MSTATUS_MPP_M | MSTATUS_MPIE_EN)
+#endif
+
+/* Previous-privilege field and its user-mode value, abstracted across M/S mode.
+ * Use as: (esf->mstatus & RV_STATUS_PP) == RV_STATUS_PP_U
+ */
+#ifdef CONFIG_RISCV_S_MODE
+/** @brief Previous-privilege field mask in the status CSR (S-mode: SPP) */
+#define RV_STATUS_PP    SSTATUS_SPP
+/** @brief Previous-privilege field value representing User mode (S-mode) */
+#define RV_STATUS_PP_U  0
+#else
+/** @brief Previous-privilege field mask in the status CSR (M-mode: MPP) */
+#define RV_STATUS_PP    MSTATUS_MPP
+/** @brief Previous-privilege field value representing User mode (M-mode) */
+#define RV_STATUS_PP_U  PRV_U
+#endif
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -223,10 +285,29 @@ typedef struct {
 } k_mem_partition_attr_t;
 
 struct arch_mem_domain {
+#ifdef CONFIG_RISCV_MMU
+	uint64_t *ptables; /* root page table for this domain */
+	uint16_t asid; /* ASID assigned to this domain */
+	sys_snode_t node; /* domain list linkage for kernel mapping sync */
+#else
 	unsigned int pmp_update_nr;
+#endif
 };
 
 extern void z_irq_spurious(const void *unused);
+
+/* Privilege-level abstraction for IRQ enable/disable CSR and bit */
+#ifdef CONFIG_RISCV_S_MODE
+/** @brief Name of the interrupt-status CSR as a string literal (S-mode) */
+#define RISCV_STATUS_CSR "sstatus"
+/** @brief Interrupt-enable bit in the status CSR (S-mode: SIE) */
+#define RISCV_STATUS_IE  SSTATUS_SIE
+#else
+/** @brief Name of the interrupt-status CSR as a string literal (M-mode) */
+#define RISCV_STATUS_CSR "mstatus"
+/** @brief Interrupt-enable bit in the status CSR (M-mode: MIE) */
+#define RISCV_STATUS_IE  MSTATUS_IEN
+#endif
 
 /*
  * use atomic instruction csrrc to lock global irq
@@ -239,9 +320,9 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 #else
 	unsigned int key;
 
-	__asm__ volatile ("csrrc %0, mstatus, %1"
+	__asm__ volatile ("csrrc %0, " RISCV_STATUS_CSR ", %1"
 			  : "=r" (key)
-			  : "rK" (MSTATUS_IEN)
+			  : "rK" (RISCV_STATUS_IE)
 			  : "memory");
 
 	return key;
@@ -257,9 +338,9 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 #ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
 	z_soc_irq_unlock(key);
 #else
-	__asm__ volatile ("csrs mstatus, %0"
+	__asm__ volatile ("csrs " RISCV_STATUS_CSR ", %0"
 			  :
-			  : "r" (key & MSTATUS_IEN)
+			  : "r" (key & RISCV_STATUS_IE)
 			  : "memory");
 #endif
 }
@@ -269,7 +350,7 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 #ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
 	return z_soc_irq_unlocked(key);
 #else
-	return (key & MSTATUS_IEN) != 0;
+	return (key & RISCV_STATUS_IE) != 0;
 #endif
 }
 
