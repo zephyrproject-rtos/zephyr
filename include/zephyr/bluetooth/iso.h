@@ -376,8 +376,10 @@ struct bt_iso_tx_info {
 	uint16_t seq_num;
 };
 
-
-/** Opaque type representing an Connected Isochronous Group (CIG). */
+/**
+ * @struct bt_iso_cig
+ * @brief Opaque type representing a Connected Isochronous Group (CIG).
+ */
 struct bt_iso_cig;
 
 /** @brief Connected Isochronous Group (CIG) parameters */
@@ -488,7 +490,10 @@ struct bt_iso_connect_param {
 	struct bt_conn *acl;
 };
 
-/** Opaque type representing a Broadcast Isochronous Group (BIG). */
+/**
+ * @struct bt_iso_big
+ * @brief Opaque type representing a Broadcast Isochronous Group (BIG).
+ */
 struct bt_iso_big;
 
 /** @brief Broadcast Isochronous Group (BIG) creation parameters */

@@ -287,9 +287,15 @@ typedef enum __packed {
 	BT_AVRCP_STATUS_SUCCESS = BT_AVRCP_STATUS_OPERATION_COMPLETED,
 } bt_avrcp_status_t;
 
-/** @brief AVRCP CT structure */
+/**
+ * @struct bt_avrcp_ct
+ * @brief AVRCP CT structure
+ */
 struct bt_avrcp_ct;
-/** @brief AVRCP TG structure */
+/**
+ * @struct bt_avrcp_tg
+ * @brief AVRCP TG structure
+ */
 struct bt_avrcp_tg;
 
 struct bt_avrcp_unit_info_rsp {

@@ -36,7 +36,10 @@
 extern "C" {
 #endif
 
-/** Opaque type representing a connection to a remote device */
+/**
+ * @struct bt_conn
+ * @brief Opaque type representing a connection to a remote device
+ */
 struct bt_conn;
 
 /** Connection parameters for LE connections */
