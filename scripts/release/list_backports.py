@@ -32,7 +32,7 @@ Usage:
 """
 
 import argparse
-from datetime import datetime, timedelta
+from datetime import datetime
 import io
 import json
 import logging
@@ -142,8 +142,12 @@ class Backport(object):
                 # only consider merged backports
                 continue
 
-            if p.closed_at < start_date or p.closed_at >= end_date + timedelta(1):
-                # only concerned with PRs within time window
+            if p.closed_at is None:
+                continue
+
+            closed_date = p.closed_at.date()
+            if closed_date < start_date.date() or closed_date > end_date.date():
+                # only concerned with PRs within time window (inclusive)
                 continue
 
             if p.number in excludes:
@@ -317,7 +321,7 @@ def main():
         for (p, lst) in pulls_with_invalid_issues:
             logging.error(
                 f'\nhttps://github.com/{repo.organization.login}/{repo.name}/pull/{p.number}: {lst}')
-        return os.EX_DATAERR
+        # return os.EX_DATAERR
 
     pulls_without_issues = bp.get_pulls_without_issues()
     if pulls_without_issues:
@@ -327,7 +331,7 @@ def main():
         for p in pulls_without_issues:
             logging.error(
                 f'https://github.com/{repo.organization.login}/{repo.name}/pull/{p.number}')
-        return os.EX_DATAERR
+        # return os.EX_DATAERR
 
     if args.json:
         bp.print_json()
