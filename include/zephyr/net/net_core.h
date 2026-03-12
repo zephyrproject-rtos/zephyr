@@ -21,7 +21,6 @@
 
 #include <zephyr/net/net_timeout.h>
 #include <zephyr/net/net_linkaddr.h>
-#include <zephyr/net/net_log.h>
 
 #ifdef __cplusplus
 extern "C" {
