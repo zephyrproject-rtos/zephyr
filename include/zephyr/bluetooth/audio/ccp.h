@@ -47,7 +47,10 @@ extern "C" {
  * @ingroup bt_ccp
  * @{
  */
-/** @brief Abstract Call Control Server Telephone Bearer structure. */
+/**
+ * @struct bt_ccp_call_control_server_bearer
+ * @brief Abstract Call Control Server Telephone Bearer structure.
+ */
 struct bt_ccp_call_control_server_bearer;
 
 /**
@@ -145,10 +148,17 @@ int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_
  * @ingroup bt_ccp
  * @{
  */
-/** Abstract Call Control Client structure. */
+
+/**
+ * @struct bt_ccp_call_control_client
+ * @brief Abstract Call Control Client structure.
+ */
 struct bt_ccp_call_control_client;
 
-/** Abstract Call Control Client bearer structure. */
+/**
+ * @struct bt_ccp_call_control_client_bearer
+ * @brief Abstract Call Control Client bearer structure.
+ */
 struct bt_ccp_call_control_client_bearer;
 
 /** Struct with information about bearers of a client */

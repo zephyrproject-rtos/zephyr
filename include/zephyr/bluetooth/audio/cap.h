@@ -47,10 +47,16 @@
 extern "C" {
 #endif
 
-/** @brief Abstract Audio Broadcast Source structure. */
+/**
+ * @struct bt_cap_broadcast_source
+ * @brief Abstract Audio Broadcast Source structure.
+ */
 struct bt_cap_broadcast_source;
 
-/** @brief Abstract CAP Unicast Group structure. */
+/**
+ * @struct bt_cap_unicast_group
+ * @brief Abstract CAP Unicast Group structure.
+ */
 struct bt_cap_unicast_group;
 
 /**

@@ -56,7 +56,10 @@ extern "C" {
 /** Preset name maximum length */
 #define BT_HAS_PRESET_NAME_MAX 40
 
-/** @brief Opaque Hearing Access Service object. */
+/**
+ * @struct bt_has
+ * @brief Opaque Hearing Access Service object.
+ */
 struct bt_has;
 
 /** Hearing Aid device type */

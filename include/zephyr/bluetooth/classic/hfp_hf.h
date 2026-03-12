@@ -28,8 +28,16 @@ extern "C" {
 #define BT_HFP_HF_CODEC_MSBC    0x02
 #define BT_HFP_HF_CODEC_LC3_SWB 0x03
 
+/**
+ * @struct bt_hfp_hf
+ * @brief HFP HF structure
+ */
 struct bt_hfp_hf;
 
+/**
+ * @struct bt_hfp_hf_call
+ * @brief HFP HF call structure
+ */
 struct bt_hfp_hf_call;
 
 /** @brief The status of the call
