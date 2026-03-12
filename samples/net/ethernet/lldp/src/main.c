@@ -24,8 +24,6 @@ static struct lldp_system_name_tlv {
 
 static void set_optional_tlv(struct net_if *iface)
 {
-	NET_DBG("");
-
 	tlv.type_length = net_htons((LLDP_TLV_SYSTEM_NAME << 9) |
 				    ((sizeof(tlv) - sizeof(uint16_t)) & 0x01ff));
 

@@ -49,7 +49,7 @@ static int start_udp_proto(struct data *data, struct sockaddr *bind_addr,
 	data->udp.sock = socket(bind_addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
 #endif
 	if (data->udp.sock < 0) {
-		NET_ERR("Failed to create UDP socket (%s): %d", data->proto,
+		LOG_ERR("Failed to create UDP socket (%s): %d", data->proto,
 			errno);
 		return -errno;
 	}
@@ -66,7 +66,7 @@ static int start_udp_proto(struct data *data, struct sockaddr *bind_addr,
 	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_SEC_TAG_LIST,
 			 sec_tag_list, sizeof(sec_tag_list));
 	if (ret < 0) {
-		NET_ERR("Failed to set UDP secure option (%s): %d", data->proto,
+		LOG_ERR("Failed to set UDP secure option (%s): %d", data->proto,
 			errno);
 		ret = -errno;
 	}
@@ -75,7 +75,7 @@ static int start_udp_proto(struct data *data, struct sockaddr *bind_addr,
 	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_DTLS_ROLE,
 			 &role, sizeof(role));
 	if (ret < 0) {
-		NET_ERR("Failed to set DTLS role secure option (%s): %d",
+		LOG_ERR("Failed to set DTLS role secure option (%s): %d",
 			data->proto, errno);
 		ret = -errno;
 	}
@@ -99,7 +99,7 @@ static int start_udp_proto(struct data *data, struct sockaddr *bind_addr,
 
 	ret = bind(data->udp.sock, bind_addr, bind_addrlen);
 	if (ret < 0) {
-		NET_ERR("Failed to bind UDP socket (%s): %d", data->proto,
+		LOG_ERR("Failed to bind UDP socket (%s): %d", data->proto,
 			errno);
 		ret = -errno;
 	}
@@ -114,7 +114,7 @@ static int process_udp(struct data *data)
 	struct sockaddr client_addr;
 	socklen_t client_addr_len;
 
-	NET_INFO("Waiting for UDP packets on port %d (%s)...",
+	LOG_INF("Waiting for UDP packets on port %d (%s)...",
 		 MY_PORT, data->proto);
 
 	do {
@@ -125,7 +125,7 @@ static int process_udp(struct data *data)
 
 		if (received < 0) {
 			/* Socket error */
-			NET_ERR("UDP (%s): Connection error %d", data->proto,
+			LOG_ERR("UDP (%s): Connection error %d", data->proto,
 				errno);
 			ret = -errno;
 			break;
@@ -136,18 +136,18 @@ static int process_udp(struct data *data)
 		ret = sendto(data->udp.sock, data->udp.recv_buffer, received, 0,
 			     &client_addr, client_addr_len);
 		if (ret < 0) {
-			NET_ERR("UDP (%s): Failed to send %d", data->proto,
+			LOG_ERR("UDP (%s): Failed to send %d", data->proto,
 				errno);
 			ret = -errno;
 			break;
 		}
 
 		if (++data->udp.counter % 1000 == 0U) {
-			NET_INFO("%s UDP: Sent %u packets", data->proto,
+			LOG_INF("%s UDP: Sent %u packets", data->proto,
 				 data->udp.counter);
 		}
 
-		NET_DBG("UDP (%s): Received and replied with %d bytes",
+		LOG_DBG("UDP (%s): Received and replied with %d bytes",
 			data->proto, received);
 	} while (true);
 
