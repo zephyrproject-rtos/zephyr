@@ -13,6 +13,7 @@
 #include <zephyr/net/socket_poll.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
+
 #include <zephyr/debug/cpu_load.h>
 
 static void _get_thread_name(struct k_thread *thread, ctf_bounded_string_t *name)
@@ -987,12 +988,27 @@ void sys_trace_socket_shutdown_exit(int sock, int ret)
 
 void sys_trace_socket_bind_enter(int sock, const struct net_sockaddr *addr, size_t addrlen)
 {
-	ctf_net_bounded_string_t addr_str;
+	ctf_net_bounded_string_t addr_str = {"unknown"};
+	uint16_t port = 0U;
 
-	(void)net_addr_ntop(addr->sa_family, &net_sin(addr)->sin_addr, addr_str.buf,
-			    sizeof(addr_str.buf));
+	/* Validate addr exists and is large enough to read sa_family */
+	if (addr != NULL && addrlen >= sizeof(struct net_sockaddr)) {
+		if (addr->sa_family == NET_AF_INET
+		    && addrlen >= sizeof(struct net_sockaddr_in)) {
+			(void)net_addr_ntop(NET_AF_INET, &net_sin(addr)->sin_addr,
+					    addr_str.buf, sizeof(addr_str.buf));
+			port = net_ntohs(net_sin(addr)->sin_port);
+		} else if (addr->sa_family == NET_AF_INET6
+			   && addrlen >= sizeof(struct net_sockaddr_in6)) {
+			(void)net_addr_ntop(NET_AF_INET6, &net_sin6(addr)->sin6_addr,
+					    addr_str.buf, sizeof(addr_str.buf));
+			port = net_ntohs(net_sin6(addr)->sin6_port);
+		} else {
+		    /* Required by static analysis to cover unexpected families */
+		}
+	}
 
-	ctf_top_socket_bind_enter(sock, addr_str, addrlen, net_ntohs(net_sin(addr)->sin_port));
+	ctf_top_socket_bind_enter(sock, addr_str, (uint32_t)addrlen, port);
 }
 
 void sys_trace_socket_bind_exit(int sock, int ret)
@@ -1002,12 +1018,24 @@ void sys_trace_socket_bind_exit(int sock, int ret)
 
 void sys_trace_socket_connect_enter(int sock, const struct net_sockaddr *addr, size_t addrlen)
 {
-	ctf_net_bounded_string_t addr_str;
+	ctf_net_bounded_string_t addr_str = {"unknown"};
 
-	(void)net_addr_ntop(addr->sa_family, &net_sin(addr)->sin_addr, addr_str.buf,
-			    sizeof(addr_str.buf));
+	/* Validate addr exists and is large enough to read sa_family */
+	if (addr != NULL && addrlen >= sizeof(struct net_sockaddr)) {
+		if (addr->sa_family == NET_AF_INET
+		    && addrlen >= sizeof(struct net_sockaddr_in)) {
+			(void)net_addr_ntop(NET_AF_INET, &net_sin(addr)->sin_addr,
+					    addr_str.buf, sizeof(addr_str.buf));
+		} else if (addr->sa_family == NET_AF_INET6
+			   && addrlen >= sizeof(struct net_sockaddr_in6)) {
+			(void)net_addr_ntop(NET_AF_INET6, &net_sin6(addr)->sin6_addr,
+					    addr_str.buf, sizeof(addr_str.buf));
+		} else {
+		    /* Required by static analysis to cover unexpected families */
+		}
+	}
 
-	ctf_top_socket_connect_enter(sock, addr_str, addrlen);
+	ctf_top_socket_connect_enter(sock, addr_str, (uint32_t)addrlen);
 }
 
 void sys_trace_socket_connect_exit(int sock, int ret)
@@ -1037,14 +1065,25 @@ void sys_trace_socket_accept_exit(int sock, const struct net_sockaddr *addr,
 	uint32_t addr_len = 0U;
 	uint16_t port = 0U;
 
-	if (addr != NULL) {
-		(void)net_addr_ntop(addr->sa_family, &net_sin(addr)->sin_addr, addr_str.buf,
-				    sizeof(addr_str.buf));
-		port = net_sin(addr)->sin_port;
-	}
-
 	if (addrlen != NULL) {
 		addr_len = *addrlen;
+	}
+
+	/* Validate addr exists and is large enough to read sa_family */
+	if (addr != NULL && addr_len >= sizeof(struct net_sockaddr)) {
+		if (addr->sa_family == NET_AF_INET
+		    && addr_len >= sizeof(struct net_sockaddr_in)) {
+			(void)net_addr_ntop(NET_AF_INET, &net_sin(addr)->sin_addr,
+					    addr_str.buf, sizeof(addr_str.buf));
+			port = net_sin(addr)->sin_port;
+		} else if (addr->sa_family == NET_AF_INET6
+			   && addr_len >= sizeof(struct net_sockaddr_in6)) {
+			(void)net_addr_ntop(NET_AF_INET6, &net_sin6(addr)->sin6_addr,
+					    addr_str.buf, sizeof(addr_str.buf));
+			port = net_sin6(addr)->sin6_port;
+		} else {
+		    /* Required by static analysis to cover unexpected families */
+		}
 	}
 
 	ctf_top_socket_accept_exit(sock, addr_str, addr_len, port, ret);
@@ -1055,9 +1094,19 @@ void sys_trace_socket_sendto_enter(int sock, int len, int flags,
 {
 	ctf_net_bounded_string_t addr_str = {"unknown"};
 
-	if (dest_addr != NULL) {
-		(void)net_addr_ntop(dest_addr->sa_family, &net_sin(dest_addr)->sin_addr,
-				    addr_str.buf, sizeof(addr_str.buf));
+	/* Validate pointer and ensure buffer is large enough for sa_family */
+	if (dest_addr != NULL && addrlen >= sizeof(struct net_sockaddr)) {
+		if (dest_addr->sa_family == NET_AF_INET
+		    && addrlen >= sizeof(struct net_sockaddr_in)) {
+			(void)net_addr_ntop(NET_AF_INET, &net_sin(dest_addr)->sin_addr,
+					    addr_str.buf, sizeof(addr_str.buf));
+		} else if (dest_addr->sa_family == NET_AF_INET6
+			   && addrlen >= sizeof(struct net_sockaddr_in6)) {
+			(void)net_addr_ntop(NET_AF_INET6, &net_sin6(dest_addr)->sin6_addr,
+					    addr_str.buf, sizeof(addr_str.buf));
+		} else {
+		    /* Required by static analysis to cover unexpected families */
+		}
 	}
 
 	ctf_top_socket_sendto_enter(sock, len, flags, addr_str, addrlen);
@@ -1077,11 +1126,22 @@ void sys_trace_socket_sendmsg_enter(int sock, const struct net_msghdr *msg, int 
 		len += msg->msg_iov[i].iov_len;
 	}
 
-	if (msg->msg_name != NULL) {
-		(void)net_addr_ntop(((struct net_sockaddr *)msg->msg_name)->sa_family,
-				    &net_sin((struct net_sockaddr *)msg->msg_name)->sin_addr,
-				    addr.buf,
-				    sizeof(addr.buf));
+	/* Verify msg_name exists AND is large enough to contain at least the family field */
+	if (msg->msg_name != NULL && msg->msg_namelen >= sizeof(struct net_sockaddr)) {
+		struct net_sockaddr *sa = (struct net_sockaddr *)msg->msg_name;
+
+		/* Only attempt ntop if the buffer matches the family's required size */
+		if (sa->sa_family == NET_AF_INET
+		    && msg->msg_namelen >= sizeof(struct net_sockaddr_in)) {
+			(void)net_addr_ntop(NET_AF_INET, &net_sin(sa)->sin_addr,
+					    addr.buf, sizeof(addr.buf));
+		} else if (sa->sa_family == NET_AF_INET6
+			   && msg->msg_namelen >= sizeof(struct net_sockaddr_in6)) {
+			(void)net_addr_ntop(NET_AF_INET6, &net_sin6(sa)->sin6_addr,
+					    addr.buf, sizeof(addr.buf));
+		} else {
+		    /* Required by static analysis to cover unexpected families */
+		}
 	}
 
 	ctf_top_socket_sendmsg_enter(sock, flags, (uint32_t)(uintptr_t)msg, addr, len);
@@ -1103,16 +1163,26 @@ void sys_trace_socket_recvfrom_exit(int sock, const struct net_sockaddr *src_add
 				    const uint32_t *addrlen, int ret)
 {
 	ctf_net_bounded_string_t addr_str = {"unknown"};
-	int len = 0;
+	uint32_t len = 0U;
 
-	if (src_addr != NULL) {
-		(void)net_addr_ntop(src_addr->sa_family, &net_sin(src_addr)->sin_addr,
-				    addr_str.buf,
-				    sizeof(addr_str.buf));
-	}
-
+	/* Safely extract the length updated by the stack */
 	if (addrlen != NULL) {
 		len = *addrlen;
+	}
+
+	/* Validate pointer and buffer size before access */
+	if (src_addr != NULL && len >= sizeof(struct net_sockaddr)) {
+		if (src_addr->sa_family == NET_AF_INET
+		    && len >= sizeof(struct net_sockaddr_in)) {
+			(void)net_addr_ntop(NET_AF_INET, &net_sin(src_addr)->sin_addr,
+					    addr_str.buf, sizeof(addr_str.buf));
+		} else if (src_addr->sa_family == NET_AF_INET6
+			   && len >= sizeof(struct net_sockaddr_in6)) {
+			(void)net_addr_ntop(NET_AF_INET6, &net_sin6(src_addr)->sin6_addr,
+					    addr_str.buf, sizeof(addr_str.buf));
+		} else {
+		    /* Required by static analysis to cover unexpected families */
+		}
 	}
 
 	ctf_top_socket_recvfrom_exit(sock, addr_str, len, ret);
@@ -1219,15 +1289,34 @@ void sys_trace_socket_getpeername_enter(int sock)
 	ctf_top_socket_getpeername_enter(sock);
 }
 
-void sys_trace_socket_getpeername_exit(int sock,  struct net_sockaddr *addr,
+void sys_trace_socket_getpeername_exit(int sock, struct net_sockaddr *addr,
 				       const uint32_t *addrlen, int ret)
 {
-	ctf_net_bounded_string_t addr_str;
+	ctf_net_bounded_string_t addr_str = {"unknown"};
+	uint32_t addr_len = 0U;
 
-	(void)net_addr_ntop(addr->sa_family, &net_sin(addr)->sin_addr, addr_str.buf,
-			    sizeof(addr_str.buf));
+	/* Safely extract the length if the pointer exists */
+	if (addrlen != NULL) {
+		addr_len = *addrlen;
+	}
 
-	ctf_top_socket_getpeername_exit(sock, addr_str, *addrlen, ret);
+	/* Validate addr exists and is large enough to read sa_family */
+	if (addr != NULL && addr_len >= sizeof(struct net_sockaddr)) {
+		if (addr->sa_family == NET_AF_INET
+		    && addr_len >= sizeof(struct net_sockaddr_in)) {
+			(void)net_addr_ntop(NET_AF_INET, &net_sin(addr)->sin_addr,
+					    addr_str.buf, sizeof(addr_str.buf));
+		} else if (addr->sa_family == NET_AF_INET6
+			   && addr_len >= sizeof(struct net_sockaddr_in6)) {
+			(void)net_addr_ntop(NET_AF_INET6, &net_sin6(addr)->sin6_addr,
+					    addr_str.buf, sizeof(addr_str.buf));
+		} else {
+		    /* Required by static analysis to cover unexpected families */
+		}
+	}
+
+	/* Pass the metadata and the string result */
+	ctf_top_socket_getpeername_exit(sock, addr_str, addr_len, ret);
 }
 
 void sys_trace_socket_getsockname_enter(int sock)
@@ -1238,12 +1327,30 @@ void sys_trace_socket_getsockname_enter(int sock)
 void sys_trace_socket_getsockname_exit(int sock, const struct net_sockaddr *addr,
 				       const uint32_t *addrlen, int ret)
 {
-	ctf_net_bounded_string_t addr_str;
+	ctf_net_bounded_string_t addr_str = {"unknown"};
+	uint32_t addr_len = 0U;
 
-	(void)net_addr_ntop(addr->sa_family, &net_sin(addr)->sin_addr, addr_str.buf,
-			    sizeof(addr_str.buf));
+	/* Safely extract original length metadata */
+	if (addrlen != NULL) {
+		addr_len = *addrlen;
+	}
 
-	ctf_top_socket_getsockname_exit(sock, addr_str, *addrlen, ret);
+	/* Validate addr pointer and buffer size before accessing sa_family */
+	if (addr != NULL && addr_len >= sizeof(struct net_sockaddr)) {
+		if (addr->sa_family == NET_AF_INET
+		    && addr_len >= sizeof(struct net_sockaddr_in)) {
+			(void)net_addr_ntop(NET_AF_INET, &net_sin(addr)->sin_addr,
+					    addr_str.buf, sizeof(addr_str.buf));
+		} else if (addr->sa_family == NET_AF_INET6
+			   && addr_len >= sizeof(struct net_sockaddr_in6)) {
+			(void)net_addr_ntop(NET_AF_INET6, &net_sin6(addr)->sin6_addr,
+					    addr_str.buf, sizeof(addr_str.buf));
+		} else {
+		    /* Required by static analysis to cover unexpected families */
+		}
+	}
+
+	ctf_top_socket_getsockname_exit(sock, addr_str, addr_len, ret);
 }
 
 void sys_trace_socket_socketpair_enter(int family, int type, int proto, int *sv)
