@@ -1,0 +1,28 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <alif/balletto/ab1c1f4m51820ph0.dtsi>
+#include "balletto_b1_dk-pinctrl.dtsi"
+
+/ {
+	compatible = "alif,balletto-b1-dk-ab1c1f4m51820ph0";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,flash = &mram;
+		zephyr,sram = &dtcm;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+};
+
+&uart2 {
+	status = "okay";
+	pinctrl-0 = <&pinctrl_uart2>;
+	pinctrl-names = "default";
+};

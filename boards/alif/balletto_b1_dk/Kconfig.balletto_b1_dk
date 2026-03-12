@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BALLETTO_B1_DK
+	select SOC_AB1C1F4M51820PH0 if BOARD_BALLETTO_B1_DK_AB1C1F4M51820PH0
