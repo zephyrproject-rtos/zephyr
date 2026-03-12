@@ -1,9 +1,9 @@
 # Copyright (c) 2021 Qingsong Gou <gouqs@hotmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: Hynitron CST816S touchscreen sensor
+description: Hynitron CST8XX touchscreen sensor
 
-compatible: "hynitron,cst816s"
+compatible: "hynitron,cst8xx"
 
 include: i2c-device.yaml
 
