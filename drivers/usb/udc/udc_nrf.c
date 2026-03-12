@@ -426,6 +426,15 @@ static void nrf_usbd_dma_finished(nrf_usbd_common_ep_t ep)
 		m_ep_armed |= BIT(ep2bit(ep));
 	}
 
+	/* Set default dma_ep value that has no special meaning, so we do not
+	 * need to have separate dma_ep_valid flag (in the hot interrupt path).
+	 * This is necessary to avoid false positives in ev_sof_handler() and
+	 * on EVENTS_EP0SETUP check when dma_available is held in thread context
+	 * (e.g. when thread wants to call usbd_ep_abort()), i.e. when thread
+	 * prevents DMA operation.
+	 */
+	dma_ep = NRF_USBD_COMMON_EPIN1;
+
 	k_sem_give(&dma_available);
 }
 
@@ -438,6 +447,15 @@ static void ev_sof_handler(void)
 	if (NRF_USBD->SIZE.ISOOUT) {
 		iso_ready_mask |= (1U << ep2bit(NRF_USBD_COMMON_EPOUT8));
 	}
+
+	if (k_sem_count_get(&dma_available) == 0) {
+		/* DMA may have been active across SOF which means that endpoint
+		 * data may be corrupted (if DMA was to isochronous endpoint).
+		 * Do not mark the endpoint as ready if this is the case.
+		 */
+		iso_ready_mask &= ~BIT(ep2bit(dma_ep));
+	}
+
 	m_ep_ready |= iso_ready_mask;
 
 	m_ep_armed &= ~USBD_EPISO_BIT_MASK;
