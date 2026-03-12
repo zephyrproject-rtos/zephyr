@@ -16,6 +16,7 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 #include <zephyr/shell/shell.h>
 
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/net_if.h>

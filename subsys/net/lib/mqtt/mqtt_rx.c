@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(net_mqtt_rx, CONFIG_MQTT_LOG_LEVEL);
 #include "mqtt_internal.h"
 #include "mqtt_transport.h"
 #include "mqtt_os.h"
+#include <zephyr/net/net_log.h>
 
 /** @file mqtt_rx.c
  *

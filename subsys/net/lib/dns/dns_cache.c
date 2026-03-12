@@ -6,6 +6,7 @@
 
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_log.h>
 #include "dns_cache.h"
 
 LOG_MODULE_REGISTER(net_dns_cache, CONFIG_DNS_RESOLVER_LOG_LEVEL);
