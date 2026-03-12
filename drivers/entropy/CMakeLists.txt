@@ -14,6 +14,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE entropy_handlers.c)
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_AMBIQ_PUF_TRNG entropy_ambiq_puf_trng.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_ARM64_RNG entropy_arm64.c)
+zephyr_library_sources_ifdef(CONFIG_ENTROPY_BEE_TRNG entropy_bee.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_BFLB_SEC_ENG entropy_bflb_sec_eng.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_BRCM_IPROC_RNG200 entropy_iproc_rng200.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_BT_HCI entropy_bt_hci.c)
