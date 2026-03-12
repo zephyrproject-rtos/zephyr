@@ -305,8 +305,8 @@ static int winc1500_get(net_sa_family_t family,
 	 * for now.
 	 */
 	sock = winc1500_socket(2, type, 0);
-	if (sock < 0) {
-		LOG_ERR("socket error!");
+	if (sock < 0 || sock >= CONFIG_WIFI_WINC1500_OFFLOAD_MAX_SOCKETS) {
+		LOG_ERR("socket error or out of bounds: %d", sock);
 		return -1;
 	}
 
