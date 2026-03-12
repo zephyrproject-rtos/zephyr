@@ -9,6 +9,7 @@ LOG_MODULE_REGISTER(net_l2_dummy, LOG_LEVEL_NONE);
 
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_l2.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 

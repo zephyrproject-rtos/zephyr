@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 
 #include <zephyr/misc/lorem_ipsum.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/websocket.h>
 #include <zephyr/sys/fdtable.h>

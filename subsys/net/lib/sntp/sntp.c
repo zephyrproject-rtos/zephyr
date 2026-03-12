@@ -10,6 +10,7 @@
 LOG_MODULE_REGISTER(net_sntp, CONFIG_SNTP_LOG_LEVEL);
 
 #include <zephyr/net/sntp.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/sys/clock.h>
 #include "sntp_pkt.h"
 #include <limits.h>

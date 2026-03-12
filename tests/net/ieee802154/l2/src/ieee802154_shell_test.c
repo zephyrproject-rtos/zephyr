@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_ieee802154_mgmt_test, LOG_LEVEL_DBG);
 #include <zephyr/net/ieee802154_mgmt.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/shell/shell.h>
 

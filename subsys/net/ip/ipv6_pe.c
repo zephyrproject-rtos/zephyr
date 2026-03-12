@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_ipv6_pe, CONFIG_NET_IPV6_PE_LOG_LEVEL);
 #include <psa/crypto.h>
 
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 

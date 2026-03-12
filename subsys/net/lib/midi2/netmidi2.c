@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <zephyr/net/socket_service.h>
+#include <zephyr/net/net_log.h>
 
 #if defined(CONFIG_MIDI2_UMP_STREAM_RESPONDER)
 #include <ump_stream_responder.h>

@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_ieee802154_mgmt, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #include <errno.h>
 
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/ieee802154_radio.h>
 #include <zephyr/net/ieee802154_mgmt.h>
 #include <zephyr/net/ieee802154.h>

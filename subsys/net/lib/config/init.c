@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/dhcpv4.h>
 #include <zephyr/net/dhcpv6.h>
 #include <zephyr/net/net_mgmt.h>
