@@ -41,7 +41,16 @@ enum bt_hfp_ag_indicator {
 #define BT_HFP_AG_CODEC_MSBC    0x02
 #define BT_HFP_AG_CODEC_LC3_SWB 0x03
 
+/**
+ * @struct bt_hfp_ag
+ * @brief HFP AG structure
+ */
 struct bt_hfp_ag;
+
+/**
+ * @struct bt_hfp_ag_call
+ * @brief HFP AG call structure
+ */
 struct bt_hfp_ag_call;
 
 /** @typedef bt_hfp_ag_query_subscriber_func_t

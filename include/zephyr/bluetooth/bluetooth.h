@@ -84,10 +84,16 @@ extern "C" {
 			* BT_HCI_LE_BYTES_PER_FEATURE_PAGE),        \
 		(0U)))
 
-/** Opaque type representing an advertiser. */
+/**
+ * @struct bt_le_ext_adv
+ * @brief Opaque type representing an advertiser.
+ */
 struct bt_le_ext_adv;
 
-/** Opaque type representing an periodic advertising sync. */
+/**
+ * @struct bt_le_per_adv_sync
+ * @brief Opaque type representing a periodic advertising sync.
+ */
 struct bt_le_per_adv_sync;
 
 /* Don't require everyone to include conn.h */

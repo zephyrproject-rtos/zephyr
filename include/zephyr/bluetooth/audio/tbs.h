@@ -208,7 +208,10 @@ extern "C" {
  */
 #define BT_TBS_MAX_UCI_SIZE 6
 
-/** @brief Opaque Telephone Bearer Service instance. */
+/**
+ * @struct bt_tbs_instance
+ * @brief Opaque Telephone Bearer Service instance.
+ */
 struct bt_tbs_instance;
 
 /**
