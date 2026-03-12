@@ -6,7 +6,9 @@
 
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/numaker_m48x_clock.h>
 #include <zephyr/dt-bindings/reset/numicro_m48x_reset.h>
 
 / {
@@ -38,6 +40,23 @@
 	};
 
 	soc {
+		scc: system-clock-controller@40000200 {
+			compatible = "nuvoton,numaker-scc";
+			reg = <0x40000200 0x100>;
+			#clock-cells = <0>;
+			/* hxt = "enable"; */
+			lxt = "enable";
+			clk-pclkdiv = <(NUMAKER_CLK_PCLKDIV_APB0DIV_DIV2 |
+					NUMAKER_CLK_PCLKDIV_APB1DIV_DIV2)>;
+			core-clock = <DT_FREQ_M(192)>;
+			powerdown-mode = <NUMAKER_CLK_PMUCTL_PDMSEL_DPD>;
+
+			pcc: peripheral-clock-controller {
+				compatible = "nuvoton,numaker-pcc";
+				#clock-cells = <3>;
+			};
+		};
+
 		pinctrl: pinctrl@40000030 {
 			compatible = "nuvoton,numicro-pinctrl";
 			reg = <0x40000030 0x40
