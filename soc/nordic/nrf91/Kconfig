@@ -37,4 +37,7 @@ config NRF_ENABLE_ICACHE
 	bool "Instruction cache (I-Cache)"
 	default y
 
+config NRF91_ANOMALY_36_WORKAROUND
+	bool "Anomaly 36 workaround"
+
 endif # SOC_SERIES_NRF91
