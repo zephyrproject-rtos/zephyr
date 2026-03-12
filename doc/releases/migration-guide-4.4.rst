@@ -711,6 +711,9 @@ Input
 
   The dt-binding macro prefix have also been updated from ``CST816S_*`` to ``CST8XX_*``.
 
+  * Nunchuk driver wronlgy reported `INPUT_KEY_Z`, respective `INPUT_KEY_C` in button events. This
+    has been fixed and `INPUT_BTN_Z`, respective `INPUT_BTN_C` is used now.
+
 Interrupt Controller
 ====================
 

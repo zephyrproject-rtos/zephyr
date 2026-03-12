@@ -12,4 +12,6 @@ properties:
     type: int
     default: 50
     description: |
-      Interval between two reads, in ms. The interval must be greater than 21 ms. Default to 50 ms.
+      Interval between two reads, in ms. The interval must be greater than 20 ms or equal to 0 ms
+      to disable the periodical polling and use the nunchuk_read() function to trigger a readout.
+      Defaults to 50 ms.

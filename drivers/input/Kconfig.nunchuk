@@ -7,4 +7,11 @@ config INPUT_NUNCHUK
 	depends on DT_HAS_NINTENDO_NUNCHUK_ENABLED
 	select I2C
 	help
-	  This option enable the driver for the Nintendo Nunchuk joystick.
+	  This option enables the driver for the Nintendo Nunchuk joystick.
+
+config INPUT_NUNCHUK_ACCELERATION
+	bool "Nintendo Nunchuk joystick acceleration sensor data"
+	default n
+	depends on INPUT_NUNCHUK
+	help
+	  This option enables the acceleration data reading for the Nintendo Nunchuk joystick.
