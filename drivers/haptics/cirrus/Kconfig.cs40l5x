@@ -27,6 +27,12 @@ config HAPTICS_CS40L5X_SPI
 		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L53),spi)
 	select SPI
 
+config HAPTICS_CS40L5X_RESET
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L50),reset-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L51),reset-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L52),reset-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L53),reset-gpios)
+
 config HAPTICS_CS40L5X_INTERRUPT
 	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L50),int-gpios) || \
 		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L51),int-gpios) || \
