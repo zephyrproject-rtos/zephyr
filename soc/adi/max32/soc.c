@@ -10,6 +10,8 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/devicetree/fixed-partitions.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/policy.h>
@@ -18,6 +20,10 @@
 
 #ifdef CONFIG_MAX32_SECONDARY_RV32
 #include <fcr_regs.h>
+
+BUILD_ASSERT(DT_HAS_CHOSEN(zephyr_code_rv32_partition),
+	     "Set zephyr,code-rv32-partition chosen property to launch the RV32 core");
+
 #endif
 
 #if defined(CONFIG_MAX32_STANDBY_DELAY) && (CONFIG_MAX32_STANDBY_DELAY > 0)
@@ -35,6 +41,30 @@ bool z_arm_on_enter_cpu_idle(void)
 	/* Returning false prevent device goes to sleep mode */
 	return false;
 }
+#endif
+
+#define RV32_CPU              DT_NODELABEL(cpu1)
+#define DO_RV32_DEBUG_PINCTRL (DT_PINCTRL_HAS_NAME(RV32_CPU, default))
+
+#if CONFIG_MAX32_SECONDARY_RV32 && DO_RV32_DEBUG_PINCTRL
+
+PINCTRL_DT_DEFINE(RV32_CPU);
+
+static const struct pinctrl_dev_config *rv32_pcfg = PINCTRL_DT_DEV_CONFIG_GET(RV32_CPU);
+
+#endif
+
+#if defined(CONFIG_MAX32_SECONDARY_RV32) &&                \
+	defined(CONFIG_MAX32_SECONDARY_RV32_STARTUP_DELAY) &&  \
+	(CONFIG_MAX32_SECONDARY_RV32_STARTUP_DELAY > 0)
+
+static ALWAYS_INLINE void soc_max32_rv32_delay(int n)
+{
+	while (n--) {
+		__asm__ volatile("nop");
+	}
+}
+
 #endif
 
 /**
@@ -58,7 +88,17 @@ void soc_early_init_hook(void)
 #endif /* defined(MAX32_STANDBY_DELAY) && (MAX32_STANDBY_DELAY > 0) */
 
 #ifdef CONFIG_MAX32_SECONDARY_RV32
-	MXC_FCR->urvbootaddr = CONFIG_MAX32_SECONDARY_RV32_BOOT_ADDRESS;
+
+#if DO_RV32_DEBUG_PINCTRL
+	pinctrl_apply_state(rv32_pcfg, PINCTRL_STATE_DEFAULT);
+#endif
+
+#if defined(CONFIG_MAX32_SECONDARY_RV32_STARTUP_DELAY) && \
+	(CONFIG_MAX32_SECONDARY_RV32_STARTUP_DELAY > 0)
+	soc_max32_rv32_delay(CONFIG_MAX32_SECONDARY_RV32_STARTUP_DELAY);
+#endif
+
+	MXC_FCR->urvbootaddr = DT_REG_ADDR(DT_CHOSEN(zephyr_code_rv32_partition));
 	MXC_SYS_ClockEnable(MXC_SYS_PERIPH_CLOCK_CPU1);
 	MXC_GCR->rst1 |= MXC_F_GCR_RST1_CPU1;
 #endif /* CONFIG_MAX32_SECONDARY_RV32 */

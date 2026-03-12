@@ -10,13 +10,18 @@ toolchain:
 flash: 1024
 ram: 256
 supported:
+  - adc
   - clock_control
   - comparator
+  - counter
+  - dac
   - dma
+  - entropy
   - flash
   - gpio
   - hwinfo
   - i2c
+  - interrupt_controller
   - pinctrl
   - pwm
   - reset

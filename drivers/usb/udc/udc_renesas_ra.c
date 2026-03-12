@@ -30,6 +30,7 @@ struct udc_renesas_ra_data {
 	struct k_thread thread_data;
 	struct st_usbd_instance_ctrl udc;
 	struct st_usbd_cfg udc_cfg;
+	atomic_t set_addr_req;
 };
 
 enum udc_renesas_ra_event_type {
@@ -147,11 +148,16 @@ static int usbd_ctrl_feed_dout(const struct device *dev, const size_t length)
 
 static int udc_event_xfer_setup(const struct device *dev, struct udc_renesas_ra_evt *evt)
 {
+	struct udc_renesas_ra_data *data = udc_get_private(dev);
 	struct net_buf *buf;
 	int err;
 
 	struct usb_setup_packet *setup_packet =
 		(struct usb_setup_packet *)&evt->hal_evt.setup_received;
+
+	if (setup_packet->bRequest == USB_SREQ_SET_ADDRESS) {
+		atomic_set(&data->set_addr_req, 1);
+	}
 
 	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, sizeof(struct usb_setup_packet));
 	if (buf == NULL) {
@@ -183,24 +189,33 @@ static int udc_event_xfer_setup(const struct device *dev, struct udc_renesas_ra_
 
 static void udc_event_xfer_ctrl_in(const struct device *dev, struct net_buf *const buf)
 {
-	if (udc_ctrl_stage_is_status_in(dev) || udc_ctrl_stage_is_no_data(dev)) {
-		/* Status stage finished, notify upper layer */
-		udc_ctrl_submit_status(dev, buf);
+	struct udc_renesas_ra_data *data = udc_get_private(dev);
+	atomic_val_t is_set_addr = atomic_clear(&data->set_addr_req);
+	fsp_err_t err;
+
+	if (udc_ctrl_stage_is_no_data(dev)) {
+		if (is_set_addr == 0) {
+			/* Complete s-[status] stage for non-SET_ADDRESS requests */
+			err = R_USBD_XferStart(&data->udc, USB_CONTROL_EP_IN, NULL, 0);
+			if (err != FSP_SUCCESS) {
+				return;
+			}
+		}
 	}
+
+	/*
+	 * Control status completed.
+	 * Controller supports auto-status, so we cannot check for status completion after state
+	 * update
+	 */
+	net_buf_unref(buf);
 
 	/* Update to next stage of control transfer */
 	udc_ctrl_update_stage(dev, buf);
-
-	if (udc_ctrl_stage_is_status_out(dev)) {
-		/* IN transfer finished, perform status stage OUT and release buffer */
-		usbd_ctrl_feed_dout(dev, 0);
-		net_buf_unref(buf);
-	}
 }
 
 static void udc_event_status_in(const struct device *dev)
 {
-	struct udc_renesas_ra_data *data = udc_get_private(dev);
 	struct net_buf *buf;
 
 	buf = udc_buf_get(udc_get_ep_cfg(dev, USB_CONTROL_EP_IN));
@@ -209,9 +224,6 @@ static void udc_event_status_in(const struct device *dev)
 		return;
 	}
 
-	/* Perform status stage IN */
-	R_USBD_XferStart(&data->udc, USB_CONTROL_EP_IN, NULL, 0);
-
 	udc_event_xfer_ctrl_in(dev, buf);
 }
 
@@ -219,11 +231,6 @@ static void udc_event_xfer_ctrl_out(const struct device *dev, struct net_buf *co
 				    uint32_t len)
 {
 	net_buf_add(buf, len);
-
-	if (udc_ctrl_stage_is_status_out(dev)) {
-		/* Status stage finished, notify upper layer */
-		udc_ctrl_submit_status(dev, buf);
-	}
 
 	/* Update to next stage of control transfer */
 	udc_ctrl_update_stage(dev, buf);
@@ -643,6 +650,7 @@ static int udc_renesas_ra_driver_preinit(const struct device *dev)
 
 	data->caps.rwup = true;
 	data->caps.mps0 = UDC_MPS0_64;
+	data->caps.out_ack = true;
 	if (priv->udc_cfg.usb_speed == USBD_SPEED_HS) {
 		data->caps.hs = true;
 		mps = 1024;

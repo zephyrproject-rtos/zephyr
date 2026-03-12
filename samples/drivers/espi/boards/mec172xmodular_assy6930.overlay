@@ -6,7 +6,7 @@
 
 / {
 	board_power: resources {
-		compatible = "microchip,mec172x-board-power";
+		compatible = "intel-rvp,board-power";
 		/* MCHP_GPIO_012 */
 		pwrg-gpios = <&gpio_000_036 10 GPIO_ACTIVE_HIGH>;
 		/* MCHP_GPIO_0054 */
@@ -39,11 +39,9 @@
 	reset-source = "ESPI_RESET";
 };
 
-&spi0 {
+&qspi0 {
 	status = "okay";
 	clock-frequency = <24000000>;
-	chip-select = <0>;
-	lines = <4>;
 };
 
 /* Disable unwanted VWs notifications

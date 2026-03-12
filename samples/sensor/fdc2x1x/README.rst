@@ -45,7 +45,7 @@ Building and Running
 This sample outputs sensor data to the console and can be read by any serial
 console program. It should work with any platform featuring a I2C interface.
 The platform in use requires a custom devicetree overlay.
-In this example the :ref:`nrf9160dk_nrf9160` board is used. The devicetree
+In this example the :zephyr:board:`nrf9160dk` board is used. The devicetree
 overlay of this board provides example settings for evaluation, which
 you can use as a reference for other platforms.
 

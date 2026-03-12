@@ -962,33 +962,30 @@ static int cmd_net_link_speed(const struct shell *sh, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_iface,
 	SHELL_CMD(up, IFACE_DYN_CMD,
-		  "'net iface up <index>' takes network interface up.",
+		  SHELL_HELP("Takes network interface up", "<index>"),
 		  cmd_net_iface_up),
 	SHELL_CMD(down, IFACE_DYN_CMD,
-		  "'net iface down <index>' takes network interface "
-		  "down.",
+		  SHELL_HELP("Takes network interface down", "<index>"),
 		  cmd_net_iface_down),
 	SHELL_CMD(show, IFACE_DYN_CMD,
-		  "'net iface <index>' shows network interface "
-		  "information.",
+		  SHELL_HELP("Shows network interface information", "<index>"),
 		  cmd_net_iface),
 	SHELL_CMD(set_mac, IFACE_DYN_CMD,
-		  "'net iface set_mac <index> <MAC>' sets MAC address for the network interface.",
+		  SHELL_HELP("Sets MAC address for the network interface", "<index> <MAC>"),
 		  cmd_net_set_mac),
 	SHELL_CMD(default, IFACE_DYN_CMD,
-		  "'net iface default [<index>]' displays or sets the default network interface.",
+		  SHELL_HELP("Displays or sets the default network interface", "[<index>]"),
 		  cmd_net_default_iface),
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
 	SHELL_CMD(txinjection, IFACE_DYN_CMD,
-		  "'net iface txinjection <index> <on|off>' enables or disables "
-		  "TX injection mode on the network interface.",
+		  SHELL_HELP("Enables or disables TX injection mode on the network interface",
+			     "<index> <on|off>"),
 		  cmd_net_txinjection),
 #endif /* CONFIG_NET_L2_ETHERNET_MGMT */
 #if defined(CONFIG_ETH_PHY_DRIVER)
 	SHELL_CMD(set_link, IFACE_DYN_CMD,
-		  "'net iface set_link <index> <Speed 10/100/1000/2500/5000> "
-		  "<Duplex[optional]:h/f>'"
-		  " sets link speed for the network interface.",
+		  SHELL_HELP("Sets link speed for the network interface",
+			     "<index> <Speed 10/100/1000/2500/5000> <Duplex[optional]:h/f>"),
 		  cmd_net_link_speed),
 #endif /* CONFIG_ETH_PHY_DRIVER */
 	SHELL_SUBCMD_SET_END

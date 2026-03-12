@@ -10,6 +10,7 @@ check_set_linker_property(TARGET linker PROPERTY base
 check_set_linker_property(TARGET linker PROPERTY baremetal
                           -nostdlib
                           -static
+                          -znoexecstack
                           ${LINKERFLAGPREFIX},-X
                           ${LINKERFLAGPREFIX},-N
 )

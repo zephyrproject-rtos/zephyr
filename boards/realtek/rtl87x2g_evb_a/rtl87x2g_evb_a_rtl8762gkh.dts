@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2026, Realtek Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <realtek/bee/rtl8762gkh_gku.dtsi>
+#include "rtl87x2g_evb_a_common.dtsi"
+#include "rtl87x2g_evb_a_gkh_gku-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Realtek RTL87x2G Model A Evaluation Board with RTL8762GKH Daughter Board";
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		key4: key4 {
+			gpios = <&gpioa 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "KEY4";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+
+		key5: key5 {
+			gpios = <&gpioa 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "KEY5";
+			zephyr,code = <INPUT_KEY_3>;
+		};
+	};
+};
+
+&flash {
+	partitions {
+		/* 0x402d000-0x4100000: Free space for Zephyr */
+		app_partition: partition@2d000 {
+			label = "app-image";
+			reg = <0x2d000 DT_SIZE_K(828)>;
+		};
+
+		storage_partition: partition@fc000 {
+			label = "storage";
+			reg = <0xfc000 DT_SIZE_K(16)>;
+		};
+	};
+};

@@ -127,17 +127,32 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
+		};
 
-			gpio0: gpio@20000000 {
-				compatible = "bflb,bl61x-gpio";
-				reg = <0x20000000 0x1000>;
+		gpios: gpio@20000000 {
+			compatible = "bflb,bl61x-gpio";
+			reg = <0x20000000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			interrupts = <60 1>, <47 1>;
+			interrupt-names = "gpio", "fifo";
+			interrupt-parent = <&clic>;
+
+			gpio0: gpio@0 {
 				#gpio-cells = <2>;
-				#bflb,pin-cells = <2>;
+				reg = <0>;
+				ngpios = <32>;
 				status = "disabled";
-
 				gpio-controller;
-				interrupts = <60 1>;
-				interrupt-parent = <&clic>;
+			};
+
+			gpio1: gpio@1 {
+				#gpio-cells = <2>;
+				reg = <1>;
+				ngpios = <3>;
+				status = "disabled";
+				gpio-controller;
 			};
 		};
 
@@ -176,6 +191,32 @@
 
 			interrupts = <41 1>;
 			interrupt-parent = <&clic>;
+		};
+
+		sec_eng_trng: trng@20004000 {
+			compatible = "bflb,sec-eng-trng";
+			reg = <0x20004200 0x100>;
+			interrupts = <28 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		sec_eng_sha: sha@20004000 {
+			compatible = "bflb,sec-eng-sha";
+			reg = <0x20004000 0x100>, <0x20004000 0x600>;
+			reg-names = "sha", "sec_eng";
+			interrupts = <26 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		sec_eng_aes: aes@20004100 {
+			compatible = "bflb,sec-eng-aes";
+			reg = <0x20004100 0x100>, <0x20004000 0x600>;
+			reg-names = "aes", "sec_eng";
+			interrupts = <26 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		uart0: uart@2000a000 {
@@ -256,6 +297,15 @@
 			status = "disabled";
 
 			interrupts = <49 1>;
+			interrupt-parent = <&clic>;
+		};
+
+		wdt0: watchdog@2000a500 {
+			compatible = "bflb,wdt";
+			reg = <0x2000a500 0x100>;
+			status = "disabled";
+
+			interrupts = <54 1>;
 			interrupt-parent = <&clic>;
 		};
 

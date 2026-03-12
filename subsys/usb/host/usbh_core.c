@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2022,2025 Nordic Semiconductor ASA
- *
+ * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,9 +9,12 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/usb/usbh.h>
 
-#include "usbh_internal.h"
+#include "usbh_class.h"
+#include "usbh_class_api.h"
 #include "usbh_device.h"
+#include "usbh_internal.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhs, CONFIG_USBH_LOG_LEVEL);
@@ -46,7 +48,6 @@ static int usbh_event_carrier(const struct device *dev,
 static void dev_connected_handler(struct usbh_context *const ctx,
 				  const struct uhc_event *const event)
 {
-
 	LOG_DBG("Device connected event");
 	if (ctx->root != NULL) {
 		LOG_ERR("Device already connected");
@@ -71,11 +72,14 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 	if (usbh_device_init(ctx->root)) {
 		LOG_ERR("Failed to reset new USB device");
 	}
+
+	usbh_class_probe_device(ctx->root);
 }
 
 static void dev_removed_handler(struct usbh_context *const ctx)
 {
 	if (ctx->root != NULL) {
+		usbh_class_remove_all(ctx->root);
 		usbh_device_free(ctx->root);
 		ctx->root = NULL;
 		LOG_DBG("Device removed");
@@ -194,14 +198,6 @@ int usbh_init_device_intl(struct usbh_context *const uhs_ctx)
 
 	sys_dlist_init(&uhs_ctx->udevs);
 
-	STRUCT_SECTION_FOREACH(usbh_class_data, cdata) {
-		/*
-		 * For now, we have not implemented any class drivers,
-		 * so just keep it as placeholder.
-		 */
-		break;
-	}
-
 	return 0;
 }
 
@@ -221,7 +217,9 @@ static int uhs_pre_init(void)
 			NULL, NULL, NULL,
 			K_PRIO_COOP(9), 0, K_NO_WAIT);
 
-	k_thread_name_set(&usbh_thread_data, "usbh_bus");
+	k_thread_name_set(&usbh_bus_thread_data, "usbh_bus");
+
+	usbh_class_init_all();
 
 	return 0;
 }

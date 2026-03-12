@@ -11,8 +11,8 @@ tests:
        or dt_compat_enabled("st,stm32-window-watchdog")
        or dt_compat_enabled("st,stm32-watchdog") or CONFIG_SOC_FAMILY_LPC or
        CONFIG_SOC_SERIES_IMXRT6XX or CONFIG_SOC_SERIES_IMXRT5XX or
-       CONFIG_SOC_FAMILY_GD_GD32 or SOC_SERIES_GD32VF103) and
-       dt_nodelabel_enabled("watchdog0")
+       CONFIG_SOC_FAMILY_GD_GD32 or SOC_SERIES_GD32VF103 or CONFIG_SOC_MAX32655)
+       and dt_nodelabel_enabled("watchdog0")
     platform_exclude:
       - mec15xxevb_assy6853
       - s32z2xxdc2/s32z270/rtu0
@@ -35,11 +35,12 @@ tests:
       - nrf54l15tag/nrf54l15/cpuflpr
       - nrf54l15tag/nrf54l15/cpuflpr/xip
       - nrf54lm20dk/nrf54lm20a/cpuapp/ns
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ns
       - bl54l15_dvk/nrf54l10/cpuapp/ns
       - bl54l15_dvk/nrf54l15/cpuapp/ns
       - bl54l15u_dvk/nrf54l15/cpuapp/ns
       - frdm_mcxw71
-      - frdm_mcxw72/mcxw727c/cpu0
+      - frdm_mcxw72
       - raytac_an54lq_db_15/nrf54l15/cpuapp/ns
       - frdm_mcxw23
       - mcxw23_evk
@@ -72,6 +73,8 @@ tests:
   drivers.watchdog.stm32wwdg_h7:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg_h7.overlay"
+    extra_configs:
+      - CONFIG_DCACHE=n
     platform_allow:
       - nucleo_h7s3l8
       - stm32h7s78_dk
@@ -165,12 +168,25 @@ tests:
     extra_args: EXTRA_DTC_OVERLAY_FILE="sram_noecc.overlay"
     platform_allow:
       - frdm_mcxw71
-      - frdm_mcxw72/mcxw727c/cpu0
+      - frdm_mcxw72
   drivers.watchdog.nxp_mcxw2xx_bypass_first_32k:
     extra_args: EXTRA_DTC_OVERLAY_FILE="bypass_first_32k.overlay"
     platform_allow:
       - frdm_mcxw23
       - mcxw23_evk
+  drivers.watchdog.max32:
+    filter: dt_compat_enabled("adi,max32-watchdog")
+    extra_args: DTC_OVERLAY_FILE="zephyr_sram3.overlay"
+    platform_allow:
+      - max32655evkit/max32655/m4
+      - max32655fthr/max32655/m4
+      - max32690evkit/max32690/m4
+      - max78002evkit/max78002/m4
+  drivers.watchdog.bflb:
+    platform_allow:
+      - ai_m62_12f_kit
+      - ai_wb2_12f_kit
+      - dt_xt_zb1_devkit
   drivers.watchdog.pm_enabled:
     platform_allow:
       - siwx917_rb4338a

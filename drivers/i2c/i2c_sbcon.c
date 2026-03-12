@@ -132,10 +132,10 @@ static int i2c_sbcon_init(const struct device *dev)
 	int ret;
 	ret = pinctrl_apply_state(config->pctrl, PINCTRL_STATE_DEFAULT);
 
-	/* some pins are not available externally so,
-	 * ignore if there is no entry for them
+	/* Some pins are not available externally so,
+	 * ignore if there is no pinctrl entry for them.
 	 */
-	if (ret != -ENOENT) {
+	if (ret < 0 && ret != -ENOENT) {
 		return ret;
 	}
 	i2c_bitbang_init(&context->bitbang, &io_fns, config->sbcon);

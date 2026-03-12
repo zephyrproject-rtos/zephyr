@@ -20,6 +20,11 @@ the :ref:`release notes<zephyr_4.4>`.
     :local:
     :depth: 2
 
+Common
+******
+
+* The minimum required Python version is now 3.12 (from 3.10).
+
 Build System
 ************
 
@@ -62,6 +67,9 @@ Boards
 
   * The ``--file-type`` option can now be used without ``--file`` to select between build artifacts
     (hex, elf, bin).
+
+* native_sim: host FUSE access: Defaults to using libfusev3 now instead of v2. But can be chosen
+  with :kconfig:option:`CONFIG_FUSE_LIBRARY_VERSION` (:github:`104965`).
 
 * m5stack_fire: Removed unused pinctrl entries for UART2, and updated the UART1
   pin mapping from GPIO32/GPIO33 to GPIO16/GPIO17 to match the documented Grove
@@ -220,6 +228,14 @@ Controller Area Network (CAN)
 * The :dtcompatible:`nxp,flexcan` ``clk-source`` devicetree property, if present, now automatically
   selects between the named input clocks ``clksrc0`` and ``clksrc1`` for use as the CAN protocol
   engine clock.
+
+* Renamed the NXP LPC family MCAN driver Kconfig option ``CONFIG_CAN_MCUX_MCAN`` to
+  :kconfig:option:`CONFIG_CAN_NXP_LPC_MCAN` as this driver is not based on the NXP MCUXpresso HAL
+  (:github:`103679`).
+
+* Added devicetree property ``ti,nwkrq-voltage-vio`` to :dtcompatible:`ti,tcan4x5x` to allow
+  configuring the voltage rail used for the ``nWKRQ`` pin. To maintain previous driver default of
+  using VIO, this property must be set (:github:`104182`).
 
 Counter
 =======
@@ -396,6 +412,31 @@ Counter
      GPT now uses explicit devicetree properties rather than hardcoded values, allowing
      per-instance customization.
 
+.. _migration_4.4_devicetree:
+
+Devicetree
+==========
+
+* :ref:`dt-bindings` are no longer allowed to specify any default values for
+  the ``#address-cells`` and ``#size-cells`` properties. The semantics for
+  these properties are defined in Devicetree `Specification
+  <https://www.devicetree.org/specifications>`_ section 2.3.5 and users should
+  not try to override them with their own defaults.
+
+  The following bindings syntax now causes build errors:
+
+  .. code-block:: yaml
+
+     properties:
+       "#address-cells":
+         default: ...             <---- any default is a build error
+       "#size-cells":
+         default: ...             <---- any default is a build error
+
+  If you were relying on default values in your bindings, you now must
+  explicitly specify the values in your devicetree source to fix these build
+  errors.
+
 Display
 =======
 
@@ -442,6 +483,8 @@ EEPROM
 * Added :c:func:`eeprom_target_read_data()` and :c:func:`eeprom_target_write_data()` which takes an
   offset and length and deprecated :c:func:`eeprom_target_program()` for the I2C EEPROM target driver.
 
+* Updated :dtcompatible:`microchip,xec-eeprom` for PCR and GIRQ properties to use new macros (:github:`104591`).
+
 ESP32-S3
 ========
 
@@ -481,10 +524,11 @@ Ethernet
   * :dtcompatible:`nxp,enet-mac` (:github:`102775`)
   * :dtcompatible:`sensry,sy1xx-mac` (:github:`100619`)
   * :dtcompatible:`st,stm32n6-ethernet`, :dtcompatible:`st,stm32h7-ethernet`
-    and :dtcompatible:`st,stm32-ethernet` (:github:`102810`)
+    and :dtcompatible:`st,stm32-ethernet` (:github:`102810`, :github:`105090`)
   * :dtcompatible:`virtio,net` (:github:`100106`)
   * :dtcompatible:`vnd,ethernet` (:github:`96598`)
   * :dtcompatible:`wiznet,w5500` (:github:`100919`)
+  * :dtcompatible:`snps,designware-ethernet` (:github:`105090`)
 
 * The ``fixed-link`` property has been removed from :dtcompatible:`ethernet-phy`. Use
   the new :dtcompatible:`ethernet-phy-fixed-link` compatible instead, if that functionality
@@ -495,12 +539,32 @@ Ethernet
   reworked to be used as active low, you may have to set the pin as
   ``GPIO_ACTIVE_LOW`` in devicetree (:github:`100751`).
 
+* :kconfig:option:`CONFIG_ETH_INIT_PRIORITY` is now set to 60 by default.
+  :kconfig:option:`CONFIG_PHY_INIT_PRIORITY` and :kconfig:option:`CONFIG_MDIO_INIT_PRIORITY` are now
+  defaulting to the value of :kconfig:option:`CONFIG_ETH_INIT_PRIORITY`. Same for
+  :kconfig:option:`CONFIG_PTP_CLOCK_INIT_PRIORITY`,  but only if :kconfig:option:`CONFIG_ETH_DRIVER`
+  is enabled. This way the priority is based on the dependencies in the devicetree.
+  (:github:`104310`)
+
+* Drivers, that support checksum offloading, now need to select the new Kconfig option
+  :kconfig:option:`CONFIG_NET_CHECKSUM_OFFLOAD_SUPPORTED`.
+  :kconfig:option:`CONFIG_NET_CHECKSUM_OFFLOAD` needs to be enabled to use checksum offloading.
+  It is enabled by default if :kconfig:option:`CONFIG_NET_CHECKSUM_OFFLOAD_SUPPORTED` is selected.
+  (:github:`105051`)
+
 File System
 ===========
 
 * :kconfig:option:`CONFIG_FS_FATFS_FSTAB_AUTOMOUNT` is now enabled by default, if any enabled
   :dtcompatible:`zephyr,fstab,fatfs` with the ``automount`` property are present in the devicetree.
   Applications that do not want this behavior need to explicitly disable this option.
+  (:github:`103139`)
+
+* NVS and ZMS have been moved to the new Key-Value Storage Systems (KVSS) subsystem; the move
+  affects NVS and ZMS interface header paths which have been moved from
+  ``zephyr/fs/`` to ``zephyr/kvss/``.
+  Kconfig options for NVS and ZMS have been moved from underneath "File Systems" menu to
+  "Key-Value Storage Systems" menu, no Kconfigs have been affected. (:github:`103244`)
 
 GPIO
 ====
@@ -566,12 +630,27 @@ Infineon
   * ``CONFIG_*_INFINEON_CAT1`` → ``CONFIG_*_INFINEON``
   * ``compatible: "infineon,cat1-adc"`` → ``compatible: "infineon,adc"``
 
+* Infineon Bluetooth HCI UART driver (:kconfig:option:`CONFIG_BT_HCI_UART_INFINEON`) with
+  compatible :dtcompatible:`infineon,bt-hci-uart` is now explicitly scoped to AIROC connectivity
+  chips that use HCI UART transport.
+  (:github:`103871`)
+
+  Corresponding Kconfig symbols and devicetree compatibles have also been updated:
+
+  * ``CONFIG_BT_CYW43XX`` → :kconfig:option:` CONFIG_BT_HCI_UART_INFINEON`
+  * ``dtcompatible: "infineon,cyw43xxx-bt-hci"`` → ``dtcompatible: "infineon,bt-hci-uart"``
+
 MDIO
 ====
 
 * The ``mdio_bus_enable()`` and ``mdio_bus_disable()`` functions have been removed.
   MDIO bus enabling/disabling is now handled internally by the MDIO drivers.
   (:github:`99690`).
+
+* The MDIO driver area has been integrated into the Ethernet driver area.
+  The drivers have been moved from ``drivers/mdio/`` to :zephyr_file:`drivers/ethernet/mdio/`.
+  The devicetree bindings have been moved from ``dts/bindings/mdio/`` to
+  :zephyr_file:`dts/bindings/ethernet/mdio/`. (:github:`103944`)
 
 MEMC
 ====
@@ -581,6 +660,34 @@ MEMC
   the PSRAM refresh rate in number of memory clock cycles. (:github:`102735`).
   Hard-coded default values in drivers, of 320 (:dtcompatible:`st,stm32-xspi-psram`) and 129
   (:dtcompatible:`st,stm32-ospi-psram`), have been removed.
+
+NXP
+===
+
+* NXP DTSI files were moved into family-specific subdirectories under ``dts/arm/nxp``
+  to improve maintainability and discoverability and to match the structure under
+  ``soc/nxp``. Devicetree include paths must be updated for moved files. Update
+  includes of the form ``#include <nxp/nxp_*.dtsi>`` to use the correct family
+  subdirectory. (:github:`101243`).
+
+  Example:
+
+  .. code-block:: dts
+
+    /* Before */
+    #include <nxp/nxp_rt1060.dtsi>
+
+    /* After */
+    #include <nxp/imxrt/nxp_rt1060.dtsi>
+
+  This change only applies to NXP ARM SoC include files that were moved from ``dts/arm/nxp``.
+  Do not change includes for DTSI files that live elsewhere (for example under ``dts/arm64/nxp``).
+
+  To locate affected includes, you can search for the old include prefix:
+
+  .. code-block:: console
+
+    git grep "#include <nxp/nxp_" -- '*.dtsi' '*.dts' '*.overlay'
 
 QSPI
 ====
@@ -624,43 +731,68 @@ Stepper
 * For :dtcompatible:`adi,tmc2209`, the property ``msx-gpios`` is now replaced by ``m0-gpios`` and
   ``m1-gpios`` for consistency with other step/dir stepper drivers.
 
-* Since :github:`91979`, All stepper-drv driver APIs have been refactored out of the stepper API.
-  The following APIs have been moved from :c:group:`stepper_interface` to :c:group:`stepper_drv_interface`:
+* Several API functions have been renamed:
 
-  * :c:func:`stepper_enable` is replaced by :c:func:`stepper_drv_enable`.
-  * :c:func:`stepper_disable` is replaced by :c:func:`stepper_drv_disable`.
-  * :c:func:`stepper_set_micro_step_res` is replaced by :c:func:`stepper_drv_set_micro_step_res`.
-  * :c:func:`stepper_get_micro_step_res` is replaced by :c:func:`stepper_drv_get_micro_step_res`.
+  * ``stepper_move_by`` to :c:func:`stepper_ctrl_move_by`.
+  * ``stepper_move_to`` to :c:func:`stepper_ctrl_move_to`.
+  * ``stepper_is_moving`` to :c:func:`stepper_ctrl_is_moving`.
+  * ``stepper_run`` to :c:func:`stepper_ctrl_run`.
+  * ``stepper_stop`` to :c:func:`stepper_ctrl_stop`.
+  * ``stepper_set_reference_position`` to :c:func:`stepper_ctrl_set_reference_position`.
+  * ``stepper_get_actual_position`` to :c:func:`stepper_ctrl_get_actual_position`.
+  * ``stepper_set_microstep_interval`` to :c:func:`stepper_ctrl_set_microstep_interval`.
 
-* :c:enum:`stepper_micro_step_resolution` is replaced by :c:enum:`stepper_drv_micro_step_resolution`.
-* ``STEPPER_DRV_EVENT_STALL_DETECTED`` and ``STEPPER_DRV_EVENT_FAULT_DETECTED`` events have been
-  refactored to :c:enum:`stepper_drv_event`.
+* The following events have been moved from :c:enum:`stepper_event` to :c:enum:`stepper_ctrl_event`:
 
-* :dtcompatible:`zephyr,gpio-step-dir-stepper` implements :c:group:`stepper_interface` for
-  controlling stepper motors via GPIO step and direction signals. Refer to
-  :ref:`stepper-individual-controller-driver` for more details.
+  * ``STEPPER_EVENT_STEPS_COMPLETED`` to ``STEPPER_CTRL_EVENT_STEPS_COMPLETED``.
+  * ``STEPPER_EVENT_LEFT_END_STOP_DETECTED`` to ``STEPPER_CTRL_EVENT_LEFT_END_STOP_DETECTED```.
+  * ``STEPPER_EVENT_RIGHT_END_STOP_DETECTED`` to ``STEPPER_CTRL_EVENT_RIGHT_END_STOP_DETECTED``.
+  * ``STEPPER_EVENT_STOPPED`` to ``STEPPER_CTRL_EVENT_STOPPED``.
 
-  * ``step-gpios``, ``dir-gpios``, ``invert-direction`` and ``counter`` properties are removed
-    from :dtcompatible:`adi,tmc2209`, :dtcompatible:`ti,drv84xx` and :dtcompatible:`allegro,a4979`,
-    these are now are implemented by :dtcompatible:`zephyr,gpio-step-dir-stepper`.
-  * :c:func:`stepper_move_by`, :c:func:`stepper_move_to`, :c:func:`stepper_run`,
-    :c:func:`stepper_stop`, :c:func:`stepper_is_moving`, :c:func:`stepper_set_microstep_interval`
-    and :c:func:`stepper_set_event_callback` APIs are removed from :dtcompatible:`adi,tmc2209`,
-    :dtcompatible:`ti,drv84xx` and :dtcompatible:`allegro,a4979`.
-  * :dtcompatible:`adi,tmc2209`, :dtcompatible:`ti,drv84xx` and :dtcompatible:`allegro,a4979`
-    implement :c:group:`stepper_drv_interface`.
+* The ``step-gpios``, ``dir-gpios``, ``invert-direction``, and ``counter`` properties have been
+  removed from all bindings of step-dir stepper hardware driver devices (:dtcompatible:`adi,tmc2209`,
+  :dtcompatible:`ti,drv84xx`, and :dtcompatible:`allegro,a4979`) and moved to the new generic stepper
+  motion controller binding :dtcompatible:`zephyr,gpio-step-dir-stepper-ctrl`.
 
-* :c:func:`stepper_enable`, :c:func:`stepper_disable`, :c:func:`stepper_set_micro_step_res` and
-  :c:func:`stepper_get_micro_step_res` APIs are removed from :dtcompatible:`zephyr,h-bridge-stepper`.
-* ``en-gpios`` property is removed from :dtcompatible:`zephyr,h-bridge-stepper`.
-* ``micro-step-res`` property is replaced by ``lut-step-gap`` property in
-  :dtcompatible:`zephyr,h-bridge-stepper`.
+* Motion control must now be performed through a :dtcompatible:`zephyr,gpio-step-dir-stepper-ctrl`
+  device that references the stepper hardware driver devicetree node via the ``stepper-driver`` property.
+  Applications must update their devicetree to add a motion controller node and use the ``stepper_ctrl_*``
+  APIs, instead of calling motion control functions directly on the stepper hardware driver device.
+
+* Stepper hardware driver specific APIs have been removed from the H-bridge stepper controller:
+
+  * :dtcompatible:`zephyr,h-bridge-stepper` is renamed to :dtcompatible:`zephyr,h-bridge-stepper-ctrl` to
+    reflect that it is a stepper motion controller binding, not a stepper hardware driver binding.
+
+  * :c:func:`stepper_enable`, :c:func:`stepper_disable`, :c:func:`stepper_set_micro_step_res`,
+    and :c:func:`stepper_get_micro_step_res` API functions are no longer usable with
+    :dtcompatible:`zephyr,h-bridge-stepper-ctrl` compatible devices.
+
+  * The ``en-gpios`` property has been removed from :dtcompatible:`zephyr,h-bridge-stepper-ctrl`.
+
+  * The ``micro-step-res`` property has been replaced by ``lut-step-gap`` in
+    :dtcompatible:`zephyr,h-bridge-stepper-ctrl` to better reflect the H-bridge control mechanism,
+    which uses lookup table interpolation rather than hardware micro-stepping.
+
+  Applications using H-bridge stepper controller must:
+
+  1. Remove calls to stepper hardware driver specific APIs on H-bridge controller devices
+  2. Update devicetree to use ``lut-step-gap`` instead of ``micro-step-res``
+  3. Remove ``en-gpios`` property if present
 
 * :dtcompatible:`adi,tmc50xx` and :dtcompatible:`adi,tmc51xx` devices are now modeled as MFDs.
-* :dtcompatible:`adi,tmc50xx-stepper` and :dtcompatible:`adi,tmc51xx-stepper` drivers implement
-  :c:group:`stepper_interface`.
-* :dtcompatible:`adi,tmc50xx-stepper-drv` and :dtcompatible:`adi,tmc51xx-stepper-drv` drivers implement
-  :c:group:`stepper_drv_interface`.
+
+* Removed the Kconfig.stepper_event_template template used to generate the
+  :kconfig:option:`CONFIG_STEPPER_*_GENERATE_ISR_SAFE_EVENTS` and
+  :kconfig:option:`CONFIG_STEPPER_*_EVENT_QUEUE_LEN` symbols
+
+* :kconfig:option:`CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS` is replaced by
+  :kconfig:option:`CONFIG_STEPPER_CTRL_ISR_SAFE_EVENTS`
+
+* :kconfig:option:`CONFIG_STEPPER_STEP_DIR_EVENT_QUEUE_LEN` is replaced by
+  :kconfig:option:`CONFIG_STEPPER_CTRL_EVENT_QUEUE_LEN`
+
+* :kconfig:option:`CONFIG_STEPPER_CTRL_ISR_SAFE_EVENTS` is now enabled by default
 
 STM32
 =====
@@ -709,6 +841,10 @@ STM32
   Besides, when applicable to the SoC, these properties need to be defined if the corresponding
   ``div-q`` or ``div-r`` properties are used.
 
+* For STM32L4x, the :dtcompatible:`st,stm32l4-pllsai-clock` binding has been replaced by the
+  existing :dtcompatible:`st,stm32l4-pll-clock`. This replacement brings a renaming of the
+  ``div-divr`` property to ``post-div-r``.
+
 * The MAC address generation in :zephyr_file:`drivers/ethernet/eth_stm32_hal_common.c` for STM32
   platforms now use :c:struct:`net_eth_mac_config` when one of these properties are used in the MAC
   device-tree node:
@@ -732,6 +868,18 @@ STM32
   .. note:: This change aligns STM32 platforms' behavior with the generic Zephyr one. Previous
             implementation wasn't product-ready so this shouldn't cause much trouble.
 
+* The Kconfig option ``CONFIG_SPI_STM32_USE_HW_SS`` has been removed. SPI operation mode
+  is now selected automatically based on devicetree configuration: instances with either of
+  the ``cs-gpios`` or new ``st,soft-nss`` property operate in "Soft NSS" mode, while all other
+  instances operate in "Hard NSS" mode.
+
+Timer
+=====
+
+* :dtcompatible:`renesas,rza2m-ostm` name has been replaced by :dtcompatible:`renesas,rza2m-ostm-timer`.
+  The choice :kconfig:option:`DT_HAS_RENESAS_RZA2M_OSTM_ENABLED` has been replaced with
+  :kconfig:option:`DT_HAS_RENESAS_RZA2M_OSTM_TIMER_ENABLED` (:github:`100934`)
+
 USB
 ===
 
@@ -740,6 +888,7 @@ USB
 Video
 =====
 
+* ``CONFIG_VIDEO_HIMAX_HM01B0`` has been renamed into :kconfig:option:`CONFIG_VIDEO_HM01B0`.
 * CONFIG_VIDEO_OV7670 is now gone and replaced by CONFIG_VIDEO_OV767X.  This allows supporting both the OV7670 and 0V7675.
 * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_SZ_MAX` is replaced by
   :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE` which represent the
@@ -747,6 +896,27 @@ Video
 
 * The :dtcompatible:`ovti,ov2640` reset pin handling has been corrected, resulting in an inverted
   active level compared to before, to match the active level expected by the sensor.
+
+Watchdog
+========
+
+  * The semantics of :kconfig:option:`CONFIG_WDT_DISABLE_AT_BOOT` have been clarified: the expected
+    behavior when ``CONFIG_WDT_DISABLE_AT_BOOT=n``, which was unclear and implemented inconsistently
+    across drivers, is now explicitly documented in :kconfig:option:`CONFIG_WDT_DISABLE_AT_BOOT`'s
+    description (refer to it for more details).
+
+    All in-tree watchdog drivers have been updated to follow the now documented semantics.
+
+    Notably, ``CONFIG_WDT_DISABLE_AT_BOOT=n`` can no longer be used to have watchdog(s) enabled at
+    boot "*automatically*". Users which relied on this behavior must update their application to
+    explicitly configure a watchdog, as done in the :zephyr:code-sample:`watchdog`. The following
+    Kconfig options related to this incorrect usage have been removed:
+
+      * ``CONFIG_IWDG_STM32_INITIAL_TIMEOUT``
+      * ``CONFIG_WDT_RPI_PICO_INITIAL_TIMEOUT``
+      * ``CONFIG_WDT_CC13XX_CC26XX_INITIAL_TIMEOUT``
+      * ``CONFIG_WDT_CC23X0_INITIAL_TIMEOUT``
+      * ``CONFIG_WDT_CC32XX_INITIAL_TIMEOUT``
 
 .. zephyr-keep-sorted-stop
 
@@ -765,6 +935,22 @@ Bluetooth Host
   protection as of the Bluetooth Core Specification v6.2. Stored bonds that were generated using
   this method will be downgraded to unauthenticated when loaded from persistent storage, resulting
   in a lower security level.
+* The Bluetooth Host no longer depends on :c:func:`k_poll`, and therefore doesn't select
+  :kconfig:option:`CONFIG_POLL`. If the application code itself depends on this, it needs to
+  explicitly enable :kconfig:option:`CONFIG_POLL` in its configuration.
+* Replace any usage of :kconfig:option:`CONFIG_DEVICE_NAME_GATT_WRITABLE_NONE`
+  with :kconfig:option:`CONFIG_BT_DEVICE_NAME_GATT_WRITABLE_NONE`.
+* Replace any usage of :kconfig:option:`CONFIG_DEVICE_NAME_GATT_WRITABLE_ENCRYPT`
+  with :kconfig:option:`CONFIG_BT_DEVICE_NAME_GATT_WRITABLE_ENCRYPT`.
+* Replace any usage of :kconfig:option:`CONFIG_DEVICE_NAME_GATT_WRITABLE_AUTHEN`
+  with :kconfig:option:`CONFIG_BT_DEVICE_NAME_GATT_WRITABLE_AUTHEN`.
+* Replace any usage of :kconfig:option:`CONFIG_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN`
+  with :kconfig:option:`CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN`.
+* The ``required_sec_level`` field has been removed from :c:struct:`bt_iso_chan`.
+  Applications that need to set security for CIS connections should call
+  :c:func:`bt_conn_set_security` on the ACL connection before calling
+  :c:func:`bt_iso_chan_connect`.
+* The ``sec_level`` field has been removed from :c:struct:`bt_iso_server`.
 
 Bluetooth Audio
 ===============
@@ -776,12 +962,21 @@ Bluetooth Audio
 * :kconfig:option:`CONFIG_BT_AUDIO` now depends on :kconfig:option:`CONFIG_UTF8`.
   Applications that enable :kconfig:option:`CONFIG_BT_AUDIO` must also have
   :kconfig:option:`CONFIG_UTF8` enabled. (:github:`102350`)
+* :c:func:`bt_tbs_set_uri_scheme_list` now only takes a single string value,
+  instead of a list/array of URIs. Applications will need to modify any current input
+  from e.g. ``{"tel", "skype"}`` to ``"tel,skype"``. (:github:`102724`)
 
 Bluetooth Mesh
 ==============
 
 * :kconfig:option:`CONFIG_BT_MESH_MODEL_VND_MSG_CID_FORCE` has been deprecated. Enabling it no
   longer has any effect on message handling performance.
+
+Bluetooth HCI
+=============
+* Use :c:macro:`BT_HCI_LE_SUPERVISION_TIMEOUT_MIN` and :c:macro:`BT_HCI_LE_SUPERVISION_TIMEOUT_MAX` instead
+  of :c:macro:`BT_HCI_LE_SUPERVISON_TIMEOUT_MIN` and :c:macro:`BT_HCI_LE_SUPERVISON_TIMEOUT_MAX` because
+  they have been deprecated for misspelling.
 
 Networking
 **********
@@ -801,6 +996,9 @@ Networking
   networking header files will no longer include those. If the application or Zephyr internal
   code cannot use POSIX APIs, then the relevant network API prefix needs to be added to the
   code calling a network API.
+
+* The return type of :c:type:`net_icmp_handler_t` has changed from ``int`` to
+  :c:enum:`net_verdict`. (:github:`104815`)
 
 * The enum for HTTP server transaction status has been renamed from ``http_data_status``
   to ``http_transaction_status`` to better reflect its purpose. The enum values have also been
@@ -829,10 +1027,17 @@ Networking
   to automatically enable all the dependencies of a given ciphersuite, and more can be added as
   needed following the same pattern.
 
+CoAP
+====
+
 * Resource-related metadata for CoAP ``.well-known/core`` responses is now configured with a dedicated
   :c:member:`coap_resource.metadata` pointer instead of :c:member:`coap_resource.user_data`, which
   should remain for the application to use exclusively. Applications implementing CoAP
   ``.well-known/core`` handling should be updated to use the new pointer.
+
+* ``COAP_RESPONSE_CODE_OK`` 2.00 response code definition has been removed as it's not a valid
+  response code - it's not defined in :rfc:`7252` and is not assigned in the IANA registry
+  (https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#response-codes).
 
 Modem
 *****

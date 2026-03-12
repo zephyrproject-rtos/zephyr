@@ -1,10 +1,10 @@
 # Copyright (c) 2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-config RZA2M_OS_TIMER
+config RZA2M_OSTM_TIMER
 	bool "Renesas RZ/A2M OS timer"
 	default y
-	depends on DT_HAS_RENESAS_RZA2M_OSTM_ENABLED
+	depends on DT_HAS_RENESAS_RZA2M_OSTM_TIMER_ENABLED
 	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
 	select TICKLESS_CAPABLE

@@ -258,7 +258,7 @@
 		};
 
 		adc2: adc@40012100 {
-			compatible = "st,stm32-adc";
+			compatible = "st,stm32f4-adc", "st,stm32-adc";
 			reg = <0x40012100 0x050>;
 			clocks = <&rcc STM32_CLOCK(APB2, 9)>;
 			clock-names = "adcx";
@@ -274,7 +274,7 @@
 		};
 
 		adc3: adc@40012200 {
-			compatible = "st,stm32-adc";
+			compatible = "st,stm32f4-adc", "st,stm32-adc";
 			reg = <0x40012200 0x050>;
 			clocks = <&rcc STM32_CLOCK(APB2, 10)>;
 			clock-names = "adcx";

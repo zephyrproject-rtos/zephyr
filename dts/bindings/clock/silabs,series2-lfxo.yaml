@@ -12,6 +12,13 @@ properties:
     type: int
     required: true
     description: Load capacitance configuration
+  gain:
+    type: int
+    description: |
+      Gain setting for load capacitance matching. The default value is 1, matching the hardware
+      reset value.
+    default: 1
+    enum: [0, 1, 2, 3]
   precision:
     type: int
     required: true

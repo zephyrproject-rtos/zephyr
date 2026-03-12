@@ -13,6 +13,23 @@ tests:
   drivers.can.build_all.mcp2515.mikrobus:
     extra_args: SHIELD=mikroe_mcp25625_click
     platform_allow: lpcxpresso55s28
+  drivers.can.build_all.mcp2515.xiao:
+    depends_on:
+      - xiao_spi
+      - xiao_gpio
+    extra_args:
+      - SHIELD=seeed_xiao_can
+      # Avoiding hidden Kconfig warnings, as the Zephyr console on the XIAO
+      # serial interface was disabled by the shield due to signal conflicts
+      # on SPI CS (RX) and INT (TX).
+      - CONFIG_SERIAL=n
+      - CONFIG_CONSOLE=n
+      - CONFIG_UART_CONSOLE=n
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+    platform_allow:
+      - seeeduino_xiao
+      - xiao_ble
+      - xiao_rp2040
   drivers.can.build_all.tcan4x5x:
     depends_on:
       - arduino_spi

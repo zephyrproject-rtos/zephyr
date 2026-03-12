@@ -15,6 +15,8 @@
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/dt-bindings/gpio/microchip-port-g1-gpio.h>
+#include <zephyr/drivers/interrupt_controller/intc_mchp_eic_g1.h>
 
 LOG_MODULE_REGISTER(gpio_mchp_port_g1, CONFIG_GPIO_LOG_LEVEL);
 
@@ -35,6 +37,11 @@ struct gpio_mchp_config {
 
 	/* Pointer to port group registers */
 	port_group_registers_t *gpio_regs;
+
+#ifdef CONFIG_INTC_MCHP_EIC_G1
+	/*Contains the ID of the gpio port*/
+	uint8_t gpio_port_id;
+#endif /*CONFIG_INTC_MCHP_EIC_G1*/
 };
 
 /**
@@ -46,6 +53,15 @@ struct gpio_mchp_data {
 
 	/* Pointer to device structure */
 	const struct device *dev;
+
+	/* Variable used for enabling or disabling debounce */
+	gpio_port_pins_t debounce;
+#ifdef CONFIG_INTC_MCHP_EIC_G1
+	/* provided by gpio_utils
+	 * callbacks are stored here for each pins
+	 */
+	sys_slist_t callbacks;
+#endif /*CONFIG_INTC_MCHP_EIC_G1*/
 };
 
 /******************************************************************************
@@ -536,7 +552,112 @@ static int gpio_mchp_port_get_direction(const struct device *dev, gpio_port_pins
 }
 
 #endif /* CONFIG_GPIO_GET_DIRECTION */
+#ifdef CONFIG_INTC_MCHP_EIC_G1
+static enum mchp_eic_trigger get_eic_trig_type(uint32_t trigger_mode)
+{
+	enum mchp_eic_trigger trig_type = 0;
 
+	switch (trigger_mode) {
+	case GPIO_INT_EDGE_BOTH:
+		trig_type = MCHP_EIC_BOTH;
+		LOG_DBG("both edge");
+		break;
+	case GPIO_INT_EDGE_RISING:
+		trig_type = MCHP_EIC_RISING;
+		LOG_DBG("rising edge");
+		break;
+	case GPIO_INT_EDGE_FALLING:
+		trig_type = MCHP_EIC_FALLING;
+		LOG_DBG("falling edge");
+		break;
+
+	case GPIO_INT_LEVEL_HIGH:
+		trig_type = MCHP_EIC_HIGH;
+		LOG_DBG("level high");
+		break;
+	case GPIO_INT_LEVEL_LOW:
+		trig_type = MCHP_EIC_LOW;
+		LOG_DBG("level low");
+		break;
+	default:
+		LOG_ERR("Unknown trigger mode 0x%x", trigger_mode);
+		break;
+	}
+
+	return trig_type;
+}
+
+static void gpio_mchp_callback(uint32_t pins, void *arg)
+{
+	struct gpio_mchp_data *const data = (struct gpio_mchp_data *)arg;
+
+	gpio_fire_callbacks(&data->callbacks, data->dev, pins);
+}
+
+static int gpio_mchp_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+					     enum gpio_int_mode mode, enum gpio_int_trig trig)
+{
+	int ret_val = 0;
+	const struct gpio_mchp_config *gpio_config = dev->config;
+	struct gpio_mchp_data *gpio_data = dev->data;
+	struct eic_config_params eic_pin_config = {0};
+	uint32_t trigger_mode =
+		(mode == GPIO_INT_MODE_DISABLED) ? GPIO_INT_MODE_DISABLED : (mode | trig);
+
+	gpio_data->dev = dev;
+
+	/* initialise the config params structure */
+	eic_pin_config.port_id = gpio_config->gpio_port_id;
+	eic_pin_config.pin_num = pin;
+	eic_pin_config.debounce = (gpio_data->debounce & BIT(pin)) ? true : false;
+	eic_pin_config.port_addr = gpio_config->gpio_regs;
+	eic_pin_config.eic_line_callback = gpio_mchp_callback;
+	eic_pin_config.gpio_data = gpio_data;
+
+	LOG_DBG("trigger mode : 0x%x mode = 0x%x trig = 0x%x\nport address : %p", trigger_mode,
+		mode, trig, eic_pin_config.port_addr);
+
+	/*
+	 * Handle GPIO interrupt configuration based on the trigger mode.
+	 */
+	switch (trigger_mode) {
+	case GPIO_INT_MODE_DISABLED:
+		ret_val = eic_mchp_disable_interrupt(&eic_pin_config);
+		break;
+	case GPIO_INT_EDGE_RISING:
+	case GPIO_INT_EDGE_FALLING:
+	case GPIO_INT_EDGE_BOTH:
+	case GPIO_INT_LEVEL_HIGH:
+	case GPIO_INT_LEVEL_LOW:
+		eic_pin_config.trig_type = get_eic_trig_type(trigger_mode);
+		ret_val = eic_mchp_config_interrupt(&eic_pin_config);
+		break;
+	default:
+		ret_val = -EINVAL;
+		LOG_ERR("Invalid trigger mode for interrupt");
+		break;
+	}
+	LOG_DBG("retval = %d", ret_val);
+
+	return ret_val;
+}
+
+static int gpio_mchp_manage_callback(const struct device *dev, struct gpio_callback *callback,
+				     bool set)
+{
+	struct gpio_mchp_data *const data = dev->data;
+
+	/**Adds or remove user specified callback on to the syslist */
+	return gpio_manage_callback(&data->callbacks, callback, set);
+}
+
+static uint32_t gpio_mchp_get_pending_int(const struct device *dev)
+{
+	const struct gpio_mchp_config *config = dev->config;
+
+	return eic_mchp_interrupt_pending(config->gpio_port_id);
+}
+#endif /*CONFIG_INTC_MCHP_EIC_G1*/
 /******************************************************************************
  * @brief Zephyr driver instance creation
  *****************************************************************************/
@@ -556,6 +677,11 @@ static DEVICE_API(gpio, gpio_mchp_api) = {
 #ifdef CONFIG_GPIO_GET_DIRECTION
 	.port_get_direction = gpio_mchp_port_get_direction,
 #endif
+#ifdef CONFIG_INTC_MCHP_EIC_G1
+	.pin_interrupt_configure = gpio_mchp_pin_interrupt_configure,
+	.manage_callback = gpio_mchp_manage_callback,
+	.get_pending_int = gpio_mchp_get_pending_int,
+#endif
 };
 
 /**
@@ -569,18 +695,27 @@ static int gpio_mchp_init(const struct device *dev)
 	return 0;
 }
 
-/* Define GPIO port configuration macro */
+#ifdef CONFIG_INTC_MCHP_EIC_G1
+/* port ID  => (reg_addr - parent_base(pinctrl)) / reg_size */
+#define MCHP_GPIO_PORT_ID(idx)                                                                     \
+	((DT_INST_REG_ADDR(idx) - DT_REG_ADDR(DT_INST_PARENT(idx))) /                              \
+	 DT_INST_REG_SIZE_BY_IDX(idx, 0))
+#define GPIO_PORT_ID_CONFIG(idx) .gpio_port_id = MCHP_GPIO_PORT_ID(idx),
+#else
+#define GPIO_PORT_ID_CONFIG(idx)
+#endif /*CONFIG_INTC_MCHP_EIC_G1*/
+
 /* clang-format off */
-#define GPIO_PORT_CONFIG(idx)                                                                      \
-	static const struct gpio_mchp_config gpio_mchp_config_##idx = {                            \
-		.common = {                                                                        \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),             \
-		},                                                                                 \
-		.gpio_regs = (port_group_registers_t *)DT_INST_REG_ADDR(idx),                      \
-	};                                                                                         \
-	static struct gpio_mchp_data gpio_mchp_data_##idx;                                         \
-	DEVICE_DT_DEFINE(DT_INST(idx, DT_DRV_COMPAT), gpio_mchp_init, NULL, &gpio_mchp_data_##idx, \
-			 &gpio_mchp_config_##idx, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,         \
+/* Define GPIO port configuration macro */
+#define GPIO_PORT_CONFIG(idx)									  \
+	static const struct gpio_mchp_config gpio_mchp_config_##idx = {                           \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx),                                   \
+		.gpio_regs = (port_group_registers_t *)DT_INST_REG_ADDR(idx),                     \
+		GPIO_PORT_ID_CONFIG(idx)							  \
+	};                                                                                        \
+	static struct gpio_mchp_data gpio_mchp_data_##idx;                                        \
+	DEVICE_DT_DEFINE(DT_INST(idx, DT_DRV_COMPAT), gpio_mchp_init, NULL, &gpio_mchp_data_##idx,\
+			 &gpio_mchp_config_##idx, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,        \
 			 &gpio_mchp_api);
 /* clang-format on */
 

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig CRC_DRIVER
-	bool "CRC device drivers"
+	bool "Cyclic Redundancy Check (CRC) drivers"
 	help
 	  Enable support for CRC device driver.
 

@@ -14,6 +14,7 @@
 #include "hal/cpu.h"
 #include "hal/cntr.h"
 #include "hal/ccm.h"
+#include "hal/ticker.h"
 #include "hal/radio.h"
 #include "hal/radio_df.h"
 
@@ -45,7 +46,13 @@
 
 #include "hal/debug.h"
 
-#define CNTR_MIN_DELTA 3
+/* Define to setup radio start offset by a maximum ISR latency value that is less than inter-frame
+ * switching, plus minimum counter compare offset that can be set, plus minimum CPU latency to set
+ * the counter compare register.
+ */
+#define CNTR_MIN_DELTA (HAL_TICKER_US_TO_TICKS(HAL_RADIO_ISR_LATENCY_MAX_US) + \
+			HAL_TICKER_CNTR_CMP_OFFSET_MIN + \
+			HAL_TICKER_CNTR_SET_LATENCY)
 
 /* Helper definitions for repeated payload sequence */
 #define PAYLOAD_11110000 0x0f

@@ -17,6 +17,7 @@
 
 #include "rtio_sched.h"
 
+#ifdef CONFIG_RTIO_OP_DELAY
 static void rtio_sched_alarm_expired(struct _timeout *t)
 {
 	struct rtio_sqe *sqe = CONTAINER_OF(t, struct rtio_sqe, delay.to);
@@ -32,3 +33,4 @@ void rtio_sched_alarm(struct rtio_iodev_sqe *iodev_sqe, k_timeout_t timeout)
 	z_init_timeout(&sqe->delay.to);
 	z_add_timeout(&sqe->delay.to, rtio_sched_alarm_expired, timeout);
 }
+#endif /* CONFIG_RTIO_OP_DELAY */

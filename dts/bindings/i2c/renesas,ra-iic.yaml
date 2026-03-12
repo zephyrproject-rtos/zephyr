@@ -1,7 +1,7 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Renesas RA I2C Master controller
+description: Renesas RA I2C controller
 
 compatible: "renesas,ra-iic"
 
@@ -11,12 +11,19 @@ properties:
   reg:
     required: true
 
+  clocks:
+    required: true
+
   channel:
     required: true
     type: int
 
   interrupts:
     required: true
+
+  interrupt-names:
+    required: true
+    enum: ["tei", "eri", "rxi", "txi"]
 
   rise-time-ns:
     type: int
@@ -30,6 +37,16 @@ properties:
     type: int
     default: 50
 
-  interrupt-priority-level:
+  max-bitrate-supported:
     type: int
-    default: 12
+    default: 1000000
+    description: |
+      Maximum supported I2C bitrate in Hz, with the default set to I2C_BITRATE_FAST_PLUS.
+      This property may be overlayed if the device supports higher or lower speeds.
+
+  target-digital-noise-filter:
+    type: int
+    enum: [0, 1, 2, 3, 4]
+    default: 3
+    description: |
+      Select the number of digital filter stages for IIC target

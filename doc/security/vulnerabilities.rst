@@ -2123,4 +2123,55 @@ This has been fixed in main for v4.2.0
 :cve:`2025-12899`
 -----------------
 
-Under embargo until 2026-01-28
+net: icmp: Out of bound memory read
+
+A flaw in Zephyr’s network stack allows an IPv4 packet containing ICMP type 128 to be misclassified
+as an ICMPv6 Echo Request. This results in an out-of-bounds memory read and creates a potential
+information-leak vulnerability in the networking subsystem.
+
+
+- `Zephyr project bug tracker GHSA-c2vg-hj83-c2vg
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-c2vg-hj83-c2vg>`_
+
+This has been fixed in main for v4.3.0
+
+- `PR 98780 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/98780>`_
+
+- `PR 98983 fix for 4.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/98983>`_
+
+- `PR 98984 fix for 4.1
+  <https://github.com/zephyrproject-rtos/zephyr/pull/98984>`_
+
+- `PR 98985 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/98985>`_
+
+:cve:`2026-1678`
+----------------
+
+dns: memory‑safety issue in the DNS name parser
+
+``dns_unpack_name()`` caches the buffer tailroom once and reuses it while appending
+DNS labels. As the buffer grows, the cached size becomes incorrect, and the final
+null terminator can be written past the buffer. With assertions disabled (default),
+a malicious DNS response can trigger an out-of-bounds write when ``CONFIG_DNS_RESOLVER``
+is enabled.
+
+
+- `Zephyr project bug tracker GHSA-536f-h63g-hj42
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-536f-h63g-hj42>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 99683 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/99683>`_
+
+- `PR 99830 fix for 4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/99830>`_
+
+- `PR 99829 fix for 4.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/99829>`_
+
+- `PR 99828 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/99828>`_

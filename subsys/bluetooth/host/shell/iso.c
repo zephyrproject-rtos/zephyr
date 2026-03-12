@@ -490,12 +490,6 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 		return 0;
 	}
 
-#if defined(CONFIG_BT_SMP)
-	if (argc > 1) {
-		iso_chan.required_sec_level = *argv[1] - '0';
-	}
-#endif /* CONFIG_BT_SMP */
-
 	err = bt_iso_chan_connect(&connect_param, 1);
 	if (err) {
 		shell_error(sh, "Unable to connect (err %d)", err);
@@ -536,9 +530,6 @@ static int iso_accept(const struct bt_iso_accept_info *info, struct bt_iso_chan 
 }
 
 struct bt_iso_server iso_server = {
-#if defined(CONFIG_BT_SMP)
-	.sec_level = BT_SECURITY_L1,
-#endif /* CONFIG_BT_SMP */
 	.accept = iso_accept,
 };
 
@@ -560,12 +551,6 @@ static int cmd_listen(const struct shell *sh, size_t argc, char *argv[])
 		shell_error(sh, "Invalid argument - use tx, rx or txrx");
 		return -ENOEXEC;
 	}
-
-#if defined(CONFIG_BT_SMP)
-	if (argc > 2) {
-		iso_server.sec_level = *argv[2] - '0';
-	}
-#endif /* CONFIG_BT_SMP */
 
 	err = bt_iso_server_register(&iso_server);
 	if (err) {
@@ -985,18 +970,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "[packing] [framing] [C to P latency] [P to C latency] [sdu] [phy] [rtn]",
 		      cmd_cig_create, 1, 10),
 	SHELL_CMD_ARG(cig_term, NULL, "Terminate the CIG", cmd_cig_term, 1, 0),
-#if defined(CONFIG_BT_SMP)
-	SHELL_CMD_ARG(connect, NULL, "Connect ISO Channel [security level]", cmd_connect, 1, 1),
-#else  /* !CONFIG_BT_SMP */
 	SHELL_CMD_ARG(connect, NULL, "Connect ISO Channel", cmd_connect, 1, 0),
-#endif /* CONFIG_BT_SMP */
 #endif /* CONFIG_BT_ISO_CENTRAL */
 #if defined(CONFIG_BT_ISO_PERIPHERAL)
-#if defined(CONFIG_BT_SMP)
-	SHELL_CMD_ARG(listen, NULL, "<dir=tx,rx,txrx> [security level]", cmd_listen, 2, 1),
-#else  /* !CONFIG_BT_SMP */
 	SHELL_CMD_ARG(listen, NULL, "<dir=tx,rx,txrx>", cmd_listen, 2, 0),
-#endif /* CONFIG_BT_SMP */
 #endif /* CONFIG_BT_ISO_PERIPHERAL */
 #if defined(CONFIG_BT_ISO_TX)
 	SHELL_CMD_ARG(send, NULL, "Send to ISO Channel [count]", cmd_send, 1, 1),

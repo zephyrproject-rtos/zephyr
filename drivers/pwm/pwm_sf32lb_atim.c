@@ -122,7 +122,7 @@ static int pwm_sf32lb_atim_get_cycles_per_sec(const struct device *dev, uint32_t
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_sf32lb_atim_api = {
+static DEVICE_API(pwm, pwm_sf32lb_atim_api) = {
 	.set_cycles = pwm_sf32lb_atim_set_cycles,
 	.get_cycles_per_sec = pwm_sf32lb_atim_get_cycles_per_sec,
 };

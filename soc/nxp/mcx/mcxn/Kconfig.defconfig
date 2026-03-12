@@ -9,8 +9,10 @@ configdefault CORTEX_M_SYSTICK
 
 # We override it here so CPU_FREQ controls whether OSTIMER is selected by default.
 configdefault MCUX_OS_TIMER
-	default y if CPU_FREQ
 	default n
+
+configdefault SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE
+	default y if (CPU_FREQ && CORTEX_M_SYSTICK)
 
 config MFD
 	default y if DT_HAS_NXP_LP_FLEXCOMM_ENABLED

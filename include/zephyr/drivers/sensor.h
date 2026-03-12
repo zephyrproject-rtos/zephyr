@@ -833,7 +833,7 @@ static inline int z_impl_sensor_attr_get(const struct device *dev,
  * CONTAINER_OF to retrieve a context pointer when the trigger is embedded in a
  * larger struct and requires that the trigger is not allocated on the stack.
  *
- * @funcprops \supervisor
+ * @supervisor
  *
  * @param dev Pointer to the sensor device
  * @param trig The trigger to activate

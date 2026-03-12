@@ -6,7 +6,8 @@
 
 #include <stdint.h>
 
+#define GUARD_BUF_SIZE (16)
 #define TEST_BUF_SIZE (48)
 
 extern char tx_data[TEST_BUF_SIZE];
-extern char rx_data[TEST_BUF_SIZE];
+extern char rx_data[TEST_BUF_SIZE + GUARD_BUF_SIZE];

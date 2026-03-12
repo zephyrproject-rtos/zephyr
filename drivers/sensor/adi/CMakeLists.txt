@@ -3,6 +3,7 @@
 
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_AD2S1210 ad2s1210)
+add_subdirectory_ifdef(CONFIG_ADE7978 ade7978)
 add_subdirectory_ifdef(CONFIG_ADLTC2990 adltc2990)
 add_subdirectory_ifdef(CONFIG_ADT7310 adt7310)
 add_subdirectory_ifdef(CONFIG_ADT7420 adt7420)

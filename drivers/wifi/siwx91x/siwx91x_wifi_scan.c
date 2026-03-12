@@ -62,9 +62,10 @@ static void siwx91x_report_scan_res(struct siwx91x_dev *sidev, sl_wifi_scan_resu
 	sidev->scan_res_cb(sidev->iface, 0, &tmp);
 }
 
-unsigned int siwx91x_on_scan(sl_wifi_event_t event, sl_wifi_scan_result_t *result,
-			     uint32_t result_size, void *arg)
+unsigned int siwx91x_on_scan(sl_wifi_event_t event, unsigned int status,
+			     void *data, uint32_t data_length, void *arg)
 {
+	sl_wifi_scan_result_t *result = data;
 	struct siwx91x_dev *sidev = arg;
 	int i, scan_count;
 

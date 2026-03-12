@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <silabs/xg22/clock-hfrcodpll.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
@@ -46,10 +47,6 @@
 	};
 };
 
-&cpu0 {
-	clock-frequency = <76800000>;
-};
-
 &dcdc {
 	regulator-boot-on;
 	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
@@ -59,17 +56,6 @@
 &itm {
 	pinctrl-0 = <&itm_default>;
 	pinctrl-names = "default";
-	swo-ref-frequency = <DT_FREQ_K(76800)>;
-};
-
-&hfrcodpll {
-	clock-frequency = <DT_FREQ_K(76800)>;
-	clocks = <&hfxo>;
-	dpll-autorecover;
-	dpll-edge = "fall";
-	dpll-lock = "phase";
-	dpll-m = <1919>;
-	dpll-n = <3839>;
 };
 
 &i2c0 {

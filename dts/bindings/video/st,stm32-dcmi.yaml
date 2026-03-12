@@ -10,26 +10,6 @@ description: |
     The STM32 DCMI (Digital Camera Memory Interface) allows
     capturing data via a parallel interface (DVP).
 
-    Example of node configuration at board level:
-
-    &dcmi {
-      status = "okay";
-      pinctrl-0 = <&dcmi_hsync_pa4 &dcmi_pixclk_pa6 &dcmi_vsync_pb7
-                  &dcmi_d0_pc6 &dcmi_d1_pc7 &dcmi_d2_pe0 &dcmi_d3_pe1
-                  &dcmi_d4_pe4 &dcmi_d5_pd3 &dcmi_d6_pe5 &dcmi_d7_pe6>;
-      pinctrl-names = "default";
-
-      port {
-        dcmi_ep_in: endpoint {
-          remote-endpoint-label = "ov2640_ep_out";
-          bus-width = <8>;
-          hsync-active = <0>;
-          vsync-active = <0>;
-          pclk-sample = <1>;
-        };
-      };
-    };
-
 compatible: "st,stm32-dcmi"
 
 include: [base.yaml, pinctrl-device.yaml]
@@ -52,3 +32,23 @@ properties:
 child-binding:
   child-binding:
     include: video-interfaces.yaml
+
+examples:
+  - |
+    &dcmi {
+      status = "okay";
+      pinctrl-0 = <&dcmi_hsync_pa4 &dcmi_pixclk_pa6 &dcmi_vsync_pb7
+                   &dcmi_d0_pc6 &dcmi_d1_pc7 &dcmi_d2_pe0 &dcmi_d3_pe1
+                   &dcmi_d4_pe4 &dcmi_d5_pd3 &dcmi_d6_pe5 &dcmi_d7_pe6>;
+      pinctrl-names = "default";
+
+      port {
+        dcmi_ep_in: endpoint {
+          remote-endpoint-label = "ov2640_ep_out";
+          bus-width = <8>;
+          hsync-active = <0>;
+          vsync-active = <0>;
+          pclk-sample = <1>;
+        };
+      };
+    };

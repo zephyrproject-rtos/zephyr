@@ -208,7 +208,7 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferD
 	if (data->transfer_settings.cyclic) {
 		data->transfer_settings.empty_tcds++;
 		/*In loop mode, DMA is always busy*/
-		data->busy = 1;
+		data->busy = true;
 		ret = DMA_STATUS_COMPLETE;
 	} else if (transferDone) {
 		/* DMA is no longer busy when there are no remaining TCDs to transfer */
@@ -1067,7 +1067,7 @@ static int dma_mcux_edma_init(const struct device *dev)
 				DT_PROP(DT_DRV_INST(n), channels_shared_irq_mask);
 
 #define GET_EDMA_CHANNEL_SHARED_IRQ_MASK_WIDTH(n) \
-			(DT_INST_PROP(n, dma_channels) / 32)
+	DIV_ROUND_UP(DT_INST_PROP(n, dma_channels), 32)
 
 #define EDMA_CHANNELS_SHARED_REGISTER_IN_IRQ(dev, idx, n) \
 		dma_mcux_edma_multi_channels_irq_handler(dev, idx, edma_channel_mask_##n, \

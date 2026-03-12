@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nxp/nxp_imx7d_m4.dtsi>
+#include <nxp/imx/nxp_imx7d_m4.dtsi>
 #include "96b_meerkat96-pinctrl.dtsi"
 
 / {

@@ -7,9 +7,8 @@
 
 #include "icm45686_bus.h"
 
-int icm45686_prep_reg_read_rtio_async(const struct icm45686_bus *bus,
-				    uint8_t reg, uint8_t *buf, size_t size,
-				    struct rtio_sqe **out)
+int icm45686_prep_reg_read_rtio_async(const struct icm45686_bus *bus, uint8_t reg, uint8_t *buf,
+				      size_t size, struct rtio_sqe **out)
 {
 	struct rtio *ctx = bus->rtio.ctx;
 	struct rtio_iodev *iodev = bus->rtio.iodev;
@@ -40,9 +39,8 @@ int icm45686_prep_reg_read_rtio_async(const struct icm45686_bus *bus,
 	return 2;
 }
 
-int icm45686_prep_reg_write_rtio_async(const struct icm45686_bus *bus,
-				     uint8_t reg, const uint8_t *buf, size_t size,
-				     struct rtio_sqe **out)
+int icm45686_prep_reg_write_rtio_async(const struct icm45686_bus *bus, uint8_t reg,
+				       const uint8_t *buf, size_t size, struct rtio_sqe **out)
 {
 	struct rtio *ctx = bus->rtio.ctx;
 	struct rtio_iodev *iodev = bus->rtio.iodev;

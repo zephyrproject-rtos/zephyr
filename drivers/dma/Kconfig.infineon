@@ -23,9 +23,10 @@ config DMA_INFINEON_CAT1_PDL
 	help
 	  This option enables the PDL-based DMA driver for Infineon CAT1 family.
 
-config INFINEON_DESCRIPTOR_POOL_SIZE
-	int
-	default 10
+config DMA_INFINEON_DESCRIPTOR_COUNT
+	int "Number of available descriptors per channel"
+	default 2
 	depends on DMA_INFINEON_CAT1_PDL
 	help
-	  This option provides the descritor pool size used for the DMA PDL driver
+	  This option determines the number of descriptors that are allocated for each DMA
+	  channel. This must be set to a value of 1 or greater.

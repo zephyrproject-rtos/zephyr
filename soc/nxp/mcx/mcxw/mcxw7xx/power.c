@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,15 +14,29 @@
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
-#define WUU_WAKEUP_LPTMR_IDX 0
 #define MCXW7_WUU_ADDR (WUU_Type *)DT_REG_ADDR(DT_INST(0, nxp_wuu))
 #define MCXW7_CMC_ADDR (CMC_Type *)DT_REG_ADDR(DT_INST(0, nxp_cmc))
 #define MCXW7_VBAT_ADDR (VBAT_Type *)DT_REG_ADDR(DT_INST(0, nxp_vbat))
 #define MCXW7_SPC_ADDR (SPC_Type *)DT_REG_ADDR(DT_INST(0, nxp_spc))
 
-void mcxw7xx_set_wakeup(int32_t sig)
+/* Get the IRQ number for lptmr0 */
+#define MCXW7_LPTMR0_IRQ_N           DT_IRQN(DT_NODELABEL(lptmr0))
+#define MCXW7_WUU_WAKEUP_LPTMR_IDX   0
+/* Get the IRQ number used by NBU */
+#define MCXW7_RF_IMU0_IRQ_N          DT_IRQN(DT_NODELABEL(nbu))
+#define MCXW7_WUU_WAKEUP_RF_IMU0_IDX 2
+
+#define MCXW7_LPWKUP_DELAY_10MHz (0xAAU)
+
+void mcxw7xx_set_wakeup(int32_t irqn)
 {
-	WUU_SetInternalWakeUpModulesConfig(MCXW7_WUU_ADDR, sig, kWUU_InternalModuleInterrupt);
+	if (irqn == MCXW7_LPTMR0_IRQ_N) {
+		WUU_SetInternalWakeUpModulesConfig(MCXW7_WUU_ADDR, MCXW7_WUU_WAKEUP_LPTMR_IDX,
+						   kWUU_InternalModuleInterrupt);
+	} else if (irqn == MCXW7_RF_IMU0_IRQ_N) {
+		WUU_SetInternalWakeUpModulesConfig(MCXW7_WUU_ADDR, MCXW7_WUU_WAKEUP_RF_IMU0_IDX,
+						   kWUU_InternalModuleDMATrigger);
+	}
 }
 
 /*
@@ -69,14 +83,6 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_SUSPEND_TO_IDLE:
 		cmc_power_domain_config_t config;
 
-#if CONFIG_NXP_NBU == 0
-		/* Set NBU into Sleep Mode */
-		RFMC->RF2P4GHZ_CTRL = (RFMC->RF2P4GHZ_CTRL &
-				       (~RFMC_RF2P4GHZ_CTRL_LP_MODE_MASK)) |
-				       RFMC_RF2P4GHZ_CTRL_LP_MODE(0x1);
-		RFMC->RF2P4GHZ_CTRL |= RFMC_RF2P4GHZ_CTRL_LP_ENTER_MASK;
-#endif /* CONFIG_NXP_NBU == 0 */
-
 		/* Set MAIN_CORE and MAIN_WAKE power domain into sleep mode. */
 		config.clock_mode  = kCMC_GateAllSystemClocksEnterLowPowerMode;
 		config.main_domain = kCMC_SleepMode;
@@ -87,13 +93,6 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_STANDBY:
 		/* Enable CORE VDD Voltage scaling. */
 		SPC_EnableLowPowerModeCoreVDDInternalVoltageScaling(MCXW7_SPC_ADDR, true);
-
-#if CONFIG_NXP_NBU == 0
-		/* Set NBU into Deep Sleep Mode */
-		RFMC->RF2P4GHZ_CTRL = (RFMC->RF2P4GHZ_CTRL & (~RFMC_RF2P4GHZ_CTRL_LP_MODE_MASK)) |
-				       RFMC_RF2P4GHZ_CTRL_LP_MODE(0x3);
-		RFMC->RF2P4GHZ_CTRL |= RFMC_RF2P4GHZ_CTRL_LP_ENTER_MASK;
-#endif /* CONFIG_NXP_NBU == 0 */
 
 		/* Set MAIN_CORE and MAIN_WAKE power domain into Deep Sleep Mode. */
 		config.clock_mode  = kCMC_GateAllSystemClocksEnterLowPowerMode;
@@ -125,8 +124,6 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		SPC_ClearPowerDomainLowPowerRequestFlag(MCXW7_SPC_ADDR, kSPC_PowerDomain1);
 	}
 	if (SPC_CheckPowerDomainLowPowerRequest(MCXW7_SPC_ADDR, kSPC_PowerDomain2)) {
-		RFMC->RF2P4GHZ_CTRL = (RFMC->RF2P4GHZ_CTRL & (~RFMC_RF2P4GHZ_CTRL_LP_MODE_MASK));
-		RFMC->RF2P4GHZ_CTRL &= ~RFMC_RF2P4GHZ_CTRL_LP_ENTER_MASK;
 		SPC_ClearPowerDomainLowPowerRequestFlag(MCXW7_SPC_ADDR, kSPC_PowerDomain2);
 	}
 	SPC_ClearLowPowerRequest(MCXW7_SPC_ADDR);
@@ -194,12 +191,12 @@ __weak void set_spc_configuration(void)
 
 	SPC_SetLowPowerModeRegulatorsConfig(MCXW7_SPC_ADDR, &low_power_regulator);
 
-	SPC_SetLowPowerWakeUpDelay(MCXW7_SPC_ADDR, 0xFFFFU);
+	SPC_SetLowPowerWakeUpDelay(MCXW7_SPC_ADDR, MCXW7_LPWKUP_DELAY_10MHz);
 }
 
 void nxp_mcxw7x_power_init(void)
 {
 	set_spc_configuration();
 	/* Enable LPTMR0 as wakeup source */
-	NXP_ENABLE_WAKEUP_SIGNAL(WUU_WAKEUP_LPTMR_IDX);
+	NXP_ENABLE_WAKEUP_SIGNAL(MCXW7_LPTMR0_IRQ_N);
 }

@@ -267,9 +267,7 @@ static DEVICE_API(gpio, gpio_stellaris_driver_api) = {
 	static struct gpio_stellaris_runtime port_## n ##_stellaris_runtime;		\
 											\
 	static const struct gpio_stellaris_config gpio_stellaris_port_## n ##_config = {\
-		.common = {								\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),		\
-		},									\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),				\
 		.base = DT_INST_REG_ADDR(n),			\
 		.port_map = BIT_MASK(DT_INST_PROP(n, ngpios)),		\
 		.config_func = port_## n ##_stellaris_config_func,			\

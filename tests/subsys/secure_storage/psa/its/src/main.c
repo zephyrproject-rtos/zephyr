@@ -9,11 +9,10 @@
 
 /* The flash must be erased after this test suite is run for the write-once entry test to pass. */
 #if !defined(CONFIG_BUILD_WITH_TFM) && defined(CONFIG_FLASH_PAGE_LAYOUT) &&                        \
-	DT_HAS_CHOSEN(zephyr_flash_controller) &&                                                  \
-	DT_FIXED_PARTITION_EXISTS(DT_NODELABEL(storage_partition))
+	FIXED_PARTITION_EXISTS(DT_NODELABEL(storage_partition))
 static int erase_flash(void)
 {
-	const struct device *const fdev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+	const struct device *const fdev = FIXED_PARTITION_MTD(storage_partition);
 	int rc;
 
 	rc = flash_flatten(fdev, FIXED_PARTITION_OFFSET(storage_partition),
@@ -29,7 +28,7 @@ static int erase_flash(void)
 /* Low priority to ensure we run after any flash drivers are initialized */
 SYS_INIT(erase_flash, POST_KERNEL, 100);
 
-#endif /* !CONFIG_BUILD_WITH_TFM && CONFIG_FLASH_PAGE_LAYOUT */
+#endif /* !CONFIG_BUILD_WITH_TFM && CONFIG_FLASH_PAGE_LAYOUT && storage_partition */
 
 ZTEST_SUITE(secure_storage_psa_its, NULL, NULL, NULL, NULL, NULL);
 

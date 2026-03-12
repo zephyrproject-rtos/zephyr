@@ -74,6 +74,13 @@
 			pinctrl-1 = <&airoc_wifi_host_wake>;
 			pinctrl-names = "default", "host_wake";
 			status = "okay";
+
+			cyw43_gpio: gpio {
+				compatible = "infineon,cyw43-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <3>;
+			};
 		};
 	};
 };

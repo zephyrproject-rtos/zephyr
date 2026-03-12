@@ -61,6 +61,11 @@ config SPI_NXP_LPSPI_TXFIFO_WAIT_CYCLES
 	  for if there is some programming error that causes TX fifo not to empty.
 	  The default of 10000 is arbitrary.
 
+config SPI_NXP_LPSPI_ERR050456
+	bool
+	help
+	  Indicates that the LPSPI module is affected by Erratum 050456.
+
 if SPI_NXP_LPSPI_CPU_RTIO
 
 config SPI_NXP_RTIO_SQ_SIZE

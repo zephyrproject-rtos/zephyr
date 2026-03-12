@@ -113,6 +113,25 @@ static inline void device_map(mm_reg_t *virt_addr, uintptr_t phys_addr,
 #endif /* CONFIG_EXTERNAL_ADDRESS_TRANSLATION */
 #endif /* CONFIG_MMU */
 }
+
+/**
+ * Un-set linear address for device MMIO access
+ *
+ * If the MMU is enabled, mappings can be removed from the page tables.
+ *
+ * @param virt_addr Linear address obtained from @ref device_map
+ * @param size Size of the MMIO region
+ */
+__boot_func
+static inline void device_unmap(mm_reg_t virt_addr, size_t size)
+{
+#ifdef CONFIG_MMU
+	k_mem_unmap_phys_bare((uint8_t *)virt_addr, size);
+#else
+	ARG_UNUSED(virt_addr);
+	ARG_UNUSED(size);
+#endif /* CONFIG_MMU */
+}
 #else
 /* No MMU or PCIe. Just store the address from DTS and treat as a linear
  * address
@@ -139,6 +158,13 @@ static inline void device_map(mm_reg_t *virt_addr, uintptr_t phys_addr,
 	ARG_UNUSED(size);
 	ARG_UNUSED(flags);
 	*virt_addr = phys_addr;
+}
+
+__boot_func
+static inline void device_unmap(mm_reg_t virt_addr, size_t size)
+{
+	ARG_UNUSED(virt_addr);
+	ARG_UNUSED(size);
 }
 
 #endif /* DEVICE_MMIO_IS_IN_RAM */

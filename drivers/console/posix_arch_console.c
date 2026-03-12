@@ -10,31 +10,28 @@
 #include <zephyr/sys/printk-hooks.h>
 #include <zephyr/sys/libc-hooks.h>
 
-#define _STDOUT_BUF_SIZE 256
+#define _STDOUT_BUF_SIZE CONFIG_POSIX_ARCH_CONSOLE_STDOUT_BUF_SIZE
 static char stdout_buff[_STDOUT_BUF_SIZE];
 static int n_pend; /* Number of pending characters in buffer */
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 static int print_char(int c)
 {
-	int printnow = 0;
-
-	if ((c != '\n') && (c != '\r')) {
-		stdout_buff[n_pend++] = c;
-		stdout_buff[n_pend] = 0;
-	} else {
-		printnow = 1;
+	if (c == '\r') {
+		/* Discard carriage return */
+		return c;
 	}
 
-	if (n_pend >= _STDOUT_BUF_SIZE - 1) {
-		printnow = 1;
-	}
+	stdout_buff[n_pend++] = c;
+	stdout_buff[n_pend] = 0;
 
-	if (printnow) {
-		posix_print_trace("%s\n", stdout_buff);
+	/* Flush if buffer is full or on newline */
+	if (n_pend >= sizeof(stdout_buff) - 1 || c == '\n') {
+		posix_print_trace("%s", stdout_buff);
 		n_pend = 0;
 		stdout_buff[0] = 0;
 	}
+
 	return c;
 }
 #endif /* defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE) */

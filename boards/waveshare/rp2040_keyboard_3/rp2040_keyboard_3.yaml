@@ -14,5 +14,4 @@ supported:
   - flash
   - gpio
   - hwinfo
-  - usb
   - watchdog

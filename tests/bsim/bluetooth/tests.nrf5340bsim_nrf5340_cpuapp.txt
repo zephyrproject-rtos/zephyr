@@ -7,6 +7,7 @@ tests/bsim/bluetooth/ll/bis/tests_scripts/broadcast_iso_interleaved.sh
 tests/bsim/bluetooth/ll/bis/tests_scripts/broadcast_iso_sequential.sh
 tests/bsim/bluetooth/ll/bis/tests_scripts/broadcast_iso_ticker_expire_info.sh
 tests/bsim/bluetooth/samples/central_hr_peripheral_hr/
+tests/bsim/bluetooth/samples/peripheral_gap_svc/
 tests/bsim/bluetooth/audio_samples/
 tests/bsim/bluetooth/audio/
 tests/bsim/bluetooth/host/gatt/notify_stress/

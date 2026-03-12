@@ -81,7 +81,6 @@ static bool is_join_msg_ok;
 static bool is_leave_msg_ok;
 static bool is_query_received;
 static bool is_report_sent;
-static bool ignore_already;
 
 static struct mld_report_handler *report_handler;
 
@@ -326,13 +325,7 @@ static void test_join_group(void)
 	net_ipv6_addr_create(&mcast_addr, 0xff10, 0, 0, 0, 0, 0, 0, 0x0001);
 
 	ret = net_ipv6_mld_join(net_iface, &mcast_addr);
-
-	if (ignore_already) {
-		zassert_true(ret == 0 || ret == -EALREADY,
-			     "Cannot join IPv6 multicast group");
-	} else {
-		zassert_equal(ret, 0, "Cannot join IPv6 multicast group");
-	}
+	zassert_equal(ret, 0, "Cannot join IPv6 multicast group");
 
 	/* Let the network stack to proceed */
 	k_msleep(THREAD_SLEEP);
@@ -354,8 +347,6 @@ static void test_leave_group(void)
 static void test_catch_join_group(void)
 {
 	is_group_joined = false;
-
-	ignore_already = false;
 
 	test_join_group();
 
@@ -390,8 +381,6 @@ static void test_catch_leave_group(void)
 static void test_verify_join_group(void)
 {
 	is_join_msg_ok = false;
-
-	ignore_already = false;
 
 	test_join_group();
 
@@ -529,11 +518,11 @@ static void leave_mldv2_capable_routers_group(void)
 }
 
 /* We are not really interested to parse the query at this point */
-static int handle_mld_query(struct net_icmp_ctx *ctx,
-			    struct net_pkt *pkt,
-			    struct net_icmp_ip_hdr *hdr,
-			    struct net_icmp_hdr *icmp_hdr,
-			    void *user_data)
+static enum net_verdict handle_mld_query(struct net_icmp_ctx *ctx,
+					 struct net_pkt *pkt,
+					 struct net_icmp_ip_hdr *hdr,
+					 struct net_icmp_hdr *icmp_hdr,
+					 void *user_data)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(pkt);
@@ -588,8 +577,6 @@ static void test_verify_send_report(void)
 	is_query_received = false;
 	is_report_sent = false;
 
-	ignore_already = true;
-
 	k_sem_reset(&wait_data);
 
 	test_join_group();
@@ -616,6 +603,7 @@ static void test_verify_send_report(void)
 	zassert_true(is_report_sent, "Report not sent");
 
 	leave_mldv2_capable_routers_group();
+	test_leave_group();
 }
 
 /* This value should be longer that the one in net_if.c when DAD timeouts */
@@ -1059,15 +1047,9 @@ static void socket_group_with_index(const struct net_in6_addr *local_addr, bool 
 			       (void *)&mreq, sizeof(mreq));
 
 	if (do_join) {
-		if (ignore_already) {
-			zassert_true(ret == 0 || ret == -EALREADY,
-				     "Cannot join IPv6 multicast group (%d)",
-				     -errno);
-		} else {
-			zassert_equal(ret, 0,
-				      "Cannot join IPv6 multicast group (%d)",
-				      -errno);
-		}
+		zassert_equal(ret, 0,
+			      "Cannot join IPv6 multicast group (%d)",
+			      -errno);
 	} else {
 		zassert_equal(ret, 0, "Cannot leave IPv6 multicast group (%d)",
 			      -errno);
@@ -1102,6 +1084,30 @@ ZTEST_USER(net_mld_test_suite, test_socket_catch_join_with_index)
 	socket_leave_group_with_index(net_ipv6_unspecified_address());
 	socket_join_group_with_index(&my_addr);
 	socket_leave_group_with_index(&my_addr);
+}
+
+ZTEST(net_mld_test_suite, test_mld_multi_join)
+{
+	is_join_msg_ok = false;
+	test_join_group();
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting join event");
+	zassert_true(is_join_msg_ok, "Join msg invalid");
+
+	is_join_msg_ok = false;
+	test_join_group();
+	k_msleep(THREAD_SLEEP);
+	zassert_false(is_join_msg_ok, "Unexpected join msg");
+
+	/* First leave should not send report due to two refs on the address */
+	is_leave_msg_ok = false;
+	test_leave_group();
+	k_msleep(THREAD_SLEEP);
+	zassert_false(is_leave_msg_ok, "Unexpected leave msg");
+
+	is_leave_msg_ok = false;
+	test_leave_group();
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting leave event");
+	zassert_true(is_leave_msg_ok, "Leave msg invalid");
 }
 
 ZTEST_SUITE(net_mld_test_suite, NULL, test_mld_setup, test_mld_before, NULL, NULL);

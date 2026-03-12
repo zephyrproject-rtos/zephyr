@@ -137,6 +137,17 @@ int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 			     struct k_mem_partition *parts[]);
 
 /**
+ * @brief De-initialize a memory domain.
+ *
+ * @param domain The memory domain to be de-initialized.
+ *
+ * @retval 0 if successful
+ * @retval -EBUSY if there are still threads associated with this memory domain.
+ * @retval -EINVAL if invalid parameter supplied
+ */
+int k_mem_domain_deinit(struct k_mem_domain *domain);
+
+/**
  * @brief Add a memory partition into a memory domain.
  *
  * Add a memory partition into a memory domain. Partitions must conform to

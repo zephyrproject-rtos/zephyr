@@ -37,6 +37,14 @@ config GDBSTUB_BUF_SZ
 
 endif # GDBSTUB config
 
+if PM && TICKLESS_KERNEL
+
+choice XTENSA_TIMER_LPM_TIMER
+	default XTENSA_TIMER_LPM_TIMER_HOOK
+endchoice
+
+endif # PM && TICKLESS_KERNEL
+
 endif # SOC_SERIES_ESP32 config
 
 if BT_ESP32

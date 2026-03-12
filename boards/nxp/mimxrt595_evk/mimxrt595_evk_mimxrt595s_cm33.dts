@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rt5xx.dtsi>
+#include <nxp/imxrt/nxp_rt5xx.dtsi>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -136,7 +136,7 @@
 		regulator-boot-on;
 	};
 
-	psram: memory@0x38000000 {
+	psram: memory@38000000 {
 		compatible = "zephyr,memory-region";
 		device_type = "memory";
 		reg = <0x38000000 0x8000000>;

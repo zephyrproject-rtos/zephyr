@@ -123,8 +123,9 @@ ZTEST_USER_F(bq40z50, test_get_props__returns_ok)
 		FUEL_GAUGE_SBS_ATRATE_OK,
 		FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM,
 		FUEL_GAUGE_SBS_REMAINING_TIME_ALARM,
-
+		FUEL_GAUGE_STATE_OF_HEALTH,
 	};
+
 	union fuel_gauge_prop_val vals[ARRAY_SIZE(props)];
 
 	zassert_ok(fuel_gauge_get_props(fixture->dev, props, vals, ARRAY_SIZE(props)));
@@ -154,6 +155,7 @@ ZTEST_USER_F(bq40z50, test_get_props__returns_ok)
 	zassert_equal(vals[21].sbs_at_rate_ok, 0);
 	zassert_equal(vals[22].sbs_remaining_capacity_alarm, 300);
 	zassert_equal(vals[23].sbs_remaining_time_alarm, 10);
+	zassert_equal(vals[24].state_of_health, 100);
 #else
 	/* When having a real device, check for the valid ranges */
 	zassert_between_inclusive(vals[0].avg_current, -32767 * 1000, 32768 * 1000);
@@ -180,6 +182,7 @@ ZTEST_USER_F(bq40z50, test_get_props__returns_ok)
 	/* Not testing props[21]. This is the sbs_at_rate_ok property and has a boolean.*/
 	zassert_between_inclusive(vals[22].sbs_remaining_capacity_alarm, 0, 1000);
 	zassert_between_inclusive(vals[23].sbs_remaining_time_alarm, 0, 30);
+	zassert_between_inclusive(vals[24].state_of_health, 0, 100);
 #endif
 }
 

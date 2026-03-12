@@ -70,7 +70,7 @@ extern "C" {
 /** CRC8 polynomial */
 #define CRC8_POLY 0x07
 
-/** CRC8_CCITT polynomial */
+/** CRC8_REFLECT polynomial */
 #define CRC8_REFLECT_POLY 0xE0
 
 /** CRC8_ROHC polynomial */

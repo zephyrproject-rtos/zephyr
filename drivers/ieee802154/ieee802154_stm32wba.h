@@ -249,6 +249,9 @@ struct stm32wba_802154_data_t {
 
 	/* Indicates if RxOnWhenIdle mode is enabled. */
 	bool rx_on_when_idle;
+
+	/* Channel on which the radio is to operate (11-26) */
+	uint8_t channel;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_STM32WBA_H_ */

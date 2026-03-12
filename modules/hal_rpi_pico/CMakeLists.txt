@@ -38,6 +38,7 @@ if(CONFIG_HAS_RPI_PICO)
         -DFLASH_TYPE=${flash_type}
         -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}
         -DRP2_BOOTLOADER_BYPRODUCT=${rp2_bootloader_asm}
+        -DCONFIG_PICOLIBC=${CONFIG_PICOLIBC}
       INSTALL_COMMAND "" # No installation needed
       BUILD_BYPRODUCTS ${rp2_bootloader_asm}
       BUILD_ALWAYS TRUE

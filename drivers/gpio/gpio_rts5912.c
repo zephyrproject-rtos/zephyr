@@ -617,7 +617,7 @@ static DEVICE_API(gpio, gpio_rts5912_driver_api) = {
 	static struct gpio_rts5912_data gpio_rts5912_data_##id;                                    \
                                                                                                    \
 	static const struct gpio_rts5912_config gpio_rts5912_config_##id = {                       \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(id)},                  \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(id),                                     \
 		.reg_base = (volatile uint32_t *)DT_INST_REG_ADDR(id),                             \
 		.num_pins = DT_INST_PROP(id, ngpios),                                              \
 	};                                                                                         \

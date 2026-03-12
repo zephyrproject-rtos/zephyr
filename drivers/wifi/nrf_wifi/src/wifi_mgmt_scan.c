@@ -388,7 +388,6 @@ void nrf_wifi_rx_bcn_prb_resp_frm(void *vif_ctx,
 {
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = vif_ctx;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
-	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
 	struct wifi_raw_scan_result bcn_prb_resp_info;
 	int frame_length = 0;
 	int val = signal;
@@ -415,8 +414,6 @@ void nrf_wifi_rx_bcn_prb_resp_frm(void *vif_ctx,
 		LOG_DBG("%s: RPU context not initialized", __func__);
 		goto out;
 	}
-
-	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
 
 	frame_length = nrf_wifi_osal_nbuf_data_size(nwb);
 

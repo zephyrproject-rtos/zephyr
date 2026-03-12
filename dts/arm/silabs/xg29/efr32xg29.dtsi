@@ -19,8 +19,9 @@
 					  "prortc";
 			interrupts = <36 1>, <37 1>, <38 1>, <39 1>, <40 1>, <41 1>, <42 1>,
 				     <43 1>, <44 1>, <45 1>, <46 1>, <47 1>;
-			pa-2p4ghz = "highest";
+			pa-2p4ghz = "auto";
 			pa-initial-power-dbm = <10>;
+			pa-max-power-dbm = <8>;
 			pa-ramp-time-us = <2>;
 			pa-voltage-mv = <3300>;
 			radio-tx-high-power-supported;

@@ -144,7 +144,7 @@ class CoredumpElfFile:
                 mem_region = {"start": sec_start, "end": sec_end, "data": section.data()}
                 logger.info(
                     f'ELF Section: 0x{mem_region["start"]:x} to 0x{mem_region["end"]:x} '
-                    f'of size {mem_region["data"]:d} ({sect_desc:s})'
+                    f'of size {len(mem_region["data"]):d} ({sect_desc:s})'
                 )
 
                 self.memory_regions.append(mem_region)

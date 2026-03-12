@@ -97,7 +97,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mcxw72_evk/mcxw727c/cpu0
+   :board: mcxw72_evk
    :goals: flash
 
 Open a serial terminal, reset the board (press the RESET button), and you should
@@ -106,7 +106,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build v3.7.0-xxx-xxxx ***
-   Hello World! mcxw72_evk/mcxw727c/cpu0
+   Hello World! mcxw72_evk
 
 Debugging
 =========
@@ -115,7 +115,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mcxw72_evk/mcxw727c/cpu0
+   :board: mcxw72_evk
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -124,7 +124,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build v3.7.0-xxx-xxxx ***
-   Hello World! mcxw72_evk/mcxw727c/cpu0
+   Hello World! mcxw72_evk
 
 Bluetooth
 =========

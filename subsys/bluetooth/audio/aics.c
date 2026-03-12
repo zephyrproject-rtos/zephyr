@@ -24,7 +24,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/util_utf8.h>
@@ -501,7 +500,7 @@ static ssize_t read_description(struct bt_conn *conn,
 /************************ PUBLIC API ************************/
 void *bt_aics_svc_decl_get(struct bt_aics *aics)
 {
-	CHECKIF(!aics) {
+	if (!aics) {
 		LOG_DBG("NULL instance");
 		return NULL;
 	}
@@ -521,12 +520,12 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 	int err;
 	static bool instance_prepared;
 
-	CHECKIF(!aics) {
+	if (!aics) {
 		LOG_DBG("NULL aics pointer");
 		return -ENOTCONN;
 	}
 
-	CHECKIF(!param) {
+	if (!param) {
 		LOG_DBG("NULL param");
 		return -EINVAL;
 	}
@@ -536,37 +535,37 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 		instance_prepared = true;
 	}
 
-	CHECKIF(aics->srv.initialized) {
+	if (aics->srv.initialized) {
 		return -EALREADY;
 	}
 
-	CHECKIF(param->mute > BT_AICS_STATE_MUTE_DISABLED) {
+	if (param->mute > BT_AICS_STATE_MUTE_DISABLED) {
 		LOG_DBG("Invalid AICS mute value: %u", param->mute);
 		return -EINVAL;
 	}
 
-	CHECKIF(param->gain_mode > BT_AICS_MODE_AUTO) {
+	if (param->gain_mode > BT_AICS_MODE_AUTO) {
 		LOG_DBG("Invalid AICS mode value: %u", param->gain_mode);
 		return -EINVAL;
 	}
 
-	CHECKIF(param->type > BT_AICS_INPUT_TYPE_AMBIENT) {
+	if (param->type > BT_AICS_INPUT_TYPE_AMBIENT) {
 		LOG_DBG("Invalid AICS input type value: %u", param->type);
 		return -EINVAL;
 	}
 
-	CHECKIF(param->units == 0) {
+	if (param->units == 0) {
 		LOG_DBG("AICS units value shall not be 0");
 		return -EINVAL;
 	}
 
-	CHECKIF(!(param->min_gain <= param->max_gain)) {
+	if (!(param->min_gain <= param->max_gain)) {
 		LOG_DBG("AICS min gain (%d) shall be lower than or equal to max gain (%d)",
 			param->min_gain, param->max_gain);
 		return -EINVAL;
 	}
 
-	CHECKIF(param->gain < param->min_gain || param->gain > param->max_gain) {
+	if (param->gain < param->min_gain || param->gain > param->max_gain) {
 		LOG_DBG("AICS gain (%d) shall be not lower than min gain (%d) "
 		       "or higher than max gain (%d)",
 		       param->gain, param->min_gain, param->max_gain);
@@ -644,7 +643,7 @@ struct bt_aics *bt_aics_free_instance_get(void)
 /****************************** PUBLIC API ******************************/
 int bt_aics_deactivate(struct bt_aics *inst)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
@@ -671,7 +670,7 @@ int bt_aics_deactivate(struct bt_aics *inst)
 
 int bt_aics_activate(struct bt_aics *inst)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
@@ -699,7 +698,7 @@ int bt_aics_activate(struct bt_aics *inst)
 #endif /* CONFIG_BT_AICS */
 int bt_aics_gain_set_manual_only(struct bt_aics *inst)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
@@ -713,7 +712,7 @@ int bt_aics_gain_set_manual_only(struct bt_aics *inst)
 
 int bt_aics_gain_set_auto_only(struct bt_aics *inst)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
@@ -727,7 +726,7 @@ int bt_aics_gain_set_auto_only(struct bt_aics *inst)
 
 int bt_aics_state_get(struct bt_aics *inst)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
@@ -750,7 +749,7 @@ int bt_aics_state_get(struct bt_aics *inst)
 
 int bt_aics_gain_setting_get(struct bt_aics *inst)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
@@ -774,7 +773,7 @@ int bt_aics_gain_setting_get(struct bt_aics *inst)
 
 int bt_aics_type_get(struct bt_aics *inst)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
@@ -795,7 +794,7 @@ int bt_aics_type_get(struct bt_aics *inst)
 
 int bt_aics_status_get(struct bt_aics *inst)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
@@ -816,7 +815,7 @@ int bt_aics_status_get(struct bt_aics *inst)
 
 int bt_aics_disable_mute(struct bt_aics *inst)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
@@ -830,7 +829,7 @@ int bt_aics_disable_mute(struct bt_aics *inst)
 
 int bt_aics_unmute(struct bt_aics *inst)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
@@ -851,7 +850,7 @@ int bt_aics_unmute(struct bt_aics *inst)
 
 int bt_aics_mute(struct bt_aics *inst)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
@@ -872,7 +871,7 @@ int bt_aics_mute(struct bt_aics *inst)
 
 int bt_aics_manual_gain_set(struct bt_aics *inst)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
@@ -893,7 +892,7 @@ int bt_aics_manual_gain_set(struct bt_aics *inst)
 
 int bt_aics_automatic_gain_set(struct bt_aics *inst)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
@@ -914,7 +913,7 @@ int bt_aics_automatic_gain_set(struct bt_aics *inst)
 
 int bt_aics_gain_set(struct bt_aics *inst, int8_t gain)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
@@ -936,7 +935,7 @@ int bt_aics_gain_set(struct bt_aics *inst, int8_t gain)
 
 int bt_aics_description_get(struct bt_aics *inst)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
@@ -958,12 +957,12 @@ int bt_aics_description_get(struct bt_aics *inst)
 
 int bt_aics_description_set(struct bt_aics *inst, const char *description)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
 
-	CHECKIF(!description) {
+	if (!description) {
 		LOG_DBG("NULL description");
 		return -EINVAL;
 	}

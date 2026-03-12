@@ -17,6 +17,41 @@ config USE_EMD_ICM42670
 	depends on DT_HAS_INVENSENSE_ICM42670P_ENABLED \
 		|| DT_HAS_INVENSENSE_ICM42670S_ENABLED
 
+config USE_EMD_ICM45605
+	bool "ICM45605 High Performance 6-Axis MotionTracking IMU"
+	default y
+	imply TDK_HAL
+	depends on ZEPHYR_HAL_TDK_MODULE
+	depends on DT_HAS_INVENSENSE_ICM45605_ENABLED
+
+config USE_EMD_ICM45605S
+	bool "ICM45605S High Performance 6-Axis MotionTracking IMU"
+	default y
+	imply TDK_HAL
+	depends on ZEPHYR_HAL_TDK_MODULE
+	depends on DT_HAS_INVENSENSE_ICM45605S_ENABLED
+
+config USE_EMD_ICM45686
+	bool "ICM45686 High Performance 6-Axis MotionTracking IMU"
+	default y
+	imply TDK_HAL
+	depends on ZEPHYR_HAL_TDK_MODULE
+	depends on DT_HAS_INVENSENSE_ICM45686_ENABLED
+
+config USE_EMD_ICM45686S
+	bool "ICM45686S High Performance 6-Axis MotionTracking IMU"
+	default y
+	imply TDK_HAL
+	depends on ZEPHYR_HAL_TDK_MODULE
+	depends on DT_HAS_INVENSENSE_ICM45686S_ENABLED
+
+config USE_EMD_ICM45688P
+	bool "ICM45688P High Performance 6-Axis MotionTracking IMU"
+	default y
+	imply TDK_HAL
+	depends on ZEPHYR_HAL_TDK_MODULE
+	depends on DT_HAS_INVENSENSE_ICM45688P_ENABLED
+
 config USE_EMD_ICM42370
 	bool "ICM42370P High Performance 3-Axis MotionTracking Accelerometer"
 	default y

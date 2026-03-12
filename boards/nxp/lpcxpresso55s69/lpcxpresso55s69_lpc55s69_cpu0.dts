@@ -1,12 +1,12 @@
 /*
- * Copyright 2019,2024 NXP
+ * Copyright 2019, 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include <nxp/nxp_lpc55S6x.dtsi>
+#include <nxp/lpc/nxp_lpc55S6x.dtsi>
 #include "lpcxpresso55s69.dtsi"
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -238,5 +238,13 @@ i2s1: &flexcomm7 {
 };
 
 &counter_rtc {
+	status = "okay";
+};
+
+&gint0 {
+	status = "okay";
+};
+
+&gint1 {
 	status = "okay";
 };

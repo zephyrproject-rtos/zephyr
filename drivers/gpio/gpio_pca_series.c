@@ -1757,6 +1757,10 @@ out:
 		int_status = sys_le32_to_cpu(int_status);
 		gpio_fire_callbacks(&data->callbacks, dev, int_status);
 	}
+
+	if (gpio_pin_get_dt(&cfg->gpio_int) == 1) {
+		k_work_submit(&data->int_work);
+	}
 }
 
 static void gpio_pca_series_interrupt_worker_standard(struct k_work *work)
@@ -2585,9 +2589,7 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal6534 = {
  */
 #define GPIO_PCA_SERIES_DEVICE_INSTANCE(inst, part_no) \
 	static const struct gpio_pca_series_config gpio_##part_no##_##inst##_cfg = { \
-		.common = { \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst), \
-		}, \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst), \
 		.i2c = I2C_DT_SPEC_INST_GET(inst), \
 		.part_cfg = GPIO_PCA_GET_PART_CFG_BY_PART_NO(part_no), \
 		.gpio_rst = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}), \

@@ -16,4 +16,5 @@ supported:
   - can
   - canfd
   - netif:eth
+  - rtc
 vendor: st

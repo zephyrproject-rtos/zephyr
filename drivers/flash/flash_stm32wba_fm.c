@@ -222,6 +222,9 @@ static int stm32_flash_init(const struct device *dev)
 
 	k_work_init(&fm_work, &FM_BackgroundProcess_Entry);
 
+	/* Init the Flash Manager module */
+	FM_Init();
+
 	/* Enable flash driver system flag */
 	FD_SetStatus(FD_FLASHACCESS_RFTS, LL_FLASH_DISABLE);
 	FD_SetStatus(FD_FLASHACCESS_RFTS_BYPASS, LL_FLASH_ENABLE);

@@ -126,10 +126,11 @@ struct mc_t1s_config {
 struct mc_t1s_data {
 	uint32_t phy_id;
 	const struct device *dev;
-	struct phy_link_state state;
+	bool link_is_up;
 	phy_callback_t cb;
 	void *cb_data;
 	struct k_work_delayable phy_monitor_work;
+	struct k_sem sem;
 };
 
 static int phy_mc_t1s_read(const struct device *dev, uint16_t reg, uint32_t *data)
@@ -209,28 +210,65 @@ static int phy_mc_t1s_c45_write(const struct device *dev, uint8_t devad, uint16_
 
 static int phy_mc_t1s_get_link(const struct device *dev, struct phy_link_state *state)
 {
+	struct mc_t1s_data *data = dev->data;
+
+	/* Microchip’s 10BASE-T1S half-duplex PHYs are only supported here */
+	state->speed = LINK_HALF_10BASE;
+
+	k_sem_take(&data->sem, K_FOREVER);
+
+	state->is_up = data->link_is_up;
+
+	k_sem_give(&data->sem);
+
+	return 0;
+}
+
+static void phy_mc_t1s_invoke_link_cb(const struct device *dev)
+{
+	struct mc_t1s_data *data = dev->data;
+	struct phy_link_state state;
+
+	if (data->cb == NULL) {
+		return;
+	}
+
+	phy_mc_t1s_get_link(dev, &state);
+
+	data->cb(dev, &state, data->cb_data);
+}
+
+static void phy_mc_t1s_update_link_state(const struct device *dev)
+{
 	const struct mc_t1s_config *cfg = dev->config;
 	struct mc_t1s_data *data = dev->data;
-	struct phy_link_state old_state = data->state;
+	bool old_link_status = data->link_is_up;
 	uint32_t value = 0;
 	int ret;
 
 	ret = phy_mc_t1s_read(dev, MII_BMSR, &value);
 	if (ret < 0) {
 		LOG_ERR("Failed MII_BMSR register read: %d\n", ret);
-		return ret;
+		return;
 	}
 
-	state->is_up = value & MII_BMSR_LINK_STATUS;
-	state->speed = LINK_HALF_10BASE;
+	k_sem_take(&data->sem, K_FOREVER);
 
-	if (memcmp(&old_state, state, sizeof(struct phy_link_state)) != 0) {
-		if (state->is_up) {
-			LOG_INF("PHY (%d) Link speed 10 Mbps, half duplex\n", cfg->phy_addr);
-		}
+	data->link_is_up = (value & MII_BMSR_LINK_STATUS) != 0;
+
+	k_sem_give(&data->sem);
+
+	if (data->link_is_up == old_link_status) {
+		return;
 	}
 
-	return 0;
+	if (data->link_is_up) {
+		LOG_INF("PHY (%d) Link is up, speed 10 Mbps, half duplex\n", cfg->phy_addr);
+	} else {
+		LOG_INF("PHY (%d) Link is down\n", cfg->phy_addr);
+	}
+
+	phy_mc_t1s_invoke_link_cb(dev);
 }
 
 static int phy_mc_t1s_link_cb_set(const struct device *dev, phy_callback_t cb, void *user_data)
@@ -240,9 +278,7 @@ static int phy_mc_t1s_link_cb_set(const struct device *dev, phy_callback_t cb, v
 	data->cb = cb;
 	data->cb_data = user_data;
 
-	if (data->cb) {
-		data->cb(dev, &data->state, data->cb_data);
-	}
+	phy_mc_t1s_invoke_link_cb(dev);
 
 	return 0;
 }
@@ -253,14 +289,7 @@ static void phy_monitor_work_handler(struct k_work *work)
 	struct mc_t1s_data *const data = CONTAINER_OF(dwork, struct mc_t1s_data, phy_monitor_work);
 	const struct device *dev = data->dev;
 
-	if (!data->cb) {
-		k_work_reschedule(&data->phy_monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
-		return;
-	}
-
-	phy_mc_t1s_get_link(dev, &data->state);
-
-	data->cb(dev, &data->state, data->cb_data);
+	phy_mc_t1s_update_link_state(dev);
 
 	/* Submit delayed work */
 	k_work_reschedule(&data->phy_monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
@@ -560,6 +589,8 @@ static int phy_mc_t1s_init(const struct device *dev)
 {
 	struct mc_t1s_data *data = dev->data;
 	int ret;
+
+	k_sem_init(&data->sem, 1, 1);
 
 	data->dev = dev;
 

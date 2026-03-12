@@ -2,6 +2,7 @@
  * Copyright (c) 2025 Texas Instruments Incorporated.
  *
  * TI Secureproxy Mailbox driver for Zephyr's MBOX model.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/spinlock.h>
@@ -214,7 +215,7 @@ static int secproxy_mailbox_send(const struct device *dev, uint32_t channel,
 	mem_addr_t data_reg;
 	k_spinlock_key_t key;
 
-	if (!dev || !msg || !msg->data) {
+	if (msg == NULL || msg->data == NULL) {
 		LOG_ERR("Invalid parameters");
 		return -EINVAL;
 	}
@@ -380,7 +381,7 @@ static DEVICE_API(mbox, secproxy_mailbox_driver_api) = {
 	}                                                                                          \
 	DEVICE_DT_INST_DEFINE(idx, secproxy_mailbox_##idx##_init, NULL,                            \
 			      &secproxy_mailbox_##idx##_data, &secproxy_mailbox_##idx##_config,    \
-			      PRE_KERNEL_1, CONFIG_MBOX_TI_SECURE_PROXY_PRIORITY,                  \
+			      PRE_KERNEL_1, CONFIG_MBOX_INIT_PRIORITY,                             \
 			      &secproxy_mailbox_driver_api)
 
 #define MAILBOX_INST(idx) MAILBOX_INSTANCE_DEFINE(idx);

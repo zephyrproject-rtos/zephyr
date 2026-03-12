@@ -83,9 +83,9 @@ static const struct i2s_config default_i2s_cfg = {
 	.block_size = BLOCK_SIZE,
 	.timeout = TIMEOUT,
 #if defined(CONFIG_I2S_TEST_USE_GPIO_LOOPBACK)
-	.options = I2S_OPT_FRAME_CLK_MASTER | I2S_OPT_BIT_CLK_MASTER,
+	.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER,
 #else
-	.options = I2S_OPT_FRAME_CLK_MASTER | I2S_OPT_BIT_CLK_MASTER | I2S_OPT_LOOPBACK,
+	.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER | I2S_OPT_LOOPBACK,
 #endif
 	.mem_slab = &tx_0_mem_slab,
 };
@@ -271,16 +271,16 @@ static int configure_stream(const struct device *dev, enum i2s_dir dir,
 	int ret;
 
 	if (dir == I2S_DIR_TX) {
-		/* Configure the Transmit port as Master */
-		i2s_cfg->options = I2S_OPT_FRAME_CLK_MASTER
-				| I2S_OPT_BIT_CLK_MASTER;
+		/* Configure the Transmit port as Controller */
+		i2s_cfg->options = I2S_OPT_FRAME_CLK_CONTROLLER
+				| I2S_OPT_BIT_CLK_CONTROLLER;
 	} else if (dir == I2S_DIR_RX) {
-		/* Configure the Receive port as Slave */
-		i2s_cfg->options = I2S_OPT_FRAME_CLK_SLAVE
-				| I2S_OPT_BIT_CLK_SLAVE;
+		/* Configure the Receive port as Target */
+		i2s_cfg->options = I2S_OPT_FRAME_CLK_TARGET
+				| I2S_OPT_BIT_CLK_TARGET;
 	} else { /* dir == I2S_DIR_BOTH */
-		i2s_cfg->options = I2S_OPT_FRAME_CLK_MASTER
-				| I2S_OPT_BIT_CLK_MASTER;
+		i2s_cfg->options = I2S_OPT_FRAME_CLK_CONTROLLER
+				| I2S_OPT_BIT_CLK_CONTROLLER;
 	}
 
 	if (dir == I2S_DIR_TX || dir == I2S_DIR_BOTH) {
@@ -810,12 +810,12 @@ ZTEST(i2s_additional, test_08_options_bit_frame_clk_mixed)
 	struct i2s_config i2s_cfg = default_i2s_cfg;
 	int ret;
 
-	i2s_cfg.options = I2S_OPT_FRAME_CLK_MASTER | I2S_OPT_BIT_CLK_SLAVE;
+	i2s_cfg.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_TARGET;
 
 	ret = i2s_configure(dev_i2s, I2S_DIR_TX, &i2s_cfg);
 	zassert_equal(ret, -EINVAL, "Unexpected result %d", ret);
 
-	i2s_cfg.options = I2S_OPT_FRAME_CLK_SLAVE | I2S_OPT_BIT_CLK_MASTER;
+	i2s_cfg.options = I2S_OPT_FRAME_CLK_TARGET | I2S_OPT_BIT_CLK_CONTROLLER;
 
 	ret = i2s_configure(dev_i2s, I2S_DIR_TX, &i2s_cfg);
 	zassert_equal(ret, -EINVAL, "Unexpected result %d", ret);

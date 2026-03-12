@@ -565,12 +565,12 @@ static int can_stm32_set_timing(const struct device *dev,
 static int can_stm32_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	const struct can_stm32_config *cfg = dev->config;
-	const struct device *clock;
+	const struct device *clk;
 	int ret;
 
-	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	ret = clock_control_get_rate(clock,
+	ret = clock_control_get_rate(clk,
 				     (clock_control_subsys_t) &cfg->pclken,
 				     rate);
 	if (ret != 0) {
@@ -598,7 +598,7 @@ static int can_stm32_init(const struct device *dev)
 	struct can_stm32_data *data = dev->data;
 	CAN_TypeDef *can = cfg->can;
 	struct can_timing timing = { 0 };
-	const struct device *clock;
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	int ret;
 
 	k_mutex_init(&filter_mutex);
@@ -612,13 +612,7 @@ static int can_stm32_init(const struct device *dev)
 		}
 	}
 
-	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	if (!device_is_ready(clock)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
-	ret = clock_control_on(clock, (clock_control_subsys_t) &cfg->pclken);
+	ret = clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken);
 	if (ret != 0) {
 		LOG_ERR("HAL_CAN_Init clock control on failed: %d", ret);
 		return -EIO;
@@ -849,8 +843,7 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 		mailbox->TDHR = frame->data_32[1];
 	}
 
-	mailbox->TDTR = (mailbox->TDTR & ~CAN_TDT1R_DLC) |
-			((frame->dlc & 0xF) << CAN_TDT1R_DLC_Pos);
+	mailbox->TDTR = ((frame->dlc & 0xF) << CAN_TDT1R_DLC_Pos);
 
 	mailbox->TIR |= CAN_TI0R_TXRQ;
 	k_mutex_unlock(&data->inst_mutex);

@@ -216,12 +216,16 @@ static inline void lpspi_handle_tx_irq(const struct device *dev)
 static inline void lpspi_end_xfer(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	const struct lpspi_config *config = dev->config;
 	struct lpspi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 
 	spi_context_complete(ctx, dev, 0);
+
+#ifdef CONFIG_CPU_CORTEX_M
+	const struct lpspi_config *config = dev->config;
 	NVIC_ClearPendingIRQ(config->irqn);
+#endif
+
 	if (!(ctx->config->operation & SPI_HOLD_ON_CS)) {
 		base->TCR &= ~(LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK);
 		/* don't need to wait for TCR since we are at end of xfer + in IRQ context */

@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright (c) 2017, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include <nxp/nxp_lpc54xxx_m4.dtsi>
+#include <nxp/lpc/nxp_lpc54xxx_m4.dtsi>
 #include "lpcxpresso54114.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -115,4 +115,12 @@
 			reg = <0x00030000 DT_SIZE_K(64)>;
 		};
 	};
+};
+
+&gint0 {
+	status = "okay";
+};
+
+&gint1 {
+	status = "okay";
 };

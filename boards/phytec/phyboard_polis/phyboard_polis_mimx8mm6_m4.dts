@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_imx8mm_m4.dtsi>
+#include <nxp/imx/nxp_imx8mm_m4.dtsi>
 #include "phyboard_polis-pinctrl.dtsi"
 
 / {

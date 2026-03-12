@@ -18,6 +18,7 @@
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
+#include <zephyr/dt-bindings/power/stm32h7rs_iocell.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -192,6 +193,36 @@
 				erase-block-size = <DT_SIZE_K(8)>;
 				/* maximum erase time for a 8K sector */
 				max-erase-time = <3>;
+			};
+
+			/* "FLASH read-only area" */
+			flash@8fff800 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x08fff800 512>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					vrefint_otp: vrefint@10 {
+						reg = <0x10 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					ts_cal1_otp: ts-cal1@14 {
+						reg = <0x14 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					ts_cal2_otp: ts-cal2@18 {
+						reg = <0x18 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+				};
 			};
 		};
 
@@ -413,6 +444,17 @@
 			status = "disabled";
 		};
 
+		rtc: rtc@58004000 {
+			compatible = "st,stm32-rtc";
+			reg = <0x58004000 0x400>;
+			interrupts = <32 0>;
+			clocks = <&rcc STM32_CLOCK(APB4, 16)>;
+			prescaler = <32768>;
+			alarms-count = <2>;
+			alrm-exti-line = <17>;
+			status = "disabled";
+		};
+
 		i2c1: i2c@40005400 {
 			compatible = "st,stm32-i2c-v2";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -458,6 +500,8 @@
 				 <&rcc STM32_SRC_PLL1_Q SPI1_SEL(0)>;
 			interrupts = <58 0>;
 			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -470,6 +514,8 @@
 				 <&rcc STM32_SRC_PLL1_Q SPI23_SEL(0)>;
 			interrupts = <59 0>;
 			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -482,6 +528,8 @@
 				 <&rcc STM32_SRC_PLL1_Q SPI23_SEL(0)>;
 			interrupts = <60 0>;
 			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -493,6 +541,8 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 13)>;
 			interrupts = <61 0>;
 			st,spi-data-width = "full-4-to-16-bit";
+			fifo-size = <8>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -505,6 +555,8 @@
 			interrupts = <62 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
+			fifo-size = <8>;
+			fifo-max-transfer-size = <65535>;
 		};
 
 		i2s1: i2s@40013000 {
@@ -981,7 +1033,7 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 				 <&rcc STM32_SRC_PLL3_P SAI1_SEL(2)>;
 			dmas = <&gpdma1 1 63 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				STM32_DMA_16BITS)>;
+					      STM32_DMA_16BITS)>;
 			status = "disabled";
 		};
 
@@ -993,7 +1045,7 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 				 <&rcc STM32_SRC_PLL3_P SAI1_SEL(2)>;
 			dmas = <&gpdma1 0 64 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				STM32_DMA_16BITS)>;
+					      STM32_DMA_16BITS)>;
 			status = "disabled";
 		};
 
@@ -1015,6 +1067,7 @@
 				 <&rcc STM32_SRC_PCLK5 NO_SEL>;
 			clock-names = "dcmipp", "dcmipp-ker";
 			interrupts = <95 0>;
+			interrupt-names = "dcmipp";
 			resets = <&rctl STM32_RESET(APB5, 2)>;
 			status = "disabled";
 
@@ -1029,6 +1082,23 @@
 		};
 	};
 
+	iocell: iocell {
+		compatible = "st,stm32-iocell";
+		status = "disabled";
+
+		vddio {
+			domain = <STM32_DT_IOCELL_VDDIO>;
+		};
+
+		vddxspi1 {
+			domain = <STM32_DT_IOCELL_XSPI1>;
+		};
+
+		vddxspi2 {
+			domain = <STM32_DT_IOCELL_XSPI2>;
+		};
+	};
+
 	otgfs_phy: otgfs_phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
@@ -1036,8 +1106,8 @@
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		ts-cal1-addr = <0x08fff814>;
-		ts-cal2-addr = <0x08fff818>;
+		nvmem-cells = <&ts_cal1_otp>, <&ts_cal2_otp>;
+		nvmem-cell-names = "TS_CAL1", "TS_CAL2";
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3300>;
@@ -1055,7 +1125,7 @@
 
 	vref: vref {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x08fff810>;
+		nvmem-cells = <&vrefint_otp>;
 		vrefint-cal-mv = <3300>;
 		status = "disabled";
 		io-channels = <&adc1 17>;

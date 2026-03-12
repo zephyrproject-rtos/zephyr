@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_ALIF
+	bool "Alif Semiconductor clock control driver"
+	default y
+	depends on DT_HAS_ALIF_CLOCKCTRL_ENABLED
+	help
+	  Enable clock control driver for Alif Semiconductor SoCs.

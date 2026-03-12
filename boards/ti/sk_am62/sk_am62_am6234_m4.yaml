@@ -1,8 +1,0 @@
-identifier: sk_am62/am6234/m4
-name: TI AM62X M4 Starter Kit (SK)
-type: mcu
-arch: arm
-toolchain:
-  - zephyr
-ram: 256
-vendor: ti

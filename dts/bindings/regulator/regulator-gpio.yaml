@@ -4,25 +4,6 @@
 description: |
   GPIO-controlled voltage of regulators
 
-  Example of dts node:
-    vccq_sd0: regulator-vccq-sd0 {
-      compatible = "regulator-gpio";
-
-      regulator-name = "SD0 VccQ";
-      regulator-min-microvolt = <1800000>;
-      regulator-max-microvolt = <3300000>;
-
-      enable-gpios = <&gpio5 3 GPIO_ACTIVE_HIGH>;
-
-      gpios = <&gpio5 1 GPIO_ACTIVE_HIGH>, <&gpio5 2 GPIO_ACTIVE_HIGH>;
-      states = <3300000 2>, <2700000 1>, <1800000 0>;
-
-      regulator-boot-on;
-    };
-  In the above example, three GPIO pins are used for controlling the regulator:
-    * two of them for controlling voltage;
-    * third for enabling/disabling the regulator.
-
 include:
   - name: base.yaml
   - name: regulator.yaml
@@ -70,3 +51,25 @@ properties:
 
       Example:
         enable-gpios = <&gpio5 2 GPIO_ACTIVE_HIGH>;
+
+examples:
+  - |
+    /*
+     * In the below example, three GPIO pins are used for controlling the regulator:
+     * - two of them for controlling voltage;
+     * - third one for enabling/disabling the regulator.
+     */
+    vccq_sd0: regulator-vccq-sd0 {
+      compatible = "regulator-gpio";
+
+      regulator-name = "SD0 VccQ";
+      regulator-min-microvolt = <1800000>;
+      regulator-max-microvolt = <3300000>;
+
+      enable-gpios = <&gpio5 3 GPIO_ACTIVE_HIGH>;
+
+      gpios = <&gpio5 1 GPIO_ACTIVE_HIGH>, <&gpio5 2 GPIO_ACTIVE_HIGH>;
+      states = <3300000 2>, <2700000 1>, <1800000 0>;
+
+      regulator-boot-on;
+    };

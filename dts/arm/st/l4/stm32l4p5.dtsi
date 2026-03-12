@@ -40,7 +40,7 @@
 
 		pllsai2: pllsai2 {
 			#clock-cells = <0>;
-			compatible = "st,stm32l4-pllsai-clock";
+			compatible = "st,stm32l4-pll-clock";
 			status = "disabled";
 		};
 	};
@@ -392,8 +392,9 @@
 			interrupt-names = "dcmi";
 			clocks = <&rcc STM32_CLOCK(AHB2, 14)>;
 			dmas = <&dma1 1 91 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
-				STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
-				STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
+					    STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS |
+					    STM32_DMA_MEM_32BITS |
+					    STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
 			status = "disabled";
 		};
 

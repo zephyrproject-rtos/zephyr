@@ -471,7 +471,7 @@ static int gpio_silabs_common_init(const struct device *dev)
 
 #define GPIO_PORT_INIT(n)                                                                          \
 	static const struct gpio_silabs_port_config gpio_silabs_port_config_##n = {                \
-		.common.port_pin_mask = (gpio_port_pins_t)(-1),                                    \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_NODE(n),                                      \
 		.gpio_index = GET_SILABS_GPIO_INDEX(n),                                            \
 		.common_dev = DEVICE_DT_GET(DT_PARENT(n)),                                         \
 		.em4wu_pin_count = DT_PROP_LEN(n, silabs_wakeup_ints),                             \

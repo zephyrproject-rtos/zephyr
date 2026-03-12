@@ -50,7 +50,7 @@ LOG_MODULE_REGISTER(bt_rfcomm);
 #define SESSION_RTX(_w) CONTAINER_OF(k_work_delayable_from_work(_w), \
 				     struct bt_rfcomm_session, rtx_work)
 
-static struct bt_rfcomm_server *servers;
+static sys_slist_t servers = SYS_SLIST_STATIC_INIT(&servers);
 
 #define RFCOMM_SESSION(_ch) CONTAINER_OF(_ch, \
 					 struct bt_rfcomm_session, br_chan.chan)
@@ -169,8 +169,9 @@ static struct bt_rfcomm_dlc *rfcomm_dlcs_remove_dlci(struct bt_rfcomm_dlc *dlcs,
 static struct bt_rfcomm_server *rfcomm_server_lookup_channel(uint8_t channel)
 {
 	struct bt_rfcomm_server *server;
+	struct bt_rfcomm_server *next;
 
-	for (server = servers; server; server = server->_next) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&servers, server, next, node) {
 		if (server->channel == channel) {
 			return server;
 		}
@@ -227,8 +228,16 @@ int bt_rfcomm_server_register(struct bt_rfcomm_server *server)
 
 	LOG_DBG("Channel 0x%02x", server->channel);
 
-	server->_next = servers;
-	servers = server;
+	sys_slist_prepend(&servers, &server->node);
+
+	return 0;
+}
+
+int bt_rfcomm_server_unregister(struct bt_rfcomm_server *server)
+{
+	if (!sys_slist_find_and_remove(&servers, &server->node)) {
+		return -ENOENT;
+	}
 
 	return 0;
 }

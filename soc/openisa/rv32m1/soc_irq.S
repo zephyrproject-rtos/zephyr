@@ -24,14 +24,6 @@ GTEXT(__soc_restore_context)
  * With a0 == irq_num, this is equivalent to:
  *
  * EVENT_UNIT->INTPTPENDCLEAR = (1U << irq_num);
- *
- * We could write this routine in C, but the assembly
- * that's calling us requires that a0 still contain irq_num
- * on return, and assuming nobody would ever change a
- * C implementation in a way that silently clobbers it
- * is playing with fire. Instead, we play tricks in
- * soc_context.h so that offsets.h contains a pointer to
- * INTPTPENDCLEAR.
  */
 SECTION_FUNC(exception.other, __soc_handle_irq)
 	la t0, __EVENT_INTPTPENDCLEAR

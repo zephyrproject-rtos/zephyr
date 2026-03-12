@@ -27,6 +27,7 @@
 
 #include "bap_endpoint.h"
 #include "cap_internal.h"
+#include "common/bt_str.h"
 #include "csip_internal.h"
 
 LOG_MODULE_REGISTER(bt_cap_handover, CONFIG_BT_CAP_HANDOVER_LOG_LEVEL);
@@ -163,7 +164,7 @@ void bt_cap_handover_broadcast_source_stopped(uint8_t reason)
 				bt_cap_handover_broadcast_audio_stopped();
 			}
 		} else {
-			proc_param->unicast_to_broadcast.broadcast_source = NULL;
+			proc_param->broadcast_to_unicast.broadcast_source = NULL;
 			active_proc->err = reason;
 			bt_cap_handover_complete();
 		}
@@ -198,11 +199,13 @@ void bt_cap_handover_unicast_to_broadcast_reception_start(void)
 	}
 
 	if (adv_info.ext_adv_state != BT_LE_EXT_ADV_STATE_ENABLED) {
+		struct bt_le_ext_adv_info info;
+
 		/* Start advertising to get the actual adv addr */
 		err = bt_le_ext_adv_start(proc_param->unicast_to_broadcast.ext_adv,
 					  BT_LE_EXT_ADV_START_DEFAULT);
 		if (err != 0) {
-			LOG_DBG("Failed to start advertising set (err %d)\n", err);
+			LOG_DBG("Failed to start advertising set (err %d)", err);
 
 			active_proc->err = err;
 			active_proc->failed_conn = NULL;
@@ -211,6 +214,11 @@ void bt_cap_handover_unicast_to_broadcast_reception_start(void)
 
 			return;
 		}
+
+		err = bt_le_ext_adv_get_info(proc_param->unicast_to_broadcast.ext_adv, &info);
+		__ASSERT_NO_MSG(err == 0);
+
+		LOG_DBG("Started advertising with addr %s", bt_addr_le_str(info.addr));
 
 		/* Since bt_le_ext_adv_get_info returns the pointer to actual advertising address we
 		 * do not need to call it again to get the address
@@ -294,6 +302,13 @@ void bt_cap_handover_unicast_to_broadcast_setup_broadcast(void)
 		bt_cap_handover_complete();
 
 		return;
+	}
+
+	if (cap_cb->unicast_to_broadcast_created != NULL) {
+		/* Let application know the broadcast source was created so they can set up the
+		 * periodic advertising data with the BASE
+		 */
+		cap_cb->unicast_to_broadcast_created(*broadcast_source);
 	}
 
 	ext_adv = active_proc->proc_param.handover.unicast_to_broadcast.ext_adv;

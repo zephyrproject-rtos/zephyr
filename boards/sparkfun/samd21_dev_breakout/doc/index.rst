@@ -44,7 +44,7 @@ Hardware
 Supported Features
 ==================
 
-.. zephyr::board-supported-hw::
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

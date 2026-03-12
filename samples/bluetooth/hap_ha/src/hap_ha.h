@@ -5,6 +5,12 @@
  */
 
 #include <stdint.h>
+#include <zephyr/bluetooth/audio/audio.h>
+
+/* Choose the contexts ONCE here — used for both sink and source */
+#define HAP_CONTEXT                                                                                \
+	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |                \
+	 BT_AUDIO_CONTEXT_TYPE_MEDIA)
 
 /**
  * @brief Initialize the BAP Unicast Server role

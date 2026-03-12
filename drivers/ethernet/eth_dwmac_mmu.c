@@ -36,10 +36,11 @@ int dwmac_bus_init(struct dwmac_priv *p)
 static struct dwmac_dma_desc __aligned(CONFIG_DCACHE_LINE_SIZE)
 			dwmac_tx_rx_descriptors[NB_TX_DESCS + NB_RX_DESCS];
 
-static const uint8_t dwmac_mac_addr[6] = DT_INST_PROP(0, local_mac_address);
+static struct net_eth_mac_config mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0);
 
-void dwmac_platform_init(struct dwmac_priv *p)
+int dwmac_platform_init(struct dwmac_priv *p)
 {
+	int ret;
 	uint8_t *desc_uncached_addr;
 	uintptr_t desc_phys_addr;
 
@@ -83,7 +84,17 @@ void dwmac_platform_init(struct dwmac_priv *p)
 	irq_enable(DT_INST_IRQN(0));
 
 	/* retrieve MAC address */
-	memcpy(p->mac_addr, dwmac_mac_addr, sizeof(p->mac_addr));
+	ret = net_eth_mac_load(&mac_cfg, p->mac_addr);
+	if (ret == -ENODATA) {
+		LOG_DBG("No MAC address configured");
+		return 0;
+	}
+	if (ret < 0) {
+		LOG_ERR("Failed to load MAC address (%d)", ret);
+		return ret;
+	}
+
+	return 0;
 }
 
 /* Our private device instance */

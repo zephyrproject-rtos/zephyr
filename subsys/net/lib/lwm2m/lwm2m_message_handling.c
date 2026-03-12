@@ -73,12 +73,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define OUTPUT_CONTEXT_IN_USE_MARK (enum coap_block_size)(-1)
 
-#ifdef CONFIG_ZTEST
-#define STATIC
-#else
-#define STATIC static
-#endif
-
 /* Resources */
 
 /* Shared set of in-flight LwM2M messages */
@@ -103,8 +97,8 @@ sys_slist_t *lwm2m_engine_obj_inst_list(void);
 
 static int handle_request(struct coap_packet *request, struct lwm2m_message *msg);
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
-STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_num,
-				    enum coap_block_size block_size);
+ZTESTABLE_STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_num,
+					      enum coap_block_size block_size);
 struct coap_block_context *lwm2m_output_block_context(void);
 #endif
 
@@ -213,7 +207,7 @@ static void free_block_ctx(struct lwm2m_block_context *ctx)
 }
 
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
-STATIC int request_output_block_ctx(struct coap_block_context **ctx)
+ZTESTABLE_STATIC int request_output_block_ctx(struct coap_block_context **ctx)
 {
 	int ret = -ENOMEM;
 	int i;
@@ -234,7 +228,7 @@ STATIC int request_output_block_ctx(struct coap_block_context **ctx)
 	return ret;
 }
 
-STATIC void release_output_block_ctx(struct coap_block_context **ctx)
+ZTESTABLE_STATIC void release_output_block_ctx(struct coap_block_context **ctx)
 {
 	int i;
 
@@ -280,8 +274,8 @@ static inline void release_body_encode_buffer(uint8_t **buffer)
 	}
 }
 
-STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_num,
-				    enum coap_block_size block_size)
+ZTESTABLE_STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_num,
+					      enum coap_block_size block_size)
 {
 	int ret;
 	uint16_t payload_size;
@@ -390,7 +384,7 @@ STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_nu
 	return 0;
 }
 
-STATIC int prepare_msg_for_send(struct lwm2m_message *msg)
+ZTESTABLE_STATIC int prepare_msg_for_send(struct lwm2m_message *msg)
 {
 	int ret;
 	/* save the big buffer for later use (splitting blocks) */

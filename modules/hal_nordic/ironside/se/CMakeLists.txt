@@ -1,14 +1,7 @@
 # Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-# The IronSide source directory can be overridden by setting
-# IRONSIDE_SUPPORT_DIR before invoking the build system.
-zephyr_get(IRONSIDE_SUPPORT_DIR SYSBUILD GLOBAL)
-if(NOT DEFINED IRONSIDE_SUPPORT_DIR)
-  set(IRONSIDE_SUPPORT_DIR
-    ${ZEPHYR_CURRENT_MODULE_DIR}/ironside CACHE PATH "IronSide Support Directory"
-  )
-endif()
+include(./ironside_support_dir.cmake)
 
 zephyr_include_directories(include)
 zephyr_include_directories(${IRONSIDE_SUPPORT_DIR}/se/include)
@@ -17,15 +10,24 @@ zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
 zephyr_library_sources_ifdef(CONFIG_IRONSIDE_SE_CALL
   ${IRONSIDE_SUPPORT_DIR}/se/src/ironside_se_api.c
-  call.c
+  glue.c
 )
+zephyr_library_compile_definitions(IRONSIDE_SE_GLUE_EXT_FILE_PATH="ironside_zephyr/se/glue_impl.h")
+zephyr_library_compile_definitions_ifdef(CONFIG_IRONSIDE_SE_CALL_MINIMAL IRONSIDE_SE_CALL_MINIMAL=1)
+zephyr_library_sources_ifdef(CONFIG_IRONSIDE_SE_CALL_ZEPHYR call.c)
 zephyr_library_sources_ifdef(CONFIG_IRONSIDE_SE_DVFS dvfs.c)
 
-if(CONFIG_NRF_PERIPHCONF_SECTION)
+if(CONFIG_NRF_PERIPHCONF_SECTION OR CONFIG_NRF_MPCCONF_SECTION)
   zephyr_linker_sources(SECTIONS uicr.ld)
 endif()
 
 if(CONFIG_NRF_PERIPHCONF_GENERATE_ENTRIES)
+  set(optional_args)
+  if(CONFIG_NRF_PERIPHCONF_GENERATE_ENTRIES_LOCK)
+    list(APPEND optional_args --lock)
+  else()
+    list(APPEND optional_args --no-lock)
+  endif()
   set(periphconf_entries_c_file ${PROJECT_BINARY_DIR}/periphconf_entries_generated.c)
   execute_process(
     COMMAND
@@ -34,6 +36,7 @@ if(CONFIG_NRF_PERIPHCONF_GENERATE_ENTRIES)
       --soc ${CONFIG_SOC}
       --in-edt-pickle ${EDT_PICKLE}
       --out-periphconf-source ${periphconf_entries_c_file}
+      ${optional_args}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     COMMAND_ERROR_IS_FATAL ANY
   )
@@ -44,6 +47,14 @@ endif()
 if(CONFIG_NRF_PERIPHCONF_SECTION AND NOT SYSBUILD)
   message(WARNING "CONFIG_NRF_PERIPHCONF_SECTION is enabled, but Sysbuild is not being used. "
                   "The global peripheral configuration will not be applied unless artifacts "
+                  "are generated manually/externally. To enable automatic generation, build with "
+                  "Sysbuild and ensure that SB_CONFIG_NRF_HALTIUM_GENERATE_UICR=y."
+  )
+endif()
+
+if(CONFIG_NRF_MPCCONF_SECTION AND NOT SYSBUILD)
+  message(WARNING "CONFIG_NRF_MPCCONF_SECTION is enabled, but Sysbuild is not being used. "
+                  "The MPC configuration will not be applied unless artifacts "
                   "are generated manually/externally. To enable automatic generation, build with "
                   "Sysbuild and ensure that SB_CONFIG_NRF_HALTIUM_GENERATE_UICR=y."
   )

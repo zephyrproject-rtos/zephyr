@@ -19,7 +19,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -184,7 +183,11 @@ static void tbs_client_discover_cb(struct bt_conn *conn, int err, uint8_t tbs_co
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ccp_call_control_client_cbs, listener, next, _node) {
 		if (listener->discover != NULL) {
-			listener->discover(client, err, &bearers);
+			void *user_data =
+				COND_CODE_1(CONFIG_BT_CCP_CALL_CONTROL_CLIENT_CB_USER_DATA,
+					    (listener->user_data), (NULL));
+
+			listener->discover(client, err, &bearers, user_data);
 		}
 	}
 }
@@ -195,13 +198,13 @@ int bt_ccp_call_control_client_discover(struct bt_conn *conn,
 	struct bt_ccp_call_control_client *client;
 	int err;
 
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(out_client == NULL) {
+	if (out_client == NULL) {
 		LOG_DBG("client is NULL");
 
 		return -EINVAL;
@@ -241,7 +244,7 @@ int bt_ccp_call_control_client_discover(struct bt_conn *conn,
 
 int bt_ccp_call_control_client_register_cb(struct bt_ccp_call_control_client_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 
 		return -EINVAL;
@@ -258,7 +261,7 @@ int bt_ccp_call_control_client_register_cb(struct bt_ccp_call_control_client_cb 
 
 int bt_ccp_call_control_client_unregister_cb(struct bt_ccp_call_control_client_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 		return -EINVAL;
 	}
@@ -273,12 +276,12 @@ int bt_ccp_call_control_client_unregister_cb(struct bt_ccp_call_control_client_c
 int bt_ccp_call_control_client_get_bearers(struct bt_ccp_call_control_client *client,
 					   struct bt_ccp_call_control_client_bearers *bearers)
 {
-	CHECKIF(client == NULL) {
+	if (client == NULL) {
 		LOG_DBG("client is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(bearers == NULL) {
+	if (bearers == NULL) {
 		LOG_DBG("bearers is NULL");
 		return -EINVAL;
 	}
@@ -309,7 +312,11 @@ static void tbs_client_read_bearer_provider_name_cb(struct bt_conn *conn, int er
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ccp_call_control_client_cbs, listener, next, _node) {
 		if (listener->bearer_provider_name != NULL) {
-			listener->bearer_provider_name(bearer, err, name);
+			void *user_data =
+				COND_CODE_1(CONFIG_BT_CCP_CALL_CONTROL_CLIENT_CB_USER_DATA,
+					    (listener->user_data), (NULL));
+
+			listener->bearer_provider_name(bearer, err, name, user_data);
 		}
 	}
 }
@@ -326,7 +333,7 @@ static void tbs_client_read_bearer_provider_name_cb(struct bt_conn *conn, int er
 static int validate_bearer_and_get_client(const struct bt_ccp_call_control_client_bearer *bearer,
 					  struct bt_ccp_call_control_client **client)
 {
-	CHECKIF(bearer == NULL) {
+	if (bearer == NULL) {
 		LOG_DBG("bearer is NULL");
 
 		return -EINVAL;

@@ -159,6 +159,52 @@ out:
 	return ret;
 }
 
+int k_mem_domain_deinit(struct k_mem_domain *domain)
+{
+#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
+	k_spinlock_key_t key;
+	int ret = 0;
+
+	CHECKIF(domain == NULL) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (domain == &k_mem_domain_default) {
+		/* Default memory domain must be there forever. */
+		ret = -EINVAL;
+		goto out;
+	}
+
+	key = k_spin_lock(&z_mem_domain_lock);
+
+	/* Must make sure there are no threads associated with this memory
+	 * domain anymore. Or else these threads will run with an invalid
+	 * memory domain.
+	 */
+	if (!sys_dlist_is_empty(&domain->thread_mem_domain_list)) {
+		ret = -EBUSY;
+		goto unlock_out;
+	}
+
+	ret = arch_mem_domain_deinit(domain);
+	if (ret != 0) {
+		LOG_ERR("architecture-specific de-initialization failed for domain %p with %d",
+			domain, ret);
+		ret = -ENOMEM;
+		goto unlock_out;
+	}
+
+unlock_out:
+	k_spin_unlock(&z_mem_domain_lock, key);
+
+out:
+	return ret;
+#else  /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
+	return -ENOTSUP;
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
+}
+
 int k_mem_domain_add_partition(struct k_mem_domain *domain,
 			       struct k_mem_partition *part)
 {

@@ -62,7 +62,7 @@ sl_wifi_region_code_t siwx91x_map_country_code_to_region(const char *country_cod
  *
  * @return Pointer to SDK region configuration, or NULL if unsupported.
  */
-const sli_si91x_set_region_ap_request_t *siwx91x_find_sdk_region_table(uint8_t region_code);
+const sli_wifi_set_region_ap_request_t *siwx91x_find_sdk_region_table(uint8_t region_code);
 
 /**
  * @brief Store the country code internally for GET operation.

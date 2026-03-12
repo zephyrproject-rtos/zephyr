@@ -78,7 +78,7 @@ static int max14906_reg_trans_spi_diag(const struct device *dev, uint8_t addr, u
 	const struct max14906_config *config = dev->config;
 	uint8_t rx_diag_buff[2];
 
-	if (!gpio_pin_get_dt(&config->fault_gpio)) {
+	if (config->fault_gpio.port && !gpio_pin_get_dt(&config->fault_gpio)) {
 		LOG_ERR("[FAULT] pin triggered");
 	}
 
@@ -124,7 +124,7 @@ static int gpio_max14906_diag_chan_get(const struct device *dev)
 	struct max14906_data *data = dev->data;
 	int ret;
 
-	if (!gpio_pin_get_dt(&config->fault_gpio)) {
+	if (config->fault_gpio.port && !gpio_pin_get_dt(&config->fault_gpio)) {
 		LOG_ERR("[DIAG] FAULT flag is rised");
 	}
 
@@ -232,7 +232,20 @@ static int gpio_max14906_port_clear_bits_raw(const struct device *dev, gpio_port
 	uint32_t reg_val = 0;
 
 	ret = MAX14906_REG_READ(dev, MAX14906_SETOUT_REG);
-	reg_val = ret & (0xf0 & ~pins);
+	reg_val = ret & ~(pins & 0x0f);
+
+	return MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
+}
+
+static int gpio_max14906_port_set_masked_raw(const struct device *dev,
+					     gpio_port_pins_t mask,
+					     gpio_port_value_t value)
+{
+	int ret;
+	uint32_t reg_val;
+
+	ret = MAX14906_REG_READ(dev, MAX14906_SETOUT_REG);
+	reg_val = (ret & ~(mask & 0x0f)) | (value & mask & 0x0f);
 
 	return MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
 }
@@ -263,6 +276,11 @@ static int gpio_max14906_config(const struct device *dev, gpio_pin_t pin, gpio_f
 		LOG_DBG("SETUP AS INPUT %d", pin);
 		break;
 	case GPIO_OUTPUT:
+		if (flags & GPIO_OUTPUT_INIT_HIGH) {
+			gpio_max14906_port_set_bits_raw(dev, BIT(pin));
+		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
+			gpio_max14906_port_clear_bits_raw(dev, BIT(pin));
+		}
 		max14906_ch_func(dev, (uint32_t)pin, MAX14906_OUT);
 		LOG_DBG("SETUP AS OUTPUT %d", pin);
 		break;
@@ -291,16 +309,12 @@ static int gpio_max14906_port_get_raw(const struct device *dev, gpio_port_value_
 static int gpio_max14906_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	int ret;
-	uint32_t reg_val, direction, state, new_reg_val;
+	uint32_t reg_val;
 
 	ret = MAX14906_REG_READ(dev, MAX14906_SETOUT_REG);
+	reg_val = ret ^ (pins & 0x0f);
 
-	direction = ret & 0xf0;
-	state = ret & 0x0f;
-	reg_val = state ^ pins;
-	new_reg_val = direction | (0x0f & state);
-
-	return MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, new_reg_val);
+	return MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
 }
 
 static int gpio_max14906_clean_on_power(const struct device *dev)
@@ -365,60 +379,77 @@ static int gpio_max14906_init(const struct device *dev)
 	}
 
 	/* setup READY gpio - normal low */
-	if (!gpio_is_ready_dt(&config->ready_gpio)) {
-		LOG_ERR("READY GPIO device not ready");
-		return -ENODEV;
-	}
+	if (config->ready_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&config->ready_gpio)) {
+			LOG_ERR("READY GPIO device not ready");
+			return -ENODEV;
+		}
 
-	err = gpio_pin_configure_dt(&config->ready_gpio, GPIO_INPUT);
-	if (err < 0) {
-		LOG_ERR("Failed to configure reset GPIO");
-		return err;
+		err = gpio_pin_configure_dt(&config->ready_gpio, GPIO_INPUT);
+		if (err < 0) {
+			LOG_ERR("Failed to configure reset GPIO");
+			return err;
+		}
 	}
 
 	/* setup FAULT gpio - normal high */
-	if (!gpio_is_ready_dt(&config->fault_gpio)) {
-		LOG_ERR("FAULT GPIO device not ready");
-		return -ENODEV;
-	}
+	if (config->fault_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&config->fault_gpio)) {
+			LOG_ERR("FAULT GPIO device not ready");
+			return -ENODEV;
+		}
 
-	err = gpio_pin_configure_dt(&config->fault_gpio, GPIO_INPUT);
-	if (err < 0) {
-		LOG_ERR("Failed to configure DC GPIO");
-		return err;
-	}
-
-	/* setup LATCH gpio - normal high */
-	if (!gpio_is_ready_dt(&config->sync_gpio)) {
-		LOG_ERR("SYNC GPIO device not ready");
-		return -ENODEV;
-	}
-
-	err = gpio_pin_configure_dt(&config->sync_gpio, GPIO_OUTPUT_INACTIVE);
-	if (err < 0) {
-		LOG_ERR("Failed to configure busy GPIO");
-		return err;
+		err = gpio_pin_configure_dt(&config->fault_gpio, GPIO_INPUT);
+		if (err < 0) {
+			LOG_ERR("Failed to configure DC GPIO");
+			return err;
+		}
 	}
 
 	/* setup LATCH gpio - normal high */
-	if (!gpio_is_ready_dt(&config->en_gpio)) {
-		LOG_ERR("SYNC GPIO device not ready");
-		return -ENODEV;
+	if (config->sync_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&config->sync_gpio)) {
+			LOG_ERR("SYNC GPIO device not ready");
+			return -ENODEV;
+		}
+
+		err = gpio_pin_configure_dt(&config->sync_gpio, GPIO_OUTPUT_INACTIVE);
+		if (err < 0) {
+			LOG_ERR("Failed to configure busy GPIO");
+			return err;
+		}
+
+		gpio_pin_set_dt(&config->sync_gpio, 1);
 	}
 
-	err = gpio_pin_configure_dt(&config->en_gpio, GPIO_OUTPUT_INACTIVE);
-	if (err < 0) {
-		LOG_ERR("Failed to configure busy GPIO");
-		return err;
+	/* setup LATCH gpio - normal high */
+	if (config->en_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&config->en_gpio)) {
+			LOG_ERR("SYNC GPIO device not ready");
+			return -ENODEV;
+		}
+
+		err = gpio_pin_configure_dt(&config->en_gpio, GPIO_OUTPUT_INACTIVE);
+		if (err < 0) {
+			LOG_ERR("Failed to configure busy GPIO");
+			return err;
+		}
+
+		gpio_pin_set_dt(&config->en_gpio, 1);
 	}
 
-	gpio_pin_set_dt(&config->en_gpio, 1);
-	gpio_pin_set_dt(&config->sync_gpio, 1);
-
-	LOG_DBG("[GPIO] FAULT - %d\n", gpio_pin_get_dt(&config->fault_gpio));
-	LOG_DBG("[GPIO] READY - %d\n", gpio_pin_get_dt(&config->ready_gpio));
-	LOG_DBG("[GPIO] SYNC  - %d\n", gpio_pin_get_dt(&config->sync_gpio));
-	LOG_DBG("[GPIO] EN    - %d\n", gpio_pin_get_dt(&config->en_gpio));
+	if (config->fault_gpio.port != NULL) {
+		LOG_DBG("[GPIO] FAULT - %d\n", gpio_pin_get_dt(&config->fault_gpio));
+	}
+	if (config->ready_gpio.port != NULL) {
+		LOG_DBG("[GPIO] READY - %d\n", gpio_pin_get_dt(&config->ready_gpio));
+	}
+	if (config->sync_gpio.port != NULL) {
+		LOG_DBG("[GPIO] SYNC  - %d\n", gpio_pin_get_dt(&config->sync_gpio));
+	}
+	if (config->en_gpio.port != NULL) {
+		LOG_DBG("[GPIO] EN    - %d\n", gpio_pin_get_dt(&config->en_gpio));
+	}
 
 	int ret = gpio_max14906_clean_on_power(dev);
 
@@ -434,6 +465,7 @@ static int gpio_max14906_init(const struct device *dev)
 static DEVICE_API(gpio, gpio_max14906_api) = {
 	.pin_configure = gpio_max14906_config,
 	.port_get_raw = gpio_max14906_port_get_raw,
+	.port_set_masked_raw = gpio_max14906_port_set_masked_raw,
 	.port_set_bits_raw = gpio_max14906_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_max14906_port_clear_bits_raw,
 	.port_toggle_bits = gpio_max14906_port_toggle_bits,
@@ -442,10 +474,10 @@ static DEVICE_API(gpio, gpio_max14906_api) = {
 #define GPIO_MAX14906_DEVICE(id)                                                                   \
 	static const struct max14906_config max14906_##id##_cfg = {                                \
 		.spi = SPI_DT_SPEC_INST_GET(id, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U)),            \
-		.ready_gpio = GPIO_DT_SPEC_INST_GET(id, drdy_gpios),                               \
-		.fault_gpio = GPIO_DT_SPEC_INST_GET(id, fault_gpios),                              \
-		.sync_gpio = GPIO_DT_SPEC_INST_GET(id, sync_gpios),                                \
-		.en_gpio = GPIO_DT_SPEC_INST_GET(id, en_gpios),                                    \
+		.ready_gpio = GPIO_DT_SPEC_INST_GET_OR(id, drdy_gpios, {0}),                       \
+		.fault_gpio = GPIO_DT_SPEC_INST_GET_OR(id, fault_gpios, {0}),                      \
+		.sync_gpio = GPIO_DT_SPEC_INST_GET_OR(id, sync_gpios, {0}),                        \
+		.en_gpio = GPIO_DT_SPEC_INST_GET_OR(id, en_gpios, {0}),                            \
 		.crc_en = DT_INST_PROP(id, crc_en),                                                \
 		.config1.reg_bits.FLED_SET = DT_INST_PROP(id, fled_set),                           \
 		.config1.reg_bits.SLED_SET = DT_INST_PROP(id, sled_set),                           \

@@ -1,10 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_include_directories(.)
-zephyr_library_sources(soc_ecia.c soc_pcr.c soc_cmn_init.c)
+zephyr_library_sources(soc_ecia.c soc_misc.c soc_pcr.c soc_cmn_init.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_MEC172X
   soc_i2c.c
 )
+
+if(NOT DEFINED CONFIG_SOC_SERIES_MEC172X AND NOT DEFINED CONFIG_SOC_SERIES_MEC15XX)
+  zephyr_library_sources_ifdef(CONFIG_PM soc_pm_mgmt.c)
+endif()
 
 if(DEFINED CONFIG_MCHP_HEADER_VERBOSE_OUTPUT)
     set(MCHP_HEADER_VERBOSE_OPTION "-v")

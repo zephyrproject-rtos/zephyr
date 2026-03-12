@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arm/nxp/nxp_s32k344_m7.dtsi>
+#include <arm/nxp/s32/nxp_s32k344_m7.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <freq.h>

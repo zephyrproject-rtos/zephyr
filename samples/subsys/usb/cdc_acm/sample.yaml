@@ -15,6 +15,7 @@ tests:
       - max32690evkit/max32690/m4
       - samd21_xpro
       - same54_xpro
+      - sam4l_ek
     harness: console
     harness_config:
       type: one_line

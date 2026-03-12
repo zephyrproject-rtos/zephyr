@@ -23,8 +23,11 @@ LOG_MODULE_REGISTER(usbip, CONFIG_USBIP_LOG_LEVEL);
 /* For now, we will use the Zephyr default controller. */
 USBH_CONTROLLER_DEFINE(usbip_uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
 
-#define USBIP_MAX_PKT_SIZE	2048
-NET_BUF_POOL_DEFINE(usbip_pool, 32, USBIP_MAX_PKT_SIZE, 0, NULL);
+NET_BUF_POOL_VAR_DEFINE(usbip_pool,
+			CONFIG_USBIP_BUF_COUNT, CONFIG_USBIP_BUF_POOL_SIZE,
+			0, NULL);
+
+#define USBIP_SUBMIT_REQ_RETRY_COUNT	10
 
 K_THREAD_STACK_DEFINE(usbip_thread_stack, CONFIG_USBIP_THREAD_STACK_SIZE);
 K_THREAD_STACK_ARRAY_DEFINE(dev_thread_stacks, CONFIG_USBIP_DEVICES_COUNT,
@@ -65,6 +68,11 @@ struct usbip_cmd_node {
 
 K_MEM_SLAB_DEFINE(usbip_slab, sizeof(struct usbip_cmd_node),
 		  CONFIG_USBIP_SUBMIT_BACKLOG_COUNT, sizeof(void *));
+
+static ALWAYS_INLINE int usbip_send(int sock, const void *const buf, const size_t len)
+{
+	return zsock_send_all(sock, buf, len, 0, K_FOREVER, NULL);
+}
 
 static void usbip_ntoh_command(struct usbip_command *const cmd)
 {
@@ -146,6 +154,11 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 		goto usbip_req_cb_error;
 	}
 
+	if (!k_event_wait(&dev_ctx->event, USBIP_EXPORTED, false, K_NO_WAIT)) {
+		LOG_WRN("Connection closed, drop completed seqnum %u", cmd->hdr.seqnum);
+		goto usbip_req_cb_error;
+	}
+
 	if (xfer->err == -EPIPE) {
 		LOG_INF("RET_SUBMIT status is EPIPE");
 	}
@@ -163,20 +176,18 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 		check_ctrl_request(dev_ctx->udev, xfer->ep, xfer->setup_pkt);
 	}
 
-	err = zsock_send(dev_ctx->connfd, &ret, sizeof(ret), 0);
-	if (err != sizeof(ret)) {
+	err = usbip_send(dev_ctx->connfd, &ret, sizeof(ret));
+	if (err != 0) {
 		LOG_ERR("Send RET_SUBMIT failed err %d errno %d", err, errno);
-		err = -errno;
 		goto usbip_req_cb_error;
 	}
 
 	if (USB_EP_DIR_IS_IN(xfer->ep) && ret.submit.actual_length != 0) {
 		LOG_INF("Send RET_SUBMIT transfer_buffer len %u", buf->len);
-		err = zsock_send(dev_ctx->connfd, buf->data, buf->len, 0);
-		if (err != buf->len) {
+		err = usbip_send(dev_ctx->connfd, buf->data, buf->len);
+		if (err != 0) {
 			LOG_ERR("Send transfer_buffer failed err %d errno %d",
 				err, errno);
-			err = -errno;
 			goto usbip_req_cb_error;
 		}
 	}
@@ -203,13 +214,22 @@ static int usbip_submit_req(struct usbip_cmd_node *const cmd_nd, const uint8_t e
 	struct usbip_dev_ctx *const dev_ctx = cmd_nd->ctx;
 	struct usbip_command *const cmd = &cmd_nd->cmd;
 	struct usb_device *const udev = dev_ctx->udev;
+	uint32_t retry = USBIP_SUBMIT_REQ_RETRY_COUNT;
 	struct uhc_transfer *xfer;
 	int ret;
 
-	xfer = usbh_xfer_alloc(udev, ep, usbip_req_cb, cmd_nd);
-	if (xfer == NULL) {
-		return -ENOMEM;
-	}
+	/*
+	 * Depending on the server, functions, and client application, we may
+	 * get out of transfers very quickly. To throttle here may allow
+	 * submitted transfers to be finished. Perhaps usbh_xfer_alloc() should
+	 * be reworked to take a timeout argument.
+	 */
+	do {
+		xfer = usbh_xfer_alloc(udev, ep, usbip_req_cb, cmd_nd);
+		if (xfer == NULL) {
+			k_msleep(1);
+		}
+	} while (xfer == NULL && retry--);
 
 	if (setup != NULL) {
 		memcpy(xfer->setup_pkt, setup, sizeof(struct usb_setup_packet));
@@ -257,13 +277,12 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 
 	ep = cmd->hdr.ep;
 	if (cmd->submit.length != 0) {
-		if (cmd->submit.length > USBIP_MAX_PKT_SIZE) {
-			LOG_ERR("Buffer size %u too small, requested length %zu",
-				USBIP_MAX_PKT_SIZE, cmd->submit.length);
-			return -ENOMEM;
+		if (USB_EP_GET_IDX(ep) == 0U) {
+			buf = usbh_xfer_buf_alloc(dev_ctx->udev, cmd->submit.length);
+		} else {
+			buf = net_buf_alloc_len(&usbip_pool, cmd->submit.length, K_NO_WAIT);
 		}
 
-		buf = net_buf_alloc(&usbip_pool, K_NO_WAIT);
 		if (buf == NULL) {
 			LOG_ERR("Failed to allocate net_buf");
 			return -ENOMEM;
@@ -356,12 +375,7 @@ static int usbip_handle_unlink(struct usbip_dev_ctx *const dev_ctx,
 	}
 	irq_unlock(key);
 
-	ret = zsock_send(dev_ctx->connfd, &rsp, sizeof(rsp), 0);
-	if (ret != sizeof(rsp)) {
-		return -errno;
-	}
-
-	return 0;
+	return usbip_send(dev_ctx->connfd, &rsp, sizeof(rsp));
 }
 
 static int usbip_handle_cmd(struct usbip_dev_ctx *const dev_ctx)
@@ -406,7 +420,6 @@ static void usbip_thread_cmd(void *const a, void *const b, void *const c)
 			zsock_close(dev_ctx->connfd);
 			LOG_INF("CMD connection closed, errno %d", ret);
 			k_event_set_masked(&dev_ctx->event, 0, USBIP_EXPORTED);
-			dev_ctx->udev = NULL;
 		}
 	}
 }
@@ -418,7 +431,6 @@ static int handle_devlist_device(struct usb_device *const udev,
 	struct usb_cfg_descriptor *c_desc = udev->cfg_desc;
 	static struct usbip_devlist_data devlist;
 	const uint32_t devnum = udev->addr;
-	int err;
 
 	devlist.busnum = net_htonl(busnum);
 	devlist.devnum = net_htonl(devnum);
@@ -447,12 +459,7 @@ static int handle_devlist_device(struct usb_device *const udev,
 	LOG_INF("bmAttributes\t\t%02x", c_desc->bmAttributes);
 	LOG_INF("bMaxPower\t\t%u mA", c_desc->bMaxPower * 2);
 
-	err = zsock_send(connfd, &devlist, sizeof(devlist), 0);
-	if (err != sizeof(devlist)) {
-		return -errno;
-	}
-
-	return 0;
+	return usbip_send(connfd, &devlist, sizeof(devlist));
 }
 
 static int handle_devlist_device_iface(struct usb_device *const udev, int connfd)
@@ -474,10 +481,10 @@ static int handle_devlist_device_iface(struct usb_device *const udev, int connfd
 		iface.bInterfaceProtocol = if_d->bInterfaceProtocol;
 		iface.padding = 0U;
 
-		err = zsock_send(connfd, &iface, sizeof(iface), 0);
-		if (err != sizeof(iface)) {
+		err = usbip_send(connfd, &iface, sizeof(iface));
+		if (err != 0) {
 			LOG_ERR("Failed to send interface info %d", err);
-			return -errno;
+			return err;
 		}
 	}
 
@@ -502,9 +509,9 @@ static int usbip_handle_devlist(struct usbip_bus_ctx *const bus_ctx, int connfd)
 
 	rep_hdr.ndev = net_htonl(ndev);
 	/* Send reply header with the number of USB devices  */
-	err = zsock_send(connfd, &rep_hdr, sizeof(rep_hdr), 0);
-	if (err != sizeof(rep_hdr)) {
-		return -errno;
+	err = usbip_send(connfd, &rep_hdr, sizeof(rep_hdr));
+	if (err != 0) {
+		return err;
 	}
 
 	/* Send device info for each USB devices */
@@ -552,10 +559,6 @@ static struct usbip_dev_ctx *get_free_dev_ctx(struct usbip_bus_ctx *const bus_ct
 			continue;
 		}
 
-		if (dev_ctx->udev != NULL) {
-			LOG_WRN("USB device pointer is not cleaned");
-		}
-
 		return &bus_ctx->devs[i];
 	}
 
@@ -591,9 +594,9 @@ static int usbip_handle_import(struct usbip_bus_ctx *const bus_ctx, int connfd)
 		}
 	}
 
-	ret = zsock_send(connfd, &rep_hdr, sizeof(rep_hdr), 0);
-	if (ret != sizeof(rep_hdr)) {
-		return -errno;
+	ret = usbip_send(connfd, &rep_hdr, sizeof(rep_hdr));
+	if (ret != 0) {
+		return ret;
 	}
 
 	if (rep_hdr.status || dev_ctx == NULL) {

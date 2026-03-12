@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig HWINFO
-	bool "Hardware Information drivers"
+	bool "Hardware information drivers"
 	help
 	  Enable hwinfo driver.
 
@@ -28,9 +28,11 @@ config HWINFO_SHELL
 # zephyr-keep-sorted-start
 rsource "Kconfig.ambiq"
 rsource "Kconfig.andes"
+rsource "Kconfig.bflb"
 rsource "Kconfig.cc13xx_cc26xx"
 rsource "Kconfig.cc23x0"
 rsource "Kconfig.esp32"
+rsource "Kconfig.gd32"
 rsource "Kconfig.gecko"
 rsource "Kconfig.imxrt"
 rsource "Kconfig.litex"

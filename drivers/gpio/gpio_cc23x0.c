@@ -295,8 +295,8 @@ static DEVICE_API(gpio, gpio_cc23x0_driver_api) = {
 };
 
 static const struct gpio_cc23x0_config gpio_cc23x0_config_0 = {
-	.common = {/* Read ngpios from DT */
-		   .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0)}};
+	.common = GPIO_COMMON_CONFIG_FROM_DT_INST(0),
+};
 
 static struct gpio_cc23x0_data gpio_cc23x0_data_0;
 

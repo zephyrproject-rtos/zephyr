@@ -14,6 +14,7 @@
 #include "hl78xx.h"
 #include "hl78xx_chat.h"
 #include "hl78xx_gnss.h"
+#include "hl78xx_cfg.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(hl78xx_gnss, CONFIG_GNSS_LOG_LEVEL);
@@ -835,6 +836,19 @@ void hl78xx_gnss_on_gnssev(struct modem_chat *chat, char **argv, uint16_t argc, 
 			gnss_evt.type = HL78XX_GNSS_EVENT_START;
 			gnss_evt.content.status = true;
 			event_dispatcher_dispatch(&gnss_evt);
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+			if (hl78xx_is_power_down_scheduled(data)) {
+				LOG_DBG("Power down was scheduled, but GNSS started - cancelling "
+					"power down");
+				hl78xx_cancel_power_down(data);
+			}
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+			if (hl78xx_is_edrx_idle_scheduled(data)) {
+				LOG_DBG("eDRX was scheduled, but GNSS started - cancelling eDRX");
+				hl78xx_edrx_idle_cancel(data);
+			}
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
 		}
 		break;
 
@@ -959,7 +973,12 @@ static int hl78xx_gnss_configure_nmea_output(struct hl78xx_gnss_data *data)
 	if (ret < 0 || ret >= sizeof(cmd)) {
 		return -ENOMEM;
 	}
-	LOG_DBG("portcmd: %s", cmd);
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+	hl78xx_power_down_ignore_feeding(data->parent_data);
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+	hl78xx_edrx_idle_ignore_feeding(data->parent_data);
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
 	ret = modem_dynamic_cmd_send(
 		data->parent_data, NULL, cmd, strlen(cmd), hl78xx_get_connect_matches(),
 		hl78xx_get_connect_matches_size(), HL78XX_GNSS_SCRIPT_TIMEOUT_S, false);
@@ -999,7 +1018,7 @@ static int hl78xx_gnss_start(const struct device *dev, int gnss_start_mode)
 	if (ret < 0) {
 		goto unlock_return;
 	}
-
+	data->gnss_mode_enter_pending = false;
 	LOG_INF("GNSS started (mode=%u)", gnss_start_mode);
 
 unlock_return:
@@ -1370,8 +1389,62 @@ static int hl78xx_gnss_init(const struct device *dev)
 
 int hl78xx_on_run_gnss_init_script_state_enter(struct hl78xx_data *data)
 {
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+#ifdef CONFIG_MODEM_HL78XX_PSM
+	LOG_DBG("PSMEV curr:%d prev:%d CFUN=%d", data->status.psmev.current,
+		data->status.psmev.previous, data->status.phone_functionality.functionality);
+#ifdef CONFIG_MODEM_HL78XX_12
+	/* HL7812 PSM: the modem truly hibernates (no reboot on wake), so
+	 * the LTE modem is still off and the RF Rx path is free for GNSS.
+	 * No CFUN=4 is needed, go straight to GNSS configuration.
+	 */
+	if (data->status.psmev.current == HL78XX_PSM_EVENT_ENTER ||
+	    (data->status.psmev.current == HL78XX_PSM_EVENT_EXIT &&
+	     data->status.psmev.previous == HL78XX_PSM_EVENT_ENTER)) {
+		LOG_DBG("HL7812 PSM context (curr=%d prev=%d), starting GNSS immediately",
+			data->status.psmev.current, data->status.psmev.previous);
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_SUCCESS);
+		return 0;
+	}
+#else
+	LOG_DBG("HL7800 PSM context, modem rebooted on PSM exit - proceeding to CFUN=4");
+	if (data->status.psmev.current == HL78XX_PSM_EVENT_EXIT &&
+	    data->status.psmev.previous == HL78XX_PSM_EVENT_ENTER) {
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_SUCCESS);
+		return 0;
+	}
+#endif /* !CONFIG_MODEM_HL78XX_00 */
+#endif /* CONFIG_MODEM_HL78XX_PSM */
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+#ifdef CONFIG_MODEM_HL78XX_12
+	LOG_DBG("HL7812 eDRX context, starting GNSS without airplane mode");
+	hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_SUCCESS);
+	return 0;
+#else  /* CONFIG_MODEM_HL78XX_00 */
+	/*
+	 * HL7800 eDRX: GNSS can start in CFUN=1 during eDRX idle, but only
+	 * when LTE is truly idle (no paging activity).
+	 * Per App Note: "Confirm that LTE is in idle state before starting
+	 * GNSS: RRC: IDLE with AT%STATUS='RRC'".
+	 *
+	 * Query RRC state first. On SCRIPT_SUCCESS the event handler checks
+	 * the rrc_idle flag and either proceeds or retries.
+	 */
+	LOG_DBG("HL7800 eDRX: querying RRC state before GNSS");
+
+	struct gnss_nmea0183_match_data *match_data = data->gnss_dev->data;
+	struct hl78xx_gnss_data *gnss_data = match_data->gnss->data;
+
+	gnss_data->rrc_check_phase = true;
+	gnss_data->rrc_retry_count = 0;
+
+	return 0;
+#endif /* !CONFIG_MODEM_HL78XX_00 */
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 	if (data->status.phone_functionality.functionality == HL78XX_AIRPLANE) {
 		/* Already in airplane mode */
+		LOG_DBG("Already in airplane mode, starting GNSS immediately");
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_SUCCESS);
 		return 0;
 	}
@@ -1396,8 +1469,36 @@ void hl78xx_run_gnss_init_script_event_handler(struct hl78xx_data *data, enum hl
 	case MODEM_HL78XX_EVENT_SUSPEND:
 		LOG_DBG("GNSS init: SUSPEND event");
 		break;
-
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	case MODEM_HL78XX_EVENT_DEVICE_AWAKE:
+		LOG_DBG("GNSS init: DEVICE_AWAKE event");
+#ifdef CONFIG_MODEM_HL78XX_00
+		hl78xx_run_rrc_query_script_async(data);
+#endif /* CONFIG_MODEM_HL78XX_00 */
+		break;
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
+#if defined(CONFIG_MODEM_HL78XX_00)
+		if (data_gnss->rrc_check_phase) {
+			if (data->status.rrc_idle) {
+				LOG_INF("RRC IDLE confirmed, proceeding to GNSS config");
+				data_gnss->rrc_check_phase = false;
+			} else {
+				data_gnss->rrc_retry_count++;
+				if (data_gnss->rrc_retry_count > 5) {
+					LOG_WRN("RRC IDLE not achieved after %d retries, "
+						"starting GNSS anyway (may get +GNSSEV:2,1)",
+						data_gnss->rrc_retry_count);
+					data_gnss->rrc_check_phase = false;
+				} else {
+					LOG_INF("RRC CONNECTED (attempt %d/5), retrying in 2s",
+						data_gnss->rrc_retry_count);
+					hl78xx_start_timer(data, K_SECONDS(2));
+					break;
+				}
+			}
+		}
+#endif /* CONFIG_MODEM_HL78XX_00 */
 		LOG_DBG("GNSS init: SCRIPT_SUCCESS - configuring GNSS");
 		hl78xx_gnss_configure(data->gnss_dev);
 		gnss_evt.content.status = true;
@@ -1423,10 +1524,13 @@ void hl78xx_run_gnss_init_script_event_handler(struct hl78xx_data *data, enum hl
 			hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT);
 		}
 		break;
+
 	case MODEM_HL78XX_EVENT_GNSS_SEARCH_STARTED_FAILED:
 		LOG_DBG("GNSS init: GNSS_SEARCH_STARTED_FAILED");
-		gnss_set_search_state(data_gnss, HL78XX_GNSS_SEARCH_STATE_BLOCKED_BY_LTE);
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_GNSS_SEARCH_STARTED);
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_GNSS_STOPPED);
 		break;
+
 	case MODEM_HL78XX_EVENT_GNSS_START_REQUESTED:
 		LOG_DBG("GNSS init: START_REQUESTED (cfun=%d, state=%s)",
 			data->status.phone_functionality.functionality,
@@ -1436,8 +1540,8 @@ void hl78xx_run_gnss_init_script_event_handler(struct hl78xx_data *data, enum hl
 		 * Otherwise, the search will start when PHONE_FUNCTIONALITY_CHANGED fires.
 		 */
 		hl78xx_start_timer(data_gnss->parent_data, K_MSEC(3000));
-
 		break;
+
 	case MODEM_HL78XX_EVENT_GNSS_SEARCH_STARTED:
 		LOG_DBG("GNSS init: GNSS_SEARCH_STARTED");
 		if (data_gnss->output_port != NMEA_OUTPUT_NONE) {
@@ -1447,11 +1551,46 @@ void hl78xx_run_gnss_init_script_event_handler(struct hl78xx_data *data, enum hl
 		break;
 
 	case MODEM_HL78XX_EVENT_TIMEOUT:
-
-		if (data->status.phone_functionality.functionality == HL78XX_AIRPLANE) {
+#if defined(CONFIG_MODEM_HL78XX_00)
+		/* HL7800 eDRX: RRC retry timer expired - query RRC state again */
+		if (data_gnss->rrc_check_phase) {
+			LOG_DBG("RRC check retry timer expired, querying again");
+			hl78xx_run_rrc_query_script_async(data);
+			break;
+		}
+#endif /* CONFIG_MODEM_HL78XX_00 */
+		/*
+		 * GNSS can start when the RF path is free from LTE:
+		 * - Airplane mode (CFUN=4): LTE modem is off
+		 * - PSM (PSMEV:1): LTE modem is hibernating
+		 * In either case, the shared RF Rx path is available for GNSS.
+		 */
+		if (data->status.phone_functionality.functionality == HL78XX_AIRPLANE
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+#ifdef CONFIG_MODEM_HL78XX_PSM
+#ifdef CONFIG_MODEM_HL78XX_12
+		    || data->status.psmev.current == HL78XX_PSM_EVENT_ENTER
+#else  /* CONFIG_MODEM_HL78XX_00 */
+		    || (data->status.psmev.current == HL78XX_PSM_EVENT_EXIT &&
+			data->status.psmev.previous == HL78XX_PSM_EVENT_ENTER)
+#endif /* CONFIG_MODEM_HL78XX_12 */
+#endif /* CONFIG_MODEM_HL78XX_PSM */
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+		    || (data->status.edrxev.previous == HL78XX_EDRX_EVENT_IDLE_ENTER &&
+			data->status.edrxev.current == HL78XX_EDRX_EVENT_IDLE_EXIT)
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+		    || hl78xx_gnss_get_search_state(data_gnss) ==
+			       HL78XX_GNSS_SEARCH_STATE_BLOCKED_BY_LTE
+#endif
+		) {
 			if (data_gnss->search_state ==
 			    HL78XX_GNSS_SEARCH_STATE_WAITING_FOR_AIRPLANE) {
-				LOG_INF("Already in airplane mode, starting GNSS immediately");
+				hl78xx_stop_timer(data_gnss->parent_data);
+				LOG_INF("RF path free (%s), starting GNSS",
+					(data->status.phone_functionality.functionality ==
+					 HL78XX_AIRPLANE)
+						? "airplane"
+						: "PSM/eDRX idle");
 				gnss_set_search_state(data_gnss, HL78XX_GNSS_SEARCH_STATE_STARTING);
 				hl78xx_gnss_start(data->gnss_dev, HL78XX_GNSS_START_MODE);
 				if (data_gnss->search_timeout_ms != 0) {
@@ -1462,9 +1601,40 @@ void hl78xx_run_gnss_init_script_event_handler(struct hl78xx_data *data, enum hl
 				LOG_DBG("GNSS search already started or not queued");
 			}
 		} else {
-			LOG_INF("GNSS search queued, waiting for airplane mode (CFUN=4)");
+			LOG_INF("GNSS search queued, waiting for airplane mode or PSM/idle-eDRX to "
+				"free RF path");
+			hl78xx_start_timer(data_gnss->parent_data, K_MSEC(3000));
+			LOG_DBG("Current functionality: %d",
+				data->status.phone_functionality.functionality);
+#ifdef CONFIG_MODEM_HL78XX_PSM
+			LOG_DBG(" PSM event: %d,", data->status.psmev.current);
+#endif
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+			LOG_DBG(" eDRX event: %d -> Prev: %d", data->status.edrxev.current,
+				data->status.edrxev.previous);
+#endif
 		}
 		break;
+
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	case MODEM_HL78XX_EVENT_REGISTERED:
+		/*
+		 * LTE registered during GNSS init (modem exited PSM before
+		 * GNSS search could start). GNSS start will likely fail
+		 * because LTE is now active. Abort GNSS and return to LTE.
+		 */
+		LOG_INF("LTE registered during GNSS init - aborting GNSS, returning to LTE");
+		if (data->status.phone_functionality.functionality == HL78XX_FULLY_FUNCTIONAL &&
+		    data->status.phone_functionality.in_progress == false) {
+			gnss_set_search_state(data_gnss, HL78XX_GNSS_SEARCH_STATE_IDLE);
+			data_gnss->gnss_mode_enter_pending = false;
+			gnss_evt.type = HL78XX_GNSS_EVENT_MODE_EXITED;
+			gnss_evt.content.status = false;
+			event_dispatcher_dispatch(&gnss_evt);
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_CARRIER_ON);
+		}
+		break;
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
 	default:
 		LOG_DBG("GNSS init: unhandled event %d", event);
@@ -1524,14 +1694,14 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
 		break;
 
 	case MODEM_HL78XX_EVENT_GNSS_STOP_REQUESTED:
-		LOG_INF("GNSS search: stop requested");
+		LOG_INF("GNSS search: stop requested %d", data_gnss->output_port);
 		gnss_set_search_state(data_gnss, HL78XX_GNSS_SEARCH_STATE_STOPPING);
 		hl78xx_gnss_clear_search_queue(data_gnss);
 
 		/* Abort any running script before starting stop script */
 		modem_chat_script_abort(&data->chat);
 		/* Handle NMEA output termination if active */
-		if (data_gnss->output_port != NMEA_OUTPUT_NONE) {
+		if (data_gnss->output_port != NMEA_OUTPUT_NONE && data_gnss->gnss_start_status) {
 			modem_chat_release(&data->chat);
 			modem_pipe_attach(data->uart_pipe, hl78xx_gnss_bus_pipe_handler, data);
 			LOG_DBG("Sending termination pattern to end NMEA output");
@@ -1548,8 +1718,6 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
 		ret = hl78xx_run_gnss_stop_search_chat_script(data);
 		if (ret < 0) {
 			LOG_ERR("Failed to run GNSS stop script: %d", ret);
-			/* Force state to idle on error */
-			gnss_set_search_state(data_gnss, HL78XX_GNSS_SEARCH_STATE_IDLE);
 		}
 		break;
 
@@ -1559,19 +1727,32 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
 		/* Check if GNSS mode exit was requested */
 		if (data_gnss->exit_to_lte_pending) {
 			data_gnss->exit_to_lte_pending = false;
-			LOG_INF("GNSS stopped, mode exit complete. User can now set phone "
-				"functionality.");
-			/*
-			 * Notify user that GNSS mode exit is complete.
-			 * Modem is now in airplane mode - user decides what to do next:
-			 * - Call hl78xx_api_func_set_phone_functionality(dev,
-			 * HL78XX_FULLY_FUNCTIONAL, false) to return to LTE
-			 * - Stay in airplane mode for low power operation
-			 */
-
 			gnss_evt.type = HL78XX_GNSS_EVENT_MODE_EXITED;
 			gnss_evt.content.status = true;
 			event_dispatcher_dispatch(&gnss_evt);
+			/*
+			 * If in airplane mode the user must call
+			 * hl78xx_api_func_set_phone_functionality(dev,
+			 *     HL78XX_FULLY_FUNCTIONAL, false)
+			 * to return to LTE.
+			 *
+			 * If we were operating in PSM (CFUN still 1), transition
+			 * back to LTE registration automatically since no CFUN
+			 * change is needed.
+			 */
+			if (data->status.phone_functionality.functionality != HL78XX_AIRPLANE) {
+				LOG_INF("GNSS complete - returning to LTE registration");
+				hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_REGISTERED);
+			} else {
+				LOG_INF("GNSS stopped in airplane mode. User can set "
+					"phone functionality to return to LTE.");
+			}
+		} else {
+			LOG_INF("GNSS auto-stopped (LTE active), returning to LTE mode");
+			gnss_evt.type = HL78XX_GNSS_EVENT_MODE_EXITED;
+			gnss_evt.content.status = false; /* false = not user-requested */
+			event_dispatcher_dispatch(&gnss_evt);
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_REGISTERED);
 		}
 		break;
 
@@ -1586,15 +1767,23 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
 			hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_GNSS_STOP_REQUESTED);
 		} else {
 			/* No search in progress, exit immediately */
-			LOG_INF("Exiting GNSS mode (no active search). User can now set phone "
-				"functionality.");
-			/*
-			 * Notify user that GNSS mode exit is complete.
-			 * Modem is in airplane mode - user decides what to do next.
-			 */
 			gnss_evt.type = HL78XX_GNSS_EVENT_MODE_EXITED;
 			gnss_evt.content.status = true;
 			event_dispatcher_dispatch(&gnss_evt);
+
+			/* If in PSM/eDRX (CFUN still 1), auto-transition back to LTE */
+			if (data->status.phone_functionality.functionality != HL78XX_AIRPLANE) {
+				LOG_INF("GNSS mode exited - returning to LTE");
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+				data->status.edrxev.current = HL78XX_EDRX_EVENT_IDLE_EXIT;
+				data->status.edrxev.previous = HL78XX_EDRX_EVENT_IDLE_EXIT;
+				data->status.edrxev.is_edrx_idle_requested = false;
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+				hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_REGISTERED);
+			} else {
+				LOG_INF("GNSS mode exited (airplane). User can set "
+					"phone functionality.");
+			}
 		}
 		break;
 
@@ -1618,8 +1807,41 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
 		/* Ignore if already searching - prevents duplicate starts */
 		LOG_DBG("GNSS search: ignoring START_REQUESTED (already searching)");
 		break;
+
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	case MODEM_HL78XX_EVENT_REGISTERED:
+		/*
+		 * LTE registered while GNSS mode is active (e.g. modem exited PSM).
+		 * If GNSS search is already idle (auto-stopped by +GNSSEV: 2,1
+		 * before REGISTERED could arrive), transition to CARRIER_ON.
+		 * If still searching, the modem will auto-stop GNSS via GNSSEV
+		 * and the GNSS_STOPPED handler will manage the transition.
+		 */
+		if (data_gnss->search_state == HL78XX_GNSS_SEARCH_STATE_IDLE) {
+			LOG_INF("LTE registered while GNSS idle - REQUEST TO STOP GNSS");
+			hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_GNSS_STOP_REQUESTED);
+		} else {
+			LOG_DBG("LTE registered but GNSS still active - modem will "
+				"auto-stop GNSS");
+		}
+		break;
+	case MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT:
+		LOG_DBG("GNSS search: AT command timeout");
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_GNSS_STOP_REQUESTED);
+		break;
+	case MODEM_HL78XX_EVENT_DEVICE_AWAKE:
+		LOG_DBG("GNSS search: modem awake (PSM/eDRX exit expected)");
+		break;
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+
 	case MODEM_HL78XX_EVENT_MDM_RESTART:
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
+		break;
+#if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)
+	case MODEM_HL78XX_EVENT_DEVICE_ASLEEP:
+		LOG_DBG("GNSS search: modem asleep (PSM/eDRX enter expected)");
+		break;
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 	default:
 		LOG_DBG("GNSS search: unhandled event %d", event);
 		break;

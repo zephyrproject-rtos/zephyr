@@ -10,7 +10,7 @@
  */
 /dts-v1/;
 
-#include <nxp/nxp_mcxn94x.dtsi>
+#include <nxp/mcx/nxp_mcxn94x.dtsi>
 #include "frdm_mcxn947.dtsi"
 
 / {
@@ -187,6 +187,10 @@
 };
 
 &dac0 {
+	status = "okay";
+};
+
+&dac2 {
 	status = "okay";
 };
 

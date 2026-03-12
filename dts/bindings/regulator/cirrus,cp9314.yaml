@@ -4,12 +4,6 @@
 description: |
   Cirrus CP9314 Buck Switched Cap DC/DC Converter
 
-  converter@72 {
-    compatible = "cirrus,cp9314";
-    reg = <0x72>;
-
-    cirrus,initial-switched-capacitor-mode = "2:1";
-  };
 compatible: "cirrus,cp9314"
 
 include:
@@ -44,3 +38,12 @@ properties:
     description: |
       Indicate if the hardware write lock was enabled via the resistor value applied to
       PGPIO2.
+
+examples:
+  - |
+    converter@72 {
+      compatible = "cirrus,cp9314";
+      reg = <0x72>;
+
+      cirrus,initial-switched-capacitor-mode = "2:1";
+    };

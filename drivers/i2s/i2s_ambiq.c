@@ -121,11 +121,7 @@ static int i2s_ambiq_init(const struct device *dev)
 	struct i2s_ambiq_data *data = dev->data;
 	const struct i2s_ambiq_cfg *config = dev->config;
 
-	int ret = 0;
-
-	if (ret < 0) {
-		LOG_ERR("Fail to power on I2S\n");
-	}
+	int ret;
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {

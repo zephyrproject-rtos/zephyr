@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Michal Piekos
+ * Copyright (c) 2026 Jordano Iqbal Darmawan
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +23,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,canbus = &fdcan1;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	aliases {
@@ -37,7 +39,7 @@
 		compatible = "gpio-leds";
 
 		led_0: led0 {
-			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			label = "User LED";
 		};
 	};
@@ -47,13 +49,41 @@
 
 		button_0: button0 {
 			label = "User Button";
-			gpios = <&gpioa 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			gpios = <&gpioa 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
 	zephyr,user {
 		io-channels = <&adc1 16>, <&adc4 18>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(928)>;
+		};
+
+		slot1_partition: partition@f8000 {
+			label = "image-1";
+			reg = <0x000f8000 DT_SIZE_K(928)>;
+		};
+
+		scratch_partition: partition@1e0000 {
+			label = "image-scratch";
+			reg = <0x001e0000 DT_SIZE_K(128)>;
+		};
 	};
 };
 
@@ -186,10 +216,6 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	pinctrl-names = "default";
 	status = "okay";
-
-	cdc_acm_uart0: cdc_acm_uart0 {
-		compatible = "zephyr,cdc-acm-uart";
-	};
 };
 
 &iwdg {

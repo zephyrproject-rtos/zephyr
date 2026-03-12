@@ -14,6 +14,7 @@
 #include <zephyr/kernel.h>
 #include <stdlib.h>
 
+#include <zephyr/sys/__assert.h>
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_boards.h>
@@ -149,12 +150,28 @@ static int fixed_rate_clk_init(const struct device *dev)
 	case IFX_IMO:
 		Cy_SysClk_ImoEnable();
 #if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+		uint32_t imo_freq = Cy_SysClk_ImoGetFrequency();
+
+		/* Wait state setup is needed prior to reconfiguring IMO
+		 * to correctly delay between oscillator configuration steps
+		 * in the following ImoSetFrequency call.
+		 *
+		 * If increasing frequency this must be done before the adjustment.
+		 */
+		if (config->rate > imo_freq) {
+			Cy_SysLib_SetWaitStates(config->rate/1000000UL);
+		}
 		int err = Cy_SysClk_ImoSetFrequency(config->rate);
 
-		if (err != CY_SYSCLK_SUCCESS) {
-			printk("Failed to set IMO frequency with (error: %d)\n", err);
-			return -EIO;
+		if (config->rate < imo_freq) {
+			Cy_SysLib_SetWaitStates(config->rate/1000000UL);
 		}
+
+		/* "touch" err to avoid a warning with asserts turned off */
+		ARG_UNUSED(err);
+		__ASSERT(err == CY_SYSCLK_SUCCESS, "Invalid clock selection");
+		Cy_SysClk_ImoLock(CY_SYSCLK_IMO_LOCK_NONE);
+		SystemCoreClockUpdate();
 #endif
 		break;
 #endif

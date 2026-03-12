@@ -126,8 +126,8 @@ static esp_err_t i2s_esp32_calculate_clock(const struct i2s_config *i2s_cfg, uin
 		mclk_multiple = 384;
 	}
 
-	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE ||
-	    i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) {
+	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_TARGET ||
+	    i2s_cfg->options & I2S_OPT_BIT_CLK_TARGET) {
 		i2s_hal_clock_info->bclk_div = 8;
 		i2s_hal_clock_info->bclk =
 			i2s_cfg->frame_clk_freq * i2s_cfg->channels * channel_length;
@@ -1177,7 +1177,7 @@ static int i2s_esp32_configure(const struct device *dev, enum i2s_dir dir,
 	const struct i2s_esp32_stream *stream;
 	i2s_hal_slot_config_t slot_cfg = {0};
 	uint8_t data_format;
-	bool is_slave;
+	bool is_target;
 	int err;
 
 	err = i2s_esp32_config_check(dev, dir, i2s_cfg);
@@ -1209,12 +1209,12 @@ static int i2s_esp32_configure(const struct device *dev, enum i2s_dir dir,
 		return 0;
 	}
 
-	if ((i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE) != 0 &&
-	    (i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) != 0) {
-		is_slave = true;
-	} else if ((i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE) == 0 &&
-		   (i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) == 0) {
-		is_slave = false;
+	if ((i2s_cfg->options & I2S_OPT_FRAME_CLK_TARGET) != 0 &&
+	    (i2s_cfg->options & I2S_OPT_BIT_CLK_TARGET) != 0) {
+		is_target = true;
+	} else if ((i2s_cfg->options & I2S_OPT_FRAME_CLK_TARGET) == 0 &&
+		   (i2s_cfg->options & I2S_OPT_BIT_CLK_TARGET) == 0) {
+		is_target = false;
 	} else {
 		LOG_DBG("I2S_OPT_FRAME_CLK and I2S_OPT_BIT_CLK options are incompatible");
 		return -EINVAL;
@@ -1265,14 +1265,14 @@ static int i2s_esp32_configure(const struct device *dev, enum i2s_dir dir,
 
 #if I2S_ESP32_IS_DIR_EN(rx)
 	if (dir == I2S_DIR_RX || dir == I2S_DIR_BOTH) {
-		bool rx_is_slave;
+		bool rx_is_target;
 
-		rx_is_slave = is_slave;
+		rx_is_target = is_target;
 		if (dir == I2S_DIR_BOTH || (dev_cfg->tx.data && dev_cfg->tx.data->configured)) {
-			rx_is_slave = true;
+			rx_is_target = true;
 		}
 
-		i2s_hal_std_set_rx_slot(hal, rx_is_slave, &slot_cfg);
+		i2s_hal_std_set_rx_slot(hal, rx_is_target, &slot_cfg);
 		i2s_hal_set_rx_clock(hal, &i2s_hal_clock_info, I2S_ESP32_CLK_SRC);
 		i2s_ll_rx_enable_std(hal->dev);
 
@@ -1284,7 +1284,7 @@ static int i2s_esp32_configure(const struct device *dev, enum i2s_dir dir,
 
 #if I2S_ESP32_IS_DIR_EN(tx)
 	if (dir == I2S_DIR_TX || dir == I2S_DIR_BOTH) {
-		i2s_hal_std_set_tx_slot(hal, is_slave, &slot_cfg);
+		i2s_hal_std_set_tx_slot(hal, is_target, &slot_cfg);
 		i2s_hal_set_tx_clock(hal, &i2s_hal_clock_info, I2S_ESP32_CLK_SRC);
 		i2s_ll_tx_enable_std(hal->dev);
 

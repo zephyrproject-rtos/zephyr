@@ -20,6 +20,8 @@ tests:
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - nucleo_h723zg/stm32h723xx
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
@@ -30,8 +32,7 @@ tests:
   drivers.retained_mem.api.ram.nrf52840dk_nrf52840:
     platform_allow: nrf52840dk/nrf52840
     extra_args:
-      - DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840_ram.overlay"
-      - EXTRA_CONF_FILE="boards/nrf52840dk_nrf52840_ram.conf"
+      - FILE_SUFFIX="ram"
     tags:
       - drivers
       - retained_mem

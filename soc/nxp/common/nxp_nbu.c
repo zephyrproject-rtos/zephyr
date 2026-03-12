@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,15 @@
 #define NBU_WAKE_UP_IRQ_P DT_IRQ_BY_NAME(DT_DRV_INST(0), wakeup_int, priority)
 #endif
 
+/* Check if XTAL properties are set and get values */
+#if DT_INST_NODE_HAS_PROP(0, rfmc_xo_cdac)
+#define NBU_RFMC_XO_CDAC_VALUE DT_INST_PROP(0, rfmc_xo_cdac)
+#endif
+
+#if DT_INST_NODE_HAS_PROP(0, rfmc_xo_isel)
+#define NBU_RFMC_XO_ISEL_VALUE DT_INST_PROP(0, rfmc_xo_isel)
+#endif
+
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
 /* -------------------------------------------------------------------------- */
@@ -39,6 +48,24 @@ extern int32_t nbu_wakeup_done_handler(void);
 
 void nxp_nbu_init(void)
 {
+#if defined(NBU_RFMC_XO_CDAC_VALUE) || defined(NBU_RFMC_XO_ISEL_VALUE)
+	uint32_t rfmc_xo;
+
+	rfmc_xo = RFMC->XO_TEST;
+
+#if defined(NBU_RFMC_XO_CDAC_VALUE)
+	/* Apply a Trim value/ Current selection for the crystal oscillator */
+	rfmc_xo &= ~(RFMC_XO_TEST_CDAC_MASK);
+	rfmc_xo |= RFMC_XO_TEST_CDAC(NBU_RFMC_XO_CDAC_VALUE);
+#endif
+
+#if defined(NBU_RFMC_XO_ISEL_VALUE)
+	rfmc_xo &= ~(RFMC_XO_TEST_ISEL_MASK);
+	rfmc_xo |= RFMC_XO_TEST_ISEL(NBU_RFMC_XO_ISEL_VALUE);
+#endif
+
+	RFMC->XO_TEST = rfmc_xo;
+#endif
 	/* NBU interface Interrupt */
 	IRQ_CONNECT(NBU_RX_IRQ_N, NBU_RX_IRQ_P, nbu_handler, 0, 0);
 

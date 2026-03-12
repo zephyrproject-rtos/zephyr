@@ -97,9 +97,7 @@ static void sys_event_irq_latency_run(enum rramc_mode mode)
 static void sys_event_irq_latency(void)
 {
 	sys_event_irq_latency_run(RRAMC_DEFAULT);
-#if !defined(CONFIG_SOC_NRF54LM20A)
 	sys_event_irq_latency_run(RRAMC_POWER_MODE);
-#endif
 	sys_event_irq_latency_run(RRAMC_PPI_WAKEUP);
 }
 #endif /* CONFIG_NRF_SYS_EVENT_IRQ_LATENCY */

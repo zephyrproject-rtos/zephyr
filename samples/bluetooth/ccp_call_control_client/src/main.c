@@ -192,7 +192,8 @@ static int scan_and_connect(void)
 }
 
 static void ccp_call_control_client_discover_cb(struct bt_ccp_call_control_client *client, int err,
-						struct bt_ccp_call_control_client_bearers *bearers)
+						struct bt_ccp_call_control_client_bearers *bearers,
+						void *user_data)
 {
 	if (err != 0) {
 		LOG_ERR("Discovery failed: %d", err);
@@ -209,7 +210,8 @@ static void ccp_call_control_client_discover_cb(struct bt_ccp_call_control_clien
 
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
 static void ccp_call_control_client_read_bearer_provider_name_cb(
-	struct bt_ccp_call_control_client_bearer *bearer, int err, const char *name)
+	struct bt_ccp_call_control_client_bearer *bearer, int err, const char *name,
+	void *user_data)
 {
 	if (err != 0) {
 		LOG_ERR("Failed to read bearer %p provider name: %d\n", (void *)bearer, err);

@@ -1,0 +1,147 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CZ_CA Internal Oscillator (OSC48M)
+
+description: |
+  Digital Frequency-Locked Loop (DFLL48M) configuration.
+
+include: [base.yaml]
+
+compatible: "microchip,pic32cz-ca-dfll48m"
+
+properties:
+  dfll48m-on-demand-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      0: The oscillator is always on
+      1: The oscillator is running when a peripheral is requesting the oscillator to be used as a
+      clock source. The oscillator is not running if no peripheral is requesting the clock source.
+      Important: Initializing it with 1, along with clock enabled, can lead to indefinite wait for
+      the clock to be on, if there is no peripheral request for the clock in the sequence of clock
+      Initialization. If required, better to turn on the clock using API, instead of enabling both
+      during startup.
+
+  dfll48m-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 1
+    description: |
+      Oscillator Enable
+      0: to disable, 1: to enable
+
+  dfll48m-wait-lock-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      If enabled, clock available only after DFLL is locked (Fine lock)
+
+      0: Output clock before the DFLL is locked.
+      1: Output clock when DFLL is locked.
+
+  dfll48m-quick-lock-dis:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Disable quick lock
+
+      0: Quick Lock is enabled.
+      1: Quick Lock is disabled.
+
+  dfll48m-chill-cycle-dis:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Disable chill cycle
+
+      0: Chill Cycle is enabled.
+      1: Chill Cycle is disabled.
+
+  dfll48m-lose-lock-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Lose Lock After Wake
+
+      0: Locks will not be lost after waking up from sleep modes
+         if the DFLL clock has been stopped.
+      1: Locks will be lost after waking up from sleep modes
+         if the DFLL clock has been stopped.
+
+  dfll48m-stable-freq-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Stable DFLL48M Frequency
+
+      0: Tune register tracks changes in output frequency.
+      1: Tune calibration register value will be fixed after a lock.
+
+  dfll48m-closed-loop-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Operating Mode Selection
+
+      0: The DFLL operates in open-loop operation.
+      1: The DFLL operates in closed-loop operation.
+
+  dfll48m-tune-max-step:
+    type: int
+    default: 1
+    description: |
+      Indicates the maximum step size allowed during fine adjustment in closed-loop mode (0 - 127)
+
+  dfll48m-multiply-factor:
+    type: int
+    default: 0
+    description: |
+      Determines the ratio of the CLK_DFLL output frequency to the CLK_DFLL_REF input frequency
+      (0 - 65535)
+
+  dfll48m-src-gclk:
+    type: string
+    enum:
+      - "gclk0"
+      - "gclk1"
+      - "gclk2"
+      - "gclk3"
+      - "gclk4"
+      - "gclk5"
+      - "gclk6"
+      - "gclk7"
+      - "gclk8"
+      - "gclk9"
+      - "gclk10"
+      - "gclk11"
+      - "gclk12"
+      - "gclk13"
+      - "gclk14"
+      - "gclk15"
+    default: "gclk0"
+    description: |
+      Reference source clock selection from gclk generator

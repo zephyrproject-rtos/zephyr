@@ -25,6 +25,7 @@
 		sw0 = &user_bt;
 		watchdog0 = &watchdog0;
 		pressure-sensor = &dps368;
+		accel0 = &bmi270;
 	};
 
 	leds {
@@ -122,6 +123,12 @@ i2c0: &scb0 {
 		compatible = "infineon,dps368", "infineon,dps310";
 		status = "okay";
 		reg = <0x77>;
+	};
+
+	bmi270: bmi270@68 {
+		compatible = "bosch,bmi270";
+		status = "okay";
+		reg = <0x68>;
 	};
 };
 

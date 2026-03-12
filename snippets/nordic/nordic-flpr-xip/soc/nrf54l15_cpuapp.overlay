@@ -3,6 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+&cpuapp_sram {
+	reg = <0x20000000 DT_SIZE_K(188)>;
+	ranges = <0x0 0x20000000 DT_SIZE_K(188)>;
+};
+
+&cpuapp_rram {
+	reg = <0x0 DT_SIZE_K(1428)>;
+	ranges = <0x0 0x0 DT_SIZE_K(1428)>;
+
+	/delete-node/ partitions;
+};
+
 &rram_controller {
 	cpuflpr_rram: rram@165000 {
 		compatible = "soc-nv-flash";
@@ -26,3 +38,6 @@
 &cpuapp_vevif_tx {
 	status = "okay";
 };
+
+#define WITH_FLPR_PARTITIONS
+#include <vendor/nordic/nrf54l15_cpuapp_partition.dtsi>

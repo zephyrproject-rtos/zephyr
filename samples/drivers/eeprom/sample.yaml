@@ -9,10 +9,12 @@ tests:
       - native_sim
       - native_sim/native/64
       - adafruit_qt_py_rp2040/rp2040
+      - frdm_mcxn947/mcxn947/cpu0
     integration_platforms:
       - native_sim/native/64
     extra_args:
       - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_24lc32"
+      - platform:frdm_mcxn947/mcxn947/cpu0:SHIELD="mikroe_eeprom_13_click"
     harness: console
     harness_config:
       type: one_line

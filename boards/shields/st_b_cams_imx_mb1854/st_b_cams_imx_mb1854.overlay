@@ -10,7 +10,7 @@
 
 / {
 	chosen {
-		zephyr,camera = &pipe_main;
+		zephyr,camera = &csi_capture_port;
 	};
 
 	imx335_input_clock: imx335-input-clock {

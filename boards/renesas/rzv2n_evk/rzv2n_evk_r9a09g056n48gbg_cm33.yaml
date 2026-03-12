@@ -7,7 +7,9 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
+  - counter
   - uart
   - gpio
+  - i2c
   - pwm
 vendor: renesas

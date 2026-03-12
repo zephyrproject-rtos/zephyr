@@ -105,16 +105,16 @@ starting the CM33 core.
 Memory Usage
 ============
 
-By default, Flash (MRAM) and SRAM are split evenly between the two cores.
-Users can manually change the address and size for Flash and SRAM as follows node:
+By default, MRAM (Flash) and SRAM are split evenly between the two cores.
+Users can manually change the address and size for MRAM (Flash) and SRAM as follows node:
 
-   - CPU0: &flash0, &sram0
-   - CPU1: &flash1, &sram1
+   - CPU0: &code_mram_cm85, &sram0
+   - CPU1: &code_mram_cm33, &sram1
 
 .. note::
 
-   - Flash usable range: 0x0200_0000 ... 0x0290_0000
-   - SRAM usable range: 0x2200_0000 ... 0x221D_4000
+   - MRAM usable range: 0x0200_0000 ... 0x0210_0000 (1 MB)
+   - SRAM usable range: 0x2200_0000 ... 0x221A_0000 (1664 KB)
 
 Dual Core Flashing
 ==================
@@ -146,6 +146,16 @@ see the following message in the terminal:
 
    ***** Booting Zephyr OS v4.2.0-xxx-xxxxxxxxxxxxx *****
    Hello World! ek_ra8p1/r7ka8p1kflcac/cm85
+
+For the CM33 core, you can use the ``--sysbuild`` flow to build a minimal first-core launcher image that
+starts the CM33 core.
+
+.. zephyr-app-commands::
+   :tool: west
+   :zephyr-app: samples/hello_world
+   :board: ek_ra8p1/r7ka8p1kflcac/cm33
+   :goals: build flash
+   :west-args: --sysbuild
 
 Flashing
 ========

@@ -40,37 +40,6 @@ description: |
   each bit of pixel data, the driver generates a symbol of N bits (where N
   is the value of `bits-per-symbol`), which are then packed into the buffer.
 
-  An example of an overlay:
-
-  &uart1 {
-      status = "okay";
-      /* Target baudrate is 800kHz * 3 = 2.4MHz. 2.5MHz is a close value. */
-      current-speed = <2500000>;
-      /* Frame constraint: (1 start + 7 data + 1 stop) = 9 bits total. */
-      data-bits = <7>;
-      /* tx-invert is required to create an idle-low signal. */
-      tx-invert;
-
-      led_strip: ws2812-strip {
-          compatible = "worldsemi,ws2812-uart";
-          status = "okay";
-
-          /* Timing based on 2.5MHz baudrate (400ns per bit):
-           * T1H for '1' bit (2 high bits) = 2 * 400ns = 800ns.
-           * T0H for '0' bit (1 high bit) = 1 * 400ns = 400ns.
-           */
-          one-symbol = <6>;   /* 0b110 */
-          zero-symbol = <4>;  /* 0b100 */
-          bits-per-symbol = <3>;
-
-          chain-length = <8>;
-          reset-delay = <50>;
-          color-mapping = <LED_COLOR_ID_GREEN
-                           LED_COLOR_ID_RED
-                           LED_COLOR_ID_BLUE>;
-      };
-  };
-
 compatible: "worldsemi,ws2812-uart"
 
 include: [ws2812.yaml, uart-device.yaml]
@@ -102,3 +71,34 @@ properties:
     description: |
       The number of UART bits used to represent a single WS2812 data bit.
       The value must be between 3 and 10, inclusive.
+
+examples:
+  - |
+    &uart1 {
+        status = "okay";
+        /* Target baudrate is 800kHz * 3 = 2.4MHz. 2.5MHz is a close value. */
+        current-speed = <2500000>;
+        /* Frame constraint: (1 start + 7 data + 1 stop) = 9 bits total. */
+        data-bits = <7>;
+        /* tx-invert is required to create an idle-low signal. */
+        tx-invert;
+
+        led_strip: ws2812-strip {
+            compatible = "worldsemi,ws2812-uart";
+            status = "okay";
+
+            /* Timing based on 2.5MHz baudrate (400ns per bit):
+             * T1H for '1' bit (2 high bits) = 2 * 400ns = 800ns.
+             * T0H for '0' bit (1 high bit) = 1 * 400ns = 400ns.
+             */
+            one-symbol = <6>;   /* 0b110 */
+            zero-symbol = <4>;  /* 0b100 */
+            bits-per-symbol = <3>;
+
+            chain-length = <8>;
+            reset-delay = <50>;
+            color-mapping = <LED_COLOR_ID_GREEN
+                             LED_COLOR_ID_RED
+                             LED_COLOR_ID_BLUE>;
+        };
+    };

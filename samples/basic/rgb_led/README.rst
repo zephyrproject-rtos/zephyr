@@ -53,7 +53,7 @@ Otherwise, LEDs should be connected to the appropriate PWM channels.
 Building and Running
 ********************
 
-For example, to build and flash this board for :ref:`hexiwear`:
+For example, to build and flash this board for :zephyr:board:`hexiwear`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/rgb_led

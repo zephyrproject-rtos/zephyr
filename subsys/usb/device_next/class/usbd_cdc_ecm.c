@@ -548,21 +548,24 @@ static int cdc_ecm_set_config(const struct device *dev,
 {
 	struct cdc_ecm_eth_data *data = dev->data;
 
-	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(data->mac_addr, config->mac_address.addr,
 		       sizeof(data->mac_addr));
-
 		return 0;
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		/* nothing to do */
+		return 0;
+	default:
+		return -ENOTSUP;
 	}
-
-	return -ENOTSUP;
 }
 
 static enum ethernet_hw_caps cdc_ecm_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE;
+	return ETHERNET_LINK_10BASE | ETHERNET_PROMISC_MODE;
 }
 
 static int cdc_ecm_iface_start(const struct device *dev)
@@ -739,7 +742,7 @@ static struct usbd_cdc_ecm_desc cdc_ecm_desc_##n = {				\
 		.bAlternateSetting = 1,						\
 		.bNumEndpoints = 2,						\
 		.bInterfaceClass = USB_BCC_CDC_DATA,				\
-		.bInterfaceSubClass = ECM_SUBCLASS,				\
+		.bInterfaceSubClass = 0,					\
 		.bInterfaceProtocol = 0,					\
 		.iInterface = 0,						\
 	},									\

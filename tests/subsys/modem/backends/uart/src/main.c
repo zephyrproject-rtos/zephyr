@@ -222,5 +222,17 @@ ZTEST(modem_backend_uart_suite, test_transmit_receive)
 	}
 }
 
+ZTEST(modem_backend_uart_suite, test_close_open)
+{
+	zassert_ok(modem_pipe_close(pipe, K_SECONDS(1)));
+	zassert_ok(modem_pipe_open(pipe, K_SECONDS(1)));
+	zassert_ok(modem_pipe_close(pipe, K_SECONDS(1)));
+	zassert_ok(modem_pipe_open(pipe, K_SECONDS(1)));
+	zassert_ok(modem_pipe_close(pipe, K_SECONDS(1)));
+	zassert_ok(modem_pipe_open(pipe, K_SECONDS(1)));
+	zassert_ok(modem_pipe_close(pipe, K_SECONDS(1)));
+	zassert_ok(modem_pipe_open(pipe, K_SECONDS(1)));
+}
+
 ZTEST_SUITE(modem_backend_uart_suite, NULL, test_modem_backend_uart_setup,
 	    test_modem_backend_uart_before, test_modem_backend_uart_after, NULL);

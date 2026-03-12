@@ -18,6 +18,7 @@
 		zephyr,shell-uart = &uart5;
 		zephyr,flash = &ddr_code;
 		zephyr,sram = &ddr_sys;
+		zephyr,canbus = &fdcan1;
 	};
 
 	leds {
@@ -43,6 +44,13 @@
 		led0 = &orange_led_3;
 		sw0 = &button_user2;
 	};
+
+	transceiver0: can-phy0 {
+		compatible = "microchip,mcp2562fd", "can-transceiver-gpio";
+		standby-gpios = <&gpioj 12 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
 };
 
 &clk_hsi {
@@ -56,6 +64,13 @@
 
 &rcc {
 	clock-frequency = <DT_FREQ_M(400)>;
+};
+
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_pg12 &fdcan1_tx_pg11>;
+	pinctrl-names = "default";
+	phys = <&transceiver0>;
+	status = "okay";
 };
 
 &gpiog {

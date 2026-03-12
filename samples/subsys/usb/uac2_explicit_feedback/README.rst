@@ -20,6 +20,8 @@ Asynchronous USB Audio 2 class device supporting 48 kHz 16-bit 2-channel
    release 1703 expects Full-Speed explicit feedback endpoint wMaxPacketSize to
    be equal 4, which violates the USB 2.0 Specification.
    See https://aka.ms/AArvnax for Windows Feedback Hub report.
+   For Windows-only use wMaxPacketSize can be overridden with
+   :kconfig:option:`CONFIG_USBD_UAC2_FS_WINDOWS_WORKAROUND`
 
 Explicit Feedback
 *****************

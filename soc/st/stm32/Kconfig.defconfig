@@ -126,4 +126,19 @@ config VIDEO_BUFFER_POOL_ALIGN
 config STM32_BACKUP_PROTECTION
 	default y if !SOC_SERIES_STM32C0X && !SOC_SERIES_STM32WB0X
 
+# Default LVGL configuration, closely linked to how the display (LTDC)
+# interface is being configured
+if STM32_LTDC && LVGL
+
+config LV_Z_FLUSH_THREAD
+	default y
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16 if STM32_LTDC_RGB565
+	default LV_COLOR_DEPTH_24 if STM32_LTDC_RGB888
+	default LV_COLOR_DEPTH_32 if STM32_LTDC_ARGB8888
+endchoice
+
+endif # STM32_LTDC && LVGL
+
 endif # SOC_FAMILY_STM32

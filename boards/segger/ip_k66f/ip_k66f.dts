@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_k66.dtsi>
+#include <nxp/kinetis/nxp_k66.dtsi>
 
 #include "ip_k66f-pinctrl.dtsi"
 

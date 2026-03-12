@@ -124,7 +124,6 @@ struct stream {
 typedef void (*irq_config_func_t)(const struct device *dev);
 
 struct flash_stm32_ospi_config {
-	OCTOSPI_TypeDef *regs;
 	const struct stm32_pclken pclken; /* clock subsystem */
 #if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_ker)
 	const struct stm32_pclken pclken_ker; /* clock subsystem */
@@ -190,7 +189,6 @@ static inline void ospi_unlock_thread(const struct device *dev)
 
 static int ospi_send_cmd(const struct device *dev, OSPI_RegularCmdTypeDef *cmd)
 {
-	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
 	struct flash_stm32_ospi_data *dev_data = dev->data;
 	HAL_StatusTypeDef hal_ret;
 
@@ -203,7 +201,7 @@ static int ospi_send_cmd(const struct device *dev, OSPI_RegularCmdTypeDef *cmd)
 		LOG_ERR("%d: Failed to send OSPI instruction", hal_ret);
 		return -EIO;
 	}
-	LOG_DBG("CCR 0x%x", dev_cfg->regs->CCR);
+	LOG_DBG("CCR 0x%x", dev_data->hospi.Instance->CCR);
 
 	return dev_data->cmd_status;
 }
@@ -915,7 +913,7 @@ static int stm32_ospi_mem_reset(const struct device *dev)
 
 	/* Generate RESETn pulse for the flash memory */
 	gpio_pin_configure_dt(&dev_cfg->reset, GPIO_OUTPUT_ACTIVE);
-	k_msleep(DT_INST_PROP(0, reset_gpios_duration));
+	k_msleep(DT_INST_PROP_OR(0, reset_gpios_duration, 1));
 	gpio_pin_set_dt(&dev_cfg->reset, 0);
 #else
 
@@ -2198,11 +2196,6 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	uint32_t prescaler = STM32_OSPI_CLOCK_PRESCALER_MIN;
 	int ret;
 
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 #ifdef CONFIG_STM32_MEMMAP
 	/* If MemoryMapped then configure skip init */
 	if (stm32_ospi_is_memorymap(dev)) {
@@ -2626,9 +2619,6 @@ static int flash_stm32_ospi_init(const struct device *dev)
 #define OSPI_DMA_CHANNEL(node, dir)
 #endif /* CONFIG_USE_STM32_HAL_DMA */
 
-#define OSPI_FLASH_MODULE(drv_id, flash_id)				\
-		(DT_DRV_INST(drv_id), ospi_nor_flash_##flash_id)
-
 #define DT_WRITEOC_PROP_OR(inst, default_value)							\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, writeoc),					\
 		    (_CONCAT(SPI_NOR_CMD_, DT_STRING_TOKEN(DT_DRV_INST(inst), writeoc))),	\
@@ -2645,7 +2635,6 @@ static void flash_stm32_ospi_irq_config_func(const struct device *dev);
 PINCTRL_DT_DEFINE(STM32_OSPI_NODE);
 
 static const struct flash_stm32_ospi_config flash_stm32_ospi_cfg = {
-	.regs = (OCTOSPI_TypeDef *)DT_REG_ADDR(STM32_OSPI_NODE),
 	.pclken = STM32_CLOCK_INFO_BY_NAME(STM32_OSPI_NODE, ospix),
 #if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_ker)
 	.pclken_ker = STM32_CLOCK_INFO_BY_NAME(STM32_OSPI_NODE, ospi_ker),

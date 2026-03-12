@@ -63,6 +63,27 @@ extern "C" {
 #define GPIO_PORT_PIN_MASK_FROM_DT_INST(inst)			\
 	GPIO_PORT_PIN_MASK_FROM_DT_NODE(DT_DRV_INST(inst))
 
+
+/**
+ * @brief Make a struct gpio_driver_config initializer from a node identifier
+ *
+ * @param node_id GPIO controller node identifier.
+ * @return a struct gpio_driver_config initializer
+ */
+#define GPIO_COMMON_CONFIG_FROM_DT_NODE(node_id)                           \
+	{                                                                  \
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(node_id), \
+	}
+
+/**
+ * @brief Make a struct gpio_driver_config initializer from a DT_DRV_COMPAT instance number
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @return a struct gpio_driver_config initializer
+ */
+#define GPIO_COMMON_CONFIG_FROM_DT_INST(inst)                   \
+	GPIO_COMMON_CONFIG_FROM_DT_NODE(DT_DRV_INST(inst))
+
 /**
  * @brief Generic function to insert or remove a callback from a callback list
  *

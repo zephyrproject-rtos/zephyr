@@ -101,7 +101,7 @@ int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_serv
  *
  * @retval 0 Success
  * @retval -EINVAL @p bearer or @p name is NULL, or @p name is the empty string or @p name is larger
- *                 than @kconfig{CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH}
+ *                 than @kconfig{CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH}
  * @retval -EFAULT @p bearer is not registered
  */
 int bt_ccp_call_control_server_set_bearer_provider_name(
@@ -111,14 +111,18 @@ int bt_ccp_call_control_server_set_bearer_provider_name(
  * @brief Get the bearer provider name.
  *
  * @param[in]  bearer  The bearer to get the name for.
- * @param[out] name    Pointer that will be updated to be the bearer provider name.
+ * @param[out] name Pointer a buffer that will be populated with the bearer provider name.
+ * @param name_size The size of the @p name buffer. The suggested size is
+ *                  @kconfig{CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH} + 1 to
+ *                  ensure that the name always fits.
  *
  * @retval 0 Success
  * @retval -EINVAL @p bearer or @p name is NULL
  * @retval -EFAULT @p bearer is not registered
+ * @retval -ENOMEM @p name_size is insufficient to hold the bearer name (including null terminator)
  */
 int bt_ccp_call_control_server_get_bearer_provider_name(
-	struct bt_ccp_call_control_server_bearer *bearer, const char **name);
+	struct bt_ccp_call_control_server_bearer *bearer, char *name, size_t name_size);
 
 /**
  * @brief Get the bearer UCI.
@@ -177,25 +181,37 @@ struct bt_ccp_call_control_client_cb {
 	 * @param client       Call Control Client pointer.
 	 * @param err          Error value. 0 on success, GATT error on positive
 	 *                     value or errno on negative value.
-	 * @param bearers      The bearers found.
+	 * @param bearers      The bearers found. Value must be copied if used after return.
+	 * @param user_data    User data stored in the callback struct. Will always be NULL if
+	 *                     @kconfig{CONFIG_BT_CCP_CALL_CONTROL_CLIENT_CB_USER_DATA} is not
+	 *                     enabled.
 	 */
 	void (*discover)(struct bt_ccp_call_control_client *client, int err,
-			 struct bt_ccp_call_control_client_bearers *bearers);
+			 struct bt_ccp_call_control_client_bearers *bearers, void *user_data);
 
-#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME) || defined(__DOXYGEN__)
 	/**
 	 * @brief Callback function for bt_ccp_call_control_client_read_bearer_provider_name().
 	 *
 	 * This callback is called once the read bearer provider name procedure is completed.
 	 *
-	 * @param client Call Control Client instance pointer.
-	 * @param err    Error value. 0 on success, GATT error on positive
-	 *               value or errno on negative value.
-	 * @param name   The bearer provider name. NULL if @p err is not 0.
+	 * @param bearer     Call Control Client bearer instance pointer.
+	 * @param err        Error value. 0 on success, GATT error on positive
+	 *                   value or errno on negative value.
+	 * @param name       The bearer provider name. NULL if @p err is not 0.
+	 *                   Value must be copied if used after return.
+	 * @param user_data  User data stored in the callback struct. Will always be NULL if
+	 *                   @kconfig{CONFIG_BT_CCP_CALL_CONTROL_CLIENT_CB_USER_DATA} is not
+	 *                   enabled.
 	 */
 	void (*bearer_provider_name)(struct bt_ccp_call_control_client_bearer *bearer, int err,
-				     const char *name);
+				     const char *name, void *user_data);
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
+
+#if defined(CONFIG_BT_CCP_CALL_CONTROL_CLIENT_CB_USER_DATA) || defined(__DOXYGEN__)
+	/** User data that will be supplied to all callbacks */
+	void *user_data;
+#endif /* CONFIG_BT_CCP_CALL_CONTROL_CLIENT_CB_USER_DATA */
 
 	/** @cond INTERNAL_HIDDEN */
 	/** Internally used field for list handling */

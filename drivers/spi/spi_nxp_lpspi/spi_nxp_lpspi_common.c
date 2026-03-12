@@ -298,10 +298,10 @@ int lpspi_configure(const struct device *dev, const struct spi_config *spi_cfg)
 	int ret = 0;
 
 	/* fast path to avoid reconfigure */
-	/* TODO: S32K3 errata ERR050456 requiring module reset before every transfer,
-	 * investigate alternative workaround so we don't have this latency for S32.
+	/* TODO: Investigate alternative workaround for Erratum ERR050456 to avoid
+	 * module reset before each transfer and reduce latency.
 	 */
-	if (already_configured && !IS_ENABLED(CONFIG_SOC_FAMILY_NXP_S32)) {
+	if (already_configured && !IS_ENABLED(CONFIG_SPI_NXP_LPSPI_ERR050456)) {
 		return 0;
 	}
 

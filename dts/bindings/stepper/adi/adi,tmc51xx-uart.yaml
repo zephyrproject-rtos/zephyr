@@ -42,8 +42,8 @@ examples:
             en-pwm-mode;
             invert-direction;
 
-            tmc51xx_stepper_driver: stepper_driver {
-                compatible = "adi,tmc51xx-stepper-drv";
+            tmc51xx_stepper_driver: stepper-driver {
+                compatible = "adi,tmc51xx-stepper-driver";
                 micro-step-res = <256>;
 
                 /* ADI TMC stallguard settings specific to TMC51XX */
@@ -51,8 +51,8 @@ examples:
             };
 
             /* common stepper controller settings */
-            tmc51xx_motion_controller: motion_controller {
-              compatible = "adi,tmc51xx-stepper";
+            tmc51xx_motion_controller: motion-controller {
+              compatible = "adi,tmc51xx-stepper-ctrl";
 
               /* ADI TMC stallguard settings specific to TMC5160 */
               activate-stallguard2;

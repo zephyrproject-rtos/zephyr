@@ -116,7 +116,9 @@ class Packages(WestCommand):
             )
 
         # Store the zephyr modules for easier access
-        self.zephyr_modules = zephyr_module.parse_modules(ZEPHYR_BASE, self.manifest)
+        self.zephyr_modules = zephyr_module.parse_modules(
+            ZEPHYR_BASE, self.manifest, require_yaml_validation=False
+        )
 
         if args.modules:
             # Check for unknown module names

@@ -1,4 +1,4 @@
-.. _96b_argonkey:
+.. zephyr:board:: 96b_argonkey
 
 96Boards Argonkey
 #################
@@ -51,34 +51,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr 96b_argonkey board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | system clock                        |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-
-More information about the board can be found at the
-`ARGONKEY website`_.
-
-The default board configuration can be found in
-:zephyr_file:`boards/96boards/argonkey/96b_argonkey_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -222,9 +195,6 @@ References
 **********
 
 .. target-notes::
-
-.. _ARGONKEY website:
-   https://www.st.com/en/evaluation-tools/steval-mki187v1.html
 
 .. _AN2606:
    https://www.st.com/resource/en/application_note/cd00167594.pdf

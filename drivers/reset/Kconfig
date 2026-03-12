@@ -7,7 +7,7 @@
 # Reset Controller options
 #
 menuconfig RESET
-	bool "Reset Controller drivers"
+	bool "Reset controller drivers"
 	help
 	  Reset Controller drivers. Reset node represents a region containing
 	  information about reset controller device. The typical use-case is
@@ -17,7 +17,7 @@ menuconfig RESET
 if RESET
 
 config RESET_INIT_PRIORITY
-	int "Reset Controller driver init priority"
+	int "Reset controller driver init priority"
 	default 35
 	help
 	  This option controls the priority of the reset controller device
@@ -25,7 +25,7 @@ config RESET_INIT_PRIORITY
 	  initialized earlier in the startup cycle. If unsure, leave at default
 	  value
 
-comment "Reset Controller Drivers"
+comment "Reset controller Drivers"
 
 # zephyr-keep-sorted-start
 rsource "Kconfig.aspeed"

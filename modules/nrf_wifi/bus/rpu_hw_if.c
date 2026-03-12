@@ -70,6 +70,8 @@ uint32_t rpu_7002_memmap[][3] = {
 static const struct qspi_dev *qdev;
 static struct qspi_config *cfg;
 
+static int rpu_gpio_remove(void);
+
 static int validate_addr_blk(uint32_t start_addr,
 							 uint32_t end_addr,
 							 uint32_t block_no,
@@ -81,7 +83,7 @@ static int validate_addr_blk(uint32_t start_addr,
 	if (((start_addr >= block_map[0]) && (start_addr <= block_map[1])) &&
 	    ((end_addr >= block_map[0]) && (end_addr <= block_map[1]))) {
 		if (block_no == PKTRAM) {
-			*hl_flag = 0;
+			*hl_flag = false;
 		}
 		*selected_blk = block_no;
 		return 0;
@@ -98,7 +100,7 @@ static int rpu_validate_addr(uint32_t start_addr, uint32_t len, bool *hl_flag)
 
 	end_addr = start_addr + len - 1;
 
-	*hl_flag = 1;
+	*hl_flag = true;
 
 	for (i = 0; i < NUM_MEM_BLOCKS; i++) {
 		ret = validate_addr_blk(start_addr, end_addr, i, hl_flag, &selected_blk);

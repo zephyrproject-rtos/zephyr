@@ -1010,8 +1010,8 @@ __syscall int device_deinit(const struct device *dev);
 		Z_DEVICE_DEPS_SEP,                                             \
 		Z_DEVICE_EXTRA_DEPS(__VA_ARGS__) /**/                          \
 		Z_DEVICE_DEPS_SEP,                                             \
-		COND_CODE_1(DT_NODE_EXISTS(node_id),                           \
-			    (DT_SUPPORTS_DEP_ORDS(node_id)), ()) /**/          \
+		IF_ENABLED(DT_NODE_EXISTS(node_id),                            \
+			   (DT_SUPPORTS_DEP_ORDS(node_id))) /**/               \
 	}
 
 #endif /* CONFIG_DEVICE_DEPS */
@@ -1232,8 +1232,8 @@ device_get_dt_nodelabels(const struct device *dev)
  */
 #define Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, init_fn, deinit_fn, flags, pm, data, config,   \
 			     level, prio, api, state, deps)                                        \
-	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))                                         \
-	COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (), (const))                                     \
+	IF_DISABLED(DT_NODE_EXISTS(node_id), (static))                                             \
+	IF_DISABLED(Z_DEVICE_IS_MUTABLE(node_id), (const))                                         \
 	STRUCT_SECTION_ITERABLE_NAMED_ALTERNATE(                                                   \
 		device, COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (device_mutable), (device)),     \
 		Z_DEVICE_SECTION_NAME(level, prio), DEVICE_NAME_GET(dev_id)) =                     \
@@ -1324,8 +1324,8 @@ device_get_dt_nodelabels(const struct device *dev)
  * that out until after we've built the zephyr image, though.
  */
 #define Z_MAYBE_DEVICE_DECLARE_INTERNAL(node_id)                                                   \
-	extern COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (),                                       \
-			   (const)) struct device DEVICE_DT_NAME_GET(node_id);
+	extern IF_DISABLED(Z_DEVICE_IS_MUTABLE(node_id), (const))                                  \
+		struct device DEVICE_DT_NAME_GET(node_id);
 
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
 

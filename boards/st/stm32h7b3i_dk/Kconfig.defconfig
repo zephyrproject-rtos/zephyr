@@ -7,9 +7,9 @@
 if BOARD_STM32H7B3I_DK
 
 # MEMC needs to be enabled in order to store
-# display buffer to external SDRAM connected to FMC
+# LTDC framebuffer to external SDRAM connected to FMC
 config MEMC
-	default y if DISPLAY
+	default y if STM32_LTDC
 
 if LVGL
 
@@ -33,12 +33,6 @@ config LV_Z_VDB_ZEPHYR_REGION
 
 config LV_Z_VDB_ZEPHYR_REGION_NAME
 	default "SDRAM2"
-
-config LV_Z_FLUSH_THREAD
-	default y
-
-config LV_Z_BITS_PER_PIXEL
-	default 16 if STM32_LTDC_RGB565
 
 endif # LVGL
 

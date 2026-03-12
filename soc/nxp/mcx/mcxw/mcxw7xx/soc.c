@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2024,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,8 +19,60 @@
 extern uint32_t SystemCoreClock;
 extern void nxp_nbu_init(void);
 
+#ifdef CONFIG_NXP_MCXW7XX_BOOT_HEADER
+extern char z_main_stack[];
+extern char _flash_used[];
+
+extern void z_arm_reset(void);
+extern void z_arm_nmi(void);
+extern void z_arm_hard_fault(void);
+extern void z_arm_mpu_fault(void);
+extern void z_arm_bus_fault(void);
+extern void z_arm_usage_fault(void);
+extern void z_arm_secure_fault(void);
+extern void z_arm_svc(void);
+extern void z_arm_debug_monitor(void);
+extern void z_arm_pendsv(void);
+extern void sys_clock_isr(void);
+extern void z_arm_exc_spurious(void);
+
+#ifdef CONFIG_USE_SWITCH
+#define PENDSV_VEC z_arm_exc_spurious
+#else
+#define PENDSV_VEC z_arm_pendsv
+#endif
+
+__imx_boot_ivt_section void (*const image_vector_table[])(void) = {
+	(void (*)())(z_main_stack + CONFIG_MAIN_STACK_SIZE), /* 0x00 */
+	z_arm_reset,                                         /* 0x04 */
+	z_arm_nmi,                                           /* 0x08 */
+	z_arm_hard_fault,                                    /* 0x0C */
+	z_arm_mpu_fault,                                     /* 0x10 */
+	z_arm_bus_fault,                                     /* 0x14 */
+	z_arm_usage_fault,                                   /* 0x18 */
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+	z_arm_secure_fault, /* 0x1C */
+#else
+	z_arm_exc_spurious,
+#endif                                               /* CONFIG_ARM_SECURE_FIRMWARE */
+	(void (*)())((uintptr_t)_flash_used),        /* 0x20, imageLength. */
+	0,                                           /* 0x24, imageType (Plain Image) */
+	0,                                           /* 0x28, authBlockOffset/crcChecksum */
+	z_arm_svc,                                   /* 0x2C */
+	z_arm_debug_monitor,                         /* 0x30 */
+	(void (*)())((uintptr_t)image_vector_table), /* 0x34, imageLoadAddress. */
+	PENDSV_VEC,                                /* 0x38 */
+#if defined(CONFIG_SYS_CLOCK_EXISTS) && defined(CONFIG_CORTEX_M_SYSTICK_INSTALL_ISR)
+	sys_clock_isr, /* 0x3C */
+#else
+	z_arm_exc_spurious,
+#endif
+};
+#endif /* CONFIG_NXP_MCXW7XX_BOOT_HEADER */
+
 __weak void clock_init(void)
 {
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
 	/* Unlock Reference Clock Status Registers to allow writes */
 	CLOCK_UnlockFircControlStatusReg();
 	CLOCK_UnlockSircControlStatusReg();
@@ -59,11 +111,20 @@ __weak void clock_init(void)
 
 	CLOCK_SetXtal32Freq(32768U);
 
+	const scg_firc_trim_config_t scg_firc_trim_config = {
+		.trimMode = kSCG_FircTrimUpdate,   /* FIRC trim is enabled and */
+						   /* trim value update is enabled */
+		.trimSrc = kSCG_FircTrimSrcSysOsc, /* Trim source is System OSC */
+		.trimDiv = 31U,                    /* Divided by 32 */
+		.trimCoar = 0U, /* Trim value, see Reference Manual for more information */
+		.trimFine = 0U, /* Trim value, see Reference Manual for more information */
+	};
+
 	/* Configuration to set FIRC to maximum frequency */
 	scg_firc_config_t scg_firc_config = {
 		.enableMode = kSCG_FircEnable, /* Fast IRC is enabled */
 		.range = kSCG_FircRange96M,    /* 96 Mhz FIRC clock selected */
-		.trimConfig = NULL,
+		.trimConfig = &scg_firc_trim_config,
 	};
 
 	scg_sys_clk_config_t sys_clk_safe_config_source = {
@@ -115,6 +176,7 @@ __weak void clock_init(void)
 
 	/* Init SIRC */
 	(void)CLOCK_InitSirc(&sirc_config);
+#endif
 
 	/* Attach Clocks */
 	CLOCK_SetIpSrc(kCLOCK_Lpuart0, kCLOCK_IpSrcFro192M);
@@ -133,20 +195,25 @@ __weak void clock_init(void)
 	CLOCK_SetIpSrc(kCLOCK_Lpspi1, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrc(kCLOCK_Lpadc0, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrcDiv(kCLOCK_Lpadc0, kSCG_SysClkDivBy10);
+#ifndef CONFIG_SOC_MCXW70AC
 	CLOCK_SetIpSrc(kCLOCK_Flexio0, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrcDiv(kCLOCK_Flexio0, kSCG_SysClkDivBy6);
+#endif
 
 	/* Ungate clocks if the peripheral is enabled in devicetree */
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpioa), nxp_kinetis_gpio, okay)) {
 		CLOCK_EnableClock(kCLOCK_PortA);
+		CLOCK_EnableClock(kCLOCK_GpioA);
 	}
 
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpiob), nxp_kinetis_gpio, okay)) {
 		CLOCK_EnableClock(kCLOCK_PortB);
+		CLOCK_EnableClock(kCLOCK_GpioB);
 	}
 
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpioc), nxp_kinetis_gpio, okay)) {
 		CLOCK_EnableClock(kCLOCK_PortC);
+		CLOCK_EnableClock(kCLOCK_GpioC);
 	}
 
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart0), nxp_lpuart, okay)) {
@@ -189,9 +256,16 @@ __weak void clock_init(void)
 		CLOCK_EnableClock(kCLOCK_Can0);
 	}
 
+#ifndef CONFIG_SOC_MCXW70AC
+	/* MCX W70 does not support VREF and FLEXIO */
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(vref), nxp_vref, okay)) {
 		CLOCK_EnableClock(kCLOCK_Vref0);
 	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexio), nxp_flexio, okay)) {
+		CLOCK_EnableClock(kCLOCK_Flexio0);
+	}
+#endif
 
 	if (DT_NODE_HAS_COMPAT_STATUS(adc0, nxp_lpadc, okay)) {
 		CLOCK_EnableClock(kCLOCK_Lpadc0);
@@ -204,12 +278,9 @@ __weak void clock_init(void)
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ewm0), nxp_ewm, okay)) {
 		CLOCK_EnableClock(kCLOCK_Ewm0);
 	}
-
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexio), nxp_flexio, okay)) {
-		CLOCK_EnableClock(kCLOCK_Flexio0);
-	}
 }
 
+#ifndef CONFIG_SOC_MCXW70AC
 static void vbat_init(void)
 {
 	VBAT_Type *base = (VBAT_Type *)DT_REG_ADDR(DT_NODELABEL(vbat));
@@ -224,6 +295,7 @@ static void vbat_init(void)
 	 */
 	base->STATUSA |= VBAT_STATUSA_POR_DET_MASK;
 };
+#endif
 
 void soc_early_init_hook(void)
 {
@@ -235,8 +307,10 @@ void soc_early_init_hook(void)
 	/* Initialize system clock to 96 MHz */
 	clock_init();
 
+#ifndef CONFIG_SOC_MCXW70AC
 	/* Smart power switch initialization */
 	vbat_init();
+#endif
 
 	if (IS_ENABLED(CONFIG_PM)) {
 		nxp_mcxw7x_power_init();
@@ -244,8 +318,39 @@ void soc_early_init_hook(void)
 
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
+}
 
+static int soc_nbu_init(void)
+{
 #if defined(CONFIG_NXP_NBU)
 	nxp_nbu_init();
+#else
+	/* Shutdown NBU as not used */
+
+	/* Reset all RFMC registers and put the NBU CM3 in reset */
+	RFMC->CTRL |= RFMC_CTRL_RFMC_RST(0x1U);
+	/* Wait for a few microseconds before releasing the NBU reset,
+	 * without this the system may hang in the loop waiting for FRO clock valid
+	 */
+	k_busy_wait(31U);
+	/* Release NBU reset */
+	RFMC->CTRL &= ~RFMC_CTRL_RFMC_RST_MASK;
+
+	/* NBU was probably in low power before the RFMC reset, so we need to wait for the FRO clock
+	 * to be valid before accessing RF_CMC
+	 */
+	while ((RFMC->RF2P4GHZ_STAT & RFMC_RF2P4GHZ_STAT_FRO_CLK_VLD_STAT_MASK) == 0U) {
+		;
+	}
+
+	/* Force low power entry request to the radio domain */
+	RF_CMC1->RADIO_LP |= RF_CMC1_RADIO_LP_CK(0x2);
+	RFMC->RF2P4GHZ_CTRL |= RFMC_RF2P4GHZ_CTRL_LP_ENTER(0x1U);
 #endif
+	return 0;
 }
+
+/* soc_nbu_init may call k_busy_wait, which requires the system timer to be initialized
+ * (available by early PRE_KERNEL_2).
+ */
+SYS_INIT(soc_nbu_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

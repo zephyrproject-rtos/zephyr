@@ -7,6 +7,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/clock/amebad_clock.h>
 
 / {
 	cpus {
@@ -24,10 +25,19 @@
 	};
 
 	clocks {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
 		clk_sys: clk_sys {
 			#clock-cells = <0>;
 			compatible = "fixed-clock";
 			clock-frequency = <DT_FREQ_M(260)>;
+		};
+
+		rcc: rcc@40000000 {
+			compatible = "realtek,ameba-rcc";
+			#clock-cells = <1>;
+			reg = <0x40000000 0x400>;
 		};
 	};
 
@@ -51,6 +61,7 @@
 		loguart: serial@48012000 {
 			compatible = "realtek,ameba-loguart";
 			reg = <0x48012000 0x100>;
+			clocks = <&rcc AMEBA_LOGUART_CLK>;
 			interrupts = <3 0>;
 			current-speed = <1500000>;
 			status = "disabled";

@@ -162,6 +162,39 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			/*
+			 * Device-unique information is stored
+			 * at the end of the System memory area.
+			 */
+			flash@1ff1e000 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1ff1e000 DT_SIZE_K(8)>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					ts_cal1_otp: ts-cal1@820 {
+						reg = <0x820 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					ts_cal2_otp: ts-cal2@840 {
+						reg = <0x840 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					vrefint_otp: vrefint@860 {
+						reg = <0x860 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+				};
+			};
 		};
 
 		rcc: rcc@58024400 {
@@ -458,6 +491,8 @@
 				 <&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
 			interrupts = <35 0>;
 			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -470,6 +505,8 @@
 				 <&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
 			interrupts = <36 0>;
 			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -482,6 +519,8 @@
 				 <&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
 			interrupts = <51 0>;
 			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -494,6 +533,8 @@
 			interrupts = <84 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
+			fifo-size = <8>;
+			fifo-max-transfer-size = <65535>;
 		};
 
 		spi5: spi@40015000 {
@@ -504,6 +545,8 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 20)>;
 			interrupts = <85 0>;
 			st,spi-data-width = "full-4-to-16-bit";
+			fifo-size = <8>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -515,6 +558,8 @@
 			clocks = <&rcc STM32_CLOCK(APB4, 5)>;
 			interrupts = <86 0>;
 			st,spi-data-width = "full-4-to-16-bit";
+			fifo-size = <8>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -1182,8 +1227,9 @@
 			interrupt-names = "dcmi";
 			clocks = <&rcc STM32_CLOCK(AHB2, 0)>;
 			dmas = <&dma1 1 75 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
-				STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
-				STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
+					    STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS |
+					    STM32_DMA_MEM_32BITS |
+					    STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
 			status = "disabled";
 		};
 
@@ -1195,7 +1241,7 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(1)>;
 			dmas = <&dma1 2 87 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				STM32_DMA_16BITS) 0>;
+					    STM32_DMA_16BITS) 0>;
 			status = "disabled";
 		};
 
@@ -1207,7 +1253,7 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(1)>;
 			dmas = <&dma1 3 88 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				STM32_DMA_16BITS) 0>;
+					    STM32_DMA_16BITS) 0>;
 			status = "disabled";
 		};
 
@@ -1232,8 +1278,8 @@
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		ts-cal1-addr = <0x1ff1e820>;
-		ts-cal2-addr = <0x1ff1e840>;
+		nvmem-cells = <&ts_cal1_otp>, <&ts_cal2_otp>;
+		nvmem-cell-names = "TS_CAL1", "TS_CAL2";
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <110>;
 		ts-cal-vrefanalog = <3300>;
@@ -1250,7 +1296,7 @@
 
 	vref: vref {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x1ff1e860>;
+		nvmem-cells = <&vrefint_otp>;
 		vrefint-cal-mv = <3300>;
 		vrefint-cal-resolution = <16>;
 		status = "disabled";

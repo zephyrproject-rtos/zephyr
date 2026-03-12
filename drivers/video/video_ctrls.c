@@ -545,6 +545,8 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 		return "Test Pattern";
 	case VIDEO_CID_LINK_FREQ:
 		return "Link Frequency";
+	case VIDEO_CID_DIGITAL_GAIN:
+		return "Digital Gain";
 	default:
 		return NULL;
 	}

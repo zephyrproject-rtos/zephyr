@@ -327,7 +327,7 @@ class CheckPatch(ComplianceTest):
             except subprocess.CalledProcessError as ex:
                 output = ex.output.decode("utf-8")
                 regex = (
-                    r'^\s*\S+:(\d+):\s*(ERROR|WARNING):(.+?):(.+)(?:\n|\r\n?)+'
+                    r'^\s*\S+:(\d+):\s*(ERROR|WARNING):(.+?):(.+)[\r\n]+'
                     r'^\s*#(\d+):\s*FILE:\s*(.+):(\d+):'
                 )
 
@@ -1419,6 +1419,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             regex,
             "--",
             ":!/doc/releases",
+            ":!/doc/develop/manifest/external",
             ":!/doc/security/vulnerabilities.rst",
             cwd=GIT_TOP,
         )
@@ -2546,7 +2547,7 @@ class PythonCompatCheck(ComplianceTest):
     name = "PythonCompat"
     doc = "Check that Python files are compatible with Zephyr minimum supported Python version."
 
-    MAX_VERSION = (3, 10)
+    MAX_VERSION = (3, 12)
     MAX_VERSION_STR = f"{MAX_VERSION[0]}.{MAX_VERSION[1]}"
 
     def run(self):

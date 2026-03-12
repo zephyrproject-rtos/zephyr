@@ -9,18 +9,6 @@ description: |
   When used in the event tx mode, the VEVIF events are used to trigger IRQs from VPR
   to a remote core.
 
-  Example definition:
-
-    cpuppr_vpr: vpr@deadbeef{
-      ...
-      cpuflpr_vevif_event_tx: mailbox {
-        compatible = "nordic,nrf-vevif-event-tx";
-        #mbox-cells = <1>;
-        nordic,events = <1>;
-        nordic,events-mask = <0x00008000>;
-      };
-    };
-
 compatible: "nordic,nrf-vevif-event-tx"
 
 include: [base.yaml, mailbox-controller.yaml]
@@ -38,3 +26,15 @@ properties:
 
 mbox-cells:
   - channel
+
+examples:
+  - |
+    cpuppr_vpr: vpr@deadbeef{
+      /* ... */
+      cpuflpr_vevif_event_tx: mailbox {
+        compatible = "nordic,nrf-vevif-event-tx";
+        #mbox-cells = <1>;
+        nordic,events = <1>;
+        nordic,events-mask = <0x00008000>;
+      };
+    };

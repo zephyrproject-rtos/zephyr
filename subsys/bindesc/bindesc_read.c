@@ -57,10 +57,18 @@ static inline int get_entry(struct bindesc_handle *handle, const uint8_t *addres
 			    const struct bindesc_entry **entry)
 {
 	int retval = 0;
-	int flash_retval;
 
-	/* Check if reading from flash is enabled, if not, this if/else will be optimized out */
-	if (IS_ENABLED(CONFIG_BINDESC_READ_FLASH) && handle->type == BINDESC_HANDLE_TYPE_FLASH) {
+	/*
+	 * The flash backend requires reading data into a buffer and uses struct
+	 * members (flash_device, buffer) that only exist when CONFIG_BINDESC_READ_FLASH
+	 * is enabled. We must use preprocessor conditionals here, not IS_ENABLED()
+	 * in an if statement, because the compiler still type-checks code in both
+	 * branches even when the condition is known false at compile time.
+	 */
+#if IS_ENABLED(CONFIG_BINDESC_READ_FLASH)
+	if (handle->type == BINDESC_HANDLE_TYPE_FLASH) {
+		int flash_retval;
+
 		flash_retval = flash_read(handle->flash_device, (size_t)address,
 					  handle->buffer, BINDESC_ENTRY_HEADER_SIZE);
 		if (flash_retval) {
@@ -84,7 +92,9 @@ static inline int get_entry(struct bindesc_handle *handle, const uint8_t *addres
 			}
 		}
 		*entry = (const struct bindesc_entry *)handle->buffer;
-	} else {
+	} else
+#endif /* CONFIG_BINDESC_READ_FLASH */
+	{
 		*entry = (const struct bindesc_entry *)address;
 	}
 

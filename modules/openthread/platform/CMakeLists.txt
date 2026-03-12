@@ -51,3 +51,4 @@ if(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
 
   zephyr_linker_sources(SECTIONS sections-rom.ld)
 endif()
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)

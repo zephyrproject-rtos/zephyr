@@ -8,7 +8,7 @@
  **************************************
  */
 
-adi_tmc2209: adi_tmc2209 {
+adi_tmc2209: adi-tmc2209 {
 	compatible = "adi,tmc2209";
 	status = "okay";
 	micro-step-res = <1>;
@@ -18,7 +18,7 @@ adi_tmc2209: adi_tmc2209 {
 	dual-edge-step;
 };
 
-allegro_a4979: allegro_a4979 {
+allegro_a4979: allegro-a4979 {
 	status = "okay";
 	compatible = "allegro,a4979";
 	micro-step-res = <1>;
@@ -28,7 +28,7 @@ allegro_a4979: allegro_a4979 {
 	m1-gpios = <&test_gpio 0 0>;
 };
 
-ti_drv84xx: ti_drv84xx {
+ti_drv84xx: ti-drv84xx {
 	status = "okay";
 	compatible = "ti,drv84xx";
 	sleep-gpios = <&test_gpio 0 0>;

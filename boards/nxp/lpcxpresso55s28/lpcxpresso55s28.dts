@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_lpc55S2x.dtsi>
+#include <nxp/lpc/nxp_lpc55S2x.dtsi>
 #include "lpcxpresso55s28_common.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 

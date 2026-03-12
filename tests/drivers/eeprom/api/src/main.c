@@ -48,13 +48,13 @@ ZTEST_USER(eeprom, test_write_rewrite)
 	address = 0;
 	while (address < MIN(size, 16)) {
 		rc = eeprom_write(eeprom, address, wr_buf1, sizeof(wr_buf1));
-		zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+		zassert_ok(rc, "Unexpected error code (%d)", rc);
 
 		rc = eeprom_read(eeprom, address, rd_buf, sizeof(rd_buf));
-		zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+		zassert_ok(rc, "Unexpected error code (%d)", rc);
 
 		rc = memcmp(wr_buf1, rd_buf, sizeof(wr_buf1));
-		zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+		zassert_ok(rc, "Unexpected error code (%d)", rc);
 
 		address += sizeof(wr_buf1);
 	}
@@ -62,13 +62,13 @@ ZTEST_USER(eeprom, test_write_rewrite)
 	address = 0;
 	while (address < MIN(size, 16)) {
 		rc = eeprom_write(eeprom, address, wr_buf2, sizeof(wr_buf2));
-		zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+		zassert_ok(rc, "Unexpected error code (%d)", rc);
 
 		rc = eeprom_read(eeprom, address, rd_buf, sizeof(rd_buf));
-		zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+		zassert_ok(rc, "Unexpected error code (%d)", rc);
 
 		rc = memcmp(wr_buf2, rd_buf, sizeof(wr_buf2));
-		zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+		zassert_ok(rc, "Unexpected error code (%d)", rc);
 
 		address += sizeof(wr_buf2);
 	}
@@ -89,13 +89,13 @@ ZTEST_USER(eeprom, test_write_at_fixed_address)
 
 	for (int i = 0; i < 16; i++) {
 		rc = eeprom_write(eeprom, address, wr_buf1, sizeof(wr_buf1));
-		zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+		zassert_ok(rc, "Unexpected error code (%d)", rc);
 
 		rc = eeprom_read(eeprom, address, rd_buf, sizeof(rd_buf));
-		zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+		zassert_ok(rc, "Unexpected error code (%d)", rc);
 
 		rc = memcmp(wr_buf1, rd_buf, sizeof(wr_buf1));
-		zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+		zassert_ok(rc, "Unexpected error code (%d)", rc);
 	}
 }
 
@@ -108,10 +108,10 @@ ZTEST_USER(eeprom, test_write_byte)
 
 	for (off_t address = 0; address < 16; address++) {
 		rc = eeprom_write(eeprom, address, &wr, 1);
-		zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+		zassert_ok(rc, "Unexpected error code (%d)", rc);
 
 		rc = eeprom_read(eeprom, address, &rd, 1);
-		zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+		zassert_ok(rc, "Unexpected error code (%d)", rc);
 
 		zassert_equal(wr - rd, rc, "Unexpected error code (%d)", rc);
 	}
@@ -127,13 +127,13 @@ ZTEST_USER(eeprom, test_write_at_increasing_address)
 
 	for (off_t address = 0; address < 4; address++) {
 		rc = eeprom_write(eeprom, address, wr_buf1, sizeof(wr_buf1));
-		zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+		zassert_ok(rc, "Unexpected error code (%d)", rc);
 
 		rc = eeprom_read(eeprom, address, rd_buf, sizeof(rd_buf));
-		zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+		zassert_ok(rc, "Unexpected error code (%d)", rc);
 
 		rc = memcmp(wr_buf1, rd_buf, sizeof(wr_buf1));
-		zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+		zassert_ok(rc, "Unexpected error code (%d)", rc);
 	}
 }
 
@@ -146,22 +146,22 @@ ZTEST_USER(eeprom, test_zero_length_write)
 	int rc;
 
 	rc = eeprom_write(eeprom, 0, wr_buf1, sizeof(wr_buf1));
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	zassert_ok(rc, "Unexpected error code (%d)", rc);
 
 	rc = eeprom_read(eeprom, 0, rd_buf, sizeof(rd_buf));
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	zassert_ok(rc, "Unexpected error code (%d)", rc);
 
 	rc = memcmp(wr_buf1, rd_buf, sizeof(wr_buf1));
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	zassert_ok(rc, "Unexpected error code (%d)", rc);
 
 	rc = eeprom_write(eeprom, 0, wr_buf2, 0);
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	zassert_ok(rc, "Unexpected error code (%d)", rc);
 
 	rc = eeprom_read(eeprom, 0, rd_buf, sizeof(rd_buf));
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	zassert_ok(rc, "Unexpected error code (%d)", rc);
 
 	rc = memcmp(wr_buf1, rd_buf, sizeof(wr_buf1));
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	zassert_ok(rc, "Unexpected error code (%d)", rc);
 }
 
 static void *eeprom_setup(void)

@@ -327,6 +327,9 @@ static enum ieee802154_hw_caps stm32wba_802154_get_capabilities(const struct dev
 #if (STM32WBA_802154_CSL_RECEIVER_ENABLE == 1)
 		IEEE802154_HW_RXTIME |
 #endif
+#if (SUPPORT_RADIO_SECURITY_OT_1_2 == 1)
+		IEEE802154_HW_TX_SEC |
+#endif
 		IEEE802154_HW_SLEEP_TO_TX |
 		IEEE802154_RX_ON_WHEN_IDLE;
 }
@@ -364,6 +367,8 @@ static int stm32wba_802154_set_channel(const struct device *dev, uint16_t channe
 
 	LOG_DBG("Setting channel %u", channel);
 	stm32wba_802154_ral_set_channel(channel);
+
+	stm32wba_802154_data.channel = channel;
 
 	return 0;
 }
@@ -616,8 +621,15 @@ static int stm32wba_802154_start(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+	/* Set Channel */
+	stm32wba_802154_ral_set_channel(stm32wba_802154_data.channel);
+
 	stm32wba_802154_ral_tx_power_set(stm32wba_802154_data.txpwr);
 
+	/* Configure continuous reception mode */
+	stm32wba_802154_ral_set_continuous_reception(stm32wba_802154_data.rx_on_when_idle);
+
+	/* Set the radio in Receive State */
 	if (stm32wba_802154_ral_receive() != STM32WBA_802154_RAL_ERROR_NONE) {
 		LOG_ERR("Failed to enter receive state");
 		return -EIO;
@@ -633,6 +645,10 @@ static int stm32wba_802154_stop(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+	/* Disable continuous reception mode */
+	stm32wba_802154_ral_set_continuous_reception(false);
+
+	/* Set the radio in Sleep state */
 	if (stm32wba_802154_ral_sleep() != STM32WBA_802154_RAL_ERROR_NONE) {
 		LOG_ERR("Error while stopping radio");
 		return -EIO;
@@ -663,6 +679,8 @@ static int stm32wba_802154_driver_init(const struct device *dev)
 	stm32wba_802154_data.rx_on_when_idle = false;
 #endif /* CONFIG_NET_L2_CUSTOM_IEEE802154_STM32WBA && CONFIG_NET_L2_OPENTHREAD */
 	stm32wba_802154_ral_set_continuous_reception(stm32wba_802154_data.rx_on_when_idle);
+
+	stm32wba_802154_data.channel = 0;
 
 	k_thread_create(&stm32wba_802154_data.rx_thread, stm32wba_802154_data.rx_stack,
 			CONFIG_IEEE802154_STM32WBA_RX_STACK_SIZE,
@@ -826,6 +844,34 @@ static int stm32wba_802154_configure_ack_fpb(const struct ieee802154_config *con
 	return ret;
 }
 
+#if (SUPPORT_RADIO_SECURITY_OT_1_2 == 1)
+static void stm32wba_802154_configure_mac_key(struct ieee802154_key *mac_keys)
+{
+	uint8_t aPrevKey[16] = {0};
+	uint8_t aCurrKey[16] = {0};
+	uint8_t aNextKey[16] = {0};
+	uint8_t aKeyIdMode = 0;
+	uint8_t aKeyId = 0;
+
+	if ((mac_keys[0].key_value) != NULL) {
+		memcpy(aPrevKey, mac_keys[0].key_value, 16);
+	}
+	if ((mac_keys[1].key_value) != NULL) {
+		aKeyIdMode = mac_keys[0].key_id_mode;
+		aKeyId = *(mac_keys[1].key_id);
+		memcpy(aCurrKey, mac_keys[1].key_value, 16);
+	}
+	if ((mac_keys[2].key_value) != NULL) {
+		memcpy(aNextKey, mac_keys[2].key_value, 16);
+	}
+	stm32wba_802154_ral_set_mac_key(aKeyIdMode,
+					aKeyId,
+					aPrevKey,
+					aCurrKey,
+					aNextKey);
+}
+#endif
+
 static int stm32wba_802154_configure(const struct device *dev,
 				     enum ieee802154_config_type type,
 				     const struct ieee802154_config *config)
@@ -860,10 +906,24 @@ static int stm32wba_802154_configure(const struct device *dev,
 		break;
 
 	case IEEE802154_CONFIG_RX_ON_WHEN_IDLE:
+		LOG_DBG("Setting IEEE802154_CONFIG_RX_ON_WHEN_IDLE: enabled = %d",
+			config->rx_on_when_idle);
 		stm32wba_802154_data.rx_on_when_idle = config->rx_on_when_idle;
 		stm32wba_802154_ral_set_continuous_reception(config->rx_on_when_idle);
 		break;
+#if (SUPPORT_RADIO_SECURITY_OT_1_2 == 1)
+	case IEEE802154_CONFIG_FRAME_COUNTER_IF_LARGER:
+		stm32wba_802154_ral_set_mac_frame_counter_if_larger(config->frame_counter);
+		break;
 
+	case IEEE802154_CONFIG_FRAME_COUNTER:
+		stm32wba_802154_ral_set_mac_frame_counter(config->frame_counter);
+		break;
+
+	case IEEE802154_CONFIG_MAC_KEYS:
+		stm32wba_802154_configure_mac_key(config->mac_keys);
+		break;
+#endif
 	default:
 #if defined(CONFIG_NET_L2_CUSTOM_IEEE802154)
 		ret = stm32wba_802154_configure_extended(
@@ -992,23 +1052,24 @@ static int radio_pm_action(const struct device *dev, enum pm_device_action actio
 	case PM_DEVICE_ACTION_RESUME:
 		LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_RADIO);
 #if defined(CONFIG_PM_S2RAM)
-		if (LL_PWR_IsActiveFlag_SB() == 1U) {
-			/* Put the radio in active state */
-			LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_RADIO);
-			link_layer_register_isr(true);
+		if (ll_sys_dp_slp_get_state() == LL_SYS_DP_SLP_ENABLED) {
+			if (LL_PWR_IsActiveFlag_SB() == 1U) {
+				/* Restore NVIC configuration for radio */
+				link_layer_register_isr(true);
+				ll_sys_dp_slp_exit();
+			}
 		}
+#endif /* CONFIG_PM_S2RAM */
 		LINKLAYER_PLAT_NotifyWFIExit();
-		ll_sys_dp_slp_exit();
-#endif
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 #if defined(CONFIG_PM_S2RAM)
-		uint64_t next_radio_evt;
-		enum pm_state state = pm_state_next_get(_current_cpu->id)->state;
+		if (ll_sys_dp_slp_get_state() == LL_SYS_DP_SLP_DISABLED) {
+			uint64_t next_radio_evt;
+			enum pm_state state = pm_state_next_get(_current_cpu->id)->state;
 
-		if (state == PM_STATE_SUSPEND_TO_RAM) {
-			next_radio_evt = os_timer_get_earliest_time();
-			if (llhwc_cmn_is_dp_slp_enabled() == 0) {
+			if (state == PM_STATE_SUSPEND_TO_RAM) {
+				next_radio_evt = os_timer_get_earliest_time();
 				if (next_radio_evt > CFG_LPM_STDBY_WAKEUP_TIME) {
 					/* No event in a "near" futur */
 					next_radio_evt -= CFG_LPM_STDBY_WAKEUP_TIME;
@@ -1016,7 +1077,7 @@ static int radio_pm_action(const struct device *dev, enum pm_device_action actio
 				}
 			}
 		}
-#endif
+#endif /* CONFIG_PM_S2RAM */
 		LINKLAYER_PLAT_NotifyWFIEnter();
 		break;
 	default:

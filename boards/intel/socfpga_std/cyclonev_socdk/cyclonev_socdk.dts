@@ -14,7 +14,6 @@
 	compatible = "altr,socfpga-cyclonev-socdk", "altr,socfpga-cyclonev", "altr,socfpga";
 
 	ddr0: memory@0 {
-		name = "memory";
 		device_type = "memory";
 		reg = <0x0 0x40000000>; /* 1GB */
 	};

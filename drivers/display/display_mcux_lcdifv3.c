@@ -281,7 +281,7 @@ static int mcux_lcdifv3_init(const struct device *dev)
 	return 0;
 }
 
-static const struct display_driver_api mcux_lcdifv3_api = {
+static DEVICE_API(display, mcux_lcdifv3_api) = {
 	.write = mcux_lcdifv3_write,
 	.get_framebuffer = mcux_lcdifv3_get_framebuffer,
 	.get_capabilities = mcux_lcdifv3_get_capabilities,

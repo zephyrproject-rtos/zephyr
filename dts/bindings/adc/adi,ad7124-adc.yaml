@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Bindings for the ADI AD7124 Analog-to-Digital Converter.
+  ADI AD7124 ADC Controller.
 
 compatible: "adi,ad7124-adc"
 
@@ -16,6 +16,16 @@ properties:
       Enable internal reference for AD7124
       - true: Enable internal reference
       - false: Disable internal reference
+
+  pd-switch-enable:
+    type: boolean
+    description: |
+      Enable internal low-side power-down switch for AD7124
+      - true: The switch is in the closed position
+      - false: The switch is in the open position
+      The default configuration places the switch in the
+      open position for control setup upon power-up
+      or after reset.
 
   filter-type-mask:
     type: int

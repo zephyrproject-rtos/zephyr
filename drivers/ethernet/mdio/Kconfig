@@ -1,0 +1,60 @@
+# MDIO configuration options
+
+# Copyright (c) 2021 IP-Logix Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# MDIO options
+#
+menuconfig MDIO
+	bool "Management Data Input/Output (MDIO) drivers"
+	help
+	  Enable MDIO Driver Configuration
+
+if MDIO
+
+config MDIO_SHELL
+	bool "MDIO Shell"
+	depends on SHELL
+	help
+	  Enable MDIO Shell.
+
+	  The MDIO shell currently supports scanning and device
+	  read/write.
+
+# Include these first so that any properties (e.g. defaults) below can be
+# overridden (by defining symbols in multiple locations)
+# zephyr-keep-sorted-start
+rsource "Kconfig.adin2111"
+rsource "Kconfig.dwcxgmac"
+rsource "Kconfig.esp32"
+rsource "Kconfig.gpio"
+rsource "Kconfig.intel_igc"
+rsource "Kconfig.lan865x"
+rsource "Kconfig.litex"
+rsource "Kconfig.nxp_enet"
+rsource "Kconfig.nxp_enet_qos"
+rsource "Kconfig.nxp_imx_netc"
+rsource "Kconfig.nxp_s32_gmac"
+rsource "Kconfig.nxp_s32_netc"
+rsource "Kconfig.renesas_ra"
+rsource "Kconfig.sam"
+rsource "Kconfig.stm32_hal"
+rsource "Kconfig.sy1xx"
+rsource "Kconfig.xilinx_axi_ethernet_lite"
+rsource "Kconfig.xilinx_axienet"
+rsource "Kconfig.xmc4xxx"
+# zephyr-keep-sorted-stop
+
+config MDIO_INIT_PRIORITY
+	int "Init priority"
+	default ETH_INIT_PRIORITY
+	help
+	  MDIO device driver initialization priority.
+
+
+module = MDIO
+module-str = mdio
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MDIO

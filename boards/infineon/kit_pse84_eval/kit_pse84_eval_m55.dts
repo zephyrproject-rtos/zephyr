@@ -118,7 +118,7 @@
 	min-bus-freq = <400000>;
 	power-delay-ms = <1000>;
 	/* Card detect gpios */
-	cd-gpios = <&gpio_prt17 7 GPIO_PULL_UP>;
+	cd-gpios = <&gpio_prt17 7 GPIO_ACTIVE_HIGH>;
 
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";

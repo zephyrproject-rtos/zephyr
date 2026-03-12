@@ -401,7 +401,7 @@ finish:
 		retention_config_##inst = {							\
 		.parent = DEVICE_DT_GET(DT_PARENT(DT_INST(inst, DT_DRV_COMPAT))),		\
 		.checksum_size = DT_INST_PROP(inst, checksum),					\
-		.offset = DT_INST_REG_ADDR(inst),						\
+		.offset = DT_INST_PROP_BY_IDX(inst, reg, 0),					\
 		.size = DT_INST_REG_SIZE(inst),							\
 		.reserved_size = (COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, prefix),		\
 					      (DT_INST_PROP_LEN(inst, prefix)), (0)) +		\

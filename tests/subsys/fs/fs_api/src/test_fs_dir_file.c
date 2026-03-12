@@ -991,7 +991,7 @@ ZTEST(fs_api_dir_file, test_file_stat)
 	zassert_not_equal(ret, 0, "Stat a dir without entry");
 
 	ret = fs_stat("/", &entry);
-	zassert_not_equal(ret, 0, "dir path name is too short");
+	zassert_equal(ret, 0, "Fail to stat root dir");
 
 	ret = fs_stat("SDCARD", &entry);
 	zassert_not_equal(ret, 0, "Stat a dir path without /");

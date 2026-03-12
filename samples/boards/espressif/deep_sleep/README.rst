@@ -23,9 +23,8 @@ The following wake up sources are demonstrated in this example:
 3. ``GPIO``: Only supported by some Espressif SoCs, in the case of ESP32-C3
    GPIOS0~5 can be used as wake-up sources.
 
-In this demo, Timer is the only wake-up source that cannot be disabled via a
-Kconfig option. The target SoC will always repeat the following: enable Timer
-as wake-up source, deep sleep for 20 seconds, wake up.
+The target SoC will always repeat the following: enable Timer as wake-up source,
+deep sleep for CONFIG_EXAMPLE_WAKEUP_TIME_SEC seconds, and wake up.
 
 Requirements
 ************
@@ -34,17 +33,14 @@ This example should be able to run on any commonly available
 :zephyr:board:`esp32_devkitc` development board without any extra hardware if
 only ``Timer`` is used as wakeup source.
 
-However, when ``EXT1`` is also enabled, GPIO2 and GPIO4 should be pulled-down
-by external resistors to avoid floating pins. When triggering a wake up, one
-or both of the pins must be set to high. Note that floating pins may trigger
-a wake up.
+However, when EXT1 is enabled, GPIO2 and GPIO4 must be configured with a
+pull-down to avoid floating pins. This is typically done via the device tree
+(for example, using GPIO_PULL_DOWN). When triggering a wake-up, one or
+both pins must be driven high. Floating pins may trigger spurious wake-ups.
 
-The same connection logic used on ``EXT1`` should be applied when ``GPIO`` is
-enabled as wake-up source.
-
-To enable or disable ``EXT1``, edit ``CONFIG_EXAMPLE_EXT1_WAKEUP`` on demo's
-``prj.conf`` file. By default, this wake up source is enabled. Follow similar
-steps to enable or disable ``GPIO`` by editing ``CONFIG_EXAMPLE_GPIO_WAKEUP``.
+The GPIO pins and their electrical characteristics used for ``EXT1`` or ``GPIO``
+wake-up (such as pin number, pull configuration, and active level) are defined
+in the sample’s device tree overlay and can be modified for testing as needed.
 
 Building, Flashing and Running
 ******************************
@@ -66,9 +62,8 @@ sample below is for GPIO2.
 
 .. code-block:: console
 
-   *** Booting Zephyr OS build zephyr-v3.1.0-3667-gb42e2b225ecf  ***
+   *** Booting Zephyr OS build v4.3.0-4908-g23226d1f3a4e ***
 
    Wake up from GPIO 2
-   Enabling timer wakeup, 20s
-   Enabling EXT1 wakeup on pins GPIO2, GPIO4
+   Enabling timer wakeup, 5s
    Powering off

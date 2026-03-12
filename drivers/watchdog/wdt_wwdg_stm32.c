@@ -82,7 +82,7 @@ LOG_MODULE_REGISTER(wdt_wwdg_stm32);
 #define ABS_DIFF_UINT(a, b)  ((a) > (b) ? (a) - (b) : (b) - (a))
 #define WWDG_TIMEOUT_ERROR_MARGIN(__TIMEOUT__)   (__TIMEOUT__ / 10)
 #define IS_WWDG_TIMEOUT(__TIMEOUT_GOLDEN__, __TIMEOUT__)  \
-	(__TIMEOUT__ - __TIMEOUT_GOLDEN__) < \
+	ABS_DIFF_UINT(__TIMEOUT__, __TIMEOUT_GOLDEN__) < \
 	WWDG_TIMEOUT_ERROR_MARGIN(__TIMEOUT_GOLDEN__)
 
 static void wwdg_stm32_irq_config(const struct device *dev);
@@ -285,11 +285,6 @@ static int wwdg_stm32_init(const struct device *dev)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct wwdg_stm32_config *cfg = WWDG_STM32_CFG(dev);
-
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
 
 	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken) != 0) {
 		LOG_ERR("clock control on failed");

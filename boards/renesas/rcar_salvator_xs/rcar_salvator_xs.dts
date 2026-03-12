@@ -25,7 +25,7 @@
 	};
 
 	ram: memory@48000000 {
-		device_type = "mmio-sram";
+		device_type = "memory";
 		reg = <0x0 0x48000000 0x0 DT_SIZE_M(512)>;
 	};
 };

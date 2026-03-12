@@ -12,13 +12,18 @@ common:
 tests:
   drivers.watchdog.wdt_variables.default:
     platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340dk/nrf5340/cpunet
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.watchdog.wdt_variables.54h_flpr:

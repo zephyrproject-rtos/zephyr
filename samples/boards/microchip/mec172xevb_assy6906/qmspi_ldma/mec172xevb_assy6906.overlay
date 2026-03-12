@@ -69,7 +69,7 @@
  * the gpio_off_* for internal pins at the beginning of
  * pinctrl-0 <>
  */
-&spi0 {
+&qspi0 {
 	compatible = "microchip,xec-qmspi-ldma";
 	status = "okay";
 

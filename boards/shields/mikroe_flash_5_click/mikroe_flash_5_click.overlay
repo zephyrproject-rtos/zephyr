@@ -1,0 +1,26 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mikrobus_spi {
+	status = "okay";
+	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+
+	spi_nand_mikroe_flash_5_click: spi-nand@0 {
+		compatible = "jedec,spi-nand";
+		reg = <0>;
+		status = "okay";
+		spi-max-frequency = <104000000>;
+
+		/* w25n01gv parameters */
+		jedec-id = [ef aa 21];
+		size-bytes = <DT_SIZE_M(128)>;
+		erase-block-size = <DT_SIZE_K(128)>;
+		write-block-size = <DT_SIZE_K(2)>;
+		block-erase-duration-max = <10000>;
+		page-program-duration-max = <700>;
+		page-read-duration-max = <200>;
+		reset-duration-max = <500>;
+	};
+};

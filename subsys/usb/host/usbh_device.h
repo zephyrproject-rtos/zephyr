@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2023 Nordic Semiconductor ASA
- *
+ * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -35,6 +34,9 @@ int usbh_device_init(struct usb_device *const udev);
 int usbh_device_interface_set(struct usb_device *const udev,
 			      const uint8_t iface, const uint8_t alt,
 			      const bool dry);
+
+/* Set USB device address */
+int usbh_device_set_address(struct usb_device *const udev, const uint8_t num);
 
 /* Wrappers around to avoid glue UHC calls. */
 static inline struct uhc_transfer *usbh_xfer_alloc(struct usb_device *udev,

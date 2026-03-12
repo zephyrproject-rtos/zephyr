@@ -223,11 +223,6 @@ static int stm32_comp_init(const struct device *dev)
 	COMP_TypeDef *comp = cfg->comp;
 	int ret = 0;
 
-	if (!device_is_ready(clk)) {
-		LOG_ERR("%s clock control device not ready", dev->name);
-		return -ENODEV;
-	}
-
 	/* Enable COMP bus clock */
 	ret = clock_control_on(clk, &cfg->pclken[0]);
 	if (ret != 0) {

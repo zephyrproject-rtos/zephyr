@@ -20,20 +20,21 @@ elseif(CONFIG_ARM_PACBTI_NONE)
 endif()
 
 zephyr_library_sources(
-  exc_exit.c
   fault.c
   fault_s.S
   fpu.c
   reset.S
   scb.c
-  thread_abort.c
   vector_table.S
-  swap_helper.S
+  svc.S
   irq_manage.c
   prep_c.c
   thread.c
   cpu_idle.c
   )
+
+zephyr_library_sources_ifdef(CONFIG_USE_SWITCH arm-m-switch.c)
+zephyr_library_sources_ifndef(CONFIG_USE_SWITCH exc_exit.c thread_abort.c swap_helper.S)
 
 zephyr_library_sources_ifndef(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER irq_init.c)
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.c)

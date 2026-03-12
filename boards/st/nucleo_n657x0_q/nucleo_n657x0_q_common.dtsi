@@ -256,6 +256,8 @@ zephyr_udc0: &usbotg_hs1 {
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
+	nvmem-cells = <&mac_address0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &mdio {
@@ -309,11 +311,27 @@ zephyr_udc0: &usbotg_hs1 {
 	};
 };
 
+&bsec {
+	/* Required by "iocell" and "ethernet" drivers */
+	status = "okay";
+};
+
+&iocell {
+	status = "okay";
+
+	vddio3 {
+		hslv-mode = "on";
+		compensation-enabled;
+	};
+};
+
 csi_interface: &dcmipp {
 	port {
 		csi_ep_in: endpoint {};
 	};
 };
+
+csi_capture_port: &pipe_main {};
 
 &rng {
 	status = "okay";

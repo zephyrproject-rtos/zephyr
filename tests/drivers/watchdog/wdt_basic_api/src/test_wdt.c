@@ -72,7 +72,11 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
 #define WDT_NODE            DT_INST(0, st_stm32_window_watchdog)
 #define TIMEOUTS            0
+#if defined(CONFIG_SOC_SERIES_STM32F7X)
+#define WDT_TEST_MAX_WINDOW 170
+#else
 #define WDT_TEST_MAX_WINDOW 200
+#endif
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_watchdog)
 #define WDT_NODE DT_INST(0, st_stm32_watchdog)
 #define TIMEOUTS 0
@@ -124,6 +128,9 @@
 #define WDT_TEST_BAD_MAX_WINDOW 0
 #define WDT_TEST_FINAL_DISABLE  1
 #endif
+#if DT_HAS_COMPAT_STATUS_OKAY(bflb_wdt)
+#define WDT_TEST_MAX_WINDOW 1999U
+#endif
 
 #define WDT_TEST_STATE_IDLE        0
 #define WDT_TEST_STATE_CHECK_RESET 1
@@ -167,7 +174,11 @@ static struct wdt_timeout_cfg m_cfg_wdt1;
 #define DATATYPE uint32_t
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
+/*
+ * Exclude all STM32 SoCs from using the DTCM noinit section,
+ * as it may break WDT state retention.
+ */
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) && !defined(CONFIG_SOC_FAMILY_STM32)
 #define NOINIT_SECTION ".dtcm_noinit.test_wdt"
 #else
 #define NOINIT_SECTION ".noinit.test_wdt"

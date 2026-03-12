@@ -16,7 +16,7 @@
  * If no bootloader is used, we can extend it to gain more user ram.
  */
 #ifdef CONFIG_ESP_SIMPLE_BOOT
-user_sram_end = DRAM_BUFFERS_START;
+user_sram_end = DRAM_SHARED_BUFFERS_END;
 #else
 user_sram_end = BOOTLOADER_IRAM_LOADER_SEG_START;
 #endif
@@ -83,23 +83,12 @@ MEMORY
   irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
   drom0_0_seg(R):  org = DROM_SEG_ORG, len = DROM_SEG_LEN
 
-#if CONFIG_ULP_COPROC_ENABLED
-  lp_ram_seg(RW):  org = LPSRAM_IRAM_START + ULP_COPROC_RESERVE_MEM,
-                   len = LPSRAM_SIZE - ULP_COPROC_RESERVE_MEM - CONFIG_RESERVE_RTC_MEM
+#if CONFIG_ESP32_ULP_COPROC_ENABLED
+  lp_ram_seg(RW):  org = LPSRAM_RTC_START,
+                   len = LPSRAM_RTC_SIZE
 #else
   lp_ram_seg(RW):  org = LPSRAM_IRAM_START,
-                   len = LPSRAM_SIZE - CONFIG_RESERVE_RTC_MEM
-#endif
-  /* We reduced the size of lp_ram_seg by CONFIG_RESERVE_RTC_MEM value.
-     It reserves the amount of LP memory that we use for this memory segment.
-     This segment is intended for keeping:
-       - (lower addr) rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
-       - (higher addr) bootloader rtc data (s_bootloader_retain_mem, when a Kconfig option is on).
-     The aim of this is to keep data that will not be moved around and have a fixed address.
-  */
-#if (CONFIG_RESERVE_RTC_MEM > 0)
-  lp_reserved_seg(RW): org = LPSRAM_IRAM_START + LPSRAM_SIZE - CONFIG_RESERVE_RTC_MEM,
-                       len = CONFIG_RESERVE_RTC_MEM
+                   len = LPSRAM_RTC_START + LPSRAM_RTC_SIZE - LPSRAM_IRAM_START
 #endif
 
 #ifdef CONFIG_GEN_ISR_TABLES
@@ -122,7 +111,7 @@ REGION_ALIAS("rtc_data_location", rtc_iram_seg );
 ENTRY(CONFIG_KERNEL_ENTRY)
 
 /* Heap size calculations */
-_heap_sentry = DRAM_RESERVED_START;
+_heap_sentry = DRAM_USER_END;
 _libc_heap_size = _heap_sentry - _end;
 
 SECTIONS
@@ -278,15 +267,13 @@ SECTIONS
    * This section holds RTC data that should have fixed addresses.
    * The data are not initialized at power-up and are retained during deep sleep.
    */
-#if (CONFIG_RESERVE_RTC_MEM > 0)
   .rtc_reserved (NOLOAD) :
   {
     . = ALIGN(4);
     _rtc_reserved_start = ABSOLUTE(.);
     *(.rtc_timer_data_in_rtc_mem .rtc_timer_data_in_rtc_mem.*)
     _rtc_reserved_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(lp_reserved_seg)
-#endif
+  } GROUP_LINK_IN(rtc_slow_seg)
 
   /* Get size of rtc slow data based on rtc_data_location alias */
   _rtc_slow_length = (_rtc_force_slow_end - _rtc_data_start);

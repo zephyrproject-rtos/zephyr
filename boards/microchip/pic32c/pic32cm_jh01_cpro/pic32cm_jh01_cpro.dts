@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <microchip/pic32c/pic32cm_jh/pic32cm_jh01/pic32cm5164jh01100.dtsi>
 #include "pic32cm_jh01_cpro-pinctrl.dtsi"
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -139,6 +140,22 @@
 	rxpo = <3>;
 	txpo = <1>;
 	pinctrl-0 = <&sercom4_uart_default>;
+	pinctrl-names = "default";
+	dmas = <&dmac 0x0 0xa>, <&dmac 0x1 0xb>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&dmac {
+	status = "okay";
+};
+
+&sercom1 {
+	compatible = "microchip,sercom-g1-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&sercom1_i2c_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };

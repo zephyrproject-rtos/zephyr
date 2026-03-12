@@ -225,8 +225,13 @@ stm32_lp_tick_source: &lptim1 {
 		reg = <0>;
 		size = <DT_SIZE_M(512)>; /* 512 Megabits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
-		spi-bus-width = <OSPI_OPI_MODE>;
-		data-rate = <OSPI_DTR_TRANSFER>;
+		/* Using OSPI_OPI_MODE with OSPI_STR_TRANSFER or
+		 * OSPI_DTR_TRANSFER isn't working. Please refer to
+		 * the Errata Sheet for possible causes. Alternatively
+		 * this mode can be tested with MSPI-NOR configuration.
+		 */
+		spi-bus-width = <OSPI_SPI_MODE>;
+		data-rate = <OSPI_STR_TRANSFER>;
 		four-byte-opcodes;
 		status = "okay";
 		sfdp-bfp = [53 46 44 50 06 01 02 ff

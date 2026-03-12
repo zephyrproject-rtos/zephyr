@@ -45,3 +45,10 @@ config DAC_MCUX_GAU
 	depends on DT_HAS_NXP_GAU_DAC_ENABLED
 	help
 	  Enable the driver for the NXP GAU DAC.
+
+config DAC_NXP_HPDAC
+	bool "NXP HPDAC driver"
+	default y
+	depends on DT_HAS_NXP_HPDAC_ENABLED
+	help
+	  Enable the driver for the NXP HPDAC.

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_imx7d_m4.dtsi>
+#include <nxp/imx/nxp_imx7d_m4.dtsi>
 #include <nxp/nxp_imx/mimx7d-pinctrl.dtsi>
 
 &pinctrl {

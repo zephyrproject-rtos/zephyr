@@ -126,7 +126,7 @@ def test_interrupts():
         edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 5}, name=None, basename=None)
     ]
 
-    node = edt.get_node("/interrupt-map-bitops-test/node@70000000E")
+    node = edt.get_node("/interrupt-map-bitops-test/node@70000000e")
     assert node.interrupts == [
         edtlib.ControllerAndData(node=node, controller=edt.get_node('/interrupt-map-bitops-test/controller'), data={'one': 3, 'two': 2}, name=None, basename=None)
     ]
@@ -1016,6 +1016,24 @@ def test_wrong_props():
         value_str = str(e.value)
         assert value_str.startswith("'wrong-phandle-array-name' in 'properties:'")
         assert value_str.endswith("but no 'specifier-space' was provided.")
+
+        with pytest.raises(edtlib.EDTError) as e:
+            edtlib.Binding("test-wrong-bindings/wrong-address-cells-default.yaml", None)
+        value_str = str(e.value)
+        assert value_str.startswith("invalid default value '2' specified for property "
+                                    "'#address-cells' in binding ")
+        assert "test-wrong-bindings/wrong-address-cells-default.yaml" in value_str
+        assert value_str.endswith("; this property's default behavior is "
+                                  "defined in DT Specification §2.3.5 and a default in a binding is invalid")
+
+        with pytest.raises(edtlib.EDTError) as e:
+            edtlib.Binding("test-wrong-bindings/wrong-size-cells-default.yaml", None)
+        value_str = str(e.value)
+        assert value_str.startswith("invalid default value '1' specified for property "
+                                    "'#size-cells' in binding ")
+        assert "test-wrong-bindings/wrong-size-cells-default.yaml" in value_str
+        assert value_str.endswith("; this property's default behavior is "
+                                  "defined in DT Specification §2.3.5 and a default in a binding is invalid")
 
 
 def test_deepcopy():

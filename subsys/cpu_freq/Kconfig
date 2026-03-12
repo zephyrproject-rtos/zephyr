@@ -51,6 +51,23 @@ config CPU_FREQ_POLICY_ON_DEMAND
 	bool "On-demand Policy"
 	select CPU_LOAD_METRIC
 
+config CPU_FREQ_POLICY_PRESSURE
+	bool "Pressure based Policy"
+	select TRACING
+	help
+	  Pressure based policy
+
+if CPU_FREQ_POLICY_PRESSURE
+
+config CPU_FREQ_POLICY_PRESSURE_LOWEST_PRIO
+	int "The lowest priority level (highest numerically) to accumulate"
+	default 1
+	help
+	  The lowest priority level (highest numerically) to accumulate. This should be your lowest priority thread.
+	  This priority must not be lower than the idle thread's priority.
+
+endif
+
 endchoice # CPU_FREQ_POLICY
 
 choice CPU_FREQ_PSTATE_SET

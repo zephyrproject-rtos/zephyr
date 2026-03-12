@@ -292,10 +292,7 @@ static DEVICE_API(gpio, gpio_rcar_driver_api) = {
 	static void gpio_rcar_##n##_init(const struct device *dev);   \
 	static const struct gpio_rcar_cfg gpio_rcar_cfg_##n = {	      \
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)), \
-		.common = {					      \
-			.port_pin_mask =			      \
-				GPIO_PORT_PIN_MASK_FROM_DT_INST(n),   \
-		},						      \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),	      \
 		.init_func = gpio_rcar_##n##_init,		      \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),   \
 		.mod_clk.module =				      \

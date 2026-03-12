@@ -22,7 +22,7 @@ Click the operating system you are using.
 
    .. group-tab:: Ubuntu
 
-      This guide covers Ubuntu version 22.04 LTS and later.
+      This guide covers Ubuntu version 24.04 LTS and later.
       If you are using a different Linux distribution see :ref:`installation_linux`.
 
       .. code-block:: bash
@@ -62,7 +62,7 @@ The current minimum required version for the main dependencies are:
      - 3.20.5
 
    * - `Python <https://www.python.org/>`_
-     - 3.10
+     - 3.12
 
    * - `Devicetree compiler <https://www.devicetree.org/>`_
      - 1.4.6
@@ -575,7 +575,7 @@ If you're using blinky, the LED will start to blink as shown in this figure:
    :width: 400px
    :name: reelboard-blinky
 
-   Phytec :ref:`reel_board <reel_board>` running blinky
+   Phytec :zephyr:board:`reel_board <reel_board>` running blinky
 
 Next Steps
 **********

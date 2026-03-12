@@ -578,11 +578,6 @@ static int mspi_stm32_qspi_clock_config(const struct mspi_stm32_conf *cfg,
 	uint32_t ahb_clock_freq;
 	uint32_t prescaler;
 
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 			     (clock_control_subsys_t)&cfg->pclken[0]) != 0) {
@@ -986,20 +981,12 @@ static int mspi_stm32_qspi_dev_config(const struct device *controller,
 		goto e_return;
 	}
 
-	(void)pm_device_runtime_get(controller);
-	/* Prevent the clocks to be stopped during the request */
-	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-
 	data->dev_id = dev_id;
 	/* Validate and save device configuration */
 	ret = mspi_stm32_qspi_dev_cfg_save(controller, param_mask, dev_cfg);
 	if (ret != 0) {
 		LOG_ERR("failed to change device cfg");
 	}
-
-	/* Release PM resources */
-	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-	(void)pm_device_runtime_put(controller);
 
 e_return:
 	if (locked) {

@@ -54,6 +54,7 @@ struct gspi_siwx91x_data {
 	struct spi_context ctx;
 	struct gspi_siwx91x_dma_channel dma_rx;
 	struct gspi_siwx91x_dma_channel dma_tx;
+	bool use_tx_cb;
 };
 
 #ifdef CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA
@@ -188,8 +189,8 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 }
 
 #ifdef CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA
-static void gspi_siwx91x_dma_tx_callback(const struct device *dev, void *user_data,
-					 uint32_t channel, int status)
+static void gspi_siwx91x_dma_callback(const struct device *dev, void *user_data, uint32_t channel,
+				      int status)
 {
 	const struct device *spi_dev = (const struct device *)user_data;
 	struct gspi_siwx91x_data *data = spi_dev->data;
@@ -215,6 +216,7 @@ static int gspi_siwx91x_dma_config(const struct device *dev,
 				   struct gspi_siwx91x_dma_channel *channel, uint32_t block_count,
 				   bool is_tx, uint8_t dfs, uint8_t burst_size)
 {
+	struct gspi_siwx91x_data *data = dev->data;
 	struct dma_config cfg = {
 		.channel_direction = is_tx ? MEMORY_TO_PERIPHERAL : PERIPHERAL_TO_MEMORY,
 		.channel_priority = 1,
@@ -226,9 +228,25 @@ static int gspi_siwx91x_dma_config(const struct device *dev,
 		.block_count = block_count,
 		.head_block = channel->dma_descriptors,
 		.dma_slot = channel->dma_slot,
-		.dma_callback = is_tx ? &gspi_siwx91x_dma_tx_callback : NULL,
+		.dma_callback = NULL,
 		.user_data = (void *)dev,
 	};
+
+	/* We normally rely on the Rx DMA callback because, due to a gpDMA issue,
+	 * the last byte of a transfer is missed when completion is inferred from
+	 * the Tx DMA. This problem is not visible in the Zephyr test case because
+	 * the final byte there is '\0'.
+	 *
+	 * However, there is another gpDMA bug where the Rx DMA completes early if
+	 * the Rx buffer is NULL. In that specific case, we must instead rely on
+	 * the Tx DMA callback to signal completion.
+	 *
+	 * Despite this conditional handling, the logic works correctly on
+	 * non-buggy DMA engines (for example, uDMA).
+	 */
+	if (data->use_tx_cb == is_tx) {
+		cfg.dma_callback = &gspi_siwx91x_dma_callback;
+	}
 
 	return dma_config(channel->dma_dev, channel->chan_nb, &cfg);
 }
@@ -271,7 +289,7 @@ static uint32_t gspi_siwx91x_fill_desc(const struct gspi_siwx91x_config *cfg,
 	return new_blk_cfg->block_size;
 }
 
-struct dma_block_config *gspi_siwx91x_fill_data_desc(const struct gspi_siwx91x_config *cfg,
+struct dma_block_config *gspi_siwx91x_fill_data_desc(const struct device *spi_dev,
 						     struct dma_block_config *desc,
 						     const struct spi_buf buffers[],
 						     int buffer_count, size_t transaction_len,
@@ -279,6 +297,8 @@ struct dma_block_config *gspi_siwx91x_fill_data_desc(const struct gspi_siwx91x_c
 {
 	__ASSERT(transaction_len > 0, "Not supported");
 
+	const struct gspi_siwx91x_config *cfg = spi_dev->config;
+	struct gspi_siwx91x_data *data = spi_dev->data;
 	size_t offset = 0;
 	int i = 0;
 	uint8_t *buffer = NULL;
@@ -307,6 +327,11 @@ struct dma_block_config *gspi_siwx91x_fill_data_desc(const struct gspi_siwx91x_c
 		if (transaction_len) {
 			desc = desc->next_block;
 		}
+	}
+
+	if (transaction_len == 0 && !is_tx && buffer == NULL) {
+		/* Last Rx buffer is NULL */
+		data->use_tx_cb = true;
 	}
 
 	/* Process any remaining transaction length with NULL buffer data */
@@ -343,7 +368,6 @@ static int gspi_siwx91x_prepare_dma_channel(const struct device *spi_dev,
 					    size_t padded_transaction_size, bool is_tx,
 					    uint8_t burst_size)
 {
-	const struct gspi_siwx91x_config *cfg = spi_dev->config;
 	struct gspi_siwx91x_data *data = spi_dev->data;
 	const uint8_t dfs = SPI_WORD_SIZE_GET(data->ctx.config->operation) / 8;
 	struct dma_block_config *desc;
@@ -351,7 +375,7 @@ static int gspi_siwx91x_prepare_dma_channel(const struct device *spi_dev,
 
 	gspi_siwx91x_reset_desc(channel);
 
-	desc = gspi_siwx91x_fill_data_desc(cfg, channel->dma_descriptors, buffer, buffer_count,
+	desc = gspi_siwx91x_fill_data_desc(spi_dev, channel->dma_descriptors, buffer, buffer_count,
 					   padded_transaction_size, is_tx);
 	if (!desc) {
 		return -ENOMEM;
@@ -373,15 +397,18 @@ static int gspi_siwx91x_prepare_dma_transaction(const struct device *dev,
 		return 0;
 	}
 
-	ret = gspi_siwx91x_prepare_dma_channel(dev, data->ctx.current_tx, data->ctx.tx_count,
-					       &data->dma_tx, padded_transaction_size, true,
+	data->use_tx_cb = false;
+
+	ret = gspi_siwx91x_prepare_dma_channel(dev, data->ctx.current_rx, data->ctx.rx_count,
+					       &data->dma_rx, padded_transaction_size, false,
 					       burst_size);
+
 	if (ret) {
 		return ret;
 	}
 
-	ret = gspi_siwx91x_prepare_dma_channel(dev, data->ctx.current_rx, data->ctx.rx_count,
-					       &data->dma_rx, padded_transaction_size, false,
+	ret = gspi_siwx91x_prepare_dma_channel(dev, data->ctx.current_tx, data->ctx.tx_count,
+					       &data->dma_tx, padded_transaction_size, true,
 					       burst_size);
 
 	return ret;
@@ -422,6 +449,21 @@ static int gspi_siwx91x_burst_size(struct spi_context *ctx)
 	}
 
 	return burst_len;
+}
+
+static void gspi_siwx91x_gspi_fifo_reset_sync(uint32_t frequency)
+{
+	int loops = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / frequency;
+
+	/* GSPI FIFO reset requires the RESET bits to be held high
+	 * for at least one GSPI bus clock cycle.
+	 * Since there is no explicit hardware status indicating
+	 * completion of the FIFO reset, insert a short, frequency-
+	 * dependent delay to guarantee the minimum reset pulse width.
+	 */
+	while (loops-- > 0) {
+		arch_nop();
+	}
 }
 #endif /* CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA */
 
@@ -464,6 +506,8 @@ static int gspi_siwx91x_transceive_dma(const struct device *dev, const struct sp
 
 	cfg->reg->GSPI_FIFO_THRLD_b.RFIFO_RESET = 1;
 	cfg->reg->GSPI_FIFO_THRLD_b.WFIFO_RESET = 1;
+	/* Hold FIFO reset asserted for at least one GSPI clock cycle */
+	gspi_siwx91x_gspi_fifo_reset_sync(config->frequency);
 	cfg->reg->GSPI_FIFO_THRLD = 0;
 	cfg->reg->GSPI_FIFO_THRLD_b.FIFO_AEMPTY_THRLD = burst_size - 1;
 	cfg->reg->GSPI_FIFO_THRLD_b.FIFO_AFULL_THRLD = burst_size - 1;

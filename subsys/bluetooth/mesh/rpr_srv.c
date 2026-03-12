@@ -880,6 +880,12 @@ static int handle_link_open(const struct bt_mesh_model *mod, struct bt_mesh_msg_
 			goto rsp;
 		}
 
+		if (srv.refresh.cb == NULL) {
+			LOG_WRN("RPR provisioning client bearer not available");
+			status = BT_MESH_RPR_ERR_LINK_CANNOT_OPEN;
+			goto rsp;
+		}
+
 		LOG_DBG("Node Refresh: %u", refresh);
 
 		atomic_set_bit(srv.flags, NODE_REFRESH);

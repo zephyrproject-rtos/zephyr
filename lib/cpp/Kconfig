@@ -7,6 +7,7 @@ menu "C++ Language Support"
 
 config CPP
 	bool "C++ support for the application"
+	select NONZERO_SPINLOCK_SIZE
 	help
 	  This option enables the use of applications built with C++.
 

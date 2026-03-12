@@ -101,7 +101,7 @@ static int nxp_gau_dac_init(const struct device *dev)
 	return 0;
 };
 
-/* Map output range enum index to mcux dac_output_voltage_range_t */ /
+/* Map output range enum index to mcux dac_output_voltage_range_t */
 #define _NXP_MAP_OUTPUT_RANGE(idx)	\
 	((idx) == 0 ? kDAC_RangeSmall :	\
 	(idx) == 1 ? kDAC_RangeMiddle :	\

@@ -28,13 +28,23 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(cts, CONFIG_BT_CTS_LOG_LEVEL);
 
-#define BT_CTS_ATT_ERR_VALUES_IGNORED 0x80
-#define BT_CTS_FRACTION_256_MAX_VALUE 255
-
 static const struct bt_cts_cb *cts_cb;
 
-#ifdef CONFIG_BT_CTS_HELPER_API
+static enum bt_cts_dst_offset cts_parse_dst_offset(uint8_t dst_offset)
+{
+	switch (dst_offset) {
+	case BT_CTS_DST_OFFSET_STANDARD_TIME:
+	case BT_CTS_DST_OFFSET_HALF_HOUR_DAYLIGHT_TIME:
+	case BT_CTS_DST_OFFSET_DAYLIGHT_TIME:
+	case BT_CTS_DST_OFFSET_DOUBLE_DAYLIGHT_TIME:
+		return (enum bt_cts_dst_offset)dst_offset;
+	case BT_CTS_DST_OFFSET_UNKNOWN:
+	default:
+		return BT_CTS_DST_OFFSET_UNKNOWN;
+	}
+}
 
+#ifdef CONFIG_BT_CTS_HELPER_API
 int bt_cts_time_to_unix_ms(const struct bt_cts_time_format *ct_time, int64_t *unix_ms)
 {
 	struct tm date_time;
@@ -105,6 +115,27 @@ int bt_cts_time_from_unix_ms(struct bt_cts_time_format *ct_time, int64_t unix_ms
 
 #endif /* CONFIG_BT_CTS_HELPER_API */
 
+int bt_cts_local_time_to_ms(const struct bt_cts_local_time *local_time, int32_t *relative_ms)
+{
+	int32_t timezone_offset_ms = 0;
+	int32_t dst_offset_ms = 0;
+
+	if (local_time == NULL || relative_ms == NULL ||
+	    !IN_RANGE(local_time->timezone_offset, BT_CTS_TIMEZONE_MIN, BT_CTS_TIMEZONE_MAX) ||
+	    cts_parse_dst_offset(local_time->dst_offset) == BT_CTS_DST_OFFSET_UNKNOWN) {
+		LOG_DBG("local time struct and relative ms must be valid pointers");
+		return -EINVAL;
+	}
+
+	/* Calculate timezone offset in milliseconds */
+	timezone_offset_ms = (int32_t)local_time->timezone_offset * BT_CTS_TIMEZONE_INCREMENT_MIN *
+			     SEC_PER_MIN * MSEC_PER_SEC;
+	dst_offset_ms = (int32_t)local_time->dst_offset * BT_CTS_DST_INCREMENT_MIN * SEC_PER_MIN *
+			MSEC_PER_SEC;
+	(*relative_ms) = timezone_offset_ms + dst_offset_ms;
+	return 0;
+}
+
 static void ct_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	bool notif_enabled = (value == BT_GATT_CCC_NOTIFY);
@@ -125,7 +156,7 @@ static ssize_t read_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr, vo
 	err = cts_cb->fill_current_cts_time(&ct_time);
 	ct_time.reason = BT_CTS_UPDATE_REASON_UNKNOWN;
 
-	if (!err) {
+	if (err == 0) {
 		return bt_gatt_attr_read(conn, attr, buf, len, offset, &ct_time, sizeof(ct_time));
 	} else {
 		return BT_GATT_ERR(BT_ATT_ERR_OUT_OF_RANGE);
@@ -142,13 +173,13 @@ static ssize_t write_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr, c
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
 
-	if ((offset != 0) || (offset + len != sizeof(ct_time))) {
+	if ((offset != 0) || (len != sizeof(ct_time))) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
 	memcpy(&ct_time, buf, sizeof(ct_time));
 	err = cts_cb->cts_time_write(&ct_time);
-	if (err) {
+	if (err != 0) {
 		return BT_GATT_ERR(BT_CTS_ATT_ERR_VALUES_IGNORED);
 	}
 
@@ -160,21 +191,79 @@ static ssize_t write_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr, c
 	return len;
 }
 
+static ssize_t read_lt(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+		       uint16_t len, uint16_t offset)
+{
+	int err;
+	/* initialize lt_time to default values */
+	struct bt_cts_local_time lt_time = {
+		.timezone_offset = BT_CTS_TIMEZONE_DEFAULT_VALUE,
+		.dst_offset = BT_CTS_DST_OFFSET_UNKNOWN,
+	};
+
+	err = cts_cb->fill_current_cts_local_time(&lt_time);
+
+	if (err == 0) {
+		/* serialize to send local time over air */
+		const unsigned char buffer[] = {(unsigned char)lt_time.timezone_offset,
+						(unsigned char)lt_time.dst_offset};
+		return bt_gatt_attr_read(conn, attr, buf, len, offset, &buffer, ARRAY_SIZE(buffer));
+	} else {
+		return BT_GATT_ERR(BT_ATT_ERR_OUT_OF_RANGE);
+	}
+}
+
+static ssize_t write_lt(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,
+			uint16_t len, uint16_t offset, uint8_t flags)
+{
+	int err;
+	struct bt_cts_local_time lt_time;
+	const unsigned char *buffer = (const unsigned char *)buf;
+
+	if (cts_cb->cts_local_time_write == NULL) {
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	if ((offset != 0) || (len != 2)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	/* deserialize from air */
+	lt_time.timezone_offset = (int8_t)buffer[0];
+	lt_time.dst_offset = cts_parse_dst_offset((uint8_t)buffer[1]);
+
+	if (!IN_RANGE(lt_time.timezone_offset, BT_CTS_TIMEZONE_MIN, BT_CTS_TIMEZONE_MAX) &&
+	    lt_time.timezone_offset != BT_CTS_TIMEZONE_DEFAULT_VALUE) {
+		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+	}
+
+	err = cts_cb->cts_local_time_write(&lt_time);
+	if (err != 0) {
+		return BT_GATT_ERR(BT_CTS_ATT_ERR_VALUES_IGNORED);
+	}
+
+	return len;
+}
+
 /* Current Time Service Declaration */
-BT_GATT_SERVICE_DEFINE(cts_svc, BT_GATT_PRIMARY_SERVICE(BT_UUID_CTS),
-		       BT_GATT_CHARACTERISTIC(BT_UUID_CTS_CURRENT_TIME,
-					      BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE |
-						      BT_GATT_CHRC_NOTIFY,
-					      BT_GATT_PERM_READ | BT_GATT_PERM_WRITE, read_ct,
-					      write_ct, NULL),
-		       BT_GATT_CCC(ct_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE));
+BT_GATT_SERVICE_DEFINE(
+	cts_svc, BT_GATT_PRIMARY_SERVICE(BT_UUID_CTS),
+	BT_GATT_CHARACTERISTIC(BT_UUID_CTS_CURRENT_TIME,
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | BT_GATT_CHRC_NOTIFY,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE, read_ct, write_ct, NULL),
+	BT_GATT_CCC(ct_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GATT_LTI, BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE, read_lt, write_lt, NULL));
 
 int bt_cts_init(const struct bt_cts_cb *cb)
 {
 	__ASSERT(cb != NULL, "Current Time service need valid `struct bt_cts_cb` callback");
 	__ASSERT(cb->fill_current_cts_time != NULL,
 		 "`fill_current_cts_time` callback api is required for functioning of CTS");
-	if (!cb || !cb->fill_current_cts_time) {
+	__ASSERT(cb->fill_current_cts_local_time != NULL,
+		 "`fill_current_cts_local_time` callback api is required for functioning of CTS");
+	if (cb == NULL || cb->fill_current_cts_time == NULL ||
+	    cb->fill_current_cts_local_time == NULL) {
 		return -EINVAL;
 	}
 	cts_cb = cb;
@@ -188,7 +277,7 @@ int bt_cts_send_notification(enum bt_cts_update_reason reason)
 
 	err = cts_cb->fill_current_cts_time(&ct_time);
 	ct_time.reason = reason;
-	if (err) {
+	if (err != 0) {
 		return err;
 	}
 	return bt_gatt_notify(NULL, &cts_svc.attrs[1], &ct_time, sizeof(ct_time));

@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/renesas-rztn-gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	compatible = "renesas,r9a07g074";
@@ -70,11 +71,15 @@
 		xspi1_cs0: memory@68000000 {
 			compatible = "mmio-sram";
 			reg = <0x68000000 DT_SIZE_M(16)>;
+			ranges = <0 0x68000000 DT_SIZE_M(16)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			partitions {
 				compatible = "fixed-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
+				ranges;
 
 				loader_param: partition@0 {
 					label = "loader-param";
@@ -503,6 +508,51 @@
 			status = "disabled";
 		};
 
+		i2c0: i2c@80043000 {
+			compatible = "renesas,rz-iic";
+			channel = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x80043000 0x400>;
+			interrupts = <GIC_SPI 308 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 309 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 310 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 311 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		i2c1: i2c@80043400 {
+			compatible = "renesas,rz-iic";
+			channel = <1>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x80043400 0x400>;
+			interrupts = <GIC_SPI 312 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 313 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 314 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 315 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		i2c2: i2c@81008000 {
+			compatible = "renesas,rz-iic";
+			channel = <2>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x81008000 0x400>;
+			interrupts = <GIC_SPI 439 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 440 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 441 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 442 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
 		sci0: sci0@80001000 {
 			compatible = "renesas,rz-sci";
 			reg = <0x80001000 0x400>;
@@ -607,6 +657,44 @@
 			uart {
 				compatible = "renesas,rz-sci-uart";
 				current-speed = <115200>;
+				status = "disabled";
+			};
+		};
+
+		cmtw0: cmtw@80041000 {
+			compatible = "renesas,rz-cmtw";
+			reg = <0x80041000 0x400>;
+			channel = <0>;
+			interrupts = <GIC_SPI 59 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 60 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 61 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 62 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 63 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "cmwi", "ic0i", "ic01", "oc0i", "oc1i";
+			prescaler = <8>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-cmtw-counter";
+				status = "disabled";
+			};
+		};
+
+		cmtw1: cmtw@80041400 {
+			compatible = "renesas,rz-cmtw";
+			reg = <0x80041400 0x400>;
+			channel = <1>;
+			interrupts = <GIC_SPI 64 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 65 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 66 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 67 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 68 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "cmwi", "ic0i", "ic01", "oc0i", "oc1i";
+			prescaler = <8>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-cmtw-counter";
 				status = "disabled";
 			};
 		};
@@ -1055,6 +1143,28 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+		};
+
+		xspi0: xspi@80220000 {
+			compatible = "renesas,rz-xspi";
+			reg = <0x80220000 0x1000>;
+			unit = <0>;
+			interrupts = <GIC_SPI 339 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 340 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
+
+		xspi1: xspi@80221000 {
+			compatible = "renesas,rz-xspi";
+			reg = <0x80221000 0x1000>;
+			unit = <1>;
+			interrupts = <GIC_SPI 341 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 342 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
 		};
 	};
 };

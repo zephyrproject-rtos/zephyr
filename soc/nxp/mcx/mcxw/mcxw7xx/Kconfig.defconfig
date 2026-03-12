@@ -1,19 +1,28 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_MCXW7XX
 
 config NUM_IRQS
+	default 112 if SOC_MCXW70AC
 	default 77 if SOC_MCXW727C
 	default 75
 
 config MCUX_LPTMR_TIMER
 	default y if PM
 
+
+# LPTMR runs from a 32.768 kHz clock when PM is enabled. Using 1024 ticks/sec gives an exact
+# 32-cycle tick period (32768 / 1024), reducing jitter and keeping the timer
+# efficient in low‑power.
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1024 if MCUX_LPTMR_TIMER
+
+DT_SYSCLK_PATH := $(dt_nodelabel_path,sysclk)
 DT_LPTMR_PATH := $(dt_nodelabel_path,lptmr0)
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 96000000 if CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,$(DT_SYSCLK_PATH),clock-frequency) if CORTEX_M_SYSTICK
 	default $(dt_node_int_prop_int,$(DT_LPTMR_PATH),clock-frequency) if MCUX_LPTMR_TIMER
 
 config MCUX_FLASH_K4_API
@@ -66,5 +75,12 @@ config NXP_RF_IMU
 	default y
 
 endif # IEEE802154
+
+if NXP_MCXW7XX_BOOT_HEADER
+
+config ROM_START_OFFSET
+	default 0x40 if SOC_MCXW70AC
+
+endif # NXP_MCXW7XX_BOOT_HEADER
 
 endif

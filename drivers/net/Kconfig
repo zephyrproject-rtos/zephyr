@@ -200,7 +200,7 @@ config NET_LOOPBACK_SIMULATE_PACKET_DROP
 
 config NET_LOOPBACK_MTU
 	int "MTU for loopback interface"
-	default 576
+	default 1500
 	help
 	  This option sets the MTU for loopback interface.
 

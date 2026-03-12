@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-zephyr_compile_options(-Wno-misleading-indentation)
+
+zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warning_no_misleading_indentation>>)
+zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,warning_no_misleading_indentation>>)
 
 zephyr_include_directories(.)
 

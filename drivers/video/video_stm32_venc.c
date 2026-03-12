@@ -397,11 +397,6 @@ static int stm32_venc_enable_clock(const struct device *dev)
 	const struct stm32_venc_config *config = dev->config;
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	if (clock_control_on(clk, (clock_control_subsys_t)&config->pclken) != 0) {
 		return -EIO;
 	}

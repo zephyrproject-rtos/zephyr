@@ -23,6 +23,16 @@ uart0: &scb0 {
 	pinctrl-names = "default";
 };
 
+spi1: &scb1 {
+	compatible = "infineon,spi";
+	status = "disabled";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&peri_clk_div2>;
+	pinctrl-0 = <&p4_4_scb1_spi_m_mosi &p4_5_scb1_spi_m_miso &p4_6_scb1_spi_m_clk>;
+	pinctrl-names = "default";
+};
+
 &peri_clk_div0 {
 	status = "okay";
 	resource-type = <IFX_RSC_SCB>;
@@ -48,25 +58,11 @@ uart0: &scb0 {
 	clock-div = <11500>;
 };
 
-/*
- * Note : use IFX_PATH_PSOC4_IMO for internal main oscillator as src
- *	  use IFX_PATH_PSOC4_EXT for External clock as src
- */
-&clk_hf {
+&peri_clk_div4 {
 	status = "okay";
-	source-path = <IFX_PATH_PSOC4_IMO>;
-};
-
-/*
- * Note : use IFX_PATH_PSOC4_PUMP_GND for No clock, connect to gnd
- *	  use IFX_PATH_PSOC4_PUMP_IMO for main IMO pump output
- *        use IFX_PATH_PSOC4_PUMP_HFCLK for clk_hf pump
- *
- * usage : The pump clock can be used for the analog pump
- */
-&clk_pump {
-	status = "okay";
-	source-path = <IFX_PATH_PSOC4_PUMP_GND>;
+	resource-type = <IFX_RSC_ADC>;
+	resource-instance = <0>;
+	clock-div = <4>;
 };
 
 &gpio_prt4 {
@@ -75,7 +71,10 @@ uart0: &scb0 {
 
 &gpio_prt5 {
 	status = "okay";
-	interrupts = <4 4>;
+};
+
+&gpio_prt6 {
+	status = "okay";
 };
 
 &watchdog0 {

@@ -308,7 +308,7 @@ config CMSIS_DSP_AUTOVECTORIZE
 config CMSIS_DSP_FLOAT16
 	bool "Half-Precision (16-bit Float) Support"
 	default y
-	depends on FP16
+	depends on FP16_ARITHMETIC
 	help
 	  This option enables the half-precision (16-bit) floating-point
 	  operations support.

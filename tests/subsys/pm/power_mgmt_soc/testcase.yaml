@@ -25,6 +25,7 @@ tests:
       - ek_ra8m1
       - ek_ra8d1
       - mck_ra8t1
+      - fpb_ra8e1
       - ek_ra8p1/r7ka8p1kflcac/cm85
       - mck_ra8t2/r7ka8t2lflcac/cm85
       - ek_ra8d2/r7ka8d2kflcac/cm85
@@ -32,6 +33,11 @@ tests:
       - frdm_mcxn236
       - mcxw23_evk
       - frdm_mcxw23
+      - frdm_mcxa153
+      - frdm_mcxa156
+      - frdm_mcxa266
+      - frdm_mcxa346
+      - frdm_mcxa366
     tags: pm
     integration_platforms:
       - mec15xxevb_assy6853

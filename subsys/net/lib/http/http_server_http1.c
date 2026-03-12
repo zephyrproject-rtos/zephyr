@@ -402,8 +402,8 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 	return 0;
 }
 
-static int dynamic_get_del_req(struct http_resource_detail_dynamic *dynamic_detail,
-			       struct http_client_ctx *client)
+static int dynamic_get_del_opts_req(struct http_resource_detail_dynamic *dynamic_detail,
+				    struct http_client_ctx *client)
 {
 	int ret, len;
 	char *ptr;
@@ -713,11 +713,12 @@ static int handle_http1_dynamic_resource(
 
 	case HTTP_GET:
 	case HTTP_DELETE:
-		/* For GET/DELETE request, we do not pass any data to the app
+	case HTTP_OPTIONS:
+		/* For GET/DELETE/OPTIONS request, we do not pass any data to the app
 		 * but let the app send data to the peer.
 		 */
 		if (user_method & BIT(client->method)) {
-			return dynamic_get_del_req(dynamic_detail, client);
+			return dynamic_get_del_opts_req(dynamic_detail, client);
 		}
 
 		goto not_supported;
@@ -883,7 +884,8 @@ static int on_header_value(struct http_parser *parser,
 			}
 
 			if (ctx->has_upgrade_header) {
-				if (strcasecmp(ctx->header_buffer, "h2c") == 0) {
+				if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) &&
+				    strcasecmp(ctx->header_buffer, "h2c") == 0) {
 					ctx->http2_upgrade = true;
 				} else if (strcasecmp(ctx->header_buffer, "websocket") == 0) {
 					ctx->websocket_upgrade = true;
@@ -1080,7 +1082,7 @@ int handle_http1_request(struct http_client_ctx *client)
 			goto upgrade_not_found;
 		}
 
-		if (client->http2_upgrade) {
+		if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) && client->http2_upgrade) {
 			ret = handle_http1_to_http2_upgrade(client);
 			if (ret < 0) {
 				goto error;

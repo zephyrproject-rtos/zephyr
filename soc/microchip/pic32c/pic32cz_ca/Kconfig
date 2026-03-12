@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Microchip Technology Inc.
+# Copyright (c) 2025-2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_MICROCHIP_PIC32CZ_CA
@@ -18,3 +18,4 @@ config SOC_FAMILY_MICROCHIP_PIC32CZ_CA
 	select HAS_POWEROFF
 	select PIN_OPEN_DRAIN if PINCTRL
 	select PIN_SLEW_RATE if PINCTRL
+	select CLOCK_CONTROL

@@ -6,12 +6,11 @@ toolchain:
   - zephyr
   - gccarmemb
 supported:
-  - LED
   - gpio
-  - shell
   - i2c
   - i3c
   - spi
+  - can
 testing:
   ignore_tags:
     - cmsis_rtos_v2

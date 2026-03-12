@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_FAMILY_MCXA
@@ -7,10 +7,10 @@ config CORTEX_M_SYSTICK
 	default n if (MCUX_LPTMR_TIMER || MCUX_OS_TIMER)
 
 config NUM_IRQS
-	default 80 if SOC_MCXA153
-	default 89 if SOC_MCXA156
-	default 122 if (SOC_MCXA346 || SOC_MCXA266 || SOC_MCXA366)
-	default 164 if (SOC_MCXA577)
+	default 80 if SOC_SERIES_MCXA1X3
+	default 89 if SOC_SERIES_MCXA1X6
+	default 122 if SOC_SERIES_MCXAXX6
+	default 164 if SOC_SERIES_MCXAXX7
 	default 88
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC

@@ -17,14 +17,14 @@ tests:
     filter: dt_compat_enabled("nxp,ewm")
     platform_allow:
       - frdm_mcxw71
-      - frdm_mcxw72/mcxw727c/cpu0
+      - frdm_mcxw72
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
       - frdm_mcxn947/mcxn947/cpu0
       - frdm_mcxn947/mcxn947/cpu1
     integration_platforms:
       - frdm_mcxw71
-      - frdm_mcxw72/mcxw727c/cpu0
+      - frdm_mcxw72
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
     extra_args:

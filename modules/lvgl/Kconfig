@@ -46,6 +46,9 @@ config LV_LOG_LEVEL_USER
 config LV_LOG_LEVEL_TRACE
 	bool
 
+config LV_ATTRIBUTE_MEM_ALIGN_SIZE
+	int
+
 config LV_Z_LOG_LEVEL
 	int
 	default 0 if LV_LOG_LEVEL_NONE || !LV_USE_LOG
@@ -197,6 +200,10 @@ config LV_DRAW_DMA2D_HAL_INCLUDE
 	help
 	  Must be defined to include path of CMSIS header of target processor
 	  e.g. "stm32f769xx.h" or "stm32f429xx.h"
+
+config LV_USE_DRAW_DAVE2D
+	bool
+	imply RENESAS_DRW
 
 config LV_Z_USE_OSAL
 	bool "Use OSAL enabling parallel rendering"

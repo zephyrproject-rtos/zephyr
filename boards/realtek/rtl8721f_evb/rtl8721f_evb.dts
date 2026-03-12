@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <realtek/amebag2/amebag2.dtsi>
+#include "rtl8721f_evb-pinctrl.dtsi"
+
+/ {
+	model = "RealTek AmebaG2 RTL8721F EVB";
+	compatible = "realtek,rtl8721f_evb";
+
+	chosen {
+		zephyr,console = &loguart;
+		zephyr,shell-uart = &loguart;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&flash0 {
+	reg = <0x04000020 DT_SIZE_M(4)>;
+	ranges = <0x0 0x04000020 DT_SIZE_M(4)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		boot_partition: partition@0 {
+			label = "bootloader";
+			reg = <0x00000000 0x00014000>;
+			read-only;
+		};
+
+		slot0_partition: partition@14000 {
+			label = "image-0";
+			reg = <0x00014000 0x001ec000>;
+		};
+
+		storage_partition: partition@250000 {
+			label = "storage";
+			reg = <0x00250000 0x00006000>;
+		};
+	};
+};
+
+&loguart {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};

@@ -96,7 +96,7 @@
 #define SPI3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 8, 6, CCIPR3_REG)
 #define SPI4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 11, 9, CCIPR3_REG)
 #define SPI5_SEL(val)		STM32_DT_CLOCK_SELECT((val), 14, 12, CCIPR3_REG)
-#define SPI6_SEL(val)		STM32_DT_CLOCK_SELECT((val), 17, 15, CCIPR2_REG)
+#define SPI6_SEL(val)		STM32_DT_CLOCK_SELECT((val), 17, 15, CCIPR3_REG)
 #define LPUART1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 26, 24, CCIPR3_REG)
 
 /** CCIPR4 devices */

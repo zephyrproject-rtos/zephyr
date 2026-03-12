@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 The Linux Foundation
+# SPDX-License-Identifier: Apache-2.0
+#
 # Device tree binding vendor prefix registry. Keep this list in
 # alphabetical order.
 #
@@ -30,6 +33,7 @@ adafruit	Adafruit Industries, LLC
 adapteva	Adapteva, Inc.
 adaptrum	Adaptrum, Inc.
 adh	AD Holdings Plc.
+adh-tech	ADH Technology Co. Ltd.
 adi	Analog Devices, Inc.
 advantech	Advantech Corporation
 aeroflexgaisler	Aeroflex Gaisler AB
@@ -39,6 +43,7 @@ aithinker	Ai-Thinker Co., Ltd.
 al	Annapurna Labs
 alcatel	Alcatel
 alientek	Alientek
+alif	Alif Semiconductor
 allegro	Allegro DVT
 allo	Allo.com
 allwinner	Allwinner Technology Co., Ltd.
@@ -207,6 +212,7 @@ eeti	eGalax_eMPIA Technology Inc
 efinix	Efinix Inc
 egis	Egis Technology Inc
 einfochips	Einfochips
+eink	E Ink Corporation
 elan	Elan Microelectronic Corp.
 electronut	Electronut Labs
 element14	Element14 (A Premier Farnell Company)
@@ -420,6 +426,7 @@ mapleboard	Mapleboard.org
 marvell	Marvell Technology Group Ltd.
 maxbotix	MaxBotix Inc.
 maxim	Maxim Integrated Products
+maxlinear	Maxlinear, Inc.
 mbvl	Mobiveil Inc.
 mcube	mCube
 meas	Measurement Specialties
@@ -586,6 +593,7 @@ remarkable	reMarkable AS
 renesas	Renesas Electronics Corporation
 renode	Antmicro's open source simulation and virtual development framework
 rervision	Shenzhen Rervision Technology Co., Ltd.
+retronix	Retronix Technology Inc.
 revotics	Revolution Robotics, Inc. (Revotics)
 rex	iMX6 Rex Project
 reyax	Reyax Technology Co., Ltd.
@@ -634,7 +642,7 @@ si-en	Si-En Technology Ltd.
 si-linux	Silicon Linux Corporation
 siemens	Siemens AG
 sifive	SiFive, Inc.
-sifli	SiFli Technologies(Nanjing) Co., Ltd
+sifli	SiFli Technologies
 sigma	Sigma Designs, Inc.
 sii	Seiko Instruments, Inc.
 sil	Silicon Image
@@ -650,7 +658,7 @@ simtek	Cypress Semiconductor Corporation (Simtek Corporation)
 sinlinx	Sinlinx Electronics Technology Co., LTD
 sinovoip	SinoVoip Co., Ltd
 sinowealth	Sino Wealth Electronic Ltd
-sipeed	Shenzhen Sipeed Technology Co., Ltd.
+sipeed	Shenzhen Sipeed Technology Co., Ltd.
 sirf	SiRF Technology, Inc.
 sis	Silicon Integrated Systems Corp.
 sitronix	Sitronix Technology Corporation
@@ -660,6 +668,7 @@ smsc	Standard Microsystems Corporation
 snps	Synopsys, Inc.
 sochip	Shenzhen SoChip Technology Co., Ltd.
 socionext	Socionext Inc.
+solderedelectronics	Soldered Electronics
 solderparty	Solder Party AB
 solidrun	SolidRun
 solomon	Solomon Systech Limited
@@ -685,6 +694,7 @@ sunw	Sun Microsystems, Inc
 supermicro	Super Micro Computer, Inc.
 swir	Sierra Wireless
 syna	Synaptics Inc.
+synochip	Hangzhou Synochip Data Security Technology Co., Ltd.
 synology	Synology, Inc.
 tbs	TBS Technologies
 tbs-biometrics	Touchless Biometric Systems AG
@@ -746,6 +756,7 @@ vdl	Van der Laan b.v.
 via	VIA Technologies, Inc.
 vicharak	Vicharak
 videostrong	Videostrong Technology Co., Ltd.
+viewe	VIEWE Display Co., Ltd.
 virtio	Virtual I/O Device Specification, developed by the OASIS consortium
 virtual	Used for virtual device without specific vendor.
 vishay	Vishay Intertechnology, Inc
@@ -810,6 +821,8 @@ zb	Zbit Semiconductor, Inc.
 zealz	Zealz
 zeitec	ZEITEC Semiconductor Co., LTD.
 zephyr	Zephyr Project
+zhaw	Zurich University of Applied Sciences
+zhiantec	Hangzhou Zhian Technology Co., Ltd.
 zidoo	Shenzhen Zidoo Technology Co., Ltd.
 zii	Zodiac Inflight Innovations
 zinitix	Zinitix Co., Ltd

@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <adi/max32/max78000.dtsi>
+#include <adi/max32/max78000-m4.dtsi>
 #include <adi/max32/max78000-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -129,4 +129,8 @@
 &w1 {
 	pinctrl-0 = <&owm_io_p0_18 &owm_pe_p0_19>;
 	pinctrl-names = "default";
+};
+
+&rtc_counter {
+	status = "okay";
 };

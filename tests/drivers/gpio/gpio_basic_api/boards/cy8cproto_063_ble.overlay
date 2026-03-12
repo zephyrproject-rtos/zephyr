@@ -13,6 +13,6 @@
 	};
 };
 
-&gpio_prt9 {
+&gpio_prt12 {
 	status = "okay";
 };

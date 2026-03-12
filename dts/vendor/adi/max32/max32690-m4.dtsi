@@ -1,0 +1,180 @@
+/*
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <adi/max32/max32690.dtsi>
+#include <adi/max32/max32xxx-m4.dtsi>
+
+/* MAX32690 extra peripherals. */
+/ {
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(128)>;
+		};
+
+		sram1: memory@20020000 {
+			compatible = "mmio-sram";
+			reg = <0x20020000 DT_SIZE_K(128)>;
+		};
+
+		sram2: memory@20040000 {
+			compatible = "mmio-sram";
+			reg = <0x20040000 DT_SIZE_K(128)>;
+		};
+
+		sram3: memory@20060000 {
+			compatible = "mmio-sram";
+			reg = <0x20060000 DT_SIZE_K(128)>;
+		};
+
+		sram4: memory@20080000 {
+			compatible = "mmio-sram";
+			reg = <0x20080000 DT_SIZE_K(128)>;
+		};
+
+		sram5: memory@200a0000 {
+			compatible = "mmio-sram";
+			reg = <0x200a0000 DT_SIZE_K(128)>;
+		};
+
+		sram6: memory@200c0000 {
+			compatible = "mmio-sram";
+			reg = <0x200c0000 DT_SIZE_K(64)>;
+		};
+
+		sram7: memory@200d0000 {
+			compatible = "mmio-sram";
+			reg = <0x200d0000 DT_SIZE_K(64)>;
+		};
+
+		spixf: spixf@40027000 {
+			compatible = "adi,max32-spixf";
+			reg = <0x40027000 0x1000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			interrupts = <38 0>;
+
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 30>, <&gcr ADI_MAX32_CLOCK_BUS0 31>;
+
+			status = "disabled";
+		};
+
+		hpb: hpb@40039000 {
+			compatible = "adi,max32-hpb";
+			reg = <0x40039000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 4 &gcr ADI_MAX32_CLOCK_BUS1 7>;
+			status = "disabled";
+		};
+
+		spi3: spi@400be000 {
+			compatible = "adi,max32-spi";
+			reg = <0x400be000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 16>;
+			interrupts = <56 0>;
+			status = "disabled";
+		};
+
+		spi4: spi@400be400 {
+			compatible = "adi,max32-spi";
+			reg = <0x400be400 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 17>;
+			interrupts = <105 0>;
+			status = "disabled";
+		};
+
+		usbhs: usbhs@400b1000 {
+			compatible = "adi,max32-usbhs";
+			reg = <0x400b1000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 3>;
+			interrupts = <2 0>;
+			num-bidir-endpoints = <1>;
+			num-in-endpoints = <6>;
+			num-out-endpoints = <7>;
+			maximum-speed = "high-speed";
+			status = "disabled";
+		};
+	};
+};
+
+&flash0 {
+	interrupts = <23 0>;
+};
+
+&gpio2 {
+	interrupts = <26 0>;
+};
+
+&gpio3 {
+	interrupts = <58 0>;
+};
+
+&gpio4 {
+	interrupts = <54 0>;
+};
+
+&flc1 {
+	status = "okay";
+	interrupts = <87 0>;
+};
+
+&spi0 {
+	interrupts = <16 0>;
+};
+
+&spi1 {
+	interrupts = <17 0>;
+};
+
+&spi2 {
+	interrupts = <18 0>;
+};
+
+&uart3 {
+	interrupts = <88 0>;
+};
+
+&dma0 {
+	interrupts = <28 0>, <29 0>, <30 0>, <31 0>;
+};
+
+&wdt1 {
+	interrupts = <57 0>;
+};
+
+&lptimer0 {
+	interrupts = <9 0>;
+};
+
+&lptimer1 {
+	interrupts = <10 0>;
+};
+
+&w1 {
+	interrupts = <67 0>;
+};
+
+&can0 {
+	interrupts = <107 0>;
+};
+
+&can1 {
+	interrupts = <108 0>;
+};
+
+&wut0 {
+	interrupts = <53 0>;
+};
+
+&wut1 {
+	interrupts = <109 0>;
+};

@@ -617,8 +617,8 @@ static int http2_dynamic_response(struct http_client_ctx *client, struct http2_f
 	return 0;
 }
 
-static int dynamic_get_del_req_v2(struct http_resource_detail_dynamic *dynamic_detail,
-				  struct http_client_ctx *client)
+static int dynamic_get_del_opts_req_v2(struct http_resource_detail_dynamic *dynamic_detail,
+				       struct http_client_ctx *client)
 {
 	int ret, len;
 	char *ptr;
@@ -818,8 +818,9 @@ static int handle_http2_dynamic_resource(
 	switch (client->method) {
 	case HTTP_GET:
 	case HTTP_DELETE:
+	case HTTP_OPTIONS:
 		if (user_method & BIT(client->method)) {
-			return dynamic_get_del_req_v2(dynamic_detail, client);
+			return dynamic_get_del_opts_req_v2(dynamic_detail, client);
 		}
 
 		goto not_supported;

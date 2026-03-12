@@ -40,7 +40,7 @@ static struct k_work_q pm_device_runtime_wq;
  * this case, the async flag will be always forced to be false, and so the
  * function will be blocking.
  *
- * @funcprops \pre_kernel_ok
+ * @pre_kernel_ok
  *
  * @param dev Device instance.
  * @param async Perform operation asynchronously.

@@ -40,11 +40,10 @@ Hardware connection (OPAMP0 in differential mode):
 Sample output
 =============
 
-You will see the inverting and non-inverting gain and the output of the opamp
-in the terminal. Users can calculate the theoretical output value of the opamp
-according to the formula and compare it with the ADC measurement value.
+The application configures the OPAMP gain (if programmable gain is supported)
+and measures the OPAMP output using the ADC.
 
-The following output is printed:
+For each configured gain, the measured output voltage is printed in millivolts:
 
 .. code-block:: console
 

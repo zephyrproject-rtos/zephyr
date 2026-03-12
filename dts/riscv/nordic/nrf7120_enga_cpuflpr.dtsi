@@ -16,11 +16,14 @@ clic: &cpuflpr_clic {};
 /delete-node/ &cpuapp_mram;
 
 &mram_controller {
-	cpuflpr_mram: mram@3e0000 {
+	cpuflpr_mram: mram@3de000 {
 		compatible = "soc-nv-flash";
-		reg = <0x3e0000 DT_SIZE_K(116)>;
+		reg = <0x3de000 DT_SIZE_K(116)>;
+		ranges = <0x0 0x3de000 DT_SIZE_K(116)>;
 		erase-block-size = <4096>;
 		write-block-size = <4>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 	};
 };
 
@@ -29,6 +32,24 @@ clic: &cpuflpr_clic {};
 		compatible = "simple-bus";
 		interrupt-parent = <&cpuflpr_clic>;
 		ranges;
+	};
+};
+
+&cpuflpr {
+	cpuflpr_vevif_rx: mailbox {
+		compatible = "nordic,nrf-vevif-task-rx";
+		status = "disabled";
+		interrupt-parent = <&cpuflpr_clic>;
+		interrupts = <16 NRF_DEFAULT_IRQ_PRIORITY>,
+			     <17 NRF_DEFAULT_IRQ_PRIORITY>,
+			     <18 NRF_DEFAULT_IRQ_PRIORITY>,
+			     <19 NRF_DEFAULT_IRQ_PRIORITY>,
+			     <20 NRF_DEFAULT_IRQ_PRIORITY>,
+			     <21 NRF_DEFAULT_IRQ_PRIORITY>,
+			     <22 NRF_DEFAULT_IRQ_PRIORITY>;
+		#mbox-cells = <1>;
+		nordic,tasks = <7>;
+		nordic,tasks-mask = <0x007f0000>;
 	};
 };
 

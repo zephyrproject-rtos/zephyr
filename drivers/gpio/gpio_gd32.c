@@ -360,9 +360,7 @@ static int gpio_gd32_init(const struct device *port)
 
 #define GPIO_GD32_DEFINE(n)						       \
 	static const struct gpio_gd32_config gpio_gd32_config##n = {	       \
-		.common = {						       \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),   \
-		},							       \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),		       \
 		.reg = DT_INST_REG_ADDR(n),				       \
 		.clkid = DT_INST_CLOCKS_CELL(n, id),			       \
 		COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(SYSCFG_NODE),	       \

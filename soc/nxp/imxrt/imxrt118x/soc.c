@@ -91,7 +91,7 @@ const __imx_boot_container_section container boot_header = {
 #define EDMA_DID           0x7U
 
 /* When CM33 sets TRDC, CM7 must NOT require TRDC ownership from ELE */
-#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_SOC_MIMXRT1189_CM7)
+#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M7)
 /* When CONFIG_SECOND_CORE_MCUX then TRDC(AON/WAKEUP) ownership cannot be released
  * to CM33 and CM7 both in one ELE reset cycle.
  * Only CM33 will set TRDC.
@@ -116,14 +116,10 @@ const __imx_boot_container_section container boot_header = {
 
 #ifdef CONFIG_INIT_ARM_PLL
 static const clock_arm_pll_config_t armPllConfig_BOARD_BootClockRUN = {
-#if defined(CONFIG_SOC_MIMXRT1189_CM33) || defined(CONFIG_SOC_MIMXRT1189_CM7)
 	/* Post divider, 0 - DIV by 2, 1 - DIV by 4, 2 - DIV by 8, 3 - DIV by 1 */
 	.postDivider = kCLOCK_PllPostDiv2,
 	/* PLL Loop divider, Fout = Fin * ( loopDivider / ( 2 * postDivider ) ) */
 	.loopDivider = 132,
-#else
-#error "Unknown SOC, no pll configuration defined"
-#endif
 };
 #endif
 
@@ -254,7 +250,7 @@ __weak void clock_init(void)
 	/* DeInit Audio Pll. */
 	CLOCK_DeinitAudioPll();
 
-#if defined(CONFIG_SOC_MIMXRT1189_CM7)
+#if defined(CONFIG_CPU_CORTEX_M7)
 	/* Module clock root configurations. */
 	/* Configure M7 using ARM_PLL_CLK */
 	rootCfg.mux = kCLOCK_M7_ClockRoot_MuxArmPllOut;
@@ -262,7 +258,7 @@ __weak void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_M7, &rootCfg);
 #endif
 
-#if defined(CONFIG_SOC_MIMXRT1189_CM33)
+#if defined(CONFIG_CPU_CORTEX_M33)
 	/* Configure M33 using SYS_PLL3_CLK */
 	rootCfg.mux = kCLOCK_M33_ClockRoot_MuxSysPll3Out;
 	rootCfg.div = 2;
@@ -728,10 +724,10 @@ static ALWAYS_INLINE void trdc_enable_all_access(void)
 		sts = ELE_BaseAPI_GetFwStatus(MU_RT_S3MUA, &ele_fw_sts);
 	} while (sts != kStatus_Success);
 
-#if defined(CONFIG_SOC_MIMXRT1189_CM33)
+#if defined(CONFIG_CPU_CORTEX_M33)
 	/* Release TRDC AON to CM33 core */
 	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_AON_ID, ELE_CORE_CM33_ID);
-#elif defined(CONFIG_SOC_MIMXRT1189_CM7)
+#elif defined(CONFIG_CPU_CORTEX_M7)
 	/* Release TRDC AON to CM7 core */
 	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_AON_ID, ELE_CORE_CM7_ID);
 #endif
@@ -740,10 +736,10 @@ static ALWAYS_INLINE void trdc_enable_all_access(void)
 			"AON permission, AON domain permission can't be configured.");
 	}
 
-#if defined(CONFIG_SOC_MIMXRT1189_CM33)
+#if defined(CONFIG_CPU_CORTEX_M33)
 	/* Release TRDC Wakeup to CM33 core */
 	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_WAKEUP_ID, ELE_CORE_CM33_ID);
-#elif defined(CONFIG_SOC_MIMXRT1189_CM7)
+#elif defined(CONFIG_CPU_CORTEX_M7)
 	/* Release TRDC Wakeup to CM7 core */
 	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_WAKEUP_ID, ELE_CORE_CM7_ID);
 #endif

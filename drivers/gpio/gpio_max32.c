@@ -251,10 +251,7 @@ static int gpio_max32_init(const struct device *dev)
 	}                                                                                          \
 	static struct max32_gpio_data max32_gpio_data_##_num;                                      \
 	static const struct max32_gpio_config max32_gpio_config_##_num = {                         \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(_num),            \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(_num),                                   \
 		.regs = (mxc_gpio_regs_t *)DT_INST_REG_ADDR(_num),                                 \
 		.irq_func = &gpio_max32_irq_init_##_num,                                           \
 		.clock = DEVICE_DT_GET_OR_NULL(DT_INST_CLOCKS_CTLR(_num)),                         \

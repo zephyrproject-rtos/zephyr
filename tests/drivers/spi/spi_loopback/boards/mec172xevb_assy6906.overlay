@@ -4,12 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&spi0 {
+/ {
+	aliases {
+		spi0 = &qspi0;
+	};
+};
+
+&qspi0 {
 	status = "okay";
 	compatible = "microchip,xec-qmspi-ldma";
 	clock-frequency = <12000000>;
-	lines = <1>;
-	chip-select = <0>;
 
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

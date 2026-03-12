@@ -55,17 +55,17 @@ examples:
             poscmp-enable; test-mode; lock-gconf; /* ADI TMC Global configuration flags */
             clock-frequency = <DT_FREQ_M(16)>; /* Internal/External Clock frequency */
 
-            tmc50xx_0_stepper_driver: tmc50xx_0_stepper_driver {
+            tmc50xx_0_stepper_driver: stepper-driver-0 {
               idx = <0>;
-              compatible = "adi,tmc50xx-stepper-drv";
+              compatible = "adi,tmc50xx-stepper-driver";
               micro-step-res = <256>;
               /* ADI TMC stallguard settings specific to TMC50XX */
               stallguard2-threshold=<30>;
             };
 
-            tmc50xx_0_motion_controller: tmc50xx_0_motion_controller {
+            tmc50xx_0_motion_controller: motion-controller-0 {
               idx = <0>;
-              compatible = "adi,tmc50xx-stepper";
+              compatible = "adi,tmc50xx-stepper-ctrl";
               vstart = <1000>;
               vstop = <10>;
               a1 = <10000>;

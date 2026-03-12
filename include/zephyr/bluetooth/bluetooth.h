@@ -265,7 +265,7 @@ struct bt_le_ext_adv_cb {
 	bool (*rpa_expired)(struct bt_le_ext_adv *adv);
 #endif /* defined(CONFIG_BT_PRIVACY) */
 
-#if defined(CONFIG_BT_PER_ADV_RSP)
+#if defined(CONFIG_BT_PER_ADV_RSP) || defined(__DOXYGEN__)
 	/**
 	 * @brief The Controller indicates it is ready to transmit one or more PAwR subevents.
 	 *
@@ -274,6 +274,8 @@ struct bt_le_ext_adv_cb {
 	 *
 	 * @param adv     The advertising set object.
 	 * @param request Information about the upcoming subevents.
+	 *
+	 * @kconfig_dep{CONFIG_BT_PER_ADV_RSP}
 	 */
 	void (*pawr_data_request)(struct bt_le_ext_adv *adv,
 				  const struct bt_le_per_adv_data_request *request);
@@ -285,6 +287,8 @@ struct bt_le_ext_adv_cb {
 	 * @param info Information about the responses received.
 	 * @param buf  The received data. NULL if the controller reported
 	 *             that it did not receive any response.
+	 *
+	 * @kconfig_dep{CONFIG_BT_PER_ADV_RSP}
 	 */
 	void (*pawr_response)(struct bt_le_ext_adv *adv, struct bt_le_per_adv_response_info *info,
 			      struct net_buf_simple *buf);
@@ -1028,14 +1032,16 @@ struct bt_le_per_adv_param {
 	 */
 	uint16_t interval_max;
 
-	/** Bit-field of periodic advertising options, see the @ref bt_le_adv_opt field. */
+	/** Bit-field of periodic advertising options, see the @ref bt_le_per_adv_opt field. */
 	uint32_t options;
 
-#if defined(CONFIG_BT_PER_ADV_RSP)
+#if defined(CONFIG_BT_PER_ADV_RSP) || defined(__DOXYGEN__)
 	/**
 	 * @brief Number of subevents
 	 *
 	 * If zero, the periodic advertiser will be a broadcaster, without responses.
+	 *
+	 * @kconfig_dep{CONFIG_BT_PER_ADV_RSP}
 	 */
 	uint8_t num_subevents;
 
@@ -1043,6 +1049,8 @@ struct bt_le_per_adv_param {
 	 * @brief Interval between subevents (N * 1.25 ms)
 	 *
 	 * Shall be between 7.5ms and 318.75 ms.
+	 *
+	 * @kconfig_dep{CONFIG_BT_PER_ADV_RSP}
 	 */
 	uint8_t subevent_interval;
 
@@ -1050,6 +1058,7 @@ struct bt_le_per_adv_param {
 	 * @brief Time between the advertising packet in a subevent and the
 	 * first response slot (N * 1.25 ms)
 	 *
+	 * @kconfig_dep{CONFIG_BT_PER_ADV_RSP}
 	 */
 	uint8_t response_slot_delay;
 
@@ -1057,6 +1066,8 @@ struct bt_le_per_adv_param {
 	 * @brief Time between response slots (N * 0.125 ms)
 	 *
 	 * Shall be between 0.25 and 31.875 ms.
+	 *
+	 * @kconfig_dep{CONFIG_BT_PER_ADV_RSP}
 	 */
 	uint8_t response_slot_spacing;
 
@@ -1064,6 +1075,8 @@ struct bt_le_per_adv_param {
 	 * @brief Number of subevent response slots
 	 *
 	 * If zero, response_slot_delay and response_slot_spacing are ignored.
+	 *
+	 * @kconfig_dep{CONFIG_BT_PER_ADV_RSP}
 	 */
 	uint8_t num_response_slots;
 #endif /* CONFIG_BT_PER_ADV_RSP */

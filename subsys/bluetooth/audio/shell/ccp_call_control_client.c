@@ -31,7 +31,8 @@ static struct bt_ccp_call_control_client *get_client_by_conn(const struct bt_con
 }
 
 static void ccp_call_control_client_discover_cb(struct bt_ccp_call_control_client *client, int err,
-						struct bt_ccp_call_control_client_bearers *bearers)
+						struct bt_ccp_call_control_client_bearers *bearers,
+						void *user_data)
 {
 	struct bt_ccp_call_control_client_bearer *gtbs_bearer = NULL;
 	uint8_t tbs_count = 0U;
@@ -54,7 +55,7 @@ static void ccp_call_control_client_discover_cb(struct bt_ccp_call_control_clien
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
 static void
 ccp_call_control_client_bearer_provider_name_cb(struct bt_ccp_call_control_client_bearer *bearer,
-						int err, const char *name)
+						int err, const char *name, void *user_data)
 {
 	if (err != 0) {
 		bt_shell_error("Failed to read bearer %p name: %d", (void *)bearer, err);

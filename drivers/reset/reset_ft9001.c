@@ -98,7 +98,7 @@ static int reset_ft9001_line_toggle(const struct device *dev, uint32_t id)
 	return 0;
 }
 
-static const struct reset_driver_api reset_ft9001_driver_api = {
+static DEVICE_API(reset, reset_ft9001_driver_api) = {
 	.status = reset_ft9001_status,
 	.line_assert = reset_ft9001_line_assert,
 	.line_deassert = reset_ft9001_line_deassert,

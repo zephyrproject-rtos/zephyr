@@ -12,16 +12,22 @@
 
 LOG_MODULE_REGISTER(cpu_freq, CONFIG_CPU_FREQ_LOG_LEVEL);
 
+#ifndef CONFIG_SMP
+/* Track the last pstate that was applied to avoid unnecessary pstate transitions */
+static const struct pstate *pstate_last;
+#endif /* CONFIG_SMP */
+
 /* Build-time validation: require performance_states node with at least one child */
-#define PSTATE_ROOT DT_PATH(performance_states)
+#define PSTATE_ROOT                         DT_PATH(performance_states)
 #define CPU_FREQ_COUNT_OKAY_CHILD(_node_id) + 1
-enum { CPU_FREQ_PSTATE_COUNT = 0 DT_FOREACH_CHILD_STATUS_OKAY(PSTATE_ROOT,
-		CPU_FREQ_COUNT_OKAY_CHILD) };
+enum {
+	CPU_FREQ_PSTATE_COUNT =
+		0 DT_FOREACH_CHILD_STATUS_OKAY(PSTATE_ROOT, CPU_FREQ_COUNT_OKAY_CHILD)
+};
 
 BUILD_ASSERT(DT_NODE_EXISTS(PSTATE_ROOT),
-	"cpu_freq: performance_states node missing in devicetree");
-BUILD_ASSERT(CPU_FREQ_PSTATE_COUNT > 0,
-	"cpu_freq: No P-states defined in devicetree");
+	     "cpu_freq: performance_states node missing in devicetree");
+BUILD_ASSERT(CPU_FREQ_PSTATE_COUNT > 0, "cpu_freq: No P-states defined in devicetree");
 
 #if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 
@@ -45,7 +51,22 @@ static void cpu_freq_next_pstate(void)
 		return;
 	}
 
+#ifndef CONFIG_SMP
+	if (pstate_next == pstate_last) {
+		LOG_DBG("pstate_next: %p == pstate_last: %p - pstate does not need to be updated",
+			pstate_next, pstate_last);
+		return;
+	}
+#endif /* CONFIG_SMP */
+
 	cpu_freq_policy_pstate_set(pstate_next);
+
+#ifndef CONFIG_SMP
+	if (pstate_next != NULL) {
+		pstate_last = pstate_next;
+	}
+#endif /* CONFIG_SMP */
+
 }
 
 #if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)

@@ -1370,6 +1370,7 @@ enum chip_pll_mode {
 #define IT8XXX2_I2C_CMD_ADDL(base)   ECREG(base + 0x26)
 #define IT8XXX2_I2C_RAMH2A(base)     ECREG(base + 0x50)
 #define IT8XXX2_I2C_CMD_ADDH2(base)  ECREG(base + 0x52)
+#define IT8XXX2_I2C_WM_ADDRH2(base)  ECREG(base + 0x56)
 
 /* SMBus/I2C register fields */
 /* 0x09-0xB: SMCLK Timing Setting */

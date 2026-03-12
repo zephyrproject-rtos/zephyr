@@ -712,71 +712,31 @@ struct bt_hci_rp_write_conn_accept_timeout {
 #define BT_BREDR_SCAN_INQUIRY                   0x01
 #define BT_BREDR_SCAN_PAGE                      0x02
 
+/** HCI opcode for Write Page Scan Activity. */
+#define BT_HCI_OP_WRITE_PAGE_SCAN_ACTIVITY      BT_OP(BT_OGF_BASEBAND, 0x001c) /* 0x0c1c */
+/** HCI command parameters for Write Page Scan Activity. */
+struct bt_hci_cp_write_page_scan_activity {
+	/** Page scan interval in 0.625 ms units. */
+	uint16_t interval;
+	/** Page scan window in 0.625 ms units. */
+	uint16_t window;
+} __packed;
+
+/** HCI opcode for Write Inquiry Scan Activity. */
+#define BT_HCI_OP_WRITE_INQUIRY_SCAN_ACTIVITY   BT_OP(BT_OGF_BASEBAND, 0x001e) /* 0x0c1e */
+/** HCI command parameters for Write Inquiry Scan Activity. */
+struct bt_hci_cp_write_inquiry_scan_activity {
+	/** Inquiry scan interval in 0.625 ms units. */
+	uint16_t interval;
+	/** Inquiry scan window in 0.625 ms units. */
+	uint16_t window;
+} __packed;
+
 #define BT_HCI_OP_READ_CLASS_OF_DEVICE          BT_OP(BT_OGF_BASEBAND, 0x0023) /* 0x0c23 */
 struct bt_hci_rp_read_class_of_device {
 	uint8_t  status;
 	uint8_t  class_of_device[3];
 } __packed;
-
-#define BT_COD(major_service, major_device, minor_device)                         \
-	(((uint32_t)major_service << 13) | ((uint32_t)major_device << 8) |            \
-	 ((uint32_t)minor_device << 2))
-#define BT_COD_VALID(cod) ((0 == (cod[0] & (BIT(0) | BIT(1)))) ? true : false)
-#define BT_COD_MAJOR_SERVICE_CLASSES(cod)                                         \
-	((((uint32_t)cod[2] & 0xFF) >> 5) | (((uint32_t)cod[1] & 0xD0) >> 5))
-#define BT_COD_MAJOR_DEVICE_CLASS(cod) ((((uint32_t)cod[1]) & 0x1FUL))
-#define BT_COD_MINOR_DEVICE_CLASS(cod) (((((uint32_t)cod[0]) & 0xFF) >> 2))
-
-#define BT_COD_MAJOR_MISC           0x00
-#define BT_COD_MAJOR_COMPUTER       0x01
-#define BT_COD_MAJOR_PHONE          0x02
-#define BT_COD_MAJOR_LAN_NETWORK_AP 0x03
-#define BT_COD_MAJOR_AUDIO_VIDEO    0x04
-#define BT_COD_MAJOR_PERIPHERAL     0x05
-#define BT_COD_MAJOR_IMAGING        0x06
-#define BT_COD_MAJOR_WEARABLE       0x07
-#define BT_COD_MAJOR_TOY            0x08
-#define BT_COD_MAJOR_HEALTH         0x09
-#define BT_COD_MAJOR_UNCATEGORIZED  0x1F
-
-/* Minor Device Class field - Computer Major Class */
-#define BT_COD_MAJOR_COMPUTER_MINOR_UNCATEGORIZED         0x00
-#define BT_COD_MAJOR_COMPUTER_MINOR_DESKTOP               0x01
-#define BT_COD_MAJOR_COMPUTER_MINOR_SERVER_CLASS_COMPUTER 0x02
-#define BT_COD_MAJOR_COMPUTER_MINOR_LAPTOP                0x03
-#define BT_COD_MAJOR_COMPUTER_MINOR_HANDHELD_PC_PDA       0x04
-#define BT_COD_MAJOR_COMPUTER_MINOR_PALM_SIZE_PC_PDA      0x05
-#define BT_COD_MAJOR_COMPUTER_MINOR_WEARABLE_COMPUTER     0x06
-#define BT_COD_MAJOR_COMPUTER_MINOR_TABLET                0x07
-
-/* Minor Device Class field - Phone Major Class */
-#define BT_COD_MAJOR_PHONE_MINOR_UNCATEGORIZED             0x00
-#define BT_COD_MAJOR_PHONE_MINOR_CELLULAR                  0x01
-#define BT_COD_MAJOR_PHONE_MINOR_CORDLESS                  0x02
-#define BT_COD_MAJOR_PHONE_MINOR_SMARTPHONE                0x03
-#define BT_COD_MAJOR_PHONE_MINOR_WIRED_MODEM_VOICE_GATEWAY 0x04
-#define BT_COD_MAJOR_PHONE_MINOR_ISDN                      0x05
-
-/* Minor Device Class field - Audio/Video Major Class */
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_UNCATEGORIZED             0x00
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_WEARABLE_HEADSET          0x01
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_HANDS_FREE                0x02
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_RFU                       0x03
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_MICROPHONE                0x04
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_LOUDSPEAKER               0x05
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_HEADPHONES                0x06
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_PORTABLE_AUDIO            0x07
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_CAR_AUDIO                 0x08
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_SET_TOP_BOX               0x09
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_HIFI_AUDIO                0x0A
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_VCR                       0x0B
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_VIDEO_CAMERA              0x0C
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_CAMCORDER                 0x0D
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_VIDEO_MONITOR             0x0E
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_VIDEO_DISPLAY_LOUDSPEAKER 0x0F
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_VIDEO_CONFERENCING        0x10
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_RFU2                      0x11
-#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_GAME_TOY                  0x12
 
 #define BT_HCI_OP_WRITE_CLASS_OF_DEVICE         BT_OP(BT_OGF_BASEBAND, 0x0024) /* 0x0c24 */
 struct bt_hci_cp_write_class_of_device {
@@ -913,9 +873,25 @@ struct bt_hci_cp_write_current_iac_lap {
 	struct bt_hci_iac_lap lap[0];
 } __packed;
 
+/** HCI opcode for Write Inquiry Scan Type. */
+#define BT_HCI_OP_WRITE_INQUIRY_SCAN_TYPE       BT_OP(BT_OGF_BASEBAND, 0x0043) /* 0x0c43 */
+/** HCI command parameters for Write Inquiry Scan Type. */
+struct bt_hci_cp_write_inquiry_scan_type {
+	/** Inquiry scan type. */
+	uint8_t type;
+} __packed;
+
 #define BT_HCI_OP_WRITE_INQUIRY_MODE            BT_OP(BT_OGF_BASEBAND, 0x0045) /* 0x0c45 */
 struct bt_hci_cp_write_inquiry_mode {
 	uint8_t  mode;
+} __packed;
+
+/** HCI opcode for Write Page Scan Type. */
+#define BT_HCI_OP_WRITE_PAGE_SCAN_TYPE          BT_OP(BT_OGF_BASEBAND, 0x0047) /* 0x0c47 */
+/** HCI command parameters for Write Page Scan Type. */
+struct bt_hci_cp_write_page_scan_type {
+	/** Page scan type. */
+	uint8_t type;
 } __packed;
 
 #define BT_HCI_OP_WRITE_SSP_MODE                BT_OP(BT_OGF_BASEBAND, 0x0056) /* 0x0c56 */
@@ -2626,6 +2602,62 @@ struct bt_hci_rp_le_read_local_supported_capabilities {
 	uint8_t  tx_snr_capability;
 } __packed;
 
+/** HCI opcode for LE Read Local Supported Capabilities (v2). */
+#define BT_HCI_OP_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_V2 BT_OP(BT_OGF_LE, 0x00A5) /* 0x20A5 */
+/** Test if LE Read Local Supported Capabilities v2 command is supported (octet 49, bit 2). */
+#define BT_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_V2_SUPPORTED(cmd) \
+	BT_CMD_TEST(cmd, 49, 2)
+
+/** HCI response parameters for LE Read Local Supported Capabilities command (v2). */
+struct bt_hci_rp_le_read_local_supported_capabilities_v2 {
+	/** Status. */
+	uint8_t  status;
+	/** Number of CS configurations supported. */
+	uint8_t  num_config_supported;
+	/** Maximum consecutive procedures supported. */
+	uint16_t max_consecutive_procedures_supported;
+	/** Number of antennas supported. */
+	uint8_t  num_antennas_supported;
+	/** Maximum antenna paths supported. */
+	uint8_t  max_antenna_paths_supported;
+	/** Roles supported. */
+	uint8_t  roles_supported;
+	/** Modes supported. */
+	uint8_t  modes_supported;
+	/** RTT capability. */
+	uint8_t  rtt_capability;
+	/** RTT AA-only N. */
+	uint8_t  rtt_aa_only_n;
+	/** RTT sounding N. */
+	uint8_t  rtt_sounding_n;
+	/** RTT random payload N. */
+	uint8_t  rtt_random_payload_n;
+	/** NADM sounding capability. */
+	uint16_t nadm_sounding_capability;
+	/** NADM random capability. */
+	uint16_t nadm_random_capability;
+	/** CS sync PHYs supported. */
+	uint8_t  cs_sync_phys_supported;
+	/** Subfeatures supported. */
+	uint16_t subfeatures_supported;
+	/** T_IP1 times supported. */
+	uint16_t t_ip1_times_supported;
+	/** T_IP2 times supported. */
+	uint16_t t_ip2_times_supported;
+	/** T_FCS times supported. */
+	uint16_t t_fcs_times_supported;
+	/** T_PM times supported. */
+	uint16_t t_pm_times_supported;
+	/** T_SW time supported. */
+	uint8_t  t_sw_time_supported;
+	/** TX SNR capability. */
+	uint8_t  tx_snr_capability;
+	/** T_IP2 IPT times supported. */
+	uint16_t  t_ip2_ipt_times_supported;
+	/** T_SW IPT time supported. */
+	uint8_t  t_sw_ipt_time_supported;
+} __packed;
+
 #define BT_HCI_OP_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES BT_OP(BT_OGF_LE, 0x008A) /* 0x208A */
 
 struct bt_hci_cp_le_read_remote_supported_capabilities {
@@ -2657,6 +2689,60 @@ struct bt_hci_cp_le_write_cached_remote_supported_capabilities {
 	uint16_t t_pm_times_supported;
 	uint8_t  t_sw_time_supported;
 	uint8_t  tx_snr_capability;
+} __packed;
+
+/** HCI opcode for LE CS Write Cached Remote Supported Capabilities (v2). */
+#define BT_HCI_OP_LE_CS_WRITE_CACHED_REMOTE_SUPPORTED_CAPABILITIES_V2 \
+	BT_OP(BT_OGF_LE, 0x00A6) /* 0x20A6 */
+
+/** HCI command parameters for LE CS Write Cached Remote Supported Capabilities (v2). */
+struct bt_hci_cp_le_write_cached_remote_supported_capabilities_v2 {
+	/** Connection handle. */
+	uint16_t handle;
+	/** Number of CS configurations supported. */
+	uint8_t  num_config_supported;
+	/** Maximum consecutive procedures supported. */
+	uint16_t max_consecutive_procedures_supported;
+	/** Number of antennas supported. */
+	uint8_t  num_antennas_supported;
+	/** Maximum antenna paths supported. */
+	uint8_t  max_antenna_paths_supported;
+	/** Roles supported. */
+	uint8_t  roles_supported;
+	/** Modes supported. */
+	uint8_t  modes_supported;
+	/** RTT capability. */
+	uint8_t  rtt_capability;
+	/** RTT AA-only N. */
+	uint8_t  rtt_aa_only_n;
+	/** RTT sounding N. */
+	uint8_t  rtt_sounding_n;
+	/** RTT random payload N. */
+	uint8_t  rtt_random_payload_n;
+	/** NADM sounding capability. */
+	uint16_t nadm_sounding_capability;
+	/** NADM random capability. */
+	uint16_t nadm_random_capability;
+	/** CS sync PHYs supported. */
+	uint8_t  cs_sync_phys_supported;
+	/** Subfeatures supported. */
+	uint16_t subfeatures_supported;
+	/** T_IP1 times supported. */
+	uint16_t t_ip1_times_supported;
+	/** T_IP2 times supported. */
+	uint16_t t_ip2_times_supported;
+	/** T_FCS times supported. */
+	uint16_t t_fcs_times_supported;
+	/** T_PM times supported. */
+	uint16_t t_pm_times_supported;
+	/** T_SW time supported. */
+	uint8_t  t_sw_time_supported;
+	/** TX SNR capability. */
+	uint8_t  tx_snr_capability;
+	/** T_IP2 IPT times supported. */
+	uint16_t  t_ip2_ipt_times_supported;
+	/** T_SW IPT time supported. */
+	uint8_t  t_sw_ipt_time_supported;
 } __packed;
 
 #define BT_HCI_OP_LE_CS_SECURITY_ENABLE BT_OP(BT_OGF_LE, 0x008C) /* 0x208C */
@@ -2865,7 +2951,8 @@ struct bt_hci_op_le_cs_test {
 	uint8_t  t_pm_time;
 	uint8_t  t_sw_time;
 	uint8_t  tone_antenna_config_selection;
-	uint8_t  reserved;
+	/** CS enhancements 1. */
+	uint8_t  cs_enhancements_1;
 	uint8_t  snr_control_initiator;
 	uint8_t  snr_control_reflector;
 	uint16_t drbg_nonce;
@@ -2895,7 +2982,8 @@ struct bt_hci_cp_le_cs_create_config {
 	uint8_t  channel_selection_type;
 	uint8_t  ch3c_shape;
 	uint8_t  ch3c_jump;
-	uint8_t  reserved;
+	/** CS enhancements 1. */
+	uint8_t  cs_enhancements_1;
 } __packed;
 
 #define BT_HCI_OP_LE_CS_REMOVE_CONFIG BT_OP(BT_OGF_LE, 0x0091) /* 0x2091 */
@@ -3367,12 +3455,17 @@ struct bt_hci_evt_le_advertising_report {
 } __packed;
 
 /** All limits according to BT Core Spec v5.4 [Vol 4, Part E]. */
-#define BT_HCI_LE_INTERVAL_MIN           0x0006
-#define BT_HCI_LE_INTERVAL_MAX           0x0c80
+#define BT_HCI_LE_INTERVAL_MIN            0x0006
+#define BT_HCI_LE_INTERVAL_MAX            0x0c80
 #define BT_HCI_LE_PERIPHERAL_LATENCY_MIN (0x0000U)
-#define BT_HCI_LE_PERIPHERAL_LATENCY_MAX 0x01f3
-#define BT_HCI_LE_SUPERVISON_TIMEOUT_MIN 0x000a
-#define BT_HCI_LE_SUPERVISON_TIMEOUT_MAX 0x0c80
+#define BT_HCI_LE_PERIPHERAL_LATENCY_MAX  0x01f3
+/** Minimum LE supervision timeout (10 ms) */
+#define BT_HCI_LE_SUPERVISION_TIMEOUT_MIN 0x000a
+/** Maximum LE supervision timeout (3200 ms) */
+#define BT_HCI_LE_SUPERVISION_TIMEOUT_MAX 0x0c80
+/* Deprecated misspelled aliases: use BT_HCI_LE_SUPERVISION_TIMEOUT_{MIN,MAX} instead. */
+#define BT_HCI_LE_SUPERVISON_TIMEOUT_MIN BT_HCI_LE_SUPERVISION_TIMEOUT_MIN __DEPRECATED_MACRO
+#define BT_HCI_LE_SUPERVISON_TIMEOUT_MAX BT_HCI_LE_SUPERVISION_TIMEOUT_MAX __DEPRECATED_MACRO
 
 #define BT_HCI_LE_INTERVAL_UNIT_US (1250U)
 
@@ -3871,6 +3964,7 @@ struct bt_hci_evt_le_read_all_remote_feat_complete {
 #define BT_HCI_LE_CS_TX_SNR_CAPABILITY_30DB_MASK BIT(4)
 
 #define BT_HCI_EVT_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE 0x2C
+
 struct bt_hci_evt_le_cs_read_remote_supported_capabilities_complete {
 	uint8_t  status;
 	uint16_t conn_handle;
@@ -3894,6 +3988,61 @@ struct bt_hci_evt_le_cs_read_remote_supported_capabilities_complete {
 	uint16_t t_pm_times_supported;
 	uint8_t  t_sw_time_supported;
 	uint8_t  tx_snr_capability;
+} __packed;
+
+/** HCI LE CS Read Remote Supported Capabilities Complete event (v2). */
+#define BT_HCI_EVT_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE_V2 0x38
+
+/** HCI event parameters for LE CS Read Remote Supported Capabilities Complete (v2). */
+struct bt_hci_evt_le_cs_read_remote_supported_capabilities_complete_v2 {
+	/** Status. */
+	uint8_t  status;
+	/** Connection handle. */
+	uint16_t conn_handle;
+	/** Number of CS configurations supported. */
+	uint8_t  num_config_supported;
+	/** Maximum consecutive procedures supported. */
+	uint16_t max_consecutive_procedures_supported;
+	/** Number of antennas supported. */
+	uint8_t  num_antennas_supported;
+	/** Maximum antenna paths supported. */
+	uint8_t  max_antenna_paths_supported;
+	/** Roles supported. */
+	uint8_t  roles_supported;
+	/** Modes supported. */
+	uint8_t  modes_supported;
+	/** RTT capability. */
+	uint8_t  rtt_capability;
+	/** RTT AA-only N. */
+	uint8_t  rtt_aa_only_n;
+	/** RTT sounding N. */
+	uint8_t  rtt_sounding_n;
+	/** RTT random payload N. */
+	uint8_t  rtt_random_payload_n;
+	/** NADM sounding capability. */
+	uint16_t nadm_sounding_capability;
+	/** NADM random capability. */
+	uint16_t nadm_random_capability;
+	/** CS sync PHYs supported. */
+	uint8_t  cs_sync_phys_supported;
+	/** Subfeatures supported. */
+	uint16_t subfeatures_supported;
+	/** T_IP1 times supported. */
+	uint16_t t_ip1_times_supported;
+	/** T_IP2 times supported. */
+	uint16_t t_ip2_times_supported;
+	/** T_FCS times supported. */
+	uint16_t t_fcs_times_supported;
+	/** T_PM times supported. */
+	uint16_t t_pm_times_supported;
+	/** T_SW time supported. */
+	uint8_t  t_sw_time_supported;
+	/** TX SNR capability. */
+	uint8_t  tx_snr_capability;
+	/** T_IP2 IPT times supported. */
+	uint16_t t_ip2_ipt_times_supported;
+	/** T_SW IPT time supported. */
+	uint8_t  t_sw_ipt_time_supported;
 } __packed;
 
 #define BT_HCI_EVT_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE 0x2D
@@ -3932,7 +4081,8 @@ struct bt_hci_evt_le_cs_config_complete {
 	uint8_t  channel_selection_type;
 	uint8_t  ch3c_shape;
 	uint8_t  ch3c_jump;
-	uint8_t  reserved;
+	/** CS enhancements 1. */
+	uint8_t  cs_enhancements_1;
 	uint8_t  t_ip1_time;
 	uint8_t  t_ip2_time;
 	uint8_t  t_fcs_time;
@@ -4323,6 +4473,9 @@ struct bt_hci_evt_le_conn_rate_change {
 
 #define BT_EVT_MASK_LE_FRAME_SPACE_UPDATE_COMPLETE BT_EVT_BIT(52)
 #define BT_EVT_MASK_LE_CONN_RATE_CHANGE            BT_EVT_BIT(54)
+
+/** Event mask for LE CS Read Remote Supported Capabilities Complete (v2). */
+#define BT_EVT_MASK_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE_V2 BT_EVT_BIT(55)
 
 /** HCI Error Codes, BT Core Spec v5.4 [Vol 1, Part F]. */
 #define BT_HCI_ERR_SUCCESS                      0x00

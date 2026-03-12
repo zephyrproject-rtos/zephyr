@@ -10,10 +10,19 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+#ifdef CONFIG_LOG_FRONTEND_STMESP
+#include <zephyr/logging/log_frontend_stmesp.h>
+#endif
+
+#include <hal/nrf_gpio.h>
 #include <hal/nrf_hsfll.h>
 #include <hal/nrf_lrcconf.h>
 #include <hal/nrf_spu.h>
+#include <hal/nrf_memconf.h>
 #include <lib/nrfx_coredep.h>
+#include <soc_lrcconf.h>
+#include <haltium_power.h>
+#include <dmm.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -33,25 +42,6 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 				      ADDRESS_DOMAIN_Msk |                     \
 				      ADDRESS_BUS_Msk)))
 
-static void power_domain_init(void)
-{
-	/*
-	 * Set:
-	 *  - LRCCONF010.POWERON.MAIN: 1
-	 *  - LRCCONF010.POWERON.ACT: 1
-	 *  - LRCCONF010.RETAIN.MAIN: 1
-	 *  - LRCCONF010.RETAIN.ACT: 1
-	 *
-	 *  This is done here at boot so that when the idle routine will hit
-	 *  WFI the power domain will be correctly retained.
-	 */
-
-	nrf_lrcconf_poweron_force_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_MAIN, true);
-	nrf_lrcconf_poweron_force_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_DOMAIN_0, true);
-
-	nrf_lrcconf_retain_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_MAIN, true);
-	nrf_lrcconf_retain_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_DOMAIN_0, true);
-}
 
 static int trim_hsfll(void)
 {
@@ -74,6 +64,8 @@ static int trim_hsfll(void)
 	nrf_hsfll_trim_set(hsfll, &trim);
 
 	nrf_hsfll_task_trigger(hsfll, NRF_HSFLL_TASK_FREQ_CHANGE);
+	/* HSFLL task frequency change needs to be triggered twice to take effect.*/
+	nrf_hsfll_task_trigger(hsfll, NRF_HSFLL_TASK_FREQ_CHANGE);
 
 	LOG_DBG("NRF_HSFLL->TRIM.VSUP = %d", hsfll->TRIM.VSUP);
 	LOG_DBG("NRF_HSFLL->TRIM.COARSE = %d", hsfll->TRIM.COARSE);
@@ -84,14 +76,29 @@ static int trim_hsfll(void)
 	return 0;
 }
 
+#if defined(CONFIG_ARM_ON_ENTER_CPU_IDLE_HOOK)
+bool z_arm_on_enter_cpu_idle(void)
+{
+#ifdef CONFIG_LOG_FRONTEND_STMESP
+	log_frontend_stmesp_pre_sleep();
+#endif
+	return true;
+}
+#endif
+
 void soc_early_init_hook(void)
 {
+	int err;
+
 	sys_cache_instr_enable();
 	sys_cache_data_enable();
 
-	power_domain_init();
+	nrf_power_domain_init();
 
 	trim_hsfll();
+
+	err = dmm_init();
+	__ASSERT_NO_MSG(err == 0);
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ccm030))
 	/* DMASEC is set to non-secure by default, which prevents CCM from

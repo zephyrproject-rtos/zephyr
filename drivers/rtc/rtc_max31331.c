@@ -435,9 +435,9 @@ static int enable_alarm_interrupt(const struct device *dev, uint16_t id, uint16_
 	bool enable;
 
 	if (mask != 0) {
-		enable = 1;
+		enable = true;
 	} else {
-		enable = 0;
+		enable = false;
 	}
 
 	if (id == 1) {

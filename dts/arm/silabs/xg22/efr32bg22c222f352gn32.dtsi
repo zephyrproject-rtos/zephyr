@@ -19,6 +19,22 @@
 	reg = <0x00000000 DT_SIZE_K(352)>;
 };
 
+&gpioa {
+	ngpios = <7>;
+};
+
+&gpiob {
+	ngpios = <3>;
+};
+
+&gpioc {
+	ngpios = <6>;
+};
+
+&gpiod {
+	ngpios = <2>;
+};
+
 &radio {
 	ble-2mbps-supported;
 	ble-cte-tx-supported;

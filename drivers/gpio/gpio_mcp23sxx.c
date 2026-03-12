@@ -122,9 +122,7 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 		.reg_cache.gpio = 0x0,	   .reg_cache.olat = 0x0,                             \
 	};                                                                                    \
 	static struct mcp23xxx_config mcp##model##_##inst##_config = {                        \
-		.config = {					                              \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),               \
-		},						                              \
+		.config = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                              \
 		.bus = {                                                                      \
 			.spi = SPI_DT_SPEC_INST_GET(inst,                                     \
 				SPI_OP_MODE_MASTER | SPI_MODE_CPOL |                          \

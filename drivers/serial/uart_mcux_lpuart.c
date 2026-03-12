@@ -146,6 +146,7 @@ static void mcux_lpuart_pm_policy_state_lock_get(const struct device *dev)
 	if (!data->pm_state_lock_on) {
 		data->pm_state_lock_on = true;
 		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	}
 }
 
@@ -156,6 +157,7 @@ static void mcux_lpuart_pm_policy_state_lock_put(const struct device *dev)
 	if (data->pm_state_lock_on) {
 		data->pm_state_lock_on = false;
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	}
 }
 #endif /* CONFIG_PM */
@@ -1607,7 +1609,9 @@ static DEVICE_API(uart, mcux_lpuart_driver_api) = {
 static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 	.base = (LPUART_Type *) DT_INST_REG_ADDR(n),                          \
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                   \
-	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
+	.clock_subsys = (clock_control_subsys_t)COND_CODE_1(                  \
+		DT_PHA_HAS_CELL(DT_DRV_INST(n), clocks, name),                \
+		(DT_INST_CLOCKS_CELL(n, name)), (0U)),                        \
 	.baud_rate = DT_INST_PROP(n, current_speed),                          \
 	.flow_ctrl = FLOW_CONTROL(n),                                         \
 	.parity = DT_INST_ENUM_IDX(n, parity),                                \

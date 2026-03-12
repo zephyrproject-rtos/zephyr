@@ -1,0 +1,50 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO43>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO44>;
+			bias-pull-up;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO1>,
+				 <I2C0_SCL_GPIO3>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_SCLK_GPIO40>;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO45>;
+			output-low;
+		};
+	};
+
+	spim3_ws2812_led: spim3_ws2812_led {
+		group1 {
+			pinmux = <SPIM3_MOSI_GPIO0>;  /* IO0-RGB-LED */
+			output-low;
+		};
+	};
+};

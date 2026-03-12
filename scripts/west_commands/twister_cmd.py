@@ -18,7 +18,7 @@ sys.path.insert(0, str(twister_path))
 sys.path.insert(0, str(twister_path / "pylib" / "twister"))
 
 from twisterlib.environment import add_parse_arguments, parse_arguments, python_version_guard
-from twisterlib.twister_main import twister
+from twisterlib.twister_main import Twister as TwisterMain
 
 TWISTER_DESCRIPTION = """\
 Convenience wrapper for twister. The below options are shared with the twister
@@ -58,7 +58,7 @@ class Twister(WestCommand):
 
         options = parse_arguments(self.parser, args=remainder, options=args)
         default_options = parse_arguments(self.parser, args=[], on_init=False)
-        ret = twister(options, default_options)
+        ret = TwisterMain(options, default_options).run()
         sys.exit(ret)
 
     def _parse_arguments(self, args, options):

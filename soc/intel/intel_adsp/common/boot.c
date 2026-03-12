@@ -9,6 +9,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/arch/common/init.h>
 #include <soc_util.h>
 #include <zephyr/cache.h>
 #include <adsp_shim.h>
@@ -158,6 +159,9 @@ __imr void boot_core0(void)
 	hp_sram_init(L2_SRAM_SIZE);
 	lp_sram_init();
 	parse_manifest();
+
+	arch_bss_zero();
+
 	sys_cache_data_flush_all();
 
 	xtensa_vecbase_lock();

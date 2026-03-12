@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2019, NXP
+ * Copyright (c) 2019, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include <nxp/nxp_lpc55S6x_ns.dtsi>
+#include <nxp/lpc/nxp_lpc55S6x_ns.dtsi>
 #include "lpcxpresso55s69.dtsi"
 
 / {
@@ -59,4 +59,12 @@
 
 &mma8652fc {
 	status = "disabled";
+};
+
+&gint0 {
+	status = "okay";
+};
+
+&gint1 {
+	status = "okay";
 };

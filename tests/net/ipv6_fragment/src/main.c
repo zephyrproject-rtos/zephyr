@@ -2217,11 +2217,11 @@ static uint8_t ipv6_reass_frag2[] = {
 
 static uint16_t test_recv_payload_len = 1300U;
 
-static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
-				  struct net_pkt *pkt,
-				  struct net_icmp_ip_hdr *ip_hdr,
-				  struct net_icmp_hdr *icmp_hdr,
-				  void *user_data)
+static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
+					       struct net_pkt *pkt,
+					       struct net_icmp_ip_hdr *ip_hdr,
+					       struct net_icmp_hdr *icmp_hdr,
+					       void *user_data)
 {
 	const struct net_ipv6_hdr *hdr = NET_IPV6_HDR(pkt);
 	uint8_t verify_buf[NET_IPV6H_LEN];

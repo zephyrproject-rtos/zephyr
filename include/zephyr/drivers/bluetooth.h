@@ -128,9 +128,7 @@ __subsystem struct bt_hci_driver_api {
  */
 static inline int bt_hci_open(const struct device *dev, bt_hci_recv_t recv)
 {
-	const struct bt_hci_driver_api *api = (const struct bt_hci_driver_api *)dev->api;
-
-	return api->open(dev, recv);
+	return DEVICE_API_GET(bt_hci, dev)->open(dev, recv);
 }
 
 /**
@@ -145,7 +143,7 @@ static inline int bt_hci_open(const struct device *dev, bt_hci_recv_t recv)
  */
 static inline int bt_hci_close(const struct device *dev)
 {
-	const struct bt_hci_driver_api *api = (const struct bt_hci_driver_api *)dev->api;
+	const struct bt_hci_driver_api *api = DEVICE_API_GET(bt_hci, dev);
 
 	if (api->close == NULL) {
 		return -ENOSYS;
@@ -175,9 +173,7 @@ static inline int bt_hci_close(const struct device *dev)
  */
 static inline int bt_hci_send(const struct device *dev, struct net_buf *buf)
 {
-	const struct bt_hci_driver_api *api = (const struct bt_hci_driver_api *)dev->api;
-
-	return api->send(dev, buf);
+	return DEVICE_API_GET(bt_hci, dev)->send(dev, buf);
 }
 
 #if defined(CONFIG_BT_HCI_SETUP) || defined(__DOXYGEN__)
@@ -195,7 +191,7 @@ static inline int bt_hci_send(const struct device *dev, struct net_buf *buf)
  */
 static inline int bt_hci_setup(const struct device *dev, struct bt_hci_setup_params *params)
 {
-	const struct bt_hci_driver_api *api = (const struct bt_hci_driver_api *)dev->api;
+	const struct bt_hci_driver_api *api = DEVICE_API_GET(bt_hci, dev);
 
 	if (api->setup == NULL) {
 		return -ENOSYS;

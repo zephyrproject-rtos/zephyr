@@ -18,6 +18,10 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
+config FLASH_LOAD_OFFSET
+	default $(sub_hex, $(dt_nodelabel_reg_addr_hex,header), \
+		$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)))
+
 DT_CHOSEN_IMAGE_ZEPHYR = zephyr,code-partition
 DT_CHOSEN_SRAM_ZEPHYR = zephyr,sram
 

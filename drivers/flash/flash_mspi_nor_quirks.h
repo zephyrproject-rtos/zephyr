@@ -77,7 +77,7 @@ static inline int mxicy_mx25r_post_switch_mode(const struct device *dev)
 	}
 
 	/* Write status and config registers */
-	set_up_xfer(dev, MSPI_TX);
+	set_up_xfer(dev, MSPI_TX, dev_config->control_xfer_mode);
 	dev_data->packet.data_buf  = mxicy_mx25r_hp_payload;
 	dev_data->packet.num_bytes = sizeof(mxicy_mx25r_hp_payload);
 	rc = perform_xfer(dev, SPI_NOR_CMD_WRSR);
@@ -98,7 +98,7 @@ static inline int mxicy_mx25r_post_switch_mode(const struct device *dev)
 	}
 
 	/* Verify configuration registers */
-	set_up_xfer(dev, MSPI_RX);
+	set_up_xfer(dev, MSPI_RX, dev_config->control_xfer_mode);
 	dev_data->packet.num_bytes = sizeof(config);
 	dev_data->packet.data_buf  = config;
 	rc = perform_xfer(dev, SPI_NOR_CMD_RDCR);
@@ -154,7 +154,7 @@ static inline int mxicy_mx25u_post_switch_mode(const struct device *dev)
 	}
 
 	/* Write config register 2 */
-	set_up_xfer(dev, MSPI_TX);
+	set_up_xfer(dev, MSPI_TX, dev_config->control_xfer_mode);
 	dev_data->xfer.addr_length = 4;
 	dev_data->packet.address   = 0;
 	dev_data->packet.data_buf  = &opi_enable;
@@ -187,7 +187,7 @@ static int mxicy_mx25u_pre_init(const struct device *dev)
 	 */
 
 	/* Read configured number of dummy cycles for memory reading commands. */
-	set_up_xfer(dev, MSPI_RX);
+	set_up_xfer(dev, MSPI_RX, dev_config->control_xfer_mode);
 	dev_data->xfer.addr_length = 4;
 	dev_data->packet.address   = 0x300;
 	dev_data->packet.data_buf  = &cfg_reg;

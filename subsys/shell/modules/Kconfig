@@ -40,4 +40,18 @@ config APP_VERSION_SHELL
 	help
 	  This shell command provides read access to application version information.
 
+config ZYCLICTEST_SHELL
+	bool "Zyclictest shell"
+	select POSIX_C_LIB_EXT
+	help
+	  This shell command provides latency measurement.
+	  Measure latencies of interrupt service routines and threads when
+	  woken up by a timer. Collecting data in the background while
+	  application of interrest is running in the foreground.
+	  It can be switched on by demand and measure the worst case latencies
+	  with the exact circumstances of the productive application. Thus one
+	  can see if for example interrupts or preemption locks are preventing
+	  the application to run.
+	  Inspired by Linux cyclictest tool.
+
 rsource "kernel_service/Kconfig"

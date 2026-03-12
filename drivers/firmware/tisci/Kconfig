@@ -15,7 +15,7 @@ if TISCI
 
 config TISCI_INIT_PRIORITY
 	int "TISCI init priority"
-	default KERNEL_INIT_PRIORITY_OBJECTS
+	default KERNEL_INIT_PRIORITY_DEFAULT
 	help
 	  Init priority for the TISCI driver.
 

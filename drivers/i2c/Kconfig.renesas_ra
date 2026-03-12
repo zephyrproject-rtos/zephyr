@@ -4,13 +4,26 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config I2C_RENESAS_RA_IIC
-	bool "Renesas RA I2C IIC Controller"
+	bool "Renesas RA I2C IIC driver"
 	default y
 	depends on DT_HAS_RENESAS_RA_IIC_ENABLED
 	select USE_RA_FSP_I2C_IIC_CONTROLLER
+	select USE_RA_FSP_I2C_IIC_TARGET if I2C_TARGET
 	select PINCTRL
 	help
-	  Enable Renesas RA I2C IIC Controller Driver.
+	  Enable Renesas RA I2C IIC Driver.
+
+if I2C_RENESAS_RA_IIC && I2C_TARGET && I2C_TARGET_BUFFER_MODE
+
+config I2C_TARGET_RENESAS_RA_IIC_BUFFER_SIZE
+	int "I2C Target data buffer length"
+	range 1 1024
+	default 256
+	help
+	  Specify the size of the data buffer used
+	  in the Renesas RA I2C IIC target driver.
+
+endif
 
 config I2C_RENESAS_RA_SCI
 	bool "Renesas RA SCI I2C"

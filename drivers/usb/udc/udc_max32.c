@@ -23,9 +23,13 @@ LOG_MODULE_REGISTER(udc_max32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
 enum udc_max32_event_type {
 	/* Shim driver event to trigger transfer */
-	UDC_MAX32_EVT_XFER,
+	UDC_MAX32_EVT_START_XFER,
 	/* Setup event */
 	UDC_MAX32_EVT_SETUP,
+	/* Transfer IN complete */
+	UDC_MAX32_EVT_XFER_IN_DONE,
+	/* Transfer OUT complete */
+	UDC_MAX32_EVT_XFER_OUT_DONE,
 };
 
 struct udc_max32_evt {
@@ -82,62 +86,37 @@ static void udc_event_xfer_ctrl_status(const struct device *dev, struct net_buf 
 	udc_ctrl_update_stage(dev, buf);
 }
 
+/*
+ * ISR-context callbacks: These are called from MXC_USB_EventHandler() in
+ * interrupt context.
+ *
+ * They should only push to a message queue and not acquire memory or locks.
+ */
 static void udc_event_xfer_in_callback(void *cbdata)
 {
 	struct req_cb_data *req_cb_data = (struct req_cb_data *)cbdata;
-	struct udc_max32_data *priv = udc_get_private(req_cb_data->dev);
-	MXC_USB_Req_t *ep_request = &priv->ep_request[USB_EP_GET_IDX(req_cb_data->ep)];
-	struct net_buf *buf;
+	struct udc_max32_evt evt = {
+		.type = UDC_MAX32_EVT_XFER_IN_DONE,
+		.ep_cfg = udc_get_ep_cfg(req_cb_data->dev, req_cb_data->ep),
+	};
 
-	buf = udc_buf_get(udc_get_ep_cfg(req_cb_data->dev, req_cb_data->ep));
-
-	udc_ep_set_busy(udc_get_ep_cfg(req_cb_data->dev, req_cb_data->ep), false);
-
-	if (ep_request->error_code) {
-		LOG_ERR("ep 0x%02x error: %x", req_cb_data->ep, ep_request->error_code);
-		udc_submit_ep_event(req_cb_data->dev, buf, ep_request->error_code);
-		return;
-	}
-
-	if (udc_ep_buf_has_zlp(buf)) {
-		udc_ep_buf_clear_zlp(buf);
-	}
-
-	if (req_cb_data->ep == USB_CONTROL_EP_IN) {
-		udc_event_xfer_ctrl_status(req_cb_data->dev, buf);
-	} else {
-		udc_submit_ep_event(req_cb_data->dev, buf, 0);
-	}
+	k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 }
 
 static void udc_event_xfer_out_callback(void *cbdata)
 {
 	struct req_cb_data *req_cb_data = (struct req_cb_data *)cbdata;
-	struct udc_max32_data *priv = udc_get_private(req_cb_data->dev);
-	MXC_USB_Req_t *ep_request = &priv->ep_request[USB_EP_GET_IDX(req_cb_data->ep)];
-	struct net_buf *buf;
+	struct udc_max32_evt evt = {
+		.type = UDC_MAX32_EVT_XFER_OUT_DONE,
+		.ep_cfg = udc_get_ep_cfg(req_cb_data->dev, req_cb_data->ep),
+	};
 
-	buf = udc_buf_get(udc_get_ep_cfg(req_cb_data->dev, req_cb_data->ep));
-	net_buf_add(buf, ep_request->actlen);
-
-	udc_ep_set_busy(udc_get_ep_cfg(req_cb_data->dev, req_cb_data->ep), false);
-
-	if (ep_request->error_code) {
-		LOG_ERR("ep 0x%02x error: %x", req_cb_data->ep, ep_request->error_code);
-		udc_submit_ep_event(req_cb_data->dev, buf, ep_request->error_code);
-		return;
-	}
-
-	if (req_cb_data->ep == USB_CONTROL_EP_OUT) {
-		/* Update to next stage of control transfer */
-		udc_ctrl_update_stage(req_cb_data->dev, buf);
-
-		udc_ctrl_submit_s_out_status(req_cb_data->dev, buf);
-	} else {
-		udc_submit_ep_event(req_cb_data->dev, buf, 0);
-	}
+	k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 }
 
+/*
+ * Thread-context handlers for triggering xfer in / out
+ */
 static void udc_event_xfer_in(const struct device *dev, struct udc_ep_config *ep_cfg)
 {
 	struct udc_max32_data *priv = udc_get_private(dev);
@@ -223,6 +202,73 @@ static void udc_event_xfer_out(const struct device *dev, struct udc_ep_config *e
 		udc_ep_set_busy(ep_cfg, false);
 		LOG_ERR("ep 0x%02x error: %x", ep_cfg->addr, ret);
 		udc_submit_ep_event(dev, buf, -ECONNREFUSED);
+	}
+}
+
+/*
+ * Thread-context (non ISR-safe) handlers for xfer completions.
+ */
+static void udc_event_xfer_in_done(const struct device *dev, struct udc_ep_config *ep_cfg)
+{
+	struct udc_max32_data *priv = udc_get_private(dev);
+	MXC_USB_Req_t *ep_request = &priv->ep_request[USB_EP_GET_IDX(ep_cfg->addr)];
+	struct net_buf *buf;
+
+	buf = udc_buf_get(ep_cfg);
+
+	udc_ep_set_busy(ep_cfg, false);
+
+	if (ep_request->error_code) {
+		LOG_ERR("ep 0x%02x error: %x", ep_cfg->addr, ep_request->error_code);
+		udc_submit_ep_event(dev, buf, ep_request->error_code);
+		return;
+	}
+
+	if (udc_ep_buf_has_zlp(buf)) {
+		udc_ep_buf_clear_zlp(buf);
+	}
+
+	if (ep_cfg->addr == USB_CONTROL_EP_IN) {
+		udc_event_xfer_ctrl_status(dev, buf);
+	} else {
+		udc_submit_ep_event(dev, buf, 0);
+	}
+
+	/* Start the next transfer if there is another waiting */
+	if (ep_cfg->addr != USB_CONTROL_EP_IN && udc_buf_peek(ep_cfg) != NULL) {
+		udc_event_xfer_in(dev, ep_cfg);
+	}
+}
+
+static void udc_event_xfer_out_done(const struct device *dev, struct udc_ep_config *ep_cfg)
+{
+	struct udc_max32_data *priv = udc_get_private(dev);
+	MXC_USB_Req_t *ep_request = &priv->ep_request[USB_EP_GET_IDX(ep_cfg->addr)];
+	struct net_buf *buf;
+
+	buf = udc_buf_get(ep_cfg);
+	net_buf_add(buf, ep_request->actlen);
+
+	udc_ep_set_busy(ep_cfg, false);
+
+	if (ep_request->error_code) {
+		LOG_ERR("ep 0x%02x error: %x", ep_cfg->addr, ep_request->error_code);
+		udc_submit_ep_event(dev, buf, ep_request->error_code);
+		return;
+	}
+
+	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
+		/* Update to next stage of control transfer */
+		udc_ctrl_update_stage(dev, buf);
+
+		udc_ctrl_submit_s_out_status(dev, buf);
+	} else {
+		udc_submit_ep_event(dev, buf, 0);
+	}
+
+	/* Start the next transfer if there is another waiting */
+	if (ep_cfg->addr != USB_CONTROL_EP_OUT && udc_buf_peek(ep_cfg) != NULL) {
+		udc_event_xfer_out(dev, ep_cfg);
 	}
 }
 
@@ -321,7 +367,6 @@ static ALWAYS_INLINE void max32_thread_handler(void *const arg)
 
 	LOG_DBG("Driver %p thread started", dev);
 	while (true) {
-		bool start_xfer = false;
 		struct udc_max32_evt evt;
 
 		k_msgq_get(&drv_msgq, &evt, K_FOREVER);
@@ -330,19 +375,21 @@ static ALWAYS_INLINE void max32_thread_handler(void *const arg)
 		case UDC_MAX32_EVT_SETUP:
 			udc_event_setup(dev);
 			break;
-		case UDC_MAX32_EVT_XFER:
-			start_xfer = true;
-			break;
-		default:
-			break;
-		}
-
-		if (start_xfer) {
+		case UDC_MAX32_EVT_START_XFER:
 			if (USB_EP_DIR_IS_IN(evt.ep_cfg->addr)) {
 				udc_event_xfer_in(dev, evt.ep_cfg);
 			} else {
 				udc_event_xfer_out(dev, evt.ep_cfg);
 			}
+			break;
+		case UDC_MAX32_EVT_XFER_IN_DONE:
+			udc_event_xfer_in_done(dev, evt.ep_cfg);
+			break;
+		case UDC_MAX32_EVT_XFER_OUT_DONE:
+			udc_event_xfer_out_done(dev, evt.ep_cfg);
+			break;
+		default:
+			break;
 		}
 	}
 }
@@ -351,7 +398,7 @@ static int udc_max32_ep_enqueue(const struct device *dev, struct udc_ep_config *
 				struct net_buf *buf)
 {
 	struct udc_max32_evt evt = {
-		.type = UDC_MAX32_EVT_XFER,
+		.type = UDC_MAX32_EVT_START_XFER,
 		.ep_cfg = cfg,
 	};
 
@@ -471,7 +518,7 @@ static int udc_max32_ep_clear_halt(const struct device *dev, struct udc_ep_confi
 	/* If there is a request for this endpoint, enqueue the request. */
 	if (udc_buf_peek(cfg) != NULL) {
 		struct udc_max32_evt evt = {
-			.type = UDC_MAX32_EVT_XFER,
+			.type = UDC_MAX32_EVT_START_XFER,
 			.ep_cfg = cfg,
 		};
 
@@ -532,8 +579,11 @@ static int udc_max32_event_callback(maxusb_event_t event, void *cbdata)
 		break;
 	case MAXUSB_EVENT_DPACT:
 		LOG_DBG("DPACT event occurred");
-		udc_set_suspended(dev, false);
-		udc_submit_sof_event(dev);
+		/* Only submit resume if device is suspended */
+		if (udc_is_suspended(dev)) {
+			udc_set_suspended(dev, false);
+			udc_submit_event(dev, UDC_EVT_RESUME, 0);
+		}
 		break;
 	case MAXUSB_EVENT_BRST:
 		LOG_DBG("BRST event occurred");
@@ -817,10 +867,10 @@ static const struct udc_api udc_max32_api = {
                                                                                                    \
 	static const struct udc_max32_config udc_max32_config_##n = {                              \
 		.base = (mxc_usbhs_regs_t *)DT_INST_REG_ADDR(n),                                   \
-		.num_of_in_eps = DT_INST_PROP(n, num_out_endpoints),                               \
-		.num_of_out_eps = DT_INST_PROP(n, num_in_endpoints),                               \
-		.ep_cfg_in = ep_cfg_out_##n,                                                       \
-		.ep_cfg_out = ep_cfg_in_##n,                                                       \
+		.num_of_in_eps = DT_INST_PROP(n, num_in_endpoints),                                \
+		.num_of_out_eps = DT_INST_PROP(n, num_out_endpoints),                              \
+		.ep_cfg_in = ep_cfg_in_##n,                                                        \
+		.ep_cfg_out = ep_cfg_out_##n,                                                      \
 		.make_thread = udc_max32_make_thread_##n,                                          \
 		.speed_idx = DT_ENUM_IDX(DT_DRV_INST(n), maximum_speed),                           \
 		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                    \

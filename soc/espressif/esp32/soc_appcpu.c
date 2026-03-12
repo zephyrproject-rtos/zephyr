@@ -18,6 +18,7 @@
 #include <zephyr/types.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/arch/common/init.h>
+#include <zephyr/zsr.h>
 
 #include <esp_private/system_internal.h>
 #include <esp32s3/rom/cache.h>
@@ -83,7 +84,7 @@ void IRAM_ATTR __appcpu_start(void)
 	 * initialization code wants a valid _current before
 	 * z_prep_c() is invoked.
 	 */
-	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[1]));
+	__asm__ __volatile__("wsr %0, " ZSR_CPU_STR "; rsync" : : "r"(&_kernel.cpus[1]));
 
 	core_intr_matrix_clear();
 

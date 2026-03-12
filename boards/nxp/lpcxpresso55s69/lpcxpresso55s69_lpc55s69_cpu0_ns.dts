@@ -1,12 +1,12 @@
 /*
- * Copyright 2019,2024 NXP
+ * Copyright 2019, 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include <nxp/nxp_lpc55S6x_ns.dtsi>
+#include <nxp/lpc/nxp_lpc55S6x_ns.dtsi>
 #include "lpcxpresso55s69.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -135,5 +135,13 @@ zephyr_udc0: &usbhs {
 };
 
 &ctimer4 {
+	status = "okay";
+};
+
+&gint0 {
+	status = "okay";
+};
+
+&gint1 {
 	status = "okay";
 };

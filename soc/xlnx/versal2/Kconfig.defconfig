@@ -6,6 +6,9 @@
 
 if SOC_AMD_VERSAL2
 
+configdefault CACHE_MANAGEMENT
+	default y
+
 if SOC_AMD_VERSAL2_RPU
 
 config NUM_IRQS
@@ -19,6 +22,12 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 endif # SOC_AMD_VERSAL2_RPU
 
 if SOC_AMD_VERSAL2_APU
+
+configdefault DCACHE_LINE_SIZE
+	default 64
+
+configdefault ICACHE_LINE_SIZE
+	default 64
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used

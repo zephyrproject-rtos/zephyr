@@ -128,6 +128,10 @@ static int e1000_send(const struct device *ddev, struct net_pkt *pkt)
 	struct e1000_dev *dev = ddev->data;
 	size_t len = net_pkt_get_len(pkt);
 
+	if (len > sizeof(dev->txb[dev->next_tx_desc])) {
+		return -EMSGSIZE;
+	}
+
 	if (net_pkt_read(pkt, dev->txb[dev->next_tx_desc], len)) {
 		return -EIO;
 	}
@@ -269,12 +273,10 @@ static void e1000_iface_init(struct net_if *iface)
 	struct e1000_dev *dev = net_if_get_device(iface)->data;
 	const struct e1000_config *config = net_if_get_device(iface)->config;
 
-	if (dev->iface == NULL) {
-		dev->iface = iface;
+	dev->iface = iface;
 
-		/* Do the phy link up only once */
-		config->config_func(dev);
-	}
+	/* Do the phy link up only once */
+	config->config_func(dev);
 
 	ethernet_init(iface);
 

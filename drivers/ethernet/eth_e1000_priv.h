@@ -98,8 +98,8 @@ struct e1000_dev {
 	 */
 	struct net_if *iface;
 	uint8_t mac[ETH_ALEN];
-	uint8_t txb[CONFIG_ETH_E1000_TX_QUEUE_SIZE][NET_ETH_MTU];
-	uint8_t rxb[CONFIG_ETH_E1000_RX_QUEUE_SIZE][NET_ETH_MTU];
+	uint8_t txb[CONFIG_ETH_E1000_TX_QUEUE_SIZE][NET_ETH_MAX_FRAME_SIZE];
+	uint8_t rxb[CONFIG_ETH_E1000_RX_QUEUE_SIZE][NET_ETH_MAX_FRAME_SIZE];
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
 	const struct device *ptp_clock;
 #endif
