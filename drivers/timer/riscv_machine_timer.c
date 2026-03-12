@@ -13,12 +13,22 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/irq.h>
+#ifdef CONFIG_RISCV_S_MODE
+#include <zephyr/arch/riscv/csr.h>
+#endif
 
 #define DT_DRV_COMPAT riscv_machine_timer
 
 #define MTIME_REG    DT_INST_REG_ADDR_BY_NAME(0, mtime)
 #define MTIMECMP_REG DT_INST_REG_ADDR_BY_NAME(0, mtimecmp)
 #define TIMER_IRQN   DT_INST_IRQN(0)
+
+#ifdef CONFIG_RISCV_S_MODE
+#include <zephyr/arch/riscv/sbi.h>
+#define EFFECTIVE_TIMER_IRQ IRQ_S_TIMER
+#else
+#define EFFECTIVE_TIMER_IRQ TIMER_IRQN
+#endif
 
 #define CYC_PER_TICK (uint32_t)(sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
@@ -60,14 +70,32 @@ static uint32_t last_elapsed;
 const int32_t z_sys_timer_irq_for_test = TIMER_IRQN;
 #endif
 
+#ifndef CONFIG_RISCV_S_MODE
 static uintptr_t get_hart_mtimecmp(void)
 {
 	return MTIMECMP_REG + (arch_proc_id() * 8);
 }
+#endif
+
+#ifdef CONFIG_RISCV_S_MODE
+static void sbi_set_timer(uint64_t deadline)
+{
+	register unsigned long a0 __asm__("a0") = (unsigned long)deadline;
+	register unsigned long a6 __asm__("a6") = SBI_FUNC_SET_TIMER;
+	register unsigned long a7 __asm__("a7") = SBI_EXT_TIME;
+
+	__asm__ volatile("ecall"
+						: "+r"(a0)
+						: "r"(a6), "r"(a7)
+						: "a1", "memory");
+}
+#endif
 
 static void set_mtimecmp(uint64_t time)
 {
-#ifdef CONFIG_64BIT
+#ifdef CONFIG_RISCV_S_MODE
+	sbi_set_timer(time);
+#elif defined(CONFIG_64BIT)
 	*(volatile uint64_t *)get_hart_mtimecmp() = time;
 #else
 	volatile uint32_t *r = (uint32_t *)get_hart_mtimecmp();
@@ -86,7 +114,9 @@ static void set_mtimecmp(uint64_t time)
 
 static uint64_t mtime(void)
 {
-#ifdef CONFIG_64BIT
+#ifdef CONFIG_RISCV_S_MODE
+	return csr_read(time);
+#elif CONFIG_64BIT
 	return *(volatile uint64_t *)MTIME_REG;
 #else
 	volatile uint32_t *r = (uint32_t *)MTIME_REG;
@@ -178,11 +208,11 @@ uint64_t sys_clock_cycle_get_64(void)
 
 static int sys_clock_driver_init(void)
 {
-	IRQ_CONNECT(TIMER_IRQN, 0, timer_isr, NULL, 0);
+	IRQ_CONNECT(EFFECTIVE_TIMER_IRQ, 0, timer_isr, NULL, 0);
 	last_ticks = mtime() / CYC_PER_TICK;
 	last_count = last_ticks * CYC_PER_TICK;
 	set_mtimecmp(last_count + CYC_PER_TICK);
-	irq_enable(TIMER_IRQN);
+	irq_enable(EFFECTIVE_TIMER_IRQ);
 	return 0;
 }
 
@@ -190,7 +220,7 @@ static int sys_clock_driver_init(void)
 void smp_timer_init(void)
 {
 	set_mtimecmp(last_count + CYC_PER_TICK);
-	irq_enable(TIMER_IRQN);
+	irq_enable(EFFECTIVE_TIMER_IRQ);
 }
 #endif
 

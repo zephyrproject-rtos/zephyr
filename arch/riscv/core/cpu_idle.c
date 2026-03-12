@@ -17,7 +17,7 @@ void arch_cpu_idle(void)
 #if defined(CONFIG_TRACING)
 	sys_trace_idle_exit();
 #endif
-	irq_unlock(MSTATUS_IEN);
+	irq_unlock(RISCV_STATUS_IE);
 }
 #endif
 

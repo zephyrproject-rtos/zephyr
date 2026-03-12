@@ -101,7 +101,11 @@ SECTION_FUNC(vectors, __start)
 	 * to _isr_wrapper.
 	 */
 	la t0, _isr_wrapper
+#ifdef CONFIG_RISCV_S_MODE
+	csrw stvec, t0
+#else
 	csrw mtvec, t0
+#endif
 
 #endif /* CONFIG_RISCV_HAS_CLIC&& !CONFIG_LEGACY_CLIC */
 
