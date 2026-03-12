@@ -108,6 +108,7 @@ long long strtoll(const char *nptr, char **endptr, register int base)
 			any = -1;
 		} else {
 			any = 1;
+			/* coverity[INTEGER_OVERFLOW] */
 			acc *= base;
 			acc += c;
 		}
