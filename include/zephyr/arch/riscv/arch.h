@@ -73,11 +73,40 @@
  */
 #define ARCH_KERNEL_STACK_RESERVED	Z_RISCV_STACK_GUARD_SIZE
 
-#else /* !CONFIG_PMP_STACK_GUARD */
+#elif defined(CONFIG_RISCV_MMU)
+/* MMU guard page: one page unmapped at the bottom of every stack object */
+#define Z_RISCV_STACK_GUARD_SIZE	CONFIG_MMU_PAGE_SIZE
+#define ARCH_KERNEL_STACK_OBJ_ALIGN	CONFIG_MMU_PAGE_SIZE
+#define ARCH_KERNEL_STACK_RESERVED	Z_RISCV_STACK_GUARD_SIZE
+
+#else /* !CONFIG_PMP_STACK_GUARD && !CONFIG_RISCV_MMU */
 #define Z_RISCV_STACK_GUARD_SIZE 0
 #endif
 
-#ifdef CONFIG_PMP_POWER_OF_TWO_ALIGNMENT
+#ifdef CONFIG_RISCV_MMU
+
+/* MMU thread stack layout:
+ *
+ * +------------+ <- thread.stack_obj
+ * | Guard page | } PAGE_SIZE (unmapped in kernel page tables)
+ * +------------+
+ * | Priv Stack | } CONFIG_PRIVILEGED_STACK_SIZE
+ * +------------+ <- thread.stack_info.start
+ * | Thread     |
+ * | stack      |
+ * |            |
+ * +............|
+ * | TLS        | } thread.stack_info.delta
+ * +------------+ <- thread.stack_info.start + thread.stack_info.size
+ */
+#define ARCH_THREAD_STACK_RESERVED \
+	ROUND_UP(Z_RISCV_STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE, \
+		 CONFIG_MMU_PAGE_SIZE)
+#define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
+	ROUND_UP(size, CONFIG_MMU_PAGE_SIZE)
+#define ARCH_THREAD_STACK_OBJ_ALIGN(size)	CONFIG_MMU_PAGE_SIZE
+
+#elif defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)
 /* The privilege elevation stack is located in another area of memory
  * generated at build time by gen_kobject_list.py
  *
@@ -186,9 +215,15 @@
  * In S-mode (CONFIG_RISCV_S_MODE), use the sstatus equivalents:
  * - SPP=1 so that sret returns to S-mode (not U-mode)
  * - SPIE=1 so that interrupts are enabled after sret
+ * - SUM=1 (when MMU is enabled) so S-mode can access user-mapped pages
  */
 #ifdef CONFIG_RISCV_S_MODE
+/* When MMU is enabled, set SUM so S-mode can access user-mapped pages */
+#if defined(CONFIG_RISCV_MMU)
+#define RV_STATUS_DEF_RESTORE (SSTATUS_SPP | SSTATUS_SPIE | SSTATUS_SUM)
+#else
 #define RV_STATUS_DEF_RESTORE (SSTATUS_SPP | SSTATUS_SPIE)
+#endif
 #else
 #define RV_STATUS_DEF_RESTORE (MSTATUS_MPP_M | MSTATUS_MPIE_EN)
 #endif
@@ -276,7 +311,13 @@ typedef struct {
 } k_mem_partition_attr_t;
 
 struct arch_mem_domain {
+#ifdef CONFIG_RISCV_MMU
+	uint64_t *ptables; /* root page table for this domain */
+	uint16_t asid; /* ASID assigned to this domain */
+	sys_snode_t node; /* domain list linkage for kernel mapping sync */
+#else
 	unsigned int pmp_update_nr;
+#endif
 };
 
 extern void z_irq_spurious(const void *unused);

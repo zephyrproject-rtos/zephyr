@@ -218,6 +218,26 @@ static bool bad_stack_pointer(struct arch_esf *esf)
 
 void z_riscv_fault(struct arch_esf *esf)
 {
+#ifdef CONFIG_RISCV_MMU
+	{
+		unsigned long mcause;
+
+		__asm__ volatile("csrr %0, scause" : "=r"(mcause));
+		mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
+
+		if (mcause == RISCV_EXC_INST_PAGE_FAULT ||
+		    mcause == RISCV_EXC_LOAD_PAGE_FAULT ||
+		    mcause == RISCV_EXC_STORE_PAGE_FAULT) {
+			/*
+			 * TODO: demand paging — pass the faulting address
+			 * (mtval) to z_page_fault() to allow the kernel to
+			 * resolve the fault on-demand.  For now fall through
+			 * to fatal error handling.
+			 */
+		}
+	}
+#endif /* CONFIG_RISCV_MMU */
+
 #ifdef CONFIG_USERSPACE
 	/*
 	 * Perform an assessment whether an PMP fault shall be

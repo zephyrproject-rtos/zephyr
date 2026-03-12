@@ -121,6 +121,9 @@ GTEXT(z_riscv_fatal_error)
 GTEXT(z_get_next_switch_handle)
 GTEXT(z_riscv_switch)
 GTEXT(z_riscv_thread_start)
+#ifdef CONFIG_RISCV_MMU
+GTEXT(z_riscv_userspace_enter)
+#endif
 
 #ifdef CONFIG_TRACING
 GTEXT(sys_trace_isr_enter)
@@ -195,6 +198,14 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	 * can't overflow the privileged stack. The esf will be allocated
 	 * later but it is safe to store our saved user sp here. */
 	sr t0, (-__struct_arch_esf_SIZEOF + __struct_arch_esf_sp_OFFSET)(sp)
+
+#ifdef CONFIG_RISCV_MMU
+	/* Switch to kernel address space before touching any kernel data. */
+	la	t1, z_riscv_kernel_satp_val
+	lr	t1, 0(t1)
+	csrw	satp, t1
+	sfence.vma
+#endif /* CONFIG_RISCV_MMU */
 
 	/* Make sure tls pointer is sane */
 	lr t0, ___cpu_t_current_OFFSET(s0)
@@ -892,6 +903,16 @@ fp_trap_exit:
 	add t0, sp, __struct_arch_esf_SIZEOF
 	sr t0, _curr_cpu_arch_user_exc_sp(s0)
 
+#ifdef CONFIG_RISCV_MMU
+	/* Switch to the thread's domain SATP before returning to user mode.
+	 * This code runs from the exception.entry section which has PTE_USER=0
+	 * in the domain page tables, so S-mode can safely execute it. */
+	lr	t0, ___cpu_t_current_OFFSET(s0)
+	lr	t0, _thread_offset_to_satp(t0)
+	csrw	satp, t0
+	sfence.vma
+#endif /* CONFIG_RISCV_MMU */
+
 	j 2f
 1:
 	/*
@@ -923,3 +944,25 @@ fp_trap_exit:
 #endif /* CONFIG_RISCV_SOC_HAS_ISR_STACKING */
 
 	TRAP_RET
+
+#ifdef CONFIG_RISCV_MMU
+/*
+ * z_riscv_userspace_enter - switch to domain SATP and SRET to user mode
+ *
+ * Called from arch_user_mode_enter() once sepc and sstatus are configured.
+ * Prototype:
+ *   void z_riscv_userspace_enter(k_thread_entry_t entry, void *p1,
+ *                                void *p2, void *p3,
+ *                                unsigned long user_sp,
+ *                                uintptr_t domain_satp);
+ * Arguments: a0=entry, a1=p1, a2=p2, a3=p3, a4=user_sp, a5=domain_satp
+ *
+ * MUST live in exception.entry so that the csrw+sfence.vma+sret sequence
+ * executes from a page with PTE_USER=0 in the domain SATP.
+ */
+SECTION_FUNC(exception.entry, z_riscv_userspace_enter)
+	csrw	satp, a5
+	sfence.vma
+	mv	sp, a4
+	TRAP_RET
+#endif /* CONFIG_RISCV_MMU */
