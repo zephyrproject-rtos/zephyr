@@ -16,7 +16,7 @@
 	chosen {
 		zephyr,console = &main_uart0;
 		zephyr,shell-uart = &main_uart0;
-		zephyr,sram = &ddr0;
+		zephyr,sram = &a53_ddr_section;
 	};
 
 	aliases {
@@ -41,9 +41,26 @@
 		};
 	};
 
-	ddr0: memory@82000000 {
-		/* Note: This board actually has 2GB DRAM available */
-		reg = <0x82000000 DT_SIZE_M(1)>;
+	reserved-memory {
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+
+		/* Reserved memory for TFA/OP-TEE */
+		tfa_memory: memory@80000000 {
+			reg = <0x80000000 DT_SIZE_M(32)>;
+		};
+	};
+
+	ddr0: memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_G(2)>;
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+
+		/* First 32MiB is reserved for TFA/OP-TEE */
+		a53_ddr_section: memory@82000000 {
+			reg = <0x82000000 (DT_SIZE_G(2) - DT_SIZE_M(32))>;
+		};
 	};
 
 	leds: leds {
