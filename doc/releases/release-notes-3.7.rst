@@ -55,7 +55,6 @@ Issues fixed
 ************
 
 These GitHub issues were addressed since the previous 3.7.1 tagged release:
-
 * :github:`67637` - Telnet shell asserts if connection is closed
 * :github:`72840` - sensor_shell: strange and unexpected output when getting single axis from 3-axis data
 * :github:`75119` - Doc: Graphviz fontcolor switched between light and dark themes
@@ -145,6 +144,30 @@ These GitHub issues were addressed since the previous 3.7.1 tagged release:
 * :github:`95850` - Applications do not watch MCUboot key file for changes
 * :github:`96172` - Backport #95101 (arch: arm: switch to privilege stack in SVC handler)
 * :github:`97304` - Backport #96850 (arch: arm: start threads on privileged stack)
+* :github:`84934` - USB devices broken on STM32F723XX MCUs after clock enable changes in Zephyr v3.7.0
+* :github:`86444` - BLE can't be used after erasing board and flash BT SHELL app
+* :github:`88506` - stm32: STM32 I2C LL Driver: Stuck in an infinite loop when SDA/SCL is short-circuited
+* :github:`92397` - Missing fallback to a base board.dts when using a board variant without specific dts file
+* :github:`95113` - gpio_pin_get_config for STM32 returns wrong flags value for input pins
+* :github:`95768` - Possible TCP connection leak when creating a socket
+* :github:`97473` - Branch 3.7: arch.arm.user.stack fails on frdm_k64f and npcx9m6f_evb (Timeout)
+* :github:`98231` - Build System: defconfig: Base defconfig not used on fully qualified oot board
+* :github:`98768` - STM32F303 bxCAN: Last 2 bytes corrupted on TX pin, but registers are correct
+* :github:`98936` - net: ICMPv4 packets can be reported to ICMPv6 handlers (and vice versa)
+* :github:`99678` - Build warnings on subsys/net/lib/websocket/websocket.c
+* :github:`99682` - net: lib: dns: Unpacking query name can overflow the destination buffer
+* :github:`99797` - MCUmgr: OS: DateTime: Millisecond parsing erroneous
+* :github:`99895` - [v3.7-branch] npcx9m6f_evb and frdm_k64f: kernel.common.stack_protection_arm_fpu_sharing fails
+* :github:`100212` - No event code filterint for LVGL pointer process
+* :github:`100227` - mbedtls: update to 3.6.5 in 3.7 branch
+* :github:`102635` - gpio: mcux: Potential infinite interrupt hang when configuring
+* :github:`104208` - IPv4/6 fragmentation memory leak
+* :github:`104233` - [backport] Bluetooth: Host: Add l2cap credit param checks
+* :github:`104248` - DNS query packet length check
+* :github:`104253` - driver: clock_control: RCC_BDCR_LSEDRV_Pos undefined using STM32L0
+* :github:`104652` - net: socketcan: length not always verified
+* :github:`104748` - [mcumgr] error codes of group "stat" incorrect
+* :github:`104948` - net: lib: socket: tls: Potential out-of-bounds write in socket_op_vtable::connect
 
 Mbed TLS
 ********
