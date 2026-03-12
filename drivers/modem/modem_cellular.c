@@ -960,10 +960,6 @@ static void modem_cellular_set_baudrate_event_handler(struct modem_cellular_data
 		modem_chat_run_script_async(&data->chat, config->set_baudrate_chat_script);
 		break;
 
-	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
-		/* Let modem reconfigure */
-		modem_cellular_start_timer(data, K_MSEC(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE_DELAY));
-		break;
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
 		/* Some modems save the new speed on first change, meaning the
 		 * modem is already at the new baudrate, meaning no reply. So
@@ -971,17 +967,21 @@ static void modem_cellular_set_baudrate_event_handler(struct modem_cellular_data
 		 */
 		LOG_DBG("no reply from modem, assuming baudrate is already set");
 		__fallthrough;
-	case MODEM_CELLULAR_EVENT_TIMEOUT:
+	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
+		/* Let modem reconfigure */
+		modem_cellular_start_timer(data, K_MSEC(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE_DELAY));
 		modem_chat_release(&data->chat);
 		modem_pipe_attach(data->uart_pipe, modem_cellular_bus_pipe_handler, data);
 		modem_pipe_close_async(data->uart_pipe);
+		break;
 
+	case MODEM_CELLULAR_EVENT_BUS_CLOSED:
 		/* Update UART port baudrate and preserve the original value */
 		data->original_baudrate = modem_cellular_baudrate_update(
 			data, CONFIG_MODEM_CELLULAR_NEW_BAUDRATE);
 		break;
 
-	case MODEM_CELLULAR_EVENT_BUS_CLOSED:
+	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_INIT_SCRIPT);
 		break;
 
