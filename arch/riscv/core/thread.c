@@ -74,7 +74,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 #if defined(CONFIG_USERSPACE)
 	/* Clear user thread context */
+#ifdef CONFIG_RISCV_PMP
 	z_riscv_pmp_usermode_init(thread);
+#endif
 	thread->arch.priv_stack_start = 0;
 #endif /* CONFIG_USERSPACE */
 
@@ -119,6 +121,14 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* where to go when returning from z_riscv_switch() */
 	thread->callee_saved.ra = (unsigned long)z_riscv_thread_start;
 
+#ifdef CONFIG_RISCV_MMU
+	thread->arch.satp = z_riscv_kernel_satp();
+#endif
+
+#ifdef CONFIG_RISCV_MMU_STACK_GUARD
+	z_riscv_mmu_map_guard_page(thread);
+#endif
+
 	/* our switch handle is the thread pointer itself */
 	thread->switch_handle = thread;
 }
@@ -153,9 +163,17 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 					      CONFIG_PRIVILEGED_STACK_SIZE);
 
 #ifdef CONFIG_INIT_STACKS
-	/* Initialize the privileged stack */
-	(void)memset((void *)_current->arch.priv_stack_start, 0xaa,
-		     Z_STACK_PTR_ALIGN(K_KERNEL_STACK_RESERVED + CONFIG_PRIVILEGED_STACK_SIZE));
+	/*
+	 * Initialize the privileged stack, skipping the guard region at the
+	 * bottom (K_KERNEL_STACK_RESERVED bytes).  With CONFIG_RISCV_MMU the
+	 * guard page is unmapped (V=0) and writing to it would fault; with
+	 * PMP the region is hardware-protected and does not need sentinel
+	 * bytes.  Either way, only the actual priv-stack bytes above the
+	 * guard need initialisation.
+	 */
+	(void)memset((void *)((uintptr_t)_current->arch.priv_stack_start +
+			      K_KERNEL_STACK_RESERVED),
+		     0xaa, Z_STACK_PTR_ALIGN(CONFIG_PRIVILEGED_STACK_SIZE));
 #endif /* CONFIG_INIT_STACKS */
 
 	top_of_user_stack = Z_STACK_PTR_ALIGN(
@@ -191,8 +209,10 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 #endif
 
 	/* Set up Physical Memory Protection */
+#ifndef CONFIG_RISCV_MMU
 	z_riscv_pmp_usermode_prepare(_current);
 	z_riscv_pmp_usermode_enable(_current);
+#endif
 
 	/* preserve stack pointer for next exception entry */
 	arch_curr_cpu()->arch.user_exc_sp = top_of_priv_stack;
@@ -204,6 +224,25 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	z_riscv_custom_stack_guard_disable();
 #endif /* CONFIG_CUSTOM_STACK_GUARD */
 
+#ifdef CONFIG_RISCV_MMU
+	/*
+	 * Map the thread's stack with PTE_USER=1 in the domain page tables.
+	 * This is needed here (not just in arch_mem_domain_thread_add) because
+	 * a kernel thread that drops to user mode via k_thread_user_mode_enter
+	 * is not created with K_USER, so thread_add skips the stack mapping.
+	 * This call is idempotent for threads already mapped via thread_add.
+	 */
+	z_riscv_mmu_map_user_stack(_current);
+
+	/*
+	 * Switch to domain SATP and SRET into user mode via the helper
+	 * that lives in the exception.entry section.  That section has
+	 * PTE_USER=0 in the domain page tables, allowing S-mode to execute
+	 * the csrw satp/sfence.vma/sret sequence safely.
+	 */
+	z_riscv_userspace_enter(user_entry, p1, p2, p3,
+				top_of_user_stack, _current->arch.satp);
+#else
 	register void *a0 __asm__("a0") = user_entry;
 	register void *a1 __asm__("a1") = p1;
 	register void *a2 __asm__("a2") = p2;
@@ -222,6 +261,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	: "r" (a0), "r" (a1), "r" (a2), "r" (a3), "r" (top_of_user_stack)
 	: "memory");
 #endif
+#endif /* CONFIG_RISCV_MMU */
 
 	CODE_UNREACHABLE;
 }

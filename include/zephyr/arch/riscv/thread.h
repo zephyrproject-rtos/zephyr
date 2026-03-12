@@ -82,8 +82,11 @@ struct _thread_arch {
 	unsigned long m_mode_pmpaddr_regs[CONFIG_PMP_SLOTS];
 	unsigned long m_mode_pmpcfg_regs[CONFIG_PMP_SLOTS / (__riscv_xlen / 8)];
 #endif
-#if defined(CONFIG_CPP) && !defined(CONFIG_FPU_SHARING) && !defined(CONFIG_USERSPACE) &&           \
-	!defined(CONFIG_PMP_STACK_GUARD)
+#ifdef CONFIG_RISCV_MMU
+	uintptr_t satp; /* SATP value for this thread's address space */
+#endif
+#if defined(CONFIG_CPP) && !defined(CONFIG_FPU_SHARING) && !defined(CONFIG_USERSPACE) && \
+	!defined(CONFIG_PMP_STACK_GUARD) && !defined(CONFIG_RISCV_MMU)
 	/* Empty struct has size 0 in C, size 1 in C++. Force them to be the same. */
 	uint8_t unused_cpp_size_compatibility;
 #endif
