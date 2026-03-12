@@ -6,7 +6,6 @@ description: CS40L5x haptic driver
 properties:
   reset-gpios:
     type: phandle-array
-    required: true
     description: Host GPIO pin mapped to CS40L5x reset pin.
 
   int-gpios:

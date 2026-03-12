@@ -45,6 +45,7 @@ LOG_MODULE_REGISTER(CS40L5X, CONFIG_HAPTICS_LOG_LEVEL);
 #define CS40L5X_REG_DEVID                       0x00000000U
 #define CS40L5X_REG_REVID                       (CS40L5X_REG_DEVID + 0x4)
 #define CS40L5X_REG_OTPID                       (CS40L5X_REG_REVID + 0xC)
+#define CS40L5X_REG_SFT_RESET                   0x00000020U
 #define CS40L5X_REG_IRQ1_STATUS                 0x0000E004U
 #define CS40L5X_REG_IRQ1_INT_1                  0x0000E010U
 #define CS40L5X_REG_IRQ1_INT_2                  (CS40L5X_REG_IRQ1_INT_1 + 0x4)
@@ -151,6 +152,7 @@ LOG_MODULE_REGISTER(CS40L5X, CONFIG_HAPTICS_LOG_LEVEL);
 #define CS40L5X_T_INTERRUPT_DEBOUNCER K_USEC(500)
 
 /* Miscellaneous helpers */
+#define CS40L5X_WRITE_SFT_RESET         0x5A000000U
 #define CS40L5X_WRITE_LOGGER_DISABLE    0x00000000U
 #define CS40L5X_WRITE_LOGGER_ENABLE     0x00000001U
 #define CS40L5X_WRITE_DYNAMIC_F0_ENABLE 0x00000001U
@@ -1155,21 +1157,23 @@ static int cs40l5x_reset(const struct device *const dev)
 	const struct cs40l5x_config *const config = dev->config;
 	int ret;
 
-	ret = gpio_pin_set_dt(&config->reset_gpio, CS40L5X_GPIO_ACTIVE);
-	if (ret < 0) {
-		return ret;
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_RESET) && config->reset_gpio.port != NULL) {
+		ret = gpio_pin_set_dt(&config->reset_gpio, CS40L5X_GPIO_ACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
+
+		(void)k_sleep(CS40L5X_T_RLPW);
+
+		ret = gpio_pin_set_dt(&config->reset_gpio, CS40L5X_GPIO_INACTIVE);
+	} else {
+		ret = cs40l5x_write(dev, CS40L5X_REG_SFT_RESET, CS40L5X_WRITE_SFT_RESET);
 	}
-
-	(void)k_sleep(CS40L5X_T_RLPW);
-
-	ret = gpio_pin_set_dt(&config->reset_gpio, CS40L5X_GPIO_INACTIVE);
 	if (ret < 0) {
 		return ret;
 	}
 
 	(void)k_sleep(CS40L5X_T_IRS);
-
-	LOG_INST_DBG(config->log, "hardware reset");
 
 	ret = cs40l5x_fingerprint(dev);
 	if (ret < 0) {
@@ -1191,9 +1195,21 @@ static int cs40l5x_bringup(const struct device *const dev)
 	const struct cs40l5x_config *const config = dev->config;
 	int ret;
 
-	ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT);
+	/*
+	 * Prevent the device from entering hibernation, or wake up the device if hibernating.
+	 * There is no subsequent call to allow hibernation because the runtime PM framework
+	 * will handle it if enabled.
+	 */
+	ret = cs40l5x_write_mailbox(dev, CS40L5X_MBOX_PREVENT_HIBERNATION);
 	if (ret < 0) {
 		return ret;
+	}
+
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_RESET) && config->reset_gpio.port != NULL) {
+		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	ret = cs40l5x_reset(dev);
@@ -1280,17 +1296,19 @@ static int cs40l5x_teardown(const struct device *const dev)
 		}
 	}
 
-	ret = gpio_pin_set_dt(&config->reset_gpio, CS40L5X_GPIO_ACTIVE);
-	if (ret < 0) {
-		return ret;
-	}
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_RESET) && config->reset_gpio.port != NULL) {
+		ret = gpio_pin_set_dt(&config->reset_gpio, CS40L5X_GPIO_ACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
 
-	if (gpio_pin_configure_dt(&config->reset_gpio, GPIO_DISCONNECTED) < 0) {
-		/*
-		 * If unable to disconnect the reset GPIO, configure as input to prevent the device
-		 * from being erroneously powered on.
-		 */
-		(void)gpio_pin_configure_dt(&config->reset_gpio, GPIO_INPUT);
+		if (gpio_pin_configure_dt(&config->reset_gpio, GPIO_DISCONNECTED) < 0) {
+			/*
+			 * If unable to disconnect the reset GPIO, configure as input to prevent the
+			 * device from being erroneously powered on.
+			 */
+			(void)gpio_pin_configure_dt(&config->reset_gpio, GPIO_INPUT);
+		}
 	}
 
 	return 0;
@@ -2056,7 +2074,9 @@ static int cs40l5x_pm_turn_off(const struct device *const dev)
 		return ret;
 	}
 
-	(void)pm_device_runtime_put(config->reset_gpio.port);
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_RESET) && config->reset_gpio.port != NULL) {
+		(void)pm_device_runtime_put(config->reset_gpio.port);
+	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL) {
 		(void)pm_device_runtime_put(config->interrupt_gpio.port);
@@ -2099,7 +2119,9 @@ error_pm_io:
 	(void)pm_device_runtime_put(cs40l5x_get_control_port(dev));
 
 error_pm_reset:
-	(void)pm_device_runtime_put(config->reset_gpio.port);
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_RESET) && config->reset_gpio.port != NULL) {
+		(void)pm_device_runtime_put(config->reset_gpio.port);
+	}
 
 	return ret;
 }
@@ -2145,7 +2167,8 @@ static int cs40l5x_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (!gpio_is_ready_dt(&config->reset_gpio)) {
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_RESET) && config->reset_gpio.port != NULL &&
+	    !gpio_is_ready_dt(&config->reset_gpio)) {
 		LOG_INST_DBG(config->log, "reset GPIO is not ready");
 		return -ENODEV;
 	}
@@ -2280,8 +2303,8 @@ __maybe_unused static int cs40l5x_deinit(const struct device *dev)
 
 #define HAPTICS_CS40L5X_CONFIG(inst, name, id)                                                     \
 	.dev = DEVICE_DT_INST_GET(inst), .dev_id = id,                                             \
-	.reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),                                    \
-	.interrupt_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, 0),                            \
+	.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                            \
+	.interrupt_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                          \
 	.external_boost = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, external_boost)),            \
 	LOG_INSTANCE_PTR_INIT(log, DT_NODE_FULL_NAME_TOKEN(DT_DRV_INST(inst)), inst)               \
 		HAPTICS_CS40L5X_BUS(inst) HAPTICS_CS40L5X_TRIGGER_GPIOS(inst)                      \
