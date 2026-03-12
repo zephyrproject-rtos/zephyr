@@ -417,14 +417,14 @@ static void telnet_accept(struct zsock_pollfd *pollfd)
 	sock = zsock_accept(pollfd->fd, &addr, &addrlen);
 	if (sock < 0) {
 		ret = -errno;
-		NET_ERR("Telnet accept error (%d)", ret);
+		LOG_ERR("Telnet accept error (%d)", ret);
 		return;
 	}
 
 	if (sh_telnet->fds[SOCK_ID_CLIENT].fd > 0) {
 		/* Too many connections. */
 		ret = 0;
-		NET_ERR("Telnet client already connected.");
+		LOG_ERR("Telnet client already connected.");
 		goto error;
 	}
 
@@ -508,7 +508,7 @@ static void telnet_server_cb(struct net_socket_service_event *evt)
 		return;
 	}
 
-	NET_ERR("Unexpected FD received for telnet, restarting service.");
+	LOG_ERR("Unexpected FD received for telnet, restarting service.");
 
 error:
 	telnet_restart_server();
