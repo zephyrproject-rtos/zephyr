@@ -97,7 +97,7 @@ struct z_heap {
 	size_t allocated_bytes;
 	size_t max_allocated_bytes;
 #endif
-#ifdef CONFIG_SYS_HEAP_CANARIES
+#ifdef CONFIG_SYS_HEAP_CANARIES_RANDOM
 	uint32_t canary_base;
 #endif
 	struct z_heap_bucket buckets[];

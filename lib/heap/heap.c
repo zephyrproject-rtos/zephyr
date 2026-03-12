@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(os_heap, CONFIG_SYS_HEAP_LOG_LEVEL);
 #include <sanitizer/msan_interface.h>
 #endif
 
-#ifdef CONFIG_SYS_HEAP_CANARIES
+#ifdef CONFIG_SYS_HEAP_CANARIES_RANDOM
 #include <zephyr/random/random.h>
 #endif
 
@@ -29,17 +29,20 @@ static inline void increase_allocated_bytes(struct z_heap *h, size_t num_bytes)
 #endif
 
 #ifdef CONFIG_SYS_HEAP_CANARIES
+#ifdef CONFIG_SYS_HEAP_CANARIES_RANDOM
+#define HEAP_CANARY_MAGIC(h) h->canary_base
+#else
+#define HEAP_CANARY_MAGIC(h) 0x5A6B7C8DU
+#endif
 #define HEAP_CANARY_POISON 0xDEADBEEFU
 
 /*
  * Compute a per-chunk canary from its address and size as well as the
- * base canary, which gets generated randomly at heap initialization.
- * Similar to stack canaries, this prevents attackers from forging
- * heap canaries without an information disclosure vulnerability.
+ * base canary to detect misplaced canaries.
  */
 static inline uint32_t compute_canary(struct z_heap *h, chunkid_t c)
 {
-	return ((c >> 16) | (c << 16)) ^ chunk_size(h, c) ^ h->canary_base;
+	return ((c >> 16) | (c << 16)) ^ chunk_size(h, c) ^ HEAP_CANARY_MAGIC(h);
 }
 
 static inline void set_chunk_canary(struct z_heap *h, chunkid_t c)
@@ -771,7 +774,7 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 		h->buckets[i].next = 0;
 	}
 
-#ifdef CONFIG_SYS_HEAP_CANARIES
+#ifdef CONFIG_SYS_HEAP_CANARIES_RANDOM
 	sys_rand_get(&h->canary_base, sizeof(h->canary_base));
 #endif
 
