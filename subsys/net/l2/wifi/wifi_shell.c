@@ -2799,9 +2799,9 @@ static int cmd_wifi_mode(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-void parse_channel_args_to_params(const struct shell *sh, int argc,
-				  char *argv[], struct wifi_channel_info *channel,
-				  bool *do_channel_oper)
+int parse_channel_args_to_params(const struct shell *sh, int argc,
+				 char *argv[], struct wifi_channel_info *channel,
+				 bool *do_channel_oper)
 {
 	int opt;
 	int opt_index = 0;
@@ -2809,17 +2809,35 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 	static const struct sys_getopt_option long_options[] = {
 		{"iface", sys_getopt_optional_argument, 0, 'i'},
 		{"channel", sys_getopt_required_argument, 0, 'c'},
+		{"band", sys_getopt_required_argument, 0, 'b'},
 		{"get", sys_getopt_no_argument, 0, 'g'},
 		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
-	while ((opt = sys_getopt_long(argc, argv, "i:c:gh",
+	channel->band = WIFI_FREQ_BAND_UNKNOWN;
+
+	while ((opt = sys_getopt_long(argc, argv, "i:c:b:gh",
 				  long_options, &opt_index)) != -1) {
 		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'c':
 			channel->channel = (uint16_t)atoi(state->optarg);
 			break;
+		case 'b': {
+			int b = atoi(state->optarg);
+
+			if (b == 2) {
+				channel->band = WIFI_FREQ_BAND_2_4_GHZ;
+			} else if (b == 5) {
+				channel->band = WIFI_FREQ_BAND_5_GHZ;
+			} else if (b == 6) {
+				channel->band = WIFI_FREQ_BAND_6_GHZ;
+			} else {
+				PR_ERROR("Invalid band. Use 2 (2.4GHz), 5 (5GHz), 6 (6GHz)\n");
+				return -ENOEXEC;
+			}
+			break;
+		}
 		case 'i':
 			channel->if_index = (uint8_t)atoi(state->optarg);
 			break;
@@ -2835,6 +2853,7 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 			break;
 		}
 	}
+	return 0;
 }
 
 static int cmd_wifi_channel(const struct shell *sh, size_t argc, char *argv[])
@@ -2845,7 +2864,11 @@ static int cmd_wifi_channel(const struct shell *sh, size_t argc, char *argv[])
 	bool do_channel_oper = true;
 
 	channel_info.oper = WIFI_MGMT_SET;
-	parse_channel_args_to_params(sh, argc, argv, &channel_info, &do_channel_oper);
+	ret = parse_channel_args_to_params(sh, argc, argv, &channel_info,
+					   &do_channel_oper);
+	if (ret != 0) {
+		return ret;
+	}
 
 	if (do_channel_oper) {
 		/*
@@ -2875,6 +2898,22 @@ static int cmd_wifi_channel(const struct shell *sh, size_t argc, char *argv[])
 			if ((channel_info.channel < WIFI_CHANNEL_MIN) ||
 			    (channel_info.channel > WIFI_CHANNEL_MAX)) {
 				PR_ERROR("Invalid channel number. Range is (1-233)\n");
+				return -ENOEXEC;
+			}
+			/* Channel 1-14 (2.4/6G overlap) or 15-35, 166-233 need explicit band */
+			if (channel_info.band == WIFI_FREQ_BAND_UNKNOWN &&
+			    (channel_info.channel <= 35 || channel_info.channel > 165)) {
+				PR_ERROR("Band required for channel %d (use -b 2|5|6). "
+					 "e.g. channel 1: -b2 (2.4GHz) or -b6 (6GHz)\n",
+					 channel_info.channel);
+				return -ENOEXEC;
+			}
+			if (channel_info.band != WIFI_FREQ_BAND_UNKNOWN &&
+			    !wifi_utils_validate_chan((uint8_t)channel_info.band,
+						   channel_info.channel)) {
+				PR_ERROR("Invalid channel %d for band %s\n",
+					channel_info.channel,
+					wifi_band_txt(channel_info.band));
 				return -ENOEXEC;
 			}
 		}
@@ -4499,14 +4538,15 @@ SHELL_SUBCMD_ADD((wifi), channel, NULL,
 			    "monitor or TX-Injection mode is enabled\n"
 			    "Currently 20 MHz is only supported and no BW parameter is provided\n"
 			    "[-i, --iface=<interface index>]\n"
-			    "[-c, --channel <chan>] : Set a specific channel number "
-			    "to the lower layer\n"
-			    "[-g, --get] : Get current set channel number from the lower layer\n"
+			    "[-c, --channel <chan>] : Set channel number\n"
+			    "[-b, --band <2|5|6>] : Band (2=2.4GHz, 5=5GHz, 6=6GHz). "
+			    "Required for channel 1-35 and 166-233 (ambiguous)\n"
+			    "[-g, --get] : Get current channel from the lower layer\n"
 			    "Examples:\n"
-			    "Get operation example for interface index 1\n"
 			    "wifi channel -g -i1\n"
-			    "Set operation example for interface index 1 (setting channel 5)\n"
-			    "wifi -i1 -c5"),
+			    "wifi channel -i1 -c11 -b2\n"
+			    "wifi channel -i1 -c36 (5GHz inferred)\n"
+			    "wifi channel -i1 -c1 -b6 (6GHz channel 1)"),
 		 cmd_wifi_channel,
 		 2, 6);
 
