@@ -382,7 +382,7 @@ static void ppp_change_state(struct ppp_driver_context *ctx,
 	NET_ASSERT(new_state >= STATE_HDLC_FRAME_START &&
 		   new_state <= STATE_HDLC_FRAME_DATA);
 
-	NET_DBG("[%p] state %s (%d) => %s (%d)",
+	LOG_DBG("[%p] state %s (%d) => %s (%d)",
 		ctx, ppp_driver_state_str(ctx->state), ctx->state,
 		ppp_driver_state_str(new_state), new_state);
 
