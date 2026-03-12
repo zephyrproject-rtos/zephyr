@@ -675,7 +675,7 @@ static int rf2xx_tx(const struct device *dev,
 		case IEEE802154_TX_MODE_TXTIME:
 		case IEEE802154_TX_MODE_TXTIME_CCA:
 		default:
-			NET_ERR("TX mode %d not supported", mode);
+			LOG_ERR("TX mode %d not supported", mode);
 			return -ENOTSUP;
 		}
 
