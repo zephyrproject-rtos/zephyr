@@ -2246,6 +2246,12 @@ static inline uint64_t k_cycle_get_64(void)
  * @}
  */
 
+/**
+ * @brief Kernel queue structure
+ *
+ * This structure is used to represent a kernel queue.
+ * All the members are internal and should not be accessed directly.
+ */
 struct k_queue {
 	sys_sflist_t data_q;
 	struct k_spinlock lock;
@@ -2861,6 +2867,11 @@ static inline uint32_t k_event_test(struct k_event *event, uint32_t events_mask)
 
 /** @} */
 
+/**
+ * @brief Kernel FIFO structure
+ *
+ * All the members are internal and should not be accessed directly.
+ */
 struct k_fifo {
 	struct k_queue _queue;
 #ifdef CONFIG_OBJ_CORE_FIFO
@@ -3101,6 +3112,11 @@ struct k_fifo {
 
 /** @} */
 
+/**
+ * @brief Kernel LIFO structure
+ *
+ * All the members are internal and should not be accessed directly.
+ */
 struct k_lifo {
 	struct k_queue _queue;
 #ifdef CONFIG_OBJ_CORE_LIFO
@@ -3495,7 +3511,11 @@ __syscall int k_mutex_unlock(struct k_mutex *mutex);
  * @}
  */
 
-
+/**
+ * @brief Kernel condition variable structure
+ *
+ * All the members are internal and should not be accessed directly.
+ */
 struct k_condvar {
 	_wait_q_t wait_q;
 
@@ -5528,6 +5548,11 @@ enum pipe_flags {
 	PIPE_FLAG_RESET = BIT(1),
 };
 
+/**
+ * @brief Kernel pipe structure
+ *
+ * All the members are internal and should not be accessed directly.
+ */
 struct k_pipe {
 	size_t waiting;
 	struct ring_buf buf;
@@ -5946,8 +5971,11 @@ int k_mem_slab_runtime_stats_reset_max(struct k_mem_slab *slab);
  * @{
  */
 
-/* kernel synchronized heap struct */
-
+/**
+ * @brief Kernel synchronized heap structure
+ *
+ * All the members are internal and should not be accessed directly.
+ */
 struct k_heap {
 	struct sys_heap heap;
 	_wait_q_t wait_q;
