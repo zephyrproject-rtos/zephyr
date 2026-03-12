@@ -18,4 +18,5 @@ supported:
   - clock_control
   - pinctrl
   - i2c
+  - dma
 vendor: infineon
