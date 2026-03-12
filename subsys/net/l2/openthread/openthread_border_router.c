@@ -284,6 +284,9 @@ static void ail_ipv6_address_event_handler(struct net_mgmt_event_callback *cb, u
 	}
 
 	mdns_plat_monitor_interface(iface);
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_WEB_SERVER)
+	web_server_init();
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_WEB_SERVER */
 }
 
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4)
@@ -317,6 +320,9 @@ static void ail_ipv4_address_event_handler(struct net_mgmt_event_callback *cb, u
 
 	}
 	mdns_plat_monitor_interface(iface);
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_WEB_SERVER)
+	web_server_init();
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_WEB_SERVER */
 }
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4 */
 

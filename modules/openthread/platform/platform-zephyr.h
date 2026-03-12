@@ -139,4 +139,8 @@ otError infra_if_nat64_deinit(void);
 otError infra_if_send_raw_message(uint8_t *buf, uint16_t len);
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_WEB_SERVER)
+    int web_server_init(void);
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_WEB_SERVER */
+
 #endif /* PLATFORM_ZEPHYR_H_ */

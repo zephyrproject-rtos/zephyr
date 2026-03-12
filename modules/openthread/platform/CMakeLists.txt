@@ -46,3 +46,11 @@ if(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
 endif()
 
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+
+if(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_WEB_SERVER)
+  zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_WEB_SERVER web_server.c)
+  zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_WEB_SERVER rest_api.c)
+
+  zephyr_linker_sources(SECTIONS sections-rom.ld)
+endif()
+
