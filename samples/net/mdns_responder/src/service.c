@@ -44,12 +44,12 @@ static int echo_service(const struct sockaddr *server_addr)
 	r = socket(server_addr->sa_family, SOCK_STREAM, 0);
 	if (r == -1) {
 		r = -errno;
-		NET_DBG("socket() failed (%d)", r);
+		LOG_DBG("socket() failed (%d)", r);
 		return r;
 	}
 
 	server_fd = r;
-	NET_DBG("server_fd is %d", server_fd);
+	LOG_DBG("server_fd is %d", server_fd);
 
 	r = setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
 	if (r == -1) {
@@ -62,7 +62,7 @@ static int echo_service(const struct sockaddr *server_addr)
 	r = bind(server_fd, server_addr, sizeof(*server_addr));
 	if (r == -1) {
 		r = -errno;
-		NET_DBG("bind() failed (%d)", r);
+		LOG_DBG("bind() failed (%d)", r);
 		close(server_fd);
 		return r;
 	}
@@ -76,12 +76,12 @@ static int echo_service(const struct sockaddr *server_addr)
 	}
 
 	inet_ntop(server_addr->sa_family, addrp, addrstr, sizeof(addrstr));
-	NET_DBG("bound to [%s]:%u", addrstr, ntohs(*portp));
+	LOG_DBG("bound to [%s]:%u", addrstr, ntohs(*portp));
 
 	r = listen(server_fd, 1);
 	if (r == -1) {
 		r = -errno;
-		NET_DBG("listen() failed (%d)", r);
+		LOG_DBG("listen() failed (%d)", r);
 		close(server_fd);
 		return r;
 	}
@@ -90,19 +90,19 @@ static int echo_service(const struct sockaddr *server_addr)
 		len = sizeof(client_addr);
 		r = accept(server_fd, (struct sockaddr *)&client_addr, &len);
 		if (r == -1) {
-			NET_DBG("accept() failed (%d)", errno);
+			LOG_DBG("accept() failed (%d)", errno);
 			break;
 		}
 
 		client_fd = r;
 
 		inet_ntop(server_addr->sa_family, addrp, addrstr, sizeof(addrstr));
-		NET_DBG("accepted connection from [%s]:%u", addrstr, ntohs(*portp));
+		LOG_DBG("accepted connection from [%s]:%u", addrstr, ntohs(*portp));
 
 		/* send a banner */
 		r = welcome(client_fd);
 		if (r == -1) {
-			NET_DBG("send() failed (%d)", errno);
+			LOG_DBG("send() failed (%d)", errno);
 			close(client_fd);
 			continue;
 		}
@@ -111,13 +111,13 @@ static int echo_service(const struct sockaddr *server_addr)
 			/* echo 1 line at a time */
 			r = recv(client_fd, line, sizeof(line), 0);
 			if (r == -1) {
-				NET_DBG("recv() failed (%d)", errno);
+				LOG_DBG("recv() failed (%d)", errno);
 				close(client_fd);
 				break;
 			}
 
 			if (r == 0) {
-				NET_DBG("connection closed by peer");
+				LOG_DBG("connection closed by peer");
 				close(client_fd);
 				break;
 			}
@@ -126,7 +126,7 @@ static int echo_service(const struct sockaddr *server_addr)
 
 			r = send(client_fd, line, len, 0);
 			if (r == -1) {
-				NET_DBG("send() failed (%d)", errno);
+				LOG_DBG("send() failed (%d)", errno);
 				close(client_fd);
 				break;
 			}
@@ -180,7 +180,7 @@ void service(void)
 	while (r == 0) {
 		r = echo_service((struct sockaddr *)&server_addr);
 		if (r < 0) {
-			NET_ERR("Fatal echo server error, %d", r);
+			LOG_ERR("Fatal echo server error, %d", r);
 		}
 	}
 }
