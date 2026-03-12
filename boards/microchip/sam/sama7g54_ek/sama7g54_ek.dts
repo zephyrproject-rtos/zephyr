@@ -213,6 +213,7 @@
 		status = "okay";
 		reg = <7>;
 		int-gpios = <&pioa 31 GPIO_ACTIVE_LOW>;
+		microchip,rgmii-delay = "id";
 	};
 };
 
