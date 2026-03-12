@@ -12,4 +12,8 @@
    to the corresponding symbols used inside of nrfx-based MDK.
  */
 
+#ifdef CONFIG_NRF91_ANOMALY_36_WORKAROUND
+#define NRF91_ERRATA_36_ENABLE_WORKAROUND 1
+#endif
+
 #endif /* MDK_CONFIG_H__ */
