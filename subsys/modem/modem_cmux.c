@@ -259,7 +259,7 @@ static struct modem_cmux_command modem_cmux_command_decode(const uint8_t *data, 
 	};
 
 	if (command.type.ea == 0 || command.length.ea == 0 ||
-	    command.length.value > MODEM_CMUX_CMD_DATA_SIZE_MAX ||
+	    command.length.value > sizeof(command.value) ||
 	    (2 + command.length.value) > len) {
 		return (struct modem_cmux_command){0};
 	}
@@ -1268,6 +1268,29 @@ static void modem_cmux_drop_frame(struct modem_cmux *cmux)
 #endif
 }
 
+static bool is_valid_addess(uint8_t addr)
+{
+	return addr >= 0 && addr <= 63;
+}
+
+static bool is_valid_type(uint8_t type)
+{
+	switch (type) {
+	case MODEM_CMUX_FRAME_TYPE_RR:
+	case MODEM_CMUX_FRAME_TYPE_UI:
+	case MODEM_CMUX_FRAME_TYPE_RNR:
+	case MODEM_CMUX_FRAME_TYPE_REJ:
+	case MODEM_CMUX_FRAME_TYPE_DM:
+	case MODEM_CMUX_FRAME_TYPE_SABM:
+	case MODEM_CMUX_FRAME_TYPE_DISC:
+	case MODEM_CMUX_FRAME_TYPE_UA:
+	case MODEM_CMUX_FRAME_TYPE_UIH:
+		return true;
+	default:
+		return false;
+	}
+}
+
 static void modem_cmux_process_received_byte(struct modem_cmux *cmux, int idx)
 {
 	uint8_t fcs;
@@ -1322,6 +1345,11 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, int idx)
 		/* Get DLCI address */
 		cmux->frame.dlci_address = (byte >> 2) & 0x3F;
 
+		if (!is_valid_addess(cmux->frame.dlci_address)) {
+			modem_cmux_drop_frame(cmux);
+			break;
+		}
+
 		/* Await control */
 		cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_CONTROL;
 		break;
@@ -1334,6 +1362,11 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, int idx)
 
 		/* Get frame type */
 		cmux->frame.type = byte & (~MODEM_CMUX_PF);
+
+		if (!is_valid_type(cmux->frame.type)) {
+			modem_cmux_drop_frame(cmux);
+			break;
+		}
 
 		/* Await data length */
 		cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_LENGTH;
