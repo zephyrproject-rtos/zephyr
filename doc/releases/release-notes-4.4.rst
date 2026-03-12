@@ -137,6 +137,7 @@ Deprecated APIs and options
 
     * Deprecated the ``mcux_lpcmp`` driver (:zephyr_file:`drivers/sensor/nxp/mcux_lpcmp/mcux_lpcmp.c`). It is
       currently scheduled to be removed in Zephyr 4.6, along with the ``mcux_lpcmp`` sample. (:github:`100998`).
+    * Added new temperature sensor driver (:dtcompatible:`nxp,tempsense`) (:github:`101525`).
 
 New APIs and options
 ====================
@@ -225,6 +226,14 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_CPU_FREQ_POLICY_PRESSURE`
 
+* DAC
+
+  * Added new DAC driver (:dtcompatible:`nxp,hpdac`) (:github:`104642`).
+
+* DMA
+
+  * Added new DMA driver (:dtcompatible:`nxp,4ch-dma`) (:github:`97841`).
+
 * Display
 
   * :kconfig:option:`SSD1325_DEFAULT_CONTRAST`
@@ -257,6 +266,10 @@ New APIs and options
     * :c:enum:`haptics_error_type` to enumerate common fault conditions in haptics devices.
     * :c:type:`haptics_error_callback_t` to provide function prototype for error callbacks.
     * :c:func:`haptics_register_error_callback` to register an error callback with a driver.
+
+* Hwspinlock
+
+  * Added new hwspinlock driver (:dtcompatible:`nxp,sema42`) (:github:`101499`).
 
 * IPM
 
