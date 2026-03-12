@@ -15,6 +15,7 @@
 #include <zephyr/posix/unistd.h>
 #include <zephyr/posix/netdb.h>
 
+#include <zephyr/logging/log.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_context.h>
