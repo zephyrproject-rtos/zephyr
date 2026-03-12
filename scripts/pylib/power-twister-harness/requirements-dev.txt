@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
 # Development dependencies for Power Twister Harness
 
 # Testing framework
