@@ -149,6 +149,7 @@ static void ifx_master_event_handler(void *callback_arg, uint32_t event)
 		/* In case of error abort transfer */
 		(void)_i2c_abort_async(dev);
 		data->error = true;
+		k_sem_give(&data->transfer_sem);
 	}
 
 	/* Release semaphore if operation complete
