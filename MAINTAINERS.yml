@@ -1332,6 +1332,7 @@ Documentation Infrastructure:
     - lgirdwood
     - kv2019i
     - TomasBarakNXP
+    - Peterson-Brett
   files:
     - drivers/audio/
     - include/zephyr/audio/
@@ -1921,6 +1922,7 @@ Documentation Infrastructure:
   collaborators:
     - TomasBarakNXP
     - anangl
+    - Peterson-Brett
   files:
     - doc/hardware/peripherals/audio/i2s.rst
     - drivers/i2s/
@@ -2985,6 +2987,7 @@ Infineon Platforms:
     - talih0
     - billwatersiii
     - jsbatch
+    - Peterson-Brett
   files:
     - boards/cypress/
     - boards/infineon/
@@ -5945,6 +5948,7 @@ West:
     - mcatee-infineon
     - billwatersiii
     - jsbatch
+    - Peterson-Brett
   files:
     - modules/Kconfig.infineon
     - modules/hal_infineon/
