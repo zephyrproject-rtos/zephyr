@@ -612,7 +612,7 @@ static int cc1200_tx(const struct device *dev,
 	bool status = false;
 
 	if (mode != IEEE802154_TX_MODE_DIRECT) {
-		NET_ERR("TX mode %d not supported", mode);
+		LOG_ERR("TX mode %d not supported", mode);
 		return -ENOTSUP;
 	}
 

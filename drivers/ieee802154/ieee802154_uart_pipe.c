@@ -271,7 +271,7 @@ static int upipe_tx(const struct device *dev,
 	uint8_t i, data;
 
 	if (mode != IEEE802154_TX_MODE_DIRECT) {
-		NET_ERR("TX mode %d not supported", mode);
+		LOG_ERR("TX mode %d not supported", mode);
 		return -ENOTSUP;
 	}
 
