@@ -1147,6 +1147,13 @@ Bluetooth HCI
 Networking
 **********
 
+* :c:struct:`wifi_channel_info` gained a ``band`` field for set-channel. Behaviour
+  is backwards compatible for 2.4 GHz (channels 1–14) and 5 GHz (36–165): omit or
+  leave ``band`` as :c:macro:`WIFI_FREQ_BAND_UNKNOWN` and the driver infers the
+  band. For 6 GHz, set ``band`` to :c:macro:`WIFI_FREQ_BAND_6_GHZ` (channel
+  numbers overlap 1–14 with 2.4 GHz). Recompile so ``sizeof(struct
+  wifi_channel_info)`` is correct when calling net_mgmt.
+
 * Networking APIs found in
 
   * :zephyr_file:`include/zephyr/net/net_ip.h`
