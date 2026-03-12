@@ -32,7 +32,11 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	__asm__ volatile ("li tp, 0");
 #endif
 #if defined(CONFIG_SMP) || defined(CONFIG_USERSPACE)
+#ifdef CONFIG_RISCV_S_MODE
+	csr_write(sscratch, &_kernel.cpus[0]);
+#else
 	csr_write(mscratch, &_kernel.cpus[0]);
+#endif
 #endif
 #ifdef CONFIG_SMP
 	_kernel.cpus[0].arch.hartid = csr_read(mhartid);
@@ -52,7 +56,7 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 		hart_x++;
 	}
 #endif
-#ifdef CONFIG_RISCV_PMP
+#if defined(CONFIG_RISCV_PMP) && !defined(CONFIG_RISCV_S_MODE)
 	z_riscv_pmp_init();
 #endif
 	soc_per_core_init_hook();
@@ -75,6 +79,25 @@ arch_switch(void *switch_to, void **switched_from)
 void z_riscv_fatal_error(unsigned int reason,
 				       const struct arch_esf *esf);
 
+#ifdef CONFIG_RISCV_MMU
+uintptr_t z_riscv_kernel_satp(void);
+#ifdef CONFIG_RISCV_MMU_STACK_GUARD
+void z_riscv_mmu_map_guard_page(const struct k_thread *thread);
+#endif
+#ifdef CONFIG_USERSPACE
+void z_riscv_mmu_map_user_stack(struct k_thread *thread);
+#ifdef CONFIG_MEM_DOMAIN_ISOLATED_STACKS
+void z_riscv_mmu_switch_stack_perms(struct k_thread *old_thread,
+				    struct k_thread *new_thread);
+#endif /* CONFIG_MEM_DOMAIN_ISOLATED_STACKS */
+__attribute__((noreturn)) void z_riscv_userspace_enter(k_thread_entry_t entry,
+						       void *p1, void *p2,
+						       void *p3,
+						       unsigned long user_sp,
+						       uintptr_t domain_satp);
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_RISCV_MMU */
+
 static inline bool arch_is_in_isr(void)
 {
 #ifdef CONFIG_SMP
@@ -88,10 +111,6 @@ static inline bool arch_is_in_isr(void)
 #endif
 }
 
-extern FUNC_NORETURN void z_riscv_userspace_enter(k_thread_entry_t user_entry,
-						 void *p1, void *p2, void *p3,
-						 uint32_t stack_end,
-						 uint32_t stack_start);
 
 #ifdef CONFIG_IRQ_OFFLOAD
 int z_irq_do_offload(void);
