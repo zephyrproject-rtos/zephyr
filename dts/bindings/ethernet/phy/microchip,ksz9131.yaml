@@ -17,3 +17,20 @@ properties:
   default-speeds:
     default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
               "100BASE Full-Duplex", "1000BASE Half-Duplex", "1000BASE Full-Duplex"]
+  microchip,rgmii-delay:
+    type: string
+    description: |
+      Configure KSZ9131 internal RGMII clock delay mode.
+
+      This property is only applicable when the PHY is connected
+      using an RGMII interface.
+
+      - "none": no internal delay
+      - "id": enable RX and TX delay
+      - "rxid": enable RX delay only
+      - "txid": enable TX delay only
+    enum:
+      - "none"
+      - "id"
+      - "rxid"
+      - "txid"
