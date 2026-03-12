@@ -32,3 +32,4 @@ tests:
       - CONFIG_ETH_PHY_DRIVER=n
     platform_allow:
       - stm32h735g_disco
+      - nucleo_h753zi

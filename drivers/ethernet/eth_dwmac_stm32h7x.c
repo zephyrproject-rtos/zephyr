@@ -27,12 +27,25 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/irq.h>
+#include <stm32_ll_system.h>
 
 #include "eth_dwmac_priv.h"
 
 #define ST_OUI_B0 0x00
 #define ST_OUI_B1 0x80
 #define ST_OUI_B2 0xE1
+
+#if DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii)
+#define PHY_MODE LL_SYSCFG_ETH_MII
+#elif DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)
+#define PHY_MODE LL_SYSCFG_ETH_RMII
+#else
+#error "Unsupported PHY connection type"
+#endif
+#define STM32_CONFIGURE_ETH_PHY_MODE() do {                                                        \
+	__HAL_RCC_SYSCFG_CLK_ENABLE();                                                             \
+	LL_SYSCFG_SetPHYInterface(PHY_MODE);                                                       \
+} while (0)
 
 PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *eth0_pcfg =
@@ -43,7 +56,6 @@ static struct net_eth_mac_config mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0);
 
 int dwmac_bus_init(struct dwmac_priv *p)
 {
-	uint32_t reg_addr, reg_val;
 	int ret;
 
 	p->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
@@ -62,15 +74,7 @@ int dwmac_bus_init(struct dwmac_priv *p)
 		return ret;
 	}
 
-	/* set SYSCFGEN in RCC_APB4ENR */
-	reg_addr = DT_REG_ADDR(DT_INST(0, st_stm32h7_rcc)) + 0xf4;
-	reg_val = sys_read32(reg_addr);
-	sys_write32(reg_val | BIT(1), reg_addr);
-
-	/* set RMII mode in SYSCFG_PMCR */
-	reg_addr = 0x58000404;  /* no DT node? */
-	reg_val = sys_read32(reg_addr);
-	sys_write32(reg_val | 0x03800000, reg_addr);
+	STM32_CONFIGURE_ETH_PHY_MODE();
 
 	p->base_addr = DT_REG_ADDR(DT_INST_PARENT(0));
 	return 0;
