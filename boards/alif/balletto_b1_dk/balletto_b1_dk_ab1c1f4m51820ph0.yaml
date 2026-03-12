@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: balletto_b1_dk/ab1c1f4m51820ph0
+name: Alif Balletto B1 DevKit AB1C1F4M51820PH0 MCU
+type: mcu
+arch: arm
+vendor: alif
+toolchain:
+  - zephyr
