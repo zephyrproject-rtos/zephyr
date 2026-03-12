@@ -275,7 +275,12 @@ static void gpio_sam_isr(const struct device *dev)
 	struct gpio_sam_runtime *context = dev->data;
 	uint32_t int_stat;
 
-	int_stat = pio->PIO_ISR;
+	/* ISR bits are set on input level or edge changes, regardless of whether an interrupt is
+	 * actually enabled on that line. Therefore, we check whether an interrupt is actually
+	 * enabled by masking with IMR. If we didn't do this, some other enabled interrupt firing
+	 * could also result in a callback for a disabled interrupt.
+	 */
+	int_stat = pio->PIO_ISR & pio->PIO_IMR;
 
 	gpio_fire_callbacks(&context->cb, dev, int_stat);
 }
