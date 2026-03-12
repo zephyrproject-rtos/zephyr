@@ -2253,6 +2253,9 @@ static inline uint64_t k_cycle_get_64(void)
  * All the members are internal and should not be accessed directly.
  */
 struct k_queue {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	sys_sflist_t data_q;
 	struct k_spinlock lock;
 	_wait_q_t wait_q;
@@ -2260,6 +2263,9 @@ struct k_queue {
 	Z_DECL_POLL_EVENT
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_queue)
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
 /**
@@ -2552,16 +2558,30 @@ struct k_futex {
  * z_futex_data are the helper data structure for k_futex to complete
  * futex contended operation on kernel side, structure z_futex_data
  * of every futex object is invisible in user mode.
+ *
+ * All the members are internal and should not be accessed directly.
  */
 struct z_futex_data {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	_wait_q_t wait_q;
 	struct k_spinlock lock;
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 #define Z_FUTEX_DATA_INITIALIZER(obj) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q) \
 	}
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /**
  * @defgroup futex_apis FUTEX APIs
@@ -2873,10 +2893,16 @@ static inline uint32_t k_event_test(struct k_event *event, uint32_t events_mask)
  * All the members are internal and should not be accessed directly.
  */
 struct k_fifo {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	struct k_queue _queue;
 #ifdef CONFIG_OBJ_CORE_FIFO
 	struct k_obj_core  obj_core;
 #endif
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
 /**
@@ -3118,10 +3144,16 @@ struct k_fifo {
  * All the members are internal and should not be accessed directly.
  */
 struct k_lifo {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	struct k_queue _queue;
 #ifdef CONFIG_OBJ_CORE_LIFO
 	struct k_obj_core  obj_core;
 #endif
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
 /**
@@ -3400,8 +3432,13 @@ extern struct k_work_q k_sys_work_q;
 /**
  * Mutex Structure
  * @ingroup mutex_apis
+ *
+ * All the members are internal and should not be accessed directly.
  */
 struct k_mutex {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	/** Mutex wait queue */
 	_wait_q_t wait_q;
 	/** Mutex owner */
@@ -3418,6 +3455,9 @@ struct k_mutex {
 #ifdef CONFIG_OBJ_CORE_MUTEX
 	struct k_obj_core obj_core;
 #endif
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
 /**
@@ -3517,17 +3557,29 @@ __syscall int k_mutex_unlock(struct k_mutex *mutex);
  * All the members are internal and should not be accessed directly.
  */
 struct k_condvar {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	_wait_q_t wait_q;
 
 #ifdef CONFIG_OBJ_CORE_CONDVAR
 	struct k_obj_core  obj_core;
 #endif
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 #define Z_CONDVAR_INITIALIZER(obj)                                             \
 	{                                                                      \
 		.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),                          \
 	}
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /**
  * @defgroup condvar_apis Condition Variables APIs
@@ -4502,11 +4554,16 @@ enum {
 	K_WORK_FLUSHING = BIT(K_WORK_FLUSHING_BIT),
 };
 
-/** @brief A structure used to submit work. */
+/**
+ * @brief A structure used to submit work.
+ *
+ * All the members are internal and should not be accessed directly.
+ */
 struct k_work {
-	/* All fields are protected by the work module spinlock.  No fields
-	 * are to be accessed except through kernel API.
-	 */
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+	/* All fields are protected by the work module spinlock. */
 
 	/* Node to link into k_work_q pending list. */
 	sys_snode_t node;
@@ -4524,14 +4581,30 @@ struct k_work {
 	 * It can be RUNNING and CANCELING simultaneously.
 	 */
 	uint32_t flags;
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 #define Z_WORK_INITIALIZER(work_handler) { \
 	.handler = (work_handler), \
 }
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
-/** @brief A structure used to submit work after a delay. */
+/**
+ * @brief A structure used to submit work after a delay.
+ *
+ * All the members are internal and should not be accessed directly.
+ */
 struct k_work_delayable {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	/* The work item. */
 	struct k_work work;
 
@@ -4540,14 +4613,23 @@ struct k_work_delayable {
 
 	/* The queue to which the work should be submitted. */
 	struct k_work_q *queue;
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 #define Z_WORK_DELAYABLE_INITIALIZER(work_handler) { \
 	.work = { \
 		.handler = (work_handler), \
 		.flags = K_WORK_DELAYABLE, \
 	}, \
 }
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /**
  * @brief Initialize a statically-defined delayable work item.
@@ -4611,12 +4693,20 @@ struct z_work_canceller {
  * coherent memory; see sys_cache_is_mem_coherent().  The stack on these
  * architectures is generally not coherent.  be stack-allocated.  Violations are
  * detected by runtime assertion.
+ *
+ * All the members are internal and should not be accessed directly.
  */
 struct k_work_sync {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	union {
 		struct z_work_flusher flusher;
 		struct z_work_canceller canceller;
 	};
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
 /** @brief A structure holding optional configuration items for a work
@@ -4662,8 +4752,15 @@ struct k_work_queue_config {
 	uint32_t work_timeout_ms;
 };
 
-/** @brief A structure used to hold work until it can be processed. */
+/**
+ * @brief Kernel workqueue structure
+ *
+ * All the members are internal and should not be accessed directly.
+ */
 struct k_work_q {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	/* The thread that animates the work. */
 	struct k_thread thread;
 
@@ -4693,6 +4790,9 @@ struct k_work_q {
 	struct k_work *work;
 	k_timeout_t work_timeout;
 #endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
 /* Provide the implementation for inline functions declared above */
@@ -4768,9 +4868,6 @@ struct k_work_user {
 	k_work_user_handler_t handler;
 	atomic_t flags;
 };
-/**
- * INTERNAL_HIDDEN @endcond
- */
 
 #if defined(__cplusplus) && ((__cplusplus - 0) < 202002L)
 #define Z_WORK_USER_INITIALIZER(work_handler) { NULL, work_handler, 0 }
@@ -4782,6 +4879,9 @@ struct k_work_user {
 	.flags = 0 \
 	}
 #endif
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /**
  * @brief Initialize a statically-defined user work item.
@@ -5063,8 +5163,13 @@ int k_work_poll_cancel(struct k_work_poll *work);
 
 /**
  * @brief Message Queue Structure
+ *
+ * All the members are internal and should not be accessed directly.
  */
 struct k_msgq {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	/** Message queue wait queue */
 	_wait_q_t wait_q;
 	/** Lock */
@@ -5094,6 +5199,9 @@ struct k_msgq {
 #ifdef CONFIG_OBJ_CORE_MSGQ
 	struct k_obj_core  obj_core;
 #endif
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
 /**
@@ -5392,18 +5500,28 @@ struct k_mbox_msg {
 	k_tid_t rx_source_thread;
 	/** target thread id */
 	k_tid_t tx_target_thread;
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	/** internal use only - thread waiting on send (may be a dummy) */
 	k_tid_t _syncing_thread;
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
 	/** internal use only - semaphore used during asynchronous send */
 	struct k_sem *_async_sem;
 #endif
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 /**
  * @brief Mailbox Structure
  *
+ * All the members are internal and should not be accessed directly.
  */
 struct k_mbox {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	/** Transmit messages queue */
 	_wait_q_t tx_msg_queue;
 	/** Receive message queue */
@@ -5415,6 +5533,9 @@ struct k_mbox {
 #ifdef CONFIG_OBJ_CORE_MAILBOX
 	struct k_obj_core  obj_core;
 #endif
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
 /**
@@ -5554,6 +5675,9 @@ enum pipe_flags {
  * All the members are internal and should not be accessed directly.
  */
 struct k_pipe {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	size_t waiting;
 	struct ring_buf buf;
 	struct k_spinlock lock;
@@ -5566,6 +5690,9 @@ struct k_pipe {
 	struct k_obj_core  obj_core;
 #endif
 	SYS_PORT_TRACING_TRACKING_FIELD(k_pipe)
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
 /**
@@ -5977,9 +6104,15 @@ int k_mem_slab_runtime_stats_reset_max(struct k_mem_slab *slab);
  * All the members are internal and should not be accessed directly.
  */
 struct k_heap {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	struct sys_heap heap;
 	_wait_q_t wait_q;
 	struct k_spinlock lock;
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
 /**
@@ -6432,8 +6565,14 @@ enum k_poll_modes {
 
 /* public - poll signal object */
 struct k_poll_signal {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	/** PRIVATE - DO NOT TOUCH */
 	sys_dlist_t poll_events;
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 	/**
 	 * 1 if the event has been signaled, 0 otherwise. Stays set to 1 until
@@ -6456,11 +6595,17 @@ struct k_poll_signal {
  *
  */
 struct k_poll_event {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	/** PRIVATE - DO NOT TOUCH */
 	sys_dnode_t _node;
 
 	/** PRIVATE - DO NOT TOUCH */
 	struct z_poller *poller;
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 	/** optional user-specified tag, opaque, untouched by the API */
 	uint32_t tag:8;
