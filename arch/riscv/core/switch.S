@@ -61,12 +61,27 @@ SECTION_FUNC(TEXT, z_riscv_switch)
 	mv a0, s0
 #endif
 
+#if defined(CONFIG_RISCV_MMU) && defined(CONFIG_MEM_DOMAIN_ISOLATED_STACKS) && \
+	defined(CONFIG_USERSPACE)
+	/*
+	 * Update PTE_USER on stack pages: remove from outgoing thread,
+	 * grant to incoming thread.  a0 = new thread, a1 = old thread.
+	 */
+	mv s0, a0
+	mv s1, a1
+	mv a0, a1		/* old_thread = first arg */
+	mv a1, s0		/* new_thread = second arg */
+	call z_riscv_mmu_switch_stack_perms
+	mv a0, s0
+	mv a1, s1
+#endif
+
 #ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 	/* Kernel mode has priority over user space for PMP usage. */
 	mv s0, a0
 	call z_riscv_pmp_kernelmode_enable
 	mv a0, s0
-#elif defined(CONFIG_USERSPACE)
+#elif defined(CONFIG_USERSPACE) && !defined(CONFIG_RISCV_MMU)
 	/*
 	 * When kernel mode dynamic configuration is not enabled, we need to
 	 * configure the PMP only at context switch time as the PMP is not

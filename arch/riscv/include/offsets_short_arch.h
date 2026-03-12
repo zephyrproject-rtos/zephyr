@@ -61,6 +61,11 @@
 
 #endif
 
+#ifdef CONFIG_RISCV_MMU
+#define _thread_offset_to_satp \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_satp_OFFSET)
+#endif
+
 #ifdef CONFIG_USERSPACE
 
 #define _curr_cpu_arch_user_exc_sp \

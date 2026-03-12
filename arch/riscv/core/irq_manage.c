@@ -30,7 +30,11 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 
 	ARG_UNUSED(unused);
 
+#ifdef CONFIG_RISCV_S_MODE
+	mcause = csr_read(scause);
+#else
 	mcause = csr_read(mcause);
+#endif
 
 	mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
 
