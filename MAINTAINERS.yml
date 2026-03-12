@@ -5746,6 +5746,7 @@ USB:
   collaborators:
     - josuah
     - MarkWangChinese
+    - roma-jam
   files:
     - drivers/usb/
     - dts/bindings/usb/
