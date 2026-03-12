@@ -52,11 +52,16 @@ static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 	uint8_t crc[2];
 	int i, i2c_return;
 
-	count = nparams + 5;
-	if (count > 64) {
+	/*
+	 * CID 487763: Validate nparams against both the 8-bit overflow
+	 * and the physical command buffer limit (64).
+	 */
+	if (nparams > (64 - 5)) {
 		LOG_ERR("command too large for command buffer");
 		return -EDOM;
 	}
+
+	count = nparams + 5;
 
 	/* If there is a command in progress, idle wait until it is available.
 	 * If there is concurrency protection around the driver, this should
