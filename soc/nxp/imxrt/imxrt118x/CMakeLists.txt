@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-zephyr_sources(soc.c)
+zephyr_sources(soc.c trdc_setup.c)
 
 # Only provide a SoC-specific mpu_config for CM7 builds (CM33 uses the generic
 # ARM MPU regions).
