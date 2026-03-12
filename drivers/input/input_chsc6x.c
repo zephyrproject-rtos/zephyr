@@ -7,6 +7,7 @@
 
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/input/input.h>
+#include <zephyr/input/input_touch.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
@@ -17,6 +18,7 @@ typedef int (*chsc6x_read_data_fn)(const struct i2c_dt_spec *i2c, uint8_t *is_pr
 				   uint16_t *x_axis, uint16_t *y_axis);
 
 struct chsc6x_config {
+	struct input_touchscreen_common_config common;
 	struct i2c_dt_spec i2c;
 	const struct gpio_dt_spec int_gpio;
 	chsc6x_read_data_fn read_data;
@@ -93,8 +95,7 @@ static int chsc6x_process(const struct device *dev)
 	LOG_DBG("is_pressed=%u, x_axis=%u, y_axis=%u", is_pressed, x_axis, y_axis);
 
 	if (is_pressed) {
-		input_report_abs(dev, INPUT_ABS_X, x_axis, false, K_FOREVER);
-		input_report_abs(dev, INPUT_ABS_Y, y_axis, false, K_FOREVER);
+		input_touchscreen_report_pos(dev, x_axis, y_axis, K_FOREVER);
 		input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
 	} else {
 		input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
@@ -170,6 +171,7 @@ static int chsc6x_init(const struct device *dev)
 
 #define CHSC6_DEFINE(node_id, _read_data)                                                          \
 	static const struct chsc6x_config chsc6x_config_##node_id = {                              \
+		.common = INPUT_TOUCH_DT_COMMON_CONFIG_INIT(node_id),                              \
 		.i2c = I2C_DT_SPEC_GET(node_id),                                                   \
 		.int_gpio = GPIO_DT_SPEC_GET(node_id, irq_gpios),                                  \
 		.read_data = _read_data,                                                           \

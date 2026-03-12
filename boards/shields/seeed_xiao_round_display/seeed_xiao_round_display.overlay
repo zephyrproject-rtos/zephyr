@@ -71,6 +71,8 @@
 		compatible = "chipsemi,chsc6x";
 		reg = <0x2e>;
 		irq-gpios = <&xiao_d 7 GPIO_ACTIVE_LOW>;
+		screen-width = <240>;
+		screen-height = <240>;
 	};
 };
 
