@@ -32,6 +32,7 @@
 #include <zephyr/net/net_time.h>
 #include <zephyr/net/ethernet_vlan.h>
 #include <zephyr/net/ptp_time.h>
+#include <zephyr/logging/log.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -1287,7 +1288,7 @@ static ALWAYS_INLINE void net_pkt_set_stats_tick(struct net_pkt *pkt,
 						 uint32_t tick)
 {
 	if (pkt->detail.count >= NET_PKT_DETAIL_STATS_COUNT) {
-		NET_ERR("Detail stats count overflow (%d >= %d)",
+		LOG_ERR("Detail stats count overflow (%d >= %d)",
 			pkt->detail.count, NET_PKT_DETAIL_STATS_COUNT);
 		return;
 	}
