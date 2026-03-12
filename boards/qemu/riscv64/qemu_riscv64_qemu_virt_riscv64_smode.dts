@@ -12,10 +12,11 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &ram0;
 	};
+};
 
-	cpus {
-		riscv,privilege-modes = "m", "s", "u";
-	};
+&{/cpus} {
+	riscv,privilege-modes = "m", "s", "u";
+	mmu-type = "riscv,sv39";
 };
 
 &uart0 {

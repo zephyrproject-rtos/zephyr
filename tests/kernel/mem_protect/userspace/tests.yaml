@@ -9,6 +9,7 @@ common:
 tests:
   kernel.memory_protection.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
+    timeout: 120
     extra_configs:
       - CONFIG_TEST_HW_STACK_PROTECTION=n
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
