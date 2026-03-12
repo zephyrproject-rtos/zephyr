@@ -121,6 +121,7 @@ config CAN_QEMU_IFACE_NAME
 source "drivers/can/transceiver/Kconfig"
 
 # zephyr-keep-sorted-start
+source "drivers/can/Kconfig.bee"
 source "drivers/can/Kconfig.esp32"
 source "drivers/can/Kconfig.fake"
 source "drivers/can/Kconfig.infineon"

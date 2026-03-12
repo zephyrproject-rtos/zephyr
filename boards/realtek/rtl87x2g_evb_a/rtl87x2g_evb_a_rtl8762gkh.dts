@@ -13,6 +13,10 @@
 / {
 	model = "Realtek RTL87x2G Model A Evaluation Board with RTL8762GKH Daughter Board";
 
+	chosen {
+		zephyr,canbus = &can;
+	};
+
 	gpio_keys {
 		compatible = "gpio-keys";
 
@@ -28,6 +32,14 @@
 			zephyr,code = <INPUT_KEY_3>;
 		};
 	};
+};
+
+&can {
+	pinctrl-0 = <&can_default>;
+	pinctrl-names = "default";
+	bitrate = <500000>;
+	sample-point = <875>;
+	status = "okay";
 };
 
 &flash {
