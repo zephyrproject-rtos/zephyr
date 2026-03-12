@@ -370,11 +370,11 @@ static void eth_iface_init(struct net_if *iface)
 				if (net_addr_pton(NET_AF_INET, ipv4_nm_cmd_opt, &netmask) == 0) {
 					net_if_ipv4_set_netmask_by_addr(iface, &addr, &netmask);
 				} else {
-					NET_ERR("Invalid netmask: %s", ipv4_nm_cmd_opt);
+					LOG_ERR("Invalid netmask: %s", ipv4_nm_cmd_opt);
 				}
 			}
 		} else {
-			NET_ERR("Invalid address: %s", ipv4_addr_cmd_opt);
+			LOG_ERR("Invalid address: %s", ipv4_addr_cmd_opt);
 		}
 	}
 
@@ -382,7 +382,7 @@ static void eth_iface_init(struct net_if *iface)
 		if (net_addr_pton(NET_AF_INET, ipv4_gw_cmd_opt, &addr) == 0) {
 			net_if_ipv4_set_gw(iface, &addr);
 		} else {
-			NET_ERR("Invalid gateway: %s", ipv4_gw_cmd_opt);
+			LOG_ERR("Invalid gateway: %s", ipv4_gw_cmd_opt);
 		}
 	}
 #endif
