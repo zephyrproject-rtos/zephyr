@@ -450,30 +450,10 @@ static int cs40l5x_poll(const struct device *const dev, const uint32_t addr, con
 		(void)k_sleep(CS40L5X_T_DEFAULT_DELAY);
 	} while (!sys_timepoint_expired(end));
 
-	LOG_INST_ERR(config->log, "timed out polling 0x%08x, expected 0x%08x but received 0x%08x",
+	LOG_INST_DBG(config->log, "timed out polling 0x%08x, expected 0x%08x but received 0x%08x",
 		     addr, val, reg_val);
 
 	return -EBUSY;
-}
-
-static inline char *cs40l5x_print_bank(const uint32_t bank)
-{
-	switch (bank) {
-	case CS40L5X_ROM_BANK:
-		return "ROM";
-	case CS40L5X_ROM_BANK_CMD:
-		return "ROM";
-	case CS40L5X_CUSTOM_BANK:
-		return "CUSTOM";
-	case CS40L5X_CUSTOM_BANK_CMD:
-		return "CUSTOM";
-	case CS40L5X_BUZ_BANK:
-		return "BUZ";
-	case CS40L5X_BUZ_BANK_CMD:
-		return "BUZ";
-	default:
-		return NULL;
-	}
 }
 
 static inline bool cs40l5x_valid_wavetable_source(const struct device *const dev,
@@ -512,7 +492,7 @@ static int cs40l5x_write_mailbox(const struct device *const dev, const uint32_t 
 		(void)k_sleep(CS40L5X_T_DEFAULT_DELAY);
 	} while (!sys_timepoint_expired(end));
 
-	LOG_INST_ERR(config->log, "failed write to mailbox (%d)", ret);
+	LOG_INST_DBG(config->log, "failed write to mailbox (%d)", ret);
 
 	return 0;
 }
@@ -622,39 +602,35 @@ static int cs40l5x_process_mailbox(const struct device *const dev)
 
 	ret = cs40l5x_read(dev, CS40L5X_REG_MAILBOX_STATUS, &mbox_status);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to get mailbox status (%d)", ret);
 		return ret;
 	}
 
 	ret = cs40l5x_read(dev, CS40L5X_REG_MAILBOX_QUEUE_RD, &mbox_rd_ptr);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to get mailbox read pointer (%d)", ret);
 		return ret;
 	}
 
 	ret = cs40l5x_read(dev, CS40L5X_REG_MAILBOX_QUEUE_WT, &mbox_wr_ptr);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to get mailbox write pointer (%d)", ret);
 		return ret;
 	}
 
 	if (mbox_status == CS40L5X_EXP_MBOX_OVERFLOW) {
-		LOG_INST_WRN(config->log, "mailbox overflow");
+		LOG_INST_DBG(config->log, "mailbox overflow");
 	}
 
 	do {
 		ret = cs40l5x_read(dev, mbox_rd_ptr, &mbox_val);
 		if (ret < 0) {
-			LOG_INST_DBG(config->log, "failed to read mailbox (%d)", ret);
 			return ret;
 		}
 
 		switch (mbox_val) {
 		case CS40L5X_MBOX_PLAYBACK_COMPLETE_MBOX:
-			LOG_INST_DBG(config->log, "complete  | mailbox playback");
+			LOG_INST_DBG(config->log, "mailbox playback complete");
 			break;
 		case CS40L5X_MBOX_PLAYBACK_COMPLETE_GPIO:
-			LOG_INST_DBG(config->log, "complete  | trigger playback");
+			LOG_INST_DBG(config->log, "trigger playback complete");
 			break;
 		case CS40L5X_MBOX_PLAYBACK_START_MBOX:
 			LOG_INST_DBG(config->log, "mailbox playback started");
@@ -669,17 +645,17 @@ static int cs40l5x_process_mailbox(const struct device *const dev)
 			LOG_INST_DBG(config->log, "awake after hibernation");
 			break;
 		case CS40L5X_MBOX_REDC_EST_START:
-			LOG_INST_DBG(config->log, "start     | ReDC calibration");
+			LOG_INST_DBG(config->log, "ReDC calibration started");
 			break;
 		case CS40L5X_MBOX_REDC_EST_DONE:
-			LOG_INST_DBG(config->log, "complete  | ReDC calibration");
+			LOG_INST_DBG(config->log, "ReDC calibration started");
 			k_sem_give(&data->calibration_semaphore);
 			break;
 		case CS40L5X_MBOX_F0_EST_START:
-			LOG_INST_DBG(config->log, "start     | F0 calibration");
+			LOG_INST_DBG(config->log, "F0 calibration started");
 			break;
 		case CS40L5X_MBOX_F0_EST_DONE:
-			LOG_INST_DBG(config->log, "complete  | F0 calibration");
+			LOG_INST_DBG(config->log, "F0 calibration complete");
 			k_sem_give(&data->calibration_semaphore);
 			break;
 		case CS40L5X_MBOX_PERMANENT_SHORT_DETECTED:
@@ -689,13 +665,12 @@ static int cs40l5x_process_mailbox(const struct device *const dev)
 
 			return 0;
 		default:
-			LOG_INST_WRN(config->log, "unexpected mailbox code: %08x", mbox_val);
+			LOG_INST_DBG(config->log, "unexpected mailbox code: %08x", mbox_val);
 			break;
 		}
 
 		ret = cs40l5x_increment_mailbox(dev, &mbox_rd_ptr);
 		if (ret < 0) {
-			LOG_INST_DBG(config->log, "failed to increment mailbox (%d)", ret);
 			return ret;
 		}
 	} while (mbox_rd_ptr != mbox_wr_ptr);
@@ -835,19 +810,16 @@ static void cs40l5x_interrupt_worker(struct k_work *work)
 	int ret;
 
 	if (gpio_pin_get_dt(&config->interrupt_gpio) == CS40L5X_GPIO_INACTIVE) {
-		LOG_INST_DBG(config->log, "filtered interrupt trigger with debouncer");
 		return;
 	}
 
 	ret = pm_device_runtime_get(data->dev);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed PM get for device (%d)", ret);
 		return;
 	}
 
 	ret = cs40l5x_read(data->dev, CS40L5X_REG_IRQ1_STATUS, &irq1_status);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to read IRQ status (%d)", ret);
 		goto exit_pm;
 	}
 
@@ -870,19 +842,18 @@ static void cs40l5x_interrupt_worker(struct k_work *work)
 	if (irq_ints[CS40L5X_INT2] & CS40L5X_MASK_DSP_VIRTUAL2_MBOX_WR_INT1) {
 		ret = cs40l5x_process_mailbox(data->dev);
 		if (ret < 0) {
-			LOG_INST_DBG(config->log, "failed to read process mailbox (%d)", ret);
+			LOG_INST_DBG(config->log, "failed to process mailbox (%d)", ret);
 			goto exit_pm;
 		}
 	}
 
 	ret = cs40l5x_read(data->dev, CS40L5X_REG_IRQ1_STATUS, &irq1_status);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to read IRQ status (%d)", ret);
 		goto exit_pm;
 	}
 
 	if (irq1_status != 0) {
-		LOG_INST_WRN(config->log, "IRQ still set in interrupt worker");
+		LOG_INST_DBG(config->log, "IRQ still set in interrupt worker");
 
 		ret = k_work_submit(work);
 		if (ret < 0) {
@@ -926,13 +897,11 @@ static int cs40l5x_irq_config(const struct device *const dev)
 
 	ret = cs40l5x_multi_write(dev, cs40l5x_irq_masks, ARRAY_SIZE(cs40l5x_irq_masks));
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to write IRQ masks(%d)", ret);
 		return ret;
 	}
 
 	ret = cs40l5x_multi_write(dev, cs40l5x_irq_clear, ARRAY_SIZE(cs40l5x_irq_clear));
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to write clear IRQ (%d)", ret);
 		return ret;
 	}
 
@@ -979,20 +948,16 @@ static int cs40l5x_load_calibration(const struct device *const dev)
 
 	ret = pm_device_runtime_get(config->flash);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed PM get for flash storage (%d)", ret);
 		return ret;
 	}
 
 	ret = flash_read(config->flash, config->flash_offset, &calibration, sizeof(calibration));
 	if (ret < 0) {
-		LOG_INST_ERR(config->log, "failed read from flash storage (%d)", ret);
+		LOG_INST_DBG(config->log, "failed read from flash storage (%d)", ret);
 	} else if (cs40l5x_is_memory_erased(&calibration)) {
 		LOG_INST_WRN(config->log, "calibration data not found (%d)", -EINVAL);
 	} else {
 		data->calibration = calibration;
-
-		LOG_INST_INF(config->log, "Loaded    | ReDC: 0x%08X, F0: 0x%08X",
-			     data->calibration.redc, data->calibration.f0);
 	}
 
 	(void)pm_device_runtime_put(config->flash);
@@ -1009,13 +974,11 @@ static int cs40l5x_store_calibration(const struct device *const dev)
 
 	ret = pm_device_runtime_get(config->flash);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed PM get for flash storage (%d)", ret);
 		return ret;
 	}
 
 	ret = flash_read(config->flash, config->flash_offset, &calibration, sizeof(calibration));
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to read from flash storage (%d)", ret);
 		goto exit_pm;
 	}
 
@@ -1026,9 +989,6 @@ static int cs40l5x_store_calibration(const struct device *const dev)
 
 	ret = flash_write(config->flash, config->flash_offset, &data->calibration,
 			  sizeof(data->calibration));
-	if (ret < 0) {
-		LOG_INST_ERR(config->log, "failed write to flash storage (%d)", ret);
-	}
 
 exit_pm:
 	(void)pm_device_runtime_put(config->flash);
@@ -1043,29 +1003,23 @@ static int cs40l5x_pseq_config(const struct device *const dev)
 
 	ret = cs40l5x_multi_write(dev, cs40l5x_pseq, ARRAY_SIZE(cs40l5x_pseq));
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to update write sequencer (%d)", ret);
 		return ret;
 	}
 
 	if (config->external_boost != NULL) {
 		cs40l5x_pseq_external[0].buf[0] += (cs40l5x_pseq[0].len - 2) * CS40L5X_REG_WIDTH;
 
-		ret = cs40l5x_multi_write(dev, cs40l5x_pseq_external,
-					  ARRAY_SIZE(cs40l5x_pseq_external));
+		return cs40l5x_multi_write(dev, cs40l5x_pseq_external,
+					   ARRAY_SIZE(cs40l5x_pseq_external));
 	} else {
 		cs40l5x_pseq_internal[0].buf[0] += (cs40l5x_pseq[0].len - 2) * CS40L5X_REG_WIDTH;
 
-		ret = cs40l5x_multi_write(dev, cs40l5x_pseq_internal,
-					  ARRAY_SIZE(cs40l5x_pseq_internal));
+		return cs40l5x_multi_write(dev, cs40l5x_pseq_internal,
+					   ARRAY_SIZE(cs40l5x_pseq_internal));
 	}
-	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to update write sequencer (%d)", ret);
-	}
-
-	return ret;
 }
 
-static void cs40l5x_dsp_config(const struct device *const dev)
+static int cs40l5x_dsp_config(const struct device *const dev)
 {
 	const struct cs40l5x_config *const config = dev->config;
 	int ret;
@@ -1073,28 +1027,26 @@ static void cs40l5x_dsp_config(const struct device *const dev)
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_FLASH) && config->flash != NULL) {
 		ret = cs40l5x_load_calibration(dev);
 		if (ret < 0) {
-			LOG_INST_DBG(config->log, "failed to load calibration (%d)", ret);
+			return ret;
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_CLICK_COMPENSATION)) {
 		ret = cs40l5x_click_compensation(dev);
 		if (ret < 0) {
-			LOG_INST_WRN(config->log, "failed click compensation (%d)", ret);
+			return ret;
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_DYNAMIC_F0)) {
-		ret = cs40l5x_write(dev, CS40L5X_REG_DYNAMIC_F0, CS40L5X_WRITE_DYNAMIC_F0_ENABLE);
-		if (ret < 0) {
-			LOG_INST_DBG(config->log, "failed dynamic F0 (%d)", ret);
-		}
+		return cs40l5x_write(dev, CS40L5X_REG_DYNAMIC_F0, CS40L5X_WRITE_DYNAMIC_F0_ENABLE);
 	}
+
+	return 0;
 }
 
 static int cs40l5x_timeout_config(const struct device *const dev)
 {
-	__maybe_unused const struct cs40l5x_config *const config = dev->config;
 	uint32_t active_timeout[3], standby_timeout[3];
 	int ret;
 
@@ -1108,16 +1060,10 @@ static int cs40l5x_timeout_config(const struct device *const dev)
 
 	ret = cs40l5x_burst_write(dev, active_timeout, ARRAY_SIZE(active_timeout));
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to update active timeout (%d)", ret);
 		return ret;
 	}
 
-	ret = cs40l5x_burst_write(dev, standby_timeout, ARRAY_SIZE(standby_timeout));
-	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to update standby timeout (%d)", ret);
-	}
-
-	return ret;
+	return cs40l5x_burst_write(dev, standby_timeout, ARRAY_SIZE(standby_timeout));
 }
 
 static int cs40l5x_write_errata(const struct device *const dev)
@@ -1127,19 +1073,15 @@ static int cs40l5x_write_errata(const struct device *const dev)
 
 	ret = cs40l5x_multi_write(dev, cs40l5x_b0_errata, ARRAY_SIZE(cs40l5x_b0_errata));
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to write errata (%d)", ret);
 		return ret;
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_EXTERNAL_BOOST) && config->external_boost != NULL) {
-		ret = cs40l5x_multi_write(dev, cs40l5x_b0_errata_external_boost,
-					  ARRAY_SIZE(cs40l5x_b0_errata_external_boost));
-		if (ret < 0) {
-			LOG_INST_DBG(config->log, "failed to write boost errata (%d)", ret);
-		}
+		return cs40l5x_multi_write(dev, cs40l5x_b0_errata_external_boost,
+					   ARRAY_SIZE(cs40l5x_b0_errata_external_boost));
 	}
 
-	return ret;
+	return 0;
 }
 
 static int cs40l5x_boost_configuration(const struct device *const dev)
@@ -1241,12 +1183,7 @@ static int cs40l5x_reset(const struct device *const dev)
 		return ret;
 	}
 
-	ret = cs40l5x_reset_mailbox(dev);
-	if (ret < 0) {
-		LOG_INST_DBG(config->log, "unable to reset DSP mailbox (%d)", ret);
-	}
-
-	return ret;
+	return cs40l5x_reset_mailbox(dev);
 }
 
 static int cs40l5x_bringup(const struct device *const dev)
@@ -1256,60 +1193,64 @@ static int cs40l5x_bringup(const struct device *const dev)
 
 	ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed reset GPIO configuration (%d)", ret);
 		return ret;
 	}
 
 	ret = cs40l5x_reset(dev);
 	if (ret < 0) {
-		LOG_INST_ERR(config->log, "failed reset (%d)", ret);
+		LOG_INST_DBG(config->log, "failed reset (%d)", ret);
 		return ret;
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL) {
 		ret = cs40l5x_irq_config(dev);
 		if (ret < 0) {
-			LOG_INST_WRN(config->log, "failed IRQ configuration (%d)", ret);
+			LOG_INST_DBG(config->log, "failed IRQ configuration (%d)", ret);
+			return ret;
 		}
 	}
 
 	ret = cs40l5x_boost_configuration(dev);
 	if (ret < 0) {
-		LOG_INST_WRN(config->log, "failed boost configuration (%d)", ret);
+		LOG_INST_DBG(config->log, "failed boost configuration (%d)", ret);
+		return ret;
 	}
 
 	ret = cs40l5x_write_errata(dev);
 	if (ret < 0) {
-		LOG_INST_WRN(config->log, "failed errata update (%d)", ret);
+		LOG_INST_DBG(config->log, "failed errata update (%d)", ret);
+		return ret;
 	};
 
-	cs40l5x_dsp_config(dev);
+	ret = cs40l5x_dsp_config(dev);
+	if (ret < 0) {
+		LOG_INST_DBG(config->log, "failed DSP configuration (%d)", ret);
+		return ret;
+	}
 
 	if (CS40L5X_ANY_DEV_USE_HIBERNATION) {
 		ret = cs40l5x_timeout_config(dev);
 		if (ret < 0) {
-			LOG_INST_WRN(config->log, "failed to update timeouts (%d)", ret);
+			LOG_INST_DBG(config->log, "failed to update timeouts (%d)", ret);
+			return ret;
 		}
 
 		ret = cs40l5x_pseq_config(dev);
 		if (ret < 0) {
-			LOG_INST_WRN(config->log, "failed write sequencer update (%d)", ret);
+			LOG_INST_DBG(config->log, "failed write sequencer update (%d)", ret);
+			return ret;
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_TRIGGER) && config->trigger_gpios.num_gpio > 0) {
 		ret = cs40l5x_trigger_config(dev);
 		if (ret < 0) {
-			LOG_INST_WRN(config->log, "failed trigger configuration (%d)", ret);
+			LOG_INST_DBG(config->log, "failed trigger configuration (%d)", ret);
+			return ret;
 		}
 	}
 
-	ret = cs40l5x_write(dev, CS40L5X_REG_BUZZ_RES, CS40L5X_BUZ_1MS_RES);
-	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed buzzgen configuration (%d)", ret);
-	}
-
-	return 0;
+	return cs40l5x_write(dev, CS40L5X_REG_BUZZ_RES, CS40L5X_BUZ_1MS_RES);
 }
 
 #if CONFIG_PM_DEVICE
@@ -1341,7 +1282,6 @@ static int cs40l5x_teardown(const struct device *const dev)
 
 	ret = gpio_pin_set_dt(&config->reset_gpio, CS40L5X_GPIO_ACTIVE);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to drive reset GPIO active (%d)", ret);
 		return ret;
 	}
 
@@ -1365,7 +1305,6 @@ static int cs40l5x_calibrate_redc(const struct device *const dev, uint32_t *cons
 
 	ret = cs40l5x_write_mailbox(dev, CS40L5X_MBOX_START_REDC_EST);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to trigger ReDC calibration (%d)", ret);
 		return ret;
 	}
 
@@ -1375,7 +1314,7 @@ static int cs40l5x_calibrate_redc(const struct device *const dev, uint32_t *cons
 		ret = cs40l5x_poll_mailbox(dev, CS40L5X_MBOX_REDC_EST_START,
 					   CS40L5X_T_CALIBRATION_START);
 		if (ret < 0) {
-			LOG_INST_ERR(config->log, "timed out waiting for ReDC start (%d)", ret);
+			LOG_INST_DBG(config->log, "timed out waiting for ReDC start (%d)", ret);
 			return ret;
 		}
 
@@ -1383,7 +1322,7 @@ static int cs40l5x_calibrate_redc(const struct device *const dev, uint32_t *cons
 					   CS40L5X_T_REDC_EST_DONE);
 	}
 	if (ret < 0) {
-		LOG_INST_ERR(config->log, "timed out waiting for ReDC completion (%d)", ret);
+		LOG_INST_DBG(config->log, "timed out waiting for ReDC completion (%d)", ret);
 		return ret;
 	}
 
@@ -1398,7 +1337,6 @@ static int cs40l5x_calibrate_f0(const struct device *const dev, uint32_t *const 
 
 	ret = cs40l5x_write_mailbox(dev, CS40L5X_MBOX_START_F0_EST);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to trigger F0 calibration (%d)", ret);
 		return ret;
 	}
 
@@ -1408,14 +1346,14 @@ static int cs40l5x_calibrate_f0(const struct device *const dev, uint32_t *const 
 		ret = cs40l5x_poll_mailbox(dev, CS40L5X_MBOX_F0_EST_START,
 					   CS40L5X_T_CALIBRATION_START);
 		if (ret < 0) {
-			LOG_INST_ERR(config->log, "timed out waiting for F0 start (%d)", ret);
+			LOG_INST_DBG(config->log, "timed out waiting for F0 start (%d)", ret);
 			return ret;
 		}
 
 		ret = cs40l5x_poll_mailbox(dev, CS40L5X_MBOX_F0_EST_DONE, CS40L5X_T_F0_EST_DONE);
 	}
 	if (ret < 0) {
-		LOG_INST_ERR(config->log, "timed out waiting for F0 completion (%d)", ret);
+		LOG_INST_DBG(config->log, "timed out waiting for F0 completion (%d)", ret);
 		return ret;
 	}
 
@@ -1425,7 +1363,6 @@ static int cs40l5x_calibrate_f0(const struct device *const dev, uint32_t *const 
 static int cs40l5x_run_calibration(const struct device *const dev, uint32_t *const redc,
 				   uint32_t *const f0)
 {
-	__maybe_unused const struct cs40l5x_config *const config = dev->config;
 	int ret;
 
 	ret = cs40l5x_calibrate_redc(dev, redc);
@@ -1435,7 +1372,6 @@ static int cs40l5x_run_calibration(const struct device *const dev, uint32_t *con
 
 	ret = cs40l5x_write(dev, CS40L5X_REG_REDC, *redc);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to update ReDC for F0 estimation (%d)", ret);
 		return ret;
 	}
 
@@ -1447,7 +1383,7 @@ int cs40l5x_calibrate(const struct device *const dev)
 	const struct cs40l5x_config *const config = dev->config;
 	struct cs40l5x_data *const data = dev->data;
 	uint32_t f0, redc;
-	int ret, warning;
+	int ret;
 
 	if (!IS_ENABLED(CONFIG_HAPTICS_CS40L5X_CALIBRATION)) {
 		LOG_INST_ERR(config->log, "calibration is disabled (%d)", -EPERM);
@@ -1456,7 +1392,6 @@ int cs40l5x_calibrate(const struct device *const dev)
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed PM get for device (%d)", ret);
 		return ret;
 	}
 
@@ -1482,7 +1417,7 @@ int cs40l5x_calibrate(const struct device *const dev)
 	data->calibration.redc = redc;
 
 	if (!IS_ENABLED(CONFIG_HAPTICS_CS40L5X_CLICK_COMPENSATION)) {
-		LOG_INST_WRN(config->log, "not applying calibration");
+		LOG_INST_WRN(config->log, "skipping click compensation");
 	} else {
 		ret = cs40l5x_click_compensation(data->dev);
 		if (ret < 0) {
@@ -1491,12 +1426,10 @@ int cs40l5x_calibrate(const struct device *const dev)
 		}
 	}
 
-	LOG_INST_INF(config->log, "result    | ReDC: 0x%06X, F0: 0x%06X", redc, f0);
-
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_FLASH) && config->flash != NULL) {
-		warning = cs40l5x_store_calibration(dev);
-		if (warning < 0) {
-			LOG_INST_DBG(config->log, "failed to store calibration (%d)", warning);
+		ret = cs40l5x_store_calibration(dev);
+		if (ret < 0) {
+			LOG_INST_DBG(config->log, "failed to store calibration (%d)", ret);
 		}
 	}
 
@@ -1518,7 +1451,6 @@ int cs40l5x_configure_buzz(const struct device *const dev, const uint32_t freque
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed PM get for device (%d)", ret);
 		return ret;
 	}
 
@@ -1530,29 +1462,15 @@ int cs40l5x_configure_buzz(const struct device *const dev, const uint32_t freque
 
 	ret = cs40l5x_write(dev, CS40L5X_REG_BUZZ_FREQ, frequency);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to configure buzz frequency (%d)", ret);
 		goto error_mutex;
 	}
 
 	ret = cs40l5x_write(dev, CS40L5X_REG_BUZZ_LEVEL, level);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to configure buzz amplitude (%d)", ret);
 		goto error_mutex;
 	}
 
 	ret = cs40l5x_write(dev, CS40L5X_REG_BUZZ_DURATION, duration);
-	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to configure buzz duration (%d)", ret);
-		goto error_mutex;
-	}
-
-	if (duration == CS40L5X_BUZ_INF_DURATION) {
-		LOG_INST_INF(config->log, "configure | BUZ 0 -> %u Hz, %u%%, INF ms", frequency,
-			     (uint32_t)(level) * 100 / UINT8_MAX);
-	} else {
-		LOG_INST_INF(config->log, "configure | BUZ 0 -> %u Hz, %u%%, %u ms", frequency,
-			     (uint32_t)(level) * 100 / UINT8_MAX, duration);
-	}
 
 error_mutex:
 	(void)k_mutex_unlock(&data->lock);
@@ -1576,8 +1494,8 @@ int cs40l5x_configure_trigger(const struct device *const dev, const struct gpio_
 	int ret;
 
 	if (!IS_ENABLED(CONFIG_HAPTICS_CS40L5X_TRIGGER) || gpios->num_gpio == 0) {
-		LOG_INST_ERR(config->log, "no trigger GPIOs provided (%d)", -EPERM);
-		return -EPERM;
+		LOG_INST_DBG(config->log, "no trigger GPIOs provided (%d)", -EINVAL);
+		return -EINVAL;
 	}
 
 	if (!cs40l5x_valid_wavetable_source(dev, bank, index)) {
@@ -1587,7 +1505,7 @@ int cs40l5x_configure_trigger(const struct device *const dev, const struct gpio_
 
 	ret = cs40l5x_get_trigger_gpio(dev, gpio, &i);
 	if (ret < 0) {
-		LOG_INST_ERR(config->log, "failed to retrieve trigger GPIO (%d)", -EINVAL);
+		LOG_INST_ERR(config->log, "failed to retrieve trigger GPIO (%d)", ret);
 		return ret;
 	}
 
@@ -1606,7 +1524,6 @@ int cs40l5x_configure_trigger(const struct device *const dev, const struct gpio_
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed PM get for device (%d)", ret);
 		return ret;
 	}
 
@@ -1619,12 +1536,6 @@ int cs40l5x_configure_trigger(const struct device *const dev, const struct gpio_
 	address = (edge == CS40L5X_RISING_EDGE) ? gpios->rising_edge : gpios->falling_edge;
 
 	ret = cs40l5x_write(dev, CS40L5X_REG_GPIO_EVENT_BASE | (uint32_t)address[i], playback);
-	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to update trigger playback (%d)", ret);
-	}
-
-	LOG_INST_INF(config->log, "configure | %s %u -> %s %u (%d dB)", gpio->port->name,
-			     gpio->pin, cs40l5x_print_bank(bank), index, attenuation);
 
 	(void)k_mutex_unlock(&data->lock);
 
@@ -1647,7 +1558,6 @@ int cs40l5x_logger(const struct device *const dev, enum cs40l5x_logger logger_st
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed PM get for device (%d)", ret);
 		return ret;
 	}
 
@@ -1658,9 +1568,6 @@ int cs40l5x_logger(const struct device *const dev, enum cs40l5x_logger logger_st
 	}
 
 	ret = cs40l5x_write(dev, CS40L5X_REG_LOGGER_ENABLE, (uint32_t)logger_state);
-	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to update logging (%d)", ret);
-	}
 
 	(void)k_mutex_unlock(&data->lock);
 
@@ -1686,7 +1593,6 @@ int cs40l5x_logger_get(const struct device *const dev, enum cs40l5x_logger_sourc
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed PM get for device (%d)", ret);
 		return ret;
 	}
 
@@ -1697,9 +1603,6 @@ int cs40l5x_logger_get(const struct device *const dev, enum cs40l5x_logger_sourc
 	}
 
 	ret = cs40l5x_read(dev, CS40L5X_REG_LOGGER_DATA + offset, value);
-	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to get logger data (%d)", ret);
-	}
 
 	(void)k_mutex_unlock(&data->lock);
 
@@ -1759,8 +1662,6 @@ int cs40l5x_select_output(const struct device *const dev, const enum cs40l5x_ban
 
 	(void)k_mutex_unlock(&data->lock);
 
-	LOG_INST_INF(config->log, "configure | mailbox -> %s %u", cs40l5x_print_bank(bank), index);
-
 	return ret;
 }
 
@@ -1778,7 +1679,6 @@ int cs40l5x_set_gain(const struct device *const dev, const uint8_t gain)
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed PM get for device (%d)", ret);
 		return ret;
 	}
 
@@ -1791,11 +1691,6 @@ int cs40l5x_set_gain(const struct device *const dev, const uint8_t gain)
 	attenuation = (gain == 0) ? CS40L5X_MAX_ATTENUATION : (uint32_t)cs40l5x_src_atten[gain];
 
 	ret = cs40l5x_write(data->dev, CS40L5X_REG_SOURCE_ATTENUATION, attenuation);
-	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to set gain (%d)", ret);
-	} else {
-		LOG_INST_INF(config->log, "configure | gain -> %d%%", gain);
-	}
 
 	(void)k_mutex_unlock(&data->lock);
 
@@ -1813,7 +1708,6 @@ static int cs40l5x_start_output(const struct device *const dev)
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed PM get for device (%d)", ret);
 		return ret;
 	}
 
@@ -1824,9 +1718,6 @@ static int cs40l5x_start_output(const struct device *const dev)
 	}
 
 	ret = cs40l5x_write_mailbox(dev, data->output);
-	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to start playback (%d)", ret);
-	}
 
 	(void)k_mutex_unlock(&data->lock);
 
@@ -1838,20 +1729,15 @@ error_pm:
 
 static int cs40l5x_stop_output(const struct device *const dev)
 {
-	__maybe_unused const struct cs40l5x_config *const config = dev->config;
 	struct cs40l5x_data *const data = dev->data;
 	int ret;
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed PM get for device (%d)", ret);
 		return ret;
 	}
 
 	ret = cs40l5x_write_mailbox(data->dev, CS40L5X_WRITE_PAUSE_PLAYBACK);
-	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to stop playback (%d)", ret);
-	}
 
 	(void)pm_device_runtime_put(dev);
 
@@ -1948,7 +1834,6 @@ int cs40l5x_upload_pcm(const struct device *const dev, const enum cs40l5x_custom
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed PM get for device (%d)", ret);
 		return ret;
 	}
 
@@ -1960,19 +1845,15 @@ int cs40l5x_upload_pcm(const struct device *const dev, const enum cs40l5x_custom
 
 	ret = cs40l5x_upload_pcm_header(dev, index, redc, f0, num_samples);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to write PCM header (%d)", ret);
 		goto error_mutex;
 	}
 
 	ret = cs40l5x_upload_pcm_data(dev, index, samples, num_samples);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to write PCM data (%d)", ret);
 		goto error_mutex;
 	}
 
 	data->custom_effects[index] = true;
-
-	LOG_INST_INF(config->log, "upload    | CUSTOM %d -> PCM", index);
 
 error_mutex:
 	(void)k_mutex_unlock(&data->lock);
@@ -2066,7 +1947,6 @@ int cs40l5x_upload_pwle(const struct device *const dev, const enum cs40l5x_custo
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed PM get for device (%d)", ret);
 		return ret;
 	}
 
@@ -2078,19 +1958,15 @@ int cs40l5x_upload_pwle(const struct device *const dev, const enum cs40l5x_custo
 
 	ret = cs40l5x_upload_pwle_header(dev, index, sections, num_sections);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to write PWLE header (%d)", ret);
 		goto error_mutex;
 	}
 
 	ret = cs40l5x_upload_pwle_data(dev, index, sections, num_sections);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to write PWLE data (%d)", ret);
 		goto error_mutex;
 	}
 
 	data->custom_effects[index] = true;
-
-	LOG_INST_INF(config->log, "upload    | CUSTOM %d -> PWLE", index);
 
 error_mutex:
 	(void)k_mutex_unlock(&data->lock);
@@ -2122,50 +1998,44 @@ static int cs40l5x_pm_resume(const struct device *const dev)
 
 	ret = pm_device_runtime_get(cs40l5x_get_control_port(dev));
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed PM get for control port (%d)", ret);
 		return ret;
 	}
 
 	ret = cs40l5x_write_mailbox(dev, CS40L5X_MBOX_PREVENT_HIBERNATION);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to disable hibernation (%d)", ret);
 		return ret;
 	}
 
 	LOG_INST_DBG(config->log, "disabling hibernation");
 
-	ret = cs40l5x_poll(dev, CS40L5X_REG_HALO_STATE, CS40L5X_EXP_DSP_STANDBY,
-			   CS40L5X_T_DSP_READY);
-	if (ret < 0) {
-		LOG_INST_DBG(config->log, "expected standby state upon wakeup (%d)", ret);
-	}
-
-	return ret;
+	return cs40l5x_poll(dev, CS40L5X_REG_HALO_STATE, CS40L5X_EXP_DSP_STANDBY,
+			    CS40L5X_T_DSP_READY);
 }
 
 #ifdef CONFIG_PM_DEVICE
 static int cs40l5x_pm_suspend(const struct device *const dev)
 {
 	const struct cs40l5x_config *const config = dev->config;
-	int ret, warning;
+	int ret;
 
 	ret = cs40l5x_write_mailbox(dev, CS40L5X_MBOX_ALLOW_HIBERNATION);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to allow hibernation (%d)", ret);
-	} else {
-		LOG_INST_DBG(config->log, "allowing hibernation");
+		return ret;
 	}
+
+	LOG_INST_DBG(config->log, "allowing hibernation");
 
 	(void)pm_device_runtime_put(cs40l5x_get_control_port(dev));
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_EXTERNAL_BOOST) && config->external_boost != NULL) {
-		warning = regulator_disable(config->external_boost);
-		if (warning < 0) {
-			LOG_INST_DBG(config->log, "failed to disable regulator (%d)", warning);
+		ret = regulator_disable(config->external_boost);
+		if (ret < 0) {
+			LOG_INST_DBG(config->log, "failed to disable regulator (%d)", ret);
+			return ret;
 		}
 	}
 
-	return ret;
+	return 0;
 }
 
 static int cs40l5x_pm_turn_off(const struct device *const dev)
@@ -2173,15 +2043,17 @@ static int cs40l5x_pm_turn_off(const struct device *const dev)
 	const struct cs40l5x_config *const config = dev->config;
 	int ret;
 
-	ret = pm_device_runtime_get(config->reset_gpio.port);
-	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed PM get for reset GPIO (%d)", ret);
-		return ret;
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_RESET) && config->reset_gpio.port != NULL) {
+		ret = pm_device_runtime_get(config->reset_gpio.port);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	ret = cs40l5x_teardown(dev);
 	if (ret < 0) {
 		LOG_INST_DBG(config->log, "failed device teardown (%d)", ret);
+		return ret;
 	}
 
 	(void)pm_device_runtime_put(config->reset_gpio.port);
@@ -2190,7 +2062,7 @@ static int cs40l5x_pm_turn_off(const struct device *const dev)
 		(void)pm_device_runtime_put(config->interrupt_gpio.port);
 	}
 
-	return ret;
+	return 0;
 }
 #endif /* CONFIG_PM_DEVICE */
 
@@ -2199,29 +2071,28 @@ static int cs40l5x_pm_turn_on(const struct device *const dev)
 	const struct cs40l5x_config *const config = dev->config;
 	int ret;
 
-	ret = pm_device_runtime_get(config->reset_gpio.port);
-	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed PM get for reset GPIO (%d)", ret);
-		return ret;
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_RESET) && config->reset_gpio.port != NULL) {
+		ret = pm_device_runtime_get(config->reset_gpio.port);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	ret = pm_device_runtime_get(cs40l5x_get_control_port(dev));
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed PM get for control port (%d)", ret);
 		goto error_pm_reset;
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL) {
 		ret = pm_device_runtime_get(config->interrupt_gpio.port);
 		if (ret < 0) {
-			LOG_INST_DBG(config->log, "failed PM get for interrupt GPIO (%d)", ret);
 			goto error_pm_io;
 		}
 	}
 
 	ret = cs40l5x_bringup(dev);
 	if (ret < 0) {
-		LOG_INST_ERR(config->log, "failed device bringup (%d)", ret);
+		LOG_INST_DBG(config->log, "failed device bringup (%d)", ret);
 	}
 
 error_pm_io:
@@ -2288,7 +2159,7 @@ static int cs40l5x_init(const struct device *dev)
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_TRIGGER)) {
 		for (int i = 0; i < config->trigger_gpios.num_gpio; i++) {
 			if (!gpio_is_ready_dt(&config->trigger_gpios.gpio[i])) {
-				LOG_INST_WRN(config->log, "trigger GPIO is not ready (%s)",
+				LOG_INST_DBG(config->log, "trigger GPIO is not ready (%s)",
 					     config->trigger_gpios.gpio[i].port->name);
 			}
 		}
@@ -2296,7 +2167,7 @@ static int cs40l5x_init(const struct device *dev)
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_FLASH) && config->flash != NULL &&
 	    !device_is_ready(config->flash)) {
-		LOG_INST_WRN(config->log, "flash device is not ready (%s)", config->flash->name);
+		LOG_INST_DBG(config->log, "flash device is not ready (%s)", config->flash->name);
 	}
 
 	return pm_device_driver_init(dev, cs40l5x_pm_action);
