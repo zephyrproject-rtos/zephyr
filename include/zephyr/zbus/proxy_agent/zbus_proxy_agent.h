@@ -31,7 +31,8 @@ struct zbus_proxy_agent;
  * @brief Enum for supported proxy agent backend types.
  */
 enum zbus_proxy_agent_backend_type {
-	/* No backends yet */
+	/** IPC backend for inter-process communication */
+	ZBUS_PROXY_AGENT_BACKEND_IPC,
 };
 
 /**
@@ -178,7 +179,7 @@ int zbus_init_proxy_agent(const struct zbus_proxy_agent *agent);
  * node.
  *
  * @param _name Name of the proxy agent instance
- * @param _type Backend type for the proxy agent
+ * @param _type Backend type for the proxy agent (e.g., ZBUS_PROXY_AGENT_BACKEND_IPC)
  * @param _backend_dt_node Device tree node for the backend configuration
  */
 #define ZBUS_PROXY_AGENT_DEFINE(_name, _type, _backend_dt_node)                                    \
