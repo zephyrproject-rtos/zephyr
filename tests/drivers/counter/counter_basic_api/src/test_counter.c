@@ -189,7 +189,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_RA_AGT
 	DEVS_FOR_DT_COMPAT(renesas_ra_agt_counter)
 #endif
-
+#ifdef CONFIG_COUNTER_RENESAS_RA_ULPT
+	DEVS_FOR_DT_COMPAT(renesas_ra_ulpt_counter)
+#endif
 #ifdef CONFIG_COUNTER_RENESAS_RZ_CMTW
 	DEVS_FOR_DT_COMPAT(renesas_rz_cmtw_counter)
 #endif
