@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_dsa, CONFIG_NET_DSA_LOG_LEVEL);
 #include <stdlib.h>
 
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/dsa.h>

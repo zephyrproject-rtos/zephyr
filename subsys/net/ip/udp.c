@@ -11,6 +11,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_udp, CONFIG_NET_UDP_LOG_LEVEL);
 
+#include <zephyr/net/net_log.h>
 #include "net_private.h"
 #include "udp_internal.h"
 #include "net_stats.h"

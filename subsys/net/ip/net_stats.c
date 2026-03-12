@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(net_stats, NET_LOG_LEVEL);
 #include <stdlib.h>
 #include <errno.h>
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/prometheus/collector.h>
 #include <zephyr/net/prometheus/counter.h>
 #include <zephyr/net/prometheus/gauge.h>

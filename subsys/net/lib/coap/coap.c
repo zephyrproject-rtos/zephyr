@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/coap.h>
 #include <zephyr/net/coap_mgmt.h>
 

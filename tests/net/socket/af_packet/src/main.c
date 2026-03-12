@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/socket.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_log.h>
 
 /* This test suite verifies that NET_AF_PACKET sockets behave according to well known behaviors.
  * Note, that this is not well standardized and relies on behaviors known from Linux or FreeBSD.
