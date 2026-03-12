@@ -323,7 +323,7 @@ struct zsock_addrinfo {
 	char *ai_canonname;       /**< Optional official name of the host */
 
 /** @cond INTERNAL_HIDDEN */
-	struct net_sockaddr _ai_addr;
+	struct net_sockaddr_storage _ai_addr;
 	char _ai_canonname[DNS_MAX_NAME_SIZE + 1];
 /** @endcond */
 };
