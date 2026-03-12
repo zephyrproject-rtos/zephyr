@@ -3430,8 +3430,7 @@ extern struct k_work_q k_sys_work_q;
  */
 
 /**
- * Mutex Structure
- * @ingroup mutex_apis
+ * @brief Kernel mutex structure
  *
  * All the members are internal and should not be accessed directly.
  */
