@@ -909,7 +909,6 @@ static inline k_ticks_t z_impl_k_thread_timeout_remaining_ticks(
 /**
  * @cond INTERNAL_HIDDEN
  */
-
 struct _static_thread_data {
 	struct k_thread *init_thread;
 	k_thread_stack_t *init_stack;
@@ -968,7 +967,6 @@ struct _static_thread_data {
 				     entry, p1, p2, p3, prio, options,	\
 				     delay, name);			\
 	__maybe_unused const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -1777,10 +1775,9 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
  * All the members are internal and should not be accessed directly.
  */
 struct k_timer {
-	/**
-	 * @cond INTERNAL_HIDDEN
-	 */
-
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	/*
 	 * _timeout structure must be first here if we want to use
 	 * dynamic timer allocation. timeout.node is used in the double-linked
@@ -1811,9 +1808,9 @@ struct k_timer {
 #ifdef CONFIG_OBJ_CORE_TIMER
 	struct k_obj_core  obj_core;
 #endif
-	/**
-	 * INTERNAL_HIDDEN @endcond
-	 */
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
 #ifdef CONFIG_TIMER_OBSERVER
@@ -1850,7 +1847,6 @@ struct k_timer_observer {
 	.status = 0, \
 	.user_data = 0, \
 	}
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -2263,7 +2259,6 @@ struct k_queue {
 /**
  * @cond INTERNAL_HIDDEN
  */
-
 #define Z_QUEUE_INITIALIZER(obj) \
 	{ \
 	.data_q = SYS_SFLIST_STATIC_INIT(&obj.data_q), \
@@ -2271,7 +2266,6 @@ struct k_queue {
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),	\
 	Z_POLL_EVENT_OBJ_INIT(obj)		\
 	}
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -2644,13 +2638,11 @@ struct k_event {
 /**
  * INTERNAL_HIDDEN @endcond
  */
-
 };
 
 /**
  * @cond INTERNAL_HIDDEN
  */
-
 #define Z_EVENT_INITIALIZER(obj) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
@@ -2883,7 +2875,6 @@ struct k_fifo {
 	{ \
 	._queue = Z_QUEUE_INITIALIZER(obj._queue) \
 	}
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -3120,12 +3111,10 @@ struct k_lifo {
 /**
  * @cond INTERNAL_HIDDEN
  */
-
 #define Z_LIFO_INITIALIZER(obj) \
 	{ \
 	._queue = Z_QUEUE_INITIALIZER(obj._queue) \
 	}
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -3265,7 +3254,6 @@ struct k_stack {
 	.next = (stack_buffer), \
 	.top = (stack_buffer) + (stack_num_entries), \
 	}
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -3379,12 +3367,10 @@ __syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data,
 /**
  * @cond INTERNAL_HIDDEN
  */
-
 struct k_work;
 struct k_work_q;
 struct k_work_queue_config;
 extern struct k_work_q k_sys_work_q;
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -3428,7 +3414,6 @@ struct k_mutex {
 	.lock_count = 0, \
 	.owner_orig_prio = K_LOWEST_APPLICATION_THREAD_PRIO, \
 	}
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -3605,9 +3590,9 @@ __syscall int k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
  * All the members are internal and should not be accessed directly.
  */
 struct k_sem {
-	/**
-	 * @cond INTERNAL_HIDDEN
-	 */
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	_wait_q_t wait_q;
 	unsigned int count;
 	unsigned int limit;
@@ -3619,13 +3604,14 @@ struct k_sem {
 #ifdef CONFIG_OBJ_CORE_SEM
 	struct k_obj_core  obj_core;
 #endif
-	/** @endcond */
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
 /**
  * @cond INTERNAL_HIDDEN
  */
-
 #define Z_SEM_INITIALIZER(obj, initial_count, count_limit) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&(obj).wait_q), \
@@ -3633,9 +3619,8 @@ struct k_sem {
 	.limit = (count_limit), \
 	Z_POLL_EVENT_OBJ_INIT(obj) \
 	}
-
 /**
- * @endcond
+ * INTERNAL_HIDDEN @endcond
  */
 
 /**
@@ -3768,7 +3753,9 @@ struct k_ipi_work {
 	k_ipi_func_t   func;     /* Function to execute on target CPU */
 	struct k_event event;    /* Event to signal when processed */
 	uint32_t       bitmask;  /* Bitmask of targeted CPUs */
-/** INTERNAL_HIDDEN @endcond */
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
 
@@ -3848,10 +3835,8 @@ void k_ipi_work_signal(void);
 /**
  * @cond INTERNAL_HIDDEN
  */
-
 struct k_work_delayable;
 struct k_work_sync;
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -4423,7 +4408,6 @@ enum {
 /**
  * @cond INTERNAL_HIDDEN
  */
-
 	/* The atomic API is used for all work and queue flags fields to
 	 * enforce sequential consistency in SMP environments.
 	 */
@@ -4459,7 +4443,6 @@ enum {
 	/* Static work queue flags */
 	K_WORK_QUEUE_NO_YIELD_BIT = 8,
 	K_WORK_QUEUE_NO_YIELD = BIT(K_WORK_QUEUE_NO_YIELD_BIT),
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -4569,7 +4552,6 @@ struct k_work_delayable {
 /**
  * @cond INTERNAL_HIDDEN
  */
-
 /* Record used to wait for work to flush.
  *
  * The work item is inserted into the queue that will process (or is
@@ -4593,7 +4575,6 @@ struct z_work_canceller {
 	struct k_work *work;
 	struct k_sem sem;
 };
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -4753,7 +4734,6 @@ typedef void (*k_work_user_handler_t)(struct k_work_user *work);
 /**
  * @cond INTERNAL_HIDDEN
  */
-
 struct k_work_user_q {
 	struct k_queue queue;
 	struct k_thread thread;
@@ -4768,7 +4748,6 @@ struct k_work_user {
 	k_work_user_handler_t handler;
 	atomic_t flags;
 };
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -4917,7 +4896,6 @@ static inline k_tid_t k_work_user_queue_thread_get(struct k_work_user_q *work_q)
 /**
  * @cond INTERNAL_HIDDEN
  */
-
 struct k_work_poll {
 	struct k_work work;
 	struct k_work_q *workq;
@@ -4928,7 +4906,6 @@ struct k_work_poll {
 	struct _timeout timeout;
 	int poll_result;
 };
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -5098,11 +5075,10 @@ struct k_msgq {
 	struct k_obj_core  obj_core;
 #endif
 };
+
 /**
  * @cond INTERNAL_HIDDEN
  */
-
-
 #define Z_MSGQ_INITIALIZER(obj, q_buffer, q_msg_size, q_max_msgs) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
@@ -5117,7 +5093,6 @@ struct k_msgq {
 	Z_POLL_EVENT_OBJ_INIT(obj) \
 	.flags = 0, \
 	}
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -5421,16 +5396,15 @@ struct k_mbox {
 	struct k_obj_core  obj_core;
 #endif
 };
+
 /**
  * @cond INTERNAL_HIDDEN
  */
-
 #define Z_MBOX_INITIALIZER(obj) \
 	{ \
 	.tx_msg_queue = Z_WAIT_Q_INIT(&obj.tx_msg_queue), \
 	.rx_msg_queue = Z_WAIT_Q_INIT(&obj.rx_msg_queue), \
 	}
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -5699,8 +5673,6 @@ struct k_mem_slab {
 	.free_list = NULL,                                            \
 	.info = {_slab_num_blocks, _slab_block_size, 0}               \
 	}
-
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -6743,7 +6715,6 @@ static inline void k_cpu_atomic_idle(unsigned int key)
 /**
  * @cond INTERNAL_HIDDEN
  */
-
 /*
  * private APIs that are utilized by one or more public APIs
  */
