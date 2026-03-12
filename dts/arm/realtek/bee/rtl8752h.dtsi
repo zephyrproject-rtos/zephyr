@@ -17,6 +17,7 @@
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &fmc;
 		zephyr,sram = &data_ram_app_0;
+		zephyr,entropy = &trng;
 	};
 
 	cpus {
@@ -314,6 +315,12 @@
 			interrupts = <19 0>;
 			channels = <4>;
 			status = "disabled";
+		};
+
+		trng: trng@400c2400 {
+			compatible = "realtek,bee-trng";
+			reg = <0x400c2400 0x68>;
+			status = "okay";
 		};
 	};
 
