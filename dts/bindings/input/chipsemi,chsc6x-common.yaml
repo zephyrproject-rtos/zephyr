@@ -1,6 +1,6 @@
 description: CHSC6X touchscreen sensor
 
-include: i2c-device.yaml
+include: [i2c-device.yaml, touchscreen-common.yaml]
 
 properties:
   irq-gpios:
