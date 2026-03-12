@@ -68,6 +68,14 @@ Related configuration options:
 * :kconfig:option:`CONFIG_W1`
 * :kconfig:option:`CONFIG_W1_NET`
 
+Shell commands
+**************
+
+.. zephyr:shell_help::
+   :main_command: w1
+   :main_kconfig: CONFIG_W1_SHELL
+   :extra_kconfig_deps: CONFIG_W1
+   :platform: native_sim/native/64
 
 W1 Serial Driver
 ****************

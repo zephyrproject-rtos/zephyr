@@ -25,7 +25,17 @@ Configuration Options
 Related configuration options:
 
 * :kconfig:option:`CONFIG_BIOMETRICS`
+* :kconfig:option:`CONFIG_BIOMETRICS_SHELL`
 * :kconfig:option:`CONFIG_BIOMETRICS_INIT_PRIORITY`
+
+Shell commands
+**************
+
+.. zephyr:shell_help::
+   :main_command: biometrics
+   :main_kconfig: CONFIG_BIOMETRICS_SHELL
+   :extra_kconfig_deps: CONFIG_BIOMETRICS
+   :platform: native_sim/native/64
 
 API Reference
 *************

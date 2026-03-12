@@ -4957,7 +4957,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 		      cmd_wifi_twt_teardown,
 		      5, 0),
 	SHELL_CMD_ARG(teardown_all, NULL,
-		      SHELL_HELP("Teardown all TWT flows", ""),
+		      SHELL_HELP("Teardown all TWT flows", NULL),
 		      cmd_wifi_twt_teardown_all,
 		      1, 0),
 	SHELL_SUBCMD_SET_END

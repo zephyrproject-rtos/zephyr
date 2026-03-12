@@ -20,6 +20,15 @@ Additionally, haptic driver devices often offer controls for adjusting and
 tuning the drive signal to meet the electrical requirements of their respective
 actuators.
 
+Shell commands
+**************
+
+.. zephyr:shell_help::
+   :main_command: haptics
+   :main_kconfig: CONFIG_HAPTICS_SHELL
+   :extra_kconfig_deps: CONFIG_HAPTICS
+   :platform: native_sim/native/64
+
 API Reference
 *************
 

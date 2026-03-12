@@ -242,6 +242,15 @@ To enable and build with Wi-Fi P2P support:
 
     $ west build -p -b <board> samples/net/wifi/shell -- -DCONFIG_WIFI_NM_WPA_SUPPLICANT_P2P=y
 
+Wi-Fi shell commands
+********************
+
+.. zephyr:shell_help::
+   :main_command: wifi
+   :main_kconfig: CONFIG_NET_L2_WIFI_SHELL
+   :extra_kconfig_deps: CONFIG_NETWORKING CONFIG_WIFI
+   :platform: native_sim/native/64
+
 API Reference
 *************
 

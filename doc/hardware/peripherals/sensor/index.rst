@@ -97,6 +97,15 @@ Implementing Read and Decode
 * MUST implement :c:type:`sensor_get_decoder_t` returning the
   :c:struct:`sensor_decoder_api` for that device type.
 
+Shell commands
+==============
+
+.. zephyr:shell_help::
+   :main_command: sensor
+   :main_kconfig: CONFIG_SENSOR_SHELL
+   :extra_kconfig_deps: CONFIG_SENSOR
+   :platform: qemu_x86
+
 .. _sensor-api-reference:
 
 API Reference

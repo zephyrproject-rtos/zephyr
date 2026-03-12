@@ -96,6 +96,15 @@ Related configuration options:
 * :kconfig:option:`CONFIG_RTC_UPDATE`
 * :kconfig:option:`CONFIG_RTC_CALIBRATION`
 
+Shell commands
+**************
+
+.. zephyr:shell_help::
+   :main_command: rtc
+   :main_kconfig: CONFIG_RTC_SHELL
+   :extra_kconfig_deps: CONFIG_RTC
+   :platform: native_sim/native/64
+
 API Reference
 *************
 

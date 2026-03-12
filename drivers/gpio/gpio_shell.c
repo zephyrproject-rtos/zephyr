@@ -662,7 +662,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      4, 0),
 	SHELL_COND_CMD_ARG(CONFIG_GPIO_SHELL_TOGGLE_CMD, toggle, &sub_gpio_dev,
 			   SHELL_HELP("Toggle GPIO pin", "<device> <pin>"), cmd_gpio_toggle, 3, 0),
-	SHELL_CMD(devices, NULL, SHELL_HELP("List all GPIO devices", ""), cmd_gpio_devices),
+	SHELL_CMD(devices, NULL, SHELL_HELP("List all GPIO devices", NULL), cmd_gpio_devices),
 	SHELL_COND_CMD_ARG(CONFIG_GPIO_SHELL_BLINK_CMD, blink, &sub_gpio_dev,
 			   SHELL_HELP("Blink GPIO pin", "<device> <pin>"), cmd_gpio_blink, 3, 0),
 	SHELL_COND_CMD_ARG(CONFIG_GPIO_SHELL_INFO_CMD, info, &sub_gpio_dev,

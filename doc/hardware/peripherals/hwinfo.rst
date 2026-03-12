@@ -21,6 +21,16 @@ Configuration Options
 Related configuration options:
 
 * :kconfig:option:`CONFIG_HWINFO`
+* :kconfig:option:`CONFIG_HWINFO_SHELL`
+
+Shell commands
+**************
+
+.. zephyr:shell_help::
+   :main_command: hwinfo
+   :main_kconfig: CONFIG_HWINFO_SHELL
+   :extra_kconfig_deps: CONFIG_HWINFO
+   :platform: native_sim/native/64
 
 API Reference
 *************

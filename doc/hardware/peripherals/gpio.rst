@@ -147,6 +147,15 @@ Main configuration options:
 * :kconfig:option:`CONFIG_GPIO_HOGS`
 * :kconfig:option:`CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT`
 
+Shell commands
+**************
+
+.. zephyr:shell_help::
+   :main_command: gpio
+   :main_kconfig: CONFIG_GPIO_SHELL
+   :extra_kconfig_deps: CONFIG_GPIO
+   :platform: native_sim/native/64
+
 API Reference
 *************
 

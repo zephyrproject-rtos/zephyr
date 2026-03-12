@@ -6,6 +6,7 @@ common:
   integration_platforms:
     - qemu_x86
   harness: pytest
+  timeout: 10
   harness_config:
     pytest_root:
       - pytest/test_shell_doc.py
