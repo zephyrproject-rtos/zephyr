@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,9 @@
 #include <fsl_pmu.h>
 #include <fsl_dcdc.h>
 #include <fsl_ele_base_api.h>
-#include <fsl_trdc.h>
+
+extern void imxrt118x_trdc_enable_all_access(void);
+
 #if defined(CONFIG_WDT_MCUX_RTWDOG)
 #include <fsl_soc_src.h>
 #endif
@@ -134,12 +136,6 @@ const __imx_boot_container_section container boot_header = {
 #else
 #define ELE_IS_FAILED(x) false
 #endif
-
-#define ELE_TRDC_AON_ID    0x74
-#define ELE_TRDC_WAKEUP_ID 0x78
-#define ELE_CORE_CM33_ID   0x1
-#define ELE_CORE_CM7_ID    0x2
-#define EDMA_DID           0x7U
 
 /* When CM33 sets TRDC, CM7 must NOT require TRDC ownership from ELE */
 #if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M7)
@@ -765,114 +761,7 @@ void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src, uint32_t 
  */
 static ALWAYS_INLINE void trdc_enable_all_access(void)
 {
-	status_t sts;
-	uint8_t i, j;
-
-	/* Get ELE FW status */
-	do {
-		uint32_t ele_fw_sts;
-
-		sts = ELE_BaseAPI_GetFwStatus(MU_RT_S3MUA, &ele_fw_sts);
-	} while (sts != kStatus_Success);
-
-#if defined(CONFIG_CPU_CORTEX_M33)
-	/* Release TRDC AON to CM33 core */
-	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_AON_ID, ELE_CORE_CM33_ID);
-#elif defined(CONFIG_CPU_CORTEX_M7)
-	/* Release TRDC AON to CM7 core */
-	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_AON_ID, ELE_CORE_CM7_ID);
-#endif
-	if (sts != kStatus_Success) {
-		LOG_WRN("warning: TRDC AON permission get failed. If core don't get TRDC "
-			"AON permission, AON domain permission can't be configured.");
-	}
-
-#if defined(CONFIG_CPU_CORTEX_M33)
-	/* Release TRDC Wakeup to CM33 core */
-	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_WAKEUP_ID, ELE_CORE_CM33_ID);
-#elif defined(CONFIG_CPU_CORTEX_M7)
-	/* Release TRDC Wakeup to CM7 core */
-	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_WAKEUP_ID, ELE_CORE_CM7_ID);
-#endif
-	if (sts != kStatus_Success) {
-		LOG_WRN("warning: TRDC Wakeup permission get failed. If core don't get TRDC "
-			"Wakeup permission, Wakeup domain permission can't be configured.");
-	}
-
-	/* Set the master domain access configuration for eDMA3/eDMA4 */
-	trdc_non_processor_domain_assignment_t edmaAssignment;
-
-	/* By default, EDMA access is done in privilege and security mode,
-	 * However, the NSE bit reset value in TRDC is 0, so that TRDC does
-	 * not allow nonsecurity access to other memory by default.
-	 * So by DAC module, EDMA access mode is changed to security/privilege
-	 * mode by the DAC module
-	 */
-	(void)memset(&edmaAssignment, 0, sizeof(edmaAssignment));
-	edmaAssignment.domainId       = EDMA_DID;
-	edmaAssignment.privilegeAttr  = kTRDC_MasterPrivilege;
-	edmaAssignment.secureAttr     = kTRDC_ForceSecure;
-	edmaAssignment.bypassDomainId = true;
-	edmaAssignment.lock           = false;
-
-	TRDC_SetNonProcessorDomainAssignment(TRDC1, kTRDC1_MasterDMA3, &edmaAssignment);
-	TRDC_SetNonProcessorDomainAssignment(TRDC2, kTRDC2_MasterDMA4, &edmaAssignment);
-
-	/* Enable all access modes for MBC and MRC of TRDCA and TRDCW */
-	trdc_hardware_config_t hwConfig;
-	trdc_memory_access_control_config_t memAccessConfig;
-
-	(void)memset(&memAccessConfig, 0, sizeof(memAccessConfig));
-	memAccessConfig.nonsecureUsrX  = 1U;
-	memAccessConfig.nonsecureUsrW  = 1U;
-	memAccessConfig.nonsecureUsrR  = 1U;
-	memAccessConfig.nonsecurePrivX = 1U;
-	memAccessConfig.nonsecurePrivW = 1U;
-	memAccessConfig.nonsecurePrivR = 1U;
-	memAccessConfig.secureUsrX     = 1U;
-	memAccessConfig.secureUsrW     = 1U;
-	memAccessConfig.secureUsrR     = 1U;
-	memAccessConfig.securePrivX    = 1U;
-	memAccessConfig.securePrivW    = 1U;
-	memAccessConfig.securePrivR    = 1U;
-
-	TRDC_GetHardwareConfig(TRDC1, &hwConfig);
-	for (i = 0U; i < hwConfig.mrcNumber; i++) {
-		/* Set TRDC1(A) secure access for eDMA domain, MRC i, all region for i memory */
-		TRDC_MrcDomainNseClear(TRDC1, i, 1UL << EDMA_DID);
-
-		for (j = 0U; j < 8; j++) {
-			TRDC_MrcSetMemoryAccessConfig(TRDC1, &memAccessConfig, i, j);
-		}
-	}
-
-	for (i = 0U; i < hwConfig.mbcNumber; i++) {
-		/* Set TRDC1(A) secure access for eDMA domain, MBC i, all memory blocks */
-		TRDC_MbcNseClearAll(TRDC1, i, 1UL << EDMA_DID, 0xF);
-
-		for (j = 0U; j < 8; j++) {
-			TRDC_MbcSetMemoryAccessConfig(TRDC1, &memAccessConfig, i, j);
-		}
-	}
-
-	TRDC_GetHardwareConfig(TRDC2, &hwConfig);
-	for (i = 0U; i < hwConfig.mrcNumber; i++) {
-		/* Set TRDC2(W) secure access for eDMA domain, MRC i, all region for i memory */
-		TRDC_MrcDomainNseClear(TRDC2, i, 1UL << EDMA_DID);
-
-		for (j = 0U; j < 8; j++) {
-			TRDC_MrcSetMemoryAccessConfig(TRDC2, &memAccessConfig, i, j);
-		}
-	}
-
-	for (i = 0U; i < hwConfig.mbcNumber; i++) {
-		/* Set TRDC2(W) secure access for eDMA domain, MBC i, all memory blocks */
-		TRDC_MbcNseClearAll(TRDC2, i, 1UL << EDMA_DID, 0xF);
-
-		for (j = 0U; j < 8; j++) {
-			TRDC_MbcSetMemoryAccessConfig(TRDC2, &memAccessConfig, i, j);
-		}
-	}
+	imxrt118x_trdc_enable_all_access();
 }
 
 /**
