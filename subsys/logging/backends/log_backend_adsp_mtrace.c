@@ -79,12 +79,18 @@ static void mtrace_init(void)
 
 	slot = adsp_dw_request_slot(&slot_desc, NULL);
 #else
+	struct adsp_debug_slot *slot = (struct adsp_debug_slot *)
+		ADSP_DW->slots[ADSP_DW_SLOT_NUM_MTRACE];
+
 	if (ADSP_DW->descs[ADSP_DW_SLOT_NUM_MTRACE].type == MTRACE_LOGGING_SLOT_TYPE(MTRACE_CORE)) {
 		return;
 	}
 
 	ADSP_DW->descs[ADSP_DW_SLOT_NUM_MTRACE].type = MTRACE_LOGGING_SLOT_TYPE(MTRACE_CORE);
 #endif
+
+	slot->host_ptr = 0;
+	slot->dsp_ptr = 0;
 }
 
 static size_t mtrace_out(int8_t *str, size_t len, size_t *space_left)
