@@ -1,0 +1,66 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_BEE
+	bool "CAN driver for Realtek Bee series SoC"
+	default y
+	depends on DT_HAS_REALTEK_BEE_CAN_ENABLED
+	select HAL_REALTEK_BEE_CAN
+	select CAN_MANUAL_RECOVERY_MODE
+	select CAN_ACCEPT_RTR
+	select PINCTRL
+	help
+	  This option enables the CAN driver for Realtek Bee SoCs.
+
+if CAN_BEE
+
+config CAN_BEE_TX_MSG_BUF_NUM
+	int "Number of message buffers used for tx"
+	default 6
+	range 0 15
+	help
+	  Defines the number of message buffers used for tx in the application.
+	  The tx and rx share 16 message buffers in total.
+	  Each rx message buffer can filter one standard or extended ID.
+	  The following equation determines the maximum total number for tx and rx:
+	    CAN_BEE_TX_MSG_BUF_NUM + CAN_BEE_RX_MSG_BUF_NUM <= 16
+
+config CAN_BEE_RX_MSG_BUF_NUM
+	int "Number of message buffers used for rx"
+	default 10
+	range 0 15
+	help
+	  Defines the number of message buffers used for rx in the application.
+	  The tx and rx share 16 message buffers in total.
+	  Each rx message buffer can filter one standard or extended ID.
+	  The following equation determines the maximum total number for tx and rx:
+	    CAN_BEE_TX_MSG_BUF_NUM + CAN_BEE_RX_MSG_BUF_NUM <= 16
+
+
+config CAN_BEE_MAX_STD_ID_FILTER
+	int "Maximum number of standard (11-bit) ID filters"
+	default 5
+	range 0 CAN_BEE_RX_MSG_BUF_NUM
+	help
+	  Defines the maximum number of filters with standard ID (11-bit)
+	  that can be added by the application.
+	  The tx and rx share 16 message buffers in total.
+	  Each rx message buffer can filter one standard or extended ID.
+	  The following equation determines the maximum total number of
+	  filters:
+	    CAN_BEE_MAX_STD_ID_FILTER + CAN_BEE_MAX_EXT_ID_FILTER <= CAN_BEE_RX_MSG_BUF_NUM
+
+config CAN_BEE_MAX_EXT_ID_FILTER
+	int "Maximum number of extended (29-bit) ID filters"
+	default 5
+	range 0 CAN_BEE_RX_MSG_BUF_NUM
+	help
+	  Defines the maximum number of filters with extended ID (29-bit)
+	  that can be added by the application.
+	  The tx and rx share 16 message buffers in total.
+	  Each rx message buffer can filter one standard or extended ID.
+	  The following equation determines the maximum total number of
+	  filters:
+	    CAN_BEE_MAX_STD_ID_FILTER + CAN_BEE_MAX_EXT_ID_FILTER <= CAN_BEE_RX_MSG_BUF_NUM
+
+endif # CAN_BEE
