@@ -35,6 +35,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define ST_OUI_B1 0x80
 #define ST_OUI_B2 0xE1
 
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+
 #if DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii)
 #define PHY_MODE LL_SYSCFG_ETH_MII
 #elif DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)
@@ -46,6 +48,22 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 	__HAL_RCC_SYSCFG_CLK_ENABLE();                                                             \
 	LL_SYSCFG_SetPHYInterface(PHY_MODE);                                                       \
 } while (0)
+
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+
+#if DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii)
+#define PHY_MODE LL_SBS_ETH_PHYSEL_GMII_MII
+#elif DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)
+#define PHY_MODE LL_SBS_ETH_PHYSEL_RMII
+#else
+#error "Unsupported PHY connection type"
+#endif
+#define STM32_CONFIGURE_ETH_PHY_MODE() do {                                                        \
+	__HAL_RCC_SBS_CLK_ENABLE();                                                                \
+	LL_SBS_SetEthernetPhy(PHY_MODE);                                                           \
+} while (0)
+
+#endif
 
 PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *eth0_pcfg =
