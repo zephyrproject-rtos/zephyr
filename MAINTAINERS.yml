@@ -5476,6 +5476,7 @@ USB:
   collaborators:
     - tmon-nordic
     - josuah
+    - roma-jam
   files:
     - drivers/usb/
     - dts/bindings/usb/
