@@ -115,7 +115,6 @@ config SYS_HEAP_HARDENING_MODERATE
 
 config SYS_HEAP_HARDENING_FULL
 	bool "Full"
-	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
 	select SYS_HEAP_CANARIES
 	help
 	  In addition to moderate checks, enable per-chunk trailer
@@ -127,7 +126,6 @@ config SYS_HEAP_HARDENING_FULL
 
 config SYS_HEAP_HARDENING_EXTREME
 	bool "Extreme"
-	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
 	select SYS_HEAP_CANARIES
 	select SYS_HEAP_VALIDATE
 	help
@@ -154,6 +152,17 @@ config SYS_HEAP_HARDENING_LEVEL
 
 config SYS_HEAP_CANARIES
 	bool
+
+config SYS_HEAP_CANARIES_RANDOM
+	bool "Use random base for heap canaries"
+	depends on SYS_HEAP_CANARIES
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	default y
+	help
+	  Use a random base value for heap canary computation,
+	  making canaries unpredictable across power cycles.
+	  Without this, canaries are still effective at detecting
+	  accidental corruption but are predictable.
 
 module = SYS_HEAP
 module-str = sys_heap
