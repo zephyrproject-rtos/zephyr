@@ -21,31 +21,7 @@
 
 #define CY_IPC_MAX_ENDPOINTS (8UL)
 
-/**
- * Config_noncacheable_region() copied from
- * hal_infineon\...\
- * COMPONENT_CM55\COMPONENT_NON_SECURE_DEVICE\ns_start_pse84.c
- */
-#define MPU_SRAM1_SHARED_MEM_REG_ID   0x6
-#define MPU_SRAM1_SHARED_MEM_ATTR_IDX 0x6
-
 #define CM55_STARTUP_WAIT_MS 50u
-
-void config_noncacheable_region(void)
-{
-	ARM_MPU_Disable();
-
-	/* Program MAIR0 and MAIR1 */
-	ARM_MPU_SetMemAttr(MPU_SRAM1_SHARED_MEM_ATTR_IDX,
-			   ARM_MPU_ATTR(ARM_MPU_ATTR_NON_CACHEABLE, ARM_MPU_ATTR_NON_CACHEABLE));
-
-	ARM_MPU_SetRegion(MPU_SRAM1_SHARED_MEM_REG_ID,
-			  ARM_MPU_RBAR(SRAM1_NS_SAHB_SHARED_START, ARM_MPU_SH_INNER, 0UL, 1UL, 1UL),
-			  ARM_MPU_RLAR((SRAM1_NS_SAHB_SHARED_START + SRAM1_SHARED_SIZE - 1UL),
-				       MPU_SRAM1_SHARED_MEM_ATTR_IDX));
-
-	ARM_MPU_Enable(4);
-}
 
 /*
  * This function will allow execute from sram region.  This is needed only for
@@ -79,8 +55,6 @@ void disable_mpu_rasr_xn(void)
 
 void soc_early_init_hook(void)
 {
-	/* Config non-cacheable region */
-	config_noncacheable_region();
 
 #ifdef CONFIG_ARM_MPU
 	disable_mpu_rasr_xn();
