@@ -22,6 +22,7 @@
 	aliases {
 		led0 = &led_green;
 		pwm-led0 = &pwm_led_green;
+		rtc = &rtc;
 		sw0 = &button_user;
 		sdhc0 = &sdmmc0;
 		sdhc1 = &sdmmc1;
