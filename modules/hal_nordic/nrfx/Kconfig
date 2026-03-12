@@ -227,6 +227,9 @@ config NRFX_TBM
 	bool "TBM driver"
 	depends on $(dt_nodelabel_exists,tbm)
 
+config NRFX_TDM
+	bool "TDM driver"
+
 config NRFX_TEMP
 	bool "TEMP driver"
 	depends on $(dt_nodelabel_exists,temp)
