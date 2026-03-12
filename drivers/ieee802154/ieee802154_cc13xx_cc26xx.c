@@ -338,7 +338,7 @@ static int ieee802154_cc13xx_cc26xx_tx(const struct device *dev,
 	int retry = CONFIG_IEEE802154_CC13XX_CC26XX_RADIO_TX_RETRIES;
 
 	if (mode != IEEE802154_TX_MODE_CSMA_CA) {
-		NET_ERR("TX mode %d not supported", mode);
+		LOG_ERR("TX mode %d not supported", mode);
 		return -ENOTSUP;
 	}
 

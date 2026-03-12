@@ -622,7 +622,7 @@ static int kw41z_tx(const struct device *dev, enum ieee802154_tx_mode mode,
 	unsigned int key;
 
 	if (mode != IEEE802154_TX_MODE_DIRECT) {
-		NET_ERR("TX mode %d not supported", mode);
+		LOG_ERR("TX mode %d not supported", mode);
 		return -ENOTSUP;
 	}
 
