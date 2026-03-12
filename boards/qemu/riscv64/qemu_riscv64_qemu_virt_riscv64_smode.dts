@@ -16,34 +16,42 @@
 
 &{/cpus/cpu@0} {
 	riscv,privilege-modes = "m", "s", "u";
+	mmu-type = "riscv,sv39";
 };
 
 &{/cpus/cpu@1} {
 	riscv,privilege-modes = "m", "s", "u";
+	mmu-type = "riscv,sv39";
 };
 
 &{/cpus/cpu@2} {
 	riscv,privilege-modes = "m", "s", "u";
+	mmu-type = "riscv,sv39";
 };
 
 &{/cpus/cpu@3} {
 	riscv,privilege-modes = "m", "s", "u";
+	mmu-type = "riscv,sv39";
 };
 
 &{/cpus/cpu@4} {
 	riscv,privilege-modes = "m", "s", "u";
+	mmu-type = "riscv,sv39";
 };
 
 &{/cpus/cpu@5} {
 	riscv,privilege-modes = "m", "s", "u";
+	mmu-type = "riscv,sv39";
 };
 
 &{/cpus/cpu@6} {
 	riscv,privilege-modes = "m", "s", "u";
+	mmu-type = "riscv,sv39";
 };
 
 &{/cpus/cpu@7} {
 	riscv,privilege-modes = "m", "s", "u";
+	mmu-type = "riscv,sv39";
 };
 
 &uart0 {

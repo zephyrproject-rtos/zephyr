@@ -6,6 +6,7 @@ CONFIG_UART_CONSOLE=y
 CONFIG_STACK_SENTINEL=y
 CONFIG_XIP=n
 CONFIG_RISCV_S_MODE=y
+CONFIG_QEMU_ICOUNT=y
 # The PLIC driver configures PLIC context 0 (M-mode) for hart 0.  In S-mode
 # Zephyr the correct context is 1 (supervisor mode), so external device
 # interrupts via the PLIC do not reach the CPU.  Disable interrupt-driven
