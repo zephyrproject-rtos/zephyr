@@ -143,7 +143,7 @@ if(CONFIG_NRFX_GPPI AND NOT CONFIG_NRFX_GPPI_V1)
     zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_dppi.c)
   endif()
   if(CONFIG_SOC_COMPATIBLE_NRF54LX OR CONFIG_SOC_SERIES_NRF71)
-    zephyr_library_sources(${BSP_DIR}/soc/interconnect/nrfx_gppi_lumos.c)
+    zephyr_library_sources(${BSP_DIR}/soc/interconnect/nrfx_gppi_d2ppi.c)
   endif()
 endif()
 
