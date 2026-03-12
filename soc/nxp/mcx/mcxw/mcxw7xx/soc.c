@@ -16,6 +16,7 @@
 #include <fsl_common.h>
 #include <fsl_clock.h>
 #include <fsl_cmc.h>
+#include <fsl_spc.h>
 
 #define MCXW7_CMC_ADDR (CMC_Type *)DT_REG_ADDR(DT_INST(0, nxp_cmc))
 
@@ -179,6 +180,17 @@ __weak void clock_init(void)
 
 	/* Init SIRC */
 	(void)CLOCK_InitSirc(&sirc_config);
+
+	/* Raise the core voltage to allow the system to run at 96MHz */
+	spc_active_mode_core_ldo_option_t ldoOption;
+	/* Configure Flash to support different voltage level and frequency */
+	FMU0->FCTRL = (FMU0->FCTRL & ~((uint32_t)FMU_FCTRL_RWSC_MASK)) | (FMU_FCTRL_RWSC(0x2U));
+	/* Specifies the operating voltage for the SRAM's read/write timing margin */
+	SPC_SetSRAMOperateVoltage(SPC0, kSPC_SRAM_OperatVoltage1P1V);
+	/* Set the LDO_CORE VDD regulator level */
+	ldoOption.CoreLDOVoltage = kSPC_CoreLDO_NormalVoltage;
+	ldoOption.CoreLDODriveStrength = kSPC_CoreLDO_NormalDriveStrength;
+	(void)SPC_SetActiveModeCoreLDORegulatorConfig(SPC0, &ldoOption);
 #endif
 
 	/* Attach Clocks */
