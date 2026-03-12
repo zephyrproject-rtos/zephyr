@@ -105,7 +105,10 @@ static uint64_t mtime(void)
 static void timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
-
+#if defined(CONFIG_SMP) && defined(CONFIG_TICKLESS_KERNEL)
+	k_spinlock_key_t g_key = k_spin_lock(get_update_time_lock());
+	sys_dlist_t undo_job = SYS_DLIST_STATIC_INIT(&undo_job);
+#endif
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	uint64_t now = mtime();
@@ -123,7 +126,13 @@ static void timer_isr(const void *arg)
 	}
 
 	k_spin_unlock(&lock, key);
+#if defined(CONFIG_SMP) && defined(CONFIG_TICKLESS_KERNEL)
+	sys_clock_announce(dticks, &undo_job);
+	k_spin_unlock(get_update_time_lock(), g_key);
+	sys_clock_announce_undojob_withoutlock(&undo_job);
+#else
 	sys_clock_announce(dticks);
+#endif
 }
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)

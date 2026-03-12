@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <zephyr/types.h>
+#include <zephyr/sys/dlist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -100,7 +101,34 @@ void sys_clock_idle_exit(void);
  *
  * @param ticks Elapsed time, in ticks
  */
+#if defined(CONFIG_SMP) && defined(CONFIG_TICKLESS_KERNEL)
+void sys_clock_announce(int32_t ticks, sys_dlist_t *undo_job);
+#else
 void sys_clock_announce(int32_t ticks);
+#endif
+
+#if defined(CONFIG_SMP) && defined(CONFIG_TICKLESS_KERNEL)
+/**
+ * @brief Announce time progress to the kernel
+ *
+ * sys_clock_announce() will save timeouts job to undo_job,
+ * and call this API to announce the time progress to the kernel
+ * without lock.beaceuse the timeouts job list callback will call
+ * api which will get timeout_lock or timer driver lock,
+ * it will cause deadlock.
+ *
+ * @param undo_job List of timeouts to announce without lock
+ */
+void sys_clock_announce_undojob_withoutlock(sys_dlist_t *undo_job);
+
+/**
+ * @brief get update_time_lock lock
+ *
+ * update_time_lock is used to protect sys_clock_tick_get
+ *
+ */
+struct k_spinlock *get_update_time_lock(void);
+#endif
 
 /**
  * @brief Ticks elapsed since last sys_clock_announce() call

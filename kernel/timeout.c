@@ -23,6 +23,10 @@ static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
  */
 static struct k_spinlock timeout_lock;
 
+#if defined(CONFIG_SMP) && defined(CONFIG_TICKLESS_KERNEL)
+struct k_spinlock update_time_lock;
+#endif
+
 /* Ticks left to process in the currently-executing sys_clock_announce() */
 static int announce_remaining;
 
@@ -218,7 +222,11 @@ int32_t z_get_next_timeout_expiry(void)
 	return ret;
 }
 
+#if defined(CONFIG_SMP) && defined(CONFIG_TICKLESS_KERNEL)
+void sys_clock_announce(int32_t ticks, sys_dlist_t *undo_job)
+#else
 void sys_clock_announce(int32_t ticks)
+#endif
 {
 	k_spinlock_key_t key = k_spin_lock(&timeout_lock);
 
@@ -246,10 +254,15 @@ void sys_clock_announce(int32_t ticks)
 		curr_tick += dt;
 		t->dticks = 0;
 		remove_timeout(t);
-
+#if defined(CONFIG_SMP) && defined(CONFIG_TICKLESS_KERNEL)
+		if (undo_job) {
+			sys_dlist_append(undo_job, &t->node);
+		}
+#else
 		k_spin_unlock(&timeout_lock, key);
 		t->fn(t);
 		key = k_spin_lock(&timeout_lock);
+#endif
 		announce_remaining -= dt;
 	}
 
@@ -269,13 +282,42 @@ void sys_clock_announce(int32_t ticks)
 #endif /* CONFIG_TIMESLICING */
 }
 
+#if defined(CONFIG_SMP) && defined(CONFIG_TICKLESS_KERNEL)
+struct k_spinlock *get_update_time_lock(void)
+{
+	return &update_time_lock;
+}
+
+void sys_clock_announce_undojob_withoutlock(sys_dlist_t *undo_job)
+{
+	struct _timeout *t;
+	sys_dnode_t *m;
+
+	for (m = sys_dlist_peek_head(undo_job); m != NULL; m = sys_dlist_peek_head(undo_job)) {
+		t = CONTAINER_OF(m, struct _timeout, node);
+		sys_dlist_remove(m);
+		/* fn maybe call timer expire function and insert node
+		 * to timeoutlist, so we need to remove node
+		 * from undo_job before call fn.
+		 */
+		t->fn(t);
+	}
+}
+#endif
+
 int64_t sys_clock_tick_get(void)
 {
 	uint64_t t = 0U;
 
+#if defined(CONFIG_SMP) && defined(CONFIG_TICKLESS_KERNEL)
+	k_spinlock_key_t g_key = k_spin_lock(&update_time_lock);
+#endif
 	K_SPINLOCK(&timeout_lock) {
 		t = curr_tick + elapsed();
 	}
+#if defined(CONFIG_SMP) && defined(CONFIG_TICKLESS_KERNEL)
+	k_spin_unlock(&update_time_lock, g_key);
+#endif
 	return t;
 }
 
