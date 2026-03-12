@@ -148,6 +148,12 @@ out:
 	return out;
 }
 
+#if CONFIG_MTRACE_LOG_CACHE_BUF_SIZE > ADSP_DW_SLOT_SIZE
+static uint8_t cache_buf[CONFIG_MTRACE_LOG_CACHE_BUF_SIZE];
+static size_t cache_buf_head;
+static size_t cache_buf_len;
+#endif
+
 static int char_out(uint8_t *data, size_t length, void *ctx)
 {
 	size_t space_left = 0;
@@ -157,7 +163,33 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 	 * we handle the data even if mtrace notifier is not
 	 * active. this ensures we can capture early boot messages.
 	 */
+#if CONFIG_MTRACE_LOG_CACHE_BUF_SIZE > ADSP_DW_SLOT_SIZE
+	size_t bytes_copy = MIN(CONFIG_MTRACE_LOG_CACHE_BUF_SIZE - cache_buf_len, length);
+	size_t bytes_write = 0;
+	size_t r_pos = cache_buf_head;
+	size_t w_pos = (cache_buf_head + cache_buf_len) % CONFIG_MTRACE_LOG_CACHE_BUF_SIZE;
+
+	memcpy(cache_buf + w_pos, data,
+	       MIN(bytes_copy, CONFIG_MTRACE_LOG_CACHE_BUF_SIZE - w_pos));
+	if (bytes_copy > CONFIG_MTRACE_LOG_CACHE_BUF_SIZE - w_pos) {
+		memcpy(cache_buf, data + (CONFIG_MTRACE_LOG_CACHE_BUF_SIZE - w_pos),
+		       bytes_copy - (CONFIG_MTRACE_LOG_CACHE_BUF_SIZE - w_pos));
+	}
+	cache_buf_len += bytes_copy;
+
+	bytes_write = MIN(cache_buf_len, CONFIG_MTRACE_LOG_CACHE_BUF_SIZE - r_pos);
+	out = mtrace_out(cache_buf + r_pos, bytes_write, &space_left);
+	if (space_left > 0 && cache_buf_len > bytes_write) {
+		out += mtrace_out(cache_buf,
+				  MIN(space_left, cache_buf_len - bytes_write),
+				  &space_left);
+	}
+
+	cache_buf_head = (cache_buf_head + out) % CONFIG_MTRACE_LOG_CACHE_BUF_SIZE;
+	cache_buf_len -= out;
+#else
 	out = mtrace_out(data, length, &space_left);
+#endif
 
 	if (mtrace_active && mtrace_hook) {
 
