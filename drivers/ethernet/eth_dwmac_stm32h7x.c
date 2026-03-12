@@ -35,7 +35,21 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define ST_OUI_B1 0x80
 #define ST_OUI_B2 0xE1
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+
+#if DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii)
+#define PHY_MODE LL_SBS_ETH_MII
+#elif DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)
+#define PHY_MODE LL_SBS_ETH_RMII
+#else
+#error "Unsupported PHY connection type"
+#endif
+#define STM32_CONFIGURE_ETH_PHY_MODE() do {                                                        \
+	__HAL_RCC_SBS_CLK_ENABLE();                                                                \
+	LL_SBS_SetPHYInterface(PHY_MODE);                                                          \
+} while (0)
+
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
 
 #if DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii)
 #define PHY_MODE LL_SYSCFG_ETH_MII
@@ -101,7 +115,7 @@ int dwmac_bus_init(struct dwmac_priv *p)
 #if defined(CONFIG_NOCACHE_MEMORY)
 #define __desc_mem __nocache __aligned(4)
 #else
-#error "missing memory attribute for descriptors"
+#define __desc_mem __aligned(4)
 #endif
 
 /* Descriptor rings in uncached memory */
