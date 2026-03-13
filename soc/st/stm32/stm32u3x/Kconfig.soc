@@ -18,6 +18,11 @@ config SOC_STM32U385XX
 	bool
 	select SOC_SERIES_STM32U3X
 
+config SOC_STM32U3C5XX
+	bool
+	select SOC_SERIES_STM32U3X
+
 config SOC
 	default "stm32u375xx" if SOC_STM32U375XX
 	default "stm32u385xx" if SOC_STM32U385XX
+	default "stm32u3c5xx" if SOC_STM32U3C5XX

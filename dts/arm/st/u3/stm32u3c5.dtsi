@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Filip Stojanovic <filipembedded@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u3/stm32u3.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32u3c5", "st,stm32u3", "simple-bus";
+
+		pinctrl: pin-controller@42020000 {
+			gpiof: gpio@42021400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42021400 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
+			};
+		};
+	};
+};
