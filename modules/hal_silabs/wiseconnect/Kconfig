@@ -1,6 +1,49 @@
 # Copyright (c) 2025 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+config SILABS_WISECONNECT_NCP
+	bool
+	select POLL
+	select DYNAMIC_THREAD
+	select THREAD_NAME
+	select THREAD_STACK_INFO
+	select THREAD_MONITOR
+	select INIT_STACKS
+	select EVENTS
+	help
+	  Enables WiseConnect SDK NCP-mode wireless sources for use from a
+	  non-SiWx91x host MCU (e.g. STM32, nRF). This symbol carries no
+	  SoC-family dependency and is selected automatically by the
+	  WIFI_SILABS_SIWX91X_NCP_SPI driver Kconfig.
+
+if SILABS_WISECONNECT_NCP
+
+# WiseConnect SDK creates threads with real-time priorities via CMSIS RTOS v2.
+# These defaults mirror the SoC NWP Kconfig.defconfig values.
+# We use 'default' instead of 'select' for CMSIS_RTOS_V2 because it has a
+# depends on NUM_PREEMPT_PRIORITIES >= 56, and 'select' would bypass the
+# check causing a fatal Kconfig warning. Setting the default for
+# NUM_PREEMPT_PRIORITIES first ensures the dependency is satisfied.
+config NUM_PREEMPT_PRIORITIES
+	default 56
+
+config CMSIS_RTOS_V2
+	default y
+
+config MAIN_STACK_SIZE
+	default 2048
+
+config CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT
+	default 2
+
+config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
+	default 1024
+
+config CMSIS_V2_THREAD_MAX_STACK_SIZE
+	default 2048
+
+endif # SILABS_WISECONNECT_NCP
+
 menu "WiSeConnect configuration"
 	depends on HAS_SILABS_WISECONNECT
 

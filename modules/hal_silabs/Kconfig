@@ -22,7 +22,6 @@ config HAS_SILABS_SISDK
 config HAS_SILABS_WISECONNECT
 	bool
 	select HAS_CMSIS_CORE
-	depends on SOC_FAMILY_SILABS_SIWX91X
 
 config HAS_SILABS_SI32
 	bool

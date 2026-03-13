@@ -6,11 +6,13 @@ config WIFI_SILABS_SIWX91X
 	default y
 	depends on DT_HAS_SILABS_SIWX91X_WIFI_ENABLED
 	depends on NETWORKING
-	select SILABS_SIWX91X_NWP
+	depends on SILABS_SIWX91X_NWP || WIFI_SILABS_SIWX91X_NCP_SPI
 	select EVENTS
 	select NET_L2_WIFI_MGMT
 	help
 	  Enable WiFi driver for the Silabs SiWx91x SoC series.
+	  Works in both SoC mode (with the on-chip NWP over AHB) and
+	  NCP mode (with an external SiWx91x module over SPI).
 
 if WIFI_SILABS_SIWX91X
 
@@ -205,3 +207,59 @@ config WIFI_SILABS_SIWX91X_FEAT_HIDE_PSK_CREDENTIALS
 	  When enabled, prevents printing sensitive credentials such as
 	  PSK, PMK, and EAP keys in debug or log messages.
 endif
+
+config WIFI_SILABS_SIWX91X_NCP_SPI
+	bool "SiWx91x NCP over SPI"
+	default y
+	depends on DT_HAS_SILABS_SIWX91X_NWP_SPI_ENABLED
+	depends on NETWORKING
+	select SPI
+	select GPIO
+	select HAS_SILABS_WISECONNECT
+	select SILABS_WISECONNECT_NCP
+	select NET_L2_WIFI_MGMT
+	help
+	  Enable the SiWx91x WiFi/BLE module in NCP mode over SPI.
+	  The module runs its own firmware and communicates with the
+	  Zephyr host MCU via SPI. This driver implements the
+	  sl_si91x_host_interface.h platform abstraction using
+	  Zephyr SPI and GPIO APIs.
+
+if WIFI_SILABS_SIWX91X_NCP_SPI
+
+config SIWX91X_NCP_SPI_INIT_PRIORITY
+	int "SiWx91x NCP SPI driver init priority"
+	default 80
+	help
+	  Initialization priority for the SiWx91x NCP SPI driver.
+	  Must be after SPI and GPIO drivers are initialized.
+
+config SIWX91X_NCP_SPI_FREQUENCY
+	int "SPI clock frequency in Hz"
+	default 2000000
+	help
+	  SPI clock frequency for communicating with the SiWx91x in NCP mode.
+	  Start with 2 MHz for bring-up, can be increased to 25 MHz
+	  after validation.
+
+config SIWX91X_NCP_SPI_HIGH_SPEED_FREQUENCY
+	int "SPI high-speed clock frequency in Hz"
+	default 20000000
+	help
+	  SPI clock frequency after high-speed bus enable.
+	  Used after initial boot sequence completes.
+
+config SIWX91X_NCP_RESET_HOLD_MS
+	int "Reset hold time in milliseconds"
+	default 10
+	help
+	  Time to hold the SiWx91x in reset during the reset sequence.
+
+config SIWX91X_NCP_RESET_DELAY_MS
+	int "Post-reset delay in milliseconds"
+	default 100
+	help
+	  Time to wait after releasing reset before attempting SPI
+	  communication. The module bootloader needs time to initialize.
+
+endif # WIFI_SILABS_SIWX91X_NCP_SPI

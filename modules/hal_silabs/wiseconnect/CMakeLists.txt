@@ -23,20 +23,31 @@ function(wiseconnect_get_ram_config node_var out_var)
   endif()
 endfunction()
 
-# Keep these values sync with
-# components/device/silabs/si91x/mcu/core/chip/component/siwg917*.slcc
+# Common compile definitions for both SoC and NCP modes
 zephyr_compile_definitions(
   SL_SI91X_ENABLE_LITTLE_ENDIAN
   SLI_CODE_CLASSIFICATION_DISABLE
-  SLI_SI91X_MCU_COMMON_FLASH_MODE
-  SLI_SI91X_MCU_CONFIG_RADIO_BOARD_VER2
-  SLI_SI91X_MCU_CONFIG_RADIO_BOARD_BASE_VER
-  SLI_SI91X_MCU_ENABLE_FLASH_BASED_EXECUTION
-  SLI_SI91X_MCU_ENABLE_IPMU_APIS
-  SLI_SI91X_MCU_INTERFACE
   SLI_SI917
   SLI_SI917B0
 )
+
+if(NOT CONFIG_SILABS_WISECONNECT_NCP)
+  # SoC (AHB) mode: MCU-specific defines and sources
+
+  if(CONFIG_SIWN917_NCP_SPI)
+    # Legacy app-level NCP SPI mode (transitional)
+  else()
+    # SoC (AHB) mode: original MCU-specific defines
+    zephyr_compile_definitions(
+      SLI_SI91X_MCU_COMMON_FLASH_MODE
+      SLI_SI91X_MCU_CONFIG_RADIO_BOARD_VER2
+      SLI_SI91X_MCU_CONFIG_RADIO_BOARD_BASE_VER
+      SLI_SI91X_MCU_ENABLE_FLASH_BASED_EXECUTION
+      SLI_SI91X_MCU_ENABLE_IPMU_APIS
+      SLI_SI91X_MCU_INTERFACE
+      CLOCK_ROMDRIVER_PRESENT
+    )
+  endif()
 
 zephyr_include_directories(
   ${SISDK}/platform/common/config
@@ -198,6 +209,8 @@ zephyr_library_sources_ifdef(CONFIG_WDT_SILABS_SIWX91X
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_wwdt.c
 )
 
+endif() # NOT CONFIG_SILABS_WISECONNECT_NCP
+
 if(CONFIG_WIFI_SILABS_SIWX91X)
   zephyr_library_sources(
     ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/src/sli_net_si91x_utility.c
@@ -231,6 +244,58 @@ if(CONFIG_WIFI_SILABS_SIWX91X)
 endif() # CONFIG_WIFI_SILABS_SIWX91X
 
 
+if(CONFIG_SILABS_WISECONNECT_NCP)
+  # NCP host mode from a non-SiWx91x MCU (e.g. STM32 + SiWN917 over SPI).
+  # Brings in only the wireless protocol headers and NCP SPI bus sources.
+  # Does NOT include MCU/SoC drivers, AHB interface, or CMSIS-RTOS2 portability
+  # layer — those are only applicable when running Zephyr on the SiWx91x itself.
+  zephyr_compile_definitions(
+    SLI_SI91X_ENABLE_OS
+    SL_SI91X_SI917_RAM_MEM_CONFIG=2
+    SL_WIFI_COMPONENT_INCLUDED
+  )
+  zephyr_include_directories(
+    # CMSIS RTOS v2 portability layer for CMSIS thread APIs used by WiseConnect SDK
+    ${ZEPHYR_BASE}/include/zephyr/portability
+    ${SISDK_DIR}/platform/common/inc
+    ${SISDK_DIR}/platform/common/config
+    ${SISDK_DIR}/platform/emlib/inc
+    ${SISDK_DIR}/platform/service/mem_pool/inc
+    ${WISECONNECT_DIR}/resources/defaults
+    ${WISECONNECT_DIR}/components/common/inc
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/inc
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/sl_net/inc
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/socket/inc
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/asynchronous_socket/inc
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ble/inc
+    ${WISECONNECT_DIR}/components/protocol/wifi/inc
+    ${WISECONNECT_DIR}/components/service/network_manager/inc
+    ${WISECONNECT_DIR}/components/sli_wifi_command_engine/inc
+    # Board config needed for compilation (symbols not used at runtime)
+    ${WISECONNECT_DIR}/components/board/silabs/config/brd4342a
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/firmware_upgrade
+  )
+  zephyr_library_sources(
+    # NCP-compatible platform shims (replace SoC-specific sl_core_cortexm.c
+    # and sl_mem_pool.c which require em_device.h)
+    sl_core_zephyr.c
+    ${SISDK_DIR}/platform/service/mem_pool/src/sl_mem_pool.c
+    ${WISECONNECT_DIR}/components/common/src/sl_utility.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/memory/mem_pool_buffer_quota.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/src/sl_rsi_utility.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/src/sl_si91x_driver.c
+    ${WISECONNECT_DIR}/components/protocol/wifi/si91x/sl_wifi.c
+    ${WISECONNECT_DIR}/components/protocol/wifi/src/sl_wifi_callback_framework.c
+    ${WISECONNECT_DIR}/components/service/network_manager/src/sli_net_common_utility.c
+    ${WISECONNECT_DIR}/components/sli_si91x_wifi_event_handler/src/sli_si91x_wifi_event_handler.c
+    ${WISECONNECT_DIR}/components/sli_wifi_command_engine/src/sli_wifi_command_engine.c
+    # NCP SPI bus protocol sources
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ncp_interface/spi/sl_si91x_spi.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ncp_interface/sl_si91x_ncp_driver.c
+  )
+  zephyr_include_directories(.)
+endif() # CONFIG_SILABS_WISECONNECT_NCP
+
 if(CONFIG_SILABS_SIWX91X_NWP)
   wiseconnect_get_ram_config("sram0" RAM_MEM_CONFIG)
   zephyr_compile_definitions(
@@ -242,6 +307,8 @@ if(CONFIG_SILABS_SIWX91X_NWP)
     # FIXME: find why this directory is not included when CMSIS_RTOS_V2=y
     ${ZEPHYR_BASE}/include/zephyr/portability
   )
+
+  # Bus-agnostic WiseConnect sources (common to both AHB and NCP SPI)
   zephyr_library_sources(
     nwp_fw_version.c
     ${WISECONNECT}/components/common/src/sl_utility.c
@@ -266,6 +333,37 @@ if(CONFIG_SILABS_SIWX91X_NWP)
     ${WISECONNECT}/components/sli_wifi/src/sli_wifi_utility.c
     ${WISECONNECT}/components/sli_wifi_command_engine/src/sli_wifi_command_engine.c
   )
+
+  if(CONFIG_SIWN917_NCP_SPI)
+    # NCP SPI mode: use NCP interface sources instead of AHB
+    # The NCP SPI bus layer (sl_si91x_spi.c) provides:
+    #   sl_si91x_bus_init, sli_si91x_bus_write_frame, sli_si91x_bus_read_frame,
+    #   sl_si91x_bus_read_memory, sl_si91x_bus_write_memory,
+    #   sli_si91x_bus_rx_irq_handler, sli_si91x_bus_rx_done_handler,
+    #   sli_si91x_bootup_firmware, etc.
+    # The NCP driver (sl_si91x_ncp_driver.c) provides:
+    #   sli_si91x_bus_set_interrupt_mask, sli_si91x_bus_clear_interrupt,
+    #   sli_si91x_bus_enable_high_speed, sli_si91x_req_wakeup,
+    #   sli_si91x_boot_instruction, etc.
+    # The host interface shim (siwn917_host_spi.c) is in the app's drivers/
+    # directory and provides sl_si91x_host_*() functions via Zephyr SPI/GPIO.
+    zephyr_library_sources(
+      ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ncp_interface/spi/sl_si91x_spi.c
+      ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ncp_interface/sl_si91x_ncp_driver.c
+    )
+  else()
+    # AHB (SoC) mode: original bus sources for SiWG917 running Zephyr on-chip
+    zephyr_library_sources(
+      ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_ram.c
+      ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_rom.c
+      ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/sli_siwx917_soc.c
+      ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/sl_platform.c
+      ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/sl_platform_wireless.c
+      ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/sl_si91x_bus.c
+      ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/host_mcu/si91x/siwx917_soc_ncp_host.c
+    )
+  endif() # CONFIG_SIWN917_NCP_SPI
+
   zephyr_library_sources_ifdef(CONFIG_SIWX91X_FIRMWARE_UPGRADE
     ${WISECONNECT}/components/device/silabs/si91x/wireless/firmware_upgrade/firmware_upgradation.c
   )

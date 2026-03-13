@@ -1,0 +1,76 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs SiWx91x NWP over SPI (NCP mode)
+
+description: |
+  Silicon Labs SiWx91x Network Wireless Processor in NCP (Network Co-Processor)
+  mode, connected to the host via SPI.
+
+  In NCP mode the SiWx91x module runs its own firmware while an external host MCU
+  drives it over SPI with GPIO signals for reset and interrupt handshaking. This
+  is the counterpart to the SoC-mode "silabs,siwx91x-nwp" binding, where the NWP
+  is on the internal AHB bus.
+
+  Example usage in a board overlay:
+
+    &spi1 {
+        siwx917: siwx91x-nwp@0 {
+            compatible = "silabs,siwx91x-nwp-spi";
+            reg = <0>;
+            spi-max-frequency = <2000000>;
+            reset-gpios = <&gpiog 14 GPIO_ACTIVE_LOW>;
+            irq-gpios   = <&gpiog 6  GPIO_ACTIVE_HIGH>;
+
+            siwx91x_wifi: wifi {
+                compatible = "silabs,siwx91x-wifi";
+            };
+        };
+    };
+
+compatible: "silabs,siwx91x-nwp-spi"
+
+include: [spi-device.yaml]
+
+child-binding:
+  description: |
+    Child devices of the SiWx91x NCP node, such as the WiFi interface
+    ("silabs,siwx91x-wifi") or a future BLE interface.
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the SiWx91x RESET_N pin. Active-low output driven by the
+      host to reset the module. The host must assert this for at least 1 ms and
+      allow sufficient time for the module to boot after release.
+  
+  cs-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO used as the SPI chip-select for the SiWx91x module. This pin is
+      managed manually by the driver (not by the SPI controller) to allow
+      protocol-level control of framing. Directly connects to the SiWx91x
+      CS_N input. Active-low.
+
+  irq-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the SiWx91x interrupt output pin. Active-high input; the
+      module asserts a rising edge to signal the host that data or events are ready
+      for reading over SPI.
+
+  sleep-request-gpios:
+    type: phandle-array
+    description: |
+      Optional GPIO for the host-to-module sleep request signal. The host asserts
+      this to indicate that it is entering a low-power state.
+
+  wake-indicator-gpios:
+    type: phandle-array
+    description: |
+      Optional GPIO for the module-to-host wake indicator. The module asserts this
+      to indicate that it is awake and ready for SPI communication.

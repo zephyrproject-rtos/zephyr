@@ -151,6 +151,34 @@ config BT_STM32WB0
 	help
 	  ST STM32WB0 HCI Bluetooth interface
 
+source "drivers/bluetooth/hci/Kconfig.silabs"
+
+config BT_SILABS_SIWX91X
+	bool "Silabs SiWx91x Bluetooth interface"
+	default y
+	depends on DT_HAS_SILABS_SIWX91X_BT_HCI_ENABLED
+	depends on SILABS_SIWX91X_NWP || WIFI_SILABS_SIWX91X_NCP_SPI
+	select ENTROPY_GENERATOR
+	select BT_HCI_SETUP
+	help
+	  Use Silicon Labs Wiseconnect 3.x Bluetooth library to connect to the controller.
+	  Works in both SoC mode (with the on-chip NWP) and NCP mode
+	  (with an external SiWx91x module over SPI).
+
+config BT_SILABS_SIWX91X_INIT_PRIORITY
+	int "SiWx91x BLE HCI init priority"
+	depends on BT_SILABS_SIWX91X
+	default 81
+	help
+	  Initialization priority for the SiWx91x BLE HCI driver.
+	  Must be higher (later) than the NWP device init priority
+	  so that the parent NWP device is ready before the BLE HCI
+	  child attempts to initialize.
+
+	# SiWx917 BLE controller currently does not support HCI Command: Host Number of Completed Packets
+	configdefault BT_HCI_ACL_FLOW_CONTROL
+		default n if BT_SILABS_SIWX91X
+
 config BT_USERCHAN
 	bool
 	depends on BOARD_NATIVE_SIM

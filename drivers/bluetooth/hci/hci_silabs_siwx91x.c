@@ -9,7 +9,7 @@
 #define DT_DRV_COMPAT silabs_siwx91x_bt_hci
 #define LOG_LEVEL     CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(bt_hci_driver_siwg917);
+LOG_MODULE_REGISTER(bt_hci_driver_siwg917, 4);
 
 #include "rsi_ble.h"
 #include "rsi_ble_common_config.h"
@@ -42,7 +42,6 @@ static int rsi_bt_driver_send_tx_pwr_vs_cmd(const struct device *dev, uint8_t pr
 {
 	struct net_buf *buf;
 	int err;
-
 	/* Allocate HCI command buffer with timeout */
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
@@ -182,7 +181,7 @@ static DEVICE_API(bt_hci, siwx91x_api) = {
 	};                                                                                         \
 	static struct hci_data hci_data_##inst;                                                    \
 	DEVICE_DT_INST_DEFINE(inst, siwx91x_bt_init, NULL, &hci_data_##inst, &hci_config_##inst,   \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &siwx91x_api)
+			      POST_KERNEL, CONFIG_BT_SILABS_SIWX91X_INIT_PRIORITY, &siwx91x_api)
 
 /* Only one instance supported right now */
 HCI_DEVICE_INIT(0)

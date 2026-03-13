@@ -23,7 +23,7 @@
 #define SIWX91X_MAX_RTS_THRESHOLD 2347
 #define MAX_24GHZ_CHANNELS 14
 
-LOG_MODULE_REGISTER(siwx91x_wifi);
+LOG_MODULE_REGISTER(siwx91x_wifi, 4);
 
 NET_BUF_POOL_FIXED_DEFINE(siwx91x_tx_pool, 1, _NET_ETH_MAX_FRAME_SIZE, 0, NULL);
 
@@ -254,6 +254,7 @@ static int siwx91x_send(const struct device *dev, struct net_pkt *pkt)
 	ret = sl_wifi_send_raw_data_frame(FIELD_GET(SIWX91X_INTERFACE_MASK, interface),
 					  buf->data, pkt_len);
 	if (ret) {
+		LOG_ERR("Couldn't send");
 		net_buf_unref(buf);
 		return -EIO;
 	}
