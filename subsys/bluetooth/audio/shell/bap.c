@@ -955,11 +955,17 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 	bt_shell_print("dir %u loc %X\n", dir, loc);
 }
 
+static void supported_contexts_cb(struct bt_conn *conn, enum bt_audio_context snk_ctx,
+				  enum bt_audio_context src_ctx)
+{
+	bt_shell_print("Supported snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
+}
+
 static void available_contexts_cb(struct bt_conn *conn,
 				  enum bt_audio_context snk_ctx,
 				  enum bt_audio_context src_ctx)
 {
-	bt_shell_print("snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
+	bt_shell_print("Available snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 }
 
 static void config_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
@@ -1024,6 +1030,7 @@ static void release_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code r
 
 static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.location = unicast_client_location_cb,
+	.supported_contexts = supported_contexts_cb,
 	.available_contexts = available_contexts_cb,
 	.config = config_cb,
 	.qos = qos_cb,
