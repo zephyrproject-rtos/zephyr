@@ -178,12 +178,10 @@ static inline int z_impl_stepper_ctrl_set_reference_position(const struct device
 							     const int32_t value)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	if (api->set_reference_position == NULL) {
+	if (DEVICE_API_GET(stepper_ctrl, dev)->set_reference_position == NULL) {
 		return -ENOSYS;
 	}
-	return api->set_reference_position(dev, value);
+	return DEVICE_API_GET(stepper_ctrl, dev)->set_reference_position(dev, value);
 }
 
 /**
@@ -206,12 +204,10 @@ static inline int z_impl_stepper_ctrl_get_actual_position(const struct device *d
 {
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(value != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	if (api->get_actual_position == NULL) {
+	if (DEVICE_API_GET(stepper_ctrl, dev)->get_actual_position == NULL) {
 		return -ENOSYS;
 	}
-	return api->get_actual_position(dev, value);
+	return DEVICE_API_GET(stepper_ctrl, dev)->get_actual_position(dev, value);
 }
 
 /**
@@ -234,12 +230,10 @@ static inline int z_impl_stepper_ctrl_set_event_cb(const struct device *dev,
 						   void *user_data)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	if (api->set_event_cb == NULL) {
+	if (DEVICE_API_GET(stepper_ctrl, dev)->set_event_cb == NULL) {
 		return -ENOSYS;
 	}
-	return api->set_event_cb(dev, callback, user_data);
+	return DEVICE_API_GET(stepper_ctrl, dev)->set_event_cb(dev, callback, user_data);
 }
 
 /**
@@ -263,12 +257,11 @@ static inline int z_impl_stepper_ctrl_set_microstep_interval(const struct device
 							     const uint64_t microstep_interval_ns)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	if (api->set_microstep_interval == NULL) {
+	if (DEVICE_API_GET(stepper_ctrl, dev)->set_microstep_interval == NULL) {
 		return -ENOSYS;
 	}
-	return api->set_microstep_interval(dev, microstep_interval_ns);
+	return DEVICE_API_GET(stepper_ctrl, dev)->set_microstep_interval(dev,
+								      microstep_interval_ns);
 }
 
 /**
@@ -289,9 +282,7 @@ __syscall int stepper_ctrl_move_by(const struct device *dev, const int32_t micro
 static inline int z_impl_stepper_ctrl_move_by(const struct device *dev, const int32_t micro_steps)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	return api->move_by(dev, micro_steps);
+	return DEVICE_API_GET(stepper_ctrl, dev)->move_by(dev, micro_steps);
 }
 
 /**
@@ -312,9 +303,7 @@ __syscall int stepper_ctrl_move_to(const struct device *dev, const int32_t micro
 static inline int z_impl_stepper_ctrl_move_to(const struct device *dev, const int32_t micro_steps)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	return api->move_to(dev, micro_steps);
+	return DEVICE_API_GET(stepper_ctrl, dev)->move_to(dev, micro_steps);
 }
 
 /**
@@ -339,12 +328,10 @@ static inline int z_impl_stepper_ctrl_run(const struct device *dev,
 					  const enum stepper_ctrl_direction direction)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	if (api->run == NULL) {
+	if (DEVICE_API_GET(stepper_ctrl, dev)->run == NULL) {
 		return -ENOSYS;
 	}
-	return api->run(dev, direction);
+	return DEVICE_API_GET(stepper_ctrl, dev)->run(dev, direction);
 }
 
 /**
@@ -362,12 +349,10 @@ __syscall int stepper_ctrl_stop(const struct device *dev);
 static inline int z_impl_stepper_ctrl_stop(const struct device *dev)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	if (api->stop == NULL) {
+	if (DEVICE_API_GET(stepper_ctrl, dev)->stop == NULL) {
 		return -ENOSYS;
 	}
-	return api->stop(dev);
+	return DEVICE_API_GET(stepper_ctrl, dev)->stop(dev);
 }
 
 /**
@@ -386,12 +371,10 @@ static inline int z_impl_stepper_ctrl_is_moving(const struct device *dev, bool *
 {
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(is_moving != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	if (api->is_moving == NULL) {
+	if (DEVICE_API_GET(stepper_ctrl, dev)->is_moving == NULL) {
 		return -ENOSYS;
 	}
-	return api->is_moving(dev, is_moving);
+	return DEVICE_API_GET(stepper_ctrl, dev)->is_moving(dev, is_moving);
 }
 
 /**
