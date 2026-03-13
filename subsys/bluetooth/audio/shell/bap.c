@@ -50,6 +50,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
 #include "common/bt_shell_private.h"
 #include "host/shell/bt.h"
@@ -4155,7 +4156,7 @@ static int cmd_bap_stats(const struct shell *sh, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST_SERVER)
-static void print_ase_info(struct bt_bap_ep *ep, void *user_data)
+static bool print_ase_info(struct bt_bap_ep *ep, void *user_data)
 {
 	struct bt_bap_ep_info info;
 	int err;
@@ -4164,16 +4165,21 @@ static void print_ase_info(struct bt_bap_ep *ep, void *user_data)
 	if (err == 0) {
 		printk("ASE info: id %u state %u dir %u\n", info.id, info.state, info.dir);
 	}
+
+	return true;
 }
 
 static int cmd_print_ase_info(const struct shell *sh, size_t argc, char *argv[])
 {
+	__maybe_unused int err;
+
 	if (!default_conn) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
 
-	bt_bap_unicast_server_foreach_ep(default_conn, print_ase_info, NULL);
+	err = bt_bap_unicast_server_foreach_ep(default_conn, print_ase_info, NULL);
+	__ASSERT(err == 0, "bt_bap_unicast_server_foreach_ep returned %d", err);
 
 	return 0;
 }

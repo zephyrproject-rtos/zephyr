@@ -1364,9 +1364,7 @@ int bt_bap_broadcast_source_foreach_stream(struct bt_bap_broadcast_source *sourc
 		struct bt_bap_stream *stream, *next_stream;
 
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subgroup->streams, stream, next_stream, _node) {
-			const bool stop = func(stream, user_data);
-
-			if (stop) {
+			if (!func(stream, user_data)) {
 				return -ECANCELED;
 			}
 		}

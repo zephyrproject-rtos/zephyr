@@ -217,9 +217,9 @@ int bt_bap_unicast_server_config_ase(struct bt_conn *conn, struct bt_bap_stream 
 	return bt_ascs_config_ase(conn, stream, codec_cfg, qos_pref);
 }
 
-void bt_bap_unicast_server_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data)
+int bt_bap_unicast_server_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data)
 {
-	bt_ascs_foreach_ep(conn, func, user_data);
+	return bt_ascs_foreach_ep(conn, func, user_data);
 }
 
 bool bt_bap_unicast_server_has_ep(const struct bt_bap_ep *ep)
