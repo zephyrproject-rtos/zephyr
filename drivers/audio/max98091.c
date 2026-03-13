@@ -24,22 +24,34 @@ struct max98091_config {
 static void max98091_write_reg(const struct device *dev, uint8_t reg, uint8_t val)
 {
 	const struct max98091_config *const dev_cfg = dev->config;
+	int ret;
 
-	i2c_reg_write_byte_dt(&dev_cfg->i2c, reg, val);
+	ret = i2c_reg_write_byte_dt(&dev_cfg->i2c, reg, val);
+	if (ret < 0) {
+		LOG_ERR("I2C write failed: reg 0x%02x, err %d", reg, ret);
+	}
 }
 
 static void max98091_read_reg(const struct device *dev, uint8_t reg, uint8_t *val)
 {
 	const struct max98091_config *const dev_cfg = dev->config;
+	int ret;
 
-	i2c_reg_read_byte_dt(&dev_cfg->i2c, reg, val);
+	ret = i2c_reg_read_byte_dt(&dev_cfg->i2c, reg, val);
+	if (ret < 0) {
+		LOG_ERR("I2C read failed: reg 0x%02x, err %d", reg, ret);
+	}
 }
 
 static void max98091_update_reg(const struct device *dev, uint8_t reg, uint8_t mask, uint8_t val)
 {
 	const struct max98091_config *const dev_cfg = dev->config;
+	int ret;
 
-	i2c_reg_update_byte_dt(&dev_cfg->i2c, reg, mask, val);
+	ret = i2c_reg_update_byte_dt(&dev_cfg->i2c, reg, mask, val);
+	if (ret < 0) {
+		LOG_ERR("I2C update failed: reg 0x%02x, err %d", reg, ret);
+	}
 }
 
 static void max98091_soft_reset(const struct device *dev)
