@@ -69,3 +69,20 @@ properties:
       - mp
       - lp
       - llp
+
+  rf-path-switch-combine:
+    type: boolean
+    description: |
+      Logical AND the radio active signal with the RF path selection (control) signal.
+
+  rf-path-switch-control-gpios:
+    type: phandle-array
+    description: |
+      GPIO on which the RF path selection signal is emitted. Typically connected to the
+      control signal of an RF switch.
+
+  rf-path-switch-radio-active-gpios:
+    type: phandle-array
+    description: |
+      GPIO on which the radio active signal is emitted. Typically connected to the supply
+      of an RF switch to only enable it when the radio is in operation.
