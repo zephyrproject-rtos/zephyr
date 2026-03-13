@@ -1411,7 +1411,7 @@ static bool bap_broadcast_source_foreach_stream_cb(struct bt_bap_stream *stream,
 
 	(*cnt)++;
 
-	return false;
+	return true;
 }
 
 static ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_foreach_stream)
@@ -1436,7 +1436,7 @@ static bool bap_broadcast_source_foreach_stream_return_early_cb(struct bt_bap_st
 
 	(*cnt)++;
 
-	return true;
+	return false;
 }
 
 static ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_foreach_stream_return_early)
