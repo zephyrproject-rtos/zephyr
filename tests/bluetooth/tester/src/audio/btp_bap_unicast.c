@@ -866,11 +866,18 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 	LOG_DBG("dir %u loc %X", dir, loc);
 }
 
+static void unicast_client_supported_contexts_cb(struct bt_conn *conn,
+						 enum bt_audio_context snk_ctx,
+						 enum bt_audio_context src_ctx)
+{
+	LOG_DBG("Supported snk ctx %u src ctx %u", snk_ctx, src_ctx);
+}
+
 static void unicast_client_available_contexts_cb(struct bt_conn *conn,
 						 enum bt_audio_context snk_ctx,
 						 enum bt_audio_context src_ctx)
 {
-	LOG_DBG("snk ctx %u src ctx %u", snk_ctx, src_ctx);
+	LOG_DBG("Available snk ctx %u src ctx %u", snk_ctx, src_ctx);
 }
 
 static void unicast_client_config_cb(struct bt_bap_stream *stream,
@@ -1091,6 +1098,7 @@ static struct bt_bap_unicast_server_register_param param = {
 
 static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.location = unicast_client_location_cb,
+	.supported_contexts = unicast_client_supported_contexts_cb,
 	.available_contexts = unicast_client_available_contexts_cb,
 	.config = unicast_client_config_cb,
 	.qos = unicast_client_qos_cb,
