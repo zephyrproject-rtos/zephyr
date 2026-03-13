@@ -131,10 +131,15 @@ zephyr_udc0: &usbhs {
 };
 
 &flash0 {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	ranges = <0x0 0x00400000 DT_SIZE_K(1024)>;
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* First half of sector 0 */
 		boot_partition: partition@0 {
