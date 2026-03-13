@@ -24,6 +24,7 @@ string
 	default "esp32_ethernet_kit/esp32/appcpu" if $(BOARD) = "esp32_ethernet_kit"
 	default "ek_ra8m2/r7ka8m2jflcac/cm33" if $(BOARD) = "ek_ra8m2"
 	default "ek_ra8p1/r7ka8p1kflcac/cm33" if $(BOARD) = "ek_ra8p1"
+	default "ek_ra8d2/r7ka8d2kflcac/cm33" if $(BOARD) = "ek_ra8d2"
 	default "imx943_evk/mimx94398/m33" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "imx943_evk/mimx94398/m7_1"
 	default "imx943_evk/mimx94398/m33" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "imx943_evk/mimx94398/m7_0"
 	default "imx943_evk/mimx94398/m7_1" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "imx943_evk/mimx94398/m33"
