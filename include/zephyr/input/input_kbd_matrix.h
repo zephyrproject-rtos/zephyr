@@ -332,6 +332,28 @@ int input_kbd_matrix_pm_action(const struct device *dev,
 			       enum pm_device_action action);
 #endif
 
+/**
+ * @brief Check whether the current keyboard matrix state has ghost keys.
+ *
+ * @param dev Keyboard matrix device instance.
+ *
+ * @retval true  Ghosting key detected.
+ * @retval false No ghosting key detected.
+ */
+bool input_kbd_matrix_ghosting(const struct device *dev);
+
+/**
+ * @brief Update the keyboard matrix state and apply debouncing.
+ *
+ * The driver must first fill @ref input_kbd_matrix_common_config and
+ * @ref input_kbd_matrix_common_data for the kbd matrix.
+ * This function then updates the stable and unstable states,
+ * performs per-key debouncing, and reports key events to the input subsystem.
+ *
+ * @param dev Keyboard matrix device instance.
+ */
+void input_kbd_matrix_update_state(const struct device *dev);
+
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_INPUT_KBD_MATRIX_H_ */
