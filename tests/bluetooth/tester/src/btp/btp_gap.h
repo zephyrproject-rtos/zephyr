@@ -352,6 +352,16 @@ struct btp_gap_pair_v2_cmd {
 #define BTP_GAP_BIG_CREATE_SYNC_ENC_DISABLE	0x00
 #define BTP_GAP_BIG_CREATE_SYNC_ENC_ENABLE	0x01
 
+#define BTP_GAP_SEND_SUBRATE_REQUEST	0x2b
+struct btp_gap_send_subrate_request_cmd {
+	bt_addr_le_t address;
+	uint16_t subrate_min;
+	uint16_t subrate_max;
+	uint16_t max_latency;
+	uint16_t continuation_number;
+	uint16_t supervision_timeout;
+} __packed;
+
 #define BTP_GAP_BIG_CREATE_SYNC			0x2c
 struct btp_gap_big_create_sync_cmd {
 	bt_addr_le_t address;
