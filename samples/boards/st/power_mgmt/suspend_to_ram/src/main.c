@@ -12,7 +12,7 @@
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/adc.h>
-#include <zephyr/drivers/entropy.h>
+#include <zephyr/random/random.h>
 #include <zephyr/drivers/spi.h>
 #include <string.h>
 #include <stdio.h>
@@ -39,8 +39,6 @@ static const struct adc_dt_spec adc_channels[] = {
 	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels,
 			     DT_SPEC_AND_COMMA)
 };
-
-const struct device *rng_dev;
 
 #define BUFFER_LENGTH	3
 
@@ -220,11 +218,6 @@ int main(void)
 {
 	__ASSERT_NO_MSG(gpio_is_ready_dt(&led));
 
-	rng_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
-	if (!device_is_ready(rng_dev)) {
-		printk("error: random device not ready");
-	}
-
 	spi_setup();
 
 	printk("Device ready\n");
@@ -240,7 +233,7 @@ int main(void)
 		printk("Exit Stop1\n");
 
 		(void)memset(entropy_buffer, 0x00, BUFFER_LENGTH);
-		entropy_get_entropy(rng_dev, (char *)entropy_buffer, BUFFER_LENGTH);
+		sys_rand_get(entropy_buffer, BUFFER_LENGTH);
 		printk("Sync entropy: ");
 		print_buf(entropy_buffer);
 
