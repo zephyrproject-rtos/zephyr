@@ -40,6 +40,26 @@
 		zephyr,memory-region = "DTCM";
 	};
 
+	clocks {
+		syst_aclk: axi-clk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(160)>;
+			#clock-cells = <0>;
+		};
+
+		syst_hclk: ahb-clk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(80)>;
+			#clock-cells = <0>;
+		};
+
+		syst_pclk: apb-clk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(40)>;
+			#clock-cells = <0>;
+		};
+	};
+
 	soc: soc {
 		peripheral_region: memory@1a000000 {
 			compatible = "zephyr,memory-region";
