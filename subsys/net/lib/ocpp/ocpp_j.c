@@ -721,6 +721,7 @@ static int parse_start_txn_msg(char *json,
 static int parse_getconfig_msg(char *json, char *key)
 {
 	int ret;
+	size_t key_str_len;
 
 	struct json_obj_descr descr[] = {
 		JSON_OBJ_DESCR_ARRAY_NAMED(struct json_getconfig_payload, "key",
@@ -735,9 +736,14 @@ static int parse_getconfig_msg(char *json, char *key)
 		return ret;
 	}
 
-	/* key is optional so return success*/
-	if (payload.key[0] != NULL) {
-		strcpy(key, payload.key[0]);
+	/* key is optional so return success */
+	if (payload.key_len > 0U && payload.key[0] != NULL) {
+		key_str_len = strnlen(payload.key[0], CISTR50);
+		if (key_str_len >= CISTR50) {
+			return -EMSGSIZE;
+		}
+
+		memcpy(key, payload.key[0], key_str_len + 1);
 	}
 
 	return 0;
