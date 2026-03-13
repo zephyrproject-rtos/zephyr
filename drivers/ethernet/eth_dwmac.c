@@ -537,7 +537,8 @@ static void dwmac_iface_init(struct net_if *iface)
 	k_thread_create(&p->rx_refill_thread, p->rx_refill_thread_stack,
 			K_KERNEL_STACK_SIZEOF(p->rx_refill_thread_stack),
 			dwmac_rx_refill_thread, p, NULL, NULL,
-			K_PRIO_PREEMPT(0), K_ESSENTIAL, K_NO_WAIT);
+			CONFIG_ETH_DWMAC_RX_REFILL_THREAD_PRIORITY,
+			K_ESSENTIAL, K_NO_WAIT);
 	k_thread_name_set(&p->rx_refill_thread, "dwmac_rx_refill");
 
 	/* start up TX/RX */
