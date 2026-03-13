@@ -11,8 +11,8 @@
 
 / {
 	zephyr,user {
-		pwms = <&pwm22 0 160000 PWM_POLARITY_NORMAL>,
-		       <&pwm22 1 160000 PWM_POLARITY_NORMAL>;
+		pwms = <&pwm22 0 1600000 PWM_POLARITY_NORMAL>,
+		       <&pwm22 1 1600000 PWM_POLARITY_NORMAL>;
 
 		gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>,
 			<&gpio1 3 GPIO_ACTIVE_HIGH>;
