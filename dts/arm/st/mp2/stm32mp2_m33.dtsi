@@ -64,7 +64,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x44240000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpiob: gpio@44250000 {
@@ -72,7 +71,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x44250000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpioc: gpio@44260000 {
@@ -80,7 +78,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x44260000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpiod: gpio@44270000 {
@@ -88,7 +85,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x44270000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpioe: gpio@44280000 {
@@ -96,7 +92,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x44280000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpiof: gpio@44290000 {
@@ -104,7 +99,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x44290000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpiog: gpio@442a0000 {
@@ -112,7 +106,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x442a0000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpioh: gpio@442b0000 {
@@ -120,7 +113,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x442b0000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpioi: gpio@442c0000 {
@@ -128,7 +120,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x442c0000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpioj: gpio@442d0000 {
@@ -136,7 +127,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x442d0000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpiok: gpio@442e0000 {
@@ -144,7 +134,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x442e0000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpioz: gpio@46200000 {
@@ -152,7 +141,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x46200000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 		};
 

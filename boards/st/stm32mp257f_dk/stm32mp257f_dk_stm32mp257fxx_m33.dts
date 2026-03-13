@@ -58,22 +58,6 @@
 	clock-frequency = <DT_FREQ_M(400)>;
 };
 
-&gpioc {
-	status = "okay";
-};
-
-&gpiof {
-	status = "okay";
-};
-
-&gpiog {
-	status = "okay";
-};
-
-&gpioh {
-	status = "okay";
-};
-
 &mailbox {
 	status = "okay";
 };
