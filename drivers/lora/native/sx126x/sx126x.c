@@ -443,14 +443,14 @@ static int sx126x_ensure_ready(const struct device *dev)
 {
 	int ret;
 
-	if (!IS_ENABLED(CONFIG_LORA_SX126X_NATIVE_SLEEP)) {
-		return 0;
-	}
-
 	/* Re-enable DIO1 interrupt */
 	ret = sx126x_hal_set_dio1_callback(dev, sx126x_dio1_callback);
 	if (ret < 0) {
 		return ret;
+	}
+
+	if (!IS_ENABLED(CONFIG_LORA_SX126X_NATIVE_SLEEP)) {
+		return 0;
 	}
 
 	/*
