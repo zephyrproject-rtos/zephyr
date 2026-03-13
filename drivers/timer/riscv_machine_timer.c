@@ -11,7 +11,6 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
-#include <zephyr/spinlock.h>
 #include <zephyr/irq.h>
 
 #define DT_DRV_COMPAT riscv_machine_timer
@@ -51,7 +50,6 @@
 #define CYCLES_MAX_4 (CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
 #define CYCLES_MAX   (CYCLES_MAX_4 + LSB_GET(CYCLES_MAX_4))
 
-static struct k_spinlock lock;
 static uint64_t last_count;
 static uint64_t last_ticks;
 static uint32_t last_elapsed;
@@ -106,7 +104,7 @@ static void timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = sys_clock_lock();
 
 	uint64_t now = mtime();
 	uint64_t dcycles = now - last_count;
@@ -122,8 +120,7 @@ static void timer_isr(const void *arg)
 		set_mtimecmp(next);
 	}
 
-	k_spin_unlock(&lock, key);
-	sys_clock_announce(dticks);
+	sys_clock_announce_locked(dticks, key);
 }
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
@@ -134,7 +131,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t cyc;
 
 	if (ticks == K_TICKS_FOREVER) {
@@ -146,8 +142,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		}
 	}
 	set_mtimecmp(cyc);
-
-	k_spin_unlock(&lock, key);
 }
 
 uint32_t sys_clock_elapsed(void)
@@ -156,13 +150,11 @@ uint32_t sys_clock_elapsed(void)
 		return 0;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t now = mtime();
 	uint64_t dcycles = now - last_count;
 	uint32_t dticks = (cycle_diff_t)dcycles / CYC_PER_TICK;
 
 	last_elapsed = dticks;
-	k_spin_unlock(&lock, key);
 	return dticks;
 }
 
