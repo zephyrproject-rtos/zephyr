@@ -906,6 +906,11 @@ __comp_west_attach()
 	__comp_west_runner_cmd
 }
 
+__comp_west_rtt()
+{
+	__comp_west_runner_cmd
+}
+
 __comp_west_spdx()
 {
 	local bool_opts="
