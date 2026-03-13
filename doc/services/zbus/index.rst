@@ -916,6 +916,110 @@ illustrates the runtime registration usage.
   The :c:struct:`zbus_observer_node` can only be reused in :c:func:`zbus_chan_add_obs_with_node` after removing
   the channel observer it was first associated with through :c:func:`zbus_chan_rm_obs`.
 
+.. _zbus_proxy_agent:
+
+Proxy Agent Communication (Experimental)
+****************************************
+
+.. warning::
+  Proxy agent communication is experimental and may change without deprecation.
+
+ZBus supports proxy agent forwarding, enabling message passing between different execution
+domains such as CPU cores or separate devices.
+
+.. figure:: images/zbus_proxy_agent.svg
+    :alt: ZBus proxy agent communication
+    :width: 75%
+
+..
+  Image illustrating zbus proxy agent communication between domains.
+
+Concepts
+========
+
+Proxy agent communication introduces several key concepts:
+
+* **Shadow channels**: Read-only channels that mirror channels from other domains
+* **Proxy agents**: Background services that synchronize channel data between domains
+* **Transport backends**: Communication mechanisms used by proxy agents
+
+Proxy agents are set up in code using :c:macro:`ZBUS_PROXY_AGENT_DEFINE`, specifying the transport
+backend and configuration parameters.
+Channels are defined using standard zbus macros (:c:macro:`ZBUS_CHAN_DEFINE` or
+:c:macro:`ZBUS_CHAN_DEFINE_WITH_ID`) and shadow channels use :c:macro:`ZBUS_SHADOW_CHAN_DEFINE`
+to create read-only mirrors linked to specific proxy agents.
+
+Transport Backends
+==================
+
+ZBus proxy agent communication relies on transport backends to forward messages between different
+execution domains.
+
+IPC Backend
+-----------
+
+The IPC backend forwards messages between CPU cores within the same system using
+Inter-Process Communication mechanisms.
+
+See the :zephyr:code-sample:`zbus-proxy-agent-ipc` sample for a complete implementation.
+
+Usage
+=====
+
+1. Enable :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT` and the desired backend option.
+2. Provide the backend device in devicetree.
+3. Instantiate the proxy agent:
+
+.. code-block:: c
+
+    #include <zephyr/zbus/proxy_agent/zbus_proxy_agent.h>
+    #include <zephyr/zbus/proxy_agent/zbus_proxy_agent_ipc.h>
+
+    #define IPC_DEV_NODE DT_NODELABEL(ipc0)
+
+    ZBUS_PROXY_AGENT_DEFINE(proxy_agent,                   /* Proxy agent name */
+                            ZBUS_PROXY_AGENT_BACKEND_IPC,  /* Proxy agent type */
+                            IPC_DEV_NODE                   /* Backend node */
+    );
+
+Where:
+
+- "proxy_agent": Name of the proxy agent instance
+- "ZBUS_PROXY_AGENT_BACKEND_IPC": Transport backend type (IPC in this case)
+- "IPC_DEV_NODE": Device tree node for the backend device
+
+4. Forward local channels through the agent:
+
+.. code-block:: c
+
+    ZBUS_CHAN_DEFINE(my_channel, struct my_msg, NULL, NULL,
+                     ZBUS_OBSERVERS_EMPTY, ZBUS_MSG_INIT(0));
+    ZBUS_PROXY_ADD_CHAN(proxy_agent, my_channel);
+
+    zbus_chan_pub(&my_channel, &msg, K_MSEC(100));
+
+Any message published to "my_channel" will be forwarded by "proxy_agent" to remote domains.
+
+5. Mirror remote channels with shadows:
+
+.. code-block:: c
+
+    ZBUS_SHADOW_CHAN_DEFINE(my_channel_shadow, struct my_msg,
+                            proxy_agent, NULL, ZBUS_OBSERVERS_EMPTY,
+                            ZBUS_MSG_INIT(0));
+
+Where the shadow channel can be used like any regular channel, but is read-only. For example, adding a listener:
+
+.. code-block:: c
+
+    void my_listener_cb(const struct zbus_channel *chan)
+    {
+        const struct my_msg *data = zbus_chan_const_msg(chan);
+        printk("Received: %d\n", data->data);
+    }
+
+    ZBUS_LISTENER_DEFINE(my_listener, my_listener_cb);
+    ZBUS_CHAN_ADD_OBS(my_channel_shadow, my_listener, 0);
 
 Samples
 *******
@@ -942,6 +1046,7 @@ available:
 * :zephyr:code-sample:`zbus-confirmed-channel` implements a way of implement confirmed channel only
   with subscribers;
 * :zephyr:code-sample:`zbus-benchmark` implements a benchmark with different combinations of inputs.
+* :zephyr:code-sample:`zbus-proxy-agent-ipc` demonstrates multi-core communication using IPC proxy agents;
 
 Suggested Uses
 **************
@@ -952,6 +1057,11 @@ scenarios that can tolerate message losses and duplications; when they cannot, u
 subscribers (if you need a thread) or listeners (if you need to be lean and fast). In addition to
 the listener, another asynchronous message processing mechanism (like :ref:`message queues
 <message_queues_v2>`) may be necessary to retain the pending message until it gets processed.
+
+For proxy agent scenarios, use zbus to enable communication across execution boundaries:
+
+* **Multi-core systems**: Use IPC backend proxy agents to coordinate between application and network processors,
+  or distribute workloads across multiple CPU cores.
 
 .. note::
    ZBus can be used to transfer streams from the producer to the consumer. However, this can
@@ -998,6 +1108,27 @@ Related configuration options:
   observers to statically allocate.
 * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE` use user-provided runtime
   observers nodes;
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT` enable proxy agent communication support.
+
+Proxy Agent Configuration Options
+=================================
+
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_LOG_LEVEL` log level for proxy agent communication;
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_IPC` enable IPC backend for proxy agent communication;
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_IPC_LOG_LEVEL` log level for IPC backend proxy agent
+  communication;
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_MAX_MESSAGE_SIZE` maximum message size for proxy agent
+  channels;
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_MAX_CHANNEL_NAME_SIZE` maximum size of channel names in
+  proxy agent communication;
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_INIT_PRIORITY` initialization priority for proxy agent
+  setup.
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_WORK_QUEUE_STACK_SIZE` stack size for the proxy agent
+  receive work queue thread;
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_WORK_QUEUE_PRIORITY` priority for the proxy agent receive
+  work queue thread.
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_RX_QUEUE_DEPTH` depth of the proxy agent receive queue
+  for incoming messages from remote domains.
 
 API Reference
 *************
