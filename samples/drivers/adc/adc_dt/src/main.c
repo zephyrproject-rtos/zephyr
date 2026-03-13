@@ -20,13 +20,14 @@
 #error "No suitable devicetree overlay specified"
 #endif
 
-#define DT_SPEC_AND_COMMA(node_id, prop, idx) \
-	ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
+#define DT_SPEC_AND_COMMA_FOR_INPUTS(node_id, prop, idx) \
+	COND_CODE_1(DT_PHA_HAS_CELL_AT_IDX(node_id, prop, idx, input), \
+		    (ADC_DT_SPEC_GET_BY_IDX(node_id, idx),), ())
 
 /* Data of ADC io-channels specified in devicetree. */
 static const struct adc_dt_spec adc_channels[] = {
 	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels,
-			     DT_SPEC_AND_COMMA)
+			     DT_SPEC_AND_COMMA_FOR_INPUTS)
 };
 
 int main(void)
