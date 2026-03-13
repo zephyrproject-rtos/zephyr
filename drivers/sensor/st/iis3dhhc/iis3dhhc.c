@@ -25,15 +25,18 @@ static int iis3dhhc_sample_fetch(const struct device *dev,
 {
 	struct iis3dhhc_data *data = dev->data;
 	int16_t raw_accel[3];
+	int32_t ret = 0;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ACCEL_XYZ || chan == SENSOR_CHAN_ALL);
 
-	iis3dhhc_acceleration_raw_get(data->ctx, raw_accel);
-	data->acc[0] = raw_accel[0];
-	data->acc[1] = raw_accel[1];
-	data->acc[2] = raw_accel[2];
+	ret = iis3dhhc_acceleration_raw_get(data->ctx, raw_accel);
+	if (ret == 0) {
+		data->acc[0] = raw_accel[0];
+		data->acc[1] = raw_accel[1];
+		data->acc[2] = raw_accel[2];
+	}
 
-	return 0;
+	return ret;
 }
 
 static inline void iis3dhhc_convert(struct sensor_value *val,

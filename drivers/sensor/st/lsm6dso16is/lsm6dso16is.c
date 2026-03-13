@@ -371,28 +371,38 @@ static int lsm6dso16is_sample_fetch(const struct device *dev,
 #if defined(CONFIG_LSM6DSO16IS_SENSORHUB)
 	struct lsm6dso16is_data *data = dev->data;
 #endif /* CONFIG_LSM6DSO16IS_SENSORHUB */
+	int ret = 0;
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
-		lsm6dso16is_sample_fetch_accel(dev);
+		ret = lsm6dso16is_sample_fetch_accel(dev);
 		break;
 	case SENSOR_CHAN_GYRO_XYZ:
-		lsm6dso16is_sample_fetch_gyro(dev);
+		ret = lsm6dso16is_sample_fetch_gyro(dev);
 		break;
 #if defined(CONFIG_LSM6DSO16IS_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP:
-		lsm6dso16is_sample_fetch_temp(dev);
+		ret = lsm6dso16is_sample_fetch_temp(dev);
 		break;
 #endif
 	case SENSOR_CHAN_ALL:
-		lsm6dso16is_sample_fetch_accel(dev);
-		lsm6dso16is_sample_fetch_gyro(dev);
+		ret = lsm6dso16is_sample_fetch_accel(dev);
+		if (ret != 0) {
+			break;
+		}
+		ret = lsm6dso16is_sample_fetch_gyro(dev);
+		if (ret != 0) {
+			break;
+		}
 #if defined(CONFIG_LSM6DSO16IS_ENABLE_TEMP)
-		lsm6dso16is_sample_fetch_temp(dev);
+		ret = lsm6dso16is_sample_fetch_temp(dev);
+		if (ret != 0) {
+			break;
+		}
 #endif
 #if defined(CONFIG_LSM6DSO16IS_SENSORHUB)
 		if (data->shub_inited) {
-			lsm6dso16is_sample_fetch_shub(dev);
+			ret = lsm6dso16is_sample_fetch_shub(dev);
 		}
 #endif
 		break;
@@ -400,7 +410,7 @@ static int lsm6dso16is_sample_fetch(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 static inline void lsm6dso16is_accel_convert(struct sensor_value *val, int raw_val,
