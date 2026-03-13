@@ -4,6 +4,9 @@ common:
     - native_sim
   integration_platforms:
     - native_sim
+  tags:
+    - bluetooth
+
 tests:
   bluetooth.shell.main:
     extra_configs:
@@ -16,7 +19,6 @@ tests:
     integration_platforms:
       - qemu_x86
     platform_exclude: nrf52dk/nrf52810
-    tags: bluetooth
     harness: keyboard
     min_flash: 145
   bluetooth.shell.power_control_request:
@@ -69,7 +71,6 @@ tests:
       - native_sim
       - native_sim/native/64
     platform_exclude: nrf52dk/nrf52810
-    tags: bluetooth
     harness: keyboard
   bluetooth.shell.shell_br.accept_conn_as_central:
     extra_configs:
@@ -82,7 +83,6 @@ tests:
       - native_sim
       - native_sim/native/64
     platform_exclude: nrf52dk/nrf52810
-    tags: bluetooth
     harness: keyboard
   bluetooth.shell.shell_br.did:
     extra_configs:
@@ -95,21 +95,17 @@ tests:
       - native_sim
       - native_sim/native/64
     platform_exclude: nrf52dk/nrf52810
-    tags: bluetooth
     harness: keyboard
   bluetooth.shell.no_privacy:
     build_only: true
     extra_args: CONFIG_BT_PRIVACY=n
-    tags: bluetooth
   bluetooth.shell.log_defaults:
     build_only: true
     extra_args: CONF_FILE="log.conf"
-    tags: bluetooth
   bluetooth.shell.bt_ctlr_dtm:
     build_only: true
     extra_args:
       - CONFIG_BT_CTLR_DTM_HCI=y
-    tags: bluetooth
     platform_allow:
       - nrf52840dk/nrf52840
 
@@ -117,38 +113,32 @@ tests:
   bluetooth.shell.audio:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
-    tags: bluetooth
   bluetooth.shell.audio.no_bt_conn_dynamic_callbacks:
     extra_args:
       - CONF_FILE="audio.conf"
       - CONFIG_BT_CONN_DYNAMIC_CALLBACKS=n
     build_only: true
-    tags: bluetooth
   bluetooth.shell.audio.no_testing:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_TESTING=n
-    tags: bluetooth
   bluetooth.shell.audio.no_logs:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_LOG=n
-    tags: bluetooth
   bluetooth.shell.audio.no_vcs:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_VCP_VOL_REND=n
-    tags: bluetooth
   bluetooth.shell.audio.no_vocs:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_VOCS_MAX_INSTANCE_COUNT=0
       - CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT=0
-    tags: bluetooth
   bluetooth.shell.audio.no_aics:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
@@ -156,7 +146,6 @@ tests:
       - CONFIG_BT_AICS_MAX_INSTANCE_COUNT=0
       - CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT=0
       - CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT=0
-    tags: bluetooth
   bluetooth.shell.audio.no_aics_vocs:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
@@ -166,94 +155,79 @@ tests:
       - CONFIG_BT_AICS_MAX_INSTANCE_COUNT=0
       - CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT=0
       - CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT=0
-    tags: bluetooth
   bluetooth.shell.audio.no_vcp_vol_ctlr:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_VCP_VOL_CTLR=n
-    tags: bluetooth
   bluetooth.shell.audio.no_vcs_vcp_vol_ctlr:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_VCP_VOL_REND=n
       - CONFIG_BT_VCP_VOL_CTLR=n
-    tags: bluetooth
   bluetooth.shell.audio.vcp_vol_ctlr_no_aics_client:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST=0
-    tags: bluetooth
   bluetooth.shell.audio.vcp_vol_ctlr_no_vocs_client:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST=0
-    tags: bluetooth
   bluetooth.shell.audio.no_micp_mic_dev:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_MICP_MIC_DEV=n
-    tags: bluetooth
   bluetooth.shell.audio.no_micp_mic_ctlr:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_MICP_MIC_CTLR=n
-    tags: bluetooth
   bluetooth.shell.audio.no_micp_mic_dev_micp_mic_ctlr:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_MICP_MIC_DEV=n
       - CONFIG_BT_MICP_MIC_CTLR=n
-    tags: bluetooth
   bluetooth.shell.audio.micp_mic_ctlr_no_aics_client:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_MICP_MIC_CTLR_MAX_AICS_INST=0
-    tags: bluetooth
   bluetooth.shell.audio.no_mcs:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_MCS=n
-    tags: bluetooth
   bluetooth.shell.audio.no_mcc:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_MCC=n
-    tags: bluetooth
   bluetooth.shell.audio.no_ots:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_OTS=n
-    tags: bluetooth
   bluetooth.shell.audio.no_mcc_ots:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_MCC_OTS=n
-    tags: bluetooth
   bluetooth.shell.audio.mcc_minimal:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_MCC_MINIMAL=y
-    tags: bluetooth
   bluetooth.shell.audio.no_otsc:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_OTS=n
       - CONFIG_BT_MCC_OTS=n
-    tags: bluetooth
   bluetooth.audio_shell.no_pac_snk:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
@@ -364,13 +338,11 @@ tests:
     extra_configs:
       - CONFIG_BT_CCP_CALL_CONTROL_SERVER=n
       - CONFIG_BT_TBS=n
-    tags: bluetooth
   bluetooth.shell.audio.only_gtbs:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_TBS_BEARER_COUNT=0
-    tags: bluetooth
   bluetooth.shell.audio.no_tbs_client:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
@@ -378,20 +350,17 @@ tests:
       - CONFIG_BT_TBS_CLIENT_TBS=n
       - CONFIG_BT_TBS_CLIENT_GTBS=n
       - CONFIG_BT_CCP_CALL_CONTROL_CLIENT=n
-    tags: bluetooth
   bluetooth.shell.audio.tbs_only_client:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_TBS_CLIENT_GTBS=n
-    tags: bluetooth
   bluetooth.shell.audio.gtbs_only_client:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_TBS_CLIENT_TBS=n
       - CONFIG_BT_CCP_CALL_CONTROL_CLIENT_BEARER_COUNT=1
-    tags: bluetooth
   bluetooth.audio_shell.no_cap_acceptor:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
@@ -477,10 +446,8 @@ tests:
     build_only: true
     extra_configs:
       - CONFIG_BT_CCP_CALL_CONTROL_SERVER=n
-    tags: bluetooth
   bluetooth.shell.audio.no_assert:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_ASSERT=n
-    tags: bluetooth
