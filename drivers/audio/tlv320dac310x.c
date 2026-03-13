@@ -246,11 +246,13 @@ static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg)
 
 	/* configure I2S interface */
 	val = IF_CTRL_IFTYPE(IF_CTRL_IFTYPE_I2S);
-	if (cfg->i2s.options & I2S_OPT_BIT_CLK_CONTROLLER) {
+	/* Since CONTROLLER is 0, we check that the TARGET bit is NOT set */
+	if (!(cfg->i2s.options & I2S_OPT_BIT_CLK_TARGET)) {
 		val |= IF_CTRL_BCLK_OUT;
 	}
 
-	if (cfg->i2s.options & I2S_OPT_FRAME_CLK_CONTROLLER) {
+	/* Since CONTROLLER is 0, we check that the TARGET bit is NOT set */
+	if (!(cfg->i2s.options & I2S_OPT_FRAME_CLK_TARGET)) {
 		val |= IF_CTRL_WCLK_OUT;
 	}
 
@@ -284,7 +286,7 @@ static int codec_configure_clocks(const struct device *dev,
 	struct i2s_config *i2s;
 	int osr, osr_min, osr_max;
 	enum osr_multiple osr_multiple;
-	int mdac, ndac, bclk_div, mclk_div;
+	int mdac, ndac, bclk_div = 0, mclk_div;
 
 	i2s = &cfg->dai_cfg.i2s;
 	LOG_DBG("MCLK %u Hz PCM Rate: %u Hz", cfg->mclk_freq,
@@ -340,7 +342,7 @@ static int codec_configure_clocks(const struct device *dev,
 			dac_clk, mod_clk);
 	LOG_DBG("NDAC: %u MDAC: %u OSR: %u", ndac, mdac, osr);
 
-	if (i2s->options & I2S_OPT_BIT_CLK_CONTROLLER) {
+	if (!(i2s->options & I2S_OPT_BIT_CLK_TARGET)) {
 		bclk_div = osr * mdac / (i2s->word_size * 2U); /* stereo */
 		if ((bclk_div * i2s->word_size * 2) != (osr * mdac)) {
 			LOG_ERR("Unable to generate BCLK %u from MCLK %u",
@@ -361,7 +363,8 @@ static int codec_configure_clocks(const struct device *dev,
 	codec_write_reg(dev, OSR_MSB_ADDR, (uint8_t)((osr >> 8) & OSR_MSB_MASK));
 	codec_write_reg(dev, OSR_LSB_ADDR, (uint8_t)(osr & OSR_LSB_MASK));
 
-	if (i2s->options & I2S_OPT_BIT_CLK_CONTROLLER) {
+	/* Since CONTROLLER is 0, we check that the TARGET bit is NOT set */
+	if (!(i2s->options & I2S_OPT_BIT_CLK_TARGET)) {
 		codec_write_reg(dev, BCLK_DIV_ADDR,
 				BCLK_DIV(bclk_div) | BCLK_DIV_POWER_UP);
 	}
