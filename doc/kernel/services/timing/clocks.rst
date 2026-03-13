@@ -230,6 +230,33 @@ comparatively simple API.
   :c:func:`sys_clock_announce`, which the kernel needs to test newly
   arriving timeouts for expiration.
 
+Timer Driver Locking
+--------------------
+
+The kernel exposes a unified timer lock via :c:func:`sys_clock_lock` and
+:c:func:`sys_clock_unlock`.  This lock protects both the kernel's internal
+tick accounting (``curr_tick``, the timeout queue) and any driver-private
+state that must be consistent with it (e.g. a hardware cycle counter
+baseline).
+
+Timer drivers that maintain internal state should acquire this lock at
+the start of their ISR, update their hardware state, then pass the lock
+key to :c:func:`sys_clock_announce_locked` which consumes it.  This
+ensures that the driver's cycle counter baseline and the kernel's
+``curr_tick`` are always updated under the same lock, eliminating race
+conditions that can arise on SMP systems (or, less commonly, on UP
+systems where higher-priority ISRs need consistent realtime references)
+when two separate locks are used.
+
+The driver-provided callbacks :c:func:`sys_clock_set_timeout` and
+:c:func:`sys_clock_elapsed` are always invoked by the kernel with this
+lock already held.
+
+For backward compatibility, :c:func:`sys_clock_announce` remains
+available and acquires the lock internally.  New and migrated drivers
+should prefer the :c:func:`sys_clock_lock` /
+:c:func:`sys_clock_announce_locked` pattern.
+
 Note that a natural implementation of this API results in a "tickless"
 kernel, which receives and processes timer interrupts only for
 registered events, relying on programmable hardware counters to
