@@ -339,7 +339,7 @@ static int eeprom_at24_write(const struct device *dev, off_t offset,
 		if (now > timeout) {
 			break;
 		}
-		k_sleep(1);
+		k_sleep(K_MSEC(1));
 	}
 
 	if (err < 0) {
