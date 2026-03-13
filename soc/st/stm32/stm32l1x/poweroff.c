@@ -15,11 +15,7 @@ void z_sys_poweroff(void)
 	LL_PWR_ClearFlag_SB();
 	LL_PWR_ClearFlag_WU();
 
-	LL_LPM_DisableEventOnPend();
 	LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
-	LL_LPM_EnableDeepSleep();
 
-	k_cpu_idle();
-
-	CODE_UNREACHABLE;
+	stm32_enter_poweroff();
 }
