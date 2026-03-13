@@ -75,12 +75,14 @@ static struct bt_le_ext_adv *ext_adv;
 
 CREATE_FLAG(flag_stream_configured);
 CREATE_FLAG(flag_stream_started);
-static void print_ase_info(struct bt_bap_ep *ep, void *user_data)
+static bool print_ase_info(struct bt_bap_ep *ep, void *user_data)
 {
 	struct bt_bap_ep_info info;
 
 	bt_bap_ep_get_info(ep, &info);
 	printk("ASE info: id %u state %u dir %u\n", info.id, info.state, info.dir);
+
+	return true;
 }
 
 static struct bt_bap_stream *stream_alloc(void)
@@ -100,6 +102,8 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 		      const struct bt_audio_codec_cfg *codec_cfg, struct bt_bap_stream **stream,
 		      struct bt_bap_qos_cfg_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
+	int err;
+
 	printk("ASE Codec Config: conn %p ep %p dir %u\n", conn, ep, dir);
 
 	print_codec_cfg(codec_cfg);
@@ -113,7 +117,10 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 
 	printk("ASE Codec Config stream %p\n", *stream);
 
-	bt_bap_unicast_server_foreach_ep(conn, print_ase_info, NULL);
+	err = bt_bap_unicast_server_foreach_ep(conn, print_ase_info, NULL);
+	if (err != 0) {
+		FAIL("bt_bap_unicast_server_foreach_ep returned %d", err);
+	}
 
 	*pref = qos_pref;
 
