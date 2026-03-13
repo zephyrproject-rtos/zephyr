@@ -676,7 +676,7 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	evt.data.rx.offset = data->async.rx_offset;
 
 	if (data->async.cb && evt.data.rx.len) {
-		data->async.cb(data->uart_dev, &evt, data->async.user_data);
+		data->async.cb(uart_dev, &evt, data->async.user_data);
 	}
 
 	data->async.rx_offset = 0;
@@ -1056,7 +1056,7 @@ static int uart_esp32_async_rx_disable(const struct device *dev)
 	evt.data.rx.offset = data->async.rx_offset;
 
 	if (data->async.cb && evt.data.rx.len) {
-		data->async.cb(data->uart_dev, &evt, data->async.user_data);
+		data->async.cb(dev, &evt, data->async.user_data);
 	}
 
 	data->async.rx_offset = 0;
