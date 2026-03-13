@@ -647,9 +647,6 @@ struct ethernet_lldp {
 	/** Length of the optional Data Unit TLVs */
 	size_t optional_len;
 
-	/** Network interface that has LLDP supported. */
-	struct net_if *iface;
-
 	/** LLDP TX timer start time */
 	int64_t tx_timer_start;
 
@@ -689,14 +686,8 @@ struct ethernet_context {
 	struct net_if *iface;
 
 #if defined(CONFIG_NET_LLDP)
-#if NET_VLAN_MAX_COUNT > 0
-#define NET_LLDP_MAX_COUNT NET_VLAN_MAX_COUNT
-#else
-#define NET_LLDP_MAX_COUNT 1
-#endif /* NET_VLAN_MAX_COUNT > 0 */
-
 	/** LLDP specific parameters */
-	struct ethernet_lldp lldp[NET_LLDP_MAX_COUNT];
+	struct ethernet_lldp lldp;
 #endif
 
 	/**
