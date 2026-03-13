@@ -1,55 +1,39 @@
 # Copyright (c) 2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+config SPI_MCHP_SERCOM
+	bool
+	help
+	  Common options for Microchip SPI SERCOM drivers.
+
 config SPI_MCHP_SERCOM_G1
-	bool "Microchip SERCOM SPI driver"
+	bool
 	default y
 	depends on DT_HAS_MICROCHIP_SERCOM_G1_SPI_ENABLED
 	select PINCTRL
 	select GPIO
+	select SPI_MCHP_SERCOM
 	help
 	  Enable support for the Microchip SERCOM SPI driver.
 
-menu "Microchip SERCOM SPI driver options"
+if SPI_MCHP_SERCOM
 
 config SPI_MCHP_INTER_CHARACTER_SPACE
 	int "Microchip SERCOM SPI Inter-Character Spacing (in clock cycles)"
 	default 63 if SPI_SLAVE
 	default 0
 	range 0 63
-	depends on SPI_MCHP_SERCOM_G1
+	depends on SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
 	help
 	  Number of clock cycles to delay between characters on SPI bus.
 
-endmenu
-
-
-config SPI_MCHP_INTERRUPT_DRIVEN
-	bool "Microchip SERCOM SPI driver (Interrupt Driven)"
-	depends on SPI_MCHP_SERCOM_G1 && !SPI_ASYNC
+config SPI_MCHP_DMA_DRIVEN
+	bool "Microchip SPI DMA Mode"
+	default y
+	depends on DMA
+	depends on $(dt_compat_all_has_prop,$(DT_COMPAT_MICROCHIP_SERCOM_G1_SPI),dmas)
 	help
-	  Enable interrupt-driven support for Microchip Devices
-	  SERCOM SPI driver.
+	  This enables DMA driven transfers for the SPI peripheral.
+	  Requires DMA controller and dmas property in device tree.
 
-menu "SPI ASYNC SELECTION"
-	depends on SPI_MCHP_SERCOM_G1 && SPI_ASYNC
-
-choice
-	prompt "Select Async Mode: Interrupt or DMA"
-	default SPI_MCHP_INTERRUPT_DRIVEN_ASYNC
-	help
-	  Choose between interrupt or DMA async mode for the MCHP SPI driver.
-
-config SPI_MCHP_INTERRUPT_DRIVEN_ASYNC
-	bool "MCHP Interrupt Async"
-	help
-	  Enables interrupt support for the MCHP SPI driver in async mode.
-
-config SPI_MCHP_DMA_DRIVEN_ASYNC
-	bool "MCHP DMA"
-	select DMA
-	help
-	  Enables DMA in async mode for the MCHP SPI driver.
-
-endchoice
-endmenu
+endif # SPI_MCHP_SERCOM
