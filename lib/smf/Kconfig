@@ -1,23 +1,26 @@
 # Copyright 2021 The Chromium OS Authors
 # SPDX-License-Identifier: Apache-2.0
 
-config SMF
-	bool "Hierarchical State Machine"
+menuconfig SMF
+	bool "State Machine Framework"
 	help
-	  This option enables the Hierarchical State Machine library
+	  Enable the State Machine Framework (SMF) library, which provides
+	  support for flat and hierarchical state machines.
 
 if SMF
 
 config SMF_ANCESTOR_SUPPORT
-	bool "States to have 1 or more ancestors"
+	bool "Ancestor state support"
 	help
-	   If y, then the state machine framework includes ancestor state support
+	  Enable ancestor state support in the state machine framework,
+	  allowing hierarchical state machines.
 
 config SMF_INITIAL_TRANSITION
 	depends on SMF_ANCESTOR_SUPPORT
 	bool "Support initial transitions for ancestor states"
 	help
-	   If y, then each state can have an initial transition to a sub-state
+	  Enable initial transition support, allowing each state to define
+	  an initial transition to a sub-state upon entry.
 
 config SMF_INSTRUMENTATION
 	bool "State machine instrumentation hooks"
