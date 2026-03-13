@@ -21,8 +21,9 @@ LOG_MODULE_REGISTER(net_lldp, CONFIG_NET_LLDP_LOG_LEVEL);
 
 static struct net_mgmt_event_callback cb;
 
+static void lldp_tx_timeout(struct k_work *work);
 /* Have only one timer in order to save memory */
-static struct k_work_delayable lldp_tx_timer;
+static K_WORK_DELAYABLE_DEFINE(lldp_tx_timer, lldp_tx_timeout);
 
 /* Track currently active timers */
 static sys_slist_t lldp_ifaces;
@@ -408,8 +409,6 @@ void net_lldp_unset_lldpdu(struct net_if *iface)
 
 void net_lldp_init(void)
 {
-	k_work_init_delayable(&lldp_tx_timer, lldp_tx_timeout);
-
 	net_if_foreach(iface_cb, NULL);
 
 	net_mgmt_init_event_callback(&cb, iface_event_handler,
