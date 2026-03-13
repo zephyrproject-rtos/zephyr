@@ -6,6 +6,7 @@
 #include <arm/armv8.1-m.dtsi>
 #include <freq.h>
 #include <mem.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	cpus {
@@ -39,6 +40,14 @@
 		zephyr,memory-region = "DTCM";
 	};
 
+	soc: soc {
+		peripheral_region: memory@1a000000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x1a000000 DT_SIZE_M(8)>;
+			zephyr,memory-region = "PERIPHERALS";
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_DEVICE)>;
+		};
+	};
 };
 
 &nvic {
