@@ -200,6 +200,7 @@ New APIs and options
     * :kconfig:option:`CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH`
     * :c:member:`bt_cap_handover_cb.unicast_to_broadcast_created`
     * :c:func:`bt_tbs_client_get_by_index`
+    * :c:member:`bt_bap_unicast_client_cb.supported_contexts`
 
   * Host
 
