@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
+#include <zephyr/irq.h>
 #include <zephyr/drivers/cache.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/math_extras.h>
@@ -24,6 +25,10 @@ void cache_data_enable(void)
 
 void cache_data_disable(void)
 {
+	uint32_t key;
+
+	key = irq_lock();
+
 	cache_data_flush_all();
 
 	while (LL_DCACHE_IsActiveFlag_BUSYCMD(DCACHE1)) {
@@ -39,6 +44,8 @@ void cache_data_disable(void)
 	LL_DCACHE_Disable(DCACHE2);
 	LL_DCACHE_ClearFlag_BSYEND(DCACHE2);
 #endif
+
+	irq_unlock(key);
 }
 
 static int cache_data_manage_range(void *addr, size_t size, uint32_t command)
@@ -50,10 +57,13 @@ static int cache_data_manage_range(void *addr, size_t size, uint32_t command)
 	 */
 	uint32_t start = (uint32_t)addr;
 	uint32_t end;
+	uint32_t key;
 
 	if (u32_add_overflow(start, size, &end)) {
 		return -EOVERFLOW;
 	}
+
+	key = irq_lock();
 
 	LL_DCACHE_SetStartAddress(DCACHE1, start);
 	LL_DCACHE_SetEndAddress(DCACHE1, end);
@@ -65,6 +75,23 @@ static int cache_data_manage_range(void *addr, size_t size, uint32_t command)
 	LL_DCACHE_SetCommand(DCACHE2, command);
 	LL_DCACHE_StartCommand(DCACHE2);
 #endif
+
+	while (LL_DCACHE_IsActiveFlag_BUSYCMD(DCACHE1)) {
+	}
+
+	/* Clear CMDEND to avoid an extra interrupt if somebody enables them. */
+	LL_DCACHE_ClearFlag_CMDEND(DCACHE1);
+
+#if defined(DCACHE2)
+	while (LL_DCACHE_IsActiveFlag_BUSYCMD(DCACHE2)) {
+	}
+
+	/* Clear CMDEND to avoid an extra interrupt if somebody enables them. */
+	LL_DCACHE_ClearFlag_CMDEND(DCACHE2);
+#endif
+
+	irq_unlock(key);
+
 	return 0;
 }
 
@@ -90,10 +117,31 @@ int cache_data_flush_all(void)
 
 int cache_data_invd_all(void)
 {
+	uint32_t key;
+
+	key = irq_lock();
+
 	LL_DCACHE_Invalidate(DCACHE1);
 #if defined(DCACHE2)
 	LL_DCACHE_Invalidate(DCACHE2);
 #endif
+
+	while (LL_DCACHE_IsActiveFlag_BUSY(DCACHE1)) {
+	}
+
+	/* Clear BSYEND to avoid an extra interrupt if somebody enables them. */
+	LL_DCACHE_ClearFlag_BSYEND(DCACHE1);
+
+#if defined(DCACHE2)
+	while (LL_DCACHE_IsActiveFlag_BUSY(DCACHE2)) {
+	}
+
+	/* Clear BSYEND to avoid an extra interrupt if somebody enables them. */
+	LL_DCACHE_ClearFlag_BSYEND(DCACHE2);
+#endif
+
+	irq_unlock(key);
+
 	return 0;
 }
 
