@@ -196,8 +196,43 @@ family:
       - name: efr32zg23
         socs:
           - name: efr32zg23b020f512im48
+      - name: efr32fg28
+        socs:
+          - name: efr32fg28a010f1024gm48
+          - name: efr32fg28a010f1024gm68
+          - name: efr32fg28a110f1024gm48
+          - name: efr32fg28a110f1024gm68
+          - name: efr32fg28a112f1024gm48
+          - name: efr32fg28a112f1024gm68
+          - name: efr32fg28a120f1024gm48
+          - name: efr32fg28a120f1024gm68
+          - name: efr32fg28a122f1024gm48
+          - name: efr32fg28a122f1024gm68
+          - name: efr32fg28b310f1024im48
+          - name: efr32fg28b310f1024im68
+          - name: efr32fg28b312f1024im48
+          - name: efr32fg28b312f1024im68
+          - name: efr32fg28b320f1024im48
+          - name: efr32fg28b320f1024im68
+          - name: efr32fg28b322f1024im48
+          - name: efr32fg28b322f1024im68
       - name: efr32zg28
         socs:
+          - name: efr32zg28a110f1024gm48
+          - name: efr32zg28a110f1024gm68
+          - name: efr32zg28a112f1024gm48
+          - name: efr32zg28a112f1024gm68
+          - name: efr32zg28a120f1024gm48
+          - name: efr32zg28a120f1024gm68
+          - name: efr32zg28a122f1024gm48
+          - name: efr32zg28a122f1024gm68
+          - name: efr32zg28b310f1024im48
+          - name: efr32zg28b310f1024im68
+          - name: efr32zg28b312f1024im48
+          - name: efr32zg28b312f1024im68
+          - name: efr32zg28b320f1024im48
+          - name: efr32zg28b320f1024im68
+          - name: efr32zg28b322f1024im48
           - name: efr32zg28b322f1024im68
       - name: efr32bg29
         socs:
@@ -211,6 +246,9 @@ family:
           - name: efr32mg29b230f1024cm40
       - name: efm32pg28
         socs:
+          - name: efm32pg28b200f512im68
+          - name: efm32pg28b210f1024im68
+          - name: efm32pg28b300f512im68
           - name: efm32pg28b310f1024im68
       - name: efm32pg23
         socs:
