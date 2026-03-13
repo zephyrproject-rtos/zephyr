@@ -194,7 +194,7 @@ applications as usual (:ref:`build_an_application` and
 
    .. code-block:: console
 
-      west flash -H -r nrfutil --skip-rebuild
+      west flash -H -r nrfutil --no-rebuild
 
 .. note::
 

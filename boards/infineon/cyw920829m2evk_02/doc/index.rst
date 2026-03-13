@@ -197,7 +197,7 @@ You can use ``west flash`` to flash MCUBootApp:
 .. code-block:: shell
 
    # Flash MCUBootApp.hex
-   west flash --skip-rebuild --hex-file /path/to/cypress/mcuboot/boot/cypress/MCUBootApp/out/CYW20829/Debug/MCUBootApp.hex
+   west flash --no-rebuild --hex-file /path/to/cypress/mcuboot/boot/cypress/MCUBootApp/out/CYW20829/Debug/MCUBootApp.hex
 
 .. note:: ``west flash`` requires an existing Zephyr build directory which can be created by first
     building any Zephyr application for the target board.
