@@ -340,7 +340,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	 * immediately. If the interface is not ethernet one, then
 	 * lldp_start() will return immediately.
 	 */
-	if (net_if_flag_is_set(iface, NET_IF_UP)) {
+	if (net_if_oper_state(iface) == NET_IF_OPER_UP) {
 		lldp_start(iface, NET_EVENT_IF_UP);
 	}
 }
@@ -409,9 +409,9 @@ void net_lldp_unset_lldpdu(struct net_if *iface)
 
 void net_lldp_init(void)
 {
-	net_if_foreach(iface_cb, NULL);
-
 	net_mgmt_init_event_callback(&cb, iface_event_handler,
 				     NET_EVENT_IF_UP | NET_EVENT_IF_DOWN);
 	net_mgmt_add_event_callback(&cb);
+
+	net_if_foreach(iface_cb, NULL);
 }
