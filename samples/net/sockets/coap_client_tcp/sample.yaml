@@ -1,0 +1,12 @@
+sample:
+  name: CoAP TCP Client Sample
+tests:
+  sample.net.sockets.coap_client_tcp:
+    harness: net
+    filter: CONFIG_ENTROPY_HAS_DRIVER
+    depends_on: netif
+    tags:
+      - net
+      - coap
+    integration_platforms:
+      - native_sim
