@@ -375,9 +375,12 @@ void radio_whiten_iv_set(uint32_t iv)
 	nrf_radio_datawhiteiv_set(NRF_RADIO, iv);
 #endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 
-	NRF_RADIO->PCNF1 &= ~RADIO_PCNF1_WHITEEN_Msk;
-	NRF_RADIO->PCNF1 |= ((1UL) << RADIO_PCNF1_WHITEEN_Pos) &
-			    RADIO_PCNF1_WHITEEN_Msk;
+	uint32_t pcnf1;
+
+	pcnf1 = NRF_RADIO->PCNF1;
+	pcnf1 &= ~RADIO_PCNF1_WHITEEN_Msk;
+	pcnf1 |= ((1UL) << RADIO_PCNF1_WHITEEN_Pos) & RADIO_PCNF1_WHITEEN_Msk;
+	NRF_RADIO->PCNF1 = pcnf1;
 }
 
 void radio_aa_set(const uint8_t *aa)
@@ -467,13 +470,17 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 		((((uint32_t)bits_len) << RADIO_PCNF0_LFLEN_Pos) & RADIO_PCNF0_LFLEN_Msk) |
 		((((uint32_t)bits_s1) << RADIO_PCNF0_S1LEN_Pos) & RADIO_PCNF0_S1LEN_Msk) | extra;
 
-	NRF_RADIO->PCNF1 &= ~(RADIO_PCNF1_MAXLEN_Msk | RADIO_PCNF1_STATLEN_Msk |
-			      RADIO_PCNF1_BALEN_Msk | RADIO_PCNF1_ENDIAN_Msk);
-	NRF_RADIO->PCNF1 |=
+	uint32_t pcnf1;
+
+	pcnf1 = NRF_RADIO->PCNF1;
+	pcnf1 &= ~(RADIO_PCNF1_MAXLEN_Msk | RADIO_PCNF1_STATLEN_Msk |
+		   RADIO_PCNF1_BALEN_Msk | RADIO_PCNF1_ENDIAN_Msk);
+	pcnf1 |=
 		((((uint32_t)max_len) << RADIO_PCNF1_MAXLEN_Pos) & RADIO_PCNF1_MAXLEN_Msk) |
 		(((0UL) << RADIO_PCNF1_STATLEN_Pos) & RADIO_PCNF1_STATLEN_Msk) |
 		(((3UL) << RADIO_PCNF1_BALEN_Pos) & RADIO_PCNF1_BALEN_Msk) |
 		(((RADIO_PCNF1_ENDIAN_Little) << RADIO_PCNF1_ENDIAN_Pos) & RADIO_PCNF1_ENDIAN_Msk);
+	NRF_RADIO->PCNF1 = pcnf1;
 }
 
 void radio_pkt_rx_set(void *rx_packet)
@@ -754,8 +761,15 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 		HAL_SW_SWITCH_RADIO_ENABLE_PHYEND_DELAY_COMPENSATION_PPI(sw_tifs_toggle);
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 	uint32_t delay;
+	uint32_t cc_val;
 
 	hal_radio_sw_switch_setup(sw_tifs_toggle);
+
+	/* Cache the TIFS timer compare value set by the caller via
+	 * radio_tmr_tifs_set(). hal_radio_sw_switch_setup() configures PPI
+	 * channels only and does not modify the CC[cc] register value.
+	 */
+	cc_val = SW_SWITCH_TIMER->CC[cc];
 
 	/* NOTE: As constants are passed to dir_curr and dir_next, the
 	 *       compiler should optimize out the redundant code path
@@ -789,11 +803,9 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 		if (dir_curr == SW_SWITCH_RX && end_evt_delay_en == END_EVT_DELAY_ENABLED &&
 		    !(phy_curr & PHY_CODED)) {
-			nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc,
-					 SW_SWITCH_TIMER->CC[cc] - RADIO_EVENTS_PHYEND_DELAY_US);
-			if (delay < SW_SWITCH_TIMER->CC[cc]) {
+			if (delay < cc_val) {
 				nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc,
-						 (SW_SWITCH_TIMER->CC[phyend_delay_cc] - delay));
+						 (cc_val - RADIO_EVENTS_PHYEND_DELAY_US - delay));
 			} else {
 				nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc, 1);
 			}
@@ -823,7 +835,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 								flags_next) +
 				hal_radio_rx_chain_delay_ns_get(phy_curr, 0));
 
-			new_cc_s2_value = SW_SWITCH_TIMER->CC[cc];
+			new_cc_s2_value = cc_val;
 
 			if (delay_s2 < new_cc_s2_value) {
 				new_cc_s2_value -= delay_s2;
@@ -907,10 +919,8 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}
 
-	if (delay < SW_SWITCH_TIMER->CC[cc]) {
-		nrf_timer_cc_set(SW_SWITCH_TIMER,
-				 cc,
-				 (SW_SWITCH_TIMER->CC[cc] - delay));
+	if (delay < cc_val) {
+		nrf_timer_cc_set(SW_SWITCH_TIMER, cc, (cc_val - delay));
 	} else {
 		nrf_timer_cc_set(SW_SWITCH_TIMER, cc, 1);
 	}
