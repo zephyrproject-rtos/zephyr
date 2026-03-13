@@ -16,10 +16,26 @@ drv2605@0 {
 	actuator-mode = "LRA";
 };
 
-cs40l5x@1 {
-	compatible = "cirrus,cs40l5x";
+test_i2c_cs40l50@1 {
+	compatible = "cirrus,cs40l50";
 	reg = <0x1>;
 	status = "okay";
+};
 
-	reset-gpios = <&test_gpio 0 0>;
+test_i2c_cs40l51@2 {
+	compatible = "cirrus,cs40l51";
+	reg = <0x2>;
+	status = "okay";
+};
+
+test_i2c_cs40l52@3 {
+	compatible = "cirrus,cs40l52";
+	reg = <0x3>;
+	status = "okay";
+};
+
+test_i2c_cs40l53@4 {
+	compatible = "cirrus,cs40l53";
+	reg = <0x4>;
+	status = "okay";
 };
