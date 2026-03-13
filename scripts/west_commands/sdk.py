@@ -99,8 +99,9 @@ class Sdk(WestCommand):
                 If --install-dir is specified, the directory contained in the archive will be renamed
                 and placed to the specified location.
 
-                --interactive, --toolchains, --no-toolchains, --llvm and --no-hosttools options
-                specify the behavior of the installer. Please see the description of each option.
+                --interactive, --gnu-toolchains, --no-gnu-toolchains, --llvm and --no-hosttools
+                options specify the behavior of the installer. Please see the description of each
+                option.
 
                 --personal-access-token specifies the GitHub personal access token.
                 This helps to relax the limits on the number of REST API calls.
@@ -145,11 +146,11 @@ class Sdk(WestCommand):
             "--interactive",
             action="store_true",
             help="launches installer in interactive mode. "
-            "--toolchains, --no-toolchains and --no-hosttools will be ignored if this option is enabled.",
+            "--gnu-toolchains, --no-gnu-toolchains and --no-hosttools will be ignored if this option is enabled.",
         )
         install_args_parser.add_argument(
             "-t",
-            "--toolchains",
+            "--gnu-toolchains",
             metavar="toolchain_name",
             nargs="+",
             help="GNU toolchain(s) to install (e.g. 'arm-zephyr-eabi'). "
@@ -161,10 +162,10 @@ class Sdk(WestCommand):
         )
         install_args_parser.add_argument(
             "-T",
-            "--no-toolchains",
+            "--no-gnu-toolchains",
             action="store_true",
             help="do not install GNU toolchains. "
-            "--toolchains will be ignored if this option is enabled.",
+            "--gnu-toolchains will be ignored if this option is enabled.",
         )
         install_args_parser.add_argument(
             "-l",
@@ -185,6 +186,18 @@ class Sdk(WestCommand):
             "--api-url",
             default="https://api.github.com/repos/zephyrproject-rtos/sdk-ng/releases",
             help="GitHub releases API endpoint used to look for Zephyr SDKs.",
+        )
+        # Deprecated option --toolchains; replaced with --gnu-toolchains.
+        install_args_parser.add_argument(
+            "--toolchains",
+            nargs="+",
+            help=argparse.SUPPRESS
+        )
+        # Deprecated option --no-toolchains; replaced with --no-gnu-toolchains.
+        install_args_parser.add_argument(
+            "--no-toolchains",
+            action="store_true",
+            help=argparse.SUPPRESS
         )
 
         return parser
@@ -414,11 +427,11 @@ class Sdk(WestCommand):
 
         cmds = [str(setup)]
 
-        if not args.interactive and not args.no_toolchains:
-            if not args.toolchains:
+        if not args.interactive and not args.no_gnu_toolchains:
+            if not args.gnu_toolchains:
                 cmds.extend([f"{optsep}t", "all"])
             else:
-                for tc in args.toolchains:
+                for tc in args.gnu_toolchains:
                     cmds.extend([f"{optsep}t", tc])
 
         if not args.interactive and args.llvm:
@@ -438,6 +451,14 @@ class Sdk(WestCommand):
     def install_sdk(self, args, user_args):
         version = self.detect_version(args)
         (osname, arch) = self.os_arch_name()
+
+        if args.toolchains:
+            self.wrn("--toolchains is deprecated. Use --gnu-toolchains instead.")
+            args.gnu_toolchains = args.toolchains
+
+        if args.no_toolchains:
+            self.wrn("--no-toolchains is deprecated. Use --no-gnu-toolchains instead.")
+            args.no_gnu_toolchains = args.no_toolchains
 
         if args.personal_access_token:
             req_headers = {
@@ -473,7 +494,7 @@ class Sdk(WestCommand):
 
         target_release = [x for x in releases if x["tag_name"] == f"v{version}"][0]
 
-        # checking toolchains parameters
+        # checking GNU toolchains parameters
         assets = target_release["assets"]
         self.dbg("assets: ", "\n".join([x["browser_download_url"] for x in assets]))
 
@@ -483,19 +504,19 @@ class Sdk(WestCommand):
         else:
             prefix = f"toolchain_{osname}-{arch}_"
 
-        available_toolchains = [
+        available_gnu_toolchains = [
             re.sub(r"\..*", "", x["name"].replace(prefix, ""))
             for x in assets
             if x["name"].startswith(prefix)
         ]
 
-        if args.toolchains:
-            for tc in args.toolchains:
-                if not tc in available_toolchains:
+        if args.gnu_toolchains:
+            for tc in args.gnu_toolchains:
+                if not tc in available_gnu_toolchains:
                     self.die(
-                        f"toolchain {tc} is not available.\n"
+                        f"GNU toolchain {tc} is not available.\n"
                         + "Please select from the list below:\n"
-                        + "\n".join(available_toolchains)
+                        + "\n".join(available_gnu_toolchains)
                     )
 
         installed_info = [v for (k, v) in self.fetch_sdk_info().items() if k == version]
@@ -578,7 +599,7 @@ class Sdk(WestCommand):
             if (sdk_path / "hosttools").exists() or (sdk_path / "sysroots").exists():
                 entry["hosttools"] = "installed"
 
-            # Identify toolchain directory by the existence of <toolchain>/bin/<toolchain>-gcc
+            # Identify GNU toolchain directory by the existence of <toolchain>/bin/<toolchain>-gcc
             if "Windows" == platform.system():
                 gcc_postfix = "-gcc.exe"
             else:
@@ -590,7 +611,7 @@ class Sdk(WestCommand):
             else:
                 tc_base = sdk_path
 
-            toolchains = [
+            gnu_toolchains = [
                 tc.name
                 for tc in tc_base.iterdir()
                 if (tc_base / tc / "bin" / (tc.name + gcc_postfix)).exists()
@@ -599,8 +620,8 @@ class Sdk(WestCommand):
             if (sdk_path / "llvm").exists():
                 entry["llvm"] = "installed"
 
-            if len(toolchains) > 0:
-                entry["toolchains"] = toolchains
+            if len(gnu_toolchains) > 0:
+                entry["gnu_toolchains"] = gnu_toolchains
 
             if ver:
                 sdk_info[ver] = entry
@@ -620,9 +641,9 @@ class Sdk(WestCommand):
                 self.inf(f"  hosttools: {v['hosttools']}")
             if "llvm" in v:
                 self.inf(f"  llvm: {v['llvm']}")
-            if "toolchains" in v:
+            if "gnu_toolchains" in v:
                 self.inf("  gnu-installed-toolchains:")
-                for tc in v["toolchains"]:
+                for tc in v["gnu_toolchains"]:
                     self.inf(f"    - {tc}")
 
                 # Since version 0.15.2, the sdk_toolchains file is included,
@@ -641,7 +662,7 @@ class Sdk(WestCommand):
 
                     self.inf("  gnu-available-toolchains:")
                     for tc in all_tcs:
-                        if tc not in v["toolchains"]:
+                        if tc not in v["gnu_toolchains"]:
                             self.inf(f"    - {tc}")
 
             self.inf()
