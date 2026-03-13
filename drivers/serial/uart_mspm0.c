@@ -285,9 +285,10 @@ static int uart_mspm0_err_check(const struct device *dev)
 	}
 }
 
-#define UART_MSPM0_TX_INTERRUPTS (DL_UART_MAIN_INTERRUPT_TX |		\
-				  DL_UART_MAIN_INTERRUPT_EOT_DONE)
-#define UART_MSPM0_RX_INTERRUPTS (DL_UART_MAIN_INTERRUPT_RX)
+#define UART_MSPM0_TX_INTERRUPTS (DL_UART_MAIN_INTERRUPT_TX | DL_UART_MAIN_INTERRUPT_EOT_DONE)
+
+#define UART_MSPM0_RX_INTERRUPTS                                                                   \
+	(DL_UART_MAIN_INTERRUPT_RX | DL_UART_MAIN_INTERRUPT_RX_TIMEOUT_ERROR)
 
 static int uart_mspm0_fifo_fill(const struct device *dev,
 				const uint8_t *tx_data, int size)
@@ -356,7 +357,8 @@ static int uart_mspm0_irq_rx_ready(const struct device *dev)
 	const struct uart_mspm0_config *config = dev->config;
 	struct uart_mspm0_data *data = dev->data;
 
-	return (data->pending_interrupt == DL_UART_MAIN_IIDX_RX) &&
+	return ((data->pending_interrupt == DL_UART_MAIN_IIDX_RX) ||
+		(data->pending_interrupt == DL_UART_MAIN_IIDX_RX_TIMEOUT_ERROR)) &&
 		!DL_UART_Main_isRXFIFOEmpty(config->regs) ? 1 : 0;
 }
 
@@ -440,6 +442,10 @@ static int uart_mspm0_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	DL_UART_Main_enableFIFOs(config->regs);
+	DL_UART_Main_setRXFIFOThreshold(config->regs, DL_UART_RX_FIFO_LEVEL_1_2_FULL);
+	DL_UART_Main_setTXFIFOThreshold(config->regs, DL_UART_TX_FIFO_LEVEL_EMPTY);
+	DL_UART_Main_setRXInterruptTimeout(config->regs, 15U);
 	config->irq_config_func(dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
