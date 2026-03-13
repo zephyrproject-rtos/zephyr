@@ -22,10 +22,10 @@ LOG_MODULE_REGISTER(soc);
 
 extern uint8_t pm_get_s2ram_retention_mask(void);
 
-#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER)
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER)
 static const struct device *idle_timer =
-	DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_cortex_m_idle_timer));
-#endif /* defined(CONFIG_PM_S2RAM) && defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER) */
+	DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_system_timer_companion));
+#endif /* defined(CONFIG_PM_S2RAM) && defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER) */
 
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
@@ -53,7 +53,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 #ifdef CONFIG_PM_S2RAM
 		LOG_DBG("entering PM state suspend to ram");
 
-#ifdef CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER
+#ifdef CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER
 		if (idle_timer) {
 			/* This does not actually suspend the idle-mode timer; it just decrements
 			 * the pm usage counter so that device can be resumed once the system
@@ -61,7 +61,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			 */
 			pm_device_runtime_put(idle_timer);
 		}
-#endif /* CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER */
+#endif /* CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER */
 
 		/* SRAM retention configurable via Kconfig */
 		Wrap_MXC_LP_EnableRetentionReg();
@@ -103,12 +103,12 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		Wrap_MXC_LP_DisableSramRetention();
 		Wrap_MXC_LP_ExitBackupMode();
 
-#ifdef CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER
+#ifdef CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER
 		if (idle_timer) {
 			/* Resume the idle-mode timer */
 			pm_device_runtime_get(idle_timer);
 		}
-#endif /* CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER */
+#endif /* CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER */
 
 		LOG_DBG("exited PM state suspend to ram");
 #else

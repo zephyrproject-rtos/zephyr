@@ -28,7 +28,7 @@ config FLASH_FILL_BUFFER_SIZE
 
 if PM
 
-configdefault CORTEX_M_SYSTICK_RESET_BY_LPM
+configdefault SYSTEM_TIMER_RESET_BY_LPM
 	default y
 
 endif # PM

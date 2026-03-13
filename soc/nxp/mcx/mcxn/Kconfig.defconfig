@@ -44,7 +44,7 @@ config I2S_HAS_PLL_SETTING
 
 if PM
 
-configdefault CORTEX_M_SYSTICK_RESET_BY_LPM
+configdefault SYSTEM_TIMER_RESET_BY_LPM
 	default y
 
 endif # PM

@@ -9,9 +9,10 @@
 #include <zephyr/pm/pm.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/interrupt_controller/nxp_pint.h>
+#include <zephyr/drivers/timer/system_timer_lpm.h>
 #include <fsl_power.h>
 #include <zephyr/logging/log.h>
-#if defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_HOOKS)
+#if defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS)
 #include "fsl_ostimer.h"
 #endif
 
@@ -40,8 +41,8 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 static const struct gpio_dt_spec wakeup_pin_dt = GPIO_DT_SPEC_GET(WAKEUP_BUTTON_NODE, gpios);
 #endif /* WAKEUP_PIN_ENABLE */
 
-#if !defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_HOOKS)
-#error "LPM hooks are needed. OS timer will replace SYSTICK during low power."
+#if !defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS)
+#error "System timer LPM hooks are needed. OS timer will replace SYSTICK during low power."
 #else
 /* OS Timer configuration for low power wakeup */
 #define OSTIMER_NODE DT_NODELABEL(os_timer)
@@ -58,12 +59,12 @@ static OSTIMER_Type *lptim_base = (OSTIMER_Type *)DT_REG_ADDR(OSTIMER_NODE);
 static uint64_t lptim_count;
 
 /**
- * @brief SYSTICK hook called on lp entry
+ * @brief System timer low-power companion hook called on entry
  *
  * Configures the OS timer to wake up the system after the specified time.
  * Coordinates with BLE link layer to ensure wakeup happens before next BLE event.
  */
-void z_cms_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
+void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 {
 	uint32_t lptim_freq;
 
@@ -112,12 +113,12 @@ void z_cms_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
 }
 
 /**
- * @brief Hook called on lp exit
+ * @brief System timer low-power companion hook called on exit
  *
- * This function is called by the SYSTICK timer after exiting low power mode.
+ * This function is called after the primary system timer resumes.
  * Calculates the sleep duration.
  */
-uint64_t z_cms_lptim_hook_on_lpm_exit(void)
+uint64_t z_sys_clock_lpm_exit(void)
 {
 	uint64_t lptim_sleep_cnt;
 	uint32_t lptim_freq;
@@ -138,7 +139,7 @@ uint64_t z_cms_lptim_hook_on_lpm_exit(void)
 	/* Return sleep duration in microseconds */
 	return COUNT_TO_USEC(lptim_sleep_cnt, lptim_freq);
 }
-#endif /* CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_HOOKS */
+#endif /* CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS */
 
 #if CONFIG_PM_POLICY_CUSTOM
 __weak const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
@@ -309,7 +310,7 @@ static void init_wakeup_gpio_pins(void)
 }
 #endif
 
-#if defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_HOOKS)
+#if defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS)
 static void nxp_ostimer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
@@ -330,7 +331,7 @@ static int nxp_mcxw2xx_power_init(void)
 
 void nxp_mcxw2xx_power_early_init(void)
 {
-#if defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_HOOKS)
+#if defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS)
 	/* Initialize the OS timer */
 	OSTIMER_Init(lptim_base);
 
