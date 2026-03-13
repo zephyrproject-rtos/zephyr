@@ -6,6 +6,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/lora.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "sx126x.h"
@@ -409,6 +410,50 @@ static void sx126x_set_rf_path(const struct device *dev, bool enable, bool tx)
 		sx126x_hal_set_rf_switch(dev, enable, tx);
 	}
 }
+
+#ifdef CONFIG_PM_DEVICE
+static void sx126x_disconnect_gpio(const struct gpio_dt_spec *gpio)
+{
+	if (gpio->port != NULL) {
+		gpio_pin_configure(gpio->port, gpio->pin, GPIO_DISCONNECTED);
+	}
+}
+
+static void sx126x_disconnect_rf_gpios(const struct device *dev)
+{
+	const struct sx126x_hal_config *config = dev->config;
+
+	sx126x_disconnect_gpio(&config->antenna_enable);
+	sx126x_disconnect_gpio(&config->tx_enable);
+	sx126x_disconnect_gpio(&config->rx_enable);
+}
+
+static int sx126x_reconnect_rf_gpios(const struct device *dev)
+{
+	const struct sx126x_hal_config *config = dev->config;
+	int ret;
+
+	ret = sx126x_hal_configure_gpio(&config->antenna_enable,
+					GPIO_OUTPUT_INACTIVE, "antenna enable");
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = sx126x_hal_configure_gpio(&config->tx_enable,
+					GPIO_OUTPUT_INACTIVE, "TX enable");
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = sx126x_hal_configure_gpio(&config->rx_enable,
+					GPIO_OUTPUT_INACTIVE, "RX enable");
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static int sx126x_set_sleep(const struct device *dev)
 {
@@ -1048,6 +1093,22 @@ static DEVICE_API(lora, sx126x_lora_api) = {
 	.test_cw = sx126x_lora_test_cw,
 };
 
+#ifdef CONFIG_PM_DEVICE
+static int sx126x_pm_action(const struct device *dev,
+			    enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		sx126x_disconnect_rf_gpios(dev);
+		return 0;
+	case PM_DEVICE_ACTION_RESUME:
+		return sx126x_reconnect_rf_gpios(dev);
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif
+
 static int sx126x_init(const struct device *dev)
 {
 	struct sx126x_data *data = dev->data;
@@ -1134,7 +1195,10 @@ static int sx126x_init(const struct device *dev)
 		.force_ldro = DT_INST_PROP(inst, force_ldro),			\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(inst, sx126x_init, NULL,				\
+	PM_DEVICE_DT_INST_DEFINE(inst, sx126x_pm_action);			\
+										\
+	DEVICE_DT_INST_DEFINE(inst, sx126x_init,				\
+			      PM_DEVICE_DT_INST_GET(inst),			\
 			      &sx126x_data_##inst, &sx126x_config_##inst,	\
 			      POST_KERNEL, CONFIG_LORA_INIT_PRIORITY,		\
 			      &sx126x_lora_api);
@@ -1185,7 +1249,10 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(SX126X_INIT, true)
 		.force_ldro = DT_INST_PROP(inst, force_ldro),			\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(inst, sx126x_init, NULL,				\
+	PM_DEVICE_DT_INST_DEFINE(inst, sx126x_pm_action);			\
+										\
+	DEVICE_DT_INST_DEFINE(inst, sx126x_init,				\
+			      PM_DEVICE_DT_INST_GET(inst),			\
 			      &sx126x_stm32wl_data_##inst,			\
 			      &sx126x_stm32wl_config_##inst,			\
 			      POST_KERNEL, CONFIG_LORA_INIT_PRIORITY,		\
