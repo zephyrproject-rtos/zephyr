@@ -80,6 +80,13 @@ config DWMAC_NB_RX_DESCS
 	  memory. A smaller number increases the risk of an overflow and
 	  dropped packets.
 
+config ETH_DWMAC_RX_REFILL_THREAD_PRIORITY
+	int "Receive buffer refill thread priority"
+	default 0
+	help
+	  Priority level of the internal thread which is used to refill
+	  the receive buffer pool.
+
 endif # ETH_DWMAC
 
 endmenu
