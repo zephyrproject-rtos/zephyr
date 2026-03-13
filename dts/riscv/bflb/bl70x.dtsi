@@ -344,6 +344,14 @@
 			interrupt-parent = <&clic>;
 		};
 
+		usb0: usb@4000d800 {
+			compatible = "bflb,udc-1";
+			reg = <0x4000d800 0x200>;
+			interrupts = <37 0>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
 		dma0: dma@4000c000 {
 			compatible = "bflb,dma";
 			reg = <0x4000c000 0x1000>;
