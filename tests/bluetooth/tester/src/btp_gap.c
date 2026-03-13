@@ -3075,6 +3075,36 @@ static uint8_t ead_decrypt_data(const void *cmd, uint16_t cmd_len, void *rsp, ui
 }
 #endif /* defined(CONFIG_BT_EAD) */
 
+#if defined(CONFIG_BT_SUBRATING)
+static uint8_t send_subrate_request(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_send_subrate_request_cmd *cp = cmd;
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (conn == NULL) {
+		return BTP_STATUS_FAILED;
+	}
+
+	struct bt_conn_le_subrate_param param = {
+		.subrate_min = sys_le16_to_cpu(cp->subrate_min),
+		.subrate_max = sys_le16_to_cpu(cp->subrate_max),
+		.max_latency = sys_le16_to_cpu(cp->max_latency),
+		.continuation_number = sys_le16_to_cpu(cp->continuation_number),
+		.supervision_timeout = sys_le16_to_cpu(cp->supervision_timeout),
+	};
+
+	int err = bt_conn_le_subrate_request(conn, &param);
+
+	if (err != 0) {
+		LOG_ERR("Failed to send subrate request: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif /* defined(CONFIG_BT_SUBRATING) */
+
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_GAP_READ_SUPPORTED_COMMANDS,
@@ -3275,6 +3305,13 @@ static const struct btp_handler handlers[] = {
 		.func = set_rpa_timeout,
 	},
 #endif /* defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC) */
+#if defined(CONFIG_BT_SUBRATING)
+	{
+		.opcode = BTP_GAP_SEND_SUBRATE_REQUEST,
+		.expect_len = sizeof(struct btp_gap_send_subrate_request_cmd),
+		.func = send_subrate_request,
+	},
+#endif /* defined(CONFIG_BT_SUBRATING) */
 #if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
 	{
 		.opcode = BTP_GAP_BIG_CREATE_SYNC,
