@@ -86,6 +86,8 @@ static struct fs_mount_t littlefs_mnt = {
 #define MAX_FILENAME_LEN 128
 #define MAX_INPUT_LEN    20
 
+#define TEST_MAX_REPETITIONS 10000
+
 #define SHELL_FS "fs"
 
 /* Maintenance guarantees this begins with '/' and is NUL-terminated. */
@@ -654,8 +656,8 @@ static int cmd_read_test(const struct shell *sh, size_t argc, char **argv)
 	create_abs_path(argv[1], path, sizeof(path));
 	repeat = strtol(argv[2], NULL, 0);
 
-	if (repeat == 0 || repeat > 10) {
-		shell_error(sh, "<repeat> must be between 1 and 10.");
+	if (repeat == 0 || repeat > TEST_MAX_REPETITIONS) {
+		shell_error(sh, "<repeat> must be between 1 and %d.", TEST_MAX_REPETITIONS);
 		return -EINVAL;
 	}
 
@@ -746,8 +748,8 @@ static int cmd_erase_write_test(const struct shell *sh, size_t argc, char **argv
 		return -EINVAL;
 	}
 
-	if (repeat == 0 || repeat > 10) {
-		shell_error(sh, "<repeat> must be between 1 and 10.");
+	if (repeat == 0 || repeat > TEST_MAX_REPETITIONS) {
+		shell_error(sh, "<repeat> must be between 1 and %d.", TEST_MAX_REPETITIONS);
 		return -EINVAL;
 	}
 
