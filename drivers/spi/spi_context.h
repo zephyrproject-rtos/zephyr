@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2017 Intel Corporation
  *
+ * Modifications: memcmp-based config comparison (fix for #81782, #28093)
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,6 +14,7 @@
 #ifndef ZEPHYR_DRIVERS_SPI_SPI_CONTEXT_H_
 #define ZEPHYR_DRIVERS_SPI_SPI_CONTEXT_H_
 
+#include <string.h>   /* memcmp */
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
@@ -96,15 +99,72 @@ struct spi_context {
 #define SPI_CONTEXT_CS_GPIOS_INITIALIZE(...)
 #endif /* DT_SPI_CTX_HAS_NO_CS_GPIOS */
 
-/*
- * Checks if a spi config is the same as the one stored in the spi_context
- * The intention of this function is to be used to check if a driver can skip
- * some reconfiguration for a transfer in a fast code path.
+/**
+ * spi_cfg_equal() - field-by-field equality check for spi_config.
+ *
+ * Do NOT use memcmp() — spi_config and its nested structs contain
+ * compiler padding bytes with unspecified values (C11 §6.2.6.1).
+ * memcmp reads padding, producing false mismatches or missed matches.
+ */
+static inline bool spi_cfg_equal(const struct spi_config *a,
+				 const struct spi_config *b)
+{
+	return (a->frequency        == b->frequency)        &&
+	       (a->operation        == b->operation)        &&
+	       (a->slave            == b->slave)            &&
+	       (a->cs.gpio.port     == b->cs.gpio.port)     &&
+	       (a->cs.gpio.pin      == b->cs.gpio.pin)      &&
+	       (a->cs.gpio.dt_flags == b->cs.gpio.dt_flags) &&
+	       (a->cs.delay         == b->cs.delay);
+}
+
+/**
+ * spi_context_configured() - check whether the SPI context already holds
+ *                             an equivalent configuration.
+ *
+ * Previously this function used pointer identity (!!(ctx->config == config))
+ * to skip redundant hardware reconfiguration.  That is fragile: if the same
+ * struct is reused and any field is mutated between calls the change goes
+ * undetected and the peripheral is silently left with stale settings.
+ *
+ * The replacement uses field by field over the full spi_config structure so that
+ * ANY field change triggers reconfiguration, regardless of pointer identity.
+ *
+ * NULL handling:
+ *   - If either pointer is NULL the context is treated as unconfigured so
+ *     that the caller always proceeds to (re-)apply the configuration.
+ *
+ * Lock / ownership note:
+ *   The SPI_LOCK_ON ownership token is carried by the pointer identity of
+ *   the spi_config passed to spi_lock / spi_release and is checked separately
+ *   in those paths.  This function is concerned only with hardware config
+ *   equivalence and is therefore safe to compare by value.
+ *
+ * @param ctx    Pointer to the SPI context.
+ * @param config Pointer to the new SPI configuration to test.
+ *
+ * @return true  if ctx already holds a configuration identical in every
+ *               field to @p config (hardware update can be skipped).
+ * @return false if any field differs, or if either pointer is NULL.
  */
 static inline bool spi_context_configured(struct spi_context *ctx,
 					  const struct spi_config *config)
 {
-	return !!(ctx->config == config);
+	/*
+	 * Guard against NULL: a NULL cached config means the context has
+	 * never been configured (or was released), so always return false
+	 * to force a fresh configuration pass.
+	 */
+	if (!ctx->config || !config) {
+		return false;
+	}
+
+	/*
+	 * Compare all fields explicitly to avoid padding byte issues.
+	 * This detects any field mutation even when the caller reuses
+	 * the same pointer.
+	 */
+	return spi_cfg_equal(ctx->config, config);
 }
 
 /* Returns true if the spi configuration stored for this context
@@ -129,7 +189,7 @@ static inline void spi_context_lock(struct spi_context *ctx,
 #ifdef CONFIG_MULTITHREADING
 	bool already_locked = (spi_cfg->operation & SPI_LOCK_ON) &&
 			      (k_sem_count_get(&ctx->lock) == 0) &&
-			      (ctx->owner == spi_cfg);
+			      spi_cfg_equal(ctx->owner, spi_cfg);
 
 	if (!already_locked) {
 		k_sem_take(&ctx->lock, K_FOREVER);

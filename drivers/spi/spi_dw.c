@@ -3,6 +3,8 @@
  * Copyright (c) 2023 Synopsys, Inc. All rights reserved.
  * Copyright (c) 2023 Meta Platforms
  *
+ * Modifications: NULL and zero-frequency guard (SPI-DW-002)
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -179,6 +181,54 @@ static void pull_data(const struct device *dev)
 	}
 }
 
+/**
+ * spi_dw_validate_config() - sanity-check an spi_config before touching HW.
+ *
+ * Centralises all input validation so that spi_dw_configure() and
+ * transceive() can call a single helper rather than duplicating
+ * guards.
+ *
+ * Checked conditions
+ * ------------------
+ *  1. config pointer must be non-NULL.
+ *  2. config->frequency must be > 0.
+ *  3. config->frequency must not exceed the controller's input clock
+ *     (a divider < 2 is illegal per the DW SSI databook, section 6.2.2).
+ *
+ * @param dev    SPI controller device.
+ * @param config Caller-supplied SPI configuration.
+ *
+ * @retval 0        Configuration is valid.
+ * @retval -EINVAL  config is NULL or frequency is zero / out of range.
+ */
+static int spi_dw_validate_config(const struct device *dev,
+				  const struct spi_config *config)
+{
+	const struct spi_dw_config *info = dev->config;
+
+	/* Guard 1: NULL pointer check */
+	if (!config) {
+		LOG_ERR("(%s): config pointer is NULL", dev->name);
+		return -EINVAL;
+	}
+
+	/* Guard 2: zero frequency would cause DIV/0 in clk divider calc */
+	if (config->frequency == 0U) {
+		LOG_ERR("(%s): SPI frequency must not be zero", dev->name);
+		return -EINVAL;
+	}
+
+	/* Guard 3: frequency must be achievable (divider >= 2) */
+	if (config->frequency > (info->clock_frequency / 2U)) {
+		LOG_ERR("(%s): SPI frequency %u exceeds max supported %u Hz",
+			dev->name, config->frequency,
+			info->clock_frequency / 2U);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int spi_dw_configure(const struct device *dev,
 			    struct spi_dw_data *spi,
 			    const struct spi_config *config)
@@ -188,8 +238,15 @@ static int spi_dw_configure(const struct device *dev,
 
 	LOG_DBG("%p (prev %p)", config, spi->ctx.config);
 
+	/* Always validate first, even if the context thinks it's configured */
+	int ret = spi_dw_validate_config(dev, config);
+
+	if (ret) {
+		return ret;
+	}
+
 	if (spi_context_configured(&spi->ctx, config)) {
-		/* Nothing to do */
+		/* Contents are identical — hardware update not required */
 		return 0;
 	}
 
