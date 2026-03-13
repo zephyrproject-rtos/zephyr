@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/ztest.h>
-#include <zephyr/drivers/entropy.h>
+#include <zephyr/random/random.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <hal/nrf_clock.h>
@@ -22,7 +22,6 @@ LOG_MODULE_REGISTER(test);
 
 static bool test_end;
 
-static const struct device *const entropy = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 static const struct device *const clock_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock);
 static struct onoff_manager *hf_mgr;
 static struct onoff_client cli;
@@ -30,7 +29,6 @@ static uint32_t iteration;
 
 static void *setup(void)
 {
-	zassert_true(device_is_ready(entropy));
 	zassert_true(device_is_ready(clock_dev));
 
 	hf_mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
@@ -116,8 +114,7 @@ ZTEST(nrf_onoff_and_bt, test_onoff_interrupted)
 	do {
 		iteration++;
 
-		err = entropy_get_entropy(entropy, &rand, 1);
-		zassert_equal(err, 0);
+		sys_rand_get(&rand, 1);
 		backoff = 3 * rand;
 
 		sys_notify_init_spinwait(&cli.notify);
@@ -192,7 +189,6 @@ ZTEST(nrf_onoff_and_bt, test_bt_interrupted)
 	uint64_t start_time = k_uptime_get();
 	uint64_t elapsed;
 	uint64_t checkpoint = 1000;
-	int err;
 	uint8_t rand;
 	int backoff;
 
@@ -204,8 +200,7 @@ ZTEST(nrf_onoff_and_bt, test_bt_interrupted)
 	do {
 		iteration++;
 
-		err = entropy_get_entropy(entropy, &rand, 1);
-		zassert_equal(err, 0);
+		sys_rand_get(&rand, 1);
 		backoff = 3 * rand;
 
 		z_nrf_clock_bt_ctlr_hf_request();
