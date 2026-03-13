@@ -1076,6 +1076,11 @@ static int numaker_hsusbd_ep_xfer_user_dma(struct numaker_usbd_ep *ep_cur, uint8
 	HSUSBD_T *base = config->base;
 	int err;
 
+	/* Catch zero data case which is not supported by DMA */
+	if (*size == 0) {
+		return 0;
+	}
+
 	/* Reset DMA semaphore */
 	k_sem_reset(&priv->sem_dma_done);
 
