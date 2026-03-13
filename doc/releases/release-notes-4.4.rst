@@ -83,7 +83,12 @@ API Changes
 Removed APIs and options
 ========================
 
-* ``CONFIG_BT_TBS_SUPPORTED_FEATURES``
+* Bluetooth
+
+   * ``CONFIG_BT_TBS_SUPPORTED_FEATURES``
+
+   * The deprecated ``bt_hci_cmd_create()`` functon was removed. It has been replaced by
+     :c:func:`bt_hci_cmd_alloc`.
 
 Deprecated APIs and options
 ===========================
