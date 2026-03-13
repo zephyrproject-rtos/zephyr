@@ -956,11 +956,16 @@ static uint64_t get_tcr(int el)
 
 	/*
 	 * Translation table walk is cacheable, inner/outer WBWA and
-	 * inner shareable.  Due to Cortex-A57 erratum #822227 we must
-	 * set TG1[1] = 4KB.
+	 * inner shareable.
 	 */
-	tcr |= TCR_TG1_4K | TCR_TG0_4K | TCR_SHARED_INNER |
-	       TCR_ORGN_WBWA | TCR_IRGN_WBWA;
+#if defined(CONFIG_ARM64_PAGE_SIZE_64KB)
+	tcr |= TCR_TG1_64K | TCR_TG0_64K;
+#elif defined(CONFIG_ARM64_PAGE_SIZE_16KB)
+	tcr |= TCR_TG1_16K | TCR_TG0_16K;
+#else
+	tcr |= TCR_TG1_4K | TCR_TG0_4K;
+#endif
+	tcr |= TCR_SHARED_INNER | TCR_ORGN_WBWA | TCR_IRGN_WBWA;
 
 	return tcr;
 }
@@ -1014,9 +1019,6 @@ __attribute__((target("branch-protection=none")))
 void z_arm64_mm_init(bool is_primary_core)
 {
 	unsigned int flags = 0U;
-
-	__ASSERT(CONFIG_MMU_PAGE_SIZE == KB(4),
-		 "Only 4K page size is supported\n");
 
 	__ASSERT(GET_EL(read_currentel()) == MODE_EL1,
 		 "Exception level not EL1, MMU not enabled!\n");
