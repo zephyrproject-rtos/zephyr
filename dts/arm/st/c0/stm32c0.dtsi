@@ -74,7 +74,7 @@
 	chosen {
 		zephyr,crc = &crc;
 		zephyr,flash-controller = &flash;
-		zephyr,cortex-m-idle-timer = &rtc;
+		zephyr,system-timer-companion = &rtc;
 	};
 
 	cpus {
