@@ -333,7 +333,7 @@ static void init(void)
 	const struct bt_tbs_register_param gtbs_param = {
 		.provider_name = "Generic TBS",
 		.uci = "un000",
-		.uri_schemes_supported = "tel,skype",
+		.uri_schemes_supported = "skype",
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_TBS_TECHNOLOGY_3G,

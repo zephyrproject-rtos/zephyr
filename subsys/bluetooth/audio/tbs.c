@@ -2819,6 +2819,7 @@ int bt_tbs_originate(uint8_t bearer_index, char *remote_uri, uint8_t *call_index
 	struct tbs_inst *inst = inst_lookup_index(bearer_index);
 	uint8_t buf[CONFIG_BT_TBS_MAX_URI_LENGTH + sizeof(struct bt_tbs_call_cp_originate)];
 	struct bt_tbs_call_cp_originate *ccp = (struct bt_tbs_call_cp_originate *)buf;
+	struct tbs_inst *target_inst = NULL;
 	size_t uri_len;
 	int err;
 	int ret;
@@ -2826,30 +2827,50 @@ int bt_tbs_originate(uint8_t bearer_index, char *remote_uri, uint8_t *call_index
 	if (inst == NULL) {
 		LOG_DBG("Could not find TBS instance from index %u", bearer_index);
 		return -EINVAL;
-	} else if (!bt_tbs_valid_uri((uint8_t *)remote_uri, strlen(remote_uri))) {
+	}
+
+	if (remote_uri == NULL) {
+		LOG_DBG("remote_uri is NULL");
+		return -EINVAL;
+	}
+
+	if (call_index == NULL) {
+		LOG_DBG("call_index is NULL");
+		return -EINVAL;
+	}
+
+	uri_len = strlen(remote_uri);
+	if (!bt_tbs_valid_uri((uint8_t *)remote_uri, uri_len)) {
 		LOG_DBG("Invalid URI %s", remote_uri);
 		return -EINVAL;
 	}
 
-	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
+	if (inst_is_gtbs(inst)) {
+		target_inst = lookup_inst_by_uri_scheme((uint8_t *)remote_uri, uri_len);
+		if (target_inst == NULL) {
+			return -ENODEV;
+		}
+	} else {
+		target_inst = inst;
+	}
+
+	err = k_mutex_lock(&target_inst->mutex, K_NO_WAIT);
 	if (err != 0) {
 		LOG_DBG("Failed to lock mutex");
 		return -EBUSY;
 	}
 
-	uri_len = strlen(remote_uri);
-
 	ccp->opcode = BT_TBS_CALL_OPCODE_ORIGINATE;
 	(void)memcpy(ccp->uri, remote_uri, uri_len);
 
-	ret = originate_call(inst, ccp, uri_len, call_index);
+	ret = originate_call(target_inst, ccp, uri_len, call_index);
 
 	/* In the case that we are not connected to any TBS clients, we won't notify and we can
 	 * attempt to change state from dialing to alerting immediately
 	 */
-	(void)try_change_dialing_call_to_alerting(inst);
+	(void)try_change_dialing_call_to_alerting(target_inst);
 
-	err = k_mutex_unlock(&inst->mutex);
+	err = k_mutex_unlock(&target_inst->mutex);
 	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
 	return ret;
