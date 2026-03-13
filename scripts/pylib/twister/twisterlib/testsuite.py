@@ -14,7 +14,6 @@ from pathlib import Path
 
 from twisterlib.constants import canonical_zephyr_base
 from twisterlib.error import StatusAttributeError, TwisterException, TwisterRuntimeError
-from twisterlib.mixins import DisablePyTestCollectionMixin
 from twisterlib.statuses import TwisterStatus
 
 logger = logging.getLogger('twister')
@@ -374,7 +373,9 @@ def _find_src_dir_path(test_dir_path):
         return src_dir_path
     return ""
 
-class TestCase(DisablePyTestCollectionMixin):
+
+class TestCase:
+    __test__ = False
 
     def __init__(self, name):
         self.duration = 0
@@ -406,9 +407,11 @@ class TestCase(DisablePyTestCollectionMixin):
     def __str__(self):
         return self.name
 
-class TestSuite(DisablePyTestCollectionMixin):
-    """Class representing a test application
-    """
+
+class TestSuite:
+    """Class representing a test application."""
+
+    __test__ = False
 
     def __init__(self, suite_root, suite_path, name, data=None, detailed_test_id=True):
         """TestSuite constructor.
