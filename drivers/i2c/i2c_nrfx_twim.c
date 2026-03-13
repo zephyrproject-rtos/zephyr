@@ -178,7 +178,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 			 * bus from this error.
 			 */
 			(void)i2c_nrfx_twim_recover_bus(dev);
-			ret = -EIO;
+			ret = -ETIMEDOUT;
 			break;
 		}
 
