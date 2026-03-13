@@ -25,5 +25,7 @@ void z_sys_poweroff(void)
 	LL_PWR_SetSRAM1SBRetention(LL_PWR_SRAM1_SB_NO_RETENTION);
 	LL_PWR_SetSRAM2SBRetention(LL_PWR_SRAM2_SB_NO_RETENTION);
 
+	LL_DBGMCU_DisableDBGStandbyMode();
+
 	stm32_enter_poweroff();
 }
