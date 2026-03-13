@@ -21,6 +21,7 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/lldp.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet_vlan.h>
@@ -647,11 +648,8 @@ struct ethernet_lldp {
 	/** Length of the optional Data Unit TLVs */
 	size_t optional_len;
 
-	/** LLDP TX timer start time */
-	int64_t tx_timer_start;
-
-	/** LLDP TX timeout */
-	uint32_t tx_timer_timeout;
+	/** LLDP TX timer timeout */
+	k_timepoint_t tx_timer_timeout;
 
 	/** LLDP RX callback function */
 	net_lldp_recv_cb_t cb;

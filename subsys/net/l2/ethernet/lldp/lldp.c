@@ -30,36 +30,16 @@ static sys_slist_t lldp_ifaces;
 
 #define BUF_ALLOC_TIMEOUT K_MSEC(50)
 
-static void lldp_submit_work(uint32_t timeout)
+static void lldp_submit_work(k_timeout_t timeout)
 {
-	k_work_cancel_delayable(&lldp_tx_timer);
-	k_work_reschedule(&lldp_tx_timer, K_MSEC(timeout));
+	k_work_reschedule(&lldp_tx_timer, timeout);
 
 	NET_DBG("Next wakeup in %d ms",
 		k_ticks_to_ms_ceil32(
 			k_work_delayable_remaining_get(&lldp_tx_timer)));
 }
 
-static bool lldp_check_timeout(int64_t start, uint32_t time, int64_t timeout)
-{
-	start += time;
-	start = llabs(start);
-
-	if (start > timeout) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool lldp_timedout(struct ethernet_lldp *lldp, int64_t timeout)
-{
-	return lldp_check_timeout(lldp->tx_timer_start,
-				  lldp->tx_timer_timeout,
-				  timeout);
-}
-
-static int lldp_send(struct ethernet_lldp *lldp)
+static void lldp_send(struct ethernet_lldp *lldp)
 {
 	static const struct net_eth_addr lldp_multicast_eth_addr = {
 		{ 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e }
@@ -72,8 +52,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 	if (!lldp->lldpdu) {
 		/* The ethernet driver has not set the lldpdu pointer */
 		NET_DBG("The LLDPDU is not set for lldp %p", lldp);
-		ret = -EINVAL;
-		goto out;
+		return;
 	}
 
 	if (lldp->optional_du && lldp->optional_len) {
@@ -89,8 +68,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 	pkt = net_pkt_alloc_with_buffer(ctx->iface, len, NET_AF_UNSPEC, 0,
 					BUF_ALLOC_TIMEOUT);
 	if (!pkt) {
-		ret = -ENOMEM;
-		goto out;
+		return;
 	}
 
 	net_pkt_set_lldp(pkt, true);
@@ -100,7 +78,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 			    sizeof(struct net_lldpdu));
 	if (ret < 0) {
 		net_pkt_unref(pkt);
-		goto out;
+		return;
 	}
 
 	if (lldp->optional_du && lldp->optional_len) {
@@ -108,7 +86,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 				    lldp->optional_len);
 		if (ret < 0) {
 			net_pkt_unref(pkt);
-			goto out;
+			return;
 		}
 	}
 
@@ -118,7 +96,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 		ret = net_pkt_write(pkt, (uint8_t *)&tlv_end, sizeof(tlv_end));
 		if (ret < 0) {
 			net_pkt_unref(pkt);
-			goto out;
+			return;
 		}
 	}
 
@@ -134,66 +112,53 @@ static int lldp_send(struct ethernet_lldp *lldp)
 	 */
 	if (net_if_try_send_data(ctx->iface, pkt, K_NO_WAIT) == NET_DROP) {
 		net_pkt_unref(pkt);
-		ret = -EIO;
+		return;
 	}
 
-out:
-	lldp->tx_timer_start = k_uptime_get();
+	NET_DBG("LLDP packet sent from iface %p", ctx->iface);
 
-	return ret;
+	return;
 }
 
-static uint32_t lldp_manage_timeouts(struct ethernet_lldp *lldp, int64_t timeout)
+static void lldp_tx_timeout(struct k_work *work __unused)
 {
-	int32_t next_timeout;
-
-	if (lldp_timedout(lldp, timeout)) {
-		lldp_send(lldp);
-	}
-
-	next_timeout = timeout - (lldp->tx_timer_start +
-				  lldp->tx_timer_timeout);
-
-	return abs(next_timeout);
-}
-
-static void lldp_tx_timeout(struct k_work *work)
-{
-	uint32_t timeout_update = UINT32_MAX - 1;
-	int64_t timeout = k_uptime_get();
+	k_timepoint_t timeout_update = sys_timepoint_calc(K_FOREVER);
+	k_timeout_t timeout;
 	struct ethernet_lldp *current, *next;
 
-	ARG_UNUSED(work);
-
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&lldp_ifaces, current, next, node) {
-		uint32_t next_timeout;
+		if (sys_timepoint_expired(current->tx_timer_timeout)) {
+			lldp_send(current);
 
-		next_timeout = lldp_manage_timeouts(current, timeout);
-		if (next_timeout < timeout_update) {
-			timeout_update = next_timeout;
+			current->tx_timer_timeout =
+				sys_timepoint_calc(K_SECONDS(CONFIG_NET_LLDP_TX_INTERVAL));
+		}
+
+		if (sys_timepoint_cmp(current->tx_timer_timeout, timeout_update) < 0) {
+			timeout_update = current->tx_timer_timeout;
 		}
 	}
 
-	if (timeout_update < (UINT32_MAX - 1)) {
-		NET_DBG("Waiting for %u ms", timeout_update);
-
-		k_work_reschedule(&lldp_tx_timer, K_MSEC(timeout_update));
+	timeout = sys_timepoint_timeout(timeout_update);
+	if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+		lldp_submit_work(timeout);
 	}
 }
 
 static void lldp_start_timer(struct ethernet_context *ctx)
 {
+	k_timeout_t timeout = K_NO_WAIT;
+
 	/* exit if started */
-	if (ctx->lldp.tx_timer_start != 0) {
+	if (sys_slist_find(&lldp_ifaces, &(ctx->lldp.node), NULL)) {
 		return;
 	}
 
+	ctx->lldp.tx_timer_timeout = sys_timepoint_calc(timeout);
+
 	sys_slist_append(&lldp_ifaces, &(ctx->lldp.node));
 
-	ctx->lldp.tx_timer_start = k_uptime_get();
-	ctx->lldp.tx_timer_timeout = CONFIG_NET_LLDP_TX_INTERVAL * MSEC_PER_SEC;
-
-	lldp_submit_work(ctx->lldp.tx_timer_timeout);
+	lldp_submit_work(timeout);
 }
 
 static int lldp_check_iface(struct net_if *iface)
@@ -220,10 +185,8 @@ static void lldp_start(struct net_if *iface, uint64_t mgmt_event)
 	ctx = net_if_l2_data(iface);
 
 	if (mgmt_event == NET_EVENT_IF_DOWN) {
-		if (sys_slist_find_and_remove(&lldp_ifaces,
-					      &(ctx->lldp.node))) {
-			ctx->lldp.tx_timer_start = 0;
-		}
+		NET_DBG("Stopping timer for iface %p", iface);
+		(void)sys_slist_find_and_remove(&lldp_ifaces, &(ctx->lldp.node));
 
 		if (sys_slist_is_empty(&lldp_ifaces)) {
 			k_work_cancel_delayable(&lldp_tx_timer);
