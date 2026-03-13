@@ -52,11 +52,13 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
 
   zephyr_compile_definitions(
     SL_RAIL_UTIL_PA_CONFIG_HEADER="sl_rail_util_pa_config.h"
+    SL_CATALOG_SL_RAIL_UTIL_RF_PATH_SWITCH_PRESENT=1
   )
 
   zephyr_include_directories(
     ${RADIO_DIR}/rail_lib/common
     ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_compatible_pa
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_rf_path_switch
     ${BLUETOOTH_DIR}/bgstack/ll/inc
   )
 
@@ -104,6 +106,10 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
 
   if(CONFIG_SOC_GECKO_USE_RAIL)
     # rail
+    zephyr_library_sources(
+      ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_rf_path_switch/sl_rail_util_rf_path_switch.c
+    )
+
     # PA curve for the modules comes from their config archive - omit the compilation of the SoC curves on modules
     zephyr_library_sources_ifdef(CONFIG_SILABS_DEVICE_IS_MODULE
       ${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_conversions_efr32.c
