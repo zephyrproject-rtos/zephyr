@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BQ27427
+	bool "BQ27427 Fuel Gauge"
+	default y
+	depends on DT_HAS_TI_BQ27427_ENABLED
+	select I2C
+	help
+	  Enable I2C-based driver for BQ27427 Fuel Gauge.

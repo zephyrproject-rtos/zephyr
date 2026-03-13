@@ -58,3 +58,9 @@ hy4245@7 {
 	reg = <0x7>;
 	status = "okay";
 };
+
+bq27427@8 {
+	compatible = "ti,bq27427";
+	reg = <0x8>;
+	status = "okay";
+};

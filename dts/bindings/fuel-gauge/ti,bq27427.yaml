@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments BQ27427 fuel gauge. For more info visit
+  https://www.ti.com/product/BQ27427
+
+
+compatible: "ti,bq27427"
+
+include: [i2c-device.yaml, fuel-gauge.yaml]

@@ -12,6 +12,7 @@ if(CONFIG_EMUL AND CONFIG_USERSPACE)
 endif()
 
 # zephyr-keep-sorted-start
+add_subdirectory_ifdef(CONFIG_BQ27427 bq27427)
 add_subdirectory_ifdef(CONFIG_BQ27Z746 bq27z746)
 add_subdirectory_ifdef(CONFIG_BQ40Z50 bq40z50)
 add_subdirectory_ifdef(CONFIG_FUEL_GAUGE_AXP2101 axp2101)
