@@ -80,6 +80,15 @@ Building the application for ek_ra8p1/r7ka8p1kflcac/cm85
    :goals: debug
    :west-args: --sysbuild
 
+Building the application for ek_ra8d2/r7ka8d2kflcac/cm85
+********************************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/openamp
+   :board: ek_ra8d2/r7ka8d2kflcac/cm85
+   :goals: debug
+   :west-args: --sysbuild
+
 Building the application for ek_ra8m2/r7ka8m2jflcac/cm85
 ********************************************************
 
