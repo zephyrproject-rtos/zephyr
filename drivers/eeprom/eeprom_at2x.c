@@ -332,11 +332,15 @@ static int eeprom_at24_write(const struct device *dev, off_t offset,
 	while (1) {
 		int64_t now = k_uptime_get();
 		err = i2c_write(config->bus.i2c.bus, block, sizeof(block),
-				bus_addr);
-        k_sleep(K_MSEC(config->timeout));         
-		if (!err || now > timeout) {
+				bus_addr);        
+		if (!err) {
+			k_sleep(K_MSEC(config->timeout)); 
 			break;
 		}
+		if( now > timeout){
+			break;
+		}
+		k_sleep(1); 
 	}
 
 	if (err < 0) {
