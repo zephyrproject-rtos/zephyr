@@ -100,6 +100,12 @@ static inline int vendor_specific_xip_disable(const struct device *dev,
 #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_qspi_v2)
 #include <nrfx.h>
 
+#if defined(MSPI_PRESENT) && !defined(QSPI_PRESENT)
+#define NRF_QSPI_Type		  NRF_MSPI_Type
+#define QSPI_INTENSET_CORE_Pos	  MSPI_INTENSET_CORE_Pos
+#define QSPI_INTENSET_DMADONE_Pos MSPI_INTENSET_CORE_Pos
+#endif
+
 static inline void vendor_specific_init(const struct device *dev)
 {
 	const struct mspi_dw_config *config = dev->config;
