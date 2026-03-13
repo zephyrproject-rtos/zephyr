@@ -1,8 +1,8 @@
 # Copyright (c) 2019 Intel Corporation
-# Copyright (c) 2022 Microchip Technology Inc.
+# Copyright (c) 2022 and 2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Microchip ESPI SAF version 2 controller
+description: Microchip ESPI TAF version 2 controller
 
 compatible: "microchip,xec-espi-saf-v2"
 
@@ -18,10 +18,10 @@ properties:
     required: true
     description: Array of encoded interrupt information
 
-  pcrs:
-    type: array
+  pcr-scr:
+    type: int
     required: true
-    description: Array of eSPI PCR register index and bit position
+    description: Encoded eSPI TAF PCR register index and bit position
 
   poll-timeout:
     type: int
@@ -47,13 +47,5 @@ properties:
     type: int
     const: 1
 
-  "#pcr-cells":
-    type: int
-    const: 2
-
 girq-cells:
   - girqinfo
-
-pcr-cells:
-  - regidx
-  - bitpos

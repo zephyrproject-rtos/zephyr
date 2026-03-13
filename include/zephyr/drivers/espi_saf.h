@@ -93,6 +93,23 @@ extern "C" {
 
 /** @endcond */
 
+/**
+ * @brief eSPI TAF notification type.
+ *
+ * eSPI TAF notification event details indicates the event which triggered
+ * the callback.
+ */
+enum espi_taf_event {
+	/** TAF generic event */
+	ESPI_TAF_EVENT_NO_REQUEST = 0,
+	/** TAF flash access request was from the Host eSPI controller */
+	ESPI_TAF_EVENT_HOST_REQUEST,
+	/** TAF flash access request was from EC firmware portal 0 */
+	ESPI_TAF_EVENT_EC0_REQUEST,
+	/** maximum request */
+	ESPI_TAF_EVENT_MAX_REQUEST,
+};
+
 struct espi_saf_hw_cfg;
 struct espi_saf_flash_cfg;
 struct espi_saf_pr;

@@ -912,15 +912,15 @@ espi0: espi@400f3400 {
 	pcr-scr = <MCHP_XEC_SCR_ENCODE(2, 19)>;
 	status = "disabled";
 
-	espi_saf0: espi_saf@40008000 {
+	espi_taf0: espi_taf@40008000 {
 		compatible = "microchip,xec-espi-saf-v2";
 		reg = <0x40008000 0x400>, <0x40070000 0x400>, <0x40071000 0x400>;
 		reg-names = "tafbr", "tafqspi", "tafcomm";
 		interrupts = <166 3>, <167 3>;
-		interrupt-names = "done", "err";
-		girqs = <MCHP_XEC_ECIA(19, 9, 11, 166)>,
-			<MCHP_XEC_ECIA(19, 10, 11, 167)>;
-		pcrs = <2 27>;
+		interrupt-names = "done", "busmon";
+		girqs = <MCHP_XEC_ECIA_GIRQ_ENC(19, 9)>,
+			<MCHP_XEC_ECIA_GIRQ_ENC(19, 10)>;
+		pcr-scr = <MCHP_XEC_SCR_ENCODE(2, 27)>;
 		status = "disabled";
 	};
 

@@ -6,7 +6,7 @@
 config ESPI_XEC
 	bool "XEC Microchip ESPI driver"
 	default y
-	depends on DT_HAS_MICROCHIP_XEC_ESPI_ENABLED
+	depends on DT_HAS_MICROCHIP_XEC_ESPI_ENABLED && SOC_SERIES_MEC15XX
 	select PINCTRL
 	help
 	  Enable the Microchip XEC ESPI driver for MEC15xx family.
@@ -14,10 +14,10 @@ config ESPI_XEC
 config ESPI_XEC_V2
 	bool "XEC Microchip ESPI V2 driver"
 	default y
-	depends on DT_HAS_MICROCHIP_XEC_ESPI_V2_ENABLED
+	depends on DT_HAS_MICROCHIP_XEC_ESPI_V2_ENABLED && !SOC_SERIES_MEC15XX
 	select PINCTRL
 	help
-	  Enable the Microchip XEC ESPI driver for MEC172x series.
+	  Enable the Microchip XEC ESPI driver for MEC172x/4x/5x series.
 
 if ESPI_XEC || ESPI_XEC_V2
 
@@ -67,23 +67,6 @@ config ESPI_FLASH_BUFFER_SIZE
 	help
 	  Use maximum RAM buffer size defined by spec but allow applications
 	  to override if eSPI host doesn't support it.
-
-config ESPI_TAF_XEC
-	bool "XEC Microchip ESPI TAF driver"
-	default y
-	depends on SOC_SERIES_MEC15XX
-	depends on DT_HAS_MICROCHIP_XEC_ESPI_SAF_ENABLED
-	help
-	  Enable the Microchip XEC TAF ESPI driver for MEC15xx family.
-
-if SOC_SERIES_MEC172X || SOC_SERIES_MEC174X || SOC_SERIES_MEC175X || SOC_SERIES_MEC165XB
-config ESPI_TAF_XEC_V2
-	bool "XEC Microchip ESPI TAF V2 driver"
-	default y
-	depends on DT_HAS_MICROCHIP_XEC_ESPI_SAF_V2_ENABLED
-	help
-	  Enable the Microchip XEC TAF ESPI driver for MEC172x series.
-endif #SOC_SERIES_MEC172X || SOC_SERIES_MEC174X || SOC_SERIES_MEC175X || SOC_SERIES_MEC165XB
 
 endif #ESPI_XEC
 
@@ -183,20 +166,6 @@ config ESPI_PERIPHERAL_MAILBOX_SMI_SIRQ_SLOT
 
 endif #ESPI_PERIPHERAL_CHANNEL
 
-config ESPI_TAF
-	bool "XEC Microchip ESPI TAF driver"
-	depends on ESPI_FLASH_CHANNEL
-	help
-	  Enable Target Attached Flash eSPI driver. TAF depends upon ESPI XEC driver
-	  and flash channel.
-
-config ESPI_TAF_INIT_PRIORITY
-	int "ESPI TAF driver initialization priority"
-	depends on ESPI_TAF
-	default 4
-	help
-	  Driver initialization priority for ESPI TAF driver.
-
 config ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA
 	bool "Read ACPI EC Event Data in IBF ISR"
 	depends on ESPI_PERIPHERAL_CHANNEL
@@ -220,3 +189,23 @@ config ESPI_PERIPHERAL_KBC_OBE_CBK
 	  Enable KBC OBE callback from OBE ISR
 
 endif #ESPI_XEC_V2 && ESPI_PERIPHERAL_8042_KBC
+
+if ESPI_TAF
+
+config ESPI_TAF_XEC
+	bool "XEC Microchip ESPI TAF driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_ESPI_SAF_ENABLED
+	depends on ESPI_XEC
+	help
+	  Enable the Microchip XEC TAF ESPI driver for MEC15xx family.
+
+config ESPI_TAF_XEC_V2
+	bool "XEC Microchip ESPI TAF V2 driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_ESPI_SAF_V2_ENABLED
+	depends on ESPI_XEC_V2
+	help
+	  Enable the Microchip XEC TAF ESPI driver for MEC172x and newer SoCs.
+
+endif #ESPI_TAF
