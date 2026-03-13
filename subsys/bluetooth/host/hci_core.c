@@ -340,29 +340,6 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 }
 #endif /* defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL) */
 
-struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
-{
-	struct bt_hci_cmd_hdr *hdr;
-	struct net_buf *buf;
-
-	LOG_DBG("opcode 0x%04x param_len %u", opcode, param_len);
-
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		return NULL;
-	}
-
-	LOG_DBG("buf %p", buf);
-
-	hdr = net_buf_push(buf, sizeof(*hdr));
-	hdr->opcode = sys_cpu_to_le16(opcode);
-	hdr->param_len = param_len;
-
-	net_buf_push_u8(buf, BT_HCI_H4_CMD);
-
-	return buf;
-}
-
 struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout)
 {
 	struct net_buf *buf;
@@ -389,7 +366,15 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 {
 	struct bt_hci_cmd_hdr *hdr;
 
-	if (!buf) {
+	if (buf != NULL) {
+		/* Check for sufficient headeroom, which can only happen if the user passes a
+		 * buffer that was allocated incorrectly, i.e. through some other means than
+		 * bt_hci_cmd_alloc().
+		 */
+		if (net_buf_headroom(buf) < sizeof(uint8_t) + sizeof(*hdr)) {
+			return -EINVAL;
+		}
+	} else {
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
@@ -400,16 +385,11 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 
 	cmd(buf)->opcode = opcode;
 
-	/* TODO: Remove this condition when bt_hci_cmd_create() has been removed (after its
-	 * deprecation period)
-	 */
-	if (net_buf_headroom(buf) >= sizeof(uint8_t) + sizeof(*hdr)) {
-		hdr = net_buf_push(buf, sizeof(*hdr));
-		hdr->opcode = sys_cpu_to_le16(opcode);
-		hdr->param_len = buf->len - sizeof(*hdr);
+	hdr = net_buf_push(buf, sizeof(*hdr));
+	hdr->opcode = sys_cpu_to_le16(opcode);
+	hdr->param_len = buf->len - sizeof(*hdr);
 
-		net_buf_push_u8(buf, BT_HCI_H4_CMD);
-	}
+	net_buf_push_u8(buf, BT_HCI_H4_CMD);
 
 	/* Host Number of Completed Packets can ignore the ncmd value
 	 * and does not generate any cmd complete/status events.
