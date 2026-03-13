@@ -43,6 +43,14 @@ LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 /* The devicetree node identifier for the board power rails pins. */
 #define BRD_PWR_NODE DT_NODELABEL(board_power)
 
+#ifdef CONFIG_ESPI_TAF_XEC_V2
+#define ESPI_TAF_FLASH_CTRL_NODE DT_NODELABEL(qspi0)
+#define ESPI_TAF_NODE            DT_NODELABEL(espi_taf0)
+#else
+#define ESPI_TAF_FLASH_CTRL_NODE DT_NODELABEL(spi0)
+#define ESPI_TAF_NODE            DT_NODELABEL(espi_saf0)
+#endif
+
 #ifdef CONFIG_ESPI_USE_BOARD_POWER
 static const struct gpio_dt_spec pwrgd_gpio = GPIO_DT_SPEC_GET(BRD_PWR_NODE, pwrg_gpios);
 static const struct gpio_dt_spec rsm_gpio = GPIO_DT_SPEC_GET(BRD_PWR_NODE, rsm_gpios);
@@ -345,7 +353,6 @@ int espi_handshake(void)
 	return 0;
 }
 
-
 #ifndef CONFIG_ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE
 static void send_target_bootdone(void)
 {
@@ -389,8 +396,8 @@ int espi_test(void)
 	}
 
 #ifdef CONFIG_ESPI_TAF
-	const struct device *const qspi_dev = DEVICE_DT_GET(DT_NODELABEL(qspi0));
-	const struct device *const espi_saf_dev = DEVICE_DT_GET(DT_NODELABEL(espi_saf0));
+	const struct device *const qspi_dev = DEVICE_DT_GET(ESPI_TAF_FLASH_CTRL_NODE);
+	const struct device *const espi_saf_dev = DEVICE_DT_GET(ESPI_TAF_NODE);
 
 	if (!device_is_ready(qspi_dev)) {
 		LOG_ERR("%s: device not ready.", qspi_dev->name);
