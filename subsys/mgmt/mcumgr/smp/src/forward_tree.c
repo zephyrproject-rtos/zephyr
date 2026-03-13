@@ -105,6 +105,18 @@ int smp_ft_forward_downstream(struct smp_forward_tree *req_fwd, void *vreq)
 
 	--req_fwd->hop;
 
+	/* Write updated forward tree back to the packet buffer.
+	 * smp_ft_read_fwd() read it with sys_be64_to_cpu(), so we
+	 * must convert back to big-endian before storing.
+	 */
+	struct net_buf *nb = vreq;
+	uint64_t tmp_ft;
+
+	memcpy(&tmp_ft, req_fwd, sizeof(uint64_t));
+	tmp_ft = sys_cpu_to_be64(tmp_ft);
+	memcpy(nb->data + (nb->len - sizeof(uint64_t)),
+	       &tmp_ft, sizeof(uint64_t));
+
 	return smpt->functions.output(smpt->dev, vreq);
 }
 
@@ -207,8 +219,15 @@ int smp_ft_process_request_packet(struct smp_streamer *streamer, void *vreq)
 			req_hdr.nh_flags &= ~SMP_HDR_FLAG_FORWARD_TREE;
 			req_hdr.nh_len -= sizeof(struct smp_forward_tree);
 
+			// Convert back to big-endian for the wire/buffer
+			req_hdr.nh_len = sys_cpu_to_be16(req_hdr.nh_len);
+			req_hdr.nh_group = sys_cpu_to_be16(req_hdr.nh_group);
+
 			// Replace Header
 			net_buf_simple_push_mem(&clone, &req_hdr, sizeof(struct smp_hdr));
+
+			// Sync modified length back to original buffer
+			req->len = clone.len;
 		}
 
 		if (streamer->smpt->dev == upstream_transport.dev) {
