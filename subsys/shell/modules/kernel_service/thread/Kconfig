@@ -50,6 +50,7 @@ config KERNEL_THREAD_SHELL_UNWIND
 	bool
 	default y
 	depends on ARCH_STACKWALK
+	depends on THREAD_MONITOR
 	select KERNEL_THREAD_SHELL
 	help
 	  Internal helper macro to compile the `unwind` subcommand
