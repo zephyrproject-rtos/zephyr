@@ -107,9 +107,6 @@
 #define MCHP_ESPI_FC_CAP_SHARE_TAF_ONLY  FIELD_PREP(MCHP_ESPI_FC_CAP_SHARE_MASK, 2U)
 #define MCHP_ESPI_FC_CAP_SHARE_CAF_TAF   FIELD_PREP(MCHP_ESPI_FC_CAP_SHARE_MASK, 3U)
 
-/* Temporary until SAF to TAF converstion done */
-#define MCHP_ESPI_FC_CAP_SHARE_MAF_SAF MCHP_ESPI_FC_CAP_SHARE_CAF_TAF
-
 #define MCHP_ESPI_FC_CAP_MAX_RD_SZ_POS   5U
 #define MCHP_ESPI_FC_CAP_MAX_RD_SZ_MASK0 GENMASK(2, 0)
 #define MCHP_ESPI_FC_CAP_MAX_RD_SZ_MASK  GENMASK(7, 5)
@@ -149,7 +146,7 @@
 #define MCHP_ESPI_VW_READY_MASK 0x01U
 #define MCHP_ESPI_VW_READY      0x01U
 
-/* SAF Erase Block size */
+/* TAF Erase Block size */
 #define MCHP_ESPI_SERASE_SZ_1K_BITPOS   0
 #define MCHP_ESPI_SERASE_SZ_2K_BITPOS   1
 #define MCHP_ESPI_SERASE_SZ_4K_BITPOS   2
@@ -167,6 +164,16 @@
 #define MCHP_ESPI_SERASE_SZ_64K         BIT(6)
 #define MCHP_ESPI_SERASE_SZ_128K        BIT(7)
 #define MCHP_ESPI_SERASE_SZ(bitpos)     BIT((bitpos) + 10U)
+
+#define XEC_ESPI_IOC_TAF_ERBSZ_OFS       0x2EEU
+#define XEC_ESPI_IOC_TAF_ERBSZ_1KB_POS   0
+#define XEC_ESPI_IOC_TAF_ERBSZ_2KB_POS   1
+#define XEC_ESPI_IOC_TAF_ERBSZ_4KB_POS   2
+#define XEC_ESPI_IOC_TAF_ERBSZ_8KB_POS   3
+#define XEC_ESPI_IOC_TAF_ERBSZ_16KB_POS  4
+#define XEC_ESPI_IOC_TAF_ERBSZ_32KB_POS  5
+#define XEC_ESPI_IOC_TAF_ERBSZ_64KB_POS  6
+#define XEC_ESPI_IOC_TAF_ERBSZ_128KB_POS 7
 
 /* VW Error Status */
 #define MCHP_ESPI_VW_ERR_STS_MASK      0x33U
@@ -819,102 +826,6 @@ struct espi_sram_host_bar {      /* 64-bit register on 16-bit alignment */
 	volatile uint16_t HBASE_MSH;
 	volatile uint16_t RESERVED[2];
 }; /* Size = 10 (0xa) */
-
-/* eSPI Capabilities, I/O and Memory components in one structure
- * DEPRECATED do not use for new modifications or new eSPI drivers.
- * Refer to structures at the end of this file where we have broken
- * up this monster into functionality based structures.
- */
-struct espi_iom_regs {          /* @ 0x400F3400 */
-	volatile uint8_t RTIDX; /* @ 0x0000 */
-	volatile uint8_t RTDAT; /* @ 0x0001 */
-	volatile uint16_t RESERVED;
-	volatile uint32_t RESERVED1[63];
-	volatile uint32_t PCLC[3]; /* @ 0x0100 */ /* struct xec_espi_ioc_pc_regs */
-	volatile uint32_t PCERR[2];               /* @ 0x010C */
-	volatile uint32_t PCSTS;                  /* @ 0x0114 */
-	volatile uint32_t PCIEN; /* @ 0x0118 */   /* end struct xec_espi_ioc_pc_regs */
-	volatile uint32_t RESERVED2;
-	volatile uint32_t PCBINH[2]; /* @ 0x0120 */  /* struct xec_espi_ioc_bar_ldm */
-	volatile uint32_t PCBINIT;                   /* @ 0x0128 */
-	volatile uint32_t PCECIRQ;                   /* @ 0x012C */
-	volatile uint32_t PCCKNP;                    /* @ 0x0130 */
-	volatile uint32_t PCBARI[29]; /* @ 0x0134 */ /* end struct xec_espi_ioc_bar_ldm */
-	volatile uint32_t RESERVED3[30];
-	volatile uint32_t PCLTRSTS; /* @ 0x0220 */ /* struct xec_espi_ioc_pc_ltr_regs */
-	volatile uint32_t PCLTREN;                 /* @ 0x0224 */
-	volatile uint32_t PCLTRCTL;                /* @ 0x0228 */
-	volatile uint32_t PCLTRM; /* @ 0x022C */   /* end struct xec_espi_ioc_pc_ltr_regs */
-	volatile uint32_t RESERVED4[4];
-	volatile uint32_t OOBRXA[2]; /* @ 0x0240 */ /* struct xec_espi_ioc_oob_regs */
-	volatile uint32_t OOBTXA[2];                /* @ 0x0248 */
-	volatile uint32_t OOBRXL;                   /* @ 0x0250 */
-	volatile uint32_t OOBTXL;                   /* @ 0x0254 */
-	volatile uint32_t OOBRXC;                   /* @ 0x0258 */
-	volatile uint32_t OOBRXIEN;                 /* @ 0x025C */
-	volatile uint32_t OOBRXSTS;                 /* @ 0x0260 */
-	volatile uint32_t OOBTXC;                   /* @ 0x0264 */
-	volatile uint32_t OOBTXIEN;                 /* @ 0x0268 */
-	volatile uint32_t OOBTXSTS; /* @ 0x026C */  /* end struct xec_espi_ioc_oob_regs */
-	volatile uint32_t RESERVED5[4];
-	volatile uint32_t FCFA[2]; /* @ 0x0280 */ /* struct xec_espi_ioc_fc_regs */
-	volatile uint32_t FCBA[2];                /* @ 0x0288 */
-	volatile uint32_t FCLEN;                  /* @ 0x0290 */
-	volatile uint32_t FCCTL;                  /* @ 0x0294 */
-	volatile uint32_t FCIEN;                  /* @ 0x0298 */
-	volatile uint32_t FCCFG;                  /* @ 0x029C */
-	volatile uint32_t FCSTS; /* @ 0x02A0 */   /* end struct xec_espi_ioc_fc_regs */
-	volatile uint32_t RESERVED6[3];
-	volatile uint32_t VWSTS; /* @ 0x02B0 */ /* struct xec_espi_cap_regs */
-	volatile uint32_t RESERVED7[11];
-	volatile uint8_t CAPID;                 /* @ 0x02E0 */
-	volatile uint8_t CAP0;                  /* @ 0x02E1 */
-	volatile uint8_t CAP1;                  /* @ 0x02E2 */
-	volatile uint8_t CAPPC;                 /* @ 0x02E3 */
-	volatile uint8_t CAPVW;                 /* @ 0x02E4 */
-	volatile uint8_t CAPOOB;                /* @ 0x02E5 */
-	volatile uint8_t CAPFC;                 /* @ 0x02E6 */
-	volatile uint8_t PCRDY;                 /* @ 0x02E7 */
-	volatile uint8_t OOBRDY;                /* @ 0x02E8 */
-	volatile uint8_t FCRDY;                 /* @ 0x02E9 */
-	volatile uint8_t ERIS;                  /* @ 0x02EA */
-	volatile uint8_t ERIE;                  /* @ 0x02EB */
-	volatile uint8_t PLTSRC;                /* @ 0x02EC */
-	volatile uint8_t VWRDY;                 /* @ 0x02ED */
-	volatile uint8_t SAFEBS; /* @ 0x02EE */ /* end struct xec_espi_cap_regs */
-	volatile uint8_t RESERVED8;
-	volatile uint32_t RESERVED9[16];
-	volatile uint32_t ACTV; /* @ 0x0330 */ /* struct xec_espi_ioc_cfg_regs */
-	volatile uint32_t IOHBAR[29];          /* @ 0x0334 */
-	volatile uint32_t RESERVED10;
-	volatile uint8_t SIRQ[19]; /* @ 0x03ac */
-	volatile uint8_t RESERVED11;
-	volatile uint32_t RESERVED12[12];
-	volatile uint32_t VWERREN; /* @ 0x03f0 */ /* end struct xec_espi_ioc_cfg_regs */
-	volatile uint32_t RESERVED13[79];
-	struct espi_io_mbar MBAR[10]; /* @ 0x0530 */ /* struct xec_espi_mc_bar_cfg_regs */
-	volatile uint32_t RESERVED14[6];
-	struct espi_sram_bar SRAMBAR[2]; /* @ 0x05AC */ /* struct xec_espi_mc_bar_host_regs */
-	volatile uint32_t RESERVED15[16];
-	volatile uint32_t BM_STATUS; /* @ 0x0600 */
-	volatile uint32_t BM_IEN;    /* @ 0x0604 */
-	volatile uint32_t BM_CONFIG; /* @ 0x0608 */
-	volatile uint32_t RESERVED16;
-	volatile uint32_t BM_CTRL1;        /* @ 0x0610 */
-	volatile uint32_t BM_HADDR1_LSW;   /* @ 0x0614 */
-	volatile uint32_t BM_HADDR1_MSW;   /* @ 0x0618 */
-	volatile uint32_t BM_EC_ADDR1_LSW; /* @ 0x061C */
-	volatile uint32_t BM_EC_ADDR1_MSW; /* @ 0x0620 */
-	volatile uint32_t BM_CTRL2;        /* @ 0x0624 */
-	volatile uint32_t BM_HADDR2_LSW;   /* @ 0x0628 */
-	volatile uint32_t BM_HADDR2_MSW;   /* @ 0x062C */
-	volatile uint32_t BM_EC_ADDR2_LSW; /* @ 0x0630 */
-	volatile uint32_t BM_EC_ADDR2_MSW; /* @ 0x0634 */
-	volatile uint32_t RESERVED17[62];
-	struct espi_mbar_host HMBAR[10]; /* @ 0x0730 */
-	volatile uint32_t RESERVED18[6];
-	struct espi_sram_host_bar HSRAMBAR[2]; /* @ 0x07AC */
-}; /* Size = 1984 (0x7c0) */
 
 struct xec_espi_ioc_pc_regs { /* 0x4000F400 + 0x100 */
 	volatile uint32_t PCLC[3];

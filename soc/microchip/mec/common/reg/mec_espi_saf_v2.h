@@ -62,13 +62,19 @@
 #define MCHP_SAF_ECP_CMD_ERASE_64K          BIT(25)
 
 /* Zero based command values */
-#define MCHP_SAF_ECP_CMD_READ         0x00u
-#define MCHP_SAF_ECP_CMD_WRITE        0x01u
-#define MCHP_SAF_ECP_CMD_ERASE        0x02u
-#define MCHP_SAF_ECP_CMD_RPMC_OP1_CS0 0x03u
-#define MCHP_SAF_ECP_CMD_RPMC_OP2_CS0 0x04u
-#define MCHP_SAF_ECP_CMD_RPMC_OP1_CS1 0x83u
-#define MCHP_SAF_ECP_CMD_RPMC_OP2_CS1 0x84u
+#define MCHP_SAF_ECP_CMD_READ             0x00u
+#define MCHP_SAF_ECP_CMD_WRITE            0x01u
+#define MCHP_SAF_ECP_CMD_ERASE            0x02u
+#define MCHP_SAF_ECP_CMD_RPMC_OP1_CS0     0x03u
+#define MCHP_SAF_ECP_CMD_RPMC_OP2_CS0     0x04u
+#define MCHP_SAF_ECP_CMD_RPMC_OP1_CS1     0x23u
+#define MCHP_SAF_ECP_CMD_RPMC_OP2_CS1     0x24u
+/* Default TAF hardware recognizes both 0x23/0x24 and 0x83/0x84
+ * as valid opcodes for RPMC OP1/OP2 for chip select 1.
+ * If strict mode is enabled only 0x23/0x24 will be recognized
+ */
+#define MCHP_SAF_ECP_CMD_RPMC_OP1_CS1_DEP 0x83u
+#define MCHP_SAF_ECP_CMD_RPMC_OP2_CS1_DEP 0x84u
 
 /* SAF EC Portal Flash Address register */
 #define MCHP_SAF_ECP_FLAR_OFS  0x1cu
@@ -314,6 +320,8 @@
 #define MCHP_SAF_TAG_MAP2_LOCK_POS   31
 #define MCHP_SAF_TAG_MAP2_LOCK       BIT(MCHP_SAF_TAG_MAP2_LOCK_POS)
 
+#define MCHP_SAF_PR_REGS_SIZE 0x10u /* 4 32-bit registers */
+
 /* SAF Protection Region Start registers */
 #define MCHP_SAF_PROT_RG0_START_OFS  0x84u
 #define MCHP_SAF_PROT_RG1_START_OFS  0x94u
@@ -335,6 +343,9 @@
 #define MCHP_SAF_PROT_RG_START_MASK  0xfffffu
 #define MCHP_SAF_PROT_RG_START_DFLT  0x07fffu
 
+#define MCHP_SAF_PR_START_OFS(n)                                                                   \
+	(MCHP_SAF_PROT_RG0_START_OFS + ((uint32_t)(n) * MCHP_SAF_PR_REGS_SIZE))
+
 /* SAF Protection Region Limit registers */
 #define MCHP_SAF_PROT_RG0_LIMIT_OFS  0x88u
 #define MCHP_SAF_PROT_RG1_LIMIT_OFS  0x98u
@@ -355,6 +366,9 @@
 #define MCHP_SAF_PROT_RG16_LIMIT_OFS 0x188u
 #define MCHP_SAF_PROT_RG_LIMIT_MASK  0xfffffu
 #define MCHP_SAF_PROT_RG_LIMIT_DFLT  0
+
+#define MCHP_SAF_PR_LIMIT_OFS(n)                                                                   \
+	(MCHP_SAF_PROT_RG0_LIMIT_OFS + ((uint32_t)(n) * MCHP_SAF_PR_REGS_SIZE))
 
 /* SAF Protection Region Write Bitmap registers */
 #define MCHP_SAF_PROT_RG0_WBM_OFS  0x8cu
@@ -384,6 +398,8 @@
 #define MCHP_SAF_PROT_RG_WBM6      BIT(6)
 #define MCHP_SAF_PROT_RG_WBM7      BIT(7)
 
+#define MCHP_SAF_PR_WBM_OFS(n) (MCHP_SAF_PROT_RG0_WBM_OFS + ((uint32_t)(n) * MCHP_SAF_PR_REGS_SIZE))
+
 /* SAF Protection Region Read Bitmap registers */
 #define MCHP_SAF_PROT_RG0_RBM_OFS  0x90u
 #define MCHP_SAF_PROT_RG1_RBM_OFS  0xa0u
@@ -411,6 +427,8 @@
 #define MCHP_SAF_PROT_RG_RBM5      BIT(5)
 #define MCHP_SAF_PROT_RG_RBM6      BIT(6)
 #define MCHP_SAF_PROT_RG_RBM7      BIT(7)
+
+#define MCHP_SAF_PR_RBM_OFS(n) (MCHP_SAF_PROT_RG0_RBM_OFS + ((uint32_t)(n) * MCHP_SAF_PR_REGS_SIZE))
 
 /* SAF Poll Timeout register */
 #define MCHP_SAF_POLL_TMOUT_OFS  0x194u
@@ -543,7 +561,7 @@
 #define MCHP_SAF_MSTR_ALL     0xffu
 
 /* eSPI SAF */
-/** @brief SAF SPI Opcodes and descriptor indices */
+/** @brief SAF SPI Opcodes and descriptor indices starting at 0x4000804c*/
 struct mchp_espi_saf_op {
 	volatile uint32_t OPA;
 	volatile uint32_t OPB;
@@ -551,7 +569,7 @@ struct mchp_espi_saf_op {
 	volatile uint32_t OP_DESCR;
 };
 
-/** @brief SAF protection regions contain 4 32-bit registers. */
+/** @brief SAF protection regions contain 4 32-bit registers starting at 0x40008084 */
 struct mchp_espi_saf_pr {
 	volatile uint32_t START;
 	volatile uint32_t LIMIT;
@@ -559,52 +577,7 @@ struct mchp_espi_saf_pr {
 	volatile uint32_t RDBM;
 };
 
-/** @brief eSPI SAF configuration and control registers at 0x40008000 */
-struct mchp_espi_saf {
-	uint32_t RSVD1[6];
-	volatile uint32_t SAF_ECP_CMD;         /* 0x18 */
-	volatile uint32_t SAF_ECP_FLAR;        /* 0x1c */
-	volatile uint32_t SAF_ECP_START;       /* 0x20 */
-	volatile uint32_t SAF_ECP_BFAR;        /* 0x24 */
-	volatile uint32_t SAF_ECP_STATUS;      /* 0x28 */
-	volatile uint32_t SAF_ECP_INTEN;       /* 0x2c */
-	volatile uint32_t SAF_FL_CFG_SIZE_LIM; /* 0x30 */
-	volatile uint32_t SAF_FL_CFG_THRH;     /* 0x34 */
-	volatile uint32_t SAF_FL_CFG_MISC;     /* 0x38 */
-	volatile uint32_t SAF_ESPI_MON_STATUS; /* 0x3c */
-	volatile uint32_t SAF_ESPI_MON_INTEN;  /* 0x40 */
-	volatile uint32_t SAF_ECP_BUSY;        /* 0x44 */
-	uint32_t RSVD2[1];
-	struct mchp_espi_saf_op SAF_CS_OP[2];    /* 0x4c - 0x6b */
-	volatile uint32_t SAF_FL_CFG_GEN_DESCR;  /* 0x6c */
-	volatile uint32_t SAF_PROT_LOCK;         /* 0x70 */
-	volatile uint32_t SAF_PROT_DIRTY;        /* 0x74 */
-	volatile uint32_t SAF_TAG_MAP[3];        /* 0x78 - 0x83 */
-	struct mchp_espi_saf_pr SAF_PROT_RG[17]; /* 0x84 - 0x193 */
-	volatile uint32_t SAF_POLL_TMOUT;        /* 0x194 */
-	volatile uint32_t SAF_POLL_INTRVL;       /* 0x198 */
-	volatile uint32_t SAF_SUS_RSM_INTRVL;    /* 0x19c */
-	volatile uint32_t SAF_CONSEC_RD_TMOUT;   /* 0x1a0 */
-	volatile uint16_t SAF_CS0_CFG_P2M;       /* 0x1a4 */
-	volatile uint16_t SAF_CS1_CFG_P2M;       /* 0x1a6 */
-	volatile uint32_t SAF_FL_CFG_SPM;        /* 0x1a8 */
-	volatile uint32_t SAF_SUS_CHK_DLY;       /* 0x1ac */
-	volatile uint16_t SAF_CS0_CM_PRF;        /* 0x1b0 */
-	volatile uint16_t SAF_CS1_CM_PRF;        /* 0x1b2 */
-	volatile uint32_t SAF_DNX_PROT_BYP;      /* 0x1b4 */
-	volatile uint32_t SAF_AC_RELOAD;         /* 0x1b8 */
-	volatile uint32_t SAF_PWRDN_CTRL;        /* 0x1bc */
-	volatile uint32_t SAF_MEM_PWR_STS;       /* 0x1c0 */
-	volatile uint32_t SAF_CFG_CS0_OPD;       /* 0x1c4 */
-	volatile uint32_t SAF_CFG_CS1_OPD;       /* 0x1c8 */
-	volatile uint32_t SAF_FL_PWR_TMOUT;      /* 0x1cc */
-	uint32_t RSVD[12];
-	volatile uint32_t SAF_CLKDIV_CS0;        /* 0x200 */
-	volatile uint32_t SAF_CLKDIV_CS1;        /* 0x204 */
-	volatile uint32_t SAF_RPMC_OP2_ESPI_RES; /* 0x208 */
-	volatile uint32_t SAF_RPMC_OP2_EC0_RES;  /* 0x20c */
-	volatile uint32_t SAF_RPMC_OP2_EC1_RES;  /* 0x210 */
-};
+#define MCHP_SAF_PR_OFS(n) (MCHP_SAF_PROT_RG0_START_OFS + (sizeof(struct mchp_espi_saf_pr) * (n)))
 
 struct mchp_espi_saf_comm { /* @ 0x40071000 */
 	uint32_t TEST0;

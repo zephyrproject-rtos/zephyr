@@ -257,9 +257,6 @@ typedef enum {
 #include "reg/mec172x_vbat.h"
 #include "reg/mec172x_emi.h"
 
-/* temporary until eSPI and eSPI TAF driver conversion are complete */
-#include "reg/mec172x_qspi.h"
-
 /* common peripheral register defines */
 #include <soc_common.h>
 

@@ -35,7 +35,17 @@
 #define XEC_QSPI_MODE_CK_DIV_GET(r)   FIELD_GET(XEC_QSPI_MODE_CK_DIV_MSK, (r))
 
 /* CPOL, CPHA_SDI, and CPHA_SDO bit mask */
-#define XEC_QSPI_MODE_CP_MSK 0x700u
+#define XEC_QSPI_MODE_CP_MSK    0x700u
+#define XEC_QSPI_MODE_CP_SET(m) FIELD_PREP(XEC_QSPI_MODE_CP_MSK, (m))
+#define XEC_QSPI_MODE_CP_GET(r) FIELD_GET(XEC_QSPI_MODE_CP_MSK, (r))
+
+/* SPI frequencies < 48 MHz */
+#define XEC_QSPI_SPI_MODE_0 0
+#define XEC_QSPI_SPI_MODE_3 0x7U
+
+/* SPI frequencies >= 48 MHz we must use different values */
+#define XEC_QSPI_SPI_MODE_0_GE48M 0x4U
+#define XEC_QSPI_SPI_MODE_3_GE48M 0x6U
 
 /* Control register */
 #define XEC_QSPI_CR_OFS            4u
@@ -72,7 +82,6 @@
 #define XEC_QSPI_CR_RXDMA_CD1B     1u
 #define XEC_QSPI_CR_RXDMA_CD2B     2u
 #define XEC_QSPI_CR_RXDMA_CD4B     3u
-#define XEC_QSPI_CR_RXDMA_DIS      0
 #define XEC_QSPI_CR_RXDMA_RLDCH0   1u
 #define XEC_QSPI_CR_RXDMA_RLDCH1   2u
 #define XEC_QSPI_CR_RXDMA_RLDCH2   3u
@@ -283,5 +292,10 @@
 
 /* Local DMA channel data length in bytes register b[31:0] */
 #define XEC_QSPI_LDMA_CHX_LR_OFS(x) (0x118u + ((uint32_t)(x) * 0x10u))
+
+/* QMSPI0 interrupt connections */
+#define XEC_QSPI0_GIRQ     18U
+#define XEC_QSPI0_GIRQ_POS 1U
+#define XEC_QSPI0_NVIC_NUM 91U
 
 #endif /* ZEPHYR_SOC_MICROCHIP_MEC_COMMON_REG_QMSPI_H */
