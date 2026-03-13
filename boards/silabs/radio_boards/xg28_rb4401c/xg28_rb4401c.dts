@@ -211,6 +211,12 @@
 	status = "okay";
 };
 
+&radio {
+	rf-path-switch-combine;
+	rf-path-switch-control-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
+	rf-path-switch-radio-active-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
+};
+
 &se {
 	status = "okay";
 };
