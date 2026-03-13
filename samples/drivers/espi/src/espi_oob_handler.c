@@ -184,11 +184,11 @@ void espihub_thread(void *p1, void *p2, void *p3)
 		ret = retrieve_packet(context.espi_dev, &sender);
 		if (!ret) {
 			switch (sender) {
-			case PCH_DEST_SLV_ADDR:
+			case PCH_OOB_DEST_ADDR:
 				LOG_INF("PCH response");
 				/* Any other checks */
-				if (resp_pckt.len == OOB_RESPONSE_LEN) {
-					temp = buf[OOB_RESPONSE_DATA_INDEX];
+				if (resp_pckt.len == PECI_OOB_RESPONSE_LENGTH) {
+					temp = buf[PECI_OOB_RESPONSE_DATA_INDEX];
 					LOG_INF("Temp %d", temp);
 				} else {
 					LOG_ERR("Incorrect size response");
