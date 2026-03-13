@@ -17,7 +17,9 @@
 /* ADC node from the devicetree. */
 #define SAMPLE_ADC_NODE DT_ALIAS(adc0)
 
-#define SAMPLE_DT_SPEC_AND_COMMA(node_id, prop, idx) ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
+#define SAMPLE_DT_SPEC_AND_COMMA(node_id, prop, idx) \
+	COND_CODE_1(DT_PHA_HAS_CELL_AT_IDX(node_id, prop, idx, input), \
+		    (ADC_DT_SPEC_GET_BY_IDX(node_id, idx),), ())
 
 /* Data of ADC io-channels specified in devicetree. */
 static const struct adc_dt_spec adc_channels[] = {
