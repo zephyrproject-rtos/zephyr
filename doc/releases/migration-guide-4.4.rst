@@ -1110,6 +1110,14 @@ Bluetooth Audio
 * ``CONFIG_BT_TBS_SUPPORTED_FEATURES`` has been removed. Applications should use the defined macros
   :c:macro:`BT_TBS_FEATURE_HOLD` and :c:macro:`BT_TBS_FEATURE_JOIN` to set their supported features.
   (:github:`102666`)
+* :c:func:`bt_bap_unicast_server_foreach_ep` and :c:func:`bt_has_preset_foreach` may now return an
+  error if the iteration stopped early, or if provided with invalid parameters. (:github:`105462`)
+* The callbacks for :c:func:`bt_bap_unicast_server_foreach_ep`,
+  :c:func:`bt_bap_unicast_group_foreach_stream`, :c:func:`bt_bap_broadcast_source_foreach_stream`,
+  :c:func:`bt_cap_unicast_group_foreach_stream`, :c:func:`bt_cap_initiator_broadcast_foreach_stream`
+  and :c:func:`bt_has_preset_foreach` now return ``true`` to continue the iteration,
+  and ``false`` to stop the iteration. Any callbacks for these functions need to be updated to
+  reflect the new return types and values. (:github:`105462`)
 
 Bluetooth Mesh
 ==============
