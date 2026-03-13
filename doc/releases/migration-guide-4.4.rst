@@ -944,6 +944,24 @@ STM32
 Timer
 =====
 
+* Out-of-tree SoC or platform code that implements the legacy Cortex-M SysTick low-power
+  companion interface through the compatibility macros ``z_cms_lptim_hook_on_lpm_entry``
+  and ``z_cms_lptim_hook_on_lpm_exit`` should migrate to :c:func:`z_sys_clock_lpm_enter`
+  and :c:func:`z_sys_clock_lpm_exit` from :zephyr_file:`include/zephyr/drivers/timer/system_timer_lpm.h`.
+  The compatibility shim in :zephyr_file:`drivers/timer/cortex_m_systick.h` is deprecated
+  in Zephyr 4.4.0 and is currently scheduled for removal in Zephyr 4.6.0.
+  The legacy Kconfig options:
+  :kconfig:option:`CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_NONE`,
+  :kconfig:option:`CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER`,
+  :kconfig:option:`CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_HOOKS`, and
+  :kconfig:option:`CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM` are also deprecated.
+  The chosen property ``/chosen/zephyr,cortex-m-idle-timer`` is deprecated in
+  favor of ``/chosen/zephyr,system-timer-companion``.
+  Migrate to :kconfig:option:`CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE`,
+  :kconfig:option:`CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER`,
+  :kconfig:option:`CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS`, and
+  :kconfig:option:`CONFIG_SYSTEM_TIMER_RESET_BY_LPM`.
+
 * :dtcompatible:`renesas,rza2m-ostm` name has been replaced by :dtcompatible:`renesas,rza2m-ostm-timer`.
   The choice :kconfig:option:`DT_HAS_RENESAS_RZA2M_OSTM_ENABLED` has been replaced with
   :kconfig:option:`DT_HAS_RENESAS_RZA2M_OSTM_TIMER_ENABLED` (:github:`100934`)
