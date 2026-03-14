@@ -4,6 +4,34 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/uart.h)
 
 zephyr_library()
 
+# N32A455 UART driver needs N32 HAL
+if(CONFIG_UART_N32A455)
+    # N32 HAL module paths
+    set(N32_HAL_DIR "${ZEPHYR_BASE}/modules/hal/n32/n32a455/drivers")
+    set(N32_CMSIS_DIR "${ZEPHYR_BASE}/modules/hal/n32/n32a455/cmsis/cm4/device_support")
+    set(N32_CMSIS_CORE_DIR "${ZEPHYR_BASE}/modules/hal/n32/n32a455/cmsis/cm4/core_support")
+
+    # Add include directories for N32A455 UART driver
+    zephyr_include_directories(${N32_HAL_DIR}/inc)
+    zephyr_include_directories(${N32_CMSIS_DIR})
+    zephyr_include_directories(${N32_CMSIS_CORE_DIR})
+
+    # Add compiler definitions
+    # USE_STDPERIPH_DRIVER is required to include n32a455_conf.h
+    # Note: DO NOT define USE_FULL_ASSERT - it's commented out in n32a455_conf.h
+    # and assert_param will be defined as ((void)0)
+    add_compile_definitions(USE_STDPERIPH_DRIVER=1)
+
+    # Add N32 HAL sources
+    zephyr_library_sources(
+        ${N32_HAL_DIR}/src/n32a455_usart.c
+        ${N32_HAL_DIR}/src/n32a455_rcc.c
+        ${N32_HAL_DIR}/src/n32a455_gpio.c
+        ${N32_HAL_DIR}/src/misc.c
+        ${N32_CMSIS_DIR}/system_n32a455.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/assert_stub.c
+    )
+endif()
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_SERIAL_TEST serial_test.c)
 zephyr_library_sources_ifdef(CONFIG_UART_ASYNC_RX_HELPER uart_async_rx.c)

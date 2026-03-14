@@ -91,6 +91,7 @@ aspeed	ASPEED Technology Inc.
 asus	AsusTek Computer Inc.
 atlas	Atlas Scientific LLC
 atmarktechno	Atmark Techno, Inc.
+at32	Artery (雅特力) Semiconductor
 atmel	Atmel Corporation
 auo	AU Optronics Corporation
 auvidea	Auvidea GmbH
@@ -475,6 +476,7 @@ mxchip	Shanghai MXCHIP Information Technology Co., Ltd.
 mxicy	Macronix International Co., Ltd.
 myir	MYIR Tech Limited
 national	National Semiconductor
+nations	Nations Semiconductor Co., Ltd.
 nec	NEC LCD Technologies, Ltd.
 neonode	Neonode Inc.
 neorv32	NEORV32 RISC-V Processor
@@ -501,6 +503,7 @@ nutsboard	NutsBoard
 nuvoton	Nuvoton Technology Corporation
 nvd	New Vision Display
 nvidia	NVIDIA
+n32	Nations (国民技术)
 nxp	NXP Semiconductors
 oceanic	Oceanic Systems (UK) Ltd.
 oct	Octavo Systems LLC
