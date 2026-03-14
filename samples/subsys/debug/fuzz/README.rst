@@ -25,7 +25,7 @@ toolchain is installed in your host environment, and build with:
    Target: x86_64-pc-linux-gnu
    Thread model: posix
    InstalledDir: /usr/bin
-   $ export ZEPHYR_TOOLCHAIN_VARIANT=llvm
+   $ export ZEPHYR_TOOLCHAIN_VARIANT=host/llvm
    $ west build -t run -b native_sim/native/64 samples/subsys/debug/fuzz
 
 Over 10-20 seconds or so (runtimes can be quite variable) you will see
