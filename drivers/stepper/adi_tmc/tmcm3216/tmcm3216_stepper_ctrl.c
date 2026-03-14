@@ -23,25 +23,11 @@ LOG_MODULE_DECLARE(tmcm3216, CONFIG_STEPPER_LOG_LEVEL);
 
 /* Vendor-specific functions */
 
-int tmcm3216_set_max_velocity(const struct device *dev, uint32_t velocity)
-{
-	const struct tmcm3216_stepper_ctrl_config *config = dev->config;
-
-	return tmcm3216_sap(dev, config->motor_index, TMCL_AP_MAX_VELOCITY, velocity);
-}
-
 int tmcm3216_get_max_velocity(const struct device *dev, uint32_t *velocity)
 {
 	const struct tmcm3216_stepper_ctrl_config *config = dev->config;
 
 	return tmcm3216_gap(dev, config->motor_index, TMCL_AP_MAX_VELOCITY, velocity);
-}
-
-int tmcm3216_set_max_acceleration(const struct device *dev, uint32_t acceleration)
-{
-	const struct tmcm3216_stepper_ctrl_config *config = dev->config;
-
-	return tmcm3216_sap(dev, config->motor_index, TMCL_AP_MAX_ACCELERATION, acceleration);
 }
 
 int tmcm3216_get_actual_velocity(const struct device *dev, int32_t *velocity)
@@ -347,6 +333,29 @@ static int tmcm3216_stepper_ctrl_init(const struct device *dev)
 	return 0;
 }
 
+static int tmcm3216_stepper_ctrl_configure_ramp(const struct device *dev,
+						const struct stepper_ctrl_ramp *ramp)
+{
+	const struct tmcm3216_stepper_ctrl_config *config = dev->config;
+	int err;
+
+	/* TMCL reference manual: maximum acceleration | The limit for acceleration
+	 * (and deceleration).
+	 */
+	err = tmcm3216_sap(dev, config->motor_index, TMCL_AP_MAX_ACCELERATION,
+			   ramp->acceleration_max);
+	if (err != 0) {
+		return -EIO;
+	}
+
+	err = tmcm3216_sap(dev, config->motor_index, TMCL_AP_MAX_VELOCITY, ramp->speed_max);
+	if (err != 0) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static DEVICE_API(stepper_ctrl, tmcm3216_stepper_ctrl_api) = {
 	.set_reference_position = tmcm3216_stepper_ctrl_set_reference_position,
 	.get_actual_position = tmcm3216_stepper_ctrl_get_actual_position,
@@ -356,6 +365,7 @@ static DEVICE_API(stepper_ctrl, tmcm3216_stepper_ctrl_api) = {
 	.stop = tmcm3216_stepper_ctrl_stop,
 	.is_moving = tmcm3216_stepper_ctrl_is_moving,
 	.set_event_cb = tmcm3216_stepper_ctrl_set_event_callback,
+	.configure_ramp = tmcm3216_stepper_ctrl_configure_ramp,
 };
 
 #define TMCM3216_STEPPER_CTRL_DEFINE(inst)                                                         \

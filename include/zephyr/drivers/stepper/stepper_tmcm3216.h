@@ -37,15 +37,6 @@ struct tmcm3216_status {
 };
 
 /**
- * @brief Set maximum velocity for TMCM-3216 motor
- *
- * @param dev Pointer to the stepper device
- * @param velocity Maximum velocity value
- * @return 0 on success, negative errno on failure
- */
-int tmcm3216_set_max_velocity(const struct device *dev, uint32_t velocity);
-
-/**
  * @brief Get maximum velocity for TMCM-3216 motor
  *
  * @param dev Pointer to the stepper device
@@ -53,15 +44,6 @@ int tmcm3216_set_max_velocity(const struct device *dev, uint32_t velocity);
  * @return 0 on success, negative errno on failure
  */
 int tmcm3216_get_max_velocity(const struct device *dev, uint32_t *velocity);
-
-/**
- * @brief Set maximum acceleration for TMCM-3216 motor
- *
- * @param dev Pointer to the stepper device
- * @param acceleration Maximum acceleration value
- * @return 0 on success, negative errno on failure
- */
-int tmcm3216_set_max_acceleration(const struct device *dev, uint32_t acceleration);
 
 /**
  * @brief Get actual velocity of TMCM-3216 motor
