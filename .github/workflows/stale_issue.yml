@@ -19,15 +19,15 @@ jobs:
     - uses: actions/stale@997185467fa4f803885201cee163a9f38240193d # v10.1.1
       with:
         stale-pr-message: 'This pull request has been marked as stale because it has been open (more
-          than) 60 days with no activity. Remove the stale label or add a comment saying that you
+          than) 30 days with no activity. Remove the stale label or add a comment saying that you
           would like to have the label removed otherwise this pull request will automatically be
-          closed in 14 days. Note, that you can always re-open a closed pull request at any time.'
+          closed in 7 days. Note, that you can always re-open a closed pull request at any time.'
         stale-issue-message: 'This issue has been marked as stale because it has been open (more
-          than) 60 days with no activity. Remove the stale label or add a comment saying that you
+          than) 30 days with no activity. Remove the stale label or add a comment saying that you
           would like to have the label removed otherwise this issue will automatically be closed in
-          14 days. Note, that you can always re-open a closed issue at any time.'
-        days-before-stale: 60
-        days-before-close: 14
+          7 days. Note, that you can always re-open a closed issue at any time.'
+        days-before-stale: 30
+        days-before-close: 7
         stale-issue-label: 'Stale'
         stale-pr-label: 'Stale'
         exempt-pr-labels: 'Blocked,In progress'
