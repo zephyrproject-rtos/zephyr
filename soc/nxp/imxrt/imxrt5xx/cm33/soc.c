@@ -36,8 +36,6 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define BOARD_SYSOSC_SETTLING_US 100U
 /* Board xtal frequency in Hz */
 #define BOARD_XTAL_SYS_CLK_HZ    24000000U
-/* Core clock frequency: 198000000Hz */
-#define CLOCK_INIT_CORE_CLOCK    198000000U
 
 #define CTIMER_CLOCK_SOURCE(node_id)                                                               \
 	TO_CTIMER_CLOCK_SOURCE(DT_CLOCKS_CELL(node_id, name), DT_PROP(node_id, clk_source))
@@ -451,7 +449,7 @@ void __weak rt5xx_clock_init(void)
 #endif
 
 	/* Set SystemCoreClock variable. */
-	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
+	SystemCoreClock = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency);
 
 	/* Set main clock to FRO as deep sleep clock by default. */
 	POWER_SetDeepSleepClock(kDeepSleepClk_Fro);

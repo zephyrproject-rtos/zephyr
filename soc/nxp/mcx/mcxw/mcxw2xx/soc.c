@@ -14,6 +14,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
@@ -73,7 +74,7 @@ __weak void clock_init(void)
 	CLOCK_SetupFROClocking(kFreq_32MHz);
 
 	/* Set SystemCoreClock variable. */
-	SystemCoreClock = kFreq_32MHz;
+	SystemCoreClock = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency);
 
 	CLOCK_EnableClock(kCLOCK_Iocon);
 

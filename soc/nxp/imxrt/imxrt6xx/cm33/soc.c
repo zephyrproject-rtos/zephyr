@@ -38,9 +38,6 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #include "usb.h"
 #endif
 
-/* Core clock frequency: 250105263Hz */
-#define CLOCK_INIT_CORE_CLOCK 250105263U
-
 #define SYSTEM_IS_XIP_FLEXSPI()                                                                    \
 	((((uint32_t)nxp_rt600_init >= 0x08000000U) &&                                             \
 	  ((uint32_t)nxp_rt600_init < 0x10000000U)) ||                                             \
@@ -361,7 +358,7 @@ __weak void clock_init(void)
 #endif
 
 	/* Set SystemCoreClock variable. */
-	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
+	SystemCoreClock = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency);
 
 #endif /* CONFIG_SOC_MIMXRT685S_CM33 */
 }
