@@ -1940,7 +1940,17 @@ function(zephyr_constants_library)
     ${ZEPHYR_BASE}/kernel/include
     ${ARG_INCLUDES}
   )
-  target_link_libraries(${lib_name} zephyr_interface)
+  # Use compile properties and ordering from zephyr_interface but not
+  # its link graph, to avoid cycles with zephyr_generated_headers.
+  target_include_directories(${lib_name} PRIVATE
+    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>)
+  target_include_directories(${lib_name} SYSTEM PRIVATE
+    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>)
+  target_compile_definitions(${lib_name} PRIVATE
+    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>)
+  target_compile_options(${lib_name} PRIVATE
+    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>)
+  add_dependencies(${lib_name} zephyr_interface)
 
   set_source_files_properties(${ARG_SOURCE} PROPERTIES
     COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
