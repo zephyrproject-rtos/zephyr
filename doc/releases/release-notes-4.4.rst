@@ -52,6 +52,9 @@ The following CVEs are addressed by this release:
 * :cve:`2026-1678` `Zephyr project bug tracker GHSA-536f-h63g-hj42
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-536f-h63g-hj42>`_
 
+* :cve:`2026-4179` `Zephyr project bug tracker GHSA-9xg7-g3q3-9prf
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-9xg7-g3q3-9prf>`_
+
 API Changes
 ***********
 
