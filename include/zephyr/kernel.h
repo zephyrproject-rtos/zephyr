@@ -986,7 +986,7 @@ struct _static_thread_data {
  *
  * @param name Name of the thread.
  * @param stack_size Stack size in bytes.
- * @param entry Thread entry function.
+ * @param entry Thread entry function, see @ref k_thread_entry_t.
  * @param p1 1st entry point parameter.
  * @param p2 2nd entry point parameter.
  * @param p3 3rd entry point parameter.
@@ -1031,7 +1031,7 @@ struct _static_thread_data {
  *
  * @param name Name of the thread.
  * @param stack_size Stack size in bytes.
- * @param entry Thread entry function.
+ * @param entry Thread entry function, see @ref k_thread_entry_t.
  * @param p1 1st entry point parameter.
  * @param p2 2nd entry point parameter.
  * @param p3 3rd entry point parameter.
