@@ -4,6 +4,9 @@
 
 if SOC_SERIES_MCXW7XX
 
+config SOC_CPU_CLOCK_PUBLISH
+	default y
+
 config NUM_IRQS
 	default 112 if SOC_MCXW70AC
 	default 77 if SOC_MCXW727C
@@ -19,10 +22,11 @@ config MCUX_LPTMR_TIMER
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1024 if MCUX_LPTMR_TIMER
 
+DT_CPU0_PATH := /cpus/cpu@0
 DT_SYSCLK_PATH := $(dt_nodelabel_path,sysclk)
 DT_LPTMR_PATH := $(dt_nodelabel_path,lptmr0)
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,$(DT_SYSCLK_PATH),clock-frequency) if CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,$(DT_CPU0_PATH),clock-frequency) if CORTEX_M_SYSTICK
 	default $(dt_node_int_prop_int,$(DT_LPTMR_PATH),clock-frequency) if MCUX_LPTMR_TIMER
 
 config MCUX_FLASH_K4_API

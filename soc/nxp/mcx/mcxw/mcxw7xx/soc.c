@@ -17,6 +17,10 @@
 #include <fsl_clock.h>
 #include <fsl_cmc.h>
 
+#if defined(CONFIG_SOC_CPU_CLOCK_PUBLISH)
+#include <zephyr/soc/cpu_clock.h>
+#endif
+
 #define MCXW7_CMC_ADDR (CMC_Type *)DT_REG_ADDR(DT_INST(0, nxp_cmc))
 
 extern uint32_t SystemCoreClock;
@@ -159,7 +163,11 @@ __weak void clock_init(void)
 		CLOCK_GetCurSysClkConfig(&cur_config);
 	} while (cur_config.src != sys_clk_config.src);
 
+#if defined(CONFIG_SOC_CPU_CLOCK_PUBLISH)
+	z_soc_cpu_clock_hz_publish(DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency));
+#else
 	SystemCoreClock = 96000000U;
+#endif
 
 	/* OSC-RF / System Oscillator Configuration */
 	scg_sosc_config_t sosc_config = {

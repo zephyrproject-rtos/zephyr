@@ -1,6 +1,24 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config SOC_CPU_CLOCK_PUBLISH
+	bool "Use generic CPU clock frequency publication helper"
+	help
+	  Enable the z_soc_cpu_clock_hz_publish() helper that SoC code can
+	  call after clock initialization to update SystemCoreClock (and,
+	  when applicable, the kernel runtime system timer frequency) through
+	  a single common path.
+
+config SOC_CPU_CLOCK_PUBLISH_UPDATE_SYSTEM_TIMER
+	bool "Also update system timer frequency on CPU clock publish"
+	depends on SOC_CPU_CLOCK_PUBLISH
+	depends on SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE
+	help
+	  When enabled, z_soc_cpu_clock_hz_publish() will also call
+	  z_sys_clock_hw_cycles_per_sec_update() with the published
+	  frequency. Only enable this on platforms where the system
+	  timer clock is derived from the CPU core clock.
+
 if RISCV_PRIVILEGED
 
 rsource "riscv-privileged/Kconfig"
