@@ -624,6 +624,7 @@ static int mcux_lpuart_rx_disable(const struct device *dev)
 			/* Release the next buffer as well */
 			async_evt_rx_buf_release(dev);
 		}
+		data->async.rx_dma_params.buf = NULL;
 	}
 	const int ret = dma_stop(config->rx_dma_config.dma_dev,
 				 config->rx_dma_config.dma_channel);
