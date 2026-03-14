@@ -6,6 +6,7 @@
 
 #include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
@@ -160,7 +161,7 @@ __weak void clock_init(void)
 		CLOCK_GetCurSysClkConfig(&cur_config);
 	} while (cur_config.src != sys_clk_config.src);
 
-	SystemCoreClock = 96000000U;
+	SystemCoreClock = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency);
 
 	/* OSC-RF / System Oscillator Configuration */
 	scg_sosc_config_t sosc_config = {
