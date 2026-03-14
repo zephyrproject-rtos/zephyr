@@ -97,6 +97,12 @@ extern "C" {
  */
 #define PWM_EVENT_TYPE_FAULT		(2U << PWM_EVENT_TYPE_SHIFT)
 
+/** Configure the event to trigger at a compare/capture match. This fires
+ * when the counter reaches the compare value (output compare mode) or
+ * when an external edge is captured (input capture mode).
+ */
+#define PWM_EVENT_TYPE_COMPARE_CAPTURE	(4U << PWM_EVENT_TYPE_SHIFT)
+
 /** @} */
 
 /**
