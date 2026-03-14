@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-0 = &pwm1_4;
+	};
+};
+
+&tcpwm1_4 {
+	status = "okay";
+
+	pwm1_4: pwm1_4 {
+		status = "okay";
+		clocks = <&peri0_group5_16bit_0>;
+		pinctrl-0 = <&p4_0_pwm1_4>;
+		pinctrl-names = "default";
+	};
+};
+
+&peri0_group5_16bit_0 {
+	status = "okay";
+	clock-div = <100>;
+};
+
+&pinctrl {
+	p4_0_pwm1_4: p4_0_pwm1_4 {
+		drive-push-pull;
+	};
+};
+
+&gpio_prt4 {
+	status = "okay";
+};
