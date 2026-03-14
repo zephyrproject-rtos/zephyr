@@ -41,6 +41,9 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 
 #include "net_stats.h"
 
+/* Generated network interface count header */
+#include "net_if_count.h"
+
 #define REACHABLE_TIME (MSEC_PER_SEC * 30) /* in ms */
 /*
  * split the min/max random reachable factors into numerator/denominator
@@ -6581,9 +6584,16 @@ void net_if_init(void)
 	 */
 	int count_if;
 
+	/* The NET_IFACE_COUNT() returns a runtime value */
 	NET_IFACE_COUNT(&count_if);
 	NET_ASSERT(count_if == if_count);
 #endif
+
+	/* The NET_IF_COUNT is a compile time value */
+	if (if_count != NET_IF_COUNT) {
+		NET_WARN("Mismatch network interface count %d expecting %d",
+			 NET_IF_COUNT, if_count);
+	}
 
 	iface_ipv6_init(if_count);
 	iface_ipv4_init(if_count);
