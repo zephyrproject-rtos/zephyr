@@ -71,7 +71,7 @@ out:
 	/* Disabling the controller */
 	clear_bit_ssienr(dev);
 
-	if (!spi_dw_is_slave(spi)) {
+	if (!spi_dw_is_slave(spi) && ctx->config) {
 		if (spi_cs_is_gpio(ctx->config)) {
 			spi_context_cs_control(ctx, false);
 		} else {
@@ -188,8 +188,13 @@ static int spi_dw_configure(const struct device *dev,
 
 	LOG_DBG("%p (prev %p)", config, spi->ctx.config);
 
+	if (!config) {
+		LOG_ERR("(%s): config pointer is NULL", dev->name);
+		return -EINVAL;
+	}
+
 	if (spi_context_configured(&spi->ctx, config)) {
-		/* Nothing to do */
+		/* Contents are identical — hardware update not required */
 		return 0;
 	}
 

@@ -96,15 +96,53 @@ struct spi_context {
 #define SPI_CONTEXT_CS_GPIOS_INITIALIZE(...)
 #endif /* DT_SPI_CTX_HAS_NO_CS_GPIOS */
 
-/*
- * Checks if a spi config is the same as the one stored in the spi_context
- * The intention of this function is to be used to check if a driver can skip
- * some reconfiguration for a transfer in a fast code path.
+/**
+ * spi_cfg_equal() - field-by-field equality check for spi_config.
+ *
+ * Field-by-field comparison avoids issues with padding bytes in memcmp.
+ *
+ * @param cfg1 First configuration to compare.
+ * @param cfg2 Second configuration to compare.
+ *
+ * @return true if all fields are equal, false otherwise.
+ */
+static inline bool spi_cfg_equal(const struct spi_config *cfg1,
+				 const struct spi_config *cfg2)
+{
+	return (cfg1->frequency        == cfg2->frequency)        &&
+	       (cfg1->operation        == cfg2->operation)        &&
+	       (cfg1->slave            == cfg2->slave)            &&
+	       (cfg1->cs.gpio.port     == cfg2->cs.gpio.port)     &&
+	       (cfg1->cs.gpio.pin      == cfg2->cs.gpio.pin)      &&
+	       (cfg1->cs.gpio.dt_flags == cfg2->cs.gpio.dt_flags) &&
+	       (cfg1->cs.delay         == cfg2->cs.delay)         &&
+	       (cfg1->word_delay       == cfg2->word_delay);
+}
+
+/**
+ * spi_context_configured() - check whether the SPI context already holds
+ *                             an equivalent configuration.
+ *
+ * Check if the SPI context configuration matches new configuration
+ * to avoid unnecessary hardware reconfiguration.
+ *
+ * @param ctx    Pointer to the SPI context.
+ * @param config Pointer to the new SPI configuration to test.
+ *
+ * @return true  if ctx already holds a configuration identical in every
+ *               field to @p config (hardware update can be skipped).
+ * @return false if any field differs, or if either pointer is NULL.
  */
 static inline bool spi_context_configured(struct spi_context *ctx,
 					  const struct spi_config *config)
 {
-	return !!(ctx->config == config);
+	/* NULL check: if either pointer is NULL, return false */
+	if (!ctx->config || !config) {
+		return false;
+	}
+
+	/* Compare all fields explicitly to avoid padding byte issues */
+	return spi_cfg_equal(ctx->config, config);
 }
 
 /* Returns true if the spi configuration stored for this context
@@ -112,7 +150,7 @@ static inline bool spi_context_configured(struct spi_context *ctx,
  */
 static inline bool spi_context_is_slave(struct spi_context *ctx)
 {
-	return (ctx->config->operation & SPI_OP_MODE_SLAVE);
+	return ctx->config && (ctx->config->operation & SPI_OP_MODE_SLAVE);
 }
 
 /*
@@ -129,7 +167,8 @@ static inline void spi_context_lock(struct spi_context *ctx,
 #ifdef CONFIG_MULTITHREADING
 	bool already_locked = (spi_cfg->operation & SPI_LOCK_ON) &&
 			      (k_sem_count_get(&ctx->lock) == 0) &&
-			      (ctx->owner == spi_cfg);
+			      ctx->owner &&
+			      spi_cfg_equal(ctx->owner, spi_cfg);
 
 	if (!already_locked) {
 		k_sem_take(&ctx->lock, K_FOREVER);
@@ -209,8 +248,8 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 			uint32_t tx_len = spi_context_total_tx_len(ctx);
 			uint32_t rx_len = spi_context_total_rx_len(ctx);
 
-			timeout_ms = MAX(tx_len, rx_len) * 8 * 1000 /
-				     ctx->config->frequency;
+			timeout_ms = ctx->config ? MAX(tx_len, rx_len) * 8 * 1000 /
+					       ctx->config->frequency : 0;
 			timeout_ms += CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE;
 
 			timeout = K_MSEC(timeout_ms);
@@ -285,7 +324,7 @@ static inline void spi_context_complete(struct spi_context *ctx,
 			ctx->callback(dev, status, ctx->callback_data);
 		}
 
-		if (!(ctx->config->operation & SPI_LOCK_ON)) {
+		if (!ctx->config || !(ctx->config->operation & SPI_LOCK_ON)) {
 			ctx->owner = NULL;
 			k_sem_give(&ctx->lock);
 		}
@@ -399,7 +438,7 @@ static inline void _spi_context_cs_control(struct spi_context *ctx,
 			k_busy_wait(ctx->config->cs.delay);
 		} else {
 			if (!force_off &&
-			    ctx->config->operation & SPI_HOLD_ON_CS) {
+			    (ctx->config->operation & SPI_HOLD_ON_CS)) {
 				return;
 			}
 
