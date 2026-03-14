@@ -369,6 +369,10 @@ enum hl78xx_evt_type {
 	/** Modem PSM event update */
 	HL78XX_LTE_PSMEV_UPDATE,
 #endif /* CONFIG_MODEM_HL78XX_PSM */
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+	/** Modem power-down event update */
+	HL78XX_POWER_DOWN_UPDATE,
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 	/** Cellular measurement update */
 	HL78XX_CELLMEAS_UPDATE,
@@ -504,6 +508,10 @@ struct hl78xx_evt {
 		/* eDRX event */
 		enum hl78xx_edrx_event edrx_event;
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+		/* Power-down event */
+		enum power_down_event power_down_event;
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 		/** Cellular measurement event content */
 		struct k_cellmeas_signal_info cellmeas;
