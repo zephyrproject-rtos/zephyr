@@ -40,6 +40,13 @@ struct mctp_serial_trailer {
 	uint8_t flag;
 };
 
+/* List of all bindings. Used to unpend TX. It's only necessary
+ * due to the fact that tests can use the same device (with a loop between TX and RX),
+ * and only one callback can be set at a time for UART events.
+ * It is not static so that tests can mess with it.
+ */
+sys_slist_t mctp_uart_bindings;
+
 static inline struct mctp_binding_uart *binding_to_uart(struct mctp_binding *b)
 {
 	return (struct mctp_binding_uart *)b;
@@ -48,7 +55,6 @@ static inline struct mctp_binding_uart *binding_to_uart(struct mctp_binding *b)
 static void mctp_uart_finish_pkt(struct mctp_binding_uart *uart, bool valid)
 {
 	struct mctp_pktbuf *pkt = uart->rx_pkt;
-
 
 	if (valid) {
 		__ASSERT_NO_MSG(pkt);
@@ -107,8 +113,8 @@ static void mctp_uart_consume(struct mctp_binding_uart *uart, uint8_t c)
 	struct mctp_pktbuf *pkt = uart->rx_pkt;
 	bool valid = false;
 
-	LOG_DBG("uart consume start state: %d:%s, char 0x%02x", uart->rx_state,
-		MCTP_STATE_STRING[uart->rx_state], c);
+	LOG_DBG("uart consume start state: %d:%s, char 0x%02x [%c]", uart->rx_state,
+		MCTP_STATE_STRING[uart->rx_state], c, c >= 32 && c <= 126 ? c : '.');
 
 	__ASSERT_NO_MSG(!pkt == (uart->rx_state == STATE_WAIT_SYNC_START ||
 				 uart->rx_state == STATE_WAIT_REVISION ||
@@ -210,6 +216,26 @@ static void mctp_uart_consume(struct mctp_binding_uart *uart, uint8_t c)
 		MCTP_STATE_STRING[uart->rx_state], c);
 }
 
+static void mctp_uart_notify_tx_done(const struct device *dev)
+{
+	struct mctp_binding_uart *binding, *tmp;
+	sys_snode_t *prev = NULL;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&mctp_uart_bindings, binding, tmp, node) {
+		if (binding->dev == dev && binding->waiting) {
+			k_sem_give(&binding->tx_done);
+		}
+		prev = &binding->node;
+	}
+}
+
+static void mctp_uart_wait_tx_done(struct mctp_binding_uart *binding)
+{
+	binding->waiting = true;
+	k_sem_take(&binding->tx_done, K_FOREVER);
+	binding->waiting = false;
+}
+
 static void mctp_uart_callback(const struct device *dev, struct uart_event *evt, void *userdata)
 {
 	struct mctp_binding_uart *binding = userdata;
@@ -217,9 +243,11 @@ static void mctp_uart_callback(const struct device *dev, struct uart_event *evt,
 	switch (evt->type) {
 	case UART_TX_DONE:
 		binding->tx_res = 0;
+		mctp_uart_notify_tx_done(dev);
 		break;
 	case UART_TX_ABORTED:
 		binding->tx_res = -EIO;
+		mctp_uart_notify_tx_done(dev);
 		break;
 	case UART_RX_RDY:
 		/* buffer being read into is ready */
@@ -257,9 +285,12 @@ static void mctp_uart_callback(const struct device *dev, struct uart_event *evt,
 
 void mctp_uart_start_rx(struct mctp_binding_uart *uart)
 {
-	int res = uart_callback_set(uart->dev, mctp_uart_callback, uart);
+	int res;
 
+	/* Reset callback so binding which is doing RX is used */
+	res = uart_callback_set(uart->dev, mctp_uart_callback, uart);
 	__ASSERT_NO_MSG(res == 0);
+
 	uart->rx_buf_used[0] = true;
 	res = uart_rx_enable(uart->dev, uart->rx_buf[0], sizeof(uart->rx_buf[0]), 1000);
 	__ASSERT_NO_MSG(res == 0);
@@ -330,15 +361,30 @@ int mctp_uart_tx(struct mctp_binding *b, struct mctp_pktbuf *pkt)
 		return res;
 	}
 
+	/* As libmctp will call this method in sequence to send multiple packets, and uart_tx
+	 * is asynchronous, we need to wait for the current packet to be sent before returning,
+	 * otherwise the next call to uart_tx will fail with -EBUSY.
+	 */
+	mctp_uart_wait_tx_done(uart);
+
 	return uart->tx_res;
 }
 
 int mctp_uart_start(struct mctp_binding *binding)
 {
 	struct mctp_binding_uart *uart = binding_to_uart(binding);
+	int res = uart_callback_set(uart->dev, mctp_uart_callback, uart);
+
+	if (res != 0) {
+		LOG_ERR("Failed setting callback, %d", res);
+		return res;
+	}
 
 	k_sem_init(&uart->rx_disabled, 0, 1);
+	k_sem_init(&uart->tx_done, 0, 1);
 	mctp_binding_set_tx_enabled(binding, true);
+
+	sys_slist_prepend(&mctp_uart_bindings, &uart->node);
 
 	return 0;
 }
