@@ -24,6 +24,7 @@
 #include "hl78xx_chat.h"
 #include <zephyr/modem/chat.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef CONFIG_HL78XX_GNSS
 #include "hl78xx_gnss_parsers.h"
@@ -41,24 +42,18 @@ void hl78xx_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc, void *
  * updates DNS / interface state for the driver instance.
  */
 void hl78xx_on_cgdcontrdp(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
-#if defined(CONFIG_MODEM_HL78XX_12)
 void hl78xx_on_kstatev(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
-#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
 void hl78xx_on_cgact(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
-#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
-#endif /* CONFIG_MODEM_HL78XX_12 */
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 #ifdef CONFIG_MODEM_HL78XX_PSM
-#ifdef CONFIG_MODEM_HL78XX_12
 void hl78xx_on_psmev(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
-#endif /* CONFIG_MODEM_HL78XX_12 */
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 void hl78xx_on_cpsms(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
-void hl78xx_on_kcellmeas(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
-#if defined(CONFIG_MODEM_HL78XX_00) && defined(CONFIG_HL78XX_GNSS)
+#ifdef CONFIG_HL78XX_GNSS
 void hl78xx_on_rrc_status(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
-#endif /* CONFIG_MODEM_HL78XX_00 && CONFIG_HL78XX_GNSS */
+#endif /* CONFIG_HL78XX_GNSS */
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+void hl78xx_on_kcellmeas(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_socknotifydata(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_ktcpnotif(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_cme_error(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
@@ -184,15 +179,11 @@ MODEM_CHAT_MATCHES_DEFINE(hl78xx_unsol_matches,
 			  MODEM_CHAT_MATCH("+KSUP: ", "", hl78xx_on_ksup),
 			  MODEM_CHAT_MATCH("+CREG: ", ",", hl78xx_on_cxreg),
 			  MODEM_CHAT_MATCH("+CEREG: ", ",", hl78xx_on_cxreg),
-#ifdef CONFIG_MODEM_HL78XX_12
 			  MODEM_CHAT_MATCH("+KSTATEV: ", ",", hl78xx_on_kstatev),
-#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
 			  MODEM_CHAT_MATCH("+CGACT: ", ",", hl78xx_on_cgact),
-#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
 #ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
 			  MODEM_CHAT_MATCH("+KNTNEV: \"POSREQ\"", "", hl78xx_on_kntn_posreq),
 #endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
-#endif /* CONFIG_MODEM_HL78XX_12 */
 			  MODEM_CHAT_MATCH("+KUDP_DATA: ", ",", hl78xx_on_socknotifydata),
 			  MODEM_CHAT_MATCH("+KTCP_DATA: ", ",", hl78xx_on_socknotifydata),
 			  MODEM_CHAT_MATCH("+KTCP_NOTIF: ", ",", hl78xx_on_ktcpnotif),
@@ -222,13 +213,11 @@ MODEM_CHAT_MATCHES_DEFINE(hl78xx_unsol_matches,
 #endif /* CONFIG_HL78XX_GNSS */
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 #ifdef CONFIG_MODEM_HL78XX_PSM
-#ifdef CONFIG_MODEM_HL78XX_12
 			  MODEM_CHAT_MATCH("+PSMEV: ", ",", hl78xx_on_psmev),
-#endif /* CONFIG_MODEM_HL78XX_12 */
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 			  MODEM_CHAT_MATCH("+CPSMS: ", ",", hl78xx_on_cpsms),
-			  MODEM_CHAT_MATCH("+KCELLMEAS: ", ",", hl78xx_on_kcellmeas),
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+			  MODEM_CHAT_MATCH("+KCELLMEAS: ", ",", hl78xx_on_kcellmeas),
 			  MODEM_CHAT_MATCH("+KBNDCFG: ", ",", hl78xx_on_kbndcfg),
 			  MODEM_CHAT_MATCH("+CSQ: ", ",", hl78xx_on_csq),
 			  MODEM_CHAT_MATCH("+CESQ: ", ",", hl78xx_on_cesq),
@@ -268,65 +257,64 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_periodic_chat_script, hl78xx_periodic_chat_scrip
 			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
 			 HL78XX_SCRIPT_TIMEOUT_PERIODIC);
 
-MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_init_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KHWIOCFG=3,1,6", hl78xx_ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", hl78xx_ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4,0", hl78xx_ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KPATTERN=\"--EOF--Pattern--\"",
-							 hl78xx_ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KGSN=3", hl78xx_serial_number_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CCID", hl78xx_iccid_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", hl78xx_ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", hl78xx_imei_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", hl78xx_cgmm_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMI", hl78xx_cgmi_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", hl78xx_cgmr_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", hl78xx_cimi_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
-#if defined(CONFIG_MODEM_HL78XX_12)
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSTATEV=1", hl78xx_ok_match),
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	hl78xx_init_chat_script_cmds,
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KHWIOCFG=3,1,6", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4,0", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KPATTERN=\"--EOF--Pattern--\"", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KGSN=3", hl78xx_serial_number_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CCID", hl78xx_iccid_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", hl78xx_imei_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", hl78xx_cgmm_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMI", hl78xx_cgmi_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", hl78xx_cgmr_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", hl78xx_cimi_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
+#ifdef CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSTATEV=1", hl78xx_ok_match),
 #ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KNTNCFG=\"POS\"",
-							 hl78xx_kntncfg_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KNTNCFG=\"POS\"", hl78xx_kntncfg_match),
 #endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
-#endif /* CONFIG_MODEM_HL78XX_12 */
+#endif /* CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC */
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
-#ifdef CONFIG_MODEM_HL78XX_12
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KPSMEV=1", hl78xx_ok_match),
-#endif /* CONFIG_MODEM_HL78XX_12 */
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KCELLMEAS?", hl78xx_ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPSMS?", hl78xx_ok_match),
+#ifdef CONFIG_MODEM_HL78XX_HAS_KPSMEV_URC
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KPSMEV=1", hl78xx_ok_match),
+#endif /* CONFIG_MODEM_HL78XX_HAS_KPSMEV_URC */
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KCELLMEAS?", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPSMS?", hl78xx_ok_match),
 
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGEREP=2", hl78xx_ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSELACQ?", hl78xx_kselacq_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSRAT?", hl78xx_ksrat_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KBNDCFG?", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGEREP=2", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSELACQ?", hl78xx_kselacq_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSRAT?", hl78xx_ksrat_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KBNDCFG?", hl78xx_ok_match),
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
-#ifdef CONFIG_MODEM_HL78XX_12
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSI=8191", hl78xx_ok_match),
-#elif defined(CONFIG_MODEM_HL78XX_00)
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSI=4479", hl78xx_ok_match),
+#if (CONFIG_MODEM_HL78XX_WDSI_PROFILE_VALUE > 0)
+	/* Variant-specific WDSI profile from hidden capability symbol. */
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSI=" STRINGIFY(CONFIG_MODEM_HL78XX_WDSI_PROFILE_VALUE),
+							hl78xx_ok_match),
 #else
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSI=?", hl78xx_ok_match),
-#endif /* CONFIG_MODEM_HL78XX_12 */
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSI=?", hl78xx_ok_match),
+#endif /* CONFIG_MODEM_HL78XX_WDSI_PROFILE_VALUE */
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_CONNECT_AIRVANTAGE
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSC=0,1", hl78xx_ok_match),
+				   MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSC=0,1", hl78xx_ok_match),
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_CONNECT_AIRVANTAGE */
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_DOWNLOAD_FIRMWARE
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSC=1,1", hl78xx_ok_match),
+				   MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSC=1,1", hl78xx_ok_match),
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_DOWNLOAD_FIRMWARE */
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_INSTALL_FIRMWARE
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSC=2,1", hl78xx_ok_match),
+				   MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSC=2,1", hl78xx_ok_match),
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_INSTALL_FIRMWARE */
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGACT?", hl78xx_ok_match));
+				   MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGACT?", hl78xx_ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_init_chat_script, hl78xx_init_chat_script_cmds,
 			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
@@ -336,7 +324,7 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_init_chat_script, hl78xx_init_chat_script_cmds,
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_post_restart_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_at_ready_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSRAT?", hl78xx_ksrat_match),
-#if defined(CONFIG_MODEM_HL78XX_12)
+#ifdef CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSTATEV=1", hl78xx_ok_match)
 #endif
 );
@@ -414,8 +402,8 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_gnss_gnssloc_script, hl78xx_gnss_gnssloc_script_
 			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
 			 HL78XX_SCRIPT_TIMEOUT_GNSS);
 
-#if defined(CONFIG_MODEM_HL78XX_00)
-/* RRC status query for HL7800 eDRX GNSS - verifies LTE is idle before GNSS start */
+#if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)
+/* RRC status query for GNSS/eDRX flow - verifies LTE is idle before GNSS start */
 MODEM_CHAT_MATCHES_DEFINE(hl78xx_rrc_query_matches,
 			  MODEM_CHAT_MATCH_INITIALIZER("RRC: ", "", hl78xx_on_rrc_status, false,
 						       true),
@@ -428,7 +416,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_rrc_query_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_rrc_query_script, hl78xx_rrc_query_script_cmds,
 			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
 			 HL78XX_CMD_TIMEOUT_SHORT);
-#endif /* CONFIG_MODEM_HL78XX_00 && CONFIG_MODEM_HL78XX_EDRX */
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
 #endif
 #ifndef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
@@ -441,7 +429,6 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_disable_pmc_chat_script, hl78xx_disable_pmc_chat
 			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
 			 HL78XX_CMD_TIMEOUT_MEDIUM);
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
-#if defined(CONFIG_MODEM_HL78XX_12)
 #if defined(CONFIG_MODEM_HL78XX_RAT_GSM) || defined(CONFIG_MODEM_HL78XX_AUTORAT)
 /* LTE registration status disable / GSM registration status enable script */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_lte_dis_gsm_en_reg_status_script_cmds,
@@ -465,7 +452,6 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_ntn_pos_script, hl78xx_ntn_pos_cmds, hl78xx_abor
 
 #endif /* CONFIG_NTN_POSITION_SOURCE_MANUAL */
 #endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
-#endif /* CONFIG_MODEM_HL78XX_12 */
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 /* AirVantage script connect accept  */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_av_connect_accept_cmds,
@@ -719,36 +705,43 @@ int hl78xx_run_pwroff_script_async(struct hl78xx_data *data)
 	}
 	return modem_chat_run_script_async(&data->chat, &hl78xx_pwroff_script);
 }
-#ifdef CONFIG_MODEM_HL78XX_12
-#if defined(CONFIG_MODEM_HL78XX_RAT_GSM) || defined(CONFIG_MODEM_HL78XX_AUTORAT)
 /* Run the LTE disable GSM enable registration status script */
 int hl78xx_run_lte_dis_gsm_en_reg_status_script(struct hl78xx_data *data)
 {
 	if (!data) {
 		return -EINVAL;
 	}
+
+#if defined(CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC) &&                                                \
+	(defined(CONFIG_MODEM_HL78XX_RAT_GSM) || defined(CONFIG_MODEM_HL78XX_AUTORAT))
 	return modem_chat_run_script(&data->chat, &hl78xx_lte_dis_gsm_en_reg_status_script);
+#else
+	return -ENOTSUP;
+#endif
 }
-#endif /* CONFIG_MODEM_HL78XX_RAT_GSM || CONFIG_MODEM_HL78XX_AUTORAT */
-#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
 
 const struct modem_chat_match *hl78xx_get_kntncfg_match(void)
 {
+#if defined(CONFIG_MODEM_HL78XX_RAT_NBNTN)
 	return &hl78xx_kntncfg_match;
+#else
+	return NULL;
+#endif
 }
 
-#ifdef CONFIG_NTN_POSITION_SOURCE_MANUAL
 /* Run the NTN position setting script */
 int hl78xx_run_ntn_pos_script_async(struct hl78xx_data *data)
 {
 	if (!data) {
 		return -EINVAL;
 	}
+
+#if defined(CONFIG_MODEM_HL78XX_RAT_NBNTN) && defined(CONFIG_NTN_POSITION_SOURCE_MANUAL)
 	return modem_chat_run_script_async(&data->chat, &hl78xx_ntn_pos_script);
+#else
+	return -ENOTSUP;
+#endif
 }
-#endif /* CONFIG_NTN_POSITION_SOURCE_MANUAL */
-#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
-#endif /* CONFIG_MODEM_HL78XX_12 */
 /* Run the GSM disable LTE enable registration status script */
 int hl78xx_run_gsm_dis_lte_en_reg_status_script(struct hl78xx_data *data)
 {
@@ -826,15 +819,18 @@ int hl78xx_run_gnss_gnssloc_script(struct hl78xx_data *data)
 	return modem_chat_run_script(&data->chat, &hl78xx_gnss_gnssloc_script);
 }
 
-#if defined(CONFIG_MODEM_HL78XX_00) /* && defined(CONFIG_MODEM_HL78XX_EDRX) */
 int hl78xx_run_rrc_query_script_async(struct hl78xx_data *data)
 {
 	if (!data) {
 		return -EINVAL;
 	}
+
+#if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)
 	return modem_chat_run_script_async(&data->chat, &hl78xx_rrc_query_script);
+#else
+	return -ENOTSUP;
+#endif
 }
-#endif /* CONFIG_MODEM_HL78XX_00 && CONFIG_MODEM_HL78XX_EDRX */
 
 #endif /* CONFIG_HL78XX_GNSS */
 #ifndef CONFIG_MODEM_HL78XX_LOW_POWER_MODE

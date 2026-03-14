@@ -27,7 +27,6 @@ choice MODEM_HL78XX_VARIANT
 	bool "Sierra Wireless hl78xx variant selection"
 	default MODEM_HL78XX_12 if DT_HAS_SWIR_HL7812_ENABLED
 	default MODEM_HL78XX_00 if DT_HAS_SWIR_HL7800_ENABLED
-	default MODEM_HL78XX_AUTODETECT_VARIANT
 
 config MODEM_HL78XX_12
 	bool "Sierra Wireless hl7812"
@@ -39,12 +38,28 @@ config MODEM_HL78XX_00
 	help
 	  Support for hl7800 modem
 
-config MODEM_HL78XX_AUTODETECT_VARIANT
-	bool "detect automatically"
-	help
-	  Automatic detection of modem variant (HL7812 or HL7800)
-
 endchoice
+
+config MODEM_HL78XX_HAS_KSTATEV_URC
+	bool
+	default y if MODEM_HL78XX_12
+	help
+	  Hidden capability symbol: selected variants emit +KSTATEV URCs.
+
+config MODEM_HL78XX_HAS_KPSMEV_URC
+	bool
+	default y if MODEM_HL78XX_12
+	help
+	  Hidden capability symbol: selected variants support +KPSMEV URCs.
+
+config MODEM_HL78XX_WDSI_PROFILE_VALUE
+	int
+	default 8191 if MODEM_HL78XX_12
+	default 4479 if MODEM_HL78XX_00
+	default 0
+	help
+	  Hidden capability value: variant-specific default AT+WDSI profile.
+	  Value 0 means "query profile support at runtime" via AT+WDSI=?
 
 if MODEM_HL78XX_12
 
@@ -986,6 +1001,14 @@ config MODEM_HL78XX_LOW_POWER_MODE
 
 if MODEM_HL78XX_LOW_POWER_MODE
 
+choice MODEM_HL78XX_LOW_POWER_SELECTION
+	prompt "Low power strategy"
+	default MODEM_HL78XX_PSM
+	help
+	  Select exactly one low-power strategy.
+	  Concurrent combinations (for example PSM + eDRX) are intentionally
+	  disabled until full validation is completed.
+
 config MODEM_HL78XX_EDRX
 	bool "eDRX"
 	help
@@ -993,18 +1016,15 @@ config MODEM_HL78XX_EDRX
 
 config MODEM_HL78XX_PSM
 	bool "PSM"
-	default y
 	help
 	  Enable Power Save Mode (PSM)
 
-if !MODEM_HL78XX_EDRX && !MODEM_HL78XX_PSM
-# If eDRX or PSM is enabled, the modem will not power down.
 config MODEM_HL78XX_POWER_DOWN
 	bool "Turn OFF"
 	help
 	  Power off modem
 
-endif
+endchoice
 
 if MODEM_HL78XX_EDRX
 
