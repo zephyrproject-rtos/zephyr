@@ -213,7 +213,12 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		POWER_ClearWakeupStatus(DT_IRQN(DT_NODELABEL(rtc)));
 		POWER_EnableWakeup(DT_IRQN(DT_NODELABEL(rtc)));
 
-		sys_clock_set_timeout(0, true);
+		{
+			k_spinlock_key_t key = sys_clock_lock();
+
+			sys_clock_set_timeout(0, true);
+			sys_clock_unlock(key);
+		}
 
 		if (POWER_EnterPowerMode(POWER_MODE3, &slp_cfg)) {
 			/* Go back to PM Mode 3 if RTC wakeup is to be ignored.*/
@@ -229,7 +234,12 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 #endif
 				NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(rtc)));
 				sys_clock_idle_exit();
-				sys_clock_set_timeout(0, true);
+				{
+					k_spinlock_key_t key = sys_clock_lock();
+
+					sys_clock_set_timeout(0, true);
+					sys_clock_unlock(key);
+				}
 				/* GDET got enabled when exiting PM3, disable it
 				 * again before re-entering PM3.
 				 */

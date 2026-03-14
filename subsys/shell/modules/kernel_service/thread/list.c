@@ -112,7 +112,11 @@ static int cmd_kernel_thread_list(const struct shell *sh, size_t argc, char **ar
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(sh, "Scheduler: %u since last call", sys_clock_elapsed());
+	k_spinlock_key_t key = sys_clock_lock();
+	uint32_t elapsed = sys_clock_elapsed();
+
+	sys_clock_unlock(key);
+	shell_print(sh, "Scheduler: %u since last call", elapsed);
 	shell_print(sh, "Threads:");
 
 	/*
