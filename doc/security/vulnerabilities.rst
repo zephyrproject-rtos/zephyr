@@ -2192,3 +2192,18 @@ This has been fixed in main for v4.4.0
 
 - `PR 99828 fix for 3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/99828>`_
+
+:cve:`2026-4179`
+----------------
+
+stm32: usb: Infinite while loop in Interrupt Handler
+
+Issues in stm32 USB device driver can lead to an infinite while loop.
+
+- `Zephyr project bug tracker GHSA-9xg7-g3q3-9prf
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-9xg7-g3q3-9prf>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 104390 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/104390>`_
