@@ -66,6 +66,18 @@ enum stepper_ctrl_event {
 };
 
 /**
+ * @brief Steper Motion Controller Ramp Parameters
+ */
+struct stepper_ctrl_ramp {
+	/** Acceleration in micro_steps/s² */
+	uint32_t acceleration_max;
+	/** Maximum speed in micro_steps/s */
+	uint32_t speed_max;
+	/** Deceleration in micro_steps/s² */
+	uint32_t deceleration_max;
+};
+
+/**
  * @cond INTERNAL_HIDDEN
  *
  * Stepper Motion Controller driver API definition and entry points.
@@ -107,6 +119,15 @@ typedef int (*stepper_ctrl_set_event_cb_t)(const struct device *dev,
  */
 typedef int (*stepper_ctrl_set_microstep_interval_t)(const struct device *dev,
 						     const uint64_t microstep_interval_ns);
+
+/**
+ * @brief Configure the ramp parameters for the stepper motion controller
+ *
+ * @see stepper_ctrl_configure_ramp() for details.
+ */
+typedef int (*stepper_ctrl_configure_ramp_t)(const struct device *dev,
+					     const struct stepper_ctrl_ramp *ramp);
+
 /**
  * @brief Move the stepper relatively by a given number of micro-steps.
  *
@@ -151,6 +172,7 @@ __subsystem struct stepper_ctrl_driver_api {
 	stepper_ctrl_get_actual_position_t get_actual_position;
 	stepper_ctrl_set_event_cb_t set_event_cb;
 	stepper_ctrl_set_microstep_interval_t set_microstep_interval;
+	stepper_ctrl_configure_ramp_t configure_ramp;
 	stepper_ctrl_move_by_t move_by;
 	stepper_ctrl_move_to_t move_to;
 	stepper_ctrl_run_t run;
@@ -264,6 +286,30 @@ static inline int z_impl_stepper_ctrl_set_microstep_interval(const struct device
 								      microstep_interval_ns);
 }
 
+/**
+ * @brief Configure the ramp for the stepper motion controller
+ *
+ * @param dev pointer to the device structure for the driver instance.
+ * @param ramp Pointer to the ramp configuration structure
+ *
+ * @retval -ENOSYS If not implemented by device driver
+ * @retval -EIO General input / output error
+ * @retval 0 Success
+ */
+__syscall int stepper_ctrl_configure_ramp(const struct device *dev,
+					  const struct stepper_ctrl_ramp *ramp);
+
+static inline int z_impl_stepper_ctrl_configure_ramp(const struct device *dev,
+	const struct stepper_ctrl_ramp *ramp)
+{
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(ramp != NULL);
+
+	if (DEVICE_API_GET(stepper_ctrl, dev)->configure_ramp == NULL) {
+		return -ENOSYS;
+	}
+	return DEVICE_API_GET(stepper_ctrl, dev)->configure_ramp(dev, ramp);
+}
 /**
  * @brief Set the micro-steps to be moved from the current position i.e. relative movement
  *
