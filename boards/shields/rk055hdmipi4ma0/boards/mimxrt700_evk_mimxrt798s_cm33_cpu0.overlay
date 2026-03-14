@@ -19,7 +19,29 @@
 &zephyr_mipi_dsi {
 	/* Use lower DPHY clock since RT700 uses AUDIO pll pfd2 as source,
 	 * and its max allowed clock frequency is
-	 * 532.48 x 18 / 16 = 599.04MHz. In this case the 60fps cannot be used, use 30fps instead.
+	 * 532.48 x 18 / 16 = 599.04MHz. In this case the 60fps cannot be
+	 * used, use 30fps instead.
 	 */
 	phy-clock = <396000000>;
+};
+
+/*
+ * Rename the sram1 memory region to LVGL_BUF so the Zephyr linker maps
+ * the .lvgl_buf section (used by CONFIG_LV_Z_VDB_CUSTOM_SECTION) here.
+ *
+ * sram1 (0x20200000, 2MB) is explicitly designated for non-cacheable
+ * NPU/GPU/Display data in the RT798S memory map, making it the correct
+ * location for LVGL rendering buffers (VDB).
+ *
+ * At LV_Z_VDB_SIZE=20 on a 1280x800 RGB565 display:
+ *   one VDB  = 1280 x 800 x 0.20 x 2 bytes = ~410 KB
+ *   two VDBs (LV_Z_DOUBLE_VDB)              = ~820 KB
+ * This fits well within the 2MB sram1 bank.
+ *
+ * DCNANO LCDIF frame buffers remain in PSRAM2 via ext-ram above.
+ * Cache coherency between CM33 and LCDIF over FlexSPI2 is handled
+ * by CONFIG_MCUX_DCNANO_LCDIF_MAINTAIN_CACHE=n (same cache path).
+ */
+&sram1 {
+	zephyr,memory-region = "LVGL_BUF";
 };
