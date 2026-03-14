@@ -420,6 +420,45 @@ static int tmc50xx_stepper_ctrl_init(const struct device *dev)
 	return 0;
 }
 
+static int tmc50xx_stepper_ctrl_configure_ramp(const struct device *dev,
+					       const struct stepper_ctrl_ramp *ramp)
+{
+	const struct tmc50xx_stepper_ctrl_config *config = dev->config;
+	const struct device *controller = config->controller;
+	const uint32_t clock_frequency = tmc50xx_get_clock_frequency(dev);
+	int err;
+
+	uint32_t accel_fclk = tmc5xxx_calculate_acceleration_from_hz_to_fclk(ramp->acceleration_max,
+									     clock_frequency);
+	uint32_t decel_fclk = tmc5xxx_calculate_acceleration_from_hz_to_fclk(ramp->deceleration_max,
+									     clock_frequency);
+	uint32_t speed_fclk =
+		tmc5xxx_calculate_velocity_from_hz_to_fclk(ramp->speed_max, clock_frequency);
+
+	err = tmc50xx_write(controller, TMC50XX_A1(config->index), accel_fclk);
+	if (err != 0) {
+		return -EIO;
+	}
+	err = tmc50xx_write(controller, TMC50XX_AMAX(config->index), accel_fclk);
+	if (err != 0) {
+		return -EIO;
+	}
+	err = tmc50xx_write(controller, TMC50XX_D1(config->index), decel_fclk);
+	if (err != 0) {
+		return -EIO;
+	}
+	err = tmc50xx_write(controller, TMC50XX_DMAX(config->index), decel_fclk);
+	if (err != 0) {
+		return -EIO;
+	}
+	err = tmc50xx_write(controller, TMC50XX_VMAX(config->index), speed_fclk);
+	if (err != 0) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static DEVICE_API(stepper_ctrl, tmc50xx_stepper_ctrl_api) = {
 	.is_moving = tmc50xx_stepper_ctrl_is_moving,
 	.move_by = tmc50xx_stepper_ctrl_move_by,
@@ -429,6 +468,7 @@ static DEVICE_API(stepper_ctrl, tmc50xx_stepper_ctrl_api) = {
 	.run = tmc50xx_stepper_ctrl_run,
 	.stop = tmc50xx_stepper_ctrl_stop,
 	.set_event_cb = tmc50xx_stepper_ctrl_set_event_cb,
+	.configure_ramp = tmc50xx_stepper_ctrl_configure_ramp,
 };
 
 #define TMC50XX_STEPPER_CTRL_DEFINE(inst)                                                         \
