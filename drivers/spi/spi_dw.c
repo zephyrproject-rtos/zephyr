@@ -225,6 +225,20 @@ static int spi_dw_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	/* zero frequency would cause DIV/0 in clk divider calc */
+	if (!config->frequency) {
+		LOG_ERR("(%s): Frequency must not be zero", dev->name);
+		return -EINVAL;
+	}
+
+	/* return error if the expected bus frequency is
+	 * greater than half of the input core clock frequency
+	 */
+	if (config->frequency > (info->clock_frequency / DW_SPI_MIN_SCKDIV)) {
+		LOG_ERR("(%s): Invalid bus frequency", dev->name);
+		return -EINVAL;
+	}
+
 	/* Word size */
 	if (!IS_ENABLED(CONFIG_SPI_DW_HSSI) && (info->max_xfer_size == 32)) {
 		ctrlr0 |= DW_SPI_CTRLR0_DFS_32(SPI_WORD_SIZE_GET(config->operation));
