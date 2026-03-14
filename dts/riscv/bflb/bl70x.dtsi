@@ -200,7 +200,7 @@
 
 		sec_eng_trng: trng@40004000 {
 			compatible = "bflb,sec-eng-trng";
-			reg = <0x40004200 0x100>;
+			reg = <0x40004000 0x100>;
 			interrupts = <28 0>;
 			interrupt-parent = <&clic>;
 			status = "disabled";
