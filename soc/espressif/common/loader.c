@@ -31,12 +31,12 @@
 #include <zephyr/zsr.h>
 #endif
 
-#if CONFIG_SOC_SERIES_ESP32C6
+#if CONFIG_SOC_SERIES_ESP32C5 || CONFIG_SOC_SERIES_ESP32C6
 #include <soc/hp_apm_reg.h>
 #include <soc/lp_apm_reg.h>
 #include <soc/lp_apm0_reg.h>
 #include <soc/pcr_reg.h>
-#endif /* CONFIG_SOC_SERIES_ESP32C6 */
+#endif
 
 #include <esp_flash_internal.h>
 #include <bootloader_flash.h>
@@ -285,6 +285,14 @@ void __start(void)
 
 	__asm__ __volatile__("la t0, _vector_table\n"
 			     "csrw mtvec, t0\n");
+
+#if SOC_INT_CLIC_SUPPORTED
+	/* CLIC: mtvt points to the hardware-vectored interrupt table.
+	 * mtvec mode bits are hardwired to 3 (CLIC) on ESP32-C5.
+	 */
+	__asm__ __volatile__("la t0, _mtvt_table\n"
+			     "csrw 0x307, t0\n"); /* mtvt CSR */
+#endif
 
 	/* Configure the global pointer register
 	 * (This should be the first thing startup does, as any other piece of code could be

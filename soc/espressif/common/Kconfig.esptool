@@ -91,8 +91,8 @@ choice ESPTOOLPY_FLASHFREQ
 
 config ESPTOOLPY_FLASHFREQ_120M
 	bool "120 MHz"
-	select SPI_FLASH_HPM_ENABLE
-	depends on SOC_SERIES_ESP32S3 && ESPTOOLPY_FLASH_SAMPLE_MODE_STR
+	select SPI_FLASH_HPM_ENABLE if SOC_SERIES_ESP32S3
+	depends on (SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S3) && ESPTOOLPY_FLASH_SAMPLE_MODE_STR
 	help
 	  - Flash 120 MHz SDR mode is stable.
 	  - Flash 120 MHz DDR mode is an experimental feature, it works when
@@ -124,7 +124,8 @@ endchoice # ESPTOOLPY_FLASHFREQ
 
 config ESPTOOLPY_FLASHFREQ_80M_DEFAULT
 	bool
-	default y if SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
+	default y if SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3 || \
+		   SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6
 	help
 	  This is an invisible item, used to define the targets that defaults to use 80MHz Flash SPI speed.
 
