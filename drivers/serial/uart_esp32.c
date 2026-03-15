@@ -29,6 +29,10 @@
 #include <esp32c3/rom/ets_sys.h>
 #include <esp32c3/rom/gpio.h>
 #include <zephyr/dt-bindings/clock/esp32c3_clock.h>
+#elif defined(CONFIG_SOC_SERIES_ESP32C5)
+#include <esp32c5/rom/ets_sys.h>
+#include <esp32c5/rom/gpio.h>
+#include <zephyr/dt-bindings/clock/esp32c5_clock.h>
 #elif defined(CONFIG_SOC_SERIES_ESP32C6)
 #include <esp32c6/rom/ets_sys.h>
 #include <esp32c6/rom/gpio.h>
@@ -42,6 +46,9 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
 #include <hal/uhci_ll.h>
+#if defined(CONFIG_SOC_SERIES_ESP32C5)
+#define UHCI0 UHCI
+#endif
 #include <hal/gdma_ll.h>
 #include <hal/gdma_hal.h>
 #include <hal/dma_types.h>
