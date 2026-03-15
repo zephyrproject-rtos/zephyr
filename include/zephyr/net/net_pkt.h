@@ -2274,16 +2274,13 @@ static inline void *net_pkt_cursor_get_pos(struct net_pkt *pkt)
 /**
  * @brief Skip some data from a net_pkt
  *
- * @details net_pkt's cursor should be properly initialized
- *          Cursor position will be updated after the operation.
- *          Depending on the value of pkt->overwrite bit, this function
- *          will affect the buffer length or not. If it's true, it will
- *          advance the cursor to the requested length. If it's false,
- *          it will do the same but if the cursor was already also at the
- *          end of existing data, it will increment the buffer length.
- *          So in this case, its behavior is just like net_pkt_write or
- *          net_pkt_memset, difference being that it will not affect the
- *          buffer content itself (which may be just garbage then).
+ * @details net_pkt's cursor should be properly initialized. This function will
+ *          advance the cursor by the requested length. The value of
+ *          pkt->overwrite affects the behavior of this function. If false, the
+ *          packet will be lengthened by @a length bytes. In this case, its
+ *          behavior is just like net_pkt_write or net_pkt_memset, difference
+ *          being that it will not affect the buffer content itself (which may
+ *          be just garbage then).
  *
  * @param pkt    The net_pkt whose cursor will be updated to skip given
  *               amount of data from the buffer.
