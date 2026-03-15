@@ -233,7 +233,11 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 		sys_cache_data_flush_range((void *)buf, config->height * config->width *
 					   data->current_pixel_size);
 
-		stm32_ltdc_sync_frame(data, buf);
+		/* Avoid waiting for a frame sync when the active buffer is unchanged. */
+		if (buf != data->front_buf) {
+			stm32_ltdc_sync_frame(data, buf);
+		}
+
 		return 0;
 	}
 
