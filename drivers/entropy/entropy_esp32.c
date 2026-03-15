@@ -24,8 +24,8 @@ LOG_MODULE_REGISTER(entropy, CONFIG_ENTROPY_LOG_LEVEL);
 /* If APB clock is 80 MHz, the maximum sampling frequency is around 45 KHz */
 /* 45 KHz reading frequency is the maximum we have tested so far on S3 */
 #define APB_CYCLE_WAIT_NUM (1778)
-#elif defined CONFIG_SOC_SERIES_ESP32C6
-/* On ESP32C6, we only read one byte at a time, then XOR the value with
+#elif defined CONFIG_SOC_SERIES_ESP32C5 || defined CONFIG_SOC_SERIES_ESP32C6
+/* On ESP32C5/C6, we only read one byte at a time, then XOR the value with
  * an asynchronous timer (see code below).
  * The current value translates to a sampling frequency of around 62.5 KHz
  * for reading 8 bit samples, which is the rate at which the RNG was tested,
