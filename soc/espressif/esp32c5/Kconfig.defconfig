@@ -1,0 +1,68 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_ESP32C5
+
+config NUM_IRQS
+	default 48
+
+config RISCV_MCAUSE_EXCEPTION_MASK
+	default 0xFFF
+
+config RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+	default 16
+
+config RISCV_SOC_CONTEXT_SAVE
+	default y
+
+config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
+	default y if MULTITHREADING
+
+config PMP_SLOTS
+	default 16
+
+# ESP32-C5 uses MMU to map flash to virtual addresses for code execution.
+# The PMP init code runs from IRAM while the main rom region is in flash.
+# Locked PMP entries would block IRAM execution before proper coverage is set.
+# Use unlocked entries with MPRV-based enforcement instead.
+config PMP_NO_LOCK_GLOBAL
+	default y
+
+config FLASH_SIZE
+	default $(dt_node_reg_size_int,/soc/flash-controller@60002000/flash@0,0)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/soc/flash-controller@60002000/flash@0)
+
+config MAIN_STACK_SIZE
+	default 2048
+
+endif # SOC_SERIES_ESP32C5
+
+if SOC_ESP32C5_LPCORE
+
+config GEN_ISR_TABLES
+	default n
+
+config SYS_CLOCK_EXISTS
+	default n
+
+config KERNEL_MEM_POOL
+	default n
+
+config COMMON_LIBC_MALLOC_ARENA_SIZE
+	default 0
+
+config MULTITHREADING
+	default n
+
+config NUM_PREEMPT_PRIORITIES
+	default 0
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+
+config FLASH_LOAD_OFFSET
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+endif

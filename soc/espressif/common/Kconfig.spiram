@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_ESP32 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
+if SOC_SERIES_ESP32 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
 
 ESP32_PSRAM0_NODE_PATH := $(dt_nodelabel_path,psram0)
 
@@ -94,7 +94,8 @@ config SPIRAM_SPEED_80M
 
 config SPIRAM_SPEED_120M
 	bool "120MHz clock speed"
-	depends on SPIRAM_MODE_QUAD && SOC_SERIES_ESP32S3
+	depends on SPIRAM_MODE_QUAD && (SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S3)
+	depends on ESPTOOLPY_FLASHFREQ_120M
 
 endchoice # SPIRAM_SPEED
 
@@ -116,7 +117,7 @@ config SPIRAM_CS_IO
 
 config SPIRAM_FETCH_INSTRUCTIONS
 	bool "Move Instructions in Flash to PSRAM"
-	depends on SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
+	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
 	help
 	  If enabled, instructions in flash will be moved into PSRAM on startup.
 	  If SPIRAM_RODATA is also enabled, code that requires execution during an SPI1 Flash operation
@@ -125,7 +126,7 @@ config SPIRAM_FETCH_INSTRUCTIONS
 
 config SPIRAM_RODATA
 	bool "Move Read-Only Data in Flash to PSRAM"
-	depends on SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
+	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
 	help
 	  If enabled, rodata in flash will be moved into PSRAM on startup.
 	  If SPIRAM_FETCH_INSTRUCTIONS is also enabled, code that requires execution during an SPI1 Flash operation
@@ -134,10 +135,11 @@ config SPIRAM_RODATA
 
 config SPIRAM_ECC_ENABLE
 	bool "Allow enabling SPI RAM ECC"
-	depends on SPIRAM_MODE_OCT && SOC_SERIES_ESP32S3
+	depends on SOC_SERIES_ESP32C5 || (SPIRAM_MODE_OCT && SOC_SERIES_ESP32S3)
 	help
 	  Enable MSPI Error-Correcting Code function when accessing SPIRAM.
-	  If enabled, 1/16 of the SPI RAM total size will be reserved for error-correcting code.
+	  If enabled, 1/16 of the SPI RAM total size will be reserved for
+	  error-correcting code (1/8 on ESP32-C5).
 
 if SOC_SERIES_ESP32
 
@@ -229,4 +231,4 @@ endif # SOC_SERIES_ESP32
 
 endmenu # ESP_SPIRAM
 
-endif # SOC_SERIES_ESP32 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
+endif # SOC_SERIES_ESP32 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
