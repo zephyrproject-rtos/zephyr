@@ -1165,6 +1165,8 @@
 
 	pmc_tmpsns: pmc-tmpsns {
 		compatible = "nxp,pmc-tmpsns";
+		nvmem-cells = <&tsens_cal>;
+		nvmem-cell-names = "tsens-cal";
 		status = "disabled";
 	};
 
