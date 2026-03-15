@@ -381,6 +381,11 @@ New APIs and options
   * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION`
   * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME`
   * :c:func:`video_transform_cap`
+  * :c:macro:`VIDEO_PIX_FMT_SBGGR8P16`
+  * :c:macro:`VIDEO_PIX_FMT_SGBRG8P16`
+  * :c:macro:`VIDEO_PIX_FMT_SGRBG8P16`
+  * :c:macro:`VIDEO_PIX_FMT_SRGGB8P16`
+  * :c:macro:`VIDEO_PIX_FMT_Y8P16`
 
 .. zephyr-keep-sorted-stop
 
