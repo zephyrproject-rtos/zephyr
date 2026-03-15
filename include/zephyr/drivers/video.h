@@ -1204,6 +1204,46 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_SRGGB8 VIDEO_FOURCC('R', 'G', 'G', 'B')
 
 /**
+ * 8-bit bayer format, split in two 4-bit blocks each zero-padded, little endian.
+ *
+ * @code{.unparsed}
+ *   0                   1                   2                   3
+ * | 0000bbbb 0000Bbbb | 0000gggg 0000Gggg | 0000gggg 0000Gggg | 0000rrrr 0000Rrrr | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_SBGGR8P16 VIDEO_FOURCC('p', 'B', '8', '2')
+
+/**
+ * 8-bit bayer format, split in two 4-bit blocks each zero-padded, little endian.
+ *
+ * @code{.unparsed}
+ *   0                   1                   2                   3
+ * | 0000gggg 0000Gggg | 0000bbbb 0000Bbbb | 0000rrrr 0000Rrrr | 0000gggg 0000Gggg | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_SGBRG8P16 VIDEO_FOURCC('p', 'G', '8', '2')
+
+/**
+ * 8-bit bayer format, split in two 4-bit blocks each zero-padded, little endian.
+ *
+ * @code{.unparsed}
+ *   0                   1                   2                   3
+ * | 0000gggg 0000Gggg | 0000rrrr 0000Rrrr | 0000bbbb 0000Bbbb | 0000gggg 0000Gggg | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_SGRBG8P16 VIDEO_FOURCC('p', 'g', '8', '2')
+
+/**
+ * 8-bit bayer format, split in two 4-bit blocks each zero-padded, little endian.
+ *
+ * @code{.unparsed}
+ *   0                   1                   2                   3
+ * | 0000rrrr 0000Rrrr | 0000gggg 0000Gggg | 0000gggg 0000Gggg | 0000bbbb 0000Bbbb | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_SRGGB8P16 VIDEO_FOURCC('p', 'R', '8', '2')
+
+/**
  * @code{.unparsed}
  *   0          1          2          3          3 2 1 0
  * | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | ggbbggbb | ...
@@ -1466,14 +1506,15 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
  */
 #define VIDEO_PIX_FMT_GREY VIDEO_FOURCC('G', 'R', 'E', 'Y')
 
-
 /**
+ * 8-bit luma-only split in two 4-bit blocks each zero-padded, little endian.
+ *
  * @code{.unparsed}
  *   0                   1                   2                   3
  * | 0000yyyy 0000Yyyy | 0000yyyy 0000Yyyy | 0000yyyy 0000Yyyy | 0000yyyy 0000Yyyy | ...
  * @endcode
  */
-#define VIDEO_PIX_FMT_Y4 VIDEO_FOURCC('Y', '0', '4', ' ')
+#define VIDEO_PIX_FMT_Y8P16 VIDEO_FOURCC('Y', '8', 'P', '2')
 
 /**
  * @code{.unparsed}
@@ -1978,6 +2019,10 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_YVYU:
 	case VIDEO_PIX_FMT_UYVY:
 	case VIDEO_PIX_FMT_VYUY:
+	case VIDEO_PIX_FMT_SBGGR8P16:
+	case VIDEO_PIX_FMT_SGBRG8P16:
+	case VIDEO_PIX_FMT_SGRBG8P16:
+	case VIDEO_PIX_FMT_SRGGB8P16:
 	case VIDEO_PIX_FMT_SBGGR10:
 	case VIDEO_PIX_FMT_SGBRG10:
 	case VIDEO_PIX_FMT_SGRBG10:
@@ -1994,13 +2039,13 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_SGBRG16:
 	case VIDEO_PIX_FMT_SGRBG16:
 	case VIDEO_PIX_FMT_SRGGB16:
+	case VIDEO_PIX_FMT_Y8P16:
 	case VIDEO_PIX_FMT_Y10:
 	case VIDEO_PIX_FMT_Y12:
 	case VIDEO_PIX_FMT_Y14:
 	case VIDEO_PIX_FMT_Y16:
 	case VIDEO_PIX_FMT_NV16:
 	case VIDEO_PIX_FMT_NV61:
-	case VIDEO_PIX_FMT_Y4:
 		return 16;
 	case VIDEO_PIX_FMT_BGR24:
 	case VIDEO_PIX_FMT_RGB24:
