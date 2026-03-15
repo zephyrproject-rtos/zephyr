@@ -932,6 +932,17 @@ Video
 * The :dtcompatible:`ovti,ov2640` reset pin handling has been corrected, resulting in an inverted
   active level compared to before, to match the active level expected by the sensor.
 
+* The following pixel formats were renamed to keep consistency with the data ():github:`105522`):
+
+  * :c:macro:`VIDEO_PIX_FMT_ARGB32` (swapped with :c:macro:`VIDEO_PIX_FMT_BGRA32`)
+  * :c:macro:`VIDEO_PIX_FMT_BGRA32` (swapped with :c:macro:`VIDEO_PIX_FMT_ARGB32`)
+  * :c:macro:`VIDEO_PIX_FMT_RGBA32` (unchanged)
+  * :c:macro:`VIDEO_PIX_FMT_ABGR32` (unchanged)
+  * :c:macro:`VIDEO_PIX_FMT_XRGB32` (unchanged)
+  * :c:macro:`VIDEO_PIX_FMT_XBGR32` (newly introduced)
+  * :c:macro:`VIDEO_PIX_FMT_BGRX32` (newly introduced)
+  * :c:macro:`VIDEO_PIX_FMT_RGBX32` (newly introduced)
+
 Watchdog
 ========
 
