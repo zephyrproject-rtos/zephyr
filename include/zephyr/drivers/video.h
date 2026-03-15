@@ -1803,6 +1803,8 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 	X(VIDEO_PIX_FMT_BGRA32, __VA_ARGS__)
 
 /**
+ * The first byte is alpha (A) for each pixel.
+ *
  * @code{.unparsed}
  * | Aaaaaaaa Rrrrrrrr Gggggggg Bbbbbbbb | ...
  * @endcode
@@ -1810,13 +1812,19 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_ARGB32 VIDEO_FOURCC('B', 'A', '2', '4')
 
 /**
+ * The last byte is alpha (A) for each pixel.
+ * *
+ * @warning Linux calls this format ABGR32 due to a historical typo
+ *
  * @code{.unparsed}
  * | Bbbbbbbb Gggggggg Rrrrrrrr Aaaaaaaa | ...
  * @endcode
  */
-#define VIDEO_PIX_FMT_ABGR32 VIDEO_FOURCC('A', 'R', '2', '4')
+#define VIDEO_PIX_FMT_BGRA32 VIDEO_FOURCC('A', 'R', '2', '4')
 
 /**
+ * The last byte is alpha (A) for each pixel.
+ *
  * @code{.unparsed}
  * | Rrrrrrrr Gggggggg Bbbbbbbb Aaaaaaaa | ...
  * @endcode
@@ -1824,11 +1832,15 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_RGBA32 VIDEO_FOURCC('A', 'B', '2', '4')
 
 /**
+ * The first byte is alpha (A) for each pixel.
+ *
+ * @warning Linux calls this format BGRA32 due to a historical typo
+ *
  * @code{.unparsed}
  * | Aaaaaaaa Bbbbbbbb Gggggggg Rrrrrrrr | ...
  * @endcode
  */
-#define VIDEO_PIX_FMT_BGRA32 VIDEO_FOURCC('R', 'A', '2', '4')
+#define VIDEO_PIX_FMT_ABGR32 VIDEO_FOURCC('R', 'A', '2', '4')
 
 /**
  * @brief Repeat a macro for every RGB padded format, passed as first parameter
@@ -1849,6 +1861,37 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
  * @endcode
  */
 #define VIDEO_PIX_FMT_XRGB32 VIDEO_FOURCC('B', 'X', '2', '4')
+
+/**
+ * The first byte is empty (X) for each pixel.
+ *
+ * @warning Linux calls this format BGRX32 due to a historical typo
+ *
+ * @code{.unparsed}
+ * | Xxxxxxxx Bbbbbbbb Gggggggg Rrrrrrrr | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_XBGR32 VIDEO_FOURCC('R', 'X', '2', '4')
+
+/**
+ * The last byte is empty (X) for each pixel.
+ *
+ * @warning Linux calls this format XBGR32 due to a historical typo
+ *
+ * @code{.unparsed}
+ * | Bbbbbbbb Gggggggg Rrrrrrrr Xxxxxxxx | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_BGRX32 VIDEO_FOURCC('X', 'R', '2', '4')
+
+/**
+ * The last byte is empty (X) for each pixel.
+ *
+ * @code{.unparsed}
+ * | Rrrrrrrr Gggggggg Bbbbbbbb Xxxxxxxx | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_RGBX32 VIDEO_FOURCC('X', 'B', '2', '4')
 
 /**
  * @}
@@ -2370,12 +2413,15 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_NV42:
 	case VIDEO_PIX_FMT_YUV24:
 		return 24;
-	case VIDEO_PIX_FMT_XRGB32:
 	case VIDEO_PIX_FMT_XYUV32:
 	case VIDEO_PIX_FMT_ARGB32:
 	case VIDEO_PIX_FMT_ABGR32:
 	case VIDEO_PIX_FMT_RGBA32:
 	case VIDEO_PIX_FMT_BGRA32:
+	case VIDEO_PIX_FMT_XRGB32:
+	case VIDEO_PIX_FMT_XBGR32:
+	case VIDEO_PIX_FMT_RGBX32:
+	case VIDEO_PIX_FMT_BGRX32:
 		return 32;
 	default:
 		/* Variable number of bits per pixel or unknown format */
