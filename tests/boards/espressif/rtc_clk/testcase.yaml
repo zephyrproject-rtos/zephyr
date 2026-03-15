@@ -6,6 +6,7 @@ tests:
     platform_allow:
       - esp32_devkitc/esp32/procpu
       - esp32c3_devkitc
+      - esp32c5_devkitc/esp32c5/hpcore
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32h2_devkitm
       - esp32s2_devkitc
@@ -14,6 +15,7 @@ tests:
     platform_allow:
       - esp32_devkitc/esp32/procpu
       - esp32c3_devkitc
+      - esp32c5_devkitc/esp32c5/hpcore
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
