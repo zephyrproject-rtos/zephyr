@@ -4,7 +4,7 @@ board:
   vendor: arduino
   revision:
     format: custom
-    default: "rev2"
+    default: "rev1"
     exact: true
     revisions:
     - name: "rev1"
