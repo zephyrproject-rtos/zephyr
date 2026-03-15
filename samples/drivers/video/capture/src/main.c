@@ -73,7 +73,7 @@ static inline int app_setup_display(const struct device *const display_dev, cons
 			ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_RGB_565);
 		}
 		break;
-	case VIDEO_PIX_FMT_XRGB32:
+	case VIDEO_PIX_FMT_BGRX32:
 		if (capabilities.current_pixel_format != PIXEL_FORMAT_ARGB_8888) {
 			ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_ARGB_8888);
 		}
