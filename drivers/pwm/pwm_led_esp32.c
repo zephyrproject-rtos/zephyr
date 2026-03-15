@@ -104,6 +104,10 @@ static void pwm_led_esp32_duty_set(const struct device *dev,
 	ledc_hal_set_duty_int_part(&data->hal, channel->channel_num, channel->duty_val);
 	/* Set fade parameters: range=0, dir=1, cycle=1, scale=0, step=1 (no fading) */
 	ledc_hal_set_fade_param(&data->hal, channel->channel_num, 0, 1, 1, 0, 1);
+#if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+	ledc_hal_set_range_number(&data->hal, channel->channel_num, 1);
+	ledc_hal_clear_left_off_fade_param(&data->hal, channel->channel_num, 1);
+#endif
 }
 
 static int pwm_led_esp32_calculate_max_resolution(struct pwm_ledc_esp32_channel_config *channel)
