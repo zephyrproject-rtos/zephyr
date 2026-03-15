@@ -19,6 +19,7 @@ config SAMPLE_PITCH_ALIGN
 
 config HEAP_MEM_POOL_ADD_SIZE_SAMPLE
 	int "Sample maximum heap allocated buffer size"
+	default 196608 if QEMU_RAMFB_DISPLAY
 	default 65536
 	help
 	  Maximum size of the buffer for rendering rectangles
