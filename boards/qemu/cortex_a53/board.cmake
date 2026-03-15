@@ -20,7 +20,6 @@ set(QEMU_FLAGS_${ARCH}
   -global virtio-mmio.force-legacy=false
   -cpu ${QEMU_CPU_TYPE_${ARCH}}
   ${QEMU_VIRTIO_ENTROPY_FLAGS}
-  -nographic
   -machine ${QEMU_MACH}
   )
 

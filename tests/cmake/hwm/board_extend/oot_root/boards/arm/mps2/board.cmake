@@ -8,7 +8,6 @@ if(CONFIG_BOARD_MPS2_AN521_CPUTEST)
   set(QEMU_FLAGS_${ARCH}
     -cpu ${QEMU_CPU_TYPE_${ARCH}}
     -machine mps2-an521
-    -nographic
     -m 16
     -vga none
     )

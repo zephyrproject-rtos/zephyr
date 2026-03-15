@@ -9,7 +9,5 @@ set(QEMU_CPU_TYPE_${ARCH} cortex-m0)
 set(QEMU_FLAGS_${ARCH}
   -cpu ${QEMU_CPU_TYPE_${ARCH}}
   -machine microbit
-  -nographic
-  -vga none
   )
 board_set_debugger_ifnset(qemu)

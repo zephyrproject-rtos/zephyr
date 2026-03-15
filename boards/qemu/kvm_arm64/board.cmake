@@ -13,7 +13,6 @@ endif()
 
 set(QEMU_FLAGS_${ARCH}
   -cpu host
-  -nographic
   -machine ${QEMU_MACH}
   )
 

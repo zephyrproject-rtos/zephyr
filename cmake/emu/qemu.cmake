@@ -96,6 +96,17 @@ else()
   list(APPEND QEMU_FLAGS -mon chardev=con,mode=readline)
 endif()
 
+if(CONFIG_QEMU_RAMFB_DISPLAY)
+  if(CMAKE_HOST_APPLE)
+    set(QEMU_DISPLAY_BACKEND cocoa)
+  else()
+    set(QEMU_DISPLAY_BACKEND sdl)
+  endif()
+  list(APPEND QEMU_FLAGS -device ramfb -vga none -display ${QEMU_DISPLAY_BACKEND})
+else()
+  list(APPEND QEMU_FLAGS -nographic)
+endif()
+
 if(CONFIG_QEMU_ICOUNT)
   if(CONFIG_QEMU_ICOUNT_SLEEP)
     list(APPEND QEMU_FLAGS
