@@ -22,6 +22,11 @@
 #include <assert.h>
 #include <soc/soc.h>
 
+#if SOC_INT_CLIC_SUPPORTED
+#include <hal/interrupt_clic_ll.h>
+#include <soc/clic_reg.h>
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(intc_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -631,6 +636,10 @@ int esp_intr_alloc_intrstatus(int source,
 	} else {
 		esp_cpu_intr_set_type(intr, ESP_CPU_INTR_TYPE_LEVEL);
 	}
+#endif
+
+#if SOC_INT_CLIC_SUPPORTED
+	interrupt_clic_ll_set_vectored(intr + CLIC_EXT_INTR_NUM_OFFSET, true);
 #endif
 
 	/* Enable int at CPU-level; */
