@@ -619,6 +619,67 @@ struct efi_system_table {
 	struct efi_configuration_table *ConfigurationTable;
 };
 
+/* EFI Graphics Output Protocol (GOP) - UEFI spec 12.9 */
+
+enum efi_gop_pixel_format {
+	PixelRedGreenBlueReserved8BitPerColor,
+	PixelBlueGreenRedReserved8BitPerColor,
+	PixelBitMask,
+	PixelBltOnly,
+	PixelFormatMax
+};
+
+struct efi_gop_pixel_bitmask {
+	uint32_t RedMask;
+	uint32_t GreenMask;
+	uint32_t BlueMask;
+	uint32_t ReservedMask;
+};
+
+struct efi_gop_mode_info {
+	uint32_t Version;
+	uint32_t HorizontalResolution;
+	uint32_t VerticalResolution;
+	enum efi_gop_pixel_format PixelFormat;
+	struct efi_gop_pixel_bitmask PixelInformation;
+	uint32_t PixelsPerScanLine;
+};
+
+struct efi_gop_mode {
+	uint32_t MaxMode;
+	uint32_t Mode;
+	struct efi_gop_mode_info *Info;
+	uintptr_t SizeOfInfo;
+	uint64_t FrameBufferBase;
+	uintptr_t FrameBufferSize;
+};
+
+struct efi_gop;
+
+typedef efi_status_t __abi (*efi_gop_query_mode_t)(
+	struct efi_gop *This,
+	uint32_t ModeNumber,
+	uintptr_t *SizeOfInfo,
+	struct efi_gop_mode_info **Info);
+
+typedef efi_status_t __abi (*efi_gop_set_mode_t)(struct efi_gop *This,
+						 uint32_t ModeNumber);
+
+typedef efi_status_t __abi (*efi_gop_blt_t)(struct efi_gop *This,
+					    void *BltBuffer,
+					    uint32_t BltOperation,
+					    uintptr_t SourceX, uintptr_t SourceY,
+					    uintptr_t DestX, uintptr_t DestY,
+					    uintptr_t Width, uintptr_t Height,
+					    uintptr_t Delta);
+
+struct efi_gop {
+	efi_gop_query_mode_t QueryMode;
+	efi_gop_set_mode_t SetMode;
+	efi_gop_blt_t Blt;
+	struct efi_gop_mode *Mode;
+};
+
 #ifdef CONFIG_DYNAMIC_BOOTARGS
 struct efi_loaded_image_protocol {
 	uint32_t Revision;

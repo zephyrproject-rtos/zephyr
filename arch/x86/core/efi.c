@@ -27,6 +27,39 @@ void *efi_get_acpi_rsdp(void)
 	return efi->acpi_rsdp;
 }
 
+uint64_t efi_get_gop_fb_base(void)
+{
+	if (efi == NULL || efi->gop_fb_base == 0ULL) {
+		return 0ULL;
+	}
+	return efi->gop_fb_base;
+}
+
+uintptr_t efi_get_gop_fb_size(void)
+{
+	if (efi == NULL) {
+		return 0UL;
+	}
+	return efi->gop_fb_size;
+}
+
+bool efi_get_gop_mode(uint32_t *width, uint32_t *height, uint32_t *pitch)
+{
+	if (efi == NULL || (efi->gop_width == 0U || efi->gop_height == 0U)) {
+		return false;
+	}
+	if (width != NULL) {
+		*width = efi->gop_width;
+	}
+	if (height != NULL) {
+		*height = efi->gop_height;
+	}
+	if (pitch != NULL) {
+		*pitch = efi->gop_pitch;
+	}
+	return true;
+}
+
 void efi_init(struct efi_boot_arg *efi_arg)
 {
 	if (efi_arg == NULL) {
