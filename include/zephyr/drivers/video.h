@@ -1596,7 +1596,6 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
  * | Aaaaaaaa Rrrrrrrr Gggggggg Bbbbbbbb | ...
  * @endcode
  */
-
 #define VIDEO_PIX_FMT_ARGB32 VIDEO_FOURCC('B', 'A', '2', '4')
 
 /**
@@ -1604,7 +1603,6 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
  * | Bbbbbbbb Gggggggg Rrrrrrrr Aaaaaaaa | ...
  * @endcode
  */
-
 #define VIDEO_PIX_FMT_ABGR32 VIDEO_FOURCC('A', 'R', '2', '4')
 
 /**
@@ -1612,7 +1610,6 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
  * | Rrrrrrrr Gggggggg Bbbbbbbb Aaaaaaaa | ...
  * @endcode
  */
-
 #define VIDEO_PIX_FMT_RGBA32 VIDEO_FOURCC('A', 'B', '2', '4')
 
 /**
@@ -1620,7 +1617,6 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
  * | Aaaaaaaa Bbbbbbbb Gggggggg Rrrrrrrr | ...
  * @endcode
  */
-
 #define VIDEO_PIX_FMT_BGRA32 VIDEO_FOURCC('R', 'A', '2', '4')
 
 /**
