@@ -5,8 +5,8 @@ menu "Ultra Low Power (ULP) Coprocessor"
 
 config ESP32_ULP_COPROC_ENABLED
 	bool "Ultra Low Power (ULP) Coprocessor"
-	default y if SOC_ESP32C6_LPCORE || MBOX_ESP32
-	select SOC_LATE_INIT_HOOK if SOC_ESP32C6_HPCORE
+	default y if SOC_ESP32C5_LPCORE || SOC_ESP32C6_LPCORE || MBOX_ESP32
+	select SOC_LATE_INIT_HOOK if SOC_ESP32C5_HPCORE || SOC_ESP32C6_HPCORE
 	help
 	  Enable this feature if you plan to use the ULP Coprocessor.
 	  Once this option is enabled, further ULP co-processor configuration will appear in the menu.
@@ -14,7 +14,7 @@ config ESP32_ULP_COPROC_ENABLED
 choice ESP32_ULP_COPROC_TYPE
 	prompt "ULP Coprocessor type"
 	depends on ESP32_ULP_COPROC_ENABLED
-	default ESP32_ULP_COPROC_TYPE_LP_CORE if SOC_SERIES_ESP32C6
+	default ESP32_ULP_COPROC_TYPE_LP_CORE if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6
 	help
 	  Choose the ULP Coprocessor type: ULP FSM (Finite State Machine) or ULP RISC-V.
 
@@ -28,12 +28,12 @@ config ESP32_ULP_COPROC_TYPE_RISCV
 
 config ESP32_ULP_COPROC_TYPE_LP_CORE
 	bool "LP core RISC-V"
-	depends on SOC_SERIES_ESP32C6
+	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6
 endchoice
 
 config ESP32_ULP_COPROC_RESERVE_MEM
 	hex
-	depends on ESP32_ULP_COPROC_ENABLED && (SOC_SERIES_ESP32C6 || SOC_ESP32C6_LPCORE)
+	depends on ESP32_ULP_COPROC_ENABLED && (SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_ESP32C5_LPCORE || SOC_ESP32C6_LPCORE)
 	default $(dt_nodelabel_reg_size_hex,ulp_ram,0)
 	help
 	  LP SRAM reserved for ULP coprocessor firmware and data.
