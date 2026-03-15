@@ -265,6 +265,8 @@ tests:
     harness_config:
       fixture: gpio_loopback
   drivers.flash.common.spi_nand.mikroe_flash_5_click:
+    harness_config:
+      fixture: mikroe_flash_5_click
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
     extra_args:
