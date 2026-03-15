@@ -221,7 +221,8 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 
 	/* clean up and prepare SPI hal */
 	for (size_t i = 0; i < ARRAY_SIZE(hal->hw->data_buf); ++i) {
-#if defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32H2)
+#if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                    \
+	defined(CONFIG_SOC_SERIES_ESP32H2)
 		hal->hw->data_buf[i].val = 0;
 #else
 		hal->hw->data_buf[i] = 0;
@@ -617,11 +618,10 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 #endif
 
 	/*
-	 * Workaround for ESP32S3 and ESP32Cx SoC's. This dummy transaction is needed
-	 * to sync CLK and software controlled CS when SPI is in mode 3
+	 * Workaround: dummy transaction needed to sync CLK and software
+	 * controlled CS when SPI is in mode 3. Not needed on ESP32/ESP32-S2.
 	 */
-#if (defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32C2) ||                   \
-	defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)) &&               \
+#if !defined(CONFIG_SOC_SERIES_ESP32) && !defined(CONFIG_SOC_SERIES_ESP32S2) &&                    \
 	!defined(DT_SPI_CTX_HAS_NO_CS_GPIOS)
 	if ((ctx->num_cs_gpios != 0) && (hal_dev->mode & (SPI_MODE_CPOL | SPI_MODE_CPHA))) {
 		spi_esp32_transfer(dev);
