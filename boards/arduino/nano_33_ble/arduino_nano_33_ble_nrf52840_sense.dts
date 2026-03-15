@@ -22,12 +22,6 @@
 };
 
 &i2c1 {
-	hts221: hts221@5f {
-		compatible = "st,hts221";
-		status = "okay";
-		reg = <0x5f>;
-	};
-
 	lps22hb: lps22hb-press@5c {
 		compatible = "st,lps22hb-press";
 		status = "okay";

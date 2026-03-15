@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026 Loic Domaigne
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "arduino_nano_33_ble-common_rev1.dtsi"
+
+&i2c1 {
+	hts221: hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+	};
+};

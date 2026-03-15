@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Loic Domaigne
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		accel0 = &lsm9ds1;
+	};
+};
+
+&i2c1 {
+	lsm9ds1: lsm9ds1@6b {
+		compatible = "st,lsm9ds1";
+		reg = <0x6b>;
+	};
+
+	lsm9ds1_mag: lsm9ds1_mag@1e {
+		compatible = "st,lsm9ds1_mag";
+		reg = <0x1e>;
+	};
+};
