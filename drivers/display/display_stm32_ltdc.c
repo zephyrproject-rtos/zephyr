@@ -189,9 +189,15 @@ static void stm32_ltdc_partial_write(const struct device *dev,
  * LINE interrupt so that the irq handler can swap the buffer.
  * Wait for the end of the swap by waiting for the semaphore given by
  * the irq handler upon LTDC register update
+ *
+ * NOTE: MUST only be called when switching between two different buffers,
+ * front_buf and pend_buf, where front_buf != pend_buf. Otherwise, it
+ * will lead to a deadlock.
  */
 static void stm32_ltdc_sync_frame(struct display_stm32_ltdc_data *data, const uint8_t *pend_buf)
 {
+	__ASSERT(data->front_buf != pend_buf, "Buffers must be different");
+
 	k_sem_reset(&data->sem);
 
 	data->pend_buf = pend_buf;
