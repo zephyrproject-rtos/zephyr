@@ -20,4 +20,5 @@ supported:
   - entropy
   - crypto
   - retained_mem
+  - netif:wifi
 vendor: espressif

@@ -18,6 +18,7 @@ supported:
   - i2c
   - i2s
   - netif:openthread
+  - netif:wifi
   - crypto
   - retained_mem
 
