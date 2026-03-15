@@ -472,6 +472,7 @@ mti	Imagination Technologies Ltd. (formerly MIPS Technologies Inc.)
 multi-inno	Multi-Inno Technology Co.,Ltd
 mundoreader	Mundo Reader S.L.
 murata	Murata Manufacturing Co., Ltd.
+muselab	MuseLab Electronics
 mxchip	Shanghai MXCHIP Information Technology Co., Ltd.
 mxicy	Macronix International Co., Ltd.
 myir	MYIR Tech Limited
