@@ -43,5 +43,5 @@ class TestDevice:
 
         assert return_value == 1
 
-        expected_line = r'seed_native_sim.dummy\s+FAILED rc=1 \(native (\d+\.\d+)s/seed: {} <host>\)'.format(seed)
+        expected_line = r'seed_native_sim.dummy\s+FAILED rc=1 \(native (\d+\.\d+)s/seed: {} <host/gnu>\)'.format(seed)
         assert re.search(expected_line, err), f'Regex not found: r"{expected_line}"'
