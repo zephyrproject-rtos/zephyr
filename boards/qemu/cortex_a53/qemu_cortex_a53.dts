@@ -23,6 +23,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,flash = &flash0;
 		zephyr,pcie-controller = &pcie;
+		zephyr,display = &ramfb0;
 	};
 
 	soc {
@@ -254,6 +255,32 @@
 			interrupts = <GIC_SPI 47 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
 		};
+	};
+
+	fwcfg0: fw-cfg@9020000 {
+		compatible = "qemu,fw-cfg-mmio";
+		reg = <0x0 0x09020000 0x0 0x18>;
+		status = "okay";
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		ramfb_mem: framebuffer@44000000 {
+			reg = <0x0 0x44000000 0x0 0x00400000>; /* 4 MiB */
+			no-map;
+		};
+	};
+
+	ramfb0: ramfb {
+		compatible = "qemu,ramfb";
+		fwcfg = <&fwcfg0>;
+		memory-region = <&ramfb_mem>;
+		width = <1024>;
+		height = <768>;
+		status = "okay";
 	};
 };
 
