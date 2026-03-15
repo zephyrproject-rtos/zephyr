@@ -1,0 +1,267 @@
+/*
+ * Copyright (c) 2026 Benedikt Spranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/g4/stm32g431Xb.dtsi>
+#include <st/g4/stm32g431rbtxz-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Eurovibes STM32G431 based Sertest-NG Board";
+	compatible = "eurovibes,stm32g431-sertest-ng";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,canbus = &fdcan1;
+	};
+
+	aliases {
+		led0 = &led_0;
+		led1 = &led_1;
+		led2 = &led_2;
+		led3 = &led_3;
+		mcuboot-led0 = &led_0;
+		watchdog0 = &iwdg;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_0: led0 {
+			gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
+			label = "Status LED 0";
+		};
+
+		led_1: led1 {
+			gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
+			label = "Status LED 1";
+		};
+
+		led_2: led2 {
+			gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
+			label = "Status LED 2";
+		};
+
+		led_3: led3 {
+			gpios = <&gpiob 7 GPIO_ACTIVE_LOW>;
+			label = "Status LED 3";
+		};
+
+		en: en {
+			gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
+			label = "ADM213 enable";
+		};
+
+		half: half {
+			gpios = <&gpioc 2 GPIO_ACTIVE_HIGH>;
+			label = "SP330 half duplex";
+		};
+
+		rs485: rs485 {
+			gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
+			label = "SP330 RS485";
+		};
+
+		sd: sd {
+			gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+			label = "ADM213 shutdown";
+		};
+
+		shdn: shdn {
+			gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
+			label = "SP330 transceiver shutdown";
+		};
+
+		slew: slew {
+			gpios = <&gpioc 11 GPIO_ACTIVE_LOW>;
+			label = "SP330 slew";
+		};
+
+		stb: stb {
+			gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
+			label = "CAN STB";
+		};
+
+		uart2_dcd: uart2_dcd {
+			gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
+			label = "UART2 DCD";
+		};
+
+		uart2_dsr: uart2_dsr {
+			gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>;
+			label = "UART2 DSR";
+		};
+
+		uart2_dtr: uart2_dtr {
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+			label = "UART2 DTR";
+		};
+
+		uart2_ri: uart2_ri {
+			gpios = <&gpioa 7 GPIO_ACTIVE_HIGH>;
+			label = "UART2 RI";
+		};
+	};
+
+	uart-bridge0 {
+		compatible = "zephyr,uart-bridge";
+		peers = <&cdc_acm_uart2 &usart2>;
+	};
+
+	uart-bridge1 {
+		compatible = "zephyr,uart-bridge";
+		peers = <&cdc_acm_uart3 &usart3>;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hsi {
+	status = "disabled";
+};
+
+&clk_hse {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(8)>;
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pa9 &i2c2_sda_pa8>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	atecc608a@60 {
+		compatible = "atmel,atecc608";
+		reg = <0x60>;
+	};
+
+	eeprom0: eeprom@50 {
+		compatible = "st,m24c64", "st,m24xxx", "atmel,at24";
+		reg = <0x50>;
+		size = <8192>;
+		pagesize = <32>;
+		address-width = <8>;
+		timeout = <5>;
+	};
+
+	eeprom1: eeprom@51 {
+		compatible = "st,m24c64", "st,m24xxx", "atmel,at24";
+		reg = <0x51>;
+		size = <8192>;
+		pagesize = <32>;
+		address-width = <8>;
+		timeout = <5>;
+		wp-gpios = <&gpioa 10 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(144)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&pll {
+	status = "okay";
+	div-m = <2>;
+	mul-n = <72>;
+	div-p = <2>;
+	div-q = <6>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+};
+
+&rtc {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+};
+
+stm32_lp_tick_source: &lptim1 {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 4KiB of storage at the end of the 128KiB FLASH */
+		storage_partition: partition@1f000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x0001f000 DT_SIZE_K(4)>;
+		};
+	};
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&fdcan1 {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK(APB1, 25)>,
+		 <&rcc STM32_SRC_HSE FDCAN_SEL(0)>;
+	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
+	pinctrl-names = "default";
+};
+
+&usart1 {
+	status = "okay";
+	pinctrl-0 = <&usart1_tx_pc4 &usart1_rx_pc5>;
+	pinctrl-names = "default";
+
+	current-speed = <115200>;
+};
+
+&usart2 {
+	status = "okay";
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3 &usart2_cts_pa0 &usart2_rts_pa1>;
+	pinctrl-names = "default";
+
+	current-speed = <115200>;
+};
+
+&usart3 {
+	status = "okay";
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
+
+	current-speed = <115200>;
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK(APB1, 23)>,
+		 <&rcc STM32_SRC_PLL_Q CLK48_SEL(2)>;
+	status = "okay";
+
+	cdc_acm_uart2: cdc_acm_uart2 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "USB CDC-ACM uart2";
+	};
+
+	cdc_acm_uart3: cdc_acm_uart3 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "USB CDC-ACM uart3";
+	};
+};
