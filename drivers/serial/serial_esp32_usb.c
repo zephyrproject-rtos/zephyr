@@ -106,7 +106,8 @@ static int serial_esp32_usb_init(const struct device *dev)
 
 	usb_serial_jtag_ll_phy_enable_pad(true);
 
-#if defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32H2)
+#if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                    \
+	defined(CONFIG_SOC_SERIES_ESP32H2)
 	usb_serial_jtag_ll_phy_set_defaults();
 #endif
 
