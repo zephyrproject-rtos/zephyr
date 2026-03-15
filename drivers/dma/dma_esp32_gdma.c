@@ -712,33 +712,36 @@ static void *irq_handlers[] = {
 #endif
 };
 
-#define IRQ_NUM(idx)	DT_NUM_IRQS(DT_DRV_INST(idx))
-#define IRQ_ENTRY(n, idx) {	\
-	DT_INST_IRQ_BY_IDX(idx, n, irq),	\
-	DT_INST_IRQ_BY_IDX(idx, n, priority),	\
-	DT_INST_IRQ_BY_IDX(idx, n, flags)	},
+#define IRQ_NUM(idx) DT_NUM_IRQS(DT_DRV_INST(idx))
+#define IRQ_ENTRY(n, idx)                                                                          \
+	{DT_INST_IRQ_BY_IDX(idx, n, irq), DT_INST_IRQ_BY_IDX(idx, n, priority),                    \
+	 DT_INST_IRQ_BY_IDX(idx, n, flags)},
 
-#define DMA_ESP32_INIT(idx)                                                                        \
-	static struct irq_config irq_config_##idx[] = {                                            \
-		LISTIFY(IRQ_NUM(idx), IRQ_ENTRY, (), idx)                                          \
-	};                                                                                         \
-	static struct dma_esp32_config dma_config_##idx = {                                        \
-		.irq_config = irq_config_##idx,                                                    \
-		.irq_size = IRQ_NUM(idx),                                                          \
-		.irq_handlers = irq_handlers,                                                      \
-		.dma_channel_max = DT_INST_PROP(idx, dma_channels),                                \
-		.sram_alignment = DT_INST_PROP(idx, dma_buf_addr_alignment),                       \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
-		.clock_subsys = (void *)DT_INST_CLOCKS_CELL(idx, offset),                          \
-	};                                                                                         \
-	static struct dma_esp32_data dma_data_##idx = {                                            \
-		.hal =                                                                             \
-			{                                                                          \
-				.dev = (gdma_dev_t *)DT_INST_REG_ADDR(idx),                        \
-			},                                                                         \
-	};                                                                                         \
-												   \
-	DEVICE_DT_INST_DEFINE(idx, dma_esp32_init, NULL, &dma_data_##idx, &dma_config_##idx,       \
-			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &dma_esp32_api);
+/* clang-format off */
+#define DMA_ESP32_INIT(idx)                                                  \
+	static struct irq_config irq_config_##idx[] = {                      \
+		LISTIFY(IRQ_NUM(idx), IRQ_ENTRY, (), idx)                    \
+	};                                                                   \
+	static struct dma_esp32_config dma_config_##idx = {                  \
+		.irq_config = irq_config_##idx,                              \
+		.irq_size = IRQ_NUM(idx),                                    \
+		.irq_handlers = irq_handlers,                                \
+		.dma_channel_max = DT_INST_PROP(idx, dma_channels),          \
+		.sram_alignment =                                            \
+			DT_INST_PROP(idx, dma_buf_addr_alignment),           \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),       \
+		.clock_subsys =                                              \
+			(void *)DT_INST_CLOCKS_CELL(idx, offset),            \
+	};                                                                   \
+	static struct dma_esp32_data dma_data_##idx = {                      \
+		.hal = {                                                     \
+			.dev = (void *)DT_INST_REG_ADDR(idx),                \
+		},                                                           \
+	};                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, dma_esp32_init, NULL,                     \
+			      &dma_data_##idx, &dma_config_##idx,            \
+			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,        \
+			      &dma_esp32_api);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_ESP32_INIT)
