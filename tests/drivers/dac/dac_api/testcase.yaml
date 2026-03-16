@@ -1,11 +1,116 @@
 common:
+  depends_on: dac
+  min_ram: 16
   tags:
     - dac
     - drivers
     - userspace
 tests:
   drivers.dac.api:
-    depends_on: dac
-    min_ram: 16
-    platform_exclude:
-      - pic32cx_sg61_cult
+    filter: dt_node_has_prop("/zephyr,user", "io-channels")
+  drivers.dac.api.dac_channel0:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dac-channel0.overlay"
+    platform_allow:
+      - esp32c3_devkitc
+      - esp32_devkitc/esp32/procpu
+      - esp_wrover_kit/esp32/procpu
+      - esp32s2_saola
+      - esp32s2_devkitc
+      - gd32a503v_eval
+      - gd32e103v_eval
+      - gd32f450i_eval
+      - gd32f450z_eval
+      - gd32f470i_eval
+      - yd_esp32/esp32/appcpu
+      - mimxrt1170_evk@A/mimxrt1176/cm4
+      - mimxrt1170_evk@B/mimxrt1176/cm4
+      - mimxrt1170_evk@A/mimxrt1176/cm7
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
+      - frdm_mcxc444
+      - phyboard_atlas/mimxrt1176/cm7
+  drivers.dac.api.dacc_channel0:
+    platform_allow:
+      - sam4l_ek
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dacc-channel0.overlay"
+  drivers.dac.api.dac0_no_channel:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dac0-no-channel.overlay"
+    platform_allow:
+      - arduino_zero
+      - arduino_mkrzero
+      - seeeduino_xiao
+      - sparkfun_samd21_breakout
+  drivers.dac.api.dac0_channel0:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dac0-channel0.overlay"
+    platform_allow:
+      - twr_ke18f
+      - frdm_k64f
+      - frdm_k22f
+      - frdm_mcxn947/mcxn947/cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0
+      - frdm_mcxa156
+      - lpcxpresso55s36
+      - same54_xpro
+      - bl652_dvk
+      - bl653_dvk
+      - bl5340_dvk/nrf5340/cpuapp
+  drivers.dac.api.dac1_channel1:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dac1-channel1.overlay"
+    platform_allow:
+      - nucleo_f091rc
+      - nucleo_f207zg
+      - stm32f3_disco
+      - nucleo_f429zi
+      - nucleo_f439zi
+      - nucleo_f746zg
+      - nucleo_f767zi
+      - nucleo_f722ze
+      - nucleo_g071rb
+      - nucleo_g431rb
+      - nucleo_g474re
+      - nucleo_h723zg
+      - nucleo_h743zi
+      - nucleo_h753zi
+      - nucleo_l073rz
+      - nucleo_l152re
+      - disco_l475_iot1
+      - nucleo_l552ze_q
+      - stm32l562e_dk
+      - stm32h5f5j_dk
+      - stm32h573i_dk
+      - stm32u083c_dk
+      - b_u585i_iot02a
+      - nucleo_u083rc
+      - nucleo_u385rg_q
+      - nucleo_u575zi_q
+      - nucleo_u5a5zj_q
+      - nucleo_wl55jc
+      - ronoth_lodev
+      - arduino_uno_q
+    integration_platforms:
+      - nucleo_f207zg
+  drivers.dac.api.dac1_channel2:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dac1-channel2.overlay"
+    platform_allow:
+      - nucleo_h563zi
+  drivers.dac.api.renesas_dac0_channel0:
+    vendor_allow:
+      - renesas
+    filter: dt_compat_enabled("renesas,ra-dac")
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dac0-channel0.overlay"
+  drivers.dac.api.silabs_s2_vdac0_channel0:
+    platform_allow:
+      - xg23_rb4210a
+      - xg24_dk2601b
+      - xg24_ek2703a
+      - xg24_rb4187c
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="xg2x.overlay"
