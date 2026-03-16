@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2022-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,14 +33,16 @@
  * properties: bias, drive and
  * initial pin level
  */
-#define ESP32_PIN_BIAS_SHIFT     0U
-#define ESP32_PIN_BIAS_MASK      0x3U
-#define ESP32_PIN_DRV_SHIFT      2U
-#define ESP32_PIN_DRV_MASK       0x3U
-#define ESP32_PIN_OUT_SHIFT      4U
-#define ESP32_PIN_OUT_MASK       0x3U
-#define ESP32_PIN_EN_DIR_SHIFT   6U
-#define ESP32_PIN_EN_DIR_MASK    0x3U
+#define ESP32_PIN_BIAS_SHIFT        0U
+#define ESP32_PIN_BIAS_MASK         0x3U
+#define ESP32_PIN_DRV_SHIFT         2U
+#define ESP32_PIN_DRV_MASK          0x3U
+#define ESP32_PIN_OUT_SHIFT         4U
+#define ESP32_PIN_OUT_MASK          0x3U
+#define ESP32_PIN_EN_DIR_SHIFT      6U
+#define ESP32_PIN_EN_DIR_MASK       0x3U
+#define ESP32_PIN_SLEEP_HOLD_SHIFT  8U
+#define ESP32_PIN_SLEEP_HOLD_MASK   0x1U
 
 /* Bias definitions */
 #define ESP32_NO_PULL            0x1
@@ -65,6 +67,9 @@
 #define ESP32_PIN_OUT_EN       0x1
 #define ESP32_PIN_IN_EN        0x2
 
+/* Enable GPIO hold during sleep */
+#define ESP32_PIN_SLEEP_HOLD_EN 0x1
+
 /*
  * These flags are used by the pinctrl
  * driver, based on the DTS properties
@@ -81,5 +86,6 @@
 #define ESP32_PIN_OUT_LOW_FLAG   BIT(8)
 #define ESP32_PIN_OUT_EN_FLAG    BIT(9)
 #define ESP32_PIN_IN_EN_FLAG     BIT(10)
+#define ESP32_SLEEP_HOLD_FLAG    BIT(11)
 
 #endif	/* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESP_PINCTRL_COMMON_H_ */
