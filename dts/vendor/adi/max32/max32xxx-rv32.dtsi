@@ -1,0 +1,91 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/clock/adi_max32_clock.h>
+
+/delete-node/ &cpu0;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	soc {
+		compatible = "simple-bus";
+
+		interrupt-parent = <&intc>;
+
+		intc: intc@e5070000 {
+			compatible = "adi,max32-rv32-intc";
+			reg = <0xe5070000 0x100>;
+			interrupt-controller;
+			#address-cells = <1>;
+			#interrupt-cells = <2>;
+		};
+	};
+};
+
+&i2c0 {
+	interrupts = <14 0>;
+};
+
+&i2c1 {
+	interrupts = <17 0>;
+};
+
+&i2c2 {
+	interrupts = <20 0>;
+};
+
+&gpio0 {
+	interrupts = <25 0>;
+};
+
+&gpio1 {
+	interrupts = <26 0>;
+};
+
+&uart0 {
+	interrupts = <15 0>;
+};
+
+&uart1 {
+	interrupts = <18 0>;
+};
+
+&uart2 {
+	interrupts = <19 0>;
+};
+
+&wdt0 {
+	interrupts = <5 0>;
+};
+
+&adc {
+	interrupts = <53 0>;
+};
+
+&timer0 {
+	interrupts = <8 0>;
+};
+
+&timer1 {
+	interrupts = <9 0>;
+};
+
+&timer2 {
+	interrupts = <10 0>;
+};
+
+rv32_sys_timer: &timer3 {
+	compatible = "adi,max32-rv32-sys-timer";
+	interrupts = <11 0>;
+	prescaler = <1>;
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_ISO>;
+};
+
+&rtc_counter {
+	interrupts = <7 0>;
+};

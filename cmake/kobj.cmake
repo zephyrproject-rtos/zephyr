@@ -61,11 +61,11 @@ function(gen_kobject_list_headers)
     "GEN_DIR_OUT_VAR"
     "INCLUDES;DEPENDS"
   )
-  if (PROJECT_BINARY_DIR)
+  if(PROJECT_BINARY_DIR)
     set(gen_dir ${PROJECT_BINARY_DIR}/include/generated/zephyr)
-  else ()
+  else()
     set(gen_dir ${CMAKE_BINARY_DIR}/include/generated/zephyr)
-  endif ()
+  endif()
 
   set(KOBJ_TYPES ${gen_dir}/kobj-types-enum.h)
   set(KOBJ_OTYPE ${gen_dir}/otype-to-str.h)

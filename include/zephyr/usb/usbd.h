@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief New experimental USB device stack APIs and structures
+ * @brief New USB device stack APIs and structures
  *
  * This file contains the USB device stack APIs and structures.
  */
@@ -18,7 +18,7 @@
 #include <zephyr/usb/bos.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/usb/usbd_msg.h>
-#include <zephyr/drivers/usb/udc_buf.h>
+#include <zephyr/drivers/usb/usb_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/logging/log.h>
@@ -33,7 +33,7 @@ extern "C" {
  * @defgroup usbd_api USB device core API
  * @ingroup usb
  * @since 3.3
- * @version 0.1.0
+ * @version 0.2.0
  * @{
  */
 
@@ -287,6 +287,10 @@ struct usbd_context {
 	const struct device *dev;
 	/** Notification message recipient callback */
 	usbd_msg_cb_t msg_cb;
+	/** slist to keep endpoint events */
+	sys_slist_t ep_events;
+	/** Endpoint event list spinlock */
+	struct k_spinlock ep_event_lock;
 	/** Middle layer runtime data */
 	struct usbd_ch9_data ch9_data;
 	/** slist to manage descriptors like string, BOS */

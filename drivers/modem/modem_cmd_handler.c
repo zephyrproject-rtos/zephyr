@@ -150,8 +150,8 @@ static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
 		end++;
 	}
 
-	/* consider the ending portion a param if end > begin */
-	if (end > begin) {
+	/* consider the ending portion a param if end >= begin (includes empty string arguments). */
+	if (end >= begin && *argc < argv_len && count < cmd->arg_count_max) {
 		/* mark a parameter beginning */
 		argv[*argc] = &data->match_buf[begin];
 		/* end parameter with NUL char

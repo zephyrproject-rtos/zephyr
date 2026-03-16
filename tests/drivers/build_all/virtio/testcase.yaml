@@ -8,5 +8,7 @@ tests:
     extra_configs:
       - CONFIG_PCIE=y
     filter: CONFIG_DT_HAS_VIRTIO_PCI_ENABLED
+    platform_allow: qemu_x86_64
   drivers.virtio_mmio.build:
     filter: CONFIG_DT_HAS_VIRTIO_MMIO_ENABLED
+    platform_allow: qemu_cortex_a53

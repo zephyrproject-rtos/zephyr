@@ -2,7 +2,7 @@
 
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -35,7 +35,6 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -453,12 +452,12 @@ static void long_bap_read(struct bt_conn *conn, uint16_t handle)
 		if (err != 0) {
 			LOG_DBG("Failed to get conn info, use default interval");
 
-			conn_info.le.interval = BT_GAP_INIT_CONN_INT_MIN;
+			conn_info.le.interval_us = BT_CONN_INTERVAL_TO_US(BT_GAP_INIT_CONN_INT_MIN);
 		}
 
 		/* Wait a connection interval to retry */
 		err = k_work_reschedule(&inst->bap_read_work,
-					K_USEC(BT_CONN_INTERVAL_TO_US(conn_info.le.interval)));
+					K_USEC(conn_info.le.interval_us));
 		if (err < 0) {
 			LOG_DBG("Failed to reschedule read work: %d", err);
 			bap_long_read_reset(inst);
@@ -565,23 +564,18 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 				  const void *data, uint16_t length)
 {
 	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+	bool active_recv_state = data != NULL && length != 0;
+	struct bt_bap_scan_delegator_recv_state recv_state;
+	uint16_t handle = params->single.handle;
+	int cb_err = err;
 
 	if (inst == NULL) {
 		return BT_GATT_ITER_STOP;
 	}
 
-	uint16_t handle = params->single.handle;
-	uint8_t last_handle_index = inst->recv_state_cnt - 1;
-	uint16_t last_handle = inst->recv_state_handles[last_handle_index];
-	struct bt_bap_scan_delegator_recv_state recv_state;
-	int cb_err = err;
-	bool active_recv_state = data != NULL && length != 0;
-
-	/* TODO: Split discovery and receive state characteristic read */
-
 	(void)memset(params, 0, sizeof(*params));
 
-	LOG_DBG("%s receive state", active_recv_state ? "Active " : "Inactive");
+	LOG_DBG("%s receive state", active_recv_state ? "Active" : "Inactive");
 
 	if (cb_err == 0 && active_recv_state) {
 		int16_t index;
@@ -611,48 +605,12 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 
 	if (cb_err != 0) {
 		LOG_DBG("err %d", cb_err);
-
-		if (atomic_test_bit(inst->flags, BAP_BA_FLAG_DISCOVER_IN_PROGRESS)) {
-			bap_broadcast_assistant_discover_complete(conn, cb_err, 0);
-		} else {
-			atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
-			bap_broadcast_assistant_recv_state_changed(conn, cb_err, NULL);
-		}
-	} else if (handle == last_handle) {
-		if (atomic_test_bit(inst->flags, BAP_BA_FLAG_DISCOVER_IN_PROGRESS)) {
-			const uint8_t recv_state_cnt = inst->recv_state_cnt;
-
-			bap_broadcast_assistant_discover_complete(conn, cb_err, recv_state_cnt);
-		} else {
-			atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
-			bap_broadcast_assistant_recv_state_changed(conn, cb_err,
-								   active_recv_state ?
-								   &recv_state : NULL);
-		}
+		atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
+		bap_broadcast_assistant_recv_state_changed(conn, cb_err, NULL);
 	} else {
-		for (uint8_t i = 0U; i < inst->recv_state_cnt; i++) {
-			if (handle != inst->recv_state_handles[i]) {
-				continue;
-			}
-
-			if (i + 1 < ARRAY_SIZE(inst->recv_state_handles)) {
-				cb_err = read_recv_state(inst, i + 1);
-				if (cb_err != 0) {
-					LOG_DBG("Failed to read receive state: %d", cb_err);
-
-					if (atomic_test_bit(inst->flags,
-							    BAP_BA_FLAG_DISCOVER_IN_PROGRESS)) {
-						bap_broadcast_assistant_discover_complete(
-							conn, cb_err, 0);
-					} else {
-						atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
-						bap_broadcast_assistant_recv_state_changed(
-							conn, cb_err, NULL);
-					}
-				}
-			}
-			break;
-		}
+		atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
+		bap_broadcast_assistant_recv_state_changed(conn, cb_err,
+							   active_recv_state ? &recv_state : NULL);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -686,10 +644,7 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 		LOG_DBG("Found %u BASS receive states", inst->recv_state_cnt);
 		(void)memset(params, 0, sizeof(*params));
 
-		err = read_recv_state(inst, 0);
-		if (err != 0) {
-			bap_broadcast_assistant_discover_complete(conn, err, 0);
-		}
+		bap_broadcast_assistant_discover_complete(conn, 0, inst->recv_state_cnt);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -706,14 +661,20 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_BASS_RECV_STATE) == 0) {
 			if (inst->recv_state_cnt <
 				CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT) {
-				uint8_t idx = inst->recv_state_cnt++;
+				const uint8_t idx = inst->recv_state_cnt;
 
 				LOG_DBG("Receive State %u", inst->recv_state_cnt);
 				inst->recv_state_handles[idx] =
 					attr->handle + 1;
 				sub_params = &inst->recv_state_sub_params[idx];
 				sub_params->disc_params = &inst->recv_state_disc_params[idx];
+				inst->recv_state_cnt++;
 			}
+		} else {
+			LOG_DBG("Invalid UUID %s", bt_uuid_str(chrc->uuid));
+			bap_broadcast_assistant_discover_complete(conn, -EBADMSG, 0);
+
+			return BT_GATT_ITER_STOP;
 		}
 
 		if (sub_params != NULL) {
@@ -1089,7 +1050,7 @@ int bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb 
 {
 	struct bt_bap_broadcast_assistant_cb *tmp;
 
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -1107,7 +1068,7 @@ int bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb 
 
 int bt_bap_broadcast_assistant_unregister_cb(struct bt_bap_broadcast_assistant_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -1300,8 +1261,8 @@ static bool valid_subgroup_params(uint8_t pa_sync, const struct bt_bap_bass_subg
 		/* BIS sync values of 0 and BT_BAP_BIS_SYNC_NO_PREF are allowed at any time, but any
 		 * other values are only allowed if PA sync state is also set
 		 */
-		CHECKIF(pa_sync == 0 && (subgroups[i].bis_sync != 0U &&
-					 subgroups[i].bis_sync != BT_BAP_BIS_SYNC_NO_PREF)) {
+		if (pa_sync == 0 && (subgroups[i].bis_sync != 0U &&
+				     subgroups[i].bis_sync != BT_BAP_BIS_SYNC_NO_PREF)) {
 			LOG_DBG("[%u]: Only syncing to BIS is not allowed", i);
 
 			return false;
@@ -1331,46 +1292,46 @@ static bool valid_subgroup_params(uint8_t pa_sync, const struct bt_bap_bass_subg
 
 static bool valid_add_src_param(const struct bt_bap_broadcast_assistant_add_src_param *param)
 {
-	CHECKIF(param == NULL) {
+	if (param == NULL) {
 		LOG_DBG("param is NULL");
 		return false;
 	}
 
-	CHECKIF(param->addr.type > BT_ADDR_LE_RANDOM) {
+	if (param->addr.type > BT_ADDR_LE_RANDOM) {
 		LOG_DBG("Invalid address type %u", param->addr.type);
 		return false;
 	}
 
-	CHECKIF(param->adv_sid > BT_GAP_SID_MAX) {
+	if (param->adv_sid > BT_GAP_SID_MAX) {
 		LOG_DBG("Invalid adv_sid %u", param->adv_sid);
 		return false;
 	}
 
-	CHECKIF(!(param->pa_interval != BT_BAP_PA_INTERVAL_UNKNOWN) &&
-		!IN_RANGE(param->pa_interval, BT_GAP_PER_ADV_MIN_INTERVAL,
-			  BT_GAP_PER_ADV_MAX_INTERVAL)) {
+	if (!(param->pa_interval != BT_BAP_PA_INTERVAL_UNKNOWN) &&
+	    !IN_RANGE(param->pa_interval, BT_GAP_PER_ADV_MIN_INTERVAL,
+		      BT_GAP_PER_ADV_MAX_INTERVAL)) {
 		LOG_DBG("Invalid pa_interval 0x%04X", param->pa_interval);
 		return false;
 	}
 
-	CHECKIF(param->broadcast_id > BT_AUDIO_BROADCAST_ID_MAX) {
+	if (param->broadcast_id > BT_AUDIO_BROADCAST_ID_MAX) {
 		LOG_DBG("Invalid broadcast_id 0x%08X", param->broadcast_id);
 		return false;
 	}
 
-	CHECKIF(param->num_subgroups != 0 && param->subgroups == NULL) {
+	if (param->num_subgroups != 0 && param->subgroups == NULL) {
 		LOG_DBG("Subgroups are NULL when num_subgroups = %u", param->num_subgroups);
 		return false;
 	}
 
-	CHECKIF(param->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
+	if (param->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
 		LOG_DBG("Too many subgroups %u/%u", param->num_subgroups,
 			CONFIG_BT_BAP_BASS_MAX_SUBGROUPS);
 
 		return false;
 	}
 
-	CHECKIF(param->subgroups != NULL) {
+	if (param->subgroups != NULL) {
 		if (!valid_subgroup_params(param->pa_sync, param->subgroups,
 					   param->num_subgroups)) {
 			return false;
@@ -1401,7 +1362,9 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 	/* Check if this operation would result in a duplicate before proceeding */
 	if (broadcast_src_is_duplicate(inst, param->broadcast_id, param->adv_sid,
 				       param->addr.type)) {
-		LOG_DBG("Broadcast source already exists");
+		LOG_DBG("Broadcast source already exists for broadcast_id 0x%06X, sid 0x%02X and "
+			"type 0x%02X",
+			param->broadcast_id, param->adv_sid, param->addr.type);
 
 		return -EINVAL;
 	}
@@ -1479,31 +1442,31 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 
 static bool valid_add_mod_param(const struct bt_bap_broadcast_assistant_mod_src_param *param)
 {
-	CHECKIF(param == NULL) {
+	if (param == NULL) {
 		LOG_DBG("param is NULL");
 		return false;
 	}
 
-	CHECKIF(!(param->pa_interval != BT_BAP_PA_INTERVAL_UNKNOWN) &&
-		!IN_RANGE(param->pa_interval, BT_GAP_PER_ADV_MIN_INTERVAL,
-			  BT_GAP_PER_ADV_MAX_INTERVAL)) {
+	if (!(param->pa_interval != BT_BAP_PA_INTERVAL_UNKNOWN) &&
+	    !IN_RANGE(param->pa_interval, BT_GAP_PER_ADV_MIN_INTERVAL,
+		      BT_GAP_PER_ADV_MAX_INTERVAL)) {
 		LOG_DBG("Invalid pa_interval 0x%04X", param->pa_interval);
 		return false;
 	}
 
-	CHECKIF(param->num_subgroups != 0 && param->subgroups == NULL) {
+	if (param->num_subgroups != 0 && param->subgroups == NULL) {
 		LOG_DBG("Subgroups are NULL when num_subgroups = %u", param->num_subgroups);
 		return false;
 	}
 
-	CHECKIF(param->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
+	if (param->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
 		LOG_DBG("Too many subgroups %u/%u", param->num_subgroups,
 			CONFIG_BT_BAP_BASS_MAX_SUBGROUPS);
 
 		return false;
 	}
 
-	CHECKIF(param->subgroups != NULL) {
+	if (param->subgroups != NULL) {
 		if (!valid_subgroup_params(param->pa_sync, param->subgroups,
 					   param->num_subgroups)) {
 			return false;
@@ -1731,7 +1694,7 @@ int bt_bap_broadcast_assistant_read_recv_state(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	CHECKIF(idx >= ARRAY_SIZE(inst->recv_state_handles)) {
+	if (idx >= ARRAY_SIZE(inst->recv_state_handles)) {
 		LOG_DBG("Invalid idx: %u", idx);
 
 		return -EINVAL;

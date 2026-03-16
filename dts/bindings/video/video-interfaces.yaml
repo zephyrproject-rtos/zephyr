@@ -81,7 +81,7 @@ properties:
   data-shift:
     type: int
     description: |
-      On parallel data busses, if bus-width is used to specify the number of
+      On parallel data buses, if bus-width is used to specify the number of
       data lines, data-shift can be used to specify which data lines are used,
       e.g. "bus-width=<8>; data-shift=<2>;" means, that lines 9:2 are used.
 
@@ -123,7 +123,7 @@ properties:
       Physical clock lane index. Position of an entry determines the logical
       lane number, while the value of an entry indicates physical lane, e.g. for
       a MIPI CSI-2 bus we could have "clock-lane = <0>;", which places the
-      clock lane on hardware lane 0. This property is valid for serial busses
+      clock lane on hardware lane 0. This property is valid for serial buses
       only (e.g. MIPI CSI-2).
 
   data-lanes:
@@ -135,10 +135,10 @@ properties:
       assuming the clock lane is on hardware lane 0. If the hardware does not
       support lane reordering, monotonically incremented values shall be used
       from 0 or 1 onwards, depending on whether or not there is also a clock
-      lane. This property is valid for serial busses only (e.g. MIPI CSI-2).
+      lane. This property is valid for serial buses only (e.g. MIPI CSI-2).
 
 # For parallel bus only
   bus-width:
     type: int
     description: |
-      Number of data lines actively used, only valid for parallel busses.
+      Number of data lines actively used, only valid for parallel buses.

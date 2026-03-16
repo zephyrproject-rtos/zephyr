@@ -11,6 +11,7 @@ import textwrap
 from pathlib import Path
 
 from west.commands import WestCommand
+
 from zephyr_ext_common import ZEPHYR_BASE
 
 sys.path.append(os.fspath(Path(__file__).parent.parent))
@@ -23,16 +24,14 @@ class Shields(WestCommand):
     def __init__(self):
         super().__init__(
             'shields',
-            # Keep this in sync with the string in west-commands.yml.
-            'display list of supported shield',
-            'Display supported shields',
+            '',
+            description='Display list of supported shields',
             accepts_unknown_args=False)
 
     def do_add_parser(self, parser_adder):
         default_fmt = '{name}'
         parser = parser_adder.add_parser(
             self.name,
-            help=self.help,
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=self.description,
             epilog=textwrap.dedent(f'''\

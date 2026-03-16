@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MM_DRV
-	bool "Memory Management drivers [EXPERIMENTAL]"
+	bool "Memory management drivers [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select KERNEL_VM_SUPPORT
 	help
@@ -43,6 +43,13 @@ config MM_DRV_INTEL_ADSP_TLB
 	help
 	  Driver for the translation lookup buffer on
 	  Intel Audio DSP hardware.
+
+config MM_DRV_INTEL_VIRTUAL_REGION_COUNT
+	int "Maximum number of regions defined in virtual memory"
+	depends on MM_DRV_INTEL_ADSP_MTL_TLB
+	default 1
+	help
+	  This options defines a table size keeping all virtual memory region
 
 config EXTERNAL_ADDRESS_TRANSLATION
 	bool "Support for external address translation modules"

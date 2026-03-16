@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2025 Alif Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/alif-ensemble-pinctrl.h>
+
+&pinctrl {
+	pinctrl_uart0: pinctrl_uart0 {
+		group0 {
+			pinmux = <PIN_P0_0__UART0_RX_A>;
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <PIN_P0_1__UART0_TX_A>;
+		};
+	};
+
+	pinctrl_uart1: pinctrl_uart1 {
+		group0 {
+			pinmux = <PIN_P0_4__UART1_RX_A>;
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <PIN_P0_5__UART1_TX_A>;
+		};
+	};
+
+	pinctrl_uart2: pinctrl_uart2 {
+		group0 {
+			pinmux = <PIN_P1_0__UART2_RX_A>;
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <PIN_P1_1__UART2_TX_A>;
+		};
+	};
+
+	pinctrl_uart3: pinctrl_uart3 {
+		group0 {
+			pinmux = <PIN_P1_2__UART3_RX_A>;
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <PIN_P1_3__UART3_TX_A>;
+		};
+	};
+
+	pinctrl_uart4: pinctrl_uart4 {
+		group0 {
+			pinmux = <PIN_P12_1__UART4_RX_B>;
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <PIN_P12_2__UART4_TX_B>;
+		};
+	};
+
+	pinctrl_uart5: pinctrl_uart5 {
+		group0 {
+			pinmux = <PIN_P3_4__UART5_RX_A>;
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <PIN_P3_5__UART5_TX_A>;
+		};
+	};
+};

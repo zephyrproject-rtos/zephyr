@@ -25,7 +25,7 @@ config NET_DHCPV4_INITIAL_DELAY_MAX
 	default 10
 	range 2 10
 	help
-	  As per RFC2131 4.1.1, we wait a random period between
+	  As per RFC2131 4.4.1, we wait a random period between
 	  1 and 10 seconds before sending the initial discover.
 
 config NET_DHCPV4_OPTION_CALLBACKS
@@ -120,6 +120,17 @@ config NET_DHCPV4_INIT_REBOOT
 	  Initialization with a known network address, if the DHCPv4 client has
 	  been assigned an address before, it begins in INIT-REBOOT state and
 	  sends a DHCPREQUEST message.
+
+config NET_DHCPV4_RESTART_ON_IF_UP
+	bool
+	default n if WIFI_NM_WPA_SUPPLICANT
+	default y
+	help
+	  Disable when an external software module automatically calls
+	  `net_dhcpv4_restart` when the interface is in the correct state to start
+	  binding, instead of running it internally on `NET_EVENT_IF_UP`. This prevents
+	  the DHCP request from being sent before the interface is ready, for interfaces
+	  where `NET_EVENT_IF_UP` does not mean it is ready to send arbitrary packets.
 
 endif # NET_DHCPV4
 

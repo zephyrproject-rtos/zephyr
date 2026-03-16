@@ -8,6 +8,9 @@
 
 #include <zephyr/ztest.h>
 
+/* declare locally until #97855 is merged, as some C libraries do not declare it in stdlib.h */
+int putenv(char *s);
+
 ZTEST(xsi_single_process, test_putenv)
 {
 	char buf[64];

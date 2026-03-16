@@ -4,4 +4,6 @@
 zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
 
+# zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_DRV84XX drv84xx.c)
+# zephyr-keep-sorted-stop

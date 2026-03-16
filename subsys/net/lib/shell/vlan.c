@@ -45,18 +45,16 @@ static void iface_vlan_del_cb(struct net_if *iface, void *user_data)
 
 static void iface_vlan_cb(struct net_if *iface, void *user_data)
 {
+	struct virtual_interface_context *ctx;
 	struct net_shell_user_data *data = user_data;
 	const struct shell *sh = data->sh;
 	int *count = data->user_data;
-	char name[IFNAMSIZ];
+	char name[NET_IFNAMSIZ];
 
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
+	if (!net_eth_is_vlan_interface(iface)) {
 		return;
 	}
 
-	if (!(net_virtual_get_iface_capabilities(iface) & VIRTUAL_INTERFACE_VLAN)) {
-		return;
-	}
 
 	if (*count == 0) {
 		PR("    Interface  Name        \tTag\tAttached\n");
@@ -64,9 +62,14 @@ static void iface_vlan_cb(struct net_if *iface, void *user_data)
 
 	(void)net_if_get_name(iface, name, sizeof(name));
 
-	PR("[%d] %p  %-12s\t%d\t%d\n", net_if_get_by_iface(iface), iface,
-	   name, net_eth_get_vlan_tag(iface),
-	   net_if_get_by_iface(net_eth_get_vlan_main(iface)));
+	ctx = net_if_l2_data(iface);
+	if (ctx->iface != NULL) {
+		PR("[%d] %p  %-12s\t%d\t%d\n", net_if_get_by_iface(iface), iface,
+		   name, net_eth_get_vlan_tag(iface),
+		   net_if_get_by_iface(net_eth_get_vlan_main(iface)));
+	} else {
+		PR("[%d] %p  %-12s\n", net_if_get_by_iface(iface), iface, name);
+	}
 
 	(*count)++;
 }
@@ -92,7 +95,6 @@ static int cmd_net_vlan(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_net_vlan_add(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_VLAN)
-	int arg = 0;
 	int ret;
 	uint16_t tag;
 	struct net_if *iface;
@@ -100,25 +102,25 @@ static int cmd_net_vlan_add(const struct shell *sh, size_t argc, char *argv[])
 	uint32_t iface_idx;
 
 	/* vlan add <tag> <interface index> */
-	if (!argv[++arg]) {
+	if (argv[1] == NULL) {
 		PR_WARNING("VLAN tag missing.\n");
 		goto usage;
 	}
 
-	tag = strtol(argv[arg], &endptr, 10);
+	tag = strtol(argv[1], &endptr, 10);
 	if (*endptr != '\0') {
-		PR_WARNING("Invalid tag %s\n", argv[arg]);
+		PR_WARNING("Invalid tag %s\n", argv[1]);
 		return -ENOEXEC;
 	}
 
-	if (!argv[++arg]) {
+	if (argv[2] == NULL) {
 		PR_WARNING("Network interface index missing.\n");
 		goto usage;
 	}
 
-	iface_idx = strtol(argv[arg], &endptr, 10);
+	iface_idx = strtol(argv[2], &endptr, 10);
 	if (*endptr != '\0') {
-		PR_WARNING("Invalid index %s\n", argv[arg]);
+		PR_WARNING("Invalid index %s\n", argv[2]);
 		goto usage;
 	}
 
@@ -166,20 +168,19 @@ usage:
 static int cmd_net_vlan_del(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_VLAN)
-	int arg = 0;
 	struct net_shell_user_data user_data;
 	char *endptr;
 	uint16_t tag;
 
 	/* vlan del <tag> */
-	if (!argv[++arg]) {
+	if (argv[1] == NULL) {
 		PR_WARNING("VLAN tag missing.\n");
 		goto usage;
 	}
 
-	tag = strtol(argv[arg], &endptr, 10);
+	tag = strtol(argv[1], &endptr, 10);
 	if (*endptr != '\0') {
-		PR_WARNING("Invalid tag %s\n", argv[arg]);
+		PR_WARNING("Invalid tag %s\n", argv[1]);
 		return -ENOEXEC;
 	}
 
@@ -202,12 +203,12 @@ usage:
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_vlan,
 	SHELL_CMD_ARG(add, NULL,
-		      "'net vlan add <tag> <index>' adds VLAN tag to the "
-		      "network interface.",
+		      SHELL_HELP("Adds VLAN tag to the network interface",
+				 "<tag> <index>"),
 		      cmd_net_vlan_add, 3, 0),
 	SHELL_CMD_ARG(del, NULL,
-		      "'net vlan del <tag>' deletes VLAN tag from the network "
-		      "interface.",
+		      SHELL_HELP("Deletes VLAN tag from the network interface",
+				 "<tag>"),
 		      cmd_net_vlan_del, 2, 0),
 	SHELL_SUBCMD_SET_END
 );

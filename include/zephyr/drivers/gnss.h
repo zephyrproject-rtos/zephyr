@@ -5,18 +5,19 @@
  */
 
 /**
- * @file gnss.h
- * @brief Public GNSS API.
+ * @file
+ * @ingroup gnss_interface
+ * @brief Main header file for GNSS driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_GNSS_H_
 #define ZEPHYR_INCLUDE_DRIVERS_GNSS_H_
 
 /**
- * @brief GNSS Interface
- * @defgroup gnss_interface GNSS Interface
+ * @brief Interfaces for Global Navigation Satellite System (GNSS) receivers.
+ * @defgroup gnss_interface GNSS
  * @since 3.6
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */
@@ -43,11 +44,7 @@ enum gnss_pps_mode {
 	GNSS_PPS_MODE_ENABLED_WHILE_LOCKED = 3
 };
 
-/** API for setting fix rate */
-typedef int (*gnss_set_fix_rate_t)(const struct device *dev, uint32_t fix_interval_ms);
 
-/** API for getting fix rate */
-typedef int (*gnss_get_fix_rate_t)(const struct device *dev, uint32_t *fix_interval_ms);
 
 /** GNSS navigation modes */
 enum gnss_navigation_mode {
@@ -61,13 +58,7 @@ enum gnss_navigation_mode {
 	GNSS_NAVIGATION_MODE_HIGH_DYNAMICS = 3
 };
 
-/** API for setting navigation mode */
-typedef int (*gnss_set_navigation_mode_t)(const struct device *dev,
-					  enum gnss_navigation_mode mode);
 
-/** API for getting navigation mode */
-typedef int (*gnss_get_navigation_mode_t)(const struct device *dev,
-					  enum gnss_navigation_mode *mode);
 
 /** Systems contained in gnss_systems_t */
 enum gnss_system {
@@ -92,17 +83,7 @@ enum gnss_system {
 /** Type storing bitmask of GNSS systems */
 typedef uint32_t gnss_systems_t;
 
-/** API for enabling systems */
-typedef int (*gnss_set_enabled_systems_t)(const struct device *dev, gnss_systems_t systems);
 
-/** API for getting enabled systems */
-typedef int (*gnss_get_enabled_systems_t)(const struct device *dev, gnss_systems_t *systems);
-
-/** API for getting enabled systems */
-typedef int (*gnss_get_supported_systems_t)(const struct device *dev, gnss_systems_t *systems);
-
-/** API for getting timestamp of last PPS pulse */
-typedef int (*gnss_get_latest_timepulse_t)(const struct device *dev, k_ticks_t *timestamp);
 
 /** GNSS fix status */
 enum gnss_fix_status {
@@ -164,17 +145,77 @@ struct gnss_time {
 	uint8_t century_year;
 };
 
-/** GNSS API structure */
+/**
+ * @def_driverbackendgroup{GNSS,gnss_interface}
+ * @{
+ */
+
+/** API for setting fix rate */
+typedef int (*gnss_set_fix_rate_t)(const struct device *dev, uint32_t fix_interval_ms);
+
+/** API for getting fix rate */
+typedef int (*gnss_get_fix_rate_t)(const struct device *dev, uint32_t *fix_interval_ms);
+
+/** API for setting navigation mode */
+typedef int (*gnss_set_navigation_mode_t)(const struct device *dev,
+					  enum gnss_navigation_mode mode);
+
+/** API for getting navigation mode */
+typedef int (*gnss_get_navigation_mode_t)(const struct device *dev,
+					  enum gnss_navigation_mode *mode);
+
+/** API for enabling systems */
+typedef int (*gnss_set_enabled_systems_t)(const struct device *dev, gnss_systems_t systems);
+
+/** API for getting enabled systems */
+typedef int (*gnss_get_enabled_systems_t)(const struct device *dev, gnss_systems_t *systems);
+
+/** API for getting enabled systems */
+typedef int (*gnss_get_supported_systems_t)(const struct device *dev, gnss_systems_t *systems);
+
+/** API for getting timestamp of last PPS pulse */
+typedef int (*gnss_get_latest_timepulse_t)(const struct device *dev, k_ticks_t *timestamp);
+
+/**
+ * @driver_ops{GNSS}
+ */
 __subsystem struct gnss_driver_api {
+	/**
+	 * @driver_ops_optional @copybrief gnss_set_fix_rate
+	 */
 	gnss_set_fix_rate_t set_fix_rate;
+	/**
+	 * @driver_ops_optional @copybrief gnss_get_fix_rate
+	 */
 	gnss_get_fix_rate_t get_fix_rate;
+	/**
+	 * @driver_ops_optional @copybrief gnss_set_navigation_mode
+	 */
 	gnss_set_navigation_mode_t set_navigation_mode;
+	/**
+	 * @driver_ops_optional @copybrief gnss_get_navigation_mode
+	 */
 	gnss_get_navigation_mode_t get_navigation_mode;
+	/**
+	 * @driver_ops_optional @copybrief gnss_set_enabled_systems
+	 */
 	gnss_set_enabled_systems_t set_enabled_systems;
+	/**
+	 * @driver_ops_optional @copybrief gnss_get_enabled_systems
+	 */
 	gnss_get_enabled_systems_t get_enabled_systems;
+	/**
+	 * @driver_ops_optional @copybrief gnss_get_supported_systems
+	 */
 	gnss_get_supported_systems_t get_supported_systems;
+	/**
+	 * @driver_ops_optional @copybrief gnss_get_latest_timepulse
+	 */
 	gnss_get_latest_timepulse_t get_latest_timepulse;
 };
+/**
+ * @}
+ */
 
 /** GNSS data structure */
 struct gnss_data {
@@ -211,6 +252,8 @@ struct gnss_satellite {
 	enum gnss_system system;
 	/** True if satellite is being tracked */
 	uint8_t is_tracked : 1;
+	/** True if satellite tracking has RTK corrections */
+	uint8_t is_corrected : 1;
 };
 
 /** Template for GNSS satellites callback */
@@ -427,8 +470,17 @@ static inline int z_impl_gnss_get_latest_timepulse(const struct device *dev,
 		.dev = _dev,                                                                    \
 		.callback = _callback,                                                          \
 	}
+
+#define GNSS_DT_DATA_CALLBACK_DEFINE(_node_id, _callback)                                          \
+	static const STRUCT_SECTION_ITERABLE(                                                      \
+		gnss_data_callback,                                                                \
+		CONCAT(_gnss_data_callback_, DT_DEP_ORD(_node_id), _, _callback)) = {              \
+		.dev = DEVICE_DT_GET(_node_id),                                                    \
+		.callback = _callback,                                                             \
+	}
 #else
 #define GNSS_DATA_CALLBACK_DEFINE(_dev, _callback)
+#define GNSS_DT_DATA_CALLBACK_DEFINE(_node_id, _callback)
 #endif
 
 /**
@@ -444,8 +496,17 @@ static inline int z_impl_gnss_get_latest_timepulse(const struct device *dev,
 		.dev = _dev,                                                                    \
 		.callback = _callback,                                                          \
 	}
+
+#define GNSS_DT_SATELLITES_CALLBACK_DEFINE(_node_id, _callback)                                    \
+	static const STRUCT_SECTION_ITERABLE(                                                      \
+		gnss_satellites_callback,                                                          \
+		CONCAT(_gnss_satellites_callback_, DT_DEP_ORD(_node_id), _, _callback)) = {        \
+		.dev = DEVICE_DT_GET(_node_id),                                                    \
+		.callback = _callback,                                                             \
+	}
 #else
 #define GNSS_SATELLITES_CALLBACK_DEFINE(_dev, _callback)
+#define GNSS_DT_SATELLITES_CALLBACK_DEFINE(_node_id, _callback)
 #endif
 
 /**

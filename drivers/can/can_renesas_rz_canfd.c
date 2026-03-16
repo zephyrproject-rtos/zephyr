@@ -706,7 +706,7 @@ static void can_renesas_rz_set_state_change_callback(const struct device *dev,
 		/* Clear error flags */
 		p_ctrl->p_reg->CFDC->ERFL &=
 			~(BIT(R_CANFD_CFDC_ERFL_BOEF_Pos) | BIT(R_CANFD_CFDC_ERFL_EWF_Pos) |
-			BIT(R_CANFD_CFDC_ERFL_EPF_Pos) | BIT(R_CANFD_CFDC_ERFL_BEF_Pos));
+			  BIT(R_CANFD_CFDC_ERFL_EPF_Pos) | BIT(R_CANFD_CFDC_ERFL_BEF_Pos));
 	}
 
 	data->common.state_change_cb = callback;
@@ -948,7 +948,7 @@ DEVICE_DT_DEFINE(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_rz_canfd_global), can_ren
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, ch_err, irq),                               \
 			    DT_INST_IRQ_BY_NAME(index, ch_err, priority), canfd_error_isr, NULL,   \
 			    0);                                                                    \
-	                                                                                           \
+                                                                                                   \
 		irq_enable(DT_INST_IRQ_BY_NAME(index, ch_rec, irq));                               \
 		irq_enable(DT_INST_IRQ_BY_NAME(index, ch_trx, irq));                               \
 		irq_enable(DT_INST_IRQ_BY_NAME(index, ch_err, irq));                               \
@@ -999,6 +999,7 @@ DEVICE_DT_DEFINE(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_rz_canfd_global), can_ren
 		.txmb_txi_enable = CANFD_CFG_TXMB_TXI_ENABLE,                                      \
 		.error_interrupts = 0U,                                                            \
 		.p_global_cfg = &g_canfd_global_cfg,                                               \
+		.p_reg = (void *)DT_REG_ADDR(DT_INST_PARENT(index)),                               \
 	};                                                                                         \
 	static can_cfg_t g_canfd_ch##index##cfg = {                                                \
 		.channel = DT_INST_PROP(index, channel),                                           \

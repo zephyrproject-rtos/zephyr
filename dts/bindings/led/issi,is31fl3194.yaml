@@ -10,46 +10,6 @@ description: |
   blue components; the driver takes care of routing to the outputs described
   by the color-mapping property.
 
-  The LED_SHELL application can be used for testing.
-
-  The following defines a single RGB LED in the is31fl3194 DT node:
-
-    is31fl3194@53 {
-      compatible = "issi,is31fl3194";
-      reg = <0x53>;
-
-      led_0 {
-        label = "RGB LED";
-        color-mapping =
-          <LED_COLOR_ID_RED>,
-          <LED_COLOR_ID_GREEN>,
-          <LED_COLOR_ID_BLUE>;
-      };
-    };
-
-  The following example defines three single-channel LEDs in the is31fl3194 DT node:
-
-    is31fl3194@53 {
-      compatible = "issi,is31fl3194";
-      reg = <0x53>;
-
-      led_0 {
-        label = "RED LED";
-        color-mapping = <LED_COLOR_ID_RED>;
-      };
-
-      led_1 {
-        label = "GREEN LED";
-        color-mapping = <LED_COLOR_ID_GREEN>;
-      };
-
-      led_2 {
-        label = "BLUE LED";
-        color-mapping = <LED_COLOR_ID_BLUE>;
-      };
-    };
-
-
 compatible: "issi,is31fl3194"
 
 include: ["i2c-device.yaml", "led-controller.yaml"]
@@ -72,3 +32,40 @@ child-binding:
       required: true
       description: |
         The current limit for the LED in mA.
+
+examples:
+  - |
+    /* Single RGB LED */
+    is31fl3194@53 {
+      compatible = "issi,is31fl3194";
+      reg = <0x53>;
+
+      led_0 {
+        label = "RGB LED";
+        color-mapping =
+          <LED_COLOR_ID_RED>,
+          <LED_COLOR_ID_GREEN>,
+          <LED_COLOR_ID_BLUE>;
+      };
+    };
+  - |
+    /* Three single-channel LEDs */
+    is31fl3194@53 {
+      compatible = "issi,is31fl3194";
+      reg = <0x53>;
+
+      led_0 {
+        label = "RED LED";
+        color-mapping = <LED_COLOR_ID_RED>;
+      };
+
+      led_1 {
+        label = "GREEN LED";
+        color-mapping = <LED_COLOR_ID_GREEN>;
+      };
+
+      led_2 {
+        label = "BLUE LED";
+        color-mapping = <LED_COLOR_ID_BLUE>;
+      };
+    };

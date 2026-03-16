@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-title: Silicon Labs SiWx91x NWP (Network Wireless Processor)
+title: Silicon Labs SiWx91x NWP (Network Wireless Coprocessor)
 
 description: |
   The Network Wireless Processor (NWP) manages Wi-Fi and Bluetooth connectivity on SiWx91x devices,
@@ -10,14 +10,71 @@ description: |
 
 compatible: "silabs,siwx91x-nwp"
 
+include: base.yaml
+
 properties:
-  power-profile:
-    type: string
-    description: Power/performance profile
-    enum:
-      - high-performance
-      - associated-power-save
-      - associated-power-save-low-latency
-      - deep-sleep-without-ram-retention
-      - deep-sleep-with-ram-retention
+  interrupts:
     required: true
+
+  stack-size:
+    type: int
+    description: Stack size for the NWP in bytes
+    required: true
+
+  support-1p8v:
+    type: boolean
+    description: |
+      Enables 1.8 V operation support.
+
+  enable-xtal-correction:
+    type: boolean
+    description: |
+      Enables automatic 40 MHz XTAL frequency correction.
+      Disable this when using a custom or uncalibrated XTAL and manual tuning is required.
+
+  qspi-80mhz-clk:
+    type: boolean
+    description: |
+      Enables 80 MHz QSPI clock mode for the NWP flash interface to improve
+      throughput. Enable this if the external flash device supports 80 MHz
+      operation; otherwise, keep it disabled.
+  # Note:
+  # Zephyr typically manages clocks via a clock-controller driver.
+  # However, the NWP is not yet fully compatible with that model.
+  # This property is kept as a temporary solution for NWP-specific configuration.
+
+  antenna-selection:
+    type: string
+    description: |
+      Selects the front-end (antenna) switch configuration for the NWP.
+
+      This property determines how the RF path is controlled:
+        - "none": Reserved or unused configuration.
+        - "ext-gpios": Use external ULP GPIOs (4, 5, and 0) as ANT_SEL control lines
+          for the external RF switch network.
+        - "internal": Use the internal on-chip RF switch logic. No external GPIO
+          control is required. Recommended for boards without an external RF
+          switch circuit.
+
+      The value maps directly to bits [30:29] of the SL_SI91X_EXT_FEAT register:
+        - 00b: Reserved
+        - 01b: External GPIOs (ULP_GPIO4/5/0)
+        - 10b: Internal front-end switch
+        - 11b: Reserved
+    enum:
+      - "none"
+      - "ext-gpios"
+      - "internal"
+    required: true
+  clock-frequency:
+    type: int
+    enum:
+      - 80000000
+      - 120000000
+      - 160000000
+    required: true
+    description: |
+      SoC clock frequency configuration for the NWP in Hz. 80 MHz (80000000)
+      is the default and offers lower power consumption; 120 MHz (120000000)
+      can be used for higher throughput. 160 MHz (160000000) is not
+      recommended due to potential instabilities

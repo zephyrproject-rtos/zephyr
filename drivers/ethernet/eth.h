@@ -8,6 +8,7 @@
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_H_
 
 #include <zephyr/types.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/random/random.h>
 
 /* helper macro to return mac address octet from local_mac_address prop */

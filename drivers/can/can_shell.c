@@ -25,6 +25,12 @@ struct can_shell_rx_event {
 	const struct device *dev;
 };
 
+struct can_shell_dump_context {
+	int filter_id_std;
+	int filter_id_ext;
+	bool  started;
+};
+
 struct can_shell_mode_mapping {
 	const char *name;
 	can_mode_t mode;
@@ -64,6 +70,8 @@ static struct k_poll_event can_shell_rx_msgq_events[] = {
 					&can_shell_rx_msgq, 0)
 };
 
+static struct can_shell_dump_context can_shell_dump_ctx;
+
 /* Forward declarations */
 static void can_shell_tx_msgq_triggered_work_handler(struct k_work *work);
 static void can_shell_rx_msgq_triggered_work_handler(struct k_work *work);
@@ -74,11 +82,13 @@ static bool can_device_check(const struct device *dev)
 }
 
 #ifdef CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY
-static void can_shell_dummy_bypass_cb(const struct shell *sh, uint8_t *data, size_t len)
+static void can_shell_dummy_bypass_cb(const struct shell *sh, uint8_t *data, size_t len,
+				      void *user_data)
 {
 	ARG_UNUSED(sh);
 	ARG_UNUSED(data);
 	ARG_UNUSED(len);
+	ARG_UNUSED(user_data);
 }
 #endif /* CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY */
 
@@ -90,7 +100,7 @@ static void can_shell_print_frame(const struct shell *sh, const struct device *d
 
 #ifdef CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY
 	/* Bypass the shell to avoid breaking up the line containing the frame */
-	shell_set_bypass(sh, can_shell_dummy_bypass_cb);
+	shell_set_bypass(sh, can_shell_dummy_bypass_cb, NULL);
 #endif /* CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY */
 
 #ifdef CONFIG_CAN_RX_TIMESTAMP
@@ -132,7 +142,7 @@ static void can_shell_print_frame(const struct shell *sh, const struct device *d
 	shell_fprintf_normal(sh, "\n");
 
 #ifdef CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY
-	shell_set_bypass(sh, NULL);
+	shell_set_bypass(sh, NULL, NULL);
 #endif /* CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY */
 }
 
@@ -428,6 +438,94 @@ static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 	shell_print(sh, "  ack errors:    %u", can_stats_get_ack_errors(dev));
 	shell_print(sh, "  rx overruns:   %u", can_stats_get_rx_overruns(dev));
 #endif /* CONFIG_CAN_STATS */
+
+	return 0;
+}
+
+#define ASCII_CTRL_C 0x03
+
+static void can_shell_dump_bypass_cb(const struct shell *sh, uint8_t *data, size_t len,
+				     void *user_data)
+{
+	const struct device *dev = user_data;
+	int err;
+
+	for (size_t i = 0; i < len; i++) {
+		if (data[i] == ASCII_CTRL_C) {
+			if (can_shell_dump_ctx.started) {
+				err = can_stop(dev);
+				if (err != 0) {
+					shell_error(sh, "failed to stop CAN controller (err %d)",
+						    err);
+				}
+			}
+
+			if (can_shell_dump_ctx.filter_id_std >= 0) {
+				can_remove_rx_filter(dev, can_shell_dump_ctx.filter_id_std);
+			}
+
+
+			if (can_shell_dump_ctx.filter_id_ext >= 0) {
+				can_remove_rx_filter(dev, can_shell_dump_ctx.filter_id_ext);
+			}
+
+			shell_set_bypass(sh, NULL, NULL);
+			return;
+		}
+	}
+}
+
+static int cmd_can_dump(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev = shell_device_get_binding(argv[1]);
+	const struct can_filter std_filter = {
+		.flags = 0U,
+		.id = 0U,
+		.mask = 0U
+	};
+	const struct can_filter ext_filter = {
+		.flags = CAN_FILTER_IDE,
+		.id = 0U,
+		.mask = 0U
+	};
+	int err;
+
+	if (!can_device_check(dev)) {
+		shell_error(sh, "device %s not ready", argv[1]);
+		return -ENODEV;
+	}
+
+	err = can_add_rx_filter(dev, can_shell_rx_callback, NULL, &std_filter);
+	if (err < 0) {
+		shell_warn(sh, "failed to add standard (11-bit) filter (err %d)", err);
+	}
+	can_shell_dump_ctx.filter_id_std = err;
+
+	err = can_add_rx_filter(dev, can_shell_rx_callback, NULL, &ext_filter);
+	if (err < 0) {
+		shell_warn(sh, "failed to add extended (29-bit) filter (err %d)", err);
+	}
+	can_shell_dump_ctx.filter_id_ext = err;
+
+	err = can_shell_rx_msgq_poll_submit(sh);
+	if (err != 0) {
+		shell_error(sh, "failed to start CAN RX message queue polling (err %d)", err);
+		return err;
+	}
+
+	can_shell_dump_ctx.started = true;
+
+	err = can_start(dev);
+	if (err == -EALREADY) {
+		can_shell_dump_ctx.started = false;
+	} else if (err != 0) {
+		shell_error(sh, "failed to start CAN controller (err %d)", err);
+		return err;
+	}
+
+	shell_set_bypass(sh, can_shell_dump_bypass_cb, (void *)dev);
+
+	shell_print(sh, "dumping CAN RX frames on device %s, press Ctrl+C to exit", dev->name);
 
 	return 0;
 }
@@ -1043,69 +1141,101 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_can_device_name_mode, cmd_can_device_name_mode);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_filter_cmds,
 	SHELL_CMD_ARG(add, &dsub_can_device_name,
-		"Add rx filter\n"
-		"Usage: can filter add <device> [-e] <CAN ID> [CAN ID mask]\n"
-		"-e  use extended (29-bit) CAN ID/CAN ID mask\n",
+		SHELL_HELP(
+			"Add rx filter",
+			"<device> [-e] <CAN ID> [CAN ID mask]\n"
+			"-e  use extended (29-bit) CAN ID/CAN ID mask"
+		),
 		cmd_can_filter_add, 3, 2),
 	SHELL_CMD_ARG(remove, &dsub_can_device_name,
-		"Remove rx filter\n"
-		"Usage: can filter remove <device> <filter_id>",
+		SHELL_HELP(
+			"Remove rx filter",
+			"<device> <filter_id>"
+		),
 		cmd_can_filter_remove, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_cmds,
 	SHELL_CMD_ARG(start, &dsub_can_device_name,
-		"Start CAN controller\n"
-		"Usage: can start <device>",
+		SHELL_HELP(
+			"Start CAN controller",
+			"<device>"
+		),
 		cmd_can_start, 2, 0),
 	SHELL_CMD_ARG(stop, &dsub_can_device_name,
-		"Stop CAN controller\n"
-		"Usage: can stop <device>",
+		SHELL_HELP(
+			"Stop CAN controller",
+			"<device>"
+		),
 		cmd_can_stop, 2, 0),
 	SHELL_CMD_ARG(show, &dsub_can_device_name,
-		"Show CAN controller information\n"
-		"Usage: can show <device>",
+		SHELL_HELP(
+			"Show CAN controller information",
+			"<device>"
+		),
 		cmd_can_show, 2, 0),
 	SHELL_CMD_ARG(bitrate, &dsub_can_device_name,
-		"Set CAN controller bitrate (sample point and SJW optional)\n"
-		"Usage: can bitrate <device> <bitrate> [sample point] [sjw]",
+		SHELL_HELP(
+			"Set CAN controller bitrate (sample point and SJW optional)",
+			"<device> <bitrate> [sample point] [sjw]"
+		),
 		cmd_can_bitrate_set, 3, 2),
 	SHELL_COND_CMD_ARG(CONFIG_CAN_FD_MODE,
 		dbitrate, &dsub_can_device_name,
-		"Set CAN controller data phase bitrate (sample point and SJW optional)\n"
-		"Usage: can dbitrate <device> <data phase bitrate> [sample point] [sjw]",
+		SHELL_HELP(
+			"Set CAN controller data phase bitrate (sample point and SJW optional)",
+			"<device> <data phase bitrate> [sample point] [sjw]"
+		),
 		cmd_can_dbitrate_set, 3, 2),
 	SHELL_CMD_ARG(timing, &dsub_can_device_name,
-		"Set CAN controller timing\n"
-		"Usage: can timing <device> <sjw> <prop_seg> <phase_seg1> <phase_seg2> <prescaler>",
+		SHELL_HELP(
+			"Set CAN controller timing",
+			"<device> <sjw> <prop_seg> <phase_seg1> <phase_seg2> <prescaler>"
+		),
 		cmd_can_timing_set, 7, 0),
 	SHELL_COND_CMD_ARG(CONFIG_CAN_FD_MODE,
 		dtiming, &dsub_can_device_name,
-		"Set CAN controller data phase timing\n"
-		"Usage: can dtiming <device> <sjw> <prop_seg> <phase_seg1> <phase_seg2> <prescaler>",
+		SHELL_HELP(
+			"Set CAN controller data phase timing",
+			"<device> <sjw> <prop_seg> <phase_seg1> <phase_seg2> <prescaler>"
+		),
 		cmd_can_dtiming_set, 7, 0),
 	SHELL_CMD_ARG(mode, &dsub_can_device_name_mode,
-		"Set CAN controller mode\n"
-		"Usage: can mode <device> <mode> [mode] [mode] [...]",
+		SHELL_HELP(
+			"Set CAN controller mode",
+			"<device> <mode> [mode] [mode] [...]"
+		),
 		cmd_can_mode_set, 3, SHELL_OPT_ARG_CHECK_SKIP),
 	SHELL_CMD_ARG(send, &dsub_can_device_name,
-		"Enqueue a CAN frame for sending\n"
-		"Usage: can send <device> [-e] [-r] [-f] [-b] <CAN ID> [data] [...]\n"
-		"-e  use extended (29-bit) CAN ID\n"
-		"-r  send Remote Transmission Request (RTR) frame\n"
-		"-f  use CAN FD frame format\n"
-		"-b  use CAN FD Bit Rate Switching (BRS)",
+		SHELL_HELP(
+			"Enqueue a CAN frame for sending",
+			"<device> [-e] [-r] [-f] [-b] <CAN ID> [data] [...]\n"
+			"-e  use extended (29-bit) CAN ID\n"
+			"-r  send Remote Transmission Request (RTR) frame\n"
+			"-f  use CAN FD frame format\n"
+			"-b  use CAN FD Bit Rate Switching (BRS)"
+		),
 		cmd_can_send, 3, SHELL_OPT_ARG_CHECK_SKIP),
 	SHELL_CMD(filter, &sub_can_filter_cmds,
-		"CAN rx filter commands\n"
-		"Usage: can filter <add|remove> <device> ...",
+		SHELL_HELP(
+			"CAN rx filter commands",
+			"<add|remove> <device> ..."
+		),
 		NULL),
 	SHELL_COND_CMD_ARG(CONFIG_CAN_MANUAL_RECOVERY_MODE,
 		recover, &dsub_can_device_name,
-		"Manually recover CAN controller from bus-off state\n"
-		"Usage: can recover <device> [timeout ms]",
+		SHELL_HELP(
+			"Manually recover CAN controller from bus-off state",
+			"<device> [timeout ms]"
+		),
 		cmd_can_recover, 2, 1),
+	SHELL_CMD_ARG(dump, &dsub_can_device_name,
+		SHELL_HELP(
+			"Dump all CAN controller RX frames",
+			"<device>"
+		),
+		cmd_can_dump, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
 

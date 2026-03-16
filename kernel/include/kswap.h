@@ -114,11 +114,18 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 	if (is_spinlock && lock != NULL && lock != &_sched_spinlock) {
 		k_spin_release(lock);
 	}
-	if (!is_spinlock || lock != &_sched_spinlock) {
-		(void) k_spin_lock(&_sched_spinlock);
+	if (IS_ENABLED(CONFIG_SMP) || IS_ENABLED(CONFIG_SPIN_VALIDATE)) {
+		/* Taking a nested uniprocessor lock in void context is a noop */
+		if (!is_spinlock || lock != &_sched_spinlock) {
+			(void)k_spin_lock(&_sched_spinlock);
+		}
 	}
 
+#ifdef CONFIG_SMP
 	new_thread = z_swap_next_thread();
+#else
+	new_thread = _kernel.ready_q.cache;
+#endif
 
 	if (new_thread != old_thread) {
 		z_sched_usage_switch(new_thread);
@@ -203,6 +210,16 @@ static inline int z_swap_irqlock(unsigned int key)
 {
 	int ret;
 	z_check_stack_sentinel();
+
+#ifdef CONFIG_SPIN_VALIDATE
+	/* Refer to comment in do_swap() above for details */
+# ifndef CONFIG_ARM64
+	__ASSERT(arch_irq_unlocked(key) ||
+		 _current->base.thread_state & (_THREAD_DUMMY | _THREAD_DEAD),
+		 "Context switching while holding lock!");
+# endif /* CONFIG_ARM64 */
+#endif /* CONFIG_SPIN_VALIDATE */
+
 	ret = arch_swap(key);
 	return ret;
 }

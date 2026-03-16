@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #define DT_DRV_COMPAT silabs_siwx91x_adc
+#define ADC_CONTEXT_USES_KERNEL_TIMER
 
 #include <zephyr/drivers/adc.h>
 #include <zephyr/logging/log.h>
@@ -12,6 +12,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
 
+#include "adc_context.h"
 #include "rsi_adc.h"
 #include "rsi_bod.h"
 #include "rsi_ipmu.h"
@@ -19,8 +20,6 @@
 #include "aux_reference_volt_config.h"
 
 LOG_MODULE_REGISTER(adc_silabs_siwx91x, CONFIG_ADC_LOG_LEVEL);
-
-#include "adc_context.h"
 
 struct adc_siwx91x_chan_data {
 	uint8_t input_type;
@@ -243,16 +242,9 @@ static int adc_siwx91x_init(const struct device *dev)
 	const struct adc_siwx91x_config *cfg = dev->config;
 	struct adc_siwx91x_data *data = dev->data;
 	float chip_volt;
-	float ref_voltage = cfg->ref_voltage / 1000.;
-	uint32_t total_duration = 4; /* Default clock division factor */
 	int ret;
 
 	ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
-	if (ret) {
-		return ret;
-	}
-
-	ret = clock_control_set_rate(cfg->clock_dev, cfg->clock_subsys, &total_duration);
 	if (ret) {
 		return ret;
 	}
@@ -261,6 +253,8 @@ static int adc_siwx91x_init(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
+
+	RSI_ADC_ClkDivfactor(AUX_ADC_DAC_COMP, 0, 4);
 
 	/* Set default analog reference voltage to 2.8 V from 3.2 V chip voltage */
 	RSI_AUX_RefVoltageConfig(2.8, 3.2);
@@ -272,7 +266,7 @@ static int adc_siwx91x_init(const struct device *dev)
 		RSI_IPMU_HP_LDO_Enable();
 	}
 
-	ret = RSI_AUX_RefVoltageConfig(ref_voltage, chip_volt);
+	ret = RSI_AUX_RefVoltageConfig(cfg->ref_voltage / 1000., chip_volt);
 	if (ret) {
 		return -EIO;
 	}
@@ -333,12 +327,6 @@ int16_t adc_siwx91x_read_data(const struct device *dev)
 		adc_temp = 0;
 	}
 
-	if (adc_temp >= 2048) {
-		adc_temp = adc_temp - 2048;
-	} else {
-		adc_temp = adc_temp + 2048;
-	}
-
 	return adc_temp;
 }
 
@@ -378,13 +366,16 @@ static void adc_siwx91x_isr(const struct device *dev)
 	}
 }
 
-static DEVICE_API(adc, adc_siwx91x_driver_api) = {
-	.channel_setup = adc_siwx91x_channel_setup,
-	.read = adc_siwx91x_read,
-};
+#define ADC_SIWX91X_DRIVER_API(inst)                                                               \
+	static DEVICE_API(adc, adc_siwx91x_driver_api_##inst) = {                                  \
+		.channel_setup = adc_siwx91x_channel_setup,                                        \
+		.read = adc_siwx91x_read,                                                          \
+		.ref_internal = DT_INST_PROP(inst, silabs_adc_ref_voltage),                        \
+	};
 
 #define SIWX91X_ADC_INIT(inst)                                                                     \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+	ADC_SIWX91X_DRIVER_API(inst);                                                              \
                                                                                                    \
 	static struct adc_siwx91x_chan_data adc_chan_data_##inst[DT_CHILD_NUM(DT_DRV_INST(inst))]; \
                                                                                                    \
@@ -414,6 +405,7 @@ static DEVICE_API(adc, adc_siwx91x_driver_api) = {
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, adc_siwx91x_init, NULL, &adc_data_##inst, &adc_cfg_##inst,     \
-			      PRE_KERNEL_1, CONFIG_ADC_INIT_PRIORITY, &adc_siwx91x_driver_api);
+			      PRE_KERNEL_1, CONFIG_ADC_INIT_PRIORITY,                              \
+			      &adc_siwx91x_driver_api_##inst);
 
 DT_INST_FOREACH_STATUS_OKAY(SIWX91X_ADC_INIT)

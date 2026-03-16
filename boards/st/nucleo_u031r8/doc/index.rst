@@ -22,9 +22,9 @@ board:
 
   - USB VBUS or external source(3.3V, 5V, 7 - 12V)
 
-- User LED shared with ARDUINO |reg| Uno V3
+- User LED shared with ARDUINO® Uno V3
 - Two push-buttons: USER and RESET
-- USB Type-C |reg| connector for the ST-LINK
+- USB Type-C® connector for the ST-LINK
 
 More information about the board can be found at the `NUCLEO_U031R8 website`_.
 
@@ -32,7 +32,7 @@ Hardware
 ********
 
 The STM32U031x4/6/8 devices are an ultra-low-power microcontrollers family (STM32U0
-Series) based on the high-performance Arm |reg| Cortex |reg|-M0+ 32-bit RISC core.
+Series) based on the high-performance Arm® Cortex®-M0+ 32-bit RISC core.
 They operate at a frequency of up to 56 MHz.
 
 - Includes ST state-of-the-art patented technology
@@ -52,7 +52,7 @@ They operate at a frequency of up to 56 MHz.
 
 - Core:
 
-  - 32-bit Arm |reg| Cortex |reg|-M0+ CPU, frequency up to 56 MHz
+  - 32-bit Arm® Cortex®-M0+ CPU, frequency up to 56 MHz
 
 - ART Accelerator:
 
@@ -61,7 +61,7 @@ They operate at a frequency of up to 56 MHz.
 - Benchmarks:
 
   - 1.13 DMIPS/MHz (Drystone 2.1)
-  - 134 CoreMark |reg| (2.4 CoreMark/MHz at 56 MHz)
+  - 134 CoreMark® (2.4 CoreMark/MHz at 56 MHz)
   - 430 ULPMark™-CP
   - 167 ULPMark™-PP
   - 20.3 ULPMark™-CM
@@ -93,7 +93,7 @@ They operate at a frequency of up to 56 MHz.
   - Hardware protection feature (HDP)
   - Secure boot
   - True random number generation, candidate for NIST SP 800-90B certification
-  - Candidate for Arm |reg| PSA level 1 and SESIP level 3 certifications
+  - Candidate for Arm® PSA level 1 and SESIP level 3 certifications
   - 5 passive anti-tamper pins
   - 96-bit unique ID
 
@@ -171,6 +171,15 @@ Programming and Debugging
 Nucleo U031R8 board includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash the board using various tools.
 
+.. warning::
+   The onboard ST-LINK/V3 debug probe cannot be `converted into a JLink probe`_;
+   as such, usage of the JLink runner requires an external JLink debug probe.
+
+.. warning::
+   There are known issues about the usage of the pyOCD runner with this board.
+   If issues are encountered (e.g., debugging does not work), use the
+   :ref:`ST-Link GDB Server <runner_stlink_gdbserver>` runner instead.
+
 Flashing
 ========
 
@@ -223,17 +232,12 @@ You should see the following message on the console:
 Debugging
 =========
 
-Default flasher for this board is openocd. It could be used in the usual way.
 Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
    :board: nucleo_u031r8
    :goals: debug
-
-Note: Check the ``build/tfm`` directory to ensure that the commands required by these scripts
-(``readlink``, etc.) are available on your system. Please also check ``STM32_Programmer_CLI``
-(which is used for initialization) is available in the PATH.
 
 .. _NUCLEO_U031R8 website:
   https://www.st.com/en/evaluation-tools/nucleo-u031r8.html
@@ -249,3 +253,6 @@ Note: Check the ``build/tfm`` directory to ensure that the commands required by 
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _converted into a JLink probe:
+   https://www.segger.com/products/debug-probes/j-link/models/other-j-links/st-link-on-board/

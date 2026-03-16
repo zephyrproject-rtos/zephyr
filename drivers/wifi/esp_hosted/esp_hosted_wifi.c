@@ -24,7 +24,7 @@ static esp_hosted_config_t esp_hosted_config = {
 	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 	.dataready_gpio = GPIO_DT_SPEC_INST_GET(0, dataready_gpios),
 	.handshake_gpio = GPIO_DT_SPEC_INST_GET(0, handshake_gpios),
-	.spi_bus = SPI_DT_SPEC_INST_GET(0, ESP_HOSTED_SPI_CONFIG, 10U)};
+	.spi_bus = SPI_DT_SPEC_INST_GET(0, ESP_HOSTED_SPI_CONFIG)};
 
 static esp_hosted_data_t esp_hosted_data = {0};
 
@@ -430,7 +430,7 @@ static int esp_hosted_recv(struct net_if *iface, void *buf, size_t len)
 		return 0;
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(iface, len, AF_UNSPEC, 0, K_MSEC(1000));
+	pkt = net_pkt_rx_alloc_with_buffer(iface, len, NET_AF_UNSPEC, 0, K_MSEC(1000));
 	if (pkt == NULL) {
 		LOG_ERR("Failed to allocate net buffer");
 		return -ENOMEM;

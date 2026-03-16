@@ -1,4 +1,5 @@
 # Copyright (c) 2023, TOKITA Hiroshi
+# Copyright (c) 2025 The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -46,6 +47,7 @@ child-binding:
   description: |
     Worldsemi WS2812 or compatible LED strip driver based on Raspberry Pi Pico's PIO
     The LED strip node can put up to 4 instances under a single PIO node.
+    DMA will be enabled if `CONFIG_DMA` is set and a DMA channel is defined in the node.
 
   include: ws2812-gpio.yaml
 
@@ -64,3 +66,13 @@ child-binding:
         Specify the number of times a waveform representing 1 bit is
         transmitted per second. It is same meaning as bit-per-seconds.
         WS2812 works with 800000. Set the value 400000 if use with WS2811.
+
+    dmas:
+      type: phandle-array
+      description: |
+        A DMA channel specifier for the tx channel of this LED strip.
+
+    dma-names:
+      type: string-array
+      description: |
+        The name given to the DMA channel specifier, must be `tx` for this LED strip.

@@ -4,15 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&spi1 {
-	dmas = <&dmamux1 0 12 STM32_DMA_PERIPH_TX
-		&dmamux1 7 11 STM32_DMA_PERIPH_RX>;
+/* SPI bus pins are exposed in the Arduino Uno header.
+ * SPI3 MISO  Arduino D12
+ * SPI3 MOSI  Arduino D11
+ * Short Pin PB4(D12) to PB5(D11) for the test to pass.
+ */
+
+&spi3 {
+	dmas = <&dmamux1 0 16 STM32_DMA_PERIPH_TX>,
+	       <&dmamux1 7 15 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
+
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
 		spi-max-frequency = <500000>;
 	};
+
 	fast@0 {
 		compatible = "test-spi-loopback-fast";
 		reg = <0>;

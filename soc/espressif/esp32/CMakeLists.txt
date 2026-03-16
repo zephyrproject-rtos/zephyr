@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if (CONFIG_SOC_ESP32_APPCPU)
+if(CONFIG_SOC_ESP32_APPCPU)
   zephyr_sources(
     soc_appcpu.c
     )
@@ -20,5 +20,5 @@ zephyr_library_sources_ifdef(CONFIG_NEWLIB_LIBC newlib_fix.c)
 
 zephyr_library_sources_ifdef(CONFIG_GDBSTUB gdbstub.c)
 
-zephyr_library_sources_ifdef(CONFIG_PM power.c)
-zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
+zephyr_library_sources_ifdef(CONFIG_PM ../common/power.c)
+zephyr_library_sources_ifdef(CONFIG_POWEROFF ../common/poweroff.c)

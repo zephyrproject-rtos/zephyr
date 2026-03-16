@@ -17,8 +17,8 @@ struct lpcmp_attr {
 };
 
 static const struct lpcmp_attr attrs[] = {
-	{.attr = SENSOR_ATTR_MCUX_LPCMP_POSITIVE_MUX_INPUT, .val = 0},
-	{.attr = SENSOR_ATTR_MCUX_LPCMP_NEGATIVE_MUX_INPUT, .val = 7},
+	{.attr = SENSOR_ATTR_MCUX_LPCMP_POSITIVE_MUX_INPUT, .val = CONFIG_LPCMP_POSITIVE_PORT},
+	{.attr = SENSOR_ATTR_MCUX_LPCMP_NEGATIVE_MUX_INPUT, .val = CONFIG_LPCMP_NEGATIVE_PORT},
 
 	{.attr = SENSOR_ATTR_MCUX_LPCMP_DAC_ENABLE, .val = 1},
 	{.attr = SENSOR_ATTR_MCUX_LPCMP_DAC_HIGH_POWER_MODE_ENABLE, .val = 0},

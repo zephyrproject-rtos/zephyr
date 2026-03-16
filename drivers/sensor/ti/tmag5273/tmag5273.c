@@ -18,6 +18,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/crc.h>
@@ -58,6 +59,7 @@ struct tmag5273_config {
 	uint8_t temperature_coefficient;
 	uint8_t angle_magnitude_axis;
 	uint8_t ch_mag_gain_correction;
+	uint8_t mag_gain_correction;
 
 	uint8_t operation_mode;
 	uint8_t averaging;
@@ -100,6 +102,26 @@ static int tmag5273_reset_device_status(const struct device *dev)
 
 	return i2c_reg_write_byte_dt(&drv_cfg->i2c, TMAG5273_REG_DEVICE_STATUS,
 				     TMAG5273_RESET_DEVICE_STATUS);
+}
+
+/**
+ * @brief wakes up the device from SLEEP mode
+ *
+ * @param dev driver handle
+ */
+static void tmag5273_wake_up(const struct device *dev)
+{
+	const struct tmag5273_config *drv_cfg = dev->config;
+	struct i2c_msg msg = {
+		.buf = NULL,
+		.len = 0,
+		.flags = I2C_MSG_WRITE | I2C_MSG_STOP,
+	};
+
+	/* Any I2C transaction would wake the device, empty write is enough.
+	 * Error isn't handled, the operation is known to fail.
+	 */
+	i2c_transfer_dt(&drv_cfg->i2c, &msg, 1);
 }
 
 /**
@@ -531,7 +553,7 @@ static int tmag5273_attr_get(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int tmag5273_sample_fetch(const struct device *dev, enum sensor_channel chan)
+static int tmag5273_sample_fetch_inner(const struct device *dev, enum sensor_channel chan)
 {
 	const struct tmag5273_config *drv_cfg = dev->config;
 	struct tmag5273_data *drv_data = dev->data;
@@ -589,7 +611,7 @@ static int tmag5273_sample_fetch(const struct device *dev, enum sensor_channel c
 		break;
 	case SENSOR_CHAN_MAGN_Z:
 		if (!(drv_cfg->axis & TMAG5273_MAG_CH_EN_Z)) {
-			LOG_ERR("x-axis measurement deactivated");
+			LOG_ERR("z-axis measurement deactivated");
 			return -ENOTSUP;
 		}
 		start_address = TMAG5273_REG_Z_MSB_RESULT;
@@ -747,6 +769,16 @@ static int tmag5273_sample_fetch(const struct device *dev, enum sensor_channel c
 	}
 
 	return 0;
+}
+
+static int tmag5273_sample_fetch(const struct device *dev, enum sensor_channel chan)
+{
+	int ret;
+
+	pm_device_busy_set(dev);
+	ret = tmag5273_sample_fetch_inner(dev, chan);
+	pm_device_busy_clear(dev);
+	return ret;
 }
 
 /**
@@ -983,9 +1015,13 @@ static inline int tmag5273_init_device_config(const struct device *dev)
 		regdata |= TMAG5273_TRIGGER_MODE_INT;
 	}
 
+#if defined(CONFIG_PM_DEVICE)
+	regdata |= TMAG5273_OPERATING_MODE_SLEEP;
+#else
 	if (drv_cfg->operation_mode == TMAG5273_DT_OPER_MODE_CONTINUOUS) {
 		regdata |= TMAG5273_OPERATING_MODE_CONTINUOUS;
 	}
+#endif
 
 	/* Note: I2C glitch filter enabled by default */
 
@@ -1075,8 +1111,53 @@ static inline int tmag5273_init_sensor_settings(const struct tmag5273_config *dr
 		return -EIO;
 	}
 
+	retval = i2c_reg_write_byte_dt(&drv_cfg->i2c, TMAG5273_REG_MAG_GAIN_CONFIG,
+				       drv_cfg->mag_gain_correction);
+	if (retval < 0) {
+		LOG_ERR("error setting MAG_GAIN_CONFIG %d", retval);
+		return -EIO;
+	}
+
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int tmag5273_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct tmag5273_config *drv_cfg = dev->config;
+	uint8_t value;
+	int retval;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		tmag5273_wake_up(dev);
+
+		value = drv_cfg->operation_mode == TMAG5273_DT_OPER_MODE_CONTINUOUS
+				? TMAG5273_OPERATING_MODE_CONTINUOUS
+				: TMAG5273_OPERATING_MODE_STANDBY;
+		retval = i2c_reg_update_byte_dt(&drv_cfg->i2c, TMAG5273_REG_DEVICE_CONFIG_2,
+						TMAG5273_OPERATING_MODE_MSK, value);
+		if (retval < 0) {
+			LOG_ERR("error updating DEVICE_CONFIG_2 %d", retval);
+			return -EIO;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		retval = i2c_reg_update_byte_dt(&drv_cfg->i2c, TMAG5273_REG_DEVICE_CONFIG_2,
+						TMAG5273_OPERATING_MODE_MSK,
+						TMAG5273_OPERATING_MODE_SLEEP);
+		if (retval < 0) {
+			LOG_ERR("error updating DEVICE_CONFIG_2 %d", retval);
+			return -EIO;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
 
 /**
  * @brief initialize a TMAG5273 sensor
@@ -1111,6 +1192,8 @@ static int tmag5273_init(const struct device *dev)
 			return -EINVAL;
 		}
 	}
+
+	tmag5273_wake_up(dev);
 
 	retval = i2c_reg_read_byte_dt(&drv_cfg->i2c, TMAG5273_REG_DEVICE_CONFIG_2, &regdata);
 	if (retval < 0) {
@@ -1208,7 +1291,11 @@ static int tmag5273_init(const struct device *dev)
 		return retval;
 	}
 
+#ifdef CONFIG_PM_DEVICE
+	return pm_device_driver_init(dev, tmag5273_pm_action);
+#else
 	return 0;
+#endif
 }
 
 static DEVICE_API(sensor, tmag5273_driver_api) = {
@@ -1258,6 +1345,7 @@ static DEVICE_API(sensor, tmag5273_driver_api) = {
 			DT_PROP(DT_INST(inst, compat), temperature_coefficient),                   \
 		.angle_magnitude_axis = DT_PROP(DT_INST(inst, compat), angle_magnitude_axis),      \
 		.ch_mag_gain_correction = DT_PROP(DT_INST(inst, compat), ch_mag_gain_correction),  \
+		.mag_gain_correction = DT_PROP(DT_INST(inst, compat), mag_gain_correction),        \
 		.operation_mode = DT_PROP(DT_INST(inst, compat), operation_mode),                  \
 		.averaging = DT_PROP(DT_INST(inst, compat), average_mode),                         \
 		.trigger_conv_via_int =                                                            \
@@ -1268,7 +1356,9 @@ static DEVICE_API(sensor, tmag5273_driver_api) = {
 		IF_ENABLED(CONFIG_CRC,                                                             \
 			(.crc_enabled = DT_PROP(DT_INST(inst, compat), crc_enabled),))}; \
 	static struct tmag5273_data compat##_driver_data##inst;                                    \
-	SENSOR_DEVICE_DT_DEFINE(DT_INST(inst, compat), tmag5273_init, NULL,                        \
+	PM_DEVICE_DT_DEFINE(DT_INST(inst, compat), tmag5273_pm_action);                            \
+	SENSOR_DEVICE_DT_DEFINE(DT_INST(inst, compat), tmag5273_init,                              \
+				PM_DEVICE_DT_GET(DT_INST(inst, compat)),                           \
 				&compat##_driver_data##inst, &compat##_driver_cfg##inst,           \
 				POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &tmag5273_driver_api);
 

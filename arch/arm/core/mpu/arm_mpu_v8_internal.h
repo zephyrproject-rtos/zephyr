@@ -32,7 +32,8 @@ struct dynamic_region_info {
  */
 static struct dynamic_region_info dyn_reg_info[MPU_DYNAMIC_REGION_AREAS_NUM];
 #if defined(CONFIG_CPU_CORTEX_M23) || defined(CONFIG_CPU_CORTEX_M33) || \
-	defined(CONFIG_CPU_CORTEX_M55) || defined(CONFIG_CPU_CORTEX_M85)
+	defined(CONFIG_CPU_CORTEX_M52) || defined(CONFIG_CPU_CORTEX_M55) || \
+	defined(CONFIG_CPU_CORTEX_M85)
 static inline void mpu_set_mair0(uint32_t mair0)
 {
 	MPU->MAIR0 = mair0;
@@ -183,9 +184,9 @@ static void region_init(const uint32_t index,
 			region_conf->attr.mair_idx, region_conf->attr.r_limit);
 }
 
-/* @brief Partition sanity check
+/* @brief Partition coherence check
  *
- * This internal function performs run-time sanity check for
+ * This internal function performs run-time coherence check for
  * MPU region start address and size.
  *
  * @param part Pointer to the data structure holding the partition
@@ -518,19 +519,19 @@ static int mpu_configure_region(const uint8_t index,
 #if !defined(CONFIG_MPU_GAP_FILLING)
 static int mpu_configure_regions(const struct z_arm_mpu_partition
 	regions[], uint8_t regions_num, uint8_t start_reg_index,
-	bool do_sanity_check);
+	bool do_coherence_check);
 #endif
 
 /* This internal function programs a set of given MPU regions
  * over a background memory area, optionally performing a
- * sanity check of the memory regions to be programmed.
+ * coherence check of the memory regions to be programmed.
  *
  * The function performs a full partition of the background memory
  * area, effectively, leaving no space in this area uncovered by MPU.
  */
 static int mpu_configure_regions_and_partition(const struct z_arm_mpu_partition
 	regions[], uint8_t regions_num, uint8_t start_reg_index,
-	bool do_sanity_check)
+	bool do_coherence_check)
 {
 	int i;
 	int reg_index = start_reg_index;
@@ -541,9 +542,9 @@ static int mpu_configure_regions_and_partition(const struct z_arm_mpu_partition
 		}
 		/* Non-empty region. */
 
-		if (do_sanity_check &&
+		if (do_coherence_check &&
 			(!mpu_partition_is_valid(&regions[i]))) {
-			LOG_ERR("Partition %u: sanity check failed.", i);
+			LOG_ERR("Partition %u: coherence check failed.", i);
 			return -EINVAL;
 		}
 

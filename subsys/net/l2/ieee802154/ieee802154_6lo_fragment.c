@@ -238,17 +238,17 @@ static void update_protocol_header_lengths(struct net_pkt *pkt, uint16_t size)
 	}
 
 	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
-	ipv6->len = htons(size - NET_IPV6H_LEN);
+	ipv6->len = net_htons(size - NET_IPV6H_LEN);
 
 	net_pkt_set_data(pkt, &ipv6_access);
 
-	if (ipv6->nexthdr == IPPROTO_UDP) {
+	if (ipv6->nexthdr == NET_IPPROTO_UDP) {
 		NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
 		struct net_udp_hdr *udp;
 
 		udp = (struct net_udp_hdr *)net_pkt_get_data(pkt, &udp_access);
 		if (udp) {
-			udp->len = htons(size - NET_IPV6H_LEN);
+			udp->len = net_htons(size - NET_IPV6H_LEN);
 			net_pkt_set_data(pkt, &udp_access);
 		} else {
 			NET_ERR("Could not get UDP header");

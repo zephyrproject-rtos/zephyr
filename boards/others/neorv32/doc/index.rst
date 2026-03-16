@@ -53,8 +53,8 @@ enabled:
 - Zicsr (Control and Status Register (CSR) Instructions, always enabled)
 - Zifencei (Instruction-fetch fence, always enabled)
 
-Other supported RISC-V ISA extensions must be enabled via Kconfig on the board level, and the
-``riscv,isa`` devicetree property of the ``cpu0`` node must be set accordingly.
+Other supported RISC-V ISA extensions can be enabled by changing the ``riscv,isa-extensions``
+devicetree property of the ``cpu0`` node accordingly.
 
 Core Local Interruptor
 ======================

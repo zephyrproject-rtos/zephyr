@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <silabs/efr32mg12p432f1024gl125.dtsi>
+#include <silabs/xg12/efr32mg12p432f1024gl125.dtsi>
 #include "../common/efr32-series1-common.dtsi"
 
 / {
@@ -53,7 +53,6 @@
 			reg = <0x0007e000 0x00002000>;
 			label = "storage";
 		};
-
 	};
 };
 

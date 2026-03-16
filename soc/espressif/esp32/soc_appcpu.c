@@ -7,6 +7,7 @@
 /* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <soc.h>
 #include <soc/rtc_cntl_reg.h>
+#include <soc/interrupts.h>
 #include <soc/timer_group_reg.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <xtensa/config/core-isa.h>
@@ -17,11 +18,12 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/linker/linker-defs.h>
-#include <kernel_internal.h>
+#include <zephyr/arch/common/init.h>
+#include <zephyr/zsr.h>
 
+#include <esp32/rom/cache.h>
 #include <esp_private/system_internal.h>
-#include <esp32s3/rom/cache.h>
-#include <esp32s3/rom/rtc.h>
+#include <esp32/rom/rtc.h>
 #include <soc/syscon_reg.h>
 #include <hal/soc_hal.h>
 #include <hal/wdt_hal.h>
@@ -38,7 +40,7 @@
 void __appcpu_start(void);
 static HDR_ATTR void (*_entry_point)(void) = &__appcpu_start;
 
-extern void z_prep_c(void);
+extern FUNC_NORETURN void z_prep_c(void);
 
 static void core_intr_matrix_clear(void)
 {
@@ -65,7 +67,7 @@ void IRAM_ATTR __appcpu_start(void)
 		: "r"(&_init_start));
 
 	/* Zero out BSS.  Clobber _bss_start to avoid memset() elision. */
-	z_bss_zero();
+	arch_bss_zero();
 
 	__asm__ __volatile__ (
 		""
@@ -83,7 +85,7 @@ void IRAM_ATTR __appcpu_start(void)
 	 * initialization code wants a valid _current before
 	 * z_prep_c() is invoked.
 	 */
-	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[1]));
+	__asm__ __volatile__("wsr %0, " ZSR_CPU_STR "; rsync" : : "r"(&_kernel.cpus[1]));
 
 	core_intr_matrix_clear();
 

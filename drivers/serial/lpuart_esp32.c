@@ -15,8 +15,9 @@
 #include <hal/clk_tree_ll.h>
 #include <hal/clk_tree_hal.h>
 #include <hal/rtc_io_hal.h>
+#include <hal/rtc_io_ll.h>
+#include <hal/rtc_io_periph.h>
 #include <soc/uart_pins.h>
-#include <soc/rtc_io_periph.h>
 #include <esp_private/esp_clk_tree_common.h>
 #include <ulp_lp_core_uart.h>
 #endif
@@ -84,7 +85,7 @@ static int lp_uart_esp32_param_config(const struct device *dev)
 
 	/* Get LP UART source clock frequency */
 	switch (clk_ll_rtc_fast_get_src()) {
-	case SOC_RTC_FAST_CLK_SRC_XTAL_DIV:
+	case SOC_RTC_FAST_CLK_SRC_XTAL_D2:
 #if CONFIG_SOC_SERIES_ESP32 || CONFIG_SOC_SERIES_ESP32S2 /* SOC_RTC_FAST_CLK_SRC_XTAL_D4 */
 		sclk_freq = clk_hal_xtal_get_freq_mhz() * MHZ(1) >> 2;
 #else /* SOC_RTC_FAST_CLK_SRC_XTAL_D2 */
@@ -109,9 +110,6 @@ static int lp_uart_esp32_param_config(const struct device *dev)
 	lp_uart_ll_set_source_clk(data->hal.dev, cfg->lp_uart_source_clk);
 	lp_uart_ll_sclk_enable(0);
 
-	/* Initialize LP UART HAL with default parameters */
-	uart_hal_init(&data->hal, LP_UART_NUM_0);
-
 	/* Set protocol parameters from the configuration */
 	lp_uart_ll_set_baudrate(data->hal.dev, cfg->baud_rate, sclk_freq);
 	uart_hal_set_parity(&data->hal, cfg->parity);
@@ -131,7 +129,10 @@ static void lp_uart_esp32_config_io(int pin, int direction, int func)
 {
 	int rtc_io_num = rtc_io_num_map[pin];
 
-	rtcio_hal_function_select(rtc_io_num, RTCIO_FUNC_RTC);
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+	rtcio_ll_enable_io_clock(true);
+#endif
+	rtcio_hal_function_select(rtc_io_num, RTCIO_LL_FUNC_RTC);
 	rtcio_hal_set_direction(rtc_io_num, direction);
 	rtcio_hal_iomux_func_sel(rtc_io_num, func);
 }

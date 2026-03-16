@@ -34,7 +34,7 @@
 #define GPIO_OFFSET_MODE 0x00U
 
 #define TIMER_PRESCALER_MS 16U
-#define TIMER_MAX          0xFFFFFFU
+#define NPM13XX_TIMER_MAX  0xFFFFFFU
 
 #define MAIN_SIZE 0x26U
 
@@ -206,13 +206,16 @@ int mfd_npm13xx_reg_write(const struct device *dev, uint8_t base, uint8_t offset
 	return i2c_write_dt(&config->i2c, buff, sizeof(buff));
 }
 
-int mfd_npm13xx_reg_write2(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data1,
-			   uint8_t data2)
+int mfd_npm13xx_reg_write_burst(const struct device *dev, uint8_t base, uint8_t offset, void *data,
+				size_t len)
 {
 	const struct mfd_npm13xx_config *config = dev->config;
-	uint8_t buff[] = {base, offset, data1, data2};
+	struct i2c_msg msg[2] = {
+		{.buf = (uint8_t []){base, offset}, .len = 2, .flags = I2C_MSG_WRITE},
+		{.buf = data, .len = len, .flags = I2C_MSG_WRITE | I2C_MSG_STOP},
+	};
 
-	return i2c_write_dt(&config->i2c, buff, sizeof(buff));
+	return i2c_transfer_dt(&config->i2c, msg, 2);
 }
 
 int mfd_npm13xx_reg_update(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data,
@@ -242,7 +245,7 @@ int mfd_npm13xx_set_timer(const struct device *dev, uint32_t time_ms)
 	uint8_t buff[5] = {NPM13XX_TIME_BASE, TIME_OFFSET_TIMER};
 	uint32_t ticks = time_ms / TIMER_PRESCALER_MS;
 
-	if (ticks > TIMER_MAX) {
+	if (ticks > NPM13XX_TIMER_MAX) {
 		return -EINVAL;
 	}
 
@@ -269,6 +272,9 @@ int mfd_npm13xx_hibernate(const struct device *dev, uint32_t time_ms)
 	if (ret != 0) {
 		return ret;
 	}
+
+	/* give nPM13xx time to load the timer value */
+	k_msleep(1);
 
 	return mfd_npm13xx_reg_write(dev, NPM13XX_SHIP_BASE, SHIP_OFFSET_HIBERNATE, 1U);
 }

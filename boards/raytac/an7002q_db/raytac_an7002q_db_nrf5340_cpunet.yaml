@@ -1,0 +1,13 @@
+identifier: raytac_an7002q_db/nrf5340/cpunet
+name: Raytac AN7002Q-DB-NRF5340-network-MCU
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+ram: 64
+flash: 256
+supported:
+  - gpio
+  - watchdog
+vendor: raytac

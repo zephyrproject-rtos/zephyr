@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 40000000 if SOC_V2M_MUSCA_B1
-	default 50000000 if SOC_V2M_MUSCA_S1
+	default 40000000 if SOC_MUSCA_B1
+	default 50000000 if SOC_MUSCA_S1
 
 config NUM_IRQS
 	default 96 if SOC_SERIES_MUSCA

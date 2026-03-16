@@ -1,0 +1,115 @@
+/*
+ * Copyright (c) 2026 Muhammad Waleed Badar
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/bcm2711-pinctrl.h>
+
+&pinctrl {
+	uart0_gpio14: uart0-gpio14 {
+		group1 {
+			pinmux = <UART0_TX_GPIO14>,
+				 <UART0_RX_GPIO15>;
+		};
+	};
+
+	uart0_ctsrts_gpio14: uart0-ctsrts-gpio14 {
+		group1 {
+			pinmux = <UART0_TX_GPIO14>,
+				 <UART0_RX_GPIO15>,
+				 <UART0_CTS_GPIO16>,
+				 <UART0_RTS_GPIO17>;
+		};
+	};
+
+	uart0_gpio32: uart0-gpio32 {
+		group1 {
+			pinmux = <UART0_TX_GPIO32>;
+			bias-disable;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO33>;
+			bias-pull-up;
+		};
+	};
+
+	uart0_ctsrts_gpio32: uart0-ctsrts-gpio32 {
+		group1 {
+			pinmux = <UART0_TX_GPIO32>,
+				 <UART0_RTS_GPIO31>;
+			bias-disable;
+		};
+
+		group2 {
+			pinmux = <UART0_RTS_GPIO31>,
+				 <UART0_RX_GPIO33>;
+			bias-pull-up;
+		};
+	};
+
+	uart0_gpio36: uart0-gpio36 {
+		group1 {
+			pinmux = <UART0_TX_GPIO36>,
+				 <UART0_RX_GPIO37>;
+		};
+	};
+
+	uart0_ctsrts_gpio36: uart0-ctsrts-gpio36 {
+		group1 {
+			pinmux = <UART0_TX_GPIO36>,
+				 <UART0_RX_GPIO37>,
+				 <UART0_CTS_GPIO38>,
+				 <UART0_RTS_GPIO39>;
+		};
+	};
+
+	uart1_gpio14: uart1-gpio14 {
+		group1 {
+			pinmux = <UART1_TX_GPIO14>,
+				 <UART1_RX_GPIO15>;
+		};
+	};
+
+	uart1_ctsrts_gpio14: uart1-ctsrts-gpio14 {
+		group1 {
+			pinmux = <UART1_TX_GPIO14>,
+				 <UART1_RX_GPIO15>,
+				 <UART1_CTS_GPIO16>,
+				 <UART1_RTS_GPIO17>;
+		};
+	};
+
+	uart1_gpio32: uart1-gpio32 {
+		group1 {
+			pinmux = <UART1_TX_GPIO32>,
+				 <UART1_RX_GPIO33>;
+		};
+	};
+
+	uart1_ctsrts_gpio32: uart1-ctsrts-gpio32 {
+		group1 {
+			pinmux = <UART1_TX_GPIO32>,
+				 <UART1_RX_GPIO33>,
+				 <UART1_CTS_GPIO30>,
+				 <UART1_RTS_GPIO31>;
+		};
+	};
+
+	uart1_gpio40: uart1-gpio40 {
+		group1 {
+			pinmux = <UART1_TX_GPIO40>,
+				 <UART1_RX_GPIO41>;
+		};
+	};
+
+	uart1_ctsrts_gpio40: uart1-ctsrts-gpio40 {
+		group1 {
+			pinmux = <UART1_TX_GPIO40>,
+				 <UART1_RX_GPIO41>,
+				 <UART1_CTS_GPIO42>,
+				 <UART1_RTS_GPIO43>;
+		};
+	};
+};

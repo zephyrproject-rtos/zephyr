@@ -10,14 +10,16 @@ supported:
   - adc
   - counter
   - dma
+  - feather_i2c
   - flash
   - gpio
   - i2c
   - pwm
+  - rtc_counter
   - serial
   - spi
   - trng
   - w1
   - watchdog
-ram: 128
+ram: 48
 flash: 512

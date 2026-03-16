@@ -8,7 +8,7 @@
 
 / {
 	aliases {
-		pwm-0 = &emios0_pwm;
+		pwm-test = &emios0_pwm;
 	};
 };
 

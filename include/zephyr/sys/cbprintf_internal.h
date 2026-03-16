@@ -33,8 +33,10 @@
 #elif defined(CONFIG_ARC)
 #define VA_STACK_MIN_ALIGN	ARCH_STACK_PTR_ALIGN
 #elif defined(__riscv)
-#ifdef CONFIG_RISCV_ISA_RV32E
+#if defined(CONFIG_RISCV_ISA_RV32E)
+#if !defined(CONFIG_CBPRINTF_RV32E_USE_DEFAULT_ALIGNMENT)
 #define VA_STACK_ALIGN(type)	4
+#endif
 #else
 #define VA_STACK_MIN_ALIGN	(__riscv_xlen / 8)
 #endif /* CONFIG_RISCV_ISA_RV32E */
@@ -86,7 +88,7 @@ extern "C" {
  * opaque struct pointers. Alternative is to add + 0 but that requires suppressing
  * compiler warning about pointer arithmetic and does not cover opaque structs.
  */
-#define Z_ARGIFY(arg) ((0) ? (arg) : (arg))
+#define Z_ARGIFY(arg) ((0) ? 0 : (arg))
 
 /** @brief Return 1 if argument is a pointer to char or wchar_t
  *
@@ -560,7 +562,11 @@ extern "C" {
 #ifdef __cplusplus
 #define Z_CBPRINTF_ARG_SIZE(v) z_cbprintf_cxx_arg_size(v)
 #else
-#define Z_CONSTIFY(v) (_Generic((v), char * : (const char *)(uintptr_t)(v), default : (v)))
+#define Z_CONSTIFY(v) ({ \
+	__auto_type _uv = (v); \
+	__typeof__(_uv) const _cv = _uv; \
+	_cv; \
+})
 #define Z_CBPRINTF_ARG_SIZE(v) ({\
 	__auto_type __v = Z_ARGIFY(Z_CONSTIFY(v)); \
 	/* Static code analysis may complain about unused variable. */ \
@@ -568,7 +574,7 @@ extern "C" {
 	size_t __arg_size = _Generic((v), \
 		float : sizeof(double), \
 		default : \
-			sizeof((__v)) \
+			sizeof((__v)) /* NOLINT(bugprone-sizeof-expression) */ \
 		); \
 	__arg_size; \
 })

@@ -1,0 +1,25 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		test-comp = &cmp;
+	};
+
+	zephyr,user {
+		/* PTC4 output connect to PTC6. */
+		test-gpios = <&gpioc 4 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&cmp {
+	positive-mux-input = "IN0"; /* PTC6, FRDM-MCXC242 J2-8 */
+	negative-mux-input = "IN7"; /* DAC output => 1.65V */
+	dac-vref-source = "VIN2";
+	dac-value = <31>;
+};

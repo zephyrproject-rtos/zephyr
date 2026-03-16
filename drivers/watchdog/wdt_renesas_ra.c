@@ -323,7 +323,7 @@ static DEVICE_API(wdt, wdt_renesas_ra_api) = {
 		.wdt_cfg = {.stop_control = WDT_STOP_CONTROL_DISABLE,                              \
 			    .reset_control = WDT_RESET_CONTROL_RESET,                              \
 			    .p_callback = wdt_renesas_ra_callback_adapter,                         \
-			    .p_context = DEVICE_DT_GET(id)},                                       \
+			    .p_context = (void *)DEVICE_DT_GET(id)},                               \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_DEFINE(id, NULL, NULL, &wdt_renesas_ra_data##id, &wdt_renesas_ra_cfg##id,        \

@@ -17,8 +17,11 @@ The Zephyr SDK supports the following target architectures:
 
 * ARC (32-bit and 64-bit; ARCv1, ARCv2, ARCv3)
 * ARM (32-bit and 64-bit; ARMv6, ARMv7, ARMv8; A/R/M Profiles)
+* Microblaze (32-bit)
 * MIPS (32-bit and 64-bit)
 * RISC-V (32-bit and 64-bit; RV32I, RV32E, RV64I)
+* RX
+* SPARC (32-bit and 64-bit; SPARC V8, SPARC V9)
 * x86 (32-bit and 64-bit)
 * Xtensa
 
@@ -82,9 +85,9 @@ Zephyr SDK installation
 
 .. tabs::
 
-   .. group-tab:: Ubuntu
+   .. group-tab:: Linux
 
-      .. _ubuntu_zephyr_sdk:
+      .. _linux_zephyr_sdk:
 
       #. Download and verify the `Zephyr SDK bundle`_:
 
@@ -229,6 +232,6 @@ Zephyr SDK installation
             the initial setup.
 
 .. _Zephyr SDK Releases: https://github.com/zephyrproject-rtos/sdk-ng/tags
-.. _Zephyr SDK Version Compatibility Matrix: https://github.com/zephyrproject-rtos/sdk-ng/wiki/Zephyr-SDK-Version-Compatibility-Matrix
+.. _Zephyr SDK Version Compatibility Matrix: https://github.com/zephyrproject-rtos/sdk-ng/wiki/Zephyr-Version-Compatibility#zephyr-sdk-version-compatibility-matrix
 
 .. toolchain_zephyr_sdk_install_end

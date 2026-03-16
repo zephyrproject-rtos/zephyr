@@ -43,6 +43,9 @@ properties:
       - 1032000
       - 1075000
       - 1118000
+      - 1161000
+      - 1204000
     description: |
       Reset if the core voltage drops below this threshold for a particular time
       (determined by the 'brown-out detection assertion delay').
+      On RP2040, the threshold must be less than 1.161V.

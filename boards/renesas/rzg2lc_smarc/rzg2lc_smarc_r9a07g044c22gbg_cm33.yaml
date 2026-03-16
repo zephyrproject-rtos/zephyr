@@ -6,5 +6,8 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - counter
   - uart
   - gpio
+  - i2c
+  - pwm

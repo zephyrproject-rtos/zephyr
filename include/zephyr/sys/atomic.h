@@ -35,9 +35,11 @@ extern "C" {
 /* Other arch specific implementation */
 # include <zephyr/sys/atomic_arch.h>
 # endif /* CONFIG_XTENSA */
-#else
+#elif defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN)
 /* Default.  See this file for the Doxygen reference: */
 #include <zephyr/sys/atomic_builtin.h>
+#else
+#error "CONFIG_ATOMIC_OPERATIONS_* not defined"
 #endif
 
 /* Portable higher-level utilities: */

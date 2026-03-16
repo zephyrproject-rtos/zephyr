@@ -18,10 +18,10 @@ started quickly. Here are some highlights of the STM32F3DISCOVERY board:
 
 - Ten LEDs:
 
-       - 3.3 V power on (LD1)
-       - USB communication (LD2)
-       - Eight user LEDs: red (LD3/LD10), blue (LD4/LD9), orange (LD5/LD9)
-         and green (LD6/LD7)
+  - 3.3 V power on (LD1)
+  - USB communication (LD2)
+  - Eight user LEDs: red (LD3/LD10), blue (LD4/LD9), orange (LD5/LD9)
+    and green (LD6/LD7)
 
 - Two push-buttons: USER and RESET
 - USB USER with Mini-B connector
@@ -41,7 +41,7 @@ Hardware
 STM32F3DISCOVERY Discovery kit provides the following hardware components:
 
 - STM32F303VCT6 in LQFP100 package
-- ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
+- ARM® 32-bit Cortex®-M4 CPU with FPU
 - 72 MHz max CPU frequency
 - VDD from 2.0 V to 3.6 V
 - 256 KB Flash
@@ -61,8 +61,9 @@ STM32F3DISCOVERY Discovery kit provides the following hardware components:
 - DMA Controller
 
 More information about STM32F303VC can be found here:
-       - `STM32F303VC on www.st.com`_
-       - `STM32F303xC reference manual`_
+
+- `STM32F303VC on www.st.com`_
+- `STM32F303xC reference manual`_
 
 Supported Features
 ==================

@@ -55,7 +55,7 @@
 
 		uart1: serial@400c4000 {
 			compatible = "nuvoton,npcx-uart", "nuvoton,npcx-uart-npckn";
-			reg = <0x400C4000 0x2000>;
+			reg = <0x400c4000 0x2000>;
 			interrupts = <23 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL1 4>;
 			uart-rx = <&wui_cr_sin1>;
@@ -251,8 +251,12 @@
 		espi0: espi@4000a000 {
 			rx-plsize = <64>;
 			tx-plsize = <64>;
+
+			rst-gpios = <&gpio1 0 0>;
+
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			espi_taf: espitaf@4000a000 {
 				compatible = "nuvoton,npcx-espi-taf";
 				reg = <0x4000a000 0x2000>,
@@ -261,10 +265,20 @@
 				status = "disabled";
 			};
 		};
+
+		lct0: lct@400dd000 {
+			compatible = "nuvoton,npck-lct";
+			reg = <0x400dd000 0x10>;
+			interrupts = <17 4>;
+			/* The maximum counter value is (16 weeks - 1 second) */
+			maximum-cnt-in-sec = <9676799>;
+			pwr-by-vsby;
+			status = "disabled";
+		};
 	};
 
 	soc-id {
 		chip-id = <0x09>;
-		revision-reg = <0x0000FFFC 4>;
+		revision-reg = <0x0000fffc 4>;
 	};
 };

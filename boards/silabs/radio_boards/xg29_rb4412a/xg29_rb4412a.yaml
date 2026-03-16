@@ -11,6 +11,7 @@ supported:
   - adc
   - bluetooth
   - comparator
+  - counter
   - dma
   - entropy
   - gpio

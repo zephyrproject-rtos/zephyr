@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_FLASH_AT25XV021A
+	bool "Atmel AT25 SPI flash variant"
+	default y
+	depends on DT_HAS_ATMEL_AT25XV021A_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select SPI
+	help
+	  Enable support for AT25XV021A SPI flash variants.
+
+	  Vendors that have manufactured such variants include:
+	  - Renesas Electronics
+	  - Adesto Technologies

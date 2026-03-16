@@ -34,11 +34,25 @@
 #define STM32_SRC_PLL_P		(STM32_SRC_HSE + 1)
 #define STM32_SRC_PLL_Q		(STM32_SRC_PLL_P + 1)
 #define STM32_SRC_PLL_R		(STM32_SRC_PLL_Q + 1)
-/** I2S sources */
-#define STM32_SRC_PLLI2S_Q	(STM32_SRC_PLL_R + 1)
-#define STM32_SRC_PLLI2S_R	(STM32_SRC_PLLI2S_Q + 1)
+#define STM32_SRC_PLL_POST_R	(STM32_SRC_PLL_R + 1)
+/** PLLI2S clock outputs */
+#define STM32_SRC_PLLI2S_P	(STM32_SRC_PLL_POST_R + 1)
+#define STM32_SRC_PLLI2S_Q	(STM32_SRC_PLLI2S_P + 1)
+#define STM32_SRC_PLLI2S_POST_Q	(STM32_SRC_PLLI2S_Q + 1)
+#define STM32_SRC_PLLI2S_R	(STM32_SRC_PLLI2S_POST_Q + 1)
+#define STM32_SRC_PLLI2S_POST_R	(STM32_SRC_PLLI2S_R + 1)
+/* PLLSAI clock outputs */
+#define STM32_SRC_PLLSAI_P	(STM32_SRC_PLLI2S_POST_R + 1)
+#define STM32_SRC_PLLSAI_Q	(STM32_SRC_PLLSAI_P + 1)
+#define STM32_SRC_PLLSAI_POST_Q	(STM32_SRC_PLLSAI_Q + 1)
+#define STM32_SRC_PLLSAI_R	(STM32_SRC_PLLSAI_POST_Q + 1)
+#define STM32_SRC_PLLSAI_POST_R	(STM32_SRC_PLLSAI_R + 1)
 /* CLK48MHz sources */
-#define STM32_SRC_CK48		(STM32_SRC_PLLI2S_R + 1)
+#define STM32_SRC_CK48		(STM32_SRC_PLLSAI_POST_R + 1)
+/** Bus clock */
+#define STM32_SRC_TIMPCLK1	(STM32_SRC_CK48 + 1)
+#define STM32_SRC_TIMPCLK2	(STM32_SRC_TIMPCLK1 + 1)
+
 
 /* I2S_CKIN not supported yet */
 /* #define STM32_SRC_I2S_CKIN	TBD */
@@ -50,13 +64,13 @@
 
 /** @brief Device domain clocks selection helpers */
 /** CFGR devices */
-#define I2S_SEL(val)  STM32_DT_CLOCK_SELECT((val), 1, 23, CFGR_REG)
-#define MCO1_SEL(val) STM32_DT_CLOCK_SELECT((val), 0x3, 21, CFGR_REG)
-#define MCO1_PRE(val) STM32_DT_CLOCK_SELECT((val), 0x7, 24, CFGR_REG)
-#define MCO2_SEL(val) STM32_DT_CLOCK_SELECT((val), 0x3, 30, CFGR_REG)
-#define MCO2_PRE(val) STM32_DT_CLOCK_SELECT((val), 0x7, 27, CFGR_REG)
+#define MCO1_SEL(val) STM32_DT_CLOCK_SELECT((val), 22, 21, CFGR_REG)
+#define I2S_SEL(val)  STM32_DT_CLOCK_SELECT((val), 23, 23, CFGR_REG)
+#define MCO1_PRE(val) STM32_DT_CLOCK_SELECT((val), 26, 24, CFGR_REG)
+#define MCO2_PRE(val) STM32_DT_CLOCK_SELECT((val), 29, 27, CFGR_REG)
+#define MCO2_SEL(val) STM32_DT_CLOCK_SELECT((val), 31, 30, CFGR_REG)
 /** BDCR devices */
-#define RTC_SEL(val)  STM32_DT_CLOCK_SELECT((val), 3, 8, BDCR_REG)
+#define RTC_SEL(val)  STM32_DT_CLOCK_SELECT((val), 9, 8, BDCR_REG)
 
 /* MCO prescaler : division factor */
 #define MCO_PRE_DIV_1 0

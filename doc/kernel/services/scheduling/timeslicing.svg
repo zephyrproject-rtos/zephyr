@@ -1,2 +1,670 @@
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="750px" height="424px" viewBox="-0.5 -0.5 750 424" content="&lt;mxfile modified=&quot;2019-07-14T17:08:37.330Z&quot; host=&quot;www.draw.io&quot; agent=&quot;Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0) Gecko/20100101 Firefox/68.0&quot; etag=&quot;CP8ydc_c3E-a7DQv1k8V&quot; version=&quot;10.9.6&quot; type=&quot;google&quot;&gt;&lt;diagram id=&quot;p0G0V5xwCCMQDfea08E6&quot; name=&quot;Preemptive Time Slicing&quot;&gt;7Vpde6I4GP01XnYeQviQy1bHnWdmZ9cd+8x2LylEyQ4SNsaq/fWbSKKQOFqtgLXTm5IXeIFzTpLzxnRgb7r8jYZ58pXEKO3YVrzswH7HtoHj2PyfiKxkxHK9IjKhOJaxbWCEn5G6UEbnOEazyoWMkJThvBqMSJahiFViIaVkUb1sTNLqU/NwgozAKApTM/o3jllSRLuutY1/QniSqCcDS56ZhupiGZglYUwWpRD82IE9SggrjqbLHkoFegoX62Fg9T8Ht8tv9zEdf5u7yZfvN0WywTG3bD6BooydN7Vk9ylM5xIv+a1spQBEWXwreOCtx5REPzrwLmHTlDcBP+RnBzhVrRmj5McGZ8gjRToUGyQd+BawAZhLE5EpYnTF71tsKVQMJiX2VIyiNGT4qfrMUCppskm3ecKQYP42tiVl35VppOZdpQCVYUbmNELypjLk+/MAT8vDQjpBzMjDD0ofvQ2tCT2CXPiL3BrJ9b0DiWpm1zHYvU8oCmMeG1JMKGYrg26GlqxKMUUz/Bw+ri+weDsXr7v+APeu4/Z5JJwzMiuGdXFDmOJJxo9TNBapnhBlmI+2tzLMSC6kkocRzib3otHnb8qfQxgnjYhLbgLxoDHJ2Ei+meRQ5ELLs0hJcgKhX+QpSSvYIS2durKKKrwdS5JrkoSn6IJ4qZcGmQXqfc6BBi1Ok7R4Bi2/8zHwclipiwhb4wE47fLgGzx84k99f0QAhXpbRHR/PpkAgw5K5lmMYgn9IsEMjThy4uyCVxFVpsbcQPRISuj6XjgeIy+KNm6idCb2g0fLqhFzoIHuuCbo3R2gw7pAD34OuunU3ijotnVhoKu69IWuOCMZD97F4SxZgw+qQFc9ceGZ+Vs+CJo+WACqwD9FwPNVoL+UTBatVbk1RJSbBIaoDHZeY7N5ub32oYc6f1t2HKhblEAsjfkX+3FtbutqeWq24wA0pKsbISz7TQgraFNYxshzqrAA1BTq2c0q67hFmigNZzNcjPYhZWZ4r8xeJYn2xpAzUX1QM3VTbS7ZFPWiNUpxdEl1Y11+AdjdCgPQN0sUf4eSanPGYM86CzQIeasuTSvQ23dpOxZOrqYQgd5htGGjaJvrIdeDtvuCCqRZtPcU2861oA6DKuowMMdxABqF3Sy3DbCvyqC35cZgoPll5WqOdWO6hhzPrSaq2Y0pT/FLMTUrxhiireA0xThBoCkGNKsYcxFgSBGa5uufvq7fvduBXx31oflDzy4fWZt7Vz326Np5f8ddYlYs8TndrmyLXgs+WK5sbvusaKxKDb3HGnPzYOAC0NNHkld1bP696x50ULrtLdZUdOPpLuDkKaPhH+XtHQX81a3pu1ADue1q0X4PNboHLg11s0bvkWmeoncy2blaGd/+ZGeW8WeY7C5lfnLbnJ+g41W59pzTJijD6jY9QZlbLvZpZMemQHMboLJDyhoVBcx+J1TRTnWfoTg1DBl3SNk6IrYgNKAvp019+frgHlin6ct3tET11cx/wF7+1xf0sPz6Z36X3T7/95n+e/OCkvl186/468h9a3JqKM8NEVeDsNa7Bqf6V7l2zcnnWuXize1e84Ku7ZZ9+PF/&lt;/diagram&gt;&lt;/mxfile&gt;"><defs/><g><path d="M 60 380 L 60 32.35" fill="none" stroke="#000000" stroke-width="3" stroke-miterlimit="10" pointer-events="none"/><path d="M 60 23.35 L 64.5 32.35 L 55.5 32.35 Z" fill="#000000" stroke="#000000" stroke-width="3" stroke-miterlimit="10" pointer-events="none"/><path d="M 60 380 L 727.65 380" fill="none" stroke="#000000" stroke-width="3" stroke-miterlimit="10" pointer-events="none"/><path d="M 736.65 380 L 727.65 384.5 L 727.65 375.5 Z" fill="#000000" stroke="#000000" stroke-width="3" stroke-miterlimit="10" pointer-events="none"/><g transform="translate(17.5,249.5)rotate(-90,0,0)"><switch><foreignObject style="overflow:visible;" pointer-events="all" width="85" height="12" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; font-weight: bold; text-align: left;"><div xmlns="http://www.w3.org/1999/xhtml" style="display:inline-block;text-align:inherit;text-decoration:inherit;">Thread Priority</div></div></foreignObject><text x="43" y="12" fill="#000000" text-anchor="middle" font-size="12px" font-family="Helvetica" font-weight="bold">Thread Priority</text></switch></g><g transform="translate(361.5,405.5)"><switch><foreignObject style="overflow:visible;" pointer-events="all" width="28" height="12" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; font-weight: bold; text-align: left;"><div xmlns="http://www.w3.org/1999/xhtml" style="display:inline-block;text-align:inherit;text-decoration:inherit;">Time</div></div></foreignObject><text x="14" y="12" fill="#000000" text-anchor="middle" font-size="12px" font-family="Helvetica" font-weight="bold">Time</text></switch></g><g transform="translate(1.5,376.5)"><switch><foreignObject style="overflow:visible;" pointer-events="all" width="22" height="12" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: left;"><div xmlns="http://www.w3.org/1999/xhtml" style="display:inline-block;text-align:inherit;text-decoration:inherit;">Low</div></div></foreignObject><text x="11" y="12" fill="#000000" text-anchor="middle" font-size="12px" font-family="Helvetica">Low</text></switch></g><g transform="translate(1.5,2.5)"><switch><foreignObject style="overflow:visible;" pointer-events="all" width="25" height="12" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: left;"><div xmlns="http://www.w3.org/1999/xhtml" style="display:inline-block;text-align:inherit;text-decoration:inherit;">High</div></div></foreignObject><text x="13" y="12" fill="#000000" text-anchor="middle" font-size="12px" font-family="Helvetica">High</text></switch></g><rect x="100" y="310" width="80" height="30" fill="#ffe6cc" stroke="#d79b00" pointer-events="none"/><g transform="translate(115.5,318.5)"><switch><foreignObject style="overflow:visible;" pointer-events="all" width="48" height="12" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 49px; white-space: nowrap; overflow-wrap: normal; text-align: center;"><div xmlns="http://www.w3.org/1999/xhtml" style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 1</div></div></foreignObject><text x="24" y="12" fill="#000000" text-anchor="middle" font-size="12px" font-family="Helvetica">Thread 1</text></switch></g><rect x="180" y="310" width="80" height="30" fill="#ffe6cc" stroke="#d79b00" pointer-events="none"/><g transform="translate(195.5,318.5)"><switch><foreignObject style="overflow:visible;" pointer-events="all" width="48" height="12" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 49px; white-space: nowrap; overflow-wrap: normal; text-align: center;"><div xmlns="http://www.w3.org/1999/xhtml" style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 2</div></div></foreignObject><text x="24" y="12" fill="#000000" text-anchor="middle" font-size="12px" font-family="Helvetica">Thread 2</text></switch></g><path d="M 101 260 L 101 312" fill="none" stroke="#000000" stroke-miterlimit="10" stroke-dasharray="3 3" pointer-events="none"/><path d="M 180 260 L 179 312" fill="none" stroke="#000000" stroke-miterlimit="10" stroke-dasharray="3 3" pointer-events="none"/><path d="M 106.37 260 L 173.63 260" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/><path d="M 101.12 260 L 108.12 256.5 L 106.37 260 L 108.12 263.5 Z" fill="#000000" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/><path d="M 178.88 260 L 171.88 263.5 L 173.63 260 L 171.88 256.5 Z" fill="#000000" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/><g transform="translate(109.5,236.5)"><switch><foreignObject style="overflow:visible;" pointer-events="all" width="55" height="12" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: left;"><div xmlns="http://www.w3.org/1999/xhtml" style="display:inline-block;text-align:inherit;text-decoration:inherit;">Time Slice</div></div></foreignObject><text x="28" y="12" fill="#000000" text-anchor="middle" font-size="12px" font-family="Helvetica">Time Slice</text></switch></g><rect x="260" y="310" width="80" height="30" fill="#ffe6cc" stroke="#d79b00" pointer-events="none"/><g transform="translate(275.5,318.5)"><switch><foreignObject style="overflow:visible;" pointer-events="all" width="48" height="12" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 49px; white-space: nowrap; overflow-wrap: normal; text-align: center;"><div xmlns="http://www.w3.org/1999/xhtml" style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 3</div></div></foreignObject><text x="24" y="12" fill="#000000" text-anchor="middle" font-size="12px" font-family="Helvetica">Thread 3</text></switch></g><rect x="340" y="310" width="30" height="30" fill="#ffe6cc" stroke="#d79b00" pointer-events="none"/><g transform="translate(347.5,318.5)"><switch><foreignObject style="overflow:visible;" pointer-events="all" width="14" height="12" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 15px; white-space: nowrap; overflow-wrap: normal; text-align: center;"><div xmlns="http://www.w3.org/1999/xhtml" style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">T1</div></div></foreignObject><text x="7" y="12" fill="#000000" text-anchor="middle" font-size="12px" font-family="Helvetica">T1</text></switch></g><rect x="480" y="310" width="30" height="30" fill="#ffe6cc" stroke="#d79b00" pointer-events="none"/><g transform="translate(487.5,318.5)"><switch><foreignObject style="overflow:visible;" pointer-events="all" width="14" height="12" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 15px; white-space: nowrap; overflow-wrap: normal; text-align: center;"><div xmlns="http://www.w3.org/1999/xhtml" style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">T1</div></div></foreignObject><text x="7" y="12" fill="#000000" text-anchor="middle" font-size="12px" font-family="Helvetica">T1</text></switch></g><rect x="370" y="254" width="110" height="30" fill="#ffe6cc" stroke="#d79b00" pointer-events="none"/><g transform="translate(400.5,262.5)"><switch><foreignObject style="overflow:visible;" pointer-events="all" width="48" height="12" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 49px; white-space: nowrap; overflow-wrap: normal; text-align: center;"><div xmlns="http://www.w3.org/1999/xhtml" style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 4</div></div></foreignObject><text x="24" y="12" fill="#000000" text-anchor="middle" font-size="12px" font-family="Helvetica">Thread 4</text></switch></g><path d="M 371 273 L 370 325" fill="none" stroke="#000000" stroke-miterlimit="10" stroke-dasharray="3 3" pointer-events="none"/><path d="M 480 269 L 479 321" fill="none" stroke="#000000" stroke-miterlimit="10" stroke-dasharray="3 3" pointer-events="none"/><g transform="translate(278.5,195.5)"><switch><foreignObject style="overflow:visible;" pointer-events="all" width="61" height="12" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: left;"><div xmlns="http://www.w3.org/1999/xhtml" style="display:inline-block;text-align:inherit;text-decoration:inherit;">Preemption</div></div></foreignObject><text x="31" y="12" fill="#000000" text-anchor="middle" font-size="12px" font-family="Helvetica">Preemption</text></switch></g><path d="M 316 214 L 365.97 275.07" fill="none" stroke="#ff511c" stroke-miterlimit="10" stroke-dasharray="3 3" pointer-events="none"/><path d="M 369.29 279.13 L 362.15 275.93 L 365.97 275.07 L 367.57 271.5 Z" fill="#ff511c" stroke="#ff511c" stroke-miterlimit="10" pointer-events="none"/><rect x="510" y="310" width="80" height="30" fill="#ffe6cc" stroke="#d79b00" pointer-events="none"/><g transform="translate(525.5,318.5)"><switch><foreignObject style="overflow:visible;" pointer-events="all" width="48" height="12" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 49px; white-space: nowrap; overflow-wrap: normal; text-align: center;"><div xmlns="http://www.w3.org/1999/xhtml" style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 2</div></div></foreignObject><text x="24" y="12" fill="#000000" text-anchor="middle" font-size="12px" font-family="Helvetica">Thread 2</text></switch></g><rect x="590" y="310" width="80" height="30" fill="#ffe6cc" stroke="#d79b00" pointer-events="none"/><g transform="translate(605.5,318.5)"><switch><foreignObject style="overflow:visible;" pointer-events="all" width="48" height="12" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 49px; white-space: nowrap; overflow-wrap: normal; text-align: center;"><div xmlns="http://www.w3.org/1999/xhtml" style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 3</div></div></foreignObject><text x="24" y="12" fill="#000000" text-anchor="middle" font-size="12px" font-family="Helvetica">Thread 3</text></switch></g><g transform="translate(541.5,195.5)"><switch><foreignObject style="overflow:visible;" pointer-events="all" width="61" height="12" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: left;"><div xmlns="http://www.w3.org/1999/xhtml" style="display:inline-block;text-align:inherit;text-decoration:inherit;">Completion</div></div></foreignObject><text x="31" y="12" fill="#000000" text-anchor="middle" font-size="12px" font-family="Helvetica">Completion</text></switch></g><path d="M 567.01 213 L 485.05 276.11" fill="none" stroke="#ff511c" stroke-miterlimit="10" stroke-dasharray="3 3" pointer-events="none"/><path d="M 480.89 279.32 L 484.3 272.27 L 485.05 276.11 L 488.57 277.82 Z" fill="#ff511c" stroke="#ff511c" stroke-miterlimit="10" pointer-events="none"/><path d="M 670 325 L 707.65 325" fill="none" stroke="#000000" stroke-width="3" stroke-miterlimit="10" stroke-dasharray="3 3" pointer-events="none"/><path d="M 716.65 325 L 707.65 329.5 L 707.65 320.5 Z" fill="#000000" stroke="#000000" stroke-width="3" stroke-miterlimit="10" pointer-events="none"/><rect x="370" y="310" width="110" height="30" fill="#ffffff" stroke="#000000" stroke-dasharray="3 3" pointer-events="none"/></g></svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   version="1.1"
+   width="750px"
+   height="424px"
+   viewBox="-0.5 -0.5 750 424"
+   content="&lt;mxfile modified=&quot;2019-07-14T17:08:37.330Z&quot; host=&quot;www.draw.io&quot; agent=&quot;Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0) Gecko/20100101 Firefox/68.0&quot; etag=&quot;CP8ydc_c3E-a7DQv1k8V&quot; version=&quot;10.9.6&quot; type=&quot;google&quot;&gt;&lt;diagram id=&quot;p0G0V5xwCCMQDfea08E6&quot; name=&quot;Preemptive Time Slicing&quot;&gt;7Vpde6I4GP01XnYeQviQy1bHnWdmZ9cd+8x2LylEyQ4SNsaq/fWbSKKQOFqtgLXTm5IXeIFzTpLzxnRgb7r8jYZ58pXEKO3YVrzswH7HtoHj2PyfiKxkxHK9IjKhOJaxbWCEn5G6UEbnOEazyoWMkJThvBqMSJahiFViIaVkUb1sTNLqU/NwgozAKApTM/o3jllSRLuutY1/QniSqCcDS56ZhupiGZglYUwWpRD82IE9SggrjqbLHkoFegoX62Fg9T8Ht8tv9zEdf5u7yZfvN0WywTG3bD6BooydN7Vk9ylM5xIv+a1spQBEWXwreOCtx5REPzrwLmHTlDcBP+RnBzhVrRmj5McGZ8gjRToUGyQd+BawAZhLE5EpYnTF71tsKVQMJiX2VIyiNGT4qfrMUCppskm3ecKQYP42tiVl35VppOZdpQCVYUbmNELypjLk+/MAT8vDQjpBzMjDD0ofvQ2tCT2CXPiL3BrJ9b0DiWpm1zHYvU8oCmMeG1JMKGYrg26GlqxKMUUz/Bw+ri+weDsXr7v+APeu4/Z5JJwzMiuGdXFDmOJJxo9TNBapnhBlmI+2tzLMSC6kkocRzib3otHnb8qfQxgnjYhLbgLxoDHJ2Ei+meRQ5ELLs0hJcgKhX+QpSSvYIS2durKKKrwdS5JrkoSn6IJ4qZcGmQXqfc6BBi1Ok7R4Bi2/8zHwclipiwhb4wE47fLgGzx84k99f0QAhXpbRHR/PpkAgw5K5lmMYgn9IsEMjThy4uyCVxFVpsbcQPRISuj6XjgeIy+KNm6idCb2g0fLqhFzoIHuuCbo3R2gw7pAD34OuunU3ijotnVhoKu69IWuOCMZD97F4SxZgw+qQFc9ceGZ+Vs+CJo+WACqwD9FwPNVoL+UTBatVbk1RJSbBIaoDHZeY7N5ub32oYc6f1t2HKhblEAsjfkX+3FtbutqeWq24wA0pKsbISz7TQgraFNYxshzqrAA1BTq2c0q67hFmigNZzNcjPYhZWZ4r8xeJYn2xpAzUX1QM3VTbS7ZFPWiNUpxdEl1Y11+AdjdCgPQN0sUf4eSanPGYM86CzQIeasuTSvQ23dpOxZOrqYQgd5htGGjaJvrIdeDtvuCCqRZtPcU2861oA6DKuowMMdxABqF3Sy3DbCvyqC35cZgoPll5WqOdWO6hhzPrSaq2Y0pT/FLMTUrxhiireA0xThBoCkGNKsYcxFgSBGa5uufvq7fvduBXx31oflDzy4fWZt7Vz326Np5f8ddYlYs8TndrmyLXgs+WK5sbvusaKxKDb3HGnPzYOAC0NNHkld1bP696x50ULrtLdZUdOPpLuDkKaPhH+XtHQX81a3pu1ADue1q0X4PNboHLg11s0bvkWmeoncy2blaGd/+ZGeW8WeY7C5lfnLbnJ+g41W59pzTJijD6jY9QZlbLvZpZMemQHMboLJDyhoVBcx+J1TRTnWfoTg1DBl3SNk6IrYgNKAvp019+frgHlin6ct3tET11cx/wF7+1xf0sPz6Z36X3T7/95n+e/OCkvl186/468h9a3JqKM8NEVeDsNa7Bqf6V7l2zcnnWuXize1e84Ku7ZZ9+PF/&lt;/diagram&gt;&lt;/mxfile&gt;"
+   id="svg148"
+   sodipodi:docname="timeslicing.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <sodipodi:namedview
+     id="namedview150"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="1.7466667"
+     inkscape:cx="376.14503"
+     inkscape:cy="216.12595"
+     inkscape:window-width="2494"
+     inkscape:window-height="1371"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg148" />
+  <defs
+     id="defs2" />
+  <path
+     d="M 60,380 V 32.35"
+     fill="none"
+     stroke="#000000"
+     stroke-width="3"
+     stroke-miterlimit="10"
+     pointer-events="none"
+     id="path4" />
+  <path
+     d="m 60,23.35 4.5,9 h -9 z"
+     fill="#000000"
+     stroke="#000000"
+     stroke-width="3"
+     stroke-miterlimit="10"
+     pointer-events="none"
+     id="path6" />
+  <path
+     d="M 60,380 H 727.65"
+     fill="none"
+     stroke="#000000"
+     stroke-width="3"
+     stroke-miterlimit="10"
+     pointer-events="none"
+     id="path8" />
+  <path
+     d="m 736.65,380 -9,4.5 v -9 z"
+     fill="#000000"
+     stroke="#000000"
+     stroke-width="3"
+     stroke-miterlimit="10"
+     pointer-events="none"
+     id="path10" />
+  <g
+     transform="rotate(-90,133.5,116)"
+     id="g16">
+    <switch
+       id="switch14">
+      <foreignObject
+         style="overflow:visible;"
+         pointer-events="all"
+         width="85"
+         height="12"
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; font-weight: bold; text-align: left;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;">Thread Priority</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         x="43"
+         y="12"
+         fill="#000000"
+         text-anchor="middle"
+         font-size="12px"
+         font-family="Helvetica"
+         font-weight="bold"
+         id="text12">Thread Priority</text>
+    </switch>
+  </g>
+  <g
+     transform="translate(361.5,405.5)"
+     id="g22">
+    <switch
+       id="switch20">
+      <foreignObject
+         style="overflow:visible;"
+         pointer-events="all"
+         width="28"
+         height="12"
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; font-weight: bold; text-align: left;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;">Time</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         x="14"
+         y="12"
+         fill="#000000"
+         text-anchor="middle"
+         font-size="12px"
+         font-family="Helvetica"
+         font-weight="bold"
+         id="text18">Time</text>
+    </switch>
+  </g>
+  <g
+     transform="translate(1.5,376.5)"
+     id="g28">
+    <switch
+       id="switch26">
+      <foreignObject
+         style="overflow:visible;"
+         pointer-events="all"
+         width="22"
+         height="12"
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: left;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;">Low</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         x="11"
+         y="12"
+         fill="#000000"
+         text-anchor="middle"
+         font-size="12px"
+         font-family="Helvetica"
+         id="text24">Low</text>
+    </switch>
+  </g>
+  <g
+     transform="translate(1.5,2.5)"
+     id="g34">
+    <switch
+       id="switch32">
+      <foreignObject
+         style="overflow:visible;"
+         pointer-events="all"
+         width="25"
+         height="12"
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: left;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;">High</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         x="13"
+         y="12"
+         fill="#000000"
+         text-anchor="middle"
+         font-size="12px"
+         font-family="Helvetica"
+         id="text30">High</text>
+    </switch>
+  </g>
+  <rect
+     x="72"
+     y="310"
+     width="80"
+     height="30"
+     fill="#ffe6cc"
+     stroke="#d79b00"
+     pointer-events="none"
+     id="rect36" />
+  <g
+     transform="translate(87.5,318.5)"
+     id="g42">
+    <switch
+       id="switch40">
+      <foreignObject
+         style="overflow:visible;"
+         pointer-events="all"
+         width="48"
+         height="12"
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 49px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 1</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         x="24"
+         y="12"
+         fill="#000000"
+         text-anchor="middle"
+         font-size="12px"
+         font-family="Helvetica"
+         id="text38">Thread 1</text>
+    </switch>
+  </g>
+  <rect
+     x="152"
+     y="310"
+     width="80"
+     height="30"
+     fill="#ffe6cc"
+     stroke="#d79b00"
+     pointer-events="none"
+     id="rect44" />
+  <g
+     transform="translate(167.5,318.5)"
+     id="g50">
+    <switch
+       id="switch48">
+      <foreignObject
+         style="overflow:visible;"
+         pointer-events="all"
+         width="48"
+         height="12"
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 49px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 2</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         x="24"
+         y="12"
+         fill="#000000"
+         text-anchor="middle"
+         font-size="12px"
+         font-family="Helvetica"
+         id="text46">Thread 2</text>
+    </switch>
+  </g>
+  <path
+     d="m 73,260 v 52"
+     fill="none"
+     stroke="#000000"
+     stroke-miterlimit="10"
+     stroke-dasharray="3, 3"
+     pointer-events="none"
+     id="path52" />
+  <path
+     d="m 152,260 -1,52"
+     fill="none"
+     stroke="#000000"
+     stroke-miterlimit="10"
+     stroke-dasharray="3, 3"
+     pointer-events="none"
+     id="path54" />
+  <path
+     d="m 78.37,260 h 67.26"
+     fill="none"
+     stroke="#000000"
+     stroke-miterlimit="10"
+     pointer-events="none"
+     id="path56" />
+  <path
+     d="m 73.12,260 7,-3.5 -1.75,3.5 1.75,3.5 z"
+     fill="#000000"
+     stroke="#000000"
+     stroke-miterlimit="10"
+     pointer-events="none"
+     id="path58" />
+  <path
+     d="m 150.88,260 -7,3.5 1.75,-3.5 -1.75,-3.5 z"
+     fill="#000000"
+     stroke="#000000"
+     stroke-miterlimit="10"
+     pointer-events="none"
+     id="path60" />
+  <g
+     transform="translate(81.5,236.5)"
+     id="g66">
+    <switch
+       id="switch64">
+      <foreignObject
+         style="overflow:visible;"
+         pointer-events="all"
+         width="55"
+         height="12"
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: left;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;">Time Slice</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         x="28"
+         y="12"
+         fill="#000000"
+         text-anchor="middle"
+         font-size="12px"
+         font-family="Helvetica"
+         id="text62">Time Slice</text>
+    </switch>
+  </g>
+  <rect
+     x="232"
+     y="310"
+     width="80"
+     height="30"
+     fill="#ffe6cc"
+     stroke="#d79b00"
+     pointer-events="none"
+     id="rect68" />
+  <g
+     transform="translate(247.5,318.5)"
+     id="g74">
+    <switch
+       id="switch72">
+      <foreignObject
+         style="overflow:visible;"
+         pointer-events="all"
+         width="48"
+         height="12"
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 49px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 3</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         x="24"
+         y="12"
+         fill="#000000"
+         text-anchor="middle"
+         font-size="12px"
+         font-family="Helvetica"
+         id="text70">Thread 3</text>
+    </switch>
+  </g>
+  <rect
+     x="312"
+     y="310"
+     width="30"
+     height="30"
+     fill="#ffe6cc"
+     stroke="#d79b00"
+     pointer-events="none"
+     id="rect76" />
+  <g
+     transform="translate(319.5,318.5)"
+     id="g82">
+    <switch
+       id="switch80">
+      <foreignObject
+         style="overflow:visible;"
+         pointer-events="all"
+         width="14"
+         height="12"
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 15px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">T1</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         x="7"
+         y="12"
+         fill="#000000"
+         text-anchor="middle"
+         font-size="12px"
+         font-family="Helvetica"
+         id="text78">T1</text>
+    </switch>
+  </g>
+  <rect
+     x="452.30505"
+     y="310.30505"
+     width="79.38987"
+     height="29.389874"
+     fill="#ffe6cc"
+     stroke="#d79b00"
+     pointer-events="none"
+     id="rect84"
+     style="stroke-width:1.61013" />
+  <g
+     transform="translate(469.5,318.5)"
+     id="g90">
+    <switch
+       id="switch88">
+      <foreignObject
+         style="overflow:visible;"
+         pointer-events="all"
+         width="48"
+         height="12"
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 49px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 1</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         x="24"
+         y="12"
+         fill="#000000"
+         text-anchor="middle"
+         font-size="12px"
+         font-family="Helvetica"
+         id="text86">Thread 1</text>
+    </switch>
+  </g>
+  <rect
+     x="342"
+     y="254"
+     width="110"
+     height="30"
+     fill="#ffe6cc"
+     stroke="#d79b00"
+     pointer-events="none"
+     id="rect92" />
+  <g
+     transform="translate(372.5,262.5)"
+     id="g98">
+    <switch
+       id="switch96">
+      <foreignObject
+         style="overflow:visible;"
+         pointer-events="all"
+         width="48"
+         height="12"
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 49px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 4</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         x="24"
+         y="12"
+         fill="#000000"
+         text-anchor="middle"
+         font-size="12px"
+         font-family="Helvetica"
+         id="text94">Thread 4</text>
+    </switch>
+  </g>
+  <path
+     d="m 343,273 -1,52"
+     fill="none"
+     stroke="#000000"
+     stroke-miterlimit="10"
+     stroke-dasharray="3, 3"
+     pointer-events="none"
+     id="path100" />
+  <path
+     d="m 452,269 -1,52"
+     fill="none"
+     stroke="#000000"
+     stroke-miterlimit="10"
+     stroke-dasharray="3, 3"
+     pointer-events="none"
+     id="path102" />
+  <g
+     transform="translate(250.5,195.5)"
+     id="g108">
+    <switch
+       id="switch106">
+      <foreignObject
+         style="overflow:visible;"
+         pointer-events="all"
+         width="61"
+         height="12"
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: left;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;">Preemption</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         x="31"
+         y="12"
+         fill="#000000"
+         text-anchor="middle"
+         font-size="12px"
+         font-family="Helvetica"
+         id="text104">Preemption</text>
+    </switch>
+  </g>
+  <path
+     d="m 288,214 49.97,61.07"
+     fill="none"
+     stroke="#ff511c"
+     stroke-miterlimit="10"
+     stroke-dasharray="3, 3"
+     pointer-events="none"
+     id="path110" />
+  <path
+     d="m 341.29,279.13 -7.14,-3.2 3.82,-0.86 1.6,-3.57 z"
+     fill="#ff511c"
+     stroke="#ff511c"
+     stroke-miterlimit="10"
+     pointer-events="none"
+     id="path112" />
+  <rect
+     x="532"
+     y="310"
+     width="80"
+     height="30"
+     fill="#ffe6cc"
+     stroke="#d79b00"
+     pointer-events="none"
+     id="rect114" />
+  <g
+     transform="translate(547.5,318.5)"
+     id="g120">
+    <switch
+       id="switch118">
+      <foreignObject
+         style="overflow:visible;"
+         pointer-events="all"
+         width="48"
+         height="12"
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 49px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 2</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         x="24"
+         y="12"
+         fill="#000000"
+         text-anchor="middle"
+         font-size="12px"
+         font-family="Helvetica"
+         id="text116">Thread 2</text>
+    </switch>
+  </g>
+  <rect
+     x="612"
+     y="310"
+     width="80"
+     height="30"
+     fill="#ffe6cc"
+     stroke="#d79b00"
+     pointer-events="none"
+     id="rect122" />
+  <g
+     transform="translate(627.5,318.5)"
+     id="g128">
+    <switch
+       id="switch126">
+      <foreignObject
+         style="overflow:visible;"
+         pointer-events="all"
+         width="48"
+         height="12"
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 49px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 3</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         x="24"
+         y="12"
+         fill="#000000"
+         text-anchor="middle"
+         font-size="12px"
+         font-family="Helvetica"
+         id="text124">Thread 3</text>
+    </switch>
+  </g>
+  <g
+     transform="translate(513.5,195.5)"
+     id="g134">
+    <switch
+       id="switch132">
+      <foreignObject
+         style="overflow:visible;"
+         pointer-events="all"
+         width="61"
+         height="12"
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: left;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;">Completion</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         x="31"
+         y="12"
+         fill="#000000"
+         text-anchor="middle"
+         font-size="12px"
+         font-family="Helvetica"
+         id="text130">Completion</text>
+    </switch>
+  </g>
+  <path
+     d="m 539.01,213 -81.96,63.11"
+     fill="none"
+     stroke="#ff511c"
+     stroke-miterlimit="10"
+     stroke-dasharray="3, 3"
+     pointer-events="none"
+     id="path136" />
+  <path
+     d="m 452.89,279.32 3.41,-7.05 0.75,3.84 3.52,1.71 z"
+     fill="#ff511c"
+     stroke="#ff511c"
+     stroke-miterlimit="10"
+     pointer-events="none"
+     id="path138" />
+  <path
+     d="M 692.59542,325 H 717.65"
+     fill="none"
+     stroke="#000000"
+     stroke-width="2.44727"
+     stroke-miterlimit="10"
+     stroke-dasharray="3, 3"
+     pointer-events="none"
+     id="path140" />
+  <path
+     d="m 726.65,325 -9,4.5 v -9 z"
+     fill="#000000"
+     stroke="#000000"
+     stroke-width="3"
+     stroke-miterlimit="10"
+     pointer-events="none"
+     id="path142" />
+  <rect
+     x="342"
+     y="310"
+     width="110"
+     height="30"
+     fill="#ffffff"
+     stroke="#000000"
+     stroke-dasharray="3, 3"
+     pointer-events="none"
+     id="rect144" />
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:18.6667px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;inline-size:229.066;fill:#000000"
+     x="328.12595"
+     y="80.225197"
+     id="text234"
+     transform="translate(-45.801526,-2.8625954)"><tspan
+       x="328.12595"
+       y="80.225197"
+       id="tspan372">Uniprocessor Time Slicing
+</tspan></text>
+</svg>

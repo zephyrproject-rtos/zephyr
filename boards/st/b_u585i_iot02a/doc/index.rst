@@ -12,7 +12,7 @@ some highlights of the B_U585I_IOT02A Discovery kit:
 - 512-Mbit octal-SPI Flash memory, 64-Mbit octal-SPI PSRAM, 256-Kbit I2C EEPROM
 - USB FS, Sink and Source power, 2.5 W power capability
 - 802.11 b/g/n compliant Wi-Fi® module from MXCHIP
-- Bluetooth Low Energy from STMicroelectronics
+- Bluetooth® Low Energy from STMicroelectronics
 - MEMS sensors from STMicroelectronics
 
   - 2 digital microphones
@@ -26,10 +26,11 @@ some highlights of the B_U585I_IOT02A Discovery kit:
 - 2 push-buttons (user and reset)
 - 2 user LEDs
 
-- Flexible power supply options:
-    - ST-LINK/V3
-    - USB Vbus
-    - External sources
+- Flexible power supply options
+
+  - ST-LINK/V3
+  - USB Vbus
+  - External sources
 
 
 More information about the board can be found at the `B U585I IOT02A Discovery kit website`_.
@@ -38,19 +39,19 @@ Hardware
 ********
 
 The STM32U585xx devices are an ultra-low-power microcontrollers family (STM32U5
-Series) based on the high-performance Arm|reg| Cortex|reg|-M33 32-bit RISC core.
+Series) based on the high-performance Arm® Cortex®-M33 32-bit RISC core.
 They operate at a frequency of up to 160 MHz.
 
 - Ultra-low-power with FlexPowerControl (down to 300 nA Standby mode and 19.5 uA/MHz run mode)
-- Core: ARM |reg| 32-bit Cortex |reg| -M33 CPU with TrustZone |reg| and FPU.
+- Core: ARM® 32-bit Cortex®-M33 CPU with TrustZone® and FPU.
 - Performance benchmark:
 
   - 1.5 DMPIS/MHz (Drystone 2.1)
-  - 651 CoreMark |reg| (4.07 CoreMark |reg| /MHZ)
+  - 651 CoreMark® (4.07 CoreMark® /MHZ)
 
 - Security and cryptography
 
-  - Arm |reg|  TrustZone |reg| and securable I/Os memories and peripherals
+  - Arm®  TrustZone® and securable I/Os memories and peripherals
   - Flexible life cycle scheme with RDP (readout protection) and password protected debug
   - Root of trust thanks to unique boot entry and secure hide protection area (HDP)
   - Secure Firmware Installation thanks to embedded Root Secure Services
@@ -70,10 +71,10 @@ They operate at a frequency of up to 160 MHz.
 
   - 4 to 50 MHz crystal oscillator
   - 32 kHz crystal oscillator for RTC (LSE)
-  - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
-  - Internal low-power 32 kHz RC ( |plusminus| 5%)
+  - Internal 16 MHz factory-trimmed RC (±1%)
+  - Internal low-power 32 kHz RC (±5%)
   - 2 internal multispeed 100 kHz to 48 MHz oscillators, including one auto-trimmed by
-    LSE (better than  |plusminus| 0.25 % accuracy)
+    LSE (better than ±0.25 % accuracy)
   - 3 PLLs for system clock, USB, audio, ADC
   - Internal 48 MHz with clock recovery
 
@@ -129,7 +130,7 @@ They operate at a frequency of up to 160 MHz.
     sound-activity detection
 
 - CRC calculation unit
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
 - True Random Number Generator (RNG)
 
 - Graphic features
@@ -295,8 +296,8 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
    :board: b_u585i_iot02a
    :goals: debug
 
-Disabling TrustZone |reg| on the board
-======================================
+Disabling TrustZone® on the board
+=================================
 
 If you have flashed a sample to the board that enables TrustZone, you will need
 to disable it before you can flash and run a new non-TrustZone sample on the
@@ -306,7 +307,7 @@ To disable TrustZone, it's necessary to change AT THE SAME TIME the ``TZEN``
 and ``RDP`` bits. ``TZEN`` needs to get set from 1 to 0 and ``RDP``,
 needs to be set from ``DC`` to ``AA`` (step 3 below).
 
-This is docummented in the `AN5347, in section 9`_, "TrustZone deactivation".
+This is documented in the `AN5347, in section 9`_, "TrustZone deactivation".
 
 However, it's possible that the ``RDP`` bit is not yet set to ``DC``, so you
 first need to set it to ``DC`` (step 2).

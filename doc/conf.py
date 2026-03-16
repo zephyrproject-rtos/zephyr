@@ -35,7 +35,7 @@ except ImportError:
 # -- Project --------------------------------------------------------------
 
 project = "Zephyr Project"
-copyright = "2015-2025 Zephyr Project members and individual contributors"
+copyright = "2015-2026 Zephyr Project members and individual contributors"
 author = "The Zephyr Project Contributors"
 
 # parse version from 'VERSION' file
@@ -76,6 +76,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.graphviz",
     "sphinxcontrib.jquery",
+    "sphinxcontrib.programoutput",
     "zephyr.application",
     "zephyr.html_redirects",
     "zephyr.kconfig",
@@ -108,10 +109,29 @@ templates_path = ["_templates"]
 
 exclude_patterns = ["_build"]
 
+# EOL release notes and migration guides are not built (to avoid dead links etc.)
+RELEASE_NOTES_GLOB_PATTERNS = [
+    "releases/release-notes-[12].*.rst",
+    "releases/release-notes-3.[0-6].rst",
+    "releases/release-notes-4.[01].rst",
+    "releases/migration-guide-3.[56].rst",
+    "releases/migration-guide-4.[01].rst",
+]
+exclude_patterns.extend(RELEASE_NOTES_GLOB_PATTERNS)
+
 if not west_found:
     exclude_patterns.append("**/*west-apis*")
 else:
     exclude_patterns.append("**/*west-not-found*")
+
+# Ensure only one of the two top-level indexes ever gets included.
+# This is a workaround for Sphinx issuing INFO notices about being referenced in
+# multiple toctrees.
+if tags.has("convertimages"):  # pylint: disable=undefined-variable  # noqa: F821
+    exclude_patterns.append("index.rst")
+    root_doc = "index-tex"
+else:
+    exclude_patterns.append("index-tex.rst")
 
 pygments_style = "sphinx"
 highlight_language = "none"
@@ -143,6 +163,9 @@ SDK_URL_BASE="https://github.com/zephyrproject-rtos/sdk-ng/releases/download"
 rst_epilog = f"""
 .. include:: /substitutions.txt
 
+.. |zephyr-version| replace:: ``{version}``
+.. |zephyr-version-ltrim| unicode:: {version}
+   :ltrim:
 .. |sdk-version-literal| replace:: ``{sdk_version}``
 .. |sdk-version-trim| unicode:: {sdk_version}
    :trim:
@@ -196,8 +219,8 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
-        ("4.1.0", "/4.1.0/"),
-        ("4.0.0", "/4.0.0/"),
+        ("4.3.0", "/4.3.0/"),
+        ("4.2.0", "/4.2.0/"),
         ("3.7.0 (LTS)", "/3.7.0/"),
     ),
     "display_gh_links": True,
@@ -206,6 +229,7 @@ html_context = {
         "Kconfig Options": f"{reference_prefix}/kconfig.html",
         "Devicetree Bindings": f"{reference_prefix}/build/dts/api/bindings.html",
         "West Projects": f"{reference_prefix}/develop/manifest/index.html",
+        "Glossary": f"{reference_prefix}/glossary.html",
     },
     # Set google_searchengine_id to your Search Engine ID to replace built-in search
     # engine with Google's Programmable Search Engine.
@@ -258,6 +282,7 @@ doxyrunner_projects = {
         "outdir_var": "DOXY_OUT",
     },
 }
+os.environ["DOXYGEN_SITEMAP_URL"] = f"{html_baseurl}doxygen/html"
 
 # -- Options for zephyr.doxybridge plugin ---------------------------------
 
@@ -265,7 +290,14 @@ doxybridge_projects = {"zephyr": doxyrunner_projects["zephyr"]["outdir"]}
 
 # -- Options for html_redirect plugin -------------------------------------
 
-html_redirect_pages = redirects.REDIRECTS
+html_redirect_pages = (
+    *redirects.REDIRECTS,
+    *(
+        (f"releases/{p.stem}", "releases/eol_releases")
+        for pattern in RELEASE_NOTES_GLOB_PATTERNS
+        for p in (ZEPHYR_BASE / "doc").glob(pattern)
+    ),
+)
 
 # -- Options for zephyr.link-roles ----------------------------------------
 

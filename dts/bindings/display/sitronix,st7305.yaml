@@ -1,0 +1,10 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+title: ST7305 display controller
+
+description: Sitronix ST7305 monochrome 264x320 display controller
+
+compatible: "sitronix,st7305"
+
+include: sitronix,st730x-common.yaml

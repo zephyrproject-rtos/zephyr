@@ -1,7 +1,0 @@
-/*
- * Copyright (c) 2025 Nordic Semiconductor ASA
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
-#include "nrf54l09pdk_nrf54l09_common.overlay"

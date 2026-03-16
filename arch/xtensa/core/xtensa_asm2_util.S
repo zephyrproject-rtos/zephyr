@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <xtensa_asm2_s.h>
+#include <xtensa_asm2.inc.S>
 #include <zephyr/offsets.h>
 #include <zephyr/zsr.h>
 
@@ -185,7 +185,7 @@ _restore_ps_after:
 	FPU_REG_RESTORE
 #endif
 
-#if defined(CONFIG_XTENSA_HIFI_SHARING)
+#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
 .extern _xtensa_hifi_load
 	call0 _xtensa_hifi_load
 #endif
@@ -305,8 +305,14 @@ xtensa_switch:
 	movi a0, _switch_restore_pc
 	s32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 
-#if defined(CONFIG_XTENSA_HIFI_SHARING)
+#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
 	call0 _xtensa_hifi_save
+#elif defined(CONFIG_XTENSA_LAZY_HIFI_SHARING)
+	/* Disable HiFi sharing */
+	rsr a6, CPENABLE
+	movi a7, ~(1 << XCHAL_CP_ID_AUDIOENGINELX)
+	and a6, a6, a7
+	wsr a6, CPENABLE
 #endif
 
 	/* Now the high registers */
@@ -338,7 +344,7 @@ noflush:
 	/* Switch stack pointer and restore.  The jump to
 	 * _restore_context does not return as such, but we arrange
 	 * for the restored "next" address to be immediately after for
-	 * sanity.
+	 * coherence.
 	 */
 	 l32i a1, a2, ___xtensa_irq_bsa_t_a2_OFFSET
 
@@ -573,6 +579,10 @@ _handle_tlb_miss_dblexc:
 	 */
 	rsr.ptevaddr a0
 	l32i a0, a0, 0
+
+	/* Restore EXCCAUSE and a0 values */
+	rsr a0, ZSR_EXCCAUSE_SAVE
+	wsr.exccause a0
 
 	rsr a0, ZSR_DBLEXC
 	rfde

@@ -7,12 +7,12 @@
 
 # OS Management group public API is exposed through zephyr_interface,
 # when OS Management is enabled.
-zephyr_library()
+zephyr_library_named(mcumgr_grp_os_mgmt)
 zephyr_library_sources(src/os_mgmt.c)
 
 zephyr_library_include_directories(include)
 
-if (CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
+if(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
     zephyr_include_directories(
         ${ZEPHYR_MCUBOOT_MODULE_DIR}/boot/bootutil/include
     )

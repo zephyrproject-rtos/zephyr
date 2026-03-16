@@ -12,9 +12,19 @@
 
 #include "hal/debug.h"
 
-/* Clock setup timeouts are unlikely, below values are experimental */
-#define LFCLOCK_TIMEOUT_MS 500
-#define HFCLOCK_TIMEOUT_MS 2
+/* LF (XO, RC) clock setup timeout.
+ * LF settling time can vary on the type of the source.
+ */
+#define LFCLOCK_TIMEOUT_MS 1000U
+
+/* HFXO clock setup timeout */
+#if DT_NODE_HAS_PROP(DT_NODELABEL(hfxo), startup_time_us)
+/* Use value from devicetree plus an additional margin */
+#define HFCLOCK_TIMEOUT_MS (DIV_ROUND_UP(DT_PROP(DT_NODELABEL(hfxo), startup_time_us), 1000U) + 3U)
+#else
+/* Use manually tested (peripheral role) value, includes added additional margin */
+#define HFCLOCK_TIMEOUT_MS 5U
+#endif
 
 static uint16_t const sca_ppm_lut[] = {500, 250, 150, 100, 75, 50, 30, 20};
 
@@ -127,7 +137,7 @@ int lll_hfclock_on_wait(void)
 
 int lll_hfclock_off(void)
 {
-	if (hf_refcnt < 1) {
+	if (atomic_get(&hf_refcnt) < 1) {
 		return -EALREADY;
 	}
 

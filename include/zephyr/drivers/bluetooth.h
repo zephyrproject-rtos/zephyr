@@ -5,12 +5,19 @@
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @ingroup bt_hci_api
+ * @brief Main header file for Bluetooth HCI driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_BLUETOOTH_H_
 #define ZEPHYR_INCLUDE_DRIVERS_BLUETOOTH_H_
 
 /**
- * @brief Bluetooth HCI APIs
- * @defgroup bt_hci_api Bluetooth HCI APIs
+ * @brief Interfaces for Bluetooth Host Controller Interface (HCI).
+ * @defgroup bt_hci_api Bluetooth HCI
  *
  * @since 3.7
  * @version 0.2.0
@@ -59,7 +66,7 @@ enum {
 };
 
 /** Possible values for the 'bus' member of the bt_hci_driver struct */
-enum bt_hci_bus {
+enum __deprecated bt_hci_bus { /* Use macro BT_DT_HCI_BUS_GET() instead */
 	BT_HCI_BUS_VIRTUAL       = 0,
 	BT_HCI_BUS_USB           = 1,
 	BT_HCI_BUS_PCCARD        = 2,
@@ -72,8 +79,6 @@ enum bt_hci_bus {
 	BT_HCI_BUS_SMD           = 9,
 	BT_HCI_BUS_VIRTIO        = 10,
 	BT_HCI_BUS_IPC           = 11,
-	/* IPM is deprecated and simply an alias for IPC */
-	BT_HCI_BUS_IPM           = BT_HCI_BUS_IPC,
 };
 
 #define BT_DT_HCI_QUIRK_OR(node_id, prop, idx) \
@@ -89,8 +94,10 @@ enum bt_hci_bus {
 #define BT_DT_HCI_NAME_GET(node_id) DT_PROP_OR(node_id, bt_hci_name, "HCI")
 #define BT_DT_HCI_NAME_INST_GET(inst) BT_DT_HCI_NAME_GET(DT_DRV_INST(inst))
 
-#define BT_DT_HCI_BUS_GET(node_id) \
-	UTIL_CAT(BT_HCI_BUS_, DT_STRING_UPPER_TOKEN_OR(node_id, bt_hci_bus, VIRTUAL))
+/* Fallback default when there's no property, same as "virtual" */
+#define BT_PRIV_HCI_BUS_DEFAULT (0)
+#define BT_DT_HCI_BUS_GET(node_id) DT_ENUM_IDX_OR(node_id, bt_hci_bus, BT_PRIV_HCI_BUS_DEFAULT)
+
 #define BT_DT_HCI_BUS_INST_GET(inst) BT_DT_HCI_BUS_GET(DT_DRV_INST(inst))
 
 typedef int (*bt_hci_recv_t)(const struct device *dev, struct net_buf *buf);
@@ -121,9 +128,7 @@ __subsystem struct bt_hci_driver_api {
  */
 static inline int bt_hci_open(const struct device *dev, bt_hci_recv_t recv)
 {
-	const struct bt_hci_driver_api *api = (const struct bt_hci_driver_api *)dev->api;
-
-	return api->open(dev, recv);
+	return DEVICE_API_GET(bt_hci, dev)->open(dev, recv);
 }
 
 /**
@@ -138,7 +143,7 @@ static inline int bt_hci_open(const struct device *dev, bt_hci_recv_t recv)
  */
 static inline int bt_hci_close(const struct device *dev)
 {
-	const struct bt_hci_driver_api *api = (const struct bt_hci_driver_api *)dev->api;
+	const struct bt_hci_driver_api *api = DEVICE_API_GET(bt_hci, dev);
 
 	if (api->close == NULL) {
 		return -ENOSYS;
@@ -155,6 +160,10 @@ static inline int bt_hci_close(const struct device *dev)
  * that HCI drivers that use H:4 as their native encoding don't need to do any
  * special handling of the packet type.
  *
+ * If the function returns 0 (success) the reference to @c buf was moved to the
+ * HCI driver. On error, the caller still owns the reference and is responsible
+ * for eventually calling @ref net_buf_unref on it.
+ *
  * @note This function must only be called from a cooperative thread.
  *
  * @param dev HCI device
@@ -164,9 +173,7 @@ static inline int bt_hci_close(const struct device *dev)
  */
 static inline int bt_hci_send(const struct device *dev, struct net_buf *buf)
 {
-	const struct bt_hci_driver_api *api = (const struct bt_hci_driver_api *)dev->api;
-
-	return api->send(dev, buf);
+	return DEVICE_API_GET(bt_hci, dev)->send(dev, buf);
 }
 
 #if defined(CONFIG_BT_HCI_SETUP) || defined(__DOXYGEN__)
@@ -184,7 +191,7 @@ static inline int bt_hci_send(const struct device *dev, struct net_buf *buf)
  */
 static inline int bt_hci_setup(const struct device *dev, struct bt_hci_setup_params *params)
 {
-	const struct bt_hci_driver_api *api = (const struct bt_hci_driver_api *)dev->api;
+	const struct bt_hci_driver_api *api = DEVICE_API_GET(bt_hci, dev);
 
 	if (api->setup == NULL) {
 		return -ENOSYS;

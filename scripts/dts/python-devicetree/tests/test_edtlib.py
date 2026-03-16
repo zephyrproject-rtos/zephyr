@@ -7,6 +7,7 @@ import io
 from logging import WARNING
 import os
 from pathlib import Path
+import textwrap
 
 import pytest
 
@@ -125,10 +126,103 @@ def test_interrupts():
         edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 5}, name=None, basename=None)
     ]
 
-    node = edt.get_node("/interrupt-map-bitops-test/node@70000000E")
+    node = edt.get_node("/interrupt-map-bitops-test/node@70000000e")
     assert node.interrupts == [
         edtlib.ControllerAndData(node=node, controller=edt.get_node('/interrupt-map-bitops-test/controller'), data={'one': 3, 'two': 2}, name=None, basename=None)
     ]
+
+
+def test_maps():
+    '''Tests for the maps property.'''
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    nexus = edt.get_node("/interrupt-map-test/nexus")
+    controller_0 = edt.get_node("/interrupt-map-test/controller-0")
+    controller_1 = edt.get_node("/interrupt-map-test/controller-1")
+    controller_2 = edt.get_node("/interrupt-map-test/controller-2")
+    controller_no_addr = edt.get_node("/interrupt-map-no-address/controller")
+
+    assert len(nexus.maps.keys()) == 1
+    assert "interrupt" in nexus.maps
+
+    entries = nexus.maps["interrupt"]
+    assert len(entries) == 7
+
+    assert entries[0] == edtlib.MapEntry(
+        node=nexus,
+        child_addresses=[0, 0],
+        child_specifiers=[0, 0],
+        parent=controller_0,
+        parent_addresses=[0],
+        parent_specifiers=[0],
+        basename="interrupt",
+    )
+
+    assert entries[1] == edtlib.MapEntry(
+        node=nexus,
+        child_addresses=[0, 0],
+        child_specifiers=[0, 1],
+        parent=controller_1,
+        parent_addresses=[0, 0],
+        parent_specifiers=[0, 1],
+        basename="interrupt",
+    )
+
+    assert entries[2] == edtlib.MapEntry(
+        node=nexus,
+        child_addresses=[0, 0],
+        child_specifiers=[0, 2],
+        parent=controller_2,
+        parent_addresses=[0, 0, 0],
+        parent_specifiers=[0, 0, 2],
+        basename="interrupt",
+    )
+
+    assert entries[3] == edtlib.MapEntry(
+        node=nexus,
+        child_addresses=[0, 1],
+        child_specifiers=[0, 0],
+        parent=controller_0,
+        parent_addresses=[0],
+        parent_specifiers=[3],
+        basename="interrupt",
+    )
+
+    assert entries[4] == edtlib.MapEntry(
+        node=nexus,
+        child_addresses=[0, 1],
+        child_specifiers=[0, 1],
+        parent=controller_1,
+        parent_addresses=[0, 0],
+        parent_specifiers=[0, 4],
+        basename="interrupt",
+    )
+
+    assert entries[5] == edtlib.MapEntry(
+        node=nexus,
+        child_addresses=[0, 1],
+        child_specifiers=[0, 2],
+        parent=controller_2,
+        parent_addresses=[0, 0, 0],
+        parent_specifiers=[0, 0, 5],
+        basename="interrupt",
+    )
+
+    assert entries[6] == edtlib.MapEntry(
+        node=nexus,
+        child_addresses=[0, 1],
+        child_specifiers=[1, 0],
+        parent=controller_no_addr,
+        parent_addresses=[],
+        parent_specifiers=[6],
+        basename="interrupt",
+    )
+
+    empty = edt.get_node("/interrupt-map-test/empty")
+    assert len(empty.maps) == 1
+    assert "interrupt" in empty.maps
+    assert len(empty.maps["interrupt"]) == 0
 
 def test_ranges():
     '''Tests for the ranges property'''
@@ -568,10 +662,26 @@ def test_binding_top_key():
     title = binding.title
     description = binding.description
     compatible = binding.compatible
+    examples = binding.examples[0]
 
     assert title == "Test binding"
     assert description == "Property default value test"
     assert compatible == "defaults"
+    assert examples == textwrap.dedent("""\
+    / {
+        leds {
+            compatible = "gpio-leds";
+
+            uled: led {
+                gpios = <&gpioe 12 GPIO_ACTIVE_HIGH>;
+            };
+        };
+
+        aliases {
+            led0 = &uled;
+        };
+    };
+    """)
 
 def test_child_binding():
     '''Test 'child-binding:' in bindings'''
@@ -673,7 +783,9 @@ def test_prop_defaults():
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
 
-    verify_props(edt.get_node("/defaults"),
+    node = edt.get_node("/defaults")
+
+    verify_props(node,
                  ['int',
                   'array', 'uint8-array',
                   'string', 'string-array',
@@ -686,6 +798,13 @@ def test_prop_defaults():
                   [1,2,3], b'\x89\xab\xcd',
                   'hello', ['hello','there'],
                   234])
+
+    # Verify HexInt preservation in PropertySpec.default (raw binding values)
+    # uint8-array default [0x89, 0xAB, 0xCD] should have HexInt elements
+    assert all(isinstance(v, edtlib.HexInt) for v in node.props["uint8-array"].spec.default)
+    # int/array defaults (decimal in binding) should NOT be HexInt
+    assert not isinstance(node.props["int"].spec.default, edtlib.HexInt)
+    assert not any(isinstance(v, edtlib.HexInt) for v in node.props["array"].spec.default)
 
 def test_prop_enums():
     '''test properties with enum: in the binding'''
@@ -826,7 +945,7 @@ def test_slice_errs(tmp_path):
 };
 """,
                  dts_file,
-                 f"'reg' property in <Node /sub in '{dts_file}'> has length 4, which is not evenly divisible by 12 (= 4*(<#address-cells> (= 1) + <#size-cells> (= 2))). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
+                 f"'reg' property in <Node /sub in {dts_file}:8> has length 4, which is not evenly divisible by 12 (= 4*(<#address-cells> (= 1) + <#size-cells> (= 2))). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
 
     verify_error("""
 /dts-v1/;
@@ -843,7 +962,7 @@ def test_slice_errs(tmp_path):
 };
 """,
                  dts_file,
-                 f"'interrupts' property in <Node /sub in '{dts_file}'> has length 4, which is not evenly divisible by 8 (= 4*<#interrupt-cells>). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
+                 f"'interrupts' property in <Node /sub in {dts_file}:5> has length 4, which is not evenly divisible by 8 (= 4*<#interrupt-cells>). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
 
     verify_error("""
 /dts-v1/;
@@ -863,7 +982,7 @@ def test_slice_errs(tmp_path):
 };
 """,
                  dts_file,
-                 f"'ranges' property in <Node /sub-1 in '{dts_file}'> has length 8, which is not evenly divisible by 24 (= 4*(<#address-cells> (= 2) + <#address-cells for parent> (= 1) + <#size-cells> (= 3))). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
+                 f"'ranges' property in <Node /sub-1 in {dts_file}:7> has length 8, which is not evenly divisible by 24 (= 4*(<#address-cells> (= 2) + <#address-cells for parent> (= 1) + <#size-cells> (= 3))). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
 
 def test_bad_compatible(tmp_path):
     # An invalid compatible should cause an error, even on a node with
@@ -897,6 +1016,24 @@ def test_wrong_props():
         value_str = str(e.value)
         assert value_str.startswith("'wrong-phandle-array-name' in 'properties:'")
         assert value_str.endswith("but no 'specifier-space' was provided.")
+
+        with pytest.raises(edtlib.EDTError) as e:
+            edtlib.Binding("test-wrong-bindings/wrong-address-cells-default.yaml", None)
+        value_str = str(e.value)
+        assert value_str.startswith("invalid default value '2' specified for property "
+                                    "'#address-cells' in binding ")
+        assert "test-wrong-bindings/wrong-address-cells-default.yaml" in value_str
+        assert value_str.endswith("; this property's default behavior is "
+                                  "defined in DT Specification §2.3.5 and a default in a binding is invalid")
+
+        with pytest.raises(edtlib.EDTError) as e:
+            edtlib.Binding("test-wrong-bindings/wrong-size-cells-default.yaml", None)
+        value_str = str(e.value)
+        assert value_str.startswith("invalid default value '1' specified for property "
+                                    "'#size-cells' in binding ")
+        assert "test-wrong-bindings/wrong-size-cells-default.yaml" in value_str
+        assert value_str.endswith("; this property's default behavior is "
+                                  "defined in DT Specification §2.3.5 and a default in a binding is invalid")
 
 
 def test_deepcopy():

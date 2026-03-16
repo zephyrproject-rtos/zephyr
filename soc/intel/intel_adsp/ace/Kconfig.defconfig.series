@@ -9,9 +9,10 @@ config SMP
 config POWER_DOMAIN
 	default y
 
-# MTL leaves the upper mapping in the same spot as cAVS, but moves the
-# lower one inexplicably.
-config XTENSA_UNCACHED_REGION
+config INTEL_ADSP_CACHED_REGION
+	default 5
+
+config INTEL_ADSP_UNCACHED_REGION
 	default 2
 
 # Parameters for gen_isr_tables.py:
@@ -52,8 +53,11 @@ config DYNAMIC_INTERRUPTS
 
 if LOG
 
+config LOG_BACKEND_XTENSA_SIM
+	default y if SIMULATOR_XTENSA
+
 config LOG_BACKEND_ADSP
-	default y
+	default y if !SIMULATOR_XTENSA
 
 endif # LOG
 
@@ -71,6 +75,14 @@ config GDBSTUB_BUF_SZ
 	default 840 if GDBSTUB
 
 endif
+
+# No need to use the reset vector and crt1 from the arch layer
+# as ACE has its own entry point: rom_entry().
+config XTENSA_USE_CORE_CRT1
+	default n
+
+config XTENSA_RESET_VECTOR
+	default n
 
 rsource "Kconfig.defconfig.ace*"
 

@@ -17,13 +17,19 @@
 };
 
 &cpu0 {
-	 clock-frequency = <100000000>;
+	clock-frequency = <100000000>;
 };
 
 &soc {
 	sram0: memory@30000 {
 		compatible = "mmio-sram";
 		reg = <0x30000 0x7ffd0000>;
+	};
+
+	/* RPU-local TCM address (system address: 0xEBA00000) */
+	tcm: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0x0 DT_SIZE_K(64)>;
 	};
 };
 

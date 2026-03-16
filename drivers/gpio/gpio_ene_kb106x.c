@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 ENE Technology Inc.
+ * Copyright (c) 2025-2026 ENE Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,12 +85,8 @@ static int kb106x_gpio_pin_configure(const struct device *dev, gpio_pin_t pin, g
 		/* [patch] disable open-drain when output is disabled */
 		WRITE_BIT(config->gpio_regs->GPIOOD, pin, 0);
 	}
-	/* input enable function */
-	if (flags & GPIO_INPUT) {
-		WRITE_BIT(config->gpio_regs->GPIOIE, pin, 1);
-	} else {
-		WRITE_BIT(config->gpio_regs->GPIOIE, pin, 0);
-	}
+	/* input function always enable */
+	WRITE_BIT(config->gpio_regs->GPIOIE, pin, 1);
 
 	return 0;
 }
@@ -204,7 +200,7 @@ static uint32_t kb106x_gpio_get_pending_int(const struct device *dev)
 	return config->gptd_regs->GPTDPF;
 }
 
-static const struct gpio_driver_api kb106x_gpio_api = {
+static DEVICE_API(gpio, kb106x_gpio_api) = {
 	.pin_configure = kb106x_gpio_pin_configure,
 	.port_get_raw = kb106x_gpio_port_get_raw,
 	.port_set_masked_raw = kb106x_gpio_port_set_masked_raw,
@@ -228,7 +224,7 @@ static const struct gpio_driver_api kb106x_gpio_api = {
 		return 0;                                                                          \
 	};                                                                                         \
 	static const struct gpio_kb106x_config port_##n##_kb106x_config = {                        \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n)},                   \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		.gpio_regs = (struct gpio_regs *)DT_INST_REG_ADDR_BY_IDX(n, 0),                    \
 		.gptd_regs = (struct gptd_regs *)DT_INST_REG_ADDR_BY_IDX(n, 1),                    \
 	};                                                                                         \

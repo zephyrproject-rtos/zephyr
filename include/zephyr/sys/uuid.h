@@ -23,8 +23,8 @@ extern "C" {
 
 /**
  * @defgroup uuid UUID
- * @since 4.0
- * @version 0.1.0
+ * @since 4.2
+ * @version 0.8.0
  * @ingroup utilities
  * @{
  */
@@ -56,6 +56,8 @@ struct uuid {
  *
  * @param out The UUID where the result will be written.
  *
+ * @kconfig_dep{CONFIG_UUID_V4}
+ *
  * @retval 0 The UUID has been correctly generated and stored in @p out
  * @retval -EINVAL @p out is not acceptable
  */
@@ -67,15 +69,19 @@ int uuid_generate_v4(struct uuid *out);
  * @details This function computes a deterministic UUID starting from a namespace UUID and binary
  * data.
  *
+ * @kconfig_dep{CONFIG_UUID_V5}
+ *
  * @param ns A pointer to an UUID to be used as namespace.
  * @param data A pointer to the data that will be hashed to produce the UUID.
  * @param data_size The size of the data buffer.
  * @param out The UUID where the result will be written.
  *
  * @retval 0 The UUID has been correctly generated and stored in @p out
- * @retval -EINVAL @p out is not acceptable
+ * @retval -EINVAL @p out is NULL
  * @retval -ENOMEM Memory allocation failed
- * @retval -ENOTSUP mbedTLS returned an unrecognized error
+ * @retval -ENOTSUP Required crypto algorithm (SHA-1) is not supported by the
+ *                  PSA Crypto provider
+ * @retval -EIO Generic error
  */
 int uuid_generate_v5(const struct uuid *ns, const void *data, size_t data_size,
 		     struct uuid *out);
@@ -137,6 +143,8 @@ int uuid_to_string(const struct uuid *data, char out[UUID_STR_LEN]);
 
 /**
  * @brief Convert a UUID to its base 64 (RFC 3548, RFC 4648) string representation.
+ *
+ * @kconfig_dep{CONFIG_UUID_BASE64}
  *
  * @param data The UUID to convert to string.
  * @param out A pointer to a previously allocated buffer where the result will be written.

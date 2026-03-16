@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief SCMI SHMEM API
+ * @ingroup scmi_shmem
+ * @brief Header file for the SCMI Shared Memory.
  */
 
 #ifndef _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_SHMEM_H_
@@ -15,6 +16,13 @@
 #include <zephyr/device.h>
 #include <zephyr/arch/cpu.h>
 #include <errno.h>
+
+/**
+ * @brief Shared memory transport definitions for SCMI
+ * @defgroup scmi_shmem Shared Memory
+ * @ingroup scmi_transport
+ * @{
+ */
 
 #define SCMI_SHMEM_CHAN_STATUS_BUSY_BIT BIT(0)
 #define SCMI_SHMEM_CHAN_FLAG_IRQ_BIT BIT(0)
@@ -35,12 +43,14 @@ struct scmi_message;
  *
  * @param shmem pointer to shmem device
  * @param msg message to write
+ * @param use_polling true if polling should be used, false otherwise
  *
  * @retval 0 if successful
  * @retval negative errno if failure
  */
 int scmi_shmem_write_message(const struct device *shmem,
-			     struct scmi_message *msg);
+			     struct scmi_message *msg,
+			     bool use_polling);
 
 /**
  * @brief Read a message from a SHMEM area
@@ -92,5 +102,9 @@ int scmi_shmem_vendor_write_message(struct scmi_shmem_layout *layout);
  * @retval negative errno if failure
  */
 int scmi_shmem_vendor_read_message(const struct scmi_shmem_layout *layout);
+
+/**
+ * @}
+ */
 
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_SHMEM_H_ */

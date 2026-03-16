@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Steven Lemaire
+ * Copyright (c) 2026 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,10 +9,6 @@
 #include <silabs/xg24/efr32mg24.dtsi>
 
 / {
-	sram0: memory@20000000 {
-		reg = <0x20000000 DT_SIZE_K(256)>;
-	};
-
 	soc {
 		compatible = "silabs,efr32mg24b020f1536im40", "silabs,efr32mg24", "silabs,xg24",
 			     "silabs,efr32", "simple-bus";
@@ -20,4 +17,24 @@
 
 &flash0 {
 	reg = <0x08000000 DT_SIZE_K(1536)>;
+};
+
+&gpioa {
+	ngpios = <9>;
+};
+
+&gpiob {
+	ngpios = <5>;
+};
+
+&gpioc {
+	ngpios = <8>;
+};
+
+&gpiod {
+	ngpios = <4>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(256)>;
 };

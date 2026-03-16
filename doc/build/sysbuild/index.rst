@@ -140,8 +140,8 @@ As mentioned above, you can run sysbuild via ``west build`` or ``cmake``.
 
       To use sysbuild directly with CMake, you must specify the sysbuild
       project as the source folder, and give ``-DAPP_DIR=<path-to-sample>`` as
-      an extra CMake argument. ``APP_DIR`` is the path to the main Zephyr
-      application managed by sysbuild.
+      an extra CMake argument or set APP_DIR as environment variable.
+      ``APP_DIR`` is the path to the main Zephyr application managed by sysbuild.
 
       .. tip::
 
@@ -512,6 +512,14 @@ applications as sysbuild domains. Call this CMake function from your
 application's :file:`sysbuild.cmake` file, or any other CMake file you know will
 run as part sysbuild CMake invocation.
 
+A variant image can also added using the ``ExternalZephyrVariantProject_Add()`` function which
+will duplicate an existing image in the sysbuild project, and allows for slight differences in
+configuration. An example use case for this feature is to change the chosen flash node of an image
+but having the rest of the configuration identical to the base image. When this is used, neither
+sysbuild itself nor the image will have the extra Kconfig targets made for it such as menuconfig,
+guiconfig, hardenconfig or traceconfig, as the base image can be used for viewing/adjusting
+these instead.
+
 Targeting the same board
 ========================
 
@@ -805,6 +813,22 @@ As a result, ``my_sample`` will be flashed after ``sample_a`` and ``sample_b``
    If ``my_sample`` had been created with ``BUILD_ONLY TRUE``, then the above
    call to ``sysbuild_add_dependencies()`` would have produced an error.
 
+.. _sysbuild_merged_hex_files:
+
+Merged hex files
+****************
+
+Sysbuild supports creating merged hex files, which will be created one per unique board target
+in a sysbuild project and can be enabled with :kconfig:option:`SB_CONFIG_MERGED_HEX_FILES`.
+The output filename format will be :file:`merged_<NORMALIZED_BOARD_TARGET>.hex`. This is ideal
+for creating production images for deployment, it requires that all images output hex files.
+If a sysbuild project builds multiple images for the same board target but for **different**
+devices (e.g. 3 images for 3 different boards as part of a test), then this option should remain
+disabled. Hex files will be merged as per the flashing order they have been configured in, any
+overlapping data from previous addresses that conflicts with later merged hex files will be
+overwritten with the later hex file data - see :ref:`sysbuild_zephyr_application_dependencies`
+for how to configure the flashing order of sysbuild images.
+
 Adding non-Zephyr applications to sysbuild
 ******************************************
 
@@ -880,3 +904,57 @@ can be added.
     :maxdepth: 1
 
     images.rst
+
+Sysbuild and CMake presets
+**************************
+
+`CMake presets <https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html>`_ can be used with
+Sysbuild but not all preset macros will work as expected.
+
+.. note::
+
+   Using CMake presets with sysbuild requires CMake version 3.27 or higher.
+
+As described in :ref:`sysbuild` then sysbuild is a higher-level build system which means that when
+CMake presets are used together with sysbuild, then the preset is consumed and processed by sysbuild
+itself and result is passed to the application.
+
+Running sysbuild with preset.
+
+.. tabs::
+
+   .. group-tab:: ``west build``
+
+      Here is an example where preset ``release`` should be used.
+      For details, see :ref:`west-multi-domain-builds` in the ``west build documentation``.
+
+      .. zephyr-app-commands::
+         :tool: west
+         :zephyr-app: samples/hello_world
+         :board: reel_board
+         :goals: build
+         :west-args: --sysbuild -- --preset=release
+         :compact:
+
+   .. group-tab:: ``cmake``
+
+      Here is an example using CMake and Ninja.
+
+      .. code-block:: shell
+
+         APP_DIR=samples/hello_world cmake -Bbuild -GNinja -DBOARD=reel_board share/sysbuild
+         ninja -Cbuild
+
+      When using CMake presets with sysbuild then ``APP_DIR`` must be set in environment in order
+      for Sysbuild CMake to be able to include the ``CMakePresets.json`` from the main Zephyr
+      application's source directory.
+
+.. note::
+
+   As sysbuild changes the top-level cmake project to its own directory, the cmake presets are
+   parsed from there, the application's presets are included from this file verbatim.
+   Therefore relative paths, and macros resolving relative to the source directory will not work as
+   expected, but as relative to share/sysbuild, for example ``${sourceDir}``.
+
+   The ``${fileDir}`` macro can be used to create portable paths relative to the application's
+   directory.

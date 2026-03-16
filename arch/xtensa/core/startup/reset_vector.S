@@ -150,7 +150,16 @@ _ResetHandler:
 	/* make sure that interrupts are shut off (*before* we lower
 	 * PS.INTLEVEL and PS.EXCM!)
 	 */
-	wsr	a0, INTENABLE
+	wsr.intenable	a0
+#if (XCHAL_NUM_INTERRUPTS > 32)
+	wsr.intenable1	a0
+#endif
+#if (XCHAL_NUM_INTERRUPTS > 64)
+	wsr.intenable2	a0
+#endif
+#if (XCHAL_NUM_INTERRUPTS > 96)
+	wsr.intenable3	a0
+#endif
 #endif
 
 #if !XCHAL_HAVE_FULL_RESET
@@ -566,7 +575,17 @@ unpackdone:
 	 * all CPENABLE bits must be set, even though they may not always
 	 * correspond to a coprocessor.
 	 */
+#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
+	/*
+	 * Disable HiFi coprocessor by default. Should a thread try using
+         * the HiFi coprocessor, it will trigger an exception to both enable
+	 * it AND save/restore the HiFi state.
+	 */
+
+	movi	a2, 0xFF & ~(1 << XCHAL_CP_ID_AUDIOENGINELX)
+#else
 	movi	a2, 0xFF	 /* enable *all* bits, to allow dynamic TIE */
+#endif
 	wsr	a2, CPENABLE
 # endif
 

@@ -59,13 +59,6 @@ static inline void wait_for_cache(NRF_CACHE_Type *cache)
 
 static inline int _cache_all(NRF_CACHE_Type *cache, enum k_nrf_cache_op op)
 {
-	/*
-	 * We really do not want to invalidate the whole cache.
-	 */
-	if (op == K_NRF_CACHE_INVD) {
-		return -ENOTSUP;
-	}
-
 	wait_for_cache(cache);
 
 	barrier_dsync_fence_full();
@@ -218,7 +211,8 @@ void cache_data_disable(void)
 
 int cache_data_invd_all(void)
 {
-	return _cache_checks(NRF_DCACHE, K_NRF_CACHE_INVD, NULL, 0, false);
+	/* We really do not want to invalidate the whole data cache. */
+	return -ENOTSUP;
 }
 
 int cache_data_flush_and_invd_all(void)

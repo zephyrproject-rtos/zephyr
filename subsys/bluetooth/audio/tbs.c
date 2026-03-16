@@ -1,7 +1,8 @@
 /* Bluetooth TBS - Telephone Bearer Service
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <ctype.h>
 #include <sys/types.h>
 
 #include <zephyr/autoconf.h>
@@ -28,9 +30,9 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/sys/util_utf8.h>
 #include <zephyr/types.h>
 
 #include "audio_internal.h"
@@ -66,6 +68,10 @@ struct tbs_flags {
 /* A service instance can either be a GTBS or a TBS instance */
 struct tbs_inst {
 	/* Attribute values */
+	/* TODO: The provider name should be removed from the tbs_inst and instead by stored by the
+	 * user of TBS. This will be done once the CCP API is complete as the CCP Server will own
+	 * all the data instead of the TBS
+	 */
 	char provider_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH];
 	char uci[BT_TBS_MAX_UCI_SIZE];
 	uint8_t technology;
@@ -75,7 +81,7 @@ struct tbs_inst {
 	uint16_t optional_opcodes;
 	uint16_t status_flags;
 	struct bt_tbs_in_uri incoming_uri;
-	struct bt_tbs_in_uri friendly_name;
+	struct bt_tbs_friendly_name friendly_name;
 	struct bt_tbs_in_uri in_call;
 	char uri_scheme_list[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH];
 	struct bt_tbs_terminate_reason terminate_reason;
@@ -110,11 +116,14 @@ struct tbs_inst {
 
 static struct tbs_inst svc_insts[CONFIG_BT_TBS_BEARER_COUNT];
 static struct tbs_inst gtbs_inst;
+static bool try_change_dialing_call_to_alerting(struct tbs_inst *inst);
 
-#define READ_BUF_SIZE                                                                              \
-	MAX(BT_ATT_MAX_ATTRIBUTE_LEN,                                                              \
-	    (CONFIG_BT_TBS_MAX_CALLS * sizeof(struct bt_tbs_current_call_item) *                   \
-	     (1U + ARRAY_SIZE(svc_insts))))
+#define READ_BUF_SIZE                                                                             \
+	MAX(BT_ATT_MAX_ATTRIBUTE_LEN,                                                             \
+	    MAX((CONFIG_BT_TBS_MAX_CALLS * sizeof(struct bt_tbs_current_call_item) *              \
+		(1U + ARRAY_SIZE(svc_insts))),                                                    \
+		(CONFIG_BT_TBS_BEARER_COUNT * CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH +              \
+		CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH)))
 NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, READ_BUF_SIZE);
 
 /* Used to notify app with held calls in case of join */
@@ -363,9 +372,20 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		memset(&svc_insts[i].flags[conn_index], 0, sizeof(svc_insts[i].flags[conn_index]));
 
 		if (err == 0) { /* if mutex was locked */
+			/* Try to promote after clearing flags */
+			(void)try_change_dialing_call_to_alerting(&svc_insts[i]);
 			err = k_mutex_unlock(&svc_insts[i].mutex);
 			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 		}
+	}
+
+	/* Also try GTBS after cleanup */
+	int err = k_mutex_lock(&gtbs_inst.mutex, MUTEX_TIMEOUT);
+
+	if (err == 0) {
+		(void)try_change_dialing_call_to_alerting(&gtbs_inst);
+		err = k_mutex_unlock(&gtbs_inst.mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 	}
 }
 
@@ -628,6 +648,62 @@ static void net_buf_put_current_calls(const struct tbs_inst *inst, struct net_bu
 	}
 }
 
+static bool is_tbs_uri_unique(const char *uri_list, const char *uri_to_search)
+{
+	bool is_matched = false;
+	size_t uri_len = strlen(uri_to_search);
+	char *uri_pos = strstr(uri_list, uri_to_search);
+
+	/* Below check is to avoid match for string like "aaa" with "aaas" or "saaa" string present
+	 * in uri_list.
+	 */
+
+	if ((uri_pos != NULL) && ((uri_pos == uri_list) || (!isalnum(*(uri_pos - 1)))) &&
+	    (!isalnum(*(uri_pos + uri_len)))) {
+		is_matched = true;
+	}
+
+	return is_matched;
+}
+
+static void net_buf_put_uri_scheme_list(const struct tbs_inst *inst, struct net_buf_simple *buf)
+{
+	net_buf_simple_reset(buf);
+
+	net_buf_simple_add_mem(buf, inst->uri_scheme_list, strlen(inst->uri_scheme_list));
+
+	/* For GTBS add all the URI scheme list the GTBS bearer has itself, as well as all
+	 * the other TBS bearers
+	 */
+
+	if (!inst_is_gtbs(inst)) {
+		return;
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(svc_insts); i++) {
+		char *uri_to_search = NULL;
+
+		uri_to_search = strtok(svc_insts[i].uri_scheme_list, ",");
+		/* append only unique URI prefix from all TBS instances in GTBS instance */
+		while (uri_to_search != NULL) {
+			if (!is_tbs_uri_unique((char *)buf->data, uri_to_search)) {
+
+				if ((buf->len + strlen(uri_to_search) + 1) >= buf->size) {
+					LOG_WRN("Cannot fit all TBS URI in GTBS URI list");
+					return;
+				}
+
+				/* add separator after each instance URI prefix list */
+				net_buf_simple_add_mem(buf, ",", 1);
+				net_buf_simple_add_mem(buf, uri_to_search,
+							strlen(uri_to_search));
+			}
+
+			uri_to_search = strtok(NULL, ",");
+		}
+	}
+}
+
 static void set_call_state_changed_cb(struct tbs_flags *flags)
 {
 	if (flags->call_state_changed) {
@@ -681,63 +757,125 @@ static int notify_calls(struct tbs_inst *inst)
 	return 0;
 }
 
-/**
- * @brief Attempt to move a call in an instance from dialing to alerting
- *
- * This function will look through the state of an instance to see if there are any calls in the
- * instance that are in the dialing state, and move them to the dialing state if we do not have any
- * pending call state notification. The reason for this is that we do not have an API for the
- * application to change from dialing to alterting state at this point, but the qualification tests
- * require us to do this state change.
- * Since we only notify the latest value, we need to notify dialing first for both current calls and
- * call states, and then switch to the alerting state for the call and then notify again.
- *
- * @param inst The instance to attempt the state change on
- * @retval true There was a state change
- * @retval false There was not a state change
- */
-static bool try_change_dialing_call_to_alerting(struct tbs_inst *inst)
+static bool inst_has_pending_call_state_notifications(const struct tbs_inst *inst)
 {
-	bool state_changed = false;
-
-	/* If we still have pending state change notifications, we cannot change the state
-	 * autonomously
-	 */
 	for (size_t i = 0U; i < ARRAY_SIZE(inst->flags); i++) {
 		const struct tbs_flags *flags = &inst->flags[i];
 
 		if (flags->bearer_list_current_calls_changed || flags->call_state_changed) {
-			return false;
+			return true;
 		}
 	}
 
-	if (!inst_is_gtbs(inst)) {
-		/* If inst is not the GTBS then we also need to ensure that GTBS is done notifying
-		 * before changing state
-		 */
-		for (size_t i = 0U; i < ARRAY_SIZE(gtbs_inst.flags); i++) {
-			const struct tbs_flags *flags = &gtbs_inst.flags[i];
+	return false;
+}
 
-			if (flags->bearer_list_current_calls_changed || flags->call_state_changed) {
-				return false;
-			}
-		}
+/**
+ * @brief Promote a BT_TBS_CALL_STATE_DIALING call to BT_TBS_CALL_STATE_ALERTING
+ * on a single instance.
+ *
+ * IMPORTANT:
+ *  - This function MUST NOT be called unless both:
+ *        inst_has_pending_call_state_notifications(inst) == false
+ *    AND inst_has_pending_call_state_notifications(&gtbs_inst) == false.
+ *
+ *  - The caller is responsible for checking these conditions.
+ *    This helper performs no validation and assumes that pending
+ *    notifications have already been flushed.
+ *
+ *  - This split makes the API lightweight but also easy to misuse,
+ *    so all callers must enforce the above preconditions.
+ *
+ * @return true if a call was promoted, false otherwise.
+ */
+static bool promote_dialing_call_to_alerting(struct tbs_inst *inst)
+{
+	if (inst_has_pending_call_state_notifications(inst)) {
+		return false;
 	}
 
-	/* Check if we have any calls in the dialing state */
 	for (size_t i = 0U; i < ARRAY_SIZE(inst->calls); i++) {
 		if (inst->calls[i].state == BT_TBS_CALL_STATE_DIALING) {
 			inst->calls[i].state = BT_TBS_CALL_STATE_ALERTING;
-			state_changed = true;
-			break;
+			notify_calls(inst);
+			return true;
 		}
 	}
 
-	if (state_changed) {
-		notify_calls(inst);
+	return false;
+}
+
+/**
+ * @brief Attempt to move a call in an instance from DIALING to ALERTING.
+ *
+ * This function checks the state of the given instance and promotes any
+ * BT_TBS_CALL_STATE_DIALING call to the BT_TBS_CALL_STATE_ALERTING state,
+ * provided that there are no pending.
+ * call-state or current-calls notifications that must be flushed first.
+ *
+ * Notification ordering requirement:
+ *   - We must first notify the BT_TBS_CALL_STATE_DIALING state.
+ *   - Only after all pending notifications have been completed may the call
+ *     be promoted to BT_TBS_CALL_STATE_ALERTING.
+ *   - Once promoted, the BT_TBS_CALL_STATE_ALERTING state is notified immediately.
+ *
+ * GTBS/TBS behavior:
+ *   - For a regular TBS instance, promotion may only occur once GTBS has
+ *     finished sending its pending notifications.
+ *   - For GTBS, promotion is attempted first on GTBS-owned calls, and if none
+ *     exist, on all registered TBS bearers.
+ *
+ * NOTE:
+ *   The lower-level helper promote_dialing_call_to_alerting() must never be
+ *   called directly unless the caller has ensured that both the target
+ *   instance and GTBS have no pending notifications. This function performs
+ *   all required safety checks and is the only safe entry point.
+ *
+ * @param inst The instance (GTBS or TBS) to attempt the promotion on.
+ * @retval true  A call was promoted to ALERTING.
+ * @retval false No promotion occurred.
+ */
+
+ /* Caller must lock inst->mutex before calling this function */
+static bool try_change_dialing_call_to_alerting(struct tbs_inst *inst)
+{
+	bool promoted = false;
+
+	/* Non-GTBS: only promote on this bearer, and only once GTBS
+	 * is done sending its own notifications.
+	 */
+	if (!inst_is_gtbs(inst)) {
+		/* Check GTBS pending notifications */
+		if (inst_has_pending_call_state_notifications(&gtbs_inst)) {
+			return false;
+		}
+
+		if (promote_dialing_call_to_alerting(inst)) {
+			promoted = true;
+		}
+
+		return promoted;
 	}
 
-	return state_changed;
+	/* GTBS path: Promote GTBS-owned calls */
+	if (promote_dialing_call_to_alerting(&gtbs_inst)) {
+		promoted = true;
+	}
+
+	/* Promote calls on all TBS bearers */
+	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
+		struct tbs_inst *tbs_inst = &svc_insts[i];
+
+		if (!inst_is_registered(tbs_inst)) {
+			continue;
+		}
+
+		if (promote_dialing_call_to_alerting(tbs_inst)) {
+			promoted = true;
+		}
+	}
+
+	return promoted;
 }
 
 static void notify_handler_cb(struct bt_conn *conn, void *data)
@@ -793,8 +931,8 @@ static void notify_handler_cb(struct bt_conn *conn, void *data)
 	if (flags->bearer_uri_schemes_supported_list_changed) {
 		LOG_DBG("Notifying Bearer URI schemes supported list: %s", inst->uri_scheme_list);
 
-		err = notify(conn, BT_UUID_TBS_URI_LIST, inst->attrs, &inst->uri_scheme_list,
-			     strlen(inst->uri_scheme_list));
+		net_buf_put_uri_scheme_list(inst, &read_buf);
+		err = notify(conn, BT_UUID_TBS_URI_LIST, inst->attrs, read_buf.data, read_buf.len);
 		if (err == 0) {
 			flags->bearer_uri_schemes_supported_list_changed = false;
 		} else {
@@ -901,12 +1039,12 @@ static void notify_handler_cb(struct bt_conn *conn, void *data)
 	}
 
 	if (flags->call_friendly_name_changed) {
-		LOG_DBG("Notifying Friendly Name: call index 0x%02x, URI %s",
-			inst->friendly_name.call_index, inst->friendly_name.uri);
+		LOG_DBG("Notifying Friendly Name: call index 0x%02x, name %s",
+			inst->friendly_name.call_index, inst->friendly_name.name);
 
 		err = notify(conn, BT_UUID_TBS_FRIENDLY_NAME, inst->attrs, &inst->friendly_name,
 			     sizeof(inst->friendly_name.call_index) +
-				     strlen(inst->friendly_name.uri));
+				     strlen(inst->friendly_name.name));
 		if (err == 0) {
 			flags->call_friendly_name_changed = false;
 		} else {
@@ -940,7 +1078,7 @@ fail:
 		LOG_DBG("Notify failed (%d), retrying next connection interval", err);
 reschedule:
 		err = k_work_reschedule(&inst->notify_work,
-					K_USEC(BT_CONN_INTERVAL_TO_US(info.le.interval)));
+					K_USEC(info.le.interval_us));
 		__ASSERT(err >= 0, "Failed to reschedule work: %d", err);
 	}
 
@@ -1047,32 +1185,7 @@ static ssize_t read_uri_scheme_list(struct bt_conn *conn, const struct bt_gatt_a
 	} else {
 		flags->bearer_uri_schemes_supported_list_dirty = false;
 
-		net_buf_simple_reset(&read_buf);
-
-		net_buf_simple_add_mem(&read_buf, inst->uri_scheme_list,
-				       strlen(inst->uri_scheme_list));
-
-		if (inst_is_gtbs(inst)) {
-			/* TODO: Make uri schemes unique */
-			for (size_t i = 0; i < ARRAY_SIZE(svc_insts); i++) {
-				size_t uri_len = strlen(svc_insts[i].uri_scheme_list);
-
-				if (read_buf.len + uri_len >= read_buf.size) {
-					LOG_WRN("Cannot fit all TBS instances in GTBS "
-						"URI scheme list");
-					break;
-				}
-
-				net_buf_simple_add_mem(&read_buf, svc_insts[i].uri_scheme_list,
-						       uri_len);
-			}
-
-			LOG_DBG("GTBS: URI scheme %.*s", read_buf.len, read_buf.data);
-		} else {
-			LOG_DBG("Index %u: URI scheme %.*s", inst_index(inst), read_buf.len,
-				read_buf.data);
-		}
-
+		net_buf_put_uri_scheme_list(inst, &read_buf);
 		ret = bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data, read_buf.len);
 	}
 
@@ -1156,8 +1269,24 @@ static void current_calls_cfg_changed(const struct bt_gatt_attr *attr, uint16_t 
 {
 	struct tbs_inst *inst = lookup_inst_by_attr(attr);
 
-	if (inst != NULL) {
-		LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
+	if (inst == NULL) {
+		return;
+	}
+
+	LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
+
+	if (value == 0U) {
+		int err = k_mutex_lock(&inst->mutex, K_FOREVER);
+
+		if (err != 0) {
+			LOG_DBG("Failed to lock mutex: %d", err);
+			return;
+		}
+
+		(void)try_change_dialing_call_to_alerting(inst);
+
+		err = k_mutex_unlock(&inst->mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 	}
 }
 
@@ -1324,8 +1453,24 @@ static void call_state_cfg_changed(const struct bt_gatt_attr *attr, uint16_t val
 {
 	struct tbs_inst *inst = lookup_inst_by_attr(attr);
 
-	if (inst != NULL) {
-		LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
+	if (inst == NULL) {
+		return;
+	}
+
+	LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
+
+	if (value == 0U) {
+		int err = k_mutex_lock(&inst->mutex, K_FOREVER);
+
+		if (err != 0) {
+			LOG_DBG("Failed to lock mutex: %d", err);
+			return;
+		}
+
+		(void)try_change_dialing_call_to_alerting(inst);
+
+		err = k_mutex_unlock(&inst->mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 	}
 }
 
@@ -1489,7 +1634,7 @@ static uint8_t join_calls(struct tbs_inst *inst, const struct bt_tbs_call_cp_joi
 	uint8_t call_state;
 
 	if ((inst->optional_opcodes & BT_TBS_FEATURE_JOIN) == 0) {
-		return BT_TBS_RESULT_CODE_OPCODE_NOT_SUPPORTED;
+		return BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
 	}
 
 	/* Check length */
@@ -1518,26 +1663,27 @@ static uint8_t join_calls(struct tbs_inst *inst, const struct bt_tbs_call_cp_joi
 		if (call_state == BT_TBS_CALL_STATE_INCOMING) {
 			return BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
 		}
-
-		if (call_state != BT_TBS_CALL_STATE_LOCALLY_HELD &&
-		    call_state != BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD &&
-		    call_state != BT_TBS_CALL_STATE_ACTIVE) {
-			return BT_TBS_RESULT_CODE_STATE_MISMATCH;
-		}
 	}
 
 	/* Join all calls */
 	for (int i = 0; i < call_index_cnt; i++) {
 		call_state = joined_calls[i]->state;
 
-		if (call_state == BT_TBS_CALL_STATE_LOCALLY_HELD) {
+		if (call_state == BT_TBS_CALL_STATE_ACTIVE) {
+			/* Remain active */
+		} else if (call_state == BT_TBS_CALL_STATE_LOCALLY_HELD) {
 			joined_calls[i]->state = BT_TBS_CALL_STATE_ACTIVE;
+		} else if (call_state == BT_TBS_CALL_STATE_REMOTELY_HELD) {
+			/* Remain remotely held */
 		} else if (call_state == BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD) {
 			joined_calls[i]->state = BT_TBS_CALL_STATE_REMOTELY_HELD;
-		} else if (call_state == BT_TBS_CALL_STATE_INCOMING) {
-			joined_calls[i]->state = BT_TBS_CALL_STATE_ACTIVE;
+		} else if (call_state == BT_TBS_CALL_STATE_ALERTING) {
+			/* Implementation specific - Treat as no-op */
+		} else if (call_state == BT_TBS_CALL_STATE_DIALING) {
+			/* Implementation specific - Treat as no-op */
+		} else {
+			__ASSERT(false, "Invalid call state: 0x%02X", call_state);
 		}
-		/* else active => Do nothing */
 	}
 
 	hold_other_calls(inst, call_index_cnt, ccp->call_indexes);
@@ -1811,6 +1957,7 @@ static ssize_t write_call_cp(struct bt_conn *conn, const struct bt_gatt_attr *at
 	if (tbs != NULL && status == BT_TBS_RESULT_CODE_SUCCESS) {
 		notify_calls(tbs);
 		calls_changed = true;
+		(void)try_change_dialing_call_to_alerting(tbs);
 	}
 
 	if (conn != NULL && bt_gatt_is_subscribed(conn, attr, BT_GATT_CCC_NOTIFY)) {
@@ -1887,19 +2034,19 @@ static ssize_t read_friendly_name(struct bt_conn *conn, const struct bt_gatt_att
 		LOG_DBG("Value dirty for %p", (void *)conn);
 		ret = BT_GATT_ERR(BT_TBS_ERR_VAL_CHANGED);
 	} else {
-		const struct bt_tbs_in_uri *friendly_name = &inst->friendly_name;
+		const struct bt_tbs_friendly_name *friendly_name = &inst->friendly_name;
 
 		flags->call_friendly_name_dirty = false;
 
-		LOG_DBG("Index: 0x%02x call index 0x%02x, URI %s", inst_index(inst),
-			friendly_name->call_index, friendly_name->uri);
+		LOG_DBG("Index: 0x%02x call index 0x%02x, name %s", inst_index(inst),
+			friendly_name->call_index, friendly_name->name);
 
 		if (friendly_name->call_index == BT_TBS_FREE_CALL_INDEX) {
-			LOG_DBG("URI not set");
+			LOG_DBG("Friendly name not set");
 			ret = 0;
 		} else {
 			const size_t val_len =
-				sizeof(friendly_name->call_index) + strlen(friendly_name->uri);
+				sizeof(friendly_name->call_index) + strlen(friendly_name->name);
 
 			ret = bt_gatt_attr_read(conn, attr, buf, len, offset, friendly_name,
 						val_len);
@@ -2217,7 +2364,7 @@ int bt_tbs_register_bearer(const struct bt_tbs_register_param *param)
 {
 	int ret = -ENOEXEC;
 
-	CHECKIF(!valid_register_param(param)) {
+	if (!valid_register_param(param)) {
 		LOG_DBG("Invalid parameters");
 
 		return -EINVAL;
@@ -2323,10 +2470,17 @@ int bt_tbs_unregister_bearer(uint8_t bearer_index)
 int bt_tbs_accept(uint8_t call_index)
 {
 	struct tbs_inst *inst = lookup_inst_by_call_index(call_index);
-	int status = -EINVAL;
-	const struct bt_tbs_call_cp_acc ccp = {.call_index = call_index,
-					       .opcode = BT_TBS_CALL_OPCODE_ACCEPT};
+	const struct bt_tbs_call_cp_acc ccp = {
+		.call_index = call_index,
+		.opcode = BT_TBS_CALL_OPCODE_ACCEPT,
+	};
 	int err;
+	int ret;
+
+	if (inst == NULL) {
+		LOG_DBG("Could not lookup inst from call index %u", call_index);
+		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
+	}
 
 	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
 	if (err != 0) {
@@ -2334,105 +2488,111 @@ int bt_tbs_accept(uint8_t call_index)
 		return -EBUSY;
 	}
 
-	if (inst != NULL) {
-		status = accept_call(inst, &ccp);
-	}
-
-	if (status == BT_TBS_RESULT_CODE_SUCCESS) {
+	ret = accept_call(inst, &ccp);
+	if (ret == BT_TBS_RESULT_CODE_SUCCESS) {
 		notify_calls(inst);
 	}
 
 	err = k_mutex_unlock(&inst->mutex);
 	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
-	return status;
+	return ret;
 }
 
 int bt_tbs_hold(uint8_t call_index)
 {
 	struct tbs_inst *inst = lookup_inst_by_call_index(call_index);
-	int status = -EINVAL;
-	const struct bt_tbs_call_cp_hold ccp = {.call_index = call_index,
-						.opcode = BT_TBS_CALL_OPCODE_HOLD};
+	const struct bt_tbs_call_cp_hold ccp = {
+		.call_index = call_index,
+		.opcode = BT_TBS_CALL_OPCODE_HOLD,
+	};
+	int ret;
+	int err;
 
-	if (inst != NULL) {
-		int err;
-
-		err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
-		if (err != 0) {
-			LOG_DBG("Failed to lock mutex");
-			return -EBUSY;
-		}
-
-		status = tbs_hold_call(inst, &ccp);
-
-		if (status == BT_TBS_RESULT_CODE_SUCCESS) {
-			notify_calls(inst);
-		}
-
-		err = k_mutex_unlock(&inst->mutex);
-		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	if (inst == NULL) {
+		LOG_DBG("Could not lookup inst from call index %u", call_index);
+		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
 
-	return status;
+	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
+	}
+
+	ret = tbs_hold_call(inst, &ccp);
+	if (ret == BT_TBS_RESULT_CODE_SUCCESS) {
+		notify_calls(inst);
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 int bt_tbs_retrieve(uint8_t call_index)
 {
 	struct tbs_inst *inst = lookup_inst_by_call_index(call_index);
-	int status = -EINVAL;
-	const struct bt_tbs_call_cp_retrieve ccp = {.call_index = call_index,
-						    .opcode = BT_TBS_CALL_OPCODE_RETRIEVE};
+	const struct bt_tbs_call_cp_retrieve ccp = {
+		.call_index = call_index,
+		.opcode = BT_TBS_CALL_OPCODE_RETRIEVE,
+	};
+	int ret;
+	int err;
 
-	if (inst != NULL) {
-		int err;
-
-		err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
-		if (err != 0) {
-			LOG_DBG("Failed to lock mutex");
-			return -EBUSY;
-		}
-
-		status = retrieve_call(inst, &ccp);
-
-		if (status == BT_TBS_RESULT_CODE_SUCCESS) {
-			notify_calls(inst);
-		}
-
-		err = k_mutex_unlock(&inst->mutex);
-		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	if (inst == NULL) {
+		LOG_DBG("Could not lookup inst from call index %u", call_index);
+		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
 
-	return status;
+	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
+	}
+
+	ret = retrieve_call(inst, &ccp);
+	if (ret == BT_TBS_RESULT_CODE_SUCCESS) {
+		notify_calls(inst);
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 int bt_tbs_terminate(uint8_t call_index)
 {
 	struct tbs_inst *inst = lookup_inst_by_call_index(call_index);
-	int status = -EINVAL;
-	const struct bt_tbs_call_cp_term ccp = {.call_index = call_index,
-						.opcode = BT_TBS_CALL_OPCODE_TERMINATE};
+	const struct bt_tbs_call_cp_term ccp = {
+		.call_index = call_index,
+		.opcode = BT_TBS_CALL_OPCODE_TERMINATE,
+	};
+	int ret;
+	int err;
 
-	if (inst != NULL) {
-		int err;
-
-		err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
-		if (err != 0) {
-			LOG_DBG("Failed to lock mutex");
-			return -EBUSY;
-		}
-
-		status = terminate_call(inst, &ccp, BT_TBS_REASON_SERVER_ENDED_CALL);
-
-		if (status == BT_TBS_RESULT_CODE_SUCCESS) {
-			notify_calls(inst);
-		}
-
-		err = k_mutex_unlock(&inst->mutex);
-		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	if (inst == NULL) {
+		LOG_DBG("Could not lookup inst from call index %u", call_index);
+		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
 
-	return status;
+	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
+	}
+
+	ret = terminate_call(inst, &ccp, BT_TBS_REASON_SERVER_ENDED_CALL);
+	if (ret == BT_TBS_RESULT_CODE_SUCCESS) {
+		notify_calls(inst);
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 int bt_tbs_originate(uint8_t bearer_index, char *remote_uri, uint8_t *call_index)
@@ -2481,38 +2641,44 @@ int bt_tbs_join(uint8_t call_index_cnt, uint8_t *call_indexes)
 	struct tbs_inst *inst;
 	uint8_t buf[CONFIG_BT_TBS_MAX_CALLS + sizeof(struct bt_tbs_call_cp_join)];
 	struct bt_tbs_call_cp_join *ccp = (struct bt_tbs_call_cp_join *)buf;
-	int status = -EINVAL;
+	int err;
+	int ret;
 
-	if (call_index_cnt != 0 && call_indexes != 0) {
-		inst = lookup_inst_by_call_index(call_indexes[0]);
-	} else {
-		return status;
+	if (call_index_cnt == 0U) {
+		LOG_DBG("call_index_cnt is 0");
+		return -EINVAL;
 	}
 
-	if (inst != NULL) {
-		int err;
-
-		err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
-		if (err != 0) {
-			LOG_DBG("Failed to lock mutex");
-			return -EBUSY;
-		}
-
-		ccp->opcode = BT_TBS_CALL_OPCODE_JOIN;
-		(void)memcpy(ccp->call_indexes, call_indexes,
-			     MIN(call_index_cnt, CONFIG_BT_TBS_MAX_CALLS));
-
-		status = join_calls(inst, ccp, call_index_cnt);
-
-		if (status == BT_TBS_RESULT_CODE_SUCCESS) {
-			notify_calls(inst);
-		}
-
-		err = k_mutex_unlock(&inst->mutex);
-		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	if (call_indexes == NULL) {
+		LOG_DBG("call_indexes is NULL");
+		return -EINVAL;
 	}
 
-	return status;
+	inst = lookup_inst_by_call_index(call_indexes[0]);
+
+	if (inst == NULL) {
+		LOG_DBG("Could not lookup inst from call index %u", call_indexes[0]);
+		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
+	}
+
+	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
+	}
+
+	ccp->opcode = BT_TBS_CALL_OPCODE_JOIN;
+	(void)memcpy(ccp->call_indexes, call_indexes, MIN(call_index_cnt, CONFIG_BT_TBS_MAX_CALLS));
+
+	ret = join_calls(inst, ccp, call_index_cnt);
+	if (ret == BT_TBS_RESULT_CODE_SUCCESS) {
+		notify_calls(inst);
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 int bt_tbs_remote_answer(uint8_t call_index)
@@ -2523,12 +2689,7 @@ int bt_tbs_remote_answer(uint8_t call_index)
 	int ret;
 
 	if (inst == NULL) {
-		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
-	}
-
-	call = lookup_call_in_inst(inst, call_index);
-
-	if (call == NULL) {
+		LOG_DBG("Could not lookup inst from call index %u", call_index);
 		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
 
@@ -2538,7 +2699,10 @@ int bt_tbs_remote_answer(uint8_t call_index)
 		return -EBUSY;
 	}
 
-	if (call->state == BT_TBS_CALL_STATE_ALERTING) {
+	call = lookup_call_in_inst(inst, call_index);
+	if (call == NULL) {
+		ret = BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
+	} else if (call->state == BT_TBS_CALL_STATE_ALERTING) {
 		call->state = BT_TBS_CALL_STATE_ACTIVE;
 		notify_calls(inst);
 		ret = BT_TBS_RESULT_CODE_SUCCESS;
@@ -2558,15 +2722,14 @@ int bt_tbs_remote_hold(uint8_t call_index)
 {
 	struct tbs_inst *inst = lookup_inst_by_call_index(call_index);
 	struct bt_tbs_call *call;
-	uint8_t status;
 	int err;
+	int ret;
 
 	if (inst == NULL) {
 		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
 
 	call = lookup_call_in_inst(inst, call_index);
-
 	if (call == NULL) {
 		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
@@ -2579,37 +2742,36 @@ int bt_tbs_remote_hold(uint8_t call_index)
 
 	if (call->state == BT_TBS_CALL_STATE_ACTIVE) {
 		call->state = BT_TBS_CALL_STATE_REMOTELY_HELD;
-		status = BT_TBS_RESULT_CODE_SUCCESS;
+		ret = BT_TBS_RESULT_CODE_SUCCESS;
 	} else if (call->state == BT_TBS_CALL_STATE_LOCALLY_HELD) {
 		call->state = BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD;
-		status = BT_TBS_RESULT_CODE_SUCCESS;
+		ret = BT_TBS_RESULT_CODE_SUCCESS;
 	} else {
-		status = BT_TBS_RESULT_CODE_STATE_MISMATCH;
+		ret = BT_TBS_RESULT_CODE_STATE_MISMATCH;
 	}
 
-	if (status == BT_TBS_RESULT_CODE_SUCCESS) {
+	if (ret == BT_TBS_RESULT_CODE_SUCCESS) {
 		notify_calls(inst);
 	}
 
 	err = k_mutex_unlock(&inst->mutex);
 	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
-	return status;
+	return ret;
 }
 
 int bt_tbs_remote_retrieve(uint8_t call_index)
 {
 	struct tbs_inst *inst = lookup_inst_by_call_index(call_index);
 	struct bt_tbs_call *call;
-	int status;
 	int err;
+	int ret;
 
 	if (inst == NULL) {
 		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
 
 	call = lookup_call_in_inst(inst, call_index);
-
 	if (call == NULL) {
 		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
@@ -2621,50 +2783,54 @@ int bt_tbs_remote_retrieve(uint8_t call_index)
 	}
 	if (call->state == BT_TBS_CALL_STATE_REMOTELY_HELD) {
 		call->state = BT_TBS_CALL_STATE_ACTIVE;
-		status = BT_TBS_RESULT_CODE_SUCCESS;
+		ret = BT_TBS_RESULT_CODE_SUCCESS;
 	} else if (call->state == BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD) {
 		call->state = BT_TBS_CALL_STATE_LOCALLY_HELD;
-		status = BT_TBS_RESULT_CODE_SUCCESS;
+		ret = BT_TBS_RESULT_CODE_SUCCESS;
 	} else {
-		status = BT_TBS_RESULT_CODE_STATE_MISMATCH;
+		ret = BT_TBS_RESULT_CODE_STATE_MISMATCH;
 	}
 
-	if (status == BT_TBS_RESULT_CODE_SUCCESS) {
+	if (ret == BT_TBS_RESULT_CODE_SUCCESS) {
 		notify_calls(inst);
 	}
 
 	err = k_mutex_unlock(&inst->mutex);
 	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
-	return status;
+	return ret;
 }
 
 int bt_tbs_remote_terminate(uint8_t call_index)
 {
 	struct tbs_inst *inst = lookup_inst_by_call_index(call_index);
-	int status = -EINVAL;
-	const struct bt_tbs_call_cp_term ccp = {.call_index = call_index,
-						.opcode = BT_TBS_CALL_OPCODE_TERMINATE};
+	const struct bt_tbs_call_cp_term ccp = {
+		.call_index = call_index,
+		.opcode = BT_TBS_CALL_OPCODE_TERMINATE,
+	};
+	int err;
+	int ret;
 
-	if (inst != NULL) {
-		int err;
-
-		err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
-		if (err != 0) {
-			LOG_DBG("Failed to lock mutex");
-			return -EBUSY;
-		}
-		status = terminate_call(inst, &ccp, BT_TBS_REASON_REMOTE_ENDED_CALL);
-
-		if (status == BT_TBS_RESULT_CODE_SUCCESS) {
-			notify_calls(inst);
-		}
-
-		err = k_mutex_unlock(&inst->mutex);
-		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	if (inst == NULL) {
+		LOG_DBG("Could not lookup inst from call index %u", call_index);
+		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
 
-	return status;
+	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
+	}
+
+	ret = terminate_call(inst, &ccp, BT_TBS_REASON_REMOTE_ENDED_CALL);
+	if (ret == BT_TBS_RESULT_CODE_SUCCESS) {
+		notify_calls(inst);
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 static void set_incoming_call_target_bearer_uri_changed_cb(struct tbs_flags *flags)
@@ -2714,7 +2880,8 @@ static void tbs_inst_remote_incoming(struct tbs_inst *inst, const char *to, cons
 
 	if (friendly_name) {
 		inst->friendly_name.call_index = call->index;
-		utf8_lcpy(inst->friendly_name.uri, friendly_name, sizeof(inst->friendly_name.uri));
+		utf8_lcpy(inst->friendly_name.name, friendly_name,
+			  sizeof(inst->friendly_name.name));
 	} else {
 		inst->friendly_name.call_index = BT_TBS_FREE_CALL_INDEX;
 	}
@@ -2917,44 +3084,29 @@ static void set_bearer_uri_schemes_supported_list_changed_cb(struct tbs_flags *f
 	flags->bearer_uri_schemes_supported_list_dirty = true;
 }
 
-int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint8_t uri_count)
+int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char *uri_scheme_list)
 {
-	char uri_scheme_list[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH];
-	size_t len = 0;
-	struct tbs_inst *inst;
+	struct tbs_inst *inst = inst_lookup_index(bearer_index);
+	size_t uri_scheme_list_len;
 	int err;
 
-	NET_BUF_SIMPLE_DEFINE(uri_scheme_buf, READ_BUF_SIZE);
-
-	if (bearer_index >= ARRAY_SIZE(svc_insts)) {
+	if (inst == NULL) {
+		LOG_DBG("Could not find TBS instance from index %u", bearer_index);
 		return -EINVAL;
 	}
 
-	inst = &svc_insts[bearer_index];
-	(void)memset(uri_scheme_list, 0, sizeof(uri_scheme_list));
+	if (uri_scheme_list == NULL) {
+		LOG_DBG("uri_scheme_list is NULL");
 
-	for (int i = 0; i < uri_count; i++) {
-		if (len) {
-			len++;
-			if (len > sizeof(uri_scheme_list) - 1) {
-				return -ENOMEM;
-			}
-
-			strcat(uri_scheme_list, ",");
-		}
-
-		len += strlen(uri_list[i]);
-		if (len > sizeof(uri_scheme_list) - 1) {
-			return -ENOMEM;
-		}
-
-		/* Store list in temp list in case something goes wrong */
-		strcat(uri_scheme_list, uri_list[i]);
+		return -EINVAL;
 	}
 
-	if (strcmp(inst->uri_scheme_list, uri_scheme_list) == 0) {
-		/* identical; don't update or notify */
-		return 0;
+	uri_scheme_list_len = strlen(uri_scheme_list);
+	if (uri_scheme_list_len >= sizeof(inst->uri_scheme_list)) {
+		LOG_DBG("Cannot store uri_scheme_list of size %zu in buffer of size %zu",
+			uri_scheme_list_len, sizeof(inst->uri_scheme_list));
+
+		return -ENOMEM;
 	}
 
 	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
@@ -2963,37 +3115,30 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint
 		return -EBUSY;
 	}
 
-	/* Store final result */
-	(void)utf8_lcpy(inst->uri_scheme_list, uri_scheme_list, sizeof(inst->uri_scheme_list));
+	if (strcmp(inst->uri_scheme_list, uri_scheme_list) == 0) {
+		/* No URI scheme changes */
+		LOG_DBG("URI scheme \"%s\" was identical to existing for %p", uri_scheme_list,
+			inst);
+	} else {
 
-	LOG_DBG("TBS instance %u uri prefix list is now %s", bearer_index, inst->uri_scheme_list);
+		/* Store final result */
+		(void)memcpy(inst->uri_scheme_list, uri_scheme_list, uri_scheme_list_len);
+		inst->uri_scheme_list[uri_scheme_list_len] = '\0';
 
-	set_value_changed(inst, set_bearer_uri_schemes_supported_list_changed_cb,
-			  BT_UUID_TBS_URI_LIST);
-
-	if (!inst_is_gtbs(inst)) {
-		/* If the instance is different than the GTBS notify on the GTBS instance as well */
-		net_buf_simple_add_mem(&uri_scheme_buf, gtbs_inst.uri_scheme_list,
-				       strlen(gtbs_inst.uri_scheme_list));
-
-		/* TODO: Make uri schemes unique */
-		for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
-			const size_t uri_len = strlen(svc_insts[i].uri_scheme_list);
-
-			if (uri_scheme_buf.len + uri_len >= uri_scheme_buf.size) {
-				LOG_WRN("Cannot fit all TBS instances in GTBS "
-					"URI scheme list");
-				break;
-			}
-
-			net_buf_simple_add_mem(&uri_scheme_buf, svc_insts[i].uri_scheme_list,
-					       uri_len);
-		}
-
-		LOG_DBG("GTBS: URI scheme %.*s", uri_scheme_buf.len, uri_scheme_buf.data);
-
-		set_value_changed(&gtbs_inst, set_bearer_uri_schemes_supported_list_changed_cb,
+		set_value_changed(inst, set_bearer_uri_schemes_supported_list_changed_cb,
 				  BT_UUID_TBS_URI_LIST);
+
+		LOG_DBG("TBS instance %u uri prefix list is updated to {%s}", bearer_index,
+			inst->uri_scheme_list);
+
+		if (!inst_is_gtbs(inst)) {
+			/* If the instance is different than GTBS notify on the GTBS instance as
+			 * well
+			 */
+			set_value_changed(&gtbs_inst,
+					  set_bearer_uri_schemes_supported_list_changed_cb,
+					  BT_UUID_TBS_URI_LIST);
+		}
 	}
 
 	err = k_mutex_unlock(&inst->mutex);

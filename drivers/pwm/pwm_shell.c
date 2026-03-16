@@ -29,6 +29,32 @@ static const struct args_index args_indx = {
 	.flags = 5,
 };
 
+static int cmd_frequency(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	uint32_t channel;
+	uint64_t cycles;
+	int err;
+
+	dev = shell_device_get_binding(argv[args_indx.device]);
+	if (dev == NULL) {
+		shell_error(sh, "PWM device not found");
+		return -EINVAL;
+	}
+
+	channel = strtoul(argv[args_indx.channel], NULL, 0);
+
+	err = pwm_get_cycles_per_sec(dev, channel, &cycles);
+	if (err != 0) {
+		shell_error(sh, "failed to get PWM cycles per second (err %d)", err);
+		return err;
+	}
+
+	shell_print(sh, "Frequency: %" PRIu64 " Hz", cycles);
+
+	return 0;
+}
+
 static int cmd_cycles(const struct shell *sh, size_t argc, char **argv)
 {
 	pwm_flags_t flags = 0;
@@ -144,6 +170,10 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(pwm_cmds,
+	SHELL_CMD_ARG(frequency, &dsub_device_name,
+		SHELL_HELP("Get PWM counter frequency in Hz.",
+			   "<device> <channel>"),
+		cmd_frequency, 3, 0),
 	SHELL_CMD_ARG(
 		cycles, &dsub_device_name,
 		SHELL_HELP("Set PWM period and pulse width in cycles.",

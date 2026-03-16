@@ -7,5 +7,5 @@
 zephyr_library()
 
 zephyr_library_sources(
-	ms5837.c
+  ms5837.c
 )

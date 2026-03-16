@@ -214,6 +214,25 @@ Additionally the tool allows you to specify the modules you want to list,
 fetch or clean blobs for by typing the module names as a command-line
 parameter.
 
+The argument ``--allow-regex`` can be passed ``west blobs fetch`` to restrict
+the specific blobs that are fetched, by passing a regular expression::
+
+  # For example, only download esp32 blobs, skip the other variants
+  west blobs fetch hal_espressif --allow-regex 'lib/esp32/.*'
+
+An auto-cache directory can be provided via the ``--auto-cache`` cli argument
+or via the ``blobs.auto-cache`` config option. When enabled, the auto-cache
+directory is automatically populated whenever a blob is missing and downloaded.
+
+One or more additional cache directories (separated by ``;``) can be provided
+in ``--cache-dirs`` cli argument or ``blobs.cache-dirs`` config option.
+
+``west blobs fetch`` searches all configured cache directories (including the
+auto-cache) for a matching blob filename. Cached files may be stored either
+under their original filename or with a SHA-256 suffix (``<filename>.<sha>``).
+If found, the blob is copied from the cache to the blob path; otherwise
+it is downloaded from its url to the blob path.
+
 .. _west-twister:
 
 Twister wrapper: ``west twister``
@@ -245,6 +264,10 @@ You can search for a custom descriptor by type and ID, for example::
 You can dump all of the descriptors in an image using::
 
    west bindesc dump build/zephyr/zephyr.bin
+
+You can extract the descriptor data area of the image to a file using::
+
+   west bindesc extract
 
 You can list all known standard descriptor names using::
 
@@ -422,3 +445,49 @@ each individual commit associated with the given pull request.
     │   ├── second-commit-from-pr.patch
     │   └── third-commit-from-pr.patch
     └── patches.yml
+
+Working with the Zephyr SDK: ``west sdk``
+*****************************************
+
+The ``west sdk`` command is a Zephyr-specific west command used to list
+and install the Zephyr SDK and its toolchains.
+
+Listing SDKs and toolchains
+---------------------------
+
+To list installed Zephyr SDKs as well as available SDK releases and
+toolchains, run:
+
+.. code-block:: console
+
+   west sdk list
+
+This command shows:
+
+- Installed SDK versions
+- Available SDK releases
+- Toolchains included in each SDK
+
+Installing the Zephyr SDK
+-------------------------
+
+To install the Zephyr SDK, run:
+
+.. code-block:: console
+
+   west sdk install
+
+This command may run in interactive mode and prompt for SDK or
+toolchain selection. When specific toolchains are provided via
+``--toolchains``, the command runs non-interactively, which is
+recommended for automation.
+
+To install specific toolchains only, use the ``--toolchains`` option:
+
+.. code-block:: console
+
+   west sdk install --toolchains arm-zephyr-eabi riscv64-zephyr-elf
+
+If you are unsure which toolchains you need, run ``west sdk list`` first
+to see the available options and avoid downloading unnecessary
+toolchains, which can save gigabytes of disk space and download time.

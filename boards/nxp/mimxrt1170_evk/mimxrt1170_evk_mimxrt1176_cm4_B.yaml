@@ -5,7 +5,7 @@
 #
 
 identifier: mimxrt1170_evk@B/mimxrt1176/cm4
-name: NXP MIMXRT1170-EVKB CM4
+name: NXP MIMXRT1170-EVKB (CM4)
 type: mcu
 arch: arm
 toolchain:

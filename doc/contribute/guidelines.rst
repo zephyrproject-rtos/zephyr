@@ -101,20 +101,37 @@ this contributing and review process for imported components.
 
 .. _copyrights:
 
-Copyrights Notices
-*******************
+Copyright and License Notices
+=============================
 
-The Zephyr Project follows the `Community Best Practice`_ for Copyright Notices from the Linux
-Foundation.
+Zephyr follows SPDX/REUSE-style file headers. Add a machine-readable copyright notice and a license
+identifier at the top of each file so tooling can detect them (for example
+:ref:`west spdx <west-spdx>`, which uses the `REUSE tool`_).
 
-We recommend using the following copyright notice:
+The Zephyr Project follows the `Community Best Practice`_ for copyright notices from the Linux
+Foundation, therefore we recommend using the following copyright notice:
 
-.. code-block:: C
+.. code-block:: none
 
-    Copyright The Zephyr Project Contributors
+   SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+
+Include the license identifier alongside it:
+
+.. code-block:: none
+
+   SPDX-License-Identifier: Apache-2.0
+
+Practical guidance:
+
+- Place both lines at the very top of the file using the file's native comment syntax.
+- If you authored substantial, original content, you *may* add an additional line for yourself or
+  your organization.
 
 .. _Community Best Practice:
    https://www.linuxfoundation.org/blog/copyright-notices-in-open-source-software-projects/
+
+.. _REUSE tool:
+   https://github.com/fsfe/reuse-tool
 
 .. _DCO:
 
@@ -132,7 +149,7 @@ statement and thereby agrees to the DCO.
 
 When a developer submits a patch, it is a commitment that the contributor has
 the right to submit the patch per the license.  The DCO agreement is shown
-below and at http://developercertificate.org/.
+below and at https://developercertificate.org/.
 
 .. code-block:: none
 
@@ -191,6 +208,56 @@ Additional requirements:
 
 - If you are altering an existing commit created by someone else, you must add
   your Signed-off-by: line without removing the existing one.
+
+.. _ai_coding_assistants:
+
+AI Coding Assistants
+********************
+
+This section provides guidance for contributors using AI tools and assistants when contributing to
+the Zephyr project.
+
+Licensing and Legal Requirements
+================================
+
+All contributions must comply with the licensing requirements of the project and be compatible with
+Zephyr's licensing (e.g. Apache-2.0, see :ref:`licensing_requirements` for more details).
+
+Signed-off-by and Developer Certificate of Origin
+=================================================
+
+AI agents **must not** add ``Signed-off-by`` tags. Only humans can legally certify the :ref:`DCO`.
+The human submitter is responsible for:
+
+- Reviewing all AI-generated code.
+- Ensuring compliance with licensing requirements.
+- Adding their own Signed-off-by tag to certify the DCO.
+- Taking full responsibility for the contribution.
+
+Usage disclosure and attribution
+================================
+
+When AI tools are being used to help write a contribution, proper attribution helps track the
+evolving role of AI in the development process. Contributions should include an ``Assisted-by:`` tag
+in the following format:
+
+.. code-block:: none
+
+   Assisted-by: [Agent Name]:[Model Version] [Tool1] [Tool2]
+
+Where:
+
+- ``[Agent Name]`` is the name of the AI tool or framework.
+- ``[Model Version]`` is the specific model version used.
+- ``[Tool1] [Tool2]`` are optional specialized analysis tools used.
+
+Basic development tools (git, gcc, make, editors) should not be listed.
+
+Example:
+
+.. code-block:: none
+
+   Assisted-by: Claude:claude-opus-4.6 coccinelle
 
 .. _source_tree_v2:
 
@@ -354,9 +421,22 @@ Pull Request Guidelines
 When opening a new Pull Request, adhere to the following guidelines to ensure
 compliance with Zephyr standards and facilitate the review process.
 
-If in doubt, it's advisible to explore existing Pull Requests within the Zephyr
+If in doubt, it's advisable to explore existing Pull Requests within the Zephyr
 repository. Use the search filters and labels to locate PRs related to changes
 similar to the ones you are proposing.
+
+.. note::
+   GitHub's default code UI uses 4-character tabs. However, Zephyr follows the
+   `Linux kernel coding style`_, which uses 8-character tabs.
+
+   To ensure your view of the code is consistent with other developers, please
+   go to your `user preferences on GitHub`_ and change the tab width to 8 spaces.
+
+.. _Linux kernel coding style:
+   https://kernel.org/doc/html/latest/process/coding-style.html#indentation
+
+.. _user preferences on GitHub:
+   https://github.com/settings/appearance
 
 .. _commit-guidelines:
 
@@ -567,17 +647,17 @@ Running CI Tests Locally
 check_compliance.py
 -------------------
 
-The ``check_compliance.py`` script serves as a valuable tool for assessing code
-compliance with Zephyr's established guidelines and best practices. The script
-acts as wrapper for a suite of tools that performs various checks, including
-linters and formatters.
+The :zephyr_file:`scripts/ci/check_compliance.py` script serves as a valuable
+tool for assessing code compliance with Zephyr's established guidelines and
+best practices. The script acts as wrapper for a suite of tools that performs
+various checks, including linters and formatters.
 
 Developers are encouraged to run the script locally to validate their changes
 before opening a new Pull Request:
 
 .. code-block:: bash
 
-   ./scripts/ci/check_compliance.py -c upstream/main..
+   ./scripts/ci/check_compliance.py -c <commit range>
 
 .. note::
    On Windows if the .pl extension has not yet been associated with an
@@ -585,6 +665,88 @@ before opening a new Pull Request:
    interpreter, Windows will ask what application will open Perl files.
    Set the default app to Strawberry Perl. By default the executable is
    installed at ``C:\Strawberry\perl\bin\perl.exe``.
+
+KeepSorted Check
+^^^^^^^^^^^^^^^^
+
+The KeepSorted check ensures that specified blocks of code, configuration, or
+documentation remain in sorted order.
+
+To use the KeepSorted check, wrap your sorted content between dedicated lines
+containing start and stop markers, typically using comments:
+
+.. code-block:: c
+
+   // zephyr-keep-sorted-start
+   option_a
+   option_b
+   option_c
+   // zephyr-keep-sorted-stop
+
+KeepSorted Marker Options
+"""""""""""""""""""""""""
+
+The sorting behavior of each block can be customized in several ways.
+To do this, one or more of the following parameters can be added on
+the same line as the start marker itself:
+
+**re(regex_pattern)**
+   Enables regex mode where only lines matching the specified regular expression
+   are checked for sorting. Other lines are ignored.
+
+   Example checking sorted properties in a yaml file:
+
+   .. code-block:: yaml
+
+      # zephyr-keep-sorted-start re(^\s+\- name:)
+      projects:
+        - name: application
+          revision: main
+        - name: library1
+          revision: feature-branch
+        - name: library2
+          revision: main
+      # zephyr-keep-sorted-stop
+
+**strip(characters)**
+   Strips the specified characters from lines before performing the sort comparison.
+   This is useful when lines have optional prefixes or suffixes that should be
+   ignored during sorting.
+
+   Example stripping quotes from yaml dictionary keys:
+
+   .. code-block:: yaml
+
+      # zephyr-keep-sorted-start strip(":)
+      ACPI:
+        status: odd fixes
+      "West project: acpica":
+        status: odd fixes
+      # zephyr-keep-sorted-stop
+
+**nofold**
+   Disables line folding. By default, indented lines following a main line are
+   concatenated (folded) together for sorting comparison. The ``nofold`` option
+   disables this behavior and ignores indented lines.
+
+**ignorecase**
+   Enables case-insensitive sorting using Python's `str.casefold`_. This allows
+   mixing uppercase and lowercase items in sorted blocks without causing sort
+   order violations. Defaults to Python's string ordering if omitted.
+
+.. _str.casefold: https://docs.python.org/3/library/stdtypes.html#str.casefold
+
+Multiple options can be combined on the same marker line:
+
+.. code-block:: rst
+
+   .. zephyr-keep-sorted-start re(^\* \w) ignorecase
+   * Shell
+     Some important message about the shell.
+
+   * STM32
+     Updates for this vendor.
+   .. zephyr-keep-sorted-stop
 
 twister
 -------
@@ -874,7 +1036,7 @@ For example, a copy of a locally maintained import::
 
       Origin: Contiki OS
       License: BSD 3-Clause
-      URL: http://www.contiki-os.org/
+      URL: https://www.contiki-os.org/
       commit: 853207acfdc6549b10eb3e44504b1a75ae1ad63a
       Purpose: Introduction of networking stack.
 

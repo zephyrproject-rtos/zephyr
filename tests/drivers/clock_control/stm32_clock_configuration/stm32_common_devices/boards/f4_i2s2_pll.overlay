@@ -64,8 +64,10 @@
 };
 
 &plli2s {
+	div-m = <8>;
 	mul-n = <384>;
 	div-r = <2>;
+	clocks = <&clk_hse>;
 	status = "okay";
 };
 

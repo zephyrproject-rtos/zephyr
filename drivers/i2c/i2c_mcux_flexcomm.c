@@ -254,6 +254,7 @@ static int mcux_flexcomm_recover_bus(const struct device *dev)
 	};
 	uint32_t bitrate_cfg;
 	int error = 0;
+	I2C_Type *base = config->base;
 
 	if (!gpio_is_ready_dt(&config->scl)) {
 		LOG_ERR("SCL GPIO device not ready");
@@ -264,6 +265,13 @@ static int mcux_flexcomm_recover_bus(const struct device *dev)
 		LOG_ERR("SDA GPIO device not ready");
 		return -EIO;
 	}
+
+	/* If a glitch on the bus looks like a start condition, the i2c block will be stuck
+	 * waiting forever for a stop. This resets the I2C block to clear this condition before
+	 * the bitbang recovery proceedure which should clear any other devices on the bus.
+	 */
+	I2C_MasterEnable(base, false);
+	I2C_MasterEnable(base, true);
 
 	k_sem_take(&data->lock, K_FOREVER);
 
@@ -675,8 +683,9 @@ static DEVICE_API(i2c, mcux_flexcomm_driver_api) = {
 	static const struct mcux_flexcomm_config mcux_flexcomm_config_##id = {	\
 		.base = (I2C_Type *) DT_INST_REG_ADDR(id),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
-		.clock_subsys =				\
-		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),\
+		.clock_subsys = (clock_control_subsys_t)COND_CODE_1(	\
+			DT_PHA_HAS_CELL(DT_DRV_INST(id), clocks, name),	\
+			(DT_INST_CLOCKS_CELL(id, name)), (0U)),		\
 		.irq_config_func = mcux_flexcomm_config_func_##id,	\
 		.bitrate = DT_INST_PROP(id, clock_frequency),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\

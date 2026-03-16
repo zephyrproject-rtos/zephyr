@@ -22,8 +22,8 @@ set(echo_client_path ${ZEPHYR_BASE}/samples/net/sockets/echo_client)
 target_include_directories(app PRIVATE ${echo_client_path}/src/)
 
 target_sources(app PRIVATE
-	src/echo_test.c
-	src/test_main.c
+  src/echo_test.c
+  src/test_main.c
 )
 
 target_sources(                     app PRIVATE ${echo_client_path}/src/echo-client.c)

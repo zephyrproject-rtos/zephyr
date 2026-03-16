@@ -97,6 +97,7 @@ struct i2c_it8xxx2_data {
 	uint8_t freq;
 	/* wait for stop bit interrupt */
 	uint8_t stop;
+	uint8_t *buf;
 };
 
 enum i2c_host_status {
@@ -144,20 +145,22 @@ static int i2c_parsing_return_value(const struct device *dev)
 		LOG_ERR("I2C ch%d Address:0x%X Transaction time out.",
 			config->port, data->addr_16bit);
 	} else {
-		LOG_DBG("I2C ch%d Address:0x%X Host error bits message:",
-			config->port, data->addr_16bit);
 		/* Host error bits message*/
 		if (data->err & HOSTA_TMOE) {
-			LOG_ERR("Time-out error: hardware time-out error.");
+			LOG_ERR("I2C ch%d Address:0x%X Time-out error: hardware time-out error.",
+				config->port, data->addr_16bit);
 		}
 		if (data->err & HOSTA_NACK) {
-			LOG_DBG("NACK error: device does not response ACK.");
+			LOG_DBG("I2C ch%d Address:0x%X NACK error: device does not response ACK.",
+				config->port, data->addr_16bit);
 		}
 		if (data->err & HOSTA_FAIL) {
-			LOG_ERR("Fail: a processing transmission is killed.");
+			LOG_ERR("I2C ch%d Address:0x%X Fail: a processing transmission is killed.",
+				config->port, data->addr_16bit);
 		}
 		if (data->err & HOSTA_BSER) {
-			LOG_ERR("BUS error: SMBus has lost arbitration.");
+			LOG_ERR("I2C ch%d Address:0x%X BUS error: SMBus has lost arbitration.",
+				config->port, data->addr_16bit);
 		}
 	}
 
@@ -418,7 +421,7 @@ void __soc_ram_code i2c_tran_fifo_write_start(const struct device *dev)
 
 	for (i = 0; i < data->bytecnt; i++) {
 		/* Set host block data byte. */
-		IT8XXX2_SMB_HOBDB(base) = *(data->active_msg->buf++);
+		IT8XXX2_SMB_HOBDB(base) = *data->buf++;
 	}
 	/* Calculate the remaining byte counts. */
 	data->bytecnt = data->active_msg->len - data->bytecnt;
@@ -445,7 +448,7 @@ void __soc_ram_code i2c_tran_fifo_write_next_block(const struct device *dev)
 
 	for (i = 0; i < _bytecnt; i++) {
 		/* Set host block data byte. */
-		IT8XXX2_SMB_HOBDB(base) = *(data->active_msg->buf++);
+		IT8XXX2_SMB_HOBDB(base) = *data->buf++;
 	}
 	/* Clear FIFO block done status. */
 	*reg_mstfctrl |= IT8XXX2_SMB_BLKDS;
@@ -488,6 +491,7 @@ int __soc_ram_code i2c_tran_fifo_w2r_change_direction(const struct device *dev)
 	IT8XXX2_SMB_HOCTL2(base) &= ~IT8XXX2_SMB_I2C_SW_WAIT;
 	/* Point to the next msg for the read location. */
 	data->active_msg = &data->msgs_list[data->active_msg_index];
+	data->buf = data->active_msg->buf;
 	/* Set read byte counts. */
 	IT8XXX2_SMB_D0REG(base) = data->active_msg->len;
 	data->bytecnt = data->active_msg->len;
@@ -542,7 +546,7 @@ void __soc_ram_code i2c_tran_fifo_read_next_block(const struct device *dev)
 
 	for (i = 0; i < I2C_FIFO_MODE_MAX_SIZE; i++) {
 		/* To get received data. */
-		*(data->active_msg->buf++) = IT8XXX2_SMB_HOBDB(base);
+		*data->buf++ = IT8XXX2_SMB_HOBDB(base);
 	}
 	/* Clear FIFO block done status. */
 	*reg_mstfctrl |= IT8XXX2_SMB_BLKDS;
@@ -559,7 +563,7 @@ void __soc_ram_code i2c_tran_fifo_read_finish(const struct device *dev)
 
 	for (i = 0; i < data->bytecnt; i++) {
 		/* To get received data. */
-		*(data->active_msg->buf++) = IT8XXX2_SMB_HOBDB(base);
+		*data->buf++ = IT8XXX2_SMB_HOBDB(base);
 	}
 	/* Clear byte count register. */
 	IT8XXX2_SMB_D0REG(base) = 0;
@@ -802,7 +806,7 @@ int __soc_ram_code i2c_tran_read(const struct device *dev)
 		} else if (IT8XXX2_SMB_HOSTA(base) & HOSTA_BDS) {
 			if (data->ridx < data->active_msg->len) {
 				/* To get received data. */
-				*(data->active_msg->buf++) = IT8XXX2_SMB_HOBDB(base);
+				*data->buf++ = IT8XXX2_SMB_HOBDB(base);
 				data->ridx++;
 				/* For last byte */
 				i2c_r_last_byte(dev);
@@ -848,7 +852,7 @@ int __soc_ram_code i2c_tran_write(const struct device *dev)
 		 */
 		IT8XXX2_SMB_TRASLA(base) = (uint8_t)data->addr_16bit << 1;
 		/* Send first byte */
-		IT8XXX2_SMB_HOBDB(base) = *(data->active_msg->buf++);
+		IT8XXX2_SMB_HOBDB(base) = *data->buf++;
 
 		data->widx++;
 		/* clear start flag */
@@ -866,7 +870,7 @@ int __soc_ram_code i2c_tran_write(const struct device *dev)
 		if (IT8XXX2_SMB_HOSTA(base) & HOSTA_BDS) {
 			if (data->widx < data->active_msg->len) {
 				/* Send next byte */
-				IT8XXX2_SMB_HOBDB(base) = *(data->active_msg->buf++);
+				IT8XXX2_SMB_HOBDB(base) = *data->buf++;
 
 				data->widx++;
 				/* W/C byte done for next byte */
@@ -944,6 +948,8 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 
 	/* Lock mutex of i2c controller */
 	k_mutex_lock(&data->mutex, K_FOREVER);
+	/* Block to enter power policy. */
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	/*
 	 * If the transaction of write to read is divided into two
 	 * transfers, the repeat start transfer uses this flag to
@@ -961,9 +967,8 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 			 * (No external pull-up), drop the transaction.
 			 */
 			if (i2c_bus_not_available(dev)) {
-				/* Unlock mutex of i2c controller */
-				k_mutex_unlock(&data->mutex);
-				return -EIO;
+				ret = -EIO;
+				goto done;
 			}
 		}
 
@@ -975,11 +980,6 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 	/* Store msgs to data struct. */
 	data->msgs_list = msgs;
 	bool fifo_mode_enable = fifo_mode_allowed(dev, msgs);
-
-	if (fifo_mode_enable) {
-		/* Block to enter power policy. */
-		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-	}
 #endif
 	for (int i = 0; i < num_msgs; i++) {
 
@@ -987,6 +987,7 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		data->ridx = 0;
 		data->err = 0;
 		data->active_msg = &msgs[i];
+		data->buf = msgs[i].buf;
 		data->addr_16bit = addr;
 
 #ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
@@ -1056,8 +1057,6 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		if (data->num_msgs == 2) {
 			i2c_fifo_en_w2r(dev, 0);
 		}
-		/* Permit to enter power policy. */
-		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	}
 #endif
 	/* reset i2c channel status */
@@ -1066,6 +1065,10 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 	}
 	/* Save return value. */
 	ret = i2c_parsing_return_value(dev);
+
+done:
+	/* Permit to enter power policy. */
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	/* Unlock mutex of i2c controller */
 	k_mutex_unlock(&data->mutex);
 

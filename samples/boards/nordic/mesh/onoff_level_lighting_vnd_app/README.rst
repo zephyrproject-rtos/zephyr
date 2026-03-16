@@ -61,9 +61,6 @@ likely also run on the nrf52dk/nrf52832 board.
 
 Building and Running
 ********************
-This sample can be found under :zephyr_file:`samples/boards/nordic/mesh/onoff_level_lighting_vnd_app` in the
-Zephyr tree.
-
 The following commands build the application.
 
 .. zephyr-app-commands::

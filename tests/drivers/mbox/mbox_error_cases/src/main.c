@@ -10,17 +10,6 @@
 
 int dummy_value;
 
-#if defined(CONFIG_SOC_NRF54L05) || defined(CONFIG_SOC_NRF54L10) || \
-	defined(CONFIG_SOC_NRF54L15) || defined(CONFIG_SOC_NRF54H20)
-#define EXPECTED_MTU_VALUE				(0)
-#define DATA_TRANSFER_MODE_SUPPORTED	(0)
-#define REMOTE_BUSY_SUPPORTED			(0)
-#else
-#define EXPECTED_MTU_VALUE				(4)
-#define DATA_TRANSFER_MODE_SUPPORTED	(1)
-#define REMOTE_BUSY_SUPPORTED			(1)
-#endif
-
 static void dummy_callback(const struct device *dev, mbox_channel_id_t channel_id,
 		     void *user_data, struct mbox_msg *data)
 {
@@ -164,7 +153,7 @@ ZTEST(mbox_error_cases, test_02c_mbox_send_message_with_data)
 	struct mbox_msg data_msg = {0};
 	int ret;
 
-	if (DATA_TRANSFER_MODE_SUPPORTED) {
+	if (CONFIG_TEST_EXPECTED_MTU_VALUE > 0) {
 		/* Skip this test because data transfer is supported. */
 		ztest_test_skip();
 	}
@@ -194,12 +183,8 @@ ZTEST(mbox_error_cases, test_02d_mbox_send_message_remote_busy)
 		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_valid);
 	int ret;
 
-	if (!REMOTE_BUSY_SUPPORTED)	{
-		/* Skip this test because driver is not
-		 * capable of detecting that remote is busy.
-		 */
-		ztest_test_skip();
-	}
+	/* Skip this test when driver can't detect that remote is busy. */
+	Z_TEST_SKIP_IFDEF(CONFIG_TEST_REMOTE_BUSY_NOT_SUPPORTED);
 
 	ret = mbox_send_dt(&tx_channel, NULL);
 	zassert_true(
@@ -333,19 +318,19 @@ ZTEST(mbox_error_cases, test_04b_mbox_mtu_get_on_tx_channel)
 
 	ret = mbox_mtu_get_dt(&tx_channel);
 	zassert_true(
-		(ret == EXPECTED_MTU_VALUE),
+		(ret == CONFIG_TEST_EXPECTED_MTU_VALUE),
 		"mbox_mtu_get_dt(tx_channel) shall return %d"
 		" got unexpected %d",
-		EXPECTED_MTU_VALUE,
+		CONFIG_TEST_EXPECTED_MTU_VALUE,
 		ret
 	);
 
 	ret = mbox_mtu_get_dt(&tx_channel_incorrect);
 	zassert_true(
-		(ret == EXPECTED_MTU_VALUE),
+		(ret == CONFIG_TEST_EXPECTED_MTU_VALUE),
 		"mbox_mtu_get_dt(tx_channel_incorrect) shall return %d"
 		" got unexpected %d",
-		EXPECTED_MTU_VALUE,
+		CONFIG_TEST_EXPECTED_MTU_VALUE,
 		ret
 	);
 }

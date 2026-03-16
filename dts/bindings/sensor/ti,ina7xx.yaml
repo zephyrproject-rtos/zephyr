@@ -1,0 +1,169 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments Bidirectional Current/Power Sensor
+
+compatible: "ti,ina7xx"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  inatype:
+    type: int
+    required: true
+    description: |
+      select type of INA7xx device.
+      1 = INA700
+      2 = INA745/746
+      3 = INA780/781
+    enum:
+      - 0
+      - 1
+      - 2
+
+  convdly:
+    type: int
+    default: 0
+    description: |
+      Sets the Delay for initial ADC conversion in steps of 2 ms.
+      The default is the power-on reset value.
+      0h = 0 ms (default)
+      1h = 2 ms
+      FFh = 510 ms
+
+  mode:
+    type: int
+    default: 0xf
+    description: |
+      MODE for continuous or triggered measurement mode.
+      The default is the power-on reset value.
+      0h = Shutdown
+      1h = Triggered bus voltage, single shot
+      4h = Triggered temperature, single shot
+      5h = Triggered temperature and bus voltage, single shot
+      6h = Triggered temperature and current, single shot
+      7h = Triggered temperature, current and bus voltage, single shot
+      8h = Shutdown
+      9h = Continuous bus voltage only
+      Ch = Continuous temperature only
+      Dh = Continuous bus voltage and temperature
+      Eh = Continuous temperature and current
+      Fh = Continuous temperature, current, and bus voltage (default)
+    enum:
+      - 0x0
+      - 0x1
+      - 0x4
+      - 0x5
+      - 0x6
+      - 0x7
+      - 0x8
+      - 0x9
+      - 0xc
+      - 0xd
+      - 0xe
+      - 0xf
+
+  vbusct:
+    type: int
+    default: 5
+    description: |
+      Sets the conversion time of the bus voltage measurement.
+      The default is the power-on reset value.
+      0h = 50 µs
+      1h = 84 µs
+      2h = 150 µs
+      3h = 280 µs
+      4h = 540 µs
+      5h = 1052 µs (default)
+      6h = 2074 µs
+      7h = 4120 µs
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+
+  vsenct:
+    type: int
+    default: 5
+    description: |
+      Sets the conversion time of the shunt resistor voltage. Works in
+      conjunction with the temperature conversion time. Total conversion
+      time for a current measurement is the sum of VSENCT and TCT
+      selections.
+      The default is the power-on reset value.
+      0h = 50 µs
+      1h = 84 µs
+      2h = 150 µs
+      3h = 280 µs
+      4h = 540 µs
+      5h = 1052 µs (default)
+      6h = 2074 µs
+      7h = 4120 µs
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+
+  tct:
+    type: int
+    default: 5
+    description: |
+      Sets the conversion time of the temperature measurement. Works
+      in conjunction with the shunt voltage conversion time for current
+      measurements. Total conversion time for a current measurement is
+      the sum of VSENCT and TCT selections.
+      The default is the power-on reset value.
+      0h = 50 µs
+      1h = 84 µs
+      2h = 150 µs
+      3h = 280 µs
+      4h = 540 µs (default)
+      5h = 1052 µs
+      6h = 2074 µs
+      7h = 4120 µs
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+
+  avg:
+    type: int
+    default: 0
+    description: |
+      Selects ADC sample averaging count. The averaging setting applies
+      to all active inputs.
+      When >0h, the output registers are updated after the averaging has
+      completed.
+      The default is the power-on reset value.
+      0h = 1 (default)
+      1h = 4
+      2h = 16
+      3h = 64
+      4h = 128
+      5h = 256
+      6h = 512
+      7h = 1024
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7

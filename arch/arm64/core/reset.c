@@ -78,7 +78,23 @@ void z_arm64_el3_init(void)
 	reg &= ~(CPTR_TTA_BIT |		/* Do not trap sysreg accesses */
 		 CPTR_TFP_BIT |		/* Do not trap SVE, SIMD and FP */
 		 CPTR_TCPAC_BIT);	/* Do not trap CPTR_EL2 / CPACR_EL1 accesses */
+
+#ifdef CONFIG_ARM64_SVE
+	/* Enable SVE for EL2 and below if SVE is implemented */
+	if (is_sve_implemented()) {
+		reg |= CPTR_EZ_BIT;		/* Enable SVE access for lower ELs */
+		write_cptr_el3(reg);
+		barrier_isync_fence_full();
+
+		/* Initialize ZCR_EL3 for full SVE vector length */
+		/* ZCR_EL3.LEN = 0x1ff means full hardware vector length */
+		write_zcr_el3(0x1ff);
+	} else {
+		write_cptr_el3(reg);
+	}
+#else
 	write_cptr_el3(reg);
+#endif
 
 	reg = 0U;			/* Reset */
 #ifdef CONFIG_ARMV8_A_NS
@@ -90,17 +106,26 @@ void z_arm64_el3_init(void)
 #endif
 	reg |= (SCR_RES1 |		/* RES1 */
 		SCR_RW_BIT |		/* EL2 execution state is AArch64 */
-		SCR_ST_BIT |		/* Do not trap EL1 accesses to timer */
 		SCR_HCE_BIT |		/* Do not trap HVC */
 		SCR_SMD_BIT);		/* Do not trap SMC */
+#ifdef CONFIG_ARM_PAC
+	reg |= (SCR_APK_BIT |		/* Do not trap pointer authentication key accesses */
+		SCR_API_BIT);		/* Do not trap pointer authentication instructions */
+#endif
 	write_scr_el3(reg);
+	/*
+	 * With SCR_ST_BIT == 0, a CNTPS interrupt is taken to Secure EL1 when
+	 * CNTPS_CTL_EL1.ENABLE = 1. Program CVAL to the maximum 64-bit value
+	 * first to prevent an immediate interrupt on enable.
+	 */
+	write_cntps_cval_el1(~(uint64_t)0);
 
 #if defined(CONFIG_GIC_V3)
 	reg = read_sysreg(ICC_SRE_EL3);
 	reg |= (ICC_SRE_ELx_DFB_BIT |	/* Disable FIQ bypass */
 		ICC_SRE_ELx_DIB_BIT |	/* Disable IRQ bypass */
 		ICC_SRE_ELx_SRE_BIT |	/* System register interface is used */
-		ICC_SRE_EL3_EN_BIT);	/* Enables lower Exception level access to ICC_SRE_EL1 */
+		ICC_SRE_ELx_EN_BIT);	/* Enables lower Exception level access to ICC_SRE_EL1 */
 	write_sysreg(reg, ICC_SRE_EL3);
 #endif
 
@@ -143,6 +168,17 @@ void z_arm64_el2_init(void)
 		SCTLR_SA_BIT);		/* Enable SP alignment check */
 	write_sctlr_el2(reg);
 
+#if defined(CONFIG_GIC_V3)
+	if (!is_in_secure_state() || is_el2_sec_supported()) {
+		reg = read_sysreg(ICC_SRE_EL2);
+		reg |= (ICC_SRE_ELx_DFB_BIT |   /* Disable FIQ bypass */
+			ICC_SRE_ELx_DIB_BIT |   /* Disable IRQ bypass */
+			ICC_SRE_ELx_SRE_BIT |   /* System register interface is used */
+			ICC_SRE_ELx_EN_BIT);    /* Enables Exception access to ICC_SRE_EL1 */
+		write_sysreg(reg, ICC_SRE_EL2);
+	}
+#endif
+
 	reg = read_hcr_el2();
 	/* when EL2 is enable in current security status:
 	 * Clear TGE bit: All exceptions that would not be routed to EL2;
@@ -151,16 +187,47 @@ void z_arm64_el2_init(void)
 	 */
 	reg &= ~(HCR_IMO_BIT | HCR_AMO_BIT | HCR_TGE_BIT);
 	reg |= HCR_RW_BIT;		/* EL1 Execution state is AArch64 */
+
+#ifdef CONFIG_ARM_PAC
+	/* Do not trap pointer authentication instructions and key registers */
+	reg |= (HCR_API_BIT | HCR_APK_BIT);
+#endif
+
 	write_hcr_el2(reg);
 
 	reg = 0U;			/* RES0 */
 	reg |= CPTR_EL2_RES1;		/* RES1 */
 	reg &= ~(CPTR_TFP_BIT |		/* Do not trap SVE, SIMD and FP */
-		 CPTR_TCPAC_BIT);	/* Do not trap CPACR_EL1 accesses */
+		 CPTR_TCPAC_BIT |	/* Do not trap CPACR_EL1 accesses */
+		 CPTR_EL2_TZ_BIT);	/* Do not trap SVE to EL2 */
+#ifdef CONFIG_ARM64_SVE
+	/* Enable SVE for EL1 and EL0 if SVE is implemented */
+	if (is_sve_implemented()) {
+		/*
+		 * In non-VHE CPTR_EL2, SVE trapping is controlled by the TZ
+		 * bit (bit 8) which was already cleared above.  Bits [17:16]
+		 * (ZEN) are RES0 in non-VHE mode and must not be set.
+		 *
+		 * Match the Linux kernel sequence (el2_setup.h): write
+		 * CPTR_EL2 with TZ=0, ISB, then set ZCR_EL2 for full
+		 * vector length.
+		 */
+		write_cptr_el2(reg);
+		barrier_isync_fence_full();
+
+		/* Initialize ZCR_EL2 for full SVE vector length */
+		/* ZCR_EL2.LEN = 0x1ff means full hardware vector length */
+		write_zcr_el2(0x1ff);
+	} else {
+		write_cptr_el2(reg);
+	}
+#else
 	write_cptr_el2(reg);
+#endif
 
 	zero_cntvoff_el2();		/* Set 64-bit virtual timer offset to 0 */
-	zero_cnthctl_el2();
+	reg = CNTHCTL_EL2_EL1PCEN | CNTHCTL_EL2_EL1PCTEN;
+	write_cnthctl_el2(reg);
 #ifdef CONFIG_CPU_AARCH64_CORTEX_R
 	zero_cnthps_ctl_el2();
 #else
@@ -182,6 +249,9 @@ void z_arm64_el2_init(void)
 	barrier_isync_fence_full();
 }
 
+#ifdef CONFIG_ARM_PAC
+__attribute__((target("branch-protection=none")))
+#endif
 void z_arm64_el1_init(void)
 {
 	uint64_t reg;
@@ -191,23 +261,49 @@ void z_arm64_el1_init(void)
 	barrier_isync_fence_full();
 
 	reg = 0U;			/* RES0 */
-	reg |= CPACR_EL1_FPEN_NOTRAP;	/* Do not trap NEON/SIMD/FP initially */
+	reg |= CPACR_EL1_FPEN;		/* Do not trap NEON/SIMD/FP initially */
 					/* TODO: CONFIG_FLOAT_*_FORBIDDEN */
+#ifdef CONFIG_ARM64_SVE
+	/* Enable SVE access if SVE is implemented */
+	if (is_sve_implemented()) {
+		reg |= CPACR_EL1_ZEN;	/* Do not trap SVE initially */
+		write_cpacr_el1(reg);
+		barrier_isync_fence_full();
+
+		/* Initialize ZCR_EL1 SVE vector length */
+		write_zcr_el1(CONFIG_ARM64_SVE_VL_MAX/16 - 1);
+	} else {
+		write_cpacr_el1(reg);
+	}
+#else
 	write_cpacr_el1(reg);
+#endif
 
 	reg = read_sctlr_el1();
 	reg |= (SCTLR_EL1_RES1 |	/* RES1 */
 		SCTLR_I_BIT |		/* Enable i-cache */
 		SCTLR_C_BIT |		/* Enable d-cache */
 		SCTLR_SA_BIT);		/* Enable SP alignment check */
+
+#ifdef CONFIG_ARM_PAC
+	/* Set a default APIA key BEFORE enabling PAC */
+	write_apiakeylo_el1(0x0123456789ABCDEFULL);
+	write_apiakeyhi_el1(0xFEDCBA9876543210ULL);
+	/* Now enable Pointer Authentication */
+	reg |= SCTLR_EnIA_BIT;		/* Enable instruction address signing using key A */
+#endif
+
+#ifdef CONFIG_ARM_BTI
+	/* Enable Branch Target Identification */
+	reg |= SCTLR_BT0_BIT;		/* Enable BTI for EL0 (userspace threads) */
+	reg |= SCTLR_BT1_BIT;		/* Enable BTI for EL1 (kernel) */
+#endif
+
 	write_sctlr_el1(reg);
+	barrier_isync_fence_full();
 
 	write_cntv_cval_el0(~(uint64_t)0);
-	/*
-	 * Enable these if/when we use the corresponding timers.
-	 * write_cntp_cval_el0(~(uint64_t)0);
-	 * write_cntps_cval_el1(~(uint64_t)0);
-	 */
+	write_cntp_cval_el0(~(uint64_t)0);
 
 	z_arm64_el1_plat_init();
 

@@ -7,13 +7,13 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_ADI_ADX345_H_
 
 /**
- * @defgroup ADXL345 ADI DT Options
+ * @defgroup adxl345 ADXL345 DT Options
  * @ingroup sensor_interface
  * @{
  */
 
 /**
- * @defgroup ADXL345_ODR Output Rate options
+ * @defgroup adxl345_odr Output Rate options
  * @{
  */
 #define ADXL345_DT_ODR_12_5		7
@@ -22,6 +22,16 @@
 #define ADXL345_DT_ODR_100		10
 #define ADXL345_DT_ODR_200		11
 #define ADXL345_DT_ODR_400		12
+/** @} */
+
+/**
+ * @defgroup adxl345_range Select range options
+ * @{
+ */
+#define ADXL345_DT_RANGE_2G	    0
+#define ADXL345_DT_RANGE_4G	    1
+#define ADXL345_DT_RANGE_8G	    2
+#define ADXL345_DT_RANGE_16G    3
 /** @} */
 
 /** @} */

@@ -1,9 +1,8 @@
-#! /usr/bin/python
+#!/usr/bin/env python3
 #
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # Zephyr's Twister library
-#
-# pylint: disable=unused-import
 #
 # Set of code that other projects can also import to do things on
 # Zephyr's sanity check testcases.
@@ -11,13 +10,11 @@
 import logging
 import yaml
 try:
-    # Use the C LibYAML parser if available, rather than the Python parser.
-    # It's much faster.
-    from yaml import CLoader as Loader
     from yaml import CSafeLoader as SafeLoader
-    from yaml import CDumper as Dumper
 except ImportError:
-    from yaml import Loader, SafeLoader, Dumper
+    from yaml import SafeLoader
+
+from jsonschema import Draft202012Validator
 
 log = logging.getLogger("scl")
 
@@ -26,8 +23,6 @@ class EmptyYamlFileException(Exception):
     pass
 
 
-#
-#
 def yaml_load(filename):
     """
     Safely load a YAML document
@@ -51,23 +46,23 @@ def yaml_load(filename):
                   e.note, cmark.name, cmark.line, cmark.column, e.context)
         raise
 
-# If pykwalify is installed, then the validate function will work --
-# otherwise, it is a stub and we'd warn about it.
-try:
-    import pykwalify.core
-    # Don't print error messages yourself, let us do it
-    logging.getLogger("pykwalify.core").setLevel(50)
+def _yaml_validate(data, schema):
+    """
+    Validate loaded YAML data against a JSON Schema.
 
-    def _yaml_validate(data, schema):
-        if not schema:
-            return
-        c = pykwalify.core.Core(source_data=data, schema_data=schema)
-        c.validate(raise_exception=True)
+    :param dict data: YAML document data
+    :param dict schema: JSON Schema (already loaded)
+    :raises jsonschema.exceptions.ValidationError: on schema violation
+    :raises jsonschema.exceptions.SchemaError: on invalid schema
+    """
+    if not schema:
+        return
 
-except ImportError as e:
-    log.warning("can't import pykwalify; won't validate YAML (%s)", e)
-    def _yaml_validate(data, schema):
-        pass
+    validator = Draft202012Validator(schema)
+
+    # Fail fast on first error
+    for error in validator.iter_errors(data):
+        raise error
 
 def yaml_load_verify(filename, schema):
     """
@@ -77,9 +72,9 @@ def yaml_load_verify(filename, schema):
     :param str filename: name of the file to load and process
     :param dict schema: loaded YAML schema (can load with :func:`yaml_load`)
 
-    # 'document.yaml' contains a single YAML document.
     :raises yaml.scanner.ScannerError: on YAML parsing error
-    :raises pykwalify.errors.SchemaError: on Schema violation error
+    :raises jsonschema.exceptions.ValidationError: on schema violation
+    :raises jsonschema.exceptions.SchemaError: on Schema violation error
     """
     # 'document.yaml' contains a single YAML document.
     y = yaml_load(filename)

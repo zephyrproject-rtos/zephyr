@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 
+#include <gpiote_nrfx.h>
 #include <nrfx_gpiote.h>
 #include <helpers/nrfx_gppi.h>
 
@@ -21,9 +22,6 @@ LOG_MODULE_REGISTER(nrfx_sample, LOG_LEVEL_INF);
 
 BUILD_ASSERT(NRF_DT_GPIOTE_INST(DT_ALIAS(led0), gpios) == GPIOTE_INST,
 	"Both sw0 and led0 GPIOs must use the same GPIOTE instance");
-BUILD_ASSERT(IS_ENABLED(_CONCAT(CONFIG_, _CONCAT(NRFX_GPIOTE, GPIOTE_INST))),
-	"NRFX_GPIOTE" STRINGIFY(GPIOTE_INST) " must be enabled in Kconfig");
-
 
 static void button_handler(nrfx_gpiote_pin_t pin,
 			   nrfx_gpiote_trigger_t trigger,
@@ -36,33 +34,33 @@ int main(void)
 {
 	LOG_INF("nrfx_gpiote sample on %s", CONFIG_BOARD);
 
-	nrfx_err_t err;
+	int rv;
 	uint8_t in_channel, out_channel;
-	uint8_t ppi_channel;
-	const nrfx_gpiote_t gpiote = NRFX_GPIOTE_INSTANCE(GPIOTE_INST);
+	nrfx_gppi_handle_t ppi_handle;
+	static nrfx_gpiote_t *gpiote = &GPIOTE_NRFX_INST_BY_NODE(GPIOTE_NODE);
 
 	/* Connect GPIOTE instance IRQ to irq handler */
-	IRQ_CONNECT(DT_IRQN(GPIOTE_NODE), DT_IRQ(GPIOTE_NODE, priority), nrfx_isr,
-		    NRFX_CONCAT(nrfx_gpiote_, GPIOTE_INST, _irq_handler), 0);
+	IRQ_CONNECT(DT_IRQN(GPIOTE_NODE), DT_IRQ(GPIOTE_NODE, priority), nrfx_gpiote_irq_handler,
+		    &GPIOTE_NRFX_INST_BY_NODE(GPIOTE_NODE), 0);
 
 	/* Initialize GPIOTE (the interrupt priority passed as the parameter
 	 * here is ignored, see nrfx_glue.h).
 	 */
-	err = nrfx_gpiote_init(&gpiote, 0);
-	if (err != NRFX_SUCCESS) {
-		LOG_ERR("nrfx_gpiote_init error: 0x%08X", err);
+	rv = nrfx_gpiote_init(gpiote, 0);
+	if (rv != 0) {
+		LOG_ERR("nrfx_gpiote_init error: %d", rv);
 		return 0;
 	}
 
-	err = nrfx_gpiote_channel_alloc(&gpiote, &in_channel);
-	if (err != NRFX_SUCCESS) {
-		LOG_ERR("Failed to allocate in_channel, error: 0x%08X", err);
+	rv = nrfx_gpiote_channel_alloc(gpiote, &in_channel);
+	if (rv != 0) {
+		LOG_ERR("Failed to allocate in_channel, error: %d", rv);
 		return 0;
 	}
 
-	err = nrfx_gpiote_channel_alloc(&gpiote, &out_channel);
-	if (err != NRFX_SUCCESS) {
-		LOG_ERR("Failed to allocate out_channel, error: 0x%08X", err);
+	rv = nrfx_gpiote_channel_alloc(gpiote, &out_channel);
+	if (rv != 0) {
+		LOG_ERR("Failed to allocate out_channel, error: %d", rv);
 		return 0;
 	}
 
@@ -83,10 +81,9 @@ int main(void)
 		.p_handler_config = &handler_config
 	};
 
-	err = nrfx_gpiote_input_configure(&gpiote, INPUT_PIN, &input_config);
-
-	if (err != NRFX_SUCCESS) {
-		LOG_ERR("nrfx_gpiote_input_configure error: 0x%08X", err);
+	rv = nrfx_gpiote_input_configure(gpiote, INPUT_PIN, &input_config);
+	if (rv != 0) {
+		LOG_ERR("nrfx_gpiote_input_configure error: %d", rv);
 		return 0;
 	}
 
@@ -103,36 +100,33 @@ int main(void)
 		.polarity = NRF_GPIOTE_POLARITY_TOGGLE,
 		.init_val = 1,
 	};
-	err = nrfx_gpiote_output_configure(&gpiote, OUTPUT_PIN,
+	rv = nrfx_gpiote_output_configure(gpiote, OUTPUT_PIN,
 					   &output_config,
 					   &task_config);
-	if (err != NRFX_SUCCESS) {
-		LOG_ERR("nrfx_gpiote_output_configure error: 0x%08X", err);
+	if (rv != 0) {
+		LOG_ERR("nrfx_gpiote_output_configure error: %d", rv);
 		return 0;
 	}
 
-	nrfx_gpiote_trigger_enable(&gpiote, INPUT_PIN, true);
-	nrfx_gpiote_out_task_enable(&gpiote, OUTPUT_PIN);
+	nrfx_gpiote_trigger_enable(gpiote, INPUT_PIN, true);
+	nrfx_gpiote_out_task_enable(gpiote, OUTPUT_PIN);
 
 	LOG_INF("nrfx_gpiote initialized");
-
-	/* Allocate a (D)PPI channel. */
-	err = nrfx_gppi_channel_alloc(&ppi_channel);
-	if (err != NRFX_SUCCESS) {
-		LOG_ERR("nrfx_gppi_channel_alloc error: 0x%08X", err);
-		return 0;
-	}
 
 	/* Configure endpoints of the channel so that the input pin event is
 	 * connected with the output pin OUT task. This means that each time
 	 * the button is pressed, the LED pin will be toggled.
 	 */
-	nrfx_gppi_channel_endpoints_setup(ppi_channel,
-		nrfx_gpiote_in_event_address_get(&gpiote, INPUT_PIN),
-		nrfx_gpiote_out_task_address_get(&gpiote, OUTPUT_PIN));
+	rv = nrfx_gppi_conn_alloc(nrfx_gpiote_in_event_address_get(gpiote, INPUT_PIN),
+				   nrfx_gpiote_out_task_address_get(gpiote, OUTPUT_PIN),
+				   &ppi_handle);
+	if (rv < 0) {
+		LOG_ERR("nrfx_gppi_conn_alloc error: %d", rv);
+		return 0;
+	}
 
 	/* Enable the channel. */
-	nrfx_gppi_channels_enable(BIT(ppi_channel));
+	nrfx_gppi_conn_enable(ppi_handle);
 
 	LOG_INF("(D)PPI configured, leaving main()");
 	return 0;

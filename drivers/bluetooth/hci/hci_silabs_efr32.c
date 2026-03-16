@@ -9,8 +9,9 @@
 
 #include <sl_btctrl_linklayer.h>
 #include <sl_hci_common_transport.h>
-#include <pa_conversions_efr32.h>
-#include <rail.h>
+#include <sl_rail_util_compatible_pa.h>
+#include <sl_rail.h>
+#include <soc_radio.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -54,36 +55,6 @@ void BTLE_LL_EventRaise(uint32_t events);
 void BTLE_LL_Process(uint32_t events);
 int16_t BTLE_LL_SetMaxPower(int16_t power);
 bool sli_pending_btctrl_events(void);
-
-#define RADIO_IRQN(name)     DT_IRQ_BY_NAME(DT_NODELABEL(radio), name, irq)
-#define RADIO_IRQ_PRIO(name) DT_IRQ_BY_NAME(DT_NODELABEL(radio), name, priority)
-
-void rail_isr_installer(void)
-{
-	IRQ_CONNECT(RADIO_IRQN(agc), RADIO_IRQ_PRIO(agc), AGC_IRQHandler, NULL, 0);
-	IRQ_CONNECT(RADIO_IRQN(bufc), RADIO_IRQ_PRIO(bufc), BUFC_IRQHandler, NULL, 0);
-	IRQ_CONNECT(RADIO_IRQN(frc_pri), RADIO_IRQ_PRIO(frc_pri), FRC_PRI_IRQHandler, NULL, 0);
-	IRQ_CONNECT(RADIO_IRQN(frc), RADIO_IRQ_PRIO(frc), FRC_IRQHandler, NULL, 0);
-	IRQ_CONNECT(RADIO_IRQN(modem), RADIO_IRQ_PRIO(modem), MODEM_IRQHandler, NULL, 0);
-	IRQ_CONNECT(RADIO_IRQN(protimer), RADIO_IRQ_PRIO(protimer), PROTIMER_IRQHandler, NULL, 0);
-	IRQ_CONNECT(RADIO_IRQN(rac_rsm), RADIO_IRQ_PRIO(rac_rsm), RAC_RSM_IRQHandler, NULL, 0);
-	IRQ_CONNECT(RADIO_IRQN(rac_seq), RADIO_IRQ_PRIO(rac_seq), RAC_SEQ_IRQHandler, NULL, 0);
-	IRQ_CONNECT(RADIO_IRQN(synth), RADIO_IRQ_PRIO(synth), SYNTH_IRQHandler, NULL, 0);
-
-	/* Depending on the chip family, either HOSTMAILBOX, RDMAILBOX or neither is present */
-	IF_ENABLED(DT_IRQ_HAS_NAME(DT_NODELABEL(radio), hostmailbox), ({
-		IRQ_CONNECT(RADIO_IRQN(hostmailbox),
-			    RADIO_IRQ_PRIO(hostmailbox),
-			    HOSTMAILBOX_IRQHandler,
-			    NULL, 0);
-	}));
-	IF_ENABLED(DT_IRQ_HAS_NAME(DT_NODELABEL(radio), rdmailbox), ({
-		IRQ_CONNECT(RADIO_IRQN(rdmailbox),
-			    RADIO_IRQ_PRIO(rdmailbox),
-			    RDMAILBOX_IRQHandler,
-			    NULL, 0);
-	}));
-}
 
 static bool slz_is_evt_discardable(const struct bt_hci_evt_hdr *hdr, const uint8_t *params,
 				   int16_t params_len)
@@ -214,8 +185,12 @@ static int slz_bt_send(const struct device *dev, struct net_buf *buf)
 
 	rv = hci_common_transport_receive(buf->data, buf->len, true);
 
+	if (rv != 0) {
+		return rv;
+	}
+
 	net_buf_unref(buf);
-	return rv;
+	return 0;
 }
 
 /**
@@ -302,11 +277,19 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 	slz_set_tx_power(CONFIG_BT_CTLR_TX_PWR_ANTENNA);
 
 	if (IS_ENABLED(CONFIG_PM)) {
-		RAIL_ConfigSleep(sli_btctrl_get_radio_context_handle(),
-				 RAIL_SLEEP_CONFIG_TIMERSYNC_ENABLED);
-		RAIL_Status_t status = RAIL_InitPowerManager();
+		sl_rail_timer_sync_config_t timer_sync_config = SL_RAIL_TIMER_SYNC_DEFAULT;
+		sl_rail_status_t status;
 
-		if (status != RAIL_STATUS_NO_ERROR) {
+		status = sl_rail_config_sleep(sli_btctrl_get_radio_context_handle(),
+					      &timer_sync_config);
+		if (status != SL_RAIL_STATUS_NO_ERROR) {
+			LOG_ERR("RAIL: failed to configure sleep, status=%d", status);
+			ret = -EIO;
+			goto deinit;
+		}
+
+		status = sl_rail_init_power_manager();
+		if (status != SL_RAIL_STATUS_NO_ERROR) {
 			LOG_ERR("RAIL: failed to initialize power management, status=%d",
 					status);
 			ret = -EIO;
@@ -325,6 +308,18 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 deinit:
 	sl_btctrl_deinit(); /* No-op if controller initialization failed */
 	return ret;
+}
+
+static int slz_bt_close(const struct device *dev)
+{
+	k_thread_abort(&slz_ll_thread);
+	k_thread_abort(&slz_rx_thread);
+
+	sl_btctrl_deinit();
+
+	LOG_DBG("SiLabs BT HCI stopped");
+
+	return 0;
 }
 
 bool sli_pending_btctrl_events(void)
@@ -346,6 +341,7 @@ void BTLE_LL_EventRaise(uint32_t events)
 
 static DEVICE_API(bt_hci, drv) = {
 	.open           = slz_bt_open,
+	.close          = slz_bt_close,
 	.send           = slz_bt_send,
 };
 

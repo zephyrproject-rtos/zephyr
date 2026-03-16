@@ -9,7 +9,7 @@ menuconfig GPIO_MAX14916
 	default y
 	depends on (DT_HAS_ADI_MAX14916_GPIO_ENABLED || DT_HAS_ADI_MAX14915_GPIO_ENABLED) && SPI
 	help
-	  Enabe MAX1416 octal industrial digital
+	  Enable MAX1416 octal industrial digital
 	  output with diagnostics
 
 config GPIO_MAX14916_INIT_PRIORITY

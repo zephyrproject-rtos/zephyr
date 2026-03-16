@@ -4,11 +4,33 @@
 
 menu "Input device settings"
 
+DT_CHOSEN_Z_TOUCH := zephyr,touch
+DT_CHOSEN_Z_DISPLAY := zephyr,display
+
+config LV_Z_POINTER_FROM_CHOSEN_TOUCH
+	bool "Create LVGL pointer from DT 'zephyr,touch' chosen device"
+	depends on INPUT
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_TOUCH))
+	default y if !DT_HAS_ZEPHYR_LVGL_POINTER_INPUT_ENABLED
+	help
+	  Enable creation of LVGL pointer input device
+	  based on 'zephyr,touch' chosen property in devicetree.
+
+config LV_Z_POINTER_FROM_CHOSEN_TOUCH_INFER_DISPLAY
+	bool "Link input pointer to chosen display"
+	depends on LV_Z_POINTER_FROM_CHOSEN_TOUCH
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_DISPLAY))
+	default y
+	help
+	  Process input events of the pointer device created
+	  from the 'zephyr,touch' chosen property and link it to the
+	  'zephyr,display' chosen device.
+
 config LV_Z_POINTER_INPUT
 	bool "Input lvgl pointer"
 	default y
 	depends on INPUT
-	depends on DT_HAS_ZEPHYR_LVGL_POINTER_INPUT_ENABLED
+	depends on DT_HAS_ZEPHYR_LVGL_POINTER_INPUT_ENABLED || LV_Z_POINTER_FROM_CHOSEN_TOUCH
 
 config LV_Z_POINTER_INPUT_MSGQ_COUNT
 	int "Input pointer queue message count"

@@ -146,7 +146,7 @@ ZTEST(posix_single_process, test_watertight)
 	environ = old_environ;
 
 	for (int i = 0; i < 256; ++i) {
-		snprintf(buf, sizeof(buf), "%u", i);
+		snprintf(buf, sizeof(buf), "%d", i);
 		zassert_ok(setenv("COUNTER", buf, 1));
 		zassert_mem_equal(getenv("COUNTER"), buf, strlen(buf));
 		zassert_ok(getenv_r("COUNTER", buf, sizeof(buf)));

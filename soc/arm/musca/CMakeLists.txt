@@ -4,10 +4,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if(CONFIG_SOC_V2M_MUSCA_B1)
+if(CONFIG_SOC_MUSCA_B1)
   zephyr_sources(b1/soc.c)
   zephyr_include_directories(b1)
-elseif(CONFIG_SOC_V2M_MUSCA_S1)
+elseif(CONFIG_SOC_MUSCA_S1)
   zephyr_include_directories(s1)
 endif()
 

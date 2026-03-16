@@ -345,6 +345,8 @@ dppic0: dppic: dppic@17000 {
 	compatible = "nordic,nrf-dppic";
 	reg = <0x17000 0x1000>;
 	status = "okay";
+	channels = <32>;
+	groups = <6>;
 };
 
 wdt: wdt0: watchdog@18000 {
@@ -535,7 +537,6 @@ flash_controller: flash-controller@39000 {
 
 	#address-cells = <1>;
 	#size-cells = <1>;
-
 
 	flash0: flash@0 {
 		compatible = "soc-nv-flash";

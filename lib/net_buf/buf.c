@@ -34,13 +34,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define NET_BUF_INFO(fmt, ...)
 #endif /* CONFIG_NET_BUF_LOG */
 
-#define NET_BUF_ASSERT(cond, ...) __ASSERT(cond, "" __VA_ARGS__)
-
 #if CONFIG_NET_BUF_WARN_ALLOC_INTERVAL > 0
 #define WARN_ALLOC_INTERVAL K_SECONDS(CONFIG_NET_BUF_WARN_ALLOC_INTERVAL)
 #else
 #define WARN_ALLOC_INTERVAL K_FOREVER
 #endif
+
+#define GET_ALIGN(pool) MAX(sizeof(void *), pool->alloc->alignment)
 
 /* Linker-defined symbol bound to the static pool structs */
 STRUCT_SECTION_START_EXTERN(net_buf_pool);
@@ -87,7 +87,6 @@ static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
 
 void net_buf_reset(struct net_buf *buf)
 {
-	__ASSERT_NO_MSG(buf->flags == 0U);
 	__ASSERT_NO_MSG(buf->frags == NULL);
 
 	net_buf_simple_reset(&buf->b);
@@ -95,9 +94,10 @@ void net_buf_reset(struct net_buf *buf)
 
 static uint8_t *generic_data_ref(struct net_buf *buf, uint8_t *data)
 {
+	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
 	uint8_t *ref_count;
 
-	ref_count = data - sizeof(void *);
+	ref_count = data - GET_ALIGN(buf_pool);
 	(*ref_count)++;
 
 	return data;
@@ -109,9 +109,26 @@ static uint8_t *mem_pool_data_alloc(struct net_buf *buf, size_t *size,
 	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
 	struct k_heap *pool = buf_pool->alloc->alloc_data;
 	uint8_t *ref_count;
+	void *b;
 
-	/* Reserve extra space for a ref-count (uint8_t) */
-	void *b = k_heap_alloc(pool, sizeof(void *) + *size, timeout);
+	if (buf_pool->alloc->alignment == 0) {
+		/* Reserve extra space for a ref-count (uint8_t) */
+		b = k_heap_alloc(pool, sizeof(void *) + *size, timeout);
+
+	} else {
+		if (*size < buf_pool->alloc->alignment) {
+			NET_BUF_DBG("Requested size %zu is smaller than alignment %zu",
+				    *size, buf_pool->alloc->alignment);
+			return NULL;
+		}
+
+		/* Reserve extra space for a ref-count (uint8_t) */
+		b = k_heap_aligned_alloc(pool,
+					 buf_pool->alloc->alignment,
+					 GET_ALIGN(buf_pool) +
+					 ROUND_UP(*size, buf_pool->alloc->alignment),
+					 timeout);
+	}
 
 	if (b == NULL) {
 		return NULL;
@@ -121,7 +138,7 @@ static uint8_t *mem_pool_data_alloc(struct net_buf *buf, size_t *size,
 	*ref_count = 1U;
 
 	/* Return pointer to the byte following the ref count */
-	return ref_count + sizeof(void *);
+	return ref_count + GET_ALIGN(buf_pool);
 }
 
 static void mem_pool_data_unref(struct net_buf *buf, uint8_t *data)
@@ -130,7 +147,7 @@ static void mem_pool_data_unref(struct net_buf *buf, uint8_t *data)
 	struct k_heap *pool = buf_pool->alloc->alloc_data;
 	uint8_t *ref_count;
 
-	ref_count = data - sizeof(void *);
+	ref_count = data - GET_ALIGN(buf_pool);
 	if (--(*ref_count)) {
 		return;
 	}
@@ -171,23 +188,25 @@ const struct net_buf_data_cb net_buf_fixed_cb = {
 static uint8_t *heap_data_alloc(struct net_buf *buf, size_t *size,
 			     k_timeout_t timeout)
 {
+	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
 	uint8_t *ref_count;
 
-	ref_count = k_malloc(sizeof(void *) + *size);
+	ref_count = k_malloc(GET_ALIGN(buf_pool) + *size);
 	if (!ref_count) {
 		return NULL;
 	}
 
 	*ref_count = 1U;
 
-	return ref_count + sizeof(void *);
+	return ref_count + GET_ALIGN(buf_pool);
 }
 
 static void heap_data_unref(struct net_buf *buf, uint8_t *data)
 {
+	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
 	uint8_t *ref_count;
 
-	ref_count = data - sizeof(void *);
+	ref_count = data - GET_ALIGN(buf_pool);
 	if (--(*ref_count)) {
 		return;
 	}
@@ -309,9 +328,8 @@ success:
 	NET_BUF_DBG("allocated buf %p", buf);
 
 	if (size) {
-#if __ASSERT_ON
-		size_t req_size = size;
-#endif
+		__maybe_unused size_t req_size = size;
+
 		timeout = sys_timepoint_timeout(end);
 		buf->__buf = data_alloc(buf, &size, timeout);
 		if (!buf->__buf) {
@@ -321,9 +339,7 @@ success:
 			return NULL;
 		}
 
-#if __ASSERT_ON
-		NET_BUF_ASSERT(req_size <= size);
-#endif
+		__ASSERT_NO_MSG(req_size <= size);
 	} else {
 		buf->__buf = NULL;
 	}
@@ -338,7 +354,7 @@ success:
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 	atomic_dec(&pool->avail_count);
 	__ASSERT_NO_MSG(atomic_get(&pool->avail_count) >= 0);
-	pool->max_used = MAX(pool->max_used,
+	pool->max_used = max(pool->max_used,
 			     pool->buf_count - atomic_get(&pool->avail_count));
 #endif
 	return buf;
@@ -430,13 +446,14 @@ void net_buf_unref(struct net_buf *buf)
 		struct net_buf *frags = buf->frags;
 		struct net_buf_pool *pool;
 
-#if defined(CONFIG_NET_BUF_LOG)
+		__ASSERT(buf->ref, "buf %p double free", buf);
 		if (!buf->ref) {
+#if defined(CONFIG_NET_BUF_LOG)
 			NET_BUF_ERR("%s():%d: buf %p double free", func, line,
 				    buf);
+#endif
 			return;
 		}
-#endif
 		NET_BUF_DBG("buf %p ref %u pool_id %u frags %p", buf, buf->ref,
 			    buf->pool_id, buf->frags);
 
@@ -613,7 +630,7 @@ size_t net_buf_linearize(void *dst, size_t dst_len, const struct net_buf *src,
 	size_t to_copy;
 	size_t copied;
 
-	len = MIN(len, dst_len);
+	len = min(len, dst_len);
 
 	frag = src;
 
@@ -626,7 +643,7 @@ size_t net_buf_linearize(void *dst, size_t dst_len, const struct net_buf *src,
 	/* traverse the fragment chain until len bytes are copied */
 	copied = 0;
 	while (frag && len > 0) {
-		to_copy = MIN(len, frag->len - offset);
+		to_copy = min(len, frag->len - offset);
 		memcpy((uint8_t *)dst + copied, frag->data + offset, to_copy);
 
 		copied += to_copy;
@@ -656,7 +673,7 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 	size_t max_size;
 
 	do {
-		uint16_t count = MIN(len, net_buf_tailroom(frag));
+		uint16_t count = min(len, net_buf_tailroom(frag));
 
 		net_buf_add_mem(frag, value8, count);
 		len -= count;
@@ -678,7 +695,7 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 			pool = net_buf_pool_get(buf->pool_id);
 			max_size = pool->alloc->max_alloc_size;
 			frag = net_buf_alloc_len(pool,
-						 max_size ? MIN(len, max_size) : len,
+						 max_size ? min(len, max_size) : len,
 						 timeout);
 		}
 
@@ -712,7 +729,7 @@ size_t net_buf_data_match(const struct net_buf *buf, size_t offset, const void *
 
 	while (buf && len > 0) {
 		bptr = buf->data + offset;
-		to_compare = MIN(len, buf->len - offset);
+		to_compare = min(len, buf->len - offset);
 
 		for (size_t i = 0; i < to_compare; ++i) {
 			if (dptr[compared] != bptr[i]) {

@@ -15,16 +15,20 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
 		cpu0: cpu@0 {
 			compatible = "andestech,andescore-v5", "riscv";
 			device_type = "cpu";
 			reg = <0>;
 			status = "okay";
-			riscv,isa = "rv32gc_xandes";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+					       "xandes";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
+
 			cpu0_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -32,16 +36,20 @@
 				interrupt-controller;
 			};
 		};
+
 		cpu1: cpu@1 {
 			compatible = "andestech,andescore-v5", "riscv";
 			device_type = "cpu";
 			reg = <1>;
 			status = "okay";
-			riscv,isa = "rv32gc_xandes";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+					       "xandes";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
+
 			cpu1_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -49,16 +57,20 @@
 				interrupt-controller;
 			};
 		};
+
 		cpu2: cpu@2 {
 			compatible = "andestech,andescore-v5", "riscv";
 			device_type = "cpu";
 			reg = <2>;
 			status = "okay";
-			riscv,isa = "rv32gc_xandes";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+					       "xandes";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
+
 			cpu2_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -66,16 +78,20 @@
 				interrupt-controller;
 			};
 		};
+
 		cpu3: cpu@3 {
 			compatible = "andestech,andescore-v5", "riscv";
 			device_type = "cpu";
 			reg = <3>;
 			status = "okay";
-			riscv,isa = "rv32gc_xandes";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+					       "xandes";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
+
 			cpu3_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -83,16 +99,20 @@
 				interrupt-controller;
 			};
 		};
+
 		cpu4: cpu@4 {
 			compatible = "andestech,andescore-v5", "riscv";
 			device_type = "cpu";
 			reg = <4>;
 			status = "okay";
-			riscv,isa = "rv32gc_xandes";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+					       "xandes";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
+
 			cpu4_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -100,16 +120,20 @@
 				interrupt-controller;
 			};
 		};
+
 		cpu5: cpu@5 {
 			compatible = "andestech,andescore-v5", "riscv";
 			device_type = "cpu";
 			reg = <5>;
 			status = "okay";
-			riscv,isa = "rv32gc_xandes";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+					       "xandes";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
+
 			cpu5_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -117,16 +141,20 @@
 				interrupt-controller;
 			};
 		};
+
 		cpu6: cpu@6 {
 			compatible = "andestech,andescore-v5", "riscv";
 			device_type = "cpu";
 			reg = <6>;
 			status = "okay";
-			riscv,isa = "rv32gc_xandes";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+					       "xandes";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
+
 			cpu6_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -134,16 +162,20 @@
 				interrupt-controller;
 			};
 		};
+
 		cpu7: cpu@7 {
 			compatible = "andestech,andescore-v5", "riscv";
 			device_type = "cpu";
 			reg = <7>;
 			status = "okay";
-			riscv,isa = "rv32gc_xandes";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+					       "xandes";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
+
 			cpu7_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -193,6 +225,7 @@
 					       &cpu6_intc 3 &cpu7_intc 3>;
 
 			#size-cells = <0>;
+
 			mbox: mbox-controller@0 {
 				compatible = "andestech,mbox-plic-sw";
 				#mbox-cells = <1>;
@@ -302,7 +335,7 @@
 			interrupts = <4 1>;
 			interrupt-parent = <&plic0>;
 			dmas = <&dma0 0 0 0x009>,
-			       <&dma0 1 1 0x00A>;
+			       <&dma0 1 1 0x00a>;
 			dma-names = "tx", "rx";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -317,7 +350,7 @@
 			interrupts = <5 1>;
 			interrupt-parent = <&plic0>;
 			dmas = <&dma0 2 2 0x009>,
-			       <&dma0 3 3 0x00A>;
+			       <&dma0 3 3 0x00a>;
 			dma-names = "tx", "rx";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -326,13 +359,14 @@
 		};
 
 		dma0: dma@f0c00000 {
-			compatible = "andestech,atcdmac300";
+			compatible = "andestech,atcdmacx00";
 			reg = <0xf0c00000 0x1000>;
 			interrupts = <10 1>;
 			interrupt-parent = <&plic0>;
 			dma-channels = <8>;
 			dma-requests = <16>;
 			chain-transfer = <1>;
+			max-data-width = <4>;
 			#dma-cells = <3>;
 			status = "disabled";
 		};
@@ -342,7 +376,7 @@
 			reg = <0xe0100000 0x1000>;
 			interrupts = <19 2>;
 			interrupt-parent = <&plic0>;
-			local-mac-address = [FC 8C EB 9B A6 51];
+			local-mac-address = [fc 8c eb 9b a6 51];
 			status = "disabled";
 		};
 

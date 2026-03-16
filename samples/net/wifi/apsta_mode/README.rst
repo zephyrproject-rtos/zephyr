@@ -17,8 +17,6 @@ Configuration and usage of following interfaces is shown in sample.
    configured to assign IP addresses to the joining station.
 2. ``STA mode``: Provide the SSID and PSK of you router
 
-In this demo, AP-STA mode is enabled using :kconfig:option:`CONFIG_ESP32_WIFI_AP_STA_MODE`.
-An additional Wi-Fi node is added in the ``.overlay`` file. The ``net_if``.
 In the sample code, initially, the AP mode is enabled, followed by enabling the STA mode.
 The driver checks if AP mode was previously enabled. If so, it transitions
 the board into AP-STA mode to support both modes and attempts to connect to the
@@ -30,9 +28,8 @@ Requirements
 This example should be able to run on any commonly available
 :zephyr:board:`esp32_devkitc` development board without any extra hardware.
 
-To enable or disable ``AP-STA`` mode, modify the :kconfig:option:`CONFIG_ESP32_WIFI_AP_STA_MODE`
-parameter in the ``boards/esp32_devkitc_procpu.conf`` file of the demo. Moreover, an
-extra Wi-Fi node is included in ``boards/esp32_devkitc_procpu.overlay``.
+To enable or disable ``AP-STA`` mode, modify the :kconfig:option:`CONFIG_WIFI_USAGE_MODE_STA_AP`
+parameter in the ``prj.conf`` file of the demo.
 
 By default, AP-STA mode is disabled.
 

@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+description: |
+    This will perform V2T measurements.
+
+compatible: "nuvoton,npcx-adc-v2t"
+
+include: sensor-device.yaml
+
+properties:
+  adc-dev:
+    type: phandle
+    required: true
+    description: |
+      ADC Device for temperature conversion:
+      adc-dev = <&adc_node>;
+  support-npckn-v1:
+    type: boolean
+    description: |
+        This option enables the ADC-V2T support for NPCKn V1.

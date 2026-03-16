@@ -19,7 +19,8 @@
 		vctl1-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		/* on Boron VCTL2 is inverted VCTL1 signal via SN74LVC1G04
 		 * single inverter gate -- requires a definition below,
-		 * but is not used in board.c */
+		 * but is not used in board.c
+		 */
 		vctl2-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 	};
 
@@ -63,6 +64,7 @@
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	sara_r4 {
 		compatible = "u-blox,sara-r4";
 		status = "okay";

@@ -179,6 +179,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
 	if (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
+		printk("Sending PAST %p to %p\n", g_pa_sync, conn);
 		err = bt_le_per_adv_sync_transfer(g_pa_sync, conn,
 						  BT_UUID_BASS_VAL);
 		if (err != 0) {
@@ -334,6 +335,29 @@ static void test_exchange_mtu(void)
 {
 	WAIT_FOR_FLAG(flag_mtu_exchanged);
 	printk("MTU exchanged\n");
+}
+
+static void update_conn_params(void)
+{
+	/* When we are the broadcast assistant we do not know the PA interval or ISO interval, so
+	 * set the connection parameters to something that is unlike to be a multiple of either to
+	 * avoid issues with e.g. PAST.
+	 * 45 fits nicely as it is not a multiple of neither BT_BAP_ADV_PARAM_BROADCAST_FAST or
+	 * BT_BAP_ADV_PARAM_BROADCAST_SLOW, nor 7.5 ms or 10 ms for ISO
+	 */
+	int err;
+
+	UNSET_FLAG(flag_conn_updated);
+	err = bt_conn_le_param_update(default_conn,
+				      BT_LE_CONN_PARAM(BT_GAP_MS_TO_CONN_INTERVAL(35),
+						       BT_GAP_MS_TO_CONN_INTERVAL(35), 0,
+						       BT_GAP_MS_TO_CONN_TIMEOUT(4000)));
+	if (err != 0) {
+		FAIL("Failed to update connection parameters %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_conn_updated);
 }
 
 static void test_bass_discover(void)
@@ -502,7 +526,7 @@ static void test_bass_add_source(void)
 	printk("Source added\n");
 }
 
-static void test_bass_mod_source(uint32_t bis_sync)
+static void test_bass_mod_source(bool pa_sync, uint32_t bis_sync)
 {
 	int err;
 	struct bt_bap_broadcast_assistant_mod_src_param mod_src_param = { 0 };
@@ -515,7 +539,7 @@ static void test_bass_mod_source(uint32_t bis_sync)
 	UNSET_FLAG(flag_recv_state_updated);
 	mod_src_param.src_id = recv_state.src_id;
 	mod_src_param.num_subgroups = 1;
-	mod_src_param.pa_sync = true;
+	mod_src_param.pa_sync = pa_sync;
 	mod_src_param.subgroups = &subgroup;
 	mod_src_param.pa_interval = g_broadcaster_info.interval;
 	subgroup.bis_sync = bis_sync;
@@ -542,14 +566,16 @@ static void test_bass_mod_source(uint32_t bis_sync)
 		WAIT_FOR_AND_CLEAR_FLAG(flag_recv_state_updated);
 	}
 
-	if (recv_state.pa_sync_state != BT_BAP_PA_STATE_SYNCED) {
-		FAIL("Unexpected PA sync state: %d\n", recv_state.pa_sync_state);
-		return;
-	}
+	if (pa_sync) {
+		if (recv_state.pa_sync_state != BT_BAP_PA_STATE_SYNCED) {
+			FAIL("Unexpected PA sync state: %d\n", recv_state.pa_sync_state);
+			return;
+		}
 
-	if (recv_state.encrypt_state != BT_BAP_BIG_ENC_STATE_NO_ENC) {
-		FAIL("Unexpected BIG encryption state: %d\n", recv_state.pa_sync_state);
-		return;
+		if (recv_state.encrypt_state != BT_BAP_BIG_ENC_STATE_NO_ENC) {
+			FAIL("Unexpected BIG encryption state: %d\n", recv_state.pa_sync_state);
+			return;
+		}
 	}
 
 	if (recv_state.num_subgroups != mod_src_param.num_subgroups) {
@@ -563,19 +589,15 @@ static void test_bass_mod_source(uint32_t bis_sync)
 		WAIT_FOR_AND_CLEAR_FLAG(flag_recv_state_updated);
 	}
 
-	remote_bis_sync = recv_state.subgroups[0].bis_sync;
-	if (subgroup.bis_sync == 0) {
-		if (remote_bis_sync != 0U) {
-			FAIL("Unexpected BIS sync value: %u\n", remote_bis_sync);
-			return;
-		}
-	} else {
+	if (bis_sync != 0) {
+		remote_bis_sync = recv_state.subgroups[0].bis_sync;
 		printk("Waiting for BIS sync\n");
 
 		if (remote_bis_sync == 0U &&
 		    recv_state.encrypt_state == BT_BAP_BIG_ENC_STATE_NO_ENC) {
-			/* Wait for another notification, which will either request a broadcast code
-			 * for encrypted broadcasts, or have the BIS sync values set
+			/* Wait for another notification, which will either request a
+			 * broadcast code for encrypted broadcasts, or have the BIS sync
+			 * values set
 			 */
 			printk("Waiting for another receive state update with BIS sync\n");
 			WAIT_FOR_AND_CLEAR_FLAG(flag_recv_state_updated);
@@ -749,9 +771,32 @@ static int common_init(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 
+	update_conn_params();
+
 	test_exchange_mtu();
 	test_bass_discover();
 	test_bass_read_receive_states();
+
+	return 0;
+}
+
+static int common_deinit(void)
+{
+	int err;
+
+	bt_le_scan_cb_unregister(&common_scan_cb);
+
+	err = bt_bap_broadcast_assistant_unregister_cb(&broadcast_assistant_cbs);
+	if (err != 0) {
+		FAIL("Bluetooth enable failed (err %d)\n", err);
+		return err;
+	}
+
+	err = bt_gatt_cb_unregister(&gatt_callbacks);
+	if (err != 0) {
+		FAIL("Failed to unregister GATT callbacks (err %d)\n", err);
+		return err;
+	}
 
 	return 0;
 }
@@ -770,15 +815,22 @@ static void test_main_client_sync(void)
 	test_bass_scan_stop();
 	test_bass_create_pa_sync();
 	test_bass_add_source();
-	test_bass_mod_source(0);
+	test_bass_mod_source(true, 0);
 	test_bass_mod_source_long_meta();
-	test_bass_mod_source(BT_ISO_BIS_INDEX_BIT(1) | BT_ISO_BIS_INDEX_BIT(2));
+	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1) | BT_ISO_BIS_INDEX_BIT(2));
 	test_bass_broadcast_code(BROADCAST_CODE);
 
 	printk("Waiting for receive state with BIS sync\n");
 	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
 
+	test_bass_mod_source(false, 0);
 	test_bass_remove_source();
+
+	err = common_deinit();
+	if (err != 0) {
+		FAIL("Failed to deinitialize resources (err %d)\n", err);
+		return;
+	}
 
 	PASS("BAP Broadcast Assistant Client Sync Passed\n");
 }
@@ -797,12 +849,19 @@ static void test_main_client_sync_incorrect_code(void)
 	test_bass_scan_stop();
 	test_bass_create_pa_sync();
 	test_bass_add_source();
-	test_bass_mod_source(BT_ISO_BIS_INDEX_BIT(1));
+	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1));
 	WAIT_FOR_FLAG(flag_broadcast_code_requested);
 	test_bass_broadcast_code(INCORRECT_BROADCAST_CODE);
 	WAIT_FOR_FLAG(flag_incorrect_broadcast_code);
 
+	test_bass_mod_source(false, 0);
 	test_bass_remove_source();
+
+	err = common_deinit();
+	if (err != 0) {
+		FAIL("Failed to deinitialize resources (err %d)\n", err);
+		return;
+	}
 
 	PASS("BAP Broadcast Assistant Client Sync Passed\n");
 }
@@ -825,12 +884,19 @@ static void test_main_server_sync_client_rem(void)
 	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
 
 	printk("Attempting to remove source for the first time\n");
+	test_bass_mod_source(false, 0);
 	test_bass_remove_source();
 
 	WAIT_FOR_FLAG(flag_remove_source_rejected);
 	printk("First remove source attempt was rejected as expected\n");
 
 	test_bass_remove_source();
+
+	err = common_deinit();
+	if (err != 0) {
+		FAIL("Failed to deinitialize resources (err %d)\n", err);
+		return;
+	}
 
 	PASS("BAP Broadcast Assistant Server Sync Passed\n");
 }
@@ -853,6 +919,12 @@ static void test_main_server_sync_server_rem(void)
 	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
 
 	WAIT_FOR_FLAG(flag_recv_state_removed);
+
+	err = common_deinit();
+	if (err != 0) {
+		FAIL("Failed to deinitialize resources (err %d)\n", err);
+		return;
+	}
 
 	PASS("BAP Broadcast Assistant Server Sync Passed\n");
 }

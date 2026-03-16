@@ -18,6 +18,8 @@
  * @{
  */
 
+#include <sys/types.h>
+
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/conn.h>
 
@@ -223,6 +225,44 @@ extern "C" {
 #define BT_SDP_ATTR_PROVNAME_PRIMARY (0x0002 + BT_SDP_PRIMARY_LANG_BASE)
 
 /**
+ * @name Protocol identifier codes
+ * @brief Protocol identifiers used in Bluetooth Service Discovery Protocol (SDP)
+ * @note Based on Bluetooth Assigned Numbers specification
+ *
+ * Possible values for protocol-id are listed below.
+ * See Assigned Numbers Spec, section "Protocol Identifiers" for more details.
+ *
+ * @{
+ */
+#define BT_SDP_PROTO_SDP           0x0001 /**< Service Discovery Protocol */
+#define BT_SDP_PROTO_UDP           0x0002 /**< User Datagram Protocol */
+#define BT_SDP_PROTO_RFCOMM        0x0003 /**< Radio Frequency Communication */
+#define BT_SDP_PROTO_TCP           0x0004 /**< Transmission Control Protocol */
+#define BT_SDP_PROTO_TCS_BIN       0x0005 /**< Telephony Control Specification Binary */
+#define BT_SDP_PROTO_TCS_AT        0x0006 /**< Telephony Control Specification AT */
+#define BT_SDP_PROTO_ATT           0x0007 /**< Attribute Protocol */
+#define BT_SDP_PROTO_OBEX          0x0008 /**< Object Exchange Protocol */
+#define BT_SDP_PROTO_IP            0x0009 /**< Internet Protocol */
+#define BT_SDP_PROTO_FTP           0x000a /**< File Transfer Protocol */
+#define BT_SDP_PROTO_HTTP          0x000c /**< HyperText Transfer Protocol */
+#define BT_SDP_PROTO_WSP           0x000e /**< Wireless Session Protocol */
+#define BT_SDP_PROTO_BNEP          0x000f /**< Bluetooth Network Encapsulation Protocol */
+#define BT_SDP_PROTO_UPNP          0x0010 /**< Universal Plug and Play */
+#define BT_SDP_PROTO_HID           0x0011 /**< Human Interface Device Protocol */
+#define BT_SDP_PROTO_HARDCOPY_CTRL 0x0012 /**< Hardcopy Control Channel */
+#define BT_SDP_PROTO_HARDCOPY_DATA 0x0014 /**< Hardcopy Data Channel */
+#define BT_SDP_PROTO_HARDCOPY_NTF  0x0016 /**< Hardcopy Notification Channel */
+#define BT_SDP_PROTO_AVCTP         0x0017 /**< Audio/Video Control Transport Protocol */
+#define BT_SDP_PROTO_AVDTP         0x0019 /**< Audio/Video Distribution Transport Protocol */
+#define BT_SDP_PROTO_CMTP          0x001b /**< Common ISDN Access Protocol */
+#define BT_SDP_PROTO_MCAP_CTRL     0x001e /**< Multi-Channel Adaptation Protocol Control */
+#define BT_SDP_PROTO_MCAP_DATA     0x001f /**< Multi-Channel Adaptation Protocol Data */
+#define BT_SDP_PROTO_L2CAP         0x0100 /**< Logical Link Control and Adaptation Protocol */
+/**
+ * @}
+ */
+
+/**
  * @name The Data representation in SDP PDUs (pps 339, 340 of BT SDP Spec)
  *
  * These are the exact data type+size descriptor values
@@ -241,6 +281,13 @@ extern "C" {
  * TextString and URLString can be of size 2^{8, 16, 32} bytes
  * DataSequence and DataSequenceAlternates can be of size 2^{8, 16, 32}
  * The size are computed post-facto in the API and are not known apriori.
+ *
+ * For the type BT_SDP_UINT128, BT_SDP_INT128, and BT_SDP_UUID128, the
+ * byteorder of data should be little-endian. Such as, SPP UUID128:
+ * `00001101-0000-1000-8000-00805F9B34FB` will be represented as
+ * {0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00,
+ * 0x01, 0x11, 0x00, 0x00}
+ * For UUID 128, @ref BT_SDP_ARRAY_UUID_128 is used to declare the array.
  * @{
  */
 #define BT_SDP_DATA_NIL        0x00	/**< Nil, the null type */
@@ -303,7 +350,7 @@ struct bt_sdp_record {
 	struct bt_sdp_attribute     *attrs;       /**< Base addr of attr array */
 	size_t                      attr_count;   /**< Number of attributes */
 	uint8_t                     index;        /**< Index of the record in LL */
-	struct bt_sdp_record        *next;        /**< Next service record */
+	sys_snode_t                 node;
 };
 
 /*
@@ -326,6 +373,31 @@ struct bt_sdp_record {
  *  @brief Declare an array of 32-bit elements in an attribute.
  */
 #define BT_SDP_ARRAY_32(...) ((uint32_t[]) {__VA_ARGS__})
+
+/**
+ * @brief Declare a UUID 128 in little-endian format in an attribute.
+ *
+ *  Helper macro to initialize a 128-bit UUID array value from the readable form
+ *  of UUIDs.
+ *
+ *  Example of how to declare the UUID `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
+ *
+ *  @code
+ *  BT_SDP_ARRAY_UUID_128(0x6E400001, 0xB5A3, 0xF393, 0xE0A9, 0xE50E24DCCA9E)
+ *  @endcode
+ *
+ *  Just replace the hyphen by the comma and add `0x` prefixes.
+ *
+ *  @param w32 First part of the UUID (32 bits)
+ *  @param w1  Second part of the UUID (16 bits)
+ *  @param w2  Third part of the UUID (16 bits)
+ *  @param w3  Fourth part of the UUID (16 bits)
+ *  @param w48 Fifth part of the UUID (48 bits)
+ *
+ *  @return The comma separated values for UUID 128.
+ */
+#define BT_SDP_ARRAY_UUID_128(w32, w1, w2, w3, w48) \
+	BT_SDP_ARRAY_8(BT_UUID_128_ENCODE(w32, w1, w2, w3, w48))
 
 /**
  *  @brief Declare a fixed-size data element header.
@@ -446,6 +518,32 @@ struct bt_sdp_record {
 }
 
 /**
+ *  @brief SDP Supported Capabilities Attribute Declaration Macro.
+ *
+ *  Helper macro to declare supported capabilities of a profile/protocol.
+ *
+ *  @param _capabilities Capability mask as 8bit unsigned integer.
+ */
+#define BT_SDP_SUPPORTED_CAPABILITIES(_capabilities) \
+{ \
+	BT_SDP_ATTR_SUPPORTED_CAPABILITIES, \
+	{ BT_SDP_TYPE_SIZE(BT_SDP_UINT8), BT_SDP_ARRAY_8(_capabilities) } \
+}
+
+/**
+ *  @brief SDP Supported Functions Attribute Declaration Macro.
+ *
+ *  Helper macro to declare supported functions of a profile/protocol.
+ *
+ *  @param _functions Function mask as 32bit unsigned integer.
+ */
+#define BT_SDP_SUPPORTED_FUNCTIONS(_functions) \
+{ \
+	BT_SDP_ATTR_SUPPORTED_FUNCTIONS, \
+	{ BT_SDP_TYPE_SIZE(BT_SDP_UINT32), BT_SDP_ARRAY_32(_functions) } \
+}
+
+/**
  *  @brief SDP Service Declaration Macro.
  *
  *  Helper macro to declare a service.
@@ -534,6 +632,30 @@ enum {
 	BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
 };
 
+/** Initializes SDP attribute ID range */
+#define BT_SDP_ATTR_ID_RANGE(beginning, ending) {(beginning), (ending)}
+
+/**
+ * @brief SDP attribute ID range
+ *
+ * If the beginning attribute ID is same with the ending attribute ID, the range represents a
+ * single attribute ID.
+ */
+struct bt_sdp_attribute_id_range {
+	/** Beginning attribute ID of the range */
+	uint16_t beginning;
+	/** Ending attribute ID of the range */
+	uint16_t ending;
+};
+
+/** @brief SDP attribute ID list for Service Attribute and Service Search Attribute transactions */
+struct bt_sdp_attribute_id_list {
+	/** Count of the SDP attribute ID range */
+	size_t count;
+	/** Attribute ID range array list */
+	struct bt_sdp_attribute_id_range *ranges;
+};
+
 /** @brief Main user structure used in SDP discovery of remote. */
 struct bt_sdp_discover_params {
 	sys_snode_t _node;
@@ -549,6 +671,13 @@ struct bt_sdp_discover_params {
 	struct net_buf_pool *pool;
 	/** Discover type */
 	uint8_t type;
+	/**
+	 * Attribute ID list for Service Attribute and Service Search Attribute transactions
+	 *
+	 * If the `ids` is NULL or `ids->count` is 0, the default range `(0x0000, 0xffff)` will
+	 * be used.
+	 */
+	struct bt_sdp_attribute_id_list *ids;
 };
 
 /** @brief Allows user to start SDP discovery session.
@@ -560,6 +689,10 @@ struct bt_sdp_discover_params {
  *  On the service discovery completion the callback function will be
  *  called to get feedback to user about findings.
  *
+ *  If the UUID is UUID 128 for discovery type `Service Search` and
+ * `Service Search Attribute`, the UUID data should be represented as the
+ *  little-endian byteorder sequence.
+ *
  *  Service Search:                The SDP Client generates an
  *                                 SDP_SERVICE_SEARCH_REQ to locate service
  *                                 records that match the service search
@@ -568,12 +701,14 @@ struct bt_sdp_discover_params {
  *  Service Attribute:             The SDP Client generates an
  *                                 SDP_SERVICE_ATTR_REQ to retrieve specified
  *                                 attribute values from a specific service
- *                                 record (`params->handle`).
+ *                                 record (`params->handle`). The AttributeIDList
+ *                                 is specified by `params->ids`.
  *  Service Search Attribute:      The SDP Client generates an
  *                                 SDP_SERVICE_SEARCH_ATTR_REQ to retrieve
  *                                 specified attribute values that match the
  *                                 service search pattern (`params->uuid`)
  *                                 given as the first parameter of the PDU.
+ *                                 The AttributeIDList is specified by `params->ids`.
  *
  * @param conn Object identifying connection to remote.
  * @param params SDP discovery parameters.
@@ -582,7 +717,7 @@ struct bt_sdp_discover_params {
  */
 
 int bt_sdp_discover(struct bt_conn *conn,
-		    const struct bt_sdp_discover_params *params);
+		    struct bt_sdp_discover_params *params);
 
 /** @brief Release waiting SDP discovery request.
  *
@@ -600,12 +735,6 @@ int bt_sdp_discover_cancel(struct bt_conn *conn,
 
 /* Helper types & functions for SDP client to get essential data from server */
 
-/** @brief Protocols to be asked about specific parameters */
-enum bt_sdp_proto {
-	BT_SDP_PROTO_RFCOMM = 0x0003,
-	BT_SDP_PROTO_L2CAP  = 0x0100,
-};
-
 /** @brief Give to user parameter value related to given stacked protocol UUID.
  *
  *  API extracts specific parameter associated with given protocol UUID
@@ -618,7 +747,7 @@ enum bt_sdp_proto {
  *  @return 0 on success when specific parameter associated with given protocol
  *  value is found, or negative if error occurred during processing.
  */
-int bt_sdp_get_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
+int bt_sdp_get_proto_param(const struct net_buf *buf, uint16_t proto,
 			   uint16_t *param);
 
 /** @brief Get additional parameter value related to given stacked protocol UUID.
@@ -628,17 +757,15 @@ int bt_sdp_get_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
  *
  *  @param buf Original buffered raw record data.
  *  @param proto Known protocol to be checked like RFCOMM or L2CAP.
- *  @param param_index There may be more than one parameter related to the
- *  given protocol UUID. This function returns the result that is
- *  indexed by this parameter. It's value is from 0, 0 means the
- *  first matched result, 1 means the second matched result.
+ *  @param index Zero-based index of the protocol descriptor (alternative protocol stack).
+ *               Use 0 for the first protocol descriptor, 1 for the second, etc.
  *  @param[out] param On success populated by found parameter value.
  *
  *  @return 0 on success when a specific parameter associated with a given protocol
  *  value is found, or negative if error occurred during processing.
  */
-int bt_sdp_get_addl_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
-			uint8_t param_index, uint16_t *param);
+int bt_sdp_get_addl_proto_param(const struct net_buf *buf, uint16_t proto, uint8_t index,
+				uint16_t *param);
 
 /** @brief Get profile version.
  *
@@ -666,6 +793,295 @@ int bt_sdp_get_profile_version(const struct net_buf *buf, uint16_t profile,
  *  @return 0 on success if feature found and valid, negative in case any error
  */
 int bt_sdp_get_features(const struct net_buf *buf, uint16_t *features);
+
+/** @brief Get Vendor ID
+ *
+ *  Helper API extracting remote Vendor ID. To get it proper
+ *  generic profile parameter needs to be selected usually listed in SDP
+ *  Interoperability Requirements section for given profile specification.
+ *
+ *  @param buf Buffer holding original raw record data from remote.
+ *  @param vendor_id On success populated by found Vendor ID.
+ *
+ *  @return 0 on success if vendor_id found and valid, negative in case any error
+ */
+int bt_sdp_get_vendor_id(const struct net_buf *buf, uint16_t *vendor_id);
+
+/** @brief Get Product ID
+ *
+ *  Helper API extracting remote Product ID. To get it proper
+ *  generic profile parameter needs to be selected usually listed in SDP
+ *  Interoperability Requirements section for given profile specification.
+ *
+ *  @param buf Buffer holding original raw record data from remote.
+ *  @param product_id On success populated by found Product ID.
+ *  mask.
+ *
+ *  @return 0 on success if product_id found and valid, negative in case any error
+ */
+int bt_sdp_get_product_id(const struct net_buf *buf, uint16_t *product_id);
+
+/** @brief Iterate through discovered SDP record
+ *
+ *  Helper API iterating through the discovered SDP record. It parses the specified SDP RAW record
+ *  data in the provided buffer and calls the specified callback function for each attribute found.
+ *  The iteration continues until all attributes have been processed or the callback function
+ *  returns false to stop the iteration.
+ *
+ *  @param buf Buffer holding original discovered raw SDP record data from remote.
+ *  @param func Callback function to be called for each attribute.
+ *              The callback receives a pointer to the current attribute and user-provided data.
+ *              Return the `true` to continue iteration, `false` to stop.
+ *  @param user_data Optional user-provided context data passed to the callback function.
+ *
+ *  @return 0 on success, negative value on error during the parsing or iteration.
+ */
+int bt_sdp_record_parse(const struct net_buf *buf,
+			bool (*func)(const struct bt_sdp_attribute *attr, void *user_data),
+			void *user_data);
+
+/** @brief check if the specific attribute identifier is found.
+ *
+ *  API checks if the specific attribute identifier is found.
+ *
+ *  @param buf Buffer containing the discovered SDP record data to be parsed.
+ *  @param attr_id Specific attribute identifier.
+ *
+ *  @return true if attribute identifier is found, false otherwise.
+ */
+bool bt_sdp_has_attr(const struct net_buf *buf, uint16_t attr_id);
+
+/** @brief Get a specific attribute by ID from SDP record
+ *
+ *  This function retrieves a specific attribute from the SDP record data by searching for the
+ *  given attribute identifier.
+ *
+ *  @param buf Buffer containing the discovered SDP record data to be parsed.
+ *  @param attr_id The specific attribute identifier to search for.
+ *  @param[out] attr Pointer to bt_sdp_attribute structure to store the found attribute.
+ *
+ *  @return 0 on success when the attribute is found and populated,
+ *          negative value if the attribute is not found or an error occurred.
+ */
+int bt_sdp_get_attr(const struct net_buf *buf, uint16_t attr_id, struct bt_sdp_attribute *attr);
+
+/** @brief SDP attribute value for unsigned integer types
+ *
+ *  Structure to hold parsed unsigned integer values from SDP attributes.
+ *  The size field indicates the actual size of the integer value.
+ */
+struct bt_sdp_attr_value_uint {
+	/** Size of the unsigned integer value in bytes */
+	uint8_t size;
+	/** Union containing the unsigned integer value based on size */
+	union {
+		uint8_t u8;   /**< 8-bit unsigned integer value */
+		uint16_t u16; /**< 16-bit unsigned integer value */
+		uint32_t u32; /**< 32-bit unsigned integer value */
+		uint64_t u64; /**< 64-bit unsigned integer value */
+		/** 128-bit unsigned integer value as byte array */
+		uint8_t u128[BIT(BT_SDP_UINT128 & BT_SDP_SIZE_DESC_MASK)];
+	};
+};
+
+/** @brief SDP attribute value for signed integer types
+ *
+ *  Structure to hold parsed signed integer values from SDP attributes.
+ *  The size field indicates the actual size of the integer value.
+ */
+struct bt_sdp_attr_value_int {
+	/** Size of the signed integer value in bytes */
+	uint8_t size;
+	/** Union containing the signed integer value based on size */
+	union {
+		int8_t s8;   /**< 8-bit signed integer value */
+		int16_t s16; /**< 16-bit signed integer value */
+		int32_t s32; /**< 32-bit signed integer value */
+		int64_t s64; /**< 64-bit signed integer value */
+		/** 128-bit signed integer value as byte array */
+		uint8_t s128[BIT(BT_SDP_INT128 & BT_SDP_SIZE_DESC_MASK)];
+	};
+};
+
+/** @brief SDP attribute value for text string types
+ *
+ *  Structure to hold parsed text string values from SDP attributes.
+ */
+struct bt_sdp_attr_value_text {
+	/** Length of the text string in bytes */
+	uint32_t len;
+	/** Pointer to the text string data */
+	uint8_t *text;
+};
+
+/** @brief SDP attribute value for URL string types
+ *
+ *  Structure to hold parsed URL string values from SDP attributes.
+ */
+struct bt_sdp_attr_value_url {
+	/** Length of the URL string in bytes */
+	uint32_t len;
+	/** Pointer to the URL string data */
+	uint8_t *url;
+};
+
+/** @brief SDP attribute value type enumeration
+ *
+ *  Enumeration defining the different types of attribute values
+ *  that can be parsed from SDP attributes.
+ */
+enum bt_sdp_attr_value_type {
+	BT_SDP_ATTR_VALUE_TYPE_NONE = 0, /**< No value */
+	BT_SDP_ATTR_VALUE_TYPE_UINT,     /**< Unsigned integer */
+	BT_SDP_ATTR_VALUE_TYPE_SINT,     /**< Signed integer  */
+	BT_SDP_ATTR_VALUE_TYPE_BOOL,     /**< Boolean */
+	BT_SDP_ATTR_VALUE_TYPE_TEXT,     /**< Text string */
+	BT_SDP_ATTR_VALUE_TYPE_URL,      /**< URL string */
+};
+
+/** @brief SDP attribute value container structure
+ *
+ *  Structure that holds a parsed attribute value of any supported type.
+ *  The type field indicates which member of the union contains the actual value.
+ *  This structure provides a unified way to handle different types of SDP
+ *  attribute values after parsing.
+ */
+struct bt_sdp_attr_value {
+	/** Type of the attribute value */
+	enum bt_sdp_attr_value_type type;
+	/** Union containing the actual attribute value based on type */
+	union {
+		/**< Boolean value (when type is BT_SDP_ATTR_VALUE_TYPE_BOOL) */
+		bool value;
+		/**< Unsigned integer value (when type is BT_SDP_ATTR_VALUE_TYPE_UINT) */
+		struct bt_sdp_attr_value_uint uint;
+		/**< Signed integer value (when type is BT_SDP_ATTR_VALUE_TYPE_SINT) */
+		struct bt_sdp_attr_value_int sint;
+		/**< Text string value (when type is BT_SDP_ATTR_VALUE_TYPE_TEXT) */
+		struct bt_sdp_attr_value_text text;
+		/**< URL string value (when type is BT_SDP_ATTR_VALUE_TYPE_URL) */
+		struct bt_sdp_attr_value_url url;
+	};
+};
+
+/** @brief SDP attribute value pair structure
+ *
+ *  Structure containing parsed attribute value information including the UUID identifier and the
+ *  actual value with its type. This structure is used to associate a UUID with its corresponding
+ *  attribute value, providing a complete representation of a parsed SDP attribute element.
+ *
+ *  @note The UUID and value pointers will be invalid if the callback function returned.
+ *
+ *  @note The UUID or value pointer may be NULL. If the UUID is NULL, it means the value does not
+ *        belong to any UUID. If the value is NULL, it means UUID has not value.
+ */
+struct bt_sdp_attr_value_pair {
+	/** UUID identifier for the attribute */
+	struct bt_uuid *uuid;
+	/** Pointer to the parsed attribute value */
+	struct bt_sdp_attr_value *value;
+};
+
+/** @brief Parse SDP attribute values
+ *
+ *  Parses the SDP attribute and calls the provided callback function for each parsed value found
+ *  within the attribute. This function handles complex attribute structures that may contain
+ *  multiple values.
+ *
+ *  @param attr Pointer to the SDP attribute to be parsed.
+ *  @param func Callback function to be called for each parsed value.
+ *              The callback receives a bt_sdp_attr_value_pair structure
+ *              containing the parsed value and user data.
+ *              Return true to continue parsing, false to stop.
+ *  @param user_data Optional user-provided context data passed to the callback.
+ *
+ *  @return 0 on success, negative value if an error occurred during parsing.
+ */
+int bt_sdp_attr_value_parse(const struct bt_sdp_attribute *attr,
+			    bool (*func)(const struct bt_sdp_attr_value_pair *value,
+					 void *user_data),
+			    void *user_data);
+
+/** @brief Check if SDP attribute contains a specific UUID
+ *
+ *  This function checks whether the specified SDP attribute contains the given UUID. This is
+ *  useful for verifying if an attribute references a particular service or protocol UUID.
+ *
+ *  @param attr Pointer to the SDP attribute to be checked.
+ *  @param uuid Pointer to the UUID to search for within the attribute.
+ *
+ *  @return true if the attribute contains the specified UUID, false otherwise.
+ */
+bool bt_sdp_attr_has_uuid(const struct bt_sdp_attribute *attr, const struct bt_uuid *uuid);
+
+/** @brief Read SDP attribute value for a specific UUID
+ *
+ *  This function reads and extracts the attribute value associated with the specified UUID
+ *  from the given SDP attribute. The parsed value is stored in the provided bt_sdp_attr_value
+ *  structure.
+ *
+ *  @param attr Pointer to the SDP attribute to read from.
+ *  @param uuid Pointer to the UUID identifier for the value to be read.
+ *  @param[out] value Pointer to bt_sdp_attr_value structure to store the extracted attribute value.
+ *
+ *  @return 0 on success when the value is found and extracted, negative value if the UUID is not
+ *          found or an error occurred.
+ */
+int bt_sdp_attr_read(const struct bt_sdp_attribute *attr, const struct bt_uuid *uuid,
+		     struct bt_sdp_attr_value *value);
+
+/** @brief Parse Additional Protocol Descriptor List attribute
+ *
+ *  This function parses the Additional Protocol Descriptor List attribute and calls the provided
+ *  callback function for each protocol descriptor found within the attribute. The Additional
+ *  Protocol Descriptor List contains alternative protocol stacks that can be used to access
+ *  the service.
+ *
+ *  @param attr Pointer to the SDP attribute containing Additional Protocol Descriptor List.
+ *  @param func Callback function to be called for each protocol descriptor.
+ *              The callback receives a pointer to the protocol descriptor attribute
+ *              and user-provided data. Return true to continue parsing, false to stop.
+ *  @param user_data Optional user-provided context data passed to the callback function.
+ *
+ *  @return 0 on success, negative value if an error occurred during parsing.
+ */
+int bt_sdp_attr_addl_proto_parse(const struct bt_sdp_attribute *attr,
+				 bool (*func)(const struct bt_sdp_attribute *attr, void *user_data),
+				 void *user_data);
+
+/** @brief Get count of protocol descriptors in Additional Protocol Descriptor List
+ *
+ *  This function returns the number of protocol descriptors contained in the
+ *  Additional Protocol Descriptor List attribute. This is useful for determining
+ *  how many alternative protocol stacks are available for the service.
+ *
+ *  @param attr Pointer to the SDP attribute containing Additional Protocol Descriptor List.
+ *
+ *  @return Number of protocol descriptors found on success, negative value if an error
+ *          occurred during parsing.
+ */
+ssize_t bt_sdp_attr_addl_proto_count(const struct bt_sdp_attribute *attr);
+
+/** @brief Read value from Additional Protocol Descriptor List for specific index and UUID
+ *
+ *  This function searches the Additional Protocol Descriptor List attribute for a specific
+ *  protocol UUID at the given protocol descriptor index and extracts its associated parameter
+ *  value. The index parameter specifies which protocol descriptor (alternative protocol stack)
+ *  to search within, and the UUID identifies the specific protocol within that descriptor.
+ *
+ *  @param attr Pointer to the SDP attribute containing Additional Protocol Descriptor List.
+ *  @param index Zero-based index of the protocol descriptor (alternative protocol stack).
+ *               Use 0 for the first protocol descriptor, 1 for the second, etc.
+ *  @param uuid Pointer to the UUID identifier of the protocol to search for within
+ *              the specified protocol descriptor.
+ *  @param[out] value Pointer to bt_sdp_attr_value structure to store the extracted parameter value.
+ *
+ *  @return 0 on success when the protocol and its parameter are found and extracted,
+ *          negative value if the protocol descriptor index is invalid, the UUID is not
+ *          found within the specified descriptor, or an error occurred during parsing.
+ */
+int bt_sdp_attr_addl_proto_read(const struct bt_sdp_attribute *attr, uint16_t index,
+				const struct bt_uuid *uuid, struct bt_sdp_attr_value *value);
 
 #ifdef __cplusplus
 }

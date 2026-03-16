@@ -10,7 +10,7 @@ cores for functional safety. With PLCs, I/O controllers, V2X accelerators,
 ML acceleration, energy management, and advanced security, the i.MX 943
 processor provides optimized performance and power efficiency for industrial,
 IoT, and automotive devices. The i.MX943 device on the board comes in a
-compact 19 x 19 mm package.
+compact 19 x 19 mm/15 x 15 mm package.
 
 Hardware
 ********
@@ -65,9 +65,34 @@ CPU's UART1 for Cortex-A55, and UART8 for Cortex-M33.
 Ethernet
 --------
 
-NETC driver supports to manage the Physical Station Interface (PSI).
+NETC driver supports to manage the Physical Station Interface (PSI), and TSN switch.
 The ENET0, ENETC1, ENETC2 ports could be enabled for M33 by west build option
 ``-DEXTRA_DTC_OVERLAY_FILE=enetc.overlay``.
+
+For A55 Core, ENET0, ENETC1, ENETC2 ports are enabled by default, so no overlay is
+needed, but NETC depends on GIC ITS, so need to make sure to allocate heap memory to
+be larger than 851968 byes by setting CONFIG_HEAP_MEM_POOL_SIZE.
+
+On the EVK board, switch port0 and port2 are connected to both SGMII port (SGMII-swp0
+and SGMII-swp1) and 100M port (swp0 and swp1), currently only 100M port (swp0 and swp1)
+is enabled, so could connect to 100M port for verify two switch ports.
+
+The two switch ports could be verified via :zephyr:code-sample:`dsa` on M33 core
+or on A55 Core, for example for A55 Core:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/ethernet/dsa
+   :host-os: unix
+   :board: imx943_evk/mimx94398/a55
+   :goals: flash
+
+Or for M33 Core:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/ethernet/dsa
+   :host-os: unix
+   :board: imx943_evk/mimx94398/m33/ddr
+   :goals: build
 
 Programming and Debugging (A55)
 *******************************
@@ -180,11 +205,27 @@ Then the following log could be found on UART1 console:
     *** Booting Zephyr OS build v4.1.0-3650-gdb71736adb68 ***
     Hello World! imx943_evk/mimx94398/a55
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+Cortex-A55 SMP
+==============
 
-Programming and Debugging (M33)
-*******************************
+The default SMP variant runs on all four Cortex-A Core, it could be changed by
+disabling some A55 Core nodes in dts and change :kconfig:option:`CONFIG_MP_MAX_NUM_CPUS`
+to the count of enabled A55 Cores in dts.
+
+Building SMP kernel, for example, with the :zephyr:code-sample:`synchronization` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: imx943_evk/mimx94398/a55/smp
+   :goals: build
+
+For different booting method, need to make sure SMP Zephyr to be started from the first
+CPU Core listed in "cpus" dts node, so the first A55 Core in default SMP variant dts
+is Core0, it could be booted by U-Boot "go" command,  J-Link runner or SPSDK runner.
+
+Programming and Debugging (M33 in NETC MIX, M7_0 in M7MIX0, M7_1 in M7MIX1)
+***************************************************************************
 
 Step 1. Build Zephyr application
 ================================
@@ -196,6 +237,16 @@ For TCM target
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: imx943_evk/mimx94398/m33
+   :goals: build
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: imx943_evk/mimx94398/m7_0
+   :goals: build
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: imx943_evk/mimx94398/m7_1
    :goals: build
 
 For DDR target
@@ -248,11 +299,14 @@ Below is an operations example on Linux host. (For more detail, refer to
    cp firmware-ele-imx-2.0.1-0a66c34/mx943a0-ahab-container.img          imx-mkimage/iMX94/
    cp imx-sm/build/mx94alt/m33_image.bin                                 imx-mkimage/iMX94/
    cp imx-oei/build/mx943lp5-19/ddr/oei-m33-ddr.bin                      imx-mkimage/iMX94/
-   cp zephyr/build/zephyr/zephyr.bin                                     imx-mkimage/iMX94/m33s_image.bin
+   cp zephyr/build/zephyr/zephyr.bin                                     imx-mkimage/iMX94/m33s_image.bin (m70_image.bin or m71_image.bin)
 
    cd imx-mkimage
    make SOC=iMX94 OEI=YES flash_m33s     # for TCM target
    make SOC=iMX94 OEI=YES flash_m33s_ddr # for DDR target
+   or
+   make SOC=iMX94 OEI=YES flash_m33s_m70_m71  # for TCM target
+
 
    # Program to SD card
 
@@ -322,6 +376,17 @@ For TCM target
    *** Booting Zephyr OS build v4.1.0-5264-g8654b4029d16 ***
    Hello World! imx943_evk/mimx94398/m33
 
+
+.. code-block:: console
+
+   *** Booting Zephyr OS build v4.2.0-803-g5537e8d9b3f1 ***
+   Hello World! imx943_evk/mimx94398/m7_0
+
+.. code-block:: console
+
+   *** Booting Zephyr OS build v4.2.0-803-g2f145e66dce2 ***
+   Hello World! imx943_evk/mimx94398/m7_1
+
 For DDR target
 
 .. code-block:: console
@@ -329,7 +394,48 @@ For DDR target
    *** Booting Zephyr OS build v4.1.0-5264-g8654b4029d16 ***
    Hello World! imx943_evk/mimx94398/m33/ddr
 
-Note: there will be 4 serial ports identified when connect USB cable to debug port.
+Note:
+
+a. Please connect two additional USB-to-Serial converters between the Host PC and the board's
+Arduino interface using Dupont cables. For M70 in M7MIX0 and M71 in M7MIX1,
+make the connections as shown below.
+
+.. code-block:: text
+
+  +---------+  USB  +-----------------+                                 +---------+
+  | Host PC |<----->| USB-to-Serial a |--TX-->RX(J48-2, M2_UART11_RXD)--|  board  |
+  |         |       |                 |--RX<--TX(J48-4, M2_UART11_TXD)--|         |
+  |         |       |                 |--GND----------------GND(J47-14)-|         |
+  |         |       +-----------------+                                 |         |
+  |         |                                                           |         |
+  |         |  USB  +-----------------+                                 |         |
+  |         |<----->| USB to Serial b |--TX-->RX(J44-2, M1_UART12_RXD)--|         |
+  |         |       |                 |--RX<--TX(j44-4, M1_UART12_TXD)--|         |
+  |         |       |                 |--GND----------------GND(J43-14)-|         |
+  +---------+       +-----------------+                                 +---------+
+
+b. For debugging system via JTAG interface, please connect one additional
+USB-to-Serial converter between the Host PC and the board's Arduino interface
+using Dupont cables. For M33S in NETCMIX,
+(LPUART8's pads reused by JTAG's pads, so change to use another UART3,
+then UART3 and JTAG can be used at the same time.)
+make the connections as shown below,
+
+.. code-block:: text
+
+  +---------+  USB  +-----------------+                                           +---------+
+  | Host PC |<----->| USB-to-Serial c |--TX-->RX(J44-10, M1_LED_TP1, LPUART3_RX)--|  board  |
+  |         |       |                 |--RX<--TX(J51-18, M1_PWM_CX, LPUART3_TX)---|         |
+  |         |       |                 |--GND--GND(J45-12)-------------------------|         |
+  |         |       +-----------------+                                           |         |
+  |         |                                                                     |         |
+  |         |                                                                     |         |
+  |         |                                                                     |         |
+  |         |                                                                     |         |
+  |         |                                                                     |         |
+  +---------+                                                                     +---------+
+
+c. There will be 4 serial ports identified when connect USB cable to debug port.
 The first serial port will be UART8 for M33. As there is multiplexing between JTAG
 and UART8, below bcu (`bcu 1.1.113 download`_) configuration is needed to use UART8.
 
@@ -343,3 +449,5 @@ and UART8, below bcu (`bcu 1.1.113 download`_) configuration is needed to use UA
 
 .. _i.MX Linux BSP release:
    https://www.nxp.com/design/design-center/software/embedded-software/i-mx-software/embedded-linux-for-i-mx-applications-processors:IMXLINUX
+
+.. include:: ../../common/board-footer.rst.inc

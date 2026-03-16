@@ -6,6 +6,9 @@ NXP RK043FN02H-CT Parallel Display
 Overview
 ********
 
+This display panel is no longer manufactured. The replacement for this LCD is
+the :ref:`rk043fn66hs_ctg` 4.3-inch LCD shield.
+
 RK043FN02H-CT is a 4.3 inch TFT 480*272 pixels with LED backlight and
 capacitive touch panel from Rocktech. This LCD panel can work with several i.MX
 RT EVKs and LPC MCUs for evaluation of applications with display.
@@ -96,8 +99,8 @@ example:
    :shield: rk043fn02h_ct
    :goals: build
 
-.. include:: ../../../nxp/common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../../nxp/common/board-footer.rst.inc
+
 
 References
 **********

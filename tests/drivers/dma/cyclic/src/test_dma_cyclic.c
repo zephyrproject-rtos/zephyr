@@ -22,13 +22,27 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/ztest.h>
 
-static __aligned(32) uint8_t tx_data[CONFIG_DMA_CYCLIC_XFER_SIZE];
-static __aligned(32) uint8_t rx_data[CONFIG_DMA_CYCLIC_XFER_SIZE];
+#define DMA_DATA_ALIGNMENT DT_INST_PROP_OR(tst_dma0, dma_buf_addr_alignment, 32)
+#define GUARD_BUF_SIZE (16)
+
+static __aligned(DMA_DATA_ALIGNMENT) uint8_t tx_data[CONFIG_DMA_CYCLIC_XFER_SIZE];
+static __aligned(DMA_DATA_ALIGNMENT) uint8_t rx_data[CONFIG_DMA_CYCLIC_XFER_SIZE + GUARD_BUF_SIZE];
 
 K_SEM_DEFINE(xfer_sem, 0, 1);
 
 static struct dma_config dma_cfg;
 static struct dma_block_config dma_block_cfgs;
+
+static int check_overflow_buffer(const char *buf, int len)
+{
+	for (int i = 0; i < len; ++i) {
+		if (buf[i] != 0xA5) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
 
 static void dma_callback(const struct device *dma_dev, void *user_data,
 			    uint32_t channel, int status)
@@ -47,8 +61,9 @@ static int test_cyclic(void)
 	for (int i = 0; i < CONFIG_DMA_CYCLIC_XFER_SIZE; i++) {
 		tx_data[i] = i;
 	}
+	(void)memset(rx_data + CONFIG_DMA_CYCLIC_XFER_SIZE, 0xA5, GUARD_BUF_SIZE);
 
-	dma = DEVICE_DT_GET(DT_ALIAS(dma0));
+	dma = DEVICE_DT_GET(DT_NODELABEL(tst_dma0));
 	if (!device_is_ready(dma)) {
 		TC_PRINT("dma controller device is not ready\n");
 		return TC_FAIL;
@@ -107,11 +122,16 @@ static int test_cyclic(void)
 		TC_PRINT("Failed to verify tx/rx in the first cycle.\n");
 		return TC_FAIL;
 	}
+	if (check_overflow_buffer(rx_data + CONFIG_DMA_CYCLIC_XFER_SIZE, GUARD_BUF_SIZE)) {
+		TC_PRINT("rx_data guard pattern has been overwritten.");
+		return TC_FAIL;
+	}
 
 	k_sem_reset(&xfer_sem);
 
 	/* reset rx_data to validate that transfer cycles */
 	memset(rx_data, 0, sizeof(rx_data));
+	(void)memset(rx_data + CONFIG_DMA_CYCLIC_XFER_SIZE, 0xA5, GUARD_BUF_SIZE);
 
 	if (dma_resume(dma, chan_id) != 0) {
 		TC_PRINT("Failed to resume transfer\n");
@@ -130,6 +150,10 @@ static int test_cyclic(void)
 
 	if (memcmp(tx_data, rx_data, CONFIG_DMA_CYCLIC_XFER_SIZE)) {
 		TC_PRINT("Failed to verify tx/rx in the second cycle.\n");
+		return TC_FAIL;
+	}
+	if (check_overflow_buffer(rx_data + CONFIG_DMA_CYCLIC_XFER_SIZE, GUARD_BUF_SIZE)) {
+		TC_PRINT("rx_data guard pattern has been overwritten.");
 		return TC_FAIL;
 	}
 

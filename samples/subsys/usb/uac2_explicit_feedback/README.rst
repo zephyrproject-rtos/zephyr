@@ -20,6 +20,8 @@ Asynchronous USB Audio 2 class device supporting 48 kHz 16-bit 2-channel
    release 1703 expects Full-Speed explicit feedback endpoint wMaxPacketSize to
    be equal 4, which violates the USB 2.0 Specification.
    See https://aka.ms/AArvnax for Windows Feedback Hub report.
+   For Windows-only use wMaxPacketSize can be overridden with
+   :kconfig:option:`CONFIG_USBD_UAC2_FS_WINDOWS_WORKAROUND`
 
 Explicit Feedback
 *****************
@@ -39,8 +41,8 @@ nominal number of samples every frame. Theoretically it should be possible to
 obtain the timing information based on I2S and USB interrupts, but currently
 neither subsystem provides the necessary timestamp information.
 
-Explcit Feedback on nRF5340
-***************************
+Explicit Feedback on nRF5340
+****************************
 
 The nRF5340 is capable of counting both edges of I2S LRCLK relative to USB SOF
 with the use of DPPI, TIMER and GPIOTE input. Alternatively, if the GPIOTE input

@@ -2,8 +2,11 @@ description: Nordic nRF91 series running the Serial LTE Modem application
 
 compatible: "nordic,nrf91-slm"
 
-include: uart-device.yaml
+include: zephyr,cellular-modem-device.yaml
 
 properties:
-  mdm-power-gpios:
-    type: phandle-array
+  zephyr,use-default-pdp-ctx:
+    default: 1
+
+  zephyr,mdm-reset-behavior:
+    default: ["toggle_on_recovery"]

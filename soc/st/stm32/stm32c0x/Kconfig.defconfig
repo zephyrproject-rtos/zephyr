@@ -7,4 +7,14 @@ if SOC_SERIES_STM32C0X
 
 rsource "Kconfig.defconfig.stm32c0*"
 
+if PM
+
+config COUNTER
+	default y
+
+config COUNTER_RTC_STM32_SUBSECONDS
+	default y if DT_HAS_ST_STM32_RTC_ENABLED
+
+endif # PM
+
 endif # SOC_SERIES_STM32C0X

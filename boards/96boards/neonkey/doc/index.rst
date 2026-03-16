@@ -1,4 +1,4 @@
-.. _96b_neonkey:
+.. zephyr:board:: 96b_neonkey
 
 96Boards Neonkey
 ################
@@ -24,7 +24,7 @@ Hardware
 96Boards Neonkey provides the following hardware components:
 
 - STM32F411CE in UFQFPN48 package
-- ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU
+- ARM® 32-bit Cortex®-M4 CPU with FPU
 - 84 MHz max CPU frequency
 - 1.8V work voltage
 - 512 KB Flash
@@ -49,33 +49,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr 96b_neonkey board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | system clock                        |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-
-More details about the board can be found at `96Boards website`_.
-
-The default board configuration can be found in
-:zephyr_file:`boards/96boards/neonkey/96b_neonkey_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

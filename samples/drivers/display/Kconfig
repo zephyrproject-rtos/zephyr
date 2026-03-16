@@ -1,0 +1,23 @@
+# Private config options for display sample
+
+# Copyright (c) 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Display sample application"
+
+source "Kconfig.zephyr"
+
+config SAMPLE_BUFFER_ADDR_ALIGN
+	int "The display buffer address alignment"
+	default 8 if 64BIT
+	default 4
+
+config SAMPLE_PITCH_ALIGN
+	int "The update area pitch alignment"
+	default 1
+
+config HEAP_MEM_POOL_ADD_SIZE_SAMPLE
+	int "Sample maximum heap allocated buffer size"
+	default 65536
+	help
+	  Maximum size of the buffer for rendering rectangles

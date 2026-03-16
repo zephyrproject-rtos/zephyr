@@ -322,22 +322,22 @@ static int create_sll_header(struct net_if *iface,
 	int ret;
 
 	if (IS_ENABLED(CONFIG_NET_CAPTURE_COOKED_MODE_SLLV1)) {
-		hdr1.sll_pkttype = htons(type);
-		hdr1.sll_hatype = htons(ctx->hatype);
-		hdr1.sll_halen = htons(ctx->halen);
+		hdr1.sll_pkttype = net_htons(type);
+		hdr1.sll_hatype = net_htons(ctx->hatype);
+		hdr1.sll_halen = net_htons(ctx->halen);
 		memcpy(hdr1.sll_addr, ctx->addr, sizeof(ctx->addr));
-		hdr1.sll_protocol = htons(ptype);
+		hdr1.sll_protocol = net_htons(ptype);
 
 		hdr = (uint8_t *)&hdr1;
 		hdr_len = sizeof(hdr1);
 
 	} else {
-		hdr2.sll2_protocol = htons(ptype);
+		hdr2.sll2_protocol = net_htons(ptype);
 		hdr2.sll2_reserved_mbz = 0;
 		hdr2.sll2_if_index = net_if_get_by_iface(iface);
-		hdr2.sll2_hatype = htons(ctx->hatype);
-		hdr2.sll2_pkttype = htons(type);
-		hdr2.sll2_halen = htons(ctx->halen);
+		hdr2.sll2_hatype = net_htons(ctx->hatype);
+		hdr2.sll2_pkttype = net_htons(type);
+		hdr2.sll2_halen = net_htons(ctx->halen);
 		memcpy(hdr2.sll2_addr, ctx->addr, sizeof(ctx->addr));
 
 		hdr = (uint8_t *)&hdr2;

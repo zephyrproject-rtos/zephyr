@@ -9,6 +9,7 @@ menuconfig WIFI_ESP32
 	select THREAD_CUSTOM_DATA
 	select NET_L2_WIFI_MGMT
 	select NET_L2_ETHERNET
+	select NET_L2_ETHERNET_MGMT
 	select WIFI_USE_NATIVE_NETWORKING
 	select MBEDTLS
 	select THREAD_STACK_INFO
@@ -51,7 +52,7 @@ config NET_MGMT_EVENT_STACK_SIZE
 
 config ESP32_WIFI_STA_AUTO_DHCPV4
 	bool "Automatically starts DHCP4 negotiation"
-	depends on NET_DHCPV4
+	default y if NET_DHCPV4
 	depends on NET_IPV4
 	help
 	  WiFi driver will automatically initiate DHCPV4 negotiation when connected.
@@ -370,6 +371,7 @@ config ESP32_WIFI_MBEDTLS_CRYPTO
 	select MBEDTLS_ECDH_C
 	select MBEDTLS_ECDSA_C
 	select MBEDTLS_PKCS5_C
+	select MBEDTLS_MD_C
 	select MBEDTLS_PK_WRITE_C
 	select MBEDTLS_CIPHER_MODE_CTR_ENABLED
 	select MBEDTLS_CMAC

@@ -27,31 +27,49 @@ LOG_MODULE_REGISTER(video_common, CONFIG_VIDEO_LOG_LEVEL);
 	shared_multi_heap_aligned_alloc(CONFIG_VIDEO_BUFFER_SMH_ATTRIBUTE, align, size)
 #define VIDEO_COMMON_FREE(block) shared_multi_heap_free(block)
 #else
-K_HEAP_DEFINE(video_buffer_pool, CONFIG_VIDEO_BUFFER_POOL_SZ_MAX*CONFIG_VIDEO_BUFFER_POOL_NUM_MAX);
+
+#if !defined(CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION)
+#define VIDEO_BUFFER_POOL_REGION_NAME __noinit_named(kheap_buf_video_buffer_pool)
+#else
+#define VIDEO_BUFFER_POOL_REGION_NAME Z_GENERIC_SECTION(CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME)
+#endif
+
+/*
+ * The k_heap is manually initialized instead of using directly Z_HEAP_DEFINE_IN_SECT
+ * since the section might not be yet accessible from the beginning, making it impossible
+ * to initialize it if done via Z_HEAP_DEFINE_IN_SECT
+ */
+static char VIDEO_BUFFER_POOL_REGION_NAME __aligned(8)
+	video_buffer_pool_mem[MAX(CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE, Z_HEAP_MIN_SIZE)];
+static struct k_heap video_buffer_pool;
+static bool video_buffer_pool_initialized;
+
+static void *video_buffer_k_heap_aligned_alloc(size_t align, size_t bytes, k_timeout_t timeout)
+{
+	if (!video_buffer_pool_initialized) {
+		k_heap_init(&video_buffer_pool, video_buffer_pool_mem,
+			    MAX(CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE, Z_HEAP_MIN_SIZE));
+		video_buffer_pool_initialized = true;
+	}
+
+	return k_heap_aligned_alloc(&video_buffer_pool, align, bytes, timeout);
+}
+
 #define VIDEO_COMMON_HEAP_ALLOC(align, size, timeout)                                              \
-	k_heap_aligned_alloc(&video_buffer_pool, align, size, timeout);
+	video_buffer_k_heap_aligned_alloc(align, size, timeout)
 #define VIDEO_COMMON_FREE(block) k_heap_free(&video_buffer_pool, block)
 #endif
 
 static struct video_buffer video_buf[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
 
-struct mem_block {
-	void *data;
-};
-
-static struct mem_block video_block[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
-
 struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_timeout_t timeout)
 {
 	struct video_buffer *vbuf = NULL;
-	struct mem_block *block;
-	int i;
 
 	/* find available video buffer */
-	for (i = 0; i < ARRAY_SIZE(video_buf); i++) {
+	for (uint16_t i = 0; i < ARRAY_SIZE(video_buf); i++) {
 		if (video_buf[i].buffer == NULL) {
 			vbuf = &video_buf[i];
-			block = &video_block[i];
 			break;
 		}
 	}
@@ -61,12 +79,11 @@ struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_tim
 	}
 
 	/* Alloc buffer memory */
-	block->data = VIDEO_COMMON_HEAP_ALLOC(align, size, timeout);
-	if (block->data == NULL) {
+	vbuf->buffer = VIDEO_COMMON_HEAP_ALLOC(align, size, timeout);
+	if (vbuf->buffer == NULL) {
 		return NULL;
 	}
 
-	vbuf->buffer = block->data;
 	vbuf->size = size;
 	vbuf->bytesused = 0;
 
@@ -80,22 +97,22 @@ struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout)
 
 void video_buffer_release(struct video_buffer *vbuf)
 {
-	struct mem_block *block = NULL;
-	int i;
+	if (vbuf == NULL || vbuf->buffer == NULL) {
+		return;
+	}
 
-	__ASSERT_NO_MSG(vbuf != NULL);
-
-	/* vbuf to block */
-	for (i = 0; i < ARRAY_SIZE(video_block); i++) {
-		if (video_block[i].data == vbuf->buffer) {
-			block = &video_block[i];
+	for (uint16_t i = 0; i < ARRAY_SIZE(video_buf); i++) {
+		if (video_buf[i].buffer == vbuf->buffer) {
+			video_buf[i].buffer = NULL;
+			video_buf[i].size = 0;
+			video_buf[i].bytesused = 0;
 			break;
 		}
 	}
 
-	vbuf->buffer = NULL;
-	if (block) {
-		VIDEO_COMMON_FREE(block->data);
+	if (vbuf->buffer != NULL) {
+		VIDEO_COMMON_FREE(vbuf->buffer);
+		vbuf->buffer = NULL;
 	}
 }
 
@@ -136,6 +153,11 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 	step *= stepwise->min.denominator * stepwise->max.denominator * desired->denominator;
 	goal *= stepwise->min.denominator * stepwise->max.denominator * stepwise->step.denominator;
 
+	__ASSERT_NO_MSG(step != 0U);
+	/* Prevent division by zero */
+	if (step == 0U) {
+		return;
+	}
 	/* Saturate the desired value to the min/max supported */
 	goal = CLAMP(goal, min, max);
 
@@ -436,4 +458,68 @@ fallback:
 
 	/* CSI D-PHY is using a DDR data bus so bitrate is twice the frequency */
 	return ctrl.val64 * bpp / (2 * lane_nb);
+}
+
+int video_estimate_fmt_size(struct video_format *fmt)
+{
+	if (fmt == NULL) {
+		return -EINVAL;
+	}
+
+	switch (fmt->pixelformat) {
+	case VIDEO_PIX_FMT_JPEG:
+	case VIDEO_PIX_FMT_H264:
+		/* Rough estimate for the worst case (quality = 100) */
+		fmt->pitch = 0;
+		fmt->size = fmt->width * fmt->height * 2;
+		break;
+	default:
+		/* Uncompressed format */
+		fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+		if (fmt->pitch == 0) {
+			return -ENOTSUP;
+		}
+		fmt->size = fmt->pitch * fmt->height;
+		break;
+	}
+
+	return 0;
+}
+
+int video_set_compose_format(const struct device *dev, struct video_format *fmt)
+{
+	struct video_selection sel = {
+		.type = fmt->type,
+		.target = VIDEO_SEL_TGT_COMPOSE,
+		.rect.left = 0,
+		.rect.top = 0,
+		.rect.width = fmt->width,
+		.rect.height = fmt->height,
+	};
+	int ret;
+
+	ret = video_set_selection(dev, &sel);
+	if (ret < 0 && ret != -ENOSYS) {
+		LOG_ERR("Unable to set selection compose");
+		return ret;
+	}
+
+	return video_set_format(dev, fmt);
+}
+
+int video_transfer_buffer(const struct device *src, const struct device *sink,
+			  enum video_buf_type src_type, enum video_buf_type sink_type,
+			  k_timeout_t timeout)
+{
+	struct video_buffer *buf = &(struct video_buffer){.type = src_type};
+	int ret;
+
+	ret = video_dequeue(src, &buf, timeout);
+	if (ret < 0) {
+		return ret;
+	}
+
+	buf->type = sink_type;
+
+	return video_enqueue(sink, buf);
 }

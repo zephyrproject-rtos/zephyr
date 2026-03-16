@@ -14,11 +14,24 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
 
+#if defined(CONFIG_CLOCK_CONTROL)
+#include <zephyr/drivers/clock_control.h>
+#endif
+
 #include "spi_context.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Helper macros for checking property status across instances */
+#define DT_INST_NODE_PROP_NOT_OR(inst, prop) !DT_INST_PROP(inst, prop) ||
+#define DT_ANY_INST_NOT_PROP_STATUS_OKAY(prop)                                                     \
+	(DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_INST_NODE_PROP_NOT_OR, prop) 0)
+
+#define DT_INST_NODE_PROP_AND_OR(inst, prop) DT_INST_PROP(inst, prop) ||
+#define DT_ANY_INST_PROP_STATUS_OKAY(prop)                                                         \
+	(DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_INST_NODE_PROP_AND_OR, prop) 0)
 
 typedef void (*spi_dw_config_t)(void);
 typedef uint32_t (*spi_dw_read_t)(uint8_t size, mm_reg_t addr, uint32_t off);
@@ -38,6 +51,10 @@ struct spi_dw_config {
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
 #endif
+#if defined(CONFIG_CLOCK_CONTROL)
+	const struct device *clk_dev;
+	const clock_control_subsys_t clk_id;
+#endif
 	spi_dw_read_t read_func;
 	spi_dw_write_t write_func;
 	spi_dw_set_bit_t set_bit_func;
@@ -48,22 +65,14 @@ struct spi_dw_config {
 struct spi_dw_data {
 	DEVICE_MMIO_RAM;
 	struct spi_context ctx;
+#if !DT_ANY_INST_PROP_STATUS_OKAY(aux_reg)
 	uint32_t version;	/* ssi comp version */
+#endif
 	uint8_t dfs;	/* dfs in bytes: 1,2 or 4 */
 	uint8_t fifo_diff;	/* cannot be bigger than FIFO depth */
 };
 
 /* Register operation functions */
-#define DT_INST_NODE_PROP_NOT_OR(inst, prop) \
-	!DT_INST_PROP(inst, prop) ||
-#define DT_ANY_INST_NOT_PROP_STATUS_OKAY(prop) \
-	(DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_INST_NODE_PROP_NOT_OR, prop) 0)
-
-#define DT_INST_NODE_PROP_AND_OR(inst, prop) \
-	DT_INST_PROP(inst, prop) ||
-#define DT_ANY_INST_PROP_STATUS_OKAY(prop) \
-	(DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_INST_NODE_PROP_AND_OR, prop) 0)
-
 #if DT_ANY_INST_PROP_STATUS_OKAY(aux_reg)
 static uint32_t aux_reg_read(uint8_t size, mm_reg_t addr, uint32_t off)
 {

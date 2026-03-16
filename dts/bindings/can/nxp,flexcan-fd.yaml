@@ -6,7 +6,13 @@ description: |
 
   This is a specialization of the NXP FlexCAN CAN controller with support for CAN FD.
 
-  Example:
+compatible: "nxp,flexcan-fd"
+
+include: ["nxp,flexcan.yaml", "can-fd-controller.yaml", "pinctrl-device.yaml",
+          "nxp,rdc-policy.yaml"]
+
+examples:
+  - |
     flexcan3: can@401d8000 {
       status = "okay";
       compatible = "nxp,flexcan-fd", "nxp,flexcan";
@@ -14,7 +20,9 @@ description: |
       interrupts = <154 0>;
       interrupt-names = "common";
       clocks = <&ccm IMX_CCM_CAN_CLK 0x84 6>;
-      clk-source = <2>;
+      clock-names = "clksrc1";
+      clk-source = <1>;
+      number-of-mb = <64>;
       pinctrl-0 = <&pinmux_flexcan3>;
       pinctrl-names = "default";
 
@@ -22,8 +30,3 @@ description: |
         max-bitrate = <5000000>;
       };
     };
-
-compatible: "nxp,flexcan-fd"
-
-include: ["nxp,flexcan.yaml", "can-fd-controller.yaml", "pinctrl-device.yaml",
-          "nxp,rdc-policy.yaml"]

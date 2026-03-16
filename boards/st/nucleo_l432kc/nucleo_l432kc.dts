@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/l4/stm32l432Xc.dtsi>
 #include <st/l4/stm32l432k(b-c)ux-pinctrl.dtsi>
+#include "arduino_nano_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L432KC-NUCLEO board";
@@ -104,7 +105,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };

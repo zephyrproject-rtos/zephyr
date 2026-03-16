@@ -1,0 +1,21 @@
+# RISCV64 Microchip PIC64GX SOC configuration options
+
+# Copyright (c) 2025 Microchip Technology Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_PIC64GX
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
+	select RISCV_PMP
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	imply XIP
+
+config SOC_PIC64GX1000
+	bool
+	select SCHED_IPI_SUPPORTED
+	select ATOMIC_OPERATIONS_BUILTIN
+	select INCLUDE_RESET_VECTOR
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	select USE_SWITCH_SUPPORTED
+	select USE_SWITCH

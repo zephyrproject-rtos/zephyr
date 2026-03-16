@@ -36,7 +36,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '--error-patterns',
         type=str,
-        help='text file with custom error patterns, ' 'each entry must be separated by newlines',
+        help='text file with custom error patterns, each entry must be separated by newlines',
     )
     parser.add_argument(
         '--output',

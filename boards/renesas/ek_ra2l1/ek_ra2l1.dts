@@ -15,7 +15,8 @@
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/adc/adc.h>
-#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include "ek_ra2l1-pinctrl.dtsi"
 
 / {
@@ -24,10 +25,12 @@
 
 	chosen {
 		zephyr,sram = &sram0;
+		zephyr,flash-controller = &flash;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,entropy = &trng;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -37,6 +40,98 @@
 			gpios = <&ioport5 3 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
 		};
+
+		led2: led2 {
+			gpios = <&ioport5 4 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+
+		led3: led3 {
+			gpios = <&ioport5 5 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+	};
+
+	pmod1_header: pmod-connector-1 {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport1 3 0>,	/* IO1 */
+			   <1 0 &ioport1 1 0>,	/* IO2 */
+			   <2 0 &ioport1 0 0>,	/* IO3 */
+			   <3 0 &ioport1 2 0>,	/* IO4 */
+			   <4 0 &ioport4 2 0>,	/* IO5 */
+			   <5 0 &ioport2 8 0>,	/* IO6 */
+			   <6 0 &ioport1 5 0>,	/* IO7 */
+			   <7 0 &ioport1 6 0>;	/* IO8 */
+	};
+
+	pmod2_header: pmod-connector-2 {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport2 5 0>,	/* IO1 */
+			   <1 0 &ioport2 3 0>,	/* IO2 */
+			   <2 0 &ioport2 2 0>,	/* IO3 */
+			   <3 0 &ioport2 4 0>,	/* IO4 */
+			   <4 0 &ioport4 9 0>,	/* IO5 */
+			   <5 0 &ioport3 3 0>,	/* IO6 */
+			   <6 0 &ioport2 6 0>,	/* IO7 */
+			   <7 0 &ioport3 4 0>;	/* IO8 */
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport0 0 0>,	/* AN  */
+			   <1 0 &ioport2 7 0>,	/* RST */
+			   <2 0 &ioport1 3 0>,	/* CS   */
+			   <3 0 &ioport1 2 0>,	/* SCK  */
+			   <4 0 &ioport1 0 0>,	/* MISO */
+			   <5 0 &ioport1 1 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &ioport4 0 0>,	/* PWM  */
+			   <7 0 &ioport1 10 0>,	/* INT  */
+			   <8 0 &ioport4 10 0>,	/* RX   */
+			   <9 0 &ioport4 11 0>,	/* TX   */
+			   <10 0 &ioport4 8 0>,	/* SCL  */
+			   <11 0 &ioport4 7 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &ioport0 0 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &ioport0 1 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &ioport0 2 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &ioport0 3 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &ioport0 12 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &ioport0 14 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &ioport4 10 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &ioport4 11 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &ioport1 10 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &ioport4 0 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &ioport1 7 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &ioport1 11 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &ioport5 0 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &ioport1 13 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &ioport1 9 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &ioport1 12 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &ioport1 3 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &ioport1 1 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &ioport1 0 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &ioport1 2 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &ioport4 7 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &ioport4 8 0>;
 	};
 
 	buttons {
@@ -57,6 +152,7 @@
 
 	aliases {
 		led0 = &led1;
+		led1 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdt;
@@ -71,6 +167,22 @@
 	status = "okay";
 };
 
+&ioport1 {
+	status = "okay";
+};
+
+&ioport2 {
+	status = "okay";
+};
+
+&ioport3 {
+	status = "okay";
+};
+
+&ioport4 {
+	status = "okay";
+};
+
 &sci0 {
 	pinctrl-0 = <&sci0_default>;
 	pinctrl-names = "default";
@@ -80,6 +192,36 @@
 		current-speed = <115200>;
 		status = "okay";
 	};
+};
+
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart9: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&iic0 {
+	pinctrl-0 = <&iic0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	interrupts = <28 1>, <29 1>, <30 1>, <31 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	clock-frequency = <DT_FREQ_K(400)>;
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
 };
 
 &wdt {
@@ -113,3 +255,42 @@
 	interrupts = <15 1>;
 	status = "okay";
 };
+
+&crc {
+	status = "okay";
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0x0 DT_SIZE_K(8)>;
+		};
+	};
+};
+
+pmod1_spi: &spi0 {};
+
+pmod2_serial: &uart9 {};
+
+pmod_spi: &pmod1_spi {};
+
+pmod_serial: &pmod2_serial {};
+
+pmod_header: &pmod1_header {};
+
+mikrobus_serial: &uart0 {};
+
+mikrobus_i2c: &iic0 {};
+
+mikrobus_spi: &spi0 {};
+
+arduino_serial: &uart0 {};
+
+arduino_i2c: &iic0 {};
+
+arduino_spi: &spi0 {};

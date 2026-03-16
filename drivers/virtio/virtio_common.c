@@ -6,8 +6,8 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/virtio/virtio.h>
-#include <zephyr/virtio/virtqueue.h>
+#include <zephyr/drivers/virtio.h>
+#include <zephyr/drivers/virtio/virtqueue.h>
 #include "virtio_common.h"
 
 LOG_MODULE_REGISTER(virtio_common, CONFIG_VIRTIO_LOG_LEVEL);

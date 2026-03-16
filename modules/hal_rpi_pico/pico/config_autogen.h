@@ -29,8 +29,12 @@
 /* Convert uses of asm, which is not supported in c99, to __asm */
 #define asm __asm
 
-/* Disable binary info */
+/* Configure binary info */
+#ifndef CONFIG_RPI_PICO_BINARY_INFO
 #define PICO_NO_BINARY_INFO 1
+#else
+#define PICO_NO_BINARY_INFO 0
+#endif
 
 #ifdef CONFIG_DT_HAS_RASPBERRYPI_PICO_XOSC_ENABLED
 #include <zephyr/devicetree.h>
@@ -42,7 +46,12 @@
 #define __always_inline ALWAYS_INLINE
 #endif /* __always_inline */
 
-/* Two definitions required for the flash driver */
+/* Definition required for the flash driver */
 #define __STRING(x) #x
+
+/* Enable the HAL to work with minimal modification when using a minimal libc. */
+#ifndef __CONCAT
+#define __CONCAT CONCAT
+#endif
 
 #endif

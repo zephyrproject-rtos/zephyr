@@ -118,6 +118,9 @@
 #define REGION_RAM_ATTR(size)                                                                      \
 	{(NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE |                        \
 	  IF_ENABLED(CONFIG_XIP, (MPU_RASR_XN_Msk |)) size | P_RW_U_NA_Msk)}
+#define REGION_RAM_WT_ATTR(size)                                                                   \
+	{(NORMAL_OUTER_INNER_WRITE_THROUGH_NON_SHAREABLE |                                         \
+	  IF_ENABLED(CONFIG_XIP, (MPU_RASR_XN_Msk |)) size | P_RW_U_NA_Msk)}
 #define REGION_RAM_NOCACHE_ATTR(size)                                                              \
 	{(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | MPU_RASR_XN_Msk | size | P_RW_U_NA_Msk)}
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)

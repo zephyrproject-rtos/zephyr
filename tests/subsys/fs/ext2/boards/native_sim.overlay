@@ -10,6 +10,7 @@
 
 &flash0 {
 	reg = <0x00000000 DT_SIZE_M(128)>;
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

@@ -6,7 +6,6 @@
 #include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
-
 / {
 	model = "Adafruit MacroPad RP2040";
 	compatible = "adafruit,macropad-rp2040";
@@ -104,6 +103,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 			label = "LED 0";
@@ -132,11 +132,13 @@
 
 &flash0 {
 	reg = <0x10000000 DT_SIZE_M(8)>;
+	ranges = <0x0 0x10000000 DT_SIZE_M(8)>;
 
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Reserved memory for the second stage bootloader */
 		second_stage_bootloader: partition@0 {
@@ -187,7 +189,7 @@
 		page-offset = <0>;
 		display-offset = <0>;
 		multiplex-ratio = <63>;
-		prechargep = <0x1F>;
+		prechargep = <0x1f>;
 		segment-remap;
 		com-invdir;
 		inversion-on;

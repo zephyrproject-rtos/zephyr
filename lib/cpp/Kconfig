@@ -7,6 +7,7 @@ menu "C++ Language Support"
 
 config CPP
 	bool "C++ support for the application"
+	select NONZERO_SPINLOCK_SIZE
 	help
 	  This option enables the use of applications built with C++.
 
@@ -18,7 +19,8 @@ config STD_CPP_VERSION
 	default 201103 if STD_CPP11
 	default 201402 if STD_CPP14
 	default 201703 if STD_CPP17
-	default 202002 if STD_CPP20 || STD_CPP2A || STD_CPP2B
+	default 202002 if STD_CPP20 || STD_CPP2A
+	default 202302 if STD_CPP23 || STD_CPP2B
 	help
 	  The version number of C++ standard being used (NOTE: this uses the
 	  full year and month, and is the same as the __cplusplus macro defined
@@ -75,6 +77,11 @@ config STD_CPP2B
 	help
 	  Next revision of the C++ standard, which is expected to be published in 2023.
 
+config STD_CPP23
+	bool "C++ 23"
+	help
+	  2023 C++ standard, previously known as C++2B.
+
 endchoice
 
 config REQUIRES_FULL_LIBCPP
@@ -111,7 +118,6 @@ config MINIMAL_LIBCPP
 
 config GLIBCXX_LIBCPP
 	bool "GNU C++ Standard Library"
-	depends on !NATIVE_APPLICATION
 	depends on NEWLIB_LIBC || PICOLIBC
 	select FULL_LIBCPP_SUPPORTED
 	help
@@ -120,7 +126,6 @@ config GLIBCXX_LIBCPP
 
 config LIBCXX_LIBCPP
 	bool "LLVM C++ Standard Library"
-	depends on !NATIVE_APPLICATION
 	depends on NEWLIB_LIBC
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm"
 	select FULL_LIBCPP_SUPPORTED
@@ -131,7 +136,6 @@ config LIBCXX_LIBCPP
 
 config ARCMWDT_LIBCPP
 	bool "ARC MWDT C++ Library"
-	depends on !NATIVE_APPLICATION
 	depends on ARCMWDT_LIBC
 	help
 	  Build with ARC MetaWare C++ Standard Library provided by the ARC

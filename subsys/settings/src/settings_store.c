@@ -22,7 +22,6 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 sys_slist_t settings_load_srcs;
 struct settings_store *settings_save_dst;
-extern struct k_mutex settings_lock;
 
 void settings_src_register(struct settings_store *cs)
 {
@@ -53,12 +52,12 @@ int settings_load_subtree(const char *subtree)
 	 *    apply config
 	 *    commit all
 	 */
-	k_mutex_lock(&settings_lock, K_FOREVER);
+	settings_lock_take();
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
 		cs->cs_itf->csi_load(cs, &arg);
 	}
 	rc = settings_commit_subtree(subtree);
-	k_mutex_unlock(&settings_lock);
+	settings_lock_release();
 	return rc;
 }
 
@@ -80,11 +79,11 @@ int settings_load_subtree_direct(
 	 *    apply config
 	 *    commit all
 	 */
-	k_mutex_lock(&settings_lock, K_FOREVER);
+	settings_lock_take();
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
 		cs->cs_itf->csi_load(cs, &arg);
 	}
-	k_mutex_unlock(&settings_lock);
+	settings_lock_release();
 	return 0;
 }
 
@@ -144,7 +143,7 @@ ssize_t settings_get_val_len(const char *name)
 	 * for every config store that supports this function
 	 * get the value's length.
 	 */
-	k_mutex_lock(&settings_lock, K_FOREVER);
+	settings_lock_take();
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
 		if (cs->cs_itf->csi_get_val_len) {
 			val_len = cs->cs_itf->csi_get_val_len(cs, name);
@@ -157,7 +156,7 @@ ssize_t settings_get_val_len(const char *name)
 			rc = cs->cs_itf->csi_load(cs, &arg);
 		}
 	}
-	k_mutex_unlock(&settings_lock);
+	settings_lock_release();
 
 	if (rc >= 0) {
 		return val_len;
@@ -177,7 +176,7 @@ ssize_t settings_load_one(const char *name, void *buf, size_t buf_len)
 	 * For every config store that defines csi_load_one() function use it.
 	 * Otherwise, use the csi_load() function to load the key/value pair
 	 */
-	k_mutex_lock(&settings_lock, K_FOREVER);
+	settings_lock_take();
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
 		if (cs->cs_itf->csi_load_one) {
 			rc = cs->cs_itf->csi_load_one(cs, name, (char *)buf, buf_len);
@@ -196,7 +195,7 @@ ssize_t settings_load_one(const char *name, void *buf, size_t buf_len)
 			rc = cs->cs_itf->csi_load(cs, &arg);
 		}
 	}
-	k_mutex_unlock(&settings_lock);
+	settings_lock_release();
 
 	if (rc >= 0) {
 		return val_len;
@@ -217,11 +216,11 @@ int settings_save_one(const char *name, const void *value, size_t val_len)
 		return -ENOENT;
 	}
 
-	k_mutex_lock(&settings_lock, K_FOREVER);
+	settings_lock_take();
 
 	rc = cs->cs_itf->csi_save(cs, name, (char *)value, val_len);
 
-	k_mutex_unlock(&settings_lock);
+	settings_lock_release();
 
 	return rc;
 }
@@ -304,3 +303,76 @@ void settings_store_init(void)
 {
 	sys_slist_init(&settings_load_srcs);
 }
+
+#ifdef CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION
+int settings_save_subtree_or_single_without_modification(const char *name,
+							 bool save_if_subtree,
+							 bool save_if_single_setting)
+{
+	int rc;
+	int value_size;
+	uint8_t read_buffer[CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION_VALUE_SIZE];
+	const char *next = NULL;
+	struct settings_handler_static *handler;
+
+	if (save_if_subtree == false && save_if_single_setting == false) {
+		return -EINVAL;
+	}
+
+	handler = settings_parse_and_lookup(name, &next);
+
+	if (next == NULL) {
+		/* This is a subtree of settings, bail if user did not request saving it. */
+		if (save_if_subtree == false) {
+			return -EPERM;
+		}
+
+		return settings_save_subtree(name);
+	} else if (save_if_single_setting == false) {
+		return -EPERM;
+	}
+
+	/*
+	 * For single settings, we need to be able to retrieve the value of the setting, if this
+	 * is not supported then single saving cannot be done with this key.
+	 */
+	if (handler->h_get == NULL) {
+		return -ENOSYS;
+	}
+
+	settings_lock_take();
+
+	/*
+	 * Settings does not support getting the size of a setting, therefore attempt to read the
+	 * full buffer size, if that returns that amount of data then we must abort as we cannot
+	 * get the full data with this buffer and would save a truncated value.
+	 */
+	value_size = handler->h_get(next, read_buffer, sizeof(read_buffer));
+
+	if (value_size < 0) {
+		rc = value_size;
+		goto exit;
+	} else if (value_size == sizeof(read_buffer)) {
+		rc = -EDOM;
+		goto exit;
+	}
+
+	rc = settings_save_one(name, read_buffer, value_size);
+
+	/*
+	 * Caller just needs to know that it was successful, not the length of the data that was
+	 * saved.
+	 */
+	if (rc >= 0) {
+		rc = 0;
+	} else if (rc < 0) {
+		LOG_ERR("Saving single setting '%s' of length %d failed: %d", name, value_size,
+			rc);
+	}
+
+exit:
+	settings_lock_release();
+
+	return rc;
+}
+#endif /* CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION */

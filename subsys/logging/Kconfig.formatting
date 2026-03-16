@@ -109,6 +109,11 @@ config LOG_DICTIONARY_SUPPORT
 
 	  This should be selected by the backend automatically.
 
+config LOG_DOMAIN_NAME_PREFIX
+	bool "Domain name prefix"
+	help
+		Enable support for prefixing the log source with the domain name.
+
 config LOG_THREAD_ID_PREFIX
 	bool "Thread ID prefix"
 	help
@@ -131,6 +136,18 @@ config LOG_IMMEDIATE_CLEAN_OUTPUT
 	  another one and output is clean, not interleaved. However, enabling
 	  this option is causing interrupts locking for significant amount of
 	  time (up to multiple milliseconds).
+
+config LOG_BACKEND_SHOW_TIMESTAMP
+	bool "Timestamps in the backend"
+	default y
+	help
+	  When enabled, selected backend prints timestamps with log.
+
+config LOG_BACKEND_SHOW_LEVEL
+	bool "Levels in the backend"
+	default y
+	help
+	  When enabled, selected backend prints levels with log.
 
 config LOG_BACKEND_SHOW_COLOR
 	bool "Colors in the backend"
@@ -172,7 +189,7 @@ config LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
 config LOG_BACKEND_FORMAT_TIMESTAMP
 	bool "Timestamp formatting in the backend"
 	depends on LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
-	default y
+	default y if LOG_BACKEND_SHOW_TIMESTAMP
 	help
 	  When enabled timestamp is formatted.
 
@@ -213,5 +230,20 @@ config LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP
 	  It will be applied to all backends except the syslog net backend.
 
 endchoice
+
+config LOG_BACKEND_CRLF_NONE
+	bool "Prevent adding CR and LF in logger"
+	help
+	  When enabled, selected backend prints do not add CR and LF to log
+
+config LOG_BACKEND_CRLF_LFONLY
+	bool "Force a single LF for line breaks in logger"
+	help
+	  When enabled, selected backend prints use single LF for line breaks in log
+
+config LOG_BACKEND_SKIP_SOURCE
+	bool "Skip logging the source"
+	help
+	  When enabled, selected backend prints do not add the source to log
 
 endmenu

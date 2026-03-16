@@ -19,8 +19,7 @@ See this
 `Websocket Wikipedia article <https://en.wikipedia.org/wiki/WebSocket>`_
 for a detailed overview of how Websocket works.
 
-For more information about the protocol itself, see
-`IETF RFC6455 The WebSocket Protocol <https://tools.ietf.org/html/rfc6455>`_.
+For more information about the protocol itself, see :rfc:`6455`.
 
 Websocket Transport
 *******************

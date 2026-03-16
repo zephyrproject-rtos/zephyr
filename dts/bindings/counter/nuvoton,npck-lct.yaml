@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCK-LCT node for npck variant
+
+compatible: "nuvoton,npck-lct"
+
+include: ["nuvoton,npcx-lct-base.yaml"]
+
+properties:
+  maximum-cnt-in-sec:
+    type: int
+    required: true
+    const: 9676799
+    description: |
+      The maximum count that the LCT module can support.
+      One count means 1 second.
+      Npck can support (16 weeks - 1 second).

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # Copyright 2023 The ChromiumOS Authors
 # SPDX-License-Identifier: Apache-2.0
-import sys
 import re
+import sys
 
 # Xtensa Vector Table linker generator
 #
@@ -55,10 +55,12 @@ coreisa = sys.argv[1]
 debug_level = 0
 
 # Translation for the core-isa.h vs. linker section naming conventions
-sect_names = { "DOUBLEEXC" : "DoubleException",
-               "KERNEL" : "KernelException",
-               "NMI" : "NMIException",
-               "USER" : "UserException" }
+sect_names = {
+    "DOUBLEEXC": "DoubleException",
+    "KERNEL": "KernelException",
+    "NMI": "NMIException",
+    "USER": "UserException",
+}
 
 offsets = {}
 
@@ -99,7 +101,7 @@ with open(coreisa) as infile:
 
 if debug_level > 0:
     old = f"Level{debug_level}Interrupt"
-    offsets[f"DebugException"] = offsets[old]
+    offsets["DebugException"] = offsets[old]
     del offsets[old]
 
 sects = list(offsets)
@@ -112,11 +114,11 @@ print("")
 # The 1k alignment is experimental, the docs on the Relocatable Vector
 # Option doesn't specify an alignment at all, but writes to the
 # bottom bits don't take...
-print( "  .z_xtensa_vectors : ALIGN(1024) {")
-print( "    z_xtensa_vecbase = .;")
-print(f"    KEEP(*(.WindowVectors.text));")
+print("  .z_xtensa_vectors : ALIGN(1024) {")
+print("    z_xtensa_vecbase = .;")
+print("    KEEP(*(.WindowVectors.text));")
 for s in sects:
     print(f"    KEEP(*(.{s}Vector.literal));")
-    print( "    . = 0x%3.3x;" % (offsets[s]))
+    print(f"    . = 0x{offsets[s]:x};")
     print(f"    KEEP(*(.{s}Vector.text));")
 print("  }")

@@ -9,8 +9,8 @@ FILE(GLOB app_sources src/*.c)
 # instead of returning error when attempting to perform operation that
 # a file has not been opened for.
 target_compile_definitions(app PRIVATE
-		BYPASS_FS_OPEN_FLAGS_LFS_ASSERT_CRASH
-		BYPASS_FS_OPEN_FLAGS_LFS_RW_IS_DEFAULT
+  BYPASS_FS_OPEN_FLAGS_LFS_ASSERT_CRASH
+  BYPASS_FS_OPEN_FLAGS_LFS_RW_IS_DEFAULT
 )
 target_sources(app PRIVATE
   ${app_sources}
@@ -20,4 +20,5 @@ target_sources(app PRIVATE
   ../common/test_fs_basic.c
   ../common/test_fs_mount_flags.c
   ../common/test_fs_mkfs.c
+  ../common/test_fs_gc.c
 )

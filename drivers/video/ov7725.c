@@ -549,7 +549,11 @@ static DEVICE_API(video, ov7725_driver_api) = {
 static int ov7725_init(const struct device *dev)
 {
 	const struct ov7725_config *cfg = dev->config;
-	struct video_format fmt;
+	struct video_format fmt = {
+		.pixelformat = VIDEO_PIX_FMT_RGB565,
+		.width = 640,
+		.height = 480,
+	};
 	uint8_t pid, ver;
 	int ret;
 
@@ -588,10 +592,6 @@ static int ov7725_init(const struct device *dev)
 
 	k_sleep(K_MSEC(2));
 
-	/* set default/init format VGA RGB565 */
-	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
-	fmt.width = 640;
-	fmt.height = 480;
 	ret = ov7725_set_fmt(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");

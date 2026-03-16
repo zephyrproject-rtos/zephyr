@@ -126,7 +126,7 @@ static void memc_automode_configure(void)
 static bool memc_jedec_read_and_verify_id(QSPIC_TYPE qspi_id)
 {
 	uint16_t device_density;
-	bool ret = 0;
+	bool ret = false;
 	qspi_memory_id_t memory_id;
 
 	da1469x_qspi_memory_jedec_read_id(qspi_id, &memory_id);

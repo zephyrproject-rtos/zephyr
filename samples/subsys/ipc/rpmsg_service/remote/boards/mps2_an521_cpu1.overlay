@@ -13,8 +13,8 @@
 		zephyr,ipc = &mhu0;
 	};
 
-	sramx: memory@281F8000 {
+	sramx: memory@281f8000 {
 		compatible = "mmio-sram";
-		reg = <0x281F8000 0x8000>;
+		reg = <0x281f8000 0x8000>;
 	};
 };

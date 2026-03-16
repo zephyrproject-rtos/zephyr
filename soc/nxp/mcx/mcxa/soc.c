@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,13 @@
 #ifdef CONFIG_SOC_RESET_HOOK
 void soc_reset_hook(void)
 {
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	SystemInit();
+#endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */
 }
 #endif
+
+void enable_ecc(uint32_t mask)
+{
+	SYSCON->RAM_CTRL = mask;
+}

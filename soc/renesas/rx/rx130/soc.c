@@ -17,14 +17,12 @@
 #include "platform.h"
 #include "r_bsp_cpu.h"
 
-extern
 /**
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
  * So the init priority has to be 0 (zero).
  *
- * @return 0
  */
 void soc_early_init_hook(void)
 {
@@ -32,6 +30,7 @@ void soc_early_init_hook(void)
 	bsp_ram_initialize();
 	bsp_interrupt_open();
 	bsp_register_protect_open();
+	mcu_clock_setup();
 #if CONFIG_RENESAS_NONE_USED_PORT_INIT == 1
 	/*
 	 * This is the function that initializes the unused port.

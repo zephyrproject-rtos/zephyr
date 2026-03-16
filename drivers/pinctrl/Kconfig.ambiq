@@ -1,11 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
+# Copyright (c) 2025 Linumiz GmbH
 
 config PINCTRL_AMBIQ
 	bool "Ambiq Apollo pin controller driver"
 	default y
-	depends on DT_HAS_AMBIQ_APOLLO5_PINCTRL_ENABLED || DT_HAS_AMBIQ_APOLLO4_PINCTRL_ENABLED || DT_HAS_AMBIQ_APOLLO3_PINCTRL_ENABLED
+	depends on DT_HAS_AMBIQ_APOLLO5_PINCTRL_ENABLED || DT_HAS_AMBIQ_APOLLO4_PINCTRL_ENABLED || \
+			DT_HAS_AMBIQ_APOLLO3_PINCTRL_ENABLED || DT_HAS_AMBIQ_APOLLO2_PINCTRL_ENABLED
 	select AMBIQ_HAL
 	select AMBIQ_HAL_USE_GPIO
 	help

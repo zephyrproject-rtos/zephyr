@@ -109,7 +109,7 @@ def test_edk(unlaunched_dut: DeviceAdapter):
             logger.debug(f"Running application with extension in {tempdir_extension}")
             try:
                 unlaunched_dut.launch()
-                lines = unlaunched_dut.readlines_until("Done")
+                lines = unlaunched_dut.readlines_until(regex="Done")
 
                 assert "Calling extension from kernel" in lines
                 assert "Calling extension from user" in lines

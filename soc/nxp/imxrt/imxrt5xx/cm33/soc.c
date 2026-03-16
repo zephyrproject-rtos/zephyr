@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #include "flash_clock_setup.h"
 #endif
 
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
 #include "usb_phy.h"
 #include "usb.h"
 #endif
@@ -71,7 +71,7 @@ const clock_frg_clk_config_t g_frg0Config_clock_init = {
 const clock_frg_clk_config_t g_frg12Config_clock_init = {
 	.num = 12, .sfg_clock_src = kCLOCK_FrgMainClk, .divider = 255U, .mult = 167};
 
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
 /* USB PHY configuration */
 #define BOARD_USB_PHY_D_CAL     (0x0CU)
 #define BOARD_USB_PHY_TXCAL45DP (0x06U)
@@ -99,6 +99,12 @@ extern void z_arm_pendsv(void);
 extern void sys_clock_isr(void);
 extern void z_arm_exc_spurious(void);
 
+#ifdef CONFIG_USE_SWITCH
+#define PENDSV_VEC z_arm_exc_spurious
+#else
+#define PENDSV_VEC z_arm_pendsv
+#endif
+
 __imx_boot_ivt_section void (*const image_vector_table[])(void) = {
 	(void (*)())(z_main_stack + CONFIG_MAIN_STACK_SIZE), /* 0x00 */
 	z_arm_reset,                                         /* 0x04 */
@@ -118,7 +124,7 @@ __imx_boot_ivt_section void (*const image_vector_table[])(void) = {
 	z_arm_svc,                      /* 0x2C */
 	z_arm_debug_monitor,            /* 0x30 */
 	(void (*)())image_vector_table, /* 0x34, imageLoadAddress. */
-	z_arm_pendsv,                   /* 0x38 */
+	PENDSV_VEC,                     /* 0x38 */
 #if defined(CONFIG_SYS_CLOCK_EXISTS) && defined(CONFIG_CORTEX_M_SYSTICK_INSTALL_ISR)
 	sys_clock_isr, /* 0x3C */
 #else
@@ -127,7 +133,7 @@ __imx_boot_ivt_section void (*const image_vector_table[])(void) = {
 };
 #endif /* CONFIG_NXP_IMXRT_BOOT_HEADER */
 
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
 
 static void usb_device_clock_init(void)
 {
@@ -280,7 +286,7 @@ void __weak rt5xx_clock_init(void)
 	CLOCK_AttachClk(kFRO_DIV4_to_FLEXCOMM0);
 #endif
 #endif
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
 	usb_device_clock_init();
 #endif
 

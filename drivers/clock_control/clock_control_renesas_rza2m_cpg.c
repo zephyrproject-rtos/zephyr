@@ -18,7 +18,7 @@ static int clock_control_renesas_rza2m_on_off(const struct device *dev, clock_co
 		return -EINVAL;
 	}
 
-	int ret = -EINVAL;
+	int ret;
 	uint32_t *clock_id = (uint32_t *)sys;
 	uint32_t clk_module = RZA2M_GET_MODULE(*clock_id);
 
@@ -46,7 +46,7 @@ static int clock_control_renesas_rza2m_get_rate(const struct device *dev,
 		return -EINVAL;
 	}
 
-	int ret = -EINVAL;
+	int ret;
 	uint32_t *clock_id = (uint32_t *)sys;
 	enum rza2m_cpg_get_freq_src clk_src = RZA2M_GET_CLOCK_SRC(*clock_id);
 
@@ -87,6 +87,12 @@ static int clock_control_renesas_rza2m_init(const struct device *dev)
 	rza2m_cpg_set_sub_clock_divider(dev, CPG_SUB_CLOCK_ICLK, config->cpg_iclk_freq_hz_cfg);
 	rza2m_cpg_set_sub_clock_divider(dev, CPG_SUB_CLOCK_BCLK, config->cpg_bclk_freq_hz_cfg);
 	rza2m_cpg_set_sub_clock_divider(dev, CPG_SUB_CLOCK_P1CLK, config->cpg_p1clk_freq_hz_cfg);
+
+	/* Select P1φ Clock output for SPI multi I/O bus controller */
+	reg_val = sys_read16(CPG_REG_ADDR(CPG_SCLKSEL_OFFSET));
+	reg_val &= ~(CPG_SCLKSEL_SPICR << CPG_SCLKSEL_SPICR_SHIFT);
+	reg_val |= 1 << CPG_SCLKSEL_SPICR_SHIFT;
+	sys_write16(reg_val, CPG_REG_ADDR(CPG_SCLKSEL_OFFSET));
 
 	return 0;
 }

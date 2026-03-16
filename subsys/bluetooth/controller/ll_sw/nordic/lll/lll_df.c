@@ -30,7 +30,6 @@
 #include "lll_df.h"
 #include "lll_df_internal.h"
 
-#include <soc.h>
 #include "hal/debug.h"
 
 /* Minimum number of antenna switch patterns required by Direction Finding Extension to be
@@ -103,7 +102,7 @@ void lll_df_cte_tx_enable(struct lll_adv_sync *lll_sync, const struct pdu_adv *p
 			const struct lll_df_adv_cfg *df_cfg;
 
 			df_cfg = lll_adv_sync_extra_data_curr_get(lll_sync);
-			LL_ASSERT(df_cfg);
+			LL_ASSERT_DBG(df_cfg);
 
 			lll_df_cte_tx_configure(df_cfg->cte_type, df_cfg->cte_length,
 						df_cfg->ant_sw_len, df_cfg->ant_ids);

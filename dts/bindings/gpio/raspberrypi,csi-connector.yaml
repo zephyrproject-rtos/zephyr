@@ -19,6 +19,9 @@ description: |
     3   I2C_SCL  pin 13 (15-pin based) / pin 20 (22-pin based)
     4   I2C_SDA  pin 14 (15-pin based) / pin 21 (22-pin based)
 
+  Use CSI_* constants in <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
+  to refer to specific pins using convenient constant names.
+
   For reference only, Raspberry 15-pin Connector layout:
     1   GND
     2   CSI_D0_N

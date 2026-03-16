@@ -20,6 +20,7 @@
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -106,6 +107,9 @@ struct bt_rfcomm_dlc {
 	/* TX credits, Reuse as a binary sem for MSC FC if CFC is not enabled */
 	struct k_sem               tx_credits;
 
+	/* Worker for RFCOMM TX */
+	struct k_work              tx_work;
+
 	struct bt_rfcomm_session  *session;
 	struct bt_rfcomm_dlc_ops  *ops;
 	struct bt_rfcomm_dlc      *_next;
@@ -113,16 +117,10 @@ struct bt_rfcomm_dlc {
 	bt_security_t              required_sec_level;
 	bt_rfcomm_role_t           role;
 
-	uint16_t                      mtu;
-	uint8_t                       dlci;
-	uint8_t                       state;
-	uint8_t                       rx_credit;
-
-	/* Stack & kernel data for TX thread */
-	struct k_thread            tx_thread;
-#if defined(CONFIG_BT_RFCOMM_DLC_STACK_SIZE)
-	K_KERNEL_STACK_MEMBER(stack, CONFIG_BT_RFCOMM_DLC_STACK_SIZE);
-#endif /* CONFIG_BT_RFCOMM_DLC_STACK_SIZE */
+	uint16_t                   mtu;
+	uint8_t                    dlci;
+	uint8_t                    state;
+	uint8_t                    rx_credit;
 };
 
 struct bt_rfcomm_server {
@@ -152,7 +150,9 @@ struct bt_rfcomm_server {
 	int (*accept)(struct bt_conn *conn, struct bt_rfcomm_server *server,
 		      struct bt_rfcomm_dlc **dlc);
 
-	struct bt_rfcomm_server	*_next;
+	/** @cond INTERNAL_HIDDEN */
+	sys_snode_t node;
+	/** @endcond */
 };
 
 /** @brief RFCOMM RPN baud rate values */
@@ -232,6 +232,16 @@ struct bt_rfcomm_rpn {
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_rfcomm_server_register(struct bt_rfcomm_server *server);
+
+/** @brief Unregister RFCOMM server
+ *
+ *  Unregister RFCOMM server for a channel.
+ *
+ *  @param server Server structure.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_rfcomm_server_unregister(struct bt_rfcomm_server *server);
 
 /** @brief Connect RFCOMM channel
  *

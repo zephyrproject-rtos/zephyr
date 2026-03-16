@@ -86,7 +86,7 @@
 
 	IMR1: memory@b0000000 {
 		compatible = "intel,adsp-imr";
-		reg = <0xB0000000 DT_SIZE_M(16)>;
+		reg = <0xb0000000 DT_SIZE_M(16)>;
 		block-size = <0x1000>;
 		zephyr,memory-region = "IMR1";
 	};
@@ -115,6 +115,7 @@
 			initialize;
 			read-only;
 		};
+
 		mem_window1: mem_window@71a08 {
 			compatible = "intel,adsp-mem-window";
 			reg = <0x71a08 0x8>;
@@ -163,7 +164,7 @@
 			#interrupt-cells = <3>;
 		};
 
-		cavs_intc0: cavs@78800  {
+		cavs_intc0: cavs@78800 {
 			compatible = "intel,cavs-intc";
 			reg = <0x78800 0x10>;
 			interrupt-controller;
@@ -172,25 +173,25 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs_intc1: cavs@78810  {
+		cavs_intc1: cavs@78810 {
 			compatible = "intel,cavs-intc";
 			reg = <0x78810 0x10>;
 			interrupt-controller;
 			#interrupt-cells = <3>;
-			interrupts = <0xA 0 0>;
+			interrupts = <0xa 0 0>;
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs_intc2: cavs@78820  {
+		cavs_intc2: cavs@78820 {
 			compatible = "intel,cavs-intc";
 			reg = <0x78820 0x10>;
 			interrupt-controller;
 			#interrupt-cells = <3>;
-			interrupts = <0XD 0 0>;
+			interrupts = <0xd 0 0>;
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs_intc3: cavs@78830  {
+		cavs_intc3: cavs@78830 {
 			compatible = "intel,cavs-intc";
 			reg = <0x78830 0x10>;
 			interrupt-controller;
@@ -215,7 +216,7 @@
 		dmic0: dmic0@10000 {
 			compatible = "intel,dai-dmic";
 			reg = <0x10000 0x8000>;
-			shim = <0x71E80>;
+			shim = <0x71e80>;
 			fifo = <0x0008>;
 			interrupts = <0x08 0 0>;
 			interrupt-parent = <&cavs_intc3>;
@@ -224,7 +225,7 @@
 		dmic1: dmic1@10000 {
 			compatible = "intel,dai-dmic";
 			reg = <0x10000 0x8000>;
-			shim = <0x71E80>;
+			shim = <0x71e80>;
 			fifo = <0x0108>;
 			interrupts = <0x09 0 0>;
 			interrupt-parent = <&cavs_intc3>;
@@ -256,7 +257,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00077000 0x200
-			       0x00078C00 0x008>;
+			       0x00078c00 0x008>;
 			interrupts = <0x01 0 0>;
 			interrupt-parent = <&cavs_intc3>;
 			dmas = <&lpgpdma0 2
@@ -277,7 +278,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00077200 0x200
-			       0x00078C00 0x008>;
+			       0x00078c00 0x008>;
 			interrupts = <0x01 0 0>;
 			interrupt-parent = <&cavs_intc3>;
 			dmas = <&lpgpdma0 4
@@ -298,7 +299,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00077400 0x200
-			       0x00078C00 0x008>;
+			       0x00078c00 0x008>;
 			interrupts = <0x02 0 0>;
 			interrupt-parent = <&cavs_intc3>;
 			dmas = <&lpgpdma0 6
@@ -324,76 +325,91 @@
 			status = "okay";
 			reg = <0>;
 		};
+
 		hda1: hda@1 {
 			compatible = "intel,hda-dai";
 			status = "okay";
 			reg = <1>;
 		};
+
 		hda2: hda@2 {
 			compatible = "intel,hda-dai";
 			status = "okay";
 			reg = <2>;
 		};
+
 		hda3: hda@3 {
 			compatible = "intel,hda-dai";
 			status = "okay";
 			reg = <3>;
 		};
+
 		hda4: hda@4 {
 			compatible = "intel,hda-dai";
 			status = "okay";
 			reg = <4>;
 		};
+
 		hda5: hda@5 {
 			compatible = "intel,hda-dai";
 			status = "okay";
 			reg = <5>;
 		};
+
 		hda6: hda@6 {
 			compatible = "intel,hda-dai";
 			status = "okay";
 			reg = <6>;
 		};
+
 		hda7: hda@7 {
 			compatible = "intel,hda-dai";
 			status = "okay";
 			reg = <7>;
 		};
+
 		hda8: hda@8 {
 			compatible = "intel,hda-dai";
 			status = "okay";
 			reg = <8>;
 		};
+
 		hda9: hda@9 {
 			compatible = "intel,hda-dai";
 			status = "okay";
 			reg = <9>;
 		};
+
 		hda10: hda@a {
 			compatible = "intel,hda-dai";
 			status = "okay";
 			reg = <0x0a>;
 		};
+
 		hda11: hda@b {
 			compatible = "intel,hda-dai";
 			status = "okay";
 			reg = <0x0b>;
 		};
+
 		hda12: hda@c {
 			compatible = "intel,hda-dai";
 			status = "okay";
 			reg = <0x0c>;
 		};
+
 		hda13: hda@d {
 			compatible = "intel,hda-dai";
 			status = "okay";
 			reg = <0x0d>;
 		};
+
 		hda14: hda@e {
 			compatible = "intel,hda-dai";
 			status = "okay";
 			reg = <0x0e>;
 		};
+
 		hda15: hda@f {
 			compatible = "intel,hda-dai";
 			status = "okay";

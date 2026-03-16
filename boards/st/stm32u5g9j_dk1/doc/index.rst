@@ -4,8 +4,8 @@ Overview
 ********
 
 The STM32U5G9J-DK1 Discovery kit is a complete demonstration and development
-platform for the STM32U5G9NJH6Q microcontroller, featuring an Arm |reg| Cortex |reg|-M33
-core with Arm |reg| TrustZone |reg|.
+platform for the STM32U5G9NJH6Q microcontroller, featuring an Arm® Cortex®-M33
+core with Arm® TrustZone®.
 
 Leveraging the innovative ultra-low-power oriented features, 3 Mbytes of
 embedded SRAM, 4 Mbytes of embedded flash memory, and rich graphics features,
@@ -16,8 +16,8 @@ Chrom-ART Accelerator, and Chrom-GRC™ MMU.
 
 The full range of hardware features available on the board helps users to enhance
 their application development by an evaluation of all the peripherals such as a
-2.47-inch RGB 480 x 480 pixels TFT round LCD module with MIPI DSI |reg| interface and
-capacitive touch panel, USB Type-C |reg| HS, Octo-SPI flash memory device, Hexadeca-SPI
+2.47-inch RGB 480 x 480 pixels TFT round LCD module with MIPI DSI® interface and
+capacitive touch panel, USB Type-C® HS, Octo-SPI flash memory device, Hexadeca-SPI
 PSRAM memory device, eMMC flash memory device, Time-of-Flight and gesture detection
 sensor, temperature sensor, 20-pin audio MEMS connector, and two 2.54 mm pitch
 double-row flexible expansion connectors for easy prototyping with daughterboards
@@ -138,6 +138,22 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
    :zephyr-app: samples/basic/blinky
    :board: stm32u5g9j_dk1
    :goals: debug
+
+
+Using the ST LCD DSI MB1835 shield
+**********************************
+
+The :ref:`st_lcd_dsi_mb1835` shield provides a 480x480 round LCD panel with
+capacitive touch for this board via MIPI DSI and I2C. You can exercise both
+display and touch using the :zephyr:code-sample:`draw_touch_events` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/input/draw_touch_events
+   :board: stm32u5g9j_dk1
+   :shield: st_lcd_dsi_mb1835
+   :goals: build flash
+
+See the shield documentation for details: :ref:`st_lcd_dsi_mb1835`.
 
 
 .. _STM32U5G9J-DK1 website:

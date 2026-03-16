@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		ps2-port0 = &ps2_0;
+	};
+};
+
+&ps2_0 {
+	pinctrl-0 = <&ps2_0_clk_gph3_default &ps2_0_data_gph4_default>;
+	pinctrl-names = "default";
+
+	clk-gpios = <&gpioh 3 0>;
+	data-gpios = <&gpioh 4 0>;
+
+	status = "okay";
+};

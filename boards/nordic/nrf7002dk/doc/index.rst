@@ -104,8 +104,8 @@ The nRF5340 network core does not support the Armv8-M Security Extension.
 nRF5340 IDAU can configure bus accesses by the nRF5340 network core to have the secure
 attribute set. This allows to build and run secure-only applications on the nRF5340 SoC.
 
-Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
-=============================================================================
+Building Secure/Non-Secure Zephyr applications with Arm® TrustZone®
+===================================================================
 
 Applications on the nRF5340 may contain a Secure and a Non-Secure firmware
 image for the application core. The Secure image can be built using either

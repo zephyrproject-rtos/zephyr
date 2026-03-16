@@ -9,6 +9,10 @@ Overview
 The EVAL-AD4052-ARDZ is a 16-Bit SAR ADC Arduino shield powered
 by the Analog Devices AD4052.
 
+.. figure:: eval_ad4052_ardz.webp
+   :align: center
+   :alt: EVAL-AD4052-ARDZ
+
 Programming
 ***********
 

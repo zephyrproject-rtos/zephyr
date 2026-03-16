@@ -10,13 +10,13 @@
 #include "max32657evkit_max32657_common.dtsi"
 
 / {
-	 chosen {
+	chosen {
 		zephyr,sram = &non_secure_ram;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_ns_partition;
-	 };
+	};
 
-	 reserved-memory {
+	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
@@ -67,8 +67,8 @@
 		 * };
 		 */
 
-		storage_partition: partition@f0000 {
-			label = "storage";
+		tfm_storage_partition: partition@f0000 {
+			label = "tfm-storage";
 			reg = <0xf0000 DT_SIZE_K(64)>;
 		};
 	};

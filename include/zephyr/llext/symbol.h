@@ -8,6 +8,7 @@
 #define ZEPHYR_LLEXT_SYMBOL_H
 
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -86,6 +87,60 @@ struct llext_symtable {
 	struct llext_symbol *syms;
 };
 
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Modified constant symbol export table entry
+ *
+ * All LLEXT symbols belong to a "symbol group". Some symbol groups are defined
+ * by Zephyr, while others are defined by the application writer. During build,
+ * each symbol group is *supposed to* have a corresponding Kconfig option which
+ * indicates if symbols in the group should be added to the LLEXT export table.
+ * Due to various implementation details, this can result in situations where
+ * one *wants* to use a symbol from LLEXTs but it ends up not being exported.
+ *
+ * To help diagnose such situations, when export of a symbol group is disabled,
+ * we don't simply exclude symbols of that group from the LLEXT export table,
+ * but also add an entry in a special section to indicate that the subsystem
+ * did see that the symbol is marked for export, but decided to not include it
+ * in the export table due to selected Kconfig options.
+ *
+ * The format of entries in the special section is described by this structure.
+ * Note that Zephyr never consumes this structure; it is placed in a special
+ * section present in the final ELF but discarded from binary images. Instead,
+ * post-build scripts are expected to parse this table directly from the ELF.
+ *
+ * @note Keep in sync with `scripts/build/llext_inspect_discarded_groups.py`.
+ * @note Symbol address is not retained to allow garbage collection by linker.
+ */
+struct z_llext_discarded_const_symbol {
+	/** Name of symbol */
+	const char *const name;
+
+	/** Name of symbol group in which symbol belongs */
+	const char *const group;
+};
+
+#define Z_LLEXT_DISCARD_STRTAB Z_GENERIC_SECTION(llext_discarded_exports_strtab)
+
+#ifdef CONFIG_LLEXT
+#define Z_MARKUP_NOT_EXPORTED_SYMBOL(grp, sym_ident, sym_name)		\
+	static const char Z_LLEXT_DISCARD_STRTAB __used				\
+		__llext_sym_name_ ## sym_name[] = STRINGIFY(sym_name);		\
+	static const char Z_LLEXT_DISCARD_STRTAB __used				\
+		__llext_sym_group_ ## sym_name[] = STRINGIFY(grp);		\
+	static const struct z_llext_discarded_const_symbol			\
+		Z_GENERIC_SECTION(llext_discarded_exports_table) __used		\
+		__llext_sym_discarded_ ## sym_name = {				\
+			.name = __llext_sym_name_ ## sym_name,			\
+			.group = __llext_sym_group_ ## sym_name,		\
+	};
+#else /* CONFIG_LLEXT */
+/* No extension support in this build */
+#define Z_MARKUP_NOT_EXPORTED_SYMBOL(grp, sym_ident, sym_name)
+#endif /* CONFIG_LLEXT */
+
+/** @endcond */
 
 /** @cond ignore */
 #ifdef LL_EXTENSION_BUILD
@@ -155,19 +210,34 @@ struct llext_symtable {
 #endif
 /** @endcond */
 
+#if defined(LL_EXTENSION_BUILD)
+/* Extension build: No Kconfig conditionals */
+#define Z_EXPORT_SYMBOL_NAMED_IN_GROUP(group, sym_ident, sym_name)		\
+	Z_EXPORT_SYMBOL_NAMED(sym_ident, sym_name)
+#else
+/* LLEXT application: Export if relevant group is enabled */
+#define Z_EXPORT_SYMBOL_NAMED_IN_GROUP(group, sym_ident, sym_name)		\
+	COND_CODE_1(CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_ ## group,			\
+		(Z_EXPORT_SYMBOL_NAMED(sym_ident, sym_name)),			\
+		(Z_MARKUP_NOT_EXPORTED_SYMBOL(group, sym_ident, sym_name)))
+#endif /* defined(LL_EXTENSION_BUILD) */
+
 /**
  * @brief Export a constant symbol from the current build with a custom name
  *
  * Version of @ref EXPORT_SYMBOL that allows the user to specify a custom name
- * for the exported symbol.
+ * for the exported symbol. The symbol is part of the UNASSIGNED group.
  *
  * When @c CONFIG_LLEXT is not enabled, this macro is a no-op.
+ *
+ * When @c CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_UNASSIGNED is not enabled, this
+ * macro is a no-op.
  *
  * @param sym_ident Symbol to export
  * @param sym_name Name associated with the symbol
  */
 #define EXPORT_SYMBOL_NAMED(sym_ident, sym_name)				\
-	Z_EXPORT_SYMBOL_NAMED(sym_ident, sym_name)
+	Z_EXPORT_SYMBOL_NAMED_IN_GROUP(UNASSIGNED, sym_ident, sym_name)
 
 /**
  * @brief Export a constant symbol from the current build
@@ -175,12 +245,51 @@ struct llext_symtable {
  * Takes a symbol (function or object) by symbolic name and adds the name
  * and address of the symbol to a table of symbols that may be referenced
  * by extensions or by the base image, depending on the current build type.
+ * The symbol is part of the UNASSIGNED group.
  *
  * When @c CONFIG_LLEXT is not enabled, this macro is a no-op.
+ *
+ * When @c CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_UNASSIGNED is not enabled, this
+ * macro is a no-op.
  *
  * @param x Symbol to export
  */
 #define EXPORT_SYMBOL(x) EXPORT_SYMBOL_NAMED(x, x)
+
+/**
+ * @brief Export a constant symbol with a custom name and group
+ *
+ * Version of @ref EXPORT_SYMBOL_NAMED that allows placing the symbol in a
+ * custom group.
+ *
+ * When @c CONFIG_LLEXT is not enabled, this macro is a no-op.
+ *
+ * When @c CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_{group} is not enabled, this macro
+ * is a no-op.
+ *
+ * @param group Group in which symbol is exported (must be uppercase)
+ * @param sym_ident Symbol to export
+ * @param sym_name Name associated with the symbol
+ */
+#define EXPORT_GROUP_SYMBOL_NAMED(group, sym_ident, sym_name)			\
+	Z_EXPORT_SYMBOL_NAMED_IN_GROUP(group, sym_ident, sym_name)
+
+/**
+ * @brief Export a constant symbol in a custom group
+ *
+ * Version of @ref EXPORT_SYMBOL that allows placing the symbol in a
+ * custom group.
+ *
+ * When @c CONFIG_LLEXT is not enabled, this macro is a no-op.
+ *
+ * When @c CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_{group} is not enabled, this macro
+ * is a no-op.
+ *
+ * @param group Group in which symbol is exported (must be uppercase)
+ * @param sym_ident Symbol to export
+ */
+#define EXPORT_GROUP_SYMBOL(group, sym_ident) \
+	EXPORT_GROUP_SYMBOL_NAMED(group, sym_ident, sym_ident)
 
 /**
  * @}

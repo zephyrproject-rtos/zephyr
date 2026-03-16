@@ -79,10 +79,10 @@ struct virtual_interface_link_types {
 #endif
 
 struct virtual_interface_config {
-	sa_family_t family;
+	net_sa_family_t family;
 	union {
-		struct in_addr peer4addr;
-		struct in6_addr peer6addr;
+		struct net_in_addr peer4addr;
+		struct net_in6_addr peer6addr;
 		int mtu;
 		struct virtual_interface_link_types link_types;
 		struct {

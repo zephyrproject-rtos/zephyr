@@ -49,11 +49,10 @@ void S2PI_ReleaseMutex(s2pi_slave_t slave)
 
 static void S2PI_complete_callback(struct rtio *ctx,
 				   const struct rtio_sqe *sqe,
-				   void *arg)
+				   int err, void *arg)
 {
 	struct afbr_s50_platform_data *data = (struct afbr_s50_platform_data *)arg;
 	struct rtio_cqe *cqe;
-	int err = 0;
 	status_t status = STATUS_OK;
 
 	do {
@@ -151,7 +150,7 @@ status_t S2PI_Abort(s2pi_slave_t slave)
 
 	(void)atomic_set(&data->s2pi.rtio.state, ERROR_ABORTED);
 
-	S2PI_complete_callback(data->s2pi.rtio.ctx, NULL, data);
+	S2PI_complete_callback(data->s2pi.rtio.ctx, NULL, 0, data);
 
 	return STATUS_OK;
 }

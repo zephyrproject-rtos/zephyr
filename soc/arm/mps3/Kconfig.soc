@@ -11,14 +11,14 @@ config SOC_SERIES_MPS3
 config SOC_SERIES
 	default "mps3" if SOC_SERIES_MPS3
 
-config SOC_MPS3_CORSTONE300
+config SOC_CORSTONE300
 	bool
 	select SOC_SERIES_MPS3
 
-config SOC_MPS3_CORSTONE310
+config SOC_CORSTONE310
 	bool
 	select SOC_SERIES_MPS3
 
 config SOC
-	default "corstone300" if SOC_MPS3_CORSTONE300
-	default "corstone310" if SOC_MPS3_CORSTONE310
+	default "corstone300" if SOC_CORSTONE300
+	default "corstone310" if SOC_CORSTONE310

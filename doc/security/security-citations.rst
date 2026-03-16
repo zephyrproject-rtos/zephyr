@@ -8,11 +8,11 @@ Security Document Citations
 .. [SALT75] J. H. Saltzer and M. D. Schroeder, "The protection of
    information in computer systems," Proceedings of the IEEE, vol. 63, no.
    9, pp. 1278-1308, Sep 1975. [Online].
-   Available: http://web.mit.edu/Saltzer/www/publications/protection/.
+   Available: https://web.mit.edu/Saltzer/www/publications/protection/.
 
 .. [PAUL09] M. Paul, "The Ten Best Practices for Secure Software
    Development," International Information Systems Security Certification
-   Consortium, Inc. [(ISC)2 |reg|], Palm Harbor, FL, USA, 2009.
+   Consortium, Inc. [(ISC)2®], Palm Harbor, FL, USA, 2009.
 
 .. [MS12] Microsoft Corporation, Security Development Lifecycle - SDL
    Process Guidance Version 5.2,2012.
@@ -47,3 +47,8 @@ Security Document Citations
 
 .. [CIIBPB] Core Infrastructure Initiative Best Practices Badge. [Online].
    Available: https://github.com/linuxfoundation/cii-best-practices-badge
+
+.. [CRA24] Regulation (EU) 2024/2847 of the European Parliament and of the Council
+   of 23 October 2024 on horizontal cybersecurity requirements for products with
+   digital elements (Cyber Resilience Act). [Online].
+   Available: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847

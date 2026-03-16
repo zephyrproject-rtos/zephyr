@@ -28,6 +28,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_prov);
 
+/* 10 power 32 represents 14 bytes maximum in little-endian format */
+#define MAX_NUMERIC_OOB_BYTES 14
+
 struct bt_mesh_prov_link bt_mesh_prov_link;
 const struct bt_mesh_prov *bt_mesh_prov;
 
@@ -96,7 +99,7 @@ static int check_output_auth(bt_mesh_output_action_t output, uint8_t size)
 		return -EINVAL;
 	}
 
-	if (size > bt_mesh_prov->output_size) {
+	if (size > bt_mesh_prov->output_size || size == 0) {
 		return -EINVAL;
 	}
 
@@ -113,7 +116,7 @@ static int check_input_auth(bt_mesh_input_action_t input, uint8_t size)
 		return -EINVAL;
 	}
 
-	if (size > bt_mesh_prov->input_size) {
+	if (size > bt_mesh_prov->input_size || size == 0) {
 		return -EINVAL;
 	}
 
@@ -122,59 +125,125 @@ static int check_input_auth(bt_mesh_input_action_t input, uint8_t size)
 
 static void get_auth_string(char *str, uint8_t size)
 {
-	uint64_t value;
-
-	bt_rand(&value, sizeof(value));
-
 	static const char characters[36] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
+	bt_rand(str, size);
+
 	for (int i = 0; i < size; i++) {
-		/* pull base-36 digits: */
-		int idx = value % 36;
-
-		value = value / 36;
-		str[i] = characters[idx];
+		str[i] = characters[(uint8_t)str[i] % (uint8_t)36];
 	}
-
-	str[size] = '\0';
 
 	memcpy(bt_mesh_prov_link.auth, str, size);
 	memset(bt_mesh_prov_link.auth + size, 0,
 			sizeof(bt_mesh_prov_link.auth) - size);
 }
 
-static uint32_t get_auth_number(bt_mesh_output_action_t output,
-		bt_mesh_input_action_t input, uint8_t size)
+/* Computes 10^n - 1 in little endian array */
+static void compute_pow10_minus1(uint8_t n, uint8_t *out, size_t *out_len)
 {
-	const uint32_t divider[PROV_IO_OOB_SIZE_MAX] = { 10, 100, 1000, 10000,
-			100000, 1000000, 10000000, 100000000 };
-	uint8_t auth_size = bt_mesh_prov_auth_size_get();
-	uint32_t num = 0;
+	out[0] = 1; /* Start with value 1 at LSB */
+	size_t len = 1;
 
-	bt_rand(&num, sizeof(num));
+	/* Compute 10^n */
+	for (uint8_t i = 0; i < n; ++i) {
+		uint16_t carry = 0;
 
-	if (output == BT_MESH_BLINK || output == BT_MESH_BEEP || output == BT_MESH_VIBRATE ||
-	    input == BT_MESH_PUSH || input == BT_MESH_TWIST) {
-		/* According to MshPRTv1.1: 5.4.2.4, blink, beep vibrate, push and twist should be
-		 * a random integer between 0 and 10^size, *exclusive*:
-		 */
-		num = (num % (divider[size - 1] - 1)) + 1;
-	} else {
-		num %= divider[size - 1];
+		for (size_t j = 0; j < len; ++j) {
+			uint16_t prod = out[j] * 10 + carry;
+
+			out[j] = prod & 0xFF;
+			carry = prod >> 8;
+		}
+
+		if (carry > 0 && len < MAX_NUMERIC_OOB_BYTES) {
+			out[len] = carry;
+			len++;
+		}
 	}
 
-	sys_put_be32(num, &bt_mesh_prov_link.auth[auth_size - sizeof(num)]);
-	memset(bt_mesh_prov_link.auth, 0, auth_size - sizeof(num));
+	/* Subtract 1 from the result (10^n - 1) */
+	size_t j = 0;
 
-	return num;
+	while (j < len) {
+		if (out[j] > 0) {
+			out[j] -= 1;
+			break;
+		}
+		out[j] = 0xFF;
+		j++;
+	}
+
+	/* Adjust length if highest byte becomes 0 */
+	while (len > 1 && out[len - 1] == 0) {
+		len--;
+	}
+
+	*out_len = len;
 }
 
-int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, uint8_t size)
+static void random_byte_shift(uint8_t max_inclusive, uint8_t *out)
+{
+	if (max_inclusive == 0) {
+		*out = 0;
+		return;
+	}
+
+	while (*out > max_inclusive) {
+		*out >>= 1;
+	}
+}
+
+static void generate_random_below_pow10(uint8_t n, uint8_t *output, size_t *out_len)
+{
+	uint8_t max_val[MAX_NUMERIC_OOB_BYTES] = {0};
+	size_t max_len = 0;
+
+	compute_pow10_minus1(n, max_val, &max_len);
+	bt_rand(output, max_len);
+
+	/* Generate random number less than max_val, starting from MSB in little-endian */
+	for (int i = max_len - 1; i >= 0; --i) {
+		random_byte_shift(max_val[i], &output[i]);
+		if (output[i] < max_val[i]) {
+			break;
+		}
+	}
+
+	/* Ensure the result is not all zero */
+	int all_zero = 1;
+
+	for (size_t i = 0; i < max_len; ++i) {
+		if (output[i] != 0) {
+			all_zero = 0;
+			break;
+		}
+	}
+
+	if (all_zero) {
+		output[0] = 1;
+	}
+
+	*out_len = max_len;
+}
+
+static void get_auth_number(uint8_t *rand_bytes, size_t *size)
+{
+	uint8_t auth_size = bt_mesh_prov_auth_size_get();
+
+	generate_random_below_pow10(*size, rand_bytes, size);
+	sys_memcpy_swap(bt_mesh_prov_link.auth + (auth_size - *size), rand_bytes, *size);
+	memset(bt_mesh_prov_link.auth, 0, auth_size - *size);
+}
+
+int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, size_t size)
 {
 	bt_mesh_output_action_t output;
 	bt_mesh_input_action_t input;
+	uint8_t rand_bytes[PROV_IO_OOB_SIZE_MAX + 1] = {0};
 	uint8_t auth_size = bt_mesh_prov_auth_size_get();
 	int err;
+
+	size = MIN(size, PROV_IO_OOB_SIZE_MAX);
 
 	switch (method) {
 	case AUTH_METHOD_NO_OOB:
@@ -195,6 +264,10 @@ int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, uint8
 
 	case AUTH_METHOD_OUTPUT:
 		output = output_action(action);
+		err = check_output_auth(output, size);
+		if (err) {
+			return err;
+		}
 
 		if (is_provisioner) {
 			if (output == BT_MESH_DISPLAY_STRING) {
@@ -208,32 +281,31 @@ int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, uint8
 			return bt_mesh_prov->input(input, size);
 		}
 
-		err = check_output_auth(output, size);
+		atomic_set_bit(bt_mesh_prov_link.flags, NOTIFY_INPUT_COMPLETE);
+
+		if (output == BT_MESH_DISPLAY_STRING) {
+			get_auth_string(rand_bytes, MIN(size, auth_size));
+			return bt_mesh_prov->output_string(rand_bytes);
+		}
+
+		get_auth_number(rand_bytes, &size);
+#if defined CONFIG_BT_MESH_PROV_OOB_API_LEGACY
+		uint32_t output_num;
+
+		memcpy(&output_num, rand_bytes, sizeof(output_num));
+		return bt_mesh_prov->output_number(output, output_num);
+#else
+		return bt_mesh_prov->output_numeric(output, rand_bytes, size);
+#endif
+
+	case AUTH_METHOD_INPUT:
+		input = input_action(action);
+		err = check_input_auth(input, size);
 		if (err) {
 			return err;
 		}
 
-		if (output == BT_MESH_DISPLAY_STRING) {
-			char str[9];
-
-			atomic_set_bit(bt_mesh_prov_link.flags, NOTIFY_INPUT_COMPLETE);
-			get_auth_string(str, size);
-			return bt_mesh_prov->output_string(str);
-		}
-
-		atomic_set_bit(bt_mesh_prov_link.flags, NOTIFY_INPUT_COMPLETE);
-		return bt_mesh_prov->output_number(output,
-				get_auth_number(output, BT_MESH_NO_INPUT, size));
-
-	case AUTH_METHOD_INPUT:
-		input = input_action(action);
-
 		if (!is_provisioner) {
-			err = check_input_auth(input, size);
-			if (err) {
-				return err;
-			}
-
 			if (input == BT_MESH_ENTER_STRING) {
 				atomic_set_bit(bt_mesh_prov_link.flags, WAIT_STRING);
 			} else {
@@ -243,24 +315,30 @@ int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, uint8
 			return bt_mesh_prov->input(input, size);
 		}
 
-		if (input == BT_MESH_ENTER_STRING) {
-			char str[9];
+		atomic_set_bit(bt_mesh_prov_link.flags, NOTIFY_INPUT_COMPLETE);
 
-			atomic_set_bit(bt_mesh_prov_link.flags, NOTIFY_INPUT_COMPLETE);
-			get_auth_string(str, size);
-			return bt_mesh_prov->output_string(str);
+		if (input == BT_MESH_ENTER_STRING) {
+			get_auth_string(rand_bytes, MIN(size, auth_size));
+			return bt_mesh_prov->output_string(rand_bytes);
 		}
 
-		atomic_set_bit(bt_mesh_prov_link.flags, NOTIFY_INPUT_COMPLETE);
+		get_auth_number(rand_bytes, &size);
 		output = BT_MESH_DISPLAY_NUMBER;
-		return bt_mesh_prov->output_number(output,
-				get_auth_number(BT_MESH_NO_OUTPUT, input, size));
+#if defined CONFIG_BT_MESH_PROV_OOB_API_LEGACY
+		uint32_t input_num;
+
+		memcpy(&input_num, rand_bytes, sizeof(input_num));
+		return bt_mesh_prov->output_number(output, input_num);
+#else
+		return bt_mesh_prov->output_numeric(output, rand_bytes, size);
+#endif
 
 	default:
 		return -EINVAL;
 	}
 }
 
+#if defined CONFIG_BT_MESH_PROV_OOB_API_LEGACY
 int bt_mesh_input_number(uint32_t num)
 {
 	uint8_t auth_size = bt_mesh_prov_auth_size_get();
@@ -277,13 +355,37 @@ int bt_mesh_input_number(uint32_t num)
 
 	return 0;
 }
+#endif
+
+int bt_mesh_input_numeric(uint8_t *numeric, size_t size)
+{
+	uint8_t auth_size = bt_mesh_prov_auth_size_get();
+
+	LOG_HEXDUMP_DBG(numeric, size, "");
+
+	if (size > MAX_NUMERIC_OOB_BYTES) {
+		return -ENOTSUP;
+	}
+
+	if (!atomic_test_and_clear_bit(bt_mesh_prov_link.flags, WAIT_NUMBER)) {
+		return -EINVAL;
+	}
+
+	sys_memcpy_swap(bt_mesh_prov_link.auth + (auth_size - size), numeric, size);
+	memset(bt_mesh_prov_link.auth, 0, auth_size - size);
+
+	bt_mesh_prov_link.role->input_complete();
+
+	return 0;
+}
 
 int bt_mesh_input_string(const char *str)
 {
+	size_t size = strlen(str);
+
 	LOG_DBG("%s", str);
 
-	if (strlen(str) > PROV_IO_OOB_SIZE_MAX ||
-			strlen(str) > bt_mesh_prov_link.oob_size) {
+	if (size > PROV_IO_OOB_SIZE_MAX || size > bt_mesh_prov_link.oob_size) {
 		return -ENOTSUP;
 	}
 
@@ -291,7 +393,8 @@ int bt_mesh_input_string(const char *str)
 		return -EINVAL;
 	}
 
-	memcpy(bt_mesh_prov_link.auth, str, strlen(str));
+	memcpy(bt_mesh_prov_link.auth, str, size);
+	memset(bt_mesh_prov_link.auth + size, 0, sizeof(bt_mesh_prov_link.auth) - size);
 
 	bt_mesh_prov_link.role->input_complete();
 

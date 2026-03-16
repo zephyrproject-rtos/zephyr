@@ -11,3 +11,19 @@ tests:
       - mps3/corstone310/fvp
       - mps4/corstone315/fvp
       - mps4/corstone320/fvp
+
+  application_development.vector_table_relocation.dtcm:
+    arch_allow: arm
+    # Exclude STM32F4 series due to architectural constraints. STM32F4 CCM is only accessible
+    # over the D-bus but exception vectors are fetched over the I-bus.
+    # As such, the vector table can't be relocated to CCM.
+    filter: CONFIG_CPU_CORTEX_M_HAS_VTOR and dt_chosen_enabled("zephyr,dtcm")
+            and not CONFIG_SOC_SERIES_STM32F4X
+    extra_configs:
+      - CONFIG_ARM_VECTOR_TABLE_DTCM=y
+
+  application_development.vector_table_relocation.itcm:
+    arch_allow: arm
+    filter: CONFIG_CPU_CORTEX_M_HAS_VTOR and dt_chosen_enabled("zephyr,itcm")
+    extra_configs:
+      - CONFIG_ARM_VECTOR_TABLE_ITCM=y

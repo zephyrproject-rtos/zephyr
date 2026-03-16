@@ -3,7 +3,7 @@
 
 description: nRF7000 Wi-Fi chip with COEX interface.
 
-compatible: nordic,nrf7000-coex
+compatible: "nordic,nrf7000-coex"
 
 include:
   - "nordic,nrf70-coex.yaml"

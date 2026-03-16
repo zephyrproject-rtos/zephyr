@@ -1,0 +1,20 @@
+name: nordic-flpr
+append:
+  EXTRA_DTC_OVERLAY_FILE: nordic-flpr.overlay
+
+boards:
+  /.*/nrf54l15/cpuapp/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/nrf54l15_cpuapp.overlay
+  /.*/nrf54h20/cpuapp/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/nrf54h20_cpuapp.overlay
+  /.*/nrf54lm20a/cpuapp/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/nrf54lm20a_cpuapp.overlay
+  /.*/nrf54lm20b/cpuapp/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/nrf54lm20b_cpuapp.overlay
+  /.*/nrf7120/cpuapp/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/nrf7120_cpuapp.overlay

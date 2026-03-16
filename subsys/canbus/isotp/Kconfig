@@ -87,7 +87,7 @@ config ISOTP_RX_SF_FF_BUF_COUNT
 	default 4
 	help
 	  This buffer is used for first and single frames. It is extra because the
-	  buffer has to be ready for the first reception in isr context and therefor
+	  buffer has to be ready for the first reception in isr context and therefore
 	  is allocated when binding.
 	  Each buffer will occupy CAN_MAX_DLEN - 1 byte + header (sizeof(struct net_buf))
 	  amount of data.

@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Maximilian Zimmermann
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	fwcfg0: fw-cfg@9020000 {
+		compatible = "qemu,fw-cfg-mmio";
+		reg = <0x0 0x09020000 0x0 0x18>;
+		status = "okay";
+	};
+};

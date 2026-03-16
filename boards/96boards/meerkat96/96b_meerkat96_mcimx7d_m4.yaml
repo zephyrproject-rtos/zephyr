@@ -15,7 +15,6 @@ toolchain:
   - gnuarmemb
 supported:
   - gpio
-  - shell
 testing:
   ignore_tags:
     - net

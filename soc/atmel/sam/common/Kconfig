@@ -49,7 +49,8 @@ menu "PLL A"
 config SOC_ATMEL_SAM_PLLA_MULA
 	int "PLL MULA"
 	default  6 if SOC_SERIES_SAM3X
-	default  9 if SOC_SERIES_SAM4S  || SOC_SERIES_SAM4E
+	default  9 if SOC_SERIES_SAM4S
+	default 19 if SOC_SERIES_SAM4E
 	default 24 if SOC_SERIES_SAMX7X
 	range 1 62
 	help
@@ -74,6 +75,17 @@ config SOC_ATMEL_SAM_PLLA_DIVA
 
 	  With default of MULA == N, and DIVA == 1 the PLL will run at N+1 times
 	  the main clock frequency.
+
+config SOC_ATMEL_SAM_MCK_PRESCALLER
+	int "MCK PRESCALLER"
+	default 2 if SOC_SERIES_SAM4E
+	default 1
+	range 1 64
+	help
+	  This prescaler defines a ratio between the Master Clock Source
+	  Selection (CSS) and the Free Running clock (FCLK).
+
+	  The valid values for PRES are 1, 2, 3, 4, 8, 16, 32, 64.
 
 config SOC_ATMEL_SAM_MDIV
 	int "MDIV"

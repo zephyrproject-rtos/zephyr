@@ -5,5 +5,6 @@ config WDT_SILABS_SIWX91X
 	bool "Silabs SiWx91x Watchdog driver"
 	default y
 	depends on DT_HAS_SILABS_SIWX91X_WDT_ENABLED
+	depends on CLOCK_CONTROL
 	help
 	  Enable the Watchdog driver for the Silabs SiWx91x SoC series.

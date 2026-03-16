@@ -58,6 +58,30 @@ config VIDEO_CTRL_VFLIP
 	help
 	  If set, mirror the video frame vertically
 
+config VIDEO_SHELL_AND_CAPTURE
+	bool "Capture video even if the video shell is enabled"
+	depends on VIDEO_SHELL
+	default n
+	help
+	  If set, the video capture is enabled even if the video shell is also enabled.
+
+config VIDEO_CAM_NUM_BUFS
+	int "Number of video buffers used for the camera"
+	default 2
+	help
+	  Number of buffers in the video buffer pool used for the camera device.
+	  The rest of the buffer pool will be used for other purposes such as transformation.
+
+choice VIDEO_TRANSFORM
+	prompt "Video transform implementation"
+	bool
+	help
+	  The captured frame will go through m2m transforms defined in a separate .c file.
+	  The implementation could include "transform.h" which provides helper functions
+	  for setting up and executing the transformation.
+
+endchoice
+
 endmenu
 
 source "Kconfig.zephyr"

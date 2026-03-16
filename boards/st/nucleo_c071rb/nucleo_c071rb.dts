@@ -19,6 +19,7 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds: leds {
@@ -48,7 +49,7 @@
 
 		user_button: button {
 			label = "user button";
-			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			status = "okay";
 			zephyr,code = <INPUT_KEY_0>;
 		};
@@ -65,6 +66,21 @@
 	};
 };
 
+/* Add the STM32C071Rx package-specific wake-up pins */
+&pwr {
+	wkup-pin@2 {
+		wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+	};
+
+	wkup-pin@5 {
+		wkup-gpios = <&gpioc 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+	};
+
+	wkup-pin@6 {
+		wkup-gpios = <&gpiob 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+	};
+};
+
 &clk_lse {
 	status = "okay";
 };
@@ -76,6 +92,11 @@
 
 &clk_hsi {
 	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+	crs-usb-sof;
 };
 
 &rcc {
@@ -100,7 +121,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
@@ -145,8 +166,9 @@
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1 &adc1_in4_pa4>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "ASYNC";
-	clocks = <&rcc STM32_CLOCK(APB1_2, 20U)>,
+	clocks = <&rcc STM32_CLOCK(APB1_2, 20)>,
 		 <&rcc STM32_SRC_HSI ADC_SEL(2)>;
+	clock-names = "adcx", "adc_ker";
 	st,adc-prescaler = <4>;
 	status = "okay";
 	vref-mv = <3300>;
@@ -172,4 +194,32 @@ zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(36)>;
+		};
+
+		slot0_partition: partition@9000 {
+			label = "image-0";
+			reg = <0x00009000 DT_SIZE_K(42)>;
+		};
+
+		slot1_partition: partition@13800 {
+			label = "image-1";
+			reg = <0x00013800 DT_SIZE_K(44)>;
+		};
+
+		storage_partition: partition@1e800 {
+			label = "storage";
+			reg = <0x0001e800 DT_SIZE_K(6)>;
+		};
+	};
 };

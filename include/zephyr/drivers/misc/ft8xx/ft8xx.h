@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief FT8XX public API
+ * @ingroup ft8xx_interface
  */
 
 #ifndef ZEPHYR_DRIVERS_MISC_FT8XX_FT8XX_H_
@@ -20,8 +21,8 @@ extern "C" {
 #endif
 
 /**
- * @brief FT8xx driver public APIs
- * @defgroup ft8xx_interface FT8xx driver APIs
+ * @brief Interfaces for FTDI FT8xx graphic controller.
+ * @defgroup ft8xx_interface FTDI FT8xx
  * @ingroup misc_interfaces
  * @{
  */
@@ -33,12 +34,12 @@ extern "C" {
  * The content of this structure is filled by ft8xx_calibrate().
  */
 struct ft8xx_touch_transform {
-	uint32_t a;
-	uint32_t b;
-	uint32_t c;
-	uint32_t d;
-	uint32_t e;
-	uint32_t f;
+	uint32_t a; /*< Coefficient A of the bitmap transform matrix */
+	uint32_t b; /*< Coefficient B of the bitmap transform matrix */
+	uint32_t c; /*< Coefficient C of the bitmap transform matrix */
+	uint32_t d; /*< Coefficient D of the bitmap transform matrix */
+	uint32_t e; /*< Coefficient E of the bitmap transform matrix */
+	uint32_t f; /*< Coefficient F of the bitmap transform matrix */
 };
 
 /**
@@ -90,6 +91,19 @@ void ft8xx_touch_transform_set(const struct device *dev,
  * @return Tag value 0-255 of recently touched element
  */
 int ft8xx_get_touch_tag(const struct device *dev);
+
+/**
+ * @brief Get the tag and the tracking value of the tracked object.
+ *
+ * The reported tag and the tracking value apply to an object tracked by the
+ * coprocessor with the ft8xx_copro_cmd_track() function.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ *
+ * @return Track register content where 2 MS bytes (0xffff0000 mask) indicate
+ *         the track value and 2 LS bytes (0x0000ffff mask) indicate the tag.
+ */
+uint32_t ft8xx_get_tracker_value(const struct device *dev);
 
 /**
  * @brief Set callback executed when FT8xx triggers interrupt

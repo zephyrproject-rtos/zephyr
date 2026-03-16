@@ -55,7 +55,7 @@ config SPI_AMBIQ_BLEIF_TIMING_TRACE
 	bool "Ambiq SPI-BLEIF timing trace"
 	help
 	  The pins for the SPI transceiver are not exposed from the chips
-	  and no need for user to confiugre them. But the chips design the
+	  and no need for user to configure them. But the chips design the
 	  configurable BLEIF timing observation functions on other exposed
 	  pins. The user can enable it to configure the pins for timing
 	  trace purpose.

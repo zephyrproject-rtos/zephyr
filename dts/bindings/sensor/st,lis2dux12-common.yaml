@@ -4,14 +4,6 @@
 description: |
     When setting the odr, power-mode, and range properties in a .dts or .dtsi file you may include
     st_lis2dux12.h and use the macros defined there.
-    Example:
-    #include <zephyr/dt-bindings/sensor/lis2dux12.h>
-    lis2dux12: lis2dux12@0 {
-      ...
-      power-mode = <LIS2DUX12_OPER_MODE_LOW_POWER>;
-      odr = <LIS2DUX12_DT_ODR_12Hz5>;
-      range = <LIS2DUX12_DT_FS_16G>;
-    };
 
 include: sensor-device.yaml
 
@@ -148,3 +140,13 @@ properties:
       - 0x3 # LIS2DUX12_DT_DEC_TS_32
 
     enum: [0x00, 0x01, 0x02, 0x03]
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/lis2dux12.h>
+    lis2dux12: lis2dux12@0 {
+      /* ... */
+      power-mode = <LIS2DUX12_OPER_MODE_LOW_POWER>;
+      odr = <LIS2DUX12_DT_ODR_12Hz5>;
+      range = <LIS2DUX12_DT_FS_16G>;
+    };

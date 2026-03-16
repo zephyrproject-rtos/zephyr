@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: SPI-based CS40L5X Haptic Driver
+
+compatible: "cirrus,cs40l5x"
+
+on-bus: spi
+
+include: ["spi-device.yaml", "cirrus,cs40l5x-base.yaml"]

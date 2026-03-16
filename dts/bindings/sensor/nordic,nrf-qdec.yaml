@@ -44,3 +44,19 @@ properties:
     type: int
     description: Number of steps on the rotating wheel
     required: true
+
+  nordic,period:
+    type: string
+    default: SAMPLEPER_2048US
+    enum:
+      - SAMPLEPER_128US
+      - SAMPLEPER_256US
+      - SAMPLEPER_512US
+      - SAMPLEPER_1024US
+      - SAMPLEPER_2048US
+      - SAMPLEPER_4096US
+      - SAMPLEPER_8192US
+      - SAMPLEPER_16384US
+    description: |
+      The sampling period of the QDEC device. The default value is SAMPLEPER_2048US, which
+      reflects the previously hardcoded configuration.

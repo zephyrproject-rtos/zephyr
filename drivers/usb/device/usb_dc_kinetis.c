@@ -236,7 +236,7 @@ int usb_dc_attach(void)
 	 */
 	usb_dc_reset();
 
-	dev_data.attached = 1;
+	dev_data.attached = true;
 	LOG_DBG("attached");
 
 	/* non-OTG device mode, enable DP Pullup */

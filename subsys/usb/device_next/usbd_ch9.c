@@ -130,7 +130,7 @@ static int sreq_set_configuration(struct usbd_context *const uds_ctx)
 	const enum usbd_speed speed = usbd_bus_speed(uds_ctx);
 	int ret;
 
-	LOG_INF("Set Configuration Request value %u", setup->wValue);
+	LOG_DBG("Set Configuration Request value %u", setup->wValue);
 
 	/* Not specified if wLength is non-zero, treat as error */
 	if (setup->wValue > UINT8_MAX || setup->wLength) {
@@ -590,7 +590,7 @@ static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
 		ascii7_str = (uint8_t *)dn->ptr;
 	}
 
-	LOG_DBG("wLength %u, bLength %u, tailroom %u",
+	LOG_DBG("wLength %u, bLength %u, tailroom %zu",
 		wLength, head.bLength, net_buf_tailroom(buf));
 
 	len = MIN(net_buf_tailroom(buf), MIN(head.bLength,  wLength));
@@ -771,8 +771,7 @@ static int sreq_get_desc_bos(struct usbd_context *const uds_ctx,
 
 	desc_fill_bos_root(uds_ctx, &bos);
 	len = MIN(net_buf_tailroom(buf), MIN(setup->wLength, bos.wTotalLength));
-
-	LOG_DBG("wLength %u, bLength %u, wTotalLength %u, tailroom %u",
+	LOG_DBG("wLength %u, bLength %u, wTotalLength %u, tailroom %zu",
 		setup->wLength, bos.bLength, bos.wTotalLength, net_buf_tailroom(buf));
 
 	net_buf_add_mem(buf, &bos, MIN(len, bos.bLength));
@@ -784,7 +783,7 @@ static int sreq_get_desc_bos(struct usbd_context *const uds_ctx,
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&uds_ctx->descriptors, desc_nd, node) {
 		if (desc_nd->bDescriptorType == USB_DESC_BOS) {
-			LOG_DBG("bLength %u, len %u, tailroom %u",
+			LOG_DBG("bLength %u, len %zu, tailroom %zu",
 				desc_nd->bLength, len, net_buf_tailroom(buf));
 			net_buf_add_mem(buf, desc_nd->ptr, MIN(len, desc_nd->bLength));
 
@@ -1116,7 +1115,7 @@ static struct net_buf *spool_data_out(struct net_buf *const buf)
 	struct udc_buf_info *bi;
 
 	while (next_buf) {
-		LOG_INF("spool %p", next_buf);
+		LOG_DBG("spool %p", next_buf);
 		next_buf = net_buf_frag_del(NULL, next_buf);
 		if (next_buf) {
 			bi = udc_get_buf_info(next_buf);
@@ -1155,7 +1154,7 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 		return err;
 	}
 
-	LOG_INF("Handle control %p ep 0x%02x, len %u, s:%u d:%u s:%u",
+	LOG_DBG("Handle control %p ep 0x%02x, len %u, s:%u d:%u s:%u",
 		buf, bi->ep, buf->len, bi->setup, bi->data, bi->status);
 
 	if (bi->setup && bi->ep == USB_CONTROL_EP_OUT) {
@@ -1213,7 +1212,7 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 
 	if (bi->status && bi->ep == USB_CONTROL_EP_OUT) {
 		if (ch9_get_ctrl_type(uds_ctx) == CTRL_AWAIT_STATUS_STAGE) {
-			LOG_INF("s-in-status finished");
+			LOG_DBG("s-in-status finished");
 		} else {
 			LOG_WRN("Awaited s-in-status not finished");
 		}
@@ -1227,7 +1226,7 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 		net_buf_unref(buf);
 
 		if (ch9_get_ctrl_type(uds_ctx) == CTRL_AWAIT_STATUS_STAGE) {
-			LOG_INF("s-(out)-status finished");
+			LOG_DBG("s-(out)-status finished");
 			if (unlikely(uds_ctx->ch9_data.post_status)) {
 				ret = post_status_stage(uds_ctx);
 			}

@@ -48,10 +48,7 @@ static struct mbox_stm32_hsem_data stm32_hsem_mbox_data;
 static struct mbox_stm32_hsem_conf {
 	struct stm32_pclken pclken;
 } stm32_hsem_mbox_conf = {
-	.pclken = {
-		.bus = DT_INST_CLOCKS_CELL(0, bus),
-		.enr = DT_INST_CLOCKS_CELL(0, bits)
-	},
+	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 };
 
 static inline void stm32_hsem_enable_rx_interrupt(void)
@@ -202,12 +199,7 @@ static int mbox_stm32_clock_init(const struct device *dev)
 	const struct mbox_stm32_hsem_conf *cfg = dev->config;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	if (!device_is_ready(clk)) {
-		LOG_ERR("Clock control device not ready.");
-		return -ENODEV;
-	}
-
-	if (clock_control_on(clk, (clock_control_subsys_t *)&cfg->pclken) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken) != 0) {
 		LOG_WRN("Failed to enable clock.");
 		return -EIO;
 	}

@@ -66,7 +66,6 @@ struct eth_numaker_data {
 	synopGMACdevice *gmacdev;
 	struct net_if *iface;
 	uint8_t mac_addr[NU_HWADDR_SIZE];
-	struct k_mutex tx_frame_buf_mutex;
 	struct k_spinlock rx_frame_buf_lock;
 };
 
@@ -391,7 +390,7 @@ static void m_numaker_gmacdev_packet_rx(const struct device *dev)
 		/* Allocate a memory buffer chain from buffer pool
 		 * Using root iface. It will be updated in net_recv_data()
 		 */
-		pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, AF_UNSPEC, 0, K_NO_WAIT);
+		pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("pkt alloc frame-len=%d failed", len);
 			goto next;
@@ -478,7 +477,6 @@ static int numaker_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	uint8_t *buffer;
 
 	/* Get exclusive access */
-	k_mutex_lock(&data->tx_frame_buf_mutex, K_FOREVER);
 	if (total_len > NET_ETH_MAX_FRAME_SIZE) {
 		/* NuMaker SDK reserve 2048 for tx_buf */
 		LOG_ERR("TX packet length [%d] over max [%d]", total_len, NET_ETH_MAX_FRAME_SIZE);
@@ -498,13 +496,10 @@ static int numaker_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	/* Prepare transmit descriptors to give to DMA */
 	m_numaker_gmacdev_trigger_tx(gmacdev, total_len);
 
-	k_mutex_unlock(&data->tx_frame_buf_mutex);
-
 	return 0;
 
 error:
 	LOG_ERR("Writing pkt to TX descriptor failed");
-	k_mutex_unlock(&data->tx_frame_buf_mutex);
 	return -EIO;
 }
 
@@ -719,8 +714,6 @@ static int eth_numaker_init(const struct device *dev)
 
 	gmacdev = &GMACdev[NUMAKER_GMAC_INTF];
 	data->gmacdev = gmacdev;
-
-	k_mutex_init(&data->tx_frame_buf_mutex);
 
 	eth_phy_addr = cfg->phy_addr;
 

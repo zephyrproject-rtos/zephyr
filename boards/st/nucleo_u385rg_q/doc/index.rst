@@ -3,8 +3,8 @@
 Overview
 ********
 
-The Nucleo U385RG board, featuring an ARM |reg| Cortex |reg| -M33 with
-TrustZone |reg| based STM32U385RG MCU, provides an affordable and flexible
+The Nucleo U385RG board, featuring an ARM® Cortex®-M33 with
+TrustZone® based STM32U385RG MCU, provides an affordable and flexible
 way for users to try out new concepts and build prototypes by choosing from
 the various combinations of performance and power consumption features.
 Here are some highlights of the Nucleo U385RG board:
@@ -12,7 +12,7 @@ Here are some highlights of the Nucleo U385RG board:
 - STM32U385RG microcontroller in an LQFP64 or LQFP48 package
 - Two types of extension resources:
 
-  - Arduino |reg| Uno V3 connectivity
+  - Arduino® Uno V3 connectivity
   - ST morpho extension pin headers for full access to all STM32U3 I/Os
 
 - On-board STLINK-V2EC debugger/programmer with USB re-enumeration
@@ -23,7 +23,7 @@ Here are some highlights of the Nucleo U385RG board:
 
 - Two push-buttons: USER and RESET
 - 32.768 kHz crystal oscillator
-- Second user LED shared with ARDUINO |reg| Uno V3
+- Second user LED shared with ARDUINO® Uno V3
 - External or internal SMPS to generate Vcore logic supply
 - 24 MHz or 48 MHz HSE
 - User USB Device full speed, or USB SNK/UFP full speed
@@ -32,9 +32,9 @@ Here are some highlights of the Nucleo U385RG board:
 - Board connectors:
 
  - External SMPS experimentation dedicated connector
- - USB Type-C |reg| , Micro-B, or Mini-B connector for the ST-LINK
- - USB Type-C |reg| user connector
- - MIPI |reg| debug connector
+ - USB Type-C® , Micro-B, or Mini-B connector for the ST-LINK
+ - USB Type-C® user connector
+ - MIPI® debug connector
  - CAN FD header
 
 More information about the board can be found at the `NUCLEO_U385RG website`_.
@@ -43,7 +43,7 @@ Hardware
 ********
 
 The STM32U385xx devices are an ultra-low-power microcontrollers family (STM32U3
-Series) based on the high-performance Arm |reg| Cortex |reg|-M33 32-bit RISC core.
+Series) based on the high-performance Arm® Cortex®-M33 32-bit RISC core.
 They operate at a frequency of up to 96 MHz.
 
 - Includes ST state-of-the-art patented technology
@@ -57,13 +57,13 @@ They operate at a frequency of up to 96 MHz.
   - 3.8 μA Stop 2 mode with 8-Kbyte SRAM
   - 4.5 μA Stop 2 mode with full SRAM
   - 9.5 μA/MHz Run mode @ 3.3 V (While(1) SMPS step-down converter mode)
-  - 13 μA/MHz Run mode @ 3.3 V/48 MHz (CoreMark |reg| SMPS step-down converter mode)
-  - 16 μA/MHz Run mode @ 3.3 V/96 MHz (CoreMark |reg| SMPS step-down converter mode)
+  - 13 μA/MHz Run mode @ 3.3 V/48 MHz (CoreMark® SMPS step-down converter mode)
+  - 16 μA/MHz Run mode @ 3.3 V/96 MHz (CoreMark® SMPS step-down converter mode)
   - Brownout reset
 
 - Core:
 
-  - 32-bit Arm |reg| Cortex |reg|-M33 CPU with TrustZone |reg| and FPU
+  - 32-bit Arm® Cortex®-M33 CPU with TrustZone® and FPU
 
 - ART Accelerator:
 
@@ -77,10 +77,10 @@ They operate at a frequency of up to 96 MHz.
 - Benchmarks:
 
   - 1.5 DMIPS/MHz (Drystone 2.1)
-  - 387 CoreMark |reg| (4.09 CoreMark/MHz at 56 MHz)
-  - 500 ULPMark |trade| -CP
-  - 117 ULPMark |trade| -CM
-  - 202000 SecureMark |trade| -TLS
+  - 387 CoreMark® (4.09 CoreMark/MHz at 56 MHz)
+  - 500 ULPMark™ -CP
+  - 117 ULPMark™ -CM
+  - 202000 SecureMark™ -TLS
 
 - Memories:
 
@@ -104,13 +104,13 @@ They operate at a frequency of up to 96 MHz.
 
 - Security and cryptography:
 
-  - Arm |reg| TrustZone |reg| and securable I/Os, memories, and peripherals
+  - Arm® TrustZone® and securable I/Os, memories, and peripherals
   - Flexible life cycle scheme with RDP and password protected debug
   - Root of trust due to unique boot entry and secure hide protection area (HDP)
   - Secure firmware installation (SFI) from embedded root secure services (RSS)
   - Secure data storage with hardware unique key (HUK)
   - Secure firmware upgrade
-  - Support of Trusted firmware for Cortex |reg| M (TF-M)
+  - Support of Trusted firmware for Cortex® M (TF-M)
   - Two AES coprocessors, one with side channel attack resistance (SCA) (SAES)
   - Public key accelerator, SCA resistant
   - Key hardware protection
@@ -137,7 +137,7 @@ They operate at a frequency of up to 96 MHz.
 
   - 1 USB 2.0 full-speed controller
   - 1 SAI (serial audio interface)
-  - 3 I2C FM+(1 Mbit/s), SMBus/PMBus |trade|
+  - 3 I2C FM+(1 Mbit/s), SMBus/PMBus™
   - 2 I3C (SDR), with support of I2C FM+ mode
   - 2 USARTs and 2 UARTs (SPI, ISO 7816, LIN, IrDA, modem), 1 LPUART
   - 3 SPIs (6 SPIs including 1 with OCTOSPI + 2 with USART)
@@ -160,7 +160,7 @@ They operate at a frequency of up to 96 MHz.
 - CRC calculation unit
 - Debug:
 
-  - Development support: serial-wire debug (SWD), JTAG, Embedded Trace Macrocell |trade| (ETM)
+  - Development support: serial-wire debug (SWD), JTAG, Embedded Trace Macrocell™ (ETM)
 
 - ECOPACK2 compliant packages
 
@@ -180,13 +180,15 @@ Connections and IOs
 Nucleo U385RG Board has 14 GPIO controllers. These controllers are responsible
 for pin muxing, input/output, pull-up, etc.
 
-For more details please refer to `STM32U385 User Manual`_.
+For more details please refer to `STM32U385RG board user manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
 - DAC1_OUT1 : PA4
 - I2C1 SCL/SDA : PB6/PB7 (Arduino I2C)
+- FDCAN1_TX : PA12
+- FDCAN1_RX : PA11
 - LD4 : PA5
 - LPUART_1_TX : PA2
 - LPUART_1_RX : PA3
@@ -209,6 +211,13 @@ Serial Port
 
 Nucleo U385RG board has 4 U(S)ARTs, 1 LPUART. The Zephyr console output is assigned to
 USART1. Default settings are 115200 8N1.
+
+CAN
+---
+The STM32U385RG_Q does not have an onboard CAN transceiver. In
+order to use the CAN bus on the this board, an external CAN bus
+transceiver must be connected to ``PA11`` (``FDCAN1_RX``) and ``PA12``
+(``FDCAN1_TX``).
 
 
 Programming and Debugging
@@ -286,14 +295,14 @@ Note: Check the ``build/tfm`` directory to ensure that the commands required by 
 .. _NUCLEO_U385RG website:
   https://www.st.com/en/evaluation-tools/nucleo-u385rg.html
 
-.. _STM32U385 User Manual:
-   https://www.st.com/resource/en/user_manual/um3261-stm32u3-series-safety-manual-stmicroelectronics.pdf
+.. _STM32U385RG board user manual:
+   https://www.st.com/resource/en/user_manual/um3062-stm32u3u5-nucleo64-board-mb1841-stmicroelectronics.pdf
 
 .. _STM32U385RG on www.st.com:
    https://www.st.com/en/microcontrollers-microprocessors/stm32u385rg
 
 .. _STM32U385RG reference manual:
-   https://www.st.com/resource/en/reference_manual/rm0503-stm32u3-series-advanced-armbased-32bit-mcus-stmicroelectronics.pdf
+   https://www.st.com/resource/en/reference_manual/rm0487-stm32u3-series-armbased-32bit-mcus-stmicroelectronics.pdf
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html

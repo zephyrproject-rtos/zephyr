@@ -1,13 +1,13 @@
-# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
-# an affiliate of Cypress Semiconductor Corporation
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
 #
 # SPDX-License-Identifier: Apache-2.0
 
-set(pdl_dir             ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-pdl-cat1)
-set(pdl_drv_dir         ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-pdl-cat1/drivers)
-set(pdl_dev_cat1a_dir   ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-pdl-cat1/devices/COMPONENT_CAT1A)
-set(pdl_dev_cat1b_dir   ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-pdl-cat1/devices/COMPONENT_CAT1B)
-set(pdl_dev_cat1c_dir   ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-pdl-cat1/devices/COMPONENT_CAT1C)
+set(pdl_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-pdl-cat1)
+set(pdl_drv_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-pdl-cat1/drivers)
+set(pdl_dev_cat1a_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-pdl-cat1/devices/COMPONENT_CAT1A)
+set(pdl_dev_cat1b_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-pdl-cat1/devices/COMPONENT_CAT1B)
+set(pdl_dev_cat1c_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-pdl-cat1/devices/COMPONENT_CAT1C)
 
 
 # Generate PDL specific SOC defines
@@ -56,6 +56,11 @@ else()
   zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ADC      ${pdl_drv_dir}/source/cy_sar.c)
 endif()
 
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_HPPASS_SAR_ADC ${pdl_drv_dir}/source/cy_hppass_sar.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_HPPASS_SAR_ADC ${pdl_drv_dir}/source/cy_hppass.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_HPPASS_SAR_ADC ${pdl_drv_dir}/source/cy_hppass_csg.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_HPPASS_SAR_ADC ${pdl_drv_dir}/source/cy_hppass_ac.c)
+
 if(CONFIG_USE_INFINEON_TRNG)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto.c)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto_core_trng_v1.c)
@@ -66,11 +71,8 @@ if(CONFIG_USE_INFINEON_UART OR CONFIG_USE_INFINEON_I2C OR CONFIG_USE_INFINEON_SP
   zephyr_library_sources(${pdl_drv_dir}/source/cy_scb_common.c)
 endif()
 
-if(CONFIG_USE_INFINEON_DMA OR CONFIG_USE_INFINEON_ADC OR CONFIG_USE_INFINEON_SMIF)
-  zephyr_library_sources(${pdl_drv_dir}/source/cy_dma.c)
-  zephyr_library_sources(${pdl_drv_dir}/source/cy_dmac.c)
-endif()
-
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_DMA ${pdl_drv_dir}/source/cy_dma.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_DMA ${pdl_drv_dir}/source/cy_dmac.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SMIF ${pdl_drv_dir}/source/cy_smif.c)
 zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif.c LOCATION RAM)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SMIF ${pdl_drv_dir}/source/cy_smif_sfdp.c)
@@ -101,6 +103,8 @@ if(CONFIG_SOC_FAMILY_INFINEON_CAT1B)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_syspm_v2.c)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_syspm_btss.c)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_syspm_ppu.c)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_ppc.c)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_ms_ctl.c)
   zephyr_library_sources(${pdl_drv_dir}/source/ppu_v1.c)
 endif()
 zephyr_library_sources(${pdl_drv_dir}/source/cy_syslib.c)

@@ -14,9 +14,13 @@ zephyr_library_sources(
   timestamp.c
   )
 
-zephyr_library_sources_ifdef(CONFIG_GDBSTUB
-    gdbstub.c
-    )
+if(CONFIG_GDBSTUB)
+  if(CONFIG_SOC_ACE40)
+    zephyr_library_sources(gdbstub_ace40.c)
+  else()
+    zephyr_library_sources(gdbstub.c)
+  endif()
+endif()
 
 zephyr_include_directories(include)
 zephyr_include_directories(include/${CONFIG_SOC})
@@ -27,8 +31,13 @@ zephyr_library_sources_ifdef(
   spin_relax.c
 )
 
-if (CONFIG_XTENSA_MMU)
-  zephyr_library_sources_ifdef(CONFIG_SOC_INTEL_ACE30 mmu_ace30.c)
+if(CONFIG_XTENSA_MMU)
+  zephyr_library_sources_ifdef(CONFIG_SOC_ACE30 mmu_ace30.c)
+  zephyr_library_sources_ifdef(CONFIG_SOC_ACE40 mmu_ace40.c)
 endif()
 
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
+
+if(CONFIG_INTEL_ADSP_FWREADY_MSG)
+  zephyr_library_sources(fw_ready.c)
+endif()

@@ -161,26 +161,37 @@ function __zephyr_west_complete_help
                         "update" "update projects described in west manifest" \
                         "list" "print information about projects" \
                         "manifest" "manage the west manifest" \
+                        "compare" "compare project status against the manifest" \
                         "diff" '"git diff" for one or more projects' \
                         "status" '"git status" for one or more projects' \
                         "forall" "run a command in one or more local projects" \
+                        "grep" "run grep or a grep-like tool in one or more local projects" \
+                        "help" "get help for west or a command" \
                         "config" "get or set config file values" \
-                        "topdir" "print the top level directory of the workspace" \
-                        "help" "get help for west or a command"
+                        "topdir" "print the top level directory of the workspace"
     set -l nb_builtin_cmds (count $builtin_cmds)
 
     set -l ext_cmds "completion" "display shell completion scripts" \
                     "boards" "display information about supported boards" \
+                    "shields" "display list of supported shields" \
                     "build" "compile a Zephyr application" \
+                    "twister" "west twister wrapper" \
                     "sign" "sign a Zephyr binary for bootloader chain-loading" \
                     "flash" "flash and run a binary on a board" \
                     "debug" "flash and interactively debug a Zephyr application" \
                     "debugserver" "connect to board and launch a debug server" \
                     "attach" "interactively debug a board" \
+                    "rtt" "open an rtt shell" \
                     "zephyr-export" "export Zephyr installation as a CMake config package" \
                     "spdx" "create SPDX bill of materials" \
                     "blobs" "work with binary blobs" \
-                    "sdk" "manage SDKs"
+                    "bindesc" "work with Binary Descriptors" \
+                    "robot" "run RobotFramework test suites" \
+                    "simulate" "simulate board" \
+                    "sdk" "manage SDKs" \
+                    "packages" "manage packages for Zephyr" \
+                    "patch" "manage patches for Zephyr modules" \
+                    "gtags" "create a GNU global tags file for the current workspace"
     set -l nb_ext_cmds (count $ext_cmds)
 
     if __zephyr_west_check_if_in_workspace
@@ -306,27 +317,14 @@ function __zephyr_west_complete_board
     end
 
     if test $is_cache_valid -eq 0
-        set -l boards (west boards --format="{name}|{qualifiers}|{vendor}" 2> /dev/null)
+        set -l targets (west boards --all-targets 2> /dev/null)
 
         if test $status -eq 0
             echo $manifest_hash > $cache_file
         end
 
-        for board in $boards
-            set -l split_b (string split "|" $board)
-            set -l name $split_b[1]
-            set -l qualifiers $split_b[2]
-            set -l vendor $split_b[3]
-
-            if test $vendor != "None"
-                for qualifier in (string split "," $qualifiers)
-                    printf "%s\t%s\n" $name/$qualifier $vendor >> $cache_file
-                end
-            else
-                for qualifier in (string split "," $qualifiers)
-                    printf "%s\n" $name/$qualifier >> $cache_file
-                end
-            end
+        for target in $targets
+            printf "%s\n" $target >> $cache_file
         end
     end
 
@@ -420,6 +418,7 @@ complete -c west -n "__zephyr_west_seen_subcommand_from completion; and __zephyr
 complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in_workspace" -ra boards -d "display information about supported boards"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -o f -l format -d "format string"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -o n -l name -d "name regex"
+complete -c west -n "__zephyr_west_seen_subcommand_from boards" -o a -l all-targets -d "output all board target combinations"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l arch-root -xa "(__zephyr_west_complete_directories)" -d "add an arch root"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l board-root -xa "(__zephyr_west_complete_directories)" -d "add a board root"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l soc-root -xa "(__zephyr_west_complete_directories)" -d "add a soc root"
@@ -472,7 +471,7 @@ complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in
 ## flash, debug, debugserver, attach
 complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -o d -l build-dir -ra "(__zephyr_west_complete_directories)" -d "build directory to create or use"
 complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -o r -l runner -r -d "override default runner from build-dir"
-complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -l skip-rebuild -d "do not refresh cmake dependencies first"
+complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -l rebuild -l no-rebuild -d "manually specify to reinvoke cmake or not"
 complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -l domain -r -d "execute build tool (make or ninja) for a given domain"
 complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -o H -l context -d "print runner-specific options"
 complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -l board-dir -ra "(__zephyr_west_complete_directories)" -d "board directory"

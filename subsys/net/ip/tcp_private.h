@@ -6,6 +6,7 @@
  */
 
 #include "tp.h"
+#include <zephyr/toolchain/gcc.h>
 
 #define is(_a, _b) (strcmp((_a), (_b)) == 0)
 
@@ -13,13 +14,14 @@
 #define MIN3(_a, _b, _c) MIN((_a), MIN((_b), (_c)))
 #endif
 
-#define th_sport(_x) UNALIGNED_GET(&(_x)->th_sport)
-#define th_dport(_x) UNALIGNED_GET(&(_x)->th_dport)
-#define th_seq(_x) ntohl(UNALIGNED_GET(&(_x)->th_seq))
-#define th_ack(_x) ntohl(UNALIGNED_GET(&(_x)->th_ack))
+#define th_sport(_x) UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_sport))
+#define th_dport(_x) UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_dport))
+#define th_seq(_x) net_ntohl(UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_seq)))
+#define th_ack(_x) net_ntohl(UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_ack)))
+
 #define th_off(_x) ((_x)->th_off)
-#define th_flags(_x) UNALIGNED_GET(&(_x)->th_flags)
-#define th_win(_x) UNALIGNED_GET(&(_x)->th_win)
+#define th_flags(_x) UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_flags))
+#define th_win(_x) UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_win))
 
 #define tcp_slist(_conn, _slist, _op, _type, _link)			\
 ({									\
@@ -67,7 +69,7 @@
 			(_conn)->iface,					\
 			(_len),						\
 			net_context_get_family((_conn)->context),	\
-			IPPROTO_TCP,					\
+			NET_IPPROTO_TCP,				\
 			TCP_PKT_ALLOC_TIMEOUT);				\
 	} else {							\
 		_pkt = net_pkt_alloc(TCP_PKT_ALLOC_TIMEOUT);		\
@@ -87,7 +89,7 @@
 			(_conn)->iface,					\
 			(_len),						\
 			net_context_get_family((_conn)->context),	\
-			IPPROTO_TCP,					\
+			NET_IPPROTO_TCP,				\
 			TCP_PKT_ALLOC_TIMEOUT);				\
 	} else {							\
 		_pkt = net_pkt_rx_alloc(TCP_PKT_ALLOC_TIMEOUT);		\
@@ -105,7 +107,7 @@
 	if ((_len) > 0) {						\
 		_pkt = net_pkt_alloc_with_buffer(			\
 			(_iface), (_len), (_family),			\
-			IPPROTO_TCP,					\
+			NET_IPPROTO_TCP,				\
 			TCP_PKT_ALLOC_TIMEOUT);				\
 	} else {							\
 		_pkt = net_pkt_alloc(TCP_PKT_ALLOC_TIMEOUT);		\
@@ -137,7 +139,7 @@
 
 #define conn_state(_conn, _s)						\
 ({									\
-	NET_DBG("%s->%s",						\
+	NET_DBG("[%p] %s->%s", _conn,					\
 		tcp_state_to_str((_conn)->state, false),		\
 		tcp_state_to_str((_s), false));				\
 	(_conn)->state = _s;						\
@@ -145,12 +147,12 @@
 
 #define conn_send_data_dump(_conn)                                             \
 	({                                                                     \
-		NET_DBG("conn: %p total=%zd, unacked_len=%d, "                 \
+		NET_DBG("[%p] total=%zd, unacked_len=%d, "		       \
 			"send_win=%hu, mss=%hu",                               \
-			(_conn), net_pkt_get_len((_conn)->send_data),          \
+			(_conn), net_pkt_get_len(&(_conn)->send_data),         \
 			_conn->unacked_len, _conn->send_win,                   \
 			(uint16_t)conn_mss((_conn)));                          \
-		NET_DBG("conn: %p send_data_timer=%hu, send_data_retries=%hu", \
+		NET_DBG("[%p] send_data_timer=%hu, send_data_retries=%hu",     \
 			(_conn),                                               \
 			(bool)k_ticks_to_ms_ceil32(                            \
 				k_work_delayable_remaining_get(                \
@@ -217,9 +219,9 @@ enum tcp_data_mode {
 };
 
 union tcp_endpoint {
-	struct sockaddr sa;
-	struct sockaddr_in sin;
-	struct sockaddr_in6 sin6;
+	struct net_sockaddr sa;
+	struct net_sockaddr_in sin;
+	struct net_sockaddr_in6 sin6;
 };
 
 /* TCP Option codes */
@@ -256,13 +258,21 @@ typedef void (*net_tcp_closed_cb_t)(struct tcp *conn, void *user_data);
 struct tcp { /* TCP connection */
 	sys_snode_t next;
 	struct net_context *context;
-	struct net_pkt *send_data;
-	struct net_pkt *queue_recv_data;
+	struct net_pkt send_data;
+	struct net_buf *queue_recv_data;
 	struct net_if *iface;
 	void *recv_user_data;
 	sys_slist_t send_queue;
 	union {
+		/* For listening TCP context, a pointer to the accept callback,
+		 * which informs the application of an incoming connection.
+		 */
 		net_tcp_accept_cb_t accept_cb;
+		/* For non-listening TCP context, a pointer to the parent
+		 * (listening) TCP context. The pointer remains valid until the
+		 * application "accepts" the connection (notified by net_tcp_conn_accepted()),
+		 * after which the pointer is cleared.
+		 */
 		struct tcp *accepted_conn;
 	};
 	net_context_connect_cb_t connect_cb;
@@ -303,9 +313,12 @@ struct tcp { /* TCP connection */
 	size_t send_data_total;
 	int unacked_len;
 	atomic_t ref_count;
+	atomic_t backlog;
 	enum tcp_state state;
 	enum tcp_data_mode data_mode;
 	uint32_t seq;
+	uint32_t isn;
+	uint32_t isn_peer;
 	uint32_t ack;
 #if defined(CONFIG_NET_TCP_KEEPALIVE)
 	uint32_t keep_idle;

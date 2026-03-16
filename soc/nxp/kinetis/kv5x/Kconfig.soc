@@ -4,20 +4,20 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_KINETIS_KV5X
+config SOC_SERIES_KV5X
 	bool
 	select SOC_FAMILY_KINETIS
 
 config SOC_SERIES
-	default "kv5x" if SOC_SERIES_KINETIS_KV5X
+	default "kv5x" if SOC_SERIES_KV5X
 
 config SOC_MKV56F24
 	bool
-	select SOC_SERIES_KINETIS_KV5X
+	select SOC_SERIES_KV5X
 
 config SOC_MKV58F24
 	bool
-	select SOC_SERIES_KINETIS_KV5X
+	select SOC_SERIES_KV5X
 
 config SOC
 	default "mkv56f24" if SOC_MKV56F24

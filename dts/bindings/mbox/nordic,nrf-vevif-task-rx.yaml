@@ -11,22 +11,6 @@ description: |
   intended for signaling within an interprocessor communication (IPC) framework.
   When used in task rx mode, the VEVIF tasks are used to receive events triggered by other core.
 
-  Example definition:
-
-    cpuppr: cpu@d {
-      ...
-      cpuppr_vevif_task_rx: mailbox {
-        compatible = "nordic,nrf-vevif-task-rx";
-        interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>,
-                     <1 NRF_DEFAULT_IRQ_PRIORITY>,
-                     ...
-                     <N NRF_DEFAULT_IRQ_PRIORITY>;
-        #mbox-cells = <1>;
-        nordic,tasks = <16>;
-        nordic,tasks-mask = <0xfffffff0>;
-      };
-    };
-
 compatible: "nordic,nrf-vevif-task-rx"
 
 include: [base.yaml, mailbox-controller.yaml]
@@ -47,3 +31,19 @@ properties:
 
 mbox-cells:
   - channel
+
+examples:
+  - |
+    cpuppr: cpu@d {
+      /* ... */
+      cpuppr_vevif_task_rx: mailbox {
+        compatible = "nordic,nrf-vevif-task-rx";
+        interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>,
+                     <1 NRF_DEFAULT_IRQ_PRIORITY>,
+                     ...
+                     <N NRF_DEFAULT_IRQ_PRIORITY>;
+        #mbox-cells = <1>;
+        nordic,tasks = <16>;
+        nordic,tasks-mask = <0xfffffff0>;
+      };
+    };

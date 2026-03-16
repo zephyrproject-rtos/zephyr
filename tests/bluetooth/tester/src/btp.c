@@ -53,7 +53,7 @@ static struct btp_buf *delayed_cmd;
 static struct {
 	const struct btp_handler *handlers;
 	size_t num;
-} service_handler[BTP_SERVICE_ID_MAX + 1];
+} service_handler[BTP_SERVICE_ID_COUNT];
 
 static struct net_buf_simple *rsp_buf = NET_BUF_SIMPLE(BTP_MTU);
 static K_MUTEX_DEFINE(rsp_buf_mutex);
@@ -111,13 +111,17 @@ static void cmd_handler(void *p1, void *p2, void *p3)
 
 			if (len > BTP_DATA_MAX_SIZE) {
 				status = BTP_STATUS_FAILED;
+				LOG_ERR("Data len exceeds BTP MTU %u > %u", len, BTP_DATA_MAX_SIZE);
 			} else if (btp->index != hdr->index) {
 				status = BTP_STATUS_FAILED;
+				LOG_ERR("Index mismatch %u != %u", btp->index, hdr->index);
 			} else if ((btp->expect_len >= 0) && (btp->expect_len != len)) {
 				status = BTP_STATUS_FAILED;
+				LOG_ERR("len mismatch %u != %u", btp->expect_len, len);
 			} else {
 				status = btp->func(hdr->data, len,
 						   cmd->rsp, &rsp_len);
+				LOG_DBG("Command returns status %u", status);
 			}
 
 			/* This means that caller likely overwrote rsp buffer */

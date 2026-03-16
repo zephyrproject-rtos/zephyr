@@ -22,6 +22,7 @@
 LOG_MODULE_REGISTER(wdt_mcux_wwdt);
 
 #define MIN_TIMEOUT 0xFF
+#define MAX_TIMEOUT WWDT_TC_COUNT_MASK
 
 struct mcux_wwdt_config {
 	WWDT_Type *base;
@@ -86,12 +87,20 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 	}
 
 #if defined(CONFIG_SOC_MIMXRT685S_CM33) || defined(CONFIG_SOC_MIMXRT595S_CM33) \
-	|| defined(CONFIG_SOC_SERIES_MCXN) || defined(CONFIG_SOC_MIMXRT798S_CM33_CPU0) \
+	|| defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_MIMXRT798S_CM33_CPU0) \
 	|| defined(CONFIG_SOC_MIMXRT798S_CM33_CPU1)
 	clock_freq = CLOCK_GetWdtClkFreq(0);
 #elif defined(CONFIG_SOC_SERIES_RW6XX)
 	clock_freq = CLOCK_GetWdtClkFreq();
-#elif defined(CONFIG_SOC_SERIES_MCXA)
+#elif defined(CONFIG_SOC_MCXA577)
+	const struct mcux_wwdt_config *config = dev->config;
+
+	if (config->base == WWDT0) {
+		clock_freq = CLOCK_GetWwdt0ClkFreq();
+	} else {
+		clock_freq = CLOCK_GetWwdt1ClkFreq();
+	}
+#elif defined(CONFIG_SOC_FAMILY_MCXA)
 	clock_freq = CLOCK_GetWwdtClkFreq();
 #else
 	const struct mcux_wwdt_config *config = dev->config;
@@ -107,30 +116,43 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 	data->wwdt_config.timeoutValue =
 		MSEC_TO_WWDT_TICKS(clock_freq, cfg->window.max);
 
-	if (cfg->window.min) {
-		data->wwdt_config.windowValue =
-			MSEC_TO_WWDT_TICKS(clock_freq, cfg->window.min);
-	}
-
-	if ((data->wwdt_config.timeoutValue < MIN_TIMEOUT) ||
-	    ((data->wwdt_config.windowValue != 0xFFFFFFU) &&
-	     (data->wwdt_config.timeoutValue <
-	      data->wwdt_config.windowValue))) {
+	if (data->wwdt_config.timeoutValue > MAX_TIMEOUT ||
+	    data->wwdt_config.timeoutValue < MIN_TIMEOUT) {
+		LOG_ERR("Timeout value out of range");
 		return -EINVAL;
 	}
+
+	/*
+	 * WWDT uses a count-down counter.
+	 * Window value specifies the highest timer value in which a watchdog
+	 * feed can occur. Therefore, calculate the window value as:
+	 * windowValue = timeoutValue - min_window_ticks (maybe 0)
+	 */
+	data->wwdt_config.windowValue =
+		data->wwdt_config.timeoutValue - MSEC_TO_WWDT_TICKS(clock_freq, cfg->window.min);
 
 	if (cfg->flags & WDT_FLAG_RESET_SOC) {
 		data->wwdt_config.enableWatchdogReset = true;
 		LOG_DBG("Enabling SoC reset");
 	}
 
-	if (cfg->callback && (CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0)) {
-		data->callback = cfg->callback;
-		data->wwdt_config.warningValue = CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG;
-	} else if (cfg->callback) {
-		return -ENOTSUP;
+	/*
+	 * The user callback is only invoked from the WWDT warning interrupt.
+	 * If CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG is 0, the warning interrupt
+	 * is disabled (no warningValue programmed), so a callback would never fire.
+	 * Reject this configuration to avoid a silent no-op.
+	 */
+	if (cfg->callback) {
+		if (CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0) {
+			data->callback = cfg->callback;
+			data->wwdt_config.warningValue =
+				CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG;
+		} else {
+			LOG_ERR("Warning interrupt callback requires "
+				"CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0");
+			return -ENOTSUP;
+		}
 	}
-
 
 	data->timeout_valid = true;
 	LOG_DBG("Installed timeout (timeoutValue = %d)",

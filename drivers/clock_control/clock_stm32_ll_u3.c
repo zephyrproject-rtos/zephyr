@@ -5,6 +5,7 @@
  */
 
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
@@ -102,6 +103,8 @@ static int enabled_clock(uint32_t src_clk)
 	    (src_clk == STM32_SRC_PCLK1) ||
 	    (src_clk == STM32_SRC_PCLK2) ||
 	    (src_clk == STM32_SRC_PCLK3) ||
+	    (src_clk == STM32_SRC_TIMPCLK1) ||
+	    (src_clk == STM32_SRC_TIMPCLK2) ||
 	    ((src_clk == STM32_SRC_HSE) && IS_ENABLED(STM32_HSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI16) && IS_ENABLED(STM32_HSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI48) && IS_ENABLED(STM32_HSI48_ENABLED)) ||
@@ -156,6 +159,9 @@ static int stm32_clock_control_configure(const struct device *dev,
 					 void *data)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)sub_system;
+	uint32_t enr = pclken->enr;
+	uint32_t reg = STM32_DT_CLKSEL_REG_GET(enr);
+	uint32_t shift = STM32_DT_CLKSEL_SHIFT_GET(enr);
 	int err;
 
 	ARG_UNUSED(dev);
@@ -167,12 +173,14 @@ static int stm32_clock_control_configure(const struct device *dev,
 		return err;
 	}
 
-	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
-		       STM32_DT_CLKSEL_MASK_GET(pclken->enr) <<
-			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
-	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
-		     STM32_DT_CLKSEL_VAL_GET(pclken->enr) <<
-			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
+	if (pclken->enr == NO_SEL) {
+		/* Domain clock is fixed. Nothing to set. Exit */
+		return 0;
+	}
+
+	stm32_reg_modify_bits((uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + reg),
+			      STM32_DT_CLKSEL_MASK_GET(enr) << shift,
+			      STM32_DT_CLKSEL_VAL_GET(enr) << shift);
 
 	return 0;
 }
@@ -255,6 +263,12 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		*rate = STM32_HSI48_FREQ;
 		break;
 #endif /* STM32_HSI48_ENABLED */
+	case STM32_SRC_TIMPCLK1:
+		*rate = STM32_APB1_PRESCALER <= 2 ? ahb_clock : apb1_clock * 2;
+		break;
+	case STM32_SRC_TIMPCLK2:
+		*rate = STM32_APB2_PRESCALER <= 2 ? ahb_clock : apb2_clock * 2;
+		break;
 	default:
 		return -ENOTSUP;
 	}
@@ -317,6 +331,14 @@ static void enable_epod_booster(void)
 	}
 }
 
+#if STM32_MSIK_PLL_MODE || STM32_MSIS_PLL_MODE
+
+/* Use two asserts for more precise error messages */
+BUILD_ASSERT(STM32_LSE_ENABLED || !STM32_MSIK_PLL_MODE,
+	"MSIK PLL mode requires LSE clock to be enabled for auto-calibration");
+BUILD_ASSERT(STM32_LSE_ENABLED || !STM32_MSIS_PLL_MODE,
+	"MSIS PLL mode requires LSE clock to be enabled for auto-calibration");
+
 static void configure_clock_with_calibration(int range)
 {
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSIS);
@@ -330,10 +352,6 @@ static void configure_clock_with_calibration(int range)
 	LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_HCLK_DIV_1);
 	LL_RCC_SetAPB3Prescaler(LL_RCC_APB3_HCLK_DIV_1);
 
-	BUILD_ASSERT(STM32_LSE_ENABLED || !IS_ENABLED(STM32_MSIK_ENABLED),
-		"MSIK requires LSE clock to be enabled for auto-calibration");
-	BUILD_ASSERT(STM32_LSE_ENABLED || !IS_ENABLED(STM32_MSIS_ENABLED),
-		"MSIS requires LSE clock to be enabled for auto-calibration");
 	if (IN_RANGE(range, 0, 3)) {
 		/*
 		 * LSE or HSE must be enabled and ready before selecting
@@ -362,6 +380,7 @@ static void configure_clock_with_calibration(int range)
 		}
 	}
 }
+#endif /* STM32_MSIK_PLL_MODE || STM32_MSIS_PLL_MODE */
 
 static void set_up_fixed_clock_sources(void)
 {
@@ -482,7 +501,9 @@ static void set_up_fixed_clock_sources(void)
 		while (LL_RCC_MSIS_IsReady() == 0U) {
 		}
 
+#if STM32_MSIS_PLL_MODE
 		configure_clock_with_calibration(STM32_MSIS_RANGE);
+#endif /* STM32_MSIS_PLL_MODE */
 	}
 
 	if (IS_ENABLED(STM32_MSIK_ENABLED)) {
@@ -548,7 +569,9 @@ static void set_up_fixed_clock_sources(void)
 		while (LL_RCC_MSIK_IsReady() == 0U) {
 		}
 
+#if STM32_MSIK_PLL_MODE
 		configure_clock_with_calibration(STM32_MSIK_RANGE);
+#endif /* STM32_MSIK_PLL_MODE */
 	}
 
 	if (IS_ENABLED(STM32_LSI_ENABLED)) {
@@ -612,6 +635,7 @@ int stm32_clock_control_init(const struct device *dev)
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI16) {
 	}
 #else
+	__ASSERT(0, "Invalid SYSCLK source selected");
 	return -ENOTSUP;
 #endif
 

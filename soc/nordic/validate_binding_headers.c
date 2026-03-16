@@ -14,7 +14,7 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
-#include <nrf.h>
+#include <nrfx.h>
 
 /**
  * Domain IDs. See:

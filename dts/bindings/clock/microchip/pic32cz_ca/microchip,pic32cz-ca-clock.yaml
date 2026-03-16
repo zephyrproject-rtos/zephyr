@@ -1,0 +1,42 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip PIC32CZ_CA SOC family clock
+
+description: |
+  Microchip PIC32CZ_CA SOC family clock (OSCCTRL, OSC32KCTRL, GCLK, MCLK)
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+compatible: "microchip,pic32cz-ca-clock"
+
+properties:
+  on-timeout-ms:
+    type: int
+    default: 65
+    description: |
+      Timeout in milliseconds for clock to be on.
+
+      Driver waits in clock on API to check if the clock is actually on,
+      so that the waiting time is not indefinite. (XOSC32K startup 62.6ms)
+
+  flash-auto-wait-state-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Automatic wait state enable
+      0: to disable, 1: to enable
+
+  flash-wait-states:
+    type: int
+    default: 0
+    description: |
+      Number of wait states for a flash read operation.
+
+      Change this value based on the NVM access time and system frequency
+      up to 15 wait states.

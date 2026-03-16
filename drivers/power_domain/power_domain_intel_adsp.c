@@ -10,10 +10,6 @@
 #include <adsp_shim.h>
 #include <adsp_power.h>
 
-#if CONFIG_SOC_INTEL_ACE15_MTPM
-#include <adsp_power.h>
-#endif /* CONFIG_SOC_INTEL_ACE15_MTPM */
-
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(power_domain_intel_adsp, LOG_LEVEL_INF);
 
@@ -36,7 +32,7 @@ static int pd_intel_adsp_set_power_enable(struct pg_bits *bits, bool power_enabl
 			return -EIO;
 		}
 	} else {
-#if CONFIG_SOC_INTEL_ACE15_MTPM
+#if CONFIG_SOC_ACE15_MTPM
 		extern uint32_t adsp_pending_buffer;
 
 		if (bits->SPA_bit == INTEL_ADSP_HST_DOMAIN_BIT) {
@@ -83,12 +79,30 @@ static int pd_intel_adsp_pm_action(const struct device *dev, enum pm_device_acti
 
 	return ret;
 }
+
+#else /* !CONFIG_PM_DEVICE */
+
+static int pd_intel_adsp_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	ARG_UNUSED(dev);
+
+	/* When PM is disabled, accept TURN_ON and RESUME but do nothing.
+	 * Power domains remain in their hardware default state.
+	 */
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_RESUME:
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
 #endif /* CONFIG_PM_DEVICE */
 
 static int pd_intel_adsp_init(const struct device *dev)
 {
-	pm_device_init_suspended(dev);
-	return pm_device_runtime_enable(dev);
+	return pm_device_driver_init(dev, pd_intel_adsp_pm_action);
 }
 
 #define DT_DRV_COMPAT intel_adsp_power_domain

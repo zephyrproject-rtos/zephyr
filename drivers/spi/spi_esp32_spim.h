@@ -11,6 +11,8 @@
 #include <hal/spi_hal.h>
 #ifdef SOC_GDMA_SUPPORTED
 #include <hal/gdma_hal.h>
+#else
+#include <soc/lldesc.h>
 #endif
 
 #define SPI_MASTER_FREQ_8M      (APB_CLK_FREQ/10)
@@ -36,8 +38,14 @@ struct spi_esp32_config {
 	clock_control_subsys_t clock_subsys;
 	bool use_iomux;
 	bool dma_enabled;
-	int dma_clk_src;
 	int dma_host;
+#if defined(SOC_GDMA_SUPPORTED)
+	const struct device *dma_dev;
+	uint8_t dma_tx_ch;
+	uint8_t dma_rx_ch;
+#else
+	int dma_clk_src;
+#endif
 	int cs_setup;
 	int cs_hold;
 	bool line_idle_low;
@@ -47,16 +55,16 @@ struct spi_esp32_config {
 struct spi_esp32_data {
 	struct spi_context ctx;
 	spi_hal_context_t hal;
-	spi_hal_config_t hal_config;
 #ifdef SOC_GDMA_SUPPORTED
 	gdma_hal_context_t hal_gdma;
+#else
+	lldesc_t dma_desc_tx;
+	lldesc_t dma_desc_rx;
 #endif
 	spi_hal_timing_conf_t timing_config;
 	spi_hal_dev_config_t dev_config;
 	spi_hal_trans_config_t trans_config;
 	uint8_t dfs;
-	lldesc_t dma_desc_tx;
-	lldesc_t dma_desc_rx;
 	uint32_t clock_source_hz;
 };
 

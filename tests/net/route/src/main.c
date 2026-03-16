@@ -44,31 +44,31 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ROUTE_LOG_LEVEL);
 static struct net_context *udp_ctx;
 
 /* Interface 1 is the default host and it has my_addr assigned to it */
-static struct in6_addr my_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr my_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Interface 2 is the secondary host for peer device with address peer_addr */
-static struct in6_addr peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 				    0, 0, 0, 0, 0x0b, 0x0e, 0x0e, 0x3 } } };
 
 /* Alternate next hop address for dest_addr */
-static struct in6_addr peer_addr_alt = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr peer_addr_alt = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 				    0, 0, 0, 0, 0x0b, 0x0e, 0x0e, 0x4 } } };
 
 /* The dest_addr is only reachable via peer_addr */
-static struct in6_addr dest_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr dest_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0xd, 0xe, 0x5, 0x7 } } };
 
 /* Extra address is assigned to ll_addr */
-static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0xf2, 0xaa, 0x29, 0x02,
 				       0x04 } } };
 
-static struct in6_addr in6addr_mcast = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr in6addr_mcast = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Generic address that we are using to generate some more addresses */
-static struct in6_addr generic_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr generic_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					    0, 0, 0, 0, 0xbe, 0xef, 0, 0 } } };
 
 static struct net_if *recipient;
@@ -80,7 +80,7 @@ static struct net_route_entry *route_entry;
 #define MAX_ROUTES CONFIG_NET_MAX_ROUTES
 static const int max_routes = MAX_ROUTES;
 static struct net_route_entry *test_routes[MAX_ROUTES];
-static struct in6_addr dest_addresses[MAX_ROUTES];
+static struct net_in6_addr dest_addresses[MAX_ROUTES];
 
 static bool test_failed;
 static bool data_failure;
@@ -282,7 +282,7 @@ static void test_init(void)
 	/* Some test addresses are generated */
 	for (i = 0; i < max_routes; i++) {
 		memcpy(&dest_addresses[i], &generic_addr,
-		       sizeof(struct in6_addr));
+		       sizeof(struct net_in6_addr));
 
 		dest_addresses[i].s6_addr[14] = i + 1;
 		dest_addresses[i].s6_addr[15] = sys_rand8_get();
@@ -293,14 +293,14 @@ static void test_net_ctx_create(void)
 {
 	int ret;
 
-	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP,
+	ret = net_context_get(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP,
 			      &udp_ctx);
 	zassert_equal(ret, 0,
 		      "Context create IPv6 UDP test failed");
 }
 
 static bool net_test_send_ns(struct net_if *iface,
-			     struct in6_addr *addr)
+			     struct net_in6_addr *addr)
 {
 	int ret;
 
@@ -319,7 +319,7 @@ static bool net_test_send_ns(struct net_if *iface,
 }
 
 static bool net_test_nbr_lookup_ok(struct net_if *iface,
-				   struct in6_addr *addr)
+				   struct net_in6_addr *addr)
 {
 	struct net_nbr *nbr;
 
@@ -418,7 +418,7 @@ static void test_route_del_again(void)
 
 static void test_route_get_nexthop(void)
 {
-	struct in6_addr *nexthop;
+	struct net_in6_addr *nexthop;
 
 	nexthop = net_route_get_nexthop(route_entry);
 
@@ -448,7 +448,7 @@ static void test_route_lookup_fail(void)
 
 static void test_route_del_nexthop(void)
 {
-	struct in6_addr *nexthop = &peer_addr;
+	struct net_in6_addr *nexthop = &peer_addr;
 	int ret;
 
 	ret = net_route_del_by_nexthop(my_iface, nexthop);
@@ -457,7 +457,7 @@ static void test_route_del_nexthop(void)
 
 static void test_route_del_nexthop_again(void)
 {
-	struct in6_addr *nexthop = &peer_addr;
+	struct net_in6_addr *nexthop = &peer_addr;
 	int ret;
 
 	ret = net_route_del_by_nexthop(my_iface, nexthop);

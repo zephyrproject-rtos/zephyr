@@ -26,6 +26,10 @@
  * useful.  Explicitly disallow use of the callback.
  */
 #define WDT_ALLOW_CALLBACK 0
+#elif DT_HAS_COMPAT_STATUS_OKAY(adi_max42500_watchdog)
+#define WDT_ALLOW_CALLBACK 0
+#define WDT_MAX_WINDOW 128U
+#define WDT_OPT 0
 #elif DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_watchdog)
 #define WDT_ALLOW_CALLBACK 0
 #elif DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_wwdgt)
@@ -43,6 +47,9 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_wdt)
 #define WDT_ALLOW_CALLBACK 0
 #elif DT_HAS_COMPAT_STATUS_OKAY(wch_iwdg)
+#define WDT_ALLOW_CALLBACK 0
+#define WDT_OPT            0
+#elif DT_HAS_COMPAT_STATUS_OKAY(sifli_sf32lb_wdt)
 #define WDT_ALLOW_CALLBACK 0
 #define WDT_OPT            0
 #endif

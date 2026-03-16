@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  * Copyright (c) 2019 Nordic Semiconductor ASA.
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,13 +19,27 @@
 
 #include <zephyr/sw_isr_table.h>
 #include <stdbool.h>
+#if !defined(_ASMLANGUAGE) && defined(CONFIG_CPU_CORTEX_M)
+#include <zephyr/arch/arm/arm-m-switch.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifdef _ASMLANGUAGE
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER) || defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+#define arch_irq_enable                     z_soc_irq_enable
+#define arch_irq_disable                    z_soc_irq_disable
+#define arch_irq_is_enabled                 z_soc_irq_is_enabled
+#else
+#define arch_irq_enable                     arm_irq_enable
+#define arch_irq_disable                    arm_irq_disable
+#define arch_irq_is_enabled                 arm_irq_is_enabled
+#endif
+#ifndef CONFIG_USE_SWITCH
 GTEXT(z_arm_int_exit);
+#endif
 GTEXT(arch_irq_enable)
 GTEXT(arch_irq_disable)
 GTEXT(arch_irq_is_enabled)
@@ -74,7 +89,14 @@ void z_soc_irq_eoi(unsigned int irq);
 
 #endif
 
+#if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_USE_SWITCH)
+static inline void z_arm_int_exit(void)
+{
+	arm_m_exc_tail();
+}
+#else
 extern void z_arm_int_exit(void);
+#endif
 
 extern void z_arm_interrupt_init(void);
 
@@ -118,8 +140,8 @@ extern void z_arm_interrupt_init(void);
  */
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 { \
-	BUILD_ASSERT(IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) || !(flags_p & IRQ_ZERO_LATENCY), \
-			"ZLI interrupt registered but feature is disabled"); \
+	BUILD_ASSERT(!(flags_p & IRQ_ZERO_LATENCY), \
+			"ZLI interrupts must be registered using IRQ_DIRECT_CONNECT()"); \
 	_CHECK_PRIO(priority_p, flags_p) \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 	z_arm_irq_priority_set(irq_p, priority_p, flags_p); \
@@ -143,9 +165,6 @@ extern void _arch_isr_direct_pm(void);
 
 #define ARCH_ISR_DIRECT_HEADER() arch_isr_direct_header()
 #define ARCH_ISR_DIRECT_FOOTER(swap) arch_isr_direct_footer(swap)
-
-/* arch/arm/core/exc_exit.S */
-extern void z_arm_int_exit(void);
 
 #ifdef CONFIG_TRACING_ISR
 extern void sys_trace_isr_enter(void);

@@ -58,33 +58,9 @@ More information about the board can be found at the
 Supported Features
 ==================
 
-The Zephyr ``verdin_imx8mm/mimx8mm6/m4`` board target supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | GPIO output                         |
-|           |            | GPIO input                          |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/toradex/verdin_imx8mm/verdin_imx8mm_mimx8mm6_m4_defconfig`.
+.. zephyr:board-supported-hw::
 
 It is recommended to disable peripherals used by the M4 core on the Linux host.
-
-Other hardware features are not currently supported by the port.
 
 Connections and IOs
 ===================
@@ -115,7 +91,7 @@ example). You can change the UART by changing the ``zephyr,console`` and
 
 GPIO:
 
-All the GPIO banks are enabled in the :zephyr_file:`dts/arm/nxp/nxp_imx8m_m4.dtsi`.
+All the GPIO banks are enabled in the :zephyr_file:`dts/arm/nxp/imx/nxp_imx8m_m4.dtsi`.
 
 LED:
 

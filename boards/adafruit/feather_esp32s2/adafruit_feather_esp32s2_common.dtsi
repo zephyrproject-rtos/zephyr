@@ -11,8 +11,8 @@
 #include "adafruit_feather_esp32s2-pinctrl.dtsi"
 #include <espressif/partitions_0x1000_default.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <dt-bindings/led/led.h>
-#include <dt-bindings/led/worldsemi_ws2812c.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/led/worldsemi_ws2812c.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {

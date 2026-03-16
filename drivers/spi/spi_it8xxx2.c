@@ -61,6 +61,10 @@ LOG_MODULE_REGISTER(spi_it8xxx2, CONFIG_SPI_LOG_LEVEL);
 #define SPI25_CH1_CMD_ADDR_HB2    0x25
 #define SPI27_CH1_WR_MEM_ADDR_HB2 0x27
 
+#define ECPM_BASE_ADDR          DT_REG_ADDR(DT_NODELABEL(ecpm))
+#define ECPM05_CLK_GATING_CTRL3 0x05
+#define SSPI_CLOCK_GATING       BIT(1)
+
 struct spi_it8xxx2_cmdq_data {
 	uint8_t spi_write_cmd_length;
 
@@ -98,6 +102,23 @@ struct spi_it8xxx2_data {
 	struct spi_it8xxx2_cmdq_data cmdq_data;
 	size_t transfer_len;
 	size_t receive_len;
+};
+
+static inline void spi_it8xxx2_turn_on_clk(const struct device *dev, const bool enable)
+{
+	ARG_UNUSED(dev);
+
+	uint8_t reg_val;
+	unsigned int key = irq_lock();
+
+	reg_val = sys_read8(ECPM_BASE_ADDR + ECPM05_CLK_GATING_CTRL3);
+	if (enable) {
+		sys_write8(reg_val & ~SSPI_CLOCK_GATING, ECPM_BASE_ADDR + ECPM05_CLK_GATING_CTRL3);
+	} else {
+		sys_write8(reg_val | SSPI_CLOCK_GATING, ECPM_BASE_ADDR + ECPM05_CLK_GATING_CTRL3);
+	}
+
+	irq_unlock(key);
 };
 
 static inline int spi_it8xxx2_set_freq(const struct device *dev, const uint32_t frequency)
@@ -209,13 +230,14 @@ static void spi_it8xxx2_complete(const struct device *dev, const int status)
 	struct spi_it8xxx2_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 
-	spi_context_complete(ctx, dev, status);
-	if (spi_cs_is_gpio(ctx->config)) {
-		spi_context_cs_control(ctx, false);
-	}
 	/* Permit to enter power policy and idle mode. */
 	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	chip_permit_idle();
+
+	/* disable spi clock */
+	spi_it8xxx2_turn_on_clk(dev, false);
+
+	spi_context_complete(ctx, dev, status);
 }
 
 static inline void spi_it8xxx2_tx(const struct device *dev)
@@ -328,10 +350,6 @@ static int spi_it8xxx2_next_xfer(const struct device *dev)
 		return 0;
 	}
 
-	if (spi_cs_is_gpio(ctx->config)) {
-		spi_context_cs_control(ctx, true);
-	}
-
 	if (spi_context_longest_current_buf(ctx) > SPI_CMDQ_DATA_LEN_MAX) {
 		return -EINVAL;
 	}
@@ -405,6 +423,9 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	 */
 	chip_block_idle();
 	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+
+	/* enable spi clock */
+	spi_it8xxx2_turn_on_clk(dev, true);
 
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, 1);
 	ret = spi_it8xxx2_next_xfer(dev);
@@ -522,7 +543,7 @@ static DEVICE_API(spi, spi_it8xxx2_driver_api) = {
 	static struct spi_it8xxx2_data spi_it8xxx2_data_##n = {                                    \
 		SPI_CONTEXT_INIT_LOCK(spi_it8xxx2_data_##n, ctx),                                  \
 		SPI_CONTEXT_INIT_SYNC(spi_it8xxx2_data_##n, ctx),                                  \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &spi_it8xxx2_init, NULL, &spi_it8xxx2_data_##n,                   \
 			      &spi_it8xxx2_cfg_##n, POST_KERNEL,                                   \

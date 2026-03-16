@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Alif Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <alif/ensemble/common/ensemble_common.dtsi>
+
+&soc {
+	sram0: sram@2000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2000000 DT_SIZE_M(4)>;
+		zephyr,memory-region = "SRAM0";
+	};
+
+	sram1: sram@2400000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2400000 DT_SIZE_M(4)>;
+		zephyr,memory-region = "SRAM1";
+	};
+
+	mram: flash@80000000 {
+		compatible = "zephyr,memory-region", "soc-nv-flash";
+		reg = <0x80000000 DT_SIZE_K(5632)>;
+		zephyr,memory-region = "MRAM";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x80000000 DT_SIZE_K(5632)>;
+	};
+};

@@ -12,11 +12,23 @@ extern "C" {
 #endif
 
 /**
- * @brief MCUmgr enum_mgmt callback API
- * @defgroup mcumgr_callback_api_enum_mgmt MCUmgr enum_mgmt callback API
+ * @brief MCUmgr Enumeration Management Callbacks API
+ * @defgroup mcumgr_callback_api_enum_mgmt Enumeration Management Callbacks
+ * @ingroup mcumgr_enum_mgmt
  * @ingroup mcumgr_callback_api
  * @{
  */
+
+/**
+ * MGMT event opcodes for enumeration management group.
+ */
+enum enum_mgmt_group_events {
+	/** Callback when fetching details on supported command groups. */
+	MGMT_EVT_OP_ENUM_MGMT_DETAILS		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_ENUM, 0),
+
+	/** Used to enable all enum_mgmt_group events. */
+	MGMT_EVT_OP_ENUM_MGMT_ALL		= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_ENUM),
+};
 
 /**
  * Structure provided in the #MGMT_EVT_OP_ENUM_MGMT_DETAILS notification callback: This callback

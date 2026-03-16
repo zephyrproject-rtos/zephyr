@@ -1,6 +1,11 @@
 common:
   tags:
     - test_framework
+  platform_exclude:
+    - fvp_baser_aemv8r/fvp_aemv8r_aarch32
+    - fvp_baser_aemv8r/fvp_aemv8r_aarch32/smp
+    - fvp_baser_aemv8r/fvp_aemv8r_aarch64
+    - fvp_baser_aemv8r/fvp_aemv8r_aarch64/smp
 tests:
   testing.ztest.error_hook:
     filter: CONFIG_ARCH_HAS_USERSPACE

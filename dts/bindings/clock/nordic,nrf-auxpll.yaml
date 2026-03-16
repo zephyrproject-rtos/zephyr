@@ -56,7 +56,7 @@ properties:
       - 8
       - 12
       - 16
-    description: PLL output divider.
+    description: PLL output divider. Valid values shown in dt-bindings/clock/nrf-auxpll.h.
 
   nordic,out-drive:
     type: int

@@ -14,10 +14,11 @@ supported:
   - gpio
   - i2c
   - pwm
+  - rtc_counter
   - serial
   - spi
   - trng
   - w1
   - watchdog
-ram: 128
+ram: 48
 flash: 512

@@ -28,22 +28,22 @@ static const struct test_result {
 } expected_result[] = {
 	{
 		/* 0 */
-		.test_case.family = AF_INET,
-		.test_case.type = SOCK_DGRAM,
-		.test_case.proto = IPPROTO_UDP,
+		.test_case.family = NET_AF_INET,
+		.test_case.type = NET_SOCK_DGRAM,
+		.test_case.proto = NET_IPPROTO_UDP,
 		.result = 0,
 	},
 	{
 		/* 1 */
-		.test_case.family = AF_INET6,
-		.test_case.type = SOCK_DGRAM,
-		.test_case.proto = IPPROTO_UDP,
+		.test_case.family = NET_AF_INET6,
+		.test_case.type = NET_SOCK_DGRAM,
+		.test_case.proto = NET_IPPROTO_UDP,
 		.result = 0,
 	},
 	{
 		/* 2 */
 		/* This test will not increase the called func count */
-		.test_case.family = AF_UNSPEC,
+		.test_case.family = NET_AF_UNSPEC,
 		.test_case.type = 0,
 		.test_case.proto = 0,
 		.result = -1,
@@ -51,110 +51,110 @@ static const struct test_result {
 	},
 	{
 		/* 3 */
-		.test_case.family = AF_INET,
-		.test_case.type = SOCK_DGRAM,
+		.test_case.family = NET_AF_INET,
+		.test_case.type = NET_SOCK_DGRAM,
 		.test_case.proto = 0,
 		.result = 0,
 	},
 	{
 		/* 4 */
-		.test_case.family = AF_INET6,
-		.test_case.type = SOCK_DGRAM,
+		.test_case.family = NET_AF_INET6,
+		.test_case.type = NET_SOCK_DGRAM,
 		.test_case.proto = 0,
 		.result = 0,
 	},
 	{
 		/* 5 */
-		.test_case.family = AF_INET,
-		.test_case.type = SOCK_DGRAM,
-		.test_case.proto = IPPROTO_UDP,
+		.test_case.family = NET_AF_INET,
+		.test_case.type = NET_SOCK_DGRAM,
+		.test_case.proto = NET_IPPROTO_UDP,
 		.result = 0,
 	},
 	{
 		/* 6 */
-		.test_case.family = AF_INET6,
-		.test_case.type = SOCK_DGRAM,
-		.test_case.proto = IPPROTO_UDP,
+		.test_case.family = NET_AF_INET6,
+		.test_case.type = NET_SOCK_DGRAM,
+		.test_case.proto = NET_IPPROTO_UDP,
 		.result = 0,
 	},
 	{
 		/* 7 */
-		.test_case.family = AF_INET,
-		.test_case.type = SOCK_DGRAM,
-		.test_case.proto = IPPROTO_UDP,
+		.test_case.family = NET_AF_INET,
+		.test_case.type = NET_SOCK_DGRAM,
+		.test_case.proto = NET_IPPROTO_UDP,
 		.result = 0,
 	},
 	{
 		/* 8 */
-		.test_case.family = AF_INET6,
-		.test_case.type = SOCK_DGRAM,
-		.test_case.proto = IPPROTO_UDP,
+		.test_case.family = NET_AF_INET6,
+		.test_case.type = NET_SOCK_DGRAM,
+		.test_case.proto = NET_IPPROTO_UDP,
 		.result = 0,
 	},
 	{
 		/* 9 */
-		.test_case.family = AF_INET6,
-		.test_case.type = SOCK_STREAM,
-		.test_case.proto = IPPROTO_UDP,
+		.test_case.family = NET_AF_INET6,
+		.test_case.type = NET_SOCK_STREAM,
+		.test_case.proto = NET_IPPROTO_UDP,
 		.result = -1,
 		.error = EOPNOTSUPP,
 	},
 	{
 		/* 10 */
-		.test_case.family = AF_PACKET,
-		.test_case.type = SOCK_RAW,
-		.test_case.proto = htons(ETH_P_ALL),
+		.test_case.family = NET_AF_PACKET,
+		.test_case.type = NET_SOCK_RAW,
+		.test_case.proto = net_htons(ETH_P_ALL),
 		.result = 0,
 	},
 	{
 		/* 11 */
-		.test_case.family = AF_CAN,
-		.test_case.type = SOCK_RAW,
-		.test_case.proto = CAN_RAW,
+		.test_case.family = NET_AF_CAN,
+		.test_case.type = NET_SOCK_RAW,
+		.test_case.proto = NET_CAN_RAW,
 		.result = 0,
 	},
 	{
 		/* 12 */
-		.test_case.family = AF_INET6,
-		.test_case.type = SOCK_STREAM,
-		.test_case.proto = IPPROTO_TLS_1_2,
+		.test_case.family = NET_AF_INET6,
+		.test_case.type = NET_SOCK_STREAM,
+		.test_case.proto = NET_IPPROTO_TLS_1_2,
 		.result = 0,
 	},
 	{
 		/* 13 */
-		.test_case.family = AF_INET,
-		.test_case.type = SOCK_DGRAM,
-		.test_case.proto = IPPROTO_DTLS_1_0,
+		.test_case.family = NET_AF_INET,
+		.test_case.type = NET_SOCK_DGRAM,
+		.test_case.proto = NET_IPPROTO_DTLS_1_0,
 		.result = 0,
 	},
 	{
 		/* 14 */
-		.test_case.family = AF_CAN,
-		.test_case.type = SOCK_RAW,
-		.test_case.proto = IPPROTO_RAW,
+		.test_case.family = NET_AF_CAN,
+		.test_case.type = NET_SOCK_RAW,
+		.test_case.proto = NET_IPPROTO_RAW,
 		.result = -1,
 		.error = EAFNOSUPPORT,
 	},
 	{
 		/* 15 */
-		.test_case.family = AF_INET,
-		.test_case.type = SOCK_DGRAM,
+		.test_case.family = NET_AF_INET,
+		.test_case.type = NET_SOCK_DGRAM,
 		.test_case.proto = 254,
 		.result = -1,
 		.error = EPROTONOSUPPORT,
 	},
 	{
 		/* 16 */
-		.test_case.family = AF_PACKET,
-		.test_case.type = SOCK_RAW,
-		.test_case.proto = htons(ETH_P_IEEE802154),
+		.test_case.family = NET_AF_PACKET,
+		.test_case.type = NET_SOCK_RAW,
+		.test_case.proto = net_htons(ETH_P_IEEE802154),
 		.result = 0,
 	},
 	{
 		/* 17 */
-		.test_case.family = AF_PACKET,
-		.test_case.type = SOCK_DGRAM,
-		.test_case.proto = htons(ETH_P_IEEE802154),
+		.test_case.family = NET_AF_PACKET,
+		.test_case.type = NET_SOCK_DGRAM,
+		.test_case.proto = net_htons(ETH_P_IEEE802154),
 		.result = 0,
 	},
 };
@@ -190,9 +190,9 @@ static int socket_test_ok(int family, int type, int proto)
 
 static bool is_tls(int family, int type, int proto)
 {
-	if ((family == AF_INET || family == AF_INET6) &&
-	    (((proto >= IPPROTO_TLS_1_0) && (proto <= IPPROTO_TLS_1_2)) ||
-	     (proto >= IPPROTO_DTLS_1_0 && proto <= IPPROTO_DTLS_1_2))) {
+	if ((family == NET_AF_INET || family == NET_AF_INET6) &&
+	    (((proto >= NET_IPPROTO_TLS_1_0) && (proto <= NET_IPPROTO_TLS_1_2)) ||
+	     (proto >= NET_IPPROTO_DTLS_1_0 && proto <= NET_IPPROTO_DTLS_1_2))) {
 		return true;
 	}
 
@@ -201,10 +201,10 @@ static bool is_tls(int family, int type, int proto)
 
 static bool is_packet(int family, int type, int proto)
 {
-	proto = ntohs(proto);
+	proto = net_ntohs(proto);
 
-	if (((type == SOCK_RAW) && (proto == ETH_P_ALL || proto == ETH_P_IEEE802154)) ||
-	    ((type == SOCK_DGRAM) && (proto > 0))) {
+	if (((type == NET_SOCK_RAW) && (proto == ETH_P_ALL || proto == ETH_P_IEEE802154)) ||
+	    ((type == NET_SOCK_DGRAM) && (proto > 0))) {
 		return true;
 	}
 
@@ -213,7 +213,7 @@ static bool is_packet(int family, int type, int proto)
 
 static bool is_can(int family, int type, int proto)
 {
-	if (type != SOCK_RAW || proto != CAN_RAW) {
+	if (type != NET_SOCK_RAW || proto != NET_CAN_RAW) {
 		return false;
 	}
 
@@ -222,7 +222,7 @@ static bool is_can(int family, int type, int proto)
 
 static bool is_ip(int family, int type, int proto)
 {
-	if (family != AF_INET && family != AF_INET6) {
+	if (family != NET_AF_INET && family != NET_AF_INET6) {
 		return false;
 	}
 
@@ -231,14 +231,14 @@ static bool is_ip(int family, int type, int proto)
 
 #define TEST_SOCKET_PRIO 40
 
-NET_SOCKET_REGISTER(af_inet,   TEST_SOCKET_PRIO, AF_INET,   is_ip,      socket_test);
-NET_SOCKET_REGISTER(af_inet6,  TEST_SOCKET_PRIO, AF_INET6,  is_ip,      socket_test);
-NET_SOCKET_REGISTER(af_can2,   TEST_SOCKET_PRIO, AF_CAN,    is_ip,      socket_test);
+NET_SOCKET_REGISTER(af_inet,   TEST_SOCKET_PRIO, NET_AF_INET,   is_ip,      socket_test);
+NET_SOCKET_REGISTER(af_inet6,  TEST_SOCKET_PRIO, NET_AF_INET6,  is_ip,      socket_test);
+NET_SOCKET_REGISTER(af_can2,   TEST_SOCKET_PRIO, NET_AF_CAN,    is_ip,      socket_test);
 
 /* For these socket families, we return ok always for now */
-NET_SOCKET_REGISTER(tls,       TEST_SOCKET_PRIO, AF_UNSPEC, is_tls,    socket_test_ok);
-NET_SOCKET_REGISTER(af_packet, TEST_SOCKET_PRIO, AF_PACKET, is_packet, socket_test_ok);
-NET_SOCKET_REGISTER(af_can,    TEST_SOCKET_PRIO, AF_CAN,    is_can,    socket_test_ok);
+NET_SOCKET_REGISTER(tls,       TEST_SOCKET_PRIO, NET_AF_UNSPEC, is_tls,    socket_test_ok);
+NET_SOCKET_REGISTER(af_packet, TEST_SOCKET_PRIO, NET_AF_PACKET, is_packet, socket_test_ok);
+NET_SOCKET_REGISTER(af_can,    TEST_SOCKET_PRIO, NET_AF_CAN,    is_can,    socket_test_ok);
 
 ZTEST(net_socket_register, test_create_sockets)
 {

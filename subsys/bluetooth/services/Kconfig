@@ -6,9 +6,15 @@
 menu "GATT Services"
 	depends on BT_CONN
 
+rsource "Kconfig.ans"
+
 rsource "Kconfig.dis"
 
+rsource "Kconfig.gap_svc"
+
 rsource "Kconfig.cts"
+
+rsource "Kconfig.ets"
 
 rsource "Kconfig.hrs"
 

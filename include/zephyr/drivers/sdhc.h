@@ -1,12 +1,13 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @file
- * @brief SD Host Controller public API header file.
+ * @ingroup sdhc_interface
+ * @brief Main header file for SDHC (Secure Digital Host Controller) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SDHC_H_
@@ -14,13 +15,14 @@
 
 #include <errno.h>
 #include <zephyr/device.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sd/sd_spec.h>
 
 /**
- * @brief SDHC interface
- * @defgroup sdhc_interface SDHC interface
+ * @brief Interfaces for Secure Digital Host Controllers (SDHC).
+ * @defgroup sdhc_interface SDHC
  * @since 3.1
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */
@@ -66,6 +68,9 @@ struct sdhc_data {
 	unsigned int block_size; /*!< Block size */
 	unsigned int blocks; /*!< Number of blocks */
 	unsigned int bytes_xfered; /*!< populated with number of bytes sent by SDHC */
+#if defined(CONFIG_SDHC_SCATTER_GATHER_TRANSFER) || defined(__DOXYGEN__)
+	bool is_sg_data; /*!< Is scatter gather data using net_buf data structure */
+#endif
 	void *data; /*!< Data to transfer or receive */
 	int timeout_ms; /*!< data timeout in milliseconds */
 };
@@ -158,16 +163,16 @@ enum sd_voltage {
  * @brief SD host controller capabilities
  *
  * SD host controller capability flags. These flags should be set by the SDHC
- * driver, using the @ref sdhc_get_host_props api.
+ * driver, using the @ref sdhc_get_host_props api. These are packed to fit the capabilities register
+ * in the standard specification by the SD Association.
  */
 struct sdhc_host_caps {
-	unsigned int timeout_clk_freq: 5;		/**< Timeout clock frequency */
+	unsigned int timeout_clk_freq: 6;		/**< Timeout clock frequency */
 	unsigned int _rsvd_6: 1;			/**< Reserved */
 	unsigned int timeout_clk_unit: 1;		/**< Timeout clock unit */
 	unsigned int sd_base_clk: 8;			/**< SD base clock frequency */
 	unsigned int max_blk_len: 2;			/**< Max block length */
 	unsigned int bus_8_bit_support: 1;		/**< 8-bit Support for embedded device */
-	unsigned int bus_4_bit_support: 1;		/**< 4 bit bus support */
 	unsigned int adma_2_support: 1;			/**< ADMA2 support */
 	unsigned int _rsvd_20: 1;			/**< Reserved */
 	unsigned int high_spd_support: 1;		/**< High speed support */
@@ -189,6 +194,7 @@ struct sdhc_host_caps {
 	unsigned int drv_type_d_support: 1;		/**< Driver type D support */
 	unsigned int _rsvd_39: 1;			/**< Reserved */
 	unsigned int retune_timer_count: 4;		/**< Timer count for re-tuning */
+	unsigned int _rsvd_44: 1;			/**< Reserved */
 	unsigned int sdr50_needs_tuning: 1;		/**< Use tuning for SDR50 */
 	unsigned int retuning_mode: 2;			/**< Re-tuning mode */
 	unsigned int clk_multiplier: 8;			/**< Clock multiplier */
@@ -196,8 +202,6 @@ struct sdhc_host_caps {
 	unsigned int adma3_support: 1;			/**< ADMA3 support */
 	unsigned int vdd2_180_support: 1;		/**< 1.8V VDD2 support */
 	unsigned int _rsvd_61: 3;			/**< Reserved */
-	unsigned int hs200_support: 1;			/**< HS200 support */
-	unsigned int hs400_support: 1;			/**< HS400 support */
 };
 
 /**
@@ -230,6 +234,9 @@ struct sdhc_host_props {
 	uint32_t max_current_330; /*!< Max current (in mA) at 3.3V */
 	uint32_t max_current_300; /*!< Max current (in mA) at 3.0V */
 	uint32_t max_current_180; /*!< Max current (in mA) at 1.8V */
+	bool bus_4_bit_support; /**< 4 bit bus support */
+	bool hs200_support; /**< HS200 support */
+	bool hs400_support; /**< HS400 support */
 	bool is_spi; /*!< Is the host using SPI mode */
 };
 
@@ -282,8 +289,8 @@ __subsystem struct sdhc_driver_api {
  *
  * @param dev: SD host controller device
  * @retval 0 reset succeeded
- * @retval -ETIMEDOUT: controller reset timed out
- * @retval -EIO: reset failed
+ * @retval -ETIMEDOUT controller reset timed out
+ * @retval -EIO reset failed
  */
 __syscall int sdhc_hw_reset(const struct device *dev);
 
@@ -310,7 +317,7 @@ static inline int z_impl_sdhc_hw_reset(const struct device *dev)
  * @retval 0 command was sent successfully
  * @retval -ETIMEDOUT command timed out while sending
  * @retval -ENOTSUP host controller does not support command
- * @retval -EIO: I/O error
+ * @retval -EIO I/O error
  */
 __syscall int sdhc_request(const struct device *dev, struct sdhc_command *cmd,
 			   struct sdhc_data *data);
@@ -386,9 +393,9 @@ static inline int z_impl_sdhc_card_present(const struct device *dev)
  * allows an application to request the SD host controller to tune the card.
  * @param dev: SDHC device
  * @retval 0 tuning succeeded, card is ready for commands
- * @retval -ETIMEDOUT: tuning failed after timeout
- * @retval -ENOTSUP: controller does not support tuning
- * @retval -EIO: I/O error while tuning
+ * @retval -ETIMEDOUT tuning failed after timeout
+ * @retval -ENOTSUP controller does not support tuning
+ * @retval -EIO I/O error while tuning
  */
 __syscall int sdhc_execute_tuning(const struct device *dev);
 
@@ -465,8 +472,8 @@ static inline int z_impl_sdhc_get_host_props(const struct device *dev,
  *        indicating which interrupts should produce a callback
  * @param user_data: parameter that will be passed to callback function
  * @retval 0 interrupts were enabled, and callback was installed
- * @retval -ENOTSUP: controller does not support this function
- * @retval -EIO: I/O error
+ * @retval -ENOTSUP controller does not support this function
+ * @retval -EIO I/O error
  */
 __syscall int sdhc_enable_interrupt(const struct device *dev,
 				    sdhc_interrupt_cb_t callback,
@@ -494,8 +501,8 @@ static inline int z_impl_sdhc_enable_interrupt(const struct device *dev,
  * @param sources: bitmask of @ref sdhc_interrupt_source values
  *        indicating which interrupts should be disabled.
  * @retval 0 interrupts were disabled
- * @retval -ENOTSUP: controller does not support this function
- * @retval -EIO: I/O error
+ * @retval -ENOTSUP controller does not support this function
+ * @retval -EIO I/O error
  */
 __syscall int sdhc_disable_interrupt(const struct device *dev, int sources);
 

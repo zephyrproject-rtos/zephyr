@@ -36,12 +36,15 @@
  * NRFX_GRTC_CONFIG_NUM_OF_CC_CHANNELS) based on information from devicetree.
  */
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_grtc)
-#define NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK \
-	(NRFX_CONFIG_MASK_DT(DT_INST(0, nordic_nrf_grtc), owned_channels) & \
+#define NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK						   \
+	(NRFX_CONFIG_MASK_DT(DT_INST(0, nordic_nrf_grtc), owned_channels) &			   \
 	 ~NRFX_CONFIG_MASK_DT(DT_INST(0, nordic_nrf_grtc), child_owned_channels))
-#define NRFX_GRTC_CONFIG_NUM_OF_CC_CHANNELS \
-	(DT_PROP_LEN_OR(DT_INST(0, nordic_nrf_grtc), owned_channels, 0) - \
+#define NRFX_GRTC_CONFIG_NUM_OF_CC_CHANNELS							   \
+	(DT_PROP_LEN_OR(DT_INST(0, nordic_nrf_grtc), owned_channels, 0) -			   \
 	 DT_PROP_LEN_OR(DT_INST(0, nordic_nrf_grtc), child_owned_channels, 0))
+#define NRFX_GRTC_CONFIG_EXTENDED_CC_CHANNELS_MASK						   \
+	(NRFX_CONFIG_MASK_DT(DT_INST(0, nordic_nrf_grtc), extended_channels) &			   \
+	 ~NRFX_CONFIG_MASK_DT(DT_INST(0, nordic_nrf_grtc), child_owned_channels))
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_grtc) */
 
 /*
@@ -53,7 +56,7 @@
  */
 #if defined(CONFIG_BT_LL_SW_SPLIT)
 #include <bt_ctlr_used_resources.h>
-#if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
+#if defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
 #define NRFX_PPI_CHANNELS_USED_BY_BT_CTLR BT_CTLR_USED_PPI_CHANNELS
 #define NRFX_PPI_GROUPS_USED_BY_BT_CTLR   BT_CTLR_USED_PPI_GROUPS
 #elif defined(CONFIG_SOC_COMPATIBLE_NRF53X)
@@ -78,7 +81,7 @@
 #include <../src/nrf_802154_peripherals_nrf54l.h>
 #define NRFX_DPPI10_CHANNELS_USED_BY_802154_DRV NRF_802154_DPPI_CHANNELS_USED_MASK
 #define NRFX_DPPI10_GROUPS_USED_BY_802154_DRV   NRF_802154_DPPI_GROUPS_USED_MASK
-#elif defined(CONFIG_SOC_SERIES_NRF54HX)
+#elif defined(CONFIG_SOC_SERIES_NRF54H)
 #include <../src/nrf_802154_peripherals_nrf54h.h>
 #define NRFX_DPPI020_CHANNELS_USED_BY_802154_DRV NRF_802154_DPPI_CHANNELS_USED_MASK
 #define NRFX_DPPI020_GROUPS_USED_BY_802154_DRV   NRF_802154_DPPI_GROUPS_USED_MASK

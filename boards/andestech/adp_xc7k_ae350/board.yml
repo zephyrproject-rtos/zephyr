@@ -4,3 +4,5 @@ board:
   vendor: andestech
   socs:
   - name: ae350
+    variants:
+    - name: clic

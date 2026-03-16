@@ -5,7 +5,7 @@
 #
 
 identifier: frdm_rw612
-name: NXP FRDM_RW612
+name: NXP FRDM-RW612
 type: mcu
 arch: arm
 toolchain:
@@ -14,7 +14,11 @@ toolchain:
 ram: 960
 flash: 65536
 supported:
+  - arduino_gpio
   - gpio
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
   - dma
   - spi
   - i2c
@@ -28,3 +32,6 @@ supported:
   - adc
   - dac
   - netif:eth
+  - netif:openthread
+  - comparator
+vendor: nxp

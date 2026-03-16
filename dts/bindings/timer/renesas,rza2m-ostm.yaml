@@ -13,3 +13,7 @@ properties:
 
   interrupts:
     required: true
+
+  channel:
+    type: int
+    required: true

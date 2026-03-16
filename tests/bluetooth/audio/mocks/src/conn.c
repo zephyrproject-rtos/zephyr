@@ -4,12 +4,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <stdint.h>
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/fff.h>
@@ -75,4 +74,9 @@ void mock_bt_conn_disconnected(struct bt_conn *conn, uint8_t err)
 			cb->disconnected(conn, err);
 		}
 	}
+}
+
+bool bt_conn_is_type(const struct bt_conn *conn, enum bt_conn_type type)
+{
+	return true;
 }

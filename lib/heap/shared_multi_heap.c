@@ -91,6 +91,16 @@ void *shared_multi_heap_alloc(enum shared_multi_heap_attr attr, size_t bytes)
 	return sys_multi_heap_alloc(&shared_multi_heap, (void *)(long) attr, bytes);
 }
 
+void *shared_multi_heap_realloc(enum shared_multi_heap_attr attr, void *ptr, size_t bytes)
+{
+	if (attr >= MAX_SHARED_MULTI_HEAP_ATTR) {
+		return NULL;
+	}
+
+	return sys_multi_heap_aligned_realloc(&shared_multi_heap, (void *)(long) attr,
+					      ptr, 0, bytes);
+}
+
 void *shared_multi_heap_aligned_alloc(enum shared_multi_heap_attr attr,
 				      size_t align, size_t bytes)
 {

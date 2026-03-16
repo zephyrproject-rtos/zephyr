@@ -17,4 +17,7 @@ supported:
   - uart
   - netif:eth
   - gpio
+  - pwm
+  - i2c
+  - i2s
 vendor: nxp

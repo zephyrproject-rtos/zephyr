@@ -400,13 +400,7 @@ static int spi_xmc4xxx_transceive_dma(const struct device *dev, const struct spi
 			XMC_USIC_CH_TBUF_STATUS_BUSY) {
 		};
 
-		if (data->ctx.rx_len == 0) {
-			dma_len = data->ctx.tx_len;
-		} else if (data->ctx.tx_len == 0) {
-			dma_len = data->ctx.rx_len;
-		} else {
-			dma_len = MIN(data->ctx.tx_len, data->ctx.rx_len);
-		}
+		dma_len = spi_context_max_continuous_chunk(&data->ctx);
 
 		if (ctx->rx_buf) {
 
@@ -598,7 +592,10 @@ static int spi_xmc4xxx_init(const struct device *dev)
 	}
 
 	XMC_SPI_CH_SetInputSource(config->spi, XMC_SPI_CH_INPUT_DIN0, config->miso_src);
-	spi_context_cs_configure_all(&data->ctx);
+	ret = spi_context_cs_configure_all(&data->ctx);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }

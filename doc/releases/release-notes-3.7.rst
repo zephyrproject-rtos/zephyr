@@ -30,8 +30,8 @@ Major enhancements with this release include:
   data flows than the previous fetch/get APIs.
 * A new :ref:`LLEXT Extension Developer Kit (EDK) <llext_build_edk>` makes it easier to develop and
   integrate custom extensions into Zephyr, including outside of the Zephyr tree.
-* :ref:`Native simulator <native_sim>` now supports leveraging the native host networking stack
-  without having to rely on a complex setup of the host environment.
+* :zephyr:board:`Native simulator <native_sim>` now supports leveraging the native host networking
+  stack without having to rely on a complex setup of the host environment.
 * Trusted Firmware-M (TF-M) 2.1.0 and Mbed TLS 3.6.0 have been integrated into Zephyr.
   Both of these versions are LTS releases. What's more, :ref:`psa_crypto` has been adopted as a replacement
   for TinyCrypt and provides enhanced security and performance.
@@ -369,7 +369,7 @@ Boards & SoC Support
   * Added support for STM32H7R/S SoC series.
   * Added support for NXP mke15z7, mke17z7, mke17z9, MCXNx4x, RW61x
   * Added support for Analog Devices MAX32 SoC series.
-  * Added support for Infineon Technologies AIROC |trade| CYW20829 Bluetooth LE SoC series.
+  * Added support for Infineon Technologies AIROC™ CYW20829 Bluetooth LE SoC series.
   * Added support for MediaTek MT8195 Audio DSPs
   * Added support for Nuvoton Numaker M2L31X SoC series.
   * Added support for the Microchip PolarFire ICICLE Kit SMP variant.

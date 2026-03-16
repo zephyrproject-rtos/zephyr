@@ -36,14 +36,17 @@
 #define WDT_OPT_PAUSE_IN_SLEEP_SUPPORTED          BIT(5)
 #define WDT_OPT_PAUSE_HALTED_BY_DBG_SUPPORTED     BIT(6)
 #define WDT_FEED_CAN_STALL                        BIT(7)
+#define WDT_WINDOW_MIN_SUPPORTED                  BIT(8)
+#define WDT_OPT_PAUSE_IN_SLEEP_REQUIRES_PM        BIT(9)
 
 /* Common for all targets: */
 #define DEFAULT_WINDOW_MAX (500U)
 #define DEFAULT_WINDOW_MIN (0U)
 
 /* Align tests to the specific target: */
-#if defined(CONFIG_SOC_SERIES_NRF53X) || defined(CONFIG_SOC_SERIES_NRF54LX) || \
-	defined(CONFIG_SOC_NRF54H20) || defined(CONFIG_SOC_NRF9280)
+#if defined(CONFIG_SOC_SERIES_NRF53) || defined(CONFIG_SOC_SERIES_NRF54L) || \
+	defined(CONFIG_SOC_SERIES_NRF71) || defined(CONFIG_SOC_NRF54H20) || \
+	defined(CONFIG_SOC_NRF9280)
 #define WDT_TEST_FLAGS                                                                             \
 	(WDT_DISABLE_SUPPORTED | WDT_FLAG_RESET_SOC_SUPPORTED |                                    \
 	 WDT_FLAG_ONLY_ONE_TIMEOUT_VALUE_SUPPORTED | WDT_OPT_PAUSE_IN_SLEEP_SUPPORTED |            \
@@ -52,6 +55,31 @@
 #define MAX_INSTALLABLE_TIMEOUTS (8)
 #define WDT_WINDOW_MAX_ALLOWED   (0x07CFFFFFU)
 #define DEFAULT_OPTIONS          (WDT_OPT_PAUSE_IN_SLEEP | WDT_OPT_PAUSE_HALTED_BY_DBG)
+#elif defined(CONFIG_SOC_FAMILY_SILABS_S2)
+#if defined(WDOG_CFG_EM1RUN)
+#define WDT_TEST_FLAG_SLEEP_REQUIRES_PM 0
+#else
+#define WDT_TEST_FLAG_SLEEP_REQUIRES_PM WDT_OPT_PAUSE_IN_SLEEP_REQUIRES_PM
+#endif
+#define WDT_TEST_FLAGS                                                                             \
+	(WDT_DISABLE_SUPPORTED | WDT_FLAG_RESET_NONE_SUPPORTED | WDT_FLAG_RESET_SOC_SUPPORTED |    \
+	 WDT_FLAG_ONLY_ONE_TIMEOUT_VALUE_SUPPORTED | WDT_OPT_PAUSE_IN_SLEEP_SUPPORTED |            \
+	 WDT_OPT_PAUSE_HALTED_BY_DBG_SUPPORTED | WDT_WINDOW_MIN_SUPPORTED |                        \
+	 WDT_TEST_FLAG_SLEEP_REQUIRES_PM)
+#define DEFAULT_FLAGS            (WDT_FLAG_RESET_NONE)
+#define MAX_INSTALLABLE_TIMEOUTS (1)
+#define WDT_WINDOW_MAX_ALLOWED   (0x40001U)
+#define DEFAULT_OPTIONS          (WDT_OPT_PAUSE_IN_SLEEP | WDT_OPT_PAUSE_HALTED_BY_DBG)
+#elif defined(CONFIG_SOC_FAMILY_MICROCHIP_SAM_D5X_E5X) ||					   \
+	defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
+#define WDT_TEST_FLAGS                                                                             \
+	(WDT_DISABLE_SUPPORTED | WDT_FLAG_RESET_SOC_SUPPORTED |                                    \
+	 WDT_FLAG_RESET_CPU_CORE_SUPPORTED | WDT_FLAG_ONLY_ONE_TIMEOUT_VALUE_SUPPORTED |           \
+	 WDT_OPT_PAUSE_HALTED_BY_DBG_SUPPORTED)
+#define DEFAULT_FLAGS            (WDT_FLAG_RESET_SOC)
+#define MAX_INSTALLABLE_TIMEOUTS (1)
+#define WDT_WINDOW_MAX_ALLOWED   (0x4000)
+#define DEFAULT_OPTIONS          (0)
 #else
 /* By default run most of the error checks.
  * See Readme.txt on how to align test scope for the specific target.
@@ -276,12 +304,14 @@ ZTEST(wdt_coverage, test_04w_wdt_install_timeout_with_invalid_window)
 	/* ----------------- window.min
 	 * Check that window.min can't be different than 0
 	 */
-	m_cfg_wdt0.window.min = 1U;
-	ret = wdt_install_timeout(wdt, &m_cfg_wdt0);
-	zassert_true(ret == -EINVAL,
-		     "Calling wdt_install_timeout with window.min = 1 should return -EINVAL (-22), "
-		     "got unexpected value of %d",
-		     ret);
+	if (!(WDT_TEST_FLAGS & WDT_WINDOW_MIN_SUPPORTED)) {
+		m_cfg_wdt0.window.min = 1U;
+		ret = wdt_install_timeout(wdt, &m_cfg_wdt0);
+		zassert_true(ret == -EINVAL,
+			"Calling wdt_install_timeout with window.min = 1 should return -EINVAL (-22), "
+			"got unexpected value of %d",
+			ret);
+	}
 
 	/* Set default window.min */
 	m_cfg_wdt0.window.min = DEFAULT_WINDOW_MIN;
@@ -320,6 +350,11 @@ ZTEST(wdt_coverage, test_04wm_wdt_install_timeout_with_multiple_timeout_values)
 
 	if (!(WDT_TEST_FLAGS & WDT_FLAG_ONLY_ONE_TIMEOUT_VALUE_SUPPORTED)) {
 		/* Skip this test because timeouts with different values are supported */
+		ztest_test_skip();
+	}
+
+	if (MAX_INSTALLABLE_TIMEOUTS < 2) {
+		/* Skip this test because two timeouts aren't supported */
 		ztest_test_skip();
 	}
 
@@ -425,6 +460,11 @@ ZTEST(wdt_coverage, test_06b_wdt_setup_WDT_OPT_PAUSE_IN_SLEEP_functional)
 
 	if (!(WDT_TEST_FLAGS & WDT_OPT_PAUSE_IN_SLEEP_SUPPORTED)) {
 		/* Skip this test because WDT_OPT_PAUSE_IN_SLEEP can NOT be used. */
+		ztest_test_skip();
+	}
+
+	if ((WDT_TEST_FLAGS & WDT_OPT_PAUSE_IN_SLEEP_REQUIRES_PM) && !IS_ENABLED(CONFIG_PM)) {
+		/* Skip this test because WDT_OPT_PAUSE_IN_SLEEP can't be tested without PM. */
 		ztest_test_skip();
 	}
 

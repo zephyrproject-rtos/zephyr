@@ -18,7 +18,7 @@ When developing a Zephyr-based application, then a developer simply needs to wri
 ``find_package(Zephyr)`` in the beginning of the application :file:`CMakeLists.txt` file.
 
 To use the Zephyr CMake package it must first be exported to the `CMake user package registry`_.
-This is means creating a reference to the current Zephyr installation inside the
+This means creating a reference to the current Zephyr installation inside the
 CMake user package registry.
 
 

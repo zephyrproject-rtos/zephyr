@@ -15,6 +15,8 @@ menuconfig HAWKBIT
 	depends on BOOTLOADER_MCUBOOT
 	depends on SMF
 	depends on SMF_ANCESTOR_SUPPORT
+	depends on !MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+	depends on !MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
 	select MPU_ALLOW_FLASH_WRITE
 	select IMG_ENABLE_IMAGE_CHECK
 	select IMG_ERASE_PROGRESSIVELY
@@ -220,6 +222,11 @@ config HAWKBIT_REBOOT_COLD
 	help
 	  Do a cold reboot after the update.
 
+config HAWKBIT_REBOOT_NONE
+	bool "Don't reboot after update"
+	help
+	  Do not reboot after the update.
+
 endchoice
 
 config HEAP_MEM_POOL_ADD_SIZE_HAWKBIT
@@ -252,6 +259,21 @@ config HAWKBIT_SAVE_PROGRESS_INTERVAL
 	help
 	  Set the interval (in percent) that the hawkBit update download progress will be saved.
 	  0 means that the progress will be saved every time a new chunk is downloaded.
+
+config HAWKBIT_CONFIRM_IMG_ON_INIT
+	bool "Confirm boot image at hawkBit init"
+	default y
+	help
+	  Automatically confirm current boot image at hawkBit initialization.
+	  Application shall handle image confirmation when set to false.
+
+config HAWKBIT_ERASE_SECOND_SLOT_ON_CONFIRM
+	bool "Erase second slot after confirming boot image"
+	default y
+	depends on HAWKBIT_CONFIRM_IMG_ON_INIT
+	help
+	  Erase the second image slot partition contents after confirming current boot image
+	  at hawkBit init.
 
 module = HAWKBIT
 module-str = Log Level for hawkbit

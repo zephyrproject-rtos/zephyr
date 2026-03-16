@@ -121,10 +121,14 @@ do {                                                                    \
 				"." Z_STRINGIFY(c))))
 #define __in_section(a, b, c) ___in_section(a, b, c)
 
-#define __in_section_unique(seg) ___in_section(seg, __FILE__, __COUNTER__)
+#define ___in_section_unique(a, b) \
+	__attribute__((section("." Z_STRINGIFY(a)		\
+				"." __FILE__			\
+				"." Z_STRINGIFY(b))))
 
-#define __in_section_unique_named(seg, name) \
-	___in_section(seg, __FILE__, name)
+#define __in_section_unique(seg) ___in_section_unique(seg, __COUNTER__)
+
+#define __in_section_unique_named(seg, name) ___in_section_unique(seg, name)
 
 /* When using XIP, using '__ramfunc' places a function into RAM instead
  * of FLASH. Make sure '__ramfunc' is defined only when
@@ -187,6 +191,11 @@ do {                                                                    \
 #define __deprecated	__attribute__((deprecated))
 #endif
 
+#ifndef __deprecated_version
+#define __deprecated_version(version) \
+	__attribute__((deprecated("planned removal in v" #version)))
+#endif
+
 #define FUNC_NO_STACK_PROTECTOR _Pragma("no_stack_protect")
 
 #ifndef __attribute_const__
@@ -243,7 +252,7 @@ do {                                                                    \
 #define __WARN1(s) __PRAGMA(message = #s)
 
 /* Generic message */
-#ifndef CONFIG_DEPRECATION_TEST
+#if !(defined(CONFIG_DEPRECATION_TEST) || !defined(CONFIG_WARN_DEPRECATED))
 #define __DEPRECATED_MACRO __WARN("Macro is deprecated")
 #else
 #define __DEPRECATED_MACRO
@@ -319,49 +328,6 @@ do {                                                                    \
 #define compiler_barrier() do { \
 	__asm volatile("" ::: "memory"); \
 } while (false)
-
-/** @brief Return larger value of two provided expressions.
- *
- * Macro ensures that expressions are evaluated only once.
- *
- * @note Macro has limited usage compared to the standard macro as it cannot be
- *	 used:
- *	 - to generate constant integer, e.g. __aligned(Z_MAX(4,5))
- *	 - static variable, e.g. array like static uint8_t array[Z_MAX(...)];
- */
-#define Z_MAX(a, b) ({ \
-		/* random suffix to avoid naming conflict */ \
-		__typeof__(a) _value_a_ = (a); \
-		__typeof__(b) _value_b_ = (b); \
-		_value_a_ > _value_b_ ? _value_a_ : _value_b_; \
-	})
-
-/** @brief Return smaller value of two provided expressions.
- *
- * Macro ensures that expressions are evaluated only once. See @ref Z_MAX for
- * macro limitations.
- */
-#define Z_MIN(a, b) ({ \
-		/* random suffix to avoid naming conflict */ \
-		__typeof__(a) _value_a_ = (a); \
-		__typeof__(b) _value_b_ = (b); \
-		_value_a_ < _value_b_ ? _value_a_ : _value_b_; \
-	})
-
-/** @brief Return a value clamped to a given range.
- *
- * Macro ensures that expressions are evaluated only once. See @ref Z_MAX for
- * macro limitations.
- */
-#define Z_CLAMP(val, low, high) ({                                             \
-		/* random suffix to avoid naming conflict */                   \
-		__typeof__(val) _value_val_ = (val);                           \
-		__typeof__(low) _value_low_ = (low);                           \
-		__typeof__(high) _value_high_ = (high);                        \
-		(_value_val_ < _value_low_)  ? _value_low_ :                   \
-		(_value_val_ > _value_high_) ? _value_high_ :                  \
-					       _value_val_;                    \
-	})
 
 /**
  * @brief Calculate power of two ceiling for some nonzero value

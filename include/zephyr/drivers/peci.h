@@ -6,15 +6,17 @@
 
 /**
  * @file
- * @brief Public Platform Environment Control Interface driver APIs
+ * @ingroup peci_interface
+ * @brief Main header file for PECI (Platform Environment Control Interface) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PECI_H_
 #define ZEPHYR_INCLUDE_DRIVERS_PECI_H_
 
 /**
- * @brief PECI Interface 3.0
- * @defgroup peci_interface PECI Interface
+ * @brief Interfaces for Platform Environment Control Interface (PECI)
+ *        devices.
+ * @defgroup peci_interface PECI
  * @since 2.1
  * @version 1.0.0
  * @ingroup io_interfaces
@@ -269,7 +271,7 @@ __subsystem struct peci_driver_api {
  * @param bitrate the selected bitrate expressed in Kbps.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval <0 Negative errno code if failure.
  */
 __syscall int peci_config(const struct device *dev, uint32_t bitrate);
 
@@ -288,7 +290,7 @@ static inline int z_impl_peci_config(const struct device *dev,
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval <0 Negative errno code if failure.
  */
 __syscall int peci_enable(const struct device *dev);
 
@@ -306,7 +308,7 @@ static inline int z_impl_peci_enable(const struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval <0 Negative errno code if failure.
  */
 __syscall int peci_disable(const struct device *dev);
 
@@ -325,7 +327,7 @@ static inline int z_impl_peci_disable(const struct device *dev)
  * @param msg Structure representing a PECI transaction.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval <0 Negative errno code if failure.
  */
 
 __syscall int peci_transfer(const struct device *dev, struct peci_msg *msg);

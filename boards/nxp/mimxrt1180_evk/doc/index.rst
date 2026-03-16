@@ -11,7 +11,7 @@ markets.
 Hardware
 ********
 
-- MIMXRT1189CVM8B MCU
+- MIMXRT1189CVM8C MCU
 
   - 240MHz Cortex-M33 with 256KB TCM and 16 KB caches
   - 792Mhz Cortex-M7 with 512KB TCM and 32 KB caches
@@ -57,7 +57,10 @@ For more information about the MIMXRT1180 SoC and MIMXRT1180-EVK board, see
 these references:
 
 - `i.MX RT1180 Website`_
+- `i.MX RT1180 Datasheet`_
+- `i.MX RT1180 Reference Manual`_
 - `MIMXRT1180-EVK Website`_
+- `MIMXRT1180-EVK Board Hardware User's Guide`_
 
 External Memory
 ===============
@@ -125,6 +128,30 @@ The MIMXRT1180 SoC is configured to use SysTick as the system clock source,
 running at 240MHz. When targeting the M7 core, SysTick will also be used,
 running at 792MHz
 
+ELE Active Timer Requirement
+=============================
+
+The RT1180 platform requires periodic communication with the EdgeLock Enclave (ELE)
+to prevent system reset. According to the RT1180 System Reference Manual (SRM) section
+3.11 "ELE active timer", the ELE must be pinged at least once every 24 hours.
+
+Zephyr implements this requirement using a software timer that automatically pings the
+ELE every 23 hours (instead of 24 hours) to account for potential clock inaccuracies.
+This is transparent to the application and requires no user intervention.
+
+For more details, refer to the RT1180 SRM section 3.11.
+
+ITCM and DTCM
+=============
+
+If placing ``zephyr,flash`` in ITCM or ``zephyr,sram`` in DTCM, the property
+``zephyr,memory-region`` should be deleted from the memory device node.
+For example, this overlay moves the CM33 ``zephyr,sram`` to DTCM:
+
+.. code-block:: none
+
+   boards/nxp/mimxrt1180_evk/cm33_sram_dtcm.overlay
+
 Serial Port
 ===========
 
@@ -163,6 +190,122 @@ DSA master port. DSA master port support is TODO work.
    +--------+-+--------+-+--------+-+--------+     |
        |          |          |          |          |
    NETC External Interfaces (4 switch ports, 1 end-point port)
+
+Dual Core Operation
+*******************
+
+The MIMXRT1180 EVK supports dual core operation with both the Cortex-M33 and Cortex-M7 cores.
+By default, the CM33 core is the boot core and is responsible for initializing the system and
+starting the CM7 core.
+
+CM7 Execution Modes
+===================
+
+The CM7 core is enabled to execute code in three memory options:
+
+1. **ITCM (Default)**: The CM7 code is copied from flash to ITCM (Instruction Tightly Coupled Memory)
+   and executed from there. This provides faster execution but is limited by the ITCM size.
+
+2. **Flash**: The CM7 code is executed directly from flash memory (XIP - eXecute In Place).
+   This allows for larger code size but may be slower than ITCM execution.
+   When booting CM7 from Flash the TRDC execution permissions has to be set by CM33 core.
+
+3. **HyperRAM**: The CM7 code is copied from flash to external HyperRAM and executed from there.
+   This allows for larger code size but may be slower than ITCM execution.  Be aware, the CM33
+   default data placement ``zephyr,sram`` is in HyperRAM.  Ensure the CM33 and CM7 are not using overlapping
+   regions in HyperRAM.  One option given below moves the CM33 data to DTCM.
+
+Configuring CM7 Execution memory
+================================
+
+To configure the memory for CM7 execution, you can use the following Kconfig option:
+
+.. code-block:: none
+
+   CONFIG_CM7_BOOT_FROM_FLASH=n  # For RAM execution, ITCM or HyperRAM (default)
+   CONFIG_CM7_BOOT_FROM_FLASH=y  # For flash execution
+
+When building with west, you can specify this option on the command line:
+
+.. code-block:: bash
+
+   # For ITCM execution (default)
+   west build -b mimxrt1180_evk/mimxrt1189/cm33 samples/drivers/mbox --sysbuild
+
+   # For flash execution
+   west build -b mimxrt1180_evk/mimxrt1189/cm33 <sample_path> --sysbuild -- \
+     -D<remote_app_name>_EXTRA_DTC_OVERLAY_FILE=${ZEPHYR_BASE}/boards/nxp/mimxrt1180_evk/cm7_flash_boot.overlay \
+     -DCONFIG_CM7_BOOT_FROM_FLASH=y -D<remote_app_name>_CONFIG_CM7_BOOT_FROM_FLASH=y
+
+  west build -b mimxrt1180_evk/mimxrt1189/cm33 samples/drivers/mbox --sysbuild -- \
+     -Dremote_EXTRA_DTC_OVERLAY_FILE=${ZEPHYR_BASE}/boards/nxp/mimxrt1180_evk/cm7_flash_boot.overlay \
+     -DCONFIG_CM7_BOOT_FROM_FLASH=y -Dremote_CONFIG_CM7_BOOT_FROM_FLASH=y
+
+   # For HyperRAM execution
+   west build -b mimxrt1180_evk//cm33 samples/drivers/mbox --sysbuild -- \
+     -Dremote_EXTRA_DTC_OVERLAY_FILE=${ZEPHYR_BASE}/boards/nxp/mimxrt1180_evk/cm7_code_hyperram.overlay \
+     -DEXTRA_DTC_OVERLAY_FILE=${ZEPHYR_BASE}/boards/nxp/mimxrt1180_evk/cm33_sram_dtcm.overlay
+
+Flash Boot Overlay
+==================
+
+When executing the CM7 core from flash, you need to apply a device tree overlay to configure
+the flash memory properly. The overlay file is located at:
+
+.. code-block:: none
+
+   boards/nxp/mimxrt1180_evk/cm7_flash_boot.overlay
+
+This overlay configures the CM7 core to use the flash memory for code execution instead of ITCM.
+
+HyperRAM Execution Overlay
+==========================
+
+When executing the CM7 core from HyperRAM, you need to apply a device tree overlay.  An example
+overlay file is located at:
+
+.. code-block:: none
+
+   boards/nxp/mimxrt1180_evk/cm7_code_hyperram.overlay
+
+The MPU attributes for the board also need to be changed in this file:
+
+.. code-block:: none
+
+   boards/nxp/mimxrt1180_evk/cm7/mpu_regions.c
+
+Changing the line below enables execution from the HyperRAM region by setting the flash attribute:
+
+.. code-block:: none
+
+   #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(hyperram0))
+        MPU_REGION_ENTRY("HYPER_RAM", REGION_HYPER_RAM_BASE_ADDRESS,
+   -                        REGION_RAM_ATTR(REGION_HYPER_RAM_SIZE)),
+   +                        REGION_FLASH_ATTR(REGION_HYPER_RAM_SIZE)),
+   #endif
+
+Memory Usage
+============
+
+* **from RAM**: The CM7 code is copied from flash to ITCM or HyperRAM.
+* **from Flash**: The CM7 code is executed directly from flash, which allows for larger code size than ITCM.
+
+Performance Considerations
+==========================
+
+* **from ITCM**: Provides faster execution due to the low-latency internal ITCM memory.
+* **from external memory**: External flash or HyperRAM may be slower due to memory access times,
+    but allows for larger code size.
+
+Dual Core samples Debugging
+===========================
+
+When debugging dual core samples, need to ensure the SW5 on "0100" mode.
+The CM33 core is responsible for copying and starting the CM7.
+To debug the CM7 it is useful to put infinite while loop either in reset vector or
+into main function and attach via debugger to CM7 core.
+
+CM7 core can be started again only after reset, so after flashing ensure to reset board.
 
 Programming and Debugging
 *************************
@@ -210,16 +353,6 @@ Please ensure to use a version of Linkserver above V1.5.30 and jumper JP5 is uni
 When debugging cm33 core, need to ensure the SW5 on "0100" mode.
 When debugging cm7 core, need to ensure the SW5 on "0001" mode.
 (Only support run cm7 image when debugging due to default boot core on board is cm33 core)
-
-Dual Core samples Debugging
-***************************
-
-When debugging dual core samples, need to ensure the SW5 on "0100" mode.
-The CM33 core is responsible for copying and starting the CM7.
-To debug the CM7 it is useful to put infinite while loop either in reset vector or
-into main function and attach via debugger to CM7 core.
-
-CM7 core can be started again only after reset, so after flashing ensure to reset board.
 
 Configuring a Console
 =====================
@@ -278,11 +411,19 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v3.7.0-xxx-xxxxxxxxxxxxx *****
    Hello World! mimxrt1180_evk/mimxrt1189/cm33
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1180-EVK Website:
-   https://www.nxp.com/design/design-center/development-boards-and-designs/i-mx-evaluation-and-development-boards/i-mx-rt1180-evaluation-kit:MIMXRT1180-EVK
+   https://www.nxp.com/design/design-center/development-boards-and-designs/MIMXRT1180-EVK
 
 .. _i.MX RT1180 Website:
-   https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/i-mx-rt-crossover-mcus/i-mx-rt1180-crossover-mcu-with-tsn-switch-and-edgelock:i.MX-RT1180
+   https://www.nxp.com/products/i.MX-RT1180
+
+.. _MIMXRT1180-EVK Board Hardware User's Guide:
+   https://www.nxp.com/webapp/Download?colCode=UM12021&isHTMLorPDF=HTML
+
+.. _i.MX RT1180 Datasheet:
+   https://www.nxp.com/docs/en/data-sheet/IMXRT1180EC.pdf
+
+.. _i.MX RT1180 Reference Manual:
+   https://www.nxp.com/docs/en/reference-manual/IMXRT1180RM.pdf

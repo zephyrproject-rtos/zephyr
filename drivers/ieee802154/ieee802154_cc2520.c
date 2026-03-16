@@ -618,7 +618,7 @@ static void cc2520_rx(void *p1, void *p2, void *p3)
 		}
 
 		pkt = net_pkt_rx_alloc_with_buffer(cc2520->iface, pkt_len,
-						   AF_UNSPEC, 0, K_NO_WAIT);
+						   NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("No pkt available");
 			goto flush;
@@ -1044,7 +1044,7 @@ static void cc2520_iface_init(struct net_if *iface)
 }
 
 static const struct cc2520_config cc2520_config = {
-	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
+	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8)),
 	.vreg_en = GPIO_DT_SPEC_INST_GET(0, vreg_en_gpios),
 	.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 	.fifo = GPIO_DT_SPEC_INST_GET(0, fifo_gpios),

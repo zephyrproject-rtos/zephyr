@@ -29,9 +29,23 @@ UNKNOWN_VENDOR = 'Unknown vendor'
 ZEPHYR_BASE = Path(__file__).parents[2]
 
 # Base properties that have documentation in 'dt-important-props'.
-DETAILS_IN_IMPORTANT_PROPS = set('compatible label reg status interrupts'.split())
+DETAILS_IN_IMPORTANT_PROPS = {'compatible', 'label', 'reg', 'status', 'interrupts'}
 
 logger = logging.getLogger('gen_devicetree_rest')
+
+
+def format_value(value) -> str:
+    """
+    Format a property value, preserving hexadecimal notation for HexInt values.
+    For lists/arrays, formats each element individually and joins with ", ".
+    """
+    if isinstance(value, list):
+        return "[" + ", ".join(map(format_value, value)) + "]"
+    elif isinstance(value, edtlib.HexInt):
+        return hex(value)
+    else:
+        return str(value)
+
 
 class VndLookup:
     """
@@ -499,6 +513,19 @@ def write_orphans(bindings, base_binding, vnd_lookup, driver_sources, out_dir):
     logging.info('done writing :orphan: files; %d files needed updates',
                  num_written)
 
+def make_sidebar(compatible, vendor_name, vendor_ref_target, driver_path=None):
+    lines = [
+        ".. sidebar:: Overview",
+        "",
+        f"   :Name: ``{compatible}``",
+        f"   :Vendor: :ref:`{vendor_name} <{vendor_ref_target}>`",
+        f"   :Used in: :zephyr:board-catalog:`List of boards <#compatibles={compatible}>` using",
+        "               this compatible",
+    ]
+    if driver_path:
+        lines.append(f"   :Driver: :zephyr_file:`{driver_path}`")
+    return "\n".join(lines) + "\n"
+
 def print_binding_page(binding, base_names, vnd_lookup, driver_sources,dup_compats,
                        string_io):
     # Print the rst content for 'binding' to 'string_io'. The
@@ -550,24 +577,18 @@ def print_binding_page(binding, base_names, vnd_lookup, driver_sources,dup_compa
     {underline}
     ''', string_io)
 
-    # Vendor: <link-to-vendor-section>
     vnd = compatible_vnd(compatible)
-    print('Vendor: '
-          f':ref:`{vnd_lookup.vendor(vnd)} <{vnd_lookup.target(vnd)}>`\n',
-          file=string_io)
+    vendor_name = vnd_lookup.vendor(vnd)
+    vendor_target = vnd_lookup.target(vnd)
+    driver_path = driver_sources.get(re.sub("[-,.@/+]", "_", compatible.lower()))
 
-    # Link to driver implementation (if it exists).
-    compatible = re.sub("[-,.@/+]", "_", compatible.lower())
-    if compatible in driver_sources:
-        print_block(
-            f"""\
-            .. note::
-
-               An implementation of a driver matching this compatible is available in
-               :zephyr_file:`{driver_sources[compatible]}`.
-        """,
-            string_io,
-        )
+    sidebar_content = make_sidebar(
+        compatible=compatible,
+        vendor_name=vendor_name,
+        vendor_ref_target=vendor_target,
+        driver_path=driver_path,
+    )
+    print_block(sidebar_content, string_io)
 
     # Binding description.
     if binding.bus:
@@ -588,6 +609,16 @@ def print_binding_page(binding, base_names, vnd_lookup, driver_sources,dup_compa
     else:
         description = binding.description.strip()
     print(to_code_block(description), file=string_io)
+
+    # Examples
+    if binding.examples:
+        print_block('''\
+        Examples
+        ********
+        ''', string_io)
+        blocks = [to_code_block(example, language='dts')
+                  for example in binding.examples]
+        print("\n\n----\n\n".join(blocks), file=string_io)
 
     # Properties.
     print_block('''\
@@ -737,13 +768,13 @@ def print_property_table(prop_specs, string_io, deprecated=False):
             details += '\n\nThis property is **required**.'
 
         if prop_spec.default:
-            details += f'\n\nDefault value: ``{prop_spec.default}``'
+            details += f'\n\nDefault value: ``{format_value(prop_spec.default)}``'
 
         if prop_spec.const:
-            details += f'\n\nConstant value: ``{prop_spec.const}``'
+            details += f'\n\nConstant value: ``{format_value(prop_spec.const)}``'
         elif prop_spec.enum:
             details += ('\n\nLegal values: ' +
-                        ', '.join(f'``{repr(val)}``' for val in
+                        ', '.join(f'``{format_value(val)}``' for val in
                                   prop_spec.enum))
 
         if prop_spec.name in DETAILS_IN_IMPORTANT_PROPS:
@@ -812,13 +843,13 @@ def print_block(block, string_io):
 
     print(textwrap.dedent(block), file=string_io)
 
-def to_code_block(s, indent=0):
+def to_code_block(s, indent=0, language='none'):
     # Converts 's', a string, to an indented rst .. code-block::. The
     # 'indent' argument is a leading indent for each line in the code
     # block, in spaces.
     indent = indent * ' '
-    return ('.. code-block:: none\n\n' +
-            textwrap.indent(s, indent + '   ') + '\n')
+    return (f".. code-block:: {language}\n\n"
+            f"{textwrap.indent(s, f'{indent}   ')}\n")
 
 def compatible_vnd(compatible):
     # Get the vendor prefix for a compatible string 'compatible'.

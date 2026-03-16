@@ -5,8 +5,8 @@
 
 if BOARD_FRDM_RW612
 
-config NET_L2_ETHERNET
-	default y if DT_HAS_NXP_ENET_MAC_ENABLED && NETWORKING
+configdefault NET_L2_ETHERNET
+	default y if DT_HAS_NXP_ENET_MAC_ENABLED
 
 if LVGL
 
@@ -24,12 +24,5 @@ config LV_Z_FLUSH_THREAD
 	default y
 
 endif # LVGL
-
-if COUNTER_MCUX_LPC_RTC_1HZ
-
-config XTAL32K
-	default y
-
-endif # COUNTER_MCUX_LPC_RTC_1HZ
 
 endif # BOARD_FRDM_RW612

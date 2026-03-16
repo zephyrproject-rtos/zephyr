@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 / {
 	pwm_loopback_0 {
 		compatible = "test-pwm-loopback";
 		/* first index must be a 32-Bit timer */
 		pwms = <&pwm2 1 0 PWM_POLARITY_NORMAL>,
-			<&pwm3 1 0 PWM_POLARITY_NORMAL>;
+		       <&pwm3 1 0 PWM_POLARITY_NORMAL>;
 	};
 };
 
 /* 32-Bit timers */
 &timers2 {
 	status = "okay";
+
 	pwm2: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pb6>; /* PB6 D3 */
@@ -26,6 +26,7 @@
 
 &timers3 {
 	status = "okay";
+
 	pwm3: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pb5>; /* PB5 D1 */

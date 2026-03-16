@@ -160,7 +160,7 @@ static int reset_pin_configure(void)
 }
 #endif /* USE_RESET_GPIO */
 
-static int init(void)
+void board_late_init_hook(void)
 {
 	int rc;
 
@@ -170,7 +170,7 @@ static int init(void)
 
 		if (!device_is_ready(cfg->gpio)) {
 			LOG_ERR("%s is not ready", cfg->gpio->name);
-			return -ENODEV;
+			return;
 		}
 
 		flags |= (cfg->on ? GPIO_OUTPUT_ACTIVE
@@ -188,7 +188,7 @@ static int init(void)
 		}
 #endif
 		if (rc) {
-			return rc;
+			return;
 		}
 	}
 
@@ -201,21 +201,17 @@ static int init(void)
 	rc = reset_pin_configure();
 	if (rc) {
 		LOG_ERR("Unable to configure reset pin, err %d", rc);
-		return -EIO;
+		return;
 	}
 #endif
 
 	LOG_INF("Board configured.");
-
-	return 0;
 }
 
-SYS_INIT(init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
-
 #define EXT_MEM_CTRL DT_NODELABEL(external_flash_pins_routing)
-#if DT_NODE_EXISTS(EXT_MEM_CTRL)
 
-static int early_init(void)
+#if DT_NODE_EXISTS(EXT_MEM_CTRL)
+void board_early_init_hook(void)
 {
 	/* As soon as possible after the system starts up, enable the analog
 	 * switch that routes signals to the external flash. Otherwise, the
@@ -234,9 +230,5 @@ static int early_init(void)
 		nrf_gpio_pin_set(psel);
 	}
 	nrf_gpio_cfg_output(psel);
-
-	return 0;
 }
-
-SYS_INIT(early_init, PRE_KERNEL_1, 0);
 #endif

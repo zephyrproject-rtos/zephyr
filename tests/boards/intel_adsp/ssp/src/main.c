@@ -360,7 +360,7 @@ ZTEST(adsp_ssp, test_adsp_ssp_config_set)
 	ssp_config.quirks = 1 << 6; /* loopback bit on */
 	ssp_config.bclk_delay = 0;
 
-	ret = dai_config_set(dev_dai_ssp, &config, &ssp_config);
+	ret = dai_config_set(dev_dai_ssp, &config, &ssp_config, sizeof(ssp_config));
 
 	zassert_equal(ret, TC_PASS);
 }

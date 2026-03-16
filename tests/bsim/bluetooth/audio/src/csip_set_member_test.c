@@ -290,12 +290,17 @@ static void test_new_set_size_and_rank(void)
 
 static void test_register(void)
 {
-	for (size_t iteration = 1; iteration <= 5; iteration++) {
+	for (size_t iteration = 0U; iteration < 5U; iteration++) {
 		struct bt_csip_set_member_svc_inst
 			*svc_insts[CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT];
 		int err;
 
-		printk("Running iteration %zu\n", iteration);
+		printk("Running iteration %zu\n", iteration + 1);
+
+		/* Run with different parameters for each iteration */
+		param.lockable = !param.lockable;
+		param.rank = iteration % 2;
+		param.set_size = iteration % 3;
 
 		ARRAY_FOR_EACH(svc_insts, i) {
 			err = bt_csip_set_member_register(&param, &svc_insts[i]);

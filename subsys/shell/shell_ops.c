@@ -388,6 +388,10 @@ void z_shell_cmd_line_erase(const struct shell *sh)
 
 static void print_prompt(const struct shell *sh)
 {
+	if (sh->ctx->readline_state != SHELL_READLINE_INACTIVE) {
+		return;
+	}
+
 	z_shell_fprintf(sh, SHELL_INFO, "%s", sh->ctx->prompt);
 }
 
@@ -432,14 +436,8 @@ static void shell_pend_on_txdone(const struct shell *sh)
 {
 	if (IS_ENABLED(CONFIG_MULTITHREADING) &&
 	    (sh->ctx->state < SHELL_STATE_PANIC_MODE_ACTIVE)) {
-		struct k_poll_event event;
-
-		k_poll_event_init(&event,
-				  K_POLL_TYPE_SIGNAL,
-				  K_POLL_MODE_NOTIFY_ONLY,
-				  &sh->ctx->signals[SHELL_SIGNAL_TXDONE]);
-		k_poll(&event, 1, K_FOREVER);
-		k_poll_signal_reset(&sh->ctx->signals[SHELL_SIGNAL_TXDONE]);
+		k_event_wait(&sh->ctx->signal_event, SHELL_SIGNAL_TXDONE, false, K_FOREVER);
+		k_event_clear(&sh->ctx->signal_event, SHELL_SIGNAL_TXDONE);
 	} else {
 		/* Blocking wait in case of bare metal. */
 		while (!z_flag_tx_rdy_get(sh)) {

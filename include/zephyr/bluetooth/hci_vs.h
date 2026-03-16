@@ -38,6 +38,9 @@ extern "C" {
 
 #define BT_VS_CMD_SUP_FEAT(cmd)                 BT_LE_FEAT_TEST(cmd, \
 						BT_VS_CMD_BIT_SUP_FEAT)
+/** Check if HCI VS command BT_VS_CMD_BIT_WRITE_BDADDR is supported */
+#define BT_VS_CMD_WRITE_BD_ADDR(cmd)            BT_LE_FEAT_TEST(cmd, \
+						BT_VS_CMD_BIT_WRITE_BDADDR)
 #define BT_VS_CMD_READ_STATIC_ADDRS(cmd)        BT_LE_FEAT_TEST(cmd, \
 						BT_VS_CMD_BIT_READ_STATIC_ADDRS)
 #define BT_VS_CMD_READ_KEY_ROOTS(cmd)           BT_LE_FEAT_TEST(cmd, \
@@ -46,12 +49,20 @@ extern "C" {
 #define BT_HCI_VS_HW_PLAT_INTEL                 0x0001
 #define BT_HCI_VS_HW_PLAT_NORDIC                0x0002
 #define BT_HCI_VS_HW_PLAT_NXP                   0x0003
+#define BT_HCI_VS_HW_PLAT_ESPRESSIF             0x0004
 
 #define BT_HCI_VS_HW_VAR_NORDIC_NRF51X          0x0001
 #define BT_HCI_VS_HW_VAR_NORDIC_NRF52X          0x0002
 #define BT_HCI_VS_HW_VAR_NORDIC_NRF53X          0x0003
 #define BT_HCI_VS_HW_VAR_NORDIC_NRF54HX         0x0004
 #define BT_HCI_VS_HW_VAR_NORDIC_NRF54LX         0x0005
+
+#define BT_HCI_VS_HW_VAR_ESP32                  0x0001
+#define BT_HCI_VS_HW_VAR_ESP32S3                0x0002
+#define BT_HCI_VS_HW_VAR_ESP32C2                0x0003
+#define BT_HCI_VS_HW_VAR_ESP32C3                0x0004
+#define BT_HCI_VS_HW_VAR_ESP32C6                0x0005
+#define BT_HCI_VS_HW_VAR_ESP32H2                0x0006
 
 #define BT_HCI_VS_FW_VAR_STANDARD_CTLR          0x0001
 #define BT_HCI_VS_FW_VAR_VS_CTLR                0x0002
@@ -222,20 +233,20 @@ struct bt_hci_evt_vs {
 	uint8_t  subevent;
 } __packed;
 
-#define BT_HCI_EVT_VS_FATAL_ERROR              0x02
-
 #define BT_HCI_EVT_VS_ERROR_DATA_TYPE_STACK_FRAME   0x01
 #define BT_HCI_EVT_VS_ERROR_DATA_TYPE_CTRL_ASSERT   0x02
 #define BT_HCI_EVT_VS_ERROR_DATA_TYPE_TRACE         0x03
-struct bt_hci_vs_fata_error_cpu_data_cortex_m {
+struct bt_hci_vs_fatal_error_cpu_data_cortex_m {
 	uint32_t a1;
 	uint32_t a2;
 	uint32_t a3;
 	uint32_t a4;
 	uint32_t ip;
 	uint32_t lr;
+	uint32_t pc;
 	uint32_t xpsr;
 } __packed;
+
 #define BT_HCI_EVT_VS_ERROR_CPU_TYPE_CORTEX_M  0x01
 struct bt_hci_vs_fatal_error_stack_frame {
 	uint32_t reason;

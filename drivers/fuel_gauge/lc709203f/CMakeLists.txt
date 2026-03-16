@@ -1,5 +1,3 @@
-zephyr_library()
-
 zephyr_library_sources(lc709203f.c)
 
 zephyr_include_directories_ifdef(CONFIG_EMUL_LC709203F .)

@@ -6,6 +6,7 @@
 
 #include <zephyr/cache.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/storage/flash_map.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -19,10 +20,14 @@
 #include <hal/nrf_spu.h>
 #include <hal/nrf_memconf.h>
 #include <hal/nrf_nfct.h>
-#include <soc/nrfx_coredep.h>
+#include <lib/nrfx_coredep.h>
 #include <soc_lrcconf.h>
+#include <haltium_power.h>
 #include <dmm.h>
-#include <zephyr/drivers/firmware/nrf_ironside/cpuconf.h>
+
+#if defined(CONFIG_SOC_NRF54H20_CPURAD_ENABLE)
+#include <ironside/se/api.h>
+#endif
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -32,7 +37,18 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define HSFLL_NODE DT_NODELABEL(cpurad_hsfll)
 #endif
 
-sys_snode_t soc_node;
+#ifdef CONFIG_USE_DT_CODE_PARTITION
+#define FLASH_LOAD_ADDRESS DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
+#elif defined(CONFIG_FLASH_LOAD_OFFSET)
+#define FLASH_LOAD_ADDRESS (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
+#endif
+
+#define FIXED_PARTITION_IS_RUNNING_APP_PARTITION(label)                                            \
+	DT_SAME_NODE(FIXED_PARTITION_NODE_MTD(DT_CHOSEN(zephyr_code_partition)),                   \
+		     FIXED_PARTITION_MTD(label)) &&                                                \
+		(FIXED_PARTITION_ADDRESS(label) <= FLASH_LOAD_ADDRESS &&                           \
+		 FIXED_PARTITION_ADDRESS(label) + FIXED_PARTITION_SIZE(label) >                    \
+			 FLASH_LOAD_ADDRESS)
 
 #define FICR_ADDR_GET(node_id, name)                                           \
 	DT_REG_ADDR(DT_PHANDLE_BY_NAME(node_id, nordic_ficrs, name)) +         \
@@ -44,47 +60,6 @@ sys_snode_t soc_node;
 				      ADDRESS_DOMAIN_Msk |                     \
 				      ADDRESS_BUS_Msk)))
 
-#define DT_NODELABEL_CPURAD_SLOT0_PARTITION DT_NODELABEL(cpurad_slot0_partition)
-
-static void power_domain_init(void)
-{
-	/*
-	 * Set:
-	 *  - LRCCONF010.POWERON.MAIN: 1
-	 *  - LRCCONF010.POWERON.ACT: 1
-	 *  - LRCCONF010.RETAIN.MAIN: 1
-	 *  - LRCCONF010.RETAIN.ACT: 1
-	 *
-	 *  This is done here at boot so that when the idle routine will hit
-	 *  WFI the power domain will be correctly retained.
-	 */
-
-	soc_lrcconf_poweron_request(&soc_node, NRF_LRCCONF_POWER_DOMAIN_0);
-	nrf_lrcconf_poweron_force_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_MAIN, false);
-
-	nrf_memconf_ramblock_ret_enable_set(NRF_MEMCONF, 0, RAMBLOCK_RET_BIT_ICACHE, false);
-	nrf_memconf_ramblock_ret_enable_set(NRF_MEMCONF, 0, RAMBLOCK_RET_BIT_DCACHE, false);
-	nrf_memconf_ramblock_ret_enable_set(NRF_MEMCONF, 1, RAMBLOCK_RET_BIT_ICACHE, false);
-	nrf_memconf_ramblock_ret_enable_set(NRF_MEMCONF, 1, RAMBLOCK_RET_BIT_DCACHE, false);
-#if defined(RAMBLOCK_RET2_BIT_ICACHE)
-	nrf_memconf_ramblock_ret2_enable_set(NRF_MEMCONF, 0, RAMBLOCK_RET2_BIT_ICACHE, false);
-	nrf_memconf_ramblock_ret2_enable_set(NRF_MEMCONF, 1, RAMBLOCK_RET2_BIT_ICACHE, false);
-#endif
-#if defined(RAMBLOCK_RET2_BIT_DCACHE)
-	nrf_memconf_ramblock_ret2_enable_set(NRF_MEMCONF, 0, RAMBLOCK_RET2_BIT_DCACHE, false);
-	nrf_memconf_ramblock_ret2_enable_set(NRF_MEMCONF, 1, RAMBLOCK_RET2_BIT_DCACHE, false);
-#endif
-	nrf_memconf_ramblock_ret_mask_enable_set(NRF_MEMCONF, 0, RAMBLOCK_RET_MASK, true);
-	nrf_memconf_ramblock_ret_mask_enable_set(NRF_MEMCONF, 1, RAMBLOCK_RET_MASK, true);
-#if defined(RAMBLOCK_RET2_MASK)
-	/*
-	 * TODO: Use nrf_memconf_ramblock_ret2_mask_enable_set() function
-	 * when will be provided by HAL.
-	 */
-	NRF_MEMCONF->POWER[0].RET2 = RAMBLOCK_RET2_MASK;
-	NRF_MEMCONF->POWER[1].RET2 = RAMBLOCK_RET2_MASK;
-#endif
-}
 
 static int trim_hsfll(void)
 {
@@ -136,7 +111,7 @@ void soc_early_init_hook(void)
 	sys_cache_instr_enable();
 	sys_cache_data_enable();
 
-	power_domain_init();
+	nrf_power_domain_init();
 
 	trim_hsfll();
 
@@ -161,10 +136,12 @@ void soc_early_init_hook(void)
 	}
 }
 
-#if defined(CONFIG_SOC_NRF54H20_CPURAD_ENABLE)
+#if defined(CONFIG_SOC_LATE_INIT_HOOK)
+
 void soc_late_init_hook(void)
 {
-	int err;
+#if defined(CONFIG_SOC_NRF54H20_CPURAD_ENABLE)
+	int err_cpuconf;
 
 	/* The msg will be used for communication prior to IPC
 	 * communication being set up. But at this moment no such
@@ -172,17 +149,34 @@ void soc_late_init_hook(void)
 	 */
 	uint8_t *msg = NULL;
 	size_t msg_size = 0;
+	void *radiocore_address = NULL;
 
-	void *radiocore_address =
-		(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL_CPURAD_SLOT0_PARTITION)) +
-			 DT_REG_ADDR(DT_NODELABEL_CPURAD_SLOT0_PARTITION) +
-			 CONFIG_ROM_START_OFFSET);
+#if DT_NODE_EXISTS(DT_NODELABEL(cpurad_slot1_partition))
+	if (FIXED_PARTITION_IS_RUNNING_APP_PARTITION(cpuapp_slot1_partition)) {
+		radiocore_address = (void *)(FIXED_PARTITION_ADDRESS(cpurad_slot1_partition) +
+					     CONFIG_ROM_START_OFFSET);
+	} else {
+		radiocore_address = (void *)(FIXED_PARTITION_ADDRESS(cpurad_slot0_partition) +
+					     CONFIG_ROM_START_OFFSET);
+	}
+#else
+	radiocore_address =
+		(void *)(FIXED_PARTITION_ADDRESS(cpurad_slot0_partition) + CONFIG_ROM_START_OFFSET);
+#endif
 
-	/* Don't wait as this is not yet supported. */
-	bool cpu_wait = false;
+	if (IS_ENABLED(CONFIG_SOC_NRF54H20_CPURAD_ENABLE_CHECK_VTOR) &&
+	    sys_read32((mem_addr_t)radiocore_address) == 0xFFFFFFFFUL) {
+		LOG_ERR("Radiocore is not programmed, it will not be started");
 
-	err = ironside_cpuconf(NRF_PROCESSOR_RADIOCORE, radiocore_address, cpu_wait, msg, msg_size);
-	__ASSERT(err == 0, "err was %d", err);
+		return;
+	}
+
+	bool cpu_wait = IS_ENABLED(CONFIG_SOC_NRF54H20_CPURAD_ENABLE_DEBUG_WAIT);
+
+	err_cpuconf = ironside_se_cpuconf(NRF_PROCESSOR_RADIOCORE, radiocore_address, cpu_wait, msg,
+					  msg_size);
+	__ASSERT(err_cpuconf == 0, "err_cpuconf was %d", err_cpuconf);
+#endif /* CONFIG_SOC_NRF54H20_CPURAD_ENABLE */
 }
 #endif
 

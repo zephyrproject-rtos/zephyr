@@ -139,7 +139,7 @@ static struct net_pkt *eth_ivshmem_rx(const struct device *dev)
 	}
 
 	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(
-		dev_data->iface, rx_len, AF_UNSPEC, 0, K_MSEC(100));
+		dev_data->iface, rx_len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (pkt == NULL) {
 		LOG_ERR("Failed to allocate rx buffer");
 		eth_stats_update_errors_rx(dev_data->iface);
@@ -358,9 +358,7 @@ static void eth_ivshmem_iface_init(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_ivshmem_dev_data *dev_data = dev->data;
 
-	if (dev_data->iface == NULL) {
-		dev_data->iface = iface;
-	}
+	dev_data->iface = iface;
 
 	net_if_set_link_addr(
 		iface, dev_data->mac_addr,

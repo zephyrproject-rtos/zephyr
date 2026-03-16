@@ -1,0 +1,126 @@
+/*
+ * Copyright (c) 2025 Alif Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/clock/alif-ensemble-clocks.h>
+
+/ {
+	clocks {
+		syst_aclk: axi-clk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(400)>;
+			#clock-cells = <0>;
+		};
+
+		syst_hclk: ahb-clk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(200)>;
+			#clock-cells = <0>;
+		};
+
+		syst_pclk: apb-clk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(100)>;
+			#clock-cells = <0>;
+		};
+	};
+
+	soc: soc {
+		peripheral_region: memory@1a000000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x1a000000 DT_SIZE_M(8)>;
+			zephyr,memory-region = "PERIPHERALS";
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_DEVICE)>;
+		};
+
+		clockctrl: clock-controller@1a602000 {
+			compatible = "alif,clockctrl";
+			reg = <0x1a602000 0x2c>,
+			      <0x4903f000 0xb0>,
+			      <0x4902f000 0xbc>,
+			      <0x1a604000 0x48>,
+			      <0x1a609000 0x14>,
+			      <0x43007000 0x28>,
+			      <0x400f0000 0x14>;
+			reg-names = "cgu",
+				    "clkctl_per_mst",
+				    "clkctl_per_slv",
+				    "aon",
+				    "vbat",
+				    "m55he_cfg",
+				    "m55hp_cfg";
+			#clock-cells = <1>;
+		};
+
+		pinctrl: pin-controller@1a603000 {
+			compatible = "alif,pinctrl";
+			reg = <0x1a603000 0x1000>, <0x42007000 0x1000>;
+			reg-names = "pinctrl", "lpgpio_pinctrl";
+		};
+
+		uart0: uart@49018000 {
+			compatible = "ns16550";
+			reg = <0x49018000 0x1000>;
+			clocks = <&clockctrl ALIF_UART0_SYST_PCLK>;
+			interrupts = <124 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart1: uart@49019000 {
+			compatible = "ns16550";
+			reg = <0x49019000 0x1000>;
+			clocks = <&clockctrl ALIF_UART1_SYST_PCLK>;
+			interrupts = <125 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart2: uart@4901a000 {
+			compatible = "ns16550";
+			reg = <0x4901a000 0x1000>;
+			clocks = <&clockctrl ALIF_UART2_SYST_PCLK>;
+			interrupts = <126 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart3: uart@4901b000 {
+			compatible = "ns16550";
+			reg = <0x4901b000 0x1000>;
+			clocks = <&clockctrl ALIF_UART3_SYST_PCLK>;
+			interrupts = <127 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart4: uart@4901c000 {
+			compatible = "ns16550";
+			reg = <0x4901c000 0x1000>;
+			clocks = <&clockctrl ALIF_UART4_SYST_PCLK>;
+			interrupts = <128 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart5: uart@4901d000 {
+			compatible = "ns16550";
+			reg = <0x4901d000 0x1000>;
+			clocks = <&clockctrl ALIF_UART5_SYST_PCLK>;
+			interrupts = <129 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+	};
+};

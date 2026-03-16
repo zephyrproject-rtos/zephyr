@@ -21,10 +21,25 @@
 
 LOG_MODULE_REGISTER(video_imx335, CONFIG_VIDEO_LOG_LEVEL);
 
-#define IMX335_WIDTH	2592
-#define IMX335_HEIGHT	1944
+#define IMX335_NATIVE_WIDTH	2592
+#define IMX335_NATIVE_HEIGHT	1944
+
+#define IMX335_BIN_2X2_WIDTH	1296
+#define IMX335_BIN_2X2_HEIGHT	972
 
 #define IMX335_PIXEL_RATE	396000000
+
+enum imx335_res {
+	IMX335_RES_2592x1944,
+	IMX335_RES_1296x972,
+};
+
+enum imx335_framerate {
+	IMX335_25_FPS,
+	IMX335_30_FPS,
+	IMX335_50_FPS,
+	IMX335_60_FPS,
+};
 
 struct imx335_config {
 	struct i2c_dt_spec i2c;
@@ -43,6 +58,8 @@ struct imx335_ctrls {
 struct imx335_data {
 	struct imx335_ctrls ctrls;
 	struct video_format fmt;
+	uint32_t frame_rate;
+	bool enabled;
 };
 
 #define IMX335_REG8(addr)  ((addr) | VIDEO_REG_ADDR16_DATA8)
@@ -60,12 +77,15 @@ struct imx335_data {
 #define IMX335_HTRIMMING_START		IMX335_REG16(0x302c)
 #define IMX335_HNUM			IMX335_REG16(0x302e)
 #define IMX335_VMAX			IMX335_REG24(0x3030)
+#define IMX335_HMAX			IMX335_REG16(0x3034)
 #define IMX335_VMAX_DEFAULT		4500
 #define IMX335_OPB_SIZE_V		IMX335_REG8(0x304c)
 #define IMX335_ADBIT			IMX335_REG8(0x3050)
 #define IMX335_Y_OUT_SIZE		IMX335_REG16(0x3056)
 #define IMX335_SHR0			IMX335_REG24(0x3058)
 #define IMX335_SHR0_MIN			9
+#define IMX335_SHR0_MIN_BINNING		17
+#define IMX335_AREA2_WIDTH_1		IMX335_REG16(0x3072)
 #define IMX335_AREA3_ST_ADR_1		IMX335_REG16(0x3074)
 #define IMX335_AREA3_WIDTH_1		IMX335_REG16(0x3076)
 #define IMX335_GAIN			IMX335_REG16(0x30e8)
@@ -76,17 +96,17 @@ struct imx335_data {
 #define IMX335_INCKSEL2_PLL_IF_GC	IMX335_REG8(0x315a)
 #define IMX335_INCKSEL3			IMX335_REG8(0x3168)
 #define IMX335_INCKSEL4			IMX335_REG8(0x316a)
+#define IMX335_HADD_VADD		IMX335_REG8(0x3199)
 #define IMX335_MDBIT			IMX335_REG8(0x319d)
 #define IMX335_XVS_XHS_DRV		IMX335_REG8(0x31a1)
+#define IMX335_TCYCLE			IMX335_REG8(0x3300)
 #define IMX335_ADBIT1			IMX335_REG16(0x341c)
 #define IMX335_LANEMODE			IMX335_REG8(0x3a01)
 static const struct video_reg imx335_init_params[] = {
 	{IMX335_STANDBY, 0x01},
 	{IMX335_XMSTA, 0x00},
-	{IMX335_WINMODE, 0x04},
 	{IMX335_HTRIMMING_START, 0x3c},
 	{IMX335_HNUM, 0x0a20},
-	{IMX335_OPB_SIZE_V, 0x00},
 	{IMX335_Y_OUT_SIZE, 0x0798},
 	{IMX335_AREA3_ST_ADR_1, 0x00c8},
 	{IMX335_AREA3_WIDTH_1, 0x0f30},
@@ -164,6 +184,87 @@ static const struct video_reg16 imx335_fixed_regs[] = {
 	{0x3a00, 0x01},
 };
 
+static const struct video_reg imx335_bin_2x2[] = {
+	{IMX335_WINMODE, 0x01},
+	{IMX335_Y_OUT_SIZE, 0x03D8},
+	{IMX335_AREA2_WIDTH_1, 0x0030},
+	{IMX335_AREA3_ST_ADR_1, 0x00A8},
+	{IMX335_AREA3_WIDTH_1, 0x0F60},
+	{IMX335_HADD_VADD, 0x30},
+	{IMX335_TCYCLE, 0x01},
+	/* Fixed regs for 2/2 binning */
+	{IMX335_REG8(0x3078), 0x04},
+	{IMX335_REG8(0x3079), 0xFD},
+	{IMX335_REG8(0x307A), 0x04},
+	{IMX335_REG8(0x307B), 0xFE},
+	{IMX335_REG8(0x307C), 0x04},
+	{IMX335_REG8(0x307D), 0xFB},
+	{IMX335_REG8(0x307E), 0x04},
+	{IMX335_REG8(0x307F), 0x02},
+	{IMX335_REG8(0x3080), 0x04},
+	{IMX335_REG8(0x3081), 0xFD},
+	{IMX335_REG8(0x3082), 0x04},
+	{IMX335_REG8(0x3083), 0xFE},
+	{IMX335_REG8(0x3084), 0x04},
+	{IMX335_REG8(0x3085), 0xFB},
+	{IMX335_REG8(0x3086), 0x04},
+	{IMX335_REG8(0x3087), 0x02},
+	{IMX335_REG8(0x30A4), 0x77},
+	{IMX335_REG8(0x30A8), 0x20},
+	{IMX335_REG8(0x30A9), 0x00},
+	{IMX335_REG8(0x30AC), 0x08},
+	{IMX335_REG8(0x30AD), 0x08},
+	{IMX335_REG8(0x30B0), 0x20},
+	{IMX335_REG8(0x30B1), 0x00},
+	{IMX335_REG8(0x30B4), 0x10},
+	{IMX335_REG8(0x30B5), 0x10},
+	{IMX335_REG16(0x30B6), 0x0000},
+	{IMX335_REG16(0x3112), 0x0010},
+	{IMX335_REG16(0x3116), 0x0010},
+};
+
+/* Note that this only contains registers that need to be reset when switching away from
+ * 2x2 binning mode
+ */
+static const struct video_reg imx335_bin_none[] = {
+	{IMX335_WINMODE, 0x00},
+	{IMX335_Y_OUT_SIZE, 0x07AC},
+	{IMX335_AREA2_WIDTH_1, 0x0028},
+	{IMX335_AREA3_ST_ADR_1, 0x00B0},
+	{IMX335_AREA3_WIDTH_1, 0x0F58},
+	{IMX335_HADD_VADD, 0x00},
+	{IMX335_TCYCLE, 0x00},
+	/* Reset fixed regs from binning to all-pixel scan */
+	{IMX335_REG8(0x3078), 0x01},
+	{IMX335_REG8(0x3079), 0x02},
+	{IMX335_REG8(0x307A), 0xFF},
+	{IMX335_REG8(0x307B), 0x02},
+	{IMX335_REG8(0x307C), 0x00},
+	{IMX335_REG8(0x307D), 0x00},
+	{IMX335_REG8(0x307E), 0x00},
+	{IMX335_REG8(0x307F), 0x00},
+	{IMX335_REG8(0x3080), 0x01},
+	{IMX335_REG8(0x3081), 0x02},
+	{IMX335_REG8(0x3082), 0xFF},
+	{IMX335_REG8(0x3083), 0x02},
+	{IMX335_REG8(0x3084), 0x00},
+	{IMX335_REG8(0x3085), 0x00},
+	{IMX335_REG8(0x3086), 0x00},
+	{IMX335_REG8(0x3087), 0x00},
+	{IMX335_REG8(0x30A4), 0x33},
+	{IMX335_REG8(0x30A8), 0x10},
+	{IMX335_REG8(0x30A9), 0x04},
+	{IMX335_REG8(0x30AC), 0x00},
+	{IMX335_REG8(0x30AD), 0x00},
+	{IMX335_REG8(0x30B0), 0x10},
+	{IMX335_REG8(0x30B1), 0x08},
+	{IMX335_REG8(0x30B4), 0x00},
+	{IMX335_REG8(0x30B5), 0x00},
+	{IMX335_REG16(0x30B6), 0x0000},
+	{IMX335_REG16(0x3112), 0x0008},
+	{IMX335_REG16(0x3116), 0x0008},
+};
+
 static const struct video_reg imx335_mode_2l_10b[] = {
 	{IMX335_ADBIT, 0x00},
 	{IMX335_MDBIT, 0x00},
@@ -217,33 +318,35 @@ static const struct video_reg imx335_inck_6mhz[] = {
 };
 
 static const struct video_format_cap imx335_fmts[] = {
-	{
+	/* all-pixel scan mode */
+	[IMX335_RES_2592x1944] = {
 		.pixelformat = VIDEO_PIX_FMT_SRGGB10P,
-		.width_min = IMX335_WIDTH,
-		.width_max = IMX335_WIDTH,
-		.height_min = IMX335_HEIGHT,
-		.height_max = IMX335_HEIGHT,
+		.width_min = IMX335_NATIVE_WIDTH,
+		.width_max = IMX335_NATIVE_WIDTH,
+		.height_min = IMX335_NATIVE_HEIGHT,
+		.height_max = IMX335_NATIVE_HEIGHT,
+		.width_step = 0,
+		.height_step = 0,
+	},
+	/* 2x2 binning mode */
+	[IMX335_RES_1296x972] = {
+		.pixelformat = VIDEO_PIX_FMT_SRGGB10P,
+		.width_min = IMX335_BIN_2X2_WIDTH,
+		.width_max = IMX335_BIN_2X2_WIDTH,
+		.height_min = IMX335_BIN_2X2_HEIGHT,
+		.height_max = IMX335_BIN_2X2_HEIGHT,
 		.width_step = 0,
 		.height_step = 0,
 	},
 	{0}
 };
 
-static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
-{
-	/*
-	 * Only support RGGB10 for now and resolution is fixed hence only check
-	 * values here
-	 */
-	if (fmt->pixelformat != VIDEO_PIX_FMT_SRGGB10P ||
-	    fmt->width != IMX335_WIDTH ||
-	    fmt->height != IMX335_HEIGHT) {
-		LOG_ERR("Unsupported pixel format or resolution");
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
+static const uint32_t imx335_framerates[] = {
+	[IMX335_25_FPS] = 25,
+	[IMX335_30_FPS] = 30,
+	[IMX335_50_FPS] = 50,
+	[IMX335_60_FPS] = 60,
+};
 
 static int imx335_get_fmt(const struct device *dev, struct video_format *fmt)
 {
@@ -263,14 +366,17 @@ static int imx335_get_caps(const struct device *dev, struct video_caps *caps)
 static int imx335_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	const struct imx335_config *cfg = dev->config;
+	struct imx335_data *drv_data = dev->data;
 	int ret;
 
 	ret = video_write_cci_reg(&cfg->i2c, IMX335_STANDBY,
 				  enable ? IMX335_STANDBY_OPERATING : IMX335_STANDBY_STANDBY);
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Failed to set standby register\n");
 		return ret;
 	}
+
+	drv_data->enabled = enable;
 
 	k_sleep(K_USEC(20));
 
@@ -285,13 +391,13 @@ static int imx335_set_ctrl_gain(const struct device *dev)
 	int ret;
 
 	ret = video_write_cci_reg(&cfg->i2c, IMX335_REGHOLD, 1);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
 	/* Apply gain upon conversion to gain unit */
 	ret = video_write_cci_reg(&cfg->i2c, IMX335_GAIN, ctrls->gain.val / IMX335_GAIN_UNIT_MDB);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -306,14 +412,14 @@ static int imx335_set_ctrl_exposure(const struct device *dev)
 	int ret;
 
 	ret = video_write_cci_reg(&cfg->i2c, IMX335_REGHOLD, 1);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
 	/* Since we never update VMAX, we can use the default value directly */
 	ret = video_write_cci_reg(&cfg->i2c, IMX335_SHR0,
 				  IMX335_VMAX_DEFAULT - ctrls->exposure.val);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -332,24 +438,155 @@ static int imx335_set_ctrl(const struct device *dev, unsigned int cid)
 	}
 }
 
+static int imx335_set_frmival(const struct device *dev, struct video_frmival *frmival)
+{
+	const struct imx335_config *cfg = dev->config;
+	struct imx335_data *drv_data = dev->data;
+	int ret;
+
+	struct video_frmival_enum match = {
+		.format = &drv_data->fmt,
+		.type = VIDEO_FRMIVAL_TYPE_DISCRETE,
+		.discrete = *frmival,
+	};
+	video_closest_frmival(dev, &match);
+
+	uint16_t hmax;
+
+	switch (match.index) {
+	case IMX335_25_FPS:
+		hmax = (drv_data->fmt.width == IMX335_BIN_2X2_WIDTH
+				&& drv_data->fmt.height == IMX335_BIN_2X2_HEIGHT) ? 0x0280 : 0x0294;
+		break;
+	case IMX335_30_FPS:
+		hmax = 0x0226;
+		break;
+	case IMX335_50_FPS:
+		hmax = 0x0140;
+		break;
+	case IMX335_60_FPS:
+		hmax = 0x0113;
+		break;
+	default:
+		CODE_UNREACHABLE;
+	}
+
+	/* use REGHOLD to ensure that our change is applied consistently */
+	ret = video_write_cci_reg(&cfg->i2c, IMX335_REGHOLD, 1);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = video_write_cci_reg(&cfg->i2c, IMX335_HMAX, hmax);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = video_write_cci_reg(&cfg->i2c, IMX335_REGHOLD, 0);
+	if (ret < 0) {
+		return ret;
+	}
+
+	frmival->numerator = 1;
+	frmival->denominator = imx335_framerates[match.index];
+	drv_data->frame_rate = imx335_framerates[match.index];
+
+	return 0;
+}
+
+static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
+{
+	struct imx335_data *drv_data = dev->data;
+	const struct imx335_config *cfg = dev->config;
+	struct imx335_ctrls *ctrls = &drv_data->ctrls;
+	int ret;
+	size_t fmt_idx;
+
+	if (drv_data->enabled) {
+		LOG_ERR("Cannot set format while the stream is running");
+		return -EBUSY;
+	}
+
+	ret = video_format_caps_index(imx335_fmts, fmt, &fmt_idx);
+	if (ret < 0) {
+		LOG_ERR("Unsupported pixel format or resolution");
+		return ret;
+	}
+
+	if (fmt_idx == IMX335_RES_2592x1944) {
+		/* Full resolution */
+
+		ret = video_write_cci_multiregs(&cfg->i2c, imx335_bin_none,
+						ARRAY_SIZE(imx335_bin_none));
+		if (ret < 0) {
+			LOG_ERR("Failed to disable binning");
+			return ret;
+		}
+
+		ctrls->exposure.range.max = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN;
+		ctrls->exposure.range.def = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN;
+	} else if (fmt_idx == IMX335_RES_1296x972) {
+		/* 2x2 binning mode */
+
+		LOG_DBG("2x2 binning mode active");
+		ret = video_write_cci_multiregs(&cfg->i2c, imx335_bin_2x2,
+						ARRAY_SIZE(imx335_bin_2x2));
+		if (ret < 0) {
+			LOG_ERR("Failed to enable binning");
+			return ret;
+		}
+
+		ctrls->exposure.range.max = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN_BINNING;
+		ctrls->exposure.range.def = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN_BINNING;
+
+		/* update exposure, since the upper limit is lower if binning is active */
+		ctrls->exposure.val = MIN(ctrls->exposure.range.max, ctrls->exposure.val);
+		ret = imx335_set_ctrl_exposure(dev);
+		if (ret < 0) {
+			LOG_ERR("Failed to update exposure while enabling binning");
+			return ret;
+		}
+	}
+
+	drv_data->fmt.width = fmt->width;
+	drv_data->fmt.height = fmt->height;
+	/* update framerate, since the timing and allowed framerates may have changed */
+	struct video_frmival frmival = {
+		.numerator = 1,
+		.denominator = drv_data->frame_rate,
+	};
+
+	return imx335_set_frmival(dev, &frmival);
+}
+
 static int imx335_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
-	/* Only 30fps is supported right now */
+	struct imx335_data *drv_data = dev->data;
+
 	frmival->numerator = 1;
-	frmival->denominator = 30;
+	frmival->denominator = drv_data->frame_rate;
 
 	return 0;
 }
 
 static int imx335_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
-	if (fie->index > 0) {
+	size_t fmt_idx;
+	int ret;
+
+	ret = video_format_caps_index(imx335_fmts, fie->format, &fmt_idx);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if ((fmt_idx == IMX335_RES_2592x1944 && fie->index > IMX335_30_FPS)
+	     || (fmt_idx == IMX335_RES_1296x972 && fie->index > IMX335_60_FPS)) {
 		return -EINVAL;
 	}
 
 	fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
 	fie->discrete.numerator = 1;
-	fie->discrete.denominator = 30;
+	fie->discrete.denominator = imx335_framerates[fie->index];
 
 	return 0;
 }
@@ -360,8 +597,7 @@ static DEVICE_API(video, imx335_driver_api) = {
 	.get_caps = imx335_get_caps,
 	.set_stream = imx335_set_stream,
 	.set_ctrl = imx335_set_ctrl,
-	/* frmival is fixed, hence set/get_frmival both return 30fps */
-	.set_frmival = imx335_get_frmival,
+	.set_frmival = imx335_set_frmival,
 	.get_frmival = imx335_get_frmival,
 	.enum_frmival = imx335_enum_frmival,
 };
@@ -413,7 +649,7 @@ static int imx335_init_controls(const struct device *dev)
 			.max = IMX335_GAIN_MAX,
 			.step = IMX335_GAIN_UNIT_MDB,
 			.def = 0});
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -424,7 +660,7 @@ static int imx335_init_controls(const struct device *dev)
 			.max = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN,
 			.step = 1,
 			.def = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN});
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -440,6 +676,7 @@ static int imx335_init_controls(const struct device *dev)
 static int imx335_init(const struct device *dev)
 {
 	const struct imx335_config *cfg = dev->config;
+	struct imx335_data *drv_data = dev->data;
 	int ret;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
@@ -457,7 +694,7 @@ static int imx335_init(const struct device *dev)
 
 		/* Power up sequence */
 		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
-		if (ret) {
+		if (ret < 0) {
 			return ret;
 		}
 
@@ -472,7 +709,7 @@ static int imx335_init(const struct device *dev)
 	/* Initialize register values */
 	ret = video_write_cci_multiregs(&cfg->i2c, imx335_init_params,
 					ARRAY_SIZE(imx335_init_params));
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Unable to initialize the sensor");
 		return ret;
 	}
@@ -480,21 +717,27 @@ static int imx335_init(const struct device *dev)
 	/* Apply the fixed value registers */
 	ret = video_write_cci_multiregs16(&cfg->i2c, imx335_fixed_regs,
 					  ARRAY_SIZE(imx335_fixed_regs));
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Unable to initialize the sensor");
+		return ret;
+	}
+
+	ret = imx335_set_fmt(dev, &drv_data->fmt);
+	if (ret < 0) {
+		LOG_ERR("Unable to apply format");
 		return ret;
 	}
 
 	/* TODO - Only 10bit - 2 data lanes mode is supported for the time being */
 	ret = video_write_cci_multiregs(&cfg->i2c, imx335_mode_2l_10b,
 					ARRAY_SIZE(imx335_mode_2l_10b));
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Unable to initialize the sensor");
 		return ret;
 	}
 
 	ret = imx335_set_input_clk(dev, cfg->input_clk);
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Unable to configure INCK");
 		return ret;
 	}
@@ -512,9 +755,11 @@ static int imx335_init(const struct device *dev)
 	static struct imx335_data imx335_data_##n = {						\
 		.fmt = {									\
 			.pixelformat = VIDEO_PIX_FMT_SRGGB10P,					\
-			.width = IMX335_WIDTH,							\
-			.height = IMX335_HEIGHT,						\
+			.width = IMX335_NATIVE_WIDTH,						\
+			.height = IMX335_NATIVE_HEIGHT,						\
 		},										\
+		.frame_rate = 30,								\
+		.enabled = false,								\
 	};											\
 	static const struct imx335_config imx335_cfg_##n = {					\
 		.i2c = I2C_DT_SPEC_INST_GET(n),							\

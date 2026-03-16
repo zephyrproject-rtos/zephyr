@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright 2025-2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +23,13 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 
+/* Cortex M's USE_SWITCH implementation is somewhat unique and doesn't
+ * use much of the thread struct
+ */
+#if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_USE_SWITCH)
+#define _ARM_M_SWITCH
+#endif
+
 struct _callee_saved {
 	uint32_t v1;  /* r4 */
 	uint32_t v2;  /* r5 */
@@ -41,6 +49,7 @@ typedef struct _callee_saved _callee_saved_t;
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 struct _preempt_float {
+#ifndef _ARM_M_SWITCH
 	float  s16;
 	float  s17;
 	float  s18;
@@ -57,16 +66,33 @@ struct _preempt_float {
 	float  s29;
 	float  s30;
 	float  s31;
+#endif /* !_ARM_M_SWITCH */
+};
+#endif
+
+#if defined(CONFIG_ARM_PAC_PER_THREAD)
+struct pac_keys {
+	uint32_t key_0;
+	uint32_t key_1;
+	uint32_t key_2;
+	uint32_t key_3;
 };
 #endif
 
 struct _thread_arch {
 
+#ifndef _ARM_M_SWITCH
 	/* interrupt locking key */
 	uint32_t basepri;
 
 	/* r0 in stack frame cannot be written to reliably */
 	uint32_t swap_return_value;
+#endif
+
+#ifdef _ARM_M_SWITCH
+	uint32_t iciit_pc;
+	uint32_t iciit_apsr;
+#endif
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/*
@@ -128,11 +154,15 @@ struct _thread_arch {
 
 #if defined(CONFIG_USERSPACE)
 	uint32_t priv_stack_start;
-#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 	uint32_t priv_stack_end;
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 	uint32_t sp_usr;
 #endif
 #endif
+#endif
+
+#if defined(CONFIG_ARM_PAC_PER_THREAD)
+	struct pac_keys pac_keys;
 #endif
 };
 

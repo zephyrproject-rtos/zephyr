@@ -7,9 +7,13 @@
 &zephyr_lcdif {
 	compatible = "nxp,dcnano-lcdif";
 	version = "DC8000";
+
 	display-timings {
 		clock-frequency = <29333333>;
 	};
+
+	/* Secondary RAM space for large frame buffer(s). */
+	ext-ram = <&psram2>;
 };
 
 &zephyr_mipi_dsi {

@@ -17,7 +17,7 @@
 };
 
 spi: &scb1 {
-	compatible = "infineon,cat1-spi";
+	compatible = "infineon,spi";
 	status = "okay";
 
 	pinctrl-0 = <&p10_0_scb1_spi_m_mosi &p10_1_scb1_spi_m_miso &p10_2_scb1_spi_m_clk>;

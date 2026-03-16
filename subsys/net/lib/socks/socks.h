@@ -21,12 +21,12 @@
  */
 #if defined(CONFIG_SOCKS)
 int net_socks5_connect(struct net_context *ctx,
-		       const struct sockaddr *dest,
-		       socklen_t dest_len);
+		       const struct net_sockaddr *dest,
+		       net_socklen_t dest_len);
 #else
 inline int net_socks5_connect(struct net_context *ctx,
-			      const struct sockaddr *dest,
-			      socklen_t dest_len)
+			      const struct net_sockaddr *dest,
+			      net_socklen_t dest_len)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(dest);

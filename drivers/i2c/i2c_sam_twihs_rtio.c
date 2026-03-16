@@ -159,11 +159,11 @@ static void read_msg_start(Twihs *const twihs, const uint32_t len, const uint8_t
 	/* In single data byte read the START and STOP must both be set */
 	twihs_cr_stop = (len == 1U) ? TWIHS_CR_STOP : 0;
 
-	/* Enable Receive Ready and Transmission Completed interrupts */
-	twihs->TWIHS_IER = TWIHS_IER_RXRDY | TWIHS_IER_TXCOMP | TWIHS_IER_NACK;
-
 	/* Start the transfer by sending START condition */
 	twihs->TWIHS_CR = TWIHS_CR_START | twihs_cr_stop;
+
+	/* Enable Receive Ready and Transmission Completed interrupts */
+	twihs->TWIHS_IER = TWIHS_IER_RXRDY | TWIHS_IER_TXCOMP | TWIHS_IER_NACK;
 }
 
 static void i2c_sam_twihs_complete(const struct device *dev, int status);

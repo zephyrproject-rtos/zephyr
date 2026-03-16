@@ -509,22 +509,20 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 
 		if (fds[0].revents & ZSOCK_POLLERR) {
 			int sock_err;
-			socklen_t optlen = sizeof(sock_err);
+			net_socklen_t optlen = sizeof(sock_err);
 
-			(void)zsock_getsockopt(sock, SOL_SOCKET, SO_ERROR, &sock_err, &optlen);
+			(void)zsock_getsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_ERROR,
+					       &sock_err, &optlen);
 			ret = -sock_err;
 			goto error;
 		} else if (fds[0].revents & ZSOCK_POLLNVAL) {
 			ret = -EBADF;
 			goto error;
-		} else if (fds[0].revents & ZSOCK_POLLHUP) {
-			/* Connection closed */
-			goto closed;
 		} else if (fds[0].revents & ZSOCK_POLLIN) {
 			received = zsock_recv(sock, req->internal.response.recv_buf + offset,
 					      req->internal.response.recv_buf_len - offset, 0);
-			if (received == 0) {
-				/* Connection closed */
+			if (received == 0 && total_received == 0) {
+				/* Connection closed, no data received */
 				goto closed;
 			} else if (received < 0) {
 				ret = -errno;
@@ -537,9 +535,12 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 			/* Initialize the data length with the received data length. */
 			req->internal.response.data_len = offset;
 
+			/* In case of EOF on a socket, indicate this by passing
+			 * 0 length to the parser.
+			 */
 			processed = http_parser_execute(
 				&req->internal.parser, &req->internal.parser_settings,
-				req->internal.response.recv_buf, offset);
+				req->internal.response.recv_buf, received > 0 ? offset : 0);
 
 			if (processed > offset) {
 				LOG_ERR("HTTP parser error, too much data consumed");
@@ -593,6 +594,9 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 					req->internal.response.recv_buf + processed,
 					offset);
 			}
+		} else if (fds[0].revents & ZSOCK_POLLHUP) {
+			/* Connection closed */
+			goto closed;
 		}
 
 	} while (!req->internal.response.message_complete);

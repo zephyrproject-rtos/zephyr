@@ -4,7 +4,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <ksched.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <zephyr/logging/log.h>
@@ -46,7 +45,7 @@ void arch_syscall_oops(void *ssf_ptr)
 {
 	struct x86_ssf *ssf = ssf_ptr;
 
-	LOG_ERR("Bad system call from RIP 0x%lx", ssf->rip);
+	EXCEPTION_DUMP("Bad system call from RIP 0x%lx", ssf->rip);
 
 	z_x86_fatal_error(K_ERR_KERNEL_OOPS, NULL);
 }

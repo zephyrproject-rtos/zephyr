@@ -26,14 +26,14 @@ Hardware
 The STM32G474RE SoC provides the following hardware IPs:
 
 - Ultra-low-power with FlexPowerControl (down to 28 nA Standby mode and 84
-  |micro| A/MHz run mode)
-- Core: ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU, frequency up to 170 MHz
+  µA/MHz run mode)
+- Core: ARM® 32-bit Cortex®-M4 CPU with FPU, frequency up to 170 MHz
 - Clock Sources:
 
   - 4 to 48 MHz crystal oscillator (HSE)
   - 32 kHz crystal oscillator for RTC (LSE)
-  - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
-  - Internal low-power 32 kHz RC ( |plusminus| 5%)
+  - Internal 16 MHz factory-trimmed RC (±1%)
+  - Internal low-power 32 kHz RC (±5%)
   - 2 PLLs for system clock, USB, audio, ADC
 
 - RTC with HW calendar, alarms and calibration
@@ -51,13 +51,13 @@ The STM32G474RE SoC provides the following hardware IPs:
 - Up to 86 fast I/Os, most 5 V-tolerant
 - Memories
 
-  - Up to 128 KB single bank Flash, proprietary code readout protection
-  - Up to 22 KB of SRAM including 16 KB with hardware parity check
+  - Up to 512 KB single bank Flash, proprietary code readout protection
+  - Up to 128 KB of SRAM including 32 KB with hardware parity check
 
 - Rich analog peripherals (independent supply)
 
   - 2x 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200
-    |micro| A/MSPS
+    µA/MSPS
   - 4x 12-bit DAC, low-power sample and hold
   - 3x operational amplifiers with built-in PGA
   - 4x ultra-fast rail-to-rail analog comparators
@@ -72,7 +72,7 @@ The STM32G474RE SoC provides the following hardware IPs:
   - 1x SAI (serial audio interface)
   - USB 2.0 full-speed interface with LPM and BCD support
   - IRTIM (Infrared interface)
-  - USB Type-C™ /USB power delivery controller (UCPD)
+  - USB Type-C® /USB power delivery controller (UCPD)
 
 - 12-channel DMA controller
 - True random number generator (RNG)

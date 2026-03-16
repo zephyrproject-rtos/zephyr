@@ -10,7 +10,7 @@ Overview
 This sample application periodically reads the 8x8 temperature array from
 the AMG88XX sensor and displays its values to the serial console.
 The sample can also be configured to be triggered when the upper threshold
-of 27 |deg| Celsius has been reached.
+of 27 °C has been reached.
 
 Building and Running
 ********************
@@ -21,7 +21,7 @@ for the list of supported shields and build instructions.
 Sample Output
 =============
 
-Sample shows values in |deg| C  multiplied by 100.
+Sample shows values in °C  multiplied by 100.
 
 .. code-block:: console
 

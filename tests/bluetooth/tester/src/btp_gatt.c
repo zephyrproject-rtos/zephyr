@@ -452,6 +452,7 @@ static int alloc_characteristic(struct add_characteristic *ch)
 	chrc_data->uuid = attr_value->uuid;
 
 	ch->char_id = attr_chrc->handle;
+
 	return 0;
 }
 
@@ -1682,7 +1683,6 @@ static uint8_t read_multiple_var(const void *cmd, uint16_t cmd_len,
 	const struct btp_gatt_read_multiple_var_cmd *cp = cmd;
 	uint16_t handles[5];
 	struct bt_conn *conn;
-	int i;
 
 	if ((cmd_len < sizeof(*cp)) ||
 	    (cmd_len != sizeof(*cp) + (cp->handles_count * sizeof(cp->handles[0])))) {
@@ -1693,7 +1693,7 @@ static uint8_t read_multiple_var(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(handles); i++) {
+	for (int i = 0; i < cp->handles_count; i++) {
 		handles[i] = sys_le16_to_cpu(cp->handles[i]);
 	}
 
@@ -1708,7 +1708,7 @@ static uint8_t read_multiple_var(const void *cmd, uint16_t cmd_len,
 	}
 
 	read_params.func = read_cb;
-	read_params.handle_count = i;
+	read_params.handle_count = cp->handles_count;
 	read_params.multiple.handles = handles; /* not used in read func */
 	read_params.multiple.variable = true;
 #if defined(CONFIG_BT_EATT)
@@ -1749,34 +1749,6 @@ static uint8_t write_without_rsp(const void *cmd, uint16_t cmd_len,
 					   cp->data,
 					   sys_le16_to_cpu(cp->data_length),
 					   false) < 0) {
-		bt_conn_unref(conn);
-		return BTP_STATUS_FAILED;
-	}
-
-	bt_conn_unref(conn);
-	return BTP_STATUS_SUCCESS;
-}
-
-static uint8_t write_signed_without_rsp(const void *cmd, uint16_t cmd_len,
-					void *rsp, uint16_t *rsp_len)
-{
-	const struct btp_gatt_signed_write_without_rsp_cmd *cp = cmd;
-	struct bt_conn *conn;
-
-	if (cmd_len < sizeof(*cp) ||
-	    cmd_len != sizeof(*cp) + sys_le16_to_cpu(cp->data_length)) {
-		return BTP_STATUS_FAILED;
-	}
-
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
-	if (!conn) {
-		return BTP_STATUS_FAILED;
-	}
-
-	if (bt_gatt_write_without_response(conn, sys_le16_to_cpu(cp->handle),
-					   cp->data,
-					   sys_le16_to_cpu(cp->data_length),
-					   true) < 0) {
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
@@ -2112,7 +2084,7 @@ static uint8_t notify_mult(const void *cmd, uint16_t cmd_len,
 	struct bt_conn *conn;
 	const size_t min_cnt = 1U;
 	int err = 0;
-	uint16_t attr_data_len = 0;
+	uint16_t server_db_start_handle = server_db[0].handle;
 
 	if ((cmd_len < sizeof(*cp)) ||
 	    (cmd_len != sizeof(*cp) + (cp->cnt * sizeof(cp->attr_id[0])))) {
@@ -2134,14 +2106,23 @@ static uint8_t notify_mult(const void *cmd, uint16_t cmd_len,
 	(void)memset(params, 0, sizeof(params));
 
 	for (uint16_t i = 0U; i < cp->cnt; i++) {
-		struct bt_gatt_attr attr = server_db[cp->attr_id[i] -
-			server_db[0].handle];
+		const struct bt_gatt_attr *attr;
+		const struct gatt_value *value;
+		uint16_t handle = sys_le16_to_cpu(cp->attr_id[i]);
 
-		attr_data_len = strtoul(attr.user_data, NULL, 16);
+		if (!IN_RANGE(handle, server_db_start_handle,
+			      server_db_start_handle + attr_count)) {
+			LOG_ERR("ATT handle %u not in server DB range", handle);
+			return BTP_STATUS_FAILED;
+		}
+
+		attr = &server_db[handle - server_db_start_handle];
+		value = attr->user_data;
+
 		params[i].uuid = 0;
-		params[i].attr = &attr;
-		params[i].data = &attr.user_data;
-		params[i].len = attr_data_len;
+		params[i].attr = attr;
+		params[i].data = value->data;
+		params[i].len = value->len;
 		params[i].func = notify_cb;
 		params[i].user_data = NULL;
 	}
@@ -2158,6 +2139,71 @@ static uint8_t notify_mult(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 #endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
+
+static uint8_t get_handle_from_uuid(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gatt_get_handle_from_uuid_cmd *cp = cmd;
+	struct btp_gatt_get_handle_from_uuid_rp *rp = rsp;
+	struct bt_uuid search_uuid;
+
+	if (btp2bt_uuid(cp->uuid, cp->uuid_length, &search_uuid)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	__maybe_unused char uuid_str[BT_UUID_STR_LEN];
+
+	bt_uuid_to_str(&search_uuid, uuid_str, sizeof(uuid_str));
+
+	LOG_DBG("Searching handle for UUID %s", uuid_str);
+
+	for (int i = 0; i < attr_count; i++) {
+		if (server_db[i].uuid != NULL &&
+		    bt_uuid_cmp(server_db[i].uuid, &search_uuid) == 0) {
+			rp->handle = sys_cpu_to_le16(server_db[i].handle);
+			*rsp_len = sizeof(*rp);
+
+			return BTP_STATUS_SUCCESS;
+		}
+	}
+
+	LOG_DBG("No handle found");
+	return BTP_STATUS_FAILED;
+}
+
+static uint8_t remove_by_handle_from_db(const void *cmd, uint16_t cmd_len, void *rsp,
+						uint16_t *rsp_len)
+{
+	const struct btp_gatt_remove_handle_from_db_cmd *cp = cmd;
+	uint16_t handle = sys_le16_to_cpu(cp->handle);
+
+	/* Search for the service that contains the attribute with the given handle and unregister
+	 * it.
+	 */
+
+	for (int i = 0; i < svc_count; i++) {
+		for (int j = 0; j < server_svcs[i].attr_count; j++) {
+			if (server_svcs[i].attrs[j].handle == handle) {
+				int err;
+
+				err = bt_gatt_service_unregister(&server_svcs[i]);
+				if (err < 0 && err != -ENOENT) {
+					LOG_ERR("Failed to unregister service [%d]: %d", i, err);
+					return BTP_STATUS_FAILED;
+				}
+
+				if (err == -ENOENT) {
+					LOG_WRN("Service [%d] already unregistered", i);
+				} else {
+					LOG_DBG("Service [%d] unregistered", i);
+				}
+
+				return BTP_STATUS_SUCCESS;
+			}
+		}
+	}
+
+	return BTP_STATUS_FAILED;
+}
 
 struct get_attrs_foreach_data {
 	struct net_buf_simple *buf;
@@ -2534,11 +2580,6 @@ static const struct btp_handler handlers[] = {
 		.func = write_without_rsp,
 	},
 	{
-		.opcode = BTP_GATT_SIGNED_WRITE_WITHOUT_RSP,
-		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
-		.func = write_signed_without_rsp,
-	},
-	{
 		.opcode = BTP_GATT_WRITE,
 		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = write_data,
@@ -2589,6 +2630,16 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_GATT_NOTIFY_MULTIPLE,
 		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = notify_mult,
+	},
+	{
+		.opcode = BTP_GATT_GET_HANDLE_FROM_UUID,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = get_handle_from_uuid,
+	},
+	{
+		.opcode = BTP_GATT_REMOVE_HANDLE_FROM_DB,
+		.expect_len = sizeof(struct btp_gatt_remove_handle_from_db_cmd),
+		.func = remove_by_handle_from_db,
 	},
 };
 

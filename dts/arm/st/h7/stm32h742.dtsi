@@ -22,11 +22,11 @@
 		};
 
 		dmamux1: dmamux@40020800 {
-			dma-requests= <107>;
+			dma-requests = <107>;
 		};
 
 		dmamux2: dmamux@58025800 {
-			dma-requests= <12>;
+			dma-requests = <12>;
 		};
 
 		usbotg_fs: usb@40080000 {
@@ -64,8 +64,9 @@
 
 	/* System data RAM accessible over AXI bus: AXI SRAM in D1 domain */
 	sram0: memory@24000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x24000000 DT_SIZE_K(384)>;
+		zephyr,memory-region = "SRAM0";
 	};
 
 	/* System data RAM accessible over AHB bus: SRAM1 in D2 domain */
@@ -80,6 +81,7 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x30020000 DT_SIZE_K(16)>;
 		zephyr,memory-region = "SRAM2";
+		#memory-region-cells = <0>;
 	};
 
 	/* System data RAM accessible over AHB bus: SRAM4 in D3 domain  */
@@ -87,18 +89,6 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x38000000 DT_SIZE_K(64)>;
 		zephyr,memory-region = "SRAM4";
-	};
-
-	dtcm: memory@20000000 {
-		compatible = "zephyr,memory-region", "arm,dtcm";
-		reg = <0x20000000 DT_SIZE_K(128)>;
-		zephyr,memory-region = "DTCM";
-	};
-
-	itcm: memory@0 {
-		compatible = "zephyr,memory-region", "arm,itcm";
-		reg = <0x00000000 DT_SIZE_K(64)>;
-		zephyr,memory-region = "ITCM";
 	};
 
 	otghs_fs_phy: otghs_fs_phy {

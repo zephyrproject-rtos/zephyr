@@ -14,17 +14,42 @@ config NXP_IMX_EXTERNAL_HYPERRAM
 
 if SECOND_CORE_MCUX && BOARD_MIMXRT1180_EVK_MIMXRT1189_CM7
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+
+config FLASH_LOAD_OFFSET
+	depends on CM7_BOOT_FROM_FLASH
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+config FLASH_LOAD_SIZE
+	depends on CM7_BOOT_FROM_FLASH
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
 config BUILD_OUTPUT_INFO_HEADER
 	default y
 
 DT_CHOSEN_IMAGE_M7 = nxp,m7-partition
+DT_CHOSEN_ZEPHYR_FLASH = zephyr,flash
 
-# Adjust the offset of the output image if building for RT18xx SOC
+# Only adjust LMA if running from RAM
+if !CM7_BOOT_FROM_FLASH
+
+# Adjust the offset of the output image if building for RT118x SOC in RAM
+FLEXSPI_BASE := $(dt_nodelabel_reg_addr_hex,flexspi,1)
+M7_CODE_BASE := $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_ZEPHYR_FLASH))
+IMAGE_M7_ADDR := $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M7))
+
 config BUILD_OUTPUT_ADJUST_LMA
-	default "($(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M7)) + \
-	$(dt_node_reg_addr_hex,/soc/spi@425e0000,1)) - \
-	$(dt_node_reg_addr_hex,/soc/itcm@0)"
+	default "($(IMAGE_M7_ADDR) + $(FLEXSPI_BASE) - $(M7_CODE_BASE))"
 
-endif
+endif # !CM7_BOOT_FROM_FLASH
+endif # SECOND_CORE_MCUX && BOARD_MIMXRT1180_EVK_MIMXRT1189_CM7
+
+if DMA
+
+config NOCACHE_MEMORY
+	default y
+
+endif # DMA
 
 endif # BOARD_MIMXRT1180_EVK

@@ -815,6 +815,63 @@ static int cmd_net_default_iface(const struct shell *sh, size_t argc, char *argv
 	return 0;
 }
 
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+static int cmd_net_txinjection(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface;
+	int idx;
+	int ret;
+	bool enable;
+
+	if (argc < 3) {
+		PR_WARNING("Usage: net iface txinjection <index> <on|off>\n");
+		return -ENOEXEC;
+	}
+
+	idx = get_iface_idx(sh, argv[1]);
+	if (idx < 0) {
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		PR_WARNING("No such interface in index %d\n", idx);
+		return -ENOEXEC;
+	}
+
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		PR_WARNING("TX injection mode only supported on Ethernet interfaces\n");
+		return -ENOEXEC;
+	}
+
+	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_TXINJECTION_MODE)) {
+		PR_WARNING("TX injection mode not supported by this interface\n");
+		return -ENOTSUP;
+	}
+
+	if (!strcmp(argv[2], "on") || !strcmp(argv[2], "1") ||
+	    !strcmp(argv[2], "enable")) {
+		enable = true;
+	} else if (!strcmp(argv[2], "off") || !strcmp(argv[2], "0") ||
+		   !strcmp(argv[2], "disable")) {
+		enable = false;
+	} else {
+		PR_WARNING("Invalid argument: %s (use on/off)\n", argv[2]);
+		return -EINVAL;
+	}
+
+	ret = net_eth_txinjection_mode(iface, enable);
+	if (ret < 0) {
+		PR_WARNING("Failed to set TX injection mode (%d)\n", ret);
+		return ret;
+	}
+
+	PR("TX injection mode %s on interface %d\n", enable ? "enabled" : "disabled", idx);
+
+	return 0;
+}
+#endif /* CONFIG_NET_L2_ETHERNET */
+
 #if defined(CONFIG_ETH_PHY_DRIVER)
 static int cmd_net_link_speed(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -905,27 +962,30 @@ static int cmd_net_link_speed(const struct shell *sh, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_iface,
 	SHELL_CMD(up, IFACE_DYN_CMD,
-		  "'net iface up <index>' takes network interface up.",
+		  SHELL_HELP("Takes network interface up", "<index>"),
 		  cmd_net_iface_up),
 	SHELL_CMD(down, IFACE_DYN_CMD,
-		  "'net iface down <index>' takes network interface "
-		  "down.",
+		  SHELL_HELP("Takes network interface down", "<index>"),
 		  cmd_net_iface_down),
 	SHELL_CMD(show, IFACE_DYN_CMD,
-		  "'net iface <index>' shows network interface "
-		  "information.",
+		  SHELL_HELP("Shows network interface information", "<index>"),
 		  cmd_net_iface),
 	SHELL_CMD(set_mac, IFACE_DYN_CMD,
-		  "'net iface set_mac <index> <MAC>' sets MAC address for the network interface.",
+		  SHELL_HELP("Sets MAC address for the network interface", "<index> <MAC>"),
 		  cmd_net_set_mac),
 	SHELL_CMD(default, IFACE_DYN_CMD,
-		  "'net iface default [<index>]' displays or sets the default network interface.",
+		  SHELL_HELP("Displays or sets the default network interface", "[<index>]"),
 		  cmd_net_default_iface),
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+	SHELL_CMD(txinjection, IFACE_DYN_CMD,
+		  SHELL_HELP("Enables or disables TX injection mode on the network interface",
+			     "<index> <on|off>"),
+		  cmd_net_txinjection),
+#endif /* CONFIG_NET_L2_ETHERNET_MGMT */
 #if defined(CONFIG_ETH_PHY_DRIVER)
 	SHELL_CMD(set_link, IFACE_DYN_CMD,
-		  "'net iface set_link <index> <Speed 10/100/1000/2500/5000> "
-		  "<Duplex[optional]:h/f>'"
-		  " sets link speed for the network interface.",
+		  SHELL_HELP("Sets link speed for the network interface",
+			     "<index> <Speed 10/100/1000/2500/5000> <Duplex[optional]:h/f>"),
 		  cmd_net_link_speed),
 #endif /* CONFIG_ETH_PHY_DRIVER */
 	SHELL_SUBCMD_SET_END

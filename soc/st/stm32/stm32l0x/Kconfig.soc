@@ -61,6 +61,10 @@ config SOC_STM32L081XX
 	bool
 	select SOC_SERIES_STM32L0X
 
+config SOC_STM32L083XX
+	bool
+	select SOC_SERIES_STM32L0X
+
 config SOC
 	default "stm32l010x4" if SOC_STM32L010X4
 	default "stm32l010x6" if SOC_STM32L010X6
@@ -74,3 +78,4 @@ config SOC
 	default "stm32l072xx" if SOC_STM32L072XX
 	default "stm32l073xx" if SOC_STM32L073XX
 	default "stm32l081xx" if SOC_STM32L081XX
+	default "stm32l083xx" if SOC_STM32L083XX

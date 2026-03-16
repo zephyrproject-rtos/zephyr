@@ -9,17 +9,8 @@ description: |
   The specification of the sensor can be found at:
     https://www.ti.com/lit/ds/symlink/tmag5273.pdf
 
-    When setting the enum properties in a .dts or .dtsi file you may
-    include tmag5273.h and use the macros defined there.
-
-    Example:
-    #include <zephyr/dt-bindings/sensor/tmag5273.h>
-
-    tmag5273: tmag5273@0 {
-      ...
-      axis = <TMAG5273_DT_AXIS_XYZ>;
-      range = <TMAG5273_DT_AXIS_RANGE_HIGH>;
-    };
+  When setting the enum properties in a .dts or .dtsi file you may
+  include tmag5273.h and use the macros defined there.
 
 compatible: "ti,tmag5273"
 
@@ -134,6 +125,18 @@ properties:
 
       Only active if angle-magnitude-calculation is active.
 
+  mag-gain-correction:
+    type: int
+    default: 0
+    description: |
+      Gain value for axis determined by ch-mag-gain-correction.
+
+      The value is between 0 and 255, interpreted as a fractional
+      value between 0 and 1 (mag-gain-correction/256). Gain value of 0
+      is interpreted as 1.
+
+      The default corresponds to the reset value of the register field.
+
   average-mode:
     type: int
     default: 1
@@ -167,3 +170,13 @@ properties:
     description: |
       Ignore detected diagnostic fail.
       According to the manual, this should be done if VCC < 2.3V.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/tmag5273.h>
+
+    tmag5273: tmag5273@0 {
+      /* ... */
+      axis = <TMAG5273_DT_AXIS_XYZ>;
+      range = <TMAG5273_DT_AXIS_RANGE_HIGH>;
+    };

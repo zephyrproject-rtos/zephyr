@@ -3,4 +3,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_SIM3U1XX_DK
-	select SOC_PART_NUMBER_SIM3U167AGQ
+	select SOC_SIM3U167AGQ

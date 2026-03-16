@@ -165,7 +165,7 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 		sys_cache_data_flush_range(pinned->data, pinned->len);
 		p->tx_frags[d_idx] = pinned;
 		LOG_DBG("d[%d]: frag %p pinned %p len %d", d_idx,
-			frag->data, pinned->data, pinned->len);
+			(void *)frag->data, (void *)pinned->data, pinned->len);
 
 		/* if no more fragments after this one: */
 		if (!frag->frags) {
@@ -236,7 +236,7 @@ static void dwmac_tx_release(struct dwmac_priv *p)
 
 		/* release corresponding fragments */
 		frag = p->tx_frags[d_idx];
-		LOG_DBG("unref frag %p", frag->data);
+		LOG_DBG("unref frag %p", (void *)frag->data);
 		net_pkt_frag_unref(frag);
 
 		/* last packet descriptor: */
@@ -366,12 +366,12 @@ static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
 				k_sem_give(&p->free_rx_descs);
 				break;
 			}
-			LOG_DBG("new frag[%d] at %p", d_idx, frag->data);
+			LOG_DBG("new frag[%d] at %p", d_idx, (void *)frag->data);
 			__ASSERT(frag->size == RX_FRAG_SIZE, "");
 			sys_cache_data_invd_range(frag->data, frag->size);
 			p->rx_frags[d_idx] = frag;
 		} else {
-			LOG_DBG("reusing frag[%d] at %p", d_idx, frag->data);
+			LOG_DBG("reusing frag[%d] at %p", d_idx, (void *)frag->data);
 		}
 
 		/* all is good: initialize the descriptor */
@@ -596,7 +596,10 @@ int dwmac_probe(const struct device *dev)
 	LOG_DBG("hw_feature: 0x%08x 0x%08x 0x%08x 0x%08x",
 		p->feature0, p->feature1, p->feature2, p->feature3);
 
-	dwmac_platform_init(p);
+	ret = dwmac_platform_init(p);
+	if (ret != 0) {
+		return ret;
+	}
 
 	memset(p->tx_descs, 0, NB_TX_DESCS * sizeof(struct dwmac_dma_desc));
 	memset(p->rx_descs, 0, NB_RX_DESCS * sizeof(struct dwmac_dma_desc));

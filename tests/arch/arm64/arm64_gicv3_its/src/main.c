@@ -19,12 +19,19 @@ static void lpi_irq_handle(const void *parameter)
 	last_lpi_irq_num = i;
 }
 
+#if defined(CONFIG_SOC_MIMX9596_A55) || defined(CONFIG_SOC_MIMX94398_A55)
+/* DeviceID is 8bits */
+#define ITS_TEST_DEV(id)        (id & 0xff)
+/* Cover up to 832 LPIs over 26 DevicesIDs and 32 EventIDs per DeviceID */
+#define ITS_TEST_NUM_DEVS       26
+#define ITS_TEST_NUM_ITES       32
+#else
 /* Generate a DeviceID over the whole 16bits */
 #define ITS_TEST_DEV(id)        ((((id + 256) % 16) << 12) | (((id + 256) % 24) << 8) | (id & 0xff))
-
 /* Cover up to 8192 LPIs over 256 DevicesIDs and 32 EventIDs per DeviceID */
 #define ITS_TEST_NUM_DEVS       256
 #define ITS_TEST_NUM_ITES       32
+#endif
 
 /* Do not test all 8192 irqs, iterate with a prime offset to cover most of the possible event_ids */
 #define ITS_TEST_NEXT		13

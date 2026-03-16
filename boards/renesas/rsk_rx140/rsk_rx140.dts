@@ -1,0 +1,143 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/r5f51406.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include "rsk_rx140-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	model = "Renesas RSK-RX140 KIT";
+	compatible = "renesas,rsk_rx140";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &code_flash;
+		zephyr,flash-controller = &flash;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&ioport0 4 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		led3: led3 {
+			gpios = <&ioport0 7 GPIO_ACTIVE_LOW>;
+			label = "LED3";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		sw1: button {
+			label = "sw1";
+			gpios = <&ioport3 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+		led1 = &led3;
+		watchdog0 = &iwdt;
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(8)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	status = "okay";
+};
+
+&cmt {
+	clock-frequency = <3000000>;
+	status = "okay";
+};
+
+&ioport0 {
+	status = "okay";
+};
+
+&ioport3 {
+	status = "okay";
+};
+
+&port_irq1 {
+	status = "okay";
+};
+
+&mtu1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+
+	pwm1: pwm {
+		status = "okay";
+	};
+};
+
+&sci1 {
+	pinctrl-0 = <&sci1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart1: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&rspi0 {
+	pinctrl-0 = <&rspi0_default>;
+	pinctrl-names = "default";
+	ssl-assert = <0>;
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <DT_FREQ_K(400)>;
+	status = "okay";
+};
+
+&data_flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0x0 DT_SIZE_K(8)>;
+		};
+	};
+};
+
+&iwdt {
+	window-start = <0x3000>;
+	window-end = <0x0300>;
+	status = "okay";
+};

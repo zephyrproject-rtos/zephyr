@@ -214,8 +214,8 @@ static const unsigned char ack[] = {
 0xff
 };
 
-static const struct in_addr server_addr = { { { 192, 0, 2, 1 } } };
-static const struct in_addr client_addr = { { { 255, 255, 255, 255 } } };
+static const struct net_in_addr server_addr = { { { 192, 0, 2, 1 } } };
+static const struct net_in_addr client_addr = { { { 255, 255, 255, 255 } } };
 
 #define SERVER_PORT		67
 #define CLIENT_PORT		68
@@ -300,8 +300,8 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, uint32_t xid)
 {
 	struct net_pkt *pkt;
 
-	pkt = net_pkt_alloc_with_buffer(iface, sizeof(offer), AF_INET,
-					IPPROTO_UDP, K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(offer), NET_AF_INET,
+					NET_IPPROTO_UDP, K_FOREVER);
 	if (!pkt) {
 		return NULL;
 	}
@@ -309,7 +309,7 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, uint32_t xid)
 	net_pkt_set_ipv4_ttl(pkt, 0xFF);
 
 	if (net_ipv4_create(pkt, &server_addr, &client_addr) ||
-	    net_udp_create(pkt, htons(SERVER_PORT), htons(CLIENT_PORT))) {
+	    net_udp_create(pkt, net_htons(SERVER_PORT), net_htons(CLIENT_PORT))) {
 		goto fail;
 	}
 
@@ -328,7 +328,7 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, uint32_t xid)
 
 	net_pkt_cursor_init(pkt);
 
-	net_ipv4_finalize(pkt, IPPROTO_UDP);
+	net_ipv4_finalize(pkt, NET_IPPROTO_UDP);
 
 	offer_xid = xid;
 
@@ -343,8 +343,8 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, uint32_t xid)
 {
 	struct net_pkt *pkt;
 
-	pkt = net_pkt_alloc_with_buffer(iface, sizeof(offer), AF_INET,
-					IPPROTO_UDP, K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(offer), NET_AF_INET,
+					NET_IPPROTO_UDP, K_FOREVER);
 	if (!pkt) {
 		return NULL;
 	}
@@ -352,7 +352,7 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, uint32_t xid)
 	net_pkt_set_ipv4_ttl(pkt, 0xFF);
 
 	if (net_ipv4_create(pkt, &server_addr, &client_addr) ||
-	    net_udp_create(pkt, htons(SERVER_PORT), htons(CLIENT_PORT))) {
+	    net_udp_create(pkt, net_htons(SERVER_PORT), net_htons(CLIENT_PORT))) {
 		goto fail;
 	}
 
@@ -371,7 +371,7 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, uint32_t xid)
 
 	net_pkt_cursor_init(pkt);
 
-	net_ipv4_finalize(pkt, IPPROTO_UDP);
+	net_ipv4_finalize(pkt, NET_IPPROTO_UDP);
 
 	return pkt;
 
@@ -510,8 +510,8 @@ static struct net_dhcpv4_option_callback opt_vs_invalid_cb;
 static void receiver_cb(uint64_t nm_event, struct net_if *iface, void *info, size_t info_length,
 			void *user_data)
 {
-	const struct in_addr ip_addr = { { { 10, 237, 72, 158 } } };
-	const struct in_addr dns_addrs[3] = {
+	const struct net_in_addr ip_addr = { { { 10, 237, 72, 158 } } };
+	const struct net_in_addr dns_addrs[3] = {
 		{ { { 10, 248, 2, 1 } } },
 		{ { { 163, 33, 253, 68 } } },
 		{ { { 10, 184, 9, 1 } } },
@@ -522,15 +522,15 @@ static void receiver_cb(uint64_t nm_event, struct net_if *iface, void *info, siz
 
 	switch (nm_event) {
 	case NET_EVENT_IPV4_ADDR_ADD:
-		zassert_equal(info_length, sizeof(struct in_addr));
-		zassert_mem_equal(info, &ip_addr, sizeof(struct in_addr));
+		zassert_equal(info_length, sizeof(struct net_in_addr));
+		zassert_mem_equal(info, &ip_addr, sizeof(struct net_in_addr));
 		k_event_post(&events, EVT_ADDR_ADD);
 		break;
 	case NET_EVENT_IPV4_ADDR_DEL:
 		k_event_post(&events, EVT_ADDR_DEL);
 		break;
 	case NET_EVENT_DNS_SERVER_ADD:
-		zassert_equal(info_length, sizeof(struct sockaddr));
+		zassert_equal(info_length, sizeof(struct net_sockaddr));
 		if (net_sin(info)->sin_addr.s_addr == dns_addrs[0].s_addr) {
 			k_event_post(&events, EVT_DNS_SERVER1_ADD);
 		} else if (net_sin(info)->sin_addr.s_addr == dns_addrs[1].s_addr) {
@@ -542,7 +542,7 @@ static void receiver_cb(uint64_t nm_event, struct net_if *iface, void *info, siz
 		}
 		break;
 	case NET_EVENT_DNS_SERVER_DEL:
-		zassert_equal(info_length, sizeof(struct sockaddr));
+		zassert_equal(info_length, sizeof(struct net_sockaddr));
 		if (net_sin(info)->sin_addr.s_addr == dns_addrs[0].s_addr) {
 			k_event_post(&events, EVT_DNS_SERVER1_DEL);
 		} else if (net_sin(info)->sin_addr.s_addr == dns_addrs[1].s_addr) {

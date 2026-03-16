@@ -4,22 +4,41 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __MEC5_SOC_H
-#define __MEC5_SOC_H
+#ifndef __SOC_MICROCHIP_MEC_MEC175X_SOC_H
+#define __SOC_MICROCHIP_MEC_MEC175X_SOC_H
 
 #define SYSCLK_DEFAULT_IOSC_HZ MHZ(96)
 
 #ifndef _ASMLANGUAGE
 
-#include "device_mec5.h"
+#define MCHP_HAS_UART_LSR2
 
-/* common SoC API */
-#include "soc_dt.h"
-#include "soc_espi_channels.h"
-#include "soc_gpio.h"
-#include "soc_pcr.h"
-#include "soc_pins.h"
+/* Minimal ARM CMSIS requirements */
+typedef enum {
+	Reset_IRQn = -15,
+	NonMaskableInt_IRQn = -14,
+	HardFault_IRQn = -13,
+	MemoryManagement_IRQn = -12,
+	BusFault_IRQn = -11,
+	UsageFault_IRQn = -10,
+	SVCall_IRQn = -5,
+	DebugMonitor_IRQn = -4,
+	PendSV_IRQn = -2,
+	SysTick_IRQn = -1,
+	FirstPeriph_IRQn = 0,
+	LastPeriph_IRQn = 197,
+} IRQn_Type;
+
+#define __CM4_REV              0x0201U /* CM4 Core Revision */
+#define __NVIC_PRIO_BITS       3       /* Number of Bits used for Priority Levels */
+#define __Vendor_SysTickConfig 0       /* Set to 1 if different SysTick Config is used */
+#define __MPU_PRESENT          1       /* MPU present */
+#define __FPU_PRESENT          1       /* FPU present */
+
+#include <core_cm4.h>
+
+/* common peripheral register defines */
+#include <soc_common.h>
 
 #endif
-
 #endif

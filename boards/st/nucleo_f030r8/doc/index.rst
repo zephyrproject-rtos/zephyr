@@ -109,14 +109,14 @@ Flashing
 The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
 so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-Alternatively, OpenOCD, JLink, prob-rs can also be used to flash the board using
+Alternatively, OpenOCD, JLink, probe-rs can also be used to flash the board using
 the ``--runner`` (or ``-r``) option:
 
 .. code-block:: console
 
    $ west flash --runner openocd
    $ west flash --runner jlink
-   $ west flash --runner prob-rs
+   $ west flash --runner probe-rs
 
 Flashing an application to Nucleo F030R8
 ----------------------------------------

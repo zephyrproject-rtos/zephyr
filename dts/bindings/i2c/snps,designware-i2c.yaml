@@ -11,6 +11,20 @@ properties:
   interrupts:
     required: true
 
+  sda-hold-tx:
+    description: |
+      This property specifies the amount of time that the SDA line is held
+      after a transmit operation. The value is in units of I2C clock cycles.
+      Valid range is 0 to 0xffff.
+    type: int
+
+  sda-hold-rx:
+    description: |
+      This property specifies the amount of time that the SDA line is held
+      after a receive operation. The value is in units of I2C clock cycles.
+      Valid range is 0 to 0xff.
+    type: int
+
   lcnt-offset:
     type: int
     description: |
@@ -32,3 +46,31 @@ properties:
     default: 30
     description: |
       Describe the SCL stuck at low timeout value, unit in ms
+
+  fs-spike-len:
+    type: int
+    description: |
+      Spike suppression length for Standard-mode (Sm), Fast-mode (Fm),
+      and Fast-mode Plus (Fm+) I2C transfers, expressed in units of the
+      I2C controller input clock (ic_clk) cycles.
+
+      The I2C-bus specification (UM10204) defines a maximum spike width
+      (tSP) of 50 ns for Sm, Fm, and Fm+ modes. This property programs the
+      controller to suppress spikes up to the corresponding number of
+      ic_clk cycles.
+
+      For example, with an input clock frequency of 100 MHz, a value of
+      5 corresponds to a spike width of 50 ns.
+
+  hs-spike-len:
+    type: int
+    description: |
+      Spike suppression length for High-speed (Hs) I2C transfers,
+      expressed in units of the I2C controller input clock (ic_clk) cycles.
+
+      The I2C-bus specification (UM10204) defines a maximum spike width
+      (tSP) of 10 ns for Hs mode. This property programs the controller to
+      suppress spikes up to the corresponding number of ic_clk cycles.
+
+      For example, with an input clock frequency of 100 MHz, a value of
+      1 corresponds to a spike width of 10 ns.

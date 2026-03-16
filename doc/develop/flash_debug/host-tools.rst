@@ -255,6 +255,12 @@ path to add is:
 
          /usr/local/LinkServer
 
+   .. group-tab:: macOS
+
+      .. code-block:: console
+
+         /Applications/LinkServer_<version>
+
    .. group-tab:: Windows
 
       .. code-block:: console
@@ -462,13 +468,13 @@ the runner on each invocation via ``--s32ds-path`` as shown below:
 
       .. code-block:: console
 
-         west debug --s32ds-path=/opt/NXP/S32DS.3.5
+         west debug --s32ds-path=/opt/NXP/S32DS.3.6
 
    .. group-tab:: Windows
 
       .. code-block:: console
 
-         west debug --s32ds-path=C:\NXP\S32DS.3.5
+         west debug --s32ds-path=C:\NXP\S32DS.3.6
 
 If multiple S32 debug probes are connected to the host via USB, the runner will
 ask the user to select one via command line prompt before continuing. The
@@ -490,6 +496,18 @@ afterwards detach the debug session:
 .. code-block:: console
 
    west debug --tool-opt='--batch'
+
+Requirements
+------------
+
+- **S32 Design Studio version**: 3.6.0 or newer.
+- **S32DebugProbe OS (firmware)**: 1.1.0 or newer.
+
+S32 Debug Probe OS Upgrade Procedure
+------------------------------------
+
+Refer to the “Reprogramming S32 Debug Probe Firmware Images” chapter
+in the `S32 Debug Probe User Guide`_ to upgrade the OS of the S32DebugProbe.
 
 .. _runner_probe_rs:
 
@@ -532,7 +550,7 @@ STM32CubeCLT Flash & Debug Host Tools
 *************************************
 
 STMicroelectronics provides `STM32CubeCLT`_ as an official all-in-one toolset compatible with
-Linux |reg|, macOS |reg| and Windows |reg|, allowing the use of STMicroelectronics proprietary
+Linux®, macOS® and Windows®, allowing the use of STMicroelectronics proprietary
 tools within third-party development environments.
 
 It notably provides a GDB debugging server (the *ST-LINK GDB Server*) that can be used to debug
@@ -576,7 +594,7 @@ STM32CubeProgrammer Flash Host Tools
 ************************************
 
 STMicroelectronics provides `STM32CubeProgrammer`_ (STM32CubeProg) as an official programming tool
-for STM32 boards on Linux |reg|, macOS |reg|, and Windows |reg| operating systems.
+for STM32 boards on Linux®, macOS®, and Windows® operating systems.
 
 It provides an easy-to-use and efficient environment for reading, writing, and verifying device memory
 through both the debug interface (JTAG and SWD) and the bootloader interface (UART and USB DFU, I2C, SPI, and CAN).
@@ -640,6 +658,28 @@ using the ``--device`` option:
 
 For more about the UF2 format and its tooling, see `USB Flashing Format (UF2)`_.
 
+.. _runner_mpcli:
+
+Realtek Bee Flash Programmer (MPCli) Host Tools
+***********************************************
+
+Realtek provides `Realtek Flash Programmer (MPCli)`_ as an official programming tool for the Bee
+series, supporting Linux, macOS, and Windows operating systems. MPCli enables In‑System Programming
+(ISP) via a UART interface, eliminating the need for external programming hardware. On most
+official Bee‑series evaluation boards, a built‑in UART‑to‑USB converter is included for
+ready‑to‑use programming and logging.
+
+After downloading the archive of MPCli, extract it and choose the version compatible with your
+operating system. Then, add the directory containing the ``mpcli`` executable to your system
+:ref:`PATH environment variable <env_vars>`.
+
+Before starting, ensure your board is in download mode. Please refer to the board documentation
+at: `Realtek Supported Boards`_
+
+.. code-block:: console
+
+   west flash [--runner mpcli] --port /dev/ttyX
+
 .. _J-Link Software and Documentation Pack:
    https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack
 
@@ -656,13 +696,13 @@ For more about the UF2 format and its tooling, see `USB Flashing Format (UF2)`_.
    https://github.com/pyocd/pyOCD/tree/main/pyocd/target/builtin
 
 .. _OpenOCD Windows:
-    http://gnutoolchains.com/arm-eabi/openocd/
+    https://gnutoolchains.com/arm-eabi/openocd/
 
 .. _Lauterbach TRACE32:
     https://www.lauterbach.com/
 
 .. _Lauterbach TRACE32 download website:
-   http://www.lauterbach.com/download_trace32.html
+   https://www.lauterbach.com/download_trace32.html
 
 .. _Lauterbach TRACE32 Installation Guide:
    https://www2.lauterbach.com/pdf/installation.pdf
@@ -687,6 +727,9 @@ For more about the UF2 format and its tooling, see `USB Flashing Format (UF2)`_.
 
 .. _S32 Design Studio for S32 Platform Installation User Guide:
    https://www.nxp.com/webapp/Download?colCode=S32DSIG
+
+.. _S32 Debug Probe User Guide:
+   https://www.nxp.com/docs/en/user-guide/S32DBGUG.pdf
 
 .. _probe-rs Installation:
    https://probe.rs/docs/getting-started/installation/
@@ -714,3 +757,9 @@ For more about the UF2 format and its tooling, see `USB Flashing Format (UF2)`_.
 
 .. _USB Flashing Format (UF2):
    https://github.com/microsoft/uf2
+
+.. _Realtek Flash Programmer (MPCli):
+   https://docs.realmcu.com/tools/mpcli_tool/en/latest/mpcli/text_en/README.html
+
+.. _Realtek Supported Boards:
+   https://docs.zephyrproject.org/latest/boards/realtek/index.html

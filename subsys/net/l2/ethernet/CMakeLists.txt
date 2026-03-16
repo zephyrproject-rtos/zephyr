@@ -19,8 +19,6 @@ if(CONFIG_NET_NATIVE)
 zephyr_library_sources_ifdef(CONFIG_NET_ARP              arp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_VLAN             vlan.c)
 zephyr_library_sources_ifdef(CONFIG_NET_STATISTICS_ETHERNET ethernet_stats.c)
-zephyr_library_sources_ifdef(CONFIG_NET_ETHERNET_BRIDGE bridge.c)
-zephyr_library_sources_ifdef(CONFIG_NET_ETHERNET_BRIDGE_SHELL bridge_shell.c)
 
 if(CONFIG_NET_GPTP)
   add_subdirectory(gptp)
@@ -32,6 +30,10 @@ endif()
 
 if(CONFIG_NET_DSA)
   add_subdirectory(dsa)
+endif()
+
+if(CONFIG_NET_ETHERNET_BRIDGE)
+  add_subdirectory(bridge)
 endif()
 
 endif()

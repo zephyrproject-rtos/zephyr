@@ -19,11 +19,8 @@
 #if defined(STM32_PLL_ENABLED)
 
 /* Macros to fill up multiplication and division factors values */
-#define z_pll_mul(v) LL_RCC_PLL_MUL_ ## v
-#define pll_mul(v) z_pll_mul(v)
-
-#define z_pll_div(v) LL_RCC_PLL_DIV_ ## v
-#define pll_div(v) z_pll_div(v)
+#define pll_mul(v) CONCAT(LL_RCC_PLL_MUL_, v)
+#define pll_div(v) CONCAT(LL_RCC_PLL_DIV_, v)
 
 /**
  * @brief Return PLL source
@@ -49,7 +46,11 @@ __unused
 uint32_t get_pllsrc_frequency(void)
 {
 	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+#if defined(CONFIG_SOC_SERIES_STM32L0X)
+		return STM32_HSI_FREQ / STM32_HSI_DIVISOR;
+#else
 		return STM32_HSI_FREQ;
+#endif
 	} else if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
 		return STM32_HSE_FREQ;
 	}

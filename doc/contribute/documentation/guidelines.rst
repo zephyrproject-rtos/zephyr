@@ -21,14 +21,17 @@ then be viewed using a web browser. This same .rst content is served by the
 You can read details about `reStructuredText`_
 and about `Sphinx extensions`_ from their respective websites.
 
-.. _Sphinx extensions: http://www.sphinx-doc.org/en/stable/contents.html
-.. _reStructuredText: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
-.. _Sphinx Inline Markup:  http://sphinx-doc.org/markup/inline.html#inline-markup
+.. _Sphinx extensions: https://www.sphinx-doc.org/en/stable/contents.html
+.. _reStructuredText: https://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
+.. _Sphinx Inline Markup:  https://sphinx-doc.org/markup/inline.html#inline-markup
 .. _Zephyr documentation:  https://docs.zephyrproject.org
 
 This document provides a quick reference for commonly used reST and
 Sphinx-defined directives and roles used to create the documentation
 you're reading.
+
+For instructions regarding writing good C API documentation, see
+:ref:`doxygen_style`.
 
 Content Structure
 *****************
@@ -187,7 +190,7 @@ Tables
 
 There are a few ways to create tables, each with their limitations or
 quirks.  `Grid tables
-<http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables>`_
+<https://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables>`_
 offer the most capability for defining merged rows and columns, but are
 hard to maintain::
 
@@ -220,7 +223,7 @@ This example would render as:
 +------------------------+------------+----------+----------+
 
 `List tables
-<http://docutils.sourceforge.net/docs/ref/rst/directives.html#list-table>`_
+<https://docutils.sourceforge.net/docs/ref/rst/directives.html#list-table>`_
 are much easier to maintain, but don't support row or column spans::
 
    .. list-table:: Table title
@@ -345,7 +348,7 @@ reference for some of the most commonly used text formatting options in Zephyr d
 exhaustive list, refer to the `reStructuredText Quick Reference`_,
 `reStructuredText Interpreted Text Roles`_ as well as the `additional roles provided by Sphinx`_.
 
-.. _reStructuredText Quick Reference: http://docutils.sourceforge.io/docs/user/rst/quickref.html
+.. _reStructuredText Quick Reference: https://docutils.sourceforge.io/docs/user/rst/quickref.html
 .. _reStructuredText Interpreted Text Roles: https://docutils.sourceforge.io/docs/ref/rst/roles.html
 .. _additional roles provided by Sphinx: https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html
 
@@ -420,18 +423,14 @@ This would render as:
 Non-ASCII Characters
 ====================
 
-You can insert non-ASCII characters such as a Trademark symbol (|trade|),
-by using the notation ``|trade|``.
-Available replacement names are defined in an include file used during the Sphinx processing
-of the reST files.  The names of these replacement characters are the same as used in HTML
-entities used to insert characters in HTML, e.g., ``\&trade;`` and are defined in the
-file :zephyr_file:`doc/substitutions.txt` as listed below:
+Prefer plain ASCII unless a specific symbol is required for correctness or conventional typography
+(for example units like µ, or well-known marks like ™).
 
-.. literalinclude:: ../../substitutions.txt
-   :language: rst
+Avoid adding non-ASCII characters purely for aesthetic purposes.
 
-We've kept the substitutions list small but others can be added as
-needed by submitting a change to the :zephyr_file:`doc/substitutions.txt` file.
+The file :zephyr_file:`doc/substitutions.txt` contains some basic HTML substitution definitions for
+special formatting needs (e.g. to force line breaks), but Unicode characters can and should be used
+directly in the documentation source files.
 
 Code Blocks and Command Examples
 ================================
@@ -472,7 +471,7 @@ This would be rendered as:
 Other languages are of course supported (see `languages supported by Pygments`_), and in particular,
 you are encouraged to make use of the following when appropriate:
 
-.. _`languages supported by Pygments`: http://pygments.org/languages/
+.. _`languages supported by Pygments`: https://pygments.org/languages/
 
 * ``c`` for C code
 * ``cpp`` for C++ code
@@ -1293,6 +1292,28 @@ Boards
    This directive is used to generate a catalog of Zephyr-supported boards that can be used to
    quickly browse the list of all supported boards and filter them according to various criteria.
 
+.. rst:role:: zephyr:board-catalog
+
+   This role is used to reference the board catalog page, optionally with filter parameters.
+   For example::
+
+      Check out :zephyr:board-catalog:`` for more information.
+
+   Will render as:
+
+      Check out :zephyr:board-catalog:`` for more information.
+
+   This role can be used exactly like the built-in :rst:role:`ref` role, i.e. you may provide a
+   custom link text. For example::
+
+      Check out the :zephyr:board-catalog:`boards using this compatible <#compatibles=ti,hdc2080>`
+      for more information.
+
+   Will render as:
+
+      Check out the :zephyr:board-catalog:`boards using this compatible <#compatibles=ti,hdc2080>`
+      for more information.
+
 .. rst:directive:: .. zephyr:board-supported-hw::
 
    This directive is used to show supported hardware features for all the targets of the board
@@ -1328,8 +1349,8 @@ Boards
       produce a complete table. If disabled, a warning message will be shown instead of the runners
       tables.
 
-Accessibilty Guidelines
-***********************
+Accessibility Guidelines
+************************
 
 Accessibility is an important aspect of documentation, ensuring that all users, including those with
 disabilities, can access and understand the content.

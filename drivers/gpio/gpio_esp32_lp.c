@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2025-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,8 +17,7 @@
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
 #include <hal/rtc_io_hal.h>
-#include <soc/rtc_io_periph.h>
-#include <ulp_lp_core_interrupts.h>
+#include <hal/rtc_io_periph.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
@@ -50,12 +49,14 @@ bool lp_gpio_is_valid(uint32_t pin)
 
 static int gpio_esp32_lp_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
+	const struct gpio_esp32_lp_config *const cfg = dev->config;
+
 	if (!lp_gpio_is_valid(pin)) {
 		LOG_ERR("Selected LP IO pin is not valid.");
 		return -EINVAL;
 	}
 
-	rtcio_hal_function_select(pin, RTCIO_FUNC_RTC);
+	rtcio_hal_function_select(pin, RTCIO_LL_FUNC_RTC);
 
 	if (flags & GPIO_OUTPUT) {
 		rtcio_hal_set_direction(pin, RTC_GPIO_MODE_OUTPUT_ONLY);
@@ -66,6 +67,23 @@ static int gpio_esp32_lp_configure(const struct device *dev, gpio_pin_t pin, gpi
 		}
 	} else if (flags & GPIO_INPUT) {
 		rtcio_hal_set_direction(pin, RTC_GPIO_MODE_INPUT_ONLY);
+		rtcio_hal_set_direction_in_sleep(pin, RTC_GPIO_MODE_INPUT_ONLY);
+	}
+
+	if (flags & GPIO_PULL_UP) {
+		rtcio_ll_pullup_enable(pin);
+		cfg->lp_io_dev->gpio[pin].mcu_wpu = 1;
+	} else {
+		rtcio_ll_pullup_disable(pin);
+		cfg->lp_io_dev->gpio[pin].mcu_wpu = 0;
+	}
+
+	if (flags & GPIO_PULL_DOWN) {
+		rtcio_ll_pulldown_enable(pin);
+		cfg->lp_io_dev->gpio[pin].mcu_wpd = 1;
+	} else {
+		rtcio_ll_pulldown_disable(pin);
+		cfg->lp_io_dev->gpio[pin].mcu_wpd = 0;
 	}
 
 	return 0;
@@ -116,26 +134,26 @@ static int gpio_esp32_lp_port_toggle_bits(const struct device *port, uint32_t pi
 static int lp_gpio_convert_int_type(enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	if (mode == GPIO_INT_MODE_DISABLED) {
-		return RTCIO_INTR_DISABLE;
+		return GPIO_INTR_DISABLE;
 	}
 
 	if (mode == GPIO_INT_MODE_LEVEL) {
 		switch (trig) {
 		case GPIO_INT_TRIG_LOW:
-			return RTCIO_INTR_LOW_LEVEL;
+			return GPIO_INTR_LOW_LEVEL;
 		case GPIO_INT_TRIG_HIGH:
-			return RTCIO_INTR_HIGH_LEVEL;
+			return GPIO_INTR_HIGH_LEVEL;
 		default:
 			return -EINVAL;
 		}
 	} else { /* edge interrupts */
 		switch (trig) {
 		case GPIO_INT_TRIG_HIGH:
-			return RTCIO_INTR_POSEDGE;
+			return GPIO_INTR_POSEDGE;
 		case GPIO_INT_TRIG_LOW:
-			return RTCIO_INTR_NEGEDGE;
+			return GPIO_INTR_NEGEDGE;
 		case GPIO_INT_TRIG_BOTH:
-			return RTCIO_INTR_ANYEDGE;
+			return GPIO_INTR_ANYEDGE;
 		default:
 			return -EINVAL;
 		}
@@ -156,9 +174,8 @@ static int gpio_esp32_lp_pin_interrupt_configure(const struct device *dev, gpio_
 	}
 
 	rtcio_ll_clear_interrupt_status();
-	ulp_lp_core_intr_enable();
-
 	rtcio_ll_intr_enable(pin, intr_trig_mode);
+	rtcio_ll_wakeup_enable(pin, intr_trig_mode);
 
 	return 0;
 }
@@ -180,6 +197,12 @@ static uint32_t gpio_esp32_lp_get_pending_int(const struct device *dev)
 
 static int gpio_esp32_lp_init(const struct device *dev)
 {
+	/* Enable the LP IO peripheral clock so that register writes to
+	 * LP_IO.gpio[] and LP_IO.pin[] take effect.  On the LP core there
+	 * is no concurrent user of this clock gate, so bypass the
+	 * PERIPH_RCC_ATOMIC() wrapper and call the raw LL function directly.
+	 */
+	_rtcio_ll_enable_io_clock(true);
 	return 0;
 }
 
@@ -197,9 +220,7 @@ static DEVICE_API(gpio, gpio_esp32_lp_driver_api) = {
 
 static struct gpio_esp32_lp_data gpio_esp32_lp_data_0;
 static struct gpio_esp32_lp_config gpio_esp32_lp_cfg = {
-	.drv_cfg = {
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(DT_NODELABEL(lp_gpio)),
-		},
+	.drv_cfg = GPIO_COMMON_CONFIG_FROM_DT_NODE(DT_NODELABEL(lp_gpio)),
 	.lp_io_dev = (lp_io_dev_t *)DT_REG_ADDR(DT_NODELABEL(lp_gpio)),
 };
 

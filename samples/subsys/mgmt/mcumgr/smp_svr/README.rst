@@ -75,7 +75,7 @@ included. The ``smp_svr`` sample comes in different flavours.
          :board: nrf52dk/nrf52832
          :goals: build
          :west-args: --sysbuild
-         :gen-args: -DEXTRA_CONF_FILE="overlay-bt.conf"
+         :gen-args: -DEXTRA_CONF_FILE="bt.conf"
          :compact:
 
    .. group-tab:: Serial
@@ -88,7 +88,23 @@ included. The ``smp_svr`` sample comes in different flavours.
          :board: frdm_k64f
          :goals: build
          :west-args: --sysbuild
-         :gen-args: -DEXTRA_CONF_FILE="overlay-serial.conf;overlay-fs.conf;overlay-shell-mgmt.conf"
+         :gen-args: -DEXTRA_CONF_FILE="serial.conf;fs.conf;shell-mgmt.conf"
+         :compact:
+
+   .. group-tab:: Raw UART (serial)
+
+      .. note::
+         Raw UART support sends raw MCUmgr packets over a UART device without using the SMP over console protocol, this is binary data and cannot be used if e.g. the shell is enabled on the same UART.
+
+      To build the raw UART (serial) sample with file-system management support:
+
+      .. zephyr-app-commands::
+         :tool: west
+         :zephyr-app: samples/subsys/mgmt/mcumgr/smp_svr
+         :board: nrf52840dk/nrf52840
+         :goals: build
+         :west-args: --sysbuild
+         :gen-args: -DEXTRA_CONF_FILE="raw-serial.conf;fs.conf"
          :compact:
 
    .. group-tab:: USB CDC_ACM
@@ -101,8 +117,13 @@ included. The ``smp_svr`` sample comes in different flavours.
          :board: nrf52840dk/nrf52840
          :goals: build
          :west-args: --sysbuild
-         :gen-args: -DEXTRA_CONF_FILE="overlay-cdc.conf" -DEXTRA_DTC_OVERLAY_FILE="usb.overlay"
+         :gen-args: -DEXTRA_CONF_FILE="cdc.conf" -DEXTRA_DTC_OVERLAY_FILE="usb.overlay"
          :compact:
+
+      .. note::
+         If you are building the sample with the CDC overlay files
+         and plan to test it, make sure to connect to the USB port
+         on your board that is connected directly to the MCU.
 
    .. group-tab:: Shell
 
@@ -114,7 +135,7 @@ included. The ``smp_svr`` sample comes in different flavours.
          :board: frdm_k64f
          :goals: build
          :west-args: --sysbuild
-         :gen-args: -DEXTRA_CONF_FILE="overlay-shell.conf"
+         :gen-args: -DEXTRA_CONF_FILE="shell.conf"
          :compact:
 
    .. group-tab:: UDP
@@ -131,7 +152,29 @@ included. The ``smp_svr`` sample comes in different flavours.
          :board: frdm_k64f
          :goals: build
          :west-args: --sysbuild
-         :gen-args: -DEXTRA_CONF_FILE="overlay-udp.conf"
+         :gen-args: -DEXTRA_CONF_FILE="udp.conf"
+         :compact:
+
+      To build UDP sample with 802154 Subg networking:
+
+      .. zephyr-app-commands::
+         :tool: west
+         :zephyr-app: samples/subsys/mgmt/mcumgr/smp_svr
+         :board: beagleconnect_freedom
+         :goals: build
+         :west-args: --sysbuild
+         :gen-args: -DEXTRA_CONF_FILE="overlay-udp.conf;802154-subg.conf"
+         :compact:
+
+      To build the UDP with DTLS sample:
+
+      .. zephyr-app-commands::
+         :tool: west
+         :zephyr-app: samples/subsys/mgmt/mcumgr/smp_svr
+         :board: bl5340_dvk/nrf5340/cpuapp
+         :goals: build
+         :west-args: --sysbuild
+         :gen-args: -DEXTRA_CONF_FILE="udp-dtls.conf"
          :compact:
 
 Flashing the sample image

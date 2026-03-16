@@ -1,7 +1,7 @@
 .. _usb_device_stack:
 
-USB device support
-##################
+USB device support (deprecated)
+###############################
 
 .. contents::
     :local:
@@ -26,10 +26,9 @@ over time. It provides the following functionalities:
   :zephyr_file:`include/zephyr/usb/usb_device.h`
 
 .. note::
-   It is planned to deprecate all APIs listed in :ref:`usb_api` and the
-   functions that depend on them between Zephyr v4.1.0 and v4.2.0, and remove
-   them in v4.4.0. The new USB device support, represented by the APIs in
-   :ref:`usb_device_next_api`, will become the default in Zephyr v4.2.0.
+   All APIs listed in :ref:`usb_api` and the functions that depend on them are
+   deprecated and will be remove in v4.4.0. Please use the new USB device
+   support represented by the APIs in :ref:`usb_device_next_api`.
 
 Supported USB classes
 *********************
@@ -212,7 +211,7 @@ DFU
 USB DFU class implementation is tightly coupled to :ref:`dfu` and :ref:`mcuboot_api`.
 This means that the target platform must support the :ref:`flash_img_api` API.
 
-See :zephyr:code-sample:`usb-dfu` sample for reference.
+See :zephyr:code-sample:`legacy-usb-dfu` sample for reference.
 
 USB Human Interface Devices (HID) support
 =========================================
@@ -373,9 +372,7 @@ Ethernet connection between the remote (USB host) and Zephyr network support.
 * CDC EEM class, enabled with :kconfig:option:`CONFIG_USB_DEVICE_NETWORK_EEM`
 * RNDIS support, enabled with :kconfig:option:`CONFIG_USB_DEVICE_NETWORK_RNDIS`
 
-See :zephyr:code-sample:`zperf` or :zephyr:code-sample:`socket-dumb-http-server` for reference.
-Typically, users will need to add a configuration file overlay to the build,
-such as :zephyr_file:`samples/net/zperf/overlay-netusb.conf`.
+See :zephyr:code-sample:`legacy-netusb` sample for reference.
 
 Applications using RNDIS support should enable :kconfig:option:`CONFIG_USB_DEVICE_OS_DESC`
 for a better user experience on a host running Microsoft Windows OS.
@@ -389,7 +386,7 @@ The application should register descriptors such as Capability Descriptor
 using :c:func:`usb_bos_register_cap`. Registered descriptors are added to the root
 BOS descriptor and handled by the stack.
 
-See :zephyr:code-sample:`webusb` sample for reference.
+See :zephyr:code-sample:`legacy-webusb` sample for reference.
 
 Interface number and endpoint address assignment
 ************************************************
@@ -462,7 +459,7 @@ Testing over USBIP in native_sim
 
 A virtual USB controller implemented through USBIP might be used to test the USB
 device stack. Follow the general build procedure to build the USB sample for
-the :ref:`native_sim <native_sim>` configuration.
+the :zephyr:board:`native_sim <native_sim>` configuration.
 
 Run built sample with:
 

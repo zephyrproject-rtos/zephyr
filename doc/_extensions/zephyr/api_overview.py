@@ -89,9 +89,7 @@ class ApiOverview(SphinxDirective):
         github_uri = self.config.api_overview_base_url + "/releases/tag/"
         cdef = group.get_compounddef()[0]
 
-        ssects = [
-            s for p in cdef.get_detaileddescription().get_para() for s in p.get_simplesect()
-        ]
+        ssects = [s for p in cdef.get_detaileddescription().get_para() for s in p.get_simplesect()]
         for sect in ssects:
             if sect.get_kind() == "since":
                 since = sect.get_para()[0].get_valueOf_()
@@ -123,7 +121,7 @@ class ApiOverview(SphinxDirective):
 
         # Next entry will contain the spacer and the link with API name
         entry = nodes.entry()
-        span = nodes.Text("".join(["\U000000A0"] * indent))
+        span = nodes.Text("".join(["\U000000a0"] * indent))
         entry += span
 
         # API name with link
@@ -143,9 +141,7 @@ class ApiOverview(SphinxDirective):
         rows.append(row_node)
 
         for innergroup in cdef.get_innergroup():
-            self.visit_group(
-                get_group(innergroup, all_groups), all_groups, rows, indent + 6
-            )
+            self.visit_group(get_group(innergroup, all_groups), all_groups, rows, indent + 6)
 
 
 def setup(app) -> dict[str, Any]:

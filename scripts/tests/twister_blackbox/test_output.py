@@ -8,18 +8,18 @@ Blackbox tests for twister's command line functions changing test output.
 
 import importlib
 import re
-import mock
+from unittest import mock
 import os
 import pytest
 import sys
 import json
 
 # pylint: disable=no-name-in-module
-from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock, clear_log_in_test
+from conftest import ZEPHYR_BASE, TEST_DATA, suite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
 
-@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
 class TestOutput:
     TESTDATA_1 = [
         ([]),
@@ -76,11 +76,6 @@ class TestOutput:
 
         expected_start = os.path.relpath(TEST_DATA, ZEPHYR_BASE) if expect_paths else 'dummy.'
         assert all([testsuite.startswith(expected_start) for _, testsuite, _ in filtered_j])
-        if expect_paths:
-            assert all([(tc_name.count('.') > 1) for _, _, tc_name in filtered_j])
-        else:
-            assert all([(tc_name.count('.') == 1) for _, _, tc_name in filtered_j])
-
 
     def test_inline_logs(self, out_path):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
@@ -171,7 +166,7 @@ class TestOutput:
     )
     def test_output_levels(self, capfd, out_path, flags):
         test_path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')
-        args = ['--outdir', out_path, '-T', test_path, *flags]
+        args = ['--outdir', out_path, '-T', test_path, '-p', 'qemu_x86', *flags]
 
         with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
             pytest.raises(SystemExit) as sys_exit:

@@ -21,12 +21,12 @@ extern "C" {
 #endif
 
 /**
- * @brief eSPI SAF Driver APIs
- * @defgroup espi_interface ESPI Driver APIs
- * @ingroup io_interfaces
+ * @brief Interfaces for eSPI SAF (Serial Attached Flash)
+ *        controllers.
+ * @defgroup espi_saf_interface eSPI SAF
+ * @ingroup espi_interface
  * @{
  */
-
 
 /**
  * @code

@@ -13,8 +13,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbd_sample_config);
 
-#define ZEPHYR_PROJECT_USB_VID		0x2fe3
-
 /* By default, do not register the USB DFU class DFU mode instance. */
 static const char *const blocklist[] = {
 	"dfu_dfu",
@@ -29,7 +27,7 @@ static const char *const blocklist[] = {
  */
 USBD_DEVICE_DEFINE(sample_usbd,
 		   DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
-		   ZEPHYR_PROJECT_USB_VID, CONFIG_SAMPLE_USBD_PID);
+		   CONFIG_SAMPLE_USBD_VID, CONFIG_SAMPLE_USBD_PID);
 /* doc device instantiation end */
 
 /* doc string instantiation start */

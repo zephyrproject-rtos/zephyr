@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Vestas Wind Systems A/S
+ * Copyright (c) 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,33 +18,18 @@
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "No LPTMR instance enabled in devicetree");
 
-/* Prescaler mapping */
-#define LPTMR_PRESCALER_2     kLPTMR_Prescale_Glitch_0
-#define LPTMR_PRESCALER_4     kLPTMR_Prescale_Glitch_1
-#define LPTMR_PRESCALER_8     kLPTMR_Prescale_Glitch_2
-#define LPTMR_PRESCALER_16    kLPTMR_Prescale_Glitch_3
-#define LPTMR_PRESCALER_32    kLPTMR_Prescale_Glitch_4
-#define LPTMR_PRESCALER_64    kLPTMR_Prescale_Glitch_5
-#define LPTMR_PRESCALER_128   kLPTMR_Prescale_Glitch_6
-#define LPTMR_PRESCALER_256   kLPTMR_Prescale_Glitch_7
-#define LPTMR_PRESCALER_512   kLPTMR_Prescale_Glitch_8
-#define LPTMR_PRESCALER_1024  kLPTMR_Prescale_Glitch_9
-#define LPTMR_PRESCALER_2048  kLPTMR_Prescale_Glitch_10
-#define LPTMR_PRESCALER_4096  kLPTMR_Prescale_Glitch_11
-#define LPTMR_PRESCALER_8192  kLPTMR_Prescale_Glitch_12
-#define LPTMR_PRESCALER_16384 kLPTMR_Prescale_Glitch_13
-#define LPTMR_PRESCALER_32768 kLPTMR_Prescale_Glitch_14
-#define LPTMR_PRESCALER_65536 kLPTMR_Prescale_Glitch_15
-#define TO_LPTMR_PRESCALER(val) _DO_CONCAT(LPTMR_PRESCALER_, val)
-
 /* Prescaler clock mapping */
 #define TO_LPTMR_CLK_SEL(val) _DO_CONCAT(kLPTMR_PrescalerClock_, val)
 
 /* Devicetree properties */
 #define LPTMR_BASE ((LPTMR_Type *)(DT_INST_REG_ADDR(0)))
-#define LPTMR_CLK_SOURCE TO_LPTMR_CLK_SEL(DT_INST_PROP(0, clk_source));
-#define LPTMR_PRESCALER TO_LPTMR_PRESCALER(DT_INST_PROP(0, prescaler));
-#define LPTMR_BYPASS_PRESCALER DT_INST_PROP(0, prescaler) == 1
+#define LPTMR_CLK_SOURCE TO_LPTMR_CLK_SEL(DT_INST_PROP_OR(0, clk_source, 0))
+#define LPTMR_PRESCALER DT_INST_PROP_OR(0, prescale_glitch_filter, 0)
+/*
+ * Default must be false so prescale-glitch-filter can be used without requiring
+ * an explicit bypass property.
+ */
+#define LPTMR_PRESCALER_BYPASS DT_INST_PROP_OR(0, prescale_glitch_filter_bypass, false)
 #define LPTMR_IRQN DT_INST_IRQN(0)
 #define LPTMR_IRQ_PRIORITY DT_INST_IRQ(0, priority)
 
@@ -51,8 +37,25 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 #define CYCLES_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() \
 			/ (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 
-/* 32 bit cycle counter */
+/* Counter maximum value based on resolution */
+#define LPTMR_RESOLUTION DT_INST_PROP(0, resolution)
+#define COUNTER_MAX GENMASK(LPTMR_RESOLUTION - 1, 0)
+
+#define MAX_TICKS ((COUNTER_MAX / CYCLES_PER_TICK) - 1)
+#define MAX_CYCLES (MAX_TICKS * CYCLES_PER_TICK)
+#define MIN_DELAY MAX(1024U, ((uint32_t)CYCLES_PER_TICK/16U))
+
+/* 32 bit cycle counter, the variable only used in tickful mode */
 static volatile uint32_t cycles;
+
+/*
+ * Stores the current number of cycles the system has had announced to it,
+ * since the last rollover of the free running counter.
+ */
+static uint32_t announced_cycles;
+
+/* Lock on shared variables */
+static struct k_spinlock lock;
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
@@ -61,6 +64,59 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	if (idle && (ticks == K_TICKS_FOREVER)) {
 		LPTMR_DisableInterrupts(LPTMR_BASE, kLPTMR_TimerInterruptEnable);
 	}
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
+
+	k_spinlock_key_t key;
+	uint32_t next, adj, now;
+
+	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
+	/* Clamp ticks. We subtract one since we round up to next tick */
+	ticks = CLAMP((ticks - 1), 0, (int32_t)MAX_TICKS);
+
+	key = k_spin_lock(&lock);
+
+	/* Read current timer value */
+	now = LPTMR_GetCurrentTimerCount(LPTMR_BASE);
+
+	/* Adjustment value, used to ensure next capture is on tick boundary */
+	adj = (now - announced_cycles) + (CYCLES_PER_TICK - 1);
+
+	next = ticks * CYCLES_PER_TICK;
+	/*
+	 * The following section rounds the capture value up to the next tick
+	 * boundary
+	 */
+	if (next <= MAX_CYCLES - adj) {
+		next += adj;
+	} else {
+		next = MAX_CYCLES;
+	}
+	next = (next / CYCLES_PER_TICK) * CYCLES_PER_TICK;
+
+	if ((int32_t)(next + announced_cycles - now) < MIN_DELAY) {
+		next += CYCLES_PER_TICK;
+	}
+
+	next += announced_cycles;
+
+	/* Update CMR safely while the timer is running.
+	 *
+	 * CMR writes are not hardware‑synchronized. If TCF is cleared while the
+	 * interrupt is still enabled, TCF may be reasserted in a narrow race window
+	 * and generate an unexpected interrupt.
+	 *
+	 * To avoid this, disable the LPTMR interrupt first, then clear TCF,
+	 * program the new compare value, and finally re-enable the interrupt.
+	 */
+	LPTMR_DisableInterrupts(LPTMR_BASE, kLPTMR_TimerInterruptEnable);
+	LPTMR_ClearStatusFlags(LPTMR_BASE, kLPTMR_TimerCompareFlag);
+	LPTMR_SetTimerPeriod(LPTMR_BASE, next);
+	LPTMR_EnableInterrupts(LPTMR_BASE, kLPTMR_TimerInterruptEnable);
+
+	k_spin_unlock(&lock, key);
 }
 
 void sys_clock_idle_exit(void)
@@ -78,7 +134,17 @@ void sys_clock_disable(void)
 
 uint32_t sys_clock_elapsed(void)
 {
-	return 0;
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return 0;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	uint32_t now = LPTMR_GetCurrentTimerCount(LPTMR_BASE);
+
+	now -= announced_cycles;
+	k_spin_unlock(&lock, key);
+
+	return now / CYCLES_PER_TICK;
 }
 
 uint32_t sys_clock_cycle_get_32(void)
@@ -89,29 +155,39 @@ uint32_t sys_clock_cycle_get_32(void)
 static void mcux_lptmr_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
+	k_spinlock_key_t key;
+	uint32_t tick = 0;
 
-	cycles += CYCLES_PER_TICK;
+	key = k_spin_lock(&lock);
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		uint32_t now = LPTMR_GetCurrentTimerCount(LPTMR_BASE);
 
-	sys_clock_announce(1);
-	LPTMR_ClearStatusFlags(LPTMR_BASE, kLPTMR_TimerCompareFlag);
+		LPTMR_ClearStatusFlags(LPTMR_BASE, kLPTMR_TimerCompareFlag);
+		tick += (now - announced_cycles) / CYCLES_PER_TICK;
+		announced_cycles = now;
+	} else {
+		LPTMR_ClearStatusFlags(LPTMR_BASE, kLPTMR_TimerCompareFlag);
+		cycles += CYCLES_PER_TICK;
+	}
+
+	k_spin_unlock(&lock, key);
+	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? tick : 1);
 }
 
 static int sys_clock_driver_init(void)
 {
 	lptmr_config_t config;
 
-
 	LPTMR_GetDefaultConfig(&config);
 	config.timerMode = kLPTMR_TimerModeTimeCounter;
+#if defined(CONFIG_TICKLESS_KERNEL)
+	config.enableFreeRunning = true;
+#else
 	config.enableFreeRunning = false;
+#endif
 	config.prescalerClockSource = LPTMR_CLK_SOURCE;
-
-#if LPTMR_BYPASS_PRESCALER
-	config.bypassPrescaler = true;
-#else /* LPTMR_BYPASS_PRESCALER */
-	config.bypassPrescaler = false;
+	config.bypassPrescaler = LPTMR_PRESCALER_BYPASS;
 	config.value = LPTMR_PRESCALER;
-#endif /* !LPTMR_BYPASS_PRESCALER */
 
 	LPTMR_Init(LPTMR_BASE, &config);
 

@@ -250,6 +250,7 @@ static void mctp_uart_callback(const struct device *dev, struct uart_event *evt,
 	case UART_RX_STOPPED:
 		break;
 	case UART_RX_DISABLED:
+		k_sem_give(&binding->rx_disabled);
 		break;
 	}
 }
@@ -262,6 +263,20 @@ void mctp_uart_start_rx(struct mctp_binding_uart *uart)
 	uart->rx_buf_used[0] = true;
 	res = uart_rx_enable(uart->dev, uart->rx_buf[0], sizeof(uart->rx_buf[0]), 1000);
 	__ASSERT_NO_MSG(res == 0);
+}
+
+int mctp_uart_stop_rx(struct mctp_binding_uart *uart)
+{
+	int res = uart_rx_disable(uart->dev);
+
+	if (res != 0) {
+		return res;
+	}
+
+	/* Ensure rx is fully stopped before returning */
+	k_sem_take(&uart->rx_disabled, K_FOREVER);
+
+	return 0;
 }
 
 int mctp_uart_tx(struct mctp_binding *b, struct mctp_pktbuf *pkt)
@@ -320,6 +335,10 @@ int mctp_uart_tx(struct mctp_binding *b, struct mctp_pktbuf *pkt)
 
 int mctp_uart_start(struct mctp_binding *binding)
 {
+	struct mctp_binding_uart *uart = binding_to_uart(binding);
+
+	k_sem_init(&uart->rx_disabled, 0, 1);
 	mctp_binding_set_tx_enabled(binding, true);
+
 	return 0;
 }

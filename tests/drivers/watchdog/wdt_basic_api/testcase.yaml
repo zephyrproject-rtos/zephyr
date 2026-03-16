@@ -11,27 +11,40 @@ tests:
        or dt_compat_enabled("st,stm32-window-watchdog")
        or dt_compat_enabled("st,stm32-watchdog") or CONFIG_SOC_FAMILY_LPC or
        CONFIG_SOC_SERIES_IMXRT6XX or CONFIG_SOC_SERIES_IMXRT5XX or
-       CONFIG_SOC_FAMILY_GD_GD32 or SOC_SERIES_GD32VF103)
+       CONFIG_SOC_FAMILY_GD_GD32 or SOC_SERIES_GD32VF103 or CONFIG_SOC_MAX32655)
+       and dt_nodelabel_enabled("watchdog0")
     platform_exclude:
       - mec15xxevb_assy6853
       - s32z2xxdc2/s32z270/rtu0
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
+      - s32k5xxcvb/s32k566/r52
       - mps2/an383
+      - mps2/an385
       - mps2/an386
       - mps2/an500
-      - panb511evb/nrf54l15/cpuapp
-      - panb511evb/nrf54l15/cpuapp/ns
-      - panb511evb/nrf54l15/cpuflpr
-      - panb511evb/nrf54l15/cpuflpr/xip
+      - panb611evb/nrf54l15/cpuapp
+      - panb611evb/nrf54l15/cpuapp/ns
+      - panb611evb/nrf54l15/cpuflpr
+      - panb611evb/nrf54l15/cpuflpr/xip
       - mimxrt700_evk/mimxrt798s/cm33_cpu1
-      - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54l15dk/nrf54l10/cpuapp/ns
+      - nrf54l15tag/nrf54l15/cpuapp
+      - nrf54l15tag/nrf54l15/cpuapp/ns
+      - nrf54l15tag/nrf54l15/cpuflpr
+      - nrf54l15tag/nrf54l15/cpuflpr/xip
+      - nrf54lm20dk/nrf54lm20a/cpuapp/ns
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ns
       - bl54l15_dvk/nrf54l10/cpuapp/ns
       - bl54l15_dvk/nrf54l15/cpuapp/ns
       - bl54l15u_dvk/nrf54l15/cpuapp/ns
-      - raytac_an54l15q_db/nrf54l15/cpuapp/ns
+      - frdm_mcxw71
+      - frdm_mcxw72
+      - raytac_an54lq_db_15/nrf54l15/cpuapp/ns
+      - frdm_mcxw23
+      - mcxw23_evk
+      - pic32cx_sg61_cult
   drivers.watchdog.stm32wwdg:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg.overlay"
@@ -54,13 +67,15 @@ tests:
       - nucleo_u385rg_q
       - nucleo_u575zi_q
       - nucleo_c031c6
-      - stm32h573i_dk
       - nucleo_wba55cg
+      - stm32n6570_dk/stm32n657xx/sb
     integration_platforms:
       - nucleo_f091rc
   drivers.watchdog.stm32wwdg_h7:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg_h7.overlay"
+    extra_configs:
+      - CONFIG_DCACHE=n
     platform_allow:
       - nucleo_h7s3l8
       - stm32h7s78_dk
@@ -86,7 +101,6 @@ tests:
       - nucleo_wl55jc
       - b_u585i_iot02a
       - nucleo_u575zi_q
-      - nucleo_h753zi
       - nucleo_h743zi
       - nucleo_c031c6
       - nucleo_h753zi
@@ -94,6 +108,7 @@ tests:
       - stm32h7s78_dk
       - nucleo_u385rg_q
       - nucleo_wba55cg
+      - stm32n6570_dk/stm32n657xx/sb
     integration_platforms:
       - nucleo_f091rc
   drivers.watchdog.mec15xxevb_assy6853:
@@ -143,6 +158,7 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
+      - s32k5xxcvb/s32k566/r52
       - mr_canhubk3
     integration_platforms:
       - s32z2xxdc2/s32z270/rtu0
@@ -150,3 +166,32 @@ tests:
     filter: dt_compat_enabled("ti,tps382x")
     platform_allow: mimxrt1050_evk/mimxrt1052/hyperflash
     extra_args: DTC_OVERLAY_FILE="boards/mimxrt1050_evk_ti_tps382x.overlay"
+  drivers.watchdog.nxp_sram_noecc:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="sram_noecc.overlay"
+    platform_allow:
+      - frdm_mcxw71
+      - frdm_mcxw72
+  drivers.watchdog.nxp_mcxw2xx_bypass_first_32k:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="bypass_first_32k.overlay"
+    platform_allow:
+      - frdm_mcxw23
+      - mcxw23_evk
+  drivers.watchdog.max32:
+    filter: dt_compat_enabled("adi,max32-watchdog")
+    extra_args: DTC_OVERLAY_FILE="zephyr_sram3.overlay"
+    platform_allow:
+      - max32655evkit/max32655/m4
+      - max32655fthr/max32655/m4
+      - max32690evkit/max32690/m4
+      - max78002evkit/max78002/m4
+  drivers.watchdog.bflb:
+    platform_allow:
+      - ai_m62_12f_kit
+      - ai_wb2_12f_kit
+      - dt_xt_zb1_devkit
+  drivers.watchdog.pm_enabled:
+    platform_allow:
+      - siwx917_rb4338a
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y

@@ -1,0 +1,8 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Counter-based Virtual Real Time Clock (RTC)
+
+compatible: "zephyr,rtc-counter"
+
+include: rtc-device.yaml

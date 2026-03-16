@@ -43,6 +43,9 @@ static const struct wpa_supp_event_info {
 	{ "CTRL-EVENT-NETWORK-REMOVED", SUPPLICANT_EVENT_NETWORK_REMOVED },
 	{ "CTRL-EVENT-DSCP-POLICY", SUPPLICANT_EVENT_DSCP_POLICY },
 	{ "CTRL-EVENT-REGDOM-CHANGE", SUPPLICANT_EVENT_REGDOM_CHANGE },
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	{ "P2P-DEVICE-FOUND", SUPPLICANT_EVENT_P2P_DEVICE_FOUND },
+#endif
 };
 
 static void copy_mac_addr(const unsigned int *src, uint8_t *dst)
@@ -174,6 +177,43 @@ static int supplicant_process_status(struct supplicant_int_event_data *event_dat
 		event_data->data_len = sizeof(data->bss_removed);
 		copy_mac_addr(tmp_mac_addr, data->bss_removed.bssid);
 		break;
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	case SUPPLICANT_EVENT_P2P_DEVICE_FOUND:
+	{
+		char *ptr, *name_start, *name_end;
+		unsigned int config_methods = 0;
+
+		memset(&data->p2p_device_found, 0, sizeof(data->p2p_device_found));
+		ret = sscanf(event_no_prefix, MACSTR, MACADDR2STR(tmp_mac_addr));
+		if (ret > 0) {
+			copy_mac_addr(tmp_mac_addr, data->p2p_device_found.mac);
+		}
+		name_start = strstr(event_no_prefix, "name='");
+		if (name_start) {
+			name_start += 6;
+			name_end = strchr(name_start, '\'');
+			if (name_end) {
+				size_t name_len = name_end - name_start;
+
+				if (name_len >= sizeof(data->p2p_device_found.device_name)) {
+					name_len = sizeof(data->p2p_device_found.device_name) - 1;
+				}
+				memcpy(data->p2p_device_found.device_name, name_start, name_len);
+				data->p2p_device_found.device_name[name_len] = '\0';
+			}
+		}
+		ptr = strstr(event_no_prefix, "config_methods=");
+		if (ptr) {
+			ret = sscanf(ptr, "config_methods=%x", &config_methods);
+			if (ret > 0) {
+				data->p2p_device_found.config_methods = config_methods;
+			}
+		}
+		event_data->data_len = sizeof(data->p2p_device_found);
+		ret = 1;
+		break;
+	}
+#endif
 	case SUPPLICANT_EVENT_TERMINATING:
 	case SUPPLICANT_EVENT_SCAN_STARTED:
 	case SUPPLICANT_EVENT_SCAN_RESULTS:
@@ -224,20 +264,24 @@ int supplicant_send_wifi_mgmt_conn_event(void *ctx, int status_code)
 int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code)
 {
 	struct wpa_supplicant *wpa_s = ctx;
-	int status = wpas_to_wifi_mgmt_disconn_status(reason_code);
 	enum net_event_wifi_cmd event;
+	int status;
 
 	if (!wpa_s || !wpa_s->current_ssid) {
 		return -EINVAL;
 	}
 
 	if (wpa_s->wpa_state >= WPA_COMPLETED) {
+		/* Disconnect event code & status */
+		status = wpas_to_wifi_mgmt_disconn_status(reason_code);
 		if (wpa_s->current_ssid->mode == WPAS_MODE_AP) {
 			event = NET_EVENT_WIFI_CMD_AP_DISABLE_RESULT;
 		} else {
 			event = NET_EVENT_WIFI_CMD_DISCONNECT_RESULT;
 		}
 	} else {
+		/* Connect event code & status */
+		status = WIFI_STATUS_CONN_FAIL;
 		if (wpa_s->current_ssid->mode == WPAS_MODE_AP) {
 			event = NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT;
 		} else {
@@ -300,12 +344,14 @@ int supplicant_send_wifi_mgmt_ap_sta_event(void *ctx,
 {
 	struct sta_info *sta = data;
 	struct wpa_supplicant *ap_ctx = ctx;
-	char *ifname = ap_ctx->ifname;
+	char *ifname;
 	struct wifi_ap_sta_info sta_info = { 0 };
 
 	if (!ap_ctx || !sta) {
 		return -EINVAL;
 	}
+
+	ifname = ap_ctx->ifname;
 
 	memcpy(sta_info.mac, sta->addr, sizeof(sta_info.mac));
 
@@ -380,8 +426,18 @@ int supplicant_send_wifi_mgmt_event(const char *ifname, enum net_event_wifi_cmd 
 	case NET_EVENT_WIFI_CMD_SUPPLICANT:
 		event_data.data = &data;
 		if (supplicant_process_status(&event_data, (char *)supplicant_status) > 0) {
-			net_mgmt_event_notify_with_info(NET_EVENT_SUPPLICANT_INT_EVENT,
-						iface, &event_data, sizeof(event_data));
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+			/* Handle P2P events directly */
+			if (event_data.event == SUPPLICANT_EVENT_P2P_DEVICE_FOUND) {
+				wifi_mgmt_raise_p2p_device_found_event(iface,
+						&data.p2p_device_found);
+			} else {
+#endif
+				net_mgmt_event_notify_with_info(NET_EVENT_SUPPLICANT_INT_EVENT,
+							iface, &event_data, sizeof(event_data));
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+			}
+#endif
 		}
 		break;
 	default:

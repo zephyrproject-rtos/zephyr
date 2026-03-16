@@ -6,16 +6,37 @@
 
 if SOC_AMD_VERSAL2
 
+configdefault CACHE_MANAGEMENT
+	default y
+
 if SOC_AMD_VERSAL2_RPU
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used
 	# - include the UART interrupts
-	default 256
+	default 288
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
 
 endif # SOC_AMD_VERSAL2_RPU
+
+if SOC_AMD_VERSAL2_APU
+
+configdefault DCACHE_LINE_SIZE
+	default 64
+
+configdefault ICACHE_LINE_SIZE
+	default 64
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	default 288
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+endif # SOC_AMD_VERSAL2_APU
 
 endif # SOC_VERSAL2_AMD

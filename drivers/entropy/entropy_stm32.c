@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <soc.h>
 #include <zephyr/pm/policy.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_rng.h>
@@ -84,7 +85,7 @@ BUILD_ASSERT((CONFIG_ENTROPY_STM32_THR_POOL_SIZE &
  *  at least 32 MHz. See also: §6.2.2 "Peripheral clock details".
  */
 BUILD_ASSERT(!IS_ENABLED(CONFIG_SOC_STM32WB09XX) ||
-		CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= (32 * 1000 * 1000),
+		STM32_HCLK_FREQUENCY >= (32 * 1000 * 1000),
 	"STM32WB09: TRNG requires system clock frequency >= 32MHz");
 
 struct entropy_stm32_rng_dev_cfg {
@@ -139,12 +140,30 @@ static int entropy_stm32_suspend(void)
 	LL_RNG_SetAesReset(rng, 1);
 #endif /* CONFIG_SOC_STM32WB09XX */
 
-#ifdef CONFIG_SOC_SERIES_STM32WBAX
-	uint32_t wait_cycles, rng_rate;
+/*
+ * The PKA IP is currently not supported by Zephyr but may be used by
+ * external code, such as wireless stack for example. Since the RNG
+ * clock must be enabled when PKA is used on certain series, check if
+ * the PKA is in use and keep RNG clock active if so.
+ *
+ * A notable exception is the STM32WB0 series where PKA can operate
+ * autonomously and, on certain SoCs, lacks PKA_CR.EN and corresponding
+ * LL_PKA_IsEnabled(). Since RNG clock is not required by PKA, we can
+ * ignore the check on this series.
+ */
+#if defined(PKA) && !defined(CONFIG_SOC_SERIES_STM32WB0X)
+	if (__HAL_RCC_PKA_IS_CLK_ENABLED() && LL_PKA_IsEnabled(PKA)) {
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
+		z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
+#endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 
-	if (LL_PKA_IsEnabled(PKA)) {
+		/* PKA needs RNG clock, so exit here if in use */
 		return 0;
 	}
+#endif /* PKA && !CONFIG_SOC_SERIES_STM32WB0X */
+
+#ifdef CONFIG_SOC_SERIES_STM32WBAX
+	uint32_t wait_cycles, rng_rate;
 
 	if (clock_control_get_rate(dev_data->clock,
 			(clock_control_subsys_t) &dev_cfg->pclken[0],
@@ -199,19 +218,21 @@ static void configure_rng(void)
 #ifdef STM32_CONDRST_SUPPORT
 	uint32_t desired_nist_cfg = DT_INST_PROP_OR(0, nist_config, 0U);
 	uint32_t desired_htcr = DT_INST_PROP_OR(0, health_test_config, 0U);
+	uint32_t desired_nscr = DT_INST_PROP_OR(0, noise_source_control, 0U);
 	uint32_t cur_nist_cfg = 0U;
 	uint32_t cur_htcr = 0U;
+	uint32_t cur_nscr = 0U;
 
 #if DT_INST_NODE_HAS_PROP(0, nist_config)
 	/*
 	 * Configure the RNG_CR in compliance with the NIST SP800.
-	 * The nist-config is direclty copied from the DTS.
+	 * The nist-config is directly copied from the DTS.
 	 * The RNG clock must be 48MHz else the clock DIV is not adpated.
 	 * The RNG_CR_CONDRST is set to 1 at the same time the RNG_CR is written
 	 */
-	cur_nist_cfg = READ_BIT(rng->CR,
-				(RNG_CR_NISTC | RNG_CR_CLKDIV | RNG_CR_RNG_CONFIG1 |
-				RNG_CR_RNG_CONFIG2 | RNG_CR_RNG_CONFIG3
+	cur_nist_cfg = stm32_reg_read_bits(&rng->CR,
+					   (RNG_CR_NISTC | RNG_CR_CLKDIV | RNG_CR_RNG_CONFIG1 |
+					    RNG_CR_RNG_CONFIG2 | RNG_CR_RNG_CONFIG3
 #if defined(RNG_CR_ARDIS)
 				| RNG_CR_ARDIS
 	/* For STM32U5 series, the ARDIS bit7 is considered in the nist-config */
@@ -223,27 +244,32 @@ static void configure_rng(void)
 	cur_htcr = LL_RNG_GetHealthConfig(rng);
 #endif /* health_test_config */
 
-	if (cur_nist_cfg != desired_nist_cfg || cur_htcr != desired_htcr) {
-		MODIFY_REG(rng->CR, cur_nist_cfg, (desired_nist_cfg | RNG_CR_CONDRST));
+#if DT_INST_NODE_HAS_PROP(0, noise_source_control)
+	cur_nscr = LL_RNG_GetNoiseConfig(rng);
+#endif /* noise_source_control */
+
+	if (cur_nist_cfg != desired_nist_cfg || cur_htcr != desired_htcr ||
+	    cur_nscr != desired_nscr) {
+		stm32_reg_modify_bits(&rng->CR, cur_nist_cfg, desired_nist_cfg | RNG_CR_CONDRST);
 
 #if DT_INST_NODE_HAS_PROP(0, health_test_config)
 #if DT_INST_NODE_HAS_PROP(0, health_test_magic)
+		/* On certain series, a magic value must be written first as
+		 * health configuration before the actual configuration value.
+		 */
 		LL_RNG_SetHealthConfig(rng, DT_INST_PROP(0, health_test_magic));
 #endif /* health_test_magic */
 		LL_RNG_SetHealthConfig(rng, desired_htcr);
 #endif /* health_test_config */
 
-#if defined(CONFIG_SOC_SERIES_STM32L4X)
-		LL_RNG_ResetConditioningResetBit(rng);
-		/* Wait for conditioning reset process to be completed */
-		while (LL_RNG_IsResetConditioningBitSet(rng) == 1) {
-		}
-#else
+#if DT_INST_NODE_HAS_PROP(0, noise_source_control)
+		LL_RNG_SetNoiseConfig(rng, DT_INST_PROP(0, noise_source_control));
+#endif /* noise_source_control */
+
 		LL_RNG_DisableCondReset(rng);
 		/* Wait for conditioning reset process to be completed */
 		while (LL_RNG_IsEnabledCondReset(rng) == 1) {
 		}
-#endif /* CONFIG_SOC_SERIES_STM32L4X */
 	}
 #endif /* STM32_CONDRST_SUPPORT */
 
@@ -293,23 +319,14 @@ static int recover_seed_error(RNG_TypeDef *rng)
 {
 	uint32_t count_timeout = 0;
 
-#if defined(CONFIG_SOC_SERIES_STM32L4X)
-		LL_RNG_SetConditioningResetBit(rng);
-		LL_RNG_ResetConditioningResetBit(rng);
-#else
-		LL_RNG_EnableCondReset(rng);
-		LL_RNG_DisableCondReset(rng);
-#endif /* CONFIG_SOC_SERIES_STM32L4X */
+	LL_RNG_EnableCondReset(rng);
+	LL_RNG_DisableCondReset(rng);
 
 	/* When reset process is done cond reset bit is read 0
 	 * This typically takes: 2 AHB clock cycles + 2 RNG clock cycles.
 	 */
 
-#if defined(CONFIG_SOC_SERIES_STM32L4X)
-	while (LL_RNG_IsResetConditioningBitSet(rng) ||
-#else
 	while (LL_RNG_IsEnabledCondReset(rng) ||
-#endif /* CONFIG_SOC_SERIES_STM32L4X */
 		ll_rng_is_active_seis(rng) ||
 		ll_rng_is_active_secs(rng)) {
 		count_timeout++;
@@ -327,9 +344,14 @@ static int recover_seed_error(RNG_TypeDef *rng)
 {
 	ll_rng_clear_seis(rng);
 
+#if !defined(CONFIG_SOC_SERIES_STM32WB0X)
+	/* After a noise source error is detected, 12 words must be read from the RNG_DR register
+	 * and discarded to restart the entropy generation.
+	 */
 	for (int i = 0; i < 12; ++i) {
 		(void)ll_rng_read_rand_data(rng);
 	}
+#endif /* !CONFIG_SOC_SERIES_STM32WB0X */
 
 	if (ll_rng_is_active_seis(rng) != 0) {
 		return -EIO;
@@ -445,7 +467,7 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 		ret = random_sample_get(&rnd_sample);
 #if !IRQLESS_TRNG
 		NVIC_ClearPendingIRQ(IRQN);
-#endif /* IRQLESS_TRNG */
+#endif /* !IRQLESS_TRNG */
 
 		if (ret < 0) {
 			continue;
@@ -809,10 +831,6 @@ static int entropy_stm32_rng_init(const struct device *dev)
 
 	dev_data->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	if (!device_is_ready(dev_data->clock)) {
-		return -ENODEV;
-	}
-
 	res = clock_control_on(dev_data->clock,
 		(clock_control_subsys_t)&dev_cfg->pclken[0]);
 	__ASSERT_NO_MSG(res == 0);
@@ -929,5 +947,5 @@ DEVICE_DT_INST_DEFINE(0,
 		    entropy_stm32_rng_init,
 		    PM_DEVICE_DT_INST_GET(0),
 		    &entropy_stm32_rng_data, &entropy_stm32_rng_config,
-		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
+		    STM32_TRNG_INIT_LEVEL, CONFIG_ENTROPY_INIT_PRIORITY,
 		    &entropy_stm32_rng_api);

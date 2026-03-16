@@ -175,6 +175,15 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 				k_thread_entry_t _main);
 #endif /* CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN */
 
+/**
+ * @brief Save coprocessor states on an IPI
+ *
+ * The function, invoked by the IPI handler, is used by cross-CPU lazy context
+ * switches. It saves the relevant coprocessor context(s) before signalling the
+ * waiting CPU that it has finished.
+ */
+void arch_ipi_lazy_coprocessors_save(void);
+
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 /**
  * @brief Disable floating point context preservation
@@ -211,6 +220,14 @@ int arch_float_disable(struct k_thread *thread);
  */
 int arch_float_enable(struct k_thread *thread, unsigned int options);
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
+
+/**
+ * @brief Disable coprocessor context preservation
+ *
+ * This function serves as a catchall for disabling the preservation of
+ * coprocessor context information when aborting a thread.
+ */
+int arch_coprocessors_disable(struct k_thread *thread);
 
 #if defined(CONFIG_USERSPACE) && defined(CONFIG_ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET)
 /**

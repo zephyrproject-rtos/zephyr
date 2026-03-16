@@ -23,11 +23,50 @@
 		#include "mec5/mec5_gpspi_v2.dtsi"
 		#include "mec5/mec5_eeprom_8kb.dtsi"
 		#include "mec5/mec5_pkg176_pwms.dtsi"
-		#include "mec5/mec5_pkg176_uarts.dtsi"
+		#include "mec5/mec5_rcid.dtsi"
+		#include "mec5/mec5_bclink.dtsi"
+
+		ps2_1: ps2@40009040 {
+			reg = <0x40009040 0x40>;
+			interrupts = <101 3>;
+			girqs = <18 11>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 
 		kscan0: kscan@40009c00 {
 			reg = <0x40009c00 0x18>;
 			interrupts = <135 0>;
+			girqs = <21 25>;
+			status = "disabled";
+		};
+
+		bbled3: bbled@4000bb00 {
+			reg = <0x4000bb00 0x100>;
+			interrupts = <86 3>;
+			status = "disabled";
+		};
+
+		uart2: uart@400f2c00 {
+			reg = <0x400f2c00 0x400>;
+			interrupts = <183 2>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 25)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(2, 28)>;
+			ldn = <11>;
+			clock-frequency = <1843200>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart3: uart@400f3000 {
+			reg = <0x400f3000 0x400>;
+			interrupts = <184 2>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 26)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(2, 30)>;
+			ldn = <12>;
+			clock-frequency = <1843200>;
+			current-speed = <115200>;
 			status = "disabled";
 		};
 	};

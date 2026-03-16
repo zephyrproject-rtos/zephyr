@@ -15,6 +15,9 @@ config ADXL345
 
 if ADXL345
 
+config ADXL345_ACCEL_RANGE_RUNTIME
+	bool "Select range at runtime"
+
 choice ADXL345_TRIGGER_MODE
 	prompt "Trigger mode"
 	default ADXL345_TRIGGER_NONE

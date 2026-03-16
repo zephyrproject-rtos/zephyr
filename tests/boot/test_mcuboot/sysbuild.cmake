@@ -14,6 +14,12 @@ ExternalZephyrProject_Add(
   SOURCE_DIR ${APP_DIR}/swapped_app
 )
 
+# This section ensures that sysbuild-related configurations, such as the MCUBOOT swap type,
+# are passed down to the swapped_app image.
+set_target_properties(swapped_app PROPERTIES
+  IMAGE_CONF_SCRIPT ${ZEPHYR_BASE}/share/sysbuild/image_configurations/MAIN_image_default.cmake
+)
+
 # Add the swapped app to the list of images to flash
 # Ensure the flashing order of images is as follows:
 # - mcuboot

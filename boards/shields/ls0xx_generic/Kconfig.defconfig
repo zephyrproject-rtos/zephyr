@@ -13,9 +13,6 @@ config LV_Z_VDB_SIZE
 config LV_DPI_DEF
 	default 150
 
-config LV_Z_BITS_PER_PIXEL
-	default 1
-
 choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_1
 endchoice

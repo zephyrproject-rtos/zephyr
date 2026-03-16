@@ -1,0 +1,325 @@
+/*
+ * Copyright (c) 2025 PHYTEC America LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <phytec/phycore_rt1170-pinctrl.dtsi>
+
+&pinctrl {
+	pinmux_csi: pinmux_csi {
+		group0 {
+			pinmux = <&iomuxc_gpio_disp_b2_14_gpio11_io15>;
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "fast";
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_ad_26_gpio9_io25>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_enet: pinmux_enet {
+		group0 {
+			pinmux = <&iomuxc_gpio_disp_b2_08_enet_rx_en>,
+				 <&iomuxc_gpio_disp_b2_09_enet_rx_er>;
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "fast";
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_disp_b2_06_enet_rdata00>,
+				 <&iomuxc_gpio_disp_b2_07_enet_rdata01>;
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "fast";
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <&iomuxc_gpio_disp_b2_02_enet_tdata00>,
+				 <&iomuxc_gpio_disp_b2_03_enet_tdata01>,
+				 <&iomuxc_gpio_disp_b2_04_enet_tx_en>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+
+		group3 {
+			pinmux = <&iomuxc_gpio_disp_b2_05_enet_ref_clk>;
+			drive-strength = "high";
+			slew-rate = "slow";
+			input-enable;
+		};
+	};
+
+	pinmux_enet_mdio: pinmux_enet_mdio {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_32_enet_mdc>,
+				 <&iomuxc_gpio_ad_33_enet_mdio>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lcdif: pinmux_lcdif {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_30_gpio9_io29>,
+				 <&iomuxc_gpio_ad_31_gpio9_io30>;
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "fast";
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_disp_b2_15_gpio11_io16>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpi2c1: pinmux_lpi2c1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_08_lpi2c1_scl>,
+				 <&iomuxc_gpio_ad_09_lpi2c1_sda>;
+			drive-strength = "normal";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpi2c2: pinmux_lpi2c2 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_18_lpi2c2_scl>,
+				 <&iomuxc_gpio_ad_19_lpi2c2_sda>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpi2c5: pinmux_lpi2c5 {
+		group0 {
+			pinmux = <&iomuxc_lpsr_gpio_lpsr_08_lpi2c5_sda>,
+				 <&iomuxc_lpsr_gpio_lpsr_09_lpi2c5_scl>;
+			drive-strength = "normal";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpspi1: pinmux_lpspi1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_29_lpspi1_pcs0>,
+				 <&iomuxc_gpio_ad_28_lpspi1_sck>,
+				 <&iomuxc_gpio_ad_31_lpspi1_sdi>,
+				 <&iomuxc_gpio_ad_30_lpspi1_sdo>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpspi5: pinmux_lpspi5 {
+		group0 {
+			pinmux = <&iomuxc_lpsr_gpio_lpsr_03_lpspi5_pcs0>,
+				 <&iomuxc_lpsr_gpio_lpsr_06_lpspi5_pcs1>,
+				 <&iomuxc_lpsr_gpio_lpsr_07_lpspi5_pcs2>,
+				 <&iomuxc_lpsr_gpio_lpsr_02_lpspi5_sck>,
+				 <&iomuxc_lpsr_gpio_lpsr_05_lpspi5_sdi>,
+				 <&iomuxc_lpsr_gpio_lpsr_04_lpspi5_sdo>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart1: pinmux_lpuart1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_25_lpuart1_rx>,
+				 <&iomuxc_gpio_ad_24_lpuart1_tx>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart1_sleep: pinmux_lpuart1_sleep {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_25_gpio_mux3_io24>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_ad_24_lpuart1_tx>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart2: pinmux_lpuart2 {
+		group0 {
+			pinmux = <&iomuxc_gpio_disp_b2_11_lpuart2_rx>,
+				 <&iomuxc_gpio_disp_b2_10_lpuart2_tx>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart2_sleep: pinmux_lpuart2_sleep {
+		group0 {
+			pinmux = <&iomuxc_gpio_disp_b2_11_gpio_mux5_io12>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_disp_b2_10_lpuart2_tx>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart5: pinmux_lpuart5 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_29_lpuart5_rx>,
+				 <&iomuxc_gpio_ad_28_lpuart5_tx>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart5_sleep: pinmux_lpuart5_sleep {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_29_gpio_mux3_io28>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_ad_28_lpuart5_tx>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart6: pinmux_lpuart6 {
+		group0 {
+			pinmux = <&iomuxc_gpio_emc_b1_41_lpuart6_rx>,
+				 <&iomuxc_gpio_emc_b1_40_lpuart6_tx>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart6_sleep: pinmux_lpuart6_sleep {
+		group0 {
+			pinmux = <&iomuxc_gpio_emc_b1_41_gpio_mux2_io09>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_emc_b1_40_lpuart6_tx>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart8: pinmux_lpuart8 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_03_lpuart8_rx>,
+				 <&iomuxc_gpio_ad_02_lpuart8_tx>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart8_sleep: pinmux_lpuart8_sleep {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_03_gpio9_io02>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_ad_02_lpuart8_tx>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart8_flowcontrol: pinmux_lpuart8_flowcontrol {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_03_lpuart8_rx>,
+				 <&iomuxc_gpio_ad_02_lpuart8_tx>,
+				 <&iomuxc_gpio_ad_04_lpuart8_cts_b>,
+				 <&iomuxc_gpio_ad_05_lpuart8_rts_b>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_flexcan3: pinmux_flexcan3 {
+		group0 {
+			pinmux = <&iomuxc_lpsr_gpio_lpsr_01_can3_rx>,
+				 <&iomuxc_lpsr_gpio_lpsr_00_can3_tx>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_sai1: pinmux_sai1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_17_sai1_mclk>,
+				 <&iomuxc_gpio_ad_20_sai1_rx_data00>,
+				 <&iomuxc_gpio_ad_21_sai1_tx_data00>,
+				 <&iomuxc_gpio_ad_22_sai1_tx_bclk>,
+				 <&iomuxc_gpio_ad_23_sai1_tx_sync>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_usdhc1: pinmux_usdhc1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_sd_b1_00_usdhc1_cmd>,
+				 <&iomuxc_gpio_sd_b1_01_usdhc1_clk>,
+				 <&iomuxc_gpio_sd_b1_02_usdhc1_data0>,
+				 <&iomuxc_gpio_sd_b1_03_usdhc1_data1>,
+				 <&iomuxc_gpio_sd_b1_04_usdhc1_data2>,
+				 <&iomuxc_gpio_sd_b1_05_usdhc1_data3>;
+			bias-pull-up;
+			input-enable;
+		};
+	};
+
+	/* removes pull on dat3 for card detect */
+	pinmux_usdhc1_dat3_nopull: pinmux_usdhc1_dat3_nopull {
+		group0 {
+			pinmux = <&iomuxc_gpio_sd_b1_05_usdhc1_data3>;
+			bias-disable;
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_sd_b1_00_usdhc1_cmd>,
+				 <&iomuxc_gpio_sd_b1_01_usdhc1_clk>,
+				 <&iomuxc_gpio_sd_b1_02_usdhc1_data0>,
+				 <&iomuxc_gpio_sd_b1_03_usdhc1_data1>,
+				 <&iomuxc_gpio_sd_b1_04_usdhc1_data2>;
+			bias-pull-up;
+			input-enable;
+		};
+	};
+};

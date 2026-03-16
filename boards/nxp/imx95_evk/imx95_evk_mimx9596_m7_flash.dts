@@ -1,0 +1,18 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "imx95_evk_mimx9596_m7.dts"
+
+/ {
+	model = "NXP i.MX95 EVK board NOR flash variant";
+
+	chosen {
+		zephyr,flash = &mt35xu01gbba;
+		zephyr,code-partition = &slot0_partition;
+	};
+};

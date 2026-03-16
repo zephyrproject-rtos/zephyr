@@ -48,6 +48,18 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+TPM
+---
+
+TPM2 is enabled for PWM for M33 core. Signals can be observerd with
+oscilloscope or logic analyzer.
+Connect J1005-3 and J1005-7(GND) to Oscilloscope or logic analyzer
+
+ADC
+---
+
+sar_adc1 is enabled for M33 core. Pins ADC_IN0/1/2/3 are connected to J1003-1/3/5/7
+
 Devices
 ========
 System Clock
@@ -246,6 +258,10 @@ Or use "cpu" command to boot from secondary Core, for example Core1:
 
     dcache flush; icache flush; cpu 1 release 0xd0000000
 
+.. note::
+
+   Use U-Boot "go" command to boot Zephyr when build with target ``imx93_evk/mimx9352/a55/smp``, since i.MX 93 only has 2 Cortex-A55 cores.
+
 Option 3. Boot Zephyr by Using Remoteproc under Linux
 =====================================================
 
@@ -321,6 +337,34 @@ to enable this, `imx-atf`_ can to be modified in "plat/imx/imx93/trdc_config.h".
 
 .. _imx-atf:
     https://github.com/nxp-imx/imx-atf
+
+imx-atf changes:
+
+.. code-block:: console
+
+    git diff plat/imx/imx93/trdc_config.h
+    diff --git a/plat/imx/imx93/trdc_config.h b/plat/imx/imx93/trdc_config.h
+    index 6c8b8f8fa..b155f9048 100644
+    --- a/plat/imx/imx93/trdc_config.h
+    +++ b/plat/imx/imx93/trdc_config.h
+    @@ -302,7 +302,7 @@ struct trdc_mbc_config trdc_n_mbc[] = {
+     };
+
+     struct trdc_glbac_config trdc_n_mrc_glbac[] = {
+    -       { 0, 0, SP(RW)  | SU(RW)  | NP(RW)  | NU(RW)  },
+    +       { 0, 0, SP(RWX)  | SU(RW)  | NP(RW)  | NU(RW)  },
+            { 0, 1, SP(RWX) | SU(RWX) | NP(RWX) | NU(RWX) },
+     };
+
+    @@ -356,7 +356,7 @@ struct trdc_mrc_config trdc_n_mrc[] = {
+     struct trdc_mrc_config trdc_n_mrc[] = {
+            { 0, 0, 0, 0x80000000, 0x80000000, 0, false }, /* MRC0 DRAM for S400 DID0 */
+            { 0, 1, 0, 0x80000000, 0x80000000, 0, false }, /* MRC0 DRAM for MTR DID1 */
+    -       { 0, 2, 0, 0x80000000, 0x80000000, 0, true }, /* MRC0 DRAM for M33 DID2 */
+    +       { 0, 2, 0, 0x80000000, 0x80000000, 1, true }, /* MRC0 DRAM for M33 DID2 */
+            { 0, 3, 0, 0x80000000, 0x80000000, 1, false }, /* MRC0 DRAM for A55 DID3 */
+            { 0, 5, 0, 0x80000000, 0x80000000, 0, false }, /* MRC0 DRAM for USDHC1 DID5 */
+            { 0, 6, 0, 0x80000000, 0x80000000, 0, false }, /* MRC0 DRAM for USDHC2 DID6 */
 
 Use this configuration to run basic Zephyr applications and kernel tests,
 for example, with the :zephyr:code-sample:`synchronization` sample:
@@ -446,5 +490,4 @@ This board has been designed for SOF so it's only intended to be used with SOF.
 TODO: document the SOF build process for this board. For now, the support for
 i.MX93 is still in review and has yet to merged on SOF side.
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc

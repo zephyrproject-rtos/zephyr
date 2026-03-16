@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: sockets-http-server
    :name: HTTP Server
-   :relevant-api: http_service http_server tls_credentials
+   :relevant-api: http_service http_server tls_credentials json
 
    Implement an HTTP(s) Server demonstrating various resource types.
 
@@ -31,7 +31,7 @@ There are configuration files for various setups in the
     * - :zephyr_file:`ieee802154-overlay.conf <samples/net/sockets/http_server/ieee802154-overlay.conf>`
       - This overlay config can be added for IEEE 802.15.4 support.
 
-    * - :zephyr_file:`overlay-netusb.conf <samples/net/sockets/http_server/overlay-netusb.conf>`
+    * - :zephyr_file:`overlay-usbd.conf <samples/net/sockets/http_server/overlay-usbd.conf>`
       - This overlay config can be added for connecting via network USB.
 
     * - :zephyr_file:`overlay-tls.conf <samples/net/sockets/http_server/overlay-tls.conf>`

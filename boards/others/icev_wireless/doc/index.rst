@@ -3,7 +3,7 @@
 Overview
 ********
 
-The ICE-V Wireless is a combined ESP32C3 and iCE40 FPGA board.
+The ICE-V Wireless is a combined ESP32-C3 and iCE40 FPGA board.
 
 See the `ICE-V Wireless Github Project`_ for details.
 
@@ -13,7 +13,7 @@ Hardware
 This board combines an Espressif ESP32-C3-MINI-1 (which includes 4MB of flash in the module) with a
 Lattice iCE40UP5k-SG48 FPGA to allow WiFi and Bluetooth control of the FPGA. ESP32 and FPGA I/O is
 mostly uncommitted except for the pins used for SPI communication between ESP32 and FPGA. Several
-of the ESP32C3 GPIO pins are available for additonal interfaces such as serial, ADC, I2C, etc.
+of the ESP32C3 GPIO pins are available for additional interfaces such as serial, ADC, I2C, etc.
 
 For details on ESP32-C3 hardware please refer to the following resources:
 
@@ -24,6 +24,9 @@ For details on ESP32-C3 hardware please refer to the following resources:
 For details on iCE40 hardware please refer to the following resources:
 
 * `iCE40 UltraPlus Family Datasheet`_
+
+.. include:: ../../../espressif/common/soc-esp32c3-features.rst
+   :start-after: espressif-soc-esp32c3-features
 
 Supported Features
 ==================
@@ -55,179 +58,35 @@ below.
    :align: center
    :alt: ICE-V Wireless Pinout
 
+System Requirements
+*******************
+
+.. include:: ../../../espressif/common/system-requirements.rst
+   :start-after: espressif-system-requirements
+
 Programming and Debugging
 *************************
 
 .. zephyr:board-supported-runners::
 
-Programming and debugging for the ICE-V Wireless ESP32-C3 target is
-incredibly easy 🎉 following the steps below.
+.. include:: ../../../espressif/common/building-flashing.rst
+   :start-after: espressif-building-flashing
 
-Building and Flashing
-*********************
-
-Simple boot
-===========
-
-The board could be loaded using the single binary image, without 2nd stage bootloader.
-It is the default option when building the application without additional configuration.
-
-.. note::
-
-   Simple boot does not provide any security features nor OTA updates.
-
-MCUboot bootloader
-==================
-
-User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be built (and flashed) at least once.
-
-There are two options to be used when building an application:
-
-1. Sysbuild
-2. Manual build
-
-.. note::
-
-   User can select the MCUboot bootloader by adding the following line
-   to the board default configuration file.
-
-   .. code:: cfg
-
-      CONFIG_BOOTLOADER_MCUBOOT=y
-
-Sysbuild
-========
-
-The sysbuild makes possible to build and flash all necessary images needed to
-bootstrap the board with the ESP32 SoC.
-
-To build the sample application using sysbuild use the command:
-
-.. zephyr-app-commands::
-   :tool: west
-   :zephyr-app: samples/hello_world
-   :board: icev_wireless
-   :goals: build
-   :west-args: --sysbuild
-   :compact:
-
-By default, the ESP32 sysbuild creates bootloader (MCUboot) and application
-images. But it can be configured to create other kind of images.
-
-Build directory structure created by sysbuild is different from traditional
-Zephyr build. Output is structured by the domain subdirectories:
-
-.. code-block::
-
-  build/
-  ├── hello_world
-  │   └── zephyr
-  │       ├── zephyr.elf
-  │       └── zephyr.bin
-  ├── mcuboot
-  │    └── zephyr
-  │       ├── zephyr.elf
-  │       └── zephyr.bin
-  └── domains.yaml
-
-.. note::
-
-   With ``--sysbuild`` option the bootloader will be re-build and re-flash
-   every time the pristine build is used.
-
-For more information about the system build please read the :ref:`sysbuild` documentation.
-
-Manual build
-============
-
-During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be built one at a time using traditional build.
-
-The instructions following are relevant for both manual build and sysbuild.
-The only difference is the structure of the build directory.
-
-.. note::
-
-   Remember that bootloader (MCUboot) needs to be flash at least once.
-
-For the :code:`Hello, world!` application, follow the instructions below.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: icev_wireless
-   :goals: build flash
-
-Open the serial monitor using the following command:
-
-.. code-block:: console
-
-   $ west espressif monitor
-
-After the board has automatically reset and booted, you should see the following
-message in the monitor:
-
-.. code-block:: console
-
-   ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! icev_wireless
+.. include:: ../../../espressif/common/board-variants.rst
+   :start-after: espressif-board-variants
 
 Debugging
-*********
+=========
 
-As with much custom hardware, the ESP32C3 modules require patches to
-OpenOCD that are not upstreamed. Espressif maintains their own fork of
-the project. The custom OpenOCD can be obtained by running the following extension:
-
-.. code-block:: console
-
-   west espressif install
-
-.. note::
-
-   By default, the OpenOCD will be downloaded and installed under $HOME/.espressif/tools/zephyr directory
-   (%USERPROFILE%/.espressif/tools/zephyr on Windows).
-
-The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite that behavior by adding the
-``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
-parameter when building.
-
-Here is an example for building the :zephyr:code-sample:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: icev_wireless
-   :goals: build flash
-   :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
-
-You can debug an application in the usual way. Here is an example for the
-:zephyr:code-sample:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: icev_wireless
-   :maybe-skip-config:
-   :goals: debug
+.. include:: ../../../espressif/common/openocd-debugging.rst
+   :start-after: espressif-openocd-debugging
 
 References
 **********
 
 .. target-notes::
 
-.. _ICE-V Wireless Github Project:
-   https://github.com/ICE-V-Wireless/ICE-V-Wireless
-
-.. _ESP32-C3-MINI-1 Datasheet:
-   https://www.espressif.com/sites/default/files/documentation/esp32-c3-mini-1_datasheet_en.pdf
-
-.. _ESP32-C3 Datasheet:
-   https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf
-
-.. _ESP32-C3 Technical Reference Manual:
-   https://www.espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf
-
-.. _iCE40 UltraPlus Family Datasheet:
-   https://www.latticesemi.com/-/media/LatticeSemi/Documents/DataSheets/iCE/iCE40-UltraPlus-Family-Data-Sheet.ashx
-
-.. _PMOD Specification:
-   https://digilent.com/reference/_media/reference/pmod/pmod-interface-specification-1_2_0.pdf
+.. _`ICE-V Wireless Github Project`: https://github.com/ICE-V-Wireless/ICE-V-Wireless
+.. _`ESP32-C3-MINI-1 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-c3-mini-1_datasheet_en.pdf
+.. _`iCE40 UltraPlus Family Datasheet`: https://www.latticesemi.com/-/media/LatticeSemi/Documents/DataSheets/iCE/iCE40-UltraPlus-Family-Data-Sheet.ashx
+.. _`PMOD Specification`: https://digilent.com/reference/_media/reference/pmod/pmod-interface-specification-1_2_0.pdf

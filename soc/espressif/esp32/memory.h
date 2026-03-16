@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
+
 /* SRAM0 (192kB)  instruction cache+memory */
 #define SRAM0_IRAM_START    DT_REG_ADDR(DT_NODELABEL(sram0))
 #define SRAM0_CACHE_SIZE    0x10000
@@ -25,6 +27,15 @@
 #define SRAM2_DRAM_END        (SRAM2_DRAM_START + SRAM2_DRAM_SIZE)
 #define SRAM2_DRAM_USER_START (SRAM2_DRAM_START + SRAM2_DRAM_SHM_SIZE)
 #define SRAM2_DRAM_USER_SIZE  (SRAM2_DRAM_END - SRAM2_DRAM_USER_START)
+
+/* RTC SLOW RAM (8kB) */
+#define RCT_SLOW_RAM_START DT_REG_ADDR(DT_NODELABEL(rtc_slow_ram))
+#define RCT_SLOW_RAM_SIZE  DT_REG_SIZE(DT_NODELABEL(rtc_slow_ram))
+
+/* RTC FAST RAM (8kB) */
+#define RCT_FAST_RAM_START        DT_REG_ADDR(DT_NODELABEL(rtc_fast_ram))
+#define RCT_FAST_RAM_SIZE         DT_REG_SIZE(DT_NODELABEL(rtc_fast_ram))
+#define RTC_FAST_IRAM_DRAM_OFFSET 0x140000;
 
 /** Simplified memory map for the bootloader.
  *  Make sure the bootloader can load into main memory without overwriting itself.
@@ -53,16 +64,19 @@
 #define SRAM1_DRAM_IRAM_CALC(addr_dram) (SRAM1_SIZE - (addr_dram - SRAM1_DRAM_START) + \
 					SRAM1_IRAM_START)
 
-/* Set bootloader segments size */
-#define BOOTLOADER_DRAM_SEG_LEN        0x7a00
-#define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x4000
-#define BOOTLOADER_IRAM_SEG_LEN        0xa000
-
-/* Start of the lower region is determined by region size and the end of the higher region */
-#define BOOTLOADER_DRAM_SEG_START  0x3ffe8000
-#define BOOTLOADER_DRAM_SEG_END    (BOOTLOADER_DRAM_SEG_START + BOOTLOADER_DRAM_SEG_LEN)
+/* Bootloader segment start addresses (fixed by physical bank layout) */
+#define BOOTLOADER_DRAM_SEG_START        0x3ffe8000
 #define BOOTLOADER_IRAM_LOADER_SEG_START 0x40078000
-#define BOOTLOADER_IRAM_SEG_START  0x400a0000
+#define BOOTLOADER_IRAM_SEG_START        ALIGN_UP(SRAM1_IRAM_START, 0x400)
+
+/* Bootloader segment sizes (computed from bank boundaries) */
+#define BOOTLOADER_DRAM_SEG_LEN \
+	(SRAM1_DRAM_END - BOOTLOADER_DRAM_SEG_START)
+#define BOOTLOADER_DRAM_SEG_END \
+	(BOOTLOADER_DRAM_SEG_START + BOOTLOADER_DRAM_SEG_LEN)
+#define BOOTLOADER_IRAM_LOADER_SEG_LEN \
+	((SRAM0_IRAM_START + SRAM0_CACHE_SIZE) - BOOTLOADER_IRAM_LOADER_SEG_START)
+#define BOOTLOADER_IRAM_SEG_LEN         SRAM1_SIZE
 
 /* The `USER_IRAM_END` represents the end of staticaly allocated memory.
  * This address is where 2nd stage bootloader starts allocating memory.
@@ -77,13 +91,19 @@
 #endif
 
 /* AMP memory */
-#if defined(CONFIG_SOC_ENABLE_APPCPU) || defined(CONFIG_SOC_ESP32_APPCPU)
+#if defined(CONFIG_SOC_ESP32_APPCPU)
+#if defined(CONFIG_SOC_ENABLE_APPCPU)
 #define APPCPU_IRAM_SIZE CONFIG_ESP_APPCPU_IRAM_SIZE
 #define APPCPU_DRAM_SIZE CONFIG_ESP_APPCPU_DRAM_SIZE
 #else
+/* Fallback for non-AMP APPCPU builds */
+#define APPCPU_IRAM_SIZE 0x8000
+#define APPCPU_DRAM_SIZE 0x8000
+#endif /* CONFIG_SOC_ENABLE_APPCPU */
+#else
 #define APPCPU_IRAM_SIZE 0
 #define APPCPU_DRAM_SIZE 0
-#endif
+#endif /* CONFIG_SOC_ESP32_APPCPU */
 
 #define APPCPU_SRAM_SIZE (APPCPU_IRAM_SIZE + APPCPU_DRAM_SIZE)
 

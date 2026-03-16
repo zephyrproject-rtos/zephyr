@@ -22,10 +22,10 @@ ZTEST_F(eventfd, test_read_nonblock)
 
 	ret = eventfd_read(fixture->fd, &val);
 	zassert_true(ret == 0, "read set ret %d", ret);
-	zassert_true(val == TESTVAL, "red set val %d", val);
+	zassert_true(val == TESTVAL, "red set val %lld", val);
 
 	ret = eventfd_read(fixture->fd, &val);
-	zassert_true(ret == -1, "read subsequent ret %d val %d", ret, val);
+	zassert_true(ret == -1, "read subsequent ret %d val %lld", ret, val);
 	zassert_true(errno == EAGAIN, "errno %d", errno);
 }
 

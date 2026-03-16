@@ -223,7 +223,6 @@ struct eth_enc28j60_config {
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec interrupt;
 	uint8_t full_duplex;
-	int32_t timeout;
 	uint8_t hw_rx_filter;
 	bool random_mac;
 };

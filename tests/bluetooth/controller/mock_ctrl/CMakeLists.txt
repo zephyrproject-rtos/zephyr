@@ -22,6 +22,7 @@ add_library(mocks STATIC
   src/ull_peripheral.c
   src/ull_peripheral_iso.c
   src/ull_central.c
+  src/ull_central_iso.c
   src/ull_scan.c
   src/ull_sync.c
   src/ull_adv_sync.c

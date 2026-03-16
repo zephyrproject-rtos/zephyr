@@ -4,9 +4,9 @@ board:
   vendor: u-blox
   revision:
     format: custom
-    default: fidelex
+    default: fidelix
     revisions:
       - name: "macronix"
-      - name: "fidelex"
+      - name: "fidelix"
   socs:
     - name: rw612

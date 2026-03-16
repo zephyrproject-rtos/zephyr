@@ -9,7 +9,7 @@
  * RX and TX pins wired together to provide loopback functionality. A large number of bytes
  * containing a sequence of pseudo random numbers are then transmitted, received, and validated.
  *
- * The test suite repeats three times, opening and clsoing the modem_pipe attached to the
+ * The test suite repeats three times, opening and closing the modem_pipe attached to the
  * modem_backend_uart instance before and after the tests respectively.
  */
 
@@ -220,6 +220,18 @@ ZTEST(modem_backend_uart_suite, test_transmit_receive)
 			received += (uint32_t)ret;
 		}
 	}
+}
+
+ZTEST(modem_backend_uart_suite, test_close_open)
+{
+	zassert_ok(modem_pipe_close(pipe, K_SECONDS(1)));
+	zassert_ok(modem_pipe_open(pipe, K_SECONDS(1)));
+	zassert_ok(modem_pipe_close(pipe, K_SECONDS(1)));
+	zassert_ok(modem_pipe_open(pipe, K_SECONDS(1)));
+	zassert_ok(modem_pipe_close(pipe, K_SECONDS(1)));
+	zassert_ok(modem_pipe_open(pipe, K_SECONDS(1)));
+	zassert_ok(modem_pipe_close(pipe, K_SECONDS(1)));
+	zassert_ok(modem_pipe_open(pipe, K_SECONDS(1)));
 }
 
 ZTEST_SUITE(modem_backend_uart_suite, NULL, test_modem_backend_uart_setup,

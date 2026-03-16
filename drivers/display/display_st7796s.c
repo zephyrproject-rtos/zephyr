@@ -102,22 +102,22 @@ static int st7796s_get_pixelfmt(const struct device *dev)
 	/*
 	 * Invert the pixel format for 8-bit 8080 Parallel Interface.
 	 *
-	 * Zephyr uses big endian byte order when the pixel format has
+	 * Zephyr uses little endian byte order when the pixel format has
 	 * multiple bytes.
 	 *
 	 * For RGB565, Red is placed in byte 1 and Blue in byte 0.
-	 * For BGR565, Red is placed in byte 0 and Blue in byte 1.
+	 * For RGB565X, Red is placed in byte 0 and Blue in byte 1.
 	 *
 	 * This is not an issue when using a 16-bit interface.
 	 * For RGB565, this would map to Red being in D[11:15] and
-	 * Blue in D[0:4] and vice versa for BGR565.
+	 * Blue in D[0:4] and vice versa for RGB565X.
 	 *
 	 * However this is an issue when using a 8-bit interface.
 	 * For RGB565, Blue is placed in byte 0 as mentioned earlier.
 	 * However the controller expects Red to be in D[3:7] of byte 0.
 	 *
-	 * Hence we report pixel format as RGB when MADCTL setting is BGR
-	 * and vice versa.
+	 * Hence we report pixel format as RGB565 when MADCTL setting is
+	 * RGB565X and vice versa.
 	 */
 	if (config->dbi_config.mode == MIPI_DBI_MODE_8080_BUS_8_BIT) {
 		/*
@@ -129,7 +129,7 @@ static int st7796s_get_pixelfmt(const struct device *dev)
 		    config->rgb_is_inverted) {
 			return PIXEL_FORMAT_RGB_565;
 		} else {
-			return PIXEL_FORMAT_BGR_565;
+			return PIXEL_FORMAT_RGB_565X;
 		}
 	}
 
@@ -143,9 +143,9 @@ static int st7796s_get_pixelfmt(const struct device *dev)
 	 */
 	if (((bool)(config->madctl & ST7796S_MADCTL_BGR)) !=
 	    config->rgb_is_inverted) {
-		return PIXEL_FORMAT_BGR_565;
-	} else {
 		return PIXEL_FORMAT_RGB_565;
+	} else {
+		return PIXEL_FORMAT_RGB_565X;
 	}
 }
 
@@ -167,6 +167,9 @@ static int st7796s_write(const struct device *dev,
 
 	mipi_desc.buf_size = desc->width * desc->height * ST7796S_PIXEL_SIZE;
 	mipi_desc.frame_incomplete = desc->frame_incomplete;
+	mipi_desc.pitch = desc->pitch;
+	mipi_desc.width = desc->width;
+	mipi_desc.height = desc->height;
 
 	ret =  mipi_dbi_command_write(config->mipi_dbi,
 				      &config->dbi_config, ST7796S_CMD_RAMWR,
@@ -379,8 +382,11 @@ static DEVICE_API(display, st7796s_api) = {
 						SPI_OP_MODE_MASTER |		\
 						SPI_WORD_SET(8),		\
 						0),				\
-			.mode = DT_INST_STRING_UPPER_TOKEN_OR(n, mipi_mode,     \
+			.mode = DT_INST_STRING_UPPER_TOKEN_OR(n, mipi_mode,	\
 						MIPI_DBI_MODE_SPI_4WIRE),	\
+			.color_coding = DT_INST_STRING_UPPER_TOKEN_OR(n,	\
+						color_coding,			\
+						MIPI_DBI_MODE_RGB565),		\
 		},								\
 		.width = DT_INST_PROP(n, width),				\
 		.height = DT_INST_PROP(n, height),				\

@@ -83,8 +83,13 @@ struct k_mem_domain {
 #endif /* CONFIG_ARCH_MEM_DOMAIN_DATA */
 	/** partitions in the domain */
 	struct k_mem_partition partitions[CONFIG_MAX_DOMAIN_PARTITIONS];
-	/** Doubly linked list of member threads */
-	sys_dlist_t mem_domain_q;
+#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
+	/** Doubly linked list of member threads,
+	 * pointer to the thread_mem_domain_node inside
+	 * each thread's memory domain info struct.
+	 */
+	sys_dlist_t thread_mem_domain_list;
+#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
 	/** number of active partitions in the domain */
 	uint8_t num_partitions;
 };
@@ -130,6 +135,17 @@ struct k_mem_partition;
  */
 int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 			     struct k_mem_partition *parts[]);
+
+/**
+ * @brief De-initialize a memory domain.
+ *
+ * @param domain The memory domain to be de-initialized.
+ *
+ * @retval 0 if successful
+ * @retval -EBUSY if there are still threads associated with this memory domain.
+ * @retval -EINVAL if invalid parameter supplied
+ */
+int k_mem_domain_deinit(struct k_mem_domain *domain);
 
 /**
  * @brief Add a memory partition into a memory domain.

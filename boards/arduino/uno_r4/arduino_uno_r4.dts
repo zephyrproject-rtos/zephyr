@@ -38,7 +38,6 @@
 	};
 };
 
-
 &ioport0 {
 	status = "okay";
 };
@@ -84,7 +83,7 @@
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	clock-frequency = <DT_FREQ_M(1)>;
+	clock-frequency = <DT_FREQ_K(400)>;
 	interrupts = <10 1>, <11 1>, <12 1>, <13 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
@@ -104,7 +103,7 @@
 
 		code_partition: partition@4000 {
 			label = "code";
-			reg = <0x4000 0x3C000>;
+			reg = <0x4000 0x3c000>;
 			read-only;
 		};
 	};

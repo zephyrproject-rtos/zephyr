@@ -3,38 +3,48 @@
 # Copyright (c) 2022-2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_NRF52X
+config SOC_SERIES_NRF52
+	bool
 	select SOC_FAMILY_NORDIC_NRF
 	help
 	  Enable support for NRF52 MCU series
 
+config SOC_SERIES_NRF52X
+	bool
+	select SOC_SERIES_NRF52
+	help
+	  Deprecated Kconfig, use SOC_SERIES_NRF52 instead
+
+config SOC_SERIES
+	default "nrf52" if SOC_SERIES_NRF52
+
 config SOC_NRF52805
 	bool
-	select SOC_SERIES_NRF52X
+	select SOC_SERIES_NRF52
 
 config SOC_NRF52810
 	bool
-	select SOC_SERIES_NRF52X
+	select SOC_SERIES_NRF52
 
 config SOC_NRF52811
 	bool
-	select SOC_SERIES_NRF52X
+	select SOC_SERIES_NRF52
 
 config SOC_NRF52820
 	bool
-	select SOC_SERIES_NRF52X
+	select SOC_SERIES_NRF52
 
 config SOC_NRF52832
 	bool
-	select SOC_SERIES_NRF52X
+	select SOC_SERIES_NRF52
 
 config SOC_NRF52833
 	bool
-	select SOC_SERIES_NRF52X
+	select SOC_SERIES_NRF52
 
 config SOC_NRF52840
 	bool
-	select SOC_SERIES_NRF52X
+	select SOC_SERIES_NRF52
 
 config SOC_NRF52805_CAAA
 	bool

@@ -19,7 +19,7 @@ void soc_timing_init(void)
 	NRF_TIMER2->TASKS_CLEAR = 1; /* Clear Timer */
 	NRF_TIMER2->MODE = 0; /* Timer Mode */
 	NRF_TIMER2->PRESCALER = 0; /* 16M Hz */
-#if defined(CONFIG_SOC_SERIES_NRF51X)
+#if defined(CONFIG_SOC_SERIES_NRF51)
 	NRF_TIMER2->BITMODE = 0; /* 16 - bit */
 #else
 	NRF_TIMER2->BITMODE = 3; /* 32 - bit */
@@ -45,7 +45,7 @@ timing_t soc_timing_counter_get(void)
 uint64_t soc_timing_cycles_get(volatile timing_t *const start,
 			       volatile timing_t *const end)
 {
-#if defined(CONFIG_SOC_SERIES_NRF51X)
+#if defined(CONFIG_SOC_SERIES_NRF51)
 #define COUNTER_SPAN BIT(16)
 #else
 #define COUNTER_SPAN BIT64(32)

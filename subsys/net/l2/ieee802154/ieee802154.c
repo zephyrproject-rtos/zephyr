@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 #include <errno.h>
 
+#include <zephyr/toolchain/gcc.h>
 #include <zephyr/net/capture.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_core.h>
@@ -80,7 +81,7 @@ static inline void ieee802154_acknowledge(struct net_if *iface, struct ieee80215
 		return;
 	}
 
-	pkt = net_pkt_alloc_with_buffer(iface, IEEE802154_ACK_PKT_LENGTH, AF_UNSPEC, 0,
+	pkt = net_pkt_alloc_with_buffer(iface, IEEE802154_ACK_PKT_LENGTH, NET_AF_UNSPEC, 0,
 					BUF_TIMEOUT);
 	if (!pkt) {
 		return;
@@ -264,7 +265,8 @@ static inline void swap_and_set_pkt_ll_addr(struct net_linkaddr *addr, bool has_
 		(void)net_linkaddr_create(
 			addr,
 			(const uint8_t *)(has_pan_id ?
-					  &ll->plain.addr.short_addr : &ll->comp.addr.short_addr),
+					UNALIGNED_MEMBER_ADDR(ll, plain.addr.short_addr) :
+					UNALIGNED_MEMBER_ADDR(ll, comp.addr.short_addr)),
 			IEEE802154_SHORT_ADDR_LENGTH,
 			NET_LINK_IEEE802154);
 		break;
@@ -291,7 +293,7 @@ static inline void swap_and_set_pkt_ll_addr(struct net_linkaddr *addr, bool has_
  */
 static bool ieee802154_check_dst_addr(struct net_if *iface, struct ieee802154_mhr *mhr)
 {
-	struct ieee802154_address_field_plain *dst_plain = &mhr->dst_addr->plain;
+	struct ieee802154_address_field_plain *dst_plain;
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	bool ret = false;
 
@@ -310,6 +312,8 @@ static bool ieee802154_check_dst_addr(struct net_if *iface, struct ieee802154_mh
 		/* also, macImplicitBroadcast is not implemented */
 		return false;
 	}
+
+	dst_plain = &mhr->dst_addr->plain;
 
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
@@ -489,7 +493,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 		frame_buf = net_buf_alloc(&tx_frame_buf_pool, K_FOREVER);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && net_pkt_family(pkt) == AF_PACKET) {
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && net_pkt_family(pkt) == NET_AF_PACKET) {
 		enum net_sock_type socket_type;
 		struct net_context *context;
 
@@ -499,21 +503,31 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 		}
 
 		socket_type = net_context_get_type(context);
-		if (socket_type == SOCK_RAW) {
+		if (socket_type == NET_SOCK_RAW) {
 			send_raw = true;
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) &&
-			   socket_type == SOCK_DGRAM) {
-			struct sockaddr_ll *dst_addr = (struct sockaddr_ll *)&context->remote;
-			struct sockaddr_ll_ptr *src_addr =
-				(struct sockaddr_ll_ptr *)&context->local;
+			   socket_type == NET_SOCK_DGRAM) {
+			struct net_sockaddr_ll *dst_addr =
+				(struct net_sockaddr_ll *)&context->remote;
 
 			(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
 					       dst_addr->sll_addr,
 					       dst_addr->sll_halen);
 
+			/* context->local sockaddr_ll_ptr is not supported for
+			 * NET_AF_PACKET sockets (raw packets from l2).
+			 *
+			 * Although the sll_addr pointer correctly links to the iface
+			 * net_linkaddr, the sll_halen is a copy and doesn't track properly
+			 * the iface linkaddr len. For example, the linkaddr len can change
+			 * depending on the link address format with 802.15.4, between
+			 * extended (8 bytes) or short (2 bytes).
+			 *
+			 * Instead, use the iface link_addr directly.
+			 */
 			(void)net_linkaddr_set(net_pkt_lladdr_src(pkt),
-					       src_addr->sll_addr,
-					       src_addr->sll_halen);
+					       iface->if_dev->link_addr.addr,
+					       iface->if_dev->link_addr.len);
 		} else {
 			return -EINVAL;
 		}

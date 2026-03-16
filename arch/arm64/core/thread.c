@@ -12,8 +12,11 @@
  */
 
 #include <zephyr/kernel.h>
-#include <ksched.h>
+#include <kernel_internal.h>
 #include <zephyr/arch/cpu.h>
+#ifdef CONFIG_ARM_PAC_PER_THREAD
+#include <zephyr/arch/arm64/pac.h>
+#endif
 
 /*
  * Note about stack usage:
@@ -149,6 +152,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->arch.stack_limit = (uint64_t)stack + Z_ARM64_STACK_GUARD_SIZE;
 	z_arm64_thread_mem_domains_init(thread);
 #endif
+
+#ifdef CONFIG_ARM_PAC_PER_THREAD
+	/* Generate unique PAC keys for this thread */
+	z_arm64_pac_keys_generate(&thread->arch.pac_keys);
+#endif
 }
 
 #ifdef CONFIG_USERSPACE
@@ -199,3 +207,12 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	CODE_UNREACHABLE;
 }
 #endif
+
+int arch_coprocessors_disable(struct k_thread *thread)
+{
+#if defined(CONFIG_FPU_SHARING)
+	return arch_float_disable(thread);
+#else
+	return -ENOTSUP;
+#endif
+}

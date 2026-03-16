@@ -6,13 +6,6 @@ if SHIELD_M5STACK_CARDPUTER
 config INPUT
 	default y
 
-if DISK_DRIVERS
-
-config DISK_DRIVER_SDMMC
-	default y
-
-endif # DISK_DRIVERS
-
 if DISPLAY
 
 choice ST7789V_PIXEL_FORMAT
@@ -20,9 +13,6 @@ choice ST7789V_PIXEL_FORMAT
 endchoice
 
 if LVGL
-
-config LV_Z_BITS_PER_PIXEL
-	default 16
 
 choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_16

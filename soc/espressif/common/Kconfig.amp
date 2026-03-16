@@ -9,6 +9,8 @@ config SOC_ENABLE_APPCPU
 	help
 	  This hidden configuration lets PROCPU core to map and start APPCPU whenever IPM is enabled.
 
+if SOC_ENABLE_APPCPU
+
 menu "Espressif AMP Config"
 
 config ESP_APPCPU_IRAM_SIZE
@@ -35,4 +37,6 @@ config ESP_APPCPU_DROM_SIZE
 	help
 	  Defines APPCPU DROM area size in bytes.
 
-endmenu # AMP config
+endmenu # AMP menu
+
+endif # SOC_ENABLE_APPCPU config

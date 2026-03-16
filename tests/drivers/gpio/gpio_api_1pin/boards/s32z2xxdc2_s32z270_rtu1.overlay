@@ -5,7 +5,7 @@
  */
 
 #include <nxp/s32/S32Z27-BGA594-pinctrl.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	aliases {
@@ -14,6 +14,7 @@
 
 	gpio-led {
 		compatible = "gpio-leds";
+
 		led_a3: led_a3 {
 			gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
 		};

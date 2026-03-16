@@ -2,11 +2,30 @@
 
 Overview
 ********
-see <https://www.raspberrypi.com/products/raspberry-pi-4-model-b/specifications/>
+
+The `Raspberry Pi 4`_ is the fourth generation of the Raspberry Pi flagship series of
+single-board computers. It is based on the Broadcom BCM2711 SoC which features a
+quad-core 64-bit ARM Cortex-A72 CPU and is available in 1, 2, 4 or 8 GB of LPDDR4 RAM.
 
 Hardware
 ********
-see <https://www.raspberrypi.com/documentation/computers/raspberry-pi.html>
+
+- Broadcom BCM2711, Quad core Cortex-A72 (ARM v8) 64-bit SoC @ 1.8GHz
+- 1GB, 2GB, 4GB or 8GB LPDDR4-3200 SDRAM (depending on model)
+- 2.4 GHz and 5.0 GHz IEEE 802.11ac wireless, Bluetooth 5.0, BLE
+- Gigabit Ethernet
+- 2 USB 3.0 ports; 2 USB 2.0 ports.
+- Raspberry Pi standard 40 pin GPIO header (fully backwards compatible with previous boards)
+- 2 × micro-HDMI® ports (up to 4kp60 supported)
+- 2-lane MIPI DSI display port
+- 2-lane MIPI CSI camera port
+- 4-pole stereo audio and composite video port
+- H.265 (4kp60 decode), H264 (1080p60 decode, 1080p30 encode)
+- OpenGL ES 3.1, Vulkan 1.0
+- Micro-SD card slot for loading operating system and data storage
+- 5V DC via USB-C connector (minimum 3A)
+- 5V DC via GPIO header (minimum 3A)
+- Power over Ethernet (PoE) enabled (requires separate PoE HAT)
 
 Supported Features
 ==================
@@ -46,3 +65,14 @@ the serial console (GPIO 14/15):
 
    *** Booting Zephyr OS build XXXXXXXXXXXX  ***
    Hello World! Raspberry Pi 4 Model B!
+
+References
+**********
+
+.. target-notes::
+
+.. _Raspberry Pi 4:
+   https://pip.raspberrypi.com/documents/RP-008344-DS-raspberry-pi-4-product-brief.pdf/
+
+.. _Raspberry Pi 4 Schematic:
+   https://datasheets.raspberrypi.com/rpi4/raspberry-pi-4-reduced-schematics.pdf

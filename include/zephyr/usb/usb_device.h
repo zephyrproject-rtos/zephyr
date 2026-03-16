@@ -52,35 +52,35 @@ extern "C" {
  * in predetermined order in the RAM.
  */
 #define USBD_DEVICE_DESCR_DEFINE(p) \
-	static __in_section(usb, descriptor_##p, 0) __used __aligned(1)
+	static __in_section(usb, descriptor_##p, 0) __used __aligned(1) __DEPRECATED_MACRO
 #define USBD_CLASS_DESCR_DEFINE(p, instance) \
-	static __in_section(usb, descriptor_##p.1, instance) __used __aligned(1)
+	static __in_section(usb, descriptor_##p.1, instance) __used __aligned(1) __DEPRECATED_MACRO
 #define USBD_MISC_DESCR_DEFINE(p) \
-	static __in_section(usb, descriptor_##p, 2) __used __aligned(1)
+	static __in_section(usb, descriptor_##p, 2) __used __aligned(1) __DEPRECATED_MACRO
 #define USBD_USER_DESCR_DEFINE(p) \
-	static __in_section(usb, descriptor_##p, 3) __used __aligned(1)
+	static __in_section(usb, descriptor_##p, 3) __used __aligned(1) __DEPRECATED_MACRO
 #define USBD_STRING_DESCR_DEFINE(p) \
-	static __in_section(usb, descriptor_##p, 4) __used __aligned(1)
+	static __in_section(usb, descriptor_##p, 4) __used __aligned(1) __DEPRECATED_MACRO
 #define USBD_STRING_DESCR_USER_DEFINE(p) \
-	static __in_section(usb, descriptor_##p, 5) __used __aligned(1)
+	static __in_section(usb, descriptor_##p, 5) __used __aligned(1) __DEPRECATED_MACRO
 #define USBD_TERM_DESCR_DEFINE(p) \
-	static __in_section(usb, descriptor_##p, 6) __used __aligned(1)
+	static __in_section(usb, descriptor_##p, 6) __used __aligned(1) __DEPRECATED_MACRO
 
 /*
  * This macro should be used to place the struct usb_cfg_data
  * inside usb data section in the RAM.
  */
 #define USBD_DEFINE_CFG_DATA(name) \
-	static STRUCT_SECTION_ITERABLE(usb_cfg_data, name)
+	static STRUCT_SECTION_ITERABLE(usb_cfg_data, name) __DEPRECATED_MACRO
 
 /*************************************************************************
  *  USB configuration
  **************************************************************************/
 
-#define USB_MAX_CTRL_MPS	64   /**< maximum packet size (MPS) for EP 0 */
-#define USB_MAX_FS_BULK_MPS	64   /**< full speed MPS for bulk EP */
-#define USB_MAX_FS_INT_MPS	64   /**< full speed MPS for interrupt EP */
-#define USB_MAX_FS_ISO_MPS	1023 /**< full speed MPS for isochronous EP */
+#define USB_MAX_CTRL_MPS	64  __DEPRECATED_MACRO  /**< maximum packet size (MPS) for EP 0 */
+#define USB_MAX_FS_BULK_MPS	64  __DEPRECATED_MACRO  /**< full speed MPS for bulk EP */
+#define USB_MAX_FS_INT_MPS	64  __DEPRECATED_MACRO  /**< full speed MPS for interrupt EP */
+#define USB_MAX_FS_ISO_MPS	1023 __DEPRECATED_MACRO /**< full speed MPS for isochronous EP */
 
 /*************************************************************************
  *  USB application interface
@@ -200,6 +200,8 @@ struct usb_cfg_data {
 /**
  * @brief Configure USB controller
  *
+ * @deprecated Use @ref usbd_api instead
+ *
  * Function to configure USB controller.
  * Configuration parameters must be valid or an error is returned
  *
@@ -207,19 +209,23 @@ struct usb_cfg_data {
  *
  * @return 0 on success, negative errno code on fail
  */
-int usb_set_config(const uint8_t *usb_descriptor);
+__deprecated int usb_set_config(const uint8_t *usb_descriptor);
 
 /**
  * @brief Deconfigure USB controller
+ *
+ * @deprecated Use @ref usbd_api instead
  *
  * This function returns the USB device to it's initial state
  *
  * @return 0 on success, negative errno code on fail
  */
-int usb_deconfig(void);
+__deprecated int usb_deconfig(void);
 
 /**
  * @brief Enable the USB subsystem and associated hardware
+ *
+ * @deprecated Use @ref usbd_api instead
  *
  * This function initializes the USB core subsystem and enables the
  * corresponding hardware so that it can begin transmitting and receiving
@@ -234,10 +240,12 @@ int usb_deconfig(void);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_enable(usb_dc_status_callback status_cb);
+__deprecated int usb_enable(usb_dc_status_callback status_cb);
 
 /**
  * @brief Disable the USB device
+ *
+ * @deprecated Use @ref usbd_api instead
  *
  * Function to disable the USB device.
  * Upon success, the specified USB interface is clock gated in hardware,
@@ -245,10 +253,12 @@ int usb_enable(usb_dc_status_callback status_cb);
  *
  * @return 0 on success, negative errno code on fail
  */
-int usb_disable(void);
+__deprecated int usb_disable(void);
 
 /**
  * @brief Write data to the specified endpoint
+ *
+ * @deprecated Use @ref usbd_api instead
  *
  * Function to write data to the specified endpoint. The supplied
  * usb_ep_callback will be called when transmission is done.
@@ -263,10 +273,12 @@ int usb_disable(void);
  *
  * @return 0 on success, negative errno code on fail
  */
-int usb_write(uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *bytes_ret);
+__deprecated int usb_write(uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *bytes_ret);
 
 /**
  * @brief Read data from the specified endpoint
+ *
+ * @deprecated Use @ref usbd_api instead
  *
  * This function is called by the Endpoint handler function, after an
  * OUT interrupt has been received for that EP. The application must
@@ -282,10 +294,12 @@ int usb_write(uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *byte
  *
  * @return  0 on success, negative errno code on fail
  */
-int usb_read(uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *ret_bytes);
+__deprecated int usb_read(uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *ret_bytes);
 
 /**
  * @brief Set STALL condition on the specified endpoint
+ *
+ * @deprecated Use @ref usbd_api instead
  *
  * This function is called by USB device class handler code to set stall
  * condition on endpoint.
@@ -295,10 +309,12 @@ int usb_read(uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *ret_byt
  *
  * @return  0 on success, negative errno code on fail
  */
-int usb_ep_set_stall(uint8_t ep);
+__deprecated int usb_ep_set_stall(uint8_t ep);
 
 /**
  * @brief Clears STALL condition on the specified endpoint
+ *
+ * @deprecated Use @ref usbd_api instead
  *
  * This function is called by USB device class handler code to clear stall
  * condition on endpoint.
@@ -308,10 +324,12 @@ int usb_ep_set_stall(uint8_t ep);
  *
  * @return  0 on success, negative errno code on fail
  */
-int usb_ep_clear_stall(uint8_t ep);
+__deprecated int usb_ep_clear_stall(uint8_t ep);
 
 /**
  * @brief Read data from the specified endpoint
+ *
+ * @deprecated Use @ref usbd_api instead
  *
  * This is similar to usb_ep_read, the difference being that, it doesn't
  * clear the endpoint NAKs so that the consumer is not bogged down by further
@@ -328,12 +346,14 @@ int usb_ep_clear_stall(uint8_t ep);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
+__deprecated int usb_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 		     uint32_t *read_bytes);
 
 
 /**
  * @brief Continue reading data from the endpoint
+ *
+ * @deprecated Use @ref usbd_api instead
  *
  * Clear the endpoint NAK and enable the endpoint to accept more data
  * from the host. Usually called after usb_ep_read_wait() when the consumer
@@ -345,7 +365,7 @@ int usb_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_ep_read_continue(uint8_t ep);
+__deprecated int usb_ep_read_continue(uint8_t ep);
 
 /**
  * Callback function signature for transfer completion.
@@ -353,20 +373,24 @@ int usb_ep_read_continue(uint8_t ep);
 typedef void (*usb_transfer_callback)(uint8_t ep, int tsize, void *priv);
 
 /* USB transfer flags */
-#define USB_TRANS_READ       BIT(0)   /** Read transfer flag */
-#define USB_TRANS_WRITE      BIT(1)   /** Write transfer flag */
-#define USB_TRANS_NO_ZLP     BIT(2)   /** No zero-length packet flag */
+#define USB_TRANS_READ       BIT(0) __DEPRECATED_MACRO   /** Read transfer flag */
+#define USB_TRANS_WRITE      BIT(1) __DEPRECATED_MACRO   /** Write transfer flag */
+#define USB_TRANS_NO_ZLP     BIT(2) __DEPRECATED_MACRO   /** No zero-length packet flag */
 
 /**
  * @brief Transfer management endpoint callback
  *
+ * @deprecated Use @ref usbd_api instead
+ *
  * If a USB class driver wants to use high-level transfer functions, driver
  * needs to register this callback as usb endpoint callback.
  */
-void usb_transfer_ep_callback(uint8_t ep, enum usb_dc_ep_cb_status_code);
+__deprecated void usb_transfer_ep_callback(uint8_t ep, enum usb_dc_ep_cb_status_code);
 
 /**
  * @brief Start a transfer
+ *
+ * @deprecated Use @ref usbd_api instead
  *
  * Start a usb transfer to/from the data buffer. This function is asynchronous
  * and can be executed in IRQ context. The provided callback will be called
@@ -382,11 +406,13 @@ void usb_transfer_ep_callback(uint8_t ep, enum usb_dc_ep_cb_status_code);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_transfer(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags,
+__deprecated int usb_transfer(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags,
 		 usb_transfer_callback cb, void *priv);
 
 /**
  * @brief Start a transfer and block-wait for completion
+ *
+ * @deprecated Use @ref usbd_api instead
  *
  * Synchronous version of usb_transfer, wait for transfer completion before
  * returning.
@@ -401,33 +427,41 @@ int usb_transfer(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags,
  *
  * @return number of bytes transferred on success, negative errno code on fail.
  */
-int usb_transfer_sync(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags);
+__deprecated int usb_transfer_sync(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags);
 
 /**
  * @brief Cancel any ongoing transfer on the specified endpoint
  *
+ * @deprecated Use @ref usbd_api instead
+ *
  * @param[in]  ep           Endpoint address corresponding to the one
  *                          listed in the device configuration table
  */
-void usb_cancel_transfer(uint8_t ep);
+__deprecated void usb_cancel_transfer(uint8_t ep);
 
 /**
  * @brief Cancel all ongoing transfers
+ *
+ * @deprecated Use @ref usbd_api instead
  */
-void usb_cancel_transfers(void);
+__deprecated void usb_cancel_transfers(void);
 
 /**
  * @brief Check that transfer is ongoing for the endpoint
+ *
+ * @deprecated Use @ref usbd_api instead
  *
  * @param[in]  ep           Endpoint address corresponding to the one
  *                          listed in the device configuration table
  *
  * @return true if transfer is ongoing, false otherwise.
  */
-bool usb_transfer_is_busy(uint8_t ep);
+__deprecated bool usb_transfer_is_busy(uint8_t ep);
 
 /**
  * @brief Start the USB remote wakeup procedure
+ *
+ * @deprecated Use @ref usbd_api instead
  *
  * Function to request a remote wakeup.
  * This feature must be enabled in configuration, otherwise
@@ -436,31 +470,35 @@ bool usb_transfer_is_busy(uint8_t ep);
  * @return 0 on success, negative errno code on fail,
  *         i.e. when the bus is already active.
  */
-int usb_wakeup_request(void);
+__deprecated int usb_wakeup_request(void);
 
 /**
  * @brief Get status of the USB remote wakeup feature
  *
+ * @deprecated Use @ref usbd_api instead
+ *
  * @return true if remote wakeup has been enabled by the host, false otherwise.
  */
-bool usb_get_remote_wakeup_status(void);
+__deprecated bool usb_get_remote_wakeup_status(void);
 
 /**
  * @brief Helper macro to place the BOS compatibility descriptor
  *        in the right memory section.
  */
 #define USB_DEVICE_BOS_DESC_DEFINE_CAP \
-	static __in_section(usb, bos_desc_area, 1) __aligned(1) __used
+	static __in_section(usb, bos_desc_area, 1) __aligned(1) __used __DEPRECATED_MACRO
 
 /**
  * @brief Register BOS capability descriptor
+ *
+ * @deprecated Use @ref usbd_api instead
  *
  * This function should be used by the application to register BOS capability
  * descriptors before the USB device stack is enabled.
  *
  * @param[in] hdr Pointer to BOS capability descriptor
  */
-void usb_bos_register_cap(void *hdr);
+__deprecated void usb_bos_register_cap(void *hdr);
 
 /**
  * @}

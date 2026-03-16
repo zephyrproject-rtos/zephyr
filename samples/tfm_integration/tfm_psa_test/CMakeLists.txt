@@ -26,19 +26,19 @@ set(PSA_ARCH_TESTS_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../psa-arch-test
 
 set(TFM_TEST_DIR         "${TFM_TEST_REPO_PATH}/tests_psa_arch/spe/partitions")
 set(PSA_ARCH_TESTS_CONFIG_FILE "${TFM_TEST_REPO_PATH}/tests_psa_arch/spe/config/config_test_psa_api.cmake")
-if (CONFIG_TFM_PSA_TEST_CRYPTO)
+if(CONFIG_TFM_PSA_TEST_CRYPTO)
 set(TFM_PSA_TEST_SUITE CRYPTO)
-elseif (CONFIG_TFM_PSA_TEST_PROTECTED_STORAGE)
+elseif(CONFIG_TFM_PSA_TEST_PROTECTED_STORAGE)
 set(TFM_PSA_TEST_SUITE PROTECTED_STORAGE)
-elseif (CONFIG_TFM_PSA_TEST_INTERNAL_TRUSTED_STORAGE)
+elseif(CONFIG_TFM_PSA_TEST_INTERNAL_TRUSTED_STORAGE)
 set(TFM_PSA_TEST_SUITE INTERNAL_TRUSTED_STORAGE)
-elseif (CONFIG_TFM_PSA_TEST_STORAGE)
+elseif(CONFIG_TFM_PSA_TEST_STORAGE)
 set(TFM_PSA_TEST_SUITE STORAGE)
-elseif (CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION)
+elseif(CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION)
 set(TFM_PSA_TEST_SUITE INITIAL_ATTESTATION)
 endif()
 
-if (NOT DEFINED TFM_PSA_TEST_SUITE)
+if(NOT DEFINED TFM_PSA_TEST_SUITE)
   message(FATAL_ERROR "Please define a test suite to run. Refer to the README to see the available test suites.")
 endif()
 set(TEST_PSA_API "${TFM_PSA_TEST_SUITE}")
@@ -63,6 +63,17 @@ set_property(TARGET zephyr_property_target
              -DTEST_PSA_API=${TEST_PSA_API}
 )
 
+# Workaround: The TF-M tests require the large TF-M profile because it supports
+# the full list of crypto algorithms needed, not because of the isolation level.
+# For the TF-M tests the isolation level is irrelevant so we set it to 2 here so
+# that we don't exclude the platforms which don't support the isolation level 3.
+# This is a short lived workaround because the TF-M cmake logic will do this workaround
+# automatically in the future.
+set_property(TARGET zephyr_property_target
+             APPEND PROPERTY TFM_CMAKE_OPTIONS
+             -DTFM_ISOLATION_LEVEL=2
+)
+
 include(ExternalProject)
 
 ExternalProject_Add(tfm_psa_arch_test_app
@@ -73,6 +84,7 @@ ExternalProject_Add(tfm_psa_arch_test_app
                 -G ${CMAKE_GENERATOR}
                 -S ${TFM_TEST_REPO_PATH}/tests_psa_arch
                 -B ${PROJECT_BINARY_DIR}/tfm_ns
+                -DPython3_EXECUTABLE=${PYTHON_EXECUTABLE}
                 -DCROSS_COMPILE=${TFM_TOOLCHAIN_PATH}/${TFM_TOOLCHAIN_PREFIX}
                 -DPSA_TOOLCHAIN_FILE=${TFM_BINARY_DIR}/api_ns/cmake/${TFM_TOOLCHAIN_NS_FILE}
                 -DCONFIG_SPE_PATH=${TFM_BINARY_DIR}/api_ns

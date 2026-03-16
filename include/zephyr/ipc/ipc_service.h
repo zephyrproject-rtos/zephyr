@@ -315,6 +315,36 @@ int ipc_service_deregister_endpoint(struct ipc_ept *ept);
  */
 int ipc_service_send(struct ipc_ept *ept, const void *data, size_t len);
 
+/** @brief Send a high-priority message bypassing normal state checks.
+ *
+ *  This function sends a high-priority message using the backend in a
+ *  special fast path that skips normal state and busy checking. It is
+ *  intended for critical system notifications such as crash reports,
+ *  fatal errors, or emergency shutdown signals that must be delivered
+ *  even when the IPC channel is otherwise considered busy or blocked.
+ *
+ *  WARNING: This function should only be used for critical system notifications.
+ *  Misuse can lead to data corruption or system instability. The backend must
+ *  support this operation.
+ *
+ *  @param[in] ept Registered endpoint by @ref ipc_service_register_endpoint.
+ *  @param[in] data Pointer to the critical message buffer to send.
+ *  @param[in] len Number of bytes to send.
+ *
+ *  @retval -EIO when no backend is registered or send_critical hook is missing
+ *               from backend.
+ *  @retval -EINVAL when instance or endpoint is invalid.
+ *  @retval -ENOENT when the endpoint is not registered with the instance.
+ *  @retval -EBADMSG when the data is invalid (i.e. invalid data format,
+ *                   invalid length exceeds backend limits, ...).
+ *  @retval -ENOTSUP when the operation is not supported by backend.
+ *  @retval -ENOMEM when even critical path buffers are exhausted.
+ *
+ *  @retval bytes number of bytes sent.
+ *  @retval other errno codes depending on the implementation of the backend.
+ */
+int ipc_service_send_critical(struct ipc_ept *ept, const void *data, size_t len);
+
 /** @brief Get the TX buffer size
  *
  *  Get the maximal size of a buffer which can be obtained by @ref

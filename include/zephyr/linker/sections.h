@@ -49,10 +49,6 @@
 #define _KINETIS_FLASH_CONFIG_SECTION_NAME  kinetis_flash_config
 #define _TI_CCFG_SECTION_NAME	        .ti_ccfg
 
-#define _CCM_DATA_SECTION_NAME		.ccm_data
-#define _CCM_BSS_SECTION_NAME		.ccm_bss
-#define _CCM_NOINIT_SECTION_NAME	.ccm_noinit
-
 #define _ITCM_SECTION_NAME		.itcm
 
 #define _DTCM_DATA_SECTION_NAME	        .dtcm_data
@@ -69,14 +65,11 @@
 #define _IMX_BOOT_DCD_SECTION_NAME	.boot_hdr.dcd_data
 #define _IMX_BOOT_CONTAINER_SECTION_NAME .boot_hdr.container
 
-#define _STM32_SDRAM1_SECTION_NAME	.stm32_sdram1
-#define _STM32_SDRAM2_SECTION_NAME	.stm32_sdram2
-#define _STM32_PSRAM_SECTION_NAME	.stm32_psram
-
 #define _STM32_BACKUP_SRAM_SECTION_NAME	.stm32_backup_sram
 
 #ifdef CONFIG_NOCACHE_MEMORY
 #define _NOCACHE_SECTION_NAME nocache
+#define _NOCACHE_LOAD_SECTION_NAME nocache_load
 #endif
 
 /* Symbol table section */

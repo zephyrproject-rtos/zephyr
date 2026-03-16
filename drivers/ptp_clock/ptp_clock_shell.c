@@ -225,29 +225,30 @@ static int cmd_ptp_clock_selftest(const struct shell *sh, size_t argc, char **ar
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_ptp_clock_cmds,
 	SHELL_CMD_ARG(get, &dsub_device_name,
-		"Get time: get <device>",
-		cmd_ptp_clock_get, 2, 0),
+		      SHELL_HELP("Get current time", "<device>"),
+		      cmd_ptp_clock_get, 2, 0),
 	SHELL_CMD_ARG(set, &dsub_device_name,
-		"Set time: set <device> <seconds>",
-		cmd_ptp_clock_set, 3, 0),
+		      SHELL_HELP("Set time", "<device> <seconds>"),
+		      cmd_ptp_clock_set, 3, 0),
 	SHELL_CMD_ARG(adj, &dsub_device_name,
-		"Adjust time: adj <device> <seconds>",
-		cmd_ptp_clock_adj, 3, 0),
+		      SHELL_HELP("Adjust time", "<device> <seconds>"),
+		      cmd_ptp_clock_adj, 3, 0),
 	SHELL_CMD_ARG(freq, &dsub_device_name,
-		"Adjust frequency: freq <device> <ppb>",
-		cmd_ptp_clock_freq, 3, 0),
+		      SHELL_HELP("Adjust frequency", "<device> <ppb>"),
+		      cmd_ptp_clock_freq, 3, 0),
 	SHELL_CMD_ARG(selftest, &dsub_device_name,
-		"selftest <device> <time> <freq> <delay> <adj>\n"
-		"The selftest will do following steps:\n"
-		"1. set 'time' with seconds and read back to\n"
-		"   verify clock setting/getting.\n"
-		"2. set 'freq' with ppb value, sleep 'delay' seconds,\n"
-		"    and read back time to verify rate adjustment.\n"
-		"3. set 'adj' seconds and read back time to\n"
-		"   verify time adjustment.\n"
-		"Example:\n"
-		"   ptp_clock selftest ptp_clock 1000 100000000 10 10",
-		cmd_ptp_clock_selftest, 6, 0),
+		      SHELL_HELP("Run self-test sequence",
+				 "<device> <time> <freq> <delay> <adj>\n"
+				 "The selftest will do the following steps:\n"
+				 "1. set 'time' with seconds and read back to\n"
+				 "   verify clock setting/getting.\n"
+				 "2. set 'freq' with ppb value, sleep 'delay' seconds,\n"
+				 "   and read back time to verify rate adjustment.\n"
+				 "3. set 'adj' seconds and read back time to\n"
+				 "   verify time adjustment.\n"
+				 "Example:\n"
+				 "   ptp_clock selftest ptp_clock 1000 100000000 10 10"),
+		      cmd_ptp_clock_selftest, 6, 0),
 	SHELL_SUBCMD_SET_END     /* Array terminated. */
 );
 

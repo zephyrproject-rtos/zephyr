@@ -19,6 +19,7 @@ extern "C" {
 /**
  * @defgroup devicetree-pwms Devicetree PWMs API
  * @ingroup devicetree
+ * @ingroup pwm_interface
  * @{
  */
 

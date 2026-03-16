@@ -55,6 +55,5 @@ struct bt_bap_ep *bt_bap_iso_get_paired_ep(const struct bt_bap_ep *ep);
 /* Unicast client-only functions*/
 void bt_bap_iso_bind_stream(struct bt_bap_iso *bap_iso, struct bt_bap_stream *stream,
 			    enum bt_audio_dir dir);
-void bt_bap_iso_unbind_stream(struct bt_bap_iso *bap_iso, struct bt_bap_stream *stream,
-			      enum bt_audio_dir dir);
+void bt_bap_iso_unbind_stream(struct bt_bap_stream *stream, enum bt_audio_dir dir);
 struct bt_bap_stream *bt_bap_iso_get_stream(struct bt_bap_iso *iso, enum bt_audio_dir dir);

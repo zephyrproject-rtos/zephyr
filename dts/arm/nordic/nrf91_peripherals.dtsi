@@ -12,7 +12,6 @@ flash_controller: flash-controller@39000 {
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-
 	flash0: flash@0 {
 		compatible = "soc-nv-flash";
 		erase-block-size = <4096>;
@@ -33,6 +32,8 @@ dppic0: dppic: dppic@17000 {
 	compatible = "nordic,nrf-dppic";
 	reg = <0x17000 0x1000>;
 	status = "okay";
+	channels = <16>;
+	groups = <6>;
 };
 
 egu0: egu@1b000 {

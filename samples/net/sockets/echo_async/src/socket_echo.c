@@ -23,6 +23,12 @@
 #else
 
 #include <zephyr/posix/fcntl.h>
+#include <zephyr/posix/netinet/in.h>
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/poll.h>
+
 #include <zephyr/net/socket.h>
 #include <zephyr/kernel.h>
 

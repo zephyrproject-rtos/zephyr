@@ -27,7 +27,7 @@ programmer for the STM32 MCU, with a USB Virtual COM port bridge and the compreh
 Hardware
 ********
 
-- STM32N657X0H3Q Arm® Cortex®‑M55‑based microcontroller featuring ST Neural-ART Accelerator,
+- STM32N657X0H3Q Arm® Cortex®‑M55‑based microcontroller featuring ST Neural-ART Accelerator™,
   H264 encoder, NeoChrom 2.5D GPU, and 4.2 Mbytes of contiguous SRAM, in a VFBGA264 package
 - 5" LCD module with capacitive touch panel
 - USB Type-C® with USB 2.0 HS interface, dual‑role‑power (DRP)
@@ -65,6 +65,20 @@ Supported Features
 ==================
 
 .. zephyr:board-supported-hw::
+
+Video
+=====
+
+STM32N6570-DK features a CSI camera module with a high-resolution 5‑Mpx CMOS RGB image sensor.
+This camera outputs images in RAW Bayer format which require signal processing to be displayed with
+real life colors. This Image Signal Processing could be done with a dedicated `STM32 ISP module`_.
+
+NPU
+===
+
+STM32N6570-DK also embeds the ST Neural-ART Accelerator™ as NPU engineered for power-efficient edge
+AI applications, such as the `Zephyr computer vision application`_ which is available as a separate
+Zephyr application.
 
 USB
 ===
@@ -181,10 +195,11 @@ Board variants
 
 Three variants are available with STM32N6570_DK:
 
-- Default variant. Available as a chainloaded application which should be loaded by a
-  Boot Loader, it has access to the whole AXISRAM1 and AXISRAM2 regions.
+- Main application (default variant). Available as a chainloaded application which should
+  be loaded by a bootloader, it has access to the whole AXISRAM1 and AXISRAM2 regions.
+  It is expected to be built using ``--sysbuild`` option exclusively.
 - ``fsbl``: First Stage Boot Loader (FSBL) which is available as an application loaded by the
-  Boot ROM and flashed using ST-Link. This is typically a Boot Loader image. It runs
+  Boot ROM and flashed using ST-Link. This is typically a bootloader image. It runs
   in RAM LOAD mode on second half of AXISRAM2. 511K are available for the whole image.
 - ``sb``: First Stage Boot Loader - Serial Boot. Equivalent to the FSBL image, but could be
   loaded using USB and doesn't require switching the bootpins. This is the most practical
@@ -219,7 +234,7 @@ To program the board, there are two options:
   and executed from there.
 - Optionally, it can also be taken advantage from the serial boot interface provided
   by the boot ROM. In that case, firmware is directly loaded in RAM and executed from
-  there. It is not retained.
+  there. It is not retained in persistent memory.
 
 Programming an application to STM32N6570_DK
 -------------------------------------------
@@ -240,8 +255,28 @@ First, connect the STM32N6570_DK to your host computer using the ST-Link USB por
             :west-args: --sysbuild
             :goals: build flash
 
-         By default, application runs in XIP mode. Add ``-DSB_CONFIG_MCUBOOT_MODE_RAM_LOAD=y``
-         to use RAMLOAD mode.
+         .. note::
+             By default, application runs in XIP mode. To use RAMLOAD mode, build
+	     using the following command instead:
+
+                      .. zephyr-app-commands::
+                         :zephyr-app: samples/hello_world
+                         :board: stm32n6570_dk
+                         :west-args: --sysbuild -- -DCONFIG_XIP=n -DSB_CONFIG_MCUBOOT_MODE_RAM_LOAD=y
+                         :goals: build flash
+
+         .. note::
+            For flashing, before powering the board, set the boot pins in the following configuration:
+
+            * BOOT0: 0 (switch SW2 in position L)
+            * BOOT1: 1 (switch SW1 in position H)
+
+            After flashing, to run the application, set the boot pins in the following configuration:
+
+            * BOOT0: 0 (switch SW2 in position L)
+            * BOOT1: 0 (switch SW1 in position L)
+
+            Power off and on the board again.
 
       .. group-tab:: FSBL - ST-Link
 
@@ -255,26 +290,31 @@ First, connect the STM32N6570_DK to your host computer using the ST-Link USB por
          .. note::
             For flashing, before powering the board, set the boot pins in the following configuration:
 
-            * BOOT0: 0
-            * BOOT1: 1
+            * BOOT0: 0 (switch SW2 in position L)
+            * BOOT1: 1 (switch SW1 in position H)
 
             After flashing, to run the application, set the boot pins in the following configuration:
 
-            * BOOT1: 0
+            * BOOT0: 0 (switch SW2 in position L)
+            * BOOT1: 0 (switch SW1 in position L)
 
-	    Power off and on the board again.
+            Power off and on the board again.
 
       .. group-tab:: FSBL - Serial Boot Loader (USB)
 
-         Additionally, connect the STM32N6570_DK to your host computer using the USB port.
-         In this configuration, ST-Link is used to power the board and for serial communication
-         over the Virtual COM Port.
+         Additionally to the USB/ST-Link, connect the STM32N6570_DK to your
+         host computer using USB1 port (CN18).
+
+         In this configuration, ST-Link (USB/CN6) is used to power the board
+         and for serial communication over the Virtual COM Port, while
+         USB1/CN18 is used to send the Zephyr image to Boot ROM for loading it
+         in RAM and executing it.
 
          .. note::
             Before powering the board, set the boot pins in the following configuration:
 
-            * BOOT0: 1
-            * BOOT1: 0
+            * BOOT0: 1 (switch SW2 in position H)
+            * BOOT1: 0 (switch SW1 in position L)
 
          Build and load an application using ``stm32n6570_dk/stm32n657xx/sb`` target (you
          can also use the shortened form: ``stm32n6570_dk//sb``)
@@ -301,20 +341,66 @@ You should see the following message on the console:
 Debugging
 =========
 
-You can debug an application in the usual way using the :ref:`ST-LINK GDB Server <runner_stlink_gdbserver>`.
-Here is an example for the :zephyr:code-sample:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: stm32n6570_dk
-   :maybe-skip-config:
-   :goals: debug
+You can debug an application in the usual way using west and the :ref:`ST-LINK GDB Server <runner_stlink_gdbserver>`.
 
 .. note::
    To enable debugging, before powering on the board, set the boot pins in the following configuration:
 
-   * BOOT0: 0
-   * BOOT1: 1
+   * BOOT0: 0 (switch SW2 in position L)
+   * BOOT1: 1 (switch SW1 in position H)
+
+   .. tabs::
+
+      .. group-tab:: Application image
+
+         To debug a multi-stage application (application loaded by a bootloader such as MCUboot), follow these steps:
+
+         First, flash your application, it is required so that MCUboot can find it in external memory (see indications above).
+
+         Then, launch debug session using the bootloader domain:
+
+         .. code-block:: console
+
+            west debug --domain mcuboot
+
+         At this step, you're able to debug the bootloader. To debug the chainloaded application, now run the following gdb commands:
+
+         .. code-block:: console
+
+            (gdb) b do_boot
+            (gdb) c
+            # Once stopped in do_boot, add chainloaded application symbols
+            (gdb) add-symbol-file ./build/hello_world/zephyr/zephyr.elf
+            # Place breakpoint on 'main' in chainloaded application
+            (gdb) b main
+            (gdb) c
+
+         Don't forget to systematically power reset the board before each debug session.
+         This can be done using :zephyr_file:`the following script:<boards/st/common/scripts/board_power_reset.sh>`
+
+         .. code-block:: console
+
+            ./boards/st/common/scripts/board_power_reset.sh
+
+      .. group-tab:: FSBL - ST-Link
+
+         Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+         .. zephyr-app-commands::
+            :zephyr-app: samples/hello_world
+            :board: stm32n6570_dk/stm32n657xx/fsbl
+            :maybe-skip-config:
+            :goals: debug
+
+      .. group-tab:: FSBL - Serial Boot Loader (USB)
+
+         Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+         .. zephyr-app-commands::
+            :zephyr-app: samples/hello_world
+            :board: stm32n6570_dk/stm32n657xx/sb
+            :maybe-skip-config:
+            :goals: debug
 
 Another solution for debugging is to use STM32CubeIDE:
 
@@ -353,3 +439,9 @@ To do so, it is advised to use Twister's hardware map feature with the following
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _STM32 ISP module:
+   https://github.com/stm32-hotspot/zephyr-stm32-mw-isp
+
+.. _Zephyr computer vision application:
+   https://github.com/stm32-hotspot/zephyr-stm32n6-ai-people-detection

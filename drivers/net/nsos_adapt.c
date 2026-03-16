@@ -269,7 +269,7 @@ int nsos_adapt_socket(int family_mid, int type_mid, int proto_mid)
 		return ret;
 	}
 
-	ret = socket(family, type, proto);
+	ret = socket(family, type | SOCK_CLOEXEC, proto);
 	if (ret < 0) {
 		return -nsi_errno_to_mid(errno);
 	}
@@ -846,6 +846,36 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 	}
 
 	return -NSI_ERRNO_MID_EOPNOTSUPP;
+}
+
+int nsos_adapt_getpeername(int fd, struct nsos_mid_sockaddr *addr_mid, size_t *addrlen_mid)
+{
+	struct sockaddr_storage addr_storage;
+	struct sockaddr *addr = (struct sockaddr *)&addr_storage;
+	socklen_t addrlen = sizeof(addr_storage);
+	int ret;
+
+	ret = getpeername(fd, addr, &addrlen);
+	if (ret < 0) {
+		return -nsi_errno_to_mid(errno);
+	}
+
+	return sockaddr_to_nsos_mid(addr, addrlen, addr_mid, addrlen_mid);
+}
+
+int nsos_adapt_getsockname(int fd, struct nsos_mid_sockaddr *addr_mid, size_t *addrlen_mid)
+{
+	struct sockaddr_storage addr_storage;
+	struct sockaddr *addr = (struct sockaddr *)&addr_storage;
+	socklen_t addrlen = sizeof(addr_storage);
+	int ret;
+
+	ret = getsockname(fd, addr, &addrlen);
+	if (ret < 0) {
+		return -nsi_errno_to_mid(errno);
+	}
+
+	return sockaddr_to_nsos_mid(addr, addrlen, addr_mid, addrlen_mid);
 }
 
 #define MAP_POLL_EPOLL(_event_from, _event_to)	\

@@ -135,7 +135,7 @@ ZTEST(threads_lifecycle, test_essential_thread_abort_self)
 	 * But run it for everyone else to catch regressions in the
 	 * code we are actually trying to test.
 	 */
-	if (IS_ENABLED(CONFIG_RISCV) || IS_ENABLED(CONFIG_X86) || IS_ENABLED(CONFIG_SPARC)) {
+	if (IS_ENABLED(CONFIG_X86) || IS_ENABLED(CONFIG_SPARC)) {
 		ztest_test_skip();
 	}
 

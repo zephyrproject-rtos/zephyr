@@ -23,8 +23,8 @@ config MIPI_DSI_MCUX_2L_SMARTDMA
 	depends on DMA_MCUX_SMARTDMA
 	help
 	  Use SMARTDMA. This accelerator will automatically
-	  convert RGB565 input data to BGR565 (little endian to big endian),
-	  and write it to the MIPI DSI.
+	  convert RGB565 input data to RGB565X, and write it
+	  to the MIPI DSI.
 
 config MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
 	bool "Use NXP DCNano DBI controller with MIPI DSI"
@@ -43,3 +43,10 @@ config MIPI_DSI_MCUX_2L_SWAP16
 
 
 endif # MIPI_DSI_MCUX_2L
+
+config MIPI_DSI_NXP_DWC
+	bool "NXP DWC MIPI-DSI Host Controller"
+	default y
+	depends on DT_HAS_NXP_MIPI_DSI_DWC_ENABLED
+	help
+	  NXP MIPI DSI DWC controller driver

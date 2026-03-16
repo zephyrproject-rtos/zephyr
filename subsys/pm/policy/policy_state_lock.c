@@ -43,9 +43,25 @@ static const struct {
 static atomic_t lock_cnt[ARRAY_SIZE(substates)];
 static atomic_t latency_mask = BIT_MASK(ARRAY_SIZE(substates));
 static atomic_t unlock_mask = BIT_MASK(ARRAY_SIZE(substates));
+static atomic_t global_lock_cnt;
 static struct k_spinlock lock;
 
 #endif
+
+void pm_policy_state_all_lock_get(void)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+	(void)atomic_inc(&global_lock_cnt);
+#endif
+}
+
+void pm_policy_state_all_lock_put(void)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+	__ASSERT(global_lock_cnt > 0, "Unbalanced state lock get/put");
+	(void)atomic_dec(&global_lock_cnt);
+#endif
+}
 
 void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 {
@@ -63,6 +79,14 @@ void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 		}
 	}
 #endif
+}
+
+void pm_policy_state_constraints_get(struct pm_state_constraints *constraints)
+{
+	for (int i = 0; i < constraints->count; i++) {
+		pm_policy_state_lock_get(constraints->list[i].state,
+					 constraints->list[i].substate_id);
+	}
 }
 
 void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id)
@@ -84,13 +108,22 @@ void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id)
 #endif
 }
 
+void pm_policy_state_constraints_put(struct pm_state_constraints *constraints)
+{
+	for (int i = 0; i < constraints->count; i++) {
+		pm_policy_state_lock_put(constraints->list[i].state,
+					 constraints->list[i].substate_id);
+	}
+}
+
 bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
 	for (size_t i = 0; i < ARRAY_SIZE(substates); i++) {
 		if (substates[i].state == state &&
 		   (substates[i].substate_id == substate_id || substate_id == PM_ALL_SUBSTATES)) {
-			return atomic_get(&lock_cnt[i]) != 0;
+			return (atomic_get(&global_lock_cnt) != 0) ||
+			       (atomic_get(&lock_cnt[i]) != 0);
 		}
 	}
 #endif
@@ -101,6 +134,10 @@ bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id)
 bool pm_policy_state_is_available(enum pm_state state, uint8_t substate_id)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+	if (atomic_get(&global_lock_cnt) != 0) {
+		return false;
+	}
+
 	for (size_t i = 0; i < ARRAY_SIZE(substates); i++) {
 		if (substates[i].state == state &&
 		   (substates[i].substate_id == substate_id || substate_id == PM_ALL_SUBSTATES)) {
@@ -119,7 +156,8 @@ bool pm_policy_state_any_active(void)
 	/* Check if there is any power state that is not locked and not disabled due
 	 * to latency requirements.
 	 */
-	return atomic_get(&unlock_mask) & atomic_get(&latency_mask);
+	return (atomic_get(&global_lock_cnt) == 0) &&
+	       (atomic_get(&unlock_mask) & atomic_get(&latency_mask));
 #endif
 	return true;
 }
@@ -129,7 +167,7 @@ bool pm_policy_state_any_active(void)
 static void pm_policy_latency_update_locked(int32_t max_latency_us)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(substates); i++) {
-		if (substates[i].exit_latency_us >= max_latency_us) {
+		if (substates[i].exit_latency_us > max_latency_us) {
 			latency_mask &= ~BIT(i);
 		} else {
 			latency_mask |= BIT(i);

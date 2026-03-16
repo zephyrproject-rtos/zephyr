@@ -56,6 +56,7 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define ANY_INST_HAS_FLSR \
 	DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_flag_status_register)
 #define ANY_INST_USE_FAST_READ DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_fast_read)
+#define ANY_INST_REQUIRES_ULBPR DT_ANY_INST_HAS_BOOL_STATUS_OKAY(requires_ulbpr)
 
 #ifdef CONFIG_SPI_NOR_ACTIVE_DWELL_MS
 #define ACTIVE_DWELL_MS CONFIG_SPI_NOR_ACTIVE_DWELL_MS
@@ -847,7 +848,7 @@ static int mxicy_configure(const struct device *dev, const uint8_t *jedec_id)
 		}
 
 		if (ret < 0) {
-			LOG_ERR("Enable high performace mode failed: %d", ret);
+			LOG_ERR("Enable high performance mode failed: %d", ret);
 		}
 
 		release_device(dev);
@@ -1124,26 +1125,22 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 static int spi_nor_write_protection_set(const struct device *dev,
 					bool write_protect)
 {
-	int ret;
-	const struct spi_nor_config *cfg = dev->config;
+	int ret = 0;
 
 #if ANY_INST_HAS_WP_GPIOS
-	if (DEV_CFG(dev)->wp_gpios_exist && write_protect == false) {
+	if (DEV_CFG(dev)->wp_gpios_exist && !write_protect) {
 		gpio_pin_set_dt(&(DEV_CFG(dev)->wp), 0);
 	}
 #endif
 
-	ret = spi_nor_cmd_write(dev, (write_protect) ?
-	      SPI_NOR_CMD_WRDI : SPI_NOR_CMD_WREN);
-
-	if (cfg->requires_ulbpr_exist
-	    && (ret == 0)
+	if (IS_ENABLED(ANY_INST_REQUIRES_ULBPR)
+	    && DEV_CFG(dev)->requires_ulbpr_exist
 	    && !write_protect) {
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_ULBPR);
 	}
 
 #if ANY_INST_HAS_WP_GPIOS
-	if (DEV_CFG(dev)->wp_gpios_exist && write_protect == true) {
+	if (DEV_CFG(dev)->wp_gpios_exist && write_protect) {
 		gpio_pin_set_dt(&(DEV_CFG(dev)->wp), 1);
 	}
 #endif
@@ -1376,7 +1373,7 @@ static int spi_nor_process_sfdp(const struct device *dev)
 
 		if (id == JESD216_SFDP_PARAM_ID_BFP) {
 			union {
-				uint32_t dw[MIN(php->len_dw, 20)];
+				uint32_t dw[20];
 				struct jesd216_bfp bfp;
 			} u_param;
 			const struct jesd216_bfp *bfp = &u_param.bfp;
@@ -1452,10 +1449,9 @@ static int spi_nor_process_sfdp(const struct device *dev)
 	return rc;
 }
 
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+#if defined(CONFIG_FLASH_PAGE_LAYOUT) && defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 static int setup_pages_layout(const struct device *dev)
 {
-#if defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 	struct spi_nor_data *data = dev->data;
 	const size_t flash_size = dev_flash_size(dev);
 	const uint32_t layout_page_size = CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE;
@@ -1497,24 +1493,10 @@ static int setup_pages_layout(const struct device *dev)
 	data->layout.pages_size = layout_page_size;
 	data->layout.pages_count = flash_size / layout_page_size;
 	LOG_DBG("layout %zu x %zu By pages", data->layout.pages_count, data->layout.pages_size);
-#elif defined(CONFIG_SPI_NOR_SFDP_DEVICETREE)
-	const struct spi_nor_config *cfg = dev->config;
-	const struct flash_pages_layout *layout = &cfg->layout;
-	const size_t flash_size = dev_flash_size(dev);
-	size_t layout_size = layout->pages_size * layout->pages_count;
-
-	if (flash_size != layout_size) {
-		LOG_ERR("device size %u mismatch %zu * %zu By pages",
-			flash_size, layout->pages_count, layout->pages_size);
-		return -EINVAL;
-	}
-#else /* CONFIG_SPI_NOR_SFDP_RUNTIME */
-#error Unhandled SFDP choice
-#endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 
 	return 0;
 }
-#endif /* CONFIG_FLASH_PAGE_LAYOUT */
+#endif /* CONFIG_FLASH_PAGE_LAYOUT && CONFIG_SPI_NOR_SFDP_RUNTIME */
 #endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 
 /**
@@ -1646,13 +1628,13 @@ static int spi_nor_configure(const struct device *dev)
 		return -ENODEV;
 	}
 
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+#if defined(CONFIG_FLASH_PAGE_LAYOUT) && defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 	rc = setup_pages_layout(dev);
 	if (rc != 0) {
 		LOG_ERR("layout setup failed: %d", rc);
 		return -ENODEV;
 	}
-#endif /* CONFIG_FLASH_PAGE_LAYOUT */
+#endif /* CONFIG_FLASH_PAGE_LAYOUT && CONFIG_SPI_NOR_SFDP_RUNTIME */
 #endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 
 #if ANY_INST_HAS_MXICY_MX25R_POWER_MODE
@@ -1799,8 +1781,6 @@ static DEVICE_API(flash, spi_nor_api) = {
 };
 
 #define PAGE_LAYOUT_GEN(idx)								\
-	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(idx, size),					\
-		"jedec,spi-nor size required for non-runtime SFDP page layout");	\
 	enum {										\
 		INST_##idx##_BYTES = (DT_INST_PROP(idx, size) / 8)			\
 	};										\
@@ -1815,13 +1795,9 @@ static DEVICE_API(flash, spi_nor_api) = {
 	     "SPI_NOR_FLASH_LAYOUT_PAGE_SIZE incompatible with flash size");
 
 #define SFDP_BFP_ATTR_GEN(idx)							\
-	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(idx, sfdp_bfp),			\
-		"jedec,spi-nor sfdp-bfp required for devicetree SFDP");		\
 	static const __aligned(4) uint8_t bfp_##idx##_data[] = DT_INST_PROP(idx, sfdp_bfp);
 
 #define INST_ATTR_GEN(idx)								\
-	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(idx, jedec_id),				\
-		"jedec,spi-nor jedec-id required for non-runtime SFDP");		\
 	IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT, (PAGE_LAYOUT_GEN(idx)))			\
 	IF_ENABLED(CONFIG_SPI_NOR_SFDP_DEVICETREE, (SFDP_BFP_ATTR_GEN(idx)))
 
@@ -1888,7 +1864,7 @@ static DEVICE_API(flash, spi_nor_api) = {
 
 #define GENERATE_CONFIG_STRUCT(idx)								\
 	static const struct spi_nor_config spi_nor_##idx##_config = {				\
-		.spi = SPI_DT_SPEC_INST_GET(idx, SPI_WORD_SET(8), CONFIG_SPI_NOR_CS_WAIT_DELAY),\
+		.spi = SPI_DT_SPEC_INST_GET(idx, SPI_WORD_SET(8)),				\
 		.dpd_exist = DT_INST_PROP(idx, has_dpd),					\
 		.dpd_wakeup_sequence_exist = DT_INST_NODE_HAS_PROP(idx, dpd_wakeup_sequence),	\
 		.mxicy_mx25r_power_mode_exist =							\

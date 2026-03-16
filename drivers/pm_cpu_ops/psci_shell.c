@@ -63,9 +63,14 @@ static int cmd_psci_cpuon(const struct shell *shctx, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_reboot,
-	SHELL_CMD_ARG(warm, NULL, "System warm reset. Usage: <psci warm>", cmd_reboot_warm, 1, 0),
-	SHELL_CMD_ARG(cold, NULL, "System cold reset. Usage: <psci cold>", cmd_reboot_cold, 1, 0),
-	SHELL_CMD_ARG(cpuon, NULL, "Power-up the secondary CPU. Usage: <psci cpuon <cpuid>>",
+	SHELL_CMD_ARG(warm, NULL,
+		      SHELL_HELP("System warm reset", NULL),
+		      cmd_reboot_warm, 1, 0),
+	SHELL_CMD_ARG(cold, NULL,
+		      SHELL_HELP("System cold reset", NULL),
+		      cmd_reboot_cold, 1, 0),
+	SHELL_CMD_ARG(cpuon, NULL,
+		      SHELL_HELP("Power-up the secondary CPU", "<cpuid>"),
 		      cmd_psci_cpuon, 2, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Renesas Electronics Corporation
+ * Copyright (c) 2024-2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,13 +12,17 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
-#if defined(CONFIG_SOC_SERIES_RZG3S)
-#include <instances/rzg/r_intc_irq.h>
-#include <instances/rzg/r_intc_nmi.h>
-#elif defined(CONFIG_SOC_SERIES_RZN2L) || defined(CONFIG_SOC_SERIES_RZT2L) ||                      \
-	defined(CONFIG_SOC_SERIES_RZT2M)
-#include <instances/rzn/r_icu.h>
-#endif /* CONFIG_SOC_SERIES_* */
+
+#if CONFIG_DT_HAS_RENESAS_RZ_INTC_ENABLED
+#include "r_intc_irq.h"
+#elif CONFIG_DT_HAS_RENESAS_RZ_ICU_ENABLED || CONFIG_DT_HAS_RENESAS_RZ_ICU_V2_ENABLED
+#include "r_icu.h"
+#endif
+
+#if CONFIG_RENESAS_RZ_INTC_HAS_NMI
+#include "r_intc_nmi.h"
+#endif
+
 #include <zephyr/drivers/interrupt_controller/intc_rz_ext_irq.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
@@ -37,13 +41,14 @@ struct intc_rz_ext_irq_data {
 };
 
 /* FSP interruption handlers. */
-#if defined(CONFIG_SOC_SERIES_RZG3S)
-void r_intc_irq_isr(void);
-void r_intc_nmi_isr(void);
-#elif defined(CONFIG_SOC_SERIES_RZN2L) || defined(CONFIG_SOC_SERIES_RZT2L) ||                      \
-	defined(CONFIG_SOC_SERIES_RZT2M)
-void r_icu_isr(void);
-#endif /* CONFIG_SOC_SERIES_* */
+#if CONFIG_DT_HAS_RENESAS_RZ_INTC_ENABLED
+void r_intc_irq_isr(void *irq);
+void r_intc_nmi_isr(void *irq);
+#define INTC_IRQ_ISR r_intc_irq_isr
+#elif CONFIG_DT_HAS_RENESAS_RZ_ICU_ENABLED || CONFIG_DT_HAS_RENESAS_RZ_ICU_V2_ENABLED
+void r_icu_isr(void *irq);
+#define INTC_IRQ_ISR r_icu_isr
+#endif
 
 int intc_rz_ext_irq_enable(const struct device *dev)
 {
@@ -91,6 +96,11 @@ int intc_rz_ext_irq_set_type(const struct device *dev, uint8_t trig)
 	struct intc_rz_ext_irq_data *data = dev->data;
 	fsp_err_t err = FSP_SUCCESS;
 	external_irq_cfg_t *p_cfg = (external_irq_cfg_t *)config->fsp_cfg;
+
+	/* High level detection is not supported by HW */
+	if (trig == EXTERNAL_IRQ_TRIG_LEVEL_HIGH) {
+		return -ENOTSUP;
+	}
 
 	p_cfg->trigger = (external_irq_trigger_t)trig;
 	err = config->fsp_api->close(data->fsp_ctrl);
@@ -143,19 +153,25 @@ static void intc_rz_ext_irq_callback(external_irq_callback_args_t *args)
 	}
 }
 
+static void intc_rz_ext_irq_isr_handle(const struct device *dev)
+{
+	const struct intc_rz_ext_irq_config *config = dev->config;
+
+	INTC_IRQ_ISR((void *)config->fsp_cfg->irq);
+}
+
 #ifdef CONFIG_CPU_CORTEX_M
 #define GET_IRQ_FLAGS(index) 0
 #else /* Cortex-A/R */
 #define GET_IRQ_FLAGS(index) DT_INST_IRQ_BY_IDX(index, 0, flags)
 #endif
 
-#define EXT_IRQ_RZ_IRQ_CONNECT(index, isr, isr_nmi)                                                \
+#define EXT_IRQ_RZ_IRQ_CONNECT(index, isr)                                                         \
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(index, 0, irq), DT_INST_IRQ_BY_IDX(index, 0, priority),     \
-		    COND_CODE_0(DT_INST_IRQ_BY_IDX(index, 0, irq),                                 \
-		    (isr_nmi), (isr)), NULL, GET_IRQ_FLAGS(index));
+		    isr, DEVICE_DT_INST_GET(index), GET_IRQ_FLAGS(index))
 
-#define INTC_RZG_EXT_IRQ_INIT(index)                                                               \
-	static const external_irq_cfg_t g_external_irq##index##_cfg = {                            \
+#define INTC_RZ_EXT_IRQ_INIT(index)                                                                \
+	static external_irq_cfg_t g_external_irq##index##_cfg = {                                  \
 		.trigger = DT_INST_ENUM_IDX_OR(index, trigger_type, 0),                            \
 		.filter_enable = true,                                                             \
 		.clock_source_div = EXTERNAL_IRQ_CLOCK_SOURCE_DIV_1,                               \
@@ -164,9 +180,9 @@ static void intc_rz_ext_irq_callback(external_irq_callback_args_t *args)
 		.p_extend = NULL,                                                                  \
 		.ipl = DT_INST_IRQ_BY_IDX(index, 0, priority),                                     \
 		.irq = DT_INST_IRQ_BY_IDX(index, 0, irq),                                          \
-		COND_CODE_0(DT_INST_IRQ_BY_IDX(index, 0, irq),                   \
-			(.channel = DT_INST_IRQ_BY_IDX(index, 0, irq)),          \
-			(.channel = DT_INST_IRQ_BY_IDX(index, 0, irq) - 1)),     \
+		COND_CODE_0(DT_NUM_REGS(DT_DRV_INST(index)), (         \
+			.channel = 0), (                               \
+			.channel = (DT_INST_REG_ADDR(index)))),        \
 	};                                                                                         \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
@@ -174,12 +190,12 @@ static void intc_rz_ext_irq_callback(external_irq_callback_args_t *args)
 	struct intc_rz_ext_irq_config intc_rz_ext_irq_config##index = {                            \
 		.pin_config = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                               \
 		.fsp_cfg = (external_irq_cfg_t *)&g_external_irq##index##_cfg,                     \
-		COND_CODE_0(DT_INST_IRQ_BY_IDX(index, 0, irq), (            \
-			.fsp_api = &g_external_irq_on_intc_nmi), (          \
-			.fsp_api = &g_external_irq_on_intc_irq)),           \
+		COND_CODE_0(DT_NUM_REGS(DT_DRV_INST(index)), (                     \
+			.fsp_api = &g_external_irq_on_intc_nmi), (                 \
+			.fsp_api = &g_external_irq_on_intc_irq)),                  \
 	};                                                                                         \
                                                                                                    \
-	COND_CODE_0(DT_INST_IRQ_BY_IDX(index, 0, irq),                                     \
+	COND_CODE_0(DT_NUM_REGS(DT_DRV_INST(index)),                                       \
 		    (static intc_nmi_instance_ctrl_t g_external_irq##index##_ctrl;),       \
 		    (static intc_irq_instance_ctrl_t g_external_irq##index##_ctrl;))       \
                                                                                                    \
@@ -189,7 +205,9 @@ static void intc_rz_ext_irq_callback(external_irq_callback_args_t *args)
                                                                                                    \
 	static int intc_rz_ext_irq_init_##index(const struct device *dev)                          \
 	{                                                                                          \
-		EXT_IRQ_RZ_IRQ_CONNECT(index, r_intc_irq_isr, r_intc_nmi_isr)                      \
+		COND_CODE_0(DT_NUM_REGS(DT_DRV_INST(index)), (                             \
+			EXT_IRQ_RZ_IRQ_CONNECT(index, r_intc_nmi_isr);), (                 \
+			EXT_IRQ_RZ_IRQ_CONNECT(index, intc_rz_ext_irq_isr_handle);))       \
 		return intc_rz_ext_irq_init(dev);                                                  \
 	};                                                                                         \
                                                                                                    \
@@ -197,8 +215,8 @@ static void intc_rz_ext_irq_callback(external_irq_callback_args_t *args)
 			      &intc_rz_ext_irq_data##index, &intc_rz_ext_irq_config##index,        \
 			      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
 
-#define INTC_RZTN_EXT_IRQ_INIT(index)                                                              \
-	static const external_irq_cfg_t g_external_irq##index##_cfg = {                            \
+#define INTC_RZ_ICU_EXT_IRQ_INIT(index)                                                            \
+	static external_irq_cfg_t g_external_irq##index##_cfg = {                                  \
 		.trigger = DT_INST_ENUM_IDX_OR(index, trigger_type, 0),                            \
 		.filter_enable = true,                                                             \
 		.clock_source_div = EXTERNAL_IRQ_CLOCK_SOURCE_DIV_1,                               \
@@ -226,7 +244,7 @@ static void intc_rz_ext_irq_callback(external_irq_callback_args_t *args)
                                                                                                    \
 	static int intc_rz_ext_irq_init_##index(const struct device *dev)                          \
 	{                                                                                          \
-		EXT_IRQ_RZ_IRQ_CONNECT(index, r_icu_isr, NULL);                                    \
+		EXT_IRQ_RZ_IRQ_CONNECT(index, intc_rz_ext_irq_isr_handle);                         \
 		return intc_rz_ext_irq_init(dev);                                                  \
 	};                                                                                         \
                                                                                                    \
@@ -234,9 +252,8 @@ static void intc_rz_ext_irq_callback(external_irq_callback_args_t *args)
 			      &intc_rz_ext_irq_data##index, &intc_rz_ext_irq_config##index,        \
 			      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
 
-#if defined(CONFIG_SOC_SERIES_RZG3S)
-DT_INST_FOREACH_STATUS_OKAY(INTC_RZG_EXT_IRQ_INIT)
-#elif defined(CONFIG_SOC_SERIES_RZN2L) || defined(CONFIG_SOC_SERIES_RZT2L) ||                      \
-	defined(CONFIG_SOC_SERIES_RZT2M)
-DT_INST_FOREACH_STATUS_OKAY(INTC_RZTN_EXT_IRQ_INIT)
+#if CONFIG_DT_HAS_RENESAS_RZ_INTC_ENABLED
+DT_INST_FOREACH_STATUS_OKAY(INTC_RZ_EXT_IRQ_INIT)
+#elif CONFIG_DT_HAS_RENESAS_RZ_ICU_ENABLED || CONFIG_DT_HAS_RENESAS_RZ_ICU_V2_ENABLED
+DT_INST_FOREACH_STATUS_OKAY(INTC_RZ_ICU_EXT_IRQ_INIT)
 #endif

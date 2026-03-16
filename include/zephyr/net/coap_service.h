@@ -100,7 +100,7 @@ struct coap_service {
  *     static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
  *
  *     static int led_put(struct coap_resource *resource, struct coap_packet *request,
- *                        struct sockaddr *addr, socklen_t addr_len)
+ *                        struct net_sockaddr *addr, net_socklen_t addr_len)
  *     {
  *             const uint8_t *payload;
  *             uint16_t payload_len;
@@ -271,7 +271,7 @@ int coap_service_stop(const struct coap_service *service);
  * @param service Pointer to CoAP service
  * @retval 1 if the service is running
  * @retval 0 if the service is stopped
- * @retval negative in case of an error.
+ * @retval <0 negative in case of an error.
  */
 int coap_service_is_running(const struct coap_service *service);
 
@@ -288,7 +288,7 @@ int coap_service_is_running(const struct coap_service *service);
  * @return 0 in case of success or negative in case of error.
  */
 int coap_service_send(const struct coap_service *service, const struct coap_packet *cpkt,
-		      const struct sockaddr *addr, socklen_t addr_len,
+		      const struct net_sockaddr *addr, net_socklen_t addr_len,
 		      const struct coap_transmission_parameters *params);
 
 /**
@@ -304,7 +304,7 @@ int coap_service_send(const struct coap_service *service, const struct coap_pack
  * @return 0 in case of success or negative in case of error.
  */
 int coap_resource_send(const struct coap_resource *resource, const struct coap_packet *cpkt,
-		       const struct sockaddr *addr, socklen_t addr_len,
+		       const struct net_sockaddr *addr, net_socklen_t addr_len,
 		       const struct coap_transmission_parameters *params);
 
 /**
@@ -321,7 +321,7 @@ int coap_resource_send(const struct coap_resource *resource, const struct coap_p
  * @return the observe option value in case of success or negative in case of error.
  */
 int coap_resource_parse_observe(struct coap_resource *resource, const struct coap_packet *request,
-				const struct sockaddr *addr);
+				const struct net_sockaddr *addr);
 
 /**
  * @brief Lookup an observer by address and remove it from the @p resource .
@@ -333,7 +333,7 @@ int coap_resource_parse_observe(struct coap_resource *resource, const struct coa
  * @return 0 in case of success or negative in case of error.
  */
 int coap_resource_remove_observer_by_addr(struct coap_resource *resource,
-					  const struct sockaddr *addr);
+					  const struct net_sockaddr *addr);
 
 /**
  * @brief Lookup an observer by token and remove it from the @p resource .

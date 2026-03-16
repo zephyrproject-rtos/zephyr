@@ -1,4 +1,4 @@
-.. _phyboard_nash:
+.. zephyr:board:: phyboard_nash
 
 phyBOARD-Nash i.MX93
 ####################
@@ -52,41 +52,7 @@ More information about the board can be found at the `PHYTEC website`_.
 Supported Features
 ==================
 
-The ``phyboard_nash/mimx9352/a55`` board target supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| GIC-v4    | on-chip    | interrupt controller                |
-+-----------+------------+-------------------------------------+
-| ARM TIMER | on-chip    | system clock                        |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| TPM       | on-chip    | TPM Counter                         |
-+-----------+------------+-------------------------------------+
-
-The ``phyboard_nash/mimx9352/m33`` board target supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | interrupt controller                |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Devices
 ========
@@ -161,8 +127,8 @@ display the following console output:
     *** Booting Zephyr OS build v3.7.0-848-gb4d99b124c6d ***
     Hello World! phyboard_nash/mimx9352/m33
 
-Starting the M7-Core from U-Boot and Linux
-==========================================
+Starting the M33-Core from U-Boot and Linux
+===========================================
 
 Loading binaries and starting the M33-Core is supported from Linux via
 remoteproc. Please check the `phyCORE-i.MX93 BSP Manual`_ for more information.

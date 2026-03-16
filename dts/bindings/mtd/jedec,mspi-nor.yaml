@@ -5,9 +5,78 @@ description: Generic NOR flash on MSPI bus
 
 compatible: "jedec,mspi-nor"
 
-include: [mspi-device.yaml, "jedec,spi-nor-common.yaml"]
+include:
+  - name: mspi-device.yaml
+  - name: jedec,spi-nor-common.yaml
+    property-allowlist:
+      - jedec-id
+      - size
+      - sfdp-bfp
+      - sfdp-ff05
+      - sfdp-ff84
+      - quad-enable-requirements
+      - has-dpd
+      - dpd-wakeup-sequence
+      - t-enter-dpd
+      - t-exit-dpd
 
 properties:
+  read-frequency:
+    type: int
+    description: |
+      Clock frequency of device to configure in Hz for read
+      command, when reads are desired to be in a different
+      frequency than the rest of the commands.
+
+  read-io-mode:
+    type: string
+    enum:
+      - "MSPI_IO_MODE_SINGLE"
+      - "MSPI_IO_MODE_DUAL"
+      - "MSPI_IO_MODE_DUAL_1_1_2"
+      - "MSPI_IO_MODE_DUAL_1_2_2"
+      - "MSPI_IO_MODE_QUAD"
+      - "MSPI_IO_MODE_QUAD_1_1_4"
+      - "MSPI_IO_MODE_QUAD_1_4_4"
+      - "MSPI_IO_MODE_OCTAL"
+      - "MSPI_IO_MODE_OCTAL_1_1_8"
+      - "MSPI_IO_MODE_OCTAL_1_8_8"
+      - "MSPI_IO_MODE_HEX"
+      - "MSPI_IO_MODE_HEX_8_8_16"
+      - "MSPI_IO_MODE_HEX_8_16_16"
+    description: |
+      MSPI I/O mode setting for read command when desired to
+      be different from base device `mspi-io-mode` for the rest
+      of the commands.
+
+  write-frequency:
+    type: int
+    description: |
+      Clock frequency of device to configure in Hz for write
+      command, when write are desired to be in a different
+      frequency than the rest of the commands.
+
+  write-io-mode:
+    type: string
+    enum:
+      - "MSPI_IO_MODE_SINGLE"
+      - "MSPI_IO_MODE_DUAL"
+      - "MSPI_IO_MODE_DUAL_1_1_2"
+      - "MSPI_IO_MODE_DUAL_1_2_2"
+      - "MSPI_IO_MODE_QUAD"
+      - "MSPI_IO_MODE_QUAD_1_1_4"
+      - "MSPI_IO_MODE_QUAD_1_4_4"
+      - "MSPI_IO_MODE_OCTAL"
+      - "MSPI_IO_MODE_OCTAL_1_1_8"
+      - "MSPI_IO_MODE_OCTAL_1_8_8"
+      - "MSPI_IO_MODE_HEX"
+      - "MSPI_IO_MODE_HEX_8_8_16"
+      - "MSPI_IO_MODE_HEX_8_16_16"
+    description: |
+      MSPI I/O mode setting for write command when desired to
+      be different from base device `mspi-io-mode` for the rest
+      of the commands.
+
   reset-gpios:
     type: phandle-array
     description: |
@@ -22,3 +91,28 @@ properties:
     type: int
     description: |
       Minimum time, in nanoseconds, the flash chip needs to recover after reset.
+      Such delay is performed when a GPIO or software reset is done, or after
+      power is supplied to the chip if the "supply-gpios" property is specified.
+
+  transfer-timeout:
+    type: int
+    default: 10
+    description: |
+      Maximum time, in milliseconds, allowed for a single transfer on the MSPI
+      bus in communication with the flash chip. The default value is the one
+      that was previously hard-coded in the flash_mspi_nor driver.
+
+  use-4byte-addressing:
+    type: boolean
+    description: |
+      Indicates that 4-byte addressing is to be used in communication with
+      the flash chip. The driver will use dedicated 4-byte address instruction
+      codes for commands that require addresses (like Read, Page Program,
+      or Erase) if those are supported by the flash chip, or if necessary,
+      it will switch the chip to 4-byte addressing mode.
+
+  initial-soft-reset:
+    type: boolean
+    description: |
+      When set, the flash driver performs software reset of the flash chip
+      at initialization.

@@ -5,4 +5,4 @@ description: Nuclei Bumblebee RISC-V Core
 
 compatible: "nuclei,bumblebee"
 
-include: riscv,cpus.yaml
+include: riscv-common.yaml

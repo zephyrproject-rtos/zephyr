@@ -11,19 +11,13 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
-#include <gpio/gpio_stm32.h>
 
 #include <stm32_ll_bus.h>
 #include <stm32_ll_gpio.h>
 #include <stm32_ll_system.h>
 
-/** Helper to extract IO port number from STM32PIN() encoded value */
-#define STM32_PORT(__pin) \
-	((__pin) >> 4)
-
-/** Helper to extract IO pin number from STM32PIN() encoded value */
-#define STM32_PIN(__pin) \
-	((__pin) & 0xf)
+#include <stm32_bitops.h>
+#include <stm32_gpio_shared.h>
 
 /** Helper to extract IO port number from STM32_PINMUX() encoded value */
 #define STM32_DT_PINMUX_PORT(__pin) \
@@ -42,34 +36,6 @@
 #define STM32_DT_PINMUX_REMAP(__pin) \
 	(((__pin) >> STM32_REMAP_SHIFT) & STM32_REMAP_MASK)
 #endif
-
-/**
- * @brief Array containing pointers to each GPIO port.
- *
- * Entries will be NULL if the GPIO port is not enabled.
- */
-static const struct device *const gpio_ports[] = {
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioa)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiob)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioc)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiod)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioe)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiof)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiog)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioh)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioi)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioj)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiok)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiol)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiom)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpion)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioo)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiop)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioq)),
-};
-
-/** Number of GPIO ports. */
-static const size_t gpio_ports_cnt = ARRAY_SIZE(gpio_ports);
 
 #if DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), remap_pa11)
 #define REMAP_PA11	DT_PROP(DT_NODELABEL(pinctrl), remap_pa11)
@@ -120,39 +86,6 @@ SYS_INIT(stm32_pinmux_init_remap, PRE_KERNEL_1,
 #endif /* REMAP_PA11 || REMAP_PA12 || REMAP_PA11_PA12 */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
-
-/* ignore swj-cfg reset state (default value) */
-#if ((DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg)) && \
-	(DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) != 0))
-
-static int stm32f1_swj_cfg_init(void)
-{
-
-	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
-
-	/* reset state is '000' (Full SWJ, (JTAG-DP + SW-DP)) */
-	/* only one of the 3 bits can be set */
-#if (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 1)
-	/* 001: Full SWJ (JTAG-DP + SW-DP) but without NJTRST */
-	/* releases: PB4 */
-	LL_GPIO_AF_Remap_SWJ_NONJTRST();
-#elif (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 2)
-	/* 010: JTAG-DP Disabled and SW-DP Enabled */
-	/* releases: PB4 PB3 PA15 */
-	LL_GPIO_AF_Remap_SWJ_NOJTAG();
-#elif (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 3)
-	/* 100: JTAG-DP Disabled and SW-DP Disabled */
-	/* releases: PB4 PB3 PA13 PA14 PA15 */
-	LL_GPIO_AF_DisableRemap_SWJ();
-#endif
-
-	return 0;
-}
-
-SYS_INIT(stm32f1_swj_cfg_init, PRE_KERNEL_1, 0);
-
-#endif /* DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg) */
-
 /**
  * @brief Helper function to check and apply provided pinctrl remap
  * configuration.
@@ -210,58 +143,15 @@ static int stm32_pins_remap(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt)
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 
-static int stm32_pin_configure(uint32_t pin, uint32_t pin_cgf, uint32_t pin_func)
-{
-	const struct device *port_device;
-
-	if (STM32_PORT(pin) >= gpio_ports_cnt) {
-		return -EINVAL;
-	}
-
-	port_device = gpio_ports[STM32_PORT(pin)];
-
-	if ((port_device == NULL) || (!device_is_ready(port_device))) {
-		return -ENODEV;
-	}
-
-	return gpio_stm32_configure(port_device, STM32_PIN(pin), pin_cgf, pin_func);
-}
-
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl)
-static int apply_iosync_configuration(uint32_t port, uint32_t pin, uint32_t pincfg)
+static void apply_iosync_configuration(
+	const struct device *port_device, uint32_t pin, uint32_t pincfg)
 {
-	const struct device *port_device;
-	const struct gpio_stm32_config *gpio_cfg;
-	uint32_t piocfgr, delayr, pinbit;
-	GPIO_TypeDef *gpio_reg;
-	int ret;
-
-	if (port >= gpio_ports_cnt) {
-		return -EINVAL;
-	}
-
-	port_device = gpio_ports[port];
-	if (port_device == NULL || !device_is_ready(port_device)) {
-		return -ENODEV;
-	}
-
-	/**
-	 * For lack of better way, obtain the GPIO base address from the
-	 * device's configuration directly. This *can* be made cleaner
-	 * but would require reworking the GPIO & PINCTRL entirely...
-	 */
-	gpio_cfg = port_device->config;
-	gpio_reg = (GPIO_TypeDef *)gpio_cfg->base;
-
-	/* Make sure GPIO clock is enabled */
-	ret = pm_device_runtime_get(port_device);
-	if (ret < 0) {
-		return ret;
-	}
-
-	piocfgr = (pincfg >> STM32_IORETIME_ADVCFGR_SHIFT) & STM32_IORETIME_ADVCFGR_MASK;
-	delayr = (pincfg >> STM32_IODELAY_LENGTH_SHIFT) & STM32_IODELAY_LENGTH_MASK;
-	pinbit = BIT(pin);
+	const struct gpio_stm32_config *gpio_cfg = port_device->config;
+	GPIO_TypeDef *gpio_reg = gpio_cfg->base;
+	uint32_t piocfgr = (pincfg >> STM32_IORETIME_ADVCFGR_SHIFT) & STM32_IORETIME_ADVCFGR_MASK;
+	uint32_t delayr = (pincfg >> STM32_IODELAY_LENGTH_SHIFT) & STM32_IODELAY_LENGTH_MASK;
+	uint32_t pinbit = BIT(pin);
 
 	/**
 	 * Thanks to clever encoding, we don't have to check whether the I/O retiming
@@ -276,18 +166,22 @@ static int apply_iosync_configuration(uint32_t port, uint32_t pin, uint32_t pinc
 		LL_GPIO_SetDelayPin_8_15(gpio_reg, pinbit, delayr);
 		LL_GPIO_SetPIOControlPin_8_15(gpio_reg, pinbit, piocfgr);
 	}
-
-	/* Release GPIO device since we are done */
-	return pm_device_runtime_put(port_device);
 }
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl) */
+
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+#define IS_GPIO_OUT GPIO_OUT
+#else
+#define IS_GPIO_OUT STM32_GPIO
 #endif
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
 {
-	uint32_t pin, mux;
+	const struct device *port;
+	uint32_t mux, func, line;
 	uint32_t pin_cgf = 0;
-	int ret = 0;
+	int ret = 0, cfg_ret;
 
 	ARG_UNUSED(reg);
 
@@ -334,24 +228,53 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			__ASSERT_NO_MSG(STM32_DT_PINMUX_FUNC(mux));
 		}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
+		port = stm32_gpioport_get(STM32_DT_PINMUX_PORT(mux));
+		if (port == NULL) {
+			return -ENODEV;
+		}
 
-		pin = STM32PIN(STM32_DT_PINMUX_PORT(mux),
-			       STM32_DT_PINMUX_LINE(mux));
-
-		ret = stm32_pin_configure(pin, pin_cgf, STM32_DT_PINMUX_FUNC(mux));
+		ret = pm_device_runtime_get(port);
 		if (ret < 0) {
 			return ret;
+		}
+
+		line = STM32_DT_PINMUX_LINE(mux);
+		func = STM32_DT_PINMUX_FUNC(mux);
+
+		cfg_ret = stm32_gpioport_configure_pin(port, line, pin_cgf, func);
+
+		if (cfg_ret >= 0 && func == IS_GPIO_OUT) {
+			/* Apply output level configuration */
+			const struct gpio_stm32_config *cfg = port->config;
+			GPIO_TypeDef *gpio = cfg->base;
+			uint32_t gpio_out = pin_cgf & (STM32_ODR_MASK << STM32_ODR_SHIFT);
+
+			if (gpio_out == STM32_ODR_1) {
+				stm32_reg_write(&gpio->BSRR, BIT(line));
+			} else {
+				/* c.f. gpio_stm32_port_clear_bits_raw() for rationale */
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+				stm32_reg_write(&gpio->BRR, BIT(line));
+#else /* CONFIG_SOC_SERIES_STM32F1X */
+				LL_GPIO_ResetOutputPin(gpio, BIT(line));
+#endif /* CONFIG_SOC_SERIES_STM32F1X */
+			}
 		}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl)
-		ret = apply_iosync_configuration(
-			STM32_DT_PINMUX_PORT(mux),
-			STM32_DT_PINMUX_LINE(mux),
-			pins[i].pincfg);
+		if (cfg_ret >= 0) {
+			apply_iosync_configuration(port, line, pins[i].pincfg);
+		}
+#endif
+
+		ret = pm_device_runtime_put(port);
 		if (ret < 0) {
 			return ret;
 		}
-#endif
+
+		if (cfg_ret < 0) {
+			return cfg_ret;
+		}
 	}
 
 	return 0;

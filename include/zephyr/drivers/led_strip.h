@@ -7,7 +7,8 @@
 
 /**
  * @file
- * @brief Public API for controlling linear strips of LEDs.
+ * @ingroup led_strip_interface
+ * @brief Main header file for LED strip driver API.
  *
  * This library abstracts the chipset drivers for individually
  * addressable strips of LEDs.
@@ -17,10 +18,15 @@
 #define ZEPHYR_INCLUDE_DRIVERS_LED_STRIP_H_
 
 /**
- * @brief LED Strip Interface
- * @defgroup led_strip_interface LED Strip Interface
+ * @brief Interfaces for LED strips.
+ * @defgroup led_strip_interface LED Strip
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup led_strip_interface_ext Device-specific LED Strip API extensions
+ * @{
+ * @}
+ *
  */
 
 #include <errno.h>
@@ -83,13 +89,13 @@ typedef size_t (*led_api_length)(const struct device *dev);
 
 /**
  * @brief LED strip driver API
- *
- * This is the mandatory API any LED strip driver needs to expose.
  */
 __subsystem struct led_strip_driver_api {
+	/* Mandatory callbacks. */
 	led_api_update_rgb update_rgb;
-	led_api_update_channels update_channels;
 	led_api_length length;
+	/* Optional callbacks. */
+	led_api_update_channels update_channels;
 };
 
 /**
@@ -158,7 +164,7 @@ static inline int led_strip_update_channels(const struct device *dev,
  *
  * @param dev	LED strip device.
  *
- * @retval	Length of LED strip device.
+ * @return	Length of LED strip device.
  */
 static inline size_t led_strip_length(const struct device *dev)
 {

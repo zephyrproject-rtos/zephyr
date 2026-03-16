@@ -6,7 +6,7 @@
 
 #include <mem.h>
 #include <nordic/nrf_common.dtsi>
-#include <zephyr/dt-bindings/adc/nrf-saadc-nrf54l.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc.h>
 #include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 /delete-node/ &sw_pwm;
@@ -39,11 +39,12 @@
 		};
 
 		cpuflpr: cpu@1 {
-			compatible = "nordic,vpr";
+			compatible = "nordic,vpr", "riscv";
 			reg = <1>;
 			device_type = "cpu";
 			clocks = <&hfpll>;
-			riscv,isa = "rv32emc";
+			riscv,isa-base = "rv32e";
+			riscv,isa-extensions = "e", "m", "c", "zicsr";
 			nordic,bus-width = <32>;
 		};
 	};
@@ -87,6 +88,7 @@
 			reg = <0xffd000 0x1000>;
 		};
 #endif
+
 		ficr: ficr@ffc000 {
 			compatible = "nordic,nrf-ficr";
 			reg = <0xffc000 0x1000>;
@@ -101,11 +103,13 @@
 
 #ifdef USE_NON_SECURE_ADDRESS_MAP
 		global_peripherals: peripheral@40000000 {
+			reg = <0x40000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x40000000 0x10000000>;
 #else
 		global_peripherals: peripheral@50000000 {
+			reg = <0x50000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x50000000 0x10000000>;
@@ -115,18 +119,22 @@
 				compatible = "nordic,nrf-dppic";
 				reg = <0x42000 0x808>;
 				status = "disabled";
+				channels = <8>;
+				groups = <2>;
 			};
 
 			ppib00: ppib@43000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x43000 0x1000>;
 				status = "disabled";
+				channels = <8>;
 			};
 
 			ppib01: ppib@44000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x44000 0x1000>;
 				status = "disabled";
+				channels = <8>;
 			};
 
 			spi00: spi@4a000 {
@@ -141,6 +149,7 @@
 				#size-cells = <0>;
 				reg = <0x4a000 0x1000>;
 				interrupts = <74 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hfpll>;
 				max-frequency = <DT_FREQ_M(32)>;
 				easydma-maxcnt-bits = <16>;
 				rx-delay-supported;
@@ -202,18 +211,22 @@
 				compatible = "nordic,nrf-dppic";
 				reg = <0x82000 0x808>;
 				status = "disabled";
+				channels = <24>;
+				groups = <6>;
 			};
 
 			ppib10: ppib@83000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x83000 0x1000>;
 				status = "disabled";
+				channels = <8>;
 			};
 
 			ppib11: ppib@84000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x84000 0x1000>;
 				status = "disabled";
+				channels = <16>;
 			};
 
 			timer10: timer@85000 {
@@ -243,7 +256,7 @@
 				ieee802154-supported;
 				ble-2mbps-supported;
 				ble-coded-phy-supported;
-				cs-supported;
+				ble-cs-supported;
 
 				ieee802154: ieee802154 {
 					compatible = "nordic,nrf-ieee802154";
@@ -263,24 +276,29 @@
 				compatible = "nordic,nrf-dppic";
 				reg = <0xc2000 0x808>;
 				status = "disabled";
+				channels = <16>;
+				groups = <6>;
 			};
 
 			ppib20: ppib@c3000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0xc3000 0x1000>;
 				status = "disabled";
+				channels = <8>;
 			};
 
 			ppib21: ppib@c4000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0xc4000 0x1000>;
 				status = "disabled";
+				channels = <16>;
 			};
 
 			ppib22: ppib@c5000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0xc5000 0x1000>;
 				status = "disabled";
+				channels = <4>;
 			};
 
 			i2c20: i2c@c6000 {
@@ -526,7 +544,7 @@
 				gpio-controller;
 				reg = <0xd8200 0x300>;
 				#gpio-cells = <2>;
-				ngpios = <16>;
+				ngpios = <17>;
 				status = "disabled";
 				port = <1>;
 				gpiote-instance = <&gpiote20>;
@@ -569,18 +587,22 @@
 				clocks = <&lfxo>, <&pclk>;
 				clock-names = "lfclock", "hfclock";
 				status = "disabled";
+				extended-channels = <0>;
 			};
 
 			dppic30: dppic@102000 {
 				compatible = "nordic,nrf-dppic";
 				reg = <0x102000 0x808>;
 				status = "disabled";
+				channels = <4>;
+				groups = <2>;
 			};
 
 			ppib30: ppib@103000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x103000 0x1000>;
 				status = "disabled";
+				channels = <4>;
 			};
 
 			i2c30: i2c@104000 {
@@ -689,7 +711,7 @@
 				gpio-controller;
 				reg = <0x10a000 0x300>;
 				#gpio-cells = <2>;
-				ngpios = <5>;
+				ngpios = <7>;
 				status = "disabled";
 				port = <0>;
 				gpiote-instance = <&gpiote30>;
@@ -730,6 +752,8 @@
 				compatible = "soc-nv-flash";
 				erase-block-size = <4096>;
 				write-block-size = <16>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 
@@ -746,7 +770,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			cpuapp_nvic: interrupt-controller@e000e100  {
+			cpuapp_nvic: interrupt-controller@e000e100 {
 				#address-cells = <1>;
 				compatible = "arm,v8m-nvic";
 				reg = <0xe000e100 0xc00>;

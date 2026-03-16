@@ -38,7 +38,7 @@ if NRF_802154_RADIO_DRIVER
 
 config NRF_802154_CONSTLAT_CONTROL
 	def_bool y
-	depends on SOC_SERIES_NRF54LX && NRF_802154_SL_OPENSOURCE
+	depends on SOC_SERIES_NRF54L && NRF_802154_SL_OPENSOURCE
 	select NRF_SYS_EVENT
 	help
 	  Allows the nRF 802.15.4 radio driver to manage the constant latency state.
@@ -183,7 +183,7 @@ config NRF_802154_CCA_CORR_LIMIT
 
 config NRF_802154_RX_BUFFERS
 	int "nRF 802.15.4 receive buffers"
-	default 16
+	default 20
 	help
 	  Number of buffers in nRF 802.15.4 driver serialization host's receive queue.
 	  If this value is modified, its remote counterpart must be set to the exact same value.
@@ -203,6 +203,20 @@ config NRF_802154_PENDING_EXTENDED_ADDRESSES
 config NRF_802154_ENCRYPTION
 	bool "nRF 802.15.4 AES-CCM* authentication & encryption"
 	depends on !CRYPTO_NRF_ECB
+	select NRF_802154_IE_WRITER
+	select NRF_802154_SECURITY_WRITER
+	help
+	  Enable module for encryption and authentication of outgoing frames and Acks.
+
+config NRF_802154_IE_WRITER
+	bool "Information element writer"
+	help
+	  Enable data injection for some Information Element types.
+
+config NRF_802154_SECURITY_WRITER
+	bool "Security frame counter writer"
+	help
+	  Enable injection of security frame counter.
 
 config NRF_802154_SECURITY_KEY_STORAGE_SIZE
 	int "nRF 802.15.4 security key storage size"
@@ -244,6 +258,7 @@ endif # NRF_802154_RADIO_DRIVER || NRF_802154_SERIALIZATION
 
 endmenu # HAS_NORDIC_DRIVERS
 
+rsource "ironside/se/Kconfig"
 rsource "nrfs/Kconfig"
 rsource "nrfx/Kconfig"
 rsource "Kconfig.nrf_regtool"

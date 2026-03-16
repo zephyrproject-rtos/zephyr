@@ -53,6 +53,9 @@ enum llext_mem {
 	LLEXT_MEM_PREINIT,      /**< Array of early setup functions */
 	LLEXT_MEM_INIT,         /**< Array of setup functions */
 	LLEXT_MEM_FINI,         /**< Array of cleanup functions */
+#ifdef CONFIG_LLEXT_RODATA_NO_RELOC
+	LLEXT_MEM_RODATA_NO_RELOC,  /**< Read-only data without relocations (kept in flash) */
+#endif
 
 	LLEXT_MEM_COUNT,        /**< Number of regions managed by LLEXT */
 };
@@ -62,6 +65,22 @@ enum llext_mem {
 /* Number of memory partitions used by LLEXT */
 #define LLEXT_MEM_PARTITIONS (LLEXT_MEM_BSS+1)
 
+#ifdef CONFIG_LLEXT_RODATA_NO_RELOC
+/* Section name for read-only data kept in flash */
+#define LLEXT_SECT_RODATA_NO_RELOC llext.rodata.noreloc
+
+/* Full section name as string for comparisons */
+#define LLEXT_SECTION_RODATA_NO_RELOC ("." STRINGIFY(LLEXT_SECT_RODATA_NO_RELOC))
+
+/**
+ * Use this attribute on read-only data that should remain in flash
+ * instead of being copied to RAM.
+ */
+#define LLEXT_RODATA_NO_RELOC Z_GENERIC_DOT_SECTION(LLEXT_SECT_RODATA_NO_RELOC)
+#else
+#define LLEXT_RODATA_NO_RELOC
+#endif
+
 struct llext_loader;
 /** @endcond */
 
@@ -70,6 +89,17 @@ struct llext_loader;
 
 /** Maximum number of dependency LLEXTs */
 #define LLEXT_MAX_DEPENDENCIES 8
+
+#ifdef CONFIG_LLEXT_HEAP_MEMBLK
+struct llext_alloc {
+	int num_blocks;
+	void *memblk_ptr;
+};
+struct llext_alloc_map {
+	int idx;
+	struct llext_alloc map[LLEXT_MEM_COUNT];
+};
+#endif
 
 /**
  * @brief Structure describing a linkable loadable extension
@@ -83,7 +113,6 @@ struct llext {
 
 #ifdef CONFIG_USERSPACE
 	struct k_mem_partition mem_parts[LLEXT_MEM_PARTITIONS];
-	struct k_mem_domain mem_domain;
 #endif
 
 	/** @endcond */
@@ -96,6 +125,10 @@ struct llext {
 
 	/** Is the memory for this region allocated on heap? */
 	bool mem_on_heap[LLEXT_MEM_COUNT];
+
+#ifdef CONFIG_LLEXT_HEAP_MEMBLK
+	struct llext_alloc_map mem_alloc_map;
+#endif
 
 	/** Size of each stored region */
 	size_t mem_size[LLEXT_MEM_COUNT];
@@ -397,7 +430,7 @@ ssize_t llext_find_section(struct llext_loader *loader, const char *search_name)
  * @retval -ENOTSUP "peek" method not supported
  * @retval -ENOENT section not found
  */
-int llext_get_section_header(struct llext_loader *loader, struct llext *ext,
+int llext_get_section_header(const struct llext_loader *loader, const struct llext *ext,
 			     const char *search_name, elf_shdr_t *shdr);
 
 /**
@@ -409,9 +442,26 @@ int llext_get_section_header(struct llext_loader *loader, struct llext *ext,
  * @param bytes Size of memory region, in bytes
  *
  * @returns 0 on success, or a negative error code.
- * @retval -ENOSYS Option @kconfig{CONFIG_LLEXT_HEAP_DYNAMIC} is not enabled or supported
+ * @retval -ENOSYS Option @kconfig{CONFIG_LLEXT_HEAP_DYNAMIC} is not enabled or supported,
+ *         or it is and option @kconfig{CONFIG_HARVARD} is enabled
  */
 int llext_heap_init(void *mem, size_t bytes);
+
+/**
+ * @brief Initialize LLEXT heap dynamically for Harvard architecture
+ *
+ * Use the provided memory blocks as the LLEXT heaps at runtime.
+ *
+ * @param instr_mem Pointer to instruction memory.
+ * @param instr_bytes Size of instruction memory region, in bytes
+ * @param data_mem Pointer to data memory.
+ * @param data_bytes Size of data memory region, in bytes
+ *
+ * @returns 0 on success, or a negative error code.
+ * @retval -ENOSYS Option @kconfig{CONFIG_LLEXT_HEAP_DYNAMIC} is not enabled or supported,
+ *         or it is and option @kconfig{CONFIG_HARVARD} is not enabled
+ */
+int llext_heap_init_harvard(void *instr_mem, size_t instr_bytes, void *data_mem, size_t data_bytes);
 
 /**
  * @brief Mark LLEXT heap as uninitialized.
@@ -448,7 +498,7 @@ int llext_relink_dependency(struct llext *ext, unsigned int n_ext);
  * During suspend the user has saved all the extension and loader descriptors
  * and related objects and called @ref llext_relink_dependency() to prepare
  * dependency pointers.
- * When resuming llext_alloc() has to be used to re-allocate all the objects,
+ * When resuming llext_alloc_metadata() has to be used to re-allocate all the objects,
  * therefore the user needs support from LLEXT core to accomplish that.
  * This function takes arrays of pointers to saved copies of extensions and
  * loaders as arguments and re-allocates all the objects, while also adding them

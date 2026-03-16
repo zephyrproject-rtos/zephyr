@@ -51,7 +51,15 @@ extern "C" {
 
 /* Exhaustively enumerated, highly optimized time unit conversion API */
 
-#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
+	defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
+/**
+ * @brief Get the current system timer frequency.
+ *
+ * Returns the system timer frequency in Hz as a runtime value. This is used by
+ * sys_clock_hw_cycles_per_sec() and by time conversion helpers, and may change
+ * after boot on some platforms.
+ */
 __syscall unsigned int sys_clock_hw_cycles_per_sec_runtime_get(void);
 
 static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
@@ -63,7 +71,8 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
 #if defined(__cplusplus) && (__cplusplus >= 201402L)
-  #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+	#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
+		defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
     #define TIME_CONSTEXPR
   #else
     #define TIME_CONSTEXPR constexpr
@@ -76,7 +85,8 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  * @brief Get the system timer frequency.
  * @return system timer frequency in Hz
  */
-#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
+	defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
 #define sys_clock_hw_cycles_per_sec() sys_clock_hw_cycles_per_sec_runtime_get()
 #else
 #define sys_clock_hw_cycles_per_sec() (uint32_t)CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
@@ -188,7 +198,7 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 
 /* Integer multiplication 32-bit conversion */
 #define z_tmcvt_int_mul_32(__t, __from_hz, __to_hz)	\
-	(uint32_t) ((__t)*((__to_hz) / (__from_hz)))
+	((uint32_t) ((__t)*((__to_hz) / (__from_hz))))
 
 /* General 32-bit conversion */
 #define z_tmcvt_gen_32(__t, __from_hz, __to_hz, __round_up, __round_off) \
@@ -212,9 +222,9 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 
 /* Slow 64-bit conversion. This avoids overflowing the multiply */
 #define z_tmcvt_gen_64_slow(__t, __from_hz, __to_hz, __round_up, __round_off) \
-	(((uint64_t) (__t) / (__from_hz))*(__to_hz) +			\
-	 (((uint64_t) (__t) % (__from_hz))*(__to_hz) +		\
-	  z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz))
+	((((uint64_t) (__t) / (__from_hz))*(__to_hz)) +			\
+	 (((((uint64_t) (__t) % (__from_hz))*(__to_hz)) +		\
+	  z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz)))
 
 /* General 64-bit conversion. Uses one of the two above macros */
 #define z_tmcvt_gen_64(__t, __from_hz, __to_hz, __round_up, __round_off) \
@@ -346,7 +356,8 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 #define Z_HZ_ns 1000000000
 #define Z_HZ_cyc sys_clock_hw_cycles_per_sec()
 #define Z_HZ_ticks CONFIG_SYS_CLOCK_TICKS_PER_SEC
-#define Z_CCYC (!IS_ENABLED(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME))
+#define Z_CCYC (!IS_ENABLED(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) && \
+		!IS_ENABLED(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE))
 
 /** @brief Convert seconds to hardware cycles. 32 bits. Truncates.
  *
@@ -2075,7 +2086,8 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 #define k_ticks_to_cyc_ceil64(t) \
 	z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, true, false)
 
-#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
+	defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
 #include <zephyr/syscalls/time_units.h>
 #endif
 

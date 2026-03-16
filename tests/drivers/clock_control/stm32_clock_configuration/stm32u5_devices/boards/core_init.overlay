@@ -9,7 +9,6 @@
  * be found in stm32h7.dtsi
  */
 
-
 /* Clocks clean up config
  * Aim is to avoid conflict with specific default board configuration
  */

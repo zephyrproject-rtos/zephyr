@@ -12,9 +12,6 @@
 
 LOG_MODULE_REGISTER(can_common, CONFIG_CAN_LOG_LEVEL);
 
-/* Maximum acceptable deviation in sample point location (permille) */
-#define SAMPLE_POINT_MARGIN 50
-
 /* CAN sync segment is always one time quantum */
 #define CAN_SYNC_SEG 1
 
@@ -37,7 +34,7 @@ int z_impl_can_send(const struct device *dev, const struct can_frame *frame,
 		    k_timeout_t timeout, can_tx_callback_t callback,
 		    void *user_data)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	const struct can_driver_api *api = DEVICE_API_GET(can, dev);
 	uint32_t id_mask;
 
 	CHECKIF(frame == NULL) {
@@ -80,7 +77,6 @@ int z_impl_can_send(const struct device *dev, const struct can_frame *frame,
 int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
 		      void *user_data, const struct can_filter *filter)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 	uint32_t id_mask;
 
 	CHECKIF(callback == NULL || filter == NULL) {
@@ -102,7 +98,7 @@ int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
 		return -EINVAL;
 	}
 
-	return api->add_rx_filter(dev, callback, user_data, filter);
+	return DEVICE_API_GET(can, dev)->add_rx_filter(dev, callback, user_data, filter);
 }
 
 static void can_msgq_put(const struct device *dev, struct can_frame *frame, void *user_data)
@@ -123,9 +119,8 @@ static void can_msgq_put(const struct device *dev, struct can_frame *frame, void
 int z_impl_can_add_rx_filter_msgq(const struct device *dev, struct k_msgq *msgq,
 				  const struct can_filter *filter)
 {
-	const struct can_driver_api *api = dev->api;
 
-	return api->add_rx_filter(dev, can_msgq_put, msgq, filter);
+	return DEVICE_API_GET(can, dev)->add_rx_filter(dev, can_msgq_put, msgq, filter);
 }
 
 /**
@@ -371,7 +366,6 @@ static int check_timing_in_range(const struct can_timing *timing,
 int z_impl_can_set_timing(const struct device *dev,
 			  const struct can_timing *timing)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 	const struct can_timing *min = can_get_timing_min(dev);
 	const struct can_timing *max = can_get_timing_max(dev);
 	int err;
@@ -381,7 +375,7 @@ int z_impl_can_set_timing(const struct device *dev,
 		return err;
 	}
 
-	return api->set_timing(dev, timing);
+	return DEVICE_API_GET(can, dev)->set_timing(dev, timing);
 }
 
 int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate)
@@ -402,7 +396,7 @@ int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate)
 		return ret;
 	}
 
-	if (ret > SAMPLE_POINT_MARGIN) {
+	if (ret > CONFIG_CAN_SAMPLE_POINT_MARGIN) {
 		return -ERANGE;
 	}
 
@@ -413,7 +407,7 @@ int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate)
 int z_impl_can_set_timing_data(const struct device *dev,
 			       const struct can_timing *timing_data)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	const struct can_driver_api *api = DEVICE_API_GET(can, dev);
 	const struct can_timing *min = can_get_timing_data_min(dev);
 	const struct can_timing *max = can_get_timing_data_max(dev);
 	int err;
@@ -448,7 +442,7 @@ int z_impl_can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data)
 		return ret;
 	}
 
-	if (ret > SAMPLE_POINT_MARGIN) {
+	if (ret > CONFIG_CAN_SAMPLE_POINT_MARGIN) {
 		return -ERANGE;
 	}
 

@@ -1,0 +1,16 @@
+# Copyright 2024 Texas Instruments Incorporated.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_TISCI
+	bool "TI SCI Clock Control driver"
+	default y
+	depends on DT_HAS_TI_K2G_SCI_CLK_ENABLED
+	help
+	  Driver for TISCI based clock control.
+
+config CLOCK_CONTROL_TISCI_PRIORITY
+	int "TISCI Clock Controller Priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+		TISCI clock controller priority should always be equal or greater
+		than the TISCI priority.

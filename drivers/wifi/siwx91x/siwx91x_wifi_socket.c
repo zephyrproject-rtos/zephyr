@@ -166,7 +166,7 @@ static void siwx91x_sock_on_recv(sl_si91x_fdset_t *read_fd, sl_si91x_fdset_t *wr
 			siwx91x_sock_on_recv);
 }
 
-static int siwx91x_sock_get(sa_family_t family, enum net_sock_type type,
+static int siwx91x_sock_get(net_sa_family_t family, enum net_sock_type type,
 			    enum net_ip_protocol ip_proto, struct net_context **context)
 {
 	struct siwx91x_dev *sidev = net_if_get_first_wifi()->if_dev->dev->data;

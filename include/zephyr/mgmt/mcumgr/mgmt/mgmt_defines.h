@@ -15,9 +15,7 @@ extern "C" {
 #endif
 
 /**
- * @brief MCUmgr mgmt API
- * @defgroup mcumgr_mgmt_api MCUmgr mgmt API
- * @ingroup mcumgr
+ * @addtogroup mcumgr_mgmt_api
  * @{
  */
 
@@ -40,6 +38,8 @@ enum mcumgr_op_t {
 
 	/** Write response op-code */
 	MGMT_OP_WRITE_RSP,
+
+	MGMT_OP_COUNT,
 };
 
 /**

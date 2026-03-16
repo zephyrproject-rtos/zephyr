@@ -55,12 +55,21 @@ config MSPI_TIMING
 	  Enables mspi_timing_config calls in device drivers for those
 	  controllers that need this to proper function at high frequencies.
 
+config MSPI_DMA
+	bool "DMA support"
+	select DMA
+	help
+	  Enables DMA capabilities, depending on the driver and hardware it
+	  runs on.
+
 module = MSPI
 module-str = mspi
 source "subsys/logging/Kconfig.template.log_config"
 
+# zephyr-keep-sorted-start
 source "drivers/mspi/Kconfig.ambiq"
 source "drivers/mspi/Kconfig.dw"
 source "drivers/mspi/Kconfig.mspi_emul"
-
+source "drivers/mspi/Kconfig.stm32"
+# zephyr-keep-sorted-stop
 endif # MSPI

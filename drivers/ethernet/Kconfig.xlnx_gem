@@ -11,6 +11,9 @@ menuconfig ETH_XLNX_GEM
 	default y
 	depends on DT_HAS_XLNX_GEM_ENABLED
 	depends on !QEMU_TARGET || (QEMU_TARGET && NET_QEMU_ETHERNET)
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select CACHE_MANAGEMENT if DCACHE
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	help
 	  Enable Xilinx GEM Ethernet driver.
 

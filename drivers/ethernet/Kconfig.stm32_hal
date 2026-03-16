@@ -9,12 +9,12 @@ menuconfig ETH_STM32_HAL
 	default y
 	depends on DT_HAS_ST_STM32_ETHERNET_ENABLED
 	select USE_STM32_HAL_ETH
-	select USE_STM32_HAL_RIF if SOC_SERIES_STM32N6X
 	select NOCACHE_MEMORY if (SOC_SERIES_STM32H7X && CPU_CORTEX_M7) || SOC_SERIES_STM32N6X
 	select HWINFO
 	select ETH_DSA_SUPPORT_DEPRECATED
 	select PINCTRL
-	select MDIO if DT_HAS_ST_STM32_MDIO_ENABLED
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET && !SOC_SERIES_STM32H5X
+	imply NVMEM if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_ETHERNET),nvmem-cells)
 	imply CRC
 	help
 	  Enable STM32 HAL based Ethernet driver. It is available for
@@ -27,7 +27,13 @@ choice ETH_STM32_HAL_API_VERSION
 
 config ETH_STM32_HAL_API_V2
 	bool "Use official STM32Cube HAL driver"
-	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H5X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32N6X
+	depends on SOC_SERIES_STM32F4X \
+		   || SOC_SERIES_STM32F7X \
+		   || SOC_SERIES_STM32H5X \
+		   || SOC_SERIES_STM32H7X \
+		   || SOC_SERIES_STM32H7RSX \
+		   || SOC_SERIES_STM32MP13X \
+		   || SOC_SERIES_STM32N6X
 	select USE_STM32_HAL_ETH_EX if SOC_SERIES_STM32N6X
 	help
 	  Use the official STM32Cube HAL driver instead of the legacy one.
@@ -77,17 +83,29 @@ config ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER
 config ETH_STM32_HW_CHECKSUM
 	bool "Use TX and RX hardware checksum"
 	depends on !SOC_SERIES_STM32H5X
+	depends on NET_CHECKSUM_OFFLOAD
 	help
 	  Enable receive and transmit checksum offload to enhance throughput
 	  performances.
 	  See reference manual for more information on this feature.
+
+config ETH_STM32_HAL_TX_ASYNC
+	bool "Use TX async mode"
+	depends on ETH_STM32_HAL_API_V2
+	help
+	  Enable TX transmission asynchronous mode to enhance throughput
+	  performances.
 
 menuconfig PTP_CLOCK_STM32_HAL
 	bool "STM32 HAL PTP clock driver support"
 	default y
 	depends on PTP_CLOCK || NET_L2_PTP
 	depends on ETH_STM32_HAL_API_V2
-	depends on SOC_SERIES_STM32F7X || SOC_SERIES_STM32H7X || SOC_SERIES_STM32H5X
+	depends on SOC_SERIES_STM32F7X \
+		   || SOC_SERIES_STM32H5X \
+		   || SOC_SERIES_STM32H7X \
+		   || SOC_SERIES_STM32H7RSX \
+		   || SOC_SERIES_STM32N6X
 	help
 	  Enable STM32 PTP clock support.
 

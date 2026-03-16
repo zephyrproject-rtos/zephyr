@@ -1,0 +1,26 @@
+sample:
+  name: ADC stream sample
+common:
+  tags: adc
+  depends_on: adc
+  filter: dt_alias_exists("adc0") and dt_node_has_prop("/zephyr,user","io-channels")
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "^ADC data for [^@]+@\\d+ \\([0-9.]+\\) \\d+n$"
+tests:
+  sample.driver.adc_stream: {}
+  sample.driver.adc_stream.ad4052-stream:
+    extra_args:
+      - SHIELD=eval_ad4052_ardz
+      - EXTRA_CONF_FILE=ad4052-stream.conf
+      - DTC_OVERLAY_FILE=boards/apard32690_max32690_m4_ad4052.overlay
+    platform_allow:
+      - apard32690/max32690/m4
+  sample.driver.adc_stream.max32-stream:
+    extra_args:
+      - EXTRA_CONF_FILE=max32-stream.conf
+      - DTC_OVERLAY_FILE=boards/apard32690_max32690_m4_max32.overlay
+    platform_allow:
+      - apard32690/max32690/m4

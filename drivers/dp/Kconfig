@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig DP_DRIVER
-	bool "Debug Port interface driver [EXPERIMENTAL]"
+	bool "Debug Port (DP) drivers [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  Enable Debug Port interface driver

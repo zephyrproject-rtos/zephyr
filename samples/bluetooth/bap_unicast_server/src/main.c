@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +32,8 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/types.h>
 
+#include "stream_tx.h"
+
 #define AVAILABLE_SINK_CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
 				 BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | \
 				 BT_AUDIO_CONTEXT_TYPE_MEDIA | \
@@ -53,13 +55,14 @@ static const struct bt_audio_codec_cap lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
 static struct bt_conn *default_conn;
-static struct k_work_delayable audio_send_work;
-static struct bt_bap_stream sink_streams[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT];
+static struct audio_sink {
+	struct bt_bap_stream stream;
+	size_t recv_cnt;
+} sink_streams[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT];
 static struct audio_source {
 	struct bt_bap_stream stream;
 	uint16_t seq_num;
-	uint16_t max_sdu;
-	size_t len_to_send;
+	size_t send_cnt;
 } source_streams[CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
 static size_t configured_source_stream_count;
 
@@ -84,33 +87,6 @@ static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
-#define AUDIO_DATA_TIMEOUT_US 1000000UL /* Send data every 1 second */
-#define SDU_INTERVAL_US       10000UL   /* 10 ms SDU interval */
-
-static uint16_t get_and_incr_seq_num(const struct bt_bap_stream *stream)
-{
-	for (size_t i = 0U; i < configured_source_stream_count; i++) {
-		if (stream == &source_streams[i].stream) {
-			uint16_t seq_num;
-
-			seq_num = source_streams[i].seq_num;
-
-			if (IS_ENABLED(CONFIG_LIBLC3)) {
-				source_streams[i].seq_num++;
-			} else {
-				source_streams[i].seq_num += (AUDIO_DATA_TIMEOUT_US /
-							      SDU_INTERVAL_US);
-			}
-
-			return seq_num;
-		}
-	}
-
-	printk("Could not find endpoint from stream %p\n", stream);
-
-	return 0;
-}
-
 #if defined(CONFIG_LIBLC3)
 
 #include "lc3.h"
@@ -119,7 +95,6 @@ static uint16_t get_and_incr_seq_num(const struct bt_bap_stream *stream)
 #define MAX_FRAME_DURATION_US   10000
 #define MAX_NUM_SAMPLES         ((MAX_FRAME_DURATION_US * MAX_SAMPLE_RATE) / USEC_PER_SEC)
 
-static int16_t audio_buf[MAX_NUM_SAMPLES];
 static lc3_decoder_t lc3_decoder;
 static lc3_decoder_mem_48k_t lc3_decoder_mem;
 static int frames_per_sdu;
@@ -192,75 +167,6 @@ static void print_qos(const struct bt_bap_qos_cfg *qos)
 	       qos->rtn, qos->latency, qos->pd);
 }
 
-/**
- * @brief Send audio data on timeout
- *
- * This will send an increasing amount of audio data, starting from 1 octet.
- * The data is just mock data, and does not actually represent any audio.
- *
- * First iteration : 0x00
- * Second iteration: 0x00 0x01
- * Third iteration : 0x00 0x01 0x02
- *
- * And so on, until it wraps around the configured MTU (CONFIG_BT_ISO_TX_MTU)
- *
- * @param work Pointer to the work structure
- */
-static void audio_timer_timeout(struct k_work *work)
-{
-	int ret;
-	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
-	static bool data_initialized;
-	struct net_buf *buf;
-
-	if (!data_initialized) {
-		/* TODO: Actually encode some audio data */
-		for (size_t i = 0U; i < ARRAY_SIZE(buf_data); i++) {
-			buf_data[i] = (uint8_t)i;
-		}
-
-		data_initialized = true;
-	}
-
-	/* We configured the sink streams to be first in `streams`, so that
-	 * we can use `stream[i]` to select sink streams (i.e. streams with
-	 * data going to the server)
-	 */
-	for (size_t i = 0; i < configured_source_stream_count; i++) {
-		struct bt_bap_stream *stream = &source_streams[i].stream;
-
-		buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
-		if (buf == NULL) {
-			printk("Failed to allocate TX buffer\n");
-			/* Break and retry later */
-			break;
-		}
-		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
-
-		net_buf_add_mem(buf, buf_data, ++source_streams[i].len_to_send);
-
-		ret = bt_bap_stream_send(stream, buf, get_and_incr_seq_num(stream));
-		if (ret < 0) {
-			printk("Failed to send audio data on streams[%zu] (%p): (%d)\n",
-			       i, stream, ret);
-			net_buf_unref(buf);
-		} else {
-			printk("Sending mock data with len %zu on streams[%zu] (%p)\n",
-			       source_streams[i].len_to_send, i, stream);
-		}
-
-		if (source_streams[i].len_to_send >= source_streams[i].max_sdu) {
-			source_streams[i].len_to_send = 0;
-		}
-	}
-
-#if defined(CONFIG_LIBLC3)
-	k_work_schedule(&audio_send_work, K_USEC(MAX_FRAME_DURATION_US));
-#else
-	k_work_schedule(&audio_send_work, K_USEC(AUDIO_DATA_TIMEOUT_US));
-#endif
-}
-
 static enum bt_audio_dir stream_dir(const struct bt_bap_stream *stream)
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(source_streams); i++) {
@@ -270,7 +176,7 @@ static enum bt_audio_dir stream_dir(const struct bt_bap_stream *stream)
 	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(sink_streams); i++) {
-		if (stream == &sink_streams[i]) {
+		if (stream == &sink_streams[i].stream) {
 			return BT_AUDIO_DIR_SINK;
 		}
 	}
@@ -291,7 +197,7 @@ static struct bt_bap_stream *stream_alloc(enum bt_audio_dir dir)
 		}
 	} else {
 		for (size_t i = 0; i < ARRAY_SIZE(sink_streams); i++) {
-			struct bt_bap_stream *stream = &sink_streams[i];
+			struct bt_bap_stream *stream = &sink_streams[i].stream;
 
 			if (!stream->conn) {
 				return stream;
@@ -360,13 +266,6 @@ static int lc3_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qo
 
 	print_qos(qos);
 
-	for (size_t i = 0U; i < configured_source_stream_count; i++) {
-		if (stream == &source_streams[i].stream) {
-			source_streams[i].max_sdu = qos->sdu;
-			break;
-		}
-	}
-
 	return 0;
 }
 
@@ -428,16 +327,8 @@ static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 	for (size_t i = 0U; i < configured_source_stream_count; i++) {
 		if (stream == &source_streams[i].stream) {
 			source_streams[i].seq_num = 0U;
-			source_streams[i].len_to_send = 0U;
 			break;
 		}
-	}
-
-	if (configured_source_stream_count > 0 &&
-	    !k_work_delayable_is_pending(&audio_send_work)) {
-
-		/* Start send timer */
-		k_work_schedule(&audio_send_work, K_MSEC(0));
 	}
 
 	return 0;
@@ -509,16 +400,27 @@ static void stream_recv_lc3_codec(struct bt_bap_stream *stream,
 				  const struct bt_iso_recv_info *info,
 				  struct net_buf *buf)
 {
+	static int16_t audio_buf[MAX_NUM_SAMPLES];
+
+	struct audio_sink *sink_stream = CONTAINER_OF(stream, struct audio_sink, stream);
 	const bool valid_data = (info->flags & BT_ISO_FLAGS_VALID) != 0;
 	const int octets_per_frame = buf->len / frames_per_sdu;
+
+	if (valid_data) {
+		sink_stream->recv_cnt++;
+
+		if (CONFIG_INFO_REPORTING_INTERVAL > 0 &&
+		    (sink_stream->recv_cnt % CONFIG_INFO_REPORTING_INTERVAL) == 0U) {
+			printk("Incoming audio on stream %p len %u (%zu)\n", stream, buf->len,
+			       sink_stream->recv_cnt);
+		}
+	} else {
+		printk("Bad packet: 0x%02X\n", info->flags);
+	}
 
 	if (lc3_decoder == NULL) {
 		printk("LC3 decoder not setup, cannot decode data.\n");
 		return;
-	}
-
-	if (!valid_data) {
-		printk("Bad packet: 0x%02X\n", info->flags);
 	}
 
 	for (int i = 0; i < frames_per_sdu; i++) {
@@ -533,8 +435,6 @@ static void stream_recv_lc3_codec(struct bt_bap_stream *stream,
 			printk("[%d]: Decoder failed - wrong parameters?: %d\n", i, err);
 		}
 	}
-
-	printk("RX stream %p len %u\n", stream, buf->len);
 }
 
 #else
@@ -544,7 +444,14 @@ static void stream_recv(struct bt_bap_stream *stream,
 			struct net_buf *buf)
 {
 	if (info->flags & BT_ISO_FLAGS_VALID) {
-		printk("Incoming audio on stream %p len %u\n", stream, buf->len);
+		struct audio_sink *sink_stream = CONTAINER_OF(stream, struct audio_sink, stream);
+
+		sink_stream->recv_cnt++;
+
+		if (CONFIG_INFO_REPORTING_INTERVAL > 0 &&
+		    (sink_stream->recv_cnt % CONFIG_INFO_REPORTING_INTERVAL) == 0U) {
+			printk("Incoming audio on stream %p len %u\n", stream, buf->len);
+		}
 	}
 }
 
@@ -554,13 +461,37 @@ static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Audio Stream %p stopped with reason 0x%02X\n", stream, reason);
 
-	/* Stop send timer */
-	k_work_cancel_delayable(&audio_send_work);
+	if (IS_ENABLED(CONFIG_BT_AUDIO_TX) && stream_dir(stream) == BT_AUDIO_DIR_SOURCE) {
+		const int err = stream_tx_unregister(stream);
+
+		if (err != 0) {
+			printk("Failed to register stream %p for TX: %d\n", stream, err);
+		}
+	}
 }
 
 static void stream_started(struct bt_bap_stream *stream)
 {
-	printk("Audio Stream %p started\n", stream);
+	struct bt_iso_info info;
+	int err;
+
+	err = bt_iso_chan_get_info(stream->iso, &info);
+	__ASSERT(err == 0, "Failed to get ISO chan info: %d", err);
+
+	printk("Audio Stream %p started  with CIG_ID %u and CIS_ID %u\n", stream,
+	       info.unicast.cig_id, info.unicast.cis_id);
+
+	if (stream_dir(stream) == BT_AUDIO_DIR_SINK) {
+		struct audio_sink *sink_stream = CONTAINER_OF(stream, struct audio_sink, stream);
+
+		sink_stream->recv_cnt = 0U;
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_TX)) {
+		const int err = stream_tx_register(stream);
+
+		if (err != 0) {
+			printk("Failed to register stream %p for TX: %d\n", stream, err);
+		}
+	}
 }
 
 static void stream_enabled_cb(struct bt_bap_stream *stream)
@@ -642,7 +573,8 @@ static int set_location(void)
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
 		err = bt_pacs_set_location(BT_AUDIO_DIR_SINK,
-					   BT_AUDIO_LOCATION_FRONT_CENTER);
+					   (BT_AUDIO_LOCATION_FRONT_LEFT |
+					    BT_AUDIO_LOCATION_FRONT_RIGHT));
 		if (err != 0) {
 			printk("Failed to set sink location (err %d)\n", err);
 			return err;
@@ -651,8 +583,7 @@ static int set_location(void)
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
 		err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
-					   (BT_AUDIO_LOCATION_FRONT_LEFT |
-					    BT_AUDIO_LOCATION_FRONT_RIGHT));
+					   BT_AUDIO_LOCATION_FRONT_CENTER);
 		if (err != 0) {
 			printk("Failed to set source location (err %d)\n", err);
 			return err;
@@ -747,6 +678,10 @@ int main(void)
 		return 0;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_AUDIO_TX)) {
+		stream_tx_init();
+	}
+
 	bt_bap_unicast_server_register(&param);
 	bt_bap_unicast_server_register_cb(&unicast_server_cb);
 
@@ -754,7 +689,7 @@ int main(void)
 	bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
 
 	for (size_t i = 0; i < ARRAY_SIZE(sink_streams); i++) {
-		bt_bap_stream_cb_register(&sink_streams[i], &stream_ops);
+		bt_bap_stream_cb_register(&sink_streams[i].stream, &stream_ops);
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(source_streams); i++) {
@@ -791,8 +726,6 @@ int main(void)
 	}
 
 	while (true) {
-		struct k_work_sync sync;
-
 		err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
 		if (err) {
 			printk("Failed to start advertising set (err %d)\n", err);
@@ -800,11 +733,6 @@ int main(void)
 		}
 
 		printk("Advertising successfully started\n");
-
-		if (CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT > 0) {
-			/* Start send timer */
-			k_work_init_delayable(&audio_send_work, audio_timer_timeout);
-		}
 
 		err = k_sem_take(&sem_disconnected, K_FOREVER);
 		if (err != 0) {
@@ -814,8 +742,6 @@ int main(void)
 
 		/* reset data */
 		configured_source_stream_count = 0U;
-		k_work_cancel_delayable_sync(&audio_send_work, &sync);
-
 	}
 	return 0;
 }

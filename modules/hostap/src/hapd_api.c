@@ -38,7 +38,7 @@ static struct wifi_enterprise_creds_params hapd_enterprise_creds;
 #define hostapd_cli_cmd_v(cmd, ...) ({					\
 	bool status;							\
 									\
-	if (zephyr_hostapd_cli_cmd_v(cmd, ##__VA_ARGS__) < 0) {		\
+	if (zephyr_hostapd_cli_cmd_v(iface->ctrl_conn, cmd, ##__VA_ARGS__) < 0) {		\
 		wpa_printf(MSG_ERROR,					\
 			   "Failed to execute wpa_cli command: %s",	\
 			   cmd);					\
@@ -365,12 +365,36 @@ out:
 }
 #endif
 
-bool hostapd_ap_reg_domain(struct wifi_reg_domain *reg_domain)
+int hostapd_ap_reg_domain(const struct device *dev,
+	struct wifi_reg_domain *reg_domain)
 {
-	return hostapd_cli_cmd_v("set country_code %s", reg_domain->country_code);
+	struct hostapd_iface *iface;
+	int ret = 0;
+
+	iface = get_hostapd_handle(dev);
+	if (iface == NULL) {
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		ret = -ENODEV;
+		goto out;
+	}
+
+	if (iface->state == HAPD_IFACE_ENABLED) {
+		wpa_printf(MSG_ERROR, "Interface %s is operational and in SAP mode", dev->name);
+		ret = -EACCES;
+		goto out;
+	}
+
+	if (!hostapd_cli_cmd_v("set country_code %s", reg_domain->country_code)) {
+		ret = -ENOTSUP;
+		goto out;
+	}
+
+out:
+	return ret;
 }
 
-static int hapd_config_chan_center_seg0(struct wifi_connect_req_params *params)
+static int hapd_config_chan_center_seg0(struct hostapd_iface *iface,
+	struct wifi_connect_req_params *params)
 {
 	int ret = 0;
 	uint8_t center_freq_seg0_idx = 0;
@@ -472,7 +496,7 @@ int hapd_config_network(struct hostapd_iface *iface,
 		goto out;
 	}
 
-	ret = hapd_config_chan_center_seg0(params);
+	ret = hapd_config_chan_center_seg0(iface, params);
 	if (ret) {
 		goto out;
 	}
@@ -751,19 +775,117 @@ int hostapd_ap_status(const struct device *dev, struct wifi_iface_status *status
 
 	hw_mode = iface->current_mode;
 
-	status->link_mode = conf->ieee80211ax                          ? WIFI_6
-			    : conf->ieee80211ac                        ? WIFI_5
-			    : conf->ieee80211n                         ? WIFI_4
-			    : hw_mode->mode == HOSTAPD_MODE_IEEE80211G ? WIFI_3
-			    : hw_mode->mode == HOSTAPD_MODE_IEEE80211A ? WIFI_2
-			    : hw_mode->mode == HOSTAPD_MODE_IEEE80211B ? WIFI_1
-								       : WIFI_0;
+	status->link_mode = (hw_mode->he_capab[IEEE80211_MODE_AP].he_supported
+			    && conf->ieee80211ax)                       ? WIFI_6
+			    : (hw_mode->vht_capab && conf->ieee80211ac) ? WIFI_5
+			    : (hw_mode->ht_capab && conf->ieee80211n)   ? WIFI_4
+			    : hw_mode->mode == HOSTAPD_MODE_IEEE80211G  ? WIFI_3
+			    : hw_mode->mode == HOSTAPD_MODE_IEEE80211A  ? WIFI_2
+			    : hw_mode->mode == HOSTAPD_MODE_IEEE80211B  ? WIFI_1
+									: WIFI_0;
 	status->twt_capable = (hw_mode->he_capab[IEEE80211_MODE_AP].mac_cap[0] & 0x04);
 
 out:
 	k_mutex_unlock(&hostapd_mutex);
 	return ret;
 }
+
+int hostapd_11n_cfg(const struct device *dev, uint8_t enable)
+{
+	int ret = 0;
+	struct hostapd_iface *iface;
+
+	k_mutex_lock(&hostapd_mutex, K_FOREVER);
+
+	iface = get_hostapd_handle(dev);
+	if (!iface) {
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		ret = -ENODEV;
+		goto out;
+	}
+
+	if (iface->state == HAPD_IFACE_ENABLED) {
+		wpa_printf(MSG_ERROR, "Interface %s is operational and in SAP mode", dev->name);
+		ret = -EACCES;
+		goto out;
+	}
+
+	if (!hostapd_cli_cmd_v("set ieee80211n %d", enable)) {
+		wpa_printf(MSG_ERROR, "Failed to set ieee80211n");
+		ret = -EINVAL;
+		goto out;
+	}
+
+out:
+	k_mutex_unlock(&hostapd_mutex);
+	return ret;
+}
+
+#if CONFIG_WIFI_NM_WPA_SUPPLICANT_11AC
+int hostapd_11ac_cfg(const struct device *dev, uint8_t enable)
+{
+	int ret = 0;
+	struct hostapd_iface *iface;
+
+	k_mutex_lock(&hostapd_mutex, K_FOREVER);
+
+	iface = get_hostapd_handle(dev);
+	if (!iface) {
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		ret = -ENODEV;
+		goto out;
+	}
+
+	if (iface->state == HAPD_IFACE_ENABLED) {
+		wpa_printf(MSG_ERROR, "Interface %s is operational and in SAP mode", dev->name);
+		ret = -EACCES;
+		goto out;
+	}
+
+	if (!hostapd_cli_cmd_v("set ieee80211ac %d", enable)) {
+		wpa_printf(MSG_ERROR, "Failed to set ieee80211ac");
+		ret = -EINVAL;
+		goto out;
+	}
+
+out:
+	k_mutex_unlock(&hostapd_mutex);
+	return ret;
+}
+#endif
+
+#if CONFIG_WIFI_NM_WPA_SUPPLICANT_11AX
+int hostapd_11ax_cfg(const struct device *dev, uint8_t enable)
+{
+	int ret = 0;
+	struct hostapd_iface *iface;
+
+	k_mutex_lock(&hostapd_mutex, K_FOREVER);
+
+	iface = get_hostapd_handle(dev);
+	if (!iface) {
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		ret = -ENODEV;
+		goto out;
+	}
+
+	if (iface->state == HAPD_IFACE_ENABLED) {
+		wpa_printf(MSG_ERROR, "Interface %s is operational and in SAP mode", dev->name);
+		ret = -EACCES;
+		goto out;
+	}
+
+	if (!hostapd_cli_cmd_v("set ieee80211ax %d", enable)) {
+		wpa_printf(MSG_ERROR, "Failed to set ieee80211ax");
+		ret = -EINVAL;
+		goto out;
+	}
+
+out:
+	k_mutex_unlock(&hostapd_mutex);
+	return ret;
+}
+#endif
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_WPS
 static int hapd_ap_wps_pbc(const struct device *dev)
@@ -820,7 +942,7 @@ static int hapd_ap_wps_pin(const struct device *dev, struct wifi_wps_config_para
 	}
 
 	if (params->oper == WIFI_WPS_PIN_GET) {
-		if (zephyr_hostapd_cli_cmd_resp(get_pin_cmd, params->pin)) {
+		if (zephyr_hostapd_cli_cmd_resp(iface->ctrl_conn, get_pin_cmd, params->pin)) {
 			goto out;
 		}
 	} else if (params->oper == WIFI_WPS_PIN_SET) {
@@ -1003,9 +1125,16 @@ int hostapd_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *param
 {
 	int ret;
 	char *cmd = NULL;
+	struct hostapd_iface *iface;
 
 	if (params == NULL) {
 		return -EINVAL;
+	}
+
+	iface = get_hostapd_handle(dev);
+	if (!iface) {
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		return -ENOENT;
 	}
 
 	cmd = os_zalloc(SUPPLICANT_DPP_CMD_BUF_SIZE);
@@ -1021,7 +1150,7 @@ int hostapd_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *param
 	}
 
 	wpa_printf(MSG_DEBUG, "hostapd_cli %s", cmd);
-	if (zephyr_hostapd_cli_cmd_resp(cmd, params->resp)) {
+	if (zephyr_hostapd_cli_cmd_resp(iface->ctrl_conn, cmd, params->resp)) {
 		os_free(cmd);
 		return -ENOEXEC;
 	}

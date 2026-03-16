@@ -8,6 +8,9 @@
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(net_dumb_http_srv_mt_sample);
 
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/unistd.h>
+
 #include <zephyr/kernel.h>
 #include <errno.h>
 #include <zephyr/net/net_ip.h>

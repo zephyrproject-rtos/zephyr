@@ -6,6 +6,11 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_MCHP_XEC_ECIA_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_MCHP_XEC_ECIA_H_
 
+/* Encode peripheral's GIRQ and GIRQ bit position only
+ * g = GIRQ number [8, 26], b = bit position [0, 31]
+ */
+#define MCHP_XEC_ECIA_GIRQ_ENC(g, b) (((g) & 0x1f) + (((b) & 0x1f) << 8))
+
 /*
  * Encode peripheral interrupt information into a 32-bit unsigned.
  * g  = bits[0:4], GIRQ number in [8, 26]

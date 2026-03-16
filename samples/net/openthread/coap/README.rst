@@ -26,7 +26,7 @@ The source code for this sample application can be found at:
    This sample uses the OpenThread CoAP API whereas Zephyr has its own CoAP API.
    So, why are we using the OpenThread CoAP API here ?
 
-   * OpenThread uses it internaly to implement many of its services.
+   * OpenThread uses it internally to implement many of its services.
    * OpenThread CoAP API has a more direct access to radio.
 
    So by using OpenThread CoAP API instead of Zephyr one,
@@ -76,7 +76,7 @@ Example building CoAP client for the cc1352p7 launchpad:
 Checking Thread network state
 *****************************
 
-Open a console on both server and client boards then check the sate:
+Open a console on both server and client boards then check the state:
 
 .. code-block:: console
 

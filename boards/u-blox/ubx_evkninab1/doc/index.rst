@@ -1,4 +1,4 @@
-.. _ubx_evkninab1_nrf52832:
+.. zephyr:board:: ubx_evkninab1
 
 u-blox EVK NINA-B11x
 ####################
@@ -36,50 +36,13 @@ can be found at `NINA-B1 product page`_ and
 Supported Features
 ==================
 
-The ubx_evkninab1/nrf52832 board configuration supports the
-following hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth Low Energy |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
+.. zephyr:board-supported-hw::
 
 .. note::
 	Most Arduino interfaces are supported. Arduino pins
 	D5 and D8 are not available, so arduino_gpio is
 	disabled. On the EVK-NINA-B1, these pins are
 	assigned to SWDIO and SWDCLK, respectively.
-
-Other hardware features have not been enabled yet for this board.
-See `EVK-NINA-B1 product page`_ and `NINA-B1 Data Sheet`_
-for a complete list of EVK NINA-B1 hardware features.
 
 Connections and IOs
 ===================

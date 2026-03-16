@@ -36,7 +36,6 @@ static int cmd_uart_write(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-
 static int cmd_uart_read(const struct shell *sh, size_t argc, char **argv)
 {
 	char *s_dev_name = argv[1];
@@ -78,6 +77,112 @@ static int cmd_uart_read(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static const char *parity_to_str(uint8_t parity)
+{
+	switch (parity) {
+	case UART_CFG_PARITY_NONE:
+		return "none";
+	case UART_CFG_PARITY_ODD:
+		return "odd";
+	case UART_CFG_PARITY_EVEN:
+		return "even";
+	case UART_CFG_PARITY_MARK:
+		return "mark";
+	case UART_CFG_PARITY_SPACE:
+		return "space";
+	default:
+		return "Invalid";
+	}
+}
+
+static const char *stop_bits_to_str(uint8_t stop_bits)
+{
+	switch (stop_bits) {
+	case UART_CFG_STOP_BITS_0_5:
+		return "0.5";
+	case UART_CFG_STOP_BITS_1:
+		return "1";
+	case UART_CFG_STOP_BITS_1_5:
+		return "1.5";
+	case UART_CFG_STOP_BITS_2:
+		return "2";
+	default:
+		return "Invalid";
+	}
+}
+
+static const char *data_bits_to_str(uint8_t data_bits)
+{
+	switch (data_bits) {
+	case UART_CFG_DATA_BITS_5:
+		return "5";
+	case UART_CFG_DATA_BITS_6:
+		return "6";
+	case UART_CFG_DATA_BITS_7:
+		return "7";
+	case UART_CFG_DATA_BITS_8:
+		return "8";
+	case UART_CFG_DATA_BITS_9:
+		return "9";
+	default:
+		return "Invalid";
+	}
+}
+
+static const char *flow_ctrl_to_str(uint8_t flow_ctrl)
+{
+	switch (flow_ctrl) {
+	case UART_CFG_FLOW_CTRL_NONE:
+		return "none";
+	case UART_CFG_FLOW_CTRL_RTS_CTS:
+		return "rtscts";
+	case UART_CFG_FLOW_CTRL_DTR_DSR:
+		return "dtrdsr";
+	case UART_CFG_FLOW_CTRL_RS485:
+		return "rs485";
+	default:
+		return "Invalid";
+	}
+}
+
+static void print_uart_config(const struct shell *sh, const char *dev_name,
+			      const struct uart_config *cfg)
+{
+	shell_fprintf_normal(sh, /**/
+			     "\n"
+			     "Device: %s\n"
+			     "\tBaud rate: %u bps\n"
+			     "\tData bits: %s\n"
+			     "\tParity: %s\n"
+			     "\tStop bits: %s\n"
+			     "\tFlow control: %s\n"
+			     "\n",
+			     dev_name, cfg->baudrate, data_bits_to_str(cfg->data_bits),
+			     parity_to_str(cfg->parity), stop_bits_to_str(cfg->stop_bits),
+			     flow_ctrl_to_str(cfg->flow_ctrl));
+}
+
+static int cmd_uart_config(const struct shell *sh, size_t argc, char **argv)
+{
+	char *s_dev_name = argv[1];
+	const struct device *dev;
+	struct uart_config cfg;
+	int ret = 0;
+
+	dev = shell_device_get_binding(s_dev_name);
+	if (!dev || !device_is_uart(dev)) {
+		shell_error(sh, "UART: Device driver %s not found.", s_dev_name);
+		return -ENODEV;
+	}
+	ret = uart_config_get(dev, &cfg);
+	if (ret < 0) {
+		shell_error(sh, "UART: Failed to get current configuration: %d", ret);
+		return ret;
+	}
+	print_uart_config(sh, s_dev_name, &cfg);
+
+	return 0;
+}
 
 static int cmd_uart_baudrate(const struct shell *sh, size_t argc, char **argv)
 {
@@ -92,24 +197,28 @@ static int cmd_uart_baudrate(const struct shell *sh, size_t argc, char **argv)
 		shell_error(sh, "UART: Device driver %s not found.", s_dev_name);
 		return -ENODEV;
 	}
-
-	baudrate = shell_strtoul(argv[2], 10, &ret);
-	if (ret != 0) {
-		shell_help(sh);
-		return SHELL_CMD_HELP_PRINTED;
-	}
 	ret = uart_config_get(dev, &cfg);
 	if (ret < 0) {
 		shell_error(sh, "UART: Failed to get current configuration: %d", ret);
 		return ret;
 	}
+	if (argc == 2) {
+		print_uart_config(sh, s_dev_name, &cfg);
+		return 0;
+	}
+	baudrate = shell_strtoul(argv[2], 10, &ret);
+	if (ret != 0) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
 	cfg.baudrate = baudrate;
-
 	ret = uart_configure(dev, &cfg);
 	if (ret < 0) {
 		shell_error(sh, "UART: Failed to configure device: %d", ret);
 		return ret;
 	}
+	shell_info(sh, "Baud rate successfully updated.");
+
 	return 0;
 }
 
@@ -126,7 +235,15 @@ static int cmd_uart_flow_control(const struct shell *sh, size_t argc, char **arg
 		shell_error(sh, "UART: Device driver %s not found.", s_dev_name);
 		return -ENODEV;
 	}
-
+	ret = uart_config_get(dev, &cfg);
+	if (ret < 0) {
+		shell_error(sh, "UART: Failed to get current configuration: %d", ret);
+		return ret;
+	}
+	if (argc == 2) {
+		print_uart_config(sh, s_dev_name, &cfg);
+		return 0;
+	}
 	if (!strcmp(argv[2], "none")) {
 		flow_control = UART_CFG_FLOW_CTRL_NONE;
 	} else if (!strcmp(argv[2], "rtscts")) {
@@ -140,19 +257,14 @@ static int cmd_uart_flow_control(const struct shell *sh, size_t argc, char **arg
 		shell_help(sh);
 		return SHELL_CMD_HELP_PRINTED;
 	}
-
-	ret = uart_config_get(dev, &cfg);
-	if (ret < 0) {
-		shell_error(sh, "UART: Failed to get current configuration: %d", ret);
-		return ret;
-	}
 	cfg.flow_ctrl = flow_control;
-
 	ret = uart_configure(dev, &cfg);
 	if (ret < 0) {
 		shell_error(sh, "UART: Failed to configure device: %d", ret);
 		return ret;
 	}
+	shell_info(sh, "Flow control successfully updated.");
+
 	return 0;
 }
 
@@ -168,24 +280,25 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_uart_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_uart_cmds,
 	SHELL_CMD_ARG(write, &dsub_device_name,
-		      SHELL_HELP("Write data to the UART device",
-				 "<device> <data>"),
+		      SHELL_HELP("Write data to the UART device", "<device> <data>"),
 		      cmd_uart_write, 3, 0),
 	SHELL_CMD_ARG(read, &dsub_device_name,
-		      SHELL_HELP("Read data from the UART device",
-				 "<device> <duration in secs>"),
+		      SHELL_HELP("Read data from the UART device", "<device> <duration in secs>"),
 		      cmd_uart_read, 3, 0),
+	SHELL_CMD_ARG(config, &dsub_device_name,
+		      SHELL_HELP("Get the UART device configuration", "<device>"), cmd_uart_config,
+		      2, 0),
 	SHELL_CMD_ARG(baudrate, &dsub_device_name,
-		      SHELL_HELP("Configure the UART device baudrate",
-				 "<device> <baudrate>"),
-		      cmd_uart_baudrate, 3, 0),
+		      SHELL_HELP("Configure the UART device baudrate", "<device> <baudrate>"),
+		      cmd_uart_baudrate, 2, 1),
 	SHELL_CMD_ARG(fc, &dsub_device_name,
 		      SHELL_HELP("Configure the UART device flow control",
 				 "<device> <none|rtscts|dtrdsr|rs485>"),
-		      cmd_uart_flow_control, 3, 0),
-	SHELL_SUBCMD_SET_END     /* Array terminated. */
+		      cmd_uart_flow_control, 2, 1),
+	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
 SHELL_CMD_REGISTER(uart, &sub_uart_cmds, "UART commands", NULL);

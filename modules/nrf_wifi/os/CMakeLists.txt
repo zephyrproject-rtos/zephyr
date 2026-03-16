@@ -15,13 +15,5 @@ zephyr_library_sources(
   timer.c
   work.c
 )
-zephyr_include_directories_ifdef(CONFIG_NRF71_ON_IPC
-  ${CMAKE_CURRENT_LIST_DIR}/../bus/
-  ${CMAKE_CURRENT_LIST_DIR}/../hw_if/hal/inc
-)
-
-zephyr_library_compile_definitions_ifdef(CONFIG_NRF71_ON_IPC
-  NRF71_ON_IPC
-)
 
 zephyr_library_link_libraries(nrf-wifi-osal)

@@ -182,7 +182,7 @@ extern "C" {
  * @retval false Drop that message.
  */
 #define Z_LOG_DYNAMIC_LEVEL_CHECK(_level, _source)                                                 \
-	(!IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) || k_is_user_context() ||                       \
+	(!IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ||                                              \
 	 ((_level) <= Z_LOG_RUNTIME_FILTER(((struct log_source_dynamic_data *)_source)->filters)))
 
 /** @brief Check if message shall be created.
@@ -199,7 +199,30 @@ extern "C" {
 #define Z_LOG_LEVEL_ALL_CHECK(_level, _inst, _source)                                              \
 	(Z_LOG_CONST_LEVEL_CHECK(_level) &&                                                        \
 	 Z_LOG_STATIC_INST_LEVEL_CHECK(_level, _inst, _source) &&                                  \
-	 Z_LOG_DYNAMIC_LEVEL_CHECK(_level, _source))
+	 COND_CODE_0(IS_ENABLED(CONFIG_USERSPACE),                                                 \
+		     (Z_LOG_DYNAMIC_LEVEL_CHECK(_level, _source)),                                 \
+		     (true))                                                                       \
+	)
+
+/** @brief Check if the message shall be created, otherwise break.
+ *
+ * Aggregate all checks into a single one. Calls break to skip message creation. Userspace safe.
+ *
+ * @param _level Log level.
+ * @param _inst 1 is source is the instance of a module.
+ * @param _source Data associated with the source.
+ */
+#define Z_LOG_LEVEL_ALL_CHECK_BREAK(_level, _inst, _source)                                        \
+	if (!Z_LOG_LEVEL_ALL_CHECK((_level), (_inst), (_source))) {                                \
+		break;                                                                             \
+	}                                                                                          \
+	IF_ENABLED(CONFIG_USERSPACE, (                                                             \
+	if (!k_is_user_context()) {                                                                \
+		compiler_barrier();                                                                \
+		if (!Z_LOG_DYNAMIC_LEVEL_CHECK((_level), (_source))) {                             \
+			break;                                                                     \
+		}                                                                                  \
+	}))
 
 /** @brief Get current module data that is used for source id retrieving.
  *
@@ -289,10 +312,9 @@ static inline char z_log_minimal_level_to_char(int level)
  * @param ... String with arguments.
  */
 #define Z_LOG2(_level, _inst, _source, ...)                                                        \
+	TOOLCHAIN_DISABLE_CLANG_WARNING(TOOLCHAIN_WARNING_USED_BUT_MARKED_UNUSED)                  \
 	do {                                                                                       \
-		if (!Z_LOG_LEVEL_ALL_CHECK(_level, _inst, _source)) {                              \
-			break;                                                                     \
-		}                                                                                  \
+		Z_LOG_LEVEL_ALL_CHECK_BREAK(_level, _inst, _source)                                \
 		if (IS_ENABLED(CONFIG_LOG_MODE_MINIMAL)) {                                         \
 			Z_LOG_TO_PRINTK(_level, __VA_ARGS__);                                      \
 			break;                                                                     \
@@ -313,7 +335,8 @@ static inline char z_log_minimal_level_to_char(int level)
 			/* evaluated once when log is enabled.*/                                   \
 			z_log_printf_arg_checker(__VA_ARGS__);                                     \
 		}                                                                                  \
-	} while (false)
+	} while (false)                                                                            \
+	TOOLCHAIN_ENABLE_CLANG_WARNING(TOOLCHAIN_WARNING_USED_BUT_MARKED_UNUSED)
 
 #define Z_LOG(_level, ...)                 Z_LOG2(_level, 0, Z_LOG_CURRENT_DATA(), __VA_ARGS__)
 #define Z_LOG_INSTANCE(_level, _inst, ...) Z_LOG2(_level, 1, Z_LOG_INST(_inst), __VA_ARGS__)
@@ -342,10 +365,9 @@ static inline char z_log_minimal_level_to_char(int level)
  * @param ... String.
  */
 #define Z_LOG_HEXDUMP2(_level, _inst, _source, _data, _len, ...)                                   \
+	TOOLCHAIN_DISABLE_CLANG_WARNING(TOOLCHAIN_WARNING_USED_BUT_MARKED_UNUSED)                  \
 	do {                                                                                       \
-		if (!Z_LOG_LEVEL_ALL_CHECK(_level, _inst, _source)) {                              \
-			break;                                                                     \
-		}                                                                                  \
+		Z_LOG_LEVEL_ALL_CHECK_BREAK(_level, _inst, _source)                                \
 		const char *_str = GET_ARG_N(1, __VA_ARGS__);                                      \
 		if (IS_ENABLED(CONFIG_LOG_MODE_MINIMAL)) {                                         \
 			Z_LOG_TO_PRINTK(_level, "%s", _str);                                       \
@@ -360,7 +382,8 @@ static inline char z_log_minimal_level_to_char(int level)
 			  (COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
 				  ("%s", __VA_ARGS__), (__VA_ARGS__)))));   \
 		(void)_mode;                                                                       \
-	} while (false)
+	} while (false)                                                                            \
+	TOOLCHAIN_ENABLE_CLANG_WARNING(TOOLCHAIN_WARNING_USED_BUT_MARKED_UNUSED)
 
 #define Z_LOG_HEXDUMP(_level, _data, _length, ...)                                                 \
 	Z_LOG_HEXDUMP2(_level, 0, Z_LOG_CURRENT_DATA(), _data, _length, __VA_ARGS__)

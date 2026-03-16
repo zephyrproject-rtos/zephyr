@@ -9,7 +9,6 @@ toolchain:
   - zephyr
   - cross-compile
 ram: 4096
-flash: 0
 supported:
   - gpio
   - uart

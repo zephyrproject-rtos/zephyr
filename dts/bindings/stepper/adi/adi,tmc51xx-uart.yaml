@@ -9,38 +9,6 @@ description: |
   - SWION should be connected to half the IO level voltage (1.65V for 3.3V systems)
   - SW_SEL must be HIGH (either via GPIO control or hardwired)
 
-  Example:
-
-    &uart2 {
-        current-speed = <115200>;
-        status = "okay";
-
-        tmc51xx: tmc51xx {
-            compatible = "adi,tmc51xx";
-            sw-sel-gpios = <&gpiob 0x01 GPIO_ACTIVE_HIGH>;
-
-            /* Common settings from base binding */
-            clock-frequency = <DT_FREQ_M(12)>;
-            en-pwm-mode;
-            invert-direction;
-            micro-step-res = <256>;
-
-            /* ADI TMC ramp generator as well as current settings */
-            vstart = <0>;
-            vstop = <10>;
-            a1 = <1000>;
-            v1 = <50000>;
-            d1 = <1400>;
-            vmax = <200000>;
-            amax = <50000>;
-            dmax = <700>;
-            tzerowait = <100>;
-            ihold = <10>;
-            irun = <31>;
-            iholddelay = <6>;
-        };
-    };
-
 compatible: "adi,tmc51xx"
 
 include: [uart-device.yaml, "adi,tmc51xx-base.yaml"]
@@ -58,3 +26,55 @@ properties:
     description: |
         UART device address for TMC51XX in UART mode.
         Valid range: 0 - 253
+
+examples:
+  - |
+    &uart2 {
+        current-speed = <115200>;
+        status = "okay";
+
+        tmc51xx: tmc51xx {
+            compatible = "adi,tmc51xx";
+            sw-sel-gpios = <&gpiob 0x01 GPIO_ACTIVE_HIGH>;
+
+            /* Common settings from base binding */
+            clock-frequency = <DT_FREQ_M(12)>;
+            en-pwm-mode;
+            invert-direction;
+
+            tmc51xx_stepper_driver: stepper-driver {
+                compatible = "adi,tmc51xx-stepper-driver";
+                micro-step-res = <256>;
+
+                /* ADI TMC stallguard settings specific to TMC51XX */
+                stallguard2-threshold=<9>;
+            };
+
+            /* common stepper controller settings */
+            tmc51xx_motion_controller: motion-controller {
+              compatible = "adi,tmc51xx-stepper-ctrl";
+
+              /* ADI TMC stallguard settings specific to TMC5160 */
+              activate-stallguard2;
+              stallguard-velocity-check-interval-ms = <100>;
+              stallguard-threshold-velocity = <50000>;
+
+              /* ADI TMC ramp generator as well as current settings */
+              vstart = <10>;
+              a1 = <20>;
+              v1 = <30>;
+              d1 = <40>;
+              vmax = <50>;
+              amax = <60>;
+              dmax = <70>;
+              tzerowait = <80>;
+              thigh = <90>;
+              tcoolthrs = <100>;
+              tpwmthrs = <110>;
+              tpowerdown = <120>;
+              ihold = <1>;
+              irun = <2>;
+              iholddelay = <3>;
+            };
+        };
+    };

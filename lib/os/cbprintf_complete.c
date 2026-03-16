@@ -15,7 +15,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <zephyr/toolchain.h>
-#include <sys/types.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/cbprintf.h>
 
@@ -1657,7 +1656,12 @@ int z_cbvprintf_impl(cbprintf_cb __out, void *ctx, const char *fp,
 			break;
 		case 'c':
 			bps = buf;
-			buf[0] = CHAR_IS_SIGNED ? value->sint : value->uint;
+			/* Use if-else to avoid -Wsign-compare warning */
+			if (CHAR_IS_SIGNED) {
+				buf[0] = value->sint;
+			} else {
+				buf[0] = value->uint;
+			}
 			bpe = buf + 1;
 			break;
 		case 'd':

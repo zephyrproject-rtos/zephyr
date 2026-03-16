@@ -990,7 +990,6 @@ const struct bt_mesh_model *bt_mesh_model_get(bool vnd, uint8_t elem_idx, uint8_
 	}
 }
 
-#if defined(CONFIG_BT_MESH_MODEL_VND_MSG_CID_FORCE)
 static int bt_mesh_vnd_mod_msg_cid_check(const struct bt_mesh_model *mod)
 {
 	uint16_t cid;
@@ -999,7 +998,7 @@ static int bt_mesh_vnd_mod_msg_cid_check(const struct bt_mesh_model *mod)
 	for (op = mod->op; op->func; op++) {
 		cid = (uint16_t)(op->opcode & 0xffff);
 
-		if (cid == mod->vnd.company) {
+		if (BT_MESH_MODEL_OP_LEN(op->opcode) == 3 && cid == mod->vnd.company) {
 			continue;
 		}
 
@@ -1012,7 +1011,6 @@ static int bt_mesh_vnd_mod_msg_cid_check(const struct bt_mesh_model *mod)
 
 	return 0;
 }
-#endif
 
 static void mod_init(const struct bt_mesh_model *mod, const struct bt_mesh_elem *elem,
 		     bool vnd, bool primary, void *user_data)
@@ -1388,38 +1386,12 @@ static bool model_has_dst(const struct bt_mesh_model *mod, uint16_t dst, const u
 	return mod->rt->elem_idx == 0;
 }
 
-static const struct bt_mesh_model_op *find_op(const struct bt_mesh_elem *elem,
-					      uint32_t opcode, const struct bt_mesh_model **model)
+static const struct bt_mesh_model_op *find_op_in_list(const struct bt_mesh_model *models,
+						      uint8_t model_count, uint32_t opcode,
+						      const struct bt_mesh_model **model)
 {
-	uint8_t i;
-	uint8_t count;
-	/* This value shall not be used in shipping end products. */
-	uint32_t cid = UINT32_MAX;
-	const struct bt_mesh_model *models;
-
-	/* SIG models cannot contain 3-byte (vendor) OpCodes, and
-	 * vendor models cannot contain SIG (1- or 2-byte) OpCodes, so
-	 * we only need to do the lookup in one of the model lists.
-	 */
-	if (BT_MESH_MODEL_OP_LEN(opcode) < 3) {
-		models = elem->models;
-		count = elem->model_count;
-	} else {
-		models = elem->vnd_models;
-		count = elem->vnd_model_count;
-
-		cid = (uint16_t)(opcode & 0xffff);
-	}
-
-	for (i = 0U; i < count; i++) {
-
+	for (uint8_t i = 0U; i < model_count; i++) {
 		const struct bt_mesh_model_op *op;
-
-		if (IS_ENABLED(CONFIG_BT_MESH_MODEL_VND_MSG_CID_FORCE) &&
-		     cid != UINT32_MAX &&
-		     cid != models[i].vnd.company) {
-			continue;
-		}
 
 		*model = &models[i];
 
@@ -1432,6 +1404,21 @@ static const struct bt_mesh_model_op *find_op(const struct bt_mesh_elem *elem,
 
 	*model = NULL;
 	return NULL;
+}
+
+static const struct bt_mesh_model_op *find_op(const struct bt_mesh_elem *elem,
+					      uint32_t opcode, const struct bt_mesh_model **model)
+{
+	const struct bt_mesh_model_op *op;
+
+	op = find_op_in_list(elem->vnd_models, elem->vnd_model_count, opcode, model);
+
+	if (op != NULL || BT_MESH_MODEL_OP_LEN(opcode) == 3) {
+		/* Return early if LEN == 3, since SIG models cannot contain 3-byte opcodes. */
+		return op;
+	}
+
+	return find_op_in_list(elem->models, elem->model_count, opcode, model);
 }
 
 static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode)

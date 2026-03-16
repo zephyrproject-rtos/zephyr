@@ -41,7 +41,7 @@ config SHELL_PROMPT_UART
 
 config SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	bool "Interrupt driven"
-	default y
+	default y if !UART_NATIVE_PTY
 	depends on SERIAL_SUPPORT_INTERRUPT
 
 config SHELL_ASYNC_API
@@ -97,6 +97,15 @@ config SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE
 	  usually enough if ring buffer is few bytes (more than one due to
 	  escape sequences). However, if bulk data is transferred it may be
 	  required to increase it.
+
+config SHELL_BACKEND_SERIAL_NEEDS_LARGE_RING_BUFFER
+	bool
+	default y if SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE > $(INT16_MAX)
+	default y if SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE > $(INT16_MAX)
+	select RING_BUFFER_LARGE
+	help
+	  This is a helper Kconfig to select RING_BUFFER_LARGE when the implementation
+	  requires a ring buffer of > 32kB.
 
 if SHELL_BACKEND_SERIAL_API_ASYNC
 
@@ -288,8 +297,7 @@ config SHELL_BACKEND_MQTT
 	select DNS_RESOLVER
 	select HWINFO
 	select MQTT_LIB
-	select NET_MGMT
-	select NET_MGMT_EVENT
+	select NET_CONNECTION_MANAGER
 	help
 	  Enable MQTT backend.
 
@@ -323,12 +331,50 @@ config SHELL_MQTT_RX_BUF_SIZE
 	help
 	  Buffer size for the MQTT data reception.
 
+config SHELL_MQTT_NEEDS_LARGE_RING_BUFFER
+	bool
+	default y if SHELL_MQTT_RX_BUF_SIZE > $(INT16_MAX)
+	select RING_BUFFER_LARGE
+	help
+	  This is a helper Kconfig to select RING_BUFFER_LARGE when the implementation
+	  requires a ring buffer of > 32kB.
+
 config SHELL_MQTT_TX_BUF_SIZE
 	int "TX buffer size"
 	range 32 $(UINT16_MAX)
 	default 256
 	help
 	  Buffer size for the MQTT data transmission.
+
+config SHELL_MQTT_CONNECT_TIMEOUT_MS
+	int "MQTT connect timeout [ms]"
+	default 2000
+	help
+	  Time to await MQTT connect acknowledge in milliseconds.
+
+config SHELL_MQTT_WORK_DELAY_MS
+	int "MQTT work delay [ms]"
+	default 1000
+	help
+	  Period between MQTT work in milliseconds.
+
+config SHELL_MQTT_LISTEN_TIMEOUT_MS
+	int "MQTT listen timeout [ms]"
+	default 500
+	help
+	  Time to listen for incoming packets in milliseconds.
+
+config SHELL_MQTT_TOPIC_RX_ID
+	string "MQTT topic receive identifier"
+	default "/sh/rx"
+	help
+	  String used as receive identifier in the MQTT topic.
+
+config SHELL_MQTT_TOPIC_TX_ID
+	string "MQTT topic transmit identifier"
+	default "/sh/tx"
+	help
+	  String used as transmit identifier in the MQTT topic.
 
 module = SHELL_BACKEND_MQTT
 default-timeout = 100

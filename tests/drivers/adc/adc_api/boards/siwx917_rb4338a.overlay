@@ -40,5 +40,6 @@
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <7>;
 	};
+
 	status = "okay";
 };

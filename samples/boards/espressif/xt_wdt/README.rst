@@ -32,7 +32,7 @@ to pins XTAL_32K_P and XTAL_32K_N.
 
 .. code-block:: console
 
-   west build -p -b esp32s3_devkitm/esp32s3/procpu samples/boards/espressif/xt_wdt
+   west build -p -b esp32s3_devkitc/esp32s3/procpu samples/boards/espressif/xt_wdt
    west flash
 
 If using another supported Espressif board, replace the argument in the above
@@ -53,7 +53,7 @@ port at ``/dev/ttyUSB0``:
 .. code-block:: console
 
    *** Booting Zephyr OS build v3.6.0-3896-gb4a7f061524f ***
-   [00:00:01.287,000] <inf> xt_wdt_sample: XT WDT Sample on esp32s3_devkitm/esp32s3/procpu
+   [00:00:01.287,000] <inf> xt_wdt_sample: XT WDT Sample on esp32s3_devkitc/esp32s3/procpu
    [00:00:01.287,000] <inf> xt_wdt_sample: Current RTC SLOW clock rate: 32768 Hz
    [00:00:01.287,000] <inf> xt_wdt_sample: Remove the external 32K crystal to trigger the watchdog
    XT WDT callback

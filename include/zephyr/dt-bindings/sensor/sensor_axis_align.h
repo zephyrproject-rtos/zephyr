@@ -6,13 +6,13 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_AXIS_ALIGN_H_
 
 /**
- * @defgroup SENSOR_AXIS_ALIGN DT Options
+ * @defgroup sensor_axis_align Sensor axis alignment DT Options
  * @ingroup sensor_interface
  * @{
  */
 
 /**
- * @defgroup SENSOR_AXIS_ALIGN_INDEX_DT Axis description for sensor alignment
+ * @defgroup sensor_axis_align_index_dt Axis description for sensor alignment
  * @{
  */
 #define SENSOR_AXIS_ALIGN_DT_X		0
@@ -21,7 +21,7 @@
 /** @} */
 
 /**
- * @defgroup SENSOR_AXIS_ALIGN_DT Axis description for sensor alignment
+ * @defgroup sensor_axis_align_dt Axis description for sensor alignment
  * @{
  */
 #define SENSOR_AXIS_ALIGN_DT_NEG		0

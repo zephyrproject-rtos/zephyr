@@ -12,7 +12,7 @@
 };
 
 &pinctrl {
-	input_test: input_test{
+	input_test: input_test {
 		group1 {
 			pinmux = <RZT_PINMUX(PORT_15, 4, 4)>;
 			input-enable;
@@ -28,6 +28,6 @@
 };
 
 &gpio15 {
-	irqs = <4 3>;
+	irqs = <&irq3 4>;
 	status = "okay";
 };

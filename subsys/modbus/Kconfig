@@ -48,6 +48,12 @@ config MODBUS_SERIAL
 	help
 	  Enable Modbus over serial line support.
 
+config MODBUS_SERIAL_ASYNC_API
+	depends on MODBUS_SERIAL && UART_ASYNC_API
+	bool "Modbus over serial line UART ASYNC API support"
+	help
+	  Use UART ASYNC API for Modbus over serial line.
+
 config MODBUS_ASCII_MODE
 	depends on MODBUS_SERIAL
 	bool "Modbus transmission mode ASCII"

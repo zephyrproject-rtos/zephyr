@@ -144,6 +144,16 @@ union ic_comp_param_1_register {
 	} bits;
 };
 
+/* SDAHOLD */
+union ic_sdahold_register {
+	uint32_t		raw;
+	struct {
+		uint32_t sdahold_tx : 16 __packed;
+		uint32_t sdahold_rx : 8 __packed;
+		uint32_t reserved : 8 __packed;
+	} bits;
+};
+
 #define DW_IC_REG_CON           (0x00)
 #define DW_IC_REG_TAR           (0x04)
 #define DW_IC_REG_SAR           (0x08)
@@ -179,6 +189,7 @@ union ic_comp_param_1_register {
 #define DW_IC_REG_DMA_CR        (0x88)
 #define DW_IC_REG_TDLR          (0x8C)
 #define DW_IC_REG_RDLR          (0x90)
+#define DW_IC_REG_ENABLE_STS    (0x9C)
 #define DW_IC_REG_FS_SPKLEN     (0xA0)
 #define DW_IC_REG_HS_SPKLEN     (0xA4)
 #define DW_IC_REG_SCL_TIMEOUT   (0xAC)
@@ -196,6 +207,11 @@ union ic_comp_param_1_register {
 #define DW_IC_DMA_RX_ENABLE BIT(0)
 #define DW_IC_DMA_TX_ENABLE BIT(1)
 #define DW_IC_DMA_ENABLE    (BIT(0) | BIT(1))
+
+/* Minimum supported spike length value
+ * in terms of ic clocks
+ */
+#define DW_IC_SPKLEN_MIN     0x1
 
 DEFINE_TEST_BIT_OP(con_master_mode, DW_IC_REG_CON, DW_IC_CON_MASTER_MODE_BIT)
 DEFINE_MM_REG_WRITE(con, DW_IC_REG_CON, 32)
@@ -287,7 +303,12 @@ DEFINE_MM_REG_WRITE(tdlr, DW_IC_REG_TDLR, 32)
 DEFINE_MM_REG_READ(rdlr, DW_IC_REG_RDLR, 32)
 DEFINE_MM_REG_WRITE(rdlr, DW_IC_REG_RDLR, 32)
 
+#define DW_IC_ENABLE_STS_BIT (0)
+DEFINE_TEST_BIT_OP(enable_sts, DW_IC_REG_ENABLE_STS, DW_IC_ENABLE_STS_BIT)
+
+DEFINE_MM_REG_WRITE(fs_spklen, DW_IC_REG_FS_SPKLEN, 32)
 DEFINE_MM_REG_READ(fs_spklen, DW_IC_REG_FS_SPKLEN, 32)
+DEFINE_MM_REG_WRITE(hs_spklen, DW_IC_REG_HS_SPKLEN, 32)
 DEFINE_MM_REG_READ(hs_spklen, DW_IC_REG_HS_SPKLEN, 32)
 
 DEFINE_MM_REG_WRITE(scltimeout, DW_IC_REG_SCL_TIMEOUT, 32)

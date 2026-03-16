@@ -26,7 +26,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <zephyr/debug/stack.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 
@@ -61,8 +60,7 @@ void esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_info_t *fr
 
 	/* The ESP-IDF HAL handles FCS already and drops frames with bad checksum. The checksum at
 	 * the end of a valid frame is replaced with RSSI and LQI values.
-	 *
-	 * ToDo: Check if L2 needs a valid checksum in the frame.
+	 * Zephyr L2 expects only valid frames, so checksum is not needed for a re-check.
 	 */
 	if (IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 		len = frame[0];
@@ -78,7 +76,7 @@ void esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_info_t *fr
 
 	LOG_HEXDUMP_DBG(payload, len, "RX buffer:");
 
-	pkt = net_pkt_rx_alloc_with_buffer(esp32_data.iface, len, AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(esp32_data.iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No pkt available");
 		goto exit;
@@ -121,7 +119,7 @@ static enum ieee802154_hw_caps esp32_get_capabilities(const struct device *dev)
 
 	/* ToDo: Double-check and extend */
 	return IEEE802154_HW_ENERGY_SCAN | IEEE802154_HW_FILTER | IEEE802154_HW_TX_RX_ACK |
-	       IEEE802154_HW_CSMA;
+	       IEEE802154_HW_CSMA | IEEE802154_HW_PROMISC | IEEE802154_RX_ON_WHEN_IDLE;
 }
 
 /* override weak function in components/ieee802154/esp_ieee802154.c of ESP-IDF */
@@ -233,7 +231,7 @@ static int handle_ack(struct ieee802154_esp32_data *data)
 		ack_len = data->ack_frame[0] - IEEE802154_FCS_LENGTH;
 	}
 
-	ack_pkt = net_pkt_rx_alloc_with_buffer(data->iface, ack_len, AF_UNSPEC, 0, K_NO_WAIT);
+	ack_pkt = net_pkt_rx_alloc_with_buffer(data->iface, ack_len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!ack_pkt) {
 		LOG_ERR("No free packet available.");
 		err = -ENOMEM;
@@ -345,9 +343,6 @@ static int esp32_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode, s
 
 	err = k_sem_take(&data->tx_wait, K_MSEC(IEEE802154_ESP32_TX_TIMEOUT_MS));
 
-	/* set the radio back to RX mode as quickly as possible */
-	ieee802154_receive();
-
 	if (err != 0) {
 		LOG_ERR("TX timeout");
 	} else {
@@ -359,36 +354,26 @@ static int esp32_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode, s
 
 static int esp32_start(const struct device *dev)
 {
-	struct ieee802154_esp32_data *data = dev->data;
+	ARG_UNUSED(dev);
 
-	if (data->is_started) {
-		return 0;
-	} else if (esp_ieee802154_enable() == 0) {
-		esp_ieee802154_set_promiscuous(false);
-		esp_ieee802154_set_rx_when_idle(true);
-
-		/* ToDo: check if this is necessary */
-		esp_ieee802154_receive();
-
-		data->is_started = true;
-		return 0;
+	if (esp_ieee802154_receive() != 0) {
+		LOG_ERR("Failed to start radio");
+		return -EIO;
 	}
 
-	return -EIO;
+	return 0;
 }
 
 static int esp32_stop(const struct device *dev)
 {
-	struct ieee802154_esp32_data *data = dev->data;
+	ARG_UNUSED(dev);
 
-	if (!data->is_started) {
-		return 0;
-	} else if (esp_ieee802154_disable() == 0) {
-		data->is_started = false;
-		return 0;
+	if (esp_ieee802154_sleep() != 0) {
+		LOG_ERR("Failed to stop radio");
+		return -EIO;
 	}
 
-	return -EIO;
+	return 0;
 }
 
 /* override weak function in components/ieee802154/esp_ieee802154.c of ESP-IDF */
@@ -404,7 +389,7 @@ void IRAM_ATTR esp_ieee802154_energy_detect_done(int8_t power)
 	callback = esp32_data.energy_scan_done;
 	esp32_data.energy_scan_done = NULL;
 	dev = net_if_get_device(esp32_data.iface);
-	callback(dev, power); /* TODO: check scaling */
+	callback(dev, power);
 }
 
 static int esp32_ed_scan(const struct device *dev, uint16_t duration, energy_scan_done_cb_t done_cb)
@@ -416,7 +401,7 @@ static int esp32_ed_scan(const struct device *dev, uint16_t duration, energy_sca
 	if (esp32_data.energy_scan_done == NULL) {
 		esp32_data.energy_scan_done = done_cb;
 
-		/* The duration of energy detection, in symbol unit (16 us). TODO: check scaling */
+		/* The duration of energy detection, in symbol unit (16 us) */
 		if (esp_ieee802154_energy_detect(duration * USEC_PER_MSEC / US_PER_SYMBLE) != 0) {
 			esp32_data.energy_scan_done = NULL;
 			err = -EBUSY;
@@ -469,6 +454,15 @@ static int esp32_init(const struct device *dev)
 
 	k_sem_init(&data->cca_wait, 0, 1);
 	k_sem_init(&data->tx_wait, 0, 1);
+
+	if (esp_ieee802154_enable() != 0) {
+		LOG_ERR("IEEE 802154 enabling failed!");
+		return -EIO;
+	}
+
+	/* Default radio settings */
+	esp_ieee802154_set_promiscuous(false);
+	esp_ieee802154_set_rx_when_idle(true);
 
 	LOG_INF("IEEE 802154 radio initialized");
 

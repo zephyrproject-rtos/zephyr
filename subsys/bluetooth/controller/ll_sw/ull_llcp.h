@@ -202,7 +202,7 @@ bool ull_cp_cc_awaiting_established(struct ll_conn *conn);
 /**
  * @brief Cancel ongoing create cis procedure
  */
-bool ull_cp_cc_cancel(struct ll_conn *conn);
+bool ull_cp_cc_cancel(struct ll_conn *conn, const struct ll_conn_iso_stream *cis);
 
 /**
  * @brief Get handle of ongoing create cis procedure.
@@ -226,14 +226,25 @@ void ull_cp_cc_reject(struct ll_conn *conn, uint8_t error_code);
 void ull_cp_cc_established(struct ll_conn *conn, uint8_t error_code);
 
 /**
+ * @brief ACL disconnect.
+ */
+void ull_cp_cc_acl_disconnect(struct ll_conn *conn);
+
+/**
  * @brief CIS creation ongoing.
+ */
+bool ull_cp_cc_is_active(struct ll_conn *conn);
+
+/**
+ * @brief Local CIS creation ongoing.
  */
 bool ull_lp_cc_is_active(struct ll_conn *conn);
 
 /**
- * @brief CIS creation ongoing or enqueued.
+ * @brief CIS creation ongoing or enqueued. If cis is NULL, it will return true if
+ *        any CIS Create is enqueued, otherwise it will look for the cis specified
  */
-bool ull_lp_cc_is_enqueued(struct ll_conn *conn);
+bool ull_lp_cc_is_enqueued(struct ll_conn *conn, const struct ll_conn_iso_stream *cis);
 
 /**
  * @brief Initiate a Channel Map Update Procedure.

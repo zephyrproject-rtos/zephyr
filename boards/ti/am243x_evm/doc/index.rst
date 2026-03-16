@@ -89,7 +89,7 @@ Zephyr dependencies. You can replace ``all/dev.yml`` in the ``west init``
 command with ``am243x/dev.yml``, if you want to clone a few less repositories.
 
 You also need to follow the "Downloading And Installing Dependencies" section
-but you need to replace all ``am263x`` occurences in commands with ``am243x``.
+but you need to replace all ``am263x`` occurrences in commands with ``am243x``.
 Please also take note of the ``tools`` and ``mcu_plus_sdk`` install path. The
 ``tools`` install path will later be referred to as ``$TI_TOOLS`` and the MCU+
 SDK path as ``$MCUPSDK``. You can pass ``--skip_doxygen=true`` and
@@ -256,7 +256,7 @@ References
 **********
 
 AM64x/AM243x EVM Technical Reference Manual:
-   https://www.ti.com/lit/ug/spruj63a/spruj63a.pdf
+   https://www.ti.com/lit/pdf/spruim2
 
 MCU+ SDK Github repository:
    https://github.com/TexasInstruments/mcupsdk-core

@@ -5,7 +5,7 @@
 #
 
 identifier: rd_rw612_bga
-name: NXP RD_RW612_BGA
+name: NXP RD-RW612-BGA
 type: mcu
 arch: arm
 toolchain:
@@ -28,4 +28,8 @@ supported:
   - pwm
   - spi
   - usb_device
+  - usb_host
   - watchdog
+  - netif:eth
+  - netif:openthread
+vendor: nxp

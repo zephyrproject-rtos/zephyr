@@ -46,34 +46,112 @@ static struct k_thread rx_thread_data;
 static unsigned short bt_dev_index;
 
 #define TCP_ADDR_BUFF_SIZE 16
-static bool hci_socket;
+#define UNIX_ADDR_BUFF_SIZE 4096
+enum hci_connection_type {
+	HCI_USERCHAN,
+	HCI_TCP,
+	HCI_UNIX,
+};
+static enum hci_connection_type conn_type;
 static char ip_addr[TCP_ADDR_BUFF_SIZE];
 static unsigned int port;
+static char socket_path[UNIX_ADDR_BUFF_SIZE];
 static bool arg_found;
+
+static bool is_hci_event_discardable(const struct bt_hci_evt_hdr *evt)
+{
+	switch (evt->evt) {
+#if defined(CONFIG_BT_CLASSIC)
+	case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
+	case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
+		return true;
+#endif
+	case BT_HCI_EVT_LE_META_EVENT: {
+		const struct bt_hci_evt_le_meta_event *meta_evt = (const void *)evt->data;
+
+		switch (meta_evt->subevent) {
+		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
+			return true;
+#if defined(CONFIG_BT_EXT_ADV)
+		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT: {
+			const struct bt_hci_evt_le_ext_advertising_report *ext_adv =
+				(const void *)meta_evt->data;
+
+			return (ext_adv->num_reports == 1) &&
+			       ((ext_adv->adv_info[0].evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY) !=
+				0);
+		}
+#endif
+		default:
+			return false;
+		}
+	}
+	default:
+		return false;
+	}
+}
+
+static struct net_buf *get_rx_evt(const uint8_t *data)
+{
+	const struct bt_hci_evt_hdr *evt = (const void *)data;
+	const bool discardable = is_hci_event_discardable(evt);
+	const k_timeout_t timeout = discardable ? K_NO_WAIT : K_SECONDS(1);
+	struct net_buf *buf;
+
+	do {
+		buf = bt_buf_get_evt(evt->evt, discardable, timeout);
+		if (buf == NULL) {
+			if (discardable) {
+				LOG_DBG_RATELIMIT("Discardable buffer pool full, ignoring event");
+				return buf;
+			}
+			LOG_WRN("Couldn't allocate a buffer after waiting 1 second.");
+		}
+	} while (!buf);
+
+	return buf;
+}
+
+static struct net_buf *get_rx_acl(const uint8_t *data)
+{
+	struct net_buf *buf;
+
+	buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_NO_WAIT);
+	if (buf == NULL) {
+		LOG_ERR("No available ACL buffers!");
+	}
+
+	return buf;
+}
+
+static struct net_buf *get_rx_iso(const uint8_t *data)
+{
+	struct net_buf *buf;
+
+	buf = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
+	if (buf == NULL) {
+		LOG_ERR_RATELIMIT("No available ISO buffers!");
+	}
+
+	return buf;
+}
 
 static struct net_buf *get_rx(const uint8_t *buf)
 {
-	bool discardable = false;
-	k_timeout_t timeout = K_FOREVER;
+	uint8_t hci_h4_type = buf[0];
 
-	switch (buf[0]) {
+	switch (hci_h4_type) {
 	case BT_HCI_H4_EVT:
-		if (buf[1] == BT_HCI_EVT_LE_META_EVENT &&
-		    (buf[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
-			discardable = true;
-			timeout = K_NO_WAIT;
-		}
-
-		return bt_buf_get_evt(buf[1], discardable, timeout);
+		return get_rx_evt(&buf[1]);
 	case BT_HCI_H4_ACL:
-		return bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+		return get_rx_acl(&buf[1]);
 	case BT_HCI_H4_ISO:
 		if (IS_ENABLED(CONFIG_BT_ISO)) {
-			return bt_buf_get_rx(BT_BUF_ISO_IN, K_FOREVER);
+			return get_rx_iso(&buf[1]);
 		}
 		__fallthrough;
 	default:
-		LOG_ERR("Unknown packet type: %u", buf[0]);
+		LOG_ERR("Unknown packet type: %u", hci_h4_type);
 	}
 
 	return NULL;
@@ -240,7 +318,6 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			frame_start += decoded_len;
 
 			if (!buf) {
-				LOG_DBG("Discard adv report due to insufficient buf");
 				continue;
 			}
 
@@ -286,16 +363,19 @@ static int uc_open(const struct device *dev, bt_hci_recv_t recv)
 {
 	struct uc_data *uc = dev->data;
 
-	if (hci_socket) {
+	switch (conn_type) {
+	case HCI_USERCHAN:
 		LOG_DBG("hci%d", bt_dev_index);
-	} else {
-		LOG_DBG("hci %s:%d", ip_addr, port);
-	}
-
-	if (hci_socket) {
 		uc->fd = user_chan_socket_open(bt_dev_index);
-	} else {
+		break;
+	case HCI_TCP:
+		LOG_DBG("hci %s:%d", ip_addr, port);
 		uc->fd = user_chan_net_connect(ip_addr, port);
+		break;
+	case HCI_UNIX:
+		LOG_DBG("hci socket %s", socket_path);
+		uc->fd = user_chan_unix_connect(socket_path);
+		break;
 	}
 	if (uc->fd < 0) {
 		return -nsi_errno_from_mid(-uc->fd);
@@ -316,8 +396,28 @@ static int uc_open(const struct device *dev, bt_hci_recv_t recv)
 	return 0;
 }
 
+static int uc_close(const struct device *dev)
+{
+	struct uc_data *uc = dev->data;
+	int rc;
+
+	if (uc->fd < 0) {
+		return -ENETDOWN;
+	}
+
+	rc = nsi_host_close(uc->fd);
+	if (rc < 0) {
+		return -nsi_errno_from_mid(-rc);
+	}
+
+	uc->fd = -1;
+
+	return 0;
+}
+
 static DEVICE_API(bt_hci, uc_drv_api) = {
 	.open = uc_open,
+	.close = uc_close,
 	.send = uc_send,
 };
 
@@ -325,7 +425,8 @@ static int uc_init(const struct device *dev)
 {
 	if (!arg_found) {
 		posix_print_warning("Warning: Bluetooth device missing.\n"
-				    "Specify either a local hci interface --bt-dev=hciN\n"
+				    "Specify either a local hci interface --bt-dev=hciN,\n"
+				    "a UNIX socket --bt-dev=/tmp/bt-server-bredrle\n"
 				    "or a valid hci tcp server --bt-dev=ip_address:port\n");
 		return -ENODEV;
 	}
@@ -350,7 +451,7 @@ static void cmd_bt_dev_found(char *argv, int offset)
 
 		if (arg_hci_idx >= 0 && arg_hci_idx <= USHRT_MAX) {
 			bt_dev_index = arg_hci_idx;
-			hci_socket = true;
+			conn_type = HCI_USERCHAN;
 		} else {
 			posix_print_error_and_exit("Invalid argument value for --bt-dev. "
 						  "hci idx must be within range 0 to 65536.\n");
@@ -365,9 +466,14 @@ static void cmd_bt_dev_found(char *argv, int offset)
 			posix_print_error_and_exit("Error: IP address for bluetooth "
 						   "hci tcp server is incorrect.\n");
 		}
+
+		conn_type = HCI_TCP;
+	} else if (strlen(&argv[offset]) > 0 && argv[offset] == '/') {
+		strncpy(socket_path, &argv[offset], UNIX_ADDR_BUFF_SIZE - 1);
+		conn_type = HCI_UNIX;
 	} else {
 		posix_print_error_and_exit("Invalid option %s for --bt-dev. "
-					   "An hci interface or hci tcp server is expected.\n",
+					   "An hci interface, absolute UNIX socket path or hci tcp server is expected.\n",
 					   &argv[offset]);
 	}
 }
@@ -385,7 +491,8 @@ static void add_btuserchan_arg(void)
 		{ false, true, false,
 		"bt-dev", "hciX", 's',
 		NULL, cmd_bt_dev_found,
-		"A local HCI device to be used for Bluetooth (e.g. hci0) "
+		"A local HCI device to be used for Bluetooth (e.g. hci0), "
+		"UNIX socket (absolute path, like /tmp/bt-server-bredrle) "
 		"or an HCI TCP Server (e.g. 127.0.0.1:9000)"},
 		ARG_TABLE_ENDMARKER
 	};

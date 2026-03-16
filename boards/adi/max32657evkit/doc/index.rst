@@ -9,7 +9,7 @@ with digital signal processing (DSP) instructions, large flash and SRAM memories
 and the latest generation Bluetooth® 5.4 Low Energy (LE) radio.
 The nano-power modes increase battery life substantially.
 
-The MAX32657 is qualified to operate at a temperature range of -20°C to +85°C.
+The MAX32657 is qualified to operate at a temperature range of -20 °C to +85 °C.
 Bluetooth 5.4 LE radio supports Mesh, long-range (coded), and high-throughput modes.
 A cryptographic toolbox (CTB) provides advanced root of trust security features,
 including an Advanced Encryption Standard (AES) Engine, TRNG, and secure boot.
@@ -344,10 +344,11 @@ using :zephyr:code-sample:`blinky` sample:
    :goals: build
 
 The above command will:
- * Build a bootloader image (MCUboot)
- * Build a TF-M (secure) firmware image
- * Build Zephyr application as non-secure firmware image
- * Merge them as ``tfm_merged.hex`` which contain all images.
+
+* Build a bootloader image (MCUboot)
+* Build a TF-M (secure) firmware image
+* Build Zephyr application as non-secure firmware image
+* Merge them as ``tfm_merged.hex`` which contain all images.
 
 
 Note:
@@ -414,7 +415,7 @@ in the Secure world, and ideally has robust software running that can protect as
 a wide range of possible software attacks (`1`_).
 
 MPC (Memory Protection Controller) and PPC (Peripheral Protection Controller) are allow to
-protect memory and peripheral. Incase of need peripheral and flash ownership can be updated in
+protect memory and peripheral. In case of need peripheral and flash ownership can be updated in
 <zephyr_path>../modules/tee/tf-m/trusted-firmware-m/platform/ext/target/adi/max32657/s_ns_access.cmake`
 file by updating cmake flags to ON/OFF.
 
@@ -478,7 +479,7 @@ by non-secure. All others is going to be accessible by NS world.
   endif()
 
 
-As an alternative method (which recommended) user can configurate ownership peripheral by
+As an alternative method (which recommended) user can configure ownership peripheral by
 an cmake overlay file too without touching TF-M source files. For this path
 create ``s_ns_access_overlay.cmake`` file under your project root folder and put peripheral/memory
 you would like to be accessible by secure world.
@@ -517,8 +518,8 @@ see the following message in the terminal:
    ***** Booting Zephyr OS build v4.1.0 *****
    Hello World! max32657evkit/max32657
 
-Building and flashing secure/non-secure with Arm |reg| TrustZone |reg|
-----------------------------------------------------------------------
+Building and flashing secure/non-secure with Arm® TrustZone®
+------------------------------------------------------------
 The TF-M integration samples can be run using the
 ``max32657evkit/max32657/ns`` board target. To run we need to manually flash
 the resulting image (``tfm_merged.hex``) with a J-Link as follows
@@ -572,4 +573,4 @@ References
    https://developer.arm.com/documentation/100935/0100/The-TrustZone-hardware-architecture-
 
 .. _Trusted Firmware M:
-   https://tf-m-user-guide.trustedfirmware.org/building/tfm_build_instruction.html
+   https://tf-m.docs.trustedfirmware.org/en/latest/building/tfm_build_instruction.html

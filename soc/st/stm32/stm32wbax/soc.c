@@ -24,6 +24,17 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
+#define PWR_NODE DT_INST(0, st_stm32_pwr)
+
+/* Helper to simplify following #if chain */
+#define SELECTED_PSU(_x) DT_ENUM_HAS_VALUE(PWR_NODE, power_supply, _x)
+
+#if SELECTED_PSU(ldo)
+#define SELECTED_POWER_SUPPLY LL_PWR_LDO_SUPPLY
+#elif SELECTED_PSU(smps)
+#define SELECTED_POWER_SUPPLY LL_PWR_SMPS_SUPPLY
+#endif
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -43,11 +54,7 @@ void stm32wba_init(void)
 	/* Enable PWR */
 	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_PWR);
 
-#if defined(CONFIG_POWER_SUPPLY_DIRECT_SMPS)
-	LL_PWR_SetRegulatorSupply(LL_PWR_SMPS_SUPPLY);
-#elif defined(CONFIG_POWER_SUPPLY_LDO)
-	LL_PWR_SetRegulatorSupply(LL_PWR_LDO_SUPPLY);
-#endif
+	LL_PWR_SetRegulatorSupply(SELECTED_POWER_SUPPLY);
 }
 
 void soc_early_init_hook(void)

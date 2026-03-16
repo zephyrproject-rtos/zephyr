@@ -8,6 +8,8 @@
 /dts-v1/;
 #include <silabs/xg24/mgm240sd22vna.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/silabs-adc.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "arduino_nano_matter-pinctrl.dtsi"
 #include "arduino_nano_matter_connector.dtsi"
 
@@ -30,8 +32,12 @@
 		led0 = &led0;
 		led1 = &led1;
 		led2 = &led2;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
 		sw0 = &button0;
 		watchdog0 = &wdog0;
+		adc0 = &adc0;
 	};
 
 	leds {
@@ -53,6 +59,25 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: pwm_led_0 {
+			pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "red";
+		};
+
+		green_pwm_led: pwm_led_1 {
+			pwms = <&timer0_pwm 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "green";
+		};
+
+		blue_pwm_led: pwm_led_2 {
+			pwms = <&timer0_pwm 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "blue";
+		};
+	};
+
 	buttons {
 		compatible = "gpio-keys";
 
@@ -61,14 +86,31 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+
+	zephyr,user {
+		io-channels = <&adc0 0>,
+			      <&adc0 1>,
+			      <&adc0 2>,
+			      <&adc0 3>,
+			      <&adc0 4>,
+			      <&adc0 5>,
+			      <&adc0 6>,
+			      <&adc0 7>;
+	};
+};
+
+&timer0 {
+	status = "okay";
+
+	timer0_pwm: pwm {
+		pinctrl-0 = <&timer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
 };
 
 &cpu0 {
 	clock-frequency = <78000000>;
-};
-
-&pstate_em3 {
-	status = "disabled";
 };
 
 &hfxo {
@@ -137,13 +179,13 @@
 	pinctrl-names = "default";
 };
 
-&i2c0 {
+zephyr_i2c: &i2c0 {
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio {
-	location-swo = <0>;
 	status = "okay";
 };
 
@@ -175,6 +217,102 @@
 	status = "okay";
 };
 
+&adc0 {
+	pinctrl-0 = <&iadc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	// A0 - PB0
+	channel@0 {
+		reg = <0>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,input-positive = <IADC_INPUT_PB0>;
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+
+	// A1 - PB2
+	channel@1 {
+		reg = <1>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,input-positive = <IADC_INPUT_PB2>;
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+
+	// A2 - PB5
+	channel@2 {
+		reg = <2>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,input-positive = <IADC_INPUT_PB5>;
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+
+	// A3 - PC0
+	channel@3 {
+		reg = <3>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,input-positive = <IADC_INPUT_PC0>;
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+
+	// A4 - PA6
+	channel@4 {
+		reg = <4>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,input-positive = <IADC_INPUT_PA6>;
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+
+	// A5 - PA7
+	channel@5 {
+		reg = <5>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,input-positive = <IADC_INPUT_PA7>;
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+
+	// A6 - PB1
+	channel@6 {
+		reg = <6>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,input-positive = <IADC_INPUT_PB1>;
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+
+	// A7 - PB3
+	channel@7 {
+		reg = <7>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,input-positive = <IADC_INPUT_PB3>;
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -190,13 +328,13 @@
 
 		/* Reserve 736 kB for the application in slot 0 */
 		slot0_partition: partition@c000 {
-			reg = <0x0000c000 0x000B8000>;
+			reg = <0x0000c000 0x000b8000>;
 			label = "image-0";
 		};
 
 		/* Reserve 736 kB for the application in slot 1 */
-		slot1_partition: partition@C4000 {
-			reg = <0x000C4000 0x000B8000>;
+		slot1_partition: partition@c4000 {
+			reg = <0x000c4000 0x000b8000>;
 			label = "image-1";
 		};
 

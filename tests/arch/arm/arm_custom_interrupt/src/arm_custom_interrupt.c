@@ -17,6 +17,12 @@ static volatile bool custom_set_priority_called;
 static volatile bool custom_eoi_called;
 static volatile bool irq_handler_called;
 
+#if CONFIG_2ND_LVL_ISR_TBL_OFFSET > 0
+#define TEST_1ST_LEVEL_INTERRUPTS_MAX (CONFIG_2ND_LVL_ISR_TBL_OFFSET - 1)
+#else
+#define TEST_1ST_LEVEL_INTERRUPTS_MAX (CONFIG_NUM_IRQS - 1)
+#endif
+
 /* Define out custom SoC interrupt controller interface methods.
  * These closely match the normal Cortex-M implementations.
  */
@@ -29,7 +35,7 @@ void z_soc_irq_init(void)
 {
 	int irq = 0;
 
-	for (; irq < CONFIG_NUM_IRQS; irq++) {
+	for (; irq <= TEST_1ST_LEVEL_INTERRUPTS_MAX; irq++) {
 		NVIC_SetPriority((IRQn_Type)irq, _IRQ_PRIO_OFFSET);
 	}
 
@@ -127,7 +133,7 @@ ZTEST(arm_custom_interrupt, test_arm_custom_interrupt)
 	/* Determine an NVIC IRQ line that is not currently in use. */
 	int i;
 
-	for (i = CONFIG_NUM_IRQS - 1; i >= 0; i--) {
+	for (i = TEST_1ST_LEVEL_INTERRUPTS_MAX; i >= 0; i--) {
 		if (NVIC_GetEnableIRQ(i) == 0) {
 			/*
 			 * Interrupts configured statically with IRQ_CONNECT(.)

@@ -36,12 +36,10 @@ source "modules/Kconfig.picolibc"
 source "modules/Kconfig.renesas"
 source "modules/Kconfig.rust"
 source "modules/Kconfig.simplelink"
-source "modules/Kconfig.sof"
 source "modules/Kconfig.stm32"
 source "modules/Kconfig.syst"
 source "modules/Kconfig.telink"
 source "modules/thrift/Kconfig"
-source "modules/Kconfig.tinycrypt"
 source "modules/Kconfig.vega"
 source "modules/Kconfig.wurthelektronik"
 source "modules/Kconfig.xtensa"
@@ -78,6 +76,9 @@ comment "hal_nxp module not available."
 comment "liblc3 module not available."
 	depends on !ZEPHYR_LIBLC3_MODULE
 
+comment "libsbc module not available."
+	depends on !ZEPHYR_LIBSBC_MODULE
+
 comment "LittleFS module not available."
 	depends on !ZEPHYR_LITTLEFS_MODULE
 
@@ -93,11 +94,11 @@ comment "Trusted-firmware-a module not available."
 comment "Nanopb module not available."
 	depends on !ZEPHYR_NANOPB_MODULE
 
-comment "Lz4 module not available."
-	depends on !ZEPHYR_LZ4_MODULE
-
 comment "loramac-node module not available."
 	depends on !ZEPHYR_LORAMAC_NODE_MODULE
+
+comment "LoRa Basics Modem module not available."
+	depends on !ZEPHYR_LORA_BASICS_MODEM_MODULE
 
 comment "CANopenNode module not available."
 	depends on !ZEPHYR_CANOPENNODE_MODULE

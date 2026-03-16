@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/pwm_ifx_tcpwm.h>
+
+/ {
+	zephyr,user {
+		pwms = <&pwm1_4 0 PWM_MSEC(6) (PWM_POLARITY_NORMAL | PWM_IFX_TCPWM_OUTPUT_HIGHZ)>,
+		       <&pwm2_6 1 PWM_MSEC(6) (PWM_POLARITY_NORMAL | PWM_IFX_TCPWM_OUTPUT_HIGHZ)>;
+		gpios = <&gpio_prt4 1 GPIO_ACTIVE_HIGH>,
+			<&gpio_prt2 1 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&tcpwm1_4 {
+	status = "okay";
+
+	pwm1_4: pwm1_4 {
+		status = "okay";
+		clocks = <&peri0_group5_16bit_0>;
+		pinctrl-0 = <&p4_0_pwm1_4>;
+		pinctrl-names = "default";
+	};
+};
+
+&peri0_group5_16bit_0 {
+	status = "okay";
+	resource-type = <IFX_RSC_TCPWM>;
+	resource-instance = <1>;
+	resource-channel = <4>;
+	clock-div = <25>;
+};
+
+&tcpwm2_6 {
+	status = "okay";
+
+	pwm2_6: pwm2_6 {
+		status = "okay";
+		clocks = <&peri0_group5_16bit_0>;
+		pinctrl-0 = <&p2_0_pwm2_6>;
+		pinctrl-names = "default";
+	};
+};
+
+&pinctrl {
+	p4_0_pwm1_4: p4_0_pwm1_4 {
+		drive-push-pull;
+	};
+
+	p2_0_pwm2_6: p2_0_pwm2_6 {
+		drive-push-pull;
+	};
+};
+
+&gpio_prt4 {
+	status = "okay";
+};
+
+&gpio_prt2 {
+	status = "okay";
+};

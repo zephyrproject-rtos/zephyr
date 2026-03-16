@@ -10,17 +10,18 @@
 
 	gpio-led {
 		compatible = "gpio-leds";
+
 		led_0: led_0 {
 			gpios = <&gpio1 3 0>;
 		};
 	};
 };
 
-&gpio {
+&tint15 {
 	status = "okay";
 };
 
 &gpio1 {
-	irqs = <3 15>;
+	irqs = <&tint15 3>;
 	status = "okay";
 };

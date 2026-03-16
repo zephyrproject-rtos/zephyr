@@ -13,6 +13,10 @@
 #include <zephyr/drivers/bluetooth.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/pm.h>
+#include "linklayer_plat.h"
 #include <linklayer_plat_local.h>
 
 #include <zephyr/sys/byteorder.h>
@@ -34,24 +38,6 @@ struct hci_data {
 
 static K_SEM_DEFINE(hci_sem, 1, 1);
 
-#define BLE_CTRLR_STACK_BUFFER_SIZE 300
-
-#define MBLOCK_COUNT	(BLE_MBLOCKS_CALC(PREP_WRITE_LIST_SIZE, \
-					  CFG_BLE_ATT_MTU_MAX, \
-					  CFG_BLE_NUM_LINK) \
-			 + CFG_BLE_MBLOCK_COUNT_MARGIN)
-
-#define BLE_DYN_ALLOC_SIZE \
-	(BLE_TOTAL_BUFFER_SIZE(CFG_BLE_NUM_LINK, MBLOCK_COUNT))
-
-/* GATT buffer size (in bytes)*/
-#define BLE_GATT_BUF_SIZE \
-	BLE_TOTAL_BUFFER_SIZE_GATT(CFG_BLE_NUM_GATT_ATTRIBUTES, \
-				   CFG_BLE_NUM_GATT_SERVICES, \
-				   CFG_BLE_ATT_VALUE_ARRAY_SIZE)
-
-#define DIVC(x, y)         (((x)+(y)-1)/(y))
-
 #if defined(CONFIG_BT_HCI_SETUP)
 /* Bluetooth LE public STM32WBA default device address (if udn not available) */
 static bt_addr_t bd_addr_dflt = {{0x65, 0x43, 0x21, 0x1E, 0x08, 0x00}};
@@ -64,11 +50,22 @@ struct aci_set_ble_addr {
 	uint8_t length;
 	uint8_t value[6];
 } __packed;
-#endif
+#endif /* CONFIG_BT_HCI_SETUP */
 
-static uint32_t __noinit buffer[DIVC(BLE_DYN_ALLOC_SIZE, 4)];
-static uint32_t __noinit gatt_buffer[DIVC(BLE_GATT_BUF_SIZE, 4)];
+/* ACI Reset command */
+#define ACI_RESET                             0xFF00
 
+struct aci_reset {
+	uint8_t mode;
+	uint32_t options;
+} __packed;
+
+/* Bluetooth driver state */
+#define BT_HCI_STATE_DEINIT                   0
+#define BT_HCI_STATE_OPENED                   1
+#define BT_HCI_STATE_CLOSED                   2
+
+static uint8_t bt_hci_state = BT_HCI_STATE_DEINIT;
 extern uint8_t ll_state_busy;
 
 static bool is_hci_event_discardable(const uint8_t *evt_data)
@@ -80,7 +77,7 @@ static bool is_hci_event_discardable(const uint8_t *evt_data)
 	case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
 	case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
 		return true;
-#endif
+#endif /* CONFIG_BT_CLASSIC */
 	case BT_HCI_EVT_LE_META_EVENT: {
 		uint8_t subevt_type = evt_data[sizeof(struct bt_hci_evt_hdr)];
 
@@ -285,7 +282,7 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 
 	k_sem_take(&hci_sem, K_FOREVER);
 
-	err = receive_data(dev, data, (size_t)length - 1,
+	err = receive_data(dev, data, (size_t)length,
 			   ext_data, (size_t)ext_length);
 
 	k_sem_give(&hci_sem);
@@ -302,7 +299,9 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 {
 	uint16_t event_length;
-	uint8_t tx_buffer[BLE_CTRLR_STACK_BUFFER_SIZE];
+	struct hci_data *hci = dev->data;
+	struct net_buf *evt_buf = NULL;
+	uint8_t *data;
 
 	ARG_UNUSED(dev);
 
@@ -310,13 +309,44 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 
 	LOG_DBG("buf %p type %u len %u", buf, buf->data[0], buf->len);
 
-	memcpy(&tx_buffer, buf->data, buf->len);
+	if (buf->data[0] == BT_HCI_H4_CMD) {
+		/*
+		 * Get Event Buffer which will be used to store Tx buffer and store
+		 * the response event which is a Command Complete Event or a
+		 * Command Status Event.
+		 */
+		evt_buf = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE, false, K_FOREVER);
+		if (!evt_buf) {
+			LOG_ERR("No available event buffers!");
+			__ASSERT_NO_MSG(evt_buf);
+			k_sem_give(&hci_sem);
+			return -ENOMEM;
+		}
+		/*
+		 * Reset the event buffer length and copy the data packet to transmit
+		 * in the event buffer resource.
+		 */
+		evt_buf->len = 0;
+		net_buf_add_mem(evt_buf, buf->data, buf->len);
+		data = evt_buf->data;
+	} else {
+		data = buf->data;
+	}
 
-	event_length = BleStack_Request(tx_buffer);
+	event_length = BleStack_Request(data);
 	LOG_DBG("event_length: %u", event_length);
 
-	if (event_length) {
-		receive_data(dev, (uint8_t *)&tx_buffer, (size_t)event_length, NULL, 0);
+	if (evt_buf) {
+		if (event_length) {
+			/*
+			 * Update the length of the event packet returned by
+			 * the BleStack_Request() function.
+			 */
+			evt_buf->len = event_length;
+			hci->recv(dev, evt_buf);
+		} else {
+			net_buf_unref(evt_buf);
+		}
 	}
 
 	k_sem_give(&hci_sem);
@@ -326,26 +356,49 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 	return 0;
 }
 
+static void stm32wba_set_stack_options(BleStack_init_t *init_params_p)
+{
+	init_params_p->options = 0;
+
+	/* - bit 0:   1: LL only                   0: LL + host */
+	init_params_p->options = BLE_OPTIONS_LL_ONLY;
+
+	/* - bit 1:   1: no service change desc.   0: with service change desc. */
+	/* NA for LL only */
+
+	/* - bit 2:   1: device name Read-Only     0: device name R/W */
+	/* NA for LL only */
+
+	/* - bit 3:   1: extended adv supported    0: extended adv not supported */
+#if defined(CONFIG_BT_EXT_ADV)
+	init_params_p->options |= BLE_OPTIONS_EXTENDED_ADV;
+#endif
+
+	/* - bit 5:   1: Reduced GATT db in NVM    0: Full GATT db in NVM */
+	/* NA for LL only */
+
+	/* - bit 6:   1: GATT caching is used      0: GATT caching is not used */
+	/* NA for LL only */
+
+	/* - bit 7:   1: LE Power Class 1          0: Other LE Power Classes */
+	/* Set to 0: Other LE Power Classes */
+
+	/* - bit 8:   1: appearance Writable       0: appearance Read-Only */
+	/* NA for LL only */
+
+	/* - bit 9:   1: Enhanced ATT supported    0: Enhanced ATT not supported */
+	/* NA for LL only */
+}
+
 static int bt_ble_ctlr_init(void)
 {
 	BleStack_init_t init_params_p = {0};
 
-	init_params_p.numAttrRecord           = CFG_BLE_NUM_GATT_ATTRIBUTES;
-	init_params_p.numAttrServ             = CFG_BLE_NUM_GATT_SERVICES;
-	init_params_p.attrValueArrSize        = CFG_BLE_ATT_VALUE_ARRAY_SIZE;
-	init_params_p.prWriteListSize         = CFG_BLE_ATTR_PREPARE_WRITE_VALUE_SIZE;
-	init_params_p.attMtu                  = CFG_BLE_ATT_MTU_MAX;
-	init_params_p.max_coc_nbr             = CFG_BLE_COC_NBR_MAX;
-	init_params_p.max_coc_mps             = CFG_BLE_COC_MPS_MAX;
-	init_params_p.max_coc_initiator_nbr   = CFG_BLE_COC_INITIATOR_NBR_MAX;
-	init_params_p.numOfLinks              = CFG_BLE_NUM_LINK;
-	init_params_p.mblockCount             = CFG_BLE_MBLOCK_COUNT;
-	init_params_p.bleStartRamAddress      = (uint8_t *)buffer;
-	init_params_p.total_buffer_size       = BLE_DYN_ALLOC_SIZE;
-	init_params_p.bleStartRamAddress_GATT = (uint8_t *)gatt_buffer;
-	init_params_p.total_buffer_size_GATT  = BLE_GATT_BUF_SIZE;
-	init_params_p.options                 = CFG_BLE_OPTIONS;
-	init_params_p.debug                   = 0U;
+	/**
+	 * Set BLE Options, Options_extension, max_adv_set_nbr,
+	 * max_adv_data_len and MaxAddEattBearers according zephyr KConfig
+	 */
+	stm32wba_set_stack_options(&init_params_p);
 
 	if (BleStack_Init(&init_params_p) != BLE_STATUS_SUCCESS) {
 		return -EIO;
@@ -359,7 +412,13 @@ static int bt_hci_stm32wba_open(const struct device *dev, bt_hci_recv_t recv)
 	struct hci_data *data = dev->data;
 	int ret = 0;
 
-	link_layer_register_isr();
+	if (bt_hci_state == BT_HCI_STATE_CLOSED) {
+#if !defined(CONFIG_IEEE802154_STM32WBA)
+		LINKLAYER_PLAT_ClockInit();
+#endif
+	}
+
+	link_layer_register_isr(false);
 
 	ret = bt_ble_ctlr_init();
 	if (ret == 0) {
@@ -371,7 +430,50 @@ static int bt_hci_stm32wba_open(const struct device *dev, bt_hci_recv_t recv)
 		FD_SetStatus(FD_FLASHACCESS_RFTS_BYPASS, LL_FLASH_DISABLE);
 	}
 
+	if (ret == 0) {
+		bt_hci_state = BT_HCI_STATE_OPENED;
+	}
+
 	return ret;
+}
+
+static int bt_hci_stm32wba_close(const struct device *dev)
+{
+	int err = 0;
+	uint8_t aci_reset_cmd[9];
+
+	ARG_UNUSED(dev);
+
+	aci_reset_cmd[0] = BT_HCI_H4_CMD;
+	aci_reset_cmd[1] = (uint8_t)ACI_RESET;
+	aci_reset_cmd[2] = (uint8_t)(ACI_RESET >> 8);
+	aci_reset_cmd[3] = 5;
+	aci_reset_cmd[4] = 0;
+	aci_reset_cmd[5] = (uint8_t)CFG_BLE_OPTIONS;
+	aci_reset_cmd[6] = (uint8_t)(CFG_BLE_OPTIONS >> 8);
+	aci_reset_cmd[7] = (uint8_t)(CFG_BLE_OPTIONS >> 16);
+	aci_reset_cmd[8] = (uint8_t)(CFG_BLE_OPTIONS >> 24);
+
+	BleStack_Request(aci_reset_cmd);
+
+	bt_hci_state = BT_HCI_STATE_CLOSED;
+
+#if !defined(CONFIG_IEEE802154_STM32WBA)
+
+	/* No radio event scheduled : inform LL to enter in deep sleep */
+	(void)ll_sys_dp_slp_enter(LL_DP_SLP_NO_WAKEUP);
+
+	link_layer_disable_isr();
+
+	/* Disable the clock sources used for the radio */
+	LINKLAYER_PLAT_AclkCtrl(0);
+
+	__HAL_RCC_RADIO_CLK_DISABLE();
+
+	__HAL_RCC_RADIO_CLK_SLEEP_DISABLE();
+#endif
+
+	return err;
 }
 
 #if defined(CONFIG_BT_HCI_SETUP)
@@ -421,52 +523,105 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 				 const struct bt_hci_setup_params *params)
 {
 	bt_addr_t *uid_addr;
-	struct aci_set_ble_addr *param;
-	struct net_buf *buf;
-	int err;
+	uint8_t aci_set_ble_addr_cmd[12];
+	uint16_t event_length;
+
+	ARG_UNUSED(dev);
 
 	uid_addr = bt_get_ble_addr();
 	if (!uid_addr) {
 		return -ENOMSG;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	param = net_buf_add(buf, sizeof(*param));
-	param->config_offset = HCI_CONFIG_DATA_PUBADDR_OFFSET;
-	param->length = 6;
+	aci_set_ble_addr_cmd[0] = BT_HCI_H4_CMD;
+	aci_set_ble_addr_cmd[1] = (uint8_t)ACI_HAL_WRITE_CONFIG_DATA;
+	aci_set_ble_addr_cmd[2] = (uint8_t)(ACI_HAL_WRITE_CONFIG_DATA >> 8);
+	aci_set_ble_addr_cmd[3] = 8;
+	aci_set_ble_addr_cmd[4] = HCI_CONFIG_DATA_PUBADDR_OFFSET;
+	aci_set_ble_addr_cmd[5] = 6;
 
 	if (bt_addr_eq(&params->public_addr, BT_ADDR_ANY)) {
-		bt_addr_copy((bt_addr_t *)param->value, uid_addr);
+		memcpy(&aci_set_ble_addr_cmd[6], uid_addr, 6);
 	} else {
-		bt_addr_copy((bt_addr_t *)param->value, &(params->public_addr));
+		memcpy(&aci_set_ble_addr_cmd[6], &(params->public_addr), 6);
 	}
 
-	err = bt_hci_cmd_send_sync(ACI_HAL_WRITE_CONFIG_DATA, buf, NULL);
-	if (err) {
-		return err;
+	event_length = BleStack_Request(aci_set_ble_addr_cmd);
+	if (event_length) {
+		/* Get the return status from the event */
+		uint8_t evt_status;
+
+		evt_status = aci_set_ble_addr_cmd[6];
+		if (evt_status != 0) {
+			LOG_ERR("Failed to set BLE address, status: 0x%02X", evt_status);
+			return -EIO;
+		}
+	} else {
+		LOG_ERR("No response received for setting BLE address");
+		return -EIO;
 	}
 
 	return 0;
 }
 #endif /* CONFIG_BT_HCI_SETUP */
 
+#ifdef CONFIG_PM_DEVICE
+static int radio_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_RADIO);
+#if defined(CONFIG_PM_S2RAM)
+		if (ll_sys_dp_slp_get_state() == LL_SYS_DP_SLP_ENABLED) {
+			if (LL_PWR_IsActiveFlag_SB() == 1U) {
+				/* Restore NVIC configuration for radio */
+				link_layer_register_isr(true);
+				ll_sys_dp_slp_exit();
+			}
+		}
+#endif /* CONFIG_PM_S2RAM */
+		LINKLAYER_PLAT_NotifyWFIExit();
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+#if defined(CONFIG_PM_S2RAM)
+		if (ll_sys_dp_slp_get_state() == LL_SYS_DP_SLP_DISABLED) {
+			uint64_t next_radio_evt;
+			enum pm_state state = pm_state_next_get(_current_cpu->id)->state;
+
+			if (state == PM_STATE_SUSPEND_TO_RAM) {
+				next_radio_evt = os_timer_get_earliest_time();
+				if (next_radio_evt > CFG_LPM_STDBY_WAKEUP_TIME) {
+					/* No event in a "near" future */
+					next_radio_evt -= CFG_LPM_STDBY_WAKEUP_TIME;
+					ll_sys_dp_slp_enter(next_radio_evt);
+				}
+			}
+		}
+#endif /* CONFIG_PM_S2RAM */
+		LINKLAYER_PLAT_NotifyWFIEnter();
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(bt_hci, drv) = {
 #if defined(CONFIG_BT_HCI_SETUP)
 	.setup          = bt_hci_stm32wba_setup,
-#endif
+#endif /* CONFIG_BT_HCI_SETUP */
 	.open           = bt_hci_stm32wba_open,
 	.send           = bt_hci_stm32wba_send,
+	.close          = bt_hci_stm32wba_close,
 };
 
 #define HCI_DEVICE_INIT(inst) \
-	static struct hci_data hci_data_##inst = { \
-	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+	static struct hci_data hci_data_##inst = {}; \
+	PM_DEVICE_DT_INST_DEFINE(inst, radio_pm_action); \
+	DEVICE_DT_INST_DEFINE(inst, NULL, PM_DEVICE_DT_INST_GET(inst), &hci_data_##inst, NULL, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv);
 
 /* Only one instance supported */
 HCI_DEVICE_INIT(0)

@@ -1,0 +1,6 @@
+board:
+  name: weact_esp32c6_mini
+  full_name: WeAct Studio ESP32-C6-Mini
+  vendor: weact
+  socs:
+    - name: esp32c6

@@ -7,7 +7,6 @@
 #include <zephyr/sys/printk.h>
 #include <ctype.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/llext/symbol.h>
 
 #define HEXDUMP_BYTES_IN_LINE 8U

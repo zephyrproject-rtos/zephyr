@@ -17,6 +17,12 @@ extern "C" {
 typedef uint16_t in_port_t;
 typedef uint32_t in_addr_t;
 
+#define in_addr  net_in_addr
+#define in6_addr net_in6_addr
+
+#define INET_ADDRSTRLEN  NET_INET_ADDRSTRLEN
+#define INET6_ADDRSTRLEN NET_INET6_ADDRSTRLEN
+
 #ifdef __cplusplus
 }
 #endif

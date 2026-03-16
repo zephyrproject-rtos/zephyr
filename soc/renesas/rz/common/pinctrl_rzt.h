@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Renesas Electronics Corporation
+ * Copyright (c) 2025-2026 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifndef ZEPHYR_SOC_RENESAS_RZ_COMMON_PINCTRL_RZT_H_
@@ -13,21 +13,24 @@
 extern "C" {
 #endif
 
-#define RZT_GET_PORT_PIN(pinmux) (pinmux & ~(0xF << 4))
-#define RZT_GET_FUNC(pinmux)     ((pinmux & 0xF0) >> 4)
+#define RZT_GET_PORT_PIN(pinmux) (pinmux & BIT_MASK(16))
+#define RZT_GET_FUNC(pinmux)     ((pinmux & GENMASK(21, 16)) >> 16)
 
 /*Porting*/
-typedef struct pinctrl_cfg_data_t {
-	uint32_t p_reg: 1;
-	uint32_t pm_reg: 2;
-	uint32_t pmc_reg: 1;
-	uint32_t pfc_reg: 4;
-	uint32_t drct_reg: 6;
-	uint32_t rsel_reg: 1;
-	uint32_t reserved: 17;
+typedef union {
+	uint32_t cfg;
+	struct {
+		uint32_t p_reg: 1;
+		uint32_t pm_reg: 2;
+		uint32_t pmc_reg: 1;
+		uint32_t pfc_reg: 6;
+		uint32_t drct_reg: 6;
+		uint32_t rsel_reg: 1;
+		uint32_t reserved: 15;
+	} cfg_b;
 } pinctrl_cfg_data_t;
 
-typedef struct pinctrl_soc_pin_t {
+typedef struct pinctrl_soc_pin {
 	bsp_io_port_pin_t port_pin;
 	pinctrl_cfg_data_t config;
 } pinctrl_soc_pin_t;
@@ -35,7 +38,7 @@ typedef struct pinctrl_soc_pin_t {
 #define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)                                               \
 	{                                                                                          \
 		.port_pin = RZT_GET_PORT_PIN(DT_PROP_BY_IDX(node_id, prop, idx)),                  \
-		.config =                                                                          \
+		.config.cfg_b =                                                                    \
 			{                                                                          \
 				.p_reg = DT_PROP(node_id, output_high),                            \
 				.pm_reg = DT_PROP(node_id, input_enable) == 1                      \

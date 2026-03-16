@@ -16,8 +16,13 @@ description: |
   these can list the specific EEPROM vendor and model along with the vendor EEPROM family as long as
   the least-specific compatible entry is "atmel,at25".
 
-  Example devicetree node describing a ST M95256 EEPROM on the spi0 bus:
+compatible: "atmel,at25"
 
+include: ["atmel,at2x-base.yaml", spi-device.yaml]
+
+examples:
+  - |
+    /* Example node for an ST M95256 EEPROM on the spi0 bus */
     &spi0 {
       status = "okay";
 
@@ -30,8 +35,4 @@ description: |
         spi-max-frequency = <DT_FREQ_M(20)>;
         timeout = <5>;
       };
-   };
-
-compatible: "atmel,at25"
-
-include: ["atmel,at2x-base.yaml", spi-device.yaml]
+    };

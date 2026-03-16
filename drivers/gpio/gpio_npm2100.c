@@ -167,10 +167,7 @@ static int gpio_npm2100_init(const struct device *dev)
 
 #define GPIO_NPM2100_DEFINE(n)                                                                     \
 	static const struct gpio_npm2100_config gpio_npm2100_config##n = {                         \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(n))};                                        \
                                                                                                    \
 	static struct gpio_npm2100_data gpio_npm2100_data##n;                                      \

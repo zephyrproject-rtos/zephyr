@@ -260,19 +260,6 @@ static inline void hal_trigger_crypt_by_bcmatch_ppi_config(void)
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
 /*******************************************************************************
- * Trigger automatic address resolution on Bit counter match:
- * wire the RADIO EVENTS_BCMATCH event to the AAR TASKS_START task.
- *
- * PPI channel 23 is pre-programmed with the following fixed settings:
- *   EEP: RADIO->EVENTS_BCMATCH
- *   TEP: AAR->TASKS_START
- */
-static inline void hal_trigger_aar_ppi_config(void)
-{
-	/* No need to configure anything for the pre-programmed channel. */
-}
-
-/*******************************************************************************
  * Trigger Radio Rate override upon Rateboost event.
  */
 #if defined(CONFIG_BT_CTLR_PHY_CODED) && defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
@@ -286,11 +273,32 @@ static inline void hal_trigger_rateoverride_ppi_config(void)
 }
 #endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 
+/*******************************************************************************
+ * Trigger automatic address resolution on Bit counter match:
+ * wire the RADIO EVENTS_BCMATCH event to the AAR TASKS_START task.
+ *
+ * PPI channel 23 is pre-programmed with the following fixed settings:
+ *   EEP: RADIO->EVENTS_BCMATCH
+ *   TEP: AAR->TASKS_START
+ */
+static inline void hal_trigger_aar_ppi_config(void)
+{
+	/* No need to configure anything for the pre-programmed channel. */
+}
+
 /******************************************************************************/
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 /* PPI setup used for SW-based auto-switching during TIFS. */
 
 #if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+
+/* Start SW-switch timer on event timer start.
+ */
+static inline void hal_sw_switch_timer_start_ppi_config(void)
+{
+	nrf_ppi_fork_endpoint_setup(NRF_PPI, HAL_EVENT_TIMER_START_PPI,
+				    (uint32_t)&(SW_SWITCH_TIMER->TASKS_START));
+}
 
 /* Clear SW-switch timer on packet end:
  * wire the RADIO EVENTS_END event to SW_SWITCH_TIMER TASKS_CLEAR task.

@@ -875,9 +875,9 @@ ZTEST(semaphore, test_sem_multiple_threads_wait)
 		expect_k_sem_count_get_nomsg(&simple_sem, 0U);
 		expect_k_sem_count_get_nomsg(&multiple_thread_sem, 0U);
 
-	}
-	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
-		k_thread_join(&multiple_tid[i], K_FOREVER);
+		for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
+			k_thread_join(&multiple_tid[i], K_FOREVER);
+		}
 	}
 }
 

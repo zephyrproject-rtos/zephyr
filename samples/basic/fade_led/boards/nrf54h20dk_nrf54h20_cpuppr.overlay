@@ -7,6 +7,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_led2: pwm_led_2 {
 			pwms = <&pwm130 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};

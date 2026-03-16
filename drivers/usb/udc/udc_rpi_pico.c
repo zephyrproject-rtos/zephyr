@@ -12,13 +12,13 @@
 
 #include <soc.h>
 #include <hardware/structs/usb.h>
-#include <hardware/resets.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/mem_blocks.h>
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(udc_rpi_pico, CONFIG_UDC_DRIVER_LOG_LEVEL);
@@ -36,6 +36,7 @@ struct rpi_pico_config {
 	const struct device *clk_dev;
 	struct pinctrl_dev_config *const pcfg;
 	clock_control_subsys_t clk_sys;
+	const struct reset_dt_spec reset;
 };
 
 struct rpi_pico_ep_data {
@@ -1025,10 +1026,13 @@ static int udc_rpi_pico_enable(const struct device *dev)
 	const struct pinctrl_dev_config *const pcfg = config->pcfg;
 	usb_device_dpram_t *dpram = config->dpram;
 	usb_hw_t *base = config->base;
+	int ret;
 
 	/* Reset USB controller */
-	reset_block(RESETS_RESET_USBCTRL_BITS);
-	unreset_block_wait(RESETS_RESET_USBCTRL_BITS);
+	ret = reset_line_toggle_dt(&config->reset);
+	if (ret) {
+		return ret;
+	}
 
 	/* Clear registers and DPRAM */
 	memset(base, 0, sizeof(usb_hw_t));
@@ -1042,6 +1046,18 @@ static int udc_rpi_pico_enable(const struct device *dev)
 		/* Force VBUS detect so the device thinks it is plugged into a host */
 		sys_write32(USB_USB_PWR_VBUS_DETECT_BITS |
 			    USB_USB_PWR_VBUS_DETECT_OVERRIDE_EN_BITS, (mm_reg_t)&base->pwr);
+	}
+
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
+				   USB_EP_TYPE_CONTROL, 64, 0)) {
+		LOG_ERR("Failed to enable control endpoint");
+		return -EIO;
+	}
+
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
+				   USB_EP_TYPE_CONTROL, 64, 0)) {
+		LOG_ERR("Failed to enable control endpoint");
+		return -EIO;
 	}
 
 	/* Enable an interrupt per EP0 transaction */
@@ -1082,6 +1098,16 @@ static int udc_rpi_pico_disable(const struct device *dev)
 {
 	const struct rpi_pico_config *config = dev->config;
 
+	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
+		LOG_ERR("Failed to disable control endpoint");
+		return -EIO;
+	}
+
+	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
+		LOG_ERR("Failed to disable control endpoint");
+		return -EIO;
+	}
+
 	config->irq_disable_func(dev);
 	LOG_DBG("Disable device %p", dev);
 
@@ -1093,18 +1119,6 @@ static int udc_rpi_pico_init(const struct device *dev)
 	const struct rpi_pico_config *config = dev->config;
 	const struct pinctrl_dev_config *const pcfg = config->pcfg;
 	int err;
-
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
-		return -EIO;
-	}
-
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
-		return -EIO;
-	}
 
 	if (pcfg != NULL) {
 		err = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
@@ -1120,16 +1134,6 @@ static int udc_rpi_pico_init(const struct device *dev)
 static int udc_rpi_pico_shutdown(const struct device *dev)
 {
 	const struct rpi_pico_config *config = dev->config;
-
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control endpoint");
-		return -EIO;
-	}
-
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
-		LOG_ERR("Failed to disable control endpoint");
-		return -EIO;
-	}
 
 	return clock_control_off(config->clk_dev, config->clk_sys);
 }
@@ -1296,6 +1300,7 @@ static const struct udc_api udc_rpi_pico_api = {
 		.pcfg = UDC_RPI_PICO_PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
 		.clk_sys = (void *)DT_INST_PHA_BY_IDX(n, clocks, 0, clk_id),		\
+		.reset = RESET_DT_SPEC_INST_GET(n),					\
 	};										\
 											\
 	static struct rpi_pico_data udc_priv_##n = {					\

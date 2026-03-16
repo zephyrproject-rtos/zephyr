@@ -64,21 +64,21 @@ struct net_arp_hdr {
  * @retval <0 on failure
  */
 int net_arp_prepare(struct net_pkt *pkt,
-			struct in_addr *request_ip,
-			struct in_addr *current_ip,
+			struct net_in_addr *request_ip,
+			struct net_in_addr *current_ip,
 			struct net_pkt **arp_pkt);
 enum net_verdict net_arp_input(struct net_pkt *pkt,
 			       struct net_eth_addr *src,
 			       struct net_eth_addr *dst);
 
 int net_arp_clear_pending(struct net_if *iface,
-				struct in_addr *dst);
+				struct net_in_addr *dst);
 
 struct arp_entry {
 	sys_snode_t node;
 	uint32_t req_start;
 	struct net_if *iface;
-	struct in_addr ip;
+	struct net_in_addr ip;
 	struct net_eth_addr eth;
 	struct k_fifo pending_queue;
 };
@@ -89,7 +89,7 @@ int net_arp_foreach(net_arp_cb_t cb, void *user_data);
 
 void net_arp_clear_cache(struct net_if *iface);
 void net_arp_init(void);
-void net_arp_update(struct net_if *iface, struct in_addr *src,
+void net_arp_update(struct net_if *iface, struct net_in_addr *src,
 		    struct net_eth_addr *hwaddr, bool gratuitous,
 		    bool force);
 

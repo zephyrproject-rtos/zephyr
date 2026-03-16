@@ -1,0 +1,26 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	chosen {
+		zephyr,ipc_shm_hifi4 = &sram_shared1;
+		zephyr,ipc = &mailbox_b;
+	};
+
+	mailbox_b: ipm-mbox {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox4_b 0>, <&mbox4_b 1>;
+		mbox-names = "tx", "rx";
+	};
+};
+
+&sram_shared1 {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	zephyr,memory-region = "SRAM_SHARED_HIFI4";
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
+};

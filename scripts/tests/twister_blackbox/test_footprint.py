@@ -8,19 +8,19 @@ Blackbox tests for twister's command line functions related to memory footprints
 
 import importlib
 import json
-import mock
+from unittest import mock
 import os
 import pytest
 import sys
 import re
 
 # pylint: disable=no-name-in-module
-from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock, clear_log_in_test
+from conftest import ZEPHYR_BASE, TEST_DATA, suite_filename_mock, clear_log_in_test
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
 
 
-@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
 class TestFootprint:
     # Log printed when entering delta calculations
     FOOTPRINT_LOG = 'running footprint_reports'

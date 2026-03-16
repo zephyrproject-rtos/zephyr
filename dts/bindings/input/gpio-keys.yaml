@@ -8,21 +8,6 @@ description: |
   is defined in a child node of the gpio-keys node and defines a specific key
   code.
 
-  For example:
-
-  #include <zephyr/dt-bindings/input/input-event-codes.h>
-
-  / {
-         buttons {
-                 compatible = "gpio-keys";
-                 button_0 {
-                         gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-                         zephyr,code = <INPUT_KEY_0>;
-                 };
-         };
-  };
-
-
 compatible: "gpio-keys"
 
 include: base.yaml
@@ -61,3 +46,17 @@ child-binding:
     zephyr,code:
       type: int
       description: Key code to emit.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/input/input-event-codes.h>
+
+    / {
+           buttons {
+                   compatible = "gpio-keys";
+                   button_0 {
+                           gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+                           zephyr,code = <INPUT_KEY_0>;
+                   };
+           };
+    };

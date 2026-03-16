@@ -102,8 +102,8 @@ nRF5340 IDAU may configure bus accesses by the nRF5340 network core
 to have Secure attribute set; the latter allows to build and run
 Secure only applications on the nRF5340 SoC.
 
-Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
-=============================================================================
+Building Secure/Non-Secure Zephyr applications with Arm® TrustZone®
+===================================================================
 
 Applications on the nRF5340 may contain a Secure and a Non-Secure firmware
 image for the application core. The Secure image can be built using either

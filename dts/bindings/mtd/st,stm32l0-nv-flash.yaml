@@ -3,7 +3,7 @@ description: |
 
 include: st,stm32-nv-flash.yaml
 
-compatible: st,stm32l0-nv-flash
+compatible: "st,stm32l0-nv-flash"
 
 properties:
   write-block-size:

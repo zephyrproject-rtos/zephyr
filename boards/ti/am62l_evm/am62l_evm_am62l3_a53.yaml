@@ -1,0 +1,15 @@
+identifier: am62l_evm/am62l3/a53
+name: TI AM62L Evaluation Module (EVM)
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 2048
+supported:
+  - uart
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: ti

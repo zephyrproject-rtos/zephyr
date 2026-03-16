@@ -11,9 +11,10 @@ supported:
   - spi
   - adc
   - rng
+  - usbd
   - arduino_gpio
   - arduino_i2c
   - arduino_spi
-ram: 512
+ram: 448
 flash: 2048
 vendor: st

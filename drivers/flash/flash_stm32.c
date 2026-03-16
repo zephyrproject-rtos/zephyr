@@ -395,10 +395,7 @@ static struct flash_stm32_priv flash_data = {
 	 * on the presence of 'clocks' property.
 	 */
 #if DT_INST_NODE_HAS_PROP(0, clocks)
-	.pclken = {
-		.enr = DT_INST_CLOCKS_CELL(0, bits),
-		.bus = DT_INST_CLOCKS_CELL(0, bus),
-	}
+	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 #endif
 };
 
@@ -439,11 +436,6 @@ static int stm32_flash_init(const struct device *dev)
 	while (!LL_RCC_HSI_IsReady()) {
 	}
 #endif
-
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
 
 	/* enable clock */
 	if (clock_control_on(clk, (clock_control_subsys_t)&p->pclken) != 0) {

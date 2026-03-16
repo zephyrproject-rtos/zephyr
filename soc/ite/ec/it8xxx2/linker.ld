@@ -90,10 +90,7 @@ SECTIONS
     {
 
 #include <zephyr/linker/rel-sections.ld>
-
-#ifdef CONFIG_LLEXT
 #include <zephyr/linker/llext-sections.ld>
-#endif
 
     /*
      * The .plt and .iplt are here according to
@@ -173,6 +170,9 @@ SECTIONS
 #ifdef CONFIG_SOC_IT8XXX2_LIBRARY_TO_RAM
 		*(EXCLUDE_FILE (
 #endif
+#ifdef CONFIG_SOC_IT8XXX2_SWITCH_IN_RAM
+			*libarch__riscv__core.a:*
+#endif
 #ifdef CONFIG_SOC_IT8XXX2_SERIAL_IN_RAM
 			*libdrivers__serial.a:*
 #endif
@@ -190,6 +190,9 @@ SECTIONS
 
 #ifdef CONFIG_SOC_IT8XXX2_LIBRARY_TO_RAM
 		*(EXCLUDE_FILE (
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_SWITCH_IN_RAM
+			*libarch__riscv__core.a:*
 #endif
 #ifdef CONFIG_SOC_IT8XXX2_SERIAL_IN_RAM
 			*libdrivers__serial.a:*
@@ -226,6 +229,9 @@ SECTIONS
 #ifdef CONFIG_SOC_IT8XXX2_EXCEPTIONS_IN_RAM
 		KEEP(*(".exception.entry.*"))
 		*(".exception.other.*")
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_SWITCH_IN_RAM
+		*libarch__riscv__core.a:*(.text .text.*)
 #endif
 #ifdef CONFIG_SOC_IT8XXX2_SERIAL_IN_RAM
 		*libdrivers__serial.a:*(.text .text.*)
@@ -441,6 +447,7 @@ SECTIONS
 
     __data_region_end = .;
 
+#ifdef CONFIG_ESPI_IT8XXX2
 	SECTION_DATA_PROLOGUE(.h2ram_pool,(NOLOAD),)
 	{
 		/*
@@ -456,6 +463,7 @@ SECTIONS
 		_h2ram_pool_end = .;
 	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 	_h2ram_pool_size = ABSOLUTE(_h2ram_pool_end - _h2ram_pool_start);
+#endif
 
 	__kernel_ram_end = .;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;

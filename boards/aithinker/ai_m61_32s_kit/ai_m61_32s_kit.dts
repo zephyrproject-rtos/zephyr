@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2025-2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "ai_m61_32s.dtsi"
+#include "ai_m61_32s_kit_common.dtsi"

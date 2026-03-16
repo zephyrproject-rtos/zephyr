@@ -6,18 +6,19 @@
 
 /**
  * @file
- * @brief Public APIs for the I2S (Inter-IC Sound) bus drivers.
+ * @ingroup i2s_interface
+ * @brief Main header file for I2S (Inter-IC Sound) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_I2S_H_
 #define ZEPHYR_INCLUDE_DRIVERS_I2S_H_
 
 /**
- * @defgroup i2s_interface I2S Interface
+ * @defgroup i2s_interface I2S
  * @since 1.9
  * @version 1.0.0
  * @ingroup io_interfaces
- * @brief I2S (Inter-IC Sound) Interface
+ * @brief Interfaces for Inter-IC Sound (I2S) controllers.
  *
  * The I2S API provides support for the standard I2S interface standard as well
  * as common non-standard extensions such as PCM Short/Long Frame Sync,
@@ -177,14 +178,23 @@ typedef uint8_t i2s_opt_t;
 #define I2S_OPT_BIT_CLK_CONT                (0 << 0)
 /** Run bit clock when sending data only */
 #define I2S_OPT_BIT_CLK_GATED               BIT(0)
-/** I2S driver is bit clock master */
-#define I2S_OPT_BIT_CLK_MASTER              (0 << 1)
-/** I2S driver is bit clock slave */
-#define I2S_OPT_BIT_CLK_SLAVE               BIT(1)
-/** I2S driver is frame clock master */
-#define I2S_OPT_FRAME_CLK_MASTER            (0 << 2)
-/** I2S driver is frame clock slave */
-#define I2S_OPT_FRAME_CLK_SLAVE             BIT(2)
+/** I2S driver is bit clock controller */
+#define I2S_OPT_BIT_CLK_CONTROLLER          (0 << 1)
+/** I2S driver is bit clock target */
+#define I2S_OPT_BIT_CLK_TARGET              BIT(1)
+/** I2S driver is frame clock controller */
+#define I2S_OPT_FRAME_CLK_CONTROLLER        (0 << 2)
+/** I2S driver is frame clock target */
+#define I2S_OPT_FRAME_CLK_TARGET            BIT(2)
+
+/** @deprecated @see I2S_OPT_BIT_CLK_CONTROLLER */
+#define I2S_OPT_BIT_CLK_MASTER              I2S_OPT_BIT_CLK_CONTROLLER __DEPRECATED_MACRO
+/** @deprecated @see I2S_OPT_BIT_CLK_TARGET */
+#define I2S_OPT_BIT_CLK_SLAVE               I2S_OPT_BIT_CLK_TARGET __DEPRECATED_MACRO
+/** @deprecated @see I2S_OPT_FRAME_CLK_CONTROLLER */
+#define I2S_OPT_FRAME_CLK_MASTER            I2S_OPT_FRAME_CLK_CONTROLLER __DEPRECATED_MACRO
+/** @deprecated @see I2S_OPT_FRAME_CLK_TARGET */
+#define I2S_OPT_FRAME_CLK_SLAVE             I2S_OPT_FRAME_CLK_TARGET __DEPRECATED_MACRO
 
 /** @brief Loop back mode.
  *
@@ -372,7 +382,7 @@ static inline int z_impl_i2s_configure(const struct device *dev,
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param dir Stream direction: RX or TX as defined by I2S_DIR_*
- * @retval Pointer to the structure containing configuration parameters,
+ * @return Pointer to the structure containing configuration parameters,
  *         or NULL if un-configured
  */
 static inline const struct i2s_config *i2s_config_get(const struct device *dev,

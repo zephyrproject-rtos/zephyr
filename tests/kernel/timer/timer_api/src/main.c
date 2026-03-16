@@ -748,6 +748,7 @@ ZTEST_USER(timer_api, test_timeout_abs)
 	uint64_t exp_ticks = k_ms_to_ticks_ceil64(exp_ms);
 	k_timeout_t t = K_TIMEOUT_ABS_TICKS(exp_ticks), t2;
 	uint64_t t0, t1;
+	uint32_t rpt;
 
 	/* Ensure second alignment for K_TIMEOUT_ABS_SEC */
 	zassert_true(exp_ms % MSEC_PER_SEC == 0);
@@ -811,16 +812,28 @@ ZTEST_USER(timer_api, test_timeout_abs)
 		k_usleep(1);
 	}
 
+	/* Attempt to read rem_ticks and a known point in time. If that is not possible,
+	 * due to target being slow and system clock being fast, then use known tick range to
+	 * validate rem_ticks.
+	 */
+	rpt = 4;
 	do {
 		t0 = k_uptime_ticks();
 		rem_ticks = k_timer_remaining_ticks(&remain_timer);
 		t1 = k_uptime_ticks();
-	} while (t0 != t1);
+		rpt--;
+	} while ((t0 != t1) && (rpt > 0));
 
-	zassert_true(t0 + rem_ticks == exp_ticks,
+	if (t0 == t1) {
+		zassert_true(t0 + rem_ticks == exp_ticks,
 		     "Wrong remaining: now %lld rem %lld expires %lld (%lld)",
-		     (uint64_t)t0, (uint64_t)rem_ticks, (uint64_t)exp_ticks,
-		     t0+rem_ticks-exp_ticks);
+		     t0, rem_ticks, exp_ticks, t0 + rem_ticks - exp_ticks);
+	} else {
+		zassert_true(IN_RANGE(exp_ticks, t0 + rem_ticks, t1 + rem_ticks),
+		     "Wrong remaining: now %lld-%lld rem %lld expires %lld",
+		     t0, t1, rem_ticks, exp_ticks);
+	}
+
 
 	k_timer_stop(&remain_timer);
 
@@ -837,16 +850,27 @@ ZTEST_USER(timer_api, test_timeout_abs)
 		k_usleep(1);
 	}
 
+	/* Attempt to read rem_ticks and a known point in time. If that is not possible,
+	 * due to target being slow and system clock being fast, then use known tick range to
+	 * validate rem_ticks.
+	 */
+	rpt = 4;
 	do {
 		t0 = k_uptime_ticks();
 		rem_ticks = k_timer_remaining_ticks(&remain_timer);
 		t1 = k_uptime_ticks();
-	} while (t0 != t1);
+		rpt--;
+	} while ((t0 != t1) && (rpt > 0));
 
-	zassert_true(t0 + rem_ticks == exp_ticks,
+	if (t0 == t1) {
+		zassert_true(t0 + rem_ticks == exp_ticks,
 		     "Wrong remaining: now %lld rem %lld expires %lld (%lld)",
-		     (uint64_t)t0, (uint64_t)rem_ticks, (uint64_t)exp_ticks,
-		     t0+rem_ticks-exp_ticks);
+		     t0, rem_ticks, exp_ticks, t0 + rem_ticks - exp_ticks);
+	} else {
+		zassert_true(IN_RANGE(exp_ticks, t0 + rem_ticks, t1 + rem_ticks),
+		     "Wrong remaining: now %lld-%lld rem %lld expires %lld",
+		     t0, t1, rem_ticks, exp_ticks);
+	}
 
 	k_timer_stop(&remain_timer);
 
@@ -869,13 +893,21 @@ ZTEST_USER(timer_api, test_sleep_abs)
 	k_sleep(K_TIMEOUT_ABS_TICKS(start + sleep_ticks));
 	end = k_uptime_ticks();
 
-	/* Systems with very high tick rates and/or slow idle resume
-	 * (I've seen this on intel_adsp) can occasionally take more
-	 * than a tick to return from k_sleep().  Set a 100us real
-	 *  time slop or more depending on the time to resume
+	/* Systems with very high tick rates, slow idle resume, or QEMU
+	 * timing instability can occasionally take more than a tick to
+	 * return from k_sleep().
+	 *
+	 * The Xilinx QEMU, used to emulate the ZynqMP and Versal platforms,
+	 * is particularly unstable in terms of timing and can be several
+	 * ticks late waking from sleep.
 	 */
 	k_ticks_t late = end - (start + sleep_ticks);
+#if defined(CONFIG_SOC_XILINX_ZYNQMP) || defined(CONFIG_SOC_VERSAL_RPU)
+	/* QEMU timing instability requires larger margin */
+	int slop = MAX(10, k_us_to_ticks_ceil32(1000));
+#else
 	int slop = MAX(2, k_us_to_ticks_ceil32(250));
+#endif
 
 	zassert_true(late >= 0 && late <= slop,
 		     "expected wakeup at %lld, got %lld (late %lld)",

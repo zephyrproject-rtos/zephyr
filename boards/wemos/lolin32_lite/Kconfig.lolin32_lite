@@ -1,0 +1,7 @@
+# Copyright (c) 2025 Siratul Islam <email@sirat.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LOLIN32_LITE
+	select SOC_ESP32_WROVER_E_N4R8
+	select SOC_ESP32_PROCPU if BOARD_LOLIN32_LITE_ESP32_PROCPU
+	select SOC_ESP32_APPCPU if BOARD_LOLIN32_LITE_ESP32_APPCPU

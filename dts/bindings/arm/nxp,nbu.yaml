@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP NBU interruption information
@@ -14,3 +14,12 @@ properties:
     default: "NBU NXP"
     type: string
     description: Name of the Narrow Band Unit interruption initialization
+  rfmc-xo-cdac:
+    type: int
+    description: |
+      XTAL CDAC trim value.
+      This value is usually used to fine-tune the 32MHz crystal oscillator frequency.
+  rfmc-xo-isel:
+    type: int
+    description: |
+      XTAL ISEL (Current Selection) value.

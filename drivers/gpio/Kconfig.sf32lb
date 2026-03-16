@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_SF32LB
+	bool "SiFli SF32LB GPIO driver"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_GPIO_ENABLED
+	help
+	  Enable GPIO driver for SiFli SF32LB

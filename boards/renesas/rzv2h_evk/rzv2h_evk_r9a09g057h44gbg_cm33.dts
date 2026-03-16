@@ -65,3 +65,13 @@
 		status = "okay";
 	};
 };
+
+&adc0 {
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};

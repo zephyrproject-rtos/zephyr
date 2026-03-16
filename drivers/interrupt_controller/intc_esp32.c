@@ -51,19 +51,6 @@ LOG_MODULE_REGISTER(intc_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 /* Typedef for C-callable interrupt handler function */
 typedef void (*intc_dyn_handler_t)(const void *);
 
-/* shared critical section context */
-static int esp_intc_csec;
-
-static inline void esp_intr_lock(void)
-{
-	esp_intc_csec = irq_lock();
-}
-
-static inline void esp_intr_unlock(void)
-{
-	irq_unlock(esp_intc_csec);
-}
-
 /* Linked list of vector descriptions, sorted by cpu.intno value */
 static struct vector_desc_t *vector_desc_head; /* implicitly initialized to NULL */
 
@@ -185,18 +172,18 @@ int esp_intr_mark_shared(int intno, int cpu, bool is_int_ram)
 		return -EINVAL;
 	}
 
-	esp_intr_lock();
+	unsigned int key = irq_lock();
 	struct vector_desc_t *vd = get_desc_for_int(intno, cpu);
 
 	if (vd == NULL) {
-		esp_intr_unlock();
+		irq_unlock(key);
 		return -ENOMEM;
 	}
 	vd->flags = VECDESC_FL_SHARED;
 	if (is_int_ram) {
 		vd->flags |= VECDESC_FL_INIRAM;
 	}
-	esp_intr_unlock();
+	irq_unlock(key);
 
 	return 0;
 }
@@ -210,15 +197,15 @@ int esp_intr_reserve(int intno, int cpu)
 		return -EINVAL;
 	}
 
-	esp_intr_lock();
+	unsigned int key = irq_lock();
 	struct vector_desc_t *vd = get_desc_for_int(intno, cpu);
 
 	if (vd == NULL) {
-		esp_intr_unlock();
+		irq_unlock(key);
 		return -ENOMEM;
 	}
 	vd->flags = VECDESC_FL_RESERVED;
-	esp_intr_unlock();
+	irq_unlock(key);
 
 	return 0;
 }
@@ -459,7 +446,7 @@ static void IRAM_ATTR shared_intr_isr(void *arg)
 	struct vector_desc_t *vd = (struct vector_desc_t *)arg;
 	struct shared_vector_desc_t *sh_vec = vd->shared_vec_info;
 
-	esp_intr_lock();
+	unsigned int key = irq_lock();
 	while (sh_vec) {
 		if (!sh_vec->disabled) {
 			if (!(sh_vec->statusreg) || (*sh_vec->statusreg & sh_vec->statusmask)) {
@@ -468,7 +455,7 @@ static void IRAM_ATTR shared_intr_isr(void *arg)
 		}
 		sh_vec = sh_vec->next;
 	}
-	esp_intr_unlock();
+	irq_unlock(key);
 }
 
 int esp_intr_alloc_intrstatus(int source,
@@ -557,14 +544,14 @@ int esp_intr_alloc_intrstatus(int source,
 		return -ENOMEM;
 	}
 
-	esp_intr_lock();
+	unsigned int key = irq_lock();
 	int cpu = esp_cpu_get_core_id();
 	/* See if we can find an interrupt that matches the flags. */
 	int intr = get_available_int(flags, cpu, force, source);
 
 	if (intr == -1) {
 		/* None found. Bail out. */
-		esp_intr_unlock();
+		irq_unlock(key);
 		k_free(ret);
 		return -ENODEV;
 	}
@@ -572,7 +559,7 @@ int esp_intr_alloc_intrstatus(int source,
 	struct vector_desc_t *vd = get_desc_for_int(intr, cpu);
 
 	if (vd == NULL) {
-		esp_intr_unlock();
+		irq_unlock(key);
 		k_free(ret);
 		return -ENOMEM;
 	}
@@ -583,7 +570,7 @@ int esp_intr_alloc_intrstatus(int source,
 		struct shared_vector_desc_t *sv = k_malloc(sizeof(struct shared_vector_desc_t));
 
 		if (sv == NULL) {
-			esp_intr_unlock();
+			irq_unlock(key);
 			k_free(ret);
 			return -ENOMEM;
 		}
@@ -630,6 +617,22 @@ int esp_intr_alloc_intrstatus(int source,
 	ret->vector_desc = vd;
 	ret->shared_vector_desc = vd->shared_vec_info;
 
+#if SOC_CPU_HAS_FLEXIBLE_INTC
+	/*
+	 * Set interrupt priority and type BEFORE enabling the interrupt.
+	 * On RISC-V chips with flexible INTC, the default priority is 0 which
+	 * would cause the interrupt to be masked if the threshold is >= 1.
+	 */
+	int level = esp_intr_flags_to_level(flags);
+	esp_cpu_intr_set_priority(intr, level);
+
+	if (flags & ESP_INTR_FLAG_EDGE) {
+		esp_cpu_intr_set_type(intr, ESP_CPU_INTR_TYPE_EDGE);
+	} else {
+		esp_cpu_intr_set_type(intr, ESP_CPU_INTR_TYPE_LEVEL);
+	}
+#endif
+
 	/* Enable int at CPU-level; */
 	irq_enable(intr);
 
@@ -641,24 +644,12 @@ int esp_intr_alloc_intrstatus(int source,
 		esp_intr_disable(ret);
 	}
 
-#if SOC_CPU_HAS_FLEXIBLE_INTC
-	/* Extract the level from the interrupt passed flags */
-	int level = esp_intr_flags_to_level(flags);
-	esp_cpu_intr_set_priority(intr, level);
-
-	if (flags & ESP_INTR_FLAG_EDGE) {
-		esp_cpu_intr_set_type(intr, ESP_CPU_INTR_TYPE_EDGE);
-	} else {
-		esp_cpu_intr_set_type(intr, ESP_CPU_INTR_TYPE_LEVEL);
-	}
-#endif
-
 #if SOC_INT_PLIC_SUPPORTED
 	/* Make sure the interrupt is not delegated to user mode (IDF uses machine mode only) */
 	RV_CLEAR_CSR(mideleg, BIT(intr));
 #endif
 
-	esp_intr_unlock();
+	irq_unlock(key);
 
 	/* Fill return handle if needed, otherwise free handle. */
 	if (ret_handle != NULL) {
@@ -696,7 +687,7 @@ int IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
 	if (vd->flags & VECDESC_FL_SHARED) {
 		return -EINVAL;
 	}
-	esp_intr_lock();
+	unsigned int key = irq_lock();
 	uint32_t mask = (1 << vd->intno);
 
 	if (is_in_iram) {
@@ -706,7 +697,7 @@ int IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
 		vd->flags &= ~VECDESC_FL_INIRAM;
 		non_iram_int_mask[vd->cpu] |= mask;
 	}
-	esp_intr_unlock();
+	irq_unlock(key);
 	return 0;
 }
 
@@ -718,7 +709,7 @@ int esp_intr_free(intr_handle_t handle)
 		return -EINVAL;
 	}
 
-	esp_intr_lock();
+	unsigned int key = irq_lock();
 	esp_intr_disable(handle);
 	if (handle->vector_desc->flags & VECDESC_FL_SHARED) {
 		/* Find and kill the shared int */
@@ -764,11 +755,13 @@ int esp_intr_free(intr_handle_t handle)
 		 * few bytes of memory we save.(We can also not use the same exit path for empty
 		 * shared ints anymore if we delete the desc.) For now, just mark it as free.
 		 */
-		handle->vector_desc->flags &= !(VECDESC_FL_NONSHARED | VECDESC_FL_RESERVED);
+		handle->vector_desc->flags &=
+			~(VECDESC_FL_NONSHARED | VECDESC_FL_RESERVED | VECDESC_FL_SHARED);
+		handle->vector_desc->source = ETS_INTERNAL_UNUSED_INTR_SOURCE;
 		/* Also kill non_iram mask bit. */
 		non_iram_int_mask[handle->vector_desc->cpu] &= ~(1 << (handle->vector_desc->intno));
 	}
-	esp_intr_unlock();
+	irq_unlock(key);
 	k_free(handle);
 	return 0;
 }
@@ -802,7 +795,7 @@ int IRAM_ATTR esp_intr_enable(intr_handle_t handle)
 	if (!handle) {
 		return -EINVAL;
 	}
-	esp_intr_lock();
+	unsigned int key = irq_lock();
 	int source;
 
 	if (handle->shared_vector_desc) {
@@ -818,12 +811,12 @@ int IRAM_ATTR esp_intr_enable(intr_handle_t handle)
 	} else {
 		/* Re-enable using cpu int ena reg */
 		if (handle->vector_desc->cpu != esp_cpu_get_core_id()) {
-			esp_intr_unlock();
+			irq_unlock(key);
 			return -EINVAL; /* Can only enable these ints on this cpu */
 		}
 		irq_enable(handle->vector_desc->intno);
 	}
-	esp_intr_unlock();
+	irq_unlock(key);
 	return 0;
 }
 
@@ -832,9 +825,9 @@ int IRAM_ATTR esp_intr_disable(intr_handle_t handle)
 	if (!handle) {
 		return -EINVAL;
 	}
-	esp_intr_lock();
+	unsigned int key = irq_lock();
 	int source;
-	bool disabled = 1;
+	bool disabled = true;
 
 	if (handle->shared_vector_desc) {
 		handle->shared_vector_desc->disabled = 1;
@@ -845,7 +838,7 @@ int IRAM_ATTR esp_intr_disable(intr_handle_t handle)
 		assert(svd != NULL);
 		while (svd) {
 			if (svd->source == source && svd->disabled == 0) {
-				disabled = 0;
+				disabled = false;
 				break;
 			}
 			svd = svd->next;
@@ -863,21 +856,21 @@ int IRAM_ATTR esp_intr_disable(intr_handle_t handle)
 	} else {
 		/* Disable using per-cpu regs */
 		if (handle->vector_desc->cpu != esp_cpu_get_core_id()) {
-			esp_intr_unlock();
+			irq_unlock(key);
 			return -EINVAL; /* Can only enable these ints on this cpu */
 		}
 		irq_disable(handle->vector_desc->intno);
 	}
-	esp_intr_unlock();
+	irq_unlock(key);
 	return 0;
 }
 
 void IRAM_ATTR esp_intr_noniram_disable(void)
 {
-	esp_intr_lock();
+	unsigned int key = irq_lock();
 	int oldint;
 	int cpu = esp_cpu_get_core_id();
-	int non_iram_ints = ~non_iram_int_mask[cpu];
+	int non_iram_ints = non_iram_int_mask[cpu];
 
 	if (non_iram_int_disabled_flag[cpu]) {
 		abort();
@@ -888,12 +881,12 @@ void IRAM_ATTR esp_intr_noniram_disable(void)
 	rtc_isr_noniram_disable(cpu);
 	/* Save which ints we did disable */
 	non_iram_int_disabled[cpu] = oldint & non_iram_ints;
-	esp_intr_unlock();
+	irq_unlock(key);
 }
 
 void IRAM_ATTR esp_intr_noniram_enable(void)
 {
-	esp_intr_lock();
+	unsigned int key = irq_lock();
 	int cpu = esp_cpu_get_core_id();
 	int non_iram_ints = non_iram_int_disabled[cpu];
 
@@ -903,7 +896,7 @@ void IRAM_ATTR esp_intr_noniram_enable(void)
 	non_iram_int_disabled_flag[cpu] = false;
 	esp_cpu_intr_enable(non_iram_ints);
 	rtc_isr_noniram_enable(cpu);
-	esp_intr_unlock();
+	irq_unlock(key);
 }
 
 #if defined(CONFIG_RISCV)

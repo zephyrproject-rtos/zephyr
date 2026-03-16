@@ -4,7 +4,7 @@ Overview
 ********
 
 The YD-STM32H750VB development board is a complete demonstration and development
-platform for Arm |reg| Cortex |reg|-M7 core-based STM32H750VBT6 microcontroller, with
+platform for Arm® Cortex®-M7 core-based STM32H750VBT6 microcontroller, with
 128Kbytes of Flash memory and 1 Mbytes of SRAM.
 
 More information about STM32H750 can be found here:

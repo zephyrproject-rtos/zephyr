@@ -80,6 +80,14 @@ as well as by the main PLL clock. By default, the CPU2 (Cortex-M4) System clock
 is driven at 240MHz. PLL clock is fed by a 25MHz high speed external clock. The
 M7 clock is driven at 400MHz.
 
+External flash
+==============
+
+External flash (16MB on QSPI) access can be enabled by the ``CONFIG_FLASH``
+option. The default partition table tracks the one used by the latest Arduino
+IoT Cloud library. If you have any issues, re-run the ``QSPIFormat.ino``
+sketch to update the Flash contents.
+
 Resources sharing
 =================
 

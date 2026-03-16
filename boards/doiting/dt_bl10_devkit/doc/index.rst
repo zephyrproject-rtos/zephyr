@@ -58,7 +58,7 @@ Samples
 =======
 
 #. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample
-application:
+   application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

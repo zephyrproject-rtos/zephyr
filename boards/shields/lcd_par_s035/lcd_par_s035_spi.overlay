@@ -7,20 +7,20 @@
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 #include <zephyr/dt-bindings/spi/spi.h>
 
-/{
+/ {
 	chosen {
 		zephyr,display = &st7796s;
 		zephyr,touch = &gt911_lcd_par_s035;
 	};
 
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&gt911_lcd_par_s035>;
-		swap-xy;
-		invert-y;
+	aliases {
+		mipi-dbi = &zephyr_mipi_dbi_spi;
 	};
 };
 
+/* Initialization of touch, MIPI DBI and display devices is deferred to
+ * lcd_par_s035_init() in shield.c
+ */
 &nxp_pmod_touch_panel_i2c {
 	status = "okay";
 
@@ -28,6 +28,11 @@
 		compatible = "goodix,gt911";
 		reg = <0x5d>;
 		irq-gpios = <&nxp_lcd_pmod_connector 12 GPIO_ACTIVE_HIGH>;
+		zephyr,deferred-init;
+		swapped-x-y;
+		inverted-x;
+		screen-width = <320>;
+		screen-height = <480>;
 	};
 };
 
@@ -35,6 +40,7 @@
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	zephyr,deferred-init;
 
 	st7796s: st7796s@0 {
 		compatible = "sitronix,st7796s";
@@ -53,16 +59,17 @@
 		width = <480>;
 		invert-mode = "1-dot";
 		frmctl1 = [80 10];
-		bpc = [1F 50 00 20];
-		dfc = [8A 07 3B];
+		bpc = [1f 50 00 20];
+		dfc = [8a 07 3b];
 		pwr1 = [80 64];
 		pwr2 = <0x13>;
-		pwr3 = <0xA7>;
+		pwr3 = <0xa7>;
 		vcmpctl = <0x09>;
-		doca = [40 8A 00 00 29 19 A5 33];
-		pgc = [F0 06 0B 07 06 05 2E 33 47 3A 17 16 2E 31];
-		ngc = [F0 09 0D 09 08 23 2E 33 46 38 13 13 2C 32];
+		doca = [40 8a 00 00 29 19 a5 33];
+		pgc = [f0 06 0b 07 06 05 2e 33 47 3a 17 16 2e 31];
+		ngc = [f0 09 0d 09 08 23 2e 33 46 38 13 13 2c 32];
 		madctl = <0x28>;
 		color-invert;
+		zephyr,deferred-init;
 	};
 };

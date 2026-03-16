@@ -46,7 +46,7 @@ EXPORT_SYMBOL(z_spin_lock_set_owner);
 #ifdef CONFIG_KERNEL_COHERENCE
 bool z_spin_lock_mem_coherent(struct k_spinlock *l)
 {
-	return arch_mem_coherent((void *)l);
+	return sys_cache_is_mem_coherent((void *)l);
 }
 EXPORT_SYMBOL(z_spin_lock_mem_coherent);
 #endif /* CONFIG_KERNEL_COHERENCE */

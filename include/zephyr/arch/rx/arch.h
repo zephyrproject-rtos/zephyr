@@ -17,7 +17,7 @@
 #define ZEPHYR_INCLUDE_ARCH_RX_ARCH_H_
 
 /* Add include for DTS generated information */
-#include <zephyr/arch/rx/exception.h>
+#include <zephyr/arch/exception.h>
 #include <zephyr/devicetree.h>
 
 #include <zephyr/arch/rx/thread.h>

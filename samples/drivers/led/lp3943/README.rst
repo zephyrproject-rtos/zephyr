@@ -15,13 +15,13 @@ reverse order.
 Requirements
 ************
 
-The :ref:`96b_neonkey` board has an LP3943 driver and 16 LEDs on board,
+The :zephyr:board:`96b_neonkey` board has an LP3943 driver and 16 LEDs on board,
 so we'll use this board for our example.
 
 Building and Running
 ********************
 
-Build the application for the :ref:`96b_neonkey` board, which has an
+Build the application for the :zephyr:board:`96b_neonkey` board, which has an
 LP3943 driver included.
 
 .. zephyr-app-commands::
@@ -31,7 +31,7 @@ LP3943 driver included.
    :compact:
 
 For flashing the application, refer to the Flashing section of the
-:ref:`96b_neonkey` board documentation.
+:zephyr:board:`96b_neonkey` board documentation.
 
 When you connect to the board's serial console, you should see the
 following output in addition to the LED pattern:

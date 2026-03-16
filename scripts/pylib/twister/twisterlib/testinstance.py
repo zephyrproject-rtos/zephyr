@@ -55,7 +55,7 @@ class TestInstance:
         self.platform: Platform = platform
 
         self._status = TwisterStatus.NONE
-        self.reason = "Unknown"
+        self.reason = None
         self.metrics = dict()
         self.handler = None
         self.recording = None
@@ -97,6 +97,8 @@ class TestInstance:
         self.init_cases()
         self.filters = []
         self.filter_type = None
+        self.required_applications = []
+        self.required_build_dirs = []
 
     def setup_run_id(self):
         self.run_id = self._get_run_id()
@@ -184,9 +186,6 @@ class TestInstance:
     def __lt__(self, other):
         return self.name < other.name
 
-    def compose_case_name(self, tc_name) -> str:
-        return self.testsuite.compose_case_name(tc_name)
-
     def set_case_status_by_name(self, name, status, reason=None):
         tc = self.get_case_or_create(name)
         tc.status = status
@@ -222,6 +221,7 @@ class TestInstance:
         # console harness allows us to run the test and capture data.
         if testsuite.harness in [
             'console',
+            'display_capture',
             'ztest',
             'pytest',
             'power',
@@ -316,7 +316,7 @@ class TestInstance:
                             device_testing)
 
         # check if test is runnable in pytest
-        if self.testsuite.harness in ['pytest', 'shell', 'power']:
+        if self.testsuite.harness in ['pytest', 'shell', 'power', 'display_capture']:
             target_ready = bool(
                 filter == 'runnable' or simulator and simulator.name in SUPPORTED_SIMS_IN_PYTEST
             )
@@ -395,7 +395,6 @@ class TestInstance:
             for cp in coverage_platform:
                 if cp in platform.aliases:
                     content = content + "\nCONFIG_COVERAGE=y"
-                    content = content + "\nCONFIG_COVERAGE_DUMP=y"
 
         if platform.type == "native":
             if enable_asan:

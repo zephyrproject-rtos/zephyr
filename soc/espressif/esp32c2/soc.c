@@ -5,6 +5,7 @@
  */
 
 #include <soc.h>
+#include <esp_rom_serial_output.h>
 #include <soc_init.h>
 #include <flash_init.h>
 #include <esp_private/cache_utils.h>
@@ -13,9 +14,10 @@
 #include <efuse_virtual.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/kernel_structs.h>
-#include <kernel_internal.h>
+#include <zephyr/arch/common/init.h>
 
 extern void esp_reset_reason_init(void);
+extern FUNC_NORETURN void z_cstart(void);
 
 void IRAM_ATTR __esp_platform_app_start(void)
 {
@@ -45,9 +47,9 @@ void IRAM_ATTR __esp_platform_mcuboot_start(void)
 int IRAM_ATTR arch_printk_char_out(int c)
 {
 	if (c == '\n') {
-		esp_rom_uart_tx_one_char('\r');
+		esp_rom_output_tx_one_char('\r');
 	}
-	esp_rom_uart_tx_one_char(c);
+	esp_rom_output_tx_one_char(c);
 	return 0;
 }
 

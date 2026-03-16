@@ -1,11 +1,11 @@
 #
-# Copyright 2019, 2024 NXP
+# Copyright 2019, 2024-2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
 identifier: lpcxpresso55s69/lpc55s69/cpu0/ns
-name: NXP LPCXpresso55S69 (Non-Secure)
+name: NXP LPCXpresso55S69 (CPU0) (Non-Secure)
 type: mcu
 arch: arm
 ram: 136
@@ -21,4 +21,6 @@ supported:
   - gpio
   - spi
   - watchdog
+  - rtc
+  - gint
 vendor: nxp

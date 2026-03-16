@@ -5,39 +5,39 @@ Overview
 The STM32MP135 Discovery kit (STM32MP135F-DK) leverages the capabilities of the
 1 GHz STM32MP135 microprocessors to allow users to develop applications easily with Zephyr RTOS.
 
-It includes an ST-LINK embedded debug tool, LEDs, push-buttons, two 10/100 Mbit/s Ethernet (RMII) connectors, one USB Type-C |reg| connector, four USB Host Type-A connectors, and one microSD™ connector.
+It includes an ST-LINK embedded debug tool, LEDs, push-buttons, two 10/100 Mbit/s Ethernet (RMII) connectors, one USB Type-C® connector, four USB Host Type-A connectors, and one microSD™ connector.
 
 To expand the functionality of the STM32MP135 Discovery kit, one GPIO expansion connector is also available for third-party shields.
 
-Additionally, the STM32MP135 Discovery kit features an LCD display with a touch panel, Wi‑Fi |reg| and Bluetooth |reg| Low Energy capability, and a 2-megapixel CMOS camera module.
+Additionally, the STM32MP135 Discovery kit features an LCD display with a touch panel, Wi‑Fi® and Bluetooth® Low Energy capability, and a 2-megapixel CMOS camera module.
 
 It also provides secure boot and cryptography features.
 
-Zephyr OS is ported to run on the Cortex |reg|-A7 core.
+Zephyr OS is ported to run on the Cortex®-A7 core.
 
-- STM32MP135FAF7: Arm |reg| Cortex |reg|-A7 32-bit processor at 1 GHz, in a TFBGA320 package
+- STM32MP135FAF7: Arm® Cortex®-A7 32-bit processor at 1 GHz, in a TFBGA320 package
 - ST PMIC STPMIC1
 - 4-Gbit DDR3L, 16 bits, 533 MHz
 - 4.3" 480x272 pixels LCD display module with capacitive touch panel and RGB interface
-- UXGA 2-megapixel CMOS camera module (included) with MIPI CSI-2 |reg| / SMIA CCP2 deserializer
-- Wi-Fi |reg| 802.11b/g/n
-- Bluetooth |reg| Low Energy 4.1
+- UXGA 2-megapixel CMOS camera module (included) with MIPI CSI-2® / SMIA CCP2 deserializer
+- Wi-Fi® 802.11b/g/n
+- Bluetooth® Low Energy 4.1
 - Dual 10/100 Mbit/s Ethernet (RMII) compliant with IEEE-802.3u, one with Wake on LAN (WoL) support
 - USB Host 4-port hub
-- USB Type-C |reg| DRP based on an STM32G0 device
+- USB Type-C® DRP based on an STM32G0 device
 - 4 user LEDs
 - 4 push-buttons (2× user, tamper, and reset)
 - 1 wake-up button
 - Board connectors:
 
-  - Dual-lane MIPI CSI-2 |reg| camera module expansion
+  - Dual-lane MIPI CSI-2® camera module expansion
   - 2x Ethernet RJ45
   - 4x USB Type-A
   - USB Micro-B
-  - USB Type-C |reg|
+  - USB Type-C®
   - microSD™ card holder
   - GPIO expansion
-  - 5 V / 3 A USB Type-C |reg| power supply input (charger not provided)
+  - 5 V / 3 A USB Type-C® power supply input (charger not provided)
   - VBAT for power backup
 
 - On-board current measurement
@@ -86,7 +86,7 @@ Default Zephyr Peripheral Mapping:
 System Clock
 ------------
 
-The Cortex |reg|-A7 core is configured to run at a clock speed of up to 1GHz.
+The Cortex®-A7 core is configured to run at a clock speed of up to 1GHz.
 
 Memory mapping
 --------------

@@ -36,10 +36,10 @@ upgrade occurs.
 2. The `Golioth OTA documentation`_ includes complete information about the
    versioning process
 
-Eclipse hawkBit |trade|
-=======================
+Eclipse hawkBit™
+================
 
-`Eclipse hawkBit`_ |trade| is an update server framework that uses polling on a
+`Eclipse hawkBit™`_ is an update server framework that uses polling on a
 REST api to detect firmware updates. When a new update is detected, the binary
 is downloaded and installed. MCUboot can be used to verify the signature before
 upgrading the firmware.
@@ -77,9 +77,32 @@ The :ref:`lwm2m_interface` protocol includes support for firmware update via
 connect to an LwM2M server using DTLS. A :zephyr:code-sample:`lwm2m-client` sample is
 available but it does not demonstrate the firmware update feature.
 
+mender-mcu
+==========
+
+`mender-mcu`_ enables robust firmware updates on resource-constrained devices by
+integrating with Zephyr. It implements an Update Module interface and provides
+a default Update Module that integrates with MCUboot to provide A/B updates.
+This allows microcontroller units (MCUs) to perform atomic, fail-safe OTA
+updates with automatic rollback on failure.
+
+See :ref:`external_module_mender_mcu` for integration details and examples.
+
+Memfault and nRF Cloud powered by Memfault
+==========================================
+
+`Memfault`_ is a IoT observability platform that includes OTA management. Devices check-in with
+Memfault's service periodically for an OTA update, and when an update is available, download and
+install the binary.
+
+See :ref:`external_module_memfault_firmware_sdk` for overall integration details and
+examples.
+
 .. _MCUboot bootloader: https://mcuboot.com/
 .. _Golioth: https://golioth.io/
 .. _Golioth Firmware SDK repository: https://github.com/golioth/golioth-firmware-sdk/tree/main/examples/zephyr/fw_update
 .. _Golioth OTA documentation: https://docs.golioth.io/device-management/ota
-.. _Eclipse hawkBit: https://www.eclipse.org/hawkbit/
+.. _Eclipse hawkBit™: https://www.eclipse.org/hawkbit/
 .. _UpdateHub: https://updatehub.io/
+.. _mender-mcu: https://github.com/mendersoftware/mender-mcu
+.. _Memfault: https://memfault.com/

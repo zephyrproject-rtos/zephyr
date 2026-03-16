@@ -11,7 +11,6 @@
 
 #include "lorawan_services.h"
 
-#include <LoRaMac.h>
 #include <zephyr/kernel.h>
 #include <zephyr/lorawan/lorawan.h>
 #include <zephyr/logging/log.h>

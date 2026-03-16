@@ -1,9 +1,3 @@
-/**
- * @file
- *
- * @brief Public APIs for Video.
- */
-
 /*
  * Copyright (c) 2019 Linaro Limited.
  * Copyright 2025 NXP
@@ -11,14 +5,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @ingroup video_interface
+ * @brief Main header file for video driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_VIDEO_H_
 #define ZEPHYR_INCLUDE_VIDEO_H_
 
 /**
- * @brief Video Interface
- * @defgroup video_interface Video Interface
+ * @brief Interfaces for video devices.
+ * @defgroup video_interface Video
  * @since 2.1
- * @version 1.1.0
+ * @version 1.2.0
  * @ingroup io_interfaces
  * @{
  */
@@ -33,12 +34,6 @@
 extern "C" {
 #endif
 
-/*
- * Flag used by @ref video_caps structure to indicate endpoint operates on
- * buffers the size of the video frame
- */
-#define LINE_COUNT_HEIGHT (-1)
-
 struct video_control;
 
 /**
@@ -51,13 +46,12 @@ struct video_control;
  */
 enum video_buf_type {
 	/** input buffer type */
-	VIDEO_BUF_TYPE_INPUT,
+	VIDEO_BUF_TYPE_INPUT = 1,
 	/** output buffer type */
-	VIDEO_BUF_TYPE_OUTPUT,
+	VIDEO_BUF_TYPE_OUTPUT = 2,
 };
 
 /**
- * @struct video_format
  * @brief Video format structure
  *
  * Used to configure frame format.
@@ -79,10 +73,20 @@ struct video_format {
 	 * the next row (>=width).
 	 */
 	uint32_t pitch;
+	/**
+	 * @brief size of the buffer in bytes, need to be set by the drivers
+	 *
+	 * For uncompressed formats, this is the size of the raw data buffer in bytes,
+	 * which could be the whole raw image or a portion of the raw image in cases
+	 * the receiver / dma supports it.
+	 *
+	 * For compressed formats, this is the maximum number of bytes required to
+	 * hold a complete compressed frame, estimated for the worst case.
+	 */
+	uint32_t size;
 };
 
 /**
- * @struct video_format_cap
  * @brief Video format capability
  *
  * Used to describe a video endpoint format capability.
@@ -105,7 +109,6 @@ struct video_format_cap {
 };
 
 /**
- * @struct video_caps
  * @brief Video format capabilities
  *
  * Used to describe video endpoint capabilities.
@@ -119,39 +122,25 @@ struct video_caps {
 	 * the stream.
 	 */
 	uint8_t min_vbuf_count;
-	/** Denotes minimum line count of a video buffer that this endpoint
-	 * can fill or process. Each line is expected to consume the number
-	 * of bytes the selected video format's pitch uses, so the video
-	 * buffer must be at least `pitch` * `min_line_count` bytes.
-	 * `LINE_COUNT_HEIGHT` is a special value, indicating the endpoint
-	 * only supports video buffers with at least enough bytes to store
-	 * a full video frame
-	 */
-	int16_t min_line_count;
-	/**
-	 * Denotes maximum line count of a video buffer that this endpoint
-	 * can fill or process. Similar constraints to `min_line_count`,
-	 * but `LINE_COUNT_HEIGHT` indicates that the endpoint will never
-	 * fill or process more than a full video frame in one video buffer.
-	 */
-	int16_t max_line_count;
+	/** requirement on the buffer alignment, in bytes */
+	size_t buf_align;
 };
 
 /**
- * @struct video_buffer
  * @brief Video buffer structure
  *
- * Represent a video frame.
+ * Represents a video frame.
  */
 struct video_buffer {
+	/** Pointer to driver specific data. */
+	/* It must be kept as first field of the struct if used for @ref k_fifo APIs. */
+	void *driver_data;
 	/** type of the buffer */
 	enum video_buf_type type;
-	/** pointer to driver specific data. */
-	void *driver_data;
 	/** pointer to the start of the buffer. */
 	uint8_t *buffer;
-	/** index of the buffer, optionally set by the application */
-	uint8_t index;
+	/** index of the buffer in the video buffer pool */
+	uint16_t index;
 	/** size of the buffer in bytes. */
 	uint32_t size;
 	/** number of bytes occupied by the valid data in the buffer. */
@@ -170,9 +159,7 @@ struct video_buffer {
 };
 
 /**
- * @brief video_frmival_type enum
- *
- * Supported frame interval type of a video device.
+ * @brief Supported frame interval type of a video device.
  */
 enum video_frmival_type {
 	/** discrete frame interval type */
@@ -182,7 +169,6 @@ enum video_frmival_type {
 };
 
 /**
- * @struct video_frmival
  * @brief Video frame interval structure
  *
  * Used to describe a video frame interval.
@@ -195,7 +181,6 @@ struct video_frmival {
 };
 
 /**
- * @struct video_frmival_stepwise
  * @brief Video frame interval stepwise structure
  *
  * Used to describe the video frame interval stepwise type.
@@ -210,7 +195,6 @@ struct video_frmival_stepwise {
 };
 
 /**
- * @struct video_frmival_enum
  * @brief Video frame interval enumeration structure
  *
  * Used to describe the supported video frame intervals of a given video format.
@@ -230,19 +214,18 @@ struct video_frmival_enum {
 };
 
 /**
- * @brief video_event enum
+ * @brief Video signal result
  *
  * Identify video event.
  */
 enum video_signal_result {
-	VIDEO_BUF_DONE,
-	VIDEO_BUF_ABORTED,
-	VIDEO_BUF_ERROR,
+	VIDEO_BUF_DONE,    /**< Buffer is done */
+	VIDEO_BUF_ABORTED, /**< Buffer is aborted */
+	VIDEO_BUF_ERROR,   /**< Buffer is in error */
 };
 
 /**
- * @struct video_selection_target
- * @brief Video selection target enum
+ * @brief Video selection target
  *
  * Used to indicate which selection to query or set on a video device
  */
@@ -260,7 +243,6 @@ enum video_selection_target {
 };
 
 /**
- * @struct video_rect
  * @brief Description of a rectangle area.
  *
  * Used for crop/compose and possibly within drivers as well
@@ -277,7 +259,6 @@ struct video_rect {
 };
 
 /**
- * @struct video_selection
  * @brief Video selection (crop / compose) structure
  *
  * Used to describe the query and set selection target on a video device
@@ -374,6 +355,18 @@ typedef int (*video_api_ctrl_t)(const struct device *dev, uint32_t cid);
 typedef int (*video_api_get_caps_t)(const struct device *dev, struct video_caps *caps);
 
 /**
+ * @typedef video_api_transform_cap_t
+ * @brief Function pointer type for transforming a @ref video_format_cap from one end
+ * to the other end of a m2m video device.
+ *
+ * See @ref video_transform_cap for argument descriptions.
+ */
+typedef int (*video_api_transform_cap_t)(const struct device *const dev,
+					 const struct video_format_cap *const cap,
+					 struct video_format_cap *const res_cap,
+					 enum video_buf_type type, uint16_t ind);
+
+/**
  * @typedef video_api_set_signal_t
  * @brief Register/Unregister poll signal for buffer events.
  *
@@ -407,6 +400,8 @@ __subsystem struct video_driver_api {
 	video_api_enum_frmival_t enum_frmival;
 	video_api_selection_t set_selection;
 	video_api_selection_t get_selection;
+	/** Transform capability from one end to the other end of an m2m device */
+	video_api_transform_cap_t transform_cap;
 };
 
 /**
@@ -426,8 +421,9 @@ static inline int video_set_format(const struct device *dev, struct video_format
 {
 	const struct video_driver_api *api;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(fmt != NULL);
+	if (dev == NULL || fmt == NULL) {
+		return -EINVAL;
+	}
 
 	api = (const struct video_driver_api *)dev->api;
 	if (api->set_format == NULL) {
@@ -451,8 +447,9 @@ static inline int video_get_format(const struct device *dev, struct video_format
 {
 	const struct video_driver_api *api;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(fmt != NULL);
+	if (dev == NULL || fmt == NULL) {
+		return -EINVAL;
+	}
 
 	api = (const struct video_driver_api *)dev->api;
 	if (api->get_format == NULL) {
@@ -482,8 +479,9 @@ static inline int video_set_frmival(const struct device *dev, struct video_frmiv
 {
 	const struct video_driver_api *api;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(frmival != NULL);
+	if (dev == NULL || frmival == NULL) {
+		return -EINVAL;
+	}
 
 	if (frmival->numerator == 0 || frmival->denominator == 0) {
 		return -EINVAL;
@@ -514,8 +512,9 @@ static inline int video_get_frmival(const struct device *dev, struct video_frmiv
 {
 	const struct video_driver_api *api;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(frmival != NULL);
+	if (dev == NULL || frmival == NULL) {
+		return -EINVAL;
+	}
 
 	api = (const struct video_driver_api *)dev->api;
 	if (api->get_frmival == NULL) {
@@ -546,9 +545,9 @@ static inline int video_enum_frmival(const struct device *dev, struct video_frmi
 {
 	const struct video_driver_api *api;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(fie != NULL);
-	__ASSERT_NO_MSG(fie->format != NULL);
+	if (dev == NULL || fie == NULL || fie->format == NULL) {
+		return -EINVAL;
+	}
 
 	api = (const struct video_driver_api *)dev->api;
 	if (api->enum_frmival == NULL) {
@@ -575,9 +574,9 @@ static inline int video_enqueue(const struct device *dev, struct video_buffer *b
 {
 	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(buf != NULL);
-	__ASSERT_NO_MSG(buf->buffer != NULL);
+	if (dev == NULL || buf == NULL || buf->buffer == NULL) {
+		return -EINVAL;
+	}
 
 	api = (const struct video_driver_api *)dev->api;
 	if (api->enqueue == NULL) {
@@ -606,8 +605,9 @@ static inline int video_dequeue(const struct device *dev, struct video_buffer **
 {
 	const struct video_driver_api *api;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(buf != NULL);
+	if (dev == NULL || buf == NULL) {
+		return -EINVAL;
+	}
 
 	api = (const struct video_driver_api *)dev->api;
 	if (api->dequeue == NULL) {
@@ -634,7 +634,9 @@ static inline int video_flush(const struct device *dev, bool cancel)
 {
 	const struct video_driver_api *api;
 
-	__ASSERT_NO_MSG(dev != NULL);
+	if (dev == NULL) {
+		return -EINVAL;
+	}
 
 	api = (const struct video_driver_api *)dev->api;
 	if (api->flush == NULL) {
@@ -656,14 +658,17 @@ static inline int video_flush(const struct device *dev, bool cancel)
  * @param dev Pointer to the device structure.
  * @param type The type of the buffers stream to start.
  *
- * @retval 0 Is successful.
+ * @retval 0 Successful.
+ * @retval -EINVAL Parameters are invalid.
  * @retval -EIO General input / output error.
  */
 static inline int video_stream_start(const struct device *dev, enum video_buf_type type)
 {
 	const struct video_driver_api *api;
 
-	__ASSERT_NO_MSG(dev != NULL);
+	if (dev == NULL) {
+		return -EINVAL;
+	}
 
 	api = (const struct video_driver_api *)dev->api;
 	if (api->set_stream == NULL) {
@@ -682,7 +687,8 @@ static inline int video_stream_start(const struct device *dev, enum video_buf_ty
  * @param dev Pointer to the device structure.
  * @param type The type of the buffers stream to stop.
  *
- * @retval 0 Is successful.
+ * @retval 0 Successful.
+ * @retval -EINVAL Parameters are invalid.
  * @retval -EIO General input / output error.
  */
 static inline int video_stream_stop(const struct device *dev, enum video_buf_type type)
@@ -690,7 +696,9 @@ static inline int video_stream_stop(const struct device *dev, enum video_buf_typ
 	const struct video_driver_api *api;
 	int ret;
 
-	__ASSERT_NO_MSG(dev != NULL);
+	if (dev == NULL) {
+		return -EINVAL;
+	}
 
 	api = (const struct video_driver_api *)dev->api;
 	if (api->set_stream == NULL) {
@@ -715,8 +723,10 @@ static inline int video_get_caps(const struct device *dev, struct video_caps *ca
 {
 	const struct video_driver_api *api;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(caps != NULL);
+	if (dev == NULL || caps == NULL ||
+	    (caps->type != VIDEO_BUF_TYPE_INPUT && caps->type != VIDEO_BUF_TYPE_OUTPUT)) {
+		return -EINVAL;
+	}
 
 	api = (const struct video_driver_api *)dev->api;
 	if (api->get_caps == NULL) {
@@ -724,6 +734,60 @@ static inline int video_get_caps(const struct device *dev, struct video_caps *ca
 	}
 
 	return api->get_caps(dev, caps);
+}
+
+/**
+ * @brief Transform a video format capability from one end to the other end of a m2m video device.
+ *
+ * This function transforms a @ref video_format_cap from one end to the other end of an m2m video
+ * device. It allows applications to iteratively get all the supported capabilities on one end of
+ * the device given a single input capability on the other end.
+ *
+ * Applications pass the addresses of a single input cap and a single res_cap together with the
+ * type of the res_cap and the index (started from 0) to iterate through to the function. The
+ * driver fills the res_cap structure and return 0 each time. Index should be incremented to get
+ * the next res_cap until the function returns an errno e.g., -EINVAL. For example:
+ *
+ * @code{.c}
+ *  struct video_format_cap cap = {.pixelformat = VIDEO_PIX_FMT_RGB565};
+ *  struct video_format_cap res_cap = {0};
+ *  uint8_t ind = 0;
+ *  while (video_transform_cap(dev, &cap, &res_cap, VIDEO_BUF_TYPE_OUTPUT, ind) == 0) {
+ *		// Process output_cap here
+ *		ind++;
+ *  }
+ * @endcode
+ *
+ * @param dev Pointer to the device structure.
+ * @param cap Pointer to the source video format capability structure.
+ * @param res_cap Pointer to the resulting video format capability structure, filled by the driver.
+ * @param type The @ref video_buf_type of the resulting transformed cap.
+ * @param ind Index of the resulting transformed cap.
+ *
+ * @retval 0 Success.
+ * @retval -ENOSYS API is not implemented.
+ * @retval -EINVAL Parameters are invalid.
+ * @retval -ENOTSUP The transformation is not supported.
+ * @retval -EIO General input / output error.
+ */
+static inline int video_transform_cap(const struct device *const dev,
+				      const struct video_format_cap *const cap,
+				      struct video_format_cap *const res_cap,
+				      enum video_buf_type type, uint16_t ind)
+{
+	const struct video_driver_api *api;
+
+	if (dev == NULL || cap == NULL || res_cap == NULL ||
+	    (type != VIDEO_BUF_TYPE_INPUT && type != VIDEO_BUF_TYPE_OUTPUT)) {
+		return -EINVAL;
+	}
+
+	api = (const struct video_driver_api *)dev->api;
+	if (api->transform_cap == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->transform_cap(dev, cap, res_cap, type, ind);
 }
 
 /**
@@ -807,8 +871,9 @@ static inline int video_set_signal(const struct device *dev, struct k_poll_signa
 {
 	const struct video_driver_api *api;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(sig != NULL);
+	if (dev == NULL || sig == NULL) {
+		return -EINVAL;
+	}
 
 	api = (const struct video_driver_api *)dev->api;
 	if (api->set_signal == NULL) {
@@ -841,8 +906,9 @@ static inline int video_set_selection(const struct device *dev, struct video_sel
 {
 	const struct video_driver_api *api;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(sel != NULL);
+	if (dev == NULL || sel == NULL) {
+		return -EINVAL;
+	}
 
 	api = (const struct video_driver_api *)dev->api;
 	if (api->set_selection == NULL) {
@@ -873,8 +939,9 @@ static inline int video_get_selection(const struct device *dev, struct video_sel
 {
 	const struct video_driver_api *api;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(sel != NULL);
+	if (dev == NULL || sel == NULL) {
+		return -EINVAL;
+	}
 
 	api = (const struct video_driver_api *)dev->api;
 	if (api->get_selection == NULL) {
@@ -891,7 +958,7 @@ static inline int video_get_selection(const struct device *dev, struct video_sel
  * @param align Alignment of the requested memory, must be a power of two.
  * @param timeout Timeout duration or K_NO_WAIT
  *
- * @retval pointer to allocated video buffer
+ * @return pointer to allocated video buffer
  */
 struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_timeout_t timeout);
 
@@ -901,7 +968,7 @@ struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_tim
  * @param size Size of the video buffer (in bytes).
  * @param timeout Timeout duration or K_NO_WAIT
  *
- * @retval pointer to allocated video buffer
+ * @return pointer to allocated video buffer
  */
 struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout);
 
@@ -934,8 +1001,9 @@ int video_format_caps_index(const struct video_format_cap *fmts, const struct vi
  */
 static inline uint64_t video_frmival_nsec(const struct video_frmival *frmival)
 {
-	__ASSERT_NO_MSG(frmival != NULL);
-	__ASSERT_NO_MSG(frmival->denominator != 0);
+	if (frmival == NULL || frmival->denominator == 0) {
+		return -EINVAL;
+	}
 
 	return (uint64_t)NSEC_PER_SEC * frmival->numerator / frmival->denominator;
 }
@@ -986,6 +1054,61 @@ void video_closest_frmival(const struct device *dev, struct video_frmival_enum *
  * @param lane_nb Number of CSI-2 lanes used
  */
 int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t lane_nb);
+
+/**
+ * @brief Estimate the size and pitch in bytes of a @ref video_format
+ *
+ * This helper should only be used by drivers that support the whole image frame.
+ *
+ * For uncompressed formats, it gives the actual size and pitch of the
+ * whole raw image without any padding.
+ *
+ * For compressed formats, it gives a rough estimate size of a complete
+ * compressed frame.
+ *
+ * @param fmt Pointer to the video format structure
+ * @return 0 on success, otherwise a negative errno code
+ */
+int video_estimate_fmt_size(struct video_format *fmt);
+
+/**
+ * @brief Set compose rectangle (if applicable) prior to setting format
+ *
+ * Some devices expose compose capabilities, allowing them to apply a transformation
+ * (downscale / upscale) to the frame. For those devices, it is necessary to set the
+ * compose rectangle before being able to apply the frame format (which must have the
+ * same width / height as the compose rectangle width / height).
+ * In order to allow non-compose aware application to be able to control such devices,
+ * introduce a helper which, if available, will apply the compose rectangle prior to
+ * setting the format.
+ *
+ * @param dev Pointer to the video device struct to set format
+ * @param fmt Pointer to a video format struct.
+ *
+ * @retval 0 Is successful.
+ * @retval -EINVAL If parameters are invalid.
+ * @retval -ENOTSUP If format is not supported.
+ * @retval -EIO General input / output error.
+ */
+int video_set_compose_format(const struct device *dev, struct video_format *fmt);
+
+/**
+ * @brief Transfer a buffer between 2 video device
+ *
+ * Helper function which dequeues a buffer from a source device and enqueues it into a
+ * sink device, changing its buffer type between the two.
+ *
+ * @param src		Video device from where buffer is dequeued (source)
+ * @param sink		Video device into which the buffer is queued (sink)
+ * @param src_type	Video buffer type on the source device
+ * @param sink_type	Video buffer type on the sink device
+ * @param timeout	Timeout to be applied on dequeue
+ *
+ * @return 0 on success, otherwise a negative errno code
+ */
+int video_transfer_buffer(const struct device *src, const struct device *sink,
+			  enum video_buf_type src_type, enum video_buf_type sink_type,
+			  k_timeout_t timeout);
 
 /**
  * @defgroup video_pixel_formats Video pixel formats
@@ -1343,6 +1466,15 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
  */
 #define VIDEO_PIX_FMT_GREY VIDEO_FOURCC('G', 'R', 'E', 'Y')
 
+
+/**
+ * @code{.unparsed}
+ *   0                   1                   2                   3
+ * | 0000yyyy 0000Yyyy | 0000yyyy 0000Yyyy | 0000yyyy 0000Yyyy | 0000yyyy 0000Yyyy | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_Y4 VIDEO_FOURCC('Y', '0', '4', ' ')
+
 /**
  * @code{.unparsed}
  *   0          1          2          3          3 2 1 0
@@ -1551,6 +1683,229 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 #define VIDEO_PIX_FMT_XYUV32 VIDEO_FOURCC('X', 'Y', 'U', 'V')
 
 /**
+ * 24 bit YUV format with 8 bit per component
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy Uuuuuuuu Vvvvvvvv | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_YUV24 VIDEO_FOURCC('Y', 'U', 'V', '3')
+
+/**
+ * Planar formats
+ */
+/**
+ * Chroma (U/V) are subsampled horizontaly and vertically
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
+ * | ... |
+ * | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv | ...
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y6        Y7        Y8        Y9        ...
+ *  ...
+ *
+ *  U0/1/6/7  V0/1/6/7  U2/3/8/9  V2/3/8/9  ...
+ *  ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_NV12 VIDEO_FOURCC('N', 'V', '1', '2')
+
+/**
+ * Chroma (U/V) are subsampled horizontaly and vertically
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
+ * | ... |
+ * | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu | ...
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y6        Y7        Y8        Y9        ...
+ *  ...
+ *
+ *  V0/1/6/7  U0/1/6/7  V2/3/8/9  U2/3/8/9  ...
+ *  ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_NV21 VIDEO_FOURCC('N', 'V', '2', '1')
+
+/**
+ * Chroma (U/V) are subsampled horizontaly
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
+ * | ... |
+ * | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv | ...
+ * | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv | ...
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y6        Y7        Y8        Y9        ...
+ *  ...
+ *
+ *  U0/1      V0/1      U2/3      V2/3      ...
+ *  U6/7      V6/7      U8/9      V8/9      ...
+ *  ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_NV16 VIDEO_FOURCC('N', 'V', '1', '6')
+
+/**
+ * Chroma (U/V) are subsampled horizontaly
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
+ * | ... |
+ * | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu | ...
+ * | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu | ...
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y6        Y7        Y8        Y9        ...
+ *  ...
+ *
+ *  V0/1      U0/1      V2/3      U2/3      ...
+ *  V6/7      U6/7      V8/9      U8/9      ...
+ *  ...
+ * @endcode
+ */
+
+#define VIDEO_PIX_FMT_NV61 VIDEO_FOURCC('N', 'V', '6', '1')
+
+/**
+ * Chroma (U/V) are not subsampled
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | ... |
+ * | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv |
+ * | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv |
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y6        Y7        Y8        Y9        ...
+ *  ...
+ *
+ *  U0        V0        U1        V1        U2        V2        U3        V3        ...
+ *  U6        V6        U7        V7        U8        V8        U9        V9        ...
+ *  ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_NV24 VIDEO_FOURCC('N', 'V', '2', '4')
+
+/**
+ * Chroma (U/V) are not subsampled
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | ... |
+ * | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu |
+ * | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu |
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y6        Y7        Y8        Y9        ...
+ *  ...
+ *
+ *  V0        U0        V1        U1        V2        U2        V3        U3        ...
+ *  V6        U6        V7        U7        V8        U8        V9        U9        ...
+ *  ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_NV42 VIDEO_FOURCC('N', 'V', '4', '2')
+
+/**
+ * Chroma (U/V) are subsampled horizontaly and vertically
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | ... |
+ * | Uuuuuuuu | Uuuuuuuu |
+ * | ... |
+ * | Vvvvvvvv | Vvvvvvvv |
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y6        Y7        Y8        Y9        ...
+ *  ...
+ *
+ *  U0/1/6/7      U2/3/8/9      ...
+ *  ...
+ *
+ *  V0/1/6/7      V2/3/8/9      ...
+ *  ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_YUV420 VIDEO_FOURCC('Y', 'U', '1', '2')
+
+/**
+ * Chroma (U/V) are subsampled horizontaly and vertically
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | ... |
+ * | Vvvvvvvv | Vvvvvvvv |
+ * | ... |
+ * | Uuuuuuuu | Uuuuuuuu |
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y6        Y7        Y8        Y9        ...
+ *  ...
+ *
+ *  V0/1/6/7      V2/3/8/9      ...
+ *  ...
+ *
+ *  U0/1/6/7      U2/3/8/9      ...
+ *  ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_YVU420 VIDEO_FOURCC('Y', 'V', '1', '2')
+
+/**
  * @}
  */
 
@@ -1565,6 +1920,21 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 #define VIDEO_PIX_FMT_JPEG VIDEO_FOURCC('J', 'P', 'E', 'G')
 
 /**
+ * H264 with start code
+ */
+#define VIDEO_PIX_FMT_H264 VIDEO_FOURCC('H', '2', '6', '4')
+
+/**
+ * H264 without start code
+ */
+#define VIDEO_PIX_FMT_H264_NO_SC VIDEO_FOURCC('A', 'V', 'C', '1')
+
+/**
+ * PNG
+ */
+#define VIDEO_PIX_FMT_PNG VIDEO_FOURCC('P', 'N', 'G', ' ')
+
+/**
  * @}
  */
 
@@ -1574,7 +1944,7 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
  * @param pixfmt FourCC pixel format value (@ref video_pixel_formats).
  *
  * @retval 0 if the format is unhandled or if it is variable number of bits
- * @retval bit size of one pixel for this format
+ * @retval >0 bit size of one pixel for this format
  */
 static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 {
@@ -1596,6 +1966,10 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_SGRBG12P:
 	case VIDEO_PIX_FMT_SRGGB12P:
 	case VIDEO_PIX_FMT_Y12P:
+	case VIDEO_PIX_FMT_NV12:
+	case VIDEO_PIX_FMT_NV21:
+	case VIDEO_PIX_FMT_YUV420:
+	case VIDEO_PIX_FMT_YVU420:
 		return 12;
 	case VIDEO_PIX_FMT_SBGGR14P:
 	case VIDEO_PIX_FMT_SGBRG14P:
@@ -1628,9 +2002,15 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_Y12:
 	case VIDEO_PIX_FMT_Y14:
 	case VIDEO_PIX_FMT_Y16:
+	case VIDEO_PIX_FMT_NV16:
+	case VIDEO_PIX_FMT_NV61:
+	case VIDEO_PIX_FMT_Y4:
 		return 16;
 	case VIDEO_PIX_FMT_BGR24:
 	case VIDEO_PIX_FMT_RGB24:
+	case VIDEO_PIX_FMT_NV24:
+	case VIDEO_PIX_FMT_NV42:
+	case VIDEO_PIX_FMT_YUV24:
 		return 24;
 	case VIDEO_PIX_FMT_XRGB32:
 	case VIDEO_PIX_FMT_XYUV32:
@@ -1650,32 +2030,68 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
  */
 
 /**
- * @name MIPI CSI2 Data-types
+ * @name MIPI CSI-2 Data Types
+ * @brief Standard MIPI CSI-2 data type identifiers for camera sensor interfaces
+ *
+ * These constants define the data type field values used in MIPI CSI-2 packet headers to identify
+ * the format and encoding of transmitted image data. The data type field is 6 bits wide, allowing
+ * values from 0x00 to 0x3F.
  *
  * @{
  */
-#define VIDEO_MIPI_CSI2_DT_NULL	0x10
-#define VIDEO_MIPI_CSI2_DT_BLANKING	0x11
-#define VIDEO_MIPI_CSI2_DT_EMBEDDED_8	0x12
-#define VIDEO_MIPI_CSI2_DT_YUV420_8	0x18
-#define VIDEO_MIPI_CSI2_DT_YUV420_10	0x19
-#define VIDEO_MIPI_CSI2_DT_YUV420_CSPS_8	0x1c
-#define VIDEO_MIPI_CSI2_DT_YUV420_CSPS_10	0x1d
-#define VIDEO_MIPI_CSI2_DT_YUV422_8	0x1e
-#define VIDEO_MIPI_CSI2_DT_YUV422_10	0x1f
-#define VIDEO_MIPI_CSI2_DT_RGB444	0x20
-#define VIDEO_MIPI_CSI2_DT_RGB555	0x21
-#define VIDEO_MIPI_CSI2_DT_RGB565	0x22
-#define VIDEO_MIPI_CSI2_DT_RGB666	0x23
-#define VIDEO_MIPI_CSI2_DT_RGB888	0x24
-#define VIDEO_MIPI_CSI2_DT_RAW6		0x28
-#define VIDEO_MIPI_CSI2_DT_RAW7		0x29
-#define VIDEO_MIPI_CSI2_DT_RAW8		0x2a
-#define VIDEO_MIPI_CSI2_DT_RAW10	0x2b
-#define VIDEO_MIPI_CSI2_DT_RAW12	0x2c
-#define VIDEO_MIPI_CSI2_DT_RAW14	0x2d
 
-/* User-defined Data-Type range from 0x30 to 0x37 */
+/** NULL data type - used for padding or synchronization */
+#define VIDEO_MIPI_CSI2_DT_NULL                 0x10
+/** Blanking data - horizontal/vertical blanking information */
+#define VIDEO_MIPI_CSI2_DT_BLANKING             0x11
+/** Embedded 8-bit data - sensor metadata or configuration data */
+#define VIDEO_MIPI_CSI2_DT_EMBEDDED_8           0x12
+/** YUV 4:2:0 format with 8 bits per component */
+#define VIDEO_MIPI_CSI2_DT_YUV420_8             0x18
+/** YUV 4:2:0 format with 10 bits per component */
+#define VIDEO_MIPI_CSI2_DT_YUV420_10            0x19
+/** YUV 4:2:0 CSPS (Chroma Shifted Pixel Sampling) 8-bit format */
+#define VIDEO_MIPI_CSI2_DT_YUV420_CSPS_8	0x1c
+/** YUV 4:2:0 CSPS (Chroma Shifted Pixel Sampling) 10-bit format */
+#define VIDEO_MIPI_CSI2_DT_YUV420_CSPS_10	0x1d
+/** YUV 4:2:2 format with 8 bits per component */
+#define VIDEO_MIPI_CSI2_DT_YUV422_8             0x1e
+/** YUV 4:2:2 format with 10 bits per component */
+#define VIDEO_MIPI_CSI2_DT_YUV422_10            0x1f
+/** RGB format with 4 bits per color component */
+#define VIDEO_MIPI_CSI2_DT_RGB444               0x20
+/** RGB format with 5 bits per color component */
+#define VIDEO_MIPI_CSI2_DT_RGB555               0x21
+/** RGB format with 5-6-5 bits per R-G-B components */
+#define VIDEO_MIPI_CSI2_DT_RGB565               0x22
+/** RGB format with 6 bits per color component */
+#define VIDEO_MIPI_CSI2_DT_RGB666               0x23
+/** RGB format with 8 bits per color component */
+#define VIDEO_MIPI_CSI2_DT_RGB888               0x24
+/** Raw sensor data with 6 bits per pixel */
+#define VIDEO_MIPI_CSI2_DT_RAW6                 0x28
+/** Raw sensor data with 7 bits per pixel */
+#define VIDEO_MIPI_CSI2_DT_RAW7                 0x29
+/** Raw sensor data with 8 bits per pixel */
+#define VIDEO_MIPI_CSI2_DT_RAW8                 0x2a
+/** Raw sensor data with 10 bits per pixel */
+#define VIDEO_MIPI_CSI2_DT_RAW10                0x2b
+/** Raw sensor data with 12 bits per pixel */
+#define VIDEO_MIPI_CSI2_DT_RAW12                0x2c
+/** Raw sensor data with 14 bits per pixel */
+#define VIDEO_MIPI_CSI2_DT_RAW14                0x2d
+
+/**
+ * @brief User-defined data type generator macro
+ *
+ * Generates user-defined data type identifier for custom or proprietary formats.
+ * The MIPI CSI-2 specification reserves data types 0x30 to 0x37 for user-specific implementations.
+ *
+ * @note Parameter n must be in range 0-7 to generate valid user-defined data types
+ *
+ * @param n User-defined type index (0-7)
+ * @return Data type value in user-defined range (0x30-0x37)
+ */
 #define VIDEO_MIPI_CSI2_DT_USER(n)	(0x30 + (n))
 
 /**

@@ -5,6 +5,7 @@
  */
 
 /delete-node/ &ipc0;
+/delete-node/ &sram0_shared;
 
 / {
 	chosen {
@@ -13,7 +14,8 @@
 	};
 
 	reserved-memory {
-		/delete-node/ memory@20070000;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		sram_tx: memory@20070000 {
 			reg = <0x20070000 0x8000>;

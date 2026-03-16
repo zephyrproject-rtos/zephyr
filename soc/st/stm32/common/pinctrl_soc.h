@@ -60,6 +60,149 @@ typedef struct pinctrl_soc_pin {
 #define STM32_OUTPUT_HIGH 0x1
 #define STM32_GPIO_OUTPUT 0x1
 
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+/**
+ * @brief PIN configuration bitfield
+ *
+ * Pin configuration is coded with the following
+ * fields
+ *    GPIO I/O Mode       [ 0 ]
+ *    GPIO Input config   [ 1 : 2 ]
+ *    GPIO Output speed   [ 3 : 4 ]
+ *    GPIO Output PP/OD   [ 5 ]
+ *    GPIO Output AF/GP   [ 6 ]
+ *    GPIO PUPD Config    [ 7 : 8 ]
+ *    GPIO ODR            [ 9 ]
+ *
+ * Applicable to STM32F1 series
+ */
+
+/* Port Mode */
+#define STM32_MODE_INPUT		(0x0 << STM32_MODE_INOUT_SHIFT)
+#define STM32_MODE_OUTPUT		(0x1 << STM32_MODE_INOUT_SHIFT)
+#define STM32_MODE_INOUT_MASK		0x1
+#define STM32_MODE_INOUT_SHIFT		0
+
+/* Input Port configuration */
+#define STM32_CNF_IN_ANALOG		(0x0 << STM32_CNF_IN_SHIFT)
+#define STM32_CNF_IN_FLOAT		(0x1 << STM32_CNF_IN_SHIFT)
+#define STM32_CNF_IN_PUPD		(0x2 << STM32_CNF_IN_SHIFT)
+#define STM32_CNF_IN_MASK		0x3
+#define STM32_CNF_IN_SHIFT		1
+
+/* Output Port configuration */
+#define STM32_MODE_OUTPUT_MAX_10	(0x0 << STM32_MODE_OSPEED_SHIFT)
+#define STM32_MODE_OUTPUT_MAX_2		(0x1 << STM32_MODE_OSPEED_SHIFT)
+#define STM32_MODE_OUTPUT_MAX_50	(0x2 << STM32_MODE_OSPEED_SHIFT)
+#define STM32_MODE_OSPEED_MASK		0x3
+#define STM32_MODE_OSPEED_SHIFT		3
+
+#define STM32_CNF_PUSH_PULL		(0x0 << STM32_CNF_OUT_0_SHIFT)
+#define STM32_CNF_OPEN_DRAIN		(0x1 << STM32_CNF_OUT_0_SHIFT)
+#define STM32_CNF_OUT_0_MASK		0x1
+#define STM32_CNF_OUT_0_SHIFT		5
+
+#define STM32_CNF_GP_OUTPUT		(0x0 << STM32_CNF_OUT_1_SHIFT)
+#define STM32_CNF_ALT_FUNC		(0x1 << STM32_CNF_OUT_1_SHIFT)
+#define STM32_CNF_OUT_1_MASK		0x1
+#define STM32_CNF_OUT_1_SHIFT		6
+
+/* GPIO High impedance/Pull-up/Pull-down */
+#define STM32_PUPD_NO_PULL		(0x0 << STM32_PUPD_SHIFT)
+#define STM32_PUPD_PULL_UP		(0x1 << STM32_PUPD_SHIFT)
+#define STM32_PUPD_PULL_DOWN		(0x2 << STM32_PUPD_SHIFT)
+#define STM32_PUPD_MASK			0x3
+#define STM32_PUPD_SHIFT		7
+
+/* GPIO plain output value */
+#define STM32_ODR_0			(0x0 << STM32_ODR_SHIFT)
+#define STM32_ODR_1			(0x1 << STM32_ODR_SHIFT)
+#define STM32_ODR_MASK			0x1
+#define STM32_ODR_SHIFT			9
+
+/**
+ * @brief Utility macro to initialize pincfg field in #pinctrl_pin_t (F1).
+ *
+ * @param node_id Node identifier.
+ */
+#define Z_PINCTRL_STM32_PINCFG_INIT(node_id)				       \
+	(((STM32_NO_PULL * DT_PROP(node_id, bias_disable)) << STM32_PUPD_SHIFT) | \
+	 ((STM32_PULL_UP * DT_PROP(node_id, bias_pull_up)) << STM32_PUPD_SHIFT) | \
+	 ((STM32_PULL_DOWN * DT_PROP(node_id, bias_pull_down)) << STM32_PUPD_SHIFT) | \
+	 ((STM32_PUSH_PULL * DT_PROP(node_id, drive_push_pull)) << STM32_CNF_OUT_0_SHIFT) | \
+	 ((STM32_OPEN_DRAIN * DT_PROP(node_id, drive_open_drain)) << STM32_CNF_OUT_0_SHIFT) | \
+	 ((STM32_OUTPUT_LOW * DT_PROP(node_id, output_low)) << STM32_ODR_SHIFT) | \
+	 ((STM32_OUTPUT_HIGH * DT_PROP(node_id, output_high)) << STM32_ODR_SHIFT) | \
+	 (DT_ENUM_IDX(node_id, slew_rate) << STM32_MODE_OSPEED_SHIFT))
+#else
+
+/**
+ * @brief PIN configuration bitfield
+ *
+ * Pin configuration is coded with the following
+ * fields
+ *	[03:00] Alternate Functions
+ *	[05:04] GPIO Mode
+ *	[   06] GPIO Output type
+ *	[08:07] GPIO Speed
+ *	[10:09] GPIO PUPD config
+ *	[   11] GPIO Output data
+ *
+ * These fields are only used when pinctrl with compatible
+ * "st,stm32n6-pinctrl" is in use:
+ *	[15:12] I/O delay length
+ *	[   16] I/O delay direction
+ *	[18:17] I/O retime edge
+ *	[   19] I/O retime enable
+ */
+
+/* GPIO Mode */
+#define STM32_MODER_INPUT_MODE		(0x0 << STM32_MODER_SHIFT)
+#define STM32_MODER_OUTPUT_MODE		(0x1 << STM32_MODER_SHIFT)
+#define STM32_MODER_ALT_MODE		(0x2 << STM32_MODER_SHIFT)
+#define STM32_MODER_ANALOG_MODE		(0x3 << STM32_MODER_SHIFT)
+#define STM32_MODER_MASK		0x3
+#define STM32_MODER_SHIFT		4
+
+/* GPIO Output type */
+#define STM32_OTYPER_PUSH_PULL		(0x0 << STM32_OTYPER_SHIFT)
+#define STM32_OTYPER_OPEN_DRAIN		(0x1 << STM32_OTYPER_SHIFT)
+#define STM32_OTYPER_MASK		0x1
+#define STM32_OTYPER_SHIFT		6
+
+/* GPIO speed */
+#define STM32_OSPEEDR_LOW_SPEED		(0x0 << STM32_OSPEEDR_SHIFT)
+#define STM32_OSPEEDR_MEDIUM_SPEED	(0x1 << STM32_OSPEEDR_SHIFT)
+#define STM32_OSPEEDR_HIGH_SPEED	(0x2 << STM32_OSPEEDR_SHIFT)
+#define STM32_OSPEEDR_VERY_HIGH_SPEED	(0x3 << STM32_OSPEEDR_SHIFT)
+#define STM32_OSPEEDR_MASK		0x3
+#define STM32_OSPEEDR_SHIFT		7
+
+/* GPIO High impedance/Pull-up/pull-down */
+#define STM32_PUPDR_NO_PULL		(0x0 << STM32_PUPDR_SHIFT)
+#define STM32_PUPDR_PULL_UP		(0x1 << STM32_PUPDR_SHIFT)
+#define STM32_PUPDR_PULL_DOWN		(0x2 << STM32_PUPDR_SHIFT)
+#define STM32_PUPDR_MASK		0x3
+#define STM32_PUPDR_SHIFT		9
+
+/* GPIO plain output value */
+#define STM32_ODR_0			(0x0 << STM32_ODR_SHIFT)
+#define STM32_ODR_1			(0x1 << STM32_ODR_SHIFT)
+#define STM32_ODR_MASK			0x1
+#define STM32_ODR_SHIFT			11
+
+/* I/O delay length (DELAYR) */
+#define STM32_IODELAY_LENGTH_MASK	0xFU
+#define STM32_IODELAY_LENGTH_SHIFT	12
+
+/* I/O delay & retime configuration (ADVCFGR) */
+#define STM32_IORETIME_ADVCFGR_MASK	0xFU
+#define STM32_IORETIME_ADVCFGR_SHIFT	16
+
+#define STM32_IODELAY_DIRECTION_SHIFT	STM32_IORETIME_ADVCFGR_SHIFT
+#define STM32_IORETIME_EDGE_SHIFT	17
+#define STM32_IORETIME_ENABLE_SHIFT	19
+
 /**
  * @brief Definitions for the various fields related to I/O synchronization
  *
@@ -76,23 +219,6 @@ typedef struct pinctrl_soc_pin {
 #define STM32_IOSYNC_RETIME_EDGE_FALLING	GPIO_ADVCFGRL_INVCLK0
 #define STM32_IOSYNC_RETIME_EDGE_BOTH		GPIO_ADVCFGRL_DE0
 #define STM32_IOSYNC_RETIME_ENABLE		GPIO_ADVCFGRL_RET0
-
-#ifdef CONFIG_SOC_SERIES_STM32F1X
-/**
- * @brief Utility macro to initialize pincfg field in #pinctrl_pin_t (F1).
- *
- * @param node_id Node identifier.
- */
-#define Z_PINCTRL_STM32_PINCFG_INIT(node_id)				       \
-	(((STM32_NO_PULL * DT_PROP(node_id, bias_disable)) << STM32_PUPD_SHIFT) | \
-	 ((STM32_PULL_UP * DT_PROP(node_id, bias_pull_up)) << STM32_PUPD_SHIFT) | \
-	 ((STM32_PULL_DOWN * DT_PROP(node_id, bias_pull_down)) << STM32_PUPD_SHIFT) | \
-	 ((STM32_PUSH_PULL * DT_PROP(node_id, drive_push_pull)) << STM32_CNF_OUT_0_SHIFT) | \
-	 ((STM32_OPEN_DRAIN * DT_PROP(node_id, drive_open_drain)) << STM32_CNF_OUT_0_SHIFT) | \
-	 ((STM32_OUTPUT_LOW * DT_PROP(node_id, output_low)) << STM32_ODR_SHIFT) | \
-	 ((STM32_OUTPUT_HIGH * DT_PROP(node_id, output_high)) << STM32_ODR_SHIFT) | \
-	 (DT_ENUM_IDX(node_id, slew_rate) << STM32_MODE_OSPEED_SHIFT))
-#else
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl)
 /* Inner helper macro for Z_PINCTRL_STM32_IOSYNC_INIT */

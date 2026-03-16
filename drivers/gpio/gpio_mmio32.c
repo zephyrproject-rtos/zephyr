@@ -197,10 +197,7 @@ int gpio_mmio32_init(const struct device *dev)
 	static struct gpio_mmio32_context gpio_mmio32_##n##_ctx;                                   \
                                                                                                    \
 	static const struct gpio_mmio32_config gpio_mmio32_##n##_cfg = {                           \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		.reg = (volatile uint32_t *)DT_INST_REG_ADDR(n),                                   \
 		.is_input = DT_INST_PROP(n, direction_input),                                      \
 	};                                                                                         \

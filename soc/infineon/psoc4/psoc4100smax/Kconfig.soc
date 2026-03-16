@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# MCU series
+config SOC_SERIES_PSOC4100SMAX
+	bool
+	select SOC_FAMILY_INFINEON_PSOC4
+	help
+	  PSOC4100Smax Series MCU
+
+config SOC_SERIES
+	default "psoc4100smax" if SOC_SERIES_PSOC4100SMAX
+
+config SOC_CY8C4149AZI_S598
+	bool
+	select SOC_SERIES_PSOC4100SMAX
+
+config SOC
+	default "cy8c4149azi_s598" if SOC_CY8C4149AZI_S598

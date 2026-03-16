@@ -22,6 +22,7 @@ GEN_OFFSET_SYM(_xtensa_irq_bsa_t, a2);
 GEN_OFFSET_SYM(_xtensa_irq_bsa_t, a3);
 
 GEN_OFFSET_SYM(_xtensa_irq_bsa_t, exccause);
+GEN_OFFSET_SYM(_xtensa_irq_bsa_t, excvaddr);
 GEN_OFFSET_SYM(_xtensa_irq_bsa_t, pc);
 GEN_OFFSET_SYM(_xtensa_irq_bsa_t, ps);
 GEN_OFFSET_SYM(_xtensa_irq_bsa_t, sar);
@@ -61,7 +62,7 @@ GEN_OFFSET_SYM(_xtensa_irq_bsa_t, fpu14);
 GEN_OFFSET_SYM(_xtensa_irq_bsa_t, fpu15);
 #endif
 
-#if defined(CONFIG_XTENSA_HIFI_SHARING)
+#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
 GEN_OFFSET_SYM(_xtensa_irq_bsa_t, hifi);
 #endif
 

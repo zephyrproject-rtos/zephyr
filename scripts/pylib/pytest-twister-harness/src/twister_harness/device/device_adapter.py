@@ -7,19 +7,13 @@ from __future__ import annotations
 import abc
 import logging
 import os
-import queue
-import re
 import shutil
 import threading
-import time
 from datetime import datetime
 from pathlib import Path
-from serial import SerialException
 
-from twister_harness.exceptions import (
-    TwisterHarnessException,
-    TwisterHarnessTimeoutException,
-)
+from twister_harness.device.device_connection import DeviceConnection, create_device_connections
+from twister_harness.exceptions import TwisterHarnessException
 from twister_harness.twister_harness_config import DeviceConfig
 
 logger = logging.getLogger(__name__)
@@ -32,24 +26,16 @@ class DeviceAdapter(abc.ABC):
     it.
     """
 
+    _west: str | None = None
+
     def __init__(self, device_config: DeviceConfig) -> None:
-        """
-        :param device_config: device configuration
-        """
         self.device_config: DeviceConfig = device_config
         self.base_timeout: float = device_config.base_timeout
-        self._device_read_queue: queue.Queue = queue.Queue()
-        self._reader_thread: threading.Thread | None = None
-        self._device_run: threading.Event = threading.Event()
-        self._device_connected: threading.Event = threading.Event()
+        self._reader_started: threading.Event = threading.Event()
         self.command: list[str] = []
-        self._west: str | None = None
 
-        self.handler_log_path: Path = device_config.build_dir / 'handler.log'
-        self._log_files: list[Path] = [self.handler_log_path]
-
-    def __repr__(self) -> str:
-        return f'{self.__class__.__name__}()'
+        self.connections: list[DeviceConnection] = create_device_connections(device_config)
+        self._log_files: list[Path] = [conn.log_path for conn in self.connections]
 
     @property
     def env(self) -> dict[str, str]:
@@ -57,167 +43,117 @@ class DeviceAdapter(abc.ABC):
         return env
 
     def launch(self) -> None:
-        """
-        Start by closing previously running application (no effect if not
-        needed). Then, flash and run test application. Finally, start an
-        internal reader thread capturing an output from a device.
+        """Launch the test application on the target device.
+
+        This method performs the complete device initialization sequence:
+
+        - Close any previously running application (cleanup)
+        - Generate the execution command if not already set
+        - Add any extra test arguments to the command
+        - Start reader threads to capture device output
+        - Launch the application (flash for hardware, execute for simulators)
+
+        The launch process varies by device type:
+
+        - Hardware devices: Flash the application and establish serial communication.
+          May connect before or after flashing depending on device configuration.
+        - QEMU/simulators: Start subprocess and establish FIFO/pipe communication
+        - Native simulators: Execute binary and connect via process pipes
         """
         self.close()
-        self._clear_internal_resources()
 
         if not self.command:
             self.generate_command()
             if self.device_config.extra_test_args:
                 self.command.extend(self.device_config.extra_test_args.split())
 
-        if self.device_config.type != 'hardware':
-            self._flash_and_run()
-            self._device_run.set()
-            self._start_reader_thread()
-            self.connect()
-            return
-
-        self._device_run.set()
-        self._start_reader_thread()
-
-        if self.device_config.flash_before:
-            # For hardware devices with shared USB or software USB, connect after flashing.
-            # Retry for up to 10 seconds for USB-CDC based devices to enumerate.
-            self._flash_and_run()
-            self.connect(retry_s = 10)
-        else:
-            # On hardware, flash after connecting to COM port, otherwise some messages
-            # from target can be lost.
-            self.connect()
-            self._flash_and_run()
+        self.start_reader()
+        self._device_launch()
 
     def close(self) -> None:
-        """Disconnect, close device and close reader thread."""
-        if not self._device_run.is_set():
-            # device already closed
-            return
+        """Disconnect, close device and close reader threads."""
         self.disconnect()
         self._close_device()
-        self._device_run.clear()
-        self._join_reader_thread()
+        self.stop_reader()
+        self._clear_internal_resources()
 
     def connect(self, retry_s: int = 0) -> None:
         """Connect to device - allow for output gathering."""
-        if self.is_device_connected():
-            logger.debug('Device already connected')
-            return
-        if not self.is_device_running():
-            msg = 'Cannot connect to not working device'
-            logger.error(msg)
-            raise TwisterHarnessException(msg)
-
-        if retry_s > 0:
-            retry_cycles = retry_s * 10
-            for i in range(retry_cycles):
-                try:
-                    self._connect_device()
-                    break
-                except SerialException:
-                    if i == retry_cycles - 1:
-                        raise
-                    time.sleep(0.1)
-        else:
-            self._connect_device()
-
-        self._device_connected.set()
+        for connection in self.connections:
+            connection.connect()
 
     def disconnect(self) -> None:
         """Disconnect device - block output gathering."""
-        if not self.is_device_connected():
-            logger.debug("Device already disconnected")
-            return
-        self._disconnect_device()
-        self._device_connected.clear()
+        for connection in self.connections:
+            connection.disconnect()
 
-    def readline(self, timeout: float | None = None, print_output: bool = True) -> str:
-        """
-        Read line from device output. If timeout is not provided, then use
-        base_timeout.
-        """
-        timeout = timeout or self.base_timeout
-        if self.is_device_connected() or not self._device_read_queue.empty():
-            data = self._read_from_queue(timeout)
-        else:
-            msg = 'No connection to the device and no more data to read.'
-            logger.error(msg)
-            raise TwisterHarnessException('No connection to the device and no more data to read.')
-        if print_output:
-            logger.debug('#: %s', data)
-        return data
-
-    def readlines_until(
-            self,
-            regex: str | None = None,
-            num_of_lines: int | None = None,
-            timeout: float | None = None,
-            print_output: bool = True,
-    ) -> list[str]:
-        """
-        Read available output lines produced by device from internal buffer
-        until following conditions:
-
-        1. If regex is provided - read until regex regex is found in read
-           line (or until timeout).
-        2. If num_of_lines is provided - read until number of read lines is
-           equal to num_of_lines (or until timeout).
-        3. If none of above is provided - return immediately lines collected so
-           far in internal buffer.
-
-        If timeout is not provided, then use base_timeout.
-        """
-        timeout = timeout or self.base_timeout
-        if regex:
-            regex_compiled = re.compile(regex)
-        lines: list[str] = []
-        if regex or num_of_lines:
-            timeout_time: float = time.time() + timeout
-            while time.time() < timeout_time:
-                try:
-                    line = self.readline(0.1, print_output)
-                except TwisterHarnessTimeoutException:
-                    continue
-                lines.append(line)
-                if regex and regex_compiled.search(line):
-                    break
-                if num_of_lines and len(lines) == num_of_lines:
-                    break
-            else:
-                msg = 'Read from device timeout occurred'
-                logger.error(msg)
-                raise TwisterHarnessTimeoutException(msg)
-        else:
-            lines = self.readlines(print_output)
-        return lines
-
-    def readlines(self, print_output: bool = True) -> list[str]:
-        """
-        Read all available output lines produced by device from internal buffer.
-        """
-        lines: list[str] = []
-        while not self._device_read_queue.empty():
-            line = self.readline(0.1, print_output)
-            lines.append(line)
-        return lines
-
-    def clear_buffer(self) -> None:
-        """
-        Remove all available output produced by device from internal buffer
-        (queue).
-        """
-        self.readlines(print_output=False)
-
-    def write(self, data: bytes) -> None:
-        """Write data bytes to device."""
-        if not self.is_device_connected():
-            msg = 'No connection to the device'
+    def check_connection(self, connection_index: int = 0) -> None:
+        """Validate that the specified connection index exists."""
+        if connection_index >= len(self.connections):
+            msg = f'Connection index {connection_index} is out of range.'
             logger.error(msg)
             raise TwisterHarnessException(msg)
-        self._write_to_device(data)
+
+    def readline(self, connection_index: int = 0, **kwargs) -> str:
+        """Read a single line from device output.
+
+        :param connection_index: Connection port to read from (0=main UART, 1=second core, etc.)
+        :param kwargs: Additional keyword arguments (timeout, print_output)
+        :returns: Single line of text without trailing newlines
+        """
+        self.check_connection(connection_index)
+        if kwargs.get('timeout') is None:
+            kwargs['timeout'] = self.base_timeout
+        return self.connections[connection_index].readline(**kwargs)
+
+    def readlines(self, connection_index: int = 0, **kwargs) -> list[str]:
+        """Read all available output lines produced by device from internal buffer."""
+        self.check_connection(connection_index)
+        return self.connections[connection_index].readlines(**kwargs)
+
+    def readlines_until(self, connection_index: int = 0, **kwargs) -> list[str]:
+        """Read lines from device output until a specific condition is met.
+
+        This method provides flexible ways to collect device output: wait for a specific
+        pattern, collect a fixed number of lines, or get all currently available lines.
+
+        :param connection_index: Index of the connection/port to read from (default: 0).
+            For hardware devices: 0 = main UART, 1 = second core UART, etc.
+            For QEMU and native: always use 0 (only one connection available)
+        :param kwargs: Keyword arguments passed to underlying connection including:
+
+            - regex - Regular expression pattern to search for
+            - num_of_lines - Exact number of lines to read
+            - timeout - Maximum time in seconds to wait (uses base_timeout if not provided)
+            - print_output - Whether to log each line as it's read (default: True)
+        :returns: List of output lines without trailing newlines
+        :raises AssertionError: If timeout expires before condition is met
+        """
+        self.check_connection(connection_index)
+        return self.connections[connection_index].readlines_until(**kwargs)
+
+    def clear_buffer(self) -> None:
+        """Remove all available output produced by device from internal buffer."""
+        for connection in self.connections:
+            connection.clear_buffer()
+
+    def write(self, data: bytes, connection_index: int = 0) -> None:
+        """Write data bytes to the target device.
+
+        Sends raw bytes to the device through the appropriate communication channel.
+        The underlying transport mechanism varies by device type: Hardware devices
+        write to serial/UART port, QEMU devices write to FIFO queue, and Native
+        simulators write to process stdin pipes.
+
+        :param data: Raw bytes to send to the device
+        :param connection_index: Index of the connection/port to write to (default: 0)
+        """
+        self.check_connection(connection_index)
+        if not self.connections[connection_index].is_device_connected():
+            msg = f'Cannot write to not connected device on connection index {connection_index}.'
+            logger.error(msg)
+            raise TwisterHarnessException(msg)
+        self.connections[connection_index]._write_to_device(data)
 
     def initialize_log_files(self, test_name: str = '') -> None:
         """
@@ -228,46 +164,27 @@ class DeviceAdapter(abc.ABC):
             with open(log_file_path, 'a+') as log_file:
                 log_file.write(f'\n==== Test {test_name} started at {datetime.now()} ====\n')
 
-    def _start_reader_thread(self) -> None:
-        self._reader_thread = threading.Thread(target=self._handle_device_output, daemon=True)
-        self._reader_thread.start()
+    def start_reader(self) -> None:
+        """Start internal reader threads for all connections."""
+        if self._reader_started.is_set():
+            # reader already started
+            return
+        self._reader_started.set()
+        for connection in self.connections:
+            connection.start_reader_thread(self._reader_started)
 
-    def _handle_device_output(self) -> None:
-        """
-        This method is dedicated to run it in separate thread to read output
-        from device and put them into internal queue and save to log file.
-        """
-        with open(self.handler_log_path, 'a+') as log_file:
-            while self.is_device_running():
-                if self.is_device_connected():
-                    output = self._read_device_output().decode(errors='replace').rstrip("\r\n")
-                    if output:
-                        self._device_read_queue.put(output)
-                        log_file.write(f'{output}\n')
-                        log_file.flush()
-                else:
-                    # ignore output from device
-                    self._flush_device_output()
-                    time.sleep(0.1)
-
-    def _read_from_queue(self, timeout: float) -> str:
-        """Read data from internal queue"""
-        try:
-            data: str | object = self._device_read_queue.get(timeout=timeout)
-        except queue.Empty as exc:
-            raise TwisterHarnessTimeoutException(f'Read from device timeout occurred ({timeout}s)') from exc
-        return data
-
-    def _join_reader_thread(self) -> None:
-        if self._reader_thread is not None:
-            self._reader_thread.join(self.base_timeout)
-        self._reader_thread = None
+    def stop_reader(self) -> None:
+        """Stop internal reader threads for all connections."""
+        if not self._reader_started.is_set():
+            # reader already stopped
+            return
+        self._reader_started.clear()
+        for connection in self.connections:
+            connection.join_reader_thread(self.base_timeout)
 
     def _clear_internal_resources(self) -> None:
-        self._reader_thread = None
-        self._device_read_queue = queue.Queue()
-        self._device_run.clear()
-        self._device_connected.clear()
+        for connection in self.connections:
+            connection._clear_internal_resources()
 
     @property
     def west(self) -> str:
@@ -292,42 +209,21 @@ class DeviceAdapter(abc.ABC):
         """
 
     @abc.abstractmethod
-    def _flash_and_run(self) -> None:
-        """Flash and run application on a device."""
-
-    @abc.abstractmethod
-    def _connect_device(self) -> None:
-        """Connect with the device (e.g. via serial port)."""
-
-    @abc.abstractmethod
-    def _disconnect_device(self) -> None:
-        """Disconnect from the device (e.g. from serial port)."""
+    def _device_launch(self) -> None:
+        """Launch the application on the target device."""
 
     @abc.abstractmethod
     def _close_device(self) -> None:
-        """Stop application"""
+        """Stop application on the target device."""
 
-    @abc.abstractmethod
-    def _read_device_output(self) -> bytes:
-        """
-        Read device output directly through serial, subprocess, FIFO, etc.
-        Even if device is not connected, this method has to return something
-        (e.g. empty bytes string). This assumption is made to maintain
-        compatibility between various adapters and their reading technique.
-        """
-
-    @abc.abstractmethod
-    def _write_to_device(self, data: bytes) -> None:
-        """Write to device directly through serial, subprocess, FIFO, etc."""
-
-    @abc.abstractmethod
-    def _flush_device_output(self) -> None:
-        """Flush device connection (serial, subprocess output, FIFO, etc.)"""
-
-    @abc.abstractmethod
-    def is_device_running(self) -> bool:
-        """Return true if application is running on device."""
-
-    @abc.abstractmethod
     def is_device_connected(self) -> bool:
-        """Return true if device is connected."""
+        """
+        Check if the primary device connection is active.
+
+        Added to keep backward compatibility as it is used in fixtures.
+        """
+        return self.connections and self.connections[0].is_device_connected()
+
+    def is_reader_started(self) -> bool:
+        """Check if the reader thread is started."""
+        return self._reader_started.is_set()

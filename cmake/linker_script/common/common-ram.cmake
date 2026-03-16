@@ -2,7 +2,7 @@
 # The contents of this file is based on include/zephyr/linker/common-ram.ld
 # Please keep in sync
 
-if(CONFIG_GEN_SW_ISR_TABLE AND CONFIG_DYNAMIC_INTERRUPTS)
+if(CONFIG_GEN_SW_ISR_TABLE AND CONFIG_SRAM_SW_ISR_TABLE)
   # ld align has been changed to subalign to provide identical behavior scatter vs. ld.
   zephyr_linker_section(NAME sw_isr_table
     GROUP DATA_REGION
@@ -118,7 +118,7 @@ if(CONFIG_SENSING)
 endif()
 
 if(CONFIG_ZBUS)
-  zephyr_iterable_section(NAME zbus_channel_observation_mask GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 1)
+  zephyr_iterable_section(NAME zbus_channel_observation_mask GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
 endif()
 
 if(CONFIG_UVB)

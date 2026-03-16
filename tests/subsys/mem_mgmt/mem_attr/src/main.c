@@ -84,4 +84,26 @@ ZTEST(mem_attr, test_mem_attr)
 		      -ENOBUFS, "Unexpected return value");
 }
 
+ZTEST(mem_attr, test_get_index_by_name_success)
+{
+	int index;
+
+	/* Check first region */
+	index = mem_attr_get_region_index_by_name("memory@10000000");
+	zassert_equal(index, 0, "Index for 'memory@10000000 should be 0");
+
+	/* Check second region */
+	index = mem_attr_get_region_index_by_name("memory@20000000");
+	zassert_equal(index, 1, "Index for 'memory@20000000 should be 1");
+}
+
+ZTEST(mem_attr, test_get_index_by_name_not_found)
+{
+	int index;
+
+	/* Search for a non-existent memory node name */
+	index = mem_attr_get_region_index_by_name("memory@30000000");
+	zassert_equal(index, -ENOENT, "Should return -ENOENT for unknown names");
+}
+
 ZTEST_SUITE(mem_attr, NULL, NULL, NULL, NULL, NULL);

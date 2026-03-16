@@ -1,0 +1,12 @@
+# OV767X CMOS digital image sensor configuration options
+
+# Copyright (c) 2025 Michael Smorto <CyberMerln@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_OV767X
+	bool "OV767X CMOS digital image sensor"
+	select I2C
+	depends on DT_HAS_OVTI_OV7670_ENABLED || DT_HAS_OVTI_OV7675_ENABLED
+	default y
+	help
+	  Enable driver for OV7670 / OV7675 CMOS digital image sensor.

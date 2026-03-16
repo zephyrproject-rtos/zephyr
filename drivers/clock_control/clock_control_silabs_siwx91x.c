@@ -14,13 +14,13 @@
 #include "rsi_rom_clks.h"
 #include "rsi_sysrtc.h"
 #include "rsi_pll.h"
-#include "rsi_adc.h"
 #include "clock_update.h"
 #include "sl_si91x_clock_manager.h"
 
 #define DT_DRV_COMPAT          silabs_siwx91x_clock
 #define LF_FSM_CLOCK_FREQUENCY 32768
 #define XTAL_FREQUENCY         40000000
+#define INTF_PLL_FREQUENCY     160000000
 
 LOG_MODULE_REGISTER(siwx91x_clock, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
@@ -84,7 +84,7 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 		RSI_CLK_GspiClkConfig(M4CLK, GSPI_INTF_PLL_CLK);
 		break;
 	case SIWX91X_CLK_QSPI:
-		RSI_CLK_Qspi2ClkConfig(M4CLK, QSPI_ULPREFCLK, 0, 0, 0);
+		RSI_CLK_Qspi2ClkConfig(M4CLK, QSPI_INTFPLLCLK, 0, 0, 1);
 		break;
 	case SIWX91X_CLK_RTC:
 		/* Already done in sl_calendar_init()*/
@@ -104,8 +104,17 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 		ULPCLK->ULP_I2S_CLK_GEN_REG_b.ULP_I2S_MASTER_SLAVE_MODE_b = 1;
 		RSI_ULPSS_PeripheralEnable(ULPCLK, ULP_I2S_CLK, ENABLE_STATIC_CLK);
 		break;
-	case SIWX91X_ADC_CLK:
-		RSI_ADC_PowerControl(ADC_POWER_ON);
+	case SIWX91X_CLK_ADC:
+		/* Warning, DAC also use these clocks */
+		RSI_IPMU_PowerGateSet(AUXADC_PG_ENB);
+		RSI_PS_UlpssPeriPowerUp(ULPSS_PWRGATE_ULP_AUX);
+		RSI_ULPSS_AuxClkConfig(ULPCLK, ENABLE_STATIC_CLK, ULP_AUX_REF_CLK);
+		break;
+	case SIWX91X_CLK_GPDMA0:
+		RSI_CLK_PeripheralClkEnable(M4CLK, RPDMA_CLK, ENABLE_STATIC_CLK);
+		break;
+	case SIWX91X_CLK_RNG:
+		RSI_CLK_PeripheralClkEnable1(M4CLK, HWRNG_PCLK_ENABLE);
 		break;
 	default:
 		return -EINVAL;
@@ -142,9 +151,13 @@ static int siwx91x_clock_off(const struct device *dev, clock_control_subsys_t sy
 	case SIWX91X_CLK_STATIC_ULP_I2S:
 		RSI_ULPSS_PeripheralDisable(ULPCLK, ULP_I2S_CLK);
 		break;
-	case SIWX91X_ADC_CLK:
-		RSI_ADC_PowerControl(ADC_POWER_OFF);
+	case SIWX91X_CLK_ADC:
+		/* Warning, DAC also use these clocks */
+		RSI_PS_UlpssPeriPowerDown(ULPSS_PWRGATE_ULP_AUX);
+		RSI_ULPSS_PeripheralDisable(ULPCLK, ULP_AUX_CLK);
+		RSI_IPMU_PowerGateClr(AUXADC_PG_ENB);
 		break;
+	case SIWX91X_CLK_RNG:
 	case SIWX91X_CLK_ULP_UART:
 	case SIWX91X_CLK_I2C0:
 	case SIWX91X_CLK_I2C1:
@@ -181,7 +194,7 @@ static int siwx91x_clock_get_rate(const struct device *dev, clock_control_subsys
 		*rate = LF_FSM_CLOCK_FREQUENCY;
 		return 0;
 	case SIWX91X_CLK_GSPI:
-		*rate = RSI_CLK_GetBaseClock(M4_GSPI);
+		*rate = INTF_PLL_FREQUENCY;
 		return 0;
 	default:
 		/* For now, no other driver need clock rate */
@@ -190,31 +203,26 @@ static int siwx91x_clock_get_rate(const struct device *dev, clock_control_subsys
 }
 
 static int siwx91x_clock_set_rate(const struct device *dev, clock_control_subsys_t sys,
-				  clock_control_subsys_rate_t rate)
+				  clock_control_subsys_rate_t raw_rate)
 {
-	ARG_UNUSED(dev);
-	int div_numerator = FIELD_GET(0xFFFF0000, *(uint32_t *)rate);
-	int div_denominator =  FIELD_GET(0x0000FFFF, *(uint32_t *)rate);
 	uintptr_t clockid = (uintptr_t)sys;
-	ULP_I2S_CLK_SELECT_T ref_clk;
-	uint32_t freq;
+	uint32_t rate = *(uint32_t *)raw_rate;
 	int ret;
+
+	ARG_UNUSED(dev);
 
 	switch (clockid) {
 	case SIWX91X_CLK_I2S0:
-		RSI_CLK_SetI2sPllFreq(M4CLK, *((uint32_t *)rate), XTAL_FREQUENCY);
+		RSI_CLK_SetI2sPllFreq(M4CLK, rate, XTAL_FREQUENCY);
 		RSI_CLK_I2sClkConfig(M4CLK, I2S_PLLCLK, 0);
 		return 0;
 	case SIWX91X_CLK_ULP_I2S:
-		ref_clk = ULPCLK->ULP_I2S_CLK_GEN_REG_b.ULP_I2S_CLK_SEL_b;
-		freq = RSI_CLK_GetBaseClock(ULPSS_I2S);
-		ret = RSI_ULPSS_UlpI2sClkConfig(ULPCLK, ref_clk, freq / (*((uint32_t *)rate) / 2));
+		ret = RSI_ULPSS_UlpI2sClkConfig(ULPCLK,
+						ULPCLK->ULP_I2S_CLK_GEN_REG_b.ULP_I2S_CLK_SEL_b,
+						RSI_CLK_GetBaseClock(ULPSS_I2S) * 2 / rate);
 		if (ret) {
 			return -EIO;
 		}
-		return 0;
-	case SIWX91X_ADC_CLK:
-		RSI_ADC_ClkDivfactor(AUX_ADC_DAC_COMP, div_numerator, div_denominator);
 		return 0;
 	default:
 		/* For now, no other driver need clock rate */
@@ -242,11 +250,14 @@ static int siwx91x_clock_init(const struct device *dev)
 	sl_si91x_clock_manager_init();
 
 	/* Use SoC PLL at configured frequency as core clock */
-	sl_si91x_clock_manager_m4_set_core_clk(M4_SOCPLLCLK, CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	sl_si91x_clock_manager_m4_set_core_clk(M4_SOCPLLCLK,
+					       DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency));
 
 	/* Use interface PLL at configured frequency as peripheral clock */
-	sl_si91x_clock_manager_set_pll_freq(INFT_PLL, CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
-					    PLL_REF_CLK_VAL_XTAL);
+	sl_si91x_clock_manager_set_pll_freq(INFT_PLL, INTF_PLL_FREQUENCY, PLL_REF_CLK_VAL_XTAL);
+
+	/* Change the QSPI clock source to INTF_PLL */
+	RSI_CLK_QspiClkConfig(M4CLK, QSPI_INTFPLLCLK, 0, 0, 1);
 
 	/* FIXME: Currently the clock consumer use clocks without power on them.
 	 * This should be fixed in drivers. Meanwhile, get the list of required

@@ -8,11 +8,14 @@ menuconfig PTP_CLOCK
 
 if PTP_CLOCK
 
+# zephyr-keep-sorted-start
 source "drivers/ptp_clock/Kconfig.nxp_enet"
 source "drivers/ptp_clock/Kconfig.nxp_netc"
+# zephyr-keep-sorted-stop
 
 config PTP_CLOCK_INIT_PRIORITY
 	int "Init priority"
+	default ETH_INIT_PRIORITY if ETH_DRIVER
 	default 75
 	help
 	  PTP Clock device driver initialization priority

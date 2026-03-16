@@ -6,7 +6,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf54l15_cpuflpr.dtsi>
+#include <vendor/nordic/nrf54l15_cpuflpr.dtsi>
 #include "bl54l15_dvk_common.dtsi"
 
 / {
@@ -22,18 +22,12 @@
 	};
 };
 
-&cpuflpr_sram {
-	status = "okay";
-	/* size must be increased due to booting from SRAM */
-	reg = <0x20028000 DT_SIZE_K(96)>;
-	ranges = <0x0 0x20028000 0x18000>;
-};
-
 &cpuflpr_rram {
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		cpuflpr_code_partition: partition@0 {
 			label = "image-0";

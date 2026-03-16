@@ -28,7 +28,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
-#include <zephyr/types.h>
 #include <zephyr/shell/shell.h>
 
 #include "host/shell/bt.h"

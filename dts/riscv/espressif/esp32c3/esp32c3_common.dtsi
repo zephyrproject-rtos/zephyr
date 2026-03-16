@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp-esp32c3-intmux.h>
 #include <zephyr/dt-bindings/clock/esp32c3_clock.h>
-#include <dt-bindings/pinctrl/esp32-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32-pinctrl.h>
 
 / {
 	#address-cells = <1>;
@@ -34,7 +34,8 @@
 		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "espressif,riscv", "riscv";
-			riscv,isa = "rv32imc_zicsr";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "c", "zicsr";
 			reg = <0>;
 			cpu-power-states = <&light_sleep &deep_sleep>;
 			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
@@ -46,15 +47,17 @@
 			light_sleep: light_sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
-				min-residency-us = <200>;
-				exit-latency-us = <60>;
+				min-residency-us = <1000>;
+				exit-latency-us = <50>;
 			};
 
 			deep_sleep: deep_sleep {
+				/* Deep sleep must be entered using pm_state_force()
+				 * or sys_poweroff() calls only
+				 */
 				compatible = "zephyr,power-state";
 				power-state-name = "soft-off";
-				min-residency-us = <660>;
-				exit-latency-us = <105>;
+				status = "disabled";
 			};
 		};
 	};
@@ -71,6 +74,7 @@
 
 	esp32_bt_hci: esp32_bt_hci {
 		compatible = "espressif,esp32-bt-hci";
+		bt-hci-vs-ext;
 		status = "disabled";
 	};
 
@@ -100,6 +104,12 @@
 			zephyr,memory-region = "SRAM1";
 		};
 
+		rtc_fast_ram: memory@50000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x50000000 DT_SIZE_K(8)>;
+			zephyr,memory-region = "RTC_FAST_RAM";
+		};
+
 		intc: interrupt-controller@600c2000 {
 			compatible = "espressif,esp32-intc";
 			#address-cells = <0>;
@@ -127,12 +137,12 @@
 		};
 
 		rtc_timer: rtc_timer@60008004 {
-			reg = <0x60008004 0xC>;
-			compatible = "espressif,esp32-rtc_timer";
+			reg = <0x60008004 0xc>;
+			compatible = "espressif,esp32-rtc-timer";
 			clocks = <&clock ESP32_MODULE_MAX>;
 			interrupts = <RTC_CORE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		flash: flash-controller@60002000 {
@@ -229,7 +239,7 @@
 
 		timer0: counter@6001f000 {
 			compatible = "espressif,esp32-timer";
-			reg = <0x6001F000 DT_SIZE_K(4)>;
+			reg = <0x6001f000 DT_SIZE_K(4)>;
 			clocks = <&clock ESP32_TIMG0_MODULE>;
 			group = <0>;
 			index = <0>;
@@ -261,7 +271,8 @@
 
 		trng0: trng@3ff700b0 {
 			compatible = "espressif,esp32-trng";
-			reg = <0x3FF700B0 0x4>;
+			reg = <0x3ff700b0 0x4>;
+			clocks = <&clock ESP32_RNG_MODULE>;
 			status = "disabled";
 		};
 
@@ -280,12 +291,11 @@
 			interrupts = <SPI2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_SPI2_MODULE>;
-			dma-clk = <ESP32_GDMA_MODULE>;
 			dma-host = <0>;
 			status = "disabled";
 		};
 
-		wdt0: watchdog@6001f048  {
+		wdt0: watchdog@6001f048 {
 			compatible = "espressif,esp32-watchdog";
 			reg = <0x6001f048 0x20>;
 			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
@@ -324,10 +334,9 @@
 			compatible = "espressif,esp32-gdma";
 			reg = <0x6003f000 DT_SIZE_K(4)>;
 			#dma-cells = <1>;
-			interrupts =
-				<DMA_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<DMA_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<DMA_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupts = <DMA_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <DMA_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <DMA_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_GDMA_MODULE>;
 			dma-channels = <6>;
@@ -335,6 +344,18 @@
 			status = "disabled";
 		};
 
-	};
+		sha: sha@6003b000 {
+			compatible = "espressif,esp32-sha";
+			reg = <0x6003b000 0x100>;
+			clocks = <&clock ESP32_SHA_MODULE>;
+			status = "okay";
+		};
 
+		aes: aes@6003a000 {
+			compatible = "espressif,esp32-aes";
+			reg = <0x6003a000 0x1000>;
+			clocks = <&clock ESP32_AES_MODULE>;
+			status = "okay";
+		};
+	};
 };

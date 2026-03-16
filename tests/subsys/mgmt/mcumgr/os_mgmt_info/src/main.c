@@ -82,24 +82,10 @@ const uint8_t response_kernel_release[] = STRINGIFY(BUILD_VERSION);
 const uint8_t response_kernel_version[] = KERNEL_VERSION_STRING;
 const uint8_t response_machine[] = CONFIG_ARCH;
 const uint8_t response_processor[] = PROCESSOR_NAME;
-const uint8_t response_board_revision[] = CONFIG_BOARD "@" CONFIG_BOARD_REVISION;
-const uint8_t response_board[] = CONFIG_BOARD;
+const uint8_t response_board_target[] = CONFIG_BOARD_TARGET;
 const uint8_t response_os[] = "Zephyr";
 const uint8_t response_custom_cmd[] = "Magic Output for Test";
 const uint8_t response_os_custom[] = CONFIG_CUSTOM_OS_NAME_VALUE;
-
-const uint8_t response_all_board_revision[] = "Zephyr "
-#if defined(CONFIG_BT)
-					      CONFIG_BT_DEVICE_NAME
-#elif defined(CONFIG_NET_HOSTNAME_ENABLE)
-					      CONFIG_NET_HOSTNAME
-#else
-					      "unknown"
-#endif
-					      " " STRINGIFY(BUILD_VERSION) " "
-					      KERNEL_VERSION_STRING " " CONFIG_ARCH " "
-					      PROCESSOR_NAME " " CONFIG_BOARD "@"
-					      CONFIG_BOARD_REVISION " Zephyr";
 
 const uint8_t response_all[] = "Zephyr "
 #if defined(CONFIG_BT)
@@ -110,7 +96,7 @@ const uint8_t response_all[] = "Zephyr "
 			       "unknown"
 #endif
 			       " " STRINGIFY(BUILD_VERSION) " " KERNEL_VERSION_STRING " "
-			       CONFIG_ARCH " " PROCESSOR_NAME " " CONFIG_BOARD " Zephyr";
+			       CONFIG_ARCH " " PROCESSOR_NAME " " CONFIG_BOARD_TARGET " Zephyr";
 
 const uint8_t query_kernel_name[] = "s";
 const uint8_t query_node_name[] = "n";
@@ -247,7 +233,7 @@ ZTEST(os_mgmt_info, test_info_1)
 	smp_dummy_disable();
 
 	zassert_equal(sizeof(expected_response), nb->len,
-		      "Expected to receive %d bytes but got %d\n", sizeof(expected_response),
+		      "Expected to receive %zu bytes but got %d\n", sizeof(expected_response),
 		      nb->len);
 
 	zassert_mem_equal(expected_response, nb->data, nb->len,
@@ -285,7 +271,7 @@ ZTEST(os_mgmt_info, test_info_1)
 	smp_dummy_disable();
 
 	zassert_equal(sizeof(expected_response), nb->len,
-		      "Expected to receive %d bytes but got %d\n", sizeof(expected_response),
+		      "Expected to receive %zu bytes but got %d\n", sizeof(expected_response),
 		      nb->len);
 
 	zassert_mem_equal(expected_response, nb->data, nb->len,
@@ -346,7 +332,7 @@ ZTEST(os_mgmt_info, test_info_2_kernel_name)
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
 	zassert_equal((sizeof(response_kernel_name) - 1), output.len,
-		      "Expected to receive %d bytes but got %d\n",
+		      "Expected to receive %zu bytes but got %zu\n",
 		      (sizeof(response_kernel_name) - 1), output.len);
 
 	zassert_mem_equal(response_kernel_name, output.value, output.len,
@@ -407,7 +393,7 @@ ZTEST(os_mgmt_info, test_info_3_node_name)
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
 	zassert_equal((sizeof(response_node_name) - 1), output.len,
-		      "Expected to receive %d bytes but got %d\n",
+		      "Expected to receive %zu bytes but got %zu\n",
 		      (sizeof(response_node_name) - 1), output.len);
 
 	zassert_mem_equal(response_node_name, output.value, output.len,
@@ -469,7 +455,7 @@ ZTEST(os_mgmt_info, test_info_4_kernel_release)
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
 	zassert_equal((sizeof(response_kernel_release) - 1), output.len,
-		      "Expected to receive %d bytes but got %d\n",
+		      "Expected to receive %zu bytes but got %zu\n",
 		      (sizeof(response_kernel_release) - 1), output.len);
 
 	zassert_mem_equal(response_kernel_release, output.value, output.len,
@@ -531,7 +517,7 @@ ZTEST(os_mgmt_info, test_info_5_kernel_version)
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
 	zassert_equal((sizeof(response_kernel_version) - 1), output.len,
-		      "Expected to receive %d bytes but got %d\n",
+		      "Expected to receive %zu bytes but got %zu\n",
 		      (sizeof(response_kernel_version) - 1), output.len);
 
 	zassert_mem_equal(response_kernel_version, output.value, output.len,
@@ -592,8 +578,8 @@ ZTEST(os_mgmt_info, test_info_6_machine)
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
 	zassert_equal((sizeof(response_machine) - 1), output.len,
-		      "Expected to receive %d bytes but got %d\n", (sizeof(response_machine) - 1),
-		      output.len);
+		      "Expected to receive %zu bytes but got %zu\n",
+		      (sizeof(response_machine) - 1), output.len);
 
 	zassert_mem_equal(response_machine, output.value, output.len,
 			  "Expected received data mismatch");
@@ -653,8 +639,8 @@ ZTEST(os_mgmt_info, test_info_7_processor)
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
 	zassert_equal((sizeof(response_processor) - 1), output.len,
-		      "Expected to receive %d bytes but got %d\n", (sizeof(response_processor) - 1),
-		      output.len);
+		      "Expected to receive %zu bytes but got %zu\n",
+		      (sizeof(response_processor) - 1), output.len);
 
 	zassert_mem_equal(response_processor, output.value, output.len,
 			  "Expected received data mismatch");
@@ -713,23 +699,12 @@ ZTEST(os_mgmt_info, test_info_8_platform)
 	zassert_true(ok, "Expected decode to be successful\n");
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
-	if (sizeof(CONFIG_BOARD_REVISION) > 1) {
-		/* Check with board revision */
-		zassert_equal((sizeof(response_board_revision) - 1), output.len,
-			      "Expected to receive %d bytes but got %d\n",
-			      (sizeof(response_board_revision) - 1), output.len);
+	zassert_equal((sizeof(response_board_target) - 1), output.len,
+		      "Expected to receive %zu bytes but got %zu\n",
+		      (sizeof(response_board_target) - 1), output.len);
 
-		zassert_mem_equal(response_board_revision, output.value, output.len,
-				  "Expected received data mismatch");
-	} else {
-		/* Check without board revision */
-		zassert_equal((sizeof(response_board) - 1), output.len,
-			      "Expected to receive %d bytes but got %d\n",
-			      (sizeof(response_board) - 1), output.len);
-
-		zassert_mem_equal(response_board, output.value, output.len,
-				  "Expected received data mismatch");
-	}
+	zassert_mem_equal(response_board_target, output.value, output.len,
+			  "Expected received data mismatch");
 }
 
 ZTEST(os_mgmt_info, test_info_9_os)
@@ -786,7 +761,7 @@ ZTEST(os_mgmt_info, test_info_9_os)
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
 	zassert_equal((sizeof(response_os) - 1), output.len,
-		      "Expected to receive %d bytes but got %d\n", (sizeof(response_os) - 1),
+		      "Expected to receive %zu bytes but got %zu\n", (sizeof(response_os) - 1),
 		      output.len);
 
 	zassert_mem_equal(response_os, output.value, output.len,
@@ -846,23 +821,12 @@ ZTEST(os_mgmt_info, test_info_10_all)
 	zassert_true(ok, "Expected decode to be successful\n");
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
-	if (sizeof(CONFIG_BOARD_REVISION) > 1) {
-		/* Check with board revision */
-		zassert_equal((sizeof(response_all_board_revision) - 1), output.len,
-			      "Expected to receive %d bytes but got %d\n",
-			      (sizeof(response_all_board_revision) - 1), output.len);
+	zassert_equal((sizeof(response_all) - 1), output.len,
+		      "Expected to receive %zu bytes but got %zu\n",
+		      (sizeof(response_all) - 1), output.len);
 
-		zassert_mem_equal(response_all_board_revision, output.value, output.len,
-				  "Expected received data mismatch");
-	} else {
-		/* Check without board revision */
-		zassert_equal((sizeof(response_all) - 1), output.len,
-			      "Expected to receive %d bytes but got %d\n",
-			      (sizeof(response_all) - 1), output.len);
-
-		zassert_mem_equal(response_all, output.value, output.len,
-				  "Expected received data mismatch");
-	}
+	zassert_mem_equal(response_all, output.value, output.len,
+			  "Expected received data mismatch");
 }
 
 ZTEST(os_mgmt_info, test_info_11_multi_1)
@@ -924,7 +888,7 @@ ZTEST(os_mgmt_info, test_info_11_multi_1)
 	/* Construct expected response to be compared against */
 	sprintf(buffer, "%s %s %s", response_kernel_release, response_processor, response_os);
 
-	zassert_equal(strlen(buffer), output.len, "Expected to receive %d bytes but got %d\n",
+	zassert_equal(strlen(buffer), output.len, "Expected to receive %zu bytes but got %zu\n",
 		      strlen(buffer), output.len);
 
 	zassert_mem_equal(buffer, output.value, output.len, "Expected received data mismatch");
@@ -991,7 +955,7 @@ ZTEST(os_mgmt_info, test_info_12_multi_2)
 	 */
 	sprintf(buffer, "%s %s", response_node_name, response_kernel_version);
 
-	zassert_equal(strlen(buffer), output.len, "Expected to receive %d bytes but got %d\n",
+	zassert_equal(strlen(buffer), output.len, "Expected to receive %zu bytes but got %zu\n",
 		      strlen(buffer), output.len);
 
 	zassert_mem_equal(buffer, output.value, output.len, "Expected received data mismatch");
@@ -1064,7 +1028,7 @@ ZTEST(os_mgmt_info, test_info_13_invalid_1)
 
 	zassert_true(ok, "Expected decode to be successful\n");
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
-	zassert_equal(output.len, 0, "Expected to receive 0 bytes but got %d\n", output.len);
+	zassert_equal(output.len, 0, "Expected to receive 0 bytes but got %zu\n", output.len);
 	zassert_equal(rc, MGMT_ERR_EINVAL, "Expected to receive EINVAL error but got %d\n", rc);
 }
 
@@ -1135,7 +1099,7 @@ ZTEST(os_mgmt_info, test_info_14_invalid_2)
 
 	zassert_true(ok, "Expected decode to be successful\n");
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
-	zassert_equal(output.len, 0, "Expected to receive 0 bytes but got %d\n", output.len);
+	zassert_equal(output.len, 0, "Expected to receive 0 bytes but got %zu\n", output.len);
 	zassert_equal(rc, MGMT_ERR_EINVAL, "Expected to receive EINVAL error but got %d\n", rc);
 }
 
@@ -1207,7 +1171,7 @@ ZTEST(os_mgmt_info_custom_os, test_info_os_custom)
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
 	zassert_equal((sizeof(response_os_custom) - 1), output.len,
-		      "Expected to receive %d bytes but got %d\n",
+		      "Expected to receive %zu bytes but got %zu\n",
 		      (sizeof(response_os_custom) - 1), output.len);
 
 	zassert_mem_equal(response_os_custom, output.value, output.len,
@@ -1268,7 +1232,7 @@ ZTEST(os_mgmt_info_custom_os_disabled, test_info_os_custom_disabled)
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
 	zassert_equal((sizeof(response_os) - 1), output.len,
-		      "Expected to receive %d bytes but got %d\n",
+		      "Expected to receive %zu bytes but got %zu\n",
 		      (sizeof(response_os) - 1), output.len);
 
 	zassert_mem_equal(response_os, output.value, output.len,
@@ -1341,7 +1305,7 @@ ZTEST(os_mgmt_info_custom_cmd, test_info_cmd_custom)
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
 	zassert_equal((sizeof(response_custom_cmd) - 1), output.len,
-		      "Expected to receive %d bytes but got %d\n",
+		      "Expected to receive %zu bytes but got %zu\n",
 		      (sizeof(response_custom_cmd) - 1), output.len);
 
 	zassert_mem_equal(response_custom_cmd, output.value, output.len,
@@ -1412,7 +1376,7 @@ ZTEST(os_mgmt_info_custom_cmd_disabled, test_info_cmd_custom_disabled)
 	zassert_true(ok, "Expected decode to be successful\n");
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
-	zassert_equal(output.len, 0, "Expected to receive 0 bytes but got %d\n", output.len);
+	zassert_equal(output.len, 0, "Expected to receive 0 bytes but got %zu\n", output.len);
 
 	zassert_equal(rc, MGMT_ERR_EINVAL, "Expected to receive EINVAL error but got %d\n", rc);
 }
@@ -1481,7 +1445,7 @@ ZTEST(os_mgmt_info_custom_cmd_disabled_verify, test_info_cmd_custom_disabled)
 	zassert_true(ok, "Expected decode to be successful\n");
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
-	zassert_equal(output.len, 0, "Expected to receive 0 bytes but got %d\n", output.len);
+	zassert_equal(output.len, 0, "Expected to receive 0 bytes but got %zu\n", output.len);
 
 	zassert_equal(rc, MGMT_ERR_EINVAL, "Expected to receive EINVAL error but got %d\n", rc);
 

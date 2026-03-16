@@ -187,13 +187,6 @@ static int npcx_kbd_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	/* Configure wake-up input and callback for keyboard input signal */
-	for (int i = 0; i < common->row_size; i++) {
-		npcx_kbd_init_ksi_wui_callback(
-				dev, &data->ksi_callback[i], &config->wui_maps[i],
-				npcx_kbd_ksi_isr);
-	}
-
 	/* Configure pin-mux for keyboard scan device */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
@@ -201,7 +194,20 @@ static int npcx_kbd_init(const struct device *dev)
 		return ret;
 	}
 
-	return input_kbd_matrix_common_init(dev);
+	ret = input_kbd_matrix_common_init(dev);
+	if (ret < 0) {
+		LOG_ERR("keyboard scan common init failed (%d)", ret);
+		return ret;
+	}
+
+	/* Configure wake-up input and callback for keyboard input signal */
+	for (int i = 0; i < common->row_size; i++) {
+		npcx_kbd_init_ksi_wui_callback(
+				dev, &data->ksi_callback[i], &config->wui_maps[i],
+				npcx_kbd_ksi_isr);
+	}
+
+	return 0;
 }
 
 PINCTRL_DT_INST_DEFINE(0);

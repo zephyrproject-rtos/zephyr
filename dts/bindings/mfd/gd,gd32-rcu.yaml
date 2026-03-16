@@ -1,4 +1,7 @@
 # Copyright (c) 2022, Teslabs Engineering S.L.
+# Copyright (c) 2025 Meshium
+#               Aleksandr Senin <al@meshium.net>
+#
 # SPDX-License-Identifier: Apache-2.0
 
 title: Gigadevice RCU (Reset and Clock Unit)
@@ -15,3 +18,27 @@ include: base.yaml
 properties:
   reg:
     required: true
+
+  gd,ck48m-source:
+    type: string
+    enum:
+      - "irc48m"
+      - "pll48m"
+    description: |
+      Select the CK48M clock source. CK48M is used by TRNG/SDIO/USBFS/USBHS.
+      When set to "irc48m", the SoC initialization code enables the IRC48M
+      oscillator and selects it as CK48M source.
+      When set to "pll48m", the SoC initialization code selects PLL48M as CK48M
+      source (see gd,pll48m-source).
+
+  gd,pll48m-source:
+    type: string
+    enum:
+      - "pllq"
+      - "pllsaip"
+    default: "pllq"
+    description: |
+      Select the PLL48M source (CK_PLLQ or CK_PLLSAIP) when gd,ck48m-source is
+      set to "pll48m". This does not configure PLL/PLLSAI parameters; board
+      clock configuration must ensure the selected source provides a valid
+      48MHz clock domain.

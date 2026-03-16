@@ -8,7 +8,7 @@ description: Sierra Wireless HL7800 Modem
 
 compatible: "swir,hl7800"
 
-include: uart-device.yaml
+include: zephyr,cellular-modem-device.yaml
 
 properties:
   mdm-wake-gpios:
@@ -45,3 +45,6 @@ properties:
   mdm-gpio6-gpios:
     type: phandle-array
     required: true
+
+  zephyr,mdm-reset-behavior:
+    default: ["hold_on_suspend", "toggle_on_resume", "toggle_on_recovery"]

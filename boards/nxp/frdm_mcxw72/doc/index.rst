@@ -51,33 +51,32 @@ Configuring a Debug Probe
 =========================
 
 A debug probe is used for both flashing and debugging the board. This board is
-configured by default to use the MCU-Link CMSIS-DAP Onboard Debug Probe.
-
-Using LinkServer
-----------------
-
-Linkserver is the default runner for this board, and supports the factory
-default MCU-Link firmware. Follow the instructions in
-:ref:`mcu-link-cmsis-onboard-debug-probe` to reprogram the default MCU-Link
-firmware. This only needs to be done if the default onboard debug circuit
-firmware was changed. To put the board in ``DFU mode`` to program the firmware,
-short jumper JP5.
+configured by default to use the J-Link Onboard Debug Probe.
 
 Using J-Link
 ------------
 
-There are two options. The onboard debug circuit can be updated with Segger
-J-Link firmware by following the instructions in
-:ref:`mcu-link-jlink-onboard-debug-probe`.
-To be able to program the firmware, you need to put the board in ``DFU mode``
-by shortening the jumper JP5.
+J-Link is the default runner for this board.
+Follow the instructions in :ref:`mcu-link-jlink-onboard-debug-probe`
+to reprogram the default MCU-Link firmware. This only needs to be done if
+the default onboard debug circuit firmware was changed. To put the board
+in ``DFU mode`` to program the firmware, short jumper JP5.
 The second option is to attach a :ref:`jlink-external-debug-probe` to the
 10-pin SWD connector (J12) of the board.
-For both options use the ``-r jlink`` option with west to use the jlink runner.
+
+Using LinkServer
+----------------
+
+The onboard debug circuit can be updated with Linkserver firmware by following
+the instructions in :ref:`mcu-link-cmsis-onboard-debug-probe`.
+To be able to program the firmware, you need to put the board in ``DFU mode``
+by shortening the jumper JP5.
+
+Use the ``-r linkserver`` option with west to use the linkserver runner.
 
 .. code-block:: console
 
-   west flash -r jlink
+   west flash -r linkserver
 
 Configuring a Console
 =====================
@@ -98,13 +97,15 @@ Openthread applications
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_server
-   :board: frdm_mcxw72/mcxw727c/cpu0
+   :board: frdm_mcxw72
    :goals: build
+   :gen-args: -DEXTRA_CONF_FILE=overlay-ot.conf
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_client
-   :board: frdm_mcxw72/mcxw727c/cpu0
+   :board: frdm_mcxw72
    :goals: build
+   :gen-args: -DEXTRA_CONF_FILE=overlay-ot.conf
 
 Application Flashing
 ====================
@@ -113,7 +114,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: frdm_mcxw72/mcxw727c/cpu0
+   :board: frdm_mcxw72
    :goals: flash
 
 Open a serial terminal, reset the board (press the RESET button), and you should
@@ -122,7 +123,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build v3.7.0-xxx-xxxx ***
-   Hello World! frdm_mcxw72/mcxw727c/cpu0
+   Hello World! frdm_mcxw72
 
 Debugging
 =========
@@ -131,7 +132,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: frdm_mcxw72/mcxw727c/cpu0
+   :board: frdm_mcxw72
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -140,7 +141,27 @@ should see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build v3.7.0-xxx-xxxx ***
-   Hello World! frdm_mcxw72/mcxw727c/cpu0
+   Hello World! frdm_mcxw72
+
+Entering ISP Mode
+=================
+
+To boot the MCU in ISP mode, follow these steps:
+
+   * Disconnect the ``FRDM-MCXW72`` board from all power sources.
+   * Keep the ``SW3`` button on the board pressed, while connecting
+     the board to the host computer USB port.
+   * Release the ``SW3`` button. The MCXW72 MCU boots in ISP mode.
+   * Reconnect any external power supply, if needed.
+
+Flashing with Low Power Mode
+============================
+
+When running an application with low power mode enabled (``CONFIG_PM=y``), flashing
+via the standard debug probe (MCU-Link or J-Link) may fail. This is because the
+MCU enters low power states where the SWD debug interface becomes unresponsive.
+
+To flash a board running a low power image, enter ISP mode (see ``Entering ISP Mode``).
 
 NBU Flashing
 ============
@@ -155,11 +176,7 @@ Two images must be written to the board: one for the host (CM33) and one for the
 - To flash the ``NBU Flashing``, follow the instructions below:
 
    * Install ``blhost`` from NXP's website. This is the tool that will allow you to flash the NBU.
-   * Enter ISP mode. To boot the MCU in ISP mode, follow these steps:
-      - Disconnect the ``FRDM-MCXW72`` board from all power sources.
-      - Keep the ``SW4`` and ``SW1`` buttons on the board pressed, while connecting the board to the host computer USB port.
-      - Release the ``SW4`` and ``SW1`` buttons. The MCXW72 MCU boots in ISP mode.
-      - Reconnect any external power supply, if needed.
+   * Enter ISP mode (see ``Entering ISP Mode``).
    * Use the following command to flash NBU file:
 
 .. tabs::
@@ -189,11 +206,9 @@ The NBU files can be found in : ``<zephyr workspace>/modules/hal/nxp/zephyr/blob
 Troubleshooting
 ===============
 
-.. include:: ../../common/segger-ecc-systemview.rst
-   :start-after: segger-ecc-systemview
+.. include:: ../../common/segger-ecc-systemview.rst.inc
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 References
 **********

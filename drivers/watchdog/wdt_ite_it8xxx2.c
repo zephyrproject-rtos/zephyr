@@ -217,11 +217,12 @@ static void wdt_it8xxx2_isr(const struct device *dev)
 	if (IS_ENABLED(CONFIG_WDT_ITE_REDUCE_WARNING_LEADING_TIME)) {
 		/*
 		 * Once warning timer triggered: if watchdog timer isn't reloaded,
-		 * then we will reduce interval of warning timer to 30ms to print
-		 * more warning messages before watchdog reset.
+		 * then we will reduce interval of warning timer to CONFIG_ value
+		 * for printing more warning messages before watchdog reset.
 		 */
 		if (!wdt_warning_fired) {
-			uint16_t cnt0 = WARNING_TIMER_PERIOD_MS_TO_1024HZ_COUNT(30);
+			uint16_t cnt0 = WARNING_TIMER_PERIOD_MS_TO_1024HZ_COUNT((
+					CONFIG_WDT_ITE_PRINT_WARNING_MSG_TIME_MS));
 
 			/* pre-warning timer1 is 16-bit counter down timer */
 			inst->ET1CNTLHR = (cnt0 >> 8) & 0xff;

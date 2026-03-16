@@ -408,6 +408,9 @@ static int eth_cyclonev_send(const struct device *dev, struct net_pkt *pkt)
 
 	LOG_DBG("Pkt length: %d", len);
 	frag = pkt->buffer;
+
+	__ASSERT((frag != NULL), "Invalid net_pkt: no data buffer\n");
+
 	do {
 
 		/* reserve a free descriptor for this fragment */
@@ -433,10 +436,7 @@ static int eth_cyclonev_send(const struct device *dev, struct net_pkt *pkt)
 
 		/* Copy data to local buffer   */
 
-		if (frag) {
-			memcpy(&p->tx_buf[p->tx_current_desc_number * ETH_BUFFER_SIZE], frag->data,
-			       len);
-		}
+		memcpy(&p->tx_buf[p->tx_current_desc_number * ETH_BUFFER_SIZE], frag->data, len);
 
 		/* Set the buffer size.  */
 		tx_desc->control_buffer_size = (frag->len & ETH_DMATXDESC_TBS1);
@@ -680,7 +680,8 @@ static void eth_cyclonev_receive(struct eth_cyclonev_priv *p)
 		p->rx_current_desc_number = last_desc_index;
 
 		/* Allocate packet with buffer */
-		pkt = net_pkt_rx_alloc_with_buffer(p->iface, frame_length, AF_UNSPEC, 0, K_NO_WAIT);
+		pkt = net_pkt_rx_alloc_with_buffer(p->iface, frame_length,
+						   NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("net_pkt_rx_alloc_with_buffer() failed");
 			eth_stats_update_errors_rx(p->iface);

@@ -10,6 +10,7 @@
 #include "rp2040_zero-pinctrl.dtsi"
 #include <freq.h>
 #include <zephyr/dt-bindings/led/led.h>
+
 / {
 	chosen {
 		zephyr,sram = &sram0;
@@ -29,11 +30,13 @@
 
 &flash0 {
 	reg = <0x10000000 DT_SIZE_M(2)>;
+	ranges = <0x0 0x10000000 DT_SIZE_M(2)>;
 
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Reserved memory for the second stage bootloader */
 		second_stage_bootloader: partition@0 {
@@ -142,6 +145,9 @@ zephyr_udc0: &usbd {
 };
 
 pico_spi: &spi0 {};
+
 pico_i2c0: &i2c0 {};
+
 pico_i2c1: &i2c1 {};
+
 pico_serial: &uart0 {};

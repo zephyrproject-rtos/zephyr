@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2024 Joel Guittet
+ * Copyright (c) 2025 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+
+&pinctrl {
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_CSEL_GPIO10>,
+				 <SPIM2_SCLK_GPIO12>;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO11>;
+			output-low;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO16>,
+				 <I2C0_SCL_GPIO17>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	sdhc0_default: sdhc0_default {
+		group1 {
+			pinmux = <SDHC0_CLKOUT_GPIO36>,
+				 <SDHC0_CMD_GPIO35>,
+				 <SDHC0_DATA0_GPIO37>,
+				 <SDHC0_DATA1_GPIO33>,
+				 <SDHC0_DATA2_GPIO38>,
+				 <SDHC0_DATA3_GPIO34>;
+			bias-pull-up;
+			output-high;
+		};
+	};
+
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO43>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO44>;
+			bias-pull-up;
+		};
+	};
+};

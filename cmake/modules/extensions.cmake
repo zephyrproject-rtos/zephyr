@@ -3,6 +3,7 @@
 include_guard(GLOBAL)
 
 include(user_cache)
+include(yaml)
 
 # Dependencies on CMake modules from the CMake distribution.
 include(CheckCCompilerFlag)
@@ -449,6 +450,9 @@ macro(zephyr_library_get_current_dir_lib_name base lib_name)
   # Replace : with __ (C:/zephyrproject => C____zephyrproject)
   string(REGEX REPLACE ":" "__" name ${name})
 
+  # Replace ~ with - (driver~serial => driver-serial)
+  string(REGEX REPLACE "~" "-" name ${name})
+
   set(${lib_name} ${name})
 endmacro()
 
@@ -560,7 +564,7 @@ function(zephyr_library_compile_options item)
   string(MD5 uniqueness "${ARGV}")
   set(lib_name options_interface_lib_${uniqueness})
 
-  if (NOT TARGET ${lib_name})
+  if(NOT TARGET ${lib_name})
     # Create the unique target only if it doesn't exist.
     add_library(           ${lib_name} INTERFACE)
     target_compile_options(${lib_name} INTERFACE ${item} ${ARGN})
@@ -755,7 +759,7 @@ endfunction()
 
 set(TYPES "FLASH" "DEBUG" "SIM" "ROBOT")
 function(_board_check_runner_type type) # private helper
-  if (NOT "${type}" IN_LIST TYPES)
+  if(NOT "${type}" IN_LIST TYPES)
     message(FATAL_ERROR "invalid type ${type}; should be one of: ${TYPES}")
   endif()
 endfunction()
@@ -776,7 +780,7 @@ endfunction()
 # the name of a runner.
 function(board_set_runner type runner)
   _board_check_runner_type(${type})
-  if (DEFINED BOARD_${type}_RUNNER)
+  if(DEFINED BOARD_${type}_RUNNER)
     message(STATUS "overriding ${type} runner ${BOARD_${type}_RUNNER}; it's now ${runner}")
   endif()
   set(BOARD_${type}_RUNNER ${runner} PARENT_SCOPE)
@@ -1316,6 +1320,7 @@ function(zephyr_linker_sources location)
   set(rom_sections_path  "${snippet_base}/snippets-rom-sections.ld")
   set(ram_sections_path  "${snippet_base}/snippets-ram-sections.ld")
   set(data_sections_path "${snippet_base}/snippets-data-sections.ld")
+  set(text_sections_path "${snippet_base}/snippets-text-sections.ld")
   set(rom_start_path     "${snippet_base}/snippets-rom-start.ld")
   set(noinit_path        "${snippet_base}/snippets-noinit.ld")
   set(rwdata_path        "${snippet_base}/snippets-rwdata.ld")
@@ -1331,11 +1336,12 @@ function(zephyr_linker_sources location)
 
   # Clear destination files if this is the first time the function is called.
   get_property(cleared GLOBAL PROPERTY snippet_files_cleared)
-  if (NOT DEFINED cleared)
+  if(NOT DEFINED cleared)
     file(WRITE ${sections_path} "")
     file(WRITE ${rom_sections_path} "")
     file(WRITE ${ram_sections_path} "")
     file(WRITE ${data_sections_path} "")
+    file(WRITE ${text_sections_path} "")
     file(WRITE ${rom_start_path} "")
     file(WRITE ${noinit_path} "")
     file(WRITE ${rwdata_path} "")
@@ -1351,7 +1357,7 @@ function(zephyr_linker_sources location)
   endif()
 
   # Choose destination file, based on the <location> argument.
-  if ("${location}" STREQUAL "SECTIONS")
+  if("${location}" STREQUAL "SECTIONS")
     set(snippet_path "${sections_path}")
   elseif("${location}" STREQUAL "ROM_SECTIONS")
     set(snippet_path "${rom_sections_path}")
@@ -1359,6 +1365,8 @@ function(zephyr_linker_sources location)
     set(snippet_path "${ram_sections_path}")
   elseif("${location}" STREQUAL "DATA_SECTIONS")
     set(snippet_path "${data_sections_path}")
+  elseif("${location}" STREQUAL "TEXT_SECTIONS")
+    set(snippet_path "${text_sections_path}")
   elseif("${location}" STREQUAL "ROM_START")
     set(snippet_path "${rom_start_path}")
   elseif("${location}" STREQUAL "NOINIT")
@@ -1423,7 +1431,7 @@ function(zephyr_linker_sources location)
 
     # Remove line from other snippet file, if already used
     get_property(old_path GLOBAL PROPERTY "snippet_files_used_${relpath}")
-    if (DEFINED old_path)
+    if(DEFINED old_path)
       file(STRINGS ${old_path} lines)
       list(FILTER lines EXCLUDE REGEX ${relpath})
       string(REPLACE ";" "\n;" lines "${lines}") # Add newline to each line.
@@ -1566,7 +1574,7 @@ function(check_dtc_flag flag ok)
     OUTPUT_QUIET
     RESULT_VARIABLE dtc_check_ret
   )
-  if (dtc_check_ret EQUAL 0)
+  if(dtc_check_ret EQUAL 0)
     set(${ok} 1 PARENT_SCOPE)
   else()
     set(${ok} 0 PARENT_SCOPE)
@@ -1725,7 +1733,7 @@ function(zephyr_build_string outvar)
   list(REMOVE_DUPLICATES ${outvar})
 
   if(BUILD_STR_SHORT AND BUILD_STR_BOARD_QUALIFIERS)
-    string(REGEX REPLACE "^/[^/]*(.*)" "\\1" shortened_qualifiers "${BOARD_QUALIFIERS}")
+    string(REGEX REPLACE "^.[^/]*(.*)" "\\1" shortened_qualifiers "${BOARD_QUALIFIERS}")
     string(REPLACE "/" ";" str_short_segment_list "${shortened_qualifiers}")
     string(JOIN "_" ${BUILD_STR_SHORT}
            ${BUILD_STR_BOARD} ${str_short_segment_list} ${revision_string}
@@ -1764,10 +1772,6 @@ function(zephyr_syscall_include_directories)
       syscalls_interface INTERFACE
       ${include_dir}
     )
-    add_dependencies(
-      syscalls_interface
-      ${include_dir}
-    )
 
     unset(include_dir)
   endforeach()
@@ -1786,10 +1790,6 @@ function(zephyr_syscall_header)
 
     target_sources(
       syscalls_interface INTERFACE
-      ${header_file}
-    )
-    add_dependencies(
-      syscalls_interface
       ${header_file}
     )
 
@@ -1874,6 +1874,91 @@ function(zephyr_blobs_verify)
       endif()
     endforeach()
   endif()
+endfunction()
+
+#
+# Usage:
+#   zephyr_custom_target_shared(<arguments>)
+#
+# Extension function of add_custom_command().
+#
+# The purpose of this function is to add the custom target to a CMake cache `ZEPHYR_SHARED_TARGETS`
+# list of targets.
+# The list of targets provides a possibility for external tools or build system to fetch important
+# build targets expected to be available to users.
+#
+# For example, Sysbuild will use this list for making build targets available to the user for the
+# image.
+#
+# All arguments to this function is passed to CMake add_custom_command() function as-is.
+#
+# Arguments:
+#  - See `add_custom_target` documentation
+#
+macro(zephyr_custom_target_shared)
+  add_custom_target(${ARGN})
+
+  zephyr_set(ZEPHYR_SHARED_TARGETS ${ARGV0} SCOPE cache APPEND)
+endmacro()
+
+# Usage:
+#   zephyr_constants_library(
+#     NAME    <name>          - OBJECT library name and base for target "<name>_h"
+#     SOURCE  <file>          - C source file using GEN_ABSOLUTE_SYM macros
+#     [HEADER  <filename>]    - output header name (default: <name>.h)
+#     [INCLUDES <dir>...]     - additional private include directories
+#     [DEPENDS <name>...]     - other constants libraries this one depends on
+#   )
+#
+# Creates an OBJECT library from a C source file containing
+# GEN_ABSOLUTE_SYM() declarations, then generates a header file from
+# the resulting symbols.  Symbols ending in _OFFSET or _SIZEOF are
+# extracted by gen_offset_header.py and the resulting header is placed
+# under include/generated/zephyr/.
+#
+# NAME is used as the OBJECT library name (like add_library(<name>)),
+# allowing callers to reference the compiled objects at link time via
+# $<TARGET_OBJECTS:name> if needed.
+#
+# DEPENDS lists other constants libraries (by NAME) whose generated
+# headers must be produced before this library is compiled.
+#
+function(zephyr_constants_library)
+  cmake_parse_arguments(ARG "" "NAME;SOURCE;HEADER" "INCLUDES;DEPENDS" ${ARGN})
+
+  zephyr_check_arguments_required_all(${CMAKE_CURRENT_FUNCTION} ARG NAME SOURCE)
+  if(NOT ARG_HEADER)
+    set(ARG_HEADER "${ARG_NAME}.h")
+  endif()
+
+  set(output_path ${PROJECT_BINARY_DIR}/include/generated/zephyr/${ARG_HEADER})
+  set(target_name ${ARG_NAME}_h)
+  set(lib_name ${ARG_NAME})
+
+  add_library(${lib_name} OBJECT ${ARG_SOURCE})
+  target_include_directories(${lib_name} PRIVATE
+    ${ZEPHYR_BASE}/kernel/include
+    ${ARG_INCLUDES}
+  )
+  target_link_libraries(${lib_name} zephyr_interface)
+
+  set_source_files_properties(${ARG_SOURCE} PROPERTIES
+    COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
+
+  add_custom_command(
+    OUTPUT ${output_path}
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/gen_offset_header.py
+    -i $<TARGET_OBJECTS:${lib_name}>
+    -o ${output_path}
+    DEPENDS ${lib_name} $<TARGET_OBJECTS:${lib_name}>
+  )
+  add_custom_target(${target_name} DEPENDS ${output_path})
+
+  add_dependencies(zephyr_generated_headers ${target_name})
+
+  foreach(_dep IN LISTS ARG_DEPENDS)
+    add_dependencies(${lib_name} ${_dep}_h)
+  endforeach()
 endfunction()
 
 ########################################################
@@ -2548,6 +2633,14 @@ function(set_compiler_property)
 
   set_property(TARGET compiler ${APPEND} PROPERTY ${COMPILER_PROPERTY_PROPERTY})
   set_property(TARGET compiler-cpp ${APPEND} PROPERTY ${COMPILER_PROPERTY_PROPERTY})
+
+  list(GET COMPILER_PROPERTY_PROPERTY 0 prop_name)
+  # Brief docs is used to inform if inheritance is set for the property.
+  # When inheritance is set, then the value must also be set on directory to ensure inheritance.
+  get_property(inherit TARGET NONE PROPERTY ${prop_name} BRIEF_DOCS)
+  if(inherit STREQUAL "INHERIT")
+    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY ${COMPILER_PROPERTY_PROPERTY})
+  endif()
 endfunction()
 
 # 'check_set_compiler_property' is a function that check the provided compiler
@@ -3081,7 +3174,7 @@ function(zephyr_string)
 
   zephyr_check_flags_exclusive(${CMAKE_CURRENT_FUNCTION} ZEPHYR_STRING SANITIZE ESCAPE)
 
-  if (NOT ZEPHYR_STRING_UNPARSED_ARGUMENTS)
+  if(NOT ZEPHYR_STRING_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR "Function zephyr_string() called without a return variable")
   endif()
 
@@ -3352,6 +3445,8 @@ function(zephyr_scope_exists result scope)
   get_property(scope_defined GLOBAL PROPERTY scope:${scope})
   if(scope_defined)
     set(${result} TRUE PARENT_SCOPE)
+  elseif(scope STREQUAL cache)
+    set(${result} TRUE PARENT_SCOPE)
   else()
     set(${result} FALSE PARENT_SCOPE)
   endif()
@@ -3362,6 +3457,9 @@ endfunction()
 #
 # Get the current value of <var> in a specific <scope>, as defined by a
 # previous zephyr_set() call. The value will be stored in the <output> var.
+#
+# Note: the scope `cache` will return the CMake cache value of the variable set
+#       in current CMake run. (cache values from earlier runs are ignored).
 #
 # <output> : Variable to store the value in
 # <scope>  : Scope for the variable look up
@@ -3388,6 +3486,9 @@ endfunction()
 # scope. The scope is used on later zephyr_get() invocation for precedence
 # handling when a variable it set in multiple scopes.
 #
+# Note: the scope `cache` sets the CMake cache value of the variable but cache
+#       values from earlier CMake runs are ignored.
+#
 # <variable>   : Name of variable
 # <value>      : Value of variable, multiple values will create a list.
 #                The SCOPE argument identifies the end of value list.
@@ -3411,6 +3512,11 @@ function(zephyr_set variable)
   set_property(GLOBAL ${property_args} PROPERTY
                ${SET_VAR_SCOPE}_scope:${variable} ${SET_VAR_UNPARSED_ARGUMENTS}
   )
+
+  if(SET_VAR_SCOPE STREQUAL cache)
+    zephyr_get_scoped(value ${SET_VAR_SCOPE} ${variable})
+    set(${variable} "${value}" CACHE INTERNAL "")
+  endif()
 endfunction()
 
 # Usage:
@@ -3545,7 +3651,7 @@ function(zephyr_boilerplate_watch variable)
 endfunction()
 
 function(zephyr_variable_set_too_late variable access value current_list_file)
-  if (access STREQUAL "MODIFIED_ACCESS")
+  if(access STREQUAL "MODIFIED_ACCESS")
     message(WARNING
 "
    **********************************************************************
@@ -3751,8 +3857,8 @@ function(build_info)
   endif()
 
   string(GENEX_STRIP "${arg_list}" arg_list_no_genexes)
-  if (NOT "${arg_list}" STREQUAL "${arg_list_no_genexes}")
-    if (convert_path)
+  if(NOT "${arg_list}" STREQUAL "${arg_list_no_genexes}")
+    if(convert_path)
       message(FATAL_ERROR "build_info: generator expressions unsupported on PATH entries")
     endif()
     set(genex_flag GENEX)
@@ -3971,7 +4077,7 @@ function(dt_node_exists var)
   endforeach()
 
   dt_path_internal(canonical "${DT_NODE_PATH}" "${DT_NODE_TARGET}")
-  if (DEFINED canonical)
+  if(DEFINED canonical)
     set(${var} TRUE PARENT_SCOPE)
   else()
     set(${var} FALSE PARENT_SCOPE)
@@ -4512,7 +4618,7 @@ function(dt_path_internal var path target)
     # If the string starts with a slash, it should be an existing
     # canonical path.
     dt_path_internal_exists(check "${path}" "${target}")
-    if (check)
+    if(check)
       set(${var} "${path}" PARENT_SCOPE)
       return()
     endif()
@@ -4523,13 +4629,13 @@ function(dt_path_internal var path target)
 
     # If there is a leading alias, append the rest of the string
     # onto it and see if that's an existing node.
-    if (DEFINED alias_path)
+    if(DEFINED alias_path)
       set(rest)
-      if (NOT "${slash_index}" EQUAL -1)
+      if(NOT "${slash_index}" EQUAL -1)
         string(SUBSTRING "${path}" "${slash_index}" -1 rest)
       endif()
       dt_path_internal_exists(expanded_path_exists "${alias_path}${rest}" "${target}")
-      if (expanded_path_exists)
+      if(expanded_path_exists)
         set(${var} "${alias_path}${rest}" PARENT_SCOPE)
         return()
       endif()
@@ -4545,7 +4651,7 @@ endfunction()
 # dt_path_internal for a definition and examples of 'canonical' paths.
 function(dt_path_internal_exists var path target)
   get_target_property(path_prop "${target}" "DT_NODE|${path}")
-  if (path_prop)
+  if(path_prop)
     set(${var} TRUE PARENT_SCOPE)
   else()
     set(${var} FALSE PARENT_SCOPE)
@@ -4702,6 +4808,7 @@ function(zephyr_dt_import)
   zephyr_check_arguments_required_all(${CMAKE_CURRENT_FUNCTION} arg ${req_single_args})
 
   set(gen_dts_cmake_script ${ZEPHYR_BASE}/scripts/dts/gen_dts_cmake.py)
+  set(gen_dts_cmake_temp ${arg_EDT_PICKLE_FILE}.cmake.new)
   set(gen_dts_cmake_output ${arg_EDT_PICKLE_FILE}.cmake)
 
   if((${arg_EDT_PICKLE_FILE} IS_NEWER_THAN ${gen_dts_cmake_output}) OR
@@ -4710,11 +4817,13 @@ function(zephyr_dt_import)
     execute_process(
       COMMAND ${PYTHON_EXECUTABLE} ${gen_dts_cmake_script}
       --edt-pickle ${arg_EDT_PICKLE_FILE}
-      --cmake-out ${gen_dts_cmake_output}
+      --cmake-out ${gen_dts_cmake_temp}
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
       RESULT_VARIABLE ret
       COMMAND_ERROR_IS_FATAL ANY
     )
+
+    zephyr_file_copy(${gen_dts_cmake_temp} ${gen_dts_cmake_output} ONLY_IF_DIFFERENT)
   endif()
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${gen_dts_cmake_script})
 
@@ -5303,7 +5412,7 @@ function(zephyr_iterable_section)
   endif()
 
   if(DEFINED SECTION_SUBALIGN)
-    set(subalign "SUBALIGN ${SECTION_SUBALIGN}")
+    set(subalign SUBALIGN ${SECTION_SUBALIGN})
   endif()
 
   if(SECTION_ALIGN_WITH_INPUT)
@@ -5837,7 +5946,7 @@ function(add_llext_target target_name)
   cmake_parse_arguments(PARSE_ARGV 1 LLEXT "${options}" "${single_args}" "${multi_args}")
 
   # Check that the llext subsystem is enabled for this build
-  if (NOT CONFIG_LLEXT)
+  if(NOT CONFIG_LLEXT)
     message(FATAL_ERROR "add_llext_target: CONFIG_LLEXT must be enabled")
   endif()
 
@@ -5933,7 +6042,7 @@ function(add_llext_target target_name)
   # dynamic library.
   set(llext_proc_target ${target_name}_llext_proc)
   set(llext_pkg_input ${PROJECT_BINARY_DIR}/llext/${target_name}_debug.elf)
-  add_custom_target(${llext_proc_target} DEPENDS ${llext_pkg_input})
+  add_custom_target(${llext_proc_target} DEPENDS ${llext_lib_target} ${llext_lib_output})
   set_property(TARGET ${llext_proc_target} PROPERTY has_post_build_cmds 0)
 
   # By default this target must copy the `lib_output` binary file to the
@@ -5945,7 +6054,7 @@ function(add_llext_target target_name)
   add_custom_command(
     OUTPUT ${llext_pkg_input}
     COMMAND "$<IF:${has_post_build_cmds},${noop_cmd},${copy_cmd}>"
-    DEPENDS ${llext_lib_target} ${llext_lib_output}
+    DEPENDS ${llext_proc_target}
     COMMAND_EXPAND_LISTS
   )
 
@@ -5955,7 +6064,7 @@ function(add_llext_target target_name)
   # to ensure that the ELF processed for binary generation contains SLIDs.
   # If executed too early, it is possible that some tools executed to modify
   # the ELF file (e.g., strip) undo the work performed here.
-  if (CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
+  if(CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
     set(slid_inject_cmd
       ${PYTHON_EXECUTABLE}
       ${ZEPHYR_BASE}/scripts/build/llext_inject_slids.py
@@ -5965,9 +6074,24 @@ function(add_llext_target target_name)
     set(slid_inject_cmd ${CMAKE_COMMAND} -E true)
   endif()
 
+  # When using the arcmwdt toolchain, the compiler may emit hundreds of
+  # .arcextmap.* sections that bloat the shstrtab. stripac removes
+  # these sections, but it does not remove their names from the shstrtab.
+  # Use GNU strip to remove these sections beforehand.
+  if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "arcmwdt")
+    set(gnu_strip_for_mwdt_cmd
+      ${CMAKE_GNU_STRIP}
+      --remove-section=.arcextmap* --strip-unneeded
+      ${llext_pkg_input}
+    )
+  else()
+    set(gnu_strip_for_mwdt_cmd ${CMAKE_COMMAND} -E true)
+  endif()
+
   # Remove sections that are unused by the llext loader
   add_custom_command(
     OUTPUT ${llext_pkg_output}
+    COMMAND ${gnu_strip_for_mwdt_cmd}
     COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
             $<TARGET_PROPERTY:bintools,elfconvert_flag>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_strip_unneeded>
@@ -5977,7 +6101,7 @@ function(add_llext_target target_name)
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
     COMMAND ${slid_inject_cmd}
-    DEPENDS ${llext_proc_target} ${llext_pkg_input}
+    DEPENDS ${llext_pkg_input}
     COMMAND_EXPAND_LISTS
   )
 
@@ -6096,7 +6220,7 @@ function(llext_filter_zephyr_flags filter flags outvar)
        OUTPUT_VARIABLE llext_remove_flags_regexp
   )
   list(JOIN llext_remove_flags_regexp "|" llext_remove_flags_regexp)
-  if ("${llext_remove_flags_regexp}" STREQUAL "")
+  if("${llext_remove_flags_regexp}" STREQUAL "")
     # an empty regexp would match anything, we actually need the opposite
     # so set it to match empty strings
     set(llext_remove_flags_regexp "^$")

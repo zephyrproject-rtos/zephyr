@@ -16,3 +16,9 @@ shields:
     vendor: others
     supported_features:
       - can
+
+  - name: seeed_xiao_can
+    full_name: XIAO CAN Bus Shield
+    vendor: seeed
+    supported_features:
+      - can

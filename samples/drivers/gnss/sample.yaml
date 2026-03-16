@@ -11,3 +11,14 @@ tests:
     filter: dt_alias_exists("gnss")
     integration_platforms:
       - mimxrt1062_fmurt6
+
+  sample.drivers.gnss.rtk:
+    harness: rtk
+    tags:
+      - drivers
+      - gnss
+      - rtk
+    filter: dt_chosen_enabled("zephyr,rtk-serial") and dt_alias_exists("gnss")
+    extra_args: EXTRA_CONF_FILE=overlay-rtk.conf
+    integration_platforms:
+      - vmu_rt1170/mimxrt1176/cm7

@@ -11,7 +11,7 @@ This sample application periodically (1Hz) measures the ambient temperature
 in degrees Celsius. The result is written to the console.
 
 When configured in trigger mode the update interval is 5 s, and the
-sample maintains a |plusminus| 1 |deg| C window around a recent
+sample maintains a ±1 °C window around a recent
 temperature.  As soon as the temperature goes outside the window an
 interrupt causes the application to display an event and update the
 upper and lower window boundaries.

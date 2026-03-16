@@ -14,7 +14,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/drivers/usb/udc_buf.h>
+#include <zephyr/drivers/usb/usb_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/usb/usb_ch9.h>
 
@@ -295,8 +295,8 @@ struct udc_data {
 
 /**
  * @brief New USB device controller (UDC) driver API
- * @defgroup udc_api USB device controller driver API
- * @ingroup io_interfaces
+ * @defgroup udc_api USB Device Controller
+ * @ingroup usb_interfaces
  * @since 3.3
  * @version 0.1.0
  * @{

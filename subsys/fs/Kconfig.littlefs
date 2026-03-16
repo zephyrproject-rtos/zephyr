@@ -132,4 +132,12 @@ config FS_LITTLEFS_DISK_VERSION_NUMBER
 	help
 	  Set to 0 to use the latest littlefs disk version (LFS_DISK_VERSION).
 
+config FS_LITTLEFS_FSTAB_AUTOMOUNT
+	bool "Support for fstab auto-mounting"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ZEPHYR_FSTAB_LITTLEFS),automount,True)
+	default y
+	help
+	  This option enables littlefs support for the devicetree fstab auto-mounting
+	  functionality.
+
 endif # FILE_SYSTEM_LITTLEFS

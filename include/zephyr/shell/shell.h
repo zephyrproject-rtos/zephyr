@@ -20,7 +20,7 @@
 #include <zephyr/toolchain.h>
 
 #if defined CONFIG_SHELL_GETOPT
-#include <getopt.h>
+#include <zephyr/sys/sys_getopt.h>
 #endif
 
 #ifdef __cplusplus
@@ -130,7 +130,44 @@ struct shell_static_args {
  * start with this text.  Pass null if no prefix match is required.
  */
 const struct device *shell_device_lookup(size_t idx,
-				   const char *prefix);
+					 const char *prefix);
+
+/**
+ * @brief Get by index a device that matches .
+ *
+ * This can be used, for example, to identify I2C_1 as the second I2C
+ * device.
+ *
+ * Devices that failed to initialize - or deferred to be - are included
+ * from the candidates for a match, minus the ones who do not have
+ * a non-empty name.
+ *
+ * @param idx the device number starting from zero.
+ *
+ * @param prefix optional name prefix used to restrict candidate
+ * devices.  Indexing is done relative to devices with names that
+ * start with this text.  Pass null if no prefix match is required.
+ */
+const struct device *shell_device_lookup_all(size_t idx,
+					     const char *prefix);
+
+/**
+ * @brief Get by index a non-initialized device that matches .
+ *
+ * This can be used, for example, to identify I2C_1 as the second I2C
+ * device.
+ *
+ * Devices that initialized successfully or do not have a non-empty name
+ * are excluded.
+ *
+ * @param idx the device number starting from zero.
+ *
+ * @param prefix optional name prefix used to restrict candidate
+ * devices.  Indexing is done relative to devices with names that
+ * start with this text.  Pass null if no prefix match is required.
+ */
+const struct device *shell_device_lookup_non_ready(size_t idx,
+						   const char *prefix);
 
 /**
  * @brief Filter callback type, for use with shell_device_lookup_filter
@@ -181,6 +218,23 @@ const struct device *shell_device_filter(size_t idx,
  * failed.
  */
 const struct device *shell_device_get_binding(const char *name);
+
+/**
+ * @brief Get a @ref device reference from its @ref device.name field or label.
+ *
+ * This function iterates through the devices on the system. If a device with
+ * the given @p name field is found, this function returns a pointer to the
+ * device.
+ *
+ * If no device has the given @p name, this function returns `NULL`.
+ *
+ * @param name device name to search for. A null pointer, or a pointer to an
+ * empty string, will cause NULL to be returned.
+ *
+ * @return pointer to device structure with the given name; `NULL` if the device
+ * is not found.
+ */
+const struct device *shell_device_get_binding_all(const char *name);
 
 /**
  * @brief Shell command handler prototype.
@@ -272,10 +326,16 @@ struct shell_cmd_help {
  */
 static inline bool shell_help_is_structured(const char *help)
 {
-	const struct shell_cmd_help *structured = (const struct shell_cmd_help *)help;
+	const uint32_t magic32 = SHELL_STRUCTURED_HELP_MAGIC;
+	const char *magic = (const char *)&magic32;
 
-	return structured != NULL && IS_PTR_ALIGNED(structured, struct shell_cmd_help) &&
-	       structured->magic == SHELL_STRUCTURED_HELP_MAGIC;
+	/**
+	 * Check if what help points to starts with the structured help magic word,
+	 * but without assuming help is 32 bit aligned, or that if it is a string,
+	 * that it is at least 4 bytes long.
+	 */
+	return help != NULL && (magic[0] == help[0]) && (magic[1] == help[1])
+	       && (magic[2] == help[2]) && (magic[3] == help[3]);
 }
 
 #if defined(CONFIG_SHELL_HELP) || defined(__DOXYGEN__)
@@ -693,6 +753,8 @@ static int UTIL_CAT(UTIL_CAT(cmd_dict_, UTIL_CAT(_handler, _)),		\
 		SHELL_SUBCMD_SET_END					\
 	)
 
+/* @cond INTERNAL_HIDDEN */
+
 /**
  * @internal @brief Internal shell state in response to data received from the
  * terminal.
@@ -721,6 +783,15 @@ enum shell_transport_evt {
 	SHELL_TRANSPORT_EVT_TX_RDY
 };
 
+enum shell_readline_state {
+	SHELL_READLINE_INACTIVE,
+	SHELL_READLINE_ACTIVE,
+	SHELL_READLINE_DONE,
+	SHELL_READLINE_CANCELED,
+};
+
+/* @endcond */
+
 typedef void (*shell_transport_handler_t)(enum shell_transport_evt evt,
 					  void *context);
 
@@ -735,7 +806,8 @@ typedef void (*shell_uninit_cb_t)(const struct shell *sh, int res);
  */
 typedef void (*shell_bypass_cb_t)(const struct shell *sh,
 				  uint8_t *data,
-				  size_t len);
+				  size_t len,
+				  void *user_data);
 
 struct shell_transport;
 
@@ -870,10 +942,10 @@ BUILD_ASSERT((sizeof(struct shell_backend_config_flags) == sizeof(uint32_t)),
 };
 
 struct shell_backend_ctx_flags {
+	uint32_t last_nl      :8; /*!< Last received new line character */
 	uint32_t processing   :1; /*!< Shell is executing process function */
 	uint32_t tx_rdy       :1;
 	uint32_t history_exit :1; /*!< Request to exit history mode */
-	uint32_t last_nl      :8; /*!< Last received new line character */
 	uint32_t cmd_ctx      :1; /*!< Shell is executing command */
 	uint32_t print_noinit :1; /*!< Print request from not initialized shell */
 	uint32_t sync_mode    :1; /*!< Shell in synchronous mode */
@@ -900,11 +972,10 @@ union shell_backend_ctx {
 };
 
 enum shell_signal {
-	SHELL_SIGNAL_RXRDY,
-	SHELL_SIGNAL_LOG_MSG,
-	SHELL_SIGNAL_KILL,
-	SHELL_SIGNAL_TXDONE, /* TXDONE must be last one before SHELL_SIGNALS */
-	SHELL_SIGNALS
+	SHELL_SIGNAL_RXRDY = BIT(0),
+	SHELL_SIGNAL_LOG_MSG = BIT(1),
+	SHELL_SIGNAL_KILL = BIT(2),
+	SHELL_SIGNAL_TXDONE = BIT(3),
 };
 
 /**
@@ -919,6 +990,9 @@ struct shell_ctx {
 
 	enum shell_state state; /*!< Internal module state.*/
 	enum shell_receive_state receive_state;/*!< Escape sequence indicator.*/
+
+	/** Field tracking the readline state for user input */
+	enum shell_readline_state readline_state;
 
 	/** Currently executed command.*/
 	struct shell_static_entry active_cmd;
@@ -937,18 +1011,22 @@ struct shell_ctx {
 	/** When bypass is set, all incoming data is passed to the callback. */
 	shell_bypass_cb_t bypass;
 
+	/** When bypass is set, this user data pointer is passed to the callback. */
+	void *bypass_user_data;
+
 	/*!< Logging level for a backend. */
 	uint32_t log_level;
 
 #if defined CONFIG_SHELL_GETOPT
 	/*!< getopt context for a shell backend. */
-	struct getopt_state getopt;
+	struct sys_getopt_state getopt;
 #endif
 
 	uint16_t cmd_buff_len; /*!< Command length.*/
 	uint16_t cmd_buff_pos; /*!< Command buffer cursor position.*/
 
 	uint16_t cmd_tmp_buff_len; /*!< Command length in tmp buffer.*/
+	uint16_t cmd_tmp_buff_pos; /*!< Command buffer cursor position in tmp buffer.*/
 
 	/** Command input buffer.*/
 	char cmd_buff[CONFIG_SHELL_CMD_BUFF_SIZE];
@@ -962,14 +1040,9 @@ struct shell_ctx {
 	volatile union shell_backend_cfg cfg;
 	volatile union shell_backend_ctx ctx;
 
-	struct k_poll_signal signals[SHELL_SIGNALS];
+	struct k_event signal_event;
 
-	/** Events that should be used only internally by shell thread.
-	 * Event for SHELL_SIGNAL_TXDONE is initialized but unused.
-	 */
-	struct k_poll_event events[SHELL_SIGNALS];
-
-	struct k_mutex wr_mtx;
+	struct k_sem lock_sem;
 	k_tid_t tid;
 	int ret_val;
 };
@@ -1316,8 +1389,9 @@ int shell_set_root_cmd(const char *cmd);
  *
  * @param[in] sh	Pointer to the shell instance.
  * @param[in] bypass	Bypass callback or null to disable.
+ * @param[in] user_data	Bypass callback user data.
  */
-void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass);
+void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass, void *user_data);
 
 /** @brief Get shell readiness to execute commands.
  *
@@ -1335,7 +1409,7 @@ bool shell_ready(const struct shell *sh);
  * @param[in] sh	Pointer to the shell instance.
  * @param[in] val	Insert mode.
  *
- * @retval 0 or 1: previous value
+ * @return 0 or 1: previous value
  * @retval -EINVAL if shell is NULL.
  */
 int shell_insert_mode_set(const struct shell *sh, bool val);
@@ -1348,7 +1422,7 @@ int shell_insert_mode_set(const struct shell *sh, bool val);
  * @param[in] sh	Pointer to the shell instance.
  * @param[in] val	Color mode.
  *
- * @retval 0 or 1: previous value
+ * @return 0 or 1: previous value
  * @retval -EINVAL if shell is NULL.
  */
 int shell_use_colors_set(const struct shell *sh, bool val);
@@ -1360,7 +1434,7 @@ int shell_use_colors_set(const struct shell *sh, bool val);
  * @param[in] sh	Pointer to the shell instance.
  * @param[in] val	vt100 mode.
  *
- * @retval 0 or 1: previous value
+ * @return 0 or 1: previous value
  * @retval -EINVAL if shell is NULL.
  */
 int shell_use_vt100_set(const struct shell *sh, bool val);
@@ -1372,7 +1446,7 @@ int shell_use_vt100_set(const struct shell *sh, bool val);
  * @param[in] sh	Pointer to the shell instance.
  * @param[in] val	Echo mode.
  *
- * @retval 0 or 1: previous value
+ * @return 0 or 1: previous value
  * @retval -EINVAL if shell is NULL.
  */
 int shell_echo_set(const struct shell *sh, bool val);
@@ -1385,7 +1459,7 @@ int shell_echo_set(const struct shell *sh, bool val);
  * @param[in] sh	Pointer to the shell instance.
  * @param[in] obscure	Obscure mode.
  *
- * @retval 0 or 1: previous value.
+ * @return 0 or 1: previous value.
  * @retval -EINVAL if shell is NULL.
  */
 int shell_obscure_set(const struct shell *sh, bool obscure);
@@ -1398,7 +1472,7 @@ int shell_obscure_set(const struct shell *sh, bool obscure);
  * @param[in] sh	Pointer to the shell instance.
  * @param[in] val	Delete mode.
  *
- * @retval 0 or 1: previous value
+ * @return 0 or 1: previous value
  * @retval -EINVAL if shell is NULL.
  */
 int shell_mode_delete_set(const struct shell *sh, bool val);
@@ -1408,9 +1482,32 @@ int shell_mode_delete_set(const struct shell *sh, bool val);
  *
  * @param[in] sh Pointer to the shell instance
  *
- * @retval return value of previous command
+ * @return return value of previous command
  */
 int shell_get_return_value(const struct shell *sh);
+
+/**
+ * @brief Read a line of input from the shell.
+ *
+ * This function reads from the shell transport until a newline character is
+ * received, storing the data in the provided buffer. The newline character is
+ * not included in the buffer. The buffer is null-terminated on success.
+ *
+ * @note This function should be called from the shell thread in a shell command
+ *       handler and blocks the thread until a result is returned.
+ *
+ * @param[in]  sh      Shell instance.
+ * @param[out] buf     Buffer to store the input line.
+ * @param[in]  len     Maximum buffer size (including null terminator).
+ * @param[in]  timeout Maximum time to wait for a complete line.
+ *
+ * @return Number of bytes read (excluding null terminator) on success.
+ * @retval -ETIMEDOUT If timeout occurred before newline was received.
+ * @retval -ENOBUFS If @a buf is NULL or input exceeds buffer size.
+ * @retval -ECANCELED If CTRL+C was pressed.
+ * @retval -EACCES If not called from an active shell command or bypass callback is set.
+ */
+int shell_readline(const struct shell *sh, uint8_t *buf, size_t len, k_timeout_t timeout);
 
 /**
  * @}

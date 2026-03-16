@@ -9,13 +9,13 @@ import logging
 import struct
 
 from coredump_parser.elf_parser import ThreadInfoOffset
-from gdbstubs.gdbstub import GdbStub
 
+from gdbstubs.gdbstub import GdbStub
 
 logger = logging.getLogger("gdbstub")
 
 
-class RegNum():
+class RegNum:
     R0 = 0
     R1 = 1
     R2 = 2
@@ -36,8 +36,9 @@ class RegNum():
 
 
 class GdbStub_ARM_CortexM(GdbStub):
-    ARCH_DATA_BLK_STRUCT    = "<IIIIIIIII"
+    ARCH_DATA_BLK_STRUCT = "<IIIIIIIII"
     ARCH_DATA_BLK_STRUCT_V2 = "<IIIIIIIIIIIIIIIII"
+    ARCH_DATA_BLK_STRUCT_V3 = "<IIIIIIIIIIIIIIIIIII"
 
     GDB_SIGNAL_DEFAULT = 7
 
@@ -47,6 +48,7 @@ class GdbStub_ARM_CortexM(GdbStub):
         super().__init__(logfile=logfile, elffile=elffile)
         self.registers = None
         self.gdb_signal = self.GDB_SIGNAL_DEFAULT
+        self.callee_saved_offset = None
 
         self.parse_arch_data_block()
 
@@ -58,6 +60,8 @@ class GdbStub_ARM_CortexM(GdbStub):
             tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT, arch_data_blk)
         elif arch_data_ver == 2:
             tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT_V2, arch_data_blk)
+        elif arch_data_ver == 3:
+            tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT_V3, arch_data_blk)
 
         self.registers = dict()
 
@@ -72,14 +76,19 @@ class GdbStub_ARM_CortexM(GdbStub):
         self.registers[RegNum.SP] = tu[8]
 
         if arch_data_ver > 1:
-            self.registers[RegNum.R4]  = tu[9]
-            self.registers[RegNum.R5]  = tu[10]
-            self.registers[RegNum.R6]  = tu[11]
-            self.registers[RegNum.R7]  = tu[12]
-            self.registers[RegNum.R8]  = tu[13]
-            self.registers[RegNum.R9]  = tu[14]
+            self.registers[RegNum.R4] = tu[9]
+            self.registers[RegNum.R5] = tu[10]
+            self.registers[RegNum.R6] = tu[11]
+            self.registers[RegNum.R7] = tu[12]
+            self.registers[RegNum.R8] = tu[13]
+            self.registers[RegNum.R9] = tu[14]
             self.registers[RegNum.R10] = tu[15]
             self.registers[RegNum.R11] = tu[16]
+
+        if arch_data_ver > 2:
+            callee_saved_valid = tu[17]
+            if callee_saved_valid:
+                self.callee_saved_offset = tu[18]
 
     def send_registers_packet(self, registers):
         reg_fmt = "<I"
@@ -115,8 +124,15 @@ class GdbStub_ARM_CortexM(GdbStub):
 
     def handle_register_single_write_packet(self, pkt):
         pkt_str = pkt.decode("ascii")
-        reg = int(pkt_str[1:pkt_str.index('=')], 16)
-        self.registers[reg] = int.from_bytes(binascii.unhexlify(pkt[3:]), byteorder = 'little')
+        separator_index = pkt_str.index('=')
+
+        if separator_index < 0:
+            raise ValueError(f"Malformed register write packet: {pkt_str}")
+
+        reg = int(pkt_str[1:separator_index], 16)
+        self.registers[reg] = int.from_bytes(
+            binascii.unhexlify(pkt[(separator_index + 1) :]), byteorder='little'
+        )
         self.put_gdb_packet(b'+')
 
     def arch_supports_thread_operations(self):
@@ -130,7 +146,9 @@ class GdbStub_ARM_CortexM(GdbStub):
             thread_ptr = self.thread_ptrs[self.selected_thread]
 
             # Get stack pointer out of thread struct
-            t_stack_ptr_offset = self.elffile.get_kernel_thread_info_offset(ThreadInfoOffset.THREAD_INFO_OFFSET_T_STACK_PTR)
+            t_stack_ptr_offset = self.elffile.get_kernel_thread_info_offset(
+                ThreadInfoOffset.THREAD_INFO_OFFSET_T_STACK_PTR
+            )
             size_t_size = self.elffile.get_kernel_thread_info_size_t_size()
             stack_ptr_bytes = self.get_memory(thread_ptr + t_stack_ptr_offset, size_t_size)
 
@@ -156,19 +174,42 @@ class GdbStub_ARM_CortexM(GdbStub):
                     thread_registers[RegNum.SP] = stack_ptr + 32
 
                     # Read the exc_return value from the thread's arch struct
-                    t_arch_offset = self.elffile.get_kernel_thread_info_offset(ThreadInfoOffset.THREAD_INFO_OFFSET_T_ARCH)
-                    t_exc_return_offset = self.elffile.get_kernel_thread_info_offset(ThreadInfoOffset.THREAD_INFO_OFFSET_T_ARM_EXC_RETURN)
+                    t_arch_offset = self.elffile.get_kernel_thread_info_offset(
+                        ThreadInfoOffset.THREAD_INFO_OFFSET_T_ARCH
+                    )
+                    t_exc_return_offset = self.elffile.get_kernel_thread_info_offset(
+                        ThreadInfoOffset.THREAD_INFO_OFFSET_T_ARM_EXC_RETURN
+                    )
 
                     # Value of 0xffffffff indicates THREAD_INFO_UNIMPLEMENTED
-                    if t_exc_return_offset != 0xffffffff:
-                        exc_return_bytes = self.get_memory(thread_ptr + t_arch_offset + t_exc_return_offset, 1)
+                    if t_exc_return_offset != 0xFFFFFFFF:
+                        exc_return_bytes = self.get_memory(
+                            thread_ptr + t_arch_offset + t_exc_return_offset, 1
+                        )
                         exc_return = int.from_bytes(exc_return_bytes, "little")
 
-                        # If the bit 4 is not set, the stack frame is extended for floating point data, adjust the SP accordingly
+                        # If the bit 4 is not set, the stack frame is extended for floating point
+                        # data, adjust the SP accordingly
                         if (exc_return & (1 << 4)) == 0:
                             thread_registers[RegNum.SP] = thread_registers[RegNum.SP] + 72
 
                     # Set R7 to match the stack pointer in case the frame pointer is not omitted
                     thread_registers[RegNum.R7] = thread_registers[RegNum.SP]
+
+                # Read callee-saved registers (r4-r11) from _callee_saved struct.
+                if self.callee_saved_offset is not None:
+                    callee_saved_bytes = self.get_memory(
+                        thread_ptr + self.callee_saved_offset, size_t_size * 8
+                    )
+                    if callee_saved_bytes is not None:
+                        callee_regs = struct.unpack("<IIIIIIII", callee_saved_bytes)
+                        thread_registers[RegNum.R4] = callee_regs[0]
+                        thread_registers[RegNum.R5] = callee_regs[1]
+                        thread_registers[RegNum.R6] = callee_regs[2]
+                        thread_registers[RegNum.R7] = callee_regs[3]
+                        thread_registers[RegNum.R8] = callee_regs[4]
+                        thread_registers[RegNum.R9] = callee_regs[5]
+                        thread_registers[RegNum.R10] = callee_regs[6]
+                        thread_registers[RegNum.R11] = callee_regs[7]
 
             self.send_registers_packet(thread_registers)

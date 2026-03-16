@@ -46,6 +46,7 @@ ExternalProject_Add(tfm_regression_test_app
                 -G ${CMAKE_GENERATOR}
                 -S ${TFM_TEST_REPO_PATH}/tests_reg
                 -B ${PROJECT_BINARY_DIR}/tfm_ns
+                -DPython3_EXECUTABLE=${PYTHON_EXECUTABLE}
                 -DCONFIG_SPE_PATH=${TFM_BINARY_DIR}/api_ns
                 -DTFM_TOOLCHAIN_FILE=cmake/${TFM_TOOLCHAIN_NS_FILE}
                 -DCROSS_COMPILE=${TFM_TOOLCHAIN_PATH}/${TFM_TOOLCHAIN_PREFIX}

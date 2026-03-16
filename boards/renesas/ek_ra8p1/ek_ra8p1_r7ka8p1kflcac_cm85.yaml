@@ -10,4 +10,7 @@ toolchain:
 supported:
   - gpio
   - uart
+  - spi
+  - sdhc
+  - netif:eth
 vendor: renesas

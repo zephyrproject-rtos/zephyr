@@ -48,13 +48,13 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 #if defined(CONFIG_NET_IPV6)
 /* Interface 1 addresses */
-static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static struct net_in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
+					    0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 #endif
 
 #if defined(CONFIG_NET_IPV4)
 /* Interface 1 addresses */
-static struct in_addr my_addr2 = { { { 192, 0, 2, 1 } } };
+static struct net_in_addr my_addr2 = { { { 192, 0, 2, 1 } } };
 #endif
 
 static struct net_mgmt_event_callback mgmt_cb;

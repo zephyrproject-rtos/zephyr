@@ -19,6 +19,11 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/data/json.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/net/net_config.h>
+
+#if CONFIG_USB_DEVICE_STACK_NEXT
+#include <sample_usbd.h>
+#endif
 
 #include "ws.h"
 
@@ -67,7 +72,7 @@ static struct http_resource_detail_static main_js_gz_resource_detail = {
 	.static_data_len = sizeof(main_js_gz),
 };
 
-static int echo_handler(struct http_client_ctx *client, enum http_data_status status,
+static int echo_handler(struct http_client_ctx *client, enum http_transaction_status status,
 			const struct http_request_ctx *request_ctx,
 			struct http_response_ctx *response_ctx, void *user_data)
 {
@@ -76,13 +81,16 @@ static int echo_handler(struct http_client_ctx *client, enum http_data_status st
 	enum http_method method = client->method;
 	static size_t processed;
 
-	if (status == HTTP_SERVER_DATA_ABORTED) {
-		LOG_DBG("Transaction aborted after %zd bytes.", processed);
+	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
+	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
+		if (status == HTTP_SERVER_TRANSACTION_ABORTED) {
+			LOG_DBG("Transaction aborted after %zd bytes.", processed);
+		}
 		processed = 0;
 		return 0;
 	}
 
-	__ASSERT_NO_MSG(buffer != NULL);
+	__ASSERT_NO_MSG(request_ctx->data != NULL);
 
 	processed += request_ctx->data_len;
 
@@ -90,7 +98,7 @@ static int echo_handler(struct http_client_ctx *client, enum http_data_status st
 		 request_ctx->data_len);
 	LOG_HEXDUMP_DBG(request_ctx->data, request_ctx->data_len, print_str);
 
-	if (status == HTTP_SERVER_DATA_FINAL) {
+	if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
 		LOG_DBG("All data received (%zd bytes).", processed);
 		processed = 0;
 	}
@@ -98,7 +106,7 @@ static int echo_handler(struct http_client_ctx *client, enum http_data_status st
 	/* Echo data back to client */
 	response_ctx->body = request_ctx->data;
 	response_ctx->body_len = request_ctx->data_len;
-	response_ctx->final_chunk = (status == HTTP_SERVER_DATA_FINAL);
+	response_ctx->final_chunk = (status == HTTP_SERVER_REQUEST_DATA_FINAL);
 
 	return 0;
 }
@@ -112,7 +120,7 @@ static struct http_resource_detail_dynamic echo_resource_detail = {
 	.user_data = NULL,
 };
 
-static int uptime_handler(struct http_client_ctx *client, enum http_data_status status,
+static int uptime_handler(struct http_client_ctx *client, enum http_transaction_status status,
 			  const struct http_request_ctx *request_ctx,
 			  struct http_response_ctx *response_ctx, void *user_data)
 {
@@ -124,7 +132,7 @@ static int uptime_handler(struct http_client_ctx *client, enum http_data_status 
 	/* A payload is not expected with the GET request. Ignore any data and wait until
 	 * final callback before sending response
 	 */
-	if (status == HTTP_SERVER_DATA_FINAL) {
+	if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
 		ret = snprintf(uptime_buf, sizeof(uptime_buf), "%" PRId64, k_uptime_get());
 		if (ret < 0) {
 			LOG_ERR("Failed to snprintf uptime, err %d", ret);
@@ -171,7 +179,7 @@ static void parse_led_post(uint8_t *buf, size_t len)
 	}
 }
 
-static int led_handler(struct http_client_ctx *client, enum http_data_status status,
+static int led_handler(struct http_client_ctx *client, enum http_transaction_status status,
 		       const struct http_request_ctx *request_ctx,
 		       struct http_response_ctx *response_ctx, void *user_data)
 {
@@ -180,7 +188,8 @@ static int led_handler(struct http_client_ctx *client, enum http_data_status sta
 
 	LOG_DBG("LED handler status %d, size %zu", status, request_ctx->data_len);
 
-	if (status == HTTP_SERVER_DATA_ABORTED) {
+	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
+	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
 		cursor = 0;
 		return 0;
 	}
@@ -197,7 +206,7 @@ static int led_handler(struct http_client_ctx *client, enum http_data_status sta
 	memcpy(post_payload_buf + cursor, request_ctx->data, request_ctx->data_len);
 	cursor += request_ctx->data_len;
 
-	if (status == HTTP_SERVER_DATA_FINAL) {
+	if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
 		parse_led_post(post_payload_buf, cursor);
 		cursor = 0;
 	}
@@ -248,7 +257,7 @@ struct http_resource_detail_websocket ws_netstats_resource_detail = {
 #if defined(CONFIG_NET_SAMPLE_HTTP_SERVICE)
 static uint16_t test_http_service_port = CONFIG_NET_SAMPLE_HTTP_SERVER_SERVICE_PORT;
 HTTP_SERVICE_DEFINE(test_http_service, NULL, &test_http_service_port,
-		    CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL);
+		    CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL, NULL);
 
 HTTP_RESOURCE_DEFINE(index_html_gz_resource, test_http_service, "/",
 		     &index_html_gz_resource_detail);
@@ -281,7 +290,7 @@ static const sec_tag_t sec_tag_list_verify_none[] = {
 
 static uint16_t test_https_service_port = CONFIG_NET_SAMPLE_HTTPS_SERVER_SERVICE_PORT;
 HTTPS_SERVICE_DEFINE(test_https_service, NULL, &test_https_service_port,
-		     CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL, sec_tag_list_verify_none,
+		     CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL, NULL, sec_tag_list_verify_none,
 		     sizeof(sec_tag_list_verify_none));
 
 HTTP_RESOURCE_DEFINE(index_html_gz_resource_https, test_https_service, "/",
@@ -347,14 +356,27 @@ static void setup_tls(void)
 #endif /* defined(CONFIG_NET_SAMPLE_HTTPS_SERVICE) */
 }
 
-#if defined(CONFIG_USB_DEVICE_STACK)
-int init_usb(void);
-#else
-static inline int init_usb(void)
+static int init_usb(void)
 {
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
+	struct usbd_context *sample_usbd;
+	int err;
+
+	sample_usbd = sample_usbd_init_device(NULL);
+	if (sample_usbd == NULL) {
+		return -ENODEV;
+	}
+
+	err = usbd_enable(sample_usbd);
+	if (err) {
+		return err;
+	}
+
+	(void)net_config_init_app(NULL, "Initializing network");
+#endif /* CONFIG_USB_DEVICE_STACK_NEXT */
+
 	return 0;
 }
-#endif /* CONFIG_USB_DEVICE_STACK */
 
 int main(void)
 {

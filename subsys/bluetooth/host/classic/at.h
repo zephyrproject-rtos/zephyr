@@ -89,9 +89,7 @@ typedef int (*handle_cmd_input_t)(struct at_client *at, struct net_buf *buf,
 				  enum at_cmd_type type);
 
 struct at_client {
-	char *buf;
-	uint8_t pos;
-	uint8_t buf_max_len;
+	struct net_buf_simple rsp_buf;
 	uint8_t state;
 	uint8_t cmd_state;
 	at_resp_cb_t resp;
@@ -115,6 +113,6 @@ int at_list_get_range(struct at_client *at, uint32_t *min, uint32_t *max);
 int at_list_get_string(struct at_client *at, char *name, uint8_t len);
 int at_close_list(struct at_client *at);
 int at_open_list(struct at_client *at);
-int at_has_next_list(struct at_client *at);
-char *at_get_string(struct at_client *at);
-char *at_get_raw_string(struct at_client *at, size_t *string_len);
+bool at_has_next_list(struct at_client *at);
+const char *at_get_string(struct at_client *at);
+const char *at_get_raw_string(struct at_client *at, size_t *string_len);

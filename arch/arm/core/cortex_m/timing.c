@@ -75,7 +75,7 @@ static inline uint64_t z_arm_dwt_freq_get(void)
 		dwt_frequency = (cyc_freq * ddwt) / dcyc;
 	}
 	return dwt_frequency;
-#endif /* CONFIG_SOC_FAMILY_NORDIC_NRF */
+#endif
 }
 
 void arch_timing_init(void)

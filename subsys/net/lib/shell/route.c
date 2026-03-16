@@ -116,8 +116,8 @@ static int cmd_net_ip6_route_add(const struct shell *sh, size_t argc, char *argv
 	struct net_if *iface = NULL;
 	int idx;
 	struct net_route_entry *route;
-	struct in6_addr gw = {0};
-	struct in6_addr prefix = {0};
+	struct net_in6_addr gw = {0};
+	struct net_in6_addr prefix = {0};
 
 	if (argc != 4) {
 		PR_ERROR("Correct usage: net route add <index> "
@@ -136,12 +136,12 @@ static int cmd_net_ip6_route_add(const struct shell *sh, size_t argc, char *argv
 		return -ENOEXEC;
 	}
 
-	if (net_addr_pton(AF_INET6, argv[2], &prefix)) {
+	if (net_addr_pton(NET_AF_INET6, argv[2], &prefix)) {
 		PR_ERROR("Invalid address: %s\n", argv[2]);
 		return -EINVAL;
 	}
 
-	if (net_addr_pton(AF_INET6, argv[3], &gw)) {
+	if (net_addr_pton(NET_AF_INET6, argv[3], &gw)) {
 		PR_ERROR("Invalid gateway: %s\n", argv[3]);
 		return -EINVAL;
 	}
@@ -168,7 +168,7 @@ static int cmd_net_ip6_route_del(const struct shell *sh, size_t argc, char *argv
 	struct net_if *iface = NULL;
 	int idx;
 	struct net_route_entry *route;
-	struct in6_addr prefix = { 0 };
+	struct net_in6_addr prefix = { 0 };
 
 	if (argc != 3) {
 		PR_ERROR("Correct usage: net route del <index> <destination>\n");
@@ -185,7 +185,7 @@ static int cmd_net_ip6_route_del(const struct shell *sh, size_t argc, char *argv
 		return -ENOEXEC;
 	}
 
-	if (net_addr_pton(AF_INET6, argv[2], &prefix)) {
+	if (net_addr_pton(NET_AF_INET6, argv[2], &prefix)) {
 		PR_ERROR("Invalid address: %s\n", argv[2]);
 		return -EINVAL;
 	}
@@ -232,12 +232,12 @@ static int cmd_net_route(const struct shell *sh, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_route,
 	SHELL_CMD(add, NULL,
-		  "'net route add <index> <destination> <gateway>'"
-		  " adds the route to the destination.",
+		  SHELL_HELP("Adds the route to the destination",
+			     "<index> <destination> <gateway>"),
 		  cmd_net_ip6_route_add),
 	SHELL_CMD(del, NULL,
-		  "'net route del <index> <destination>'"
-		  " deletes the route to the destination.",
+		  SHELL_HELP("Deletes the route to the destination",
+			     "<index> <destination>"),
 		  cmd_net_ip6_route_del),
 	SHELL_SUBCMD_SET_END
 );

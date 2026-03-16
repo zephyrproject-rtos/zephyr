@@ -20,16 +20,15 @@
 
 
 /* Check dt-bindings match MDK frequency division definitions*/
-BUILD_ASSERT(NRF_AUXPLL_FREQ_DIV_MIN		== NRF_AUXPLL_FREQUENCY_DIV_MIN,
-	"Different AUXPLL_FREQ_DIV_MIN definition in MDK and devicetree binding");
-BUILD_ASSERT(NRF_AUXPLL_FREQ_DIV_AUDIO_44K1	== NRF_AUXPLL_FREQUENCY_AUDIO_44K1,
-	"Different AUXPLL_FREQ_DIV_AUDIO_44K1 definition in MDK and devicetree binding");
-BUILD_ASSERT(NRF_AUXPLL_FREQ_DIV_USB24M		== NRF_AUXPLL_FREQUENCY_USB_24M,
-	"Different AUXPLL_FREQ_DIV_USB24M definition in MDK and devicetree binding");
-BUILD_ASSERT(NRF_AUXPLL_FREQ_DIV_AUDIO_48K	== NRF_AUXPLL_FREQUENCY_AUDIO_48K,
-	"Different AUXPLL_FREQ_DIV_AUDIO_48K definition in MDK and devicetree binding");
-BUILD_ASSERT(NRF_AUXPLL_FREQ_DIV_MAX		== NRF_AUXPLL_FREQUENCY_DIV_MAX,
-	"Different AUXPLL_FREQ_DIV_MAX definition in MDK and devicetree binding");
+#define CHECK_DTS_BINDING_VS_MDK(dt, mdk) \
+	BUILD_ASSERT((mdk) == (dt), \
+		"Different " #mdk " definition in MDK and devicetree binding")
+
+CHECK_DTS_BINDING_VS_MDK(NRF_AUXPLL_FREQ_DIV_MIN,	 NRF_AUXPLL_FREQUENCY_DIV_MIN);
+CHECK_DTS_BINDING_VS_MDK(NRF_AUXPLL_FREQ_DIV_AUDIO_44K1, NRF_AUXPLL_FREQUENCY_AUDIO_44K1);
+CHECK_DTS_BINDING_VS_MDK(NRF_AUXPLL_FREQ_DIV_USB24M,	 NRF_AUXPLL_FREQUENCY_USB_24M);
+CHECK_DTS_BINDING_VS_MDK(NRF_AUXPLL_FREQ_DIV_AUDIO_48K,	 NRF_AUXPLL_FREQUENCY_AUDIO_48K);
+CHECK_DTS_BINDING_VS_MDK(NRF_AUXPLL_FREQ_DIV_MAX,	 NRF_AUXPLL_FREQUENCY_DIV_MAX);
 
 /* maximum lock time in us, >10x time observed experimentally */
 #define AUXPLL_LOCK_TIME_MAX_US  20000
@@ -48,8 +47,36 @@ struct clock_control_nrf_auxpll_config {
 	uint32_t ficr_ctune;
 	nrf_auxpll_config_t cfg;
 	nrf_auxpll_freq_div_ratio_t frequency;
-	nrf_auxpll_ctrl_outsel_t out_div;
+	uint8_t out_div;
 };
+
+/* Helper function to convert out_div to register AUXPLLCTRL.OUTSEL value */
+static inline void set_out_div(const struct clock_control_nrf_auxpll_config *config)
+{
+	nrf_auxpll_ctrl_outsel_t out_div_nrfx;
+	uint8_t out_div_dts = config->out_div;
+
+	switch (out_div_dts) {
+	case NRF_AUXPLL_CTRL_OUTSEL_DIV_6:
+		out_div_nrfx = (nrf_auxpll_ctrl_outsel_t)AUXPLL_AUXPLLCTRL_OUTSEL_OUTSEL_Div6;
+		break;
+	case NRF_AUXPLL_CTRL_OUTSEL_DIV_8:
+		out_div_nrfx = (nrf_auxpll_ctrl_outsel_t)AUXPLL_AUXPLLCTRL_OUTSEL_OUTSEL_Div8;
+		break;
+	case NRF_AUXPLL_CTRL_OUTSEL_DIV_12:
+		out_div_nrfx = (nrf_auxpll_ctrl_outsel_t)AUXPLL_AUXPLLCTRL_OUTSEL_OUTSEL_Div12;
+		break;
+	case NRF_AUXPLL_CTRL_OUTSEL_DIV_16:
+		out_div_nrfx = (nrf_auxpll_ctrl_outsel_t)AUXPLL_AUXPLLCTRL_OUTSEL_OUTSEL_Div16;
+		break;
+	default:
+		/* Values less than 5 align with the OUTSEL register value */
+		out_div_nrfx = out_div_dts;
+		break;
+	}
+
+	nrf_auxpll_ctrl_outsel_set(config->auxpll, out_div_nrfx);
+}
 
 static int clock_control_nrf_auxpll_on(struct dev_data_auxpll *dev_data)
 {
@@ -182,7 +209,7 @@ static int clock_control_nrf_auxpll_init(const struct device *dev)
 	nrf_auxpll_lock(config->auxpll);
 	nrf_auxpll_trim_ctune_set(config->auxpll, sys_read8(config->ficr_ctune));
 	nrf_auxpll_config_set(config->auxpll, &config->cfg);
-	nrf_auxpll_ctrl_outsel_set(config->auxpll, config->out_div);
+	set_out_div(config);
 	nrf_auxpll_unlock(config->auxpll);
 
 	nrf_auxpll_ctrl_mode_set(config->auxpll, NRF_AUXPLL_CTRL_MODE_LOCKED);

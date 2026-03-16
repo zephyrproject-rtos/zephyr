@@ -1,11 +1,12 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /*
  * To test this sample
  * frdm_mcxa156 connect P3_20 to P3_21
+ * frdm_mcxe247 connect J5-3 to J5-4
  */
 
 dut: &lpuart1 {};

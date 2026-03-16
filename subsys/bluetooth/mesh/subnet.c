@@ -22,7 +22,6 @@
 #include "common/bt_str.h"
 
 #include "crypto.h"
-#include "mesh.h"
 #include "net.h"
 #include "lpn.h"
 #include "friend.h"
@@ -970,6 +969,10 @@ static int net_key_set(const char *name, size_t len_rd,
 	struct bt_mesh_key val[2];
 	int err;
 	uint16_t net_idx;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
 
 	if (!name) {
 		LOG_ERR("Insufficient number of arguments");

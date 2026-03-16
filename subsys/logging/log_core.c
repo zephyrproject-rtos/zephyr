@@ -311,10 +311,13 @@ static uint32_t activate_foreach_backend(uint32_t mask)
 
 		mask_cpy &= ~BIT(i);
 		if (backend->autostart && (log_backend_is_ready(backend) == 0)) {
+			uint32_t level = CONFIG_LOG_MAX_LEVEL;
+
+#if defined(CONFIG_LOG_RUNTIME_FILTERING) && defined(CONFIG_LOG_RUNTIME_DEFAULT_LEVEL)
+			level = CONFIG_LOG_RUNTIME_DEFAULT_LEVEL;
+#endif
 			mask &= ~BIT(i);
-			log_backend_enable(backend,
-					   backend->cb->ctx,
-					   CONFIG_LOG_MAX_LEVEL);
+			log_backend_enable(backend, backend->cb->ctx, level);
 		}
 	}
 
@@ -344,15 +347,18 @@ static uint32_t z_log_init(bool blocking, bool can_sleep)
 	STRUCT_SECTION_FOREACH(log_backend, backend) {
 		/* Activate autostart backends */
 		if (backend->autostart) {
+			uint32_t level = CONFIG_LOG_MAX_LEVEL;
+
+#if defined(CONFIG_LOG_RUNTIME_FILTERING) && defined(CONFIG_LOG_RUNTIME_DEFAULT_LEVEL)
+			level = CONFIG_LOG_RUNTIME_DEFAULT_LEVEL;
+#endif
 			log_backend_init(backend);
 
 			/* If backend has activation function then backend is
 			 * not ready until activated.
 			 */
 			if (log_backend_is_ready(backend) == 0) {
-				log_backend_enable(backend,
-						   backend->cb->ctx,
-						   CONFIG_LOG_MAX_LEVEL);
+				log_backend_enable(backend, backend->cb->ctx, level);
 			} else {
 				mask |= BIT(backend_index);
 			}
@@ -759,9 +765,9 @@ union log_msg_generic *z_log_msg_claim_oldest(k_timeout_t *backoff)
 				* long processing shall back off.
 				*/
 				if (timestamp_freq == sys_clock_hw_cycles_per_sec()) {
-					*backoff = K_TICKS(diff);
+					*backoff = K_CYC(diff);
 				} else {
-					*backoff = K_TICKS((diff * sys_clock_hw_cycles_per_sec()) /
+					*backoff = K_CYC((diff * sys_clock_hw_cycles_per_sec()) /
 							timestamp_freq);
 				}
 

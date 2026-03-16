@@ -14,6 +14,7 @@ endif()
 set_property(TARGET linker PROPERTY no_position_independent "${LINKERFLAGPREFIX},--no-pie")
 
 set_property(TARGET linker PROPERTY lto_arguments)
+set_property(TARGET linker PROPERTY lto_arguments_st)
 
 check_set_linker_property(TARGET linker PROPERTY sort_alignment ${LINKERFLAGPREFIX},--sort-section=alignment)
 

@@ -36,7 +36,9 @@
 #if defined(CONFIG_BT_ISO_TX)
 #define DEFAULT_IO_QOS                                                                             \
 	{                                                                                          \
-		.sdu = 40u, .phy = BT_GAP_LE_PHY_2M, .rtn = 2u,                                    \
+		.sdu = 40u,                                                                        \
+		.phy = BT_GAP_LE_PHY_2M,                                                           \
+		.rtn = 2u,                                                                         \
 	}
 
 #define TX_BUF_TIMEOUT K_SECONDS(1)
@@ -56,8 +58,7 @@ static int64_t bis_sn_last_updated_ticks;
  *
  * @return The next sequence number to use
  */
-static uint32_t get_next_sn(uint32_t last_sn, int64_t *last_ticks,
-			    uint32_t interval_us)
+static uint32_t get_next_sn(uint32_t last_sn, int64_t *last_ticks, uint32_t interval_us)
 {
 	int64_t uptime_ticks, delta_ticks;
 	uint64_t delta_us;
@@ -84,8 +85,8 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 		     struct net_buf *buf)
 {
 	if (info->flags & BT_ISO_FLAGS_VALID) {
-		bt_shell_print("Incoming data channel %p len %u, seq: %d, ts: %d",
-			       chan, buf->len, info->seq_num, info->ts);
+		bt_shell_print("Incoming data channel %p len %u, seq: %d, ts: %d", chan, buf->len,
+			       info->seq_num, info->ts);
 	}
 }
 #endif /* CONFIG_BT_ISO_RX */
@@ -204,9 +205,7 @@ static long parse_interval(const struct shell *sh, const char *interval_str)
 		return -ENOEXEC;
 	}
 
-	if (!IN_RANGE(interval,
-		      BT_ISO_SDU_INTERVAL_MIN,
-		      BT_ISO_SDU_INTERVAL_MAX)) {
+	if (!IN_RANGE(interval, BT_ISO_SDU_INTERVAL_MIN, BT_ISO_SDU_INTERVAL_MAX)) {
 		shell_error(sh, "Invalid interval %lu", interval);
 
 		return -ENOEXEC;
@@ -228,9 +227,7 @@ static long parse_latency(const struct shell *sh, const char *latency_str)
 		return -ENOEXEC;
 	}
 
-	if (!IN_RANGE(latency,
-		      BT_ISO_LATENCY_MIN,
-		      BT_ISO_LATENCY_MAX)) {
+	if (!IN_RANGE(latency, BT_ISO_LATENCY_MIN, BT_ISO_LATENCY_MAX)) {
 		shell_error(sh, "Invalid latency %lu", latency);
 
 		return -ENOEXEC;
@@ -406,8 +403,7 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 			return -ENOEXEC;
 		}
 
-		if (phy != BT_GAP_LE_PHY_1M &&
-		    phy != BT_GAP_LE_PHY_2M &&
+		if (phy != BT_GAP_LE_PHY_1M && phy != BT_GAP_LE_PHY_2M &&
 		    phy != BT_GAP_LE_PHY_CODED) {
 			shell_error(sh, "Invalid phy %lu", phy);
 
@@ -486,22 +482,13 @@ static int cmd_cig_term(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct bt_iso_connect_param connect_param = {
-		.acl = default_conn,
-		.iso_chan = &iso_chan
-	};
+	struct bt_iso_connect_param connect_param = {.acl = default_conn, .iso_chan = &iso_chan};
 	int err;
 
 	if (iso_chan.iso == NULL) {
 		shell_error(sh, "ISO channel not initialized in a CIG");
 		return 0;
 	}
-
-#if defined(CONFIG_BT_SMP)
-	if (argc > 1) {
-		iso_chan.required_sec_level = *argv[1] - '0';
-	}
-#endif /* CONFIG_BT_SMP */
 
 	err = bt_iso_chan_connect(&connect_param, 1);
 	if (err) {
@@ -517,11 +504,10 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_BT_ISO_PERIPHERAL)
 
-static int iso_accept(const struct bt_iso_accept_info *info,
-		      struct bt_iso_chan **chan)
+static int iso_accept(const struct bt_iso_accept_info *info, struct bt_iso_chan **chan)
 {
-	bt_shell_print("Incoming request from %p with CIG ID 0x%02X and CIS ID 0x%02X",
-		       info->acl, info->cig_id, info->cis_id);
+	bt_shell_print("Incoming request from %p with CIG ID 0x%02X and CIS ID 0x%02X", info->acl,
+		       info->cig_id, info->cis_id);
 
 	if (iso_chan.iso) {
 		bt_shell_print("No channels available");
@@ -544,9 +530,6 @@ static int iso_accept(const struct bt_iso_accept_info *info,
 }
 
 struct bt_iso_server iso_server = {
-#if defined(CONFIG_BT_SMP)
-	.sec_level = BT_SECURITY_L1,
-#endif /* CONFIG_BT_SMP */
 	.accept = iso_accept,
 };
 
@@ -569,12 +552,6 @@ static int cmd_listen(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-#if defined(CONFIG_BT_SMP)
-	if (argc > 2) {
-		iso_server.sec_level = *argv[2] - '0';
-	}
-#endif /* CONFIG_BT_SMP */
-
 	err = bt_iso_server_register(&iso_server);
 	if (err) {
 		shell_error(sh, "Unable to register ISO cap (err %d)", err);
@@ -590,9 +567,7 @@ static int cmd_listen(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 {
-	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU] = {
-		[0 ... (CONFIG_BT_ISO_TX_MTU - 1)] = 0xff
-	};
+	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU] = {[0 ...(CONFIG_BT_ISO_TX_MTU - 1)] = 0xff};
 	unsigned long count = 1;
 	struct net_buf *buf;
 	int ret = 0;
@@ -624,8 +599,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	len = MIN(iso_chan.qos->tx->sdu, CONFIG_BT_ISO_TX_MTU);
-	cis_sn_last = get_next_sn(cis_sn_last, &cis_sn_last_updated_ticks,
-				  cis_sdu_interval_us);
+	cis_sn_last = get_next_sn(cis_sn_last, &cis_sn_last_updated_ticks, cis_sdu_interval_us);
 
 	while (count--) {
 		buf = net_buf_alloc(&tx_pool, TX_BUF_TIMEOUT);
@@ -651,8 +625,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_disconnect(const struct shell *sh, size_t argc,
-			  char *argv[])
+static int cmd_disconnect(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
@@ -701,7 +674,7 @@ static struct bt_iso_chan bis_iso_chan = {
 	.qos = &bis_iso_qos,
 };
 
-static struct bt_iso_chan *bis_channels[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
+static struct bt_iso_chan *bis_channels[BIS_ISO_CHAN_COUNT] = {&bis_iso_chan};
 
 #if defined(CONFIG_BT_ISO_BROADCASTER)
 static uint32_t bis_sdu_interval_us;
@@ -712,9 +685,7 @@ NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
 
 static int cmd_broadcast(const struct shell *sh, size_t argc, char *argv[])
 {
-	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU] = {
-		[0 ... (CONFIG_BT_ISO_TX_MTU - 1)] = 0xff
-	};
+	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU] = {[0 ...(CONFIG_BT_ISO_TX_MTU - 1)] = 0xff};
 	unsigned long count = 1;
 	struct net_buf *buf;
 	int ret = 0;
@@ -746,8 +717,7 @@ static int cmd_broadcast(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	len = MIN(bis_iso_chan.qos->tx->sdu, CONFIG_BT_ISO_TX_MTU);
-	bis_sn_last = get_next_sn(bis_sn_last, &bis_sn_last_updated_ticks,
-				  bis_sdu_interval_us);
+	bis_sn_last = get_next_sn(bis_sn_last, &bis_sn_last_updated_ticks, bis_sdu_interval_us);
 
 	while (count--) {
 		buf = net_buf_alloc(&bis_tx_pool, TX_BUF_TIMEOUT);
@@ -790,8 +760,8 @@ static int cmd_big_create(const struct shell *sh, size_t argc, char *argv[])
 	bis_iso_qos.tx->rtn = 2;
 	bis_iso_qos.tx->sdu = CONFIG_BT_ISO_TX_MTU;
 
-	bis_sdu_interval_us = param.interval = 10000;      /* us */
-	param.latency = 20;          /* ms */
+	bis_sdu_interval_us = param.interval = 10000; /* us */
+	param.latency = 20;                           /* ms */
 	param.bis_channels = bis_channels;
 	param.num_bis = BIS_ISO_CHAN_COUNT;
 	param.encryption = false;
@@ -800,10 +770,11 @@ static int cmd_big_create(const struct shell *sh, size_t argc, char *argv[])
 
 	if (argc > 1) {
 		if (!strcmp(argv[1], "enc")) {
-			uint8_t bcode_len = hex2bin(argv[1], strlen(argv[1]), param.bcode,
-						    sizeof(param.bcode));
+			size_t bcode_len =
+				hex2bin(argv[2], strlen(argv[2]), param.bcode, sizeof(param.bcode));
+
 			if (!bcode_len || bcode_len != sizeof(param.bcode)) {
-				shell_error(sh, "Invalid Broadcast Code Length");
+				shell_error(sh, "Invalid Broadcast Code Length %zu", bcode_len);
 				return -ENOEXEC;
 			}
 			param.encryption = true;
@@ -928,8 +899,7 @@ static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 				return -ENOEXEC;
 			}
 
-			if (!IN_RANGE(sync_timeout,
-				      BT_ISO_SYNC_TIMEOUT_MIN,
+			if (!IN_RANGE(sync_timeout, BT_ISO_SYNC_TIMEOUT_MIN,
 				      BT_ISO_SYNC_TIMEOUT_MAX)) {
 				shell_error(sh, "Invalid sync_timeout %lu", sync_timeout);
 
@@ -947,8 +917,8 @@ static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 			}
 
 			memset(param.bcode, 0, sizeof(param.bcode));
-			bcode_len = hex2bin(argv[i], strlen(argv[i]), param.bcode,
-					    sizeof(param.bcode));
+			bcode_len =
+				hex2bin(argv[i], strlen(argv[i]), param.bcode, sizeof(param.bcode));
 
 			if (bcode_len == 0) {
 				shell_error(sh, "Invalid Broadcast Code");
@@ -991,7 +961,8 @@ static int cmd_big_term(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif /* CONFIG_BT_ISO_BROADCAST*/
 
-SHELL_STATIC_SUBCMD_SET_CREATE(iso_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	iso_cmds,
 #if defined(CONFIG_BT_ISO_UNICAST)
 #if defined(CONFIG_BT_ISO_CENTRAL)
 	SHELL_CMD_ARG(cig_create, NULL,
@@ -999,18 +970,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(iso_cmds,
 		      "[packing] [framing] [C to P latency] [P to C latency] [sdu] [phy] [rtn]",
 		      cmd_cig_create, 1, 10),
 	SHELL_CMD_ARG(cig_term, NULL, "Terminate the CIG", cmd_cig_term, 1, 0),
-#if defined(CONFIG_BT_SMP)
-	SHELL_CMD_ARG(connect, NULL, "Connect ISO Channel [security level]", cmd_connect, 1, 1),
-#else /* !CONFIG_BT_SMP */
 	SHELL_CMD_ARG(connect, NULL, "Connect ISO Channel", cmd_connect, 1, 0),
-#endif /* CONFIG_BT_SMP */
 #endif /* CONFIG_BT_ISO_CENTRAL */
 #if defined(CONFIG_BT_ISO_PERIPHERAL)
-#if defined(CONFIG_BT_SMP)
-	SHELL_CMD_ARG(listen, NULL, "<dir=tx,rx,txrx> [security level]", cmd_listen, 2, 1),
-#else /* !CONFIG_BT_SMP */
 	SHELL_CMD_ARG(listen, NULL, "<dir=tx,rx,txrx>", cmd_listen, 2, 0),
-#endif /* CONFIG_BT_SMP */
 #endif /* CONFIG_BT_ISO_PERIPHERAL */
 #if defined(CONFIG_BT_ISO_TX)
 	SHELL_CMD_ARG(send, NULL, "Send to ISO Channel [count]", cmd_send, 1, 1),
@@ -1019,22 +982,21 @@ SHELL_STATIC_SUBCMD_SET_CREATE(iso_cmds,
 	SHELL_CMD_ARG(tx_sync_read_cis, NULL, "Read CIS TX sync info", cmd_tx_sync_read_cis, 1, 0),
 #endif /* CONFIG_BT_ISO_UNICAST */
 #if defined(CONFIG_BT_ISO_BROADCASTER)
-	SHELL_CMD_ARG(create-big, NULL, "Create a BIG as a broadcaster [enc <broadcast code>]",
+	SHELL_CMD_ARG(create - big, NULL, "Create a BIG as a broadcaster [enc <broadcast code>]",
 		      cmd_big_create, 1, 2),
 	SHELL_CMD_ARG(broadcast, NULL, "Broadcast on ISO channels", cmd_broadcast, 1, 1),
 	SHELL_CMD_ARG(tx_sync_read_bis, NULL, "Read BIS TX sync info", cmd_tx_sync_read_bis, 1, 0),
 #endif /* CONFIG_BT_ISO_BROADCASTER */
 #if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
-	SHELL_CMD_ARG(sync-big, NULL,
+	SHELL_CMD_ARG(sync - big, NULL,
 		      "Synchronize to a BIG as a receiver <BIS bitfield> [mse] "
 		      "[timeout] [enc <broadcast code>]",
 		      cmd_big_sync, 2, 4),
 #endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
 #if defined(CONFIG_BT_ISO_BROADCAST)
-	SHELL_CMD_ARG(term-big, NULL, "Terminate a BIG", cmd_big_term, 1, 0),
+	SHELL_CMD_ARG(term - big, NULL, "Terminate a BIG", cmd_big_term, 1, 0),
 #endif /* CONFIG_BT_ISO_BROADCAST */
-	SHELL_SUBCMD_SET_END
-);
+	SHELL_SUBCMD_SET_END);
 
 static int cmd_iso(const struct shell *sh, size_t argc, char **argv)
 {
@@ -1049,5 +1011,4 @@ static int cmd_iso(const struct shell *sh, size_t argc, char **argv)
 	return -EINVAL;
 }
 
-SHELL_CMD_ARG_REGISTER(iso, &iso_cmds, "Bluetooth ISO shell commands",
-		       cmd_iso, 1, 1);
+SHELL_CMD_ARG_REGISTER(iso, &iso_cmds, "Bluetooth ISO shell commands", cmd_iso, 1, 1);

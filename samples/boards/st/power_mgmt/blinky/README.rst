@@ -37,9 +37,18 @@ Build and flash Blinky as follows, changing ``stm32l562e_dk`` for your board:
    :compact:
 
 After flashing, the LED starts to blink with a fixed period (SLEEP_TIME_MS).
-When LPTIM input clock has a prescaler, longer perdiod (up to 64 seconds)
+When st,prescaler lptim property is defined, longer period (up to 64 seconds)
 of low power can be tested.
 
+.. warning::
+   Debugging this sample may require enabling :kconfig:option:`CONFIG_DEBUG` ``=y``.
+   That will enable the :kconfig:option:`CONFIG_STM32_ENABLE_DEBUG_SLEEP_STOP`
+   and prevent the system to go to low power mode.
+   When enabled, entry in low-power modes will not disable power in the power domains
+   that should be powered off, ensuring that the debug logic remains always
+   available. However, low-power modes will no longer reduce the system's
+   power consumption in this configuration, which is the opposite of what
+   this sample is attempting to demonstrate.
 
 PM configurations
 *****************

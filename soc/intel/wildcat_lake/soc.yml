@@ -1,0 +1,4 @@
+vendor: intel
+comment: "Intel Wildcat Lake SoC"
+socs:
+- name: wildcat_lake

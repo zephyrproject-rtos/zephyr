@@ -33,19 +33,32 @@ Sample output
 
 .. code-block:: console
 
-   Hello eSPI test!
-   eSPI test - I/O initialization...complete
-   eSPI slave configured successfully!
+   Hello eSPI test <BOARD USED>
+   eSPI target configured successfully!
    eSPI test - callbacks initialization... complete
    eSPI test - callbacks registration... complete
-   eSPI test - Power initialization...complete
-   eSPI test - Handshake
-   eSPI BUS reset 0
-   VW channel is ready
 
+   eSPI BUS reset 1
+
+   eSPI test - Handshake with eSPI controller (host)...
+   VW channel event 1
+   OOB channel event 1
+
+   1st phase completed
+   SLP signal changed 1
+   SLP signal changed 1
+   SLP signal changed 1
+
+   2nd phase completed
    PLT_RST changed 1
-        1st phase completed
-        2nd phase completed
-        3rd phase completed
 
-note:: The values shown above might differ.
+   3rd phase completed
+
+   request_temp
+   OOB transaction completed rcvd: 11 bytes
+   request_temp
+   OOB transaction completed rcvd: 5 bytes
+   eSPI sample completed err: 0
+
+
+note:: The values shown above might differ depending on the subtests executed.

@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_VIDEO_CLASS
+	bool "USB host Video Class support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  USB Host Video Class (UVC) implementation.
+
+if USBH_VIDEO_CLASS
+
+config USBH_VIDEO_MAX_FRMIVAL
+	int "Max number of video frame interval per descriptor supported"
+	range 1 255
+	default 16
+	help
+	  Max number of Frame Interval listed on a frame descriptor. The
+	  default value is selected arbitrarily to fit most situations.
+
+module = USBH_UVC
+module-str = usbh uvc
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+source "subsys/usb/common/Kconfig.template.instances_count"
+
+endif # USBH_VIDEO_CLASS

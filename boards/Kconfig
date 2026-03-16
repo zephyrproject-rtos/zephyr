@@ -20,8 +20,8 @@ config BOARD_REVISION
 
 config BOARD_TARGET
 	string
-	default "$(BOARD)@$(BOARD_REVISION)$(BOARD_QUALIFIERS)" if "$(BOARD_REVISION)" != ""
-	default "$(BOARD)$(BOARD_QUALIFIERS)"
+	default "$(BOARD)@$(BOARD_REVISION)/$(BOARD_QUALIFIERS)" if "$(BOARD_REVISION)" != ""
+	default "$(BOARD)/$(BOARD_QUALIFIERS)"
 	help
 	  Contains the board target (full string including name, revision, soc, cluster and
 	  variant) of the board being used.

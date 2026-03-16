@@ -20,6 +20,8 @@
 		cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-a9";
+			i-cache-line-size = <32>;
+			d-cache-line-size = <32>;
 			reg = <0>;
 		};
 	};
@@ -34,12 +36,12 @@
 	};
 
 	chosen {
-		zephyr,flash      = &flash0;
-		zephyr,sram       = &sram0;
-		zephyr,console    = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,ocm        = &ocm_low;
-		zephyr,uart-pipe  = &uart1;
+		zephyr,ocm = &ocm_low;
+		zephyr,uart-pipe = &uart1;
 	};
 };
 

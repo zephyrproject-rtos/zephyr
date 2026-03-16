@@ -38,7 +38,7 @@ ZTEST(shell_flash, test_flash_read)
 	const struct device *const flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 	const char *buf;
 	const int test_base = FLASH_SIMULATOR_BASE_OFFSET;
-	const int test_size = 0x24;  /* 32-alignment required */
+	const int test_size = 0x24; /* 32-alignment required */
 	uint8_t data[test_size];
 	size_t size;
 	int ret;
@@ -48,13 +48,12 @@ ZTEST(shell_flash, test_flash_read)
 		data[i] = 'A' + i;
 	}
 
-	zassert_true(device_is_ready(flash_dev),
-		     "Simulated flash driver not ready");
+	zassert_true(device_is_ready(flash_dev), "Simulated flash driver not ready");
 
 	ret = flash_write(flash_dev, test_base, data, test_size);
 	zassert_equal(0, ret, "flash_write() failed: %d", ret);
 
-	ret = shell_execute_cmd(NULL, "flash read 0 23");
+	ret = shell_execute_cmd(NULL, "flash read 0 0x23");
 	zassert_equal(0, ret, "flash read failed: %d", ret);
 
 	buf = shell_backend_dummy_get_output(sh, &size);

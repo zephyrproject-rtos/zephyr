@@ -1,9 +1,9 @@
 .. _usbd_api:
 
-USB device stack (next) API
-###########################
+USB device stack API
+####################
 
-New USB device stack API is experimental and is subject to change without notice.
+USB device stack API is unstable and is subject to change without notice.
 
 API reference
 *************

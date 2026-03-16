@@ -35,8 +35,9 @@ class BinaryAdapterBase(DeviceAdapter, abc.ABC):
     def generate_command(self) -> None:
         """Generate and set command which will be used during running device."""
 
-    def _flash_and_run(self) -> None:
+    def _device_launch(self) -> None:
         self._run_subprocess()
+        self.connect()
 
     def _run_subprocess(self) -> None:
         if not self.command:
@@ -46,6 +47,9 @@ class BinaryAdapterBase(DeviceAdapter, abc.ABC):
         log_command(logger, 'Running command', self.command, level=logging.DEBUG)
         try:
             self._process = subprocess.Popen(self.command, **self.process_kwargs)
+            # Update all ProcessConnection instances with the new process
+            for conn in self.connections:
+                conn.update(process=self._process)
         except subprocess.SubprocessError as exc:
             msg = f'Running subprocess failed due to SubprocessError {exc}'
             logger.error(msg)
@@ -59,22 +63,6 @@ class BinaryAdapterBase(DeviceAdapter, abc.ABC):
             logger.error(msg)
             raise TwisterHarnessException(msg) from exc
 
-    def _connect_device(self) -> None:
-        """
-        This method was implemented only to imitate standard connect behavior
-        like in Serial class.
-        """
-
-    def _disconnect_device(self) -> None:
-        """
-        This method was implemented only to imitate standard disconnect behavior
-        like in serial connection.
-        """
-
-    def _close_device(self) -> None:
-        """Terminate subprocess"""
-        self._stop_subprocess()
-
     def _stop_subprocess(self) -> None:
         if self._process is None:
             # subprocess already stopped
@@ -84,30 +72,14 @@ class BinaryAdapterBase(DeviceAdapter, abc.ABC):
             terminate_process(self._process, self.base_timeout)
             return_code = self._process.wait(self.base_timeout)
         self._process = None
+        for conn in self.connections:
+            if hasattr(conn, '_process'):
+                conn._process = None
         logger.debug('Running subprocess finished with return code %s', return_code)
 
-    def _read_device_output(self) -> bytes:
-        return self._process.stdout.readline()
-
-    def _write_to_device(self, data: bytes) -> None:
-        self._process.stdin.write(data)
-        self._process.stdin.flush()
-
-    def _flush_device_output(self) -> None:
-        if self.is_device_running():
-            self._process.stdout.flush()
-
-    def is_device_running(self) -> bool:
-        return self._device_run.is_set() and self._is_binary_running()
-
-    def _is_binary_running(self) -> bool:
-        if self._process is None or self._process.poll() is not None:
-            return False
-        return True
-
-    def is_device_connected(self) -> bool:
-        """Return true if device is connected."""
-        return self.is_device_running() and self._device_connected.is_set()
+    def _close_device(self) -> None:
+        """Terminate subprocess"""
+        self._stop_subprocess()
 
     def _clear_internal_resources(self) -> None:
         super()._clear_internal_resources()
@@ -131,6 +103,32 @@ class UnitSimulatorAdapter(BinaryAdapterBase):
 
 
 class CustomSimulatorAdapter(BinaryAdapterBase):
+    """Simulator adapter to run custom simulator"""
+
     def generate_command(self) -> None:
         """Set command to run."""
-        self.command = [self.west, 'build', '-d', str(self.device_config.app_build_dir), '-t', 'run']
+        self.command = [
+            self.west,
+            'build',
+            '-d',
+            str(self.device_config.app_build_dir),
+            '-t',
+            'run',
+        ]
+
+
+class QemuAdapter(BinaryAdapterBase):
+    """Simulator adapter to run QEMU"""
+
+    def generate_command(self) -> None:
+        """Set command to run."""
+        self.command = [
+            self.west,
+            'build',
+            '-d',
+            str(self.device_config.app_build_dir),
+            '-t',
+            'run',
+        ]
+        if 'stdin' in self.process_kwargs:
+            self.process_kwargs.pop('stdin')

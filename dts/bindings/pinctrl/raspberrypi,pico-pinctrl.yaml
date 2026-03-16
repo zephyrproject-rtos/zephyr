@@ -24,7 +24,7 @@ description: |
        */
 
       /* include pre-defined combinations for the SoC variant used by the board */
-      #include <dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+      #include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
 
       &pinctrl {
         /* configuration for the usart0 "default" state */

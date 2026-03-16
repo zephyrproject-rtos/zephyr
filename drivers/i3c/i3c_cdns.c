@@ -29,7 +29,7 @@
 #define CONF_STATUS0_PROT_FAULTS_CHK      BIT(24)
 #define CONF_STATUS0_GPO_NUM(x)           (((x) & GENMASK(23, 16)) >> 16)
 #define CONF_STATUS0_GPI_NUM(x)           (((x) & GENMASK(15, 8)) >> 8)
-#define CONF_STATUS0_IBIR_DEPTH(x)        (4 << (((x) & GENMASK(7, 6)) >> 7))
+#define CONF_STATUS0_IBIR_DEPTH(x)        (4 << (((x) & GENMASK(7, 6)) >> 6))
 /* CONF_STATUS0_SUPPORTS_DDR moved to CONF_STATUS1 in rev >= 1p7 */
 #define CONF_STATUS0_SUPPORTS_DDR         BIT(5)
 #define CONF_STATUS0_SEC_MASTER           BIT(4)
@@ -55,7 +55,7 @@
 #define REV_ID_VID(id)       (((id) & GENMASK(31, 20)) >> 20)
 #define REV_ID_PID(id)       (((id) & GENMASK(19, 8)) >> 8)
 #define REV_ID_REV(id)       ((id) & GENMASK(7, 0))
-#define REV_ID_VERSION(m, n) ((m << 5) | (n))
+#define REV_ID_VERSION(m, n) (((m) << 5) | (n))
 #define REV_ID_REV_MAJOR(id) (((id) & GENMASK(7, 5)) >> 5)
 #define REV_ID_REV_MINOR(id) ((id) & GENMASK(4, 0))
 
@@ -267,7 +267,7 @@
 
 #define CMD1_FIFO            0x64
 #define CMD1_FIFO_CMDID(id)  ((id) << 24)
-#define CMD1_FIFO_DB(db)     (((db) & GENMASK(15, 8)) << 8)
+#define CMD1_FIFO_DB(db)     FIELD_PREP(GENMASK(15, 8), (db))
 #define CMD1_FIFO_CSRADDR(a) (a)
 #define CMD1_FIFO_CCC(id)    (id)
 
@@ -289,9 +289,9 @@
 #define SLV_DDR_TX_FIFO             0x88
 #define SLV_DDR_RX_FIFO             0x8c
 #define DDR_PREAMBLE_MASK           GENMASK(19, 18)
-#define DDR_PREAMBLE_CMD_CRC        0x1 << 18
-#define DDR_PREAMBLE_DATA_ABORT     0x2 << 18
-#define DDR_PREAMBLE_DATA_ABORT_ALT 0x3 << 18
+#define DDR_PREAMBLE_CMD_CRC        (0x1 << 18)
+#define DDR_PREAMBLE_DATA_ABORT     (0x2 << 18)
+#define DDR_PREAMBLE_DATA_ABORT_ALT (0x3 << 18)
 #define DDR_DATA(x)                 (((x) & GENMASK(17, 2)) >> 2)
 #define DDR_EVEN_PARITY             BIT(0)
 #define DDR_ODD_PARITY              BIT(1)
@@ -466,7 +466,7 @@
 #define I3C_MAX_IDLE_CANCEL_WAIT_RETRIES 50
 #define I3C_PRESCL_REG_SCALE             (4)
 #define I2C_PRESCL_REG_SCALE             (5)
-#define I3C_WAIT_FOR_IDLE_STATE_US       100
+#define I3C_WAIT_FOR_IDLE_STATE_US       CONFIG_I3C_CADENCE_IDLE_TIMEOUT_US
 #define I3C_IDLE_TIMEOUT_CYC                                                                       \
 	(I3C_WAIT_FOR_IDLE_STATE_US * (sys_clock_hw_cycles_per_sec() / USEC_PER_SEC))
 
@@ -935,6 +935,7 @@ static inline int cdns_i3c_wait_for_idle(const struct device *dev)
 	 */
 	while (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_IDLE)) {
 		if (k_cycle_get_32() - start_time > I3C_IDLE_TIMEOUT_CYC) {
+			LOG_ERR("%s: Timeout waiting for idle", dev->name);
 			return -EAGAIN;
 		}
 	}
@@ -1088,10 +1089,21 @@ static int cdns_i3c_controller_ibi_enable(const struct device *dev, struct i3c_d
 	sir_cfg = SIR_MAP_DEV_ROLE(I3C_BCR_DEVICE_ROLE(target->bcr)) |
 		  SIR_MAP_DEV_DA(target->dynamic_addr);
 	if (i3c_ibi_has_payload(target)) {
-		sir_cfg |= SIR_MAP_DEV_PL(target->data_length.max_ibi);
+		/*
+		 * the I3C spec says that a len of 0x00, means no limit, but the cdns i3c doesn't
+		 * reconigize stops when loading a new word in the FIFO, so if multiple ibis come in
+		 * quick succession, then they may be all in the same fifo word and may not be read
+		 * correctly.
+		 */
+		if (target->data_length.max_ibi == 0x00) {
+			sir_cfg |= SIR_MAP_DEV_PL(
+				MIN(SIR_MAP_PL_MAX, CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE));
+		} else {
+			sir_cfg |= SIR_MAP_DEV_PL(target->data_length.max_ibi);
+		}
 	} else {
-		/* Set to 1 for MDB */
-		sir_cfg |= SIR_MAP_DEV_PL(1);
+		/* Set to 0 for no ibi payload */
+		sir_cfg |= SIR_MAP_DEV_PL(0);
 	}
 	/* ACK if there is an ibi tir cb or if it is controller capable*/
 	if ((target->ibi_cb != NULL) || i3c_device_is_controller_capable(target)) {
@@ -1306,7 +1318,6 @@ static void cdns_i3c_cancel_transfer(const struct device *dev)
 	struct cdns_i3c_data *data = dev->data;
 	const struct cdns_i3c_config *config = dev->config;
 	uint32_t val;
-	uint32_t retry_count;
 
 	/* Disable further interrupts */
 	sys_write32(MST_INT_CMDD_EMP, config->base + MST_IDR);
@@ -1326,15 +1337,17 @@ static void cdns_i3c_cancel_transfer(const struct device *dev)
 	 * actually take any time since we only get here if a transaction didn't
 	 * complete in a long time.
 	 */
-	retry_count = I3C_MAX_IDLE_CANCEL_WAIT_RETRIES;
-	while (retry_count--) {
+	bool idle = false;
+
+	for (uint32_t i = 0; i < I3C_MAX_IDLE_CANCEL_WAIT_RETRIES; i++) {
 		val = sys_read32(config->base + MST_STATUS0);
 		if (val & MST_STATUS0_IDLE) {
+			idle = true;
 			break;
 		}
 		k_msleep(10);
 	}
-	if (retry_count == 0) {
+	if (!idle) {
 		data->xfer.ret = -ETIMEDOUT;
 	}
 
@@ -2763,7 +2776,9 @@ static void cdns_i3c_target_sdr_tx_thr_int_handler(const struct device *dev,
 static void cdns_i3c_irq_handler(const struct device *dev)
 {
 	const struct cdns_i3c_config *config = dev->config;
+#if defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_USE_IBI) || defined(CONFIG_I3C_TARGET)
 	struct cdns_i3c_data *data = dev->data;
+#endif
 #ifdef CONFIG_I3C_CONTROLLER
 	uint32_t int_st = sys_read32(config->base + MST_ISR);
 
@@ -3032,7 +3047,7 @@ static void cdns_i3c_read_hw_cfg(const struct device *dev)
 	data->hw_cfg.ddr_rx_mem_depth = CONF_STATUS1_SLV_DDR_RX_DEPTH(cfg1) * 4;
 	data->hw_cfg.ddr_tx_mem_depth = CONF_STATUS1_SLV_DDR_TX_DEPTH(cfg1) * 4;
 	data->hw_cfg.ibir_mem_depth = CONF_STATUS0_IBIR_DEPTH(cfg0) * 4;
-	data->hw_cfg.ibi_mem_depth = CONF_STATUS1_IBI_DEPTH(cfg0) * 4;
+	data->hw_cfg.ibi_mem_depth = CONF_STATUS1_IBI_DEPTH(cfg1) * 4;
 
 	LOG_DBG("%s: FIFO info:\r\n"
 		"  cmd_mem_depth = %u\r\n"
@@ -3416,45 +3431,6 @@ static int cdns_i3c_target_controller_handoff(const struct device *dev, bool acc
 #endif
 #ifdef CONFIG_I3C_CONTROLLER
 /**
- * Determine I3C bus mode from the i2c devices on the bus
- *
- * Reads the LVR of all I2C devices and returns the I3C bus
- * Mode
- *
- * @param dev_list Pointer to device list
- *
- * @return @see enum i3c_bus_mode.
- */
-static enum i3c_bus_mode i3c_bus_mode(const struct i3c_dev_list *dev_list)
-{
-	enum i3c_bus_mode mode = I3C_BUS_MODE_PURE;
-
-	for (int i = 0; i < dev_list->num_i2c; i++) {
-		switch (I3C_LVR_I2C_DEV_IDX(dev_list->i2c[i].lvr)) {
-		case I3C_LVR_I2C_DEV_IDX_0:
-			if (mode < I3C_BUS_MODE_MIXED_FAST) {
-				mode = I3C_BUS_MODE_MIXED_FAST;
-			}
-			break;
-		case I3C_LVR_I2C_DEV_IDX_1:
-			if (mode < I3C_BUS_MODE_MIXED_LIMITED) {
-				mode = I3C_BUS_MODE_MIXED_LIMITED;
-			}
-			break;
-		case I3C_LVR_I2C_DEV_IDX_2:
-			if (mode < I3C_BUS_MODE_MIXED_SLOW) {
-				mode = I3C_BUS_MODE_MIXED_SLOW;
-			}
-			break;
-		default:
-			mode = I3C_BUS_MODE_INVALID;
-			break;
-		}
-	}
-	return mode;
-}
-
-/**
  * Determine THD_DEL value for CTRL register
  *
  * Should be MIN(t_cf, t_cr) + 3ns
@@ -3613,9 +3589,9 @@ static int cdns_i3c_bus_init(const struct device *dev)
 	k_sem_init(&data->ibi_hj_complete, 0, 1);
 #ifdef CONFIG_I3C_CONTROLLER
 	k_sem_init(&data->ibi_cr_complete, 0, 1);
-#endif /* CONFIG_I3C_TARGET */
 #endif /* CONFIG_I3C_CONTROLLER */
-#endif
+#endif /* CONFIG_I3C_TARGET */
+#endif /* CONFIG_I3C_USE_IBI */
 
 	cdns_i3c_interrupts_disable(config);
 	cdns_i3c_interrupts_clear(config);
@@ -3727,7 +3703,9 @@ static int cdns_i3c_bus_init(const struct device *dev)
 		/* Sleep to wait for bus idle. */
 		k_busy_wait(201);
 		/* Perform bus initialization */
-		ret = i3c_bus_init(dev, &config->common.dev_list);
+		if (config->common.dev_list.num_i3c > 0) {
+			ret = i3c_bus_init(dev, &config->common.dev_list);
+		}
 #ifdef CONFIG_I3C_USE_IBI
 		/* Bus Initialization Complete, allow HJ ACKs */
 		sys_write32(CTRL_HJ_ACK | sys_read32(config->base + CTRL), config->base + CTRL);

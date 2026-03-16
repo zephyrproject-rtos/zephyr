@@ -8,6 +8,9 @@ common:
   ignore_qemu_crash: true
   integration_platforms:
     - qemu_cortex_m3
+    - qemu_riscv32
+    - qemu_riscv64
+    - qemu_riscv32e
 tests:
   debug.coredump.threads:
     filter: CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS

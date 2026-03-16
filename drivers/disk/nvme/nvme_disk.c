@@ -169,13 +169,13 @@ static int nvme_disk_ioctl(struct disk_info *disk, uint8_t cmd, void *buff)
 		*(uint32_t *)buff = nvme_namespace_get_sector_size(ns);
 
 		break;
-	case DISK_IOCTL_GET_ERASE_BLOCK_SZ:
+	case DISK_IOCTL_GET_ERASE_BLOCK_SZ: /* in sectors */
 		if (!buff) {
 			ret = -EINVAL;
 			break;
 		}
 
-		*(uint32_t *)buff = nvme_namespace_get_sector_size(ns);
+		*(uint32_t *)buff = 1;
 
 		break;
 	case DISK_IOCTL_CTRL_DEINIT:

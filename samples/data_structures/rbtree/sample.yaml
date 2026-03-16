@@ -1,0 +1,22 @@
+# Copyright (c) 2025 James Roy <rruuaanng@outlook.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  description: zephyr red-black tree library application
+  name: red-black tree
+tests:
+  sample.data_structures.red-black-tree:
+    tags:
+      - data_structures
+    harness: console
+    integration_platforms:
+      - native_sim
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "max=5 min=1"
+        - "removed max=5"
+        - "removed min=1"
+        - "Done"

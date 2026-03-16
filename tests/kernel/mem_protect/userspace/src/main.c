@@ -63,7 +63,7 @@ K_APP_BMEM(alt_part) volatile bool alt_bool;
 static struct k_thread test_thread;
 static K_THREAD_STACK_DEFINE(test_stack, STACKSIZE);
 
-static void clear_fault(void)
+void clear_fault(void)
 {
 	expect_fault = false;
 	compiler_barrier();
@@ -108,6 +108,18 @@ ZTEST_USER(userspace, test_is_usermode)
 	clear_fault();
 
 	zassert_true(k_is_user_context(), "thread left in kernel mode");
+}
+
+/**
+ * @brief Test to check if k_is_pre_kernel works from user mode
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+ZTEST_USER(userspace, test_is_post_kernel)
+{
+	clear_fault();
+
+	zassert_false(k_is_pre_kernel(), "still pre-kernel in user mode");
 }
 
 /**
@@ -672,7 +684,7 @@ K_PIPE_DEFINE(kpipe, PIPE_LEN, BYTES_TO_READ_WRITE);
 ZTEST_USER(userspace, test_write_kobject_user_pipe)
 {
 	/*
-	 * Attempt to use system call from k_pipe_get to write over
+	 * Attempt to use system call from k_pipe_read to write over
 	 * a kernel object.
 	 */
 	set_fault(K_ERR_KERNEL_OOPS);
@@ -691,7 +703,7 @@ ZTEST_USER(userspace, test_write_kobject_user_pipe)
 ZTEST_USER(userspace, test_read_kobject_user_pipe)
 {
 	/*
-	 * Attempt to use system call from k_pipe_put to read a
+	 * Attempt to use system call from k_pipe_write to read a
 	 * kernel object.
 	 */
 	set_fault(K_ERR_KERNEL_OOPS);
@@ -1191,6 +1203,12 @@ void *userspace_setup(void)
 	priv_stack_ptr = (char *)((uintptr_t)ztest_thread_stack +
 				  Z_RISCV_STACK_GUARD_SIZE);
 #endif
+#elif defined(CONFIG_XTENSA)
+	struct xtensa_thread_stack_header *hdr;
+	void *vhdr = ((struct xtensa_thread_stack_header *)ztest_thread_stack);
+
+	hdr = vhdr;
+	priv_stack_ptr = (((char *)&hdr->privilege_stack) + (sizeof(hdr->privilege_stack) - 1));
 #endif
 	k_thread_access_grant(k_current_get(),
 			      &test_thread, &test_stack,

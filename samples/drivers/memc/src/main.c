@@ -8,6 +8,8 @@
 #include <string.h>
 #include <zephyr/drivers/mspi.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(main);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_flexspi)
 /* Use memc API to get AHB base address for the device */
@@ -28,6 +30,20 @@
 #define mspi_get_xip_address(controller) DT_REG_ADDR_BY_IDX(controller, 1)
 #define MEMC_BASE (void *)(mspi_get_xip_address(MSPI_BUS))
 #define MEMC_SIZE (DT_PROP(MEMC_DEV, size) / 8)
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_fmc_sdram) || \
+	DT_HAS_COMPAT_STATUS_OKAY(st_stm32_xspi_psram)
+#define MEMC_DEV  DT_ALIAS(sram_ext)
+#define MEMC_BASE DT_REG_ADDR(MEMC_DEV)
+#define MEMC_SIZE DT_REG_SIZE(MEMC_DEV)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_xspi_psram)
+#define MEMC_DEV DT_ALIAS(sram_ext)
+#define MSPI_BUS DT_BUS(MEMC_DEV)
+#define MEMC_BASE DT_REG_ADDR_BY_IDX(MSPI_BUS, 1)
+#define MEMC_SIZE (DT_PROP(MEMC_DEV, size) / 8)
+#elif DT_HAS_COMPAT_STATUS_OKAY(silabs_siwx91x_qspi_memory)
+#define MEMC_DEV  DT_ALIAS(sram_ext)
+#define MEMC_BASE ((void *)DT_REG_ADDR(MEMC_DEV))
+#define MEMC_SIZE (DT_REG_SIZE(MEMC_DEV) / 8)
 #else
 #error At least one driver should be selected!
 #endif
@@ -93,7 +109,7 @@ int main(void)
 			dump_memory(memc_read_buffer, BUF_SIZE);
 			return 0;
 		}
-		printk("Check (%i/%i) passed!\n", j, (MEMC_SIZE / BUF_SIZE) - 1);
+		LOG_INF("Check (%i/%i) passed!", j, (MEMC_SIZE / BUF_SIZE) - 1);
 	}
 	/* Copy any remaining space bytewise */
 	for (; i < MEMC_SIZE; i++) {

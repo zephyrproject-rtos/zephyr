@@ -14,7 +14,6 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/types.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/spi.h>
 #include <zephyr/sys/util.h>
 #include <stmemsc.h>
 #include "lsm6dso_reg.h"
@@ -52,6 +51,7 @@ struct lsm6dso_config {
 	} stmemsc_cfg;
 	uint8_t accel_pm;
 	uint8_t accel_odr;
+	uint8_t accel_lp_filter;
 #define ACCEL_RANGE_DOUBLE	BIT(7)
 #define ACCEL_RANGE_MASK	BIT_MASK(6)
 	uint8_t accel_range;

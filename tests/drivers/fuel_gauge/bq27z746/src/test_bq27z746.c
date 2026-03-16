@@ -101,23 +101,24 @@ ZTEST_USER_F(bq27z746, test_get_props__returns_ok)
 	/* Validate what props are supported by the driver */
 
 	fuel_gauge_prop_t props[] = {
-			FUEL_GAUGE_AVG_CURRENT,
-			FUEL_GAUGE_CYCLE_COUNT,
-			FUEL_GAUGE_CURRENT,
-			FUEL_GAUGE_FULL_CHARGE_CAPACITY,
-			FUEL_GAUGE_REMAINING_CAPACITY,
-			FUEL_GAUGE_RUNTIME_TO_EMPTY,
-			FUEL_GAUGE_RUNTIME_TO_FULL,
-			FUEL_GAUGE_SBS_MFR_ACCESS,
-			FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE,
-			FUEL_GAUGE_TEMPERATURE,
-			FUEL_GAUGE_VOLTAGE,
-			FUEL_GAUGE_SBS_ATRATE,
-			FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY,
-			FUEL_GAUGE_CHARGE_VOLTAGE,
-			FUEL_GAUGE_CHARGE_CURRENT,
-			FUEL_GAUGE_STATUS,
-			FUEL_GAUGE_DESIGN_CAPACITY,
+		FUEL_GAUGE_AVG_CURRENT,
+		FUEL_GAUGE_CYCLE_COUNT,
+		FUEL_GAUGE_CURRENT,
+		FUEL_GAUGE_FULL_CHARGE_CAPACITY,
+		FUEL_GAUGE_REMAINING_CAPACITY,
+		FUEL_GAUGE_RUNTIME_TO_EMPTY,
+		FUEL_GAUGE_RUNTIME_TO_FULL,
+		FUEL_GAUGE_SBS_MFR_ACCESS,
+		FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE,
+		FUEL_GAUGE_TEMPERATURE,
+		FUEL_GAUGE_VOLTAGE,
+		FUEL_GAUGE_SBS_ATRATE,
+		FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY,
+		FUEL_GAUGE_CHARGE_VOLTAGE,
+		FUEL_GAUGE_CHARGE_CURRENT,
+		FUEL_GAUGE_STATUS,
+		FUEL_GAUGE_DESIGN_CAPACITY,
+		FUEL_GAUGE_STATE_OF_HEALTH,
 	};
 	union fuel_gauge_prop_val vals[ARRAY_SIZE(props)];
 
@@ -143,6 +144,7 @@ ZTEST_USER_F(bq27z746, test_get_props__returns_ok)
 	zassert_equal(vals[14].chg_current, 1000);
 	zassert_equal(vals[15].fg_status, 1);
 	zassert_equal(vals[16].design_cap, 1);
+	zassert_equal(vals[17].state_of_health, 1);
 #else
 	/* When having a real device, check for the valid ranges */
 	zassert_between_inclusive(props[0].avg_current, -32768 * 1000, 32767 * 1000);
@@ -162,6 +164,7 @@ ZTEST_USER_F(bq27z746, test_get_props__returns_ok)
 	zassert_between_inclusive(props[14].chg_current, 0, 32767);
 	/* Not testing props[15]. This property is the status and only has only status bits */
 	zassert_between_inclusive(props[16].design_cap, 0, 32767);
+	zassert_between_inclusive(props[17].state_of_health, 0, 100);
 #endif
 }
 

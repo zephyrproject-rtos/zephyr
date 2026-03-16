@@ -32,7 +32,7 @@ Hardware
 
 The CC3235SF SoC has two MCUs:
 
-#. Applications MCU - an ARM |reg| Cortex |reg|-M4 Core at 80 MHz, with 256Kb RAM,
+#. Applications MCU - an ARM® Cortex®-M4 Core at 80 MHz, with 256Kb RAM,
    and access to external serial 4MB flash with bootloader and peripheral
    drivers in ROM.
 

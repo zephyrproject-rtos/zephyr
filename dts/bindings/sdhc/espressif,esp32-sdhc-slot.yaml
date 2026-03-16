@@ -11,12 +11,6 @@ properties:
   reg:
     required: true
 
-  pinctrl-0:
-    required: true
-
-  pinctrl-names:
-    required: true
-
   bus-width:
     type: int
     enum:

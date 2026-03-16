@@ -22,6 +22,7 @@ struct mctp_binding_uart {
 	const struct device *dev;
 
 	/* receive buffers and state */
+	struct k_sem rx_disabled;
 	uint8_t rx_buf[2][256];
 	bool rx_buf_used[2];
 	struct mctp_pktbuf *rx_pkt;
@@ -44,22 +45,36 @@ struct mctp_binding_uart {
 	uint8_t tx_buf[256];
 	int tx_res;
 
-	/** @endcond INTERNAL_HIDDEN */
+	/** INTERNAL_HIDDEN @endcond */
 };
 
 /**
- * @brief Start the receive of a single mctp message
+ * @brief Start the receive of mctp messages
  *
- * Will read a single mctp message from the uart.
+ * Will read mctp messages from the uart.
  *
  * @param uart MCTP UART binding
  */
 void mctp_uart_start_rx(struct mctp_binding_uart *uart);
 
+/**
+ * @brief Stop the receive of mctp messages
+ *
+ * Will stop reading mctp messages from the uart.
+ *
+ * @param uart MCTP UART binding
+ *
+ * @retval 0 on success
+ * @retval -errno result from `uart_rx_disable` on failure
+ *
+ * @see uart_rx_disable
+ */
+int mctp_uart_stop_rx(struct mctp_binding_uart *uart);
+
 /** @cond INTERNAL_HIDDEN */
 int mctp_uart_start(struct mctp_binding *binding);
 int mctp_uart_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
-/** @endcond INTERNAL_HIDDEN */
+/** INTERNAL_HIDDEN @endcond */
 
 /**
  * @brief Statically define a MCTP bus binding for a UART

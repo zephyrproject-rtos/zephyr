@@ -5,7 +5,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "clock_source_def.h"
+#define DIV_8_BIT    00
+#define DIV_16_BIT	 01
+#define DIV_16_5_BIT 02
+#define DIV_24_5_BIT 03
+
+#include <dt-bindings/clock/ifx_clock_source_common.h>
+
 / {
 	srss_power: srss_power {
 		#clock-cells = <0>;
@@ -133,7 +139,6 @@
 			status = "disabled";
 		};
 
-
 		/* clk_lf */
 		clk_lf: clk_lf {
 			#clock-cells = <0>;
@@ -141,7 +146,166 @@
 			clocks = <&clk_pilo>;
 			status = "okay";
 		};
-
 	};
 
+	peri0: peri0 {
+		/* Peripheral 0, Clock Group 0 */
+		/* 24.5-bit */
+		peri0_group0_24_5bit_0: peri0_group0_24_5bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 00]; /* inst#, group# */
+			div-type = <DIV_24_5_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		/* Peripheral 0, Clock Group 1 */
+		/* 8-bit */
+		peri0_group1_8bit_0: peri0_group1_8bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group1_8bit_1: peri0_group1_8bit_1 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <1>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group1_8bit_2: peri0_group1_8bit_2 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <2>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group1_8bit_3: peri0_group1_8bit_3 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <3>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group1_8bit_4: peri0_group1_8bit_4 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <4>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		/* 16-bit */
+		peri0_group1_16bit_0: peri0_group1_16bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_16_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group1_16bit_1: peri0_group1_16bit_1 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_16_BIT>;
+			channel = <1>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group1_16bit_2: peri0_group1_16bit_2 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_16_BIT>;
+			channel = <2>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group1_16bit_3: peri0_group1_16bit_3 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_16_BIT>;
+			channel = <3>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		/* 16.5-bit */
+		peri0_group1_16_5bit_0: peri0_group1_16_5bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_16_5_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group1_16_5bit_1: peri0_group1_16_5bit_1 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_16_5_BIT>;
+			channel = <1>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		/* 24.5-bit */
+		peri0_group1_24_5bit_0: peri0_group1_24_5bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_24_5_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		/* Peripheral 0, Clock Group 3 */
+		/* 16.5-bit */
+		peri0_group3_16_5bit_0: peri0_group3_16_5bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 03]; /* inst#, group# */
+			div-type = <DIV_16_5_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group3_16_5bit_1: peri0_group3_16_5bit_1 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 03]; /* inst#, group# */
+			div-type = <DIV_16_5_BIT>;
+			channel = <1>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+	};
 };

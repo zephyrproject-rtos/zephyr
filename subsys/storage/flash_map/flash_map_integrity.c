@@ -18,25 +18,14 @@
 #include "flash_map_priv.h"
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
-
-#define SHA256_DIGEST_SIZE 32
-#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA)
 #include <psa/crypto.h>
-#define SUCCESS_VALUE PSA_SUCCESS
-#else
-#include <mbedtls/sha256.h>
-#define SUCCESS_VALUE 0
-#endif
 
 int flash_area_check_int_sha256(const struct flash_area *fa,
 				const struct flash_area_check *fac)
 {
-	unsigned char hash[SHA256_DIGEST_SIZE];
-#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA)
+	unsigned char hash[PSA_HASH_LENGTH(PSA_ALG_SHA_256)];
 	psa_hash_operation_t hash_ctx;
-#else /* CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS */
-	mbedtls_sha256_context hash_ctx;
-#endif
+	size_t hash_len;
 	int to_read;
 	int pos;
 	int rc;
@@ -50,14 +39,9 @@ int flash_area_check_int_sha256(const struct flash_area *fa,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA)
 	hash_ctx = psa_hash_operation_init();
 	rc = psa_hash_setup(&hash_ctx, PSA_ALG_SHA_256);
-#else /* CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS */
-	mbedtls_sha256_init(&hash_ctx);
-	rc = mbedtls_sha256_starts(&hash_ctx, false);
-#endif
-	if (rc != SUCCESS_VALUE) {
+	if (rc != PSA_SUCCESS) {
 		return -ESRCH;
 	}
 
@@ -74,44 +58,25 @@ int flash_area_check_int_sha256(const struct flash_area *fa,
 			goto error;
 		}
 
-#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA)
 		rc = psa_hash_update(&hash_ctx, fac->rbuf, to_read);
-#else /* CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS */
-		rc = mbedtls_sha256_update(&hash_ctx, fac->rbuf, to_read);
-#endif
-		if (rc != SUCCESS_VALUE) {
+		if (rc != PSA_SUCCESS) {
 			rc = -ESRCH;
 			goto error;
 		}
 	}
 
-#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA)
-	size_t hash_len;
-
 	rc = psa_hash_finish(&hash_ctx, hash, sizeof(hash), &hash_len);
-#else /* CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS */
-	rc = mbedtls_sha256_finish(&hash_ctx, hash);
-#endif
-	if (rc != SUCCESS_VALUE) {
+	if (rc != PSA_SUCCESS) {
 		rc = -ESRCH;
 		goto error;
 	}
 
-	if (memcmp(hash, fac->match, SHA256_DIGEST_SIZE)) {
-#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA)
+	if (memcmp(hash, fac->match, sizeof(hash))) {
 		/* The operation has already been terminated. */
 		return -EILSEQ;
-#else /* CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS */
-		rc = -EILSEQ;
-		goto error;
-#endif
 	}
 
 error:
-#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA)
 	psa_hash_abort(&hash_ctx);
-#else /* CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS */
-	mbedtls_sha256_free(&hash_ctx);
-#endif
 	return rc;
 }

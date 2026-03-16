@@ -20,4 +20,6 @@ struct hid_device_driver_api {
 	int (*dev_register)(const struct device *dev,
 			    const uint8_t *const rdesc, const uint16_t rsize,
 			    const struct hid_device_ops *const ops);
+	int (*set_in_polling)(const struct device *dev, const unsigned int period_us);
+	int (*set_out_polling)(const struct device *dev, const unsigned int period_us);
 };

@@ -3,6 +3,7 @@
 # Copyright (c) 2019 - 2020 Nordic Semiconductor ASA
 # Copyright (c) 2019 Linaro Limited
 # Copyright (c) 2024 SILA Embedded Solutions GmbH
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 # This script uses edtlib to generate a pickled edt from a devicetree
@@ -50,7 +51,8 @@ def main():
                          default_prop_types=True,
                          infer_binding_for_paths=["/zephyr,user", "/cpus"],
                          werror=args.edtlib_Werror,
-                         vendor_prefixes=vendor_prefixes)
+                         vendor_prefixes=vendor_prefixes,
+                         warn_bus_mismatch=args.warn_bus_mismatch)
     except edtlib.EDTError as e:
         sys.exit(f"devicetree error: {e}")
 
@@ -87,6 +89,9 @@ def parse_args() -> argparse.Namespace:
                         help="if set, edtlib-specific warnings become errors. "
                              "(this does not apply to warnings shared "
                              "with dtc.)")
+    parser.add_argument("--warn-bus-mismatch", action="store_true",
+                        help="warn when devicetree nodes are on buses that "
+                             "don't match available binding expectations")
 
     return parser.parse_args()
 

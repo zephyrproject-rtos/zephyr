@@ -151,6 +151,8 @@ static int ina3221_sample_fetch(const struct device *dev, enum sensor_channel ch
 	const struct ina3221_config *cfg = dev->config;
 	bool measurement_successful = false;
 	k_timeout_t measurement_time = K_NO_WAIT;
+	uint8_t enabled_channels = 0;
+	int32_t channel_conv_time_us = 0;
 	int ret;
 
 	/* Trigger measurement and wait for completion */
@@ -159,28 +161,34 @@ static int ina3221_sample_fetch(const struct device *dev, enum sensor_channel ch
 		if (ret) {
 			return ret;
 		}
-		measurement_time =
-			K_USEC(avg_mode_samples[cfg->avg_mode] *
-			       conv_time_us[cfg->conv_time_bus]);
+		channel_conv_time_us = conv_time_us[cfg->conv_time_bus];
 	} else if (chan == SENSOR_CHAN_CURRENT) {
 		ret = start_measurement(dev, false, true);
 		if (ret) {
 			return ret;
 		}
-		measurement_time =
-			K_USEC(avg_mode_samples[cfg->avg_mode] *
-			       conv_time_us[cfg->conv_time_shunt]);
+		channel_conv_time_us = conv_time_us[cfg->conv_time_shunt];
 	} else if (chan == SENSOR_CHAN_POWER || chan == SENSOR_CHAN_ALL) {
 		ret = start_measurement(dev, true, true);
 		if (ret) {
 			return ret;
 		}
-		measurement_time =
-			K_USEC(avg_mode_samples[cfg->avg_mode] *
-			       conv_time_us[MAX(cfg->conv_time_shunt, cfg->conv_time_bus)]);
+		channel_conv_time_us =
+			conv_time_us[cfg->conv_time_bus] + conv_time_us[cfg->conv_time_shunt];
 	} else {
 		return -ENOTSUP;
 	}
+
+	for (size_t i = 0; i < 3; ++i) {
+		if (cfg->enable_channel[i]) {
+			enabled_channels++;
+		}
+	}
+
+	/* Measurements are performed sequentially for all enabled channels. */
+	/* See chapter 7.3.1 in the datasheet. */
+	measurement_time =
+		K_USEC(enabled_channels * avg_mode_samples[cfg->avg_mode] * channel_conv_time_us);
 
 	for (size_t i = 0; i < MAX_RETRIES; ++i) {
 		k_sleep(measurement_time);
@@ -285,7 +293,7 @@ static DEVICE_API(sensor, ina3221_api) = {
 	static struct ina3221_data ina3221_data_##index;                                           \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(index, ina3221_init, NULL, &ina3221_data_##index,             \
-			      &ina3221_config_##index, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,   \
-			      &ina3221_api);
+				     &ina3221_config_##index, POST_KERNEL,                         \
+				     CONFIG_SENSOR_INIT_PRIORITY, &ina3221_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INST_DT_INA3221);

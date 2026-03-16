@@ -43,8 +43,8 @@ struct adc_ambiq_config {
 struct adc_ambiq_data {
 	struct adc_context ctx;
 	void *adcHandle;
-	uint32_t *buffer;
-	uint32_t *repeat_buffer;
+	uint16_t *buffer;
+	uint16_t *repeat_buffer;
 	uint8_t active_channels;
 	struct k_sem dma_done_sem;
 	am_hal_adc_dma_config_t dma_cfg;
@@ -175,7 +175,7 @@ static void adc_ambiq_isr(const struct device *dev)
 						&Sample);
 			*data->buffer++ = Sample.ui32Sample;
 		}
-		adc_ambiq_disable(dev);
+		am_hal_adc_disable(data->adcHandle);
 		adc_context_on_sampling_done(&data->ctx, dev);
 	}
 
@@ -437,6 +437,11 @@ static int adc_ambiq_init(const struct device *dev)
 	/* power on ADC*/
 	ret = am_hal_adc_power_control(data->adcHandle, AM_HAL_SYSCTRL_WAKE, false);
 
+	if (ret != AM_HAL_STATUS_SUCCESS) {
+		LOG_ERR("Failed to power on ADC, code: %d", ret);
+		return -EIO;
+	}
+
 	ret = pinctrl_apply_state(cfg->pin_cfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		return ret;
@@ -572,7 +577,7 @@ static int adc_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                      \
 	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(n, adc_ambiq_pm_action);                                          \
-	DEVICE_DT_INST_DEFINE(n, &adc_ambiq_init, PM_DEVICE_DT_INST_GET(n), &adc_ambiq_data_##n,   \
+	DEVICE_DT_INST_DEFINE(n, adc_ambiq_init, PM_DEVICE_DT_INST_GET(n), &adc_ambiq_data_##n,    \
 			      &adc_ambiq_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,        \
 			      &adc_ambiq_driver_api_##n);
 

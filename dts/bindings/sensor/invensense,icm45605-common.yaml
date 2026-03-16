@@ -1,0 +1,36 @@
+# Copyright (c) 2024 Intel Corporation
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# Copyright (c) 2026 TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  accel-fs:
+    type: int
+    default: 1
+    description: |
+      Specify the accelerometer range in g.
+      Default is power-up configuration.
+    enum:
+      - 1 # ICM45686_DT_ACCEL_FS_16
+      - 2 # ICM45686_DT_ACCEL_FS_8
+      - 3 # ICM45686_DT_ACCEL_FS_4
+      - 4 # ICM45686_DT_ACCEL_FS_2
+
+  gyro-fs:
+    type: int
+    default: 1
+    description: |
+      Specify the gyro range in degrees per second.
+      Default is power-up configuration.
+    enum:
+      - 1 # ICM45686_DT_GYRO_FS_2000
+      - 2 # ICM45686_DT_GYRO_FS_1000
+      - 3 # ICM45686_DT_GYRO_FS_500
+      - 4 # ICM45686_DT_GYRO_FS_250
+      - 5 # ICM45686_DT_GYRO_FS_125
+      - 6 # ICM45686_DT_GYRO_FS_62_5
+      - 7 # ICM45686_DT_GYRO_FS_31_25
+      - 8 # ICM45686_DT_GYRO_FS_15_625
+
+include: invensense,icm45600-common.yaml

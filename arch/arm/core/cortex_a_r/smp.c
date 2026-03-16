@@ -5,7 +5,6 @@
 
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/kernel.h>
-#include <ksched.h>
 #include <zephyr/arch/arm/cortex_a_r/lib_helpers.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <ipi.h>
@@ -99,18 +98,18 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 {
 	int cpu_count, i, j;
 	uint32_t cpu_mpid = 0;
-	uint32_t master_core_mpid;
+	uint32_t primary_core_mpid;
 
-	/* Now it is on master core */
+	/* Now it is on primary core */
 	__ASSERT(arch_curr_cpu()->id == 0, "");
-	master_core_mpid = MPIDR_TO_CORE(GET_MPIDR());
+	primary_core_mpid = MPIDR_TO_CORE(GET_MPIDR());
 
 	cpu_count = ARRAY_SIZE(cpu_node_list);
 	__ASSERT(cpu_count == CONFIG_MP_MAX_NUM_CPUS,
 		"The count of CPU Cores nodes in dts is not equal to CONFIG_MP_MAX_NUM_CPUS\n");
 
 	for (i = 0, j = 0; i < cpu_count; i++) {
-		if (cpu_node_list[i] == master_core_mpid) {
+		if (cpu_node_list[i] == primary_core_mpid) {
 			continue;
 		}
 		if (j == cpu_num - 1) {
@@ -200,9 +199,7 @@ void arch_secondary_cpu_init(void)
 	 */
 #endif
 
-#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
 	soc_per_core_init_hook();
-#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 
 	fn = arm_cpu_boot_params.fn;
 	arg = arm_cpu_boot_params.arg;

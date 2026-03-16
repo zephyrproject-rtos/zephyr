@@ -18,3 +18,8 @@ tests:
       - adafruit_feather_esp32s2_tft_reverse/esp32s2
       - adafruit_feather_esp32s3/esp32s3/procpu
     tags: fuel_gauge
+  sample.sensor.fuel_gauge.shields:
+    platform_allow:
+      - adafruit_feather_canbus_rp2040/rp2040
+    extra_args:
+      - platform:adafruit_feather_canbus_rp2040/rp2040:SHIELD="adafruit_max17048"

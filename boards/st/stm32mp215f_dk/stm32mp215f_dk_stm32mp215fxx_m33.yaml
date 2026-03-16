@@ -1,0 +1,24 @@
+identifier: stm32mp215f_dk/stm32mp215fxx/m33
+name: STM32MP215F_DK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+supported:
+  - gpio
+  - led
+  - shell
+  - spi
+testing:
+  ignore_tags:
+    - aes
+    - cmm
+    - cmsis_rtos_v2
+    - crypto
+    - mpu
+    - net
+    - nfc
+ram: 8192
+flash: 8192
+vendor: st

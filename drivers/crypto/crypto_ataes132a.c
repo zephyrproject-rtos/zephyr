@@ -33,7 +33,7 @@ static void ataes132a_init_states(void)
 {
 	int i;
 
-	for (i = 0; i < ATAES132A_AES_KEY_SIZE; i++) {
+	for (i = 0; i < CRYPTO_MAX_SESSION; i++) {
 		ataes132a_state[i].in_use = false;
 		ataes132a_state[i].key_id = i;
 	}
@@ -110,6 +110,14 @@ static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 	burst_read_i2c(&cfg->i2c, ATAES_COMMAND_MEM_ADDR, data->command_buffer, 64);
 
 	count = data->command_buffer[0];
+	/* Validate count: must be at least 3 (1 for count, 2 for CRC)
+	 * AND must not exceed the actual buffer size to prevent memory corruption.
+	 */
+	if (count < 3 || count > sizeof(data->command_buffer)) {
+		LOG_ERR("invalid packet received: count=%d"
+			" , expects count>=3", count);
+		return -EINVAL;
+	}
 
 	/* Calculate and validate response CRC */
 	ataes132a_atmel_crc(data->command_buffer, count - 2, crc);
@@ -130,7 +138,11 @@ static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 		burst_read_i2c(&cfg->i2c, ATAES_COMMAND_MEM_ADDR, data->command_buffer, 64);
 
 		count = data->command_buffer[0];
-
+		if (count < 3) {
+			LOG_ERR("invalid packet received: count=%d"
+				" , expects count>=3", count);
+			return -EINVAL;
+		}
 		ataes132a_atmel_crc(data->command_buffer, count -  2, crc);
 		retry_count++;
 
@@ -193,7 +205,7 @@ int ataes132a_aes_ccm_decrypt(const struct device *dev,
 	struct ataes132a_device_data *data = dev->data;
 	uint8_t out_len;
 	uint8_t in_buf_len;
-	uint8_t return_code;
+	int return_code;
 	uint8_t expected_out_len;
 	uint8_t param_buffer[52];
 
@@ -272,11 +284,11 @@ int ataes132a_aes_ccm_decrypt(const struct device *dev,
 						     0x0, param_buffer, 16,
 						     param_buffer, &out_len);
 
-		if (return_code != 0U) {
+		if (return_code < 0) {
 			LOG_ERR("nonce command ended with code %d",
 				    return_code);
 			k_sem_give(&data->device_sem);
-			return -EINVAL;
+			return return_code;
 		}
 
 		if (param_buffer[0] != 0U) {
@@ -347,10 +359,10 @@ int ataes132a_aes_ccm_decrypt(const struct device *dev,
 					     in_buf_len + 4, param_buffer,
 					     &out_len);
 
-	if (return_code != 0U) {
+	if (return_code < 0) {
 		LOG_ERR("decrypt command ended with code %d", return_code);
 		k_sem_give(&data->device_sem);
-		return -EINVAL;
+		return return_code;
 	}
 
 	if (!IN_RANGE(out_len, 2, 33)) {
@@ -393,7 +405,7 @@ int ataes132a_aes_ccm_encrypt(const struct device *dev,
 	struct ataes132a_device_data *data = dev->data;
 	uint8_t buf_len;
 	uint8_t out_len;
-	uint8_t return_code;
+	int return_code;
 
 	const uint8_t key_id_len = 1;
 	const uint8_t buf_len_len = 1;
@@ -470,11 +482,11 @@ int ataes132a_aes_ccm_encrypt(const struct device *dev,
 						     0x0, param_buffer, 16,
 						     param_buffer, &out_len);
 
-		if (return_code != 0U) {
+		if (return_code < 0) {
 			LOG_ERR("nonce command ended with code %d",
 				    return_code);
 			k_sem_give(&data->device_sem);
-			return -EINVAL;
+			return return_code;
 		}
 
 		if (param_buffer[0] != 0U) {
@@ -519,6 +531,12 @@ int ataes132a_aes_ccm_encrypt(const struct device *dev,
 
 	param_buffer[0] = key_id;
 	param_buffer[1] = buf_len;
+	/* Ensure buf_len + 2 does not overflow uint8_t and fits in param_buffer */
+	if (buf_len > (UINT8_MAX - 2) || (buf_len + 2) > sizeof(param_buffer)) {
+		LOG_ERR("Encrypt buffer length %d is too large", buf_len);
+		return -EINVAL;
+	}
+
 	memcpy(param_buffer + 2, aead_op->pkt->in_buf, buf_len);
 
 	return_code = ataes132a_send_command(dev, ATAES_ENCRYPT_OP,
@@ -526,10 +544,10 @@ int ataes132a_aes_ccm_encrypt(const struct device *dev,
 					     buf_len + 2, param_buffer,
 					     &out_len);
 
-	if (return_code != 0U) {
+	if (return_code < 0) {
 		LOG_ERR("encrypt command ended with code %d", return_code);
 		k_sem_give(&data->device_sem);
-		return -EINVAL;
+		return return_code;
 	}
 
 	if (!IN_RANGE(out_len, 33, 49)) {
@@ -585,7 +603,7 @@ int ataes132a_aes_ecb_block(const struct device *dev,
 	struct ataes132a_device_data *data = dev->data;
 	uint8_t buf_len;
 	uint8_t out_len;
-	uint8_t return_code;
+	int return_code;
 	uint8_t param_buffer[19];
 
 	if (!pkt) {
@@ -633,17 +651,31 @@ int ataes132a_aes_ecb_block(const struct device *dev,
 	param_buffer[0] = 0x0;
 	param_buffer[1] = key_id;
 	param_buffer[2] = 0x0;
-	memcpy(param_buffer + 3, pkt->in_buf, buf_len);
-	(void)memset(param_buffer + 3 + buf_len, 0x0, 16 - buf_len);
 
+	/* Ensure buf_len + 3 fits within a uint8_t and the destination buffer */
+	if (buf_len > (UINT8_MAX - 3) || (buf_len + 3) > sizeof(param_buffer)) {
+		LOG_ERR("Encrypt buffer length %d is too large", buf_len);
+		k_sem_give(&data->device_sem);
+		return -EINVAL;
+	}
+
+	memcpy(param_buffer + 3, pkt->in_buf, buf_len);
+	/* skip memset() if buf_len==16.
+	 * Indeed, calling memset(&param_buffer[19], 0x0, 0)
+	 * is an undefined behaviour in C as &param_buffer[19] is
+	 * an invalid pointer (even if size is 0).
+	 */
+	if (buf_len < 16) {
+		(void)memset(param_buffer + 3 + buf_len, 0x0, 16 - buf_len);
+	}
 	return_code = ataes132a_send_command(dev, ATAES_LEGACY_OP, 0x00,
 					     param_buffer, buf_len + 3,
 					     param_buffer, &out_len);
 
-	if (return_code != 0U) {
+	if (return_code < 0) {
 		LOG_ERR("legacy command ended with code %d", return_code);
 		k_sem_give(&data->device_sem);
-		return -EINVAL;
+		return return_code;
 	}
 
 	if (out_len != 17U) {
@@ -706,7 +738,7 @@ static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
 
 	if (aead_op->ad != NULL || aead_op->ad_len != 0U) {
 		LOG_ERR("Associated data is not supported.");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	ataes132a_aes_ccm_encrypt(dev, key_id, &mac_mode,
@@ -751,7 +783,7 @@ static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
 
 	if (aead_op->ad != NULL || aead_op->ad_len != 0U) {
 		LOG_ERR("Associated data is not supported.");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	/* Normal Decryption Mode will only decrypt host generated packets */
@@ -828,18 +860,18 @@ static int ataes132a_session_setup(const struct device *dev,
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
 		LOG_ERR("ATAES132A unsupported algorithm");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	/*ATAES132A support I2C polling only*/
 	if (!(ctx->flags & CAP_SYNC_OPS)) {
 		LOG_ERR("Async not supported by this driver");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	if (ctx->keylen != ATAES132A_AES_KEY_SIZE) {
 		LOG_ERR("ATAES132A unsupported key size");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
@@ -852,7 +884,7 @@ static int ataes132a_session_setup(const struct device *dev,
 			break;
 		default:
 			LOG_ERR("ATAES132A unsupported mode");
-			return -EINVAL;
+			return -ENOTSUP;
 		}
 	} else {
 		switch (mode) {
@@ -864,7 +896,7 @@ static int ataes132a_session_setup(const struct device *dev,
 			break;
 		default:
 			LOG_ERR("ATAES132A unsupported mode");
-			return -EINVAL;
+			return -ENOTSUP;
 		}
 	}
 

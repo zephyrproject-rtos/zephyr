@@ -21,9 +21,22 @@ extern "C" {
  * @{
  */
 
+/**
+ * @brief Retrieve the current flags of the standard logger backend interface
+ *
+ * @return A bitmask of the active flags defined at compilation time.
+ */
 static inline uint32_t log_backend_std_get_flags(void)
 {
-	uint32_t flags = (LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP);
+	uint32_t flags = 0;
+
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_TIMESTAMP)) {
+		flags |= LOG_OUTPUT_FLAG_TIMESTAMP;
+	}
+
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_LEVEL)) {
+		flags |= LOG_OUTPUT_FLAG_LEVEL;
+	}
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
 		flags |= LOG_OUTPUT_FLAG_COLORS;
@@ -33,8 +46,20 @@ static inline uint32_t log_backend_std_get_flags(void)
 		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	}
 
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_CRLF_NONE)) {
+		flags |= LOG_OUTPUT_FLAG_CRLF_NONE;
+	}
+
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_CRLF_LFONLY)) {
+		flags |= LOG_OUTPUT_FLAG_CRLF_LFONLY;
+	}
+
 	if (IS_ENABLED(CONFIG_LOG_THREAD_ID_PREFIX)) {
 		flags |= LOG_OUTPUT_FLAG_THREAD;
+	}
+
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_SKIP_SOURCE)) {
+		flags |= LOG_OUTPUT_FLAG_SKIP_SOURCE;
 	}
 
 	return flags;

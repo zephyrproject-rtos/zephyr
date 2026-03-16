@@ -153,6 +153,9 @@ A secure socket can be created by specifying secure protocol type, for instance:
 
    sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TLS_1_2);
 
+The protocol version specified when creating the secure socket indicates the
+minimum TLS version used for the TLS session.
+
 Once created, it can be configured with socket options. For instance, the
 CA certificate and hostname can be set:
 
@@ -172,6 +175,13 @@ CA certificate and hostname can be set:
    ret = setsockopt(sock, SOL_TLS, TLS_HOSTNAME, host, sizeof(host));
 
 Once configured, socket can be used just like a regular TCP socket.
+
+.. note::
+
+   Due to mbed TLS internal data buffering and ``mbedtls_ssl_write()`` function
+   requirements, when a non-blocking :c:func:`zsock_send` returns ``EAGAIN``, it is
+   expected that the consecutive call to :c:func:`zsock_send` will contain the same
+   data as the original call.
 
 Several samples in Zephyr use secure sockets for communication. For a sample use
 see e.g. :zephyr:code-sample:`echo-server sample application <sockets-echo-server>` or

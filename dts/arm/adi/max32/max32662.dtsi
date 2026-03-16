@@ -1,19 +1,15 @@
 /*
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arm/armv7-m.dtsi>
 #include <adi/max32/max32xxx.dtsi>
+#include <adi/max32/max32xxx-m4.dtsi>
 #include <zephyr/dt-bindings/dma/max32662_dma.h>
 
 &flash0 {
 	reg = <0x10000000 DT_SIZE_K(256)>;
-};
-
-&sram0 {
-	reg = <0x20000000 DT_SIZE_K(16)>;
 };
 
 /delete-node/ &clk_iso;
@@ -27,6 +23,18 @@
 /delete-node/ &i2c2;
 
 /delete-node/ &rtc_counter;
+
+/* MAX32662 external clocks. */
+/ {
+	clocks {
+		clk_lp_ext: clk_lp_ext {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <0>;
+			status = "disabled";
+		};
+	};
+};
 
 &adc {
 	compatible = "adi,max32-adc-sar", "adi,max32-adc";
@@ -42,6 +50,11 @@
 /* MAX32662 extra peripherals. */
 / {
 	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(16)>;
+		};
+
 		sram1: memory@20004000 {
 			compatible = "mmio-sram";
 			reg = <0x20004000 DT_SIZE_K(16)>;
@@ -112,9 +125,10 @@
 			reg = <0x40113000 0x2000>;
 			interrupts = <8 0>;
 			status = "disabled";
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 0>, <&clk_lp_ext>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";

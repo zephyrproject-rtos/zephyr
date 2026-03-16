@@ -26,9 +26,7 @@ K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
-#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
 	soc_per_core_init_hook();
-#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 }
 
 void xtensa_switch(void *switch_to, void **switched_from);
@@ -278,7 +276,25 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 
 static inline bool arch_is_in_isr(void)
 {
-	return arch_curr_cpu()->nested != 0U;
+	uint32_t nested;
+
+#if defined(CONFIG_SMP)
+	/*
+	 * Lock interrupts on SMP to ensure that the caller does not migrate
+	 * to another CPU before we get to read the nested field.
+	 */
+	unsigned int key;
+
+	key = arch_irq_lock();
+#endif
+
+	nested = arch_curr_cpu()->nested;
+
+#if defined(CONFIG_SMP)
+	arch_irq_unlock(key);
+#endif
+
+	return nested != 0U;
 }
 
 #ifdef __cplusplus

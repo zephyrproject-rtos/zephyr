@@ -391,11 +391,8 @@ useful to understand them since they will frequently be seen in compiler error
 messages.
 
 This section contains an Augmented Backus-Naur Form grammar for these
-generated macros, with examples and more details in comments. See `RFC 7405`_
-(which extends `RFC 5234`_) for a syntax specification.
+generated macros, with examples and more details in comments. See :rfc:`7405`
+(which extends :rfc:`5234`) for a syntax specification.
 
 .. literalinclude:: macros.bnf
    :language: abnf
-
-.. _RFC 7405: https://tools.ietf.org/html/rfc7405
-.. _RFC 5234: https://tools.ietf.org/html/rfc5234

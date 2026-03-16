@@ -146,7 +146,7 @@ static struct net_pkt *eth_stellaris_rx_pkt(const struct device *dev,
 	frame_len = reg_val & 0x0000ffff;
 
 	pkt = net_pkt_rx_alloc_with_buffer(iface, frame_len,
-					   AF_UNSPEC, 0, K_NO_WAIT);
+					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		return NULL;
 	}

@@ -31,3 +31,9 @@ properties:
     description: |
       Some soc series don't allow Isochronous IN/OUT endpoints to be assigned the same numbers,
       for example, 0x82 (for Isochronous IN) and 0x02 (for Isochronous OUT) are disallowed.
+
+  allow-disable-usb-on-unplug:
+    type: boolean
+    description: |
+      Supports USB controller can be disabled temporarily when USB cable is unplugged
+      and then enabled back when the cable is re-plugged.

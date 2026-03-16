@@ -18,6 +18,7 @@
 #include "system/fmac_api.h"
 #include "system/fmac_tx.h"
 #include "common/fmac_util.h"
+#include "common/fmac_structs_common.h"
 #include "fmac_main.h"
 #include "wifi_mgmt.h"
 
@@ -25,6 +26,7 @@ LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
 extern struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;
 
+#ifdef CONFIG_NRF70_STA_MODE
 int nrf_wifi_set_power_save(const struct device *dev,
 			    struct wifi_ps_params *params)
 {
@@ -201,11 +203,6 @@ int nrf_wifi_get_power_save_config(const struct device *dev,
 	}
 
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
-
-	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
-		goto out;
-	}
 
 	vif_ctx_zep->ps_info = ps_config;
 
@@ -568,7 +565,7 @@ int nrf_wifi_set_twt(const struct device *dev,
 
 		twt_info.dialog_token = twt_params->dialog_token;
 		twt_info.twt_wake_ahead_duration = twt_params->setup.twt_wake_ahead_duration;
-
+		twt_info.twt_req_timeout = CONFIG_NRF_WIFI_TWT_SETUP_TIMEOUT_MS;
 		status = nrf_wifi_sys_fmac_twt_setup(rpu_ctx_zep->rpu_ctx,
 					   vif_ctx_zep->vif_idx,
 					   &twt_info);
@@ -748,6 +745,7 @@ void nrf_wifi_event_proc_twt_sleep_zep(void *vif_ctx,
 out:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 }
+#endif /* CONFIG_NRF70_STA_MODE */
 
 #ifdef CONFIG_NRF70_SYSTEM_WITH_RAW_MODES
 int nrf_wifi_mode(const struct device *dev,
@@ -758,6 +756,8 @@ int nrf_wifi_mode(const struct device *dev,
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
 	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
+	struct peers_info *peer = NULL;
+	int i = 0;
 	int ret = -1;
 
 	if (!dev || !mode) {
@@ -799,10 +799,16 @@ int nrf_wifi_mode(const struct device *dev,
 			goto out;
 		}
 
-		if (vif_ctx_zep->authorized && (mode->mode == NRF_WIFI_MONITOR_MODE)) {
-			LOG_ERR("%s: Cannot set monitor mode when station is connected",
-				__func__);
-			goto out;
+		for (i = 0; i < MAX_PEERS; i++) {
+			peer = &sys_dev_ctx->tx_config.peers[i];
+			if (peer->peer_id == -1) {
+				continue;
+			}
+			if (peer->authorized && (mode->mode == NRF_WIFI_MONITOR_MODE)) {
+				LOG_ERR("%s: Cannot set monitor mode when station is connected",
+					__func__);
+					goto out;
+			}
 		}
 
 		/**
@@ -852,6 +858,8 @@ int nrf_wifi_channel(const struct device *dev,
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
+	struct peers_info *peer = NULL;
+	int i = 0;
 	int ret = -1;
 
 	if (!dev || !channel) {
@@ -862,11 +870,6 @@ int nrf_wifi_channel(const struct device *dev,
 	vif_ctx_zep = dev->data;
 	if (!vif_ctx_zep) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
-		return ret;
-	}
-
-	if (vif_ctx_zep->authorized) {
-		LOG_ERR("%s: Cannot change channel when in station connected mode", __func__);
 		return ret;
 	}
 
@@ -884,6 +887,18 @@ int nrf_wifi_channel(const struct device *dev,
 
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
 	sys_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
+
+	for (i = 0; i < MAX_PEERS; i++) {
+		peer = &sys_dev_ctx->tx_config.peers[i];
+		if (peer->peer_id == -1) {
+			continue;
+		}
+		if (peer->authorized) {
+			LOG_ERR("%s: Cannot change channel when in station connected mode",
+				__func__);
+			return ret;
+		}
+	}
 
 	if (channel->oper == WIFI_MGMT_SET) {
 		/**
@@ -1077,6 +1092,57 @@ int nrf_wifi_get_rts_threshold(const struct device *dev,
 
 	*rts_threshold = vif_ctx_zep->rts_threshold_value;
 	ret = 0;
+
+	return ret;
+}
+
+int nrf_wifi_set_bss_max_idle_period(const struct device *dev,
+				     unsigned short bss_max_idle_period)
+{
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	int ret = -1;
+
+	if (!dev) {
+		LOG_ERR("%s: dev is NULL", __func__);
+		return ret;
+	}
+
+	vif_ctx_zep = dev->data;
+
+	if (!vif_ctx_zep) {
+		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		return ret;
+	}
+
+	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+
+	if (!rpu_ctx_zep) {
+		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		return ret;
+	}
+
+
+	if (!rpu_ctx_zep->rpu_ctx) {
+		LOG_ERR("%s: RPU context not initialized", __func__);
+		return ret;
+	}
+
+	if (bss_max_idle_period > 64000) {
+		/* 0 or value less than 64000 is passed to f/w.
+		 * All other values considered as invalid.
+		 */
+		LOG_ERR("%s: Invalid max_idle_period value : %d", __func__, bss_max_idle_period);
+		return ret;
+	}
+
+	k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
+
+	vif_ctx_zep->bss_max_idle_period = bss_max_idle_period;
+
+	ret = 0;
+
+	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 
 	return ret;
 }

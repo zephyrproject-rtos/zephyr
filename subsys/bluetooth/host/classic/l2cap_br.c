@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +31,7 @@
 #include "a2dp_internal.h"
 #include "avctp_internal.h"
 #include "avrcp_internal.h"
+#include "did_internal.h"
 #include "rfcomm_internal.h"
 #include "sdp_internal.h"
 
@@ -65,19 +67,6 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 #define L2CAP_BR_IS_ZERO_LEN_I_FRAME(flag)                                       \
 	((POINTER_TO_UINT(flag) & L2CAP_BR_ZL_I_FRAME_FLAG_MASK) == L2CAP_BR_ZL_I_FRAME_UD_FLAG)
 
-#define L2CAP_BR_S_FRAME_FLAG_MASK 0xffffff00U
-#define L2CAP_BR_S_FRAME_UD_FLAG   0xffffff00
-#define L2CAP_BR_IS_S_FRAME(flag)                                                \
-	((POINTER_TO_UINT(flag) & L2CAP_BR_S_FRAME_FLAG_MASK) == L2CAP_BR_S_FRAME_UD_FLAG)
-
-#define L2CAP_BR_GET_S_BIT(flag) (POINTER_TO_UINT(flag) & ~L2CAP_BR_S_FRAME_FLAG_MASK)
-
-#define L2CAP_BR_S_FRAME_UD_FLAG_SET(s) UINT_TO_POINTER(L2CAP_BR_S_FRAME_UD_FLAG | (s))
-#define L2CAP_BR_S_RR_FRAME             L2CAP_BR_S_FRAME_UD_FLAG_SET(BT_L2CAP_CONTROL_S_RR)
-#define L2CAP_BR_S_REJ_FRAME            L2CAP_BR_S_FRAME_UD_FLAG_SET(BT_L2CAP_CONTROL_S_REJ)
-#define L2CAP_BR_S_RNR_FRAME            L2CAP_BR_S_FRAME_UD_FLAG_SET(BT_L2CAP_CONTROL_S_RNR)
-#define L2CAP_BR_S_SREJ_FRAME           L2CAP_BR_S_FRAME_UD_FLAG_SET(BT_L2CAP_CONTROL_S_SREJ)
-
 #define L2CAP_BR_INFO_TIMEOUT    K_SECONDS(4)
 #define L2CAP_BR_CFG_TIMEOUT     K_SECONDS(4)
 #define L2CAP_BR_DISCONN_TIMEOUT K_SECONDS(1)
@@ -93,8 +82,14 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 #define L2CAP_FEAT_EXT_FS_MASK       BIT(6)
 #define L2CAP_FEAT_FIXED_CHAN_MASK   BIT(7)
 #define L2CAP_FEAT_EXT_WIN_SIZE_MASK BIT(8)
-#define L2CAP_FEAT_CLS_MASK          BIT(9)
+#define L2CAP_FEAT_CONNLESS_MASK     BIT(9)
 #define L2CAP_FEAT_ECBFC_MASK        BIT(10)
+
+#if defined(CONFIG_BT_L2CAP_CONNLESS)
+#define L2CAP_FEAT_CONNLESS_ENABLE_MASK L2CAP_FEAT_CONNLESS_MASK
+#else
+#define L2CAP_FEAT_CONNLESS_ENABLE_MASK 0
+#endif /* CONFIG_BT_L2CAP_CONNLESS */
 
 #if defined(CONFIG_BT_L2CAP_RET)
 #define L2CAP_FEAT_RET_ENABLE_MASK L2CAP_FEAT_RET_MASK
@@ -140,7 +135,7 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 	(L2CAP_FEAT_FIXED_CHAN_MASK | L2CAP_FEAT_RET_ENABLE_MASK |                             \
 	 L2CAP_FEAT_FC_ENABLE_MASK | L2CAP_FEAT_ENH_RET_ENABLE_MASK |                          \
 	 L2CAP_FEAT_STREAM_ENABLE_MASK | L2CAP_FEAT_FCS_ENABLE_MASK |                          \
-	 L2CAP_FEAT_EXT_WIN_SIZE_ENABLE_MASK)
+	 L2CAP_FEAT_EXT_WIN_SIZE_ENABLE_MASK | L2CAP_FEAT_CONNLESS_ENABLE_MASK)
 
 enum {
 	/* Connection oriented channels flags */
@@ -158,15 +153,9 @@ enum {
 
 	/* Retransmition and flow control flags*/
 	L2CAP_FLAG_RET_TIMER,   /* Retransmission timer is working */
-	L2CAP_FLAG_PDU_RETRANS, /* PDU retransmission */
 
 	/* Receiving S-frame/I-frame flags */
 	L2CAP_FLAG_RECV_FRAME_P,         /* Poll (P) flag of received frame */
-	L2CAP_FLAG_RECV_FRAME_R,         /* Retransmission Disable (R) of received frame */
-	L2CAP_FLAG_RECV_FRAME_R_CHANGED, /* Flag the R flag changed.
-					  * After send received frame with R bit set,
-					  * clear the flag.
-					  */
 
 	/* Sending S-frame/I-frame flags */
 	L2CAP_FLAG_SEND_FRAME_REJ,         /* Report an REJ in received frame */
@@ -186,10 +175,10 @@ enum {
 	L2CAP_FLAG_LOCAL_BUSY_CHANGED, /* Local Busy Flag changed */
 	L2CAP_FLAG_REJ_ACTIONED,       /* REJ Actioned */
 	L2CAP_FLAG_SREJ_ACTIONED,      /* SREJ Actioned */
-	L2CAP_FLAG_RET_I_FRAME,        /* Could Retransmit I-frames */
+	L2CAP_FLAG_RET_I_FRAME,        /* Could Retransmit timeout I-frame */
 	L2CAP_FLAG_NEW_I_FRAME,        /* Could Send Pending I-frames */
 	L2CAP_FLAG_RET_REQ_I_FRAME,    /* Could Retransmit Requested I-frames */
-	L2CAP_FLAG_REQ_SEQ_UPDATED,    /* req_seq has been updated */
+	L2CAP_FLAG_RET_I_FRAMES,       /* Could Retransmit all unacked I-frames */
 
 	/* Auth failed, disconnect ACL */
 	L2CAP_FLAG_DISCONNECT_ACL,	/* Disconnect ACL */
@@ -213,10 +202,10 @@ static void br_tx_buf_destroy(struct net_buf *buf)
 	bt_tx_irq_raise();
 }
 
-/* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
+/* Pool for outgoing BR/EDR RET/FC transmit PDUs (I-frames/S-frames) */
 NET_BUF_POOL_FIXED_DEFINE(br_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
-			  BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_MPS), CONFIG_BT_CONN_TX_USER_DATA_SIZE,
-			  br_tx_buf_destroy);
+			  BT_L2CAP_RT_FC_MAX_SDU_BUF_SIZE(CONFIG_BT_L2CAP_MPS),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, br_tx_buf_destroy);
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
 /* BR/EDR L2CAP signalling channel specific context */
@@ -650,9 +639,14 @@ static int bt_l2cap_br_update_req_seq_direct(struct bt_l2cap_br_chan *br_chan, u
 		}
 	}
 
-	if (!atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R)) {
+	if (!atomic_test_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY)) {
 		if (bt_l2cap_br_get_outstanding_count(br_chan)) {
-			l2cap_br_start_timer(br_chan, BT_L2CAP_BR_TIMER_RET, true);
+			/*
+			 * If unacknowledged I-frames have been sent but the retransmission
+			 * timer has not elapsed, then the ongoing retransmission timer should
+			 * not be restarted.
+			 */
+			l2cap_br_start_timer(br_chan, BT_L2CAP_BR_TIMER_RET, false);
 		} else {
 			l2cap_br_start_timer(br_chan, BT_L2CAP_BR_TIMER_MONITOR, false);
 		}
@@ -684,34 +678,13 @@ static int bt_l2cap_br_update_req_seq(struct bt_l2cap_br_chan *br_chan, uint16_t
 	return err;
 }
 
-static int l2cap_br_send_s_frame(struct bt_l2cap_br_chan *br_chan, uint8_t s, k_timeout_t timeout)
+static void l2cap_br_send_s_frame(struct bt_l2cap_br_chan *br_chan)
 {
-	struct net_buf *buf;
-	int err;
-
 	if (atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_SEND_S_FRAME)) {
-		LOG_WRN("S-frame is in pending on %p", br_chan);
+		LOG_DBG("S-frame is in pending on %p", br_chan);
 	}
-
-	if (chan_has_data(br_chan)) {
-		/* There is PDU in pending. No Empty SDU needed to trigger S-frame sending. */
-		raise_data_ready(br_chan);
-		return 0;
-	}
-
-	buf = bt_l2cap_create_pdu_timeout(&br_tx_pool, 0, timeout);
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	err = bt_l2cap_br_send_cb(br_chan->chan.conn, br_chan->tx.cid, buf, NULL,
-				  L2CAP_BR_S_FRAME_UD_FLAG_SET(s));
-	if (err) {
-		LOG_ERR("Fail to send S-frame %d on %p", err, br_chan);
-		net_buf_unref(buf);
-	}
-
-	return err;
+	LOG_DBG("chan %p ready", br_chan);
+	raise_data_ready(br_chan);
 }
 
 static void l2cap_br_ret_timeout(struct k_work *work)
@@ -743,7 +716,7 @@ static void l2cap_br_ret_timeout(struct k_work *work)
 	switch (br_chan->tx.mode) {
 	case BT_L2CAP_BR_LINK_MODE_RET:
 		LOG_WRN("Retrans on chan %p", br_chan);
-		atomic_set_bit(br_chan->flags, L2CAP_FLAG_PDU_RETRANS);
+		atomic_set_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAME);
 		/* Append channel to list if it still has data */
 		if (chan_has_data(br_chan)) {
 			LOG_DBG("chan %p ready", br_chan);
@@ -759,8 +732,6 @@ static void l2cap_br_ret_timeout(struct k_work *work)
 		break;
 	case BT_L2CAP_BR_LINK_MODE_ERET:
 		if (!atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P)) {
-			int err;
-
 			/* State: XMIT
 			 * Retrans Timer expires Or Local Busy Clears
 			 * Action: send RR(P=1) or RNR(P=1)
@@ -772,10 +743,7 @@ static void l2cap_br_ret_timeout(struct k_work *work)
 			l2cap_br_start_timer(br_chan, BT_L2CAP_BR_TIMER_MONITOR, true);
 
 			atomic_set_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P_CHANGED);
-			err = l2cap_br_send_s_frame(br_chan, BT_L2CAP_CONTROL_S_RR, K_NO_WAIT);
-			if (err) {
-				bt_l2cap_chan_disconnect(&br_chan->chan);
-			}
+			l2cap_br_send_s_frame(br_chan);
 		}
 		break;
 	default:
@@ -812,8 +780,6 @@ static void l2cap_br_monitor_timeout(struct k_work *work)
 			 * Monitor Timer expires
 			 * Action: send RR(P=1) or RNR(P=1)
 			 */
-			int err;
-
 			br_chan->retry_count++;
 			if (br_chan->tx.max_transmit &&
 			    (br_chan->retry_count > br_chan->tx.max_transmit)) {
@@ -826,24 +792,12 @@ static void l2cap_br_monitor_timeout(struct k_work *work)
 			atomic_set_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P_CHANGED);
 			l2cap_br_start_timer(br_chan, BT_L2CAP_BR_TIMER_MONITOR, true);
 
-			err = l2cap_br_send_s_frame(br_chan, BT_L2CAP_CONTROL_S_RR, K_NO_WAIT);
-			if (err) {
-				bt_l2cap_chan_disconnect(&br_chan->chan);
-			}
+			l2cap_br_send_s_frame(br_chan);
 		}
 	} else if ((br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_FC) ||
 		   (br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_RET)) {
-		/* Send S-frame with R=0.
-		 * Send S-Frame if there is not any pending I-frame
-		 */
-		int err;
-
-		err = l2cap_br_send_s_frame(br_chan, BT_L2CAP_CONTROL_S_RR, K_NO_WAIT);
-		if (!err) {
-			atomic_clear_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R);
-		} else {
-			bt_l2cap_chan_disconnect(&br_chan->chan);
-		}
+		/* Send S-Frame if there is not any pending I-frame */
+		l2cap_br_send_s_frame(br_chan);
 	}
 }
 #endif /* CONFIG_BT_L2CAP_RET_FC */
@@ -886,6 +840,11 @@ int bt_l2cap_br_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 	if (ch == NULL) {
 		LOG_WRN("CID %d is not found on conn %p", cid, conn);
 		return -ESHUTDOWN;
+	}
+
+	if (ch->conn == NULL) {
+		LOG_WRN("ACL conn of chan %p is invalid", ch);
+		return -ENOTCONN;
 	}
 
 	br_chan = CONTAINER_OF(ch, struct bt_l2cap_br_chan, chan);
@@ -961,7 +920,7 @@ static void l2cap_br_chan_send_req(struct bt_l2cap_br_chan *chan,
 }
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
-static uint16_t get_pdu_len(struct bt_l2cap_br_chan *br_chan, struct net_buf *buf, bool start_seg)
+static uint16_t get_pdu_len(struct bt_l2cap_br_chan *br_chan, struct net_buf *buf)
 {
 	uint16_t pdu_len = buf->len;
 	uint16_t actual_mps;
@@ -970,27 +929,11 @@ static uint16_t get_pdu_len(struct bt_l2cap_br_chan *br_chan, struct net_buf *bu
 		return pdu_len;
 	}
 
-	/* MPS is Max PDU Size.
-	 * PDU of I-frame includes the Control, L2CAP SDU Length (when present),
-	 * Information Payload, and frame check sequence (FCS) (when present) fields.
-	 */
-	actual_mps = br_chan->tx.mps - BT_L2CAP_RT_FC_SDU_HDR_SIZE(br_chan) -
-		     BT_L2CAP_RT_FC_SDU_TAIL_SIZE(br_chan);
-
-	/* To get the max available space,
-	 * assume SDU field is no present.
-	 */
-	actual_mps += BT_L2CAP_RT_FC_SDU_LEN_SIZE;
+	/* MPS is Max PDU Size. */
+	actual_mps = br_chan->tx.mps;
 
 	if (pdu_len <= actual_mps) {
 		return pdu_len;
-	}
-
-	if (start_seg) {
-		/* The max mps length cannot meet the requirement.
-		 * Deduct the SDU length field for Max length could be used for seg.
-		 */
-		return actual_mps - BT_L2CAP_RT_FC_SDU_LEN_SIZE;
 	}
 
 	return actual_mps;
@@ -1041,15 +984,17 @@ static int bt_l2cap_br_pack_s_frame_header(struct bt_l2cap_br_chan *br_chan, str
 		}
 	}
 
-	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY) &&
-	    (s != BT_L2CAP_CONTROL_S_RNR)) {
-		LOG_WRN("Local is busy and cannot send S-frame on %p", br_chan);
-		return -EINVAL;
-	}
+	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY)) {
+		if ((br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_ERET) &&
+		    (s != BT_L2CAP_CONTROL_S_RNR)) {
+			LOG_WRN("Local is busy and cannot send S-frame on %p", br_chan);
+			return -EINVAL;
+		}
 
-	if (atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R_CHANGED) &&
-	    atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R)) {
-		r_bit = 1;
+		if (br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_RET) {
+			r_bit = 1;
+			s = BT_L2CAP_CONTROL_S_REJ;
+		}
 	}
 
 	if (br_chan->tx.mode != BT_L2CAP_BR_LINK_MODE_STREAM) {
@@ -1082,7 +1027,7 @@ static int bt_l2cap_br_pack_s_frame_header(struct bt_l2cap_br_chan *br_chan, str
 }
 
 static void bt_l2cap_br_pack_i_frame_header(struct bt_l2cap_br_chan *br_chan, struct net_buf *buf,
-					    uint8_t pdu_len, uint8_t sar, uint8_t tx_seq)
+					    uint16_t pdu_len, uint8_t sar, uint8_t tx_seq)
 {
 	struct bt_l2cap_hdr *hdr;
 	uint16_t std_control;
@@ -1101,8 +1046,8 @@ static void bt_l2cap_br_pack_i_frame_header(struct bt_l2cap_br_chan *br_chan, st
 		f_bit = 1;
 	}
 
-	if (atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R_CHANGED) &&
-	    atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R)) {
+	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY) &&
+	    (br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_RET)) {
 		r_bit = 1;
 	}
 
@@ -1146,10 +1091,6 @@ static struct net_buf *l2cap_br_get_next_sdu(struct bt_l2cap_br_chan *br_chan)
 			return sdu;
 		}
 
-		if (L2CAP_BR_IS_S_FRAME(closure_data(sdu->user_data))) {
-			return sdu;
-		}
-
 		if (L2CAP_BR_IS_ZERO_LEN_I_FRAME(closure_data(sdu->user_data))) {
 			return sdu;
 		}
@@ -1160,7 +1101,7 @@ static struct net_buf *l2cap_br_get_next_sdu(struct bt_l2cap_br_chan *br_chan)
 
 static bool l2cap_br_send_i_frame(struct bt_l2cap_br_chan *br_chan, struct net_buf *sdu)
 {
-	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R)) {
+	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY)) {
 		return false;
 	}
 
@@ -1170,17 +1111,15 @@ static bool l2cap_br_send_i_frame(struct bt_l2cap_br_chan *br_chan, struct net_b
 		}
 	}
 
-	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAME) &&
-	    (atomic_test_bit(br_chan->flags, L2CAP_FLAG_PDU_RETRANS) ||
-	     atomic_test_bit(br_chan->flags, L2CAP_FLAG_REQ_SEQ_UPDATED))) {
+	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAME)) {
+		return true;
+	}
+
+	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAMES)) {
 		return true;
 	}
 
 	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P)) {
-		return false;
-	}
-
-	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY)) {
 		return false;
 	}
 
@@ -1201,6 +1140,20 @@ static bool l2cap_br_send_i_frame(struct bt_l2cap_br_chan *br_chan, struct net_b
 	}
 
 	return false;
+}
+
+static struct bt_l2cap_br_window *l2cap_br_get_ret_win(struct bt_l2cap_br_chan *br_chan)
+{
+	struct bt_l2cap_br_window *tx_win, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&br_chan->_pdu_outstanding, tx_win, next, node) {
+		if (tx_win->retransmit) {
+			return tx_win;
+		}
+	}
+
+	atomic_clear_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAMES);
+	return NULL;
 }
 
 static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t amount,
@@ -1233,15 +1186,7 @@ static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t am
 		uint8_t s_bit = BT_L2CAP_CONTROL_S_RR;
 		bool alloc = false;
 
-		if (pdu && !pdu->len && L2CAP_BR_IS_S_FRAME(closure_data(pdu->user_data))) {
-			/* It is a S-frame */
-			s_bit = L2CAP_BR_GET_S_BIT(closure_data(pdu->user_data));
-			alloc = true;
-		}
-
-		if ((atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R) &&
-		     atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R_CHANGED)) ||
-		    (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_REJ) &&
+		if ((atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_REJ) &&
 		     atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_REJ_CHANGED)) ||
 		    (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P) &&
 		     atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P_CHANGED)) ||
@@ -1289,20 +1234,7 @@ static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t am
 
 			make_closure(send_buf->user_data, NULL, NULL);
 
-			if (pdu && !pdu->len && L2CAP_BR_IS_S_FRAME(closure_data(pdu->user_data))) {
-				l2cap_br_sdu_is_done(br_chan, pdu, 0);
-			}
-
 			goto done;
-		}
-
-		if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R)) {
-			/* No I-frames shall be transmitted if the last
-			 * RetransmissionDisableBit (R) received is set to one.
-			 */
-			LOG_DBG("Stop to send I-frame on %p", br_chan);
-			lower_data_ready(br_chan);
-			return NULL;
 		}
 
 		if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY)) {
@@ -1322,12 +1254,18 @@ static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t am
 			}
 		}
 
-		/* Retransmission i-Frame. Or, if seq_req has been updated, send next I-frame*/
-		if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAME) &&
-		    (atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_PDU_RETRANS) ||
-		     atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_REQ_SEQ_UPDATED))) {
+		/* Retransmission i-Frame */
+		if (atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAME)) {
 			tx_win = (void *)sys_slist_peek_head(&br_chan->_pdu_outstanding);
-			if (tx_win) {
+			if (tx_win != NULL) {
+				first = false;
+				goto send_i_frame;
+			}
+		}
+
+		if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAMES)) {
+			tx_win = l2cap_br_get_ret_win(br_chan);
+			if (tx_win != NULL) {
 				first = false;
 				goto send_i_frame;
 			}
@@ -1383,7 +1321,9 @@ send_i_frame:
 			/* Maybe we can disconnect channel here if retransmission I-frame. */
 
 			/* Free allocated tx_win. */
-			l2cap_br_free_window(br_chan, tx_win);
+			if (first) {
+				l2cap_br_free_window(br_chan, tx_win);
+			}
 			return NULL;
 		}
 
@@ -1410,7 +1350,7 @@ send_i_frame:
 
 			net_buf_simple_save(&pdu->b, &tx_win->sdu_state);
 
-			pdu_len = get_pdu_len(br_chan, pdu, start_seg);
+			pdu_len = get_pdu_len(br_chan, pdu);
 
 			actual_pdu_len = pdu_len + BT_L2CAP_RT_FC_SDU_HDR_SIZE(br_chan) +
 					 BT_L2CAP_RT_FC_SDU_TAIL_SIZE(br_chan);
@@ -1450,6 +1390,7 @@ send_i_frame:
 			tx_win->data = pdu->data;
 			tx_win->len = pdu_len;
 			tx_win->srej = false;
+			tx_win->retransmit = false;
 			tx_win->sar = sar;
 			tx_win->transmit_counter = 1;
 			tx_win->sdu_total_len = br_chan->_sdu_total_len;
@@ -1471,6 +1412,7 @@ send_i_frame:
 
 			tx_win->transmit_counter++;
 			tx_win->srej = false;
+			tx_win->retransmit = false;
 
 			if (br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_ERET) {
 				if (br_chan->tx.max_transmit &&
@@ -1548,11 +1490,12 @@ done:
 
 	struct net_buf *buf;
 
-	buf = br_chan->_pdu_buf;
+	buf = net_buf_ref(br_chan->_pdu_buf);
 
 	if (br_chan->_pdu_remaining > amount) {
 		br_chan->_pdu_remaining -= amount;
 	} else {
+		net_buf_unref(br_chan->_pdu_buf);
 		br_chan->_pdu_buf = NULL;
 		br_chan->_pdu_remaining = 0;
 		if (pdu && !pdu->len) {
@@ -1592,13 +1535,31 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn, size_t amount, size_t *
 		return NULL;
 	}
 
+	__ASSERT_NO_MSG(conn->state == BT_CONN_CONNECTED);
+
 	struct bt_l2cap_br_chan *br_chan;
 
 	br_chan = CONTAINER_OF(pdu_ready, struct bt_l2cap_br_chan, _pdu_ready);
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	if (br_chan->tx.mode != BT_L2CAP_BR_LINK_MODE_BASIC) {
-		return l2cap_br_ret_fc_data_pull(conn, amount, length);
+		struct net_buf *buf;
+		const sys_snode_t *next_pdu_ready;
+
+		buf = l2cap_br_ret_fc_data_pull(conn, amount, length);
+
+		/* When the returned buffer is a `NULL`, it means there is not any data needs to
+		 * be sent. However maybe there is any frame pending on other L2CAP channel needs
+		 * to be sent over the same ACL connection. Re-trigger the TX processor. It will
+		 * call the function `l2cap_br_data_pull()` again and the pending buffer will be
+		 * pulled from following L2CAP.
+		 */
+		next_pdu_ready = sys_slist_peek_head(&conn->l2cap_data_ready);
+		if ((buf == NULL) && (next_pdu_ready != NULL) && (next_pdu_ready != pdu_ready)) {
+			bt_tx_irq_raise();
+		}
+
+		return buf;
 	}
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
@@ -1609,12 +1570,14 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn, size_t amount, size_t *
 
 	__ASSERT(tx_pdu, "signaled ready but no PDUs in the TX queue");
 
-	struct net_buf *pdu = CONTAINER_OF(tx_pdu, struct net_buf, node);
+	struct net_buf *q_pdu = CONTAINER_OF(tx_pdu, struct net_buf, node);
 
-	if (bt_buf_has_view(pdu)) {
-		LOG_ERR("already have view on %p", pdu);
+	if (bt_buf_has_view(q_pdu)) {
+		LOG_ERR("already have view on %p", q_pdu);
 		return NULL;
 	}
+
+	struct net_buf *pdu = net_buf_ref(q_pdu);
 
 	/* We can't interleave ACL fragments from different channels for the
 	 * same ACL conn -> we have to wait until a full L2 PDU is transferred
@@ -1623,12 +1586,14 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn, size_t amount, size_t *
 	bool last_frag = amount >= pdu->len;
 
 	if (last_frag) {
-		LOG_DBG("last frag, removing %p", pdu);
+		LOG_DBG("last frag, removing %p", q_pdu);
 		__maybe_unused bool found;
 
-		found = sys_slist_find_and_remove(&br_chan->_pdu_tx_queue, &pdu->node);
+		found = sys_slist_find_and_remove(&br_chan->_pdu_tx_queue, &q_pdu->node);
 
 		__ASSERT_NO_MSG(found);
+
+		net_buf_unref(q_pdu);
 
 		LOG_DBG("chan %p done", br_chan);
 		lower_data_ready(br_chan);
@@ -1660,6 +1625,7 @@ static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
 	switch (info_type) {
 	case BT_L2CAP_INFO_FEAT_MASK:
 	case BT_L2CAP_INFO_FIXED_CHAN:
+	case BT_L2CAP_INFO_CONNLESS_MTU:
 		break;
 	default:
 		LOG_WRN("Unsupported info type %u", info_type);
@@ -1784,7 +1750,34 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 
 		connect_optional_fixed_channels(l2cap);
 
+#if defined(CONFIG_BT_L2CAP_CONNLESS)
+		if (!(l2cap->info_feat_mask & L2CAP_FEAT_CONNLESS_MASK)) {
+			break;
+		}
+
+		l2cap_br_get_info(l2cap, BT_L2CAP_INFO_CONNLESS_MTU);
+		return 0;
+	case BT_L2CAP_INFO_CONNLESS_MTU:
+		{
+			struct bt_l2cap_chan *connless_chan;
+
+			if (buf->len < sizeof(uint16_t)) {
+				LOG_ERR("Invalid remote info connectionless MTU");
+				err = -EINVAL;
+				break;
+			}
+
+			connless_chan = bt_l2cap_br_lookup_rx_cid(l2cap->chan.chan.conn,
+								  BT_L2CAP_CID_CONNLESS);
+			if (connless_chan != NULL) {
+				BR_CHAN(connless_chan)->tx.mtu = net_buf_pull_le16(buf);
+				break;
+			}
+		}
+		__fallthrough;
+#else
 		break;
+#endif /* CONFIG_BT_L2CAP_CONNLESS */
 	default:
 		LOG_WRN("type 0x%04x unsupported", type);
 		err = -EINVAL;
@@ -1850,6 +1843,22 @@ static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 
 		hdr_info->len = sys_cpu_to_le16(sizeof(*rsp) + 8);
 		break;
+#if defined(CONFIG_BT_L2CAP_CONNLESS)
+	case BT_L2CAP_INFO_CONNLESS_MTU:
+		{
+			struct bt_l2cap_chan *connless_chan;
+
+			connless_chan = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_CONNLESS);
+			if (connless_chan != NULL) {
+				rsp->type = sys_cpu_to_le16(BT_L2CAP_INFO_CONNLESS_MTU);
+				rsp->result = sys_cpu_to_le16(BT_L2CAP_INFO_SUCCESS);
+				net_buf_add_le16(rsp_buf, BR_CHAN(connless_chan)->rx.mtu);
+				hdr_info->len = sys_cpu_to_le16(sizeof(*rsp) + sizeof(uint16_t));
+				break;
+			}
+		}
+		__fallthrough;
+#endif /* CONFIG_BT_L2CAP_CONNLESS */
 	default:
 		rsp->type = req->type;
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_INFO_NOTSUPP);
@@ -1985,6 +1994,41 @@ static void l2cap_br_conf_add_opt(struct net_buf *buf, const struct bt_l2cap_con
 }
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
+static uint16_t l2cap_br_get_rx_mtu(struct bt_l2cap_br_chan *br_chan)
+{
+	uint16_t rx_mtu;
+
+	rx_mtu = BT_L2CAP_RX_MTU;
+
+	if ((br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_BASIC) && !br_chan->rx.optional) {
+		return rx_mtu;
+	}
+
+	/* Discount the overhead of the I-frame for non-basic modes. */
+	if (IS_ENABLED(CONFIG_BT_L2CAP_ENH_RET) || IS_ENABLED(CONFIG_BT_L2CAP_STREAM)) {
+		/* Due to the extended_control being used if any one side of the L2CAP entities
+		 * supports Extended Window Size option, discount the maximum size of control
+		 * field to avoid the issue that the MTU exceeding the maximum payload of the
+		 * I-frame.
+		 */
+		rx_mtu -= BT_L2CAP_EXT_CONTROL_SIZE;
+	} else {
+		rx_mtu -= BT_L2CAP_STD_CONTROL_SIZE;
+	}
+
+	/* Due to the FCS field being used if any one side of the L2CAP entities does not
+	 * support the FCS option, discount the FCS size to avoid the issue that the MTU
+	 * exceeding the maximum payload of the I-frame.
+	 */
+	rx_mtu -= BT_L2CAP_FCS_SIZE;
+
+	__ASSERT(rx_mtu >= L2CAP_BR_MIN_MTU,
+		 "Invalid MTU (%u < %u). Please increase CONFIG_BT_BUF_ACL_RX_SIZE.", rx_mtu,
+		 L2CAP_BR_MIN_MTU);
+
+	return rx_mtu;
+}
+
 static int l2cap_br_check_chan_config(struct bt_conn *conn, struct bt_l2cap_br_chan *br_chan)
 {
 	struct bt_l2cap_chan *chan_sig;
@@ -2002,8 +2046,8 @@ static int l2cap_br_check_chan_config(struct bt_conn *conn, struct bt_l2cap_br_c
 
 	br_chan_sig = CONTAINER_OF(chan_sig, struct bt_l2cap_br, chan.chan);
 
-	/* Disable segment/reassemble of l2cap rx pdu */
-	br_chan->rx.mtu = MIN(br_chan->rx.mtu, BT_L2CAP_RX_MTU);
+	br_chan->rx.mtu = MIN(br_chan->rx.mtu, l2cap_br_get_rx_mtu(br_chan));
+	/* Disable segment/reassemble of l2cap rx pdu by default. */
 	br_chan->rx.mps = br_chan->rx.mtu;
 
 	br_chan->tx.mps = CONFIG_BT_L2CAP_MPS;
@@ -2115,7 +2159,6 @@ static int l2cap_br_check_chan_config(struct bt_conn *conn, struct bt_l2cap_br_c
 	}
 
 	atomic_set_bit(br_chan->flags, L2CAP_FLAG_NEW_I_FRAME);
-	atomic_set_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAME);
 
 	switch (br_chan->rx.mode) {
 	case BT_L2CAP_BR_LINK_MODE_BASIC:
@@ -2531,6 +2574,9 @@ destroy:
 	/* Reset internal members of common channel */
 	bt_l2cap_br_chan_set_state(chan, BT_L2CAP_DISCONNECTED);
 	BR_CHAN(chan)->psm = 0U;
+	if (L2CAP_BR_CID_IS_DYN(BR_CHAN(chan)->rx.cid)) {
+		BR_CHAN(chan)->rx.cid = 0U;
+	}
 #endif
 	if (chan->destroy) {
 		chan->destroy(chan);
@@ -2606,6 +2652,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 
 	br_chan = BR_CHAN(chan);
 	br_chan->required_sec_level = server->sec_level;
+	br_chan->psm = psm;
 
 	l2cap_br_chan_add(conn, chan, l2cap_br_chan_destroy);
 	BR_CHAN(chan)->tx.cid = scid;
@@ -2667,7 +2714,6 @@ no_chan:
 #define L2CAP_QOS_LATENCY_DEFAULT           0xffffffff
 #define L2CAP_QOS_DELAY_DEFAULT             0xffffffff
 
-#if defined(CONFIG_BT_L2CAP_RET_FC)
 static uint16_t l2cap_br_conf_rsp_opt_mtu(struct bt_l2cap_chan *chan, struct net_buf *buf,
 					  size_t len)
 {
@@ -2724,8 +2770,20 @@ static uint16_t l2cap_br_conf_rsp_opt_flush_timeout(struct bt_l2cap_chan *chan, 
 
 	LOG_DBG("Flash timeout %u", opt_to->timeout);
 
-	opt_to->timeout = sys_cpu_to_le32(0xffff);
-	result = BT_L2CAP_CONF_UNACCEPT;
+	opt_to->timeout = sys_le16_to_cpu(opt_to->timeout);
+
+	if (opt_to->timeout == 0) {
+		/* 0 is illegal value */
+		LOG_ERR("Flush timeout cannot be 0");
+		result = BT_L2CAP_CONF_REJECT;
+		goto done;
+	}
+
+	/* For tx, only support the default value (0xFFFF - infinite amount of retransmissions) */
+	if (opt_to->timeout != 0xFFFF) {
+		result = BT_L2CAP_CONF_UNACCEPT;
+	}
+
 done:
 	return result;
 }
@@ -2783,6 +2841,7 @@ done:
 	return result;
 }
 
+#if defined(CONFIG_BT_L2CAP_RET_FC)
 static uint16_t l2cap_br_conf_rsp_opt_ret_fc(struct bt_l2cap_chan *chan, struct net_buf *buf,
 					     size_t len)
 {
@@ -3046,6 +3105,7 @@ static uint16_t l2cap_br_conf_rsp_opt_ext_win_size(struct bt_l2cap_chan *chan, s
 done:
 	return result;
 }
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 
 static int l2cap_br_conf_rsp_opt_check(struct bt_l2cap_chan *chan, uint16_t opt_len,
 				       struct net_buf *buf)
@@ -3095,6 +3155,7 @@ static int l2cap_br_conf_rsp_opt_check(struct bt_l2cap_chan *chan, uint16_t opt_
 				goto invalid_opt;
 			}
 			break;
+#if defined(CONFIG_BT_L2CAP_RET_FC)
 		case BT_L2CAP_CONF_OPT_RET_FC:
 			result = l2cap_br_conf_rsp_opt_ret_fc(chan, buf, opt->len);
 			if (result != BT_L2CAP_CONF_SUCCESS) {
@@ -3119,6 +3180,7 @@ static int l2cap_br_conf_rsp_opt_check(struct bt_l2cap_chan *chan, uint16_t opt_
 				goto invalid_opt;
 			}
 			break;
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 		default:
 			result = BT_L2CAP_CONF_UNKNOWN_OPT;
 			goto invalid_opt;
@@ -3126,6 +3188,7 @@ static int l2cap_br_conf_rsp_opt_check(struct bt_l2cap_chan *chan, uint16_t opt_
 		net_buf_pull(buf, opt->len);
 	}
 
+#if defined(CONFIG_BT_L2CAP_RET_FC)
 	if (BR_CHAN(chan)->rx.fcs == BT_L2CAP_BR_FCS_16BIT) {
 		/* If local enable FCS, peer also needs to enable it. */
 		BR_CHAN(chan)->tx.fcs = BT_L2CAP_BR_FCS_16BIT;
@@ -3137,6 +3200,7 @@ static int l2cap_br_conf_rsp_opt_check(struct bt_l2cap_chan *chan, uint16_t opt_
 		 */
 		BR_CHAN(chan)->tx.extended_control = true;
 	}
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 
 	return 0;
 
@@ -3240,6 +3304,7 @@ done:
 	return result;
 }
 
+#if defined(CONFIG_BT_L2CAP_RET_FC)
 static uint16_t l2cap_br_conf_rsp_unaccept_opt_ret_fc(struct bt_l2cap_chan *chan,
 						      struct net_buf *buf, size_t len)
 {
@@ -3448,6 +3513,7 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_ext_win_size(struct bt_l2cap_chan
 done:
 	return result;
 }
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 
 static int l2cap_br_conf_rsp_unaccept_opt(struct bt_l2cap_chan *chan, uint16_t opt_len,
 					  struct net_buf *buf)
@@ -3497,6 +3563,7 @@ static int l2cap_br_conf_rsp_unaccept_opt(struct bt_l2cap_chan *chan, uint16_t o
 				goto invalid_opt;
 			}
 			break;
+#if defined(CONFIG_BT_L2CAP_RET_FC)
 		case BT_L2CAP_CONF_OPT_RET_FC:
 			result = l2cap_br_conf_rsp_unaccept_opt_ret_fc(chan, buf, opt->len);
 			if (result != BT_L2CAP_CONF_SUCCESS) {
@@ -3521,6 +3588,7 @@ static int l2cap_br_conf_rsp_unaccept_opt(struct bt_l2cap_chan *chan, uint16_t o
 				goto invalid_opt;
 			}
 			break;
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 		default:
 			result = BT_L2CAP_CONF_UNKNOWN_OPT;
 			goto invalid_opt;
@@ -3528,17 +3596,17 @@ static int l2cap_br_conf_rsp_unaccept_opt(struct bt_l2cap_chan *chan, uint16_t o
 		net_buf_pull(buf, opt->len);
 	}
 
+#if defined(CONFIG_BT_L2CAP_RET_FC)
 	if (BR_CHAN(chan)->rx.fcs == BT_L2CAP_BR_FCS_16BIT) {
 		/* If local enable FCS, peer also needs to enable it. */
 		BR_CHAN(chan)->tx.fcs = BT_L2CAP_BR_FCS_16BIT;
 	}
-
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 	return 0;
 
 invalid_opt:
 	return -EINVAL;
 }
-#endif /* CONFIG_BT_L2CAP_RET_FC */
 
 static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t len,
 			      struct net_buf *buf)
@@ -3548,9 +3616,7 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 	struct bt_l2cap_conf_rsp *rsp = (void *)buf->data;
 	uint16_t flags, scid, result, opt_len;
 	struct bt_l2cap_br_chan *br_chan;
-#if defined(CONFIG_BT_L2CAP_RET_FC)
 	int err;
-#endif /* CONFIG_BT_L2CAP_RET_FC */
 
 	if (buf->len < sizeof(*rsp)) {
 		LOG_ERR("Too small L2CAP conf rsp packet size");
@@ -3589,14 +3655,12 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 	switch (result) {
 	case BT_L2CAP_CONF_SUCCESS:
 		atomic_set_bit(br_chan->flags, L2CAP_FLAG_CONN_LCONF_DONE);
-#if defined(CONFIG_BT_L2CAP_RET_FC)
 		err = l2cap_br_conf_rsp_opt_check(chan, opt_len, buf);
 		if (err) {
 			/* currently disconnect channel if opt is invalid */
 			bt_l2cap_chan_disconnect(chan);
 			break;
 		}
-#endif /* CONFIG_BT_L2CAP_RET_FC */
 		if (br_chan->state == BT_L2CAP_CONFIG &&
 		    atomic_test_bit(br_chan->flags, L2CAP_FLAG_CONN_RCONF_DONE)) {
 			LOG_DBG("scid 0x%04x rx MTU %u dcid 0x%04x tx MTU %u", br_chan->rx.cid,
@@ -3608,7 +3672,6 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 			}
 		}
 		break;
-#if defined(CONFIG_BT_L2CAP_RET_FC)
 	case BT_L2CAP_CONF_UNACCEPT:
 		err = l2cap_br_conf_rsp_unaccept_opt(chan, opt_len, buf);
 		if (!err) {
@@ -3616,7 +3679,6 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 			break;
 		}
 		__fallthrough;
-#endif /* CONFIG_BT_L2CAP_RET_FC */
 	default:
 		/* currently disconnect channel on non success result */
 		bt_l2cap_chan_disconnect(chan);
@@ -3681,6 +3743,14 @@ int bt_l2cap_br_server_register(struct bt_l2cap_server *server)
 {
 	int err;
 
+	CHECKIF(server == NULL) {
+		return -EINVAL;
+	}
+
+	if (sys_slist_find(&br_servers, &server->node, NULL)) {
+		return -EEXIST;
+	}
+
 	if (!server->accept) {
 		return -EINVAL;
 	}
@@ -3713,6 +3783,21 @@ int bt_l2cap_br_server_register(struct bt_l2cap_server *server)
 	LOG_DBG("PSM 0x%04x", server->psm);
 
 	sys_slist_append(&br_servers, &server->node);
+
+	return 0;
+}
+
+int bt_l2cap_br_server_unregister(struct bt_l2cap_server *server)
+{
+	CHECKIF(server == NULL) {
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&br_servers, &server->node)) {
+		return -ENOENT;
+	}
+
+	LOG_DBG("PSM 0x%04x unregistered", server->psm);
 
 	return 0;
 }
@@ -3791,8 +3876,21 @@ static uint16_t l2cap_br_conf_opt_flush_timeout(struct bt_l2cap_chan *chan, stru
 
 	LOG_DBG("Flush timeout %u", opt_to->timeout);
 
-	opt_to->timeout = sys_cpu_to_le16(0xffff);
-	result = BT_L2CAP_CONF_UNACCEPT;
+	opt_to->timeout = sys_le16_to_cpu(opt_to->timeout);
+
+	if (opt_to->timeout == 0) {
+		/* 0 is illegal value */
+		LOG_ERR("Flush timeout cannot be 0");
+		result = BT_L2CAP_CONF_REJECT;
+		goto done;
+	}
+
+	if (opt_to->timeout < CONFIG_BT_L2CAP_RX_FLUSH_TO) {
+		LOG_DBG("Flush timeout %u is too small", opt_to->timeout);
+		opt_to->timeout = sys_cpu_to_le16(CONFIG_BT_L2CAP_RX_FLUSH_TO);
+		result = BT_L2CAP_CONF_UNACCEPT;
+	}
+
 done:
 	return result;
 }
@@ -3986,8 +4084,18 @@ static uint16_t l2cap_br_conf_opt_ret_fc(struct bt_l2cap_chan *chan, struct net_
 		uint16_t mps = CONFIG_BT_L2CAP_MPS;
 
 		if (sys_le16_to_cpu(opt_ret_fc->mps) > br_chan->tx.mtu) {
+			/*
+			 * There is an issue that the mps is bigger than tx mtu sent from the peer
+			 * device. The L2CAP configuration request from the peer device contains
+			 * a mps value that is bigger its tx mtu (sent in the same
+			 * L2CAP_CONFIGURATION_REQ packet or omitted). The issue can occur when
+			 * connecting to an iphone with the enhanced retransmission mode if the
+			 * test profile is MAP or PBAP.
+			 *
+			 * Just adjust it to the tx mtu, and give the suggested value in the
+			 * L2CAP_CONFIGURATION_RSP packet.
+			 */
 			opt_ret_fc->mps = sys_cpu_to_le16(br_chan->tx.mtu);
-			accept = false;
 		}
 
 		if (sys_le16_to_cpu(opt_ret_fc->mps) > mps) {
@@ -4026,6 +4134,14 @@ static uint16_t l2cap_br_conf_opt_ret_fc(struct bt_l2cap_chan *chan, struct net_
 
 		if (opt_ret_fc->tx_windows_size > CONFIG_BT_L2CAP_MAX_WINDOW_SIZE) {
 			opt_ret_fc->tx_windows_size = CONFIG_BT_L2CAP_MAX_WINDOW_SIZE;
+		}
+
+		if (monitor_timeout == 0) {
+			monitor_timeout = CONFIG_BT_L2CAP_BR_MONITOR_TIMEOUT;
+		}
+
+		if (retransmission_timeout == 0) {
+			retransmission_timeout = CONFIG_BT_L2CAP_BR_RET_TIMEOUT;
 		}
 
 		opt_ret_fc->retransmission_timeout = sys_cpu_to_le16(retransmission_timeout);
@@ -4664,11 +4780,16 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan, u
 		return -EBUSY;
 	}
 
+	if (!br_chan->rx.mtu) {
+		br_chan->rx.mtu = BT_L2CAP_RX_MTU;
+	}
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	err = l2cap_br_check_chan_config(conn, br_chan);
 	if (err) {
 		return err;
 	}
+#else
+	br_chan->rx.mtu = MIN(br_chan->rx.mtu, BT_L2CAP_RX_MTU);
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
 	if (!l2cap_br_chan_add(conn, chan, l2cap_br_chan_destroy)) {
@@ -5049,6 +5170,11 @@ void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
 		l2cap_br_conn_pend(chan, hci_status);
 
+		if (chan->conn == NULL) {
+			LOG_WRN("Invalid ACL conn for chan %p", chan);
+			continue;
+		}
+
 		if (chan->ops && chan->ops->encrypt_change) {
 			chan->ops->encrypt_change(chan, hci_status);
 		}
@@ -5152,23 +5278,34 @@ static void bt_l2cap_br_update_srej(struct bt_l2cap_br_chan *br_chan, uint16_t r
 	}
 }
 
+static void l2cap_br_retransmit_i_frames(struct bt_l2cap_br_chan *br_chan)
+{
+	struct bt_l2cap_br_window *tx_win, *next;
+
+	if (atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAMES)) {
+		LOG_WRN("Retransmit-I-frames is ongoing");
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&br_chan->_pdu_outstanding, tx_win, next, node) {
+		tx_win->retransmit = true;
+	}
+}
+
 static void bt_l2cap_br_update_r(struct bt_l2cap_br_chan *br_chan, uint8_t r)
 {
-	int err;
-
 	if (br_chan->rx.mode != BT_L2CAP_BR_LINK_MODE_RET) {
 		LOG_DBG("Only Support retransmission mode");
 		return;
 	}
 
 	if (!r) {
-		if (!atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R)) {
+		if (!atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY)) {
 			/* R bit without any change */
 			return;
 		}
 
 		/* R bit is changed from 1 -> 0 */
-		atomic_set_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R_CHANGED);
 		if (bt_l2cap_br_get_outstanding_count(br_chan)) {
 			/* If any unacknowledged I-frames have been sent then RetransmissionTimer
 			 * shall be restarted.
@@ -5180,22 +5317,20 @@ static void bt_l2cap_br_update_r(struct bt_l2cap_br_chan *br_chan, uint8_t r)
 			 */
 			l2cap_br_start_timer(br_chan, BT_L2CAP_BR_TIMER_MONITOR, false);
 		}
+
+		/* Retransmit I-frames */
+		l2cap_br_retransmit_i_frames(br_chan);
 	} else {
-		if (atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R)) {
+		if (atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY)) {
 			/* R bit without any change */
 			return;
 		}
 
 		/* R bit is changed from 0 -> 1 */
-		atomic_set_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R_CHANGED);
 		l2cap_br_start_timer(br_chan, BT_L2CAP_BR_TIMER_MONITOR, false);
 	}
 
-	err = l2cap_br_send_s_frame(br_chan, BT_L2CAP_CONTROL_S_RR, K_NO_WAIT);
-	if (err) {
-		LOG_ERR("Fail to send frame %d on %p", err, br_chan);
-		bt_l2cap_chan_disconnect(&br_chan->chan);
-	}
+	l2cap_br_send_s_frame(br_chan);
 }
 
 static int bt_l2cap_br_update_f(struct bt_l2cap_br_chan *br_chan, uint8_t f)
@@ -5232,6 +5367,19 @@ static int bt_l2cap_br_update_f(struct bt_l2cap_br_chan *br_chan, uint8_t f)
 	}
 
 	return 0;
+}
+
+static void l2cap_br_stop_retransmit_i_frames(struct bt_l2cap_br_chan *br_chan)
+{
+	struct bt_l2cap_br_window *tx_win, *next;
+
+	if (!atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAMES)) {
+		LOG_WRN("Retransmit-I-frames was not started");
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&br_chan->_pdu_outstanding, tx_win, next, node) {
+		tx_win->retransmit = false;
+	}
 }
 
 static void bt_l2cap_br_ret_fc_s_recv(struct bt_l2cap_br_chan *br_chan, struct net_buf *buf)
@@ -5294,22 +5442,22 @@ static void bt_l2cap_br_ret_fc_s_recv(struct bt_l2cap_br_chan *br_chan, struct n
 		}
 
 		bt_l2cap_br_update_req_seq(br_chan, req_seq, false);
-		remote_busy = atomic_test_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY);
-		atomic_clear_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY);
+
+		if (br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_RET) {
+			break;
+		}
+
+		remote_busy = atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY);
 
 		if (f && !atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_REJ_ACTIONED)) {
 			/* Retransmit I-frames */
-			atomic_set_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAME);
-			atomic_set_bit(br_chan->flags, L2CAP_FLAG_REQ_SEQ_UPDATED);
+			l2cap_br_retransmit_i_frames(br_chan);
 		}
 
 		if (p) {
 			/* Send IorRRorRNR(F=1) */
 			atomic_set_bit(br_chan->flags, L2CAP_FLAG_NEW_I_FRAME);
-			err = l2cap_br_send_s_frame(br_chan, BT_L2CAP_CONTROL_S_RR, K_NO_WAIT);
-			if (err) {
-				bt_l2cap_br_chan_disconnect(&br_chan->chan);
-			}
+			l2cap_br_send_s_frame(br_chan);
 
 			if (remote_busy && bt_l2cap_br_get_outstanding_count(br_chan)) {
 				/* Start-RetransTimer */
@@ -5324,22 +5472,25 @@ static void bt_l2cap_br_ret_fc_s_recv(struct bt_l2cap_br_chan *br_chan, struct n
 			break;
 		}
 
+		if (br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_RET) {
+			bt_l2cap_br_update_req_seq(br_chan, req_seq, true);
+			break;
+		}
+
 		atomic_clear_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY);
 		atomic_set_bit(br_chan->flags, L2CAP_FLAG_NEW_I_FRAME);
 
-		if (!f && atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P)) {
-			atomic_set_bit(br_chan->flags, L2CAP_FLAG_REJ_ACTIONED);
-		}
-
-		if (!f && atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_REJ)) {
-			atomic_set_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAME);
-			atomic_set_bit(br_chan->flags, L2CAP_FLAG_REQ_SEQ_UPDATED);
+		if (f == 0) {
+			/* Retransmit I-frames */
+			l2cap_br_retransmit_i_frames(br_chan);
+			if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P)) {
+				atomic_set_bit(br_chan->flags, L2CAP_FLAG_REJ_ACTIONED);
+			}
 		}
 
 		if (f && !atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_REJ_ACTIONED)) {
 			/* Retransmit I-frames */
-			atomic_set_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAME);
-			atomic_set_bit(br_chan->flags, L2CAP_FLAG_REQ_SEQ_UPDATED);
+			l2cap_br_retransmit_i_frames(br_chan);
 		}
 
 		bt_l2cap_br_update_req_seq(br_chan, req_seq, true);
@@ -5367,14 +5518,13 @@ static void bt_l2cap_br_ret_fc_s_recv(struct bt_l2cap_br_chan *br_chan, struct n
 		if (!atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_REJ)) {
 			l2cap_br_start_timer(br_chan, BT_L2CAP_BR_TIMER_MONITOR, true);
 			atomic_clear_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAME);
+			l2cap_br_stop_retransmit_i_frames(br_chan);
 		}
 
-		if (p || atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_REJ)) {
+		if ((atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_REJ) &&
+		     !atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY)) || (p != 0)) {
 			/* Send RRorRNR (F=1) or Send RR (F=0) */
-			err = l2cap_br_send_s_frame(br_chan, BT_L2CAP_CONTROL_S_RR, K_NO_WAIT);
-			if (err) {
-				bt_l2cap_br_chan_disconnect(&br_chan->chan);
-			}
+			l2cap_br_send_s_frame(br_chan);
 		}
 		break;
 	case BT_L2CAP_CONTROL_S_SREJ:
@@ -5618,36 +5768,19 @@ static void bt_l2cap_br_update_expected_tx_seq(struct bt_l2cap_br_chan *br_chan,
 
 	br_chan->expected_tx_seq = seq;
 
-	if (chan_has_data(br_chan)) {
-		LOG_DBG("chan %p ready", br_chan);
-		raise_data_ready(br_chan);
-	} else {
-		/* Send S-Frame if there is not any pending I-frame */
-		int err;
-
-		err = l2cap_br_send_s_frame(br_chan, BT_L2CAP_CONTROL_S_RR, K_NO_WAIT);
-		if (err) {
-			LOG_ERR("Fail to send frame %d on %p", err, br_chan);
-			bt_l2cap_chan_disconnect(&br_chan->chan);
-		}
-	}
+	/* Send S-Frame */
+	l2cap_br_send_s_frame(br_chan);
 }
 
 static void bt_l2cap_br_rej_exception(struct bt_l2cap_br_chan *br_chan)
 {
-	int err;
-
 	if (atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_REJ)) {
 		return;
 	}
 
 	LOG_DBG("Set REJ Exception received flag");
 	atomic_set_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_REJ_CHANGED);
-	err = l2cap_br_send_s_frame(br_chan, BT_L2CAP_CONTROL_S_RR, K_NO_WAIT);
-	if (err) {
-		LOG_ERR("Fail to send frame %d on %p", err, br_chan);
-		bt_l2cap_chan_disconnect(&br_chan->chan);
-	}
+	l2cap_br_send_s_frame(br_chan);
 }
 
 static void bt_l2cap_br_ret_fc_i_recv(struct bt_l2cap_br_chan *br_chan, struct net_buf *buf)
@@ -5758,28 +5891,14 @@ static void bt_l2cap_br_ret_fc_i_recv(struct bt_l2cap_br_chan *br_chan, struct n
 
 	if (br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_ERET) {
 		if (f && !atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_REJ_ACTIONED)) {
-			/* Retransmit I-frames and Send-Pending-I-frames */
+			/* Retransmit I-frames */
+			l2cap_br_retransmit_i_frames(br_chan);
+			/* Send-Pending-I-frames */
 			atomic_set_bit(br_chan->flags, L2CAP_FLAG_NEW_I_FRAME);
-			atomic_set_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAME);
-			atomic_set_bit(br_chan->flags, L2CAP_FLAG_REQ_SEQ_UPDATED);
 		}
 	}
 
 valid_frame:
-	switch (sar) {
-	case BT_L2CAP_CONTROL_SAR_START:
-		if (buf->len < 2) {
-			LOG_WRN("Too short data packet");
-			bt_l2cap_chan_disconnect(&br_chan->chan);
-			return;
-		}
-		break;
-	case BT_L2CAP_CONTROL_SAR_UNSEG:
-	case BT_L2CAP_CONTROL_SAR_END:
-	case BT_L2CAP_CONTROL_SAR_CONTI:
-		break;
-	}
-
 	/* Redirect to experimental API. */
 	IF_ENABLED(CONFIG_BT_L2CAP_SEG_RECV, ({
 		if (br_chan->chan.ops->seg_recv) {
@@ -5794,19 +5913,16 @@ valid_frame:
 			goto done;
 		}
 
-		if ((br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_RET) ||
-		    (br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_ERET)) {
-			expected_tx_seq = false;
+		if ((br_chan->rx.mode != BT_L2CAP_BR_LINK_MODE_RET) &&
+		    (br_chan->rx.mode != BT_L2CAP_BR_LINK_MODE_ERET)) {
+			goto done;
 		}
 
-		if ((br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_ERET) &&
-		    (!atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY))) {
+		expected_tx_seq = false;
+
+		if (!atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY)) {
 			atomic_set_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY_CHANGED);
-			err = l2cap_br_send_s_frame(br_chan, BT_L2CAP_CONTROL_S_RR, K_NO_WAIT);
-			if (err) {
-				LOG_ERR("Fail to send frame %d on %p", err, br_chan);
-				bt_l2cap_chan_disconnect(&br_chan->chan);
-			}
+			l2cap_br_send_s_frame(br_chan);
 		}
 		goto done;
 	}
@@ -5871,6 +5987,7 @@ static void bt_l2cap_br_ret_fc_recv(struct bt_l2cap_br_chan *br_chan, struct net
 	uint16_t control;
 	uint32_t ext_control;
 	uint8_t type;
+	uint8_t sar = BT_L2CAP_CONTROL_SAR_UNSEG;
 	struct net_buf_simple_state state;
 
 	hdr = (struct bt_l2cap_hdr *)buf->data;
@@ -5897,26 +6014,50 @@ static void bt_l2cap_br_ret_fc_recv(struct bt_l2cap_br_chan *br_chan, struct net
 	/* Pull L2CAP Header from received frame */
 	net_buf_pull_mem(buf, sizeof(*hdr));
 
-	if (buf->len > br_chan->rx.mps) {
-		LOG_WRN("PDU size > MPS (%u > %u)", buf->len, br_chan->rx.mps);
-		bt_l2cap_chan_disconnect(&br_chan->chan);
-		return;
-	}
-
 	net_buf_simple_save(&buf->b, &state);
 	if ((br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_ERET) ||
 	    (br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_STREAM)) {
 		if (br_chan->rx.extended_control) {
 			ext_control = net_buf_pull_le32(buf);
 			type = (uint8_t)BT_L2CAP_S_FRAME_EXT_CONTROL_GET_TYPE(ext_control);
+			if (type == BT_L2CAP_CONTROL_TYPE_I) {
+				sar = (uint8_t)BT_L2CAP_I_FRAME_EXT_CONTROL_GET_SAR(ext_control);
+			}
 		} else {
 			control = net_buf_pull_le16(buf);
 			type = (uint8_t)BT_L2CAP_S_FRAME_ENH_CONTROL_GET_TYPE(control);
+			if (type == BT_L2CAP_CONTROL_TYPE_I) {
+				sar = (uint8_t)BT_L2CAP_I_FRAME_ENH_CONTROL_GET_SAR(control);
+			}
 		}
 	} else {
 		control = net_buf_pull_le16(buf);
 		type = (uint8_t)BT_L2CAP_S_FRAME_STD_CONTROL_GET_TYPE(control);
+		if (type == BT_L2CAP_CONTROL_TYPE_I) {
+			sar = (uint8_t)BT_L2CAP_I_FRAME_STD_CONTROL_GET_SAR(control);
+		}
 	}
+
+	if (sar == BT_L2CAP_CONTROL_SAR_START) {
+		__maybe_unused uint16_t sdu_length;
+
+		if (buf->len < sizeof(sdu_length)) {
+			LOG_WRN("Too short data packet");
+			bt_l2cap_chan_disconnect(&br_chan->chan);
+			return;
+		}
+
+		sdu_length = net_buf_pull_le16(buf);
+
+		LOG_DBG("New segment i-frame arrived (SDU Len %u)", sdu_length);
+	}
+
+	if (buf->len > br_chan->rx.mps) {
+		LOG_WRN("PDU size > MPS (%u > %u)", buf->len, br_chan->rx.mps);
+		bt_l2cap_chan_disconnect(&br_chan->chan);
+		return;
+	}
+
 	net_buf_simple_restore(&buf->b, &state);
 
 	if (type == BT_L2CAP_CONTROL_TYPE_S) {
@@ -5973,37 +6114,46 @@ int bt_l2cap_br_chan_recv_complete(struct bt_l2cap_chan *chan)
 {
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	struct bt_l2cap_br_chan *br_chan;
-	int err = 0;
 
 	br_chan = BR_CHAN(chan);
 
 	LOG_DBG("Receiving completed on %p", br_chan);
 
-	if ((br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_ERET) &&
-	    atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY)) {
-
-		if (!atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY_CHANGED) &&
-		    !atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P)) {
-			/* State: XMIT
-			 * Local Busy Clears
-			 * Action: send RR(P=1)
-			 */
-			br_chan->retry_count = 1;
-
-			l2cap_br_start_timer(br_chan, BT_L2CAP_BR_TIMER_MONITOR, true);
-
-			atomic_set_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P_CHANGED);
-			err = l2cap_br_send_s_frame(br_chan, BT_L2CAP_CONTROL_S_RR, K_NO_WAIT);
-			if (err) {
-				LOG_ERR("Fail to send frame %d on %p", err, br_chan);
-				bt_l2cap_chan_disconnect(&br_chan->chan);
-			}
-		} else {
-			atomic_clear_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY_CHANGED);
-		}
+	if ((br_chan->rx.mode != BT_L2CAP_BR_LINK_MODE_ERET) &&
+	    (br_chan->rx.mode != BT_L2CAP_BR_LINK_MODE_RET)) {
+		LOG_DBG("Unsupported mode (%u)", br_chan->rx.mode);
+		return 0;
 	}
 
-	return err;
+	if (!atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY)) {
+		LOG_DBG("Local is not busy");
+		return 0;
+	}
+
+	if (br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_RET) {
+		/* Ignore local busy changed flag */
+		atomic_clear_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY_CHANGED);
+		l2cap_br_send_s_frame(br_chan);
+		return 0;
+	}
+
+	/* ERET Mode */
+	if (atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY_CHANGED)) {
+		return 0;
+	}
+
+	if (!atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P)) {
+		/* State: XMIT
+		 * Local Busy Clears
+		 * Action: send RR(P=1)
+		 */
+		br_chan->retry_count = 1;
+		l2cap_br_start_timer(br_chan, BT_L2CAP_BR_TIMER_MONITOR, true);
+		atomic_set_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P_CHANGED);
+		l2cap_br_send_s_frame(br_chan);
+	}
+
+	return 0;
 #else
 	return -ENOTSUP;
 #endif /* CONFIG_BT_L2CAP_RET_FC */
@@ -6042,8 +6192,6 @@ BT_L2CAP_BR_CHANNEL_DEFINE(br_fixed_chan, BT_L2CAP_CID_BR_SIG, l2cap_br_accept);
 
 void bt_l2cap_br_init(void)
 {
-	sys_slist_init(&br_servers);
-
 	if (IS_ENABLED(CONFIG_BT_RFCOMM)) {
 		bt_rfcomm_init();
 	}
@@ -6064,6 +6212,10 @@ void bt_l2cap_br_init(void)
 
 	if (IS_ENABLED(CONFIG_BT_AVRCP)) {
 		bt_avrcp_init();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_DID)) {
+		bt_did_init();
 	}
 }
 
@@ -6196,3 +6348,191 @@ int bt_l2cap_br_echo_rsp(struct bt_conn *conn, uint8_t identifier, struct net_bu
 
 	return bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, buf, NULL, NULL);
 }
+
+#if defined(CONFIG_BT_L2CAP_CONNLESS)
+
+static sys_slist_t br_connless_cbs = SYS_SLIST_STATIC_INIT(br_connless_cbs);
+
+int bt_l2cap_br_connless_register(struct bt_l2cap_br_connless_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (cb->recv == NULL) {
+		LOG_ERR("Recv callback should not be NULL");
+		return -EINVAL;
+	}
+
+	/* PSM must be odd and lsb of upper byte must be 0 */
+	if ((cb->psm != 0) && (cb->psm & 0x0101) != 0x0001) {
+		LOG_ERR("PSM must be odd and lsb of upper byte must be 0");
+		return -EINVAL;
+	}
+
+	if (cb->sec_level > BT_SECURITY_L4) {
+		LOG_ERR("Invalid security level %u", cb->sec_level);
+		return -EINVAL;
+	}
+
+	if (sys_slist_find(&br_connless_cbs, &cb->_node, NULL)) {
+		return -EEXIST;
+	}
+
+	sys_slist_append(&br_connless_cbs, &cb->_node);
+	return 0;
+}
+
+int bt_l2cap_br_connless_unregister(struct bt_l2cap_br_connless_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&br_connless_cbs, &cb->_node)) {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
+static uint32_t bt_l2cap_br_get_remote_features(struct bt_conn *conn)
+{
+	struct bt_l2cap_chan *chan_sig;
+	struct bt_l2cap_br *br_chan_sig;
+
+	chan_sig = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_BR_SIG);
+	if (chan_sig == NULL) {
+		return (uint32_t)0U;
+	}
+
+	br_chan_sig = CONTAINER_OF(chan_sig, struct bt_l2cap_br, chan.chan);
+
+	return br_chan_sig->info_feat_mask;
+}
+
+int bt_l2cap_br_connless_send(struct bt_conn *conn, uint16_t psm, struct net_buf *buf)
+{
+	struct bt_l2cap_chan *chan;
+	uint32_t remote_features;
+	uint16_t mtu;
+
+	if ((conn == NULL) || (buf == NULL)) {
+		LOG_ERR("Invalid parameters");
+		return -EINVAL;
+	}
+
+	/* PSM must be odd and lsb of upper byte must be 0 */
+	if ((psm & 0x0101) != 0x0001) {
+		LOG_ERR("Invalid PSM");
+		return -EINVAL;
+	}
+
+	LOG_DBG("ACL conn %p buf %p len %u", conn, buf, buf->len);
+
+	if (buf->ref != 1) {
+		LOG_WRN("Expecting 1 ref, got %d", buf->ref);
+		return -EINVAL;
+	}
+
+	if (net_buf_headroom(buf) < BT_L2CAP_CONNLESS_RESERVE) {
+		/* Call `net_buf_reserve(buf, BT_L2CAP_CONNLESS_RESERVE)`
+		 * when allocating buffers intended for bt_l2cap_br_connless_send().
+		 */
+		LOG_ERR("Not enough headroom in buf %p", buf);
+		return -EINVAL;
+	}
+
+	remote_features = bt_l2cap_br_get_remote_features(conn);
+	if ((remote_features & L2CAP_FEAT_CONNLESS_MASK) == 0) {
+		LOG_ERR("Remote device does not support connectionless reception");
+		return -ENOTSUP;
+	}
+
+	chan = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_CONNLESS);
+	if (chan == NULL) {
+		LOG_ERR("Connectionless data channel %u not found", BT_L2CAP_CID_CONNLESS);
+		return -ENOTCONN;
+	}
+
+	mtu = BR_CHAN(chan)->tx.mtu - sizeof(psm);
+	if (buf->len > mtu) {
+		LOG_ERR("attempt to send %u bytes on %u MTU chan", buf->len, mtu);
+		return -EMSGSIZE;
+	}
+
+	net_buf_push_le16(buf, psm);
+
+	return bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_CONNLESS, buf, NULL, NULL);
+}
+
+static struct bt_l2cap_br_chan bt_l2cap_br_connless_pool[CONFIG_BT_MAX_CONN];
+
+static void l2cap_br_connless_connected(struct bt_l2cap_chan *chan)
+{
+	LOG_DBG("ch %p cid 0x%04x", BR_CHAN(chan), BR_CHAN(chan)->rx.cid);
+}
+
+static void l2cap_br_connless_disconnected(struct bt_l2cap_chan *chan)
+{
+	LOG_DBG("ch %p cid 0x%04x", BR_CHAN(chan), BR_CHAN(chan)->rx.cid);
+}
+
+static int l2cap_br_conless_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	struct bt_conn *conn;
+	uint16_t psm;
+	struct bt_l2cap_br_connless_cb *cb;
+
+	if (buf->len < sizeof(psm)) {
+		LOG_ERR("Invalid buffer length for connless receive");
+		return -EINVAL;
+	}
+
+	conn = chan->conn;
+	psm = net_buf_pull_le16(buf);
+
+	/* Iterate through registered connless callbacks to find matching PSM */
+	SYS_SLIST_FOR_EACH_CONTAINER(&br_connless_cbs, cb, _node) {
+		if ((cb->psm == 0) || (cb->psm == psm)) {
+			/* Found matching PSM, call registered callback */
+			if ((conn->sec_level >= cb->sec_level) && (cb->recv != NULL)) {
+				cb->recv(conn, psm, buf);
+			} else {
+				LOG_WRN("No matching sec level (%u < %u)", conn->sec_level,
+					cb->sec_level);
+			}
+		} else {
+			LOG_DBG("Ignore the received connectionless data, no matching PSM");
+		}
+	}
+	return 0;
+}
+
+static int l2cap_br_connless_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+{
+	struct bt_l2cap_br_chan *br_chan;
+	uint8_t index;
+	static const struct bt_l2cap_chan_ops ops = {
+		.connected = l2cap_br_connless_connected,
+		.disconnected = l2cap_br_connless_disconnected,
+		.recv = l2cap_br_conless_recv,
+	};
+
+	LOG_DBG("conn %p handle %u", conn, conn->handle);
+
+	index = bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(bt_l2cap_br_pool), "Invalid ACL conn index");
+
+	br_chan = &bt_l2cap_br_connless_pool[index];
+
+	br_chan->chan.ops = &ops;
+	br_chan->rx.mtu = BT_L2CAP_RX_MTU - BT_L2CAP_CONNLESS_SDU_HDR_SIZE;
+	br_chan->tx.mtu = L2CAP_BR_MIN_MTU;
+	*chan = &br_chan->chan;
+	atomic_set(br_chan->flags, 0);
+	return 0;
+}
+
+BT_L2CAP_BR_CHANNEL_DEFINE(br_fixed_chan_connless, BT_L2CAP_CID_CONNLESS, l2cap_br_connless_accept);
+#endif /* CONFIG_BT_L2CAP_CONNLESS */

@@ -12,7 +12,7 @@ config CAN_LOOPBACK
 
 if CAN_LOOPBACK
 
-config CAN_MAX_FILTER
+config CAN_LOOPBACK_MAX_FILTERS
 	int "Maximum number of concurrent active filters"
 	default 16
 	range 1 1024

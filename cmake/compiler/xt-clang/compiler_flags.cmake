@@ -28,3 +28,6 @@ set_compiler_property(PROPERTY warning_shadow_variables)
 check_set_compiler_property(APPEND PROPERTY warning_extended
                             -Wno-unknown-warning-option
 )
+
+# Do not fuse instructions via FLIX
+set_compiler_property(PROPERTY no_generate_vliw -mno-generate-flix)

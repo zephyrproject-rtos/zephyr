@@ -15,7 +15,7 @@ menuconfig GPIO_PCF857X
 
 config GPIO_PCF857X_INIT_PRIORITY
 	int "Init priority"
-	default 70
+	default I2C_INIT_PRIORITY
 	depends on GPIO_PCF857X
 	help
 	  Device driver initialization priority.

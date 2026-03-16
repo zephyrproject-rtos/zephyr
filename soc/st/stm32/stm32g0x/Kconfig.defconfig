@@ -9,8 +9,6 @@ if SOC_SERIES_STM32G0X
 
 rsource "Kconfig.defconfig.stm32g0*"
 
-if UART_STM32
-
 configdefault SHARED_IRQ_MAX_NUM_CLIENTS
 	# LPUART1 - USART3/4/5/6 instances are all enabled
 	default 5 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,lpuart1)
@@ -32,7 +30,7 @@ configdefault SHARED_IRQ_MAX_NUM_CLIENTS
 	default 3 if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,lpuart1)
 	default 3 if $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,lpuart1)
 
-config SHARED_INTERRUPTS
+configdefault SHARED_INTERRUPTS
 	# LPUART1 - USART3/4/5/6 : irq 29
 	default y if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4)
 	default y if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart5)
@@ -46,7 +44,19 @@ config SHARED_INTERRUPTS
 	default y if $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,lpuart1)
 	# USART2 - LPUART2 : irq 28
 	default y if $(dt_nodelabel_enabled,lpuart2) && $(dt_nodelabel_enabled,usart2)
+	# TIM3 - TIM4 : irq 16
+	default y if $(dt_nodelabel_enabled,timers3) && $(dt_nodelabel_enabled,timers4)
+	# TIM6 - LPTIM1 : irq 17
+	default y if $(dt_nodelabel_enabled,timers6) && $(dt_nodelabel_enabled,lptim1)
+	# TIM7 - LPTIM2 : irq 18
+	default y if $(dt_nodelabel_enabled,timers7) && $(dt_nodelabel_enabled,lptim2)
 
-endif # UART_STM32
+# Default disable flash prefetch for G0Bx and G0Cx since ErrataSheet ES0548/ES0549,
+# section "Prefetch failure when branching across flash memory banks
+# which causes code execution corruption and may lead to HardFault interrupt"
+# Project may override this configuration if sure no cross-bank prefetch access is
+# awaited.
+config STM32_FLASH_PREFETCH
+	default n if SOC_STM32G0B0XX || SOC_STM32G0B1XX || SOC_STM32G0C1XX
 
 endif # SOC_SERIES_STM32G0X

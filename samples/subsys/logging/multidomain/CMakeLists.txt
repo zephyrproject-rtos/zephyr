@@ -10,7 +10,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 if(NOT (CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP OR
    CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUAPP))
-  message(FATAL_ERROR "${BOARD}${BOARD_QUALIFIERS} is not supported for this sample")
+  message(FATAL_ERROR "${BOARD}/${BOARD_QUALIFIERS} is not supported for this sample")
 endif()
 
 project(log_multidomain)

@@ -1,0 +1,6 @@
+shield:
+  name: arduino_modulino_pixels
+  full_name: Arduino Modulino Pixels
+  vendor: arduino
+  supported_features:
+    - led_strip

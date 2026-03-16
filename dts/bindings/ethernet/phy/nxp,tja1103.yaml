@@ -27,3 +27,4 @@ properties:
       - "default"
       - "master"
       - "slave"
+      - "auto"

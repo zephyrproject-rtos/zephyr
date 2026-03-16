@@ -17,27 +17,17 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "starfive,fu74-g000";
+
 		cpu@0 {
 			clock-frequency = <0>;
 			compatible = "starfive,rocket0", "riscv";
-			d-cache-block-size = <64>;
-			d-cache-sets = <64>;
-			d-cache-size = <32768>;
-			d-tlb-sets = <1>;
-			d-tlb-size = <32>;
 			device_type = "cpu";
-			i-cache-block-size = <64>;
-			i-cache-sets = <64>;
-			i-cache-size = <32768>;
-			i-tlb-sets = <1>;
-			i-tlb-size = <32>;
 			mmu-type = "riscv,sv39";
-			next-level-cache = <&cachectrl>;
 			reg = <0>;
-			riscv,isa = "rv64gc";
-			starfive,itim = <&itim0>;
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 			status = "okay";
-			tlb-split;
+
 			cpu0intctrl: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -49,24 +39,13 @@
 		cpu@1 {
 			clock-frequency = <0>;
 			compatible = "starfive,rocket0", "riscv";
-			d-cache-block-size = <64>;
-			d-cache-sets = <64>;
-			d-cache-size = <32768>;
-			d-tlb-sets = <1>;
-			d-tlb-size = <32>;
 			device_type = "cpu";
-			i-cache-block-size = <64>;
-			i-cache-sets = <64>;
-			i-cache-size = <32768>;
-			i-tlb-sets = <1>;
-			i-tlb-size = <32>;
 			mmu-type = "riscv,sv39";
-			next-level-cache = <&cachectrl>;
 			reg = <1>;
-			riscv,isa = "rv64gc";
-			starfive,itim = <&itim1>;
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 			status = "okay";
-			tlb-split;
+
 			cpu1intctrl: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -76,7 +55,7 @@
 		};
 	};
 
-	ram0:memory@80000000 {
+	ram0: memory@80000000 {
 		device_type = "memory";
 		reg = <0x0 0x80000000 0x2 0x0>;
 	};
@@ -134,7 +113,7 @@
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&cpu0intctrl 11 &cpu0intctrl 9
-					       &cpu1intctrl 11 &cpu1intctrl 9 >;
+					       &cpu1intctrl 11 &cpu1intctrl 9>;
 			reg = <0x0 0x0c000000 0x0 0x04000000>;
 			riscv,max-priority = <7>;
 			riscv,ndev = <127>;
@@ -173,7 +152,7 @@
 			reg = <0x0 0x11880000 0x0 0x10000>;
 			reg-shift = <2>;
 			clocks = <&hs_uartclk>, <&apb1clk>;
-			clock-names = "baudclk","apb_pclk";
+			clock-names = "baudclk", "apb_pclk";
 			clock-frequency = <74250000>;
 			current-speed = <115200>;
 			status = "disabled";

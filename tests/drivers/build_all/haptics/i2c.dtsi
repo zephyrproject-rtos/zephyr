@@ -5,7 +5,8 @@
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
- ***************************************/
+ **************************************
+ */
 
 drv2605@0 {
 	compatible = "ti,drv2605";
@@ -13,4 +14,12 @@ drv2605@0 {
 	status = "okay";
 
 	actuator-mode = "LRA";
+};
+
+cs40l5x@1 {
+	compatible = "cirrus,cs40l5x";
+	reg = <0x1>;
+	status = "okay";
+
+	reset-gpios = <&test_gpio 0 0>;
 };

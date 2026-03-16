@@ -76,10 +76,7 @@ SECTIONS
 	{
 
 #include <zephyr/linker/rel-sections.ld>
-
-#ifdef CONFIG_LLEXT
 #include <zephyr/linker/llext-sections.ld>
-#endif
 
     /DISCARD/ :
 	{
@@ -228,8 +225,6 @@ SECTIONS
 		*(.pinned_rodata)
 		*(.pinned_rodata.*)
 
-#include <snippets-rodata.ld>
-
 #include <zephyr/linker/kobject-rom.ld>
 
 		MMU_PAGE_ALIGN_PERM
@@ -341,6 +336,8 @@ SECTIONS
 	*(.fini)
 	*(.eini)
 
+#include <snippets-text-sections.ld>
+
 #ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <zephyr/linker/kobject-text.ld>
 #endif
@@ -373,12 +370,12 @@ SECTIONS
 #endif /* !CONFIG_LINKER_USE_PINNED_SECTION */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 
-#ifndef CONFIG_LINKER_USE_PINNED_SECTION
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rodata.ld>
 
+#ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <zephyr/linker/kobject-rom.ld>
 #endif
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
@@ -469,6 +466,32 @@ SECTIONS
 #ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <zephyr/linker/common-ram.ld>
 #include <zephyr/arch/x86/pagetables.ld>
+
+#ifdef CONFIG_HW_SHADOW_STACK
+SECTION_PROLOGUE(.x86shadowstack,,)
+{
+	MMU_PAGE_ALIGN
+
+	__x86shadowstack_start = .;
+
+	*(.x86shadowstack)
+
+	MMU_PAGE_ALIGN
+
+	__x86shadowstack_end = .;
+} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+SECTION_PROLOGUE(.x86shadowstack.arr,,)
+{
+	MMU_PAGE_ALIGN
+
+	*(.x86shadowstack.arr*)
+
+	MMU_PAGE_ALIGN
+
+	__x86shadowstack_end = .;
+} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
 
 /* Must be last in RAM */
 #include <zephyr/linker/kobject-data.ld>

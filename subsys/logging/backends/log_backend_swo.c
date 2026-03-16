@@ -58,6 +58,17 @@ PINCTRL_DT_DEFINE(DT_NODELABEL(itm));
 
 #endif
 
+/*
+ * Estimate TPIU drain time from the configured SWO baud rate.
+ * ~200 bytes * 10 bits/byte with 50% margin, converted to microseconds.
+ * When frequency is 0 (default = max supported), fall back to 2 ms.
+ */
+#if CONFIG_LOG_BACKEND_SWO_FREQ_HZ > 0
+#define SWO_DRAIN_WAIT_US ((200UL * 10 * 1500000) / CONFIG_LOG_BACKEND_SWO_FREQ_HZ)
+#else
+#define SWO_DRAIN_WAIT_US 2000
+#endif
+
 static uint8_t buf[1];
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_SWO_OUTPUT_DEFAULT;
 
@@ -93,26 +104,32 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 static void log_backend_swo_init(struct log_backend const *const backend)
 {
 	/* Enable DWT and ITM units */
-	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+	DCB->DEMCR |= DCB_DEMCR_TRCENA_Msk;
+#if (__CORTEX_M <= 7U)
 	/* Enable access to ITM registers */
 	ITM->LAR  = 0xC5ACCE55;
+#endif
 	/* Disable stimulus ports ITM_STIM0-ITM_STIM31 */
 	ITM->TER  = 0x0;
 	/* Disable ITM */
 	ITM->TCR  = 0x0;
 	/* Select TPIU encoding protocol */
-	TPI->SPPR = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_PROTOCOL_NRZ) ? 2 : 1;
+	TPIU->SPPR = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_PROTOCOL_NRZ) ? 2 : 1;
 	/* Set SWO baud rate prescaler value: SWO_clk = ref_clock/(ACPR + 1) */
-	TPI->ACPR = SWO_FREQ_DIV - 1;
+	TPIU->ACPR = SWO_FREQ_DIV - 1;
 	/* Enable unprivileged access to ITM stimulus ports */
 	ITM->TPR  = 0x0;
 	/* Configure Debug Watchpoint and Trace */
 	DWT->CTRL &= (DWT_CTRL_POSTPRESET_Msk | DWT_CTRL_POSTINIT_Msk | DWT_CTRL_CYCCNTENA_Msk);
 	DWT->CTRL |= (DWT_CTRL_POSTPRESET_Msk | DWT_CTRL_POSTINIT_Msk);
 	/* Configure Formatter and Flush Control Register */
-	TPI->FFCR = 0x00000100;
+	TPIU->FFCR = TPIU_FFCR_TrigIn_Msk;
 	/* Enable ITM, set TraceBusID=1, no local timestamp generation */
-	ITM->TCR  = 0x0001000D;
+	uint32_t tcr = ITM_TCR_ITMENA_Msk | ITM_TCR_DWTENA_Msk | (1 << ITM_TCR_TRACEBUSID_Pos);
+#if CONFIG_LOG_BACKEND_SWO_SYNC_PACKETS
+	tcr |= ITM_TCR_SYNCENA_Msk;
+#endif
+	ITM->TCR  = tcr;
 	/* Enable stimulus port used by the logger */
 	ITM->TER  = 1 << ITM_PORT_LOGGER;
 
@@ -127,6 +144,22 @@ static void log_backend_swo_init(struct log_backend const *const backend)
 
 static void log_backend_swo_panic(struct log_backend const *const backend)
 {
+	ARG_UNUSED(backend);
+
+	/*
+	 * Poll ITM BUSY for up to SWO_DRAIN_WAIT_US. The formatter should
+	 * finish well before the TPIU output stage drains, so using the
+	 * same budget for both is conservative.
+	 */
+	for (uint32_t i = 0;
+	     i < SWO_DRAIN_WAIT_US && (ITM->TCR & ITM_TCR_BUSY_Msk); i++) {
+		k_busy_wait(1);
+	}
+
+	/* ITM BUSY only means the formatter is done — the TPIU output
+	 * buffer still needs time to clock bytes out at the SWO baud rate.
+	 */
+	k_busy_wait(SWO_DRAIN_WAIT_US);
 }
 
 static void dropped(const struct log_backend *const backend, uint32_t cnt)

@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: pt2
+  full_name: Pebble Time 2
+  vendor: coredevices
+  socs:
+    - name: sf32lb52jud6

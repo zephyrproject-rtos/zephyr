@@ -1,0 +1,10 @@
+tests:
+  pmci.mctp.uart.ping_pong:
+    platform_allow:
+      - npcx4m8f_evb
+      - frdm_mcxn947/mcxn947/cpu0
+    tags:
+      - mctp
+      - uart
+    harness_config:
+      fixture: uart_loopback

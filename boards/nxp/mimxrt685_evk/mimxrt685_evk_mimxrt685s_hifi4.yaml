@@ -5,7 +5,7 @@
 #
 
 identifier: mimxrt685_evk/mimxrt685s/hifi4
-name: NXP MIMXRT685-EVK (HiFi 4)
+name: NXP MIMXRT685-EVK (HiFi4)
 type: mcu
 arch: xtensa
 ram: 64

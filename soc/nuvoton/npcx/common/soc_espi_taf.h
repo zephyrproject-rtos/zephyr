@@ -60,13 +60,10 @@ extern "C" {
 /* ESPI TAF RPMC OP2 instruction */
 #define ESPI_TAF_RPMC_OP2_CMD                      0x96
 
-/* Timeout for checking transmit buffer available and no completion was sent */
-#define NPCX_FLASH_CHK_TIMEOUT                     10000
-
 /* Clear RSTBUFHEADS, FLASH_ACC_TX_AVAIL, and FLASH_ACC_NP_FREE */
 #define NPCX_FLASHCTL_ACCESS_MASK     (~(BIT(NPCX_FLASHCTL_RSTBUFHEADS) |   \
 					 BIT(NPCX_FLASHCTL_FLASH_NP_FREE) | \
-					 BIT(NPCX_FLASHCTL_FLASH_TX_AVAIL)))
+					 BIT(NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL)))
 
 /* Flash Sharing Capability Support */
 #define NPCX_FLASH_SHARING_CAP_SUPP_CAF            0

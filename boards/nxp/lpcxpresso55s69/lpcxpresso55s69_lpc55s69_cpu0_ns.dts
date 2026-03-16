@@ -1,12 +1,12 @@
 /*
- * Copyright 2019,2024 NXP
+ * Copyright 2019, 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include <nxp/nxp_lpc55S6x_ns.dtsi>
+#include <nxp/lpc/nxp_lpc55S6x_ns.dtsi>
 #include "lpcxpresso55s69.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -38,16 +38,19 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_1: button_0 {
 			label = "User SW1";
 			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_2: button_1 {
 			label = "User SW2";
 			gpios = <&gpio1 18 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		user_button_3: button_2 {
 			label = "User SW3";
 			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
@@ -132,5 +135,13 @@ zephyr_udc0: &usbhs {
 };
 
 &ctimer4 {
+	status = "okay";
+};
+
+&gint0 {
+	status = "okay";
+};
+
+&gint1 {
 	status = "okay";
 };

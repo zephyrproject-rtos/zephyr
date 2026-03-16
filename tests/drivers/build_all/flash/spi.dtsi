@@ -24,3 +24,39 @@ spi-nor@1 {
 	size = <1048576>;
 	jedec-id = [00 11 22];
 };
+
+at25xv021a@2 {
+	compatible = "atmel,at25xv021a";
+	reg = <0x2>;
+	status = "okay";
+	spi-max-frequency = <5000000>;
+	jedec-id = [00 11 22];
+	size = <262144>;
+	page-size = <1>;
+	timeout = <1>;
+	timeout-erase = <1>;
+};
+
+s3axx04@3 {
+	compatible = "netsol,s3axx04";
+	reg = <3>;
+	spi-max-frequency = <54000000>;
+	size = <DT_SIZE_M(2)>;
+	status = "okay";
+};
+
+spi-nand@4 {
+	compatible = "jedec,spi-nand";
+	reg = <0x4>;
+	status = "okay";
+	spi-max-frequency = <5000000>;
+	/* mt29f4g01 parameters */
+	jedec-id = [2c 35];
+	size-bytes = <536870912>;
+	erase-block-size = <262144>;
+	write-block-size = <4096>;
+	block-erase-duration-max = <10000>;
+	page-program-duration-max = <600>;
+	page-read-duration-max = <200>;
+	reset-duration-max = <500>;
+};

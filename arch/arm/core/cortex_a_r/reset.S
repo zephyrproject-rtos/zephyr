@@ -47,8 +47,25 @@ GTEXT(soc_reset_hook)
  * setting up the system for running C code.
  *
  */
+#if defined(CONFIG_AARCH32_ARMV8_R)
+/*
+ * ARMv8-R AArch32 cores use RVBAR (Reset Vector Base Address Register) to
+ * determine the CPU start address on reset.  RVBAR only stores bits [31:5];
+ * bits [4:0] are RES0.  This means the reset
+ * vector address is implicitly rounded down to a 32-byte boundary.
+ *
+ * If __start is not 32-byte aligned, any firmware or boot-loader that
+ * programs RVBAR from the ELF entry point will silently truncate the
+ * address, causing the CPU to begin executing at the wrong location.
+ */
+	.section .text._reset_section, "ax"
+	.align 5
+z_arm_reset:
+__start:
+#else
 SECTION_SUBSEC_FUNC(TEXT, _reset_section, z_arm_reset)
 SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
+#endif
 #if defined(CONFIG_AARCH32_ARMV8_R)
     /* Check if we are starting in HYP mode */
     mrs r0, cpsr

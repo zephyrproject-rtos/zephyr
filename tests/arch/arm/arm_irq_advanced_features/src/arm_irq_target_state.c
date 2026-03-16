@@ -9,6 +9,11 @@
 #include <cmsis_core.h>
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE) && defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#if CONFIG_2ND_LVL_ISR_TBL_OFFSET > 0
+#define TEST_1ST_LEVEL_INTERRUPTS_MAX (CONFIG_2ND_LVL_ISR_TBL_OFFSET - 1)
+#else
+#define TEST_1ST_LEVEL_INTERRUPTS_MAX (CONFIG_NUM_IRQS - 1)
+#endif
 
 extern irq_target_state_t irq_target_state_set(unsigned int irq, irq_target_state_t target_state);
 extern int irq_target_state_is_secure(unsigned int irq);
@@ -24,7 +29,7 @@ ZTEST(arm_irq_advanced_features, test_arm_irq_target_state)
 	 */
 	int i;
 
-	for (i = CONFIG_NUM_IRQS - 1; i >= 0; i--) {
+	for (i = TEST_1ST_LEVEL_INTERRUPTS_MAX; i >= 0; i--) {
 		if (NVIC_GetEnableIRQ(i) == 0) {
 			/*
 			 * In-use interrupts are automatically enabled by

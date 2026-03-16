@@ -6,31 +6,6 @@ description: |
 
   Listens for row-column events from the parent device and reports key events.
 
-  Example configuration:
-
-  #include <zephyr/dt-bindings/input/input-event-codes.h>
-  #include <zephyr/dt-bindings/input/keymap.h>
-
-  kbd {
-      ...
-      keymap {
-          compatible = "input-keymap";
-          keymap = <
-              MATRIX_KEY(0, 0, INPUT_KEY_1)
-              MATRIX_KEY(0, 1, INPUT_KEY_2)
-              MATRIX_KEY(0, 2, INPUT_KEY_3)
-              MATRIX_KEY(1, 0, INPUT_KEY_4)
-              MATRIX_KEY(1, 1, INPUT_KEY_5)
-              MATRIX_KEY(1, 2, INPUT_KEY_6)
-              MATRIX_KEY(2, 0, INPUT_KEY_7)
-              MATRIX_KEY(2, 1, INPUT_KEY_8)
-              MATRIX_KEY(2, 2, INPUT_KEY_9)
-          >;
-          row-size = <3>;
-          col-size = <3>;
-      };
-  };
-
 compatible: "input-keymap"
 
 properties:
@@ -51,3 +26,28 @@ properties:
     required: true
     description: |
       The number of columns in the keymap.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/input/input-event-codes.h>
+    #include <zephyr/dt-bindings/input/keymap.h>
+
+    kbd {
+        /* ... */
+        keymap {
+            compatible = "input-keymap";
+            keymap = <
+                MATRIX_KEY(0, 0, INPUT_KEY_1)
+                MATRIX_KEY(0, 1, INPUT_KEY_2)
+                MATRIX_KEY(0, 2, INPUT_KEY_3)
+                MATRIX_KEY(1, 0, INPUT_KEY_4)
+                MATRIX_KEY(1, 1, INPUT_KEY_5)
+                MATRIX_KEY(1, 2, INPUT_KEY_6)
+                MATRIX_KEY(2, 0, INPUT_KEY_7)
+                MATRIX_KEY(2, 1, INPUT_KEY_8)
+                MATRIX_KEY(2, 2, INPUT_KEY_9)
+            >;
+            row-size = <3>;
+            col-size = <3>;
+        };
+    };

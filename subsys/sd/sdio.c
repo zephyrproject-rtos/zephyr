@@ -549,6 +549,7 @@ int sdio_card_init(struct sd_card *card)
 {
 	int ret;
 	uint32_t ocr_arg = 0U;
+	uint32_t cid[4] = {0};
 
 	/* Probe card with SDIO OCR CM5 */
 	ret = sdio_send_ocr(card, ocr_arg);
@@ -589,10 +590,10 @@ int sdio_card_init(struct sd_card *card)
 		 * If card and host support 1.8V, perform voltage switch sequence now.
 		 * note that we skip this switch if the UHS protocol is not enabled.
 		 */
-		if ((card->flags & SD_1800MV_FLAG) &&
-			(!card->host_props.is_spi) &&
-			(card->host_props.host_caps.vol_180_support) &&
-			IS_ENABLED(CONFIG_SD_UHS_PROTOCOL)) {
+		if (IS_ENABLED(CONFIG_SD_UHS_PROTOCOL) &&
+		    (card->flags & SD_1800MV_FLAG) &&
+		    (!card->host_props.is_spi) &&
+		    (card->host_props.host_caps.vol_180_support)) {
 			ret = sdmmc_switch_voltage(card);
 			if (ret) {
 				/* Disable host support for 1.8 V */
@@ -609,7 +610,7 @@ int sdio_card_init(struct sd_card *card)
 		if ((card->flags & SD_MEM_PRESENT_FLAG) &&
 			((card->flags & SD_SDHC_FLAG) == 0)) {
 			/* We must send CMD2 to get card cid */
-			ret = card_read_cid(card);
+			ret = card_read_cid(card, cid);
 			if (ret) {
 				return ret;
 			}

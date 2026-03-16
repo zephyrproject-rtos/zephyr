@@ -9,7 +9,6 @@ menuconfig THREAD_ANALYZER
 	select INIT_STACKS
 	select THREAD_MONITOR
 	select THREAD_STACK_INFO
-	select THREAD_RUNTIME_STATS
 	help
 	  Enable thread analyzer functionality and all the required modules.
 	  This module may be used to debug thread configuration issues, e.g.
@@ -20,6 +19,9 @@ if THREAD_ANALYZER
 module = THREAD_ANALYZER
 module-str = thread analyzer
 source "subsys/logging/Kconfig.template.log_config"
+
+configdefault THREAD_RUNTIME_STATS
+	default y
 
 choice
 	prompt "Thread analysis print mode"
@@ -68,6 +70,16 @@ config THREAD_ANALYZER_RUN_UNLOCKED
 	  For the limitation of such configuration see the k_thread_foreach
 	  documentation.
 
+config THREAD_ANALYZER_STACK_SAFETY
+	bool "Thread analysis includes thread runtime stack safety check"
+	default n
+	select THREAD_RUNTIME_STACK_SAFETY
+	help
+	  If enabled, the stack usage analysis is enhanced by calling a customizable handler
+	  when the unused stack space of a thread falls below its configured threshold. This
+	  customized handler may take actions such as logging warnings, suspending or even
+	  aborting threads.
+
 config THREAD_ANALYZER_AUTO
 	bool "Run periodic thread analysis in a thread"
 	help
@@ -112,5 +124,13 @@ config THREAD_ANALYZER_AUTO_THREAD_PRIORITY
 endif # THREAD_ANALYZER_AUTO_THREAD_PRIORITY_OVERRIDE
 
 endif # THREAD_ANALYZER_AUTO
+
+config THREAD_ANALYZER_LONG_FRAME_PER_INTERVAL
+	bool "Prints the longest frame since the last thread analyzer interval"
+	depends on SCHED_THREAD_USAGE_ANALYSIS
+	help
+	  Resets the thread longest frame field after printing so that the next print
+	  will show the longest frame during that interval.  This enables observation
+	  of what long frames come after the initial startup of a thread.
 
 endif # THREAD_ANALYZER

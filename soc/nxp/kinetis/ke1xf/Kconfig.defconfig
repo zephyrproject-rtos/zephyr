@@ -4,7 +4,7 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_KINETIS_KE1XF
+if SOC_SERIES_KE1XF
 
 config MCUX_LPTMR_TIMER
 	default y if PM
@@ -37,4 +37,4 @@ config PWM_MCUX_PWT
 config GPIO
 	default y
 
-endif # SOC_SERIES_KINETIS_KE1XF
+endif # SOC_SERIES_KE1XF

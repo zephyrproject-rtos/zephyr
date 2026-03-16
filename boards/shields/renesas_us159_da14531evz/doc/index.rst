@@ -7,9 +7,9 @@ Overview
 ********
 
 The Renesas US159 DA14531EVZ carries a `DA14531MOD`_ Bluetooth LE module
-in a `Digilent Pmod`_ |trade| form factor.
+in a `Digilent Pmod™`_ form factor.
 
-.. figure:: us159-da14531evz-pmod.webp
+.. figure:: renesas_us159_da14531evz.webp
    :align: center
    :alt: Renesas US159 DA14531EVZ Pmod
 
@@ -18,7 +18,7 @@ in a `Digilent Pmod`_ |trade| form factor.
 Requirements
 ************
 
-This shield can only be used with a board that provides a Pmod |trade|
+This shield can only be used with a board that provides a Pmod™
 socket and defines the ``pmod_serial`` node label (see :ref:`shields` for
 more details).
 
@@ -66,7 +66,7 @@ References
 .. _DA14531MOD:
    https://www.renesas.com/us/en/products/wireless-connectivity/bluetooth-low-energy/da14531mod-smartbond-tiny-bluetooth-low-energy-module
 
-.. _Digilent Pmod:
+.. _Digilent Pmod™:
    https://digilent.com/reference/pmod/start
 
 .. _Renesas SmartBond Flash Programmer:

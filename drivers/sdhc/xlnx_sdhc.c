@@ -248,6 +248,14 @@ static uint16_t xlnx_sdhc_cmd_frame(struct sdhc_command *cmd, bool data, uint8_t
 		command |= RESP_R3;
 		break;
 
+	case SD_RSP_TYPE_R4:
+		command |= RESP_R3;
+		break;
+
+	case SD_RSP_TYPE_R5:
+		command |= RESP_R1;
+		break;
+
 	case SD_RSP_TYPE_R6:
 		command |= RESP_R6;
 		break;
@@ -536,6 +544,23 @@ static int xlnx_sdhc_request(const struct device *dev, struct sdhc_command *cmd,
 		ret = xlnx_sdhc_transfer(dev, cmd, data);
 		break;
 
+	case SDIO_RW_EXTENDED:
+		if (IS_BIT_SET(cmd->arg, SDIO_CMD_ARG_RW_SHIFT)) {
+			dev_data->transfermode &= ~XLNX_SDHC_TM_DAT_DIR_SEL_MASK;
+		}
+		if (data->blocks > 1) {
+			dev_data->transfermode |= XLNX_SDHC_TM_MUL_SIN_BLK_SEL_MASK;
+		}
+		ret = xlnx_sdhc_transfer(dev, cmd, data);
+		break;
+
+	case SDIO_RW_DIRECT:
+		if (IS_BIT_SET(cmd->arg, SDIO_CMD_ARG_RW_SHIFT)) {
+			dev_data->transfermode &= ~XLNX_SDHC_TM_DAT_DIR_SEL_MASK;
+		}
+		ret = xlnx_sdhc_transfer(dev, cmd, data);
+		break;
+
 	default:
 		ret = xlnx_sdhc_transfer(dev, cmd, data);
 	}
@@ -587,14 +612,14 @@ static int xlnx_sdhc_host_props(const struct device *dev, struct sdhc_host_props
 			XLNX_SDHC_SLOT_TYPE_GET);
 	props->host_caps.bus_8_bit_support = XLNX_SDHC_GET_HOST_PROP_BIT(cap,
 			XLNX_SDHC_8BIT_SUPPORT);
-	props->host_caps.bus_4_bit_support = XLNX_SDHC_GET_HOST_PROP_BIT(cap,
+	props->bus_4_bit_support = XLNX_SDHC_GET_HOST_PROP_BIT(cap,
 			XLNX_SDHC_4BIT_SUPPORT);
 
 	if ((cap & CHECK_BITS(XLNX_SDHC_SDR400_SUPPORT)) != 0U) {
-		props->host_caps.hs400_support = (uint8_t)config->hs400_mode;
+		props->hs400_support = config->hs400_mode;
 		dev_data->has_phy = true;
 	}
-	props->host_caps.hs200_support = (uint8_t)config->hs200_mode;
+	props->hs200_support = config->hs200_mode;
 
 	dev_data->props = *props;
 
@@ -1294,7 +1319,7 @@ static int xlnx_sdhc_init(const struct device *dev)
 	return xlnx_sdhc_host_reset(dev);
 }
 
-static const struct sdhc_driver_api xlnx_sdhc_api = {
+static DEVICE_API(sdhc, xlnx_sdhc_api) = {
 	.reset = xlnx_sdhc_host_reset,
 	.request = xlnx_sdhc_request,
 	.set_io = xlnx_sdhc_set_io,

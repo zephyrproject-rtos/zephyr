@@ -1,0 +1,9 @@
+family:
+- name: microchip_pic64
+  series:
+  - name: pic64gx
+    socs:
+    - name: pic64gx1000
+      cpuclusters:
+      - name: e51
+      - name: u54

@@ -81,4 +81,31 @@ config COBS
 	help
 	  Enable consistent overhead byte stuffing
 
+config GETOPT
+	bool "Getopt library support"
+	help
+	  This option adds support of the sys_getopt API.
+
+config GETOPT_LONG
+	bool "Getopt long library support"
+	depends on GETOPT
+	help
+	  This option adds support of the getopt long.
+	  Different shell backends are using their own instance of getopt to
+	  not interfere with each other.
+	  All not shell threads share one global instance of getopt state, hence
+	  apart from shell this library is not thread safe. User can add support
+	  for other threads by extending function sys_getopt_state_get in
+	  getopt_common.c file.
+
+config TIMEUTIL_APPLY_SKEW
+	bool "Support applying clock skew corrections in conversion functions"
+	default y
+	help
+	  Accurately applying clock skew correction in timeutil_sync_ref_from_local
+	  and timeutil_sync_local_from_ref requires double-precision floating point
+	  operations. If this is the only usage of double precision logic in the
+	  build, but clocks skews are not used, this can be a significant ROM
+	  overhead. Disabling this option can save ~2.4 kB of ROM.
+
 endmenu

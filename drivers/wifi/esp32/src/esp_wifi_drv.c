@@ -13,16 +13,20 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
+#if defined(CONFIG_NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT)
+#include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
+#endif
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 #include <zephyr/net/wifi_nm.h>
-#include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 #endif
 #include <zephyr/device.h>
 #include <soc.h>
 #include "esp_private/wifi.h"
 #include "esp_event.h"
+#include "esp_rom_sys.h"
 #include "esp_timer.h"
 #include "esp_system.h"
+#include "esp_wifi.h"
 #include "esp_wpa.h"
 #include <esp_mac.h>
 #include "wifi/wifi_event.h"
@@ -64,7 +68,7 @@ struct esp32_wifi_status {
 };
 
 struct esp32_wifi_runtime {
-	uint8_t mac_addr[6];
+	uint8_t mac_addr[WIFI_MAC_ADDR_LEN];
 	uint8_t frame_buf[NET_ETH_MAX_FRAME_SIZE];
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	struct net_stats_wifi stats;
@@ -136,7 +140,7 @@ static esp_err_t eth_esp32_rx(void *buffer, uint16_t len, void *eb)
 		return -EIO;
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface, len, AF_UNSPEC, 0, K_MSEC(100));
+	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface, len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
 		LOG_ERR("Failed to allocate net buffer");
 		esp_wifi_internal_free_rx_buffer(eb);
@@ -183,7 +187,8 @@ static esp_err_t wifi_esp32_ap_iface_rx(void *buffer, uint16_t len, void *eb)
 		return -EIO;
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface_ap, len, AF_UNSPEC, 0, K_MSEC(100));
+	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface_ap, len,
+					   NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
 		esp_wifi_internal_free_rx_buffer(eb);
 		LOG_ERR("Failed to get net buffer");
@@ -221,76 +226,65 @@ pkt_unref:
 
 static void scan_done_handler(void)
 {
-	uint16_t aps = 0;
-	wifi_ap_record_t *ap_list_buffer;
+	esp_err_t ret;
+	wifi_ap_record_t ap_record;
 	struct wifi_scan_result res = { 0 };
 
-	esp_wifi_scan_get_ap_num(&aps);
-	if (!aps) {
-		LOG_INF("No Wi-Fi AP found");
-		goto out;
-	}
+	while ((ret = esp_wifi_scan_get_ap_record(&ap_record)) == ESP_OK) {
+		memset(&res, 0, sizeof(struct wifi_scan_result));
 
-	ap_list_buffer = k_malloc(aps * sizeof(wifi_ap_record_t));
-	if (ap_list_buffer == NULL) {
-		LOG_INF("Failed to malloc buffer to print scan results");
-		goto out;
-	}
+		int ssid_len = strnlen(ap_record.ssid, WIFI_SSID_MAX_LEN);
 
-	if (esp_wifi_scan_get_ap_records(&aps, (wifi_ap_record_t *)ap_list_buffer) == ESP_OK) {
-		for (int k = 0; k < aps; k++) {
-			memset(&res, 0, sizeof(struct wifi_scan_result));
-			int ssid_len = strnlen(ap_list_buffer[k].ssid, WIFI_SSID_MAX_LEN);
+		res.ssid_length = ssid_len;
+		strncpy(res.ssid, ap_record.ssid, ssid_len);
+		res.rssi = ap_record.rssi;
+		res.channel = ap_record.primary;
 
-			res.ssid_length = ssid_len;
-			strncpy(res.ssid, ap_list_buffer[k].ssid, ssid_len);
-			res.rssi = ap_list_buffer[k].rssi;
-			res.channel = ap_list_buffer[k].primary;
+		memcpy(res.mac, ap_record.bssid, WIFI_MAC_ADDR_LEN);
+		res.mac_length = WIFI_MAC_ADDR_LEN;
 
-			memcpy(res.mac, ap_list_buffer[k].bssid, WIFI_MAC_ADDR_LEN);
-			res.mac_length = WIFI_MAC_ADDR_LEN;
-
-			switch (ap_list_buffer[k].authmode) {
-			case WIFI_AUTH_OPEN:
-				res.security = WIFI_SECURITY_TYPE_NONE;
-				break;
-			case WIFI_AUTH_WPA2_PSK:
-				res.security = WIFI_SECURITY_TYPE_PSK;
-				break;
-			case WIFI_AUTH_WPA3_PSK:
-				res.security = WIFI_SECURITY_TYPE_SAE;
-				break;
-			case WIFI_AUTH_WAPI_PSK:
-				res.security = WIFI_SECURITY_TYPE_WAPI;
-				break;
-			case WIFI_AUTH_WPA2_ENTERPRISE:
-				res.security = WIFI_SECURITY_TYPE_EAP;
-				break;
-			case WIFI_AUTH_WEP:
-				res.security = WIFI_SECURITY_TYPE_WEP;
-				break;
-			case WIFI_AUTH_WPA_PSK:
-				res.security = WIFI_SECURITY_TYPE_WPA_PSK;
-				break;
-			default:
-				res.security = WIFI_SECURITY_TYPE_UNKNOWN;
-				break;
-			}
-
-			if (esp32_data.scan_cb) {
-				esp32_data.scan_cb(esp32_wifi_iface, 0, &res);
-
-				/* ensure notifications get delivered */
-				k_yield();
-			}
+		switch (ap_record.authmode) {
+		case WIFI_AUTH_OPEN:
+			res.security = WIFI_SECURITY_TYPE_NONE;
+			break;
+		case WIFI_AUTH_WPA2_PSK:
+			res.security = WIFI_SECURITY_TYPE_PSK;
+			break;
+		case WIFI_AUTH_WPA3_PSK:
+			res.security = WIFI_SECURITY_TYPE_SAE;
+			break;
+		case WIFI_AUTH_WAPI_PSK:
+			res.security = WIFI_SECURITY_TYPE_WAPI;
+			break;
+		case WIFI_AUTH_WPA2_ENTERPRISE:
+			res.security = WIFI_SECURITY_TYPE_EAP;
+			break;
+		case WIFI_AUTH_WEP:
+			res.security = WIFI_SECURITY_TYPE_WEP;
+			break;
+		case WIFI_AUTH_WPA_PSK:
+			res.security = WIFI_SECURITY_TYPE_WPA_PSK;
+			break;
+		default:
+			res.security = WIFI_SECURITY_TYPE_UNKNOWN;
+			break;
 		}
-	} else {
-		LOG_INF("Unable to retrieve AP records");
+
+		if (esp32_data.scan_cb) {
+			esp32_data.scan_cb(esp32_wifi_iface, 0, &res);
+
+			/* ensure notifications get delivered */
+			k_yield();
+		}
 	}
 
-	k_free(ap_list_buffer);
+	if (ret != ESP_FAIL) {
+		LOG_WRN("scan fetch failed unexpectedly: %d", ret);
+	}
 
-out:
+	/* Ensure the hardware releases any records we didn't fetch */
+	esp_wifi_clear_ap_list();
+
 	/* report end of scan event */
 	esp32_data.scan_cb(esp32_wifi_iface, 0, NULL);
 	esp32_data.scan_cb = NULL;
@@ -373,7 +367,7 @@ static void esp_wifi_handle_ap_connect_event(void *event_data)
 	for (int i = 0; i < sta_list.num; i++) {
 		wifi_sta_info_t *sta = &sta_list.sta[i];
 
-		if (memcmp(event->mac, sta->mac, 6) == 0) {
+		if (memcmp(event->mac, sta->mac, WIFI_MAC_ADDR_LEN) == 0) {
 			if (sta->phy_11n) {
 				sta_info.link_mode = WIFI_4;
 			} else if (sta->phy_11g) {
@@ -390,7 +384,7 @@ static void esp_wifi_handle_ap_connect_event(void *event_data)
 	wifi_mgmt_raise_ap_sta_connected_event(iface, &sta_info);
 
 	if (!(esp32_data.ap_connection_cnt++)) {
-		esp_wifi_internal_reg_rxcb(WIFI_IF_AP, esp32_rx);
+		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, esp32_rx);
 	}
 }
 
@@ -413,7 +407,7 @@ static void esp_wifi_handle_ap_disconnect_event(void *event_data)
 	wifi_mgmt_raise_ap_sta_disconnected_event(iface, &sta_info);
 
 	if (!(--esp32_data.ap_connection_cnt)) {
-		esp_wifi_internal_reg_rxcb(WIFI_IF_AP, NULL);
+		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
 	}
 }
 
@@ -577,6 +571,13 @@ static int esp32_wifi_connect(const struct device *dev,
 	wifi_config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
 #endif
 
+	if (params->bssid[0] != 0 || params->bssid[1] != 0 || params->bssid[2] != 0 ||
+	    params->bssid[3] != 0 || params->bssid[4] != 0 || params->bssid[5] != 0) {
+
+		memcpy(wifi_config.sta.bssid, params->bssid, sizeof(params->bssid));
+		wifi_config.sta.bssid_set = true;
+	}
+
 	if (params->channel == WIFI_CHANNEL_ANY) {
 		wifi_config.sta.channel = 0U;
 		data->status.channel = 0U;
@@ -657,6 +658,7 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 			 struct wifi_connect_req_params *params)
 {
 	struct esp32_wifi_runtime *data = dev->data;
+	struct net_if *iface = net_if_lookup_by_dev(dev);
 	esp_err_t err = 0;
 
 	/* Build Wi-Fi configuration for AP mode */
@@ -707,7 +709,7 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		return -EINVAL;
 	}
 
-	err = esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
+	err = esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config);
 	if (err) {
 		LOG_ERR("Failed to set Wi-Fi configuration (%d)", err);
 		return -EINVAL;
@@ -719,11 +721,32 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		return -EAGAIN;
 	}
 
+	/*
+	 * Update interface link address to AP MAC.
+	 * In AP-only mode (without CONFIG_ESP32_WIFI_AP_STA_MODE), the interface
+	 * is initialized with STA MAC but operates with AP MAC. Some clients
+	 * correctly address frames to AP MAC, which would be dropped without
+	 * this update. See: https://github.com/zephyrproject-rtos/zephyr/issues/101761
+	 */
+#if !defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+	esp_read_mac(data->mac_addr, ESP_MAC_WIFI_SOFTAP);
+	net_if_carrier_off(iface);
+	net_if_set_link_addr(iface, data->mac_addr, NET_ETH_ADDR_LEN,
+			     NET_LINK_ETHERNET);
+	net_if_carrier_on(iface);
+#else
+	ARG_UNUSED(iface);
+#endif
+
 	return 0;
 };
 
 static int esp32_wifi_ap_disable(const struct device *dev)
 {
+#if !defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+	struct esp32_wifi_runtime *data = dev->data;
+	struct net_if *iface = net_if_lookup_by_dev(dev);
+#endif
 	int err = 0;
 	wifi_mode_t mode;
 
@@ -738,6 +761,15 @@ static int esp32_wifi_ap_disable(const struct device *dev)
 		LOG_ERR("Failed to disable Wi-Fi AP mode: (%d)", err);
 		return -EAGAIN;
 	}
+
+	/* Restore interface link address to STA MAC when AP mode is disabled */
+#if !defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+	esp_read_mac(data->mac_addr, ESP_MAC_WIFI_STA);
+	net_if_carrier_off(iface);
+	net_if_set_link_addr(iface, data->mac_addr, NET_ETH_ADDR_LEN,
+			     NET_LINK_ETHERNET);
+	net_if_carrier_on(iface);
+#endif
 
 	return 0;
 };
@@ -844,6 +876,45 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 	return 0;
 }
 
+static int esp32_wifi_set_power_save(const struct device *dev, struct wifi_ps_params *params)
+{
+	wifi_config_t config;
+	esp_err_t rc;
+
+	if (params->enabled == WIFI_PS_DISABLED) {
+		rc = esp_wifi_set_ps(WIFI_PS_NONE);
+		if (rc != ESP_OK) {
+			LOG_ERR("Failed to disable power save, error: %d", rc);
+			return -EIO;
+		}
+		return 0;
+	}
+
+	rc = esp_wifi_get_config(ESP_IF_WIFI_STA, &config);
+
+	if (rc != ESP_OK) {
+		LOG_ERR("Failed to get ESP WiFi config, error: %d", rc);
+		return -EIO;
+	}
+
+	config.sta.listen_interval = params->listen_interval;
+	rc = esp_wifi_set_config(ESP_IF_WIFI_STA, &config);
+
+	if (rc != ESP_OK) {
+		LOG_ERR("Failed to set ESP WiFi config, error: %d", rc);
+		return -EINVAL;
+	}
+
+	rc = esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
+
+	if (rc != ESP_OK) {
+		LOG_ERR("Failed to set ESP power save max modem mode, error: %d", rc);
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static void esp32_wifi_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -875,7 +946,7 @@ static void esp32_wifi_init(struct net_if *iface)
 #endif
 
 	/* Assign link local address. */
-	net_if_set_link_addr(iface, dev_data->mac_addr, 6, NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, dev_data->mac_addr, WIFI_MAC_ADDR_LEN, NET_LINK_ETHERNET);
 
 	ethernet_init(iface);
 	net_if_carrier_off(iface);
@@ -899,7 +970,7 @@ static void esp32_wifi_init_ap(struct net_if *iface)
 	wifi_nm_register_mgd_type_iface(nm, WIFI_TYPE_SAP, esp32_wifi_iface_ap);
 
 	/* Assign link local address. */
-	net_if_set_link_addr(iface, dev_data->mac_addr, 6, NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, dev_data->mac_addr, WIFI_MAC_ADDR_LEN, NET_LINK_ETHERNET);
 
 	ethernet_init(iface);
 	net_if_carrier_off(iface);
@@ -907,7 +978,7 @@ static void esp32_wifi_init_ap(struct net_if *iface)
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
-static int esp32_wifi_stats(const struct device *dev, struct net_stats_wifi *stats)
+static int esp32_wifi_get_stats(const struct device *dev, struct net_stats_wifi *stats)
 {
 	struct esp32_wifi_runtime *data = dev->data;
 
@@ -926,12 +997,21 @@ static int esp32_wifi_stats(const struct device *dev, struct net_stats_wifi *sta
 
 	return 0;
 }
+
+static int esp32_wifi_reset_stats(const struct device *dev)
+{
+	struct esp32_wifi_runtime *data = dev->data;
+
+	memset(&data->stats, 0, sizeof(data->stats));
+
+	return 0;
+}
 #endif
 
 static int esp32_wifi_dev_init(const struct device *dev)
 {
 #if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
-	adc2_init_code_calibration();
+	adc2_cal_include();
 #endif /* CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3 */
 
 	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
@@ -954,20 +1034,52 @@ static int esp32_wifi_dev_init(const struct device *dev)
 	return 0;
 }
 
+static int esp32_wifi_set_config(const struct device *dev, enum ethernet_config_type type,
+				 const struct ethernet_config *config)
+{
+	struct esp32_wifi_runtime *dev_data = dev->data;
+
+	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
+		esp_err_t ret = esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
+
+		if (ret != ESP_OK) {
+			LOG_ERR("Failed to set WiFi mode: %d", ret);
+			return -EIO;
+		}
+
+		ret = esp_wifi_set_mac(ESP_IF_WIFI_STA, config->mac_address.addr);
+		if (ret != ESP_OK) {
+			LOG_ERR("Failed to set MAC address: %d", ret);
+			return -EIO;
+		}
+
+		memcpy(dev_data->mac_addr, config->mac_address.addr, sizeof(dev_data->mac_addr));
+		net_if_set_link_addr(esp32_wifi_iface, dev_data->mac_addr,
+				     sizeof(dev_data->mac_addr), NET_LINK_ETHERNET);
+
+		return 0;
+	}
+
+	return -ENOTSUP;
+}
+
 static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
-	.scan		   = esp32_wifi_scan,
-	.connect	   = esp32_wifi_connect,
-	.disconnect	   = esp32_wifi_disconnect,
-	.ap_enable	   = esp32_wifi_ap_enable,
-	.ap_disable	   = esp32_wifi_ap_disable,
-	.iface_status	   = esp32_wifi_status,
+	.scan = esp32_wifi_scan,
+	.connect = esp32_wifi_connect,
+	.disconnect = esp32_wifi_disconnect,
+	.ap_enable = esp32_wifi_ap_enable,
+	.ap_disable = esp32_wifi_ap_disable,
+	.iface_status = esp32_wifi_status,
+	.set_power_save = esp32_wifi_set_power_save,
 #if defined(CONFIG_NET_STATISTICS_WIFI)
-	.get_stats	   = esp32_wifi_stats,
+	.get_stats = esp32_wifi_get_stats,
+	.reset_stats = esp32_wifi_reset_stats,
 #endif
 };
 
 static const struct net_wifi_mgmt_offload esp32_api = {
-	.wifi_iface.iface_api.init	  = esp32_wifi_init,
+	.wifi_iface.iface_api.init = esp32_wifi_init,
+	.wifi_iface.set_config = esp32_wifi_set_config,
 	.wifi_iface.send = esp32_wifi_send,
 	.wifi_mgmt_api = &esp32_wifi_mgmt,
 };
@@ -993,6 +1105,8 @@ NET_DEVICE_DT_INST_DEFINE(1,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 DEFINE_WIFI_NM_INSTANCE(esp32_wifi_nm, &esp32_wifi_mgmt);
+#endif
 
+#if defined(CONFIG_NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT)
 CONNECTIVITY_WIFI_MGMT_BIND(Z_DEVICE_DT_DEV_ID(DT_DRV_INST(0)));
 #endif

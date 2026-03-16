@@ -14,6 +14,14 @@ menuconfig FLASH_SIMULATOR
 
 if FLASH_SIMULATOR
 
+config FLASH_SIMULATOR_CALLBACKS
+	bool "Provide callback mechanism"
+	help
+	  If selected the flash_simulator_set_callbacks is implemented allowing
+	  to change write and erase functions behavior.
+	  This option is meant to be used with tests when checking module reaction
+	  to different write/erase errors in the memory.
+
 config FLASH_SIMULATOR_UNALIGNED_READ
 	bool "Allow read access to be unaligned"
 	default y

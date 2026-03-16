@@ -34,7 +34,7 @@ else()
     if(NOT "${GCC_M_FPU}" STREQUAL "auto")
       list(APPEND TOOLCHAIN_C_FLAGS   -mfpu=${GCC_M_FPU})
     endif()
-    if    (CONFIG_FP_SOFTABI)
+    if(CONFIG_FP_SOFTABI)
       list(APPEND TOOLCHAIN_C_FLAGS   -mfloat-abi=softfp)
     elseif(CONFIG_FP_HARDABI)
       list(APPEND TOOLCHAIN_C_FLAGS   -mfloat-abi=hard)
@@ -67,3 +67,7 @@ if(CONFIG_ARMCLANG_STD_LIBC)
   # library, for example error numbers, errno.h.
   list(APPEND TOOLCHAIN_C_FLAGS -D_AEABI_PORTABILITY_LEVEL=1)
 endif()
+
+# The empty function is to make sure GCC runtime library flags like -lgcc are not passed.
+function(compiler_set_linker_properties)
+endfunction()

@@ -22,6 +22,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		user_led: led {
 			gpios = <&gpioe 3 GPIO_ACTIVE_HIGH>;
 			label = "User LED";
@@ -30,6 +31,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User PB";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
@@ -55,18 +57,18 @@
 			rgb-is-inverted;
 			x-offset = <1>;
 			y-offset = <26>;
-			pwctr1 = [A2 02 84];
-			pwctr2 = [C5];
-			pwctr3 = [0A 00];
-			pwctr4 = [8A 2A];
-			pwctr5 = [8A EE];
+			pwctr1 = [a2 02 84];
+			pwctr2 = [c5];
+			pwctr3 = [0a 00];
+			pwctr4 = [8a 2a];
+			pwctr5 = [8a ee];
 			invctr = <7>;
-			frmctr1 = [01 2C 2D];
-			frmctr2 = [01 2C 2D];
-			frmctr3 = [01 2C 2D 01 2C 2D];
+			frmctr1 = [01 2c 2d];
+			frmctr2 = [01 2c 2d];
+			frmctr3 = [01 2c 2d 01 2c 2d];
 			vmctr1 = <14>;
-			gamctrp1 = [02 1C 07 12 37 32 29 2D 29 25 2B 39 00 01 03 10];
-			gamctrn1 = [03 1D 07 06 2E 2C 29 2D 2E 2E 37 3F 00 00 02 10];
+			gamctrp1 = [02 1c 07 12 37 32 29 2d 29 25 2b 39 00 01 03 10];
+			gamctrn1 = [03 1d 07 06 2e 2c 29 2d 2e 2e 37 3f 00 00 02 10];
 			colmod = <5>;
 			/* Set D3 (RGB) bit to 1. LV_COLOR_16_SWAP is enabled by default */
 			madctl = <120>; /* Set to <184> to rotate the image 180 degrees. */
@@ -117,6 +119,10 @@
 	d3ppre = <1>;
 };
 
+&pwr {
+	power-supply = "ldo";
+};
+
 &sdmmc1 {
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
 		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
@@ -138,11 +144,11 @@ zephyr_udc0: &usbotg_hs {
 &octospi1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&octospim_p1_clk_pb2 &octospim_p1_ncs_pb6
-		&octospim_p1_io0_pd11 &octospim_p1_io1_pd12
-		&octospim_p1_io2_pe2 &octospim_p1_io3_pd13>;
+		     &octospim_p1_io0_pd11 &octospim_p1_io1_pd12
+		     &octospim_p1_io2_pe2 &octospim_p1_io3_pd13>;
 	status = "okay";
 
-	w25q64_qspi: ospi-nor-flash@0{
+	w25q64_qspi: ospi-nor-flash@0 {
 		compatible = "st,stm32-ospi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
@@ -156,8 +162,9 @@ zephyr_udc0: &usbotg_hs {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			slot0_partition: partition@0 {
-				reg = <0x00000000 DT_SIZE_M(64)>;
+				reg = <0x00000000 DT_SIZE_M(8)>;
 			};
 		};
 	};
@@ -168,6 +175,7 @@ zephyr_udc0: &usbotg_hs {
 	cs-gpios = <&gpiod 6 GPIO_ACTIVE_LOW>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	w25q64_spi: spi-nor-flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
@@ -178,10 +186,12 @@ zephyr_udc0: &usbotg_hs {
 		has-dpd;
 		t-enter-dpd = <3500>;
 		t-exit-dpd = <3500>;
+
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			storage_partition: partition@0 {
 				label = "storage";
 				reg = <0x00000000 DT_SIZE_M(64)>;

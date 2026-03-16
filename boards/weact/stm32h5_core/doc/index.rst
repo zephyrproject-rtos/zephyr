@@ -5,7 +5,7 @@ Overview
 
 The ``weact_stm32h5_core`` board is a compact development board equipped with
 an STM32H562RGT6 microcontroller. It features basic set of peripherals:
-user LED and button, microSD |trade| card slot, and combined SWD & UART header.
+user LED and button, microSD™ card slot, and combined SWD & UART header.
 
 Key Features
 
@@ -16,7 +16,7 @@ Key Features
 - 32.768 kHz and 8MHz HSE crystal oscillators
 - Board connectors:
 
-   - microSD |trade| card
+   - microSD™ card
    - USB Type-C Connector
    - SWD & UART header for external debugger
    - 2x 30-pin GPIO connector

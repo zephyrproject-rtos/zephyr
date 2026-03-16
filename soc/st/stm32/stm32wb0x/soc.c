@@ -38,7 +38,7 @@ uint32_t SystemCoreClock = 16000000U;
  * of SRAM0; used by the UART bootloader and the Low Power Manager.
  * Data type definition comes from @ref system_stm32wb0xx.h
  */
-Z_GENERIC_SECTION("stm32wb0_RAM_VR")
+Z_GENERIC_SECTION(stm32wb0_RAM_VR)
 __used RAM_VR_TypeDef RAM_VR;
 
 #if defined(CONFIG_BT)
@@ -47,7 +47,7 @@ __used RAM_VR_TypeDef RAM_VR;
  *
  * N.B.: radio driver defines CFG_BLE_NUM_RADIO_TASKS.
  */
-Z_GENERIC_SECTION("stm32wb0_BLUE_RAM")
+Z_GENERIC_SECTION(stm32wb0_BLUE_RAM)
 static uint8_t __used __blue_RAM[sizeof(GLOBALSTATMACH_TypeDef) +
 				 CFG_BLE_NUM_RADIO_TASKS * sizeof(STATMACH_TypeDef)];
 #endif /* CONFIG_BT */

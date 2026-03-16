@@ -36,16 +36,14 @@ flat code/data segments for ring 3 execution.
 """
 
 import argparse
-import sys
-import struct
 import os
-
-from packaging import version
+import struct
+import sys
 
 import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
-
+from packaging import version
 
 if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
@@ -75,7 +73,7 @@ ACCESS_RW = 1 << 1  # read or write permission
 
 def create_gdt_pseudo_desc(addr, size):
     """Create pseudo GDT descriptor"""
-    debug("create pseudo descriptor: %x %x" % (addr, size))
+    debug(f"create pseudo descriptor: {addr:x} {size:x}")
     # ...and take back one byte for the Intel god whose Ark this is...
     size = size - 1
     return struct.pack(GDT_PD_FMT, size, addr, 0)
@@ -98,11 +96,9 @@ GDT_ENT_FMT = "<HHBBBB"
 
 def create_code_data_entry(base, limit, dpl, flags, access):
     """Create GDT entry for code or data"""
-    debug("create code or data entry: %x %x %x %x %x" %
-          (base, limit, dpl, flags, access))
+    debug(f"create code or data entry: {base:x} {limit:x} {dpl:x} {flags:x} {access:x}")
 
-    base_lo, base_mid, base_hi, limit_lo, limit_hi = chop_base_limit(base,
-                                                                     limit)
+    base_lo, base_mid, base_hi, limit_lo, limit_hi = chop_base_limit(base, limit)
 
     # This is a valid descriptor
     present = 1
@@ -121,17 +117,21 @@ def create_code_data_entry(base, limit, dpl, flags, access):
     access = access | (present << 7) | (dpl << 5) | (desc_type << 4) | accessed
     flags = flags | (size << 6) | limit_hi
 
-    return struct.pack(GDT_ENT_FMT, limit_lo, base_lo, base_mid,
-                       access, flags, base_hi)
+    return struct.pack(GDT_ENT_FMT, limit_lo, base_lo, base_mid, access, flags, base_hi)
 
 
 def create_tss_entry(base, limit, dpl):
     """Create GDT TSS entry"""
-    debug("create TSS entry: %x %x %x" % (base, limit, dpl))
+    debug(f"create TSS entry: {base:x} {limit:x} {dpl:x}")
     present = 1
 
-    base_lo, base_mid, base_hi, limit_lo, limit_hi, = chop_base_limit(base,
-                                                                      limit)
+    (
+        base_lo,
+        base_mid,
+        base_hi,
+        limit_lo,
+        limit_hi,
+    ) = chop_base_limit(base, limit)
 
     type_code = 0x9  # non-busy 32-bit TSS descriptor
     gran = 0
@@ -139,16 +139,14 @@ def create_tss_entry(base, limit, dpl):
     flags = (gran << 7) | limit_hi
     type_byte = (present << 7) | (dpl << 5) | type_code
 
-    return struct.pack(GDT_ENT_FMT, limit_lo, base_lo, base_mid,
-                       type_byte, flags, base_hi)
+    return struct.pack(GDT_ENT_FMT, limit_lo, base_lo, base_mid, type_byte, flags, base_hi)
 
 
 def get_symbols(obj):
     """Extract all symbols from ELF file object"""
     for section in obj.iter_sections():
         if isinstance(section, SymbolTableSection):
-            return {sym.name: sym.entry.st_value
-                    for sym in section.iter_symbols()}
+            return {sym.name: sym.entry.st_value for sym in section.iter_symbols()}
 
     raise LookupError("Could not find symbol table")
 
@@ -158,14 +156,15 @@ def parse_args():
     global args
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+    )
 
-    parser.add_argument("-k", "--kernel", required=True,
-                        help="Zephyr kernel image")
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="Print extra debugging information")
-    parser.add_argument("-o", "--output-gdt", required=True,
-                        help="output GDT binary")
+    parser.add_argument("-k", "--kernel", required=True, help="Zephyr kernel image")
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Print extra debugging information"
+    )
+    parser.add_argument("-o", "--output-gdt", required=True, help="output GDT binary")
     args = parser.parse_args()
     if "VERBOSE" in os.environ:
         args.verbose = 1
@@ -205,12 +204,10 @@ def main():
         output_fp.write(create_gdt_pseudo_desc(gdt_base, num_entries * 8))
 
         # Selector 0x08: code descriptor
-        output_fp.write(create_code_data_entry(0, 0xFFFFF, 0,
-                                        FLAGS_GRAN, ACCESS_EX | ACCESS_RW))
+        output_fp.write(create_code_data_entry(0, 0xFFFFF, 0, FLAGS_GRAN, ACCESS_EX | ACCESS_RW))
 
         # Selector 0x10: data descriptor
-        output_fp.write(create_code_data_entry(0, 0xFFFFF, 0,
-                                        FLAGS_GRAN, ACCESS_RW))
+        output_fp.write(create_code_data_entry(0, 0xFFFFF, 0, FLAGS_GRAN, ACCESS_RW))
 
         if num_entries >= 5:
             main_tss = syms["_main_tss"]
@@ -224,12 +221,12 @@ def main():
 
         if num_entries >= 7:
             # Selector 0x28: code descriptor, dpl = 3
-            output_fp.write(create_code_data_entry(0, 0xFFFFF, 3,
-                                            FLAGS_GRAN, ACCESS_EX | ACCESS_RW))
+            output_fp.write(
+                create_code_data_entry(0, 0xFFFFF, 3, FLAGS_GRAN, ACCESS_EX | ACCESS_RW)
+            )
 
             # Selector 0x30: data descriptor, dpl = 3
-            output_fp.write(create_code_data_entry(0, 0xFFFFF, 3,
-                                            FLAGS_GRAN, ACCESS_RW))
+            output_fp.write(create_code_data_entry(0, 0xFFFFF, 3, FLAGS_GRAN, ACCESS_RW))
 
         if use_tls:
             # Selector 0x18, 0x28 or 0x38 (depending on entries above):
@@ -237,8 +234,7 @@ def main():
             #
             # for use with thread local storage while this will be
             # modified at runtime.
-            output_fp.write(create_code_data_entry(0, 0xFFFFF, 3,
-                                            FLAGS_GRAN, ACCESS_RW))
+            output_fp.write(create_code_data_entry(0, 0xFFFFF, 3, FLAGS_GRAN, ACCESS_RW))
 
 
 if __name__ == "__main__":

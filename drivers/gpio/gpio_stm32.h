@@ -13,11 +13,9 @@
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/gpio.h>
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
-#include <zephyr/dt-bindings/pinctrl/stm32f1-pinctrl.h>
-#else
-#include <zephyr/dt-bindings/pinctrl/stm32-pinctrl.h>
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
+#include <zephyr/drivers/pinctrl.h>
+
+#include <stm32_gpio_shared.h>
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 #define STM32_PINCFG_MODE_OUTPUT        (STM32_MODE_OUTPUT     \
@@ -55,44 +53,5 @@ struct gpio_stm32_pin {
 	unsigned int out_state; /* 1 (high level) or 0 (low level) */
 };
 #endif /* CONFIG_GPIO_GET_CONFIG */
-
-/**
- * @brief configuration of GPIO device
- */
-struct gpio_stm32_config {
-	/* gpio_driver_config needs to be first */
-	struct gpio_driver_config common;
-	/* port base address */
-	uint32_t *base;
-	/* IO port */
-	int port;
-	struct stm32_pclken pclken;
-};
-
-/**
- * @brief driver data
- */
-struct gpio_stm32_data {
-	/* gpio_driver_data needs to be first */
-	struct gpio_driver_data common;
-	/* device's owner of this data */
-	const struct device *dev;
-	/* user ISR cb */
-	sys_slist_t cb;
-	/* keep track of pins that  are connected and need GPIO clock to be enabled */
-	uint32_t pin_has_clock_enabled;
-};
-
-/**
- * @brief helper for configuration of GPIO pin
- *
- * @param dev GPIO port device pointer
- * @param pin IO pin
- * @param conf GPIO mode
- * @param func Pin function
- *
- * @return 0 on success, negative errno code on failure
- */
-int gpio_stm32_configure(const struct device *dev, gpio_pin_t pin, uint32_t conf, uint32_t func);
 
 #endif /* ZEPHYR_DRIVERS_GPIO_GPIO_STM32_H_ */

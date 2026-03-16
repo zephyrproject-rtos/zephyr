@@ -15,6 +15,7 @@ if SPI_STM32
 
 config SPI_STM32_INTERRUPT
 	bool "STM32 MCU SPI Interrupt Support"
+	default y if SPI_RTIO
 	help
 	  Enable Interrupt support for the SPI Driver of STM32 family.
 
@@ -25,12 +26,8 @@ config SPI_STM32_DMA
 	help
 	  Enable the SPI DMA mode for SPI instances
 	  that enable dma channels in their device tree node.
-
-config SPI_STM32_USE_HW_SS
-	bool "STM32 Hardware Slave Select support"
-	default y
-	help
-	  Use Slave Select pin instead of software Slave Select.
+	  This can be used with the SPI_RTIO config to have SPI
+	  transactions using DMA + RTIO
 
 config SPI_STM32_ERRATA_BUSY
 	bool
@@ -48,5 +45,31 @@ config SPI_STM32_BUSY_FLAG_TIMEOUT
 	default 10000
 
 endif # SPI_STM32_ERRATA_BUSY
+
+if SPI_RTIO
+
+config SPI_STM32_RTIO_SQ_SIZE
+	int "Number of available submission queue entries"
+	default 8 # Sensible default that covers most common SPI transactions
+	help
+	  When RTIO is used with SPI, each driver holds a context whose blocking API
+	  calls are used to perform SPI transactions. This queue needs to be as deep
+	  as the longest set of spi_buf_set used, where normal SPI operations are
+	  used (equal length buffers). It may need to be slightly deeper where the
+	  SPI buffers set for transmit/receive do not always matched equally in
+	  length as these are transformed into normal transceives.
+
+config SPI_STM32_RTIO_CQ_SIZE
+	int "Number of available completion queue entries"
+	default 8 # Sensible default that covers most common SPI transactions
+	help
+	  When RTIO is used with SPI, each driver holds a context whose blocking API
+	  calls are used to perform SPI transactions. This queue needs to be as deep
+	  as the longest set of spi_buf_set used, where normal SPI operations are
+	  used (equal length buffers). It may need to be slightly deeper where the
+	  SPI buffers set for transmit/receive do not always matched equally in
+	  length as these are transformed into normal transceives.
+
+endif # SPI_RTIO
 
 endif # SPI_STM32

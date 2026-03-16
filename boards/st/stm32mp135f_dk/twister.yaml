@@ -8,7 +8,7 @@ toolchain:
 supported:
   - gpio
   - uart
-  - shell
-ram: 256
-flash: 256
+  - spi
+ram: 262144
+flash: 262144
 vendor: st

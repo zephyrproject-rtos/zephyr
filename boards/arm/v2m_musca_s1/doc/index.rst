@@ -1,4 +1,4 @@
-.. _v2m_musca_s1_board:
+.. zephyr:board:: v2m_musca_s1
 
 ARM V2M Musca-S1
 ################
@@ -69,33 +69,7 @@ The v2m_musca_s1 board provides the following user push buttons:
 Supported Features
 ===================
 
-The v2m_musca_s1 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| TIMER     | on-chip    | timer                               |
-+-----------+------------+-------------------------------------+
-| TrustZone | on-chip    | Trusted Firmware-M                  |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by the port.
-See the `V2M Musca-S1 Website`_ for a complete list of V2M Musca-S1 board
-hardware features.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/arm/v2m_musca_s1/v2m_musca_s1_defconfig`.
+.. zephyr:board-supported-hw::
 
 Interrupt Controller
 ====================
@@ -421,7 +395,7 @@ corresponding TF-M integration example's README file.
    https://developer.arm.com/documentation/100235/latest/
 
 .. _Trusted Firmware-M Guide:
-   https://tf-m-user-guide.trustedfirmware.org/building/tfm_build_instruction.html
+   https://tf-m.docs.trustedfirmware.org/en/latest/building/tfm_build_instruction.html
 
 .. _Corelink SSE-200 Subsystem:
    https://developer.arm.com/documentation/dto0051/latest/subsystem-overview/about-the-sse-200

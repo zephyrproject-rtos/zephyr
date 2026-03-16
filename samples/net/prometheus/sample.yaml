@@ -15,5 +15,8 @@ common:
   filter: not CONFIG_HAS_RENESAS_RA_FSP
   integration_platforms:
     - qemu_x86
+  platform_exclude:
+    - phyboard_atlas/mimxrt1176/cm7
+    - nrf5340dk/nrf5340/cpuapp/ns
 tests:
   sample.net.prometheus: {}

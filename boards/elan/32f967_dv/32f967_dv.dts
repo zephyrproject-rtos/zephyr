@@ -1,0 +1,120 @@
+/*
+ * Copyright (c) 2024 ELAN Microelectronics Corp.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm/armv7-m.dtsi>
+#include <elan/em32fxxx.dtsi>
+#include <elan/em32f967-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "ELAN EM32F967 Development Board";
+	compatible = "elan,em32f967_dv";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash-controller = &em32_flash_controller;
+		zephyr,flash = &flash0;
+	};
+};
+
+&clk_ahb {
+	status = "okay";
+};
+
+&clk_apb {
+	clocks = <&clk_ahb>;
+	status = "okay";
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(272)>;
+};
+
+&spi2 {
+	status = "disabled";
+	pinctrl-0 = <&spi2_sck_pb5 &spi2_miso_pb6 &spi2_mosi_pb7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
+};
+
+&uart1 {
+	status = "disabled";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_rx_pa1 &uart1_tx_pa2>;
+	pinctrl-names = "default";
+};
+
+&em32_flash_controller {
+	status = "okay";
+};
+
+&gpioa {
+	status = "disabled";
+};
+
+&gpiob {
+	status = "disabled";
+};
+
+zephyr_udc0: &usbd {
+	status = "disabled";
+};
+
+&uid {
+	status = "disabled";
+};
+
+&bbram0 {
+	status = "disabled";
+};
+
+&trng0 {
+	status = "disabled";
+};
+
+&wdt0 {
+	status = "disabled";
+};
+
+&crypto0 {
+	status = "disabled";
+};
+
+/* Enable Timer controllers */
+&timer1 {
+	status = "disabled";
+};
+
+&timer2 {
+	status = "disabled";
+};
+
+/* Enable RTC */
+&rtc0 {
+	status = "disabled";
+};
+
+/* Enable PWM Controller - PWMB N output on PA3 */
+&pwm0 {
+	status = "disabled";
+	use-port-a;			/* Use Port A pins (PWM_S=0) */
+	output-type = <1>;		/* N output only */
+	pinctrl-0 = <&pwmb_pa3_n>;
+	pinctrl-names = "default";
+};
+
+&sysctrl {
+	status = "disabled";
+};
+
+&pwrctrl {
+	status = "disabled";
+};
+
+&clkctrl {
+	status = "disabled";
+};

@@ -1,10 +1,6 @@
 # Copyright (c) 2025 Analog Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: ADL4050 ADC Controller
-
-compatible: "adi,ad4050-adc"
-
 include: [adc-controller.yaml, spi-device.yaml]
 
 properties:
@@ -34,6 +30,11 @@ properties:
       Default ADC input range is 0V to Vref.
       This option increases the range from 0V to 2 x Vref. Note that this
       requires VDD >= 2 x Vref.
+
+  sampling-period:
+    type: int
+    description: |
+      Specify ADC sampling period in uS.
 
 io-channel-cells:
   - input

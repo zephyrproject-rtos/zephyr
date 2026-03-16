@@ -1,0 +1,11 @@
+common:
+  platform_allow:
+    - qemu_riscv32
+    - qemu_riscv32e
+    - qemu_riscv64
+  filter: CONFIG_RISCV_PMP
+
+tests:
+  arch.riscv.pmp.memattr.entries:
+    extra_args:
+      DTC_OVERLAY_FILE="memattr_mapping.overlay"

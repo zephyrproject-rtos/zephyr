@@ -38,7 +38,7 @@ Hardware
 STM32F072-EVAL Discovery kit provides the following hardware components:
 
 - STM32F072VBT6 in LQFP100 package
-- ARM |reg| 32-bit Cortex |reg| -M0 CPU
+- ARM® 32-bit Cortex®-M0 CPU
 - 48 MHz max CPU frequency
 - VDD from 2.0 V to 3.6 V
 - 128 KB Flash
@@ -62,8 +62,9 @@ STM32F072-EVAL Discovery kit provides the following hardware components:
 - Up to 87 fast I/Os: 68 I/Os with 5V tolerant capability and 19 with independent supply
 
 More information about STM32F072VB can be found here:
-       - `STM32F072VB on www.st.com`_
-       - `STM32F072 reference manual`_
+
+- `STM32F072VB on www.st.com`_
+- `STM32F072 reference manual`_
 
 Supported Features
 ==================

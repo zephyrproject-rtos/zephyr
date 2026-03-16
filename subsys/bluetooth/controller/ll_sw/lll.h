@@ -14,8 +14,6 @@
 #define TICKER_USER_ID_ULL_LOW  MAYFLY_CALL_ID_2
 #define TICKER_USER_ID_THREAD   MAYFLY_CALL_ID_PROGRAM
 
-#define EVENT_PIPELINE_MAX 7
-
 #define ADV_INT_UNIT_US          625U
 #define SCAN_INT_UNIT_US         625U
 #define CONN_INT_UNIT_US         1250U
@@ -194,6 +192,19 @@ enum {
 
 #define TICKER_ID_ULL_BASE ((TICKER_ID_LLL_PREEMPT) + 1)
 
+/* Number of (connection interval) events that can occur per (connection) event length.
+ * These number of event's prepare will be deferred if overlapping a single Tx-Rx chain.
+ */
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+/* Connection events per 251 byte PDU Coded PHY S8 event length */
+#define EVENT_DEFER_MAX 4U
+#elif defined(CONFIG_BT_CTLR_PHY_2M)
+/* Low latency connection interval events per 27 byte PDU 2M PHY event length */
+#define EVENT_DEFER_MAX 1U
+#else /* !CONFIG_BT_CTLR_PHY_CODED && !CONFIG_BT_CTLR_PHY_2M */
+#define EVENT_DEFER_MAX 0U
+#endif /* !CONFIG_BT_CTLR_PHY_CODED && !CONFIG_BT_CTLR_PHY_2M */
+
 enum done_result {
 	DONE_COMPLETED,
 	DONE_ABORTED,
@@ -236,7 +247,8 @@ struct lll_prepare_param {
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	int8_t  prio;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
-	uint8_t force;
+	uint8_t force:1;
+	uint8_t defer:1;
 	void *param;
 };
 
@@ -309,6 +321,7 @@ enum node_rx_type {
 	NODE_RX_TYPE_IQ_SAMPLE_REPORT_ULL_RELEASE,
 	NODE_RX_TYPE_IQ_SAMPLE_REPORT_LLL_RELEASE,
 	NODE_RX_TYPE_SYNC_TRANSFER_RECEIVED,
+	NODE_RX_TYPE_PATH_LOSS,
 	/* Signals retention (ie non-release) of rx node */
 	NODE_RX_TYPE_RETAIN,
 
@@ -612,6 +625,7 @@ void ull_iso_rx_put(memq_link_t *link, void *rx);
 void ull_iso_rx_sched(void);
 void *ull_iso_tx_ack_dequeue(void);
 void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *tx);
+void ull_iso_lll_tx_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx);
 void ull_iso_lll_event_prepare(uint16_t handle, uint64_t event_count);
 struct event_done_extra *ull_event_done_extra_get(void);
 struct event_done_extra *ull_done_extra_type_set(uint8_t type);

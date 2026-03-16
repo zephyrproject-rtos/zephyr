@@ -15,8 +15,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net/http/service.h>
 #include <zephyr/sys/base64.h>
-#include <mbedtls/sha1.h>
 #include <zephyr/net/websocket.h>
+#include <psa/crypto.h>
 
 LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
@@ -40,19 +40,27 @@ int handle_http1_to_websocket_upgrade(struct http_client_ctx *client)
 		"Sec-WebSocket-Accept: ";
 	char key_accept[HTTP_SERVER_WS_MAX_SEC_KEY_LEN + sizeof(WS_MAGIC)];
 	char accept[20];
+	size_t accept_len;
 	char tmp[64];
 	size_t key_len;
 	size_t olen;
 	int ret;
+	psa_status_t psa_status;
 
 	key_len = MIN(sizeof(key_accept) - 1, sizeof(client->ws_sec_key));
 	strncpy(key_accept, client->ws_sec_key, key_len);
 	key_len = strlen(key_accept);
 
 	olen = MIN(sizeof(key_accept) - 1 - key_len, sizeof(WS_MAGIC) - 1);
-	strncpy(key_accept + key_len, WS_MAGIC, olen);
+	memcpy(key_accept + key_len, WS_MAGIC, olen);
 
-	mbedtls_sha1(key_accept, olen + key_len, accept);
+	psa_status = psa_hash_compute(PSA_ALG_SHA_1, key_accept, olen + key_len,
+			 accept, sizeof(accept), &accept_len);
+	if (psa_status != PSA_SUCCESS) {
+		NET_DBG("Failed to compute hash for websocket key (%d)", psa_status);
+		ret = -EIO;
+		goto error;
+	}
 
 	ret = base64_encode(tmp, sizeof(tmp) - 1, &olen, accept, sizeof(accept));
 	if (ret) {

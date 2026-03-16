@@ -77,7 +77,7 @@ Debugging
 =========
 
 Debuggning relies on JLink tool. JLink is not able to flash the firmware. So
-debug session has to be done in two steps. ``west flash`` will flahs the
+debug session has to be done in two steps. ``west flash`` will flash the
 firmware using Simplicity Commander. Then ``west attach`` will use JLink to
 attach to the board. The Zephyr image may has already booted when user runs
 ``west attach``. User may execute ``monitor reset`` in the gdb prompt to reset

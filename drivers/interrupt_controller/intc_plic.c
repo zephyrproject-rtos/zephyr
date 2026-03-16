@@ -262,6 +262,23 @@ static void plic_irq_enable_set_state(uint32_t irq, bool enable)
 }
 
 /**
+ * @brief Clear a riscv PLIC-specific interrupt line
+ *
+ * This routine clear a RISCV PLIC-specific interrupt line.
+ * riscv_plic_irq_complete is called by RISCV_PRIVILEGED
+ *
+ * @param irq IRQ number to enable
+ */
+void riscv_plic_irq_complete(uint32_t irq)
+{
+	const struct device *dev = get_plic_dev_from_irq(irq);
+	const uint32_t local_irq = irq_from_level_2(irq);
+	mem_addr_t claim_complete_addr = get_claim_complete_addr(dev);
+
+	sys_write32(local_irq, claim_complete_addr);
+}
+
+/**
  * @brief Enable a riscv PLIC-specific interrupt line
  *
  * This routine enables a RISCV PLIC-specific interrupt line.
@@ -578,7 +595,9 @@ static int plic_init(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
 	mem_addr_t en_addr, thres_prio_addr;
+#if !defined(CONFIG_PLIC_WARM_BOOT)
 	mem_addr_t prio_addr = config->prio;
+#endif
 
 	/* Iterate through each of the contexts, HART + PRIV */
 	for (uint32_t cpu_num = 0; cpu_num < arch_num_cpus(); cpu_num++) {
@@ -594,10 +613,12 @@ static int plic_init(const struct device *dev)
 		sys_write32(0U, thres_prio_addr);
 	}
 
+#if !defined(CONFIG_PLIC_WARM_BOOT)
 	/* Set priority of each interrupt line to 0 initially */
 	for (uint32_t i = 0; i < config->nr_irqs; i++) {
 		sys_write32(0U, prio_addr + (i * sizeof(uint32_t)));
 	}
+#endif
 
 	/* Configure IRQ for PLIC driver */
 	config->irq_config_func();

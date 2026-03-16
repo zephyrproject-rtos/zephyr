@@ -22,7 +22,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/cbprintf.h>
 #include <zephyr/llext/symbol.h>
-#include <sys/types.h>
 
 /* Option present only when CONFIG_USERSPACE enabled. */
 #ifndef CONFIG_PRINTK_BUFFER_SIZE
@@ -124,6 +123,7 @@ void vprintk(const char *fmt, va_list ap)
 			buf_flush(&ctx);
 		}
 	} else {
+		compiler_barrier();
 #ifdef CONFIG_PRINTK_SYNC
 		k_spinlock_key_t key = k_spin_lock(&lock);
 #endif

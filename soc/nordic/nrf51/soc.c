@@ -15,7 +15,7 @@
 
 #include <zephyr/kernel.h>
 #include <hal/nrf_power.h>
-#include <soc/nrfx_coredep.h>
+#include <lib/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL

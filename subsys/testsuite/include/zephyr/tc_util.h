@@ -208,7 +208,7 @@ static inline void print_nothing(const char *fmt, ...)
 	} while (false)
 #endif
 
-#if defined(CONFIG_ARCH_POSIX)
+#if defined(CONFIG_ARCH_POSIX) && !defined(CONFIG_ZTEST_SHELL)
 #include <zephyr/logging/log_ctrl.h>
 #define TC_END_POST(result) do { \
 	LOG_PANIC(); \

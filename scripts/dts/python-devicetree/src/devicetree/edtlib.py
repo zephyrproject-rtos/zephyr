@@ -1,5 +1,6 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # Copyright (c) 2019 Linaro Limited
+# Copyright 2025 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Tip: You can view just the documentation with 'pydoc3 devicetree.edtlib'
@@ -136,6 +137,17 @@ class Binding:
       This may be None. For example, it's None when the Binding is inferred
       from node properties. It can also be None for Binding objects created
       using 'child-binding:' with no compatible.
+
+    examples:
+      Provides a minimal example node illustrating the binding (optional).
+      Like this:
+
+      examples:
+        - |
+          / {
+              model = "This is a sample node";
+              ...
+          };
 
     prop2specs:
       A dict mapping property names to PropertySpec objects
@@ -291,6 +303,11 @@ class Binding:
         return self.raw.get('bus')
 
     @property
+    def examples(self) -> Optional[list[str]]:
+        "See the class docstring"
+        return self.raw.get('examples')
+
+    @property
     def buses(self) -> list[str]:
         "See the class docstring"
         if self.raw.get('bus') is not None:
@@ -420,7 +437,7 @@ class Binding:
         # Allowed top-level keys. The 'include' key should have been
         # removed by _load_raw() already.
         ok_top = {"title", "description", "compatible", "bus",
-                  "on-bus", "properties", "child-binding"}
+                  "on-bus", "properties", "child-binding", "examples"}
 
         # Descriptive errors for legacy bindings.
         legacy_errors = {
@@ -438,7 +455,7 @@ class Binding:
 
             if key not in ok_top and not key.endswith("-cells"):
                 _err(f"unknown key '{key}' in {self.path}, "
-                     "expected one of {', '.join(ok_top)}, or *-cells")
+                     f"expected one of {', '.join(ok_top)}, or *-cells")
 
         if "bus" in raw:
             bus = raw["bus"]
@@ -574,6 +591,7 @@ class PropertySpec:
         self.binding: Binding = binding
         self.name: str = name
         self._raw: dict[str, Any] = self.binding.raw["properties"][name]
+        self._check_special_properties()
 
     def __repr__(self) -> str:
         return f"<PropertySpec {self.name} type '{self.type}'>"
@@ -652,6 +670,20 @@ class PropertySpec:
     def specifier_space(self) -> Optional[str]:
         "See the class docstring"
         return self._raw.get("specifier-space")
+
+    def _check_special_properties(self):
+        # Add checks for properties which have special meaning
+        # according to the specification.
+        def invalid_cells_default(prop, default):
+            _err(f"invalid default value '{default}' specified for property '{prop}' "
+                 f"in binding {self.binding.path}; this property's default behavior is "
+                 "defined in DT Specification §2.3.5 and a default in a binding is invalid")
+
+        if self.name == "#address-cells" and self.default is not None:
+            invalid_cells_default("#address-cells", self.default)
+
+        if self.name == "#size-cells" and self.default is not None:
+            invalid_cells_default("#size-cells", self.default)
 
 PropertyValType = Union[int, str,
                         list[int], list[str],
@@ -855,7 +887,7 @@ class ControllerAndData:
       *-names property
 
     basename:
-      Basename for the controller when supporting named cells
+      Basename for the controller when supporting named cells. AKA, the specifier space.
     """
     node: 'Node'
     controller: 'Node'
@@ -898,6 +930,55 @@ class PinCtrl:
         "See the class docstring"
         return str_as_token(self.name) if self.name is not None else None
 
+@dataclass
+class MapEntry:
+    """
+    Represents a single entry parsed from a ``*-map`` property. For example,
+    the value '<0 0 &gpio0 14 0>' from 'gpio-map = <0 0 &gpio0 14 0>, <1 0 &gpio0 0 0>;'
+    becomes one ``MapEntry`` instance.
+
+    These attributes are available on ``MapEntry`` objects:
+
+    node:
+      The Node instance whose property contains the map entry.
+
+    child_addresses:
+      A list of integers describing the unit address portion that precedes the
+      child specifier.  ``interrupt-map`` entries, for example, begin with the
+      child unit address whose length is determined by ``#address-cells`` on the
+      nexus node or its parent.  When no address cells are defined this list is
+      empty.
+
+    child_specifiers:
+      A list of integers read from the child side of the map entry after any
+      address words.  These are the specifier cells that precede the parent
+      phandle.
+
+    parent:
+      The parent Node instance.
+
+    parent_addresses:
+      The unit address portion that follows the parent phandle.  Its length is
+      derived from the parent's ``#address-cells`` (with the same parent lookup
+      fallback as in the devicetree specification).  Empty when no address cells
+      are provided.
+
+    parent_specifiers:
+      A list of integers describing the parent side of the mapping after any
+      parent address cells.  These values correspond to the ``*-cells``
+      definition in the parent's binding.
+
+    basename:
+      The base name of the ``*-map`` property, which also describes the
+      specifier space for the mapping.
+    """
+    node: 'Node'
+    child_addresses: list[int]
+    child_specifiers: list[int]
+    parent: 'Node'
+    parent_addresses: list[int]
+    parent_specifiers: list[int]
+    basename: str
 
 class Node:
     """
@@ -972,8 +1053,7 @@ class Node:
 
     status:
       The node's status property value, as a string, or "okay" if the node
-      has no status property set. If the node's status property is "ok",
-      it is converted to "okay" for consistency.
+      has no status property set.
 
     read_only:
       True if the node has a 'read-only' property, and False otherwise
@@ -1045,6 +1125,11 @@ class Node:
       A list of ControllerAndData objects for the GPIOs hogged by the node. The
       list is empty if the node does not hog any GPIOs. Only relevant for GPIO hog
       nodes.
+
+    maps:
+      A dictionary that contains a list of MapEntry instances associated with each string key.
+      The key is the basename-part of the node property name, the value is
+      the entries of the property value.
 
     is_pci_device:
       True if the node is a PCI device.
@@ -1199,9 +1284,6 @@ class Node:
         else:
             as_string = status.to_string()
 
-        if as_string == "ok":
-            as_string = "okay"
-
         return as_string
 
     @property
@@ -1322,6 +1404,103 @@ class Node:
         return res
 
     @property
+    def maps(self) -> dict[str, list[MapEntry]]:
+        "See the class docstring"
+
+        res: dict[str, list[MapEntry]] = {}
+
+        def count_specifier_cells(node: dtlib_Node, specifier: str) -> int:
+            """Return the number of specifier cells for *specifier* in *node*."""
+
+            cells_prop = f"#{specifier}-cells"
+
+            if cells_prop not in node.props:
+                _err(f"{node!r} lacks required '{cells_prop}' property")
+
+            return node.props[cells_prop].to_num()
+
+        def count_address_cells(node: dtlib_Node) -> int:
+            """Return the number of interrupt address cells for *node*."""
+
+            if "#address-cells" in node.props:
+                return node.props["#address-cells"].to_num()
+
+            if node.parent and "#address-cells" in node.parent.props:
+                return node.parent.props["#address-cells"].to_num()
+
+            return 0
+
+        for prop in [v for k, v in self._node.props.items() if k.endswith("-map")]:
+            specifier_space = prop.name[:-4]  # Strip '-map'
+            entries: list[MapEntry] = []
+            raw = prop.value
+            while raw:
+                if len(raw) < 4:
+                    # Not enough room for phandle
+                    _err("bad value for " + repr(prop))
+
+                child_address_cells = 0
+                if specifier_space == "interrupt":
+                    child_address_cells = count_address_cells(prop.node)
+
+                child_specifier_cells = count_specifier_cells(prop.node, specifier_space)
+                child_total_cells = child_address_cells + child_specifier_cells
+
+                if len(raw) < 4 * child_total_cells:
+                    _err("bad value for " + repr(prop))
+
+                child_cells = to_nums(raw[: 4 * child_total_cells])
+                child_addresses = child_cells[:child_address_cells]
+                child_specifiers = child_cells[child_address_cells:]
+
+                raw = raw[4 * child_total_cells :]
+                phandle = to_num(raw[:4])
+                raw = raw[4:]
+
+                parent_node = prop.node.dt.phandle2node.get(phandle)
+                if parent_node is None:
+                    _err(f"parent node cannot be found from phandle:{phandle}")
+
+                parent: Node = self.edt._node2enode[parent_node]
+                if parent is None:
+                    _err("parent cannot be found from: " + repr(parent_node))
+
+                parent_address_cells = 0
+                if specifier_space == "interrupt":
+                    parent_address_cells = count_address_cells(parent_node)
+
+                parent_specifier_cells = count_specifier_cells(parent_node, specifier_space)
+                parent_total_cells = parent_address_cells + parent_specifier_cells
+
+                if len(raw) < 4 * parent_total_cells:
+                    _err("bad value for " + repr(prop))
+
+                parent_cells = to_nums(raw[: 4 * parent_total_cells])
+                parent_addresses = parent_cells[:parent_address_cells]
+                parent_specifiers = parent_cells[parent_address_cells:]
+
+                raw = raw[4 * parent_total_cells :]
+
+                entries.append(
+                    MapEntry(
+                        node=self,
+                        child_addresses=child_addresses,
+                        child_specifiers=child_specifiers,
+                        parent=parent,
+                        parent_addresses=parent_addresses,
+                        parent_specifiers=parent_specifiers,
+                        basename=specifier_space,
+                    )
+                )
+
+            if len(raw) != 0:
+                _err(f"unexpected prop.value remaining: {raw}")
+
+            res[specifier_space] = entries
+
+        return res
+
+    @property
     def has_child_binding(self) -> bool:
         """
         True if the node's binding contains a child-binding definition, False
@@ -1365,6 +1544,14 @@ class Node:
                 # works the same way in Zephyr as it does elsewhere.
                 binding = None
 
+                # Collect all available bindings for this compatible for warning purposes
+                available_bindings = [
+                    (binding_bus, candidate_binding.path)
+                    for (binding_compat, binding_bus), candidate_binding
+                    in self.edt._compat2binding.items()
+                    if binding_compat == compat
+                ]
+
                 for bus in on_buses:
                     if (compat, bus) in self.edt._compat2binding:
                         binding = self.edt._compat2binding[compat, bus]
@@ -1374,6 +1561,27 @@ class Node:
                     if (compat, None) in self.edt._compat2binding:
                         binding = self.edt._compat2binding[compat, None]
                     else:
+                        # No matching binding found - warn if bindings exist for other buses
+                        if (available_bindings and
+                            self.edt._warn_bus_mismatch):
+                            current_bus = on_buses[0] if on_buses else "none"
+
+                            # Format available bus information for the warning
+                            available_bus_info = []
+                            for bus, binding_path in available_bindings:  # type: ignore
+                                bus_name = bus if bus is not None else "any"
+                                # Get relative path for cleaner output
+                                rel_path = (os.path.relpath(binding_path)
+                                            if binding_path is not None else "unknown")
+                                bus_info = f"'{bus_name}' (from {rel_path})"
+                                available_bus_info.append(bus_info)
+
+                            _LOG.warning(
+                                f"Node '{self.path}' with compatible '{compat}' "
+                                f"is on bus '{current_bus}', but available bindings "
+                                f"expect: {', '.join(available_bus_info)}. "
+                                f"No binding will be applied to this node."
+                            )
                         continue
 
                 self._binding = binding
@@ -1999,7 +2207,8 @@ class EDT:
                  support_fixed_partitions_on_any_bus: bool = True,
                  infer_binding_for_paths: Optional[Iterable[str]] = None,
                  vendor_prefixes: Optional[dict[str, str]] = None,
-                 werror: bool = False):
+                 werror: bool = False,
+                 warn_bus_mismatch: bool = False):
         """EDT constructor.
 
         dts:
@@ -2043,6 +2252,10 @@ class EDT:
           If True, some edtlib specific warnings become errors. This currently
           errors out if 'dts' has any deprecated properties set, or an unknown
           vendor prefix is used.
+
+        warn_bus_mismatch (default: False):
+          If True, a warning is logged if a node's actual bus does not match
+            the bus specified in its binding.
         """
         # All instance attributes should be initialized here.
         # This makes it easy to keep track of them, which makes
@@ -2069,6 +2282,7 @@ class EDT:
         self._infer_binding_for_paths: set[str] = set(infer_binding_for_paths or [])
         self._vendor_prefixes: dict[str, str] = vendor_prefixes or {}
         self._werror: bool = bool(werror)
+        self._warn_bus_mismatch: bool = warn_bus_mismatch
 
         # Other internal state
         self._compat2binding: dict[tuple[str, Optional[str]], Binding] = {}
@@ -2705,7 +2919,7 @@ def _bad_overwrite(to_dict: dict, from_dict: dict, prop: str,
         return False
 
     # These are overridden deliberately
-    if prop in {"title", "description", "compatible"}:
+    if prop in {"title", "description", "compatible", "examples"}:
         return False
 
     if prop == "required":
@@ -3312,8 +3526,7 @@ def _check_dt(dt: DT) -> None:
 
     # Check that 'status' has one of the values given in the devicetree spec.
 
-    # Accept "ok" for backwards compatibility
-    ok_status = {"ok", "okay", "disabled", "reserved", "fail", "fail-sss"}
+    ok_status = {"okay", "disabled", "reserved", "fail", "fail-sss"}
 
     for node in dt.node_iter():
         if "status" in node.props:
@@ -3360,6 +3573,48 @@ def str_as_token(val: str) -> str:
 class _BindingLoader(Loader):
     pass
 
+
+class HexInt(int):
+    """
+    An integer subclass that indicates the value was expressed in hexadecimal
+    notation in the original YAML binding file.
+
+    This allows downstream tools (e.g., documentation generators) to preserve
+    the original representation when displaying default values.
+
+    Example usage:
+        if isinstance(prop_spec.default, HexInt):
+            # Format as hex: f"0x{prop_spec.default:x}"
+        else:
+            # Format as decimal: str(prop_spec.default)
+    """
+
+    def __new__(cls, value: int) -> "HexInt":
+        return super().__new__(cls, value)
+
+
+def _binding_int_constructor(
+    loader: _BindingLoader, node: yaml.ScalarNode
+) -> int:
+    """
+    Custom YAML constructor for integers that preserves hexadecimal notation.
+
+    Returns a HexInt instance if the original YAML value was in hex format,
+    otherwise returns a regular int.
+    """
+    # Get the original string representation from the YAML
+    value_str = node.value.lower()
+    # Use the standard YAML int parsing
+    value = loader.construct_yaml_int(node)
+
+    # Check if the original was hexadecimal (0x prefix, possibly with sign)
+    if value_str.lstrip("+-").startswith("0x"):
+        return HexInt(value)
+    return value
+
+
+# Override the default integer constructor to track hex notation
+_BindingLoader.add_constructor("tag:yaml.org,2002:int", _binding_int_constructor)
 
 # Add legacy '!include foo.yaml' handling
 _BindingLoader.add_constructor("!include", _binding_include)

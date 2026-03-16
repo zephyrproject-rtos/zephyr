@@ -6,7 +6,7 @@ Hardware
 ********
 
 - Apollo510 SoC with up to 250 MHz operating frequency
-- ARM® Cortex® M55 core
+- ARM® Cortex®-M55 core
 - 64 kB Instruction Cache and 64 kB Data Cache
 - Up to 4 MB of non-volatile memory (NVM) for code/data
 - Up to 3 MB of low leakage / low power RAM for code/data

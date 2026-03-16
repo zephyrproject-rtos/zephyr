@@ -9,7 +9,7 @@
 #include "m5stack_core2-pinctrl.dtsi"
 #include "grove_connectors.dtsi"
 #include "m5stack_mbus_connectors.dtsi"
-#include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/regulator/axp192.h>
 #include <espressif/partitions_0x1000_amp.dtsi>
 
@@ -41,16 +41,11 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led_pwr: led_pwr {
 			gpios = <&axp192_gpio 1 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
 			label = "Power LED";
 		};
-	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft5336_touch>;
-		swap-xy;
 	};
 
 	mipi_dbi {
@@ -67,7 +62,7 @@
 			mipi-max-frequency = <30000000>;
 			reg = <0>;
 			vin-supply = <&lcd_bg>;
-			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 			display-inversion;
 			width = <320>;
 			height = <240>;
@@ -191,6 +186,9 @@
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		swapped-x-y;
+		screen-width = <320>;
+		screen-height = <240>;
 	};
 };
 
@@ -212,22 +210,21 @@
 	dma-enabled;
 	clock-frequency = <20000000>;
 	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>,
-			   <&gpio0 4 GPIO_ACTIVE_LOW>;
+		   <&gpio0 4 GPIO_ACTIVE_LOW>;
 
 	sd0: sd@1 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
 		status = "okay";
 		spi-max-frequency = <20000000>;
+
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			disk-name = "SD";
 			status = "okay";
 		};
-
 	};
 };
-
 
 &timer0 {
 	status = "okay";

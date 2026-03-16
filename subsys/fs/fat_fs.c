@@ -568,7 +568,7 @@ static const struct fs_file_system_t fatfs_fs = {
 	static FATFS fs_data_##inst;                                                               \
 	struct fs_mount_t FS_FSTAB_ENTRY(DT_DRV_INST(inst)) = {                                    \
 		.type = FS_FATFS,                                                                  \
-		.mnt_point = DT_INST_PROP(inst, mount_point),                                      \
+		.mnt_point = FSTAB_ENTRY_DT_INST_MOUNT_POINT(inst),                                \
 		.fs_data = &fs_data_##inst,                                                        \
 		.storage_dev = NULL,                                                               \
 		.flags = FSTAB_ENTRY_DT_MOUNT_FLAGS(DT_DRV_INST(inst)),                            \
@@ -577,19 +577,21 @@ static const struct fs_file_system_t fatfs_fs = {
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_FS);
 
 #ifdef CONFIG_FS_FATFS_FSTAB_AUTOMOUNT
-#define REFERENCE_MOUNT(inst) (&FS_FSTAB_ENTRY(DT_DRV_INST(inst))),
+#define REFERENCE_MOUNT(inst)                                                                      \
+	IF_ENABLED(DT_INST_PROP(inst, automount), ((&FS_FSTAB_ENTRY(DT_DRV_INST(inst))),))
 
 static void automount_if_enabled(struct fs_mount_t *mountp)
 {
-	int ret = 0;
+	int ret;
 
-	if ((mountp->flags & FS_MOUNT_FLAG_AUTOMOUNT) != 0) {
-		ret = fs_mount(mountp);
-		if (ret < 0) {
-			LOG_ERR("Error mounting filesystem: at %s: %d", mountp->mnt_point, ret);
-		} else {
-			LOG_DBG("FATFS Filesystem \"%s\" initialized", mountp->mnt_point);
-		}
+	/* We already filter it during build. */
+	__ASSERT_NO_MSG((mountp->flags & FS_MOUNT_FLAG_AUTOMOUNT) != 0);
+
+	ret = fs_mount(mountp);
+	if (ret < 0) {
+		LOG_ERR("Error mounting filesystem: at %s: %d", mountp->mnt_point, ret);
+	} else {
+		LOG_DBG("FATFS Filesystem \"%s\" initialized", mountp->mnt_point);
 	}
 }
 #endif /* CONFIG_FS_FATFS_FSTAB_AUTOMOUNT */

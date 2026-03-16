@@ -18,6 +18,7 @@ supported:
   - ble
   - dma
   - usart
+  - arduino_gpio
   - arduino_spi
   - usb_device
   - nvs

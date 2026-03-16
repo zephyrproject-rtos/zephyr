@@ -13,9 +13,9 @@ zephyr_library_sources_ifdef(CONFIG_USB_DC_SAM_USBC  usb_dc_sam_usbc.c)
 zephyr_library_sources_ifdef(CONFIG_USB_DC_SAM_USBHS usb_dc_sam_usbhs.c)
 zephyr_library_sources_ifdef(CONFIG_USB_KINETIS      usb_dc_kinetis.c)
 zephyr_library_sources_ifdef(CONFIG_USB_NATIVE_POSIX
-	usb_dc_native_posix.c
-	usb_dc_native_posix_adapt.c
-	)
+  usb_dc_native_posix.c
+  usb_dc_native_posix_adapt.c
+)
 zephyr_library_sources_ifdef(CONFIG_USB_NRFX         usb_dc_nrfx.c)
 zephyr_library_sources_ifdef(CONFIG_USB_MCUX         usb_dc_mcux.c)
 zephyr_library_sources_ifdef(CONFIG_USB_DC_SMARTBOND usb_dc_smartbond.c)

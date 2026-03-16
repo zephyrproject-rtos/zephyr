@@ -3,28 +3,28 @@
 # Copyright 2017,2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_KINETIS_KWX
+config SOC_SERIES_KWX
 	bool
 	select SOC_FAMILY_KINETIS
 
 config SOC_SERIES
-	default "kwx" if SOC_SERIES_KINETIS_KWX
+	default "kwx" if SOC_SERIES_KWX
 
 config SOC_MKW22D5
 	bool
-	select SOC_SERIES_KINETIS_KWX
+	select SOC_SERIES_KWX
 
 config SOC_MKW24D5
 	bool
-	select SOC_SERIES_KINETIS_KWX
+	select SOC_SERIES_KWX
 
 config SOC_MKW40Z4
 	bool
-	select SOC_SERIES_KINETIS_KWX
+	select SOC_SERIES_KWX
 
 config SOC_MKW41Z4
 	bool
-	select SOC_SERIES_KINETIS_KWX
+	select SOC_SERIES_KWX
 
 config SOC
 	default "mkw22d5" if SOC_MKW22D5

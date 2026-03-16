@@ -4,6 +4,9 @@
 # Copyright (c) 2022, Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+config SOC_FAMILY_MICROCHIP_MEC
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+
 if SOC_FAMILY_MICROCHIP_MEC
 
 menuconfig MCHP_MEC_UNSIGNED_HEADER
@@ -215,7 +218,7 @@ endif # MCHP_MEC_UNSIGNED_HEADER
 choice
 	prompt "MEC debug interface general configuration"
 	default SOC_MEC_DEBUG_AND_TRACING
-	depends on SOC_SERIES_MEC174X || SOC_SERIES_MEC175X || SOC_SERIES_MECH172X
+	depends on SOC_SERIES_MEC174X || SOC_SERIES_MEC175X || SOC_SERIES_MEC165XB
 	help
 	  Select Debug SoC interface support for MEC SoC family
 

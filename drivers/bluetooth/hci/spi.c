@@ -86,7 +86,7 @@ static K_KERNEL_STACK_DEFINE(spi_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 static struct k_thread spi_rx_thread_data;
 
 static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
-	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0);
+	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8));
 
 static struct spi_buf spi_tx_buf;
 static struct spi_buf spi_rx_buf;
@@ -309,8 +309,7 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 
 	LOG_DBG("");
 
-	/* Buffer needs an additional byte for type */
-	if (buf->len >= SPI_MAX_MSG_LEN) {
+	if (buf->len > SPI_MAX_MSG_LEN) {
 		LOG_ERR("Message too long (%d)", buf->len);
 		return -EINVAL;
 	}
@@ -346,17 +345,16 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 
 	k_sem_give(&sem_busy);
 
-	if (ret) {
+	if (ret != 0) {
 		LOG_ERR("Error %d", ret);
-		goto out;
+		return ret;
 	}
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "SPI TX");
 
-out:
 	net_buf_unref(buf);
 
-	return ret;
+	return 0;
 }
 
 static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)

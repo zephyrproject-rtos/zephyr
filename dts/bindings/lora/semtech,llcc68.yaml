@@ -1,0 +1,21 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Semtech LLCC68 LoRa Modem
+  A cost-cut version of sx126x with limited Spreading Factors and Bandwidth selections:
+  SF=5-6-7-8-9 for BW=125kHz,
+  SF=5-6-7-8-9-10 for BW =250 kHz,
+  SF=5-6-7-8-9-10-11 for BW=500 kHz.
+
+compatible: "semtech,llcc68"
+
+include: semtech,sx126x-base.yaml
+
+properties:
+  reset-gpios:
+    required: true
+  busy-gpios:
+    required: true
+  dio1-gpios:
+    required: true

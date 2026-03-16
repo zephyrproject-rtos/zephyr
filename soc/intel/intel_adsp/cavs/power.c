@@ -11,7 +11,6 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
-#include <zephyr/device.h>
 #include <zephyr/cache.h>
 #include <cpu_init.h>
 
@@ -208,7 +207,9 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 __no_optimization
 void arch_cpu_idle(void)
 {
+#if defined(CONFIG_TRACING)
 	sys_trace_idle();
+#endif
 
 	/* Just spin forever with interrupts unmasked, for platforms
 	 * where WAITI can't be used or where its behavior is

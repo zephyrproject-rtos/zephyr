@@ -36,6 +36,14 @@ properties:
     description: |
       A mask for channels that have internal counter, lsb is channel 0.
 
+  global-timebase-provider:
+    type: phandle
+    description: |
+      Phandle to eMIOS instance that provides the global timebase. On some hardware designs, this
+      property must be set explicitly, even if the timebase provider is the eMIOS instance itself.
+      On other hardware platforms, this property is not required or may not be present at all.
+      Refer to the Reference Manual to determine whether this property is needed
+
 child-binding:
   child-binding:
     description: |

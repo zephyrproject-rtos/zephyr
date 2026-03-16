@@ -41,7 +41,11 @@ static int verify_buf(int16_t *rx_block, int att)
 	int sample_no = SAMPLE_NO;
 
 #if (CONFIG_I2S_TEST_ALLOWED_DATA_OFFSET > 0)
+#if (CONFIG_I2S_TEST_ALLOW_VARIABLE_OFFSET)
+	int offset = -1;
+#else
 	static ZTEST_DMEM int offset = -1;
+#endif
 
 	if (offset < 0) {
 		do {
@@ -52,7 +56,9 @@ static int verify_buf(int16_t *rx_block, int att)
 			}
 		} while (rx_block[2 * offset] != data_l[0] >> att);
 
+#if (!CONFIG_I2S_TEST_ALLOW_VARIABLE_OFFSET)
 		TC_PRINT("Using data offset: %d\n", offset);
+#endif
 	}
 
 	rx_block += 2 * offset;
@@ -87,7 +93,26 @@ void fill_buf_const(int16_t *tx_block, int16_t val_l, int16_t val_r)
 
 int verify_buf_const(int16_t *rx_block, int16_t val_l, int16_t val_r)
 {
-	for (int i = 0; i < SAMPLE_NO; i++) {
+	int sample_no = SAMPLE_NO;
+
+#if (CONFIG_I2S_TEST_ALLOWED_DATA_OFFSET > 0)
+	static ZTEST_DMEM int offset = -1;
+
+	if (offset < 0) {
+		do {
+			++offset;
+			if (offset > CONFIG_I2S_TEST_ALLOWED_DATA_OFFSET) {
+				TC_PRINT("Allowed data offset exceeded\n");
+				return -TC_FAIL;
+			}
+		} while (rx_block[2 * offset] != val_l);
+	}
+
+	rx_block += 2 * offset;
+	sample_no -= offset;
+#endif
+
+	for (int i = 0; i < sample_no; i++) {
 		if (rx_block[2 * i] != val_l) {
 			TC_PRINT("Error: data_l mismatch at position "
 				 "%d, expected %d, actual %d\n",
@@ -156,7 +181,7 @@ int rx_block_read(const struct device *dev_i2s, int att)
 int configure_stream(const struct device *dev_i2s, enum i2s_dir dir)
 {
 	int ret;
-	struct i2s_config i2s_cfg;
+	struct i2s_config i2s_cfg = {0};
 
 	i2s_cfg.word_size = 16U;
 	i2s_cfg.channels = 2U;
@@ -166,16 +191,16 @@ int configure_stream(const struct device *dev_i2s, enum i2s_dir dir)
 	i2s_cfg.timeout = TIMEOUT;
 
 	if (dir == I2S_DIR_TX) {
-		/* Configure the Transmit port as Master */
-		i2s_cfg.options = I2S_OPT_FRAME_CLK_MASTER
-				| I2S_OPT_BIT_CLK_MASTER;
+		/* Configure the Transmit port as Controller */
+		i2s_cfg.options = I2S_OPT_FRAME_CLK_CONTROLLER
+				| I2S_OPT_BIT_CLK_CONTROLLER;
 	} else if (dir == I2S_DIR_RX) {
-		/* Configure the Receive port as Slave */
-		i2s_cfg.options = I2S_OPT_FRAME_CLK_SLAVE
-				| I2S_OPT_BIT_CLK_SLAVE;
+		/* Configure the Receive port as Target */
+		i2s_cfg.options = I2S_OPT_FRAME_CLK_TARGET
+				| I2S_OPT_BIT_CLK_TARGET;
 	} else { /* dir == I2S_DIR_BOTH */
-		i2s_cfg.options = I2S_OPT_FRAME_CLK_MASTER
-				| I2S_OPT_BIT_CLK_MASTER;
+		i2s_cfg.options = I2S_OPT_FRAME_CLK_CONTROLLER
+				| I2S_OPT_BIT_CLK_CONTROLLER;
 	}
 
 	if (!IS_ENABLED(CONFIG_I2S_TEST_USE_GPIO_LOOPBACK)) {

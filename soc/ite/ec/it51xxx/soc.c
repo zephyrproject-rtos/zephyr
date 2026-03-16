@@ -57,7 +57,9 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 	 * interrupt here to protect the below content.
 	 */
 	csr_clear(mie, MIP_MEIP);
+#if defined(CONFIG_TRACING)
 	sys_trace_idle();
+#endif
 
 #ifdef CONFIG_ESPI
 	/*
@@ -77,6 +79,9 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 #ifdef CONFIG_ESPI
 	/* CPU has been woken up, the interrupt is no longer needed */
 	espi_ite_ec_enable_trans_irq(ESPI_ITE_SOC_DEV, false);
+#endif
+#if defined(CONFIG_TRACING)
+	sys_trace_idle_exit();
 #endif
 	/*
 	 * Enable M-mode external interrupt
@@ -116,6 +121,13 @@ void soc_prep_hook(void)
 {
 	struct gpio_ite_ec_regs *const gpio_regs = GPIO_ITE_EC_REGS_BASE;
 	struct gctrl_ite_ec_regs *const gctrl_regs = GCTRL_ITE_EC_REGS_BASE;
+
+	/* USB pull down disable */
+	gpio_regs->GPIO_GCR35 &= ~IT51XXX_GPIO_USBPDEN;
+
+	/* Set FSPI pins are tri-state */
+	sys_write8(sys_read8(IT51XXX_SMFI_FLHCTRL3R) | IT51XXX_SMFI_FFSPITRI,
+		   IT51XXX_SMFI_FLHCTRL3R);
 
 	/* Scratch SRAM0 uses the 4KB based form 0x801000h */
 	gctrl_regs->GCTRL_SCR0BAR = IT51XXX_SEL_SRAM0_BASE_4K;

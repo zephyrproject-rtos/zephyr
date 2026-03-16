@@ -19,7 +19,7 @@ properties:
     type: int
     enum: [0, 1, 2, 3]
     description: |
-      The it51xxx chip features four i3c io channels and two i3c cotroller
+      The it51xxx chip features four i3c io channels and two i3c controller
       (i3cm) engines. This property allows the i3cm engine to select the
       desired i3c io channel. To ensure proper i3c functionality, make sure
       that multiple controllers (including the i3cm controller and i3cs

@@ -12,9 +12,8 @@ import re
 from enum import Enum
 from pathlib import Path
 
-from twisterlib.environment import canonical_zephyr_base
+from twisterlib.constants import canonical_zephyr_base
 from twisterlib.error import StatusAttributeError, TwisterException, TwisterRuntimeError
-from twisterlib.mixins import DisablePyTestCollectionMixin
 from twisterlib.statuses import TwisterStatus
 
 logger = logging.getLogger('twister')
@@ -374,20 +373,17 @@ def _find_src_dir_path(test_dir_path):
         return src_dir_path
     return ""
 
-class TestCase(DisablePyTestCollectionMixin):
 
-    def __init__(self, name=None, testsuite=None):
+class TestCase:
+    __test__ = False
+
+    def __init__(self, name):
         self.duration = 0
         self.name = name
         self._status = TwisterStatus.NONE
         self.reason = None
-        self.testsuite = testsuite
         self.output = ""
         self.freeform = False
-
-    @property
-    def detailed_name(self) -> str:
-        return TestSuite.get_case_name_(self.testsuite, self.name, detailed=True)
 
     @property
     def status(self) -> TwisterStatus:
@@ -411,9 +407,11 @@ class TestCase(DisablePyTestCollectionMixin):
     def __str__(self):
         return self.name
 
-class TestSuite(DisablePyTestCollectionMixin):
-    """Class representing a test application
-    """
+
+class TestSuite:
+    """Class representing a test application."""
+
+    __test__ = False
 
     def __init__(self, suite_root, suite_path, name, data=None, detailed_test_id=True):
         """TestSuite constructor.
@@ -447,7 +445,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             os.path.realpath(suite_path), start=canonical_zephyr_base
         )
         self.yamlfile = suite_path
-        self.testcases = []
+        self.testcases: list[TestCase] = []
         self.integration_platforms = []
 
         self.ztest_suite_names = []
@@ -480,18 +478,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                 'Harness config error: console harness defined without a configuration.'
             )
 
-    @staticmethod
-    def get_case_name_(test_suite, tc_name, detailed=True) -> str:
-        return f"{test_suite.id}.{tc_name}" \
-            if test_suite and detailed and not test_suite.detailed_test_id else f"{tc_name}"
-
-    @staticmethod
-    def compose_case_name_(test_suite, tc_name) -> str:
-        return f"{test_suite.id}.{tc_name}" \
-            if test_suite and test_suite.detailed_test_id else f"{tc_name}"
-
     def compose_case_name(self, tc_name) -> str:
-        return self.compose_case_name_(self, tc_name)
+        return f"{self.id}.{tc_name}" if self.id != tc_name else tc_name
 
     def add_subcases(self, data, parsed_subcases=None, suite_names=None):
         testcases = data.get("testcases", [])
@@ -509,7 +497,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             self.ztest_suite_names = suite_names
 
     def add_testcase(self, name, freeform=False):
-        tc = TestCase(name=name, testsuite=self)
+        tc = TestCase(name=name)
         tc.freeform = freeform
         self.testcases.append(tc)
 

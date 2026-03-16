@@ -8,7 +8,7 @@ Overview
 
 The `ARM V2C-DAPLink for DesignStart FPGA`_ shield can be used to provide
 DAPLink debug access to the ARM DesignStart FPGA reference designs implemented
-on the :ref:`arty`.
+on the :zephyr:board:`arty_a7`.
 
 .. figure:: v2c_daplink.jpg
    :align: center
@@ -27,7 +27,7 @@ Programming
 
 When using the V2C-DAPLink shield with the ``Cfg`` jumper (``J2``) open, the CPU
 will boot from ITCM and flashing can be performed automatically. The console is
-routed to USB connector ``J10`` on the :ref:`arty`. For example:
+routed to USB connector ``J10`` on the :zephyr:board:`arty_a7`. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

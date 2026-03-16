@@ -102,20 +102,25 @@ def sync_contents(app: Sphinx) -> None:
     to_copy = []
     to_delete = set(f for f in srcdir.glob("**/*") if not f.is_dir())
     to_keep = set(
-        f
-        for k in app.config.external_content_keep
-        for f in srcdir.glob(k)
-        if not f.is_dir()
+        f for k in app.config.external_content_keep for f in srcdir.glob(k) if not f.is_dir()
     )
+
+    def _pattern_excludes(f):
+        # backup files
+        return f.match('.#*') or f.match('*~')
 
     for content in app.config.external_content_contents:
         prefix_src, glob = content
         for src in prefix_src.glob(glob):
             if src.is_dir():
                 to_copy.extend(
-                    [(f, prefix_src) for f in src.glob("**/*") if not f.is_dir()]
+                    [
+                        (f, prefix_src)
+                        for f in src.glob("**/*")
+                        if (not f.is_dir() and not _pattern_excludes(f))
+                    ]
                 )
-            else:
+            elif not _pattern_excludes(src):
                 to_copy.append((src, prefix_src))
 
     for entry in to_copy:

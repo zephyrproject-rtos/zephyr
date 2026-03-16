@@ -5,8 +5,10 @@
  */
 
 #include <zephyr/drivers/firmware/scmi/pinctrl.h>
+#include <zephyr/kernel.h>
 
-DT_SCMI_PROTOCOL_DEFINE_NODEV(DT_INST(0, arm_scmi_pinctrl), NULL);
+DT_SCMI_PROTOCOL_DEFINE_NODEV(DT_INST(0, arm_scmi_pinctrl), NULL,
+		SCMI_PIN_CONTROL_PROTOCOL_SUPPORTED_VERSION);
 
 int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings)
 {
@@ -17,7 +19,7 @@ int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings)
 
 	proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_PINCTRL);
 
-	/* sanity checks */
+	/* input validation */
 	if (!settings) {
 		return -EINVAL;
 	}
@@ -50,14 +52,10 @@ int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings)
 	reply.len = sizeof(status);
 	reply.content = &status;
 
-	ret = scmi_send_message(proto, &msg, &reply);
+	ret = scmi_send_message(proto, &msg, &reply, false);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(status);
-	}
-
-	return 0;
+	return scmi_status_to_errno(status);
 }

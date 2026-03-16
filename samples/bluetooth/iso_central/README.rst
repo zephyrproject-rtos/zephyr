@@ -12,8 +12,6 @@ The sample scans for a peripheral, establishes a connection, and sets up a conne
 Once the isochronous channel is connected, isochronous data is transferred to the peer device every 10 milliseconds.
 It is recommended to run this sample together with the :zephyr:code-sample:`ble_peripheral_iso` sample.
 
-To run the sample with an encrypted isochronous channel, enable :kconfig:option:`CONFIG_BT_SMP`.
-
 Requirements
 ************
 
@@ -24,9 +22,6 @@ Requirements
 
 Building and Running
 ********************
-This sample can be found under :zephyr_file:`samples/bluetooth/iso_central` in
-the Zephyr tree.
-
 1. Start the application.
    In the terminal window, check that it is scanning for other devices.
 

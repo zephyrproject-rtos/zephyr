@@ -1,4 +1,4 @@
-.. _zybo:
+.. zephyr:board:: zybo
 
 Digilent Zybo
 #############
@@ -23,27 +23,7 @@ Hardware
 Supported Features
 ==================
 
-The zybo board configuration supports the following hardware features:
-
-+------------+------------+-------------------------------------+
-| Interface  | Controller | Driver/Component                    |
-+============+============+=====================================+
-| GICv1      | on-chip    | ARM generic interrupt controller v1 |
-+------------+------------+-------------------------------------+
-| ARCH TIMER | on-chip    | ARM architected timer               |
-+------------+------------+-------------------------------------+
-| PINCTRL    | on-chip    | pinctrl                             |
-+------------+------------+-------------------------------------+
-| GPIO       | on-chip    | gpio                                |
-+------------+------------+-------------------------------------+
-| UART       | on-chip    | serial port-polling;                |
-|            |            | serial port-interrupt               |
-+------------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/digilent/zybo/zybo_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************

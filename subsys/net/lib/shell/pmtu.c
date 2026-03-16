@@ -30,11 +30,11 @@ static void pmtu_cb(struct net_pmtu_entry *entry, void *user_data)
 /* Use the value of NET_IPV6_ADDR_LEN */
 #define ADDR_STR_LEN 40
 #elif defined(CONFIG_NET_IPV4)
-#define ADDR_STR_LEN INET_ADDRSTRLEN
+#define ADDR_STR_LEN NET_INET_ADDRSTRLEN
 #elif defined(CONFIG_NET_IPV6)
 #define ADDR_STR_LEN 40
 #else
-#define ADDR_STR_LEN INET_ADDRSTRLEN
+#define ADDR_STR_LEN NET_INET_ADDRSTRLEN
 #endif
 
 	if (!entry->in_use) {
@@ -59,13 +59,12 @@ static int cmd_net_pmtu(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_PMTU)
 	struct net_shell_user_data user_data;
-	int arg = 1;
 #endif
 
 	ARG_UNUSED(argc);
 
 #if defined(CONFIG_NET_PMTU)
-	if (!argv[arg]) {
+	if (argv[1] == NULL) {
 		/* PMTU destination cache content */
 		int count = 0;
 
@@ -102,7 +101,7 @@ static int cmd_net_pmtu_flush(const struct shell *sh, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_pmtu,
 	SHELL_CMD(flush, NULL,
-		  "Remove all entries from PMTU destination cache.",
+		  SHELL_HELP("Remove all entries from PMTU destination cache", ""),
 		  cmd_net_pmtu_flush),
 	SHELL_SUBCMD_SET_END
 );

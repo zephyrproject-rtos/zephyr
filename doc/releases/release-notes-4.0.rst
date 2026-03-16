@@ -113,7 +113,7 @@ Deprecated in this release
 * Deprecated the TinyCrypt shim driver ``CONFIG_CRYPTO_TINYCRYPT_SHIM``.
 
 * ``native_posix`` has been deprecated in favour of
-  :ref:`native_sim<native_sim>`.
+  :zephyr:board:`native_sim<native_sim>`.
 
 * ``include/zephyr/net/buf.h`` is deprecated in favor of
   ``include/zephyr/net_buf.h>``. The old header will be removed in future releases
@@ -290,7 +290,7 @@ Boards & SoC Support
    * :zephyr:board:`Gardena Smart Garden Radio Module <sgrm>` (``sgrm``)
    * :zephyr:board:`mikroe STM32 M4 Clicker <mikroe_stm32_m4_clicker>` (``mikroe_stm32_m4_clicker``)
    * :zephyr:board:`Nordic Semiconductor nRF54L15 DK <nrf54l15dk>` (``nrf54l15dk``)
-   * :zephyr:board:`Nordic Semiconductor nRF54L20 PDK <nrf54l20pdk>` (``nrf54l20pdk``)
+   * Nordic Semiconductor nRF54L20 PDK (``nrf54l20pdk``)
    * :zephyr:board:`Nordic Semiconductor nRF7002 DK <nrf7002dk>` (``nrf7002dk``)
    * :zephyr:board:`Nuvoton NPCM400_EVB <npcm400_evb>` (``npcm400_evb``)
    * :zephyr:board:`NXP FRDM-MCXA156 <frdm_mcxa156>` (``frdm_mcxa156``)
@@ -300,7 +300,7 @@ Boards & SoC Support
    * :zephyr:board:`NXP FRDM-MCXW71 <frdm_mcxw71>` (``frdm_mcxw71``)
    * :zephyr:board:`NXP i.MX95 EVK <imx95_evk>` (``imx95_evk``)
    * :zephyr:board:`NXP MIMXRT1180-EVK <mimxrt1180_evk>` (``mimxrt1180_evk``)
-   * :ref:`PHYTEC phyBOARD-Nash i.MX93 <phyboard_nash>` (``phyboard_nash``)
+   * :zephyr:board:`PHYTEC phyBOARD-Nash i.MX93 <phyboard_nash>` (``phyboard_nash``)
    * :zephyr:board:`Renesas RA2A1 Evaluation Kit <ek_ra2a1>` (``ek_ra2a1``)
    * :zephyr:board:`Renesas RA4E2 Evaluation Kit <ek_ra4e2>` (``ek_ra4e2``)
    * :zephyr:board:`Renesas RA4M2 Evaluation Kit <ek_ra4m2>` (``ek_ra4m2``)
@@ -318,7 +318,7 @@ Boards & SoC Support
    * :zephyr:board:`Renesas RA8T1 Motor Control Kit <mck_ra8t1>` (``mck_ra8t1``)
    * :zephyr:board:`Renode Cortex-R8 Virtual <cortex_r8_virtual>` (``cortex_r8_virtual``)
    * :zephyr:board:`Seeed XIAO ESP32-S3 Sense Variant <xiao_esp32s3>`: ``xiao_esp32s3``.
-   * :ref:`sensry.io Ganymed Break-Out-Board (BOB) <ganymed_bob>` (``ganymed_bob``)
+   * :zephyr:board:`sensry.io Ganymed Break-Out-Board (BOB) <ganymed_bob>` (``ganymed_bob``)
    * :zephyr:board:`SiLabs SiM3U1xx 32-bit MCU USB Development Kit <sim3u1xx_dk>` (``sim3u1xx_dk``)
    * :zephyr:board:`SparkFun Thing Plus Matter <sparkfun_thing_plus_matter_mgm240p>` (``sparkfun_thing_plus_matter_mgm240p``)
    * :zephyr:board:`ST Nucleo G431KB <nucleo_g431kb>` (``nucleo_g431kb``)
@@ -345,9 +345,9 @@ Boards & SoC Support
     See ``samples/boards/st/mco`` sample.
   * STM32: STM32CubeProgrammer is now the default runner on all STMicroelectronics STM32 boards.
   * Removed the ``nrf54l15pdk`` board, use :zephyr:board:`nrf54l15dk` instead.
-  * PHYTEC: ``mimx8mp_phyboard_pollux`` has been renamed to :ref:`phyboard_pollux<phyboard_pollux>`,
+  * PHYTEC: ``mimx8mp_phyboard_pollux`` has been renamed to :zephyr:board:`phyboard_pollux<phyboard_pollux>`,
     with the old name marked as deprecated.
-  * PHYTEC: ``mimx8mm_phyboard_polis`` has been renamed to :ref:`phyboard_polis<phyboard_polis>`,
+  * PHYTEC: ``mimx8mm_phyboard_polis`` has been renamed to :zephyr:board:`phyboard_polis<phyboard_polis>`,
     with the old name marked as deprecated.
   * The board qualifier for MPS3/AN547 is changed from:
 
@@ -1542,7 +1542,7 @@ Tests and Samples
 *****************
 
 * Together with the deprecation of ``native_posix``, many tests which were
-  explicitly run in native_posix now run in :ref:`native_sim<native_sim>` instead.
+  explicitly run in native_posix now run in :zephyr:board:`native_sim<native_sim>` instead.
   native_posix as a platform remains tested though.
 * Extended the tests of counter_basic_api with a testcase for counters without alarms
 * Added support for testing SDMMC devices to the fatfs API test

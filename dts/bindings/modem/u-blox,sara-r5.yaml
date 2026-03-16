@@ -5,11 +5,8 @@ description: u-blox SARA-R5 modem
 
 compatible: "u-blox,sara-r5"
 
-include: uart-device.yaml
+include: zephyr,cellular-modem-device.yaml
 
 properties:
-  mdm-power-gpios:
-    type: phandle-array
-
-  mdm-reset-gpios:
-    type: phandle-array
+  zephyr,mdm-reset-behavior:
+    default: ["toggle_on_recovery"]

@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PIC32CM_JH01_CPRO
+	select SOC_PIC32CM5164JH01100

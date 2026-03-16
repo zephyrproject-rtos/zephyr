@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_imx93_m33.dtsi>
+#include <nxp/imx/nxp_imx93_m33.dtsi>
 #include "imx93_var_dart-pinctrl.dtsi"
 #include "imx93_var_dart-m33-common.dtsi"
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -44,7 +44,7 @@
 
 		button0: btn_0 {
 			label = "BTN0";
-			gpios = <&gpio2 27 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
+			gpios = <&gpio2 27 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};

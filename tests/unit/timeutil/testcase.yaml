@@ -8,3 +8,7 @@ tests:
 
   utilities.time.64bit:
     extra_args: M64_MODE=1
+
+  utilities.time.no_skew:
+    extra_configs:
+      - CONFIG_TIMEUTIL_APPLY_SKEW=n

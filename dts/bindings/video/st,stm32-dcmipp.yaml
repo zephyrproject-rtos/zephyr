@@ -4,27 +4,14 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+title: STM32 DCMIPP (Digital Camera Memory Interface Pixel Processor)
+
 description: |
-    STM32 Digital Camera Memory Interface Pixel Processor (DCMIPP).
-
-    Example of node configuration at board level:
-
-    &dcmipp {
-      status = "okay";
-
-      ports {
-        #address-cells = <1>;
-        #size-cells = <0>;
-
-        port@0 {
-          reg = <0>;
-          dcmipp_ep_in: endpoint {
-            remote-endpoint-label = "imx335_ep_out";
-            data-lanes = <1 2>;
-          };
-        };
-      };
-    };
+    The STM32 DCMIPP (Digital Camera Memory Interface Pixel Processor) supports,
+    depending on the platform, data capture from either parallel (DVP) or
+    CSI-2 interfaces. It integrates up to three processing pipelines capable of
+    performing frame operations, including one pipeline with ISP functionality
+    enabled.
 
 compatible: "st,stm32-dcmipp"
 
@@ -43,14 +30,36 @@ properties:
   interrupts:
     required: true
 
+  interrupt-names:
+    required: true
+    enum: ["dcmipp", "dcmipp_csi"]
+
   resets:
     required: true
 
 child-binding:
   child-binding:
-    child-binding:
-      include: video-interfaces.yaml
+    include: video-interfaces.yaml
 
-      properties:
-        bus-type:
-          required: true
+    properties:
+      bus-type:
+        required: true
+
+examples:
+  - |
+    &dcmipp {
+      status = "okay";
+
+      ports {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        port@0 {
+          reg = <0>;
+          dcmipp_ep_in: endpoint {
+            remote-endpoint-label = "imx335_ep_out";
+            data-lanes = <1 2>;
+          };
+        };
+      };
+    };

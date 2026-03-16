@@ -7,16 +7,17 @@
 
 /**
  * @file
- * @brief Public API for FLASH drivers
+ * @ingroup flash_interface
+ * @brief Main header file for Flash driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_FLASH_H_
 #define ZEPHYR_INCLUDE_DRIVERS_FLASH_H_
 
 /**
- * @brief FLASH internal Interface
- * @defgroup flash_internal_interface FLASH internal Interface
- * @ingroup io_interfaces
+ * @brief Internal interfaces for flash memory controllers.
+ * @defgroup flash_internal_interface Flash Internal
+ * @ingroup flash_interface
  * @{
  */
 
@@ -43,12 +44,18 @@ struct flash_pages_layout {
  */
 
 /**
- * @brief FLASH Interface
- * @defgroup flash_interface FLASH Interface
+ * @brief Interfaces for flash memory controllers.
+ * @defgroup flash_interface Flash
  * @since 1.2
  * @version 1.0.0
  * @ingroup io_interfaces
+ *
  * @{
+ *
+ * @defgroup flash_ex_op Extended Operations
+ * @brief Vendor-specific extended operations for flash drivers.
+ * @{
+ * @}
  */
 
 /**
@@ -88,8 +95,8 @@ struct flash_parameters {
 #define FLASH_ERASE_C_VAL_BIT		0x04
 #define FLASH_ERASE_UNIFORM_PAGE	0x08
 
-
-/* @brief Parser for flash_parameters for retrieving erase capabilities
+/**
+ * @brief Parser for flash_parameters for retrieving erase capabilities
  *
  * The functions parses flash_parameters type object and returns combination
  * of erase capabilities of 0 if device does not have any.
@@ -518,7 +525,7 @@ void flash_page_foreach(const struct device *dev, flash_page_cb cb,
  *
  * @retval 0 on success
  * @retval -ENOTSUP if the flash driver does not support SFDP access
- * @retval negative values for other errors.
+ * @retval <0 negative values for other errors.
  */
 __syscall int flash_sfdp_read(const struct device *dev, off_t offset,
 			      void *data, size_t len);
@@ -546,7 +553,7 @@ static inline int z_impl_flash_sfdp_read(const struct device *dev,
  *
  * @retval 0 on successful store of 3-byte JEDEC id
  * @retval -ENOTSUP if flash driver doesn't support this function
- * @retval negative values for other errors
+ * @retval <0 negative values for other errors
  */
 __syscall int flash_read_jedec_id(const struct device *dev, uint8_t *id);
 
@@ -630,7 +637,7 @@ static inline const struct flash_parameters *z_impl_flash_get_parameters(const s
  *  @retval 0 on success.
  *  @retval -ENOTSUP if given device doesn't support extended operation.
  *  @retval -ENOSYS if support for extended operations is not enabled in Kconfig
- *  @retval negative value on extended operation errors.
+ *  @retval <0 negative value on extended operation errors.
  */
 __syscall int flash_ex_op(const struct device *dev, uint16_t code,
 			  const uintptr_t in, void *out);

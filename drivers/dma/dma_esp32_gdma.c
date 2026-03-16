@@ -10,9 +10,14 @@
 LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 
 #include <hal/gdma_hal.h>
+#include <hal/gdma_hal_ahb.h>
+#include <hal/gdma_channel.h>
 #include <hal/gdma_ll.h>
-#include <soc/gdma_channel.h>
 #include <hal/dma_types.h>
+#include <hal/gdma_types.h>
+#if defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32S2)
+#include <esp_cache.h>
+#endif
 
 #include <soc.h>
 #include <esp_memory_utils.h>
@@ -23,10 +28,12 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
-#define DMA_MAX_CHANNEL SOC_GDMA_PAIRS_PER_GROUP
+#define DMA_MAX_CHANNEL GDMA_LL_PAIRS_PER_INST
 
-#define ESP_DMA_M2M_ON  0
-#define ESP_DMA_M2M_OFF 1
+static int get_m2m_periph_id(void)
+{
+	return __builtin_ctz(GDMA_LL_M2M_FREE_PERIPH_ID_MASK);
+}
 
 struct dma_esp32_data {
 	gdma_hal_context_t hal;
@@ -47,7 +54,6 @@ struct irq_config {
 struct dma_esp32_channel {
 	uint8_t dir;
 	uint8_t channel_id;
-	int host_id;
 	int periph_id;
 	dma_callback_t cb;
 	void *user_data;
@@ -61,8 +67,6 @@ struct dma_esp32_config {
 	uint8_t dma_channel_max;
 	uint8_t sram_alignment;
 	struct dma_esp32_channel dma_channel[DMA_MAX_CHANNEL * 2];
-	void (*config_irq)(const struct device *dev);
-	struct device *src_dev;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 };
@@ -76,12 +80,12 @@ static void IRAM_ATTR dma_esp32_isr_handle_rx(const struct device *dev,
 	if (rx->cb) {
 		int status;
 
-		if (intr_status == (GDMA_LL_EVENT_RX_SUC_EOF | GDMA_LL_EVENT_RX_DONE)) {
+		if (intr_status & GDMA_LL_EVENT_RX_SUC_EOF) {
 			status = DMA_STATUS_COMPLETE;
-		} else if (intr_status == GDMA_LL_EVENT_RX_DONE) {
+		} else if (intr_status & GDMA_LL_EVENT_RX_DONE) {
 			status = DMA_STATUS_BLOCK;
 #if defined(CONFIG_SOC_SERIES_ESP32S3)
-		} else if (intr_status == GDMA_LL_EVENT_RX_WATER_MARK) {
+		} else if (intr_status & GDMA_LL_EVENT_RX_WATER_MARK) {
 			status = DMA_STATUS_BLOCK;
 #endif
 		} else {
@@ -106,7 +110,7 @@ static void IRAM_ATTR dma_esp32_isr_handle_tx(const struct device *dev,
 	}
 }
 
-#if defined(SOC_GDMA_TX_RX_SHARE_INTERRUPT)
+#if defined(GDMA_LL_AHB_TX_RX_SHARE_INTERRUPT)
 static void IRAM_ATTR dma_esp32_isr_handle(const struct device *dev, uint8_t rx_id, uint8_t tx_id)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
@@ -115,12 +119,14 @@ static void IRAM_ATTR dma_esp32_isr_handle(const struct device *dev, uint8_t rx_
 	struct dma_esp32_channel *dma_channel_tx = &config->dma_channel[tx_id];
 	uint32_t intr_status = 0;
 
-	intr_status = gdma_ll_rx_get_interrupt_status(data->hal.dev, dma_channel_rx->channel_id);
+	intr_status =
+		gdma_ll_rx_get_interrupt_status(data->hal.dev, dma_channel_rx->channel_id, false);
 	if (intr_status) {
 		dma_esp32_isr_handle_rx(dev, dma_channel_rx, intr_status);
 	}
 
-	intr_status = gdma_ll_tx_get_interrupt_status(data->hal.dev, dma_channel_tx->channel_id);
+	intr_status =
+		gdma_ll_tx_get_interrupt_status(data->hal.dev, dma_channel_tx->channel_id, false);
 	if (intr_status) {
 		dma_esp32_isr_handle_tx(dev, dma_channel_tx, intr_status);
 	}
@@ -206,6 +212,14 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32S2)
+	/* Write back cache to ensure DMA descriptor is visible to GDMA hardware.
+	 * ESP32-S3/S2 have data cache that may hold stale descriptor values.
+	 */
+	esp_cache_msync(dma_channel->desc_list, sizeof(dma_channel->desc_list),
+			ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+#endif
+
 	return 0;
 }
 
@@ -219,12 +233,13 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 
 	gdma_ll_rx_reset_channel(data->hal.dev, dma_channel->channel_id);
 
-	gdma_ll_rx_connect_to_periph(
-		data->hal.dev, dma_channel->channel_id,
-		dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0 ? ESP_DMA_M2M_ON
-								    : ESP_DMA_M2M_OFF,
-		dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0 ? ESP_DMA_M2M_ON
-								    : dma_channel->periph_id);
+	if (dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0) {
+		gdma_ll_rx_connect_to_mem(data->hal.dev, dma_channel->channel_id,
+					  get_m2m_periph_id());
+	} else {
+		gdma_ll_rx_connect_to_periph(data->hal.dev, dma_channel->channel_id,
+					     dma_channel->periph_id);
+	}
 
 	if (config_dma->dest_burst_length) {
 		/*
@@ -235,6 +250,9 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 		gdma_ll_rx_enable_descriptor_burst(data->hal.dev, dma_channel->channel_id,
 						   config->sram_alignment >= 4);
 	}
+
+	/* Enable owner check for proper descriptor ownership handling */
+	gdma_ll_rx_enable_owner_check(data->hal.dev, dma_channel->channel_id, true);
 
 	dma_channel->cb = config_dma->dma_callback;
 	dma_channel->user_data = config_dma->user_data;
@@ -257,12 +275,13 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 
 	gdma_ll_tx_reset_channel(data->hal.dev, dma_channel->channel_id);
 
-	gdma_ll_tx_connect_to_periph(
-		data->hal.dev, dma_channel->channel_id,
-		dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0 ? ESP_DMA_M2M_ON
-								    : ESP_DMA_M2M_OFF,
-		dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0 ? ESP_DMA_M2M_ON
-								    : dma_channel->periph_id);
+	if (dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0) {
+		gdma_ll_tx_connect_to_mem(data->hal.dev, dma_channel->channel_id,
+					  get_m2m_periph_id());
+	} else {
+		gdma_ll_tx_connect_to_periph(data->hal.dev, dma_channel->channel_id,
+					     dma_channel->periph_id);
+	}
 
 	/*
 	 * TX channel can always enable burst mode, no matter data alignment
@@ -449,9 +468,9 @@ static int dma_esp32_get_status(const struct device *dev, uint32_t channel,
 	memset(status, 0, sizeof(struct dma_status));
 
 	if (dma_channel->dir == DMA_RX) {
-		status->busy = !gdma_ll_rx_is_fsm_idle(data->hal.dev, dma_channel->channel_id);
+		status->busy = !gdma_ll_rx_is_desc_fsm_idle(data->hal.dev, dma_channel->channel_id);
 		status->dir = PERIPHERAL_TO_MEMORY;
-		desc = (dma_descriptor_t *)gdma_ll_rx_get_current_desc_addr(
+		desc = (dma_descriptor_t *)gdma_ll_rx_get_prefetched_desc_addr(
 			data->hal.dev, dma_channel->channel_id);
 		if (desc >= dma_channel->desc_list) {
 			status->read_position = desc - dma_channel->desc_list;
@@ -460,9 +479,9 @@ static int dma_esp32_get_status(const struct device *dev, uint32_t channel,
 						* status->read_position;
 		}
 	} else if (dma_channel->dir == DMA_TX) {
-		status->busy = !gdma_ll_tx_is_fsm_idle(data->hal.dev, dma_channel->channel_id);
+		status->busy = !gdma_ll_tx_is_desc_fsm_idle(data->hal.dev, dma_channel->channel_id);
 		status->dir = MEMORY_TO_PERIPHERAL;
-		desc = (dma_descriptor_t *)gdma_ll_tx_get_current_desc_addr(
+		desc = (dma_descriptor_t *)gdma_ll_tx_get_prefetched_desc_addr(
 			data->hal.dev, dma_channel->channel_id);
 		if (desc >= dma_channel->desc_list) {
 			status->write_position = desc - dma_channel->desc_list;
@@ -536,7 +555,7 @@ static int dma_esp32_configure_irq(const struct device *dev)
 	uint32_t status_mask;
 
 	for (uint8_t i = 0; i < config->irq_size; i++) {
-#if defined(SOC_GDMA_TX_RX_SHARE_INTERRUPT)
+#if defined(GDMA_LL_AHB_TX_RX_SHARE_INTERRUPT)
 		status_reg = gdma_ll_rx_get_interrupt_status_reg(data->hal.dev, i);
 		status_mask = (GDMA_LL_RX_EVENT_MASK | GDMA_LL_TX_EVENT_MASK);
 #else
@@ -581,7 +600,7 @@ static int dma_esp32_init(const struct device *dev)
 	}
 
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
-	if (ret < 0) {
+	if (ret < 0 && ret != -EALREADY) {
 		LOG_ERR("Could not initialize clock (%d)", ret);
 		return ret;
 	}
@@ -600,8 +619,11 @@ static int dma_esp32_init(const struct device *dev)
 		memset(dma_channel->desc_list, 0, sizeof(dma_channel->desc_list));
 	}
 
-	gdma_hal_init(&data->hal, 0);
-	gdma_ll_enable_clock(data->hal.dev, true);
+	gdma_hal_config_t hal_config = {
+		.group_id = 0,
+	};
+	gdma_ahb_hal_init(&data->hal, &hal_config);
+	gdma_ll_force_enable_reg_clock(data->hal.dev, true);
 
 	return 0;
 }
@@ -614,7 +636,7 @@ static DEVICE_API(dma, dma_esp32_api) = {
 	.reload = dma_esp32_reload,
 };
 
-#if defined(SOC_GDMA_TX_RX_SHARE_INTERRUPT)
+#if defined(GDMA_LL_AHB_TX_RX_SHARE_INTERRUPT)
 
 #define DMA_ESP32_DEFINE_IRQ_HANDLER(channel)                                                      \
 	__attribute__((unused)) static void IRAM_ATTR dma_esp32_isr_##channel(                     \
@@ -631,7 +653,8 @@ static DEVICE_API(dma, dma_esp32_api) = {
 	{                                                                                          \
 		struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;          \
 		struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;           \
-		uint32_t intr_status = gdma_ll_rx_get_interrupt_status(data->hal.dev, channel);    \
+		uint32_t intr_status =                                                             \
+			gdma_ll_rx_get_interrupt_status(data->hal.dev, channel, false);            \
 		if (intr_status) {                                                                 \
 			dma_esp32_isr_handle_rx(dev, &config->dma_channel[channel * 2],            \
 						intr_status);                                      \
@@ -643,7 +666,8 @@ static DEVICE_API(dma, dma_esp32_api) = {
 	{                                                                                          \
 		struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;          \
 		struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;           \
-		uint32_t intr_status = gdma_ll_tx_get_interrupt_status(data->hal.dev, channel);    \
+		uint32_t intr_status =                                                             \
+			gdma_ll_tx_get_interrupt_status(data->hal.dev, channel, false);            \
 		if (intr_status) {                                                                 \
 			dma_esp32_isr_handle_tx(dev, &config->dma_channel[channel * 2 + 1],        \
 						intr_status);                                      \
@@ -652,29 +676,41 @@ static DEVICE_API(dma, dma_esp32_api) = {
 
 #endif
 
-#if defined(SOC_GDMA_TX_RX_SHARE_INTERRUPT)
+#if defined(GDMA_LL_AHB_TX_RX_SHARE_INTERRUPT)
 #define ESP32_DMA_HANDLER(channel) dma_esp32_isr_##channel
 #else
 #define ESP32_DMA_HANDLER(channel) dma_esp32_isr_##channel##_rx, dma_esp32_isr_##channel##_tx
 #endif
 
 DMA_ESP32_DEFINE_IRQ_HANDLER(0)
+#if DMA_MAX_CHANNEL >= 2
 DMA_ESP32_DEFINE_IRQ_HANDLER(1)
+#endif
+#if DMA_MAX_CHANNEL >= 3
 DMA_ESP32_DEFINE_IRQ_HANDLER(2)
-#if DMA_MAX_CHANNEL >= 5
+#endif
+#if DMA_MAX_CHANNEL >= 4
 DMA_ESP32_DEFINE_IRQ_HANDLER(3)
+#endif
+#if DMA_MAX_CHANNEL >= 5
 DMA_ESP32_DEFINE_IRQ_HANDLER(4)
 #endif
 
 static void *irq_handlers[] = {
 	ESP32_DMA_HANDLER(0),
+#if DMA_MAX_CHANNEL >= 2
 	ESP32_DMA_HANDLER(1),
+#endif
+#if DMA_MAX_CHANNEL >= 3
 	ESP32_DMA_HANDLER(2),
-#if DMA_MAX_CHANNEL >= 5
+#endif
+#if DMA_MAX_CHANNEL >= 4
 	ESP32_DMA_HANDLER(3),
+#endif
+#if DMA_MAX_CHANNEL >= 5
 	ESP32_DMA_HANDLER(4),
 #endif
-	};
+};
 
 #define IRQ_NUM(idx)	DT_NUM_IRQS(DT_DRV_INST(idx))
 #define IRQ_ENTRY(n, idx) {	\

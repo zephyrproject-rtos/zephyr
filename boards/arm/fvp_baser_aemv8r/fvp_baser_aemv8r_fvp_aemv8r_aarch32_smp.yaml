@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
+# Copyright 2023, 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: fvp_baser_aemv8r/fvp_aemv8r_aarch32/smp
@@ -15,3 +15,9 @@ ram: 2048
 flash: 64
 testing:
   timeout_multiplier: 25
+  ignore_tags:
+    - multi_heap
+    - cmsis_rtos
+    - kernel
+    - benchmark
+    - ring_buffer

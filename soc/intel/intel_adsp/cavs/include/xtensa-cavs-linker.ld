@@ -37,8 +37,8 @@ ENTRY(rom_entry);
  */
 #ifdef CONFIG_KERNEL_COHERENCE
 #define RPO_SET(addr, reg) ((addr & 0x1fffffff) | (reg << 29))
-#define SEGSTART_CACHED   RPO_SET(ALIGN(64), CONFIG_XTENSA_CACHED_REGION)
-#define SEGSTART_UNCACHED RPO_SET(ALIGN(64), CONFIG_XTENSA_UNCACHED_REGION)
+#define SEGSTART_CACHED   RPO_SET(ALIGN(64), CONFIG_INTEL_ADSP_CACHED_REGION)
+#define SEGSTART_UNCACHED RPO_SET(ALIGN(64), CONFIG_INTEL_ADSP_UNCACHED_REGION)
 #else
 #define SEGSTART_CACHED   .
 #define SEGSTART_UNCACHED .
@@ -122,7 +122,7 @@ MEMORY {
 	len = RAM_SIZE
 #ifdef CONFIG_KERNEL_COHERENCE
   ucram :
-	org = RPO_SET(RAM_BASE, CONFIG_XTENSA_UNCACHED_REGION),
+	org = RPO_SET(RAM_BASE, CONFIG_INTEL_ADSP_UNCACHED_REGION),
 	len = RAM_SIZE
 #endif
 #ifdef CONFIG_GEN_ISR_TABLES
@@ -307,10 +307,6 @@ SECTIONS {
     *(.dynamic)
     *(.gnu.version_d)
     _image_ram_start = .;
-    _bss_table_start = .;
-    LONG(_bss_start)
-    LONG(_bss_end)
-    _bss_table_end = .;
     __rodata_region_end = .;
   } >RAM
 
@@ -405,7 +401,7 @@ SECTIONS {
 
   .bss SEGSTART_UNCACHED (NOLOAD) :
   {
-    _bss_start = .;
+    __bss_start = .;
     *(.dynsbss)
     *(.sbss)
     *(.sbss.*)
@@ -423,7 +419,7 @@ SECTIONS {
 #include <linker_sram_bss_relocate.ld>
 #endif
     . = ALIGN(8);
-    _bss_end = .;
+    __bss_end = .;
   } >ucram
 
   /* Heap start and end markers.  Mostly unused, though newlib likes them */
@@ -507,8 +503,5 @@ SECTIONS {
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <zephyr/linker/intlist.ld>
 #endif
-
-#ifdef CONFIG_LLEXT
 #include <zephyr/linker/llext-sections.ld>
-#endif
 }

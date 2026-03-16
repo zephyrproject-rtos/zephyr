@@ -8,12 +8,7 @@ description: |
   lv_indev_data_t to the underlying pointer lv_indev_t managed by LVGL.
 
   Needs to be associated to a specific device to listen for events
-  from that device. Example configuration:
-
-  pointer {
-          compatible = "zephyr,lvgl-pointer-input";
-          input = <&input_sdl_touch>;
-  };
+  from that device.
 
 compatible: "zephyr,lvgl-pointer-input"
 
@@ -34,3 +29,10 @@ properties:
     type: boolean
     description: |
       Invert y axes to align input with the display.
+
+examples:
+  - |
+    pointer {
+            compatible = "zephyr,lvgl-pointer-input";
+            input = <&input_sdl_touch>;
+    };

@@ -40,7 +40,7 @@ Hardware
 The STM32F746G Discovery kit provides the following hardware components:
 
 - STM32F746NGH6 in BGA216 package
-- ARM |reg| 32-bit Cortex |reg| -M7 CPU with FPU
+- ARM® 32-bit Cortex®-M7 CPU with FPU
 - 216 MHz max CPU frequency
 - VDD from 1.8 V to 3.6 V
 - 2 MB Flash
@@ -48,7 +48,7 @@ The STM32F746G Discovery kit provides the following hardware components:
 - GPIO with external interrupt capability
 - LCD parallel interface, 8080/6800 modes
 - LCD TFT controller supporting up to XGA resolution
-- MIPI |reg|  DSI host controller supporting up to 720p 30Hz resolution
+- MIPI®  DSI host controller supporting up to 720p 30Hz resolution
 - 3x12-bit ADC with 24 channels
 - 2x12-bit D/A converters
 - RTC

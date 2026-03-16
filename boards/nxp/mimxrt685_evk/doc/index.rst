@@ -305,17 +305,19 @@ earlier packages and ``xt-lang`` newer ones) and the
 To build a project:
 
 - Set up toolchain environment
-   - No special configuration needed for the GCC variant in the Zephyr SDK.
-   - For the proprietary Xtensa toolchain, set ``XTENSA_CORE``,
-     ``XTENSA_TOOLCHAIN_PATH`` and ``TOOLCHAIN_VER`` according to your
-     installed version. ``ZEPHYR_TOOLCHAIN_VARIANT`` should be either ``xcc``
-     or ``xt-clang``.
+
+  - No special configuration needed for the GCC variant in the Zephyr SDK.
+  - For the proprietary Xtensa toolchain, set ``XTENSA_CORE``,
+    ``XTENSA_TOOLCHAIN_PATH`` and ``TOOLCHAIN_VER`` according to your
+    installed version. ``ZEPHYR_TOOLCHAIN_VARIANT`` should be either ``xcc``
+    or ``xt-clang``.
+
 - Build the project with:
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: mimxrt685_evk/mimxrt685s/hifi4
-   :goals: build
+  .. zephyr-app-commands::
+     :zephyr-app: samples/hello_world
+     :board: mimxrt685_evk/mimxrt685s/hifi4
+     :goals: build
 
 Debugging can be directly carried out using the J-Link GDB server with
 ``xt-gdb`` (Xtensa proprietary) or ``gdb`` (Zephyr SDK) connected. It's
@@ -330,8 +332,7 @@ and clocks are set up upon it initialising. This is sufficient for
 attaching a debugger to the core. For the use in an AMP system, this driver
 handles code loading and run control.
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT685-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt600-evaluation-kit:MIMXRT685-EVK

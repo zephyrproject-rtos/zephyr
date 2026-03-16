@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(i2c_shell, CONFIG_LOG_DEFAULT_LEVEL);
 #define ARGV_REG	3
 
 /* Maximum bytes we can write or read at once */
-#define MAX_I2C_BYTES	16
+#define MAX_I2C_BYTES	CONFIG_I2C_SHELL_BUFFER_SIZE
 
 static int get_bytes_count_for_hex(char *arg)
 {
@@ -320,8 +320,7 @@ static int cmd_i2c_speed(const struct shell *sh, size_t argc, char **argv)
 }
 
 /* i2c target register <device> */
-static int cmd_i2c_target_register(const struct shell *sh,
-				   size_t argc, char **argv)
+__maybe_unused static int cmd_i2c_target_register(const struct shell *sh, size_t argc, char **argv)
 {
 	char *s_dev_name = argv[ARGV_DEV];
 	const struct device *dev;
@@ -335,8 +334,7 @@ static int cmd_i2c_target_register(const struct shell *sh,
 
 	ret = i2c_target_driver_register(dev);
 	if (ret < 0) {
-		shell_error(sh, "I2C: Failed to register %s with err=%d",
-			    s_dev_name, ret);
+		shell_error(sh, "I2C: Failed to register %s with err=%d", s_dev_name, ret);
 		return ret;
 	}
 
@@ -346,8 +344,8 @@ static int cmd_i2c_target_register(const struct shell *sh,
 }
 
 /* i2c target unregister <device> */
-static int cmd_i2c_target_unregister(const struct shell *sh,
-				     size_t argc, char **argv)
+__maybe_unused static int cmd_i2c_target_unregister(const struct shell *sh, size_t argc,
+						    char **argv)
 {
 	char *s_dev_name = argv[ARGV_DEV];
 	const struct device *dev;
@@ -361,8 +359,7 @@ static int cmd_i2c_target_unregister(const struct shell *sh,
 
 	ret = i2c_target_driver_unregister(dev);
 	if (ret < 0) {
-		shell_error(sh, "I2C: Failed to unregister %s with err=%d",
-			    s_dev_name, ret);
+		shell_error(sh, "I2C: Failed to unregister %s with err=%d", s_dev_name, ret);
 		return ret;
 	}
 
@@ -392,56 +389,60 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
+#ifdef CONFIG_I2C_TARGET
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_i2c_target,
 	SHELL_CMD_ARG(register, &dsub_device_name,
-		      "Register an i2c-target on its respective bus.\n"
-		      "Usage: target register <device>",
+		      SHELL_HELP("Register an i2c-target on its respective bus",
+				 "<device>"),
 		      cmd_i2c_target_register, 2, 0),
 	SHELL_CMD_ARG(unregister, &dsub_device_name,
-		      "Unegister an i2c-target from its respective bus.\n"
-		      "Usage: target unregister <device>",
+		      SHELL_HELP("Unregister an i2c-target from its respective bus",
+				 "<device>"),
 		      cmd_i2c_target_unregister, 2, 0),
 	SHELL_SUBCMD_SET_END     /* Array terminated. */
 );
+#endif /* CONFIG_I2C_TARGET */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
 	SHELL_CMD_ARG(scan, &dsub_device_name,
-		      "Scan I2C devices\n"
-		      "Usage: scan <device>",
+		      SHELL_HELP("Scan I2C devices",
+				 "<device>"),
 		      cmd_i2c_scan, 2, 0),
 	SHELL_CMD_ARG(recover, &dsub_device_name,
-		      "Recover I2C bus\n"
-		      "Usage: recover <device>",
+		      SHELL_HELP("Recover I2C bus",
+				 "<device>"),
 		      cmd_i2c_recover, 2, 0),
 	SHELL_CMD_ARG(read, &dsub_device_name,
-		      "Read bytes from an I2C device\n"
-		      "Usage: read <device> <addr> <reg> [<bytes>]",
+		      SHELL_HELP("Read bytes from an I2C device",
+				 "<device> <addr> <reg> [<bytes>]"),
 		      cmd_i2c_read, 4, 1),
 	SHELL_CMD_ARG(read_byte, &dsub_device_name,
-		      "Read a byte from an I2C device\n"
-		      "Usage: read_byte <device> <addr> <reg>",
+		      SHELL_HELP("Read a byte from an I2C device",
+				 "<device> <addr> <reg>"),
 		      cmd_i2c_read_byte, 4, 0),
 	SHELL_CMD_ARG(direct_read, &dsub_device_name,
-		      "Read byte stream directly from an I2C device without "
-		      "writing a register address first\n"
-		      "Usage: direct_read <device> <addr> [<bytes>]",
+		      SHELL_HELP("Read byte stream directly from an I2C device "
+				 "without writing a register address first",
+				 "<device> <addr> [<bytes>]"),
 		      cmd_i2c_direct_read, 3, 1),
 	SHELL_CMD_ARG(write, &dsub_device_name,
-		      "Write bytes to an I2C device\n"
-		      "Usage: write <device> <addr> <reg> [<byte1>, ...]",
+		      SHELL_HELP("Write bytes to an I2C device",
+				 "<device> <addr> <reg> [<byte1>, ...]"),
 		      cmd_i2c_write, 4, MAX_I2C_BYTES),
 	SHELL_CMD_ARG(write_byte, &dsub_device_name,
-		      "Write a byte to an I2C device\n"
-		      "Usage: write_byte <device> <addr> <reg> <value>",
+		      SHELL_HELP("Write a byte to an I2C device",
+				 "<device> <addr> <reg> <value>"),
 		      cmd_i2c_write_byte, 5, 0),
 	SHELL_CMD_ARG(speed, &dsub_device_name,
-		      "Configure I2C bus speed\n"
-		      "Usage: speed <device> <speed>",
+		      SHELL_HELP("Configure I2C bus speed",
+				 "<device> <speed>"),
 		      cmd_i2c_speed, 3, 0),
+#ifdef CONFIG_I2C_TARGET
 	SHELL_CMD_ARG(target, &sub_i2c_target,
-		      "Subcommands operating on i2c targets.",
+		      SHELL_HELP("Subcommands operating on i2c targets", NULL),
 		      NULL, 3, 0),
+#endif /* CONFIG_I2C_TARGET */
 	SHELL_SUBCMD_SET_END     /* Array terminated. */
 );
 

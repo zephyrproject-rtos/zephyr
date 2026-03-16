@@ -12,7 +12,7 @@ Hardware
 - VideoCore VII GPU, supporting OpenGL ES 3.1, Vulkan 1.2
 - Dual 4Kp60 HDMI® display output with HDR support
 - 4Kp60 HEVC decoder
-- LPDDR4X-4267 SDRAM (4GB and 8GB SKUs available at launch)
+- LPDDR4X-4267 SDRAM (1GB, 2GB, 4GB, 8GB and 16GB SKUs available)
 - Dual-band 802.11ac Wi-Fi®
 - Bluetooth 5.0 / Bluetooth Low Energy (BLE)
 - microSD card slot, with support for high-speed SDR104 mode
@@ -46,7 +46,7 @@ In brief,
     2. Save three files below in the root directory.
         * config.txt
         * zephyr.bin
-        * `bcm2712-rpi-5.dtb`_
+        * `bcm2712-rpi-5-b.dtb`_
     3. Insert the Micro SD card and power on the Raspberry Pi 5.
 
 then, You will see the Raspberry Pi 5 running the :file:`zephyr.bin`.
@@ -57,7 +57,6 @@ config.txt
 .. code-block:: text
 
    kernel=zephyr.bin
-   arm_64bit=1
 
 
 zephyr.bin
@@ -98,7 +97,6 @@ config.txt
 .. code-block:: text
 
    kernel=zephyr.bin
-   arm_64bit=1
    enable_uart=1
    uart_2ndstage=1
 
@@ -135,8 +133,29 @@ When you power on the Raspberry Pi 5, you will see the following output in the s
 .. _Raspberry Pi hardware:
    https://www.raspberrypi.com/documentation/computers/raspberry-pi.html
 
-.. _bcm2712-rpi-5.dtb:
+.. _bcm2712-rpi-5-b.dtb:
    https://github.com/raspberrypi/firmware/raw/master/boot/bcm2712-rpi-5-b.dtb
 
 .. _Raspberry Pi Debug Probe:
    https://www.raspberrypi.com/products/debug-probe/
+
+XEN Dom0
+========
+
+The Raspberry Pi 5 platform can be used to run as Xen Zephyr Dom0. For such
+purposes the ``xen_dom0`` snippet can be used.
+
+Run below command as an example of RPI 5 Zephyr build as Dom0:
+
+.. code-block:: bash
+
+   west build -b rpi_5 -p always -S xen_dom0 samples/hello_world
+
+It is expected to be used with special application performing Xen Domain-0/Dom0 functions.
+
+.. note::
+
+   The "hypervisor@x" and "memory@x" DT nodes need to be specified in
+   DT application overlay with values provided on the Xen boot, because
+   normaly Xen will update DT for the target Kernel, but this is not possible
+   in case of Zephyr. More details described in :ref:`xen_dom0`.

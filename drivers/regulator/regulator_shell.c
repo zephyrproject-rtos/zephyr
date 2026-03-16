@@ -164,7 +164,7 @@ static int cmd_vlist(const struct shell *sh, size_t argc, char **argv)
 	volt_cnt = regulator_count_voltages(dev);
 
 	for (unsigned int i = 0U; i < volt_cnt; i++) {
-		int32_t volt_uv;
+		int32_t volt_uv = 0;
 
 		(void)regulator_list_voltage(dev, i, &volt_uv);
 
@@ -245,7 +245,7 @@ static int cmd_clist(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	unsigned int current_cnt;
-	int32_t last_current_ua;
+	int32_t last_current_ua = 0;
 
 	ARG_UNUSED(argc);
 
@@ -258,7 +258,7 @@ static int cmd_clist(const struct shell *sh, size_t argc, char **argv)
 	current_cnt = regulator_count_current_limits(dev);
 
 	for (unsigned int i = 0U; i < current_cnt; i++) {
-		int32_t current_ua;
+		int32_t current_ua = 0;
 
 		(void)regulator_list_current_limit(dev, i, &current_ua);
 
@@ -527,7 +527,12 @@ static bool device_is_regulator(const struct device *dev)
 	return DEVICE_API_IS(regulator, dev);
 }
 
-static void device_name_get(size_t idx, struct shell_static_entry *entry)
+static bool device_is_regulator_parent(const struct device *dev)
+{
+	return DEVICE_API_IS(regulator_parent, dev);
+}
+
+static void device_name_get_regulator(size_t idx, struct shell_static_entry *entry)
 {
 	const struct device *dev = shell_device_filter(idx, device_is_regulator);
 
@@ -537,7 +542,18 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->subcmd = NULL;
 }
 
-SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
+static void device_name_get_regulator_parent(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev = shell_device_filter(idx, device_is_regulator_parent);
+
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get_regulator);
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name_parent, device_name_get_regulator_parent);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_regulator_cmds,
@@ -572,19 +588,19 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_modeset, 3, 0),
 	SHELL_CMD_ARG(modeget, &dsub_device_name,
 		      SHELL_HELP("Get the mode of the regulator", "<device>"), cmd_modeget, 2, 0),
-	SHELL_CMD_ARG(adset, NULL,
+	SHELL_CMD_ARG(adset, &dsub_device_name,
 		      SHELL_HELP("Set active discharge status", "<device> <enable|disable>"),
 		      cmd_adset, 3, 0),
-	SHELL_CMD_ARG(adget, NULL, SHELL_HELP("Get active discharge status", "<device>"), cmd_adget,
-		      2, 0),
+	SHELL_CMD_ARG(adget, &dsub_device_name,
+		      SHELL_HELP("Get active discharge status", "<device>"), cmd_adget, 2, 0),
 	SHELL_CMD_ARG(errors, &dsub_device_name, SHELL_HELP("Get active errors", "<device>"),
 		      cmd_errors, 2, 0),
-	SHELL_CMD_ARG(dvsset, &dsub_device_name,
+	SHELL_CMD_ARG(dvsset, &dsub_device_name_parent,
 		      SHELL_HELP("Set dynamic voltage scaling state",
 				 "<device> <state identifier>"),
 		      cmd_dvsset, 3, 0),
-	SHELL_CMD_ARG(shipmode, &dsub_device_name, SHELL_HELP("Enable ship mode", "<device>"),
-		      cmd_shipmode, 2, 0),
+	SHELL_CMD_ARG(shipmode, &dsub_device_name_parent,
+		      SHELL_HELP("Enable ship mode", "<device>"), cmd_shipmode, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(regulator, &sub_regulator_cmds, "Regulator playground",

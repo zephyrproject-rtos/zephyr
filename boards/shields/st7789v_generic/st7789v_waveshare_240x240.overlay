@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
 	chosen {
@@ -15,8 +16,8 @@
 	mipi_dbi_st7789v_waveshare_240x240 {
 		compatible = "zephyr,mipi-dbi-spi";
 		spi-dev = <&arduino_spi>;
-		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_HIGH>;	/* D9 */
-		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
+		dc-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D8 GPIO_ACTIVE_LOW>;
 		write-only;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -40,10 +41,10 @@
 			porch-param = [0c 0c 00 33 33];
 			cmd2en-param = [5a 69 02 01];
 			pwctrl1-param = [a4 a1];
-			pvgam-param = [D0 04 0D 11 13 2B 3F 54 4C 18 0D 0B 1F 23];
-			nvgam-param = [D0 04 0C 11 13 2C 3F 44 51 2F 1F 1F 20 23];
-			ram-param = [00 F0];
-			rgb-param = [CD 08 14];
+			pvgam-param = [d0 04 0d 11 13 2b 3f 54 4c 18 0d 0b 1f 23];
+			nvgam-param = [d0 04 0c 11 13 2c 3f 44 51 2f 1f 1f 20 23];
+			ram-param = [00 f0];
+			rgb-param = [cd 08 14];
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 		};
 	};
@@ -51,5 +52,5 @@
 
 &arduino_spi {
 	status = "okay";
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
 };

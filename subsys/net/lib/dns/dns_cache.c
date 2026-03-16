@@ -75,6 +75,10 @@ int dns_cache_add(struct dns_cache *cache, char const *query, struct dns_addrinf
 
 int dns_cache_remove(struct dns_cache *cache, char const *query)
 {
+	if (cache == NULL || query == NULL) {
+		return -EINVAL;
+	}
+
 	NET_DBG("Remove all entries with query \"%s\"", query);
 	if (strlen(query) >= CONFIG_DNS_RESOLVER_MAX_QUERY_LEN) {
 		NET_WARN("Query string to big to be processed %u >= "
@@ -102,16 +106,16 @@ int dns_cache_find(struct dns_cache const *cache, const char *query, enum dns_qu
 		   struct dns_addrinfo *addrinfo, size_t addrinfo_array_len)
 {
 	size_t found = 0;
-	sa_family_t family;
+	net_sa_family_t family;
 
 	NET_DBG("Find \"%s\"", query);
 	if (cache == NULL || query == NULL || addrinfo == NULL || addrinfo_array_len <= 0) {
 		return -EINVAL;
 	}
 	if (type == DNS_QUERY_TYPE_A) {
-		family = AF_INET;
+		family = NET_AF_INET;
 	} else if (type == DNS_QUERY_TYPE_AAAA) {
-		family = AF_INET6;
+		family = NET_AF_INET6;
 	} else {
 		return -EINVAL;
 	}

@@ -6,17 +6,6 @@ description: |
     When setting the odr, lpf, avg properties in a .dts or .dtsi file
     you may include ilps22qs.h and use the macros defined there.
 
-    Example:
-    #include <zephyr/dt-bindings/sensor/ilps22qs.h>
-
-    ilps22qs@5d {
-      ...
-
-      odr = <LPS2xDF_DT_ODR_10HZ>;
-      lpf = <LPS2xDF_DT_LP_FILTER_ODR_4>;
-      avg = <LPS2xDF_DT_AVG_128_SAMPLES>;
-    };
-
 include: sensor-device.yaml
 
 properties:
@@ -81,3 +70,15 @@ properties:
         - 0 # ILPS22QS_DT_FS_MODE_1_1260
         - 1 # ILPS22QS_DT_FS_MODE_2_4060
     enum: [0, 1]
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/ilps22qs.h>
+
+    ilps22qs@5d {
+      /* ... */
+
+      odr = <LPS2xDF_DT_ODR_10HZ>;
+      lpf = <LPS2xDF_DT_LP_FILTER_ODR_4>;
+      avg = <LPS2xDF_DT_AVG_128_SAMPLES>;
+    };

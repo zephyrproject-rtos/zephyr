@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Piotr Mienkowski
  * Copyright (c) 2017 Justin Watson
+ * Copyright (c) 2026 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -127,7 +128,7 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40018000 0x12B>;
+			reg = <0x40018000 0x12b>;
 			interrupts = <19 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 19>;
 			status = "disabled";
@@ -138,7 +139,7 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x4001c000 0x12B>;
+			reg = <0x4001c000 0x12b>;
 			interrupts = <20 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 20>;
 			status = "disabled";
@@ -205,11 +206,14 @@
 
 		usbhs: usbd@40038000 {
 			compatible = "atmel,sam-usbhs";
-			reg = <0x40038000 0x4000>;
+			reg = <0x40038000 0x4000>, <0xa0100000 0x50000>;
+			reg-names = "core", "fifo";
 			interrupts = <34 0>;
 			interrupt-names = "usbhs";
 			maximum-speed = "high-speed";
-			num-bidir-endpoints = <10>;
+			num-bidir-endpoints = <1>;
+			num-in-endpoints = <6>;
+			num-out-endpoints = <5>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 34>;
 			status = "disabled";
 		};
@@ -232,24 +236,26 @@
 			#io-channel-cells = <1>;
 		};
 
-		gmac: ethernet@40050000 {
-			compatible = "atmel,sam-gmac";
+		ethernet@40050000 {
+			compatible = "microchip,sam-ethernet-controller";
 			reg = <0x40050000 0x4000>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 39>;
-			interrupts = <39 0>, <66 0>, <67 0>;
-			interrupt-names = "gmac", "q1", "q2";
-			num-queues = <3>;
-			local-mac-address = [00 00 00 00 00 00];
-			status = "disabled";
-		};
 
-		mdio: mdio@40050000 {
-			compatible = "atmel,sam-mdio";
-			reg = <0x40050000 0x4000>;
-			clocks = <&pmc PMC_TYPE_PERIPHERAL 39>;
-			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <0>;
+			gmac: ethernet {
+				compatible = "atmel,sam-gmac";
+				interrupts = <39 0>, <66 0>, <67 0>;
+				interrupt-names = "gmac", "q1", "q2";
+				num-queues = <3>;
+				local-mac-address = [00 00 00 00 00 00];
+				status = "disabled";
+			};
+
+			mdio: mdio {
+				compatible = "atmel,sam-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
 		};
 
 		tc3: tc@40054000 {
@@ -295,7 +301,7 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40060000 0x12B>;
+			reg = <0x40060000 0x12b>;
 			interrupts = <41 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 41>;
 			status = "disabled";
@@ -439,7 +445,7 @@
 			status = "okay";
 		};
 
-		wdt: watchog@400e1850 {
+		wdt: watchdog@400e1850 {
 			compatible = "atmel,sam-watchdog";
 			reg = <0x400e1850 0xc>;
 			interrupts = <4 0>;

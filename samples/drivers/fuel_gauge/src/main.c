@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2023 Alvaro Garcia Gomez <maxpowel@gmail.com>
  * Copyright (c) 2025 Philipp Steiner <philipp.steiner1987@gmail.com>
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,8 +21,6 @@ const char *fuel_gauge_prop_to_str(enum fuel_gauge_prop_type prop)
 	switch (prop) {
 	case FUEL_GAUGE_AVG_CURRENT:
 		return "FUEL_GAUGE_AVG_CURRENT";
-	case FUEL_GAUGE_BATTERY_CUTOFF:
-		return "FUEL_GAUGE_BATTERY_CUTOFF";
 	case FUEL_GAUGE_CURRENT:
 		return "FUEL_GAUGE_CURRENT";
 	case FUEL_GAUGE_CHARGE_CUTOFF:
@@ -116,12 +115,6 @@ int main(void)
 		LOG_INF("Test-Read generic fuel gauge properties to verify which are supported");
 		LOG_INF("Info: not all properties are supported by all fuel gauges!");
 
-		/*
-		 * FUEL_GAUGE_BATTERY_CUTOFF will not be tested because this is a special property
-		 * and is intended to be used to cutoff the battery from the system - useful for
-		 * storage/shipping of devices
-		 */
-
 		fuel_gauge_prop_t test_props[] = {
 			FUEL_GAUGE_AVG_CURRENT,
 			FUEL_GAUGE_CURRENT,
@@ -157,6 +150,7 @@ int main(void)
 			FUEL_GAUGE_CURRENT_DIRECTION,
 			FUEL_GAUGE_STATE_OF_CHARGE_ALARM,
 			FUEL_GAUGE_LOW_VOLTAGE_ALARM,
+			FUEL_GAUGE_STATE_OF_HEALTH,
 		};
 
 		union fuel_gauge_prop_val test_vals[ARRAY_SIZE(test_props)];
@@ -346,6 +340,11 @@ int main(void)
 					case FUEL_GAUGE_LOW_VOLTAGE_ALARM:
 						LOG_INF("  Low voltage alarm: %" PRIu32,
 							test_vals[i].low_voltage_alarm);
+
+					case FUEL_GAUGE_STATE_OF_HEALTH:
+						LOG_INF(" State of Health (SOH): %" PRIu32,
+							test_vals[i].state_of_health);
+
 						break;
 					}
 				}

@@ -15,38 +15,43 @@
 
 #define TX_ENCRYPT_DELAY_SYM 200
 
-#define DEFAULT_CHANNEL                  (11)
-#define DEFAULT_CCA_MODE                 (gPhyCCAMode1_c)
-#define IEEE802154_ACK_REQUEST           (1 << 5)
-#define IEEE802154_MIN_LENGTH            (5)
-#define IEEE802154_FRM_CTL_LO_OFFSET     (0)
-#define IEEE802154_DSN_OFFSET            (2)
-#define IEEE802154_FRM_TYPE_MASK         (0x7)
-#define IEEE802154_FRM_TYPE_ACK          (0x2)
-#define IEEE802154_SYMBOL_TIME_US        (16)
-#define IEEE802154_TURNAROUND_LEN_SYM    (12)
-#define IEEE802154_CCA_LEN_SYM           (8)
-#define IEEE802154_PHY_SHR_LEN_SYM       (10)
-#define IEEE802154_IMM_ACK_WAIT_SYM      (54)
-#define IEEE802154_ENH_ACK_WAIT_SYM      (90)
+#define DEFAULT_CHANNEL               (11)
+#define DEFAULT_CCA_MODE              (gPhyCCAMode1_c)
+#define IEEE802154_ACK_REQUEST        (1 << 5)
+#define IEEE802154_MIN_LENGTH         (5)
+#define IEEE802154_FRM_CTL_LO_OFFSET  (0)
+#define IEEE802154_DSN_OFFSET         (2)
+#define IEEE802154_FRM_TYPE_MASK      (0x7)
+#define IEEE802154_FRM_TYPE_ACK       (0x2)
+#define IEEE802154_SYMBOL_TIME_US     (16)
+#define IEEE802154_TURNAROUND_LEN_SYM (12)
+#define IEEE802154_CCA_LEN_SYM        (8)
+#define IEEE802154_PHY_SHR_LEN_SYM    (10)
+#define IEEE802154_IMM_ACK_WAIT_SYM   (54)
+#define IEEE802154_ENH_ACK_WAIT_SYM   (90)
 
-#define NMAX_RXRING_BUFFERS              (8)
-#define RX_ON_IDLE_START                 (1)
-#define RX_ON_IDLE_STOP                  (0)
+#define NMAX_RXRING_BUFFERS (8)
+#define RX_ON_IDLE_START    (1)
+#define RX_ON_IDLE_STOP     (0)
 
-#define PHY_TMR_MAX_VALUE                (0x00FFFFFF)
+#define PHY_TMR_MAX_VALUE (0x00FFFFFF)
 
 /* The Uncertainty of the scheduling CSL of transmission by the parent, in ±10 us units. */
 #define CSL_UNCERT 32
 
-#define RADIO_SYMBOLS_PER_OCTET			(2)
+/* Duration in microseconds of the IEEE 802.15.4 Synchronization Header
+ * (preamble + SFD) transmitted before the MAC payload.
+ */
+ #define IEEE802154_SHR_DURATION_US 160
+
+#define RADIO_SYMBOLS_PER_OCTET (2)
 
 typedef enum mcxw_radio_state {
 	RADIO_STATE_DISABLED = 0,
-	RADIO_STATE_SLEEP    = 1,
-	RADIO_STATE_RECEIVE  = 2,
+	RADIO_STATE_SLEEP = 1,
+	RADIO_STATE_RECEIVE = 2,
 	RADIO_STATE_TRANSMIT = 3,
-	RADIO_STATE_INVALID  = 255,
+	RADIO_STATE_INVALID = 255,
 } mcxw_radio_state;
 
 typedef struct mcxw_rx_frame {
@@ -54,18 +59,22 @@ typedef struct mcxw_rx_frame {
 	uint8_t length;
 	int8_t rssi;
 	uint8_t lqi;
-	uint32_t timestamp;
+	uint64_t timestamp;
 	bool ack_fpb;
-	bool ack_seb;
 	uint64_t time;
 	void *phy_buffer;
 	uint8_t channel;
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+	uint32_t ack_fc;   /* ACK frame counter */
+	uint8_t ack_keyid; /* ACK key ID */
+	bool ack_seb;      /* Security Enabled Bit in ACK */
+#endif
 } mcxw_rx_frame;
 
 typedef struct mcxw_tx_frame {
 	uint8_t *psdu;
 	uint8_t length;
-	uint32_t tx_delay;
+	net_time_t tx_delay;
 	uint32_t tx_delay_base;
 	bool sec_processed;
 	bool hdr_updated;
@@ -117,9 +126,14 @@ struct mcxw_context {
 	/* CSL period */
 	uint32_t csl_period;
 	/* CSL sample time in microseconds */
-	uint32_t csl_sample_time;
+	net_time_t csl_sample_time;
 	/* PHY context */
 	uint8_t ot_phy_ctx;
+
+	/* Callback handler to notify of any important radio events.
+	 * Can be NULL if event notification is not needed.
+	 */
+	ieee802154_event_cb_t event_handler;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_MCXW_H_ */

@@ -9,17 +9,20 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_utf8.h>
 
 LOG_MODULE_REGISTER(bt_ccp_call_control_server, CONFIG_BT_CCP_CALL_CONTROL_SERVER_LOG_LEVEL);
 
 /* A service instance can either be a GTBS or a TBS instance */
 struct bt_ccp_call_control_server_bearer {
+	char provider_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 1];
+	char uci[BT_TBS_MAX_UCI_SIZE];
 	uint8_t tbs_index;
 	bool registered;
 };
@@ -45,7 +48,7 @@ int bt_ccp_call_control_server_register_bearer(const struct bt_tbs_register_para
 	struct bt_ccp_call_control_server_bearer *free_bearer;
 	int ret;
 
-	CHECKIF(bearer == NULL) {
+	if (bearer == NULL) {
 		LOG_DBG("bearer is NULL");
 
 		return -EINVAL;
@@ -70,6 +73,9 @@ int bt_ccp_call_control_server_register_bearer(const struct bt_tbs_register_para
 
 	free_bearer->registered = true;
 	free_bearer->tbs_index = (uint8_t)ret;
+	(void)utf8_lcpy(free_bearer->provider_name, param->provider_name,
+			sizeof(free_bearer->provider_name));
+	(void)utf8_lcpy(free_bearer->uci, param->uci, sizeof(free_bearer->uci));
 	*bearer = free_bearer;
 
 	return 0;
@@ -79,7 +85,7 @@ int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_serv
 {
 	int err;
 
-	CHECKIF(bearer == NULL) {
+	if (bearer == NULL) {
 		LOG_DBG("bearer is NULL");
 
 		return -EINVAL;
@@ -102,6 +108,107 @@ int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_serv
 	}
 
 	bearer->registered = false;
+
+	return 0;
+}
+
+int bt_ccp_call_control_server_set_bearer_provider_name(
+	struct bt_ccp_call_control_server_bearer *bearer, const char *name)
+{
+	size_t len;
+
+	if (bearer == NULL) {
+		LOG_DBG("bearer is NULL");
+
+		return -EINVAL;
+	}
+
+	if (name == NULL) {
+		LOG_DBG("name is NULL");
+
+		return -EINVAL;
+	}
+
+	if (!bearer->registered) {
+		LOG_DBG("Bearer %p not registered", bearer);
+
+		return -EFAULT;
+	}
+
+	len = strlen(name);
+	if (len > CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH || len == 0) {
+		LOG_DBG("Invalid name length: %zu", len);
+
+		return -EINVAL;
+	}
+
+	if (strcmp(bearer->provider_name, name) == 0) {
+		return 0;
+	}
+
+	(void)utf8_lcpy(bearer->provider_name, name, sizeof(bearer->provider_name));
+
+	return bt_tbs_set_bearer_provider_name(bearer->tbs_index, name);
+}
+
+int bt_ccp_call_control_server_get_bearer_provider_name(
+	struct bt_ccp_call_control_server_bearer *bearer, char *name, size_t name_size)
+{
+	size_t provider_name_len;
+
+	if (bearer == NULL) {
+		LOG_DBG("bearer is NULL");
+
+		return -EINVAL;
+	}
+
+	if (name == NULL) {
+		LOG_DBG("name is NULL");
+
+		return -EINVAL;
+	}
+
+	if (!bearer->registered) {
+		LOG_DBG("Bearer %p not registered", bearer);
+
+		return -EFAULT;
+	}
+
+	provider_name_len = strlen(bearer->provider_name);
+	if (name_size <= provider_name_len) {
+		LOG_DBG("name buffer not large enough (is <= %zu)", provider_name_len);
+
+		return -ENOMEM;
+	}
+
+	(void)memcpy(name, bearer->provider_name, provider_name_len);
+	name[provider_name_len] = '\0';
+
+	return 0;
+}
+
+int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_bearer *bearer,
+					      const char **uci)
+{
+	if (bearer == NULL) {
+		LOG_DBG("bearer is NULL");
+
+		return -EINVAL;
+	}
+
+	if (uci == NULL) {
+		LOG_DBG("uci is NULL");
+
+		return -EINVAL;
+	}
+
+	if (!bearer->registered) {
+		LOG_DBG("Bearer %p not registered", bearer);
+
+		return -EFAULT;
+	}
+
+	*uci = bearer->uci;
 
 	return 0;
 }

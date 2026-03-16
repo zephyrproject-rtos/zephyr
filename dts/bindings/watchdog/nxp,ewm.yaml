@@ -14,10 +14,20 @@ properties:
   interrupts:
     required: true
 
+  clk-sel:
+    type: string
+    description: |
+      Watchdog clock select
+      (See the chip-specific information for clock sources used.)
+    enum:
+      - "lpo_clk[0]"
+      - "lpo_clk[1]"
+      - "lpo_clk[2]"
+      - "lpo_clk[3]"
+
   clk-divider:
     type: int
     description: Watchdog clock divider
-    required: true
 
   input-trigger-en:
     type: boolean

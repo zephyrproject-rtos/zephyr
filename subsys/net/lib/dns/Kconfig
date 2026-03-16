@@ -81,11 +81,21 @@ config DNS_RESOLVER_MAX_NAME_LEN
 	int "Max length of the resolved DNS name"
 	range 1 $(UINT8_MAX)
 	default 128 if DNS_SD
+	default 46 if NET_IPV6
 	default 20
 	help
 	  Max length of a buffer that is used to store information returned from
 	  DNS server. For example if we query a DNS-SD service, then this value should
 	  be long enough to store the returned string.
+
+config DNS_RESOLVER_MAX_TEXT_LEN
+	int "Max length of the resolved DNS text string in a record"
+	range 1 $(UINT8_MAX)
+	default 255 if DNS_SD
+	default 64
+	help
+	  Max length of a buffer that is used to store text record string
+	  returned from a DNS server.
 
 menuconfig DNS_SERVER_IP_ADDRESSES
 	bool "Set DNS server IP addresses"
@@ -185,6 +195,13 @@ config DNS_RESOLVER_CACHE_MAX_ENTRIES
 
 endif # DNS_RESOLVER_CACHE
 
+config DNS_RESOLVER_PACKET_FORWARDING
+	bool "Forwards received DNS packets to application"
+	depends on !DNS_RESOLVER_CACHE
+	help
+	  This allows forwarding of received packets from DNS servers
+	  to applications that register the forwarding callback.
+
 endif # DNS_RESOLVER
 
 config MDNS_RESPONDER
@@ -205,6 +222,12 @@ config MDNS_RESPONDER
 	  See RFC 6762 for more details about mDNS.
 
 if MDNS_RESPONDER
+
+config MDNS_RESOLVER_BUF_SIZE
+	int "Size of the net_buf pool buffers"
+	default 512
+	help
+	  For larger DNS SD TXT records and long service instance names, bigger buffers are necessary
 
 config MDNS_RESPONDER_TTL
 	int "Time-to-Live of returned DNS name"

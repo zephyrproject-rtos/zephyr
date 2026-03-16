@@ -31,6 +31,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button1: button_1 {
 			label = "User SW1";
 			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
@@ -43,7 +44,8 @@
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &trng0 {
@@ -54,6 +56,11 @@
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&i2s {
+	pinctrl-0 = <&i2s_default>;
 	pinctrl-names = "default";
 };
 
@@ -78,5 +85,9 @@
 };
 
 &ieee802154 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
 	status = "okay";
 };

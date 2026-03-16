@@ -8,6 +8,7 @@ menuconfig ETH_XMC4XXX
 	default y
 	depends on DT_HAS_INFINEON_XMC4XXX_ETHERNET_ENABLED
 	select PINCTRL
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	help
 	  Enable XMC4XXX Ethernet driver.
 

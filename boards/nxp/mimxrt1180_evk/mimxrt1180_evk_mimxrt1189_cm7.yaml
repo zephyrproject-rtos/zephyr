@@ -1,11 +1,11 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
 identifier: mimxrt1180_evk/mimxrt1189/cm7
-name: NXP MIMXRT1180-EVK CM7
+name: NXP MIMXRT1180-EVK (CM7)
 type: mcu
 arch: arm
 toolchain:
@@ -27,4 +27,7 @@ supported:
   - sdhc
   - spi
   - uart
+  - dac
+  - kpp
+  - i2s
 vendor: nxp

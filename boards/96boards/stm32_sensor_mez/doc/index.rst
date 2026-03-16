@@ -1,4 +1,4 @@
-.. _96b_stm32_sensor_mez:
+.. zephyr:board:: 96b_stm32_sensor_mez
 
 96Boards STM32 Sensor Mezzanine
 ###############################
@@ -24,7 +24,7 @@ Hardware
 96Boards STM32 Sensor Mezzanine provides the following hardware components:
 
 - STM32F446VE in LQFP100 package
-- ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU
+- ARM® 32-bit Cortex®-M4 CPU with FPU
 - 180 MHz max CPU frequency
 - 1.8V work voltage
 - 512 KB Flash
@@ -46,35 +46,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr 96b_stm32_sensor_mez board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | system clock                        |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| I2S       | on-chip    | i2s                                 |
-+-----------+------------+-------------------------------------+
-
-The default board configuration can be found in
-:zephyr_file:`boards/96boards/stm32_sensor_mez/96b_stm32_sensor_mez_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -110,16 +82,19 @@ exposed via on-board Micro USB connector. Default settings are 115200 8N1.
 The default USART mappings for the remaining ones are:
 
 - USART1: Connected to AP via UART0 on the 96Boards Low-Speed Header.
-        - TX: PA9
-        - RX: PA10
+
+  - TX: PA9
+  - RX: PA10
 
 - USART2: Connected to D0(RX) and D1(TX) on the Arduino Header.
-        - TX: PD5
-        - RX: PD6
+
+  - TX: PD5
+  - RX: PD6
 
 - USART3: Broken out to Grove connector J10.
-        - TX: PD8
-        - RX: PD9
+
+  - TX: PD8
+  - RX: PD9
 
 I2C
 ---

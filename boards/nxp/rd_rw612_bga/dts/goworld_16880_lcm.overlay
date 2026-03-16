@@ -5,13 +5,6 @@
 		zephyr,display = &st7796s_lcdic;
 		zephyr,touch = &ft7401;
 	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft7401>;
-		swap-xy;
-		invert-y;
-	};
 };
 
 &lcdic {
@@ -19,6 +12,7 @@
 	nxp,swap-bytes;
 	/* Raise the timer0 ratio to enable longer reset delay */
 	nxp,timer0-ratio = <15>;
+
 	/*
 	 * Settings to connect this display:
 	 * Populate the following resistors:
@@ -46,27 +40,28 @@
 		compatible = "sitronix,st7796s";
 		status = "okay";
 		reg = <0>;
-		mipi-max-frequency = <23000000>;
+		mipi-max-frequency = <DT_FREQ_M(23)>;
 		duplex = <SPI_HALF_DUPLEX>;
 		height = <320>;
 		width = <480>;
 		invert-mode = "1-dot";
 		frmctl1 = [80 10];
-		bpc = [1F 50 00 20];
-		dfc = [8A 07 3B];
+		bpc = [1f 50 00 20];
+		dfc = [8a 07 3b];
 		pwr1 = [80 64];
 		pwr2 = <0x13>;
-		pwr3 = <0xA7>;
+		pwr3 = <0xa7>;
 		vcmpctl = <0x09>;
-		doca = [40 8A 00 00 29 19 A5 38];
-		pgc = [F0 06 0B 07 06 05 2E 33 47 3A 17 16 2E 31];
-		ngc = [F0 09 0D 09 08 23 2E 33 46 38 13 13 2C 32];
+		doca = [40 8a 00 00 29 19 a5 38];
+		pgc = [f0 06 0b 07 06 05 2e 33 47 3a 17 16 2e 31];
+		ngc = [f0 09 0d 09 08 23 2e 33 46 38 13 13 2c 32];
 		madctl = <0x28>;
 	};
 };
 
 &flexcomm2 {
 	status = "okay";
+
 	ft7401: ft7401@38 {
 		/*
 		 * Settings to connect this touch controller:
@@ -90,5 +85,9 @@
 		reg = <0x38>;
 		reset-gpios = <&hsgpio0 15 GPIO_ACTIVE_LOW>;
 		int-gpios = <&hsgpio0 11 GPIO_ACTIVE_LOW>;
+		swapped-x-y;
+		inverted-y;
+		screen-width = <480>;
+		screen-height = <320>;
 	};
 };

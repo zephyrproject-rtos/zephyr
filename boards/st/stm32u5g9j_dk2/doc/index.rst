@@ -4,8 +4,8 @@ Overview
 ********
 
 The STM32U5G9J-DK2 Discovery kit is a complete demonstration and development
-platform for the STM32U5G9ZJT6Q microcontroller, featuring an Arm |reg| Cortex |reg|‑M33
-core with Arm |reg| TrustZone |reg|.
+platform for the STM32U5G9ZJT6Q microcontroller, featuring an Arm® Cortex®‑M33
+core with Arm® TrustZone®.
 
 Leveraging the innovative ultra-low power-oriented features, 3 Mbytes of
 embedded SRAM, 4 Mbytes of embedded flash memory, and rich graphics features,
@@ -17,7 +17,7 @@ chrom-ART Accelerator, and Chrom-GRC™ MMU.
 The STM32U5G9J-DK2 Discovery kit integrates a full range of hardware features
 that help the user evaluate all the peripherals, such as a 5" RGB 800x480 pixels
 TFT colored LCD module with a 24‑bit RGB interface and capacitive touch panel,
-USB Type-C |reg| HS, Octo‑SPI flash memory device, ARDUINO |reg|, and STLINK-V3EC
+USB Type-C® HS, Octo‑SPI flash memory device, ARDUINO®, and STLINK-V3EC
 (USART console).
 
 The STM32U5G9J-DK2 Discovery kit integrates an STLINK-V3EC embedded in-circuit

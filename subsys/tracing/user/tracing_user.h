@@ -49,7 +49,21 @@ void sys_trace_idle(void);
 void sys_trace_idle_exit(void);
 void sys_trace_sys_init_enter(const struct init_entry *entry, int level);
 void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int result);
+void sys_trace_timer_init(struct k_timer *timer);
+void sys_trace_timer_start(struct k_timer *timer, k_timeout_t duration, k_timeout_t period);
+void sys_trace_timer_stop(struct k_timer *timer);
+void sys_trace_timer_status_sync_enter(struct k_timer *timer);
+void sys_trace_timer_status_sync_blocking(struct k_timer *timer, k_timeout_t timeout);
+void sys_trace_timer_status_sync_exit(struct k_timer *timer, uint32_t result);
+void sys_trace_timer_expiry_enter(struct k_timer *timer);
+void sys_trace_timer_expiry_exit(struct k_timer *timer);
+void sys_trace_timer_stop_fn_expiry_enter(struct k_timer *timer);
+void sys_trace_timer_stop_fn_expiry_exit(struct k_timer *timer);
 
+struct rtio;
+struct rtio_sqe;
+struct rtio_cqe;
+struct rtio_iodev_sqe;
 struct gpio_callback;
 typedef uint8_t gpio_pin_t;
 typedef uint32_t gpio_flags_t;
@@ -97,6 +111,23 @@ void sys_trace_gpio_get_pending_int_exit_user(const struct device *dev, int ret)
 void sys_trace_gpio_fire_callbacks_enter_user(sys_slist_t *list, const struct device *port,
 					      gpio_pin_t pins);
 void sys_trace_gpio_fire_callback_user(const struct device *port, struct gpio_callback *callback);
+
+void sys_trace_rtio_submit_enter(const struct rtio *r, uint32_t wait_count);
+void sys_trace_rtio_submit_exit(const struct rtio *r);
+void sys_trace_rtio_sqe_acquire_enter(const struct rtio *r);
+void sys_trace_rtio_sqe_acquire_exit(const struct rtio *r, const struct rtio_sqe *sqe);
+void sys_trace_rtio_sqe_cancel(const struct rtio_sqe *sqe);
+void sys_trace_rtio_cqe_submit_enter(const struct rtio *r, int result, uint32_t flags);
+void sys_trace_rtio_cqe_submit_exit(const struct rtio *r);
+void sys_trace_rtio_cqe_acquire_enter(const struct rtio *r);
+void sys_trace_rtio_cqe_acquire_exit(const struct rtio *r, const struct rtio_cqe *cqe);
+void sys_trace_rtio_cqe_release(const struct rtio *r, const struct rtio_cqe *cqe);
+void sys_trace_rtio_cqe_consume_enter(const struct rtio *r);
+void sys_trace_rtio_cqe_consume_exit(const struct rtio *r, const struct rtio_cqe *cqe);
+void sys_trace_rtio_txn_next_enter(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe);
+void sys_trace_rtio_txn_next_exit(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe);
+void sys_trace_rtio_chain_next_enter(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe);
+void sys_trace_rtio_chain_next_exit(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe);
 
 #define sys_port_trace_k_thread_foreach_enter()
 #define sys_port_trace_k_thread_foreach_exit()
@@ -224,8 +255,8 @@ void sys_trace_gpio_fire_callback_user(const struct device *port, struct gpio_ca
 #define sys_port_trace_k_condvar_signal_exit(condvar, ret)
 #define sys_port_trace_k_condvar_broadcast_enter(condvar)
 #define sys_port_trace_k_condvar_broadcast_exit(condvar, ret)
-#define sys_port_trace_k_condvar_wait_enter(condvar)
-#define sys_port_trace_k_condvar_wait_exit(condvar, ret)
+#define sys_port_trace_k_condvar_wait_enter(condvar, timeout)
+#define sys_port_trace_k_condvar_wait_exit(condvar, timeout, ret)
 
 #define sys_port_trace_k_queue_init(queue)
 #define sys_port_trace_k_queue_cancel_wait(queue)
@@ -304,6 +335,9 @@ void sys_trace_gpio_fire_callback_user(const struct device *port, struct gpio_ca
 #define sys_port_trace_k_msgq_put_enter(msgq, timeout)
 #define sys_port_trace_k_msgq_put_blocking(msgq, timeout)
 #define sys_port_trace_k_msgq_put_exit(msgq, timeout, ret)
+#define sys_port_trace_k_msgq_put_front_enter(msgq, timeout)
+#define sys_port_trace_k_msgq_put_front_blocking(msgq, timeout)
+#define sys_port_trace_k_msgq_put_front_exit(msgq, timeout, ret)
 #define sys_port_trace_k_msgq_get_enter(msgq, timeout)
 #define sys_port_trace_k_msgq_get_blocking(msgq, timeout)
 #define sys_port_trace_k_msgq_get_exit(msgq, timeout, ret)
@@ -335,21 +369,6 @@ void sys_trace_gpio_fire_callback_user(const struct device *port, struct gpio_ca
 #define sys_port_trace_k_pipe_read_blocking(pipe, timeout)
 #define sys_port_trace_k_pipe_read_exit(pipe, ret)
 
-#define sys_port_trace_k_pipe_cleanup_enter(pipe)
-#define sys_port_trace_k_pipe_cleanup_exit(pipe, ret)
-#define sys_port_trace_k_pipe_alloc_init_enter(pipe)
-#define sys_port_trace_k_pipe_alloc_init_exit(pipe, ret)
-#define sys_port_trace_k_pipe_flush_enter(pipe)
-#define sys_port_trace_k_pipe_flush_exit(pipe)
-#define sys_port_trace_k_pipe_buffer_flush_enter(pipe)
-#define sys_port_trace_k_pipe_buffer_flush_exit(pipe)
-#define sys_port_trace_k_pipe_put_enter(pipe, timeout)
-#define sys_port_trace_k_pipe_put_blocking(pipe, timeout)
-#define sys_port_trace_k_pipe_put_exit(pipe, timeout, ret)
-#define sys_port_trace_k_pipe_get_enter(pipe, timeout)
-#define sys_port_trace_k_pipe_get_blocking(pipe, timeout)
-#define sys_port_trace_k_pipe_get_exit(pipe, timeout, ret)
-
 #define sys_port_trace_k_heap_init(heap)
 #define sys_port_trace_k_heap_aligned_alloc_enter(heap, timeout)
 #define sys_port_trace_k_heap_alloc_helper_blocking(heap, timeout)
@@ -379,12 +398,26 @@ void sys_trace_gpio_fire_callback_user(const struct device *port, struct gpio_ca
 #define sys_port_trace_k_mem_slab_free_enter(slab)
 #define sys_port_trace_k_mem_slab_free_exit(slab)
 
-#define sys_port_trace_k_timer_init(timer)
-#define sys_port_trace_k_timer_start(timer, duration, period)
-#define sys_port_trace_k_timer_stop(timer)
-#define sys_port_trace_k_timer_status_sync_enter(timer)
-#define sys_port_trace_k_timer_status_sync_blocking(timer, timeout)
-#define sys_port_trace_k_timer_status_sync_exit(timer, result)
+#define sys_port_trace_k_timer_init(timer)					\
+					sys_trace_timer_init(timer)
+#define sys_port_trace_k_timer_start(timer, duration, period)			\
+					sys_trace_timer_start(timer, duration, period)
+#define sys_port_trace_k_timer_stop(timer)					\
+					sys_trace_timer_stop(timer)
+#define sys_port_trace_k_timer_status_sync_enter(timer)				\
+					sys_trace_timer_status_sync_enter(timer)
+#define sys_port_trace_k_timer_status_sync_blocking(timer, timeout)		\
+					sys_trace_timer_status_sync_blocking(timer, timeout)
+#define sys_port_trace_k_timer_status_sync_exit(timer, result)			\
+					sys_trace_timer_status_sync_exit(timer, result)
+#define sys_port_trace_k_timer_expiry_enter(timer)				\
+					sys_trace_timer_expiry_enter(timer)
+#define sys_port_trace_k_timer_expiry_exit(timer)				\
+					sys_trace_timer_expiry_exit(timer)
+#define sys_port_trace_k_timer_stop_fn_expiry_enter(timer)			\
+					sys_trace_timer_stop_fn_expiry_enter(timer)
+#define sys_port_trace_k_timer_stop_fn_expiry_exit(timer)			\
+					sys_trace_timer_stop_fn_expiry_exit(timer)
 
 #define sys_port_trace_k_event_init(event)
 #define sys_port_trace_k_event_post_enter(event, events, events_mask)
@@ -514,6 +547,44 @@ void sys_trace_gpio_fire_callback_user(const struct device *port, struct gpio_ca
 	sys_trace_gpio_fire_callbacks_enter_user(list, port, pins)
 #define sys_port_trace_gpio_fire_callback(port, callback) \
 	sys_trace_gpio_fire_callback_user(port, callback)
+
+#define sys_port_trace_rtio_submit_enter(rtio, wait_count)                                         \
+	sys_trace_rtio_submit_enter(rtio, wait_count)
+
+#define sys_port_trace_rtio_submit_exit(rtio) sys_trace_rtio_submit_exit(rtio)
+
+#define sys_port_trace_rtio_sqe_acquire_enter(rtio) sys_trace_rtio_sqe_acquire_enter(rtio)
+
+#define sys_port_trace_rtio_sqe_acquire_exit(rtio, sqe) sys_trace_rtio_sqe_acquire_exit(rtio, sqe)
+
+#define sys_port_trace_rtio_sqe_cancel(sqe) sys_trace_rtio_sqe_cancel(sqe)
+
+#define sys_port_trace_rtio_cqe_submit_enter(rtio, result, flags)                                  \
+	sys_trace_rtio_cqe_submit_enter(rtio, result, flags)
+
+#define sys_port_trace_rtio_cqe_submit_exit(rtio) sys_trace_rtio_cqe_submit_exit(rtio)
+
+#define sys_port_trace_rtio_cqe_acquire_enter(rtio) sys_trace_rtio_cqe_acquire_enter(rtio)
+
+#define sys_port_trace_rtio_cqe_acquire_exit(rtio, cqe) sys_trace_rtio_cqe_acquire_exit(rtio, cqe)
+
+#define sys_port_trace_rtio_cqe_release(rtio, cqe) sys_trace_rtio_cqe_release(rtio, cqe)
+
+#define sys_port_trace_rtio_cqe_consume_enter(rtio) sys_trace_rtio_cqe_consume_enter(rtio)
+
+#define sys_port_trace_rtio_cqe_consume_exit(rtio, cqe) sys_trace_rtio_cqe_consume_exit(rtio, cqe)
+
+#define sys_port_trace_rtio_txn_next_enter(rtio, iodev_sqe)                                        \
+	sys_trace_rtio_txn_next_enter(rtio, iodev_sqe)
+
+#define sys_port_trace_rtio_txn_next_exit(rtio, iodev_sqe)                                         \
+	sys_trace_rtio_txn_next_exit(rtio, iodev_sqe)
+
+#define sys_port_trace_rtio_chain_next_enter(rtio, iodev_sqe)                                      \
+	sys_trace_rtio_chain_next_enter(rtio, iodev_sqe)
+
+#define sys_port_trace_rtio_chain_next_exit(rtio, iodev_sqe)                                       \
+	sys_trace_rtio_chain_next_exit(rtio, iodev_sqe)
 
 #ifdef __cplusplus
 }

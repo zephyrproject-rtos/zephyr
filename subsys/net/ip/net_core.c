@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include <string.h>
 #include <errno.h>
 
+#include <zephyr/net/conn_mgr_connectivity.h>
 #include <zephyr/net/ipv4_autoconf.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
@@ -32,6 +33,9 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include <zephyr/net/gptp.h>
 #include <zephyr/net/websocket.h>
 #include <zephyr/net/ethernet.h>
+#if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+#include <zephyr/net/dsa_core.h>
+#endif
 #include <zephyr/net/capture.h>
 
 #if defined(CONFIG_NET_LLDP)
@@ -64,26 +68,11 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include "net_stats.h"
 
 #if defined(CONFIG_NET_NATIVE)
-static inline enum net_verdict process_data(struct net_pkt *pkt,
-					    bool is_loopback)
+static inline enum net_verdict process_data(struct net_pkt *pkt)
 {
 	int ret;
-	bool locally_routed = false;
 
-	net_pkt_set_l2_processed(pkt, false);
-
-	/* Initial call will forward packets to SOCK_RAW packet sockets. */
-	ret = net_packet_socket_input(pkt, ETH_P_ALL);
-	if (ret != NET_CONTINUE) {
-		return ret;
-	}
-
-	/* If the packet is routed back to us when we have reassembled an IPv4 or IPv6 packet,
-	 * then do not pass it to L2 as the packet does not have link layer headers in it.
-	 */
-	if (net_pkt_is_ip_reassembled(pkt)) {
-		locally_routed = true;
-	}
+	net_packet_socket_input(pkt, ETH_P_ALL, NET_SOCK_RAW);
 
 	/* If there is no data, then drop the packet. */
 	if (!pkt->frags) {
@@ -93,7 +82,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		return NET_DROP;
 	}
 
-	if (!is_loopback && !locally_routed) {
+	if (!net_pkt_is_l2_processed(pkt)) {
 		ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
 		if (ret != NET_CONTINUE) {
 			if (ret == NET_DROP) {
@@ -114,33 +103,27 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 	net_pkt_cursor_init(pkt);
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM)) {
-		/* Consecutive call will forward packets to SOCK_DGRAM packet sockets
-		 * (after L2 removed header).
-		 */
-		ret = net_packet_socket_input(pkt, net_pkt_ll_proto_type(pkt));
-		if (ret != NET_CONTINUE) {
-			return ret;
-		}
+		net_packet_socket_input(pkt, net_pkt_ll_proto_type(pkt), NET_SOCK_DGRAM);
 	}
 
 	uint8_t family = net_pkt_family(pkt);
 
-	if (IS_ENABLED(CONFIG_NET_IP) && (family == AF_INET || family == AF_INET6 ||
-					  family == AF_UNSPEC || family == AF_PACKET)) {
+	if (IS_ENABLED(CONFIG_NET_IP) && (family == NET_AF_INET || family == NET_AF_INET6 ||
+					  family == NET_AF_UNSPEC || family == NET_AF_PACKET)) {
 		/* IP version and header length. */
 		uint8_t vtc_vhl = NET_IPV6_HDR(pkt)->vtc & 0xf0;
 
 		if (IS_ENABLED(CONFIG_NET_IPV6) && vtc_vhl == 0x60) {
-			return net_ipv6_input(pkt, is_loopback);
+			return net_ipv6_input(pkt);
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) && vtc_vhl == 0x40) {
-			return net_ipv4_input(pkt, is_loopback);
+			return net_ipv4_input(pkt);
 		}
 
 		NET_DBG("Unknown IP family packet (0x%x)", NET_IPV6_HDR(pkt)->vtc & 0xf0);
 		net_stats_update_ip_errors_protoerr(net_pkt_iface(pkt));
 		net_stats_update_ip_errors_vhlerr(net_pkt_iface(pkt));
 		return NET_DROP;
-	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN) {
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == NET_AF_CAN) {
 		return net_canbus_socket_input(pkt);
 	}
 
@@ -148,10 +131,10 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 	return NET_DROP;
 }
 
-static void processing_data(struct net_pkt *pkt, bool is_loopback)
+static void processing_data(struct net_pkt *pkt)
 {
 again:
-	switch (process_data(pkt, is_loopback)) {
+	switch (process_data(pkt)) {
 	case NET_CONTINUE:
 		if (IS_ENABLED(CONFIG_NET_L2_VIRTUAL)) {
 			/* If we have a tunneling packet, feed it back
@@ -209,7 +192,7 @@ static inline int check_ip(struct net_pkt *pkt)
 	family = net_pkt_family(pkt);
 	ret = 0;
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6 &&
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6 &&
 	    net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IPV6) {
 		/* Drop IPv6 packet if hop limit is 0 */
 		if (NET_IPV6_HDR(pkt)->hop_limit == 0) {
@@ -230,8 +213,8 @@ static inline int check_ip(struct net_pkt *pkt)
 			return 0;
 		}
 #endif
-		if (net_ipv6_addr_cmp((struct in6_addr *)NET_IPV6_HDR(pkt)->dst,
-				      net_ipv6_unspecified_address())) {
+		if (net_ipv6_addr_cmp_raw(NET_IPV6_HDR(pkt)->dst,
+					  (const uint8_t *)net_ipv6_unspecified_address())) {
 			NET_DBG("DROP: IPv6 dst address missing");
 			ret = -EADDRNOTAVAIL;
 			goto drop;
@@ -240,12 +223,10 @@ static inline int check_ip(struct net_pkt *pkt)
 		/* If the destination address is our own, then route it
 		 * back to us (if it is not already forwarded).
 		 */
-		if ((net_ipv6_is_addr_loopback(
-				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst) ||
-		    net_ipv6_is_my_addr(
-				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst)) &&
+		if ((net_ipv6_is_addr_loopback_raw(NET_IPV6_HDR(pkt)->dst) ||
+		    net_ipv6_is_my_addr_raw(NET_IPV6_HDR(pkt)->dst)) &&
 		    !net_pkt_forwarding(pkt)) {
-			struct in6_addr addr;
+			struct net_in6_addr addr;
 
 			/* Swap the addresses so that in receiving side
 			 * the packet is accepted.
@@ -267,8 +248,7 @@ static inline int check_ip(struct net_pkt *pkt)
 		 * in local host, so this is similar as how ::1 unicast
 		 * addresses are handled. See RFC 3513 ch 2.7 for details.
 		 */
-		if (net_ipv6_is_addr_mcast_iface(
-				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst)) {
+		if (net_ipv6_is_addr_mcast_iface_raw(NET_IPV6_HDR(pkt)->dst)) {
 			NET_DBG("IPv6 interface scope mcast dst address");
 			return 1;
 		}
@@ -276,14 +256,13 @@ static inline int check_ip(struct net_pkt *pkt)
 		/* The source check must be done after the destination check
 		 * as having src ::1 is perfectly ok if dst is ::1 too.
 		 */
-		if (net_ipv6_is_addr_loopback(
-				(struct in6_addr *)NET_IPV6_HDR(pkt)->src)) {
+		if (net_ipv6_is_addr_loopback_raw(NET_IPV6_HDR(pkt)->src)) {
 			NET_DBG("DROP: IPv6 loopback src address");
 			ret = -EADDRNOTAVAIL;
 			goto drop;
 		}
 
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET &&
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET &&
 		   net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IP) {
 		/* Drop IPv4 packet if ttl is 0 */
 		if (NET_IPV4_HDR(pkt)->ttl == 0) {
@@ -304,8 +283,8 @@ static inline int check_ip(struct net_pkt *pkt)
 			return 0;
 		}
 #endif
-		if (net_ipv4_addr_cmp((struct in_addr *)NET_IPV4_HDR(pkt)->dst,
-				      net_ipv4_unspecified_address())) {
+		if (net_ipv4_addr_cmp_raw(NET_IPV4_HDR(pkt)->dst,
+					  net_ipv4_unspecified_address()->s4_addr)) {
 			NET_DBG("DROP: IPv4 dst address missing");
 			ret = -EADDRNOTAVAIL;
 			goto drop;
@@ -314,11 +293,11 @@ static inline int check_ip(struct net_pkt *pkt)
 		/* If the destination address is our own, then route it
 		 * back to us.
 		 */
-		if (net_ipv4_is_addr_loopback((struct in_addr *)NET_IPV4_HDR(pkt)->dst) ||
-		    (net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-				     (struct in_addr *)NET_IPV4_HDR(pkt)->dst) == false &&
-		     net_ipv4_is_my_addr((struct in_addr *)NET_IPV4_HDR(pkt)->dst))) {
-			struct in_addr addr;
+		if (net_ipv4_is_addr_loopback_raw(NET_IPV4_HDR(pkt)->dst) ||
+		    (net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt),
+						NET_IPV4_HDR(pkt)->dst) == false &&
+		     net_ipv4_is_my_addr_raw(NET_IPV4_HDR(pkt)->dst))) {
+			struct net_in_addr addr;
 
 			/* Swap the addresses so that in receiving side
 			 * the packet is accepted.
@@ -338,7 +317,7 @@ static inline int check_ip(struct net_pkt *pkt)
 		 * as having src 127.0.0.0/8 is perfectly ok if dst is in
 		 * localhost subnet too.
 		 */
-		if (net_ipv4_is_addr_loopback((struct in_addr *)NET_IPV4_HDR(pkt)->src)) {
+		if (net_ipv4_is_addr_loopback_raw(NET_IPV4_HDR(pkt)->src)) {
 			NET_DBG("DROP: IPv4 loopback src address");
 			ret = -EADDRNOTAVAIL;
 			goto drop;
@@ -349,7 +328,7 @@ static inline int check_ip(struct net_pkt *pkt)
 
 drop:
 	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
-		if (family == AF_INET6) {
+		if (family == NET_AF_INET6) {
 			net_stats_update_ipv6_drop(net_pkt_iface(pkt));
 		} else {
 			net_stats_update_ipv4_drop(net_pkt_iface(pkt));
@@ -363,32 +342,35 @@ drop:
 static inline bool process_multicast(struct net_pkt *pkt)
 {
 	struct net_context *ctx = net_pkt_context(pkt);
-	sa_family_t family = net_pkt_family(pkt);
+	net_sa_family_t family = net_pkt_family(pkt);
 
 	if (ctx == NULL) {
 		return false;
 	}
 
 #if defined(CONFIG_NET_IPV4)
-	if (family == AF_INET) {
-		const struct in_addr *dst = (const struct in_addr *)&NET_IPV4_HDR(pkt)->dst;
+	if (family == NET_AF_INET) {
+		const struct net_in_addr *dst = (const struct net_in_addr *)&NET_IPV4_HDR(pkt)->dst;
 
 		return net_ipv4_is_addr_mcast(dst) && net_context_get_ipv4_mcast_loop(ctx);
 	}
 #endif
 #if defined(CONFIG_NET_IPV6)
-	if (family == AF_INET6) {
-		const struct in6_addr *dst = (const struct in6_addr *)&NET_IPV6_HDR(pkt)->dst;
-
-		return net_ipv6_is_addr_mcast(dst) && net_context_get_ipv6_mcast_loop(ctx);
+	if (family == NET_AF_INET6) {
+		return net_ipv6_is_addr_mcast_raw(NET_IPV6_HDR(pkt)->dst) &&
+		       net_context_get_ipv6_mcast_loop(ctx);
 	}
 #endif
 	return false;
 }
 #endif
 
+static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt);
+
 int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 {
+	struct net_if *iface;
+	int family;
 	int status;
 	int ret;
 
@@ -401,6 +383,11 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 
 	if (!net_pkt_iface(pkt)) {
 		ret = -EINVAL;
+		goto err;
+	}
+
+	if (!net_if_is_up(net_pkt_iface(pkt))) {
+		ret = -ENETDOWN;
 		goto err;
 	}
 
@@ -426,7 +413,9 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 		 * to RX processing.
 		 */
 		NET_DBG("Loopback pkt %p back to us", pkt);
-		processing_data(pkt, true);
+		net_pkt_set_loopback(pkt, true);
+		net_pkt_set_l2_processed(pkt, true);
+		net_queue_rx(net_pkt_iface(pkt), pkt);
 		ret = 0;
 		goto err;
 	}
@@ -441,12 +430,12 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 				if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
 					switch (net_pkt_family(pkt)) {
 #if defined(CONFIG_NET_IPV4)
-					case AF_INET:
+					case NET_AF_INET:
 						net_stats_update_ipv4_sent(net_pkt_iface(pkt));
 						break;
 #endif
 #if defined(CONFIG_NET_IPV6)
-					case AF_INET6:
+					case NET_AF_INET6:
 						net_stats_update_ipv6_sent(net_pkt_iface(pkt));
 						break;
 #endif
@@ -460,18 +449,27 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 	}
 #endif
 
+	/* The pkt might contain garbage already after the call to
+	 * net_if_try_send_data(), so do not use pkt after that call.
+	 * Remember the iface and family for statistics update.
+	 */
+	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
+		iface = net_pkt_iface(pkt);
+		family = net_pkt_family(pkt);
+	}
+
 	if (net_if_try_send_data(net_pkt_iface(pkt), pkt, timeout) == NET_DROP) {
 		ret = -EIO;
 		goto err;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
-		switch (net_pkt_family(pkt)) {
-		case AF_INET:
-			net_stats_update_ipv4_sent(net_pkt_iface(pkt));
+		switch (family) {
+		case NET_AF_INET:
+			net_stats_update_ipv4_sent(iface);
 			break;
-		case AF_INET6:
-			net_stats_update_ipv6_sent(net_pkt_iface(pkt));
+		case NET_AF_INET6:
+			net_stats_update_ipv6_sent(iface);
 			break;
 		}
 	}
@@ -486,7 +484,6 @@ err:
 
 static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 {
-	bool is_loopback = false;
 	size_t pkt_len;
 
 	pkt_len = net_pkt_get_len(pkt);
@@ -498,12 +495,13 @@ static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 	if (IS_ENABLED(CONFIG_NET_LOOPBACK)) {
 #ifdef CONFIG_NET_L2_DUMMY
 		if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
-			is_loopback = true;
+			net_pkt_set_loopback(pkt, true);
+			net_pkt_set_l2_processed(pkt, true);
 		}
 #endif
 	}
 
-	processing_data(pkt, is_loopback);
+	processing_data(pkt);
 
 	net_print_statistics();
 	net_pkt_print();
@@ -527,9 +525,7 @@ static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 #if NET_TC_RX_COUNT > 1
 	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);
 #endif
-
-	if ((IS_ENABLED(CONFIG_NET_TC_RX_SKIP_FOR_HIGH_PRIO) &&
-	     prio >= NET_PRIORITY_CA) || NET_TC_RX_COUNT == 0) {
+	if (net_tc_rx_is_immediate(tc, prio)) {
 		net_process_rx_packet(pkt);
 	} else {
 		if (net_tc_submit_to_rx_queue(tc, pkt) != NET_OK) {
@@ -652,12 +648,12 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 
 static void init_rx_queues(void)
 {
+	net_tc_rx_init();
+
 	/* Starting TX side. The ordering is important here and the TX
 	 * can only be started when RX side is ready to receive packets.
 	 */
 	net_if_init();
-
-	net_tc_rx_init();
 
 	/* This will take the interface up and start everything. */
 	net_if_post_init();

@@ -21,5 +21,6 @@
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <12>;
 	};
+
 	status = "okay";
 };

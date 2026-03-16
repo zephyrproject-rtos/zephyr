@@ -38,6 +38,14 @@ config SYSCON_INIT_PRIORITY
 	  initialized earlier in the startup cycle. If unsure, leave at default
 	  value
 
+config SYSCON_SHELL
+	bool "SYSCON Shell"
+	depends on SHELL
+	help
+	  Enable the SYSCON shell with SYSCON related commands.
+
+# zephyr-keep-sorted-start
 source "drivers/syscon/Kconfig.bflb_efuse"
+# zephyr-keep-sorted-stop
 
 endif # SYSCON

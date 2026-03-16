@@ -20,17 +20,20 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
 		cpu@0 {
 			device_type = "cpu";
 			compatible = "openisa,ri5cy", "riscv";
-			riscv,isa = "rv32imc_zicsr_zifencei";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "c", "zicsr", "zifencei";
 			reg = <0>;
 		};
 
 		cpu@1 {
 			device_type = "cpu";
 			compatible = "openisa,zero-ri5cy", "riscv";
-			riscv,isa = "rv32imc_zicsr_zifencei";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "c", "zicsr", "zifencei";
 			reg = <1>;
 		};
 	};
@@ -488,7 +491,7 @@
 			#pwm-cells = <3>;
 		};
 
-		trng: random@41029000{
+		trng: random@41029000 {
 			compatible = "openisa,rv32m1-trng";
 			reg = <0x41029000 0x1000>;
 			status = "okay";

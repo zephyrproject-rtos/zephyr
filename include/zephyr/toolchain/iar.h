@@ -132,6 +132,18 @@
 
 #define TOOLCHAIN_WARNING_UNUSED_FUNCTION Pe001
 
+/**
+ * @def TOOLCHAIN_WARNING_ALWAYS_INLINE
+ * @brief Toolchain-specific warning for inline functions.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_ALWAYS_INLINE
+#define TOOLCHAIN_WARNING_ALWAYS_INLINE Go004
+#define IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+#endif
+
 #ifdef __ICCARM__
 #include "iar/iccarm.h"
 #endif

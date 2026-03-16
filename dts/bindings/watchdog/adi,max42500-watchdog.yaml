@@ -1,0 +1,78 @@
+# Copyright 2025, Analog Devices, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Driver for setting up and using the MAX42500 voltage monitor/watchdog.
+
+compatible: "adi,max42500-watchdog"
+
+include: i2c-device.yaml
+
+properties:
+
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
+
+  wdiv:
+    type: int
+    description: |
+      Watchdog clock divider (WDIV) value to adjust window values/calculations.
+      If not set, the default value on the device loaded from OTP is used.
+
+  enable-vmpd:
+    type: boolean
+    description: |
+      Enable voltage-monitor power-down, to reduce IC power consumption when
+      EN0 is low.
+
+  mode:
+    type: string
+    enum:
+      - default
+      - sww
+      - challenge_response
+    description: |
+      Enable watchdog mode to either simple windoweed watchdog or challenge/response.
+      A value of "default" will leave whatever mode is loaded from OTP in place.
+
+child-binding:
+  description: |
+    Configuration for a given input voltage for UV/OV monitoring
+  properties:
+
+    reg:
+      type: int
+      required: true
+      description: |
+        The specific voltage input channel to configure. Channels 1-5 are single ended,
+        6 and 7 are differential.
+
+    nominal-voltage:
+      type: int
+      description: |
+        Channels 1-5 have a nominal voltage set, 6 and 7 are differential and only use UV/OV
+        settings
+
+    uv-limit:
+      type: int
+      required: true
+      description: |
+        Under voltage limit. For channels 1-5, this is a percentage over the nominal voltage.
+        For channels 6 and 7, this is an absolute voltage.
+
+    ov-limit:
+      type: int
+      required: true
+      description: |
+        Over voltage limit. For channels 1-5, this is a percentage over the nominal voltage.
+        For channels 6 and 7, this is an absolute voltage.
+
+    uvov-trigger-reset:
+      type: boolean
+      description: |
+        Indicate that a UV/OV scenario for the channel should trigger a RESET condition.

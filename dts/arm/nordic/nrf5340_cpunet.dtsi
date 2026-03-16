@@ -48,11 +48,15 @@
 
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		sram1: memory@21000000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			zephyr,memory-region = "SRAM1";
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		clock: clock@41005000 {
@@ -163,6 +167,8 @@
 			compatible = "nordic,nrf-dppic";
 			reg = <0x4100f000 0x1000>;
 			status = "okay";
+			channels = <16>;
+			groups = <6>;
 		};
 
 		temp: temp@41010000 {
@@ -309,11 +315,12 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-
 			flash1: flash@1000000 {
 				compatible = "soc-nv-flash";
 				erase-block-size = <2048>;
 				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 

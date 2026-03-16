@@ -25,5 +25,14 @@ config WDT_ITE_REDUCE_WARNING_LEADING_TIME
 	depends on WDT_ITE_IT8XXX2
 	help
 	  Once warning timer triggered, if watchdog timer isn't reloaded,
-	  then we will reduce interval of warning timer to 30ms to print
-	  more warning messages before watchdog reset.
+	  then we will reduce interval of warning timer to
+	  WDT_ITE_PRINT_WARNING_MSG_TIME_MS for printing more warning messages
+	  before watchdog reset.
+
+config WDT_ITE_PRINT_WARNING_MSG_TIME_MS
+	int "Time interval to print warning message in milliseconds"
+	depends on WDT_ITE_IT8XXX2
+	default 100
+	range 30 WDT_ITE_WARNING_LEADING_TIME_MS
+	help
+	  Time interval to print warning message in milliseconds.

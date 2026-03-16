@@ -12,6 +12,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/drivers/sensor/lis2dh.h>
 
 LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"
@@ -286,6 +287,16 @@ static int lis2dh_acc_hp_filter_set(const struct device *dev, int32_t val)
 }
 #endif
 
+#ifdef CONFIG_LIS2DH_SELF_TEST
+static int lis2dh_self_test_set(const struct device *dev, int32_t val)
+{
+	struct lis2dh_data *lis2dh = dev->data;
+	uint8_t value = (val << LIS2DH_CTRL4_ST_SHIFT) & LIS2DH_CTRL4_ST_MASK;
+
+	return lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL4, LIS2DH_CTRL4_ST_MASK, value);
+}
+#endif
+
 static int lis2dh_acc_config(const struct device *dev,
 			     enum sensor_channel chan,
 			     enum sensor_attribute attr,
@@ -308,6 +319,10 @@ static int lis2dh_acc_config(const struct device *dev,
 #ifdef CONFIG_LIS2DH_ACCEL_HP_FILTERS
 	case SENSOR_ATTR_CONFIGURATION:
 		return lis2dh_acc_hp_filter_set(dev, val->val1);
+#endif
+#ifdef CONFIG_LIS2DH_SELF_TEST
+	case SENSOR_ATTR_LIS2DH_SELF_TEST:
+		return lis2dh_self_test_set(dev, val->val1);
 #endif
 	default:
 		LOG_DBG("Accel attribute not supported.");
@@ -439,9 +454,8 @@ int lis2dh_init_chip(const struct device *dev)
 		(uint8_t)LIS2DH_LP_EN_BIT, lis2dh->scale);
 
 	/* enable accel measurements and set power mode and data rate */
-	return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
-					LIS2DH_ACCEL_EN_BITS | LIS2DH_LP_EN_BIT |
-					LIS2DH_ODR_BITS);
+	lis2dh->reg_ctrl1_active_val = LIS2DH_ACCEL_EN_BITS | LIS2DH_LP_EN_BIT | LIS2DH_ODR_BITS;
+	return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, lis2dh->reg_ctrl1_active_val);
 }
 
 static int lis2dh_pm_action(const struct device *dev,
@@ -467,7 +481,7 @@ static int lis2dh_pm_action(const struct device *dev,
 		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
 						  lis2dh->reg_ctrl1_active_val);
 		if (status < 0) {
-			LOG_ERR("failed to write reg_crtl1");
+			LOG_ERR("failed to write reg_ctrl1");
 			return status;
 		}
 		break;
@@ -476,13 +490,13 @@ static int lis2dh_pm_action(const struct device *dev,
 		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL1,
 						 &lis2dh->reg_ctrl1_active_val);
 		if (status < 0) {
-			LOG_ERR("failed to read reg_crtl1");
+			LOG_ERR("failed to read reg_ctrl1");
 			return status;
 		}
 		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
 						  LIS2DH_SUSPEND);
 		if (status < 0) {
-			LOG_ERR("failed to write reg_crtl1");
+			LOG_ERR("failed to write reg_ctrl1");
 			return status;
 		}
 		break;
@@ -596,8 +610,7 @@ static int lis2dh_init(const struct device *dev)
 					SPI_WORD_SET(8) |		\
 					SPI_OP_MODE_MASTER |		\
 					SPI_MODE_CPOL |			\
-					SPI_MODE_CPHA,			\
-					0) },				\
+					SPI_MODE_CPHA)},		\
 		.hw = { .is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),	\
 			.disc_pull_up = DISC_PULL_UP(inst),		\
 			.anym_on_int1 = ANYM_ON_INT1(inst),		\

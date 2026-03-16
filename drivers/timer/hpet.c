@@ -100,6 +100,13 @@ static inline uint64_t hpet_counter_get(void)
 	uint32_t high;
 	uint32_t low;
 
+#ifdef CONFIG_MMU
+	/* If base address is not mapped yet then return 0 to avoid page faults */
+	if (DEVICE_MMIO_TOPLEVEL_GET(hpet_regs) == 0) {
+		return 0;
+	}
+#endif
+
 	do {
 		high = sys_read32(MAIN_COUNTER_HIGH_REG);
 		low = sys_read32(MAIN_COUNTER_LOW_REG);
@@ -377,7 +384,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 __pinned_func
 uint32_t sys_clock_elapsed(void)
 {
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) || cyc_per_tick == 0) {
 		return 0;
 	}
 

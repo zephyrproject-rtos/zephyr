@@ -1,11 +1,11 @@
 #
-# Copyright (c) 2017, NXP
+# Copyright 2017, 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
 identifier: mimxrt1050_evk/mimxrt1052/qspi
-name: NXP MIMXRT1050-EVK-QSPI
+name: NXP MIMXRT1050-EVK (QSPI)
 type: mcu
 arch: arm
 toolchain:
@@ -29,4 +29,5 @@ supported:
   - usb_device
   - usbd
   - watchdog
+  - rtc
 vendor: nxp

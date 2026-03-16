@@ -4,16 +4,18 @@ type: mcu
 arch: arm
 toolchain:
   - zephyr
-ram: 640
+ram: 456
 flash: 64
 supported:
-  - arduino_gpio
-  - gpio
-  - uart
-  - watchdog
-  - entropy
   - adc
-  - octospi
-  - usbd
+  - arduino_gpio
+  - entropy
+  - gpio
   - memc
+  - octospi
+  - rtc
+  - uart
+  - usb_device
+  - usbd
+  - watchdog
 vendor: st

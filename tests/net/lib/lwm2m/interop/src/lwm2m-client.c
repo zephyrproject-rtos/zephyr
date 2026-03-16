@@ -65,9 +65,9 @@ int set_socketoptions(struct lwm2m_ctx *ctx)
 		int ret;
 
 		/* Enable CID */
-		int cid = TLS_DTLS_CID_ENABLED;
+		int cid = ZSOCK_TLS_DTLS_CID_ENABLED;
 
-		ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_DTLS_CID, &cid,
+		ret = zsock_setsockopt(ctx->sock_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_DTLS_CID, &cid,
 				       sizeof(cid));
 		if (ret) {
 			ret = -errno;
@@ -80,10 +80,10 @@ int set_socketoptions(struct lwm2m_ctx *ctx)
 		uint32_t min = 100;
 		uint32_t max = 500;
 
-		zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_DTLS_HANDSHAKE_TIMEOUT_MIN, &min,
-				 sizeof(min));
-		zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_DTLS_HANDSHAKE_TIMEOUT_MAX, &max,
-				 sizeof(max));
+		zsock_setsockopt(ctx->sock_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_DTLS_HANDSHAKE_TIMEOUT_MIN,
+				 &min, sizeof(min));
+		zsock_setsockopt(ctx->sock_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_DTLS_HANDSHAKE_TIMEOUT_MAX,
+				 &max, sizeof(max));
 	}
 	return lwm2m_set_default_sockopt(ctx);
 }
@@ -100,7 +100,7 @@ static int create_appdata(uint16_t obj_inst_id)
 	return 0;
 }
 
-static int lwm2m_setup(void)
+static void lwm2m_setup(void)
 {
 	/* setup DEVICE object */
 
@@ -131,8 +131,6 @@ static int lwm2m_setup(void)
 	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 8, 1), &usb_ma, sizeof(usb_ma), sizeof(usb_ma), 0);
 
 	lwm2m_register_create_callback(19, create_appdata);
-
-	return 0;
 }
 
 static void rd_client_event(struct lwm2m_ctx *client,
@@ -236,13 +234,7 @@ static void observe_cb(enum lwm2m_observe_event event,
 
 int main(void)
 {
-	int ret;
-
-	ret = lwm2m_setup();
-	if (ret < 0) {
-		LOG_ERR("Cannot setup LWM2M fields (%d)", ret);
-		return 0;
-	}
+	lwm2m_setup();
 
 	client.tls_tag = 1;
 	client.set_socketoptions = set_socketoptions;

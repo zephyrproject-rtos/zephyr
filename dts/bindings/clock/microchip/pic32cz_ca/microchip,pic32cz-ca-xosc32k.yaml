@@ -1,0 +1,118 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CZ_CA External Crystal Oscillator (XOSC32K)
+
+description: |
+  32.768 kHz External Crystal Oscillator (XOSC32K) Control.
+
+include: [base.yaml]
+
+compatible: "microchip,pic32cz-ca-xosc32k"
+
+properties:
+  xosc32k-control-gain-mode:
+    type: string
+    enum:
+      - "lower-gain-mode-value"
+      - "higher-than-cgm0"
+      - "higher-than-cgm1"
+      - "higher-than-cgm2"
+      - "higher-than-cgm3"
+      - "higher-than-cgm4"
+      - "higher-than-cgm5"
+      - "higher-than-cgm6"
+      - "higher-than-cgm7"
+      - "higher-than-cgm8"
+      - "higher-than-cgm9"
+      - "higher-than-cgm10"
+      - "higher-than-cgm11"
+      - "higher-than-cgm12"
+      - "higher-than-cgm13"
+      - "highest-gain-mode-value"
+    default: "higher-than-cgm7"
+    description: |
+      control the gain of the external crystal oscillator
+
+  xosc32k-startup-time:
+    type: string
+    enum:
+      - "122-us"
+      - "580-us"
+      - "1.07-ms"
+      - "62.6-ms"
+      - "125.1-ms"
+      - "500.1-ms"
+      - "1-s"
+      - "2-s"
+      - "4-s"
+      - "8-s"
+    default: "62.6-ms"
+    description: |
+      Oscillator Start-Up Time
+
+  xosc32k-on-demand-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      0: The oscillator is always on, if standby-en is true, else run in
+         Standby Sleep mode if requested by a peripheral.
+      1: Run if requested by peripheral
+      Important: Initializing it with 1, along with clock enabled, can lead to indefinite wait for
+      the clock to be on, if there is no peripheral request for the clock in the sequence of clock
+      Initialization. If required, better to turn on the clock using API, instead of enabling both
+      during startup.
+
+  xosc32k-xtal-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Selects external clock or crystal oscillator
+      0 - External clock connected on XIN. XOUT can be used as general-purpose I/O.
+      1 - Crystal connected to XIN/XOUT.
+
+  xosc32k-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Oscillator Enable
+
+  xosc32k-cfd-prescaler:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Clock Failure Detector Prescaler
+      0: The CFD safe clock frequency is the OSCULP32K frequency
+      1: The CFD safe clock frequency is the OSCULP32K frequency divided by 2
+
+  xosc32k-cfd-switchback-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Clock Switch Back
+      0: to disable, 1: to enable
+
+  xosc32k-cfd-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Clock Failure Detector Enable
+      0: to disable, 1: to enable

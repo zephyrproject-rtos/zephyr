@@ -8,5 +8,8 @@ window.addEventListener('DOMContentLoaded', (event) => {
   let version = document.getElementById('projectnumber').innerText
   let titleTable = document.querySelector('#titlearea table');
   let cell = titleTable.insertRow(1).insertCell(0);
-  cell.innerHTML = '<div id="projectversion">' + version + '</div>';
+  let versionDiv = document.createElement('div');
+  versionDiv.id = 'projectversion';
+  versionDiv.textContent = version;
+  cell.appendChild(versionDiv);
 });

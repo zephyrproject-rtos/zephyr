@@ -40,11 +40,12 @@ static int sbs_cmd_reg_read(const struct device *dev, uint8_t reg_addr, uint16_t
 static int sbs_cmd_reg_write(const struct device *dev, uint8_t reg_addr, uint16_t val)
 {
 	const struct sbs_charger_config *config = dev->config;
-	uint8_t buf[2];
+	uint8_t buf[3];
 
-	sys_put_le16(val, buf);
+	buf[0] = reg_addr;
+	sys_put_le16(val, &buf[1]);
 
-	return i2c_burst_write_dt(&config->i2c, reg_addr, buf, sizeof(buf));
+	return i2c_write_dt(&config->i2c, buf, sizeof(buf));
 }
 
 static int sbs_cmd_reg_update(const struct device *dev, uint8_t reg_addr, uint16_t mask,

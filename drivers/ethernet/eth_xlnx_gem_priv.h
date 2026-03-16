@@ -16,6 +16,7 @@
 #include <zephyr/types.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/irq.h>
+#include <zephyr/linker/section_tags.h>
 
 #include "phy_xlnx_gem.h"
 
@@ -31,9 +32,9 @@
  * [01]       Wrap bit, last BD in RX BD ring
  * [00]       BD used bit
  */
-#define ETH_XLNX_GEM_RXBD_WRAP_BIT			0x00000002
-#define ETH_XLNX_GEM_RXBD_USED_BIT			0x00000001
-#define ETH_XLNX_GEM_RXBD_BUFFER_ADDR_MASK		0xFFFFFFFC
+#define ETH_XLNX_GEM_RX_BD_WRAP_BIT			0x00000002
+#define ETH_XLNX_GEM_RX_BD_USED_BIT			0x00000001
+#define ETH_XLNX_GEM_RX_BD_BUFFER_ADDR_MASK		0xFFFFFFFC
 
 /*
  * Receive Buffer Descriptor control word:
@@ -56,24 +57,24 @@
  * [13]       FCS status bit for FCS ignore mode
  * [12 .. 00] Data length of received frame
  */
-#define ETH_XLNX_GEM_RXBD_BCAST_BIT			0x80000000
-#define ETH_XLNX_GEM_RXBD_MCAST_HASH_MATCH_BIT		0x40000000
-#define ETH_XLNX_GEM_RXBD_UCAST_HASH_MATCH_BIT		0x20000000
-#define ETH_XLNX_GEM_RXBD_SPEC_ADDR_MATCH_BIT		0x08000000
-#define ETH_XLNX_GEM_RXBD_SPEC_ADDR_MASK		0x00000003
-#define ETH_XLNX_GEM_RXBD_SPEC_ADDR_SHIFT		25
-#define ETH_XLNX_GEM_RXBD_BIT24				0x01000000
-#define ETH_XLNX_GEM_RXBD_BITS23_22_MASK		0x00000003
-#define ETH_XLNX_GEM_RXBD_BITS23_22_SHIFT		22
-#define ETH_XLNX_GEM_RXBD_VLAN_TAG_DETECTED_BIT		0x00200000
-#define ETH_XLNX_GEM_RXBD_PRIO_TAG_DETECTED_BIT		0x00100000
-#define ETH_XLNX_GEM_RXBD_VLAN_PRIORITY_MASK		0x00000007
-#define ETH_XLNX_GEM_RXBD_VLAN_PRIORITY_SHIFT		17
-#define ETH_XLNX_GEM_RXBD_CFI_BIT			0x00010000
-#define ETH_XLNX_GEM_RXBD_END_OF_FRAME_BIT		0x00008000
-#define ETH_XLNX_GEM_RXBD_START_OF_FRAME_BIT		0x00004000
-#define ETH_XLNX_GEM_RXBD_FCS_STATUS_BIT		0x00002000
-#define ETH_XLNX_GEM_RXBD_FRAME_LENGTH_MASK		0x00001FFF
+#define ETH_XLNX_GEM_RX_BD_BCAST_BIT			0x80000000
+#define ETH_XLNX_GEM_RX_BD_MCAST_HASH_MATCH_BIT		0x40000000
+#define ETH_XLNX_GEM_RX_BD_UCAST_HASH_MATCH_BIT		0x20000000
+#define ETH_XLNX_GEM_RX_BD_SPEC_ADDR_MATCH_BIT		0x08000000
+#define ETH_XLNX_GEM_RX_BD_SPEC_ADDR_MASK		0x00000003
+#define ETH_XLNX_GEM_RX_BD_SPEC_ADDR_SHIFT		25
+#define ETH_XLNX_GEM_RX_BD_BIT24			0x01000000
+#define ETH_XLNX_GEM_RX_BD_BITS23_22_MASK		0x00000003
+#define ETH_XLNX_GEM_RX_BD_BITS23_22_SHIFT		22
+#define ETH_XLNX_GEM_RX_BD_VLAN_TAG_DETECTED_BIT	0x00200000
+#define ETH_XLNX_GEM_RX_BD_PRIO_TAG_DETECTED_BIT	0x00100000
+#define ETH_XLNX_GEM_RX_BD_VLAN_PRIORITY_MASK		0x00000007
+#define ETH_XLNX_GEM_RX_BD_VLAN_PRIORITY_SHIFT		17
+#define ETH_XLNX_GEM_RX_BD_CFI_BIT			0x00010000
+#define ETH_XLNX_GEM_RX_BD_END_OF_FRAME_BIT		0x00008000
+#define ETH_XLNX_GEM_RX_BD_START_OF_FRAME_BIT		0x00004000
+#define ETH_XLNX_GEM_RX_BD_FCS_STATUS_BIT		0x00002000
+#define ETH_XLNX_GEM_RX_BD_FRAME_LENGTH_MASK		0x00001FFF
 
 /* Transmit Buffer Descriptor bits & masks: comp. Zynq-7000 TRM, Table 16-3. */
 
@@ -90,17 +91,17 @@
  * [15]       Last buffer bit, indicates end of current TX frame
  * [13 .. 00] Data length in the BD's associated buffer
  */
-#define ETH_XLNX_GEM_TXBD_USED_BIT			0x80000000
-#define ETH_XLNX_GEM_TXBD_WRAP_BIT			0x40000000
-#define ETH_XLNX_GEM_TXBD_RETRY_BIT			0x20000000
-#define ETH_XLNX_GEM_TXBD_TX_FRAME_CORRUPT_BIT		0x08000000
-#define ETH_XLNX_GEM_TXBD_LATE_COLLISION_BIT		0x04000000
-#define ETH_XLNX_GEM_TXBD_CKSUM_OFFLOAD_ERROR_MASK	0x00000007
-#define ETH_XLNX_GEM_TXBD_CKSUM_OFFLOAD_ERROR_SHIFT	20
-#define ETH_XLNX_GEM_TXBD_NO_CRC_BIT			0x00010000
-#define ETH_XLNX_GEM_TXBD_LAST_BIT			0x00008000
-#define ETH_XLNX_GEM_TXBD_LEN_MASK			0x00003FFF
-#define ETH_XLNX_GEM_TXBD_ERR_MASK			0x3C000000
+#define ETH_XLNX_GEM_TX_BD_USED_BIT			0x80000000
+#define ETH_XLNX_GEM_TX_BD_WRAP_BIT			0x40000000
+#define ETH_XLNX_GEM_TX_BD_RETRY_BIT			0x20000000
+#define ETH_XLNX_GEM_TX_BD_TX_FRAME_CORRUPT_BIT		0x08000000
+#define ETH_XLNX_GEM_TX_BD_LATE_COLLISION_BIT		0x04000000
+#define ETH_XLNX_GEM_TX_BD_CKSUM_OFFLOAD_ERROR_MASK	0x00000007
+#define ETH_XLNX_GEM_TX_BD_CKSUM_OFFLOAD_ERROR_SHIFT	20
+#define ETH_XLNX_GEM_TX_BD_NO_CRC_BIT			0x00010000
+#define ETH_XLNX_GEM_TX_BD_LAST_BIT			0x00008000
+#define ETH_XLNX_GEM_TX_BD_LEN_MASK			0x00003FFF
+#define ETH_XLNX_GEM_TX_BD_ERR_MASK			0x3C000000
 
 #define ETH_XLNX_GEM_CKSUM_NO_ERROR			0x00000000
 #define ETH_XLNX_GEM_CKSUM_VLAN_HDR_ERROR		0x00000001
@@ -149,27 +150,33 @@
 
 /*
  * Register offsets within the respective GEM's address space:
- * NWCTRL   = gem.net_ctrl       Network Control           register
- * NWCFG    = gem.net_cfg        Network Configuration     register
- * NWSR     = gem.net_status     Network Status            register
- * DMACR    = gem.dma_cfg        DMA Control               register
- * TXSR     = gem.tx_status      TX Status                 register
- * RXQBASE  = gem.rx_qbar        RXQ base address          register
- * TXQBASE  = gem.tx_qbar        TXQ base address          register
- * RXSR     = gem.rx_status      RX Status                 register
- * ISR      = gem.intr_status    Interrupt status          register
- * IER      = gem.intr_en        Interrupt enable          register
- * IDR      = gem.intr_dis       Interrupt disable         register
- * IMR      = gem.intr_mask      Interrupt mask            register
- * PHYMNTNC = gem.phy_maint      PHY maintenance           register
- * LADDR1L  = gem.spec_addr1_bot Specific address 1 bottom register
- * LADDR1H  = gem.spec_addr1_top Specific address 1 top    register
- * LADDR2L  = gem.spec_addr2_bot Specific address 2 bottom register
- * LADDR2H  = gem.spec_addr2_top Specific address 2 top    register
- * LADDR3L  = gem.spec_addr3_bot Specific address 3 bottom register
- * LADDR3H  = gem.spec_addr3_top Specific address 3 top    register
- * LADDR4L  = gem.spec_addr4_bot Specific address 4 bottom register
- * LADDR4H  = gem.spec_addr4_top Specific address 4 top    register
+ * NWCTRL      = gem.net_ctrl             Network Control              register
+ * NWCFG       = gem.net_cfg              Network Configuration        register
+ * NWSR        = gem.net_status           Network Status               register
+ * DMACR       = gem.dma_cfg              DMA Control                  register
+ * TXSR        = gem.tx_status            TX Status                    register
+ * RXQBASE     = gem.rx_qbar              RXQ base address             register
+ * TXQBASE     = gem.tx_qbar              TXQ base address             register
+ * RXSR        = gem.rx_status            RX Status                    register
+ * ISR         = gem.intr_status          Interrupt status             register
+ * IER         = gem.intr_en              Interrupt enable             register
+ * IDR         = gem.intr_dis             Interrupt disable            register
+ * IMR         = gem.intr_mask            Interrupt mask               register
+ * PHYMNTNC    = gem.phy_maint            PHY maintenance              register
+ * LADDR1L     = gem.spec_addr1_bot       Specific address 1 bottom    register
+ * LADDR1H     = gem.spec_addr1_top       Specific address 1 top       register
+ * LADDR2L     = gem.spec_addr2_bot       Specific address 2 bottom    register
+ * LADDR2H     = gem.spec_addr2_top       Specific address 2 top       register
+ * LADDR3L     = gem.spec_addr3_bot       Specific address 3 bottom    register
+ * LADDR3H     = gem.spec_addr3_top       Specific address 3 top       register
+ * LADDR4L     = gem.spec_addr4_bot       Specific address 4 bottom    register
+ * LADDR4H     = gem.spec_addr4_top       Specific address 4 top       register
+ * DESIGN_CFG5 = gem.design_cfg5          Design Configuration 5       register
+ * UltraScale specific extensions:
+ * TX1QBASEL   = gem.transmit_q1_ptr      64-bit TXQ low address word  register
+ * TX1QBASEH   = gem.upper_tx_q_base_addr 64-bit TXQ high address word register
+ * RX1QBASEL   = gem.receive_q1_ptr       64-bit RXQ low address word  register
+ * RX1QBASEH   = gem.upper_rx_q_base_addr 64-bit RXQ high address word register
  */
 #define ETH_XLNX_GEM_NWCTRL_OFFSET			0x00000000
 #define ETH_XLNX_GEM_NWCFG_OFFSET			0x00000004
@@ -192,6 +199,13 @@
 #define ETH_XLNX_GEM_LADDR3H_OFFSET			0x0000009C
 #define ETH_XLNX_GEM_LADDR4L_OFFSET			0x000000A0
 #define ETH_XLNX_GEM_LADDR4H_OFFSET			0x000000A4
+#define ETH_XLNX_GEM_DESIGN_CFG5_OFFSET			0x00000290
+#ifdef CONFIG_SOC_XILINX_ZYNQMP
+#define ETH_XLNX_GEM_TX1QBASEL_OFFSET			0x00000440
+#define ETH_XLNX_GEM_TX1QBASEH_OFFSET			0x000004C8
+#define ETH_XLNX_GEM_RX1QBASEL_OFFSET			0x00000480
+#define ETH_XLNX_GEM_RX1QBASEH_OFFSET			0x000004D4
+#endif /* CONFIG_SOC_XILINX_ZYNQMP */
 
 /*
  * Masks for clearing registers during initialization:
@@ -403,6 +417,13 @@
 #define ETH_XLNX_GEM_PHY_MAINT_REGISTER_ID_SHIFT	18
 #define ETH_XLNX_GEM_PHY_MAINT_DATA_MASK		0x0000FFFF
 
+/*
+ * gem.design_cfg5:
+ * [11 .. 10] Data bus width of the current target SoC
+ *            (mask identical with ETH_XLNX_GEM_NWCFG_DBUSW_MASK)
+ */
+#define ETH_XLNX_GEM_DESIGN_CFG5_DBUSW_SHIFT		10
+
 /* Device initialization macro */
 #define ETH_XLNX_GEM_NET_DEV_INIT(port) \
 ETH_NET_DEVICE_DT_INST_DEFINE(port,\
@@ -431,17 +452,15 @@ static const struct eth_xlnx_gem_dev_cfg eth_xlnx_gem##port##_dev_cfg = {\
 	.phy_poll_interval		= DT_INST_PROP(port, phy_poll_interval),\
 	.defer_rxp_to_queue		= !DT_INST_PROP(port, handle_rx_in_isr),\
 	.defer_txd_to_queue		= DT_INST_PROP(port, handle_tx_in_workq),\
-	.amba_dbus_width		= (enum eth_xlnx_amba_dbus_width)\
-		(DT_INST_PROP(port, amba_ahb_dbus_width)),\
 	.ahb_burst_length		= (enum eth_xlnx_ahb_burst_length)\
 		(DT_INST_PROP(port, amba_ahb_burst_length)),\
 	.hw_rx_buffer_size		= (enum eth_xlnx_hwrx_buffer_size)\
 		(DT_INST_PROP(port, hw_rx_buffer_size)),\
 	.hw_rx_buffer_offset		= (uint8_t)\
 		(DT_INST_PROP(port, hw_rx_buffer_offset)),\
-	.rxbd_count			= (uint8_t)\
+	.rx_bd_count			= (uint8_t)\
 		(DT_INST_PROP(port, rx_buffer_descriptors)),\
-	.txbd_count			= (uint8_t)\
+	.tx_bd_count			= (uint8_t)\
 		(DT_INST_PROP(port, tx_buffer_descriptors)),\
 	.rx_buffer_size			= (((uint16_t)(DT_INST_PROP(port, rx_buffer_size)) +\
 		(ETH_XLNX_BUFFER_ALIGNMENT-1)) & ~(ETH_XLNX_BUFFER_ALIGNMENT-1)),\
@@ -453,7 +472,8 @@ static const struct eth_xlnx_gem_dev_cfg eth_xlnx_gem##port##_dev_cfg = {\
 	.enable_sgmii_mode		= DT_INST_PROP(port, sgmii_mode),\
 	.disable_reject_fcs_crc_errors	= DT_INST_PROP(port, disable_reject_fcs_crc_errors),\
 	.enable_rx_halfdup_while_tx	= DT_INST_PROP(port, rx_halfdup_while_tx),\
-	.enable_rx_chksum_offload	= DT_INST_PROP(port, rx_checksum_offload),\
+	.disable_rx_chksum_offload	= UTIL_OR(IS_ENABLED(CONFIG_QEMU_TARGET),\
+					  DT_INST_PROP(port, disable_rx_checksum_offload)),\
 	.disable_pause_copy		= DT_INST_PROP(port, disable_pause_copy),\
 	.discard_rx_fcs			= DT_INST_PROP(port, discard_rx_fcs),\
 	.discard_rx_length_errors	= DT_INST_PROP(port, discard_rx_length_errors),\
@@ -467,7 +487,8 @@ static const struct eth_xlnx_gem_dev_cfg eth_xlnx_gem##port##_dev_cfg = {\
 	.discard_non_vlan		= DT_INST_PROP(port, discard_non_vlan),\
 	.enable_fdx			= DT_INST_PROP(port, full_duplex),\
 	.disc_rx_ahb_unavail		= DT_INST_PROP(port, discard_rx_frame_ahb_unavail),\
-	.enable_tx_chksum_offload	= DT_INST_PROP(port, tx_checksum_offload),\
+	.disable_tx_chksum_offload	= UTIL_OR(IS_ENABLED(CONFIG_QEMU_TARGET),\
+					  DT_INST_PROP(port, disable_tx_checksum_offload)),\
 	.tx_buffer_size_full		= DT_INST_PROP(port, hw_tx_buffer_size_full),\
 	.enable_ahb_packet_endian_swap	= DT_INST_PROP(port, ahb_packet_endian_swap),\
 	.enable_ahb_md_endian_swap	= DT_INST_PROP(port, ahb_md_endian_swap)\
@@ -486,11 +507,22 @@ static struct eth_xlnx_gem_dev_data eth_xlnx_gem##port##_dev_data = {\
 	.first_tx_buffer = NULL\
 };
 
+/* Buffer descriptor rings declaration macro */
+#define ETH_XLNX_GEM_BD_RINGS_DECL(port) \
+struct eth_xlnx_gem##port##_bd_rings_layout {\
+	struct eth_xlnx_gem_bd rx_bd_ring[DT_INST_PROP(port, rx_buffer_descriptors)];\
+	struct eth_xlnx_gem_bd tx_bd_ring[DT_INST_PROP(port, tx_buffer_descriptors)];\
+	struct eth_xlnx_gem_bd tie_off_rx_bd;\
+	struct eth_xlnx_gem_bd tie_off_tx_bd;\
+}
+
+/* Buffer descriptor rings instantiation macro */
+#define ETH_XLNX_GEM_BD_RINGS_INST(port) \
+__nocache static struct eth_xlnx_gem##port##_bd_rings_layout eth_xlnx_gem##port##_bd_rings;
+
 /* DMA memory area declaration macro */
 #define ETH_XLNX_GEM_DMA_AREA_DECL(port) \
-struct eth_xlnx_dma_area_gem##port {\
-	struct eth_xlnx_gem_bd rx_bd[DT_INST_PROP(port, rx_buffer_descriptors)];\
-	struct eth_xlnx_gem_bd tx_bd[DT_INST_PROP(port, tx_buffer_descriptors)];\
+struct eth_xlnx_gem##port##_dma_area_layout {\
 	uint8_t rx_buffer\
 		[DT_INST_PROP(port, rx_buffer_descriptors)]\
 		[((DT_INST_PROP(port, rx_buffer_size)\
@@ -501,12 +533,18 @@ struct eth_xlnx_dma_area_gem##port {\
 		[((DT_INST_PROP(port, tx_buffer_size)\
 		+ (ETH_XLNX_BUFFER_ALIGNMENT - 1))\
 		& ~(ETH_XLNX_BUFFER_ALIGNMENT - 1))];\
+	uint8_t rx_tie_off_buffer[((DT_INST_PROP(port, rx_buffer_size)\
+		+ (ETH_XLNX_BUFFER_ALIGNMENT - 1))\
+		& ~(ETH_XLNX_BUFFER_ALIGNMENT - 1))];\
+	uint8_t tx_tie_off_buffer[((DT_INST_PROP(port, tx_buffer_size)\
+		+ (ETH_XLNX_BUFFER_ALIGNMENT - 1))\
+		& ~(ETH_XLNX_BUFFER_ALIGNMENT - 1))];\
 };
 
 /* DMA memory area instantiation macro */
 #define ETH_XLNX_GEM_DMA_AREA_INST(port) \
-static struct eth_xlnx_dma_area_gem##port eth_xlnx_gem##port##_dma_area\
-	__ocm_bss_section __aligned(4096);
+static struct eth_xlnx_gem##port##_dma_area_layout eth_xlnx_gem##port##_dma_area\
+	__aligned(4096);
 
 /* Interrupt configuration function macro */
 #define ETH_XLNX_GEM_CONFIG_IRQ_FUNC(port) \
@@ -521,10 +559,14 @@ static void eth_xlnx_gem##port##_irq_config(const struct device *dev)\
 /* RX/TX BD Ring initialization macro */
 #define ETH_XLNX_GEM_INIT_BD_RING(port) \
 if (dev_conf->base_addr == DT_REG_ADDR_BY_IDX(DT_INST(port, xlnx_gem), 0)) {\
-	dev_data->rxbd_ring.first_bd = &(eth_xlnx_gem##port##_dma_area.rx_bd[0]);\
-	dev_data->txbd_ring.first_bd = &(eth_xlnx_gem##port##_dma_area.tx_bd[0]);\
+	dev_data->rx_bd_ring.first_bd = &(eth_xlnx_gem##port##_bd_rings.rx_bd_ring[0]);\
+	dev_data->rx_bd_ring.tie_off_bd = &eth_xlnx_gem##port##_bd_rings.tie_off_rx_bd;\
+	dev_data->tx_bd_ring.first_bd = &(eth_xlnx_gem##port##_bd_rings.tx_bd_ring[0]);\
+	dev_data->tx_bd_ring.tie_off_bd = &eth_xlnx_gem##port##_bd_rings.tie_off_tx_bd;\
 	dev_data->first_rx_buffer = (uint8_t *)eth_xlnx_gem##port##_dma_area.rx_buffer;\
 	dev_data->first_tx_buffer = (uint8_t *)eth_xlnx_gem##port##_dma_area.tx_buffer;\
+	dev_data->rx_tie_off_buffer = eth_xlnx_gem##port##_dma_area.rx_tie_off_buffer;\
+	dev_data->tx_tie_off_buffer = eth_xlnx_gem##port##_dma_area.tx_tie_off_buffer;\
 }
 
 /* Top-level device initialization macro - bundles all of the above */
@@ -532,6 +574,8 @@ if (dev_conf->base_addr == DT_REG_ADDR_BY_IDX(DT_INST(port, xlnx_gem), 0)) {\
 ETH_XLNX_GEM_CONFIG_IRQ_FUNC(port);\
 ETH_XLNX_GEM_DEV_CONFIG(port);\
 ETH_XLNX_GEM_DEV_DATA(port);\
+ETH_XLNX_GEM_BD_RINGS_DECL(port);\
+ETH_XLNX_GEM_BD_RINGS_INST(port);\
 ETH_XLNX_GEM_DMA_AREA_DECL(port);\
 ETH_XLNX_GEM_DMA_AREA_INST(port);\
 ETH_XLNX_GEM_NET_DEV_INIT(port);\
@@ -553,20 +597,6 @@ enum eth_xlnx_link_speed {
 	LINK_10MBIT,
 	LINK_100MBIT,
 	LINK_1GBIT
-};
-
-/**
- * @brief AMBA AHB data bus width configuration enumeration type.
- *
- * Enumeration type containing the supported width options for the
- * AMBA AHB data bus. This is a configuration item in the controller's
- * net_cfg register.
- */
-enum eth_xlnx_amba_dbus_width {
-	/* The values of this enum are consecutively numbered */
-	AMBA_AHB_DBUS_WIDTH_32BIT = 0,
-	AMBA_AHB_DBUS_WIDTH_64BIT,
-	AMBA_AHB_DBUS_WIDTH_128BIT
 };
 
 /**
@@ -654,11 +684,13 @@ struct eth_xlnx_gem_bd {
  * counter as well as indices used to determine which BD shall be used
  * or evaluated for the next RX/TX operation.
  */
-struct eth_xlnx_gem_bdring {
+struct eth_xlnx_gem_bd_ring {
 	/* Concurrent modification protection */
 	struct k_sem		ring_sem;
 	/* Pointer to the first BD in the list */
 	struct eth_xlnx_gem_bd	*first_bd;
+	/* Pointer to the tie-off BD for the respective direction */
+	struct eth_xlnx_gem_bd	*tie_off_bd;
 	/* Index of the next BD to be used for TX */
 	uint8_t			next_to_use;
 	/* Index of the next BD to be processed (both RX/TX) */
@@ -694,13 +726,12 @@ struct eth_xlnx_gem_dev_cfg {
 	uint8_t				defer_rxp_to_queue;
 	uint8_t				defer_txd_to_queue;
 
-	enum eth_xlnx_amba_dbus_width	amba_dbus_width;
 	enum eth_xlnx_ahb_burst_length	ahb_burst_length;
 	enum eth_xlnx_hwrx_buffer_size	hw_rx_buffer_size;
 	uint8_t				hw_rx_buffer_offset;
 
-	uint8_t				rxbd_count;
-	uint8_t				txbd_count;
+	uint8_t				rx_bd_count;
+	uint8_t				tx_bd_count;
 	uint16_t			rx_buffer_size;
 	uint16_t			tx_buffer_size;
 
@@ -710,7 +741,7 @@ struct eth_xlnx_gem_dev_cfg {
 	bool				enable_sgmii_mode : 1;
 	bool				disable_reject_fcs_crc_errors : 1;
 	bool				enable_rx_halfdup_while_tx : 1;
-	bool				enable_rx_chksum_offload : 1;
+	bool				disable_rx_chksum_offload : 1;
 	bool				disable_pause_copy : 1;
 	bool				discard_rx_fcs : 1;
 	bool				discard_rx_length_errors : 1;
@@ -724,7 +755,7 @@ struct eth_xlnx_gem_dev_cfg {
 	bool				discard_non_vlan : 1;
 	bool				enable_fdx : 1;
 	bool				disc_rx_ahb_unavail : 1;
-	bool				enable_tx_chksum_offload : 1;
+	bool				disable_tx_chksum_offload : 1;
 	bool				tx_buffer_size_full : 1;
 	bool				enable_ahb_packet_endian_swap : 1;
 	bool				enable_ahb_md_endian_swap : 1;
@@ -753,9 +784,11 @@ struct eth_xlnx_gem_dev_data {
 
 	uint8_t				*first_rx_buffer;
 	uint8_t				*first_tx_buffer;
+	uint8_t				*rx_tie_off_buffer;
+	uint8_t				*tx_tie_off_buffer;
 
-	struct eth_xlnx_gem_bdring	rxbd_ring;
-	struct eth_xlnx_gem_bdring	txbd_ring;
+	struct eth_xlnx_gem_bd_ring	rx_bd_ring;
+	struct eth_xlnx_gem_bd_ring	tx_bd_ring;
 
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 	struct net_stats_eth		stats;

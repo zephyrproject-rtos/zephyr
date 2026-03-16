@@ -28,7 +28,7 @@ Hardware
 The STM32F723E Discovery kit provides the following hardware components:
 
 - STM32F723IEK6 in BGA176 package
-- ARM |reg| 32-bit Cortex |reg| -M7 CPU with FPU
+- ARM® 32-bit Cortex®-M7 CPU with FPU
 - 216 MHz max CPU frequency
 - VDD from 1.8 V to 3.6 V
 - 1 MB Flash
