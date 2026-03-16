@@ -394,6 +394,34 @@ New APIs and options
   * :c:macro:`VIDEO_PIX_FMT_SGRBG8P16`
   * :c:macro:`VIDEO_PIX_FMT_SRGGB8P16`
   * :c:macro:`VIDEO_PIX_FMT_Y8P16`
+  * :c:macro:`VIDEO_FMT_IS_SEMI_PLANAR`
+  * :c:macro:`VIDEO_FMT_IS_PLANAR`
+  * :c:macro:`VIDEO_FMT_IS_GRAYSCALE`
+  * :c:macro:`VIDEO_FMT_IS_BAYER`
+  * :c:macro:`VIDEO_FMT_IS_RGB`
+  * :c:macro:`VIDEO_FMT_IS_YUV`
+  * :c:macro:`VIDEO_FMT_IS_MIPI_PACKED`
+  * :c:macro:`VIDEO_FMT_IS_PADDED`
+  * :c:macro:`VIDEO_FMT_IS_SEMI_PLANAR`
+  * :c:macro:`VIDEO_FMT_IS_FULL_PLANAR`
+  * :c:macro:`VIDEO_FOREACH_BAYER`
+  * :c:macro:`VIDEO_FOREACH_BAYER_PADDED`
+  * :c:macro:`VIDEO_FOREACH_BAYER_MIPI_PACKED`
+  * :c:macro:`VIDEO_FOREACH_BAYER_NON_PACKED`
+  * :c:macro:`VIDEO_FOREACH_GRAYSCALE`
+  * :c:macro:`VIDEO_FOREACH_GRAYSCALE_NON_PACKED`
+  * :c:macro:`VIDEO_FOREACH_GRAYSCALE_PADDED`
+  * :c:macro:`VIDEO_FOREACH_GRAYSCALE_MIPI_PACKED`
+  * :c:macro:`VIDEO_FOREACH_RGB`
+  * :c:macro:`VIDEO_FOREACH_RGB_PACKED`
+  * :c:macro:`VIDEO_FOREACH_RGB_NON_PACKED`
+  * :c:macro:`VIDEO_FOREACH_RGB_ALPHA`
+  * :c:macro:`VIDEO_FOREACH_RGB_PADDED`
+  * :c:macro:`VIDEO_FOREACH_YUV`
+  * :c:macro:`VIDEO_FOREACH_YUV_NON_PLANAR`
+  * :c:macro:`VIDEO_FOREACH_YUV_SEMI_PLANAR`
+  * :c:macro:`VIDEO_FOREACH_YUV_FULL_PLANAR`
+  * :c:macro:`VIDEO_FOREACH_COMPRESSED`
 
 .. zephyr-keep-sorted-stop
 
