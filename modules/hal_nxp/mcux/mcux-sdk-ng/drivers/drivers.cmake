@@ -173,6 +173,7 @@ set_variable_ifdef(CONFIG_OPAMP_MCUX_OPAMP_FAST     CONFIG_MCUX_COMPONENT_driver
 set_variable_ifdef(CONFIG_CRC_DRIVER_NXP        CONFIG_MCUX_COMPONENT_driver.crc)
 set_variable_ifdef(CONFIG_CRC_DRIVER_NXP_LPC    CONFIG_MCUX_COMPONENT_driver.lpc_crc)
 set_variable_ifdef(CONFIG_PHY_NXP_T1S           CONFIG_MCUX_COMPONENT_driver.tenbaset_phy)
+set_variable_ifdef(CONFIG_AUXDISPLAY_NXP_SLCD CONFIG_MCUX_COMPONENT_driver.slcd)
 
 if(NOT CONFIG_SOC_MIMX9596)
   set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC          CONFIG_MCUX_COMPONENT_driver.netc_switch)
