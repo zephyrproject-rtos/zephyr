@@ -5,28 +5,29 @@
  */
 
 /*
- * DAC output on PA10
- * ADC input read from PB14
+ * DAC output on PA5
+ * ADC input read from PA6
  * Add a jumper between those two pins to run this test.
  */
-
 / {
 	zephyr,user {
-		io-channels = <&dac1 1 &adc1 1>;
+		io-channels = <&dac1 2 &adc1 3>;
 		io-channel-names = "dac1", "adc1";
 	};
 };
 
 &adc1 {
 	status = "okay";
-	pinctrl-0 = <&adc_in1_pb14>;
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	pinctrl-0 = <&adc1_inp3_pa6>;
 	pinctrl-names = "default";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	channel@1 {
-		reg = <1>;
+	channel@3 {
+		reg = <3>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <12>;
@@ -36,14 +37,14 @@
 
 &dac1 {
 	status = "okay";
-	pinctrl-0 = <&dac_out1_pa10>;
+	pinctrl-0 = <&dac1_out2_pa5>;
 	pinctrl-names = "default";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	channel@1 {
-		reg = <1>;
+	channel@2 {
+		reg = <2>;
 		zephyr,resolution = <12>;
 	};
 };
