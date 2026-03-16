@@ -1,0 +1,28 @@
+# Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: m1s_dock
+name: Sipeed M1S Dock
+vendor: sipeed
+type: mcu
+arch: riscv
+ram: 224
+flash: 8128
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - gpio
+  - pinctrl
+  - uart
+  - pwm
+  - i2c
+  - spi
+  - watchdog
+  - counter
+  - entropy
+  - crypto
