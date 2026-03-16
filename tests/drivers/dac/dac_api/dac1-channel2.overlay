@@ -1,25 +1,24 @@
 /*
- * Copyright (c) 2025-2026 Microchip Technology Inc.
+ * Copyright (c) 2026 Analog Devices, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 / {
 	zephyr,user {
-		io-channels = <&dac 0>;
+		io-channels = <&dac1 2>;
 		io-channel-names = "dac1";
 	};
 };
 
-&dac {
+&dac1 {
 	status = "okay";
-	refsel = "int_ref";
+
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	dac0: channel@0 {
-		reg = <0>;
-		rate = <1000>;
+	channel@2 {
+		reg = <2>;
 		zephyr,resolution = <12>;
 	};
 };

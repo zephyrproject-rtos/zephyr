@@ -142,15 +142,20 @@
 
 &dac0 {
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
 	reference = "intref";
 
-	channel_0 {
+	channel@0 {
+		reg = <0>;
 		oversampling = "OSR_1";
 		refresh-period = <1>;
 		current-control = "CC1M";
 	};
 
-	channel_1 {
+	channel@1 {
+		reg = <1>;
 		oversampling = "OSR_1";
 		refresh-period = <1>;
 		current-control = "CC1M";
