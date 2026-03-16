@@ -1557,7 +1557,8 @@ static int float_encode(const float *num, json_append_bytes_t append_bytes, void
 	char buf[sizeof("-3.40282347e+38")];
 	int ret;
 
-	ret = print_double(buf, sizeof(buf), "%.9g", (double)*num);
+	ret = print_double(buf, sizeof(buf),
+			   "%." STRINGIFY(CONFIG_JSON_FLOAT_PRECISION) "g", (double)*num);
 
 	if (ret < 0) {
 		return ret;
@@ -1574,7 +1575,8 @@ static int double_encode(const double *num, json_append_bytes_t append_bytes, vo
 	char buf[sizeof("-1.797693134862316e+308")];
 	int ret;
 
-	ret = print_double(buf, sizeof(buf), "%.16g", *num);
+	ret = print_double(buf, sizeof(buf),
+			   "%." STRINGIFY(CONFIG_JSON_DOUBLE_PRECISION) "g", *num);
 
 	if (ret < 0) {
 		return ret;
