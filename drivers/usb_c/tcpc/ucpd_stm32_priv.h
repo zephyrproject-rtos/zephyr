@@ -12,6 +12,7 @@
 #include <zephyr/drivers/usb_c/usbc_tcpc.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <stm32_ll_ucpd.h>
+#include <stm32_ll_pwr.h>
 
 /**
  * @brief The packet type(SOP*) consists of 2-bytes
