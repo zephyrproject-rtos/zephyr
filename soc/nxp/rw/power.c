@@ -228,6 +228,17 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 				NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(rtc)));
 				sys_clock_idle_exit();
 				sys_clock_set_timeout(0, true);
+				/* Subtract exit-latency from the programmed
+				 * RTC wakeup to account for PM3 re-entry
+				 * recovery overhead.
+				 */
+				uint16_t wake = RTC_GetWakeupCount(RTC);
+				uint32_t latency_us = pm_state_next_get(0)->exit_latency_us;
+				uint16_t latency_ticks = latency_us / USEC_PER_MSEC;
+
+				if (wake > latency_ticks) {
+					RTC_SetWakeupCount(RTC, wake - latency_ticks);
+				}
 				/* GDET got enabled when exiting PM3, disable it
 				 * again before re-entering PM3.
 				 */

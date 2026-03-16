@@ -184,6 +184,8 @@ static uint32_t mcux_lpc_ostick_compensate_system_timer(void)
 		slept_time_ticks = counter_get_top_value(counter_dev) - slept_time_ticks;
 	}
 	slept_time_us = counter_ticks_to_us(counter_dev, slept_time_ticks);
+	/* Compensate for PM3 exit overhead not tracked by the counter */
+	slept_time_us += pm_state_next_get(0)->exit_latency_us;
 	cyc_sys_compensated += CYC_PER_US * slept_time_us;
 
 	if (IS_ENABLED(CONFIG_MCUX_OS_TIMER_PM_POWERED_OFF)) {
