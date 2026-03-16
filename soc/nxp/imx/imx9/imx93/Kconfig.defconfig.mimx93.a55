@@ -28,4 +28,7 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 24000000
 
+config PM_CPU_OPS
+	default y if PM
+
 endif
