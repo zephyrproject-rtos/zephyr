@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright (c) 2024-2026 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_ESP32 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
@@ -227,6 +227,18 @@ config SPIRAM_SPIWP_SD3_PIN
 	  value to the GPIO number of the SPIRAM WP pin.
 
 endif # SOC_SERIES_ESP32
+
+menu "Relocate BSS to PSRAM"
+	depends on ESP_SPIRAM
+
+config ESP_SPIRAM_BSS_RELOC_LIBS_AND_OBJS
+	string "Libraries and objects to relocate BSS to PSRAM"
+	default ""
+	help
+	  Space-separated list of library or object file names (e.g. libfile.a or file.o). Their .bss segments
+	  will be placed in .ext_ram.data when CONFIG_ESP_SPIRAM is enabled. Leave empty to not relocate any BSS.
+
+endmenu # Relocate BSS to PSRAM
 
 endmenu # ESP_SPIRAM
 
