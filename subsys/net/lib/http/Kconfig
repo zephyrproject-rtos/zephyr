@@ -86,6 +86,23 @@ config HTTP_SERVER_VERSION
 	help
 	  What HTTP version is supported in HTTP server.
 
+config HTTP_SERVER_TO_H3_UPGRADE
+	bool "Advertise HTTP/3 upgrade by default"
+	depends on HTTP_SERVER_VERSION_3
+	default y
+	help
+	  If enabled, then services that support HTTP/3 send
+	      Alt-Svc: h3=":443"; ma=86400
+	  in HTTP/1 header so that the client can know it can connect using HTTP/3.
+	  Individual services can override this default in http_service_config.
+
+config HTTP_SERVER_TO_H3_UPGRADE_MAX_AGE_SECS
+	int "What is the max age of the HTTP/3 upgrade (in secs)"
+	depends on HTTP_SERVER_TO_H3_UPGRADE
+	default 86400
+	help
+	  Default is 1 day (86400 seconds)
+
 config HTTP_SERVER_STACK_SIZE
 	int "HTTP server thread stack size"
 	default 4096 if FILE_SYSTEM

@@ -99,12 +99,24 @@ enum http_version {
 	HTTP_VERSION_3 = 0x04, /**< Support HTTP/3 */
 };
 
+/** HTTP/3 Alt-Svc advertisement policy for this service. */
+enum http_h3_alt_svc_policy {
+	/** Use the global default policy configured in Kconfig. */
+	HTTP_H3_ALT_SVC_DEFAULT = 0,
+	/** Never advertise HTTP/3 via Alt-Svc for this service. */
+	HTTP_H3_ALT_SVC_DISABLE,
+	/** Always advertise HTTP/3 via Alt-Svc for this service when available. */
+	HTTP_H3_ALT_SVC_ENABLE,
+};
+
 /** HTTP service configuration */
 struct http_service_config {
 	/** Custom socket creation for the service if needed */
 	http_socket_create_fn socket_create;
 	/** What HTTP version to use for the service. */
 	enum http_version http_ver;
+	/** HTTP/3 Alt-Svc advertisement policy for the service. */
+	enum http_h3_alt_svc_policy h3_alt_svc_policy;
 
 	/* If any more service-specific configuration is needed, it can be added here. */
 };
