@@ -117,13 +117,12 @@ config FLASH_CODE_PARTITION_USING_FIXED_PARTITIONS
 		$(dt_chosen_has_compat,$(dt_node_parent,$(dt_chosen_path,$(DT_CHOSEN_Z_CODE_PARTITION))),fixed-partitions) || \
 		$(dt_chosen_has_compat,$(dt_node_parent,$(dt_chosen_path,$(DT_CHOSEN_Z_CODE_PARTITION))),fixed-subpartitions)
 	depends on USE_DT_CODE_PARTITION
-	select DEPRECATED
 	help
 	  If this item is selected then it is because your device is using ``fixed-partitions`` or
 	  ``fixed-subpartitions`` for partition layout, this has been replaced with
 	  ``zephyr,mapped-partitions``.
 
-	  Support for this will be removed and required that your files be updated correctly for
+	  Support for this will be deprecated and requires that your files be updated correctly for
 	  a future release, check the Zephyr 4.4 migration notes.
 
 config FLASH_LOAD_OFFSET
