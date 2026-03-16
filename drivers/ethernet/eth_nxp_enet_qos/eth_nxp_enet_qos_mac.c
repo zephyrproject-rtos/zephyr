@@ -269,7 +269,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 		CONTAINER_OF(work, struct nxp_enet_qos_rx_data, rx_work);
 	struct nxp_enet_qos_mac_data *data =
 		CONTAINER_OF(rx_data, struct nxp_enet_qos_mac_data, rx);
-	const struct device *dev = data->iface->if_dev->dev;
+	const struct device *dev = net_if_get_device(data->iface);
 	volatile union nxp_enet_qos_rx_desc *desc_arr = data->rx.descriptors;
 	uint32_t desc_idx = rx_data->next_desc_idx;
 	volatile union nxp_enet_qos_rx_desc *desc = &desc_arr[desc_idx];
