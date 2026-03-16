@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Kent Hall.
+ * Copyright (c) 2026 Meta Platforms
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,8 @@
 #include <zephyr/drivers/reset.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/drivers/counter/stm32.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #include <stm32_ll_tim.h>
 #include <stm32_ll_rcc.h>
@@ -53,6 +56,30 @@ static uint32_t(*const get_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *) = {
 	LL_TIM_OC_GetCompareCH3, LL_TIM_OC_GetCompareCH4,
 };
 #endif
+
+#ifdef CONFIG_COUNTER_CAPTURE
+/** Channel to LL mapping. */
+static const uint32_t ch2ll[TIMER_MAX_CH] = {
+	LL_TIM_CHANNEL_CH1, LL_TIM_CHANNEL_CH2,
+	LL_TIM_CHANNEL_CH3, LL_TIM_CHANNEL_CH4,
+};
+
+static uint32_t (*const get_timer_capture[TIMER_MAX_CH])(const TIM_TypeDef *) = {
+	LL_TIM_IC_GetCaptureCH1, LL_TIM_IC_GetCaptureCH2,
+	LL_TIM_IC_GetCaptureCH3, LL_TIM_IC_GetCaptureCH4,
+};
+
+static uint32_t (*const get_over_capture[TIMER_MAX_CH])(const TIM_TypeDef *) = {
+	LL_TIM_IsActiveFlag_CC1OVR, LL_TIM_IsActiveFlag_CC2OVR,
+	LL_TIM_IsActiveFlag_CC3OVR, LL_TIM_IsActiveFlag_CC4OVR,
+};
+
+static void (*const clear_over_capture[TIMER_MAX_CH])(TIM_TypeDef *) = {
+	LL_TIM_ClearFlag_CC1OVR, LL_TIM_ClearFlag_CC2OVR,
+	LL_TIM_ClearFlag_CC3OVR, LL_TIM_ClearFlag_CC4OVR,
+};
+#endif /* CONFIG_COUNTER_CAPTURE */
+
 /** Channel to interrupt enable function mapping. */
 static void(*const enable_it[TIMER_MAX_CH])(TIM_TypeDef *) = {
 	LL_TIM_EnableIT_CC1, LL_TIM_EnableIT_CC2,
@@ -95,7 +122,11 @@ struct counter_stm32_data {
 };
 
 struct counter_stm32_ch_data {
-	counter_alarm_callback_t callback;
+	counter_alarm_callback_t alarm_cb;
+#ifdef CONFIG_COUNTER_CAPTURE
+	counter_capture_cb_t capture_cb;
+	bool single_shot_capture;
+#endif /* CONFIG_COUNTER_CAPTURE */
 	void *user_data;
 };
 
@@ -110,6 +141,9 @@ struct counter_stm32_config {
 	uint32_t irqn;
 	/* Reset controller device configuration */
 	const struct reset_dt_spec reset;
+#ifdef CONFIG_COUNTER_CAPTURE
+	const struct pinctrl_dev_config *pcfg;
+#endif /* CONFIG_COUNTER_CAPTURE */
 
 	LOG_INSTANCE_PTR_DECLARE(log);
 };
@@ -263,7 +297,7 @@ static int counter_stm32_set_cc(const struct device *dev, uint8_t id,
 		if (irq_on_late) {
 			counter_stm32_counter_stm32_set_cc_int_pending(dev, id);
 		} else {
-			config->ch_data[id].callback = NULL;
+			config->ch_data[id].alarm_cb = NULL;
 		}
 	} else {
 		enable_it[id](timer);
@@ -282,11 +316,20 @@ static int counter_stm32_set_alarm(const struct device *dev, uint8_t chan,
 		return -EINVAL;
 	}
 
-	if (chdata->callback) {
+	if (chdata->alarm_cb) {
 		return -EBUSY;
 	}
 
-	chdata->callback = alarm_cfg->callback;
+#ifdef CONFIG_COUNTER_CAPTURE
+	/* Can't use channel if is used for a capture */
+	if (LL_TIM_CC_IsEnabledChannel(config->timer, ch2ll[chan])) {
+		LOG_ERR("%s: cannot use channel %d for alarm while capture is enabled",
+			dev->name, chan);
+		return -EBUSY;
+	}
+#endif /* CONFIG_COUNTER_CAPTURE */
+
+	chdata->alarm_cb = alarm_cfg->callback;
 	chdata->user_data = alarm_cfg->user_data;
 
 	return counter_stm32_set_cc(dev, chan, alarm_cfg);
@@ -297,7 +340,7 @@ static int counter_stm32_cancel_alarm(const struct device *dev, uint8_t chan)
 	const struct counter_stm32_config *config = dev->config;
 
 	disable_it[chan](config->timer);
-	config->ch_data[chan].callback = NULL;
+	config->ch_data[chan].alarm_cb = NULL;
 
 	return 0;
 }
@@ -314,7 +357,7 @@ static int counter_stm32_set_top_value(const struct device *dev,
 		/* Overflow can be changed only when all alarms are
 		 * disabled.
 		 */
-		if (config->ch_data[i].callback) {
+		if (config->ch_data[i].alarm_cb) {
 			return -EBUSY;
 		}
 	}
@@ -411,6 +454,16 @@ static int counter_stm32_init_timer(const struct device *dev)
 	/* config/enable IRQ */
 	cfg->irq_config_func(dev);
 
+#ifdef CONFIG_COUNTER_CAPTURE
+	if (cfg->pcfg) {
+		r = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (r < 0) {
+			LOG_ERR("%s: Counter Capture pinctrl setup failed (%d)", dev->name, r);
+			return r;
+		}
+	}
+#endif /* CONFIG_COUNTER_CAPTURE */
+
 	/* initialize timer */
 	LL_TIM_SetPrescaler(timer, cfg->prescaler);
 	LL_TIM_SetAutoReload(timer, counter_get_max_top_value(dev));
@@ -474,6 +527,167 @@ static int counter_stm32_set_value(const struct device *dev, uint32_t ticks)
 	return 0;
 }
 
+
+#ifdef CONFIG_COUNTER_CAPTURE
+static int counter_stm32_enable_capture(const struct device *dev, uint8_t chan)
+{
+	const struct counter_stm32_config *config = dev->config;
+	TIM_TypeDef *timer = config->timer;
+	struct counter_stm32_ch_data *chdata = &config->ch_data[chan];
+
+	/* Prevent configuring capture on a channel already used for alarms */
+	if (chdata->alarm_cb != NULL) {
+		LOG_ERR("%s: Channel %d already configured for alarm, cannot set capture",
+			dev->name, chan);
+		return -EBUSY;
+	}
+
+	/* Make sure a capture callback is set */
+	if (chdata->capture_cb == NULL) {
+		LOG_ERR("%s: Capture callback not set for channel %d, please configure",
+			dev->name, chan);
+		return -EINVAL;
+	}
+
+	/* enable interrupt */
+	enable_it[chan](timer);
+
+	LL_TIM_CC_EnableChannel(timer, ch2ll[chan]);
+
+	return 0;
+}
+
+static int counter_stm32_disable_capture(const struct device *dev, uint8_t chan)
+{
+	const struct counter_stm32_config *config = dev->config;
+	struct counter_stm32_ch_data *chdata = &config->ch_data[chan];
+	TIM_TypeDef *timer = config->timer;
+
+	LL_TIM_CC_DisableChannel(timer, ch2ll[chan]);
+
+	/* disable interrupt */
+	disable_it[chan](timer);
+	chdata->capture_cb = NULL;
+
+	return 0;
+}
+
+static int counter_stm32_capture_callback_set(const struct device *dev, uint8_t chan,
+					      counter_capture_flags_t flags,
+					      counter_capture_cb_t cb, void *user_data)
+{
+	const struct counter_stm32_config *config = dev->config;
+	struct counter_stm32_ch_data *chdata = &config->ch_data[chan];
+	TIM_TypeDef *timer = config->timer;
+	uint32_t config_flags = LL_TIM_ACTIVEINPUT_DIRECTTI;
+
+	/* Prevent configuring capture on a channel already used for alarms */
+	if (chdata->alarm_cb != NULL) {
+		LOG_ERR("%s: Channel %d already configured for alarm, cannot set capture",
+			dev->name, chan);
+		return -EBUSY;
+	}
+
+	/* Config is only writable when it is off */
+	if (LL_TIM_CC_IsEnabledChannel(timer, ch2ll[chan])) {
+		LOG_ERR("%s: Capture channel %d is enabled, cannot reconfigure", dev->name, chan);
+		return -EBUSY;
+	}
+
+	/* Configure polarity */
+	if ((flags & COUNTER_CAPTURE_BOTH_EDGES) == COUNTER_CAPTURE_BOTH_EDGES) {
+		config_flags |= LL_TIM_IC_POLARITY_BOTHEDGE;
+	} else if (flags & COUNTER_CAPTURE_FALLING_EDGE) {
+		config_flags |= LL_TIM_IC_POLARITY_FALLING;
+	} else if (flags & COUNTER_CAPTURE_RISING_EDGE) {
+		config_flags |= LL_TIM_IC_POLARITY_RISING;
+	} else {
+		return -EINVAL;
+	}
+
+	/* Configure prescaler */
+	switch (flags & COUNTER_CAPTURE_STM32_PRESCALER_DIV_MSK) {
+	case COUNTER_CAPTURE_STM32_PRESCALER_DIV1:
+		config_flags |= LL_TIM_ICPSC_DIV1;
+		break;
+	case COUNTER_CAPTURE_STM32_PRESCALER_DIV2:
+		config_flags |= LL_TIM_ICPSC_DIV2;
+		break;
+	case COUNTER_CAPTURE_STM32_PRESCALER_DIV4:
+		config_flags |= LL_TIM_ICPSC_DIV4;
+		break;
+	case COUNTER_CAPTURE_STM32_PRESCALER_DIV8:
+		config_flags |= LL_TIM_ICPSC_DIV8;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	/* Configure filter */
+	switch (flags & COUNTER_CAPTURE_STM32_FILTER_MSK) {
+	case COUNTER_CAPTURE_STM32_FILTER_DTS_DIV1_N1:
+		config_flags |= LL_TIM_IC_FILTER_FDIV1;
+		break;
+	case COUNTER_CAPTURE_STM32_FILTER_TIM_KER_CK_N2:
+		config_flags |= LL_TIM_IC_FILTER_FDIV1_N2;
+		break;
+	case COUNTER_CAPTURE_STM32_FILTER_TIM_KER_CK_N4:
+		config_flags |= LL_TIM_IC_FILTER_FDIV1_N4;
+		break;
+	case COUNTER_CAPTURE_STM32_FILTER_TIM_KER_CK_N8:
+		config_flags |= LL_TIM_IC_FILTER_FDIV1_N8;
+		break;
+	case COUNTER_CAPTURE_STM32_FILTER_DTS_DIV2_N6:
+		config_flags |= LL_TIM_IC_FILTER_FDIV2_N6;
+		break;
+	case COUNTER_CAPTURE_STM32_FILTER_DTS_DIV2_N8:
+		config_flags |= LL_TIM_IC_FILTER_FDIV2_N8;
+		break;
+	case COUNTER_CAPTURE_STM32_FILTER_DTS_DIV4_N6:
+		config_flags |= LL_TIM_IC_FILTER_FDIV4_N6;
+		break;
+	case COUNTER_CAPTURE_STM32_FILTER_DTS_DIV4_N8:
+		config_flags |= LL_TIM_IC_FILTER_FDIV4_N8;
+		break;
+	case COUNTER_CAPTURE_STM32_FILTER_DTS_DIV8_N6:
+		config_flags |= LL_TIM_IC_FILTER_FDIV8_N6;
+		break;
+	case COUNTER_CAPTURE_STM32_FILTER_DTS_DIV8_N8:
+		config_flags |= LL_TIM_IC_FILTER_FDIV8_N8;
+		break;
+	case COUNTER_CAPTURE_STM32_FILTER_DTS_DIV16_N5:
+		config_flags |= LL_TIM_IC_FILTER_FDIV16_N5;
+		break;
+	case COUNTER_CAPTURE_STM32_FILTER_DTS_DIV16_N6:
+		config_flags |= LL_TIM_IC_FILTER_FDIV16_N6;
+		break;
+	case COUNTER_CAPTURE_STM32_FILTER_DTS_DIV16_N8:
+		config_flags |= LL_TIM_IC_FILTER_FDIV16_N8;
+		break;
+	case COUNTER_CAPTURE_STM32_FILTER_DTS_DIV32_N5:
+		config_flags |= LL_TIM_IC_FILTER_FDIV32_N5;
+		break;
+	case COUNTER_CAPTURE_STM32_FILTER_DTS_DIV32_N6:
+		config_flags |= LL_TIM_IC_FILTER_FDIV32_N6;
+		break;
+	case COUNTER_CAPTURE_STM32_FILTER_DTS_DIV32_N8:
+		config_flags |= LL_TIM_IC_FILTER_FDIV32_N8;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	chdata->capture_cb = cb;
+	chdata->user_data = user_data;
+	chdata->single_shot_capture = (flags & COUNTER_CAPTURE_SINGLE_SHOT) ? true : false;
+
+	/* Apply configuration */
+	LL_TIM_IC_Config(timer, ch2ll[chan], config_flags);
+
+	return 0;
+}
+#endif
+
 static void counter_stm32_top_irq_handle(const struct device *dev)
 {
 	struct counter_stm32_data *data = dev->data;
@@ -484,27 +698,80 @@ static void counter_stm32_top_irq_handle(const struct device *dev)
 	cb(dev, data->top_user_data);
 }
 
-static void counter_stm32_alarm_irq_handle(const struct device *dev, uint32_t id)
+static void counter_stm32_irq_handle(const struct device *dev, uint32_t id)
 {
 	const struct counter_stm32_config *config = dev->config;
 	struct counter_stm32_data *data = dev->data;
 	TIM_TypeDef *timer = config->timer;
 
 	struct counter_stm32_ch_data *chdata;
-	counter_alarm_callback_t cb;
 
 	atomic_and(&data->cc_int_pending, ~BIT(id));
-	disable_it[id](timer);
 
 	chdata = &config->ch_data[id];
-	cb = chdata->callback;
-	chdata->callback = NULL;
 
-	if (cb) {
-		uint32_t cc_val = get_timer_compare[id](timer);
+#ifdef CONFIG_COUNTER_CAPTURE
+	/* With Counter Capture, we need to check which mode it was configured for */
+	if (LL_TIM_IC_GetActiveInput(timer, ch2ll[id]) == LL_TIM_ACTIVEINPUT_DIRECTTI) {
+		counter_capture_cb_t cb = chdata->capture_cb;
 
-		cb(dev, id, cc_val, chdata->user_data);
+		/*
+		 * CCxOF is also set if at least two consecutive captures
+		 * occurred whereas the flag was not cleared
+		 */
+		if (get_over_capture[id](timer)) {
+			LOG_ERR("%s: overcapture on channel %d", dev->name, id);
+			clear_over_capture[id](timer);
+		}
+
+		if (cb) {
+			uint32_t cc_val = get_timer_capture[id](timer);
+			uint32_t pol = LL_TIM_IC_GetPolarity(timer, ch2ll[id]);
+			uint32_t filter = LL_TIM_IC_GetFilter(timer, ch2ll[id]);
+			uint32_t prescaler = LL_TIM_IC_GetPrescaler(timer, ch2ll[id]);
+			counter_capture_flags_t flags = 0;
+
+			/* translate stm32 flags to zephyr flags */
+			if (pol == LL_TIM_IC_POLARITY_RISING) {
+				flags = COUNTER_CAPTURE_RISING_EDGE;
+			} else if (pol == LL_TIM_IC_POLARITY_FALLING) {
+				flags = COUNTER_CAPTURE_FALLING_EDGE;
+			} else if (pol == LL_TIM_IC_POLARITY_BOTHEDGE) {
+				flags = COUNTER_CAPTURE_BOTH_EDGES;
+			}
+
+			/* Set Vendor flags */
+			flags |= FIELD_PREP(COUNTER_CAPTURE_STM32_FILTER_MSK, filter);
+			flags |= FIELD_PREP(COUNTER_CAPTURE_STM32_PRESCALER_DIV_MSK, prescaler);
+
+			/* For single shot capture, disable the channel after capture event */
+			if (chdata->single_shot_capture) {
+				flags |= COUNTER_CAPTURE_SINGLE_SHOT;
+				counter_stm32_disable_capture(dev, id);
+			} else {
+				flags |= COUNTER_CAPTURE_CONTINUOUS;
+			}
+
+			cb(dev, id, flags, cc_val, chdata->user_data);
+		}
+	} else {
+#endif
+		counter_alarm_callback_t cb;
+
+		/* alarm is one-shot, disable the interrupt after it fires */
+		disable_it[id](timer);
+
+		cb = chdata->alarm_cb;
+		chdata->alarm_cb = NULL;
+
+		if (cb) {
+			uint32_t cc_val = get_timer_compare[id](timer);
+
+			cb(dev, id, cc_val, chdata->user_data);
+		}
+#ifdef CONFIG_COUNTER_CAPTURE
 	}
+#endif
 }
 
 static DEVICE_API(counter, counter_stm32_driver_api) = {
@@ -521,6 +788,11 @@ static DEVICE_API(counter, counter_stm32_driver_api) = {
 	.set_guard_period = counter_stm32_set_guard_period,
 	.get_freq = counter_stm32_get_freq,
 	.set_value = counter_stm32_set_value,
+#ifdef CONFIG_COUNTER_CAPTURE
+	.enable_capture = counter_stm32_enable_capture,
+	.disable_capture = counter_stm32_disable_capture,
+	.capture_callback_set = counter_stm32_capture_callback_set,
+#endif
 };
 
 #define TIM_IRQ_HANDLE_CC(timx, cc)						\
@@ -531,7 +803,7 @@ static DEVICE_API(counter, counter_stm32_driver_api) = {
 			if (hw_irq) {						\
 				LL_TIM_ClearFlag_CC##cc(timer);			\
 			}							\
-			counter_stm32_alarm_irq_handle(dev, cc - 1U);		\
+			counter_stm32_irq_handle(dev, cc - 1U);			\
 		}								\
 	} while (0)
 
@@ -602,6 +874,10 @@ static void counter_stm32_irq_handler_global(const struct device *dev)
 	BUILD_ASSERT(NUM_CH(TIM(idx)) <= TIMER_MAX_CH,				  \
 		     "TIMER too many channels");				  \
 										  \
+	IF_ENABLED(CONFIG_COUNTER_CAPTURE,					  \
+		(IF_ENABLED(DT_INST_PINCTRL_HAS_NAME(idx, default),		  \
+		(PINCTRL_DT_INST_DEFINE(idx);))))				  \
+										  \
 	static struct counter_stm32_data counter##idx##_data;			  \
 	static struct counter_stm32_ch_data counter##idx##_ch_data[TIMER_MAX_CH]; \
 										  \
@@ -639,6 +915,10 @@ static void counter_stm32_irq_handler_global(const struct device *dev)
 				    (DT_IRQ_BY_NAME(TIMER(idx), cc, irq)),	  \
 				    (DT_IRQ_BY_NAME(TIMER(idx), global, irq))),	  \
 		.reset = RESET_DT_SPEC_GET(TIMER(idx)),				  \
+		IF_ENABLED(CONFIG_COUNTER_CAPTURE,				  \
+			(.pcfg = COND_CODE_1(					  \
+				DT_NODE_HAS_PROP(DT_DRV_INST(idx), pinctrl_0),	  \
+				(PINCTRL_DT_INST_DEV_CONFIG_GET(idx)), (NULL)),)) \
 	};									  \
 										  \
 	DEVICE_DT_INST_DEFINE(idx,						  \

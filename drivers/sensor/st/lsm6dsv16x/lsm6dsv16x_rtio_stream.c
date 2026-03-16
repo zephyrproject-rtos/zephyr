@@ -203,13 +203,10 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, struct trigger_conf
 void lsm6dsv16x_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
-#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
-	const struct lsm6dsv16x_config *config = dev->config;
-#endif
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
 	struct trigger_config trig_cfg = { 0 };
 
-	if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
+	if (LSM6DSV16X_USING_GPIO_TRIGGER(dev)) {
 		gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio, GPIO_INT_DISABLE);
 	}
 
@@ -243,7 +240,7 @@ void lsm6dsv16x_submit_stream(const struct device *dev, struct rtio_iodev_sqe *i
 
 	lsm6dsv16x->streaming_sqe = iodev_sqe;
 
-	if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
+	if (LSM6DSV16X_USING_GPIO_TRIGGER(dev)) {
 		gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	}
 }
@@ -257,9 +254,6 @@ static void lsm6dsv16x_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe
 	ARG_UNUSED(result);
 
 	const struct device *dev = arg;
-#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
-	const struct lsm6dsv16x_config *config = dev->config;
-#endif
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
 
 	/*
@@ -267,7 +261,7 @@ static void lsm6dsv16x_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe
 	 */
 	rtio_iodev_sqe_ok(sqe->userdata, 0);
 	lsm6dsv16x->streaming_sqe = NULL;
-	if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
+	if (LSM6DSV16X_USING_GPIO_TRIGGER(dev)) {
 		gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	}
 }
@@ -330,7 +324,7 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 		rtio_iodev_sqe_ok(sqe->userdata, 0);
 
 		lsm6dsv16x->streaming_sqe = NULL;
-		if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
+		if (LSM6DSV16X_USING_GPIO_TRIGGER(dev)) {
 			gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		}
 		return;
@@ -370,7 +364,7 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 				    sizeof(struct lsm6dsv16x_fifo_data), &buf, &buf_len) != 0) {
 			rtio_iodev_sqe_err(lsm6dsv16x->streaming_sqe, -ENOMEM);
 			lsm6dsv16x->streaming_sqe = NULL;
-			if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
+			if (LSM6DSV16X_USING_GPIO_TRIGGER(dev)) {
 				gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 			}
 			return;
@@ -387,7 +381,7 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 		/* complete request with ok */
 		rtio_iodev_sqe_ok(lsm6dsv16x->streaming_sqe, 0);
 		lsm6dsv16x->streaming_sqe = NULL;
-		if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
+		if (LSM6DSV16X_USING_GPIO_TRIGGER(dev)) {
 			gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		}
 
@@ -425,7 +419,7 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 		LOG_ERR("Failed to get buffer");
 		rtio_iodev_sqe_err(lsm6dsv16x->streaming_sqe, -ENOMEM);
 		lsm6dsv16x->streaming_sqe = NULL;
-		if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
+		if (LSM6DSV16X_USING_GPIO_TRIGGER(dev)) {
 			gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		}
 		return;
@@ -496,9 +490,6 @@ static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 	ARG_UNUSED(result);
 
 	const struct device *dev = arg;
-#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
-	const struct lsm6dsv16x_config *config = dev->config;
-#endif
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
 	struct rtio *rtio = lsm6dsv16x->rtio_ctx;
 	struct gpio_dt_spec *irq_gpio = lsm6dsv16x->drdy_gpio;
@@ -544,7 +535,7 @@ static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 				    sizeof(struct lsm6dsv16x_rtio_data), &buf, &buf_len) != 0) {
 			rtio_iodev_sqe_err(lsm6dsv16x->streaming_sqe, -ENOMEM);
 			lsm6dsv16x->streaming_sqe = NULL;
-			if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
+			if (LSM6DSV16X_USING_GPIO_TRIGGER(dev)) {
 				gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 			}
 			return;
@@ -562,7 +553,7 @@ static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 		/* complete request with ok */
 		rtio_iodev_sqe_ok(lsm6dsv16x->streaming_sqe, 0);
 		lsm6dsv16x->streaming_sqe = NULL;
-		if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
+		if (LSM6DSV16X_USING_GPIO_TRIGGER(dev)) {
 			gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		}
 
@@ -585,7 +576,7 @@ static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 			LOG_ERR("Failed to get buffer");
 			rtio_iodev_sqe_err(lsm6dsv16x->streaming_sqe, -ENOMEM);
 			lsm6dsv16x->streaming_sqe = NULL;
-			if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
+			if (LSM6DSV16X_USING_GPIO_TRIGGER(dev)) {
 				gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 			}
 			return;
@@ -657,15 +648,20 @@ void lsm6dsv16x_stream_irq_handler(const struct device *dev)
 		return;
 	}
 
-	rc = sensor_clock_get_cycles(&cycles);
-	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(lsm6dsv16x->streaming_sqe, rc);
-		return;
-	}
+#if defined(CONFIG_COUNTER_CAPTURE)
+	if (lsm6dsv16x->drdy_counter_capture == NULL)
+#endif /* CONFIG_COUNTER_CAPTURE */
+	{
+		rc = sensor_clock_get_cycles(&cycles);
+		if (rc != 0) {
+			LOG_ERR("Failed to get sensor clock cycles");
+			rtio_iodev_sqe_err(lsm6dsv16x->streaming_sqe, rc);
+			return;
+		}
 
-	/* get timestamp as soon as the irq is served */
-	lsm6dsv16x->timestamp = sensor_clock_cycles_to_ns(cycles);
+		/* get timestamp as soon as the irq is served */
+		lsm6dsv16x->timestamp = sensor_clock_cycles_to_ns(cycles);
+	}
 
 	/* handle FIFO triggers */
 	if (lsm6dsv16x->trig_cfg.int_fifo_th || lsm6dsv16x->trig_cfg.int_fifo_full) {

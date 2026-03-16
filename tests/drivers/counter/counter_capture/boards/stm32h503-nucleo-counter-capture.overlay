@@ -1,0 +1,31 @@
+/*
+ * Copyright Meta Platforms, Inc. and its affiliates.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <st/h5/stm32h503rbtx-pinctrl.dtsi>
+
+/ {
+	zephyr,user {
+		capture-tester-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>,
+				       <&gpioc 7 GPIO_ACTIVE_HIGH>;
+	};
+
+	counter_loopback_0: counter_loopback {
+		compatible = "test-counter-capture";
+		/* index order must match the order of the capture-tester-gpios for loopback */
+		test-counter-captures = <&capture 0 0>,
+					<&capture 1 0>;
+	};
+};
+
+&timers2 {
+	st,prescaler = <239>;
+	status = "okay";
+
+	capture: counter {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa0 &tim2_ch2_pa1>;
+		pinctrl-names = "default";
+	};
+};
