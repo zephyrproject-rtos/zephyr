@@ -449,6 +449,7 @@ New APIs and options
   * :c:macro:`VIDEO_FOREACH_YUV_SEMI_PLANAR`
   * :c:macro:`VIDEO_FOREACH_YUV_FULL_PLANAR`
   * :c:macro:`VIDEO_FOREACH_COMPRESSED`
+  * :c:func:`video_import_buffer`
 
 .. zephyr-keep-sorted-stop
 

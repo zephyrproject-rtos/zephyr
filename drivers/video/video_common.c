@@ -9,7 +9,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/drivers/video.h>
+#include <zephyr/video/video.h>
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -85,6 +85,7 @@ struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_tim
 		return NULL;
 	}
 
+	vbuf->memory = VIDEO_MEMORY_INTERNAL;
 	vbuf->size = size;
 	vbuf->bytesused = 0;
 
@@ -96,25 +97,59 @@ struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout)
 	return video_buffer_aligned_alloc(size, sizeof(void *), timeout);
 }
 
-void video_buffer_release(struct video_buffer *vbuf)
+int video_buffer_release(struct video_buffer *vbuf)
 {
-	if (vbuf == NULL || vbuf->buffer == NULL) {
-		return;
+	if (vbuf == NULL || vbuf->index >= ARRAY_SIZE(video_buf)) {
+		LOG_ERR("Invalid buffer index: %u", vbuf->index);
+		return -EINVAL;
 	}
 
-	for (uint16_t i = 0; i < ARRAY_SIZE(video_buf); i++) {
-		if (video_buf[i].buffer == vbuf->buffer) {
-			video_buf[i].buffer = NULL;
-			video_buf[i].size = 0;
-			video_buf[i].bytesused = 0;
+	if (video_buf[vbuf->index].buffer == NULL) {
+		LOG_ERR("Buffer %u is already released", vbuf->index);
+		return -EINVAL;
+	}
+
+	if (video_buf[vbuf->index].memory == VIDEO_MEMORY_INTERNAL) {
+		VIDEO_COMMON_FREE(video_buf[vbuf->index].buffer);
+	}
+
+	video_buf[vbuf->index].buffer = NULL;
+
+	return 0;
+}
+
+int video_import_buffer(uint8_t *mem, size_t sz, uint16_t *idx)
+{
+	uint16_t ind;
+
+	if (mem == NULL || sz == 0) {
+		LOG_ERR("Invalid memory address or size");
+		return -EINVAL;
+	}
+
+	/* Find the 1st available slot in the video buffer pool */
+	for (ind = 0; ind < ARRAY_SIZE(video_buf); ind++) {
+		if (video_buf[ind].buffer == NULL) {
 			break;
 		}
 	}
 
-	if (vbuf->buffer != NULL) {
-		VIDEO_COMMON_FREE(vbuf->buffer);
-		vbuf->buffer = NULL;
+	if (ind == ARRAY_SIZE(video_buf)) {
+		return -ENOBUFS;
 	}
+
+	/* Populate the internal buffer */
+	video_buf[ind].index = ind;
+	video_buf[ind].size = sz;
+	video_buf[ind].memory = VIDEO_MEMORY_EXTERNAL;
+	video_buf[ind].buffer = mem;
+	video_buf[ind].bytesused = 0;
+	video_buf[ind].timestamp = 0;
+
+	/* Return the buffer index to the requester */
+	*idx = ind;
+
+	return 0;
 }
 
 int video_enqueue(const struct device *dev, struct video_buffer *buf)

@@ -52,6 +52,18 @@ enum video_buf_type {
 };
 
 /**
+ * @brief video_buf_memory enum
+ *
+ * Memory type of a buffer
+ */
+enum video_buf_memory {
+	/** buffer is allocated from the internal video heap */
+	VIDEO_MEMORY_INTERNAL = 1,
+	/** buffer is allocated from outside */
+	VIDEO_MEMORY_EXTERNAL = 2,
+};
+
+/**
  * @brief Video format structure
  *
  * Used to configure frame format.
@@ -137,6 +149,8 @@ struct video_buffer {
 	void *driver_data;
 	/** type of the buffer */
 	enum video_buf_type type;
+	/** type of the buffer memory, see @ref video_buf_memory */
+	uint8_t memory;
 	/** pointer to the start of the buffer. */
 	uint8_t *buffer;
 	/** index of the buffer in the video buffer pool */
@@ -962,8 +976,10 @@ struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout);
  * @brief Release a video buffer.
  *
  * @param buf Pointer to the video buffer to release.
+ *
+ * @retval 0 on success or a negative errno on failure
  */
-void video_buffer_release(struct video_buffer *buf);
+int video_buffer_release(struct video_buffer *buf);
 
 /**
  * @brief Search for a format that matches in a list of capabilities
