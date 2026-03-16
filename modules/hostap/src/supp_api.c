@@ -419,7 +419,7 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 	case WPA_KEY_MGMT_PSK_SHA256:
 		return WIFI_SECURITY_TYPE_PSK_SHA256;
 	case WPA_KEY_MGMT_SAE:
-		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3)) {
+		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON)) {
 			if (pwe == 1) {
 				return WIFI_SECURITY_TYPE_SAE_H2E;
 			} else if (pwe == 2) {
@@ -438,7 +438,7 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 	case WPA_KEY_MGMT_FT_PSK:
 		return WIFI_SECURITY_TYPE_FT_PSK;
 	case WPA_KEY_MGMT_FT_SAE:
-		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3)) {
+		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON)) {
 			return WIFI_SECURITY_TYPE_FT_SAE;
 		}
 		return WIFI_SECURITY_TYPE_UNKNOWN;
@@ -449,7 +449,7 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 	case WPA_KEY_MGMT_FT_IEEE8021X_SHA384:
 		return WIFI_SECURITY_TYPE_FT_EAP_SHA384;
 	case WPA_KEY_MGMT_SAE_EXT_KEY:
-		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3)) {
+		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON)) {
 			return WIFI_SECURITY_TYPE_SAE_EXT_KEY;
 		}
 		return WIFI_SECURITY_TYPE_UNKNOWN;
@@ -747,7 +747,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			}
 		}
 
-		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3) &&
+		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON) &&
 		    (params->security == WIFI_SECURITY_TYPE_SAE_HNP ||
 		     params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
 		     params->security == WIFI_SECURITY_TYPE_SAE_AUTO ||
@@ -853,7 +853,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 
-			if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3)) {
+			if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON)) {
 				if (params->sae_password) {
 					if ((params->sae_password_length < WIFI_PSK_MIN_LEN) ||
 					    (params->sae_password_length > WIFI_SAE_PSWD_MAX_LEN)) {
