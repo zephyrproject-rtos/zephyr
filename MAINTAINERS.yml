@@ -4541,6 +4541,22 @@ Networking:
     - net.lwm2m
     - sample.net.lwm2m_client
 
+"Networking: MCP":
+  status: maintained
+  maintainers:
+    - dpiskula-nxp
+  files:
+    - subsys/net/lib/mcp/
+    - include/zephyr/net/mcp/
+    - tests/net/lib/mcp/
+    - samples/net/mcp/
+    - doc/services/connectivity/networking/api/mcp.rst
+  labels:
+    - "area: Networking"
+    - "area: MCP"
+  tests:
+    - net.mcp
+
 "Networking: MQTT":
   status: maintained
   maintainers:
