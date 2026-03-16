@@ -376,9 +376,9 @@ static void dead_battery(const struct device *dev, bool en)
 	update_stm32g0x_cc_line(config->ucpd_port);
 #else
 	if (en) {
-		stm32_reg_clear_bits(&PWR->CR3, PWR_CR3_UCPD_DBDIS);
+		LL_PWR_EnableUCPDDeadBattery();
 	} else {
-		stm32_reg_set_bits(&PWR->CR3, PWR_CR3_UCPD_DBDIS);
+		LL_PWR_DisableUCPDDeadBattery();
 	}
 #endif
 	data->dead_battery_active = en;
@@ -1413,7 +1413,8 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0, "No compatible STM32 TC
 	static const struct tcpc_config drv_config_##inst = {                                      \
 		.ucpd_pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                 \
 		.ucpd_port = (UCPD_TypeDef *)DT_INST_REG_ADDR(inst),                               \
-		.ucpd_params.psc_ucpdclk = ilog2(DT_INST_PROP(inst, psc_ucpdclk)),                 \
+		.ucpd_params.psc_ucpdclk =                                                         \
+			(ilog2(DT_INST_PROP(inst, psc_ucpdclk)) << UCPD_CFG1_PSC_UCPDCLK_Pos),     \
 		.ucpd_params.transwin = DT_INST_PROP(inst, transwin) - 1,                          \
 		.ucpd_params.IfrGap = DT_INST_PROP(inst, ifrgap) - 1,                              \
 		.ucpd_params.HbitClockDiv = DT_INST_PROP(inst, hbitclkdiv) - 1,                    \
