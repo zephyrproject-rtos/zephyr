@@ -479,10 +479,7 @@ static void enc424j600_rx_thread(void *p1, void *p2, void *p3)
 				net_eth_carrier_on(context->iface);
 			} else {
 				LOG_INF("Link down");
-
-				if (context->iface_initialized) {
-					net_eth_carrier_off(context->iface);
-				}
+				net_eth_carrier_off(context->iface);
 			}
 		} else {
 			LOG_ERR("Unknown Interrupt, EIR: 0x%04x", eir);
@@ -552,7 +549,14 @@ static void enc424j600_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 
 	net_if_carrier_off(iface);
-	context->iface_initialized = true;
+
+	/* Start interruption-poll thread */
+	k_thread_create(&context->thread, context->thread_stack,
+			CONFIG_ETH_ENC424J600_RX_THREAD_STACK_SIZE,
+			enc424j600_rx_thread,
+			context, NULL, NULL,
+			K_PRIO_COOP(CONFIG_ETH_ENC424J600_RX_THREAD_PRIO),
+			0, K_NO_WAIT);
 }
 
 static int enc424j600_start_device(const struct device *dev)
@@ -751,14 +755,6 @@ static int enc424j600_init(const struct device *dev)
 		enc424j600_read_sfru(dev, ENC424J600_SFRX_ECON1L, &tmp);
 		LOG_DBG("ECON1: 0x%04x", tmp);
 	}
-
-	/* Start interruption-poll thread */
-	k_thread_create(&context->thread, context->thread_stack,
-			CONFIG_ETH_ENC424J600_RX_THREAD_STACK_SIZE,
-			enc424j600_rx_thread,
-			context, NULL, NULL,
-			K_PRIO_COOP(CONFIG_ETH_ENC424J600_RX_THREAD_PRIO),
-			0, K_NO_WAIT);
 
 	enc424j600_write_sbc(dev, ENC424J600_1BC_SETEIE);
 
