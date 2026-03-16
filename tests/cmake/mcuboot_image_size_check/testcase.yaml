@@ -1,0 +1,7 @@
+common:
+  tags: cmake mcuboot
+  build_only: true
+  platform_allow: native_sim
+tests:
+  buildsystem.cmake.mcuboot_image_size_check:
+    sysbuild: false
