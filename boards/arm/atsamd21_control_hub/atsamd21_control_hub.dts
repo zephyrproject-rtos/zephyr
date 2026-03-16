@@ -208,7 +208,7 @@
 	pinctrl-0 = <&sercom4_i2c_default>;
 	pinctrl-names = "default";
 
-	ads7830: ads7830@48 {
+	ads78xx: ads78xx@48 {
 		compatible = "ti,ads7830";
 		reg = <0x48>;
 	};
@@ -230,7 +230,7 @@ zephyr_udc0: &usb0 {
 };
 
 &dac0 {
-	status = "okay";
+	status = "disabled";
 	pinctrl-0 = <&dac_default>;
 	pinctrl-names = "default";
 };
@@ -244,22 +244,22 @@ zephyr_udc0: &usb0 {
 
 	channel@2 {
 		reg = <2>;
-		zephyr,gain = "ADC_GAIN_1";
-		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,gain = "ADC_GAIN_1_2";
+		zephyr,reference = "ADC_REF_VDD_1_2";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <2>;
-		zephyr,vref-mv = <3300>;
+		zephyr,vref-mv = <1650>;
 	};
 
 	channel@7 {
 		reg = <7>;
-		zephyr,gain = "ADC_GAIN_1";
-		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,gain = "ADC_GAIN_1_2";
+		zephyr,reference = "ADC_REF_VDD_1_2";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <7>;
-		zephyr,vref-mv = <3300>;
+		zephyr,vref-mv = <1650>;
 	};
 };
 
