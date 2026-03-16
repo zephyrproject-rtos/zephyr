@@ -93,6 +93,8 @@ tests:
       - arm
       - riscv
       - x86
+    platform_exclude:
+      - qemu_x86_tiny/atom       # See #105603
     filter: CONFIG_MMU or CONFIG_RISCV_PMP
     integration_platforms:
       - qemu_cortex_a53         # ARM Cortex-A53 (ARMv8-A ISA)
