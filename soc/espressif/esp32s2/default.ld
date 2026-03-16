@@ -752,10 +752,11 @@ SECTIONS
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif /* !CONFIG_BOOTLOADER_MCUBOOT */
 
-  #include <snippets-data-sections.ld>
   #include <zephyr/linker/common-ram.ld>
+  #include <snippets-data-sections.ld>
   #include <snippets-ram-sections.ld>
   #include <zephyr/linker/cplusplus-ram.ld>
+  #include <zephyr/linker/kobject-data.ld>
 
   /* logging sections should be placed in RAM area to avoid flash cache disabled issues */
   #pragma push_macro("GROUP_ROM_LINK_IN")
