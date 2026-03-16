@@ -21,7 +21,7 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "arm,cortex-r5";
+			compatible = "arm,cortex-r5f";
 			reg = <0>;
 			clock-frequency = <DT_FREQ_M(800)>;
 		};
