@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
@@ -384,41 +385,89 @@ static void set_location(void)
 	printk("Location successfully set\n");
 }
 
-static void set_available_contexts(void)
+static void set_contexts(void)
 {
 	int err;
 
-	err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK,
-					     BT_AUDIO_CONTEXT_TYPE_MEDIA |
-						     BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL);
-	if (IS_ENABLED(CONFIG_BT_PAC_SNK) && err != 0) {
-		FAIL("Failed to set sink supported contexts (err %d)\n", err);
-		return;
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
+		const enum bt_audio_context sink_ctx =
+			BT_AUDIO_CONTEXT_TYPE_MEDIA | BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL;
+
+		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK, sink_ctx);
+		if (IS_ENABLED(CONFIG_BT_PAC_SNK) && err != 0) {
+			FAIL("Failed to set sink supported contexts (err %d)\n", err);
+			return;
+		}
+
+		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK, sink_ctx);
+		if (IS_ENABLED(CONFIG_BT_PAC_SNK) && err != 0) {
+			FAIL("Failed to set sink available contexts (err %d)\n", err);
+			return;
+		}
 	}
 
-	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
-					     BT_AUDIO_CONTEXT_TYPE_MEDIA |
-						     BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL);
-	if (IS_ENABLED(CONFIG_BT_PAC_SNK) && err != 0) {
-		FAIL("Failed to set sink available contexts (err %d)\n", err);
-		return;
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
+		const enum bt_audio_context source_ctx = BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS;
+
+		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE, source_ctx);
+		if (IS_ENABLED(CONFIG_BT_PAC_SRC) && err != 0) {
+			FAIL("Failed to set source supported contexts (err %d)\n", err);
+			return;
+		}
+
+		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE, source_ctx);
+		if (IS_ENABLED(CONFIG_BT_PAC_SRC) && err != 0) {
+			FAIL("Failed to set source available contexts (err %d)\n", err);
+			return;
+		}
 	}
 
-	err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE,
-					     BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS);
-	if (IS_ENABLED(CONFIG_BT_PAC_SRC) && err != 0) {
-		FAIL("Failed to set source supported contexts (err %d)\n", err);
-		return;
+	printk("Contexts successfully set\n");
+}
+
+static void update_contexts(void)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
+		/* Shift contexts by one to ensure a new value */
+		const enum bt_audio_context sink_ctx =
+			(bt_pacs_get_available_contexts(BT_AUDIO_DIR_SINK) << 1U) &
+			BT_AUDIO_CONTEXT_TYPE_ANY;
+
+		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK, sink_ctx);
+		if (IS_ENABLED(CONFIG_BT_PAC_SNK) && err != 0) {
+			FAIL("Failed to set sink supported contexts (err %d)\n", err);
+			return;
+		}
+
+		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK, sink_ctx);
+		if (IS_ENABLED(CONFIG_BT_PAC_SNK) && err != 0) {
+			FAIL("Failed to set sink available contexts (err %d)\n", err);
+			return;
+		}
 	}
 
-	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE,
-					     BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS);
-	if (IS_ENABLED(CONFIG_BT_PAC_SRC) && err != 0) {
-		FAIL("Failed to set source available contexts (err %d)\n", err);
-		return;
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
+		/* Shift contexts by one to ensure a new value */
+		const enum bt_audio_context source_ctx =
+			(bt_pacs_get_available_contexts(BT_AUDIO_DIR_SOURCE) << 1U) &
+			BT_AUDIO_CONTEXT_TYPE_ANY;
+
+		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE, source_ctx);
+		if (err != 0) {
+			FAIL("Failed to set source supported contexts (err %d)\n", err);
+			return;
+		}
+
+		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE, source_ctx);
+		if (err != 0) {
+			FAIL("Failed to set source available contexts (err %d)\n", err);
+			return;
+		}
 	}
 
-	printk("Available contexts successfully set\n");
+	printk("Contexts successfully updated\n");
 }
 
 static void init(void)
@@ -480,7 +529,7 @@ static void init(void)
 	}
 
 	set_location();
-	set_available_contexts();
+	set_contexts();
 
 	for (size_t i = 0; i < ARRAY_SIZE(test_streams); i++) {
 		bt_bap_stream_cb_register(bap_stream_from_audio_test_stream(&test_streams[i]),
@@ -517,11 +566,13 @@ static void test_main(void)
 {
 	init();
 
-	/* TODO: When babblesim supports ISO, wait for audio stream to pass */
-
 	WAIT_FOR_FLAG(flag_connected);
-	WAIT_FOR_FLAG(flag_stream_configured);
 
+	/* Wait for signal to trigger context type changes */
+	backchannel_sync_wait_any();
+	update_contexts();
+
+	WAIT_FOR_FLAG(flag_stream_configured);
 
 	WAIT_FOR_FLAG(flag_stream_started);
 	transceive_test_streams();
