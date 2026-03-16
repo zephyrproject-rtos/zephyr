@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-node0 = &i2s3;
+		i2s-node1 = &i2s6;
+	};
+};
+
+&i2s3 {
+	pinctrl-0 = <&i2s3_ws_pd7 &i2s3_ck_pc10 &spi3_miso_pc11>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* Full-Duplex Master Transmit */
+&i2s6 {
+	pinctrl-0 = <&i2s6_ws_pb15 &i2s6_ck_pc12 &spi6_mosi_pg14>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpdma1 {
+	status = "okay";
+};

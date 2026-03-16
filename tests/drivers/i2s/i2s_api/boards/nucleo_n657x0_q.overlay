@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-node0 = &i2s6;
+	};
+};
+
+/* Full-Duplex Master Transmit */
+&i2s6 {
+	pinctrl-0 = <&i2s6_mck_pf6 &i2s6_ws_pb15 &i2s6_ck_pc12
+		     &spi6_mosi_pg14 &spi6_miso_pe4>;
+	pinctrl-names = "default";
+	mck-enabled;
+	status = "okay";
+};
+
+&gpdma1 {
+	status = "okay";
+};
