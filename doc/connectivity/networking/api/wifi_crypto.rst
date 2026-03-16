@@ -18,7 +18,11 @@ Feature set (from hostap Kconfig)
 Features are gated by Kconfig. Relevant options include:
 
 * :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP` — WEP (legacy)
-* :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3` — WPA3-SAE (default on)
+* :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON` — WPA3-SAE when Internal or
+  External is selected (``WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION``; default Internal).
+  :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3` is promptless and turns on the internal
+  bignum SAE path when Internal is chosen (set the implementation choice in ``prj.conf``, not
+  this symbol).
 * :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP` — Wi-Fi Easy Connect (DPP)
 * :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_WPS` — Wi-Fi Protected Setup
 * :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P` — P2P / Wi-Fi Direct (implies WPS)
