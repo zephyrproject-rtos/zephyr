@@ -1,0 +1,53 @@
+# Copyright (c) 2024 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config WIFI_AMEBA
+	bool "AMEBA SoC WiFi support"
+	default y
+	depends on DT_HAS_REALTEK_AMEBA_WIFI_ENABLED
+	select WIFI_USE_NATIVE_NETWORKING
+
+if WIFI_AMEBA
+
+config AMEBA_WIFI_EVENT_STACK_SIZE
+	int "Ameba Wi-Fi event thread stack size"
+	default 4096
+	help
+	  Stack size for the Ameba Wi-Fi event handling thread.
+	  Increase this if you see stack overflow, or decrease to save RAM.
+
+config NET_TCP_WORKQ_STACK_SIZE
+	default 2048
+
+config NET_RX_STACK_SIZE
+	default 2048
+
+config NET_MGMT_EVENT_STACK_SIZE
+	default 2048
+
+config RTK_WIFI_STA_AUTO_DHCPV4
+	bool "Automatically starts DHCP4 negotiation"
+	depends on NET_DHCPV4
+	depends on NET_IPV4
+	default y
+	help
+	  WiFi driver will automatically initiate DHCPV4 negotiation when connected.
+
+config BT_COEXIST
+	bool "Wi-Fi/Bluetooth coexistence"
+	default n
+
+config RTK_WIFI_AP_STA_MODE
+	bool "Concurrent AP and STA mode"
+	default y
+
+config SINGLE_CORE_WIFI
+	bool
+	depends on SOC_SERIES_AMEBAD
+	default y
+
+config WHC_HOST
+	bool
+	default n
+
+endif
