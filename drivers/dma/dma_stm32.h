@@ -60,7 +60,8 @@ typedef void (*dma_stm32_clear_flag_func)(DMA_TypeDef *DMAx);
 	!defined(CONFIG_SOC_SERIES_STM32H7X) && \
 	!defined(CONFIG_SOC_SERIES_STM32L4X) && \
 	!defined(CONFIG_SOC_SERIES_STM32MP13X) && \
-	!defined(CONFIG_SOC_SERIES_STM32U0X)
+	!defined(CONFIG_SOC_SERIES_STM32U0X) && \
+	!defined(CONFIG_SOC_SERIES_STM32WLX)
 typedef uint32_t (*dma_stm32_check_flag_func)(DMA_TypeDef *DMAx);
 #else
 typedef uint32_t (*dma_stm32_check_flag_func)(const DMA_TypeDef *DMAx);
