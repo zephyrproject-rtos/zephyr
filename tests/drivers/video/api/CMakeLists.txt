@@ -6,3 +6,4 @@ project(integration)
 
 target_sources(app PRIVATE src/video_common.c)
 target_sources(app PRIVATE src/video_emul.c)
+target_sources(app PRIVATE src/video_formats.c)

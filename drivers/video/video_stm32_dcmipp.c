@@ -137,18 +137,9 @@ struct stm32_dcmipp_config {
 #define STM32_DCMIPP_WIDTH_MAX	4094
 #define STM32_DCMIPP_HEIGHT_MAX	4094
 
-#define VIDEO_FMT_IS_SEMI_PLANAR(fmt)			\
-	(((fmt)->pixelformat == VIDEO_PIX_FMT_NV12 ||	\
-	  (fmt)->pixelformat == VIDEO_PIX_FMT_NV21 ||	\
-	  (fmt)->pixelformat == VIDEO_PIX_FMT_NV16 ||	\
-	  (fmt)->pixelformat == VIDEO_PIX_FMT_NV61) ? true : false)
-
-#define VIDEO_FMT_IS_PLANAR(fmt)			\
-	(((fmt)->pixelformat == VIDEO_PIX_FMT_YUV420 ||	\
-	  (fmt)->pixelformat == VIDEO_PIX_FMT_YVU420) ? true : false)
-
 #define VIDEO_Y_PLANE_PITCH(fmt)						\
-	((VIDEO_FMT_IS_PLANAR(fmt) || VIDEO_FMT_IS_SEMI_PLANAR(fmt)) ?		\
+	((VIDEO_FMT_IS_FULL_PLANAR(fmt->pixelformat) ||				\
+	  VIDEO_FMT_IS_SEMI_PLANAR(fmt->pixelformat)) ?				\
 	 (fmt)->width : (fmt)->pitch)
 
 #define VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt)	((fmt)->width * (fmt)->height)
@@ -177,13 +168,14 @@ static void stm32_dcmipp_set_next_buffer_addr(struct stm32_dcmipp_pipe_data *pip
 		return;
 	}
 
-	if (VIDEO_FMT_IS_SEMI_PLANAR(fmt) || VIDEO_FMT_IS_PLANAR(fmt)) {
+	if (VIDEO_FMT_IS_SEMI_PLANAR(fmt->pixelformat) ||
+	    VIDEO_FMT_IS_FULL_PLANAR(fmt->pixelformat)) {
 		/* Y plane has 8 bit per pixel, next plane is located at off + width * height */
 		plane += VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt);
 
 		stm32_reg_write(&dcmipp->hdcmipp.Instance->P1PPM1AR1, (uint32_t)plane);
 
-		if (VIDEO_FMT_IS_PLANAR(fmt)) {
+		if (VIDEO_FMT_IS_FULL_PLANAR(fmt->pixelformat)) {
 			/* In case of YUV420 / YVU420, U plane has half width / half height */
 			plane += VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt) / 4;
 
@@ -918,7 +910,7 @@ static int stm32_dcmipp_start_pipeline(const struct device *dev,
 	HAL_StatusTypeDef hal_ret;
 
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
-	if (VIDEO_FMT_IS_PLANAR(fmt)) {
+	if (VIDEO_FMT_IS_FULL_PLANAR(fmt->pixelformat)) {
 		uint8_t *u_addr = pipe->next->buffer + VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt);
 		uint8_t *v_addr = u_addr + (VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt) / 4);
 		DCMIPP_FullPlanarDstAddressTypeDef planar_addr = {
@@ -944,7 +936,7 @@ static int stm32_dcmipp_start_pipeline(const struct device *dev,
 			LOG_ERR("Invalid bus_type");
 			hal_ret = HAL_ERROR;
 		}
-	} else if (VIDEO_FMT_IS_SEMI_PLANAR(fmt)) {
+	} else if (VIDEO_FMT_IS_SEMI_PLANAR(fmt->pixelformat)) {
 		uint8_t *uv_addr = pipe->next->buffer + VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt);
 		DCMIPP_SemiPlanarDstAddressTypeDef semiplanar_addr = {
 			.YAddress = (uint32_t)pipe->next->buffer,

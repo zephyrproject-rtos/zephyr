@@ -19,7 +19,7 @@
  * @brief Interfaces for video devices.
  * @defgroup video_interface Video
  * @since 2.1
- * @version 1.2.0
+ * @version 1.3.0
  * @ingroup io_interfaces
  * @{
  */
@@ -1168,40 +1168,27 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
  */
 
 /**
- * @code{.unparsed}
- *   0          1          2          3
- * | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | ...
- * | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | ...
- * @endcode
+ * @brief Repeat a macro for every Bayer format, passed as first parameter
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
  */
-#define VIDEO_PIX_FMT_SBGGR8 VIDEO_FOURCC('B', 'A', '8', '1')
+#define VIDEO_FOREACH_BAYER(X, ...)						\
+	VIDEO_FOREACH_BAYER_PADDED(X, __VA_ARGS__)				\
+	VIDEO_FOREACH_BAYER_MIPI_PACKED(X, __VA_ARGS__)				\
+	VIDEO_FOREACH_BAYER_NON_PACKED(X, __VA_ARGS__)
 
 /**
- * @code{.unparsed}
- *   0          1          2          3
- * | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | ...
- * | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | ...
- * @endcode
+ * @brief Repeat a macro for every Bayer padded format, passed as first parameter
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
  */
-#define VIDEO_PIX_FMT_SGBRG8 VIDEO_FOURCC('G', 'B', 'R', 'G')
-
-/**
- * @code{.unparsed}
- *   0          1          2          3
- * | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | ...
- * | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | ...
- * @endcode
- */
-#define VIDEO_PIX_FMT_SGRBG8 VIDEO_FOURCC('G', 'R', 'B', 'G')
-
-/**
- * @code{.unparsed}
- *   0          1          2          3
- * | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | ...
- * | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | ...
- * @endcode
- */
-#define VIDEO_PIX_FMT_SRGGB8 VIDEO_FOURCC('R', 'G', 'G', 'B')
+#define VIDEO_FOREACH_BAYER_PADDED(X, ...)					\
+	X(VIDEO_PIX_FMT_SBGGR8P16, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGBRG8P16, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGRBG8P16, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SRGGB8P16, __VA_ARGS__)
 
 /**
  * 8-bit bayer format, split in two 4-bit blocks each zero-padded, little endian.
@@ -1242,6 +1229,28 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
  * @endcode
  */
 #define VIDEO_PIX_FMT_SRGGB8P16 VIDEO_FOURCC('p', 'R', '8', '2')
+
+/**
+ * @brief Repeat a macro for every Bayer MIPI-packed format, passed as first parameter
+ *
+ * A red, green, blue channel for every pixel, other than 8-bit per pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_BAYER_MIPI_PACKED(X, ...)					\
+	X(VIDEO_PIX_FMT_SBGGR10P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGBRG10P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGRBG10P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SRGGB10P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SBGGR12P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGBRG12P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGRBG12P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SRGGB12P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SBGGR14P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGBRG14P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGRBG14P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SRGGB14P, __VA_ARGS__)
 
 /**
  * @code{.unparsed}
@@ -1350,6 +1359,71 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
  * @endcode
  */
 #define VIDEO_PIX_FMT_SRGGB14P VIDEO_FOURCC('p', 'R', 'E', 'E')
+
+/**
+ * @brief Repeat a macro for every Bayer non-packed format, passed as first parameter
+ *
+ * A red, green, blue channel for every pixel, other than 8-bit per pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_BAYER_NON_PACKED(X, ...)					\
+	X(VIDEO_PIX_FMT_SBGGR8, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGBRG8, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGRBG8, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SRGGB8, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGBRG10, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGRBG10, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SRGGB10, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SBGGR12, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGBRG12, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGRBG12, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SRGGB12, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SBGGR14, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGBRG14, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGRBG14, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SRGGB14, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SBGGR16, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGBRG16, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGRBG16, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SRGGB16, __VA_ARGS__)
+
+/**
+ * @code{.unparsed}
+ *   0          1          2          3
+ * | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | ...
+ * | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_SBGGR8 VIDEO_FOURCC('B', 'A', '8', '1')
+
+/**
+ * @code{.unparsed}
+ *   0          1          2          3
+ * | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | ...
+ * | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_SGBRG8 VIDEO_FOURCC('G', 'B', 'R', 'G')
+
+/**
+ * @code{.unparsed}
+ *   0          1          2          3
+ * | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | ...
+ * | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_SGRBG8 VIDEO_FOURCC('G', 'R', 'B', 'G')
+
+/**
+ * @code{.unparsed}
+ *   0          1          2          3
+ * | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | ...
+ * | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_SRGGB8 VIDEO_FOURCC('R', 'G', 'G', 'B')
 
 /**
  * @code{.unparsed}
@@ -1496,6 +1570,32 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
  */
 
 /**
+ * @brief Repeat a macro for every grayscale format, passed as first parameter
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_GRAYSCALE(X, ...)						\
+	VIDEO_FOREACH_GRAYSCALE_NON_PACKED(X, __VA_ARGS__)			\
+	VIDEO_FOREACH_GRAYSCALE_PADDED(X, __VA_ARGS__)				\
+	VIDEO_FOREACH_GRAYSCALE_MIPI_PACKED(X, __VA_ARGS__)
+
+/**
+ * @brief Repeat a macro for every grayscale non-packed format, passed as first parameter
+ *
+ * A red, green, blue channel for every pixel, other than 8-bit per pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_GRAYSCALE_NON_PACKED(X, ...)				\
+	X(VIDEO_PIX_FMT_GREY, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_Y10, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_Y12, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_Y14, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_Y16, __VA_ARGS__)
+
+/**
  * Same as Y8 (8-bit luma-only) following the standard FOURCC naming,
  * or L8 in some graphics libraries.
  *
@@ -1505,42 +1605,6 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
  * @endcode
  */
 #define VIDEO_PIX_FMT_GREY VIDEO_FOURCC('G', 'R', 'E', 'Y')
-
-/**
- * 8-bit luma-only split in two 4-bit blocks each zero-padded, little endian.
- *
- * @code{.unparsed}
- *   0                   1                   2                   3
- * | 0000yyyy 0000Yyyy | 0000yyyy 0000Yyyy | 0000yyyy 0000Yyyy | 0000yyyy 0000Yyyy | ...
- * @endcode
- */
-#define VIDEO_PIX_FMT_Y8P16 VIDEO_FOURCC('Y', '8', 'P', '2')
-
-/**
- * @code{.unparsed}
- *   0          1          2          3          3 2 1 0
- * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | yyyyyyyy | ...
- * @endcode
- */
-#define VIDEO_PIX_FMT_Y10P VIDEO_FOURCC('Y', '1', '0', 'P')
-
-/**
- * @code{.unparsed}
- *   0          1          1   0      2          3          3   2
- * | Yyyyyyyy | Yyyyyyyy | yyyyyyyy | Yyyyyyyy | Yyyyyyyy | yyyyyyyy | ...
- * | Yyyyyyyy | Yyyyyyyy | yyyyyyyy | Yyyyyyyy | Yyyyyyyy | yyyyyyyy | ...
- * @endcode
- */
-#define VIDEO_PIX_FMT_Y12P VIDEO_FOURCC('Y', '1', '2', 'P')
-
-/**
- * @code{.unparsed}
- *   0          1          2          3          1 0      2   1    3     2
- * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | yyyyyyyy yyyyyyyy yyyyyyyy | ...
- * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | yyyyyyyy yyyyyyyy yyyyyyyy | ...
- * @endcode
- */
-#define VIDEO_PIX_FMT_Y14P VIDEO_FOURCC('Y', '1', '4', 'P')
 
 /**
  * Little endian, with the 6 most significant bits set to Zero.
@@ -1583,6 +1647,62 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_Y16 VIDEO_FOURCC('Y', '1', '6', ' ')
 
 /**
+ * @brief Repeat a macro for every grayscale padded format, passed as first parameter
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_GRAYSCALE_PADDED(X, ...)					\
+	X(VIDEO_PIX_FMT_Y8P16, __VA_ARGS__)
+
+/**
+ * 8-bit luma-only split in two 4-bit blocks each zero-padded, little endian.
+ *
+ * @code{.unparsed}
+ *   0                   1                   2                   3
+ * | 0000yyyy 0000Yyyy | 0000yyyy 0000Yyyy | 0000yyyy 0000Yyyy | 0000yyyy 0000Yyyy | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_Y8P16 VIDEO_FOURCC('Y', '8', 'P', '2')
+
+/**
+ * @brief Repeat a macro for every grayscale MIPI-packed format, passed as first parameter
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_GRAYSCALE_MIPI_PACKED(X, ...)				\
+	X(VIDEO_PIX_FMT_Y10P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_Y12P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_Y14P, __VA_ARGS__)
+
+/**
+ * @code{.unparsed}
+ *   0          1          2          3          3 2 1 0
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | yyyyyyyy | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_Y10P VIDEO_FOURCC('Y', '1', '0', 'P')
+
+/**
+ * @code{.unparsed}
+ *   0          1          1   0      2          3          3   2
+ * | Yyyyyyyy | Yyyyyyyy | yyyyyyyy | Yyyyyyyy | Yyyyyyyy | yyyyyyyy | ...
+ * | Yyyyyyyy | Yyyyyyyy | yyyyyyyy | Yyyyyyyy | Yyyyyyyy | yyyyyyyy | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_Y12P VIDEO_FOURCC('Y', '1', '2', 'P')
+
+/**
+ * @code{.unparsed}
+ *   0          1          2          3          1 0      2   1    3     2
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | yyyyyyyy yyyyyyyy yyyyyyyy | ...
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | yyyyyyyy yyyyyyyy yyyyyyyy | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_Y14P VIDEO_FOURCC('Y', '1', '4', 'P')
+
+/**
  * @}
  */
 
@@ -1591,6 +1711,30 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
  * Per-color (R, G, B) channels.
  * @{
  */
+
+/**
+ * @brief Repeat a macro for every RGB format, passed as first parameter
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_RGB(X, ...)						\
+	VIDEO_FOREACH_RGB_PACKED(X, __VA_ARGS__)				\
+	VIDEO_FOREACH_RGB_NON_PACKED(X, __VA_ARGS__)				\
+	VIDEO_FOREACH_RGB_ALPHA(X, __VA_ARGS__)					\
+	VIDEO_FOREACH_RGB_PADDED(X, __VA_ARGS__)
+
+/**
+ * @brief Repeat a macro for every RGB packed format, passed as first parameter
+ *
+ * A red, green, blue channel for every pixel, other than 8-bit per pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_RGB_PACKED(X, ...)					\
+	X(VIDEO_PIX_FMT_RGB565X, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_RGB565, __VA_ARGS__)
 
 /**
  * 5 red bits [15:11], 6 green bits [10:5], 5 blue bits [4:0].
@@ -1615,6 +1759,18 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_RGB565 VIDEO_FOURCC('R', 'G', 'B', 'P')
 
 /**
+ * @brief Repeat a macro for every RGB non-packed format, passed as first parameter
+ *
+ * A red, green, blue channel for every pixel, 8-bit per pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_RGB_NON_PACKED(X, ...)					\
+	X(VIDEO_PIX_FMT_BGR24, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_RGB24, __VA_ARGS__)
+
+/**
  * 24 bit RGB format with 8 bit per component
  *
  * @code{.unparsed}
@@ -1631,6 +1787,20 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
  * @endcode
  */
 #define VIDEO_PIX_FMT_RGB24 VIDEO_FOURCC('R', 'G', 'B', '3')
+
+/**
+ * @brief Repeat a macro for every RGB alpha format, passed as first parameter
+ *
+ * A red, green, blue, alpha channel for every pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_RGB_ALPHA(X, ...)						\
+	X(VIDEO_PIX_FMT_ARGB32, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_ABGR32, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_RGBA32, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_BGRA32, __VA_ARGS__)
 
 /**
  * @code{.unparsed}
@@ -1661,6 +1831,17 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_BGRA32 VIDEO_FOURCC('R', 'A', '2', '4')
 
 /**
+ * @brief Repeat a macro for every RGB padded format, passed as first parameter
+ *
+ * A red, green, blue channel for every pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_RGB_PADDED(X, ...)					\
+	X(VIDEO_PIX_FMT_XRGB32, __VA_ARGS__)
+
+/**
  * The first byte is empty (X) for each pixel.
  *
  * @code{.unparsed}
@@ -1678,6 +1859,31 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
  * Luminance (Y) and chrominance (U, V) channels.
  * @{
  */
+
+/**
+ * @brief Repeat a macro for every YUV format, passed as first parameter
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_YUV(X, ...)						\
+	VIDEO_FOREACH_YUV_FULL_PLANAR(X, __VA_ARGS__)				\
+	VIDEO_FOREACH_YUV_NON_PLANAR(X, __VA_ARGS__)				\
+	VIDEO_FOREACH_YUV_SEMI_PLANAR(X, __VA_ARGS__)
+
+/**
+ * @brief Repeat a macro for every YUV Non-Planar format, passed as first parameter
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_YUV_NON_PLANAR(X, ...)					\
+	X(VIDEO_PIX_FMT_YUYV, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_YVYU, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_VYUY, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_UYVY, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_YUV24, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_XYUV32, __VA_ARGS__)
 
 /**
  * There is either a missing channel per pixel, U or V.
@@ -1729,8 +1935,19 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_YUV24 VIDEO_FOURCC('Y', 'U', 'V', '3')
 
 /**
- * Planar formats
+ * @brief Repeat a macro for every YUV Semi-Planar format, passed as first parameter
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
  */
+#define VIDEO_FOREACH_YUV_SEMI_PLANAR(X, ...)					\
+	X(VIDEO_PIX_FMT_NV12, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_NV21, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_NV16, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_NV61, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_NV24, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_NV42, __VA_ARGS__)
+
 /**
  * Chroma (U/V) are subsampled horizontaly and vertically
  *
@@ -1885,6 +2102,16 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_NV42 VIDEO_FOURCC('N', 'V', '4', '2')
 
 /**
+ * @brief Repeat a macro for every YUV Full-Planar format, passed as first parameter
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_YUV_FULL_PLANAR(X, ...)					\
+	X(VIDEO_PIX_FMT_YUV420, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_YVU420, __VA_ARGS__)
+
+/**
  * Chroma (U/V) are subsampled horizontaly and vertically
  *
  * @code{.unparsed}
@@ -1952,6 +2179,18 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
  */
 
 /**
+ * @brief Repeat a macro for every compressed format, passed as first parameter
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_COMPRESSED(X, ...)					\
+	X(VIDEO_PIX_FMT_JPEG, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_H264, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_H264_NO_SC, __VA_ARGS__)				\
+	X(VIDEO_PIX_FMT_PNG, __VA_ARGS__)
+
+/**
  * Both JPEG (single frame) and Motion-JPEG (MJPEG, multiple JPEG frames concatenated)
  */
 #define VIDEO_PIX_FMT_JPEG VIDEO_FOURCC('J', 'P', 'E', 'G')
@@ -1974,6 +2213,84 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 /**
  * @}
  */
+
+/** @cond INTERNAL_HIDDEN */
+#define _VIDEO_FMT_OR_EQ(pixfmt_a, pixfmt_b) || ((pixfmt_a) == (pixfmt_b))
+/** @endcond */
+
+/**
+ * @brief Test if a fourcc is a grayscale format
+ *
+ * @param pixfmt FourCC of the pixel format to test
+ * @return Whether the format is known to match this category
+ */
+#define VIDEO_FMT_IS_GRAYSCALE(pixfmt)						\
+	(0 VIDEO_FOREACH_GRAYSCALE(_VIDEO_FMT_OR_EQ, pixfmt))
+
+/**
+ * @brief Test if a fourcc is a Bayer format
+ *
+ * @param pixfmt FourCC of the pixel format to test
+ * @return Whether the format is known to match this category
+ */
+#define VIDEO_FMT_IS_BAYER(pixfmt)						\
+	(0 VIDEO_FOREACH_BAYER(_VIDEO_FMT_OR_EQ, pixfmt))
+
+/**
+ * @brief Test if a fourcc is an RGB format (bayer excluded)
+ *
+ * @param pixfmt FourCC of the pixel format to test
+ * @return Whether the format is known to match this category
+ */
+#define VIDEO_FMT_IS_RGB(pixfmt)						\
+	(0 VIDEO_FOREACH_RGB(_VIDEO_FMT_OR_EQ, pixfmt))
+
+/**
+ * @brief Test if a fourcc is an YUV format
+ *
+ * @param pixfmt FourCC of the pixel format to test
+ * @return Whether the format is known to match this category
+ */
+#define VIDEO_FMT_IS_YUV(pixfmt)						\
+	(0 VIDEO_FOREACH_YUV(_VIDEO_FMT_OR_EQ, pixfmt))
+
+/**
+ * @brief Test if a fourcc is any of the MIPI-packed formats
+ *
+ * @param pixfmt FourCC of the pixel format to test
+ * @return Whether the format is known to match this category
+ */
+#define VIDEO_FMT_IS_MIPI_PACKED(pixfmt)					\
+	(0 VIDEO_FOREACH_BAYER_MIPI_PACKED(_VIDEO_FMT_OR_EQ, pixfmt)		\
+	   VIDEO_FOREACH_GRAYSCALE_MIPI_PACKED(_VIDEO_FMT_OR_EQ, pixfmt))
+
+/**
+ * @brief Test if a fourcc is any of the MIPI-packed formats
+ *
+ * @param pixfmt FourCC of the pixel format to test
+ * @return Whether the format is known to match this category
+ */
+#define VIDEO_FMT_IS_PADDED(pixfmt)						\
+	(0 VIDEO_FOREACH_BAYER_PADDED(_VIDEO_FMT_OR_EQ, pixfmt)			\
+	   VIDEO_FOREACH_GRAYSCALE_PADDED(_VIDEO_FMT_OR_EQ, pixfmt))
+
+/**
+ * @brief Test if a fourcc is any of the semi-planar formats
+ *
+ * @param pixfmt FourCC of the pixel format to test
+ * @return Whether the format is known to match this category
+ */
+#define VIDEO_FMT_IS_SEMI_PLANAR(pixfmt)					\
+	(0 VIDEO_FOREACH_YUV_SEMI_PLANAR(_VIDEO_FMT_OR_EQ, pixfmt))
+
+/**
+ * @brief Test if a fourcc is any of the full-planar formats
+ *
+ * @param pixfmt FourCC of the pixel format to test
+ * @return Whether the format is known to match this category
+ */
+#define VIDEO_FMT_IS_FULL_PLANAR(pixfmt)					\
+	(0 VIDEO_FOREACH_YUV_FULL_PLANAR(_VIDEO_FMT_OR_EQ, pixfmt))
 
 /**
  * @brief Get number of bits per pixel of a pixel format
