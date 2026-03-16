@@ -64,4 +64,14 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT)
       set_config_bool(${ZCMAKE_APPLICATION} CONFIG_MCUBOOT_ENCRYPTION_ALG_AES_256 y)
     endif()
   endif()
+
+  # Propagate the exact MCUboot trailer + workspace overhead so the app-level
+  # build-time size check (cmake/mcuboot.cmake) and runtime upload check
+  # (MCUmgr) can use it instead of a conservative estimate.
+  set(mcuboot_footer_size)
+  sysbuild_get(mcuboot_footer_size IMAGE mcuboot VAR mcuboot_image_footer_size CACHE)
+  if(DEFINED mcuboot_footer_size AND NOT mcuboot_footer_size STREQUAL "")
+    math(EXPR mcuboot_footer_hex "${mcuboot_footer_size}" OUTPUT_FORMAT HEXADECIMAL)
+    set_config_int(${ZCMAKE_APPLICATION} CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE ${mcuboot_footer_hex})
+  endif()
 endif()

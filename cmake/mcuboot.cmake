@@ -290,6 +290,54 @@ function(zephyr_mcuboot_tasks)
     endif()
   endif()
   set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${byproducts})
+
+  # Post-build image size check for swap-based MCUboot modes.
+  # Verifies the signed binary fits within the usable slot space after
+  # accounting for the swap trailer and workspace overhead.  Without this
+  # check an oversized image is only detected at runtime when the swap
+  # silently fails.
+  if(CONFIG_MCUBOOT_IMAGE_SIZE_CHECK AND CONFIG_BUILD_OUTPUT_BIN)
+    set(footer_size 0)
+
+    # When built with sysbuild, CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE carries the
+    # exact trailer + workspace overhead that MCUboot computed at configure
+    # time.  Prefer it over any local estimate.
+    if(DEFINED CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE)
+      math(EXPR footer_size "${CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE}")
+    endif()
+
+    # Without sysbuild (or if the sysbuild value was not propagated), fall back
+    # to a conservative estimate derived from the flash erase-block-size.
+    if(footer_size EQUAL 0)
+      dt_prop(erase_block_size PATH "${flash_node}" PROPERTY "erase-block-size")
+      if(NOT erase_block_size)
+        set(erase_block_size 4096)
+        message(WARNING "Flash erase-block-size not in devicetree, assuming "
+                        "4096 for MCUboot image size check")
+      endif()
+
+      # Conservative footer estimate: trailer content rounds up to one erase
+      # block; swap-using-move and swap-using-offset need an additional erase
+      # block for the move/offset workspace.
+      if(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE
+         OR CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH
+         OR CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET)
+        math(EXPR footer_size "${erase_block_size} * 2")
+      elseif(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH)
+        set(footer_size ${erase_block_size})
+      endif()
+    endif()
+
+    if(footer_size GREATER 0)
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+        ${CMAKE_COMMAND}
+          -DSIGNED_BIN=${output}.signed.bin
+          -DSLOT_SIZE=${slot_size}
+          -DFOOTER_SIZE=${footer_size}
+          -P ${CMAKE_CURRENT_LIST_DIR}/mcuboot_check_image_size.cmake
+      )
+    endif()
+  endif()
 endfunction()
 
 zephyr_mcuboot_tasks()

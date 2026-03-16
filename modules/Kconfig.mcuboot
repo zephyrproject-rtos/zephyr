@@ -391,6 +391,25 @@ config MCUBOOT_APPLICATION_FIRMWARE_UPDATER
 
 endmenu # On board MCUboot operation mode
 
+config MCUBOOT_IMAGE_SIZE_CHECK
+	bool "Build-time check that signed image fits in MCUboot slot"
+	default y
+	depends on !MCUBOOT_IMGTOOL_OVERWRITE_ONLY
+	help
+	  When enabled, a post-build step verifies that the signed binary
+	  does not exceed the maximum usable image size for the configured
+	  MCUboot swap mode.  Swap-based upgrade modes (move, offset, scratch)
+	  reserve space at the end of each slot for a trailer and, in some
+	  modes, a swap workspace sector.  An oversized image is only detected
+	  at runtime without this check.
+
+	  When built with sysbuild the exact overhead computed by MCUboot is
+	  used.  Otherwise a conservative estimate based on the flash
+	  erase-block-size is applied.
+
+	  Disable this option only if you have a non-standard partition layout
+	  that the heuristic cannot handle correctly.
+
 endif # BOOTLOADER_MCUBOOT
 
 menuconfig MCUBOOT_BOOTUTIL_LIB
