@@ -19,4 +19,5 @@ supported:
   - arduino_gpio
   - arduino_serial
   - arduino_spi
+  - netif:eth
 vendor: renesas

@@ -158,3 +158,57 @@
 		};
 	};
 };
+
+&eswm {
+	status = "okay";
+	interrupts = <27 1>;
+	interrupt-names = "gwdi";
+	pinctrl-0 = <&ethphyclk_default>;
+	pinctrl-names = "default";
+};
+
+&eth0 {
+	phy-connection-type = "gmii";
+	local-mac-address = [74 90 50 01 02 05];
+	phy-clock-type = "internal";
+	phy-handle = <&phy1>;
+	pinctrl-0 = <&eth0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&eth1 {
+	phy-connection-type = "gmii";
+	local-mac-address = [74 90 50 01 02 06];
+	phy-clock-type = "internal";
+	phy-handle = <&phy2>;
+	pinctrl-0 = <&eth1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mdio0 {
+	pinctrl-0 = <&mdio0_default>;
+	pinctrl-names = "default";
+	mdio-hold-time-ns = <7>;
+	mdio-capture-time-ns = <0>;
+	status = "okay";
+
+	phy1: phy@0 {
+		compatible = "microchip,vsc8541";
+		reg = <0>;
+		microchip,interface-type = "gmii";
+		/* Board limitations are currently being analyzed.
+		 * Will be improved in the future
+		 */
+		default-speeds = "100BASE Full-Duplex";
+		status = "okay";
+	};
+
+	phy2: phy@1 {
+		compatible = "microchip,vsc8541";
+		reg = <1>;
+		microchip,interface-type = "gmii";
+		status = "okay";
+	};
+};
