@@ -462,6 +462,7 @@ Libraries / Subsystems
 * LoRa/LoRaWAN
 
    * :c:func:`lora_airtime`
+   * :c:member:`lora_modem_config.sync_word`
 
 * Mbed TLS
 
