@@ -873,7 +873,7 @@ class DeviceHandler(Handler):
                     # Reset pulse: IO0=LOW (DTR=False), EN=LOW (RTS=True)
                     ser.dtr = False
                     ser.rts = True
-                    time.sleep(0.01)
+                    time.sleep(0.1)
 
                     # Return to normal boot
                     ser.rts = False
