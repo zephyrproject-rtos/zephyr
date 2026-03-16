@@ -1,4 +1,5 @@
 /*
+
  * Copyright (c) 2025 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -58,6 +59,8 @@ struct shared_multi_heap_region smh_psram = {
 #define STM32_XSPI_CLOCK_PRESCALER_MIN  0U
 #define STM32_XSPI_CLOCK_PRESCALER_MAX  255U
 #define STM32_XSPI_CLOCK_COMPUTE(bus_freq, prescaler) ((bus_freq) / ((prescaler) + 1U))
+/* Init mode clock frequency */
+#define STM32_XSPI_SPI_INIT_MAX_FREQ MHZ(50)
 
 #if defined(XSPI1)
 #define STM32_XSPI1 XSPI1
@@ -297,7 +300,27 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	hxspi->Init.ClockPrescaler = prescaler;
+	/* Use a conservative clock for the SPI-mode init phase */
+	uint32_t init_prescaler = prescaler;
+
+	if (dev_cfg->data_mode == XSPI_OCTO_MODE) {
+		uint32_t p;
+
+		for (p = STM32_XSPI_CLOCK_PRESCALER_MIN;
+		     p <= STM32_XSPI_CLOCK_PRESCALER_MAX;
+		     p++) {
+			if (STM32_XSPI_CLOCK_COMPUTE(ahb_clock_freq, p) <=
+				STM32_XSPI_SPI_INIT_MAX_FREQ) {
+				break;
+			}
+		}
+
+		if (p > prescaler) {
+			init_prescaler = p;
+		}
+	}
+
+	hxspi->Init.ClockPrescaler = init_prescaler;
 	hxspi->Init.MemorySize = find_msb_set(dev_cfg->memory_size) - 2;
 
 	if (HAL_XSPI_Init(hxspi) != HAL_OK) {
