@@ -41,6 +41,7 @@ struct mctp_binding_i2c_gpio_target {
 extern const struct i2c_target_callbacks mctp_i2c_gpio_target_callbacks;
 int mctp_i2c_gpio_target_start(struct mctp_binding *binding);
 int mctp_i2c_gpio_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
+int mctp_i2c_gpio_target_unregister(struct mctp_binding_i2c_gpio_target *b);
 /** INTERNAL_HIDDEN @endcond */
 
 /**
