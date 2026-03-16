@@ -11,6 +11,6 @@ elseif(CONFIG_SOC_MIMX9596)
   add_subdirectory(imx95)
 endif()
 
-if(CONFIG_CPU_CORTEX_A55)
-  zephyr_library_sources_ifdef(CONFIG_PM pm_acore.c)
+if(CONFIG_CPU_CORTEX_A55 AND CONFIG_PM)
+  zephyr_library_sources_ifdef(CONFIG_PM_CPU_OPS_PSCI pm_acore.c)
 endif()
