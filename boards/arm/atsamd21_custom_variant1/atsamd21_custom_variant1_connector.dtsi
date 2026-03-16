@@ -5,8 +5,8 @@
  */
 
 / {
-	atsamd21_custom_d: connector {
-		compatible = "samd21,samd21_custom-gpio";
+	atsamd21_custom_variant1_d: connector {
+		compatible = "samd21,samd21_custom_variant1-gpio";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
@@ -17,6 +17,6 @@
 	};
 };
 
-atsamd21_custom_spi: &sercom0 {};
-atsamd21_custom_debug: &sercom4 {};
-atsamd21_custom_dac: &dac0 {};
+atsamd21_custom_variant1_spi: &sercom0 {};
+atsamd21_custom_variant1_debug: &sercom4 {};
+atsamd21_custom_variant1_dac: &dac0 {};

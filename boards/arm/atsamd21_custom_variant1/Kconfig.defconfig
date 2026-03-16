@@ -1,0 +1,8 @@
+# ATSAMD21 Custom board configuration
+
+# Copyright (c) 2020 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "atsamd21_custom_variant1"
+	depends on BOARD_ATSAMD21_CUSTOM_VARIANT1

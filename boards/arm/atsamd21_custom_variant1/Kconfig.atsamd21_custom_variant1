@@ -1,0 +1,7 @@
+# ATSAMD21 Custom board configuration
+
+# Copyright (c) 2020 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ATSAMD21_CUSTOM_VARIANT1
+	select SOC_SAMD21J18A

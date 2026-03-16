@@ -1,0 +1,14 @@
+description: GPIO pins to control DE/nRE of the RS485 Drivers
+compatible: "gpio-rs485-en"
+child-binding:
+  description: The GPIOs controlling the pins for DE/nRE
+  properties:
+    gpios:
+     type: phandle-array
+     required: true
+    label:
+      type: string
+      description: |
+        Human readable string describing the DE/nRE pin. It can be used by an
+        application to identify this pin or to retrieve its number/index
+        (i.e. child node number) on the parent device.

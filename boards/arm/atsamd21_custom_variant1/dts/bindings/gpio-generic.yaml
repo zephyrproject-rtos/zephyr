@@ -1,0 +1,28 @@
+description: Generic GPIO pins (IN / OUT)
+compatible: "gpio-generic"
+child-binding:
+  description: Generic IO
+  properties:
+    debounce-interval-ms:
+      type: int
+      default: 30
+      description: |
+        Debouncing interval time in milliseconds.
+        If not specified defaults to 30.
+    polling-mode:
+      type: boolean
+      description: |
+        Poll the pin periodically at the specified debounce-interval-ms.
+    direction:
+      type: string
+      enum: ["input", "output", "inout"]
+      description: "Specifies whether the pin is an input, output, or both."
+    gpios:
+      type: phandle-array
+      required: true
+    label:
+      type: string
+      description: |
+        Human readable string describing the IO pin. It can be used by an
+        application to identify this pin or to retrieve its number/index
+        (i.e. child node number) on the parent device.

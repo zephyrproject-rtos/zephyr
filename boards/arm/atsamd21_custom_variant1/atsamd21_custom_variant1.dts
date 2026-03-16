@@ -7,12 +7,12 @@
 /dts-v1/;
 #include <atmel/samd21.dtsi>
 #include <atmel/samx2xx18.dtsi>
-#include "atsamd21_custom-pinctrl.dtsi"
-#include "atsamd21_custom_connector.dtsi"
+#include "atsamd21_custom_variant1-pinctrl.dtsi"
+#include "atsamd21_custom_variant1_connector.dtsi"
 
 / {
-	model = "ATSAMD21 Custom";
-	compatible = "samd21,samd21_custom", "atmel,samd21j18a", "atmel,samd21";
+	model = "ATSAMD21 Custom Variant1";
+	compatible = "samd21,samd21_custom_variant1", "atmel,samd21j18a", "atmel,samd21";
 
 	chosen {
 		zephyr,console = &sercom4;
@@ -51,7 +51,7 @@
 	/* Define the SPI CS pin */
 	spi_cs {
 		compatible = "gpio-generic";
-		spi_cs_1: spi_cs_1 {
+		spi_cs: spi_cs {
 			gpios = <&porta 4 GPIO_ACTIVE_HIGH>;
 			label = "SPI_CS";
 		};
@@ -63,6 +63,38 @@
 		generic_io_1: generic_io_1 {
 			gpios = <&porta 14 GPIO_ACTIVE_HIGH>;
 			label = "GENERIC_IO";
+		};
+
+		reset_line: reset_line {
+			gpios = <&porta 8 GPIO_ACTIVE_HIGH>;
+			label = "GENERIC_IO";
+		};
+
+		snx4hx595_clock: snx4hx595_clock {
+			gpios = <&porta 9 GPIO_ACTIVE_HIGH>;
+			label = "GENERIC_IO";
+		};
+
+		ad654_fout: ad654_fout {
+			gpios = <&porta 16 GPIO_ACTIVE_HIGH>;
+			label = "GENERIC_IO";
+		};
+	};
+
+	relays_shift_register {
+		compatible = "gpio-generic";
+		/* Define control pins for the TPIC6B595DWR */
+		mic584x_clock: mic584x_clock {
+			gpios = <&porta 13 GPIO_ACTIVE_HIGH>;
+			label = "CLOCK";
+		};
+		mic584x_strobe: mic584x_strobe {
+			gpios = <&porta 10 GPIO_ACTIVE_HIGH>;
+			label = "STROBE";
+		};
+		mic584x_serout: mic584x_serout {
+			gpios = <&porta 17 GPIO_ACTIVE_HIGH>;
+			label = "SEROUT";
 		};
 	};
 
@@ -99,6 +131,24 @@
 
 	pinctrl-0 = <&sercom0_spi_default>;
 	pinctrl-names = "default";
+
+	// cs-gpios = <&porta 4 GPIO_ACTIVE_LOW>;
+
+	pic16c63: spi-device@0 {
+		status = "okay";
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <250000>;
+		label = "GenDev";
+	};
+
+	snx4hx595: spi-device@1 {
+		status = "okay";
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+		label = "GenDev";
+	};
 };
 
 &sercom2 {

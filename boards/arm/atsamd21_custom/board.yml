@@ -1,0 +1,6 @@
+board:
+  name: atsamd21_custom
+  full_name: ATSAMD21 Custom
+  vendor: atmel
+  socs:
+    - name: samd21j18a

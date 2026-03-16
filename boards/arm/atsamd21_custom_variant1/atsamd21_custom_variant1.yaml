@@ -1,0 +1,21 @@
+identifier: atsamd21_custom_variant1
+name: ATSAMD21 Custom Variant1
+type: mcu
+arch: arm
+ram: 32
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - dma
+  - dac
+  - gpio
+  - hwinfo
+  - spi
+  - i2c
+  - uart
+  - usb_device
+  - watchdog
+vendor: obiio
