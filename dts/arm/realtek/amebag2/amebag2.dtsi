@@ -56,6 +56,18 @@
 			reg = <0x20006040 0x49fc0>;
 		};
 
+		wifi0: wifi@40000000 {
+			compatible = "realtek,ameba-wifi";
+			reg = <0x40000000 0x40000>;
+			status = "disabled";
+		};
+
+		wifi1: wifi@40040000 {
+			compatible = "realtek,ameba-wifi";
+			reg = <0x40040000 0x40000>;
+			status = "disabled";
+		};
+
 		sdhc0: sdhc@40114000 {
 			compatible = "realtek,ameba-sdhost";
 			reg = <0x40114000 0xd00>;
