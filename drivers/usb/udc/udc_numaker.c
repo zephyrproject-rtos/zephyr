@@ -1592,25 +1592,26 @@ static void numaker_hsusbd_ep_trigger(struct numaker_usbd_ep *ep_cur, uint32_t l
 			if (udc_ctrl_stage_is_status_in(dev) || udc_ctrl_stage_is_no_data(dev)) {
 				/* Unleash Status stage */
 				base->CEPCTL = HSUSBD_CEPCTL_NAKCLR;
-			}
-
-			if (len == 0) {
-				base->CEPCTL = HSUSBD_CEPCTL_ZEROLEN | HSUSBD_CEPCTL_NAKCLR_Msk;
 			} else {
-				__ASSERT_NO_MSG(len <= ep_cur->mps);
-				base->CEPTXCNT = len;
-			}
+				if (len == 0) {
+					base->CEPCTL = HSUSBD_CEPCTL_ZEROLEN |
+						       HSUSBD_CEPCTL_NAKCLR_Msk;
+				} else {
+					__ASSERT_NO_MSG(len <= ep_cur->mps);
+					base->CEPTXCNT = len;
+				}
 
-			/* Enable CEP interrupt */
-			base->CEPINTEN |= HSUSBD_CEPINTEN_TXPKIEN_Msk;
+				/* Enable CEP interrupt */
+				base->CEPINTEN |= HSUSBD_CEPINTEN_TXPKIEN_Msk;
+			}
 		} else {
 			if (udc_ctrl_stage_is_status_out(dev)) {
 				/* Unleash Status stage */
 				base->CEPCTL = HSUSBD_CEPCTL_NAKCLR;
+			} else {
+				/* Enable CEP interrupt */
+				base->CEPINTEN |= HSUSBD_CEPINTEN_RXPKIEN_Msk;
 			}
-
-			/* Enable CEP interrupt */
-			base->CEPINTEN |= HSUSBD_CEPINTEN_RXPKIEN_Msk;
 		}
 	} else {
 		if (USB_EP_DIR_IS_IN(ep_cur->addr)) {
