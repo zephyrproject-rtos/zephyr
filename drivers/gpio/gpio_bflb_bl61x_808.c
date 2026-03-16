@@ -4,20 +4,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT bflb_bl61x_gpio
+#define DT_DRV_COMPAT bflb_bl61x_808_gpio
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/irq.h>
 #include <zephyr/dt-bindings/pinctrl/bflb-common-pinctrl.h>
-#include <zephyr/dt-bindings/pinctrl/bl61x-pinctrl.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
+#if defined(CONFIG_SOC_SERIES_BL61X)
+#include <zephyr/dt-bindings/pinctrl/bl61x-pinctrl.h>
 #include <bouffalolab/bl61x/bflb_soc.h>
 #include <bouffalolab/bl61x/glb_reg.h>
 #include <bouffalolab/bl61x/hbn_reg.h>
+#elif defined(CONFIG_SOC_SERIES_BL808)
+#include <zephyr/dt-bindings/pinctrl/bl808-pinctrl.h>
+#include <bouffalolab/bl808/bflb_soc.h>
+#include <bouffalolab/bl808/glb_reg.h>
+#include <bouffalolab/bl808/hbn_reg.h>
+#else
+#error Unsupported platform
+#endif
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(gpio_bflb_bl61x);
+LOG_MODULE_REGISTER(gpio_bflb_bl61x_808);
 
 #define GPIO_BFLB_FUNCTION_GPIO 11
 
@@ -60,7 +69,7 @@ LOG_MODULE_REGISTER(gpio_bflb_bl61x);
 #define GPIO_BFLB_GET_INST_PORTS(n) \
 	DT_INST_FOREACH_CHILD_STATUS_OKAY(n, GPIO_BFLB_GET_INST_PORTS_IMPL)
 
-#ifdef CONFIG_GPIO_BL61X_WO
+#ifdef CONFIG_GPIO_BL61X_808_WO
 #include <zephyr/drivers/clock_control.h>
 
 #include <zephyr/drivers/gpio/gpio_bl61x_wo.h>
@@ -102,7 +111,7 @@ struct gpio_bflb_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
 	sys_slist_t callbacks;
-#ifdef CONFIG_GPIO_BFLB_BL61X_CACHE_WRITE
+#ifdef CONFIG_GPIO_BFLB_BL61X_808_CACHE_WRITE
 	uint32_t cache;
 #endif
 };
@@ -116,7 +125,7 @@ static int gpio_bflb_port_get_raw(const struct device *dev, uint32_t *value)
 	return 0;
 }
 
-#ifdef CONFIG_GPIO_BFLB_BL61X_CACHE_WRITE
+#ifdef CONFIG_GPIO_BFLB_BL61X_808_CACHE_WRITE
 
 static int gpio_bflb_port_set_masked_raw(const struct device *dev,
 					 uint32_t mask,
@@ -168,7 +177,7 @@ static int gpio_bflb_port_toggle_bits(const struct device *dev, uint32_t mask)
 	return 0;
 }
 
-#else /* CONFIG_GPIO_BFLB_BL61X_CACHE_WRITE */
+#else /* CONFIG_GPIO_BFLB_BL61X_808_CACHE_WRITE */
 
 static int gpio_bflb_port_set_masked_raw(const struct device *dev,
 					 uint32_t mask,
@@ -220,7 +229,7 @@ static int gpio_bflb_port_toggle_bits(const struct device *dev, uint32_t mask)
 	return 0;
 }
 
-#endif /* CONFIG_GPIO_BFLB_BL61X_CACHE_WRITE */
+#endif /* CONFIG_GPIO_BFLB_BL61X_808_CACHE_WRITE */
 
 static void gpio_bflb_port_interrupt_configure_mode(const struct device *dev, uint32_t pin,
 						    enum gpio_int_mode mode,
@@ -431,7 +440,7 @@ void gpio_bflb_init_parent(const struct device *dev)
 
 	/* Only do initialization once, this is functionally a single peripheral */
 	if (!cfg->p_data->initialized) {
-#ifdef CONFIG_GPIO_BL61X_WO
+#ifdef CONFIG_GPIO_BL61X_808_WO
 		gpio_bflb_common_init_bl61x_wo();
 #endif
 		cfg->p_config->irq_config_func();
@@ -441,7 +450,7 @@ void gpio_bflb_init_parent(const struct device *dev)
 
 int gpio_bflb_init(const struct device *dev)
 {
-#ifdef CONFIG_GPIO_BFLB_BL61X_CACHE_WRITE
+#ifdef CONFIG_GPIO_BFLB_BL61X_808_CACHE_WRITE
 	const struct gpio_bflb_config * const cfg = dev->config;
 	struct gpio_bflb_data *data = dev->data;
 
@@ -512,7 +521,7 @@ static DEVICE_API(gpio, gpio_bflb_api) = {
 	irq_enable(DT_INST_IRQ_BY_NAME(n, fifo, irq));
 
 #define GPIO_BFLB_IRQ_FUNC_IMPL_WO(n) \
-	IF_ENABLED(CONFIG_GPIO_BL61X_WO, (GPIO_BFLB_IRQ_FUNC_IMPL_WO_IMPL(n)))
+	IF_ENABLED(CONFIG_GPIO_BL61X_808_WO, (GPIO_BFLB_IRQ_FUNC_IMPL_WO_IMPL(n)))
 
 #define GPIO_BFLB_IRQ_FUNC(n, cfg)					\
 	static void gpio_bflb_bl61x_##n##_irq_config_func(void)		\
@@ -568,7 +577,7 @@ DT_INST_FOREACH_STATUS_OKAY(GPIO_BFLB_INIT_PARENT)
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "Only one instance of " STRINGIFY(DT_DRV_COMPAT) " is allowed and it must be okay");
 
-#ifdef CONFIG_GPIO_BL61X_WO
+#ifdef CONFIG_GPIO_BL61X_808_WO
 
 struct bl61x_wo_data {
 	struct k_sem					lock;
@@ -958,4 +967,4 @@ void gpio_bflb_common_bl61x_wo_isr(void)
 	sys_write32(tmp, GLB_BASE + GLB_GPIO_CFG143_OFFSET);
 }
 
-#endif /* CONFIG_GPIO_BL61X_WO */
+#endif /* CONFIG_GPIO_BL61X_808_WO */
