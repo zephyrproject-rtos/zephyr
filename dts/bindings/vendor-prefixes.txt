@@ -238,6 +238,7 @@ espressif	Espressif Systems
 est	ESTeem Wireless Modems
 ettus	NI Ettus Research
 eukrea	Eukréa Electromatique
+eurovibes	Eurovibes
 everest	Everest Semiconductor Co. Ltd.
 everlight	Everlight Electronics Co. Ltd.
 everspin	Everspin Technologies, Inc.
