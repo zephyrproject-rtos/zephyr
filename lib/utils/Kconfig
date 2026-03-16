@@ -20,6 +20,22 @@ config JSON_LIBRARY_FP_SUPPORT
 	  Requires a libc implementation with support for floating point
 	  functions: strtof(), strtod(), isnan() and isinf().
 
+config JSON_FLOAT_PRECISION
+	int "Maximum number of decimal places for an encoded float value"
+	depends on JSON_LIBRARY_FP_SUPPORT
+	default 9
+	help
+	  Sets the precision value in the printf style format string
+	  for a float.
+
+config JSON_DOUBLE_PRECISION
+	int "Maximum number of decimal places for an encoded double value"
+	depends on JSON_LIBRARY_FP_SUPPORT
+	default 16
+	help
+	  Sets the precision value in the printf style format string
+	  for a double.
+
 config RING_BUFFER
 	bool "Ring buffers"
 	help
