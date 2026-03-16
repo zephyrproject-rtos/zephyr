@@ -7,7 +7,6 @@
 import binascii
 import logging
 import struct
-import sys
 from enum import Enum
 
 from gdbstubs.gdbstub import GdbStub
@@ -29,25 +28,17 @@ class XtensaSoc(Enum):
     DC233C = 6
 
 
-# The previous version of this script didn't need to know
-# what toolchain Zephyr was built with; it assumed sample_controller
-# was built with the Zephyr SDK and ESP32 with Espressif's.
-# However, if a SOC can be built by two separate toolchains,
-# there is a chance that the GDBs provided by the toolchains will
-# assign different indices to the same registers. For example, the
+# If a SOC can be built by two separate toolchains, there is a
+# chance that the GDBs provided by the toolchains will assign
+# different indices to the same registers. For example, the
 # Intel ADSP family of SOCs can be built with both Zephyr's
 # SDK and Cadence's XCC toolchain. With the same SOC APL,
 # the SDK's GDB assigns PC the index 0, while XCC's GDB assigns
 # it the index 32.
-#
-# (The Espressif value isn't really required, since ESP32 can
-# only be built with Espressif's toolchain, but it's included for
-# completeness.)
 class XtensaToolchain(Enum):
     UNKNOWN = 0
     ZEPHYR = 1
     XCC = 2
-    ESPRESSIF = 3
 
 
 def get_gdb_reg_definition(soc, toolchain):
@@ -60,12 +51,6 @@ def get_gdb_reg_definition(soc, toolchain):
             return GdbRegDef_Intel_Adsp_CAVS_Zephyr
         elif toolchain == XtensaToolchain.XCC:
             return GdbRegDef_Intel_Adsp_CAVS_XCC
-        elif toolchain == XtensaToolchain.ESPRESSIF:
-            logger.error(
-                "Can't use espressif toolchain with CAVS. "
-                + "Use zephyr or xcc instead. Exiting..."
-            )
-            sys.exit(1)
         else:
             raise NotImplementedError
     elif soc == XtensaSoc.ESP32S2:
@@ -167,10 +152,7 @@ class GdbStub_Xtensa(GdbStub):
         else:
             # v1 only supported ESP32 and sample_controller, each of which
             # only build with one toolchain
-            if self.soc == XtensaSoc.ESP32:
-                self.toolchain = XtensaToolchain.ESPRESSIF
-            else:
-                self.toolchain = XtensaToolchain.ZEPHYR
+            self.toolchain = XtensaToolchain.ZEPHYR
             arch_data_blk_regs = arch_data_blk[3:]
 
         logger.debug(f"Xtensa toolchain: {self.toolchain.name}")
@@ -299,8 +281,7 @@ class GdbRegDef_Sample_Controller:
         WINDOWSTART = 35
 
 
-# ESP32 is unique to espressif toolchain
-# espressif xtensa-overlays -> xtensa_esp32/gdb/gdb/xtensa-config.c
+# xtensa-overlays -> xtensa_esp32/gdb/gdb/xtensa-config.c
 class GdbRegDef_ESP32:
     ARCH_DATA_BLK_STRUCT_REGS = '<IIIIIIIIIIIIIIIIIIIIIIIII'
     SOC_GDB_GPKT_BIN_SIZE = 420
