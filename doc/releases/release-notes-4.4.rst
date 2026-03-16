@@ -758,11 +758,77 @@ New Drivers
 New Samples
 ***********
 
-* :zephyr:code-sample:`ble_peripheral_ans`
-* :zephyr:code-sample:`cpu_freq_pressure`
 * :zephyr:code-sample:`6dof_fifo_stream` (renamed from ``stream_fifo``)
 * :zephyr:code-sample:`accel_stream` (renamed from ``accel_polling``)
-* :zephyr:code-sample:`accel_polling` (it uses sensor_read() API)
+* :zephyr:code-sample:`adc_stream`
+* :zephyr:code-sample:`amp_talk`
+* :zephyr:code-sample:`at_client`
+* :zephyr:code-sample:`bflb-bl61x-wo-uart`
+* :zephyr:code-sample:`ble_peripheral_ans`
+* :zephyr:code-sample:`ble_peripheral_ets`
+* :zephyr:code-sample:`ble_peripheral_gap_svc`
+* :zephyr:code-sample:`bluetooth_a2dp_sink`
+* :zephyr:code-sample:`bluetooth_a2dp_source`
+* :zephyr:code-sample:`bluetooth_l2cap_coc_acceptor`
+* :zephyr:code-sample:`bluetooth_l2cap_coc_initiator`
+* :zephyr:code-sample:`bridge`
+* :zephyr:code-sample:`button_interrupt`
+* :zephyr:code-sample:`capture`
+* :zephyr:code-sample:`coap-upload`
+* :zephyr:code-sample:`codec`
+* :zephyr:code-sample:`cpu_freq_on_demand`
+* :zephyr:code-sample:`cpu_freq_pressure`
+* :zephyr:code-sample:`crc_drivers`
+* :zephyr:code-sample:`crc_subsys`
+* :zephyr:code-sample:`cs40l5x`
+* :zephyr:code-sample:`device_pm`
+* :zephyr:code-sample:`event`
+* :zephyr:code-sample:`ext2-fstab`
+* :zephyr:code-sample:`fingerprint-sensor`
+* :zephyr:code-sample:`flash-ipm`
+* :zephyr:code-sample:`frdm_mcxa156_lpdac_opamp_lpadc`
+* :zephyr:code-sample:`ftp-client`
+* :zephyr:code-sample:`hello_hl78xx`
+* :zephyr:code-sample:`hwspinlock`
+* :zephyr:code-sample:`instrumentation`
+* :zephyr:code-sample:`latmon-client`
+* :zephyr:code-sample:`legacy_bluetooth_hci_usb`
+* :zephyr:code-sample:`legacy-netusb`
+* :zephyr:code-sample:`legacy-usb-cdc-acm-console`
+* :zephyr:code-sample:`legacy-usb-cdc-acm`
+* :zephyr:code-sample:`legacy-usb-dfu`
+* :zephyr:code-sample:`legacy-usb-hid-mouse`
+* :zephyr:code-sample:`legacy-usb-mass`
+* :zephyr:code-sample:`legacy-webusb`
+* :zephyr:code-sample:`lp-gpio-wakeup`
+* :zephyr:code-sample:`lp-timer-wakeup`
+* :zephyr:code-sample:`max32664c`
+* :zephyr:code-sample:`mctp_i2c_bus_endpoint`
+* :zephyr:code-sample:`mctp_i2c_bus_owner`
+* :zephyr:code-sample:`mctp_i3c_bus_endpoint`
+* :zephyr:code-sample:`mctp_i3c_bus_owner`
+* :zephyr:code-sample:`mctp-usb-endpoint`
+* :zephyr:code-sample:`msg_queue`
+* :zephyr:code-sample:`mtch9010`
+* :zephyr:code-sample:`netmidi2`
+* :zephyr:code-sample:`nrf_clock_control`
+* :zephyr:code-sample:`ocpp`
+* :zephyr:code-sample:`opamp_output_measure`
+* :zephyr:code-sample:`openthread-border-router`
+* :zephyr:code-sample:`pico-w-wifi-led`
+* :zephyr:code-sample:`producer_consumer`
+* :zephyr:code-sample:`quality-of-service`
+* :zephyr:code-sample:`red-black-tree`
+* :zephyr:code-sample:`regulator_shell`
+* :zephyr:code-sample:`renesas_lvd`
+* :zephyr:code-sample:`rtk0eg0019b01002bj`
+* :zephyr:code-sample:`sct2024`
+* :zephyr:code-sample:`shell-devmem-load`
+* :zephyr:code-sample:`stm32_pwm_mastermode`
+* :zephyr:code-sample:`t1s`
+* :zephyr:code-sample:`veml6046`
+* :zephyr:code-sample:`virtiofs`
+* :zephyr:code-sample:`zbus-async-listeners`
 
 ..
   Same as above, this will also be recomputed at the time of the release.
