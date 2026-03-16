@@ -488,6 +488,10 @@ device.
    * - zephyr,sram
      - A node whose ``reg`` sets the base address and size of SRAM memory
        available to the Zephyr image, used during linking
+   * - zephyr,system-timer
+     - Selects the hardware timer instance used as the Zephyr system timer.
+       Used when devicetree selects which timer instance provides that
+       singleton system function.
    * - zephyr,tracing-uart
      - Sets UART device used by tracing subsystem
    * - zephyr,uart-mcumgr
