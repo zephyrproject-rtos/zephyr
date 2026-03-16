@@ -1,0 +1,190 @@
+# Copyright (c) 2026 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nPM10xx PMIC regulator
+
+include: base.yaml
+
+compatible: "nordic,npm10xx-regulator"
+
+properties:
+  dvs-gpios:
+    type: phandle-array
+    description: |
+      List of SoC GPIOs connected to PMIC as regulator control GPIOs.
+      regulator_parent_dvs_state_set will drive these pins according to the bits set in the state
+      identifier, that is:
+        0 (0b000) - deactivate all pins
+        1 (0b001) - activate only the first pin
+        2 (0b010) - activate only the second pin
+        3 (0b011) - activate both the first and the second pin
+        etc.
+      The effect of the state change is defined by the *-gpio-config properties for each of the
+      regulator blocks. Provide up to three pins (nPM10xx has 3 GPIOs).
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-name
+        - regulator-init-microvolt
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - regulator-init-microamp
+        - regulator-min-microamp
+        - regulator-max-microamp
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-boot-off
+        - regulator-allow-bypass
+        - regulator-initial-mode
+        - regulator-allowed-modes
+        - regulator-over-current-protection
+        - regulator-active-discharge
+
+  properties:
+    regulator-init-microvolt:
+      description: Valid range is 1V to 3V3 with 50mV steps. BUCK and LDO.
+
+    regulator-min-microvolt:
+      description: Valid range is 1V to 3V3 with 50mV steps. BUCK and LDO.
+
+    regulator-max-microvolt:
+      description: Valid range is 1V to 3V3 with 50mV steps. BUCK and LDO.
+
+    regulator-alternate-microvolt:
+      type: int
+      description: Alternate output voltage. Valid range is 1V to 3V3 with 50mV steps. BUCK only.
+
+    regulator-init-microamp:
+      enum:
+        - 66000
+        - 91000
+        - 117000
+        - 142000
+        - 167000
+        - 192000
+        - 217000
+        - 291000
+      description: Peak current limit to set during initialization. BUCK only.
+
+    regulator-min-microamp:
+      enum:
+        - 66000
+        - 91000
+        - 117000
+        - 142000
+        - 167000
+        - 192000
+        - 217000
+        - 291000
+      description: Minimum allowed peak current limit. BUCK only.
+
+    regulator-max-microamp:
+      enum:
+        - 66000
+        - 91000
+        - 117000
+        - 142000
+        - 167000
+        - 192000
+        - 217000
+        - 291000
+      description: Maximum allowed peak current limit. BUCK only.
+
+    regulator-allow-bypass:
+      description: |
+        Enable automatic pass-through mode when BUCK output does not reach the target due to low
+        supply voltage. BUCK only.
+
+    regulator-soft-start-microamp:
+      type: int
+      enum:
+        - 10000
+        - 20000
+        - 35000
+        - 50000
+        - 66000
+        - 91000
+        - 117000
+        - 142000
+        - 167000
+        - 192000
+        - 217000
+        - 291000
+      description: |
+        Peak current limit for startup. The values are:
+        10mA, 20mA, 35mA, 50mA - for LDO and LOADSW
+        66mA, 91mA, 117mA, 142mA, 167mA, 192mA, 217mA, 291mA - for BUCK
+
+    regulator-soft-start-us:
+      type: int
+      enum:
+        - 1500
+        - 4500
+        - 7500
+        - 10500
+      description: Soft start time. LDO and LOADSW.
+
+    regulator-pull-down-ohms:
+      type: int
+      enum:
+        - 250
+        - 500
+        - 1000
+        - 2000
+      description: Pull-down resistence in Ohms. BUCK only.
+
+    regulator-ripple:
+      type: string
+      enum:
+        - "default"
+        - "low"
+        - "high"
+      description: Output voltage ripple. BUCK only.
+
+    enable-gpio-config:
+      type: array
+      description: Regulator enable controlled by specified GPIO pin <idx flags>.
+
+    pwr-mode-gpio-config:
+      type: array
+      description: Regulator power mode controlled by specified GPIO pin <idx flags>. BUCK only.
+
+    alternate-vout-gpio-config:
+      type: array
+      description: |
+        Regulator alternate output voltage controlled by specified GPIO pin <idx flags>. BUCK only.
+
+examples:
+  - |
+    npm1012: pmic@6a {
+      reg = <0x6a>;
+      compatible = "nordic,npm10xx";
+      /* ... */
+
+      regulators {
+        compatible = "nordic,npm10xx-regulator";
+        dvs-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>, <&gpio0 1 GPIO_ACTIVE_HIGH>;
+
+        BUCK {
+          regulator-init-microvolt = <2500000>;
+          pwr-mode-gpio-config = <0 GPIO_ACTIVE_HIGH>;
+          /* ... */
+        };
+
+        LDO {
+          regulator-init-microvolt = <1800000>;
+          enable-gpio-config = <1 GPIO_ACTIVE_HIGH>;
+          /* ... */
+        };
+
+        LDSW {
+          regulator-boot-off;
+          regulator-soft-start-microamp = <10000>;
+          /* ... */
+        };
+      };
+
+      /* ... */
+    };
