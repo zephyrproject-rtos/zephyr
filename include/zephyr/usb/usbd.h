@@ -853,6 +853,8 @@ int usbd_add_configuration(struct usbd_context *uds_ctx,
  * @param[in] cfg     Configuration value (bConfigurationValue)
  *
  * @return 0 on success, other values on fail.
+ * @retval -EALREADY If class instance is already registered.
+ * @retval -EBUSY If USB device support is already initialized.
  */
 int usbd_register_class(struct usbd_context *uds_ctx,
 			const char *name,
