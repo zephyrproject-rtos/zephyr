@@ -238,7 +238,7 @@ static void prepare_ra_message(struct net_pkt *pkt)
 
 	hdr.type = net_htons(NET_ETH_PTYPE_IPV6);
 	memset(&hdr.src, 0, sizeof(struct net_eth_addr));
-	memcpy(&hdr.dst, net_pkt_iface(pkt)->if_dev->link_addr.addr,
+	memcpy(&hdr.dst, net_if_get_link_addr(net_pkt_iface(pkt))->addr,
 	       sizeof(struct net_eth_addr));
 
 	net_pkt_set_overwrite(pkt, false);
@@ -266,7 +266,7 @@ static void inject_na_message(struct net_if *iface, struct net_in6_addr *src,
 
 	hdr.type = net_htons(NET_ETH_PTYPE_IPV6);
 	memset(&hdr.src, 0xaa, sizeof(struct net_eth_addr));
-	memcpy(&hdr.dst, net_pkt_iface(pkt)->if_dev->link_addr.addr,
+	memcpy(&hdr.dst, net_if_get_link_addr(net_pkt_iface(pkt))->addr,
 	       sizeof(struct net_eth_addr));
 
 	/* Reserve space for the L2 header. */
