@@ -39,6 +39,13 @@
 #define STM32_XSPI_CLOCK_PRESCALER_MAX  255U
 #define STM32_XSPI_CLOCK_COMPUTE(bus_freq, prescaler) ((bus_freq) / ((prescaler) + 1U))
 
+/*
+ * Max SPI-mode clock frequency (Hz) used during flash init (reset, status
+ * polling, JEDEC ID read). On other boards a (~50 MHz) prescaler for these operations has
+ * been observed to work, then switch to full speed after the flash is configured for OPI-DTR.
+ */
+#define STM32_XSPI_SPI_INIT_MAX_FREQ MHZ(50)
+
 /* Max Time value during reset or erase operation */
 #define STM32_XSPI_RESET_MAX_TIME               100U
 #define STM32_XSPI_BULK_ERASE_MAX_TIME          460000U
