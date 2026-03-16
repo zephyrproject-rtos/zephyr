@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Shrink the MCUboot image slots to 24 KB so the image size check can be
+ * exercised with a small padding array.
+ *
+ * With erase-block-size = 4096 and swap-using-offset mode the estimated
+ * footer is 2 * 4096 = 8192 bytes, leaving max image = 24576 - 8192 = 16384.
+ */
+
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+/delete-node/ &scratch_partition;
+/delete-node/ &storage_partition;
+
+&flash0 {
+	partitions {
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 0x00006000>;
+		};
+
+		slot1_partition: partition@12000 {
+			label = "image-1";
+			reg = <0x00012000 0x00006000>;
+		};
+
+		scratch_partition: partition@18000 {
+			label = "image-scratch";
+			reg = <0x00018000 0x00006000>;
+		};
+
+		storage_partition: partition@1e000 {
+			label = "storage";
+			reg = <0x0001e000 0x00002000>;
+		};
+	};
+};

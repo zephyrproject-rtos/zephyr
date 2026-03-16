@@ -1,0 +1,18 @@
+# To manually verify the overflow check, build with a large bloat size:
+#   west build -b native_sim tests/cmake/mcuboot_image_size_check_sysbuild \
+#     --sysbuild -- -DCONFIG_TEST_BLOAT_SIZE=14000
+# The build should fail with:
+#   "MCUboot signed image exceeds maximum size for swap upgrade"
+common:
+  sysbuild: true
+  build_only: true
+  tags:
+    - cmake
+    - mcuboot
+  platform_allow:
+    - native_sim
+    - nrf52840dk/nrf52840
+tests:
+  buildsystem.cmake.mcuboot_image_size_check_sysbuild.pass:
+    extra_configs:
+      - CONFIG_TEST_BLOAT_SIZE=6000
