@@ -2109,3 +2109,28 @@ uint32_t zms_get_num_cycles(struct zms_fs *fs)
 
 	return max_cycle_cnt;
 }
+
+int zms_get_sector_num_cycles(struct zms_fs *fs, uint32_t sector, uint32_t *cycles)
+{
+	int rc;
+
+	if (!fs || !cycles) {
+		return -EINVAL;
+	}
+
+	if (!fs->ready) {
+		return -EACCES;
+	}
+
+	if (sector >= fs->sector_count) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&fs->zms_lock, K_FOREVER);
+
+	rc = zms_get_full_sector_cycle(fs, (uint64_t)sector << ADDR_SECT_SHIFT, cycles);
+
+	k_mutex_unlock(&fs->zms_lock);
+
+	return rc;
+}
