@@ -147,7 +147,7 @@ static void siwx91x_sock_on_recv(sl_si91x_fdset_t *read_fd, sl_si91x_fdset_t *wr
 				 sl_si91x_fdset_t *except_fd, int status)
 {
 	/* When CONFIG_NET_SOCKETS_OFFLOAD is set, only one interface exist */
-	struct siwx91x_dev *sidev = net_if_get_first_wifi()->if_dev->dev->data;
+	struct siwx91x_dev *sidev = net_if_get_device(net_if_get_first_wifi())->data;
 
 	ARRAY_FOR_EACH(sidev->fds_cb, i) {
 		if (SL_SI91X_FD_ISSET(i, read_fd)) {
@@ -169,7 +169,7 @@ static void siwx91x_sock_on_recv(sl_si91x_fdset_t *read_fd, sl_si91x_fdset_t *wr
 static int siwx91x_sock_get(net_sa_family_t family, enum net_sock_type type,
 			    enum net_ip_protocol ip_proto, struct net_context **context)
 {
-	struct siwx91x_dev *sidev = net_if_get_first_wifi()->if_dev->dev->data;
+	struct siwx91x_dev *sidev = net_if_get_device(net_if_get_first_wifi())->data;
 	int sockfd;
 
 	sockfd = sl_si91x_socket(family, type, ip_proto);
@@ -183,7 +183,7 @@ static int siwx91x_sock_get(net_sa_family_t family, enum net_sock_type type,
 
 static int siwx91x_sock_put(struct net_context *context)
 {
-	struct siwx91x_dev *sidev = net_context_get_iface(context)->if_dev->dev->data;
+	struct siwx91x_dev *sidev = net_if_get_device(net_context_get_iface(context))->data;
 	int sockfd = (int)context->offload_context;
 	int ret;
 
@@ -201,7 +201,7 @@ static int siwx91x_sock_put(struct net_context *context)
 static int siwx91x_sock_bind(struct net_context *context,
 			     const struct sockaddr *addr, socklen_t addrlen)
 {
-	struct siwx91x_dev *sidev = net_context_get_iface(context)->if_dev->dev->data;
+	struct siwx91x_dev *sidev = net_if_get_device(net_context_get_iface(context))->data;
 	int sockfd = (int)context->offload_context;
 	struct sockaddr addr_le;
 	int ret;
@@ -231,7 +231,7 @@ static int siwx91x_sock_connect(struct net_context *context,
 				const struct sockaddr *addr, socklen_t addrlen,
 				net_context_connect_cb_t cb, int32_t timeout, void *user_data)
 {
-	struct siwx91x_dev *sidev = net_context_get_iface(context)->if_dev->dev->data;
+	struct siwx91x_dev *sidev = net_if_get_device(net_context_get_iface(context))->data;
 	int sockfd = (int)context->offload_context;
 	struct sockaddr addr_le;
 	int ret;
@@ -268,7 +268,7 @@ static int siwx91x_sock_listen(struct net_context *context, int backlog)
 static int siwx91x_sock_accept(struct net_context *context,
 			       net_tcp_accept_cb_t cb, int32_t timeout, void *user_data)
 {
-	struct siwx91x_dev *sidev = net_context_get_iface(context)->if_dev->dev->data;
+	struct siwx91x_dev *sidev = net_if_get_device(net_context_get_iface(context))->data;
 	int sockfd = (int)context->offload_context;
 	struct net_context *newcontext;
 	struct sockaddr addr_le;
@@ -368,7 +368,7 @@ static int siwx91x_sock_recv(struct net_context *context,
 			     net_context_recv_cb_t cb, int32_t timeout, void *user_data)
 {
 	struct net_if *iface = net_context_get_iface(context);
-	struct siwx91x_dev *sidev = iface->if_dev->dev->data;
+	struct siwx91x_dev *sidev = net_if_get_device(iface)->data;
 	int sockfd = (int)context->offload_context;
 	int ret;
 
@@ -407,7 +407,7 @@ static struct net_offload siwx91x_offload = {
 
 void siwx91x_sock_init(struct net_if *iface)
 {
-	struct siwx91x_dev *sidev = iface->if_dev->dev->data;
+	struct siwx91x_dev *sidev = net_if_get_device(iface)->data;
 
 	iface->if_dev->offload = &siwx91x_offload;
 	k_event_init(&sidev->fds_recv_event);
