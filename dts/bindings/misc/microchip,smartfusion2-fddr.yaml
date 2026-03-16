@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright Bavariamatic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: SmartFusion2 FDDR configuration block
+
+compatible: "microchip,smartfusion2-fddr"
+
+include: microchip,smartfusion2-common.yaml

@@ -1,0 +1,12 @@
+## SPDX-FileCopyrightText: Copyright Bavariamatic GmbH
+## SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SMARTFUSION2
+
+config NUM_IRQS
+	default 82
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 100000000
+
+endif

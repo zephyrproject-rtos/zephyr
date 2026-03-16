@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright Bavariamatic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: SmartFusion2 watchdog block
+
+compatible: "microchip,smartfusion2-watchdog"
+
+include: microchip,smartfusion2-common.yaml

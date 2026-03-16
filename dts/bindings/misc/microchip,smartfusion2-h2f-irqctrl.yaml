@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright Bavariamatic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: SmartFusion2 H2F interrupt controller block
+
+compatible: "microchip,smartfusion2-h2f-irqctrl"
+
+include: microchip,smartfusion2-common.yaml
