@@ -1,19 +1,15 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright 2026 Analog Devices, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
-
-&dac0 {
-	/* To align reference voltage with ADC. */
-	voltage-reference = <1>;
-};
+/* DAC0 output is internally available on ADC0_SE23 */
 
 / {
 	zephyr,user {
-		io-channels = <&dac0 0 &adc0 0>;
+		io-channels = <&dac0 0 &adc0 23>;
 		io-channel-names = "dac1", "adc1";
 	};
 };
@@ -36,12 +32,11 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	channel@0 {
-		reg = <0>;
+	channel@23 {
+		reg = <23>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <12>;
-		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
-		zephyr,input-positive = <MCUX_LPADC_CH4A>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 	};
 };
