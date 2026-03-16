@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	clocks {
+		lfxo: lfxo {
+			compatible = "nordic,nrf53-lfxo";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+		};
+
+		hfxo: hfxo {
+			compatible = "nordic,nrf53-hfxo";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(32)>;
+			startup-time-us = <1400>;
+		};
+	};
+};

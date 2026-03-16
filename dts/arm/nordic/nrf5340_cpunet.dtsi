@@ -6,6 +6,7 @@
 
 #include <arm/armv8-m.dtsi>
 #include <nordic/nrf_common.dtsi>
+#include <arm/nordic/nrf5340_clocks.dtsi>
 
 / {
 	chosen {
