@@ -20,7 +20,13 @@ description: |
 compatible: "atmel,at24"
 
 include: ["atmel,at2x-base.yaml", i2c-device.yaml]
-
+properties:
+  write-delay-ms:
+    type: int
+    default: 5
+    description: |
+      After the write command is completed, delay for the set period.
+        
 examples:
   - |
     /* Example node for an ST M24M01 EEPROM on the i2c0 bus */
@@ -35,5 +41,6 @@ examples:
         pagesize = <256>;
         address-width = <16>;
         timeout = <5>;
+        write-delay-ms = <5>;
       };
     };
