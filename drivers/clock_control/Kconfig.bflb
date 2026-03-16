@@ -15,3 +15,8 @@ config CLOCK_CONTROL_BOUFFALOLAB_BL70X_L
 	bool "Bouffalolab BL70x(L) Clock Control"
 	default y
 	depends on DT_HAS_BFLB_BL70X_L_CLOCK_CONTROLLER_ENABLED
+
+config CLOCK_CONTROL_BOUFFALOLAB_BL808
+	bool "Bouffalolab BL808 Clock Control Driver"
+	default y
+	depends on DT_HAS_BFLB_BL808_CLOCK_CONTROLLER_ENABLED
