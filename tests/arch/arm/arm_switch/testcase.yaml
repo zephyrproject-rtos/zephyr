@@ -1,6 +1,15 @@
 tests:
   arch.arm.switch:
     arch_allow: arm
+    platform_allow:
+      - qemu_cortex_m3
+      - mps2/an385
+      - mps2/an386
+      - mps2/an521/cpu0
+      - mps2/an521/cpu1
+      - mps3/corstone300/fvp
+      - mps3/corstone310/fvp
+      - mps4/corstone320/fvp
     filter: CONFIG_CPU_CORTEX_M and CONFIG_USE_SWITCH
     tags:
       - arm
