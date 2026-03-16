@@ -162,19 +162,6 @@ static void mcpwm_esp32_duty_set(const struct device *dev,
 	}
 }
 
-static int mcpwm_esp32_configure_pinctrl(const struct device *dev)
-{
-	int ret;
-	struct mcpwm_esp32_config *config = (struct mcpwm_esp32_config *)dev->config;
-
-	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		LOG_ERR("PWM pinctrl setup failed (%d)", ret);
-		return ret;
-	}
-	return 0;
-}
-
 static int mcpwm_esp32_timer_set(const struct device *dev,
 				 struct mcpwm_esp32_channel_config *channel)
 {
@@ -260,12 +247,6 @@ static int mcpwm_esp32_set_cycles(const struct device *dev, uint32_t channel_idx
 	channel->inverted = (flags & PWM_POLARITY_INVERTED);
 
 	mcpwm_esp32_duty_set(dev, channel);
-
-	ret = mcpwm_esp32_configure_pinctrl(dev);
-	if (ret < 0) {
-		k_sem_give(&data->cmd_sem);
-		return ret;
-	}
 
 	mcpwm_ll_timer_set_start_stop_command(data->hal.dev, channel->timer_id,
 					      MCPWM_TIMER_START_NO_STOP);
@@ -411,6 +392,12 @@ int mcpwm_esp32_init(const struct device *dev)
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
+	}
+
+	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("PWM pinctrl setup failed (%d)", ret);
+		return ret;
 	}
 
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
