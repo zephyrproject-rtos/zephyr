@@ -66,6 +66,15 @@ enum auxdisplay_direction {
 	AUXDISPLAY_DIRECTION_COUNT,
 };
 
+/** @brief Used for setting the orientation of an auxiliary display */
+enum auxdisplay_orientation {
+	/** No rotation */
+	AUXDISPLAY_ORIENTATION_NORMAL = 0,
+
+	/** Rotated 180 degrees clockwise */
+	AUXDISPLAY_ORIENTATION_ROTATED_180,
+};
+
 /** @brief Light levels for brightness and/or backlight. If not supported by a
  *  display/driver, both minimum and maximum will be AUXDISPLAY_LIGHT_NOT_SUPPORTED.
  */
@@ -265,6 +274,20 @@ typedef int (*auxdisplay_custom_command_t)(const struct device *dev,
 					   struct auxdisplay_custom_data *command);
 
 /**
+ * @brief Callback API to set a custom indicator on or off
+ * See @a auxdisplay_custom_indicator_set() for argument description
+ */
+typedef int (*auxdisplay_custom_indicator_set_t)(const struct device *dev,
+						 uint8_t index, bool enable);
+
+/**
+ * @brief Callback API to set the orientation of the display.
+ * See @a auxdisplay_set_orientation() for argument description.
+ */
+typedef int (*auxdisplay_set_orientation_t)(const struct device *dev,
+					    enum auxdisplay_orientation orientation);
+
+/**
  * @driver_ops{Auxiliary Display}
  */
 __subsystem struct auxdisplay_driver_api {
@@ -344,6 +367,14 @@ __subsystem struct auxdisplay_driver_api {
 	 * @driver_ops_optional @copybrief auxdisplay_custom_command
 	 */
 	auxdisplay_custom_command_t custom_command;
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_custom_indicator_set
+	 */
+	auxdisplay_custom_indicator_set_t custom_indicator_set;
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_set_orientation
+	 */
+	auxdisplay_set_orientation_t set_orientation;
 };
 
 /**
@@ -844,6 +875,61 @@ static inline int z_impl_auxdisplay_custom_command(const struct device *dev,
 	}
 
 	return api->custom_command(dev, data);
+}
+
+/**
+ * @brief		Sets a custom indicator on or off on the display.
+ *
+ * @param dev		Auxiliary display device instance
+ * @param index		Index of the custom indicator to control
+ * @param enable	True to turn the indicator on, false to turn it off
+ *
+ * @retval		0 on success.
+ * @retval		-ENOSYS if not supported/implemented.
+ * @retval		-EINVAL if provided argument is invalid.
+ * @retval		-errno Negative errno code on other failure.
+ */
+__syscall int auxdisplay_custom_indicator_set(const struct device *dev,
+					      uint8_t index, bool enable);
+
+static inline int z_impl_auxdisplay_custom_indicator_set(const struct device *dev,
+							 uint8_t index, bool enable)
+{
+	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+
+	if (!api->custom_indicator_set) {
+		return -ENOSYS;
+	}
+
+	return api->custom_indicator_set(dev, index, enable);
+}
+
+/**
+ * @brief		Set the orientation of an auxiliary display
+ *
+ * @param dev		Auxiliary display device instance
+ * @param orientation	Orientation to set
+ *
+ * @retval		0 on success.
+ * @retval		-ENOSYS if not supported/implemented.
+ * @retval		-EINVAL if provided argument is invalid.
+ * @retval		-errno Negative errno code on other failure.
+ */
+__syscall int auxdisplay_set_orientation(const struct device *dev,
+					 const enum auxdisplay_orientation
+					 orientation);
+
+static inline int z_impl_auxdisplay_set_orientation(const struct device *dev,
+						    const enum auxdisplay_orientation
+						    orientation)
+{
+	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+
+	if (!api->set_orientation) {
+		return -ENOSYS;
+	}
+
+	return api->set_orientation(dev, orientation);
 }
 
 #ifdef __cplusplus
