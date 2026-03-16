@@ -55,9 +55,9 @@ struct eeprom_at2x_config {
 	uint8_t addr_width;
 	bool readonly;
 	uint16_t timeout;
-#ifdef CONFIG_EEPROM_AT24	
+#ifdef CONFIG_EEPROM_AT24
 	uint16_t write_delay_ms;
-#endif /* CONFIG_EEPROM_AT24 */	
+#endif /* CONFIG_EEPROM_AT24 */
 	bool (*bus_is_ready)(const struct device *dev);
 	eeprom_api_read read_fn;
 	eeprom_api_write write_fn;
