@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Download artifacts
-        uses: dawidd6/action-download-artifact@0bd50d53a6d7fb5cb921e607957e9cc12b4ce392 # v12
+        uses: dawidd6/action-download-artifact@1f8785ff7a5130826f848e7f72725c85d241860f # v18
         with:
           run_id: ${{ github.event.workflow_run.id }}
 
