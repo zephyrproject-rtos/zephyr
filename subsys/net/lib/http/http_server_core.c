@@ -65,11 +65,18 @@ static K_SEM_DEFINE(server_start, 0, 1);
 static bool server_running;
 
 #if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
-static const char *const alpn_list[] = {
-	IF_ENABLED(CONFIG_HTTP_SERVER_VERSION_3, ("h3",))
+#if defined(CONFIG_HTTP_SERVER_VERSION_1) || defined(CONFIG_HTTP_SERVER_VERSION_2)
+static const char *const h1_h2_alpn_list[] = {
 	IF_ENABLED(CONFIG_HTTP_SERVER_VERSION_2, ("h2",))
 	IF_ENABLED(CONFIG_HTTP_SERVER_VERSION_1, ("http/1.1",))
 };
+#endif
+
+#if defined(CONFIG_HTTP_SERVER_VERSION_3)
+static const char *const h3_alpn_list[] = {
+	"h3",
+};
+#endif
 #endif
 
 static void close_client_connection(struct http_client_ctx *client);
@@ -130,12 +137,15 @@ static int setup_h1_h2_socket(const struct http_service_desc *svc, int af,
 		}
 
 #if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
-		if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST, alpn_list,
-				     sizeof(alpn_list)) < 0) {
+#if defined(CONFIG_HTTP_SERVER_VERSION_1) || defined(CONFIG_HTTP_SERVER_VERSION_2)
+		if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST,
+				     h1_h2_alpn_list,
+				     sizeof(h1_h2_alpn_list)) < 0) {
 			LOG_ERR("%s: setsockopt(%s): %d", "h1/2", "TLS_ALPN_LIST", errno);
 			zsock_close(fd);
 			return -errno;
 		}
+#endif
 #endif /* defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN) */
 	}
 #endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
@@ -218,12 +228,12 @@ static int setup_h3_socket(const struct http_service_desc *svc, int af,
 	}
 
 #if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
-	if (zsock_setsockopt(quic_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST,
-			     alpn_list, sizeof(alpn_list)) < 0) {
-		ret = -errno;
-		LOG_ERR("%s: setsockopt(%s): %d", "h3", "TLS_ALPN_LIST", ret);
-		zsock_close(quic_sock);
-		goto out;
+		if (zsock_setsockopt(quic_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST,
+				     h3_alpn_list, sizeof(h3_alpn_list)) < 0) {
+			ret = -errno;
+			LOG_ERR("%s: setsockopt(%s): %d", "h3", "TLS_ALPN_LIST", ret);
+			zsock_close(quic_sock);
+			goto out;
 	}
 #endif /* defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN) */
 #endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
