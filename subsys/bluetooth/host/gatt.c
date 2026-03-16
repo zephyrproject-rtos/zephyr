@@ -1788,7 +1788,7 @@ ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
 				   void *buf, uint16_t len, uint16_t offset)
 {
 	if ((attr == NULL) || (attr->user_data == NULL)) {
-		return -EINVAL;
+		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
 	struct bt_gatt_attr *incl = attr->user_data;
