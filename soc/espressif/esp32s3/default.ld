@@ -815,6 +815,11 @@ SECTIONS
     *(.noinit)
     *(.noinit.*)
 #endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
+#ifdef CONFIG_LLEXT
+    *(.llext_heap)
+    *(.llext_ext_heap)
+    *(.llext_metadata_heap)
+#endif /* CONFIG_LLEXT */
     __dram_noinit_end = ABSOLUTE(.);
     . = ALIGN(4) ;
   } GROUP_LINK_IN(RAMABLE_REGION)
