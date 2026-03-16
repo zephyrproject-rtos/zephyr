@@ -1,0 +1,20 @@
+# To manually verify the overflow check, the bloat size must land in the
+# narrow gap between the linker limit and the signed-binary limit (~336
+# bytes of imgtool header + TLV overhead):
+#   west build -b nrf52840dk/nrf52840 \
+#     tests/cmake/mcuboot_image_size_check_sysbuild \
+#     --sysbuild -- -DCONFIG_TEST_BLOAT_SIZE=23700
+# The build should fail with:
+#   "MCUboot signed image exceeds maximum size for swap upgrade"
+common:
+  sysbuild: true
+  build_only: true
+  tags:
+    - cmake
+    - mcuboot
+  platform_allow:
+    - nrf52840dk/nrf52840
+tests:
+  buildsystem.cmake.mcuboot_image_size_check_sysbuild.pass:
+    extra_configs:
+      - CONFIG_TEST_BLOAT_SIZE=6000

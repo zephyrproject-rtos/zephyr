@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Shrink the MCUboot image slots to 48 KB so the image size check can be
+ * exercised with a padding array.  The nrf52840dk base image is ~25 KB due
+ * to HAL drivers, so 24 KB slots (as used for native_sim) are too small.
+ *
+ * With erase-block-size = 4096 and swap-using-offset mode the estimated
+ * footer is 2 * 4096 = 8192 bytes, leaving max image = 49152 - 8192 = 40960.
+ */
+
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+/delete-node/ &storage_partition;
+
+&flash0 {
+	partitions {
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 0x0000c000>;
+		};
+
+		slot1_partition: partition@18000 {
+			label = "image-1";
+			reg = <0x00018000 0x0000c000>;
+		};
+
+		storage_partition: partition@24000 {
+			label = "storage";
+			reg = <0x00024000 0x00008000>;
+		};
+	};
+};
