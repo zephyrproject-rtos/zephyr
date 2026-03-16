@@ -1,8 +1,29 @@
 # Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: Counter-based Virtual Real Time Clock (RTC)
+title: Counter-based Virtual Real Time Clock (RTC).
+
+description: |
+  Some counters continue running in lower power modes. The epoch offset
+  can be stored in NVMEM so it is preserved across resets, allowing the
+  RTC to maintain wall-clock time as long as the underlying counter keeps
+  running.
 
 compatible: "zephyr,rtc-counter"
 
-include: rtc-device.yaml
+include:
+- rtc-device.yaml
+- nvmem-consumer.yaml
+
+examples:
+- |
+  &rtc {
+          counter_rtc: counter-rtc {
+                  compatible = "zephyr,rtc-counter";
+                  status = "okay";
+                  alarms-count = <1>;
+
+                  nvmem-cells = <&epoch_offset>;
+                  nvmem-cell-names = "epoch-offset";
+          };
+  };

@@ -10,6 +10,7 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/nvmem.h>
 #include <zephyr/types.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/timeutil.h>
@@ -21,6 +22,9 @@ struct rtc_counter_config {
 	const struct device *counter_dev;
 	/* Number of alarm channels */
 	uint8_t alarms_count;
+#if defined(CONFIG_RTC_COUNTER_NVMEM)
+	struct nvmem_cell epoch_offset_cell;
+#endif
 };
 
 struct rtc_counter_data {
@@ -510,6 +514,16 @@ static int rtc_counter_set_time(const struct device *dev, const struct rtc_time 
 		return ret;
 	}
 
+#if defined(CONFIG_RTC_COUNTER_NVMEM)
+	if (nvmem_cell_is_ready(&config->epoch_offset_cell)) {
+		ret = nvmem_cell_write(&config->epoch_offset_cell, &data->epoch_offset, 0,
+				       sizeof(int64_t));
+		if (ret < 0) {
+			LOG_ERR("Failed to write epoch offset (%d)", ret);
+		}
+	}
+#endif
+
 	return 0;
 }
 
@@ -614,6 +628,18 @@ static int rtc_counter_init(const struct device *dev)
 	data->epoch_offset = 0;
 	data->epoch_valid = false;
 
+#if defined(CONFIG_RTC_COUNTER_NVMEM)
+	if (nvmem_cell_is_ready(&config->epoch_offset_cell)) {
+		int ret = nvmem_cell_read(&config->epoch_offset_cell, &data->epoch_offset, 0,
+					  sizeof(int64_t));
+		if (ret < 0) {
+			LOG_ERR("Failed to read epoch offset (%d)", ret);
+		} else {
+			data->epoch_valid = true;
+		}
+	}
+#endif
+
 #ifdef CONFIG_RTC_ALARM
 	data->rtc_dev = dev;
 	if (config->alarms_count == 0U) {
@@ -679,6 +705,9 @@ DT_INST_FOREACH_STATUS_OKAY(RTC_COUNTER_DECLARE_ALARM_STORAGE)
 	static const struct rtc_counter_config rtc_counter_config_##n = {           \
 		.counter_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                        \
 		.alarms_count = DT_PROP_OR(DT_DRV_INST(n), alarms_count, 0),            \
+		IF_ENABLED(CONFIG_RTC_COUNTER_NVMEM, (                             \
+			.epoch_offset_cell = NVMEM_CELL_INST_GET_BY_NAME_OR(n, epoch_offset, {0}), \
+		))                                                                  \
 	};                                                                          \
 	static struct rtc_counter_data rtc_counter_data_##n = {                     \
 		IF_ENABLED(CONFIG_RTC_ALARM, (                                          \
