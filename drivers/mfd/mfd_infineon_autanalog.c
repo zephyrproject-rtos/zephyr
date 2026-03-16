@@ -127,6 +127,9 @@ static const uint32_t ifx_autanalog_intr_masks[IFX_AUTANALOG_PERIPH_COUNT] = {
  */
 #define IFX_AUTANALOG_DEFAULT_DAC_CHAN 15
 
+/** 1 when the PRB child node is enabled */
+#define PRB_IS_USED(n) DT_NODE_HAS_STATUS(DT_CHILD(DT_DRV_INST(n), prb_e0300), okay)
+
 /* ===== Basic mode: hardcoded 3-state SAR single-shot STT ===== */
 
 #define IFX_AUTANALOG_BASIC_NUM_STT 3
@@ -233,20 +236,26 @@ static const uint32_t ifx_autanalog_intr_masks[IFX_AUTANALOG_PERIPH_COUNT] = {
 		{.unlock = DAC1_IS_USED(n), .enable = DAC1_IS_USED(n),                             \
 		 .channel = IFX_AUTANALOG_DEFAULT_DAC_CHAN},                                       \
 	};                                                                                     \
+	static cy_stc_autanalog_stt_prb_t ifx_autanalog_prb_stt_##n[] = {                          \
+		{.unlock = PRB_IS_USED(n), .prbVref0Fw = true, .prbVref1Fw = true},                \
+		{.unlock = PRB_IS_USED(n), .prbVref0Fw = true, .prbVref1Fw = true},                \
+		{.unlock = PRB_IS_USED(n), .prbVref0Fw = true, .prbVref1Fw = true},                \
+	};                                                                                         \
 	static cy_stc_autanalog_stt_t ifx_autanalog_stt_##n[] = {                                  \
 		{.ac = &ifx_autanalog_ac_stt_##n[0],                                               \
 		 .ctb = {&ifx_autanalog_ctb0_stt_##n[0], &ifx_autanalog_ctb1_stt_##n[0]},          \
-		 .dac = {&ifx_autanalog_dac0_stt_##n[0], &ifx_autanalog_dac1_stt_##n[0]},          \
+		 .prb = &ifx_autanalog_prb_stt_##n[0],                                             \
 		 .ptcomp = {&ifx_autanalog_ptcomp0_stt_##n[0]},                                    \
 		 .sar = {&ifx_autanalog_sar_stt_##n[0]}},                                          \
 		{.ac = &ifx_autanalog_ac_stt_##n[1],                                               \
 		 .ctb = {&ifx_autanalog_ctb0_stt_##n[1], &ifx_autanalog_ctb1_stt_##n[1]},          \
 		 .dac = {&ifx_autanalog_dac0_stt_##n[1], &ifx_autanalog_dac1_stt_##n[1]},          \
+		 .prb = &ifx_autanalog_prb_stt_##n[1],                                             \
 		 .ptcomp = {&ifx_autanalog_ptcomp0_stt_##n[1]},                                    \
 		 .sar = {&ifx_autanalog_sar_stt_##n[1]}},                                          \
 		{.ac = &ifx_autanalog_ac_stt_##n[2],                                               \
 		 .ctb = {&ifx_autanalog_ctb0_stt_##n[2], &ifx_autanalog_ctb1_stt_##n[2]},          \
-		 .dac = {&ifx_autanalog_dac0_stt_##n[2], &ifx_autanalog_dac1_stt_##n[2]},          \
+		 .prb = &ifx_autanalog_prb_stt_##n[2],                                             \
 		 .ptcomp = {&ifx_autanalog_ptcomp0_stt_##n[2]},                                    \
 		 .sar = {&ifx_autanalog_sar_stt_##n[2]}},                                          \
 	};
