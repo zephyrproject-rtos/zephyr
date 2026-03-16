@@ -807,8 +807,9 @@ SECTIONS
     *(.sbss2.*)
     *(.gnu.linkonce.sb2.*)
     *(.dynbss)
-    *(.bss)
-    *(.bss.*)
+
+#include <esp_spiram_relocate_bss.ld.inc>
+
     *(.share.mem)
     *(.gnu.linkonce.b.*)
     *(COMMON)
@@ -1013,6 +1014,9 @@ SECTIONS
 
     _ext_ram_bss_start = ABSOLUTE(.);
     *(.ext_ram.bss*)
+    . = ALIGN(16);
+
+#include <esp_spiram_relocate_bss_ext_ram.ld.inc>
     . = ALIGN(16);
 
     KEEP(*(.lvgl_buf*))
