@@ -4,17 +4,44 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* DAC0 internally connected to ADC channel 30*/
+/* DAC0 internally connected to ADC channel 30 */
+
+/ {
+	zephyr,user {
+		io-channels = <&dac 0 &adc0 1>;
+		io-channel-names = "dac1", "adc1";
+	};
+};
 
 &dac {
 	refsel = "vdd_ana";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
 
 	dac0: channel@0 {
+		reg = <0>;
+		rate = <100>;
 		data-adj = "right";
+		refresh-period = <30>;
+		sampling-ratio = <1>;
+		zephyr,resolution = <12>;
 	};
 };
 
 &adc0 {
 	prescaler = <16>;
 	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 4)>;
+		zephyr,input-positive = <MCHP_ADC_DAC0>;
+	};
 };

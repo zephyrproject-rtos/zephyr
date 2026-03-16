@@ -7,6 +7,13 @@
 #include <zephyr/dt-bindings/adc/silabs-adc.h>
 #include <zephyr/dt-bindings/dac/silabs-vdac.h>
 
+/ {
+	zephyr,user {
+		io-channels = <&vdac0 0 &adc0 0>;
+		io-channel-names = "dac1", "adc1";
+	};
+};
+
 &adc0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -29,5 +36,6 @@
 	channel@0 {
 		reg = <0>;
 		aux-output = <VDAC_OUTPUT_AUX>;
+		zephyr,resolution = <12>;
 	};
 };
