@@ -1162,12 +1162,24 @@ Bluetooth HCI
 Networking
 **********
 
+Wi-Fi
+=====
+
 * :c:struct:`wifi_channel_info` gained a ``band`` field for set-channel. Behaviour
   is backwards compatible for 2.4 GHz (channels 1–14) and 5 GHz (36–165): omit or
   leave ``band`` as :c:macro:`WIFI_FREQ_BAND_UNKNOWN` and the driver infers the
   band. For 6 GHz, set ``band`` to :c:macro:`WIFI_FREQ_BAND_6_GHZ` (channel
   numbers overlap 1–14 with 2.4 GHz). Recompile so ``sizeof(struct
   wifi_channel_info)`` is correct when calling net_mgmt.
+
+* WPA3 is configured with the choice
+  ``WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION`` (Internal, External, or None).
+  Replace any ``CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3=y`` line in ``prj.conf`` with
+  ``CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_INT=y`` (or ``_EXT`` /
+  ``_NONE`` as needed). :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3` is
+  now promptless and is selected only when Internal is chosen; do not assign it
+  directly. In C code, prefer :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON`
+  to detect either internal or external WPA3.
 
 * Networking APIs found in
 
