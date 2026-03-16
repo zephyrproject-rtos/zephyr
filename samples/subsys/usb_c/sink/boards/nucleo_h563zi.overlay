@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2026 ARS Embedded Systems LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <dt-bindings/usb-c/pd.h>
+
+/ {
+	aliases {
+		usbc-port0 = &port1;
+	};
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* usbc.rst usbc-port start */
+		port1: usbc-port@1 {
+			compatible = "usb-c-connector";
+			reg = <1>;
+			tcpc = <&ucpd1>;
+			vbus = <&vbus1>;
+			power-role = "sink";
+			sink-pdos = <PDO_FIXED(5000, 500, 0)>;
+		};
+		/* usbc.rst usbc-port end */
+	};
+};
+
+&vbus1 {
+	status = "okay";
+};
+
+&ucpd1 {
+	dead-battery;
+};
+
+&gpioa {
+	/* Activate /DB pin on TCPP01-M12 to enable CCx passthrough */
+	hog1 {
+		gpio-hog;
+		gpios = <9 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
