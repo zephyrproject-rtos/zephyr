@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -984,10 +984,16 @@ static int second_core_boot(void)
 	result1 = MU_RT_S3MUA->RR[0];
 	result2 = MU_RT_S3MUA->RR[1];
 
+	/* Disable M7 clock before clearing CPU_WAIT bit */
+	CLOCK_DisableClock(kCLOCK_M7);
+
 	/* Deassert Wait */
 	BLK_CTRL_S_AONMIX->M7_CFG =
 		(BLK_CTRL_S_AONMIX->M7_CFG & (~BLK_CTRL_S_AONMIX_M7_CFG_WAIT_MASK)) |
 		BLK_CTRL_S_AONMIX_M7_CFG_WAIT(0);
+
+	/* Re-enable M7 clock again */
+	CLOCK_EnableClock(kCLOCK_M7);
 
 	return 0;
 }
