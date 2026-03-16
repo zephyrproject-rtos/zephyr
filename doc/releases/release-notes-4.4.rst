@@ -1415,6 +1415,11 @@ DeviceTree
 * :c:macro:`DT_CHILD_BY_UNIT_ADDR_INT`
 * :c:macro:`DT_INST_CHILD_BY_UNIT_ADDR_INT`
 
+Kconfig
+*******
+
+* Added new preprocessor function ``dt_highest_controller_irq_number`` (:github:`104819`)
+
 Kernel
 ******
 
