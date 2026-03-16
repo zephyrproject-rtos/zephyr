@@ -68,7 +68,7 @@ static uint32_t i2c_bflb_get_clk(void)
 	return uclk / (i2c_divider + 1);
 }
 
-#elif defined(CONFIG_SOC_SERIES_BL61X)
+#elif defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 
 static uint32_t i2c_bflb_get_clk(void)
 {
@@ -117,7 +117,7 @@ static int i2c_bflb_configure_freqs(const struct device *dev, uint32_t frequency
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_SOC_SERIES_BL61X)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 	tmp = sys_read32(GLB_BASE + GLB_I2C_CFG0_OFFSET);
 	tmp &= GLB_I2C_CLK_DIV_UMSK;
 	/* select BCLK */
@@ -364,7 +364,7 @@ static void i2c_bflb_set_address(const struct device *dev, uint32_t address, boo
 	/* no sub addresses */
 	tmp &= ~I2C_CR_I2C_SUB_ADDR_EN;
 	tmp &= ~I2C_CR_I2C_SLV_ADDR_MASK;
-#if defined(CONFIG_SOC_SERIES_BL61X)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 	if (addr_10b) {
 		tmp |= I2C_CR_I2C_10B_ADDR_EN;
 		tmp |= ((address & 0x3FF) << I2C_CR_I2C_SLV_ADDR_SHIFT);
@@ -557,7 +557,7 @@ static int i2c_bflb_check_msgs(struct i2c_msg *msgs, uint8_t num_msgs, bool *add
 			return -ENOTSUP;
 		}
 		if ((msgs[i].flags & I2C_MSG_ADDR_10_BITS) != 0) {
-#if defined(CONFIG_SOC_SERIES_BL61X)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 			*addr_10b = true;
 #else
 			LOG_ERR("10 bits addresses not supported");
@@ -736,7 +736,7 @@ static int i2c_bflb_deinit(const struct device *dev)
 	sys_write32(tmp, config->base + I2C_INT_STS_OFFSET);
 
 	/* disable clocks */
-#if defined(CONFIG_SOC_SERIES_BL61X)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 	tmp = sys_read32(GLB_BASE + GLB_I2C_CFG0_OFFSET);
 	tmp &= GLB_I2C_CLK_EN_UMSK;
 	sys_write32(tmp, GLB_BASE + GLB_I2C_CFG0_OFFSET);
