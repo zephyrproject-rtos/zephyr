@@ -257,6 +257,8 @@ family:
     - name: stm32wb09
   - name: stm32wbax
     socs:
+    - name: stm32wba23xx
+    - name: stm32wba25xx
     - name: stm32wba52xx
     - name: stm32wba55xx
     - name: stm32wba65xx
