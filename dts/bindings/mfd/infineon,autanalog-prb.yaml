@@ -1,0 +1,65 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon AutAnalog Programmable Reference Block (PRB) MFD.
+
+  The PRB provides two programmable voltage references (Vref0, Vref1) derived
+  from either VBGR (0.9 V) or VDDA (1.8 V max) via a 16-position resistive
+  tap divider.  Each reference output is represented as a child regulator node
+  with compatible "infineon,autanalog-prb-vref".
+
+  The PRB sits within the AutAnalog subsystem and is coordinated by the
+  Autonomous Controller (AC) State Transition Table (STT).  This MFD driver
+  aggregates both Vref children into the single cy_stc_autanalog_prb_t PDL
+  config structure and manages the shared PRB unlock in the STT.
+
+compatible: "infineon,autanalog-prb"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+  lp-mode:
+    type: boolean
+    description: |
+      Request Low Power (LP) operation for the AutAnalog subsystem.
+      When set, the parent AutAnalog MFD basic-mode STT enters LP operation
+      for the AC states. LP mode is also activated if any other AutAnalog
+      child peripheral (SAR ADC, DAC, CTB, PTCOMP) sets lp-mode.
+      In advanced mode (ac-states), use the per-state ac-lp-mode property
+      instead.
+
+examples:
+  - |
+    /*
+     * Use constants from <dt-bindings/regulator/infineon-autanalog-prb.h>.
+     */
+    prb0: prb@0 {
+        compatible = "infineon,autanalog-prb";
+        status = "okay";
+
+        vref0: vref@0 {
+            compatible = "infineon,autanalog-prb-vref";
+            reg = <0>;
+            source = <IFX_AUTANALOG_PRB_SRC_VDDA>;
+            tap = <IFX_AUTANALOG_PRB_TAP_7>;
+        };
+
+        vref1: vref@1 {
+            compatible = "infineon,autanalog-prb-vref";
+            reg = <1>;
+            source = <IFX_AUTANALOG_PRB_SRC_VDDA>;
+            tap = <IFX_AUTANALOG_PRB_TAP_6>;
+        };
+    };

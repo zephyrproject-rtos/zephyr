@@ -1,0 +1,92 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon AutAnalog PRB voltage reference regulator.
+
+  Each node represents one of the two programmable voltage references (Vref0 or
+  Vref1) within a PRB block.  The PRB derives the output voltage from a source
+  (VBGR at 0.9 V or VDDA at up to 1.8 V) through a 16-position resistive tap
+  divider.  The output voltage is:
+
+    Vref = fraction * Vsrc
+
+  where fraction depends on the tap setting:
+    Tap  0 → 0.0625  (1/16)
+    Tap  1 → 0.125   (2/16)
+    ...
+    Tap 15 → 1.0     (16/16)
+
+  Available voltages (microvolts) depend on the source property:
+    source = 0 (VBGR, Vsrc = 0.9 V): 56250, 112500, ..., 900000
+    source = 1 (VDDA, Vsrc = 1.8 V): 112500, 225000, ..., 1800000
+
+  The parent node must have compatible "infineon,autanalog-prb".
+
+compatible: "infineon,autanalog-prb-vref"
+
+include: [base.yaml, regulator.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Vref index within the PRB block (0 or 1).
+
+  source:
+    type: int
+    required: true
+    description: |
+      Source voltage selector.
+      Use IFX_AUTANALOG_PRB_SRC_* constants from
+      <dt-bindings/regulator/infineon-autanalog-prb.h>.
+        IFX_AUTANALOG_PRB_SRC_VBGR (0) = VBGR (0.9 V nominal)
+        IFX_AUTANALOG_PRB_SRC_VDDA (1) = VDDA (1.8 V max)
+    enum:
+      - 0
+      - 1
+
+  tap:
+    type: int
+    required: true
+    description: |
+      Initial tap position (0-15).  The output voltage is
+      ((tap + 1) / 16) * Vsrc.
+      Use IFX_AUTANALOG_PRB_TAP_* constants from
+      <dt-bindings/regulator/infineon-autanalog-prb.h>.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+
+examples:
+  - |
+    /*
+     * Use constants from <dt-bindings/regulator/infineon-autanalog-prb.h>.
+     */
+    prb0: prb@0 {
+        compatible = "infineon,autanalog-prb";
+        status = "okay";
+
+        vref0: vref@0 {
+            compatible = "infineon,autanalog-prb-vref";
+            reg = <0>;
+            source = <IFX_AUTANALOG_PRB_SRC_VDDA>;
+            tap = <IFX_AUTANALOG_PRB_TAP_7>;
+        };
+    };
