@@ -1,16 +1,16 @@
 /*
- * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2022-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @file
- * ESP32S2 SoC specific helpers for pinctrl driver
+ * Helpers for pinctrl driver
  */
 
-#ifndef ZEPHYR_SOC_XTENSA_ESP32S2_PINCTRL_SOC_H_
-#define ZEPHYR_SOC_XTENSA_ESP32S2_PINCTRL_SOC_H_
+#ifndef ZEPHYR_SOC_ESPRESSIF_COMMON_PINCTRL_SOC_H_
+#define ZEPHYR_SOC_ESPRESSIF_COMMON_PINCTRL_SOC_H_
 
 #include <zephyr/devicetree.h>
 #include <zephyr/types.h>
@@ -48,7 +48,9 @@ typedef struct pinctrl_soc_pin {
 	 ((ESP32_PIN_OUT_HIGH * DT_PROP(node_id, output_high)) << ESP32_PIN_OUT_SHIFT) |           \
 	 ((ESP32_PIN_OUT_LOW * DT_PROP(node_id, output_low)) << ESP32_PIN_OUT_SHIFT) |             \
 	 ((ESP32_PIN_OUT_EN * DT_PROP(node_id, output_enable)) << ESP32_PIN_EN_DIR_SHIFT) |        \
-	 ((ESP32_PIN_IN_EN * DT_PROP(node_id, input_enable)) << ESP32_PIN_EN_DIR_SHIFT))
+	 ((ESP32_PIN_IN_EN * DT_PROP(node_id, input_enable)) << ESP32_PIN_EN_DIR_SHIFT) |          \
+	 ((ESP32_PIN_SLEEP_HOLD_EN * DT_PROP(node_id, sleep_hold_en))                              \
+	  << ESP32_PIN_SLEEP_HOLD_SHIFT))
 
 /**
  * @brief Utility macro to initialize each pin.
@@ -68,11 +70,9 @@ typedef struct pinctrl_soc_pin {
  * @param prop Property name describing state pins.
  */
 #define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)                                                   \
-	{                                                                                          \
-		DT_FOREACH_CHILD_VARGS(DT_PHANDLE(node_id, prop), DT_FOREACH_PROP_ELEM, pinmux,    \
-				       Z_PINCTRL_STATE_PIN_INIT)                                   \
-	}
+	{DT_FOREACH_CHILD_VARGS(DT_PHANDLE(node_id, prop), DT_FOREACH_PROP_ELEM, pinmux,           \
+				Z_PINCTRL_STATE_PIN_INIT)}
 
 /** @endcond */
 
-#endif /* ZEPHYR_SOC_XTENSA_ESP32S2_PINCTRL_SOC_H_ */
+#endif /* ZEPHYR_SOC_ESPRESSIF_COMMON_PINCTRL_SOC_H_ */
