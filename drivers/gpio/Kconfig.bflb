@@ -8,27 +8,27 @@ config GPIO_BFLB_BL60X_70X
 	help
 	  Bouffalo Lab BL60x and BL70x GPIO driver
 
-config GPIO_BFLB_BL61X
-	bool "Bouffalo Lab BL61X GPIO driver"
-	depends on DT_HAS_BFLB_BL61X_GPIO_ENABLED
+config GPIO_BFLB_BL61X_808
+	bool "Bouffalo Lab BL61X and BL808 GPIO driver"
+	depends on DT_HAS_BFLB_BL61X_808_GPIO_ENABLED
 	default y
 	help
-	  Bouffalo Lab BL61X GPIO driver
+	  Bouffalo Lab BL61X and BL808 GPIO driver
 
-if GPIO_BFLB_BL61X
+if GPIO_BFLB_BL61X_808
 
-config GPIO_BFLB_BL61X_CACHE_WRITE
+config GPIO_BFLB_BL61X_808_CACHE_WRITE
 	bool "Cache BL61x GPIO writes"
 	default y
 	help
 	  Cache last written value to GPIO register, this doubles GPIO toggle speed by
 	  avoiding a nonrequired read operation on the speed-limited peripheral.
 
-config GPIO_BL61X_WO
+config GPIO_BL61X_808_WO
 	bool "Bouffalolab BL61x GPIO FIFO"
 	depends on CLOCK_CONTROL
 	help
 	  The GPIO FIFO / WO is an extension of the GPIO device, it enables outputting arbitrary
 	  toggle waveforms over 16 pins at up to XCLK Hz (32MHz or crystal value).
 
-endif # GPIO_BFLB_BL61X
+endif # GPIO_BFLB_BL61X_808

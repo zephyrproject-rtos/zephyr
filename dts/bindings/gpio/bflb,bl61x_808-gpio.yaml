@@ -1,9 +1,11 @@
 # Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
 # SPDX-License-Identifier: Apache-2.0
 
-description: BouffaloLab GPIO node for BL61X series
+title: BouffaloLab BL61x/BL808 GPIO
 
-compatible: "bflb,bl61x-gpio"
+description: BouffaloLab GPIO node for BL61X and BL808 series
+
+compatible: "bflb,bl61x_808-gpio"
 
 include: base.yaml
 
