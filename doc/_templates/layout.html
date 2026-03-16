@@ -38,4 +38,42 @@
   </noscript>
   <script src="{{ pathto('_static/js/dark-mode-toggle-stylesheets-loader.min.js', 1) }}"></script>
   <script type="module" src="{{ pathto('_static/js/dark-mode-toggle.min.mjs', 1) }}"></script>
+  {% if kapa_website_id %}
+  <script async src="https://widget.kapa.ai/kapa-widget.bundle.js"
+    data-website-id="{{ kapa_website_id }}"
+    data-color-scheme-selector="[data-theme='dark']"
+    data-search-mode-enabled="true"
+    data-project-name="The Zephyr Project Documentation"
+    data-modal-title="Zephyr Chatbot"
+    data-view-mode="sidebar"
+    data-search-result-target="_self"
+    data-modal-open-on-command-k="true"
+    data-project-color="#7929d2"
+    data-project-logo="{{ pathto('_static/images/logo.svg', 1) }}"
+    data-modal-logo-hidden="true"
+    data-user-analytics-cookie-enabled="false"
+    data-button-bg-color="transparent"
+    data-button-hover-bg-color="transparent"
+    data-button-box-shadow="none"
+    data-button-border="none"
+    data-button-width="6rem"
+    data-button-image-height="50px"
+    data-button-image-width="50px"
+    data-button-hover-animation-enabled="false"
+    data-button-image="{{ pathto('_static/images/chatbot.webp', 1) }}"
+    data-button-text=" "
+    data-consent-required="true"
+    data-consent-screen-title="How does this AI Chat work?"
+    data-consent-screen-disclaimer="This AI assistant uses your questions to provide answers based
+      on the Zephyr documentation, source code, and GitHub issues and pull requests. Your questions
+      and interactions may be anonymously collected and analyzed to improve the quality of the
+      documentation by identifying areas for improvement. We don't collect any personally
+      identifiable information.
+      By clicking &quot;Accept&quot;, you consent to using this AI-powered feature and the
+      collection of your data. AI-generated responses may contain inaccuracies, please verify
+      important information with the official documentation."
+    data-mcp-enabled="true"
+    data-mcp-server-url="https://zephyrproject.mcp.kapa.ai"
+  ></script>
+  {% endif %}
 {% endblock %}
