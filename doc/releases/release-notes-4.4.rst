@@ -692,10 +692,33 @@ New Shields
 ..
   Same as above, this will also be recomputed at the time of the release.
 
-
-* Nordic Semiconductor ASA
-
-  * :ref:`nrf7002eb2 <nrf7002eb2>` (nRF7002 EB II)
+* :ref:`Adafruit FeatherWing 128x64 OLED Shield <adafruit_featherwing_128x64_oled>`
+* :ref:`Adafruit HTS221 Shield <adafruit_hts221>`
+* :ref:`Adafruit INA3221 Shield <adafruit_ina3221>`
+* :ref:`Adafruit MAX17048 Shield <adafruit_max17048>`
+* :ref:`Adafruit MCP4728 Quad DAC Shield <adafruit_mcp4728>`
+* :ref:`Analog Devices EVAL-CN0391-ARDZ <eval_cn0391_ardz>`
+* :ref:`Arduino Modulino Latch Relay <arduino_modulino_latch_relay>`
+* :ref:`Microchip RNBD451 Add-on Board <rnbd451_add_on_shield>`
+* :ref:`MikroElektronika 3 axis Accel 4 Click <mikroe_accel4_click_shield>`
+* :ref:`MikroElektronika CAN FD 6 Click <mikroe_can_fd_6_click_shield>`
+* :ref:`MikroElektronika EEPROM 13 Click <mikroe_eeprom_13_click_shield>`
+* :ref:`MikroElektronika Flash 5 Click <mikroe_flash_5_click_shield>`
+* :ref:`MikroElektronika Flash 6 Click <mikroe_flash_6_click_shield>`
+* :ref:`MikroElektronika Flash 8 Click <mikroe_flash_8_click_shield>`
+* :ref:`MikroElektronika LTE IoT 7 Click <mikroe_lte_iot7_click_shield>`
+* :ref:`MikroElektronika MCP251x Click shields <mikroe_mcp251x_click_shield>`
+* :ref:`MikroElektronika MCP251xFD Click shields <mikroe_mcp251xfd_click_shield>`
+* :ref:`MikroElektronika RS485 Isolator 5 Click <mikroe_rs485_isolator_5_click_shield>`
+* :ref:`MikroElektronika Temp&Hum Click <mikroe_temp_hum_click_shield>`
+* :ref:`Nordic Semiconductor nRF7002 EB II <nrf7002eb2>`
+* :ref:`NXP S32K5XX-MB Shield <nxp_s32k5xx_mb>`
+* :ref:`Raspberry Pi Camera Module 2 <raspberry_pi_camera_module_2>`
+* :ref:`Renesas AIK OV2640 Camera Shield <renesas_aik_ov2640_cam>`
+* :ref:`Semtech SX1261MB2BAS LoRa Shield <semtech_sx1261mb2bas>`
+* :ref:`ST Microelectronics B-DSI-MB1314 <st_b_dsi_mb1314>`
+* :ref:`ST Microelectronics ST87MXX shield <st87mxx_generic>`
+* :ref:`ZHAW Luma Matrix Shield <zhaw_lumamatrix>`
 
 New Drivers
 ***********
