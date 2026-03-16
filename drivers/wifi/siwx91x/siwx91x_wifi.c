@@ -504,8 +504,8 @@ static int siwx91x_wifi_reg_domain(const struct device *dev, struct wifi_reg_dom
 
 static void siwx91x_iface_init(struct net_if *iface)
 {
-	const struct siwx91x_config *siwx91x_cfg = iface->if_dev->dev->config;
-	struct siwx91x_dev *sidev = iface->if_dev->dev->data;
+	const struct siwx91x_config *siwx91x_cfg = net_if_get_device(iface)->config;
+	struct siwx91x_dev *sidev = net_if_get_device(iface)->data;
 	sl_wifi_advanced_client_configuration_t client_config = {
 		.max_retry_attempts = 1,
 		.scan_interval = 0,
