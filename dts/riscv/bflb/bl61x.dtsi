@@ -154,7 +154,7 @@
 		};
 
 		gpios: gpio@20000000 {
-			compatible = "bflb,bl61x-gpio";
+			compatible = "bflb,bl61x_808-gpio";
 			reg = <0x20000000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
