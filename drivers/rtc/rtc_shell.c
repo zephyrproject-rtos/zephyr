@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/rtc.h>
+#include <zephyr/rtc/rtc_shell.h>
 #include <time.h>
 #include <stdlib.h>
 
@@ -15,6 +16,11 @@
 static const char format_iso8601[] = "%FT%T";
 static const char format_time[] = "%T";  /* hh:mm:ss */
 static const char format_date[] = " %F"; /* yyyy-mm-dd */
+
+static rtc_shell_cmd_cb set_cmd_cb = NULL;
+static rtc_shell_cmd_cb get_cmd_cb = NULL;
+static void* user_data_set_cmd_cb = NULL;
+static void* user_data_get_cmd_cb = NULL;
 
 static const char *consume_chars(const char *s, char *dest, unsigned int cnt)
 {
@@ -186,6 +192,11 @@ static int cmd_set(const struct shell *sh, size_t argc, char **argv)
 		shell_error(sh, "error in time");
 		return -EINVAL;
 	}
+
+	if (set_cmd_cb) {
+		set_cmd_cb(user_data_set_cmd_cb);
+	}
+
 	return res;
 }
 
@@ -213,6 +224,10 @@ static int cmd_get(const struct shell *sh, size_t argc, char **argv)
 	shell_print(sh, "%04d-%02d-%02dT%02d:%02d:%02d.%03d", rtctime.tm_year + 1900,
 		    rtctime.tm_mon + 1, rtctime.tm_mday, rtctime.tm_hour, rtctime.tm_min,
 		    rtctime.tm_sec, rtctime.tm_nsec / 1000000);
+
+	if (get_cmd_cb) {
+		get_cmd_cb(user_data_get_cmd_cb);
+	}
 
 	return 0;
 }
@@ -289,6 +304,27 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->handler = NULL;
 	entry->help = NULL;
 	entry->subcmd = NULL;
+}
+
+int rtc_shell_cmd_set_callback(rtc_shell_cmd_type_t cmd_type, rtc_shell_cmd_cb cb, void* user_data)
+{
+	if (!cb) {
+		return -EINVAL;
+	}
+
+	if (cmd_type == RTC_SHELL_CMD_SET) {
+		set_cmd_cb = cb;
+		user_data_set_cmd_cb = user_data;
+	}
+	else if (cmd_type == RTC_SHELL_CMD_GET) {
+		get_cmd_cb = cb;
+		user_data_get_cmd_cb = user_data;
+	}
+	else {
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 #define RTC_GET_HELP                                                                               \
