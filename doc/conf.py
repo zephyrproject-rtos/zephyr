@@ -236,6 +236,9 @@ html_context = {
     # engine with Google's Programmable Search Engine.
     # See https://programmablesearchengine.google.com/ for details.
     "google_searchengine_id": "746031aa0d56d4912",
+    # Set kapa_website_id to your Kapa.ai website ID to enable the AI search widget.
+    # See https://docs.kapa.ai/integrations/website-widget/installation/general
+    "kapa_website_id": "231c2d18-d9cd-4296-bbcd-971a391dfe34",
 }
 
 # -- Options for LaTeX output ---------------------------------------------
