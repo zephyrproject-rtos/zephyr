@@ -83,3 +83,18 @@ gen_section_count(
     PRODUCER_TARGET ${ZEPHYR_CURRENT_LIBRARY}
     CONSUMERS       ${CMAKE_CURRENT_SOURCE_DIR}/net_if.c
   )
+
+gen_section_count(
+    TARGET          net_if_dev
+    SECTION         net_if_dev_area
+    ITEM_TYPE       "struct net_if_dev"
+    PRODUCER_TARGET ${ZEPHYR_CURRENT_LIBRARY}
+  )
+
+# net_if.c uses NET_IF_DEV_COUNT too so register the dependency without
+# recompiling it under a second target
+gen_section_count_add_consumer(
+    TARGET  net_if_consumers   # the OBJECT library that already owns net_if.c
+    HEADER  net_if_dev
+    FILES   ${CMAKE_CURRENT_SOURCE_DIR}/net_if.c
+  )
