@@ -62,6 +62,13 @@ static void *video_buffer_k_heap_aligned_alloc(size_t align, size_t bytes, k_tim
 
 static struct video_buffer video_buf[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
 
+enum {
+	/** buffer is allocated from the internal video heap */
+	VIDEO_MEMORY_INTERNAL = 1,
+	/** buffer is allocated from outside */
+	VIDEO_MEMORY_EXTERNAL = 2,
+};
+
 struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_timeout_t timeout)
 {
 	struct video_buffer *vbuf = NULL;

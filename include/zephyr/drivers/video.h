@@ -572,6 +572,19 @@ static inline int video_enum_frmival(const struct device *dev, struct video_frmi
 }
 
 /**
+ * @brief Import an external memory to the video buffer pool
+ *
+ * Import an externally allocated memory as a @ref video_buffer in the video buffer pool
+ *
+ * @param mem Pointer to the external memory
+ * @param sz Size of the external memory
+ * @param idx Returned index of the imported video buffer in the video buffer pool
+ *
+ * @retval 0 on success or a negative errno code on failure.
+ */
+int video_import_buffer(uint8_t *mem, size_t sz, uint16_t *idx);
+
+/**
  * @brief Enqueue a video buffer.
  *
  * Enqueue an empty (capturing) or filled (output) video buffer in the driver’s
