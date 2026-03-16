@@ -77,6 +77,9 @@ Boards
   pin mapping from GPIO32/GPIO33 to GPIO16/GPIO17 to match the documented Grove
   PORT.C wiring.
 
+* The Ai-Thinker ``ai_m62_12f`` and ``ai_wb2_12f`` boards have been renamed to
+  ``ai_m62_12f_kit`` and ``ai_wb2_12f_kit`` respectively.
+
 * Compile definitions 'XIP_EXTERNAL_FLASH', 'USE_HYPERRAM' and 'XIP_BOOT_HEADER_XMCD_ENABLE'
   are only used in :zephyr_file:`boards/nxp/mimxrt1180_evk/xip/evkmimxrt1180_flexspi_nor_config.c`
   and :zephyr_file:`boards/nxp/mimxrt1170_evk/xmcd/xmcd.c`, we have changed them to local scope
