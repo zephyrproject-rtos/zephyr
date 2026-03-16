@@ -1,0 +1,255 @@
+# Copyright (c) 2026 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic's nPM10 Series PMIC battery charger
+
+include: base.yaml
+
+compatible: "nordic,npm10xx-charger"
+
+properties:
+  charging-enable:
+    type: boolean
+    description: Enable charging.
+
+  charge-current-microamp:
+    type: int
+    description: |
+      Charge current in uA.
+      Available range is 0.5-128 mA in 0.5 mA steps and 129-256 mA in 1 mA steps.
+
+  term-voltage-microvolt:
+    type: int
+    description: Charge termination voltage in uV. Available range is 3.5-4.65 V in 10 mV steps.
+
+  term-current-percent:
+    type: string
+    enum:
+      - "12.5%"
+      - "100%"
+      - "50%"
+      - "25%"
+      - "6.25%"
+      - "3.125%"
+      - "1.56%"
+      - "0.78%"
+    description: Charge termination current in percent of current-microamp.
+
+  charge-current-warm-microamp:
+    type: int
+    description: |
+      Charge current in uA for the NTC warm region. Same range as current-microamp.
+
+  term-voltage-warm-microvolt:
+    type: int
+    description: |
+      Charge termination voltage in uV for the NTC warm region. Same range as term-microvolt.
+
+  charge-current-cool-microamp:
+    type: int
+    description: |
+      Charge current in uA for the NTC cool region. Same range as current-microamp.
+
+  term-voltage-cool-microvolt:
+    type: int
+    description: |
+      Charge termination voltage in uV for the NTC cool region. Same range as term-microvolt.
+
+  trickle-current-percent:
+    type: string
+    enum:
+      - "12.5%"
+      - "100%"
+      - "50%"
+      - "25%"
+      - "6.25%"
+      - "3.125%"
+      - "1.56%"
+      - "0.78%"
+    description: Trickle charge current in percent of current-microamp.
+
+  trickle-voltage-microvolt:
+    type: int
+    enum:
+      - 2900000
+      - 2500000
+      - 2700000
+      - 3100000
+    description: Trickle charge voltage in uV.
+
+  throttle-current-percent:
+    type: string
+    enum:
+      - "100%"
+      - "87.5%"
+      - "75%"
+      - "62.5%"
+      - "50%"
+      - "37.5%"
+      - "25%"
+      - "12.5%"
+    description: Charge throttle current in percent of current-microamp.
+
+  throttle-level-microvolt:
+    type: int
+    enum:
+      - 25000
+      - 50000
+      - 75000
+      - 100000
+      - 125000
+      - 150000
+      - 175000
+      - 200000
+      - 225000
+      - 250000
+      - 275000
+      - 300000
+      - 325000
+      - 350000
+      - 375000
+      - 400000
+    description: |
+      Charge throttle voltage level in uV.
+      Vthrottle = term-voltage-{,-cool,-warm}microvolt- - throttle-level-microvolt.
+
+  trickle-timeout-minute:
+    type: int
+    enum:
+      - 10
+      - 20
+      - 30
+      - 40
+      - 50
+      - 60
+      - 70
+      - 80
+      - 90
+      - 100
+      - 110
+      - 120
+    description: Trickle charge timeout in minutes.
+
+  charge-timeout-hour:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+    description: Charge cycle timeout in hours.
+
+  thermistor-beta:
+    type: int
+    description: Beta value of selected thermistor.
+
+  thermistor-cold-degrees:
+    type: int
+    description: Thermistor cold threshold in degrees Celsius.
+
+  thermistor-cool-degrees:
+    type: int
+    description: Thermistor cool threshold in degrees Celsius.
+
+  thermistor-warm-degrees:
+    type: int
+    description: Thermistor warm threshold in degrees Celsius.
+
+  thermistor-hot-degrees:
+    type: int
+    description: Thermistor hot threshold in degrees Celsius.
+
+  dietemp-reduce-degrees:
+    type: int
+    description: |
+      Die temperature current reduce threshold in degrees Celsius.
+      When die temperature exceeds this threshold, charging current will be reduced.
+
+  dietemp-resume-degrees:
+    type: int
+    description: |
+      Die temperature resume threshold in degrees Celsius. When die temperature falls below this
+      threshold, charging current will gradually increase. Recommended to be at least 10 degrees
+      lower than dietemp-reduce-degrees.
+
+  disable-batt-monitoring:
+    type: boolean
+    description: Disable battery temperature monitoring during charging.
+
+  disable-recharge:
+    type: boolean
+    description: Disable automatic recharge.
+
+  disable-warm-charging:
+    type: boolean
+    description: Disable charging of warm battery.
+
+  disable-cool-charging:
+    type: boolean
+    description: Disable charging of cool battery.
+
+  enable-advanced-profile:
+    type: boolean
+    description: |
+      Use custom values for termination voltage and charge current in warm and cool termperature
+      regions. The default JEITA values will be used otherwise.
+
+  enable-throttle-charging:
+    type: boolean
+    description: Enable throttle charging.
+
+  disable-lowbatt-charging:
+    type: boolean
+    description: Disable charging of battery below VBATLOW threshold (2.1 or 1.1 V).
+
+  vbat-low-microvolt:
+    type: int
+    enum:
+      - 2100000
+      - 1100000
+    description: VBATLOW threshold. Choose between 2.1 and 1.1 V.
+
+  vbus-limit-microamp:
+    type: int
+    enum:
+      - 100000
+      - 10000
+      - 225000
+      - 300000
+    description: VBUS input current limit to set during initialization.
+
+  vbusdpm-microvolt:
+    type: int
+    enum:
+      - 4350000
+      - 4500000
+      - 4650000
+      - 4800000
+    description: |
+      The device monitors VBUS and limits SYSREG current to maintain the VBUS voltage above the
+      selected level. Choose a level to set during initialization.
+
+examples:
+  - |
+    npm1012: pmic@6a {
+      reg = <0x6a>;
+      compatible = "nordic,npm10xx";
+      /* ... */
+
+      charger {
+        compatible = "nordic,npm10xx-charger";
+        charging-enable;
+        charge-current-microamp = <25000>;
+        term-voltage-microvolt = <4200000>;
+        term-current-percent = "3.125%";
+        /* ... */
+      };
+
+      /* ... */
+    };
