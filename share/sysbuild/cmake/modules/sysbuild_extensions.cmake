@@ -577,8 +577,12 @@ function(ExternalZephyrVariantProject_Add)
     set_target_properties(${ZBUILD_APPLICATION} PROPERTIES MAIN_APP True)
   endif()
 
+  set(${ZBUILD_APPLICATION}_DTC_OVERLAY_FILE ${ZEPHYR_BASE}/share/sysbuild/images/empty.overlay
+      CACHE INTERNAL "Application default DTC file" FORCE
+  )
+
   set(${ZBUILD_APPLICATION}_DTS_SOURCE ${CMAKE_BINARY_DIR}/${ZBUILD_SOURCE_APP}/zephyr/zephyr.dts
-      CACHE INTERNAL "Application DTC file" FORCE
+      CACHE INTERNAL "Application pre-configured DTC file" FORCE
   )
 
   set(${ZBUILD_APPLICATION}_DTS_DEPS ${CMAKE_BINARY_DIR}/${ZBUILD_SOURCE_APP}/zephyr/zephyr.dts.d
