@@ -947,6 +947,17 @@ STM32
   the ``cs-gpios`` or new ``st,soft-nss`` property operate in "Soft NSS" mode, while all other
   instances operate in "Hard NSS" mode.
 
+* :kconfig:option:`CONFIG_NUM_IRQS` is computed automatically based on active (``status = "okay";``)
+  devices by using the new ``dt_highest_controller_irq_number`` Kconfig preprocessor function.
+  Applications which register custom ISRs (using :c:macro:`IRQ_CONNECT()`) may encounter build
+  failures such as the following due to :kconfig:option:`CONFIG_NUM_IRQS` having a lower value:
+
+  .. code-block::
+
+    gen_isr_tables.py: error: IRQ 114 (offset=0) exceeds the maximum of 106
+
+  Explicitly set :kconfig:option:`CONFIG_NUM_IRQS` to an appropriate value to solve these issues.
+
 Timer
 =====
 
