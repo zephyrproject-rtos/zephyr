@@ -20,6 +20,7 @@ endif() # CONFIG_BUILD_ONLY_NO_BLOBS
 
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_WIFI_AIROC infineon)
+add_subdirectory_ifdef(CONFIG_WIFI_AMEBA ameba)
 add_subdirectory_ifdef(CONFIG_WIFI_ESP32 esp32)
 add_subdirectory_ifdef(CONFIG_WIFI_ESP_AT esp_at)
 add_subdirectory_ifdef(CONFIG_WIFI_ESP_HOSTED esp_hosted)

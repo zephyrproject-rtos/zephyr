@@ -37,6 +37,7 @@ config WIFI_USE_NATIVE_NETWORKING
 	  to use native ethernet stack interface.
 
 # zephyr-keep-sorted-start
+source "drivers/wifi/ameba/Kconfig.ameba"
 source "drivers/wifi/esp32/Kconfig.esp32"
 source "drivers/wifi/esp_at/Kconfig.esp_at"
 source "drivers/wifi/esp_hosted/Kconfig.esp_hosted"
