@@ -392,7 +392,7 @@ include product-specific requirements for:
 * Firewalls (prEN 304 636)
 
 For the complete list of draft standards and participation in public consultations, see the
-`ETSI Cyber Resilience Act Portal <https://www.etsi.org/committee/1430-tc-cyber>`_.
+`ETSI Cyber Resilience Act Portal <https://docbox.etsi.org/cyber/CYBER/Open>`_.
 
 Educational resources
 =====================
