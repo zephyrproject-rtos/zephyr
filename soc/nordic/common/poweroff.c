@@ -9,8 +9,8 @@
 
 #if defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_SERIES_NRF52)
 #include <hal/nrf_power.h>
-#elif defined(CONFIG_SOC_SERIES_NRF54H)
-#include <power.h>
+#elif defined(CONFIG_NRF_PLATFORM_HALTIUM)
+#include <haltium_power.h>
 #else
 #include <hal/nrf_regulators.h>
 #endif
@@ -72,7 +72,7 @@ void z_sys_poweroff(void)
 #endif
 #if defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_SERIES_NRF52)
 	nrf_power_system_off(NRF_POWER);
-#elif defined(CONFIG_SOC_SERIES_NRF54H)
+#elif defined(CONFIG_NRF_PLATFORM_HALTIUM)
 	nrf_poweroff();
 #else
 	nrf_regulators_system_off(NRF_REGULATORS);
