@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SOC_ALIF_ENSEMBLE_PINCTRL_SOC_H_
-#define ZEPHYR_SOC_ALIF_ENSEMBLE_PINCTRL_SOC_H_
+#ifndef ZEPHYR_SOC_ALIF_COMMON_PINCTRL_SOC_H_
+#define ZEPHYR_SOC_ALIF_COMMON_PINCTRL_SOC_H_
 
 #include <zephyr/devicetree.h>
 #include <zephyr/types.h>
@@ -78,4 +78,4 @@ typedef uint32_t pinctrl_soc_pin_t;
 	{DT_FOREACH_CHILD_VARGS(DT_PHANDLE(node_id, prop),		\
 		DT_FOREACH_PROP_ELEM, pinmux, Z_PINCTRL_STATE_PIN_INIT)};
 
-#endif /* ZEPHYR_SOC_ALIF_ENSEMBLE_PINCTRL_SOC_H_ */
+#endif /* ZEPHYR_SOC_ALIF_COMMON_PINCTRL_SOC_H_ */
