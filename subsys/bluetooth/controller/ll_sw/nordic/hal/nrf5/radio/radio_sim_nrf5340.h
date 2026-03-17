@@ -219,13 +219,21 @@
 #define HAL_RADIO_NRF5340_TX_CHAIN_DELAY_US \
 	HAL_RADIO_NS2US_CEIL(HAL_RADIO_NRF5340_TX_CHAIN_DELAY_NS)
 
+#define HAL_RADIO_NRF5340_RX_ADDRESS_DELAY_1M_US  9
 #define HAL_RADIO_NRF5340_RX_CHAIN_DELAY_1M_US  9
+#define HAL_RADIO_NRF5340_RX_ADDRESS_DELAY_1M_NS  9000
 #define HAL_RADIO_NRF5340_RX_CHAIN_DELAY_1M_NS  9000
+#define HAL_RADIO_NRF5340_RX_ADDRESS_DELAY_2M_US  5
 #define HAL_RADIO_NRF5340_RX_CHAIN_DELAY_2M_US  5
+#define HAL_RADIO_NRF5340_RX_ADDRESS_DELAY_2M_NS  5000
 #define HAL_RADIO_NRF5340_RX_CHAIN_DELAY_2M_NS  5000
+#define HAL_RADIO_NRF5340_RX_ADDRESS_DELAY_S2_US  30
 #define HAL_RADIO_NRF5340_RX_CHAIN_DELAY_S2_US  30
+#define HAL_RADIO_NRF5340_RX_ADDRESS_DELAY_S2_NS  30000
 #define HAL_RADIO_NRF5340_RX_CHAIN_DELAY_S2_NS  30000
+#define HAL_RADIO_NRF5340_RX_ADDRESS_DELAY_S8_US  30
 #define HAL_RADIO_NRF5340_RX_CHAIN_DELAY_S8_US  30
+#define HAL_RADIO_NRF5340_RX_ADDRESS_DELAY_S8_NS  30000
 #define HAL_RADIO_NRF5340_RX_CHAIN_DELAY_S8_NS  30000
 
 #if defined(CONFIG_BT_CTLR_RADIO_ENABLE_FAST)
@@ -612,6 +620,28 @@ static inline uint32_t hal_radio_tx_chain_delay_us_get(uint8_t phy, uint8_t flag
 	return HAL_RADIO_NRF5340_TX_CHAIN_DELAY_US;
 }
 
+static inline uint32_t hal_radio_rx_address_delay_us_get(uint8_t phy, uint8_t flags)
+{
+	ARG_UNUSED(flags);
+
+	switch (phy) {
+	default:
+	case BIT(0):
+		return HAL_RADIO_NRF5340_RX_ADDRESS_DELAY_1M_US;
+	case BIT(1):
+		return HAL_RADIO_NRF5340_RX_ADDRESS_DELAY_2M_US;
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	case BIT(2):
+		if (flags & 0x01) {
+			return HAL_RADIO_NRF5340_RX_ADDRESS_DELAY_S8_US;
+		} else {
+			return HAL_RADIO_NRF5340_RX_ADDRESS_DELAY_S2_US;
+		}
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+	}
+}
+
 static inline uint32_t hal_radio_rx_chain_delay_us_get(uint8_t phy, uint8_t flags)
 {
 	ARG_UNUSED(flags);
@@ -684,6 +714,28 @@ static inline uint32_t hal_radio_tx_chain_delay_ns_get(uint8_t phy, uint8_t flag
 	ARG_UNUSED(flags);
 
 	return HAL_RADIO_NRF5340_TX_CHAIN_DELAY_NS;
+}
+
+static inline uint32_t hal_radio_rx_address_delay_ns_get(uint8_t phy, uint8_t flags)
+{
+	ARG_UNUSED(flags);
+
+	switch (phy) {
+	default:
+	case BIT(0):
+		return HAL_RADIO_NRF5340_RX_ADDRESS_DELAY_1M_NS;
+	case BIT(1):
+		return HAL_RADIO_NRF5340_RX_ADDRESS_DELAY_2M_NS;
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	case BIT(2):
+		if (flags & 0x01) {
+			return HAL_RADIO_NRF5340_RX_ADDRESS_DELAY_S8_NS;
+		} else {
+			return HAL_RADIO_NRF5340_RX_ADDRESS_DELAY_S2_NS;
+		}
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+	}
 }
 
 static inline uint32_t hal_radio_rx_chain_delay_ns_get(uint8_t phy, uint8_t flags)
