@@ -197,10 +197,9 @@ struct input_kbd_matrix_common_config {
 		.api = _api, \
 		.row_size = _row_size, \
 		.col_size = _col_size, \
-		.poll_period_us = DT_PROP(node_id, poll_period_ms) * USEC_PER_MSEC, \
-		.stable_poll_period_us = DT_PROP_OR(node_id, stable_poll_period_ms, \
-						    DT_PROP(node_id, poll_period_ms)) * \
-							USEC_PER_MSEC, \
+		.poll_period_us = DT_PROP(node_id, poll_period_us), \
+		.stable_poll_period_us = DT_PROP_OR(node_id, stable_poll_period_us, \
+						    DT_PROP(node_id, poll_period_us)), \
 		.poll_timeout_ms = DT_PROP(node_id, poll_timeout_ms), \
 		.debounce_down_us = DT_PROP(node_id, debounce_down_ms) * USEC_PER_MSEC, \
 		.debounce_up_us = DT_PROP(node_id, debounce_up_ms) * USEC_PER_MSEC, \

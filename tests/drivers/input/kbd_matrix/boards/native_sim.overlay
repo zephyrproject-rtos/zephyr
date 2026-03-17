@@ -9,7 +9,7 @@
 		compatible = "test-kbd-scan";
 		row-size = <3>;
 		col-size = <3>;
-		poll-period-ms = <5>;
+		poll-period-us = <5000>;
 		debounce-down-ms = <40>;
 		debounce-up-ms = <80>;
 		poll-timeout-ms = <500>;
