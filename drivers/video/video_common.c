@@ -174,9 +174,9 @@ int video_enqueue(const struct device *dev, struct video_buffer *buf)
 int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,
 			    size_t *idx)
 {
-	__ASSERT_NO_MSG(fmts != NULL);
-	__ASSERT_NO_MSG(fmt != NULL);
-	__ASSERT_NO_MSG(idx != NULL);
+	if (fmts == NULL || fmt == NULL || idx == NULL) {
+		return -EINVAL;
+	}
 
 	for (int i = 0; fmts[i].pixelformat != 0; i++) {
 		if (fmts[i].pixelformat == fmt->pixelformat &&
@@ -299,10 +299,9 @@ int video_read_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32_
 	uint8_t *data_ptr;
 	int ret;
 
-	__ASSERT_NO_MSG(i2c != NULL);
-	__ASSERT_NO_MSG(reg_data != NULL);
-	__ASSERT(addr_size > 0, "The address must have a address size flag");
-	__ASSERT(data_size > 0, "The address must have a data size flag");
+	if (i2c == NULL || reg_data == NULL || addr_size == 0 || data_size == 0) {
+		return -EINVAL;
+	}
 
 	*reg_data = 0;
 
@@ -340,8 +339,9 @@ static int video_write_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, 
 {
 	int ret;
 
-	__ASSERT_NO_MSG(i2c != NULL);
-	__ASSERT_NO_MSG(buf_w != NULL);
+	if (i2c == NULL || buf_w == NULL) {
+		return -EINVAL;
+	}
 
 	for (int i = 0;; i++) {
 		ret = i2c_write_dt(i2c, buf_w, size);
@@ -370,9 +370,9 @@ int video_write_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32
 	uint8_t *data_ptr;
 	int ret;
 
-	__ASSERT_NO_MSG(i2c != NULL);
-	__ASSERT(addr_size > 0, "The address must have a address size flag");
-	__ASSERT(data_size > 0, "The address must have a data size flag");
+	if (i2c == NULL || addr_size == 0 || data_size == 0) {
+		return -EINVAL;
+	}
 
 	if (big_endian) {
 		/* Casting between data sizes in big-endian requires re-aligning */
@@ -425,7 +425,9 @@ int video_write_cci_multiregs(const struct i2c_dt_spec *i2c, const struct video_
 {
 	int ret;
 
-	__ASSERT_NO_MSG(regs != NULL);
+	if (regs == NULL) {
+		return -EINVAL;
+	}
 
 	for (int i = 0; i < num_regs; i++) {
 		ret = video_write_cci_reg(i2c, regs[i].addr, regs[i].data);
@@ -442,7 +444,9 @@ int video_write_cci_multiregs8(const struct i2c_dt_spec *i2c, const struct video
 {
 	int ret;
 
-	__ASSERT_NO_MSG(regs != NULL);
+	if (regs == NULL) {
+		return -EINVAL;
+	}
 
 	for (int i = 0; i < num_regs; i++) {
 		ret = video_write_cci_reg(i2c, regs[i].addr | VIDEO_REG_ADDR8_DATA8, regs[i].data);
@@ -459,7 +463,9 @@ int video_write_cci_multiregs16(const struct i2c_dt_spec *i2c, const struct vide
 {
 	int ret;
 
-	__ASSERT_NO_MSG(regs != NULL);
+	if (regs == NULL) {
+		return -EINVAL;
+	}
 
 	for (int i = 0; i < num_regs; i++) {
 		ret = video_write_cci_reg(i2c, regs[i].addr | VIDEO_REG_ADDR16_DATA8, regs[i].data);
