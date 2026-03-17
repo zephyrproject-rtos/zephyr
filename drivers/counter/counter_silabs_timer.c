@@ -125,12 +125,14 @@ static uint32_t counter_silabs_timer_get_top_value(const struct device *dev)
 static int counter_silabs_timer_set_top_value(const struct device *dev,
 	const struct counter_top_cfg *cfg)
 {
-	if (is_counter_running(dev)) {
-		return -EBUSY;
-	}
-
 	struct counter_silabs_timer_data *data = dev->data;
 	const struct counter_silabs_timer_config *config = dev->config;
+
+	for (int i = 0; i < config->info.channels; i++) {
+		if (config->timer->IEN & get_IEN_flag(i)) {
+			return -EBUSY;
+		}
+	}
 
 	uint32_t now_ticks = sl_hal_timer_get_counter(config->timer);
 
@@ -242,7 +244,7 @@ static void counter_silabs_timer_isr(const struct device *dev)
 	struct counter_silabs_timer_data *data = dev->data;
 	const struct counter_silabs_timer_config *config = dev->config;
 	uint32_t now_ticks;
-	uint32_t pendings = sl_hal_timer_get_pending_interrupts(config->timer);
+	uint32_t pendings = sl_hal_timer_get_enabled_pending_interrupts(config->timer);
 
 	counter_silabs_timer_get_value(dev, &now_ticks);
 
