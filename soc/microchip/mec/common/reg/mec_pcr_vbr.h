@@ -11,6 +11,7 @@
 
 /* PCR hardware registers for MEC SoC */
 #define XEC_CC_PCR_MAX_SCR 5
+#define XEC_CC_SCR_BITPOS_MAX 31u
 
 #define XEC_CC_SLP_CR_OFS              0
 #define XEC_CC_SLP_CR_MODE_DS_POS      0 /* if set enter deep sleep when sleep is triggered */

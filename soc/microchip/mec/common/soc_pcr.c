@@ -27,7 +27,24 @@ void soc_xec_pcr_reset_en(uint16_t enc_pcr_scr)
 int soc_xec_pcr_cpu_clk_div_set(uint8_t cpu_clk_div)
 {
 	mm_reg_t pcr_base = XEC_PCR_BASE;
-	uint32_t rval = XEC_CC_PCLK_CR_DIV_SET((uint32_t)cpu_clk_div);
+	uint32_t rval;
+
+	switch (cpu_clk_div) {
+	case MCHP_XEC_CLK_CPU_CLK_DIV_1:
+	case MCHP_XEC_CLK_CPU_CLK_DIV_4:
+	case MCHP_XEC_CLK_CPU_CLK_DIV_16:
+	case MCHP_XEC_CLK_CPU_CLK_DIV_48:
+#if defined(CONFIG_SOC_SERIES_MEC15XX)
+	case MCHP_XEC_CLK_CPU_CLK_DIV_3:
+#else
+	case MCHP_XEC_CLK_CPU_CLK_DIV_2:
+#endif
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	rval = XEC_CC_PCLK_CR_DIV_SET((uint32_t)cpu_clk_div);
 
 	soc_mmcr_mask_set(pcr_base + XEC_CC_PCLK_CR_OFS, rval, XEC_CC_PCLK_CR_DIV_MSK);
 
