@@ -422,7 +422,6 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	uint32_t ticks_expire;
 	uint32_t interval_us;
 	uint32_t ticks_diff;
-	struct pdu_adv *pdu;
 	uint32_t slot_us;
 	uint8_t num_bis;
 	uint8_t bi_size;
@@ -577,7 +576,6 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	}
 
 	ftr = &node_rx->rx_ftr;
-	pdu = (void *)((struct node_rx_pdu *)node_rx)->pdu;
 
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 
@@ -597,8 +595,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 		sync_iso_offset_us += (stream->bis_index - 1U) *
 				      lll->bis_spacing;
 	}
-	sync_iso_offset_us -= PDU_AC_US(pdu->len, sync_iso->sync->lll.phy,
-					ftr->phy_flags);
+
 	sync_iso_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	sync_iso_offset_us -= EVENT_JITTER_US;
 	sync_iso_offset_us -= ready_delay_us;
