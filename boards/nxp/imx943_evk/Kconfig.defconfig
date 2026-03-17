@@ -47,6 +47,20 @@ configdefault NET_MGMT_EVENT_STACK_SIZE
 configdefault NET_SOCKETS_SERVICE_STACK_SIZE
 	default 8192
 
+# CAN Phy must be initialized after board mux
+configdefault GPIO_PCA_SERIES_INIT_PRIORITY
+	default 62
+
+configdefault CAN_TRANSCEIVER_INIT_PRIORITY
+	default 65
+
+# I2C multiplexer channels must be initialized after their root
+configdefault I2C_TCA954X_ROOT_INIT_PRIO
+	default 60
+
+configdefault I2C_TCA954X_CHANNEL_INIT_PRIO
+	default 61
+
 endif # SOC_MIMX94398_A55
 
 if SOC_MIMX94398_M33
