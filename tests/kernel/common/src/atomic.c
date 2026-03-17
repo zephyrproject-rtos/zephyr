@@ -386,6 +386,118 @@ ZTEST(atomic, test_atomic_overflow)
 }
 
 /**
+ * @brief Verify atomic_uchar functionalities
+ * @details Test the atomic_uchar_* operations for correctness with
+ * unsigned char sized atomics.
+ *
+ * @see atomic_uchar_cas(), atomic_uchar_add(), atomic_uchar_sub(),
+ * atomic_uchar_inc(), atomic_uchar_dec(), atomic_uchar_get(),
+ * atomic_uchar_set(), atomic_uchar_clear(), atomic_uchar_or(),
+ * atomic_uchar_xor(), atomic_uchar_and(), atomic_uchar_nand()
+ */
+ZTEST_USER(atomic, test_atomic_uchar)
+{
+	atomic_uchar_t target;
+	unsigned char old_val;
+
+	/* atomic_uchar_cas() - mismatch, should fail */
+	target = 4;
+	zassert_false(atomic_uchar_cas(&target, 6, 5), "atomic_uchar_cas should fail");
+	zassert_equal(target, 4, "target unchanged on failed cas");
+
+	/* atomic_uchar_cas() - match, should succeed */
+	target = 6;
+	zassert_true(atomic_uchar_cas(&target, 6, 5), "atomic_uchar_cas should succeed");
+	zassert_equal(target, 5, "target updated on successful cas");
+
+	/* atomic_uchar_add() */
+	target = 10;
+	old_val = atomic_uchar_add(&target, 5);
+	zassert_equal(old_val, 10, "atomic_uchar_add return");
+	zassert_equal(target, 15, "atomic_uchar_add result");
+
+	/* atomic_uchar_sub() */
+	target = 20;
+	old_val = atomic_uchar_sub(&target, 7);
+	zassert_equal(old_val, 20, "atomic_uchar_sub return");
+	zassert_equal(target, 13, "atomic_uchar_sub result");
+
+	/* atomic_uchar_inc() */
+	target = 99;
+	old_val = atomic_uchar_inc(&target);
+	zassert_equal(old_val, 99, "atomic_uchar_inc return");
+	zassert_equal(target, 100, "atomic_uchar_inc result");
+
+	/* atomic_uchar_dec() */
+	target = 100;
+	old_val = atomic_uchar_dec(&target);
+	zassert_equal(old_val, 100, "atomic_uchar_dec return");
+	zassert_equal(target, 99, "atomic_uchar_dec result");
+
+	/* atomic_uchar_get() */
+	target = 42;
+	zassert_equal(atomic_uchar_get(&target), 42, "atomic_uchar_get");
+
+	/* atomic_uchar_set() */
+	target = 42;
+	old_val = atomic_uchar_set(&target, 77);
+	zassert_equal(old_val, 42, "atomic_uchar_set return");
+	zassert_equal(target, 77, "atomic_uchar_set result");
+
+	/* atomic_uchar_clear() */
+	target = 0xAB;
+	old_val = atomic_uchar_clear(&target);
+	zassert_equal(old_val, 0xAB, "atomic_uchar_clear return");
+	zassert_equal(target, 0, "atomic_uchar_clear result");
+
+	/* atomic_uchar_or() */
+	target = 0xF0;
+	old_val = atomic_uchar_or(&target, 0x0F);
+	zassert_equal(old_val, 0xF0, "atomic_uchar_or return");
+	zassert_equal(target, 0xFF, "atomic_uchar_or result");
+
+	/* atomic_uchar_xor() */
+	target = 0xF0;
+	old_val = atomic_uchar_xor(&target, 0x0F);
+	zassert_equal(old_val, 0xF0, "atomic_uchar_xor return");
+	zassert_equal(target, 0xFF, "atomic_uchar_xor result");
+
+	/* atomic_uchar_and() */
+	target = 0xF0;
+	old_val = atomic_uchar_and(&target, 0x0F);
+	zassert_equal(old_val, 0xF0, "atomic_uchar_and return");
+	zassert_equal(target, 0x00, "atomic_uchar_and result");
+
+	/* atomic_uchar_nand() */
+	target = 0xF0;
+	old_val = atomic_uchar_nand(&target, 0x0F);
+	zassert_equal(old_val, 0xF0, "atomic_uchar_nand return");
+	zassert_equal(target, 0xFF, "atomic_uchar_nand result");
+
+	/* atomic_uchar_nand() with overlapping bits */
+	target = 0xFF;
+	old_val = atomic_uchar_nand(&target, 0x0F);
+	zassert_equal(old_val, 0xFF, "atomic_uchar_nand return 2");
+	zassert_equal(target, 0xF0, "atomic_uchar_nand result 2");
+
+	/* Unsigned char wrapping behavior */
+	target = 255;
+	old_val = atomic_uchar_inc(&target);
+	zassert_equal(old_val, 255, "atomic_uchar_inc wrap return");
+	zassert_equal(target, 0, "atomic_uchar_inc wraps to 0");
+
+	target = 0;
+	old_val = atomic_uchar_dec(&target);
+	zassert_equal(old_val, 0, "atomic_uchar_dec wrap return");
+	zassert_equal(target, 255, "atomic_uchar_dec wraps to 255");
+
+	target = 200;
+	old_val = atomic_uchar_add(&target, 100);
+	zassert_equal(old_val, 200, "atomic_uchar_add wrap return");
+	zassert_equal(target, (unsigned char)44, "atomic_uchar_add wraps");
+}
+
+/**
  * @}
  */
 extern void *common_setup(void);
