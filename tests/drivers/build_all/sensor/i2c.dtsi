@@ -1542,3 +1542,12 @@ test_i2c_qmi8658a: qmi8658a@cb {
 	reg = <0xcb>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_npm10xx: npm10xx@cc {
+	reg = <0xcc>;
+	compatible = "nordic,npm10xx";
+
+	sensor {
+		compatible = "nordic,npm10xx-adc";
+	};
+};
