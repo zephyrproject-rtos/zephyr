@@ -1732,16 +1732,21 @@ static int cmd_id_select(const struct shell *sh, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_BT_OBSERVER)
+#define BT_SHELL_SCAN_INT_DEFAULT 0U
+#define BT_SHELL_SCAN_WIN_DEFAULT 0U
+
 static int cmd_active_scan_on(const struct shell *sh, uint32_t options,
-			      uint16_t timeout)
+			      uint16_t timeout, uint16_t interval, uint16_t window)
 {
 	int err;
 	struct bt_le_scan_param param = {
-			.type       = BT_LE_SCAN_TYPE_ACTIVE,
-			.options    = BT_LE_SCAN_OPT_NONE,
-			.interval   = BT_GAP_SCAN_FAST_INTERVAL,
-			.window     = BT_GAP_SCAN_FAST_WINDOW,
-			.timeout    = 0, };
+		.type = BT_LE_SCAN_TYPE_ACTIVE,
+		.options = BT_LE_SCAN_OPT_NONE,
+		.interval = interval != BT_SHELL_SCAN_INT_DEFAULT ? interval
+								  : BT_GAP_SCAN_FAST_INTERVAL,
+		.window = window != BT_SHELL_SCAN_WIN_DEFAULT ? window : BT_GAP_SCAN_FAST_WINDOW,
+		.timeout = 0,
+	};
 
 	param.options |= options;
 
@@ -1762,14 +1767,15 @@ static int cmd_active_scan_on(const struct shell *sh, uint32_t options,
 }
 
 static int cmd_passive_scan_on(const struct shell *sh, uint32_t options,
-			       uint16_t timeout)
+			       uint16_t timeout, uint16_t interval, uint16_t window)
 {
 	struct bt_le_scan_param param = {
-			.type       = BT_LE_SCAN_TYPE_PASSIVE,
-			.options    = BT_LE_SCAN_OPT_NONE,
-			.interval   = 0x10,
-			.window     = 0x10,
-			.timeout    = timeout, };
+		.type = BT_LE_SCAN_TYPE_PASSIVE,
+		.options = BT_LE_SCAN_OPT_NONE,
+		.interval = interval != BT_SHELL_SCAN_INT_DEFAULT ? interval : 0x10U,
+		.window = window != BT_SHELL_SCAN_WIN_DEFAULT ? window : 0x10U,
+		.timeout = timeout,
+	};
 	int err;
 
 	param.options |= options;
@@ -1817,6 +1823,9 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 	const char *action;
 	uint32_t options = 0;
 	uint16_t timeout = 0;
+	uint16_t scan_interval = BT_SHELL_SCAN_INT_DEFAULT;
+	uint16_t scan_window = BT_SHELL_SCAN_WIN_DEFAULT;
+	int err = 0;
 
 	/* Parse duplicate filtering data */
 	for (size_t argn = 2; argn < argc; argn++) {
@@ -1839,6 +1848,27 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 			}
 
 			timeout = strtoul(argv[argn], NULL, 16);
+		} else if (!strcmp(arg, "interval")) {
+			unsigned long si;
+			unsigned long sw;
+
+			if (argn + 2U >= argc) {
+				shell_help(sh);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			si = shell_strtoul(argv[argn + 1U], 0, &err);
+			sw = shell_strtoul(argv[argn + 2U], 0, &err);
+			if (err == 0 && (si > UINT16_MAX || sw > UINT16_MAX)) {
+				err = -EINVAL;
+			}
+			if (err != 0) {
+				shell_error(sh, "Invalid scan interval or window");
+				return -EINVAL;
+			}
+			scan_interval = (uint16_t)si;
+			scan_window = (uint16_t)sw;
+			argn += 2U;
 		} else {
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
@@ -1847,11 +1877,11 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 
 	action = argv[1];
 	if (!strcmp(action, "on")) {
-		return cmd_active_scan_on(sh, options, timeout);
+		return cmd_active_scan_on(sh, options, timeout, scan_interval, scan_window);
 	} else if (!strcmp(action, "off")) {
 		return cmd_scan_off(sh);
 	} else if (!strcmp(action, "passive")) {
-		return cmd_passive_scan_on(sh, options, timeout);
+		return cmd_passive_scan_on(sh, options, timeout, scan_interval, scan_window);
 	} else {
 		shell_help(sh);
 		return SHELL_CMD_HELP_PRINTED;
@@ -2117,7 +2147,7 @@ static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 	bool appearance = false;
 	ssize_t ad_len = 0;
 	ssize_t sd_len = 0;
-	int err;
+	int err = 0;
 	bool with_name = true;
 	bool name_ad = false;
 	bool name_sd = true;
@@ -2174,6 +2204,27 @@ static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 			param.options |= BT_LE_ADV_OPT_DISABLE_CHAN_38;
 		} else if (!strcmp(arg, "disable-39")) {
 			param.options |= BT_LE_ADV_OPT_DISABLE_CHAN_39;
+		} else if (!strcmp(arg, "interval")) {
+			unsigned long imin;
+			unsigned long imax;
+
+			if (argn + 2U >= argc) {
+				shell_help(sh);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			imin = shell_strtoul(argv[argn + 1U], 0, &err);
+			imax = shell_strtoul(argv[argn + 2U], 0, &err);
+			if (err == 0 && (imin > UINT16_MAX || imax > UINT16_MAX)) {
+				rc = -EINVAL;
+			}
+			if (err != 0) {
+				shell_error(sh, "Invalid interval");
+				return -EINVAL;
+			}
+			param.interval_min = (uint16_t)imin;
+			param.interval_max = (uint16_t)imax;
+			argn += 2U;
 		} else {
 			goto fail;
 		}
@@ -5329,9 +5380,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #endif /* CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC */
 #if defined(CONFIG_BT_OBSERVER)
 	SHELL_CMD_ARG(scan, NULL,
-		      "<value: on, passive, off> [filter: dups, nodups] [fal]"
+		      "<value: on, passive, off> [filter: dups, nodups] [fal] [interval <interval> <window>]"
 		      EXT_ADV_SCAN_OPT,
-		      cmd_scan, 2, 4),
+		      cmd_scan, 2U, 9U),
 	SHELL_CMD(scan-filter-set, &bt_scan_filter_set_cmds,
 		      "Scan filter set commands",
 		      cmd_default_handler),
@@ -5395,8 +5446,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      "<type: off, on, nconn> [mode: discov, non_discov] "
 		      "[filter-accept-list: fal, fal-scan, fal-conn] [identity] [no-name] "
 		      "[name-ad] [appearance] "
+		      "[interval <min> <max>] "
 		      "[disable-37] [disable-38] [disable-39]",
-		      cmd_advertise, 2, 8),
+		      cmd_advertise, 2U, 11U),
 #if defined(CONFIG_BT_PERIPHERAL)
 	SHELL_CMD_ARG(directed-adv, NULL, HELP_ADDR_LE " [mode: low] "
 		      "[identity] [dir-rpa]",
