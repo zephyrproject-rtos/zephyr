@@ -315,6 +315,9 @@ static int sh_write(const struct shell_transport *transport,
 			k_mutex_unlock(&ws->socket_lock);
 			if (ret != 0) {
 				*cnt = length;
+				if (ret == -ENOTCONN || ret == -ECONNRESET || ret == -EPIPE) {
+					return 0;
+				}
 				return ret;
 			}
 		}
