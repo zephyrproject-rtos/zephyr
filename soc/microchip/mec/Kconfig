@@ -272,6 +272,12 @@ config SOC_MEC_PROC_CLK_DIV
 	  HCLK = MCK / PROC_CLK_DIV
 	  Allowed divider values: 1, 3, 4, 16, and 48.
 
+# common I3C IP present
+config HAS_MCHP_MEC_I3C
+	bool
+	help
+	  Hidden symbol selected by SoCs which have I3C support
+
 # Select SoC Part No. and configuration options
 rsource "*/Kconfig"
 
