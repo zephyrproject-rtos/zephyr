@@ -12,6 +12,8 @@
 /* clang-format off */
 #define DIGITAL_INPUT_STATE_RID           5500
 #define DIGITAL_INPUT_COUNTER_RID         5501
+#define CURRENT_TIME_RID                  5506
+#define FRACTIONAL_TIME_RID               5507
 #define TIMESTAMP_RID                     5518
 #define DELAY_DURATION_RID                5521
 #define TRIGGER_RID                       5523
