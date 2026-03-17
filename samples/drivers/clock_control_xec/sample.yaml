@@ -5,6 +5,9 @@ tests:
   sample.drivers.clock_control_xec:
     tags: clock_control
     platform_allow:
-      - mec172xevb_assy6906
-      - mec15xxevb_assy6853
       - mec1501modular_assy6885
+      - mec15xxevb_assy6853
+      - mec172xevb_assy6906
+      - mec172xmodular_assy6930
+      - mec_assy6941/mec1743_qlj
+      - mec_assy6941/mec1753_qlj
