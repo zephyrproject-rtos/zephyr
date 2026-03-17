@@ -623,7 +623,7 @@ static void isr_tx_rx(void *param)
 	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
 	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
 	       HAL_RADIO_TMR_START_DELAY_US;
-	hcto += radio_rx_chain_delay_get(lll->phy_s, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(lll->phy_s, PHY_FLAGS_S8);
 	hcto += addr_us_get(lll->phy_s);
 	hcto -= radio_tx_chain_delay_get(lll->phy_s, PHY_FLAGS_S8);
 	radio_tmr_hcto_configure(hcto);

@@ -236,7 +236,7 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	LL_ASSERT_DBG(node_rx);
 
 	aa_us = radio_tmr_aa_get();
-	aa_delay_us = radio_rx_chain_delay_get(pdu_phy, pdu_phy_flags_rx);
+	aa_delay_us = radio_rx_address_delay_get(pdu_phy, pdu_phy_flags_rx);
 	aa_delay_us += addr_us_get(pdu_phy);
 	LL_ASSERT_MSG(aa_us >= aa_delay_us, "aa_us %u < aa_delay_us %u", aa_us, aa_delay_us);
 
@@ -383,7 +383,7 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	hcto += window_widening_us;
 	hcto += lll_radio_rx_ready_delay_get(phy_aux, PHY_FLAGS_S8);
 	hcto += window_size_us;
-	hcto += radio_rx_chain_delay_get(phy_aux, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(phy_aux, PHY_FLAGS_S8);
 	hcto += addr_us_get(phy_aux);
 	radio_tmr_hcto_configure_abs(hcto);
 
@@ -577,7 +577,7 @@ sync_aux_prepare_done:
 	hcto = remainder_us + lll_aux->window_size_us;
 	hcto += radio_rx_ready_delay_get(lll_aux->phy, PHY_FLAGS_S8);
 	hcto += addr_us_get(lll_aux->phy);
-	hcto += radio_rx_chain_delay_get(lll_aux->phy, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(lll_aux->phy, PHY_FLAGS_S8);
 	radio_tmr_hcto_configure(hcto);
 
 	/* capture aa to have aux_offset calculated */
@@ -1378,7 +1378,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		uint32_t aa_us;
 
 		aa_us = radio_tmr_aa_get();
-		aa_delay_us = radio_rx_chain_delay_get(phy_aux, phy_aux_flags_rx);
+		aa_delay_us = radio_rx_address_delay_get(phy_aux, phy_aux_flags_rx);
 		aa_delay_us += addr_us_get(phy_aux);
 		LL_ASSERT_MSG(aa_us >= aa_delay_us, "aa_us %u < aa_delay_us %u", aa_us,
 			      aa_delay_us);
@@ -1484,7 +1484,7 @@ static void isr_tx(struct lll_scan_aux *lll_aux, void (*isr)(void *), void *para
 	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
 	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
 	       HAL_RADIO_TMR_START_DELAY_US;
-	hcto += radio_rx_chain_delay_get(lll_aux->phy, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(lll_aux->phy, PHY_FLAGS_S8);
 	hcto += addr_us_get(lll_aux->phy);
 	hcto -= radio_tx_chain_delay_get(lll_aux->phy, PHY_FLAGS_S8);
 	radio_tmr_hcto_configure(hcto);

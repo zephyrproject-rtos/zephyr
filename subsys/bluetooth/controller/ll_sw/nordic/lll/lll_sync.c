@@ -476,7 +476,7 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 	       lll->window_size_event_us;
 	hcto += radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 	hcto += addr_us_get(lll->phy);
-	hcto += radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(lll->phy, PHY_FLAGS_S8);
 	radio_tmr_hcto_configure(hcto);
 
 	/* capture aa to have aux_offset calculated for chain PDUs */
@@ -752,7 +752,7 @@ static void isr_aux_setup(void *param)
 	hcto += window_widening_us;
 	hcto += lll_radio_rx_ready_delay_get(phy_aux, PHY_FLAGS_S8);
 	hcto += window_size_us;
-	hcto += radio_rx_chain_delay_get(phy_aux, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(phy_aux, PHY_FLAGS_S8);
 	hcto += addr_us_get(phy_aux);
 	radio_tmr_hcto_configure_abs(hcto);
 
@@ -834,7 +834,7 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 			uint32_t aa_us;
 
 			aa_us = radio_tmr_aa_get();
-			aa_delay_us = radio_rx_chain_delay_get(lll->phy, phy_flags_rx);
+			aa_delay_us = radio_rx_address_delay_get(lll->phy, phy_flags_rx);
 			aa_delay_us += addr_us_get(lll->phy);
 			LL_ASSERT_MSG(aa_us >= aa_delay_us, "aa_us %u < aa_delay_us %u", aa_us,
 				      aa_delay_us);

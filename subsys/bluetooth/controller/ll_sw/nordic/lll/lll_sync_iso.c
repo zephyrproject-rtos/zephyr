@@ -368,7 +368,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	       lll->window_size_event_us;
 	hcto += radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 	hcto += addr_us_get(lll->phy);
-	hcto += radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(lll->phy, PHY_FLAGS_S8);
 	radio_tmr_hcto_configure(hcto);
 
 	radio_tmr_end_capture();
@@ -1328,7 +1328,7 @@ isr_rx_next_subevent:
 		 * listen early by 4 us.
 		 */
 		hcto += radio_tmr_aa_restore();
-		hcto -= radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
+		hcto -= radio_rx_address_delay_get(lll->phy, PHY_FLAGS_S8);
 		hcto -= addr_us_get(lll->phy);
 		hcto -= radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 
@@ -1391,7 +1391,7 @@ isr_rx_next_subevent:
 	 */
 	hcto += radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 	hcto += addr_us_get(lll->phy);
-	hcto += radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(lll->phy, PHY_FLAGS_S8);
 
 	/* setup absolute PDU header reception timeout */
 	radio_tmr_hcto_configure_abs(hcto);
