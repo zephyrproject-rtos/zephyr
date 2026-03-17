@@ -32,6 +32,7 @@ extern char __extram_bss_start[];
 extern char __extram_bss_end[];
 
 extern void _isr_wrapper(void);
+extern void Peripheral_Handler(void);
 
 #define S_RAM_VECTOR_ADDR (0x14ec00)
 #define STACK_ROM_ADDRESS DT_REG_ADDR(DT_NODELABEL(bee_bt_controller))
@@ -135,6 +136,13 @@ void soc_early_init_hook(void)
 
 	SCB->VTOR = (uint32_t)S_RAM_VECTOR_ADDR;
 	(void)memcpy((void *)S_RAM_VECTOR_ADDR, _vector_start, vector_size);
+
+	/*
+	 * Connect the Level 1 interrupt ISR (Peripheral_Handler,
+	 * which is implemented in ROM) to the Zephyr interrupt subsystem.
+	 */
+	IRQ_CONNECT(Peripheral_IRQn, 0, Peripheral_Handler, NULL, 0);
+	irq_enable(Peripheral_IRQn);
 
 	rtl87x2g_extra_ram_init();
 
