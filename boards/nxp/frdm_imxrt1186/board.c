@@ -7,11 +7,30 @@
 #include <zephyr/platform/hooks.h>
 #include <soc.h>
 
+#include <fsl_clock.h>
+
 #if defined(CONFIG_ETH_NXP_IMX_NETC) && (DT_CHILD_NUM_STATUS_OKAY(DT_NODELABEL(netc)) != 0)
 #define FRDM_IMXRT1186_HAS_NETC_ENABLED 1
 #else
 #define FRDM_IMXRT1186_HAS_NETC_ENABLED 0
 #endif
+
+/*
+ * Board-level clock setup hook.
+ *
+ * Keep this function as a generic clock init place for this board so that
+ * other peripherals can extend it later.
+ */
+static void frdm_imxrt1186_clock_init(void)
+{
+#if FRDM_IMXRT1186_HAS_NETC_ENABLED
+	/*
+	 * NETC MAC0 is used in RGMII 1G mode and requires 125MHz on FRDM_IMXRT1186.
+	 * Zephyr SoC default sets MAC0 to 50MHz for MIMXRT1180-EVK(RMII 100M).
+	 */
+	CLOCK_SetRootClockDiv(kCLOCK_Root_Mac0, 4);
+#endif /* FRDM_IMXRT1186_HAS_NETC_ENABLED */
+}
 
 #if FRDM_IMXRT1186_HAS_NETC_ENABLED
 static void frdm_imxrt1186_netc_configure(void)
@@ -38,6 +57,8 @@ static void frdm_imxrt1186_netc_configure(void)
 
 void board_early_init_hook(void)
 {
+	frdm_imxrt1186_clock_init();
+
 #if FRDM_IMXRT1186_HAS_NETC_ENABLED
 	frdm_imxrt1186_netc_configure();
 #endif
