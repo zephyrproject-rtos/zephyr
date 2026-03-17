@@ -58,6 +58,14 @@ example, you can set ``ZEPHYR_SDK_INSTALL_DIR`` to ``/company/tools``, where the
 This allows the Zephyr build system to choose the correct version of the SDK,
 while allowing multiple Zephyr SDKs to be grouped together at a specific path.
 
+By default, Zephyr build system chooses the latest compatible SDK version found in the CMake package
+registry or the directory specified by the :envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variable
+when defined.
+
+This behaviour can be overridden by defining the :envvar:`ZEPHYR_SDK_INSTALL_DIR_FORCE` environment
+variable, which disables the SDK version compatibility check and allows the SDK installation pointed
+by :envvar:`ZEPHYR_SDK_INSTALL_DIR` to be used regardless of compatibility.
+
 .. _toolchain_zephyr_sdk_compatibility:
 
 Zephyr SDK version compatibility
