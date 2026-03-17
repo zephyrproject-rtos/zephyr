@@ -470,8 +470,6 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 	remainder = p->remainder;
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
-	radio_tmr_aa_capture();
-
 	hcto = remainder_us +
 	       ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US + lll->window_widening_event_us)
 		<< 1) +
@@ -481,7 +479,8 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 	hcto += radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
 	radio_tmr_hcto_configure(hcto);
 
-	radio_tmr_end_capture();
+	/* capture aa to have aux_offset calculated for chain PDUs */
+	radio_tmr_aa_capture();
 
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
@@ -757,10 +756,8 @@ static void isr_aux_setup(void *param)
 	hcto += addr_us_get(phy_aux);
 	radio_tmr_hcto_configure_abs(hcto);
 
-	/* capture end of Rx-ed PDU, extended scan to schedule auxiliary
-	 * channel chaining, create connection or to create periodic sync.
-	 */
-	radio_tmr_end_capture();
+	/* capture aa to have aux_offset calculated for chain PDUs */
+	radio_tmr_aa_capture();
 
 	/* scanner always measures RSSI */
 	radio_rssi_measure();
@@ -832,9 +829,17 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 			ftr->rssi = (rssi_ready) ? radio_rssi_get() :
 						   BT_HCI_LE_RSSI_NOT_AVAILABLE;
 			ftr->ticks_anchor = radio_tmr_start_get();
-			ftr->radio_end_us = radio_tmr_end_get() -
-					    radio_rx_chain_delay_get(lll->phy,
-								     phy_flags_rx);
+
+			uint32_t aa_delay_us;
+			uint32_t aa_us;
+
+			aa_us = radio_tmr_aa_get();
+			aa_delay_us = radio_rx_chain_delay_get(lll->phy, phy_flags_rx);
+			aa_delay_us += addr_us_get(lll->phy);
+			LL_ASSERT_MSG(aa_us >= aa_delay_us, "aa_us %u < aa_delay_us %u", aa_us,
+				      aa_delay_us);
+
+			ftr->radio_end_us = aa_us - aa_delay_us;
 			ftr->phy_flags = phy_flags_rx;
 			ftr->sync_status = status;
 			ftr->sync_rx_enabled = lll->is_rx_enabled;
