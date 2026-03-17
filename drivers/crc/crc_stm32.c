@@ -149,39 +149,46 @@ static int crc_stm32_update(const struct device *dev, struct crc_ctx *ctx, const
 	}
 
 #if defined(CONFIG_CRC_STM32_DMA)
-	struct crc_stm32_data *data = dev->data;
-	int ret;
+	/*
+	 * Perform a DMA transfer if the buffer size is
+	 * as large as threshold specified in Kconfig.
+	 */
+	if (bufsize >= CONFIG_CRC_STM32_DMA_THRESHOLD) {
+		struct crc_stm32_data *data = dev->data;
+		int ret;
 
-	/* Ensure buffer contents are visible by DMA */
-	sys_cache_data_flush_range((void *)buffer, bufsize);
+		/* Ensure buffer contents are visible by DMA */
+		sys_cache_data_flush_range((void *)buffer, bufsize);
 
-	k_sem_reset(&data->dma_sync);
+		k_sem_reset(&data->dma_sync);
 
-	ret = dma_reload(config->dmac, config->dma_channel,
-		(uintptr_t)buffer, (uintptr_t)&config->base->DR, bufsize);
-	if (ret != 0) {
-		LOG_ERR("dma_reload() failed: %d", ret);
-		return ret;
-	}
+		ret = dma_reload(config->dmac, config->dma_channel,
+			(uintptr_t)buffer, (uintptr_t)&config->base->DR, bufsize);
+		if (ret != 0) {
+			LOG_ERR("dma_reload() failed: %d", ret);
+			return ret;
+		}
 
-	/* Wait until DMA transfer is complete */
-	k_sem_take(&data->dma_sync, K_FOREVER);
+		/* Wait until DMA transfer is complete */
+		k_sem_take(&data->dma_sync, K_FOREVER);
 
-	if (data->dma_transfer_status != DMA_STATUS_COMPLETE) {
-		LOG_ERR("DMA transfer failure (status=%d)", data->dma_transfer_status);
+		if (data->dma_transfer_status != DMA_STATUS_COMPLETE) {
+			LOG_ERR("DMA transfer failure (status=%d)", data->dma_transfer_status);
 
-		/* Abort CRC computation and release device in case of failure */
-		crc_stm32_release(dev, ctx);
+			/* Abort CRC computation and release device in case of failure */
+			crc_stm32_release(dev, ctx);
 
-		return -EIO;
-	}
-#else
+			return -EIO;
+		}
+
+		return 0;
+	} /* else: perform a busy CPU copy */
+#endif /* CONFIG_CRC_STM32_DMA */
 	const uint8_t *buf = buffer;
 
 	for (size_t i = 0; i < bufsize; i++) {
 		LL_CRC_FeedData8(config->base, buf[i]);
 	}
-#endif /* CONFIG_CRC_STM32_DMA */
 
 	return 0;
 }
