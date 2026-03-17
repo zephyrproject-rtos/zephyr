@@ -131,8 +131,7 @@ struct tcpc_chip_info {
  * @retval 0 on success
  * @retval -EIO on failure
  */
-typedef int (*tcpc_vconn_control_cb_t)(const struct device *tcpc_dev,
-				       const struct device *usbc_dev,
+typedef int (*tcpc_vconn_control_cb_t)(const struct device *tcpc_dev, const struct device *usbc_dev,
 				       enum tc_cc_polarity pol, bool enable);
 
 /**
@@ -147,8 +146,8 @@ typedef int (*tcpc_vconn_control_cb_t)(const struct device *tcpc_dev,
  * @retval -EIO on failure
  */
 typedef int (*tcpc_vconn_discharge_cb_t)(const struct device *tcpc_dev,
-					 const struct device *usbc_dev,
-					 enum tc_cc_polarity pol, bool enable);
+					 const struct device *usbc_dev, enum tc_cc_polarity pol,
+					 bool enable);
 
 /**
  * @brief Callback type for handling TCPC alert events

@@ -71,13 +71,15 @@ static void dump_sink_request_rdo(const uint32_t rdo)
 	LOG_INF("\tNo USB Suspend:\t\t %d", request.fixed.no_usb_suspend);
 	LOG_INF("\tUnchunk Ext MSG Support: %d", request.fixed.unchunked_ext_msg_supported);
 	LOG_INF("\tOperating Current:\t %d mA",
-			PD_CONVERT_FIXED_PDO_CURRENT_TO_MA(request.fixed.operating_current));
+		PD_CONVERT_FIXED_PDO_CURRENT_TO_MA(request.fixed.operating_current));
 	if (request.fixed.giveback) {
 		LOG_INF("\tMax Operating Current:\t %d mA",
-		PD_CONVERT_FIXED_PDO_CURRENT_TO_MA(request.fixed.min_or_max_operating_current));
+			PD_CONVERT_FIXED_PDO_CURRENT_TO_MA(
+				request.fixed.min_or_max_operating_current));
 	} else {
 		LOG_INF("\tMin Operating Current:\t %d mA",
-		PD_CONVERT_FIXED_PDO_CURRENT_TO_MA(request.fixed.min_or_max_operating_current));
+			PD_CONVERT_FIXED_PDO_CURRENT_TO_MA(
+				request.fixed.min_or_max_operating_current));
 	}
 }
 
@@ -85,8 +87,7 @@ static void dump_sink_request_rdo(const uint32_t rdo)
 /**
  * @brief PE calls this function when it needs to set the Rp on CC
  */
-int port0_policy_cb_get_src_rp(const struct device *dev,
-			       enum tc_rp_value *rp)
+int port0_policy_cb_get_src_rp(const struct device *dev, enum tc_rp_value *rp)
 {
 	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
@@ -136,8 +137,8 @@ int port0_policy_cb_vconn_en(const struct device *tcpc_dev, const struct device 
  * @brief PE calls this function to get the Source Caps that will be sent
  *	  to the Sink
  */
-int port0_policy_cb_get_src_caps(const struct device *dev,
-			const uint32_t **pdos, uint32_t *num_pdos)
+int port0_policy_cb_get_src_caps(const struct device *dev, const uint32_t **pdos,
+				 uint32_t *num_pdos)
 {
 	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
@@ -151,7 +152,7 @@ int port0_policy_cb_get_src_caps(const struct device *dev,
  * @brief PE calls this function to verify that a Sink's request if valid
  */
 static enum usbc_snk_req_reply_t port0_policy_cb_check_sink_request(const struct device *dev,
-					const uint32_t request_msg)
+								    const uint32_t request_msg)
 {
 	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 	union pd_fixed_supply_pdo_source pdo;
@@ -194,7 +195,6 @@ static bool port0_policy_cb_is_ps_ready(const struct device *dev)
 {
 	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
-
 	/* Return true to inform that the Power Supply is ready */
 	return dpm_data->ps_ready;
 }
@@ -204,7 +204,7 @@ static bool port0_policy_cb_is_ps_ready(const struct device *dev)
  *	  valid
  */
 static bool port0_policy_cb_present_contract_is_valid(const struct device *dev,
-					const uint32_t present_contract)
+						      const uint32_t present_contract)
 {
 	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 	union pd_fixed_supply_pdo_source pdo;
@@ -232,8 +232,7 @@ static bool port0_policy_cb_present_contract_is_valid(const struct device *dev,
 /* usbc.rst callbacks end */
 
 /* usbc.rst notify start */
-static void port0_notify(const struct device *dev,
-			      const enum usbc_policy_notify_t policy_notify)
+static void port0_notify(const struct device *dev, const enum usbc_policy_notify_t policy_notify)
 {
 	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
@@ -281,8 +280,7 @@ static void port0_notify(const struct device *dev,
 /* usbc.rst notify end */
 
 /* usbc.rst check start */
-bool port0_policy_check(const struct device *dev,
-			const enum usbc_policy_check_t policy_check)
+bool port0_policy_check(const struct device *dev, const enum usbc_policy_check_t policy_check)
 {
 	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
@@ -312,7 +310,6 @@ bool port0_policy_check(const struct device *dev,
 	default:
 		/* Reject all other policy checks */
 		return false;
-
 	}
 }
 /* usbc.rst check end */
@@ -356,7 +353,7 @@ int main(void)
 	usbc_set_policy_cb_is_ps_ready(usbc_port0, port0_policy_cb_is_ps_ready);
 	/* Register Policy callback to check if Present Contract is still valid */
 	usbc_set_policy_cb_present_contract_is_valid(usbc_port0,
-				port0_policy_cb_present_contract_is_valid);
+						     port0_policy_cb_present_contract_is_valid);
 
 	/* usbc.rst register end */
 
