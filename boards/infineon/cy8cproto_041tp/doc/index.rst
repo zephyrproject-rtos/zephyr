@@ -3,19 +3,20 @@
 Overview
 ********
 
-The PSOC™ 4100T Plus evaluation kit enables you to evaluate and develop applications using the PSOC™ 4100T Plus microcontroller, part of Infineon’s PSOC™ 4 family.
-The device integrates an Arm Cortex-M0 CPU running up to 48 MHz, combining programmable analog and digital subsystems to support flexible mixed-signal designs. It features up to 128 KB Flash and 16 KB SRAM, and includes a wide range of configurable peripherals such as SAR ADC, comparators, opamps (CTBm), CapSense™ capacitive touch sensing, and TCPWM for timer/counter/PWM functionality.
+The PSOC™ 4100T Plus CAPSENSE™ Prototyping Kit (CY8CPROTO-041TP) enables you to evaluate and develop applications using the PSOC™ 4100T Plus microcontroller, part of Infineon’s PSOC™ 4 family.
+The device integrates an Arm Cortex-M0 CPU running up to 48 MHz, combining programmable analog and digital subsystems to support flexible mixed-signal designs. It features up to 128 KB Flash and 16 KB SRAM, and includes a wide range of configurable peripherals such as SAR ADC, CAPSENSE™ capacitive touch sensing, and TCPWM for timer/counter/PWM functionality.
 
-32-bit MCU subsystem
-- 48-MHz Arm® Cortex®-M0+ CPU with single-cycle multiply
-- Up to 128 KB of flash with read accelerator
-- Up to 32 KB of SRAM
-- Direct memory access (DMA)
-- Low-power 1.71 V to 5.5 V operation
-- Deep sleep mode with 6 μA always-on touch sensing
-- Active touch detection and tracking with 200 μA (average)
-- Real Time clock-SW is available
-- Power supply: 3.3 V or 5 V operation
+* 32-bit MCU subsystem
+
+    * 48-MHz Arm® Cortex®-M0+ CPU with single-cycle multiply
+    * Up to 128 KB of flash with read accelerator
+    * Up to 32 KB of SRAM
+    * Direct memory access (DMA)
+    * Low-power 1.71 V to 5.5 V operation
+    * Deep sleep mode with 6 μA always-on touch sensing
+    * Active touch detection and tracking with 200 μA (average)
+    * Real Time clock-SW is available
+    * Power supply: 3.3 V or 5 V operation
 
 Programming and Debugging
 *************************
@@ -81,13 +82,35 @@ The path to the installed Infineon OpenOCD executable must be available to the `
 
 Once the gdb console starts after executing the west debug command, you may now set breakpoints and perform other standard GDB debugging.
 
+Documentation
+=============
+
+The following documentation is available for the CY8CPROTO-041TP board:
+
+* Quick Start Guide: `cy8cproto_041tp Quick Start Guide`_
+* User Guide: `cy8cproto_041tp User Guide`_
+* Product Brief: `cy8cproto_041tp Product Brief`_
+* Release Notes: `cy8cproto_041tp Release Notes`_
+
 References
 **********
 
 .. target-notes::
 
 .. _cy8cproto_041tp Board Website:
-   https://www.infineon.com/evaluation-board/CY8CPROTO-041TP
+    https://www.infineon.com/evaluation-board/CY8CPROTO-041TP
+
+.. _cy8cproto_041tp Quick Start Guide:
+    https://www.infineon.com/content/dam/infineon/row/public/documents/30/68/infineon-cy8cproto-041tp-qsg-gettingstarted-en.pdf
+
+.. _cy8cproto_041tp User Guide:
+    https://www.infineon.com/content/dam/infineon/row/public/documents/30/44/infineon-cy8cproto-041tp-ug-usermanual-en.pdf
+
+.. _cy8cproto_041tp Product Brief:
+    https://www.infineon.com/content/dam/infineon/row/public/documents/30/45/infineon-cy8cproto-041tp-product-brief-productbrief-en.pdf
+
+.. _cy8cproto_041tp Release Notes:
+    https://www.infineon.com/content/dam/infineon/row/public/documents/30/44/infineon-cy8cproto-041tp-release-notes-usermanual-en.pdf
 
 .. _ModusToolbox:
     https://www.infineon.com/design-resources/development-tools/sdk/modustoolbox-software
