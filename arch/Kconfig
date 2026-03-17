@@ -135,6 +135,8 @@ config RISCV
 	select ARCH_HAS_DIRECTED_IPIS
 	select BARRIER_OPERATIONS_BUILTIN if RISCV_ISA_BASE_FENCE
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
+	select ARCH_HAS_STACK_CANARIES_TLS
+	select STACK_CANARIES_TLS_PREPEND if STACK_CANARIES_TLS
 	depends on DT_HAS_RISCV_ENABLED
 	help
 	  RISCV architecture
@@ -364,6 +366,7 @@ config KOBJECT_TEXT_AREA
 	default 1024 if UBSAN
 	default 512 if COVERAGE_GCOV
 	default 512 if NO_OPTIMIZATIONS
+	default 512 if STACK_CANARIES_ALL
 	default 512 if STACK_CANARIES && RISCV
 	default 256
 	depends on USERSPACE
@@ -835,6 +838,31 @@ config ARCH_HAS_SUSPEND_TO_RAM
 
 config ARCH_HAS_STACK_CANARIES_TLS
 	bool
+
+config STACK_CANARIES_TLS_PREPEND
+	bool
+	depends on STACK_CANARIES_TLS
+	help
+	  The stack canary (.stack_chk.guard) is placed as the first section
+	  in the TLS block at offset 0, before .tdata/.tbss. Required on
+	  architectures where the compiler accesses the canary via a fixed
+	  offset from the TLS base pointer (e.g. RISC-V).
+
+config STACK_CANARIES_TLS_GUARD_REG
+	string
+	default "tp" if RISCV
+	depends on STACK_CANARIES_TLS_PREPEND
+	help
+	  The register used as the TLS base pointer for stack canary access.
+	  Sets -mstack-protector-guard-reg=<reg>.
+
+config STACK_CANARIES_TLS_GUARD_OFFSET
+	int
+	default 0
+	depends on STACK_CANARIES_TLS_PREPEND
+	help
+	  The byte offset from the TLS base register to the stack canary.
+	  Sets -mstack-protector-guard-offset=<offset>.
 
 config ARCH_SUPPORTS_MEM_MAPPED_STACKS
 	bool

@@ -45,6 +45,28 @@ SECTION_FUNC(reset, __reset)
 
 /* use ABI name of registers for the sake of simplicity */
 
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+/*
+ * Allocate a TLS area on the current stack, initialize it via
+ * arch_riscv_early_tls_stack_update(), set tp to point to it, then
+ * restore the original stack pointer.
+ */
+.macro riscv_tls_init_early
+	mv s0, sp
+
+	call z_tls_data_size_asm
+	beqz a0, tls_skip\@
+	mv s1, a0
+	sub sp, sp, a0
+
+	mv a0, s0	/* arg0: stack_top */
+	mv a1, s1	/* arg1: tls_size  */
+	call arch_riscv_early_tls_stack_update
+	mv sp, s0
+tls_skip\@:
+.endm
+#endif /* CONFIG_THREAD_LOCAL_STORAGE */
+
 /*
  * Remainder of asm-land initialization code before we can jump into
  * the C domain
@@ -93,6 +115,11 @@ aa_loop:
 	la sp, z_interrupt_stacks
 	li t0, __z_interrupt_stack_SIZEOF
 	add sp, sp, t0
+
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	/* Initialize tp early so TLS-based stack canaries work before z_prep_c */
+	riscv_tls_init_early
+#endif
 
 #ifdef CONFIG_RISCV_SMRNMI_ENABLE_NMI_DELIVERY
 	csrs CSR_MNSTATUS, MNSTATUS_NMIE
@@ -173,6 +200,13 @@ wait_secondary_wake_flag:
 	/* Set up stack */
 	la t0, riscv_cpu_sp
 	lr sp, 0(t0)
+
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	/* Initialize tp early so TLS-based stack canaries work on secondary CPUs */
+	mv s2, a0		/* save hartid across TLS init calls */
+	riscv_tls_init_early
+	mv a0, s2		/* restore hartid */
+#endif
 
 	la t0, riscv_cpu_boot_flag
 	li t1, 1
