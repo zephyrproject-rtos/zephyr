@@ -24,7 +24,7 @@
 
 	adc0_default: adc0_default {
 		group {
-			pinmux = <AGPIO_ULP1>;
+			pinmux = <ADC_TOPGPIO_HP28>;
 		};
 	};
 };
