@@ -181,6 +181,56 @@ static void main_ext_adv_advertiser(void)
 	TEST_PASS("Extended advertiser passed");
 }
 
+static void main_ext_adv_advertiser_5x(void)
+{
+	static const struct bt_le_ext_adv_start_param adv_start_param = {
+		.timeout = 0,
+		.num_events = 1,
+	};
+	struct bt_le_ext_adv *ext_adv;
+	struct bt_data ad;
+	int err;
+
+	common_init();
+	create_ext_adv_set(&ext_adv, false);
+
+	/* Broadcast the device name */
+	ad.type = BT_DATA_NAME_COMPLETE;
+	ad.data_len = strlen(CONFIG_BT_DEVICE_NAME);
+	ad.data = (const uint8_t *)CONFIG_BT_DEVICE_NAME;
+	err = bt_le_ext_adv_set_data(ext_adv, &ad, 1, NULL, 0);
+	if (err) {
+		printk("Failed to set advertising data: %d\n", err);
+		return;
+	}
+
+	/* Small delay to allow scanner to setup */
+	k_sleep(K_MSEC(10));
+
+	/* Send exactly 5 extended advertising reports */
+	for (int i = 0; i < 5; i++) {
+		printk("Starting advertising set %d\n", i);
+		err = bt_le_ext_adv_start(ext_adv, &adv_start_param);
+		if (err) {
+			printk("Failed to start advertising set %d: %d\n", i, err);
+			return;
+		}
+		/* Wait 1 second between reports */
+		k_sleep(K_MSEC(1000));
+	}
+
+	/* Delete the advertising set */
+	err = bt_le_ext_adv_delete(ext_adv);
+	if (err) {
+		printk("Failed to delete advertising data: %d\n", err);
+		return;
+	}
+
+	ext_adv = NULL;
+
+	TEST_PASS("Extended advertiser passed");
+}
+
 static void adv_connect_and_disconnect_cycle(void)
 {
 	struct bt_le_ext_adv *ext_adv;
@@ -257,6 +307,12 @@ static const struct bst_test_instance ext_adv_advertiser[] = {
 		.test_descr = "Basic extended advertising test. "
 			      "Will just start extended advertising.",
 		.test_main_f = main_ext_adv_advertiser
+	},
+	{
+		.test_id = "ext_adv_advertiser_5x",
+		.test_descr = "Basic extended advertising test. "
+			      "Will advertise 5x times with a 1 second gap",
+		.test_main_f = main_ext_adv_advertiser_5x
 	},
 	{
 		.test_id = "ext_adv_conn_advertiser",

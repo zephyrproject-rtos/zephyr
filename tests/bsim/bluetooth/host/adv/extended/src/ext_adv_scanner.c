@@ -129,12 +129,12 @@ static void common_init(void)
 	printk("Bluetooth initialized\n");
 }
 
-static void start_scan(void)
+static void start_scan(const struct bt_le_scan_param *param)
 {
 	int err;
 
 	printk("Start scanning...");
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+	err = bt_le_scan_start(param ? param : BT_LE_SCAN_PASSIVE, NULL);
 	if (err) {
 		TEST_FAIL("Failed to start scan: %d", err);
 		return;
@@ -145,7 +145,7 @@ static void start_scan(void)
 static void main_ext_adv_scanner(void)
 {
 	common_init();
-	start_scan();
+	start_scan(NULL);
 
 	printk("Waiting for extended advertisements...\n");
 
@@ -154,9 +154,35 @@ static void main_ext_adv_scanner(void)
 	TEST_PASS("Extended adv scanner passed");
 }
 
+static void main_ext_adv_scanner_5x(void)
+{
+	/* 100% duty cycle scanning, no filtering */
+	static const struct bt_le_scan_param scan_param = {
+		.type = BT_LE_SCAN_TYPE_PASSIVE,
+		.options = BT_LE_SCAN_OPT_NONE,
+		.interval = BT_GAP_SCAN_FAST_INTERVAL_MIN,
+		.window = BT_GAP_SCAN_FAST_WINDOW,
+	};
+
+	common_init();
+
+	start_scan(&scan_param);
+
+	printk("Waiting for 5x extended advertisements...\n");
+
+	for (int i = 0; i < 5; i++) {
+		WAIT_FOR_FLAG(flag_ext_adv_seen);
+		atomic_clear(&flag_ext_adv_seen);
+		printk("Observed advertising set %d\n", i);
+	}
+
+	TEST_PASS("Extended adv scanner 5x passed");
+}
+
+
 static void scan_connect_and_disconnect_cycle(void)
 {
-	start_scan();
+	start_scan(NULL);
 
 	printk("Waiting for extended advertisements...\n");
 	WAIT_FOR_FLAG(flag_ext_adv_seen);
@@ -182,7 +208,7 @@ static void main_ext_adv_conn_scanner(void)
 
 	scan_connect_and_disconnect_cycle();
 
-	start_scan();
+	start_scan(NULL);
 	printk("Waiting to extended advertisements (again)...\n");
 	WAIT_FOR_FLAG(flag_ext_adv_seen);
 
@@ -198,7 +224,7 @@ static void main_ext_adv_conn_scanner_x5(void)
 		scan_connect_and_disconnect_cycle();
 	}
 
-	start_scan();
+	start_scan(NULL);
 	printk("Waiting to extended advertisements (again)...\n");
 	WAIT_FOR_FLAG(flag_ext_adv_seen);
 
@@ -211,6 +237,12 @@ static const struct bst_test_instance ext_adv_scanner[] = {
 		.test_descr = "Basic extended advertising scanning test. "
 			      "Will just scan an extended advertiser.",
 		.test_main_f = main_ext_adv_scanner
+	},
+	{
+		.test_id = "ext_adv_scanner_5x",
+		.test_descr = "Basic extended advertising scanning test. "
+			      "Expects to receive 5x extended advertising reports",
+		.test_main_f = main_ext_adv_scanner_5x
 	},
 	{
 		.test_id = "ext_adv_conn_scanner",
