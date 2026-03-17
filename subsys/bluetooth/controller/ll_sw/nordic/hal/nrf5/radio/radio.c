@@ -492,6 +492,11 @@ uint32_t radio_rx_ready_delay_get(uint8_t phy, uint8_t flags)
 	return hal_radio_rx_ready_delay_us_get(phy, flags);
 }
 
+uint32_t radio_rx_address_delay_get(uint8_t phy, uint8_t flags)
+{
+	return hal_radio_rx_address_delay_us_get(phy, flags);
+}
+
 uint32_t radio_rx_chain_delay_get(uint8_t phy, uint8_t flags)
 {
 	return hal_radio_rx_chain_delay_us_get(phy, flags);
