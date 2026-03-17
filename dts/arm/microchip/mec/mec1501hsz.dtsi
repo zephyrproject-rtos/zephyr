@@ -77,6 +77,7 @@
 			clk32kmon-valid-min = <4>;
 			xtal-enable-delay-ms = <300>;
 			pll-lock-timeout-ms = <30>;
+			hibtimer-handle = <&hibtimer1>;
 			#clock-cells = <3>;
 		};
 
@@ -358,15 +359,17 @@
 		};
 
 		hibtimer0: timer@40009800 {
+			compatible = "microchip,xec-hibtimer";
 			reg = <0x40009800 0x20>;
 			interrupts = <112 0>;
-			girqs = <23 16>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 16)>;
 		};
 
 		hibtimer1: timer@40009820 {
+			compatible = "microchip,xec-hibtimer";
 			reg = <0x40009820 0x20>;
 			interrupts = <113 0>;
-			girqs = <23 17>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 17)>;
 		};
 
 		ps2_0: ps2@40009000 {
@@ -579,6 +582,12 @@
 			interrupts = <85 0>;
 			girqs = <17 15>;
 			pcrs = <3 18>;
+			status = "disabled";
+		};
+
+		glblcfg0: glblcfg@400fff00 {
+			reg = <0x400fff00 0x40>;
+			pcrs = <2 12>;
 			status = "disabled";
 		};
 	};
