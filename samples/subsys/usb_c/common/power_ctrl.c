@@ -84,26 +84,22 @@ static int power_ctrl_init(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&cfg->source_en)) {
-		LOG_ERR("Error: Source Enable device %s is not ready",
-			cfg->source_en.port->name);
+		LOG_ERR("Error: Source Enable device %s is not ready", cfg->source_en.port->name);
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&cfg->dcdc_en)) {
-		LOG_ERR("Error: DCDC Enable device %s is not ready",
-			cfg->dcdc_en.port->name);
+		LOG_ERR("Error: DCDC Enable device %s is not ready", cfg->dcdc_en.port->name);
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&cfg->vconn1_en)) {
-		LOG_ERR("Error: VCONN1 Enable device %s is not ready",
-			cfg->vconn1_en.port->name);
+		LOG_ERR("Error: VCONN1 Enable device %s is not ready", cfg->vconn1_en.port->name);
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&cfg->vconn2_en)) {
-		LOG_ERR("Error: VCONN2 Enable device %s is not ready",
-			cfg->vconn2_en.port->name);
+		LOG_ERR("Error: VCONN2 Enable device %s is not ready", cfg->vconn2_en.port->name);
 		return -ENODEV;
 	}
 
@@ -114,29 +110,29 @@ static int power_ctrl_init(const struct device *dev)
 
 	ret = gpio_pin_configure_dt(&cfg->source_en, GPIO_OUTPUT);
 	if (ret != 0) {
-		LOG_ERR("Error %d: failed to configure Source Enable device %s pin %d",
-			ret, cfg->source_en.port->name, cfg->source_en.pin);
+		LOG_ERR("Error %d: failed to configure Source Enable device %s pin %d", ret,
+			cfg->source_en.port->name, cfg->source_en.pin);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&cfg->dcdc_en, GPIO_OUTPUT);
 	if (ret != 0) {
-		LOG_ERR("Error %d: failed to configure DCDC Enable device %s pin %d",
-			ret, cfg->dcdc_en.port->name, cfg->dcdc_en.pin);
+		LOG_ERR("Error %d: failed to configure DCDC Enable device %s pin %d", ret,
+			cfg->dcdc_en.port->name, cfg->dcdc_en.pin);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&cfg->vconn1_en, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
 	if (ret != 0) {
-		LOG_ERR("Error %d: failed to configure VCONN1 Enable device %s pin %d",
-			ret, cfg->vconn1_en.port->name, cfg->vconn1_en.pin);
+		LOG_ERR("Error %d: failed to configure VCONN1 Enable device %s pin %d", ret,
+			cfg->vconn1_en.port->name, cfg->vconn1_en.pin);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&cfg->vconn2_en, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
 	if (ret != 0) {
-		LOG_ERR("Error %d: failed to configure VCONN2 Enable device %s pin %d",
-			ret, cfg->vconn2_en.port->name, cfg->vconn2_en.pin);
+		LOG_ERR("Error %d: failed to configure VCONN2 Enable device %s pin %d", ret,
+			cfg->vconn2_en.port->name, cfg->vconn2_en.pin);
 		return ret;
 	}
 
@@ -164,15 +160,15 @@ static int power_ctrl_init(const struct device *dev)
 }
 
 #define PWRCTRL_INIT(inst)                                                                         \
-	static const struct power_ctrl_config power_ctrl_config_##inst = {                        \
-		.source_en = GPIO_DT_SPEC_INST_GET(inst, source_en_gpios),                        \
-		.vconn1_en = GPIO_DT_SPEC_INST_GET(inst, vconn1_en_gpios),                        \
-		.vconn2_en = GPIO_DT_SPEC_INST_GET(inst, vconn2_en_gpios),                        \
-		.dcdc_en = GPIO_DT_SPEC_INST_GET_OR(inst, dcdc_en_gpios, {0}),                    \
-		.pwm_ctl = PWM_DT_SPEC_INST_GET_OR(inst, {0}),                                    \
+	static const struct power_ctrl_config power_ctrl_config_##inst = {                         \
+		.source_en = GPIO_DT_SPEC_INST_GET(inst, source_en_gpios),                         \
+		.vconn1_en = GPIO_DT_SPEC_INST_GET(inst, vconn1_en_gpios),                         \
+		.vconn2_en = GPIO_DT_SPEC_INST_GET(inst, vconn2_en_gpios),                         \
+		.dcdc_en = GPIO_DT_SPEC_INST_GET_OR(inst, dcdc_en_gpios, {0}),                     \
+		.pwm_ctl = PWM_DT_SPEC_INST_GET_OR(inst, {0}),                                     \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, power_ctrl_init, NULL, NULL, &power_ctrl_config_##inst,       \
+	DEVICE_DT_INST_DEFINE(inst, power_ctrl_init, NULL, NULL, &power_ctrl_config_##inst,        \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PWRCTRL_INIT)
