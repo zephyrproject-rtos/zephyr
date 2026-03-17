@@ -8,23 +8,25 @@
 
 / {};
 
+/*
+ * Use 32KHZ_IN pin as the 32KHz clock source with no debug
+ * pinctrl-0 = <&clk_32khz_in_gpio165>;
+ *
+ * Use 32KHZ_IN pin as the 32KHz clock source with debug
+ * pinctrl-0 = <&clk_32khz_in_gpio165 &tst_clk_out_gpio060 &clk_32khz_out_gpio221>;
+ *
+ * MEC15xx hardware uses the same 32KHz source for both PLL and peripherals.
+ * pll-32-src and periph-32k-src must be set to the same clock source!
+ * MEC15xx does not have clock monitor hardware.
+ */
 &pcr {
 	status = "okay";
-	pll-32k-src = <MCHP_XEC_PLL_CLK32K_SRC_SIL_OSC>;
-	periph-32k-src = <MCHP_XEC_PERIPH_CLK32K_SRC_SO_SO>;
-	xtal-single-ended;
-	internal-osc-disable;
+	pll-32k-src = <MCHP_XEC_PLL_CLK32K_SRC_XTAL>;
+	periph-32k-src = <MCHP_XEC_PERIPH_CLK32K_SRC_XTAL_XTAL>;
+
+	hibtimer-handle = <&hibtimer1>;
 
 	/* debug only, not using 32KHZ_IN pin */
 	pinctrl-0 = <&tst_clk_out_gpio060 &clk_32khz_out_gpio221>;
-
-	/* 32KHZ_IN is a clock source and no debug */
-	/* pinctrl-0 = <&clk_32khz_in_gpio165>; */
-
-	/* 32KHZ_IN is a clock source with debug */
-	/* pinctrl-0 = <&clk_32khz_in_gpio165
-	 * &tst_clk_out_gpio060
-	 * &clk_32khz_out_gpio221>;
-	 */
 	pinctrl-names = "default";
 };
