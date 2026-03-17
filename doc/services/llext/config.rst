@@ -78,8 +78,8 @@ non-metadata (i.e., extension regions) by selecting
    :kconfig:option:`CONFIG_LLEXT_HEAP_MEMBLK` does not support
    :kconfig:option:`CONFIG_LLEXT_HEAP_DYNAMIC`.
 
-The heap will be split into two, the size of each sub-heap controlled by the
-following options:
+The heap will be split into two, with the size of each sub-heap controlled by
+the following options.
 
 :kconfig:option:`CONFIG_LLEXT_EXT_HEAP_SIZE`
 
