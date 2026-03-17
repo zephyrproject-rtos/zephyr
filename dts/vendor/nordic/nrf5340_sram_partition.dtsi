@@ -24,6 +24,13 @@
 			/* Secure image memory */
 			reg = <0x0 0x40000>;
 		};
+
+		sram0_offset_for_dfu: sram@2000 {
+			reg = <0x2000 DT_SIZE_K(440)>;
+			ranges = <0x0 0x2000 DT_SIZE_K(440)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
 	};
 
 	/*
