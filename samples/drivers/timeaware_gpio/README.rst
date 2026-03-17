@@ -19,7 +19,7 @@ Building and Running
 This application can be built and executed as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/misc/timeaware_gpio
+   :zephyr-app: samples/drivers/timeaware_gpio
    :board: intel_rpl_crb
    :host-os: unix
    :goals: build

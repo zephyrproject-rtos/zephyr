@@ -2568,9 +2568,9 @@ Documentation Infrastructure:
     - akanisetti
   files:
     - doc/hardware/peripherals/tgpio.rst
-    - drivers/misc/timeaware_gpio/
-    - include/zephyr/drivers/misc/timeaware_gpio/
-    - samples/drivers/misc/timeaware_gpio/
+    - drivers/timeaware_gpio/
+    - include/zephyr/drivers/timeaware_gpio.h
+    - samples/drivers/timeaware_gpio/
   labels:
     - "area: Time Aware GPIO"
   tests:
