@@ -456,10 +456,10 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 	remainder = p->remainder;
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
-	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * central event or extended scan to schedule auxiliary channel
-	 * reception.
-	 */
+	/* capture aa to have aux_offset calculated */
+	radio_tmr_aa_capture();
+
+	/* capture end of Rx-ed PDU, for initiator to calculate first central event */
 	radio_tmr_end_capture();
 
 	/* scanner always measures RSSI */
@@ -916,9 +916,10 @@ static void isr_done(void *param)
 	radio_rx_enable();
 #endif /* !HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
-	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * central event.
-	 */
+	/* capture aa to have aux_offset calculated */
+	radio_tmr_aa_capture();
+
+	/* capture end of Rx-ed PDU, for initiator to calculate first central event */
 	radio_tmr_end_capture();
 }
 
@@ -968,9 +969,10 @@ static void isr_window(void *param)
 	remainder_us = radio_tmr_start_now(0);
 #endif /* !CONFIG_BT_CENTRAL && !CONFIG_BT_CTLR_ADV_EXT */
 
-	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * central event.
-	 */
+	/* capture aa to have aux_offset calculated */
+	radio_tmr_aa_capture();
+
+	/* capture end of Rx-ed PDU, for initiator to calculate first central event */
 	radio_tmr_end_capture();
 
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
@@ -1611,10 +1613,17 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 				ftr = &(node_rx->rx_ftr);
 				ftr->param = lll;
 				ftr->ticks_anchor = radio_tmr_start_get();
-				ftr->radio_end_us =
-					radio_tmr_end_get() -
-					radio_rx_chain_delay_get(lll->phy,
-								 phy_flags_rx);
+
+				uint32_t aa_delay_us;
+				uint32_t aa_us;
+
+				aa_us = radio_tmr_aa_get();
+				aa_delay_us = radio_rx_chain_delay_get(lll->phy, phy_flags_rx);
+				aa_delay_us += addr_us_get(lll->phy);
+				LL_ASSERT_MSG(aa_us >= aa_delay_us, "aa_us %u < aa_delay_us %u",
+					      aa_us, aa_delay_us);
+
+				ftr->radio_end_us = aa_us - aa_delay_us;
 				ftr->phy_flags = phy_flags_rx;
 				ftr->aux_lll_sched =
 					lll_scan_aux_setup(pdu_adv_rx, lll->phy,
