@@ -1399,6 +1399,11 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 		reqdep *= (1 + addnl);
 	}
 
+	/* Allocate double fifo size for bulk endpoints to improve throughput */
+	if ((cfg->attributes & USB_EP_TRANSFER_TYPE_MASK) == USB_EP_TYPE_BULK) {
+		reqdep *= 2;
+	}
+
 	if (priv->dynfifosizing) {
 		if (priv->txf_set & ~BIT_MASK(ep_idx)) {
 			dwc2_unset_unused_fifo(dev);
