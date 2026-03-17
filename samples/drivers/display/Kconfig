@@ -10,6 +10,7 @@ source "Kconfig.zephyr"
 config SAMPLE_BUFFER_ADDR_ALIGN
 	int "The display buffer address alignment"
 	default 8 if 64BIT
+	default 8 if DISPLAY_MCUX_ELCDIF
 	default 4
 
 config SAMPLE_PITCH_ALIGN
