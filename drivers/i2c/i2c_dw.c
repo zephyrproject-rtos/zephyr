@@ -583,6 +583,7 @@ static void i2c_dw_isr(const struct device *port)
 		if (intr_stat.bits.rx_full) {
 			if (dw->state != I2C_DW_CMD_SEND) {
 				dw->state = I2C_DW_CMD_SEND;
+				dw->read_in_progress = false;
 				if (slave_cb->write_requested) {
 					slave_cb->write_requested(dw->slave_cfg);
 				}
