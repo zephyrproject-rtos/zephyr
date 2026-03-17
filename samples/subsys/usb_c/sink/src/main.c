@@ -12,7 +12,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-#define USBC_PORT0_NODE		DT_ALIAS(usbc_port0)
+#define USBC_PORT0_NODE DT_ALIAS(usbc_port0)
 
 BUILD_ASSERT(DT_ENUM_IDX(USBC_PORT0_NODE, power_role) == TC_ROLE_CAP_SINK,
 	     "Unsupported board: Only Sink device supported");
@@ -32,13 +32,11 @@ static struct port0_data_t {
 	int src_cap_cnt;
 	/* Power Supply Ready flag */
 	atomic_t ps_ready;
-} port0_data = {
-	.snk_caps = DT_PROP(USBC_PORT0_NODE, sink_pdos),
-	.snk_cap_cnt = DT_PROP_LEN(USBC_PORT0_NODE, sink_pdos),
-	.src_caps = {0},
-	.src_cap_cnt = 0,
-	.ps_ready = 0
-};
+} port0_data = {.snk_caps = DT_PROP(USBC_PORT0_NODE, sink_pdos),
+		.snk_cap_cnt = DT_PROP_LEN(USBC_PORT0_NODE, sink_pdos),
+		.src_caps = {0},
+		.src_cap_cnt = 0,
+		.ps_ready = 0};
 
 /* usbc.rst port data object end */
 
@@ -80,8 +78,7 @@ static uint32_t build_rdo(const struct port0_data_t *dpm_data)
 	return rdo.raw_value;
 }
 
-static void display_pdo(const int idx,
-			const uint32_t pdo_value)
+static void display_pdo(const int idx, const uint32_t pdo_value)
 {
 	union pd_fixed_supply_pdo_source pdo;
 
@@ -93,24 +90,16 @@ static void display_pdo(const int idx,
 	case PDO_FIXED: {
 		LOG_INF("\tType:              FIXED");
 		LOG_INF("\tCurrent:           %d",
-		       PD_CONVERT_FIXED_PDO_CURRENT_TO_MA(pdo.max_current));
-		LOG_INF("\tVoltage:           %d",
-		       PD_CONVERT_FIXED_PDO_VOLTAGE_TO_MV(pdo.voltage));
+			PD_CONVERT_FIXED_PDO_CURRENT_TO_MA(pdo.max_current));
+		LOG_INF("\tVoltage:           %d", PD_CONVERT_FIXED_PDO_VOLTAGE_TO_MV(pdo.voltage));
 		LOG_INF("\tPeak Current:      %d", pdo.peak_current);
-		LOG_INF("\tUchunked Support:  %d",
-		       pdo.unchunked_ext_msg_supported);
-		LOG_INF("\tDual Role Data:    %d",
-		       pdo.dual_role_data);
-		LOG_INF("\tUSB Comms:         %d",
-		       pdo.usb_comms_capable);
-		LOG_INF("\tUnconstrained Pwr: %d",
-		       pdo.unconstrained_power);
-		LOG_INF("\tUSB Suspend:       %d",
-		       pdo.usb_suspend_supported);
-		LOG_INF("\tDual Role Power:   %d",
-		       pdo.dual_role_power);
-	}
-	break;
+		LOG_INF("\tUchunked Support:  %d", pdo.unchunked_ext_msg_supported);
+		LOG_INF("\tDual Role Data:    %d", pdo.dual_role_data);
+		LOG_INF("\tUSB Comms:         %d", pdo.usb_comms_capable);
+		LOG_INF("\tUnconstrained Pwr: %d", pdo.unconstrained_power);
+		LOG_INF("\tUSB Suspend:       %d", pdo.usb_suspend_supported);
+		LOG_INF("\tDual Role Power:   %d", pdo.dual_role_power);
+	} break;
 	case PDO_BATTERY: {
 		union pd_battery_supply_pdo_source batt_pdo;
 
@@ -122,8 +111,7 @@ static void display_pdo(const int idx,
 			PD_CONVERT_BATTERY_PDO_VOLTAGE_TO_MV(batt_pdo.max_voltage));
 		LOG_INF("\tMax Power:   %d",
 			PD_CONVERT_BATTERY_PDO_POWER_TO_MW(batt_pdo.max_power));
-	}
-	break;
+	} break;
 	case PDO_VARIABLE: {
 		union pd_variable_supply_pdo_source var_pdo;
 
@@ -135,8 +123,7 @@ static void display_pdo(const int idx,
 			PD_CONVERT_VARIABLE_PDO_VOLTAGE_TO_MV(var_pdo.max_voltage));
 		LOG_INF("\tMax Current: %d",
 			PD_CONVERT_VARIABLE_PDO_CURRENT_TO_MA(var_pdo.max_current));
-	}
-	break;
+	} break;
 	case PDO_AUGMENTED: {
 		union pd_augmented_supply_pdo_source aug_pdo;
 
@@ -149,8 +136,7 @@ static void display_pdo(const int idx,
 		LOG_INF("\tMax Current:       %d",
 			PD_CONVERT_AUGMENTED_PDO_CURRENT_TO_MA(aug_pdo.max_current));
 		LOG_INF("\tPPS Power Limited: %d", aug_pdo.pps_power_limited);
-	}
-	break;
+	} break;
 	}
 }
 
@@ -166,9 +152,7 @@ static void display_source_caps(const struct device *dev)
 }
 
 /* usbc.rst callbacks start */
-static int port0_policy_cb_get_snk_cap(const struct device *dev,
-					    uint32_t **pdos,
-					    int *num_pdos)
+static int port0_policy_cb_get_snk_cap(const struct device *dev, uint32_t **pdos, int *num_pdos)
 {
 	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
@@ -178,9 +162,8 @@ static int port0_policy_cb_get_snk_cap(const struct device *dev,
 	return 0;
 }
 
-static void port0_policy_cb_set_src_cap(const struct device *dev,
-					     const uint32_t *pdos,
-					     const int num_pdos)
+static void port0_policy_cb_set_src_cap(const struct device *dev, const uint32_t *pdos,
+					const int num_pdos)
 {
 	struct port0_data_t *dpm_data;
 	int num;
@@ -209,8 +192,7 @@ static uint32_t port0_policy_cb_get_rdo(const struct device *dev)
 /* usbc.rst callbacks end */
 
 /* usbc.rst notify start */
-static void port0_notify(const struct device *dev,
-			      const enum usbc_policy_notify_t policy_notify)
+static void port0_notify(const struct device *dev, const enum usbc_policy_notify_t policy_notify)
 {
 	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
@@ -265,8 +247,7 @@ static void port0_notify(const struct device *dev,
 /* usbc.rst notify end */
 
 /* usbc.rst check start */
-bool port0_policy_check(const struct device *dev,
-			const enum usbc_policy_check_t policy_check)
+bool port0_policy_check(const struct device *dev, const enum usbc_policy_check_t policy_check)
 {
 	switch (policy_check) {
 	case CHECK_POWER_ROLE_SWAP:
@@ -284,7 +265,6 @@ bool port0_policy_check(const struct device *dev,
 	default:
 		/* Reject all other policy checks */
 		return false;
-
 	}
 }
 /* usbc.rst check end */

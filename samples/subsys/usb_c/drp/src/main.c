@@ -31,7 +31,6 @@ BUILD_ASSERT(DT_ENUM_IDX(USBC_PORT0_NODE, power_role) == TC_ROLE_CAP_DRP,
 #define PS_SOURCE_READY_BIT      2 /* Source: Voltage transition complete */
 #define PS_SINK_READY_BIT        3 /* Sink: Source has finished transition */
 
-
 /* usbc.rst port data object start */
 /**
  * @brief A structure that encapsulates Port data.

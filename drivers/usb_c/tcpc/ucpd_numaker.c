@@ -1857,8 +1857,7 @@ static int numaker_tcpc_vconn_discharge(const struct device *dev, bool enable)
 
 	/* Use DPM supplied VCONN discharge */
 	if (data->dpm.vconn_discharge_cb) {
-		return data->dpm.vconn_discharge_cb(dev, data->dpm.usbc_dev,
-						    polarity, enable);
+		return data->dpm.vconn_discharge_cb(dev, data->dpm.usbc_dev, polarity, enable);
 	}
 
 	/* Use GPIO VCONN discharge */
