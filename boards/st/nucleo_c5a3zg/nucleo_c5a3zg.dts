@@ -98,6 +98,10 @@
 	};
 };
 
+&lpdma1 {
+	status = "okay";
+};
+
 &lpuart1 {
 	pinctrl-0 = <&lpuart1_tx_pa3 &lpuart1_rx_pa2>;
 	pinctrl-names = "default";
