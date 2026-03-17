@@ -30,8 +30,8 @@ enum mchp_rom_hash_alg_id {
 	MCHP_ROM_HASH_ALG_MAX
 };
 
-#define MCHP_XEC_STRUCT_HASH_STATE_STRUCT_SIZE	8
-#define MCHP_XEC_STRUCT_HASH_STRUCT_SIZE	240
+#define MCHP_XEC_STRUCT_HASH_STATE_STRUCT_SIZE 8
+#define MCHP_XEC_STRUCT_HASH_STRUCT_SIZE       240
 
 struct mchphashstate {
 	uint32_t v[MCHP_XEC_STRUCT_HASH_STATE_STRUCT_SIZE / 4];
@@ -42,65 +42,64 @@ struct mchphash {
 };
 
 #define MCHP_XEC_ROM_API_BASE DT_REG_ADDR(DT_NODELABEL(rom_api))
-#define MCHP_XEC_ROM_API_ADDR(n)						\
+#define MCHP_XEC_ROM_API_ADDR(n)                                                                   \
 	(((uint32_t)(MCHP_XEC_ROM_API_BASE) + ((uint32_t)(n) * 4u)) | BIT(0))
 
 #define MCHP_XEC_ROM_HASH_CREATE_SHA224_ID 95
-#define mchp_xec_rom_hash_create_sha224						\
-	((int (*)(struct mchphash *)) MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_HASH_CREATE_SHA224_ID))
+#define mchp_xec_rom_hash_create_sha224                                                            \
+	((int (*)(struct mchphash *))MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_HASH_CREATE_SHA224_ID))
 
 #define MCHP_XEC_ROM_HASH_CREATE_SHA256_ID 96
-#define mchp_xec_rom_hash_create_sha256						\
-	((int (*)(struct mchphash *)) MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_HASH_CREATE_SHA256_ID))
+#define mchp_xec_rom_hash_create_sha256                                                            \
+	((int (*)(struct mchphash *))MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_HASH_CREATE_SHA256_ID))
 
 #define MCHP_XEC_ROM_HASH_CREATE_SHA384_ID 97
-#define mchp_xec_rom_hash_create_sha384						\
-	((int (*)(struct mchphash *)) MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_HASH_CREATE_SHA384_ID))
+#define mchp_xec_rom_hash_create_sha384                                                            \
+	((int (*)(struct mchphash *))MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_HASH_CREATE_SHA384_ID))
 
 #define MCHP_XEC_ROM_HASH_CREATE_SHA512_ID 98
-#define mchp_xec_rom_hash_create_sha512						\
-	((int (*)(struct mchphash *)) MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_HASH_CREATE_SHA512_ID))
-
+#define mchp_xec_rom_hash_create_sha512                                                            \
+	((int (*)(struct mchphash *))MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_HASH_CREATE_SHA512_ID))
 
 #define MCHP_XEC_ROM_HASH_INIT_STATE_ID 100
-#define mec172x_rom_hash_init_state						\
-	((void (*)(struct mchphash *, struct mchphashstate *, char *))		\
-		MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_HASH_INIT_STATE_ID))
+#define mec172x_rom_hash_init_state                                                                \
+	((void (*)(struct mchphash *, struct mchphashstate *, char *))MCHP_XEC_ROM_API_ADDR(       \
+		MCHP_XEC_ROM_HASH_INIT_STATE_ID))
 
 #define MCHP_XEC_ROM_HASH_RESUME_STATE_ID 101
-#define mchp_xec_rom_hash_resume_state						\
-	((void (*)(struct mchphash *, struct mchphashstate *))			\
-		MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_HASH_RESUME_STATE_ID))
+#define mchp_xec_rom_hash_resume_state                                                             \
+	((void (*)(struct mchphash *, struct mchphashstate *))MCHP_XEC_ROM_API_ADDR(               \
+		MCHP_XEC_ROM_HASH_RESUME_STATE_ID))
 
 #define MCHP_XEC_ROM_HASH_SAVE_STATE_ID 102
-#define mchp_xec_rom_hash_save_state						\
-	((int (*)(struct mchphash *)) MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_HASH_SAVE_STATE_ID))
+#define mchp_xec_rom_hash_save_state                                                               \
+	((int (*)(struct mchphash *))MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_HASH_SAVE_STATE_ID))
 
 #define MCHP_XEC_ROM_HASH_FEED_ID 103
-#define mchp_xec_rom_hash_feed							\
-	((int (*)(struct mchphash *, const uint8_t *, size_t))			\
-		MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_HASH_FEED_ID))
+#define mchp_xec_rom_hash_feed                                                                     \
+	((int (*)(struct mchphash *, const uint8_t *, size_t))MCHP_XEC_ROM_API_ADDR(               \
+		MCHP_XEC_ROM_HASH_FEED_ID))
 
 #define MCHP_XEC_ROM_HASH_DIGEST_ID 104
-#define mchp_xec_rom_hash_digest						\
-	((int (*)(struct mchphash *, char *)) MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_HASH_DIGEST_ID))
+#define mchp_xec_rom_hash_digest                                                                   \
+	((int (*)(struct mchphash *, char *))MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_HASH_DIGEST_ID))
 
 #define MCHP_XEC_ROM_HASH_WAIT_ID 105
-#define mec172x_rom_hash_wait							\
-	((int (*)(struct mchphash *)) MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_HASH_WAIT_ID))
+#define mec172x_rom_hash_wait                                                                      \
+	((int (*)(struct mchphash *))MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_HASH_WAIT_ID))
 
 #define MCHP_XEC_ROM_AH_DMA_INIT_ID 144
-#define mchp_xec_rom_ah_dma_init						\
-	((int (*)(uint8_t)) MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_AH_DMA_INIT_ID))
+#define mchp_xec_rom_ah_dma_init                                                                   \
+	((int (*)(uint8_t))MCHP_XEC_ROM_API_ADDR(MCHP_XEC_ROM_AH_DMA_INIT_ID))
 
-#define MCHP_ROM_AH_DMA_INIT_NO_RESET 0
+#define MCHP_ROM_AH_DMA_INIT_NO_RESET   0
 #define MCHP_ROM_AH_DMA_INIT_WITH_RESET 1
 
-#define MCHP_XEC_SYMCR_CAPS_SUPPORT	\
+#define MCHP_XEC_SYMCR_CAPS_SUPPORT                                                                \
 	(CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_NO_IV_PREFIX)
-#define MCHP_XEC_SYMCR_MAX_SESSION	1
-#define MCHP_XEC_STATE_BUF_SIZE 256
-#define MCHP_XEC_BLOCK_BUF_SIZE 128
+#define MCHP_XEC_SYMCR_MAX_SESSION 1
+#define MCHP_XEC_STATE_BUF_SIZE    256
+#define MCHP_XEC_BLOCK_BUF_SIZE    128
 
 struct xec_symcr_hash_session {
 	struct mchphash mhctx;
@@ -147,10 +146,10 @@ struct hash_alg_to_rom {
 };
 
 const struct hash_alg_to_rom hash_alg_tbl[] = {
-	{ CRYPTO_HASH_ALGO_SHA224, MCHP_ROM_HASH_ALG_SHA224 },
-	{ CRYPTO_HASH_ALGO_SHA256, MCHP_ROM_HASH_ALG_SHA256 },
-	{ CRYPTO_HASH_ALGO_SHA384, MCHP_ROM_HASH_ALG_SHA384 },
-	{ CRYPTO_HASH_ALGO_SHA512, MCHP_ROM_HASH_ALG_SHA512 },
+	{CRYPTO_HASH_ALGO_SHA224, MCHP_ROM_HASH_ALG_SHA224},
+	{CRYPTO_HASH_ALGO_SHA256, MCHP_ROM_HASH_ALG_SHA256},
+	{CRYPTO_HASH_ALGO_SHA384, MCHP_ROM_HASH_ALG_SHA384},
+	{CRYPTO_HASH_ALGO_SHA512, MCHP_ROM_HASH_ALG_SHA512},
 };
 
 static enum mchp_rom_hash_alg_id lookup_hash_alg(enum hash_algo algo)

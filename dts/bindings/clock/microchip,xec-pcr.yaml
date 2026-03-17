@@ -99,9 +99,10 @@ properties:
 
   xtal-monitor-max-ms:
     type: int
+    default: 400
     description: |
       Time interval in milliseconds the driver will check crystal is within
-      specified bounds (stable). A value of 0 (default) indicates infinite timeout.
+      specified bounds (stable).
 
   pll-lock-timeout-ms:
     type: int
@@ -140,4 +141,4 @@ properties:
 clock-cells:
   - regidx
   - bitpos
-  - domain
+  - clkid
