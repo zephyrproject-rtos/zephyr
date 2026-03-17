@@ -171,7 +171,7 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 	return 0;
 }
 
-int sntp_init(struct sntp_ctx *ctx, struct net_sockaddr *addr, net_socklen_t addr_len)
+int sntp_init(struct sntp_ctx *ctx, const struct net_sockaddr *addr, net_socklen_t addr_len)
 {
 	int ret;
 
@@ -283,7 +283,7 @@ void sntp_close(struct sntp_ctx *ctx)
 
 #ifdef CONFIG_NET_SOCKETS_SERVICE
 
-int sntp_init_async(struct sntp_ctx *ctx, struct net_sockaddr *addr, net_socklen_t addr_len,
+int sntp_init_async(struct sntp_ctx *ctx, const struct net_sockaddr *addr, net_socklen_t addr_len,
 		    const struct net_socket_service_desc *service)
 {
 	int ret;
