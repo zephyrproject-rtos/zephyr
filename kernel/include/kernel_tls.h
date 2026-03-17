@@ -26,10 +26,14 @@
  *
  * @return Total size of TLS data/bss areas
  */
-static inline size_t z_tls_data_size(void)
+static inline FUNC_NO_STACK_PROTECTOR size_t z_tls_data_size(void)
 {
-	return (size_t)(uintptr_t)__tdata_size +
-	       (size_t)(uintptr_t)__tbss_size;
+	size_t size = (size_t)(uintptr_t)__tdata_size + (size_t)(uintptr_t)__tbss_size;
+
+#if defined(CONFIG_STACK_CANARIES_TLS_PREPEND)
+	size += (size_t)(uintptr_t)__stack_chk_size;
+#endif
+	return size;
 }
 
 /**
@@ -40,13 +44,21 @@ static inline size_t z_tls_data_size(void)
  *
  * @param dest Pointer to destination
  */
-static inline void z_tls_copy(char *dest)
+static inline FUNC_NO_STACK_PROTECTOR void z_tls_copy(char *dest)
 {
+#if defined(CONFIG_STACK_CANARIES_TLS_PREPEND)
+	/* .stack_chk.guard precedes .tdata in the TLS block (see
+	 * thread-local-storage.ld), so both are copied in one memcpy.
+	 */
+	memcpy(dest, __stack_chk_start,
+	       (size_t)(uintptr_t)__stack_chk_size + (size_t)(uintptr_t)__tdata_size);
+	dest += (size_t)(uintptr_t)__stack_chk_size + (size_t)(uintptr_t)__tdata_size;
+#else
 	/* Copy initialized data (tdata) */
 	memcpy(dest, __tdata_start, (size_t)(uintptr_t)__tdata_size);
-
-	/* Clear BSS data (tbss) */
 	dest += (size_t)(uintptr_t)__tdata_size;
+#endif
+	/* Clear BSS data (tbss) */
 	memset(dest, 0, (size_t)(uintptr_t)__tbss_size);
 }
 
