@@ -1135,6 +1135,26 @@ static inline struct net_offload *net_if_offload(struct net_if *iface)
 }
 
 /**
+ * @brief Set the IP offload plugin
+ *
+ * @param iface Network interface
+ * @param offload Offload plugin to set
+ */
+static inline void net_if_offload_set(struct net_if *iface, struct net_offload *offload)
+{
+#if defined(CONFIG_NET_OFFLOAD)
+	if (iface == NULL || iface->if_dev == NULL) {
+		return;
+	}
+
+	iface->if_dev->offload = offload;
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(offload);
+#endif
+}
+
+/**
  * @brief Return the socket offload status
  *
  * @param iface Network interface
