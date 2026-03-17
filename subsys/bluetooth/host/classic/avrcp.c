@@ -2030,7 +2030,8 @@ static void avrcp_unit_info_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid, str
 		goto err_rsp;
 	}
 
-	return avrcp_tg_cb->unit_info_req(get_avrcp_tg(avrcp), tid);
+	avrcp_tg_cb->unit_info_req(get_avrcp_tg(avrcp), tid);
+	return;
 
 err_rsp:
 	err = bt_avrcp_send_unit_info_err_rsp(avrcp, tid);
@@ -2447,7 +2448,8 @@ static void avrcp_subunit_info_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid,
 		goto err_rsp;
 	}
 
-	return avrcp_tg_cb->subunit_info_req(get_avrcp_tg(avrcp), tid);
+	avrcp_tg_cb->subunit_info_req(get_avrcp_tg(avrcp), tid);
+	return;
 
 err_rsp:
 	err = bt_avrcp_send_subunit_info(avrcp, tid, BT_AVRCP_RSP_REJECTED);
@@ -2483,7 +2485,8 @@ static void avrcp_pass_through_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid,
 		goto err_rsp;
 	}
 
-	return avrcp_tg_cb->passthrough_req(get_avrcp_tg(avrcp), tid, buf);
+	avrcp_tg_cb->passthrough_req(get_avrcp_tg(avrcp), tid, buf);
+	return;
 
 err_rsp:
 	rsp_buf = bt_avrcp_create_pdu(NULL);
