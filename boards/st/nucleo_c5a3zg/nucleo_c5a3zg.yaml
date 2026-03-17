@@ -8,7 +8,9 @@ toolchain:
 supported:
   - arduino_gpio
   - arduino_serial
+  - counter
   - gpio
+  - pwm
   - uart
 ram: 256
 flash: 1024
