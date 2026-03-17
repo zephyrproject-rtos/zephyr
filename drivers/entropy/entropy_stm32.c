@@ -105,6 +105,16 @@ struct entropy_stm32_rng_dev_data {
 	/* work item that polls TRNG to refill pools */
 	struct k_work_delayable trng_poll_work;
 #endif /* IRQLESS_TRNG */
+	/*
+	 * Used to keep track of whether the RNG is enabled
+	 * (and owned by this core) and to prevent multiple
+	 * callers from enabling the RNG concurrently.
+	 *
+	 * (use_count is protected by the spinlock)
+	 */
+	struct k_spinlock usecount_lock;
+	uint32_t use_count;
+
 	bool filling_pools;
 
 	RNG_POOL_DEFINE(isr, CONFIG_ENTROPY_STM32_ISR_POOL_SIZE);
@@ -282,21 +292,38 @@ static void configure_rng(void)
 
 static void acquire_rng(void)
 {
-	entropy_stm32_resume();
+	k_spinlock_key_t key = k_spin_lock(&entropy_stm32_rng_data.usecount_lock);
+	const uint32_t old_use_count = entropy_stm32_rng_data.use_count++;
+
+	if (old_use_count == 0) {
+		entropy_stm32_resume();
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
-	/* Lock the RNG to prevent concurrent access */
-	z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
-	/* RNG configuration could have been changed by the other core */
-	configure_rng();
+		/* Lock the RNG to prevent concurrent access */
+		z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
+		/* RNG configuration could have been changed by the other core */
+		configure_rng();
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
+	}
+
+	k_spin_unlock(&entropy_stm32_rng_data.usecount_lock, key);
 }
 
 static void release_rng(void)
 {
-	entropy_stm32_suspend();
+	k_spinlock_key_t key = k_spin_lock(&entropy_stm32_rng_data.usecount_lock);
+	const uint32_t old_use_count = entropy_stm32_rng_data.use_count--;
+
+	__ASSERT(old_use_count > 0, "acquire_rng()/release_rng() mismatch!");
+
+	if (old_use_count == 1) {
+		/* Last user is releasing RNG */
+		entropy_stm32_suspend();
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
-	z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
+		z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
+	}
+
+	k_spin_unlock(&entropy_stm32_rng_data.usecount_lock, key);
 }
 
 static int entropy_stm32_got_error(RNG_TypeDef *rng)
@@ -773,43 +800,34 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 	}
 
 	if (len) {
-		/**
-		 * On TRNG without interrupt line, we cannot allow reentrancy,
-		 * so we have to suspend all interrupts. Otherwise, only suspend
-		 * it until we have established ourselves as owner of the TRNG
-		 * to prevent race with a higher priority interrupt handler.
-		 */
-		unsigned int key = irq_lock();
-		bool rng_already_acquired = false;
 #if !IRQLESS_TRNG
-		int irq_enabled = irq_is_enabled(IRQN);
+		/**
+		 * Disable RNG interrupt at NVIC level to ensure this driver's ISR
+		 * cannot preempt us - it would steal entropy our caller wants ASAP!
+		 *
+		 * Note that this doesn't need to be done under irq_lock() because
+		 * modifying NVIC configuration itself is atomic: at worse, we will
+		 * merely do more than one irq_disable()/irq_enable() paired call.
+		 */
+		int rng_irq_enabled = irq_is_enabled(IRQN);
 
-		rng_already_acquired = (irq_enabled != 0);
 		irq_disable(IRQN);
-		irq_unlock(key);
 #endif /* !IRQLESS_TRNG */
 
-		/* Do not release if IRQ is enabled. RNG will be released in ISR
-		 * when the pools are full. On TRNG without interrupt line, the
-		 * default value of false ensures TRNG is always released.
+		/*
+		 * Ensure the RNG is enabled then poll for entropy.
+		 * We don't need to mask interrupts while polling
+		 * because re-entrant calls will merely increment
+		 * the RNG's use count temporarily, but can never
+		 * make it reach zero.
 		 */
-		if (z_stm32_hsem_is_owned(CFG_HW_RNG_SEMID)) {
-			rng_already_acquired = true;
-		}
 		acquire_rng();
-
 		cnt = generate_from_isr(buf, len);
+		release_rng();
 
-		/* Restore the state of the RNG lock and IRQ */
-		if (!rng_already_acquired) {
-			release_rng();
-		}
-
-#if IRQLESS_TRNG
-		/* Exit critical section */
-		irq_unlock(key);
-#else
-		if (irq_enabled) {
+#if !IRQLESS_TRNG
+		/* Re-enable RNG interrupt at NVIC level if applicable */
+		if (rng_irq_enabled) {
 			irq_enable(IRQN);
 		}
 #endif /* !IRQLESS_TRNG */
