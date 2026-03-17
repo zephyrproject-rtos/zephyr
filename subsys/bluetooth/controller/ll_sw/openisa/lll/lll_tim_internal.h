@@ -21,6 +21,6 @@ static inline uint32_t addr_us_get(uint8_t phy)
 	case PHY_2M:
 		return 24;
 	case PHY_CODED:
-		return 376;
+		return 336;
 	}
 }

@@ -312,11 +312,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 #if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_ready_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
 	hcto += addr_us_get(cis_lll->rx.phy);
-	hcto += radio_rx_chain_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
 #else /* !CONFIG_BT_CTLR_PHY */
 	hcto += radio_rx_ready_delay_get(0U, 0U);
 	hcto += addr_us_get(0U);
-	hcto += radio_rx_chain_delay_get(0U, 0U);
+	hcto += radio_rx_address_delay_get(0U, 0U);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	radio_tmr_hcto_configure(hcto);
@@ -888,11 +888,10 @@ static void isr_rx(void *param)
 #if defined(CONFIG_BT_CTLR_PHY)
 	subevent_us -= radio_rx_ready_delay_get(cis_lll->rx.phy,
 						PHY_FLAGS_S8);
-	subevent_us -= radio_rx_chain_delay_get(cis_lll->rx.phy,
-						PHY_FLAGS_S8);
+	subevent_us -= radio_rx_address_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
 #else /* !CONFIG_BT_CTLR_PHY */
 	subevent_us -= radio_rx_ready_delay_get(0U, 0U);
-	subevent_us -= radio_rx_chain_delay_get(0U, 0U);
+	subevent_us -= radio_rx_address_delay_get(0U, 0U);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	start_us = radio_tmr_start_us(0U, subevent_us);
@@ -1002,11 +1001,10 @@ static void isr_tx(void *param)
 #if defined(CONFIG_BT_CTLR_PHY)
 	subevent_us -= radio_rx_ready_delay_get(cis_lll->rx.phy,
 						PHY_FLAGS_S8);
-	subevent_us -= radio_rx_chain_delay_get(cis_lll->rx.phy,
-						PHY_FLAGS_S8);
+	subevent_us -= radio_rx_address_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
 #else /* !CONFIG_BT_CTLR_PHY */
 	subevent_us -= radio_rx_ready_delay_get(0U, 0U);
-	subevent_us -= radio_rx_chain_delay_get(0U, 0U);
+	subevent_us -= radio_rx_address_delay_get(0U, 0U);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
@@ -1026,11 +1024,11 @@ static void isr_tx(void *param)
 #if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_ready_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
 	hcto += addr_us_get(cis_lll->rx.phy);
-	hcto += radio_rx_chain_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
 #else /* !CONFIG_BT_CTLR_PHY */
 	hcto += radio_rx_ready_delay_get(0U, 0U);
 	hcto += addr_us_get(0U);
-	hcto += radio_rx_chain_delay_get(0U, 0U);
+	hcto += radio_rx_address_delay_get(0U, 0U);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	radio_tmr_hcto_configure_abs(hcto);
@@ -1235,11 +1233,10 @@ static void isr_prepare_subevent_common(void *param)
 #if defined(CONFIG_BT_CTLR_PHY)
 		subevent_us -= radio_rx_ready_delay_get(cis_lll->rx.phy,
 							PHY_FLAGS_S8);
-		subevent_us -= radio_rx_chain_delay_get(cis_lll->rx.phy,
-							PHY_FLAGS_S8);
+		subevent_us -= radio_rx_address_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
 #else /* !CONFIG_BT_CTLR_PHY */
 		subevent_us -= radio_rx_ready_delay_get(0U, 0U);
-		subevent_us -= radio_rx_chain_delay_get(0U, 0U);
+		subevent_us -= radio_rx_address_delay_get(0U, 0U);
 #endif /* !CONFIG_BT_CTLR_PHY */
 	} else {
 		subevent_us = radio_tmr_ready_restore();
@@ -1267,11 +1264,11 @@ static void isr_prepare_subevent_common(void *param)
 #if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_ready_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
 	hcto += addr_us_get(cis_lll->rx.phy);
-	hcto += radio_rx_chain_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
 #else /* !CONFIG_BT_CTLR_PHY */
 	hcto += radio_rx_ready_delay_get(0U, 0U);
 	hcto += addr_us_get(0U);
-	hcto += radio_rx_chain_delay_get(0U, 0U);
+	hcto += radio_rx_address_delay_get(0U, 0U);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	radio_tmr_hcto_configure_abs(hcto);

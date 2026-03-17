@@ -20,7 +20,9 @@
 
 #define HAL_RADIO_NRF51_TX_CHAIN_DELAY_US 1 /* ceil(1.0) */
 #define HAL_RADIO_NRF51_TX_CHAIN_DELAY_NS 1000 /* 1.0 */
+#define HAL_RADIO_NRF51_RX_ADDRESS_DELAY_US 3 /* ceil(3.0) */
 #define HAL_RADIO_NRF51_RX_CHAIN_DELAY_US 3 /* ceil(3.0) */
+#define HAL_RADIO_NRF51_RX_ADDRESS_DELAY_NS 3000 /* 3.0 */
 #define HAL_RADIO_NRF51_RX_CHAIN_DELAY_NS 3000 /* 3.0 */
 
 /* HAL abstraction of Radio bitfields */
@@ -166,6 +168,13 @@ static inline uint32_t hal_radio_tx_chain_delay_us_get(uint8_t phy, uint8_t flag
 	return HAL_RADIO_NRF51_TX_CHAIN_DELAY_US;
 }
 
+static inline uint32_t hal_radio_rx_address_delay_us_get(uint8_t phy, uint8_t flags)
+{
+	ARG_UNUSED(phy);
+	ARG_UNUSED(flags);
+	return HAL_RADIO_NRF51_RX_ADDRESS_DELAY_US;
+}
+
 static inline uint32_t hal_radio_rx_chain_delay_us_get(uint8_t phy, uint8_t flags)
 {
 	ARG_UNUSED(phy);
@@ -192,6 +201,13 @@ static inline uint32_t hal_radio_tx_chain_delay_ns_get(uint8_t phy, uint8_t flag
 	ARG_UNUSED(phy);
 	ARG_UNUSED(flags);
 	return HAL_RADIO_NRF51_TX_CHAIN_DELAY_NS;
+}
+
+static inline uint32_t hal_radio_rx_address_delay_ns_get(uint8_t phy, uint8_t flags)
+{
+	ARG_UNUSED(phy);
+	ARG_UNUSED(flags);
+	return HAL_RADIO_NRF51_RX_ADDRESS_DELAY_NS;
 }
 
 static inline uint32_t hal_radio_rx_chain_delay_ns_get(uint8_t phy, uint8_t flags)
