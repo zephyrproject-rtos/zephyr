@@ -757,6 +757,17 @@ MEMC
   Hard-coded default values in drivers, of 320 (:dtcompatible:`st,stm32-xspi-psram`) and 129
   (:dtcompatible:`st,stm32-ospi-psram`), have been removed.
 
+Nordic
+======
+
+* :dtcompatible:`nordic,nrf53-hfxo` and :dtcompatible:`nordic,nrf53-lfxo` have been added to the
+  nRF5340 CPUNET target found in :zephyr_file:`dts/arm/nordic/nrf5340_cpunet.dtsi`. Previously
+  these clocks were only present in the devicetree for the CPUAPP target, thus the specified
+  startup time of the ``&hfxo`` was not used when building, for example, the Bluetooth
+  controller for the nRF5340 CPUNET target. The ``startup-time-us`` property of the ``&hfxo``
+  should be overwritten by any board using the nRF5340 SoC, otherwise it will default to 1400 us.
+  (:github:`105558`).
+
 NXP
 ===
 
