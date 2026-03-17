@@ -3006,6 +3006,7 @@ Infineon Platforms:
     - billwatersiii
     - jsbatch
     - Peterson-Brett
+    - lauracarlesso
   files:
     - boards/cypress/
     - boards/infineon/
@@ -6070,6 +6071,7 @@ West:
     - billwatersiii
     - jsbatch
     - Peterson-Brett
+    - lauracarlesso
   files:
     - modules/Kconfig.infineon
     - modules/hal_infineon/
