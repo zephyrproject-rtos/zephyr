@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2026 Aerlync Labs Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/lpc84x-pinctrl.h>
+
+&swm {
+	status = "okay";
+
+	/*
+	 * Fixed-function pins used for Serial Wire Debug (SWCLK, SWDIO)
+	 * on Port 0 are explicitly configured to preserve debug connectivity.
+	 * The pinmux group is intentionally empty to satisfy pinctrl_apply_state().
+	 */
+
+	gpio0_default: gpio0_default {
+		group0 {
+			pinmux = <LPC84X_PINMUX_F(LPC84X_SWM_SWCLK, P0_3)>,
+				 <LPC84X_PINMUX_F(LPC84X_SWM_SWDIO, P0_2)>;
+		};
+	};
+
+	gpio0_sleep: gpio0_sleep {
+		group0 {
+			pinmux = <LPC84X_PINMUX_F(LPC84X_SWM_SWCLK, P0_3)>,
+				 <LPC84X_PINMUX_F(LPC84X_SWM_SWDIO, P0_2)>;
+		};
+	};
+
+	gpio1_default: gpio1_default {
+		group0 {
+			pinmux = <>;
+		};
+	};
+
+	gpio1_sleep: gpio1_sleep {
+		group0 {
+			pinmux = <>;
+		};
+	};
+
+	uart0_default: uart0_default {
+		group0 {
+			pinmux = <LPC84X_PINMUX_M(LPC84X_SWM_USART0_TXD, P0_25)>,
+				 <LPC84X_PINMUX_M(LPC84X_SWM_USART0_RXD, P0_24)>;
+		};
+	};
+};
