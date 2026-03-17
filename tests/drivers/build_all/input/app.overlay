@@ -321,6 +321,11 @@
 				reg = <0xd>;
 				int-gpios = <&test_gpio 0 0>;
 			};
+
+			seesaw@e {
+				compatible = "adafruit,seesaw-gamepad";
+				reg = <0xe>;
+			};
 		};
 
 		spi@2 {
