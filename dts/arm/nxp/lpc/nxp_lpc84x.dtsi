@@ -116,6 +116,49 @@
 			interrupts = <31 0>;
 			status = "disabled";
 		};
+
+		gpio: gpio@a0000000 {
+			reg = <0xa0000000 0x4000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gpio0: gpio@0 {
+				compatible = "nxp,lpc84x-gpio";
+				reg = <0>;
+				clocks = <&syscon LPC84X_CLK_GPIO0>;
+				interrupt-parent = <&pint>;
+				port-no = <0>;
+				ngpios = <32>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpio1: gpio@1 {
+				compatible = "nxp,lpc84x-gpio";
+				reg = <1>;
+				clocks = <&syscon LPC84X_CLK_GPIO1>;
+				interrupt-parent = <&pint>;
+				port-no = <1>;
+				ngpios = <22>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+		};
+
+		pint: pint@a0004000 {
+			compatible = "nxp,lpc84x-pint";
+			reg = <0xa0004000 0x4000>;
+			clocks = <&syscon LPC84X_CLK_GPIOINT>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			#address-cells = <0>;
+			interrupts = <24 2>, <25 2>, <26 2>, <27 2>,
+				     <28 2>, <29 2>, <30 2>, <31 2>;
+			num-lines = <8>;
+			status = "disabled";
+		};
 	};
 };
 
