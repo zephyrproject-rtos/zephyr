@@ -454,6 +454,11 @@ static int gpio_esp32_pin_interrupt_configure(const struct device *port,
 	}
 
 	key = irq_lock();
+
+	/* Disable interrupt before reconfiguring to avoid spurious triggers */
+	gpio_ll_intr_disable(cfg->gpio_base, io_pin);
+	gpio_ll_set_intr_type(cfg->gpio_base, io_pin, GPIO_INTR_DISABLE);
+
 	if (cfg->gpio_port == 0) {
 		gpio_ll_clear_intr_status(cfg->gpio_base, BIT(pin));
 	} else {
@@ -461,7 +466,9 @@ static int gpio_esp32_pin_interrupt_configure(const struct device *port,
 	}
 
 	gpio_ll_set_intr_type(cfg->gpio_base, io_pin, intr_trig_mode);
-	gpio_ll_intr_enable_on_core(cfg->gpio_base, ESP32_CPU_ID(), io_pin);
+	if (intr_trig_mode != GPIO_INTR_DISABLE) {
+		gpio_ll_intr_enable_on_core(cfg->gpio_base, ESP32_CPU_ID(), io_pin);
+	}
 	irq_unlock(key);
 
 	return 0;
