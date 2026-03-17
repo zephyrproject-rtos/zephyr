@@ -150,48 +150,50 @@ if(NOT DEFINED DTS_SOURCE)
       set(DTS_SOURCE ${dir}/${shortened_board_string}.dts)
     endif()
   endforeach()
-endif()
 
-if(EXISTS ${DTS_SOURCE})
-  # We found a devicetree. Append all relevant dts overlays we can find...
-  zephyr_file(CONF_FILES ${BOARD_DIRECTORIES} DTS DTS_SOURCE)
+  if(EXISTS ${DTS_SOURCE})
+    # We found a devicetree. Append all relevant dts overlays we can find...
+    zephyr_file(CONF_FILES ${BOARD_DIRECTORIES} DTS DTS_SOURCE)
 
-  zephyr_file(
-    CONF_FILES ${BOARD_DIRECTORIES}
-    DTS no_rev_suffix_dts_board_overlays
-    BOARD ${BOARD}
-    BOARD_QUALIFIERS ${BOARD_QUALIFIERS}
-  )
-
-  # ...but remove the ones that do not include the revision suffix
-  list(REMOVE_ITEM DTS_SOURCE ${no_rev_suffix_dts_board_overlays})
-else()
-  # If we don't have a devicetree, provide an empty stub
-  set(DTS_SOURCE ${ZEPHYR_BASE}/boards/common/stub.dts)
-endif()
-
-#
-# Find all the DTS files we need to concatenate and preprocess, as
-# well as all the devicetree bindings and vendor prefixes associated
-# with them.
-#
-
-zephyr_file(CONF_FILES ${BOARD_EXTENSION_DIRS} DTS board_extension_dts_files)
-
-set(dts_files
-  ${DTS_SOURCE}
-  ${board_extension_dts_files}
-  ${shield_dts_files}
-  )
-
-if(DTC_OVERLAY_FILE)
-  zephyr_list(TRANSFORM DTC_OVERLAY_FILE NORMALIZE_PATHS
-              OUTPUT_VARIABLE DTC_OVERLAY_FILE_AS_LIST)
-  build_info(devicetree user-files PATH ${DTC_OVERLAY_FILE_AS_LIST})
-  list(APPEND
-    dts_files
-    ${DTC_OVERLAY_FILE_AS_LIST}
+    zephyr_file(
+      CONF_FILES ${BOARD_DIRECTORIES}
+      DTS no_rev_suffix_dts_board_overlays
+      BOARD ${BOARD}
+      BOARD_QUALIFIERS ${BOARD_QUALIFIERS}
     )
+
+    # ...but remove the ones that do not include the revision suffix
+    list(REMOVE_ITEM DTS_SOURCE ${no_rev_suffix_dts_board_overlays})
+  else()
+    # If we don't have a devicetree, provide an empty stub
+    set(DTS_SOURCE ${ZEPHYR_BASE}/boards/common/stub.dts)
+  endif()
+
+  #
+  # Find all the DTS files we need to concatenate and preprocess, as
+  # well as all the devicetree bindings and vendor prefixes associated
+  # with them.
+  #
+
+  zephyr_file(CONF_FILES ${BOARD_EXTENSION_DIRS} DTS board_extension_dts_files)
+
+  set(dts_files
+    ${DTS_SOURCE}
+    ${board_extension_dts_files}
+    ${shield_dts_files}
+  )
+
+  if(DTC_OVERLAY_FILE)
+    zephyr_list(TRANSFORM DTC_OVERLAY_FILE NORMALIZE_PATHS
+                OUTPUT_VARIABLE DTC_OVERLAY_FILE_AS_LIST)
+    build_info(devicetree user-files PATH ${DTC_OVERLAY_FILE_AS_LIST})
+    list(APPEND
+      dts_files
+      ${DTC_OVERLAY_FILE_AS_LIST}
+    )
+  endif()
+else()
+  set(dts_files ${DTS_SOURCE})
 endif()
 
 if(EXTRA_DTC_OVERLAY_FILE)
