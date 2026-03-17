@@ -29,12 +29,15 @@ extern "C" {
 #define MCHP_XEC_PCR_SCR_GET_IDX(e)    ((e) & 0x7u)
 #define MCHP_XEC_PCR_SCR_GET_BITPOS(e) (((e) & 0xf8u) >> 3)
 
-/* cpu clock divider */
+/* CPU (processor) clock divider. The set of supported divider values is
+ * part specific: MEC15xx supports 3 (and not 2), while MEC172x/174x/175x
+ * support 2 (and not 3). 1, 4, 16 and 48 are common to all parts.
+ */
 #define MCHP_XEC_CLK_CPU_MASK       GENMASK(7, 0)
 #define MCHP_XEC_CLK_CPU_CLK_DIV_1  1u
 #define MCHP_XEC_CLK_CPU_CLK_DIV_2  2u
+#define MCHP_XEC_CLK_CPU_CLK_DIV_3  3u
 #define MCHP_XEC_CLK_CPU_CLK_DIV_4  4u
-#define MCHP_XEC_CLK_CPU_CLK_DIV_8  8u
 #define MCHP_XEC_CLK_CPU_CLK_DIV_16 16u
 #define MCHP_XEC_CLK_CPU_CLK_DIV_48 48u
 
