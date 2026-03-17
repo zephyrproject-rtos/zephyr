@@ -19,4 +19,8 @@ configdefault ETH_NXP_ENET_RMII_EXT_CLK
 	default y
 
 
+config FLASH_MCUX_FLEXSPI_MX25UM51345G
+	default y if FLASH
+	imply FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
+
 endif # BOARD_VMU_RT1170
