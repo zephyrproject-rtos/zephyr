@@ -6,30 +6,33 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <stddef.h>
-#include <zephyr/kernel.h>
-#include <zephyr/device.h>
-#include <zephyr/drivers/entropy.h>
-#include <zephyr/random/random.h>
-#include <zephyr/init.h>
-#include <zephyr/sys/__assert.h>
-#include <zephyr/sys/util.h>
+
 #include <errno.h>
+#include <stddef.h>
+
 #include <soc.h>
-#include <zephyr/pm/policy.h>
 #include <stm32_bitops.h>
+#include <stm32_hsem.h>
 #include <stm32_ll_bus.h>
+#include <stm32_ll_pka.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_rng.h>
-#include <stm32_ll_pka.h>
 #include <stm32_ll_system.h>
-#include <zephyr/sys/printk.h>
-#include <zephyr/pm/device.h>
+
+#include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/entropy.h>
+#include <zephyr/init.h>
 #include <zephyr/irq.h>
+#include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/random/random.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/barrier.h>
-#include "stm32_hsem.h"
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
 #include "entropy_stm32.h"
 
