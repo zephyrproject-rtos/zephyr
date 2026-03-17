@@ -1446,6 +1446,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, int idx)
 		__fallthrough;
 
 	case MODEM_CMUX_RECEIVE_STATE_FCS:
+	{
 		/* Compute FCS */
 		uint8_t *frame_start = &cmux->config.receive_buf[cmux->frame_start];
 
@@ -1467,7 +1468,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, int idx)
 
 		cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_EOF;
 		break;
-
+	}
 	case MODEM_CMUX_RECEIVE_STATE_EOF:
 		/* Validate byte is EOF */
 		if (byte != MODEM_CMUX_SOF) {
