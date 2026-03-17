@@ -518,30 +518,6 @@ static const struct stm32_dcmipp_mapping {
 #endif
 };
 
-/*
- * FIXME: Helper to know colorspace of a format
- * This below to the video_common part and should be moved there
- */
-#define VIDEO_COLORSPACE_RAW	0
-#define VIDEO_COLORSPACE_RGB	1
-#define VIDEO_COLORSPACE_YUV	2
-#define VIDEO_COLORSPACE(fmt)							\
-	(((fmt) == VIDEO_PIX_FMT_RGB565X || (fmt) == VIDEO_PIX_FMT_RGB565 ||	\
-	  (fmt) == VIDEO_PIX_FMT_BGR24 || (fmt) == VIDEO_PIX_FMT_RGB24 ||	\
-	  (fmt) == VIDEO_PIX_FMT_ARGB32 || (fmt) == VIDEO_PIX_FMT_ABGR32 ||	\
-	  (fmt) == VIDEO_PIX_FMT_RGBA32 || (fmt) == VIDEO_PIX_FMT_BGRA32 ||	\
-	  (fmt) == VIDEO_PIX_FMT_XRGB32) ? VIDEO_COLORSPACE_RGB :		\
-										\
-	 ((fmt) == VIDEO_PIX_FMT_GREY ||					\
-	  (fmt) == VIDEO_PIX_FMT_YUYV || (fmt) == VIDEO_PIX_FMT_YVYU ||		\
-	  (fmt) == VIDEO_PIX_FMT_VYUY || (fmt) == VIDEO_PIX_FMT_UYVY ||		\
-	  (fmt) == VIDEO_PIX_FMT_NV12 || (fmt) == VIDEO_PIX_FMT_NV21 ||		\
-	  (fmt) == VIDEO_PIX_FMT_NV16 || (fmt) == VIDEO_PIX_FMT_NV61 ||		\
-	  (fmt) == VIDEO_PIX_FMT_YUV420 || (fmt) == VIDEO_PIX_FMT_YVU420 ||	\
-	  (fmt) == VIDEO_PIX_FMT_XYUV32) ? VIDEO_COLORSPACE_YUV :		\
-										\
-	  VIDEO_COLORSPACE_RAW)
-
 static const struct stm32_dcmipp_mapping *stm32_dcmipp_get_mapping(uint32_t pixelformat,
 								   uint32_t pipe)
 {
@@ -851,8 +827,8 @@ const DCMIPP_ColorConversionConfTypeDef stm32_dcmipp_yuv_to_rgb = {
 };
 
 static int stm32_dcmipp_set_yuv_conversion(struct stm32_dcmipp_pipe_data *pipe,
-					   uint32_t source_colorspace,
-					   uint32_t output_colorspace)
+					   uint32_t source_pixelformat,
+					   uint32_t output_pixelformat)
 {
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
 	const DCMIPP_ColorConversionConfTypeDef *cfg = NULL;
@@ -864,13 +840,11 @@ static int stm32_dcmipp_set_yuv_conversion(struct stm32_dcmipp_pipe_data *pipe,
 	}
 
 	/* Perform YUV conversion if necessary and possible */
-	if ((source_colorspace == VIDEO_COLORSPACE_RAW ||
-	     source_colorspace == VIDEO_COLORSPACE_RGB) &&
-	     output_colorspace == VIDEO_COLORSPACE_YUV) {
+	if ((VIDEO_FMT_IS_BAYER(source_pixelformat) || VIDEO_FMT_IS_RGB(source_pixelformat)) &&
+	    VIDEO_FMT_IS_YUV(output_pixelformat)) {
 		/* Need to perform RGB to YUV conversion */
 		cfg = &stm32_dcmipp_rgb_to_yuv;
-	} else if (source_colorspace == VIDEO_COLORSPACE_YUV &&
-		   output_colorspace == VIDEO_COLORSPACE_RGB) {
+	} else if (VIDEO_FMT_IS_YUV(source_pixelformat) && VIDEO_FMT_IS_RGB(output_pixelformat)) {
 		/* Need to perform YUV to RGB conversion */
 		cfg = &stm32_dcmipp_yuv_to_rgb;
 	} else {
@@ -1107,9 +1081,6 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	}
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	else if (pipe->id == DCMIPP_PIPE1 || pipe->id == DCMIPP_PIPE2) {
-		uint32_t source_colorspace = VIDEO_COLORSPACE(dcmipp->source_fmt.pixelformat);
-		uint32_t output_colorspace = VIDEO_COLORSPACE(fmt->pixelformat);
-
 		/* Enable / disable SWAPRB if necessary */
 		if (mapping->pixels.swap_uv) {
 			hal_ret = HAL_DCMIPP_PIPE_EnableRedBlueSwap(&dcmipp->hdcmipp, pipe->id);
@@ -1127,7 +1098,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 			}
 		}
 
-		if (source_colorspace == VIDEO_COLORSPACE_RAW) {
+		if (VIDEO_FMT_IS_BAYER(dcmipp->source_fmt.pixelformat)) {
 			/* Enable demosaicing if input format is Bayer */
 			hal_ret = HAL_DCMIPP_PIPE_EnableISPRawBayer2RGB(&dcmipp->hdcmipp,
 									DCMIPP_PIPE1);
@@ -1160,7 +1131,9 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 		}
 
 		/* Configure YUV conversion */
-		ret = stm32_dcmipp_set_yuv_conversion(pipe, source_colorspace, output_colorspace);
+		ret = stm32_dcmipp_set_yuv_conversion(pipe,
+						      dcmipp->source_fmt.pixelformat,
+						      fmt->pixelformat);
 		if (ret < 0) {
 			goto out;
 		}
