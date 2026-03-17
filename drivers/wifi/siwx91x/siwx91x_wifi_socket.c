@@ -409,6 +409,6 @@ void siwx91x_sock_init(struct net_if *iface)
 {
 	struct siwx91x_dev *sidev = iface->if_dev->dev->data;
 
-	iface->if_dev->offload = &siwx91x_offload;
+	net_if_offload_set(iface, &siwx91x_offload);
 	k_event_init(&sidev->fds_recv_event);
 }
