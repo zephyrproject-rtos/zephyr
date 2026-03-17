@@ -451,7 +451,7 @@ class DeviceHandler(Handler):
         # Clear serial leftover.
         ser.reset_input_buffer()
 
-        with open(self.log, "wb") as log_out_fp:
+        with open(self.log, "w", encoding="utf-8") as log_out_fp:
             while ser.isOpen():
                 if halt_event.is_set():
                     logger.debug('halted')
@@ -486,8 +486,8 @@ class DeviceHandler(Handler):
                 # is available yet.
                 if serial_line:
                     # can be more lines in serial_line so split them before handling
-                    for sl in serial_line.decode('utf-8', 'ignore').splitlines(keepends=True):
-                        log_out_fp.write(strip_ansi_sequences(sl).encode('utf-8'))
+                    for sl in serial_line.decode('utf-8', 'replace').splitlines(keepends=True):
+                        log_out_fp.write(strip_ansi_sequences(sl))
                         log_out_fp.flush()
                         if sl := sl.strip():
                             logger.debug(f"DEVICE: {sl}")
