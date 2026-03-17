@@ -51,6 +51,23 @@ Connections and IOs
 
 The `SAMA7G54-EK User Guide`_ has detailed information about board connections.
 
+Programming
+***********
+
+Prerequisite
+============
+
+Before Zephyr runs on SAMA7G54-EK, `at91bootstrap`_ (the second stage bootloader
+for Microchip MPU) needs to run first. It will initialize the peripherals and
+memory controllers, download and jump to Zephyr entry point.
+
+Loading the firmware
+====================
+
+Using a bootloader compiled with sama7g5eksd_zephyr_defconfig configuration, the
+binary for Zephyr (zephyr.bin) copied to a SD card can be loaded and run on the
+SAMA7G54-EK board.
+
 References
 **********
 
@@ -62,3 +79,6 @@ SAMA7G54 Evaluation Kit Page:
 
 .. _SAMA7G54-EK User Guide:
     https://ww1.microchip.com/downloads/aemDocuments/documents/MPU32/ProductDocuments/UserGuides/SAMA7G54-EK-User%27s-Guide-DS50003273.pdf
+
+.. _at91bootstrap:
+    https://developerhelp.microchip.com/xwiki/bin/view/products/mcu-mpu/32bit-mpu/at91bootstrap/
