@@ -98,6 +98,7 @@ tests:
       - mimxrt1060_evk@A/mimxrt1062/qspi
       - mimxrt1060_evk@B/mimxrt1062/qspi
       - mimxrt1060_evk@C/mimxrt1062/qspi
+      - lpc845brk
       - lpcxpresso55s69/lpc55s69/cpu0
       - lpcxpresso55s36
       - frdm_mcxw23
