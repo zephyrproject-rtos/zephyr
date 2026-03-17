@@ -21,6 +21,43 @@ Note that after refreshing the device key, node address or Composition Data thro
 Provisioning Protocol Interface (NPPI) procedure, the :c:member:`bt_mesh_prov.reprovisioned`
 callback is triggered. See section :ref:`bluetooth_mesh_models_rpr_cli` for further details.
 
+How to integrate the model into an application
+-----------------------------------------------
+
+To add the Remote Provisioning Server model in your application, do the following:
+
+1. Enable Kconfig in your project configuration:
+
+   .. code-block:: cfg
+
+      CONFIG_BT_MESH_RPR_SRV=y
+
+2. Add the model instance into the model list :c:member:`bt_mesh_elem.models` of the
+   primary element using the :c:macro:`BT_MESH_MODEL_RPR_SRV` macro, for example:
+
+   .. code-block:: c
+
+      static const struct bt_mesh_model models[] = {
+              BT_MESH_MODEL_CFG_SRV,
+              BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
+              BT_MESH_MODEL_RPR_SRV,
+              /* ... */
+      };
+
+      static const struct bt_mesh_elem elements[] = {
+              BT_MESH_ELEM(0, models, BT_MESH_MODEL_NONE),
+      };
+
+3. Enable PB-Remote by calling :c:func:`bt_mesh_prov_enable` with
+   :c:enumerator:`BT_MESH_PROV_REMOTE`:
+
+   .. code-block:: c
+
+      err = bt_mesh_prov_enable(BT_MESH_PROV_REMOTE);
+      if (err) {
+              printk("PB-Remote enable failed (err %d)\n", err);
+      }
+
 Limitations
 -----------
 
