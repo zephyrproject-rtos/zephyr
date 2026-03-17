@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -92,16 +92,19 @@
 		};
 
 		clk_ertco: clk_ertco {
-			compatible = "fixed-clock";
+			compatible = "adi,max32-ertco";
 			#clock-cells = <0>;
 			clock-frequency = <32768>;
+			capacitance-rtcx1 = <0xf>;
+			capacitance-rtcx2 = <0xf>;
 			status = "disabled";
 		};
 
 		clk_erfo: clk_erfo {
-			compatible = "fixed-clock";
+			compatible = "adi,max32-erfo";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(32)>;
+			capacitance-erfoctrl = <0>;
 			status = "disabled";
 		};
 	};
