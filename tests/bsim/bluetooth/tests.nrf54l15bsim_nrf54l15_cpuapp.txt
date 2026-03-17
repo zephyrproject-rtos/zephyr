@@ -12,3 +12,5 @@ tests/bsim/bluetooth/samples/central_hr_peripheral_hr/
 tests/bsim/bluetooth/samples/peripheral_gap_svc/
 tests/bsim/bluetooth/audio_samples/
 tests/bsim/bluetooth/audio/
+tests/bsim/bluetooth/host/adv/extended/tests_scripts/ext_adv.sh
+tests/bsim/bluetooth/host/adv/extended/tests_scripts/ext_adv_5x.sh
