@@ -127,8 +127,9 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 	struct video_ctrl *vc;
 	struct video_device *vdev;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(ctrl != NULL);
+	if (ctrl == NULL) {
+		return -EINVAL;
+	}
 
 	vdev = video_find_vdev(dev);
 	if (!vdev) {
@@ -304,8 +305,9 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 {
 	struct video_ctrl *ctrl = NULL;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(control != NULL);
+	if (dev == NULL || control == NULL) {
+		return -EINVAL;
+	}
 
 	int ret = video_find_ctrl(dev, control->id, &ctrl);
 
@@ -350,8 +352,9 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 	int32_t val = 0;
 	int64_t val64 = 0;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(control != NULL);
+	if (dev == NULL || control == NULL) {
+		return -EINVAL;
+	}
 
 	ret = video_find_ctrl(dev, control->id, &ctrl);
 	if (ret) {
@@ -572,8 +575,9 @@ int video_query_ctrl(struct video_ctrl_query *cq)
 	struct video_device *vdev;
 	struct video_ctrl *ctrl = NULL;
 
-	__ASSERT_NO_MSG(cq != NULL);
-	__ASSERT_NO_MSG(cq->dev != NULL);
+	if (cq == NULL || cq->dev == NULL) {
+		return -EINVAL;
+	}
 
 	if (cq->id & VIDEO_CTRL_FLAG_NEXT_CTRL) {
 		cq->id &= ~VIDEO_CTRL_FLAG_NEXT_CTRL;
