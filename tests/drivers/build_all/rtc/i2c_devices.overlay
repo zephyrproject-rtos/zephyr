@@ -127,6 +127,12 @@
 				reg = <0xd>;
 				interrupt-gpios = <&test_gpio 0 0>;
 			};
+
+			test_mcp7940n: mcp7940n@6f {
+				compatible = "microchip,mcp7940n";
+				reg = <0x6f>;
+				int-gpios = <&test_gpio 0 0>;
+			};
 		};
 	};
 };
