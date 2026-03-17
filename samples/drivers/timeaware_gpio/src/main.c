@@ -14,7 +14,7 @@
 
 /* Local Includes */
 #include <zephyr/sys/util.h>
-#include <zephyr/drivers/misc/timeaware_gpio/timeaware_gpio.h>
+#include <zephyr/drivers/timeaware_gpio.h>
 #include <zephyr/kernel.h>
 #include <stdio.h>
 #include <stdlib.h>

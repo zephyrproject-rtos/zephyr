@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/drivers/misc/timeaware_gpio/timeaware_gpio.h>
+#include <zephyr/drivers/timeaware_gpio.h>
 #include <zephyr/syscall_handler.h>
 
 static inline int z_vrfy_tgpio_port_get_time(const struct device *port, uint64_t *current_time)
