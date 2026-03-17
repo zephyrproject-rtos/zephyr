@@ -52,7 +52,7 @@ static void net_offload_l2_iface_init(struct net_if *iface)
 	/* Reviewers: Is there a better way to do this?
 	 * I couldn't find any actual examples in the source
 	 */
-	iface->if_dev->offload = &net_offload_api;
+	net_if_offload_set(iface, &net_offload_api);
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 	net_if_flag_set(iface, NET_IF_IPV4);
 	net_if_flag_set(iface, NET_IF_IPV6);
