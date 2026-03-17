@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/misc/timeaware_gpio/timeaware_gpio.h)
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/timeaware_gpio.h)
 
 zephyr_library()
 

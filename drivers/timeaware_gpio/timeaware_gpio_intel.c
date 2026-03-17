@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
-#include <zephyr/drivers/misc/timeaware_gpio/timeaware_gpio.h>
+#include <zephyr/drivers/timeaware_gpio.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/internal/syscall_handler.h>
 
