@@ -5,11 +5,27 @@ description: Microchip XEC Power Clock Reset and VBAT register (PCR)
 
 compatible: "microchip,xec-pcr"
 
-include: [clock-controller.yaml, pinctrl-device.yaml, base.yaml]
+include:
+  - "base.yaml"
+  - "clock-controller.yaml"
+  - "pinctrl-device.yaml"
 
 properties:
   reg:
     required: true
+
+  girqs:
+    type: array
+    description: |
+      PCR clock monitor encoded GIRQ number and bit position.
+      Note: MEC15xx PCR does not implement the clock monitor and
+      has no interrupt.
+
+  hibtimer-handle:
+    type: phandle
+    description: |
+      Handle to a hibernation timer node used by clock control for timeouts
+      during clock configuration.
 
   core-clock-div:
     type: int
@@ -31,6 +47,15 @@ properties:
     type: int
     required: true
     description: 32 KHz clock source for peripherals
+
+  xtal-gain:
+    type: string
+    description: Crystal input amplifier circuit gain
+    enum:
+      - "4X"
+      - "3X"
+      - "2X"
+      - "1X"
 
   xtal-single-ended:
     type: boolean
@@ -64,10 +89,16 @@ properties:
   xtal-enable-delay-ms:
     type: int
     required: true
-    default: 300
+    default: 10
     description: |
-      Delay in milliseconds after crystal is enabled and clock monitor is
-      started.
+      Delay in milliseconds after crystal is started and before crystal
+      is checked.
+
+  xtal-monitor-max-ms:
+    type: int
+    description: |
+      Time interval in milliseconds the driver will check crystal is within
+      specified bounds (stable). A value of 0 (default) indicates infinite timeout.
 
   pll-lock-timeout-ms:
     type: int
@@ -76,16 +107,30 @@ properties:
     description: |
       Timeout in milliseconds waiting for PLL to lock to new clock source.
 
-  clkmon-bypass:
-    type: boolean
-    description: Bypass clkmon check of crystal or XTAL2 single-ended clock.
-
   internal-osc-disable:
     type: boolean
     description: |
       If the internal silicon 32KHz oscillator is not chosen as the source
       for PLL and Periheral devices then disable the internal 32KHz
       oscillator to save power.
+
+  xtal-hi-startup-current-disable:
+    type: boolean
+    description: |
+      If present disable crystal high startup current afer the crytal is
+      stable and PLL has locked.
+
+  pll-src-lock:
+    type: boolean
+    description: |
+      If present the driver will lock the PLL clock source register after
+      configuration.
+
+  silosc-en-lock:
+    type: boolean
+    description: |
+      If present after clock configuration the driver will lock the 32KHz
+      internal silicon OSC enable bit.
 
   "#clock-cells":
     const: 3
