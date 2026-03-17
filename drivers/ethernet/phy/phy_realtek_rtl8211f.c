@@ -604,12 +604,65 @@ skip_int_gpio:
 	return 0;
 }
 
+static int phy_rt_rtl8211f_monitor_stop(const struct device *dev)
+{
+	struct rt_rtl8211f_data *data = dev->data;
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	int ret;
+	const struct rt_rtl8211f_config *config = dev->config;
+
+	if (config->interrupt_gpio.port) {
+		ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio,
+				GPIO_INT_DISABLE);
+		if (ret) {
+			return ret;
+		}
+	}
+#endif
+	k_work_cancel_delayable(&data->phy_monitor_work);
+
+	return 0;
+}
+
+static int phy_rt_rtl8211f_monitor_start(const struct device *dev)
+{
+	struct rt_rtl8211f_data *data = dev->data;
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	int ret;
+	const struct rt_rtl8211f_config *config = dev->config;
+
+	if (config->interrupt_gpio.port) {
+		/* Clear any pending interrupts */
+		ret = phy_rt_rtl8211f_clear_interrupt(data);
+		if (ret) {
+			return ret;
+		}
+		/* Re-enable interrupt */
+		ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio,
+				GPIO_INT_EDGE_TO_ACTIVE);
+		if (ret) {
+			return ret;
+		}
+	} else {
+		k_work_reschedule(&data->phy_monitor_work, K_NO_WAIT);
+	}
+#else
+	k_work_reschedule(&data->phy_monitor_work, K_NO_WAIT);
+#endif
+
+	return 0;
+}
+
 static DEVICE_API(ethphy, rt_rtl8211f_phy_api) = {
 	.get_link = phy_rt_rtl8211f_get_link,
 	.cfg_link = phy_rt_rtl8211f_cfg_link,
 	.link_cb_set = phy_rt_rtl8211f_link_cb_set,
 	.read = phy_rt_rtl8211f_read,
 	.write = phy_rt_rtl8211f_write,
+	.monitor_stop = phy_rt_rtl8211f_monitor_stop,
+	.monitor_start = phy_rt_rtl8211f_monitor_start,
 };
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
