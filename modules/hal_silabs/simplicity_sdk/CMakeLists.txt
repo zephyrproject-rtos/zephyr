@@ -108,6 +108,7 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
     # rail
     zephyr_library_sources(
       ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_rf_path_switch/sl_rail_util_rf_path_switch.c
+      ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_sequencer/sl_rail_util_sequencer.c
     )
 
     # PA curve for the modules comes from their config archive - omit the compilation of the SoC curves on modules
