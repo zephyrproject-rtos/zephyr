@@ -313,6 +313,14 @@
 			#size-cells = <1>;
 			ranges;
 
+			ptcomp0: ptcomp@e40000 {
+				compatible = "infineon,autanalog-ptcomp";
+				reg = <0xe40000 0xf00>;
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
 			adc0: adc0@80000 {
 				compatible = "infineon,autanalog-sar-adc";
 				/* Offset within AutAnalog subsystem */
