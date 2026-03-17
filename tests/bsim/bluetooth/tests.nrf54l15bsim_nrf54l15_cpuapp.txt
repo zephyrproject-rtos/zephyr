@@ -8,3 +8,5 @@ tests/bsim/bluetooth/ll/multiple_id/
 tests/bsim/bluetooth/ll/bis/tests_scripts/broadcast_iso_interleaved.sh
 tests/bsim/bluetooth/ll/bis/tests_scripts/broadcast_iso_sequential.sh
 tests/bsim/bluetooth/ll/bis/tests_scripts/broadcast_iso_ticker_expire_info.sh
+tests/bsim/bluetooth/host/adv/extended/tests_scripts/ext_adv.sh
+tests/bsim/bluetooth/host/adv/extended/tests_scripts/ext_adv_5x.sh
