@@ -556,12 +556,12 @@ static void isr_tx(void *param)
 	       HAL_RADIO_TMR_START_DELAY_US;
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	hcto += radio_rx_chain_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
 	hcto += addr_us_get(cis_lll->rx.phy);
 	hcto -= radio_tx_chain_delay_get(cis_lll->tx.phy,
 					 cis_lll->tx.phy_flags);
 #else /* !CONFIG_BT_CTLR_PHY */
-	hcto += radio_rx_chain_delay_get(0U, 0U);
+	hcto += radio_rx_address_delay_get(0U, 0U);
 	hcto += addr_us_get(0U);
 	hcto -= radio_tx_chain_delay_get(0U, 0U);
 #endif /* !CONFIG_BT_CTLR_PHY */
