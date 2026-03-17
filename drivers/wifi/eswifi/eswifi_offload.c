@@ -559,8 +559,9 @@ static int eswifi_off_disable_bypass(struct eswifi_dev *eswifi)
 
 int eswifi_offload_init(struct eswifi_dev *eswifi)
 {
-	eswifi->iface->if_dev->offload = &eswifi_offload;
 	int err;
+
+	net_if_offload_set(eswifi->iface, &eswifi_offload);
 
 	err = eswifi_off_enable_dhcp(eswifi);
 	if (err < 0) {

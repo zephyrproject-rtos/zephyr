@@ -229,7 +229,7 @@ static void simplelink_iface_init(struct net_if *iface)
 		SIMPLELINK_IPV6 : 0;
 
 	/* Direct socket offload used instead of net offload: */
-	iface->if_dev->offload = &simplelink_offload;
+	net_if_offload_set(iface, &simplelink_offload);
 
 	/* Initialize and configure NWP to defaults: */
 	ret = z_simplelink_init(simplelink_wifi_cb);

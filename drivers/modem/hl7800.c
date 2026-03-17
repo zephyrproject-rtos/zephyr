@@ -6611,8 +6611,9 @@ static void offload_iface_init(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct hl7800_iface_ctx *ctx = dev->data;
 
-	iface->if_dev->offload = &offload_funcs;
 	ctx->iface = iface;
+
+	net_if_offload_set(iface, &offload_funcs);
 
 	if (!IS_ENABLED(CONFIG_MODEM_HL7800_BOOT_DELAY)) {
 		hl7800_build_mac(&iface_ctx);
