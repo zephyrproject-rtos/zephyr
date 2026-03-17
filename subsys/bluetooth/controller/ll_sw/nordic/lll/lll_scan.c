@@ -830,7 +830,7 @@ static void isr_tx(void *param)
 	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
 	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
 	       HAL_RADIO_TMR_START_DELAY_US;
-	hcto += radio_rx_chain_delay_get(0, 0);
+	hcto += radio_rx_address_delay_get(0, 0);
 	hcto += addr_us_get(0);
 	hcto -= radio_tx_chain_delay_get(0, 0);
 
@@ -1623,7 +1623,7 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 				uint32_t aa_us;
 
 				aa_us = radio_tmr_aa_get();
-				aa_delay_us = radio_rx_chain_delay_get(lll->phy, phy_flags_rx);
+				aa_delay_us = radio_rx_address_delay_get(lll->phy, phy_flags_rx);
 				aa_delay_us += addr_us_get(lll->phy);
 				LL_ASSERT_MSG(aa_us >= aa_delay_us, "aa_us %u < aa_delay_us %u",
 					      aa_us, aa_delay_us);
