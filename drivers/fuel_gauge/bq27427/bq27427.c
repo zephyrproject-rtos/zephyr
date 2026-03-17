@@ -10,10 +10,13 @@
 
 #include <errno.h>
 
-#include <zephyr/kernel.h>
 #include <zephyr/drivers/fuel_gauge.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
+
+LOG_MODULE_REGISTER(bq27427);
 
 struct bq27427_config {
 	struct i2c_dt_spec i2c;
@@ -27,6 +30,7 @@ static int bq27427_command_read(const struct device *dev, uint8_t command, uint1
 	const int status = i2c_burst_read_dt(&cfg->i2c, command, i2c_data, sizeof(i2c_data));
 
 	if (status < 0) {
+		LOG_ERR("Failed to read register 0x%02X", command);
 		return status;
 	}
 
@@ -38,7 +42,7 @@ static int bq27427_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 			    union fuel_gauge_prop_val *val)
 {
 	int rc = 0;
-	uint16_t tmp_val;
+	uint16_t tmp_val = 0;
 
 	switch (prop) {
 	case FUEL_GAUGE_AVG_CURRENT:
@@ -63,7 +67,7 @@ static int bq27427_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		break;
 	case FUEL_GAUGE_TEMPERATURE:
 		rc = bq27427_command_read(dev, BQ27427_CMD_TEMPERATURE, &tmp_val);
-		val->temperature = tmp_val * 1000;
+		val->temperature = tmp_val;
 		break;
 	case FUEL_GAUGE_VOLTAGE:
 		rc = bq27427_command_read(dev, BQ27427_CMD_VOLTAGE, &tmp_val);
@@ -81,6 +85,7 @@ static int bq27427_init(const struct device *dev)
 	const struct bq27427_config *cfg = (const struct bq27427_config *)dev->config;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("I2C bus not ready");
 		return -ENODEV;
 	}
 
