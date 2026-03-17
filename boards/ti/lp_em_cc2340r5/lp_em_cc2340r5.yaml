@@ -11,6 +11,7 @@ supported:
   - gpio
   - uart
   - adc
+  - counter
   - pwm
   - dma
   - crypto

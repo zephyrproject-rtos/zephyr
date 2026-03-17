@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_CC27XX_LGPT
+	bool "CC27xx Counter driver based on the LGPT Timer"
+	default y
+	depends on DT_HAS_TI_CC27XX_LGPT_ENABLED
+	help
+	  Enable counter driver based on LGPT timer for CC27xx devices.
