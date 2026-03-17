@@ -13,6 +13,7 @@ pcr: pcr@40080100 {
 	reg = <0x40080100 0x100 0x4000a400 0x100>;
 	reg-names = "pcrr", "vbatr";
 	interrupts = <174 0>;
+	girqs = <MCHP_XEC_ECIA_GIRQ_ENC(20, 9)>;
 	core-clock-div = <1>;
 	/* MEC172x allows sources to be different */
 	pll-32k-src = <MCHP_XEC_PLL_CLK32K_SRC_SIL_OSC>;
@@ -23,6 +24,7 @@ pcr: pcr@40080100 {
 	clk32kmon-valid-min = <4>;
 	xtal-enable-delay-ms = <300>;
 	pll-lock-timeout-ms = <30>;
+	hibtimer-handle = <&hibtimer1>;
 	#clock-cells = <3>;
 };
 
@@ -438,15 +440,19 @@ cctmr0: timer@40001000 {
 };
 
 hibtimer0: timer@40009800 {
+	compatible = "microchip,xec-hibtimer";
 	reg = <0x40009800 0x20>;
 	interrupts = <112 0>;
-	girqs = <23 16>;
+	girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 16)>;
+	status = "disabled";
 };
 
 hibtimer1: timer@40009820 {
+	compatible = "microchip,xec-hibtimer";
 	reg = <0x40009820 0x20>;
 	interrupts = <113 0>;
-	girqs = <23 17>;
+	girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 17)>;
+	status = "disabled";
 };
 
 weektmr0: timer@4000ac80 {
