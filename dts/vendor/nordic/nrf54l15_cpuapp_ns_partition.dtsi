@@ -21,6 +21,12 @@
 		/* Secure image memory */
 		reg = <0x0 DT_SIZE_K(128)>;
 		ranges = <0x0 0x0 DT_SIZE_K(128)>;
+
+		kmu_push_area: memory@0 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x0 0x60>;
+			zephyr,memory-region = "kmu_push_area";
+		};
 	};
 
 	sram0_ns: image_ns@20000 {

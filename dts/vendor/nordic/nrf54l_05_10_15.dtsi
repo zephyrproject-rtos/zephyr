@@ -797,3 +797,18 @@
 		};
 	};
 };
+
+#ifndef USE_NON_SECURE_ADDRESS_MAP
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		kmu_push_area: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 0x60>;
+		};
+	};
+};
+#endif
