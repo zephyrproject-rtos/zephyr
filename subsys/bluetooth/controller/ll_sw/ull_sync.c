@@ -956,7 +956,6 @@ void ull_sync_setup(struct ll_scan_set *scan, uint8_t phy,
 	uint16_t sync_handle;
 	uint32_t interval_us;
 	uint32_t overhead_us;
-	struct pdu_adv *pdu;
 	uint16_t interval;
 	uint32_t slot_us;
 	uint8_t chm_last;
@@ -1087,7 +1086,6 @@ void ull_sync_setup(struct ll_scan_set *scan, uint8_t phy,
 
 	/* Calculate offset and schedule sync radio events */
 	ftr = &node_rx->rx_ftr;
-	pdu = (void *)((struct node_rx_pdu *)node_rx)->pdu;
 
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 
@@ -1096,7 +1094,6 @@ void ull_sync_setup(struct ll_scan_set *scan, uint8_t phy,
 			  lll->window_size_event_us;
 	/* offs_adjust may be 1 only if sync setup by LL_PERIODIC_SYNC_IND */
 	sync_offset_us += (PDU_ADV_SYNC_INFO_OFFS_ADJUST_GET(si) ? OFFS_ADJUST_US : 0U);
-	sync_offset_us -= PDU_AC_US(pdu->len, lll->phy, ftr->phy_flags);
 	sync_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	sync_offset_us -= EVENT_JITTER_US;
 	sync_offset_us -= ready_delay_us;
