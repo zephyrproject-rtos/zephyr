@@ -211,6 +211,12 @@ __subsystem struct ethphy_driver_api {
 
 	/* Get PLCA status */
 	int (*get_plca_sts)(const struct device *dev, bool *plca_sts);
+
+	/* Stop PHY link monitoring */
+	int (*monitor_stop)(const struct device *dev);
+
+	/* Start PHY link monitoring */
+	int (*monitor_start)(const struct device *dev);
 };
 /**
  * @endcond
@@ -293,6 +299,41 @@ static inline int phy_link_callback_set(const struct device *dev, phy_callback_t
 	}
 
 	return DEVICE_API_GET(ethphy, dev)->link_cb_set(dev, callback, user_data);
+}
+
+/**
+ * @brief Stop PHY link monitoring.
+ *
+ * Stops any periodic PHY polling and/or IRQ-driven monitoring so the PHY driver
+ * will not access the MDIO bus.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP If the PHY driver does not support this.
+ */
+static inline int phy_monitor_stop(const struct device *dev)
+{
+	if (DEVICE_API_GET(ethphy, dev)->monitor_stop == NULL) {
+		return -ENOTSUP;
+	}
+
+	return DEVICE_API_GET(ethphy, dev)->monitor_stop(dev);
+}
+
+/**
+ * @brief Start PHY link monitoring.
+ *
+ * Restarts PHY monitoring previously stopped by phy_monitor_stop().
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP If the PHY driver does not support this.
+ */
+static inline int phy_monitor_start(const struct device *dev)
+{
+	if (DEVICE_API_GET(ethphy, dev)->monitor_start == NULL) {
+		return -ENOTSUP;
+	}
+
+	return DEVICE_API_GET(ethphy, dev)->monitor_start(dev);
 }
 
 /**
