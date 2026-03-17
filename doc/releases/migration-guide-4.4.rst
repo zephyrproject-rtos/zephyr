@@ -664,6 +664,25 @@ Infineon
   * ``CONFIG_BT_CYW43XX`` → :kconfig:option:` CONFIG_BT_HCI_UART_INFINEON`
   * ``dtcompatible: "infineon,cyw43xxx-bt-hci"`` → ``dtcompatible: "infineon,bt-hci-uart"``
 
+Keyboard matrix
+===============
+
+* The common keyboard matrix Devicetree bindings have been updated to use
+  microseconds instead of milliseconds for polling period properties.
+
+  The following properties have been renamed and their units changed:
+
+  * ``poll-period-ms`` -> ``poll-period-us``
+  * ``stable-poll-period-ms`` -> ``stable-poll-period-us``
+
+  Applications using these properties must:
+
+  * Replace the old property names with the new ones, and
+  * Convert the values from milliseconds to microseconds. For example, a value
+    of ``10`` previously representing 10 ms must now be written as ``10000`` to
+    represent 10,000 µs.
+
+
 MDIO
 ====
 
