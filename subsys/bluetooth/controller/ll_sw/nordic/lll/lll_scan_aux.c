@@ -126,6 +126,8 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	uint32_t window_widening_us;
 	struct node_rx_ftr *ftr;
 	uint16_t window_size_us;
+	uint32_t end_timer_us;
+	uint32_t end_delays_us;
 	uint32_t aux_offset_us;
 	uint32_t overhead_us;
 	uint8_t *pri_dptr;
@@ -233,14 +235,15 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT_DBG(node_rx);
 
+	end_timer_us = radio_tmr_end_get();
+	end_delays_us = radio_rx_chain_delay_get(pdu_phy, pdu_phy_flags_rx) + pdu_us;
+	LL_ASSERT_MSG(end_timer_us >= end_delays_us, "Timer expired before starting");
+
 	/* Store the lll context, aux_ptr and start of PDU in footer */
 	ftr = &(node_rx->rx_ftr);
 	ftr->param = param;
 	ftr->aux_ptr = aux_ptr;
-	ftr->radio_end_us = radio_tmr_end_get() -
-			    radio_rx_chain_delay_get(pdu_phy,
-						     pdu_phy_flags_rx) -
-			    pdu_us;
+	ftr->radio_end_us = end_timer_us - end_delays_us;
 
 	radio_isr_set(setup_cb, node_rx);
 	radio_disable();
