@@ -99,9 +99,10 @@
 		};
 
 		clk_erfo: clk_erfo {
-			compatible = "fixed-clock";
+			compatible = "adi,max32-erfo";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(32)>;
+			capacitance-erfoctrl = <0>;
 			status = "disabled";
 		};
 	};
