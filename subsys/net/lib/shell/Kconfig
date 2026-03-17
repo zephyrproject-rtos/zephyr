@@ -70,10 +70,27 @@ config NET_SHELL_GPTP_SUPPORTED
 	default y
 	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_GPTP
 
+config NET_SHELL_HTTP_SUPPORTED
+	bool
+
 config NET_SHELL_HTTP_SERVER_SUPPORTED
 	bool "HTTP server status"
 	default y
 	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || HTTP_SERVER
+	select NET_SHELL_HTTP_SUPPORTED
+
+config NET_SHELL_HTTP_CLIENT_SUPPORTED
+	bool "HTTP client"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || HTTP_PARSER
+	select NET_SHELL_HTTP_SUPPORTED
+
+config NET_SHELL_HTTP_CLIENT_RECEIVE_BUFFER_SIZE
+	int "HTTP client receive buffer size"
+	default 512
+	depends on NET_SHELL_HTTP_CLIENT_SUPPORTED
+	depends on HTTP_PARSER
+
 
 config NET_SHELL_CONNECTION_MANAGER_SUPPORTED
 	bool "Connection manager status"
