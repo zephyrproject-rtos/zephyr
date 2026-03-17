@@ -25,6 +25,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/devicetree/nvmem.h>
+#include <zephyr/sys/byteorder.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -374,6 +375,326 @@ static inline bool nvmem_cell_is_ready(const struct nvmem_cell *cell)
 static inline bool nvmem_cell_is_read_only(const struct nvmem_cell *cell)
 {
 	return cell->read_only;
+}
+
+/**
+ * @brief Read a little-endian 16-bit value from an NVMEM cell.
+ *
+ * @param cell NVMEM cell to read from.
+ * @param[out] val Pointer to store the host-endian result.
+ * @param off Offset within the cell to start reading from, in bytes.
+ *
+ * @return 0 on success, or a negative error code.
+ */
+static inline int nvmem_cell_read_le16(const struct nvmem_cell *cell, uint16_t *val, off_t off)
+{
+	uint8_t buf[sizeof(uint16_t)];
+	int ret;
+
+	ret = nvmem_cell_read(cell, buf, off, sizeof(buf));
+	if (ret == 0) {
+		*val = sys_get_le16(buf);
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Read a big-endian 16-bit value from an NVMEM cell.
+ *
+ * @param cell NVMEM cell to read from.
+ * @param[out] val Pointer to store the host-endian result.
+ * @param off Offset within the cell to start reading from, in bytes.
+ *
+ * @return 0 on success, or a negative error code.
+ */
+static inline int nvmem_cell_read_be16(const struct nvmem_cell *cell, uint16_t *val, off_t off)
+{
+	uint8_t buf[sizeof(uint16_t)];
+	int ret;
+
+	ret = nvmem_cell_read(cell, buf, off, sizeof(buf));
+	if (ret == 0) {
+		*val = sys_get_be16(buf);
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Read a little-endian 32-bit value from an NVMEM cell.
+ *
+ * @param cell NVMEM cell to read from.
+ * @param[out] val Pointer to store the host-endian result.
+ * @param off Offset within the cell to start reading from, in bytes.
+ *
+ * @return 0 on success, or a negative error code.
+ */
+static inline int nvmem_cell_read_le32(const struct nvmem_cell *cell, uint32_t *val, off_t off)
+{
+	uint8_t buf[sizeof(uint32_t)];
+	int ret;
+
+	ret = nvmem_cell_read(cell, buf, off, sizeof(buf));
+	if (ret == 0) {
+		*val = sys_get_le32(buf);
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Read a big-endian 32-bit value from an NVMEM cell.
+ *
+ * @param cell NVMEM cell to read from.
+ * @param[out] val Pointer to store the host-endian result.
+ * @param off Offset within the cell to start reading from, in bytes.
+ *
+ * @return 0 on success, or a negative error code.
+ */
+static inline int nvmem_cell_read_be32(const struct nvmem_cell *cell, uint32_t *val, off_t off)
+{
+	uint8_t buf[sizeof(uint32_t)];
+	int ret;
+
+	ret = nvmem_cell_read(cell, buf, off, sizeof(buf));
+	if (ret == 0) {
+		*val = sys_get_be32(buf);
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Read a little-endian 48-bit value from an NVMEM cell.
+ *
+ * @param cell NVMEM cell to read from.
+ * @param[out] val Pointer to store the host-endian result.
+ * @param off Offset within the cell to start reading from, in bytes.
+ *
+ * @return 0 on success, or a negative error code.
+ */
+static inline int nvmem_cell_read_le48(const struct nvmem_cell *cell, uint64_t *val, off_t off)
+{
+	uint8_t buf[6];
+	int ret;
+
+	ret = nvmem_cell_read(cell, buf, off, sizeof(buf));
+	if (ret == 0) {
+		*val = sys_get_le48(buf);
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Read a big-endian 48-bit value from an NVMEM cell.
+ *
+ * @param cell NVMEM cell to read from.
+ * @param[out] val Pointer to store the host-endian result.
+ * @param off Offset within the cell to start reading from, in bytes.
+ *
+ * @return 0 on success, or a negative error code.
+ */
+static inline int nvmem_cell_read_be48(const struct nvmem_cell *cell, uint64_t *val, off_t off)
+{
+	uint8_t buf[6];
+	int ret;
+
+	ret = nvmem_cell_read(cell, buf, off, sizeof(buf));
+	if (ret == 0) {
+		*val = sys_get_be48(buf);
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Read a little-endian 64-bit value from an NVMEM cell.
+ *
+ * @param cell NVMEM cell to read from.
+ * @param[out] val Pointer to store the host-endian result.
+ * @param off Offset within the cell to start reading from, in bytes.
+ *
+ * @return 0 on success, or a negative error code.
+ */
+static inline int nvmem_cell_read_le64(const struct nvmem_cell *cell, uint64_t *val, off_t off)
+{
+	uint8_t buf[sizeof(uint64_t)];
+	int ret;
+
+	ret = nvmem_cell_read(cell, buf, off, sizeof(buf));
+	if (ret == 0) {
+		*val = sys_get_le64(buf);
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Read a big-endian 64-bit value from an NVMEM cell.
+ *
+ * @param cell NVMEM cell to read from.
+ * @param[out] val Pointer to store the host-endian result.
+ * @param off Offset within the cell to start reading from, in bytes.
+ *
+ * @return 0 on success, or a negative error code.
+ */
+static inline int nvmem_cell_read_be64(const struct nvmem_cell *cell, uint64_t *val, off_t off)
+{
+	uint8_t buf[sizeof(uint64_t)];
+	int ret;
+
+	ret = nvmem_cell_read(cell, buf, off, sizeof(buf));
+	if (ret == 0) {
+		*val = sys_get_be64(buf);
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Write a little-endian 16-bit value to an NVMEM cell.
+ *
+ * @param cell NVMEM cell to write to.
+ * @param val Host-endian value to write.
+ * @param off Offset within the cell to start writing to, in bytes.
+ *
+ * @return 0 on success, or a negative error code.
+ */
+static inline int nvmem_cell_write_le16(const struct nvmem_cell *cell, uint16_t val, off_t off)
+{
+	uint8_t buf[sizeof(uint16_t)];
+
+	sys_put_le16(val, buf);
+
+	return nvmem_cell_write(cell, buf, off, sizeof(buf));
+}
+
+/**
+ * @brief Write a big-endian 16-bit value to an NVMEM cell.
+ *
+ * @param cell NVMEM cell to write to.
+ * @param val Host-endian value to write.
+ * @param off Offset within the cell to start writing to, in bytes.
+ *
+ * @return 0 on success, or a negative error code.
+ */
+static inline int nvmem_cell_write_be16(const struct nvmem_cell *cell, uint16_t val, off_t off)
+{
+	uint8_t buf[sizeof(uint16_t)];
+
+	sys_put_be16(val, buf);
+
+	return nvmem_cell_write(cell, buf, off, sizeof(buf));
+}
+
+/**
+ * @brief Write a little-endian 32-bit value to an NVMEM cell.
+ *
+ * @param cell NVMEM cell to write to.
+ * @param val Host-endian value to write.
+ * @param off Offset within the cell to start writing to, in bytes.
+ *
+ * @return 0 on success, or a negative error code.
+ */
+static inline int nvmem_cell_write_le32(const struct nvmem_cell *cell, uint32_t val, off_t off)
+{
+	uint8_t buf[sizeof(uint32_t)];
+
+	sys_put_le32(val, buf);
+
+	return nvmem_cell_write(cell, buf, off, sizeof(buf));
+}
+
+/**
+ * @brief Write a big-endian 32-bit value to an NVMEM cell.
+ *
+ * @param cell NVMEM cell to write to.
+ * @param val Host-endian value to write.
+ * @param off Offset within the cell to start writing to, in bytes.
+ *
+ * @return 0 on success, or a negative error code.
+ */
+static inline int nvmem_cell_write_be32(const struct nvmem_cell *cell, uint32_t val, off_t off)
+{
+	uint8_t buf[sizeof(uint32_t)];
+
+	sys_put_be32(val, buf);
+
+	return nvmem_cell_write(cell, buf, off, sizeof(buf));
+}
+
+/**
+ * @brief Write a little-endian 48-bit value to an NVMEM cell.
+ *
+ * @param cell NVMEM cell to write to.
+ * @param val Host-endian value to write.
+ * @param off Offset within the cell to start writing to, in bytes.
+ *
+ * @return 0 on success, or a negative error code.
+ */
+static inline int nvmem_cell_write_le48(const struct nvmem_cell *cell, uint64_t val, off_t off)
+{
+	uint8_t buf[6];
+
+	sys_put_le48(val, buf);
+
+	return nvmem_cell_write(cell, buf, off, sizeof(buf));
+}
+
+/**
+ * @brief Write a big-endian 48-bit value to an NVMEM cell.
+ *
+ * @param cell NVMEM cell to write to.
+ * @param val Host-endian value to write.
+ * @param off Offset within the cell to start writing to, in bytes.
+ *
+ * @return 0 on success, or a negative error code.
+ */
+static inline int nvmem_cell_write_be48(const struct nvmem_cell *cell, uint64_t val, off_t off)
+{
+	uint8_t buf[6];
+
+	sys_put_be48(val, buf);
+
+	return nvmem_cell_write(cell, buf, off, sizeof(buf));
+}
+
+/**
+ * @brief Write a little-endian 64-bit value to an NVMEM cell.
+ *
+ * @param cell NVMEM cell to write to.
+ * @param val Host-endian value to write.
+ * @param off Offset within the cell to start writing to, in bytes.
+ *
+ * @return 0 on success, or a negative error code.
+ */
+static inline int nvmem_cell_write_le64(const struct nvmem_cell *cell, uint64_t val, off_t off)
+{
+	uint8_t buf[sizeof(uint64_t)];
+
+	sys_put_le64(val, buf);
+
+	return nvmem_cell_write(cell, buf, off, sizeof(buf));
+}
+
+/**
+ * @brief Write a big-endian 64-bit value to an NVMEM cell.
+ *
+ * @param cell NVMEM cell to write to.
+ * @param val Host-endian value to write.
+ * @param off Offset within the cell to start writing to, in bytes.
+ *
+ * @return 0 on success, or a negative error code.
+ */
+static inline int nvmem_cell_write_be64(const struct nvmem_cell *cell, uint64_t val, off_t off)
+{
+	uint8_t buf[sizeof(uint64_t)];
+
+	sys_put_be64(val, buf);
+
+	return nvmem_cell_write(cell, buf, off, sizeof(buf));
 }
 
 #ifdef __cplusplus
