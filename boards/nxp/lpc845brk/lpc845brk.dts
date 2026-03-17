@@ -8,6 +8,7 @@
 
 #include <nxp/lpc/nxp_lpc845.dtsi>
 #include <zephyr/dt-bindings/pinctrl/lpc84x-pinctrl.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	model = "NXP LPC845-BRK Board";
@@ -19,6 +20,31 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,flash-controller = &iap;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+			label = "RGB Green Led";
+		};
+
+		led1: led_1 {
+			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+			label = "RGB Blue Led";
+		};
+
+		led2: led_2 {
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+			label = "RGB Red Led";
+		};
 	};
 };
 
@@ -77,4 +103,16 @@
 			reg = <0x0000f000 DT_SIZE_K(8)>;
 		};
 	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&pint {
+	status = "okay";
 };
