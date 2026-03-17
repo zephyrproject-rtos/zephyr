@@ -6259,8 +6259,10 @@ int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf)
 
 	LOG_DBG("ACL conn %p buf %p len %u", conn, buf, buf->len);
 
-	if (buf->ref != 1) {
-		LOG_WRN("Expecting 1 ref, got %d", buf->ref);
+	unsigned char ref = atomic_uchar_get(&buf->ref);
+
+	if (ref != 1) {
+		LOG_WRN("Expecting 1 ref, got %u", ref);
 		return -EINVAL;
 	}
 
@@ -6316,8 +6318,10 @@ int bt_l2cap_br_echo_rsp(struct bt_conn *conn, uint8_t identifier, struct net_bu
 
 	LOG_DBG("ACL conn %p buf %p len %u", conn, buf, buf->len);
 
-	if (buf->ref != 1) {
-		LOG_WRN("Expecting 1 ref, got %d", buf->ref);
+	unsigned char ref = atomic_uchar_get(&buf->ref);
+
+	if (ref != 1) {
+		LOG_WRN("Expecting 1 ref, got %u", ref);
 		return -EINVAL;
 	}
 
@@ -6430,8 +6434,10 @@ int bt_l2cap_br_connless_send(struct bt_conn *conn, uint16_t psm, struct net_buf
 
 	LOG_DBG("ACL conn %p buf %p len %u", conn, buf, buf->len);
 
-	if (buf->ref != 1) {
-		LOG_WRN("Expecting 1 ref, got %d", buf->ref);
+	unsigned char ref = atomic_uchar_get(&buf->ref);
+
+	if (ref != 1) {
+		LOG_WRN("Expecting 1 ref, got %u", ref);
 		return -EINVAL;
 	}
 

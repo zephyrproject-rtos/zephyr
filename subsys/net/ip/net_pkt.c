@@ -410,15 +410,15 @@ struct net_buf *net_pkt_get_reserve_data(struct net_buf_pool *pool,
 	}
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	NET_FRAG_CHECK_IF_NOT_IN_USE(frag, frag->ref + 1U);
+	NET_FRAG_CHECK_IF_NOT_IN_USE(frag, atomic_uchar_get(&frag->ref) + 1);
 #endif
 
 	net_pkt_alloc_add(frag, false, caller, line);
 
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-	NET_DBG("%s (%s) [%d] frag %p ref %d (%s():%d)",
+	NET_DBG("%s (%s) [%d] frag %p ref %u (%s():%d)",
 		pool2str(pool), get_name(pool), get_frees(pool),
-		frag, frag->ref, caller, line);
+		frag, atomic_uchar_get(&frag->ref), caller, line);
 #endif
 
 	return frag;
@@ -571,14 +571,14 @@ void net_pkt_unref(struct net_pkt *pkt)
 	frag = pkt->frags;
 	while (frag) {
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-		NET_DBG("%s (%s) [%d] frag %p ref %d frags %p (%s():%d)",
+		NET_DBG("%s (%s) [%d] frag %p ref %u frags %p (%s():%d)",
 			pool2str(net_buf_pool_get(frag->pool_id)),
 			get_name(net_buf_pool_get(frag->pool_id)),
 			get_frees(net_buf_pool_get(frag->pool_id)), frag,
-			frag->ref - 1U, frag->frags, caller, line);
+			atomic_uchar_get(&frag->ref) - 1, frag->frags, caller, line);
 #endif
 
-		if (!frag->ref) {
+		if (!atomic_uchar_get(&frag->ref)) {
 			const char *func_freed;
 			int line_freed;
 
@@ -665,11 +665,11 @@ struct net_buf *net_pkt_frag_ref(struct net_buf *frag)
 	}
 
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-	NET_DBG("%s (%s) [%d] frag %p ref %d (%s():%d)",
+	NET_DBG("%s (%s) [%d] frag %p ref %u (%s():%d)",
 		pool2str(net_buf_pool_get(frag->pool_id)),
 		get_name(net_buf_pool_get(frag->pool_id)),
 		get_frees(net_buf_pool_get(frag->pool_id)),
-		frag, frag->ref + 1U, caller, line);
+		frag, atomic_uchar_get(&frag->ref) + 1, caller, line);
 #endif
 
 	return net_buf_ref(frag);
@@ -691,14 +691,14 @@ void net_pkt_frag_unref(struct net_buf *frag)
 	}
 
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-	NET_DBG("%s (%s) [%d] frag %p ref %d (%s():%d)",
+	NET_DBG("%s (%s) [%d] frag %p ref %u (%s():%d)",
 		pool2str(net_buf_pool_get(frag->pool_id)),
 		get_name(net_buf_pool_get(frag->pool_id)),
 		get_frees(net_buf_pool_get(frag->pool_id)),
-		frag, frag->ref - 1U, caller, line);
+		frag, atomic_uchar_get(&frag->ref) - 1, caller, line);
 #endif
 
-	if (frag->ref == 1U) {
+	if (atomic_uchar_get(&frag->ref) == 1) {
 		net_pkt_alloc_del(frag, caller, line);
 	}
 
@@ -718,13 +718,13 @@ struct net_buf *net_pkt_frag_del(struct net_pkt *pkt,
 {
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 	NET_DBG("pkt %p parent %p frag %p ref %u (%s:%d)",
-		pkt, parent, frag, frag->ref, caller, line);
+		pkt, parent, frag, atomic_uchar_get(&frag->ref), caller, line);
 #endif
 
 	if (pkt->frags == frag && !parent) {
 		struct net_buf *tmp;
 
-		if (frag->ref == 1U) {
+		if (atomic_uchar_get(&frag->ref) == 1) {
 			net_pkt_alloc_del(frag, caller, line);
 		}
 
@@ -734,7 +734,7 @@ struct net_buf *net_pkt_frag_del(struct net_pkt *pkt,
 		return tmp;
 	}
 
-	if (frag->ref == 1U) {
+	if (atomic_uchar_get(&frag->ref) == 1) {
 		net_pkt_alloc_del(frag, caller, line);
 	}
 
@@ -987,13 +987,13 @@ static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
 		timeout = sys_timepoint_timeout(end);
 
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-		NET_FRAG_CHECK_IF_NOT_IN_USE(new, new->ref + 1);
+		NET_FRAG_CHECK_IF_NOT_IN_USE(new, atomic_uchar_get(&new->ref) + 1);
 
 		net_pkt_alloc_add(new, false, caller, line);
 
-		NET_DBG("%s (%s) [%d] frag %p ref %d (%s():%d)",
+		NET_DBG("%s (%s) [%d] frag %p ref %u (%s():%d)",
 			pool2str(pool), get_name(pool), get_frees(pool),
-			new, new->ref, caller, line);
+			new, atomic_uchar_get(&new->ref), caller, line);
 #endif
 	} while (size);
 
@@ -1045,13 +1045,15 @@ static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
 	buf = net_buf_alloc_len(pool, size + headroom, timeout);
 
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-	NET_FRAG_CHECK_IF_NOT_IN_USE(buf, buf->ref + 1);
+	unsigned char ref = atomic_uchar_get(&buf->ref);
+
+	NET_FRAG_CHECK_IF_NOT_IN_USE(buf, ref + 1);
 
 	net_pkt_alloc_add(buf, false, caller, line);
 
-	NET_DBG("%s (%s) [%d] frag %p ref %d (%s():%d)",
+	NET_DBG("%s (%s) [%d] frag %p ref %u (%s():%d)",
 		pool2str(pool), get_name(pool), get_frees(pool),
-		buf, buf->ref, caller, line);
+		buf, ref, caller, line);
 #endif
 
 #if defined(CONFIG_NET_PKT_ALLOC_STATS)
