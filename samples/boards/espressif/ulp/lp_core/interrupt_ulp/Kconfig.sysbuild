@@ -6,3 +6,4 @@ source "share/sysbuild/Kconfig"
 config ULP_REMOTE_BOARD
 	string
 	default "esp32c6_devkitc/esp32c6/lpcore" if $(BOARD) = "esp32c6_devkitc"
+	default "esp32c5_devkitc/esp32c5/lpcore" if $(BOARD) = "esp32c5_devkitc"
