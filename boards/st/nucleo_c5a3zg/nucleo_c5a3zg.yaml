@@ -9,6 +9,7 @@ supported:
   - arduino_gpio
   - arduino_serial
   - counter
+  - dma
   - gpio
   - pwm
   - rtc
