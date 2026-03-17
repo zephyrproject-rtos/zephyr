@@ -129,7 +129,7 @@
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <0>;
 		zephyr,resolution = <12>;
-		zephyr,input-positive = <SIWX91X_ADC_INPUT_ULP1>;
+		zephyr,input-positive = <SIWX91X_ADC_INPUT_HP28>;
 	};
 
 	status = "okay";
