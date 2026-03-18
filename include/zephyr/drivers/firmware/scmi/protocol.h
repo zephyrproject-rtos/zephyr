@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -122,6 +122,8 @@ struct scmi_protocol {
 	uint32_t id;
 	/** TX channel */
 	struct scmi_channel *tx;
+	/** RX channel */
+	struct scmi_channel *rx;
 	/** Transport layer device */
 	const struct device *transport;
 	/** Protocol private data */
