@@ -31,6 +31,7 @@ struct tisci_config {
 	uint32_t host_id;
 	int max_msg_size;
 	int max_rx_timeout_ms;
+	bool is_secure;
 };
 
 /**
@@ -1595,6 +1596,7 @@ static int tisci_init(const struct device *dev)
 		.host_id = DT_INST_PROP(_n, ti_host_id),                                           \
 		.max_msg_size = MAILBOX_MBOX_SIZE,                                                 \
 		.max_rx_timeout_ms = 10000,                                                        \
+		.is_secure = DT_INST_PROP_OR(_n, ti_is_secure, false),                             \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(_n, tisci_init, NULL, &tisci_data_##_n, &tisci_config_##_n,          \
 			      PRE_KERNEL_1, CONFIG_TISCI_INIT_PRIORITY, NULL);
