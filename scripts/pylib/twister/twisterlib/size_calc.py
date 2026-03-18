@@ -43,7 +43,6 @@ class SizeCalculator:
         "k_mbox_area",
         "k_pipe_area",
         "net_if_area",
-        "net_if_dev_area",
         "net_l2_area",
         "net_l2_data",
         "k_queue_area",
