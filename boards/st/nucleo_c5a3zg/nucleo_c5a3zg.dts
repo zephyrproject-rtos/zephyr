@@ -60,6 +60,15 @@
 	};
 };
 
+&adc2 {
+	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
+		 <&rcc STM32_SRC_PSIK ADCDAC_SEL(2)>;
+	clock-names = "adcx", "adc_ker";
+	pinctrl-0 = <&adc2_in12_ph4 &adc2_in13_ph5>; /* Arduino A1 & A2 */
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(48)>;
 	status = "okay";
@@ -71,6 +80,12 @@
 
 &clk_psis {
 	clock-frequency = <DT_FREQ_M(144)>;
+	status = "okay";
+};
+
+&clk_psik {
+	clock-frequency = <DT_FREQ_M(32)>;
+	xsik-div = "4.5";
 	status = "okay";
 };
 
