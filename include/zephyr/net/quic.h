@@ -113,6 +113,9 @@ enum {
 	 * Call multiple times to add multiple intermediate certificates.
 	 */
 	ZSOCK_QUIC_SO_CERT_CHAIN_ADD = 2,
+
+	/** Set the error code to use when sending STOP_SENDING frame on stream close */
+	ZSOCK_QUIC_SO_STOP_SENDING_CODE = 3,
 };
 
 /**
