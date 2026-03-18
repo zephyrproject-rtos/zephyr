@@ -558,7 +558,7 @@ static const struct disk_operations disk_ftl_ops = {
 				.name = DT_INST_PROP(n, disk_name),                                \
 				.ops = &disk_ftl_ops,                                              \
 			},                                                                         \
-		.area = FIXED_PARTITION_BY_NODE(PARTITION_PHANDLE(n)),                             \
+		.area = PARTITION_BY_NODE(PARTITION_PHANDLE(n)),                                   \
 		.buffer_size = DT_INST_PROP(n, buffer_size),                                       \
 		.page_buffer = disk_ftl_page_buffer_##n,                                           \
 		.dhara_buffer = disk_ftl_dhara_buffer_##n,                                         \
