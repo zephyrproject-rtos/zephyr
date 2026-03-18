@@ -38,6 +38,9 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define LFXO_NODE DT_NODELABEL(lfxo)
 #define HFXO_NODE DT_NODELABEL(hfxo)
 
+#define LFXO_CAP_MIN_FF 3000UL  /* min load capacitance in femtofarads */
+#define LFXO_CAP_MAX_FF 18000UL /* max load capacitance in femtofarads */
+
 #if DT_PROP(LFXO_NODE, external_clock_source)
 BUILD_ASSERT(DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, internal) == 0,
 	     "Internal load capacitors must be disconnected when using "
@@ -54,6 +57,12 @@ static inline void power_and_clock_configuration(void)
  * that requires them to be configured with the same security property.
  */
 #if DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, internal)
+	BUILD_ASSERT(DT_PROP(LFXO_NODE, load_capacitance_femtofarad) >= LFXO_CAP_MIN_FF &&
+		     DT_PROP(LFXO_NODE, load_capacitance_femtofarad) <= LFXO_CAP_MAX_FF,
+		     "LFXO load capacitance must be between "
+		     STRINGIFY(LFXO_CAP_MIN_FF) " and " STRINGIFY(LFXO_CAP_MAX_FF)
+		     " femtofarads");
+
 	uint32_t xosc32ktrim = NRF_FICR->XOSC32KTRIM;
 	/* The SLOPE field is in the two's complement form, hence this special
 	 * handling. Ideally, it would result in just one SBFX instruction for
