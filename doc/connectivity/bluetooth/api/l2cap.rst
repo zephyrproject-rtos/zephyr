@@ -80,6 +80,17 @@ of how to define a fixed channel is shown below.
 Client Channels
 ---------------
 
+For dynamic L2CAP channels, the application must provide a channel
+instance from within the ``accept`` callback.
+
+The application typically keeps a :c:struct:`bt_l2cap_le_chan`
+instance (either static or allocated per connection). Inside the
+``accept`` callback, this channel object must be initialized,
+its callback table (``chan.ops``) assigned, and any required
+parameters such as the receive MTU (``rx.mtu``) configured.
+The pointer returned via ``*chan`` must reference the
+``bt_l2cap_chan`` member of this object.
+
 Client channels can be initiated with use of :c:func:`bt_l2cap_chan_connect`
 API and can be disconnected with the :c:func:`bt_l2cap_chan_disconnect` API.
 Note that the latter can also disconnect channel instances created by servers.
