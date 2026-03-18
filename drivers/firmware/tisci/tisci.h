@@ -21,24 +21,21 @@
 #define __packed __attribute__((__packed__))
 #endif
 
+/* Core System Messages */
 #define TISCI_MSG_ENABLE_WDT            0x0000
 #define TISCI_MSG_WAKE_RESET            0x0001
 #define TISCI_MSG_VERSION               0x0002
 #define TISCI_MSG_WAKE_REASON           0x0003
 #define TISCI_MSG_GOODBYE               0x0004
 #define TISCI_MSG_SYS_RESET             0x0005
-#define TISCI_MSG_BOARD_CONFIG          0x000b
+#define TISCI_MSG_BOOT_NOTIFICATION     0x000a /* Secure */
+#define TISCI_MSG_BOARD_CONFIG          0x000b /* Secure */
 #define TISCI_MSG_BOARD_CONFIG_RM       0x000c
-#define TISCI_MSG_BOARD_CONFIG_SECURITY 0x000d
+#define TISCI_MSG_BOARD_CONFIG_SECURITY 0x000d /* Secure */
 #define TISCI_MSG_BOARD_CONFIG_PM       0x000e
 #define TISCI_MSG_QUERY_MSMC            0x0020
 
-/* Device requests */
-#define TISCI_MSG_SET_DEVICE_STATE  0x0200
-#define TISCI_MSG_GET_DEVICE_STATE  0x0201
-#define TISCI_MSG_SET_DEVICE_RESETS 0x0202
-
-/* Clock requests */
+/* Clock Management */
 #define TISCI_MSG_SET_CLOCK_STATE       0x0100
 #define TISCI_MSG_GET_CLOCK_STATE       0x0101
 #define TISCI_MSG_SET_CLOCK_PARENT      0x0102
@@ -47,6 +44,77 @@
 #define TISCI_MSG_SET_CLOCK_FREQ        0x010c
 #define TISCI_MSG_QUERY_CLOCK_FREQ      0x010d
 #define TISCI_MSG_GET_CLOCK_FREQ        0x010e
+
+/* Device Management */
+#define TISCI_MSG_SET_DEVICE_STATE  0x0200
+#define TISCI_MSG_GET_DEVICE_STATE  0x0201
+#define TISCI_MSG_SET_DEVICE_RESETS 0x0202
+
+/* Low Power Mode Messages */
+#define TISCI_MSG_ENTER_SLEEP 0x0301 /* Secure */
+
+/* Resource Management Requests */
+/* RM TISCI message to set an IRQ between a peripheral and host processor */
+#define TISCI_MSG_RM_IRQ_SET         0x1000
+/* RM TISCI message to release a configured IRQ */
+#define TISCI_MSG_RM_IRQ_RELEASE     0x1001
+
+/* Ring Accelerator */
+#define TISCI_MSG_RM_RING_CFG 0x1110
+
+/* UDMAP Transmit Channels */
+#define TISCI_MSG_RM_UDMAP_TX_ALLOC  0x1200
+#define TISCI_MSG_RM_UDMAP_TX_FREE   0x1201
+#define TISCI_MSG_RM_UDMAP_TX_CH_CFG 0x1205
+
+/* UDMAP Receive Channels */
+#define TISCI_MSG_RM_UDMAP_RX_ALLOC  0x1210
+#define TISCI_MSG_RM_UDMAP_RX_FREE   0x1211
+#define TISCI_MSG_RM_UDMAP_RX_CH_CFG 0x1215
+
+/* UDMAP Flow Configuration */
+#define TISCI_MSG_RM_UDMAP_FLOW_CFG             0x1220
+#define TISCI_MSG_RM_UDMAP_OPT_FLOW_CFG         0x1221
+#define TISCI_MSG_RM_UDMAP_FLOW_SIZE_THRESH_CFG 0x1231
+
+/* PSI-L Pairing */
+#define TISCI_MSG_RM_PSIL_PAIR   0x1280
+#define TISCI_MSG_RM_PSIL_UNPAIR 0x1281
+
+/* RM TISCI message to request a resource range assignment for a host */
+#define TISCI_MSG_GET_RESOURCE_RANGE 0x1500
+
+/* Security Messages */
+/* Firewall Configuration */
+#define TISCI_MSG_FWL_SET          0x9000
+#define TISCI_MSG_FWL_GET          0x9001
+#define TISCI_MSG_FWL_CHANGE_OWNER 0x9002
+#define TISCI_MSG_OPEN_DEBUG_FWLS  0x900c /* Secure */
+
+/* Cryptographic Key Management (DKEK) */
+#define TISCI_MSG_SA2UL_SET_DKEK     0x9003 /* Secure */
+#define TISCI_MSG_SA2UL_RELEASE_DKEK 0x9004 /* Secure */
+#define TISCI_MSG_SA2UL_GET_DKEK     0x9029 /* Secure */
+
+/* OTP (One-Time Programmable) Memory */
+#define TISCI_MSG_READ_OTP_MMR               0x9022 /* Secure */
+#define TISCI_MSG_WRITE_OTP_ROW              0x9023 /* Secure */
+#define TISCI_MSG_LOCK_OTP_ROW               0x9024 /* Secure */
+#define TISCI_MSG_SOFT_LOCK_OTP_WRITE_GLOBAL 0x9025 /* Secure */
+#define TISCI_MSG_GET_OTP_ROW_LOCK_STATUS    0x9026 /* Secure */
+
+/* Security Handover and Key Writing */
+#define TISCI_MSG_SEC_HANDOVER       0x9030 /* Secure */
+#define TISCI_MSG_KEY_WRITER         0x9031 /* Secure */
+#define TISCI_MSG_WRITE_SWREV        0x9032 /* Secure */
+#define TISCI_MSG_READ_SWREV         0x9033 /* Secure */
+#define TISCI_MSG_READ_KEYCNT_KEYREV 0x9034 /* Secure */
+#define TISCI_MSG_WRITE_KEYREV       0x9035 /* Secure */
+
+/* Cryptographic Key Management (DSMEK) */
+#define TISCI_MSG_SA2UL_GET_DSMEK     0x9036 /* Secure */
+#define TISCI_MSG_SA2UL_SET_DSMEK     0x9037 /* Secure */
+#define TISCI_MSG_SA2UL_RELEASE_DSMEK 0x9038 /* Secure */
 
 /* Processor Control Messages */
 #define TISCI_MSG_PROC_REQUEST          0xc000
@@ -57,37 +125,6 @@
 #define TISCI_MSG_PROC_AUTH_BOOT_IMAGE  0xc120
 #define TISCI_MSG_GET_PROC_BOOT_STATUS  0xc400
 #define TISCI_MSG_WAIT_PROC_BOOT_STATUS 0xc401
-
-/* Resource Management Requests */
-/* RM TISCI message to request a resource range assignment for a host */
-#define TISCI_MSG_GET_RESOURCE_RANGE 0x1500
-/* RM TISCI message to set an IRQ between a peripheral and host processor */
-#define TISCI_MSG_RM_IRQ_SET         (0x1000U)
-/* RM TISCI message to release a configured IRQ */
-#define TISCI_MSG_RM_IRQ_RELEASE     (0x1001U)
-
-/* NAVSS resource management */
-/* Ringacc requests */
-#define TISCI_MSG_RM_RING_CFG 0x1110
-
-/* PSI-L requests */
-#define TISCI_MSG_RM_PSIL_PAIR   0x1280
-#define TISCI_MSG_RM_PSIL_UNPAIR 0x1281
-
-#define TISCI_MSG_RM_UDMAP_TX_ALLOC     0x1200
-#define TISCI_MSG_RM_UDMAP_TX_FREE      0x1201
-#define TISCI_MSG_RM_UDMAP_RX_ALLOC     0x1210
-#define TISCI_MSG_RM_UDMAP_RX_FREE      0x1211
-#define TISCI_MSG_RM_UDMAP_FLOW_CFG     0x1220
-#define TISCI_MSG_RM_UDMAP_OPT_FLOW_CFG 0x1221
-
-#define TISCI_MSG_RM_UDMAP_TX_CH_CFG            0x1205
-#define TISCI_MSG_RM_UDMAP_RX_CH_CFG            0x1215
-#define TISCI_MSG_RM_UDMAP_FLOW_SIZE_THRESH_CFG 0x1231
-
-#define TISCI_MSG_FWL_SET          0x9000
-#define TISCI_MSG_FWL_GET          0x9001
-#define TISCI_MSG_FWL_CHANGE_OWNER 0x9002
 
 /**
  * @struct rx_msg
