@@ -15,9 +15,15 @@ static void scmi_mbox_cb(const struct device *mbox,
 			 struct mbox_msg *data)
 {
 	struct scmi_channel *scmi_chan = user_data;
+	struct scmi_mbox_channel *mbox_chan = scmi_chan->data;
 
 	if (scmi_chan->cb) {
 		scmi_chan->cb(scmi_chan);
+	}
+
+	/* RX notification needs an ACK (free shmem) after core is notified. */
+	if (mbox_chan && !mbox_chan->is_tx && mbox_chan->shmem) {
+		scmi_shmem_clear_channel_status(mbox_chan->shmem);
 	}
 }
 

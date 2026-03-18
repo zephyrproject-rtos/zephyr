@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,6 +37,17 @@ int scmi_shmem_get_channel_status(const struct device *dev, uint32_t *status)
 	*status = layout->chan_status;
 
 	return 0;
+}
+
+void scmi_shmem_clear_channel_status(const struct device *dev)
+{
+	struct scmi_shmem_data *data;
+	struct scmi_shmem_layout *layout;
+
+	data = dev->data;
+	layout = (struct scmi_shmem_layout *)data->regmap;
+
+	layout->chan_status |= SCMI_SHMEM_CHAN_STATUS_BUSY_BIT;
 }
 
 static void scmi_shmem_memcpy(mm_reg_t dst, mm_reg_t src, uint32_t bytes)

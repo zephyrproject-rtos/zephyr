@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -102,6 +102,13 @@ int scmi_shmem_vendor_write_message(struct scmi_shmem_layout *layout);
  * @retval negative errno if failure
  */
 int scmi_shmem_vendor_read_message(const struct scmi_shmem_layout *layout);
+
+/**
+ * @brief Clear a SHMEM area channel status
+ *
+ * @param dev pointer to shmem device
+ */
+void scmi_shmem_clear_channel_status(const struct device *dev);
 
 /**
  * @}
