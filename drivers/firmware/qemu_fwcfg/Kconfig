@@ -4,6 +4,7 @@
 config QEMU_FWCFG
 	bool "Support for QEMU's fwcfg"
 	default y
+	depends on MULTITHREADING
 	depends on DT_HAS_QEMU_FW_CFG_MMIO_ENABLED || DT_HAS_QEMU_FW_CFG_IOPORT_ENABLED
 	help
 	  Enable support for QEMU's firmware configuration device.
