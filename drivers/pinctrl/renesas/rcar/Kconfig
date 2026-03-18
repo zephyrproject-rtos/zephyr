@@ -15,7 +15,6 @@ config PINCTRL_RCAR_VOLTAGE_CONTROL
 
 config PINCTRL_RCAR_SCMI
 	bool "SCMI functionality of Renesas R-Car PFC driver"
-	default y
 	depends on PINCTRL_RCAR_PFC
 	depends on ARM_SCMI_PINCTRL_HELPERS
 	help
