@@ -48,6 +48,26 @@
 	(SCMI_FIELD_MAKE(id, GENMASK(7, 0), 0) | SCMI_FIELD_MAKE(type, GENMASK(1, 0), 8) |         \
 	 SCMI_FIELD_MAKE(proto, GENMASK(7, 0), 10) | SCMI_FIELD_MAKE(token, GENMASK(9, 0), 18))
 
+/**
+ * @brief Extract message ID (bits [7:0]) from SCMI message header
+ */
+#define SCMI_MESSAGE_HDR_TAKE_MSGID(hdr)    FIELD_GET(GENMASK(7, 0), (hdr))
+
+/**
+ * @brief Extract message type (bits [9:8]) from SCMI message header
+ */
+#define SCMI_MESSAGE_HDR_TAKE_TYPE(hdr)     FIELD_GET(GENMASK(9, 8), (hdr))
+
+/**
+ * @brief Extract protocol ID (bits [17:10]) from SCMI message header
+ */
+#define SCMI_MESSAGE_HDR_TAKE_PROTOCOL(hdr) FIELD_GET(GENMASK(17, 10), (hdr))
+
+/**
+ * @brief Extract token (bits [27:18]) from SCMI message header
+ */
+#define SCMI_MESSAGE_HDR_TAKE_TOKEN(hdr)    FIELD_GET(GENMASK(27, 18), (hdr))
+
 struct scmi_channel;
 
 /**
