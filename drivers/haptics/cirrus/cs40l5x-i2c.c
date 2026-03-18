@@ -20,11 +20,11 @@ static bool cs40l5x_is_ready_i2c(const struct device *const dev)
 	return i2c_is_ready_dt(&config->bus.i2c);
 }
 
-static struct device *cs40l5x_get_device_i2c(const struct device *const dev)
+static const struct device *const cs40l5x_get_device_i2c(const struct device *const dev)
 {
 	const struct cs40l5x_config *const config = dev->config;
 
-	return (struct device *)&config->bus.i2c.bus;
+	return (const struct device *const)&config->bus.i2c.bus;
 }
 
 static int cs40l5x_read_i2c(const struct device *const dev, uint32_t addr, uint32_t *const rx,

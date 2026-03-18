@@ -32,7 +32,7 @@ struct cs40l5x_trigger_gpios {
 };
 
 typedef bool (*cs40l5x_io_bus_is_ready)(const struct device *const dev);
-typedef struct device *(*cs40l5x_io_bus_get_device)(const struct device *const dev);
+typedef const struct device *const (*cs40l5x_io_bus_get_device)(const struct device *const dev);
 typedef int (*cs40l5x_io_bus_read)(const struct device *const dev, const uint32_t addr,
 				   uint32_t *const rx, const uint32_t len);
 typedef int (*cs40l5x_io_bus_write)(const struct device *const dev, uint32_t *const tx,
