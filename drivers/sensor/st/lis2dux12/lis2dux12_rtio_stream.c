@@ -219,8 +219,9 @@ static void lis2dux12_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	}
 
 	uint8_t *buf, *read_buf;
-	uint32_t buf_len, buf_avail;
-	uint32_t req_len = LIS2DUX12_FIFO_SIZE(fifo_count) + sizeof(struct lis2dux12_fifo_data);
+	uint32_t buf_len;
+	uint32_t fifo_read_size = LIS2DUX12_FIFO_SIZE(fifo_count);
+	uint32_t req_len = fifo_read_size + sizeof(struct lis2dux12_fifo_data);
 
 	if (rtio_sqe_rx_buf(lis2dux12->streaming_sqe, req_len, req_len, &buf, &buf_len) != 0) {
 		LOG_ERR("Failed to get buffer");
@@ -247,7 +248,6 @@ static void lis2dux12_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 
 	memcpy(buf, &hdr, sizeof(hdr));
 	read_buf = buf + sizeof(hdr);
-	buf_avail = buf_len - sizeof(hdr);
 
 	uint8_t reg_addr = lis2dux12_bus_reg(lis2dux12->bus_type, LIS2DUXXX_DT_FIFO_DATA_OUT_TAG);
 	struct rtio_regs fifo_regs;
@@ -255,7 +255,7 @@ static void lis2dux12_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 		{
 			reg_addr,
 			read_buf,
-			buf_avail,
+			fifo_read_size,
 		},
 	};
 
