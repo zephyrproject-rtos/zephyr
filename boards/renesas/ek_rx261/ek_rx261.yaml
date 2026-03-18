@@ -6,6 +6,7 @@ name: Renesas EK-RX261
 type: mcu
 arch: rx
 toolchain:
+  - zephyr
   - cross-compile
 supported:
   - gpio
