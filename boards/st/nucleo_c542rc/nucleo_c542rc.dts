@@ -88,6 +88,12 @@
 	};
 };
 
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&clk_psis>;
 	clock-frequency = <DT_FREQ_M(144)>;

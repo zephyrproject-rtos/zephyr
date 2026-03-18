@@ -7,8 +7,10 @@ toolchain:
   - gnuarmemb
 supported:
   - arduino_gpio
+  - arduino_i2c
   - arduino_serial
   - gpio
+  - i2c
   - uart
 ram: 64
 flash: 256
