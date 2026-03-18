@@ -193,6 +193,19 @@ int stm32_gpioport_configure_pin(
 		}
 	}
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl)
+	uint32_t piocfgr = (config >> STM32_IORETIME_ADVCFGR_SHIFT) & STM32_IORETIME_ADVCFGR_MASK;
+	uint32_t delayr = (config >> STM32_IODELAY_LENGTH_SHIFT) & STM32_IODELAY_LENGTH_MASK;
+
+	if (pin <= 7) {
+		LL_GPIO_SetDelayPin_0_7(gpio, pin_ll, delayr);
+		LL_GPIO_SetPIOControlPin_0_7(gpio, pin_ll, piocfgr);
+	} else {
+		LL_GPIO_SetDelayPin_8_15(gpio, pin_ll, delayr);
+		LL_GPIO_SetPIOControlPin_8_15(gpio, pin_ll, piocfgr);
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl) */
+
 	LL_GPIO_SetPinMode(gpio, pin_ll, mode >> STM32_MODER_SHIFT);
 
 	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
