@@ -5,10 +5,64 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(bmi270);
 
 #include "bmi270.h"
+
+#if defined(CONFIG_BMI270_STREAM)
+/* Dedicated work queue so FIFO handler runs on a thread with large stack (SPI + RTIO). */
+static K_KERNEL_STACK_DEFINE(bmi270_fifo_work_stack, CONFIG_BMI270_FIFO_WORKQ_STACK_SIZE);
+static struct k_work_q bmi270_fifo_work_q;
+static bool bmi270_fifo_work_q_initialized;
+
+static inline const struct gpio_dt_spec *bmi270_fifo_irq_pin(const struct bmi270_config *cfg)
+{
+#if defined(CONFIG_BMI270_FIFO_ON_INT2)
+	return &cfg->int2;
+#else
+	return &cfg->int1;
+#endif
+}
+
+static void bmi270_fifo_work_handler(struct k_work *work)
+{
+	struct bmi270_data *data = CONTAINER_OF(work, struct bmi270_data, fifo_work);
+
+	bmi270_stream_handle_fifo(data->dev);
+}
+
+void bmi270_submit_fifo_work(const struct device *dev)
+{
+	struct bmi270_data *data = dev->data;
+
+	k_work_submit_to_queue(&bmi270_fifo_work_q, &data->fifo_work);
+}
+
+struct k_work_q *bmi270_get_fifo_work_q(void)
+{
+	return &bmi270_fifo_work_q;
+}
+
+static bool bmi270_try_submit_fifo_irq(const struct device *dev, const struct gpio_dt_spec *irq_pin,
+				       const char *label)
+{
+	struct bmi270_data *data = dev->data;
+
+	if (data->streaming_sqe == NULL) {
+		return false;
+	}
+
+	if (irq_pin->port) {
+		gpio_pin_interrupt_configure_dt(irq_pin, GPIO_INT_DISABLE);
+	}
+
+	LOG_DBG("%s: submit FIFO work", label);
+	k_work_submit_to_queue(&bmi270_fifo_work_q, &data->fifo_work);
+	return true;
+}
+#endif
 
 enum {
 	INT_FLAGS_INT1,
@@ -33,6 +87,7 @@ static void bmi270_int1_callback(const struct device *dev,
 {
 	struct bmi270_data *data =
 		CONTAINER_OF(cb, struct bmi270_data, int1_cb);
+
 	bmi270_raise_int_flag(data->dev, INT_FLAGS_INT1);
 }
 
@@ -44,14 +99,20 @@ static void bmi270_int2_callback(const struct device *dev,
 	bmi270_raise_int_flag(data->dev, INT_FLAGS_INT2);
 }
 
-
 static void bmi270_thread_cb(const struct device *dev)
 {
 	struct bmi270_data *data = dev->data;
 	int ret;
 
-	/* INT1 is used for feature interrupts */
+	/* INT1: FIFO by default, feature (motion) interrupts when using INT2 for FIFO */
 	if (atomic_test_and_clear_bit(&data->int_flags, INT_FLAGS_INT1)) {
+#if defined(CONFIG_BMI270_STREAM) && !defined(CONFIG_BMI270_FIFO_ON_INT2)
+		const struct bmi270_config *cfg = dev->config;
+
+		if (bmi270_try_submit_fifo_irq(dev, bmi270_fifo_irq_pin(cfg), "INT1")) {
+			return;
+		}
+#endif
 		uint16_t int_status;
 
 		ret = bmi270_reg_read(dev, BMI270_REG_INT_STATUS_0,
@@ -72,8 +133,15 @@ static void bmi270_thread_cb(const struct device *dev)
 		k_mutex_unlock(&data->trigger_mutex);
 	}
 
-	/* INT2 is used for data ready interrupts */
+	/* INT2: FIFO when CONFIG_BMI270_FIFO_ON_INT2, else data ready only */
 	if (atomic_test_and_clear_bit(&data->int_flags, INT_FLAGS_INT2)) {
+#if defined(CONFIG_BMI270_STREAM) && defined(CONFIG_BMI270_FIFO_ON_INT2)
+		const struct bmi270_config *cfg = dev->config;
+
+		if (bmi270_try_submit_fifo_irq(dev, bmi270_fifo_irq_pin(cfg), "INT2")) {
+			return;
+		}
+#endif
 		k_mutex_lock(&data->trigger_mutex, K_FOREVER);
 
 		if (data->drdy_handler != NULL) {
@@ -168,6 +236,24 @@ static int bmi270_init_int_pin(const struct gpio_dt_spec *pin,
 	return 0;
 }
 
+static int bmi270_configure_int_io_ctrl(const struct device *dev, const struct gpio_dt_spec *pin,
+					uint8_t reg, const char *name)
+{
+	int ret;
+	uint8_t io_ctrl = BMI270_INT_IO_CTRL_OUTPUT_EN | BMI270_INT_IO_CTRL_LVL;
+
+	if (!pin->port) {
+		return 0;
+	}
+
+	ret = bmi270_reg_write(dev, reg, &io_ctrl, 1);
+	if (ret < 0) {
+		LOG_ERR("failed configuring %s_IO_CTRL (%d)", name, ret);
+		return ret;
+	}
+
+	return 0;
+}
 
 int bmi270_init_interrupts(const struct device *dev)
 {
@@ -194,29 +280,53 @@ int bmi270_init_interrupts(const struct device *dev)
 	ret = bmi270_init_int_pin(&cfg->int2, &data->int2_cb,
 				  bmi270_int2_callback);
 	if (ret) {
-		LOG_ERR("Failed to initialize INT2");
+		LOG_ERR("Failed to initialize INT2 (required for FIFO and data ready)");
 		return -EINVAL;
 	}
 
-	if (cfg->int1.port) {
-		uint8_t int1_io_ctrl = BMI270_INT_IO_CTRL_OUTPUT_EN;
+#if defined(CONFIG_BMI270_STREAM)
+	if (!bmi270_fifo_work_q_initialized) {
+		k_work_queue_init(&bmi270_fifo_work_q);
+		k_work_queue_start(&bmi270_fifo_work_q, bmi270_fifo_work_stack,
+				   K_THREAD_STACK_SIZEOF(bmi270_fifo_work_stack),
+				   CONFIG_BMI270_THREAD_PRIORITY - 1, NULL);
+		bmi270_fifo_work_q_initialized = true;
+	}
+	k_work_init(&data->fifo_work, bmi270_fifo_work_handler);
+#endif
 
-		ret = bmi270_reg_write(dev, BMI270_REG_INT1_IO_CTRL, &int1_io_ctrl, 1);
-		if (ret < 0) {
-			LOG_ERR("failed configuring INT1_IO_CTRL (%d)", ret);
-			return ret;
-		}
+	ret = bmi270_configure_int_io_ctrl(dev, &cfg->int1, BMI270_REG_INT1_IO_CTRL, "INT1");
+	if (ret < 0) {
+		return ret;
 	}
 
-	if (cfg->int2.port) {
-		uint8_t int2_io_ctrl = BMI270_INT_IO_CTRL_OUTPUT_EN;
-
-		ret = bmi270_reg_write(dev, BMI270_REG_INT2_IO_CTRL, &int2_io_ctrl, 1);
-		if (ret < 0) {
-			LOG_ERR("failed configuring INT2_IO_CTRL (%d)", ret);
-			return ret;
-		}
+	ret = bmi270_configure_int_io_ctrl(dev, &cfg->int2, BMI270_REG_INT2_IO_CTRL, "INT2");
+	if (ret < 0) {
+		return ret;
 	}
+
+	/*
+	 * Permanent latched: pin stays HIGH until INT_STATUS is read AND the
+	 * interrupt condition is no longer active.  Non-latched mode leaves
+	 * INT1 permanently HIGH on this hardware even with no mapped sources.
+	 * With latched mode the pin deasserts after the handler drains the
+	 * FIFO and reads INT_STATUS_1, giving the nRF GPIO a clean edge.
+	 */
+	uint8_t int_latch = BMI270_INT_LATCH_PERMANENT;
+
+	ret = bmi270_reg_write(dev, BMI270_REG_INT_LATCH, &int_latch, 1);
+	if (ret < 0) {
+		LOG_ERR("failed configuring INT_LATCH (%d)", ret);
+		return ret;
+	}
+
+	/*
+	 * Clear any stale latched status so INT pins deassert before the
+	 * GPIO edge interrupt is armed.
+	 */
+	uint8_t dummy[2];
+
+	bmi270_reg_read(dev, BMI270_REG_INT_STATUS_0, dummy, 2);
 
 	return 0;
 }
@@ -264,7 +374,6 @@ static int bmi270_anymo_config(const struct device *dev, bool enable)
 static int bmi270_drdy_config(const struct device *dev, bool enable)
 {
 	int ret;
-
 	uint8_t int_map_data = 0;
 
 	if (enable) {

@@ -64,4 +64,100 @@ config BMI270_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
+config BMI270_LOW_POWER_MODE
+	bool "Force low-power (power-optimized) filter mode at all ODRs"
+	default n
+	help
+	  When set, the accelerometer and gyroscope always use the
+	  power-optimized filter mode (acc_filter_perf=0, gyr_filter_perf=0,
+	  gyr_noise_perf=0) regardless of ODR. By default the driver switches
+	  to performance mode at ODR >= 100 Hz. Enabling this saves power at
+	  the cost of higher noise (no digital filtering / OSR).
+
+config BMI270_STREAM
+	bool "FIFO streaming via sensor_stream()"
+	depends on BMI270_TRIGGER
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_BOSCH_BMI270),irq-gpios)
+	select SENSOR_ASYNC_API
+	help
+	  Enable FIFO watermark/full streaming using the standard Zephyr
+	  sensor_stream() API and SENSOR_TRIG_FIFO_WATERMARK trigger.
+
+config BMI270_FIFO_ON_INT2
+	bool "Route FIFO watermark/full interrupt to INT2 instead of INT1"
+	depends on BMI270_STREAM
+	default n
+	help
+	  By default, FIFO watermark and full interrupts are mapped to INT1
+	  and the single irq-gpios pin is assigned to INT1. Enable this only
+	  if your board routes the FIFO interrupt to the sensor's INT2 pin.
+
+config BMI270_FIFO_POLL_FALLBACK
+	bool "Poll-based FIFO fallback alongside GPIO interrupt"
+	depends on BMI270_STREAM
+	default n
+	help
+	  When set, a periodic poll checks the FIFO fill level via SPI/I2C
+	  and triggers a read when the watermark is reached, as a fallback
+	  for hardware where the GPIO interrupt line is not connected.
+	  The poll period is set by BMI270_FIFO_POLL_PERIOD_MS.
+
+config BMI270_FIFO_POLL_PERIOD_MS
+	int "FIFO poll fallback period (ms)"
+	depends on BMI270_FIFO_POLL_FALLBACK
+	default 100
+	range 10 1000
+	help
+	  How often (in milliseconds) the poll fallback checks the FIFO fill
+	  level. Lower values reduce latency but increase SPI/I2C bus traffic.
+
+config BMI270_FIFO_WORKQ_STACK_SIZE
+	int "Stack size for FIFO handler work queue thread"
+	depends on BMI270_STREAM
+	default 4096
+	help
+	  The FIFO watermark handler runs in a dedicated work queue thread to avoid
+	  stack overflow in the trigger thread. Increase if you see crashes when
+	  the interrupt fires.
+
+config BMI270_FIFO_HEADERLESS
+	bool "Use FIFO headerless mode (no per-frame headers)"
+	depends on BMI270_STREAM
+	default n
+	help
+	  When set, FIFO is configured with FIFO_CONFIG_1.fifo_header_en=0.
+	  Requires identical ODR for accelerometer and gyroscope.
+	  Only regular frames are stored (no skip/sensortime/config);
+	  watermark = WATERMARK_SAMPLES*12 gives exactly that many samples per interrupt.
+
+config BMI270_FIFO_WATERMARK_SAMPLES
+	int "FIFO watermark in number of samples (acc+gyr frames)"
+	depends on BMI270_STREAM
+	default 10
+	help
+	  Desired number of accelerometer and gyroscope data samples per watermark interrupt.
+	  In headerless mode the byte watermark is SAMPLES*12 (exact).
+
+config BMI270_FIFO_WATERMARK_CONTROL_MARGIN
+	int "Extra bytes added to FIFO byte-watermark for control frames"
+	depends on BMI270_STREAM && !BMI270_FIFO_HEADERLESS
+	default 0
+	help
+	  In header mode the FIFO may insert control/skip frames between data
+	  frames. This margin is added to (WATERMARK_SAMPLES * frame_bytes) when
+	  programming the hardware watermark register, so the interrupt fires
+	  after at least WATERMARK_SAMPLES data frames. Set to 0 if you do not
+	  need extra headroom for control frames.
+
+config BMI270_FIFO_STREAM_BLOCK_SIZE
+	int "Stream RTIO mempool block size (bytes)"
+	depends on BMI270_STREAM
+	default 384
+	help
+	  Must match the block size used in RTIO_DEFINE_WITH_MEMPOOL for the
+	  sensor stream. Each FIFO read is capped to fit in one block (minus
+	  encoded header). Size needed: WATERMARK_SAMPLES*13 + CONTROL_MARGIN
+	  + ~32 bytes encoded header. Default 384 supports 10 samples in
+	  header mode (10*13+40+32=202) with headroom.
+
 endif # BMI270
