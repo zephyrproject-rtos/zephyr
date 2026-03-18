@@ -364,11 +364,13 @@ enum lpc_peripheral_opcode {
 	/**
 	 * Get host command parameter memory (custom)
 	 * @kconfig_dep{CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE}
+	 * @deprecated Use @ref espi_get_memory_map_config instead
 	 */
 	ECUSTOM_HOST_CMD_GET_PARAM_MEMORY,
 	/**
 	 * Get host command parameter memory size (custom)
 	 * @kconfig_dep{CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE}
+	 * @deprecated Use @ref espi_get_memory_map_config instead
 	 */
 	ECUSTOM_HOST_CMD_GET_PARAM_MEMORY_SIZE,
 	/**
@@ -522,6 +524,23 @@ struct espi_flash_packet {
 };
 
 /**
+ * @brief eSPI memory map configuration parameters
+ */
+struct mem_map_packet {
+	/** Index of predefined memory hardware block for host access */
+	uint8_t memory_map_index;
+	/** Address of memory region for host access.
+	 * This can be allocated in driver based on device tree parameters.
+	 * Or allocated in application memory
+	 */
+	uint8_t *const mem_map;
+	/** Memory region size in bytes.
+	 *  Must be a power of 2 (eg. 64, 128, 256, ... or 2^n)
+	 */
+	uint32_t size;
+};
+
+/**
  * @brief Opaque type representing an eSPI callback.
  *
  * Used to register a callback in the driver instance callback list.
@@ -605,6 +624,13 @@ typedef int (*espi_api_flash_write)(const struct device *dev,
 				    struct espi_flash_packet *pckt);
 typedef int (*espi_api_flash_erase)(const struct device *dev,
 				    struct espi_flash_packet *pckt);
+
+/* eSPI shared memory */
+typedef int (*espi_api_set_memory_map_config)(const struct device *dev,
+					  struct mem_map_packet *cfg);
+typedef int (*espi_api_get_memory_map_config)(const struct device *dev,
+					  struct mem_map_packet *cfg);
+
 /* Callbacks and traffic intercept */
 typedef int (*espi_api_manage_callback)(const struct device *dev,
 					struct espi_callback *callback,
@@ -625,6 +651,8 @@ __subsystem struct espi_driver_api {
 	espi_api_flash_write flash_write;
 	espi_api_flash_erase flash_erase;
 	espi_api_manage_callback manage_callback;
+	espi_api_set_memory_map_config set_memory_map_config;
+	espi_api_get_memory_map_config get_memory_map_config;
 };
 
 /**
@@ -840,6 +868,154 @@ static inline int z_impl_espi_write_lpc_request(const struct device *dev,
 
 	return api->write_lpc_request(dev, op, data);
 }
+
+/**
+ * @brief Set eSPI memory map configuration
+ *
+ * Adjust details of predefined eSPI memory region for eSPI host shared access
+ *
+ * Note: In this case, the memory region HW block is initialized to some minimum
+ * memory allocated in the driver e.g 8 bytes.
+ * Later when applications allocates the shared memory region it would pass
+ * the details to the driver to update the memory region HW block.
+ *
+ *
+ * @code
+ * +---------+           +---------+     +------+          +---------+   +---------+
+ * |  eSPI   |           |  eSPI   |     | eSPI |          |  eSPI   |   |  eSPI   |
+ * |  target |           | driver  |     |  bus |          |  driver |   |  host   |
+ * +--------+            +---------+     +------+          +---------+   +---------+
+ *     |                      |            |                   |             |
+ *     |                      +- eSPI--+   |                   |             |
+ *     +                      +<- init-+   |                   |             |
+ *     |                      | memory hw  |                   |             |
+ *     |                      | block (dts)|                   |             |
+ *     |                      |            |                   |             |
+ *     | espi_config          | Set eSPI   |                   |             |
+ *     +----------------------+ ctrl regs  |                   |             |
+ *     |                      +-------+    |                   |             |
+ *     |                      |<------+    |                   |             |
+ *     |                      |            |                   |             |
+ *     | espi_set_memory_map  |            |                   |             |
+ *     +----------------------+            |                   |             |
+ *     | Memory pointer       +<- init-+   |                   |             |
+ *     | Memory size          | memory hw  |                   |             |
+ *     | Memory attributes    | block (dts)|                   |             |
+ *     |                      |            |                   |             |  eSPI host
+ *     |                      |            | Memory operation  +<------------+  writes to shared
+ *     |                      |            | <-----------------+             |  memory
+ *     |                      |    ISR     |                   |             |
+ *     |  ESPI_MMIO_EVENT     |<-----------|                   |             |  or
+ *     +<---------------------+            +                   +             +
+ *     |                      |            |                   |             |  eSPI host uses
+ *     |                      |            |  ACPI operation   +<------------+  ACPI signaling
+ *     |                      |            | <-----------------+             |  after memory update
+ *     |                      |    ISR     |                   |             |
+ *     |  ESPI_ACPI_EVENT     |<-----------|                   |             |
+ *     +<---------------------+            |                   |             |
+ *     |                      |            |                   |             |
+ *     |                      |            |                   |             |
+ *     |                      |            |                   |             |
+ *     | reads/write memory   |            |                   |             |
+ *     |                      |            |                   |             |
+ *
+ * @endcode
+ *
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param cfg memory map configuration  @ref mem_map_packet
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP memory map config not supported.
+ * @retval -EINVAL invalid parameters for the selected memory HW block.
+ */
+__syscall int espi_set_memory_map_config(const struct device *dev,
+				     struct mem_map_packet *cfg);
+
+static inline int z_impl_espi_set_memory_map_config(const struct device *dev,
+						struct mem_map_packet *cfg)
+{
+	const struct espi_driver_api *api =
+		(const struct espi_driver_api *)dev->api;
+
+	if (!api->set_memory_map_config) {
+		return -ENOTSUP;
+	}
+
+	return api->set_memory_map_config(dev, cfg);
+}
+
+/**
+ * @brief Retrieve eSPI memory map configuration
+ *
+ * Retrieve details of predefined eSPI memory region for eSPI host shared access.
+ *
+ * Note: In this case, the shared memory region within EC is allocated by the driver
+ * using details from device tree during driver initialization.
+ *
+ * @code
+ * +---------+           +---------+     +------+          +---------+   +---------+
+ * |  eSPI   |           |  eSPI   |     | eSPI |          |  eSPI   |   |  eSPI   |
+ * |  target |           | driver  |     |  bus |          |  driver |   |  host   |
+ * +--------+            +---------+     +------+          +---------+   +---------+
+ *     |                      |            |                   |             |
+ *     |                      +- eSPI--+   |                   |             |
+ *     +                      +<- init-+   |                   |             |
+ *     |                      | memory hw  |                   |             |
+ *     |                      | block (dts)|                   |             |
+ *     |                      |            |                   |             |
+ *     |                      |            |                   |             |
+ *     | espi_config          | Set eSPI   |                   |             |
+ *     +----------------------+ ctrl regs  |                   |             |
+ *     |                      +-------+    |                   |             |
+ *     |                      |<------+    |                   |             |
+ *     |                      |            |                   |             |
+ *     | espi_get_memory_map  |            |                   |             |
+ *     +----------------------+            |                   |             |
+ *     | Memory pointer       |            |                   |             |
+ *     | Memory size          |            |                   |             |
+ *     | Memory attributes    |            |                   |             |  eSPI host
+ *     |                      |            | Memory operation  +<------------+  writes to shared
+ *     |                      |            | <-----------------+             |  memory
+ *     |                      |    ISR     |                   |             |
+ *     |  ESPI_MMIO_EVENT     |<-----------|                   |             |  or
+ *     +<---------------------+            +                   +             +
+ *     |                      |            |                   |             |  eSPI host uses
+ *     |                      |            |  ACPI operation   +<------------+  ACPI signaling
+ *     |                      |            | <-----------------+             |  after memory update
+ *     |                      |    ISR     |                   |             |
+ *     |  ESPI_ACPI_EVENT     |<-----------|                   |             |
+ *     +<---------------------+            |                   |             |
+ *     |                      |            |                   |             |
+ *     |                      |            |                   |             |
+ *     |                      |            |                   |             |
+ *     | reads/write memory   |            |                   |             |
+ *     |                      |            |                   |             |
+ *
+ * @endcode
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param cfg memory map configuration  @ref mem_map_packet
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP memory map not supported.
+ */
+__syscall int espi_get_memory_map_config(const struct device *dev,
+				     struct mem_map_packet *cfg);
+
+static inline int z_impl_espi_get_memory_map_config(const struct device *dev,
+						struct mem_map_packet *cfg)
+{
+	const struct espi_driver_api *api =
+		(const struct espi_driver_api *)dev->api;
+
+	if (!api->get_memory_map_config) {
+		return -ENOTSUP;
+	}
+
+	return api->get_memory_map_config(dev, cfg);
+}
+
 
 /**
  * @brief Sends system/platform signal as a virtual wire packet.
