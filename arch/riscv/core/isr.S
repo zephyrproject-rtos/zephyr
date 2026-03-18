@@ -423,7 +423,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 	li t1, RISCV_EXC_ECALLU
 	beq t0, t1, is_user_syscall
 
-#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
+#if defined(CONFIG_PMP_KERNEL_MODE_DYNAMIC) || defined(CONFIG_EXECUTE_XOR_WRITE)
 	/*
 	 * Determine if we come from user space. If so, reconfigure the PMP for
 	 * kernel mode configuration.
@@ -435,7 +435,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 	lr a0, ___cpu_t_current_OFFSET(s0)
 	call z_riscv_pmp_kernelmode_enable
 1:
-#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC || CONFIG_EXECUTE_XOR_WRITE */
 
 #endif /* CONFIG_USERSPACE */
 
@@ -590,14 +590,14 @@ do_irq_offload:
 #ifdef CONFIG_USERSPACE
 is_user_syscall:
 
-#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
+#if defined(CONFIG_PMP_KERNEL_MODE_DYNAMIC) || defined(CONFIG_EXECUTE_XOR_WRITE)
 	/*
 	 * We came from userspace and need to reconfigure the
 	 * PMP for kernel mode configuration.
 	 */
 	lr a0, ___cpu_t_current_OFFSET(s0)
 	call z_riscv_pmp_kernelmode_enable
-#endif
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC || CONFIG_EXECUTE_XOR_WRITE */
 
 	/* It is safe to re-enable IRQs now */
 	csrs RV_STATUS, STATUS_IE
@@ -660,7 +660,7 @@ valid_syscall_id:
 
 is_interrupt:
 
-#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
+#if defined(CONFIG_PMP_KERNEL_MODE_DYNAMIC) || defined(CONFIG_EXECUTE_XOR_WRITE)
 #ifdef CONFIG_USERSPACE
 	/*
 	 * If we came from userspace then we need to reconfigure the
@@ -684,7 +684,7 @@ is_interrupt:
 1:
 #endif
 2:
-#endif
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC || CONFIG_EXECUTE_XOR_WRITE */
 
 	/* Increment _current_cpu->nested */
 	lw t1, ___cpu_t_nested_OFFSET(s0)
@@ -871,11 +871,11 @@ fp_trap_exit:
 	and t0, t2, t1
 	bnez t0, 1f
 
-#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
+#if defined(CONFIG_PMP_KERNEL_MODE_DYNAMIC) || defined(CONFIG_EXECUTE_XOR_WRITE)
 	/* Remove kernel mode configuration and Reconfigure PMP for user mode */
 	lr a0, ___cpu_t_current_OFFSET(s0)
 	call z_riscv_pmp_usermode_enable
-#endif
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC || CONFIG_EXECUTE_XOR_WRITE */
 
 #ifdef CONFIG_CUSTOM_STACK_GUARD
 	/* Disable the custom stack guard in user mode */

@@ -109,23 +109,7 @@ SECTION_FUNC(TEXT, z_riscv_switch)
 	mv s0, a0
 	call z_riscv_pmp_usermode_enable
 	mv a0, s0
-#ifdef CONFIG_EXECUTE_XOR_WRITE
-	j end_user_switch
-#endif
 not_user_task:
-#ifdef CONFIG_EXECUTE_XOR_WRITE
-	/*
-	 * Call z_riscv_pmp_usermode_disable only when switching from
-	 * a user to a kernel task.
-	 */
-	lh t0, _thread_offset_to_user_options(a1)
-	andi t0, t0, K_USER
-	beqz t0, end_user_switch
-	mv s0, a0
-	call z_riscv_pmp_usermode_disable
-	mv a0, s0
-end_user_switch:
-#endif
 #endif
 
 #if CONFIG_INSTRUMENT_THREAD_SWITCHING
