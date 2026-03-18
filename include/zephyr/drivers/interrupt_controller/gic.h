@@ -260,6 +260,12 @@
 
 #endif /* CONFIG_GIC_VER <= 2 */
 
+/**
+ * 0x000  GICD_CTLR — DS (Disable Security), bit 6
+ * v3/v3.1	See ARM GIC architecture spec, GICD_CTLR
+ */
+#define GICD_CTLR_DS BIT(6)
+
 /* GICD_ICFGR */
 #define GICD_ICFGR_MASK BIT_MASK(2)
 #define GICD_ICFGR_TYPE BIT(1)
