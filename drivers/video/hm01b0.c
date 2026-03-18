@@ -20,6 +20,7 @@
 #include "video_device.h"
 
 LOG_MODULE_REGISTER(hm01b0, CONFIG_VIDEO_LOG_LEVEL);
+
 #define MAX_FRAME_RATE 10
 #define MIN_FRAME_RATE 1
 #define HM01B0_ID      0x01B0
@@ -73,10 +74,10 @@ LOG_MODULE_REGISTER(hm01b0, CONFIG_VIDEO_LOG_LEVEL);
 #define HM01B0_ORIENTATION_VMIRROR BIT(1)
 #define HM01B0_CCI_OSC_CLOCK_DIV_VT_REG_DIV_1 0x08 /* vt_reg_div[3:2]=10 */
 
-#define HM01B0_CTRL_VAL(data_bits) \
-	((data_bits) == 8 ? 0x02 : \
-	(data_bits) == 4 ? 0x42 : \
-	(data_bits) == 1 ? 0x22 : 0x00)
+#define HM01B0_BIT_CONTROL_VAL(bus_width) \
+	((bus_width) == 8 ? 0x02 : \
+	 (bus_width) == 4 ? 0x42 : \
+	 (bus_width) == 1 ? 0x22 : 0x00)
 
 /* Note: Bayer versions do not support 160x120 type settings */
 enum hm01b0_resolution {
@@ -233,8 +234,8 @@ struct hm01b0_data {
 };
 
 struct hm01b0_config {
-	const struct i2c_dt_spec i2c;
-	const uint8_t ctrl_val;
+	struct i2c_dt_spec i2c;
+	int8_t bus_width;
 };
 
 #define HM01B0_VIDEO_FORMAT_CAP(width, height, format)                                             \
@@ -266,6 +267,7 @@ static const struct video_format_cap hm01b0_fmts[] = {
 static int hm01b0_apply_configuration(const struct device *dev, enum hm01b0_resolution resolution)
 {
 	const struct hm01b0_config *config = dev->config;
+	const uint32_t bit_control = HM01B0_BIT_CONTROL_VAL(config->bus_width);
 	int ret;
 
 	/* Number of registers is the same for all configuration */
@@ -277,7 +279,7 @@ static int hm01b0_apply_configuration(const struct device *dev, enum hm01b0_reso
 	}
 
 	/* REG_BIT_CONTROL */
-	ret = video_write_cci_reg(&config->i2c, HM01B0_CCI_BIT_CONTROL, config->ctrl_val);
+	ret = video_write_cci_reg(&config->i2c, HM01B0_CCI_BIT_CONTROL, bit_control);
 	if (ret < 0) {
 		LOG_ERR("Failed to write BIT_CONTROL reg (%d)", ret);
 		return ret;
@@ -603,16 +605,17 @@ static int hm01b0_init(const struct device *dev)
 	return hm01b0_init_controls(dev);
 }
 
+#define HM01B0_LINK_PROP(inst, prop) DT_PROP(DT_INST_ENDPOINT_BY_ID(inst, 0, 0), prop)
 
-#define HM01B0_INIT(inst)                                                                       \
-	const struct hm01b0_config hm01b0_config_##inst = {                                     \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                              \
-		.ctrl_val = HM01B0_CTRL_VAL(DT_INST_PROP(inst, data_bits))                      \
-	};                                                                                      \
-	struct hm01b0_data hm01b0_data_##inst;                                                  \
-	DEVICE_DT_INST_DEFINE(inst, &hm01b0_init, NULL, &hm01b0_data_##inst,                    \
-			      &hm01b0_config_##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,   \
-			      &hm01b0_driver_api);                                              \
+#define HM01B0_INIT(inst)                                                                          \
+	const struct hm01b0_config hm01b0_config_##inst = {                                        \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.bus_width = HM01B0_LINK_PROP(inst, bus_width),                                    \
+	};                                                                                         \
+	struct hm01b0_data hm01b0_data_##inst;                                                     \
+	DEVICE_DT_INST_DEFINE(inst, &hm01b0_init, NULL, &hm01b0_data_##inst,                       \
+			      &hm01b0_config_##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,      \
+			      &hm01b0_driver_api);                                                 \
 	VIDEO_DEVICE_DEFINE(hm01b0_##inst, DEVICE_DT_INST_GET(inst), NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(HM01B0_INIT)
