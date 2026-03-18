@@ -6,6 +6,7 @@ name: Renesas RX261 Fast Prototyping Board
 type: mcu
 arch: rx
 toolchain:
+  - zephyr
   - cross-compile
 supported:
   - gpio

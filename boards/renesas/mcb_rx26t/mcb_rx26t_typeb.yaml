@@ -6,6 +6,7 @@ name: Renesas MCB-RX26T type B
 type: mcu
 arch: rx
 toolchain:
+  - zephyr
   - cross-compile
 supported:
   - gpio
