@@ -6,3 +6,8 @@ description: NXP MCXW71 IEEE 802.15.4 node
 compatible: "nxp,mcxw-ieee802154"
 
 include: base.yaml
+
+properties:
+  counter:
+    type: phandle
+    description: Dedicated counter device used as the radio timestamp source.
