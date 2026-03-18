@@ -9,6 +9,14 @@ Devicetree Style Guidelines
   * If the Linux kernel rules in
     `Devicetree Sources (DTS) Coding Style <https://docs.kernel.org/devicetree/bindings/dts-coding-style.html>`_
     make a recommendation, it's the preferred style in Zephyr too.
+  * The following order of properties in device nodes is **required** in Zephyr:
+    “compatible”
+    “reg”
+    “ranges”
+    Standard/common properties (defined by common bindings, e.g. without vendor-prefixes)
+    Vendor-specific properties
+    “status” (if applicable)
+    Child nodes
   * You can split related groups of properties into "paragraphs" by
     separating them with one empty line (two newline characters) if it aids
     readability.
