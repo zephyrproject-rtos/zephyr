@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,29 +72,30 @@ static int scmi_mbox_setup_chan(const struct device *transport,
 {
 	int ret;
 	struct scmi_mbox_channel *mbox_chan;
-	struct mbox_dt_spec *tx_reply;
+	struct mbox_dt_spec *mbox_spec;
 
 	mbox_chan = chan->data;
+	mbox_chan->is_tx = tx;
 
-	if (!tx) {
-		return -ENOTSUP;
-	}
-
-	if (mbox_chan->tx_reply.dev) {
-		tx_reply = &mbox_chan->tx_reply;
+	if (tx) {
+		mbox_spec = mbox_chan->tx_reply.dev ? &mbox_chan->tx_reply : &mbox_chan->tx;
 	} else {
-		tx_reply = &mbox_chan->tx;
+		if (!mbox_chan->rx.dev) {
+			LOG_ERR("RX channel not defined");
+			return -ENOTSUP;
+		}
+		mbox_spec = &mbox_chan->rx;
 	}
 
-	ret = mbox_register_callback_dt(tx_reply, scmi_mbox_cb, chan);
+	ret = mbox_register_callback_dt(mbox_spec, scmi_mbox_cb, chan);
 	if (ret < 0) {
-		LOG_ERR("failed to register tx reply cb");
+		LOG_ERR("failed to register cb on %s", tx ? (mbox_chan->tx_reply.dev ?
+					"tx_reply" : "tx") : "rx");
 		return ret;
 	}
-
-	ret = mbox_set_enabled_dt(tx_reply, true);
+	ret = mbox_set_enabled_dt(mbox_spec, true);
 	if (ret < 0) {
-		LOG_ERR("failed to enable tx reply dbell");
+		LOG_ERR("failed to enable %s dbell", tx ? "tx" : "rx");
 	}
 
 	return 0;
