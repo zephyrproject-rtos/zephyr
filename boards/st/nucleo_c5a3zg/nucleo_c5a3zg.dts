@@ -29,6 +29,7 @@
 		die-temp0 = &die_temp;
 		led0 = &green_led;
 		sw0 = &user_button;
+		volt-sensor0 = &vref;
 	};
 
 	gpio_keys {
@@ -182,5 +183,9 @@
 	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
+};
+
+&vref {
 	status = "okay";
 };
