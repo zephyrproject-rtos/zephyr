@@ -971,6 +971,20 @@ static void work_timeout(struct _timeout *to)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	struct k_work_q *queue = NULL;
 
+	/*
+	 * The routine sys_clock_announce() both removed the timeout from the
+	 * timeout list and unlocked interrupts before calling this handler.
+	 * It is possible that another ISR (or thread on another CPU) called
+	 * k_work_schedule_for_queue() leading to a sequence of events where
+	 * the timeout is aborted and re-added to the timeout list before this
+	 * handler gets the lock. Should the timeout be active, we close that
+	 * gap by not proceeding any further in this handler.
+	 */
+
+	if (!z_is_inactive_timeout(to)) {
+		k_spin_unlock(&lock, key);
+	}
+
 	/* If the work is still marked delayed (should be) then clear that
 	 * state and submit it to the queue.  If successful the queue will be
 	 * notified of new work at the next reschedule point.
