@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/imx95_clock.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	#address-cells = <1>;
@@ -276,6 +277,76 @@
 		interrupts = <GIC_SPI 184 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		clocks = <&scmi_clk IMX95_CLK_LPI2C8>;
+		status = "disabled";
+	};
+
+	flexcan1: can@443a0000 {
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
+		reg = <0x443a0000 DT_SIZE_K(64)>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 9 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "common", "error";
+		clocks = <&scmi_clk IMX95_CLK_CAN1>;
+		clock-names = "clksrc0";
+		clk-source = <0>;
+		number-of-mb = <96>;
+		status = "disabled";
+	};
+
+	flexcan2: can@425b0000 {
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
+		reg = <0x425b0000 DT_SIZE_K(64)>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 39 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "common", "error";
+		clocks = <&scmi_clk IMX95_CLK_CAN2>;
+		clock-names = "clksrc0";
+		clk-source = <0>;
+		number-of-mb = <96>;
+		status = "disabled";
+	};
+
+	flexcan3: can@42600000 {
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
+		reg = <0x42600000 DT_SIZE_K(64)>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 41 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "common", "error";
+		clocks = <&scmi_clk IMX95_CLK_CAN3>;
+		clock-names = "clksrc0";
+		clk-source = <0>;
+		number-of-mb = <96>;
+		status = "disabled";
+	};
+
+	flexcan4: can@427c0000 {
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
+		reg = <0x427c0000 DT_SIZE_K(64)>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 43 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "common", "error";
+		clocks = <&scmi_clk IMX95_CLK_CAN4>;
+		clock-names = "clksrc0";
+		clk-source = <0>;
+		number-of-mb = <96>;
+		status = "disabled";
+	};
+
+	flexcan5: can@427d0000 {
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
+		reg = <0x427d0000 DT_SIZE_K(64)>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 45 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "common", "error";
+		clocks = <&scmi_clk IMX95_CLK_CAN5>;
+		clock-names = "clksrc0";
+		clk-source = <0>;
+		number-of-mb = <96>;
 		status = "disabled";
 	};
 
