@@ -16,10 +16,12 @@ target_sources(app PRIVATE
   src/test_fat_file.c
   ../common/test_fs_open_flags.c
 )
-target_sources_ifdef(CONFIG_FLASH app PRIVATE
-  ../common/test_fs_mkfs.c
-  src/test_fat_mkfs.c
-)
+if(CONFIG_FILE_SYSTEM_MKFS)
+  target_sources_ifdef(CONFIG_FLASH app PRIVATE
+    ../common/test_fs_mkfs.c
+    src/test_fat_mkfs.c
+  )
+endif()
 target_sources_ifdef(CONFIG_FS_FATFS_REENTRANT app PRIVATE
   src/test_fat_file_reentrant.c
 )
