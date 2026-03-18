@@ -1182,7 +1182,10 @@ static int ov5640_init_controls(const struct device *dev)
 		return ret;
 	}
 
-	video_auto_cluster_ctrl(auto_ctrls, 2, true);
+	ret = video_auto_cluster_ctrl(auto_ctrls, 2, true);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ret = video_init_ctrl(
 		&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS,
