@@ -20,6 +20,8 @@
 /**
  * @brief Interfaces for LED strips.
  * @defgroup led_strip_interface LED Strip
+ * @since 1.10
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  *
