@@ -1,0 +1,19 @@
+# SPDX-File-CopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config FREERTOS
+	bool "FreeRTOS compatibility layer"
+	help
+	  Enable FreeRTOS API translation layer allowing integration of FreeRTOS application,
+	  libraries, or binaries into Zephyr.
+
+if FREERTOS
+
+config FREERTOS_HEAP_SIZE
+	int "Size of the memory heap used internally by the shim"
+	default 8192
+	help
+	  Size in bytes to dedicate to the heap shared across all the FreeRTOS functions,
+	  internal data structures or FreeRTOS allocation functions alike.
+
+endif # FREERTOS

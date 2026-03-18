@@ -1,0 +1,4 @@
+# SPDX-File-CopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_sources_ifdef(CONFIG_FREERTOS freertos_shim.c)
