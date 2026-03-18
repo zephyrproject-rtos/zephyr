@@ -62,8 +62,8 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #define RANGES_OVERLAP(i1s, i1e, i2s, i2e)					\
 	(((i1e) > (i2s)) && ((i1s) < (i2e)))
 
-#if !defined(PWR_STOP2_SUPPORT) /* STM32WBA5x */
-/* No page granularity on STM32WBA5x */
+#if !defined(PWR_STOP2_SUPPORT) || defined(PWR_STOP3_SUPPORT) /* STM32WBA5x or STM32WBA2x */
+/* No page granularity on STM32WBA5x and STM32WBA2x */
 #define SRAM1_RETENTION_MASK LL_PWR_SRAM1_SB_FULL_RETENTION
 #else /* STM32WBA6x */
 /*
@@ -91,7 +91,7 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 BUILD_ASSERT(SRAM1_RETENTION_MASK != 0U,
 	"Retained SRAM1/2 region does not contain any SRAM1 page!");
-#endif /* !defined(PWR_STOP2_SUPPORT) */
+#endif /* !defined(PWR_STOP2_SUPPORT) || defined(PWR_STOP3_SUPPORT) */
 
 #define RETAINED_SRAM12_OVERLAPS_SRAM2                                 \
 		(RANGES_OVERLAP(RETAINED_SRAM12_START,                 \
