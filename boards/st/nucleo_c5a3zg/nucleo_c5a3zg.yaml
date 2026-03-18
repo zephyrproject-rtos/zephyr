@@ -9,12 +9,14 @@ supported:
   - arduino_gpio
   - arduino_i2c
   - arduino_serial
+  - arduino_spi
   - counter
   - dma
   - gpio
   - i2c
   - pwm
   - rtc
+  - spi
   - uart
 ram: 256
 flash: 1024
