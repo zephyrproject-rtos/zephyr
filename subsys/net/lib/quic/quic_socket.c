@@ -1613,6 +1613,43 @@ static int quic_stream_getsockopt_ctx(void *obj, int level, int optname,
 	return -1;
 }
 
+static int quic_stream_setsockopt_ctx(void *obj, int level, int optname,
+				      const void *optval, net_socklen_t optlen)
+{
+	struct quic_stream *stream = obj;
+
+	switch (level) {
+	case ZSOCK_SOL_SOCKET:
+		switch (optname) {
+		default:
+			return -ENOTSUP;
+		}
+
+	case ZSOCK_SOL_QUIC:
+		switch (optname) {
+		case ZSOCK_QUIC_SO_STOP_SENDING_CODE: {
+			uint64_t code;
+
+			if (optlen != sizeof(code)) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			memcpy(&code, optval, sizeof(code));
+			stream->stop_sending_error_code = code;
+			return 0;
+		}
+		default:
+			return -ENOTSUP;
+		}
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int quic_stream_close_vmeth(void *obj)
 {
 	struct quic_stream *stream = obj;
@@ -1656,6 +1693,95 @@ static int quic_stream_close_vmeth(void *obj)
 	return 0;
 }
 
+static int quic_stream_shutdown_vmeth(void *obj, int how)
+{
+	struct quic_stream *stream = obj;
+	int ret = 0;
+
+	if (!PART_OF_ARRAY(streams, stream)) {
+		return -EINVAL;
+	}
+
+	/*
+	 * SHUT_WR (or SHUT_RDWR): send a STREAM+FIN to close our sending half.
+	 * RFC 9000 ch. 2.4.
+	 */
+	if ((how == ZSOCK_SHUT_WR || how == ZSOCK_SHUT_RDWR) &&
+	    stream->ep != NULL && stream->ep->crypto.application.initialized) {
+		int state;
+
+		state = quic_stream_get_state(stream);
+
+		/* Only send FIN if we haven't already (state machine guard) */
+		if (state != STATE_DATA_SENT &&
+		    state != STATE_DATA_RECVD &&
+		    state != STATE_DATA_READ &&
+		    state != STATE_RESET_SENT &&
+		    state != STATE_RESET_RECVD &&
+		    state != STATE_RESET_READ) {
+			ret = quic_send_stream_fin(stream);
+			if (ret < 0) {
+				NET_DBG("[ST:%p/%d] shutdown(SHUT_WR): FIN send failed (%d)",
+					stream, quic_get_by_stream(stream), ret);
+				return ret;
+			}
+
+			/* Advance state so quic_stream_close_vmeth won't send a second FIN */
+			smf_set_state(SMF_CTX(&stream->state.ctx),
+				      &quic_stream_bidirectional_states[STATE_DATA_SENT]);
+
+			NET_DBG("[ST:%p/%d] shutdown(SHUT_WR): FIN sent on stream %" PRIu64,
+				stream, quic_get_by_stream(stream), stream->id);
+		} else {
+			NET_DBG("[ST:%p/%d] shutdown(SHUT_WR): FIN already sent (state=%d)",
+				stream, quic_get_by_stream(stream), state);
+		}
+	}
+
+	/*
+	 * SHUT_RD (or SHUT_RDWR): tell the peer to stop sending via STOP_SENDING.
+	 * RFC 9000 ch. 2.5.
+	 *
+	 * Skip if the peer already sent FIN (stream is in SIZE_KNOWN or later),
+	 * all data has already arrived so there is nothing left to stop.
+	 */
+	if ((how == ZSOCK_SHUT_RD || how == ZSOCK_SHUT_RDWR) &&
+	    stream->ep != NULL && stream->ep->crypto.application.initialized) {
+		int state;
+
+		state = quic_stream_get_state(stream);
+		if (state != STATE_SIZE_KNOWN &&
+		    state != STATE_DATA_RECVD &&
+		    state != STATE_DATA_READ  &&
+		    state != STATE_RESET_RECVD &&
+		    state != STATE_RESET_READ) {
+			stream->read_closed = true;
+
+			/*
+			 * Callers that want a specific error code should call can set the
+			 * desired error code using setsockopt().
+			 */
+			ret = quic_send_stop_sending(stream->ep, stream->id,
+						     stream->stop_sending_error_code);
+			if (ret < 0) {
+				NET_DBG("[ST:%p/%d] shutdown with error %" PRIu64
+					" : STOP_SENDING failed (%d)",
+					stream, quic_get_by_stream(stream),
+					stream->stop_sending_error_code, ret);
+				return ret;
+			}
+
+			NET_DBG("[ST:%p/%d] shutdown(SHUT_RD): STOP_SENDING sent on stream "
+				"%" PRIu64, stream, quic_get_by_stream(stream), stream->id);
+		} else {
+			NET_DBG("[ST:%p/%d] shutdown(SHUT_RD): peer already done (state=%d), "
+				"skipping STOP_SENDING", stream, quic_get_by_stream(stream), state);
+		}
+	}
+
+	return ret;
+}
+
 static const struct socket_op_vtable quic_ctx_fd_op_vtable = {
 	.fd_vtable = {
 		.close = quic_ctx_close_vmeth,
@@ -1676,6 +1802,8 @@ static const struct socket_op_vtable quic_stream_fd_op_vtable = {
 	.sendto = quic_stream_sendto_ctx,
 	.recvfrom = quic_stream_recvfrom_ctx,
 	.getsockopt = quic_stream_getsockopt_ctx,
+	.setsockopt = quic_stream_setsockopt_ctx,
+	.shutdown = quic_stream_shutdown_vmeth,
 };
 
 int quic_connection_open(const struct net_sockaddr *remote_addr,
@@ -1927,21 +2055,21 @@ have_endpoint:
 	}
 
 	if (initiator == QUIC_STREAM_CLIENT) {
-		NET_DBG("[ST:%p/%d] Opened %s %s stream id %" PRIu64 " prio %d on conn %p",
+		NET_DBG("[ST:%p/%d] Opened %s %s stream id %" PRIu64 " prio %u on conn %p",
 			stream, quic_get_by_stream(stream), "client",
 			direction == QUIC_STREAM_BIDIRECTIONAL ?
-			"bidirectional" : "unidirectional", stream->id, priority,
-			ctx);
+			"bidirectional" : "unidirectional",
+			stream->id, priority, ctx);
 
 		/* Client initiated streams start in READY state. */
 		smf_set_initial(SMF_CTX(&stream->state.ctx),
 				&quic_stream_bidirectional_states[STATE_READY]);
 	} else {
-		NET_DBG("[ST:%p/%d] Opened %s %s stream id % " PRIu64 " prio %d on conn %p",
+		NET_DBG("[ST:%p/%d] Opened %s %s stream id %" PRIu64 " prio %u on conn %p",
 			stream, quic_get_by_stream(stream), "server",
 			direction == QUIC_STREAM_BIDIRECTIONAL ?
-			"bidirectional" : "unidirectional", stream->id, priority,
-			ctx);
+			"bidirectional" : "unidirectional",
+			stream->id, priority, ctx);
 
 		/* Server initiated streams start in RECV state. */
 		smf_set_initial(SMF_CTX(&stream->state.ctx),
@@ -1988,6 +2116,11 @@ int quic_stream_close(int sock)
 		quic_stats_update_stream_close_failed();
 		return -EINVAL;
 	}
+
+	/* Do NOT send FIN here. The caller must call shutdown(SHUT_WR) first
+	 * if it wants a clean half-close. zsock_close() without prior shutdown
+	 * is an abortive reset, which is the correct behaviour on error paths.
+	 */
 
 	(void)sock_obj_core_dealloc(stream->sock);
 	(void)quic_stream_unref(stream);

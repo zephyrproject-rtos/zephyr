@@ -841,6 +841,12 @@ __net_socket struct quic_stream {
 	/** RX flow control, last MAX_STREAM_DATA value we sent */
 	uint64_t local_max_data_sent;
 
+	/**
+	 * Error code to use in STOP_SENDING frame (set via setsockopt).
+	 * Defaults to QUIC_ERROR_NO_ERROR. The value is opaque to QUIC;
+	 * its meaning is defined by the application protocol (e.g. HTTP/3).
+	 */
+	uint64_t stop_sending_error_code;
 
 	/** BSD socket private data */
 	void *socket_data;
@@ -880,6 +886,9 @@ __net_socket struct quic_stream {
 
 	/** Read half shut down via shutdown(SHUT_RD), discard incoming data */
 	bool read_closed : 1;
+
+	/** TX side reset because peer sent STOP_SENDING */
+	bool tx_reset : 1;
 };
 
 /**

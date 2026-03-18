@@ -250,6 +250,9 @@ static int quic_send_packet(struct quic_endpoint *ep,
 			    enum quic_secret_level level,
 			    const uint8_t *payload,
 			    size_t payload_len);
+static int quic_send_stop_sending(struct quic_endpoint *ep,
+				  uint64_t stream_id,
+				  uint64_t error_code);
 
 static int quic_get_by_ep(struct quic_endpoint *ep)
 {
@@ -3710,6 +3713,8 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 	stream->local_max_data_sent = CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL;
 	stream->bytes_received = 0;
 	stream->read_closed = false;
+	stream->stop_sending_error_code = QUIC_ERROR_NO_ERROR;
+	stream->tx_reset = false;
 
 	return stream;
 }
@@ -4687,6 +4692,19 @@ static int quic_stream_receive_data(struct quic_stream *stream,
 	bool progress = true;
 	size_t available;
 	int ret = 0;
+
+	/*
+	 * If the application shut down the read half (SHUT_RD), discard
+	 * incoming data silently. We have already sent STOP_SENDING so the
+	 * peer should stop soon; any data in flight before that arrives is
+	 * simply dropped here.
+	 */
+	if (stream->read_closed) {
+		NET_DBG("[ST:%p/%d] stream %" PRIu64 ": discarding %zu bytes "
+			"(read half closed)", stream, quic_get_by_stream(stream),
+			stream->id, len);
+		return 0;
+	}
 
 	k_mutex_lock(&stream->cond.data_available, K_FOREVER);
 

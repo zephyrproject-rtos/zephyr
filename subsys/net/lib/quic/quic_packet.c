@@ -190,6 +190,7 @@ static int handle_reset_stream_frame(struct quic_endpoint *ep,
 				     const uint8_t *buf, size_t len)
 {
 	uint64_t stream_id, error_code, final_size;
+	struct quic_stream *stream;
 	int pos = 1;
 	int ret;
 
@@ -218,13 +219,107 @@ static int handle_reset_stream_frame(struct quic_endpoint *ep,
 		", final_size=%" PRIu64,
 		ep, quic_get_by_ep(ep), stream_id, error_code, final_size);
 
+	/*
+	 * Wake any thread blocked in quic_stream_recv() so it gets
+	 * -ECONNRESET rather than blocking forever. Also mark the stream's
+	 * read half as closed so future recv() calls return immediately.
+	 */
+	stream = quic_find_stream_by_id(ep, stream_id);
+	if (stream != NULL) {
+		stream->read_closed = true;
+		stream->rx_buf.fin_received = true;  /* unblocks the wait loop */
+
+		k_poll_signal_raise(&stream->recv.signal, 0);
+		k_condvar_signal(&stream->cond.recv);
+
+		NET_DBG("[ST:%p/%d] RESET_STREAM: woke blocked readers on "
+			"stream %" PRIu64, stream, quic_get_by_stream(stream),
+			stream_id);
+	}
+
 	return pos;
+}
+
+static int quic_send_reset_stream(struct quic_endpoint *ep,
+				  uint64_t stream_id,
+				  uint64_t error_code)
+{
+	uint8_t frame[32];
+	int pos = 0;
+	int n;
+
+	frame[pos++] = QUIC_FRAME_TYPE_RESET_STREAM;
+
+	n = quic_put_varint(&frame[pos], sizeof(frame) - pos, stream_id);
+	if (n <= 0) {
+		return -EINVAL;
+	}
+	pos += n;
+
+	n = quic_put_varint(&frame[pos], sizeof(frame) - pos, error_code);
+	if (n <= 0) {
+		return -EINVAL;
+	}
+	pos += n;
+
+	n = quic_put_varint(&frame[pos], sizeof(frame) - pos, 0 /* final_size */);
+	if (n <= 0) {
+		return -EINVAL;
+	}
+	pos += n;
+
+	NET_DBG("[EP:%p/%d] Sending RESET_STREAM: stream=%" PRIu64
+		" error=0x%" PRIx64,
+		ep, quic_get_by_ep(ep), stream_id, error_code);
+
+	return quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, pos);
+}
+
+/**
+ * @brief Send STOP_SENDING frame (RFC 9000 ch. 19.5)
+ *
+ * Tells the peer to stop sending on this stream. The peer must respond
+ * with RESET_STREAM. Used when we close the read half of a stream before
+ * all data has been received (SHUT_RD).
+ *
+ * @param ep          The endpoint
+ * @param stream_id   Stream to stop
+ * @param error_code  Application error code (H3_NO_ERROR = 0x0100 for clean stop)
+ * @return 0 on success, negative errno on error
+ */
+static int quic_send_stop_sending(struct quic_endpoint *ep,
+				  uint64_t stream_id,
+				  uint64_t error_code)
+{
+	uint8_t frame[32];
+	int pos = 0;
+	int varint_len;
+
+	frame[pos++] = QUIC_FRAME_TYPE_STOP_SENDING;
+
+	varint_len = quic_put_varint(&frame[pos], sizeof(frame) - pos, stream_id);
+	if (varint_len <= 0) {
+		return -EINVAL;
+	}
+	pos += varint_len;
+
+	varint_len = quic_put_varint(&frame[pos], sizeof(frame) - pos, error_code);
+	if (varint_len <= 0) {
+		return -EINVAL;
+	}
+	pos += varint_len;
+
+	NET_DBG("[EP:%p/%d] Sending STOP_SENDING: stream=%" PRIu64 " error=0x%" PRIx64,
+		ep, quic_get_by_ep(ep), stream_id, error_code);
+
+	return quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, pos);
 }
 
 static int handle_stop_sending_frame(struct quic_endpoint *ep,
 				     const uint8_t *buf, size_t len)
 {
 	uint64_t stream_id, error_code;
+	struct quic_stream *stream;
 	int pos = 1;
 	int ret;
 
@@ -244,6 +339,38 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 
 	NET_DBG("[EP:%p/%d] STOP_SENDING: stream=%" PRIu64 ", error=0x%" PRIx64,
 		ep, quic_get_by_ep(ep), stream_id, error_code);
+
+	/*
+	 * RFC 9000 ch. 3.5: a sender that receives STOP_SENDING MUST respond
+	 * with either RESET_STREAM or a stream FIN. Send RESET_STREAM to
+	 * immediately release our TX side, then wake the stream so the HTTP
+	 * layer can call zsock_close() and free the slot.
+	 *
+	 * Re-use the peer's error code so the HTTP layer (and any logging)
+	 * can see why the stream was reset.
+	 */
+	stream = quic_find_stream_by_id(ep, stream_id);
+	if (stream != NULL) {
+		/* Send RESET_STREAM, our TX side is being abandoned */
+		quic_send_reset_stream(ep, stream_id, error_code);
+
+		/* Mark TX side as reset so future sends return an error */
+		stream->tx_reset = true;
+
+		/*
+		 * Wake any thread blocked in zsock_recv() or waiting on
+		 * POLLIN so the HTTP layer sees the stream is done and calls
+		 * zsock_close().  Reuse the fin_received flag so
+		 * quic_stream_recv() returns 0 (EOF) rather than blocking.
+		 */
+		stream->rx_buf.fin_received = true;
+		k_poll_signal_raise(&stream->recv.signal, 0);
+		k_condvar_signal(&stream->cond.recv);
+
+		NET_DBG("[ST:%p/%d] STOP_SENDING: sent RESET_STREAM and woke "
+			"stream %" PRIu64,
+			stream, quic_get_by_stream(stream), stream_id);
+	}
 
 	return pos;
 }
