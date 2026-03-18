@@ -25,6 +25,38 @@
 		pinmux = <K3_PINMUX(0x264, PIN_INPUT_PULLUP, MUX_MODE_0)>;
 	};
 
+	main_adc0_ain0: adc0_ain0_default {
+		pinmux = <K3_PINMUX(0x2b0, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_adc0_ain1: adc0_ain1_default {
+		pinmux = <K3_PINMUX(0x2b4, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_adc0_ain2: adc0_ain2_default {
+		pinmux = <K3_PINMUX(0x2b8, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_adc0_ain3: adc0_ain3_default {
+		pinmux = <K3_PINMUX(0x2bc, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_adc0_ain4: adc0_ain4_default {
+		pinmux = <K3_PINMUX(0x2c0, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_adc0_ain5: adc0_ain5_default {
+		pinmux = <K3_PINMUX(0x2c4, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_adc0_ain6: adc0_ain6_default {
+		pinmux = <K3_PINMUX(0x2c8, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_adc0_ain7: adc0_ain7_default {
+		pinmux = <K3_PINMUX(0x2cc, PIN_INPUT, MUX_MODE_0)>;
+	};
+
 	spi0_cs0: spi0_cs0_default {
 		pinmux = <K3_PINMUX(0x208, PIN_OUTPUT, MUX_MODE_0)>;
 	};
