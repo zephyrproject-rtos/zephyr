@@ -19,8 +19,9 @@ DT_CHOSEN_IMAGE_ZEPHYR = zephyr,code-partition
 DT_CHOSEN_Z_SRAM = zephyr,sram
 
 config BUILD_OUTPUT_ADJUST_LMA
-	default "($(dt_chosen_partition_addr_hex,$(DT_CHOSEN_IMAGE_ZEPHYR)) - \
-	$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM)))"
+	default "$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)) + \
+	$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_ZEPHYR)) - \
+	$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))"
 
 config BUILD_OUTPUT_ADJUST_LMA_SECTIONS
 	default "*;!.loader"
