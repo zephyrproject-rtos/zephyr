@@ -172,6 +172,8 @@
 				compatible = "renesas,rx-nv-flash";
 				reg = <0xfff80000 DT_SIZE_K(512)>;
 				ranges = <0x0 0xfff80000 DT_SIZE_K(512)>;
+				write-block-size = <128>;
+				erase-block-size = <DT_SIZE_K(16)>;
 			};
 
 			data_flash: flash@100000 {
@@ -180,6 +182,8 @@
 				compatible = "renesas,rx-nv-flash";
 				reg = <0x100000 DT_SIZE_K(16)>;
 				ranges = <0x0 0x100000 DT_SIZE_K(16)>;
+				write-block-size = <1>;
+				erase-block-size = <64>;
 			};
 		};
 	};
