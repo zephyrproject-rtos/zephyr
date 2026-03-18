@@ -108,4 +108,11 @@ config TIMEUTIL_APPLY_SKEW
 	  build, but clocks skews are not used, this can be a significant ROM
 	  overhead. Disabling this option can save ~2.4 kB of ROM.
 
+config TIMEUTIL_TIMEZONE
+	bool "Timezone support with POSIX TZ string parsing"
+	help
+	  Enable lightweight timezone conversion using POSIX TZ strings.
+	  Provides parsing of TZ strings (e.g. "EST5EDT,M3.2.0/2,M11.1.0/2")
+	  and conversion between UTC and local time with DST support.
+
 endmenu

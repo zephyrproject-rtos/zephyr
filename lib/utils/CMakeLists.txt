@@ -33,4 +33,6 @@ zephyr_library_include_directories(
   ${ZEPHYR_BASE}/arch/${ARCH}/include
 )
 
+zephyr_sources_ifdef(CONFIG_TIMEUTIL_TIMEZONE timeutil_tz.c)
+
 zephyr_sources_ifdef(CONFIG_LINKER_LAST_SECTION_ID last_section_id.c)
