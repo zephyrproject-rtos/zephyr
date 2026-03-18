@@ -233,11 +233,13 @@ static inline bool is_cluster_manual(const struct video_ctrl *primary)
 	return primary->type == VIDEO_CTRL_TYPE_INTEGER64 ? primary->val64 == 0 : primary->val == 0;
 }
 
-void video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz)
+int video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz)
 {
 	bool has_volatiles = false;
 
-	__ASSERT(sz && ctrls, "The 1st control, i.e. the primary control, must not be NULL");
+	if (sz == 0 || ctrls == NULL) {
+		return -EINVAL;
+	}
 
 	for (uint8_t i = 0; i < sz; i++) {
 		ctrls[i].cluster_sz = sz;
@@ -248,15 +250,23 @@ void video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz)
 	}
 
 	ctrls->has_volatiles = has_volatiles;
+
+	return 0;
 }
 
-void video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, bool set_volatile)
+int video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, bool set_volatile)
 {
-	video_cluster_ctrl(ctrls, sz);
+	int ret;
 
-	__ASSERT(sz > 1, "Control auto cluster size must be > 1");
-	__ASSERT(!(set_volatile && !DEVICE_API_GET(video, ctrls->vdev->dev)->get_volatile_ctrl),
-		 "Volatile is set but no ops");
+	if (sz <= 1 ||
+	    (set_volatile && !DEVICE_API_GET(video, ctrls->vdev->dev)->get_volatile_ctrl)) {
+		return -EINVAL;
+	}
+
+	ret = video_cluster_ctrl(ctrls, sz);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ctrls->is_auto = true;
 	ctrls->has_volatiles = set_volatile;
@@ -269,6 +279,8 @@ void video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, bool set_vola
 					  (set_volatile ? VIDEO_CTRL_FLAG_VOLATILE : 0);
 		}
 	}
+
+	return 0;
 }
 
 static int video_find_ctrl(const struct device *dev, uint32_t id, struct video_ctrl **ctrl)
@@ -604,8 +616,10 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 	const char *type = NULL;
 	char buf[11];
 
-	__ASSERT_NO_MSG(cq != NULL);
-	__ASSERT_NO_MSG(cq->dev != NULL);
+	if (cq == NULL || cq->dev == NULL) {
+		LOG_ERR("%s - Invalid parameter given", __func__);
+		return;
+	}
 
 	/* Get type of the control */
 	switch (cq->type) {
