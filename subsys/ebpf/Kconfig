@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig EBPF
+	bool "eBPF (extended Berkeley Packet Filter) subsystem"
+	help
+	  Enable the eBPF subsystem for kernel observability.
+	  Provides a lightweight bytecode interpreter with tracepoint
+	  attachment for runtime-programmable kernel instrumentation.
+
+if EBPF
+
+config EBPF_STACK_SIZE
+	int "Per-program stack size (bytes)"
+	default 512
+	range 128 4096
+	help
+	  Size of the stack available to each eBPF program invocation.
+	  Allocated on the calling thread's kernel stack.
+
+config EBPF_MAX_PROG_INSNS
+	int "Maximum instructions per program"
+	default 4096
+	range 64 65536
+	help
+	  Maximum number of instructions allowed in a single eBPF program.
+	  Programs exceeding this limit will fail verification.
+
+config EBPF_MAX_INSNS_PER_RUN
+	int "Maximum instructions executed per invocation"
+	default 4096
+	range 256 65536
+	help
+	  Safety limit on the number of instructions executed in a single
+	  eBPF program run. Prevents infinite loops.
+
+config EBPF_RUNTIME_BOUNDS_CHECK
+	bool "Runtime memory bounds checking"
+	default y
+	help
+	  Enable runtime validation of all memory accesses from eBPF
+	  programs. This adds overhead but prevents wild pointer access.
+	  Recommended for development; can be disabled for production
+	  on verified programs.
+
+config EBPF_TRACING
+	bool "eBPF tracing integration"
+	default y if TRACING_CUSTOM
+	depends on TRACING_CUSTOM
+	select INSTRUMENT_THREAD_SWITCHING
+	help
+	  Integrate eBPF programs with the Zephyr tracing subsystem.
+	  This enables attaching eBPF programs to kernel tracepoints
+	  such as context switches, syscalls, and scheduler events.
+	  This requires CONFIG_TRACING=y and CONFIG_TRACING_CUSTOM=y.
+
+config EBPF_SHELL
+	bool "eBPF shell commands"
+	default y
+	depends on SHELL
+	help
+	  Enable shell commands for listing, enabling, disabling eBPF
+	  programs and dumping map contents at runtime.
+
+config EBPF_STATS
+	bool "eBPF program execution statistics"
+	default y
+	help
+	  Track per-program execution count and cumulative run time.
+	  Accessible via the shell 'ebpf stats' command.
+
+rsource "Kconfig.maps"
+rsource "Kconfig.progs"
+
+module = EBPF
+module-str = ebpf
+module-help = Sets log level for eBPF subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # EBPF

@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config EBPF_MAP_HASH
+	bool "Hash map support"
+	default y
+	depends on EBPF
+	help
+	  Enable the hash map type for eBPF programs.
+
+config EBPF_MAP_ARRAY
+	bool "Array map support"
+	default y
+	depends on EBPF
+	help
+	  Enable the array map type for eBPF programs.
+	  Array maps are always available as a basic requirement.
+
+config EBPF_MAP_RINGBUF
+	bool "Ring buffer map support"
+	default y
+	depends on EBPF
+	select RING_BUFFER
+	help
+	  Enable the ring buffer map type for event output.
+
+config EBPF_MAP_PER_CPU_ARRAY
+	bool "Per-CPU array map support"
+	default y
+	depends on EBPF && SMP
+	help
+	  Enable per-CPU array maps. Only available on SMP systems.
