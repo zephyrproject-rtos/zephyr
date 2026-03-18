@@ -107,6 +107,7 @@ ZTEST(video_common, test_video_closest_frmival_stepwise)
 	struct video_frmival desired;
 	struct video_frmival expected;
 	struct video_frmival match;
+	int ret;
 
 	stepwise.min.numerator = 1;
 	stepwise.min.denominator = 30;
@@ -117,29 +118,34 @@ ZTEST(video_common, test_video_closest_frmival_stepwise)
 
 	desired.numerator = 1;
 	desired.denominator = 1;
-	video_closest_frmival_stepwise(&stepwise, &desired, &match);
+	ret = video_closest_frmival_stepwise(&stepwise, &desired, &match);
+	zassert_ok(ret, "expecting video_closest_frmival_stepwise to work");
 	zassert_equal(video_frmival_nsec(&match), video_frmival_nsec(&desired), "1 / 1");
 
 	desired.numerator = 3;
 	desired.denominator = 30;
-	video_closest_frmival_stepwise(&stepwise, &desired, &match);
+	ret = video_closest_frmival_stepwise(&stepwise, &desired, &match);
+	zassert_ok(ret, "expecting video_closest_frmival_stepwise to work");
 	zassert_equal(video_frmival_nsec(&match), video_frmival_nsec(&desired), "3 / 30");
 
 	desired.numerator = 7;
 	desired.denominator = 80;
 	expected.numerator = 3;
 	expected.denominator = 30;
-	video_closest_frmival_stepwise(&stepwise, &desired, &match);
+	ret = video_closest_frmival_stepwise(&stepwise, &desired, &match);
+	zassert_ok(ret, "expecting video_closest_frmival_stepwise to work");
 	zassert_equal(video_frmival_nsec(&match), video_frmival_nsec(&expected), "7 / 80");
 
 	desired.numerator = 1;
 	desired.denominator = 120;
-	video_closest_frmival_stepwise(&stepwise, &desired, &match);
+	ret = video_closest_frmival_stepwise(&stepwise, &desired, &match);
+	zassert_ok(ret, "expecting video_closest_frmival_stepwise to work");
 	zassert_equal(video_frmival_nsec(&match), video_frmival_nsec(&stepwise.min), "1 / 120");
 
 	desired.numerator = 100;
 	desired.denominator = 1;
-	video_closest_frmival_stepwise(&stepwise, &desired, &match);
+	ret = video_closest_frmival_stepwise(&stepwise, &desired, &match);
+	zassert_ok(ret, "expecting video_closest_frmival_stepwise to work");
 	zassert_equal(video_frmival_nsec(&match), video_frmival_nsec(&stepwise.max), "100 / 1");
 }
 

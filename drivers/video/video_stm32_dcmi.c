@@ -372,6 +372,7 @@ static int video_stm32_dcmi_set_frmival(const struct device *dev, struct video_f
 	uint32_t best_diff_us = INT32_MAX;
 	uint32_t diff_us = 0, a, b;
 	int best_capture_rate = 1;
+	int ret;
 
 	a = video_frmival_nsec(frmival) / USEC_PER_MSEC;
 
@@ -388,7 +389,10 @@ static int video_stm32_dcmi_set_frmival(const struct device *dev, struct video_f
 		fie.discrete.numerator = frmival->numerator;
 		fie.discrete.denominator = frmival->denominator * capture_rate;
 
-		video_closest_frmival(config->sensor_dev, &fie);
+		ret = video_closest_frmival(config->sensor_dev, &fie);
+		if (ret < 0) {
+			return ret;
+		}
 		b = video_frmival_nsec(&fie.discrete) * capture_rate / USEC_PER_MSEC;
 		diff_us = a > b ? a - b : b - a;
 		if (diff_us < best_diff_us) {

@@ -1017,9 +1017,9 @@ static inline uint64_t video_frmival_nsec(const struct video_frmival *frmival)
  * @param desired The frame interval for which find the closest match
  * @param match The resulting frame interval closest to @p desired
  */
-void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
-				    const struct video_frmival *desired,
-				    struct video_frmival *match);
+int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
+				   const struct video_frmival *desired,
+				   struct video_frmival *match);
 
 /**
  * @brief Find the closest match to a frame interval value within a video device.
@@ -1038,7 +1038,7 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
  * @param dev Video device to query.
  * @param match Frame interval enumerator with the query, and loaded with the result.
  */
-void video_closest_frmival(const struct device *dev, struct video_frmival_enum *match);
+int video_closest_frmival(const struct device *dev, struct video_frmival_enum *match);
 
 /**
  * @brief Return the link-frequency advertised by a device
