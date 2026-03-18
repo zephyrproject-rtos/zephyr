@@ -43,6 +43,11 @@
 					ngpios = <3>;
 				};
 			};
+
+			test_i2c_npm10xx: pmic@0 {
+				compatible = "nordic,npm10xx";
+				reg = <0x0>;
+			};
 		};
 
 		test_uart: uart@55556666 {
