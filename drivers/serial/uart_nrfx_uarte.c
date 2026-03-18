@@ -300,7 +300,7 @@ struct uarte_nrfx_data {
 #define UARTE_CFG_FLAG_VOLATILE_BAUDRATE BIT(5)
 
 /* Formula for getting the baudrate settings is following:
- * 2^12 * (2^20 / (f_PCLK / desired_baudrate)) where f_PCLK is a frequency that
+ * 2^12 * floor(2^20 / round(f_PCLK / desired_baudrate)) where f_PCLK is a frequency that
  * drives the UARTE.
  *
  * @param f_pclk Frequency of the clock that drives the peripheral.
@@ -308,7 +308,8 @@ struct uarte_nrfx_data {
  *
  * @return Baudrate setting to be written to the BAUDRATE register
  */
-#define UARTE_GET_CUSTOM_BAUDRATE(f_pclk, baudrate) ((BIT(20) / (f_pclk / baudrate)) << 12)
+#define UARTE_GET_CUSTOM_BAUDRATE(f_pclk, baudrate)                                                \
+	((BIT(20) / DIV_ROUND_CLOSEST(f_pclk, baudrate)) << 12)
 
 /* Macro for converting numerical baudrate to register value. It is convenient
  * to use this approach because for constant input it can calculate nrf setting
