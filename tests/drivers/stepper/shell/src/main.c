@@ -84,6 +84,16 @@ ZTEST(stepper_shell, test_stepper_ctrl_set_microstep_interval)
 		      "wrong step_interval value");
 }
 
+ZTEST(stepper_shell, test_stepper_ctrl_configure_ramp)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	int err = shell_execute_cmd(sh, "stepper_ctrl configure_ramp " FAKE_STEPPER_CONTROLLER
+					" 100 200 300");
+
+	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_ctrl_configure_ramp_fake,
+				   fake_stepper_controller_dev, err);
+}
+
 ZTEST(stepper_shell, test_stepper_driver_set_micro_step_res)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();

@@ -33,6 +33,9 @@ DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_ctrl_move_by, const struct device *, i
 DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_ctrl_set_microstep_interval, const struct device *,
 			uint64_t);
 
+DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_ctrl_configure_ramp, const struct device *,
+			const struct stepper_ctrl_ramp *);
+
 DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_ctrl_set_reference_position, const struct device *,
 			int32_t);
 
