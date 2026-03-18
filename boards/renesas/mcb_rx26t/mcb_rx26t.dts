@@ -83,6 +83,10 @@
 	status = "okay";
 };
 
+&group_irq_bl1 {
+	status = "okay";
+};
+
 &sci12 {
 	pinctrl-0 = <&sci12_default>;
 	pinctrl-names = "default";
@@ -92,4 +96,11 @@
 		current-speed = <115200>;
 		status = "okay";
 	};
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <DT_FREQ_K(400)>;
+	status = "okay";
 };
