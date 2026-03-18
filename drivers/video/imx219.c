@@ -329,7 +329,10 @@ static int imx219_set_frmival(const struct device *dev, struct video_frmival *fr
 	};
 	int ret;
 
-	video_closest_frmival(dev, &fie);
+	ret = video_closest_frmival(dev, &fie);
+	if (ret < 0) {
+		return ret;
+	}
 
 	switch (fie.index) {
 	case IMX219_30FPS_IDX:

@@ -134,13 +134,13 @@ int video_format_caps_index(const struct video_format_cap *fmts, const struct vi
 	return -ENOENT;
 }
 
-void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
-				    const struct video_frmival *desired,
-				    struct video_frmival *match)
+int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
+				   const struct video_frmival *desired,
+				   struct video_frmival *match)
 {
-	__ASSERT_NO_MSG(stepwise != NULL);
-	__ASSERT_NO_MSG(desired != NULL);
-	__ASSERT_NO_MSG(match != NULL);
+	if (stepwise == NULL || desired == NULL || match == NULL) {
+		return -EINVAL;
+	}
 
 	uint64_t min = stepwise->min.numerator;
 	uint64_t max = stepwise->max.numerator;
@@ -153,10 +153,9 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 	step *= stepwise->min.denominator * stepwise->max.denominator * desired->denominator;
 	goal *= stepwise->min.denominator * stepwise->max.denominator * stepwise->step.denominator;
 
-	__ASSERT_NO_MSG(step != 0U);
 	/* Prevent division by zero */
 	if (step == 0U) {
-		return;
+		return -EINVAL;
 	}
 	/* Saturate the desired value to the min/max supported */
 	goal = CLAMP(goal, min, max);
@@ -165,20 +164,21 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 	match->numerator = min + DIV_ROUND_CLOSEST(goal - min, step) * step;
 	match->denominator = stepwise->min.denominator * stepwise->max.denominator *
 			     stepwise->step.denominator * desired->denominator;
+
+	return 0;
 }
 
-void video_closest_frmival(const struct device *dev, struct video_frmival_enum *match)
+int video_closest_frmival(const struct device *dev, struct video_frmival_enum *match)
 {
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(match != NULL);
+	if (dev == NULL || match == NULL || match->type == VIDEO_FRMIVAL_TYPE_STEPWISE) {
+		return -EINVAL;
+	}
 
 	struct video_frmival desired = match->discrete;
 	struct video_frmival_enum fie = {.format = match->format};
 	uint64_t best_diff_nsec = INT32_MAX;
 	uint64_t goal_nsec = video_frmival_nsec(&desired);
-
-	__ASSERT(match->type != VIDEO_FRMIVAL_TYPE_STEPWISE,
-		 "cannot find range matching the range, only a value matching the range");
+	int ret = 0;
 
 	for (fie.index = 0; video_enum_frmival(dev, &fie) == 0; fie.index++) {
 		struct video_frmival tmp = {0};
@@ -190,7 +190,7 @@ void video_closest_frmival(const struct device *dev, struct video_frmival_enum *
 			tmp = fie.discrete;
 			break;
 		case VIDEO_FRMIVAL_TYPE_STEPWISE:
-			video_closest_frmival_stepwise(&fie.stepwise, &desired, &tmp);
+			ret = video_closest_frmival_stepwise(&fie.stepwise, &desired, &tmp);
 			break;
 		default:
 			CODE_UNREACHABLE;
@@ -210,6 +210,8 @@ void video_closest_frmival(const struct device *dev, struct video_frmival_enum *
 			break;
 		}
 	}
+
+	return ret;
 }
 
 static int video_read_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, size_t size_w,
