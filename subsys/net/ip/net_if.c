@@ -5893,7 +5893,7 @@ const char *net_if_oper_state2str(enum net_if_oper_state state)
 
 static void update_operational_state(struct net_if *iface)
 {
-	enum net_if_oper_state prev_state = iface->if_dev->oper_state;
+	enum net_if_oper_state prev_state = iface->oper_state;
 	enum net_if_oper_state new_state = NET_IF_OPER_UNKNOWN;
 
 	if (!net_if_is_admin_up(iface)) {

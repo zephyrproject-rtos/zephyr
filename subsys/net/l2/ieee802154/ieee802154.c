@@ -527,8 +527,8 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 			 * Instead, use the iface link_addr directly.
 			 */
 			(void)net_linkaddr_set(net_pkt_lladdr_src(pkt),
-					       iface->if_dev->link_addr.addr,
-					       iface->if_dev->link_addr.len);
+					       iface->link_addr.addr,
+					       iface->link_addr.len);
 		} else {
 			return -EINVAL;
 		}

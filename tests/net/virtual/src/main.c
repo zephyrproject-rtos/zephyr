@@ -317,7 +317,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	    net_if_get_by_iface(iface));
 
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-		if (PART_OF_ARRAY(NET_IF_GET_NAME(eth_test, 0), iface)) {
+		if (iface == NET_IF_GET(eth_test, 0)) {
 			if (!eth_interfaces[0]) {
 				/* Just use the first interface */
 				eth_interfaces[0] = iface;

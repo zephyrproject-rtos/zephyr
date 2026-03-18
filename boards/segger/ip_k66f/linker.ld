@@ -40,7 +40,6 @@ SECTION_DATA_PROLOGUE(net_if_area,,SUBALIGN(4))                 \
 	KEEP(*(SORT_BY_NAME(._net_if.static.*)));               \
 	_net_if_list_end = .;                                   \
 } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)            \
-ITERABLE_SECTION_RAM(net_if_dev, 4)                             \
 ITERABLE_SECTION_RAM(net_l2, 4)                                 \
 ITERABLE_SECTION_RAM(eth_bridge, 4)
 

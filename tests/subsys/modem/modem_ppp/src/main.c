@@ -111,8 +111,8 @@ static struct ppp_context test_net_l2_data = {
 	.lcp.peer_options.async_map = NET_PPP_DEFAULT_ASYNC_MAP,
 };
 
-/* This emulates the network interface device which will receive unwrapped network packets */
-static struct net_if_dev test_net_if_dev = {
+/* This emulates the network interface which will receive unwrapped network packets */
+static struct net_if test_iface = {
 	.l2 = &test_net_l2,
 	.l2_data = &test_net_l2_data,
 	.link_addr.addr = {0x00, 0x00, 0x5E, 0x00, 0x53, 0x01},
@@ -120,11 +120,6 @@ static struct net_if_dev test_net_if_dev = {
 	.link_addr.type = NET_LINK_DUMMY,
 	.mtu = 1500,
 	.oper_state = NET_IF_OPER_UP,
-};
-
-/* This emulates the network interface which contains the network interface device */
-static struct net_if test_iface = {
-	.if_dev = &test_net_if_dev,
 };
 
 /*************************************************************************************************/

@@ -567,11 +567,6 @@ struct net_if_ipv4_autoconf {
 };
 #endif /* CONFIG_NET_IPV4_AUTO */
 
-/** @cond INTERNAL_HIDDEN */
-/* We always need to have at least one IP config */
-#define NET_IF_MAX_CONFIGS 1
-/** @endcond */
-
 /**
  * @brief Network interface IP address configuration.
  */
@@ -658,20 +653,20 @@ struct net_traffic_class {
 typedef int (*net_socket_create_t)(int, int, int);
 
 /**
- * @brief Network Interface Device structure
+ * @brief Network Interface structure
  *
  * Used to handle a network interface on top of a device driver instance.
- * There can be many net_if_dev instance against the same device.
+ * There can be many net_if instance against the same device.
  *
  * Such interface is mainly to be used by the link layer, but is also tight
  * to a network context: it then makes the relation with a network context
  * and the network device.
  *
  * Because of the strong relationship between a device driver and such
- * network interface, each net_if_dev should be instantiated by one of the
+ * network interface, each net_if should be instantiated by one of the
  * network device init macros found in net_if.h.
  */
-struct net_if_dev {
+struct net_if {
 	/** The actually device driver instance the net_if is related to */
 	const struct device *dev;
 
@@ -719,18 +714,6 @@ struct net_if_dev {
 	 * The value is in milliseconds since boot.
 	 */
 	int64_t oper_state_change_time;
-};
-
-/**
- * @brief Network Interface structure
- *
- * Used to handle a network interface on top of a net_if_dev instance.
- * There can be many net_if instance against the same net_if_dev instance.
- *
- */
-struct net_if {
-	/** The net_if_dev instance the net_if is related to */
-	struct net_if_dev *if_dev;
 
 #if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
 	/** Network statistics related to this network interface */
@@ -825,11 +808,11 @@ static inline void net_if_tx_unlock(struct net_if *iface)
 static inline void net_if_flag_set(struct net_if *iface,
 				   enum net_if_flag value)
 {
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return;
 	}
 
-	atomic_set_bit(iface->if_dev->flags, value);
+	atomic_set_bit(iface->flags, value);
 }
 
 /**
@@ -843,11 +826,11 @@ static inline void net_if_flag_set(struct net_if *iface,
 static inline bool net_if_flag_test_and_set(struct net_if *iface,
 					    enum net_if_flag value)
 {
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return false;
 	}
 
-	return atomic_test_and_set_bit(iface->if_dev->flags, value);
+	return atomic_test_and_set_bit(iface->flags, value);
 }
 
 /**
@@ -859,11 +842,11 @@ static inline bool net_if_flag_test_and_set(struct net_if *iface,
 static inline void net_if_flag_clear(struct net_if *iface,
 				     enum net_if_flag value)
 {
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return;
 	}
 
-	atomic_clear_bit(iface->if_dev->flags, value);
+	atomic_clear_bit(iface->flags, value);
 }
 
 /**
@@ -877,11 +860,11 @@ static inline void net_if_flag_clear(struct net_if *iface,
 static inline bool net_if_flag_test_and_clear(struct net_if *iface,
 					      enum net_if_flag value)
 {
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return false;
 	}
 
-	return atomic_test_and_clear_bit(iface->if_dev->flags, value);
+	return atomic_test_and_clear_bit(iface->flags, value);
 }
 
 /**
@@ -895,11 +878,11 @@ static inline bool net_if_flag_test_and_clear(struct net_if *iface,
 static inline bool net_if_flag_is_set(struct net_if *iface,
 				      enum net_if_flag value)
 {
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return false;
 	}
 
-	return atomic_test_bit(iface->if_dev->flags, value);
+	return atomic_test_bit(iface->flags, value);
 }
 
 /**
@@ -913,21 +896,21 @@ static inline bool net_if_flag_is_set(struct net_if *iface,
 static inline enum net_if_oper_state net_if_oper_state_set(
 	struct net_if *iface, enum net_if_oper_state oper_state)
 {
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return NET_IF_OPER_UNKNOWN;
 	}
 
 	if (oper_state <= NET_IF_OPER_UP) {
-		iface->if_dev->oper_state = oper_state;
+		iface->oper_state = oper_state;
 	}
 
 	net_if_lock(iface);
 
-	iface->if_dev->oper_state_change_time = k_uptime_get();
+	iface->oper_state_change_time = k_uptime_get();
 
 	net_if_unlock(iface);
 
-	return iface->if_dev->oper_state;
+	return iface->oper_state;
 }
 
 /**
@@ -939,11 +922,11 @@ static inline enum net_if_oper_state net_if_oper_state_set(
  */
 static inline enum net_if_oper_state net_if_oper_state(struct net_if *iface)
 {
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return NET_IF_OPER_UNKNOWN;
 	}
 
-	return iface->if_dev->oper_state;
+	return iface->oper_state;
 }
 
 /**
@@ -961,13 +944,13 @@ static inline enum net_if_oper_state net_if_oper_state(struct net_if *iface)
 static inline int net_if_oper_state_change_time(struct net_if *iface,
 						int64_t *change_time)
 {
-	if (iface == NULL || iface->if_dev == NULL || change_time == NULL) {
+	if (iface == NULL || change_time == NULL) {
 		return -EINVAL;
 	}
 
 	net_if_lock(iface);
 
-	*change_time = iface->if_dev->oper_state_change_time;
+	*change_time = iface->oper_state_change_time;
 
 	net_if_unlock(iface);
 
@@ -1012,11 +995,11 @@ static inline enum net_verdict net_if_send_data(struct net_if *iface,
  */
 static inline const struct net_l2 *net_if_l2(struct net_if *iface)
 {
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return NULL;
 	}
 
-	return iface->if_dev->l2;
+	return iface->l2;
 }
 
 /**
@@ -1038,11 +1021,11 @@ enum net_verdict net_if_recv_data(struct net_if *iface, struct net_pkt *pkt);
  */
 static inline void *net_if_l2_data(struct net_if *iface)
 {
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return NULL;
 	}
 
-	return iface->if_dev->l2_data;
+	return iface->l2_data;
 }
 
 /**
@@ -1054,11 +1037,11 @@ static inline void *net_if_l2_data(struct net_if *iface)
  */
 static inline const struct device *net_if_get_device(struct net_if *iface)
 {
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return NULL;
 	}
 
-	return iface->if_dev->dev;
+	return iface->dev;
 }
 
 /**
@@ -1094,8 +1077,7 @@ static inline void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 static inline bool net_if_is_ip_offloaded(struct net_if *iface)
 {
 #if defined(CONFIG_NET_OFFLOAD)
-	return (iface != NULL && iface->if_dev != NULL &&
-		iface->if_dev->offload != NULL);
+	return (iface != NULL && iface->offload != NULL);
 #else
 	ARG_UNUSED(iface);
 
@@ -1122,11 +1104,11 @@ bool net_if_is_offloaded(struct net_if *iface);
 static inline struct net_offload *net_if_offload(struct net_if *iface)
 {
 #if defined(CONFIG_NET_OFFLOAD)
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return NULL;
 	}
 
-	return iface->if_dev->offload;
+	return iface->offload;
 #else
 	ARG_UNUSED(iface);
 
@@ -1143,11 +1125,11 @@ static inline struct net_offload *net_if_offload(struct net_if *iface)
 static inline void net_if_offload_set(struct net_if *iface, struct net_offload *offload)
 {
 #if defined(CONFIG_NET_OFFLOAD)
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return;
 	}
 
-	iface->if_dev->offload = offload;
+	iface->offload = offload;
 #else
 	ARG_UNUSED(iface);
 	ARG_UNUSED(offload);
@@ -1164,11 +1146,11 @@ static inline void net_if_offload_set(struct net_if *iface, struct net_offload *
 static inline bool net_if_is_socket_offloaded(struct net_if *iface)
 {
 #if defined(CONFIG_NET_SOCKETS_OFFLOAD)
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return false;
 	}
 
-	return (iface->if_dev->socket_offload != NULL);
+	return (iface->socket_offload != NULL);
 #else
 	ARG_UNUSED(iface);
 
@@ -1186,11 +1168,11 @@ static inline void net_if_socket_offload_set(
 		struct net_if *iface, net_socket_create_t socket_offload)
 {
 #if defined(CONFIG_NET_SOCKETS_OFFLOAD)
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return;
 	}
 
-	iface->if_dev->socket_offload = socket_offload;
+	iface->socket_offload = socket_offload;
 #else
 	ARG_UNUSED(iface);
 	ARG_UNUSED(socket_offload);
@@ -1207,11 +1189,11 @@ static inline void net_if_socket_offload_set(
 static inline net_socket_create_t net_if_socket_offload(struct net_if *iface)
 {
 #if defined(CONFIG_NET_SOCKETS_OFFLOAD)
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return NULL;
 	}
 
-	return iface->if_dev->socket_offload;
+	return iface->socket_offload;
 #else
 	ARG_UNUSED(iface);
 
@@ -1228,11 +1210,11 @@ static inline net_socket_create_t net_if_socket_offload(struct net_if *iface)
  */
 static inline struct net_linkaddr *net_if_get_link_addr(struct net_if *iface)
 {
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return NULL;
 	}
 
-	return &iface->if_dev->link_addr;
+	return &iface->link_addr;
 }
 
 /**
@@ -1398,11 +1380,11 @@ static inline int net_if_set_link_addr(struct net_if *iface,
  */
 static inline uint16_t net_if_get_mtu(struct net_if *iface)
 {
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return 0U;
 	}
 
-	return iface->if_dev->mtu;
+	return iface->mtu;
 }
 
 /**
@@ -1414,11 +1396,11 @@ static inline uint16_t net_if_get_mtu(struct net_if *iface)
 static inline void net_if_set_mtu(struct net_if *iface,
 				  uint16_t mtu)
 {
-	if (iface == NULL || iface->if_dev == NULL) {
+	if (iface == NULL) {
 		return;
 	}
 
-	iface->if_dev->mtu = mtu;
+	iface->mtu = mtu;
 }
 
 /**
@@ -3472,7 +3454,6 @@ struct net_if_api {
 		   (.collector = &NET_PROMETHEUS_GET_COLLECTOR_NAME(dev_id, sfx),))
 
 #define NET_IF_GET_NAME(dev_id, sfx) __net_if_##dev_id##_##sfx
-#define NET_IF_DEV_GET_NAME(dev_id, sfx) __net_if_dev_##dev_id##_##sfx
 
 #define NET_IF_GET(dev_id, sfx)						\
 	((struct net_if *)&NET_IF_GET_NAME(dev_id, sfx))
@@ -3483,23 +3464,15 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 				       void *user_data);
 #endif /* CONFIG_NET_STATISTICS_VIA_PROMETHEUS */
 
-#define NET_IF_INIT(dev_id, sfx, _l2, _mtu, _num_configs)		\
-	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
-				NET_IF_DEV_GET_NAME(dev_id, sfx)) = {	\
+#define NET_IF_INIT(dev_id, sfx, _l2, _mtu)				\
+	static STRUCT_SECTION_ITERABLE(net_if,				\
+				NET_IF_GET_NAME(dev_id, sfx)) = {	\
 		.dev = &(DEVICE_NAME_GET(dev_id)),			\
 		.l2 = &(NET_L2_GET_NAME(_l2)),				\
 		.l2_data = &(NET_L2_GET_DATA(dev_id, sfx)),		\
 		.mtu = _mtu,						\
 		.flags = {BIT(NET_IF_LOWER_UP)},			\
-	};								\
-	static Z_DECL_ALIGN(struct net_if)				\
-		       NET_IF_GET_NAME(dev_id, sfx)[_num_configs]	\
-		       __used __noasan __in_section(_net_if, static,	\
-					   dev_id) = {			\
-		[0 ... (_num_configs - 1)] = {				\
-			.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),	\
-			NET_IF_CONFIG_INIT				\
-		}							\
+		NET_IF_CONFIG_INIT					\
 	};								\
 	IF_ENABLED(CONFIG_NET_STATISTICS_VIA_PROMETHEUS,		\
 		   (static PROMETHEUS_COLLECTOR_DEFINE(			\
@@ -3511,21 +3484,13 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 					 dev_id, sfx);))
 
 #define NET_IF_OFFLOAD_INIT(dev_id, sfx, _mtu)				\
-	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
-				NET_IF_DEV_GET_NAME(dev_id, sfx)) = {	\
+	static STRUCT_SECTION_ITERABLE(net_if,				\
+				NET_IF_GET_NAME(dev_id, sfx)) = {	\
 		.dev = &(DEVICE_NAME_GET(dev_id)),			\
 		.mtu = _mtu,						\
 		.l2 = &(NET_L2_GET_NAME(OFFLOADED_NETDEV)),		\
 		.flags = {BIT(NET_IF_LOWER_UP)},			\
-	};								\
-	static Z_DECL_ALIGN(struct net_if)				\
-		NET_IF_GET_NAME(dev_id, sfx)[NET_IF_MAX_CONFIGS]	\
-		       __used __noasan __in_section(_net_if, static,	\
-					   dev_id) = {			\
-		[0 ... (NET_IF_MAX_CONFIGS - 1)] = {			\
-			.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),	\
-			NET_IF_CONFIG_INIT				\
-		}							\
+		NET_IF_CONFIG_INIT					\
 	};								\
 	IF_ENABLED(CONFIG_NET_STATISTICS_VIA_PROMETHEUS,		\
 		   (static PROMETHEUS_COLLECTOR_DEFINE(			\
@@ -3549,7 +3514,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
  * @param dev_id Device ID provided to `NET_IF_INIT` or `NET_IF_OFFLOAD_INIT`
  */
 #define NET_IF_DECLARE(dev_id, inst) \
-	static struct net_if NET_IF_GET_NAME(dev_id, inst)[NET_IF_MAX_CONFIGS]
+	static struct net_if NET_IF_GET_NAME(dev_id, inst)
 
 #define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
 				   init_fn, pm, data, config, prio,	\
@@ -3560,7 +3525,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 			config, POST_KERNEL, prio, api,			\
 			&Z_DEVICE_STATE_NAME(dev_id));			\
 	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
-	NET_IF_INIT(dev_id, instance, l2, mtu, NET_IF_MAX_CONFIGS)
+	NET_IF_INIT(dev_id, instance, l2, mtu)
 
 #define Z_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
 			  config, prio, api, l2, l2_ctx_type, mtu)	\
