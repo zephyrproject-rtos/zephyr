@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1360 760" role="img" aria-labelledby="title desc">
+  <title id="title">Zephyr eBPF subsystem architecture</title>
+  <desc id="desc">Single-view architecture diagram showing the control path and event path of the Zephyr eBPF subsystem.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#294157" />
+    </marker>
+    <style>
+      .bg { fill: #ffffff; }
+      .frame { fill: none; stroke: #d7dee7; stroke-width: 1.5; }
+      .panel { fill: #fbfcfe; stroke: #ced8e3; stroke-width: 1.5; }
+      .panel-divider { stroke: #dde4ed; stroke-width: 1; }
+      .panel-title { fill: #243447; font: 600 18px Cambria, "Times New Roman", serif; letter-spacing: 0.2px; }
+      .panel-subtitle { fill: #627389; font: 16px "Segoe UI", Arial, sans-serif; }
+      .card { stroke-width: 1.7; }
+      .card-event { fill: #fbf8f3; stroke: #c6a582; }
+      .card-runtime { fill: #f8fbff; stroke: #8ea9c4; }
+      .card-data { fill: #f6faf5; stroke: #91a88d; }
+      .card-control { fill: #fbfaf6; stroke: #b7a47b; }
+      .card-app { fill: #f7f9fc; stroke: #93a6bb; }
+      .card-title { fill: #243447; font: 600 19px "Segoe UI", Arial, sans-serif; }
+      .card-meta { fill: #66768a; font: 13px Consolas, "Courier New", monospace; }
+      .badge { stroke-width: 0; }
+      .badge-event { fill: #f1e5d9; }
+      .badge-runtime { fill: #e5eef9; }
+      .badge-data { fill: #e5efe3; }
+      .badge-control { fill: #efe7d7; }
+      .badge-app { fill: #e8edf4; }
+      .badge-text { font: 600 11px "Segoe UI", Arial, sans-serif; letter-spacing: 0.8px; }
+      .badge-text-event { fill: #7a5c3c; }
+      .badge-text-runtime { fill: #35597a; }
+      .badge-text-data { fill: #496548; }
+      .badge-text-control { fill: #6f5b30; }
+      .badge-text-app { fill: #495d73; }
+      .edge { stroke: #294157; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
+      .edge-dashed { stroke-dasharray: 7 6; }
+      .edge-pill { fill: #ffffff; stroke: #d7dee7; stroke-width: 1; }
+      .edge-pill-text { fill: #45586f; font: 12.5px "Segoe UI", Arial, sans-serif; }
+      .caption { fill: #5f7187; font: 15px "Segoe UI", Arial, sans-serif; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1360" height="760" rx="20" ry="20" />
+  <rect class="frame" x="12" y="12" width="1336" height="736" rx="18" ry="18" />
+<rect class="panel" x="40" y="40" width="220" height="450" rx="22" ry="22" />
+<line class="panel-divider" x1="40" y1="96" x2="260" y2="96" />
+<text class="panel-title" x="58" y="70" text-anchor="start"><tspan x="58" dy="0">Zephyr Kernel</tspan></text>
+<text class="panel-subtitle" x="58" y="122" text-anchor="start"><tspan x="58" dy="0">Event sources that emit</tspan><tspan x="58" dy="16">tracepoint contexts into</tspan><tspan x="58" dy="16">the eBPF runtime</tspan></text>
+<rect class="panel" x="284" y="40" width="746" height="450" rx="22" ry="22" />
+<line class="panel-divider" x1="284" y1="96" x2="1030" y2="96" />
+<text class="panel-title" x="302" y="70" text-anchor="start"><tspan x="302" dy="0">eBPF Runtime</tspan></text>
+<text class="panel-subtitle" x="302" y="122" text-anchor="start"><tspan x="302" dy="0">Short event path: dispatch one prepared program, execute it, and exchange state through controlled</tspan><tspan x="302" dy="16">services</tspan></text>
+<rect class="panel" x="1054" y="40" width="266" height="450" rx="22" ry="22" />
+<line class="panel-divider" x1="1054" y1="96" x2="1320" y2="96" />
+<text class="panel-title" x="1072" y="70" text-anchor="start"><tspan x="1072" dy="0">Application</tspan></text>
+<text class="panel-subtitle" x="1072" y="122" text-anchor="start"><tspan x="1072" dy="0">Defines programs, enables them,</tspan><tspan x="1072" dy="16">and consumes exported state</tspan></text>
+<rect class="panel" x="40" y="530" width="1280" height="200" rx="22" ry="22" />
+<line class="panel-divider" x1="40" y1="586" x2="1320" y2="586" />
+<text class="panel-title" x="58" y="560" text-anchor="start"><tspan x="58" dy="0">Program Control Path</tspan></text>
+<text class="panel-subtitle" x="58" y="612" text-anchor="start"><tspan x="58" dy="0">Preparation work that stays outside the hot event path</tspan></text>
+<rect class="card card-event" x="59" y="180" width="180" height="144" rx="18" ry="18" />
+<rect class="badge badge-event" x="75" y="194" width="98" height="24" rx="12" ry="12" />
+<text class="badge-text badge-text-event" x="85" y="210" text-anchor="start"><tspan x="85" dy="0">event source</tspan></text>
+<text class="card-title card-title-event" x="149" y="242" text-anchor="middle"><tspan x="149" dy="0">Tracepoints</tspan></text>
+<text class="card-meta" x="149" y="271" text-anchor="middle"><tspan x="149" dy="0">Zephyr tracing hooks</tspan><tspan x="149" dy="15">produce event context</tspan></text>
+<rect class="card card-runtime" x="330" y="180" width="190" height="144" rx="18" ry="18" />
+<rect class="badge badge-runtime" x="346" y="194" width="88" height="24" rx="12" ry="12" />
+<text class="badge-text badge-text-runtime" x="356" y="210" text-anchor="start"><tspan x="356" dy="0">runtime</tspan></text>
+<text class="card-title card-title-runtime" x="425" y="242" text-anchor="middle"><tspan x="425" dy="0">ebpf_tracing</tspan></text>
+<text class="card-meta" x="425" y="271" text-anchor="middle"><tspan x="425" dy="0">dispatch hub</tspan><tspan x="425" dy="15">tracepoint -&gt; program</tspan><tspan x="425" dy="15">binding</tspan></text>
+<rect class="card card-runtime" x="574" y="180" width="200" height="144" rx="18" ry="18" />
+<rect class="badge badge-runtime" x="590" y="194" width="88" height="24" rx="12" ry="12" />
+<text class="badge-text badge-text-runtime" x="600" y="210" text-anchor="start"><tspan x="600" dy="0">runtime</tspan></text>
+<text class="card-title card-title-runtime" x="674" y="242" text-anchor="middle"><tspan x="674" dy="0">ebpf_vm</tspan></text>
+<text class="card-meta" x="674" y="271" text-anchor="middle"><tspan x="674" dy="0">execution engine</tspan><tspan x="674" dy="15">memory check, and</tspan><tspan x="674" dy="15">execute bytecode</tspan></text>
+<rect class="card card-runtime" x="820" y="180" width="178" height="144" rx="18" ry="18" />
+<rect class="badge badge-runtime" x="836" y="194" width="88" height="24" rx="12" ry="12" />
+<text class="badge-text badge-text-runtime" x="846" y="210" text-anchor="start"><tspan x="846" dy="0">runtime</tspan></text>
+<text class="card-title card-title-runtime" x="909" y="242" text-anchor="middle"><tspan x="909" dy="0">ebpf_helpers</tspan></text>
+<text class="card-meta" x="909" y="271" text-anchor="middle"><tspan x="909" dy="0">service switchboard</tspan><tspan x="909" dy="15">helper ID -&gt; host</tspan><tspan x="909" dy="15">service</tspan></text>
+<rect class="card card-data" x="790" y="360" width="228" height="116" rx="18" ry="18" />
+<rect class="badge badge-data" x="806" y="374" width="88" height="24" rx="12" ry="12" />
+<text class="badge-text badge-text-data" x="816" y="390" text-anchor="start"><tspan x="816" dy="0">data plane</tspan></text>
+<text class="card-title card-title-data" x="904" y="422" text-anchor="middle"><tspan x="904" dy="0">ebpf_maps</tspan></text>
+<text class="card-meta" x="904" y="451" text-anchor="middle"><tspan x="904" dy="0">shared state store</tspan><tspan x="904" dy="15">array, hash, ringbuf, etc.</tspan></text>
+<rect class="card card-app" x="1082" y="180" width="210" height="144" rx="18" ry="18" />
+<rect class="badge badge-app" x="1098" y="194" width="91.5" height="24" rx="12" ry="12" />
+<text class="badge-text badge-text-app" x="1108" y="210" text-anchor="start"><tspan x="1108" dy="0">user-facing</tspan></text>
+<text class="card-title card-title-app" x="1187" y="242" text-anchor="middle"><tspan x="1187" dy="0">Application</tspan></text>
+<text class="card-meta" x="1187" y="271" text-anchor="middle"><tspan x="1187" dy="0">define programs and maps</tspan><tspan x="1187" dy="15">attach, enable, disable</tspan><tspan x="1187" dy="15">read counters or ringbuf</tspan></text>
+<rect class="card card-control" x="454" y="598" width="266" height="115" rx="18" ry="18" />
+<rect class="badge badge-control" x="470" y="612" width="104.5" height="24" rx="12" ry="12" />
+<text class="badge-text badge-text-control" x="480" y="628" text-anchor="start"><tspan x="480" dy="0">control plane</tspan></text>
+<text class="card-title card-title-control" x="587" y="660" text-anchor="middle"><tspan x="587" dy="0">ebpf_verifier</tspan></text>
+<text class="card-meta" x="587" y="689" text-anchor="middle"><tspan x="587" dy="0">safety gate</tspan><tspan x="587" dy="15">opcode, jump, helper, stack checks</tspan></text>
+<rect class="card card-control" x="846" y="598" width="296" height="115" rx="18" ry="18" />
+<rect class="badge badge-control" x="862" y="612" width="104.5" height="24" rx="12" ry="12" />
+<text class="badge-text badge-text-control" x="872" y="628" text-anchor="start"><tspan x="872" dy="0">control plane</tspan></text>
+<text class="card-title card-title-control" x="994" y="660" text-anchor="middle"><tspan x="994" dy="0">ebpf_prog</tspan></text>
+<text class="card-meta" x="994" y="689" text-anchor="middle"><tspan x="994" dy="0">program orchestrator</tspan><tspan x="994" dy="15">attach, detach, enable, disable</tspan></text>
+<text class="caption" x="680" y="516" text-anchor="middle"><tspan x="680" dy="0">Control path prepares the program once; event path runs it many times.</tspan></text>
+<path class="edge" d="M 239 252 H 330" fill="none" marker-end="url(#arrow)" />
+<path class="edge" d="M 520 252 H 574" fill="none" marker-end="url(#arrow)" />
+<path class="edge" d="M 774 252 H 820" fill="none" marker-end="url(#arrow)" />
+<path class="edge" d="M 909 324 V 360" fill="none" marker-end="url(#arrow)" />
+<path class="edge" d="M 1018 418 H 1048 V 252 H 1082" fill="none" marker-end="url(#arrow)" />
+<path class="edge" d="M 1187 324 V 548 H 994 V 598" fill="none" marker-end="url(#arrow)" />
+<path class="edge" d="M 846 655.5 H 720" fill="none" marker-end="url(#arrow)" />
+<path class="edge edge-dashed" d="M 994 598 V 546 H 425 V 324" fill="none" marker-end="url(#arrow)" />
+<rect class="edge-pill" x="238.5" y="148" width="92" height="28" rx="14" ry="14" />
+<text class="edge-pill-text" x="284.5" y="167" text-anchor="middle"><tspan x="284.5" dy="0">event context</tspan></text>
+<rect class="edge-pill" x="754" y="148" width="86" height="28" rx="14" ry="14" />
+<text class="edge-pill-text" x="797" y="167" text-anchor="middle"><tspan x="797" dy="0">CALL helper</tspan></text>
+<rect class="edge-pill" x="1040" y="356" width="98" height="28" rx="14" ry="14" />
+<text class="edge-pill-text" x="1089" y="375" text-anchor="middle"><tspan x="1089" dy="0">state exchange</tspan></text>
+<rect class="edge-pill" x="1196.5" y="452" width="113" height="28" rx="14" ry="14" />
+<text class="edge-pill-text" x="1253" y="471" text-anchor="middle"><tspan x="1253" dy="0">attach, enable, ...</tspan></text>
+</svg>
