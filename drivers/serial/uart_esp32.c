@@ -1112,24 +1112,18 @@ static int uart_esp32_pm_action(const struct device *dev, enum pm_device_action 
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-
-		if (ret) {
-			LOG_ERR("Failed to configure UART pins at PM resume");
-			return ret;
-		}
-		break;
-
 	case PM_DEVICE_ACTION_SUSPEND:
-		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
-
-		if (ret && (ret != -ENOENT)) {
-			LOG_ERR("Failed to configure UART pins at PM suspend (%d)", ret);
-			return ret;
-		}
 		break;
 
 	case PM_DEVICE_ACTION_TURN_ON:
+
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret) {
+			LOG_ERR("Failed to configure UART pins (%d)", ret);
+			return ret;
+		}
+		break;
+
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
 
