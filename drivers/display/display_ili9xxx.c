@@ -516,7 +516,7 @@ static const struct ili9xxx_quirks ili9163c_quirks = {
 
 #ifdef CONFIG_ILI9340
 static const struct ili9xxx_quirks ili9340_quirks = {
-	.cmd_set = CMD_SET_1,
+	.cmd_set = CMD_SET_2,
 };
 #endif
 
