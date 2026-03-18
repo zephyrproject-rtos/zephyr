@@ -26,6 +26,7 @@
 	};
 
 	aliases {
+		die-temp0 = &die_temp;
 		led0 = &green_led;
 		sw0 = &user_button;
 	};
@@ -61,12 +62,22 @@
 	};
 };
 
+&adc1 {
+	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
+		 <&rcc STM32_SRC_PSIK ADCDAC_SEL(2)>;
+	status = "okay";
+};
+
 &adc2 {
 	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
 		 <&rcc STM32_SRC_PSIK ADCDAC_SEL(2)>;
 	clock-names = "adcx", "adc_ker";
 	pinctrl-0 = <&adc2_in12_ph4 &adc2_in13_ph5>; /* Arduino A1 & A2 */
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };
 
