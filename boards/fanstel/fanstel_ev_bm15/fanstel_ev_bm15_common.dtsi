@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "fanstel_ev_bm15_nrf54l_05_10_15-pinctrl.dtsi"
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+			label = "EV-BM15 LED 0";
+		};
+
+		led1: led_1 {
+			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+			label = "EV-BM15 LED 1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio1 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpio1 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+
+		sw0 = &button0;
+		sw1 = &button1;
+
+		watchdog0 = &wdt31;
+	};
+};
+
+&uart20 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart20_default>;
+	pinctrl-1 = <&uart20_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart30 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart30_default>;
+	pinctrl-1 = <&uart30_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+/* Crystal configuration */
+
+&lfxo {
+	load-capacitors = "internal";
+	load-capacitance-femtofarad = <7000>;
+};
+
+&hfxo {
+	load-capacitors = "internal";
+	startup-time-us = <1400>;
+	load-capacitance-femtofarad = <17000>;
+};

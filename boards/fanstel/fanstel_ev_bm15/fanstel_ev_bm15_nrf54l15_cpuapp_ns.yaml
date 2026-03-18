@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: fanstel_ev_bm15/nrf54l15/cpuapp/ns
+name: Fanstel-EV-BM15-nRF54L15-Application-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+ram: 256
+flash: 1524
+supported:
+  - adc
+  - counter
+  - gpio
+  - i2c
+  - i2s
+  - pwm
+  - spi
+  - watchdog
+vendor: fanstel
+sysbuild: true
