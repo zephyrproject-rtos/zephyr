@@ -84,21 +84,24 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		m4_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-m4";
 			reg = <0x0 DT_SIZE_K(352)>;
 		};
 
 		storage_partition: partition@58000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage-m4";
 			reg = <0x58000 DT_SIZE_K(32)>;
 		};
 
 		rv32_partition: partition@60000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-rv32";
 			reg = <0x60000 DT_SIZE_K(128)>;
 		};
