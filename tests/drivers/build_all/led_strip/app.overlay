@@ -27,6 +27,25 @@
 			status = "okay";
 		};
 
+		test_i2s: i2s@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2s";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+
+			test_i2s_ws2812: ws2812@0 {
+				compatible = "worldsemi,ws2812-i2s";
+				reg = <0>;
+
+				chain-length = <11>;
+				color-mapping = <LED_COLOR_ID_GREEN
+						 LED_COLOR_ID_RED
+						 LED_COLOR_ID_BLUE
+						 LED_COLOR_ID_WHITE>;
+			};
+		};
+
 		test_spi: spi@33334444 {
 			#address-cells = <1>;
 			#size-cells = <0>;
