@@ -24,10 +24,16 @@ struct mbox_vevif_event_rx_cbs {
 	mbox_callback_t cb[EVENTS_IDX_MAX - EVENTS_IDX_MIN + 1U];
 	void *user_data[EVENTS_IDX_MAX - EVENTS_IDX_MIN + 1U];
 	uint32_t enabled_mask;
+#if defined(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16)
+	bool pending_irq;
+#endif
 };
 
 struct mbox_vevif_event_rx_conf {
 	NRF_VPR_Type *vpr;
+#if defined(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16)
+	IRQn_Type irqn;
+#endif
 	uint32_t events_mask;
 	uint8_t events;
 	void (*irq_connect)(void);
@@ -37,6 +43,15 @@ static void trigger_callback(const struct device *dev, struct mbox_vevif_event_r
 			     uint8_t id)
 {
 	uint8_t idx = id - EVENTS_IDX_MIN;
+
+#if defined(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16)
+	if (cbs->enabled_mask == 0) {
+		cbs->pending_irq = true;
+		return;
+	} else if (cbs->pending_irq) {
+		cbs->pending_irq = false;
+	}
+#endif
 
 	if ((cbs->enabled_mask & BIT(id)) && (cbs->cb[idx] != NULL)) {
 		cbs->cb[idx](dev, id, cbs->user_data[idx], NULL);
@@ -107,14 +122,22 @@ static int vevif_event_rx_set_enabled(const struct device *dev, uint32_t id, boo
 		}
 
 		cbs->enabled_mask |= BIT(id);
+#if defined(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16)
+		if (cbs->pending_irq) {
+			NRFX_IRQ_PENDING_SET(config->irqn);
+		}
+#else
 		nrfy_vpr_int_enable(config->vpr, BIT(id));
+#endif
 	} else {
 		if ((cbs->enabled_mask & BIT(id)) == 0U) {
 			return -EALREADY;
 		}
 
 		cbs->enabled_mask &= ~BIT(id);
+#if !defined(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16)
 		nrfy_vpr_int_disable(config->vpr, BIT(id));
+#endif
 	}
 
 	return 0;
@@ -131,6 +154,16 @@ static int vevif_event_rx_init(const struct device *dev)
 	const struct mbox_vevif_event_rx_conf *config = dev->config;
 
 	config->irq_connect();
+
+#if defined(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16)
+	/* Only one event is used anyway so all can be enabled. Interrupt is enabled
+	 * here because workaround works in a way that event triggered when interrupts
+	 * are enabled would be lost. Interrupts are enabled from the start and if
+	 * interrupt is triggered then pending flag is set and interrupt is manually
+	 * triggered when event is enabled.
+	 */
+	nrfy_vpr_int_enable(config->vpr, UINT32_MAX);
+#endif
 
 	return 0;
 }
@@ -155,6 +188,8 @@ static int vevif_event_rx_init(const struct device *dev)
 		.events = DT_INST_PROP(inst, nordic_events),                                       \
 		.events_mask = DT_INST_PROP(inst, nordic_events_mask),                             \
 		.irq_connect = irq_connect##inst,                                                  \
+		IF_ENABLED(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16,                          \
+				(.irqn = DT_IRQN(DT_DRV_INST(inst))))                              \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, vevif_event_rx_init, NULL, &data##inst, &conf##inst,           \
