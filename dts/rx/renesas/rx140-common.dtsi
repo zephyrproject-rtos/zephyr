@@ -634,6 +634,7 @@
 			#size-cells = <0x0>;
 			reg = <0x88300 0x20>;
 			channel = <0>;
+			dtc = <&dtc>;
 			interrupts = <246 1>, <247 1>, <248 1>, <249 1>;
 			interrupt-names = "eei", "rxi", "txi", "tei";
 			status = "disabled";
