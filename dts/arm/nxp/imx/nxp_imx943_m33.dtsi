@@ -62,6 +62,11 @@
 			compatible = "arm,scmi-shmem";
 			reg = <0x44721000 0x80>;
 		};
+
+		scmi_shmem1: memory@44721080 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x44721080 0x80>;
+		};
 	};
 
 	soc {
@@ -169,8 +174,9 @@
 };
 
 &scmi {
-	shmem = <&scmi_shmem0>;
-	mboxes = <&mu8 0>;
+	shmem = <&scmi_shmem0>, <&scmi_shmem1>;
+	mboxes = <&mu8 0>, <&mu8 1>;
+	mbox-names = "tx", "rx";
 };
 
 &mu8 {

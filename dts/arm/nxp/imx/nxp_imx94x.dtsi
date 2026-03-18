@@ -21,7 +21,7 @@
 	firmware {
 		scmi: scmi {
 			compatible = "arm,scmi";
-			mbox-names = "tx";
+			mbox-names = "tx", "rx";
 
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -64,6 +64,11 @@
 			scmi_cpu: protocol@82 {
 				compatible = "nxp,scmi-cpu";
 				reg = <0x82>;
+			};
+
+			scmi_bbm: protocol@81 {
+				compatible = "nxp,scmi-bbm";
+				reg = <0x81>;
 			};
 		};
 	};
