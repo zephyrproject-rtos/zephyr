@@ -90,9 +90,61 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 	/* Find or create the stream */
 	stream = quic_find_stream(conn, ep, stream_id);
 	if (stream == NULL) {
+		/*
+		 * This is a new peer-initiated stream. Before allocating a slot,
+		 * verify the peer has not exceeded the stream limit we advertised.
+		 *
+		 * RFC 9000 ch. 4.6: if a peer opens more streams than permitted,
+		 * the endpoint MUST close the connection with STREAM_LIMIT_ERROR.
+		 *
+		 * Stream ID encoding (RFC 9000 ch. 2.1):
+		 *   bit 0 = initiator: 0 = client, 1 = server
+		 *   bit 1 = direction: 0 = bidi,   1 = uni
+		 *   bits 63-2 = sequence number
+		 *
+		 * We only count peer-initiated streams against our rx_sl budget.
+		 * Peer-initiated: bit0==0 when we are server, bit0==1 when client.
+		 */
+		bool peer_init = ((stream_id & 1u) == 0u) == ep->is_server;
+		bool is_bidi = (stream_id & 2u) == 0u;
+		uint64_t stream_seq = stream_id >> 2;
+
+		if (peer_init) {
+			uint64_t limit = is_bidi ? ep->rx_sl.max_bidi : ep->rx_sl.max_uni;
+
+			if (stream_seq >= limit) {
+				NET_ERR("[EP:%p/%d] Stream %" PRIu64
+					" exceeds our %s limit %" PRIu64
+					", sending STREAM_LIMIT_ERROR",
+					ep, quic_get_by_ep(ep), stream_id,
+					is_bidi ? "bidi" : "uni", limit);
+				quic_endpoint_send_connection_close(
+					ep,
+					QUIC_ERROR_STREAM_LIMIT_ERROR,
+					"stream limit exceeded");
+				return -EPROTO;
+			}
+
+			/* Consume one slot from the open-stream budget */
+			if (is_bidi) {
+				ep->rx_sl.open_bidi++;
+			} else {
+				ep->rx_sl.open_uni++;
+			}
+		}
+
 		/* New stream from peer, create and queue for accept */
 		stream = quic_create_stream_from_peer(conn, ep, stream_id);
 		if (stream == NULL) {
+			/* Pool exhausted, roll back the counter we just incremented */
+			if (peer_init) {
+				if (is_bidi && ep->rx_sl.open_bidi > 0) {
+					ep->rx_sl.open_bidi--;
+				} else if (!is_bidi && ep->rx_sl.open_uni > 0) {
+					ep->rx_sl.open_uni--;
+				}
+			}
+
 			NET_DBG("[CO:%p/%d] Failed to create stream %" PRIu64,
 				conn, quic_get_by_conn(conn), stream_id);
 			return -ENOMEM;
@@ -539,9 +591,34 @@ static int handle_stream_data_blocked_frame(struct quic_endpoint *ep,
 	return pos;
 }
 
+static int quic_send_max_streams(struct quic_endpoint *ep, bool bidi)
+{
+	uint8_t frame[16];
+	int pos = 0;
+	int varint_len;
+	uint64_t limit = bidi ? ep->rx_sl.max_bidi : ep->rx_sl.max_uni;
+
+	frame[pos++] = bidi ? QUIC_FRAME_TYPE_MAX_STREAMS_BIDI
+			    : QUIC_FRAME_TYPE_MAX_STREAMS_UNI;
+
+	varint_len = quic_put_varint(&frame[pos], sizeof(frame) - pos, limit);
+	if (varint_len <= 0) {
+		return -EINVAL;
+	}
+
+	pos += varint_len;
+
+	NET_DBG("[EP:%p/%d] Sending MAX_STREAMS_%s: %" PRIu64,
+		ep, quic_get_by_ep(ep),
+		bidi ? "BIDI" : "UNI", limit);
+
+	return quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, pos);
+}
+
 static int handle_streams_blocked_frame(struct quic_endpoint *ep,
 					const uint8_t *buf, size_t len)
 {
+	bool is_bidi = (buf[0] == QUIC_FRAME_TYPE_STREAMS_BLOCKED_BIDI);
 	uint64_t max_streams;
 	int pos = 1;
 	int ret;
@@ -555,6 +632,38 @@ static int handle_streams_blocked_frame(struct quic_endpoint *ep,
 
 	NET_DBG("[EP:%p/%d] STREAMS_BLOCKED: limit=%" PRIu64,
 		ep, quic_get_by_ep(ep), max_streams);
+
+	/*
+	 * Only extend the peer's stream credit if we have free pool slots.
+	 * The number of free bidi slots = pool_capacity - currently open.
+	 * Handing out more credit than we have slots would cause the pool
+	 * to run dry and produce the -ENOMEM error.
+	 */
+	if (is_bidi) {
+		uint64_t free_slots = (uint64_t)CONFIG_QUIC_MAX_STREAMS_BIDI
+							- ep->rx_sl.open_bidi;
+
+		if (free_slots > 0 && ep->rx_sl.max_bidi <= max_streams) {
+			ep->rx_sl.max_bidi += free_slots;
+			quic_send_max_streams(ep, true);
+
+			NET_DBG("[EP:%p/%d] STREAMS_BLOCKED: advanced bidi limit to "
+				"%" PRIu64 " (%" PRIu64 " free slots)",
+				ep, quic_get_by_ep(ep),
+				ep->rx_sl.max_bidi, free_slots);
+		} else {
+			NET_DBG("[EP:%p/%d] STREAMS_BLOCKED: pool full "
+				"(open=%" PRIu64 "), not advancing limit",
+				ep, quic_get_by_ep(ep), ep->rx_sl.open_bidi);
+		}
+	} else {
+		uint64_t free_slots = (uint64_t)CONFIG_QUIC_MAX_STREAMS_UNI - ep->rx_sl.open_uni;
+
+		if (free_slots > 0 && ep->rx_sl.max_uni <= max_streams) {
+			ep->rx_sl.max_uni += free_slots;
+			quic_send_max_streams(ep, false);
+		}
+	}
 
 	return pos;
 }

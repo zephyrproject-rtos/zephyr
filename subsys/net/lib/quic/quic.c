@@ -237,6 +237,7 @@ static int derive_application_secrets(struct quic_tls_context *ctx);
 static int quic_send_max_data(struct quic_endpoint *ep);
 static int quic_send_max_stream_data(struct quic_endpoint *ep,
 				     struct quic_stream *stream);
+static int quic_send_max_streams(struct quic_endpoint *ep, bool bidi);
 static int quic_send_data_blocked(struct quic_endpoint *ep);
 static int quic_send_stream_data_blocked(struct quic_endpoint *ep,
 					 struct quic_stream *stream);
@@ -1967,6 +1968,47 @@ static int quic_stream_unref(struct quic_stream *stream)
 
 	quic_stream_flush_queue(stream);
 
+	/*
+	 * If this was a peer-initiated stream (RFC 9000 ch. 4.6) freeing its slot
+	 * back to the pool, advance our advertised stream limit by 1 so the peer
+	 * can open another stream in place of the one that just closed.
+	 *
+	 * Peer-initiated streams on a server endpoint have bit 0 == 0 (client bit).
+	 * Peer-initiated streams on a client endpoint have bit 0 == 1 (server bit).
+	 * Bidi streams have bit 1 == 0; uni streams have bit 1 == 1.
+	 */
+	if (stream->ep != NULL && stream->id != QUIC_STREAM_ID_UNASSIGNED) {
+		bool is_server = stream->ep->is_server;
+		bool peer_init = ((stream->id & 1u) == 0u) == is_server;
+		bool is_bidi = (stream->id & 2u) == 0u;
+
+		if (peer_init) {
+			if (is_bidi && stream->ep->rx_sl.open_bidi > 0) {
+				stream->ep->rx_sl.open_bidi--;
+
+				/*
+				 * Slide the cumulative limit up by 1: the freed slot
+				 * is now available for a future stream.  Notify the
+				 * peer so it can unblock if it was waiting.
+				 */
+				stream->ep->rx_sl.max_bidi++;
+				(void)quic_send_max_streams(stream->ep, true);
+
+				NET_DBG("[EP:%p/%d] Stream %" PRIu64 " closed, "
+					"open_bidi=%" PRIu64 " max_bidi=%" PRIu64,
+					stream->ep, quic_get_by_ep(stream->ep),
+					stream->id,
+					stream->ep->rx_sl.open_bidi,
+					stream->ep->rx_sl.max_bidi);
+
+			} else if (!is_bidi && stream->ep->rx_sl.open_uni > 0) {
+				stream->ep->rx_sl.open_uni--;
+				stream->ep->rx_sl.max_uni++;
+				(void)quic_send_max_streams(stream->ep, false);
+			}
+		}
+	}
+
 	if (stream->conn != NULL) {
 		k_mutex_lock(&streams_lock, K_FOREVER);
 		sys_slist_find_and_remove(&stream->conn->streams, &stream->node);
@@ -1978,6 +2020,21 @@ static int quic_stream_unref(struct quic_stream *stream)
 
 	if (stream->sock >= 0) {
 		zsock_close(stream->sock);
+		stream->sock = -1;
+	}
+
+	/*
+	 * The stream fd must be closed by the caller (HTTP layer) via
+	 * zsock_close() BEFORE quic_stream_unref() is called.
+	 * quic_stream_close_vmeth() clears stream->sock = -1 before
+	 * calling us, so this should never trigger. If it does, it
+	 * indicates a missing zsock_close() somewhere.
+	 */
+	if (stream->sock >= 0) {
+		NET_WARN("[ST:%p/%d] Stream %" PRIu64 " freed with open fd %d, "
+			 "missing zsock_close() in caller",
+			 stream, quic_get_by_stream(stream),
+			 stream->id, stream->sock);
 		stream->sock = -1;
 	}
 
@@ -3182,6 +3239,10 @@ static void quic_endpoint_init(struct quic_endpoint *ep)
 	ep->rx_fc.bytes_received = 0;
 	ep->rx_fc.max_data_sent = CONFIG_QUIC_INITIAL_MAX_DATA;
 	ep->rx_fc.need_window_update = false;
+	ep->rx_sl.max_bidi = CONFIG_QUIC_INITIAL_MAX_STREAMS_BIDI;
+	ep->rx_sl.max_uni = CONFIG_QUIC_INITIAL_MAX_STREAMS_UNI;
+	ep->rx_sl.open_bidi = 0;
+	ep->rx_sl.open_uni = 0;
 	ep->peer_params.parsed = false;
 
 	quic_endpoint_init_idle_timeout(ep, QUIC_DEFAULT_IDLE_TIMEOUT_MS);
@@ -3383,8 +3444,15 @@ static struct quic_endpoint *quic_endpoint_create(struct quic_endpoint *ep,
 			ep->peer_params.initial_max_streams_uni;
 		new_ep->peer_params.max_idle_timeout = ep->peer_params.max_idle_timeout;
 		new_ep->max_tx_payload_size = ep->max_tx_payload_size;
+		new_ep->rx_sl.max_bidi = ep->rx_sl.max_bidi;
+		new_ep->rx_sl.max_uni = ep->rx_sl.max_uni;
+
+		/* Child starts with no open streams (it is a fresh connection) */
+		new_ep->rx_sl.open_bidi = 0;
+		new_ep->rx_sl.open_uni = 0;
 
 		new_ep->sock = ep->sock;
+
 		NET_DBG("[EP:%p/%d] Child endpoint inherits socket %d from parent %d [%p]",
 			new_ep, quic_get_by_ep(new_ep), new_ep->sock, quic_get_by_ep(ep), ep);
 	} else {
@@ -3641,6 +3709,7 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 				     sizeof(stream->rx_buf.data));
 	stream->local_max_data_sent = CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL;
 	stream->bytes_received = 0;
+	stream->read_closed = false;
 
 	return stream;
 }

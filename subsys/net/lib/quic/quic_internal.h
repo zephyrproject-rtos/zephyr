@@ -628,6 +628,17 @@ struct quic_endpoint {
 		bool need_window_update; /* Flag to send MAX_DATA */
 	} rx_fc;
 
+	/** Stream-count limits, how many streams we allow the peer to open.
+	 * Mirrored from our own transport parameters and grown in response to
+	 * STREAMS_BLOCKED frames (RFC 9000 ch. 19.14 / 4.6).
+	 */
+	struct {
+		uint64_t max_bidi;   /* Current bidi stream limit advertised to peer */
+		uint64_t max_uni;    /* Current uni stream limit advertised to peer */
+		uint64_t open_bidi;  /* peer-initiated bidi streams currently open */
+		uint64_t open_uni;   /* peer-initiated uni  streams currently open */
+	} rx_sl;
+
 	/** Peer's transport parameters */
 	struct {
 		uint64_t initial_max_data;
@@ -830,8 +841,6 @@ __net_socket struct quic_stream {
 	/** RX flow control, last MAX_STREAM_DATA value we sent */
 	uint64_t local_max_data_sent;
 
-	/** Flag indicating stream needs window update (MAX_STREAM_DATA) */
-	bool need_window_update;
 
 	/** BSD socket private data */
 	void *socket_data;
@@ -865,6 +874,12 @@ __net_socket struct quic_stream {
 
 	/** Stream priority (to order streams within a connection) */
 	uint8_t priority;
+
+	/** Flag indicating stream needs window update (MAX_STREAM_DATA) */
+	bool need_window_update : 1;
+
+	/** Read half shut down via shutdown(SHUT_RD), discard incoming data */
+	bool read_closed : 1;
 };
 
 /**
