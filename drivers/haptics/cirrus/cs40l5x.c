@@ -377,7 +377,7 @@ static bool cs40l5x_is_ready(const struct device *const dev)
 	return config->bus_io->is_ready(dev);
 }
 
-static struct device *cs40l5x_get_control_port(const struct device *const dev)
+static const struct device *const cs40l5x_get_control_port(const struct device *const dev)
 {
 	const struct cs40l5x_config *const config = dev->config;
 
