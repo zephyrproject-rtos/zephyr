@@ -50,11 +50,22 @@ static int scmi_mbox_read_message(const struct device *transport,
 				  struct scmi_channel *chan,
 				  struct scmi_message *msg)
 {
-	struct scmi_mbox_channel *mbox_chan;
+	struct scmi_mbox_channel *mbox_chan = chan->data;
+	int ret;
 
-	mbox_chan = chan->data;
+	ret = scmi_shmem_read_message(mbox_chan->shmem, msg);
+	if (ret < 0) {
+		return ret;
+	}
 
-	return scmi_shmem_read_message(mbox_chan->shmem, msg);
+	/* For RX notifications, acknowledge the message after it has been read.
+	 * This releases the shared memory channel for subsequent notifications.
+	 */
+	if (!mbox_chan->is_tx) {
+		scmi_shmem_mark_channel_free(mbox_chan->shmem);
+	}
+
+	return 0;
 }
 
 static bool scmi_mbox_channel_is_free(const struct device *transport,

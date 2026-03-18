@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -121,6 +121,16 @@ int scmi_shmem_vendor_write_message(struct scmi_shmem_layout *layout);
  * @return 0 on success, negative errno value on failure.
  */
 int scmi_shmem_vendor_read_message(const struct scmi_shmem_layout *layout);
+
+/**
+ * @brief Mark a SHMEM channel as free (acknowledge message consumption)
+ *
+ * Per SCMI spec: Bit[0]=1 means FREE, Bit[0]=0 means BUSY.
+ * This helper sets the BUSY bit to indicate the channel is free.
+ *
+ * @param dev pointer to shmem device
+ */
+void scmi_shmem_mark_channel_free(const struct device *dev);
 
 /**
  * @}
