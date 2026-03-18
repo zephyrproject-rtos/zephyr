@@ -7,10 +7,12 @@ toolchain:
   - gnuarmemb
 supported:
   - arduino_gpio
+  - arduino_i2c
   - arduino_serial
   - counter
   - dma
   - gpio
+  - i2c
   - pwm
   - rtc
   - uart
