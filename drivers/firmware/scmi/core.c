@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,11 +59,6 @@ static int scmi_core_setup_chan(const struct device *transport,
 
 	if (chan->ready) {
 		return 0;
-	}
-
-	/* no support for RX channels ATM */
-	if (!tx) {
-		return -ENOTSUP;
 	}
 
 	k_mutex_init(&chan->lock);
@@ -204,6 +199,7 @@ static int scmi_core_protocol_setup(const struct device *transport)
 #ifndef CONFIG_ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS
 		/* no static channel allocation, attempt dynamic binding */
 		it->tx = scmi_transport_request_channel(transport, it->id, true);
+		it->rx = scmi_transport_request_channel(transport, it->id, false);
 #endif /* CONFIG_ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS */
 
 		if (!it->tx) {
@@ -213,6 +209,14 @@ static int scmi_core_protocol_setup(const struct device *transport)
 		ret = scmi_core_setup_chan(transport, it->tx, true);
 		if (ret < 0) {
 			return ret;
+		}
+
+		/* notification/delayed reply channel is optional */
+		if (it->rx) {
+			ret = scmi_core_setup_chan(transport, it->rx, false);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 
 		ret = scmi_core_protocol_negotiate(it);
