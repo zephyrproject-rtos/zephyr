@@ -205,3 +205,18 @@ tps55287@a {
 	compatible = "ti,tps55287";
 	reg = <0xa>;
 };
+
+npm10xx@b {
+	compatible = "nordic,npm10xx";
+	reg = <0xb>;
+
+	regulators {
+		compatible = "nordic,npm10xx-regulator";
+
+		BUCK {};
+
+		LDO {};
+
+		LDSW {};
+	};
+};
