@@ -538,6 +538,20 @@
 			};
 		};
 
+		i2c0: i2c@88300 {
+			compatible = "renesas,rx-i2c";
+			#address-cells = <0x1>;
+			#size-cells = <0x0>;
+			reg = <0x88300 0x20>;
+			clocks = <&pclkb MSTPB 21>;
+			channel = <0>;
+			interrupts-extended = <&icu 52 1>, <&icu 53 1>, <&group_irq_bl1 13 1>,
+					      <&group_irq_bl1 14 1>;
+			interrupt-names = "rxi", "txi", "tei", "eei";
+			dtc = <&dtc>;
+			status = "disabled";
+		};
+
 		cmt: timer@88000 {
 			compatible = "renesas,rx-timer-cmt-start-control";
 			#address-cells = <1>;
