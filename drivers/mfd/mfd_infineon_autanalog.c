@@ -96,6 +96,24 @@ static const uint32_t ifx_autanalog_intr_masks[IFX_AUTANALOG_PERIPH_COUNT] = {
 /** 1 when the PTCOMP child node is enabled */
 #define PTCOMP_IS_USED(n) DT_NODE_HAS_STATUS(DT_CHILD(DT_DRV_INST(n), ptcomp_40000), okay)
 
+/** 1 when the CTB0 child node is enabled */
+#define CTB0_IS_USED(n) DT_NODE_HAS_STATUS(DT_CHILD(DT_DRV_INST(n), ctb0_0), okay)
+
+/** 1 when the CTB1 child node is enabled */
+#define CTB1_IS_USED(n) DT_NODE_HAS_STATUS(DT_CHILD(DT_DRV_INST(n), ctb1_10000), okay)
+
+/*
+ * Helper macros to read the gain property from an opamp child node
+ * nested inside a CTB child of this AutAnalog instance.
+ * Path: AutAnalog(n) → ctb_child → opamp_oa_idx
+ */
+#define CTB_OA_NODE(n, ctb_child, oa_idx)                                                      \
+	DT_CHILD(DT_CHILD(DT_DRV_INST(n), ctb_child), opamp_##oa_idx)
+#define CTB_OA_EXISTS(n, ctb_child, oa_idx) DT_NODE_EXISTS(CTB_OA_NODE(n, ctb_child, oa_idx))
+#define CTB_OA_GAIN(n, ctb_child, oa_idx)                                                      \
+	COND_CODE_1(CTB_OA_EXISTS(n, ctb_child, oa_idx), \
+		    (DT_PROP(CTB_OA_NODE(n, ctb_child, oa_idx), gain)), (0))
+
 /* ===== Basic mode: hardcoded 3-state SAR single-shot STT ===== */
 
 #define IFX_AUTANALOG_BASIC_NUM_STT 3
@@ -140,14 +158,63 @@ static const uint32_t ifx_autanalog_intr_masks[IFX_AUTANALOG_PERIPH_COUNT] = {
 		 .enableComp1 = PTCOMP_IS_USED(n),                                                 \
 		 .dynCfgIdxComp1 = 1},                                                             \
 	};                                                                                         \
+	static cy_stc_autanalog_stt_ctb_t ifx_autanalog_ctb0_stt_##n[] = {                         \
+		{.unlock = CTB0_IS_USED(n),                                                        \
+		 .enableOpamp0 = CTB0_IS_USED(n),                                                  \
+		 .cfgOpamp0 = 0,                                                                   \
+		 .gainOpamp0 = CTB_OA_GAIN(n, ctb0_0, 0),                                          \
+		 .enableOpamp1 = CTB0_IS_USED(n),                                                  \
+		 .cfgOpamp1 = 1,                                                                   \
+		 .gainOpamp1 = CTB_OA_GAIN(n, ctb0_0, 1)},                                         \
+		{.unlock = CTB0_IS_USED(n),                                                        \
+		 .enableOpamp0 = CTB0_IS_USED(n),                                                  \
+		 .cfgOpamp0 = 0,                                                                   \
+		 .gainOpamp0 = CTB_OA_GAIN(n, ctb0_0, 0),                                          \
+		 .enableOpamp1 = CTB0_IS_USED(n),                                                  \
+		 .cfgOpamp1 = 1,                                                                   \
+		 .gainOpamp1 = CTB_OA_GAIN(n, ctb0_0, 1)},                                         \
+		{.unlock = CTB0_IS_USED(n),                                                        \
+		 .enableOpamp0 = CTB0_IS_USED(n),                                                  \
+		 .cfgOpamp0 = 0,                                                                   \
+		 .gainOpamp0 = CTB_OA_GAIN(n, ctb0_0, 0),                                          \
+		 .enableOpamp1 = CTB0_IS_USED(n),                                                  \
+		 .cfgOpamp1 = 1,                                                                   \
+		 .gainOpamp1 = CTB_OA_GAIN(n, ctb0_0, 1)},                                         \
+	};                                                                                         \
+	static cy_stc_autanalog_stt_ctb_t ifx_autanalog_ctb1_stt_##n[] = {                         \
+		{.unlock = CTB1_IS_USED(n),                                                        \
+		 .enableOpamp0 = CTB1_IS_USED(n),                                                  \
+		 .cfgOpamp0 = 0,                                                                   \
+		 .gainOpamp0 = CTB_OA_GAIN(n, ctb1_10000, 0),                                      \
+		 .enableOpamp1 = CTB1_IS_USED(n),                                                  \
+		 .cfgOpamp1 = 1,                                                                   \
+		 .gainOpamp1 = CTB_OA_GAIN(n, ctb1_10000, 1)},                                     \
+		{.unlock = CTB1_IS_USED(n),                                                        \
+		 .enableOpamp0 = CTB1_IS_USED(n),                                                  \
+		 .cfgOpamp0 = 0,                                                                   \
+		 .gainOpamp0 = CTB_OA_GAIN(n, ctb1_10000, 0),                                      \
+		 .enableOpamp1 = CTB1_IS_USED(n),                                                  \
+		 .cfgOpamp1 = 1,                                                                   \
+		 .gainOpamp1 = CTB_OA_GAIN(n, ctb1_10000, 1)},                                     \
+		{.unlock = CTB1_IS_USED(n),                                                        \
+		 .enableOpamp0 = CTB1_IS_USED(n),                                                  \
+		 .cfgOpamp0 = 0,                                                                   \
+		 .gainOpamp0 = CTB_OA_GAIN(n, ctb1_10000, 0),                                      \
+		 .enableOpamp1 = CTB1_IS_USED(n),                                                  \
+		 .cfgOpamp1 = 1,                                                                   \
+		 .gainOpamp1 = CTB_OA_GAIN(n, ctb1_10000, 1)},                                     \
+	};                                                                                         \
 	static cy_stc_autanalog_stt_t ifx_autanalog_stt_##n[] = {                                  \
 		{.ac = &ifx_autanalog_ac_stt_##n[0],                                               \
+		 .ctb = {&ifx_autanalog_ctb0_stt_##n[0], &ifx_autanalog_ctb1_stt_##n[0]},          \
 		 .ptcomp = {&ifx_autanalog_ptcomp0_stt_##n[0]},                                    \
 		 .sar = {&ifx_autanalog_sar_stt_##n[0]}},                                          \
 		{.ac = &ifx_autanalog_ac_stt_##n[1],                                               \
+		 .ctb = {&ifx_autanalog_ctb0_stt_##n[1], &ifx_autanalog_ctb1_stt_##n[1]},          \
 		 .ptcomp = {&ifx_autanalog_ptcomp0_stt_##n[1]},                                    \
 		 .sar = {&ifx_autanalog_sar_stt_##n[1]}},                                          \
 		{.ac = &ifx_autanalog_ac_stt_##n[2],                                               \
+		 .ctb = {&ifx_autanalog_ctb0_stt_##n[2], &ifx_autanalog_ctb1_stt_##n[2]},          \
 		 .ptcomp = {&ifx_autanalog_ptcomp0_stt_##n[2]},                                    \
 		 .sar = {&ifx_autanalog_sar_stt_##n[2]}},                                          \
 	};
