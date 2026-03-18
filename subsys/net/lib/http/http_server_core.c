@@ -532,11 +532,20 @@ static void client_release_resources(struct http_client_ctx *client)
 void http_server_release_client(struct http_client_ctx *client)
 {
 	int i;
-	struct k_work_sync sync;
 
 	__ASSERT_NO_MSG(IS_ARRAY_ELEMENT(server_ctx.clients, client));
 
-	k_work_cancel_delayable_sync(&client->inactivity_timer, &sync);
+	/*
+	 * Use the non-blocking cancel. The _sync variant deadlocks when
+	 * called from within the work handler (client_timeout) because it
+	 * waits for the work item to finish executing, which is us.
+	 * The non-blocking cancel is sufficient: if the timer is pending it
+	 * gets cancelled; if it is currently running (we are inside it) the
+	 * cancel is a no-op, which is fine because the handler will not
+	 * reschedule itself.
+	 */
+	(void)k_work_cancel_delayable(&client->inactivity_timer);
+
 	client_release_resources(client);
 
 	client->service->data->num_clients--;
