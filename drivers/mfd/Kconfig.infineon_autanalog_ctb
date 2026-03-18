@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_INFINEON_AUTANALOG_CTB
+	bool "Infineon AutAnalog CTB multi-function device driver"
+	default y
+	depends on DT_HAS_INFINEON_AUTANALOG_CTB_ENABLED
+	depends on MFD_INFINEON_AUTANALOG
+	help
+	  Enable the Infineon AutAnalog CTB (Continuous Time Block) MFD driver.
+	  The CTB contains two opamps (OA0, OA1) that share a combined PDL
+	  configuration.  This driver aggregates both opamps and manages
+	  the shared config structure.
+
+config MFD_INFINEON_AUTANALOG_CTB_INIT_PRIORITY
+	int "Infineon AutAnalog CTB MFD init priority"
+	default 42
+	depends on MFD_INFINEON_AUTANALOG_CTB
+	help
+	  Init priority for the CTB MFD.  Must be higher (later) than the
+	  AutAnalog MFD init priority (default 41).

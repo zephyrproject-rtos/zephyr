@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config OPAMP_INFINEON_AUTANALOG_CTB
+	bool "Infineon AutAnalog CTB opamp driver"
+	default y
+	depends on DT_HAS_INFINEON_AUTANALOG_CTB_OPAMP_ENABLED
+	select MFD
+	help
+	  Enable the Infineon AutAnalog CTB opamp driver.  Each instance
+	  provides a single opamp (OA0 or OA1) within a CTB block, with
+	  runtime gain control via the Autonomous Controller STT.
+
+config OPAMP_INFINEON_AUTANALOG_CTB_INIT_PRIORITY
+	int "Infineon AutAnalog CTB opamp init priority"
+	default 43
+	depends on OPAMP_INFINEON_AUTANALOG_CTB
+	help
+	  Init priority for the CTB opamp driver.  Must be higher (later)
+	  than the CTB MFD init priority (default 42).
