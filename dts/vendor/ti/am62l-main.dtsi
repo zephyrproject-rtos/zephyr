@@ -239,6 +239,8 @@
 		compatible = "ti,j7-rti-wdt";
 		reg = <0x0e000000 0x100>;
 		clock-frequency = <DT_FREQ_M(25)>;
+		clocks = <&scmi_clk 277>;
+		reset-capable;
 		status = "disabled";
 	};
 
@@ -246,6 +248,8 @@
 		compatible = "ti,j7-rti-wdt";
 		reg = <0x0e010000 0x100>;
 		clock-frequency = <DT_FREQ_M(25)>;
+		clocks = <&scmi_clk 283>;
+		reset-capable;
 		status = "disabled";
 	};
 
