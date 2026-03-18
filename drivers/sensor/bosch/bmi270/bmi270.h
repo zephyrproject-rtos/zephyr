@@ -24,6 +24,20 @@
 #define BMI270_CONFIG_FILE_POLL_PERIOD_US       10000
 #define BMI270_INTER_WRITE_DELAY_US             1000
 
+#if defined(CONFIG_BMI270_STREAM)
+#include <zephyr/rtio/rtio.h>
+#endif
+
+int bmi270_adv_power_save_enable(const struct device *dev);
+int bmi270_adv_power_save_disable(const struct device *dev);
+
+#if defined(CONFIG_BMI270_STREAM)
+void bmi270_stream_handle_fifo(const struct device *dev);
+void bmi270_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+void bmi270_submit_fifo_work(const struct device *dev);
+struct k_work_q *bmi270_get_fifo_work_q(void);
+#endif
+
 #define BMI270_REG_CHIP_ID         0x00
 #define BMI270_REG_ERROR           0x02
 #define BMI270_REG_STATUS          0x03
@@ -33,6 +47,7 @@
 #define BMI270_REG_SENSORTIME_0    0x18
 #define BMI270_REG_EVENT           0x1B
 #define BMI270_REG_INT_STATUS_0    0x1C
+#define BMI270_REG_INT_STATUS_1    0x1D
 #define BMI270_REG_SC_OUT_0        0x1E
 #define BMI270_REG_WR_GEST_ACT     0x20
 #define BMI270_REG_INTERNAL_STATUS 0x21
@@ -48,7 +63,9 @@
 #define BMI270_REG_AUX_CONF        0x44
 #define BMI270_REG_FIFO_DOWNS      0x45
 #define BMI270_REG_FIFO_WTM_0      0x46
+#define BMI270_REG_FIFO_WTM_1      0x47
 #define BMI270_REG_FIFO_CONFIG_0   0x48
+#define BMI270_REG_FIFO_CONFIG_1   0x49
 #define BMI270_REG_SATURATION      0x4A
 #define BMI270_REG_AUX_DEV_ID      0x4B
 #define BMI270_REG_AUX_IF_CONF     0x4C
@@ -110,6 +127,9 @@
 #define BMI270_INT_IO_CTRL_OUTPUT_EN	BIT(3) /* Output enabled */
 #define BMI270_INT_IO_CTRL_INPUT_EN	BIT(4) /* Input enabled */
 
+#define BMI270_INT_LATCH_NONE      0x00
+#define BMI270_INT_LATCH_PERMANENT 0x01
+
 /* Applies to INT1_MAP_FEAT, INT2_MAP_FEAT, INT_STATUS_0 */
 #define BMI270_INT_MAP_SIG_MOTION        BIT(0)
 #define BMI270_INT_MAP_STEP_COUNTER      BIT(1)
@@ -130,12 +150,45 @@
 
 #define BMI270_INT_STATUS_ANY_MOTION		BIT(6)
 
+/* INT_STATUS_1 */
+#define BMI270_INT_STATUS_1_FFULL_INT    BIT(0)
+#define BMI270_INT_STATUS_1_FWM_INT      BIT(1)
+#define BMI270_INT_STATUS_1_ERR_INT      BIT(2)
+#define BMI270_INT_STATUS_1_ACC_DRDY_INT BIT(7)
+#define BMI270_INT_STATUS_1_GYR_DRDY_INT BIT(6)
+#define BMI270_INT_STATUS_1_AUX_DRDY_INT BIT(5)
+
+/* FIFO header mode (fh_mode<1:0>) - type of frame (regular or control)*/
+#define BMI270_FIFO_HEADER_REGULAR 0x02
+#define BMI270_FIFO_HEADER_CONTROL 0x01
+
+/* FIFO header parameters (fh_parm<3:0>) - sensors in the payload or control opcode */
+#define BMI270_FIFO_FHPARM_ACC BIT(0)
+#define BMI270_FIFO_FHPARM_GYR BIT(1)
+#define BMI270_FIFO_FHPARM_AUX BIT(2)
+
+/* Regular frame payload: acc+gyr only = 6 + 6 bytes */
+#define BMI270_FIFO_FRAME_PAYLOAD_ACC_GYR_BYTES 12
+#define BMI270_FIFO_HEADER_BYTES                1
+#define BMI270_FIFO_FRAME_ACC_GYR_BYTES                                                            \
+	(BMI270_FIFO_HEADER_BYTES + BMI270_FIFO_FRAME_PAYLOAD_ACC_GYR_BYTES)
+
+/* FIFO_CONFIG_0 (register 0x48) */
+#define BMI270_FIFO_CONFIG_0_STOP_ON_FULL_MSK BIT(0)
+#define BMI270_FIFO_CONFIG_0_FIFO_TIME_EN_MSK BIT(1)
+
+/* FIFO_CONFIG_1 (register 0x49) */
+#define BMI270_FIFO_CONFIG_1_FIFO_HEADER_EN_MSK BIT(4)
+#define BMI270_FIFO_CONFIG_1_FIFO_AUX_EN_MSK    BIT(5)
+#define BMI270_FIFO_CONFIG_1_FIFO_ACC_EN_MSK    BIT(6)
+#define BMI270_FIFO_CONFIG_1_FIFO_GYR_EN_MSK    BIT(7)
+
 #define BMI270_CHIP_ID 0x24
 
 #define BMI270_CMD_G_TRIGGER  0x02
 #define BMI270_CMD_USR_GAIN   0x03
 #define BMI270_CMD_NVM_PROG   0xA0
-#define BMI270_CMD_FIFO_FLUSH OxB0
+#define BMI270_CMD_FIFO_FLUSH 0xB0
 #define BMI270_CMD_SOFT_RESET 0xB6
 
 #define BMI270_POWER_ON_TIME                500
@@ -290,6 +343,14 @@ struct bmi270_data {
 	struct k_work trig_work;
 #endif
 #endif /* CONFIG_BMI270_TRIGGER */
+
+#if defined(CONFIG_BMI270_STREAM)
+	struct rtio_iodev_sqe *streaming_sqe;
+	uint16_t fifo_watermark_bytes;
+	uint8_t int_status_1;
+	uint64_t timestamp;
+	struct k_work fifo_work;
+#endif /* CONFIG_BMI270_STREAM */
 };
 
 struct bmi270_feature_reg {
