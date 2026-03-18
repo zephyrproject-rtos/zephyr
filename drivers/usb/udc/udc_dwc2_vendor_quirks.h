@@ -540,7 +540,7 @@ DT_INST_FOREACH_STATUS_OKAY(QUIRK_NRF_USBHS_DEFINE)
 #include <soc/usb_periph.h>
 
 #include <esp_rom_gpio.h>
-#include <driver/gpio.h>
+#include <hal/gpio_ll.h>
 #include <soc/usb_pins.h>
 #include <soc/gpio_sig_map.h>
 
@@ -593,8 +593,8 @@ static inline int esp32_usb_otg_init(const struct device *dev,
 	esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, USB_OTG_AVALID_IN_IDX, false);
 
 	if (cfg->phy_ctx->target == USB_PHY_TARGET_INT) {
-		gpio_set_drive_capability(USBPHY_DM_NUM, GPIO_DRIVE_CAP_3);
-		gpio_set_drive_capability(USBPHY_DP_NUM, GPIO_DRIVE_CAP_3);
+		gpio_ll_set_drive_capability(GPIO_LL_GET_HW(0), USBPHY_DM_NUM, GPIO_DRIVE_CAP_3);
+		gpio_ll_set_drive_capability(GPIO_LL_GET_HW(0), USBPHY_DP_NUM, GPIO_DRIVE_CAP_3);
 	}
 
 	/* allocate interrupt but keep it disabled to avoid
