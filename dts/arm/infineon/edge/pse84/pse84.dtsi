@@ -293,6 +293,20 @@
 			#size-cells = <1>;
 			ranges;
 
+			ctb0: ctb0@0 {
+				compatible = "infineon,autanalog-ctb";
+				reg = <0x0 0x1000>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
+			ctb1: ctb1@10000 {
+				compatible = "infineon,autanalog-ctb";
+				reg = <0x10000 0x1000>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
 			adc0: adc0@80000 {
 				compatible = "infineon,autanalog-sar-adc";
 				/* Offset within AutAnalog subsystem */
