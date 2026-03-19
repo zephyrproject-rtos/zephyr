@@ -21,3 +21,4 @@ supported:
   - sdhc
   - i2s
   - watchdog
+  - comparator
