@@ -14,8 +14,8 @@
 #include "heltec_wireless_tracker-pinctrl.dtsi"
 
 / {
-	model = "Heltec Wireless Tracker V1.1 PROCPU";
 	compatible = "espressif,esp32s3";
+	model = "Heltec Wireless Tracker V1.1 PROCPU";
 
 	aliases {
 		uart-0 = &uart0;
@@ -73,9 +73,9 @@
 
 		st7735r_160x80: st7735r@0 {
 			compatible = "sitronix,st7735r";
+			reg = <0>;
 			mipi-max-frequency = <24000000>;
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
-			reg = <0>;
 			width = <160>;
 			height = <80>;
 			inversion-on;
@@ -106,24 +106,24 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart2 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	gnss: gnss-nmea-generic {
 		compatible = "gnss-nmea-generic";
@@ -154,9 +154,9 @@
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	lora0: lora@0 {
 		compatible = "semtech,sx1262";

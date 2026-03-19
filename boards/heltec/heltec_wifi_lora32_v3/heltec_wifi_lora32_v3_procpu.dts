@@ -15,8 +15,8 @@
 #include <espressif/partitions_0x0_amp_8M.dtsi>
 
 / {
-	model = "Heltec Wi-Fi Lora32 V3 PROCPU";
 	compatible = "espressif,esp32s3";
+	model = "Heltec Wi-Fi Lora32 V3 PROCPU";
 
 	aliases {
 		led0 = &led0;
@@ -95,10 +95,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -112,9 +112,9 @@
 &ledc0 {
 	pinctrl-0 = <&ledc0_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel0@0 {
 		reg = <0x0>;
@@ -123,10 +123,10 @@
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	ssd1306_128x64: display-controller@3c {
 		compatible = "solomon,ssd1306";
@@ -149,11 +149,11 @@
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 
 	cs-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	lora0: modem@0 {
 		compatible = "semtech,sx1262";
