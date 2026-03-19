@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Freescale Semiconductor, Inc.
- * Copyright 2019-2023, NXP
+ * Copyright 2019-2023, 2026 NXP
  * Copyright (c) 2022 Vestas Wind Systems A/S
  * Copyright (c) 2024 Intel Corporation
  *
@@ -126,10 +126,6 @@ static uint32_t mcux_lpi2c_convert_flags(int msg_flags)
 
 	if (!(msg_flags & I2C_MSG_STOP)) {
 		flags |= kLPI2C_TransferNoStopFlag;
-	}
-
-	if (msg_flags & I2C_MSG_RESTART) {
-		flags |= kLPI2C_TransferRepeatedStartFlag;
 	}
 
 	return flags;

@@ -3,7 +3,7 @@
  *
  * Based on the i2c_mcux_lpi2c.c driver, which is:
  * Copyright (c) 2016 Freescale Semiconductor, Inc.
- * Copyright (c) 2019, NXP
+ * Copyright (c) 2019, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -114,10 +114,6 @@ static uint32_t rv32m1_lpi2c_convert_flags(int msg_flags)
 
 	if (!(msg_flags & I2C_MSG_STOP)) {
 		flags |= kLPI2C_TransferNoStopFlag;
-	}
-
-	if (msg_flags & I2C_MSG_RESTART) {
-		flags |= kLPI2C_TransferRepeatedStartFlag;
 	}
 
 	return flags;

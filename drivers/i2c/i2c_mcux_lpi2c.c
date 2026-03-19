@@ -141,10 +141,6 @@ static uint32_t mcux_lpi2c_convert_flags(int msg_flags)
 		flags |= kLPI2C_TransferNoStopFlag;
 	}
 
-	if (msg_flags & I2C_MSG_RESTART) {
-		flags |= kLPI2C_TransferRepeatedStartFlag;
-	}
-
 	return flags;
 }
 
