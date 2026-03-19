@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: eBPF ISR Latency Profiler
+  description: >
+    Demonstrates using two cooperating eBPF programs to measure ISR
+    execution latency via the ring buffer map type.
+
+common:
+  platform_allow:
+    - native_sim
+    - qemu_cortex_m3
+    - qemu_x86
+  tags: ebpf
+
+tests:
+  sample.ebpf.isr_latency:
+    integration_platforms:
+      - frdm_mcxn236
+    platform_allow:
+      - frdm_mcxn236
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "eBPF programs detached\\. Profiling complete\\."
+    tags: ebpf
