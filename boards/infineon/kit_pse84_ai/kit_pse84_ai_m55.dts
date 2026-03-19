@@ -14,8 +14,8 @@
 #include "kit_pse84_ai_memory_map.dtsi"
 
 / {
-	model = "kit_pse84_ai";
 	compatible = "kit_pse84_ai";
+	model = "kit_pse84_ai";
 
 	aliases {
 		led0 = &led_0;
@@ -37,13 +37,12 @@
 };
 
 &peri0_group1_16_5bit_0 {
-	status = "okay";
 	clock-div = <1>;
+	status = "okay";
 };
 
 uart4: &scb4 {
 	compatible = "infineon,uart";
-	status = "okay";
 
 	current-speed = <115200>;
 
@@ -56,16 +55,17 @@ uart4: &scb4 {
 
 	/* HW Flow control must be enabled for HCI H4 */
 	hw-flow-control;
+	status = "okay";
 
 	bt_hci_uart: bt_hci_uart {
 		compatible = "zephyr,bt-hci-uart";
 
 		cyw55513 {
-			status = "okay";
 			compatible = "infineon,bt-hci-uart";
 			bt-reg-on-gpios = <&gpio_prt11 0 GPIO_ACTIVE_HIGH>;
 			fw-download-speed = <115200>;
 			hci-operation-speed = <115200>;
+			status = "okay";
 		};
 	};
 };

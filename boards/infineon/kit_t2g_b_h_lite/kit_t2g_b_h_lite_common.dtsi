@@ -56,13 +56,13 @@
 
 uart0: &scb0 {
 	compatible = "infineon,uart";
-	status = "okay";
 	current-speed = <115200>;
 
 	/* UART pins */
 	pinctrl-0 = <&p0_1_scb0_uart_tx &p0_0_scb0_uart_rx
 		     &p0_2_scb0_uart_rts &p0_3_scb0_uart_cts>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio_prt5 {

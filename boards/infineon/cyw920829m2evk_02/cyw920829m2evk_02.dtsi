@@ -27,7 +27,6 @@
 
 uart2: &scb2 {
 	compatible = "infineon,uart";
-	status = "okay";
 	current-speed = <115200>;
 	hw-flow-control;
 
@@ -36,12 +35,13 @@ uart2: &scb2 {
 
 	dmas = <&dma0 8>, <&dma0 9>;
 	dma-names = "tx", "rx";
+	status = "okay";
 };
 
 &dma0 {
+	compatible = "infineon,dma";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	compatible = "infineon,dma";
 	status = "okay";
 };
 
@@ -66,8 +66,8 @@ uart2: &scb2 {
 };
 
 &clk_hf0 {
-	status = "okay";
 	clocks = <&fll0>;
+	status = "okay";
 };
 
 &clk_hf1 {

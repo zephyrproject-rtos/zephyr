@@ -11,8 +11,8 @@
 #include "kit_psc3m5_evk-pinctrl.dtsi"
 
 / {
-	model = "The Infineon PSOC™ Control C3M5 Evaluation Kit";
 	compatible = "infineon,kit_psc3m5_evk", "infineon,PSC3M5";
+	model = "The Infineon PSOC™ Control C3M5 Evaluation Kit";
 
 	aliases {
 		watchdog0 = &watchdog0;
@@ -28,18 +28,18 @@
 
 uart3: &scb3 {
 	compatible = "infineon,uart";
-	status = "okay";
 	current-speed = <115200>;
 
 	clocks = <&peri0_group4_8bit_0>;
 
 	pinctrl-0 = <&p6_3_scb3_uart_tx &p6_2_scb3_uart_rx &p6_1_scb3_uart_rts &p6_0_scb3_uart_cts>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &peri0_group4_8bit_0 {
-	status = "okay";
 	clock-div = <109>;
+	status = "okay";
 };
 
 &watchdog0 {
@@ -69,7 +69,6 @@ uart3: &scb3 {
  * dpll_lp0 is set to "okay".
  */
 &dpll_lp0 {
-	status = "okay";
 	clock-frequency = <180000000>;
 
 	feedback-div = <45>;
@@ -77,6 +76,7 @@ uart3: &scb3 {
 	output-div = <2>;
 	fraction-div = <0>;
 	dco-mode-enable;
+	status = "okay";
 };
 
 /* This dpll_lp1 is on "clock path" 2. So HF clocks sourced
@@ -84,7 +84,6 @@ uart3: &scb3 {
  * dpll_lp1 is set to "okay".
  */
 &dpll_lp1 {
-	status = "okay";
 	clock-frequency = <240000000>;
 
 	feedback-div = <60>;
@@ -92,6 +91,7 @@ uart3: &scb3 {
 	output-div = <2>;
 	fraction-div = <0>;
 	dco-mode-enable;
+	status = "okay";
 };
 
 &path_mux0 {

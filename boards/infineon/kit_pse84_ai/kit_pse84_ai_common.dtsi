@@ -60,18 +60,18 @@
 
 uart2: &scb2 {
 	compatible = "infineon,uart";
-	status = "okay";
 	current-speed = <115200>;
 
 	clocks = <&peri0_group1_16bit_0>;
 
 	pinctrl-0 = <&p6_7_scb2_uart_tx &p6_5_scb2_uart_rx>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &peri0_group1_16bit_0 {
-	status = "okay";
 	clock-div = <1>;
+	status = "okay";
 };
 
 &gpio_prt0 {

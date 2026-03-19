@@ -12,8 +12,8 @@
 #include "cy8ckit_041s_max_common.dtsi"
 
 / {
-	model = "CY8CKIT-041S-MAX Development Board";
 	compatible = "infineon,cy8ckit-041s-max", "infineon,psoc4100smax";
+	model = "CY8CKIT-041S-MAX Development Board";
 
 	chosen {
 		zephyr,sram = &sram0;

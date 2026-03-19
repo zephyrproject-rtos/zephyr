@@ -10,11 +10,11 @@
 
 / {
 	sram0: memory@20000000 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 
 		compatible = "mmio-sram";
 		reg = <SRAM0_SAHB_BASE SRAM0_SIZE>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		/* SRAM aliased address path */
 		sram_sahb: sram_sahb@20000000 {
@@ -31,11 +31,11 @@
 	 * (e.g. 0x20000000 + 0x40000 - 16K (0x4000) = 0x2003C000)
 	 */
 	sram_bootstrap: memory@2003c000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <BOOTSTRAP_SAHB_BASE BOOTSTRAP_SIZE>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "BOOTSTRAP_RAM";
-		reg = <BOOTSTRAP_SAHB_BASE BOOTSTRAP_SIZE>;
 
 		/* SRAM aliased address path */
 		sram_bootstrap_sahb: sram_bootstrap_sahb@2003c000 {
@@ -73,19 +73,19 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x0 0x20000>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x20000 0x60000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@80000 {
-			label = "image-1";
 			reg = <0x80000 0x60000>;
+			label = "image-1";
 		};
 
 		storage_partition: storage_partition@e0000 {

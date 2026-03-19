@@ -16,9 +16,9 @@
 	 * - 4 kB allocated to shared memory for each core (cm33_s, cm33 and cm55)
 	 */
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		extended_boot_sram_reserved: memory@34000000 {
 			reg = <0x34000000 DT_SIZE_K(4)>;
@@ -46,14 +46,14 @@
 
 		m33s_allocatable_shared: memory@340fd000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "SHARED_MEMORY_SEC";
 			reg = <0x340fd000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "SHARED_MEMORY_SEC";
 		};
 
 		m33_allocatable_shared: memory@240fe000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "SHARED_MEMORY";
 			reg = <0x240fe000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "SHARED_MEMORY";
 		};
 
 		m55_allocatable_shared: memory@240ff000 {
@@ -84,13 +84,13 @@
 			erase-block-size = <65536>;
 
 			partitions {
+				compatible = "fixed-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
-				compatible = "fixed-partitions";
 
 				storage_partition: storage@0 {
-					label = "storage";
 					reg = <0 DT_SIZE_M(1)>;
+					label = "storage";
 				};
 
 				m33s_header: m33s_header@60100000 {

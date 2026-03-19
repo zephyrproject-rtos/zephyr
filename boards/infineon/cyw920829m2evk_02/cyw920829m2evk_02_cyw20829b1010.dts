@@ -11,6 +11,6 @@
 #include "cyw920829m2evk_02.dtsi"
 
 / {
-	model = "The Infineon AIROC™ CYW20829 Bluetooth® LE evaluation kit w/ CYW20829B1010";
 	compatible = "infineon,cyw920829m2evk_02", "infineon,CYW20829";
+	model = "The Infineon AIROC™ CYW20829 Bluetooth® LE evaluation kit w/ CYW20829B1010";
 };

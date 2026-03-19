@@ -14,8 +14,8 @@
 #include "kit_pse84_eval_memory_map.dtsi"
 
 / {
-	model = "kit_pse84_eval";
 	compatible = "kit_pse84_eval";
+	model = "kit_pse84_eval";
 
 	aliases {
 		led0 = &led_red;
@@ -50,7 +50,6 @@
  * dpll_lp0 is set to "okay".
  */
 &dpll_lp0 {
-	status = "okay";
 	clock-frequency = <400000000>;
 
 	feedback-div = <56>;
@@ -58,6 +57,7 @@
 	output-div = <1>;
 	fraction-div = <0>;
 	dco-mode-enable;
+	status = "okay";
 };
 
 /* This dpll_lp1 is on "clock path" 1. So HF clocks sourced
@@ -65,13 +65,13 @@
  * dpll_lp1 is set to "okay".
  */
 &dpll_lp1 {
-	status = "okay";
 	clock-frequency = <49152000>;
 
 	feedback-div = <27>;
 	reference-div = <7>;
 	output-div = <4>;
 	fraction-div = <8810051>;
+	status = "okay";
 };
 
 /* This dpll_hp is on "clock path" 2. So HF clocks sourced
@@ -79,7 +79,6 @@
  * dpll_hp is set to "okay".
  */
 &dpll_hp {
-	status = "okay";
 	clock-frequency = <300000000>;
 
 	div-p = <0>;
@@ -89,6 +88,7 @@
 	freq-mode-sel = <7>;
 	flock-enable-threshold = <3>;
 	lf-beta-value = <20>;
+	status = "okay";
 };
 
 &path_mux0 {
@@ -195,13 +195,12 @@
 };
 
 &peri0_group1_16_5bit_0 {
-	status = "okay";
 	clock-div = <1>;
+	status = "okay";
 };
 
 uart4: &scb4 {
 	compatible = "infineon,uart";
-	status = "okay";
 
 	current-speed = <115200>;
 
@@ -214,16 +213,17 @@ uart4: &scb4 {
 
 	/* HW Flow control must be enabled for HCI H4 */
 	hw-flow-control;
+	status = "okay";
 
 	bt_hci_uart: bt_hci_uart {
 		compatible = "zephyr,bt-hci-uart";
 
 		cyw55513 {
-			status = "okay";
 			compatible = "infineon,bt-hci-uart";
 			bt-reg-on-gpios = <&gpio_prt11 0 GPIO_ACTIVE_HIGH>;
 			fw-download-speed = <115200>;
 			hci-operation-speed = <115200>;
+			status = "okay";
 		};
 	};
 };
