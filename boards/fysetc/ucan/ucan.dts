@@ -10,8 +10,8 @@
 #include <st/f0/stm32f072c(8-b)tx-pinctrl.dtsi>
 
 / {
-	model = "FYSETC UCAN board";
 	compatible = "fysetc,ucan";
+	model = "FYSETC UCAN board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -48,8 +48,8 @@
 };
 
 &clk_hse {
-	status = "okay";
 	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
 };
 
 &pll {
@@ -86,14 +86,14 @@ zephyr_udc0: &usb {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(80)>;
+			label = "image-0";
 		};
 	};
 };
