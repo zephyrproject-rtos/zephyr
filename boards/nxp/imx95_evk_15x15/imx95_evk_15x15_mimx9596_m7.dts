@@ -10,8 +10,8 @@
 #include "imx95_evk_15x15-pinctrl.dtsi"
 
 / {
-	model = "NXP i.MX95 15x15 EVK board (M7)";
 	compatible = "nxp,imx95_evk_15x15";
+	model = "NXP i.MX95 15x15 EVK board (M7)";
 
 	chosen {
 		/* TCM */
@@ -56,31 +56,31 @@
 };
 
 &flexspi {
-	status = "okay";
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
 	pinctrl-0 = <&flexspi_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	mt35xu01gbba: mt35xu01gbba@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(1024)>;
 		reg = <0>;
+		size = <DT_SIZE_M(1024)>;
 		spi-max-frequency = <DT_FREQ_M(200)>;
-		status = "okay";
 		jedec-id = [2c 5b 1b];
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <2>;
+		status = "okay";
 	};
 };
 
 /* Enable UART used by chosen zephyr,console / zephyr,shell-uart */
 &lpuart3 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lptmr1 {

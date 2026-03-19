@@ -27,13 +27,13 @@
 		#size-cells = <1>;
 
 		ivt_header: partition@0 {
-			label = "ivt-header";
 			reg = <0x00000000 0x100>;
+			label = "ivt-header";
 		};
 
 		code_partition: partition@100 {
-			label = "code-partition";
 			reg = <0x00000100 (DT_SIZE_K(4048) - 0x100)>;
+			label = "code-partition";
 		};
 	};
 };

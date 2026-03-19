@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP Freedom KW41Z board";
 	compatible = "nxp,kw41z", "nxp,mkw41z4";
+	model = "NXP Freedom KW41Z board";
 
 	aliases {
 		led0 = &green_led;
@@ -130,15 +130,15 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c1 {
-	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	fxos8700: fxos8700@1f {
 		compatible = "nxp,fxos8700";
@@ -148,10 +148,10 @@
 };
 
 &lpuart0 {
-	status = "okay";
 	pinctrl-0 = <&lpuart0_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &gpioa {
@@ -163,15 +163,15 @@
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &tpm0 {
-	status = "okay";
 	pinctrl-0 = <&tpm0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &tpm1 {
@@ -179,9 +179,9 @@
 };
 
 &tpm2 {
-	status = "okay";
 	pinctrl-0 = <&tmp2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &ieee802154 {
@@ -195,13 +195,13 @@
 		#size-cells = <1>;
 
 		slot0_partition: partition@0 {
-			label = "image-0";
 			reg = <0x00000000 0x00070000>;
+			label = "image-0";
 		};
 
 		storage_partition: partition@70000 {
-			label = "storage";
 			reg = <0x00070000 0x00010000>;
+			label = "storage";
 		};
 	};
 };

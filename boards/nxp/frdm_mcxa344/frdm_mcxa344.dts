@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP FRDM_MCXA344 board";
 	compatible = "nxp,mcxa344", "nxp,mcx";
+	model = "NXP FRDM_MCXA344 board";
 
 	aliases {
 		led0 = &red_led;
@@ -119,32 +119,32 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(16)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@4000 {
-			label = "image-0";
 			reg = <0x00004000 DT_SIZE_K(100)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@1d000 {
-			label = "image-1";
 			reg = <0x0001d000 DT_SIZE_K(100)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@36000 {
-			label = "storage";
 			reg = <0x00036000 DT_SIZE_K(28)>;
+			label = "storage";
 		};
 	};
 };
 
 &flexcan0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -168,27 +168,27 @@
 };
 
 &lpadc0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpspi1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lptmr0 {
@@ -196,10 +196,10 @@
 };
 
 &lpuart2 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart2>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &wwdt0 {

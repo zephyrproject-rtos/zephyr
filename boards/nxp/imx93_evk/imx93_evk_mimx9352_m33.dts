@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP i.MX93 EVK board";
 	compatible = "nxp,imx93_evk";
+	model = "NXP i.MX93 EVK board";
 
 	chosen {
 		/* TCM */
@@ -65,17 +65,17 @@
 };
 
 &lpuart2 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c2 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sar_adc1 {

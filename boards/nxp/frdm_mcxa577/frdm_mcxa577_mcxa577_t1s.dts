@@ -10,8 +10,8 @@
 #include "frdm_mcxa577.dtsi"
 
 / {
-	model = "NXP FRDM_MCXA577 board";
 	compatible = "nxp,mcxa577", "nxp,mcx";
+	model = "NXP FRDM_MCXA577 board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -33,16 +33,16 @@
 };
 
 &enet {
-	status = "okay";
 	pinctrl-0 = <&pinmux_t1s>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &enet_mac {
-	status = "okay";
 	phy-connection-type = "internal";
-	zephyr,random-mac-address;
 	phy-handle = <&t1s>;
+	zephyr,random-mac-address;
+	status = "okay";
 };
 
 &t1s {

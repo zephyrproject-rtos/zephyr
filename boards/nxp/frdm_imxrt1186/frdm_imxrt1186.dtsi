@@ -43,10 +43,10 @@
 		compatible = "gpio-keys";
 
 		user_button: button-1 {
-			status = "okay";
 			label = "User SW4";
 			gpios = <&gpio4 12 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
 			zephyr,code = <INPUT_KEY_0>;
+			status = "okay";
 		};
 	};
 };
@@ -60,10 +60,10 @@
 };
 
 &lpspi2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi2>;
 	pinctrl-1 = <&pinmux_lpspi2_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &lpuart1 {
@@ -105,9 +105,9 @@
 };
 
 &flexcan1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &systick {
@@ -115,6 +115,11 @@
 };
 
 &flexspi2 {
+	pinctrl-0 = <&pinmux_flexspi2>;
+	pinctrl-names = "default";
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
 	/*
 	 * If booting with XIP from FlexSPI flash, the flash memory will be initialized by the
 	 * bootloader in ROM.
@@ -124,21 +129,16 @@
 	 * corresponding MPU settings.
 	 */
 	status = "disabled";
-	pinctrl-0 = <&pinmux_flexspi2>;
-	pinctrl-names = "default";
-	ahb-prefetch;
-	ahb-read-addr-opt;
-	rx-clock-source = <1>;
 
 	w25q128jv: w25q128jv@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(16*8)>;
 		reg = <0>;
+		size = <DT_SIZE_M(16*8)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
-		status = "okay";
 		jedec-id = [ef 40 18];
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -150,23 +150,23 @@
 			 * to the flash memory sector size of 4KB.
 			 */
 			boot_partition: partition@0 {
-				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
+				label = "mcuboot";
 			};
 
 			slot0_partition: partition@20000 {
-				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(7)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@720000 {
-				label = "image-1";
 				reg = <0x00720000 DT_SIZE_M(7)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@e20000 {
-				label = "storage";
 				reg = <0x00e20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				label = "storage";
 			};
 		};
 	};

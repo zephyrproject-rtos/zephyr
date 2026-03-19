@@ -12,8 +12,8 @@
 #include <freq.h>
 
 / {
-	model = "NXP FRDM-IMXRT1186 board";
 	compatible = "nxp,mimxrt1186";
+	model = "NXP FRDM-IMXRT1186 board";
 
 	chosen {
 		zephyr,sram = &hyperram0;
@@ -28,9 +28,9 @@
 	};
 
 	hyperram0: memory@38000000 {
+		reg = <0x38000000 DT_SIZE_M(8)>;
 		/* Winbond W957A8MFYA5K */
 		device_type = "memory";
-		reg = <0x38000000 DT_SIZE_M(8)>;
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 		/*
 		 * HyperRAM on FRDM-IMXRT1186 is initialized by ROM bootloader
@@ -40,8 +40,8 @@
 	};
 
 	qspi_flash: memory@14000000 {
-		device_type = "memory";
 		reg = <0x14000000 DT_SIZE_M(16)>;
+		device_type = "memory";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 		status = "okay";
 	};
@@ -52,8 +52,8 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &flexspi {

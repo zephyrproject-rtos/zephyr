@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/gpio/dvp-20pin-connector.h>
 
 / {
-	model = "NXP FRDM_N236 board";
 	compatible = "nxp,mcxn236", "nxp,mcx";
+	model = "NXP FRDM_N236 board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -200,12 +200,12 @@
 };
 
 &flexcomm2_lpi2c2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	/* Note: The DA7212 codec is not populated on this board by default.
 	 * Refer to the board MCX_N5XX_EVK to use this sample with the same codec.
@@ -268,15 +268,15 @@
 };
 
 zephyr_udc0: &usb1 {
-	status = "okay";
 	phy-handle = <&usbphy1>;
+	status = "okay";
 };
 
 &usbphy1 {
-	status = "okay";
 	tx-d-cal = <4>;
 	tx-cal-45-dp-ohms = <7>;
 	tx-cal-45-dm-ohms = <7>;
+	status = "okay";
 };
 
 &i3c1 {
@@ -364,26 +364,26 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 		 * to the flash memory sector size of 8KB.
 		 */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
+			label = "mcuboot";
 		};
 
 		/* For the MCUBoot "upgrade only" method,
 		 * the slot sizes must be equal.
 		 */
 		slot0_partition: partition@14000 {
-			label = "image-0";
 			reg = <0x00014000 DT_SIZE_K(440)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@84000 {
-			label = "image-1";
 			reg = <0x0084000 DT_SIZE_K(440)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@f0000 {
-			label = "storage";
 			reg = <0x000f0000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };
@@ -430,18 +430,18 @@ p3t1755dp_ard_i2c_interface: &flexcomm5_lpi2c5 {};
 
 /* SmartDMA is used for video driver on this board */
 &smartdma {
+	program-mem = <0x4000000>;
 	/* Shields do not enable video-sdma parent node so enable it by default */
 	status = "okay";
-	program-mem = <0x4000000>;
 
 	video_sdma: video-sdma {
-		status = "disabled";
 		compatible = "nxp,video-smartdma";
 		pinctrl-0 = <&pinmux_smartdma_camera>;
 		pinctrl-names = "default";
 		vsync-pin = <4>;
 		hsync-pin = <5>;
 		pclk-pin = <7>;
+		status = "disabled";
 	};
 };
 
@@ -450,19 +450,19 @@ dvp_20pin_i2c: &flexcomm2_lpi2c2 {};
 dvp_20pin_interface: &video_sdma {};
 
 &sai0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_sai0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sai1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_sai1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &micfil {
-	status = "okay";
 	pinctrl-0 = <&pinmux_micfil>;
 	pinctrl-names = "default";
+	status = "okay";
 };

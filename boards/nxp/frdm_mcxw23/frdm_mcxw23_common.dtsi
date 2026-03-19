@@ -126,27 +126,27 @@
 };
 
 &flexcomm0 {
-	status = "okay";
 	compatible = "nxp,lpc-usart";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flexcomm1 {
-	status = "okay";
 	compatible = "nxp,lpc-i2c";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_flexcomm1_i2c>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	fxls8974: fxls8974@19 {
 		compatible = "nxp,fxls8974";
 		reg = <0x19>;
-		status = "okay";
 		int1-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 };
 
@@ -171,9 +171,9 @@
 };
 
 &sc_timer {
-	status = "okay";
 	pinctrl-0 = <&pinmux_sctimer_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &systick {
@@ -215,23 +215,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(80)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@14000 {
-			label = "image-0";
 			reg = <0x00014000 DT_SIZE_K(440)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@82000 {
-			label = "image-1";
 			reg = <0x0082000 DT_SIZE_K(440)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@f0000 {
-			label = "storage";
 			reg = <0x000f0000 DT_SIZE_K(56)>;
+			label = "storage";
 		};
 	};
 };
@@ -239,12 +239,12 @@
 arduino_i2c: &flexcomm1 {};
 
 arduino_spi: &flexcomm2 {
-	status = "okay";
 	compatible = "nxp,lpc-spi";
 	pinctrl-0 = <&pinmux_flexcomm2_spi>;
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 };
 
 mikrobus_i2c: &flexcomm1 {};

@@ -10,8 +10,8 @@
 #include "s32k5xxcvb_s32k566.dtsi"
 
 / {
-	model = "NXP S32K566CVB on Cortex-M7 cores";
 	compatible = "nxp,s32k566cvb";
+	model = "NXP S32K566CVB on Cortex-M7 cores";
 
 	chosen {
 		zephyr,sram = &sram0;

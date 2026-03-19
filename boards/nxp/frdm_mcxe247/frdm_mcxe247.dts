@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP FRDM-MCXE247 board";
 	compatible = "nxp,mcxe247", "nxp,mcx";
+	model = "NXP FRDM-MCXE247 board";
 
 	aliases {
 		led0 = &red_led;
@@ -101,17 +101,17 @@
 };
 
 &adc0 {
-	status = "okay";
 	sample-time = <12>;
 	vref-mv = <3300>;
 	pinctrl-0 = <&pinmux_adc0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &cmp0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_cmp0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &cpu0 {
@@ -195,17 +195,17 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpuart2 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart2>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpit0 {
@@ -247,9 +247,9 @@
 };
 
 &lpspi1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &edma {

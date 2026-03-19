@@ -10,8 +10,8 @@
 #include "frdm_mcxa577.dtsi"
 
 / {
-	model = "NXP FRDM_MCXA577 board";
 	compatible = "nxp,mcxa577", "nxp,mcx";
+	model = "NXP FRDM_MCXA577 board";
 
 	chosen {
 		zephyr,sram = &sram0;

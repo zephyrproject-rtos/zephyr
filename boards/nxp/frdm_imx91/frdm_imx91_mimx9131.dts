@@ -11,8 +11,8 @@
 #include "frdm_imx91-pinctrl.dtsi"
 
 / {
-	model = "NXP FRDM-IMX91 A55";
 	compatible = "fsl,mimx91";
+	model = "NXP FRDM-IMX91 A55";
 
 	chosen {
 		zephyr,console = &lpuart1;
@@ -53,10 +53,10 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &edma4_2 {
@@ -64,9 +64,9 @@
 };
 
 &sai3_2 {
-	status = "disabled";
 	pinctrl-0 = <&sai3_default>;
 	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &tpm2 {
@@ -120,8 +120,8 @@
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
 	phy-handle = <&phy>;
-	zephyr,random-mac-address;
 	phy-connection-type = "rgmii";
+	zephyr,random-mac-address;
 	status = "okay";
 };
 
@@ -133,9 +133,9 @@
 	phy: phy@2 {
 		compatible = "motorcomm,yt8521";
 		reg = <2>;
-		status = "okay";
 		motorcomm,rx-delay-sel = <13>;
 		motorcomm,tx-delay-sel = <13>;
+		status = "okay";
 	};
 };
 

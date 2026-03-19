@@ -10,8 +10,8 @@
 #include "imx8ulp_evk_mimx8ud7_adsp-pinctrl.dtsi"
 
 / {
-	model = "NXP i.MX 8ULP Audio DSP";
 	compatible = "nxp";
+	model = "NXP i.MX 8ULP Audio DSP";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -21,10 +21,10 @@
 };
 
 &lpuart7 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart7_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sai5 {

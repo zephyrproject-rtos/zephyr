@@ -12,8 +12,8 @@
 #include <freq.h>
 
 / {
-	model = "NXP FRDM-iMXRT1186 board";
 	compatible = "nxp,mimxrt1186";
+	model = "NXP FRDM-iMXRT1186 board";
 
 	chosen {
 		zephyr,sram = &dtcm;
@@ -27,9 +27,9 @@
 	};
 
 	hyperram0: memory@28000000 {
+		reg = <0x28000000 DT_SIZE_M(8)>;
 		/* Winbond W957A8MFYA5K */
 		device_type = "memory";
-		reg = <0x28000000 DT_SIZE_M(8)>;
 		/*
 		 * HyperRAM on FRDM-IMXRT1186 is connected to FlexSPI and initialized by ROM
 		 * reading the XMCD configuration from xip/frdmimxrt1186_flexspi_nor_config.c
@@ -44,8 +44,8 @@
 };
 
 &lpuart3 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &flexspi2 {

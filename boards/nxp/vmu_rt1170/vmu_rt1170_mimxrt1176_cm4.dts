@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP VMU RT1170 (CM4)";
 	compatible = "nxp,mimxrt1176";
+	model = "NXP VMU RT1170 (CM4)";
 
 	chosen {
 		/* Follow mimxrt1170_evk CM4 choices */
@@ -29,8 +29,8 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &mailbox_b {

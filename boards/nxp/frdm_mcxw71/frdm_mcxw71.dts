@@ -114,41 +114,41 @@
 
 &lpuart0 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpuart1 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	accelerometer: accelerometer@19 {
-		status = "okay";
 		compatible = "nxp,fxls8974";
 		reg = <0x19>;
+		status = "okay";
 	};
 };
 
 arduino_i2c: &lpi2c1 {};
 
 &lpspi1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	mx25r6435fm2il0: flash@0 {
 		compatible = "jedec,spi-nor";
-		jedec-id = [c2 28 17];
 		reg = <0>;
+		jedec-id = [c2 28 17];
 		/* only wp-gpio on default board configuration,
 		 * there is a reset gpio line but the line is
 		 * DNP by default on the board (R4 on schematic)
@@ -158,13 +158,13 @@ arduino_i2c: &lpi2c1 {};
 		has-dpd;
 		dpd-wakeup-sequence = <30000 20 35000>;
 		t-enter-dpd = <10000>;
-		/* this is the default (reset) mode for this flash */
-		mxicy,mx25r-power-mode = "low-power";
 		/* 8 MHz for low power mode */
 		spi-max-frequency = <DT_FREQ_M(8)>;
 		spi-cs-setup-delay-ns = <5>;
 		spi-cs-hold-delay-ns = <5>;
 		spi-interframe-delay-ns = <125>;
+		/* this is the default (reset) mode for this flash */
+		mxicy,mx25r-power-mode = "low-power";
 	};
 };
 
@@ -195,8 +195,8 @@ arduino_i2c: &lpi2c1 {};
 		};
 
 		hw_params_partition: partition@fe000 {
-			label = "hw-parameters";
 			reg = <0xfe000 DT_SIZE_K(8)>;
+			label = "hw-parameters";
 		};
 	};
 };
@@ -210,9 +210,9 @@ arduino_i2c: &lpi2c1 {};
 };
 
 &tpm0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_tpm0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lptmr0 {
@@ -228,9 +228,9 @@ arduino_i2c: &lpi2c1 {};
 };
 
 &flexcan0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	can-transceiver {
 		max-bitrate = <5000000>;
@@ -244,8 +244,8 @@ arduino_i2c: &lpi2c1 {};
 };
 
 &nbu {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };
 
 &rtc {

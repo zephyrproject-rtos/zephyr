@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP FRDM_MCXE31B board";
 	compatible = "nxp,mcxe31b";
+	model = "NXP FRDM_MCXE31B board";
 
 	aliases {
 		led0 = &red_led;
@@ -114,13 +114,13 @@
 		#size-cells = <1>;
 
 		ivt_header: partition@0 {
-			label = "ivt-header";
 			reg = <0x00000000 0x100>;
+			label = "ivt-header";
 		};
 
 		code_partition: partition@100 {
-			label = "code-partition";
 			reg = <0x00000100 (DT_SIZE_K(3920) - 0x100)>;
+			label = "code-partition";
 		};
 	};
 };
@@ -165,12 +165,12 @@
 };
 
 &lpuart_5 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart_5>;
 	pinctrl-names = "default";
 	dmas = <&edma 1 44>, <&edma 2 45>;
 	dma-names = "tx", "rx";
+	status = "okay";
 };
 
 &flexcan_0 {
@@ -198,16 +198,16 @@
 };
 
 &firc {
-	status = "okay";
 	firc-div = "UnDiv";
+	status = "okay";
 };
 
 &fxosc {
-	status = "okay";
 	freq = <16000000>;
 	workmode = "crystal";
 	delay = <49>;
 	overdrive = <12>;
+	status = "okay";
 };
 
 &pit_0 {
@@ -215,7 +215,6 @@
 };
 
 &pll {
-	status = "okay";
 	workmode = "Integer";
 	prediv = <2>;
 	postdiv = <2>;
@@ -225,10 +224,10 @@
 	stepnum = <0>;
 	accuracy = "Accuracy9";
 	outdiv = <3 3>;
+	status = "okay";
 };
 
 &mc_cgm {
-	status = "okay";
 	max-ido-change = <50>;
 	step-duration = <1>;
 	clk-src-freq = <160000000>;
@@ -241,11 +240,12 @@
 	mux-0-dc-6-div = <1>;
 	mux-1-dc-0-div = <1>;
 	mux-2-dc-0-div = <1>;
+	status = "okay";
 };
 
 &stm_0 {
-	status = "okay";
 	prescaler = <1>;
+	status = "okay";
 };
 
 &rtc {
@@ -290,8 +290,8 @@ lpuart2: &lpuart_2 {};
 };
 
 nxp_8080_touch_panel_i2c: &lpi2c_1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c_1>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 };

@@ -102,16 +102,16 @@ portd: &port_d {};
 
 lpuart0: &lpuart_0 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 lpuart1: &lpuart_1 {
 	current-speed = <115200>;
-	status = "disabled";
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-names = "default";
+	status = "disabled";
 };
 
 nbu: &nbu {
@@ -126,13 +126,13 @@ nbu: &nbu {
 		#size-cells = <1>;
 
 		storage_partition: partition@17a000 {
-			label = "storage";
 			reg = <0x17a000 DT_SIZE_K(16)>;
+			label = "storage";
 		};
 
 		hw_params_partition: partition@17e000 {
-			label = "hw-parameters";
 			reg = <0x17e000 DT_SIZE_K(8)>;
+			label = "hw-parameters";
 		};
 	};
 };
@@ -144,8 +144,8 @@ nbu: &nbu {
 		#size-cells = <1>;
 
 		code_partition: partition@0 {
-			label = "code";
 			reg = <0x0 DT_SIZE_K(1160)>;
+			label = "code";
 		};
 	};
 };
@@ -155,15 +155,15 @@ fmu: &fmu_0 {
 };
 
 tpm0: &tpm_0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_tpm0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 tpm2: &tpm_2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_tpm2>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 lptmr0: &lptmr_0 {

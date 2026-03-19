@@ -9,7 +9,7 @@
 #include "mcx_n5xx_evk-pinctrl.dtsi"
 
 &micfil {
-	status = "okay";
 	pinctrl-0 = <&pinmux_micfil>;
 	pinctrl-names = "default";
+	status = "okay";
 };

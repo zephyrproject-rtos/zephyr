@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP Freedom KE16Z board";
 	compatible = "nxp,ke16z", "nxp,mke16z4";
+	model = "NXP Freedom KE16Z board";
 
 	aliases {
 		led0 = &red_led;
@@ -66,10 +66,10 @@
 };
 
 &lpuart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpiob {
