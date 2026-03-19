@@ -3224,10 +3224,11 @@ void bt_ascs_cleanup(void)
 	}
 }
 
+static const struct bt_gatt_attr ascs_attrs_backup[] = BT_ASCS_SERVICE_DEFINITION();
+BUILD_ASSERT(sizeof(ascs_attrs_backup) == sizeof(ascs_attrs));
 int bt_ascs_unregister(void)
 {
 	int err;
-	struct bt_gatt_attr _ascs_attrs[] = BT_ASCS_SERVICE_DEFINITION();
 
 	if (!ascs.registered) {
 		LOG_DBG("No ascs instance registered");
@@ -3251,7 +3252,8 @@ int bt_ascs_unregister(void)
 		return err;
 	}
 
-	memcpy(&ascs_attrs, &_ascs_attrs, sizeof(struct bt_gatt_attr));
+	(void)memcpy(ascs_attrs, ascs_attrs_backup, sizeof(ascs_attrs_backup));
+	ascs_svc.attr_count = ARRAY_SIZE(ascs_attrs);
 	ascs.registered = false;
 
 	return err;
