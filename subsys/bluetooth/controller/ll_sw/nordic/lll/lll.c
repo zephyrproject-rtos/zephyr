@@ -479,6 +479,31 @@ int lll_reset(void)
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_ZLI)
+static void mfy_ll_rx_sched(void *param)
+{
+	ARG_UNUSED(param);
+
+	ll_rx_sched();
+}
+
+void ll_iso_rx_sched(void)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, mfy_ll_rx_sched};
+
+	/* Ignore mayfly_enqueue failure on repeated enqueue call */
+	(void)mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_HIGH, 0,
+			     &mfy);
+}
+
+#else /* !CONFIG_BT_CTLR_ZLI */
+void ll_iso_rx_sched(void)
+{
+	ll_rx_sched();
+}
+#endif /* !CONFIG_BT_CTLR_ZLI */
+
 void lll_disable(void *param)
 {
 	/* LLL disable of current event, done is generated */
