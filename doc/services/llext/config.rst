@@ -109,11 +109,52 @@ Heap placement
 --------------
 
 The LLEXT heap(s) have custom sections. Non-Harvard heap sections
-(``.llext_heap`` or ``.llext_metadata_heap`` and ``.llext_ext_heap`` if
+(``.llext_heap``, or ``.llext_metadata_heap`` and ``.llext_ext_heap`` if
 :kconfig:option:`CONFIG_LLEXT_HEAP_MEMBLK` is selected) are placed alongside
-``.noinit`` sections by default. Harvard instruction and data heap sections
-(``.llext_instr_heap`` and ``.llext_data_heap``) are placed in instruction and
-data memory respectively. These default placements can be overridden by
+``.noinit`` sections in the file
+:file:`include/zephyr/linker/common-noinit.ld`. If none of your linker scripts
+include this file, you will need to place the non-Harvard LLEXT heap sections
+manually. One way to do this is by including :file:`snippets-noinit.ld` in
+your linker script after your ``.noinit`` sections.
+
+.. code-block:: none
+
+   /* Located in generated directory. This file is populated by the
+    * zephyr_linker_sources() CMake function.
+    */
+   #include <snippets-noinit.ld>
+
+Add the file as a linker source in your board, SoC, or architecture
+:file:`CMakeFiles.txt`.
+
+.. code-block:: cmake
+
+   zephyr_linker_sources(NOINIT snippets-noinit.ld)
+
+Then create a file in the same directory as your :file:`CMakeFiles.txt` named
+:file:`noinit.ld`.
+
+.. code-block:: none
+
+   #ifdef CONFIG_LLEXT
+   *(.llext_heap)
+   *(.llext_ext_heap)
+   *(.llext_metadata_heap)
+   #endif /* CONFIG_LLEXT */
+
+For ARC, the Harvard instruction and data heap sections (``.llext_instr_heap``
+and ``.llext_data_heap``) are placed in instruction and data memory at the
+architecture level. If you are using a non-ARC board with a Harvard
+architecture, you will need to manually place ``.llext_instr_heap`` and
+``.llext_data_heap``.
+
+.. warning::
+
+   LLEXT will be unable to load extensions if the instruction memory
+   ``.llext_instr_heap`` is placed in is not writable at the time the
+   extensions are loaded and linked.
+
+Placements can also be specified, or default placements overridden, by
 providing a custom linker script.
 
 :kconfig:option:`CONFIG_CUSTOM_LINKER_SCRIPT`
@@ -127,12 +168,6 @@ providing a custom linker script.
         This is useful when an application needs to add sections into the
         linker script and avoid having to change the script provided by
         Zephyr.
-
-.. warning::
-
-   LLEXT will be unable to load extensions if the instruction memory
-   ``.llext_instr_heap`` is placed in is not writable at the time the
-   extensions are loaded and linked.
 
 .. _llext_kconfig_type:
 
