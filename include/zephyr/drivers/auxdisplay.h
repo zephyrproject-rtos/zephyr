@@ -620,9 +620,9 @@ static inline int z_impl_auxdisplay_capabilities_get(const struct device *dev,
 }
 
 /**
- * @brief	Clear display of auxiliary display and return to home position (note that
- *		this does not reset the display configuration, e.g. custom characters and
- *		display mode will persist).
+ * @brief	Clear display of auxiliary display and return to home position.
+ * @details	Note that this does not reset the display configuration, e.g. custom characters and
+ *		display mode will persist.
  *
  * @param dev	Auxiliary display device instance
  *
@@ -764,16 +764,16 @@ static inline int z_impl_auxdisplay_is_busy(const struct device *dev)
 }
 
 /**
- * @brief		Sets a custom character in the display, the custom character struct
- *			must contain the pixel data for the custom character to add and valid
- *			custom character index, if successful then the character_code variable
- *			in the struct will be set to the character code that can be used with
- *			the auxdisplay_write() function to show it.
+ * @brief		Sets a custom character in the display.
+ * @details		The custom character struct must contain the pixel data for the custom
+ *			character to add and valid custom character index. If successful then the
+ *			character_code variable in the struct will be set to the character code that
+ *			can be used with the auxdisplay_write() function to show it.
  *
  *			A character must be valid for a display consisting of a uint8 array of
- *			size character width by character height, values should be 0x00 for
- *			pixel off or 0xff for pixel on, if a display supports shades then
- *			values between 0x00 and 0xff may be used (display driver dependent).
+ *			size character width by character height, values should be @c 0x00 for
+ *			pixel off or @c 0xff for pixel on, if a display supports shades then
+ *			values between @c 0x00 and @c 0xff may be used (display driver dependent).
  *
  * @param dev		Auxiliary display device instance
  * @param character	Pointer to custom character structure
