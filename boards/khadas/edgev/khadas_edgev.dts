@@ -9,8 +9,8 @@
 #include <rockchip/rk3399.dtsi>
 
 / {
-	model = "Khadas Edge-V";
 	compatible = "khadas,edgev";
+	model = "Khadas Edge-V";
 
 	chosen {
 		zephyr,sram = &sram0;
