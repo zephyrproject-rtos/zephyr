@@ -41,10 +41,53 @@ int scmi_status_to_errno(int scmi_status)
 	}
 }
 
-static void scmi_core_reply_cb(struct scmi_channel *chan)
+static bool scmi_core_handle_notification(uint32_t hdr)
 {
-	if (!k_is_pre_kernel()) {
-		k_sem_give(&chan->sem);
+	uint32_t protocol_id = SCMI_MESSAGE_HDR_TAKE_PROTOCOL(hdr);
+	uint32_t msg_id = SCMI_MESSAGE_HDR_TAKE_MSGID(hdr);
+
+	STRUCT_SECTION_FOREACH(scmi_protocol, it) {
+		if (protocol_id != it->id) {
+			continue;
+		}
+
+		if (!it->events || !it->events->cb) {
+			return false;
+		}
+
+		for (uint32_t i = 0; i < it->events->num_events; i++) {
+			if (msg_id == it->events->evts[i]) {
+				it->events->cb(it, msg_id);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	return false;
+}
+
+static void scmi_core_reply_cb(struct scmi_channel *chan, uint32_t hdr)
+{
+	int msg_type;
+
+	msg_type = SCMI_MESSAGE_HDR_TAKE_TYPE(hdr);
+
+	switch (msg_type) {
+	case SCMI_COMMAND:
+		if (!k_is_pre_kernel()) {
+			k_sem_give(&chan->sem);
+		}
+		break;
+	case SCMI_NOTIFICATION:
+		if (!scmi_core_handle_notification(hdr)) {
+			LOG_WRN("no event dispatcher for message 0x%x", hdr);
+		}
+		break;
+	default:
+		/* TODO: delayed replies currently not supported */
+		LOG_WRN("unexpected message type: 0x%x", msg_type);
 	}
 }
 
@@ -152,6 +195,28 @@ out_release_mutex:
 	}
 
 	return ret;
+}
+
+int scmi_read_message(struct scmi_protocol *proto, struct scmi_message *msg)
+{
+	if (!proto->rx) {
+		return -ENODEV;
+	}
+
+	if (!proto->rx->ready) {
+		return -EINVAL;
+	}
+
+	/* read message from platform, such as notification event
+	 *
+	 * Unlike scmi_send_message, reading messages with scmi_read_message is not currently
+	 * required in the PRE_KERNEL stage. The interrupt-based logic is used here.
+	 */
+	if (k_is_pre_kernel()) {
+		return -EINVAL;
+	}
+
+	return scmi_transport_read_message(proto->transport, proto->rx, msg);
 }
 
 static int scmi_core_protocol_negotiate(struct scmi_protocol *proto)

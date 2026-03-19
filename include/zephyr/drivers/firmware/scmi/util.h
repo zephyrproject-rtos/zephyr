@@ -283,19 +283,21 @@
  * DT_SCMI_PROTOCOL_DEFINE(), which also takes care of the static
  * channel declaration (if applicable).
  *
- * node_id     - protocol node identifier
- * proto       - protocol ID in decimal format
- * pdata       - protocol private data
- * version_val - protocol version supported by the driver
+ * node_id	- protocol node identifier
+ * proto	- protocol ID in decimal format
+ * pdata	- protocol private data
+ * version_val	- protocol version supported by the driver
+ * pevents	- protocol registered events
  */
-#define DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, proto, pdata, version_val)	\
-	STRUCT_SECTION_ITERABLE(scmi_protocol, SCMI_PROTOCOL_NAME(proto)) =	\
-	{									\
-		.id = proto,							\
-		.tx = DT_SCMI_TRANSPORT_TX_CHAN(node_id),			\
-		.rx = DT_SCMI_TRANSPORT_RX_CHAN(node_id),			\
-		.data = pdata,							\
-		.version = version_val						\
+#define DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, proto, pdata, version_val, pevents)	\
+	STRUCT_SECTION_ITERABLE(scmi_protocol, SCMI_PROTOCOL_NAME(proto)) =		\
+	{										\
+		.id = proto,								\
+		.tx = DT_SCMI_TRANSPORT_TX_CHAN(node_id),				\
+		.rx = DT_SCMI_TRANSPORT_RX_CHAN(node_id),				\
+		.data = pdata,								\
+		.version = version_val,							\
+		.events = pevents							\
 	}
 /** @endcond */
 
@@ -360,11 +362,11 @@
  * @param version_val Protocol version supported by the driver
  */
 #define DT_SCMI_PROTOCOL_DEFINE(node_id, init_fn, pm, data, config,		\
-				level, prio, api, version_val)			\
+				level, prio, api, version_val, events)		\
 	DT_SCMI_TRANSPORT_CHANNELS_DECLARE(node_id)				\
 	DT_SCMI_PROTOCOL_DATA_DEFINE(node_id,					\
 				     DT_SCMI_TRANSPORT_PROTOCOL_ID(node_id),	\
-				     data, version_val);			\
+				     data, version_val, events);		\
 	DEVICE_DT_DEFINE(node_id, init_fn, pm,					\
 			 &SCMI_PROTOCOL_NAME(					\
 				DT_SCMI_TRANSPORT_PROTOCOL_ID(node_id)),	\
@@ -385,9 +387,9 @@
  * @param version Protocol version supported by the driver
  */
 #define DT_INST_SCMI_PROTOCOL_DEFINE(inst, init_fn, pm, data, config,		\
-				     level, prio, api, version)			\
+				     level, prio, api, version, events)		\
 	DT_SCMI_PROTOCOL_DEFINE(DT_INST(inst, DT_DRV_COMPAT), init_fn, pm,	\
-				data, config, level, prio, api, version)
+				data, config, level, prio, api, version, events)
 
 /**
  * @brief Define an SCMI protocol with no device
@@ -401,11 +403,11 @@
  * @param data Protocol private data
  * @param version Protocol version supported by the driver
  */
-#define DT_SCMI_PROTOCOL_DEFINE_NODEV(node_id, data, version)			\
+#define DT_SCMI_PROTOCOL_DEFINE_NODEV(node_id, data, version, events)		\
 	DT_SCMI_TRANSPORT_CHANNELS_DECLARE(node_id)				\
 	DT_SCMI_PROTOCOL_DATA_DEFINE(node_id,					\
 				     DT_SCMI_TRANSPORT_PROTOCOL_ID(node_id),	\
-				     data, version)
+				     data, version, events)
 
 /**
  * @brief Create an SCMI message field
