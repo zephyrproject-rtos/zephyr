@@ -188,10 +188,24 @@ config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
 	  aims to use other mbedTLS services on top of OpenThread (e.g. secure
 	  sockets), it's advised to disable this option.
 
+config MBEDTLS_PK_PARSE_C
+	bool "The generic public (asymmetric) key parser"
+	help
+	  Enable generic public key parse functions.
+
 config MBEDTLS_PK_WRITE_C
 	bool "The generic public (asymmetric) key writer"
 	help
 	  Enable generic public key write functions.
+
+config MBEDTLS_X509_USE_C
+	bool "X.509 core for using certificates"
+	select MBEDTLS_PK_PARSE_C
+	select MBEDTLS_ASN1_PARSE_C
+	help
+	  Enable the X.509 core for using certificates. Required for
+	  the X.509 parsing modules (CRT, CRL and CSR). Automatically
+	  selected when any of those is enabled.
 
 config MBEDTLS_PKCS5_C
 	bool "Password-based encryption functions"
