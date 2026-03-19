@@ -2113,13 +2113,6 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 		priv->ctrlout_tailroom -= data_len;
 	}
 
-	if (data_rmn) {
-		LOG_ERR("Buffer (%p) queued for ep=0x%02x cannot accommodate packet", buf, ep);
-		LOG_ERR("net_buf_tailroom(buf)=%d, data_len=%d, data_rmn=%d", net_buf_tailroom(buf),
-			data_len, data_rmn);
-		return -ENOBUFS;
-	}
-
 	/* CTRL DATA OUT/STATUS OUT stage completed */
 	if (ep == USB_CONTROL_EP_OUT) {
 		if (priv->ctrlout_tailroom != 0) {
