@@ -11,8 +11,8 @@
 #include "../common/launchxl-flash.dtsi"
 
 / {
-	model = "TI CC1312R1 LaunchXL";
 	compatible = "ti,launchxl-cc1312r1";
+	model = "TI CC1312R1 LaunchXL";
 
 	chosen {
 		/delete-property/ zephyr,ieee802154;

@@ -10,8 +10,8 @@
 #include "am62l_evm_am62l3_a53-pinctrl.dtsi"
 
 / {
-	model = "TI AM62L EVALUATION MODULE (EVM)";
 	compatible = "ti,am62l_evm";
+	model = "TI AM62L EVALUATION MODULE (EVM)";
 
 	chosen {
 		zephyr,console = &main_uart0;
