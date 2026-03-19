@@ -2814,6 +2814,9 @@ Espressif Platforms:
     - name: Espressif hosted Wi-Fi driver
       files:
         - drivers/wifi/esp_hosted
+    - name: Espressif ESP-AT Wi-Fi driver
+      files:
+        - drivers/wifi/esp_at
   labels:
     - "platform: ESP32"
 
