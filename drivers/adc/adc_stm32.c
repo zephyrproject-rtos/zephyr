@@ -1052,7 +1052,6 @@ static int start_read(const struct device *dev,
 #endif
 #endif /* CONFIG_ADC_STM32_DMA */
 
-	LL_ADC_REG_SetContinuousMode(adc, LL_ADC_REG_CONV_SINGLE);
 #ifdef CONFIG_ADC_STREAM
 	data->ctx.asynchronous = true;
 	adc_context_start_sampling(&data->ctx);
