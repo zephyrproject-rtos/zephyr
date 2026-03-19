@@ -20,8 +20,8 @@
 #include "seeed_xiao_pads.dtsi"
 
 / {
-	model = "Seeed Studio XIAO RP2350";
 	compatible = "seeed,xiao-rp2350";
+	model = "Seeed Studio XIAO RP2350";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -75,11 +75,11 @@
 	 */
 	neopixel_power_enable: neopixel-power-enable {
 		compatible = "regulator-fixed";
-		status = "okay";
 
 		enable-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
 		regulator-name = "neopixel_enable";
 		regulator-boot-on;
+		status = "okay";
 	};
 
 	/*
@@ -91,18 +91,18 @@
 	 */
 	battery_adc_enable: battery-adc-enable {
 		compatible = "regulator-fixed";
-		status = "okay";
 
 		enable-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
 		regulator-name = "battery_adc_enable";
 		regulator-boot-on;
+		status = "okay";
 	};
 };
 
 /* overwrite for 2M; there is no default 2M partition DTS include for RP2350 */
 &flash0 {
-	status = "okay";
 	reg = <0x10000000 DT_SIZE_M(2)>;
+	status = "okay";
 };
 
 &storage_partition {
@@ -126,9 +126,9 @@
 };
 
 &pwm {
-	status = "okay";
 	pinctrl-0 = <&pwm_ch4b_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 gpio0_lo: &gpio0 {
@@ -140,7 +140,6 @@ gpio0_lo: &gpio0 {
 
 	pio-ws2812 {
 		compatible = "worldsemi,ws2812-rpi_pico-pio";
-		status = "okay";
 
 		pinctrl-0 = <&ws2812_pio0_default>;
 		pinctrl-names = "default";
@@ -148,9 +147,9 @@ gpio0_lo: &gpio0 {
 		/* HI: 0x3F0: 1111110000: 0.750 us high and 0.500 us low */
 		/* LO: 0x380: 1110000000: 0.375 us high and 0.875 us low */
 		bit-waveform = <3>, <3>, <4>;
+		status = "okay";
 
 		ws2812: ws2812 {
-			status = "okay";
 
 			chain-length = <1>;
 			color-mapping = <LED_COLOR_ID_GREEN
@@ -161,58 +160,59 @@ gpio0_lo: &gpio0 {
 			gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
 			frequency = <DT_FREQ_K(800)>;
 			reset-delay = <280>;
+			status = "okay";
 		};
 	};
 };
 
 &uart0 {
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &uart1 {
-	status = "okay";
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c1 {
-	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 	clock-frequency = <DT_FREQ_M(20)>;
+	status = "okay";
 };
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
 	clock-frequency = <DT_FREQ_M(20)>;
+	status = "okay";
 };
 
 &adc {
-	status = "okay";
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;

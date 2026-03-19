@@ -12,6 +12,6 @@
 #include <espressif/partitions_0x0_amp.dtsi>
 
 / {
-	model = "Seeed Xiao ESP32S3 PROCPU";
 	compatible = "seeed,xiao-esp32s3";
+	model = "Seeed Xiao ESP32S3 PROCPU";
 };
