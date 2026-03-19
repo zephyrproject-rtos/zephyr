@@ -59,6 +59,7 @@
 
 &flash0 {
 	reg = <0x10000000 DT_SIZE_M(4)>;
+	ranges = <0x0 0x10000000 DT_SIZE_M(4)>; 
 	status = "reserved";
 };
 
