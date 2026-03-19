@@ -11,9 +11,6 @@
 /delete-node/ &sram2;
 /delete-node/ &sram3;
 
-/* no UART 9 instance */
-/delete-node/ &uart9;
-
 / {
 	soc {
 		compatible = "st,stm32h5ef", "st,stm32h5", "simple-bus";
