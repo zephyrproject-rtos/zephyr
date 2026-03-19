@@ -958,17 +958,6 @@ static int litex_clk_calc_duty_normal(struct litex_clk_clkout *lcko,
 	return 0;
 }
 
-/* Calculates duty high_time for given divider and ratio */
-static inline int litex_clk_calc_duty_high_time(struct clk_duty *duty,
-						   uint32_t divider)
-{
-	uint32_t high_duty;
-
-	high_duty = litex_clk_calc_duty_percent(duty) * divider;
-
-	return litex_round(high_duty, 100);
-}
-
 /* Set duty cycle with given ratio */
 static int litex_clk_set_duty_cycle(struct litex_clk_clkout *lcko,
 			     struct clk_duty *duty)
