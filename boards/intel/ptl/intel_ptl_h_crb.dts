@@ -12,8 +12,8 @@
 #include <intel/panther_lake_h.dtsi>
 
 / {
-	model = "intel_ptl_h_crb";
 	compatible = "intel,panther-lake-crb";
+	model = "intel_ptl_h_crb";
 
 	chosen {
 		zephyr,sram = &dram0;

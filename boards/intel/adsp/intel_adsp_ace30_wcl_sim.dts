@@ -9,8 +9,8 @@
 #include <intel/intel_adsp_ace30_wcl.dtsi>
 
 / {
-	model = "intel_adsp_ace30_wcl_sim";
 	compatible = "intel";
+	model = "intel_adsp_ace30_wcl_sim";
 
 	chosen {
 		zephyr,sram = &sram0;
