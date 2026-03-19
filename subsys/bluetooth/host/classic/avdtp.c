@@ -13,7 +13,6 @@
 #include <errno.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 
 #include <zephyr/bluetooth/hci.h>
@@ -2665,7 +2664,7 @@ int bt_avdtp_delay_report(struct bt_avdtp *session, struct bt_avdtp_delay_report
 {
 	struct net_buf *buf;
 
-	CHECKIF(param == NULL || session == NULL || param->sep == NULL) {
+	if (param == NULL || session == NULL || param->sep == NULL) {
 		LOG_DBG("Error: parameters not valid");
 		return -EINVAL;
 	}
