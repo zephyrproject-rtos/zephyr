@@ -83,25 +83,25 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_i2c: &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 };
 
 &adc {
-	status = "okay";
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;
@@ -141,13 +141,12 @@ zephyr_i2c: &i2c0 {
 
 	pio-ws2812 {
 		compatible = "worldsemi,ws2812-rpi_pico-pio";
-		status = "okay";
 		pinctrl-0 = <&ws2812_pio0_default>;
 		pinctrl-names = "default";
 		bit-waveform = <3>, <3>, <4>;
+		status = "okay";
 
 		ws2812: ws2812 {
-			status = "okay";
 			gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
 			chain-length = <2>;
 			color-mapping = <LED_COLOR_ID_RED
@@ -155,15 +154,16 @@ zephyr_i2c: &i2c0 {
 					 LED_COLOR_ID_BLUE>;
 			reset-delay = <280>;
 			frequency = <DT_FREQ_K(800)>;
+			status = "okay";
 		};
 	};
 };
 
 &pwm {
-	status = "okay";
 	pinctrl-0 = <&pwm_default>;
 	pinctrl-names = "default";
 	divider-int-0 = <255>;
+	status = "okay";
 };
 
 &timer0 {
