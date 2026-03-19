@@ -1,0 +1,19 @@
+identifier: rak3172lp_sip
+name: RAK3172-SiP LP LoRa STM32WL (LP PA)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 256
+supported:
+  - counter
+  - gpio
+  - i2c
+  - nvs
+  - spi
+  - uart
+  - watchdog
+  - lora
+vendor: rak
