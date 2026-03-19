@@ -10,8 +10,8 @@
 #include "ch32v307v_evt_r1-pinctrl.dtsi"
 
 / {
-	model = "wch_ch32v307v_evt_r1";
 	compatible = "wch,ch32v307";
+	model = "wch_ch32v307v_evt_r1";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -89,10 +89,10 @@
 };
 
 &usart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &rng {
@@ -100,17 +100,17 @@
 };
 
 &mac {
-	status = "okay";
 	pinctrl-0 = <&mac_default>;
 	pinctrl-names = "default";
 	phy-connection-type = "internal";
 	phy-handle = <&eth_phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&mdio_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
