@@ -1,0 +1,17 @@
+sample:
+  name: SPI slave async callback
+tests:
+  sample.drivers.spis.async:
+    tags:
+      - drivers
+      - spi
+    depends_on: spi
+    platform_allow:
+      - xiao_ble/nrf52840/sense
+    integration_platforms:
+      - xiao_ble/nrf52840/sense
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - ".*spis_async: Waiting for SPI master transfer"
