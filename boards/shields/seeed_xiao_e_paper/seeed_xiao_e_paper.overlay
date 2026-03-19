@@ -6,7 +6,6 @@
 &xiao_spi {
 	status = "okay";
 	cs-gpios = <&xiao_d 1 GPIO_ACTIVE_LOW>;	/* A1-D1 */
-			
 
 	seeed_xiao_e_paper_sdhc: sdhc@1 {
 		compatible = "zephyr,sdhc-spi-slot";
@@ -29,8 +28,8 @@
 	mipi_dbi_seeed_epaper {
 		compatible = "zephyr,mipi-dbi-spi";
 		spi-dev = <&xiao_spi>;
-		dc-gpios = <&xiao_d 3 GPIO_ACTIVE_HIGH>;	/* D9 */
-		reset-gpios = <&xiao_d 0 GPIO_ACTIVE_LOW>;	/* D8 */
+		dc-gpios = <&xiao_d 3 GPIO_ACTIVE_HIGH>;	/* D3 */
+		reset-gpios = <&xiao_d 0 GPIO_ACTIVE_LOW>;	/* D0 */
 		write-only;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -41,7 +40,7 @@
 			reg = <0>;
 			width = <800>;
 			height = <480>;
-			busy-gpios = <&xiao_d 2 GPIO_ACTIVE_LOW>; /* D7 */
+			busy-gpios = <&xiao_d 2 GPIO_ACTIVE_LOW>; /* D2 */
 
 			softstart = [17 17 17 17];
 

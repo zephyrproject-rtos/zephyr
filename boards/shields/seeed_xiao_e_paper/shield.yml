@@ -3,7 +3,5 @@ shield:
   full_name: E-Paper display for XIAO
   vendor: seeed
   supported_features:
-    - input
-    - rtc
     - display
     - sdhc
