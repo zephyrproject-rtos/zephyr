@@ -9,6 +9,19 @@
 #define INFINEON_KCONFIG_H__
 
 /*
+ * Mappings from general Zephyr Kconfig options to ModusToolbox PDL options
+ */
+
+/*
+ * Map CONFIG_ASSERT to PDL Assert Level or ASSERT disable
+ */
+#ifdef CONFIG_ASSERT
+#define CY_ASSERT_LEVEL CY_ASSERT_CLASS_3
+#else
+#define CY_NO_ASSERT
+#endif
+
+/*
  * These are mappings of Kconfig options enabling Infineon SOCs and particular
  * peripheral instances to the corresponding symbols used inside of Infineon code.
  */
