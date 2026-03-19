@@ -21,3 +21,4 @@ supported:
   - spi
   - i2s
   - watchdog
+  - comparator
