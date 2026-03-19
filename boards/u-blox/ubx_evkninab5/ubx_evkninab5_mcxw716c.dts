@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "u-blox EVK-NINA-B5 mcxw71";
 	compatible = "u-blox,ubx_evkninab5_mcxw716c";
+	model = "u-blox EVK-NINA-B5 mcxw71";
 
 	aliases {
 		led0 = &blue_led;
@@ -94,16 +94,16 @@
 
 &lpuart0 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpuart1 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flash {
@@ -149,8 +149,8 @@
 };
 
 &nbu {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };
 
 &rtc {
