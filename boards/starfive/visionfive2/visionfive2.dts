@@ -9,8 +9,8 @@
 #include "starfive/jh7110-visionfive-v2.dtsi"
 
 / {
-	model = "StarFive VisionFive V2";
 	compatible = "starfive,visionfive-v2";
+	model = "StarFive VisionFive V2";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -20,11 +20,11 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
