@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2026, Peter Johanson
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* This shield assumes a WS2812 compatible LED chain attached to the Uno D11 pin */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+&timers17 {
+	status = "okay";
+
+	led_pwm: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim17_ch1_pa7>;
+		pinctrl-names = "default";
+	};
+};
+
+/ {
+	led_strip: ws2812 {
+		compatible = "worldsemi,ws2812-stm32-timer";
+		pwms = <&led_pwm 1 PWM_NSEC(1250) PWM_POLARITY_NORMAL>;
+		dmas = <&dmamux1 2 35 (STM32_DMA_PERIPH_TX | STM32_DMA_MEM_16BITS |
+				       STM32_DMA_PERIPH_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+		dma-names = "tx";
+
+		/* WS2812 */
+		reset-codes = <300>;
+		zero-high-ns = <300>;
+		one-high-ns = <900>;
+		chain-length = <3>; /* arbitrary; change at will */
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
+	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
+/ {
+	aliases {
+		led-strip = &led_strip;
+	};
+};
