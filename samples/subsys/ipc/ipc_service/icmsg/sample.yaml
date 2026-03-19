@@ -14,7 +14,7 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340bsim/nrf5340/cpuapp
 
-  sample.ipc.rp2350:
+  sample.ipc.rp2350_cpu0:
     platform_allow:
       - rpi_pico2/rp2350a/m33/cpu0
     integration_platforms:
@@ -23,13 +23,24 @@ tests:
       # When the remote CPU does not have a console configured, the sample would hang
       - remote_CONFIG_LOG=n
 
+  sample.ipc.rp2350:
+    platform_allow:
+      - rpi_pico2/rp2350a/m33
+    integration_platforms:
+      - rpi_pico2/rp2350a/m33
+    extra_args:
+      - icmsg_SNIPPET=rp2xxx-cpu1
+      # When the remote CPU does not have a console configured, the sample would hang
+      - remote_CONFIG_LOG=n
+
   sample.ipc.icbmsg.rp2350:
     platform_allow:
-      - rpi_pico2/rp2350a/m33/cpu0
+      - rpi_pico2/rp2350a/m33
     integration_platforms:
-      - rpi_pico2/rp2350a/m33/cpu0
+      - rpi_pico2/rp2350a/m33
     extra_args:
-      - icmsg_EXTRA_DTC_OVERLAY_FILE="boards/rpi_pico2_rp2350a_m33_cpu0_icbmsg.overlay"
+      - icmsg_SNIPPET=rp2xxx-cpu1
+      - icmsg_EXTRA_DTC_OVERLAY_FILE="boards/rpi_pico2_rp2350a_m33_icbmsg.overlay"
       - remote_EXTRA_DTC_OVERLAY_FILE="boards/rpi_pico2_rp2350a_m33_cpu1_icbmsg.overlay"
       # When the remote CPU does not have a console configured, the sample would hang
       - remote_CONFIG_LOG=n
