@@ -10,8 +10,8 @@
 #include "arduino_portenta_h7-common.dtsi"
 
 / {
-	model = "Arduino Portenta H7 board";
 	compatible = "arduino,portenta-h7";
+	model = "Arduino Portenta H7 board";
 
 	/* HW resources are split between CM7 and CM4 */
 	chosen {
@@ -39,8 +39,8 @@
 
 	sdram1: sdram@c0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(8)>;
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM1";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
@@ -87,13 +87,13 @@
 	status = "okay";
 
 	pf1550: pmic@8 {
-		status = "okay";
-		reg = <0x8>;
 		compatible = "nxp,pf1550";
+		reg = <0x8>;
+		status = "okay";
 
 		pmic_regulators: regulators {
-			status = "okay";
 			compatible = "nxp,pf1550-regulator";
+			status = "okay";
 
 			pf1550_sw1: BUCK1 {
 				regulator-init-microvolt = <3000000>;
@@ -128,7 +128,6 @@
 		};
 
 		pmic_charger: charger {
-			status = "okay";
 			compatible = "nxp,pf1550-charger";
 			constant-charge-current-max-microamp = <100000>;
 			constant-charge-voltage-max-microvolt = <4200000>;
@@ -137,6 +136,7 @@
 			pf1550,system-voltage-min-threshold-microvolt = <3500000>;
 			pf1550,thermistor-monitoring-mode = "thermistor";
 			pf1550,vbus-current-limit-microamp = <1500000>;
+			status = "okay";
 		};
 	};
 };
@@ -147,7 +147,6 @@
 };
 
 zephyr_udc0: &usbotg_hs {
-	status = "okay";
 	pinctrl-0 = <&usb_otg_hs_ulpi_d0_pa3
 		     &usb_otg_hs_ulpi_ck_pa5
 		     &usb_otg_hs_ulpi_d1_pb0
@@ -167,6 +166,7 @@ zephyr_udc0: &usbotg_hs {
 	clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x6000000>,
 		 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 	num-bidir-endpoints = <4>;
+	status = "okay";
 };
 
 #include <../boards/common/usb/cdc_acm_serial.dtsi>
@@ -178,8 +178,8 @@ zephyr_udc0: &usbotg_hs {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x00010000>;
+			label = "mcuboot";
 			read-only;
 		};
 
@@ -189,8 +189,8 @@ zephyr_udc0: &usbotg_hs {
 		 * by the application.
 		 */
 		scratch_partition: partition@10000 {
-			label = "image-scratch";
 			reg = <0x00010000 0x00030000>;
+			label = "image-scratch";
 		};
 
 		/* The arduino default bootloader occupies the address space 0x0 - 0x40000.
@@ -199,13 +199,13 @@ zephyr_udc0: &usbotg_hs {
 		 * arduino bootloader.
 		 */
 		slot0_partition: partition@40000 {
-			label = "image-0";
 			reg = <0x00040000 0x00060000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@a0000 {
-			label = "image-1";
 			reg = <0x000a0000 0x00060000>;
+			label = "image-1";
 		};
 	};
 };

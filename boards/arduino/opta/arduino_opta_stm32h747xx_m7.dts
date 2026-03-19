@@ -12,8 +12,8 @@
 #include "arduino_opta-common.dtsi"
 
 / {
-	model = "Arduino OPTA M7 core Programmable Logic Controller";
 	compatible = "arduino,opta-m7";
+	model = "Arduino OPTA M7 core Programmable Logic Controller";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -75,14 +75,14 @@ zephyr_udc0: &usbotg_fs {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcu-boot";
 			reg = <0x00000000 DT_SIZE_K(256)>;
+			label = "mcu-boot";
 			read-only;
 		};
 
 		slot0_partition: partition@40000 {
-			label = "image-0";
 			reg = <0x00040000 DT_SIZE_K(768)>;
+			label = "image-0";
 		};
 	};
 };
