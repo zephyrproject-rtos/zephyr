@@ -37,7 +37,6 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/slist.h>
@@ -2187,7 +2186,7 @@ int bt_unpair(uint8_t id, const bt_addr_le_t *addr)
 			unpair(id, addr);
 		}
 	} else {
-		CHECKIF(addr == NULL) {
+		if (addr == NULL) {
 			LOG_DBG("addr is NULL");
 			return -EINVAL;
 		}

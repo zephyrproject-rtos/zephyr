@@ -32,7 +32,6 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -954,7 +953,7 @@ static struct bt_conn *get_conn_ready(void)
 			continue;
 		}
 
-		CHECKIF(dont_have_methods(conn)) {
+		if (dont_have_methods(conn)) {
 			/* When a connection is missing mandatory methods, try next connection. */
 			LOG_DBG("conn %p (type %d) is missing mandatory methods", conn, conn->type);
 			prev = &conn->_conn_ready;
@@ -2680,7 +2679,7 @@ int bt_conn_cb_register(struct bt_conn_cb *cb)
 
 int bt_conn_cb_unregister(struct bt_conn_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -4044,11 +4043,11 @@ int bt_conn_le_create(const bt_addr_le_t *peer, const struct bt_conn_le_create_p
 	struct bt_conn *conn;
 	int err;
 
-	CHECKIF(ret_conn == NULL) {
+	if (ret_conn == NULL) {
 		return -EINVAL;
 	}
 
-	CHECKIF(*ret_conn != NULL) {
+	if (*ret_conn != NULL) {
 		/* This rule helps application developers prevent leaks of connection references. If
 		 * a bt_conn variable is not null, it presumably holds a reference and must not be
 		 * overwritten. To avoid this warning, initialize the variables to null, and set
@@ -4126,11 +4125,11 @@ int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
 	struct bt_conn *conn;
 	int err;
 
-	CHECKIF(ret_conn == NULL) {
+	if (ret_conn == NULL) {
 		return -EINVAL;
 	}
 
-	CHECKIF(*ret_conn != NULL) {
+	if (*ret_conn != NULL) {
 		/* This rule helps application developers prevent leaks of connection references. If
 		 * a bt_conn variable is not null, it presumably holds a reference and must not be
 		 * overwritten. To avoid this warning, initialize the variables to null, and set
@@ -4264,7 +4263,7 @@ int bt_conn_auth_cb_overlay(struct bt_conn *conn, const struct bt_conn_auth_cb *
 
 int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -4279,7 +4278,7 @@ int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb)
 
 int bt_conn_auth_info_cb_unregister(struct bt_conn_auth_info_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 

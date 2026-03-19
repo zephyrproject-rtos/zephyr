@@ -26,7 +26,6 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -1840,7 +1839,7 @@ struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_index(uint8_t index)
 int bt_le_per_adv_sync_get_info(struct bt_le_per_adv_sync *per_adv_sync,
 				struct bt_le_per_adv_sync_info *info)
 {
-	CHECKIF(per_adv_sync == NULL || info == NULL) {
+	if (per_adv_sync == NULL || info == NULL) {
 		return -EINVAL;
 	}
 
