@@ -8,8 +8,8 @@
 #include "pocketbeagle_2_m4-pinctrl.dtsi"
 
 / {
-	model = "BeagleBoard.org PocketBeagle 2";
 	compatible = "beagle,pocketbeagle_2_m4";
+	model = "BeagleBoard.org PocketBeagle 2";
 
 	chosen {
 		/* Split and place TEXT and DATA in I-RAM and D-RAM respectively. `sram_icode`
@@ -30,8 +30,8 @@
 
 	cpus {
 		cpu@0 {
-			status = "okay";
 			clock-frequency = <400000000>;
+			status = "okay";
 		};
 	};
 
