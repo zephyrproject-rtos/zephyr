@@ -250,6 +250,30 @@ New APIs and options
 * DAC
 
   * Added new DAC driver (:dtcompatible:`nxp,hpdac`) (:github:`104642`).
+  * Added new DAC driver APIs (:github:`104630`)
+
+    * :c:struct:`dac_dt_spec`
+    * :c:macro:`DAC_CHANNEL_CFG_DT`
+    * :c:macro:`DAC_DT_SPEC_GET_BY_NAME`
+    * :c:macro:`DAC_DT_SPEC_GET_BY_NAME_OR`
+    * :c:macro:`DAC_DT_SPEC_INST_GET_BY_NAME`
+    * :c:macro:`DAC_DT_SPEC_INST_GET_BY_NAME_OR`
+    * :c:macro:`DAC_DT_SPEC_GET_BY_IDX`
+    * :c:macro:`DAC_DT_SPEC_GET_BY_IDX_OR`
+    * :c:macro:`DAC_DT_SPEC_INST_GET_BY_IDX`
+    * :c:macro:`DAC_DT_SPEC_INST_GET_BY_IDX_OR`
+    * :c:macro:`DAC_DT_SPEC_GET`
+    * :c:macro:`DAC_DT_SPEC_GET_OR`
+    * :c:macro:`DAC_DT_SPEC_INST_GET`
+    * :c:macro:`DAC_DT_SPEC_INST_GET_OR`
+    * :c:func:`dac_channel_setup_dt`
+    * :c:func:`dac_write_value_dt`
+    * :c:func:`dac_millivolts_to_raw`
+    * :c:func:`dac_microvolts_to_raw`
+    * :c:func:`dac_x_to_raw_dt_chan`
+    * :c:func:`dac_millivolts_to_raw_dt`
+    * :c:func:`dac_microvolts_to_raw_dt`
+    * :c:func:`dac_is_ready_dt`
 
 * DMA
 
