@@ -9,8 +9,8 @@
 #include "skeleton.dtsi"
 
 / {
-	model = "Qemu MIPS Malta";
 	compatible = "qemu,malta";
+	model = "Qemu MIPS Malta";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -23,22 +23,22 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "mti,mips24Kc";
 			reg = <0>;
+			device_type = "cpu";
 
 			cpu_intc: interrupt-controller {
-				#interrupt-cells = <1>;
 				compatible = "mti,cpu-intc";
+				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
 	};
 
 	sram0: memory@80200000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x80200000 0x100000>;
+		device_type = "memory";
 	};
 
 	uart2: serial@bf000900 {
