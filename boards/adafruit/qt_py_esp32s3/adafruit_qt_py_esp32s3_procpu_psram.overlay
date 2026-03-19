@@ -17,9 +17,9 @@
 			/* 4MB flash */
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
+				reg = <0x0 DT_SIZE_M(4)>;
 				erase-block-size = <4096>;
 				write-block-size = <4>;
-				reg = <0x0 DT_SIZE_M(4)>;
 			};
 		};
 	};
