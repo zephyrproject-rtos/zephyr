@@ -14,15 +14,6 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340bsim/nrf5340/cpuapp
 
-  sample.ipc.rp2350_cpu0:
-    platform_allow:
-      - rpi_pico2/rp2350a/m33/cpu0
-    integration_platforms:
-      - rpi_pico2/rp2350a/m33/cpu0
-    extra_args:
-      # When the remote CPU does not have a console configured, the sample would hang
-      - remote_CONFIG_LOG=n
-
   sample.ipc.rp2350:
     platform_allow:
       - rpi_pico2/rp2350a/m33
