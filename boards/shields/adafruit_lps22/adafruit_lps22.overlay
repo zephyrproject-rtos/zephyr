@@ -15,7 +15,7 @@
 
 	adafruit_lps22: lps22@5d {
 		compatible = "st,lps22hb-press";
-		status = "okay";
 		reg = <0x5d>;
+		status = "okay";
 	};
 };

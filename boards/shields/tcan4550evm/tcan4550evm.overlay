@@ -15,8 +15,8 @@
 };
 
 &arduino_spi {
-	status = "okay";
 	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	tcan4x5x_tcan4550evm: can@0 {
 		compatible = "ti,tcan4x5x";

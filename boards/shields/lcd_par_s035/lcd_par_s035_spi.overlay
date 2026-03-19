@@ -28,19 +28,19 @@
 		compatible = "goodix,gt911";
 		reg = <0x5d>;
 		irq-gpios = <&nxp_lcd_pmod_connector 12 GPIO_ACTIVE_HIGH>;
-		zephyr,deferred-init;
 		swapped-x-y;
 		inverted-x;
 		screen-width = <320>;
 		screen-height = <480>;
+		zephyr,deferred-init;
 	};
 };
 
 &zephyr_mipi_dbi_spi {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	zephyr,deferred-init;
+	status = "okay";
 
 	st7796s: st7796s@0 {
 		compatible = "sitronix,st7796s";

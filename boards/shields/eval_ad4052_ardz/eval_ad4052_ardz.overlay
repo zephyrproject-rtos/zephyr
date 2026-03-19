@@ -16,6 +16,7 @@
 	status = "okay";
 
 	adc4052_eval_ad4052_ardz: adc4052@0 {
+		compatible = "adi,ad4052-adc";
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(2)>;
 		gp1-gpios = <&arduino_header ARDUINO_HEADER_R3_D8
@@ -27,7 +28,6 @@
 		#size-cells = <0>;
 		#io-channel-cells = <1>;
 		status = "okay";
-		compatible = "adi,ad4052-adc";
 
 		channel@0 {
 			reg = <0>;

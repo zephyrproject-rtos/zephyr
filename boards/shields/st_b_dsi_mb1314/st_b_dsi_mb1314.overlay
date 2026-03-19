@@ -52,11 +52,15 @@
 };
 
 &zephyr_lcd_controller {
-	status = "okay";
 
 	width = <390>;
 	height = <390>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+
+	def-back-color-red = <0x0>;
+	def-back-color-green = <0x0>;
+	def-back-color-blue = <0x0>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -71,8 +75,4 @@
 		hfront-porch = <1>;
 		vfront-porch = <1>;
 	};
-
-	def-back-color-red = <0x0>;
-	def-back-color-green = <0x0>;
-	def-back-color-blue = <0x0>;
 };
