@@ -19,6 +19,44 @@
 
 #include <zephyr/device.h>
 
+/** Feature Unit Control Selectors (UAC2 Table A-23) */
+enum usb_audio_fucs {
+	/** Control undefined (UAC1 and UAC2) */
+	USB_AUDIO_FU_CONTROL_UNDEFINED = 0x00,
+	/** Mute control (UAC1 and UAC2) */
+	USB_AUDIO_FU_MUTE_CONTROL = 0x01,
+	/** Volume control (UAC1 and UAC2) */
+	USB_AUDIO_FU_VOLUME_CONTROL = 0x02,
+	/** Bass control (UAC1 and UAC2) */
+	USB_AUDIO_FU_BASS_CONTROL = 0x03,
+	/** Mid control (UAC1 and UAC2) */
+	USB_AUDIO_FU_MID_CONTROL = 0x04,
+	/** Treble control (UAC1 and UAC2) */
+	USB_AUDIO_FU_TREBLE_CONTROL = 0x05,
+	/** Graphic equalizer control (UAC1 and UAC2) */
+	USB_AUDIO_FU_GRAPHIC_EQUALIZER_CONTROL = 0x06,
+	/** Automatic gain control (UAC1 and UAC2) */
+	USB_AUDIO_FU_AUTOMATIC_GAIN_CONTROL = 0x07,
+	/** Delay control (UAC1 and UAC2) */
+	USB_AUDIO_FU_DELAY_CONTROL = 0x08,
+	/** Bass boost control (UAC1 and UAC2) */
+	USB_AUDIO_FU_BASS_BOOST_CONTROL = 0x09,
+	/** Loudness control (UAC1 and UAC2) */
+	USB_AUDIO_FU_LOUDNESS_CONTROL = 0x0A,
+	/** Input gain control (UAC2 only) */
+	USB_AUDIO_FU_INPUT_GAIN_CONTROL = 0x0B,
+	/** Input gain pad control (UAC2 only) */
+	USB_AUDIO_FU_INPUT_GAIN_PAD_CONTROL = 0x0C,
+	/** Phase inverter control (UAC2 only) */
+	USB_AUDIO_FU_PHASE_INVERTER_CONTROL = 0x0D,
+	/** Underflow control (UAC2 only) */
+	USB_AUDIO_FU_UNDERFLOW_CONTROL = 0x0E,
+	/** Overflow control (UAC2 only) */
+	USB_AUDIO_FU_OVERFLOW_CONTROL = 0x0F,
+	/** Latency control (UAC2 only) */
+	USB_AUDIO_FU_LATENCY_CONTROL = 0x10
+};
+
 /**
  * @brief USB Audio Class 2 device API
  * @defgroup uac2_device USB Audio Class 2 device API
@@ -27,6 +65,44 @@
  * @version 0.2.0
  * @{
  */
+
+/**
+ * @brief Structure to describe a single sub-range of an audio control.
+ */
+struct uac2_range_subrange {
+	/** Minimum value */
+	int32_t min;
+	/** Maximum value */
+	int32_t max;
+	/** Resolution (step size) */
+	uint32_t res;
+};
+
+/**
+ * @brief Structure to describe the full range of a control.
+ *
+ * The application is responsible for the memory management of this structure.
+ * Use @ref UAC2_RANGE_DEFINE define a range with a specific
+ * number of subranges.
+ */
+struct uac2_range {
+	/** Number of sub-ranges */
+	uint16_t num_subranges;
+	/** Array of sub-ranges */
+	struct uac2_range_subrange ranges[];
+};
+
+/**
+ * @brief Define a uac2_range with a specific number of subranges.
+ *
+ * @param _name Variable name
+ * @param _count Number of subranges
+ */
+#define UAC2_RANGE_DEFINE(_name, _count) \
+	struct { \
+		uint16_t num_subranges; \
+		struct uac2_range_subrange ranges[_count]; \
+	} _name
 
 /**
  * @brief Get entity ID
@@ -38,6 +114,61 @@
 		BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_PARENT(node), zephyr_uac2));	\
 		UTIL_INC(DT_NODE_CHILD_IDX(node));				\
 	})
+
+/**
+ * @brief USB Audio 2 Feature Unit event handlers
+ */
+struct uac2_feature_unit_ops {
+	/**
+	 * @brief Callback for host SET CUR requests on a Feature Unit.
+	 * @param[in] buf Raw buffer from the host containing the new value.
+	 * @param dev USB Audio 2 device
+	 * @param entity_id Feature Unit ID
+	 * @param control_selector Control selector (mute, volume, etc.)
+	 * @param channel_num Channel number (0 = master, 1+ = individual channels)
+	 * @param buf Buffer containing the new control value
+	 * @param user_data Opaque user data pointer
+	 * @return 0 on success, negative value on error
+	 */
+	int (*set_cur_cb)(const struct device *dev, uint8_t entity_id,
+			  enum usb_audio_fucs control_selector, uint8_t channel_num,
+			  const struct net_buf *buf, void *user_data);
+
+	/**
+	 * @brief Callback for host GET CUR requests on a Feature Unit.
+	 * @param dev USB Audio 2 device
+	 * @param entity_id Feature Unit ID
+	 * @param control_selector Control selector (mute, volume, etc.)
+	 * @param channel_num Channel number (0 = master, 1+ = individual channels)
+	 * @param[out] value Pointer to be filled with the current control value.
+	 * @param user_data Opaque user data pointer
+	 * @return 0 on success, negative value on error
+	 */
+	int (*get_cur_cb)(const struct device *dev, uint8_t entity_id,
+			  enum usb_audio_fucs control_selector, uint8_t channel_num,
+			  uint32_t *value, void *user_data);
+
+	/**
+	 * @brief Callback for host GET RANGE requests on a Feature Unit.
+	 *
+	 * The application is responsible for the memory management of the
+	 * returned uac2_range structure. The pointer returned can point to
+	 * a structure in read-only memory (ROM) to save RAM.
+	 *
+	 * @param dev USB Audio 2 device
+	 * @param entity_id Feature Unit ID
+	 * @param control_selector Control selector (mute, volume, etc.)
+	 * @param channel_num Channel number (0 = master, 1+ = individual channels)
+	 * @param user_data Opaque user data pointer
+	 *
+	 * @return Pointer to the uac2_range struct on success, NULL on error.
+	 */
+	const struct uac2_range *(*get_range_cb)(const struct device *dev,
+						 uint8_t entity_id,
+						 enum usb_audio_fucs control_selector,
+						 uint8_t channel_num,
+						 void *user_data);
+};
 
 /**
  * @brief USB Audio 2 application event handlers
@@ -166,6 +297,14 @@ struct uac2_ops {
 	 */
 	int (*set_sample_rate)(const struct device *dev, uint8_t clock_id,
 			       uint32_t rate, void *user_data);
+
+	/**
+	 * @brief Feature Unit operations callback structure
+	 *
+	 * Pointer to feature unit operations. Set to NULL if feature units
+	 * are not used or not supported by the application.
+	 */
+	const struct uac2_feature_unit_ops *feature_unit_ops;
 };
 
 /**
