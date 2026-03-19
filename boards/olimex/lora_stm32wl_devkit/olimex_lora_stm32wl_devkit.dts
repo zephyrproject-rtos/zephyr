@@ -9,8 +9,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Olimex LoRa STM32WL DevKit";
 	compatible = "olimex,lora-stm32wl-devkit";
+	model = "Olimex LoRa STM32WL DevKit";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -92,13 +92,13 @@ uext_serial: &lpuart1 {
 uext_i2c: &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pa9 &i2c1_sda_pa10>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	bme280: bme280@77 {
 		compatible = "bosch,bme280";
-		status = "okay";
 		reg = <0x77>;
+		status = "okay";
 	};
 
 	iis2mdc@1e {
@@ -140,24 +140,24 @@ uext_spi: &spi1 {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(32)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@8000 {
-			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(108)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@23000 {
-			label = "image-1";
 			reg = <0x00023000 DT_SIZE_K(108)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@3e000 {
-			label = "storage";
 			reg = <0x0003e000 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };

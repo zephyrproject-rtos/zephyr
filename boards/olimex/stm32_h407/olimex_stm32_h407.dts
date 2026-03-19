@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Olimex STM32-H407 board";
 	compatible = "olimex,stm32-h407";
+	model = "Olimex STM32-H407 board";
 
 	chosen {
 		zephyr,console = &usart2;
