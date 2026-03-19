@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "WaRP7 IMX7S board";
 	compatible = "nxp,mcimx7d_m4";
+	model = "WaRP7 IMX7S board";
 
 	aliases {
 		sw0 = &user_switch_1;
@@ -39,19 +39,19 @@
 };
 
 &uart2 {
-	status = "okay";
 	current-speed = <115200>;
 	modem-mode = <0>;
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart6 {
-	status = "okay";
 	current-speed = <115200>;
 	modem-mode = <0>;
 	pinctrl-0 = <&uart6_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio7 {
@@ -74,9 +74,9 @@
 };
 
 &i2c4 {
-	status = "okay";
 	pinctrl-0 = <&i2c4_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	fxos8700: fxos8700@1e {
 		compatible = "nxp,fxos8700";
