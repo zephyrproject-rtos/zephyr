@@ -383,6 +383,7 @@ static inline void hal_radio_tx_power_high_voltage_clear(void);
 
 static inline void hal_radio_reset(void)
 {
+	/* Nothing to be done for this target */
 }
 
 static inline void hal_radio_stop(void)
@@ -395,6 +396,7 @@ static inline void hal_radio_stop(void)
 
 static inline void hal_radio_ram_prio_setup(void)
 {
+	/* Nothing to be done for this target */
 }
 
 static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
@@ -402,8 +404,8 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 	uint32_t mode;
 
 	switch (phy) {
-	case BIT(0):
 	default:
+	case BIT(0):
 		mode = RADIO_MODE_MODE_Ble_1Mbit;
 		break;
 
