@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "SAM E54 Curiosity Ultra";
 	compatible = "microchip,sam_e54_cult";
+	model = "SAM E54 Curiosity Ultra";
 
 	chosen {
 		zephyr,console = &sercom1;

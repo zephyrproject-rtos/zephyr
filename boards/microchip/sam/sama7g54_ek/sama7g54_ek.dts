@@ -16,8 +16,8 @@
 #include <microchip/sam/sama7/sama7g5/sama7g54.dtsi>
 
 / {
-	model = "SAMA7G54-EK board";
 	compatible = "microchip,sama7g5ek", "microchip,sama7g5", "microchip,sama7";
+	model = "SAMA7G54-EK board";
 
 	aliases {
 		led0 = &led_green;
@@ -192,7 +192,6 @@
 };
 
 &gmac0 {
-	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_gmac0_default>;
 	phy-connection-type = "gmii";
@@ -200,25 +199,25 @@
 
 	nvmem-cells = <&eeprom0_eui48>;
 	nvmem-cell-names = "mac_address";
+	status = "okay";
 };
 
 &gmac0_mdio {
-	status = "okay";
 
 	pinctrl-0 = <&pinctrl_gmac0_mdio_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	gmac0_phy: ethernet-phy@7 {
 		compatible = "microchip,ksz9131";
-		status = "okay";
 		reg = <7>;
 		int-gpios = <&pioa 31 GPIO_ACTIVE_LOW>;
 		microchip,rgmii-delay = "id";
+		status = "okay";
 	};
 };
 
 &gmac1 {
-	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_gmac1_default>;
 	phy-connection-type = "mii";
@@ -227,35 +226,36 @@
 
 	nvmem-cells = <&eeprom1_eui48>;
 	nvmem-cell-names = "mac_address";
+	status = "okay";
 };
 
 &gmac1_mdio {
-	status = "okay";
 
 	pinctrl-0 = <&pinctrl_gmac1_mdio_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	gmac1_phy: ethernet-phy@0 {
 		compatible = "microchip,ksz8081";
-		status = "okay";
 		reg = <0>;
 		int-gpios = <&pioa 21 GPIO_ACTIVE_LOW>;
 		microchip,interface-type = "rmii-25MHz";
+		status = "okay";
 	};
 };
 
 &mcan0 {
-	status = "okay";
 	pinctrl-0 = <&pinctrl_can0_default>;
 	pinctrl-names = "default";
 	phys = <&transceiver0>;
+	status = "okay";
 };
 
 &mcan1 {
-	status = "okay";
 	pinctrl-0 = <&pinctrl_can1_default>;
 	pinctrl-names = "default";
 	phys = <&transceiver1>;
+	status = "okay";
 };
 
 &pinctrl {

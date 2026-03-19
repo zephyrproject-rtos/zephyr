@@ -9,8 +9,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "PIC32CZ CA80 Curiosity Ultra";
 	compatible = "pic32cz_ca80,cult", "microchip,pic32cz8110ca80208", "microchip,pic32cz";
+	model = "PIC32CZ CA80 Curiosity Ultra";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -62,8 +62,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@7fc000 {
-			label = "storage";
 			reg = <0x0007fc000 0x4000>;
+			label = "storage";
 		};
 	};
 };

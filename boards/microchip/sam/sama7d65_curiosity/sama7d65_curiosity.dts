@@ -12,8 +12,8 @@
 #include <microchip/sam/sama7/sama7d6/sama7d65.dtsi>
 
 / {
-	model = "SAMA7D65-Curiosity board";
 	compatible = "microchip,sama7d65curiosity", "microchip,sama7d6", "microchip,sama7";
+	model = "SAMA7D65-Curiosity board";
 
 	chosen {
 		zephyr,sram = &ddram;

@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "PIC32CM PL10 Curiosity Nano";
 	compatible = "pic32cmpl10,cnano";
+	model = "PIC32CM PL10 Curiosity Nano";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -46,8 +46,8 @@
 		};
 
 		storage_partition: partition@bfff000 {
-			label = "storage";
 			reg = <0x0bfff000 DT_SIZE_K(4)>;
+			label = "storage";
 		};
 	};
 };

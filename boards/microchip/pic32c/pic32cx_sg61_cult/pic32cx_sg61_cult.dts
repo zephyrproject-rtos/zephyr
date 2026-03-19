@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/adc/mchp_sam_d5x_e5x_adc.h>
 
 / {
-	model = "PIC32CX SG61 Curiosity Ultra";
 	compatible = "pic32cxsg61,cultra", "microchip,pic32cx1025sg61128", "microchip,pic32cx";
+	model = "PIC32CX SG61 Curiosity Ultra";
 
 	chosen {
 		zephyr,sram = &sram0;
