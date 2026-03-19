@@ -12,8 +12,8 @@
 #include <espressif/partitions_0x0_default_2M.dtsi>
 
 / {
-	model = "Espressif ESP8684-DevkitM";
 	compatible = "espressif,esp32c2";
+	model = "Espressif ESP8684-DevkitM";
 
 	chosen {
 		zephyr,sram = &sram1;
@@ -41,11 +41,11 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <74880>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &trng0 {
