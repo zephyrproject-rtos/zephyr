@@ -100,7 +100,7 @@ struct video_buffer {
 struct video_format {
 	/** type of the buffer */
 	enum video_buf_type type;
-	/** FourCC pixel format value (@ref video_pixel_formats) */
+	/** FourCC pixel format value (@ref video_formats) */
 	uint32_t pixelformat;
 	/** frame width in pixels. */
 	uint32_t width;
@@ -133,7 +133,7 @@ struct video_format {
  * Used to describe a video endpoint format capability.
  */
 struct video_format_cap {
-	/** FourCC pixel format value (@ref video_pixel_formats). */
+	/** FourCC pixel format value (@ref video_formats). */
 	uint32_t pixelformat;
 	/** minimum supported frame width in pixels. */
 	uint32_t width_min;
@@ -168,7 +168,6 @@ struct video_caps {
 };
 
 /**
- * @struct video_control_range
  * @brief Video control range structure
  *
  * Describe range of a control including min, max, step and default values
@@ -195,6 +194,47 @@ struct video_ctrl_range {
 	union {
 		int32_t def;
 		int64_t def64;
+	};
+};
+
+/**
+ * @brief Video control structure
+ *
+ * Used to get/set a video control.
+ * @see video_ctrl for the struct used in the driver implementation
+ */
+struct video_control {
+	/** control id */
+	uint32_t id;
+	/** control value */
+	union {
+		int32_t val;
+		int64_t val64;
+	};
+};
+
+/**
+ * @brief Video control query structure
+ *
+ * Used to query information about a control.
+ */
+struct video_ctrl_query {
+	/** device being queried, application needs to set this field */
+	const struct device *dev;
+	/** control id, application needs to set this field */
+	uint32_t id;
+	/** control type */
+	uint32_t type;
+	/** control name */
+	const char *name;
+	/** control flags */
+	uint32_t flags;
+	/** control range */
+	struct video_ctrl_range range;
+	/** menu if control is of menu type */
+	union {
+		const char *const *menu;
+		const int64_t *int_menu;
 	};
 };
 

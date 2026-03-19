@@ -13,8 +13,6 @@
 #include <zephyr/video/video.h>
 
 #include "video_common.h"
-#include "video_ctrls.h"
-#include "video_device.h"
 
 LOG_MODULE_REGISTER(video_hm0360, CONFIG_VIDEO_LOG_LEVEL);
 

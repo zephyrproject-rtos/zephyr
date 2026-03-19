@@ -161,49 +161,6 @@ int video_set_signal(const struct device *dev, struct k_poll_signal *sig);
  */
 
 /**
- * @struct video_control
- * @brief Video control structure
- *
- * Used to get/set a video control.
- * @see video_ctrl for the struct used in the driver implementation
- */
-struct video_control {
-	/** control id */
-	uint32_t id;
-	/** control value */
-	union {
-		int32_t val;
-		int64_t val64;
-	};
-};
-
-/**
- * @struct video_control_query
- * @brief Video control query structure
- *
- * Used to query information about a control.
- */
-struct video_ctrl_query {
-	/** device being queried, application needs to set this field */
-	const struct device *dev;
-	/** control id, application needs to set this field */
-	uint32_t id;
-	/** control type */
-	uint32_t type;
-	/** control name */
-	const char *name;
-	/** control flags */
-	uint32_t flags;
-	/** control range */
-	struct video_ctrl_range range;
-	/** menu if control is of menu type */
-	union {
-		const char *const *menu;
-		const int64_t *int_menu;
-	};
-};
-
-/**
  * @brief Set the value of a control.
  *
  * This set the value of a video control, value type depends on control ID, and
@@ -571,6 +528,43 @@ int video_get_selection(const struct device *dev, struct video_selection *sel);
  * @retval -ENOSYS API is not implemented.
  */
 int video_get_caps(const struct device *dev, struct video_caps *caps);
+
+/**
+ * @brief Transform a video format capability from one end to the other end of a m2m video device.
+ *
+ * This function transforms a @ref video_format_cap from one end to the other end of an m2m video
+ * device. It allows applications to iteratively get all the supported capabilities on one end of
+ * the device given a single input capability on the other end.
+ *
+ * Applications pass the addresses of a single input cap and a single res_cap together with the
+ * type of the res_cap and the index (started from 0) to iterate through to the function. The
+ * driver fills the res_cap structure and return 0 each time. Index should be incremented to get
+ * the next res_cap until the function returns an errno e.g., -EINVAL. For example:
+ *
+ * @code{.c}
+ * struct video_format_cap cap = {.pixelformat = VIDEO_PIX_FMT_RGB565};
+ * struct video_format_cap res_cap = {0};
+ * uint8_t ind = 0;
+ * while (video_transform_cap(dev, &cap, &res_cap, VIDEO_BUF_TYPE_OUTPUT, ind) == 0) {
+ *	// Process output_cap here
+ *	ind++;
+ * }
+ * @endcode
+ *
+ * @param dev Pointer to the device structure.
+ * @param cap Pointer to the source video format capability structure.
+ * @param res_cap Pointer to the resulting video format capability structure, filled by the driver.
+ * @param type The @ref video_buf_type of the resulting transformed cap.
+ * @param ind Index of the resulting transformed cap.
+ *
+ * @retval 0 on success.
+ * @retval -ENOSYS API is not implemented.
+ * @retval -ENOTSUP The transformation is not supported.
+ */
+int video_transform_cap(const struct device *const dev,
+			const struct video_format_cap *const cap,
+			struct video_format_cap *const res_cap,
+			enum video_buf_type type, uint16_t ind);
 
 /**
  * @brief Search for a format that matches in a list of capabilities

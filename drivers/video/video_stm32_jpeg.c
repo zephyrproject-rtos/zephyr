@@ -15,8 +15,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/video/video.h>
 
-#include "video_ctrls.h"
-#include "video_device.h"
+#include "video_common.h"
 
 #define DT_DRV_COMPAT st_stm32_jpeg
 

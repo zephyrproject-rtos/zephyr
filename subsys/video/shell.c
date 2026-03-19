@@ -9,13 +9,10 @@
 #include <stdlib.h>
 
 #include <zephyr/device.h>
-#include <zephyr/video/controls.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
-
-#include "video_ctrls.h"
-#include "video_device.h"
+#include <zephyr/video/video.h>
 
 #define VIDEO_FRMIVAL_FPS(frmival)  DIV_ROUND_CLOSEST((frmival)->denominator, (frmival)->numerator)
 #define VIDEO_FRMIVAL_MSEC(frmival) (MSEC_PER_SEC * (frmival)->numerator / (frmival)->denominator)
