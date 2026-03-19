@@ -9,8 +9,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Analog Devices MAX32690EVKIT";
 	compatible = "adi,max32690evkit";
+	model = "Analog Devices MAX32690EVKIT";
 
 	chosen {
 		zephyr,flash = &flash0;
@@ -85,9 +85,9 @@
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0a_scl_p2_8 &i2c0a_sda_p2_7>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &rtc_counter {
@@ -101,13 +101,13 @@
 		#size-cells = <1>;
 
 		m4_partition: partition@0 {
-			label = "image-m4";
 			reg = <0x0 DT_SIZE_M(1)>;
+			label = "image-m4";
 		};
 
 		storage_partition: partition@100000 {
-			label = "storage";
 			reg = <0x100000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };
@@ -119,13 +119,13 @@
 		#size-cells = <1>;
 
 		rv32_partition: rv32_partition@0 {
-			label = "image-rv32";
 			reg = <0x0 DT_SIZE_K(192)>;
+			label = "image-rv32";
 		};
 
 		rv32_storage_partition: rv32_partition@30000 {
-			label = "rv32-storage";
 			reg = <0x30000 DT_SIZE_K(64)>;
+			label = "rv32-storage";
 		};
 	};
 };

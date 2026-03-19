@@ -89,18 +89,18 @@
 		#size-cells = <1>;
 
 		m4_partition: partition@0 {
-			label = "image-m4";
 			reg = <0x0 DT_SIZE_K(352)>;
+			label = "image-m4";
 		};
 
 		storage_partition: partition@58000 {
-			label = "storage-m4";
 			reg = <0x58000 DT_SIZE_K(32)>;
+			label = "storage-m4";
 		};
 
 		rv32_partition: partition@60000 {
-			label = "image-rv32";
 			reg = <0x60000 DT_SIZE_K(128)>;
+			label = "image-rv32";
 		};
 	};
 };

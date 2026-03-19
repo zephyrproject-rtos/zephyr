@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Analog Devices MAX32666EVKIT";
 	compatible = "adi,max32666evkit";
+	model = "Analog Devices MAX32666EVKIT";
 
 	chosen {
 		zephyr,console = &uart1;
@@ -66,17 +66,17 @@
 
 	spibb0: spibb0 {
 		compatible = "zephyr,spi-bitbang";
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		clk-gpios = <&gpio1 11 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
 		mosi-gpios = <&gpio1 9 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
 		cs-gpios = <&gpio1 8 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		status = "okay";
 
 		ls0xx_ls013b7dh03: ls0xx@0 {
 			compatible = "sharp,ls0xx";
-			spi-max-frequency = <2000000>;
 			reg = <0>;
+			spi-max-frequency = <2000000>;
 			width = <128>;
 			height = <128>;
 			disp-en-gpios = <&gpio1 10 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
@@ -110,15 +110,15 @@
 };
 
 &i2c1 {
-	status = "okay";
 	pinctrl-0 = <&i2c1_scl_p0_14 &i2c1_sda_p0_15>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c2 {
-	status = "okay";
 	pinctrl-0 = <&i2c2_scl_p1_14 &i2c2_sda_p1_15>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &trng {

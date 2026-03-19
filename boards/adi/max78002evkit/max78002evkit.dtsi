@@ -9,8 +9,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Analog Devices MAX78002EVKIT";
 	compatible = "adi,max78002evkit";
+	model = "Analog Devices MAX78002EVKIT";
 
 	chosen {
 		zephyr,flash = &flash0;
@@ -133,9 +133,9 @@ m4_uart: &uart0 {};
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_scl_p0_10 &i2c0_sda_p0_11>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &rtc_counter {
@@ -149,23 +149,23 @@ m4_uart: &uart0 {};
 		#size-cells = <1>;
 
 		m4_partition: partition@0 {
-			label = "image-m4";
 			reg = <0x0 DT_SIZE_M(1)>;
+			label = "image-m4";
 		};
 
 		m4_storage_partition: partition@100000 {
-			label = "storage-m4";
 			reg = <0x100000 DT_SIZE_K(256)>;
+			label = "storage-m4";
 		};
 
 		rv32_partition: partition@140000 {
-			label = "image-rv32";
 			reg = <0x140000 DT_SIZE_M(1)>;
+			label = "image-rv32";
 		};
 
 		rv32_storage_partition: partition@240000 {
-			label = "storage-rv32";
 			reg = <0x240000 DT_SIZE_K(256)>;
+			label = "storage-rv32";
 		};
 	};
 };

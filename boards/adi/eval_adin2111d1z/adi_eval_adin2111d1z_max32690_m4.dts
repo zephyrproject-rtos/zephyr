@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Analog Devices EVAL_ADIN2111D1Z";
 	compatible = "adi,eval-adin2111d1z";
+	model = "Analog Devices EVAL_ADIN2111D1Z";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -139,9 +139,9 @@
 		reg = <0x0>;
 		spi-max-frequency = <DT_FREQ_M(25)>;
 		int-gpios = <&gpio2 25 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
-		status = "okay";
 		spi-oa;
 		spi-oa-protection;
+		status = "okay";
 
 		port1 {
 			local-mac-address = [00 aa 22 fe da c8];
@@ -160,14 +160,14 @@
 			status = "okay";
 
 			ethernet-phy@1 {
-				reg = <0x1>;
 				compatible = "adi,adin2111-phy";
+				reg = <0x1>;
 				status = "okay";
 			};
 
 			ethernet-phy@2 {
-				reg = <0x2>;
 				compatible = "adi,adin2111-phy";
+				reg = <0x2>;
 				status = "okay";
 			};
 		};
@@ -181,13 +181,13 @@
 		#size-cells = <1>;
 
 		code_partition: partition@0 {
-			label = "image";
 			reg = <0x0 DT_SIZE_M(1)>;
+			label = "image";
 		};
 
 		storage_partition: partition@100000 {
-			label = "storage_partition";
 			reg = <0x100000 DT_SIZE_K(256)>;
+			label = "storage_partition";
 		};
 	};
 };

@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Analog Devices MAX32655FTHR";
 	compatible = "adi,max32655fthr";
+	model = "Analog Devices MAX32655FTHR";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -156,9 +156,9 @@
 };
 
 &i2c1 {
-	status = "okay";
 	pinctrl-0 = <&i2c1_scl_p0_16 &i2c1_sda_p0_17>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c2_scl_p0_30 {
@@ -170,10 +170,10 @@
 };
 
 feather_i2c: &i2c2 {
-	status = "okay";
 	pinctrl-0 = <&i2c2_scl_p0_30 &i2c2_sda_p0_31>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 };
 
 &dma0 {
@@ -181,9 +181,9 @@ feather_i2c: &i2c2 {
 };
 
 &i2s0 {
-	status = "okay";
 	pinctrl-0 = <&i2s_sck_p1_2 &i2s_ws_p1_3 &i2s_sdi_p1_4 &i2s_sdo_p1_5>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &wdt0 {
@@ -207,9 +207,9 @@ feather_i2c: &i2c2 {
 };
 
 feather_spi: &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_mosi_p0_21 &spi1_miso_p0_22 &spi1_sck_p0_23 &spi1_ss0_p0_20>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &rtc_counter {
@@ -229,22 +229,22 @@ feather_spi: &spi1 {
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>,
 		   <&gpio0 11 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+	status = "okay";
 
 	spi0_cs1_flash: w25q128jv@1 {
 		compatible = "jedec,spi-nor";
-		status = "disabled";
+		reg = <1>;
 		/* 134217728 bits = 16 Mbytes */
 		size = <0x8000000>;
-		reg = <1>;
 		spi-max-frequency = <10000000>;
 		jedec-id = [ef 70 18];
 		hold-gpios = <&gpio0 9 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 		wp-gpios = <&gpio0 8 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		status = "disabled";
 		status = "okay";
 	};
 };
@@ -256,13 +256,13 @@ feather_spi: &spi1 {
 		#size-cells = <1>;
 
 		code_partition: partition@0 {
-			label = "image-m4";
 			reg = <0x0 DT_SIZE_K(448)>;
+			label = "image-m4";
 		};
 
 		storage_partition: partition@70000 {
-			label = "storage";
 			reg = <0x70000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };

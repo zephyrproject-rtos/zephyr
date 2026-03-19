@@ -10,8 +10,8 @@
 #include "max32655evkit.dtsi"
 
 / {
-	model = "Analog Devices MAX32655EVKIT";
 	compatible = "adi,max32655evkit";
+	model = "Analog Devices MAX32655EVKIT";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -50,11 +50,11 @@
 
 &uart0 {
 	pinctrl-0 = <&uart0a_tx_p0_1 &uart0a_rx_p0_0>;
-	status = "okay";
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	data-bits = <8>;
 	parity = "none";
+	status = "okay";
 };
 
 /*
@@ -85,9 +85,9 @@
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_scl_p0_10 &i2c0_sda_p0_11>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dma0 {
@@ -127,14 +127,14 @@
 
 	spi0_cs0_flash: w25q128@0 {
 		compatible = "jedec,spi-nor";
-		status = "disabled";
+		reg = <0>;
 		/* 134217728 bits = 16 Mbytes */
 		size = <0x8000000>;
-		reg = <0>;
 		spi-max-frequency = <10000000>;
 		jedec-id = [ef 40 18];
 		hold-gpios = <&gpio0 9 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 		wp-gpios = <&gpio0 8 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		status = "disabled";
 		status = "okay";
 	};
 };

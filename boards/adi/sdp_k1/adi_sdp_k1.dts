@@ -11,8 +11,8 @@
 #include "adi_sdp_120pin_connector.dtsi"
 
 / {
-	model = "Analog Devices Inc. SDP-K1 board";
 	compatible = "adi,sdp-k1";
+	model = "Analog Devices Inc. SDP-K1 board";
 
 	chosen {
 		zephyr,console = &uart5;
