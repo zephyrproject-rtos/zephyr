@@ -122,6 +122,9 @@ static otError tx_result;
 K_FIFO_DEFINE(rx_pkt_fifo);
 K_FIFO_DEFINE(tx_pkt_fifo);
 
+void transmit_message(struct k_work *tx_job_item);
+static K_WORK_DEFINE(tx_job, transmit_message);
+
 static int8_t get_transmit_power_for_channel(uint8_t aChannel)
 {
 	int8_t channel_max_power = OT_RADIO_POWER_INVALID;
@@ -379,11 +382,11 @@ static void radio_set_channel(uint16_t ch)
 	radio_api->set_channel(radio_dev, ch);
 }
 
-void transmit_message(struct k_work *tx_job)
+void transmit_message(struct k_work *tx_job_item)
 {
 	int tx_err;
 
-	ARG_UNUSED(tx_job);
+	ARG_UNUSED(tx_job_item);
 
 	enum ieee802154_hw_caps radio_caps = radio_api->get_capabilities(radio_dev);
 
@@ -480,6 +483,11 @@ void transmit_message(struct k_work *tx_job)
 
 static inline void handle_tx_done(otInstance *aInstance)
 {
+	struct k_work_sync sync;
+
+	/* Wait for work item to complete */
+	k_work_flush(&tx_job, &sync);
+
 	sTransmitFrame.mInfo.mTxInfo.mIsSecurityProcessed =
 		net_pkt_ieee802154_frame_secured(tx_pkt);
 	sTransmitFrame.mInfo.mTxInfo.mIsHeaderUpdated = net_pkt_ieee802154_mac_hdr_rdy(tx_pkt);
@@ -614,8 +622,6 @@ int notify_new_tx_frame(struct net_pkt *pkt)
 
 static int run_tx_task(otInstance *aInstance)
 {
-	static K_WORK_DEFINE(tx_job, transmit_message);
-
 	ARG_UNUSED(aInstance);
 
 	if (!k_work_is_pending(&tx_job)) {
