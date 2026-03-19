@@ -1,0 +1,323 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h5/stm32h5f5Xj.dtsi>
+#include <st/h5/stm32h5f5ljhxq-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+/ {
+	model = "STMicroelectronics STM32H5F5J DISCOVERY KIT board";
+	compatible = "st,stm32h5f5j-dk";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,canbus = &fdcan1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led_0: led_1 {
+			gpios = <&gpioh 10 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+
+		green_led_0: led_2 {
+			gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+
+		blue_led_0: led_3 {
+			gpios = <&gpiob 9 GPIO_ACTIVE_LOW>;
+			label = "User LD3";
+		};
+
+		orange_led_0: led_4 {
+			gpios = <&gpiod 15 GPIO_ACTIVE_LOW>;
+			label = "User LD4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button {
+			label = "User";
+			gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: red_pwm_led {
+			pwms = <&pwm5 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	aliases {
+		led0 = &blue_led_0;
+		sw0 = &user_button;
+		pwm-led0 = &red_pwm_led;
+		watchdog0 = &iwdg;
+		die-temp0 = &digi_die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
+	};
+
+	psram: memory@70000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x70000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "PSRAM";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM>;
+	};
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(48)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <12>;
+	mul-n = <125>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(250)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_ph7 &i2c3_sda_ph8>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart7 {
+	pinctrl-0 = <&uart7_tx_pe8 &uart7_rx_pe7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&timers5 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm5: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim5_ch1_ph10>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers14 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm14: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim14_ch1_pa7>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers15 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm15: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim15_ch2_pe6>;
+		pinctrl-names = "default";
+	};
+};
+
+&aes {
+	status = "okay";
+};
+
+&rng {
+	/* default clock source is HSI48 */
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB3, 21)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&gpdma1 {
+	status = "okay";
+};
+
+&gpdma2 {
+	status = "okay";
+};
+
+&dac1 {
+	/* only 2 output channels : out1 on pa4 or out2 on pa5 */
+	pinctrl-0 = <&dac1_out1_pa4>;  /* Arduino D10 */
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pg11
+		     &spi1_miso_pg9 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&fdcan2 {
+	pinctrl-0 = <&fdcan2_tx_pb13 &fdcan2_rx_pb12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&fdcan3 {
+	pinctrl-0 = <&fdcan3_tx_pe12 &fdcan3_rx_pe13>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&digi_die_temp {
+	status = "okay";
+};
+
+&adc1 {
+	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
+		 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
+	clock-names = "adcx", "adc_ker";
+	pinctrl-0 = <&adc1_inp6_pf12>; /* Arduino A5 */
+	pinctrl-names = "default";
+	st,adc-clock-source = "ASYNC";
+	st,adc-prescaler = <6>;
+	status = "okay";
+};
+
+&adc3 {
+	clocks = <&rcc STM32_CLOCK(AHB2, 24)>,
+		 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
+	clock-names = "adcx", "adc_ker";
+	pinctrl-0 = <&adc3_inp6_pe12>; /* Arduino A1 */
+	pinctrl-names = "default";
+	st,adc-clock-source = "ASYNC";
+	st,adc-prescaler = <6>;
+	status = "okay";
+};
+
+/* Do not enable the Vsense until calibration values are fixed */
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};
+
+&xspi1 {
+	pinctrl-0 = <&octospim_p1_io0_pc9 &octospim_p1_io1_pf9
+		     &octospim_p1_io2_pe2 &octospim_p1_io3_pa6
+		     &octospim_p1_io4_ph2 &octospim_p1_io5_ph3
+		     &octospim_p1_io6_pe9 &octospim_p1_io7_pe10
+		     &octospim_p1_clk_pf10 &octospim_p1_ncs1_pg6
+		     &octospim_p1_dqs_pc5>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	ext_flash_ctrl: xspi-flash-controller@0 {
+		compatible = "st,stm32-xspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Mbits */
+		ospi-max-frequency = <DT_FREQ_M(50)>;
+		spi-bus-width = <XSPI_OCTO_MODE>;
+		data-rate = <XSPI_DTR_TRANSFER>;
+		four-byte-opcodes;
+		status = "okay";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ext_flash: mx25lm51245: ext-flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(64)>;
+			write-block-size = <1>;
+			erase-block-size = <DT_SIZE_K(4)>;
+		};
+	};
+};
+
+&xspi2 {
+	pinctrl-0 = <&octospim_p2_io0_pg0 &octospim_p2_io1_pd2
+		     &octospim_p2_io2_pg2 &octospim_p2_io3_pg3
+		     &octospim_p2_io4_pg4 &octospim_p2_io5_pg5
+		     &octospim_p2_io6_pg10 &octospim_p2_io7_pg15
+		     &octospim_p2_clk_pe14 &octospim_p2_ncs1_pe15
+		     &octospim_p2_dqs_pf5>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	memc: aps6408l: memory@0 {
+		compatible = "st,stm32-xspi-psram";
+		reg = <0>;
+		size = <DT_SIZE_M(64)>; /* 64 Mbits */
+		max-frequency = <DT_FREQ_M(133)>;
+		fixed-latency;
+		burst-length = <3>;
+		st,refresh = <320>;
+		st,csbound = <10>;
+		status = "okay";
+	};
+};

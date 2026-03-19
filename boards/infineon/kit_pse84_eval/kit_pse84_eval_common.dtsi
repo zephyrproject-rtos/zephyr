@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
+ * Copyright (c) 2025-2026 Infineon Technologies AG,
  * or an affiliate of Infineon Technologies AG.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -44,6 +44,10 @@
 	};
 };
 
+&watchdog0 {
+	status = "okay";
+};
+
 uart2: &scb2 {
 	compatible = "infineon,uart";
 	status = "okay";
@@ -57,8 +61,6 @@ uart2: &scb2 {
 
 &peri0_group1_16bit_0 {
 	status = "okay";
-	resource-type = <IFX_RSC_SCB>;
-	resource-instance = <2>;
 	clock-div = <1>;
 };
 

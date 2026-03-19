@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Krisztian Szilvasi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+&arduino_spi {
+	status = "okay";
+
+	eth_w5500: eth-w5500@0 {
+		compatible = "wiznet,w5500";
+		reg = <0>;
+		int-gpios = <&arduino_header ARDUINO_HEADER_R3_D2 GPIO_ACTIVE_LOW>;
+		spi-max-frequency = <DT_FREQ_M(32)>;
+		local-mac-address = [00 00 00 01 02 03];
+	};
+};

@@ -219,6 +219,14 @@ arduino_i2c: &lpi2c1 {};
 	status = "okay";
 };
 
+&lptmr1 {
+	status = "okay";
+};
+
+&ieee802154 {
+	counter = <&lptmr1>;
+};
+
 &flexcan0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan>;

@@ -25,6 +25,14 @@ tests:
     platform_allow:
       - native_sim/native/64
       - native_sim
+  drivers.disk.ftl:
+    extra_args: DTC_OVERLAY_FILE=boards/native_sim_ftl.overlay
+    extra_configs:
+      - CONFIG_DISK_DRIVER_FTL=y
+      - CONFIG_FLASH_SIMULATOR_EX_OP=y
+    platform_allow:
+      - native_sim/native/64
+      - native_sim
   drivers.disk.loopback:
     extra_configs:
       - CONFIG_DISK_DRIVER_LOOPBACK=y

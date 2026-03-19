@@ -1357,6 +1357,7 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 		}
 		/* Still return an error- we want the JEDEC configuration to run */
 		return -ENOTSUP;
+	case 0x1940ef: /* W25Q256JV-IQ/IN flash, uses identical LUT than W25Q512JV*/
 	case 0x2040ef:
 		/* W25Q512JV-IQ/IN flash, use 4 byte read/write */
 		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(

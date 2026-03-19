@@ -19,6 +19,11 @@ rsource "*/Kconfig"
 #
 # (Please indicate as a comment where each option is consumed)
 
+config STM32_HAL2
+	bool
+	help
+	  STM32 HAL and LL modules use STM32 HAL2 format.
+
 # This option is consumed by the HAL module
 config USE_STM32_ASSERT
 	depends on ASSERT

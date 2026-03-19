@@ -77,6 +77,7 @@
 			status = "disabled";
 		};
 
+		/* controller reset default is on */
 		clk_hsi: clk-hsi {
 			#clock-cells = <0>;
 			compatible = "st,stm32h7-hsi-clock";

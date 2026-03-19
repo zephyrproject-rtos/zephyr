@@ -102,7 +102,14 @@
 		uicr: uicr@ff8000 {
 			compatible = "nordic,nrf-uicr";
 			reg = <0xff8000 0x1000>;
+			ranges = <0x0 0xff8000 0x1000>;
 			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			bl_storage: uicr@108 {
+				reg = <0x108 0x280>;
+			};
 		};
 	};
 };

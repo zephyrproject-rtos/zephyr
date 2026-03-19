@@ -32,6 +32,21 @@
 		};
 	};
 
+	rom {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		rom: memory@0 {
+			/* rom code region */
+			reg = <0x0 DT_SIZE_K(148)>;
+		};
+
+		bee_bt_controller: memory@25000 {
+			/* bt controller code region */
+			reg = <0x25000 DT_SIZE_K(196)>;
+		};
+	};
+
 	soc {
 		cctl: clock-controller@40000200 {
 			compatible = "realtek,bee-cctl";
@@ -53,7 +68,12 @@
 
 			data_ram_app_0: memory@208800 {
 				compatible = "mmio-sram";
-				reg = <0x208800 DT_SIZE_K(70)>;
+				reg = <0x208800 DT_SIZE_K(57)>;
+			};
+
+			data_ram_heap: memory@216c00 {
+				compatible = "mmio-sram";
+				reg = <0x216c00 DT_SIZE_K(13)>;
 			};
 		};
 
@@ -68,7 +88,7 @@
 				reg = <0x280000 (DT_SIZE_K(1) + 512)>;
 			};
 
-			buffer_ram_app_0: memory@280600 {
+			buffer_ram_heap: memory@280600 {
 				compatible = "mmio-sram";
 				reg = <0x280600 (DT_SIZE_K(14) + 512)>;
 			};
@@ -98,7 +118,6 @@
 					compatible = "fixed-partitions";
 					#address-cells = <1>;
 					#size-cells = <1>;
-					ranges;
 
 					rsvd_partition: partition@0 {
 						label = "rsvd-image";

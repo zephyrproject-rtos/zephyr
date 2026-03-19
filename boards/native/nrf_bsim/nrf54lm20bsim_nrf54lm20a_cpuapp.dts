@@ -33,7 +33,7 @@
 			/delete-node/ vpr@4c000;
 			/delete-node/ interrupt-controller@f0000000;
 			/delete-node/ spi@4d000;
-			/delete-node/ usbhs@5a000;
+			/delete-node/ usbhs_wrapper@5a000;
 			/delete-node/ i2c@c6000;
 			/delete-node/ spi@c6000;
 			/delete-node/ i2c@c7000;

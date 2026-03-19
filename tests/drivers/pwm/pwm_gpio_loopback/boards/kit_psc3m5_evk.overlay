@@ -30,9 +30,6 @@
 
 &peri0_group5_16bit_0 {
 	status = "okay";
-	resource-type = <IFX_RSC_TCPWM>;
-	resource-instance = <1>;
-	resource-channel = <4>;
 	clock-div = <25>;
 };
 

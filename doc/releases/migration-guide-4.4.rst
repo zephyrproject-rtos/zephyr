@@ -212,6 +212,12 @@ Clock Control
   ``bflb,bl70x-root-clk`` and ``bflb,bl61x-flash-clk`` got respectively replaced with
   :dtcompatible:`bflb,flash-clk`, :dtcompatible:`bflb,pll` and :dtcompatible:`bflb,root-clk`.
 
+* The :dtcompatible:`infineon,peri-div` clock control binding has removed the ``resource-type``,
+  ``resource-instance``, and ``resource-channel`` properties. These properties are no longer used by
+  the driver and the corresponding fields have been removed from the driver's internal data structures.
+  Out-of-tree boards using this compatible must remove these properties from their devicetree nodes.
+  (:github:`105393`)
+
 Controller Area Network (CAN)
 =============================
 
@@ -570,6 +576,8 @@ Ethernet
   It is enabled by default if :kconfig:option:`CONFIG_NET_CHECKSUM_OFFLOAD_SUPPORTED` is selected.
   (:github:`105051`)
 
+* The ``phy-handle`` property of :dtcompatible:`microchip,lan865x` must now be set to the phy node.
+
 File System
 ===========
 
@@ -657,6 +665,25 @@ Infineon
 
   * ``CONFIG_BT_CYW43XX`` → :kconfig:option:` CONFIG_BT_HCI_UART_INFINEON`
   * ``dtcompatible: "infineon,cyw43xxx-bt-hci"`` → ``dtcompatible: "infineon,bt-hci-uart"``
+
+Keyboard matrix
+===============
+
+* The common keyboard matrix Devicetree bindings have been updated to use
+  microseconds instead of milliseconds for polling period properties.
+
+  The following properties have been renamed and their units changed:
+
+  * ``poll-period-ms`` -> ``poll-period-us``
+  * ``stable-poll-period-ms`` -> ``stable-poll-period-us``
+
+  Applications using these properties must:
+
+  * Replace the old property names with the new ones, and
+  * Convert the values from milliseconds to microseconds. For example, a value
+    of ``10`` previously representing 10 ms must now be written as ``10000`` to
+    represent 10,000 µs.
+
 
 MDIO
 ====
@@ -931,6 +958,17 @@ Video
 
 * The :dtcompatible:`ovti,ov2640` reset pin handling has been corrected, resulting in an inverted
   active level compared to before, to match the active level expected by the sensor.
+
+* The following pixel formats were renamed to keep consistency with the data ():github:`105522`):
+
+  * :c:macro:`VIDEO_PIX_FMT_ARGB32` (swapped with :c:macro:`VIDEO_PIX_FMT_BGRA32`)
+  * :c:macro:`VIDEO_PIX_FMT_BGRA32` (swapped with :c:macro:`VIDEO_PIX_FMT_ARGB32`)
+  * :c:macro:`VIDEO_PIX_FMT_RGBA32` (unchanged)
+  * :c:macro:`VIDEO_PIX_FMT_ABGR32` (unchanged)
+  * :c:macro:`VIDEO_PIX_FMT_XRGB32` (unchanged)
+  * :c:macro:`VIDEO_PIX_FMT_XBGR32` (newly introduced)
+  * :c:macro:`VIDEO_PIX_FMT_BGRX32` (newly introduced)
+  * :c:macro:`VIDEO_PIX_FMT_RGBX32` (newly introduced)
 
 Watchdog
 ========

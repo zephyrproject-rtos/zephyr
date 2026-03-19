@@ -27,16 +27,11 @@
 	aliases {
 		led0 = &led1;
 		sw0 = &button0;
-		sw1 = &button1;
 		watchdog0 = &wdt0;
 	};
 };
 
 &button0 {
-	status = "okay";
-};
-
-&button1 {
 	status = "okay";
 };
 
@@ -90,18 +85,13 @@
 	interrupt-names = "rxi", "txi", "tei", "eri";
 };
 
-&port_irq12 {
+&port_irq13 {
 	interrupts = <18 1>;
 	status = "okay";
 };
 
-&port_irq13 {
-	interrupts = <19 1>;
-	status = "okay";
-};
-
 &ulpt0 {
-	interrupts = <20 1>;
+	interrupts = <19 1>;
 	interrupt-names = "ulpti";
 	status = "okay";
 
@@ -118,16 +108,6 @@
 	};
 };
 
-&port_irq12 {
-	interrupts = <21 1>;
-	status = "okay";
-};
-
-&port_irq13 {
-	interrupts = <22 1>;
-	status = "okay";
-};
-
 &crc {
 	status = "okay";
 };
@@ -138,7 +118,7 @@
 
 &pwm12 {
 	pinctrl-0 = <&pwm12_default>;
-	interrupts = <23 1>, <24 1>;
+	interrupts = <20 1>, <21 1>;
 	interrupt-names = "gtioca", "overflow";
 	pinctrl-names = "default";
 
@@ -153,7 +133,7 @@
 &ceu {
 	pinctrl-0 = <&ceu_default>;
 	pinctrl-names = "default";
-	interrupts = <25 1>;
+	interrupts = <22 1>;
 	interrupt-names = "ceui";
 	clocks = <&pclka MSTPC 16>, <&cam_clock 0>;
 	clock-names = "pclk", "cam-xclk";
@@ -162,7 +142,7 @@
 
 &usbhs {
 	pinctrl-0 = <&usbhs_default>;
-	interrupts = <26 1>;
+	interrupts = <23 1>;
 	interrupt-names = "usbhs-ir";
 	status = "okay";
 
@@ -184,17 +164,17 @@
 
 		slot0_partition: partition@10000 {
 			label = "image-0";
-			reg = <0x10000 DT_SIZE_K(472)>;
+			reg = <0x10000 DT_SIZE_K(344)>;
 		};
 
-		slot1_partition: partition@86000 {
+		slot1_partition: partition@66000 {
 			label = "image-1";
-			reg = <0x86000 DT_SIZE_K(472)>;
+			reg = <0x66000 DT_SIZE_K(344)>;
 		};
 
-		storage_partition: partition@fc000 {
+		storage_partition: partition@bc000 {
 			label = "storage";
-			reg = <0xfc000 DT_SIZE_K(16)>;
+			reg = <0xbc000 DT_SIZE_K(16)>;
 		};
 	};
 };
@@ -248,5 +228,9 @@ arducam_ffc_40pin_dvp_xclk: &cam_clock {};
 &drw {
 	interrupt-names = "drw";
 	interrupts = <28 12>;
+	status = "okay";
+};
+
+&trng {
 	status = "okay";
 };

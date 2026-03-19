@@ -54,9 +54,19 @@
  */
 #define DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, idx)\
 	DT_PROP_HAS_IDX(node_id, shmem, idx)
-#else /* CONFIG_ARM_SCMI_MAILBOX_TRANSPORT */
+#elif CONFIG_ARM_SCMI_SMC_TRANSPORT
+/** @brief Check if a protocol node has an associated channel
+ *
+ * For SMC transport, all protocols share the base channel.
+ * Return 0, to make all protocols fall back to base channel.
+ *
+ * @param node_id protocol node identifier
+ * @idx channel index
+ */
+#define DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, idx) 0
+#else
 #error "Transport with static channels needs to define HAS_CHAN macro"
-#endif /* CONFIG_ARM_SCMI_MAILBOX_TRANSPORT */
+#endif
 
 #define SCMI_TRANSPORT_CHAN_NAME(proto, idx) CONCAT(scmi_channel_, proto, _, idx)
 

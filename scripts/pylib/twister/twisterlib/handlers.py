@@ -21,7 +21,6 @@ import subprocess
 import sys
 import threading
 import time
-from contextlib import contextmanager
 from enum import Enum
 from pathlib import Path
 from queue import Empty, Queue
@@ -30,8 +29,7 @@ import psutil
 from serial.tools import list_ports
 from twisterlib.constants import ZEPHYR_BASE
 from twisterlib.environment import strip_ansi_sequences
-from twisterlib.error import TwisterException
-from twisterlib.hardwaremap import DUT
+from twisterlib.hardwaredata import CompoundHardwareData
 from twisterlib.platform import Platform
 from twisterlib.statuses import TwisterStatus
 
@@ -108,7 +106,6 @@ class Handler:
 
         self.args = []
         self.terminated = False
-        self.duts: list[DUT] = []
 
     def get_test_timeout(self):
         return math.ceil(self.instance.testsuite.timeout *
@@ -501,61 +498,6 @@ class DeviceHandler(Handler):
                     break
 
     @staticmethod
-    @contextmanager
-    def acquire_dut_locks(duts):
-        try:
-            for d in duts:
-                d.lock.acquire()
-            yield
-        finally:
-            for d in duts:
-                d.lock.release()
-
-    def device_is_available(self, instance) -> DUT | None:
-        device = instance.platform.name
-        fixture = instance.testsuite.harness_config.get("fixture")
-        duts_found: list[DUT] = []
-
-        for d in self.duts:
-            if fixture and fixture not in map(lambda f: f.split(sep=':')[0], d.fixtures):
-                continue
-            if d.platform != device or (d.serial is None and d.serial_pty is None):
-                continue
-            duts_found.append(d)
-
-        if not duts_found:
-            raise TwisterException(f"No device to serve as {device} platform.")
-
-        # Select an available DUT with less failures
-        for d in sorted(duts_found, key=lambda _dut: _dut.failures):
-            # get all DUTs with the same id
-            duts_shared_hw = [_d for _d in self.duts if _d.id == d.id]
-            with self.acquire_dut_locks(duts_shared_hw):
-                avail = False
-                if d.available:
-                    for _d in duts_shared_hw:
-                        _d.available = 0
-                    d.counter_increment()
-                    avail = True
-                    logger.debug(f"Retain DUT:{d.platform}, Id:{d.id}, "
-                                f"counter:{d.counter}, failures:{d.failures}")
-            if avail:
-                return d
-
-        return None
-
-    def make_dut_available(self, dut: DUT) -> None:
-        if self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
-            dut.failures_increment()
-        logger.debug(f"Release DUT:{dut.platform}, Id:{dut.id}, "
-                     f"counter:{dut.counter}, failures:{dut.failures}")
-        # get all DUTs with the same id
-        duts_shared_hw = [_d for _d in self.duts if _d.id == dut.id]
-        with self.acquire_dut_locks(duts_shared_hw):
-            for _d in duts_shared_hw:
-                _d.available = 1
-
-    @staticmethod
     def run_custom_script(script, timeout):
         with subprocess.Popen(script, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
             try:
@@ -667,7 +609,7 @@ class DeviceHandler(Handler):
             logger.debug(f"Terminated serial-pty:'{ser_pty}'")
     #
 
-    def _create_serial_connection(self, dut, serial_device, hardware_baud,
+    def _create_serial_connection(self, serial_device, hardware_baud,
                                   flash_timeout, serial_pty, ser_pty_process):
         try:
             ser = serial.Serial(
@@ -680,12 +622,12 @@ class DeviceHandler(Handler):
                 timeout=max(flash_timeout, self.get_test_timeout())
             )
         except serial.SerialException as e:
-            self._handle_serial_exception(e, dut, serial_pty, ser_pty_process)
+            self._handle_serial_exception(e, serial_pty, ser_pty_process)
             raise
 
         return ser
 
-    def _handle_serial_exception(self, exception, dut, serial_pty, ser_pty_process):
+    def _handle_serial_exception(self, exception, serial_pty, ser_pty_process):
         self.instance.status = TwisterStatus.FAIL
         self.instance.reason = "Serial Device Error"
         logger.error(f"Serial device error: {exception!s}")
@@ -693,38 +635,6 @@ class DeviceHandler(Handler):
         self.instance.add_missing_case_status(TwisterStatus.BLOCK, "Serial Device Error")
         if serial_pty and ser_pty_process:
             self._terminate_pty(serial_pty, ser_pty_process)
-
-        self.make_dut_available(dut)
-
-    def get_other_duts_with_same_id(self, hardware: DUT) -> list[DUT]:
-        """Get all DUTs that share the same hardware ID as the provided DUT,
-        excluding the provided DUT itself."""
-        duts: list[DUT] = []
-        # get all DUTs with the same id
-        duts_shared_hw = [_d for _d in self.duts if _d.id == hardware.id]
-        serials = {hardware.serial}
-        for d in duts_shared_hw:
-            if d.serial and d.serial not in serials:
-                duts.append(d)
-                serials.add(d.serial)
-        return duts
-
-    def get_hardware(self) -> DUT | None:
-        hardware = None
-        try:
-            hardware = self.device_is_available(self.instance)
-            in_waiting = 0
-            while not hardware:
-                time.sleep(1)
-                in_waiting += 1
-                if in_waiting % 60 == 0:
-                    logger.debug(f"Waiting for a DUT to run {self.instance.name}")
-                hardware = self.device_is_available(self.instance)
-        except TwisterException as error:
-            self.instance.status = TwisterStatus.FAIL
-            self.instance.reason = str(error)
-            logger.error(self.instance.reason)
-        return hardware
 
     def _start_serial_pty(self, serial_pty, serial_pty_master):
         ser_pty_process = None
@@ -748,12 +658,7 @@ class DeviceHandler(Handler):
         return ser_pty_process
 
     def handle(self, harness):
-        runner = None
-        hardware = self.get_hardware()
-        if hardware:
-            self.instance.dut = hardware.id
-        else:
-            return
+        hardware: CompoundHardwareData = self.instance.reserved_duts[0]
 
         # Run pre-script BEFORE starting serial PTY to avoid conflicts
         pre_script = hardware.pre_script
@@ -794,7 +699,6 @@ class DeviceHandler(Handler):
 
         try:
             ser = self._create_serial_connection(
-                hardware,
                 serial_port,
                 hardware.serial_baud,
                 flash_timeout,
@@ -873,7 +777,7 @@ class DeviceHandler(Handler):
                     # Reset pulse: IO0=LOW (DTR=False), EN=LOW (RTS=True)
                     ser.dtr = False
                     ser.rts = True
-                    time.sleep(0.01)
+                    time.sleep(0.1)
 
                     # Return to normal boot
                     ser.rts = False
@@ -891,7 +795,7 @@ class DeviceHandler(Handler):
                     ser.open()
 
             except serial.SerialException as e:
-                self._handle_serial_exception(e, hardware, serial_pty, ser_pty_process)
+                self._handle_serial_exception(e, serial_pty, ser_pty_process)
                 return
 
         if failure_type != Handler.FailureType.FLASH:
@@ -927,8 +831,6 @@ class DeviceHandler(Handler):
             if script_param:
                 timeout = script_param.get("post_script_timeout", timeout)
             self.run_custom_script(post_script, timeout)
-
-        self.make_dut_available(hardware)
 
 
 class QEMUHandler(Handler):

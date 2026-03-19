@@ -133,6 +133,9 @@ manifest:
       path: modules/hal/cmsis_6
       groups:
         - hal
+    - name: dhara
+      revision: 6f163ca05e174b168b4d148160b50eeaeeb561fc
+      path: modules/lib/dhara
     - name: edtt
       revision: c282625e694f0b53ea53e13231ea6d2f49411768
       path: tools/edtt
@@ -165,11 +168,11 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: 6236ecf4224ffb5fe1e3542c0380db951bb14540
+      revision: af6758a0d500bd2cb1c0e85574bb89de22d3828d
       groups:
         - hal
     - name: hal_espressif
-      revision: 79c15a6e947a9a1cd4e348352969ddb3bf441e9c
+      revision: d73843b864463def35d99b29e61001874151d8a6
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -210,7 +213,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 22a92524af8ff98fcfbbbdb345509b76729344b1
+      revision: d5a3b40c05699689c692021d82171dff3e94b38e
       path: modules/hal/nxp
       groups:
         - hal
@@ -226,12 +229,12 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: 5d482b1086d551f07ae331caae7f2b05029068fe
+      revision: c8f99f7de0b8ea5817dd1873e0b31208be3fb63b
       groups:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: c92be1e7442b01e02d0f56a3b0ee090d8d068467
+      revision: 59414fee28d89de23673d2e6b3789d711942436d
       groups:
         - hal
     - name: hal_rpi_pico
@@ -255,7 +258,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: b0dc1376b6af8c6b4d68b609e4815a6ca418edf7
+      revision: 610e32fb539e3f1b7c6c0959a7566ecfd1b75e44
       path: modules/hal/stm32
       groups:
         - hal
@@ -362,7 +365,7 @@ manifest:
         - debug
     - name: picolibc
       path: modules/lib/picolibc
-      revision: ca8b6ebba5226a75545e57a140443168a26ba664
+      revision: 01254932e8e81085817ed61fd858648584ffe37c
     - name: psa-arch-tests
       revision: 6e8219237435112df33bbcf37b7f5657fcfb9cff
       path: modules/tee/tf-m/psa-arch-tests

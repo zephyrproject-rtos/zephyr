@@ -1649,7 +1649,7 @@ static int nsos_socket_offload_init(const struct device *arg)
 
 static void nsos_iface_api_init(struct net_if *iface)
 {
-	iface->if_dev->socket_offload = nsos_socket_create;
+	net_if_socket_offload_set(iface, nsos_socket_create);
 
 	socket_offload_dns_register(&nsos_dns_ops);
 }

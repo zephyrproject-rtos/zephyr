@@ -323,6 +323,13 @@ static struct tbs_inst *lookup_inst_by_uri_scheme(const uint8_t *uri, uint8_t ur
 
 	/* Look for ':' between the first and last char */
 	for (uint8_t i = 1U; i < uri_len - 1U; i++) {
+		/* If the size of the URI scheme of `uri` is larger than what we support, then we
+		 * do not need to search any instances, as we cannot possibly support it.
+		 */
+		if (i > (sizeof(uri_scheme) - 1U /* NULL terminator */)) {
+			return NULL;
+		}
+
 		if (uri[i] == ':') {
 			(void)memcpy(uri_scheme, uri, i);
 			break;

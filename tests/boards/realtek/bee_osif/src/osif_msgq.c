@@ -132,7 +132,11 @@ ZTEST(osif_msgq, test_messageq)
 	uint32_t task_param;
 	uint32_t msg_num;
 
+#ifdef CONFIG_SOC_SERIES_RTL8752H
+	status = os_msg_queue_create(&msgq_id, Q_LEN, sizeof(struct sample_data));
+#else
 	status = os_msg_queue_create(&msgq_id, "Test Msg Q", Q_LEN, sizeof(struct sample_data));
+#endif
 	zassert_true(status != false, "Message Queue creation failed");
 
 	status = os_task_create(&tid, "send_thread", send_msg_thread, &task_param, STACKSZ, 3);

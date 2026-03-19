@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		cpuflpr_sram_code_data: memory@20010000 {
+			compatible = "mmio-sram";
+			reg = <0x20010000 DT_SIZE_K(32)>;
+			ranges = <0x0 0x20010000 DT_SIZE_K(32)>;
+			status = "reserved";
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+};
+
+&uart30 {
+	status = "reserved";
+};
+
+&cpuapp_sram {
+	reg = <0x20000000 DT_SIZE_K(64)>;
+	ranges = <0x0 0x20000000 DT_SIZE_K(64)>;
+};
+
+&cpuapp_rram {
+	reg = <0x0 DT_SIZE_K(468)>;
+	ranges = <0x0 0x0 DT_SIZE_K(468)>;
+
+	/delete-node/ partitions;
+};
+
+&rram_controller {
+	cpuflpr_rram: rram@75000 {
+		compatible = "soc-nv-flash";
+		reg = <0x75000 DT_SIZE_K(32)>;
+		ranges = <0x0 0x75000 DT_SIZE_K(32)>;
+		erase-block-size = <0x1000>;
+		write-block-size = <0x10>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+};
+
+&cpuflpr_vpr {
+	execution-memory = <&cpuflpr_sram_code_data>;
+	source-memory = <&cpuflpr_rram>;
+};
+
+&cpuapp_vevif_tx {
+	status = "okay";
+};
+
+#define WITH_FLPR_PARTITIONS
+#include <vendor/nordic/nrf54l05_cpuapp_partition.dtsi>

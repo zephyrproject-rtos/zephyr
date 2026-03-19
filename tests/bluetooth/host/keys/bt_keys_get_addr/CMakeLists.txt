@@ -18,6 +18,8 @@ target_sources(testbinary
     src/test_suite_full_list_overwrite_oldest.c
     ${ZEPHYR_BASE}/subsys/bluetooth/common/bt_str.c
     ${ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
+    ${ZEPHYR_BASE}/lib/utils/hex.c
+    ${ZEPHYR_BASE}/lib/uuid/uuid.c
 
     # Unit under test
     ${ZEPHYR_BASE}/subsys/bluetooth/host/keys.c

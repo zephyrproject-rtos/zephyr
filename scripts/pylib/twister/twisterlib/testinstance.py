@@ -30,6 +30,7 @@ from twisterlib.handlers import (
     QEMUWinHandler,
     SimulationHandler,
 )
+from twisterlib.hardwaredata import CompoundHardwareData
 from twisterlib.platform import Platform
 from twisterlib.size_calc import SizeCalculator
 from twisterlib.statuses import TwisterStatus
@@ -67,7 +68,7 @@ class TestInstance:
         self.retries = 0
         self.toolchain = toolchain
         self.name = os.path.join(platform.name, toolchain, testsuite.name)
-        self.dut = None
+        self.hardware_id: str | None = None
         self.suite_repeat = None
         self.test_repeat = None
         self.test_shuffle = None
@@ -99,6 +100,7 @@ class TestInstance:
         self.filter_type = None
         self.required_applications = []
         self.required_build_dirs = []
+        self.reserved_duts: list[CompoundHardwareData] = []
 
     def setup_run_id(self):
         self.run_id = self._get_run_id()

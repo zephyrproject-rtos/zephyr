@@ -2067,15 +2067,19 @@ class Node:
         # unspecified.
 
         if not specifier_space:
-            if prop.name.endswith("gpios"):
-                # There's some slight special-casing for *-gpios properties in that
-                # e.g. foo-gpios still maps to #gpio-cells rather than
-                # #foo-gpio-cells
-                specifier_space = "gpio"
-            else:
-                # Strip -s. We've already checked that property names end in -s
-                # if there is no specifier space in _check_prop_by_type().
-                specifier_space = prop.name[:-1]
+            specifier_space_groups = {"gpio", "io-channel"}
+            for group in specifier_space_groups:
+                if prop.name.endswith(group + 's'):
+                    # There's some slight special-casing for some properties in that
+                    # e.g. foo-gpios and bar-io-channels still map to #gpio-cells and
+                    # #io-channels rather than #foo-gpio-cells and bar-io-channels
+                    # respectively.
+                    specifier_space = group
+
+        if not specifier_space:
+            # Strip -s. We've already checked that property names end in -s
+            # if there is no specifier space in _check_prop_by_type().
+            specifier_space = prop.name[:-1]
 
         res: list[Optional[ControllerAndData]] = []
 
@@ -2399,6 +2403,22 @@ class EDT:
         # 'phandles', or 'phandle-array' property values.
         for prop in props_node.props.values():
             if prop.type == 'phandle':
+                # According to the DT spec, a property named 'phy-handle' is required when
+                # the Ethernet device is connected a physical layer device (PHY).
+                # But the 'phy-handle' property can point to a child node of the Ethernet device,
+                # so we need to check for that and not add a dependency in that case, otherwise
+                # we'll get a cycle in the graph.
+                if prop.name == "phy-handle":
+                    def _is_child(parent_node: Node, child_node: Optional[Node]) -> bool:
+                        if child_node is None:
+                            return False
+                        if parent_node is child_node:
+                            return True
+                        return _is_child(parent_node, child_node.parent)
+                    if TYPE_CHECKING:
+                        assert isinstance(prop.val, Node)
+                    if _is_child(props_node, prop.val):
+                        continue
                 self._graph.add_edge(root_node, prop.val)
             elif prop.type == 'phandles':
                 if TYPE_CHECKING:

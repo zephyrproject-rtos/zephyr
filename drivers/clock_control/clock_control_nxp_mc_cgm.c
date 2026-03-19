@@ -239,6 +239,8 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 		CLOCK_EnableClock(kCLOCK_TempSensor);
 		break;
 #endif /* CONFIG_NXP_TEMPSENSE */
+	case MCUX_SIRC_CLK:
+		break;
 	default:
 		return -ENOTSUP;
 	}

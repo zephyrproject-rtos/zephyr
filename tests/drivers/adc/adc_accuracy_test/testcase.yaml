@@ -69,9 +69,10 @@ tests:
       - ek_ra4c1
       - pic32cx_sg41_cult
       - sam_e54_xpro
+      - pic32cm_jh01_cpro
     extra_args:
-      - platform:pic32cx_sg41_cult/pic32cx1025sg41128:"DTC_OVERLAY_FILE=boards/pic32cx_sg41_cult_ref.overlay"
       - platform:sam_e54_xpro/atsame54p20a:"DTC_OVERLAY_FILE=boards/sam_e54_xpro_ref.overlay"
+      - platform:pic32cx_sg41_cult/pic32cx1025sg41128:"DTC_OVERLAY_FILE=boards/pic32cx_sg41_cult_ref.overlay"
     integration_platforms:
       - frdm_kl25z
       - nrf54l15dk/nrf54l15/cpuapp

@@ -61,6 +61,7 @@ struct flash_stm32_priv {
 #if defined(FLASH_NSSR_NSBSY) || defined(FLASH_NSSR_BSY) /* For mcu w. TZ in non-secure mode */
 #define FLASH_SECURITY_NS
 #define FLASH_STM32_SR		NSSR
+#define FLASH_STM32_CCR		FLASH_STM32_SR
 #elif defined(FLASH_SECSR_SECBSY)	/* For mcu w. TZ  in secured mode */
 #error Flash is not supported in secure mode
 #define FLASH_SECURITY_SEC
@@ -69,6 +70,11 @@ struct flash_stm32_priv {
 					 *  secured or non-secured mode
 					 */
 #define FLASH_STM32_SR		SR
+#if defined(CONFIG_SOC_SERIES_STM32C5X)
+#define FLASH_STM32_CCR		CCR
+#else /* CONFIG_SOC_SERIES_STM32C5X */
+#define FLASH_STM32_CCR		FLASH_STM32_SR
+#endif /* CONFIG_SOC_SERIES_STM32C5X */
 #endif
 
 #define FLASH_STM32_PRIV(dev) ((struct flash_stm32_priv *)((dev)->data))
@@ -157,6 +163,8 @@ struct flash_stm32_priv {
 #else
 #define FLASH_STM32_SR_BUSY	(FLASH_SR_BSY1)
 #endif /* defined(FLASH_FLAG_BSY2) */
+#elif defined(CONFIG_STM32_HAL2)
+#define FLASH_STM32_SR_BUSY	LL_FLASH_FLAG_BSY
 #else
 #define FLASH_STM32_SR_BUSY	(FLASH_FLAG_BSY)
 #endif
@@ -254,6 +262,9 @@ struct flash_stm32_priv {
 
 #endif /* !defined(CONFIG_SOC_SERIES_STM32G0X) */
 
+#if defined(CONFIG_SOC_SERIES_STM32C5X)
+#define FLASH_STM32_SR_ERRORS	LL_FLASH_FLAG_ERRORS_ALL
+#else /* CONFIG_SOC_SERIES_STM32C5X */
 #define FLASH_STM32_SR_ERRORS  (FLASH_STM32_SR_OPERR |			\
 				FLASH_STM32_SR_PGERR |			\
 				FLASH_STM32_SR_PROGERR |		\
@@ -265,6 +276,7 @@ struct flash_stm32_priv {
 				FLASH_STM32_SR_FASTERR |		\
 				FLASH_STM32_SR_RDERR |			\
 				FLASH_STM32_SR_PGPERR)
+#endif /* CONFIG_SOC_SERIES_STM32C5X */
 
 #define FLASH_STM32_RDP0 0xAA
 #define FLASH_STM32_RDP2 0xCC

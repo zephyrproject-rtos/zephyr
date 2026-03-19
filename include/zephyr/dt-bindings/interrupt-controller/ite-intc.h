@@ -56,6 +56,10 @@
 #define IT8XXX2_IRQ_WU66        54
 #define IT8XXX2_IRQ_WU67        55
 /* Group 7 */
+/** RTC alarm1 interrupt */
+#define IT8XXX2_IRQ_RTCT_ALARM1 56
+/** RTC alarm2 interrupt */
+#define IT8XXX2_IRQ_RTCT_ALARM2 57
 #define IT8XXX2_IRQ_TIMER2      58
 /* Group 8 */
 #define IT8XXX2_IRQ_PMC3_IBF    67
