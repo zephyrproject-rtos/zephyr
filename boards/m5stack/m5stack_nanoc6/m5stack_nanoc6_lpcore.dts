@@ -10,8 +10,8 @@
 #include <espressif/partitions_0x0_default.dtsi>
 
 / {
-	model = "m5stack_nanoc6 LPCORE";
 	compatible = "m5stack,nanoc6";
+	model = "m5stack_nanoc6 LPCORE";
 
 	chosen {
 		zephyr,sram = &ulp_ram;

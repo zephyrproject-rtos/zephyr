@@ -9,8 +9,8 @@
 #include <espressif/partitions_0x0_amp.dtsi>
 
 / {
-	model = "M5Stack StampS3 APPCPU";
 	compatible = "espressif,esp32s3";
+	model = "M5Stack StampS3 APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;
