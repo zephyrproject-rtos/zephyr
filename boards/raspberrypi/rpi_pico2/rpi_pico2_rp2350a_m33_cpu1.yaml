@@ -9,5 +9,4 @@ toolchain:
   - gnuarmemb
 supported:
   - hwinfo
-  - uart
   - usbd
