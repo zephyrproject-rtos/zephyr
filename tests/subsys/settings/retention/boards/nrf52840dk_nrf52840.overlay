@@ -26,6 +26,7 @@
 			#size-cells = <1>;
 
 			settings_partition0: settings_partition@0 {
+				compatible = "zephyr,mapped-partition";
 				compatible = "zephyr,retention";
 				status = "okay";
 				reg = <0x0 0x1000>;
