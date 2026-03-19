@@ -145,6 +145,16 @@ SECTIONS
     GROUP_START(ROMABLE_REGION)
     __rom_region_start = ROM_BASE;
 
+#if !defined(CONFIG_XIP) && defined(CONFIG_MMU)
+    /*
+     * z_mapped_start must cover the very first byte of the image so that
+     * the pre-.text sections (reset vector, exception entry) are included
+     * in the pinned range tracked by z_mem_manage_init().  ROM_BASE is
+     * always page-aligned, so no extra alignment is needed here.
+     */
+    z_mapped_start = ROM_BASE;
+#endif
+
     SECTION_PROLOGUE(rom_start,,)
     {
 		. = ALIGN(16);
@@ -175,12 +185,17 @@ SECTIONS
 		KEEP(*(.openocd_debug))
 		KEEP(*(".openocd_debug.*"))
 
+#if defined(CONFIG_MMU)
+		/* z_mapped_start must be page-aligned for the MMU page frame iterator */
+		. = ALIGN(CONFIG_MMU_PAGE_SIZE);
+#endif
 		__text_region_start = .;
 
 		*(.text)
 		*(".text.*")
 		*(.gnu.linkonce.t.*)
 #include <zephyr/linker/kobject-text.ld>
+#include <snippets-text-sections.ld>
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
     __text_region_end = .;
@@ -251,8 +266,20 @@ SECTIONS
 #include <snippets-ram-sections.ld>
 
 #if defined(CONFIG_USERSPACE)
+#if defined(CONFIG_RISCV_MMU)
+/*
+ * With MMU enabled the unit of protection is a page.  Each partition
+ * must start and end on a page boundary so that no two partitions
+ * share a page; otherwise adding one partition to a domain would
+ * inadvertently grant access to data belonging to another partition
+ * on the same page.
+ */
+#define APP_SHARED_ALIGN      . = ALIGN(CONFIG_MMU_PAGE_SIZE);
+#define SMEM_PARTITION_ALIGN(size) . = ALIGN(CONFIG_MMU_PAGE_SIZE)
+#else
 #define APP_SHARED_ALIGN MPU_MIN_SIZE_ALIGN
 #define SMEM_PARTITION_ALIGN MPU_ALIGN
+#endif /* CONFIG_RISCV_MMU */
 
 #include <app_smem.ld>
 

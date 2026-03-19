@@ -22,7 +22,26 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_USERSPACE
+#ifdef CONFIG_RISCV_S_MODE
+/*
+ * In S-mode the ecall instruction generates cause=9 (ECall from S-mode).
+ * Our medeleg deliberately keeps cause=9 in M-mode so that SBI calls reach
+ * the M-mode SBI handler.  Therefore kernel-context panics must NOT use ecall;
+ * call z_riscv_fatal_error directly instead.
+ */
+void z_riscv_fatal_error(unsigned int reason, const struct arch_esf *esf);
+
+#define ARCH_EXCEPT(reason_p)	do {				\
+		if (k_is_user_context()) {			\
+			arch_syscall_invoke1(reason_p,		\
+				K_SYSCALL_USER_FAULT);		\
+		} else {					\
+			z_riscv_fatal_error((reason_p), NULL);	\
+		}						\
+		CODE_UNREACHABLE; /* LCOV_EXCL_LINE */		\
+	} while (false)
+
+#elif defined(CONFIG_USERSPACE)
 
 #define ARCH_EXCEPT(reason_p)	do {			\
 		if (k_is_user_context()) {		\

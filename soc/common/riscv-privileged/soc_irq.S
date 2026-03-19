@@ -25,10 +25,18 @@ WTEXT(__soc_handle_irq)
  * Exception number is given as parameter via register a0.
  */
 SECTION_FUNC(exception.other, __soc_handle_irq)
+#ifdef CONFIG_RISCV_S_MODE
+	/*
+	 * In S-mode, sip.STIP is read-only; the timer pending bit is
+	 * cleared by M-mode SBI when sbi_set_timer() is called with the
+	 * next deadline.  Nothing to do here.
+	 */
+#else
 	/* Clear exception number from CSR mip register */
 	li t1, 1
 	sll t0, t1, a0
 	csrrc t1, mip, t0
+#endif
 
 	/* Return */
 	ret

@@ -426,11 +426,14 @@ config PMP_GRANULARITY
 
 config PMP_NO_LOCK_GLOBAL
 	bool "Do not lock the global PMP entries"
+	depends on !RISCV_MMU
 	select PMP_KERNEL_MODE_DYNAMIC
 	help
 	  Configure the PMP entries as unlocked (L=0) to implement PMP relative
 	  features. This allows application to dynamically reconfigure PMP
 	  entries without requiring hard reset.
+	  Not applicable when RISCV_MMU is enabled: the kernel runs in S-mode
+	  and cannot access PMP registers, which are M-mode only.
 
 config PMP_UNLOCK_ROM_FOR_DEBUG
 	bool "Unlock ROM region for debugger access"
@@ -444,9 +447,13 @@ config PMP_UNLOCK_ROM_FOR_DEBUG
 
 endif #RISCV_PMP
 
+config RISCV_MMU_STACK_GUARD
+	def_bool y
+	depends on HW_STACK_PROTECTION && RISCV_MMU
+
 config PMP_STACK_GUARD
 	def_bool y
-	depends on HW_STACK_PROTECTION
+	depends on HW_STACK_PROTECTION && !RISCV_MMU_STACK_GUARD
 	select PMP_KERNEL_MODE_DYNAMIC if MULTITHREADING
 
 config PMP_STACK_GUARD_MIN_SIZE
@@ -466,9 +473,12 @@ config PMP_STACK_GUARD_MIN_SIZE
 
 config PMP_KERNEL_MODE_DYNAMIC
 	bool
+	depends on !RISCV_MMU
 	help
 	  Enable this to dynamically reconfigure and activate PMP entries for
 	  Machine mode when switching between kernel (ISR, syscall) and threads.
+	  Not applicable when RISCV_MMU is enabled, as the MMU handles memory
+	  protection in S-mode instead of PMP-based machine-mode switching.
 
 # Implement the null pointer detection using the Physical Memory Protection
 # (PMP) Unit.
@@ -573,6 +583,87 @@ config RISCV_NO_MTVAL_ON_FP_TRAP
 	  When this option is enabled, the mtval content cannot be relied upon
 	  to contain the faulting FP instruction, requiring alternative methods
 	  to handle FP exceptions.
+
+menu "RISC-V MMU Options"
+
+config RISCV_S_MODE
+	bool
+	help
+		Indicates that the kernel runs in Supervisor mode. When enabled,
+		the boot code performs an M-mode to S-mode transition before
+		entering the C runtime, and a minimal SBI runtime is kept
+		resident in M-mode to service timer and ecall requests.
+
+config RISCV_MMU
+	bool "RISC-V MMU Support"
+	depends on RISCV_PRIVILEGED
+	select CPU_HAS_MMU
+	select MMU
+	select KERNEL_VM_SUPPORT
+	select ARCH_HAS_USERSPACE
+	select ARCH_HAS_STACK_PROTECTION
+	select ARCH_MEM_DOMAIN_DATA if USERSPACE
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	select ARCH_HAS_RESERVED_PAGE_FRAMES
+	select RISCV_S_MODE
+	help
+		Enable Memory Management Unit (MMU) support for RISC-V.
+		This enables virtual memory management and is required for
+		demand paging and advanced memory protection features.
+
+		Only enable this if your RISC-V processor supports Supervisor
+		mode and has an MMU (supports Sv39, Sv48, or Sv57).
+
+if RISCV_MMU
+
+choice RISCV_MMU_MODE
+	prompt "RISC-V MMU Address Translation Mode"
+	default RISCV_MMU_SV39
+
+config RISCV_MMU_SV39
+	bool "Sv39 - 39-bit Virtual Address"
+	help
+		Use Sv39 mode with 39-bit virtual addresses and 3-level page tables.
+		This is the most common MMU mode for RISC-V and supports up to
+		512GB of virtual address space.
+
+config RISCV_MMU_SV48
+	bool "Sv48 - 48-bit Virtual Address"
+	help
+		Use Sv48 mode with 48-bit virtual addresses and 4-level page tables.
+		This supports up to 256TB of virtual address space but requires
+		more memory for page tables.
+
+endchoice
+
+config RISCV_VA_BITS
+	int
+	default 39 if RISCV_MMU_SV39
+	default 48 if RISCV_MMU_SV48
+
+config RISCV_PA_BITS
+	int "Physical Address Bits"
+	default 56
+	range 32 56
+	help
+		Number of bits used for physical addresses. RISC-V supports
+		up to 56-bit physical addresses.
+
+config MAX_XLAT_TABLES
+	int "Maximum number of translation tables"
+	default 32 if USERSPACE && TEST
+	default 20 if USERSPACE && RISCV_MMU_SV48
+	default 16 if USERSPACE
+	default 12 if RISCV_MMU_SV48
+	default 8
+	help
+	  Maximum number of translation tables available for MMU.
+	  Each table is 4KB in size. Increase this if you get
+	  "CONFIG_MAX_XLAT_TABLES is too small" errors.
+
+endif # RISCV_MMU
+
+endmenu
 
 rsource "Kconfig.isa"
 

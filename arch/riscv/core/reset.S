@@ -10,7 +10,15 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/offsets.h>
 #include <zephyr/arch/riscv/csr.h>
+#include <zephyr/arch/riscv/irq.h>
 #include "asm_macros.inc"
+
+#ifdef CONFIG_RISCV_S_MODE
+/* mcounteren bits */
+#define MCOUNTEREN_CY  BIT(0)  /* cycle counter */
+#define MCOUNTEREN_TM  BIT(1)  /* time counter */
+#define MCOUNTEREN_IR  BIT(2)  /* instret counter */
+#endif
 
 /* exports */
 GTEXT(__initialize)
@@ -21,6 +29,9 @@ GTEXT(z_prep_c)
 GDATA(riscv_cpu_wake_flag)
 GDATA(riscv_cpu_sp)
 GTEXT(arch_secondary_cpu_init)
+#ifdef CONFIG_RISCV_S_MODE
+GTEXT(__mmode_sbi_handler)
+#endif
 
 #if CONFIG_INCLUDE_RESET_VECTOR
 SECTION_FUNC(reset, __reset)
@@ -90,6 +101,55 @@ aa_loop:
 #ifdef CONFIG_WDOG_INIT
 	call _WdogInit
 #endif
+
+#ifdef CONFIG_RISCV_S_MODE
+	/* Set M-mode trap vector to our SBI handler */
+	la t0, __mmode_sbi_handler
+	csrw mtvec, t0
+
+	/* Delegate all exceptions to S-mode except S-mode ecall and
+	 * M-mode ecall, which stay in M-mode to be handled by our SBI.
+	 */
+	li t0, ~((1 << RISCV_EXC_ECALLS) | (1 << RISCV_EXC_ECALLM))
+	csrw medeleg, t0
+
+	/* Delegate supervisor software, timer and external interrupts
+	 * to S-mode.
+	 */
+	li t0, (MIP_SSIP | MIP_STIP | MIP_SEIP)
+	csrw mideleg, t0
+
+	/* PMP entry 0: NAPOT, RWX, covers all memory so S-mode can
+	* access everything
+	*/
+	li t0, -1
+	csrw pmpaddr0, t0
+	li t0, (PMP_NAPOT | PMP_R | PMP_W | PMP_X)
+	csrw pmpcfg0, t0
+
+	/* Initialize mscratch to M-mode stack top */
+	la t0, m_mode_stack_top
+	csrw mscratch, t0
+
+	/* Allow S-mode to read cycle, time and instret counters */
+	li t0, (MCOUNTEREN_CY | MCOUNTEREN_TM | MCOUNTEREN_IR)
+	csrw mcounteren, t0
+
+	/* Enable M-mode timer interrupt so MTIP fires and is forwarded to S-mode as STIP */
+	li t0, MIP_MTIP
+	csrs mie, t0
+
+	/* Set MPP=S-mode in mstatus then mret into S-mode */
+	li t0, MSTATUS_MPP
+	csrc mstatus, t0
+	li t0, MSTATUS_MPP_S
+	csrs mstatus, t0
+	la t0, s_mode_entry
+	csrw mepc, t0
+	mret
+
+s_mode_entry:
+#endif /* CONFIG_RISCV_S_MODE */
 
 	/*
 	 * Jump into C domain. z_prep_c zeroes BSS, copies rw data into RAM,

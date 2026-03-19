@@ -30,8 +30,16 @@ extern "C" {
 
 /* Environment Call from U-mode */
 #define RISCV_EXC_ECALLU 8
+/** Environment Call from S-mode */
+#define RISCV_EXC_ECALLS  9
 /** Environment Call from M-mode */
 #define RISCV_EXC_ECALLM 11
+/** Instruction page fault */
+#define RISCV_EXC_INST_PAGE_FAULT  12
+/** Load page fault */
+#define RISCV_EXC_LOAD_PAGE_FAULT  13
+/** Store/AMO page fault */
+#define RISCV_EXC_STORE_PAGE_FAULT 15
 
 /* IRQs 0-15 (MCAUSE interrupt=1) */
 

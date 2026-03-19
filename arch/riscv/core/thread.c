@@ -120,8 +120,17 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* where to go when returning from z_riscv_switch() */
 	thread->callee_saved.ra = (unsigned long)z_riscv_thread_start;
 
+#ifdef CONFIG_RISCV_MMU
+	thread->arch.satp = z_riscv_kernel_satp();
+#endif
+
+#ifdef CONFIG_RISCV_MMU_STACK_GUARD
+	z_riscv_mmu_map_guard_page(thread);
+#endif
+
 	/* our switch handle is the thread pointer itself */
 	thread->switch_handle = thread;
+
 }
 
 #ifdef CONFIG_USERSPACE
@@ -164,17 +173,27 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 				_current->stack_info.size -
 				_current->stack_info.delta);
 
+#ifdef CONFIG_RISCV_S_MODE
+	status = csr_read(sstatus);
+	/* Clear SPP so that sret returns to U-mode */
+	status = INSERT_FIELD(status, SSTATUS_SPP, 0);
+	/* Enable IRQs when entering user mode (SPIE) */
+	status = INSERT_FIELD(status, SSTATUS_SPIE, 1);
+	/* Disable IRQs in S-mode until the mode switch */
+	status &= ~SSTATUS_SIE;
+	csr_write(sstatus, status);
+	csr_write(sepc, z_thread_entry);
+#else
 	status = csr_read(mstatus);
-
 	/* Set next CPU status to user mode */
 	status = INSERT_FIELD(status, MSTATUS_MPP, PRV_U);
 	/* Enable IRQs for user mode */
 	status = INSERT_FIELD(status, MSTATUS_MPIE, 1);
 	/* Disable IRQs for m-mode until the mode switch */
 	status = INSERT_FIELD(status, MSTATUS_MIE, 0);
-
 	csr_write(mstatus, status);
 	csr_write(mepc, z_thread_entry);
+#endif
 
 #ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 	/* reconfigure as the kernel mode configuration will be different */
@@ -182,24 +201,58 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 #endif
 
 	/* Set up Physical Memory Protection */
+#ifndef CONFIG_RISCV_MMU
 	z_riscv_pmp_usermode_prepare(_current);
 	z_riscv_pmp_usermode_enable(_current);
+#endif
 
 	/* preserve stack pointer for next exception entry */
 	arch_curr_cpu()->arch.user_exc_sp = top_of_priv_stack;
 
 	is_user_mode = true;
 
-	register void *a0 __asm__("a0") = user_entry;
-	register void *a1 __asm__("a1") = p1;
-	register void *a2 __asm__("a2") = p2;
-	register void *a3 __asm__("a3") = p3;
+#ifdef CONFIG_RISCV_MMU
+	/*
+	 * Map the thread's stack with PTE_USER=1 in the domain page tables.
+	 * This is needed here (not just in arch_mem_domain_thread_add) because
+	 * a kernel thread that drops to user mode via k_thread_user_mode_enter
+	 * is not created with K_USER, so thread_add skips the stack mapping.
+	 * This call is idempotent for threads already mapped via thread_add.
+	 */
+	z_riscv_mmu_map_user_stack(_current);
+#endif
 
-	__asm__ volatile (
-	"mv sp, %4; mret"
-	:
-	: "r" (a0), "r" (a1), "r" (a2), "r" (a3), "r" (top_of_user_stack)
-	: "memory");
+#ifdef CONFIG_RISCV_MMU
+	/*
+	 * Switch to domain SATP and SRET into user mode via the helper
+	 * that lives in the exception.entry section.  That section has
+	 * PTE_USER=0 in the domain page tables, allowing S-mode to execute
+	 * the csrw satp/sfence.vma/sret sequence safely.
+	 */
+	z_riscv_userspace_enter(user_entry, p1, p2, p3,
+				top_of_user_stack, _current->arch.satp);
+#else
+	{
+		register void *a0 __asm__("a0") = user_entry;
+		register void *a1 __asm__("a1") = p1;
+		register void *a2 __asm__("a2") = p2;
+		register void *a3 __asm__("a3") = p3;
+
+#ifdef CONFIG_RISCV_S_MODE
+		__asm__ volatile (
+		"mv sp, %4; sret"
+		:
+		: "r" (a0), "r" (a1), "r" (a2), "r" (a3), "r" (top_of_user_stack)
+		: "memory");
+#else
+		__asm__ volatile (
+		"mv sp, %4; mret"
+		:
+		: "r" (a0), "r" (a1), "r" (a2), "r" (a3), "r" (top_of_user_stack)
+		: "memory");
+#endif
+	}
+#endif /* CONFIG_RISCV_MMU */
 
 	CODE_UNREACHABLE;
 }
@@ -248,7 +301,7 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 	main_stack = (K_THREAD_STACK_BUFFER(z_main_stack) +
 		      K_THREAD_STACK_SIZEOF(z_main_stack));
 
-	irq_unlock(MSTATUS_IEN);
+	irq_unlock(RISCV_STATUS_IE);
 
 	__asm__ volatile (
 	"mv sp, %0; jalr ra, %1, 0"

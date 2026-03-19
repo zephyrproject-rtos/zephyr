@@ -890,6 +890,7 @@ void z_riscv_pmp_usermode_init(struct k_thread *thread)
 	thread->arch.u_mode_pmp_end_index = 0;
 }
 
+#ifndef CONFIG_RISCV_MMU
 /**
  * @brief Prepare the u-mode PMP content for given thread.
  *
@@ -1037,7 +1038,9 @@ void z_riscv_pmp_usermode_enable(struct k_thread *thread)
 		dump_pmp_regs("u-mode register dump");
 	}
 }
+#endif /* !CONFIG_RISCV_MMU */
 
+#ifndef CONFIG_RISCV_MMU
 int arch_mem_domain_max_partitions_get(void)
 {
 	int available_pmp_slots = CONFIG_PMP_SLOTS;
@@ -1107,6 +1110,8 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 
 	return 0;
 }
+
+#endif /* !CONFIG_RISCV_MMU */
 
 #define IS_WITHIN(inner_start, inner_size, outer_start, outer_size) \
 	((inner_start) >= (outer_start) && (inner_size) <= (outer_size) && \

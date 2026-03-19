@@ -62,10 +62,14 @@ void arch_irq_enable(unsigned int irq)
 #endif
 
 	/*
-	 * CSR mie register is updated using atomic instruction csrrs
+	 * CSR mie/sie register is updated using atomic instruction csrrs
 	 * (atomic read and set bits in CSR register)
 	 */
+#ifdef CONFIG_RISCV_S_MODE
+	mie = csr_read_set(sie, 1 << irq);
+#else
 	mie = csr_read_set(mie, 1 << irq);
+#endif
 }
 
 void arch_irq_disable(unsigned int irq)
@@ -82,10 +86,14 @@ void arch_irq_disable(unsigned int irq)
 #endif
 
 	/*
-	 * Use atomic instruction csrrc to disable device interrupt in mie CSR.
+	 * Use atomic instruction csrrc to disable device interrupt in mie/sie CSR.
 	 * (atomic read and clear bits in CSR register)
 	 */
+#ifdef CONFIG_RISCV_S_MODE
+	mie = csr_read_clear(sie, 1 << irq);
+#else
 	mie = csr_read_clear(mie, 1 << irq);
+#endif
 }
 
 int arch_irq_is_enabled(unsigned int irq)
@@ -100,7 +108,11 @@ int arch_irq_is_enabled(unsigned int irq)
 	}
 #endif
 
+#ifdef CONFIG_RISCV_S_MODE
+	mie = csr_read(sie);
+#else
 	mie = csr_read(mie);
+#endif
 
 	return !!(mie & (1 << irq));
 }
@@ -123,7 +135,12 @@ __weak void soc_interrupt_init(void)
 	/* ensure that all interrupts are disabled */
 	(void)arch_irq_lock();
 
+#ifdef CONFIG_RISCV_S_MODE
+	csr_write(sie, 0);
+	/* sip.STIP is read-only from S-mode; clearing sie is sufficient */
+#else
 	csr_write(mie, 0);
 	csr_write(mip, 0);
+#endif
 }
 #endif
