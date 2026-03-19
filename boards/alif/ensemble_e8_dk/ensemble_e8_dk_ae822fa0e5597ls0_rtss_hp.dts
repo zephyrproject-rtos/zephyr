@@ -31,14 +31,14 @@
 		#size-cells = <1>;
 
 		slot0_partition: partition@0 {
-			label = "image-0";
 			reg = <0x0 DT_SIZE_K(5632)>;
+			label = "image-0";
 		};
 	};
 };
 
 &uart4 {
-	status = "okay";
 	pinctrl-0 = <&pinctrl_uart4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
