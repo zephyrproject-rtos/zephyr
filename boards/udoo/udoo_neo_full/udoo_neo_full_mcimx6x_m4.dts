@@ -28,8 +28,8 @@
 #include "udoo_neo_full-pinctrl.dtsi"
 
 / {
-	model = "UDOO Neo Full board";
 	compatible = "nxp,mcmcimx6x_m4";
+	model = "UDOO Neo Full board";
 
 	aliases {
 		led0 = &red_led;
@@ -53,11 +53,11 @@
 };
 
 &uart5 {
-	status = "okay";
 	current-speed = <115200>;
 	modem-mode = <0>;
 	pinctrl-0 = <&uart5_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio4 {
