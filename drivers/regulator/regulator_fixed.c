@@ -8,6 +8,7 @@
 #define DT_DRV_COMPAT regulator_fixed
 
 #include <stdint.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/drivers/gpio.h>
@@ -107,6 +108,10 @@ static int regulator_fixed_init(const struct device *dev)
 		if (ret < 0) {
 			return ret;
 		}
+	}
+
+	if (should_enable && cfg->common.startup_delay_us > 0U) {
+		k_usleep(cfg->common.startup_delay_us);
 	}
 
 	return regulator_common_init(dev, should_enable);
