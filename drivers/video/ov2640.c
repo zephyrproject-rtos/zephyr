@@ -14,8 +14,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/video/video.h>
 
-#include "video_ctrls.h"
-#include "video_device.h"
+#include "video_common.h"
 
 LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 

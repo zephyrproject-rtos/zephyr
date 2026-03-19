@@ -15,7 +15,7 @@
 
 #include <fsl_mipi_csi2rx.h>
 
-#include "video_device.h"
+#include "video_common.h"
 
 LOG_MODULE_REGISTER(video_mipi_csi2rx, CONFIG_VIDEO_LOG_LEVEL);
 

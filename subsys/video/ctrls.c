@@ -11,10 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/video/video.h>
 
-#include "video_ctrls.h"
-#include "video_device.h"
-
-LOG_MODULE_REGISTER(video_ctrls, CONFIG_VIDEO_LOG_LEVEL);
+LOG_MODULE_REGISTER(video_controls, CONFIG_VIDEO_LOG_LEVEL);
 
 static inline const char *const *video_get_std_menu_ctrl(uint32_t id)
 {
@@ -48,184 +45,6 @@ static inline const char *const *video_get_std_menu_ctrl(uint32_t id)
 	default:
 		return NULL;
 	}
-}
-
-static inline int check_range(enum video_ctrl_type type, struct video_ctrl_range range)
-{
-	switch (type) {
-	case VIDEO_CTRL_TYPE_BOOLEAN:
-		if (range.step != 1 || range.max > 1 || range.min < 0) {
-			return -ERANGE;
-		}
-		return 0;
-	case VIDEO_CTRL_TYPE_INTEGER:
-		if (range.step == 0 || range.min > range.max ||
-		    !IN_RANGE(range.def, range.min, range.max)) {
-			return -ERANGE;
-		}
-		return 0;
-	case VIDEO_CTRL_TYPE_INTEGER64:
-		if (range.step64 == 0 || range.min64 > range.max64 ||
-		    !IN_RANGE(range.def64, range.min64, range.max64)) {
-			return -ERANGE;
-		}
-		return 0;
-	case VIDEO_CTRL_TYPE_MENU:
-	case VIDEO_CTRL_TYPE_INTEGER_MENU:
-		if (!IN_RANGE(range.min, 0, range.max) ||
-		    !IN_RANGE(range.def, range.min, range.max)) {
-			return -ERANGE;
-		}
-		return 0;
-	default:
-		return 0;
-	}
-}
-
-static inline void set_type_flag(uint32_t id, enum video_ctrl_type *type, uint32_t *flags)
-{
-	*flags = 0;
-
-	switch (id) {
-	case VIDEO_CID_AUTO_WHITE_BALANCE:
-	case VIDEO_CID_AUTOGAIN:
-	case VIDEO_CID_HFLIP:
-	case VIDEO_CID_VFLIP:
-	case VIDEO_CID_HUE_AUTO:
-	case VIDEO_CID_AUTOBRIGHTNESS:
-	case VIDEO_CID_EXPOSURE_AUTO_PRIORITY:
-	case VIDEO_CID_FOCUS_AUTO:
-	case VIDEO_CID_WIDE_DYNAMIC_RANGE:
-		*type = VIDEO_CTRL_TYPE_BOOLEAN;
-		break;
-	case VIDEO_CID_POWER_LINE_FREQUENCY:
-	case VIDEO_CID_EXPOSURE_AUTO:
-	case VIDEO_CID_COLORFX:
-	case VIDEO_CID_TEST_PATTERN:
-	case VIDEO_CID_CAMERA_ORIENTATION:
-		*type = VIDEO_CTRL_TYPE_MENU;
-		break;
-	case VIDEO_CID_PIXEL_RATE:
-		*type = VIDEO_CTRL_TYPE_INTEGER64;
-		*flags |= VIDEO_CTRL_FLAG_READ_ONLY;
-		break;
-	case VIDEO_CID_LINK_FREQ:
-		*type = VIDEO_CTRL_TYPE_INTEGER_MENU;
-		break;
-	default:
-		*type = VIDEO_CTRL_TYPE_INTEGER;
-		break;
-	}
-}
-
-int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
-		    struct video_ctrl_range range)
-{
-	int ret;
-	uint32_t flags;
-	enum video_ctrl_type type;
-	struct video_ctrl *vc;
-	struct video_device *vdev;
-
-	if (ctrl == NULL) {
-		return -EINVAL;
-	}
-
-	vdev = video_find_vdev(dev);
-	if (!vdev) {
-		return -EINVAL;
-	}
-
-	/* Sanity checks */
-	if (id < VIDEO_CID_BASE) {
-		return -EINVAL;
-	}
-
-	set_type_flag(id, &type, &flags);
-
-	ret = check_range(type, range);
-	if (ret) {
-		return ret;
-	}
-
-	ctrl->cluster_sz = 0;
-	ctrl->cluster = NULL;
-	ctrl->is_auto = false;
-	ctrl->has_volatiles = false;
-	ctrl->menu = NULL;
-	ctrl->vdev = vdev;
-	ctrl->id = id;
-	ctrl->type = type;
-	ctrl->flags = flags;
-	ctrl->range = range;
-
-	if (type == VIDEO_CTRL_TYPE_INTEGER64) {
-		ctrl->val64 = range.def64;
-	} else {
-		ctrl->val = range.def;
-	}
-
-	/* Insert in an ascending order of ctrl's id */
-	SYS_DLIST_FOR_EACH_CONTAINER(&vdev->ctrls, vc, node) {
-		if (vc->id > ctrl->id) {
-			sys_dlist_insert(&vc->node, &ctrl->node);
-			return 0;
-		}
-	}
-
-	sys_dlist_append(&vdev->ctrls, &ctrl->node);
-
-	return 0;
-}
-
-int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
-			 uint8_t def, const char *const menu[])
-{
-	int ret;
-	uint8_t sz = 0;
-	const char *const *_menu = menu ? menu : video_get_std_menu_ctrl(id);
-
-	if (!_menu) {
-		return -EINVAL;
-	}
-
-	while (_menu[sz]) {
-		sz++;
-	}
-
-	ret = video_init_ctrl(
-		ctrl, dev, id,
-		(struct video_ctrl_range){.min = 0, .max = sz - 1, .step = 1, .def = def});
-
-	if (ret) {
-		return ret;
-	}
-
-	ctrl->menu = _menu;
-
-	return 0;
-}
-
-int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
-			     uint8_t def, const int64_t menu[], size_t menu_len)
-{
-	int ret;
-
-	if (!menu) {
-		return -EINVAL;
-	}
-
-	ret = video_init_ctrl(
-		ctrl, dev, id,
-		(struct video_ctrl_range){.min = 0, .max = menu_len - 1, .step = 1, .def = def});
-
-	if (ret) {
-		return ret;
-	}
-
-	ctrl->int_menu = menu;
-
-	return 0;
 }
 
 /* By definition, the cluster is in manual mode if the primary control value is 0 */
@@ -679,4 +498,48 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 				(cq->type == VIDEO_CTRL_TYPE_MENU) ? cq->menu[i] : buf);
 		}
 	}
+}
+
+int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t lane_nb)
+{
+	struct video_control ctrl = {
+		.id = VIDEO_CID_LINK_FREQ,
+	};
+	struct video_ctrl_query ctrl_query = {
+		.dev = dev,
+		.id = VIDEO_CID_LINK_FREQ,
+	};
+	int ret;
+
+	/* Try to get the LINK_FREQ value from the source device */
+	ret = video_get_ctrl(dev, &ctrl);
+	if (ret < 0) {
+		goto fallback;
+	}
+
+	ret = video_query_ctrl(&ctrl_query);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (!IN_RANGE(ctrl.val, ctrl_query.range.min, ctrl_query.range.max)) {
+		return -ERANGE;
+	}
+
+	if (ctrl_query.int_menu == NULL) {
+		return -EINVAL;
+	}
+
+	return (int64_t)ctrl_query.int_menu[ctrl.val];
+
+fallback:
+	/* If VIDEO_CID_LINK_FREQ is not available, approximate from VIDEO_CID_PIXEL_RATE */
+	ctrl.id = VIDEO_CID_PIXEL_RATE;
+	ret = video_get_ctrl(dev, &ctrl);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* CSI D-PHY is using a DDR data bus so bitrate is twice the frequency */
+	return ctrl.val64 * bpp / (2 * lane_nb);
 }

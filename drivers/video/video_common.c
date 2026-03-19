@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2019, Linaro Limited
- * Copyright (c) 2024-2025, tinyVision.ai Inc.
- * Copyright (c) 2026 NXP
+ * SPDX-FileCopyrightText: Copyright tinyVision.ai Inc.
  * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,243 +20,241 @@
 
 LOG_MODULE_REGISTER(video_common, CONFIG_VIDEO_LOG_LEVEL);
 
-#if defined(CONFIG_VIDEO_BUFFER_USE_SHARED_MULTI_HEAP)
-#include <zephyr/multi_heap/shared_multi_heap.h>
-
-#define VIDEO_COMMON_HEAP_ALLOC(align, size, timeout)                                              \
-	shared_multi_heap_aligned_alloc(CONFIG_VIDEO_BUFFER_SMH_ATTRIBUTE, align, size)
-#define VIDEO_COMMON_FREE(block) shared_multi_heap_free(block)
-#else
-
-#if !defined(CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION)
-#define VIDEO_BUFFER_POOL_REGION_NAME __noinit_named(kheap_buf_video_buffer_pool)
-#else
-#define VIDEO_BUFFER_POOL_REGION_NAME Z_GENERIC_SECTION(CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME)
-#endif
-
-/*
- * The k_heap is manually initialized instead of using directly Z_HEAP_DEFINE_IN_SECT
- * since the section might not be yet accessible from the beginning, making it impossible
- * to initialize it if done via Z_HEAP_DEFINE_IN_SECT
- */
-static char VIDEO_BUFFER_POOL_REGION_NAME __aligned(8)
-	video_buffer_pool_mem[MAX(CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE, Z_HEAP_MIN_SIZE)];
-static struct k_heap video_buffer_pool;
-static bool video_buffer_pool_initialized;
-
-static void *video_buffer_k_heap_aligned_alloc(size_t align, size_t bytes, k_timeout_t timeout)
+struct video_device *video_find_vdev(const struct device *dev)
 {
-	if (!video_buffer_pool_initialized) {
-		k_heap_init(&video_buffer_pool, video_buffer_pool_mem,
-			    MAX(CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE, Z_HEAP_MIN_SIZE));
-		video_buffer_pool_initialized = true;
+	if (!dev) {
+		return NULL;
 	}
 
-	return k_heap_aligned_alloc(&video_buffer_pool, align, bytes, timeout);
-}
-
-#define VIDEO_COMMON_HEAP_ALLOC(align, size, timeout)                                              \
-	video_buffer_k_heap_aligned_alloc(align, size, timeout)
-#define VIDEO_COMMON_FREE(block) k_heap_free(&video_buffer_pool, block)
-#endif
-
-static struct video_buffer video_buf[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
-
-struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_timeout_t timeout)
-{
-	struct video_buffer *vbuf = NULL;
-
-	/* find available video buffer */
-	for (uint16_t i = 0; i < ARRAY_SIZE(video_buf); i++) {
-		if (video_buf[i].buffer == NULL) {
-			vbuf = &video_buf[i];
-			vbuf->index = i;
-			break;
+	STRUCT_SECTION_FOREACH(video_device, vdev) {
+		if (vdev->dev == dev) {
+			return vdev;
 		}
 	}
 
-	if (vbuf == NULL) {
-		return NULL;
-	}
-
-	/* Alloc buffer memory */
-	vbuf->buffer = VIDEO_COMMON_HEAP_ALLOC(align, size, timeout);
-	if (vbuf->buffer == NULL) {
-		return NULL;
-	}
-
-	vbuf->memory = VIDEO_MEMORY_INTERNAL;
-	vbuf->size = size;
-	vbuf->bytesused = 0;
-
-	return vbuf;
+	return NULL;
 }
 
-struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout)
+const char *const *video_get_std_menu_ctrl(uint32_t id)
 {
-	return video_buffer_aligned_alloc(size, sizeof(void *), timeout);
-}
+	static char const *const power_line_frequency[] = {
+		"Disabled", "50 Hz", "60 Hz", "Auto", NULL,
+	};
+	static char const *const exposure_auto[] = {
+		"Auto Mode", "Manual Mode", "Shutter Priority Mode", "Aperture Priority Mode", NULL,
+	};
+	static char const *const colorfx[] = {
+		"None", "Black & White", "Sepia", "Negative", "Emboss", "Sketch", "Sky Blue",
+		"Grass Green", "Skin Whiten", "Vivid", "Aqua", "Art Freeze", "Silhouette",
+		"Solarization", "Antique", "Set Cb/Cr", NULL,
+	};
+	static char const *const camera_orientation[] = {
+		"Front", "Back", "External", NULL,
+	};
 
-int video_buffer_release(struct video_buffer *vbuf)
-{
-	if (vbuf == NULL || vbuf->index >= ARRAY_SIZE(video_buf)) {
-		LOG_ERR("Invalid buffer index: %u", vbuf->index);
-		return -EINVAL;
-	}
+	switch (id) {
+	/* User control menus */
+	case VIDEO_CID_POWER_LINE_FREQUENCY:
+		return power_line_frequency;
 
-	if (video_buf[vbuf->index].buffer == NULL) {
-		LOG_ERR("Buffer %u is already released", vbuf->index);
-		return -EINVAL;
-	}
-
-	if (video_buf[vbuf->index].memory == VIDEO_MEMORY_INTERNAL) {
-		VIDEO_COMMON_FREE(video_buf[vbuf->index].buffer);
-	}
-
-	video_buf[vbuf->index].buffer = NULL;
-
-	return 0;
-}
-
-struct video_buffer *video_import_buffer(uint8_t *mem, size_t sz)
-{
-	uint16_t ind;
-
-	if (mem == NULL || sz == 0) {
-		LOG_ERR("Invalid memory address or size");
+	/* Camera control menus */
+	case VIDEO_CID_EXPOSURE_AUTO:
+		return exposure_auto;
+	case VIDEO_CID_COLORFX:
+		return colorfx;
+	case VIDEO_CID_CAMERA_ORIENTATION:
+		return camera_orientation;
+	default:
 		return NULL;
 	}
+}
 
-	/* Find the 1st available slot in the video buffer pool */
-	for (ind = 0; ind < ARRAY_SIZE(video_buf); ind++) {
-		if (video_buf[ind].buffer == NULL) {
-			break;
+static inline int check_range(enum video_ctrl_type type, struct video_ctrl_range range)
+{
+	switch (type) {
+	case VIDEO_CTRL_TYPE_BOOLEAN:
+		if (range.step != 1 || range.max > 1 || range.min < 0) {
+			return -ERANGE;
 		}
+		return 0;
+	case VIDEO_CTRL_TYPE_INTEGER:
+		if (range.step == 0 || range.min > range.max ||
+		    !IN_RANGE(range.def, range.min, range.max)) {
+			return -ERANGE;
+		}
+		return 0;
+	case VIDEO_CTRL_TYPE_INTEGER64:
+		if (range.step64 == 0 || range.min64 > range.max64 ||
+		    !IN_RANGE(range.def64, range.min64, range.max64)) {
+			return -ERANGE;
+		}
+		return 0;
+	case VIDEO_CTRL_TYPE_MENU:
+	case VIDEO_CTRL_TYPE_INTEGER_MENU:
+		if (!IN_RANGE(range.min, 0, range.max) ||
+		    !IN_RANGE(range.def, range.min, range.max)) {
+			return -ERANGE;
+		}
+		return 0;
+	default:
+		return 0;
 	}
-
-	if (ind == ARRAY_SIZE(video_buf)) {
-		return NULL;
-	}
-
-	/* Populate the internal buffer */
-	video_buf[ind].index = ind;
-	video_buf[ind].size = sz;
-	video_buf[ind].memory = VIDEO_MEMORY_EXTERNAL;
-	video_buf[ind].buffer = mem;
-	video_buf[ind].bytesused = 0;
-	video_buf[ind].timestamp = 0;
-
-	return &video_buf[ind];
 }
 
-int video_enqueue(const struct device *dev, struct video_buffer *buf)
+static inline void set_type_flag(uint32_t id, enum video_ctrl_type *type, uint32_t *flags)
 {
-	if (dev == NULL || buf == NULL || buf->index >= CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
-	    (buf->type != VIDEO_BUF_TYPE_INPUT && buf->type != VIDEO_BUF_TYPE_OUTPUT)) {
+	*flags = 0;
+
+	switch (id) {
+	case VIDEO_CID_AUTO_WHITE_BALANCE:
+	case VIDEO_CID_AUTOGAIN:
+	case VIDEO_CID_HFLIP:
+	case VIDEO_CID_VFLIP:
+	case VIDEO_CID_HUE_AUTO:
+	case VIDEO_CID_AUTOBRIGHTNESS:
+	case VIDEO_CID_EXPOSURE_AUTO_PRIORITY:
+	case VIDEO_CID_FOCUS_AUTO:
+	case VIDEO_CID_WIDE_DYNAMIC_RANGE:
+		*type = VIDEO_CTRL_TYPE_BOOLEAN;
+		break;
+	case VIDEO_CID_POWER_LINE_FREQUENCY:
+	case VIDEO_CID_EXPOSURE_AUTO:
+	case VIDEO_CID_COLORFX:
+	case VIDEO_CID_TEST_PATTERN:
+	case VIDEO_CID_CAMERA_ORIENTATION:
+		*type = VIDEO_CTRL_TYPE_MENU;
+		break;
+	case VIDEO_CID_PIXEL_RATE:
+		*type = VIDEO_CTRL_TYPE_INTEGER64;
+		*flags |= VIDEO_CTRL_FLAG_READ_ONLY;
+		break;
+	case VIDEO_CID_LINK_FREQ:
+		*type = VIDEO_CTRL_TYPE_INTEGER_MENU;
+		break;
+	default:
+		*type = VIDEO_CTRL_TYPE_INTEGER;
+		break;
+	}
+}
+
+int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
+		    struct video_ctrl_range range)
+{
+	int ret;
+	uint32_t flags;
+	enum video_ctrl_type type;
+	struct video_ctrl *vc;
+	struct video_device *vdev;
+
+	if (ctrl == NULL) {
 		return -EINVAL;
 	}
 
-	video_buf[buf->index].type = buf->type;
-
-	return video_driver_enqueue(dev, &video_buf[buf->index]);
-}
-
-int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,
-			    size_t *idx)
-{
-	if (fmts == NULL || fmt == NULL || idx == NULL) {
+	vdev = video_find_vdev(dev);
+	if (!vdev) {
 		return -EINVAL;
 	}
 
-	for (int i = 0; fmts[i].pixelformat != 0; i++) {
-		if (fmts[i].pixelformat == fmt->pixelformat &&
-		    IN_RANGE(fmt->width, fmts[i].width_min, fmts[i].width_max) &&
-		    IN_RANGE(fmt->height, fmts[i].height_min, fmts[i].height_max)) {
-			*idx = i;
+	/* Sanity checks */
+	if (id < VIDEO_CID_BASE) {
+		return -EINVAL;
+	}
+
+	vdev = video_find_vdev(dev);
+	if (!vdev) {
+		return -EINVAL;
+	}
+
+	/* Sanity checks */
+	if (id < VIDEO_CID_BASE) {
+		return -EINVAL;
+	}
+
+	set_type_flag(id, &type, &flags);
+
+	ret = check_range(type, range);
+	if (ret) {
+		return ret;
+	}
+
+	ctrl->cluster_sz = 0;
+	ctrl->cluster = NULL;
+	ctrl->is_auto = false;
+	ctrl->has_volatiles = false;
+	ctrl->menu = NULL;
+	ctrl->vdev = vdev;
+	ctrl->id = id;
+	ctrl->type = type;
+	ctrl->flags = flags;
+	ctrl->range = range;
+
+	if (type == VIDEO_CTRL_TYPE_INTEGER64) {
+		ctrl->val64 = range.def64;
+	} else {
+		ctrl->val = range.def;
+	}
+
+	/* Insert in an ascending order of ctrl's id */
+	SYS_DLIST_FOR_EACH_CONTAINER(&vdev->ctrls, vc, node) {
+		if (vc->id > ctrl->id) {
+			sys_dlist_insert(&vc->node, &ctrl->node);
 			return 0;
 		}
 	}
-	return -ENOENT;
-}
 
-int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
-				   const struct video_frmival *desired,
-				   struct video_frmival *match)
-{
-	if (stepwise == NULL || desired == NULL || match == NULL) {
-		return -EINVAL;
-	}
-
-	uint64_t min = stepwise->min.numerator;
-	uint64_t max = stepwise->max.numerator;
-	uint64_t step = stepwise->step.numerator;
-	uint64_t goal = desired->numerator;
-
-	/* Set a common denominator to all values */
-	min *= stepwise->max.denominator * stepwise->step.denominator * desired->denominator;
-	max *= stepwise->min.denominator * stepwise->step.denominator * desired->denominator;
-	step *= stepwise->min.denominator * stepwise->max.denominator * desired->denominator;
-	goal *= stepwise->min.denominator * stepwise->max.denominator * stepwise->step.denominator;
-
-	/* Prevent division by zero */
-	if (step == 0U) {
-		return -EINVAL;
-	}
-	/* Saturate the desired value to the min/max supported */
-	goal = CLAMP(goal, min, max);
-
-	/* Compute a numerator and denominator */
-	match->numerator = min + DIV_ROUND_CLOSEST(goal - min, step) * step;
-	match->denominator = stepwise->min.denominator * stepwise->max.denominator *
-			     stepwise->step.denominator * desired->denominator;
+	sys_dlist_append(&vdev->ctrls, &ctrl->node);
 
 	return 0;
 }
 
-int video_closest_frmival(const struct device *dev, struct video_frmival_enum *match)
+int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
+			 uint8_t def, const char *const menu[])
 {
-	if (dev == NULL || match == NULL || match->type == VIDEO_FRMIVAL_TYPE_STEPWISE) {
+	int ret;
+	uint8_t sz = 0;
+	const char *const *_menu = menu ? menu : video_get_std_menu_ctrl(id);
+
+	if (!_menu) {
 		return -EINVAL;
 	}
 
-	struct video_frmival desired = match->discrete;
-	struct video_frmival_enum fie = {.format = match->format};
-	uint64_t best_diff_nsec = INT32_MAX;
-	uint64_t goal_nsec = video_frmival_nsec(&desired);
-	int ret = 0;
-
-	for (fie.index = 0; video_enum_frmival(dev, &fie) == 0; fie.index++) {
-		struct video_frmival tmp = {0};
-		uint64_t diff_nsec = 0;
-		uint64_t tmp_nsec;
-
-		switch (fie.type) {
-		case VIDEO_FRMIVAL_TYPE_DISCRETE:
-			tmp = fie.discrete;
-			break;
-		case VIDEO_FRMIVAL_TYPE_STEPWISE:
-			ret = video_closest_frmival_stepwise(&fie.stepwise, &desired, &tmp);
-			break;
-		default:
-			CODE_UNREACHABLE;
-		}
-
-		tmp_nsec = video_frmival_nsec(&tmp);
-		diff_nsec = tmp_nsec > goal_nsec ? tmp_nsec - goal_nsec : goal_nsec - tmp_nsec;
-
-		if (diff_nsec < best_diff_nsec) {
-			best_diff_nsec = diff_nsec;
-			match->index = fie.index;
-			match->discrete = tmp;
-		}
-
-		if (diff_nsec == 0) {
-			/* Exact match, stop searching a better match */
-			break;
-		}
+	while (_menu[sz]) {
+		sz++;
 	}
 
-	return ret;
+	ret = video_init_ctrl(
+		ctrl, dev, id,
+		(struct video_ctrl_range){.min = 0, .max = sz - 1, .step = 1, .def = def});
+
+	if (ret) {
+		return ret;
+	}
+
+	ctrl->menu = _menu;
+
+	return 0;
+}
+
+int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
+			     uint8_t def, const int64_t menu[], size_t menu_len)
+{
+	int ret;
+
+	if (!menu) {
+		return -EINVAL;
+	}
+
+	ret = video_init_ctrl(
+		ctrl, dev, id,
+		(struct video_ctrl_range){.min = 0, .max = menu_len - 1, .step = 1, .def = def});
+
+	if (ret) {
+		return ret;
+	}
+
+	ctrl->int_menu = menu;
+
+	return 0;
 }
 
 static int video_read_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, size_t size_w,
@@ -468,118 +465,4 @@ int video_write_cci_multiregs16(const struct i2c_dt_spec *i2c, const struct vide
 	}
 
 	return 0;
-}
-
-int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t lane_nb)
-{
-	struct video_control ctrl = {
-		.id = VIDEO_CID_LINK_FREQ,
-	};
-	struct video_ctrl_query ctrl_query = {
-		.dev = dev,
-		.id = VIDEO_CID_LINK_FREQ,
-	};
-	int ret;
-
-	/* Try to get the LINK_FREQ value from the source device */
-	ret = video_get_ctrl(dev, &ctrl);
-	if (ret < 0) {
-		goto fallback;
-	}
-
-	ret = video_query_ctrl(&ctrl_query);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (!IN_RANGE(ctrl.val, ctrl_query.range.min, ctrl_query.range.max)) {
-		return -ERANGE;
-	}
-
-	if (ctrl_query.int_menu == NULL) {
-		return -EINVAL;
-	}
-
-	return (int64_t)ctrl_query.int_menu[ctrl.val];
-
-fallback:
-	/* If VIDEO_CID_LINK_FREQ is not available, approximate from VIDEO_CID_PIXEL_RATE */
-	ctrl.id = VIDEO_CID_PIXEL_RATE;
-	ret = video_get_ctrl(dev, &ctrl);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* CSI D-PHY is using a DDR data bus so bitrate is twice the frequency */
-	return ctrl.val64 * bpp / (2 * lane_nb);
-}
-
-int video_estimate_fmt_size(struct video_format *fmt)
-{
-	if (fmt == NULL) {
-		return -EINVAL;
-	}
-
-	switch (fmt->pixelformat) {
-	case VIDEO_PIX_FMT_JPEG:
-	case VIDEO_PIX_FMT_PNG:
-	case VIDEO_PIX_FMT_H264:
-		/* Rough estimate for the worst case (quality = 100) */
-		fmt->pitch = 0;
-		fmt->size = fmt->width * fmt->height * 2;
-		break;
-	case VIDEO_PIX_FMT_NV12:
-	case VIDEO_PIX_FMT_NV21:
-		fmt->pitch = fmt->width;
-		fmt->size = fmt->pitch * fmt->height * 2U;
-		break;
-	default:
-		/* Uncompressed format */
-		fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
-		if (fmt->pitch == 0) {
-			return -ENOTSUP;
-		}
-		fmt->size = fmt->pitch * fmt->height;
-		break;
-	}
-
-	return 0;
-}
-
-int video_set_compose_format(const struct device *dev, struct video_format *fmt)
-{
-	struct video_selection sel = {
-		.type = fmt->type,
-		.target = VIDEO_SEL_TGT_COMPOSE,
-		.rect.left = 0,
-		.rect.top = 0,
-		.rect.width = fmt->width,
-		.rect.height = fmt->height,
-	};
-	int ret;
-
-	ret = video_set_selection(dev, &sel);
-	if (ret < 0 && ret != -ENOSYS) {
-		LOG_ERR("Unable to set selection compose");
-		return ret;
-	}
-
-	return video_set_format(dev, fmt);
-}
-
-int video_transfer_buffer(const struct device *src, const struct device *sink,
-			  enum video_buf_type src_type, enum video_buf_type sink_type,
-			  k_timeout_t timeout)
-{
-	struct video_buffer *buf = &(struct video_buffer){.type = src_type};
-	int ret;
-
-	ret = video_driver_dequeue(src, &buf, timeout);
-	if (ret < 0) {
-		return ret;
-	}
-
-	buf->type = sink_type;
-
-	return video_driver_enqueue(sink, buf);
 }

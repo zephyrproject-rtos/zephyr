@@ -8,8 +8,8 @@
 
 /**
  * @file
- * @ingroup video_interface
  * @brief Main header file for video driver API.
+ * @ingroup video_interface
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_VIDEO_H
@@ -29,6 +29,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/dlist.h>
 #include <zephyr/types.h>
 #include <zephyr/video/video.h>
 
@@ -232,67 +233,67 @@ typedef int (*video_api_selection_t)(const struct device *dev, struct video_sele
  */
 __subsystem struct video_driver_api {
 	/**
-	 * @driver_ops_mandatory @copybrief video_set_format
+	 * @driver_ops_mandatory @copybrief video_driver_set_format
 	 */
 	video_api_format_t set_format;
 	/**
-	 * @driver_ops_mandatory @copybrief video_get_format
+	 * @driver_ops_mandatory @copybrief video_driver_get_format
 	 */
 	video_api_format_t get_format;
 	/**
-	 * @driver_ops_mandatory @copybrief video_stream_start
+	 * @driver_ops_mandatory @copybrief video_driver_set_stream
 	 */
 	video_api_set_stream_t set_stream;
 	/**
-	 * @driver_ops_mandatory @copybrief video_get_caps
+	 * @driver_ops_mandatory @copybrief video_driver_get_caps
 	 */
 	video_api_get_caps_t get_caps;
 	/**
-	 * @driver_ops_optional @copybrief video_enqueue
+	 * @driver_ops_optional @copybrief video_driver_enqueue
 	 */
 	video_api_enqueue_t enqueue;
 	/**
-	 * @driver_ops_optional @copybrief video_dequeue
+	 * @driver_ops_optional @copybrief video_driver_dequeue
 	 */
 	video_api_dequeue_t dequeue;
 	/**
-	 * @driver_ops_optional @copybrief video_flush
+	 * @driver_ops_optional @copybrief video_driver_flush
 	 */
 	video_api_flush_t flush;
 	/**
-	 * @driver_ops_optional @copybrief video_set_ctrl
+	 * @driver_ops_optional @copybrief video_driver_set_ctrl
 	 */
 	video_api_ctrl_t set_ctrl;
 	/**
-	 * @driver_ops_optional @copybrief video_get_ctrl
+	 * @driver_ops_optional @copybrief video_driver_get_volatile_ctrl
 	 */
 	video_api_ctrl_t get_volatile_ctrl;
 	/**
-	 * @driver_ops_optional @copybrief video_set_signal
+	 * @driver_ops_optional @copybrief video_driver_set_signal
 	 */
 	video_api_set_signal_t set_signal;
 	/**
-	 * @driver_ops_optional @copybrief video_set_frmival
+	 * @driver_ops_optional @copybrief video_driver_set_frmival
 	 */
 	video_api_frmival_t set_frmival;
 	/**
-	 * @driver_ops_optional @copybrief video_get_frmival
+	 * @driver_ops_optional @copybrief video_driver_get_frmival
 	 */
 	video_api_frmival_t get_frmival;
 	/**
-	 * @driver_ops_optional @copybrief video_enum_frmival
+	 * @driver_ops_optional @copybrief video_driver_enum_frmival
 	 */
 	video_api_enum_frmival_t enum_frmival;
 	/**
-	 * @driver_ops_optional @copybrief video_set_selection
+	 * @driver_ops_optional @copybrief video_driver_set_selection
 	 */
 	video_api_selection_t set_selection;
 	/**
-	 * @driver_ops_optional @copybrief video_get_selection
+	 * @driver_ops_optional @copybrief video_driver_get_selection
 	 */
 	video_api_selection_t get_selection;
 	/**
-	 * @driver_ops_optional @copybrief video_transform_cap
+	 * @driver_ops_optional @copybrief video_driver_transform_cap
 	 */
 	video_api_transform_cap_t transform_cap;
 };

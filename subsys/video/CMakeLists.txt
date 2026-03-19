@@ -4,7 +4,9 @@
 # zephyr-keep-sorted-start
 zephyr_sources_ifdef(CONFIG_VIDEO buffer.c)
 zephyr_sources_ifdef(CONFIG_VIDEO caps.c)
+zephyr_sources_ifdef(CONFIG_VIDEO ctrls.c)
 zephyr_sources_ifdef(CONFIG_VIDEO format.c)
 zephyr_sources_ifdef(CONFIG_VIDEO frmival.c)
 zephyr_sources_ifdef(CONFIG_VIDEO stream.c)
+zephyr_sources_ifdef(CONFIG_VIDEO_SHELL shell.c)
 # zephyr-keep-sorted-stop
