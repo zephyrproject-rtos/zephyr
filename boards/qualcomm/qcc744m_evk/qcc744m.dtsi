@@ -8,8 +8,8 @@
 #include "qcc744m-pinctrl.dtsi"
 
 / {
-	model = "Qualcomm QCC744M Module";
 	compatible = "qcom,qcc744";
+	model = "Qualcomm QCC744M Module";
 
 	chosen {
 		zephyr,flash = &flash0;
@@ -38,26 +38,26 @@
 			#size-cells = <1>;
 
 			slot0_partition: partition@0 {
-				label = "image-0";
 				reg = <0x00000000 0x00100000>;
+				label = "image-0";
 				read-only;
 			};
 
 			storage_partition: partition@100000 {
-				label = "storage";
 				reg = <0x00100000 (0x700000 - 0x2000)>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &gpio0 {
