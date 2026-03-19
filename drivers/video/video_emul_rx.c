@@ -8,12 +8,13 @@
 
 #include <string.h>
 
-#include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/sys/util.h>
-#include <zephyr/drivers/video.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/video.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/video/video.h>
 
 #include "video_device.h"
 

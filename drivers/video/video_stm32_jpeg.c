@@ -6,14 +6,14 @@
 
 #include <errno.h>
 
-#include <zephyr/kernel.h>
-#include <zephyr/irq.h>
-#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/video.h>
-#include <zephyr/drivers/video-controls.h>
+#include <zephyr/irq.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/video/video.h>
 
 #include "video_ctrls.h"
 #include "video_device.h"

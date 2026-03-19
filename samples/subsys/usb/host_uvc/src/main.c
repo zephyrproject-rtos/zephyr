@@ -10,11 +10,11 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/video.h>
-#include <zephyr/drivers/video-controls.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/usb/usbh.h>
+#include <zephyr/video/video.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 

@@ -8,8 +8,8 @@
 #include <stdio.h>
 
 #include <zephyr/drivers/video.h>
-#include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/video/video.h>
 
 #include "video_ctrls.h"
 #include "video_device.h"

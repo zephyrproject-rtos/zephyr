@@ -1,3 +1,7 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /**
 
 @defgroup internal_api Internal and System API
@@ -15,6 +19,12 @@
 
 @defgroup os_services Operating System Services
 @brief Operating System Services
+@{
+@}
+
+@defgroup multimedia Multimedia
+@brief Hardware and software multimedia streaming support.
+@ingroup os_services
 @{
 @}
 
