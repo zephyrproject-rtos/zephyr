@@ -222,6 +222,7 @@ typedef int (*i2c_api_target_register_t)(const struct device *dev,
 					struct i2c_target_config *cfg);
 typedef int (*i2c_api_target_unregister_t)(const struct device *dev,
 					  struct i2c_target_config *cfg);
+
 #ifdef CONFIG_I2C_CALLBACK
 typedef int (*i2c_api_transfer_cb_t)(const struct device *dev,
 				 struct i2c_msg *msgs,
@@ -230,12 +231,8 @@ typedef int (*i2c_api_transfer_cb_t)(const struct device *dev,
 				 i2c_callback_t cb,
 				 void *userdata);
 #endif /* CONFIG_I2C_CALLBACK */
-#if defined(CONFIG_I2C_RTIO) || defined(__DOXYGEN__)
 
-/**
- * @typedef i2c_api_iodev_submit
- * @brief Callback API for submitting work to a I2C device with RTIO
- */
+#ifdef CONFIG_I2C_RTIO
 typedef void (*i2c_api_iodev_submit)(const struct device *dev,
 				     struct rtio_iodev_sqe *iodev_sqe);
 #endif /* CONFIG_I2C_RTIO */
@@ -355,7 +352,7 @@ typedef int (*i2c_target_read_requested_cb_t)(
 typedef int (*i2c_target_read_processed_cb_t)(
 		struct i2c_target_config *config, uint8_t *val);
 
-#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+#if defined(CONFIG_I2C_TARGET_BUFFER_MODE) || defined(__DOXYGEN__)
 /** @brief Function called when a write to the device is completed.
  *
  * This function is invoked by the controller when it completes
@@ -449,15 +446,29 @@ typedef void (*i2c_target_error_cb_t)(struct i2c_target_config *config,
  * same API at different addresses on the bus.
  */
 struct i2c_target_callbacks {
+	/** @copybrief i2c_target_write_requested_cb_t */
 	i2c_target_write_requested_cb_t write_requested;
+	/** @copybrief i2c_target_read_requested_cb_t */
 	i2c_target_read_requested_cb_t read_requested;
+	/** @copybrief i2c_target_write_received_cb_t */
 	i2c_target_write_received_cb_t write_received;
+	/** @copybrief i2c_target_read_processed_cb_t */
 	i2c_target_read_processed_cb_t read_processed;
-#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+#if defined(CONFIG_I2C_TARGET_BUFFER_MODE) || defined(__DOXYGEN__)
+	/**
+	 * @kconfig_dep{CONFIG_I2C_TARGET_BUFFER_MODE}
+	 * @copybrief i2c_target_buf_write_received_cb_t
+	 */
 	i2c_target_buf_write_received_cb_t buf_write_received;
+	/**
+	 * @kconfig_dep{CONFIG_I2C_TARGET_BUFFER_MODE}
+	 * @copybrief i2c_target_buf_read_requested_cb_t
+	 */
 	i2c_target_buf_read_requested_cb_t buf_read_requested;
 #endif
+	/** @copybrief i2c_target_stop_cb_t */
 	i2c_target_stop_cb_t stop;
+	/** @copybrief i2c_target_error_cb_t */
 	i2c_target_error_cb_t error;
 };
 
