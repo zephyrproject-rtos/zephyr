@@ -65,11 +65,11 @@ if(CONFIG_ESP32_BT_LE_CRYPTO_STACK_MBEDTLS OR CONFIG_ESP32_WIFI_MBEDTLS_CRYPTO)
     # Setting legacy build symbols is not allowed so we need to set this
     # to bypass the check.
     -DTF_PSA_CRYPTO_CONFIG_CHECK_BYPASS
-    -DMBEDTLS_ENTROPY_C
-    -DMBEDTLS_BIGNUM_C
-    -DMBEDTLS_ECP_C
+    # MBEDTLS_ECP_C, MBEDTLS_BIGNUM_C, MBEDTLS_ECP_DP_SECP256R1_ENABLED
+    # are auto-derived from PSA_WANT_* by crypto_adjust_config_enable_builtins.h.
+    # MBEDTLS_ENTROPY_C was removed in TF-PSA-Crypto 1.0 (now implied).
+    # Only define symbols not auto-derived:
     -DMBEDTLS_ECDH_C
-    -DMBEDTLS_ECP_DP_SECP256R1_ENABLED
   )
   set(MBEDTLS_EXPORT_REMOVED_HEADERS  ON)
 endif()

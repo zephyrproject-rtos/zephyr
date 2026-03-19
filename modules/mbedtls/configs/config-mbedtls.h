@@ -122,9 +122,7 @@
 #define MBEDTLS_SSL_ALPN
 #endif
 
-#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C) || \
-    defined(CONFIG_MBEDTLS_X509_CRL_PARSE_C) || \
-    defined(CONFIG_MBEDTLS_X509_CSR_PARSE_C)
+#if defined(CONFIG_MBEDTLS_X509_USE_C)
 #define MBEDTLS_X509_USE_C
 #endif
 
