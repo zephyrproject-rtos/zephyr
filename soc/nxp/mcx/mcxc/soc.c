@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include <fsl_clock.h>
 #include <zephyr/dt-bindings/clock/kinetis_sim.h>
 #include <zephyr/arch/cpu.h>
+#include "fsl_smc.h"
 
 /*******************************************************************************
  * Definitions
@@ -129,6 +130,15 @@ void soc_early_init_hook(void)
 #endif /* CONFIG_TEMP_KINETIS */
 
 	clock_init();
+
+#ifdef CONFIG_PM
+	SMC_SetPowerModeProtection(SMC, kSMC_AllowPowerModeAll);
+	/* Keep the system OSC running in STOP modes so that ERCLK32K (and
+	 * therefore the LPTMR system timer when sourced from it) can continue
+	 * to tick and wake the CPU from STOP.
+	 */
+	OSC0->CR |= OSC_CR_EREFSTEN_MASK;
+#endif /* CONFIG_PM */
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK
