@@ -66,12 +66,12 @@
 	ranges = <0x0 0x10000000 DT_SIZE_M(4)>;
 
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <0x1>;
 		#size-cells = <0x1>;
 		ranges;
 
 		code_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "code";
 			reg = <0x0 DT_SIZE_M(4)>;
 			read-only;
