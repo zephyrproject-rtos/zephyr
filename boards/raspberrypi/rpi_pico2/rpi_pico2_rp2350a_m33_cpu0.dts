@@ -79,3 +79,7 @@ gpio0_lo: &gpio0 {
 &wdt0 {
 	status = "okay";
 };
+
+/* Include default memory partition configuration file */
+#define WITH_CPU1_PARTITIONS
+#include <raspberrypi/partitions_4M_default.dtsi>

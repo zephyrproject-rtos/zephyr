@@ -31,10 +31,23 @@
 		 * Then add image-source to the &cpu1_launcher on cpu0
 		 * zephyr,code-partition = &cpu1_slot0_partition;
 		 */
-		zephyr,code-partition = &sram0_cpu1;
+		// zephyr,code-partition = &sram0_cpu1;
+
+		/* It is possible to have a zephyr,code-partition in a partition the
+		 * board does not control. This is necessary to have the image start
+		 * address in flash, so openocd can flash the cpu1 image. I am not sure
+		 * if it is necessary to re-define the flash node with the cpu1-specific
+		 * address space in this dts since, with CONFIG_XIP=n, cpu1 should not
+		 * access the flash while its code is executing (I think????).
+		 */
+		zephyr,code-partition = &cpu1_slot0_partition;
 	};
 };
 
 zephyr_udc0: &usbd {
 	status = "okay";
 };
+
+/* Include default memory partition configuration file */
+#define WITH_CPU1_PARTITIONS
+#include <raspberrypi/partitions_4M_default.dtsi>
