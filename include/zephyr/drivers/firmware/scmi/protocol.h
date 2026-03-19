@@ -134,6 +134,36 @@ struct scmi_protocol {
 	void *data;
 	/** protocol supported version */
 	uint32_t version;
+	/** protocol event */
+	struct scmi_protocol_event *events;
+};
+
+/**
+ * @typedef scmi_protocol_event_callback
+ * @brief Per‑protocol notification callback invoked by the SCMI core.
+ *
+ * Define event-specific information during the static registration phase
+ * of each SCMI protocol. When a P2A notification/interrupt is received,
+ * the SCMI core decodes the message and dispatches it to the corresponding
+ * protocol's callback.
+ *
+ * @param msg_id is the protocol specific message index.
+ * @return int 0 on success, negative error code on failure
+ */
+typedef int (*scmi_protocol_event_callback)(int32_t msg_id);
+
+/**
+ * @struct scmi_protocol_event
+ *
+ * @brief SCMI protocol event structure
+ */
+struct scmi_protocol_event {
+	/** events ids */
+	uint32_t *evts;
+	/** Number of supported protocol's events **/
+	uint32_t num_events;
+	/** protocol private event call back **/
+	scmi_protocol_event_callback cb;
 };
 
 /**
@@ -225,6 +255,19 @@ int scmi_protocol_message_attributes_get(struct scmi_protocol *proto,
  * @retval negative errno if failure
  */
 int scmi_protocol_version_negotiate(struct scmi_protocol *proto, uint32_t version);
+
+/**
+ * @brief Read an SCMI message
+ *
+ * Blocking function used to read an SCMI message over a given channel
+ *
+ * @param proto pointer to SCMI protocol
+ * @param msg pointer to SCMI message to read
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_read_message(struct scmi_protocol *proto, struct scmi_message *msg);
 
 /**
  * @}

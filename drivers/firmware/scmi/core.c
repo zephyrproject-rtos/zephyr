@@ -8,6 +8,7 @@
 #include <zephyr/drivers/firmware/scmi/transport.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/iterable_sections.h>
 
 LOG_MODULE_REGISTER(scmi_core);
 
@@ -41,10 +42,56 @@ int scmi_status_to_errno(int scmi_status)
 	}
 }
 
-static void scmi_core_reply_cb(struct scmi_channel *chan)
+static int scmi_core_handle_notification(int hdr)
 {
-	if (!k_is_pre_kernel()) {
-		k_sem_give(&chan->sem);
+	uint32_t protocol_id, msg_id;
+	struct scmi_protocol_event *events;
+
+	protocol_id = SCMI_MESSAGE_HDR_TAKE_PROTOCOL(hdr);
+	msg_id = SCMI_MESSAGE_HDR_TAKE_MSGID(hdr);
+
+	STRUCT_SECTION_FOREACH(scmi_protocol, it) {
+		events = it->events;
+		if (!events || !events->cb) {
+			continue;
+		}
+
+		if (protocol_id == it->id) {
+			for (uint32_t num = 0; num < events->num_events; num++) {
+				if (msg_id == events->evts[num]) {
+					events->cb(msg_id);
+					return 0;
+				}
+			}
+		}
+	}
+
+	return -ENOENT;
+}
+
+static void scmi_core_reply_cb(struct scmi_channel *chan, int hdr)
+{
+	int msg_type;
+	int status;
+
+	msg_type = SCMI_MESSAGE_HDR_TAKE_TYPE(hdr);
+
+	switch (msg_type) {
+	case SCMI_COMMAND:
+		if (!k_is_pre_kernel()) {
+			k_sem_give(&chan->sem);
+		}
+		break;
+	case SCMI_DELAYED_REPLY:
+		break;
+	case SCMI_NOTIFICATION:
+		status = scmi_core_handle_notification(hdr);
+		if (status) {
+			LOG_WRN("Scmi notification event not found");
+		}
+		break;
+	default:
+		LOG_WRN("Unexpected message type %u", msg_type);
 	}
 }
 
@@ -153,6 +200,28 @@ out_release_mutex:
 	}
 
 	return ret;
+}
+
+int scmi_read_message(struct scmi_protocol *proto, struct scmi_message *msg)
+{
+	if (!proto->rx) {
+		return -ENODEV;
+	}
+
+	if (!proto->rx->ready) {
+		return -EINVAL;
+	}
+
+	/* read message from platform, such as notification event
+	 *
+	 * Unlike scmi_send_message, reading messages with scmi_read_message is not currently
+	 * required in the PRE_KERNEL stage. The interrupt-based logic is used here.
+	 */
+	if (k_is_pre_kernel()) {
+		return -EINVAL;
+	}
+
+	return scmi_transport_read_message(proto->transport, proto->rx, msg);
 }
 
 static int scmi_core_protocol_negotiate(struct scmi_protocol *proto)
