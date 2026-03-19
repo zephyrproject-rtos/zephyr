@@ -7,12 +7,13 @@
 #include <string.h>
 
 #include <zephyr/drivers/stepper/stepper.h>
-#include <zephyr/drivers/stepper/stepper_fake.h>
 #include <zephyr/fff.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_dummy.h>
 #include <zephyr/ztest.h>
 #include <zephyr/sys/util.h>
+
+#include <stepper_fake.h>
 
 #define FAKE_STEPPER_CONTROLLER DEVICE_DT_NAME(DT_NODELABEL(fake_stepper_controller))
 #define FAKE_STEPPER_DRIVER     DEVICE_DT_NAME(DT_NODELABEL(fake_stepper_driver))

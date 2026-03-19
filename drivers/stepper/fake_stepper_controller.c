@@ -5,8 +5,9 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/stepper/stepper.h>
-#include <zephyr/drivers/stepper/stepper_fake.h>
 #include <zephyr/fff.h>
+
+#include "stepper_fake.h"
 
 #ifdef CONFIG_ZTEST
 #include <zephyr/ztest.h>
