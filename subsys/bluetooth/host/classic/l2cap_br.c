@@ -12,7 +12,6 @@
 #include <errno.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/crc.h>
@@ -3743,7 +3742,7 @@ int bt_l2cap_br_server_register(struct bt_l2cap_server *server)
 {
 	int err;
 
-	CHECKIF(server == NULL) {
+	if (server == NULL) {
 		return -EINVAL;
 	}
 
@@ -3789,7 +3788,7 @@ int bt_l2cap_br_server_register(struct bt_l2cap_server *server)
 
 int bt_l2cap_br_server_unregister(struct bt_l2cap_server *server)
 {
-	CHECKIF(server == NULL) {
+	if (server == NULL) {
 		return -EINVAL;
 	}
 
@@ -6221,7 +6220,7 @@ void bt_l2cap_br_init(void)
 
 int bt_l2cap_br_echo_cb_register(struct bt_l2cap_br_echo_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -6236,7 +6235,7 @@ int bt_l2cap_br_echo_cb_register(struct bt_l2cap_br_echo_cb *cb)
 
 int bt_l2cap_br_echo_cb_unregister(struct bt_l2cap_br_echo_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -6355,7 +6354,7 @@ static sys_slist_t br_connless_cbs = SYS_SLIST_STATIC_INIT(br_connless_cbs);
 
 int bt_l2cap_br_connless_register(struct bt_l2cap_br_connless_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -6385,7 +6384,7 @@ int bt_l2cap_br_connless_register(struct bt_l2cap_br_connless_cb *cb)
 
 int bt_l2cap_br_connless_unregister(struct bt_l2cap_br_connless_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
