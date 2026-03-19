@@ -44,6 +44,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* where to go when returning from z_openrisc_switch() */
 	thread->callee_saved.r9 = (uint32_t)z_openrisc_thread_start;
 
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	/* TLS base pointer */
+	thread->callee_saved.r10 = thread->tls;
+#endif
 	/* our switch handle is the thread pointer itself */
 	thread->switch_handle = thread;
 }

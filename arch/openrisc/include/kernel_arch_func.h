@@ -26,6 +26,9 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	__asm__ volatile ("l.movhi r10, hi(0)");
+#endif
 #ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
 	soc_per_core_init_hook();
 #endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
