@@ -10,8 +10,8 @@
 #include "lyra_dvk.dtsi"
 
 / {
-	model = "Ezurio Lyra S DVK";
 	compatible = "ezurio,lyra_dvk_s", "silabs,efr32bg22";
+	model = "Ezurio Lyra S DVK";
 
 	buttons {
 		compatible = "gpio-keys";

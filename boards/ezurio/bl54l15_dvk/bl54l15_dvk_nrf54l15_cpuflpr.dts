@@ -10,8 +10,8 @@
 #include "bl54l15_dvk_common.dtsi"
 
 / {
-	model = "Ezurio BL54L15 DVK nRF54L15 FLPR MCU";
 	compatible = "ezurio,bl54l15_dvk_nrf54l15-cpuflpr";
+	model = "Ezurio BL54L15 DVK nRF54L15 FLPR MCU";
 
 	chosen {
 		zephyr,console = &uart30;
@@ -25,13 +25,13 @@
 &cpuflpr_rram {
 	partitions {
 		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		cpuflpr_code_partition: partition@0 {
-			label = "image-0";
 			reg = <0x0 DT_SIZE_K(96)>;
+			label = "image-0";
 		};
 	};
 };

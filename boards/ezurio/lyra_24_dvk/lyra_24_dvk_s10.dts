@@ -10,6 +10,6 @@
 #include "lyra_24_dvk.dtsi"
 
 / {
-	model = "Ezurio Lyra 24 S10 DVK";
 	compatible = "ezurio,lyra_24_dvk_s10", "silabs,efr32bg24";
+	model = "Ezurio Lyra 24 S10 DVK";
 };

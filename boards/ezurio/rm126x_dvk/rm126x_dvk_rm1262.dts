@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/lora/sx126x.h>
 
 / {
-	model = "Ezurio RM1262 DVK";
 	compatible = "ezurio,rm126x_dvk_rm1262", "silabs,efr32bg22";
+	model = "Ezurio RM1262 DVK";
 };
 
 &usart1 {
