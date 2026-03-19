@@ -12,8 +12,8 @@
 #include <ti/am64x_m4.dtsi>
 
 / {
-	model = "PHYTEC phyBOARD-Electra AM64x M4";
 	compatible = "phytec,phyboard-electra-am64xx-m4", "ti,am6442";
+	model = "PHYTEC phyBOARD-Electra AM64x M4";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -29,8 +29,8 @@
 
 	cpus {
 		cpu@0 {
-			status = "okay";
 			clock-frequency = <DT_FREQ_M(400)>;
+			status = "okay";
 		};
 	};
 
