@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
-	model = "STMicroelectronics STM32H573I DISCOVERY KIT board";
 	compatible = "st,stm32h573i-dk";
+	model = "STMicroelectronics STM32H573I DISCOVERY KIT board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -232,9 +232,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch4_pa3>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -243,9 +243,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch2_pb5>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -254,7 +254,6 @@
 };
 
 &mac {
-	status = "okay";
 	pinctrl-0 = <&eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_ref_clk_pa1
@@ -265,12 +264,13 @@
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -343,16 +343,16 @@
 	ext_flash_ctrl: xspi-flash-controller@0 {
 		compatible = "st,stm32-xspi-nor";
 		reg = <0>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(64)>; /* Ext Flash mem-mapped to 0x90000000 */
 		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
 		spi-bus-width = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
-		status = "okay";
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x90000000 DT_SIZE_M(64)>; /* Ext Flash mem-mapped to 0x90000000 */
+		status = "okay";
 
 		ext_flash: mx25lm51245: ext-flash@0 {
 			compatible = "soc-nv-flash";

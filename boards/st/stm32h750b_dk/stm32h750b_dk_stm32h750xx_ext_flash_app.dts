@@ -8,8 +8,8 @@
 #include "stm32h750b_dk-common.dtsi"
 
 / {
-	model = "STMicroelectronics STM32H750B DISCOVERY KIT";
 	compatible = "st,stm32h750b-dk";
+	model = "STMicroelectronics STM32H750B DISCOVERY KIT";
 
 	chosen {
 		zephyr,flash = &ext_flash;
@@ -28,8 +28,8 @@
 
 		/* Flash has 128KB sector size */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(128)>;
+			label = "mcuboot";
 		};
 	};
 };
@@ -39,18 +39,18 @@
 
 	partitions {
 		slot0_partition: partition@0 {
-			label = "image-0";
 			reg = <0x0 DT_SIZE_M(60)>; /* 60MB */
+			label = "image-0";
 		};
 
 		slot1_partition: partition@3c00000 {
-			label = "image-1";
 			reg = <0x3c00000 DT_SIZE_M(60)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@7800000 {
-			label = "storage";
 			reg = <0x7800000 DT_SIZE_M(8)>;
+			label = "storage";
 		};
 	};
 };

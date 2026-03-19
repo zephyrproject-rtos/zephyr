@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32WBA65RI-NUCLEO board";
 	compatible = "st,stm32wba65ri-nucleo";
+	model = "STMicroelectronics STM32WBA65RI-NUCLEO board";
 
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -117,10 +117,10 @@
 };
 
 &rtc {
-	status = "okay";
 	clocks = <&rcc STM32_CLOCK(APB7, 21)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	prescaler = <32768>;
+	status = "okay";
 };
 
 &usart1 {
@@ -143,8 +143,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb2 &i2c1_sda_pb1>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &adc4 {
@@ -180,23 +180,23 @@ stm32_lp_tick_source: &lptim1 {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(960)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@100000 {
-			label = "image-1";
 			reg = <0x00100000 DT_SIZE_K(968)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@1f2000 {
-			label = "storage";
 			reg = <0x001f2000 DT_SIZE_K(56)>;
+			label = "storage";
 		};
 	};
 };

@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32L152RE-NUCLEO board";
 	compatible = "st,stm32l152re-nucleo";
+	model = "STMicroelectronics STM32L152RE-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -137,9 +137,9 @@
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flash0 {
@@ -149,23 +149,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(224)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@44000 {
-			label = "image-1";
 			reg = <0x00044000 DT_SIZE_K(228)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@7d000 {
-			label = "storage";
 			reg = <0x0007d000 DT_SIZE_K(12)>;
+			label = "storage";
 		};
 	};
 };
@@ -174,9 +174,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pa6>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

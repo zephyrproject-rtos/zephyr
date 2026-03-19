@@ -8,8 +8,8 @@
 #include "stm32l562e_dk_common.dtsi"
 
 / {
-	model = "STMicroelectronics STM32L562E-DK Discovery board";
 	compatible = "st,stm32l562e-dk";
+	model = "STMicroelectronics STM32L562E-DK Discovery board";
 
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -51,23 +51,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(228)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@45000 {
-			label = "image-1";
 			reg = <0x00045000 DT_SIZE_K(230)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@7e800 {
-			label = "storage";
 			reg = <0x0007e800 DT_SIZE_K(6)>;
+			label = "storage";
 		};
 	};
 };

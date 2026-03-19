@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/stm32-tsc-defines.h>
 
 / {
-	model = "STMicroelectronics STM32F072B-DISCO board";
 	compatible = "st,stm32f072b-disco";
+	model = "STMicroelectronics STM32F072B-DISCO board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -105,15 +105,15 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -137,14 +137,13 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pc6>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &tsc {
-	status = "okay";
 	pinctrl-0 = <&tsc_g1_io3_pa2 &tsc_g1_io4_pa3 &tsc_g2_io3_pa6 &tsc_g2_io4_pa7 &tsc_g3_io2_pb0
 		     &tsc_g3_io3_pb1>;
 	pinctrl-names = "default";
@@ -156,6 +155,7 @@
 	st,spread-spectrum-prescaler = <2>;
 	st,spread-spectrum-deviation = <100>;
 	st,max-count-value = <8191>;
+	status = "okay";
 
 	tsc_group1: g1 {
 		group = <1>;

@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32G071RB-NUCLEO board";
 	compatible = "st,stm32g071rb-nucleo";
+	model = "STMicroelectronics STM32G071RB-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -111,24 +111,24 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pa6>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pa11 &i2c2_sda_pa12>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -151,16 +151,16 @@
 	clock-names = "adcx", "adc_ker";
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1>;
 	pinctrl-names = "default";
+	vref-mv = <3300>;
 	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
-	vref-mv = <3300>;
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &die_temp {
@@ -174,23 +174,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(36)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@9000 {
-			label = "image-0";
 			reg = <0x00009000 DT_SIZE_K(42)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@13800 {
-			label = "image-1";
 			reg = <0x00013800 DT_SIZE_K(44)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@1e800 {
-			label = "storage";
 			reg = <0x0001e800 DT_SIZE_K(6)>;
+			label = "storage";
 		};
 	};
 };

@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32F091RC-NUCLEO board";
 	compatible = "st,stm32f091rc-nucleo";
+	model = "STMicroelectronics STM32F091RC-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -104,16 +104,16 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
 	/* Pin conflict with can1. Enable only with can1 disabled. */
 	pinctrl-0 = <&i2c2_scl_pa11 &i2c2_sda_pa12>;
 	pinctrl-names = "default";
-	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "disabled";
 };
 
 &can1 {
@@ -157,9 +157,9 @@
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dma1 {
@@ -192,23 +192,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(100)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@25000 {
-			label = "image-1";
 			reg = <0x00025000 DT_SIZE_K(102)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@3e800 {
-			label = "storage";
 			reg = <0x0003e800 DT_SIZE_K(6)>;
+			label = "storage";
 		};
 	};
 };

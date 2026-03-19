@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32F469I-DISCO board";
 	compatible = "st,stm32f469i-disco";
+	model = "STMicroelectronics STM32F469I-DISCO board";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -27,8 +27,8 @@
 
 	sdram1: sdram@c0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(16)>;
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM1";
 	};
 
@@ -154,7 +154,6 @@ zephyr_udc0: &usbotg_fs {
 &sdmmc1 {
 	clocks = <&rcc STM32_CLOCK(APB2, 11)>,
 		 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
-	status = "okay";
 	pinctrl-0 = <&sdio_d0_pc8
 		     &sdio_d1_pc9
 		     &sdio_d2_pc10
@@ -164,6 +163,7 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	cd-gpios = <&gpiog 2 GPIO_ACTIVE_LOW>;
 	disk-name = "SD";
+	status = "okay";
 };
 
 &fmc {

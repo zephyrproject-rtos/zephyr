@@ -8,8 +8,8 @@
 #include "nucleo_l552ze_q-common.dtsi"
 
 / {
-	model = "STMicroelectronics STM32L552ZE-NUCLEO-Q board";
 	compatible = "st,stm32l552ze-nucleo-q";
+	model = "STMicroelectronics STM32L552ZE-NUCLEO-Q board";
 
 	#address-cells = <1>;
 	#size-cells = <1>;

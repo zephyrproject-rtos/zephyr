@@ -19,9 +19,9 @@
 
 	sdram2: sdram@d0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		/* 128Mbit, but only half is available by HW design */
 		reg = <0xd0000000 DT_SIZE_M(8)>;
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM2";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
@@ -92,7 +92,6 @@
 	disp-on-gpios = <&gpiod 7 GPIO_ACTIVE_HIGH>;
 
 	ext-sdram = <&sdram2>;
-	status = "okay";
 
 	clocks = <&rcc STM32_CLOCK(APB3, 3)>,
 		 <&rcc STM32_SRC_PLL3_R NO_SEL>;
@@ -100,6 +99,11 @@
 	width = <480>;
 	height = <272>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+
+	def-back-color-red = <0xff>;
+	def-back-color-green = <0xff>;
+	def-back-color-blue = <0xff>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -114,10 +118,6 @@
 		hfront-porch = <8>;
 		vfront-porch = <4>;
 	};
-
-	def-back-color-red = <0xff>;
-	def-back-color-green = <0xff>;
-	def-back-color-blue = <0xff>;
 };
 
 &pll {
@@ -180,16 +180,16 @@
 	ext_flash_ctrl: qspi-flash-controller@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(128)>; /* Ext Flash mem-mapped to 0x90000000 */
 		size = <DT_SIZE_M(512)>; /* 64MB for each Flash */
 		qspi-max-frequency = <72000000>;
 		cs-high-time = <4>; /* >= 50 ns */
 		spi-bus-width = <4>;
 		reset-cmd;
-		status = "okay";
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x90000000 DT_SIZE_M(128)>; /* Ext Flash mem-mapped to 0x90000000 */
+		status = "okay";
 
 		/* Sector erase 64KB uniform granularity for each Flash */
 		/* Subsector erase 4KB, 32KB granularity for each Flash */
@@ -224,11 +224,11 @@
 	status = "okay";
 
 	sdram {
-		status = "okay";
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x230>;
 		refresh-rate = <0x603>;
+		status = "okay";
 
 		bank@1 {
 			reg = <1>;

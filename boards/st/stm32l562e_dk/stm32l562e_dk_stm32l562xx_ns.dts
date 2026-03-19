@@ -8,8 +8,8 @@
 #include "stm32l562e_dk_common.dtsi"
 
 / {
-	model = "STMicroelectronics STM32L562E-DK Discovery board";
 	compatible = "st,stm32l562e-dk";
+	model = "STMicroelectronics STM32L562E-DK Discovery board";
 
 	#address-cells = <1>;
 	#size-cells = <1>;

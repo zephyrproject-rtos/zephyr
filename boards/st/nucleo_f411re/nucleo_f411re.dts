@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32F411RE-NUCLEO board";
 	compatible = "st,stm32f411re-nucleo";
+	model = "STMicroelectronics STM32F411RE-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -91,8 +91,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {

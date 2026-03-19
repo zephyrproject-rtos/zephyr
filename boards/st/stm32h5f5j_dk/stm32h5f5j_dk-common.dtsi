@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
-	model = "STMicroelectronics STM32H5F5J DISCOVERY KIT board";
 	compatible = "st,stm32h5f5j-dk";
+	model = "STMicroelectronics STM32H5F5J DISCOVERY KIT board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -142,9 +142,9 @@
 	status = "okay";
 
 	pwm5: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim5_ch1_ph10>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -153,9 +153,9 @@
 	status = "okay";
 
 	pwm14: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim14_ch1_pa7>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -164,9 +164,9 @@
 	status = "okay";
 
 	pwm15: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim15_ch2_pe6>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -284,10 +284,10 @@
 		spi-bus-width = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
-		status = "okay";
 
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "okay";
 
 		ext_flash: mx25lm51245: ext-flash@0 {
 			compatible = "soc-nv-flash";

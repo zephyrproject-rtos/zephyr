@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32WL55JC-NUCLEO board";
 	compatible = "st,stm32wl55-nucleo";
+	model = "STMicroelectronics STM32WL55JC-NUCLEO board";
 
 	chosen {
 		zephyr,console = &lpuart1;
@@ -124,8 +124,8 @@ stm32_lp_tick_source: &lptim1 {
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pa12 &i2c2_sda_pa11>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -145,9 +145,9 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch4_pb11>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -179,7 +179,6 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 
 	lora: radio@0 {
-		status = "okay";
 		tx-enable-gpios = <&gpioc 4 GPIO_ACTIVE_LOW>; /* FE_CTRL1 */
 		rx-enable-gpios = <&gpioc 5 GPIO_ACTIVE_LOW>; /* FE_CTRL2 */
 		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V7>;
@@ -192,6 +191,7 @@ stm32_lp_tick_source: &lptim1 {
 		power-amplifier-output = "rfo-hp";
 		rfo-lp-max-power = <15>;
 		rfo-hp-max-power = <22>;
+		status = "okay";
 	};
 };
 
@@ -202,24 +202,24 @@ stm32_lp_tick_source: &lptim1 {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(98)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@24800 {
-			label = "image-1";
 			reg = <0x00024800 DT_SIZE_K(100)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@3d800 {
-			label = "storage";
 			reg = <0x0003d800 DT_SIZE_K(10)>;
+			label = "storage";
 		};
 	};
 };

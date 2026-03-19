@@ -62,9 +62,9 @@
 };
 
 &clk_msis {
-	status = "okay";
 	msi-range = <4>;
 	msi-pll-mode;
+	status = "okay";
 };
 
 &pll1 {
@@ -113,24 +113,24 @@ stm32_lp_tick_source: &lptim1 {
 };
 
 &timers4 {
-	status = "okay";
 	st,prescaler = <1>;
+	status = "okay";
 
 	pwm4: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim4_ch1_pb6>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &timers3 {
-	status = "okay";
 	st,prescaler = <255>;
+	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch2_pe4>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -171,17 +171,17 @@ stm32_lp_tick_source: &lptim1 {
 	ext_flash_ctrl: ospi-flash-controller@0 {
 		compatible = "st,stm32-ospi-nor";
 		reg = <0>;
+
+		ranges = <0x0 0x70000000 DT_SIZE_M(64)>; /* Ext Flash mem-mapped to 0x70000000 */
 		size = <DT_SIZE_M(512)>; /* 512 Megabits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
-		status = "okay";
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		ranges = <0x0 0x70000000 DT_SIZE_M(64)>; /* Ext Flash mem-mapped to 0x70000000 */
+		status = "okay";
 
 		ext_flash: mx25lm51245: ext-flash@0 {
 			compatible = "soc-nv-flash";
@@ -195,15 +195,15 @@ stm32_lp_tick_source: &lptim1 {
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_ph5>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	veml6030@10 {
 		compatible = "vishay,veml7700";
@@ -232,11 +232,11 @@ stm32_lp_tick_source: &lptim1 {
 	eeprom0: eeprom@56 {
 		compatible = "atmel,at24";
 		reg = <0x56>;
-		status = "okay";
 		size = <DT_SIZE_K(32)>;
 		pagesize = <64>;
 		address-width = <16>;
 		timeout = <5>;
+		status = "okay";
 	};
 
 	hts221@5f {

@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32F103RB-NUCLEO board";
 	compatible = "st,stm32f103rb-nucleo";
+	model = "STMicroelectronics STM32F103RB-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -97,8 +97,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_remap1_pb8 &i2c1_sda_remap1_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -120,9 +120,9 @@
 	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim1_ch1_pwm_out_pa8>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -131,9 +131,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch2_pwm_in_pa1>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -168,23 +168,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(34)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@8800 {
-			label = "image-0";
 			reg = <0x00008800 DT_SIZE_K(45)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@13c00 {
-			label = "image-1";
 			reg = <0x00013c00 DT_SIZE_K(46)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@1f400 {
-			label = "storage";
 			reg = <0x0001f400 DT_SIZE_K(3)>;
+			label = "storage";
 		};
 	};
 };

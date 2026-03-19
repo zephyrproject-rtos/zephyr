@@ -11,8 +11,8 @@
 #include "arduino_r3_connector.dtsi"
 
 / {
-	model = "STMicroelectronics STM32L452RE-P-NUCLEO board";
 	compatible = "st,stm32l452re-nucleo";
+	model = "STMicroelectronics STM32L452RE-P-NUCLEO board";
 
 	leds: leds {
 		compatible = "gpio-leds";

@@ -9,8 +9,8 @@
 #include "nucleo_h7s3l8-common.dtsi"
 
 / {
-	model = "STMicroelectronics STM32H7S3L8-NUCLEO board";
 	compatible = "st,stm32h7s3l8-nucleo";
+	model = "STMicroelectronics STM32H7S3L8-NUCLEO board";
 
 	chosen {
 		zephyr,flash = &flash0;
@@ -27,8 +27,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0x00000000 DT_SIZE_M(32)>; /* 32MB */
+			label = "storage";
 		};
 	};
 };
