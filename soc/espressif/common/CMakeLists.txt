@@ -68,6 +68,18 @@ board_finalize_runner_args(esp32 "--esp-monitor-baud=${monitor_baud}")
 
 message(STATUS "Image partition address: ${image_off}")
 
+# Check for lsi instructions loading from IROM on FPU-capable Xtensa SoCs.
+# GCC 14 may generate lsi from literal pools in IROM, which is instruction-bus
+# only on Harvard-architecture SoCs, causing EXCCAUSE 3 at runtime.
+if(CONFIG_CPU_HAS_FPU AND CONFIG_XTENSA)
+  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+    COMMAND
+      ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/check_instructions.py
+    ARGS
+      ${CMAKE_OBJDUMP}
+      ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME})
+endif()
+
 # Look for cross references between bootloader sections
 if(CONFIG_MCUBOOT)
     message("check_callgraph using: ${ESP_IDF_PATH}/tools/ci/check_callgraph.py")
