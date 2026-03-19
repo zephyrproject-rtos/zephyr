@@ -9,8 +9,8 @@
 #include <st/f4/stm32f415rgtx-pinctrl.dtsi>
 
 / {
-	model = "Mikroe MINI-M4 for STM32 board";
 	compatible = "mikroe,mini-m4-for-stm32";
+	model = "Mikroe MINI-M4 for STM32 board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -90,9 +90,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pb4>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
