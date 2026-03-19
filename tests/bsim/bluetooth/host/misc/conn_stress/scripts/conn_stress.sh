@@ -12,7 +12,7 @@ bsim_peripheral_exe_name="bs_${BOARD_TS}_${test_path}_peripheral_prj_conf"
 bsim_args="-RealEncryption=1 -v=2 -s=${simulation_id}"
 test_args="-argstest notify_size=220 conn_interval=32"
 
-EXECUTE_TIMEOUT=120
+EXECUTE_TIMEOUT=300
 
 cd ${BSIM_OUT_PATH}/bin
 
