@@ -13,8 +13,8 @@
 #include "mgm260p_rb4350a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs MGM260P 2.4 GHz +10 dBm Radio Board (MGM260P-RB4350A, BRD4350A)";
 	compatible = "silabs,mgm260p_rb4350a", "silabs,mgm26";
+	model = "Silicon Labs MGM260P 2.4 GHz +10 dBm Radio Board (MGM260P-RB4350A, BRD4350A)";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;
@@ -205,9 +205,9 @@
 	clock-frequency = <DT_FREQ_M(10)>;
 	pinctrl-0 = <&eusart1_default>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	cs-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 
 	ls0xx_ls013b7dh03: ls0xx@0 {
 		compatible = "sharp,ls0xx";

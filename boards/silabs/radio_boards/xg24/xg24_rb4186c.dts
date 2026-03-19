@@ -9,8 +9,8 @@
 #include "xg24_rb418xc.dtsi"
 
 / {
-	model = "Silicon Labs EFR32xG24 2.4 GHz 10 dBm Radio Board (xG24-RB4186C, BRD4186C)";
 	compatible = "silabs,xg24_rb4186c", "silabs,efr32mg24";
+	model = "Silicon Labs EFR32xG24 2.4 GHz 10 dBm Radio Board (xG24-RB4186C, BRD4186C)";
 };
 
 &dcdc {

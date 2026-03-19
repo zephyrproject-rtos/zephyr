@@ -9,8 +9,8 @@
 #include "xg26_explorer_kit.dtsi"
 
 / {
-	model = "Silicon Labs PG26 Explorer Kit";
 	compatible = "silabs,pg26_ek2711a", "silabs,efm32pg26";
+	model = "Silicon Labs PG26 Explorer Kit";
 };
 
 &hfxo {

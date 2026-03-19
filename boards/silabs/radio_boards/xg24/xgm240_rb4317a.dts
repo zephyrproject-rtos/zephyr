@@ -9,6 +9,6 @@
 #include "xgm240_rb431xa.dtsi"
 
 / {
-	model = "Silicon Labs xGM240P +20 dBm Module Radio Board (xGM240-RB4317A, BRD4317A)";
 	compatible = "silabs,xgm240_rb4317a", "silabs,mgm24";
+	model = "Silicon Labs xGM240P +20 dBm Module Radio Board (xGM240-RB4317A, BRD4317A)";
 };

@@ -10,8 +10,8 @@
 #include "xg22_radio_board.dtsi"
 
 / {
-	model = "Silicon Labs BRD4182A (EFR32xG22 Radio Board)";
 	compatible = "silabs,slwrb4182a", "silabs,efr32mg22";
+	model = "Silicon Labs BRD4182A (EFR32xG22 Radio Board)";
 
 	aliases {
 		led0 = &led0;

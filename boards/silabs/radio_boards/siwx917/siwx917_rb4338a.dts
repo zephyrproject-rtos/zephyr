@@ -10,8 +10,8 @@
 #include "common.dtsi"
 
 / {
-	model = "Silicon Labs BRD4338A (SiWG917 Radio Board)";
 	compatible = "silabs,x917_rb4338a", "silabs,siwg917";
+	model = "Silicon Labs BRD4338A (SiWG917 Radio Board)";
 
 	aliases {
 		led1 = &led1;

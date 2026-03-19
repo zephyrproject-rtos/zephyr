@@ -9,8 +9,8 @@
 #include "xg22_radio_board.dtsi"
 
 / {
-	model = "Silicon Labs BRD4311A (BGM220 Radio Board)";
 	compatible = "silabs,slwrb4311a", "silabs,bgm220";
+	model = "Silicon Labs BRD4311A (BGM220 Radio Board)";
 
 	aliases {
 		led0 = &led0;

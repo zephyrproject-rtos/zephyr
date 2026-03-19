@@ -9,8 +9,8 @@
 #include "xg26_explorer_kit.dtsi"
 
 / {
-	model = "Silicon Labs xGM260P Explorer Kit";
 	compatible = "silabs,mgm260p_ek2713a", "silabs,mgm26";
+	model = "Silicon Labs xGM260P Explorer Kit";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;

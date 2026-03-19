@@ -13,8 +13,8 @@
 #include "siwx917_dk2605a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs BRD2605A (SiWx917 DK2605A Dev Kit)";
 	compatible = "silabs,siwx917_dk2605a", "silabs,siwg917";
+	model = "Silicon Labs BRD2605A (SiWx917 DK2605A Dev Kit)";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci0;
@@ -157,6 +157,8 @@ zephyr_i2c: &ulpi2c {
 	pinctrl-names = "default";
 	silabs,adc-ref-voltage = <3300>;
 
+	status = "okay";
+
 	channel@0 {
 		reg = <0>;
 		zephyr,gain = "ADC_GAIN_1";
@@ -165,8 +167,6 @@ zephyr_i2c: &ulpi2c {
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <SIWX91X_ADC_INPUT_HP28>;
 	};
-
-	status = "okay";
 };
 
 /* TODO: Add ICMCM-40627 with SSI */
