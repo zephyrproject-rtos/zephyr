@@ -149,8 +149,9 @@ colorama==0.4.6 \
     #   pytest
     #   sphinx
     #   sphinx-autobuild
-coverxygen==1.8.1 \
-    --hash=sha256:d1c2f6569e8df8823ae313b1f7876e88ff20b4372c6d02f04c51fb5dc424576f
+coverxygen==1.8.2 \
+    --hash=sha256:3ce04029589c150aee13c7eada2779f2b3c15385b4f102cdf7a71909c9cc6626 \
+    --hash=sha256:85cc1408ce9af906990acfc1168489f6b25811d439e4b8d27a1df4498230c5ac
     # via -r requirements.in
 docopt==0.6.2 \
     --hash=sha256:49b3a825280bd66b3aa83585ef59c4a8c82f2c8a522dbe754a8bc8d08c85c491
