@@ -6,6 +6,7 @@
 
 #include <zephyr/logging/log.h>
 #include "mailbox.h"
+#include <zephyr/drivers/firmware/scmi/protocol.h>
 
 LOG_MODULE_REGISTER(scmi_mbox);
 
@@ -14,10 +15,19 @@ static void scmi_mbox_cb(const struct device *mbox,
 			 void *user_data,
 			 struct mbox_msg *data)
 {
+	int ret;
 	struct scmi_channel *scmi_chan = user_data;
+	struct scmi_mbox_channel *mbox_chan = scmi_chan->data;
+	uint32_t hdr;
+
+	ret = scmi_shmem_read_hdr(mbox_chan->shmem, &hdr);
+	if (ret < 0) {
+		LOG_ERR("failed to read message header from shmem: %d", ret);
+		return;
+	}
 
 	if (scmi_chan->cb) {
-		scmi_chan->cb(scmi_chan);
+		scmi_chan->cb(scmi_chan, hdr);
 	}
 }
 
