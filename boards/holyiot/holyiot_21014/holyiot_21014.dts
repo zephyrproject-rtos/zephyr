@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Holyiot 21014";
 	compatible = "holyiot,21014";
+	model = "Holyiot 21014";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -82,10 +82,10 @@
 
 &spi0 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-1 = <&spi0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &flash0 {
@@ -95,23 +95,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x0000c000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000c000 0x0000f000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@1b000 {
-			label = "image-1";
 			reg = <0x0001b000 0x0000f000>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@2a000 {
-			label = "storage";
 			reg = <0x0002a000 0x00006000>;
+			label = "storage";
 		};
 	};
 };

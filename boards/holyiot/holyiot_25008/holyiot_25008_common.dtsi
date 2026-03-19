@@ -78,8 +78,8 @@
 };
 
 &vregmain {
-	status = "okay";
 	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+	status = "okay";
 };
 
 &grtc {
@@ -130,11 +130,11 @@
 };
 
 &spi00 {
-	status = "okay";
 	cs-gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi00_default>;
 	pinctrl-1 = <&spi00_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	lis2dh: lis2dh@0 {
 		compatible = "st,lis2dh", "st,lis2dh12";

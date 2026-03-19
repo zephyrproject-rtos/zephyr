@@ -9,8 +9,8 @@
 #include "holyiot_25008_common.dtsi"
 
 / {
-	model = "HOLYIOT 25008";
 	compatible = "holyiot,holyiot_25008-nrf54l15-cpuapp";
+	model = "HOLYIOT 25008";
 
 	chosen {
 		zephyr,console = &uart20;
