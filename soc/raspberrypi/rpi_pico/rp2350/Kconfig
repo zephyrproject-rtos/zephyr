@@ -32,17 +32,6 @@ config SOC_RP2350B_HAZARD3
 	select INCLUDE_RESET_VECTOR
 	select RISCV
 
-config SOC_RP2350A_M33_CPU0
-	select ARM
-	select ARM_TRUSTZONE_M
-	select CPU_CORTEX_M_HAS_SYSTICK
-	select CPU_CORTEX_M_HAS_VTOR
-	select CPU_CORTEX_M33
-	select CPU_HAS_ARM_MPU
-	select CPU_HAS_ARM_SAU
-	select CPU_HAS_FPU
-	select ARMV8_M_DSP
-
 config SOC_RP2350A_M33_CPU1
 	select ARM
 	select ARM_TRUSTZONE_M
@@ -87,7 +76,7 @@ config RPI_PICO_SIGNING_KEY
 config SOC_RP2350_CPU1_ENABLE
 	bool "Boot the RP2350 CPU1"
 	default y if MBOX
-	depends on SOC_RP2350A_M33 || SOC_RP2350A_M33_CPU0
+	depends on SOC_RP2350A_M33
 	depends on $(dt_nodelabel_enabled,sram0_cpu1)
 	select SOC_LATE_INIT_HOOK
 	help
