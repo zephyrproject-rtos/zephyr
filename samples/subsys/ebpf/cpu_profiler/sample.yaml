@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: eBPF CPU Profiler
+  description: >
+    Real-time CPU utilisation monitor with a 6-bucket idle-duration
+    histogram built entirely from eBPF bytecode running on the idle
+    enter/exit tracepoints.
+
+common:
+  platform_allow:
+    - native_sim
+    - qemu_cortex_m3
+    - qemu_x86
+  tags: ebpf
+
+tests:
+  sample.ebpf.cpu_profiler:
+    integration_platforms:
+      - frdm_mcxn236
+    platform_allow:
+      - frdm_mcxn236
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "eBPF programs detached\\. Profiling complete\\."
+    tags: ebpf
