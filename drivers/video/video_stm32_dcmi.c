@@ -17,6 +17,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_stm32.h>
+#include <zephyr/video/video.h>
 
 #include <stm32_ll_dma.h>
 

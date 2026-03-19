@@ -11,7 +11,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/usb/usbd.h>
-#include <zephyr/drivers/video.h>
+#include <zephyr/video/video.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/usb/class/usbd_uvc.h>
 

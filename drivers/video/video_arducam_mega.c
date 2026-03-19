@@ -9,7 +9,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/video-controls.h>
+#include <zephyr/video/video.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/video/arducam_mega.h>

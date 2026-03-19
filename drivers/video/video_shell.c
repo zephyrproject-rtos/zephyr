@@ -9,7 +9,7 @@
 #include <stdlib.h>
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/video-controls.h>
+#include <zephyr/video/controls.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>

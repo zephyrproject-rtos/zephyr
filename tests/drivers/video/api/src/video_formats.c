@@ -4,7 +4,7 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/drivers/video.h>
+#include <zephyr/video/video.h>
 
 ZTEST(video_formats, test_video_formats)
 {
