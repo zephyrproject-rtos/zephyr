@@ -10,8 +10,8 @@
 #include <nuvoton/npcx/npcx9/npcx9-pinctrl.dtsi>
 
 / {
-	model = "Google Quincy development board";
 	compatible = "google,quincy-fpmcu";
+	model = "Google Quincy development board";
 
 	chosen {
 		zephyr,console = &uart1;
@@ -48,9 +48,9 @@
 
 /* SHI0: communication with the AP */
 &shi0 {
-	status = "okay";
 	pinctrl-0 = <&shi_gp46_47_53_55>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* SPIP0: communication with the fingerprint sensor */
