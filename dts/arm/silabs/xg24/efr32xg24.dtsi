@@ -33,7 +33,7 @@
 				status = "disabled";
 			};
 
-			protimer: timer {
+			protimer: protimer {
 				compatible = "silabs,protimer";
 				status = "disabled";
 			};
