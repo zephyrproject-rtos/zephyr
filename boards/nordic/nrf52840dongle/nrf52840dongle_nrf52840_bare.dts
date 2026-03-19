@@ -21,26 +21,26 @@
 		 */
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 0x00012000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@12000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00012000 0x00075000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@87000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00087000 0x00075000>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@fc000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x000fc000 0x00004000>;
+			label = "storage";
 		};
 	};
 };

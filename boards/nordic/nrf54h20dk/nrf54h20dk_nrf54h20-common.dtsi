@@ -23,7 +23,6 @@ wifi_spi: &spi130 {};
 
 	mx25uw63: mx25uw6345g@0 {
 		compatible = "mxicy,mx25u", "jedec,mspi-nor";
-		status = "disabled";
 		reg = <0>;
 		jedec-id = [c2 84 37];
 		sfdp-bfp = [e5 20 8a ff ff ff ff 03 00 ff 00 ff 00 ff 00 ff
@@ -49,5 +48,6 @@ wifi_spi: &spi130 {};
 		mspi-cpp-mode = "MSPI_CPP_MODE_0";
 		mspi-endian = "MSPI_BIG_ENDIAN";
 		mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
+		status = "disabled";
 	};
 };

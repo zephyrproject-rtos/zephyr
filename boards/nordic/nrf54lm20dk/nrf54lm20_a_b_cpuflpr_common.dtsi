@@ -14,13 +14,13 @@
 &cpuflpr_rram {
 	partitions {
 		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		cpuflpr_code_partition: partition@0 {
-			label = "image-0";
 			reg = <0x0 DT_SIZE_K(96)>;
+			label = "image-0";
 		};
 	};
 };

@@ -23,9 +23,9 @@
 
 	/* Single IPC channel: 4KB shared memory for TX+RX */
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		ipc_shm_area_cpuapp_cpuuma: memory@200c0000 {
 			compatible = "mmio-sram";
@@ -119,11 +119,11 @@
 };
 
 &spi00 {
-	status = "okay";
 	cs-gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi00_default>;
 	pinctrl-1 = <&spi00_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &adc {
@@ -152,6 +152,6 @@
 };
 
 &qspi00 {
-	status = "okay";
 	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	status = "okay";
 };

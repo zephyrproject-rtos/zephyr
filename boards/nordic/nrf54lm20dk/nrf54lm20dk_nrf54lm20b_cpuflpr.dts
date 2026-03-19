@@ -10,8 +10,8 @@
 #include "nrf54lm20_a_b_cpuflpr_common.dtsi"
 
 / {
-	model = "Nordic nRF54LM20 DK nRF54LM20B FLPR MCU";
 	compatible = "nordic,nrf54lm20dk_nrf54lm20b-cpuflpr";
+	model = "Nordic nRF54LM20 DK nRF54LM20B FLPR MCU";
 
 	chosen {
 		zephyr,console = &uart30;

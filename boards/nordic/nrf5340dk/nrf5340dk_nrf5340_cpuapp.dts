@@ -9,8 +9,8 @@
 #include "nrf5340_cpuapp_common.dtsi"
 
 / {
-	model = "Nordic NRF5340 DK NRF5340 Application";
 	compatible = "nordic,nrf5340-dk-nrf5340-cpuapp";
+	model = "Nordic NRF5340 DK NRF5340 Application";
 
 	chosen {
 		zephyr,sram = &sram0_image;
@@ -27,8 +27,8 @@
 
 	boot_mode0: boot_mode@0 {
 		compatible = "zephyr,retention";
-		status = "okay";
 		reg = <0x0 0x1>;
+		status = "okay";
 	};
 };
 
