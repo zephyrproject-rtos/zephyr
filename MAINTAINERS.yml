@@ -6689,6 +6689,7 @@ West:
   collaborators:
     - wearyzen
     - ithinuel
+    - ceolin
   files:
     - modules/trusted-firmware-a/
   labels:
