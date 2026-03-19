@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Cirrus Logic CRD40L50-POC-Q";
 	compatible = "cirrus,crd40l50";
+	model = "Cirrus Logic CRD40L50-POC-Q";
 
 	aliases {
 		flash1 = &flash_1;
@@ -86,7 +86,6 @@
 };
 
 &pll {
-	status = "okay";
 
 	clocks = <&clk_hsi>;
 
@@ -94,6 +93,7 @@
 	mul-n = <336>;
 	div-p = <4>;
 	div-q = <7>;
+	status = "okay";
 };
 
 &rcc {
@@ -106,13 +106,13 @@
 };
 
 &i2c1 {
-	status = "okay";
 
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-1 = <&analog_pb6 &analog_pb7>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	haptic_0: haptic@30 {
 		compatible = "cirrus,cs40l5x";
@@ -134,13 +134,13 @@
 };
 
 &spi2 {
-	status = "okay";
 
 	cs-gpios = <&gpiob 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 
 	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
 	pinctrl-1 = <&analog_pb13 &analog_pb14 &analog_pb15>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	flash_1: flash@0 {
 		compatible = "atmel,at25xv021a";
@@ -166,8 +166,8 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
@@ -177,23 +177,23 @@
 		 */
 
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(64)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@30000 {
-			label = "image-1";
 			reg = <0x00030000 DT_SIZE_K(64)>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@40000 {
-			label = "image-scratch";
 			reg = <0x00040000 DT_SIZE_K(64)>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@50000 {
-			label = "storage";
 			reg = <0x00050000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };
