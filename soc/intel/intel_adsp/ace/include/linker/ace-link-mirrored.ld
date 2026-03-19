@@ -366,6 +366,12 @@ SECTIONS {
     __data_start = .;
     *(.noinit)
     *(.noinit.*)
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() CMake function.
+ */
+#include <snippets-noinit.ld>
+
   } >ucram
 
 #include <zephyr/linker/kobject-priv-stacks.ld>
