@@ -519,9 +519,5 @@ int bt_mesh_key_compare(const uint8_t raw_key[16], const struct bt_mesh_key *key
 
 __weak int bt_rand(void *buf, size_t len)
 {
-	if (buf == NULL || len == 0) {
-		return -EINVAL;
-	}
-
 	return psa_generate_random(buf, len) == PSA_SUCCESS ? 0 : -EIO;
 }
