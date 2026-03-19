@@ -7,6 +7,10 @@
 #include <adi/max32/max32xxx.dtsi>
 #include <zephyr/dt-bindings/dma/max32690_dma.h>
 
+&cpu1 {
+	status = "okay";
+};
+
 &clk_ipo {
 	clock-frequency = <DT_FREQ_M(120)>;
 };
