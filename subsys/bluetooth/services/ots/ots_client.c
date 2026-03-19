@@ -13,7 +13,6 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -617,7 +616,7 @@ int bt_ots_client_select_id(struct bt_ots_client *otc_inst,
 			    struct bt_conn *conn,
 			    uint64_t obj_id)
 {
-	CHECKIF(!BT_OTS_VALID_OBJ_ID(obj_id)) {
+	if (!BT_OTS_VALID_OBJ_ID(obj_id)) {
 		LOG_DBG("Invalid object ID 0x%016llx", obj_id);
 
 		return -EINVAL;
@@ -1392,18 +1391,18 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
 {
 	struct bt_otc_internal_instance_t *inst;
 
-	CHECKIF(!conn) {
+	if (!conn) {
 		LOG_WRN("Invalid Connection");
 		return -ENOTCONN;
 	}
 
-	CHECKIF(!otc_inst) {
+	if (!otc_inst) {
 		LOG_ERR("Invalid OTC instance");
 		return -EINVAL;
 	}
 
-	CHECKIF((mode != BT_OTS_OACP_WRITE_OP_MODE_NONE) &&
-		(mode != BT_OTS_OACP_WRITE_OP_MODE_TRUNCATE)) {
+	if ((mode != BT_OTS_OACP_WRITE_OP_MODE_NONE) &&
+	    (mode != BT_OTS_OACP_WRITE_OP_MODE_TRUNCATE)) {
 		LOG_ERR("Invalid write object mode parameter %d", mode);
 		return -EINVAL;
 	}
@@ -1411,34 +1410,34 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
 	/* OTS_v10.pdf Table 3.9: Object Action Control Point Procedure Requirements
 	 *	Offset and Length field are UINT32 Length
 	 */
-	CHECKIF(len > UINT32_MAX) {
+	if (len > UINT32_MAX) {
 		LOG_ERR("length %zu exceeds UINT32", len);
 		return -EINVAL;
 	}
 
-	CHECKIF(len == 0) {
+	if (len == 0) {
 		LOG_ERR("length equals zero");
 		return -EINVAL;
 	}
 
-	CHECKIF((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
+	if ((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
 		LOG_ERR("offset %ld exceeds UINT32 and must be >= 0", offset);
 		return -EINVAL;
 	}
 
-	CHECKIF(offset > otc_inst->cur_object.size.cur) {
+	if (offset > otc_inst->cur_object.size.cur) {
 		LOG_ERR("offset %ld exceeds cur size %zu", offset, otc_inst->cur_object.size.cur);
 		return -EINVAL;
 	}
 
-	CHECKIF((offset < otc_inst->cur_object.size.cur) &&
-		!BT_OTS_OBJ_GET_PROP_PATCH(otc_inst->cur_object.props)) {
+	if ((offset < otc_inst->cur_object.size.cur) &&
+	    !BT_OTS_OBJ_GET_PROP_PATCH(otc_inst->cur_object.props)) {
 		LOG_ERR("Patch is not supported");
 		return -EACCES;
 	}
 
-	CHECKIF(((len + offset) > otc_inst->cur_object.size.alloc) &&
-		!BT_OTS_OBJ_GET_PROP_APPEND(otc_inst->cur_object.props)) {
+	if (((len + offset) > otc_inst->cur_object.size.alloc) &&
+	    !BT_OTS_OBJ_GET_PROP_APPEND(otc_inst->cur_object.props)) {
 		LOG_ERR("APPEND is not supported. Invalid new end of object %lu alloc %zu."
 		, (len + offset), otc_inst->cur_object.size.alloc);
 		return -EINVAL;
@@ -1459,12 +1458,12 @@ int bt_ots_client_get_object_checksum(struct bt_ots_client *otc_inst, struct bt_
 {
 	struct bt_otc_internal_instance_t *inst;
 
-	CHECKIF(!conn) {
+	if (!conn) {
 		LOG_DBG("Invalid Connection");
 		return -ENOTCONN;
 	}
 
-	CHECKIF(!otc_inst) {
+	if (!otc_inst) {
 		LOG_DBG("Invalid OTC instance");
 		return -EINVAL;
 	}
@@ -1472,22 +1471,22 @@ int bt_ots_client_get_object_checksum(struct bt_ots_client *otc_inst, struct bt_
 	/* OTS_v10.pdf Table 3.9: Object Action Control Point Procedure Requirements
 	 *	Offset and Length field are UINT32 Length
 	 */
-	CHECKIF(len > UINT32_MAX) {
+	if (len > UINT32_MAX) {
 		LOG_DBG("length %zu exceeds UINT32", len);
 		return -EINVAL;
 	}
 
-	CHECKIF(len == 0) {
+	if (len == 0) {
 		LOG_DBG("length equals zero");
 		return -EINVAL;
 	}
 
-	CHECKIF((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
+	if ((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
 		LOG_DBG("offset exceeds %ld UINT32 and must be >= 0", offset);
 		return -EINVAL;
 	}
 
-	CHECKIF((len + offset) > otc_inst->cur_object.size.cur) {
+	if ((len + offset) > otc_inst->cur_object.size.cur) {
 		LOG_DBG("The sum of offset (%ld) and length (%zu) exceed the Current Size %lu "
 			"alloc %zu.", offset, len, (len + offset), otc_inst->cur_object.size.cur);
 		return -EINVAL;
