@@ -16,13 +16,13 @@ LOG_MODULE_REGISTER(net_ethernet_mgmt, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 static inline bool is_hw_caps_supported(const struct device *dev,
 					enum ethernet_hw_caps caps)
 {
-	const struct ethernet_api *api = dev->api;
+	const struct ethernet_driver_api *api = dev->api;
 
-	if (!api || !api->get_capabilities) {
+	if (!api || !api->l2.get_capabilities) {
 		return false;
 	}
 
-	return ((api->get_capabilities(dev) & caps) != 0);
+	return ((api->l2.get_capabilities(dev) & caps) != 0);
 }
 
 static int ethernet_set_config(uint64_t mgmt_request,
@@ -31,7 +31,7 @@ static int ethernet_set_config(uint64_t mgmt_request,
 {
 	struct ethernet_req_params *params = (struct ethernet_req_params *)data;
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->api;
+	const struct ethernet_driver_api *api = dev->api;
 	struct ethernet_config config = { 0 };
 	enum ethernet_config_type type;
 
@@ -39,7 +39,7 @@ static int ethernet_set_config(uint64_t mgmt_request,
 		return -ENOENT;
 	}
 
-	if (!api->set_config) {
+	if (!api->l2.set_config) {
 		return -ENOTSUP;
 	}
 
@@ -177,7 +177,7 @@ static int ethernet_set_config(uint64_t mgmt_request,
 		return -EINVAL;
 	}
 
-	return api->set_config(net_if_get_device(iface), type, &config);
+	return api->l2.set_config(net_if_get_device(iface), type, &config);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_MAC_ADDRESS,
@@ -213,7 +213,7 @@ static int ethernet_get_config(uint64_t mgmt_request,
 {
 	struct ethernet_req_params *params = (struct ethernet_req_params *)data;
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->api;
+	const struct ethernet_driver_api *api = dev->api;
 	struct ethernet_config config = { 0 };
 	int ret = 0;
 	enum ethernet_config_type type;
@@ -222,7 +222,7 @@ static int ethernet_get_config(uint64_t mgmt_request,
 		return -ENOENT;
 	}
 
-	if (!api->get_config) {
+	if (!api->l2.get_config) {
 		return -ENOTSUP;
 	}
 
@@ -237,7 +237,7 @@ static int ethernet_get_config(uint64_t mgmt_request,
 
 		type = ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM;
 
-		ret = api->get_config(dev, type, &config);
+		ret = api->l2.get_config(dev, type, &config);
 		if (ret) {
 			return ret;
 		}
@@ -253,7 +253,7 @@ static int ethernet_get_config(uint64_t mgmt_request,
 
 		type = ETHERNET_CONFIG_TYPE_QAV_PARAM;
 
-		ret = api->get_config(dev, type, &config);
+		ret = api->l2.get_config(dev, type, &config);
 		if (ret) {
 			return ret;
 		}
@@ -283,7 +283,7 @@ static int ethernet_get_config(uint64_t mgmt_request,
 	} else if (mgmt_request == NET_REQUEST_ETHERNET_GET_PORTS_NUM) {
 		type = ETHERNET_CONFIG_TYPE_PORTS_NUM;
 
-		ret = api->get_config(dev, type, &config);
+		ret = api->l2.get_config(dev, type, &config);
 		if (ret) {
 			return ret;
 		}
@@ -307,7 +307,7 @@ static int ethernet_get_config(uint64_t mgmt_request,
 
 		type = ETHERNET_CONFIG_TYPE_QBV_PARAM;
 
-		ret = api->get_config(dev, type, &config);
+		ret = api->l2.get_config(dev, type, &config);
 		if (ret) {
 			return ret;
 		}
@@ -347,7 +347,7 @@ static int ethernet_get_config(uint64_t mgmt_request,
 
 		type = ETHERNET_CONFIG_TYPE_QBU_PARAM;
 
-		ret = api->get_config(dev, type, &config);
+		ret = api->l2.get_config(dev, type, &config);
 		if (ret) {
 			return ret;
 		}
@@ -389,7 +389,7 @@ static int ethernet_get_config(uint64_t mgmt_request,
 
 		type = ETHERNET_CONFIG_TYPE_TXTIME_PARAM;
 
-		ret = api->get_config(dev, type, &config);
+		ret = api->l2.get_config(dev, type, &config);
 		if (ret) {
 			return ret;
 		}
@@ -407,7 +407,7 @@ static int ethernet_get_config(uint64_t mgmt_request,
 
 		type = ETHERNET_CONFIG_TYPE_TXINJECTION_MODE;
 
-		ret = api->get_config(dev, type, &config);
+		ret = api->l2.get_config(dev, type, &config);
 		if (ret) {
 			return ret;
 		}

@@ -624,12 +624,14 @@ static void eth_esp32_iface_init(struct net_if *iface)
 	}
 }
 
-static const struct ethernet_api eth_esp32_api = {
-	.iface_api.init		= eth_esp32_iface_init,
-	.get_capabilities	= eth_esp32_caps,
-	.set_config		= eth_esp32_set_config,
-	.get_phy		= eth_esp32_phy_get,
-	.send			= eth_esp32_send,
+static DEVICE_API(ethernet, eth_esp32_api) = {
+	.l2 = {
+		.iface_api.init		= eth_esp32_iface_init,
+		.get_capabilities	= eth_esp32_caps,
+		.set_config		= eth_esp32_set_config,
+		.get_phy		= eth_esp32_phy_get,
+		.send			= eth_esp32_send,
+	},
 };
 
 /* DMA data must be in DRAM */

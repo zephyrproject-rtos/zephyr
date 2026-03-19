@@ -345,22 +345,24 @@ static struct net_stats_eth *eth_stm32_hal_get_stats(const struct device *dev)
 }
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
-static const struct ethernet_api eth_api = {
-	.iface_api.init = eth_iface_init,
+static DEVICE_API(ethernet, eth_api) = {
+	.l2 = {
+		.iface_api.init = eth_iface_init,
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	.get_ptp_clock = eth_stm32_get_ptp_clock,
+		.get_ptp_clock = eth_stm32_get_ptp_clock,
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
-	.get_capabilities = eth_stm32_hal_get_capabilities,
-	.set_config = eth_stm32_hal_set_config,
-	.get_phy = eth_stm32_hal_get_phy,
+		.get_capabilities = eth_stm32_hal_get_capabilities,
+		.set_config = eth_stm32_hal_set_config,
+		.get_phy = eth_stm32_hal_get_phy,
 #if defined(CONFIG_NET_DSA_DEPRECATED)
-	.send = dsa_tx,
+		.send = dsa_tx,
 #else
-	.send = eth_stm32_tx,
+		.send = eth_stm32_tx,
 #endif
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	.get_stats = eth_stm32_hal_get_stats,
+		.get_stats = eth_stm32_hal_get_stats,
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
+	},
 };
 
 static void eth0_irq_config(void)

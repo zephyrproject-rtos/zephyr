@@ -52,12 +52,13 @@ static int eth_slip_tap_set_config(const struct device *dev, enum ethernet_confi
 	return -ENOTSUP;
 }
 
-static const struct ethernet_api slip_if_api = {
-	.iface_api.init = slip_iface_init,
-
-	.get_capabilities = eth_capabilities,
-	.send = slip_send,
-	.set_config = eth_slip_tap_set_config,
+static DEVICE_API(ethernet, slip_if_api) = {
+	.l2 = {
+		.iface_api.init = slip_iface_init,
+		.get_capabilities = eth_capabilities,
+		.send = slip_send,
+		.set_config = eth_slip_tap_set_config,
+	},
 };
 
 #define _SLIP_L2_LAYER    ETHERNET_L2

@@ -855,11 +855,13 @@ static int lan9250_set_config(const struct device *dev, enum ethernet_config_typ
 	return -ENOTSUP;
 }
 
-static const struct ethernet_api api_funcs = {
-	.iface_api.init = lan9250_iface_init,
-	.get_capabilities = lan9250_get_capabilities,
-	.set_config = lan9250_set_config,
-	.send = lan9250_tx,
+static DEVICE_API(ethernet, api_funcs) = {
+	.l2 = {
+		.iface_api.init = lan9250_iface_init,
+		.get_capabilities = lan9250_get_capabilities,
+		.set_config = lan9250_set_config,
+		.send = lan9250_tx,
+	},
 };
 
 static int lan9250_init(const struct device *dev)

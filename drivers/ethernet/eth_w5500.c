@@ -480,14 +480,16 @@ static const struct device *w5500_get_phy(const struct device *dev)
 	return config->phy_dev;
 }
 
-static const struct ethernet_api w5500_api_funcs = {
-	.iface_api.init = w5500_iface_init,
-	.get_capabilities = w5500_get_capabilities,
-	.set_config = w5500_set_config,
-	.start = w5500_hw_start,
-	.stop = w5500_hw_stop,
-	.get_phy = w5500_get_phy,
-	.send = w5500_tx,
+static DEVICE_API(ethernet, w5500_api_funcs) = {
+	.l2 = {
+		.iface_api.init = w5500_iface_init,
+		.get_capabilities = w5500_get_capabilities,
+		.set_config = w5500_set_config,
+		.start = w5500_hw_start,
+		.stop = w5500_hw_stop,
+		.get_phy = w5500_get_phy,
+		.send = w5500_tx,	
+	},
 };
 
 static int w5500_get_link_state(const struct device *dev,

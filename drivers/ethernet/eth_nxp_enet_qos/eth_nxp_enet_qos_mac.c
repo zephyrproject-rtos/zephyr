@@ -837,12 +837,14 @@ static int eth_nxp_enet_qos_set_config(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static const struct ethernet_api api_funcs = {
-	.iface_api.init = eth_nxp_enet_qos_iface_init,
-	.send = eth_nxp_enet_qos_tx,
-	.get_capabilities = eth_nxp_enet_qos_get_capabilities,
-	.get_phy = eth_nxp_enet_qos_get_phy,
-	.set_config	= eth_nxp_enet_qos_set_config,
+static DEVICE_API(ethernet, api_funcs) = {
+	.l2 = {
+		.iface_api.init = eth_nxp_enet_qos_iface_init,
+		.send = eth_nxp_enet_qos_tx,
+		.get_capabilities = eth_nxp_enet_qos_get_capabilities,
+		.get_phy = eth_nxp_enet_qos_get_phy,
+		.set_config	= eth_nxp_enet_qos_set_config,
+	},
 };
 
 #define NXP_ENET_QOS_NODE_HAS_MAC_ADDR_CHECK(n)                                                    \

@@ -553,11 +553,13 @@ static enum ethernet_hw_caps numaker_eth_get_cap(const struct device *dev)
 #endif
 }
 
-static const struct ethernet_api eth_numaker_driver_api = {
-	.iface_api.init = numaker_eth_if_init,
-	.get_capabilities = numaker_eth_get_cap,
-	.set_config = numaker_eth_set_config,
-	.send = numaker_eth_tx,
+static DEVICE_API(ethernet, eth_numaker_driver_api) = {
+	.l2 = {
+		.iface_api.init = numaker_eth_if_init,
+		.get_capabilities = numaker_eth_get_cap,
+		.set_config = numaker_eth_set_config,
+		.send = numaker_eth_tx,
+	},
 };
 
 /* EMAC IRQ Handler */

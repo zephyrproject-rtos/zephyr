@@ -374,15 +374,17 @@ static void eth_ivshmem_iface_init(struct net_if *iface)
 	k_poll_signal_raise(&dev_data->poll_signal, 0);
 }
 
-static const struct ethernet_api eth_ivshmem_api = {
-	.iface_api.init		= eth_ivshmem_iface_init,
+static DEVICE_API(ethernet, eth_ivshmem_api) = {
+	.l2 = {
+		.iface_api.init		= eth_ivshmem_iface_init,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	.get_stats		= eth_ivshmem_get_stats,
+		.get_stats		= eth_ivshmem_get_stats,
 #endif
-	.start			= eth_ivshmem_start,
-	.stop			= eth_ivshmem_stop,
-	.get_capabilities	= eth_ivshmem_caps,
-	.send			= eth_ivshmem_send,
+		.start			= eth_ivshmem_start,
+		.stop			= eth_ivshmem_stop,
+		.get_capabilities	= eth_ivshmem_caps,
+		.send			= eth_ivshmem_send,
+	},
 };
 
 #define ETH_IVSHMEM_RANDOM_MAC_ADDR(inst)						\

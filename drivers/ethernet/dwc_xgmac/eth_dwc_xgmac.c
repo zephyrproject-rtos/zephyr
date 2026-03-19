@@ -1638,17 +1638,19 @@ static struct net_stats_eth *eth_dwc_xgmac_stats(const struct device *dev)
 }
 #endif
 
-static const struct ethernet_api eth_dwc_xgmac_apis = {
-	.iface_api.init = eth_dwc_xgmac_iface_init,
-	.send = eth_dwc_xgmac_send,
-	.start = eth_dwc_xgmac_start_device,
-	.stop = eth_dwc_xgmac_stop_device,
-	.get_capabilities = eth_dwc_xgmac_get_capabilities,
-	.set_config = eth_dwc_xgmac_set_config,
-	.get_config = eth_dwc_xgmac_get_config,
+static DEVICE_API(ethernet, eth_dwc_xgmac_apis) = {
+	.l2 = {
+		.iface_api.init = eth_dwc_xgmac_iface_init,
+		.send = eth_dwc_xgmac_send,
+		.start = eth_dwc_xgmac_start_device,
+		.stop = eth_dwc_xgmac_stop_device,
+		.get_capabilities = eth_dwc_xgmac_get_capabilities,
+		.set_config = eth_dwc_xgmac_set_config,
+		.get_config = eth_dwc_xgmac_get_config,
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
-	.get_stats = eth_dwc_xgmac_stats,
+		.get_stats = eth_dwc_xgmac_stats,
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
+	},
 };
 
 /* Interrupt configuration function macro */

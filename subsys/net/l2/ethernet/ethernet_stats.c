@@ -22,7 +22,7 @@ static int eth_stats_get(uint64_t mgmt_request, struct net_if *iface,
 {
 	size_t len_chk = 0;
 	void *src = NULL;
-	const struct ethernet_api *eth;
+	const struct ethernet_driver_api *eth;
 
 	switch (NET_MGMT_GET_COMMAND(mgmt_request)) {
 	case NET_REQUEST_STATS_CMD_GET_ETHERNET:
@@ -32,16 +32,16 @@ static int eth_stats_get(uint64_t mgmt_request, struct net_if *iface,
 
 		eth = net_if_get_device(iface)->api;
 		if (eth == NULL ||
-		    (eth->get_stats == NULL && eth->get_stats_type == NULL)) {
+		    (eth->l2.get_stats == NULL && eth->l2.get_stats_type == NULL)) {
 			return -ENOENT;
 		}
 
 		len_chk = sizeof(struct net_stats_eth);
-		if (eth->get_stats_type != NULL) {
-			src = eth->get_stats_type(net_if_get_device(iface),
+		if (eth->l2.get_stats_type != NULL) {
+			src = eth->l2.get_stats_type(net_if_get_device(iface),
 						  ETHERNET_STATS_TYPE_ALL);
 		} else {
-			src = eth->get_stats(net_if_get_device(iface));
+			src = eth->l2.get_stats(net_if_get_device(iface));
 		}
 		break;
 	}

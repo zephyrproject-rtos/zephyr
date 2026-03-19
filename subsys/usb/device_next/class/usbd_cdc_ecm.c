@@ -645,13 +645,15 @@ static struct usbd_class_api usbd_cdc_ecm_api = {
 	.get_desc = usbd_cdc_ecm_get_desc,
 };
 
-static const struct ethernet_api cdc_ecm_eth_api = {
-	.iface_api.init = cdc_ecm_iface_init,
-	.set_config = cdc_ecm_set_config,
-	.get_capabilities = cdc_ecm_get_capabilities,
-	.send = cdc_ecm_send,
-	.start = cdc_ecm_iface_start,
-	.stop = cdc_ecm_iface_stop,
+static DEVICE_API(ethernet, cdc_ecm_eth_api) = {
+	.l2 = {
+		.iface_api.init = cdc_ecm_iface_init,
+		.set_config = cdc_ecm_set_config,
+		.get_capabilities = cdc_ecm_get_capabilities,
+		.send = cdc_ecm_send,
+		.start = cdc_ecm_iface_start,
+		.stop = cdc_ecm_iface_stop,
+	},
 };
 
 #define CDC_ECM_DEFINE_DESCRIPTOR(n)						\

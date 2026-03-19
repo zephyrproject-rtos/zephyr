@@ -537,14 +537,16 @@ static void sy1xx_mac_rx_thread_entry(void *p1, void *p2, void *p3)
 	}
 }
 
-const struct ethernet_api sy1xx_mac_driver_api = {
-	.start = sy1xx_mac_start,
-	.stop = sy1xx_mac_stop,
-	.iface_api.init = sy1xx_mac_iface_init,
-	.get_capabilities = sy1xx_mac_get_caps,
-	.set_config = sy1xx_mac_set_config,
-	.send = sy1xx_mac_send,
-	.get_phy = sy1xx_mac_get_phy,
+static DEVICE_API(ethernet, sy1xx_mac_driver_api) = {
+	.l2 = {
+		.start = sy1xx_mac_start,
+		.stop = sy1xx_mac_stop,
+		.iface_api.init = sy1xx_mac_iface_init,
+		.get_capabilities = sy1xx_mac_get_caps,
+		.set_config = sy1xx_mac_set_config,
+		.send = sy1xx_mac_send,
+		.get_phy = sy1xx_mac_get_phy,
+	},
 };
 
 #define SY1XX_MAC_INIT(n)                                                                          \

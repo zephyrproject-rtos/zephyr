@@ -605,6 +605,16 @@ struct ethernet_api {
 	int (*send)(const struct device *dev, struct net_pkt *pkt);
 };
 
+/* Ethernet L2 layer API */
+__subsystem struct ethernet_driver_api {
+	/** Ethernet L2 operations */
+	struct ethernet_api l2;
+#if defined(CONFIG_ETH_DRIVER_WITH_MDIO) || defined(__DOXYGEN__)
+	/** MDIO controller interface */
+	const struct mdio_driver_api *mdio; 
+#endif
+};
+
 /** @cond INTERNAL_HIDDEN */
 
 /* Make sure that the network interface API is properly setup inside
@@ -935,7 +945,7 @@ static inline
 enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = (struct ethernet_api *)dev->api;
+	const struct ethernet_driver_api *api = DEVICE_API_GET(ethernet, dev);
 	enum ethernet_hw_caps caps = (enum ethernet_hw_caps)0;
 #if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
@@ -946,11 +956,11 @@ enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 		caps |= ETHERNET_DSA_USER_PORT;
 	}
 #endif
-	if (api == NULL || api->get_capabilities == NULL) {
+	if (api == NULL || api->l2.get_capabilities == NULL) {
 		return caps;
 	}
 
-	return (enum ethernet_hw_caps)(caps | api->get_capabilities(dev));
+	return (enum ethernet_hw_caps)(caps | api->l2.get_capabilities(dev));
 }
 
 /**
@@ -966,14 +976,14 @@ static inline
 int net_eth_get_hw_config(struct net_if *iface, enum ethernet_config_type type,
 			 struct ethernet_config *config)
 {
-	const struct ethernet_api *eth =
-		(struct ethernet_api *)net_if_get_device(iface)->api;
+	const struct ethernet_driver_api *eth =
+		(struct ethernet_driver_api *)net_if_get_device(iface)->api;
 
-	if (!eth->get_config) {
+	if (!eth->l2.get_config) {
 		return -ENOTSUP;
 	}
 
-	return eth->get_config(net_if_get_device(iface), type, config);
+	return eth->l2.get_config(net_if_get_device(iface), type, config);
 }
 
 

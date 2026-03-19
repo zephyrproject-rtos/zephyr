@@ -585,14 +585,16 @@ static void eth_nxp_s32_rx_irq(const struct device *dev)
 	GMAC_RxIRQHandler(cfg->instance, cfg->rx_ring_idx);
 }
 
-static const struct ethernet_api eth_api = {
-	.iface_api.init = eth_nxp_s32_iface_init,
-	.get_capabilities = eth_nxp_s32_get_capabilities,
-	.get_phy = eth_nxp_s32_get_phy,
-	.start = eth_nxp_s32_start,
-	.stop = eth_nxp_s32_stop,
-	.send = eth_nxp_s32_tx,
-	.set_config = eth_nxp_s32_set_config,
+static DEVICE_API(ethernet, eth_api) = {
+	.l2 = {
+		.iface_api.init = eth_nxp_s32_iface_init,
+		.get_capabilities = eth_nxp_s32_get_capabilities,
+		.get_phy = eth_nxp_s32_get_phy,
+		.start = eth_nxp_s32_start,
+		.stop = eth_nxp_s32_stop,
+		.send = eth_nxp_s32_tx,
+		.set_config = eth_nxp_s32_set_config,
+	},
 };
 
 

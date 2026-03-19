@@ -803,11 +803,13 @@ static void eth_enc28j60_iface_init(struct net_if *iface)
 			0, K_NO_WAIT);
 }
 
-static const struct ethernet_api api_funcs = {
-	.iface_api.init		= eth_enc28j60_iface_init,
-	.set_config		= eth_enc28j60_set_config,
-	.get_capabilities	= eth_enc28j60_get_capabilities,
-	.send			= eth_enc28j60_tx,
+static DEVICE_API(ethernet, api_funcs) = {
+	.l2 = {
+		.iface_api.init		= eth_enc28j60_iface_init,
+		.set_config		= eth_enc28j60_set_config,
+		.get_capabilities	= eth_enc28j60_get_capabilities,
+		.send			= eth_enc28j60_tx,
+	},
 };
 
 static int eth_enc28j60_init(const struct device *dev)

@@ -314,11 +314,13 @@ static const struct device *renesas_ra_eth_get_phy(const struct device *dev)
 	return config->phy_dev;
 }
 
-static const struct ethernet_api api_funcs = {
-	.iface_api.init = renesas_ra_eth_initialize,
-	.get_capabilities = renesas_ra_eth_get_capabilities,
-	.get_phy = renesas_ra_eth_get_phy,
-	.send = renesas_ra_eth_tx,
+static DEVICE_API(ethernet, api_funcs) = {
+	.l2 = {
+		.iface_api.init = renesas_ra_eth_initialize,
+		.get_capabilities = renesas_ra_eth_get_capabilities,
+		.get_phy = renesas_ra_eth_get_phy,
+		.send = renesas_ra_eth_tx,
+	},
 };
 
 static void renesas_ra_eth_isr(const struct device *dev)

@@ -131,12 +131,14 @@ static const struct device *eth_get_ptp_clock(const struct device *dev)
 	return context->ptp_clock;
 }
 
-static struct ethernet_api api_funcs = {
-	.iface_api.init = eth_iface_init,
+static DEVICE_API(ethernet, api_funcs) = {
+	.l2 = {
+		.iface_api.init = eth_iface_init,
 
-	.get_capabilities = eth_capabilities,
-	.get_ptp_clock = eth_get_ptp_clock,
-	.send = eth_tx,
+		.get_capabilities = eth_capabilities,
+		.get_ptp_clock = eth_get_ptp_clock,
+		.send = eth_tx,
+	},
 };
 
 static void generate_mac(uint8_t *mac_addr)

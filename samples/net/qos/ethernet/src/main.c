@@ -159,9 +159,11 @@ static int net_if_fake_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static const struct ethernet_api net_if_api = {
-	.iface_api.init = net_iface_init,
-	.send = net_if_fake_send,
+static DEVICE_API(ethernet, net_if_api) = {
+	.l2 = {
+		.iface_api.init = net_iface_init,
+		.send = net_if_fake_send,
+	},
 };
 
 static struct net_if_fake_data context;

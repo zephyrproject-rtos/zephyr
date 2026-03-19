@@ -491,22 +491,22 @@ static int vlan_setup(const struct device *dev, struct net_if *iface,
 }
 #endif /* CONFIG_NET_VLAN */
 
-static const struct ethernet_api eth_if_api = {
-	.iface_api.init = eth_iface_init,
-
-	.get_capabilities = eth_native_tap_get_capabilities,
-	.set_config = set_config,
-	.send = eth_send,
-
+static DEVICE_API(ethernet, eth_if_api) = {
+	.l2 = {
+		.iface_api.init = eth_iface_init,
+		.get_capabilities = eth_native_tap_get_capabilities,
+		.set_config = set_config,
+		.send = eth_send,
 #if defined(CONFIG_NET_VLAN)
-	.vlan_setup = vlan_setup,
+		.vlan_setup = vlan_setup,
 #endif
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	.get_stats = get_stats,
+		.get_stats = get_stats,
 #endif
 #if defined(CONFIG_ETH_NATIVE_TAP_PTP_CLOCK)
-	.get_ptp_clock = eth_get_ptp_clock,
+		.get_ptp_clock = eth_get_ptp_clock,
 #endif
+	},
 };
 
 #define DEFINE_ETH_DEV_DATA(x, _)					     \

@@ -2023,18 +2023,18 @@ static const struct device *eth_sam_gmac_get_ptp_clock(const struct device *dev)
 }
 #endif
 
-static const struct ethernet_api eth_api = {
-	.iface_api.init = eth_iface_init,
-
-	.get_capabilities = eth_sam_gmac_get_capabilities,
-	.set_config = eth_sam_gmac_set_config,
-	.get_config = eth_sam_gmac_get_config,
-	.get_phy = eth_sam_gmac_get_phy,
-	.send = eth_tx,
-
+static DEVICE_API(ethernet, eth_api) = {
+	.l2 = {
+		.iface_api.init = eth_iface_init,
+		.get_capabilities = eth_sam_gmac_get_capabilities,
+		.set_config = eth_sam_gmac_set_config,
+		.get_config = eth_sam_gmac_get_config,
+		.get_phy = eth_sam_gmac_get_phy,
+		.send = eth_tx,
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-	.get_ptp_clock = eth_sam_gmac_get_ptp_clock,
+		get_ptp_clock = eth_sam_gmac_get_ptp_clock,
 #endif
+	},
 };
 
 #define DEFN_IRQ_CONFIG(n, x, name)							\

@@ -71,17 +71,19 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev);
 static void eth_xlnx_gem_tx_done_work(struct k_work *item);
 static void eth_xlnx_gem_handle_tx_done(const struct device *dev);
 
-static const struct ethernet_api eth_xlnx_gem_apis = {
-	.iface_api.init   = eth_xlnx_gem_iface_init,
-	.get_capabilities = eth_xlnx_gem_get_capabilities,
-	.send		  = eth_xlnx_gem_send,
-	.start		  = eth_xlnx_gem_start_device,
-	.stop		  = eth_xlnx_gem_stop_device,
-	.get_config	  = eth_xlnx_gem_get_config,
-	.set_config	  = eth_xlnx_gem_set_config,
+static DEVICE_API(ethernet, eth_xlnx_gem_apis) = {
+	.l2 = {
+		.iface_api.init   = eth_xlnx_gem_iface_init,
+		.get_capabilities = eth_xlnx_gem_get_capabilities,
+		.send		  = eth_xlnx_gem_send,
+		.start		  = eth_xlnx_gem_start_device,
+		.stop		  = eth_xlnx_gem_stop_device,
+		.get_config	  = eth_xlnx_gem_get_config,
+		.set_config	  = eth_xlnx_gem_set_config,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	.get_stats	  = eth_xlnx_gem_stats,
+		.get_stats	  = eth_xlnx_gem_stats,
 #endif
+	},
 };
 
 /*

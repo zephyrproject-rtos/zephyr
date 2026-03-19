@@ -240,11 +240,13 @@ static enum ethernet_hw_caps eth_vlan_capabilities(const struct device *dev)
 	return ETHERNET_HW_VLAN;
 }
 
-static struct ethernet_api api_funcs = {
-	.iface_api.init = eth_vlan_iface_init,
+static DEVICE_API(ethernet, api_funcs) = {
+	.l2 = {
+		.iface_api.init = eth_vlan_iface_init,
 
-	.get_capabilities = eth_vlan_capabilities,
-	.send = eth_tx,
+		.get_capabilities = eth_vlan_capabilities,
+		.send = eth_tx,
+	},
 };
 
 static void generate_mac(uint8_t *mac_addr)
@@ -305,7 +307,7 @@ static enum ethernet_hw_caps eth_vlan_embed_ll_hdr_capabilities(const struct dev
 	return ETHERNET_HW_VLAN;
 }
 
-static struct ethernet_api api_vlan_embed_ll_hdr_funcs = {
+static DEVICE_API(ethernet, api_vlan_embed_ll_hdr_funcs) = {
 	.iface_api.init = eth_vlan_iface_init,
 
 	.get_capabilities = eth_vlan_embed_ll_hdr_capabilities,

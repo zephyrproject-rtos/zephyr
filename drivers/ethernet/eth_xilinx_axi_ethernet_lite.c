@@ -323,12 +323,14 @@ static int axi_eth_lite_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static const struct ethernet_api axi_eth_lite_api = {
-	.get_phy = axi_eth_lite_get_phy,
-	.get_capabilities = axi_eth_lite_get_caps,
-	.iface_api.init = axi_eth_lite_iface_init,
-	.set_config = axi_eth_lite_set_config,
-	.send = axi_eth_lite_send,
+static DEVICE_API(ethernet, axi_eth_lite_api) = {
+	.l2 = {
+		.get_phy = axi_eth_lite_get_phy,
+		.get_capabilities = axi_eth_lite_get_caps,
+		.iface_api.init = axi_eth_lite_iface_init,
+		.set_config = axi_eth_lite_set_config,
+		.send = axi_eth_lite_send,
+	},
 };
 
 static inline int axi_eth_lite_read_to_pkt(const struct axi_eth_lite_config *config,

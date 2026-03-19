@@ -123,14 +123,18 @@ static const struct device *netc_eth_get_phy(const struct device *dev)
 	return cfg->phy_dev;
 }
 
-static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_iface_init,
-						 .get_capabilities = netc_eth_get_capabilities,
-						 .get_phy = netc_eth_get_phy,
-						 .set_config = netc_eth_set_config,
+static DEVICE_API(ethernet, netc_eth_api) = {
+	.l2 = {
+		.iface_api.init = netc_eth_iface_init,
+		.get_capabilities = netc_eth_get_capabilities,
+		.get_phy = netc_eth_get_phy,
+		.set_config = netc_eth_set_config,
 #ifdef NETC_PTP_TIMESTAMPING_SUPPORT
-						 .get_ptp_clock = netc_eth_get_ptp_clock,
+		.get_ptp_clock = netc_eth_get_ptp_clock,
 #endif
-						 .send = netc_eth_tx};
+		.send = netc_eth_tx
+	},
+};
 
 #define NETC_PSI_INSTANCE_DEFINE(n)                                                                \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \

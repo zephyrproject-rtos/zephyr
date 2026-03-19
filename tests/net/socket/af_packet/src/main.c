@@ -172,9 +172,11 @@ static void eth_fake_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
-static struct ethernet_api eth_fake_api_funcs = {
-	.iface_api.init = eth_fake_iface_init,
-	.send = eth_fake_send,
+static DEVICE_API(ethernet, eth_fake_api_funcs) = {
+	.l2 = {
+		.iface_api.init = eth_fake_iface_init,
+		.send = eth_fake_send,
+	};
 };
 
 ETH_NET_DEVICE_INIT(eth_fake1, "eth_fake1", NULL, NULL, &eth_fake_data1, NULL,

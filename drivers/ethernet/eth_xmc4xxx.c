@@ -1204,21 +1204,23 @@ int eth_xmc4xxx_vlan_setup(const struct device *dev, struct net_if *iface, uint1
 }
 #endif
 
-static const struct ethernet_api eth_xmc4xxx_api = {
-	.iface_api.init = eth_xmc4xxx_iface_init,
-	.send = eth_xmc4xxx_send,
-	.set_config = eth_xmc4xxx_set_config,
-	.get_phy = eth_xmc4xxx_get_phy,
-	.get_capabilities = eth_xmc4xxx_capabilities,
+static DEVICE_API(ethernet, eth_xmc4xxx_api) = {
+	.l2 = {
+		.iface_api.init = eth_xmc4xxx_iface_init,
+		.send = eth_xmc4xxx_send,
+		.set_config = eth_xmc4xxx_set_config,
+		.get_phy = eth_xmc4xxx_get_phy,
+		.get_capabilities = eth_xmc4xxx_capabilities,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	.get_stats = eth_xmc4xxx_stats,
+		.get_stats = eth_xmc4xxx_stats,
 #endif
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
-	.get_ptp_clock = eth_xmc4xxx_get_ptp_clock,
+		.get_ptp_clock = eth_xmc4xxx_get_ptp_clock,
 #endif
 #if defined(CONFIG_ETH_XMC4XXX_VLAN_HW_FILTER)
-	.vlan_setup = eth_xmc4xxx_vlan_setup,
+		.vlan_setup = eth_xmc4xxx_vlan_setup,
 #endif
+	},
 };
 
 PINCTRL_DT_INST_DEFINE(0);

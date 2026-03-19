@@ -837,16 +837,18 @@ static int eth_nxp_enet_device_pm_action(const struct device *dev, enum pm_devic
 #define NXP_ENET_SEND_FUNC eth_nxp_enet_tx
 #endif /* CONFIG_NET_DSA_DEPRECATED */
 
-static const struct ethernet_api api_funcs = {
-	.iface_api.init		= eth_nxp_enet_iface_init,
-	.get_capabilities	= eth_nxp_enet_get_capabilities,
-	.get_phy                = eth_nxp_enet_get_phy,
-	.set_config		= eth_nxp_enet_set_config,
-	.get_config		= eth_nxp_enet_get_config,
-	.send			= NXP_ENET_SEND_FUNC,
+static DEVICE_API(ethernet, api_funcs) = {
+	.l2 = {
+		.iface_api.init		= eth_nxp_enet_iface_init,
+		.get_capabilities	= eth_nxp_enet_get_capabilities,
+		.get_phy                = eth_nxp_enet_get_phy,
+		.set_config		= eth_nxp_enet_set_config,
+		.get_config		= eth_nxp_enet_get_config,
+		.send			= NXP_ENET_SEND_FUNC,
 #if defined(CONFIG_PTP_CLOCK)
-	.get_ptp_clock		= eth_nxp_enet_get_ptp_clock,
+		.get_ptp_clock		= eth_nxp_enet_get_ptp_clock,
 #endif
+	},
 };
 
 #define NXP_ENET_CONNECT_IRQ(node_id, irq_names, idx)				\

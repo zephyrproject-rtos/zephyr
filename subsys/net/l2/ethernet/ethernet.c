@@ -221,7 +221,7 @@ static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_add
 	};
 
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->api;
+	const struct ethernet_driver_api *api = DEVICE_API_GET(ethernet, dev);
 
 	/* Make sure we're an ethernet device */
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
@@ -232,7 +232,7 @@ static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_add
 		return;
 	}
 
-	if (!api || !api->set_config) {
+	if (!api || !api->l2.set_config) {
 		return;
 	}
 
@@ -251,7 +251,7 @@ static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_add
 		return;
 	}
 
-	api->set_config(dev, ETHERNET_CONFIG_TYPE_FILTER, &cfg);
+	api->l2.set_config(dev, ETHERNET_CONFIG_TYPE_FILTER, &cfg);
 }
 #endif
 
@@ -682,7 +682,7 @@ static void ethernet_update_tx_stats(struct net_if *iface, struct net_pkt *pkt)
 
 static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	const struct ethernet_api *api = net_if_get_device(iface)->api;
+	const struct ethernet_driver_api *api = net_if_get_device(iface)->api;
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	uint16_t ptype = net_htons(net_pkt_ll_proto_type(pkt));
 	struct net_pkt *orig_pkt = pkt;
@@ -693,7 +693,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 		goto error;
 	}
 
-	if (!api->send) {
+	if (!api->l2.send) {
 		ret = -ENOTSUP;
 		goto error;
 	}
@@ -777,7 +777,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	net_pkt_cursor_init(pkt);
 
 send:
-	ret = net_l2_send(api->send, net_if_get_device(iface), iface, pkt);
+	ret = net_l2_send(api->l2.send, net_if_get_device(iface), iface, pkt);
 	if (ret != 0) {
 		eth_stats_update_errors_tx(iface);
 		goto arp_error;
@@ -812,7 +812,7 @@ arp_error:
 static inline int ethernet_enable(struct net_if *iface, bool state)
 {
 	int ret = 0;
-	const struct ethernet_api *eth =
+	const struct ethernet_driver_api *eth =
 		net_if_get_device(iface)->api;
 
 	if (!eth) {
@@ -822,12 +822,12 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 	if (!state) {
 		net_arp_clear_cache(iface);
 
-		if (eth->stop) {
-			ret = eth->stop(net_if_get_device(iface));
+		if (eth->l2.stop) {
+			ret = eth->l2.stop(net_if_get_device(iface));
 		}
 	} else {
-		if (eth->start) {
-			ret = eth->start(net_if_get_device(iface));
+		if (eth->l2.start) {
+			ret = eth->l2.start(net_if_get_device(iface));
 		}
 	}
 
@@ -915,7 +915,7 @@ void net_eth_carrier_off(struct net_if *iface)
 const struct device *net_eth_get_phy(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->api;
+	const struct ethernet_driver_api *api = DEVICE_API_GET(ethernet, dev);
 
 	if (!api) {
 		return NULL;
@@ -925,18 +925,18 @@ const struct device *net_eth_get_phy(struct net_if *iface)
 		return NULL;
 	}
 
-	if (!api->get_phy) {
+	if (!api->l2.get_phy) {
 		return NULL;
 	}
 
-	return api->get_phy(net_if_get_device(iface));
+	return api->l2.get_phy(net_if_get_device(iface));
 }
 
 #if defined(CONFIG_PTP_CLOCK)
 const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->api;
+	const struct ethernet_driver_api *api = DEVICE_API_GET(ethernet, dev);
 
 	if (!api) {
 		return NULL;
@@ -950,11 +950,11 @@ const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 		return NULL;
 	}
 
-	if (!api->get_ptp_clock) {
+	if (!api->l2.get_ptp_clock) {
 		return NULL;
 	}
 
-	return api->get_ptp_clock(net_if_get_device(iface));
+	return api->l2.get_ptp_clock(net_if_get_device(iface));
 }
 #endif /* CONFIG_PTP_CLOCK */
 

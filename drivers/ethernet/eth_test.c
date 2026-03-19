@@ -117,25 +117,27 @@ static int vnd_ethernet_init(const struct device *dev)
 	return 0;
 }
 
-struct ethernet_api vnd_ethernet_api = {
-	.iface_api.init = vnd_ethernet_iface_init,
+static DEVICE_API(ethernet, vnd_ethernet_api) = {
+	.l2 = {
+		.iface_api.init = vnd_ethernet_iface_init,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	.get_stats = vnd_ethernet_get_stats,
+		.get_stats = vnd_ethernet_get_stats,
 #endif
-	.start = vnd_ethernet_start,
-	.stop = vnd_ethernet_stop,
-	.get_capabilities = vnd_ethernet_get_capabilities,
-	.set_config = vnd_ethernet_set_config,
-	.get_config = vnd_ethernet_get_config,
+		.start = vnd_ethernet_start,
+		.stop = vnd_ethernet_stop,
+		.get_capabilities = vnd_ethernet_get_capabilities,
+		.set_config = vnd_ethernet_set_config,
+		.get_config = vnd_ethernet_get_config,
 #if defined(CONFIG_NET_VLAN)
-	.vlan_setup = vnd_ethernet_vlan_setup,
+		.vlan_setup = vnd_ethernet_vlan_setup,
 #endif /* CONFIG_NET_VLAN */
 
 #if defined(CONFIG_PTP_CLOCK)
-	.get_ptp_clock = vnd_ethernet_get_ptp_clock,
+		.get_ptp_clock = vnd_ethernet_get_ptp_clock,
 #endif /* CONFIG_PTP_CLOCK */
-	.get_phy = vnd_ethernet_get_phy,
-	.send = vnd_ethernet_send,
+		.get_phy = vnd_ethernet_get_phy,
+		.send = vnd_ethernet_send,
+	},
 };
 
 #define VND_ETHERNET_INIT(n)                                                                       \

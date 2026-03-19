@@ -201,12 +201,14 @@ static void nxp_s32_eth_iface_init(struct net_if *iface)
 	}
 }
 
-static const struct ethernet_api nxp_s32_eth_api = {
-	.iface_api.init = nxp_s32_eth_iface_init,
-	.get_capabilities = nxp_s32_eth_get_capabilities,
-	.get_phy = nxp_s32_eth_get_phy,
-	.set_config = nxp_s32_eth_set_config,
-	.send = nxp_s32_eth_tx
+static DEVICE_API(ethernet, nxp_s32_eth_api) = {
+	.l2 = {
+		.iface_api.init = nxp_s32_eth_iface_init,
+		.get_capabilities = nxp_s32_eth_get_capabilities,
+		.get_phy = nxp_s32_eth_get_phy,
+		.set_config = nxp_s32_eth_set_config,
+		.send = nxp_s32_eth_tx
+	},
 };
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(nxp_s32_netc_psi) == 1, "Only one PSI enabled supported");

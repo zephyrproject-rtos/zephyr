@@ -227,13 +227,15 @@ static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev)
 	       ETHERNET_PROMISC_MODE | ETHERNET_PRIORITY_QUEUES;
 }
 
-static struct ethernet_api eth_fake_api_funcs = {
-	.iface_api.init = eth_fake_iface_init,
+static DEVICE_API(ethernet, eth_fake_api_funcs) = {
+	.l2 = {
+		.iface_api.init = eth_fake_iface_init,
 
-	.get_capabilities = eth_fake_get_capabilities,
-	.set_config = eth_fake_set_config,
-	.get_config = eth_fake_get_config,
-	.send = eth_fake_send,
+		.get_capabilities = eth_fake_get_capabilities,
+		.set_config = eth_fake_set_config,
+		.get_config = eth_fake_get_config,
+		.send = eth_fake_send,
+	},
 };
 
 static int eth_fake_init(const struct device *dev)

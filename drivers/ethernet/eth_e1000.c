@@ -295,16 +295,18 @@ static struct net_stats_eth *get_stats(const struct device *dev)
 }
 #endif
 
-static const struct ethernet_api e1000_api = {
-	.iface_api.init		= e1000_iface_init,
+static DEVICE_API(ethernet, e1000_api) = {
+	.l2 = {
+		.iface_api.init = e1000_iface_init,
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
-	.get_ptp_clock		= e1000_get_ptp_clock,
+		.get_ptp_clock = e1000_get_ptp_clock,
 #endif
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	.get_stats = get_stats,
+		.get_stats = get_stats,
 #endif
-	.get_capabilities	= e1000_caps,
-	.send			= e1000_send,
+		.get_capabilities = e1000_caps,
+		.send = e1000_send,
+	}
 };
 
 #define E1000_DT_INST_IRQ_FLAGS(inst)					\

@@ -322,6 +322,10 @@ New APIs and options
 
 * Networking
 
+  * Ethernet
+
+    * :c:struct:`ethernet_driver_api`
+
   * Wi-Fi
 
     * Add support for Wi-Fi Direct (P2P) mode.

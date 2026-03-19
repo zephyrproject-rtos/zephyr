@@ -283,14 +283,16 @@ static enum ethernet_hw_caps eth_caps(const struct device *dev)
 		ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
 }
 
-static const struct ethernet_api eth_api = {
-	.iface_api.init = eth_iface_init,
-	.start = eth_start,
-	.stop = eth_stop,
-	.get_capabilities = eth_caps,
-	.set_config = eth_set_config,
-	.get_phy = eth_get_phy,
-	.send = eth_tx
+static DEVICE_API(ethernet, eth_api) = {
+	.l2 = {
+		.iface_api.init = eth_iface_init,
+		.start = eth_start,
+		.stop = eth_stop,
+		.get_capabilities = eth_caps,
+		.set_config = eth_set_config,
+		.get_phy = eth_get_phy,
+		.send = eth_tx
+	},
 };
 
 #define ETH_LITEX_SLOT_RX_ADDR(n)                                                                  \
