@@ -403,7 +403,7 @@ static void set_up_fixed_clock_sources(void)
 		/* Wait for HSE ready */
 		}
 
-#if STM32_HSE_CSS
+#ifdef STM32_HSE_CSS
 		/* Enable HSE clock security system */
 		z_arm_nmi_set_handler(HAL_RCC_NMI_IRQHandler);
 		LL_RCC_HSE_EnableCSS();
