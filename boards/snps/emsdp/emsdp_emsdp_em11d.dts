@@ -12,8 +12,8 @@
 #include "emsdp-pinctrl.dtsi"
 
 / {
-	model = "emsdp";
 	compatible = "snps,emsdp", "snps,emsdp";
+	model = "emsdp";
 
 	aliases {
 		uart-0 = &uart0;
@@ -27,8 +27,8 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 / {
