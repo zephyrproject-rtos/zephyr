@@ -936,8 +936,9 @@ static void set_up_fixed_clock_sources(void)
 		while (LL_RCC_HSE_IsReady() != 1) {
 		/* Wait for HSE ready */
 		}
-		/* Check if we need to enable HSE clock security system or not */
+
 #ifdef STM32_HSE_CSS
+		/* Enable HSE clock security system */
 		z_arm_nmi_set_handler(HAL_RCC_NMI_IRQHandler);
 		LL_RCC_HSE_EnableCSS();
 #endif /* STM32_HSE_CSS */
