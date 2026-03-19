@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Nuvoton NuMaker GestureAI M55M1 board";
 	compatible = "nuvoton,numaker-m55m1";
+	model = "Nuvoton NuMaker GestureAI M55M1 board";
 
 	aliases {
 		led0 = &yellow_led;
@@ -65,23 +65,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x0 0xfe00>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@fe00 {
-			label = "image-0";
 			reg = <0xfe00 0xf4000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@103e00 {
-			label = "image-1";
 			reg = <0x103e00 0xf4000>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@1f7e00 {
-			label = "storage";
 			reg = <0x1f7e00 0x8200>;
+			label = "storage";
 		};
 	};
 };

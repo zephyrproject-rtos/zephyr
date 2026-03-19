@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Nuvoton NuMaker M3334KI board";
 	compatible = "nuvoton,numaker-m3334ki";
+	model = "Nuvoton NuMaker M3334KI board";
 
 	aliases {
 		led0 = &red_led;
@@ -47,23 +47,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x0 0x8000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@8000 {
-			label = "image-0";
 			reg = <0x8000 0x38000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@40000 {
-			label = "image-1";
 			reg = <0x40000 0x38000>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@78000 {
-			label = "storage";
 			reg = <0x78000 0x8000>;
+			label = "storage";
 		};
 	};
 };
