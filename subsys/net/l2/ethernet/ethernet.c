@@ -811,9 +811,8 @@ arp_error:
 
 static inline int ethernet_enable(struct net_if *iface, bool state)
 {
-	int ret = 0;
-	const struct ethernet_api *eth =
-		net_if_get_device(iface)->api;
+	const struct device *dev = net_if_get_device(iface);
+	const struct ethernet_api *eth = dev->api;
 
 	if (!eth) {
 		return -ENOENT;
@@ -823,15 +822,15 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 		net_arp_clear_cache(iface);
 
 		if (eth->stop) {
-			ret = eth->stop(net_if_get_device(iface));
+			return eth->stop(dev);
 		}
 	} else {
 		if (eth->start) {
-			ret = eth->start(net_if_get_device(iface));
+			return eth->start(dev);
 		}
 	}
 
-	return ret;
+	return 0;
 }
 
 enum net_l2_flags ethernet_flags(struct net_if *iface)
@@ -929,7 +928,7 @@ const struct device *net_eth_get_phy(struct net_if *iface)
 		return NULL;
 	}
 
-	return api->get_phy(net_if_get_device(iface));
+	return api->get_phy(dev);
 }
 
 #if defined(CONFIG_PTP_CLOCK)
@@ -954,7 +953,7 @@ const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 		return NULL;
 	}
 
-	return api->get_ptp_clock(net_if_get_device(iface));
+	return api->get_ptp_clock(dev);
 }
 #endif /* CONFIG_PTP_CLOCK */
 
