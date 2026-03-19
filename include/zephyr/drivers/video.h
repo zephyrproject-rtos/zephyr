@@ -29,14 +29,115 @@
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/dlist.h>
 #include <zephyr/types.h>
-#include <zephyr/video/types.h>
 #include <zephyr/video/controls.h>
 #include <zephyr/video/formats.h>
+#include <zephyr/video/types.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Types used to define video devices
+ * @defgroup video_interface_devices Video Devices
+ * @ingroup video_interface
+ * @{
+ */
+
+/**
+ * @brief Storage type for a wrapper type around a video device
+ *
+ * These are connected together as a list of devices, used to propagate
+ * controls along a chain of subdevices.
+ */
+struct video_device {
+	/** Device held by this video device */
+	const struct device *dev;
+	/** Source device up in the chain, and providing the data */
+	const struct device *src_dev;
+	/** List of video controls supported by this device */
+	sys_dlist_t ctrls;
+};
+
+/**
+ * @brief Find the @ref video_device associated with a video @ref device.
+ *
+ * @param dev Device that will be looked up in the global list of video devices.
+ * @return Pointer to the @ref video_device if found.
+ * @retval NULL if not found.
+ */
+struct video_device *video_find_vdev(const struct device *dev);
+
+/**
+ * @}
+ */
+
+/**
+ * @brief Types used to access drivers video controls
+ * @defgroup video_interface_ctrls Video controls
+ * @ingroup video_interface
+ * @{
+ */
+
+/** Control is read-only */
+#define VIDEO_CTRL_FLAG_READ_ONLY  BIT(0)
+/** Control is write-only */
+#define VIDEO_CTRL_FLAG_WRITE_ONLY BIT(1)
+/** Control that needs a freshly read as constanly updated by HW */
+#define VIDEO_CTRL_FLAG_VOLATILE   BIT(2)
+/** Control is inactive, e.g. manual controls of an autocluster in automatic mode */
+#define VIDEO_CTRL_FLAG_INACTIVE   BIT(3)
+/** Control that affects other controls, e.g. the primary control of a cluster */
+#define VIDEO_CTRL_FLAG_UPDATE     BIT(4)
+
+enum video_ctrl_type {
+	/** Boolean type */
+	VIDEO_CTRL_TYPE_BOOLEAN = 1,
+	/** Integer type */
+	VIDEO_CTRL_TYPE_INTEGER = 2,
+	/** 64-bit integer type */
+	VIDEO_CTRL_TYPE_INTEGER64 = 3,
+	/** Menu string type, standard or driver-defined menu */
+	VIDEO_CTRL_TYPE_MENU = 4,
+	/** String type */
+	VIDEO_CTRL_TYPE_STRING = 5,
+	/** Menu integer type, standard or driver-defined menu */
+	VIDEO_CTRL_TYPE_INTEGER_MENU = 6,
+};
+
+/**
+ * @brief Storage type for video controls
+ *
+ * @see video_control for the struct used in public API
+ */
+struct video_ctrl {
+	/* Fields should not touched by drivers, used only for the 1st control of a cluster */
+	struct video_ctrl *cluster;
+	uint8_t cluster_sz;
+	bool is_auto;
+	bool has_volatiles;
+
+	const struct video_device *vdev;
+	uint32_t id;
+	enum video_ctrl_type type;
+	unsigned long flags;
+	struct video_ctrl_range range;
+	union {
+		int32_t val;
+		int64_t val64;
+	};
+	union {
+		const char *const *menu;
+		const int64_t *int_menu;
+	};
+	sys_dnode_t node;
+};
+
+/**
+ * @}
+ */
 
 /**
  * @brief Function type of @ref video_driver_set_format(), @ref driver_get_format()

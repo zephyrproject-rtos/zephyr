@@ -19,7 +19,7 @@
 #include <fsl_cache.h>
 #endif
 
-#include "video_device.h"
+#include "video_common.h"
 
 struct video_mcux_csi_config {
 	CSI_Type *base;

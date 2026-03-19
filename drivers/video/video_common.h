@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2025 tinyVision.ai Inc.
- *
+ * SPDX-FileCopyrightText: Copyright tinyVision.ai Inc.
+ * SPDX-FileCopyrightText: Copyright 2025 NXP
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_VIDEO_COMMON_H_
-#define ZEPHYR_DRIVERS_VIDEO_COMMON_H_
+#ifndef ZEPHYR_DRIVERS_VIDEO_COMMON_H
+#define ZEPHYR_DRIVERS_VIDEO_COMMON_H
 
 #include <stddef.h>
 
@@ -14,6 +15,108 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
+
+/**
+ * @brief Video control and devices initialization
+ * @{
+ */
+
+/**
+ * @brief Register a new @ref video_device globally
+ *
+ * @param name Arbitrary name given to the video device
+ * @param device Pointer to the @ref device struct to initialize
+ * @param source Pointer to the @ref device struct of the soruce device if any or @c NULL
+ */
+#define VIDEO_DEVICE_DEFINE(name, device, source)                                                  \
+	static STRUCT_SECTION_ITERABLE(video_device, name) = {                                     \
+		.dev = device,                                                                     \
+		.src_dev = source,                                                                 \
+		.ctrls = SYS_DLIST_STATIC_INIT(&name.ctrls),                                       \
+	}
+
+/**
+ * @brief Initialize an integer control
+ *
+ * @param ctrl Video control to initialize
+ * @param dev Device to which associate this control
+ * @param id Control ID to initialize
+ * @param range Value range of the control
+ *
+ * @retval 0 on succes
+ * @return Negative error code on failure
+ */
+int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
+		    struct video_ctrl_range range);
+
+/**
+ * @brief Initialize a menu control
+ *
+ * @param ctrl Video control to initialize
+ * @param dev Device to which associate this control
+ * @param id Control ID to initialize
+ * @param def Default index in @p menu
+ * @param menu Array of strings in which the control value is the index, NULL terminated
+ *
+ * @retval 0 on succes
+ * @return Negative error code on failure
+ */
+int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
+			 uint8_t def, const char *const menu[]);
+
+/**
+ * @brief Initialize an integer menu control
+ *
+ * @param ctrl Video control to initialize
+ * @param dev Device to which associate this control
+ * @param id Control ID to initialize
+ * @param def Default index in @p menu
+ * @param menu Array of integers in which the control value is the index
+ * @param menu_len Number of elements in @p menu
+ *
+ * @retval 0 on succes
+ * @return Negative error code on failure
+ */
+int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
+			     uint8_t def, const int64_t menu[], size_t menu_len);
+
+/**
+ * @brief Cluster related video controls together
+ *
+ * @param ctrls Pointer to the first video control
+ * @param sz Number of video controls to cluster together
+ */
+void video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz);
+
+/**
+ * @brief Cluster related video controls together, first set as "auto" control
+ *
+ * @param ctrls Pointer to the first video control
+ * @param sz Number of video controls to cluster together
+ * @param set_volatile Mark this cluster as volatile controls
+ */
+void video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, bool set_volatile);
+
+/**
+ * @}
+ */
+
+/**
+ * @defgroup video_cci Video Camera Control Interface (CCI) handling
+ *
+ * The Camera Control Interface (CCI) is an I2C communication scheme part of MIPI-CSI.
+ * It defines how register addresses and register values are packed into I2C messages.
+ *
+ * After the I2C device address, I2C messages payload contain:
+ *
+ * 1. The 8-bit or 16-bit of the address in big-endian, written to the device.
+ * 2. The 8-bit of the register data either read or written.
+ *
+ * To write to registers larger than 8-bit, multiple read/writes messages are issued.
+ * Endianness and segmentation of larger registers are defined on a per-sensor basis.
+ *
+ * @{
+ */
 
 /**
  * @brief Register for building tables supporting 8/16 bit address and 8/16/24/32 bit value sizes.
@@ -49,23 +152,6 @@ struct video_reg16 {
 	/** Value to write to this address */
 	uint8_t data;
 };
-
-/**
- * @defgroup video_cci Video Camera Control Interface (CCI) handling
- *
- * The Camera Control Interface (CCI) is an I2C communication scheme part of MIPI-CSI.
- * It defines how register addresses and register values are packed into I2C messages.
- *
- * After the I2C device address, I2C messages payload contain:
- *
- * 1. The 8-bit or 16-bit of the address in big-endian, written to the device.
- * 2. The 8-bit of the register data either read or written.
- *
- * To write to registers larger than 8-bit, multiple read/writes messages are issued.
- * Endianness and segmentation of larger registers are defined on a per-sensor basis.
- *
- * @{
- */
 
 /** @cond INTERNAL_HIDDEN */
 #define VIDEO_REG_ENDIANNESS_MASK		(uint32_t)(GENMASK(24, 24))
@@ -228,6 +314,8 @@ int video_write_cci_multiregs8(const struct i2c_dt_spec *i2c, const struct video
 int video_write_cci_multiregs16(const struct i2c_dt_spec *i2c, const struct video_reg16 *regs,
 				size_t num_regs);
 
-/** @} */
+/**
+ * @}
+ */
 
-#endif /* ZEPHYR_DRIVERS_VIDEO_COMMON_H_ */
+#endif /* ZEPHYR_DRIVERS_VIDEO_COMMON_H */

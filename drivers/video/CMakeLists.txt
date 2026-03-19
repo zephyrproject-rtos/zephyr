@@ -3,8 +3,6 @@
 zephyr_library()
 
 zephyr_library_sources(video_common.c)
-zephyr_library_sources(video_ctrls.c)
-zephyr_library_sources(video_device.c)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_VIDEO_EMUL_IMAGER video_emul_imager.c)
@@ -26,7 +24,6 @@ zephyr_library_sources_ifdef(CONFIG_VIDEO_OV767X ov767x.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_OV7725 ov7725.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_OV9655 ov9655.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_RENESAS_RA_CEU video_renesas_ra_ceu.c)
-zephyr_library_sources_ifdef(CONFIG_VIDEO_SHELL video_shell.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_STM32_DCMI video_stm32_dcmi.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_STM32_DCMIPP video_stm32_dcmipp.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_STM32_JPEG video_stm32_jpeg.c)

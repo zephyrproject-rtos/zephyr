@@ -15,7 +15,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/video/formats.h>
 
-#include "video_device.h"
+#include "video_common.h"
 
 LOG_MODULE_REGISTER(video_ov7725, CONFIG_VIDEO_LOG_LEVEL);
 

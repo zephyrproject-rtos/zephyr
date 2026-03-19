@@ -14,8 +14,9 @@
 #include <soc.h>
 #include <errno.h>
 
-#include "video_device.h"
 #include "r_ceu.h"
+
+#include "video_common.h"
 
 LOG_MODULE_REGISTER(renesas_ra_video_ceu, CONFIG_VIDEO_LOG_LEVEL);
 

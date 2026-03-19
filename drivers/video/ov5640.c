@@ -22,8 +22,6 @@
 #include <zephyr/video/formats.h>
 
 #include "video_common.h"
-#include "video_ctrls.h"
-#include "video_device.h"
 
 LOG_MODULE_REGISTER(video_ov5640, CONFIG_VIDEO_LOG_LEVEL);
 
