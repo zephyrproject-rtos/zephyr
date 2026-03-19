@@ -16,8 +16,8 @@
 #include "rp2040_geek-pincontrol.dtsi"
 
 / {
-	model = "Waveshare RP2040 GEEK";
 	compatible = "waveshare,rp2040-geek";
+	model = "Waveshare RP2040 GEEK";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -46,8 +46,8 @@
 			 * boards/shields/st7789v_generic/st7789v_waveshare_240x240.overlay
 			 */
 			compatible = "sitronix,st7789v";
-			mipi-max-frequency = <20000000>;
 			reg = <0>;
+			mipi-max-frequency = <20000000>;
 			width = <135>;
 			height = <240>;
 			x-offset = <52>;
@@ -83,8 +83,8 @@
 
 		/* Reserved memory for the second stage bootloader */
 		second_stage_bootloader: partition@0 {
-			label = "second_stage_bootloader";
 			reg = <0x00000000 0x100>;
+			label = "second_stage_bootloader";
 			read-only;
 		};
 
@@ -93,8 +93,8 @@
 		 * size is 4 MB minus the 0x100 bytes taken by the bootloader.
 		 */
 		code_partition: partition@100 {
-			label = "code-partition";
 			reg = <0x100 (DT_SIZE_M(4) - 0x100)>;
+			label = "code-partition";
 			read-only;
 		};
 	};
@@ -106,29 +106,29 @@
 
 &uart1 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_i2c: &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi0 {
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	cs-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	sdhc0: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
-		status = "okay";
 		spi-max-frequency = <12000000>;
+		status = "okay";
 
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
@@ -141,14 +141,14 @@ zephyr_i2c: &i2c0 {
 &spi1 {
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	cs-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 &adc {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 };
 
 &timer {
