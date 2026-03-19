@@ -22,7 +22,7 @@ find_program(CMAKE_GDB     ${CROSS_COMPILE}mdb     PATHS ${TOOLCHAIN_HOME} NO_DE
 
 function(zephyr_sdk_target_cmake)
   # Scoped loading of variables set by Zephyr SDK target.cmake.
-  include(${ZEPHYR_SDK_INSTALL_DIR}/cmake/zephyr/target.cmake)
+  include(${ZEPHYR_SDK_INSTALL_DIR}/cmake/zephyr/gnu/target.cmake)
 
   # MWDT binutils don't support required features like section renaming, so we
   # temporarily had to use GNU objcopy instead
