@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 
 / {
-	model = "Renesas RSK+RX130-512KB KIT";
 	compatible = "renesas,rsk_rx130_512kb";
+	model = "Renesas RSK+RX130-512KB KIT";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -137,8 +137,8 @@
 		snum = <0x03>;
 		sdpa = <0x07>;
 		channels-num = <10>, <9>, <8>, <7>;
-		zephyr,code = <INPUT_ABS_THROTTLE>;
 		touch-count-threshold = <750>;
+		zephyr,code = <INPUT_ABS_THROTTLE>;
 
 		sld0 {
 			compatible = "renesas,rx-ctsu-slider";
@@ -180,9 +180,9 @@
 };
 
 &mtu1 {
-	status = "okay";
 	pinctrl-0 = <&pwm1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	pwm1: pwm {
 		status = "okay";
@@ -196,8 +196,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0x0 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };

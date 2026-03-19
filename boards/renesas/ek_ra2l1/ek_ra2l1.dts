@@ -20,8 +20,8 @@
 #include "ek_ra2l1-pinctrl.dtsi"
 
 / {
-	model = "Renesas EK-RA2L1";
 	compatible = "renesas,r7fa2l1abxxfp", "renesas,ra2l1";
+	model = "Renesas EK-RA2L1";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -208,12 +208,12 @@
 &iic0 {
 	pinctrl-0 = <&iic0_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	interrupts = <28 1>, <29 1>, <30 1>, <31 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
 	clock-frequency = <DT_FREQ_K(400)>;
+	status = "okay";
 };
 
 &spi0 {
@@ -267,8 +267,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0x0 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };

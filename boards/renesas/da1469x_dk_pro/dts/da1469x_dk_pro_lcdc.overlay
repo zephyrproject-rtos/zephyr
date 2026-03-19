@@ -15,8 +15,8 @@
 
 	lvgl_pointer {
 		input = <&display_touch>;
-		status = "okay";
 		swap-xy;
+		status = "okay";
 	};
 };
 
@@ -44,14 +44,13 @@
 
 	display_touch: ft6206@38 {
 		compatible = "focaltech,ft5336";
-		status = "okay";
 		reg = <0x38>;
 		int-gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 };
 
 &lcdc {
-	status = "okay";
 	pinctrl-0 = <&display_controller_default>;
 	pinctrl-1 = <&display_controller_sleep>;
 	pinctrl-names = "default", "sleep";
@@ -59,6 +58,7 @@
 	height = <272>;
 	disp-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	status = "okay";
 
 	/*
 	 * Panel settings for the NHD-4.3-480272EF-ASXP-CTP

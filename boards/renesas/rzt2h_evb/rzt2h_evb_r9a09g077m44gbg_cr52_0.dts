@@ -11,8 +11,8 @@
 #include "rzt2h_evb-pinctrl.dtsi"
 
 / {
-	model = "RZ/T2H Evaluation Board Kit";
 	compatible = "renesas,rzt2h-evb";
+	model = "RZ/T2H Evaluation Board Kit";
 
 	chosen {
 		zephyr,sram = &atcm;

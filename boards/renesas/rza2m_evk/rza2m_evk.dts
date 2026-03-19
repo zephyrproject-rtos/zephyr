@@ -9,8 +9,8 @@
 #include "rza2m_evk-pinctrl.dtsi"
 
 / {
-	model = "Renesas RZA2M EVK";
 	compatible = "renesas,rza2m_evk";
+	model = "Renesas RZA2M EVK";
 
 	chosen {
 		zephyr,sram = &ram;
@@ -93,9 +93,9 @@
 		ranges = <0x0 0x20000000 DT_SIZE_M(64)>;
 		write-block-size = <2>;
 		erase-block-size = <4096>;
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -103,14 +103,14 @@
 			#size-cells = <1>;
 
 			loader_program: partition@0 {
-				label = "loader-program";
 				reg = <0x00000000 DT_SIZE_K(56)>;
+				label = "loader-program";
 				read-only;
 			};
 
 			slot0_partition: partition@e000 {
-				label = "image-0";
 				reg = <0x0000e000 (DT_SIZE_M(64) - DT_SIZE_K(56))>;
+				label = "image-0";
 				read-only;
 			};
 		};

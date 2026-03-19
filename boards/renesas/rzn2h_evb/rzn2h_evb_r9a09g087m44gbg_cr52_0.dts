@@ -9,8 +9,8 @@
 #include "rzn2h_evb-pinctrl.dtsi"
 
 / {
-	model = "RZ/N2H Evaluation Board Kit";
 	compatible = "renesas,rzn2h-evb";
+	model = "RZ/N2H Evaluation Board Kit";
 
 	chosen {
 		zephyr,sram = &atcm;
@@ -85,8 +85,8 @@
 };
 
 &gpio0 {
-	status = "okay";
 	irqs = <&irq3 4>;
+	status = "okay";
 };
 
 &gpio2 {
