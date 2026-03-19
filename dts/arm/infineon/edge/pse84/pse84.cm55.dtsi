@@ -392,6 +392,10 @@
 		     <133 6>; /* Consolidated interrupt for mxsdhc */
 };
 
+&lpcomp0 {
+	interrupts = <24 4>;
+};
+
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };

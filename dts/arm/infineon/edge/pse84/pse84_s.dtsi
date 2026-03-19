@@ -285,6 +285,26 @@
 			#gpio-cells = <2>;
 		};
 
+		lpcomp0: comparator@52880000 {
+			compatible = "infineon,lp-comp";
+			reg = <0x52880000 0x10000>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			lpcomp0_0: lpcomp0-0 {
+				compatible = "infineon,lp-comp-channel";
+				channel = <0>;
+				status = "disabled";
+			};
+
+			lpcomp0_1: lpcomp0-1 {
+				compatible = "infineon,lp-comp-channel";
+				channel = <1>;
+				status = "disabled";
+			};
+		};
+
 		autanalog: analog@52e00000 {
 			reg = <0x52e00000 0x100000>;
 			interrupts = <57 4>;
