@@ -20,10 +20,8 @@
  * implemented) Hazard3 cores.
  */
 #include "rpi_pico2.dtsi"
-#include "rpi_pico2_split.dtsi"
+#include <raspberrypi/rp2350_shared_reserved_memory.dtsi>
 #include "../common/rpi_pico-led.dtsi"
-
-/delete-node/ &cpu1;
 
 / {
 	chosen {
