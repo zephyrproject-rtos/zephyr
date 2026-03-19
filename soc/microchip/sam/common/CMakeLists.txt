@@ -6,7 +6,7 @@
 if(CONFIG_SOC_FAMILY_MICROCHIP_SAMA7 OR CONFIG_SOC_FAMILY_MICROCHIP_SAM9)
   zephyr_include_directories(.)
 
-  zephyr_sources_ifdef(CONFIG_SOC_FAMILY_MICROCHIP_SAMA7
+  zephyr_sources(
     clk-generated.c
     clk-main.c
     clk-master.c
