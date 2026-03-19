@@ -7,7 +7,7 @@ description: |
   This binding describes the clock controller for Alif Semiconductor SoCs
   that manages clocks for various peripherals.
 
-  The clock controller requires 7 register regions to control different
+  The clock controller requires 6 or 7 register regions to control different
   aspects of the clock tree:
   - cgu: Clock Generation Unit
   - clkctl_per_mst: Peripheral clock control (Master)
@@ -15,7 +15,8 @@ description: |
   - aon: Always-on domain
   - vbat: Vbat domain
   - m55he_cfg: Cortex-M55 HE cluster configuration
-  - m55hp_cfg: Cortex-M55 HP cluster configuration
+  - m55hp_cfg: Cortex-M55 HP cluster configuration (optional, only for
+    multi-core SoCs with HP subsystem)
 
 compatible: "alif,clockctrl"
 
@@ -25,9 +26,9 @@ properties:
   reg:
     required: true
     description: |
-      Clock controller register regions. 7 regions are required in the
+      Clock controller register regions. 6 or 7 regions are required in the
       following order: cgu, clkctl_per_mst, clkctl_per_slv, aon, vbat,
-      m55he_cfg, m55hp_cfg
+      m55he_cfg, and optionally m55hp_cfg (only for multi-core SoCs)
 
   reg-names:
     required: true

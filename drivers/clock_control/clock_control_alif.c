@@ -156,6 +156,10 @@ static mem_addr_t alif_get_clk_reg_addr(const struct device *dev, uint32_t clk_i
 		base = config->m55he_cfg_base;
 		break;
 	case ALIF_M55HP_CFG_MODULE:
+		if (config->m55hp_cfg_base == 0) {
+			__ASSERT(false, "M55HP_CFG module not available on this SoC");
+			return 0;
+		}
 		base = config->m55hp_cfg_base;
 		break;
 	default:
@@ -338,7 +342,7 @@ static const struct alif_clock_control_config alif_clock_config = {
 	.aon_base = DT_REG_ADDR_BY_NAME(DT_NODELABEL(clockctrl), aon),
 	.vbat_base = DT_REG_ADDR_BY_NAME(DT_NODELABEL(clockctrl), vbat),
 	.m55he_cfg_base = DT_REG_ADDR_BY_NAME(DT_NODELABEL(clockctrl), m55he_cfg),
-	.m55hp_cfg_base = DT_REG_ADDR_BY_NAME(DT_NODELABEL(clockctrl), m55hp_cfg),
+	.m55hp_cfg_base = DT_REG_ADDR_BY_NAME_OR(DT_NODELABEL(clockctrl), m55hp_cfg, 0),
 };
 
 DEVICE_DT_DEFINE(DT_NODELABEL(clockctrl),
