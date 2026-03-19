@@ -11,8 +11,8 @@
 #include "particle_argon-pinctrl.dtsi"
 
 / {
-	model = "Particle Argon";
 	compatible = "particle,argon", "particle,feather";
+	model = "Particle Argon";
 
 	sky13351: sky13351 {
 		compatible = "skyworks,sky13351";
@@ -43,8 +43,8 @@
 &uart1 { /* ESP32 */
 	compatible = "nordic,nrf-uarte";
 	current-speed = <921600>;
-	status = "okay";
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
