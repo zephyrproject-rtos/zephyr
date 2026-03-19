@@ -103,6 +103,9 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_LIGHT_CONTROL
 zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_ACCELEROMETER
     ipso_accelerometer.c
     )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_MAGNETOMETER
+    ipso_magnetometer.c
+    )
 zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_BUZZER
     ipso_buzzer.c
     )

@@ -77,6 +77,7 @@ extern "C" {
 #define IPSO_OBJECT_HUMIDITY_SENSOR_ID      3304 /**< IPSO Humidity Sensor object */
 #define IPSO_OBJECT_LIGHT_CONTROL_ID        3311 /**< IPSO Light Control object */
 #define IPSO_OBJECT_ACCELEROMETER_ID        3313 /**< IPSO Accelerometer object */
+#define IPSO_OBJECT_MAGNETOMETER_ID         3314 /**< IPSO Magnetometer object */
 #define IPSO_OBJECT_VOLTAGE_SENSOR_ID       3316 /**< IPSO Voltage Sensor object */
 #define IPSO_OBJECT_CURRENT_SENSOR_ID       3317 /**< IPSO Current Sensor object */
 #define IPSO_OBJECT_PRESSURE_ID             3323 /**< IPSO Pressure Sensor object */

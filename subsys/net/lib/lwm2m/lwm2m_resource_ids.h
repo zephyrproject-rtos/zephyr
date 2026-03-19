@@ -32,6 +32,7 @@
 #define X_VALUE_RID                       5702
 #define Y_VALUE_RID                       5703
 #define Z_VALUE_RID                       5704
+#define COMPASS_DIRECTION_RID             5705
 #define COLOUR_RID                        5706
 #define APPLICATION_TYPE_RID              5750
 #define SENSOR_TYPE_RID                   5751
