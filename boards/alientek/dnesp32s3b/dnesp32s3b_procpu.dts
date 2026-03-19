@@ -10,8 +10,8 @@
 #include "dnesp32s3b-pinctrl.dtsi"
 
 / {
-	model = "DNESP32S3B PROCPU";
 	compatible = "alientek,dnesp32s3b";
+	model = "DNESP32S3B PROCPU";
 
 	aliases {
 		led0 = &ledb;
@@ -81,11 +81,11 @@
 };
 
 &uart0 {
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &gpio0 {
@@ -97,11 +97,11 @@
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 
 	io_expander: xl9555@20 {
 		compatible = "nxp,pca9555";
@@ -134,14 +134,14 @@
 };
 
 &lcd_cam {
-	status = "okay";
 	pinctrl-0 = <&lcd_cam_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lcd_cam_disp {
-	status = "okay";
 	cs-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	st7789v: st7789v@0 {
 		compatible = "sitronix,st7789v";
