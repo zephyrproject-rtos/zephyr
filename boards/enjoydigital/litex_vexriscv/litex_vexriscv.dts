@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
-	model = "LiteX VexRiscV";
 	compatible = "litex,vexriscv";
+	model = "LiteX VexRiscV";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -26,8 +26,8 @@
 	};
 
 	ram0: memory@40000000 {
-		device_type = "memory";
 		reg = <0x40000000 0x10000000>;
+		device_type = "memory";
 	};
 
 	soc {
@@ -44,8 +44,6 @@
 
 		uart0: serial@e0001800 {
 			compatible = "litex,uart";
-			interrupt-parent = <&intc0>;
-			interrupts = <2 10>;
 			reg = <0xe0001800 0x4>,
 			      <0xe0001804 0x4>,
 			      <0xe0001808 0x4>,
@@ -54,6 +52,8 @@
 			      <0xe0001814 0x4>,
 			      <0xe0001818 0x4>,
 			      <0xe000181c 0x4>;
+			interrupt-parent = <&intc0>;
+			interrupts = <2 10>;
 			reg-names = "rxtx",
 				    "txfull",
 				    "rxempty",
@@ -62,14 +62,12 @@
 				    "ev_enable",
 				    "txempty",
 				    "rxfull";
-			status = "okay";
 			current-speed = <115200>;
+			status = "okay";
 		};
 
 		timer0: timer@e0002800 {
 			compatible = "litex,timer0";
-			interrupt-parent = <&intc0>;
-			interrupts = <1 0>;
 			reg = <0xe0002800 0x4>,
 			      <0xe0002804 0x4>,
 			      <0xe0002808 0x4>,
@@ -80,6 +78,8 @@
 			      <0xe000281c 0x4>,
 			      <0xe0002820 0x4>,
 			      <0xe0002824 0x8>;
+			interrupt-parent = <&intc0>;
+			interrupts = <1 0>;
 			reg-names = "load",
 				    "reload",
 				    "en",
@@ -95,13 +95,13 @@
 
 		wdt0: watchdog@e000d000 {
 			compatible = "litex,watchdog";
-			interrupt-parent = <&intc0>;
 			reg = <0xe000d000 0x4>,
 			      <0xe000d004 0x4>,
 			      <0xe000d008 0x4>,
 			      <0xe000d00c 0x4>,
 			      <0xe000d010 0x4>,
 			      <0xe000d014 0x4>;
+			interrupt-parent = <&intc0>;
 			reg-names = "control",
 				    "cycles",
 				    "remaining",
@@ -133,8 +133,6 @@
 
 		eth0: ethernet@e0009800 {
 			compatible = "litex,liteeth";
-			interrupt-parent = <&intc0>;
-			interrupts = <3 0>;
 			reg = <0xe0009800 0x4>,
 			      <0xe0009804 0x4>,
 			      <0xe0009808 0x4>,
@@ -150,6 +148,8 @@
 			      <0xe0009830 0x4>,
 			      <0xe0009834 0x4>,
 			      <0xb0000000 0x2000>;
+			interrupt-parent = <&intc0>;
+			interrupts = <3 0>;
 			local-mac-address = [10 e2 d5 00 00 02];
 			reg-names = "rx_slot",
 				    "rx_length",
@@ -197,14 +197,13 @@
 				    "miso",
 				    "cs",
 				    "loopback";
-			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "okay";
 		};
 
 		spi1: spi@e000c000 {
 			compatible = "litex,spi-litespi";
-			interrupt-parent = <&intc0>;
 			reg = <0xe000c000 0x4>,
 			      <0xe000c004 0x4>,
 			      <0xe000c008 0x4>,
@@ -215,6 +214,7 @@
 			      <0xe000c01c 0x4>,
 			      <0xe000c020 0x4>,
 			      <0x60000000 0x1000000>;
+			interrupt-parent = <&intc0>;
 			reg-names = "phy_clk_divisor",
 				    "mmap_dummy_bits",
 				    "master_cs",
@@ -238,7 +238,6 @@
 
 		sdhc0: sdhc@e000e800 {
 			compatible = "litex,mmc";
-			interrupt-parent = <&intc0>;
 			reg = <0xe000e800 0x4>,
 			      <0xe000e804 0x4>,
 			      <0xe000e808 0x4>,
@@ -269,6 +268,7 @@
 			      <0xe000e880 0x4>,
 			      <0xe000e884 0x4>,
 			      <0xe000e888 0x4>;
+			interrupt-parent = <&intc0>;
 			reg-names = "phy_card_detect",
 				    "phy_clocker_divider",
 				    "phy_init_initialize",
@@ -304,8 +304,8 @@
 
 			mmc {
 				compatible = "zephyr,sdmmc-disk";
-				status = "okay";
 				disk-name = "SD";
+				status = "okay";
 			};
 		};
 
@@ -330,7 +330,6 @@
 
 		i2c1: i2c@e000d800 {
 			compatible = "litex,litei2c";
-			interrupt-parent = <&intc0>;
 			reg = <0xe000d800 0x4>,
 			      <0xe000d804 0x4>,
 			      <0xe000d808 0x4>,
@@ -340,6 +339,7 @@
 			      <0xe000d818 0x4>,
 			      <0xe000d81c 0x4>,
 			      <0xe000d820 0x4>;
+			interrupt-parent = <&intc0>;
 			reg-names = "phy_speed_mode",
 				    "master_active",
 				    "master_settings",
@@ -364,8 +364,8 @@
 			reg-names = "enable",
 				    "width",
 				    "period";
-			status = "okay";
 			#pwm-cells = <2>;
+			status = "okay";
 		};
 
 		gpio_out: gpio@e0005800 {
@@ -373,9 +373,9 @@
 			reg = <0xe0005800 0x4>;
 			reg-names = "out";
 			ngpios = <4>;
-			status = "okay";
 			gpio-controller;
 			#gpio-cells = <2>;
+			status = "okay";
 		};
 
 		gpio_in: gpio@e0006000 {
@@ -393,9 +393,9 @@
 				    "ev_pending",
 				    "ev_enable";
 			ngpios = <4>;
-			status = "okay";
 			gpio-controller;
 			#gpio-cells = <2>;
+			status = "okay";
 		};
 
 		i2s_rx: i2s_rx@e000a800 {
@@ -451,9 +451,9 @@
 			#size-cells = <0>;
 
 			clk0: clock-controller@0 {
-				#clock-cells = <1>;
-				reg = <0>;
 				compatible = "litex,clkout";
+				reg = <0>;
+				#clock-cells = <1>;
 				clock-output-names = "CLK_0";
 				litex,clock-frequency = <11289600>;
 				litex,clock-phase = <0>;
@@ -465,9 +465,9 @@
 			};
 
 			clk1: clock-controller@1 {
-				#clock-cells = <1>;
-				reg = <1>;
 				compatible = "litex,clkout";
+				reg = <1>;
+				#clock-cells = <1>;
 				clock-output-names = "CLK_1";
 				litex,clock-frequency = <22579200>;
 				litex,clock-phase = <0>;
