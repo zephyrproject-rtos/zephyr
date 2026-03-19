@@ -8,8 +8,8 @@
 #include <broadcom/valkyrie.dtsi>
 
 / {
-	model = "Broadcom BCM958401M2";
 	compatible = "brcm,valkyrie";
+	model = "Broadcom BCM958401M2";
 	#address-cells = <1>;
 	#size-cells = <1>;
 

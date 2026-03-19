@@ -9,8 +9,8 @@
 #include <broadcom/viper-m7.dtsi>
 
 / {
-	model = "Broadcom BCM958402M2_M7";
 	compatible = "brcm,viper";
+	model = "Broadcom BCM958402M2_M7";
 	#address-cells = <1>;
 	#size-cells = <1>;
 
