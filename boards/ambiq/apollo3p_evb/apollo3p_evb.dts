@@ -5,8 +5,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Ambiq Apollo3 Blue Plus evaluation board";
 	compatible = "ambiq,apollo3p_evb";
+	model = "Ambiq Apollo3 Blue Plus evaluation board";
 
 	chosen {
 		zephyr,itcm = &tcm;
@@ -102,8 +102,8 @@
 
 		/* Set 16KB of storage at the end of the 2000KB of flash */
 		storage_partition: partition@1f0000 {
-			label = "storage";
 			reg = <0x001f0000 0x4000>;
+			label = "storage";
 		};
 	};
 };
@@ -173,8 +173,8 @@
 };
 
 &rtc0 {
-	status = "disabled";
 	clock = "XTAL";
+	status = "disabled";
 };
 
 &adc0 {
