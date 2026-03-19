@@ -15,7 +15,7 @@
 };
 
 / {
-	watchdog0: wdt_counter: wdt-counter {
+	wdt_counter: wdt-counter {
 		compatible = "zephyr,counter-watchdog";
 		status = "okay";
 		counter = <&timer0>;
