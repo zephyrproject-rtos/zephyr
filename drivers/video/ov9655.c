@@ -10,6 +10,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/video/formats.h>
 
 #include "video_common.h"
 #include "video_device.h"

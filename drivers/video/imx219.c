@@ -9,11 +9,11 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/drivers/video-controls.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/video/video.h>
 
 #include "video_common.h"
 #include "video_ctrls.h"

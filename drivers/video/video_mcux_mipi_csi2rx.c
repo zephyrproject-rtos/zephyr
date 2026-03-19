@@ -8,7 +8,7 @@
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/video.h>
-#include <zephyr/drivers/video-controls.h>
+#include <zephyr/video/controls.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>

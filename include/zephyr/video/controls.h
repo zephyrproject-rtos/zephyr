@@ -2,22 +2,29 @@
  * Copyright (c) 2019 Linaro Limited.
  * Copyright (c) 2024 tinyVision.ai Inc.
  * Copyright 2025 NXP
- *
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_VIDEO_CONTROLS_H_
-#define ZEPHYR_INCLUDE_VIDEO_CONTROLS_H_
 
 /**
  * @file
- * @ingroup video_controls
- * @brief Main header file for video controls driver API.
+ * @ingroup video_control_ids
+ * @brief Main header file for video controls IDs definitions.
  */
 
+#ifndef ZEPHYR_INCLUDE_VIDEO_CONTROLS_H
+#define ZEPHYR_INCLUDE_VIDEO_CONTROLS_H
+
 /**
- * @brief Video controls
+ * @brief Video control IDs
  * @defgroup video_controls Video Controls
- * @ingroup video_interface
+ * @since 4.4
+ * @version 0.0.1
+ * @ingroup video
+ * @{
+ *
+ * @defgroup video_control_ids Video Control IDs
+ * @ingroup video
  *
  * The Video control IDs (CIDs) are introduced with the same name as
  * Linux V4L2 subsystem and under the same class. This facilitates
@@ -437,89 +444,6 @@ enum video_camera_orientation {
  * @}
  */
 
-/**
- * @name Public video control structures
- * @{
- */
-
-/**
- * @struct video_control
- * @brief Video control structure
- *
- * Used to get/set a video control.
- * @see video_ctrl for the struct used in the driver implementation
- */
-struct video_control {
-	/** control id */
-	uint32_t id;
-	/** control value */
-	union {
-		int32_t val;
-		int64_t val64;
-	};
-};
-
-/**
- * @struct video_control_range
- * @brief Video control range structure
- *
- * Describe range of a control including min, max, step and default values
- */
-struct video_ctrl_range {
-	/** control minimum value, inclusive */
-	union {
-		int32_t min;
-		int64_t min64;
-	};
-	/** control maximum value, inclusive */
-	union {
-		int32_t max;
-		int64_t max64;
-	};
-	/** control value step */
-	union {
-		int32_t step;
-		int64_t step64;
-	};
-	/** control default value for VIDEO_CTRL_TYPE_INTEGER, _BOOLEAN, _MENU or
-	 * _INTEGER_MENU, not valid for other types
-	 */
-	union {
-		int32_t def;
-		int64_t def64;
-	};
-};
-
-/**
- * @struct video_control_query
- * @brief Video control query structure
- *
- * Used to query information about a control.
- */
-struct video_ctrl_query {
-	/** device being queried, application needs to set this field */
-	const struct device *dev;
-	/** control id, application needs to set this field */
-	uint32_t id;
-	/** control type */
-	uint32_t type;
-	/** control name */
-	const char *name;
-	/** control flags */
-	uint32_t flags;
-	/** control range */
-	struct video_ctrl_range range;
-	/** menu if control is of menu type */
-	union {
-		const char *const *menu;
-		const int64_t *int_menu;
-	};
-};
-
-/**
- * @}
- */
-
 #ifdef __cplusplus
 }
 #endif
@@ -528,4 +452,4 @@ struct video_ctrl_query {
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_VIDEO_H_ */
+#endif /* ZEPHYR_INCLUDE_VIDEO_CONTROLS_H */

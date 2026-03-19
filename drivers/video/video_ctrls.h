@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/sys/dlist.h>
+#include <zephyr/drivers/video.h>
 
 /** Control is read-only */
 #define VIDEO_CTRL_FLAG_READ_ONLY  BIT(0)

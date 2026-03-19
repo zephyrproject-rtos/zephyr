@@ -7,17 +7,19 @@
 
 #define DT_DRV_COMPAT ovti_ov5640
 
-#include <zephyr/kernel.h>
 #include <math.h>
 #include <stdlib.h>
+
 #include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/video.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/drivers/i2c.h>
-#include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/video.h>
-#include <zephyr/drivers/video-controls.h>
-#include <zephyr/dt-bindings/video/video-interfaces.h>
+#include <zephyr/video/controls.h>
+#include <zephyr/video/formats.h>
 
 #include "video_common.h"
 #include "video_ctrls.h"

@@ -10,8 +10,9 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
-#include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/video/controls.h>
+#include <zephyr/video/formats.h>
 
 #include "video_common.h"
 #include "video_ctrls.h"

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2019, Linaro Limited
  * Copyright (c) 2024-2025, tinyVision.ai Inc.
- *
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,12 +9,12 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/video/video.h>
-#include <zephyr/drivers/video-controls.h>
+#include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/video/video.h>
 
 #include "video_common.h"
 
@@ -161,21 +161,14 @@ int video_import_buffer(uint8_t *mem, size_t sz, uint16_t *idx)
 
 int video_enqueue(const struct device *dev, struct video_buffer *buf)
 {
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
-
 	if (dev == NULL || buf == NULL || buf->index >= CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
 	    (buf->type != VIDEO_BUF_TYPE_INPUT && buf->type != VIDEO_BUF_TYPE_OUTPUT)) {
 		return -EINVAL;
 	}
 
-	api = (const struct video_driver_api *)dev->api;
-	if (api->enqueue == NULL) {
-		return -ENOSYS;
-	}
-
 	video_buf[buf->index].type = buf->type;
 
-	return api->enqueue(dev, &video_buf[buf->index]);
+	return video_driver_enqueue(dev, &video_buf[buf->index]);
 }
 
 int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,
@@ -576,12 +569,12 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 	struct video_buffer *buf = &(struct video_buffer){.type = src_type};
 	int ret;
 
-	ret = video_dequeue(src, &buf, timeout);
+	ret = video_driver_dequeue(src, &buf, timeout);
 	if (ret < 0) {
 		return ret;
 	}
 
 	buf->type = sink_type;
 
-	return video_enqueue(sink, buf);
+	return video_driver_enqueue(sink, buf);
 }

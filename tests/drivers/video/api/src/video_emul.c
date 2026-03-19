@@ -1,12 +1,13 @@
 /*
- * Copyright (c) 2024 tinyVision.ai Inc.
- *
+ * SPDX-FileCopyrightText: Copyright tinyVision.ai Inc.
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
 #include <zephyr/drivers/video.h>
-#include <zephyr/drivers/video-controls.h>
+#include <zephyr/video/controls.h>
+#include <zephyr/video/video.h>
+#include <zephyr/ztest.h>
 
 const struct device *rx_dev = DEVICE_DT_GET(DT_NODELABEL(test_video_emul_rx));
 const struct device *imager_dev = DEVICE_DT_GET(DT_NODELABEL(test_video_emul_imager));
@@ -182,7 +183,7 @@ ZTEST(video_common, test_video_vbuf)
 	zexpect_ok(video_enqueue(rx_dev, vbuf));
 
 	/* Process the remaining buffers */
-	zexpect_ok(video_flush(rx_dev, false));
+	zexpect_ok(video_driver_flush(rx_dev, false));
 
 	/* Expect the buffer to immediately be available */
 	zexpect_ok(video_dequeue(rx_dev, &vbuf, K_FOREVER));

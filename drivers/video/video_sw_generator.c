@@ -6,12 +6,12 @@
 
 #define DT_DRV_COMPAT zephyr_video_sw_generator
 
-#include <zephyr/drivers/video-controls.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/video/video.h>
 
 #include "video_ctrls.h"
 #include "video_device.h"
