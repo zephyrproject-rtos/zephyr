@@ -24,8 +24,20 @@
  * @{
  */
 
+/**
+ * @brief Channel status busy bit flag
+ */
 #define SCMI_SHMEM_CHAN_STATUS_BUSY_BIT BIT(0)
+
+/**
+ * @brief Channel flag for IRQ signaling
+ */
 #define SCMI_SHMEM_CHAN_FLAG_IRQ_BIT BIT(0)
+
+/**
+ * @brief Offset of message header in shared memory channel
+ */
+#define SCMI_SHMEM_CHAN_MSG_HDR_OFFSET 0x18
 
 struct scmi_shmem_layout {
 	volatile uint32_t res0;
@@ -51,6 +63,17 @@ struct scmi_message;
 int scmi_shmem_write_message(const struct device *shmem,
 			     struct scmi_message *msg,
 			     bool use_polling);
+
+/**
+ * @brief Read a message header from a SHMEM area
+ *
+ * @param shmem pointer to shmem device
+ * @param msg message to write the data into
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_shmem_read_hdr(const struct device *shmem, struct scmi_message *msg);
 
 /**
  * @brief Read a message from a SHMEM area
