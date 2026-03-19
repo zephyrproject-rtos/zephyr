@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Inkplate 6Color PROCPU";
 	compatible = "solderedelectronics,inkplate-6color";
+	model = "Inkplate 6Color PROCPU";
 
 	chosen {
 		zephyr,sram = &sram1;
@@ -52,21 +52,21 @@
 	};
 
 	vbatt: vbatt0 {
-		status = "okay";
 		compatible = "voltage-divider";
 		io-channels = <&adc1 7>;
 		output-ohms = <100000>;
 		full-ohms = <(100000 + 100000)>;
 		power-gpios = <&pcal6416a 9 GPIO_ACTIVE_HIGH>;
 		skip-calibration;
+		status = "okay";
 	};
 };
 
 &adc1 {
-	status = "okay";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@7 {
 		reg = <7>;
@@ -80,19 +80,19 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 	sda-gpios = <&gpio0 21 GPIO_OPEN_DRAIN>;
 	scl-gpios = <&gpio0 22 GPIO_OPEN_DRAIN>;
+	status = "okay";
 
 	pcal6416a: pcal6416a@20 {
 		compatible = "nxp,pcal6416a";
@@ -122,12 +122,12 @@
 };
 
 &i2c1 {
-	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 	sda-gpios = <&gpio0 26 GPIO_OPEN_DRAIN>;
 	scl-gpios = <&gpio0 25 GPIO_OPEN_DRAIN>;
+	status = "disabled";
 };
 
 &timer0 {
@@ -155,16 +155,16 @@
 	#size-cells = <0>;
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	cs-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	sdhc_spi: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
-		status = "okay";
 		spi-max-frequency = <4000000>;
 		pwr-gpios = <&pcal6416a 10 GPIO_ACTIVE_LOW>;
 		power-delay-ms = <50>;
+		status = "okay";
 
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
@@ -179,8 +179,8 @@
 	#size-cells = <0>;
 	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	cs-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;  /* EPAPER_CS_PIN */
+	status = "okay";
 
 	mipi_dbi: mipi_dbi {
 		compatible = "zephyr,mipi-dbi-spi";
