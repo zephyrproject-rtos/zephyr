@@ -1,0 +1,6 @@
+board:
+  name: rak3172_sip
+  full_name: RAKWireless RAK3172-SiP (STM32WLE5CC, HP PA)
+  vendor: rakwireless
+  socs:
+    - name: stm32wle5xx

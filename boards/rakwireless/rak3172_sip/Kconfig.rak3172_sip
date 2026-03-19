@@ -1,0 +1,2 @@
+config BOARD_RAK3172_SIP
+	select SOC_STM32WLE5XX
