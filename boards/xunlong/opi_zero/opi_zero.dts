@@ -9,8 +9,8 @@
 #include <allwinner/sun8i-h3.dtsi>
 
 / {
-	model = "Xunlong Orange Pi Zero";
 	compatible = "xunlong,orangepi-zero", "allwinner,sun8i-h2-plus";
+	model = "Xunlong Orange Pi Zero";
 	#address-cells = <1>;
 	#size-cells = <1>;
 
@@ -21,9 +21,9 @@
 	};
 
 	dram0: memory@40000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x40000000 DT_SIZE_M(512)>;
+		device_type = "memory";
 	};
 };
 
@@ -32,6 +32,6 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
