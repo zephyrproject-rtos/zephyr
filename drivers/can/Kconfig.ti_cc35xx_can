@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Conclusive Engineering Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_TI_CC35XX
+	bool "TI CC35XX CAN controller driver"
+	default y
+	depends on DT_HAS_TI_CC35XX_CAN_ENABLED
+	select CAN_MCAN
+	depends on !CAN_FD_MODE
+	help
+	  Enable TI CC35XX CAN controller.
