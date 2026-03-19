@@ -28,6 +28,7 @@ extern "C" {
 static inline void z_init_timeout(struct _timeout *to)
 {
 	sys_dnode_init(&to->node);
+	to->flags = 0;
 }
 
 /* Adds the timeout to the queue.
@@ -37,6 +38,24 @@ static inline void z_init_timeout(struct _timeout *to)
 k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout);
 
 int z_abort_timeout(struct _timeout *to);
+
+/* Determine if the timeout handler should continue.
+ *
+ * The routine sys_clock_announce() both removes the timeout from the timeout
+ * list and unlocks interrupts prior to invoking the timeout handler. This
+ * provides a small gap where another ISR (or thread on another CPU) could
+ * do something that would cause the timeout handler to be canceled (e.g.
+ * restarting a k_timer). This routine allows the timeout handler to check if
+ * it should continue or if it should just return immediately. It assumes that
+ * the handler has already locked interrupts / relevant spinlocks.
+ *
+ * Testing if the timeout node is linked is insuffucient as the timeout node
+ * could have been reused.
+ */
+static inline bool z_is_timeout_handler_canceled(const struct _timeout *to)
+{
+	return ((to->flags & _TIMEOUT_FLAG_ANNOUNCING) == 0);
+}
 
 static inline bool z_is_inactive_timeout(const struct _timeout *to)
 {

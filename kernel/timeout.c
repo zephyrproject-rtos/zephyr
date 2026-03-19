@@ -149,6 +149,7 @@ int z_abort_timeout(struct _timeout *to)
 	int ret = -EINVAL;
 
 	K_SPINLOCK(&timeout_lock) {
+		to->flags &= ~_TIMEOUT_FLAG_ANNOUNCING;
 		if (sys_dnode_is_linked(&to->node)) {
 			bool is_first = (to == first());
 
@@ -245,11 +246,13 @@ void sys_clock_announce(int32_t ticks)
 
 		curr_tick += dt;
 		t->dticks = 0;
+		t->flags |= _TIMEOUT_FLAG_ANNOUNCING;
 		remove_timeout(t);
 
 		k_spin_unlock(&timeout_lock, key);
 		t->fn(t);
 		key = k_spin_lock(&timeout_lock);
+		t->flags &= ~_TIMEOUT_FLAG_ANNOUNCING;
 		announce_remaining -= dt;
 	}
 

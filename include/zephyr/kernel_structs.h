@@ -295,6 +295,8 @@ typedef struct {
 
 #endif /* CONFIG_WAITQ_SCALABLE */
 
+#define _TIMEOUT_FLAG_ANNOUNCING  BIT(0)
+
 /* kernel timeout record */
 struct _timeout;
 typedef void (*_timeout_func_t)(struct _timeout *t);
@@ -308,6 +310,7 @@ struct _timeout {
 #else
 	int32_t dticks;
 #endif
+	uint32_t flags;
 };
 
 typedef void (*k_thread_timeslice_fn_t)(struct k_thread *thread, void *data);
