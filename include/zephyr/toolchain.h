@@ -192,6 +192,18 @@
 #endif
 
 /**
+ * @def TOOLCHAIN_WARNING_ARM_INTERRUPT_VFP_CLOBBER
+ * @brief Toolchain-specific warning for ARM interrupt service routines with VFP enabled that may
+ * clobber the VFP state.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_ARM_INTERRUPT_VFP_CLOBBER
+#define TOOLCHAIN_WARNING_ARM_INTERRUPT_VFP_CLOBBER
+#endif
+
+/**
  * @def TOOLCHAIN_WARNING_NONNULL
  * @brief Toolchain-specific warning for null pointer arguments to functions marked with "nonnull".
  *
