@@ -9,7 +9,7 @@ config TF_PSA_CRYPTO_CFG_FILE
 	  TF-PSA-Crypto. The default one can be tweaked with Kconfig.
 
 config MBEDTLS_ECP_NIST_OPTIM
-	bool "NSIT curves optimization"
+	bool "NIST curves optimization"
 	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
 
 comment "Supported ciphers and cipher modes"
@@ -200,13 +200,13 @@ config MBEDTLS_PKCS5_C
 	  Enable PKCS5 functions
 
 choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
-	prompt "Select random source for built-in PSA crypto"
+	prompt "PSA crypto random source"
 	depends on MBEDTLS_PSA_CRYPTO_C
 	default MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG if CSPRNG_ENABLED
 	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 
 config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
-	bool "Use a cryptographically secure driver as random source"
+	bool "Cryptographically secure driver"
 	help
 	  Use a cryptographically secure random generator to provide random data
 	  instead of legacy Mbed TLS modules. This has a smaller footprint
@@ -218,7 +218,7 @@ config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 	    will be available.
 
 config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
-	bool "Use legacy modules to generate random data"
+	bool "Mbed TLS legacy modules (ENTROPY + [CTR|HMAC]_DRBG)"
 	select MBEDTLS_ENTROPY_C
 	select MBEDTLS_HMAC_DRBG_C if !MBEDTLS_CTR_DRBG_C
 	# If there is any entropy driver in the system, then the choice would be
