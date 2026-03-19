@@ -78,11 +78,11 @@ zephyr_udc0: &usbd {
 };
 
 &pwm {
-	status = "okay";
 	/* GPIO25 is connected to channel 4B */
 	pinctrl-0 = <&pwm_ch4b_default>;
 	pinctrl-names = "default";
 	divider-int-0 = <255>;
+	status = "okay";
 };
 
 &gpio0 {
@@ -90,12 +90,12 @@ zephyr_udc0: &usbd {
 };
 
 &adc {
-	status = "okay";
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@2 {
 		reg = <2>;

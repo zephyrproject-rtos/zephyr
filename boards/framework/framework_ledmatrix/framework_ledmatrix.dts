@@ -31,15 +31,15 @@
 		/* Dip switch on the back - not normally accessible during usage */
 		dip1: dip1 {
 			gpios = <&gpio0 25 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			zephyr,code = <INPUT_KEY_0>;
 			label = "DIP1";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 
 		/* Pin from the EC on the mainboard - low indicating lid of the laptop is closed */
 		lid_closed: lid-closed {
 			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			zephyr,code = <INPUT_KEY_1>;
 			label = "Lid closed";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 };
@@ -71,14 +71,14 @@
 };
 
 &i2c1 {
-	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 
 	is31fl3741@30 {
-		status = "okay";
 		reg = <0x30>;
+		status = "okay";
 	};
 };
 
