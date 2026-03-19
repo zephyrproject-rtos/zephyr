@@ -9,8 +9,8 @@
 #include <st/wl/stm32wle5ccux-pinctrl.dtsi>
 
 / {
-	model = "RAKWireless RAK11160 WisDuo LPWAN Module";
 	compatible = "stm32,rak11160_stm32wl";
+	model = "RAKWireless RAK11160 WisDuo LPWAN Module";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -68,21 +68,20 @@
 };
 
 &clk_hse {
-	status = "okay";
 	clock-frequency = <DT_FREQ_M(32)>;
 	hse-tcxo;
+	status = "okay";
 };
 
 &clk_lse {
-	status = "okay";
 	clock-frequency = <32768>;
+	status = "okay";
 };
 
 &subghzspi {
 	status = "okay";
 
 	lora: radio@0 {
-		status = "okay";
 		antenna-enable-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
 		tx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 		rx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
@@ -90,6 +89,7 @@
 		tcxo-power-startup-delay-ms = <5>;
 		power-amplifier-output = "rfo-hp";
 		rfo-hp-max-power = <22>;
+		status = "okay";
 	};
 };
 
@@ -115,8 +115,8 @@
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pa12 &i2c2_sda_pa11>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -151,24 +151,24 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(32)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@8000 {
-			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(108)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@23000 {
-			label = "image-1";
 			reg = <0x00023000 DT_SIZE_K(108)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@3e000 {
-			label = "storage";
 			reg = <0x0003e000 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };

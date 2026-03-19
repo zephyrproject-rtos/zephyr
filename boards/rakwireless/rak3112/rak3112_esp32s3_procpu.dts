@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/lora/sx126x.h>
 
 / {
-	model = "RAK3112 PROCPU";
 	compatible = "espressif,esp32s3";
+	model = "RAK3112 PROCPU";
 
 	aliases {
 		i2c-1 = &i2c1;
@@ -50,11 +50,11 @@
 };
 
 &spi2 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	lora: lora@0 {
 		compatible = "semtech,sx1262";
@@ -71,10 +71,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &wdt0 {
