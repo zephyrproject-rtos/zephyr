@@ -401,6 +401,7 @@
 		};
 
 		bbram: bb-ram@4000a800 {
+			compatible = "microchip,xec-bbram";
 			reg = <0x4000a800 0x80>;
 			reg-names = "memory";
 			status = "disabled";
