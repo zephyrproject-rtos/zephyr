@@ -10,8 +10,8 @@
 #include "rtl872xda_evb-pinctrl.dtsi"
 
 / {
-	model = "RealTek AmebaDplus RTL872XDA EVB";
 	compatible = "realtek,rtl872xda_evb";
+	model = "RealTek AmebaDplus RTL872XDA EVB";
 
 	chosen {
 		zephyr,console = &loguart;

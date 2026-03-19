@@ -10,8 +10,8 @@
 #include "rtl8721f_evb-pinctrl.dtsi"
 
 / {
-	model = "RealTek AmebaG2 RTL8721F EVB";
 	compatible = "realtek,rtl8721f_evb";
+	model = "RealTek AmebaG2 RTL8721F EVB";
 
 	chosen {
 		zephyr,console = &loguart;
@@ -32,19 +32,19 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "bootloader";
 			reg = <0x00000000 0x00014000>;
+			label = "bootloader";
 			read-only;
 		};
 
 		slot0_partition: partition@14000 {
-			label = "image-0";
 			reg = <0x00014000 0x001ec000>;
+			label = "image-0";
 		};
 
 		storage_partition: partition@250000 {
-			label = "storage";
 			reg = <0x00250000 0x00006000>;
+			label = "storage";
 		};
 	};
 };

@@ -8,8 +8,8 @@
 #include "rts5817_maa_evb-pinctrl.dtsi"
 
 / {
-	model = "Realtek rts5817_maa_evb";
 	compatible = "realtek,rts5817_maa_evb";
+	model = "Realtek rts5817_maa_evb";
 	#address-cells = <1>;
 	#size-cells = <1>;
 

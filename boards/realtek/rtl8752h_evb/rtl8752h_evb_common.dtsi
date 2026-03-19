@@ -73,9 +73,9 @@
 &uart2 {
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	current-speed = <115200>;
 	parity = "none";
 	stop-bits = "1";
 	data-bits = <8>;
+	status = "okay";
 };

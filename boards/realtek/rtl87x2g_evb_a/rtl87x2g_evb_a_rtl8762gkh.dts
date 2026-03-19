@@ -34,13 +34,13 @@
 	partitions {
 		/* 0x402d000-0x4100000: Free space for Zephyr */
 		app_partition: partition@2d000 {
-			label = "app-image";
 			reg = <0x2d000 DT_SIZE_K(828)>;
+			label = "app-image";
 		};
 
 		storage_partition: partition@fc000 {
-			label = "storage";
 			reg = <0xfc000 DT_SIZE_K(16)>;
+			label = "storage";
 		};
 	};
 };

@@ -10,8 +10,8 @@
 #include "rtl872xd_evb-pinctrl.dtsi"
 
 / {
-	model = "RealTek AmebaD RTL872XD EVB";
 	compatible = "realtek,rtl872xd_evb";
+	model = "RealTek AmebaD RTL872XD EVB";
 
 	chosen {
 		zephyr,console = &loguart;
