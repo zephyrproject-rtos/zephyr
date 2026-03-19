@@ -5043,6 +5043,9 @@ Security:
   maintainers:
     - ceolin
     - d3zd3z
+  collaborators:
+    - tomi-font
+    - valeriosetti
   files:
     - doc/security/
   labels:
