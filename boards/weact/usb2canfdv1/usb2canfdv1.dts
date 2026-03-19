@@ -10,8 +10,8 @@
 #include <st/g0/stm32g0b1c(b-c-e)tx-pinctrl.dtsi>
 
 / {
-	model = "WeAct USB2CANFDV1 board";
 	compatible = "weact,usb2canfdv1";
+	model = "WeAct USB2CANFDV1 board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -48,13 +48,13 @@
 };
 
 &clk_hse {
-	status = "okay";
 	clock-frequency = <DT_FREQ_M(16)>;
+	status = "okay";
 };
 
 &clk_hsi48 {
-	status = "okay";
 	crs-usb-sof;
+	status = "okay";
 };
 
 &pll {
@@ -99,14 +99,14 @@ zephyr_udc0: &usb {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(80)>;
+			label = "image-0";
 		};
 	};
 };

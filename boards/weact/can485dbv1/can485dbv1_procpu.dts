@@ -20,8 +20,8 @@
 #include <zephyr/dt-bindings/led/worldsemi_ws2812c.h>
 
 / {
-	model = "CAN485 DevBoard V1 PROCPU";
 	compatible = "weact,can485dbv1", "espressif,esp32";
+	model = "CAN485 DevBoard V1 PROCPU";
 
 	chosen {
 		zephyr,sram = &sram1;
@@ -60,14 +60,13 @@
 };
 
 zephyr_serial: &uart0 {
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 zephyr_rs485: &uart1 {
-	status = "okay";
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
 
@@ -76,6 +75,7 @@ zephyr_rs485: &uart1 {
 	data-bits = <8>; /* 8 (for RTU), 7 (for ASCII) */
 	parity = "even"; /* Even (typical default), Odd, or None */
 	stop-bits = "1"; /* 1 (if parity is used), 2 (if parity is none) */
+	status = "okay";
 
 	modbus0 {
 		compatible = "zephyr,modbus-serial";
@@ -84,9 +84,9 @@ zephyr_rs485: &uart1 {
 };
 
 zephyr_can: &twai {
-	status = "okay";
 	pinctrl-0 = <&twai_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	can-transceiver {
 		max-bitrate = <1000000>;
@@ -94,10 +94,10 @@ zephyr_can: &twai {
 };
 
 zephyr_adc: &adc0 {
-	status = "okay";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;
@@ -109,7 +109,6 @@ zephyr_adc: &adc0 {
 };
 
 &spi2 {
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 
@@ -117,10 +116,10 @@ zephyr_adc: &adc0 {
 	#size-cells = <0>;
 
 	line-idle-low;
+	status = "okay";
 
 	status_rgb_led: ws2812@0 {
 		compatible = "worldsemi,ws2812-spi";
-		status = "okay";
 
 		reg = <0>;
 		spi-max-frequency = <WS2812C_SPI_FREQ>;
@@ -132,11 +131,11 @@ zephyr_adc: &adc0 {
 		spi-one-frame = <WS2812C_ONE_FRAME>;
 		spi-zero-frame = <WS2812C_ZERO_FRAME>;
 		reset-delay = <250>;
+		status = "okay";
 	};
 };
 
 &spi3 {
-	status = "okay";
 	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
 
@@ -145,18 +144,19 @@ zephyr_adc: &adc0 {
 
 	dma-enabled;
 	cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	sd0: sd@0 {
 		compatible = "zephyr,sdhc-spi-slot";
-		status = "okay";
 
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(25)>;
+		status = "okay";
 
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
-			status = "okay";
 			disk-name = "SD";
+			status = "okay";
 		};
 	};
 };

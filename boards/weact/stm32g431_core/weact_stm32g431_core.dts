@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "WeAct Studio STM32G431 Core Board";
 	compatible = "weact,stm32g431-core";
+	model = "WeAct Studio STM32G431 Core Board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -58,10 +58,10 @@
 
 	vbus1: vbus {
 		compatible = "zephyr,usb-c-vbus-adc";
-		status = "disabled";
 		io-channels = <&adc2 12>;
 		output-ohms = <10000>;
 		full-ohms = <(100000 + 10000)>;
+		status = "disabled";
 	};
 
 	ports {
@@ -70,13 +70,13 @@
 
 		usbc1: usbc-port@1 {
 			compatible = "usb-c-connector";
-			status = "disabled";
 			reg = <1>;
 			tcpc = <&ucpd1>;
 			vbus = <&vbus1>;
 			data-role = "device";
 			power-role = "sink";
 			sink-pdos = <PDO_FIXED(5000, 100, PDO_FIXED_USB_COMM)>;
+			status = "disabled";
 		};
 	};
 };
@@ -94,8 +94,8 @@
 };
 
 &clk_hse {
-	status = "okay";
 	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
 };
 
 &rcc {
@@ -107,25 +107,25 @@
 };
 
 &pll {
-	status = "okay";
 	div-m = <2>;
 	mul-n = <72>;
 	div-p = <2>;
 	div-q = <6>;
 	div-r = <2>;
 	clocks = <&clk_hse>;
+	status = "okay";
 };
 
 &rtc {
-	status = "okay";
 	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
 };
 
 stm32_lp_tick_source: &lptim1 {
-	status = "okay";
 	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
 };
 
 &flash0 {
@@ -136,8 +136,8 @@ stm32_lp_tick_source: &lptim1 {
 
 		/* 4KiB of storage at the end of the 128KiB FLASH */
 		storage_partition: partition@1f000 {
-			label = "storage";
 			reg = <0x0001f000 DT_SIZE_K(4)>;
+			label = "storage";
 		};
 	};
 };
@@ -147,21 +147,21 @@ stm32_lp_tick_source: &lptim1 {
 };
 
 &usart2 {
-	status = "okay";
 	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	pinctrl-names = "default";
 
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &adc2 {
 	pinctrl-0 = <&adc2_in12_pb2>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
 
 	channel@c {
 		reg = <12>;

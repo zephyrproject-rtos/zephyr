@@ -9,8 +9,8 @@
 #include <espressif/partitions_0x0_default.dtsi>
 
 / {
-	model = "WeAct Studio ESP32-C6-Mini LP Core";
 	compatible = "weact,esp32c6-mini";
+	model = "WeAct Studio ESP32-C6-Mini LP Core";
 
 	chosen {
 		zephyr,sram = &ulp_ram;
@@ -21,6 +21,6 @@
 };
 
 &lp_uart {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };

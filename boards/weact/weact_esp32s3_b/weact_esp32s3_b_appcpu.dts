@@ -11,8 +11,8 @@
 #include "weact_esp32s3_b-pinctrl.dtsi"
 
 / {
-	model = "WeAct Studio ESP32-S3-B APPCPU";
 	compatible = "espressif,esp32s3";
+	model = "WeAct Studio ESP32-S3-B APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;
