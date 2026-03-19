@@ -45,15 +45,15 @@
 };
 
 &rtc {
-	status = "okay";
 	clocks = <&clocks RPI_PICO_CLKID_CLK_RTC>;
+	status = "okay";
 };
 
 zephyr_serial: &uart0 {
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 zephyr_i2c: &i2c1 {
@@ -75,11 +75,11 @@ zephyr_spi: &spi0 {
 };
 
 zephyr_adc: &adc {
-	status = "okay";
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;
