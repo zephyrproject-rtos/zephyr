@@ -126,6 +126,8 @@ int dwmac_platform_init(struct dwmac_priv *p)
 {
 	int ret;
 
+	p->phy_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, phy_handle));
+
 	p->tx_descs = dwmac_tx_descs;
 	p->rx_descs = dwmac_rx_descs;
 
