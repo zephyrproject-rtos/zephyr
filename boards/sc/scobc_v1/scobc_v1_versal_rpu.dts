@@ -20,12 +20,12 @@
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <DT_FREQ_M(100)>;
+	status = "okay";
 };
 
 &ttc0 {
-	status = "okay";
 	clock-frequency = <DT_FREQ_M(150)>;
+	status = "okay";
 };
