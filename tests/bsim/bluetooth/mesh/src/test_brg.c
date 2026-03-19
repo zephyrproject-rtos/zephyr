@@ -488,6 +488,9 @@ static void send_and_receive(void)
 		for (int j = 0; j < recvd_msgs_cnt; j++) {
 			ASSERT_EQUAL(recvd_msgs[j], payload + j);
 		}
+
+		/* Sleep here to avoid packet collision. */
+		k_sleep(K_MSEC(100));
 	}
 }
 
