@@ -88,9 +88,9 @@
 
 &uart0 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -99,10 +99,10 @@
 
 &spi0 {
 	clock-frequency = <DT_FREQ_M(8)>;
-	status = "okay";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	ethernet: w5500@0 {
 		compatible = "wiznet,w5500";
