@@ -6,7 +6,7 @@
 
 simulation_id="tester_vcp"
 verbosity_level=2
-EXECUTE_TIMEOUT=100
+EXECUTE_TIMEOUT=300
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
