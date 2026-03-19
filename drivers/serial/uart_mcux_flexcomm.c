@@ -859,31 +859,46 @@ static void mcux_flexcomm_uart_dma_rx_callback(const struct device *dma_device, 
 	/* Cancel timeout now that the transfer is complete */
 	(void)k_work_cancel_delayable(&data->rx_data.timeout_work);
 
-	/* Update user with received RX data if needed */
-	flexcomm_uart_rx_update(dev);
-
-	/* Release current buffer */
-	struct uart_event current_buffer_release_event = {
-		.type = UART_RX_BUF_RELEASED,
-		.data.rx_buf.buf = data->rx_data.xfer_buf,
-	};
-
-	async_user_callback(dev, &current_buffer_release_event);
-
+	/* Provide the new buffer to DMA as soon as possible */
 	if (data->rx_data.next_xfer_buf) {
+		/* Reload DMA channel with new buffer */
+		data->rx_data.active_block.block_size = data->rx_data.next_xfer_len;
+		data->rx_data.active_block.dest_address = (uint32_t) data->rx_data.next_xfer_buf;
+		dma_reload(config->rx_dma.dev, config->rx_dma.channel,
+				data->rx_data.active_block.source_address,
+				data->rx_data.active_block.dest_address,
+				data->rx_data.active_block.block_size);
+
+		/* Start the new transfer */
+		dma_start(config->rx_dma.dev, config->rx_dma.channel);
+
+		/* Update user with final received RX data if needed */
+		size_t total_rx_receive_len = data->rx_data.xfer_len - data->rx_data.offset;
+
+		/* Generate RX ready event if there has been new data received */
+		if (total_rx_receive_len) {
+			struct uart_event rx_rdy_event = {
+				.type = UART_RX_RDY,
+				.data.rx.buf = data->rx_data.xfer_buf,
+				.data.rx.len = total_rx_receive_len,
+				.data.rx.offset = data->rx_data.offset,
+			};
+			async_user_callback(dev, &rx_rdy_event);
+		}
+
+		/* Release current buffer */
+		struct uart_event current_buffer_release_event = {
+			.type = UART_RX_BUF_RELEASED,
+			.data.rx_buf.buf = data->rx_data.xfer_buf,
+		};
+
+		async_user_callback(dev, &current_buffer_release_event);
+
 		/* Replace buffer in driver data */
 		data->rx_data.xfer_buf = data->rx_data.next_xfer_buf;
 		data->rx_data.xfer_len = data->rx_data.next_xfer_len;
 		data->rx_data.next_xfer_buf = NULL;
 		data->rx_data.next_xfer_len = 0;
-
-		/* Reload DMA channel with new buffer */
-		data->rx_data.active_block.block_size = data->rx_data.xfer_len;
-		data->rx_data.active_block.dest_address = (uint32_t) data->rx_data.xfer_buf;
-		dma_reload(config->rx_dma.dev, config->rx_dma.channel,
-				data->rx_data.active_block.source_address,
-				data->rx_data.active_block.dest_address,
-				data->rx_data.active_block.block_size);
 
 		/* Request next buffer */
 		struct uart_event rx_buf_request = {
@@ -891,18 +906,16 @@ static void mcux_flexcomm_uart_dma_rx_callback(const struct device *dma_device, 
 		};
 
 		async_user_callback(dev, &rx_buf_request);
+		
 
-		/* Start the new transfer */
-		dma_start(config->rx_dma.dev, config->rx_dma.channel);
+		/* Now that this transfer was finished, reset tracking variables */
+		data->rx_data.count = 0;
+		data->rx_data.offset = 0;
 
 	} else {
 		/* If there is no next available buffer then disable DMA */
 		mcux_flexcomm_uart_rx_disable(dev);
 	}
-
-	/* Now that this transfer was finished, reset tracking variables */
-	data->rx_data.count = 0;
-	data->rx_data.offset = 0;
 }
 
 #if defined(CONFIG_SOC_SERIES_IMXRT5XX) || defined(CONFIG_SOC_SERIES_IMXRT6XX)
