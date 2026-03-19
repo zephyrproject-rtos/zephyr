@@ -74,18 +74,21 @@ static inline uint32_t rpi_pico_mailbox_pop_blocking(sio_hw_t *const sio_regs)
 	return rpi_pico_mbox_read(sio_regs);
 }
 
-#if DT_HAS_FIXED_PARTITION_LABEL(cpu1_slot0_partition)
+#if DT_HAS_PARTITION_LABEL(cpu1_slot0_partition)
 static void rpi_pico_load_cpu1_image(void)
 {
-#define RP2350_CPU1_PART_DEV DT_GPARENT(DT_NODE_BY_FIXED_PARTITION_LABEL(cpu1_slot0_partition))
+#define RP2350_CPU1_PART_DEV DT_GPARENT(DT_NODE_BY_PARTITION_LABEL(cpu1_slot0_partition))
 #if DT_NODE_HAS_COMPAT(RP2350_CPU1_PART_DEV, soc_nv_flash)
 /* Flash partitions have addresses relative to the flash base */
-#define CPU1_CODE_ADDR DT_FIXED_PARTITION_ADDR(cpu1_slot0_partition)
+#define CPU1_CODE_ADDR DT_PARTITION_ADDR(DT_NODELABEL(cpu1_slot0_partition))
 #else
 /* Code in RAM, e.g. a section or debug build */
-#define CPU1_CODE_ADDR DT_REG_ADDR(DT_NODE_BY_FIXED_PARTITION_LABEL(cpu1_slot0_partition))
+
+/* FIXME: This #else path does not make sense because fixed and mapped partitions
+ * are only for NVM. */
+#define CPU1_CODE_ADDR DT_REG_ADDR(DT_NODE_BY_PARTITION_LABEL(cpu1_slot0_partition))
 #endif /* DT_NODE_HAS_COMPAT(DT_GPARENT(cpu1_slot0_partition), soc_nv_flash) */
-#define CPU1_CODE_SIZE DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(cpu1_slot0_partition))
+#define CPU1_CODE_SIZE DT_REG_SIZE(DT_NODE_BY_PARTITION_LABEL(cpu1_slot0_partition))
 
 	BUILD_ASSERT((CPU1_SRAM_SIZE >= CPU1_CODE_SIZE),
 		     "Image size must not exceed execution memory size");
@@ -101,7 +104,7 @@ static void rpi_pico_load_cpu1_image(void)
 
 	memcpy(exec_mem, src_mem, MIN(CPU1_SRAM_SIZE, CPU1_CODE_SIZE));
 }
-#endif /* DT_HAS_FIXED_PARTITION_LABEL(cpu1_slot0_partition) */
+#endif /* DT_HAS_PARTITION_LABEL(cpu1_slot0_partition) */
 
 #ifdef CONFIG_SOC_RP2350_CPU1_ENABLE_CHECK_VTOR
 static inline bool address_in_range(uint32_t addr, uint32_t base, uint32_t size)
@@ -177,9 +180,9 @@ static void rpi_pico_boot_cpu1(sio_hw_t *const sio_regs, uint32_t vector_table_a
 
 void soc_late_init_hook(void)
 {
-#if DT_HAS_FIXED_PARTITION_LABEL(cpu1_slot0_partition)
+#if DT_HAS_PARTITION_LABEL(cpu1_slot0_partition)
 	rpi_pico_load_cpu1_image();
-#endif /* DT_HAS_FIXED_PARTITION_LABEL(cpu1_slot0_partition) */
+#endif /* DT_HAS_PARTITION_LABEL(cpu1_slot0_partition) */
 
 	uint32_t cpu1_image_base = CPU1_SRAM_ADDR;
 
