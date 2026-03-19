@@ -1349,6 +1349,73 @@ Boards
       produce a complete table. If disabled, a warning message will be shown instead of the runners
       tables.
 
+Shell command documentation
+===========================
+
+.. rst:directive:: .. zephyr:shell_help::
+
+   This directive is used to auto-generate documentation for a Zephyr shell command module.
+   It works by building the ``shell_doc_generator`` sample via twister with the appropriate Kconfig
+   symbols enabled, and then rendering the resulting command tree.
+
+   For example, to document the ADC shell commands::
+
+      .. zephyr:shell_help::
+         :main_command: adc
+         :main_kconfig: CONFIG_ADC_SHELL
+         :extra_kconfig_deps: CONFIG_ADC
+         :platform: qemu_x86
+
+   .. rubric:: Options
+
+   .. rst:directive:option:: main_command
+      :type: text
+
+      The name of the root shell command to document (e.g. ``adc``, ``gpio``, ``i2c``).
+
+   .. rst:directive:option:: main_kconfig
+      :type: text
+
+      The Kconfig symbol that enables the shell command module (e.g. ``CONFIG_ADC_SHELL``).
+
+   .. rst:directive:option:: extra_kconfig_deps
+      :type: text
+
+      Optional space-separated list of additional Kconfig symbols that need to be enabled for the
+      shell module to work (e.g. ``CONFIG_ADC``).
+
+   .. rst:directive:option:: platform
+      :type: text
+
+      The target platform for twister to use when building the sample. Defaults to ``qemu_x86``.
+
+   .. note::
+
+      This directive runs twister during the documentation build, which requires a working Zephyr
+      development environment. Results are cached so subsequent builds will not re-run twister
+      unless the directive parameters change.
+
+.. rst:role:: zephyr:shell_cmd
+
+   This role is used to reference a shell command that was documented using the
+   :rst:dir:`zephyr:shell_help` directive.
+
+   For example::
+
+      Check out the :zephyr:shell_cmd:`w1` command for more information.
+
+   Will render as:
+
+      Check out the :zephyr:shell_cmd:`w1` command for more information.
+
+   You can also reference subcommands directly::
+
+      Check out the :zephyr:shell_cmd:`w1 reset` command for more information.
+
+   Will render as:
+
+      Check out the :zephyr:shell_cmd:`w1 reset` command for more information.
+
 Accessibility Guidelines
 ************************
 

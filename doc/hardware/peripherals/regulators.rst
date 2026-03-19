@@ -19,6 +19,15 @@ infrastructure is not justified, and ``*-gpios`` devicetree properties should be
 used. There is no device interface to these regulators as they are entirely
 controlled within the driver for the corresponding node, e.g. a sensor.
 
+Shell commands
+**************
+
+.. zephyr:shell_help::
+   :main_command: regulator
+   :main_kconfig: CONFIG_REGULATOR_SHELL
+   :extra_kconfig_deps: CONFIG_REGULATOR
+   :platform: native_sim/native/64
+
 .. _regulator_api_reference:
 
 API Reference

@@ -20,6 +20,7 @@ Directives
   of the board documented in the current page.
 - ``zephyr:board-supported-runners::`` - Shows a table of supported runners for the board documented
   in the current page.
+- ``zephyr:shell_help::`` - Generates documentation for a shell command module.
 
 Roles
 -----
@@ -28,11 +29,15 @@ Roles
 - ``:zephyr:code-sample-category:`` - References a code sample category.
 - ``:zephyr:board:`` - References a board.
 - ``:zephyr:board-catalog:`` - References the board catalog page, optionally with filter parameters.
+- ``:zephyr:shell_cmd:`` - References a documented shell command.
 
 """
 
+import hashlib
 import json
+import os
 import re
+import subprocess
 import sys
 from collections.abc import Iterator
 from os import path
@@ -1161,6 +1166,350 @@ class BoardSupportedRunnersDirective(SphinxDirective):
         return result_nodes
 
 
+class ShellHelpDirective(SphinxDirective):
+    """A directive for generating shell command documentation.
+
+    Runs the shell_doc_generator sample via twister, parses the resulting YAML,
+    and renders the command tree for the specified command.
+
+    Usage::
+
+        .. zephyr:shell_help::
+           :main_command: adc
+           :main_kconfig: CONFIG_ADC_SHELL
+           :extra_kconfig_deps: CONFIG_ADC
+           :platform: qemu_x86
+    """
+
+    has_content = False
+    required_arguments = 0
+    optional_arguments = 0
+    option_spec = {
+        "main_command": directives.unchanged_required,
+        "main_kconfig": directives.unchanged_required,
+        "extra_kconfig_deps": directives.unchanged,
+        "platform": directives.unchanged,
+    }
+
+    def _get_cache_dir(self):
+        """Return the cache directory for shell help YAML files."""
+        build_dir = Path(self.env.app.outdir).parent
+        cache_dir = build_dir / "_shell_help_cache"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        return cache_dir
+
+    def _compute_cache_key(self, main_kconfig, extra_deps, platform):
+        """Compute a cache key from the directive parameters."""
+        key_str = f"{main_kconfig}|{'|'.join(sorted(extra_deps))}|{platform}"
+        return hashlib.sha256(key_str.encode()).hexdigest()[:16]
+
+    def _run_twister(self, main_kconfig, extra_deps, platform):
+        """Run twister to build and run the shell_doc_generator sample.
+
+        Twister runs the sample's pytest harness which captures the YAML output
+        to ``shell_doc.yaml``. We don't fail on non-zero exit codes because the
+        pytest may time out while the YAML file is still produced successfully.
+
+        Returns the path to the cached YAML file, or None on failure.
+        """
+        cache_dir = self._get_cache_dir()
+        cache_key = self._compute_cache_key(main_kconfig, extra_deps, platform)
+        cached_yaml = cache_dir / f"{cache_key}.yaml"
+
+        if cached_yaml.exists():
+            logger.info(f"Using cached shell help YAML: {cached_yaml}")
+            return cached_yaml
+
+        twister_outdir = cache_dir / f"twister_{cache_key}"
+
+        twister_cmd = [
+            sys.executable,
+            str(ZEPHYR_BASE / "scripts" / "twister"),
+            "-T", str(ZEPHYR_BASE / "samples" / "subsys" / "shell"
+                       / "shell_doc_generator"),
+            "-p", platform,
+            f"-x={main_kconfig}=y",
+            "-W",
+            "-O", str(twister_outdir),
+        ]
+
+        for dep in extra_deps:
+            dep = dep.strip()
+            if dep:
+                twister_cmd.append(f"-x={dep}=y")
+
+        logger.info(
+            f"Running twister for shell help: {' '.join(twister_cmd)}"
+        )
+
+        # Build a clean environment to avoid CMake variable leakage from the
+        # doc build context (which runs its own CMake project and can pollute
+        # env vars inherited by subprocesses).
+        clean_env = {}
+        passthrough_keys = {
+            "PATH", "HOME", "USER", "LOGNAME", "SHELL", "LANG", "LC_ALL",
+            "TERM", "TMPDIR", "VIRTUAL_ENV", "PYTHONPATH",
+            "ZEPHYR_BASE", "ZEPHYR_SDK_INSTALL_DIR",
+            "ZEPHYR_TOOLCHAIN_VARIANT", "GNUARMEMB_TOOLCHAIN_PATH",
+            "CCACHE_DIR", "CCACHE_DISABLE",
+        }
+        for key, val in os.environ.items():
+            if key in passthrough_keys or key.startswith("WEST_"):
+                clean_env[key] = val
+        clean_env["ZEPHYR_BASE"] = str(ZEPHYR_BASE)
+
+        try:
+            result = subprocess.run(
+                twister_cmd,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                cwd=str(ZEPHYR_BASE),
+                env=clean_env,
+            )
+
+            if result.returncode != 0:
+                logger.info(
+                    f"Twister exited with rc={result.returncode} "
+                    "(may be expected due to pytest timeout)."
+                )
+
+        except subprocess.TimeoutExpired:
+            logger.warning(
+                "Twister timed out for shell help directive.",
+                location=(self.env.docname, self.lineno),
+            )
+            # Fall through — the YAML file may still have been produced.
+        except Exception as e:
+            logger.warning(
+                f"Failed to run twister for shell help directive: {e}",
+                location=(self.env.docname, self.lineno),
+            )
+            return None
+
+        # Look for the generated shell_doc.yaml regardless of exit code
+        yaml_files = list(twister_outdir.rglob("shell_doc.yaml"))
+        if not yaml_files:
+            # Log actual build errors to help diagnose
+            build_logs = list(twister_outdir.rglob("build.log"))
+            build_err = ""
+            if build_logs:
+                try:
+                    log_text = build_logs[0].read_text()
+                    # Show last 500 chars of build log for context
+                    build_err = f"\nBuild log (tail):\n{log_text[-500:]}"
+                except Exception:
+                    pass
+
+            logger.warning(
+                "No shell_doc.yaml found in twister output. "
+                "The build may have failed or the test did not "
+                f"produce output.{build_err}",
+                location=(self.env.docname, self.lineno),
+            )
+            return None
+
+        # Copy to cache
+        import shutil
+        shutil.copy2(yaml_files[0], cached_yaml)
+        logger.info(f"Cached shell help YAML to {cached_yaml}")
+
+        return cached_yaml
+
+    def _parse_yaml(self, yaml_path):
+        """Parse the shell_doc.yaml file and return the commands list."""
+        import yaml
+
+        try:
+            with open(yaml_path) as f:
+                data = yaml.safe_load(f)
+            return data.get("commands", [])
+        except Exception as e:
+            logger.warning(
+                f"Failed to parse shell_doc.yaml: {e}",
+                location=(self.env.docname, self.lineno),
+            )
+            return None
+
+    def _find_command(self, commands, name):
+        """Find a command by name in the commands list."""
+        for cmd in commands:
+            if cmd.get("name") == name:
+                return cmd
+        return None
+
+    def _register_shell_command(self, cmd_name, text, sig_id):
+        """Register shell command metadata in domain data for cross-references."""
+        domaindata = self.env.domaindata["zephyr"]
+        if "shell_cmds" not in domaindata:
+            domaindata["shell_cmds"] = {}
+
+        domaindata["shell_cmds"][cmd_name] = {
+            "name": cmd_name,
+            "docname": self.env.docname,
+            "description": text,
+            "id": sig_id,
+        }
+
+    def _format_usage_lines(self, cmd_name, usage):
+        """Normalize usage text and prepend the full command to the first line."""
+        usage_lines = usage.splitlines()
+        while usage_lines and not usage_lines[0].strip():
+            usage_lines.pop(0)
+        while usage_lines and not usage_lines[-1].strip():
+            usage_lines.pop()
+
+        if not usage_lines:
+            return []
+
+        continuation_indent = " " * (len(cmd_name) + 1)
+        formatted = [f"{cmd_name} {usage_lines[0].strip()}"]
+        formatted.extend(
+            f"{continuation_indent}{line.strip()}"
+            for line in usage_lines[1:]
+            if line.strip()
+        )
+        return formatted
+
+    def _collect_command_rows(self, cmd, level=0):
+        """Collect command rows recursively, preserving full command paths for subcommands."""
+        cmd_name = cmd.get("command", cmd.get("name", "unknown"))
+        help_text = cmd.get("help", "")
+        description = cmd.get("description", "")
+        usage = cmd.get("usage", "")
+        sig_id = f"shell_cmd_{cmd_name.replace(' ', '_')}"
+        text = description.strip() if description else help_text.strip()
+
+        self._register_shell_command(cmd_name, text, sig_id)
+
+        rows = [
+            {
+                "command": cmd_name,
+                "description": text,
+                "usage_lines": self._format_usage_lines(cmd_name, usage),
+                "accepts_device_names": cmd.get("accepts_device_names", False),
+                "id": sig_id,
+                "level": level,
+            }
+        ]
+
+        for sub_cmd in cmd.get("subcommands", []):
+            rows.extend(self._collect_command_rows(sub_cmd, level + 1))
+
+        return rows
+
+    def _render_command_list(self, rows):
+        """Render commands as a definition list using native docutils nodes."""
+        command_list = nodes.definition_list()
+
+        for row_data in rows:
+            item = nodes.definition_list_item()
+
+            term = nodes.term()
+            term += nodes.target("", "", ids=[row_data["id"]])
+            term += nodes.literal(text=row_data["command"])
+            item += term
+
+            definition = nodes.definition()
+            if row_data["description"]:
+                definition += nodes.paragraph(text=row_data["description"])
+
+            if row_data["usage_lines"]:
+                usage_block = nodes.literal_block(text="\n".join(row_data["usage_lines"]))
+                usage_block["language"] = "console"
+                usage_block["classes"] = ["shell-help-usage"]
+                definition += usage_block
+
+            if row_data["accepts_device_names"]:
+                note_para = nodes.paragraph()
+                note_para += nodes.emphasis(text="This command accepts device names as arguments.")
+                definition += note_para
+
+            item += definition
+            command_list += item
+
+        return command_list
+
+    def run(self):
+        main_command = self.options.get("main_command")
+        main_kconfig = self.options.get("main_kconfig")
+        extra_kconfig_str = self.options.get("extra_kconfig_deps", "")
+        platform = self.options.get("platform", "qemu_x86")
+
+        extra_deps = [d.strip() for d in extra_kconfig_str.split() if d.strip()]
+
+        # Run twister to get the YAML
+        yaml_path = self._run_twister(main_kconfig, extra_deps, platform)
+        if yaml_path is None:
+            warning = nodes.warning()
+            warning += nodes.paragraph(
+                text=f"Shell help for '{main_command}' could not be generated. "
+                     f"Make sure twister can build the shell_doc_generator sample "
+                     f"with {main_kconfig}=y on {platform}."
+            )
+            return [warning]
+
+        # Parse the YAML
+        commands = self._parse_yaml(yaml_path)
+        if commands is None:
+            warning = nodes.warning()
+            warning += nodes.paragraph(
+                text=f"Failed to parse shell documentation YAML for '{main_command}'."
+            )
+            return [warning]
+
+        # Find the specific command
+        cmd = self._find_command(commands, main_command)
+        if cmd is None:
+            warning = nodes.warning()
+            warning += nodes.paragraph(
+                text=f"Command '{main_command}' not found in shell documentation output. "
+                     f"Available commands: {', '.join(c.get('name', '?') for c in commands)}"
+            )
+            return [warning]
+
+        # Register the root command explicitly so it can still be cross-referenced.
+        cmd_name = cmd.get("command", cmd.get("name", "unknown"))
+        help_text = cmd.get("help", "")
+        description = cmd.get("description", "")
+        text = description.strip() if description else help_text.strip()
+        sig_id = f"shell_cmd_{cmd_name.replace(' ', '_')}"
+        self._register_shell_command(cmd_name, text, sig_id)
+
+        # Build output: intro paragraph + rendered subcommands
+        result_nodes = []
+
+        # Intro paragraph: "Enabled with :kconfig:option:`CONFIG_X`."
+        intro = nodes.paragraph(ids=[sig_id])
+        intro += nodes.Text("Enabled with ")
+        kconfig_ref = addnodes.pending_xref(
+            "",
+            refdomain="kconfig",
+            reftype="option",
+            reftarget=main_kconfig,
+            refwarn=True,
+        )
+        kconfig_ref += nodes.literal(text=main_kconfig)
+        intro += kconfig_ref
+        intro += nodes.Text(".")
+        result_nodes.append(intro)
+
+        # Render commands in a compact definition list. If the root has
+        # subcommands, document those directly as top-level rows.
+        subcommands = cmd.get("subcommands", [])
+        rows = []
+        if subcommands:
+            for sub_cmd in subcommands:
+                rows.extend(self._collect_command_rows(sub_cmd))
+        else:
+            rows = self._collect_command_rows(cmd)
+
+        if rows:
+            result_nodes.append(self._render_command_list(rows))
+
+        return result_nodes
+
+
 class ZephyrDomain(Domain):
     """Zephyr domain"""
 
@@ -1172,6 +1521,7 @@ class ZephyrDomain(Domain):
         "code-sample-category": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
         "board": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
         "board-catalog": XRefRole(innernodeclass=nodes.inline, warn_dangling=False),
+        "shell_cmd": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
     }
 
     directives = {
@@ -1182,12 +1532,14 @@ class ZephyrDomain(Domain):
         "board": BoardDirective,
         "board-supported-hw": BoardSupportedHardwareDirective,
         "board-supported-runners": BoardSupportedRunnersDirective,
+        "shell_help": ShellHelpDirective,
     }
 
     object_types: dict[str, ObjType] = {
         "code-sample": ObjType("code sample", "code-sample"),
         "code-sample-category": ObjType("code sample category", "code-sample-category"),
         "board": ObjType("board", "board"),
+        "shell_cmd": ObjType("shell command", "shell_cmd"),
     }
 
     initial_data: dict[str, Any] = {
@@ -1205,6 +1557,7 @@ class ZephyrDomain(Domain):
         "socs": {},
         "archs": {},
         "runners": {},
+        "shell_cmds": {},  # cmd_name -> shell_cmd data
     }
 
     def clear_doc(self, docname: str) -> None:
@@ -1227,6 +1580,12 @@ class ZephyrDomain(Domain):
             self.data["board_catalog_docname"] = None
         self.data["has_board"].pop(docname, None)
 
+        self.data["shell_cmds"] = {
+            cmd_name: cmd_data
+            for cmd_name, cmd_data in self.data.get("shell_cmds", {}).items()
+            if cmd_data["docname"] != docname
+        }
+
         # Clear board docnames for boards documented in this docname
         for board_data in self.data.get("boards", {}).values():
             if board_data.get("docname") == docname:
@@ -1235,6 +1594,9 @@ class ZephyrDomain(Domain):
     def merge_domaindata(self, docnames: list[str], otherdata: dict) -> None:
         self.data["code-samples"].update(otherdata["code-samples"])
         self.data["code-samples-categories"].update(otherdata["code-samples-categories"])
+
+        if "shell_cmds" in otherdata:
+            self.data.setdefault("shell_cmds", {}).update(otherdata["shell_cmds"])
 
         # self.data["boards"] contains all the boards right from builder-inited time, but it still
         # potentially needs merging since a board's docname property is set by BoardDirective to
@@ -1299,6 +1661,16 @@ class ZephyrDomain(Domain):
                     1,
                 )
 
+        for _, cmd_data in self.data.get("shell_cmds", {}).items():
+            yield (
+                cmd_data["name"],
+                cmd_data["name"],
+                "shell_cmd",
+                cmd_data["docname"],
+                cmd_data["id"],
+                1,
+            )
+
     # used by Sphinx Immaterial theme
     def get_object_synopses(self) -> Iterator[tuple[tuple[str, str], str]]:
         for _, code_sample in self.data["code-samples"].items():
@@ -1314,6 +1686,8 @@ class ZephyrDomain(Domain):
             elem = self.data["code-samples-categories"].get(target)
         elif type == "board":
             elem = self.data["boards"].get(target)
+        elif type == "shell_cmd":
+            elem = self.data.get("shell_cmds", {}).get(target)
         elif type == "board-catalog":
             catalog_docname = self.data["board_catalog_docname"]
             if catalog_docname is None:
@@ -1336,15 +1710,15 @@ class ZephyrDomain(Domain):
 
         if elem and "docname" in elem:
             if not node.get("refexplicit"):
-                contnode = [nodes.Text(elem["name"] if type != "board" else elem["full_name"])]
+                contnode = [nodes.Text(elem.get("name", target) if type != "board" else elem["full_name"])]
 
             return make_refnode(
                 builder,
                 fromdocname,
                 elem["docname"],
-                elem["id"] if type != "board" else elem["name"],
+                elem.get("id", elem.get("name", target)) if type != "board" else elem["name"],
                 contnode,
-                elem["description"].astext() if type == "code-sample" else None,
+                elem["description"].astext() if type == "code-sample" else elem.get("description"),
             )
 
     def add_code_sample(self, code_sample):
