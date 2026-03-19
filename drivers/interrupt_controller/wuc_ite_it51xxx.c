@@ -24,8 +24,12 @@ struct it51xxx_wuc_cfg {
 	uint8_t *reg_wuenr;
 	/* WUC level or edge mode register */
 	uint8_t *reg_wuler;
-	bool wakeup_ctrl;
+#if CONFIG_ITE_IT51XXX_WUC_EITHER_EDGE_HW
+	uint8_t *reg_wuedr;
+#else
 	bool both_edge_trigger;
+#endif /* CONFIG_ITE_IT51XXX_WUC_EITHER_EDGE_HW */
+	bool wakeup_ctrl;
 };
 
 void it51xxx_wuc_enable(const struct device *dev, uint8_t mask)
@@ -94,6 +98,9 @@ void it51xxx_wuc_set_polarity(const struct device *dev, uint8_t mask, uint32_t f
 	volatile uint8_t *reg_wuemr = config->reg_wuemr;
 	volatile uint8_t *reg_wuler = config->reg_wuler;
 	volatile uint8_t *reg_wuesr = config->reg_wuesr;
+#if CONFIG_ITE_IT51XXX_WUC_EITHER_EDGE_HW
+	volatile uint8_t *reg_wuedr = config->reg_wuedr;
+#endif /* CONFIG_ITE_IT51XXX_WUC_EITHER_EDGE_HW */
 
 	if (!config->wakeup_ctrl) {
 		LOG_ERR("Wakeup control of set polarity is not supported.");
@@ -113,27 +120,56 @@ void it51xxx_wuc_set_polarity(const struct device *dev, uint8_t mask, uint32_t f
 		}
 	} else {
 		*reg_wuler &= ~mask;
-		if ((flags & WUC_TYPE_EDGE_BOTH) == WUC_TYPE_EDGE_RISING) {
-			/* Rising-edge trigger mode */
+
+		switch (flags & WUC_TYPE_EDGE_BOTH) {
+		case WUC_TYPE_EDGE_RISING:
+#if CONFIG_ITE_IT51XXX_WUC_EITHER_EDGE_HW
+			*reg_wuedr |= mask;
+#endif /* CONFIG_ITE_IT51XXX_WUC_EITHER_EDGE_HW */
 			*reg_wuemr &= ~mask;
-		} else {
-			if (((flags & WUC_TYPE_EDGE_BOTH) == WUC_TYPE_EDGE_FALLING) &&
-			    config->both_edge_trigger) {
+			break;
+		case WUC_TYPE_EDGE_FALLING:
+#if CONFIG_ITE_IT51XXX_WUC_EITHER_EDGE_HW
+			*reg_wuedr |= mask;
+#else
+			if (config->both_edge_trigger) {
 				LOG_WRN("Group 7, 10, 12 do not support falling edge mode.");
 			}
-			if (((flags & WUC_TYPE_EDGE_BOTH) == WUC_TYPE_EDGE_BOTH) &&
-			    !config->both_edge_trigger) {
-				LOG_WRN("Both edge trigger mode only support group 7, 10, 12.\n"
-					"Not support dev = %s",
-					dev->name);
-			}
-			/* Falling-edge or both edge trigger mode */
+#endif /* CONFIG_ITE_IT51XXX_WUC_EITHER_EDGE_HW */
 			*reg_wuemr |= mask;
+			break;
+		case WUC_TYPE_EDGE_BOTH:
+#if CONFIG_ITE_IT51XXX_WUC_EITHER_EDGE_HW
+			*reg_wuedr &= ~mask;
+#else
+			if (!config->both_edge_trigger) {
+				LOG_WRN("Group 7, 10, 12 do not support falling edge mode.");
+			}
+			*reg_wuemr |= mask;
+#endif /* CONFIG_ITE_IT51XXX_WUC_EITHER_EDGE_HW */
+			break;
+		default:
+			LOG_ERR("unknown trigger mode 0x%x", flags);
+			break;
 		}
 	}
 	/* W/C wakeup interrupt status of the pin */
 	*reg_wuesr = mask;
 }
+
+/* clang-format off */
+#define INST_HAS_EITHER_EDGE(n) \
+	+DT_INST_PROP(n, hw_either_edge_supported)
+
+#define NUM_EITHER_EDGE (0 DT_INST_FOREACH_STATUS_OKAY(INST_HAS_EITHER_EDGE))
+
+BUILD_ASSERT((NUM_EITHER_EDGE == 0) || (NUM_EITHER_EDGE == DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)),
+	     "Inconsistent hw-either-edge-supported configuration");
+
+#define IT51XXX_EDGE_TRIGGER_CFG_INIT(inst)                                               \
+	COND_CODE_1(CONFIG_ITE_IT51XXX_WUC_EITHER_EDGE_HW,                                 \
+		(.reg_wuedr = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 4),),               \
+		(.both_edge_trigger = DT_INST_PROP(inst, both_edge_trigger),))
 
 #define IT51XXX_WUC_INIT(inst)                                                                     \
 	static const struct it51xxx_wuc_cfg it51xxx_wuc_cfg_##inst = {                             \
@@ -142,9 +178,10 @@ void it51xxx_wuc_set_polarity(const struct device *dev, uint8_t mask, uint32_t f
 		.reg_wuenr = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 2),                          \
 		.reg_wuler = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 3),                          \
 		.wakeup_ctrl = DT_INST_PROP(inst, wakeup_controller),                              \
-		.both_edge_trigger = DT_INST_PROP(inst, both_edge_trigger),                        \
+		IT51XXX_EDGE_TRIGGER_CFG_INIT(inst)                                                \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &it51xxx_wuc_cfg_##inst, PRE_KERNEL_1,       \
 			      CONFIG_KERNEL_INIT_PRIORITY_OBJECTS, NULL);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(IT51XXX_WUC_INIT)
