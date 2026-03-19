@@ -603,11 +603,9 @@ static void enc28j60_read_packet(const struct device *dev, uint16_t frm_len)
 		eth_enc28j60_read_mem(dev, dummy, 1);
 	}
 
-	net_pkt_set_iface(pkt, context->iface);
-
 	/* Feed buffer frame to IP stack */
 	LOG_DBG("%s: Received packet of length %u", dev->name, lengthfr);
-	if (net_recv_data(net_pkt_iface(pkt), pkt) < 0) {
+	if (net_recv_data(context->iface, pkt) < 0) {
 		net_pkt_unref(pkt);
 	}
 }

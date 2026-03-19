@@ -639,10 +639,9 @@ static int lan9250_rx(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-	net_pkt_set_iface(pkt, ctx->iface);
 
 	/* Feed buffer frame to IP stack */
-	if (net_recv_data(net_pkt_iface(pkt), pkt) < 0) {
+	if (net_recv_data(ctx->iface, pkt) < 0) {
 		net_pkt_unref(pkt);
 	}
 
