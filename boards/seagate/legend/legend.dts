@@ -92,7 +92,6 @@
 	status = "okay";
 
 	spi_nor: spi_nor@0 {
-		status = "okay";
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <8000000>;
@@ -109,6 +108,7 @@
 		 * Lifetime   : 100K erase/program cycles on each sector/block
 		 */
 		jedec-id = [85 40 12];
+		status = "okay";
 
 		/*
 		 * Alternate flash source
@@ -137,13 +137,13 @@
 			#size-cells = <1>;
 
 			product_info: partition@0 {
-				label = "product-info";
 				reg = <0x00000000 DT_SIZE_K(4)>;
+				label = "product-info";
 			};
 
 			led_das: partition@1000 {
-				label = "led-das";
 				reg = <0x00001000 DT_SIZE_K(60)>;
+				label = "led-das";
 			};
 		};
 	};
