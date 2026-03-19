@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Ujjval Rathod <ujjwalrathod007@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_SEEED_XIAO_E_PAPER
+	def_bool $(shields_list_contains,seeed_xiao_e_paper)

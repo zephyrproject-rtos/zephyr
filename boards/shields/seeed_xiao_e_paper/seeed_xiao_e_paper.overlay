@@ -1,0 +1,55 @@
+/*
+# Copyright (c) 2026 Ujjval Rathod <ujjwalrathod007@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+*/
+
+&xiao_spi {
+	status = "okay";
+	cs-gpios = <&xiao_d 1 GPIO_ACTIVE_LOW>;	/* A1-D1 */
+			
+
+	seeed_xiao_e_paper_sdhc: sdhc@1 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <1>;
+		status = "okay";
+		spi-max-frequency = <24000000>;
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
+};
+
+/ {
+	chosen {
+		zephyr,display = &uc8179_seeed_epaper;
+	};
+
+	mipi_dbi_seeed_epaper {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&xiao_spi>;
+		dc-gpios = <&xiao_d 3 GPIO_ACTIVE_HIGH>;	/* D9 */
+		reset-gpios = <&xiao_d 0 GPIO_ACTIVE_LOW>;	/* D8 */
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		uc8179_seeed_epaper: uc8179@0 {
+			compatible = "gooddisplay,gdew075t7", "ultrachip,uc8179";
+			mipi-max-frequency = <4000000>;
+			reg = <0>;
+			width = <800>;
+			height = <480>;
+			busy-gpios = <&xiao_d 2 GPIO_ACTIVE_LOW>; /* D7 */
+
+			softstart = [17 17 17 17];
+
+			full {
+				pwr = [07 07 3f 3f];
+				cdi = <07>;
+				tcon = <0x22>;
+			};
+		};
+	};
+};
