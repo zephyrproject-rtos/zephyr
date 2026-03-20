@@ -378,7 +378,7 @@ void modem_cmd_handler_tx_unlock(struct modem_cmd_handler *handler);
  * @note This function should be invoked from a dedicated thread, which only handles
  * commands.
  *
- * @param handler The handler wich will handle the command when processed
+ * @param handler The handler which will handle the command when processed
  * @param iface The interface which receives incoming data
  */
 static inline void modem_cmd_handler_process(struct modem_cmd_handler *handler,
