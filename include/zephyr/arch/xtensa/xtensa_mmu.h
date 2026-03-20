@@ -54,7 +54,7 @@ typedef uint32_t k_mem_partition_attr_t;
 #define K_MEM_PARTITION_P_RW_U_RW \
 	((k_mem_partition_attr_t) {XTENSA_MMU_PERM_W | XTENSA_MMU_MAP_USER})
 #define K_MEM_PARTITION_P_RW_U_NA \
-	((k_mem_partition_attr_t) {0})
+	((k_mem_partition_attr_t) {XTENSA_MMU_PERM_W})
 #define K_MEM_PARTITION_P_RO_U_RO \
 	((k_mem_partition_attr_t) {XTENSA_MMU_MAP_USER})
 #define K_MEM_PARTITION_P_RO_U_NA \
