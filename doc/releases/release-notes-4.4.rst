@@ -1417,7 +1417,7 @@ DeviceTree
 
 * Migration guide: :ref:`migration_4.4_devicetree`
 * Bindings are no longer allowed to specify any default values for the
-  ``#address-cells`` and ``#size-cells`` properties.
+  ``status``, ``#address-cells`` and ``#size-cells`` properties.
 * :c:macro:`DT_CHILD_BY_UNIT_ADDR_INT`
 * :c:macro:`DT_INST_CHILD_BY_UNIT_ADDR_INT`
 

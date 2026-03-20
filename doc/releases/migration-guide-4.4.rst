@@ -448,8 +448,9 @@ Devicetree
 ==========
 
 * :ref:`dt-bindings` are no longer allowed to specify any default values for
-  the ``#address-cells`` and ``#size-cells`` properties. The semantics for
+  the ``status`` and ``#address-cells``, ``#size-cells`` properties. The semantics for
   these properties are defined in Devicetree `Specification
+  <https://www.devicetree.org/specifications>`_ section 2.3.4 and `Specification
   <https://www.devicetree.org/specifications>`_ section 2.3.5 and users should
   not try to override them with their own defaults.
 
@@ -458,6 +459,8 @@ Devicetree
   .. code-block:: yaml
 
      properties:
+       "status":
+         default: ...             <---- any default is a build error
        "#address-cells":
          default: ...             <---- any default is a build error
        "#size-cells":
