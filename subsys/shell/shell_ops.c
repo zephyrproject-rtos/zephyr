@@ -465,6 +465,7 @@ void z_shell_write(const struct shell *sh, const void *data,
 		length -= tmp_cnt;
 		if (tmp_cnt == 0 &&
 		    (sh->ctx->state != SHELL_STATE_PANIC_MODE_ACTIVE)) {
+			__ASSERT(k_can_yield(), "cannot be blocked in non-yieldable context");
 			shell_pend_on_txdone(sh);
 		}
 	}
