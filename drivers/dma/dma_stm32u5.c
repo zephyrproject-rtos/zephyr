@@ -623,10 +623,38 @@ static int dma_stm32_configure(const struct device *dev,
 #endif /* CONFIG_STM32_HAL2 */
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
-	LL_DMA_EnableIT_TC(STM32_DMA_GET_CHANNEL(dma, id));
-	LL_DMA_EnableIT_USE(STM32_DMA_GET_CHANNEL(dma, id));
-	LL_DMA_EnableIT_ULE(STM32_DMA_GET_CHANNEL(dma, id));
-	LL_DMA_EnableIT_DTE(STM32_DMA_GET_CHANNEL(dma, id));
+
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	if (dma == HPDMA1) {
+		/* Overwrite the config in case of HPDMA */
+		if (ll_direction == LL_DMA_DIRECTION_MEMORY_TO_PERIPH) {
+			/* Assuming the Memory (Src) is sram0 on AXI bus : PORT0 else PORT1 */
+			LL_DMA_SetSrcAllocatedPort(dma, dma_stm32_id_to_stream(id),
+				LL_DMA_SRC_ALLOCATED_PORT0);
+			LL_DMA_SetDestAllocatedPort(dma, dma_stm32_id_to_stream(id),
+				LL_DMA_DEST_ALLOCATED_PORT1);
+		} else if (ll_direction == LL_DMA_DIRECTION_PERIPH_TO_MEMORY) {
+			/* Assuming the Memory (Dest) is sram0 on AXI bus : PORT0 else PORT1 */
+			LL_DMA_SetSrcAllocatedPort(dma, dma_stm32_id_to_stream(id),
+				LL_DMA_SRC_ALLOCATED_PORT1);
+			LL_DMA_SetDestAllocatedPort(dma, dma_stm32_id_to_stream(id),
+				LL_DMA_DEST_ALLOCATED_PORT0);
+		} else {
+			/* MEM_TO_MEM: Assuming the Memory is sram0 on AXI bus : PORT0 else PORT1 */
+			LL_DMA_SetSrcAllocatedPort(dma, dma_stm32_id_to_stream(id),
+				LL_DMA_SRC_ALLOCATED_PORT0);
+			LL_DMA_SetDestAllocatedPort(dma, dma_stm32_id_to_stream(id),
+				LL_DMA_DEST_ALLOCATED_PORT0);
+			/* Set Config burst to 8 for Src and Dest on this Channel */
+			LL_DMA_ConfigBurstLength(dma, dma_stm32_id_to_stream(id), 8, 8);
+		}
+	}
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+
+	LL_DMA_EnableIT_TC(dma, dma_stm32_id_to_stream(id));
+	LL_DMA_EnableIT_USE(dma, dma_stm32_id_to_stream(id));
+	LL_DMA_EnableIT_ULE(dma, dma_stm32_id_to_stream(id));
+	LL_DMA_EnableIT_DTE(dma, dma_stm32_id_to_stream(id));
 
 	return ret;
 }
