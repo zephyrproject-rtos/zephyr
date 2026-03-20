@@ -1770,6 +1770,7 @@ Documentation Infrastructure:
     - de-nordic
   collaborators:
     - rghaddab
+    - Albort12138
   files:
     - drivers/flash/
     - dts/bindings/flash_controller/
