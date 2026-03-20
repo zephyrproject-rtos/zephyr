@@ -674,16 +674,19 @@ class PropertySpec:
     def _check_special_properties(self):
         # Add checks for properties which have special meaning
         # according to the specification.
-        def invalid_cells_default(prop, default):
+        def invalid_default(prop, default, spec):
             _err(f"invalid default value '{default}' specified for property '{prop}' "
                  f"in binding {self.binding.path}; this property's default behavior is "
-                 "defined in DT Specification §2.3.5 and a default in a binding is invalid")
+                 f"defined in DT Specification §{spec} and a default in a binding is invalid")
+
+        if self.name == "status" and self.default is not None:
+            invalid_default("status", self.default, "2.3.4")
 
         if self.name == "#address-cells" and self.default is not None:
-            invalid_cells_default("#address-cells", self.default)
+            invalid_default("#address-cells", self.default, "2.3.5")
 
         if self.name == "#size-cells" and self.default is not None:
-            invalid_cells_default("#size-cells", self.default)
+            invalid_default("#size-cells", self.default, "2.3.5")
 
 PropertyValType = Union[int, str,
                         list[int], list[str],
