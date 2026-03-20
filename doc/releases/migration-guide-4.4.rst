@@ -1019,6 +1019,8 @@ USB
 ===
 
 * :dtcompatible:`maxim,max3421e_spi` has been renamed to :dtcompatible:`maxim,max3421e-spi`.
+* USB control transfer buffer allocation has been moved away from UDC to USB device_next.
+  Out-of-tree UDC drivers will have to be reworked. (:github:`103493`).
 
 * UVC device application API got modified:
 
