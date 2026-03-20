@@ -216,8 +216,16 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 
 	switch (dma_data->state) {
 	case LPSPI_TRANSFER_STATE_ONGOING:
-		spi_context_update_tx(ctx, 1, tx->dma_blk_cfg.block_size);
-		spi_context_update_rx(ctx, 1, rx->dma_blk_cfg.block_size);
+		/* Only update the context pointer for the channel that actually fired.
+		 * The original code updated both TX and RX on every callback, advancing
+		 * the other channel's pointer before its DMA transferred anything —
+		 * causing buffer mismatches in all loopback tests on RT700.
+		 */
+		if (channel == dma_data->dma_tx.channel) {
+			spi_context_update_tx(ctx, 1, tx->dma_blk_cfg.block_size);
+		} else {
+			spi_context_update_rx(ctx, 1, rx->dma_blk_cfg.block_size);
+		}
 		/* Calculate next DMA transfer size */
 		dma_data->synchronize_dma_size = spi_context_max_continuous_chunk(ctx);
 		LOG_DBG("tx len:%d rx len:%d next dma size:%d",	ctx->tx_len, ctx->rx_len,
