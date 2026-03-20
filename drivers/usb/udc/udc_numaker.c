@@ -919,8 +919,6 @@ static void numaker_hsusbd_cep_th(const struct device *dev, uint32_t cepintsts)
 		/* Block until next CEP trigger */
 		base->CEPINTEN &= ~HSUSBD_CEPINTEN_RXPKIEN_Msk;
 
-		base->CEPINTSTS = HSUSBD_CEPINTSTS_RXPKIF_Msk;
-
 		/* Message for bottom-half processing */
 		msg.type = NUMAKER_USBD_MSG_TYPE_OUT;
 		msg.out.ep = USB_CONTROL_EP_OUT;
@@ -929,8 +927,6 @@ static void numaker_hsusbd_cep_th(const struct device *dev, uint32_t cepintsts)
 
 	/* Data packet transmitted */
 	if (cepintsts & HSUSBD_CEPINTSTS_TXPKIF_Msk) {
-		base->CEPINTSTS = HSUSBD_CEPINTSTS_TXPKIF_Msk;
-
 		/* Message for bottom-half processing */
 		msg.type = NUMAKER_USBD_MSG_TYPE_IN;
 		msg.in.ep = USB_CONTROL_EP_IN;
@@ -940,8 +936,6 @@ static void numaker_hsusbd_cep_th(const struct device *dev, uint32_t cepintsts)
 	/* Status stage completed */
 	if (cepintsts & HSUSBD_CEPINTSTS_STSDONEIF_Msk) {
 		struct udc_numaker_data *priv = udc_get_private(dev);
-
-		base->CEPINTSTS = HSUSBD_CEPINTSTS_STSDONEIF_Msk;
 
 		/* Message for bottom-half processing */
 		msg.type = NUMAKER_USBD_MSG_TYPE_STATUS;
@@ -961,9 +955,6 @@ static void numaker_hsusbd_cep_th(const struct device *dev, uint32_t cepintsts)
 	if (cepintsts & HSUSBD_CEPINTSTS_SETUPPKIF_Msk) {
 		/* Disable RXPKIEN until Data OUT is enqueued */
 		base->CEPINTEN &= ~HSUSBD_CEPINTEN_RXPKIEN_Msk;
-
-		/* HSUSBD will not set RXPKIF before SETUPPKIF */
-		base->CEPINTSTS = HSUSBD_CEPINTSTS_SETUPPKIF_Msk;
 
 		/* By USB spec, following transactions, regardless of Data/Status stage,
 		 * will always be DATA1. HSUSBD will handle the toggle by itself and needn't
@@ -2544,6 +2535,9 @@ __maybe_unused static void numaker_hsusbd_isr(const struct device *dev)
 		uint32_t cepintsts = base->CEPINTSTS;
 
 		cepintsts &= base->CEPINTEN;
+
+		/* Clear event flag */
+		base->CEPINTSTS = cepintsts;
 
 		numaker_hsusbd_cep_th(dev, cepintsts);
 	}
