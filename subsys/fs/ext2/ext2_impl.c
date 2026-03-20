@@ -658,7 +658,7 @@ ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf, uint32_t off
 			break;
 		}
 
-		size_t to_write = MIN(nbytes, block_size - block_off);
+		size_t to_write = MIN(nbytes - written, block_size - block_off);
 
 		memcpy(inode_current_block_mem(inode) + block_off, (uint8_t *)buf + written,
 				to_write);
@@ -670,15 +670,16 @@ ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf, uint32_t off
 		}
 
 		written += to_write;
+		offset += to_write;
 	}
 
 	if (rc < 0) {
 		return rc;
 	}
 
-	if (offset + written > inode->i_size) {
-		LOG_DBG("New inode size: %d -> %zd", inode->i_size, offset + written);
-		inode->i_size = offset + written;
+	if (offset > inode->i_size) {
+		LOG_DBG("New inode size: %d -> %zd", inode->i_size, offset);
+		inode->i_size = offset;
 		rc = ext2_commit_inode(inode);
 		if (rc < 0) {
 			return rc;
