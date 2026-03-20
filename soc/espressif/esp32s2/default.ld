@@ -828,6 +828,8 @@ SECTIONS
     . = ALIGN(16);
     KEEP(*(.mbedtls_heap*))
     . = ALIGN(16);
+    KEEP(*(.ot_msg_pool*))
+    . = ALIGN(16);
 
     _ext_ram_bss_end = ABSOLUTE(.);
 
