@@ -21,6 +21,7 @@
 		zephyr,console = &uart8;
 		zephyr,shell-uart = &uart8;
 		zephyr,entropy = &trng;
+		zephyr,system-timer-companion = &idle_counter;
 	};
 
 	aliases {
@@ -106,18 +107,10 @@
 
 &ulpt0 {
 	interrupts = <19 1>;
-	interrupt-names = "ulpti";
+	interrupt-names = "ulptcmai";
 	status = "okay";
 
-	timer {
-		status = "okay";
-	};
-};
-
-&ulpt1 {
-	status = "okay";
-
-	timer {
+	idle_counter: counter {
 		status = "okay";
 	};
 };
