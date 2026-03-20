@@ -16,6 +16,9 @@ if(CONFIG_MBEDTLS)
     # - It contains public include directories which are provided by Mbed TLS.
     zephyr_interface_library_named(mbedTLS)
 
+    # Explicitly link zephyr_interface to mbedTLS
+    zephyr_link_libraries(mbedTLS)
+
     target_compile_definitions(mbedTLS INTERFACE
       MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
       TF_PSA_CRYPTO_CONFIG_FILE="${CONFIG_TF_PSA_CRYPTO_CFG_FILE}"
