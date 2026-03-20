@@ -1030,6 +1030,15 @@ def test_wrong_props():
         assert value_str.endswith("but no 'specifier-space' was provided.")
 
         with pytest.raises(edtlib.EDTError) as e:
+            edtlib.Binding("test-wrong-bindings/wrong-status-default.yaml", None)
+        value_str = str(e.value)
+        assert value_str.startswith("invalid default value 'okay' specified for property "
+                                    "'status' in binding ")
+        assert "test-wrong-bindings/wrong-status-default.yaml" in value_str
+        assert value_str.endswith("; this property's default behavior is "
+                                  "defined in DT Specification §2.3.4 and a default in a binding is invalid")
+
+        with pytest.raises(edtlib.EDTError) as e:
             edtlib.Binding("test-wrong-bindings/wrong-address-cells-default.yaml", None)
         value_str = str(e.value)
         assert value_str.startswith("invalid default value '2' specified for property "
