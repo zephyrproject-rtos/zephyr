@@ -4711,8 +4711,8 @@ Realtek Ameba Platforms:
     - zjian-zhang
     - Derek-RTK
   files:
+    - boards/realtek/rtl872*/
     - drivers/*/*ameba*
-    - boards/realtek/
     - soc/realtek/ameba/
     - dts/arm/realtek/ameba*/
     - dts/bindings/*/*ameba*
@@ -4745,7 +4745,7 @@ Realtek EC Platforms:
     - JhanBoChao-Realtek
     - Titan-Realtek
   files:
-    - boards/realtek/
+    - boards/realtek/rts5912*/
     - drivers/*/*rts5912*
     - dts/bindings/*/*rts5912*
     - dts/arm/realtek/ec/
