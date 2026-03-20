@@ -115,10 +115,12 @@ static int cmd_adc_emul_mv(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_adc_emul_cmds,
 	SHELL_CMD_ARG(raw, NULL,
-		"Set constant RAW code: raw <channel> <value> (decimal or 0x....)",
+		SHELL_HELP("Set constant RAW code",
+			   "<channel> <value> (decimal or 0x....)"),
 		cmd_adc_emul_raw, 3, 0),
 	SHELL_CMD_ARG(mv, NULL,
-		"Set constant input voltage in mV: mv <channel> <mv>",
+		SHELL_HELP("Set constant input voltage in mV",
+			   "<channel> <mv>"),
 		cmd_adc_emul_mv, 3, 0),
 	SHELL_SUBCMD_SET_END);
 
@@ -128,7 +130,7 @@ static void cmd_adc_emul_dev_get(size_t idx, struct shell_static_entry *entry)
 		entry->syntax = adc_emul_list[idx].dev->name;
 		entry->handler = NULL;
 		entry->subcmd = &sub_adc_emul_cmds;
-		entry->help = "Select subcommand for ADC emulator device.";
+		entry->help = SHELL_HELP("Select subcommand for ADC emulator device", NULL);
 	} else {
 		entry->syntax = NULL;
 	}
@@ -136,4 +138,4 @@ static void cmd_adc_emul_dev_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(sub_adc_emul_dev, cmd_adc_emul_dev_get);
 
-SHELL_CMD_REGISTER(adc_emul, &sub_adc_emul_dev, "ADC emulator commands", NULL);
+SHELL_CMD_REGISTER(adc_emul, &sub_adc_emul_dev, SHELL_HELP("ADC emulator commands", NULL), NULL);
