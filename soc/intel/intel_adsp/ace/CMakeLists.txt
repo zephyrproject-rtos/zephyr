@@ -43,3 +43,8 @@ if(CONFIG_INTEL_ADSP_FWREADY_MSG)
 endif()
 
 zephyr_linker_sources(NOINIT noinit.ld)
+
+zephyr_library_sources_ifdef(
+  CONFIG_KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK
+  custom_mem_range_check.c
+)
