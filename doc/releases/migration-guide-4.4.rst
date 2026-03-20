@@ -986,7 +986,13 @@ Timer
 USB
 ===
 
-  * :dtcompatible:`maxim,max3421e_spi` has been renamed to :dtcompatible:`maxim,max3421e-spi`.
+* :dtcompatible:`maxim,max3421e_spi` has been renamed to :dtcompatible:`maxim,max3421e-spi`.
+
+USB-C
+=====
+
+* The ``alert_handler_cb`` field has been removed from the :c:struct:`tcpc_driver_api` struct as it
+  was unused and redundant with the callback registered via :c:func:`tcpc_set_alert_handler_cb`.
 
 Video
 =====
