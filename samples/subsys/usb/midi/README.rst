@@ -60,7 +60,7 @@ MIDI 1.0 compatibility
 During enumeration the interface advertises both the USB-MIDI 1.0 (alternate
 setting 0) and MIDI 2.0 (alternate setting 1) streaming descriptors. Legacy
 hosts remain on the MIDI 1.0 alternate, where the sample handles traffic via
-the new ``usbd_midi_ops.rx_midi1_cb`` callback and echoes events with
+the ``usbd_midi_ops.rx_midi1_cb`` callback and echoes events with
 ``usbd_midi_send_midi1``. MIDI 2.0 aware hosts switch to the second alternate,
 in which case Universal MIDI Packets are delivered through ``rx_packet_cb`` and
 replied to with ``usbd_midi_send`` plus the MIDI-CI stream responder.
