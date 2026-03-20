@@ -154,7 +154,6 @@ examples:
       full-ohms = <(330000 + 49900)>;
     };
 
-  - |
     ports {
       #address-cells = <1>;
       #size-cells = <0>;
