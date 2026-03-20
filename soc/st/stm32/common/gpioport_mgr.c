@@ -206,6 +206,16 @@ int stm32_gpioport_configure_pin(
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl) */
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h5_pinctrl)
+	uint32_t hslv = (config >> STM32_HSLVR_SHIFT) & STM32_HSLVR_MASK;
+
+	if (hslv) {
+		LL_GPIO_EnableHighSPeedLowVoltage(gpio, pin_ll);
+	} else {
+		LL_GPIO_DisableHighSPeedLowVoltage(gpio, pin_ll);
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h5_pinctrl) */
+
 	LL_GPIO_SetPinMode(gpio, pin_ll, mode >> STM32_MODER_SHIFT);
 
 	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
