@@ -16,7 +16,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/device_runtime.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <zephyr/drivers/spi.h>
@@ -625,18 +624,7 @@ static int lis2dw12_init(const struct device *dev)
 		LOG_ERR("Bus not ready for device %s", dev->name);
 		return ret;
 	}
-	ret = pm_device_driver_init(dev, lis2dw12_pm_control);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Enable runtime PM so the application manages suspend/resume via
-	 * pm_device_runtime_get()/put(). System-managed PM cannot be used
-	 * for bus-attached sensors because its callbacks run on the idle
-	 * thread, which cannot block on the bus mutex required by runtime
-	 * PM-enabled bus drivers (e.g. STM32 I2C).
-	 */
-	return pm_device_runtime_enable(dev);
+	return pm_device_driver_init(dev, lis2dw12_pm_control);
 }
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
