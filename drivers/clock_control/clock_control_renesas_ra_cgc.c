@@ -27,9 +27,9 @@ static volatile uint32_t *mstp_regs[] = {};
 /* If a CPU clock exists in the system, it will be the source for the CPU */
 #if BSP_FEATURE_CGC_HAS_CPUCLK
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(cpu0))
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(cpu0)) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(cpuclk0))
 #define sys_clk DT_NODELABEL(cpuclk0)
-#elif DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(cpu1))
+#elif DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(cpu1)) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(cpuclk1))
 #define sys_clk DT_NODELABEL(cpuclk1)
 #else
 #define sys_clk DT_NODELABEL(cpuclk)
