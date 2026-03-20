@@ -152,7 +152,7 @@ static void deferred_nfy_work_schedule(k_timeout_t delay)
 }
 
 struct pac_records_build_data {
-	struct bt_pacs_read_rsp *rsp;
+	struct bt_pac_value *rsp;
 	struct net_buf_simple *buf;
 };
 
