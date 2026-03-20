@@ -44,6 +44,7 @@ Peripherals
    led.rst
    mdio.rst
    mspi.rst
+   mux.rst
    mbox.rst
    opamp.rst
    otp/index.rst
