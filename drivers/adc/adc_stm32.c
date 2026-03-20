@@ -675,6 +675,8 @@ static void adc_stm32_calibration_start(const struct device *dev, bool single_en
 
 	LL_ADC_SetCalibrationFactor(adc, LL_ADC_SINGLE_ENDED, calibration_factor);
 	LL_ADC_StopCalibration(adc);
+#elif !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+#error "Missing calibration for this series"
 #endif
 	/* Make sure ADCAL is cleared before returning for proper operations
 	 * on the ADC control register, for enabling the peripheral for example
