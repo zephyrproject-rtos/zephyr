@@ -594,6 +594,9 @@ static int dma_xilinx_axi_dma_stop(const struct device *dev, uint32_t channel)
 	/* commit before returning to caller */
 	barrier_dmem_fence_full();
 
+	/* Force soft reset on next dma_config() call */
+	data->device_has_been_reset = false;
+
 	return 0;
 }
 
