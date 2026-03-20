@@ -2147,7 +2147,7 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 	}
 
 	if ((net_buf_tailroom(buf) == 0) || (data_len < ep_cfg->mps) ||
-		   (ep_type == USB_EP_TYPE_ISO)) {
+	    (ep_type == USB_EP_TYPE_ISO)) {
 		/* Fix submit condition for non-control transfer
 		 *
 		 * Do submit when any of the following conditions is met:
