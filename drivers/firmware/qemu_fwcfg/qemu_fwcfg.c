@@ -273,11 +273,15 @@ int qemu_fwcfg_read_item(const struct device *dev, uint16_t key, void *buf, size
 	__ASSERT(buf != NULL, "buffer must not be NULL");
 	__ASSERT(len > 0U, "length must not be zero");
 
+#if defined(CONFIG_MULTITHREADING)
 	k_mutex_lock(&data_of(dev)->lock, K_FOREVER);
+#endif
 
 	rc = fwcfg_xfer_read_item(dev, key, buf, len);
 
+#if defined(CONFIG_MULTITHREADING)
 	k_mutex_unlock(&data_of(dev)->lock);
+#endif
 	return rc;
 }
 
@@ -289,11 +293,15 @@ int qemu_fwcfg_write_item(const struct device *dev, uint16_t key, const void *bu
 	__ASSERT(buf != NULL, "buffer must not be NULL");
 	__ASSERT(len > 0U, "length must not be zero");
 
+#if defined(CONFIG_MULTITHREADING)
 	k_mutex_lock(&data_of(dev)->lock, K_FOREVER);
+#endif
 
 	rc = fwcfg_xfer_write_item(dev, key, buf, len);
 
+#if defined(CONFIG_MULTITHREADING)
 	k_mutex_unlock(&data_of(dev)->lock);
+#endif
 	return rc;
 }
 
@@ -322,7 +330,9 @@ int fwcfg_init_common(const struct device *dev)
 	uint32_t id_le;
 	int rc;
 
+#if defined(CONFIG_MULTITHREADING)
 	k_mutex_init(&data_of(dev)->lock);
+#endif
 
 	data = data_of(dev);
 
@@ -354,10 +364,14 @@ int qemu_fwcfg_find_file(const struct device *dev, const char *file, uint16_t *s
 	__ASSERT(select != NULL, "select output must not be NULL");
 	__ASSERT(size != NULL, "size output must not be NULL");
 
+#if defined(CONFIG_MULTITHREADING)
 	k_mutex_lock(&data_of(dev)->lock, K_FOREVER);
+#endif
 
 	rc = fwcfg_find_file_impl(dev, file, select, size);
 
+#if defined(CONFIG_MULTITHREADING)
 	k_mutex_unlock(&data_of(dev)->lock);
+#endif
 	return rc;
 }
