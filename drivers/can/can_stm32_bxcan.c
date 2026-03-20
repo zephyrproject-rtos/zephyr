@@ -940,15 +940,13 @@ static inline int can_stm32_set_filter(const struct device *dev, const struct ca
 		LOG_DBG("Adding filter_id %d, CAN ID: 0x%x, mask: 0x%x",
 			filter_id, filter->id, filter->mask);
 
-		/* set the filter init mode */
-		can->FMR |= CAN_FMR_FINIT;
+		can->FA1R &= ~(1U << bank_num);
 
 		can_stm32_set_filter_bank(filter_id, &can->sFilterRegister[bank_num],
 					  (filter->flags & CAN_FILTER_IDE) != 0,
 					  id, mask);
 
 		can->FA1R |= 1U << bank_num;
-		can->FMR &= ~(CAN_FMR_FINIT);
 	} else {
 		LOG_WRN("No free filter left");
 	}
@@ -1052,17 +1050,16 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 
 	LOG_DBG("Removing filter_id %d, ide %d", filter_id, ide);
 
-	can->FMR |= CAN_FMR_FINIT;
+	can->FA1R &= ~(1U << bank_num);
 
 	can_stm32_set_filter_bank(filter_id, &can->sFilterRegister[bank_num],
 				  ide, 0, 0xFFFFFFFF);
 
 	if (bank_unused) {
-		can->FA1R &= ~(1U << bank_num);
 		LOG_DBG("Filter bank %d is unused -> deactivate", bank_num);
+	} else {
+		can->FA1R |= (1U << bank_num);
 	}
-
-	can->FMR &= ~(CAN_FMR_FINIT);
 
 	k_mutex_unlock(&data->inst_mutex);
 	k_mutex_unlock(&filter_mutex);
