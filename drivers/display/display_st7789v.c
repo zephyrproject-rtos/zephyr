@@ -52,6 +52,7 @@ struct st7789v_config {
 struct st7789v_data {
 	uint16_t x_offset;
 	uint16_t y_offset;
+	enum display_orientation orientation;
 };
 
 #define ST7789V_PIXEL_SIZE(fmt)	DISPLAY_BITS_PER_PIXEL(fmt) / BITS_PER_BYTE
@@ -208,14 +209,21 @@ static void st7789v_get_capabilities(const struct device *dev,
 			      struct display_capabilities *capabilities)
 {
 	const struct st7789v_config *config = dev->config;
+	struct st7789v_data *data = dev->data;
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
-	capabilities->x_resolution = config->width;
-	capabilities->y_resolution = config->height;
+	if (data->orientation == DISPLAY_ORIENTATION_ROTATED_90 ||
+		data->orientation == DISPLAY_ORIENTATION_ROTATED_270) {
+		capabilities->x_resolution = config->height;
+		capabilities->y_resolution = config->width;
+	} else {
+		capabilities->x_resolution = config->width;
+		capabilities->y_resolution = config->height;
+	}
 
 	capabilities->supported_pixel_formats = config->pixel_format;
 	capabilities->current_pixel_format = config->pixel_format;
-	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->current_orientation = data->orientation;
 }
 
 static inline uint8_t st7789v_get_colmod(enum display_pixel_format fmt)
@@ -247,11 +255,35 @@ static int st7789v_set_pixel_format(const struct device *dev,
 static int st7789v_set_orientation(const struct device *dev,
 			    const enum display_orientation orientation)
 {
-	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-		return 0;
+	const struct st7789v_config *config = dev->config;
+	struct st7789v_data *data = dev->data;
+	uint8_t madctl;
+	int ret;
+
+	madctl = config->mdac & ~0xE0;
+
+	switch (orientation) {
+	case DISPLAY_ORIENTATION_NORMAL:
+		madctl |= ST7789V_MADCTL_MY_TOP_TO_BOTTOM | ST7789V_MADCTL_MX_LEFT_TO_RIGHT;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_90:
+		madctl |= ST7789V_MADCTL_MV_REVERSE_MODE | ST7789V_MADCTL_MY_BOTTOM_TO_TOP;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_180:
+		madctl |= ST7789V_MADCTL_MX_RIGHT_TO_LEFT | ST7789V_MADCTL_MY_BOTTOM_TO_TOP;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_270:
+		madctl |= ST7789V_MADCTL_MV_REVERSE_MODE | ST7789V_MADCTL_MX_RIGHT_TO_LEFT;
+		break;
+	default:
+		return -ENOTSUP;
 	}
-	LOG_ERR("Changing display orientation not implemented");
-	return -ENOTSUP;
+
+	ret = st7789v_transmit(dev, ST7789V_CMD_MADCTL, &madctl, 1);
+	if (ret == 0) {
+		data->orientation = orientation;
+	}
+	return ret;
 }
 
 static int st7789v_lcd_init(const struct device *dev)
