@@ -12,6 +12,7 @@ menuconfig LIS2DW12
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DW12),spi)
 	select HAS_STMEMSC
 	select USE_STDC_LIS2DW12
+	select PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ if PM_DEVICE_RUNTIME
 	help
 	  Enable driver for LIS2DW12 accelerometer sensor driver
 
