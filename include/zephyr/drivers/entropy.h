@@ -113,7 +113,7 @@ static inline int z_impl_entropy_get_entropy(const struct device *dev,
  * @param length Buffer length.
  * @param flags Flags to modify the behavior of the call.
  * @return number of bytes filled with entropy or -error.
- * @retval -ENOTSUP Driver does not implement the function
+ * @retval -ENOSYS Driver does not implement the function
  */
 static inline int entropy_get_entropy_isr(const struct device *dev,
 					  uint8_t *buffer,
@@ -123,8 +123,8 @@ static inline int entropy_get_entropy_isr(const struct device *dev,
 	const struct entropy_driver_api *api =
 		(const struct entropy_driver_api *)dev->api;
 
-	if (unlikely(!api->get_entropy_isr)) {
-		return -ENOTSUP;
+	if (unlikely(api->get_entropy_isr == NULL)) {
+		return -ENOSYS;
 	}
 
 	return api->get_entropy_isr(dev, buffer, length, flags);
