@@ -82,6 +82,42 @@
 		};
 	};
 
+	mikrobus_1_header: mikrobus-connector-1 {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &piod 0 0>, /* AN = PD0 */
+			   <2 0 &piob 6 0>, /* CS = PB6 */
+			   <3 0 &piob 5 0>, /* SCK = PB5 */
+			   <4 0 &piob 4 0>, /* MISO = PB4 */
+			   <5 0 &piob 3 0>, /* MOSI = PB3 */
+			   <6 0 &pioa 13 0>, /* PWM = PA13 */
+			   <7 0 &pioc 21 0>, /* INT = PC21 */
+			   <8 0 &piod 19 0>, /* RX = PD19 */
+			   <9 0 &piod 18 0>, /* TX = PD18 */
+			   <10 0 &pioc 19 0>, /* SCL = PC19 */
+			   <11 0 &pioc 18 0>; /* SDA = PC18 */
+	};
+
+	mikrobus_2_header: mikrobus-connector-2 {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &piod 1 0>, /* AN = PD1 */
+			   <2 0 &piob 7 0>, /* CS = PB7 */
+			   <3 0 &piob 5 0>, /* SCK = PB5 */
+			   <4 0 &piob 4 0>, /* MISO = PB4 */
+			   <5 0 &piob 3 0>, /* MOSI = PB3 */
+			   <6 0 &piod 20 0>, /* PWM = PD20 */
+			   <7 0 &pioc 20 0>, /* INT = PC20 */
+			   <8 0 &pioc 24 0>, /* RX = PC24 */
+			   <9 0 &pioc 23 0>, /* TX = PC23 */
+			   <10 0 &pioc 19 0>, /* SCL = PC19 */
+			   <11 0 &pioc 18 0>; /* SDA = PC18 */
+	};
+
 	pwmleds: pwmleds {
 		compatible = "pwm-leds";
 		status = "disabled"; /* Conflict with leds. */
@@ -456,3 +492,52 @@
 &trng {
 	status = "okay";
 };
+
+&pinctrl {
+	pinctrl_i2c9_default: i2c9_default {
+		group1 {
+			pinmux = <PIN_PC18__FLEXCOM9_IO0>,
+				 <PIN_PC19__FLEXCOM9_IO1>;
+			bias-disable;
+		};
+	};
+
+	pinctrl_spi11_default: spi11_default {
+		group1 {
+			pinmux = <PIN_PB3__FLEXCOM11_IO0>, /* MOSI */
+				 <PIN_PB4__FLEXCOM11_IO1>, /* MISO */
+				 <PIN_PB5__FLEXCOM11_IO2>; /* SCK */
+			bias-disable;
+		};
+	};
+};
+
+&flx9 {
+	mchp,flexcom-mode = <SAM_FLEXCOM_MODE_TWI>;
+	status = "okay";
+
+	i2c9: i2c9@600 {
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_i2c9_default>;
+		status = "disabled";
+	};
+};
+
+&flx11 {
+	mchp,flexcom-mode = <SAM_FLEXCOM_MODE_SPI>;
+	status = "okay";
+
+	spi11: spi@400 {
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_spi11_default>;
+		cs-gpios = <&piob 6 GPIO_ACTIVE_LOW>, <&piob 7 GPIO_ACTIVE_LOW>;
+		status = "disabled";
+	};
+};
+
+mikrobus_header: &mikrobus_1_header {};
+
+mikrobus_i2c: &i2c9 {};
+
+mikrobus_spi: &spi11 {};
+
