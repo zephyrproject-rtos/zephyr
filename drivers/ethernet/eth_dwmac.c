@@ -481,8 +481,6 @@ static int dwmac_set_config(const struct device *dev,
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(p->mac_addr, config->mac_address.addr, sizeof(p->mac_addr));
 		dwmac_set_mac_addr(p, p->mac_addr, 0);
-		net_if_set_link_addr(p->iface, p->mac_addr,
-				     sizeof(p->mac_addr), NET_LINK_ETHERNET);
 		break;
 
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)

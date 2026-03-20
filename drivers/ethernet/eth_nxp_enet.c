@@ -289,9 +289,6 @@ static int eth_nxp_enet_set_config(const struct device *dev,
 		       cfg->mac_address.addr,
 		       sizeof(data->mac_addr));
 		ENET_SetMacAddr(data->base, data->mac_addr);
-		net_if_set_link_addr(data->iface, data->mac_addr,
-				     sizeof(data->mac_addr),
-				     NET_LINK_ETHERNET);
 		LOG_DBG("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x",
 			dev->name,
 			data->mac_addr[0], data->mac_addr[1],
