@@ -30,6 +30,7 @@
 		led0 = &green_led;
 		sw0 = &user_button;
 		volt-sensor0 = &vref;
+		watchdog0 = &iwdg;
 	};
 
 	gpio_keys {
@@ -91,6 +92,10 @@
 	status = "okay";
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
 &clk_psis {
 	clock-frequency = <DT_FREQ_M(144)>;
 	status = "okay";
@@ -139,6 +144,10 @@
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb4>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&iwdg {
 	status = "okay";
 };
 

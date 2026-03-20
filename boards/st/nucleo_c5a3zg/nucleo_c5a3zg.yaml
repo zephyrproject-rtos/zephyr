@@ -19,6 +19,7 @@ supported:
   - rtc
   - spi
   - uart
+  - watchdog
 ram: 256
 flash: 1024
 vendor: st
