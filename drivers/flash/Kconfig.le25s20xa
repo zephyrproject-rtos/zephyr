@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_FLASH_LE25S20XA
+	bool "Onsemi LE25S20XA SPI Flash Memory"
+	default y
+	depends on DT_HAS_ONNN_LE25S20XA_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select SPI
+	help
+	  Enable support for LE25S20XA SPI flash chips.
+
+if SPI_FLASH_LE25S20XA
+
+config SPI_FLASH_LE25S20XA_WRITE_PROTECT
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_ONNN_LE25S20XA),wp-gpios)
+
+config SPI_FLASH_LE25S20XA_READ_ONLY
+	def_bool $(dt_compat_all_has_prop,$(DT_COMPAT_ONNN_LE25S20XA),read-only,true)
+
+endif #SPI_FLASH_LE25S20XA

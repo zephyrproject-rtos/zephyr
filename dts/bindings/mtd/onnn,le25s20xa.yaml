@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LE25S20XA SPI flash chip
+
+  Datasheet: https://www.onsemi.com/pdf/datasheet/le25s20xa-d.pdf
+
+compatible: "onnn,le25s20xa"
+
+include: "spi-device.yaml"
+
+properties:
+  jedec-id:
+    type: uint8-array
+    default: [0x62, 0x16, 0x12]
+    description: JEDEC Standard ID
+
+  size:
+    type: int
+    required: true
+    description: Flash capacity in bytes.
+
+  page-size:
+    type: int
+    required: true
+    description: Flash page size in bytes.
+
+  read-only:
+    type: boolean
+    description: Set flash device to be read-only.
+
+  small-sector-erase:
+    type: boolean
+    description: |
+      Set sector erase operation to erase 4 kB regions of
+      memory instead of 64 kB regions.
+
+  wp-gpios:
+    type: phandle-array
+    description: |
+      Active low write protection pin to prevent status registers from
+      being changed.
