@@ -6,7 +6,7 @@
 
 / {
 	chosen {
-		zephyr,cortex-m-idle-timer = &rtc_counter;
+		zephyr,system-timer-companion = &rtc_counter;
 	};
 };
 

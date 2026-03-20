@@ -123,7 +123,12 @@ class Node:
         """
         # Converted to a property to discourage renaming -- that has to be done
         # via DT.move_node.
-        return self._name
+        name, sep, address = self._name.partition("@")
+
+        if sep and address:  # means '@' was found
+            return f"{name}@{address.lower()}"
+        else:
+            return name
 
     @property
     def lineno(self) -> int:
@@ -2168,11 +2173,22 @@ def _root_and_path_to_node(cur, path, fullpath):
         if not component:
             continue
 
-        if component not in cur.nodes:
-            _err(f"component '{component}' in path '{fullpath}' "
-                 "does not exist")
+        name, sep, address = component.partition("@")
+        if sep:
+            component = f"{name}@{address.lower()}"
+        else:
+            component = name
 
-        cur = cur.nodes[component]
+        if component not in cur.nodes:
+            prefix = f"{name}@"
+            names = [k for k in cur.nodes if k.startswith(prefix)]
+            if len(names) == 1:
+                cur = cur.nodes[names[0]]
+            else:
+                _err(f"component '{component}' in path '{fullpath}' "
+                     "does not exist")
+        else:
+            cur = cur.nodes[component]
 
     return cur
 

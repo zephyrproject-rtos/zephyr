@@ -1,0 +1,285 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	cpus: cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
+			reg = <1>;
+		};
+	};
+
+	cmc {
+		compatible = "nxp,cmc-reset-cause";
+	};
+
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,port-pinctrl";
+		status = "okay";
+	};
+};
+
+&sram {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	sramx: memory@27ffe000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x27ffe000 DT_SIZE_K(8)>;
+		zephyr,memory-region = "SRAMX";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+	};
+
+	sram0: memory@28000000 {
+		compatible = "mmio-sram";
+		reg = <0x28000000 DT_SIZE_K(120)>;
+	};
+};
+
+&peripheral {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	syscon: syscon@91000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x91000 0x4000>;
+		#clock-cells = <1>;
+
+		reset: reset {
+			compatible = "nxp,lpc-syscon-reset";
+			#reset-cells = <1>;
+		};
+	};
+
+	fmu: flash-controller@95000 {
+		compatible = "nxp,msf1";
+		reg = <0x95000 0x1000>;
+		interrupts = <12 0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "disabled";
+
+		uuid: uuid@1100800 {
+			compatible = "nxp,lpc-uid";
+			reg = <0x1100800 0x10>;
+		};
+	};
+
+	portb: pinmux@bc000 {
+		compatible = "nxp,port-pinmux";
+		reg = <0xbc000 0x1000>;
+		clocks = <&syscon MCUX_PORT1_CLK>;
+	};
+
+	portc: pinmux@bd000 {
+		compatible = "nxp,port-pinmux";
+		reg = <0xbd000 0x1000>;
+		clocks = <&syscon MCUX_PORT2_CLK>;
+	};
+
+	portd: pinmux@be000 {
+		compatible = "nxp,port-pinmux";
+		reg = <0xbe000 0x1000>;
+		clocks = <&syscon MCUX_PORT3_CLK>;
+	};
+
+	gpio1: gpio@102000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x102000 0x1000>;
+		interrupts = <71 0>, <72 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&portb>;
+	};
+
+	gpio2: gpio@103000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x103000 0x1000>;
+		interrupts = <73 0>, <74 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&portc>;
+	};
+
+	gpio3: gpio@104000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x104000 0x1000>;
+		interrupts = <75 0>, <76 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&portd>;
+	};
+
+	lpuart0: lpuart@9f000 {
+		compatible = "nxp,lpuart";
+		status = "disabled";
+		reg = <0x9f000 0x1000>;
+		interrupts = <31 0>;
+		clocks = <&syscon MCUX_LPUART0_CLK>;
+		/* DMA channels 0 and 1 muxed to LPUART0 RX and TX */
+		dmas = <&edma0 0 21>, <&edma0 1 22>;
+		dma-names = "rx", "tx";
+	};
+
+	lpuart1: lpuart@a0000 {
+		compatible = "nxp,lpuart";
+		status = "disabled";
+		reg = <0xa0000 0x1000>;
+		interrupts = <32 0>;
+		clocks = <&syscon MCUX_LPUART1_CLK>;
+		/* DMA channels 2 and 3 muxed to LPUART1 RX and TX */
+		dmas = <&edma0 2 23>, <&edma0 3 24>;
+		dma-names = "rx", "tx";
+	};
+
+	edma0: dma-controller@80000 {
+		#dma-cells = <2>;
+		compatible = "nxp,mcux-edma";
+		nxp,version = <4>;
+		dma-channels = <4>;
+		dma-requests = <121>;
+		reg = <0x80000 0x1000>;
+		interrupts = <2 0>, <3 0>, <4 0>, <5 0>;
+		no-error-irq;
+		status = "disabled";
+	};
+
+	edma1: dma-controller@d7000 {
+		#dma-cells = <2>;
+		compatible = "nxp,mcux-edma";
+		nxp,version = <4>;
+		dma-channels = <4>;
+		dma-requests = <121>;
+		reg = <0xd7000 0x1000>;
+		interrupts = <96 0>, <97 0>, <98 0>, <99 0>;
+		no-error-irq;
+		status = "disabled";
+	};
+
+	cmc: cmc@8b000 {
+		compatible = "nxp,cmc";
+		reg = <0x8b000 0x1000>;
+		interrupts = <1 0>;
+	};
+
+	wuu: system-modules@92000 {
+		compatible = "nxp,wuu";
+		reg = <0x92000 0x1000>;
+		interrupts = <18 0>;
+	};
+
+	mbox_a: mbox@c4000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0xc4000 0x1000>;
+		interrupts = <80 0>, <81 0>, <82 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+};
+
+&aon_peripheral {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	lpirc: lpirc {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <DT_FREQ_M(10)>;
+	};
+
+	ulpirc: ulpirc {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <DT_FREQ_M(3)>;
+		status = "disabled";
+	};
+
+	root_clock1: root_clock1 {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <DT_FREQ_M(10)>;
+	};
+
+	root_clock2: root_clock2 {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <DT_FREQ_M(5)>;
+	};
+
+	root_clock3: root_clock3 {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <DT_FREQ_K(2500)>;
+	};
+
+	porta: pinmux@85000 {
+		compatible = "nxp,port-pinmux";
+		reg = <0x85000 0x1000>;
+		clocks = <&root_clock1>;
+	};
+
+	gpio0: gpio@9f000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x9f000 0x1000>;
+		interrupts = <132 0>, <133 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&porta>;
+	};
+
+	aon_lpuart0: lpuart@82000 {
+		compatible = "nxp,lpuart";
+		status = "disabled";
+		reg = <0x82000 0x1000>;
+		interrupts = <130 0>;
+		clocks = <&root_clock1>;
+		/* DMA channels 0 and 1 muxed to LPUART0 RX and TX */
+		dmas = <&edma0 0 113>, <&edma0 1 114>;
+		dma-names = "rx", "tx";
+	};
+};
+
+&systick {
+	/*
+	 * MCXL25x relies by default on the OS Timer for system clock
+	 * implementation, so the SysTick node is not to be enabled.
+	 */
+	status = "disabled";
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

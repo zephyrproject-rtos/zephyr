@@ -18,6 +18,10 @@
  * @defgroup charger_interface Battery Charger
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup charger_interface_ext Device-specific Charger API extensions
+ * @{
+ * @}
  */
 
 #include <stdbool.h>

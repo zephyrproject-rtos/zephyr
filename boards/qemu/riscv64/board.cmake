@@ -28,7 +28,6 @@ endif()
 set(QEMU_CPU_TYPE_${ARCH} "${qemu_riscv_cpu}")
 
 set(QEMU_FLAGS_${ARCH}
-  -nographic
   -machine virt
   -bios none
   -m 256

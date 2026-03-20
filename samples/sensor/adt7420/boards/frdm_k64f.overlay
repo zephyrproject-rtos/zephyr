@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Linaro Limited
+ * Copyright (c) 2019 Linaro Limited, 2026 Analog Devices Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,10 @@
 	adt7420@48 {
 		compatible = "adi,adt7420";
 		reg = <0x48>;
-		int-gpios = <&gpioc 16 GPIO_ACTIVE_LOW>;
+		op-mode = "one-shot";
+		set-resolution = <16>;
+		int-gpios = <&gpioa 11 GPIO_ACTIVE_LOW>;
+		ct-gpios = <&gpioa 12 GPIO_ACTIVE_LOW>;
+		set-comparator-mode;
 	};
 };

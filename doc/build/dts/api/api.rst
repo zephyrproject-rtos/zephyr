@@ -495,6 +495,9 @@ device.
      - Selects the hardware timer instance used as the Zephyr system timer.
        Used when devicetree selects which timer instance provides that
        singleton system function.
+   * - zephyr,system-timer-companion
+     - Selects the device used to keep time while the primary system timer is
+       inactive in low-power states
    * - zephyr,tracing-uart
      - Sets UART device used by tracing subsystem
    * - zephyr,uart-mcumgr

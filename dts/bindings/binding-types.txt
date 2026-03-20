@@ -23,6 +23,7 @@ audio	Audio
 auxdisplay	Auxiliary Display
 base	Base
 battery	Battery
+biometrics	Biometrics
 bluetooth	Bluetooth
 cache	Cache
 can	CAN (Controller Area Network)
@@ -86,8 +87,12 @@ modem	Modem
 mspi	Multi-bit SPI (Serial Peripheral Interface)
 mtd	MTD (Memory Technology Device)
 net	Networking
+nvmem	NVMEM (Non-Volatile Memory)
+opamp	OPAMP (Operational Amplifier)
 options	Options
 ospi	OCTOSPI (Octal Serial Peripheral Interface)
+otp	OTP (One-Time Programmable) memory
+p_state Power state
 pcie	PCIe (Peripheral Component Interconnect Express)
 peci	PECI (Platform Environment Control Interface)
 phy	PHY
@@ -96,6 +101,7 @@ pm_cpu_ops	Power management CPU operations
 power	Power management
 power-domain	Power domain
 ppc	PPC architecture
+ppmcie	PMCI (Platform Management Components Interconnect)
 ps2	PS/2 (Personal System/2)
 psi5	PSI5 (Peripheral Sensor Interface, 5th generation)
 pwm	PWM (Pulse Width Modulation)
@@ -108,6 +114,7 @@ retention	Retention
 riscv	RISC-V architecture
 rng	RNG (Random Number Generator)
 rtc	RTC (Real Time Clock)
+rx	Renesas RX
 sd	SD (Secure Digital)
 sdhc	SDHC (Secure Digital High Capacity)
 sensor	Sensors

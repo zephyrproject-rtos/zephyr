@@ -27,7 +27,7 @@
 #define RAMABLE_REGION RAM
 
 /* Region of the irq vectors and boot-vector SP/PC */
-#if defined(CONFIG_ROMSTART_RELOCATION_ROM)
+#if defined(CONFIG_ROMSTART_RELOCATION_ROM) && defined(CONFIG_XIP)
 #define ROMSTART_ADDR CONFIG_ROMSTART_REGION_ADDRESS
 #define ROMSTART_SIZE (CONFIG_ROMSTART_REGION_SIZE * 1K)
 #else

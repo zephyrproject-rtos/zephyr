@@ -16,8 +16,17 @@
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
-BUILD_ASSERT(DT_SAME_NODE(DT_CHOSEN(zephyr_cortex_m_idle_timer), DT_NODELABEL(rtc)),
-		"STM32C0x series needs RTC as an additional IDLE timer for power management");
+#if DT_HAS_CHOSEN(zephyr_system_timer_companion)
+#define SYSTEM_TIMER_COMPANION_NODE DT_CHOSEN(zephyr_system_timer_companion)
+#else
+/* Compatibility fallback for the deprecated /chosen/zephyr,cortex-m-idle-timer.
+ * Scheduled for removal in Zephyr 4.6.0.
+ */
+#define SYSTEM_TIMER_COMPANION_NODE DT_CHOSEN(zephyr_cortex_m_idle_timer)
+#endif
+
+BUILD_ASSERT(DT_SAME_NODE(SYSTEM_TIMER_COMPANION_NODE, DT_NODELABEL(rtc)),
+		"STM32C0x series needs RTC as the system timer companion for power management");
 
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {

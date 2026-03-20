@@ -305,13 +305,15 @@ static void w5500_update_link_status(const struct device *dev)
 				PHY_LINK_IS_SPEED_100M(speed) ? "100" : "10",
 				PHY_LINK_IS_FULL_DUPLEX(speed) ? "full" : "half");
 		}
-	} else {
-		if (ctx->state.is_up != false) {
-			LOG_INF("%s: Link down", dev->name);
-			ctx->state.is_up = false;
-			ctx->state.speed = 0;
-			net_eth_carrier_off(ctx->iface);
-		}
+
+		return;
+	}
+
+	if (ctx->state.is_up) {
+		LOG_INF("%s: Link down", dev->name);
+		ctx->state.is_up = false;
+		ctx->state.speed = 0;
+		net_eth_carrier_off(ctx->iface);
 	}
 }
 
@@ -331,7 +333,7 @@ static void w5500_thread(void *p1, void *p2, void *p3)
 
 		if (res == 0) {
 			/* semaphore taken, update link status and receive packets */
-			if (ctx->state.is_up != true) {
+			if (!ctx->state.is_up) {
 				w5500_update_link_status(dev);
 			}
 
@@ -378,6 +380,17 @@ static void w5500_iface_init(struct net_if *iface)
 
 	/* Do not start the interface until PHY link is up */
 	net_if_carrier_off(iface);
+
+	/* Fetch initial link status */
+	w5500_update_link_status(dev);
+
+	k_thread_create(&ctx->thread, ctx->thread_stack,
+			CONFIG_ETH_W5500_RX_THREAD_STACK_SIZE,
+			w5500_thread,
+			(void *)dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_ETH_W5500_RX_THREAD_PRIO),
+			0, K_NO_WAIT);
+	k_thread_name_set(&ctx->thread, "eth_w5500");
 }
 
 static enum ethernet_hw_caps w5500_get_capabilities(const struct device *dev)
@@ -633,14 +646,6 @@ static int w5500_init(const struct device *dev)
 		LOG_ERR("Unable to read RTR register");
 		return -ENODEV;
 	}
-
-	k_thread_create(&ctx->thread, ctx->thread_stack,
-			CONFIG_ETH_W5500_RX_THREAD_STACK_SIZE,
-			w5500_thread,
-			(void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_ETH_W5500_RX_THREAD_PRIO),
-			0, K_NO_WAIT);
-	k_thread_name_set(&ctx->thread, "eth_w5500");
 
 	LOG_INF("W5500 Initialized");
 

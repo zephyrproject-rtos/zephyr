@@ -420,6 +420,38 @@
 			status = "disabled";
 		};
 
+		canfd0: canfd@42840000 {
+			compatible = "infineon,canfd-controller";
+			reg = <0x42840000 0x1088>, <0x42850000 0x2000>;
+			reg-names = "wrapper", "mram";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			status = "disabled";
+
+			can0: can@42840000 {
+				compatible = "infineon,can";
+				reg = <0x42840000 0x200>, <0x42850000 0x1000>;
+				reg-names = "m_can", "message_ram";
+				clk-dst = <0x10b>;
+				status = "disabled";
+				bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
+				interrupts = <106 4>, <107 4>;
+				interrupt-names = "int0", "int1";
+			};
+
+			can1: can@42840200 {
+				compatible = "infineon,can";
+				reg = <0x42840200 0x200>, <0x42850000 0x2000>;
+				reg-names = "m_can", "message_ram";
+				clk-dst = <0x10c>;
+				status = "disabled";
+				bosch,mram-cfg = <0x1000 15 15 8 8 0 15 15>;
+				interrupts = <108 4>, <109 4>;
+				interrupt-names = "int0", "int1";
+			};
+		};
+
 		tcpwm0: tcpwm0@42860000 {
 			reg = <0x42860000 0x8000>;
 			#address-cells = <1>;

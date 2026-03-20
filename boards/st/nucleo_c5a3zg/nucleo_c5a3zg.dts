@@ -65,6 +65,10 @@
 	status = "okay";
 };
 
+&clk_lse {
+	status = "okay";
+};
+
 &clk_psis {
 	clock-frequency = <DT_FREQ_M(144)>;
 	status = "okay";
@@ -98,6 +102,10 @@
 	};
 };
 
+&lpdma1 {
+	status = "okay";
+};
+
 &lpuart1 {
 	pinctrl-0 = <&lpuart1_tx_pa3 &lpuart1_rx_pa2>;
 	pinctrl-names = "default";
@@ -115,6 +123,12 @@
 	apb3-prescaler = <2>;
 	st,psi-frequency = <144>;
 	st,psi-source = "HSE";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB3, 21)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
 };
 
 &usart2 {

@@ -47,4 +47,11 @@ configdefault NET_MGMT_EVENT_STACK_SIZE
 configdefault NET_SOCKETS_SERVICE_STACK_SIZE
 	default 8192
 
+# CAN Phy must be initialized after board mux
+configdefault GPIO_PCA_SERIES_INIT_PRIORITY
+	default 62
+
+configdefault CAN_TRANSCEIVER_INIT_PRIORITY
+	default 65
+
 endif # SOC_MIMX9596_A55

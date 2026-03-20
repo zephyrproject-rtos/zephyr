@@ -52,6 +52,18 @@ enum video_buf_type {
 };
 
 /**
+ * @brief video_buf_memory enum
+ *
+ * Memory type of a buffer
+ */
+enum video_buf_memory {
+	/** buffer is allocated from the internal video heap */
+	VIDEO_MEMORY_INTERNAL = 1,
+	/** buffer is allocated from outside */
+	VIDEO_MEMORY_EXTERNAL = 2,
+};
+
+/**
  * @brief Video format structure
  *
  * Used to configure frame format.
@@ -137,6 +149,8 @@ struct video_buffer {
 	void *driver_data;
 	/** type of the buffer */
 	enum video_buf_type type;
+	/** type of the buffer memory, see @ref video_buf_memory */
+	uint8_t memory;
 	/** pointer to the start of the buffer. */
 	uint8_t *buffer;
 	/** index of the buffer in the video buffer pool */
@@ -570,21 +584,7 @@ static inline int video_enum_frmival(const struct device *dev, struct video_frmi
  * @retval -EINVAL If parameters are invalid.
  * @retval -EIO General input / output error.
  */
-static inline int video_enqueue(const struct device *dev, struct video_buffer *buf)
-{
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
-
-	if (dev == NULL || buf == NULL || buf->buffer == NULL) {
-		return -EINVAL;
-	}
-
-	api = (const struct video_driver_api *)dev->api;
-	if (api->enqueue == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->enqueue(dev, buf);
-}
+int video_enqueue(const struct device *dev, struct video_buffer *buf);
 
 /**
  * @brief Dequeue a video buffer.
@@ -976,8 +976,10 @@ struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout);
  * @brief Release a video buffer.
  *
  * @param buf Pointer to the video buffer to release.
+ *
+ * @retval 0 on success or a negative errno on failure
  */
-void video_buffer_release(struct video_buffer *buf);
+int video_buffer_release(struct video_buffer *buf);
 
 /**
  * @brief Search for a format that matches in a list of capabilities
@@ -1015,9 +1017,9 @@ static inline uint64_t video_frmival_nsec(const struct video_frmival *frmival)
  * @param desired The frame interval for which find the closest match
  * @param match The resulting frame interval closest to @p desired
  */
-void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
-				    const struct video_frmival *desired,
-				    struct video_frmival *match);
+int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
+				   const struct video_frmival *desired,
+				   struct video_frmival *match);
 
 /**
  * @brief Find the closest match to a frame interval value within a video device.
@@ -1036,7 +1038,7 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
  * @param dev Video device to query.
  * @param match Frame interval enumerator with the query, and loaded with the result.
  */
-void video_closest_frmival(const struct device *dev, struct video_frmival_enum *match);
+int video_closest_frmival(const struct device *dev, struct video_frmival_enum *match);
 
 /**
  * @brief Return the link-frequency advertised by a device

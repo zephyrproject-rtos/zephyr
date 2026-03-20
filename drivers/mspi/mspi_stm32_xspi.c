@@ -1288,7 +1288,8 @@ static int mspi_stm32_xspi_config(const struct mspi_dt_spec *spec)
 		goto end;
 	}
 
-#if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)
+#if (defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)) && \
+	!defined(CONFIG_STM32_XSPIM)
 	/* XSPI I/O manager config */
 	XSPIM_CfgTypeDef mspi_mgr_cfg;
 
@@ -1306,7 +1307,7 @@ static int mspi_stm32_xspi_config(const struct mspi_dt_spec *spec)
 		ret = -EIO;
 		goto end;
 	}
-#endif
+#endif /* (HAL_XSPIM_IOPORT_1 || HAL_XSPIM_IOPORT_2) && !CONFIG_STM32_XSPIM */
 
 #if defined(DLYB_XSPI1) || defined(DLYB_XSPI2) || defined(DLYB_OCTOSPI1) || defined(DLYB_OCTOSPI2)
 	HAL_XSPI_DLYB_CfgTypeDef mspi_delay_block_cfg = {0};

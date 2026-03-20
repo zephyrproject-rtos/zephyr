@@ -193,7 +193,7 @@ static void st7796s_get_capabilities(const struct device *dev,
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 
 	capabilities->current_pixel_format = st7796s_get_pixelfmt(dev);
-
+	capabilities->supported_pixel_formats = capabilities->current_pixel_format;
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
@@ -311,6 +311,19 @@ static int st7796s_lcd_config(const struct device *dev)
 	return st7796s_send_cmd(dev, ST7796S_CMD_CSCON, &param, sizeof(param));
 }
 
+static int st7796s_set_pixel_format(const struct device *dev,
+				    const enum display_pixel_format pixel_format)
+{
+	/* Just check again the current pixel format as changing format at
+	 * runtime is not supported
+	 */
+	if (pixel_format == st7796s_get_pixelfmt(dev)) {
+		return 0;
+	}
+
+	return -ENOTSUP;
+}
+
 static int st7796s_init(const struct device *dev)
 {
 	const struct st7796s_config *config = dev->config;
@@ -370,6 +383,7 @@ static DEVICE_API(display, st7796s_api) = {
 	.blanking_off = st7796s_blanking_off,
 	.write = st7796s_write,
 	.get_capabilities = st7796s_get_capabilities,
+	.set_pixel_format = st7796s_set_pixel_format,
 };
 
 

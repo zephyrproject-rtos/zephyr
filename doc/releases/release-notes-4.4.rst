@@ -160,6 +160,27 @@ Deprecated APIs and options
       currently scheduled to be removed in Zephyr 4.6, along with the ``mcux_lpcmp`` sample. (:github:`100998`).
     * Added new temperature sensor driver (:dtcompatible:`nxp,tempsense`) (:github:`101525`).
 
+* Timer
+
+  * The legacy Cortex-M SysTick low-power companion compatibility macros
+    :c:macro:`z_cms_lptim_hook_on_lpm_entry` and :c:macro:`z_cms_lptim_hook_on_lpm_exit`,
+    along with the compatibility header :zephyr_file:`drivers/timer/cortex_m_systick.h`,
+    have been deprecated. Out-of-tree SoC/platform code should migrate to
+    :c:func:`z_sys_clock_lpm_enter`, :c:func:`z_sys_clock_lpm_exit`, and
+    :zephyr_file:`include/zephyr/drivers/timer/system_timer_lpm.h`.
+    The legacy Kconfig options:
+    :kconfig:option:`CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_NONE`,
+    :kconfig:option:`CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER`,
+    :kconfig:option:`CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_HOOKS`, and
+    :kconfig:option:`CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM` are deprecated in favor of
+    :kconfig:option:`CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE`,
+    :kconfig:option:`CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER`,
+    :kconfig:option:`CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS`, and
+    :kconfig:option:`CONFIG_SYSTEM_TIMER_RESET_BY_LPM`.
+    The chosen property ``/chosen/zephyr,cortex-m-idle-timer`` is deprecated in
+    favor of ``/chosen/zephyr,system-timer-companion``.
+    The compatibility shim is currently scheduled to be removed in Zephyr 4.6.0.
+
 New APIs and options
 ====================
 ..
@@ -259,6 +280,7 @@ New APIs and options
 
   * :kconfig:option:`SSD1325_DEFAULT_CONTRAST`
   * :kconfig:option:`SSD1325_CONV_BUFFER_LINES`
+  * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_XRGB_8888`
 
 * Ethernet
 
@@ -388,6 +410,12 @@ New APIs and options
     * :c:func:`cobs_encoder_write`
     * :c:func:`cobs_encoder_close`
 
+  * Disjoint-set support
+    * :c:struct:`sys_set_node`
+    * :c:func:`sys_set_makeset`
+    * :c:func:`sys_set_find`
+    * :c:func:`sys_set_union`
+
 * Video
 
   * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE`
@@ -427,6 +455,7 @@ New APIs and options
   * :c:macro:`VIDEO_FOREACH_YUV_SEMI_PLANAR`
   * :c:macro:`VIDEO_FOREACH_YUV_FULL_PLANAR`
   * :c:macro:`VIDEO_FOREACH_COMPRESSED`
+  * :c:func:`video_import_buffer`
 
 .. zephyr-keep-sorted-stop
 

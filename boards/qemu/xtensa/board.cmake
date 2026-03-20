@@ -6,7 +6,7 @@ if(CONFIG_BOARD_QEMU_XTENSA)
   set(QEMU_CPU_TYPE_${ARCH} ${CONFIG_SOC})
 
   set(QEMU_FLAGS_${ARCH}
-    -machine sim -semihosting -nographic -cpu ${CONFIG_SOC}
+    -machine sim -semihosting -cpu ${CONFIG_SOC}
   )
 endif()
 

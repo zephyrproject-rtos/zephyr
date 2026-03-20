@@ -7,7 +7,6 @@ set(QEMU_ARCH xilinx-aarch64)
 
 set(QEMU_CPU_TYPE_${ARCH} cortex-r5)
 set(QEMU_FLAGS_${ARCH}
-  -nographic
   -machine arm-generic-fdt
   -dtb ${CMAKE_CURRENT_LIST_DIR}/fdt-single_arch-zcu102-arm.dtb
   )
