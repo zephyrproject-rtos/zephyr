@@ -332,8 +332,13 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 * If the exception is the result of an ECALL, check whether to
 	 * perform a context-switch or an IRQ offload. Otherwise call z_riscv_fault
 	 * to report the exception.
-	 *
-	 * If mcause == RISCV_EXC_ECALLM, handle system call from
+	 */
+#if CONFIG_RISCV_MCAUSE_EXCEPTION_MASK < ((1LLU << (__riscv_xlen - 1)) - 1LLU)
+	li t2, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
+	and t0, t0, t2
+#endif
+
+	/* If mcause == RISCV_EXC_ECALLM, handle system call from
 	 * kernel thread.
 	 */
 	li t1, RISCV_EXC_ECALLM
