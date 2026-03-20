@@ -1,0 +1,8 @@
+# Copyright 2026
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Flexcomm UART
+
+compatible: "nxp,flexcomm-uart"
+
+include: [uart-controller.yaml, "nxp,lpc-flexcomm.yaml"]
