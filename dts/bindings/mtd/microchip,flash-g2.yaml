@@ -1,0 +1,58 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip Flash G2
+
+description: |
+  Microchip G2 driver for Flash
+
+  Group g2 NVMCTRL driver supports following hardware peripherals:
+    - module name="NVMCTRL" id="03929" version="1a0"
+
+compatible: "microchip,flash-g2"
+
+include: soc-nv-flash.yaml
+
+examples:
+  - |
+    /*
+     * Multiple flash regions in g3 devices are considered as a single block
+     * of memory:
+     *
+     *   - 0x00000000--0x0007FFFF, main flash area
+     *   - 0x00400000--0x00401FFF, data flash area
+     *
+     * The region in between these flash are considered as
+     * unimplemented regions and driver would avoid accessing
+     * these regions
+     *
+     * data-flash-start-addr - tarting address of data flash region
+     * user-row-start-addr - starting address of user-row
+     */
+
+    nvmctrl: flash-controller@44002000 {
+      compatible = "microchip,nvmctrl-g2";
+      reg = <0x41004000 0xa0>;
+      /* ... */
+
+      flash0: flash@8000000 {
+        reg = <0x0 (DT_SIZE_K(512) + DT_SIZE_K(3584) + DT_SIZE_K(8))>;
+        compatible = "microchip,flash-g2", "soc-nv-flash";
+        unsupported-region = <0x00080000 0x003fffff>;
+        write-block-size = <64>;
+        erase-block-size = <256>;
+        data-flash-start-addr = <0x00400000>;
+        user-row-start-addr = <0x00804000>;
+      };
+    };
+
+properties:
+  unsupported-region:
+    type: array
+    description: array of unaddressable regions in the given flash area
+  data-flash-start-addr:
+    type: int
+    description: starting address of data flash region
+  user-row-start-addr:
+    type: int
+    description: starting address of user-row flash region
