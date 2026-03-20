@@ -31,7 +31,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			ethernet-phy@0 {
+			lan865x_phy: ethernet-phy@0 {
 				compatible = "microchip,t1s-phy";
 				reg = <0x0>;
 				plca-enable;
