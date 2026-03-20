@@ -366,7 +366,9 @@ static int mcxw_start(const struct device *dev)
 {
 	struct mcxw_context *mcxw_radio = dev->data;
 
-	__ASSERT(mcxw_radio->state == RADIO_STATE_DISABLED, "%s", __func__);
+	if (mcxw_radio->state == RADIO_STATE_RECEIVE) {
+		return -EALREADY;
+	}
 
 	mcxw_radio->state = RADIO_STATE_SLEEP;
 
@@ -381,7 +383,9 @@ static int mcxw_stop(const struct device *dev)
 {
 	struct mcxw_context *mcxw_radio = dev->data;
 
-	__ASSERT(mcxw_radio->state != RADIO_STATE_DISABLED, "%s", __func__);
+	if (mcxw_radio->state == RADIO_STATE_DISABLED) {
+		return -EALREADY;
+	}
 
 	stop_csl_receiver();
 
