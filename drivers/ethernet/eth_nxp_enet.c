@@ -41,10 +41,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/drivers/ptp_clock.h>
 #endif
 
-#ifdef CONFIG_NET_DSA_DEPRECATED
-#include <zephyr/net/dsa.h>
-#endif
-
 #if defined(CONFIG_NET_POWER_MANAGEMENT) && defined(CONFIG_PM_DEVICE)
 #include <zephyr/pm/device.h>
 #endif
@@ -264,9 +260,6 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 		ETHERNET_PTP |
 #endif
-#if defined(CONFIG_NET_DSA_DEPRECATED)
-		ETHERNET_DSA_CONDUIT_PORT |
-#endif
 #if defined(CONFIG_ETH_NXP_ENET_HW_ACCELERATION)
 		ETHERNET_HW_TX_CHKSUM_OFFLOAD |
 		ETHERNET_HW_RX_CHKSUM_OFFLOAD |
@@ -425,9 +418,6 @@ static int eth_nxp_enet_rx(const struct device *dev)
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
 	iface = get_iface(data);
-#if defined(CONFIG_NET_DSA_DEPRECATED)
-	iface = dsa_net_recv(iface, &pkt);
-#endif
 	if (net_recv_data(iface, pkt) < 0) {
 		goto error;
 	}
@@ -516,10 +506,6 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 
 	data->iface = iface;
-
-#if defined(CONFIG_NET_DSA_DEPRECATED)
-	dsa_register_master_tx(iface, &eth_nxp_enet_tx);
-#endif
 
 	ethernet_init(iface);
 	net_if_carrier_off(iface);
@@ -831,19 +817,13 @@ static int eth_nxp_enet_device_pm_action(const struct device *dev, enum pm_devic
 #define ETH_NXP_ENET_PM_DEVICE_GET(n) NULL
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
 
-#ifdef CONFIG_NET_DSA_DEPRECATED
-#define NXP_ENET_SEND_FUNC dsa_tx
-#else
-#define NXP_ENET_SEND_FUNC eth_nxp_enet_tx
-#endif /* CONFIG_NET_DSA_DEPRECATED */
-
 static const struct ethernet_api api_funcs = {
 	.iface_api.init		= eth_nxp_enet_iface_init,
 	.get_capabilities	= eth_nxp_enet_get_capabilities,
 	.get_phy                = eth_nxp_enet_get_phy,
 	.set_config		= eth_nxp_enet_set_config,
 	.get_config		= eth_nxp_enet_get_config,
-	.send			= NXP_ENET_SEND_FUNC,
+	.send			= eth_nxp_enet_tx,
 #if defined(CONFIG_PTP_CLOCK)
 	.get_ptp_clock		= eth_nxp_enet_get_ptp_clock,
 #endif
