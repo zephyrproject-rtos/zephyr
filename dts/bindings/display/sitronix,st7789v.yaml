@@ -105,3 +105,21 @@ properties:
 
   mipi-mode:
     required: true
+
+  rotation-90:
+    type: array
+    description: |
+      Custom parameters for 90-degree rotation.
+      Format: <x_offset y_offset madctl>
+
+  rotation-180:
+    type: array
+    description: |
+      Custom parameters for 180-degree rotation.
+      Format: <x_offset y_offset madctl>
+
+  rotation-270:
+    type: array
+    description: |
+      Custom parameters for 270-degree rotation.
+      Format: <x_offset y_offset madctl>
