@@ -1026,6 +1026,12 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 	case JSON_TOK_TRUE:
 	case JSON_TOK_FALSE:
 		return sizeof(bool);
+	case JSON_TOK_NULL:
+		/*
+		 * JSON null type has no associated data, nevertheless
+		 * return the size of the field in the backing struct.
+		 */
+		return descr->field.size;
 	case JSON_TOK_ARRAY_START: {
 		ptrdiff_t size;
 
@@ -1688,6 +1694,11 @@ static int bool_encode(const bool *value, json_append_bytes_t append_bytes,
 	return append_bytes("false", 5, data);
 }
 
+static int null_encode(json_append_bytes_t append_bytes, void *data)
+{
+	return append_bytes("null", 4, data);
+}
+
 static int encode(const struct json_obj_descr *descr, const void *val,
 		  json_append_bytes_t append_bytes, void *data)
 {
@@ -1731,6 +1742,8 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 		return opaque_string_encode(ptr, append_bytes, data);
 	case JSON_TOK_ENCODED_OBJ:
 		return encoded_obj_encode(ptr, append_bytes, data);
+	case JSON_TOK_NULL:
+		return null_encode(append_bytes, data);
 	default:
 		return -EINVAL;
 	}
@@ -2076,6 +2089,9 @@ static int encode_mixed_value(const struct json_mixed_arr_descr *elem,
 	}
 	case JSON_TOK_ENCODED_OBJ: {
 		return encoded_obj_encode((const char **)field, append_bytes, data);
+	}
+	case JSON_TOK_NULL: {
+		return null_encode(append_bytes, data);
 	}
 	default:
 		return -EINVAL;

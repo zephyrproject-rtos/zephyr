@@ -108,6 +108,16 @@ struct test_double_limits {
 	double double_min;
 };
 
+struct test_null {
+	uint32_t some_null;
+	struct elt elements[10];
+	size_t num_elements;
+	float another_null;
+	bool some_array[16];
+	size_t some_array_len;
+	int32_t some_non_null_int;
+};
+
 struct escape_test_data {
 	char string_value[128];
 	char string_buf[64];
@@ -228,6 +238,22 @@ static const struct json_obj_descr obj_double_limits_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_double_limits, double_max, JSON_TOK_DOUBLE_FP),
 	JSON_OBJ_DESCR_PRIM(struct test_double_limits, double_cero, JSON_TOK_DOUBLE_FP),
 	JSON_OBJ_DESCR_PRIM(struct test_double_limits, double_min, JSON_TOK_DOUBLE_FP),
+};
+
+static const struct json_obj_descr elt_null_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct elt, name, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct elt, name_buf, JSON_TOK_STRING_BUF),
+	JSON_OBJ_DESCR_PRIM(struct elt, height, JSON_TOK_NULL),
+};
+
+static const struct json_obj_descr obj_null_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct test_null, some_null, JSON_TOK_NULL),
+	JSON_OBJ_DESCR_OBJ_ARRAY(struct test_null, elements, 10, num_elements,
+				 elt_null_descr, ARRAY_SIZE(elt_null_descr)),
+	JSON_OBJ_DESCR_PRIM(struct test_null, another_null, JSON_TOK_NULL),
+	JSON_OBJ_DESCR_ARRAY(struct test_null, some_array,
+			     16, some_array_len, JSON_TOK_NULL),
+	JSON_OBJ_DESCR_PRIM(struct test_null, some_non_null_int, JSON_TOK_NUMBER),
 };
 
 struct array {
@@ -386,6 +412,13 @@ static const struct json_mixed_arr_descr test_mixed_arr_descr[] = {
 	JSON_MIXED_ARR_DESCR_PRIM(struct test_mixed_arr, status_buf, JSON_TOK_STRING_BUF, count),
 };
 
+static const struct json_mixed_arr_descr test_mixed_arr_null_descr[] = {
+	JSON_MIXED_ARR_DESCR_PRIM(struct test_mixed_arr, msg_type, JSON_TOK_STRING, count),
+	JSON_MIXED_ARR_DESCR_PRIM(struct test_mixed_arr, dev_id, JSON_TOK_NULL, count),
+	JSON_MIXED_ARR_DESCR_OBJECT(struct test_mixed_arr, nested, nested_descr, count),
+	JSON_MIXED_ARR_DESCR_ARRAY(struct test_mixed_arr, arr, 3, test_mixed_arr_descr_arr, count),
+	JSON_MIXED_ARR_DESCR_PRIM(struct test_mixed_arr, status_buf, JSON_TOK_STRING_BUF, count),
+};
 
 ZTEST(lib_json_test, test_json_encoding)
 {
@@ -997,6 +1030,50 @@ ZTEST(lib_json_test, test_json_doubles_limits)
 			  "Double limits not encoded correctly");
 	zassert_true(!memcmp(&limits, &limits_decoded, sizeof(limits)),
 		     "Double limits not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_encoding_null)
+{
+	char encoded[] = "{\"some_null\":null,"
+			 "\"elements\":[{\"name\":\"Alex Honnold\",\"name_buf\":\"Alex\",\"height\":null},"
+			 "{\"name\":\"Pamela Ojeda\",\"name_buf\":\"Pamela\",\"height\":null}],"
+			 "\"another_null\":null,"
+			 "\"some_array\":[null,null],"
+			 "\"some_non_null_int\":42"
+			 "}";
+
+	struct test_null nulls = {
+		.some_null = 0,
+		.elements[0] = {
+			.name = "Alex Honnold",
+			.name_buf = "Alex",
+			.height = 180
+		},
+		.elements[1] = {
+			.name = "Pamela Ojeda",
+			.name_buf = "Pamela",
+			.height = 151
+		},
+		.num_elements = 2,
+		.another_null = 0.0,
+		.some_array[0] = false,
+		.some_array[1] = false,
+		.some_array_len = 2,
+		.some_non_null_int = 42,
+	};
+
+	char buffer[sizeof(encoded)];
+	int ret;
+	ssize_t len;
+
+	len = json_calc_encoded_len(obj_null_descr, ARRAY_SIZE(obj_null_descr), &nulls);
+	zassert_equal(len, strlen(encoded), "encoded size mismatch");
+
+	ret = json_obj_encode_buf(obj_null_descr, ARRAY_SIZE(obj_null_descr),
+				  &nulls, buffer, sizeof(buffer));
+	zassert_ok(ret, "Encoding function failed");
+
+	zassert_str_equal(buffer, encoded, "Encoded contents not consistent");
 }
 
 ZTEST(lib_json_test, test_json_encoding_array_array)
@@ -2303,6 +2380,43 @@ ZTEST(lib_json_test, test_json_mixed_arr_encode)
 	zassert_equal(pkt.dev_id, 123456, NULL);
 	zassert_equal(pkt.arr[0], 10, NULL);
 	zassert_str_equal(pkt.status_buf, "ok", NULL);
+}
+
+ZTEST(lib_json_test, test_json_mixed_arr_encode_null)
+{
+	char encoded[] = "[\"msg\",null,{\"nested_int\":42,\"nested_bool\":true,"
+			"\"nested_string\":\"abc\","
+			"\"nested_string_buf\":\"buf\",\"nested_int8\":1,\"nested_uint8\":2,"
+			"\"nested_int64\":3,\"nested_uint64\":4},[10,20,30],\"ok\"]";
+
+	struct test_mixed_arr arr = {
+		.msg_type = "msg",
+		.dev_id = 123456,
+		.nested = {
+			.nested_int = 42,
+			.nested_bool = true,
+			.nested_string = "abc",
+			.nested_string_buf = "buf",
+			.nested_int8 = 1,
+			.nested_uint8 = 2,
+			.nested_int64 = 3,
+			.nested_uint64 = 4,
+		},
+		.arr = {10, 20, 30},
+		.arr_len = 3,
+		.status_buf = "ok",
+		.count = 5
+	};
+
+	char buffer[256];
+	int ret;
+
+	ret = json_mixed_arr_encode_buf(test_mixed_arr_null_descr,
+					    ARRAY_SIZE(test_mixed_arr_null_descr),
+					    &arr, buffer, sizeof(buffer));
+	zassert_ok(ret, "Encoding function failed");
+
+	zassert_str_equal(buffer, encoded, "Encoded contents not consistent");
 }
 
 ZTEST(lib_json_test, test_json_mixed_arr_empty)
