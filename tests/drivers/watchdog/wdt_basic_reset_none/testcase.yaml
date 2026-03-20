@@ -32,7 +32,7 @@ tests:
       - EXTRA_DTC_OVERLAY_FILE="boards/app_ewm.overlay"
     extra_configs:
       - CONFIG_TEST_WDT_MAX_WINDOW_TIME=254
-      - CONFIG_TEST_WDT_SLEEP_TIME=68
+      - CONFIG_TEST_WDT_SLEEP_TIME=6
   drivers.watchdog.reset_none_ewm_no_wdog:
     filter: dt_compat_enabled("nxp,ewm")
     platform_allow:
