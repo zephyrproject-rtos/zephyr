@@ -155,10 +155,6 @@ static int eth_fake_set_config(const struct device *dev,
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(ctx->mac_address, config->mac_address.addr, 6);
-
-		net_if_set_link_addr(ctx->iface, ctx->mac_address,
-				     sizeof(ctx->mac_address),
-				     NET_LINK_ETHERNET);
 		break;
 	case ETHERNET_CONFIG_TYPE_QAV_PARAM:
 		queue_id = config->qav_param.queue_id;

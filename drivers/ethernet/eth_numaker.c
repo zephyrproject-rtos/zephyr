@@ -532,8 +532,6 @@ static int numaker_eth_set_config(const struct device *dev, enum ethernet_config
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(data->mac_addr, config->mac_address.addr, sizeof(data->mac_addr));
 		synopGMAC_set_mac_address(NUMAKER_GMAC_INTF, data->mac_addr);
-		net_if_set_link_addr(data->iface, data->mac_addr, sizeof(data->mac_addr),
-				     NET_LINK_ETHERNET);
 		LOG_DBG("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x", dev->name, data->mac_addr[0],
 			data->mac_addr[1], data->mac_addr[2], data->mac_addr[3], data->mac_addr[4],
 			data->mac_addr[5]);

@@ -756,8 +756,6 @@ static int eth_xlnx_gem_set_config(const struct device *dev,
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(dev_data->mac_addr, config->mac_address.addr, sizeof(dev_data->mac_addr));
 		eth_xlnx_gem_set_mac_address(dev);
-		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
-				     sizeof(dev_data->mac_addr), NET_LINK_ETHERNET);
 		break;
 	default:
 		return -ENOTSUP;

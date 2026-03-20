@@ -2188,9 +2188,6 @@ static int nxp_wifi_set_config(const struct device *dev, enum ethernet_config_ty
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(if_handle->mac_address, config->mac_address.addr, 6);
 
-		net_if_set_link_addr(if_handle->netif, if_handle->mac_address,
-				     sizeof(if_handle->mac_address), NET_LINK_ETHERNET);
-
 		if (if_handle->state.interface == WLAN_BSS_TYPE_STA) {
 			if (wlan_set_sta_mac_addr(if_handle->mac_address)) {
 				LOG_ERR("Failed to set Wi-Fi MAC Address");

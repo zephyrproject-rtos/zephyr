@@ -422,11 +422,6 @@ static int w5500_set_config(const struct device *dev,
 			ctx->mac_addr[2], ctx->mac_addr[3],
 			ctx->mac_addr[4], ctx->mac_addr[5]);
 
-		/* Register Ethernet MAC Address with the upper layer */
-		net_if_set_link_addr(ctx->iface, ctx->mac_addr,
-			sizeof(ctx->mac_addr),
-			NET_LINK_ETHERNET);
-
 		return 0;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {

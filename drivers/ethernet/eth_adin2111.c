@@ -1245,10 +1245,7 @@ static int adin2111_port_set_config(const struct device *dev,
 			goto end_unlock;
 		}
 
-		(void)memcpy(data->mac_addr, config->mac_address.addr, sizeof(data->mac_addr));
-
-		(void)net_if_set_link_addr(data->iface, data->mac_addr, sizeof(data->mac_addr),
-					   NET_LINK_ETHERNET);
+		memcpy(data->mac_addr, config->mac_address.addr, sizeof(data->mac_addr));
 	}
 
 	if (type == ETHERNET_CONFIG_TYPE_FILTER) {

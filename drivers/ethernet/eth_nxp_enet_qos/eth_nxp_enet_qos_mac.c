@@ -812,9 +812,6 @@ static int eth_nxp_enet_qos_set_config(const struct device *dev,
 						data->mac_addr.addr[2] << 16 |
 						data->mac_addr.addr[1] << 8  |
 						data->mac_addr.addr[0]);
-		net_if_set_link_addr(data->iface, data->mac_addr.addr,
-				     sizeof(data->mac_addr.addr),
-				     NET_LINK_ETHERNET);
 		LOG_INF("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x",
 			dev->name,
 			data->mac_addr.addr[0], data->mac_addr.addr[1],

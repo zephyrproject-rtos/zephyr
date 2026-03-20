@@ -1092,8 +1092,6 @@ static int esp32_wifi_set_config(const struct device *dev, enum ethernet_config_
 		}
 
 		memcpy(dev_data->mac_addr, config->mac_address.addr, sizeof(dev_data->mac_addr));
-		net_if_set_link_addr(esp32_wifi_iface, dev_data->mac_addr,
-				     sizeof(dev_data->mac_addr), NET_LINK_ETHERNET);
 
 		return 0;
 	}
