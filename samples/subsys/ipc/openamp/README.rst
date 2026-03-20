@@ -107,6 +107,15 @@ Building the application for ek_ra8t2/r7ka8t2lflcac/cm85
    :goals: debug
    :west-args: --sysbuild
 
+Building the application for mck_ra8t2/r7ka8t2lflcac/cm85
+*********************************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/openamp
+   :board: mck_ra8t2/r7ka8t2lflcac/cm85
+   :goals: debug
+   :west-args: --sysbuild
+
 Open a serial terminal (minicom, putty, etc.) and connect the board with the
 following settings:
 
