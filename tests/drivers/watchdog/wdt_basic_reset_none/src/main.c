@@ -7,13 +7,8 @@
 #include <zephyr/ztest.h>
 #include <zephyr/cache.h>
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/linker/section_tags.h>
 #include <zephyr/sys/reboot.h>
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
-#define NOINIT_SECTION ".dtcm_noinit.test_wdt"
-#else
-#define NOINIT_SECTION ".noinit.test_wdt"
-#endif
 
 /*
  * To use this test, either the devicetree's /aliases must have a
@@ -31,6 +26,16 @@
 #define WDT_TIMEOUT_VALUE	CONFIG_TEST_WDT_MAX_WINDOW_TIME + 10
 #define WDT_SETUP_FLAGS         CONFIG_TEST_WDT_SETUP_FLAGS
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
+#define WDT_TEST_NOINIT_ATTR __dtcm_noinit_section
+#else
+#define WDT_TEST_NOINIT_ATTR __noinit
+#endif
+
+#define WDT_TEST_IDLE            0x00000000U
+#define WDT_TEST_ARMED           0x57445401U
+#define WDT_TEST_CALLBACK_FIRED  0x57445402U
+
 #if defined(CONFIG_TEST_WDT_TIMEOUT_UNIT_TICKS)
 #define WDT_TIMEOUT K_TICKS(WDT_TIMEOUT_VALUE)
 #define SLEEP_TIME  K_TICKS(CONFIG_TEST_WDT_SLEEP_TIME)
@@ -42,12 +47,7 @@
 static struct wdt_timeout_cfg m_cfg_wdt0;
 static volatile int wdt_interrupted_flag;
 static volatile int wdt_feed_flag;
-static volatile uint32_t wdt_test_state __attribute__((section(NOINIT_SECTION)));
-
-#define WDT_TEST_IDLE            0x00000000U
-#define WDT_TEST_ARMED           0x57445401U
-#define WDT_TEST_CALLBACK_FIRED  0x57445402U
-
+static volatile uint32_t wdt_test_state WDT_TEST_NOINIT_ATTR;
 
 static void wdt_callback(const struct device *dev, int channel_id)
 {
@@ -112,7 +112,7 @@ static int test_wdt_callback_reset_none(void)
 	wdt_feed_flag = 0;
 	wdt_interrupted_flag = 0;
 	for (int i = 0; i < WDT_FEED_TRIES; ++i) {
-		TC_PRINT("Feeding %d\n", i+1);
+		TC_PRINT("Feeding %d\n", i + 1);
 		wdt_feed(wdt, 0);
 		wdt_feed_flag++;
 		k_sleep(SLEEP_TIME);
@@ -178,7 +178,6 @@ static int test_wdt_bad_window_max(void)
 
 	return TC_FAIL;
 }
-
 
 ZTEST(wdt_basic_reset_none, test_wdt_callback_reset_none)
 {
