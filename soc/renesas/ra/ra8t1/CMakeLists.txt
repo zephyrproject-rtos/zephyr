@@ -3,10 +3,6 @@
 
 zephyr_include_directories(.)
 
-zephyr_sources_ifdef(CONFIG_PM
-  power.c
-)
-
 if(CONFIG_CMAKE_LINKER_GENERATOR)
   dt_nodelabel(option_setting_ofs0 NODELABEL "option_setting_ofs0")
   dt_nodelabel(option_setting_ofs2 NODELABEL "option_setting_ofs2")

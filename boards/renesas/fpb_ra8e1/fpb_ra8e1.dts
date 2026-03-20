@@ -27,6 +27,7 @@
 		zephyr,shell-uart = &uart9;
 		zephyr,entropy = &trng;
 		zephyr,crc = &crc;
+		zephyr,system-timer-companion = &idle_counter;
 	};
 
 	leds {
@@ -341,17 +342,11 @@
 };
 
 &ulpt0 {
+	interrupt-names = "ulptcmai";
+	interrupts = <36 1>;
 	status = "okay";
 
-	timer {
-		status = "okay";
-	};
-};
-
-&ulpt1 {
-	status = "okay";
-
-	timer {
+	idle_counter: counter {
 		status = "okay";
 	};
 };

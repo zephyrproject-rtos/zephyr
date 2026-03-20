@@ -29,6 +29,7 @@
 		zephyr,flash-controller = &flash1;
 		zephyr,canbus = &canfd0;
 		zephyr,crc = &crc;
+		zephyr,system-timer-companion = &idle_counter;
 	};
 
 	leds {
@@ -478,17 +479,11 @@ dvp_20pin_interface: &ceu {};
 };
 
 &ulpt0 {
+	interrupt-names = "ulptcmai";
+	interrupts = <36 1>;
 	status = "okay";
 
-	timer {
-		status = "okay";
-	};
-};
-
-&ulpt1 {
-	status = "okay";
-
-	timer {
+	idle_counter: counter {
 		status = "okay";
 	};
 };
