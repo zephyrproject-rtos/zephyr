@@ -12,7 +12,10 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x0 DT_SIZE_K(64)>;
+			/* MCUBoot partition is set to 62k to allow FPROTECT
+			 * to be enabled by default.
+			 */
+			reg = <0x0 DT_SIZE_K(62)>;
 		};
 
 #ifdef WITH_FLPR_PARTITIONS
