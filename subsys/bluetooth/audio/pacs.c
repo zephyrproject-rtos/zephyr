@@ -143,7 +143,7 @@ static void deferred_nfy_work_handler(struct k_work *work);
 static K_WORK_DEFINE(deferred_nfy_work, deferred_nfy_work_handler);
 
 struct pac_records_build_data {
-	struct bt_pacs_read_rsp *rsp;
+	struct bt_pac_value *rsp;
 	struct net_buf_simple *buf;
 };
 
