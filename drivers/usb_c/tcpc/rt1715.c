@@ -373,10 +373,6 @@ static int rt1715_tcpc_dump_std_reg(const struct device *dev)
 	return tcpci_tcpm_dump_std_reg(&cfg->bus);
 }
 
-void rt1715_tcpc_alert_handler_cb(const struct device *dev, void *data, enum tcpc_alert alert)
-{
-}
-
 static int rt1715_tcpc_get_status_register(const struct device *dev, enum tcpc_status_reg reg,
 					   uint32_t *status)
 {
@@ -497,7 +493,6 @@ static DEVICE_API(tcpc, rt1715_driver_api) = {
 	.set_cc_polarity = rt1715_tcpc_set_cc_polarity,
 	.transmit_data = rt1715_tcpc_transmit_data,
 	.dump_std_reg = rt1715_tcpc_dump_std_reg,
-	.alert_handler_cb = rt1715_tcpc_alert_handler_cb,
 	.get_status_register = rt1715_tcpc_get_status_register,
 	.clear_status_register = rt1715_tcpc_clear_status_register,
 	.mask_status_register = rt1715_tcpc_mask_status_register,
