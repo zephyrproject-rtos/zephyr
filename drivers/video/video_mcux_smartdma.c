@@ -18,7 +18,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(nxp_video_sdma);
 
-#include "video_device.h"
+#include "video_common.h"
 
 struct nxp_video_sdma_config {
 	const struct device *dma_dev;

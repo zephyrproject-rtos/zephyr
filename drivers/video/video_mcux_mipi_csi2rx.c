@@ -8,14 +8,14 @@
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/video.h>
-#include <zephyr/drivers/video-controls.h>
+#include <zephyr/video/controls.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
 
 #include <fsl_mipi_csi2rx.h>
 
-#include "video_device.h"
+#include "video_common.h"
 
 LOG_MODULE_REGISTER(video_mipi_csi2rx, CONFIG_VIDEO_LOG_LEVEL);
 

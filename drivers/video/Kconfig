@@ -1,20 +1,15 @@
-# VIDEO driver configuration options
-
 # Copyright (c) 2019 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-#
-# VIDEO Drivers
-#
-menuconfig VIDEO
+menuconfig VIDEO_DRIVERS
 	bool "Video drivers"
 	help
-	  Enable support for the VIDEO.
+	  Enable support for video drivers, typically used from the video subsystem.
 
-if VIDEO
+if VIDEO_DRIVERS
 
-module = VIDEO
-module-str = video
+module = VIDEO_DRIVERS
+module-str = video_drivers
 source "subsys/logging/Kconfig.template.log_config"
 
 config VIDEO_INIT_PRIORITY
@@ -96,7 +91,6 @@ source "drivers/video/Kconfig.ov767x"
 source "drivers/video/Kconfig.ov7725"
 source "drivers/video/Kconfig.ov9655"
 source "drivers/video/Kconfig.renesas_ra_ceu"
-source "drivers/video/Kconfig.shell"
 source "drivers/video/Kconfig.st_mipid02"
 source "drivers/video/Kconfig.stm32_dcmi"
 source "drivers/video/Kconfig.stm32_dcmipp"
@@ -105,4 +99,4 @@ source "drivers/video/Kconfig.stm32_venc"
 source "drivers/video/Kconfig.sw_generator"
 # zephyr-keep-sorted-stop
 
-endif # VIDEO
+endif # VIDEO_DRIVERS

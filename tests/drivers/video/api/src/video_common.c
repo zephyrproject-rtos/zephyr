@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/video/formats.h>
+#include <zephyr/video/video.h>
+#include <zephyr/ztest.h>
 
 enum {
 	RGB565,
