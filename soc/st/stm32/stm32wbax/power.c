@@ -109,7 +109,9 @@ static uint32_t flash_latency_backup;
 #if defined(CONFIG_PM_S2RAM)
 static struct fpu_ctx_full fpu_state;
 static struct scb_context scb_state;
+#if defined(CONFIG_ARM_MPU)
 static struct z_mpu_context_retained mpu_state;
+#endif
 #endif
 
 static int enter_low_power_mode(void)
