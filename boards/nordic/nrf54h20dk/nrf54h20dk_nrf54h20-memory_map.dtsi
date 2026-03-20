@@ -127,60 +127,72 @@
 
 &mram1x {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
 
 		cpuapp_boot_partition: partition@30000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x30000 DT_SIZE_K(64)>;
 		};
 
 		cpuapp_slot0_partition: partition@40000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x40000 DT_SIZE_K(328)>;
 		};
 
 		cpurad_slot0_partition: partition@92000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x92000 DT_SIZE_K(328)>;
 		};
 
 		cpuppr_code_partition: partition@e4000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0xe4000 DT_SIZE_K(64)>;
 		};
 
 		cpuflpr_code_partition: partition@f4000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0xf4000 DT_SIZE_K(48)>;
 		};
 
 		cpuapp_slot1_partition: partition@100000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x100000 DT_SIZE_K(328)>;
 		};
 
 		cpurad_slot1_partition: partition@152000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x152000 DT_SIZE_K(328)>;
 		};
 
 		storage_partition: partition@1a4000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x1a4000 DT_SIZE_K(40)>;
 		};
 
 		periphconf_partition: partition@1ae000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x1ae000 DT_SIZE_K(8)>;
 		};
 
 		secondary_partition: partition@1b0000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x1b0000 DT_SIZE_K(64)>;
 		};
 
 		secondary_periphconf_partition: partition@1c0000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x1c0000 DT_SIZE_K(8)>;
 		};
 
 		mpcconf_partition: partition@1c2000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x1c2000 512>;
 		};
 
 		secondary_mpcconf_partition: partition@1c2200 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x1c2200 512>;
 		};
 
@@ -190,25 +202,29 @@
 		 * there is no more space after secure_storage_partition.
 		 */
 		secure_storage_partition: partition@1fd000 {
-			compatible = "fixed-subpartitions";
+			compatible = "zephyr,mapped-partition";
 			reg = <0x1fd000 DT_SIZE_K(12)>;
 			ranges = <0x0 0x1fd000 0x3000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			cpuapp_crypto_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
 				reg = <0x0 DT_SIZE_K(4)>;
 			};
 
 			cpurad_crypto_partition: partition@1000 {
+				compatible = "zephyr,mapped-partition";
 				reg = <0x1000 DT_SIZE_K(4)>;
 			};
 
 			cpuapp_its_partition: partition@2000 {
+				compatible = "zephyr,mapped-partition";
 				reg = <0x2000 DT_SIZE_K(2)>;
 			};
 
 			cpurad_its_partition: partition@2800 {
+				compatible = "zephyr,mapped-partition";
 				reg = <0x2800 DT_SIZE_K(2)>;
 			};
 		};
