@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(host_if);
 
 K_MUTEX_DEFINE(ble_ctrl_stack_mutex);
 #if defined(CONFIG_BT_STM32WBA)
-static struct k_work_q ble_ctlr_work_q;
+struct k_work_q ble_ctlr_work_q;
 static struct k_work ble_ctlr_stack_work, bpka_work;
 static bool ble_ctlr_work_q_initialized;
 #endif /* CONFIG_BT_STM32WBA */
