@@ -191,9 +191,9 @@ safely defaulted. Candidates for default values include:
 - defaults which match the vendor-specified power-on reset value
   (as long as they are independent from other properties)
 
-Default values for ``#address-cells`` and ``#size-cells`` cannot be defined in the
+Default values for ``status``, ``#address-cells`` and ``#size-cells`` cannot be defined in the
 bindings. The default behavior for these properties is already defined in the
-devicetree specification `§2.3.5 <https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html#address-cells-and-size-cells>`_.
+devicetree specification `§2.3.4 <https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html#status>`_ and `§2.3.5 <https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html#address-cells-and-size-cells>`_.
 
 Examples of how to write descriptions according to these rules:
 
