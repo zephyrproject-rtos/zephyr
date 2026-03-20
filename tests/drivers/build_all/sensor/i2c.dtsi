@@ -24,6 +24,7 @@
 #include <zephyr/dt-bindings/sensor/lis2du12.h>
 #include <zephyr/dt-bindings/sensor/lis2dux12.h>
 #include <zephyr/dt-bindings/sensor/lis2de12.h>
+#include <zephyr/dt-bindings/sensor/pac194x.h>
 #include <zephyr/dt-bindings/sensor/tmag5273.h>
 #include <zephyr/dt-bindings/sensor/stts22h.h>
 #include <zephyr/dt-bindings/sensor/ina226.h>
@@ -1566,4 +1567,48 @@ test_i2c_cht8315: cht8315@cf {
 	compatible = "sensylink,cht8315";
 	reg = <0xcf>;
 	alert-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_pac194x: pac194x@d0 {
+	compatible = "microchip,pac194x";
+	reg = <0xd0>;
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@1 {
+		reg = <0x1>;
+		friendly-name = "CPU";
+		microchip,shunt-resistor-micro-ohms = <4000>;
+		microchip,vbus-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,vsense-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,accumulation-mode = <PAC_ACCUM_VPOWER>;
+	};
+
+	channel@2 {
+		reg = <0x2>;
+		friendly-name = "MEM";
+		microchip,shunt-resistor-micro-ohms = <4000>;
+		microchip,vbus-mode = <PAC_BIPOLAR_FSR>;
+		microchip,vsense-mode = <PAC_BIPOLAR_HALF_FSR>;
+		microchip,accumulation-mode = <PAC_ACCUM_VPOWER>;
+	};
+
+	channel@3 {
+		reg = <0x3>;
+		friendly-name = "GPU";
+		microchip,shunt-resistor-micro-ohms = <4000>;
+		microchip,vbus-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,vsense-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,accumulation-mode = <PAC_ACCUM_VBUS>;
+	};
+
+	channel@4 {
+		reg = <0x4>;
+		friendly-name = "NET";
+		microchip,shunt-resistor-micro-ohms = <4000>;
+		microchip,vbus-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,vsense-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,accumulation-mode = <PAC_ACCUM_VBUS>;
+	};
 };
