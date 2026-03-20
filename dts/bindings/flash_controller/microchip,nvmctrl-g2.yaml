@@ -1,0 +1,38 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip NVMCTRL (Nonvolatile Memory Controller)
+
+description: |
+  Microchip NVMCTRL driver for Flash
+
+  Group g2 NVMCTRL driver supports following hardware peripherals:
+    - module name="NVMCTRL" id="03929" version="1a0"
+
+compatible: "microchip,nvmctrl-g2"
+
+include: flash-controller.yaml
+
+examples:
+  - |
+    /*
+     * clock-parent phandle referes to the node label that
+     * holds clock device in the tree. Flash driver uses this
+     * phandle to initialize clocks for flash operations
+     */
+    nvmctrl: flash-controller@41004000 {
+      compatible = "microchip,nvmctrl-g2";
+      reg = <0x41004000 0xa0>;
+      /* ... */
+      clock-parent = <&clock>;
+
+      flash0: flash@0 {
+        compatible = "microchip,flash-g2", "soc-nv-flash";
+        /* ... */
+      };
+    };
+
+properties:
+  clock-parent:
+    type: phandle
+    description: Reference to the clock node

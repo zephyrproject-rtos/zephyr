@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +8,24 @@
 
 / {
 	soc {
-		flash0: flash@0 {
-			reg = <0x0 DT_SIZE_K(128)>;
+		nvmctrl: flash-controller@41004000 {
+			flash0: flash@0 {
+				/* Reg size computation:
+				 * Main Flash: 128kB (0x0 to 0x0001-ffff),
+				 * Unsupported Region: 3968kB (0x0002-0000 to 0x003f-ffff),
+				 * Data Flash: 4kB (0x0040-0000 to 0x0040-0fff),
+				 * Unsupported Region: 4108kB (0x0040-1000 to 0x0080-3fff),
+				 * User-row: 256B (0x0080-4000 to 0x0080-4100)
+				 */
+				reg = <0x0
+				       (DT_SIZE_K(128) + DT_SIZE_K(3968) +
+					DT_SIZE_K(4) + DT_SIZE_K(4108) + 256)>;
+				ranges = <0x0 0x0
+					  (DT_SIZE_K(128) + DT_SIZE_K(3968) +
+					   DT_SIZE_K(4) + DT_SIZE_K(4108) + 256)>;
+				unsupported-region = <0x00020000 0x003fffff>,
+						     <0x00401000 0x00803fff>;
+			};
 		};
 
 		sram0: memory@20000000 {

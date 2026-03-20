@@ -37,9 +37,27 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		flash0: flash@0 {
-			compatible = "soc-nv-flash";
-			write-block-size = <4>;
+		nvmctrl: flash-controller@41004000 {
+			compatible = "microchip,nvmctrl-g2";
+			reg = <0x41004000 0xa0>;
+			interrupts = <6 0>;
+			interrupt-names = "nvmctrl";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBB_NVMCTRL>;
+			clock-names = "mclk";
+			clock-parent = <&clock>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			flash0: flash@0 {
+				compatible = "microchip,flash-g2", "soc-nv-flash";
+				write-block-size = <64>;
+				erase-block-size = <256>;
+				data-flash-start-addr = <0x00400000>;
+				user-row-start-addr = <0x00804000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
 		};
 
 		nvm_sw_calib_area: nvm-sw-calib-area@806020 {
