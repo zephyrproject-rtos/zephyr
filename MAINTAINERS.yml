@@ -4759,8 +4759,24 @@ Realtek Ameba Platforms:
     - soc/realtek/ameba/
     - dts/arm/realtek/ameba*/
     - dts/bindings/*/*ameba*
+  files-exclude:
+    - drivers/wifi/ameba/
+    - dts/bindings/wifi/
   labels:
     - "platform: Realtek Ameba"
+
+Realtek Ameba Wireless Platforms:
+  status: maintained
+  maintainers:
+    - zjian-zhang
+    - Derek-RTK
+  collaborators:
+    - minyuan-xue
+  files:
+    - drivers/wifi/ameba/
+    - dts/bindings/wifi/realtek,ameba-wifi.yaml
+  labels:
+    - "platform: Realtek Ameba Wireless"
 
 Realtek Bee Platforms:
   status: maintained
