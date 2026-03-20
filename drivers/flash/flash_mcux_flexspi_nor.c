@@ -194,6 +194,41 @@ static int flash_flexspi_nor_read_id_helper(struct flash_flexspi_nor_data *data,
 	return ret;
 }
 
+static int flash_flexspi_nor_soft_reset(struct flash_flexspi_nor_data *data,
+		uint32_t (*flexspi_lut)[MEMC_FLEXSPI_CMD_PER_SEQ])
+{
+	flexspi_transfer_t transfer = {
+		.deviceAddress = 0,
+		.port = data->port,
+		.cmdType = kFLEXSPI_Command,
+		.SeqNumber = 1,
+		.seqIndex = SCRATCH_CMD,
+	};
+	int ret;
+
+	/* RSTEN (0x66) */
+	flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
+			kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x66,
+			kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x00);
+	ret = memc_flexspi_transfer(&data->controller, &transfer);
+	if (ret < 0) {
+		return ret;
+	}
+	k_busy_wait(1);
+
+	/* RST (0x99) */
+	flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
+			kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x99,
+			kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x00);
+	ret = memc_flexspi_transfer(&data->controller, &transfer);
+	if (ret < 0) {
+		return ret;
+	}
+	k_busy_wait(1);
+
+	return 0;
+}
+
 #if defined(CONFIG_FLASH_JESD216_API)
 static int flash_flexspi_nor_read_jedec_id(const struct device *dev, uint8_t *vendor_id)
 {
@@ -1625,6 +1660,11 @@ static int flash_flexspi_nor_probe(struct flash_flexspi_nor_data *data)
 					(uint32_t *)flexspi_probe_lut,
 					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
 					data->port);
+	if (ret < 0) {
+		goto _exit;
+	}
+
+	ret = flash_flexspi_nor_soft_reset(data, flexspi_probe_lut);
 	if (ret < 0) {
 		goto _exit;
 	}
