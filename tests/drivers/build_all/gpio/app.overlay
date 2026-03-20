@@ -31,6 +31,16 @@
 			status = "okay";
 		};
 
+		test_gpio_mmio_latch: gpio@feed0000 {
+			compatible = "gpio-mmio-latch";
+			gpio-controller;
+			reg = <0xfeed0000 0x4>;
+			#gpio-cells = <0x2>;
+			ngpios = <8>;
+			initial-output = <0x5a>;
+			status = "okay";
+		};
+
 		test_i2c: i2c@11112222 {
 			#address-cells = <1>;
 			#size-cells = <0>;
