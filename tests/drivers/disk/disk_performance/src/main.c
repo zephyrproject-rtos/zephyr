@@ -18,6 +18,8 @@
 #define DISK_NAME "SD2"
 #elif defined(CONFIG_NVME)
 #define DISK_NAME "nvme0n0"
+#elif defined(CONFIG_DISK_DRIVER_FTL)
+#define DISK_NAME "NAND"
 #else
 #error "No disk device defined, is your board supported?"
 #endif
