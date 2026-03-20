@@ -1,0 +1,32 @@
+# Copyright (c) 2026 Shankar Sridhar
+$ SPDX-License-Identifier: Apache-2.0
+/*
+ * Device tree overlay for Arduino UNO Q LED Matrix
+ */
+
+/ {
+	led_matrix: led-matrix {
+		compatible = "arduino,uno-q-ledmatrix";
+		/* 11 GPIO pins for Charlieplexing: PF0-PF10 */
+		gpios = <&gpiof 0 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_0 - PF0 */
+			<&gpiof 1 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_1 - PF1 */
+			<&gpiof 2 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_2 - PF2 */
+			<&gpiof 3 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_3 - PF3 */
+			<&gpiof 4 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_4 - PF4 */
+			<&gpiof 5 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_5 - PF5 */
+			<&gpiof 6 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_6 - PF6 */
+			<&gpiof 7 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_7 - PF7 */
+			<&gpiof 8 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_8 - PF8 */
+			<&gpiof 9 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_9 - PF9 */
+			<&gpiof 10 GPIO_ACTIVE_HIGH>;  /* LED_MATRIX_10 - PF10 */
+		rows = <8>;
+		columns = <13>;
+		brightness = <255>;
+		refresh-rate-hz = <800>;
+		status = "okay";
+	};
+
+	aliases {
+		ledmatrix = &led_matrix;
+	};
+};

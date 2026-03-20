@@ -1,0 +1,61 @@
+
+# Copyright (c) 2026 Shankar Sridhar
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LED_MATRIX
+	bool "LED Matrix drivers"
+	help
+	  Enable LED matrix drivers.
+
+if LED_MATRIX
+
+config LED_MATRIX_UNO_Q
+	bool "Arduino UNO Q LED Matrix Driver"
+	depends on DT_HAS_ARDUINO_UNO_Q_LEDMATRIX_ENABLED
+	depends on GPIO
+	help
+		Enable driver for the Arduino UNO Q onboard 8x13 LED matrix.
+	  	Provides a display_api-compatible interface using a packed binary
+	  	buffer format.
+
+if LED_MATRIX_UNO_Q
+
+config LED_MATRIX_UNO_Q_PIXEL_PERIOD_US
+	int "UNO_Q LED matrix pixel period (microseconds)"
+	default 100
+	range 50 500
+	help
+	  Duration in microseconds for which each column is illuminated
+	  during one scan cycle. Lower values increase refresh rate but
+	  reduce per-pixel brightness. Higher values increase brightness
+	  but may introduce visible flicker.
+	  Minimum: 50 us. Maximum: 500 us. Default: 100 us.
+
+config LED_MATRIX_UNO_Q_INIT_PRIORITY
+	int "UNO_Q LED Matrix initialization priority"
+	default 90
+	help
+	  Must be higher (later) than the GPIO driver priority so that
+	  GPIO is available when the matrix driver initializes.
+
+config CONFIG_LED_MATRIX_UNO_Q_LOG_LEVEL
+	int "LED Matrix Driver Log level"
+	depends on LOG
+	default 3
+	range 0 4
+	help
+	  Sets log level for the LED matrix driver.
+	  Levels are:
+	  0 OFF
+	  1 ERROR
+	  2 WARNING
+	  3 INFO
+	  4 DEBUG
+
+module = LED_MATRIX_UNO_Q
+module-str = led_matrix_uno_q
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # LED_MATRIX_UNO_Q
+
+endif # LED_MATRIX
