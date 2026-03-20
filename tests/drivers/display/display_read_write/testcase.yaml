@@ -1,4 +1,5 @@
 # Copyright 2024 (c) TOKITA Hiroshi
+# Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 common:
@@ -101,6 +102,30 @@ tests:
       - native_sim/native/64
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565X=y
+  drivers.display.read_write.sdl.bgr888:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_888=y
+  drivers.display.read_write.sdl.abgr8888:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ABGR_8888=y
+  drivers.display.read_write.sdl.rgba8888:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGBA_8888=y
+  drivers.display.read_write.sdl.bgra8888:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGRA_8888=y
   drivers.display.read_write.ili9340:
     tags:
       - shield
