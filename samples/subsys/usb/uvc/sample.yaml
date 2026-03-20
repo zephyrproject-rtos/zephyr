@@ -3,6 +3,7 @@ sample:
 common:
   harness: console
   harness_config:
+    fixture: usb_connected
     type: one_line
     regex:
       - "Waiting the host to select the video format"
