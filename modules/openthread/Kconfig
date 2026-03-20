@@ -324,6 +324,13 @@ config OPENTHREAD_PLATFORM_MESSAGE_MANAGEMENT
 	help
 	  The message pool is managed by platform defined logic.
 
+config OPENTHREAD_MESSAGE_POOL_CUSTOM_SECTION
+	bool "Place message pool buffer in a custom linker section"
+	depends on OPENTHREAD_PLATFORM_MESSAGE_MANAGEMENT
+	help
+	  Place the OpenThread message pool buffer in a custom ".ot_msg_pool"
+	  linker section. This allows relocating it to external memory.
+
 config OPENTHREAD_MAX_STATECHANGE_HANDLERS
 	int "The maximum number of state-changed callback handlers"
 	default 2
