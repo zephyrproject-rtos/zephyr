@@ -18,3 +18,4 @@ tests:
       - rtl8752h_evb/rtl8752hkf
       - rtl8752h_evb/rtl8752hmf
       - sam_e54_xpro
+      - pic32cm_jh01_cpro
