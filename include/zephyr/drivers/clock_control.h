@@ -45,10 +45,10 @@ extern "C" {
  * @brief Current clock status.
  */
 enum clock_control_status {
-	CLOCK_CONTROL_STATUS_STARTING,
-	CLOCK_CONTROL_STATUS_OFF,
-	CLOCK_CONTROL_STATUS_ON,
-	CLOCK_CONTROL_STATUS_UNKNOWN
+	CLOCK_CONTROL_STATUS_STARTING, /**< Clock is starting. */
+	CLOCK_CONTROL_STATUS_OFF,      /**< Clock is off. */
+	CLOCK_CONTROL_STATUS_ON,       /**< Clock is on. */
+	CLOCK_CONTROL_STATUS_UNKNOWN   /**< Clock status is unknown. */
 };
 
 /**
