@@ -99,7 +99,7 @@ static int max14906_reg_trans_spi_diag(const struct device *dev, uint8_t addr, u
  * @brief Register update function for MAX14906
  *
  * @param dev - MAX149x6 device.
- * @param addr - Register valueto wich data is updated.
+ * @param addr - Register valueto which data is updated.
  * @param mask - Corresponding mask to the data that will be updated.
  * @param val - Updated value to be written in the register at update.
  * @return 0 in case of success, negative error code otherwise.
