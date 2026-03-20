@@ -98,6 +98,14 @@ void sx126x_hal_dio1_irq_enable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+	/*
+	 * The ISR disables the NVIC but does not clear the pending
+	 * flag. Without clearing it here, irq_enable() would
+	 * immediately re-trigger a spurious ISR whose SPI traffic
+	 * can wake the radio from a duty-cycle sleep phase and
+	 * abort the cycle.
+	 */
+	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 	irq_enable(DT_INST_IRQN(0));
 }
 
