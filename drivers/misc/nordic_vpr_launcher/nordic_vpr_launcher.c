@@ -20,6 +20,9 @@
 	!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 #include <hal/nrf_spu.h>
 #endif
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(hibernation_ram_block)
+#include <hal/nrf_memconf.h>
+#endif
 
 LOG_MODULE_REGISTER(nordic_vpr_launcher, CONFIG_NORDIC_VPR_LAUNCHER_LOG_LEVEL);
 
@@ -31,6 +34,9 @@ struct nordic_vpr_launcher_config {
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(source_memory)
 	uintptr_t src_addr;
 	size_t size;
+#endif
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(hibernation_ram_block)
+	int32_t ram_block_id;
 #endif
 };
 
@@ -76,6 +82,16 @@ static int nordic_vpr_launcher_init(const struct device *dev)
 	nrf_vpr_initpc_set(config->vpr, config->exec_addr);
 	nrf_vpr_cpurun_set(config->vpr, true);
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(hibernation_ram_block)
+	/* Enable retention of the RAM block used for VPR hibernation. */
+	if (config->ram_block_id >= 0) {
+		nrf_memconf_ramblock_control_mask_enable_set(NRF_MEMCONF, config->ram_block_id / 32,
+							 BIT(config->ram_block_id % 32), true);
+		nrf_memconf_ramblock_ret_mask_enable_set(NRF_MEMCONF, config->ram_block_id / 32,
+							 BIT(config->ram_block_id % 32), true);
+	}
+#endif
+
 	return 0;
 }
 
@@ -96,7 +112,10 @@ static int nordic_vpr_launcher_init(const struct device *dev)
 		.enable_dma_secure = DT_INST_PROP(inst, enable_dma_secure),                        \
 		IF_ENABLED(NEEDS_COPYING(inst),                                                    \
 			   (.src_addr = DT_REG_ADDR(DT_INST_PHANDLE(inst, source_memory)),         \
-			    .size = DT_REG_SIZE(DT_INST_PHANDLE(inst, execution_memory)),))};      \
+			    .size = DT_REG_SIZE(DT_INST_PHANDLE(inst, execution_memory)),))        \
+		IF_ENABLED(DT_ANY_INST_HAS_PROP_STATUS_OKAY(hibernation_ram_block),                \
+			   (.ram_block_id = DT_INST_PROP_OR(inst, hibernation_ram_block, -1),))    \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, nordic_vpr_launcher_init, NULL, NULL, &config##inst,           \
 			      POST_KERNEL, CONFIG_NORDIC_VPR_LAUNCHER_INIT_PRIORITY, NULL);
