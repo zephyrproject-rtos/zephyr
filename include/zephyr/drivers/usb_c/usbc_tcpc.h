@@ -19,7 +19,7 @@
  * @brief USB Type-C Port Controller API
  * @defgroup usb_type_c_port_controller_api USB Type-C Port Controller API
  * @since 3.1
- * @version 0.1.0
+ * @version 0.1.1
  * @ingroup usb_type_c
  * @{
  */
@@ -179,7 +179,6 @@ __subsystem struct tcpc_driver_api {
 	int (*set_cc_polarity)(const struct device *dev, enum tc_cc_polarity polarity);
 	int (*transmit_data)(const struct device *dev, struct pd_msg *msg);
 	int (*dump_std_reg)(const struct device *dev);
-	void (*alert_handler_cb)(const struct device *dev, void *data, enum tcpc_alert alert);
 	int (*get_status_register)(const struct device *dev, enum tcpc_status_reg reg,
 				   uint32_t *status);
 	int (*clear_status_register)(const struct device *dev, enum tcpc_status_reg reg,
