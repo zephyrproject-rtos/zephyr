@@ -225,7 +225,20 @@ void radio_reset(void)
 
 #if defined(CONFIG_NRF_SYS_EVENT)
 	(void)nrf_sys_event_request_global_constlat();
+
 #else /* !CONFIG_NRF_SYS_EVENT */
+	/* Refer to nRF54L Product Specifications for below quirks.
+	 * FIXME: Use on off service design to share these request with application implementations.
+	 */
+	/* Put RRAMC in Standby mode.
+	 * Gives faster wake-ups, and is useful in combination with Constant Latency sub-power mode.
+	 * FIXME: Use on off service design to share this request with application implementations.
+	 */
+	NRF_RRAMC->POWER.LOWPOWERCONFIG = (RRAMC_POWER_LOWPOWERCONFIG_MODE_Standby <<
+					   RRAMC_POWER_LOWPOWERCONFIG_MODE_Pos) &
+					  RRAMC_POWER_LOWPOWERCONFIG_MODE_Msk;
+
+	/* Enable Constant Latency mode */
 	NRF_POWER->TASKS_CONSTLAT = 1U;
 #endif /* !CONFIG_NRF_SYS_EVENT */
 #endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
@@ -1770,6 +1783,15 @@ void radio_tmr_stop(void)
 #if defined(CONFIG_NRF_SYS_EVENT)
 	(void)nrf_sys_event_release_global_constlat();
 #else /* !CONFIG_NRF_SYS_EVENT */
+	/* Refer to nRF54L Product Specifications for below quirks.
+	 * FIXME: Use on off service design to share these request with application implementations.
+	 */
+	/* Put back RRAMC in auto power down mode */
+	NRF_RRAMC->POWER.LOWPOWERCONFIG = (RRAMC_POWER_LOWPOWERCONFIG_MODE_PowerOff <<
+					   RRAMC_POWER_LOWPOWERCONFIG_MODE_Pos) &
+					  RRAMC_POWER_LOWPOWERCONFIG_MODE_Msk;
+
+	/* Enable Low-power mode (variable latency) */
 	NRF_POWER->TASKS_LOWPWR = 1U;
 #endif /* !CONFIG_NRF_SYS_EVENT */
 #endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
