@@ -415,7 +415,14 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 		radio_tmr_tifs_set(EVENT_IFS_US);
 		radio_switch_complete_and_tx(0, 0, 0, 0);
 	} else {
-		radio_switch_complete_and_disable();
+		if (IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)) {
+			/* Required under single time tIFS switching, to accumulate the packet
+			 * timer value at the time of clear on radio end.
+			 */
+			radio_switch_complete_end_capture_and_disable();
+		} else {
+			radio_switch_complete_and_disable();
+		}
 	}
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -876,7 +883,14 @@ static void isr_common_done(void *param)
 		radio_tmr_tifs_set(EVENT_IFS_US);
 		radio_switch_complete_and_tx(0, 0, 0, 0);
 	} else {
-		radio_switch_complete_and_disable();
+		if (IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)) {
+			/* Required under single time tIFS switching, to accumulate the packet
+			 * timer value at the time of clear on radio end.
+			 */
+			radio_switch_complete_end_capture_and_disable();
+		} else {
+			radio_switch_complete_and_disable();
+		}
 	}
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
