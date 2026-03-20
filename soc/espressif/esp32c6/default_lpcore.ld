@@ -87,8 +87,8 @@ SECTIONS
 
     } > ram
 
-  #include <snippets-data-sections.ld>
   #include <zephyr/linker/common-ram.ld>
+  #include <snippets-data-sections.ld>
   #include <snippets-ram-sections.ld>
 
     .data.end ALIGN(4):

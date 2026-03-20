@@ -216,8 +216,8 @@ SECTIONS
 
   #include <zephyr/linker/cplusplus-rom.ld>
   #include <zephyr/linker/thread-local-storage.ld>
-  #include <snippets-data-sections.ld>
   #include <zephyr/linker/common-ram.ld>
+  #include <snippets-data-sections.ld>
   #include <snippets-ram-sections.ld>
   #include <zephyr/linker/cplusplus-ram.ld>
 
