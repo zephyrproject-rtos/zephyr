@@ -71,6 +71,14 @@ function(compute_optional_partition_address_and_size partition_nodelabel output_
   endif()
 endfunction()
 
+set(IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE "")
+
+if(CONFIG_SOC_NRF54H20)
+  set(IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE
+    "${IRONSIDE_SUPPORT_DIR}/se/resources/periphconf_registers-nrf54h20_xxaa-v23.4.0+27.json"
+  )
+endif()
+
 # Use CMAKE_VERBOSE_MAKEFILE to silence an unused-variable warning.
 if(CMAKE_VERBOSE_MAKEFILE)
 endif()
@@ -356,6 +364,70 @@ if(CONFIG_GEN_UICR_POLICY_MPCCONF_STAGE_INIT OR CONFIG_GEN_UICR_POLICY_MPCCONF_S
   list(APPEND policy_args --policy-mpcconf-stage ${CONFIG_GEN_UICR_POLICY_MPCCONF_STAGE_VALUE})
 endif()
 
+set(periphconf_check_base_cmd
+  ${CMAKE_COMMAND} -E env ZEPHYR_BASE=${ZEPHYR_BASE}
+  ${PYTHON_EXECUTABLE} ${IRONSIDE_SUPPORT_DIR}/se/tool/ironside/__main__.py
+  periphconf-check
+  --in-periphconf-registers-json ${IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE}
+)
+
+set(periphconf_validate_command)
+set(secondary_periphconf_validate_command)
+
+if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF AND IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE)
+  set(check_cmd ${periphconf_check_base_cmd} --in-periphconf-hex ${periphconf_hex_file})
+
+  set(periphconf_validate_build_command
+    COMMAND ${check_cmd} --mode errors
+  )
+
+  add_custom_target(
+    periphconf_validate
+    COMMAND ${check_cmd} --mode errors
+    DEPENDS ${periphconf_hex_file}
+    COMMENT "Validating ${periphconf_hex_file}"
+  )
+  add_custom_target(
+    periphconf_dump
+    COMMAND ${check_cmd} --mode full
+    DEPENDS ${periphconf_hex_file}
+    COMMENT "Printing ${periphconf_hex_file}"
+  )
+  add_custom_target(
+    periphconf_dump_raw
+    COMMAND ${check_cmd} --mode full --style raw
+    DEPENDS ${periphconf_hex_file}
+    COMMENT "Printing ${periphconf_hex_file}"
+  )
+endif()
+
+if(CONFIG_GEN_UICR_SECONDARY_GENERATE_PERIPHCONF AND IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE)
+  set(check_cmd ${periphconf_check_base_cmd} --in-periphconf-hex ${secondary_periphconf_hex_file})
+
+  set(secondary_periphconf_validate_build_command
+    COMMAND ${check_cmd} --mode errors
+  )
+
+  add_custom_target(
+    secondary_periphconf_validate
+    COMMAND ${check_cmd} --mode errors
+    DEPENDS ${secondary_periphconf_hex_file}
+    COMMENT "Validating ${secondary_periphconf_hex_file}"
+  )
+  add_custom_target(
+    secondary_periphconf_dump
+    COMMAND ${check_cmd} --mode full
+    DEPENDS ${secondary_periphconf_hex_file}
+    COMMENT "Printing ${secondary_periphconf_hex_file}"
+  )
+  add_custom_target(
+    secondary_periphconf_dump_raw
+    COMMAND ${check_cmd} --mode full --style raw
+    DEPENDS ${secondary_periphconf_hex_file}
+    COMMENT "Printing ${secondary_periphconf_hex_file}"
+  )
+endif()
+
 add_custom_command(
   OUTPUT ${gen_uicr_outputs}
   COMMAND ${PYTHON_EXECUTABLE} ${IRONSIDE_SUPPORT_DIR}/se/tool/ironside/__main__.py
@@ -376,6 +448,8 @@ add_custom_command(
           ${protectedmem_args}
           ${secondary_args}
           ${policy_args}
+  ${periphconf_validate_build_command}
+  ${secondary_periphconf_validate_build_command}
   DEPENDS ${gen_uicr_depends}
   WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
   COMMENT "Generating UICR artifacts"
