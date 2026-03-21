@@ -95,6 +95,14 @@ static int cmd_net_http(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-SHELL_SUBCMD_ADD((net), http, NULL,
-		 "Show HTTP services.",
+/* clang-format off */
+SHELL_SUBCMD_SET_CREATE(sub_http, (net, http));
+
+SHELL_SUBCMD_ADD((net, http), services, NULL,
+		 SHELL_HELP("Show HTTP services", NULL),
 		 cmd_net_http, 1, 0);
+
+SHELL_SUBCMD_ADD((net), http, &sub_http,
+		 SHELL_HELP("HTTP commands", NULL),
+		 NULL, 1, 0);
+/* clang-format on */
