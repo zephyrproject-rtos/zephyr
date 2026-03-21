@@ -17,7 +17,7 @@ int matrixBegin(void);
  * Write packed framebuffer to hardware
  * @param packed Array of uint32_t containing packed LED states
  */
-void matrixWrite(const uint32_t *packed);
+void matrixWriteBuffer(const uint8_t *buf, size_t len);
 
 /**
  * Set individual pixel (alternative direct access)
@@ -38,5 +38,10 @@ void matrixClear(void);
  * Turn on all LEDs
  */
 void matrixFill(void);
+
+/**
+ * Blank the matrix
+ */
+void matrixBlanking(bool on);
 
 #endif /* UNO_Q_MATRIX_HAL_H */

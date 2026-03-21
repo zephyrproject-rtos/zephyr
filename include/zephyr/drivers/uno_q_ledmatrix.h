@@ -21,14 +21,6 @@ extern "C" {
 #define UNO_Q_MATRIX_PIXELS  (UNO_Q_MATRIX_ROWS * UNO_Q_MATRIX_COLS)
 
 /**
- * @brief Initialize the LED matrix
- *
- * @param dev Pointer to the device structure
- * @return 0 on success, negative errno otherwise
- */
-int uno_q_ledmatrix_init(const struct device *dev);
-
-/**
  * @brief Write frame buffer to LED matrix
  *
  * The frame buffer uses packed binary format:
