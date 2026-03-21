@@ -403,21 +403,6 @@ static bool nrf_usbd_common_feeder(nrf_usbd_common_ep_transfer_t *p_next,
 }
 
 /**
- * @brief Change Driver endpoint number to HAL endpoint number.
- *
- * @param ep Driver endpoint identifier.
- *
- * @return Endpoint identifier in HAL.
- *
- * @sa nrf_usbd_common_ep_from_hal
- */
-static inline uint8_t ep_to_hal(nrf_usbd_common_ep_t ep)
-{
-	NRF_USBD_COMMON_ASSERT_EP_VALID(ep);
-	return (uint8_t)ep;
-}
-
-/**
  * @brief Access selected endpoint state structure.
  *
  * Function used to change or just read the state of selected endpoint.
@@ -813,7 +798,7 @@ static uint8_t usbd_dma_scheduler_algorithm(uint32_t req)
  *
  * @return The size of endpoint buffer.
  */
-static inline size_t usbd_ep_iso_capacity(nrf_usbd_common_ep_t ep)
+static __maybe_unused inline size_t usbd_ep_iso_capacity(nrf_usbd_common_ep_t ep)
 {
 	(void)ep;
 
