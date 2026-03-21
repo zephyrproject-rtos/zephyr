@@ -59,14 +59,13 @@ jobs:
           python-version: 3.12
 
       - name: Setup Zephyr project
-        uses: zephyrproject-rtos/action-zephyr-setup@360ff9b36e58499d9eb28015cdcde7ca03a5b04d # v1.0.12
+        uses: zephyrproject-rtos/action-zephyr-setup@main
         with:
           app-path: zephyr
-          toolchains: arm-zephyr-eabi:riscv64-zephyr-elf
+          toolchains: arm-zephyr-eabi:riscv64-zephyr-elf:llvm
           ccache-cache-key: hw-${{ matrix.os }}
 
-      - name: Build firmware
-        working-directory: zephyr
+      - name: Set twister flags
         shell: bash
         run: |
           if [ "${{ runner.os }}" = "macOS" ]; then
@@ -76,15 +75,30 @@ jobs:
           elif [ "${{ runner.os }}-${{ runner.arch }}" == "Linux-ARM64" ]; then
             EXTRA_TWISTER_FLAGS="--exclude-platform native_sim/native"
           fi
-          west twister \
-              -p native_sim -p qemu_cortex_m0 -p qemu_riscv32 -p qemu_riscv64 \
-              --runtime-artifact-cleanup \
-              --force-color \
-              --inline-logs \
-              -T samples/hello_world \
-              -T samples/cpp/hello_world \
-              -v \
-              $EXTRA_TWISTER_FLAGS
+
+          TWISTER_FLAGS="-p native_sim -p qemu_cortex_m0 -p qemu_riscv32 -p qemu_riscv64"
+          TWISTER_FLAGS+=" --runtime-artifact-cleanup"
+          TWISTER_FLAGS+=" --force-color"
+          TWISTER_FLAGS+=" --inline-logs"
+          TWISTER_FLAGS+=" -T samples/hello_world"
+          TWISTER_FLAGS+=" -T samples/cpp/hello_world"
+          TWISTER_FLAGS+=" -v"
+          TWISTER_FLAGS+=" $EXTRA_TWISTER_FLAGS"
+
+          echo "TWISTER_FLAGS=${TWISTER_FLAGS}" >> $GITHUB_ENV
+
+      - name: Build firmware (gcc)
+        working-directory: zephyr
+        shell: bash
+        run: |
+          west twister $TWISTER_FLAGS
+
+      - name: Build firmware (llvm)
+        working-directory: zephyr
+        shell: bash
+        run: |
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr/llvm
+          west twister $TWISTER_FLAGS
 
       - name: Upload artifacts
         if: failure()
