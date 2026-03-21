@@ -1,8 +1,5 @@
 .. zephyr:board:: qemu_or1k
 
-OpenRISC 1000 Emulation (QEMU)
-##############################
-
 Overview
 ********
 
@@ -25,19 +22,7 @@ Hardware
 Supported Features
 ==================
 
-The following hardware features are supported:
-
-+--------------------------------+------------+----------------------+
-| Interface                      | Controller | Driver/Component     |
-+================================+============+======================+
-| OpenRISC Interrupt Controller  | on-chip    | interrupt controller |
-+--------------------------------+------------+----------------------+
-| OpenRISC Tick Timer            | on-chip    | system clock         |
-+--------------------------------+------------+----------------------+
-| NS16550 UART                   | FPGA       | serial port          |
-+--------------------------------+------------+----------------------+
-
-The kernel currently does not support other hardware features on this platform.
+.. zephyr:board-supported-hw::
 
 Devices
 ========
