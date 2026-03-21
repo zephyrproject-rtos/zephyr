@@ -1,0 +1,50 @@
+# Copyright (c) 2026 Siratul Islam <email@sirat.me>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FIDO2
+	bool "FIDO2 authenticator"
+	select ZCBOR
+	select ZCBOR_CANONICAL
+	select PSA_CRYPTO
+	help
+	  Enable the FIDO2/CTAP2 authenticator subsystem.
+
+if FIDO2
+
+module = FIDO2
+module-str = fido2
+source "subsys/logging/Kconfig.template.log_config"
+
+config FIDO2_THREAD_STACK_SIZE
+	int "FIDO2 processing thread stack size"
+	default 4096
+
+config FIDO2_THREAD_PRIORITY
+	int "FIDO2 processing thread priority"
+	default 7
+
+config FIDO2_CBOR_MAX_SIZE
+	int "Maximum CBOR message buffer size"
+	default 1024
+	help
+	  Maximum size of CBOR encoded CTAP2 request and response messages.
+
+config FIDO2_MAX_CREDENTIALS
+	int "Maximum number of resident credentials"
+	default 16
+	help
+	  Maximum number of discoverable (resident) credentials that
+	  can be stored on the device.
+
+config FIDO2_UP_TIMEOUT_MS
+	int "User presence timeout in milliseconds"
+	default 30000
+	help
+	  Time to wait for user presence confirmation before timing out.
+	  Default 30 seconds, as per FIDO2 specification.
+
+rsource "transport/Kconfig"
+rsource "uv/Kconfig"
+rsource "storage/Kconfig"
+
+endif # FIDO2

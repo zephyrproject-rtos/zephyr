@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Siratul Islam <email@sirat.me>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Transport"
+
+config FIDO2_TRANSPORT_USB_HID
+	bool "CTAP over USB HID"
+	depends on USB_DEVICE_STACK_NEXT
+	select USBD_HID_SUPPORT
+	help
+	  Enable FIDO2 communication over USB HID (CTAPHID).
+
+config FIDO2_TRANSPORT_BLE
+	bool "CTAP over BLE"
+	depends on BT
+	depends on BT_PERIPHERAL
+	help
+	  Enable FIDO2 communication over Bluetooth Low Energy.
+
+config FIDO2_TRANSPORT_NFC
+	bool "CTAP over NFC"
+	help
+	  Enable FIDO2 communication over NFC.
+
+endmenu
