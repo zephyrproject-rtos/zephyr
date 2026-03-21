@@ -294,7 +294,7 @@ static inline void *z_impl_k_object_alloc_size(enum k_objects otype,
 /**
  * @brief Free an object
  *
- * @param obj
+ * @param obj Pointer to the kernel object memory address.
  */
 static inline void k_object_free(void *obj)
 {
