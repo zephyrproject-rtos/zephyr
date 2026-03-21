@@ -292,6 +292,9 @@ void tc_attached_snk_exit(void *obj)
 	/* Disable PD */
 	tc_pd_enable(dev, false);
 
+	/* Inform Device Policy Manager of the sink power change */
+	policy_notify(dev, POWER_CHANGE_0A0);
+
 	/* Disable sink path for the PPC */
 	if (data->ppc != NULL) {
 		ret = ppc_set_snk_ctrl(data->ppc, false);
