@@ -162,7 +162,8 @@ struct bt_le_per_adv_data_request {
  *
  * @details When the Controller indicates that one or more synced devices have responded to a
  * periodic advertising subevent indication, @ref bt_le_per_adv_response_info holds the information
- * about the subevent in question, its status, TX power, RSSI of the response, the Constant Tone
+ * about the subevent in question, its status, TX power, RSSI of the response (in dBm), the
+ * Constant Tone
  * Extension of the advertisement, and the slot the response was received in.
  *
  * @note Used in @ref bt_le_ext_adv_cb.
@@ -1597,7 +1598,7 @@ int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
  * and will be called for any discovered LE device.
  *
  * @param addr Advertiser LE address and type.
- * @param rssi Strength of advertiser signal.
+ * @param rssi Strength of advertiser signal in dBm.
  * @param adv_type Type of advertising response from advertiser.
  *                 Uses the @ref bt_gap_adv_type values.
  * @param buf Buffer containing advertiser data.
@@ -1795,7 +1796,8 @@ struct bt_le_per_adv_sync_term_info {
  * @brief Information about a received periodic advertising report.
  *
  * @details This struct holds information about a periodic advertising event that has been received.
- * It contains details such as the advertiser’s address, SID, transmit power, RSSI, CTE type, and
+ * It contains details such as the advertiser’s address, SID, transmit power, RSSI (in dBm), CTE
+ * type, and
  * additional information depending on the configuration (e.g., event counter and subevent in case
  * of a subevent indication). This information is provided in the callback when periodic advertising
  * data is received.
@@ -1812,7 +1814,7 @@ struct bt_le_per_adv_sync_recv_info {
 	/** The TX power of the advertisement. */
 	int8_t tx_power;
 
-	/** The RSSI of the advertisement excluding any CTE. */
+	/** The RSSI of the advertisement excluding any CTE, in dBm. */
 	int8_t rssi;
 
 	/** The Constant Tone Extension (CTE) of the advertisement (@ref bt_df_cte_type) */
@@ -2449,7 +2451,7 @@ struct bt_le_scan_recv_info {
 	/** Advertising Set Identifier, valid range @ref BT_GAP_SID_MIN to @ref BT_GAP_SID_MAX. */
 	uint8_t sid;
 
-	/** Strength of advertiser signal. */
+	/** Strength of advertiser signal in dBm. */
 	int8_t rssi;
 
 	/** Transmit power of the advertiser. */
