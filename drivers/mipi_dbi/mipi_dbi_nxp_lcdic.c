@@ -118,6 +118,7 @@ struct mipi_dbi_lcdic_data {
 	 * This is the case when we exit low power modes where we
 	 * need to configure the hardware registers.
 	 */
+	uint8_t te_to;/*Time out register value, the time out count start in the data transmition*/
 	bool reconfigure_te;
 	/* Are we starting a new display frame */
 	bool new_frame;
@@ -684,7 +685,7 @@ static int mipi_dbi_lcdic_configure_te(const struct device *dev,
 	const struct mipi_dbi_lcdic_config *config = dev->config;
 	LCDIC_Type *base = config->base;
 	struct mipi_dbi_lcdic_data *data = dev->data;
-	uint32_t lcdic_freq, ttew, reg;
+	uint32_t lcdic_freq, ttew, reg, to_reg;
 	uint32_t delay_us = k_ticks_to_us_ceil32(delay.ticks);
 
 	/* Calculate delay based off timer0 ratio. Formula given
@@ -721,6 +722,10 @@ static int mipi_dbi_lcdic_configure_te(const struct device *dev,
 	data->te_edge = edge;
 	data->te_delay = delay;
 	/* We should re-configure te signal when coming out of PM mode */
+	to_reg = base->TE_CTRL;
+	to_reg &= ~LCDIC_TE_CTRL_TE_TO_MASK;
+	to_reg |= LCDIC_TE_CTRL_TE_TO(data->te_to);
+	base->TE_CTRL = to_reg;
 	data->reconfigure_te = true;
 	return 0;
 }
