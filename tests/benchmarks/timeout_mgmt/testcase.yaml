@@ -13,6 +13,15 @@ common:
 
 tests:
   benchmark.timeout_mgmt.simple:
+    extra_configs:
+      - CONFIG_TIMEOUT_MANAGEMENT_DELTAQ=y
+    harness_config:
+      type: one_line
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
+  benchmark.timeout_mgmt.wheel:
+    extra_configs:
+      - CONFIG_TIMEOUT_MANAGEMENT_WHEEL=y
     harness_config:
       type: one_line
       regex:
