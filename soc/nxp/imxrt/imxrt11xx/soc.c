@@ -446,11 +446,48 @@ __weak void clock_init(void)
 #endif
 
 #ifdef CONFIG_SPI_NXP_LPSPI
-	/* Configure input clock to be able to reach the datasheet specified band rate. */
-	rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxOscRc400M;
-	rootCfg.div = 1;
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi1), okay)
+	/* Configure input clock to be able to reach the datasheet specified baud rate. */
+	rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxSysPll3Pfd2;
+	rootCfg.div = 2;
 	CLOCK_SetRootClock(kCLOCK_Root_Lpspi1, &rootCfg);
-#endif
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi1), okay) */
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi2), okay)
+	/* Configure input clock to be able to reach the datasheet specified baud rate. */
+	rootCfg.mux = kCLOCK_LPSPI2_ClockRoot_MuxSysPll3Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpspi2, &rootCfg);
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi2), okay) */
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi3), okay)
+	/* Configure input clock to be able to reach the datasheet specified baud rate. */
+	rootCfg.mux = kCLOCK_LPSPI3_ClockRoot_MuxSysPll3Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpspi3, &rootCfg);
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi3), okay) */
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi4), okay)
+	/* Configure input clock to be able to reach the datasheet specified baud rate. */
+	rootCfg.mux = kCLOCK_LPSPI4_ClockRoot_MuxSysPll3Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpspi4, &rootCfg);
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi4), okay) */
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi5), okay)
+	/* Configure input clock to be able to reach the datasheet specified baud rate. */
+	rootCfg.mux = kCLOCK_LPSPI5_ClockRoot_MuxSysPll3Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpspi5, &rootCfg);
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi5), okay) */
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi6), okay)
+	/* Configure input clock to be able to reach the datasheet specified baud rate. */
+	rootCfg.mux = kCLOCK_LPSPI6_ClockRoot_MuxSysPll3Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpspi6, &rootCfg);
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi6), okay) */
+#endif /* CONFIG_SPI_NXP_LPSPI */
 
 #ifdef CONFIG_VIDEO_MCUX_MIPI_CSI2RX
 	/* MIPI CSI-2 Rx connects to CSI via Video Mux */
