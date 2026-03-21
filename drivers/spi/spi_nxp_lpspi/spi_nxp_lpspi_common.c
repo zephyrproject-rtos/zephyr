@@ -105,7 +105,7 @@ int spi_lpspi_release(const struct device *dev, const struct spi_config *spi_cfg
 	 * released - clear them here so native CS doesn't stay asserted
 	 * indefinitely after a HOLD_ON_CS transaction.
 	 */
-	base->TCR &= ~(LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK);
+	base->TCR = lpspi_read_tcr(base) & ~(LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK);
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
