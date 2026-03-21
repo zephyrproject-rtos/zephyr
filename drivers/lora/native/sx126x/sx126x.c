@@ -1086,6 +1086,15 @@ static int sx126x_lora_recv_duty_cycle_async(const struct device *dev,
 		data->rx_cb_user_data = NULL;
 		if (atomic_cas(&data->state, SX126X_STATE_RX_DUTY_CYCLE,
 			       SX126X_STATE_IDLE)) {
+			/*
+			 * During duty cycle the BUSY pin stays asserted
+			 * even in the sleep phase. Wake the radio via a
+			 * raw NSS edge (bypasses BUSY check) so the
+			 * standby command can go through immediately.
+			 */
+			if (sx126x_hal_is_busy(dev)) {
+				sx126x_hal_wakeup(dev);
+			}
 			sx126x_set_standby(dev, SX126X_STANDBY_RC);
 			sx126x_set_sleep(dev);
 		}
