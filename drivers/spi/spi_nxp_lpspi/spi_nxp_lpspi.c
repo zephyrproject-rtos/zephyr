@@ -410,7 +410,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		base->CFGR1 |= LPSPI_CFGR1_AUTOPCS_MASK;
 	}
 
-	base->CR |= LPSPI_CR_MEN_MASK;
+	lpspi_enable(base, true);
 
 	if (op_mode == SPI_OP_MODE_CONTROLLER) {
 		lpspi_controller_setup_native_cs(dev, spi_cfg);
