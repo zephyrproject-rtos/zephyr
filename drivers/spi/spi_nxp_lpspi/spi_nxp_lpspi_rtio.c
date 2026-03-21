@@ -268,7 +268,7 @@ static void lpspi_isr(const struct device *dev)
 			 * to do is touch the TCR by writing to fifo through TCR register and wait
 			 * for final RX interrupt.
 			 */
-			base->TCR = base->TCR;
+			base->TCR = lpspi_read_tcr(base);
 		}
 	}
 
@@ -344,7 +344,7 @@ static void lpspi_rtio_iodev_start(const struct device *dev)
 	LOG_DBG("Starting LPSPI transfer");
 	spi_context_cs_control(&data->ctx, true);
 
-	base->TCR |= LPSPI_TCR_CONT_MASK;
+	base->TCR = lpspi_read_tcr(base) | LPSPI_TCR_CONT_MASK;
 	/* tcr is written to tx fifo */
 	lpspi_wait_tx_fifo_empty(dev);
 
@@ -378,7 +378,7 @@ static void lpspi_rtio_iodev_complete(const struct device *dev, int status)
 	if (!(ctx->config->operation & SPI_HOLD_ON_CS)) {
 		spi_context_cs_control(&data->ctx, false);
 	}
-	base->TCR &= ~(LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK);
+	base->TCR = lpspi_read_tcr(base) & ~(LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK);
 	/* don't need to wait for TCR since we are at end of xfer + in IRQ context */
 
 	if (spi_rtio_complete(rtio_ctx, status)) {
