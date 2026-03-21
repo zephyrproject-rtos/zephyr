@@ -203,7 +203,9 @@ iniconfig==2.3.0 \
 jinja2==3.1.6 \
     --hash=sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d \
     --hash=sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67
-    # via sphinx
+    # via
+    #   sphinx
+    #   sphinxcontrib-mermaid
 lxml==6.1.0 \
     --hash=sha256:00750d63ef0031a05331b9223463b1c7c02b9004cef2346a5b2877f0f9494dd2 \
     --hash=sha256:022981127642fe19866d2907d76241bb07ed21749601f727d5d5dd1ce5d1b773 \
@@ -544,7 +546,9 @@ pyyaml==6.0.3 \
     --hash=sha256:f7057c9a337546edc7973c0d3ba84ddcdf0daa14533c2065749c9075001090e6 \
     --hash=sha256:fa160448684b4e94d80416c0fa4aac48967a969efe22931448d853ada8baf926 \
     --hash=sha256:fc09d0aa354569bc501d4e787133afc08552722d3ab34836a80547331bb5d4a0
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   sphinxcontrib-mermaid
 requests==2.33.1 \
     --hash=sha256:18817f8c57c6263968bc123d237e3b8b08ac046f5456bd1e307ee8f4250d3517 \
     --hash=sha256:4e6d1ef462f3626a1f0a0a9c42dd93c63bad33f9f1c1937509b8c5c8718ab56a
@@ -584,6 +588,7 @@ sphinx==9.1.0 \
     #   sphinx-tabs
     #   sphinx-togglebutton
     #   sphinxcontrib-jquery
+    #   sphinxcontrib-mermaid
     #   sphinxcontrib-programoutput
     #   sphinxcontrib-svg2pdfconverter
 sphinx-autobuild==2025.8.25 \
@@ -638,6 +643,10 @@ sphinxcontrib-jsmath==1.0.1 \
     --hash=sha256:2ec2eaebfb78f3f2078e73666b1415417a116cc848b72e5172e596c871103178 \
     --hash=sha256:a9925e4a4587247ed2191a22df5f6970656cb8ca2bd6284309578f2153e0c4b8
     # via sphinx
+sphinxcontrib-mermaid==2.0.1 \
+    --hash=sha256:9dca7fbe827bad5e7e2b97c4047682cfd26e3e07398cfdc96c7a8842ae7f06e7 \
+    --hash=sha256:a21a385a059a6cafd192aa3a586b14bf5c42721e229db67b459dc825d7f0a497
+    # via -r requirements.in
 sphinxcontrib-programoutput==0.19 \
     --hash=sha256:787ca068b7e1205ed492ea20a23a8e599c3b4edb8c43bacf564e5ec7c30c7dad \
     --hash=sha256:95ff4219ecee64bebf4fc6d2339cb1c2f313258b9999143e54839d83ae32afd1

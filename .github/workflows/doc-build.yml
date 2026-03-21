@@ -123,6 +123,19 @@ jobs:
         pip install -r scripts/requirements-actions.txt --require-hashes
         pip install -r doc/requirements.txt --require-hashes
 
+    - name: Set up Node.js
+      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      with:
+        node-version: 24
+
+    - name: Install and vendor copies of JS libs within within docs sources
+      run: |
+        npm install --prefix doc
+        for pkg in mermaid d3; do
+          mkdir -p doc/_static/js/${pkg}
+          cp -a doc/node_modules/${pkg}/dist/. doc/_static/js/${pkg}/
+        done
+
     - name: Build HTML documentation
       shell: bash
       run: |
@@ -141,18 +154,13 @@ jobs:
         DOC_TAG=${DOC_TAG} \
         SPHINXOPTS="-j ${JOB_COUNT} -W --keep-going -T" \
         SPHINXOPTS_EXTRA="-q -t publish" \
-        make -C doc ${DOC_TARGET}
+        make -C doc ${DOC_TARGET} NO_EXTERNAL_DEPS=1
 
         # API documentation coverage
         python3 -m coverxygen --xml-dir  doc/_build/html/doxygen/xml/ --src-dir include/ --output doc-coverage.info
         # deprecated page causing issues
         lcov --remove doc-coverage.info \*/deprecated > new.info
         genhtml --no-function-coverage --no-branch-coverage new.info -o coverage-report
-
-    - name: Set up Node.js
-      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-      with:
-        node-version: 24
 
     - name: Run accessibility check (pa11y)
       run: |

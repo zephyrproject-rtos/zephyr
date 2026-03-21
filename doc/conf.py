@@ -76,6 +76,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.graphviz",
     "sphinxcontrib.jquery",
+    "sphinxcontrib.mermaid",
     "sphinxcontrib.programoutput",
     "zephyr.application",
     "zephyr.html_redirects",
@@ -386,6 +387,15 @@ copybutton_prompt_is_regexp = True
 # -- Options for sphinx-sitemap ----------------------------------------
 
 sitemap_url_scheme = "{link}"
+
+#-- Options for sphinxcontrib-mermaid -------------------------------------
+
+mermaid_version = "11.14.0"
+d3_version = "7.9.0"
+
+if tags.has("no-external-deps"): # pylint: disable=undefined-variable  # noqa: F821
+    mermaid_use_local = "../../_static/js/mermaid/mermaid.esm.mjs"
+    d3_use_local = "../../_static/js/d3/d3.min.js"
 
 # -- Linkcheck options ----------------------------------------------------
 
