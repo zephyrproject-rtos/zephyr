@@ -68,27 +68,6 @@ Applications for the ``rsk_rx130@512kb`` board target can be built, flashed, and
 debugged in the usual way. See :ref:`build_an_application` and
 :ref:`application_run` for more details on building and running.
 
-If you want to build Zephyr application for RSK-RX130 board using Renesas GCC RX toolchain follow
-the steps below:
-
-  - Download and install GCC for RX toolchain:
-
-    https://llvm-gcc-renesas.com/rx-download-toolchains/
-
-  - Set env variable:
-
-   .. code-block:: console
-
-      export ZEPHYR_TOOLCHAIN_VARIANT=cross-compile
-      export CROSS_COMPILE=<Path to your toolchain>/bin/rx-elf-
-
-  - Build the Blinky Sample for RSK-RX130-512KB:
-
-   .. code-block:: console
-
-      cd ~/zephyrproject/zephyr
-      west build -p always -b rsk_rx130@512kb samples/basic/blinky
-
 Flashing
 ========
 
