@@ -118,7 +118,7 @@ enum lora_cad_mode {
 	 * CAD before receive: lora_recv() performs CAD first and
 	 * returns 0 immediately if no activity is detected.
 	 * For continuous low-power listening, prefer
-	 * @ref lora_recv_duty_cycle instead.
+	 * @ref lora_recv_duty_cycle_async instead.
 	 */
 	LORA_CAD_MODE_RX,
 
@@ -300,15 +300,15 @@ typedef int (*lora_api_cad_async)(const struct device *dev, lora_cad_cb cb,
 				  void *user_data);
 
 /**
- * @typedef lora_api_recv_duty_cycle()
+ * @typedef lora_api_recv_duty_cycle_async()
  * @brief Callback API for receive duty cycling (wake-on-radio)
  *
- * @see lora_recv_duty_cycle() for argument descriptions.
+ * @see lora_recv_duty_cycle_async() for argument descriptions.
  */
-typedef int (*lora_api_recv_duty_cycle)(const struct device *dev,
-				       k_timeout_t rx_period,
-				       k_timeout_t sleep_period,
-				       lora_recv_cb cb, void *user_data);
+typedef int (*lora_api_recv_duty_cycle_async)(const struct device *dev,
+					      k_timeout_t rx_period,
+					      k_timeout_t sleep_period,
+					      lora_recv_cb cb, void *user_data);
 
 /**
  * @typedef lora_api_test_cw()
@@ -328,7 +328,7 @@ __subsystem struct lora_driver_api {
 	lora_api_recv_async recv_async;
 	lora_api_cad cad;
 	lora_api_cad_async cad_async;
-	lora_api_recv_duty_cycle recv_duty_cycle;
+	lora_api_recv_duty_cycle_async recv_duty_cycle_async;
 	lora_api_test_cw test_cw;
 };
 
@@ -518,18 +518,18 @@ static inline int lora_cad_async(const struct device *dev, lora_cad_cb cb,
  * @param user_data     User data passed to callback
  * @return 0 on success, negative on error
  */
-static inline int lora_recv_duty_cycle(const struct device *dev,
-				       k_timeout_t rx_period,
-				       k_timeout_t sleep_period,
-				       lora_recv_cb cb, void *user_data)
+static inline int lora_recv_duty_cycle_async(const struct device *dev,
+					     k_timeout_t rx_period,
+					     k_timeout_t sleep_period,
+					     lora_recv_cb cb, void *user_data)
 {
 	const struct lora_driver_api *api = DEVICE_API_GET(lora, dev);
 
-	if (api->recv_duty_cycle == NULL) {
+	if (api->recv_duty_cycle_async == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->recv_duty_cycle(dev, rx_period, sleep_period, cb, user_data);
+	return api->recv_duty_cycle_async(dev, rx_period, sleep_period, cb, user_data);
 }
 
 /**
