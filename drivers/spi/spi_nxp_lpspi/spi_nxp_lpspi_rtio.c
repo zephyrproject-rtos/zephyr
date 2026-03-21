@@ -349,7 +349,7 @@ static void lpspi_rtio_iodev_start(const struct device *dev)
 	lpspi_wait_tx_fifo_empty(dev);
 
 	base->FCR = LPSPI_FCR_TXWATER(0) | LPSPI_FCR_RXWATER(config->rx_fifo_size / 2);
-	base->CR |= LPSPI_CR_MEN_MASK;
+	lpspi_enable(base, true);
 
 	/* start the transfer sequence which are handled by irqs */
 	if (lpspi_rtio_next_tx_fill(dev) == false) {

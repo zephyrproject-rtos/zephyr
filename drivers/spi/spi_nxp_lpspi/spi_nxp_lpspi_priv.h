@@ -57,6 +57,34 @@ struct lpspi_data {
 	uint32_t clock_freq;
 };
 
+/* Common helper function to enable or disable the LPSPI module while
+ * taking into account ERR051472
+ */
+static inline void lpspi_enable(LPSPI_Type *base, bool enable)
+{
+	if (enable) {
+		base->CR |= LPSPI_CR_MEN_MASK;
+	} else {
+		base->CR &= ~LPSPI_CR_MEN_MASK;
+		while ((base->CR & LPSPI_CR_MEN_MASK) != 0) {
+			/* According to datasheet, should wait for this MEN bit
+			 * to clear once idle.
+			 */
+		}
+	}
+#if defined(FSL_FEATURE_LPSPI_HAS_ERRATA_051472) && FSL_FEATURE_LPSPI_HAS_ERRATA_051472
+	/*
+	 * ERR051472: The SR[REF] would assert if software disables the LPSPI module
+	 * after receiving some data and then enabled the LPSPI again without performing
+	 * a software reset.
+	 * Workaround: Clear SR[REF] flag after LPSPI module enabled
+	 */
+	if ((base->SR & LPSPI_SR_REF_MASK) != 0U) {
+		base->SR = LPSPI_SR_REF_MASK;
+	}
+#endif /* FSL_FEATURE_LPSPI_HAS_ERRATA_051472 */
+}
+
 /*
  * Avoid register reading problems: Reading the Transmit Command Register will return
  * the current state of the command register. Reading the Transmit Command Register at the

@@ -322,12 +322,10 @@ int lpspi_configure(const struct device *dev, const struct spi_config *spi_cfg)
 	/* this is workaround for ERR050456 */
 	base->CR |= LPSPI_CR_RST_MASK;
 	base->CR |= LPSPI_CR_RRF_MASK | LPSPI_CR_RTF_MASK;
+	base->CR = 0;
 
 	/* Setting the baud rate requires module to be disabled. */
-	base->CR = 0;
-	while ((base->CR & LPSPI_CR_MEN_MASK) != 0) {
-		/* According to datasheet, should wait for this MEN bit to clear once idle */
-	}
+	lpspi_enable(base, false);
 
 	data->ctx.config = spi_cfg;
 
@@ -348,7 +346,7 @@ int lpspi_configure(const struct device *dev, const struct spi_config *spi_cfg)
 		base->CCR = ccr;
 	}
 
-	base->CR |= LPSPI_CR_MEN_MASK;
+	lpspi_enable(base, true);
 
 	base->TCR = LPSPI_TCR_CPOL(!!(spi_cfg->operation & SPI_MODE_CPOL)) |
 		    LPSPI_TCR_CPHA(!!(spi_cfg->operation & SPI_MODE_CPHA)) |
