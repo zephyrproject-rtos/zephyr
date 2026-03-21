@@ -3616,7 +3616,7 @@ __syscall int k_condvar_broadcast(struct k_condvar *condvar);
  *
  * Atomically releases the currently owned mutex, blocks the current thread
  * waiting on the condition variable specified by @a condvar,
- * and finally acquires the mutex again.
+ * and finally acquires the mutex again before returning.
  *
  * The waiting thread unblocks only after another thread calls
  * k_condvar_signal, or k_condvar_broadcast with the same condition variable.

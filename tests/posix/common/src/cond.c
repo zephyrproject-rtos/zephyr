@@ -5,6 +5,7 @@
  */
 
 #include <pthread.h>
+#include <time.h>
 
 #include <zephyr/ztest.h>
 
@@ -70,6 +71,44 @@ ZTEST(cond, test_cond_init_existing_initialized_condattr)
 	/* Clean up */
 	zassert_ok(pthread_cond_destroy(&cond));
 	zassert_ok(pthread_condattr_destroy(&att));
+}
+
+/**
+ * @brief Verify pthread_cond_timedwait relocks the mutex on timeout.
+ *
+ * IEEE 1003.1 §11.4.4 states that pthread_cond_timedwait() shall always
+ * return with the mutex locked, even when the wait times out. This test
+ * confirms the mutex is held after a timeout so that callers do not need
+ * to relock it themselves.
+ */
+ZTEST(cond, test_pthread_cond_timedwait_timeout_relocks_mutex)
+{
+	int ret;
+	pthread_cond_t cond;
+	pthread_mutex_t mutex;
+	struct timespec abstime = {
+		/* Use a timestamp well in the past to trigger an immediate timeout. */
+		.tv_sec = 1,
+		.tv_nsec = 0,
+	};
+
+	zassert_ok(pthread_mutex_init(&mutex, NULL));
+	zassert_ok(pthread_cond_init(&cond, NULL));
+
+	zassert_ok(pthread_mutex_lock(&mutex));
+
+	ret = pthread_cond_timedwait(&cond, &mutex, &abstime);
+	zassert_equal(ret, ETIMEDOUT, "expected ETIMEDOUT, got %d", ret);
+
+	/*
+	 * POSIX requires the mutex to be locked on return. Unlocking it must
+	 * succeed; if the mutex were not held this would return EPERM.
+	 */
+	zassert_ok(pthread_mutex_unlock(&mutex),
+		   "mutex not held after pthread_cond_timedwait timeout");
+
+	zassert_ok(pthread_cond_destroy(&cond));
+	zassert_ok(pthread_mutex_destroy(&mutex));
 }
 
 ZTEST_SUITE(cond, NULL, NULL, NULL, NULL, NULL);
