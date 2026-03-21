@@ -1,7 +1,7 @@
-# Copyright 2026 Shankar Sridhar
-# SPDX-License-Identifier: Apache-2.0
-
-/*
+ /*   
+ *   Copyright 2026 Shankar Sridhar
+ *   SPDX-License-Identifier: Apache-2.0
+ * 
  * Arduino UNO Q LED Matrix - Charlieplex Pin Mapping
  * 
  * Hardware: 8 rows × 13 columns = 104 LEDs
