@@ -17,6 +17,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_SHELL_DNS_RESOLVER_SUPPORTED dns.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_EVENT_MONITOR_SUPPORTED events.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_FTP_SUPPORTED ftp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_GPTP_SUPPORTED gptp.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_HTTP_CLIENT_SUPPORTED http_client.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_HTTP_SERVER_SUPPORTED http.c)
 zephyr_library_sources(iface.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_CONNECTION_MANAGER_SUPPORTED cm.c)
@@ -41,3 +42,21 @@ zephyr_library_sources_ifdef(CONFIG_NET_SHELL_VLAN_SUPPORTED vlan.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_WEBSOCKET_SUPPORTED websocket.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_QBV_SUPPORTED qbv_shell.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_WIREGUARD_SUPPORTED wg_shell.c)
+
+if(CONFIG_NET_SHELL_HTTP_CLIENT_HAS_CERTIFICATE)
+  set(CERTIFICATE_PATH
+    ${APPLICATION_SOURCE_DIR}/certs/${CONFIG_NET_SHELL_HTTP_CLIENT_CERTIFICATE}
+  )
+
+  if(NOT EXISTS ${CERTIFICATE_PATH})
+    message(FATAL_ERROR
+      "HTTP client SSL certificate not found: ${CERTIFICATE_PATH}"
+    )
+  endif()
+
+  generate_inc_file_for_target(
+    app
+    ${CERTIFICATE_PATH}
+    ${ZEPHYR_BINARY_DIR}/include/generated/certs.der.inc
+  )
+endif()

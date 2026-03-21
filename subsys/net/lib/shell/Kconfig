@@ -70,6 +70,40 @@ config NET_SHELL_GPTP_SUPPORTED
 	default y
 	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_GPTP
 
+config NET_SHELL_HTTP_CLIENT_SUPPORTED
+	bool "HTTP client"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || HTTP_CLIENT
+	select NET_CONNECTION_MANAGER if HTTP_CLIENT
+	select DNS_RESOLVER if HTTP_CLIENT
+
+if NET_SHELL_HTTP_CLIENT_SUPPORTED
+
+config NET_SHELL_HTTP_CLIENT_URL_LEN
+	int "HTTP client URL length"
+	default 128
+
+config NET_SHELL_HTTP_CLIENT_CERTIFICATE
+	string "HTTP client SSL Certificate"
+	depends on TLS_CREDENTIALS
+	help
+	  Provide filename of the DER-encoded CA certificate,
+	  placed under the <app>/certs/ directory.
+
+	  Example:
+	    CONFIG_NET_SHELL_HTTP_CLIENT_CERTIFICATE="globalsign_r1.der"
+
+config NET_SHELL_HTTP_CLIENT_CERTIFICATE_TAG
+	int "HTTP client SSL Certificate TAG"
+	default 1
+	depends on TLS_CREDENTIALS
+
+config NET_SHELL_HTTP_CLIENT_HAS_CERTIFICATE
+	bool
+	default y if NET_SHELL_HTTP_CLIENT_CERTIFICATE != ""
+
+endif # NET_SHELL_HTTP_CLIENT_SUPPORTED
+
 config NET_SHELL_HTTP_SERVER_SUPPORTED
 	bool "HTTP server status"
 	default y
