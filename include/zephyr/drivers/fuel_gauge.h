@@ -3,6 +3,7 @@
  * Copyright 2023 Microsoft Corporation
  * Copyright (c) 2025 Philipp Steiner <philipp.steiner1987@gmail.com>
  * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * Copyright (c) 2026 Analog Devices Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -134,6 +135,8 @@ enum fuel_gauge_prop_type {
 	FUEL_GAUGE_CC_CONFIG,
 	/** State of Health (SoH) (percent, 0-100)*/
 	FUEL_GAUGE_STATE_OF_HEALTH,
+	/** Thermistor Voltage Sense reading (uV)  */
+	FUEL_GAUGE_THERM_VOLTAGE_UV,
 
 	/** Reserved to demark end of common fuel gauge properties */
 	FUEL_GAUGE_COMMON_COUNT,
@@ -240,6 +243,8 @@ union fuel_gauge_prop_val {
 	uint8_t cc_config;
 	/** FUEL_GAUGE_STATE_OF_HEALTH */
 	uint8_t state_of_health;
+	/** FUEL_GAUGE_THERM_VOLTAGE_UV */
+	uint32_t therm_voltage_uv;
 };
 
 /**
