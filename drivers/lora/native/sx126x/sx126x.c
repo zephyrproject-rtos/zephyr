@@ -554,6 +554,27 @@ static void sx126x_handle_irq_tx_done(const struct device *dev)
 	k_msgq_put(&data->tx_msgq, &result, K_NO_WAIT);
 }
 
+static void sx126x_rx_restart(const struct device *dev)
+{
+	struct sx126x_data *data = dev->data;
+
+	if (atomic_get(&data->state) == SX126X_STATE_RX_DUTY_CYCLE) {
+		int ret;
+
+		ret = sx126x_set_rx_duty_cycle(dev,
+					       data->duty_cycle.rx_period,
+					       data->duty_cycle.sleep_period);
+		if (ret < 0) {
+			data->rx_cb = NULL;
+			data->rx_cb_user_data = NULL;
+			atomic_set(&data->state, SX126X_REST_STATE);
+			sx126x_set_sleep(dev);
+		}
+	} else {
+		sx126x_set_rx(dev, 0);
+	}
+}
+
 static void sx126x_handle_irq_rx_done(const struct device *dev, uint16_t irq_status)
 {
 	struct sx126x_data *data = dev->data;
@@ -566,69 +587,52 @@ static void sx126x_handle_irq_rx_done(const struct device *dev, uint16_t irq_sta
 	if (ret < 0) {
 		LOG_ERR("Failed to get RX buffer status");
 		result.status = ret;
-	} else {
-		/* Get signal quality */
-		sx126x_get_packet_status(dev, &result.rssi, &result.snr);
-
-		/* Check for CRC error */
-		if (irq_status & SX126X_IRQ_CRC_ERR) {
-			LOG_WRN("CRC error");
-			result.status = -EIO;
-		} else {
-			/* Read payload into shared buffer */
-			result.len = MIN(payload_len, sizeof(data->rx_buf));
-			ret = sx126x_hal_read_buffer(dev, offset,
-						     data->rx_buf, result.len);
-			if (ret < 0) {
-				LOG_ERR("Failed to read RX buffer");
-				result.status = ret;
-			} else {
-				result.status = result.len;
-				LOG_DBG("RX done: %d bytes, RSSI=%d, SNR=%d",
-					result.len, result.rssi, result.snr);
-			}
-		}
+		goto out;
 	}
 
-	/* Handle async callback or signal sync receiver */
-	if (data->rx_cb != NULL) {
-		/*
-		 * Async mode: only report valid packets.
-		 * CRC/read failures are dropped and RX is restarted.
-		 */
-		if (result.status > 0) {
-			data->rx_cb(dev, data->rx_buf, result.len,
-				    result.rssi, result.snr,
-				    data->rx_cb_user_data);
-		}
-		/* Restart reception unless the callback stopped it */
-		if (data->rx_cb != NULL) {
-			if (atomic_get(&data->state) == SX126X_STATE_RX_DUTY_CYCLE) {
-				ret = sx126x_set_rx_duty_cycle(
-					dev,
-					data->duty_cycle.rx_period,
-					data->duty_cycle.sleep_period);
-				if (ret < 0) {
-					data->rx_cb = NULL;
-					data->rx_cb_user_data = NULL;
-					atomic_set(&data->state, SX126X_REST_STATE);
-					sx126x_set_sleep(dev);
-				}
-			} else {
-				sx126x_set_rx(dev, 0);
-			}
-		}
-	} else {
-		/* Sync mode */
+	sx126x_get_packet_status(dev, &result.rssi, &result.snr);
+
+	if (irq_status & SX126X_IRQ_CRC_ERR) {
+		LOG_WRN("CRC error");
+		result.status = -EIO;
+		goto out;
+	}
+
+	result.len = MIN(payload_len, sizeof(data->rx_buf));
+	ret = sx126x_hal_read_buffer(dev, offset, data->rx_buf, result.len);
+	if (ret < 0) {
+		LOG_ERR("Failed to read RX buffer");
+		result.status = ret;
+		goto out;
+	}
+
+	result.status = result.len;
+	LOG_DBG("RX done: %d bytes, RSSI=%d, SNR=%d",
+		result.len, result.rssi, result.snr);
+
+out:
+	if (data->rx_cb == NULL) {
 		sx126x_set_sleep(dev);
 		k_msgq_put(&data->rx_msgq, &result, K_NO_WAIT);
+		return;
+	}
+
+	/* Async mode: deliver valid packets, drop errors silently */
+	if (result.status > 0) {
+		data->rx_cb(dev, data->rx_buf, result.len,
+			    result.rssi, result.snr,
+			    data->rx_cb_user_data);
+	}
+
+	/* Restart reception unless the callback stopped it */
+	if (data->rx_cb != NULL) {
+		sx126x_rx_restart(dev);
 	}
 }
 
 static void sx126x_handle_irq_timeout(const struct device *dev)
 {
 	struct sx126x_data *data = dev->data;
-	int ret;
 
 	LOG_DBG("Timeout");
 
@@ -637,14 +641,7 @@ static void sx126x_handle_irq_timeout(const struct device *dev)
 		 * Preamble was detected but full packet reception failed.
 		 * The radio fell back to STDBY_RC — restart the duty cycle.
 		 */
-		ret = sx126x_set_rx_duty_cycle(dev, data->duty_cycle.rx_period,
-					       data->duty_cycle.sleep_period);
-		if (ret < 0) {
-			data->rx_cb = NULL;
-			data->rx_cb_user_data = NULL;
-			atomic_set(&data->state, SX126X_REST_STATE);
-			sx126x_set_sleep(dev);
-		}
+		sx126x_rx_restart(dev);
 		return;
 	}
 
