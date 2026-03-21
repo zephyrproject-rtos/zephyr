@@ -779,6 +779,75 @@ Graphviz's DOT language.
 .. _Graphviz: https://graphviz.org
 .. _Graphviz documentation: https://graphviz.org/documentation
 
+Mermaid
+=======
+
+`Mermaid`_ is a tool for creating diagrams and visualizations using a simple text-based syntax. It
+is particularly well-suited for creating flowcharts, sequence diagrams, class diagrams, and
+state transition diagrams.
+
+To include a mermaid diagram in a document, use the :rst:dir:`mermaid` directive. For example::
+
+   .. mermaid::
+      :caption: State transition diagram for a GPIO debounce
+      :alt: GPIO debounce state diagram showing transitions between inactive and active states
+            through maybe_active and maybe_inactive intermediate states before each state becomes
+            stable.
+
+      stateDiagram-v2
+
+          State inactive {
+              [*] --> stable_inactive
+              stable_inactive --> maybe_active : edge to active
+              maybe_active --> stable_inactive : edge to inactive
+          }
+
+          State active {
+              [*] --> stable_active
+              stable_active --> maybe_inactive : edge to inactive
+              maybe_inactive --> stable_active : edge to active
+          }
+
+          [*] --> inactive
+
+          maybe_active --> active : After(x ms)
+          maybe_inactive --> inactive : After(x ms)
+
+
+Would render as:
+
+.. mermaid::
+   :caption: State transition diagram for a GPIO debounce
+   :alt: GPIO debounce state diagram showing transitions between inactive and active states
+         through maybe_active and maybe_inactive intermediate states before each state becomes
+         stable.
+
+   stateDiagram-v2
+
+       State inactive {
+           [*] --> stable_inactive
+           stable_inactive --> maybe_active : edge to active
+           maybe_active --> stable_inactive : edge to inactive
+       }
+
+       State active {
+           [*] --> stable_active
+           stable_active --> maybe_inactive : edge to inactive
+           maybe_inactive --> stable_active : edge to active
+       }
+
+       [*] --> inactive
+
+       maybe_active --> active : After(x ms)
+       maybe_inactive --> inactive : After(x ms)
+
+
+For references about supported diagrams, syntax, and samples; please refer to the `Mermaid documentation`_.
+For fast iteration when creating or updating diagrams, you can use the `Mermaid live editor`_.
+
+.. _Mermaid: https://mermaid.js.org/
+.. _Mermaid documentation: https://mermaid.js.org/intro/
+.. _Mermaid live editor: https://mermaid.live/
 
 Custom Sphinx Roles and Directives
 **********************************
