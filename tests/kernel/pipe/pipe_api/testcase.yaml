@@ -3,3 +3,13 @@ tests:
     tags:
       - kernel
       - userspace
+  kernel.pipe.api.benchmark:
+    platform_allow:
+      - qemu_x86
+    integration_platforms:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_ZTEST_BENCHMARK=y
+    tags:
+      - kernel
+      - benchmark

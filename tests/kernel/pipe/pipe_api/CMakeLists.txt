@@ -10,3 +10,9 @@ target_sources(app
   ${CMAKE_CURRENT_SOURCE_DIR}/src/stress.c
   ${CMAKE_CURRENT_SOURCE_DIR}/src/concurrency.c
 )
+
+target_sources_ifdef(CONFIG_ZTEST_BENCHMARK
+  app
+  PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/benchmarks.c
+)
