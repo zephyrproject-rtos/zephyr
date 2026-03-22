@@ -81,7 +81,7 @@ properties:
     default: 0
     description: |
       - 0: Always 4x refresh
-      - 1: Enables 1x refesh when temperature allows
+      - 1: Enables 1x refresh when temperature allows
       - 3: Enables 0.5x refresh when temperature allows
     enum:
       - 0

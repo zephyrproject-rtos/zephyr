@@ -74,7 +74,7 @@ properties:
   noncontinuous-hs-clk:
     type: boolean
     description:
-      Enable non-contiuous high speed clock. Saves power but introduces latency
+      Enable non-continuous high speed clock. Saves power but introduces latency
       when transitioning to high speed mode.
 
   ulps-control:

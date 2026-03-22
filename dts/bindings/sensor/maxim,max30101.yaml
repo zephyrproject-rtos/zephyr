@@ -136,6 +136,6 @@ properties:
       2: InfraRed LED
       3: Green LED
       Default set to [0, 0, 0, 0], no LED activated in multi-LED mode.
-      User needs to choose wich LED is active for each slot.
+      User needs to choose which LED is active for each slot.
       NOTE: If a LED is present on multiple slots, `sensor_channel_get`
       will result in the averaging of the values.

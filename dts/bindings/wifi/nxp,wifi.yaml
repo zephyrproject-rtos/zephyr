@@ -15,7 +15,7 @@ properties:
     description: |
       WLAN wakeup host pin
       This pin defaults to active low when consumed by the SDK card. The
-      property value should ensure the flags properly describ the signal
+      property value should ensure the flags properly describe the signal
       that is presendted to the driver.
   pwr-gpios:
     type: phandle-array

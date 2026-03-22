@@ -73,7 +73,7 @@ properties:
     type: int
     required: true
     description: |
-      AVDD value in milivolts, for converting samples to voltage
+      AVDD value in millivolts, for converting samples to voltage
 
   dout-trig-gpios:
     type: phandle-array

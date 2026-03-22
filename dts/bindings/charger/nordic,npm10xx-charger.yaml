@@ -197,7 +197,7 @@ properties:
   enable-advanced-profile:
     type: boolean
     description: |
-      Use custom values for termination voltage and charge current in warm and cool termperature
+      Use custom values for termination voltage and charge current in warm and cool temperature
       regions. The default JEITA values will be used otherwise.
 
   enable-throttle-charging:
