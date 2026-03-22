@@ -5,7 +5,7 @@
  */
 
 /**
- * @brief File containing netowrk stack interface specific definitions for the
+ * @brief File containing network stack interface specific definitions for the
  * Zephyr OS layer of the Wi-Fi driver.
  */
 
