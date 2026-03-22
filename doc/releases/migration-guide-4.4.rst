@@ -23,6 +23,7 @@ the :ref:`release notes<zephyr_4.4>`.
 Common
 ******
 
+* The minimum required Zephyr SDK version is now 1.0.0.
 * The minimum required Python version is now 3.12 (from 3.10).
 
 Build System
