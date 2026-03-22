@@ -170,7 +170,7 @@ __weak void clock_init(void)
 
 	#if (DT_NODE_HAS_STATUS_OKAY(SCG_CLOCK_NODE(sosc_clk)) &&	\
 		 DT_NODE_HAS_STATUS_OKAY(SCG_CLOCK_NODE(spll_clk)))
-	/* Configure System PLL only if system oscilator is initialized */
+	/* Configure System PLL only if system oscillator is initialized */
 	/* as the oscillator is the only SPLL clock source.*/
 	CLOCK_InitSysPll(&scg_spll_config);
 	#endif
