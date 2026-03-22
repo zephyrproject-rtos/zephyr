@@ -316,7 +316,7 @@ static int adc_gd32_start_read(const struct device *dev,
 		adc_gd32_calibration(cfg);
 	}
 
-	/* Signle conversion mode with regular group. */
+	/* Single conversion mode with regular group. */
 	ADC_RSQ2(cfg->reg) &= ~ADC_RSQX_RSQN;
 	ADC_RSQ2(cfg->reg) = index;
 
