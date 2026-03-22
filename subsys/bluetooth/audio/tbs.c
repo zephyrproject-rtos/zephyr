@@ -291,26 +291,31 @@ static bool is_authorized(const struct tbs_inst *inst, struct bt_conn *conn)
 static bool uri_scheme_in_list(const char *uri_scheme, const char *uri_scheme_list)
 {
 	const size_t scheme_len = strlen(uri_scheme);
-	const size_t scheme_list_len = strlen(uri_scheme_list);
-	const char *uri_scheme_cand = uri_scheme_list;
-	size_t uri_scheme_cand_len;
-	size_t start_idx = 0;
+	const char *start = uri_scheme_list;
+	const char *end;
 
-	for (size_t i = 0; i < scheme_list_len; i++) {
-		if (uri_scheme_list[i] == ',') {
-			uri_scheme_cand_len = i - start_idx;
-			if (uri_scheme_cand_len != scheme_len) {
-				continue;
-			}
+	if (scheme_len == 0U) {
+		return false;
+	}
 
-			if (memcmp(uri_scheme, uri_scheme_cand, scheme_len) == 0) {
-				return true;
-			}
-
-			if (i + 1 < scheme_list_len) {
-				uri_scheme_cand = &uri_scheme_list[i + 1];
-			}
+	while (*start) {
+		end = strchr(start, ',');
+		if (end == NULL) {
+			/* If end is NULL, we set end to the NULL terminator of start */
+			end = start + strlen(start);
 		}
+
+		if ((size_t)(end - start) == scheme_len &&
+		    memcmp(start, uri_scheme, scheme_len) == 0) {
+			return true;
+		}
+
+		if (*end == '\0') {
+			break;
+		}
+
+		/* Set start to the next character after `,` */
+		start = end + 1;
 	}
 
 	return false;
