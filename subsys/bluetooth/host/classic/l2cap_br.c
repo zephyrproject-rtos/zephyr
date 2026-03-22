@@ -151,7 +151,7 @@ enum {
 	/* fixed channels flags */
 	L2CAP_FLAG_FIXED_CONNECTED, /* fixed connected */
 
-	/* Retransmition and flow control flags*/
+	/* Retransmission and flow control flags*/
 	L2CAP_FLAG_RET_TIMER,   /* Retransmission timer is working */
 
 	/* Receiving S-frame/I-frame flags */
