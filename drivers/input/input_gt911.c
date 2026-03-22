@@ -326,7 +326,7 @@ static int gt911_init(const struct device *dev)
 	/* Delay at least 10 ms after power on before we configure gt911 */
 	k_sleep(K_MSEC(20));
 	if (config->rst_gpio.port != NULL) {
-		/* reset the device and confgiure the addr mode0 */
+		/* reset the device and configure the addr mode0 */
 		gpio_pin_set_dt(&config->rst_gpio, 1);
 		/* hold down at least 1us, 1ms here */
 		k_sleep(K_MSEC(1));

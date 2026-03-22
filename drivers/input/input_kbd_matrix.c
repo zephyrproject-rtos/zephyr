@@ -55,7 +55,7 @@ static bool input_kbd_matrix_ghosting(const struct device *dev)
 			 * indication of ghosting, due to current flowing from
 			 * a key which was never pressed. In our case, current
 			 * flowing is a bit set to 1 as we flipped the bits
-			 * when the matrix was scanned. Now we OR the colums
+			 * when the matrix was scanned. Now we OR the columns
 			 * using z&(z-1) which is non-zero only if z has more
 			 * than one bit set.
 			 */

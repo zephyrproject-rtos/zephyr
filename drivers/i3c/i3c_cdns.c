@@ -500,9 +500,9 @@ LOG_MODULE_REGISTER(I3C_CADENCE, CONFIG_I3C_CADENCE_LOG_LEVEL);
 struct cdns_i3c_hw_config {
 	/* Revision ID */
 	uint32_t rev_id;
-	/* The maxiumum command queue depth. */
+	/* The maximum command queue depth. */
 	uint32_t cmd_mem_depth;
-	/* The maxiumum command response queue depth. */
+	/* The maximum command response queue depth. */
 	uint32_t cmdr_mem_depth;
 	/* The maximum RX FIFO depth. */
 	uint32_t rx_mem_depth;
@@ -1643,7 +1643,7 @@ static int cdns_i3c_do_daa(const struct device *dev)
 	/* ignore the controller register */
 	olddevs |= BIT(0);
 
-	/* Assign dynamic addressses to available RRs */
+	/* Assign dynamic addresses to available RRs */
 	/* Loop through each clear bit */
 	for (uint8_t i = find_lsb_set(~olddevs); i <= data->max_devs; i++) {
 		uint8_t rr_idx = i - 1;
@@ -1943,7 +1943,7 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 			if ((was_full) && (data->xfer.cmds[i].len > *data->xfer.cmds[i].num_xfer)) {
 				ret = -ENOSPC;
 			} else {
-				LOG_DBG("%s: Controller Abort due to buffer length excedded with "
+				LOG_DBG("%s: Controller Abort due to buffer length exceeded with "
 					"no EoD from target",
 					dev->name);
 			}
@@ -1960,7 +1960,7 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 			 * be problematic for CCCs that can have variable length such
 			 * as GETMXDS and GETCAPS. Verify the number of bytes received matches
 			 * what's expected from the specification and ignore the error. The IP will
-			 * still retramsit the same CCC and theres nothing that can be done to
+			 * still retramsit the same CCC and there's nothing that can be done to
 			 * prevent this. It it still up to the application to read `num_xfer` to
 			 * determine the number of bytes returned.
 			 */
