@@ -188,7 +188,7 @@ int rv3032_counter_cancel_alarm(const struct device *dev, uint8_t chan_id)
 		return -ENOTSUP;
 	}
 
-	/* disable counter interrut */
+	/* disable counter interrupt */
 	err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL1, RV3032_CONTROL1_TE, 0);
 	if (err) {
 		LOG_ERR("Status register read failed after EEPROM refresh: %d", err);

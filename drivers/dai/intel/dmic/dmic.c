@@ -215,7 +215,7 @@ static inline void dai_dmic_sync_prepare(const struct dai_intel_dmic *dmic)
 		    base + DMICSYNC_OFFSET);
 }
 
-/* Trigering synchronization of command execution */
+/* Triggering synchronization of command execution */
 static void dmic_sync_trigger(const struct dai_intel_dmic *dmic)
 {
 	uint32_t base = dai_dmic_base(dmic);

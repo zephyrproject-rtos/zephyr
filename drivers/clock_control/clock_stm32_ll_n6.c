@@ -930,7 +930,7 @@ int stm32_clock_control_init(const struct device *dev)
 		return r;
 	}
 
-	/* Preset the prescalers prior to chosing SYSCLK */
+	/* Preset the prescalers prior to choosing SYSCLK */
 	/* Prevents APB clock to go over limits */
 	/* Set buses (AHB, APB1, APB2, APB4 & APB5) prescalers */
 	LL_RCC_SetAHBPrescaler(ahb_prescaler(STM32_AHB_PRESCALER));

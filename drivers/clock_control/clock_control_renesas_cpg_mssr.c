@@ -209,7 +209,7 @@ static void rcar_cpg_change_children_in_out_freq(const struct device *dev,
 			return;
 		}
 
-		/* child can have childrens */
+		/* child can have children */
 		rcar_cpg_change_children_in_out_freq(dev, children_list);
 		children_list = children_list->next_sibling;
 	}

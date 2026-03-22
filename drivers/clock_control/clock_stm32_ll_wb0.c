@@ -727,7 +727,7 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Unconditionally enable SYSCFG clock for other drivers */
 	LL_APB0_GRP1_EnableClock(LL_APB0_GRP1_PERIPH_SYSCFG);
 
-	/* Set up indiviual enabled clocks */
+	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
 	/* Set up the slow clock mux */

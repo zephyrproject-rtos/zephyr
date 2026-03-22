@@ -810,7 +810,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 
 #if defined(CONFIG_MEMC)
 /*
- * Weak implemenetation of flexspi_clock_set_freq- SOC implementations are
+ * Weak implementation of flexspi_clock_set_freq- SOC implementations are
  * expected to override this
  */
 __weak int flexspi_clock_set_freq(uint32_t clock_name, uint32_t freq)
