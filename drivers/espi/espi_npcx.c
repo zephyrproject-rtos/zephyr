@@ -351,7 +351,7 @@ static void espi_bus_cfg_update_isr(const struct device *dev)
 	}
 
 #if (defined(CONFIG_ESPI_FLASH_CHANNEL) && defined(CONFIG_ESPI_TAF))
-	/* If CONFIG_ESPI_TAF is set, set to auto or manual mode accroding
+	/* If CONFIG_ESPI_TAF is set, set to auto or manual mode according
 	 * to configuration.
 	 */
 	if (IS_BIT_SET(inst->ESPICFG, NPCX_ESPICFG_FLCHANMODE)) {
@@ -1045,7 +1045,7 @@ static int espi_npcx_send_oob(const struct device *dev,
 
 	/*
 	 * Notify host a new OOB packet is ready. Please don't write OOB_FREE
-	 * to 1 at the same tiem in case clear it unexpectedly.
+	 * to 1 at the same time in case clear it unexpectedly.
 	 */
 	oob_data = inst->OOBCTL & ~(BIT(NPCX_OOBCTL_OOB_FREE));
 	oob_data |= BIT(NPCX_OOBCTL_OOB_AVAIL);
@@ -1172,7 +1172,7 @@ static int espi_npcx_flash_parse_completion(const struct device *dev)
 	 * First 3 bytes of flash cycle completion header in rx buffer
 	 *
 	 * [24:31] - LEN[0:7]   Data length of flash cycle completion package
-	 * [16:23] - LEN[8:15]  Ignore it since rx bufer size is 64 bytes
+	 * [16:23] - LEN[8:15]  Ignore it since rx buffer size is 64 bytes
 	 * [12:15] - TAG        Tag of flash cycle completion package
 	 * [8:11]  - CYCLE_TYPE Cycle type of flash completion
 	 * [0:7]   - Reserved
@@ -1195,7 +1195,7 @@ static int espi_npcx_flash_parse_completion_with_data(const struct device *dev,
 	 * First 3 bytes of flash cycle completion header in rx buffer
 	 *
 	 * [24:31] - LEN[0:7]   Data length of flash cycle completion package
-	 * [16:23] - LEN[8:15]  Ignore it since rx bufer size is 64 bytes
+	 * [16:23] - LEN[8:15]  Ignore it since rx buffer size is 64 bytes
 	 * [12:15] - TAG        Tag of flash cycle completion package
 	 * [8:11]  - CYCLE_TYPE Cycle type of flash completion
 	 * [0:7]   - Reserved

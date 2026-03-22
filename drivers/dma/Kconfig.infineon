@@ -45,7 +45,7 @@ config INFINEON_DESCRIPTOR_POOL_SIZE
 	default 10
 	depends on DMA_INFINEON_CAT1_PDL
 	help
-	  This option provides the descritor pool size used for the DMA PDL driver
+	  This option provides the descriptor pool size used for the DMA PDL driver
 
 config INFINEON_DMA_MAX_XFERS
 	int "Maximum blocks to transfer"

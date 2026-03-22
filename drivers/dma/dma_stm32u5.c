@@ -873,7 +873,7 @@ static DEVICE_API(dma, dma_funcs) = {
 	}
 
 /*
- * Macro to instanciate the irq handler (order is given by the 'listify')
+ * Macro to instantiate the irq handler (order is given by the 'listify')
  * chan: channel of the DMA instance (assuming one irq per channel)
  *       stm32U5x has 16 channels
  * dma : dma instance (one GPDMA instance on stm32U5x)
