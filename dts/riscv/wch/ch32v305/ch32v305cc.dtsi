@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 James Bennion-Pedley
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch32v305/ch32v305.dtsi>
+
+&gpioc {
+	gpio-reserved-ranges = <0 13>;
+};
+
+&gpiod {
+	gpio-reserved-ranges = <2 14>;
+};
+
+&gpioe {
+	gpio-reserved-ranges = <0 16>;
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(480)>;
+};
