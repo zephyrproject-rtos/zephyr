@@ -162,7 +162,7 @@ int8_t nm_bus_ioctl(uint8_t cmd, void *parameter)
 #endif
 	default:
 		ret = -1;
-		M2M_ERR("ERROR:invalid ioclt cmd\n");
+		M2M_ERR("ERROR:invalid ioctl cmd\n");
 		break;
 	}
 

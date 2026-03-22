@@ -142,7 +142,7 @@ int nrf_wifi_set_power_save(const struct device *dev,
 	}
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: Confiuring PS param %d failed",
+		LOG_ERR("%s: Configuring PS param %d failed",
 			__func__, params->type);
 		params->fail_reason =
 			WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL;
