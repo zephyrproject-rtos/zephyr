@@ -302,7 +302,7 @@ usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev, struct uhc_trans
 	 * Otherwise the priv->mcux_eps will be used up after
 	 * supporting hub and connecting/disconnecting multiple times.
 	 * For example: add endpoint/pipe init and de-init controller
-	 * interafce to resolve the issue.
+	 * interface to resolve the issue.
 	 */
 	uhc_mcux_lock(dev);
 	for (i = 0; i < USB_HOST_CONFIG_MAX_PIPES; i++) {

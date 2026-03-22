@@ -407,7 +407,7 @@ static int usb_dc_stm32_phy_specific_clock_enable(const struct device *const clk
 {
 	int err;
 
-	/* Sequence to enable the power of the OTG HS on a stm32U5 serie : Enable VDDUSB */
+	/* Sequence to enable the power of the OTG HS on a stm32U5 series : Enable VDDUSB */
 	bool pwr_clk = LL_AHB3_GRP1_IsEnabledClock(LL_AHB3_GRP1_PERIPH_PWR);
 
 	if (!pwr_clk) {

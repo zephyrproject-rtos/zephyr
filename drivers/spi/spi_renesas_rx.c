@@ -616,7 +616,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	} while (rx_spi_transfer_ongoing(data));
 
 	if (SPI_OP_MODE_GET(data->ctx.config->operation) == SPI_OP_MODE_MASTER) {
-		/* Wait for transmision complete */
+		/* Wait for transmission complete */
 		while (data->preg->SPSR.BIT.IDLNF) {
 			if (data->preg->SPSR.BIT.SPRF) {
 				/* Drop the incoming data because there are no rx */

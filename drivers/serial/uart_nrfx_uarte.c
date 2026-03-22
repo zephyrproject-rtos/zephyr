@@ -1494,7 +1494,7 @@ static void timer_isr(const void *arg)
 		usr_buf_complete(dev);
 	}
 
-	/* Must be after user buf complet CC handling. */
+	/* Must be after user buf complete CC handling. */
 	if (timer_ch_evt_check_clear(cfg->timer_regs, UARTE_TIMER_BUF_SWITCH_CH)) {
 		bounce_buf_switch(dev);
 	}

@@ -141,7 +141,7 @@ static int emul_rx_enqueue(const struct device *dev, struct video_buffer *vbuf)
 		return -ENOMEM;
 	}
 
-	/* The buffer has not been filled yet: flag as emtpy */
+	/* The buffer has not been filled yet: flag as empty */
 	vbuf->bytesused = 0;
 
 	/* Submit the buffer for processing in the worker, where everything happens */

@@ -136,9 +136,9 @@ LOG_MODULE_REGISTER(nrf_usbd_common, CONFIG_NRF_USBD_COMMON_LOG_LEVEL);
  *
  * @return Initialized event constant variable.
  */
-#define NRF_USBD_COMMON_EP_TRANSFER_EVENT(name, endpont, ep_stat)                                  \
+#define NRF_USBD_COMMON_EP_TRANSFER_EVENT(name, endpoint, ep_stat)                                 \
 	const nrf_usbd_common_evt_t name = {NRF_USBD_COMMON_EVT_EPTRANSFER,                        \
-				      .data = {.eptransfer = {.ep = endpont, .status = ep_stat}}}
+				      .data = {.eptransfer = {.ep = endpoint, .status = ep_stat}}}
 
 /* Check it the bit positions values match defined DATAEPSTATUS bit positions */
 BUILD_ASSERT(

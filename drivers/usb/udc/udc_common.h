@@ -229,7 +229,7 @@ void udc_ep_buf_clear_zlp(const struct net_buf *const buf);
  * @brief Cancel all queued UDC requests
  *
  * UDC driver must ensure that driver will not access any of queued endpoint
- * buffers before calling this funcition.
+ * buffers before calling this function.
  *
  * Remove all queued requests from endpoint FIFO and submit them to USB stack.
  *

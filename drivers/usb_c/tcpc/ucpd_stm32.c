@@ -161,7 +161,7 @@ static uint32_t ucpd_get_cc_enable_mask(const struct device *dev)
 		uint32_t cr = stm32_reg_read(&config->ucpd_port->CR);
 		int pol = (cr & UCPD_CR_PHYCCSEL);
 
-		/* Dissable CC line that's used for VCONN */
+		/* Disable CC line that's used for VCONN */
 		mask &= ~BIT(UCPD_CR_CCENABLE_Pos + !pol);
 	}
 
