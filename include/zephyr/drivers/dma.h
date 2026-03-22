@@ -451,7 +451,8 @@ static inline int dma_reload(const struct device *dev, uint32_t channel,
  * @retval 0 if successful.
  * @retval <0 Negative errno code if failure.
  */
-static inline int dma_reload_head_block(const struct device *dev, uint32_t channel, struct dma_block_config *head_block)
+static inline int dma_reload_head_block(const struct device *dev, uint32_t channel,
+					struct dma_block_config *head_block)
 {
 	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
 
