@@ -92,4 +92,21 @@
 			slew-rate = "slow";
 		};
 	};
+
+	pinmux_qspi: pinmux_qspi {
+		group0 {
+			pinmux = <QSPI_A_SCK_PTD10>,
+				 <QSPI_A_CS_PTC3>;
+			drive-strength = "high";
+		};
+
+		group1 {
+			pinmux = <QSPI_A_IO0_PTD11>,
+				 <QSPI_A_IO1_PTD7>,
+				 <QSPI_A_IO2_PTD12>,
+				 <QSPI_A_IO3_PTC2>;
+			drive-strength = "high";
+			input-enable;
+		};
+	};
 };
