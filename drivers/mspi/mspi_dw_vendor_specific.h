@@ -173,7 +173,7 @@ typedef struct {
 	EVDMA_JOB_Type *rx_job;
 } QSPI_TRANSFER_LIST_Type;
 
-/* Number of jobs needed for transmit trasaction */
+/* Number of jobs needed for transmit transaction */
 #define MAX_NUM_JOBS 5
 
 /* Vendor-specific data structure for Nordic QSPI */
