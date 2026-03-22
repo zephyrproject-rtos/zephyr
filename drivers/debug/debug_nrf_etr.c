@@ -105,10 +105,10 @@ static const uint16_t stm_m_id[] = {0x21, 0x22, 0x23, 0x2c, 0x2d, 0x2e, 0x24, 0x
 static uint32_t source_id_buf[ARRAY_SIZE(stm_m_id) * 8];
 static const char *const stm_m_name[] = {"sec", "app", "rad", "sys", "flpr", "ppr", "mod", "hw"};
 static const char *const hw_evts[] = {
-	"CTI211_0",  /* 0 CTI211 triger out 1 */
-	"CTI211_1",  /* 1 CTI211 triger out 1 inverted */
-	"CTI211_2",  /* 2 CTI211 triger out 2 */
-	"CTI211_3",  /* 3 CTI211 triger out 2 inverted*/
+	"CTI211_0",  /* 0 CTI211 trigger out 1 */
+	"CTI211_1",  /* 1 CTI211 trigger out 1 inverted */
+	"CTI211_2",  /* 2 CTI211 trigger out 2 */
+	"CTI211_3",  /* 3 CTI211 trigger out 2 inverted*/
 	"Sec up",    /* 4 Secure Domain up */
 	"Sec down",  /* 5 Secure Domain down */
 	"App up",    /* 6 Application Domain up */
