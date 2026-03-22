@@ -201,7 +201,7 @@ void mfd_pca9422_set_irqhandler(const struct device *dev, const struct device *c
 	struct mfd_pca9422_data *data = dev->data;
 	struct mfd_pca9422_child *child;
 
-	/* Set child device piont */
+	/* Set child device point */
 	child = &data->children[child_idx];
 
 	/* Store the interrupt handler and device instance for child device */

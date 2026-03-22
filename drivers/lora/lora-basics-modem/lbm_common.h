@@ -32,7 +32,7 @@ enum lbm_modem_mode {
 
 /* Common LBM modem configuration, must be first element of device config */
 struct lbm_lora_config_common {
-	/* LBM radio abstration layer structure */
+	/* LBM radio abstraction layer structure */
 	ralf_t ralf;
 	bool force_ldro;
 };

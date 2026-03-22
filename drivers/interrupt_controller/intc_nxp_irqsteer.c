@@ -291,7 +291,7 @@ struct irqsteer_config {
 	int irqs_num;
 	/* There is one output irq for each group of 64 inputs. */
 	int num_masters;
-	/* Totol register number of MASK/SET/STATUS */
+	/* Total register number of MASK/SET/STATUS */
 	int reg_num;
 	struct irqsteer_dispatcher *dispatchers;
 };
