@@ -928,7 +928,7 @@ static int spi_mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_
 	case PM_DEVICE_ACTION_SUSPEND:
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
-	    /*This flag is used to prevent configuration optimiztions
+	    /*This flag is used to prevent configuration optimizations
 	     * after exiting PM3 on spi_mcux_configure()
 	     */
 		force_reconfig = true;

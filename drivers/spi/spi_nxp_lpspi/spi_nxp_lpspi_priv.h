@@ -21,7 +21,7 @@
 #endif
 
 /* If any hardware revisions change this, make it into a DT property.
- * DONT'T make #ifdefs here by platform.
+ * DON'T make #ifdefs here by platform.
  */
 #define LPSPI_CHIP_SELECT_COUNT   4
 #define LPSPI_MIN_FRAME_SIZE_BITS 8
