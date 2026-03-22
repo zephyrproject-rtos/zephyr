@@ -211,6 +211,15 @@ static int configure(const struct device *dev,
 		return result;
 	}
 
+#if defined(CONFIG_NRF52_ANOMALY_58_WORKAROUND)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiote), okay)
+	nrfx_spim_nrf52_anomaly_58_init(&dev_data->spim,
+					&GPIOTE_NRFX_INST_BY_NODE(DT_NODELABEL(gpiote)));
+#else
+#error "GPIOTE is not enabled, anomaly 58 workaround cannot be applied for SPIM"
+#endif
+#endif
+
 	dev_data->initialized = true;
 
 	ctx->config = spi_cfg;
