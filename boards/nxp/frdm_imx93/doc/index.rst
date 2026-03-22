@@ -197,7 +197,7 @@ Hardware Setup
 --------------
 
 
-The default runner for the board is JLink runner, there is one SWD connnector P14 on
+The default runner for the board is JLink runner, there is one SWD connector P14 on
 the FRDM-IMX93 board.
 
 Refer to `NXP online document`_ to rework FRDM-IMX93 board and connect SWD connector P14
