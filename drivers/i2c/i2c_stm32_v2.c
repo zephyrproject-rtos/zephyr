@@ -42,7 +42,7 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v2);
 #endif /* CONFIG_STM32_HAL2 */
 
 #ifdef CONFIG_I2C_STM32_V2_TIMING
-/* Use the algorithm to calcuate the I2C timing */
+/* Use the algorithm to calculate the I2C timing */
 #ifndef I2C_STM32_VALID_TIMING_NBR
 #define I2C_STM32_VALID_TIMING_NBR                 128U
 #endif

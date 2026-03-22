@@ -479,7 +479,7 @@ static int flash_stm32_get_size(const struct device *dev, uint64_t *size)
 #endif /* CONFIG_STM32_HAL2 */
 
 #if defined(CONFIG_SOC_SERIES_STM32C5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
-	/* Re-enable the ICACHE (unconditonally - it should always be turned on) */
+	/* Re-enable the ICACHE (unconditionally - it should always be turned on) */
 	cache_instr_enable();
 #endif /* CONFIG_SOC_SERIES_STM32C5X || CONFIG_SOC_SERIES_STM32H5X */
 

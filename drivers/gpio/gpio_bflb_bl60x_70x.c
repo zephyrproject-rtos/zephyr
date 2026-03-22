@@ -67,7 +67,7 @@ LOG_MODULE_REGISTER(gpio_bl60x_bl70x);
 #define GLB_GPIO_CFG_OFFSET(pin) \
 	GLB_GPIO_CFGCTL0_OFFSET + ((pin) / GPIO_BFLB_PIN_PER_WORD * GPIO_BFLB_WORDSIZE)
 
-/* this driver supports only 32 GPIO, which happens to be the maximum on BL6 and 7 serie.
+/* this driver supports only 32 GPIO, which happens to be the maximum on BL6 and 7 series.
  */
 
 struct gpio_bflb_config {
