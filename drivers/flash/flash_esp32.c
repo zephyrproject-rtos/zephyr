@@ -181,10 +181,10 @@ static int flash_esp32_write_check_enc(off_t address, const void *buffer, size_t
 static bool aligned_flash_write(size_t dest_addr, const void *src, size_t size, bool erase);
 static bool aligned_flash_erase(size_t addr, size_t size);
 
-/* Auxiliar buffer to store the sector that will be partially written */
+/* Auxiliary buffer to store the sector that will be partially written */
 static uint8_t write_aux_buf[FLASH_SECTOR_SIZE] = {0};
 
-/* Auxiliar buffer to store the sector that will be partially erased */
+/* Auxiliary buffer to store the sector that will be partially erased */
 static uint8_t erase_aux_buf[FLASH_SECTOR_SIZE] = {0};
 
 static bool aligned_flash_write(size_t dest_addr, const void *src, size_t size, bool erase)
@@ -506,10 +506,10 @@ static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 		 * value (0xFF) into flash when erasing a region.
 		 *
 		 * This is handled on this implementation because MCUboot's state
-		 * machine relies on erased valued data (0xFF) readed from a
+		 * machine relies on erased valued data (0xFF) read from a
 		 * previously erased region that was not written yet, however when
 		 * hardware flash encryption is enabled, the flash read always
-		 * decrypts whats being read from flash, thus a region that was
+		 * decrypts what is being read from flash, thus a region that was
 		 * erased would not be read as what MCUboot expected (0xFF).
 		 */
 		while (bytes_remaining != 0) {

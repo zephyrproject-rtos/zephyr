@@ -163,7 +163,7 @@ static void xilinx_axienet_rx_callback(const struct device *dma, void *user_data
 		goto setup_new_transfer;
 	}
 	if (net_recv_data(data->interface, pkt) < 0) {
-		LOG_ERR("Coult not receive packet data!");
+		LOG_ERR("Could not receive packet data!");
 		net_pkt_unref(pkt);
 		goto setup_new_transfer;
 	}

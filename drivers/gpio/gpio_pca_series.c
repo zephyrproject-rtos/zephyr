@@ -190,7 +190,7 @@ struct gpio_pca_series_config {
 struct gpio_pca_series_data {
 	struct gpio_driver_data common; /** gpio_driver_data needs to be first */
 	struct k_sem lock;
-	void *cache;  /** device spicific reg cache
+	void *cache;  /** device specific reg cache
 			*  - if CONFIG_GPIO_PCA_SERIES_CACHE_ALL is set,
 			*    it points to device specific cache memory.
 			*  - if CONFIG_GPIO_PCA_SERIES_CACHE_ALL is not set,

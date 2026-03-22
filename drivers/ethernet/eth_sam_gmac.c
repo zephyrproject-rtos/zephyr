@@ -1393,7 +1393,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	pkt_prio = net_pkt_priority(pkt);
 
 #if defined(CONFIG_ETH_SAM_GMAC_FORCE_QUEUE)
-	/* Route eveything to the forced queue */
+	/* Route everything to the forced queue */
 	queue = &dev_data->queue_list[CONFIG_ETH_SAM_GMAC_FORCED_QUEUE];
 #elif GMAC_ACTIVE_QUEUE_NUM == CONFIG_NET_TC_TX_COUNT
 	/* Prefer to chose queue based on its traffic class */

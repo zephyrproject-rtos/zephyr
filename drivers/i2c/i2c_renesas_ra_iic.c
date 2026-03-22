@@ -517,7 +517,7 @@ static void calc_iic_ctrl_bitrate(const struct i2c_ra_iic_config *config, uint32
 	const uint32_t requested_duty = config->ctrl_duty_cycle_percent;
 	uint32_t constant_add, divided_pclk, clock_edge, clock_rise_edge;
 
-	/* A constant is added to BRL and BRH in all formulas. This constand is 3 + nf
+	/* A constant is added to BRL and BRH in all formulas. This constant is 3 + nf
 	 * when CKS == 0, or 2 + nf when CKS != 0.
 	 */
 	if (divider == 0) {

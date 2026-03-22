@@ -308,19 +308,19 @@ int npcx_i2c_ctrl_target_register(const struct device *i2c_dev,
 int npcx_i2c_ctrl_target_unregister(const struct device *i2c_dev,
 				    struct i2c_target_config *target_cfg, uint8_t port);
 
-/* Common public fucntions */
+/* Common public functions */
 bool i2c_ctrl_toggle_scls(const struct device *dev);
 size_t i2c_ctrl_calculate_msg_remains(const struct device *dev);
 void i2c_ctrl_handle_write_int_event(const struct device *dev);
 void i2c_ctrl_handle_read_int_event(const struct device *dev);
 void i2c_ctrl_stop(const struct device *dev);
 
-/* FIFO-Driven public fucntions */
+/* FIFO-Driven public functions */
 #if defined(CONFIG_I2C_NPCX_FIFO_DRIVEN)
 void i2c_ctrl_fifo_hold_bus(const struct device *dev, int stall);
 #endif
 
-/* DMA-Driven public fucntions */
+/* DMA-Driven public functions */
 #if defined(CONFIG_I2C_NPCX_DMA_DRIVEN)
 size_t i2c_ctrl_dma_proceed_write(const struct device *dev);
 size_t i2c_ctrl_dma_proceed_read(const struct device *dev);

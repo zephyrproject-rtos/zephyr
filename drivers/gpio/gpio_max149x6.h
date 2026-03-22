@@ -127,7 +127,7 @@ static int max149x6_reg_transceive(const struct device *dev, uint8_t addr, uint8
 		return ret;
 	}
 
-	/* if CRC enabled check readed */
+	/* if CRC enabled check read */
 	if (config->crc_en) {
 		crc = max149x6_crc(&local_rx_buff[0], false, local_rx_buff[2] & 0xE0);
 		if (crc != (local_rx_buff[2] & 0x1F)) {

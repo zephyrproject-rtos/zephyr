@@ -158,7 +158,7 @@ static int flash_rx_write(const struct device *dev, off_t offset, const void *da
 
 	if (flash_data->FlashRegion == DATA_FLASH) {
 #ifdef CONFIG_FLASH_RENESAS_RX_BGO_ENABLED
-		/* Waitting for the write complete event flag, if BGO is SET */
+		/* Waiting for the write complete event flag, if BGO is SET */
 		while (!(flash_event.write_complete || flash_event.error)) {
 			k_sleep(K_USEC(10));
 		}
@@ -239,7 +239,7 @@ static int flash_rx_erase(const struct device *dev, off_t offset, size_t len)
 
 		if (flash_data->FlashRegion == DATA_FLASH) {
 #ifdef CONFIG_FLASH_RENESAS_RX_BGO_ENABLED
-			/* Waitting for the write complete event flag, if BGO is SET */
+			/* Waiting for the write complete event flag, if BGO is SET */
 			while (!(flash_event.erase_complete || flash_event.error)) {
 				k_sleep(K_USEC(10));
 			}

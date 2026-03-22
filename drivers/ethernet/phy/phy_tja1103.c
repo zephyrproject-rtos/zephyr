@@ -184,7 +184,7 @@ static void phy_tja1103_ack_irq(const struct device *dev)
 
 	/* Handling Link related Functional IRQs */
 	if (irq & (TJA1103_PHY_FUNC_IRQ_LINK_EVENT | TJA1103_PHY_FUNC_IRQ_LINK_AVAIL)) {
-		/* Ack the assered link related interrupts */
+		/* Ack the asserted link related interrupts */
 		phy_tja1103_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC1, TJA1103_PHY_FUNC_IRQ_ACK,
 				      irq);
 	}

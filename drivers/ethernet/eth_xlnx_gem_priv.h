@@ -765,7 +765,7 @@ struct eth_xlnx_gem_dev_cfg {
  * @brief Run-time device configuration data structure.
  *
  * This struct contains all device configuration data for a GEM
- * controller instance which is modifyable at run-time, such as
+ * controller instance which is modifiable at run-time, such as
  * data relating to the attached PHY or the auxiliary thread.
  */
 struct eth_xlnx_gem_dev_data {

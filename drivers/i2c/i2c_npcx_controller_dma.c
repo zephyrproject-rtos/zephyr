@@ -107,7 +107,7 @@ size_t i2c_ctrl_dma_proceed_read(const struct device *dev)
 
 	/* Last byte for NACK in received transaction */
 	if (i2c_ctrl_dma_is_last_pkg(dev, dma_lens) && (data->msg->flags & I2C_MSG_STOP) != 0) {
-		/* Issue NACK in the end of DMA transation */
+		/* Issue NACK in the end of DMA transaction */
 		i2c_ctrl_dma_nack(dev);
 	}
 

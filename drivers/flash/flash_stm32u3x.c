@@ -277,7 +277,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 		sys_cache_instr_enable();
 	}
 
-	/* Restore the volatge scale at its initial range : LL_PWR_REGU_VOLTAGE_SCALE2 */
+	/* Restore the voltage scale at its initial range : LL_PWR_REGU_VOLTAGE_SCALE2 */
 	if (voltage_scale != LL_PWR_REGU_VOLTAGE_SCALE1) {
 		/* If not, then restore the voltage scale */
 		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE2);
