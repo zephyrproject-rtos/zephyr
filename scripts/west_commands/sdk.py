@@ -296,10 +296,20 @@ class Sdk(WestCommand):
 
         return f"zephyr-sdk-{version}_{osname}-{arch}_minimal{ext}"
 
+    def die_no_matching_sdk_bundle(self, release):
+        (osname, arch) = self.os_arch_name()
+        version = re.sub(r"^v", "", release["tag_name"])
+        self.die(
+            f"No Zephyr SDK {version} bundle found for host {osname}-{arch}."
+        )
+
     def minimal_sdk_sha256(self, sha256_list, release):
         name = self.minimal_sdk_filename(release)
         tuples = [(re.split(r"\s+", t)) for t in sha256_list.splitlines()]
         hashtable = {t[1]: t[0] for t in tuples}
+
+        if name not in hashtable:
+            self.die_no_matching_sdk_bundle(release)
 
         return hashtable[name]
 
