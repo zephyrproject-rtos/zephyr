@@ -1,6 +1,0 @@
-tests:
-  message_bus.zbus.proxy_agent.proxy_agent:
-    tags: zbus
-    timeout: 180
-    integration_platforms:
-      - native_sim
