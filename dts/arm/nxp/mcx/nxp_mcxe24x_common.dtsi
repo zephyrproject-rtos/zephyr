@@ -715,6 +715,14 @@
 			compatible = "nxp,sim-uuid";
 			reg = <0x40048000 0x1000>;
 		};
+
+		qspi: qspi@40076000 {
+			compatible = "nxp,qspi";
+			reg = <0x40076000 0x1000>, <0x68000000 DT_SIZE_M(128)>;
+			interrupts = <65 0>;
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			status = "disabled";
+		};
 	};
 };
 
