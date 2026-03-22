@@ -24,7 +24,7 @@ properties:
   clk-div:
     type: int
     description: |
-      Clock divider selction value. Valid range [2 ... 16].
+      Clock divider selection value. Valid range [2 ... 16].
 
 clock-cells:
   - clk
