@@ -100,7 +100,7 @@ NET_BUF_POOL_DEFINE(avctp_browsing_rx_pool, BT_BUF_ACL_RX_COUNT,
 		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 /*
  * This macros returns true if the CT/TG has been initialized, which
- * typically happens after the avrcp callack have been registered.
+ * typically happens after the avrcp callback have been registered.
  * Use these macros to determine whether the CT/TG role is supported.
  */
 #define IS_CT_ROLE_SUPPORTED() (avrcp_ct_cb != NULL)

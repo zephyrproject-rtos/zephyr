@@ -3108,7 +3108,7 @@ static void configure_ase_char(uint8_t snk_cnt, uint8_t src_cnt)
 	size_t attrs_to_rem;
 
 	/* Remove the Source ASEs. The ones to remove will always be at the very tail of the
-	 * attributes, so we just decrease the count withe the amount of sources we want to remove.
+	 * attributes, so we just decrease the count with the amount of sources we want to remove.
 	 */
 	attrs_to_rem = src_ases_to_rem * ASCS_ASE_CHAR_ATTR_COUNT;
 	ascs_svc.attr_count -= attrs_to_rem;

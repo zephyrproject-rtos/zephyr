@@ -3545,9 +3545,9 @@ static int hfp_hf_create_sco(struct bt_hfp_hf *hf)
 		LOG_WRN("SCO is not NULL (%p), target (%p)", atomic_ptr_get(&hf->sco_conn), sco);
 		__ASSERT(atomic_ptr_get(&hf->sco_conn) == sco,
 				"Concurrent SCO connection creation detected");
-		/* The `hf->sco_conn` has been udpated in callback `hfp_hf_sco_connected()`.
-		 * The refernce count has been updated in callback `hfp_hf_sco_connected()`.
-		 * The refernce count should be unreferred in this case.
+		/* The `hf->sco_conn` has been updated in callback `hfp_hf_sco_connected()`.
+		 * The reference count has been updated in callback `hfp_hf_sco_connected()`.
+		 * The reference count should be unreferred in this case.
 		 */
 		if (sco != NULL) {
 			bt_conn_unref(sco);
@@ -3574,7 +3574,7 @@ int bt_hfp_hf_audio_connect(struct bt_hfp_hf *hf)
 	}
 
 	if (atomic_ptr_get(&hf->sco_conn) != NULL) {
-		LOG_ERR("Audio conenction has been connected");
+		LOG_ERR("Audio connection has been connected");
 		return -ECONNREFUSED;
 	}
 
@@ -3726,7 +3726,7 @@ int bt_hfp_hf_turn_off_ecnr(struct bt_hfp_hf *hf)
 	}
 
 	if (hf->chan.sco) {
-		LOG_ERR("Audio conenction has been connected");
+		LOG_ERR("Audio connection has been connected");
 		return -EBUSY;
 	}
 

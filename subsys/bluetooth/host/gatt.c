@@ -3355,7 +3355,7 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 			LOG_ERR("Read method not set");
 			return false;
 		}
-		/* The characterstic properties is the first byte of the attribute value */
+		/* The characteristic properties is the first byte of the attribute value */
 		len = attr->read(NULL, attr, &properties, sizeof(properties), 0);
 		if (len < 0) {
 			LOG_ERR("Failed to read attribute %p (err %zd)", attr, len);

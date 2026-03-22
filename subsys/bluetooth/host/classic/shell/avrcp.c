@@ -226,10 +226,10 @@ static void avrcp_passthrough_rsp(struct bt_avrcp_ct *ct, uint8_t tid, bt_avrcp_
 {
 	if (result == BT_AVRCP_RSP_ACCEPTED) {
 		bt_shell_print(
-			"AVRCP passthough command accepted, operation id = 0x%02x, state = %d",
+			"AVRCP passthrough command accepted, operation id = 0x%02x, state = %d",
 			BT_AVRCP_PASSTHROUGH_GET_OPID(rsp), BT_AVRCP_PASSTHROUGH_GET_STATE(rsp));
 	} else {
-		bt_shell_print("AVRCP passthough command rejected, operation id = 0x%02x, state = "
+		bt_shell_print("AVRCP passthrough command rejected, operation id = 0x%02x, state = "
 			       "%d, response = %d",
 			       BT_AVRCP_PASSTHROUGH_GET_OPID(rsp),
 			       BT_AVRCP_PASSTHROUGH_GET_STATE(rsp), result);
