@@ -415,7 +415,7 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 		xfer_config->ldmaCfgSrcIncSign = ldmaCfgSrcIncSignPos;
 		break;
 	default:
-		LOG_ERR("Addr Adjustement error %d", config->head_block->source_addr_adj);
+		LOG_ERR("Addr Adjustment error %d", config->head_block->source_addr_adj);
 		break;
 	}
 

@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 #define SSD1306_SET_PUMP_VOLTAGE_90		0x33 /* No arguments, command is argument */
 #define SSD1306_SET_START_LINE			0x40 /* No arguments, command is argument */
 #define SSD1306_SET_START_LINE_END		0x7f /* Command as argument end */
-#define SSD1306_SET_CONTRAST_CTRL		0x81 /* 1 byte args: Constrast */
+#define SSD1306_SET_CONTRAST_CTRL		0x81 /* 1 byte args: Contrast */
 #define SH1106_SET_DCDC_DISABLED		0x8a /* No arguments, command is argument */
 #define SH1106_SET_DCDC_ENABLED			0x8b /* No arguments, command is argument */
 #define SSD1306_SET_CHARGE_PUMP			0x8d /* 1 byte args: A[0]A[7] Volts A[2] Enable */
