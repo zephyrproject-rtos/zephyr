@@ -296,7 +296,7 @@ static int phy_mchp_ksz9131_autonegotiate(const struct device *dev)
 
 		attempts++;
 		if (bmsr & MII_BMSR_AUTONEG_COMPLETE) {
-			LOG_DBG("PHY (%d) auto-negotiate completed after %d checkes",
+			LOG_DBG("PHY (%d) auto-negotiate completed after %d checks",
 				cfg->phy_addr, attempts);
 			break;
 		}

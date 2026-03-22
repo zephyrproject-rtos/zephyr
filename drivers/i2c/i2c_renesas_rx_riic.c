@@ -564,7 +564,7 @@ static int i2c_rx_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Init kernal object */
+	/* Init kernel object */
 	k_sem_init(&data->bus_lock, 1, 1);
 	k_sem_init(&data->bus_sync, 0, 1);
 

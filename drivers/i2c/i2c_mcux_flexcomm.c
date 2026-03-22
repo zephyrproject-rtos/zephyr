@@ -268,7 +268,7 @@ static int mcux_flexcomm_recover_bus(const struct device *dev)
 
 	/* If a glitch on the bus looks like a start condition, the i2c block will be stuck
 	 * waiting forever for a stop. This resets the I2C block to clear this condition before
-	 * the bitbang recovery proceedure which should clear any other devices on the bus.
+	 * the bitbang recovery procedure which should clear any other devices on the bus.
 	 */
 	I2C_MasterEnable(base, false);
 	I2C_MasterEnable(base, true);

@@ -753,7 +753,7 @@ cont:
 /**
  * @brief Release tx function
  * Main purpose of its function is to track current descriptor number
- * and give back succeding tx semaphore when it have been used.
+ * and give back succeeding tx semaphore when it have been used.
  *
  * @param p Pointer to device structure
  */

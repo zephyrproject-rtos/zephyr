@@ -6,7 +6,7 @@
 
 /*
  * **************************************************************************
- * xSPI flash controller driver for stm32 serie with xSPI periherals
+ * xSPI flash controller driver for stm32 series with xSPI periherals
  * This driver is based on the stm32Cube HAL XSPI driver
  * with one xspi DTS NODE
  * **************************************************************************
@@ -795,7 +795,7 @@ static int stm32_xspi_mem_reset(const struct device *dev)
 	gpio_pin_set_dt(&dev_cfg->reset, 0);
 #else
 
-	/* Reset command sent sucessively for each mode SPI/OPS & STR/DTR */
+	/* Reset command sent successively for each mode SPI/OPS & STR/DTR */
 	XSPI_RegularCmdTypeDef s_command = {
 		.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG,
 		.AddressMode = HAL_XSPI_ADDRESS_NONE,
