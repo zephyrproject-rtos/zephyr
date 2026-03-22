@@ -81,7 +81,7 @@ enum dma_addr_adj {
  * @brief DMA channel attributes
  */
 enum dma_channel_filter {
-	DMA_CHANNEL_NORMAL,   /* normal DMA channel */
+	DMA_CHANNEL_NORMAL, /* normal DMA channel */
 	DMA_CHANNEL_PERIODIC, /* can be triggered by periodic sources */
 };
 
@@ -127,9 +127,9 @@ struct dma_block_config {
 	/** Pointer to next block in a transfer list */
 	struct dma_block_config *next_block;
 	/** Enable source gathering when set to 1 */
-	uint16_t source_gather_en: 1;
+	uint16_t  source_gather_en :  1;
 	/** Enable destination scattering when set to 1 */
-	uint16_t dest_scatter_en: 1;
+	uint16_t  dest_scatter_en :   1;
 	/**
 	 * Source address adjustment option
 	 *
@@ -137,7 +137,7 @@ struct dma_block_config {
 	 * - 0b01 decrement
 	 * - 0b10 no change
 	 */
-	uint16_t source_addr_adj: 2;
+	uint16_t  source_addr_adj :   2;
 	/**
 	 * Destination address adjustment
 	 *
@@ -145,30 +145,30 @@ struct dma_block_config {
 	 * - 0b01 decrement
 	 * - 0b10 no change
 	 */
-	uint16_t dest_addr_adj: 2;
+	uint16_t  dest_addr_adj :     2;
 	/** Reload source address at the end of block transfer */
-	uint16_t source_reload_en: 1;
+	uint16_t  source_reload_en :  1;
 	/** Reload destination address at the end of block transfer */
-	uint16_t dest_reload_en: 1;
+	uint16_t  dest_reload_en :    1;
 	/** FIFO fill before starting transfer, HW specific meaning */
-	uint16_t fifo_mode_control: 4;
+	uint16_t  fifo_mode_control : 4;
 	/**
 	 * Transfer flow control mode
 	 *
 	 * - 0b0 source request service upon data availability
 	 * - 0b1 source request postponed until destination request happens
 	 */
-	uint16_t flow_control_mode: 1;
+	uint16_t  flow_control_mode : 1;
 
-	uint16_t _reserved: 3;
+	uint16_t  _reserved :          3;
 };
 
 /** The DMA callback event has occurred at the completion of a transfer list */
-#define DMA_STATUS_COMPLETE      0
+#define DMA_STATUS_COMPLETE			0
 /** The DMA callback has occurred at the completion of a single transfer block in a transfer list */
-#define DMA_STATUS_BLOCK         1
+#define DMA_STATUS_BLOCK			1
 /** The DMA callback event has occurred at the half completion of a single transfer block */
-#define DMA_STATUS_HALF_COMPLETE 2
+#define DMA_STATUS_HALF_COMPLETE	2
 
 /**
  * @typedef dma_callback_t
@@ -188,8 +188,8 @@ struct dma_block_config {
  *                        or water mark
  *                      - A negative errno otherwise
  */
-typedef void (*dma_callback_t)(const struct device *dev, void *user_data, uint32_t channel,
-			       int status);
+typedef void (*dma_callback_t)(const struct device *dev, void *user_data,
+			       uint32_t channel, int status);
 
 /**
  * @struct dma_config
@@ -197,7 +197,7 @@ typedef void (*dma_callback_t)(const struct device *dev, void *user_data, uint32
  */
 struct dma_config {
 	/** Which peripheral and direction, HW specific */
-	uint32_t dma_slot: 8;
+	uint32_t  dma_slot :             8;
 	/**
 	 * Direction the transfers are occurring
 	 *
@@ -209,59 +209,59 @@ struct dma_config {
 	 * - 0b101 memory to host
 	 * - others hardware specific
 	 */
-	uint32_t channel_direction: 3;
+	uint32_t  channel_direction :    3;
 	/** enable half completion callback when set to 1 */
-	uint32_t half_complete_callback_en: 1;
+	uint32_t  half_complete_callback_en : 1;
 	/**
 	 * Completion callback enable
 	 *
 	 * - 0b0 callback invoked at transfer list completion only
 	 * - 0b1 callback invoked at completion of each block
 	 */
-	uint32_t complete_callback_en: 1;
+	uint32_t  complete_callback_en : 1;
 	/**
 	 * Error callback disable
 	 *
 	 * - 0b0 error callback enabled
 	 * - 0b1 error callback disabled
 	 */
-	uint32_t error_callback_dis: 1;
+	uint32_t  error_callback_dis :    1;
 	/**
 	 * Source handshake, HW specific
 	 *
 	 * - 0b0 HW
 	 * - 0b1 SW
 	 */
-	uint32_t source_handshake: 1;
+	uint32_t  source_handshake :     1;
 	/**
 	 * Destination handshake, HW specific
 	 *
 	 * - 0b0 HW
 	 * - 0b1 SW
 	 */
-	uint32_t dest_handshake: 1;
+	uint32_t  dest_handshake :       1;
 	/**
 	 * Channel priority for arbitration, HW specific
 	 */
-	uint32_t channel_priority: 4;
+	uint32_t  channel_priority :     4;
 	/** Source chaining enable, HW specific */
-	uint32_t source_chaining_en: 1;
+	uint32_t  source_chaining_en :   1;
 	/** Destination chaining enable, HW specific */
-	uint32_t dest_chaining_en: 1;
+	uint32_t  dest_chaining_en :     1;
 	/** Linked channel, HW specific */
-	uint32_t linked_channel: 7;
+	uint32_t  linked_channel   :     7;
 	/** Cyclic transfer list, HW specific */
-	uint32_t cyclic: 1;
+	uint32_t  cyclic :				 1;
 
-	uint32_t _reserved: 2;
+	uint32_t  _reserved :             2;
 	/** Width of source data (in bytes) */
-	uint32_t source_data_size: 16;
+	uint32_t  source_data_size :    16;
 	/** Width of destination data (in bytes) */
-	uint32_t dest_data_size: 16;
+	uint32_t  dest_data_size :      16;
 	/** Source burst length in bytes */
-	uint32_t source_burst_length: 16;
+	uint32_t  source_burst_length : 16;
 	/** Destination burst length in bytes */
-	uint32_t dest_burst_length: 16;
+	uint32_t  dest_burst_length :   16;
 	/** Number of blocks in transfer list */
 	uint32_t block_count;
 	/** Pointer to the first block in the transfer list */
@@ -319,11 +319,11 @@ typedef int (*dma_api_config)(const struct device *dev, uint32_t channel,
 			      struct dma_config *config);
 
 #ifdef CONFIG_DMA_64BIT
-typedef int (*dma_api_reload)(const struct device *dev, uint32_t channel, uint64_t src,
-			      uint64_t dst, size_t size);
+typedef int (*dma_api_reload)(const struct device *dev, uint32_t channel,
+			      uint64_t src, uint64_t dst, size_t size);
 #else
-typedef int (*dma_api_reload)(const struct device *dev, uint32_t channel, uint32_t src,
-			      uint32_t dst, size_t size);
+typedef int (*dma_api_reload)(const struct device *dev, uint32_t channel,
+			      uint32_t src, uint32_t dst, size_t size);
 #endif
 
 typedef int (*dma_api_reload_head_block)(const struct device *dev, uint32_t channel,
@@ -355,7 +355,8 @@ typedef int (*dma_api_get_attribute)(const struct device *dev, uint32_t type, ui
  *
  * @return True on filter matched otherwise return False.
  */
-typedef bool (*dma_api_chan_filter)(const struct device *dev, int channel, void *filter_param);
+typedef bool (*dma_api_chan_filter)(const struct device *dev,
+				int channel, void *filter_param);
 
 /**
  * @typedef dma_chan_release
@@ -368,12 +369,13 @@ typedef bool (*dma_api_chan_filter)(const struct device *dev, int channel, void 
  * @param dev Pointer to the DMA device instance
  * @param channel channel id to use
  */
-typedef void (*dma_api_chan_release)(const struct device *dev, uint32_t channel);
+typedef void (*dma_api_chan_release)(const struct device *dev,
+				     uint32_t channel);
 
 __subsystem struct dma_driver_api {
 	dma_api_config config;
 	dma_api_reload reload;
-	dma_api_reload_head_block reload_head_block;
+    dma_api_reload_head_block reload_head_block;
 	dma_api_start start;
 	dma_api_stop stop;
 	dma_api_suspend suspend;
@@ -398,9 +400,11 @@ __subsystem struct dma_driver_api {
  * @retval 0 if successful.
  * @retval <0 Negative errno code if failure.
  */
-static inline int dma_config(const struct device *dev, uint32_t channel, struct dma_config *config)
+static inline int dma_config(const struct device *dev, uint32_t channel,
+			     struct dma_config *config)
 {
-	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+	const struct dma_driver_api *api =
+		(const struct dma_driver_api *)dev->api;
 
 	return api->config(dev, channel, config);
 }
@@ -419,14 +423,15 @@ static inline int dma_config(const struct device *dev, uint32_t channel, struct 
  * @retval <0 Negative errno code if failure.
  */
 #ifdef CONFIG_DMA_64BIT
-static inline int dma_reload(const struct device *dev, uint32_t channel, uint64_t src, uint64_t dst,
-			     size_t size)
+static inline int dma_reload(const struct device *dev, uint32_t channel,
+			     uint64_t src, uint64_t dst, size_t size)
 #else
-static inline int dma_reload(const struct device *dev, uint32_t channel, uint32_t src, uint32_t dst,
-			     size_t size)
+static inline int dma_reload(const struct device *dev, uint32_t channel,
+		uint32_t src, uint32_t dst, size_t size)
 #endif
 {
-	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+	const struct dma_driver_api *api =
+		(const struct dma_driver_api *)dev->api;
 
 	if (api->reload) {
 		return api->reload(dev, channel, src, dst, size);
@@ -478,7 +483,8 @@ static inline int dma_reload_head_block(const struct device *dev, uint32_t chann
  */
 static inline int dma_start(const struct device *dev, uint32_t channel)
 {
-	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+	const struct dma_driver_api *api =
+		(const struct dma_driver_api *)dev->api;
 
 	return api->start(dev, channel);
 }
@@ -503,7 +509,8 @@ static inline int dma_start(const struct device *dev, uint32_t channel)
  */
 static inline int dma_stop(const struct device *dev, uint32_t channel)
 {
-	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+	const struct dma_driver_api *api =
+		(const struct dma_driver_api *)dev->api;
 
 	return api->stop(dev, channel);
 }
@@ -580,7 +587,8 @@ static inline int dma_request_channel(const struct device *dev, void *filter_par
 {
 	int i = 0;
 	int channel = -EINVAL;
-	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+	const struct dma_driver_api *api =
+		(const struct dma_driver_api *)dev->api;
 	/* dma_context shall be the first one in dev data */
 	struct dma_context *dma_ctx = (struct dma_context *)dev->data;
 
@@ -590,7 +598,8 @@ static inline int dma_request_channel(const struct device *dev, void *filter_par
 
 	for (i = 0; i < dma_ctx->dma_channels; i++) {
 		if (!atomic_test_and_set_bit(dma_ctx->atomic, i)) {
-			if (api->chan_filter && !api->chan_filter(dev, i, filter_param)) {
+			if (api->chan_filter &&
+			    !api->chan_filter(dev, i, filter_param)) {
 				atomic_clear_bit(dma_ctx->atomic, i);
 				continue;
 			}
@@ -617,7 +626,8 @@ static inline int dma_request_channel(const struct device *dev, void *filter_par
  */
 static inline void dma_release_channel(const struct device *dev, uint32_t channel)
 {
-	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+	const struct dma_driver_api *api =
+		(const struct dma_driver_api *)dev->api;
 	struct dma_context *dma_ctx = (struct dma_context *)dev->data;
 
 	if (dma_ctx->magic != DMA_MAGIC) {
@@ -631,6 +641,7 @@ static inline void dma_release_channel(const struct device *dev, uint32_t channe
 
 		atomic_clear_bit(dma_ctx->atomic, channel);
 	}
+
 }
 
 /**
@@ -647,7 +658,8 @@ static inline void dma_release_channel(const struct device *dev, uint32_t channe
  */
 static inline int dma_chan_filter(const struct device *dev, int channel, void *filter_param)
 {
-	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+	const struct dma_driver_api *api =
+		(const struct dma_driver_api *)dev->api;
 
 	if (api->chan_filter) {
 		return api->chan_filter(dev, channel, filter_param);
@@ -675,7 +687,8 @@ static inline int dma_chan_filter(const struct device *dev, int channel, void *f
 static inline int dma_get_status(const struct device *dev, uint32_t channel,
 				 struct dma_status *stat)
 {
-	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+	const struct dma_driver_api *api =
+		(const struct dma_driver_api *)dev->api;
 
 	if (api->get_status) {
 		return api->get_status(dev, channel, stat);
