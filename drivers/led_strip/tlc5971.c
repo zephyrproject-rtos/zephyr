@@ -40,7 +40,7 @@ struct tlc5971_data {
 /**
  * @brief Number of RGB pixels per TLC5791 device
  *
- * The TLC5971 has 4x RGB outputs per device, where each RGB group constitues a pixel from this
+ * The TLC5971 has 4x RGB outputs per device, where each RGB group constitutes a pixel from this
  * drivers point of view.
  */
 #define TLC5971_PIXELS_PER_DEVICE 4
