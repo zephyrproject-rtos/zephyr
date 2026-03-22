@@ -31,6 +31,7 @@ except ImportError:
 
 import scl
 from twisterlib.config_parser import TwisterConfigParser
+from twisterlib.environment import TwisterEnv
 from twisterlib.error import TwisterRuntimeError
 from twisterlib.platform import Platform, generate_platforms
 from twisterlib.quarantine import Quarantine
@@ -148,6 +149,7 @@ class TestConfiguration:
 
         return levels
 
+
 class TestPlan:
     __test__ = False  # for pytest to skip this class when collects tests
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
@@ -163,7 +165,7 @@ class TestPlan:
     SAMPLE_FILENAME = 'sample.yaml'
     TESTSUITE_FILENAME = 'testcase.yaml'
 
-    def __init__(self, env: Namespace):
+    def __init__(self, env: TwisterEnv):
 
         self.options = env.options
         self.env = env

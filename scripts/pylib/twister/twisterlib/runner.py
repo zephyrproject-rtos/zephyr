@@ -1866,7 +1866,7 @@ class ProjectBuilder(FilterBuilder):
 
 class TwisterRunner:
 
-    def __init__(self, instances, suites, env=None) -> None:
+    def __init__(self, instances, suites, env) -> None:
         self.options = env.options
         self.env = env
         self.instances: dict[str, TestInstance] = instances
