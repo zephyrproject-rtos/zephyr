@@ -587,7 +587,7 @@ static int h4_setup(const struct device *dev, const struct bt_hci_setup_params *
 	 * This function executes vendor-specific commands sequence to
 	 * initialize BT Controller before BT Host executes Reset sequence.
 	 * bt_h4_vnd_setup function must be implemented in vendor-specific HCI
-	 * extansion module if CONFIG_BT_HCI_SETUP is enabled.
+	 * extension module if CONFIG_BT_HCI_SETUP is enabled.
 	 */
 	extern int bt_h4_vnd_setup(const struct device *dev,
 				   const struct bt_hci_setup_params *params);
