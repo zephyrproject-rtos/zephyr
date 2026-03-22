@@ -85,8 +85,8 @@ ZTEST(ipc_backend, test_get_backend_config_macro)
 	zassert_not_null(config, "Config should not be NULL");
 	zassert_equal(config->dev, DEVICE_DT_GET(FAKE_IPC_NODE),
 		      "Device should match the one from devicetree");
-	zassert_equal(config->ept_name, "test_agent_ipc_ept",
-		      "Endpoint name should be correctly set by macro");
+	zassert_str_equal(config->ept_name, "test_agent_ipc_ept",
+		   "Endpoint name should be correctly set by macro");
 }
 
 /* Test set_recv_cb */
