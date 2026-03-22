@@ -65,8 +65,6 @@ LOG_MODULE_REGISTER(st7586s, CONFIG_DISPLAY_LOG_LEVEL);
 #define ST7586S_SET_COL_RANGE		0x2a
 #define ST7586S_START_WRITE		0x2c
 
-#define GET_MONO_PX(_buf, _i) ((_buf[(_i) / 8] & (1U << ((_i) % 8))) >> ((_i) % 8))
-
 struct st7586s_config {
 	const struct device *mipi_dev;
 	struct mipi_dbi_config dbi_config;
@@ -87,6 +85,11 @@ struct st7586s_config {
 struct st7586s_data {
 	int current_pixel_format;
 };
+
+static inline uint8_t get_mono_px(const uint8_t *buf, size_t i)
+{
+	return (buf[i / 8] >> (i % 8)) & 0x1U;
+}
 
 static inline int st7586s_write_command(const struct device *dev, uint8_t cmd, const uint8_t *buf,
 					size_t len)
@@ -140,43 +143,34 @@ static int st7586s_start_write(const struct device *dev)
 }
 
 /* ST7586S Mono is htiled 3 bit 3 bit 2 bit for 3 pixels */
-static int st7586s_convert_MONO(const struct device *dev, const uint8_t *buf, int cur_offset,
+static int st7586s_convert_mono(const struct device *dev, const uint8_t *buf, int cur_offset,
 				uint32_t pixel_count, bool mono01)
 {
 	const struct st7586s_config *config = dev->config;
 	int i = 0;
+	uint8_t byte;
 	size_t i_d;
 
 	for (; i / ST7586S_PPB_MONO < config->conversion_buf_size && pixel_count > cur_offset + i;
 	     i += ST7586S_PPB_MONO) {
 		i_d = cur_offset + i;
-		if (mono01) {
-			config->conversion_buf[i / ST7586S_PPB_MONO] =
-				GET_MONO_PX(buf, i_d) << 7
-				| GET_MONO_PX(buf, i_d) << 6
-				| GET_MONO_PX(buf, i_d) << 5
-				| GET_MONO_PX(buf, i_d + 1) << 4
-				| GET_MONO_PX(buf, i_d + 1) << 3
-				| GET_MONO_PX(buf, i_d + 1) << 2
-				| GET_MONO_PX(buf, i_d + 2) << 1
-				| GET_MONO_PX(buf, i_d + 2);
-		} else {
-			config->conversion_buf[i / ST7586S_PPB_MONO] =
-				~(GET_MONO_PX(buf, i_d) << 7
-				| GET_MONO_PX(buf, i_d) << 6
-				| GET_MONO_PX(buf, i_d) << 5
-				| GET_MONO_PX(buf, i_d + 1) << 4
-				| GET_MONO_PX(buf, i_d + 1) << 3
-				| GET_MONO_PX(buf, i_d + 1) << 2
-				| GET_MONO_PX(buf, i_d + 2) << 1
-				| GET_MONO_PX(buf, i_d + 2));
-		}
+
+		byte = get_mono_px(buf, i_d) << 7
+			| get_mono_px(buf, i_d) << 6
+			| get_mono_px(buf, i_d) << 5
+			| get_mono_px(buf, i_d + 1) << 4
+			| get_mono_px(buf, i_d + 1) << 3
+			| get_mono_px(buf, i_d + 1) << 2
+			| get_mono_px(buf, i_d + 2) << 1
+			| get_mono_px(buf, i_d + 2);
+
+		config->conversion_buf[i / ST7586S_PPB_MONO] = mono01 ? byte : ~byte;
 	}
 	return i;
 }
 
 /* Convert what the conversion buffer can hold to pixelx+1 (3:0) and pixelx (7:4) */
-static int st7586s_convert_L_8(const struct device *dev, const uint8_t *buf, int cur_offset,
+static int st7586s_convert_l_8(const struct device *dev, const uint8_t *buf, int cur_offset,
 			       uint32_t pixel_count)
 {
 	const struct st7586s_config *config = dev->config;
@@ -232,17 +226,26 @@ static int st7586s_write(const struct device *dev, const uint16_t x, const uint1
 	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, len %u", x, y, desc->pitch,
 		desc->width, desc->height, expected_len);
 
-	st7586s_set_window(dev, x, y, desc->width, desc->height);
-	st7586s_start_write(dev);
+	ret = st7586s_set_window(dev, x, y, desc->width, desc->height);
+	if (ret < 0) {
+		LOG_ERR("Could not set write window");
+		return ret;
+	}
+
+	ret = st7586s_start_write(dev);
+	if (ret < 0) {
+		LOG_ERR("Could not start write");
+		return ret;
+	}
 
 	mipi_desc.pitch = desc->pitch;
 
 	while (pixel_count > total) {
 		if (data->current_pixel_format == PIXEL_FORMAT_L_8) {
-			i = st7586s_convert_L_8(dev, buf, total, pixel_count);
+			i = st7586s_convert_l_8(dev, buf, total, pixel_count);
 			mipi_desc.buf_size = i / ST7586S_PPB_GRAY;
 		} else {
-			i = st7586s_convert_MONO(dev, buf, total, pixel_count,
+			i = st7586s_convert_mono(dev, buf, total, pixel_count,
 						 data->current_pixel_format == PIXEL_FORMAT_MONO01);
 			mipi_desc.buf_size = i / ST7586S_PPB_MONO;
 		}
