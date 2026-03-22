@@ -51,6 +51,17 @@ enum frag_transport_commands {
 	FRAG_TRANSPORT_CMD_DATA_FRAGMENT = 0x08,
 };
 
+enum frag_transport_setup_ans_status {
+	SETUP_ANS_ENCODING_UNSUPPORTED = BIT(0),
+	SETUP_ANS_NOT_ENOUGH_MEMORY = BIT(1),
+	SETUP_ANS_INDEX_NOT_SUPPORTED = BIT(2),
+	SETUP_ANS_WRONG_DESCRIPTOR = BIT(3),
+};
+
+enum frag_transport_delete_ans_status {
+	DELETE_ANS_INDEX_NOT_SUPPORTED = BIT(2),
+};
+
 struct frag_transport_context {
 	/** Stores if a session is active */
 	bool is_active;
@@ -186,7 +197,7 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 					ctx.descriptor);
 			} else {
 				/* FragIndex unsupported */
-				status |= BIT(2);
+				status |= SETUP_ANS_INDEX_NOT_SUPPORTED;
 
 				LOG_WRN("FragSessionSetupReq failed. Session %u still active",
 					ctx.frag_index);
@@ -194,18 +205,18 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 
 			if (ctx.frag_algo > 0) {
 				/* FragAlgo unsupported */
-				status |= BIT(0);
+				status |= SETUP_ANS_ENCODING_UNSUPPORTED;
 			}
 
 			if (ctx.nb_frag > FRAG_MAX_NB || ctx.frag_size > FRAG_MAX_SIZE) {
 				/* Not enough memory */
-				status |= BIT(1);
+				status |= SETUP_ANS_NOT_ENOUGH_MEMORY;
 			}
 
 #ifdef CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
 			if (ctx.nb_frag * ctx.frag_size > FragDecoderGetMaxFileSize()) {
 				/* Not enough memory */
-				status |= BIT(1);
+				status |= SETUP_ANS_NOT_ENOUGH_MEMORY;
 			}
 #endif
 
@@ -214,7 +225,7 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 
 				if (rc < 0) {
 					/* Wrong Descriptor */
-					status |= BIT(3);
+					status |= SETUP_ANS_WRONG_DESCRIPTOR;
 				}
 			}
 
@@ -250,7 +261,7 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 			status |= index;
 			if (!ctx.is_active || ctx.frag_index != index) {
 				/* Session does not exist */
-				status |= BIT(2);
+				status |= DELETE_ANS_INDEX_NOT_SUPPORTED;
 			} else {
 				ctx.is_active = false;
 			}
