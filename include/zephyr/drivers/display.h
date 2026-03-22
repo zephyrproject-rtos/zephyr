@@ -369,22 +369,24 @@ typedef enum display_event_result (*display_event_cb_t)(const struct device *dev
 				  void *user_data);
 
 /**
- * @typedef display_blanking_on_api
- * @brief Callback API to turn on display blanking
+ * @def_driverbackendgroup{Display,display_interface}
+ * @{
+ */
+
+/**
+ * @brief Callback API to turn on display blanking.
  * See display_blanking_on() for argument description
  */
 typedef int (*display_blanking_on_api)(const struct device *dev);
 
 /**
- * @typedef display_blanking_off_api
- * @brief Callback API to turn off display blanking
+ * @brief Callback API to turn off display blanking.
  * See display_blanking_off() for argument description
  */
 typedef int (*display_blanking_off_api)(const struct device *dev);
 
 /**
- * @typedef display_write_api
- * @brief Callback API for writing data to the display
+ * @brief Callback API for writing data to the display.
  * See display_write() for argument description
  */
 typedef int (*display_write_api)(const struct device *dev, const uint16_t x,
@@ -393,8 +395,7 @@ typedef int (*display_write_api)(const struct device *dev, const uint16_t x,
 				 const void *buf);
 
 /**
- * @typedef display_read_api
- * @brief Callback API for reading data from the display
+ * @brief Callback API for reading data from the display.
  * See display_read() for argument description
  */
 typedef int (*display_read_api)(const struct device *dev, const uint16_t x,
@@ -403,38 +404,33 @@ typedef int (*display_read_api)(const struct device *dev, const uint16_t x,
 				void *buf);
 
 /**
- * @typedef display_clear
- * @brief Callback API for clearing the screen of the display
+ * @brief Callback API for clearing the screen of the display.
  * See display_clear() for argument description
  */
 typedef int (*display_clear_api)(const struct device *dev);
 
 /**
- * @typedef display_get_framebuffer_api
- * @brief Callback API to get framebuffer pointer
+ * @brief Callback API to get framebuffer pointer.
  * See display_get_framebuffer() for argument description
  */
 typedef void *(*display_get_framebuffer_api)(const struct device *dev);
 
 /**
- * @typedef display_set_brightness_api
- * @brief Callback API to set display brightness
+ * @brief Callback API to set display brightness.
  * See display_set_brightness() for argument description
  */
 typedef int (*display_set_brightness_api)(const struct device *dev,
 					  const uint8_t brightness);
 
 /**
- * @typedef display_set_contrast_api
- * @brief Callback API to set display contrast
+ * @brief Callback API to set display contrast.
  * See display_set_contrast() for argument description
  */
 typedef int (*display_set_contrast_api)(const struct device *dev,
 					const uint8_t contrast);
 
 /**
- * @typedef display_get_capabilities_api
- * @brief Callback API to get display capabilities
+ * @brief Callback API to get display capabilities.
  * See display_get_capabilities() for argument description
  */
 typedef void (*display_get_capabilities_api)(const struct device *dev,
@@ -442,8 +438,7 @@ typedef void (*display_get_capabilities_api)(const struct device *dev,
 					     capabilities);
 
 /**
- * @typedef display_set_pixel_format_api
- * @brief Callback API to set pixel format used by the display
+ * @brief Callback API to set pixel format used by the display.
  * See display_set_pixel_format() for argument description
  */
 typedef int (*display_set_pixel_format_api)(const struct device *dev,
@@ -451,8 +446,7 @@ typedef int (*display_set_pixel_format_api)(const struct device *dev,
 					    pixel_format);
 
 /**
- * @typedef display_set_orientation_api
- * @brief Callback API to set orientation used by the display
+ * @brief Callback API to set orientation used by the display.
  * See display_set_orientation() for argument description
  */
 typedef int (*display_set_orientation_api)(const struct device *dev,
@@ -460,8 +454,7 @@ typedef int (*display_set_orientation_api)(const struct device *dev,
 					   orientation);
 
 /**
- * @typedef display_register_event_cb_api
- * @brief Callback API to register display event callback
+ * @brief Callback API to register display event callback.
  * See @ref display_register_event_cb for argument description
  */
 typedef int (*display_register_event_cb_api)(const struct device *dev,
@@ -470,33 +463,71 @@ typedef int (*display_register_event_cb_api)(const struct device *dev,
 					     uint32_t *out_reg_handle);
 
 /**
- * @typedef display_unregister_event_cb_api
- * @brief Callback API to unregister display event callback
+ * @brief Callback API to unregister display event callback.
  * See @ref display_unregister_event_cb for argument description
  */
 typedef int (*display_unregister_event_cb_api)(const struct device *dev, uint32_t reg_handle);
 
 /**
- * @brief Display driver API
- * API which a display driver should expose
+ * @driver_ops{Display}
  */
 __subsystem struct display_driver_api {
+	/**
+	 * @driver_ops_optional @copybrief display_blanking_on
+	 */
 	display_blanking_on_api blanking_on;
+	/**
+	 * @driver_ops_optional @copybrief display_blanking_off
+	 */
 	display_blanking_off_api blanking_off;
+	/**
+	 * @driver_ops_mandatory @copybrief display_write
+	 */
 	display_write_api write;
+	/**
+	 * @driver_ops_optional @copybrief display_read
+	 */
 	display_read_api read;
+	/**
+	 * @driver_ops_optional @copybrief display_clear
+	 */
 	display_clear_api clear;
+	/**
+	 * @driver_ops_optional @copybrief display_get_framebuffer
+	 */
 	display_get_framebuffer_api get_framebuffer;
+	/**
+	 * @driver_ops_optional @copybrief display_set_brightness
+	 */
 	display_set_brightness_api set_brightness;
+	/**
+	 * @driver_ops_optional @copybrief display_set_contrast
+	 */
 	display_set_contrast_api set_contrast;
+	/**
+	 * @driver_ops_mandatory @copybrief display_get_capabilities
+	 */
 	display_get_capabilities_api get_capabilities;
+	/**
+	 * @driver_ops_optional @copybrief display_set_pixel_format
+	 */
 	display_set_pixel_format_api set_pixel_format;
+	/**
+	 * @driver_ops_optional @copybrief display_set_orientation
+	 */
 	display_set_orientation_api set_orientation;
-	/** Register display event callback */
+	/**
+	 * @driver_ops_optional @copybrief display_register_event_cb
+	 */
 	display_register_event_cb_api register_event_cb;
-	/** Unregister display event callback */
+	/**
+	 * @driver_ops_optional @copybrief display_unregister_event_cb
+	 */
 	display_unregister_event_cb_api unregister_event_cb;
 };
+/**
+ * @}
+ */
 
 /**
  * @brief Write data to display
