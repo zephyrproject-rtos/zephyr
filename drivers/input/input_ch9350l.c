@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(input_ch9350l, CONFIG_INPUT_LOG_LEVEL);
 
-/* The theorical maximum is 72 */
+/* The theoretical maximum is 72 */
 #define CH9350L_FRAME_SIZE_MAX	72
 #define CH9350L_FRAME_SIZE_MIN	8
 #define CH9350L_WAIT_TIMEOUT_MS	100

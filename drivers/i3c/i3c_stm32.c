@@ -626,7 +626,7 @@ static int i3c_stm32_config_ctrl_bus_char(const struct device *dev)
 		return -EIO;
 	}
 
-	/* Satisfying I3C start timing min timing will statisfy the rest of the conditions */
+	/* Satisfying I3C start timing min timing will satisfy the rest of the conditions */
 
 	if (i2c_bus_freq != 0) {
 		if (i2c_bus_freq > 400000) {
@@ -1919,7 +1919,7 @@ int i3c_stm32_ibi_hj_response(const struct device *dev, bool ack)
 	if (ack) {
 		/*
 		 * This prevents pm_device_runtime from being called multiple times
-		 * with redunant calls
+		 * with redundant calls
 		 */
 		if (!data->hj_pm_lock) {
 			data->hj_pm_lock = true;
