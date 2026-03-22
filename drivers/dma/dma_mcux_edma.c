@@ -69,7 +69,7 @@ struct dma_mcux_channel_transfer_edma_settings {
 	 * Next empty TCD idx which can be used for transfer
 	 */
 	volatile uint8_t write_idx;
-	/* How many TCDs in TCD pool is emtpy(can be used to write transfer parameters) */
+	/* How many TCDs in TCD pool is empty(can be used to write transfer parameters) */
 	volatile uint8_t empty_tcds;
 };
 
@@ -110,7 +110,7 @@ struct dma_mcux_edma_data {
 	(ch % DEV_CFG(dev)->channels_per_mux) ^ (DEV_CFG(dev)->dmamux_reg_offset)
 #endif
 
-/* Definations for SW TCD fields */
+/* Definitions for SW TCD fields */
 #if defined(CONFIG_DMA_MCUX_EDMA) || defined(CONFIG_DMA_MCUX_EDMA_V3)
 #define EDMA_TCD_SADDR(tcd, flag)     ((tcd)->SADDR)
 #define EDMA_TCD_DADDR(tcd, flag)     ((tcd)->DADDR)
@@ -129,7 +129,7 @@ struct dma_mcux_edma_data {
 #define EDMA_HW_TCD_CH_ACTIVE_MASK (DMA_CH_CSR_ACTIVE_MASK)
 #endif
 
-/* Definations for HW TCD fields */
+/* Definitions for HW TCD fields */
 #if defined(CONFIG_DMA_MCUX_EDMA)
 #define EDMA_HW_TCD_SADDR(dev, ch) (DEV_BASE(dev)->TCD[ch].SADDR)
 #define EDMA_HW_TCD_DADDR(dev, ch) (DEV_BASE(dev)->TCD[ch].DADDR)

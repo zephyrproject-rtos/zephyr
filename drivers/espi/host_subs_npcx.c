@@ -368,7 +368,7 @@ static void host_acpi_init(void)
 {
 	struct pmch_reg *const inst_acpi = host_sub_cfg.inst_pm_acpi;
 
-	/* Use SMI/SCI postive polarity by default */
+	/* Use SMI/SCI positive polarity by default */
 	inst_acpi->HIPMCTL &= ~BIT(NPCX_HIPMCTL_SCIPOL);
 	inst_acpi->HIPMIC &= ~BIT(NPCX_HIPMIC_SMIPOL);
 
