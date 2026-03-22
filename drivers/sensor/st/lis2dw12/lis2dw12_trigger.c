@@ -465,7 +465,7 @@ static int lis2dw12_ff_init(const struct device *dev)
 	LOG_DBG("FREEFALL: threshold is %02x", cfg->freefall_threshold);
 	rc = lis2dw12_ff_threshold_set(ctx, cfg->freefall_threshold);
 	if (rc != 0) {
-		LOG_ERR("Failed to set freefall thrshold");
+		LOG_ERR("Failed to set freefall threshold");
 		return -EIO;
 	}
 	return 0;

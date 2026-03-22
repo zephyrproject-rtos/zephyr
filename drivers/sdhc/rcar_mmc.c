@@ -407,7 +407,7 @@ static int rcar_mmc_enable_clock(const struct device *dev, bool enable)
  *
  * @param response_type SDHC response type without SPI flags
  *
- * @retval positiv number (partial configuration of CMD register) on
+ * @retval positive number (partial configuration of CMD register) on
  *         success, negative errno code otherwise
  */
 static int32_t rcar_mmc_convert_sd_to_mmc_resp(uint32_t response_type)
@@ -1579,7 +1579,7 @@ static const uint8_t tun_block_8_bits_bus[] = {
 
 /*
  * In 4 bit mode the same pattern is used as shown above,
- * but only first 4 bits least significant from every byte is used, examle:
+ * but only first 4 bits least significant from every byte is used, example:
  *    8-bits pattern: 0xff, 0xff, 0x00, 0xff, 0xff, 0xff, 0x00, 0x00 ...
  *                       f     f     0     f     f     f     0     0 ...
  *    4-bits pattern:      0xff        0x0f        0xff        0x00  ...
@@ -1684,7 +1684,7 @@ static int rcar_mmc_execute_tuning(const struct device *dev)
 	 * two runs is better for detecting TAP ok cases like next:
 	 *   - one burn: 0b10000011
 	 *   - two burns: 0b1000001110000011
-	 * it is more easly to detect 3 OK taps in a row
+	 * it is more easily to detect 3 OK taps in a row
 	 */
 	for (tap_idx = 0; tap_idx < 2 * RENESAS_TAPNUM; tap_idx++) {
 		/* clear flags */

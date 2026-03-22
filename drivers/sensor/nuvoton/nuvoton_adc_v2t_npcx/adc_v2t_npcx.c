@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(adc_v2t_npcx, CONFIG_SENSOR_LOG_LEVEL);
 struct adc_v2t_npcx_config {
 	/*
 	 * Pointer of ADC device that will be performing measurement, this
-	 * must be provied by device tree.
+	 * must be provided by device tree.
 	 */
 	const struct device *adc_dev;
 };
