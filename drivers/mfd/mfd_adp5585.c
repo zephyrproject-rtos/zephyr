@@ -55,10 +55,10 @@ static void mfd_adp5585_work_handler(struct k_work *work)
 	int ret = 0;
 
 	k_sem_take(&data->lock, K_FOREVER);
-	/* Read Interrput Flag */
+	/* Read Interrupt Flag */
 	ret = i2c_reg_read_byte_dt(&config->i2c_bus, ADP5585_INT_STATUS, &reg_int_status);
 
-	/* Clear Interrput Flag */
+	/* Clear Interrupt Flag */
 	if (ret == 0) {
 		ret = i2c_reg_write_byte_dt(&config->i2c_bus, ADP5585_INT_STATUS, reg_int_status);
 	}
