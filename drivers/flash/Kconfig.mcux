@@ -159,3 +159,15 @@ config SOC_FLASH_MCUX_C40_APPLY_PROTECTION
 	  regions derived from devicetree (e.g. ivt_header, ivt_pad, mcuboot)
 	  during driver init. Useful on XIP systems to keep IVT/bootloader
 	  areas read-only. Disable if your bootloader/policy manages this.
+
+config FLASH_MCUX_QSPI
+	bool "MCUX QSPI flash driver"
+	default y
+	depends on DT_HAS_NXP_QSPI_NOR_ENABLED
+	select MEMC
+	select MEMC_MCUX_QSPI
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	help
+	  Enable the NXP MCUX QSPI NOR flash driver.
