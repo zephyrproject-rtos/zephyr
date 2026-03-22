@@ -1336,7 +1336,6 @@ static int udc_bflb_v1_ep_dequeue(const struct device *dev,
 	const mm_reg_t base = config->base;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->addr);
 	unsigned int lock_key;
-	struct net_buf *buf;
 
 	lock_key = irq_lock();
 
