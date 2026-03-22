@@ -151,7 +151,7 @@ static int wdt_cc13xx_cc26xx_disable(const struct device *dev)
 	 * Node: once started, the watchdog timer cannot be stopped!
 	 * All we can do is disable the timeout reset, but the interrupt
 	 * will be triggered if it was enabled (though it won't trigger the
-	 * user callback due to `enabled` being unsed)!
+	 * user callback due to `enabled` being unset)!
 	 */
 	data->enabled = 0;
 	WatchdogUnlock();
