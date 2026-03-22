@@ -147,7 +147,7 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, struct trigger_conf
 	lsm6dsv16x_sflp_game_rotation_set(ctx, PROPERTY_ENABLE);
 
 	/*
-	 * Temporarly set Accel and gyro odr same as sensor fusion LP in order to
+	 * Temporarily set Accel and gyro odr same as sensor fusion LP in order to
 	 * make the SFLP gbias setting effective. Then restore it to saved values.
 	 */
 	switch (sflp_odr) {
@@ -324,7 +324,7 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	bool has_fifo_ths_trig = fifo_ths_cfg != NULL && fifo_th == 1;
 	bool has_fifo_full_trig = fifo_full_cfg != NULL && fifo_full == 1;
 
-	/* check if no theshold/full fifo interrupt or spurious interrupts */
+	/* check if no threshold/full fifo interrupt or spurious interrupts */
 	if (!has_fifo_ths_trig && !has_fifo_full_trig) {
 		/* complete operation with no error */
 		rtio_iodev_sqe_ok(sqe->userdata, 0);

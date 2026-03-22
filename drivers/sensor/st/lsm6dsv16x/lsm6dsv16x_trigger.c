@@ -351,7 +351,7 @@ static int lsm6dsv16x_ibi_cb(struct i3c_device_desc *target,
 	 *           FF_IA)
 	 * - MDB[3]: SHUB DRDY (SENS_HUB_ENDOP)
 	 * - MDB[4]: Advanced Function interrupt group
-	 * - MDB[7:5]: 3'b000: Vendor Definied
+	 * - MDB[7:5]: 3'b000: Vendor Defined
 	 *             3'b100: Timing Information
 	 * 2nd byte: FIFO_STATUS1
 	 * 3rd byte: FIFO_STATUS2

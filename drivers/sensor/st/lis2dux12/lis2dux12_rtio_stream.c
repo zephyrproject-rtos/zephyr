@@ -129,7 +129,7 @@ static void lis2dux12_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	bool has_fifo_ths_trig = fifo_ths_cfg != NULL && fifo_th == 1;
 	bool has_fifo_full_trig = fifo_full_cfg != NULL && fifo_full == 1;
 
-	/* check if no theshold/full fifo interrupt or spurious interrupts */
+	/* check if no threshold/full fifo interrupt or spurious interrupts */
 	if (!has_fifo_ths_trig && !has_fifo_full_trig) {
 		/* complete operation with no error */
 		rtio_iodev_sqe_ok(sqe->userdata, 0);

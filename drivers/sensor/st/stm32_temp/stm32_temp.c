@@ -287,7 +287,7 @@ static int read_calibration_data(const struct stm32_temp_config *cfg,
 #  endif
 
 #  if defined(CONFIG_SOC_SERIES_STM32H5X)
-	/* Re-enable the ICACHE (unconditonally - it should always be turned on) */
+	/* Re-enable the ICACHE (unconditionally - it should always be turned on) */
 	sys_cache_instr_enable();
 #  endif /* CONFIG_SOC_SERIES_STM32H5X */
 # endif /* CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM */
