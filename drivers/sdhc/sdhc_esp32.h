@@ -121,7 +121,7 @@ static __attribute__((always_inline)) inline int err_esp2zep(int ret_esp)
 		ret = -ENODEV; /* SD card not inserted (requires CD signal) */
 		break;
 	case ESP_ERR_INVALID_STATE:
-		ret = -EACCES; /* SD card write-protected (requires WP sinal) */
+		ret = -EACCES; /* SD card write-protected (requires WP signal) */
 		break;
 	default:
 		ret = -EIO;

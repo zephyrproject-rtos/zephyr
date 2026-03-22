@@ -67,7 +67,7 @@ struct vcmp_it8xxx2_data {
 	struct adc_channel_cfg adc_ch_cfg;
 	/* Work queue to be notified when threshold assertion happens */
 	struct k_work work;
-	/* Sensor trigger hanlder to notify user of assetion */
+	/* Sensor trigger handler to notify user of assetion */
 	sensor_trigger_handler_t handler;
 	const struct sensor_trigger *trig;
 	/* Pointer of voltage comparator device */

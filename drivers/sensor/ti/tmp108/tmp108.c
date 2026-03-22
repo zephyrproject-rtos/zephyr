@@ -216,7 +216,7 @@ static int tmp108_attr_set(const struct device *dev,
 #ifdef CONFIG_TMP108_ALERT_INTERRUPTS
 	case SENSOR_ATTR_HYSTERESIS:
 		if (TI_TMP108_HYSTER_0_C(dev) == TI_TMP108_CONF_NA) {
-			LOG_WRN("AS621x Series lacks Hysterisis setttings");
+			LOG_WRN("AS621x Series lacks Hysterisis settings");
 			return -ENOTSUP;
 		}
 		if (val->val1 < 1) {

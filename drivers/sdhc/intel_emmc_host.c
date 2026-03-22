@@ -1057,7 +1057,7 @@ static int emmc_set_io(const struct device *dev, struct sdhc_io *ios)
 		LOG_DBG("signal_voltage: %d", ios->signal_voltage);
 		ret = emmc_set_voltage(dev, ios->signal_voltage);
 		if (ret) {
-			LOG_ERR("Set signal volatge failed:%d", ret);
+			LOG_ERR("Set signal voltage failed:%d", ret);
 			return ret;
 		}
 		host_io->signal_voltage = ios->signal_voltage;

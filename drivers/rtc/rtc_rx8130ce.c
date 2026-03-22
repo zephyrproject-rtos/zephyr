@@ -79,7 +79,7 @@ enum registers {
 #define CTRL1_SMPTSEL1	BIT(7)
 
 
-/* Digital Offest reg(0x30) bit field */
+/* Digital Offset reg(0x30) bit field */
 #define DIGITAL_OFFSET_NEG	BIT(6)
 #define DIGITAL_OFFSET_DTE	BIT(7)
 

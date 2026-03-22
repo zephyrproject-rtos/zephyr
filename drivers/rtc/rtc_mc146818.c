@@ -40,7 +40,7 @@
 #define RTC_ALARM_MIN	0x03
 #define RTC_ALARM_HOUR	0x05
 
-/* Registers A-D indeces in RTC RAM */
+/* Registers A-D indices in RTC RAM */
 #define RTC_REG_A	0x0A
 #define RTC_REG_B	0x0B
 #define RTC_REG_C	0x0C

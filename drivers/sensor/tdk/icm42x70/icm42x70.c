@@ -588,7 +588,7 @@ static int icm42x70_fetch_from_fifo(const struct device *dev)
 	    (int_status & INT_STATUS_FIFO_FULL_INT_MASK)) {
 		uint16_t packet_count;
 
-		/* Make sure RCOSC is enabled to guarrantee FIFO read */
+		/* Make sure RCOSC is enabled to guarantee FIFO read */
 		status |= inv_imu_switch_on_mclk(&data->driver);
 
 		/* Read FIFO frame count */

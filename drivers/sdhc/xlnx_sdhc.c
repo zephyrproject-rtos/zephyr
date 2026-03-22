@@ -173,7 +173,7 @@ static void xlnx_sdhc_clear_intr(volatile struct reg_base *reg)
 
 /**
  * @brief
- * Setup ADMA2 discriptor table for data transfer
+ * Setup ADMA2 descriptor table for data transfer
  */
 static int xlnx_sdhc_setup_adma(const struct device *dev, const struct sdhc_data *data)
 {
