@@ -23,6 +23,10 @@ config SOC_BL702C10Q2H
 	bool
 	select SOC_SERIES_BL70X
 
+config SOC_BL706C00Q2I
+	bool
+	select SOC_SERIES_BL70X
+
 config SOC_BL706C10Q2I
 	bool
 	select SOC_SERIES_BL70X
@@ -39,6 +43,7 @@ config SOC
 	default "bl702sa0q2i" if SOC_BL702SA0Q2I
 	default "bl702s10q2i" if SOC_BL702S10Q2I
 	default "bl702c10q2h" if SOC_BL702C10Q2H
+	default "bl706c00q2i" if SOC_BL706C00Q2I
 	default "bl706c10q2i" if SOC_BL706C10Q2I
 	default "bl706s10q2i" if SOC_BL706S10Q2I
 	default "bl706c22q2i" if SOC_BL706C22Q2I
