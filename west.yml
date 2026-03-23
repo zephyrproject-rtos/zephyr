@@ -346,7 +346,7 @@ manifest:
       revision: 5a9d6055b62edc54566d6d0034d9daec91749b98
     - name: mldsa-native
       revision: 5772b4f4a0105694b1203abb582273f78fa951b7
-      path: modules/crypto/mbedtls/tf-psa-crypto/drivers/pqpc/mldsa-native
+      path: modules/crypto/mldsa-native
       groups:
         - crypto
     - name: nanopb
@@ -396,7 +396,7 @@ manifest:
         - tee
     - name: tf-psa-crypto
       revision: 6820f1dadc67c289d2dc63aec495519c9d589d8e
-      path: modules/crypto/mbedtls/tf-psa-crypto
+      path: modules/crypto/tf-psa-crypto
       groups:
         - crypto
     - name: trusted-firmware-a
