@@ -1,0 +1,92 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "bl706_mod.dtsi"
+#include "bl706_iot_dvk-pinctrl.dtsi"
+
+/ {
+	model = "Bouffalo Lab BL706-IoT-DVK";
+	compatible = "bflb,bl706-iot-dvk";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,sram = &sram0_bt;
+		zephyr,entropy = &sec_eng_trng;
+		zephyr,bt-hci = &bt_hci_bflb;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_tx0: led_tx0 {
+			gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+			label = "TX0 LED";
+		};
+
+		led_rx0: led_rx0 {
+			gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+			label = "RX0 LED";
+		};
+
+		led_tx1: led_tx1 {
+			gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+			label = "TX1 LED";
+		};
+
+		led_rx1: led_rx1 {
+			gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+			label = "RX1 LED";
+		};
+	};
+
+	aliases {
+		led0 = &led_tx0;
+		led1 = &led_rx0;
+		led2 = &led_tx1;
+		led3 = &led_rx1;
+		watchdog0 = &wdt0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usb0 {
+	status = "okay";
+
+	pinctrl-0 = <&usb_default>;
+	pinctrl-names = "default";
+};
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
