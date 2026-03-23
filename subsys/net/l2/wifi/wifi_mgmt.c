@@ -1733,7 +1733,7 @@ static int add_static_network_config(struct net_if *iface)
 	       strlen(CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD));
 
 	LOG_DBG("Adding statically configured WiFi network [%s] to internal list.",
-		creds.header.ssid);
+		CONFIG_WIFI_CREDENTIALS_STATIC_SSID);
 
 	return add_network_from_credentials_struct_personal(&creds, iface);
 #else
