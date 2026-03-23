@@ -8,7 +8,7 @@ config SOC_FLASH_NRF_MRAM
 	bool "Nordic Semiconductor flash driver for MRAM"
 	default y
 	depends on DT_HAS_NORDIC_MRAM_ENABLED
-	select NRFX_MRAMC
+	depends on HAS_NRFX
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_NO_EXPLICIT_ERASE
@@ -21,3 +21,15 @@ config SOC_FLASH_NRF_MRAM
 	  Note that MRAM words are auto-erased when written to, but writing to a
 	  pre-erased area is faster. Hence, the erase API is not required, but
 	  it can be used to amortize write performance for some use cases.
+
+config NRF_MRAM_MAX_RETRIES
+	int "Maximum number of retries for MRAM write/erase operations"
+	default 20
+	range 0 255
+	depends on SOC_FLASH_NRF_MRAM
+	help
+	  This option sets the maximum number of retry attempts for MRAM
+	  write and erase operations when verification fails. Each retry
+	  attempts to rewrite or re-erase the data to ensure reliability.
+	  Higher values increase reliability but may impact performance
+	  in case of persistent failures.
