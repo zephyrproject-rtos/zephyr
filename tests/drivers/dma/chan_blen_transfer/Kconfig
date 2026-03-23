@@ -25,3 +25,6 @@ config DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
 config DMA_TRANSFER_BURST16
 	bool "Enable loop transfers of 16-beat bursts"
 	default y
+
+config DMA_TEST_CALLBACK
+	bool "Enable callback ISR for each block transfer completion"

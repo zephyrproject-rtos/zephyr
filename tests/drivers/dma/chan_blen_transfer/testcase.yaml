@@ -21,3 +21,12 @@ tests:
       - sam_e54_xpro
       - pic32cm_jh01_cpro
       - pic32cm_pl10_cnano
+  drivers.dma.chan_blen_transfer.callback:
+    tags:
+      - dma
+    min_ram: 16
+    depends_on:
+      - dma
+    filter: dt_nodelabel_enabled("tst_dma0")
+    extra_configs:
+      - CONFIG_DMA_TEST_CALLBACK=y
