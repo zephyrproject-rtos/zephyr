@@ -25,6 +25,7 @@ COUNTER_HANDLER(reset)
 #include <zephyr/syscalls/counter_get_pending_int_mrsh.c>
 #include <zephyr/syscalls/counter_stop_mrsh.c>
 #include <zephyr/syscalls/counter_start_mrsh.c>
+#include <zephyr/syscalls/counter_reset_mrsh.c>
 
 static inline bool z_vrfy_counter_is_counting_up(const struct device *dev)
 {
