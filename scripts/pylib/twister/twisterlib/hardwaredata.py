@@ -19,7 +19,8 @@ class HardwareData:
     product: str | None = None
     serial_pty: str | None = None
     connected: bool = False
-    runner_params: str | None = None
+    base_params: list[str] | None = None
+    runner_params: list[str] | None = None
     pre_script: str | None = None
     post_script: str | None = None
     post_flash_script: str | None = None

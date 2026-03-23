@@ -18,6 +18,10 @@ items:
       type: string
     runner:
       type: string
+    base_params:
+      type: array
+      items:
+        type: string
     runner_params:
       type: array
       items:
