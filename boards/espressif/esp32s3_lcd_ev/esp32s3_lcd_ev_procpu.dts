@@ -1,0 +1,186 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+#include "esp32s3_lcd_ev-pinctrl.dtsi"
+
+/ {
+	model = "Espressif ESP32-S3-LCD-EV-Board-2 PROCPU";
+	compatible = "espressif,esp32s3";
+
+	aliases {
+		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
+		uart-0 = &uart0;
+		sw0 = &boot_button;
+		led0 = &status_led;
+		zephyr-display = &esp32_rgb;
+		zephyr-touch = &gt1151;
+	};
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,display = &esp32_rgb;
+		zephyr,touch = &gt1151;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		boot_button: button_0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BOOT Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		status_led: led_0 {
+			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+			label = "Status LED";
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(16)>;
+};
+
+&dma {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+/*
+ * Single I2C bus shared by:
+ *   - TCA9554 GPIO expander (0x20) – PA_CTRL on SUB3
+ *   - GT1151 touch controller (0x14)
+ */
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	io_expander: tca9554@20 {
+		compatible = "nxp,pca9554";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+
+		/* P0 - PA_CTRL: audio amplifier power enable (active high) */
+	};
+
+	gt1151: gt1151@14 {
+		compatible = "goodix,gt1151";
+		reg = <0x14>;
+		screen-width = <800>;
+		screen-height = <480>;
+		/* No INT/RST GPIO routed on SUB3 */
+	};
+};
+
+&i2s0 {
+	status = "disabled";
+};
+
+/*
+ * LCD-CAM RGB interface driving ST7262E43 (RGB565, 800x480) on SUB3.
+ * The panel does not require an SPI init sequence.
+ */
+&lcd_cam {
+	status = "okay";
+	pinctrl-0 = <&lcd_cam_default>;
+	pinctrl-names = "default";
+};
+
+&lcd_cam_rgb {
+	status = "okay";
+
+	esp32_rgb: esp32_rgb@0 {
+		compatible = "espressif,esp32_rgb";
+		reg = <0>;
+		width = <800>;
+		height = <480>;
+		pclk-frequency = <18000000>;
+		hsync-len = <40>;
+		hback-porch = <40>;
+		hfront-porch = <48>;
+		vsync-len = <23>;
+		vback-porch = <32>;
+		vfront-porch = <13>;
+		pclk-active-negative;
+	};
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&timer0 {
+	status = "disabled";
+};
+
+&timer1 {
+	status = "disabled";
+};
+
+&timer2 {
+	status = "disabled";
+};
+
+&timer3 {
+	status = "disabled";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};
