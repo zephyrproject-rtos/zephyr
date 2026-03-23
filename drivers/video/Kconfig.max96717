@@ -1,0 +1,48 @@
+# Copyright (c) 2026 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_MAX96717
+	bool "ADI MAX96717 GMSL2 serializer"
+	select I2C
+	depends on DT_HAS_ADI_MAX96717_ENABLED
+	default y
+	help
+	  Enable driver for the ADI MAX96717 GMSL2 serializer.
+	  The MAX96717 receives MIPI CSI-2 data from a camera sensor
+	  and transmits it over a coaxial GMSL2 link.
+
+if VIDEO_MAX96717
+
+config VIDEO_MAX96717_INIT_PRIORITY
+	int "MAX96717 init priority"
+	default 58
+	help
+	  Initialization priority for the MAX96717 serializer. Must run
+	  after the MAX96724 deserializer (default 56) — so that its I2C
+	  proxy is live and can reach the serializer over the GMSL reverse
+	  channel — and before any camera sensor (VIDEO_INIT_PRIORITY,
+	  default 60). Slot 59 is intentionally left free for any future
+	  driver that needs to sit between the serializer and the sensor.
+
+config VIDEO_MAX96717_VPG_ENABLE
+	bool "MAX96717 internal Video Pattern Generator (VPG)"
+	default n
+	help
+	  Configure the MAX96717's internal pattern generator at probe time
+	  to emit a synthetic RGB888 frame over GMSL. Used to validate the full
+	  SerDes path when no real image sensor is wired to the serializer.
+
+choice VIDEO_MAX96717_VPG_PATTERN
+	prompt "MAX96717 VPG test pattern"
+	depends on VIDEO_MAX96717_VPG_ENABLE
+	default VIDEO_MAX96717_VPG_PATTERN_GRADIENT
+
+config VIDEO_MAX96717_VPG_PATTERN_GRADIENT
+	bool "Color gradient"
+
+config VIDEO_MAX96717_VPG_PATTERN_CHECKERBOARD
+	bool "Checkerboard"
+
+endchoice
+
+endif
