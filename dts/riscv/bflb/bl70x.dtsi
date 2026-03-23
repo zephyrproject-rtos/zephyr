@@ -338,6 +338,7 @@
 			reg = <0x4000b000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 			status = "okay";
 
 			interrupts = <39 0>;
