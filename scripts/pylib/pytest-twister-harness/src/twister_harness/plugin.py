@@ -78,6 +78,11 @@ def pytest_addoption(parser: pytest.Parser):
         help='Use the specified west runner (pyocd, nrfjprog, etc.).'
     )
     twister_harness_group.addoption(
+        '--base-params',
+        action='append',
+        help='Use the specified west base params.'
+    )
+    twister_harness_group.addoption(
         '--runner-params',
         action='append',
         help='Use the specified west runner params.'

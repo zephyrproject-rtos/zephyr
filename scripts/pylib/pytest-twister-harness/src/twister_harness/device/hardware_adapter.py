@@ -78,6 +78,9 @@ class HardwareAdapter(DeviceAdapter):
         extra_args: list[str] = []
         runner = self.device_config.runner
         base_args.extend(['--runner', runner])
+        if self.device_config.base_params:
+            for param in self.device_config.base_params:
+                base_args.append(param)
         if self.device_config.runner_params:
             for param in self.device_config.runner_params:
                 extra_args.append(param)
