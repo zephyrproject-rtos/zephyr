@@ -19,6 +19,10 @@
 		zephyr,sram = &ddr0;
 	};
 
+	aliases {
+		adc0 = &main_adc0;
+	};
+
 	cpus {
 		cpu@0 {
 			status = "okay";
@@ -40,4 +44,56 @@
 		    <&uart0_tx_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&main_adc0 {
+	ti,fifo = <0>;
+	pinctrl-0 = <&adc0_ext_trigger0>,
+		    <&adc0_ext_trigger1>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		ti,open-delay = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+		zephyr,vref-mv = <1800>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		ti,open-delay = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+		zephyr,vref-mv = <1800>;
+	};
+
+	channel@2 {
+		reg = <2>;
+		ti,open-delay = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+		zephyr,vref-mv = <1800>;
+	};
+
+	channel@3 {
+		reg = <3>;
+		ti,open-delay = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+		zephyr,vref-mv = <1800>;
+	};
 };
