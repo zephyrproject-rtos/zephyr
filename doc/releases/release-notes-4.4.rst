@@ -389,6 +389,10 @@ New APIs and options
 
   * :c:func:`shell_readline` for :ref:`user input <shell-readline>`
 
+* Stepper
+
+  * :c:func:`stepper_ctrl_configure_ramp`
+
 * Sys
 
   * :c:macro:`COND_CASE_1`
@@ -1404,6 +1408,7 @@ New Samples
 * :zephyr:code-sample:`shell-devmem-load`
 * :zephyr:code-sample:`stm32_pwm_mastermode`
 * :zephyr:code-sample:`t1s`
+* :zephyr:code-sample:`tmcm3216`
 * :zephyr:code-sample:`veml6046`
 * :zephyr:code-sample:`virtiofs`
 * :zephyr:code-sample:`zbus-async-listeners`
