@@ -8,6 +8,12 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		main_adc0_pd: power-domain@0 {
+			compatible = "arm,scmi-power-domain";
+			reg = <0>;
+			#power-domain-cells = <0>;
+		};
+
 		main_uart0_pd: power-domain@59 {
 			compatible = "arm,scmi-power-domain";
 			reg = <89>;

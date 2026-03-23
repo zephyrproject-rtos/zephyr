@@ -171,3 +171,8 @@
 	interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&gic>;
 };
+
+&main_adc0 {
+	interrupts = <GIC_SPI 253 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};

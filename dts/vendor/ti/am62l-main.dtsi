@@ -304,4 +304,15 @@
 		ti,spi-num-cs = <4>;
 		status = "disabled";
 	};
+
+	main_adc0: adc@28001000 {
+		compatible = "ti,am335x-adc";
+		reg = <0x28001000 DT_SIZE_K(1)>;
+		status = "disabled";
+		power-domains = <&main_adc0_pd>;
+		clocks = <&scmi_clk 4>;
+		#io-channel-cells = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
 };
