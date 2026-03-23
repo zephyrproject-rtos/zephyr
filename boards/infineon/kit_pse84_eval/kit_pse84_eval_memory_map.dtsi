@@ -66,9 +66,11 @@
 	};
 
 	/* Default Flash memory(16MB) assignment
-	 * - Lowest 1mb reserved for Storage
-	 * - 2mb for each of the cores(cm33_s, cm33 and cm55)
-
+	 * - 1 MB  reserved for Storage
+	 * - 1 KB  header for CM33 Secure (m33s_header)
+	 * - 2304 KB allocated to CM33 Secure XIP (m33s_xip)
+	 * - 1791 KB allocated to CM33 Non-Secure XIP (m33_xip)
+	 * - 2 MB  allocated to CM55 XIP (m55_xip)
 	 */
 	flash_controller: flash_controller@40250000 {
 		compatible = "infineon,qspi-flash";
@@ -98,11 +100,11 @@
 				};
 
 				m33s_xip: m33s_xip@18100400 {
-					reg = <0x18100400 DT_SIZE_M(2)>;
+					reg = <0x18100400 DT_SIZE_K(2304)>;
 				};
 
-				m33_xip: m33_xip@8300000 {
-					reg = <0x8300000 DT_SIZE_M(2)>;
+				m33_xip: m33_xip@8340400 {
+					reg = <0x8340400 0x1bfc00>;
 				};
 
 				m55_xip: m55_xip@60500000 {
