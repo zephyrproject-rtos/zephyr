@@ -2263,8 +2263,15 @@ static int numaker_usbd_msg_handle_xfer(const struct device *dev, struct numaker
 
 	if (config->is_hsusbd) {
 		struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
-		struct net_buf *buf = udc_buf_peek(ep_cfg);
-		struct udc_buf_info *bi = udc_get_buf_info(buf);
+		struct net_buf *buf;
+		struct udc_buf_info *bi;
+
+		buf = udc_buf_peek(ep_cfg);
+		if (buf == NULL) {
+			return 0;
+		}
+
+		bi = udc_get_buf_info(buf);
 
 		if (bi->setup) {
 			return 0;
