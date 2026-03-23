@@ -1189,7 +1189,7 @@ static void eth_dwc_xgmac_iface_init(struct net_if *iface)
  * @param dev Pointer to the ethernet device
  * @retval    0 upon successful completion
  */
-static int eth_dwc_xgmac_start_device(const struct device *dev)
+static int eth_dwc_xgmac_start_device(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct eth_dwc_xgmac_config *dev_conf = (struct eth_dwc_xgmac_config *)dev->config;
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
@@ -1267,7 +1267,7 @@ static int eth_dwc_xgmac_start_device(const struct device *dev)
  * @param dev Pointer to the ethernet device
  * @retval    0 upon successful completion
  */
-static int eth_dwc_xgmac_stop_device(const struct device *dev)
+static int eth_dwc_xgmac_stop_device(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct eth_dwc_xgmac_config *dev_conf = (struct eth_dwc_xgmac_config *)dev->config;
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
@@ -1521,7 +1521,9 @@ static inline void disable_filter_for_mac_addr(const struct device *dev, uint8_t
  *          (1) if existing configuration is equals to input configuration
  *         -ENOTSUP for invalid config type
  */
-static int eth_dwc_xgmac_set_config(const struct device *dev, enum ethernet_config_type type,
+static int eth_dwc_xgmac_set_config(const struct device *dev,
+				    struct net_if *iface __unused,
+				    enum ethernet_config_type type,
 				    const struct ethernet_config *config)
 {
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
@@ -1592,9 +1594,9 @@ static int eth_dwc_xgmac_set_config(const struct device *dev, enum ethernet_conf
  * @param dev Pointer to the ethernet device
  * @return Enumeration containing the current XGMAC device's capabilities
  */
-static enum ethernet_hw_caps eth_dwc_xgmac_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_dwc_xgmac_get_capabilities(const struct device *dev __unused,
+							    struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
 	enum ethernet_hw_caps caps = (enum ethernet_hw_caps)0;
 
 	caps = (ETHERNET_LINK_1000BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE);
@@ -1626,7 +1628,8 @@ static enum ethernet_hw_caps eth_dwc_xgmac_get_capabilities(const struct device 
  * @param dev Pointer to the ethernet device
  * @return Pointer to the current XGMAC device's statistics data
  */
-static struct net_stats_eth *eth_dwc_xgmac_stats(const struct device *dev)
+static struct net_stats_eth *eth_dwc_xgmac_stats(const struct device *dev,
+						 struct net_if *iface __unused)
 {
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
 

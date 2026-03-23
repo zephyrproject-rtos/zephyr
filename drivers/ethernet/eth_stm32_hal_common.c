@@ -240,10 +240,10 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 	/* The hal also needs to be stopped before changing the MAC config.
 	 * The speed can change without receiving a link down callback before.
 	 */
-	eth_stm32_hal_stop(dev);
+	eth_stm32_hal_stop(dev, dev_data->iface);
 	if (state->is_up) {
 		eth_stm32_set_mac_config(dev, state);
-		eth_stm32_hal_start(dev);
+		eth_stm32_hal_start(dev, dev_data->iface);
 		net_eth_carrier_on(dev_data->iface);
 	} else {
 		net_eth_carrier_off(dev_data->iface);
@@ -294,10 +294,9 @@ static void eth_iface_init(struct net_if *iface)
 	k_thread_name_set(&dev_data->rx_thread, "stm_eth");
 }
 
-static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device *dev __unused,
+							    struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
@@ -321,14 +320,16 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 		;
 }
 
-static const struct device *eth_stm32_hal_get_phy(const struct device *dev)
+static const struct device *eth_stm32_hal_get_phy(const struct device *dev,
+						  struct net_if *iface __unused)
 {
 	ARG_UNUSED(dev);
 	return eth_stm32_phy_dev;
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *eth_stm32_hal_get_stats(const struct device *dev)
+static struct net_stats_eth *eth_stm32_hal_get_stats(const struct device *dev,
+						     struct net_if *iface __unused)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 

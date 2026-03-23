@@ -413,13 +413,15 @@ static int eth_tx_offloading_enabled(const struct device *dev,
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_offloading_enabled(const struct device *dev)
+static enum ethernet_hw_caps eth_offloading_enabled(const struct device *dev __unused,
+						    struct net_if *iface __unused)
 {
 	return ETHERNET_HW_TX_CHKSUM_OFFLOAD |
 		ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 }
 
-static enum ethernet_hw_caps eth_offloading_disabled(const struct device *dev)
+static enum ethernet_hw_caps eth_offloading_disabled(const struct device *dev __unused,
+						     struct net_if *iface __unused)
 {
 	return 0;
 }

@@ -354,15 +354,15 @@ static void eth_iface_init(struct net_if *iface)
 	k_thread_name_set(&dev_data->rx_thread, "stm_eth");
 }
 
-static const struct device *eth_stm32_hal_get_phy(const struct device *dev)
+static const struct device *eth_stm32_hal_get_phy(const struct device *dev __unused,
+						  struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
 	return eth_stm32_phy_dev;
 }
 
-static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device *dev __unused,
+							    struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
 #if defined(CONFIG_ETH_STM32_HW_CHECKSUM)
 		| ETHERNET_HW_RX_CHKSUM_OFFLOAD | ETHERNET_HW_TX_CHKSUM_OFFLOAD
@@ -596,6 +596,7 @@ static void eth_isr(const struct device *dev)
 }
 
 static int eth_stm32_hal_set_config(const struct device *dev,
+				    struct net_if *iface __unused,
 				    enum ethernet_config_type type,
 				    const struct ethernet_config *config)
 {

@@ -200,7 +200,8 @@ static inline void eth_wait_for_ptp_ts(const struct device *dev, struct net_pkt 
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
 #ifdef CONFIG_PTP_CLOCK
-static const struct device *eth_nxp_enet_get_ptp_clock(const struct device *dev)
+static const struct device *eth_nxp_enet_get_ptp_clock(const struct device *dev,
+						       struct net_if *iface __unused)
 {
 	const struct nxp_enet_mac_config *config = dev->config;
 
@@ -243,7 +244,8 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *dev,
+							   struct net_if *iface __unused)
 {
 	const struct nxp_enet_mac_config *config = dev->config;
 	enum ethernet_hw_caps caps;
@@ -273,8 +275,9 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 }
 
 static int eth_nxp_enet_set_config(const struct device *dev,
-			       enum ethernet_config_type type,
-			       const struct ethernet_config *cfg)
+				   struct net_if *iface __unused,
+				   enum ethernet_config_type type,
+				   const struct ethernet_config *cfg)
 {
 	struct nxp_enet_mac_data *data = dev->data;
 
@@ -316,8 +319,9 @@ static int eth_nxp_enet_set_config(const struct device *dev,
 }
 
 static int eth_nxp_enet_get_config(const struct device *dev,
-			       enum ethernet_config_type type,
-			       struct ethernet_config *cfg)
+				   struct net_if *iface __unused,
+				   enum ethernet_config_type type,
+				   struct ethernet_config *cfg)
 {
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT:
@@ -581,7 +585,8 @@ static void eth_nxp_enet_isr(const struct device *dev)
 	irq_unlock(irq_lock_key);
 }
 
-static const struct device *eth_nxp_enet_get_phy(const struct device *dev)
+static const struct device *eth_nxp_enet_get_phy(const struct device *dev,
+						 struct net_if *iface __unused)
 {
 	const struct nxp_enet_mac_config *config = dev->config;
 

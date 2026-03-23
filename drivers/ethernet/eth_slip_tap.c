@@ -16,10 +16,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static struct slip_context slip_context_data;
 
-static enum ethernet_hw_caps eth_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_capabilities(const struct device *dev __unused,
+					      struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_HW_VLAN
 #if defined(CONFIG_NET_LLDP)
 	       | ETHERNET_LLDP
@@ -31,8 +30,9 @@ static enum ethernet_hw_caps eth_capabilities(const struct device *dev)
 }
 
 static int eth_slip_tap_set_config(const struct device *dev __unused,
+				   struct net_if *iface __unused,
 				   enum ethernet_config_type type,
-				   const struct ethernet_config *config __unused)
+				   const struct ethernet_config *config)
 {
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:

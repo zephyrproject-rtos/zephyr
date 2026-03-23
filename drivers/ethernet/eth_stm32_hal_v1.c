@@ -219,7 +219,7 @@ void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *s
 	}
 }
 
-int eth_stm32_hal_start(const struct device *dev)
+int eth_stm32_hal_start(const struct device *dev, struct net_if *iface __unused)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
@@ -236,7 +236,7 @@ int eth_stm32_hal_start(const struct device *dev)
 	return 0;
 }
 
-int eth_stm32_hal_stop(const struct device *dev)
+int eth_stm32_hal_stop(const struct device *dev, struct net_if *iface __unused)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
@@ -255,8 +255,9 @@ int eth_stm32_hal_stop(const struct device *dev)
 }
 
 int eth_stm32_hal_set_config(const struct device *dev,
-				    enum ethernet_config_type type,
-				    const struct ethernet_config *config)
+			     struct net_if *iface __unused,
+			     enum ethernet_config_type type,
+			     const struct ethernet_config *config)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;

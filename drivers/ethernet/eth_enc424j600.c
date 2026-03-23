@@ -497,14 +497,14 @@ static void enc424j600_rx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static enum ethernet_hw_caps enc424j600_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps enc424j600_get_capabilities(const struct device *dev __unused,
+							 struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
 }
 
 static int enc424j600_set_config(const struct device *dev,
+				 struct net_if *iface __unused,
 				 enum ethernet_config_type type,
 				 const struct ethernet_config *config)
 {
@@ -560,7 +560,7 @@ static void enc424j600_iface_init(struct net_if *iface)
 			0, K_NO_WAIT);
 }
 
-static int enc424j600_start_device(const struct device *dev)
+static int enc424j600_start_device(const struct device *dev, struct net_if *iface __unused)
 {
 	struct enc424j600_runtime *context = dev->data;
 	uint16_t tmp;
@@ -590,7 +590,7 @@ static int enc424j600_start_device(const struct device *dev)
 	return 0;
 }
 
-static int enc424j600_stop_device(const struct device *dev)
+static int enc424j600_stop_device(const struct device *dev, struct net_if *iface __unused)
 {
 	struct enc424j600_runtime *context = dev->data;
 	uint16_t tmp;

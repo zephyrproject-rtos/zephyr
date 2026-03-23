@@ -103,7 +103,9 @@ struct sy1xx_mac_dev_data {
 /* prototypes */
 static int sy1xx_mac_set_mac_addr(const struct device *dev);
 static int sy1xx_mac_set_promiscuous_mode(const struct device *dev, bool promiscuous_mode);
-static int sy1xx_mac_set_config(const struct device *dev, enum ethernet_config_type type,
+static int sy1xx_mac_set_config(const struct device *dev,
+				struct net_if *iface,
+				enum ethernet_config_type type,
 				const struct ethernet_config *config);
 static void sy1xx_mac_rx_thread_entry(void *p1, void *p2, void *p3);
 
@@ -183,7 +185,7 @@ static int sy1xx_mac_set_mac_addr(const struct device *dev)
 	return 0;
 }
 
-static int sy1xx_mac_start(const struct device *dev)
+static int sy1xx_mac_start(const struct device *dev, struct net_if *iface __unused)
 {
 	struct sy1xx_mac_dev_config *cfg = (struct sy1xx_mac_dev_config *)dev->config;
 	struct sy1xx_mac_dev_data *data = (struct sy1xx_mac_dev_data *)dev->data;
@@ -208,7 +210,7 @@ static int sy1xx_mac_start(const struct device *dev)
 	return 0;
 }
 
-static int sy1xx_mac_stop(const struct device *dev)
+static int sy1xx_mac_stop(const struct device *dev, struct net_if *iface __unused)
 {
 	struct sy1xx_mac_dev_data *data = (struct sy1xx_mac_dev_data *)dev->data;
 
@@ -317,7 +319,8 @@ static void sy1xx_mac_iface_init(struct net_if *iface)
 	}
 }
 
-static enum ethernet_hw_caps sy1xx_mac_get_caps(const struct device *dev)
+static enum ethernet_hw_caps sy1xx_mac_get_caps(const struct device *dev __unused,
+						struct net_if *iface __unused)
 {
 	enum ethernet_hw_caps supported = 0;
 
@@ -329,7 +332,9 @@ static enum ethernet_hw_caps sy1xx_mac_get_caps(const struct device *dev)
 	return supported;
 }
 
-static int sy1xx_mac_set_config(const struct device *dev, enum ethernet_config_type type,
+static int sy1xx_mac_set_config(const struct device *dev,
+				struct net_if *iface __unused,
+				enum ethernet_config_type type,
 				const struct ethernet_config *config)
 {
 	struct sy1xx_mac_dev_data *data = (struct sy1xx_mac_dev_data *)dev->data;
@@ -351,7 +356,8 @@ static int sy1xx_mac_set_config(const struct device *dev, enum ethernet_config_t
 	return ret;
 }
 
-static const struct device *sy1xx_mac_get_phy(const struct device *dev)
+static const struct device *sy1xx_mac_get_phy(const struct device *dev,
+					      struct net_if *iface __unused)
 {
 	const struct sy1xx_mac_dev_config *const cfg = dev->config;
 

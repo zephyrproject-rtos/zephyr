@@ -127,7 +127,8 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_get_capabilities(const struct device *dev __unused,
+						  struct net_if *iface __unused)
 {
 	return 0;
 }

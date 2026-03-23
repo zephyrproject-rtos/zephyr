@@ -147,10 +147,9 @@ static struct renesas_ra_eth_config eth_0_config = {
 	.p_cfg = &g_ether0_cfg, .phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle))};
 
 /* Driver functions */
-static enum ethernet_hw_caps renesas_ra_eth_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps renesas_ra_eth_get_capabilities(const struct device *dev __unused,
+							     struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
 }
 
@@ -308,7 +307,8 @@ error:
 	return -1;
 }
 
-static const struct device *renesas_ra_eth_get_phy(const struct device *dev)
+static const struct device *renesas_ra_eth_get_phy(const struct device *dev,
+						   struct net_if *iface __unused)
 {
 	const struct renesas_ra_eth_config *config = dev->config;
 

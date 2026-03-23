@@ -116,7 +116,8 @@ init_common:
 	return netc_eth_init_common(dev);
 }
 
-static const struct device *netc_eth_get_phy(const struct device *dev)
+static const struct device *netc_eth_get_phy(const struct device *dev,
+					     struct net_if *iface __unused)
 {
 	const struct netc_eth_config *cfg = dev->config;
 

@@ -97,7 +97,7 @@ static inline uint32_t phys_lo32(void *addr)
 	return lo32((uintptr_t)addr);
 }
 
-static enum ethernet_hw_caps dwmac_caps(const struct device *dev)
+static enum ethernet_hw_caps dwmac_caps(const struct device *dev, struct net_if *iface __unused)
 {
 	struct dwmac_priv *p = dev->data;
 	enum ethernet_hw_caps caps = 0;
@@ -469,6 +469,7 @@ static void dwmac_set_mac_addr(const struct device *dev, const uint8_t *addr, in
 }
 
 static int dwmac_set_config(const struct device *dev,
+			    struct net_if *iface __unused,
 			    enum ethernet_config_type type,
 			    const struct ethernet_config *config)
 {
@@ -558,7 +559,7 @@ static void phy_link_state_changed(const struct device *phy_dev,
 	}
 }
 
-static const struct device *dwmac_get_phy(const struct device *dev)
+static const struct device *dwmac_get_phy(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct dwmac_config *cfg = dev->config;
 

@@ -779,10 +779,9 @@ static void lan9250_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static enum ethernet_hw_caps lan9250_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps lan9250_get_capabilities(const struct device *dev __unused,
+						      struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE
@@ -811,7 +810,9 @@ static void lan9250_iface_init(struct net_if *iface)
 			K_PRIO_COOP(CONFIG_ETH_LAN9250_RX_THREAD_PRIO), 0, K_NO_WAIT);
 }
 
-static int lan9250_set_config(const struct device *dev, enum ethernet_config_type type,
+static int lan9250_set_config(const struct device *dev,
+			      struct net_if *iface __unused,
+			      enum ethernet_config_type type,
 			      const struct ethernet_config *config)
 {
 	struct lan9250_runtime *ctx = dev->data;
