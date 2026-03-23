@@ -272,9 +272,10 @@ static void renesas_ra_eth_initialize(struct net_if *iface)
 		LOG_ERR("Failed to init ether - R_ETHER_CallbackSet fail");
 	}
 
-	phy_link_callback_set(cfg->phy_dev, &phy_link_state_changed, (void *)dev);
 	/* Do not start the interface until PHY link is up */
 	net_if_carrier_off(ctx->iface);
+
+	phy_link_callback_set(cfg->phy_dev, &phy_link_state_changed, (void *)dev);
 }
 
 static int renesas_ra_eth_tx(const struct device *dev, struct net_pkt *pkt)
