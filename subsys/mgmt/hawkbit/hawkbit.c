@@ -117,7 +117,7 @@ static struct hawkbit_config {
 
 #ifdef CONFIG_HAWKBIT_USE_DYNAMIC_CERT_TAG
 #define HAWKBIT_CERT_TAG hb_cfg.tls_tag
-#elif defined(HAWKBIT_USE_STATIC_CERT_TAG)
+#elif defined(CONFIG_HAWKBIT_USE_STATIC_CERT_TAG)
 #define HAWKBIT_CERT_TAG CONFIG_HAWKBIT_STATIC_CERT_TAG
 #else
 #define HAWKBIT_CERT_TAG 0
