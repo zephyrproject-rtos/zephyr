@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_NRF71_GENERATE_UICR
+	bool "Generate nRF71 UICR hex"
+	depends on SOC_SERIES_NRF71
+	default y
+	help
+	  When enabled, a UICR generator image is included in the build.
+	  This generates a standalone hex containing UICR values derived from
+	  the devicetree (nordic,nrf71-uicr binding).
