@@ -315,4 +315,40 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 	};
+
+	main_timer0: timer@2400000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2400000 DT_SIZE_K(1)>;
+		clocks = <&scmi_clk 58>;
+		clock-names = "fck";
+		power-domains = <&main_timer0_pd>;
+		status = "disabled";
+	};
+
+	main_timer1: timer@2410000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2410000 DT_SIZE_K(1)>;
+		clocks = <&scmi_clk 63>;
+		clock-names = "fck";
+		power-domains = <&main_timer1_pd>;
+		status = "disabled";
+	};
+
+	main_timer2: timer@2420000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2420000 DT_SIZE_K(1)>;
+		clocks = <&scmi_clk 77>;
+		clock-names = "fck";
+		power-domains = <&main_timer2_pd>;
+		status = "disabled";
+	};
+
+	main_timer3: timer@2430000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2430000 DT_SIZE_K(1)>;
+		clocks = <&scmi_clk 82>;
+		clock-names = "fck";
+		power-domains = <&main_timer3_pd>;
+		status = "disabled";
+	};
 };
