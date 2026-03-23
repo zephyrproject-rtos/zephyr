@@ -241,8 +241,9 @@ static bool is_valid_jump_address(uint64_t *addr)
 		(*addr <= (uint64_t)(__text_region_end)));
 }
 
-static void walk_stackframe(arm64_stacktrace_cb cb, void *cookie, const struct arch_esf *esf,
-			    int max_frames)
+static void walk_stackframe(arm64_stacktrace_cb cb, void *cookie,
+			    const struct k_thread *thread,
+			    const struct arch_esf *esf, int max_frames)
 {
 	/*
 	 * For GCC:
@@ -269,6 +270,12 @@ static void walk_stackframe(arm64_stacktrace_cb cb, void *cookie, const struct a
 
 	if (esf != NULL) {
 		fp = (uint64_t *) esf->fp;
+	} else if (thread != NULL) {
+		if (thread == _current) {
+			__asm__ volatile("mov %0, x29" : "=r" (fp));
+		} else {
+			fp = (uint64_t *) thread->callee_saved.x29;
+		}
 	} else {
 		return;
 	}
@@ -290,9 +297,7 @@ static void walk_stackframe(arm64_stacktrace_cb cb, void *cookie, const struct a
 void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 		     const struct k_thread *thread, const struct arch_esf *esf)
 {
-	ARG_UNUSED(thread);
-
-	walk_stackframe((arm64_stacktrace_cb)callback_fn, cookie, esf,
+	walk_stackframe((arm64_stacktrace_cb)callback_fn, cookie, thread, esf,
 			CONFIG_ARCH_STACKWALK_MAX_FRAMES);
 }
 #endif /* CONFIG_ARCH_STACKWALK */
@@ -321,7 +326,7 @@ static void esf_unwind(const struct arch_esf *esf)
 
 	EXCEPTION_DUMP("");
 	EXCEPTION_DUMP("call trace:");
-	walk_stackframe(print_trace_address, &i, esf, CONFIG_ARCH_STACKWALK_MAX_FRAMES);
+	walk_stackframe(print_trace_address, &i, NULL, esf, CONFIG_ARCH_STACKWALK_MAX_FRAMES);
 	EXCEPTION_DUMP("");
 }
 #endif /* CONFIG_EXCEPTION_STACK_TRACE */
