@@ -32,6 +32,17 @@ extern "C" {
 /** Maximum length of the link address */
 #if CONFIG_NET_LINK_ADDR_CUSTOM_LENGTH > 0
 #define NET_LINK_ADDR_MAX_LENGTH CONFIG_NET_LINK_ADDR_CUSTOM_LENGTH
+
+#if defined(CONFIG_NET_L2_PHY_IEEE802154) || defined(CONFIG_NET_L2_PPP)
+BUILD_ASSERT(CONFIG_NET_LINK_ADDR_CUSTOM_LENGTH >= 8,
+	     "CONFIG_NET_LINK_ADDR_CUSTOM_LENGTH too low, required at least 8");
+#endif
+
+#if defined(CONFIG_NET_L2_ETHERNET)
+BUILD_ASSERT(CONFIG_NET_LINK_ADDR_CUSTOM_LENGTH >= 6,
+	     "CONFIG_NET_LINK_ADDR_CUSTOM_LENGTH too low, required at least 6");
+#endif
+
 #elif defined(CONFIG_NET_L2_PHY_IEEE802154) || defined(CONFIG_NET_L2_PPP)
 #define NET_LINK_ADDR_MAX_LENGTH 8
 #else
