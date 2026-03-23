@@ -1313,7 +1313,7 @@ static inline void net_if_nbr_reachability_hint(struct net_if *iface,
 /** @cond INTERNAL_HIDDEN */
 
 static inline int net_if_set_link_addr_unlocked(struct net_if *iface,
-						uint8_t *addr, uint8_t len,
+						const uint8_t *addr, uint8_t len,
 						enum net_link_type type)
 {
 	int ret;
@@ -1337,7 +1337,7 @@ static inline int net_if_set_link_addr_unlocked(struct net_if *iface,
 }
 
 int net_if_set_link_addr_locked(struct net_if *iface,
-				uint8_t *addr, uint8_t len,
+				const uint8_t *addr, uint8_t len,
 				enum net_link_type type);
 
 #if CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG
@@ -1379,7 +1379,7 @@ extern struct net_if_addr *net_if_addr_ref(struct net_if *iface,
  * @return 0 on success
  */
 static inline int net_if_set_link_addr(struct net_if *iface,
-				       uint8_t *addr, uint8_t len,
+				       const uint8_t *addr, uint8_t len,
 				       enum net_link_type type)
 {
 #if defined(CONFIG_NET_RAW_MODE)
