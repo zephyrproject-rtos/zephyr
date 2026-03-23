@@ -22,5 +22,6 @@ supported:
   - pwm
   - spi
   - uart
+  - rtc
   - watchdog
   - comparator
