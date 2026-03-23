@@ -47,24 +47,34 @@
       html += `<div class="dt-prop-value">${propHtml}</div>`;
     }
 
-    html += `<div class="dt-prop-info">`;
+    html += `<div class="dt-prop-info text-muted">`;
 
     // Description
     if (edtNode.description) {
-      html += `<div>${safeHTML(edtNode.description)}</div>`;
+      html += '<span>Description:</span>';
+      html += `<div class="dt-prop-info-value">${safeHTML(edtNode.description)}</div>`;
     }
 
-    // Type from the specification
+    // Type
     if (edtNode.typeSpec) {
-      html += `<i>${safeHTML(edtNode.typeSpec)}</i>`;
+      html += '<span>Type:</span>';
+      html += `<span class="dt-prop-info-value">${safeHTML(edtNode.typeSpec)}</span>`;
     }
 
     // Location
     if (edtNode.filename) {
-      if (edtNode.typeSpec) {
-        html += ' at ';
+      html += '<span>Location:</span>';
+      html += `<span class="dt-prop-info-value">${edtNode.filename}:${edtNode.lineno}</span>`;
+    }
+
+    // Matching binding, for nodes
+    if (!edtNode.isProperty) {
+      html += '<span>Binding:</span>';
+      if (edtNode.bindingPath) {
+        html += `${edtNode.bindingPath}`;
+      } else if (!edtNode.isProperty) {
+        html += '<i>none</i>';
       }
-      html += `<span class="text-muted">${edtNode.filename}:${edtNode.lineno}</span>`;
     }
 
     html += `</div>`;

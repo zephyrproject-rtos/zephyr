@@ -543,6 +543,10 @@ class ZephyrDashboard:
 
         def create_tree_node(dt_node, expanded=False):
             edt_node = edt.get_node(dt_node.path)
+            if edt_node and edt_node.binding_path:
+                binding_path = self._safe_relpath(edt_node.binding_path)
+            else:
+                binding_path = ""
 
             return {
                 "id": dt_node.path,
@@ -554,6 +558,7 @@ class ZephyrDashboard:
                     "filename": self._safe_relpath(dt_node.filename),
                     "lineno": dt_node.lineno,
                     "description": edt_node.description if edt_node else "",
+                    "bindingPath": binding_path,
                 },
             }
 
@@ -581,6 +586,7 @@ class ZephyrDashboard:
                     "lineno": dt_prop.lineno,
                     "description": edt_prop.description if edt_prop else "",
                     "typeSpec": edt_prop.type if edt_prop else "",
+                    "bindingPath": "",
                 },
             }
 

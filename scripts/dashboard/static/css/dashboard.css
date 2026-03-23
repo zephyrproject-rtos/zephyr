@@ -256,6 +256,13 @@ tr.mem-rpt-symbol span.tt-cell-content {
 
 .dt-prop-info {
     font-size: smaller;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0em 0.5em;
+}
+
+.dt-prop-info-value {
+    overflow-wrap: anywhere;
 }
 
 a.node-ref {
