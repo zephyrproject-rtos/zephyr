@@ -1,0 +1,27 @@
+# Copyright (c) 2026 SiFli Technologies(Nanjing) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: SiFli SF32LB USB device controller
+
+compatible: "sifli,sf32lb-usbd"
+
+include: [usb-ep.yaml, pinctrl-device.yaml, sifli-sf32lb-cfg.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clocks:
+    required: true
+
+  sifli,cfg:
+    required: true
