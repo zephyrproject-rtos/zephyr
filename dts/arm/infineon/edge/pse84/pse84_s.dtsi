@@ -460,6 +460,14 @@
 			status = "disabled";
 		};
 
+		rtc0: rtc@52420000 {
+			compatible = "infineon,rtc";
+			reg = <0x52420000 0x1140>;
+			interrupts = <56 4>;
+			alarms-count = <2>;
+			status = "disabled";
+		};
+
 		canfd0: canfd@52840000 {
 			compatible = "infineon,canfd-controller";
 			reg = <0x52840000 0x1088>, <0x52850000 0x2000>;
