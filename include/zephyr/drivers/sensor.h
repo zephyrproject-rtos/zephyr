@@ -389,11 +389,11 @@ enum sensor_attribute {
 
 	/** Hardware batch duration in ticks */
 	SENSOR_ATTR_BATCH_DURATION,
-	/* Configure the gain of a sensor. */
+	/** Configure the gain of a sensor. */
 	SENSOR_ATTR_GAIN,
-	/* Configure the resolution of a sensor. */
+	/** Configure the resolution of a sensor. */
 	SENSOR_ATTR_RESOLUTION,
-	/* Chip ID of the sensor*/
+	/** Chip ID of a sensor */
 	SENSOR_ATTR_CHIP_ID,
 	/**
 	 * Number of all common sensor attributes.
