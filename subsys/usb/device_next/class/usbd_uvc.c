@@ -570,7 +570,7 @@ static int uvc_set_vs_probe(const struct device *dev, const struct net_buf *cons
 
 	if (probe.dwFrameInterval != 0) {
 		data->video_frmival.numerator = sys_le32_to_cpu(probe.dwFrameInterval);
-		data->video_frmival.denominator = USEC_PER_SEC * 100;
+		data->video_frmival.denominator = NSEC_PER_SEC / 100;
 	}
 
 	if (probe.bFrameIndex != 0) {
