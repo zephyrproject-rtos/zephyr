@@ -1,7 +1,7 @@
 # Copyright (c) 2026 BayLibre SAS
 # SPDX-License-Identifier: Apache-2.0
 
-config TF_PSA_CRYPTO_CFG_FILE
+config TF_PSA_CRYPTO_CONFIG_FILE
 	string "TF-PSA-Crypto configuration file"
 	default "config-tf-psa-crypto.h"
 	help

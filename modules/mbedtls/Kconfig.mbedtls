@@ -7,7 +7,7 @@
 menu "Mbed TLS configuration"
 	depends on MBEDTLS_BUILTIN
 
-config MBEDTLS_CFG_FILE
+config MBEDTLS_CONFIG_FILE
 	string "mbed TLS configuration file"
 	default "config-mbedtls.h"
 	help

@@ -20,11 +20,11 @@
 #include <mbedtls/debug.h>
 
 #if defined(CONFIG_MBEDTLS)
-#if !defined(CONFIG_MBEDTLS_CFG_FILE)
+#if !defined(CONFIG_MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
 #else
-#include CONFIG_MBEDTLS_CFG_FILE
-#endif /* CONFIG_MBEDTLS_CFG_FILE */
+#include CONFIG_MBEDTLS_CONFIG_FILE
+#endif /* CONFIG_MBEDTLS_CONFIG_FILE */
 #endif
 
 #if defined(CONFIG_MBEDTLS_ENABLE_HEAP) && \
