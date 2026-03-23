@@ -7,20 +7,6 @@
 #ifndef TF_PSA_CRYPTO_CONFIG_H
 #define TF_PSA_CRYPTO_CONFIG_H
 
-/* [TO BE IMPROVED]
- * This is a dirty fix to overcome a pre-existing problem: TLS/X509 build
- * symbols influence crypto ones. This not ideal even before the split, but
- * at least it was working. Now that we split the configuration headers in
- * 2 we need to include the TLS/X509 configuration header file here, which
- * is not good.
- * Of course the solution is to:
- * - have 1:1 mapping between Kconfigs and build symbols
- * - let each Kconfig enable ONLY 1 build symbol
- * - resolve all the dependencies at Kconfig level instead of doing that in the
- *   configuration header file.
- */
-#include "config-mbedtls.h"
-
 /*
  * "config-psa.h" contains all the Kconfig -> build symbols matching for
  * the "PSA_WANT_xxx", whereas "config-tf-psa-crypto.h" contains the same
