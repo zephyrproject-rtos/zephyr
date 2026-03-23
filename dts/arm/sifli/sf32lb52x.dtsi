@@ -166,6 +166,18 @@
 			status = "disabled";
 		};
 
+		usbd: usbd@50047000 {
+			compatible = "sifli,sf32lb-usbd";
+			reg = <0x50047000 0x1000>;
+			interrupts = <92 0>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_USBC>;
+			sifli,cfg = <&cfg>;
+			num-bidir-endpoints = <1>;
+			num-in-endpoints = <4>;
+			num-out-endpoints = <4>;
+			status = "disabled";
+		};
+
 		crc: crc@50048000 {
 			compatible = "sifli,sf32lb-crc";
 			reg = <0x50048000 0x1000>;
