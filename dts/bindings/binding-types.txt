@@ -54,6 +54,7 @@ fs	File system
 fuel-gauge	Fuel gauge
 gnss	GNSS (Global Navigation Satellite System)
 gpio	GPIO (General Purpose Input/Output) & Headers
+graphics_accelerator	Graphics accelerator
 haptics	Haptics
 hda	HDA (High Definition Audio)
 hdlc_rcp_if	IEEE 802.15.4 HDLC RCP interface
