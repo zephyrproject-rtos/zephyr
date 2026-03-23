@@ -483,8 +483,9 @@ header file under ``include/zephyr/`` that was modified during the release
 cycle:
 
 1. **New APIs** — every new ``@defgroup`` block that constitutes a public API
-   must carry a ``@version`` Doxygen tag as described in
-   :ref:`api_versioning`.
+   must carry a ``@version`` Doxygen tag as described in the
+   `API versioning guidelines
+   <https://docs.zephyrproject.org/latest/contribute/style/doxygen.html#api-versioning>`_.
 
 2. **Version increment** — the ``@version`` field of every modified public
    API must have been incremented **exactly once** during the release cycle,
@@ -500,19 +501,29 @@ cycle:
      (``X.Y.Z`` → ``X+1.0.0``).
 
 3. **Breaking changes** — all breaking changes to stable APIs must have gone
-   through the process described in :ref:`api_lifecycle_breaking`.  Any
-   breaking change that did not follow this process shall be reverted before
+   through the process described in the
+   `API lifecycle guidelines
+   <https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#introducing-breaking-api-changes>`_.
+   Any breaking change that did not follow this process shall be reverted before
    the final release is tagged.
 
 A CI script is provided to automate the structural part of this verification:
 
 .. code-block:: bash
 
-   python3 scripts/ci/check_api_version.py --base <previous-release-tag>
+   # 1. Build Doxygen XML for both refs:
+   west build -t doxygen  # for HEAD (run from your current checkout)
+
+   # 2. Run the version check:
+   python3 scripts/ci/check_api_version.py \
+       --base-xml <path/to/base/doxygen/xml> \
+       --head-xml <path/to/head/doxygen/xml>
 
 For example, when preparing the ``v4.3.0`` release::
 
-   python3 scripts/ci/check_api_version.py --base v4.2.0
+   python3 scripts/ci/check_api_version.py \
+       --base-xml build/v4.2.0/doxygen/xml \
+       --head-xml build/v4.3.0/doxygen/xml
 
 The script exits with a non-zero status and lists each offending header if any
 ``@version`` tag was not updated, was incremented by more than one step, or was

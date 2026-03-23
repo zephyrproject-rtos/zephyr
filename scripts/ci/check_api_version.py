@@ -1,261 +1,289 @@
 #!/usr/bin/env python3
-# Copyright (c) 2025 The Zephyr Project
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """
-Verify that public API ``@version`` tags in Zephyr header files have been
-updated correctly during a release cycle.
+Verify that public API ``@version`` tags have been updated correctly during a
+release cycle, using Doxygen XML as the authoritative source.
 
-For every public header under ``include/zephyr/`` that was modified between a
-base git ref and HEAD, the script checks that each ``@defgroup`` block's
-``@version`` tag was incremented exactly once and follows semantic-versioning
-rules:
+The script takes two pre-built Doxygen XML directories — one generated from the
+base ref (start of the release cycle) and one from the current tree (HEAD) —
+and compares the ``@version`` field of every API group (``@defgroup``) present
+in both.  For groups that exist in both trees it validates that:
 
-* Only fixes           → patch bump only           (X.Y.Z → X.Y.Z+1)
-* Fixes + new features → minor bump, patch → 0    (X.Y.Z → X.Y+1.0)
-* Breaking changes     → major bump, minor/patch → 0  (X.Y.Z → X+1.0.0)
+* The version was incremented exactly once, following SemVer rules:
+
+  - Only fixes             → patch bump only              (X.Y.Z → X.Y.Z+1)
+  - Fixes + new features   → minor bump, patch reset to 0 (X.Y.Z → X.Y+1.0)
+  - Breaking changes       → major bump, minor/patch → 0  (X.Y.Z → X+1.0.0)
+
+* No component was incremented by more than 1 in a single release cycle.
+
+Groups present only in HEAD are treated as new APIs; those present only in the
+base are ignored (removed APIs are not a versioning concern here).
 
 Usage::
 
-    python3 scripts/ci/check_api_version.py --base v4.2.0
+    # Build Doxygen XML for both refs first, then run:
+    python3 scripts/ci/check_api_version.py \\
+        --base-xml path/to/base/doxygen/xml \\
+        --head-xml path/to/head/doxygen/xml
 
-Exit code is non-zero if any violation is found.
+Exit code is non-zero if any error is found.
 """
 
 import argparse
-import re
-import subprocess
 import sys
 from pathlib import Path
 
-# ---------------------------------------------------------------------------
-# Regex
-# ---------------------------------------------------------------------------
+try:
+    import doxmlparser.compound as cpd
+    import doxmlparser.index as idx
+except ImportError:
+    print(
+        "ERROR: doxmlparser not found. Install it with: pip install doxmlparser",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
-# Matches "@version X.Y.Z" inside a Doxygen comment.
-# Named groups use strict SemVer integers (no leading zeros except "0").
-_VERSION_RE = re.compile(
-    r"@version\s+"
-    r"(?P<major>0|[1-9]\d*)"
-    r"\."
-    r"(?P<minor>0|[1-9]\d*)"
-    r"\."
-    r"(?P<patch>0|[1-9]\d*)"
-)
-
-# Matches "@defgroup <name> ..." – used to attribute a @version to an API group.
-_DEFGROUP_RE = re.compile(r"@defgroup\s+(?P<name>\S+)")
-
-# Public API header root (relative to Zephyr tree root)
-_PUBLIC_INCLUDE = "include/zephyr"
+# Doxygen XML helpers
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
+def _get_version_from_compounddef(compounddef) -> str | None:
+    """Return the ``@version`` string from a parsed compounddef, or ``None``.
 
-def _parse_versions(text: str, fallback_name: str) -> dict:
-    """Return ``{defgroup_name: (major, minor, patch)}`` parsed from *text*.
+    Doxygen encodes ``@version <text>`` as::
 
-    A ``@version`` tag is attributed to the nearest preceding ``@defgroup``
-    in the same file.  If no ``@defgroup`` precedes it, *fallback_name* is
-    used as the key.  First occurrence per group wins.
+        <detaileddescription>
+          <para>
+            <simplesect kind="version">
+              <para><text></para>
+            </simplesect>
+          </para>
+        </detaileddescription>
     """
+    dd = compounddef.get_detaileddescription()
+    if dd is None:
+        return None
+    for para in dd.get_para():
+        for sect in para.get_simplesect():
+            if sect.get_kind() == "version":
+                paras = sect.get_para()
+                if paras:
+                    return paras[0].get_valueOf_().strip() or None
+    return None
+
+
+def parse_api_versions(xml_dir: Path) -> dict:
+    """Return ``{group_name: version_str}`` for all groups in *xml_dir*.
+
+    Parses ``index.xml`` to enumerate ``group`` compounds, then reads each
+    compound XML file to extract the ``@version`` field via
+    :func:`_get_version_from_compounddef`.  Groups without a ``@version`` tag
+    are omitted.
+
+    :param xml_dir: Directory containing Doxygen XML output
+                    (must contain ``index.xml``).
+    :raises SystemExit: If ``index.xml`` is missing.
+    """
+    index_file = xml_dir / "index.xml"
+    if not index_file.is_file():
+        print(
+            f"ERROR: {index_file} not found. "
+            "Generate Doxygen XML with GENERATE_XML=YES before running this script.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     result: dict = {}
-    current_group: str | None = None
-    for line in text.splitlines():
-        m = _DEFGROUP_RE.search(line)
-        if m:
-            current_group = m.group("name")
-        m = _VERSION_RE.search(line)
-        if m:
-            ver = (int(m.group("major")),
-                   int(m.group("minor")),
-                   int(m.group("patch")))
-            key = current_group if current_group else fallback_name
-            result.setdefault(key, ver)
+    root = idx.parse(str(index_file), True)
+
+    for compound in root.get_compound():
+        if compound.get_kind() != "group":
+            continue
+        refid = compound.get_refid()
+        name = compound.get_name()
+        if not refid or not name:
+            continue
+
+        compound_file = xml_dir / f"{refid}.xml"
+        if not compound_file.is_file():
+            continue
+
+        tree = cpd.parse(str(compound_file), True)
+        for compounddef in tree.get_compounddef():
+            version = _get_version_from_compounddef(compounddef)
+            if version is not None:
+                result[name] = version
+                break  # first compounddef wins
+
     return result
 
 
-def _git_show(ref: str, rel_path: str, cwd: Path) -> str | None:
-    """Return content of *rel_path* at git *ref*, or ``None`` if absent."""
+# SemVer helpers
+
+
+def _parse_semver(version: str) -> tuple | None:
+    """Parse ``"X.Y.Z"`` and return ``(major, minor, patch)``, or ``None``."""
+    parts = version.split(".")
+    if len(parts) != 3:
+        return None
     try:
-        r = subprocess.run(
-            ["git", "show", f"{ref}:{rel_path}"],
-            capture_output=True,
-            text=True,
-            cwd=cwd,
-        )
-        return r.stdout if r.returncode == 0 else None
-    except FileNotFoundError:
+        return (int(parts[0]), int(parts[1]), int(parts[2]))
+    except ValueError:
         return None
 
 
-def _changed_public_headers(root: Path, base_ref: str, head_ref: str) -> list:
-    """Return relative paths of changed public header files."""
-    try:
-        r = subprocess.run(
-            ["git", "diff", "--name-only", f"{base_ref}..{head_ref}"],
-            capture_output=True,
-            text=True,
-            check=True,
-            cwd=root,
-        )
-    except subprocess.CalledProcessError as exc:
-        print(f"ERROR: git diff failed: {exc.stderr.strip()}", file=sys.stderr)
-        sys.exit(1)
-    except FileNotFoundError:
-        print("ERROR: git not found in PATH.", file=sys.stderr)
-        sys.exit(1)
-
-    return [
-        p for p in r.stdout.splitlines()
-        if p.startswith(_PUBLIC_INCLUDE + "/") and p.endswith(".h")
-    ]
-
-
-# ---------------------------------------------------------------------------
 # Problem container
-# ---------------------------------------------------------------------------
+
 
 class Problem:
     ERROR = "error"
     WARNING = "warning"
 
-    def __init__(self, level: str, group: str, header: str, msg: str):
+    def __init__(self, level: str, group: str, msg: str) -> None:
         self.level = level
         self.group = group
-        self.header = header
         self.msg = msg
 
     def __str__(self) -> str:
-        return f"[{self.level.upper()}] {self.header} (@defgroup {self.group}): {self.msg}"
+        return f"[{self.level.upper()}] @defgroup {self.group}: {self.msg}"
 
 
-# ---------------------------------------------------------------------------
 # Core checker
-# ---------------------------------------------------------------------------
 
-def check_api_versions(root: Path, base_ref: str, head_ref: str = "HEAD") -> list:
-    """Check ``@version`` tags for all changed public headers.
 
-    Compares *base_ref* against *head_ref* (default ``HEAD``).
-    Returns a list of :class:`Problem` objects.
+def check_api_versions(base_versions: dict, head_versions: dict) -> list:
+    """Compare *base_versions* and *head_versions* and return problems.
+
+    Both dicts have the shape ``{group_name: version_str}`` as returned by
+    :func:`parse_api_versions`.
+
+    :returns: List of :class:`Problem` instances (empty means all OK).
     """
     problems: list = []
-    changed = _changed_public_headers(root, base_ref, head_ref)
 
-    if not changed:
-        return problems
-
-    for rel in changed:
-        # Read both versions via git to avoid any working-tree noise
-        base_text = _git_show(base_ref, rel, root)
-        head_text = _git_show(head_ref, rel, root)
-
-        if head_text is None:
-            # File deleted in this cycle – nothing to version-check
+    for group, head_ver_str in head_versions.items():
+        head_ver = _parse_semver(head_ver_str)
+        if head_ver is None:
+            problems.append(
+                Problem(
+                    Problem.ERROR,
+                    group,
+                    f"@version {head_ver_str!r} is not a valid semantic version (expected X.Y.Z).",
+                )
+            )
             continue
 
-        head_groups = _parse_versions(head_text, rel)
+        hM, hm, hp = head_ver
 
-        if not head_groups:
-            # Header has no @version tags – not a versioned public API
+        if group not in base_versions:
+            # New API introduced this release cycle
+            if head_ver == (0, 0, 0):
+                problems.append(
+                    Problem(
+                        Problem.ERROR,
+                        group,
+                        "New API has @version 0.0.0 – assign a proper initial version. "
+                        "See https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html",
+                    )
+                )
+            # New API with a real version → OK, nothing to compare against
             continue
 
-        if base_text is None:
-            # Brand-new file introduced this cycle
-            for grp, ver in head_groups.items():
-                if ver == (0, 0, 0):
-                    problems.append(Problem(
-                        Problem.ERROR, grp, rel,
-                        "New API has @version 0.0.0 – assign a proper initial "
-                        "version (see "
-                        "https://docs.zephyrproject.org/latest/develop/api/"
-                        "api_lifecycle.html).",
-                    ))
+        base_ver_str = base_versions[group]
+        base_ver = _parse_semver(base_ver_str)
+        if base_ver is None:
+            problems.append(
+                Problem(
+                    Problem.WARNING,
+                    group,
+                    f"Base @version {base_ver_str!r} is not a valid semantic version "
+                    "– skipping comparison.",
+                )
+            )
             continue
 
-        base_groups = _parse_versions(base_text, rel)
+        bM, bm, bp = base_ver
 
-        for grp, head_ver in head_groups.items():
-            hM, hm, hp = head_ver
+        # No change
+        if head_ver == base_ver:
+            problems.append(
+                Problem(
+                    Problem.WARNING,
+                    group,
+                    f"@version not incremented (still {base_ver_str}). "
+                    "Confirm no public API changes were made this release cycle. "
+                    "See https://docs.zephyrproject.org/latest/develop/api/overview.html",
+                )
+            )
+            continue
 
-            if grp not in base_groups:
-                # @defgroup / @version added mid-cycle – treat as new API
-                if head_ver == (0, 0, 0):
-                    problems.append(Problem(
-                        Problem.ERROR, grp, rel,
-                        "New API has @version 0.0.0 – assign a proper initial "
-                        "version.",
-                    ))
-                continue
+        # Regression
+        if head_ver < base_ver:
+            problems.append(
+                Problem(
+                    Problem.ERROR,
+                    group,
+                    f"@version regressed: {base_ver_str} → {head_ver_str}.",
+                )
+            )
+            continue
 
-            base_ver = base_groups[grp]
-            bM, bm, bp = base_ver
-
-            # Version must have been bumped
-            if head_ver == base_ver:
-                problems.append(Problem(
-                    Problem.ERROR, grp, rel,
-                    f"@version not incremented (still {bM}.{bm}.{bp}) despite "
-                    f"changes since {base_ref}. Bump the version following "
-                    "https://docs.zephyrproject.org/latest/develop/api/overview.html.",
-                ))
-                continue
-
-            # Version must not go backwards
-            if head_ver < base_ver:
-                problems.append(Problem(
-                    Problem.ERROR, grp, rel,
-                    f"@version regressed: {bM}.{bm}.{bp} → {hM}.{hm}.{hp}.",
-                ))
-                continue
-
-            # Validate SemVer bump rules
-            if hM > bM:
-                # Major bump: minor and patch must be reset to 0
-                if hm != 0 or hp != 0:
-                    problems.append(Problem(
-                        Problem.ERROR, grp, rel,
-                        f"Major bump {bM}.{bm}.{bp} → {hM}.{hm}.{hp}: "
+        # Version went forward — validate SemVer bump rules
+        if hM > bM:
+            # Major bump: minor and patch must be reset to 0
+            if hm != 0 or hp != 0:
+                problems.append(
+                    Problem(
+                        Problem.ERROR,
+                        group,
+                        f"Major bump {base_ver_str} → {head_ver_str}: "
                         "minor and patch must be reset to 0.",
-                    ))
-                if hM - bM > 1:
-                    problems.append(Problem(
-                        Problem.ERROR, grp, rel,
-                        f"Major version may increase by at most 1 per release "
-                        f"cycle ({bM} → {hM}).",
-                    ))
-            elif hm > bm:
-                # Minor bump: patch must be reset to 0
-                if hp != 0:
-                    problems.append(Problem(
-                        Problem.ERROR, grp, rel,
-                        f"Minor bump {bM}.{bm}.{bp} → {hM}.{hm}.{hp}: "
-                        "patch must be reset to 0.",
-                    ))
-                if hm - bm > 1:
-                    problems.append(Problem(
-                        Problem.ERROR, grp, rel,
-                        f"Minor version may increase by at most 1 per release "
-                        f"cycle ({bm} → {hm}).",
-                    ))
-            else:
-                # Patch bump only
-                if hp - bp > 1:
-                    problems.append(Problem(
-                        Problem.ERROR, grp, rel,
-                        f"Patch version may increase by at most 1 per release "
-                        f"cycle ({bp} → {hp}).",
-                    ))
+                    )
+                )
+            if hM - bM > 1:
+                problems.append(
+                    Problem(
+                        Problem.ERROR,
+                        group,
+                        f"Major version may increase by at most 1 per release cycle ({bM} → {hM}).",
+                    )
+                )
+        elif hm > bm:
+            # Minor bump: patch must be reset to 0
+            if hp != 0:
+                problems.append(
+                    Problem(
+                        Problem.ERROR,
+                        group,
+                        f"Minor bump {base_ver_str} → {head_ver_str}: patch must be reset to 0.",
+                    )
+                )
+            if hm - bm > 1:
+                problems.append(
+                    Problem(
+                        Problem.ERROR,
+                        group,
+                        f"Minor version may increase by at most 1 per release cycle ({bm} → {hm}).",
+                    )
+                )
+        else:
+            # Patch-only bump
+            if hp - bp > 1:
+                problems.append(
+                    Problem(
+                        Problem.ERROR,
+                        group,
+                        f"Patch version may increase by at most 1 per release cycle ({bp} → {hp}).",
+                    )
+                )
 
     return problems
 
 
-# ---------------------------------------------------------------------------
 # CLI
-# ---------------------------------------------------------------------------
+
 
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
@@ -264,33 +292,30 @@ def _build_parser() -> argparse.ArgumentParser:
         allow_abbrev=False,
     )
     p.add_argument(
-        "--base",
+        "--base-xml",
         required=True,
-        metavar="REF",
-        help="Git ref representing the start of the release cycle "
-             "(e.g. v4.2.0 or the merge-base SHA).",
-    )
-    p.add_argument(
-        "--head",
-        default="HEAD",
-        metavar="REF",
-        help="Git ref to compare against (default: HEAD).",
-    )
-    p.add_argument(
-        "--root",
-        default=".",
         metavar="DIR",
-        help="Root of the Zephyr source tree (default: current directory).",
+        help="Directory containing Doxygen XML output for the base ref "
+        "(start of the release cycle).",
+    )
+    p.add_argument(
+        "--head-xml",
+        required=True,
+        metavar="DIR",
+        help="Directory containing Doxygen XML output for the current tree.",
     )
     return p
 
 
 def main(argv=None) -> int:
     args = _build_parser().parse_args(argv)
-    root = Path(args.root).resolve()
+    base_xml = Path(args.base_xml)
+    head_xml = Path(args.head_xml)
 
-    problems = check_api_versions(root, args.base, args.head)
+    base_versions = parse_api_versions(base_xml)
+    head_versions = parse_api_versions(head_xml)
 
+    problems = check_api_versions(base_versions, head_versions)
     errors = [p for p in problems if p.level == Problem.ERROR]
     warnings = [p for p in problems if p.level == Problem.WARNING]
 
@@ -301,8 +326,7 @@ def main(argv=None) -> int:
 
     if errors:
         print(
-            f"\n{len(errors)} error(s) found. "
-            "Fix @version tags before tagging the release.",
+            f"\n{len(errors)} error(s) found. Fix @version tags before tagging the release.",
             file=sys.stderr,
         )
         return 1
