@@ -375,7 +375,7 @@ typedef void (*dma_api_chan_release)(const struct device *dev,
 __subsystem struct dma_driver_api {
 	dma_api_config config;
 	dma_api_reload reload;
-    dma_api_reload_head_block reload_head_block;
+	dma_api_reload_head_block reload_head_block;
 	dma_api_start start;
 	dma_api_stop stop;
 	dma_api_suspend suspend;
