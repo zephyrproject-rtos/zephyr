@@ -20,8 +20,8 @@ if(CONFIG_MBEDTLS)
     zephyr_link_libraries(mbedTLS)
 
     target_compile_definitions(mbedTLS INTERFACE
-      MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
-      TF_PSA_CRYPTO_CONFIG_FILE="${CONFIG_TF_PSA_CRYPTO_CFG_FILE}"
+      MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CONFIG_FILE}"
+      TF_PSA_CRYPTO_CONFIG_FILE="${CONFIG_TF_PSA_CRYPTO_CONFIG_FILE}"
     )
 
     # Some CMake variables that are used in Mbed TLS build
