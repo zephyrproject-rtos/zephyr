@@ -471,6 +471,60 @@ Each release has a GitHub issue associated with it that contains the full
 checklist. After a release is complete, a checklist for the next release is
 created.
 
+.. _release_api_version_check:
+
+API Version Verification
+========================
+
+Public API versions must be verified before the final release is tagged.
+Area maintainers are responsible for the APIs they own; the release team covers
+unmaintained areas.  The following checks shall be performed for every public
+header file under ``include/zephyr/`` that was modified during the release
+cycle:
+
+1. **New APIs** — every new ``@defgroup`` block that constitutes a public API
+   must carry a ``@version`` Doxygen tag as described in
+   :ref:`api_versioning`.
+
+2. **Version increment** — the ``@version`` field of every modified public
+   API must have been incremented **exactly once** during the release cycle,
+   following the semantic-versioning rules documented in :ref:`api_overview`:
+
+   - *Only bug fixes* → increment the **patch** component only
+     (``X.Y.Z`` → ``X.Y.Z+1``).
+   - *Bug fixes and/or new backward-compatible features* → increment the
+     **minor** component and reset **patch** to ``0``
+     (``X.Y.Z`` → ``X.Y+1.0``).
+   - *Bug fixes, new features, and/or breaking changes* → increment the
+     **major** component and reset **minor** and **patch** to ``0``
+     (``X.Y.Z`` → ``X+1.0.0``).
+
+3. **Breaking changes** — all breaking changes to stable APIs must have gone
+   through the process described in :ref:`api_lifecycle_breaking`.  Any
+   breaking change that did not follow this process shall be reverted before
+   the final release is tagged.
+
+A CI script is provided to automate the structural part of this verification:
+
+.. code-block:: bash
+
+   python3 scripts/ci/check_api_version.py --base <previous-release-tag>
+
+For example, when preparing the ``v4.3.0`` release::
+
+   python3 scripts/ci/check_api_version.py --base v4.2.0
+
+The script exits with a non-zero status and lists each offending header if any
+``@version`` tag was not updated, was incremented by more than one step, or was
+not correctly reset (e.g. patch not zeroed after a minor bump).
+
+.. note::
+
+   The script validates only the *structural* correctness of the version bump
+   (i.e. SemVer rules).  Verifying that the *level* of the bump (patch vs.
+   minor vs. major) is appropriate for the actual changes is a manual
+   responsibility of the area maintainer.
+
 Tagging
 =======
 
