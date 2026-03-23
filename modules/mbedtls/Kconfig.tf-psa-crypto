@@ -358,3 +358,15 @@ config MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 	  allows internal headers related to legacy crypto to be made public.
 	  The long term goal is to get rid of this support so all the code
 	  should be transitioned to the PSA Crypto API as soon as possible.
+
+config TF_PSA_CRYPTO_PQCP_MLDSA_ENABLED
+	bool "mldsa-native from the PQCP (post-quantum code package) driver [EXPERIMENTAL]"
+	select EXPERIMENTAL
+
+if TF_PSA_CRYPTO_PQCP_MLDSA_ENABLED
+
+config TF_PSA_CRYPTO_PQCP_MLDSA_87_ENABLED
+	bool "mldsa-native from the PQCP (post-quantum code package) driver for the security level 87 [EXPERIMENTAL]"
+	select EXPERIMENTAL
+
+endif # TF_PSA_CRYPTO_PQCP_MLDSA_ENABLED
