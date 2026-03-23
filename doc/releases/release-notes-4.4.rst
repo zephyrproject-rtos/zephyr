@@ -33,6 +33,73 @@ We are pleased to announce the release of Zephyr version 4.4.0.
 
 Major enhancements with this release include:
 
+**OpenRISC support**
+  Zephyr now supports the :zephyr:board-catalog:`OpenRISC architecture <#arch=openrisc>`.
+
+**Toolchain updates: Zephyr SDK 1.0 and C17**
+  Zephyr 4.4 is the first release to support :ref:`Zephyr SDK 1.0 <toolchain_zephyr_sdk>`, with an
+  upgraded GNU toolchain, experimental Clang/LLVM support, and multi-platform QEMU and OpenOCD
+  host tools.
+
+  Zephyr now defaults to C17 as its minimum required C standard version.
+
+**Networking enhancements**
+  The Wi-Fi management stack now supports :ref:`wifi_mgmt_p2p`, allowing devices to discover and
+  connect directly without a traditional access point.
+
+  The networking stack also adds support for :zephyr:code-sample:`WireGuard VPN <wireguard-vpn>`,
+  enabling secure, low-overhead tunneling.
+
+**USB host**
+  Experimental USB host support has been significantly expanded with a new host-class driver
+  framework and support for :abbr:`UVC (USB Video Class)` cameras on Zephyr devices acting as USB
+  hosts.
+
+**New driver classes**
+  Zephyr 4.4 adds several new driver APIs, including:
+
+  - :ref:`One-Time Programmable (OTP) memory devices <otp>` for provisioning and reading permanent
+    device data,
+
+  - A :ref:`biometrics API <biometrics_api>` for integrating biometric sensors such as fingerprint
+    scanners or facial recognition systems, and
+
+  - A :ref:`Wake-up Controller (WUC) API <wuc_api>` for managing wake-up sources that can bring the
+    system out of low-power states.
+
+**Zbus proxy agents**
+  :ref:`Zbus proxy agents <zbus_proxy_agent>` extend publish-subscribe messaging across CPU and
+  domain boundaries over IPC.
+
+**Pressure-based CPU frequency scaling**
+  The experimental :ref:`CPU frequency scaling <cpu_freq>` subsystem now includes a
+  :ref:`pressure-based policy <pressure_policy>` that adjusts CPU frequency according to scheduler
+  load.
+
+**ARM Cortex-M context switching performance improvements**
+  A new context switch implementation for ARM Cortex-M, enabled via
+  :kconfig:option:`CONFIG_USE_SWITCH`, delivers significant performance improvements.
+
+**Developer experience improvements**
+  This release adds several new tools and improvements to development and testing workflows:
+
+  - A new :ref:`dashboard <dashboard>` consolidates build information such as RAM and ROM footprint,
+    Devicetree configuration, subsystem initialization levels, and more in a single report.
+
+  - A new display driver for QEMU targets simplifies development of display-based applications in
+    environments where the native simulator is unavailable.
+
+  - New :ref:`scope-based cleanup helpers <cleanup_api>` provide :abbr:`RAII (Resource Acquisition
+    Is Initialization)`/defer-style automatic cleanup in C when leaving scope.
+
+  - The new :ref:`ztest benchmarking framework <ztest_benchmarking>` provides a standardized way to
+    create cycle-accurate benchmarks, with automated data collection, overhead compensation, and
+    statistical reporting.
+
+**Expanded board support**
+  This release adds support for 121 :ref:`new boards <boards_added_in_zephyr_4_4>` and 31
+  :ref:`new shields <shields_added_in_zephyr_4_4>`.
+
 An overview of the changes required or recommended when migrating your application from Zephyr
 v4.3.0 to Zephyr v4.4.0 can be found in the separate :ref:`migration guide<migration_4.4>`.
 
@@ -492,6 +559,8 @@ New APIs and options
 
 .. zephyr-keep-sorted-stop
 
+.. _boards_added_in_zephyr_4_4:
+
 New Boards
 **********
 
@@ -747,6 +816,8 @@ New Boards
 * WinChipHead
 
    * :zephyr:board:`ch32v307v_evt_r1` (``ch32v307v_evt_r1``)
+
+.. _shields_added_in_zephyr_4_4:
 
 New Shields
 ***********

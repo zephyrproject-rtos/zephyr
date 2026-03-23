@@ -229,6 +229,8 @@ The test certificates in ``samples/net/wifi/test_certs/rsa2k`` are generated usi
 .. note::
    These certificates are for testing only and should not be used in production.
 
+.. _wifi_mgmt_p2p:
+
 Wi-Fi P2P (Wi-Fi Direct)
 ************************
 
