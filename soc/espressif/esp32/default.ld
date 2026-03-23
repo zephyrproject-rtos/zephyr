@@ -191,9 +191,9 @@ SECTIONS
      * 15. Flash offset (LMA) for start of IROM region
      * 16. Size of IROM region
      */
-    LONG(ADDR(.flash.text))
-    LONG(LOADADDR(.flash.text))
-    LONG(SIZEOF(.flash.text))
+    LONG(ADDR(.text))
+    LONG(LOADADDR(.text))
+    LONG(SIZEOF(.text))
 
     /* DROM metadata:
      * 17. Destination address (VMA) for DROM region
@@ -972,16 +972,16 @@ SECTIONS
 
   /* --- FLASH TEXT BEGIN --- */
 
-  .flash.text_dummy (NOLOAD):
+  .text_dummy (NOLOAD):
   {
     . = ALIGN(CACHE_ALIGN);
   } GROUP_LINK_IN(ROMABLE_REGION)
 
-  _image_irom_start = LOADADDR(.flash.text);
-  _image_irom_size = LOADADDR(.flash.text) + SIZEOF(.flash.text) - _image_irom_start;
-  _image_irom_vaddr = ADDR(.flash.text);
+  _image_irom_start = LOADADDR(.text);
+  _image_irom_size = LOADADDR(.text) + SIZEOF(.text) - _image_irom_start;
+  _image_irom_vaddr = ADDR(.text);
 
-  .flash.text : ALIGN(CACHE_ALIGN)
+  .text : ALIGN(CACHE_ALIGN)
   {
     _stext = .;
     _instruction_reserved_start = ABSOLUTE(.);  /* This is a symbol marking the flash.text start, this can be used for mmu driver to maintain virtual address */
