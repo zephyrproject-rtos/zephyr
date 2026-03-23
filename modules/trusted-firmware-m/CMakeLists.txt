@@ -288,6 +288,11 @@ if(CONFIG_BUILD_WITH_TFM)
     )
   endif()
 
+  if(CONFIG_SOC_SERIES_PSE84)
+    list(APPEND TFM_CMAKE_ARGS -DIFX_EPC=epc2)
+  endif()
+
+
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
   add_custom_target(tfm_cmake
     DEPENDS ${TFM_BINARY_DIR}/CMakeCache.txt
