@@ -855,7 +855,8 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 	}
 }
 
-static const struct device *eth_xmc4xxx_get_phy(const struct device *dev)
+static const struct device *eth_xmc4xxx_get_phy(const struct device *dev,
+						struct net_if *iface __unused)
 {
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 
@@ -889,7 +890,8 @@ static void eth_xmc4xxx_iface_init(struct net_if *iface)
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *eth_xmc4xxx_stats(const struct device *dev)
+static struct net_stats_eth *eth_xmc4xxx_stats(const struct device *dev,
+					       struct net_if *iface __unused)
 {
 	struct eth_xmc4xxx_data *dev_data = dev->data;
 
@@ -1107,7 +1109,8 @@ static int eth_xmc4xxx_init(const struct device *dev)
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_xmc4xxx_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_xmc4xxx_capabilities(const struct device *dev __unused,
+						     struct net_if *iface __unused)
 {
 	ARG_UNUSED(dev);
 	enum ethernet_hw_caps caps = ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE |
@@ -1128,7 +1131,9 @@ static enum ethernet_hw_caps eth_xmc4xxx_capabilities(const struct device *dev)
 	return caps;
 }
 
-static int eth_xmc4xxx_set_config(const struct device *dev, enum ethernet_config_type type,
+static int eth_xmc4xxx_set_config(const struct device *dev,
+				  struct net_if *iface __unused,
+				  enum ethernet_config_type type,
 				  const struct ethernet_config *config)
 {
 	struct eth_xmc4xxx_data *dev_data = dev->data;
@@ -1172,7 +1177,8 @@ static void eth_xmc4xxx_irq_config(void)
 }
 
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
-static const struct device *eth_xmc4xxx_get_ptp_clock(const struct device *dev)
+static const struct device *eth_xmc4xxx_get_ptp_clock(const struct device *dev,
+						      struct net_if *iface __unused)
 {
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 

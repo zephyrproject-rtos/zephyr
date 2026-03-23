@@ -167,6 +167,7 @@ static void eth_irq_handler(const struct device *port)
 }
 
 static int eth_set_config(const struct device *dev __unused,
+			  struct net_if *iface __unused,
 			  enum ethernet_config_type type,
 			  const struct ethernet_config *config __unused)
 {
@@ -184,7 +185,7 @@ static int eth_set_config(const struct device *dev __unused,
 	return -ENOTSUP;
 }
 
-static int eth_start(const struct device *dev)
+static int eth_start(const struct device *dev, struct net_if *iface __unused)
 {
 	struct eth_litex_dev_data *context = dev->data;
 	const struct eth_litex_config *config = dev->config;
@@ -202,7 +203,7 @@ static int eth_start(const struct device *dev)
 	return 0;
 }
 
-static int eth_stop(const struct device *dev)
+static int eth_stop(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct eth_litex_config *config = dev->config;
 
@@ -212,7 +213,7 @@ static int eth_stop(const struct device *dev)
 	return 0;
 }
 
-static const struct device *eth_get_phy(const struct device *dev)
+static const struct device *eth_get_phy(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct eth_litex_config *config = dev->config;
 
@@ -266,10 +267,9 @@ static void eth_iface_init(struct net_if *iface)
 	}
 }
 
-static enum ethernet_hw_caps eth_caps(const struct device *dev)
+static enum ethernet_hw_caps eth_caps(const struct device *dev __unused,
+				      struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return
 #ifdef CONFIG_NET_VLAN
 		ETHERNET_HW_VLAN |

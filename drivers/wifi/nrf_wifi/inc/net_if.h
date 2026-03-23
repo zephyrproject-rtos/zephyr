@@ -23,19 +23,21 @@
 
 void nrf_wifi_if_init_zep(struct net_if *iface);
 
-int nrf_wifi_if_start_zep(const struct device *dev);
+int nrf_wifi_if_start_zep(const struct device *dev, struct net_if *iface);
 
-int nrf_wifi_if_stop_zep(const struct device *dev);
+int nrf_wifi_if_stop_zep(const struct device *dev, struct net_if *iface);
 
 int nrf_wifi_if_set_config_zep(const struct device *dev,
+			       struct net_if *iface,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *config);
 
 int nrf_wifi_if_get_config_zep(const struct device *dev,
+			       struct net_if *iface,
 			       enum ethernet_config_type type,
 			       struct ethernet_config *config);
 
-enum ethernet_hw_caps nrf_wifi_if_caps_get(const struct device *dev);
+enum ethernet_hw_caps nrf_wifi_if_caps_get(const struct device *dev, struct net_if *iface);
 
 int nrf_wifi_if_send(const struct device *dev,
 		     struct net_pkt *pkt);

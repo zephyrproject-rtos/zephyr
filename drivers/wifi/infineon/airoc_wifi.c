@@ -445,18 +445,17 @@ static void airoc_wifi_network_process_ethernet_data(whd_interface_t interface, 
 	}
 }
 
-static enum ethernet_hw_caps airoc_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps airoc_get_capabilities(const struct device *dev __unused,
+						    struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_HW_FILTERING;
 }
 
-static int airoc_set_config(const struct device *dev,
+static int airoc_set_config(const struct device *dev __unused,
+			    struct net_if *iface __unused,
 			    enum ethernet_config_type type,
 			    const struct ethernet_config *config)
 {
-	ARG_UNUSED(dev);
 	whd_mac_t whd_mac_addr;
 
 	switch (type) {

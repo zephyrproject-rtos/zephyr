@@ -95,7 +95,8 @@ static int eth_fake_send(const struct device *dev,
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev __unused,
+						       struct net_if *iface __unused)
 {
 	return  ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_QAV |
 		ETHERNET_PROMISC_MODE | ETHERNET_PRIORITY_QUEUES |
@@ -140,6 +141,7 @@ static void eth_fake_recalc_qav_idle_slopes(struct eth_fake_context *ctx)
 }
 
 static int eth_fake_set_config(const struct device *dev,
+			       struct net_if *iface __unused,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *config)
 {
@@ -297,6 +299,7 @@ static int eth_fake_set_config(const struct device *dev,
 }
 
 static int eth_fake_get_config(const struct device *dev,
+			       struct net_if *iface __unused,
 			       enum ethernet_config_type type,
 			       struct ethernet_config *config)
 {
