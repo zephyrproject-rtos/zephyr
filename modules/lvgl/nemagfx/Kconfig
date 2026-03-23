@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Silicon Signals Pvt. Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "LVGL Zephyr NemaGFX support"
+
+if LV_USE_NEMA_GFX && LV_NEMA_HAL_CUSTOM
+
+config FPU
+	default y
+
+config LV_Z_NEMA_GFX_MULTI_THREAD
+	bool "Multi-thread support for NemaGFX"
+	default n
+
+config LV_Z_NEMA_HAL_RING_SIZE
+	int "NemaGFX ring size"
+	default 1024
+	help
+	  Size of the NemaGFX command ring.
+
+endif # LV_USE_NEMA_GFX
+
+endmenu
