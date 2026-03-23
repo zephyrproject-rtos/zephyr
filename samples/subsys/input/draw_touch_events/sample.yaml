@@ -14,3 +14,9 @@ tests:
     tags:
       - touch
     harness: none
+  sample.touch.ft5336.esp32s3_lcd_ev:
+    platform_allow:
+      - esp32s3_lcd_ev/esp32s3/procpu
+    tags:
+      - touch
+    build_only: true

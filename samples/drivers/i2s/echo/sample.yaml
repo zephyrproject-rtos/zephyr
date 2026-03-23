@@ -8,6 +8,7 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
+      - esp32s3_lcd_ev/esp32s3/procpu
     platform_exclude: litex_vexriscv
     harness: console
     harness_config:
