@@ -544,28 +544,89 @@ static int xilinx_axienet_probe(const struct device *dev)
 
 	xilinx_axienet_set_mac_address(config, data);
 
-	for (int i = 0; i < CONFIG_ETH_XILINX_AXIENET_BUFFER_NUM_RX - 1; i++) {
-		setup_dma_rx_transfer(dev, config, data);
+	config->config_func(data);
+
+	return 0;
+}
+
+static int xilinx_axienet_stop(const struct device *dev)
+{
+	const struct xilinx_axienet_config *config = dev->config;
+	struct xilinx_axienet_data *data = dev->data;
+	uint32_t status;
+	int err;
+
+	/* Disable AXIENET RX */
+	status = xilinx_axienet_read_register(
+		config, XILINX_AXIENET_RECEIVER_CONFIGURATION_WORD_1_REG_OFFSET);
+	status &= ~XILINX_AXIENET_RECEIVER_CONFIGURATION_WORD_1_REG_RX_EN_MASK;
+	xilinx_axienet_write_register(
+		config, XILINX_AXIENET_RECEIVER_CONFIGURATION_WORD_1_REG_OFFSET, status);
+
+	/* Stop the RX DMA channel */
+	err = dma_stop(config->dma, XILINX_AXI_DMA_RX_CHANNEL_NUM);
+	if (err) {
+		LOG_ERR("%s: failed to stop RX DMA: %d", dev->name, err);
 	}
 
+	/* Stop the TX DMA channel */
+	err = dma_stop(config->dma, XILINX_AXI_DMA_TX_CHANNEL_NUM);
+	if (err) {
+		LOG_ERR("%s: failed to stop TX DMA: %d", dev->name, err);
+	}
+
+	/* Disable AXIENET TX */
+	status = xilinx_axienet_read_register(config, XILINX_AXIENET_TX_CONTROL_REG_OFFSET);
+	status &= ~XILINX_AXIENET_TX_CONTROL_TX_EN_MASK;
+	xilinx_axienet_write_register(config, XILINX_AXIENET_TX_CONTROL_REG_OFFSET, status);
+
+	data->dma_is_configured_rx = false;
+	data->dma_is_configured_tx = false;
+	data->rx_populated_buffer_index = 0;
+	data->rx_completed_buffer_index = 0;
+	data->tx_populated_buffer_index = 0;
+	data->tx_completed_buffer_index = 0;
+
+	LOG_INF("%s: AxiEnet stopped", dev->name);
+	return 0;
+}
+
+static int xilinx_axienet_start(const struct device *dev)
+{
+	const struct xilinx_axienet_config *config = dev->config;
+	struct xilinx_axienet_data *data = dev->data;
+	uint32_t status;
+	int err;
+
+	for (int i = 0; i < CONFIG_ETH_XILINX_AXIENET_BUFFER_NUM_RX - 1; i++) {
+		err = setup_dma_rx_transfer(dev, config, data);
+		if (err) {
+			LOG_ERR("%s: failed to seed RX DMA transfer %d: %d", dev->name, i, err);
+			return err;
+		}
+	}
+
+	/* Enable AXIENET RX */
 	status = xilinx_axienet_read_register(
 		config, XILINX_AXIENET_RECEIVER_CONFIGURATION_WORD_1_REG_OFFSET);
 	status = status | XILINX_AXIENET_RECEIVER_CONFIGURATION_WORD_1_REG_RX_EN_MASK;
 	xilinx_axienet_write_register(
 		config, XILINX_AXIENET_RECEIVER_CONFIGURATION_WORD_1_REG_OFFSET, status);
 
+	/* Enable AXIENET TX */
 	status = xilinx_axienet_read_register(config, XILINX_AXIENET_TX_CONTROL_REG_OFFSET);
 	status = status | XILINX_AXIENET_TX_CONTROL_TX_EN_MASK;
 	xilinx_axienet_write_register(config, XILINX_AXIENET_TX_CONTROL_REG_OFFSET, status);
 
-	config->config_func(data);
-
+	LOG_INF("%s: AxiEnet started", dev->name);
 	return 0;
 }
 
 /* TODO PTP, VLAN not supported yet */
 static const struct ethernet_api xilinx_axienet_api = {
 	.iface_api.init = xilinx_axienet_iface_init,
+	.start            = xilinx_axienet_start,
+	.stop             = xilinx_axienet_stop,
 	.get_capabilities = xilinx_axienet_caps,
 	.get_config = xilinx_axienet_get_config,
 	.set_config = xilinx_axienet_set_config,
@@ -590,7 +651,8 @@ static const struct ethernet_api xilinx_axienet_api = {
 	static struct xilinx_axienet_data data_##inst = {                                          \
 		.mac_addr = DT_INST_PROP_OR(inst, local_mac_address, {0}),                         \
 		.dma_is_configured_rx = false,                                                     \
-		.dma_is_configured_tx = false};                                                    \
+		.dma_is_configured_tx = false,                                                     \
+	};                                                                                         \
 	static const struct xilinx_axienet_config config_##inst = {                                \
 		.config_func = xilinx_axienet_config_##inst,                                       \
 		.dma = DEVICE_DT_GET(DT_INST_PHANDLE(inst, axistream_connected)),                  \
