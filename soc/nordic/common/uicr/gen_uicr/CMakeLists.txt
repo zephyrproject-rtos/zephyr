@@ -94,6 +94,10 @@ set(secondary_periphconf_hex_file ${APPLICATION_BINARY_DIR}/zephyr/secondary_per
 set(mpcconf_hex_file ${APPLICATION_BINARY_DIR}/zephyr/mpcconf.hex)
 set(secondary_mpcconf_hex_file ${APPLICATION_BINARY_DIR}/zephyr/secondary_mpcconf.hex)
 
+# These are always output, others depend on the options
+set(gen_uicr_outputs ${merged_hex_file} ${uicr_hex_file})
+set(gen_uicr_depends)
+
 # Get UICR absolute address from this image's devicetree
 dt_nodelabel(uicr_path NODELABEL "uicr" REQUIRED)
 dt_reg_addr(UICR_ADDRESS PATH ${uicr_path} REQUIRED)
@@ -232,17 +236,21 @@ if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF OR CONFIG_GEN_UICR_SECONDARY_GENERATE_PER
   if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF)
     # Set up periphconf arguments for gen_uicr.py
     list(APPEND periphconf_args --out-periphconf-hex ${periphconf_hex_file})
+    list(APPEND gen_uicr_outputs ${periphconf_hex_file})
 
     foreach(elf ${periphconf_elfs})
       list(APPEND periphconf_args --in-periphconf-elf ${elf})
+      list(APPEND gen_uicr_depends ${elf})
     endforeach()
   endif()
   if(CONFIG_GEN_UICR_GENERATE_MPCCONF)
     # Set up mpcconf arguments for gen_uicr.py
     list(APPEND mpcconf_args --out-mpcconf-hex ${mpcconf_hex_file})
+    list(APPEND gen_uicr_outputs ${mpcconf_hex_file})
 
     foreach(elf ${mpcconf_elfs})
       list(APPEND mpcconf_args --in-mpcconf-elf ${elf})
+      list(APPEND gen_uicr_depends ${elf})
     endforeach()
   endif()
 endif()
@@ -322,16 +330,20 @@ if(CONFIG_GEN_UICR_SECONDARY)
 
   if(CONFIG_GEN_UICR_SECONDARY_GENERATE_PERIPHCONF)
     list(APPEND secondary_args --out-secondary-periphconf-hex ${secondary_periphconf_hex_file})
+    list(APPEND gen_uicr_outputs ${secondary_periphconf_hex_file})
 
     foreach(elf ${secondary_periphconf_elfs})
       list(APPEND secondary_args --in-secondary-periphconf-elf ${elf})
+      list(APPEND gen_uicr_depends ${elf})
     endforeach()
   endif()
   if(CONFIG_GEN_UICR_SECONDARY_GENERATE_MPCCONF)
     list(APPEND secondary_args --out-secondary-mpcconf-hex ${secondary_mpcconf_hex_file})
+    list(APPEND gen_uicr_outputs ${secondary_mpcconf_hex_file})
 
     foreach(elf ${secondary_mpcconf_elfs})
       list(APPEND secondary_args --in-secondary-mpcconf-elf ${elf})
+      list(APPEND gen_uicr_depends ${elf})
     endforeach()
   endif()
 endif()
@@ -344,9 +356,8 @@ if(CONFIG_GEN_UICR_POLICY_MPCCONF_STAGE_INIT OR CONFIG_GEN_UICR_POLICY_MPCCONF_S
   list(APPEND policy_args --policy-mpcconf-stage ${CONFIG_GEN_UICR_POLICY_MPCCONF_STAGE_VALUE})
 endif()
 
-# Generate hex files (merged, uicr-only, periphconf-only, and secondary-periphconf-only)
 add_custom_command(
-  OUTPUT ${merged_hex_file} ${uicr_hex_file} ${periphconf_hex_file} ${secondary_periphconf_hex_file}
+  OUTPUT ${gen_uicr_outputs}
   COMMAND ${PYTHON_EXECUTABLE} ${IRONSIDE_SUPPORT_DIR}/se/tool/ironside/__main__.py
           gen-uicr
           --uicr-address ${UICR_ADDRESS}
@@ -365,12 +376,12 @@ add_custom_command(
           ${protectedmem_args}
           ${secondary_args}
           ${policy_args}
-  DEPENDS ${periphconf_elfs} ${secondary_periphconf_elfs}
+  DEPENDS ${gen_uicr_depends}
   WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
-  COMMENT "Using gen_uicr.py to generate ${merged_hex_file}, ${uicr_hex_file}, ${periphconf_hex_file}, and ${secondary_periphconf_hex_file} from ${periphconf_elfs} ${secondary_periphconf_elfs}"
+  COMMENT "Generating UICR artifacts"
 )
 
 # Add zephyr subdirectory to handle flash configuration with correct paths
 add_subdirectory(zephyr)
 
-add_custom_target(gen_uicr ALL DEPENDS ${merged_hex_file} ${uicr_hex_file} ${periphconf_hex_file} ${secondary_periphconf_hex_file})
+add_custom_target(gen_uicr ALL DEPENDS ${gen_uicr_outputs})
