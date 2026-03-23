@@ -22,4 +22,8 @@
 	adc0_ext_trigger1: adc0-ext-trigger1-default {
 		pinmux = <K3_PINMUX(0x0f0, PIN_INPUT, MUX_MODE_5)>; /* (M22) ADC_EXT_TRIGGER1 */
 	};
+
+	main_gpio0_3_led: main_gpio0_led_default {
+		pinmux = <K3_PINMUX(0x0238, PIN_OUTPUT, MUX_MODE_7)>; /* (D6) MMC1_SDWP */
+	};
 };

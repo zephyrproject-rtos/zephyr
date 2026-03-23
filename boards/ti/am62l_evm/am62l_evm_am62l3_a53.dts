@@ -21,6 +21,15 @@
 
 	aliases {
 		adc0 = &main_adc0;
+		led0 = &ld9;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		ld9: led_0 {
+			gpios = <&main_gpio0_3 27 GPIO_ACTIVE_HIGH>;
+		};
 	};
 
 	cpus {
@@ -96,4 +105,10 @@
 		zephyr,oversampling = <4>;
 		zephyr,vref-mv = <1800>;
 	};
+};
+
+&main_gpio0_3 {
+	pinctrl-0 = <&main_gpio0_3_led>;
+	pinctrl-names = "default";
+	status = "okay";
 };
