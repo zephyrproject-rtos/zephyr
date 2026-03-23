@@ -282,8 +282,8 @@ typedef struct {
 		     "The size of the partition must be power of 2 and greater than or equal to "  \
 		     "the minimum MPU region size.\n")
 
-/* Some compilers do not handle BUILD_ASSERT on the values of pointers.*/
-#if defined(__IAR_SYSTEMS_ICC__)
+/* Some compilers do not handle BUILD_ASSERT on the values of pointers. */
+#if defined(__IAR_SYSTEMS_ICC__) || defined(__clang__)
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK_START(start, size)
 #else
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK_START(start, size)                                         \
