@@ -33,7 +33,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 struct eth_litex_dev_data {
 	struct net_if *iface;
-	uint8_t mac_addr[6];
 	uint8_t txslot;
 	struct k_sem sem_tx_ready;
 };
@@ -66,8 +65,6 @@ static int eth_initialize(const struct device *dev)
 	k_sem_init(&context->sem_tx_ready, 1, 1);
 
 	config->config_func(dev);
-
-	(void)net_eth_mac_load(&config->mcfg, context->mac_addr);
 
 	return 0;
 }
@@ -169,14 +166,12 @@ static void eth_irq_handler(const struct device *port)
 	}
 }
 
-static int eth_set_config(const struct device *dev, enum ethernet_config_type type,
-			  const struct ethernet_config *config)
+static int eth_set_config(const struct device *dev __unused,
+			  enum ethernet_config_type type,
+			  const struct ethernet_config *config __unused)
 {
-	struct eth_litex_dev_data *context = dev->data;
-
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
-		memcpy(context->mac_addr, config->mac_address.addr, sizeof(context->mac_addr));
 		return 0;
 	default:
 		break;
@@ -241,6 +236,7 @@ static void eth_iface_init(struct net_if *iface)
 	const struct device *port = net_if_get_device(iface);
 	const struct eth_litex_config *config = port->config;
 	struct eth_litex_dev_data *context = port->data;
+	uint8_t mac_addr[NET_ETH_ADDR_LEN] = {0};
 
 	/* set interface */
 	context->iface = iface;
@@ -248,12 +244,10 @@ static void eth_iface_init(struct net_if *iface)
 	/* initialize ethernet L2 */
 	ethernet_init(iface);
 
+	(void)net_eth_mac_load(&config->mcfg, mac_addr);
+
 	/* set MAC address */
-	if (net_if_set_link_addr(iface, context->mac_addr, sizeof(context->mac_addr),
-			     NET_LINK_ETHERNET) < 0) {
-		LOG_ERR("setting mac failed");
-		return;
-	}
+	(void)net_if_set_link_addr(iface, mac_addr, sizeof(mac_addr), NET_LINK_ETHERNET);
 
 	if (config->phy_dev == NULL) {
 		LOG_WRN("No PHY device");
