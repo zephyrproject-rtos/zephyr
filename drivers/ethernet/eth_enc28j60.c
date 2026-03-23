@@ -733,7 +733,8 @@ static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static enum ethernet_hw_caps eth_enc28j60_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_enc28j60_get_capabilities(const struct device *dev,
+							   struct net_if *iface __unused)
 {
 	ARG_UNUSED(dev);
 
@@ -745,6 +746,7 @@ static enum ethernet_hw_caps eth_enc28j60_get_capabilities(const struct device *
 }
 
 static int eth_enc28j60_set_config(const struct device *dev,
+				   struct net_if *iface __unused,
 				   enum ethernet_config_type type,
 				   const struct ethernet_config *config)
 {

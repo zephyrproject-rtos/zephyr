@@ -306,14 +306,14 @@ unref:
 	return SL_STATUS_FAIL;
 }
 
-static enum ethernet_hw_caps siwx91x_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps siwx91x_get_capabilities(const struct device *dev __unused,
+						      struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_HW_FILTERING;
 }
 
 static int siwx91x_set_config(const struct device *dev,
+			      struct net_if *iface __unused,
 			      enum ethernet_config_type type,
 			      const struct ethernet_config *config)
 {

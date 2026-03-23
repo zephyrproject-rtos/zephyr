@@ -1096,7 +1096,9 @@ static int esp32_wifi_dev_init(const struct device *dev)
 	return 0;
 }
 
-static int esp32_wifi_set_config(const struct device *dev, enum ethernet_config_type type,
+static int esp32_wifi_set_config(const struct device *dev,
+				 struct net_if *iface __unused,
+				 enum ethernet_config_type type,
 				 const struct ethernet_config *config)
 {
 	struct esp32_wifi_runtime *dev_data = dev->data;

@@ -156,14 +156,16 @@ static inline void axi_eth_lite_program_mac_address(const struct axi_eth_lite_co
 	axi_eth_lite_wait_complete(config);
 }
 
-static const struct device *axi_eth_lite_get_phy(const struct device *dev)
+static const struct device *axi_eth_lite_get_phy(const struct device *dev,
+						 struct net_if *iface __unused)
 {
 	const struct axi_eth_lite_config *config = dev->config;
 
 	return config->phy;
 }
 
-static enum ethernet_hw_caps axi_eth_lite_get_caps(const struct device *dev)
+static enum ethernet_hw_caps axi_eth_lite_get_caps(const struct device *dev __unused,
+						    struct net_if *iface __unused)
 {
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
 }
@@ -228,7 +230,9 @@ static void axi_eth_lite_iface_init(struct net_if *iface)
 	LOG_DBG("Interface initialized!");
 }
 
-static int axi_eth_lite_set_config(const struct device *dev, enum ethernet_config_type type,
+static int axi_eth_lite_set_config(const struct device *dev,
+				   struct net_if *iface __unused,
+				   enum ethernet_config_type type,
 				   const struct ethernet_config *config)
 {
 	struct axi_eth_lite_data *data = dev->data;

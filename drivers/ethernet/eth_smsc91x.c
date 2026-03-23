@@ -664,7 +664,7 @@ static int smsc_init(struct smsc_data *sc)
 	return 0;
 }
 
-static const struct device *eth_get_phy(const struct device *dev)
+static const struct device *eth_get_phy(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct eth_config *cfg = dev->config;
 
@@ -684,10 +684,9 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 	}
 }
 
-static enum ethernet_hw_caps eth_smsc_get_caps(const struct device *dev)
+static enum ethernet_hw_caps eth_smsc_get_caps(const struct device *dev __unused,
+					       struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return (ETHERNET_LINK_10BASE
 		| ETHERNET_LINK_100BASE
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
@@ -712,6 +711,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 }
 
 static int eth_smsc_set_config(const struct device *dev,
+			       struct net_if *iface __unused
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *config)
 {

@@ -56,7 +56,7 @@ static void netc_eth_pkt_get_timestamp(struct net_pkt *pkt, const struct device 
 	pkt->timestamp.second = time_ns / NSEC_PER_SEC;
 }
 
-const struct device *netc_eth_get_ptp_clock(const struct device *dev)
+const struct device *netc_eth_get_ptp_clock(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct netc_eth_config *cfg = dev->config;
 
@@ -184,7 +184,7 @@ static int netc_eth_rx(const struct device *dev)
 
 #ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	if (attr.isTsAvail) {
-		const struct device *ptp_dev = netc_eth_get_ptp_clock(dev);
+		const struct device *ptp_dev = netc_eth_get_ptp_clock(dev, data->iface);
 
 #if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT)
 		if (ctx->dsa_port == DSA_CONDUIT_PORT) {
@@ -481,7 +481,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 #ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	pkt_is_gptp = net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP;
 	if ((pkt_is_gptp || net_pkt_is_tx_timestamping(pkt)) &&
-	    (netc_eth_get_ptp_clock(dev) != NULL)) {
+	    (netc_eth_get_ptp_clock(dev, data->iface) != NULL)) {
 		opt.flags |= kEP_TX_OPT_REQ_TS;
 	}
 #endif
@@ -564,7 +564,8 @@ error:
 	return ret;
 }
 
-enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev)
+enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev __maybe_unused,
+						struct net_if *iface __maybe_unused)
 {
 	uint32_t caps;
 
@@ -579,15 +580,15 @@ enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev)
 	);
 
 #if defined(NETC_PTP_TIMESTAMPING_SUPPORT)
-	if (netc_eth_get_ptp_clock(dev) != NULL) {
+	if (netc_eth_get_ptp_clock(dev, iface) != NULL) {
 		caps |= ETHERNET_PTP;
 	}
 #endif
 	return caps;
 }
 
-int netc_eth_set_config(const struct device *dev, enum ethernet_config_type type,
-			const struct ethernet_config *config)
+int netc_eth_set_config(const struct device *dev, struct net_if *iface __unused,
+			enum ethernet_config_type type, const struct ethernet_config *config)
 {
 	struct netc_eth_data *data = dev->data;
 	const struct netc_eth_config *cfg = dev->config;

@@ -2189,7 +2189,9 @@ static int nxp_wifi_dev_init(const struct device *dev)
 	return 0;
 }
 
-static int nxp_wifi_set_config(const struct device *dev, enum ethernet_config_type type,
+static int nxp_wifi_set_config(const struct device *dev,
+			       struct net_if *iface __unused,
+			       enum ethernet_config_type type,
 			       const struct ethernet_config *config)
 {
 	struct interface *if_handle = (struct interface *)dev->data;
@@ -2222,6 +2224,7 @@ static int nxp_wifi_set_config(const struct device *dev, enum ethernet_config_ty
 }
 
 static int nxp_wifi_get_config(const struct device *dev,
+			       struct net_if *iface __unused,
 			       enum ethernet_config_type type,
 			       struct ethernet_config *config)
 {

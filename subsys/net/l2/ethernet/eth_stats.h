@@ -20,11 +20,11 @@ static inline struct net_stats_eth *eth_stats_get_common(struct net_if *iface)
 	const struct ethernet_api *api = dev->api;
 
 	if (api->get_stats_type != NULL) {
-		return api->get_stats_type(dev, ETHERNET_STATS_TYPE_COMMON);
+		return api->get_stats_type(dev, iface, ETHERNET_STATS_TYPE_COMMON);
 	}
 
 	if (api->get_stats != NULL) {
-		return api->get_stats(dev);
+		return api->get_stats(dev, iface);
 	}
 
 	return NULL;
