@@ -254,20 +254,8 @@ class Build(Forceable):
 
         board, origin = self._find_board()
 
-        # Parse testcase.yaml or sample.yaml files for additional options.
         if self.args.test_item:
-            # we get path + testitem
-            item = os.path.basename(self.args.test_item)
-            if self.args.source_dir:
-                test_path = self.args.source_dir
-            else:
-                test_path = os.path.dirname(self.args.test_item)
-            if test_path and os.path.exists(test_path):
-                self.args.source_dir = test_path
-                if not self._parse_test_item(item, board):
-                    self.die("No test metadata found")
-            else:
-                self.die("test item path does not exist")
+            self._resolve_test_item(board)
 
         self._run_cmake(board, origin)
         if args.cmake_only:
@@ -332,6 +320,22 @@ class Build(Forceable):
             return elem[2]
         else:
             return arg
+
+    def _resolve_test_item(self, board):
+        """Resolve --test-item: derive source_dir from the test path and
+        parse sample/testcase YAML metadata for additional build options.
+        """
+        item = os.path.basename(self.args.test_item)
+        if self.args.source_dir:
+            test_path = self.args.source_dir
+        else:
+            test_path = os.path.dirname(self.args.test_item)
+        if test_path and os.path.exists(test_path):
+            self.args.source_dir = test_path
+            if not self._parse_test_item(item, board):
+                self.die("No test metadata found")
+        else:
+            self.die("test item path does not exist")
 
     def _parse_test_item(self, test_item, board):
         found_test_metadata = False
