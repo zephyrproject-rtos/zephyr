@@ -55,9 +55,6 @@ struct eeprom_at2x_config {
 	uint8_t addr_width;
 	bool readonly;
 	uint16_t timeout;
-#ifdef CONFIG_EEPROM_AT24
-	uint16_t write_delay_ms;
-#endif /* CONFIG_EEPROM_AT24 */
 	bool (*bus_is_ready)(const struct device *dev);
 	eeprom_api_read read_fn;
 	eeprom_api_write write_fn;
@@ -334,9 +331,10 @@ static int eeprom_at24_write(const struct device *dev, off_t offset,
 	timeout = k_uptime_get() + config->timeout;
 	while (1) {
 		int64_t now = k_uptime_get();
-		err = i2c_write(config->bus.i2c.bus, block, sizeof(block), bus_addr);
+		err = i2c_write(config->bus.i2c.bus, block, sizeof(block),
+				bus_addr);
 		if (!err) {
-			k_sleep(K_MSEC(config->write_delay_ms));
+			k_sleep(K_MSEC(config->timeout));
 			break;
 		}
 		if (now > timeout) {
@@ -647,7 +645,6 @@ static DEVICE_API(eeprom, eeprom_at2x_api) = {
 		.addr_width = DT_PROP(INST_DT_AT2X(n, t), address_width), \
 		.readonly = DT_PROP(INST_DT_AT2X(n, t), read_only), \
 		.timeout = DT_PROP(INST_DT_AT2X(n, t), timeout), \
-		.write_delay_ms = DT_PROP(INST_DT_AT2X(n, t), write_delay_ms), \
 		.bus_is_ready = eeprom_at##t##_bus_is_ready, \
 		.read_fn = eeprom_at##t##_read, \
 		.write_fn = eeprom_at##t##_write, \
