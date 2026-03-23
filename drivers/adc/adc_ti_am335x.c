@@ -248,7 +248,7 @@ static int ti_adc_read_start(const struct device *dev, const struct adc_sequence
 {
 	struct ti_adc_data *data = DEV_DATA(dev);
 	const uint8_t samplings = (sequence->options ? sequence->options->extra_samplings + 1 : 1);
-	uint32_t required_size = 0;
+	size_t required_size = 0;
 
 	data->chan_count = 0;
 
@@ -262,7 +262,7 @@ static int ti_adc_read_start(const struct device *dev, const struct adc_sequence
 	required_size = sizeof(uint16_t) * data->chan_count * samplings;
 
 	if (sequence->buffer_size < required_size) {
-		LOG_ERR("Buffer size is too small (%u/%u)", sequence->buffer_size, required_size);
+		LOG_ERR("Buffer size is too small (%zu/%zu)", sequence->buffer_size, required_size);
 		return -ENOMEM;
 	}
 
