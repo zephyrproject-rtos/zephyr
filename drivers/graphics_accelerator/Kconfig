@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Silicon Signals Pvt. Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config GRAPHICS_ACCELERATOR
+	bool "Graphic accelerator drivers"
+	help
+		Enable graphic accelerator drivers.
+
+if GRAPHICS_ACCELERATOR
+
+config GRAPHICS_ACCELERATOR_INIT_PRIORITY
+	int "graphic accelerator devices init priority"
+	default 90
+	help
+		graphic accelerator devices initialization priority.
+
+module = GRAPHICS_ACCELERATOR
+module-str = graphics_accelerator
+source "subsys/logging/Kconfig.template.log_config"
+
+# zephyr-keep-sorted-start
+source "drivers/graphics_accelerator/Kconfig.neocheom_gpu2d"
+# zephyr-keep-sorted-stop
+
+endif # GRAPHICS_ACCELERATOR

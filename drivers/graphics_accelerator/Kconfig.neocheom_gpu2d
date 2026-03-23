@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Silicon Signals Pvt. Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config NEOCHROM_GPU2D
+	bool "STM32 NeoChrom GPU2D support"
+	default y if DT_HAS_ST_NEOCHROM_GPU2D_ENABLED
+	select RESET
+	select USE_STM32_HAL_GPU2D
+	help
+	  Enable support for STM32 NeoChrom GPU2D accelerator.
+	  This driver provides low-level access to the GPU2D hardware
+	  and is used by NemaGFX for hardware-accelerated rendering.
