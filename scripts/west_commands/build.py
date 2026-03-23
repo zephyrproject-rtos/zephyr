@@ -332,6 +332,7 @@ class Build(Forceable):
             test_path = os.path.dirname(self.args.test_item)
         if test_path and os.path.exists(test_path):
             self.args.source_dir = test_path
+            self.source_dir = os.path.abspath(test_path)
             if not self._parse_test_item(item, board):
                 self.die("No test metadata found")
         else:
