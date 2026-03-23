@@ -41,7 +41,7 @@ extern "C" {
 /** RFC 6763 Section 7.2 - inclusive of underscore */
 #define DNS_SD_SERVICE_MIN_SIZE 2
 /** RFC 6763 Section 7.2 - inclusive of underscore */
-#define DNS_SD_SERVICE_MAX_SIZE 16
+#define DNS_SD_SERVICE_MAX_SIZE 32
 /** RFC 6763 Section 4.1.2 */
 #define DNS_SD_SERVICE_PREFIX '_'
 /** RFC 6763 Section 4.1.2 - either _tcp or _udp (case insensitive) */

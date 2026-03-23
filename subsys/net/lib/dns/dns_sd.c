@@ -134,6 +134,10 @@ bool label_is_valid(const char *label, size_t label_size)
 			if ('-' == label[i]) {
 				continue;
 			}
+			// TEMPORARY for _universal._sub._ipp service
+			if ('.' == label[i] || '_' == label[i]) {
+				continue;
+			}
 		}
 
 		NET_DBG("label '%s' contains illegal byte 0x%02x", label, label[i]);
@@ -1036,6 +1040,27 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
     if (query[0] == '.') {
         query++;
     }
+
+	// Hardcoded code to split this query into its parts
+	if(strcmp(query, "_universal._sub._ipp._tcp.local") == 0) {
+		qsize = 20;
+		memcpy(label[0], query, qsize);
+		label[0][qsize] = 0;
+		size[0] = qsize;
+
+		qsize = 4;
+		memcpy(label[1], &query[21], qsize);
+		size[1] = qsize;
+
+		qsize = 5;
+		memcpy(label[2], &query[26], qsize);
+		size[2] = qsize;
+
+		record->service = label[0];
+		record->proto = label[1];
+		record->domain = label[2];
+		return 31;
+	}
 
 	/* also counts labels */
 	for (i = 0, qlabels = 0; query_size > 0;) {
