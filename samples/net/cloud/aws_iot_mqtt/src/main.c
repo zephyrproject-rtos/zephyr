@@ -93,7 +93,7 @@ static int setup_credentials(void)
 	ret = tls_credential_add(TLS_TAG_AWS_CA_CERTIFICATE, TLS_CREDENTIAL_CA_CERTIFICATE, ca_cert,
 				 ca_cert_len);
 	if (ret < 0) {
-		LOG_ERR("Failed to add device private key: %d", ret);
+		LOG_ERR("Failed to add ca certificate: %d", ret);
 		goto exit;
 	}
 
