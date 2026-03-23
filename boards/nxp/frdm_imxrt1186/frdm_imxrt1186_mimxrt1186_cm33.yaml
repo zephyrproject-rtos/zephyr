@@ -17,6 +17,7 @@ flash: 16384
 supported:
   - spi
   - adc
+  - dma
   - flash
   - gpio
   - can
