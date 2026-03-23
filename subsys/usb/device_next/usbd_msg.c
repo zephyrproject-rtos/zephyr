@@ -94,8 +94,8 @@ int usbd_msg_register_cb(struct usbd_context *const uds_ctx,
 
 	usbd_device_lock(uds_ctx);
 
-	if (uds_ctx->msg_cb != NULL) {
-		ret = -EALREADY;
+	if (usbd_is_enabled(uds_ctx)) {
+		ret = -EBUSY;
 		goto register_cb_exit;
 	}
 
