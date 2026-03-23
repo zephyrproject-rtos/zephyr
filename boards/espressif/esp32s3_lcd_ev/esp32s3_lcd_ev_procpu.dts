@@ -1,0 +1,207 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+/*
+ * ESP32-S3-WROOM-1-N16R16V: 16 MB flash, 16 MB octal PSRAM.
+ * The closest upstream variant is N16R8; the PSRAM size is overridden below.
+ */
+#include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <espressif/partitions_0x0_amp.dtsi>
+#include "esp32s3_lcd_ev-pinctrl.dtsi"
+
+/ {
+	model = "Espressif ESP32S3-LCD-EV-Board PROCPU";
+	compatible = "espressif,esp32s3";
+
+	aliases {
+		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
+		uart-0 = &uart0;
+		sw0 = &boot_button;
+		led0 = &status_led;
+		zephyr,display = &gc9503cv;
+	};
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,display = &gc9503cv;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		boot_button: button_0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BOOT Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		status_led: led_0 {
+			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+			label = "Status LED";
+		};
+	};
+};
+
+/* 16 MB octal PSRAM (N16R16V); override the 8 MB set by the n16r8 dtsi */
+&psram0 {
+	size = <DT_SIZE_M(16)>;
+};
+
+&dma {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+/*
+ * Single I2C bus shared by:
+ *   - TCA9554 GPIO expander (0x20)   – controls PA_CTRL and LCD SPI init signals
+ *   - FT5x06 touch controller (0x38) – capacitive touch for GC9503CV panel
+ *   - ES8311 audio codec (0x18)
+ *   - ES7210 microphone ADC (0x40)
+ */
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	io_expander: tca9554@20 {
+		compatible = "nxp,pca9554";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+
+		/*
+		 * P0 - PA_CTRL:    audio amplifier NS4150 power enable (active high)
+		 * P1 - LCD_SPI_CS: GC9503CV SPI chip select for init sequence (active low)
+		 * P2 - LCD_SPI_SCK: GC9503CV SPI clock for init sequence
+		 * P3 - LCD_SPI_MOSI: GC9503CV SPI data for init sequence
+		 * P4..P7 - free
+		 */
+	};
+
+	ft5x06: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		/* INT connected via I/O expander; no direct GPIO interrupt */
+	};
+
+	es8311: es8311@18 {
+		compatible = "everest,es8311";
+		reg = <0x18>;
+	};
+
+	es7210: es7210@40 {
+		compatible = "everest,es7210";
+		reg = <0x40>;
+	};
+};
+
+/*
+ * I2S0: shared by ES8311 audio codec (playback) and ES7210 ADC (capture).
+ * ESP32-S3 operates as I2S master. Both codec and ADC share MCLK, SCLK, LRCK.
+ */
+&i2s0 {
+	status = "okay";
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+};
+
+/*
+ * LCD-CAM peripheral driving GC9503CV (RGB565, 480x480) on SUB2.
+ *
+ * The GC9503CV is an RGB-only panel IC. It does not accept pixel data over SPI;
+ * instead the init sequence is clocked in over SPI via the TCA9554 I/O expander
+ * (P1=CS, P2=SCK, P3=MOSI). After init, continuous pixel data is sent using
+ * the 16-bit parallel RGB interface mapped on lcd_cam_disp below.
+ */
+&lcd_cam {
+	status = "okay";
+	pinctrl-0 = <&lcd_cam_default>;
+	pinctrl-names = "default";
+};
+
+&lcd_cam_disp {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	gc9503cv: gc9503cv@0 {
+		compatible = "galaxycore,gc9503cv";
+		reg = <0>;
+		width = <480>;
+		height = <480>;
+		/*
+		 * GC9503CV requires an SPI initialisation sequence that is
+		 * bit-banged via the TCA9554 I/O expander. The reset GPIO is
+		 * also routed through the expander (P1/P2/P3 for CS/SCK/MOSI).
+		 */
+	};
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&timer0 {
+	status = "disabled";
+};
+
+&timer1 {
+	status = "disabled";
+};
+
+&timer2 {
+	status = "disabled";
+};
+
+&timer3 {
+	status = "disabled";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};

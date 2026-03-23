@@ -1,0 +1,124 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * ESP32-S3-LCD-EV-Board v1.5 GPIO allocation:
+ *
+ * IO0  - BOOT button
+ * IO1  - LCD_DATA15
+ * IO2  - LCD_DATA14
+ * IO3  - LCD_VSYNC
+ * IO4  - LED (RGB LED)
+ * IO5  - I2S_MCLK
+ * IO6  - I2S_CODEC_DSDIN  (data out to ES8311 codec)
+ * IO7  - I2S_LRCK         (word select / LR clock)
+ * IO8  - LCD_DATA6
+ * IO9  - LCD_PCLK
+ * IO10 - LCD_DATA0
+ * IO11 - LCD_DATA1
+ * IO12 - LCD_DATA2
+ * IO13 - LCD_DATA3
+ * IO14 - LCD_DATA4
+ * IO15 - I2S_ADC_SDOUT    (data in from ES7210 ADC)
+ * IO16 - I2S_SCLK         (bit clock)
+ * IO17 - LCD_DE
+ * IO18 - LCD_DATA7
+ * IO19 - USB_D-
+ * IO20 - USB_D+
+ * IO21 - LCD_DATA5
+ * IO38 - LCD_DATA9
+ * IO39 - LCD_DATA10
+ * IO40 - LCD_DATA11
+ * IO41 - LCD_DATA12
+ * IO42 - LCD_DATA13
+ * IO43 - UART0_TXD
+ * IO44 - UART0_RXD
+ * IO45 - LCD_DATA8
+ * IO46 - LCD_HSYNC
+ * IO47 - I2C_SDA
+ * IO48 - I2C_SCL
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO43>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO44>;
+			bias-pull-up;
+		};
+	};
+
+	uart0_sleep: uart0_sleep {
+		group1 {
+			pinmux = <UART0_TX_GPIO43>,
+				 <UART0_RX_GPIO44>;
+			drive-open-drain;
+		};
+	};
+
+	/* Single I2C bus: TCA9554 expander, FT5x06 touch, ES8311 codec, ES7210 ADC */
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO47>,
+				 <I2C0_SCL_GPIO48>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	/*
+	 * I2S0 shared bus for ES8311 audio codec (TX) and ES7210 microphone ADC (RX).
+	 * MCLK, SCLK and LRCK are driven by the ESP32-S3 as master.
+	 */
+	i2s0_default: i2s0_default {
+		group1 {
+			pinmux = <I2S0_MCLK_GPIO5>,
+				 <I2S0_O_BCK_GPIO16>,
+				 <I2S0_O_WS_GPIO7>,
+				 <I2S0_O_SD_GPIO6>,
+				 <I2S0_I_SD_GPIO15>;
+		};
+	};
+
+	/*
+	 * LCD-CAM output for GC9503CV RGB panel (SUB2 - 480x480).
+	 * 16-bit RGB565 data bus + VSYNC + HSYNC + DE + PCLK.
+	 */
+	lcd_cam_default: lcd_cam_default {
+		group1 {
+			pinmux = <LCD_CAM_LCD_CLK_GPIO9>,
+				 <LCD_CAM_V_SYNC_LCD_GPIO3>,
+				 <LCD_CAM_H_SYNC_LCD_GPIO46>,
+				 <LCD_CAM_H_ENABLE_LCD_GPIO17>,
+				 <LCD_CAM_DATA_OUT0_GPIO10>,
+				 <LCD_CAM_DATA_OUT1_GPIO11>,
+				 <LCD_CAM_DATA_OUT2_GPIO12>,
+				 <LCD_CAM_DATA_OUT3_GPIO13>,
+				 <LCD_CAM_DATA_OUT4_GPIO14>,
+				 <LCD_CAM_DATA_OUT5_GPIO21>,
+				 <LCD_CAM_DATA_OUT6_GPIO8>,
+				 <LCD_CAM_DATA_OUT7_GPIO18>,
+				 <LCD_CAM_DATA_OUT8_GPIO45>,
+				 <LCD_CAM_DATA_OUT9_GPIO38>,
+				 <LCD_CAM_DATA_OUT10_GPIO39>,
+				 <LCD_CAM_DATA_OUT11_GPIO40>,
+				 <LCD_CAM_DATA_OUT12_GPIO41>,
+				 <LCD_CAM_DATA_OUT13_GPIO42>,
+				 <LCD_CAM_DATA_OUT14_GPIO2>,
+				 <LCD_CAM_DATA_OUT15_GPIO1>;
+			output-enable;
+		};
+	};
+};
