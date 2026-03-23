@@ -394,13 +394,7 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  *
  * @return offset, as defined for the partition in DTS.
  */
-#define PARTITION_OFFSET(label)									\
-	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_NODELABEL(label), zephyr_mapped_partition),		\
-		    (DT_MAPPED_PARTITION_OFFSET(DT_NODELABEL(label))),				\
-		    (COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(DT_NODELABEL(label)),		\
-				(DT_PROP_BY_IDX(DT_PARENT(DT_NODELABEL(label)), reg, 0) +	\
-				 DT_PROP_BY_IDX(DT_NODELABEL(label), reg, 0)), \
-				(DT_PROP_BY_IDX(DT_NODELABEL(label), reg, 0)))))
+#define PARTITION_OFFSET(label) PARTITION_NODE_OFFSET(DT_NODELABEL(label))
 
 /** Deprecated macro, replace with PARTITION_OFFSET() */
 #define FIXED_PARTITION_OFFSET(label) PARTITION_OFFSET(label) __DEPRECATED_MACRO
@@ -446,10 +440,12 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  *
  * @return offset, as defined for the partition in DTS.
  */
-#define PARTITION_NODE_OFFSET(node)						\
-	COND_CODE_1(DT_NODE_HAS_COMPAT(node, zephyr_mapped_partition),		\
-		    (DT_MAPPED_PARTITION_OFFSET(node)),				\
-		    (DT_REG_ADDR(node)))
+#define PARTITION_NODE_OFFSET(node)								\
+	COND_CASE_1(DT_NODE_HAS_COMPAT(node, zephyr_mapped_partition),				\
+		    (DT_MAPPED_PARTITION_OFFSET(node)),						\
+		    DT_FIXED_SUBPARTITION_EXISTS(node),						\
+		    (DT_PROP_BY_IDX(DT_PARENT(node), reg, 0) + DT_PROP_BY_IDX(node, reg, 0)),	\
+		    ((DT_PROP_BY_IDX(node, reg, 0))))
 
 /** Deprecated macro, replace with PARTITION_NODE_OFFSET() */
 #define FIXED_PARTITION_NODE_OFFSET(label) PARTITION_NODE_OFFSET(label) __DEPRECATED_MACRO
