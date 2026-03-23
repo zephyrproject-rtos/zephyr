@@ -4,6 +4,9 @@
 # Set supported clock accuracy
 CONFIG_SYS_CLOCK_TICKS_PER_SEC=5000
 
+# Enable GPIO
+CONFIG_GPIO=y
+
 # Console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
