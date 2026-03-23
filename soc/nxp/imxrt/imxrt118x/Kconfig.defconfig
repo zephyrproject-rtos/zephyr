@@ -26,6 +26,9 @@ config FLEXSPI_CONFIG_BLOCK_OFFSET
 config ROM_START_OFFSET
 	default 0xb000 if BOOT_FLEXSPI_NOR
 
+config SPI_NXP_LPSPI_MAX_SCK_FREQUENCY
+	default 60000000
+
 if SECOND_CORE_MCUX
 
 # RT Boot header is only needed on primary core
