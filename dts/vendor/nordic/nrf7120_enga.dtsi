@@ -135,7 +135,7 @@
 		/* Intentionally empty because uicr is hardware fixed to Secure */
 #else
 		uicr: uicr@ffd000 {
-			compatible = "nordic,nrf-uicr";
+			compatible = "nordic,nrf71-uicr";
 			reg = <0xffd000 0x1000>;
 			ranges = <0x0 0xffd000 0x1000>;
 			#address-cells = <1>;
