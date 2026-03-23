@@ -193,5 +193,5 @@ static const DEVICE_API(wuc, mcux_llwu_api) = {
 	.clear = mcux_llwu_clear_wakeup_source_triggered,
 };
 
-DEVICE_DT_INST_DEFINE(0, mcux_llwu_init, NULL, &llwu_data, &llwu_config, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, mcux_llwu_init, NULL, &llwu_data, &llwu_config, PRE_KERNEL_1,
 		      WUC_INIT_PRIORITY, &mcux_llwu_api);

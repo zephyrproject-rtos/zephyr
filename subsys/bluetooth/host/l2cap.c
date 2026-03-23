@@ -23,7 +23,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/math_extras.h>
@@ -68,7 +67,7 @@ LOG_MODULE_REGISTER(bt_l2cap, CONFIG_BT_L2CAP_LOG_LEVEL);
 #define L2CAP_LE_PSM_IS_DYN(_psm) \
 	(_psm >= L2CAP_LE_PSM_DYN_START && _psm <= L2CAP_LE_PSM_DYN_END)
 
-#define L2CAP_CONN_TIMEOUT	K_SECONDS(40)
+#define L2CAP_CONN_TIMEOUT	K_SECONDS(CONFIG_BT_L2CAP_CONN_RTX_TIMEOUT)
 #define L2CAP_DISC_TIMEOUT	K_SECONDS(2)
 /** @brief Local L2CAP RTX (Response Timeout eXpired)
  *

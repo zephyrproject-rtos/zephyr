@@ -11,18 +11,18 @@ supported:
   - arduino_i2c
   - arduino_serial
   - arduino_spi
+  - adc
+  - can
+  - counter
+  - dac
+  - dma
+  - entropy
   - gpio
+  - i2c
+  - octospi
+  - pwm
+  - rtc
+  - spi
   - uart
   - watchdog
-  - entropy
-  - dma
-  - adc
-  - dac
-  - pwm
-  - counter
-  - spi
-  - octospi
-  - can
-  - i2c
-  - rtc
 vendor: st

@@ -11,7 +11,6 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -2299,7 +2298,7 @@ struct bt_mesh_comp_p0_elem *bt_mesh_comp_p0_elem_pull(const struct bt_mesh_comp
 
 uint16_t bt_mesh_comp_p0_elem_mod(struct bt_mesh_comp_p0_elem *elem, int idx)
 {
-	CHECKIF(idx >= elem->nsig) {
+	if (idx >= elem->nsig) {
 		return 0xffff;
 	}
 
@@ -2308,7 +2307,7 @@ uint16_t bt_mesh_comp_p0_elem_mod(struct bt_mesh_comp_p0_elem *elem, int idx)
 
 struct bt_mesh_mod_id_vnd bt_mesh_comp_p0_elem_mod_vnd(struct bt_mesh_comp_p0_elem *elem, int idx)
 {
-	CHECKIF(idx >= elem->nvnd) {
+	if (idx >= elem->nvnd) {
 		return (struct bt_mesh_mod_id_vnd){ 0xffff, 0xffff };
 	}
 

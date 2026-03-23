@@ -85,7 +85,7 @@ struct bap_broadcast_assistant_instance {
 	struct bt_gatt_discover_params
 		recv_state_disc_params[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
 
-	/* We ever only allow a single outstanding operation per instance, so we can resuse the
+	/* We ever only allow a single outstanding operation per instance, so we can reuse the
 	 * memory for the GATT params
 	 */
 	union {

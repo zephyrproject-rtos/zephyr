@@ -36,6 +36,6 @@ properties:
       - "ON_20MW_100MS"
     description: |
       Activate the heater when fetching a sample for the specified amount of time.
-      This is only possible when the precison is set to high.
+      This is only possible when the precision is set to high.
       Defaults to OFF, since this option is valid for high precision
       and the default precision is mid.
