@@ -461,11 +461,11 @@ static int dma_stm32_configure(const struct device *dev,
 		LOG_ERR("Source burst length %d is invalid", config->source_burst_length);
 		return -EINVAL;
 	} else if (burst_beats > 0) {
-		LL_DMA_SetSrcBurstLength(dma, dma_stm32_id_to_stream(id), burst_beats);
+		LL_DMA_SetSrcBurstLength(STM32_DMA_GET_CHANNEL(dma, id), burst_beats);
 	} else {
 		/* Default HW behavior (upon reset) is a single beat burst */
 		LOG_WRN("Accepting source burst length 0 for backwards compatibility");
-		LL_DMA_SetSrcBurstLength(dma, dma_stm32_id_to_stream(id), 1U);
+		LL_DMA_SetSrcBurstLength(STM32_DMA_GET_CHANNEL(dma, id), 1U);
 	}
 
 	burst_beats = config->dest_burst_length / config->dest_data_size;
@@ -474,11 +474,11 @@ static int dma_stm32_configure(const struct device *dev,
 		LOG_ERR("Destination burst length %d is invalid", config->dest_burst_length);
 		return -EINVAL;
 	} else if (burst_beats > 0) {
-		LL_DMA_SetDestBurstLength(dma, dma_stm32_id_to_stream(id), burst_beats);
+		LL_DMA_SetDestBurstLength(STM32_DMA_GET_CHANNEL(dma, id), burst_beats);
 	} else {
 		/* Default HW behavior (upon reset) is a single beat burst */
 		LOG_WRN("Accepting destination burst length 0 for backwards compatibility");
-		LL_DMA_SetDestBurstLength(dma, dma_stm32_id_to_stream(id), 1U);
+		LL_DMA_SetDestBurstLength(STM32_DMA_GET_CHANNEL(dma, id), 1U);
 	}
 #endif /* !defined(CONFIG_SOC_SERIES_STM32C5X) */
 
@@ -612,8 +612,8 @@ static int dma_stm32_configure(const struct device *dev,
 
 #ifdef CONFIG_ARM_SECURE_FIRMWARE
 #ifdef CONFIG_STM32_HAL2
-	LL_DMA_SetChannelSecurity(dma, dma_stm32_id_to_stream(id), LL_DMA_ATTR_SEC);
-	LL_DMA_SetChannelPrivilege(dma, dma_stm32_id_to_stream(id), LL_DMA_ATTR_PRIV);
+	LL_DMA_SetChannelSecurity(STM32_DMA_GET_CHANNEL(dma, id), LL_DMA_ATTR_SEC);
+	LL_DMA_SetChannelPrivilege(STM32_DMA_GET_CHANNEL(dma, id), LL_DMA_ATTR_PRIV);
 	LL_DMA_ConfigChannelAccessSecurity(STM32_DMA_GET_CHANNEL(dma, id),
 		LL_DMA_ATTR_SEC, LL_DMA_ATTR_SEC);
 #else /* CONFIG_STM32_HAL2 */
@@ -629,32 +629,32 @@ static int dma_stm32_configure(const struct device *dev,
 		/* Overwrite the config in case of HPDMA */
 		if (ll_direction == LL_DMA_DIRECTION_MEMORY_TO_PERIPH) {
 			/* Assuming the Memory (Src) is sram0 on AXI bus : PORT0 else PORT1 */
-			LL_DMA_SetSrcAllocatedPort(dma, dma_stm32_id_to_stream(id),
+			LL_DMA_SetSrcAllocatedPort(STM32_DMA_GET_CHANNEL(dma, id),
 				LL_DMA_SRC_ALLOCATED_PORT0);
-			LL_DMA_SetDestAllocatedPort(dma, dma_stm32_id_to_stream(id),
+			LL_DMA_SetDestAllocatedPort(STM32_DMA_GET_CHANNEL(dma, id),
 				LL_DMA_DEST_ALLOCATED_PORT1);
 		} else if (ll_direction == LL_DMA_DIRECTION_PERIPH_TO_MEMORY) {
 			/* Assuming the Memory (Dest) is sram0 on AXI bus : PORT0 else PORT1 */
-			LL_DMA_SetSrcAllocatedPort(dma, dma_stm32_id_to_stream(id),
+			LL_DMA_SetSrcAllocatedPort(STM32_DMA_GET_CHANNEL(dma, id),
 				LL_DMA_SRC_ALLOCATED_PORT1);
-			LL_DMA_SetDestAllocatedPort(dma, dma_stm32_id_to_stream(id),
+			LL_DMA_SetDestAllocatedPort(STM32_DMA_GET_CHANNEL(dma, id),
 				LL_DMA_DEST_ALLOCATED_PORT0);
 		} else {
 			/* MEM_TO_MEM: Assuming the Memory is sram0 on AXI bus : PORT0 else PORT1 */
-			LL_DMA_SetSrcAllocatedPort(dma, dma_stm32_id_to_stream(id),
+			LL_DMA_SetSrcAllocatedPort(STM32_DMA_GET_CHANNEL(dma, id),
 				LL_DMA_SRC_ALLOCATED_PORT0);
-			LL_DMA_SetDestAllocatedPort(dma, dma_stm32_id_to_stream(id),
+			LL_DMA_SetDestAllocatedPort(STM32_DMA_GET_CHANNEL(dma, id),
 				LL_DMA_DEST_ALLOCATED_PORT0);
 			/* Set Config burst to 8 for Src and Dest on this Channel */
-			LL_DMA_ConfigBurstLength(dma, dma_stm32_id_to_stream(id), 8, 8);
+			LL_DMA_ConfigBurstLength(STM32_DMA_GET_CHANNEL(dma, id), 8, 8);
 		}
 	}
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
-	LL_DMA_EnableIT_TC(dma, dma_stm32_id_to_stream(id));
-	LL_DMA_EnableIT_USE(dma, dma_stm32_id_to_stream(id));
-	LL_DMA_EnableIT_ULE(dma, dma_stm32_id_to_stream(id));
-	LL_DMA_EnableIT_DTE(dma, dma_stm32_id_to_stream(id));
+	LL_DMA_EnableIT_TC(STM32_DMA_GET_CHANNEL(dma, id));
+	LL_DMA_EnableIT_USE(STM32_DMA_GET_CHANNEL(dma, id));
+	LL_DMA_EnableIT_ULE(STM32_DMA_GET_CHANNEL(dma, id));
+	LL_DMA_EnableIT_DTE(STM32_DMA_GET_CHANNEL(dma, id));
 
 	return ret;
 }
