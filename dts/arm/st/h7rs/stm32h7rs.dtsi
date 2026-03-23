@@ -949,6 +949,7 @@
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-deep-powerdown;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -966,6 +967,7 @@
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-deep-powerdown;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
