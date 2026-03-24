@@ -35,24 +35,6 @@ const char *bt_hex(const void *buf, size_t len)
 	return str;
 }
 
-const char *bt_addr_str(const bt_addr_t *addr)
-{
-	static char str[BT_ADDR_STR_LEN];
-
-	bt_addr_to_str(addr, str, sizeof(str));
-
-	return str;
-}
-
-const char *bt_addr_le_str(const bt_addr_le_t *addr)
-{
-	static char str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(addr, str, sizeof(str));
-
-	return str;
-}
-
 const char *bt_uuid_str(const struct bt_uuid *uuid)
 {
 	static char str[BT_UUID_STR_LEN];
