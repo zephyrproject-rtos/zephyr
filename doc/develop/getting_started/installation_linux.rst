@@ -78,8 +78,8 @@ need one.
 
          sudo apt-get install --no-install-recommends git cmake ninja-build gperf \
            ccache dfu-util device-tree-compiler wget \
-           python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
-           make gcc gcc-multilib g++-multilib libsdl2-dev libmagic1
+           python3-dev python3-pip python3-setuptools python3-tk xz-utils file \
+           make gcc gcc-multilib g++ g++-multilib libsdl2-dev libmagic1 libusb-1.0-0-dev
 
    .. group-tab:: Fedora
 
