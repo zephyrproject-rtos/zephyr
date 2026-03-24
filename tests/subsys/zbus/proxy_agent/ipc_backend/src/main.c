@@ -38,7 +38,6 @@ create_test_proxy_agent(const struct zbus_proxy_agent_ipc_config *config)
 {
 	struct zbus_proxy_agent agent_config = {
 		.name = "test_agent",
-		.type = ZBUS_PROXY_AGENT_BACKEND_IPC,
 		.backend_config = config,
 		.backend_api = _ZBUS_PROXY_AGENT_GET_BACKEND_API_ZBUS_PROXY_AGENT_BACKEND_IPC,
 	};
