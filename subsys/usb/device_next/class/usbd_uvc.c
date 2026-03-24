@@ -1555,6 +1555,15 @@ int uvc_device_shutdown(const struct device *const dev)
 
 static int uvc_init(struct usbd_class_data *const c_data)
 {
+	const struct device *dev = usbd_class_get_private(c_data);
+	const struct uvc_config *cfg = dev->config;
+
+	/*
+	 * Assign the actual streaming interface number after the configuration
+	 * descriptor is initialized.
+	 */
+	cfg->desc->if0_hdr.baInterfaceNr[0] = cfg->desc->if1.bInterfaceNumber;
+
 	return 0;
 }
 
@@ -1576,8 +1585,6 @@ void uvc_device_init(const struct device *const dev, const struct device *const 
 	data->video_dev = video_dev;
 
 	/* Generate VideoControl descriptors (interface 0) */
-
-	cfg->desc->if0_hdr.baInterfaceNr[0] = cfg->desc->if1.bInterfaceNumber;
 
 	uvc_get_control_map(UVC_VC_INPUT_TERMINAL, &map, &map_sz);
 	mask = uvc_get_mask(data->video_dev, map, map_sz);
