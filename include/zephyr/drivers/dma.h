@@ -326,6 +326,9 @@ typedef int (*dma_api_reload)(const struct device *dev, uint32_t channel,
 			      uint32_t src, uint32_t dst, size_t size);
 #endif
 
+typedef int (*dma_api_reload_head_block)(const struct device *dev, uint32_t channel,
+					 struct dma_block_config *head_block);
+
 typedef int (*dma_api_start)(const struct device *dev, uint32_t channel);
 
 typedef int (*dma_api_stop)(const struct device *dev, uint32_t channel);
@@ -372,6 +375,7 @@ typedef void (*dma_api_chan_release)(const struct device *dev,
 __subsystem struct dma_driver_api {
 	dma_api_config config;
 	dma_api_reload reload;
+	dma_api_reload_head_block reload_head_block;
 	dma_api_start start;
 	dma_api_stop stop;
 	dma_api_suspend suspend;
@@ -431,6 +435,29 @@ static inline int dma_reload(const struct device *dev, uint32_t channel,
 
 	if (api->reload) {
 		return api->reload(dev, channel, src, dst, size);
+	}
+
+	return -ENOSYS;
+}
+
+/**
+ * @brief Reload head block for a DMA channel
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param channel Numeric identification of the channel to configure
+ *                selected channel
+ * @param head_block    Pointer to the first block in the transfer list
+ *
+ * @retval 0 if successful.
+ * @retval <0 Negative errno code if failure.
+ */
+static inline int dma_reload_head_block(const struct device *dev, uint32_t channel,
+					struct dma_block_config *head_block)
+{
+	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+
+	if (api->reload_head_block) {
+		return api->reload_head_block(dev, channel, head_block);
 	}
 
 	return -ENOSYS;
