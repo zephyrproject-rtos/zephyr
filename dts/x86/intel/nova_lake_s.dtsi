@@ -210,6 +210,7 @@
 		compatible = "pcie-controller";
 		acpi-hid = "PNP0A08";
 		acpi-uid = "2";
+		scan-buses = <128>;
 		ranges;
 
 		smbus0: smbus0 {
