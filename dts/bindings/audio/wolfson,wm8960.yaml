@@ -1,0 +1,112 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Wolfson Microelectronics WM8960 Audio CODEC
+
+include: i2c-device.yaml
+
+compatible: "wolfson,wm8960"
+
+properties:
+  reg:
+    required: true
+
+  clk-out:
+    type: boolean
+    description: |
+      Enable SYSCLK output on GPIO1.
+
+  hp-jd:
+    type: string
+    default: "WM8960_GPIO1"
+    description: |
+      Selects the headphone jack detect input. Defaults to "WM8960_GPIO1",
+      as this is the chip's default configuration.
+
+      - "WM8960_GPIO1": GPIO1 pin
+      - "WM8960_JD2": JD2 pin
+      - "WM8960_JD3": JD3 pin
+    enum:
+      - "WM8960_GPIO1"
+      - "WM8960_JD2"
+      - "WM8960_JD3"
+
+  gpio1-sel:
+    type: string
+    default: "WM8960_JDO"
+    description: |
+      Selects the GPIO1 function. Defaults to "WM8960_JDO", as this the chip's
+      default configuration.
+
+      - "WM8960_JDO": jack detect output
+      - "WM8960_Reserved": reserved function
+      - "WM8960_DJDO": debounced jack detect output
+      - "WM8960_TEMP_OK": temperature status output
+      - "WM8960_SYSCLK_OUT": SYSCLK output
+      - "WM8960_PLL_LOCK": PLL lock status output
+    enum:
+      - "WM8960_JDO"
+      - "WM8960_Reserved"
+      - "WM8960_DJDO"
+      - "WM8960_TEMP_OK"
+      - "WM8960_SYSCLK_OUT"
+      - "WM8960_PLL_LOCK"
+
+  left-input:
+    type: string
+    default: "WM8960_IN_MUTE"
+    description: |
+      Selects the default left audio input. Defaults to
+      "WM8960_IN_MUTE".
+
+      - "WM8960_IN_MUTE": muted, no input
+      - "WM8960_IN_MIC_SE_1": microphone, single-ended on 1
+      - "WM8960_IN_MIC_SE_2": microphone, single-ended on 2
+      - "WM8960_IN_MIC_SE_3": microphone, single-ended on 3
+      - "WM8960_IN_MIC_DE_12": microphone, differential on 1 and 2
+      - "WM8960_IN_MIC_DE_13": microphone, differential on 1 and 3
+      - "WM8960_IN_MIC_DE_23": microphone, differential on 2 and 3
+      - "WM8960_IN_LINE_2": line input on 2
+      - "WM8960_IN_LINE_3": line input on 3
+    enum:
+      - "WM8960_IN_MUTE"
+      - "WM8960_IN_MIC_SE_1"
+      - "WM8960_IN_MIC_SE_2"
+      - "WM8960_IN_MIC_SE_3"
+      - "WM8960_IN_MIC_DE_12"
+      - "WM8960_IN_MIC_DE_13"
+      - "WM8960_IN_MIC_DE_23"
+      - "WM8960_IN_LINE_2"
+      - "WM8960_IN_LINE_3"
+
+  right-input:
+    type: string
+    default: "WM8960_IN_MUTE"
+    description: |
+      Selects the default right audio input. Defaults to
+      "WM8960_IN_MUTE".
+
+      - "WM8960_IN_MUTE": muted, no input
+      - "WM8960_IN_MIC_SE_1": microphone, single-ended on 1
+      - "WM8960_IN_MIC_SE_2": microphone, single-ended on 2
+      - "WM8960_IN_MIC_SE_3": microphone, single-ended on 3
+      - "WM8960_IN_MIC_DE_12": microphone, differential on 1 and 2
+      - "WM8960_IN_MIC_DE_13": microphone, differential on 1 and 3
+      - "WM8960_IN_MIC_DE_23": microphone, differential on 2 and 3
+      - "WM8960_IN_LINE_2": line input on 2
+      - "WM8960_IN_LINE_3": line input on 3
+    enum:
+      - "WM8960_IN_MUTE"
+      - "WM8960_IN_MIC_SE_1"
+      - "WM8960_IN_MIC_SE_2"
+      - "WM8960_IN_MIC_SE_3"
+      - "WM8960_IN_MIC_DE_12"
+      - "WM8960_IN_MIC_DE_13"
+      - "WM8960_IN_MIC_DE_23"
+      - "WM8960_IN_LINE_2"
+      - "WM8960_IN_LINE_3"
+
+  enable-spkr:
+    type: boolean
+    description: |
+      Enable the speaker (Class D) audio output by default.
