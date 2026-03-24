@@ -1,0 +1,21 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+include: [i2c-device.yaml, base.yaml]
+
+description: WM8960 audio codec emulator
+compatible: "zephyr,wm8960-emul"
+
+properties:
+  reg:
+    required: true
+    description: I2C device address of the emulated WM8900 codec
+  wakeup-source:
+    type: boolean
+    description: |
+      If enabled, the device can wake the system from sleep states.
+  reset-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the codec's reset pin. This is optional and
+      represents the hardware reset line if present in the system.
