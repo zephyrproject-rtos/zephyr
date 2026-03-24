@@ -1,0 +1,22 @@
+# Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE Real Time Clock (RTC)
+
+compatible: "ite,it8xxx2-rtc"
+
+include: rtc.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  alarms-count:
+    type: int
+    description: |
+      Number of alarms supported by the RTC device.
+      For IT8XXX2 series chips, the RTC hardware supports two alarms
+      (Alarm0 and Alarm1).
