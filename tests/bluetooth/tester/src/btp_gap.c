@@ -30,6 +30,9 @@
 
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/kernel.h>
+
+#include <limits.h>
 
 #include <hci_core.h>
 #include <iso_internal.h>
@@ -78,6 +81,21 @@ static struct {
 	bt_addr_le_t addr;
 	bool supported;
 } peers_with_car[CONFIG_BT_MAX_PAIRED];
+
+/* for now we do NRPA rotation in application (just for legacy instance)
+ * since there is no API to restart advertising with forced new NRPA we need to
+ * keep all required info and do stop and start.
+ */
+static void nrpa_legacy_timeout(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(nrpa_legacy_update, nrpa_legacy_timeout);
+static struct bt_le_adv_param nrpa_legacy_param;
+static uint8_t nrpa_ad_sd_data[BT_GAP_ADV_MAX_ADV_DATA_LEN * 2U];
+static uint8_t nrpa_ad_len;
+static uint8_t nrpa_sd_len;
+#define NRPA_TIMEOUT K_SECONDS(30)
+
+#define AD_DATA_MAX_CNT 10
+static uint8_t ad_flags = BT_LE_AD_NO_BREDR;
 
 static void add_to_peers_with_car(const bt_addr_le_t *addr, bool supported)
 {
@@ -547,6 +565,10 @@ static uint8_t set_powered(const void *cmd, uint16_t cmd_len,
 		bt_conn_cb_register(&conn_callbacks);
 		atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_POWERED);
 	} else {
+		struct k_work_sync sync;
+
+		(void)k_work_cancel_delayable_sync(&nrpa_legacy_update, &sync);
+
 		err = bt_disable();
 		if (err < 0) {
 			LOG_ERR("Unable to disable Bluetooth: %d", err);
@@ -589,12 +611,6 @@ static uint8_t set_connectable(const void *cmd, uint16_t cmd_len,
 
 	return BTP_STATUS_SUCCESS;
 }
-
-static uint8_t ad_flags = BT_LE_AD_NO_BREDR;
-static struct bt_data ad[10] = {
-	BT_DATA(BT_DATA_FLAGS, &ad_flags, sizeof(ad_flags)),
-};
-static struct bt_data sd[10];
 
 #if CONFIG_BT_EXT_ADV
 static struct bt_le_ext_adv *ext_adv_sets[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
@@ -859,14 +875,7 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param,
 		}
 		break;
 	case BTP_GAP_ADDR_TYPE_NON_RESOLVABLE_PRIVATE:
-		if (!IS_ENABLED(CONFIG_BT_PRIVACY)) {
-			return -EINVAL;
-		}
-
-		/* NRPA is used only for non-connectable advertising */
-		if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_CONNECTABLE)) {
-			return -EINVAL;
-		}
+		param->options |= BT_LE_ADV_OPT_USE_NRPA;
 		break;
 	default:
 		return -EINVAL;
@@ -917,6 +926,94 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param,
 
 static struct bt_le_ext_adv *gap_ext_adv;
 
+static int tlv_to_bt_data(const uint8_t *tlvs, uint8_t tlvs_len,
+			  struct bt_data *ad_data, size_t ad_cnt)
+{
+	size_t i;
+	unsigned int tlv_off = 0U;
+
+	__ASSERT_NO_MSG(ad_cnt < INT_MAX);
+
+	for (i = 0U; i < ad_cnt; i++) {
+		uint8_t type;
+		uint8_t data_len;
+		const uint8_t *data;
+
+		/* all TLVs valid and converted */
+		if (tlv_off == tlvs_len) {
+			return i;
+		}
+
+		if (tlv_off + 2U > tlvs_len) {
+			return -EINVAL;
+		}
+
+		type = tlvs[tlv_off];
+		tlv_off++;
+		data_len = tlvs[tlv_off];
+		tlv_off++;
+
+		if (tlv_off + data_len > tlvs_len) {
+			return -EINVAL;
+		}
+
+		if (data_len > 0) {
+			data = &tlvs[tlv_off];
+		} else {
+			data = NULL;
+		}
+
+		ad_data[i].type = type;
+		ad_data[i].data_len = data_len;
+		ad_data[i].data = data;
+
+		tlv_off += data_len;
+	}
+
+	/* all TLVs valid and converted */
+	if (tlv_off == tlvs_len) {
+		return i;
+	}
+
+	return -ENOMEM;
+}
+
+static void nrpa_legacy_timeout(struct k_work *work)
+{
+	struct bt_data ad[AD_DATA_MAX_CNT] = {
+		BT_DATA(BT_DATA_FLAGS, &ad_flags, sizeof(ad_flags)),
+	};
+	struct bt_data sd[AD_DATA_MAX_CNT];
+	size_t adv_len;
+	size_t sd_len;
+	int err;
+
+	err = tlv_to_bt_data(nrpa_ad_sd_data, nrpa_ad_len, &ad[1], ARRAY_SIZE(ad) - 1U);
+	__ASSERT(err >= 0, "TLV to AD parsing error");
+	adv_len = 1U + err;
+
+	err = tlv_to_bt_data(nrpa_ad_sd_data + nrpa_ad_len, nrpa_sd_len, &sd[0], ARRAY_SIZE(sd));
+	__ASSERT(err >= 0, "TLV to SD parsing error");
+	sd_len = err;
+
+	err = bt_le_adv_stop();
+	if (err < 0) {
+		LOG_ERR("Failed to rotate NRPA (%d)", err);
+		return;
+	}
+
+	err = bt_le_adv_start(&nrpa_legacy_param, ad, adv_len, sd_len ? sd : NULL, sd_len);
+	if (err < 0) {
+		LOG_ERR("Failed to rotate NRPA (%d)", err);
+		return;
+	}
+
+	LOG_DBG("NRPA rotated");
+
+	err = k_work_schedule(&nrpa_legacy_update, NRPA_TIMEOUT);
+	__ASSERT(err == 1, "NRPA rotation k_work_schedule failed");
+}
+
 static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
@@ -924,12 +1021,15 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 	struct btp_gap_start_advertising_rp *rp = rsp;
 	struct bt_le_adv_param param =
 		BT_LE_ADV_PARAM_INIT(0, BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL);
+	struct bt_data ad[AD_DATA_MAX_CNT] = {
+		BT_DATA(BT_DATA_FLAGS, &ad_flags, sizeof(ad_flags)),
+	};
+	struct bt_data sd[AD_DATA_MAX_CNT];
 	uint8_t own_addr_type;
 	uint32_t duration;
-	uint8_t adv_len;
-	uint8_t sd_len;
+	size_t adv_len;
+	size_t sd_len;
 	int err;
-	int i;
 
 	/* This command is very unfortunate since after variable data there is
 	 * additional 5 bytes (4 bytes for duration, 1 byte for own address
@@ -946,29 +1046,20 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 	(void)duration;
 	own_addr_type = cp->adv_sr_data[cp->adv_data_len + cp->scan_rsp_len + sizeof(duration)];
 
-	for (i = 0, adv_len = 1U; i < cp->adv_data_len; adv_len++) {
-		if (adv_len >= ARRAY_SIZE(ad)) {
-			LOG_ERR("ad[] Out of memory");
-			return BTP_STATUS_FAILED;
-		}
-
-		ad[adv_len].type = cp->adv_sr_data[i++];
-		ad[adv_len].data_len = cp->adv_sr_data[i++];
-		ad[adv_len].data = &cp->adv_sr_data[i];
-		i += ad[adv_len].data_len;
+	err = tlv_to_bt_data(cp->adv_sr_data, cp->adv_data_len, &ad[1], ARRAY_SIZE(ad) - 1U);
+	if (err < 0) {
+		LOG_ERR("TLV to AD parsing error");
+		return BTP_STATUS_FAILED;
 	}
+	adv_len = 1U + err;
 
-	for (sd_len = 0U; i < cp->adv_data_len + cp->scan_rsp_len; sd_len++) {
-		if (sd_len >= ARRAY_SIZE(sd)) {
-			LOG_ERR("sd[] Out of memory");
-			return BTP_STATUS_FAILED;
-		}
-
-		sd[sd_len].type = cp->adv_sr_data[i++];
-		sd[sd_len].data_len = cp->adv_sr_data[i++];
-		sd[sd_len].data = &cp->adv_sr_data[i];
-		i += sd[sd_len].data_len;
+	err = tlv_to_bt_data(cp->adv_sr_data + cp->adv_data_len, cp->scan_rsp_len,
+			     &sd[0], ARRAY_SIZE(sd));
+	if (err < 0) {
+		LOG_ERR("TLV to SD parsing error");
+		return BTP_STATUS_FAILED;
 	}
+	sd_len = err;
 
 	err = tester_gap_create_adv_instance(&param, own_addr_type, ad, adv_len, sd,
 					     sd_len, NULL, &gap_ext_adv);
@@ -988,6 +1079,21 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 		LOG_ERR("Failed to start advertising");
 
 		return BTP_STATUS_FAILED;
+	}
+
+	/* add NRPA rotation for legacy instance */
+	if (own_addr_type == BTP_GAP_ADDR_TYPE_NON_RESOLVABLE_PRIVATE &&
+	    !atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING) &&
+	    !k_work_delayable_is_pending(&nrpa_legacy_update)) {
+		nrpa_legacy_param = param;
+		/* we rotate only for legacy advertising so this should never happen */
+		__ASSERT_NO_MSG(cp->adv_data_len + cp->scan_rsp_len <= sizeof(nrpa_ad_sd_data));
+		(void)memcpy(nrpa_ad_sd_data, cp->adv_sr_data, cp->adv_data_len + cp->scan_rsp_len);
+		nrpa_ad_len = cp->adv_data_len;
+		nrpa_sd_len = cp->scan_rsp_len;
+
+		err = k_work_schedule(&nrpa_legacy_update, NRPA_TIMEOUT);
+		__ASSERT(err == 1, "NRPA rotation k_work_schedule failed");
 	}
 
 	atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_ADVERTISING);
@@ -1062,6 +1168,10 @@ static uint8_t stop_advertising(const void *cmd, uint16_t cmd_len,
 	    atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
 		err = tester_gap_stop_ext_adv(gap_ext_adv);
 	} else {
+		struct k_work_sync sync;
+
+		(void)k_work_cancel_delayable_sync(&nrpa_legacy_update, &sync);
+
 		err = bt_le_adv_stop();
 	}
 
@@ -2191,6 +2301,9 @@ int tester_gap_padv_configure(struct bt_le_ext_adv *ext_adv,
 	int err;
 	struct bt_le_adv_param ext_adv_param =
 		BT_LE_ADV_PARAM_INIT(0, param->interval_min, param->interval_max, NULL);
+	struct bt_data ad[1] = {
+		BT_DATA(BT_DATA_FLAGS, &ad_flags, sizeof(ad_flags)),
+	};
 
 	if (ext_adv == NULL) {
 		current_settings = BIT(BTP_GAP_SETTINGS_DISCOVERABLE) |
