@@ -796,6 +796,7 @@ Bouffalolab Platforms:
     - boards/aithinker/ai_*/
     - boards/bflb/
     - boards/doiting/
+    - boards/sipeed/m1s_dock/
     - boards/sipeed/maix_m0s_dock/
     - drivers/*/*bflb*
     - dts/riscv/bflb/
