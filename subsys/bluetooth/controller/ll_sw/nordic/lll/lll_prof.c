@@ -22,6 +22,8 @@
 #include "pdu_vendor.h"
 #include "pdu.h"
 
+#include "lll/lll_prof_internal.h"
+
 #include "lll.h"
 
 #include "hal/debug.h"
@@ -196,14 +198,12 @@ uint16_t lll_prof_latency_get(void)
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 static uint32_t timestamp_radio_end;
 
-uint32_t lll_prof_radio_end_backup(void)
+void lll_prof_radio_end_backup(void)
 {
 	/* PA enable is overwriting packet end used in ISR profiling, hence
 	 * back it up for later use.
 	 */
 	timestamp_radio_end = radio_tmr_end_get();
-
-	return timestamp_radio_end;
 }
 #endif /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 
@@ -233,7 +233,10 @@ uint16_t lll_prof_cputime_get(void)
 
 void lll_prof_send(void)
 {
-	(void)send(NULL);
+	struct node_rx_pdu *rx;
+
+	rx = lll_prof_reserve();
+	lll_prof_reserve_send(rx);
 }
 
 struct node_rx_pdu *lll_prof_reserve(void)
@@ -241,11 +244,9 @@ struct node_rx_pdu *lll_prof_reserve(void)
 	struct node_rx_pdu *rx;
 
 	rx = ull_pdu_rx_alloc_peek(3);
-	if (!rx) {
-		return NULL;
+	if (rx != NULL) {
+		(void)ull_pdu_rx_alloc();
 	}
-
-	ull_pdu_rx_alloc();
 
 	return rx;
 }
@@ -256,7 +257,7 @@ void lll_prof_reserve_send(struct node_rx_pdu *rx)
 
 	err = send(rx);
 	if ((err != 0) && (rx != NULL)) {
-		rx->hdr.type = NODE_RX_TYPE_PROFILE;
+		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		ull_rx_put_sched(rx->hdr.link, rx);
 	}
@@ -317,14 +318,9 @@ static int send(struct node_rx_pdu *rx)
 		return -ENODATA;
 	}
 
-	/* Allocate if not already allocated */
-	if (!rx) {
-		rx = ull_pdu_rx_alloc_peek(3U);
-		if (!rx) {
-			return -ENOMEM;
-		}
-
-		(void)ull_pdu_rx_alloc();
+	/* Do not encode profile if no node rx allocated */
+	if (rx == NULL) {
+		return -ENOMEM;
 	}
 
 	/* Generate event with the allocated node rx */
