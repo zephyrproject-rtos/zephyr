@@ -17,6 +17,7 @@
 / {
 	chosen {
 		zephyr,crc = &crc;
+		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
 	};
 
@@ -344,6 +345,16 @@
 				compatible = "st,stm32-rcc-rctl";
 				#reset-cells = <1>;
 			};
+		};
+
+		rng: rng@420c0800 {
+			compatible = "st,stm32-rng";
+			reg = <0x420c0800 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 18)>;
+			interrupts = <64 0>;
+			nist-config = <0x8451f00>;
+			health-test-config = <0xaac7>;
+			status = "disabled";
 		};
 
 		rtc: rtc@44007800 {
