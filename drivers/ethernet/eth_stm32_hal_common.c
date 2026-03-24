@@ -165,6 +165,10 @@ static int eth_initialize(const struct device *dev)
 
 	heth->Init.MACAddr = dev_data->mac_addr;
 
+#ifdef CONFIG_ETH_STM32_HAL_MDIO
+	k_mutex_init(&dev_data->mdio_mutex);
+#endif /* CONFIG_ETH_STM32_HAL_MDIO */
+
 	ret = eth_stm32_hal_init(dev);
 	if (ret) {
 		LOG_ERR("Failed to initialize HAL");
@@ -334,18 +338,83 @@ static struct net_stats_eth *eth_stm32_hal_get_stats(const struct device *dev)
 }
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
-static const struct ethernet_api eth_api = {
-	.iface_api.init = eth_iface_init,
+#ifdef CONFIG_ETH_STM32_HAL_MDIO
+static int mdio_stm32_read(const struct device *dev, uint8_t prtad,
+			   uint8_t regad, uint16_t *data)
+{
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
+	HAL_StatusTypeDef ret;
+	uint32_t read;
+
+	k_mutex_lock(&dev_data->mdio_mutex, K_FOREVER);
+
+#ifdef CONFIG_ETH_STM32_HAL_API_V2
+	ret = HAL_ETH_ReadPHYRegister(heth, prtad, regad, &read);
+#else
+	heth->Init.PhyAddress = prtad;
+
+	ret = HAL_ETH_ReadPHYRegister(heth, regad, &read);
+#endif
+
+	k_mutex_unlock(&dev_data->mdio_mutex);
+
+	if (ret != HAL_OK) {
+		return -EIO;
+	}
+
+	*data = read & GENMASK(15, 0);
+
+	return 0;
+}
+
+static int mdio_stm32_write(const struct device *dev, uint8_t prtad,
+			    uint8_t regad, uint16_t data)
+{
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
+	HAL_StatusTypeDef ret;
+
+	k_mutex_lock(&dev_data->mdio_mutex, K_FOREVER);
+
+#ifdef CONFIG_ETH_STM32_HAL_API_V2
+	ret = HAL_ETH_WritePHYRegister(heth, prtad, regad, data);
+#else
+	heth->Init.PhyAddress = prtad;
+
+	ret = HAL_ETH_WritePHYRegister(heth, regad, data);
+#endif
+
+	k_mutex_unlock(&dev_data->mdio_mutex);
+
+	if (ret != HAL_OK) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static DEVICE_API(mdio, mdio_stm32_api) = {
+	.read = mdio_stm32_read,
+	.write = mdio_stm32_write,
+};
+#endif /* CONFIG_ETH_STM32_HAL_MDIO */
+
+static DEVICE_API(ethernet, eth_api) = {
+	.l2.iface_api.init = eth_iface_init,
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	.get_ptp_clock = eth_stm32_get_ptp_clock,
+	.l2.get_ptp_clock = eth_stm32_get_ptp_clock,
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
-	.get_capabilities = eth_stm32_hal_get_capabilities,
-	.set_config = eth_stm32_hal_set_config,
-	.get_phy = eth_stm32_hal_get_phy,
-	.send = eth_stm32_tx,
+	.l2.get_capabilities = eth_stm32_hal_get_capabilities,
+	.l2.set_config = eth_stm32_hal_set_config,
+	.l2.get_phy = eth_stm32_hal_get_phy,
+	.l2.send = eth_stm32_tx,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	.get_stats = eth_stm32_hal_get_stats,
+	.l2.get_stats = eth_stm32_hal_get_stats,
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
+#ifdef CONFIG_ETH_STM32_HAL_MDIO
+	.mdio = &mdio_stm32_api,
+#endif /* CONFIG_ETH_STM32_HAL_MDIO */
 };
 
 static void eth0_irq_config(void)
@@ -357,20 +426,20 @@ static void eth0_irq_config(void)
 
 PINCTRL_DT_INST_DEFINE(0);
 
-static const struct stm32_pclken eth0_pclken[] = STM32_DT_CLOCKS(DT_INST_PARENT(0));
+static const struct stm32_pclken eth0_pclken[] = STM32_DT_INST_CLOCKS(0);
 
-#define ETH_STM32_HAS_PTP_CLOCK	DT_CLOCKS_HAS_NAME(DT_INST_PARENT(0), mac_clk_ptp)
+#define ETH_STM32_HAS_PTP_CLOCK	DT_INST_CLOCKS_HAS_NAME(0, mac_clk_ptp)
 
 static const struct eth_stm32_hal_dev_cfg eth0_config = {
 	.config_func = eth0_irq_config,
 	.pclken = eth0_pclken,
-	.pclken_cnt = DT_NUM_CLOCKS(DT_INST_PARENT(0)),
-	.kclk_sel_idx = COND_CODE_1(DT_PROP_HAS_NAME(DT_INST_PARENT(0), clocks, eth_ker),
-				    (DT_PHA_ELEM_IDX_BY_NAME(DT_INST_PARENT(0), clocks, eth_ker)),
+	.pclken_cnt = DT_INST_NUM_CLOCKS(0),
+	.kclk_sel_idx = COND_CODE_1(DT_INST_PROP_HAS_NAME(0, clocks, eth_ker),
+				    (DT_PHA_ELEM_IDX_BY_NAME(DT_DRV_INST(0), clocks, eth_ker)),
 				    (UINT8_MAX)),
 #ifdef CONFIG_PTP_CLOCK_STM32_HAL
 	/* If no PTP clock is defined, bus clock ("stm-eth") gives the ethernet clock rate */
-	.rate_pclken_idx = DT_PHA_ELEM_IDX_BY_NAME(DT_INST_PARENT(0), clocks,
+	.rate_pclken_idx = DT_PHA_ELEM_IDX_BY_NAME(DT_DRV_INST(0), clocks,
 						   COND_CODE_1(ETH_STM32_HAS_PTP_CLOCK,
 							       (mac_clk_ptp), (stm_eth))),
 #endif
@@ -387,7 +456,7 @@ BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii)
 
 static struct eth_stm32_hal_dev_data eth0_data = {
 	.heth = {
-		.Instance = (ETH_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(0)),
+		.Instance = (ETH_TypeDef *)DT_INST_REG_ADDR(0),
 		.Init = {
 #if defined(CONFIG_ETH_STM32_HAL_API_V1)
 			.RxMode = ETH_RXINTERRUPT_MODE,

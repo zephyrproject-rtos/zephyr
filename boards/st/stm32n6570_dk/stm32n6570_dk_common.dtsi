@@ -479,18 +479,14 @@ zephyr_udc0: &usbotg_hs1 {
 		     &eth1_rgmii_rxd0_pf14
 		     &eth1_rgmii_rxd1_pf15
 		     &eth1_rgmii_txd2_pg3
-		     &eth1_rgmii_txd3_pg4>;
+		     &eth1_rgmii_txd3_pg4
+		     &eth1_mdio_pd12
+		     &eth1_mdc_pd1>;
 	pinctrl-names = "default";
 	phy-connection-type = "rgmii";
 	phy-handle = <&eth_phy>;
 	nvmem-cells = <&mac_address0>;
 	nvmem-cell-names = "mac-address";
-};
-
-&mdio {
-	status = "okay";
-	pinctrl-0 = <&eth1_mdio_pd12 &eth1_mdc_pd1>;
-	pinctrl-names = "default";
 
 	eth_phy: ethernet-phy@1 {
 		compatible = "realtek,rtl8211f";

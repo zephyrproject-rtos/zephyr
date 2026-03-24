@@ -24,6 +24,10 @@
 #include <zephyr/device.h>
 #include <errno.h>
 
+#ifdef CONFIG_ETH_DRIVER_WITH_MDIO
+#include <zephyr/net/ethernet.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -51,6 +55,16 @@ __subsystem struct mdio_driver_api {
 	int (*write_c45)(const struct device *dev, uint8_t prtad, uint8_t devad,
 			 uint16_t regad, uint16_t data);
 };
+
+static inline const struct mdio_driver_api *mdio_get_api(const struct device *dev)
+{
+#ifdef CONFIG_ETH_DRIVER_WITH_MDIO
+	if (DEVICE_API_IS(ethernet, dev)) {
+		return DEVICE_API_GET(ethernet, dev)->mdio;
+	}
+#endif
+	return DEVICE_API_GET(mdio, dev);
+}
 /**
  * @endcond
  */
@@ -77,11 +91,13 @@ __syscall int mdio_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 static inline int z_impl_mdio_read(const struct device *dev, uint8_t prtad,
 				   uint8_t regad, uint16_t *data)
 {
-	if (DEVICE_API_GET(mdio, dev)->read == NULL) {
+	const struct mdio_driver_api *api = mdio_get_api(dev);
+
+	if (api->read == NULL) {
 		return -ENOSYS;
 	}
 
-	return DEVICE_API_GET(mdio, dev)->read(dev, prtad, regad, data);
+	return api->read(dev, prtad, regad, data);
 }
 
 
@@ -107,11 +123,13 @@ __syscall int mdio_write(const struct device *dev, uint8_t prtad, uint8_t regad,
 static inline int z_impl_mdio_write(const struct device *dev, uint8_t prtad,
 				    uint8_t regad, uint16_t data)
 {
-	if (DEVICE_API_GET(mdio, dev)->write == NULL) {
+	const struct mdio_driver_api *api = mdio_get_api(dev);
+
+	if (api->write == NULL) {
 		return -ENOSYS;
 	}
 
-	return DEVICE_API_GET(mdio, dev)->write(dev, prtad, regad, data);
+	return api->write(dev, prtad, regad, data);
 }
 
 /**
@@ -138,11 +156,13 @@ static inline int z_impl_mdio_read_c45(const struct device *dev, uint8_t prtad,
 				       uint8_t devad, uint16_t regad,
 				       uint16_t *data)
 {
-	if (DEVICE_API_GET(mdio, dev)->read_c45 == NULL) {
+	const struct mdio_driver_api *api = mdio_get_api(dev);
+
+	if (api->read_c45 == NULL) {
 		return -ENOSYS;
 	}
 
-	return DEVICE_API_GET(mdio, dev)->read_c45(dev, prtad, devad, regad, data);
+	return api->read_c45(dev, prtad, devad, regad, data);
 }
 
 /**
@@ -169,11 +189,13 @@ static inline int z_impl_mdio_write_c45(const struct device *dev, uint8_t prtad,
 					uint8_t devad, uint16_t regad,
 					uint16_t data)
 {
-	if (DEVICE_API_GET(mdio, dev)->write_c45 == NULL) {
+	const struct mdio_driver_api *api = mdio_get_api(dev);
+
+	if (api->write_c45 == NULL) {
 		return -ENOSYS;
 	}
 
-	return DEVICE_API_GET(mdio, dev)->write_c45(dev, prtad, devad, regad, data);
+	return api->write_c45(dev, prtad, devad, regad, data);
 }
 
 #ifdef __cplusplus

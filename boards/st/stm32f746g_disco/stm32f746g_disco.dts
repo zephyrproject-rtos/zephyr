@@ -190,16 +190,12 @@ zephyr_udc0: &usbotg_fs {
 		     &eth_crs_dv_pa7
 		     &eth_tx_en_pg11
 		     &eth_txd0_pg13
-		     &eth_txd1_pg14>;
+		     &eth_txd1_pg14
+		     &eth_mdio_pa2
+		     &eth_mdc_pc1>;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
-};
-
-&mdio {
-	status = "okay";
-	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
-	pinctrl-names = "default";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";

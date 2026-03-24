@@ -28,7 +28,6 @@ tests:
     extra_args: DTC_OVERLAY_FILE="mdio_gpio.overlay"
     extra_configs:
       - CONFIG_ETH_STM32_HAL=n
-      - CONFIG_MDIO_ST_STM32_HAL=n
       - CONFIG_ETH_DWMAC_STM32H7X=y
     platform_allow:
       - stm32h735g_disco

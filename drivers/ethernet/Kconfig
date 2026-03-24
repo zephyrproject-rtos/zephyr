@@ -93,6 +93,11 @@ source "drivers/ethernet/nxp_imx_netc/Kconfig"
 source "drivers/ethernet/phy/Kconfig"
 # zephyr-keep-sorted-stop
 
+config ETH_DRIVER_WITH_MDIO
+	bool
+	help
+	  This needs to be enabled if the Ethernet driver also implements the MDIO bus.
+
 endif # "Ethernet Drivers"
 
 config ETH_INIT_PRIORITY

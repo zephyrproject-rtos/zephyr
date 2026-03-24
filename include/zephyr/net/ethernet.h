@@ -599,6 +599,18 @@ struct ethernet_api {
 	int (*send)(const struct device *dev, struct net_pkt *pkt);
 };
 
+struct mdio_driver_api;
+
+/** Ethernet device driver API */
+__subsystem struct ethernet_driver_api {
+	/** Ethernet L2 API operations */
+	struct ethernet_api l2;
+#if defined(CONFIG_ETH_DRIVER_WITH_MDIO) || defined(__DOXYGEN__)
+	/** MDIO API, if supported by the driver */
+	const struct mdio_driver_api *mdio;
+#endif
+};
+
 /** @cond INTERNAL_HIDDEN */
 
 /* Make sure that the network interface API is properly setup inside
@@ -1549,6 +1561,10 @@ static inline bool net_eth_type_is_wifi(struct net_if *iface)
 
 #ifdef __cplusplus
 }
+#endif
+
+#if defined(CONFIG_ETH_DRIVER_WITH_MDIO) || defined(__DOXYGEN__)
+#include <zephyr/drivers/mdio.h>
 #endif
 
 #include <zephyr/syscalls/ethernet.h>

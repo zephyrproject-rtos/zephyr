@@ -17,6 +17,11 @@ LOG_MODULE_REGISTER(mdio_shell, CONFIG_LOG_DEFAULT_LEVEL);
 
 static bool device_is_mdio(const struct device *dev)
 {
+#ifdef CONFIG_ETH_DRIVER_WITH_MDIO
+	if (DEVICE_API_IS(ethernet, dev)) {
+		return DEVICE_API_GET(ethernet, dev)->mdio != NULL;
+	}
+#endif
 	return DEVICE_API_IS(mdio, dev);
 }
 
