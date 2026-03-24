@@ -205,6 +205,12 @@
 	st,psi-source = "HSE";
 };
 
+&rng {
+	clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
+		 <&rcc STM32_SRC_CK48 CK48_SEL(2)>;
+	status = "okay";
+};
+
 &rtc {
 	clocks = <&rcc STM32_CLOCK(APB3, 21)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
