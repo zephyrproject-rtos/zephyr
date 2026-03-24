@@ -595,6 +595,9 @@ Ethernet
   ``microchip,ksz8463``, ``microchip,ksz8794`` and ``microchip,ksz8863`` were removed, as they
   haven't been migrated to the new DSA subsystem. (:github:`105926`)
 
+* Ethernet drivers no longer need to call :c:func:`net_if_set_link_addr` themselves, when
+  the mac address is changed via ``ETHERNET_CONFIG_TYPE_MAC_ADDRESS``. (:github:`105931`)
+
 File System
 ===========
 
