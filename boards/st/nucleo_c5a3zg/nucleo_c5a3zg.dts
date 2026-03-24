@@ -89,6 +89,10 @@
 	status = "okay";
 };
 
+&clk_hsidiv3 {
+	status = "okay";
+};
+
 &clk_hsik {
 	clock-frequency = <DT_FREQ_M(32)>;
 	xsik-div = "4.5";
@@ -211,6 +215,14 @@
 	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	clocks = <&rcc STM32_CLOCK(APB2, 24)>,
+		 <&rcc STM32_SRC_CK48 CK48_SEL(2)>;
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
