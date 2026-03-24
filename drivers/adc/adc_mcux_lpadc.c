@@ -18,7 +18,10 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/opamp.h>
-
+#include <zephyr/pm/policy.h>
+#if CONFIG_PM_DEVICE
+#include <zephyr/pm/device.h>
+#endif
 #ifdef CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN
 #include <zephyr/drivers/dma.h>
 #endif
@@ -38,6 +41,9 @@ LOG_MODULE_REGISTER(nxp_mcux_lpadc);
  */
 #define CHANNELS_PER_SIDE 0x8
 
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+#define ADC_CONTEXT_ENABLE_ON_COMPLETE
+#endif
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
@@ -65,6 +71,9 @@ struct mcux_lpadc_config {
 	 * (from that channel node's zephyr,vref-mv)
 	 */
 	uint16_t opamp_vref_mv;
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	bool pm_device_constraints;
+#endif
 #ifdef CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN
 	const struct device *dma_dev;
 	uint32_t dma_channel;
@@ -89,6 +98,9 @@ struct mcux_lpadc_data {
 	uint16_t sample_max_raw;
 	uint8_t channels_count;
 	bool use_dma;
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	bool pm_lock_active;
+#endif
 #ifdef CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN
 	struct dma_config dma_cfg;
 	struct dma_block_config dma_block;
@@ -416,6 +428,31 @@ static int mcux_lpadc_start_read(const struct device *dev,
 	return error;
 }
 
+static void mcux_lpadc_pm_policy_device_power_lock_get(const struct device *dev)
+{
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	struct mcux_lpadc_data *data = dev->data;
+	const struct mcux_lpadc_config *config = dev->config;
+
+	if (config->pm_device_constraints && !data->pm_lock_active) {
+		pm_policy_device_power_lock_get(dev);
+		data->pm_lock_active = true;
+	}
+#endif
+}
+
+static void mcux_lpadc_pm_policy_device_power_lock_put(const struct device *dev)
+{
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	struct mcux_lpadc_data *data = dev->data;
+
+	if (data->pm_lock_active) {
+		pm_policy_device_power_lock_put(dev);
+		data->pm_lock_active = false;
+	}
+#endif
+}
+
 static int mcux_lpadc_read_async(const struct device *dev,
 			const struct adc_sequence *sequence,
 			struct k_poll_signal *async)
@@ -424,7 +461,15 @@ static int mcux_lpadc_read_async(const struct device *dev,
 	int error;
 
 	adc_context_lock(&data->ctx, async ? true : false, async);
+
+	mcux_lpadc_pm_policy_device_power_lock_get(dev);
+
 	error = mcux_lpadc_start_read(dev, sequence);
+
+	if (error != 0) {
+		mcux_lpadc_pm_policy_device_power_lock_put(dev);
+	}
+
 	adc_context_release(&data->ctx, error);
 
 	return error;
@@ -435,6 +480,17 @@ static int mcux_lpadc_read(const struct device *dev,
 {
 	return mcux_lpadc_read_async(dev, sequence, NULL);
 }
+
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+static void adc_context_on_complete(struct adc_context *ctx, int status)
+{
+	ARG_UNUSED(status);
+
+	struct mcux_lpadc_data *data = CONTAINER_OF(ctx, struct mcux_lpadc_data, ctx);
+
+	mcux_lpadc_pm_policy_device_power_lock_put(data->dev);
+}
+#endif
 
 static void mcux_lpadc_start_channel(const struct device *dev)
 {
@@ -750,6 +806,56 @@ static void mcux_lpadc_isr(const struct device *dev)
 	}
 }
 
+#if CONFIG_PM_DEVICE
+static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_action action)
+{
+	const struct mcux_lpadc_config *config = dev->config;
+	const struct device *regulator = config->ref_supplies;
+	int err;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+
+		if (regulator != NULL) {
+			err = regulator_enable(regulator);
+			if (err < 0) {
+				return err;
+			}
+		}
+
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+
+		LPADC_Enable(config->base, true);
+
+		return 0;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+
+		LPADC_Enable(config->base, false);
+
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+
+		if (regulator != NULL) {
+			err = regulator_disable(regulator);
+			if (err < 0) {
+				return err;
+			}
+		}
+
+		return 0;
+
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif
+
 static int mcux_lpadc_init(const struct device *dev)
 {
 	const struct mcux_lpadc_config *config = dev->config;
@@ -852,6 +958,23 @@ static int mcux_lpadc_init(const struct device *dev)
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
+
+
+#if CONFIG_PM_DEVICE
+	/* Disable LPADC here, in pm_device_driver_init,
+	 * - if device runtime PM is enabled, the LPADC state will be set to SUSPEND,
+	 *   we should keep same state in hardware.
+	 * - if device runtime PM is not enabled, pm_device_driver_init will resume LPADC.
+	 * - if the LPADC is in a power domain, and the power domain is off, the LPADC
+	 *   state will set to OFF, disabled LPADC matches the state.
+	 */
+	LPADC_Enable(config->base, false);
+
+	return pm_device_driver_init(dev, mcux_lpadc_pm_callback);
+#else
+	return 0;
+#endif
+
 	return 0;
 }
 
@@ -892,6 +1015,21 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 #define DMA_INIT(n)
 #endif
 
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+#define PM_POLICY_DEVICE_CONSTRAINTS_INIT(n)							\
+	.pm_device_constraints = DT_INST_NODE_HAS_PROP(n, zephyr_disabling_power_states),
+#else
+#define PM_POLICY_DEVICE_CONSTRAINTS_INIT(n)
+#endif
+
+#if CONFIG_PM_DEVICE
+#define LPADC_PM_DEVICE_DEFINE		PM_DEVICE_DT_INST_DEFINE(n, mcux_lpadc_pm_callback);
+#define LPADC_PM_DEVICE_GET		PM_DEVICE_DT_INST_GET(n)
+#else
+#define LPADC_PM_DEVICE_DEFINE
+#define LPADC_PM_DEVICE_GET		NULL
+#endif
+
 #define LPADC_MCUX_INIT(n)									\
 												\
 	static void mcux_lpadc_config_func_##n(const struct device *dev);			\
@@ -914,6 +1052,7 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 		.ref_supply_val = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_references),		\
 					      (DT_PHA(DT_DRV_INST(n), nxp_references, vref_mv)),\
 					      (0)),						\
+		PM_POLICY_DEVICE_CONSTRAINTS_INIT(n)						\
 		.opamp = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_opamps),			\
 			(DEVICE_DT_GET(DT_INST_PHANDLE_BY_IDX(n, nxp_opamps, 0))), (NULL)),	\
 		.opamp_channel = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_opamps),		\
@@ -935,7 +1074,9 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 		ADC_CONTEXT_INIT_SYNC(mcux_lpadc_data_##n, ctx),				\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(n, mcux_lpadc_init, NULL, &mcux_lpadc_data_##n,			\
+	LPADC_PM_DEVICE_DEFINE									\
+												\
+	DEVICE_DT_INST_DEFINE(n, mcux_lpadc_init, LPADC_PM_DEVICE_GET, &mcux_lpadc_data_##n,	\
 			      &mcux_lpadc_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,	\
 			      &mcux_lpadc_driver_api);						\
 												\

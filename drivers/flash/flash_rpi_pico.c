@@ -25,6 +25,12 @@ LOG_MODULE_REGISTER(flash_rpi_pico, CONFIG_FLASH_LOG_LEVEL);
 #define ERASE_VALUE 0xff
 #define FLASH_SIZE  KB(CONFIG_FLASH_SIZE)
 
+#ifdef CONFIG_FLASH_RPI_PICO_READ_UNTRANSLATED
+#define PICO_FLASH_READ_BASE XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE
+#else
+#define PICO_FLASH_READ_BASE CONFIG_FLASH_BASE_ADDRESS
+#endif
+
 static const struct flash_parameters flash_rpi_parameters = {
 	.write_block_size = 1,
 	.erase_value = ERASE_VALUE,
@@ -50,7 +56,7 @@ static int flash_rpi_read(const struct device *dev, off_t offset, void *data, si
 		return -EINVAL;
 	}
 
-	memcpy(data, (uint8_t *)(CONFIG_FLASH_BASE_ADDRESS + offset), size);
+	memcpy(data, (uint8_t *)(PICO_FLASH_READ_BASE + offset), size);
 
 	return 0;
 }

@@ -13,6 +13,10 @@ config NUM_IRQS
 	default 164 if SOC_SERIES_MCXAXX7
 	default 88
 
+# Default offset 0x200 is not enough with higher ISR count
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT && SOC_SERIES_MCXAXX7
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 1000000 if MCUX_OS_TIMER
 	default 16000 if MCUX_LPTMR_TIMER
@@ -24,7 +28,7 @@ config FLASH_FILL_BUFFER_SIZE
 
 if PM
 
-configdefault CORTEX_M_SYSTICK_RESET_BY_LPM
+configdefault SYSTEM_TIMER_RESET_BY_LPM
 	default y
 
 endif # PM

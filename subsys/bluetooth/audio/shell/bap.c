@@ -19,6 +19,7 @@
 #include <sys/types.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
@@ -42,12 +43,14 @@
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
 #include "common/bt_shell_private.h"
 #include "host/shell/bt.h"
@@ -952,11 +955,17 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 	bt_shell_print("dir %u loc %X\n", dir, loc);
 }
 
+static void supported_contexts_cb(struct bt_conn *conn, enum bt_audio_context snk_ctx,
+				  enum bt_audio_context src_ctx)
+{
+	bt_shell_print("Supported snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
+}
+
 static void available_contexts_cb(struct bt_conn *conn,
 				  enum bt_audio_context snk_ctx,
 				  enum bt_audio_context src_ctx)
 {
-	bt_shell_print("snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
+	bt_shell_print("Available snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 }
 
 static void config_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
@@ -1021,6 +1030,7 @@ static void release_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code r
 
 static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.location = unicast_client_location_cb,
+	.supported_contexts = supported_contexts_cb,
 	.available_contexts = available_contexts_cb,
 	.config = config_cb,
 	.qos = qos_cb,
@@ -4153,7 +4163,7 @@ static int cmd_bap_stats(const struct shell *sh, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST_SERVER)
-static void print_ase_info(struct bt_bap_ep *ep, void *user_data)
+static bool print_ase_info(struct bt_bap_ep *ep, void *user_data)
 {
 	struct bt_bap_ep_info info;
 	int err;
@@ -4162,16 +4172,21 @@ static void print_ase_info(struct bt_bap_ep *ep, void *user_data)
 	if (err == 0) {
 		printk("ASE info: id %u state %u dir %u\n", info.id, info.state, info.dir);
 	}
+
+	return true;
 }
 
 static int cmd_print_ase_info(const struct shell *sh, size_t argc, char *argv[])
 {
+	__maybe_unused int err;
+
 	if (!default_conn) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
 
-	bt_bap_unicast_server_foreach_ep(default_conn, print_ase_info, NULL);
+	err = bt_bap_unicast_server_foreach_ep(default_conn, print_ase_info, NULL);
+	__ASSERT(err == 0, "bt_bap_unicast_server_foreach_ep returned %d", err);
 
 	return 0;
 }

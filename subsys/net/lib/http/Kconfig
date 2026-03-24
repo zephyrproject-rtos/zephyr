@@ -178,6 +178,7 @@ config HTTP_SERVER_CLIENT_INACTIVITY_TIMEOUT
 
 config HTTP_SERVER_WEBSOCKET
 	bool "Allow upgrading to Websocket connection"
+	select PSA_WANT_ALG_SHA_1
 	select WEBSOCKET_CLIENT
 	select WEBSOCKET
 	help

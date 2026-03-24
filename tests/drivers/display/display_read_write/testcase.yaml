@@ -15,6 +15,12 @@ tests:
       - native_sim/native/64
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ARGB_8888=y
+  drivers.display.read_write.sdl.xrgb8888:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_XRGB_8888=y
   drivers.display.read_write.sdl.al88:
     platform_allow:
       - native_sim
@@ -114,3 +120,4 @@ tests:
     extra_args:
       - platform:ek_ra8d1/r7fa8d1bhecbd:SHIELD=rtkmipilcdb00000be
       - platform:ek_ra8d1/r7fa8d1bhecbd:SHIELD="rtk7eka6m3b00001bu;ek_ra8d1_rtk7eka6m3b00001bu"
+      - platform:aik_ra8d1/r7fa8d1bhecbd:SHIELD=rtkmipilcdb00000be

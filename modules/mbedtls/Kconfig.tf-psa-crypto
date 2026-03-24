@@ -1,0 +1,360 @@
+# Copyright (c) 2026 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config TF_PSA_CRYPTO_CFG_FILE
+	string "TF-PSA-Crypto configuration file"
+	default "config-tf-psa-crypto.h"
+	help
+	  Specify the configuration header file to be used when building
+	  TF-PSA-Crypto. The default one can be tweaked with Kconfig.
+
+config MBEDTLS_ECP_NIST_OPTIM
+	bool "NIST curves optimization"
+	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+
+comment "Supported ciphers and cipher modes"
+
+config MBEDTLS_CIPHER_ALL_ENABLED
+	bool "All available ciphers and modes"
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_KEY_TYPE_CAMELLIA
+	select PSA_WANT_KEY_TYPE_CHACHA20
+	select PSA_WANT_ALG_GCM
+	select PSA_WANT_ALG_CCM
+	select PSA_WANT_ALG_CBC_NO_PADDING
+	select PSA_WANT_ALG_CBC_PKCS7
+	select PSA_WANT_ALG_CTR
+	select PSA_WANT_ALG_CHACHA20_POLY1305
+
+config MBEDTLS_SOME_AEAD_CIPHER_ENABLED
+	bool
+	default y
+	depends on \
+		PSA_WANT_KEY_TYPE_AES || \
+		PSA_WANT_KEY_TYPE_CAMELLIA
+
+config MBEDTLS_SOME_CIPHER_ENABLED
+	bool
+	default y
+	depends on \
+		MBEDTLS_SOME_AEAD_CIPHER_ENABLED || \
+		PSA_WANT_KEY_TYPE_CHACHA20
+
+if PSA_WANT_KEY_TYPE_AES
+
+config MBEDTLS_AES_ROM_TABLES
+	bool "Use precomputed AES tables stored in ROM"
+
+config MBEDTLS_AES_FEWER_TABLES
+	bool "Reduce the size of precomputed AES tables by ~6kB"
+	default y
+	depends on MBEDTLS_AES_ROM_TABLES
+	help
+	  Reduce the size of the AES tables at a tradeoff of more
+	  arithmetic operations at runtime. Specifically 4 table
+	  lookups are converted to 1 table lookup, 3 additions
+	  and 6 bit shifts.
+
+endif # PSA_WANT_KEY_TYPE_AES
+
+comment "Supported hash algorithms"
+
+config MBEDTLS_HASH_ALL_ENABLED
+	bool "All available MAC methods"
+	select PSA_WANT_ALG_MD5
+	select PSA_WANT_ALG_SHA_1
+	select PSA_WANT_ALG_SHA_224
+	select PSA_WANT_ALG_SHA_256
+	select PSA_WANT_ALG_SHA_384
+	select PSA_WANT_ALG_SHA_512
+
+config MBEDTLS_SHA256_SMALLER
+	bool "Smaller SHA-256 implementation"
+	depends on PSA_WANT_ALG_SHA_256
+	default y
+	help
+	  Enable an implementation of SHA-256 that has a
+	  smaller ROM footprint but also lower performance.
+
+comment "Random number generators"
+
+config MBEDTLS_CTR_DRBG_C
+	bool "CTR_DRBG AES-256-based random generator"
+
+config MBEDTLS_HMAC_DRBG_C
+	bool "HMAC_DRBG random generator"
+	select MBEDTLS_MD_C
+
+comment "Other configurations"
+
+config MBEDTLS_MEMORY_DEBUG
+	bool "mbed TLS memory debug activation"
+	help
+	  Enable debugging of buffer allocator memory issues. Automatically
+	  prints (to stderr) all (fatal) messages on memory allocation
+	  issues. Enables function for 'debug output' of allocated memory.
+
+config MBEDTLS_CIPHER
+	bool "Generic cipher layer"
+	default y if PSA_WANT_ALG_CMAC
+
+config MBEDTLS_MD_C
+	bool "Generic message digest layer"
+
+config MBEDTLS_ASN1_PARSE_C
+	bool "Support for ASN1 parser functions"
+
+config MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
+	bool "Remove usage of standard libc functions"
+	help
+	  This prevents Mbed TLS from linking against the following standard functions
+	  from libc: `snprintf`, `vsnprintf`, `printf`, `fprintf`, `calloc`, `free`, `setbuf`, `exit`
+	  and `time`. By default Mbed TLS will use stub functions for all these functions.
+	  These stubs are just meant to return successfully, but they don't implement
+	  the required functionality.
+	  Users can individually override each of these stubs by calling
+	  `mbedtls_platform_set_xxx()` to set the their implementation of `xxx()` function
+	  at runtime.
+
+if MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
+
+config MBEDTLS_PLATFORM_SNPRINTF_ALT
+	bool "Allow setting custom snprintf at run-time"
+	help
+	  Allow setting a custom `snprintf()` function with `mbedtls_platform_set_snprintf()`.
+	  Include `mbedtls/platform.h` for the prototype of this function.
+
+endif # MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
+
+config MBEDTLS_ZEROIZE_ALT
+	bool "mbed TLS alternate mbedtls_platform_zeroize implementation"
+	help
+	  mbed TLS configuration supplies an alternate implementation of
+	  mbedtls_platform_zeroize.
+
+config MBEDTLS_BASE64_C
+	bool "Base64 module"
+	help
+	  This module is required for PEM support (required by X.509).
+
+config MBEDTLS_PEM_PARSE_C
+	bool "PEM decoding / parsing"
+	select MBEDTLS_BASE64_C
+	help
+	  This module adds support for decoding / parsing PEM files.
+
+config MBEDTLS_PEM_WRITE_C
+	bool "PEM encoding / writing"
+	select MBEDTLS_BASE64_C
+	help
+	  This module adds support for encoding / writing PEM files.
+
+config MBEDTLS_HAVE_ASM
+	bool "Use of assembly code"
+	default y if !ARM
+	help
+	  Enable use of assembly code in mbedTLS. This improves the performances
+	  of asymmetric cryptography, however this might have an impact on the
+	  code size.
+
+config MBEDTLS_ENTROPY_C
+	bool "Mbed TLS entropy accumulator"
+	select PSA_WANT_ALG_SHA_256 if !PSA_WANT_ALG_SHA_512
+	help
+	  This module gathers entropy data from enabled entropy sources. It's
+	  mostly used in conjunction with CTR_DRBG or HMAC_DRBG to create
+	  a deterministic random number generator.
+	  It requires either PSA_WANT_ALG_SHA_256 or PSA_WANT_ALG_SHA_512.
+
+config MBEDTLS_PSA_DRIVER_GET_ENTROPY
+	bool "Provide entropy data to Mbed TLS through entropy driver or random generator"
+	default y
+	depends on MBEDTLS_ENTROPY_C
+	help
+	  Provide entropy data to the Mbed TLS's entropy module through either
+	  an entropy driver (if available in the system) or a generic random
+	  number generator.
+	  Warning: the latter choice is potentially non secure because it might
+	  end up using weaker/test-only sources (ex: random number generator
+	  built on system timer).
+
+config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
+	bool "MbedTLS optimizations for OpenThread"
+	depends on OPENTHREAD
+	default y if !NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Enable some OpenThread specific mbedTLS optimizations that allows to
+	  save some RAM/ROM when OpenThread is used. Note, that when application
+	  aims to use other mbedTLS services on top of OpenThread (e.g. secure
+	  sockets), it's advised to disable this option.
+
+config MBEDTLS_PK_PARSE_C
+	bool "The generic public (asymmetric) key parser"
+	help
+	  Enable generic public key parse functions.
+
+config MBEDTLS_PK_WRITE_C
+	bool "The generic public (asymmetric) key writer"
+	help
+	  Enable generic public key write functions.
+
+config MBEDTLS_X509_USE_C
+	bool "X.509 core for using certificates"
+	select MBEDTLS_PK_PARSE_C
+	select MBEDTLS_ASN1_PARSE_C
+	help
+	  Enable the X.509 core for using certificates. Required for
+	  the X.509 parsing modules (CRT, CRL and CSR). Automatically
+	  selected when any of those is enabled.
+
+config MBEDTLS_PKCS5_C
+	bool "Password-based encryption functions"
+	depends on MBEDTLS_MD_C
+	help
+	  Enable PKCS5 functions
+
+choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
+	prompt "PSA crypto random source"
+	depends on MBEDTLS_PSA_CRYPTO_C
+	default MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG if CSPRNG_ENABLED
+	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
+
+config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
+	bool "Cryptographically secure driver"
+	help
+	  Use a cryptographically secure random generator to provide random data
+	  instead of legacy Mbed TLS modules. This has a smaller footprint
+	  than its legacy counterpart MBEDTLS_PSA_CRYPTO_LEGACY_RNG, but it
+	  requires a cryptographically secure random number generator (CSPRNG)
+	  to be available in the system. If no CSPRNG is available:
+	  - there is no fallback to weak entropy random generators.
+	  - the initialization of PSA crypto will fail and none of its API
+	    will be available.
+
+config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
+	bool "Mbed TLS legacy modules (ENTROPY + [CTR|HMAC]_DRBG)"
+	select MBEDTLS_ENTROPY_C
+	select MBEDTLS_HMAC_DRBG_C if !MBEDTLS_CTR_DRBG_C
+	# If there is any entropy driver in the system, then the choice would be
+	# CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG. If we fall here, then the only
+	# way to get some random data is to enable CONFIG_TEST_RANDOM_GENERATOR.
+	select TEST_RANDOM_GENERATOR
+	help
+	  Use legacy Mbed TLS modules to generate random data. In this
+	  configuration the entropy module is used to gather some data and then
+	  either ctr_drbg or hmac_drbg are applied on top of it to improve
+	  the randomness.
+	  Security level in this case really depends on the type of entropy
+	  sources which are enabled in the system: if weak entropy sources are
+	  used, then the generated data will only be pseudo random. Strong
+	  entropy sources are strongly recommended (if possible) to have real
+	  random data.
+	  Another difference between this implementation and the
+	  MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG counterpart is the memory footprint:
+	  this implementation brings in legacy modules which are not required
+	  in the "external" version, so the footprint is larger.
+
+endchoice
+
+config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG
+	bool "Allow non cryptographically secure random sources (for test only!)"
+	depends on MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
+	help
+	  MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG is by default limited to rely only
+	  on cryptographically secure random number generators. However, only
+	  for test purposes, it might be useful to enable external random
+	  number generation, but have it using weak random sources (non
+	  cryptographically secure).
+	  Warning: this is meant to be enabled only for tests, not in production
+	  as the generated values are not cryptographically secure!
+
+config MBEDTLS_PSA_CRYPTO_C
+	bool "Platform Security Architecture cryptography API"
+	depends on !BUILD_WITH_TFM
+	select CSPRNG_NEEDED
+
+config MBEDTLS_PSA_CRYPTO_CLIENT
+	bool
+	default y
+	depends on BUILD_WITH_TFM || MBEDTLS_PSA_CRYPTO_C
+	select PSA_CRYPTO_CLIENT
+
+config MBEDTLS_LMS_C
+	bool "Support LMS signature schemes"
+	depends on MBEDTLS_PSA_CRYPTO_CLIENT
+	select PSA_WANT_ALG_SHA_256
+
+if MBEDTLS_PSA_CRYPTO_C
+
+config MBEDTLS_PSA_P256M_DRIVER_ENABLED
+	bool "P256-M driver"
+	imply PSA_WANT_ALG_SHA_256
+	help
+	  Enable support for the optimized software implementation of the secp256r1
+	  curve through the standard PSA API.
+
+config MBEDTLS_PSA_P256M_DRIVER_RAW
+	bool "Access p256-m driver directly (without PSA interface)"
+	depends on MBEDTLS_PSA_P256M_DRIVER_ENABLED
+	help
+	  Allow direct access to the p256-m driver interface.
+	  Warning: Usage of this Kconfig option is prohibited in Zephyr's codebase.
+	           Users can enable it in case of very memory-constrained devices, but be aware that the p256-m interface is absolutely not guaranteed to remain stable over time.
+
+config MBEDTLS_PSA_CRYPTO_STORAGE_C
+	bool
+
+config MBEDTLS_PSA_STATIC_KEY_SLOTS
+	bool "Use statically allocated key buffers to store key material"
+	default y if !MBEDTLS_ENABLE_HEAP
+	help
+	  By default Mbed TLS's PSA Crypto core uses heap memory to store the
+	  key material for each key slot. This might impose an undesired
+	  requirement to support heap memory and its management code, affecting
+	  RAM and ROM footprints at the same time.
+	  Enabling this symbol causes Mbed TLS to pre-allocate all the key slot
+	  buffers that are used to store the key material at build time, thus
+	  removing the need for heap memory. Each buffer will be sized to
+	  contain the largest asymmetric/symmetric key type enabled in the build
+	  through PSA_WANT symbols.
+
+config MBEDTLS_PSA_KEY_SLOT_COUNT
+	int "Number of key slots in PSA Crypto core"
+	default 16
+	help
+	  Set the number of key slots that are available in the PSA Crypto core.
+	  Be aware that each slot, even if unused, increases RAM consumption
+	  by ~40 bytes plus:
+	  * the length of the largest asymmetric/symmetric key type enabled in
+	    the build through PSA_WANT symbols, if MBEDTLS_PSA_STATIC_KEY_SLOTS
+	    is set. (This is all defined statically at build time).
+	  * the heap-allocated memory to store the key material of a given slot,
+	    if it is used and MBEDTLS_PSA_STATIC_KEY_SLOTS is not set.
+
+config MBEDTLS_PSA_CRYPTO_BUILTIN_KEYS
+	bool "Built-in key support in PSA Crypto core"
+	help
+	  Enable support for platform built-in keys in PSA Crypto. Built-in keys
+	  are typically derived from a hardware unique key or stored in a secure
+	  element. Mbed TLS uses key IDs from MBEDTLS_PSA_KEY_ID_BUILTIN_MIN to
+	  MBEDTLS_PSA_KEY_ID_BUILTIN_MAX for built-in keys. The platform must
+	  implement mbedtls_psa_platform_get_builtin_key().
+
+endif # MBEDTLS_PSA_CRYPTO_C
+
+config MBEDTLS_NIST_KW_C
+	bool "NIST key wrap"
+	depends on PSA_WANT_KEY_TYPE_AES
+	help
+	  Key Wrapping mode for 128-bit block ciphers,
+	  as defined in NIST SP 800-38F.
+
+config MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+	bool "Legacy crypto support (private)"
+	help
+	  Legacy crypto is now private inside TF-PSA-Crypto and they should
+	  no more be directly accessed. However there might be code that still
+	  needs to be transitioned and in this case enabling this Kconfig
+	  allows internal headers related to legacy crypto to be made public.
+	  The long term goal is to get rid of this support so all the code
+	  should be transitioned to the PSA Crypto API as soon as possible.

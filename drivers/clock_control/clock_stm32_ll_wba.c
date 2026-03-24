@@ -525,6 +525,13 @@ int stm32_clock_control_init(const struct device *dev)
 
 	ARG_UNUSED(dev);
 
+	if (IS_ENABLED(STM32_SYSCLK_SRC_HSE)) {
+#if DT_NODE_HAS_PROP(DT_NODELABEL(clk_hse), hse_trimming)
+		/* Set the HSE Trimming value specified in the device tree */
+		LL_RCC_HSE_SetClockTrimming(DT_PROP(DT_NODELABEL(clk_hse), hse_trimming));
+#endif
+	}
+
 	if (IS_ENABLED(STM32_SYSCLK_SRC_PLL) &&
 			(LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL1R)) {
 		/* In case of chainloaded application, it may happen that PLL

@@ -11,6 +11,7 @@
 #include <driver/gpio.h>
 #include <driver/rtc_io.h>
 #include <soc/gpio_reg.h>
+#include <soc/gpio_sig_map.h>
 #include <soc/io_mux_reg.h>
 #include <soc/soc.h>
 #include <hal/gpio_ll.h>
@@ -48,7 +49,8 @@ LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 #define out_w1tc out_w1tc.val
 /* arch_curr_cpu() is not available for riscv based chips */
 #define ESP32_CPU_ID()  0
-#elif defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32H2)
+#elif defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                  \
+	defined(CONFIG_SOC_SERIES_ESP32H2)
 /* gpio structs in esp32c6/h2 are also different */
 #define out out.out_data_orig
 #define in in.in_data_next
@@ -60,8 +62,14 @@ LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 #define ESP32_CPU_ID() arch_curr_cpu()->id
 #endif
 
-#ifndef SOC_GPIO_SUPPORT_RTC_INDEPENDENT
-#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT 0
+/*
+ * On ESP32, RTC IO pads share pull-up/down/drive registers with GPIO.
+ * On all other targets, digital IOs have independent pull/drive registers.
+ */
+#ifdef CONFIG_SOC_SERIES_ESP32
+#define GPIO_RTCIO_ARE_INDEPENDENT 0
+#else
+#define GPIO_RTCIO_ARE_INDEPENDENT 1
 #endif
 
 struct gpio_esp32_config {
@@ -112,7 +120,7 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
 
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 	if (rtc_gpio_is_valid_gpio(io_pin)) {
-		rtcio_hal_function_select(rtc_io_num_map[io_pin], RTCIO_FUNC_DIGITAL);
+		rtcio_hal_function_select(rtc_io_num_map[io_pin], RTCIO_LL_FUNC_DIGITAL);
 	}
 #endif
 
@@ -123,14 +131,14 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
 	}
 
 	/* Set pin function as GPIO */
-	gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[io_pin], PIN_FUNC_GPIO);
+	gpio_ll_func_sel(&GPIO, io_pin, PIN_FUNC_GPIO);
 
 	/* On SoCs with independent GPIO/RTCIO control, pull-up/down
-	 * configuration is handled via the GPIO registers. On ESP32/C2/C3,
+	 * configuration is handled via the GPIO registers. On ESP32,
 	 * pads with RTC functionality instead require pull configuration
 	 * via RTCIO registers.
 	 */
-	gpio_pull = !rtc_gpio_is_valid_gpio(io_pin) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT;
+	gpio_pull = !rtc_gpio_is_valid_gpio(io_pin) || GPIO_RTCIO_ARE_INDEPENDENT;
 	rtcio_pull = !gpio_pull;
 	rtcio_wakeup = rtc_gpio_is_valid_gpio(io_pin) && (flags & GPIO_INT_WAKEUP);
 
@@ -266,7 +274,7 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
 							io_pin, err);
 					}
 #elif SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
-					err = esp_deep_sleep_enable_gpio_wakeup(
+					err = esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown(
 						BIT64(io_pin), polarity);
 
 					if (err != 0) {
@@ -447,6 +455,11 @@ static int gpio_esp32_pin_interrupt_configure(const struct device *port,
 	}
 
 	key = irq_lock();
+
+	/* Disable interrupt before reconfiguring to avoid spurious triggers */
+	gpio_ll_intr_disable(cfg->gpio_base, io_pin);
+	gpio_ll_set_intr_type(cfg->gpio_base, io_pin, GPIO_INTR_DISABLE);
+
 	if (cfg->gpio_port == 0) {
 		gpio_ll_clear_intr_status(cfg->gpio_base, BIT(pin));
 	} else {
@@ -454,7 +467,9 @@ static int gpio_esp32_pin_interrupt_configure(const struct device *port,
 	}
 
 	gpio_ll_set_intr_type(cfg->gpio_base, io_pin, intr_trig_mode);
-	gpio_ll_intr_enable_on_core(cfg->gpio_base, ESP32_CPU_ID(), io_pin);
+	if (intr_trig_mode != GPIO_INTR_DISABLE) {
+		gpio_ll_intr_enable_on_core(cfg->gpio_base, ESP32_CPU_ID(), io_pin);
+	}
 	irq_unlock(key);
 
 	return 0;
@@ -510,7 +525,6 @@ static int gpio_esp32_pm_action(const struct device *dev, enum pm_device_action 
 	case PM_DEVICE_ACTION_SUSPEND:
 #if CONFIG_PM
 		if (pm_device_wakeup_is_capable(dev)) {
-			/* If the driver is being suspended, GPIO is not enabled as wakeup device */
 			esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_GPIO);
 		}
 #endif

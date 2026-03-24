@@ -8,13 +8,19 @@
 
 #include <soc/soc_caps.h>
 #include <esp_rom_sys.h>
+#include <hal/rtc_timer_ll.h>
 
-#if SOC_LP_TIMER_SUPPORTED
-#include "hal/lp_timer_ll.h"
+#if defined(SOC_RTC_TIMER_V2_SUPPORTED) && SOC_RTC_TIMER_V2_SUPPORTED
+#define SOC_HAS_LP_TIMER 1
+#include <soc/lp_timer_struct.h>
+#if defined(CONFIG_SOC_SERIES_ESP32C5)
+#define LP_TIMER_INT_ST_ALARM LP_TIMER.int_st.soc_wakeup_int_st
 #else
-#include "soc/rtc_cntl_reg.h"
-#include "soc/rtc.h"
-#include <hal/rtc_cntl_ll.h>
+#define LP_TIMER_INT_ST_ALARM LP_TIMER.int_st.alarm
+#endif
+#else
+#define SOC_HAS_LP_TIMER 0
+#include <soc/rtc_cntl_reg.h>
 #endif
 
 #include <zephyr/device.h>
@@ -33,9 +39,6 @@ static void counter_esp32_isr(void *arg);
 
 struct counter_esp32_config {
 	struct counter_config_info counter_info;
-#if SOC_LP_TIMER_SUPPORTED
-	lp_timer_dev_t *dev;
-#endif
 	int irq_source;
 	int irq_priority;
 	int irq_flags;
@@ -119,37 +122,18 @@ static int counter_esp32_stop(const struct device *dev)
 
 static int counter_esp32_get_value(const struct device *dev, uint32_t *ticks)
 {
-#if SOC_LP_TIMER_SUPPORTED
-	const struct counter_esp32_config *cfg = dev->config;
-
-	lp_timer_ll_counter_snapshot(cfg->dev);
-
-	*ticks = lp_timer_ll_get_counter_value_low(cfg->dev, 0);
-#else
 	ARG_UNUSED(dev);
 
-	*ticks = (uint32_t) rtc_cntl_ll_get_rtc_time();
-#endif
+	*ticks = (uint32_t)rtc_timer_ll_get_cycle_count(0);
 
 	return 0;
 }
 
 static int counter_esp32_get_value_64(const struct device *dev, uint64_t *ticks)
 {
-#if SOC_LP_TIMER_SUPPORTED
-	const struct counter_esp32_config *cfg = dev->config;
-
-	lp_timer_ll_counter_snapshot(cfg->dev);
-
-	uint32_t lo = lp_timer_ll_get_counter_value_low(cfg->dev, 0);
-	uint32_t hi = lp_timer_ll_get_counter_value_high(cfg->dev, 0);
-
-	*ticks = ((uint64_t)hi << 32 | lo);
-#else
 	ARG_UNUSED(dev);
 
-	*ticks = rtc_cntl_ll_get_rtc_time();
-#endif
+	*ticks = rtc_timer_ll_get_cycle_count(0);
 
 	return 0;
 }
@@ -158,17 +142,13 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 				   const struct counter_alarm_cfg *alarm_cfg)
 {
 	ARG_UNUSED(chan_id);
-#if SOC_LP_TIMER_SUPPORTED
-	const struct counter_esp32_config *cfg = dev->config;
-	lp_timer_dev_t *lp_timer = cfg->dev;
-#endif
 	struct counter_esp32_data *data = dev->data;
 	uint64_t now;
 	uint64_t ticks = 0;
 
 #if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32C2) || \
 	defined(CONFIG_SOC_SERIES_ESP32C3)
-	/* In ESP32/C3 Series the min possible value is 30+ us*/
+	/* In ESP32/C2/C3 Series the min possible value is 30+ us */
 	if (counter_ticks_to_us(dev, alarm_cfg->ticks) <= 30) {
 		return -EINVAL;
 	}
@@ -189,21 +169,15 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 
 	data->ticks = (uint32_t)ticks;
 
-#if SOC_LP_TIMER_SUPPORTED
-	lp_timer_ll_clear_alarm_intr_status(cfg->dev);
-	lp_timer_ll_set_alarm_target(cfg->dev, 0, ticks);
-	lp_timer_ll_set_target_enable(cfg->dev, 0, true);
-	lp_timer->int_en.alarm = 1;
+	/* rtc_timer_ll_set_wakeup_time sets up alarm target and enables it */
+	rtc_timer_ll_set_wakeup_time(0, ticks);
+
+#if SOC_HAS_LP_TIMER
+	/* For LP_TIMER chips, enable interrupt (set_wakeup_time doesn't do this) */
+	rtc_timer_ll_alarm_intr_enable(&LP_TIMER, 0, true);
 #else
-	rtc_cntl_ll_set_wakeup_timer(ticks);
-
-	/* RTC main timer set alarm value */
-	CLEAR_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, 0xFFFFFFFF);
-
-	/* RTC main timer set alarm enable */
+	/* For chips without LP_TIMER, enable alarm and interrupt via registers */
 	SET_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN);
-
-	/* RTC main timer interrupt enable */
 	SET_PERI_REG_MASK(RTC_CNTL_INT_ENA_REG, RTC_CNTL_MAIN_TIMER_INT_ENA);
 #endif
 
@@ -215,13 +189,10 @@ static int counter_esp32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	ARG_UNUSED(chan_id);
 	struct counter_esp32_data *data = dev->data;
 
-#if SOC_LP_TIMER_SUPPORTED
-	const struct counter_esp32_config *cfg = dev->config;
-	lp_timer_dev_t *lp_timer = cfg->dev;
-
-	lp_timer_ll_set_target_enable(cfg->dev, 0, false);
-	lp_timer->int_en.alarm = 0;
-	lp_timer_ll_clear_alarm_intr_status(cfg->dev);
+#if SOC_HAS_LP_TIMER
+	rtc_timer_ll_set_target_enable(&LP_TIMER, 0, false);
+	rtc_timer_ll_alarm_intr_enable(&LP_TIMER, 0, false);
+	rtc_timer_ll_clear_alarm_intr_status(&LP_TIMER, 0);
 #else
 	/* RTC main timer set alarm disable */
 	CLEAR_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN);
@@ -251,14 +222,11 @@ static int counter_esp32_set_top_value(const struct device *dev,
 
 static uint32_t counter_esp32_get_pending_int(const struct device *dev)
 {
-#if SOC_LP_TIMER_SUPPORTED
-	const struct counter_esp32_config *cfg = dev->config;
-	lp_timer_dev_t *lp_timer = cfg->dev;
-
-	return lp_timer->int_st.alarm;
-#else
 	ARG_UNUSED(dev);
 
+#if SOC_HAS_LP_TIMER
+	return LP_TIMER_INT_ST_ALARM;
+#else
 	uint32_t rc = READ_PERI_REG(RTC_CNTL_INT_ST_REG) & RTC_CNTL_MAIN_TIMER_INT_ST;
 
 	return (rc >> RTC_CNTL_MAIN_TIMER_INT_ST_S);
@@ -292,9 +260,6 @@ static const struct counter_esp32_config counter_config = {
 		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
 		.channels = 1
 	},
-#if SOC_LP_TIMER_SUPPORTED
-	.dev = (lp_timer_dev_t *)DT_INST_REG_ADDR(0),
-#endif
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.irq_source = DT_INST_IRQ_BY_IDX(0, 0, irq),
 	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority),
@@ -324,11 +289,8 @@ static void IRAM_ATTR counter_esp32_isr(void *arg)
 	void *cb_data = data->alarm_cfg.user_data;
 	uint32_t now;
 
-#if SOC_LP_TIMER_SUPPORTED
-	const struct counter_esp32_config *cfg = dev->config;
-	lp_timer_dev_t *lp_timer = cfg->dev;
-
-	if (!lp_timer->int_st.alarm) {
+#if SOC_HAS_LP_TIMER
+	if (!LP_TIMER_INT_ST_ALARM) {
 		return;
 	}
 #else

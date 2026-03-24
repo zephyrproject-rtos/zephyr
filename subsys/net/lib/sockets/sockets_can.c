@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(net_sock_can, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/net/net_context.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/internal/syscall_handler.h>

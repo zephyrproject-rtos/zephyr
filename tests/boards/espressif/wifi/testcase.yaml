@@ -1,6 +1,6 @@
 common:
   integration_platforms:
-    - esp32c3_devkitm
+    - esp32c3_devkitc
 tests:
   esp.wifi.sec.none:
     tags: wifi
@@ -9,9 +9,9 @@ tests:
       - CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4=y
     platform_allow:
       - esp32_devkitc/esp32/procpu
-      - esp32s2_saola
+      - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
-      - esp32c3_devkitm
+      - esp32c3_devkitc
       - esp8684_devkitm
   esp.wifi.sec.wpa2:
     tags: wifi
@@ -21,9 +21,9 @@ tests:
       - CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4=y
     platform_allow:
       - esp32_devkitc/esp32/procpu
-      - esp32s2_saola
+      - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
-      - esp32c3_devkitm
+      - esp32c3_devkitc
       - esp8684_devkitm
   esp.wifi.sec.wpa3:
     tags: wifi
@@ -33,7 +33,7 @@ tests:
       - CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4=y
     platform_allow:
       - esp32_devkitc/esp32/procpu
-      - esp32s2_saola
+      - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
-      - esp32c3_devkitm
+      - esp32c3_devkitc
       - esp8684_devkitm

@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_ieee802154_security, CONFIG_NET_L2_IEEE802154_LOG_LEVEL)
 
 #include <zephyr/crypto/crypto.h>
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_log.h>
 
 extern const uint8_t level_2_authtag_len[4];
 

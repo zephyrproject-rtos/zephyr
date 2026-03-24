@@ -27,14 +27,6 @@ control these allocations.
 
         Size of the LLEXT heap in data memory in kilobytes.
 
-.. note::
-   The LLEXT instruction heap is grouped with Zephyr .rodata, which the linker
-   typically places after .text in instruction memory.
-
-.. warning::
-   LLEXT will be unable to link and execute extensions if instruction memory
-   (i.e., memory the processor can fetch instructions from) is not writable.
-
 Alternatively the application can configure a dynamic heap using the following
 option.
 
@@ -58,8 +50,89 @@ option.
    alignment required by the architecture.
 
 .. note::
+
    On Harvard architectures, applications must call
    :c:func:`llext_heap_init_harvard`.
+
+The backing data structure for the LLEXT heap is by default a
+:c:struct:`k_heap`, but it can be changed to :c:type:`sys_mem_blocks_t` for
+non-metadata (i.e., extension regions) by selecting
+:kconfig:option:`CONFIG_LLEXT_HEAP_MEMBLK` for
+:kconfig:option:`CONFIG_LLEXT_HEAP_MANAGEMENT`.
+
+:kconfig:option:`CONFIG_LLEXT_HEAP_MANAGEMENT`
+
+        Select the memory management API used to store extension regions in
+        LLEXT heap memory. This choice does not affect LLEXT metadata, which
+        is always managed with :c:struct:`k_heap`.
+
+:kconfig:option:`CONFIG_LLEXT_HEAP_MEMBLK`
+
+        Use :c:type:`sys_mem_blocks_t` API to manage LLEXT heap memory for
+        extension regions. A minimum of one block will be allocated per region.
+        Block size must be selected with care to ensure proper alignment for
+        extension regions.
+
+.. note::
+
+   :kconfig:option:`CONFIG_LLEXT_HEAP_MEMBLK` does not support
+   :kconfig:option:`CONFIG_LLEXT_HEAP_DYNAMIC`.
+
+The heap will be split into two, with the size of each sub-heap controlled by
+the following options.
+
+:kconfig:option:`CONFIG_LLEXT_EXT_HEAP_SIZE`
+
+        Heap size in kilobytes available for LLEXT extension sections. Must be
+        a multiple of :kconfig:option:`CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE`.
+        Replaced by :kconfig:option:`CONFIG_LLEXT_INSTR_HEAP_SIZE` and
+        :kconfig:option:`CONFIG_LLEXT_DATA_HEAP_SIZE` if
+        :kconfig:option:`CONFIG_HARVARD` is selected.
+
+:kconfig:option:`CONFIG_LLEXT_METADATA_HEAP_SIZE`
+
+        Heap size in kilobytes available for LLEXT metadata.
+
+Another option controls block size.
+
+:kconfig:option:`CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE`
+
+        Block size in bytes for LLEXT :c:type:`sys_mem_blocks_t` heap(s).
+        Must be equal to or a multiple of ``LLEXT_PAGE_SIZE``. The block size
+        must also be equal to or a multiple of the largest alignment needed
+        for any extension region. If
+        :kconfig:option:`CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT` is
+        selected and regions are large, an unreasonably large block size may be
+        needed to satisfy alignment requirements.
+
+Heap placement
+--------------
+
+The LLEXT heap(s) have custom sections. Non-Harvard heap sections
+(``.llext_heap`` or ``.llext_metadata_heap`` and ``.llext_ext_heap`` if
+:kconfig:option:`CONFIG_LLEXT_HEAP_MEMBLK` is selected) are placed alongside
+``.noinit`` sections by default. Harvard instruction and data heap sections
+(``.llext_instr_heap`` and ``.llext_data_heap``) are placed in instruction and
+data memory respectively. These default placements can be overridden by
+providing a custom linker script.
+
+:kconfig:option:`CONFIG_CUSTOM_LINKER_SCRIPT`
+
+        Path to the linker script to be used instead of the one defined by the
+        board.
+
+        The linker script must be based on a version provided by Zephyr since
+        the kernel can expect a certain layout/certain regions.
+
+        This is useful when an application needs to add sections into the
+        linker script and avoid having to change the script provided by
+        Zephyr.
+
+.. warning::
+
+   LLEXT will be unable to load extensions if the instruction memory
+   ``.llext_instr_heap`` is placed in is not writable at the time the
+   extensions are loaded and linked.
 
 .. _llext_kconfig_type:
 

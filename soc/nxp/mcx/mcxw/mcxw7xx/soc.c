@@ -6,6 +6,7 @@
 
 #include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
@@ -15,6 +16,10 @@
 #include <fsl_ccm32k.h>
 #include <fsl_common.h>
 #include <fsl_clock.h>
+#include <fsl_cmc.h>
+#include <fsl_spc.h>
+
+#define MCXW7_CMC_ADDR (CMC_Type *)DT_REG_ADDR(DT_INST(0, nxp_cmc))
 
 extern uint32_t SystemCoreClock;
 extern void nxp_nbu_init(void);
@@ -156,7 +161,7 @@ __weak void clock_init(void)
 		CLOCK_GetCurSysClkConfig(&cur_config);
 	} while (cur_config.src != sys_clk_config.src);
 
-	SystemCoreClock = 96000000U;
+	SystemCoreClock = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency);
 
 	/* OSC-RF / System Oscillator Configuration */
 	scg_sosc_config_t sosc_config = {
@@ -176,6 +181,17 @@ __weak void clock_init(void)
 
 	/* Init SIRC */
 	(void)CLOCK_InitSirc(&sirc_config);
+
+	/* Raise the core voltage to allow the system to run at 96MHz */
+	spc_active_mode_core_ldo_option_t ldoOption;
+	/* Configure Flash to support different voltage level and frequency */
+	FMU0->FCTRL = (FMU0->FCTRL & ~((uint32_t)FMU_FCTRL_RWSC_MASK)) | (FMU_FCTRL_RWSC(0x2U));
+	/* Specifies the operating voltage for the SRAM's read/write timing margin */
+	SPC_SetSRAMOperateVoltage(SPC0, kSPC_SRAM_OperatVoltage1P1V);
+	/* Set the LDO_CORE VDD regulator level */
+	ldoOption.CoreLDOVoltage = kSPC_CoreLDO_NormalVoltage;
+	ldoOption.CoreLDODriveStrength = kSPC_CoreLDO_NormalDriveStrength;
+	(void)SPC_SetActiveModeCoreLDORegulatorConfig(SPC0, &ldoOption);
 #endif
 
 	/* Attach Clocks */
@@ -198,6 +214,9 @@ __weak void clock_init(void)
 #ifndef CONFIG_SOC_MCXW70AC
 	CLOCK_SetIpSrc(kCLOCK_Flexio0, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrcDiv(kCLOCK_Flexio0, kSCG_SysClkDivBy6);
+#endif
+#ifdef CONFIG_SOC_MCXW70AC
+	CLOCK_EnableClock(kCLOCK_Tstmr0);
 #endif
 
 	/* Ungate clocks if the peripheral is enabled in devicetree */
@@ -324,7 +343,7 @@ static int soc_nbu_init(void)
 {
 #if defined(CONFIG_NXP_NBU)
 	nxp_nbu_init();
-#else
+#elif defined(CONFIG_PM)
 	/* Shutdown NBU as not used */
 
 	/* Reset all RFMC registers and put the NBU CM3 in reset */
@@ -346,6 +365,11 @@ static int soc_nbu_init(void)
 	/* Force low power entry request to the radio domain */
 	RF_CMC1->RADIO_LP |= RF_CMC1_RADIO_LP_CK(0x2);
 	RFMC->RF2P4GHZ_CTRL |= RFMC_RF2P4GHZ_CTRL_LP_ENTER(0x1U);
+#endif
+#if !defined(CONFIG_SOC_MCXW716C)
+	/* Allow wakeup from the debugger */
+	RFMC->RF2P4GHZ_CFG |= RFMC_RF2P4GHZ_CFG_FORCE_DBG_PWRUP_ACK_MASK;
+	CMC_EnableDebugOperation(MCXW7_CMC_ADDR, true);
 #endif
 	return 0;
 }

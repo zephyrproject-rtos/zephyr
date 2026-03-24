@@ -66,6 +66,18 @@ enum stepper_ctrl_event {
 };
 
 /**
+ * @brief Steper Motion Controller Ramp Parameters
+ */
+struct stepper_ctrl_ramp {
+	/** Acceleration in micro_steps/s² */
+	uint32_t acceleration_max;
+	/** Maximum speed in micro_steps/s */
+	uint32_t speed_max;
+	/** Deceleration in micro_steps/s² */
+	uint32_t deceleration_max;
+};
+
+/**
  * @cond INTERNAL_HIDDEN
  *
  * Stepper Motion Controller driver API definition and entry points.
@@ -107,6 +119,15 @@ typedef int (*stepper_ctrl_set_event_cb_t)(const struct device *dev,
  */
 typedef int (*stepper_ctrl_set_microstep_interval_t)(const struct device *dev,
 						     const uint64_t microstep_interval_ns);
+
+/**
+ * @brief Configure the ramp parameters for the stepper motion controller
+ *
+ * @see stepper_ctrl_configure_ramp() for details.
+ */
+typedef int (*stepper_ctrl_configure_ramp_t)(const struct device *dev,
+					     const struct stepper_ctrl_ramp *ramp);
+
 /**
  * @brief Move the stepper relatively by a given number of micro-steps.
  *
@@ -151,6 +172,7 @@ __subsystem struct stepper_ctrl_driver_api {
 	stepper_ctrl_get_actual_position_t get_actual_position;
 	stepper_ctrl_set_event_cb_t set_event_cb;
 	stepper_ctrl_set_microstep_interval_t set_microstep_interval;
+	stepper_ctrl_configure_ramp_t configure_ramp;
 	stepper_ctrl_move_by_t move_by;
 	stepper_ctrl_move_to_t move_to;
 	stepper_ctrl_run_t run;
@@ -178,12 +200,10 @@ static inline int z_impl_stepper_ctrl_set_reference_position(const struct device
 							     const int32_t value)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	if (api->set_reference_position == NULL) {
+	if (DEVICE_API_GET(stepper_ctrl, dev)->set_reference_position == NULL) {
 		return -ENOSYS;
 	}
-	return api->set_reference_position(dev, value);
+	return DEVICE_API_GET(stepper_ctrl, dev)->set_reference_position(dev, value);
 }
 
 /**
@@ -206,12 +226,10 @@ static inline int z_impl_stepper_ctrl_get_actual_position(const struct device *d
 {
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(value != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	if (api->get_actual_position == NULL) {
+	if (DEVICE_API_GET(stepper_ctrl, dev)->get_actual_position == NULL) {
 		return -ENOSYS;
 	}
-	return api->get_actual_position(dev, value);
+	return DEVICE_API_GET(stepper_ctrl, dev)->get_actual_position(dev, value);
 }
 
 /**
@@ -234,12 +252,10 @@ static inline int z_impl_stepper_ctrl_set_event_cb(const struct device *dev,
 						   void *user_data)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	if (api->set_event_cb == NULL) {
+	if (DEVICE_API_GET(stepper_ctrl, dev)->set_event_cb == NULL) {
 		return -ENOSYS;
 	}
-	return api->set_event_cb(dev, callback, user_data);
+	return DEVICE_API_GET(stepper_ctrl, dev)->set_event_cb(dev, callback, user_data);
 }
 
 /**
@@ -263,14 +279,37 @@ static inline int z_impl_stepper_ctrl_set_microstep_interval(const struct device
 							     const uint64_t microstep_interval_ns)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	if (api->set_microstep_interval == NULL) {
+	if (DEVICE_API_GET(stepper_ctrl, dev)->set_microstep_interval == NULL) {
 		return -ENOSYS;
 	}
-	return api->set_microstep_interval(dev, microstep_interval_ns);
+	return DEVICE_API_GET(stepper_ctrl, dev)->set_microstep_interval(dev,
+								      microstep_interval_ns);
 }
 
+/**
+ * @brief Configure the ramp for the stepper motion controller
+ *
+ * @param dev pointer to the device structure for the driver instance.
+ * @param ramp Pointer to the ramp configuration structure
+ *
+ * @retval -ENOSYS If not implemented by device driver
+ * @retval -EIO General input / output error
+ * @retval 0 Success
+ */
+__syscall int stepper_ctrl_configure_ramp(const struct device *dev,
+					  const struct stepper_ctrl_ramp *ramp);
+
+static inline int z_impl_stepper_ctrl_configure_ramp(const struct device *dev,
+	const struct stepper_ctrl_ramp *ramp)
+{
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(ramp != NULL);
+
+	if (DEVICE_API_GET(stepper_ctrl, dev)->configure_ramp == NULL) {
+		return -ENOSYS;
+	}
+	return DEVICE_API_GET(stepper_ctrl, dev)->configure_ramp(dev, ramp);
+}
 /**
  * @brief Set the micro-steps to be moved from the current position i.e. relative movement
  *
@@ -289,9 +328,7 @@ __syscall int stepper_ctrl_move_by(const struct device *dev, const int32_t micro
 static inline int z_impl_stepper_ctrl_move_by(const struct device *dev, const int32_t micro_steps)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	return api->move_by(dev, micro_steps);
+	return DEVICE_API_GET(stepper_ctrl, dev)->move_by(dev, micro_steps);
 }
 
 /**
@@ -312,9 +349,7 @@ __syscall int stepper_ctrl_move_to(const struct device *dev, const int32_t micro
 static inline int z_impl_stepper_ctrl_move_to(const struct device *dev, const int32_t micro_steps)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	return api->move_to(dev, micro_steps);
+	return DEVICE_API_GET(stepper_ctrl, dev)->move_to(dev, micro_steps);
 }
 
 /**
@@ -339,12 +374,10 @@ static inline int z_impl_stepper_ctrl_run(const struct device *dev,
 					  const enum stepper_ctrl_direction direction)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	if (api->run == NULL) {
+	if (DEVICE_API_GET(stepper_ctrl, dev)->run == NULL) {
 		return -ENOSYS;
 	}
-	return api->run(dev, direction);
+	return DEVICE_API_GET(stepper_ctrl, dev)->run(dev, direction);
 }
 
 /**
@@ -362,12 +395,10 @@ __syscall int stepper_ctrl_stop(const struct device *dev);
 static inline int z_impl_stepper_ctrl_stop(const struct device *dev)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	if (api->stop == NULL) {
+	if (DEVICE_API_GET(stepper_ctrl, dev)->stop == NULL) {
 		return -ENOSYS;
 	}
-	return api->stop(dev);
+	return DEVICE_API_GET(stepper_ctrl, dev)->stop(dev);
 }
 
 /**
@@ -386,12 +417,10 @@ static inline int z_impl_stepper_ctrl_is_moving(const struct device *dev, bool *
 {
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(is_moving != NULL);
-	const struct stepper_ctrl_driver_api *api = dev->api;
-
-	if (api->is_moving == NULL) {
+	if (DEVICE_API_GET(stepper_ctrl, dev)->is_moving == NULL) {
 		return -ENOSYS;
 	}
-	return api->is_moving(dev, is_moving);
+	return DEVICE_API_GET(stepper_ctrl, dev)->is_moving(dev, is_moving);
 }
 
 /**

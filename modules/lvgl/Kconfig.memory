@@ -92,6 +92,7 @@ config LV_Z_FULL_REFRESH
 config LV_Z_VDB_ALIGN
 	int "Rending buffer alignment"
 	default 4
+	default 8 if DISPLAY_MCUX_ELCDIF
 	depends on LV_Z_BUFFER_ALLOC_STATIC
 	help
 	  Rendering buffer alignment. Depending on chosen color depth,

@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/dhcpv4.h>
 #include <zephyr/net/dhcpv6.h>
 #include <zephyr/net/net_mgmt.h>
@@ -366,7 +367,15 @@ static void iface_up_handler(struct net_mgmt_event_callback *cb,
 
 static bool check_interface(struct net_if *iface)
 {
+	net_mgmt_init_event_callback(&mgmt_iface_cb, iface_up_handler,
+				     NET_EVENT_IF_UP);
+	net_mgmt_add_event_callback(&mgmt_iface_cb);
+
+	/* Check after registering the callback to avoid missing NET_EVENT_IF_UP
+	 * that could fire between the check and the callback registration.
+	 */
 	if (net_if_is_up(iface)) {
+		net_mgmt_del_event_callback(&mgmt_iface_cb);
 		k_sem_reset(&counter);
 		k_sem_give(&waiter);
 		return true;
@@ -374,10 +383,6 @@ static bool check_interface(struct net_if *iface)
 
 	NET_INFO("Waiting interface %d (%p) to be up...",
 		 net_if_get_by_iface(iface), iface);
-
-	net_mgmt_init_event_callback(&mgmt_iface_cb, iface_up_handler,
-				     NET_EVENT_IF_UP);
-	net_mgmt_add_event_callback(&mgmt_iface_cb);
 
 	return false;
 }

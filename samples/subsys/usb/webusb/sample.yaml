@@ -16,3 +16,4 @@ tests:
       - max32690evkit/max32690/m4
       - samd21_xpro
       - same54_xpro
+      - sam_v71_xult/samv71q21b

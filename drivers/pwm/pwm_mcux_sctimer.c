@@ -762,8 +762,9 @@ static int mcux_sctimer_pwm_init_common(const struct device *dev)
 
 static int mcux_sctimer_pwm_pm_action(const struct device *dev, enum pm_device_action action)
 {
-#ifdef CONFIG_PM_DEVICE
 	const struct pwm_mcux_sctimer_config *config = dev->config;
+	int err;
+#ifdef CONFIG_PM_DEVICE
 	const struct pwm_mcux_sctimer_data *data = dev->data;
 	uint8_t channel;
 #endif /* CONFIG_PM_DEVICE */
@@ -773,6 +774,10 @@ static int mcux_sctimer_pwm_pm_action(const struct device *dev, enum pm_device_a
 #ifdef CONFIG_PM_DEVICE
 		SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
 #endif /* CONFIG_PM_DEVICE */
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 #ifdef CONFIG_PM_DEVICE
@@ -789,6 +794,10 @@ static int mcux_sctimer_pwm_pm_action(const struct device *dev, enum pm_device_a
 			}
 		}
 #endif /* CONFIG_PM_DEVICE */
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;

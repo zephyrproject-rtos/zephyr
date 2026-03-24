@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net_buf.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_log.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"

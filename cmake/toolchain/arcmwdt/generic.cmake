@@ -18,7 +18,7 @@ if(NOT EXISTS ${ARCMWDT_TOOLCHAIN_PATH})
 endif()
 
 # arcmwdt relies on Zephyr SDK for the use of C preprocessor (devicetree) and objcopy
-find_package(Zephyr-sdk 0.15 REQUIRED)
+find_package(Zephyr-sdk 1.0 REQUIRED)
 # Handling to be improved in Zephyr SDK, we can drop setting TOOLCHAIN_HOME after
 # https://github.com/zephyrproject-rtos/sdk-ng/pull/682 got merged and we switch to proper SDK
 # version.
@@ -30,7 +30,7 @@ set(TOOLCHAIN_HOME ${ZEPHYR_SDK_INSTALL_DIR})
 # but in hew HWMv2 model ARCH variable will be initialized more later.
 # This workaround uses any (first awailable, independent on ARCH) toolchain from SDK for DTC preprocessing only.
 # For other build stages ARCMWDT will be used.
-include(${ZEPHYR_SDK_INSTALL_DIR}/cmake/zephyr/generic.cmake)
+include(${ZEPHYR_SDK_INSTALL_DIR}/cmake/zephyr/gnu/generic.cmake)
 unset(TOOLCHAIN_HAS_NEWLIB CACHE)
 unset(TOOLCHAIN_HAS_PICOLIBC CACHE)
 

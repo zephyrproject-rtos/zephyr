@@ -28,6 +28,7 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
+			clock-frequency = <DT_FREQ_M(198)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			cpu-power-states = <&idle &suspend>;
@@ -120,10 +121,12 @@
 
 	flexspi: spi@134000 {
 		reg = <0x134000 0x1000>, <0x18000000 DT_SIZE_M(128)>;
+		reg-names = "reg_base", "ahb";
 	};
 
 	flexspi2: spi@13c000 {
 		reg = <0x13c000 0x1000>, <0x38000000 DT_SIZE_M(128)>;
+		reg-names = "reg_base", "ahb";
 	};
 
 	clkctl0: clkctl@1000 {

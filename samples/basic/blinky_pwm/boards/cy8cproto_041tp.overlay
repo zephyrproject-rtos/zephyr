@@ -40,5 +40,4 @@
 
 &peri_clk_div3 {
 	status = "okay";
-	resource-channel = <1>;
 };

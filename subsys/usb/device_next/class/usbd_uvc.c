@@ -35,6 +35,12 @@ LOG_MODULE_REGISTER(usbd_uvc, CONFIG_USBD_VIDEO_LOG_LEVEL);
 #define UVC_IDX_VC_UNIT 3
 #define UVC_MAX_HEADER_LENGTH 0xff
 
+/* Offset at which full-speed descriptors will start to be added */
+#define UVC_FS_DESC_IDX 10
+
+/* Offset at which full-speed descriptors will start to be added */
+#define UVC_HS_DESC_IDX 10
+
 enum uvc_op {
 	UVC_OP_GET_ERRNO,
 	UVC_OP_VC_CTRL,
@@ -1113,7 +1119,7 @@ static void *uvc_get_desc(struct usbd_class_data *const c_data, const enum usbd_
 	return cfg->fs_desc;
 }
 
-static int uvc_assign_desc(const struct device *dev, void *const desc,
+static int uvc_assign_desc(const struct device *const dev, void *const desc,
 			   const bool add_to_fs, const bool add_to_hs)
 {
 	const struct uvc_config *cfg = dev->config;
@@ -1143,6 +1149,25 @@ err:
 	LOG_WRN("Out of descriptors, raise CONFIG_USBD_VIDEO_MAX_FORMATS above %u",
 		CONFIG_USBD_VIDEO_MAX_FORMATS);
 	return -ENOMEM;
+}
+
+static int uvc_deassign_all_descs(const struct device *const dev)
+{
+	const struct uvc_config *cfg = dev->config;
+	struct uvc_data *data = dev->data;
+	size_t n;
+
+	/* Clear Full Speed descriptor pointers */
+	n = data->fs_desc_idx - UVC_FS_DESC_IDX;
+	memset(&cfg->fs_desc[UVC_FS_DESC_IDX], 0x00, sizeof(*cfg->fs_desc) * n);
+	data->fs_desc_idx = UVC_FS_DESC_IDX;
+
+	/* Clear High Speed descriptor pointers */
+	n = data->hs_desc_idx - UVC_HS_DESC_IDX;
+	memset(&cfg->hs_desc[UVC_HS_DESC_IDX], 0x00, sizeof(*cfg->hs_desc) * n);
+	data->hs_desc_idx = UVC_HS_DESC_IDX;
+
+	return 0;
 }
 
 static union uvc_fmt_desc *uvc_new_fmt_desc(const struct device *dev)
@@ -1257,7 +1282,15 @@ static int uvc_compare_frmival_desc(const void *const a, const void *const b)
 	memcpy(&ia, a, sizeof(uint32_t));
 	memcpy(&ib, b, sizeof(uint32_t));
 
-	return ia - ib;
+	if (ia < ib) {
+		return -1;
+	}
+
+	if (ia > ib) {
+		return 1;
+	}
+
+	return 0;
 }
 
 static void uvc_set_vs_bitrate_range(struct uvc_frame_common_descriptor *const desc,
@@ -1469,18 +1502,15 @@ static uint32_t uvc_get_mask(const struct device *video_dev,
 	return mask;
 }
 
-static int uvc_init(struct usbd_class_data *const c_data)
+int uvc_device_enable(const struct device *const dev)
 {
-	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uvc_config *cfg = dev->config;
 	struct uvc_data *data = dev->data;
 	int ret;
 
-	__ASSERT_NO_MSG(data->video_dev != NULL);
-
-	if (atomic_test_bit(&data->state, UVC_STATE_INITIALIZED)) {
-		LOG_DBG("UVC instance '%s' is already initialized", dev->name);
-		return 0;
+	if (!atomic_test_bit(&data->state, UVC_STATE_INITIALIZED)) {
+		LOG_ERR("UVC instance '%s' is not initialized ", dev->name);
+		return -EIO;
 	}
 
 	cfg->desc->if1_hdr.wTotalLength += cfg->desc->if1_color.bLength;
@@ -1503,27 +1533,45 @@ static int uvc_init(struct usbd_class_data *const c_data)
 	cfg->desc->if1_hdr.wTotalLength = sys_cpu_to_le16(cfg->desc->if1_hdr.wTotalLength);
 
 	/* Generating the default probe message now that descriptors are complete */
-
 	ret = uvc_get_vs_probe_struct(dev, &data->default_probe, UVC_GET_CUR);
 	if (ret != 0) {
 		LOG_ERR("init: failed to query the default probe");
 		return ret;
 	}
 
-	atomic_set_bit(&data->state, UVC_STATE_INITIALIZED);
+	return 0;
+}
 
+int uvc_device_shutdown(const struct device *const dev)
+{
+	struct uvc_data *data = dev->data;
+
+	uvc_deassign_all_descs(dev);
+
+	atomic_clear_bit(&data->state, UVC_STATE_INITIALIZED);
+
+	return 0;
+}
+
+static int uvc_init(struct usbd_class_data *const c_data)
+{
 	return 0;
 }
 
 /* UVC public API */
 
-void uvc_set_video_dev(const struct device *const dev, const struct device *const video_dev)
+void uvc_device_init(const struct device *const dev, const struct device *const video_dev)
 {
 	struct uvc_data *data = dev->data;
 	const struct uvc_config *cfg = dev->config;
 	const struct uvc_control_map *map = NULL;
 	uint32_t mask = 0;
 	size_t map_sz = 0;
+
+	if (atomic_test_and_set_bit(&data->state, UVC_STATE_INITIALIZED)) {
+		LOG_WRN("UVC instance '%s' is already initialized ", dev->name);
+		return;
+	}
 
 	data->video_dev = video_dev;
 
@@ -1551,11 +1599,16 @@ void uvc_set_video_dev(const struct device *const dev, const struct device *cons
 	cfg->desc->if0_xu.bmControls[3] = mask >> 24;
 }
 
-int uvc_add_format(const struct device *const dev, const struct video_format *const fmt)
+int uvc_device_add_format(const struct device *const dev, const struct video_format *const fmt)
 {
 	struct uvc_data *data = dev->data;
 	const struct uvc_config *cfg = dev->config;
 	int ret;
+
+	if (!atomic_test_bit(&data->state, UVC_STATE_INITIALIZED)) {
+		LOG_ERR("UVC instance '%s' is not initialized ", dev->name);
+		return -EIO;
+	}
 
 	if (data->video_dev == NULL) {
 		LOG_ERR("Video device not yet configured into UVC");
@@ -2233,8 +2286,8 @@ struct usb_desc_header *uvc_hs_desc_##n[UVC_MAX_HS_DESC] = {			\
 	};									\
 										\
 	struct uvc_data uvc_data_##n = {					\
-		.fs_desc_idx = 10,						\
-		.hs_desc_idx = 10,						\
+		.fs_desc_idx = UVC_FS_DESC_IDX,					\
+		.hs_desc_idx = UVC_HS_DESC_IDX,					\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n, uvc_preinit, NULL, &uvc_data_##n, &uvc_cfg_##n,\

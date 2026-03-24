@@ -13,6 +13,7 @@ toolchain:
   - cross-compile
 ram: 10240
 supported:
+  - can
   - counter
   - gpio
   - i2c

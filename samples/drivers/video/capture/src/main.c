@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Linaro Limited
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,9 +15,35 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
+/*
+ * Include transform.h unconditionally to ensure it's compiled and checked by CI,
+ * even though the functions in this header are not used here at all.
+ * This prevents silent breakage when APIs change.
+ */
+#include "transform.h"
+
 #if !DT_HAS_CHOSEN(zephyr_camera)
 #error No camera chosen in devicetree. Missing "--shield" or "--snippet video-sw-generator" flag?
 #endif
+
+/* The default transform implementation is a pass-through when no transform device is available */
+int __weak app_setup_video_transform(const struct device *const transform_dev,
+				     struct video_format *const in_fmt,
+				     struct video_format *const out_fmt,
+				     struct video_buffer **out_buf)
+{
+	*out_fmt = *in_fmt;
+
+	return 0;
+}
+
+int __weak app_transform_frame(const struct device *const transform_dev,
+			       struct video_buffer *in_buf, struct video_buffer **out_buf)
+{
+	*out_buf = in_buf;
+
+	return 0;
+}
 
 static inline int app_setup_display(const struct device *const display_dev, const uint32_t pixfmt)
 {
@@ -47,9 +73,15 @@ static inline int app_setup_display(const struct device *const display_dev, cons
 			ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_RGB_565);
 		}
 		break;
-	case VIDEO_PIX_FMT_XRGB32:
-		if (capabilities.current_pixel_format != PIXEL_FORMAT_ARGB_8888) {
-			ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_ARGB_8888);
+	case VIDEO_PIX_FMT_BGRX32:
+		if (capabilities.current_pixel_format != PIXEL_FORMAT_XRGB_8888) {
+			ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_XRGB_8888);
+			if (ret < 0) {
+				/* If failed with PIXEL_FORMAT_XRGB_8888, PIXEL_FORMAT_ARGB_8888 is
+				 * still applicable
+				 */
+				ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_ARGB_8888);
+			}
 		}
 		break;
 	default:
@@ -85,7 +117,7 @@ static int app_display_frame(const struct device *const display_dev,
 	return display_write(display_dev, 0, vbuf->line_offset, &buf_desc, vbuf->buffer);
 }
 
-static int app_setup_video_selection(const struct device *const video_dev,
+static int app_setup_video_selection(const struct device *const camera_dev,
 				     const struct video_format *const fmt)
 {
 	struct video_selection sel = {
@@ -101,7 +133,7 @@ static int app_setup_video_selection(const struct device *const video_dev,
 		sel.rect.width = CONFIG_VIDEO_SOURCE_CROP_WIDTH;
 		sel.rect.height = CONFIG_VIDEO_SOURCE_CROP_HEIGHT;
 
-		ret = video_set_selection(video_dev, &sel);
+		ret = video_set_selection(camera_dev, &sel);
 		if (ret < 0) {
 			LOG_ERR("Unable to set selection crop");
 			return ret;
@@ -111,52 +143,24 @@ static int app_setup_video_selection(const struct device *const video_dev,
 			sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
 	}
 
-	/*
-	 * Check (if possible) if targeted size is same as crop
-	 * and if compose is necessary
-	 */
-	sel.target = VIDEO_SEL_TGT_CROP;
-	ret = video_get_selection(video_dev, &sel);
-	if (ret < 0 && ret != -ENOSYS) {
-		LOG_ERR("Unable to get selection crop");
-		return ret;
-	}
-
-	if (ret == 0 && (sel.rect.width != fmt->width || sel.rect.height != fmt->height)) {
-		sel.target = VIDEO_SEL_TGT_COMPOSE;
-		sel.rect.left = 0;
-		sel.rect.top = 0;
-		sel.rect.width = fmt->width;
-		sel.rect.height = fmt->height;
-
-		ret = video_set_selection(video_dev, &sel);
-		if (ret < 0 && ret != -ENOSYS) {
-			LOG_ERR("Unable to set selection compose");
-			return ret;
-		}
-
-		LOG_INF("Compose window set to (%u,%u)/%ux%u",
-			sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
-	}
-
 	return 0;
 }
 
-static int app_query_video_info(const struct device *const video_dev,
+static int app_query_video_info(const struct device *const camera_dev,
 				struct video_caps *const caps,
 				struct video_format *const fmt)
 {
 	int ret;
 
-	LOG_INF("Video device: %s", video_dev->name);
+	LOG_INF("Camera device: %s", camera_dev->name);
 
-	if (!device_is_ready(video_dev)) {
-		LOG_ERR("%s: video device is not ready", video_dev->name);
+	if (!device_is_ready(camera_dev)) {
+		LOG_ERR("%s: camera device is not ready", camera_dev->name);
 		return -ENOSYS;
 	}
 
 	/* Get capabilities */
-	ret = video_get_caps(video_dev, caps);
+	ret = video_get_caps(camera_dev, caps);
 	if (ret < 0) {
 		LOG_ERR("Unable to retrieve video capabilities");
 		return ret;
@@ -173,7 +177,7 @@ static int app_query_video_info(const struct device *const video_dev,
 	}
 
 	/* Get default/native format */
-	ret = video_get_format(video_dev, fmt);
+	ret = video_get_format(camera_dev, fmt);
 	if (ret < 0) {
 		LOG_ERR("Unable to retrieve video format");
 	}
@@ -192,7 +196,7 @@ static int app_query_video_info(const struct device *const video_dev,
 	return 0;
 }
 
-static int app_setup_video_format(const struct device *const video_dev,
+static int app_setup_video_format(const struct device *const camera_dev,
 				  struct video_format *const fmt)
 {
 	int ret;
@@ -200,7 +204,7 @@ static int app_setup_video_format(const struct device *const video_dev,
 	LOG_INF("- Video format: %s %ux%u",
 		VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height);
 
-	ret = video_set_compose_format(video_dev, fmt);
+	ret = video_set_compose_format(camera_dev, fmt);
 	if (ret < 0) {
 		LOG_ERR("Unable to set format");
 		return ret;
@@ -209,7 +213,7 @@ static int app_setup_video_format(const struct device *const video_dev,
 	return 0;
 }
 
-static int app_setup_video_frmival(const struct device *const video_dev,
+static int app_setup_video_frmival(const struct device *const camera_dev,
 				   struct video_format *const fmt)
 {
 	struct video_frmival frmival = {};
@@ -220,7 +224,7 @@ static int app_setup_video_frmival(const struct device *const video_dev,
 
 	LOG_INF("- Supported frame intervals for the default format:");
 
-	while (video_enum_frmival(video_dev, &fie) == 0) {
+	while (video_enum_frmival(camera_dev, &fie) == 0) {
 		if (fie.type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
 			LOG_INF("   %u/%u", fie.discrete.numerator, fie.discrete.denominator);
 		} else {
@@ -232,7 +236,7 @@ static int app_setup_video_frmival(const struct device *const video_dev,
 		fie.index++;
 	}
 
-	ret = video_get_frmival(video_dev, &frmival);
+	ret = video_get_frmival(camera_dev, &frmival);
 	if (ret == -ENOTSUP || ret == -ENOSYS) {
 		LOG_WRN("The video source does not support frame rate control");
 	} else if (ret < 0) {
@@ -246,14 +250,14 @@ static int app_setup_video_frmival(const struct device *const video_dev,
 	return 0;
 }
 
-static int app_setup_video_controls(const struct device *const video_dev)
+static int app_setup_video_controls(const struct device *const camera_dev)
 {
 	int ret;
 
 	/* Get supported controls */
 	LOG_INF("- Supported controls:");
 	const struct device *last_dev = NULL;
-	struct video_ctrl_query cq = {.dev = video_dev, .id = VIDEO_CTRL_FLAG_NEXT_CTRL};
+	struct video_ctrl_query cq = {.dev = camera_dev, .id = VIDEO_CTRL_FLAG_NEXT_CTRL};
 
 	while (video_query_ctrl(&cq) == 0) {
 		if (cq.dev != last_dev) {
@@ -268,7 +272,7 @@ static int app_setup_video_controls(const struct device *const video_dev)
 	struct video_control ctrl = {.id = VIDEO_CID_HFLIP, .val = 1};
 
 	if (IS_ENABLED(CONFIG_VIDEO_CTRL_HFLIP)) {
-		ret = video_set_ctrl(video_dev, &ctrl);
+		ret = video_set_ctrl(camera_dev, &ctrl);
 		if (ret < 0) {
 			LOG_ERR("Failed to set horizontal flip");
 			return ret;
@@ -277,7 +281,7 @@ static int app_setup_video_controls(const struct device *const video_dev)
 
 	if (IS_ENABLED(CONFIG_VIDEO_CTRL_VFLIP)) {
 		ctrl.id = VIDEO_CID_VFLIP;
-		ret = video_set_ctrl(video_dev, &ctrl);
+		ret = video_set_ctrl(camera_dev, &ctrl);
 		if (ret < 0) {
 			LOG_ERR("Failed to set vertical flip");
 			return ret;
@@ -286,7 +290,7 @@ static int app_setup_video_controls(const struct device *const video_dev)
 
 	if (IS_ENABLED(CONFIG_TEST)) {
 		ctrl.id = VIDEO_CID_TEST_PATTERN;
-		ret = video_set_ctrl(video_dev, &ctrl);
+		ret = video_set_ctrl(camera_dev, &ctrl);
 		if (ret < 0 && ret != -ENOTSUP) {
 			LOG_WRN("Failed to set the test pattern");
 		}
@@ -295,19 +299,19 @@ static int app_setup_video_controls(const struct device *const video_dev)
 	return 0;
 }
 
-static int app_setup_video_buffers(const struct device *const video_dev,
+static int app_setup_video_buffers(const struct device *const camera_dev,
 				   struct video_caps *const caps,
 				   struct video_format *const fmt)
 {
 	int ret;
 
 	/* Alloc video buffers and enqueue for capture */
-	if (caps->min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX) {
+	if (caps->min_vbuf_count > CONFIG_VIDEO_CAM_NUM_BUFS) {
 		LOG_ERR("Not enough buffers to start streaming");
 		return -EINVAL;
 	}
 
-	for (int i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
+	for (uint8_t i = 0; i < CONFIG_VIDEO_CAM_NUM_BUFS; i++) {
 		struct video_buffer *vbuf;
 
 		/*
@@ -323,7 +327,7 @@ static int app_setup_video_buffers(const struct device *const video_dev,
 
 		vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
 
-		ret = video_enqueue(video_dev, vbuf);
+		ret = video_enqueue(camera_dev, vbuf);
 		if (ret < 0) {
 			LOG_ERR("Failed to enqueue video buffer");
 			return ret;
@@ -335,16 +339,22 @@ static int app_setup_video_buffers(const struct device *const video_dev,
 
 int main(void)
 {
-	const struct device *const video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
+	const struct device *const camera_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
 	const struct device *const display_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_display));
-	struct video_buffer *vbuf = &(struct video_buffer){};
-	struct video_format fmt = {
+	const struct device *transform_dev = NULL;
+	struct video_buffer *camera_vbuf = &(struct video_buffer){};
+	struct video_buffer *transformed_vbuf = &(struct video_buffer){};
+	struct video_format camera_fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+	};
+	struct video_format transformed_fmt = {
 		.type = VIDEO_BUF_TYPE_OUTPUT,
 	};
 	struct video_caps caps = {
 		.type = VIDEO_BUF_TYPE_OUTPUT,
 	};
 	unsigned int frame = 0;
+	uint32_t last_ts = 0;
 	int ret;
 
 	/* When the video shell is enabled, do not run the capture loop unless requested */
@@ -353,44 +363,56 @@ int main(void)
 		return 0;
 	}
 
-	ret = app_query_video_info(video_dev, &caps, &fmt);
+	transform_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_videotrans));
+	if (transform_dev == NULL) {
+		transform_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_videodec));
+	}
+
+	ret = app_query_video_info(camera_dev, &caps, &camera_fmt);
 	if (ret < 0) {
 		goto err;
 	}
 
-	ret = app_setup_video_selection(video_dev, &fmt);
+	ret = app_setup_video_selection(camera_dev, &camera_fmt);
 	if (ret < 0) {
 		goto err;
 	}
 
-	ret = app_setup_video_format(video_dev, &fmt);
+	ret = app_setup_video_format(camera_dev, &camera_fmt);
 	if (ret < 0) {
 		goto err;
 	}
 
-	ret = app_setup_video_frmival(video_dev, &fmt);
+	ret = app_setup_video_frmival(camera_dev, &camera_fmt);
 	if (ret < 0) {
 		goto err;
 	}
 
-	ret = app_setup_video_controls(video_dev);
+	ret = app_setup_video_controls(camera_dev);
 	if (ret < 0) {
+		goto err;
+	}
+
+	ret = app_setup_video_transform(transform_dev, &camera_fmt, &transformed_fmt,
+					&transformed_vbuf);
+	if (ret < 0) {
+		LOG_ERR("Unable to setup video transform");
 		goto err;
 	}
 
 	if (DT_HAS_CHOSEN(zephyr_display)) {
-		ret = app_setup_display(display_dev, fmt.pixelformat);
+		ret = app_setup_display(display_dev, transformed_fmt.pixelformat);
 		if (ret < 0) {
 			goto err;
 		}
 	}
 
-	ret = app_setup_video_buffers(video_dev, &caps, &fmt);
+	ret = app_setup_video_buffers(camera_dev, &caps, &camera_fmt);
 	if (ret < 0) {
 		goto err;
 	}
 
-	ret = video_stream_start(video_dev, VIDEO_BUF_TYPE_OUTPUT);
+	ret = video_stream_start(camera_dev, VIDEO_BUF_TYPE_OUTPUT);
 	if (ret < 0) {
 		LOG_ERR("Unable to start capture (interface)");
 		goto err;
@@ -398,28 +420,33 @@ int main(void)
 
 	LOG_INF("Capture started");
 
-	uint32_t last_ts = 0;
-
-	vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
+	camera_vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
 	while (1) {
-		ret = video_dequeue(video_dev, &vbuf, K_FOREVER);
+		ret = video_dequeue(camera_dev, &camera_vbuf, K_FOREVER);
 		if (ret < 0) {
 			LOG_ERR("Unable to dequeue video buf");
 			goto err;
 		}
 
-		LOG_INF("Got frame %u! size: %u; timestamp %u ms (delta %u ms)",
-			frame++, vbuf->bytesused, vbuf->timestamp, vbuf->timestamp-last_ts);
-		last_ts = vbuf->timestamp;
+		LOG_INF("Got frame %u! size: %u; timestamp %u ms (delta %u ms)", frame++,
+			camera_vbuf->bytesused, camera_vbuf->timestamp,
+			camera_vbuf->timestamp - last_ts);
+		last_ts = camera_vbuf->timestamp;
+
+		ret = app_transform_frame(transform_dev, camera_vbuf, &transformed_vbuf);
+		if (ret < 0) {
+			LOG_ERR("Unable to transform video frame");
+			goto err;
+		}
 
 		if (DT_HAS_CHOSEN(zephyr_display)) {
-			ret = app_display_frame(display_dev, vbuf, &fmt);
+			ret = app_display_frame(display_dev, transformed_vbuf, &transformed_fmt);
 			if (ret != 0) {
 				LOG_WRN("Failed to display this frame");
 			}
 		}
 
-		ret = video_enqueue(video_dev, vbuf);
+		ret = video_enqueue(camera_dev, camera_vbuf);
 		if (ret < 0) {
 			LOG_ERR("Unable to requeue video buf");
 			goto err;

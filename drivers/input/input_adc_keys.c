@@ -167,7 +167,7 @@ static int adc_keys_init(const struct device *dev)
 	int ret;
 
 	if (!adc_is_ready_dt(&cfg->channel)) {
-		LOG_ERR("ADC controller device %s not ready", cfg->channel.dev->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->channel.dev);
 		return -ENODEV;
 	}
 

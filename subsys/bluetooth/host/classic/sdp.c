@@ -1354,7 +1354,7 @@ static uint16_t sdp_svc_att_req(struct bt_sdp *sdp, struct net_buf *buf, uint16_
 	}
 
 	if (state.current_svc != record->index) {
-		/* It is a corner case that the remaining free space of the responding is emtpy,
+		/* It is a corner case that the remaining free space of the responding is empty,
 		 * and all attributes are sent, clear state.pkt_full to avoid further processing.
 		 */
 		state.pkt_full = false;
@@ -2762,7 +2762,7 @@ void sdp_client_released(struct bt_l2cap_chan *chan)
 		/* put the reqs_next to reqs */
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->reqs_next, param, tmp, _node) {
 			sys_slist_append(&session->reqs, &param->_node);
-			/* Remove already proccessed node */
+			/* Remove already processed node */
 			sys_slist_remove(&session->reqs_next, NULL, &param->_node);
 		}
 

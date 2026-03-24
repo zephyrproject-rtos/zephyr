@@ -23,6 +23,7 @@
 		zephyr,flash = &slot0_partition;
 		zephyr,console = &uart3;
 		zephyr,shell-uart = &uart3;
+		zephyr,canbus = &can1;
 	};
 };
 
@@ -39,9 +40,23 @@ uart3: &scb3 {
 
 &peri0_group4_8bit_0 {
 	status = "okay";
-	resource-type = <IFX_RSC_SCB>;
-	resource-instance = <3>;
-	clock-div = <109>;
+	clock-div = <86>;
+};
+
+&peri0_group4_16_5bit_0 {
+	status = "okay";
+	clock-div = <1>;
+};
+
+&canfd0 {
+	status = "okay";
+};
+
+&can1 {
+	status = "okay";
+	clocks = <&peri0_group4_16_5bit_0>;
+	pinctrl-0 = <&p5_2_can1_rx &p5_3_can1_tx>;
+	pinctrl-names = "default";
 };
 
 &watchdog0 {
@@ -122,8 +137,15 @@ uart3: &scb3 {
 	status = "okay";
 };
 
+/*
+ * CLK_HF2 feeds peri group 4 (UART, CAN, SPI, counter).
+ * Source from dpll_lp1 (CLKPATH2, 240 MHz) / 3 = 80 MHz
+ * for CiA 601-3 compliant CAN FD bit rates.
+ * The UART driver dynamically recalculates its peri divider.
+ */
 &clk_hf2 {
-	source-path = <IFX_CLK_HF_IN_CLKPATH0>;
+	source-path = <IFX_CLK_HF_IN_CLKPATH2>;
+	clock-div = <IFX_CLK_HF_DIVIDE_BY_3>;
 	status = "okay";
 };
 

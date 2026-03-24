@@ -8,7 +8,6 @@
 
 #include <hal/mcpwm_hal.h>
 #include <hal/mcpwm_ll.h>
-#include <driver/mcpwm.h>
 
 #include <soc.h>
 #include <errno.h>
@@ -23,6 +22,12 @@
 #endif /* CONFIG_PWM_CAPTURE */
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mcpwm_esp32, CONFIG_PWM_LOG_LEVEL);
+
+/* Duty mode for generator action configuration */
+#define DUTY_MODE_ACTIVE_HIGH 0
+#define DUTY_MODE_ACTIVE_LOW  1
+#define DUTY_MODE_FORCE_LOW   2
+#define DUTY_MODE_FORCE_HIGH  3
 
 #ifdef CONFIG_PWM_CAPTURE
 #define SKIP_IRQ_NUM        4U
@@ -43,7 +48,7 @@ struct mcpwm_esp32_data {
 #ifdef CONFIG_PWM_CAPTURE
 struct capture_data {
 	uint32_t value;
-	mcpwm_capture_on_edge_t edge;
+	mcpwm_capture_edge_t edge;
 };
 
 struct mcpwm_esp32_capture_config {
@@ -94,17 +99,15 @@ static void mcpwm_esp32_duty_set(const struct device *dev,
 {
 	struct mcpwm_esp32_config *config = (struct mcpwm_esp32_config *)dev->config;
 	struct mcpwm_esp32_data *data = (struct mcpwm_esp32_data *const)(dev)->data;
-	mcpwm_duty_type_t duty_type;
+	int duty_mode;
 	uint32_t set_duty;
 
-	if (channel->inverted) {
-		duty_type = channel->duty == 0 ?
-			MCPWM_HAL_GENERATOR_MODE_FORCE_HIGH : channel->duty == 100 ?
-			MCPWM_HAL_GENERATOR_MODE_FORCE_LOW  : MCPWM_DUTY_MODE_1;
+	if (channel->duty == 0) {
+		duty_mode = channel->inverted ? DUTY_MODE_FORCE_HIGH : DUTY_MODE_FORCE_LOW;
+	} else if (channel->duty == 100) {
+		duty_mode = channel->inverted ? DUTY_MODE_FORCE_LOW : DUTY_MODE_FORCE_HIGH;
 	} else {
-		duty_type = channel->duty == 0 ?
-			MCPWM_HAL_GENERATOR_MODE_FORCE_LOW  : channel->duty == 100 ?
-			MCPWM_HAL_GENERATOR_MODE_FORCE_HIGH : MCPWM_DUTY_MODE_0;
+		duty_mode = channel->inverted ? DUTY_MODE_ACTIVE_LOW : DUTY_MODE_ACTIVE_HIGH;
 	}
 
 	uint32_t timer_clk_hz = data->mcpwm_clk_hz / config->prescale / channel->prescale;
@@ -116,7 +119,7 @@ static void mcpwm_esp32_duty_set(const struct device *dev,
 	mcpwm_ll_operator_enable_update_compare_on_tez(data->hal.dev, channel->operator_id,
 						       channel->generator_id, true);
 
-	if (duty_type == MCPWM_DUTY_MODE_0) {
+	if (duty_mode == DUTY_MODE_ACTIVE_HIGH) {
 		mcpwm_ll_generator_set_action_on_timer_event(
 			data->hal.dev, channel->operator_id, channel->generator_id,
 			MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH);
@@ -125,51 +128,38 @@ static void mcpwm_esp32_duty_set(const struct device *dev,
 			MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_KEEP);
 		mcpwm_ll_generator_set_action_on_compare_event(
 			data->hal.dev, channel->operator_id, channel->generator_id,
-			MCPWM_TIMER_DIRECTION_UP, channel->generator_id, MCPWM_ACTION_FORCE_LOW);
-	} else if (duty_type == MCPWM_DUTY_MODE_1) {
+			MCPWM_TIMER_DIRECTION_UP, channel->generator_id, MCPWM_GEN_ACTION_LOW);
+	} else if (duty_mode == DUTY_MODE_ACTIVE_LOW) {
 		mcpwm_ll_generator_set_action_on_timer_event(
 			data->hal.dev, channel->operator_id, channel->generator_id,
 			MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW);
 		mcpwm_ll_generator_set_action_on_timer_event(
 			data->hal.dev, channel->operator_id, channel->generator_id,
-			MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_ACTION_NO_CHANGE);
+			MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_KEEP);
 		mcpwm_ll_generator_set_action_on_compare_event(
 			data->hal.dev, channel->operator_id, channel->generator_id,
-			MCPWM_TIMER_DIRECTION_UP, channel->generator_id, MCPWM_ACTION_FORCE_HIGH);
-	} else if (duty_type == MCPWM_HAL_GENERATOR_MODE_FORCE_LOW) {
+			MCPWM_TIMER_DIRECTION_UP, channel->generator_id, MCPWM_GEN_ACTION_HIGH);
+	} else if (duty_mode == DUTY_MODE_FORCE_LOW) {
 		mcpwm_ll_generator_set_action_on_timer_event(
 			data->hal.dev, channel->operator_id, channel->generator_id,
-			MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_ACTION_FORCE_LOW);
+			MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW);
 		mcpwm_ll_generator_set_action_on_timer_event(
 			data->hal.dev, channel->operator_id, channel->generator_id,
-			MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_ACTION_FORCE_LOW);
+			MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_LOW);
 		mcpwm_ll_generator_set_action_on_compare_event(
 			data->hal.dev, channel->operator_id, channel->generator_id,
-			MCPWM_TIMER_DIRECTION_UP, channel->generator_id, MCPWM_ACTION_FORCE_LOW);
-	} else if (duty_type == MCPWM_HAL_GENERATOR_MODE_FORCE_HIGH) {
+			MCPWM_TIMER_DIRECTION_UP, channel->generator_id, MCPWM_GEN_ACTION_LOW);
+	} else {
 		mcpwm_ll_generator_set_action_on_timer_event(
 			data->hal.dev, channel->operator_id, channel->generator_id,
-			MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_ACTION_FORCE_HIGH);
+			MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH);
 		mcpwm_ll_generator_set_action_on_timer_event(
 			data->hal.dev, channel->operator_id, channel->generator_id,
-			MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_ACTION_FORCE_HIGH);
+			MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_HIGH);
 		mcpwm_ll_generator_set_action_on_compare_event(
 			data->hal.dev, channel->operator_id, channel->generator_id,
-			MCPWM_TIMER_DIRECTION_UP, channel->generator_id, MCPWM_ACTION_FORCE_HIGH);
+			MCPWM_TIMER_DIRECTION_UP, channel->generator_id, MCPWM_GEN_ACTION_HIGH);
 	}
-}
-
-static int mcpwm_esp32_configure_pinctrl(const struct device *dev)
-{
-	int ret;
-	struct mcpwm_esp32_config *config = (struct mcpwm_esp32_config *)dev->config;
-
-	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		LOG_ERR("PWM pinctrl setup failed (%d)", ret);
-		return ret;
-	}
-	return 0;
 }
 
 static int mcpwm_esp32_timer_set(const struct device *dev,
@@ -257,12 +247,6 @@ static int mcpwm_esp32_set_cycles(const struct device *dev, uint32_t channel_idx
 	channel->inverted = (flags & PWM_POLARITY_INVERTED);
 
 	mcpwm_esp32_duty_set(dev, channel);
-
-	ret = mcpwm_esp32_configure_pinctrl(dev);
-	if (ret < 0) {
-		k_sem_give(&data->cmd_sem);
-		return ret;
-	}
 
 	mcpwm_ll_timer_set_start_stop_command(data->hal.dev, channel->timer_id,
 					      MCPWM_TIMER_START_NO_STOP);
@@ -363,27 +347,15 @@ static int mcpwm_esp32_enable_capture(const struct device *dev, uint32_t channel
 		return -EBUSY;
 	}
 
-	/**
-	 * Capture prescale is different from other modules as it is applied to the input
-	 * signal, not the timer source. It is disabled by default.
-	 */
-	mcpwm_capture_config_t cap_conf = {
-		.cap_edge = MCPWM_BOTH_EDGE,
-		.cap_prescale = 1,
-	};
-
-	mcpwm_ll_group_set_clock_prescale(data->hal.dev, config->prescale);
+	mcpwm_ll_group_set_clock_prescale(config->index, config->prescale);
 	mcpwm_ll_group_enable_shadow_mode(data->hal.dev);
 	mcpwm_ll_group_flush_shadow(data->hal.dev);
 
 	mcpwm_ll_capture_enable_timer(data->hal.dev, true);
 	mcpwm_ll_capture_enable_channel(data->hal.dev, capture->capture_signal, true);
-	mcpwm_ll_capture_enable_negedge(data->hal.dev, capture->capture_signal,
-					cap_conf.cap_edge & MCPWM_NEG_EDGE);
-	mcpwm_ll_capture_enable_posedge(data->hal.dev, capture->capture_signal,
-					cap_conf.cap_edge & MCPWM_POS_EDGE);
-	mcpwm_ll_capture_set_prescale(data->hal.dev, capture->capture_signal,
-				      cap_conf.cap_prescale);
+	mcpwm_ll_capture_enable_negedge(data->hal.dev, capture->capture_signal, true);
+	mcpwm_ll_capture_enable_posedge(data->hal.dev, capture->capture_signal, true);
+	mcpwm_ll_capture_set_prescale(data->hal.dev, capture->capture_signal, 1);
 
 	mcpwm_ll_intr_enable(data->hal.dev, MCPWM_LL_EVENT_CAPTURE(capture->capture_signal), true);
 	mcpwm_ll_intr_clear_status(data->hal.dev, MCPWM_LL_EVENT_CAPTURE(capture->capture_signal));
@@ -422,20 +394,26 @@ int mcpwm_esp32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	mcpwm_ll_group_set_clock_source(data->hal.dev, MCPWM_TIMER_CLK_SRC_DEFAULT);
-	esp_clk_tree_src_get_freq_hz(MCPWM_TIMER_CLK_SRC_DEFAULT,
-				     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &data->mcpwm_clk_hz);
+	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("PWM pinctrl setup failed (%d)", ret);
+		return ret;
+	}
 
-	/* Enable peripheral */
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret < 0) {
 		LOG_ERR("Could not initialize clock (%d)", ret);
 		return ret;
 	}
 
+	mcpwm_ll_group_enable_clock(config->index, true);
+	mcpwm_ll_group_set_clock_source(config->index, MCPWM_TIMER_CLK_SRC_DEFAULT);
+	esp_clk_tree_src_get_freq_hz(MCPWM_TIMER_CLK_SRC_DEFAULT,
+				     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &data->mcpwm_clk_hz);
+
 	channel_init(dev);
 
-	mcpwm_ll_group_set_clock_prescale(data->hal.dev, config->prescale);
+	mcpwm_ll_group_set_clock_prescale(config->index, config->prescale);
 	mcpwm_ll_group_enable_shadow_mode(data->hal.dev);
 	mcpwm_ll_group_flush_shadow(data->hal.dev);
 
@@ -481,10 +459,7 @@ static void IRAM_ATTR mcpwm_esp32_isr(const struct device *dev)
 		capture->capture_data[capture->skip_irq].value =
 			mcpwm_ll_capture_get_value(data->hal.dev, capture->capture_signal);
 		capture->capture_data[capture->skip_irq].edge =
-			mcpwm_ll_capture_get_edge(data->hal.dev, capture->capture_signal) ==
-					MCPWM_CAP_EDGE_NEG
-				? MCPWM_NEG_EDGE
-				: MCPWM_POS_EDGE;
+			mcpwm_ll_capture_get_edge(data->hal.dev, capture->capture_signal);
 		capture->skip_irq++;
 
 	} else {
@@ -492,19 +467,23 @@ static void IRAM_ATTR mcpwm_esp32_isr(const struct device *dev)
 		 * The capture timer is a 32-bit counter incrementing continuously, once enabled.
 		 * On the input it has an APB clock running typically at 80 MHz
 		 */
-		capture->period = channel->inverted ?
-			capture->capture_data[0].edge == MCPWM_NEG_EDGE
-				? (capture->capture_data[2].value - capture->capture_data[0].value)
-				: (capture->capture_data[3].value - capture->capture_data[1].value)
-			: capture->capture_data[0].edge == MCPWM_POS_EDGE
+		capture->period =
+			channel->inverted ? capture->capture_data[0].edge == MCPWM_CAP_EDGE_NEG
+						    ? (capture->capture_data[2].value -
+						       capture->capture_data[0].value)
+						    : (capture->capture_data[3].value -
+						       capture->capture_data[1].value)
+			: capture->capture_data[0].edge == MCPWM_CAP_EDGE_POS
 				? (capture->capture_data[2].value - capture->capture_data[0].value)
 				: (capture->capture_data[3].value - capture->capture_data[1].value);
 
-		capture->pulse = channel->inverted ?
-			capture->capture_data[0].edge == MCPWM_NEG_EDGE
-				? (capture->capture_data[1].value - capture->capture_data[0].value)
-				: (capture->capture_data[2].value - capture->capture_data[1].value)
-			: capture->capture_data[0].edge == MCPWM_POS_EDGE
+		capture->pulse =
+			channel->inverted ? capture->capture_data[0].edge == MCPWM_CAP_EDGE_NEG
+						    ? (capture->capture_data[1].value -
+						       capture->capture_data[0].value)
+						    : (capture->capture_data[2].value -
+						       capture->capture_data[1].value)
+			: capture->capture_data[0].edge == MCPWM_CAP_EDGE_POS
 				? (capture->capture_data[1].value - capture->capture_data[0].value)
 				: (capture->capture_data[2].value - capture->capture_data[1].value);
 

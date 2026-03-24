@@ -603,11 +603,9 @@ static void enc28j60_read_packet(const struct device *dev, uint16_t frm_len)
 		eth_enc28j60_read_mem(dev, dummy, 1);
 	}
 
-	net_pkt_set_iface(pkt, context->iface);
-
 	/* Feed buffer frame to IP stack */
 	LOG_DBG("%s: Received packet of length %u", dev->name, lengthfr);
-	if (net_recv_data(net_pkt_iface(pkt), pkt) < 0) {
+	if (net_recv_data(context->iface, pkt) < 0) {
 		net_pkt_unref(pkt);
 	}
 }
@@ -718,20 +716,10 @@ static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 			eth_enc28j60_read_phy(dev, ENC28J60_PHY_PHSTAT2, &phstat2);
 			if (phstat2 & ENC28J60_BIT_PHSTAT2_LSTAT) {
 				LOG_INF("%s: Link up", dev->name);
-				/* We may have been interrupted before L2 init complete
-				 * If so flag that the carrier should be set on in init
-				 */
-				if (context->iface_initialized) {
-					net_eth_carrier_on(context->iface);
-				} else {
-					context->iface_carrier_on_init = true;
-				}
+				net_eth_carrier_on(context->iface);
 			} else {
 				LOG_INF("%s: Link down", dev->name);
-
-				if (context->iface_initialized) {
-					net_eth_carrier_off(context->iface);
-				}
+				net_eth_carrier_off(context->iface);
 			}
 		}
 
@@ -802,13 +790,15 @@ static void eth_enc28j60_iface_init(struct net_if *iface)
 
 	ethernet_init(iface);
 
-	/* The device may have already interrupted us to flag link UP */
-	if (context->iface_carrier_on_init) {
-		net_if_carrier_on(iface);
-	} else {
-		net_if_carrier_off(iface);
-	}
-	context->iface_initialized = true;
+	net_if_carrier_off(iface);
+
+	/* Start interruption-poll thread */
+	k_thread_create(&context->thread, context->thread_stack,
+			CONFIG_ETH_ENC28J60_RX_THREAD_STACK_SIZE,
+			eth_enc28j60_rx_thread,
+			(void *)dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_ETH_ENC28J60_RX_THREAD_PRIO),
+			0, K_NO_WAIT);
 }
 
 static const struct ethernet_api api_funcs = {
@@ -888,14 +878,6 @@ static int eth_enc28j60_init(const struct device *dev)
 	/* Enable Reception */
 	eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_ECON1,
 				 ENC28J60_BIT_ECON1_RXEN);
-
-	/* Start interruption-poll thread */
-	k_thread_create(&context->thread, context->thread_stack,
-			CONFIG_ETH_ENC28J60_RX_THREAD_STACK_SIZE,
-			eth_enc28j60_rx_thread,
-			(void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_ETH_ENC28J60_RX_THREAD_PRIO),
-			0, K_NO_WAIT);
 
 	LOG_INF("%s: Initialized", dev->name);
 

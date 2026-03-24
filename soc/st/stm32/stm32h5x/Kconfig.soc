@@ -34,6 +34,22 @@ config SOC_STM32H573XX
 	bool
 	select SOC_SERIES_STM32H5X
 
+config SOC_STM32H5E4XX
+	bool
+	select SOC_SERIES_STM32H5X
+
+config SOC_STM32H5E5XX
+	bool
+	select SOC_SERIES_STM32H5X
+
+config SOC_STM32H5F4XX
+	bool
+	select SOC_SERIES_STM32H5X
+
+config SOC_STM32H5F5XX
+	bool
+	select SOC_SERIES_STM32H5X
+
 config SOC
 	default "stm32h503xx" if SOC_STM32H503XX
 	default "stm32h523xx" if SOC_STM32H523XX
@@ -41,3 +57,7 @@ config SOC
 	default "stm32h562xx" if SOC_STM32H562XX
 	default "stm32h563xx" if SOC_STM32H563XX
 	default "stm32h573xx" if SOC_STM32H573XX
+	default "stm32h5e4xx" if SOC_STM32H5E4XX
+	default "stm32h5e5xx" if SOC_STM32H5E5XX
+	default "stm32h5f4xx" if SOC_STM32H5F4XX
+	default "stm32h5f5xx" if SOC_STM32H5F5XX

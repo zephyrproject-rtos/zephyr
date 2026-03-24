@@ -268,14 +268,22 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		mram1x: mram@e000000 {
+		mram1x_controller: mram-controller@5f092000 {
 			compatible = "nordic,mram";
-			reg = <0xe000000 DT_SIZE_K(2048)>;
+			reg = <0x5f092000 0x2000>;
 			ranges = <0x0 0xe000000 DT_SIZE_K(2048)>;
-			erase-block-size = <4096>;
-			write-block-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			mram1x: mram-memory@0 {
+				compatible = "soc-nv-flash";
+				reg = <0 DT_SIZE_K(2048)>;
+				ranges;
+				erase-block-size = <4096>;
+				write-block-size = <16>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
 		};
 
 		uicr: uicr@fff8000 {
@@ -1137,6 +1145,7 @@
 				cc-num = <16>;
 				clocks = <&lfclk>, <&fll16m>;
 				clock-names = "lfclock", "hfclock";
+				extended-channels = <0>;
 			};
 
 			ppib133: ppib@99d000 {

@@ -23,7 +23,7 @@
 / {
 	chosen {
 		zephyr,flash-controller = &flash;
-		zephyr,cortex-m-idle-timer = &rtc;
+		zephyr,system-timer-companion = &rtc;
 	};
 
 	cpus {
@@ -314,6 +314,7 @@
 			st,adc-sequencer = "programmable";
 			st,adc-oversampler = "none";
 			st,adc-internal-regulator = "none";
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 

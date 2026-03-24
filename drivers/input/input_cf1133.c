@@ -268,7 +268,7 @@ static int cf1133_init(const struct device *dev)
 	int ret;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
-		LOG_ERR("I2C controller device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->bus.bus);
 		return -ENODEV;
 	}
 
@@ -277,10 +277,10 @@ static int cf1133_init(const struct device *dev)
 
 #ifdef CONFIG_INPUT_CF1133_INTERRUPT
 
-	LOG_DBG("Int conf for TS gpio: %d", &config->int_gpio);
+	LOG_DBG("Int conf for TS gpio: %p", &config->int_gpio);
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("Interrupt GPIO controller device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 		return -ENODEV;
 	}
 

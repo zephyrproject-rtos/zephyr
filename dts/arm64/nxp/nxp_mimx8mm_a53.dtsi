@@ -141,6 +141,14 @@
 		status = "disabled";
 	};
 
+	wdog1: wdog@30280000 {
+		compatible = "nxp,imx-wdog";
+		reg = <0x30280000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		status = "disabled";
+	};
+
 	gpt1: gpt@302d0000 {
 		compatible = "nxp,imx-gpt";
 		reg = <0x302d0000 DT_SIZE_K(64)>;
@@ -192,6 +200,18 @@
 		interrupt-names = "irq_0";
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_UART2_CLK 0x6c 24>;
+		rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
+			RDC_DOMAIN_PERM(M4_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
+		status = "disabled";
+	};
+
+	uart3: serial@30880000 {
+		compatible = "nxp,imx-iuart";
+		reg = <0x30880000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_UART3_CLK 0x6c 24>;
 		rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
 			RDC_DOMAIN_PERM(M4_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
 		status = "disabled";

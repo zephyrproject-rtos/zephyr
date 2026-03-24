@@ -205,6 +205,13 @@ int espi_init(void)
 #ifdef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
 	espi_add_callback(espi_dev, &oob_cb);
 #endif
+
+#if defined(CONFIG_SOC_SERIES_NPCX4) || defined(CONFIG_SOC_SERIES_NPCX9)
+	uint32_t enable = 1;
+
+	espi_write_lpc_request(espi_dev, ECUSTOM_HOST_SUBS_INTERRUPT_EN, &enable);
+#endif
+
 	LOG_INF("complete");
 
 	return ret;

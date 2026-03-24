@@ -1,0 +1,81 @@
+# Copyright (c) 2026 Zephyr Project Developers
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Avia Semiconductor HX711 24-bit ADC Specialized for Load Cells / Strain Gauges on SPI bus
+
+    This driver implements the sensor interface. A trigger can be configured for data ready
+    events (i.e. when the DOUT line is pulled low), which is implemented through a GPIO
+    interrupt.
+
+    To enable the trigger, the user has to supply two pinctrl configs named "default" and
+    "trigger":
+    - "default" pinctrl should be identical to the pinctrl supplied to the parent spi node;
+    - "trigger" pinctrl should include only one pin that specifies the DOUT pin.
+
+    For example:
+
+    &pinctrl {
+      spi0_hx711: spi0_hx711 {
+        /* GPIO16 (RX) connects to DOUT, GPIO19 (TX) connects to PD_SCK */
+        /* GPIO17 (CS) and GPIO19 (SCK) are not used */
+        group1 {
+          pinmux = <SPI0_CSN_P17>, <SPI0_SCK_P18>, <SPI0_TX_P19>;
+          };
+
+          group2 {
+            pinmux = <SPI0_RX_P16>;
+            input-enable;
+          };
+      };
+      hx711_trig: hx711_trig {
+        /* Assign GPIO16 (DOUT) for use as an interrupt source */
+        group1 {
+          pinmux = <GPIO_P16>;
+          input-enable;
+        };
+      };
+    };
+
+    &spi0 {
+      status = "okay";
+      cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+      pinctrl-0 = <&spi0_hx711>;
+
+      hx711@0 {
+        compatible = "avia,hx711";
+        reg = <0>;
+        spi-max-frequency = <1000000>; /* max 2.5 MHz, min 10 kHz */
+        gain = <64>;
+        avdd = <5000>; /* mV */
+        pinctrl-0 = <&spi0_hx711>;
+        pinctrl-1 = <&hx711_trig>;
+        pinctrl-names = "default", "trigger";
+        dout-trig-gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+      };
+    };
+
+compatible: "avia,hx711-spi"
+
+include: ["spi-device.yaml", "sensor-device.yaml", "pinctrl-device.yaml"]
+
+properties:
+  gain:
+    type: int
+    required: true
+    enum:
+      - 64
+      - 128
+    description: |
+      PGA gain for channel A
+
+  avdd:
+    type: int
+    required: true
+    description: |
+      AVDD value in millivolts, for converting samples to voltage
+
+  dout-trig-gpios:
+    type: phandle-array
+    description: |
+      GPIO for DOUT and trigger signal indicating a sample is ready

@@ -21,6 +21,52 @@ struct internal_ctx {
 	bool handled: 1;
 };
 
+#ifdef CONFIG_SMF_INSTRUMENTATION
+static inline void invoke_action_hook(struct smf_ctx *ctx, const struct smf_state *state,
+				      enum smf_action_type type)
+{
+	if (ctx->hooks && ctx->hooks->on_action) {
+		ctx->hooks->on_action(ctx, state, type);
+	}
+}
+
+static inline void invoke_transition_hook(struct smf_ctx *ctx, const struct smf_state *source,
+					  const struct smf_state *dest)
+{
+	if (ctx->hooks && ctx->hooks->on_transition) {
+		ctx->hooks->on_transition(ctx, source, dest);
+	}
+}
+
+static inline void invoke_error_hook(struct smf_ctx *ctx, int code)
+{
+	if (ctx->hooks && ctx->hooks->on_error) {
+		ctx->hooks->on_error(ctx, code);
+	}
+}
+
+#define INVOKE_ACTION_HOOK(ctx, state, type) invoke_action_hook(ctx, state, type)
+
+#define INVOKE_TRANSITION_HOOK(ctx, source, dest) invoke_transition_hook(ctx, source, dest)
+
+#define INVOKE_ERROR_HOOK(ctx, code) invoke_error_hook(ctx, code)
+
+#else /* CONFIG_SMF_INSTRUMENTATION */
+
+#define INVOKE_ACTION_HOOK(ctx, state, type)                                                       \
+	do {                                                                                       \
+	} while (false)
+
+#define INVOKE_TRANSITION_HOOK(ctx, source, dest)                                                  \
+	do {                                                                                       \
+	} while (false)
+
+#define INVOKE_ERROR_HOOK(ctx, code)                                                               \
+	do {                                                                                       \
+	} while (false)
+
+#endif /* CONFIG_SMF_INSTRUMENTATION */
+
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 static bool is_descendant_of(const struct smf_state *test_state,
 			     const struct smf_state *target_state)
@@ -100,6 +146,7 @@ static bool smf_execute_all_entry_actions(struct smf_ctx *const ctx,
 		ctx->executing = to_execute;
 		/* Execute every entry action EXCEPT that of the topmost state */
 		if (to_execute->entry) {
+			INVOKE_ACTION_HOOK(ctx, to_execute, SMF_ACTION_ENTRY);
 			to_execute->entry(ctx);
 
 			/* No need to continue if terminate was set */
@@ -113,6 +160,7 @@ static bool smf_execute_all_entry_actions(struct smf_ctx *const ctx,
 	/* and execute the new state entry action */
 	ctx->executing = new_state;
 	if (new_state->entry) {
+		INVOKE_ACTION_HOOK(ctx, new_state, SMF_ACTION_ENTRY);
 		new_state->entry(ctx);
 
 		/* No need to continue if terminate was set */
@@ -156,6 +204,7 @@ static bool smf_execute_ancestor_run_actions(struct smf_ctx *const ctx)
 		ctx->executing = tmp_state;
 		/* Execute parent run action */
 		if (tmp_state->run) {
+			INVOKE_ACTION_HOOK(ctx, tmp_state, SMF_ACTION_RUN);
 			enum smf_state_result rc = tmp_state->run(ctx);
 
 			if (rc == SMF_EVENT_HANDLED) {
@@ -197,6 +246,7 @@ static bool smf_execute_all_exit_actions(struct smf_ctx *const ctx, const struct
 	     to_execute != NULL && to_execute != topmost; to_execute = to_execute->parent) {
 		if (to_execute->exit) {
 			ctx->executing = to_execute;
+			INVOKE_ACTION_HOOK(ctx, to_execute, SMF_ACTION_EXIT);
 			to_execute->exit(ctx);
 
 			/* No need to continue if terminate was set in the exit action */
@@ -246,6 +296,10 @@ void smf_set_initial(struct smf_ctx *const ctx, const struct smf_state *init_sta
 	ctx->previous = NULL;
 	ctx->terminate_val = 0;
 
+#ifdef CONFIG_SMF_INSTRUMENTATION
+	ctx->hooks = NULL;
+#endif /* CONFIG_SMF_INSTRUMENTATION */
+
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 	struct internal_ctx *const internal = (void *)&ctx->internal;
 
@@ -258,6 +312,7 @@ void smf_set_initial(struct smf_ctx *const ctx, const struct smf_state *init_sta
 	 */
 	if (topmost->entry) {
 		ctx->executing = topmost;
+		INVOKE_ACTION_HOOK(ctx, topmost, SMF_ACTION_ENTRY);
 		topmost->entry(ctx);
 		ctx->executing = init_state;
 		if (internal->terminate) {
@@ -273,6 +328,7 @@ void smf_set_initial(struct smf_ctx *const ctx, const struct smf_state *init_sta
 #else
 	/* execute entry action if it exists */
 	if (init_state->entry) {
+		INVOKE_ACTION_HOOK(ctx, init_state, SMF_ACTION_ENTRY);
 		init_state->entry(ctx);
 	}
 #endif
@@ -284,6 +340,7 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 
 	if (new_state == NULL) {
 		LOG_ERR("new_state cannot be NULL");
+		INVOKE_ERROR_HOOK(ctx, SMF_ERR_NULL_TRANSITION);
 		return;
 	}
 
@@ -294,6 +351,7 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 	 */
 	if (internal->is_exit) {
 		LOG_ERR("Calling %s from exit action", __func__);
+		INVOKE_ERROR_HOOK(ctx, SMF_ERR_TRANSITION_IN_EXIT);
 		return;
 	}
 
@@ -325,6 +383,7 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 
 	/* if self-transition, call the exit action */
 	if ((ctx->executing == new_state) && (new_state->exit)) {
+		INVOKE_ACTION_HOOK(ctx, new_state, SMF_ACTION_EXIT);
 		new_state->exit(ctx);
 
 		/* No need to continue if terminate was set in the exit action */
@@ -337,6 +396,7 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 
 	/* if self transition, call the entry action */
 	if ((ctx->executing == new_state) && (new_state->entry)) {
+		INVOKE_ACTION_HOOK(ctx, new_state, SMF_ACTION_ENTRY);
 		new_state->entry(ctx);
 
 		/* No need to continue if terminate was set in the entry action */
@@ -359,6 +419,8 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 	ctx->current = new_state;
 	ctx->executing = new_state;
 
+	INVOKE_TRANSITION_HOOK(ctx, ctx->previous, ctx->current);
+
 	/* call all entry actions (except those of topmost) */
 	if (smf_execute_all_entry_actions(ctx, new_state, topmost)) {
 		/* No need to continue if terminate was set in the entry action */
@@ -368,6 +430,7 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 	/* Flat state machines have a very simple transition: */
 	if (ctx->current->exit) {
 		internal->is_exit = true;
+		INVOKE_ACTION_HOOK(ctx, ctx->current, SMF_ACTION_EXIT);
 		ctx->current->exit(ctx);
 		/* No need to continue if terminate was set in the exit action */
 		if (internal->terminate) {
@@ -379,7 +442,10 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 	ctx->previous = ctx->current;
 	ctx->current = new_state;
 
+	INVOKE_TRANSITION_HOOK(ctx, ctx->previous, ctx->current);
+
 	if (ctx->current->entry) {
+		INVOKE_ACTION_HOOK(ctx, ctx->current, SMF_ACTION_ENTRY);
 		ctx->current->entry(ctx);
 		/* No need to continue if terminate was set in the entry action */
 		if (internal->terminate) {
@@ -414,6 +480,7 @@ int32_t smf_run_state(struct smf_ctx *const ctx)
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 	ctx->executing = ctx->current;
 	if (ctx->current->run) {
+		INVOKE_ACTION_HOOK(ctx, ctx->current, SMF_ACTION_RUN);
 		enum smf_state_result rc = ctx->current->run(ctx);
 
 		if (rc == SMF_EVENT_HANDLED) {
@@ -426,8 +493,16 @@ int32_t smf_run_state(struct smf_ctx *const ctx)
 	}
 #else
 	if (ctx->current->run) {
+		INVOKE_ACTION_HOOK(ctx, ctx->current, SMF_ACTION_RUN);
 		ctx->current->run(ctx);
 	}
 #endif
 	return 0;
 }
+
+#ifdef CONFIG_SMF_INSTRUMENTATION
+void smf_set_hooks(struct smf_ctx *const ctx, const struct smf_hooks *hooks)
+{
+	ctx->hooks = hooks;
+}
+#endif /* CONFIG_SMF_INSTRUMENTATION */

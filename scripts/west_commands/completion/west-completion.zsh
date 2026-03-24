@@ -115,16 +115,7 @@ _get_west_projs() {
 }
 
 _get_west_boards() {
-  local boards=( $(__west_x boards --format='{name}|{qualifiers}') )
-  local -a transformed_boards
-
-  for board_line in "${boards[@]}"; do
-    local name="${board_line%%|*}"
-    local transformed_board="${board_line//|//}"
-    transformed_boards+=("${transformed_board//,/ ${name}/}")
-  done
-
-  _describe 'boards' transformed_boards
+  _describe 'boards' $(__west_x boards --all-targets)
 }
 
 _get_west_shields() {
@@ -299,6 +290,7 @@ _west_boards() {
   local -a opts=(
   {-f,--format}'[format string]:format string:'
   {-n,--name}'[name regex]:regex:'
+  '(-a --all-targets)'{-a,--all-targets}'[output all board target combinations]'
   '*--arch-root[Add an arch root]:arch root:_directories'
   '*--board-root[Add a board root]:board root:_directories'
   '*--soc-root[Add a soc root]:soc root:_directories'

@@ -148,6 +148,7 @@
 
 	flexspi: spi@134000 {
 		reg = <0x134000 0x1000>, <0x18000000 DT_SIZE_M(128)>;
+		reg-names = "reg_base", "ahb";
 	};
 
 	clkctl0: clkctl@1000 {
@@ -600,7 +601,7 @@
 			reg = <0x38200 0x30>;
 			interrupts = <108 0>;
 			status = "disabled";
-			#io-channel-cells = <0>;
+			#io-channel-cells = <1>;
 			power-domains = <&peripheral_domain>;
 		};
 

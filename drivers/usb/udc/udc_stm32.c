@@ -278,67 +278,6 @@ void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
 	}
 }
 
-/*
- * Prepare OUT EP0 for reception.
- *
- * @param dev		USB controller
- * @param length	wLength from SETUP packet for s-out-status
- *                      0 for s-in-status ZLP
- */
-static int udc_stm32_prep_out_ep0_rx(const struct device *dev, const size_t length)
-{
-	struct udc_stm32_data *priv = udc_get_private(dev);
-	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-	struct net_buf *buf;
-	uint32_t buf_size;
-
-	udc_ep_set_busy(ep_cfg, true);
-
-	/*
-	 * Make sure OUT EP0 can receive bMaxPacketSize0 bytes
-	 * from each Data packet by rounding up allocation size
-	 * even if "device behaviour is undefined if the host
-	 * should send more data than specified in wLength"
-	 * according to the USB Specification.
-	 *
-	 * Note that ROUND_UP() will return 0 for ZLP.
-	 */
-	buf_size = ROUND_UP(length, UDC_STM32_EP0_MAX_PACKET_SIZE);
-
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, buf_size);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
-
-	k_fifo_put(&ep_cfg->fifo, buf);
-
-	/*
-	 * Keep track of how much data we're expecting from
-	 * host so we know when the transfer is complete.
-	 * Unlike other endpoints, this bookkeeping isn't
-	 * done by the HAL for OUT EP0.
-	 */
-	priv->ep0_out_wlength = length;
-
-	/* Don't try to receive more than bMaxPacketSize0 */
-	if (HAL_PCD_EP_Receive(&priv->pcd, ep_cfg->addr, net_buf_tail(buf),
-			       UDC_STM32_EP0_MAX_PACKET_SIZE) != HAL_OK) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static void udc_stm32_flush_tx_fifo(const struct device *dev)
-{
-	struct udc_stm32_data *priv = udc_get_private(dev);
-	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-	HAL_StatusTypeDef __maybe_unused status;
-
-	status = HAL_PCD_EP_Receive(&priv->pcd, ep_cfg->addr, NULL, 0);
-	__ASSERT_NO_MSG(status == HAL_OK);
-}
-
 static int udc_stm32_tx(const struct device *dev, struct udc_ep_config *ep_cfg,
 			struct net_buf *buf)
 {
@@ -371,41 +310,66 @@ static int udc_stm32_tx(const struct device *dev, struct udc_ep_config *ep_cfg,
 
 	udc_ep_set_busy(ep_cfg, true);
 
-	if (ep_cfg->addr == USB_CONTROL_EP_IN && len > 0U) {
-		/* Wait for an empty package from the host.
-		 * This also flushes the TX FIFO to the host.
-		 */
-		if (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)) {
-			udc_stm32_flush_tx_fifo(dev);
-		} else {
-			udc_stm32_prep_out_ep0_rx(dev, 0);
-		}
-	}
-
 	return 0;
 }
 
-static int udc_stm32_rx(const struct device *dev, struct udc_ep_config *ep_cfg,
-			struct net_buf *buf)
+/* Start accepting packets (OUT transfers) */
+static int udc_stm32_initiate_ep_rx(const struct device *dev,
+				    struct udc_ep_config *const ep_cfg,
+				    struct net_buf *const buf)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	HAL_StatusTypeDef status;
+	uint32_t rx_size;
 
-	/* OUT EP0 requires special logic! */
-	__ASSERT_NO_MSG(ep_cfg->addr != USB_CONTROL_EP_OUT);
+	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		if (bi->setup) {
+			/* SETUP data will be received without any action */
+			return 0;
+		}
+	}
+
+	/*
+	 * NOTE: we don't check udc_ep_is_busy(ep_cfg) here because
+	 * this may be called while the endpoint is still *marked*
+	 * as busy even though a transaction just ended. In such
+	 * situation, the call to `udc_ep_set_busy(true)` at the
+	 * end of this function is a no-op.
+	 */
 
 	LOG_DBG("RX ep 0x%02x len %u", ep_cfg->addr, buf->size);
 
-	if (udc_ep_is_busy(ep_cfg)) {
-		return 0;
+	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
+		/*
+		 * Keep track of how much data we're expecting from
+		 * host so we know when the transfer is complete.
+		 * Unlike other endpoints, this bookkeeping isn't
+		 * done by the HAL for OUT EP0.
+		 */
+		priv->ep0_out_wlength = buf->size;
+
+		/* We can receive only up to bMaxPacketSize0 per
+		 * call to HAL_PCD_EP_Receive(), regardless of
+		 * how much data the host wants to send in total.
+		 */
+		rx_size = MIN(buf->size, UDC_STM32_EP0_MAX_PACKET_SIZE);
+	} else {
+		/* One call to HAL_PCD_EP_Receive() is enough,
+		 * the HAL will split in multiple receive transfers
+		 * and perform all bookkeeping internally.
+		 */
+		rx_size = buf->size;
 	}
 
-	status = HAL_PCD_EP_Receive(&priv->pcd, ep_cfg->addr, buf->data, buf->size);
+	status = HAL_PCD_EP_Receive(&priv->pcd, ep_cfg->addr, buf->data, rx_size);
 	if (status != HAL_OK) {
 		LOG_ERR("HAL_PCD_EP_Receive failed(0x%02x), %d", ep_cfg->addr, (int)status);
 		return -EIO;
 	}
 
+	/* RX started - mark endpoint as busy */
 	udc_ep_set_busy(ep_cfg, true);
 
 	return 0;
@@ -528,71 +492,35 @@ static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint
 	net_buf_add(buf, rx_count);
 
 	if (ep == USB_CONTROL_EP_OUT) {
-		/*
-		 * OUT EP0 is used for two purposes:
-		 *  - receive 'out' Data packets during s-(out)-status
-		 *  - receive Status OUT ZLP during s-in-(status)
-		 */
-		if (udc_ctrl_stage_is_status_out(dev)) {
-			/*
-			 * s-in-status completed (ZLP)
-			 *
-			 * Dequeue packet and submit it to stack.
-			 */
-			__ASSERT_NO_MSG(rx_count == 0);
-			buf = udc_buf_get(ep_cfg);
-			udc_ctrl_update_stage(dev, buf);
-			udc_ctrl_submit_status(dev, buf);
-		} else {
-			/* Verify that host did not send more data than it promised */
-			__ASSERT(buf->len <= priv->ep0_out_wlength,
-				 "Received more data from Host than expected!");
+		/* Verify that host did not send more data than it promised */
+		__ASSERT(buf->len <= priv->ep0_out_wlength,
+				"Received more data from Host than expected!");
 
-			/* Check if the data stage is complete */
-			if (buf->len < priv->ep0_out_wlength) {
-				HAL_StatusTypeDef __maybe_unused status;
+		/* Check if the data stage is complete */
+		if (rx_count == UDC_STM32_EP0_MAX_PACKET_SIZE &&
+		    buf->len < priv->ep0_out_wlength) {
+			HAL_StatusTypeDef __maybe_unused status;
+			uint32_t rx_size = MIN(net_buf_tailroom(buf),
+					       UDC_STM32_EP0_MAX_PACKET_SIZE);
 
-				/* Not yet - prepare to receive more data and wait */
-				status = HAL_PCD_EP_Receive(&priv->pcd, ep_cfg->addr,
-							    net_buf_tail(buf),
-							    UDC_STM32_EP0_MAX_PACKET_SIZE);
-				__ASSERT_NO_MSG(status == HAL_OK);
-				return;
-			} /* else: buf->len == priv->ep0_out_wlength */
-
-			/*
-			 * Data stage is complete: update to next step
-			 * which should be Status IN, then submit the
-			 * Setup+Data phase buffers to UDC stack and
-			 * let it handle the next stage. Don't forget
-			 * to dequeue packet before submitting it.
-			 */
-			buf = udc_buf_get(ep_cfg);
-			udc_ctrl_update_stage(dev, buf);
-			__ASSERT_NO_MSG(udc_ctrl_stage_is_status_in(dev));
-			udc_ctrl_submit_s_out_status(dev, buf);
-		}
-	} else {
-		/* All data received - dequeue packet and submit it to stack */
-		buf = udc_buf_get(ep_cfg);
-		udc_submit_ep_event(dev, buf, 0);
+			/* Not yet - prepare to receive more data and wait */
+			status = HAL_PCD_EP_Receive(&priv->pcd, ep_cfg->addr,
+						    net_buf_tail(buf), rx_size);
+			__ASSERT_NO_MSG(status == HAL_OK);
+			return;
+		} /* else: buf->len == priv->ep0_out_wlength */
 	}
 
-	/* Endpoint is no longer busy */
-	udc_ep_set_busy(ep_cfg, false);
+	/* All data received - dequeue packet and submit it to stack */
+	buf = udc_buf_get(ep_cfg);
+	udc_submit_ep_event(dev, buf, 0);
 
 	/* Prepare next transfer for EP if its queue is not empty */
 	buf = udc_buf_peek(ep_cfg);
 	if (buf != NULL) {
-		/*
-		 * Only the driver is allowed to queue transfers on OUT EP0,
-		 * and it should only be doing so once per Control transfer.
-		 * If it has a queued transfer, something must be wrong.
-		 */
-		__ASSERT(ep_cfg->addr != USB_CONTROL_EP_OUT,
-			 "OUT EP0 should never have pending transfers!");
-
-		udc_stm32_rx(dev, ep_cfg, buf);
+		udc_stm32_initiate_ep_rx(dev, ep_cfg, buf);
+	} else { /* Nothing left to receive: EP is no longer busy */
+		udc_ep_set_busy(ep_cfg, false);
 	}
 }
 
@@ -656,31 +584,11 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 		return;
 	}
 
-	udc_buf_get(ep_cfg);
-
-	if (ep == USB_CONTROL_EP_IN) {
-		if (udc_ctrl_stage_is_status_in(dev) ||
-		    udc_ctrl_stage_is_no_data(dev)) {
-			/* Status stage finished, notify upper layer */
-			udc_ctrl_submit_status(dev, buf);
-		}
-
-		/* Update to next stage of control transfer */
-		udc_ctrl_update_stage(dev, buf);
-
-		if (udc_ctrl_stage_is_status_out(dev)) {
-			/*
-			 * IN transfer finished, release buffer,
-			 * control OUT buffer should be already fed.
-			 */
-			net_buf_unref(buf);
-		}
-
-		return;
-	}
-
+	/* drop reference to packet and submit to stack */
+	buf = udc_buf_get(ep_cfg);
 	udc_submit_ep_event(dev, buf, 0);
 
+	/* enqueue */
 	buf = udc_buf_peek(ep_cfg);
 	if (buf != NULL) {
 		udc_stm32_tx(dev, ep_cfg, buf);
@@ -700,48 +608,6 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 	}
 }
 
-static void handle_msg_setup(struct udc_stm32_data *priv)
-{
-	struct usb_setup_packet *setup = (void *)priv->pcd.Setup;
-	const struct device *dev = priv->dev;
-	struct net_buf *buf;
-	int err;
-
-	/* Drop all transfers in control endpoints queue upon new SETUP */
-	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT));
-	if (buf != NULL) {
-		net_buf_unref(buf);
-	}
-
-	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_IN));
-	if (buf != NULL) {
-		net_buf_unref(buf);
-	}
-
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, sizeof(struct usb_setup_packet));
-	if (buf == NULL) {
-		LOG_ERR("Failed to allocate for setup");
-		return;
-	}
-
-	udc_ep_buf_set_setup(buf);
-	net_buf_add_mem(buf, setup, sizeof(struct usb_setup_packet));
-
-	udc_ctrl_update_stage(dev, buf);
-
-	if (udc_ctrl_stage_is_data_out(dev)) {
-		/*  Allocate and feed buffer for data OUT stage */
-		err = udc_stm32_prep_out_ep0_rx(dev, udc_data_stage_length(buf));
-		if (err == -ENOMEM) {
-			udc_submit_ep_event(dev, buf, err);
-		}
-	} else if (udc_ctrl_stage_is_data_in(dev)) {
-		udc_ctrl_submit_s_in_status(dev);
-	} else {
-		udc_ctrl_submit_s_status(dev);
-	}
-}
-
 static void udc_stm32_thread_handler(void *arg1, void *arg2, void *arg3)
 {
 	const struct device *dev = arg1;
@@ -752,7 +618,8 @@ static void udc_stm32_thread_handler(void *arg1, void *arg2, void *arg3)
 		k_msgq_get(&priv->msgq_data, &msg, K_FOREVER);
 		switch (msg.type) {
 		case UDC_STM32_MSG_SETUP:
-			handle_msg_setup(priv);
+			/* HAL copies SETUP packet contents to pcd.Setup */
+			udc_setup_received(dev, priv->pcd.Setup);
 			break;
 		case UDC_STM32_MSG_DATA_IN:
 			handle_msg_data_in(priv, msg.ep);
@@ -1176,6 +1043,7 @@ static int udc_stm32_ep_clear_halt(const struct device *dev,
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	HAL_StatusTypeDef status;
 	struct net_buf *buf;
+	int ret = 0;
 
 	LOG_DBG("Clear halt for ep 0x%02x", ep_cfg->addr);
 
@@ -1201,11 +1069,12 @@ static int udc_stm32_ep_clear_halt(const struct device *dev,
 
 		if (USB_EP_DIR_IS_IN(ep_cfg->addr) && !busy) {
 			udc_stm32_tx(dev, ep_cfg, buf);
-		} else if (USB_EP_DIR_IS_OUT(ep_cfg->addr) && busy) {
-			udc_stm32_rx(dev, ep_cfg, buf);
+		} else if (USB_EP_DIR_IS_OUT(ep_cfg->addr) && !busy) {
+			ret = udc_stm32_initiate_ep_rx(dev, ep_cfg, buf);
 		}
 	}
-	return 0;
+
+	return ret;
 }
 
 static int udc_stm32_ep_enqueue(const struct device *dev,
@@ -1215,9 +1084,9 @@ static int udc_stm32_ep_enqueue(const struct device *dev,
 	unsigned int lock_key;
 	int ret = 0;
 
-	udc_buf_put(ep_cfg, buf);
-
 	lock_key = irq_lock();
+
+	udc_buf_put(ep_cfg, buf);
 
 	if (USB_EP_DIR_IS_IN(ep_cfg->addr)) {
 		if (ep_cfg->stat.halted) {
@@ -1226,7 +1095,9 @@ static int udc_stm32_ep_enqueue(const struct device *dev,
 			ret = udc_stm32_tx(dev, ep_cfg, buf);
 		}
 	} else {
-		ret = udc_stm32_rx(dev, ep_cfg, buf);
+		if (!udc_ep_is_busy(ep_cfg)) {
+			ret = udc_stm32_initiate_ep_rx(dev, ep_cfg, buf);
+		}
 	}
 
 	irq_unlock(lock_key);
@@ -1239,17 +1110,13 @@ static int udc_stm32_ep_dequeue(const struct device *dev,
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	__maybe_unused HAL_StatusTypeDef status;
-	struct net_buf *buf;
 
 	LOG_DBG("Flush ep 0x%02x", ep_cfg->addr);
 
 	status = HAL_PCD_EP_Flush(&priv->pcd, ep_cfg->addr);
 	__ASSERT_NO_MSG(status == HAL_OK);
 
-	buf = udc_buf_get_all(ep_cfg);
-	if (buf != NULL) {
-		udc_submit_ep_event(dev, buf, -ECONNABORTED);
-	}
+	udc_ep_cancel_queued(dev, ep_cfg);
 
 	udc_ep_set_busy(ep_cfg, false);
 
@@ -1345,7 +1212,6 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 	}
 
 	data->caps.rwup = true;
-	data->caps.out_ack = false;
 	data->caps.addr_before_status = true;
 	data->caps.mps0 = UDC_MPS0_64;
 	if (cfg->selected_speed == PCD_SPEED_HIGH) {

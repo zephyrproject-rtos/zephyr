@@ -33,6 +33,8 @@
 	};
 
 	soc {
+		compatible = "simple-bus";
+
 		ficr: ficr@1ff0000 {
 			compatible = "nordic,nrf-ficr";
 			reg = <0x01ff0000 0x1000>;
@@ -43,7 +45,10 @@
 		uicr: uicr@1ff8000 {
 			compatible = "nordic,nrf-uicr";
 			reg = <0x01ff8000 0x1000>;
+			ranges = <0x0 0x01ff8000 0x1000>;
 			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		sram0: memory@20000000 {
@@ -310,8 +315,8 @@
 		flash_controller: flash-controller@41080000 {
 			compatible = "nordic,nrf53-flash-controller";
 			reg = <0x41080000 0x1000>;
+			ranges;
 			partial-erase;
-
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -319,6 +324,9 @@
 				compatible = "soc-nv-flash";
 				erase-block-size = <2048>;
 				write-block-size = <4>;
+				reg = <0x1000000 DT_SIZE_K(256)>;
+				ranges = <0x0 0x1000000 DT_SIZE_K(256)>;
+				status = "okay";
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};

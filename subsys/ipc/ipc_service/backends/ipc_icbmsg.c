@@ -1030,6 +1030,10 @@ static int open(const struct device *instance)
 		.error = NULL,
 	};
 
+	if (!device_is_ready(instance)) {
+		return -EAGAIN;
+	}
+
 	LOG_DBG("Open instance 0x%08X, initiator=%d", (uint32_t)instance,
 		dev_data->is_initiator ? 1 : 0);
 	LOG_DBG("  TX %d blocks of %d bytes at 0x%08X, max allocable %d bytes",

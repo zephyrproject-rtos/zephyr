@@ -10,6 +10,8 @@ import logging
 import os
 import platform
 import re
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from multiprocessing import Lock, Value
 from pathlib import Path
@@ -18,7 +20,8 @@ import scl
 import yaml
 from natsort import natsorted
 from twisterlib.constants import ZEPHYR_BASE
-from twisterlib.hardwaredata import HardwareData
+from twisterlib.error import NoDeviceAvailableException, TwisterException
+from twisterlib.hardwaredata import CompoundHardwareData, HardwareData
 
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
@@ -470,3 +473,77 @@ class HardwareMap:
                 table.append([platform, p.id, p.serial])
 
         print(tabulate(table, headers=header, tablefmt="github"))
+
+    @staticmethod
+    @contextmanager
+    def acquire_dut_locks(duts: list[DUT]) -> Iterator[None]:
+        try:
+            for d in duts:
+                d.lock.acquire()
+            yield
+        finally:
+            for d in duts:
+                d.lock.release()
+
+    def reserve_dut(self, device: str, fixture: str | None) -> DUT:
+        """Reserve a DUT matching the specified device and fixture."""
+        duts_found: list[DUT] = []
+
+        for d in self.duts:
+            if fixture and fixture not in (f.split(sep=':')[0] for f in d.fixtures):
+                continue
+            if d.platform != device or (d.serial is None and d.serial_pty is None):
+                continue
+            duts_found.append(d)
+
+        if not duts_found:
+            raise TwisterException(f"No device to serve as {device} platform.")
+
+        # Select an available DUT with less failures
+        for d in sorted(duts_found, key=lambda _dut: _dut.failures):
+            # get all DUTs with the same id
+            duts_shared_hw = [_d for _d in self.duts if _d.id == d.id]
+            with self.acquire_dut_locks(duts_shared_hw):
+                avail = False
+                if d.available:
+                    for _d in duts_shared_hw:
+                        _d.available = 0
+                    d.counter_increment()
+                    avail = True
+                    logger.debug(f"Retain DUT:{d.platform}, Id:{d.id}, "
+                                 f"counter:{d.counter}, failures:{d.failures}")
+            if avail:
+                return d
+
+        raise NoDeviceAvailableException(f"No free {device} devices available")
+
+    def release_dut(self, dut: DUT) -> None:
+        """Release a previously reserved DUT, making it available for future reservations."""
+        logger.debug(f"Release DUT:{dut.platform}, Id:{dut.id}, "
+                     f"counter:{dut.counter}, failures:{dut.failures}")
+        # get all DUTs with the same id
+        duts_shared_hw = [_d for _d in self.duts if _d.id == dut.id]
+        with self.acquire_dut_locks(duts_shared_hw):
+            for _d in duts_shared_hw:
+                _d.available = 1
+
+    def _get_other_duts_with_same_id(self, hardware: DUT) -> list[DUT]:
+        """Get all DUTs that share the same hardware ID as the provided DUT,
+        excluding the provided DUT itself."""
+        duts: list[DUT] = []
+        # get all DUTs with the same id
+        duts_shared_hw = [_d for _d in self.duts if _d.id == hardware.id]
+        serials = {hardware.serial}
+        for d in duts_shared_hw:
+            if d.serial and d.serial not in serials:
+                duts.append(d)
+                serials.add(d.serial)
+        return duts
+
+    def create_compound_hardware_data(self, hardware: DUT) -> CompoundHardwareData:
+        """Create a CompoundHardwareData object for the provided DUT,
+        including any auxiliary connections that share the same hardware ID."""
+        compound_hardware = CompoundHardwareData.from_dict(hardware.to_dict())
+        for dut in self._get_other_duts_with_same_id(hardware):
+            compound_hardware.entries.append(HardwareData(**dut.to_dict()))
+        return compound_hardware

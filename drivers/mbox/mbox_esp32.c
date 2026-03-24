@@ -13,6 +13,10 @@
 #include <soc/pmu_reg.h>
 #include <ulp_lp_core_utils.h>
 #include <ulp_lp_core_interrupts.h>
+#if defined(CONFIG_SOC_ESP32C6_LPCORE)
+#include <hal/pmu_ll.h>
+#include <soc/pmu_struct.h>
+#endif
 #endif
 
 #include "soc/gpio_periph.h"
@@ -60,6 +64,22 @@ struct esp32_mbox_data {
 	struct esp32_mbox_memory shm;
 	struct esp32_mbox_control *control;
 };
+
+static void esp32_mbox_isr(const struct device *dev);
+
+#if defined(CONFIG_SOC_ESP32C6_LPCORE)
+static const struct device *s_mbox_dev;
+
+void ulp_lp_core_lp_pmu_intr_handler(void)
+{
+	if (PMU.lp_ext.int_st.sw_trigger) {
+		pmu_ll_lp_clear_sw_intr_status(&PMU);
+		if (s_mbox_dev != NULL) {
+			esp32_mbox_isr(s_mbox_dev);
+		}
+	}
+}
+#endif
 
 IRAM_ATTR static void esp32_mbox_isr(const struct device *dev)
 {
@@ -217,8 +237,10 @@ static int esp32_mbox_set_enabled(const struct device *dev, mbox_channel_id_t ch
 static int esp32_mbox_init(const struct device *dev)
 {
 	struct esp32_mbox_data *data = (struct esp32_mbox_data *)dev->data;
+#if !defined(CONFIG_SOC_ESP32C6_LPCORE)
 	struct esp32_mbox_config *cfg = (struct esp32_mbox_config *)dev->config;
 	int ret;
+#endif
 
 #if defined(CONFIG_SOC_ESP32C6_LPCORE)
 	data->this_core_id = 1;
@@ -245,9 +267,7 @@ static int esp32_mbox_init(const struct device *dev)
 		 * after that releases
 		 */
 #if defined(CONFIG_SOC_ESP32C6_LPCORE)
-		ret = 0;
-		ulp_lp_core_intr_set_handler(cfg->irq_source_app_cpu,
-					     (void (*)(void *))esp32_mbox_isr, (void *)dev);
+		s_mbox_dev = dev;
 		ulp_lp_core_intr_enable();
 		ulp_lp_core_sw_intr_enable(true);
 #else
@@ -266,7 +286,11 @@ static int esp32_mbox_init(const struct device *dev)
 		LOG_DBG("Synchronization done");
 	}
 
+#if defined(CONFIG_SOC_ESP32C6_LPCORE)
+	return 0;
+#else
 	return ret;
+#endif
 }
 
 static DEVICE_API(mbox, esp32_mbox_driver_api) = {

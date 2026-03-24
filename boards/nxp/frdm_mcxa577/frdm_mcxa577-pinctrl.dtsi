@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -20,6 +20,16 @@
 		group0 {
 			pinmux = <LPUART1_RXD_P1_8>,
 				 <LPUART1_TXD_P1_9>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpuart2: pinmux_lpuart2 {
+		group0 {
+			pinmux = <LPUART2_RXD_P2_11>,
+				 <LPUART2_TXD_P2_10>;
 			drive-strength = "low";
 			slew-rate = "fast";
 			input-enable;
@@ -67,6 +77,40 @@
 			input-enable;
 			bias-pull-up;
 			drive-open-drain;
+		};
+	};
+
+	pinmux_enet_qos: pinmux_enet_qos {
+		mdio_group {
+			pinmux = <ENET0_MDC_P1_2>,
+				 <ENET0_MDIO_P1_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+
+		mac_group {
+			pinmux = <ENET0_RXDV_P1_13>,
+				 <ENET0_RXD0_P1_11>,
+				 <ENET0_RXD1_P1_12>,
+				 <ENET0_TX_CLK_P1_4>,
+				 <ENET0_TXEN_P1_5>,
+				 <ENET0_TXD0_P1_6>,
+				 <ENET0_TXD1_P1_7>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_t1s: pinmux_t1s {
+		pmd_group {
+			pinmux = <TENBASET1S_TX_P1_2>,
+				 <TENBASET1S_RX_P1_0>,
+				 <TENBASET1S_ED_P1_1>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
 		};
 	};
 };

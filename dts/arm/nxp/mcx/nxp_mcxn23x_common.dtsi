@@ -865,6 +865,7 @@
 		#io-channel-cells = <1>;
 		clocks = <&syscon MCUX_LPADC1_CLK>;
 		nxp,references = <&vref 1800>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown>;
 	};
 
 	temp0: temp0 {

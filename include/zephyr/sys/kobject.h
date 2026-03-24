@@ -147,6 +147,18 @@ void k_object_access_all_grant(const void *object);
  */
 bool k_object_is_valid(const void *obj, enum k_objects otype);
 
+/**
+ * @brief Check if the current thread has access to an object
+ *
+ * Allows user threads to test if they have permission before attempting to
+ * perform an operation and fail gracefully if not.
+ *
+ * @param object The object to be checked
+ * @retval 0 The object is valid and current thread has access
+ * @retval -EBADF The object is not valid
+ * @retval -EPERM The object is valid but current thread has no access
+ */
+__syscall int k_object_access_check(const void *object);
 #else
 /* LCOV_EXCL_START */
 #define K_THREAD_ACCESS_GRANT(thread, ...)
@@ -190,6 +202,16 @@ static inline bool k_object_is_valid(const void *obj, enum k_objects otype)
 	ARG_UNUSED(otype);
 
 	return true;
+}
+
+/**
+ * @internal
+ */
+static inline int z_impl_k_object_access_check(const void *object)
+{
+	ARG_UNUSED(object);
+
+	return 0;
 }
 
 /* LCOV_EXCL_STOP */
@@ -272,7 +294,7 @@ static inline void *z_impl_k_object_alloc_size(enum k_objects otype,
 /**
  * @brief Free an object
  *
- * @param obj
+ * @param obj Pointer to the kernel object memory address.
  */
 static inline void k_object_free(void *obj)
 {

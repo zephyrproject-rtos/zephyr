@@ -25,10 +25,10 @@ tests:
       - ophelia4ev/nrf54l15/cpuflpr
       - esp32_devkitc/esp32/procpu
       - esp8684_devkitm
-      - esp32c3_devkitm
+      - esp32c3_devkitc
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32h2_devkitm
-      - esp32s2_saola
+      - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
       - bgm220_ek4314a
       - slwrb4180b

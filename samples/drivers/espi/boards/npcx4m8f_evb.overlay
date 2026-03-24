@@ -4,11 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/nuvoton-npcx-gpio.h>
+
 / {
 	board_power: resources {
 		compatible = "intel-rvp,board-power";
 		/* GPIO72 */
-		pwrg-gpios = <&gpio7 2 GPIO_ACTIVE_HIGH>;
+		pwrg-gpios = <&gpio7 2 (GPIO_ACTIVE_HIGH | NPCX_GPIO_VOLTAGE_1P8)>;
 		/* GPIOA5 */
 		rsm-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 	};

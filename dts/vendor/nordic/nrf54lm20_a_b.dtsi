@@ -103,6 +103,9 @@
 		uicr: uicr@ffd000 {
 			compatible = "nordic,nrf-uicr";
 			reg = <0xffd000 0x1000>;
+			ranges = <0x0 0xffd000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 #endif
 
@@ -122,14 +125,6 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x20000000 DT_SIZE_K(511)>;
-		};
-
-		cpuflpr_sram: memory@20067c00 {
-			compatible = "mmio-sram";
-			reg = <0x20067c00 DT_SIZE_K(96)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x0 0x20067c00 DT_SIZE_K(96)>;
 		};
 #endif
 
@@ -239,17 +234,25 @@
 				prescaler = <0>;
 			};
 
-			usbhs: usbhs@5a000 {
-				compatible = "nordic,nrf-usbhs-nrf54l", "snps,dwc2";
-				reg = <0x5a000 0x1000>, <0x20000 0x1a000>;
-				reg-names = "wrapper", "core";
-				interrupts = <90 NRF_DEFAULT_IRQ_PRIORITY>;
-				num-in-eps = <16>;
-				num-out-eps = <16>;
-				ghwcfg1 = <0x0>;
-				ghwcfg2 = <0x22affc52>;
-				ghwcfg4 = <0x3e10aa60>;
-				status = "disabled";
+			usbhs_wrapper: usbhs_wrapper@5a000 {
+				compatible = "nordic,nrf-usbhs-wrapper";
+				reg = <0x5a000 0x1000>;
+				ranges = <0x20000 0x20000 0x1a000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				regulator = <&vregusb>;
+
+				usbhs: usbhs@20000 {
+					compatible = "nordic,nrf-usbhs-nrf54l", "snps,dwc2";
+					reg = <0x20000 0x1a000>;
+					interrupts = <90 NRF_DEFAULT_IRQ_PRIORITY>;
+					num-in-eps = <16>;
+					num-out-eps = <16>;
+					ghwcfg1 = <0x0>;
+					ghwcfg2 = <0x22affc52>;
+					ghwcfg4 = <0x3e10aa60>;
+					status = "disabled";
+				};
 			};
 
 			dppic10: dppic@82000 {
@@ -353,6 +356,7 @@
 				reg = <0xc6000 0x1000>;
 				interrupts = <198 NRF_DEFAULT_IRQ_PRIORITY>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
@@ -392,6 +396,7 @@
 				reg = <0xc7000 0x1000>;
 				interrupts = <199 NRF_DEFAULT_IRQ_PRIORITY>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
@@ -431,6 +436,7 @@
 				reg = <0xc8000 0x1000>;
 				interrupts = <200 NRF_DEFAULT_IRQ_PRIORITY>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
@@ -631,6 +637,7 @@
 				clocks = <&lfxo>, <&pclk>;
 				clock-names = "lfclock", "hfclock";
 				status = "disabled";
+				extended-channels = <0>;
 			};
 
 			tdm: tdm@e8000 {
@@ -651,6 +658,7 @@
 				reg = <0xed000 0x1000>;
 				interrupts = <237 NRF_DEFAULT_IRQ_PRIORITY>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
@@ -690,6 +698,7 @@
 				reg = <0xee000 0x1000>;
 				interrupts = <238 NRF_DEFAULT_IRQ_PRIORITY>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
@@ -744,6 +753,7 @@
 				reg = <0x104000 0x1000>;
 				interrupts = <260 NRF_DEFAULT_IRQ_PRIORITY>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
@@ -858,17 +868,26 @@
 
 			regulators: regulator@120000 {
 				compatible = "nordic,nrf54l-regulators";
-				reg = <0x120000 0x1000>;
+				reg = <0x120000 0x2000>;
+				ranges = <0x0 0x120000 0x2000>;
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				vregmain: regulator@120600 {
+				vregmain: regulator@0 {
 					compatible = "nordic,nrf5x-regulator";
-					reg = <0x120600 0x1>;
+					reg = <0x0 0x1000>;
 					status = "disabled";
 					regulator-name = "VREGMAIN";
 					regulator-initial-mode = <NRF5X_REG_MODE_LDO>;
+				};
+
+				vregusb: regulator@1000 {
+					compatible = "nordic,vregusb-regulator";
+					reg = <0x1000 0x1000>;
+					status = "disabled";
+					regulator-name = "VREGUSB";
+					interrupts = <289 NRF_DEFAULT_IRQ_PRIORITY>;
 				};
 			};
 		};
@@ -876,11 +895,11 @@
 		rram_controller: rram-controller@5004e000 {
 			compatible = "nordic,rram-controller";
 			reg = <0x5004e000 0x1000>;
+			ranges;
 			interrupts = <78 NRF_DEFAULT_IRQ_PRIORITY>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-#ifdef USE_NON_SECURE_ADDRESS_MAP
 			cpuapp_rram: rram@0 {
 				compatible = "soc-nv-flash";
 				reg = <0x0 DT_SIZE_K(2036)>;
@@ -890,27 +909,6 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
-#else
-			cpuapp_rram: rram@0 {
-				compatible = "soc-nv-flash";
-				reg = <0x0 DT_SIZE_K(1940)>;
-				ranges = <0x0 0x0 DT_SIZE_K(1940)>;
-				erase-block-size = <4096>;
-				write-block-size = <16>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
-
-			cpuflpr_rram: rram@1e5000 {
-				compatible = "soc-nv-flash";
-				reg = <0x1e5000 DT_SIZE_K(96)>;
-				ranges = <0x0 0x1e5000 DT_SIZE_K(96)>;
-				erase-block-size = <4096>;
-				write-block-size = <16>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
-#endif
 		};
 
 		nrf_mpc: memory@50041000 {

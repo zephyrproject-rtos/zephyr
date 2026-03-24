@@ -798,17 +798,19 @@ static ssize_t read_content_ctrl_id(struct bt_conn *conn,
 		      BT_GATT_PERM_READ_ENCRYPT, \
 		      read_search_results_id, NULL, NULL), \
 	BT_AUDIO_CCC(search_results_id_cfg_changed),
+#define INCLUDE_SERVICE_IF_OTS BT_GATT_INCLUDE_SERVICE(NULL), /* To be overwritten */
 
 #else
 #define ICON_OBJ_ID_CHARACTERISTIC_IF_OTS
 #define SEGMENTS_TRACK_GROUP_ID_CHARACTERISTICS_IF_OTS
 #define SEARCH_CHARACTERISTICS_IF_OTS
+#define INCLUDE_SERVICE_IF_OTS
 #endif /* CONFIG_BT_OTS */
 
 /* Media control service attributes */
 #define BT_MCS_SERVICE_DEFINITION \
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GMCS), \
-	BT_GATT_INCLUDE_SERVICE(NULL), /* To be overwritten */ \
+	INCLUDE_SERVICE_IF_OTS \
 	BT_AUDIO_CHRC(BT_UUID_MCS_PLAYER_NAME, \
 		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
 		      BT_GATT_PERM_READ_ENCRYPT, \

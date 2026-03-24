@@ -31,7 +31,7 @@ static struct bt_tbs_client_cb tbs_client_cbs;
 
 static struct bt_tbs_client_cb tbs_client_cbs;
 
-/* A service instance can either be a GTBS or a TBS insttance */
+/* A service instance can either be a GTBS or a TBS instance */
 struct bt_ccp_call_control_client_bearer {
 	uint8_t tbs_index;
 	bool discovered;
@@ -166,7 +166,7 @@ static void tbs_client_discover_cb(struct bt_conn *conn, int err, uint8_t tbs_co
 			const uint8_t idx = i + (gtbs_found ? 1 : 0);
 
 			if (idx >= ARRAY_SIZE(client->bearers)) {
-				LOG_WRN("Discoverd more TBS instances (%u) than the CCP Call "
+				LOG_WRN("Discovered more TBS instances (%u) than the CCP Call "
 					"Control Client supports %zu",
 					tbs_count, ARRAY_SIZE(client->bearers));
 				break;

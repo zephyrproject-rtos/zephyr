@@ -32,6 +32,26 @@
 		};
 	};
 
+	rom {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		rom: memory@0 {
+			/* rom code region */
+			reg = <0x0 DT_SIZE_K(148)>;
+		};
+
+		bee_bt_controller: memory@25000 {
+			/* bt controller code region */
+			reg = <0x25000 DT_SIZE_K(196)>;
+		};
+	};
+
+	bee_bt_hci: bee_bt_hci {
+		compatible = "realtek,bee-bt-hci";
+		status = "disabled";
+	};
+
 	soc {
 		cctl: clock-controller@40000200 {
 			compatible = "realtek,bee-cctl";
@@ -53,7 +73,12 @@
 
 			data_ram_app_0: memory@208800 {
 				compatible = "mmio-sram";
-				reg = <0x208800 DT_SIZE_K(70)>;
+				reg = <0x208800 DT_SIZE_K(57)>;
+			};
+
+			data_ram_heap: memory@216c00 {
+				compatible = "mmio-sram";
+				reg = <0x216c00 DT_SIZE_K(13)>;
 			};
 		};
 
@@ -68,7 +93,7 @@
 				reg = <0x280000 (DT_SIZE_K(1) + 512)>;
 			};
 
-			buffer_ram_app_0: memory@280600 {
+			buffer_ram_heap: memory@280600 {
 				compatible = "mmio-sram";
 				reg = <0x280600 (DT_SIZE_K(14) + 512)>;
 			};
@@ -98,7 +123,6 @@
 					compatible = "fixed-partitions";
 					#address-cells = <1>;
 					#size-cells = <1>;
-					ranges;
 
 					rsvd_partition: partition@0 {
 						label = "rsvd-image";
@@ -170,6 +194,94 @@
 			reg = <0x40012400 0x60>;
 			clocks = <&cctl APB_CLK(UART2)>;
 			interrupts = <31 0>;
+			status = "disabled";
+		};
+
+		/* basic timers */
+		timer2: timer@40002028 {
+			compatible = "realtek,bee-timer", "realtek,bee-basic-timer";
+			reg = <0x40002028 0x10>;
+			clocks = <&cctl APB_CLK(TIMER)>;
+			interrupts = <4 0>;
+			status = "disabled";
+
+			counter {
+				compatible = "realtek,bee-counter-timer";
+				status = "disabled";
+			};
+		};
+
+		timer3: timer@4000203c {
+			compatible = "realtek,bee-timer", "realtek,bee-basic-timer";
+			reg = <0x4000203c 0x10>;
+			clocks = <&cctl APB_CLK(TIMER)>;
+			interrupts = <3 0>;
+			status = "disabled";
+
+			counter {
+				compatible = "realtek,bee-counter-timer";
+				status = "disabled";
+			};
+		};
+
+		timer4: timer@40002050 {
+			compatible = "realtek,bee-timer", "realtek,bee-basic-timer";
+			reg = <0x40002050 0x10>;
+			clocks = <&cctl APB_CLK(TIMER)>;
+			interrupts = <8 0>;
+			status = "disabled";
+
+			counter {
+				compatible = "realtek,bee-counter-timer";
+				status = "disabled";
+			};
+		};
+
+		timer5: timer@40002064 {
+			compatible = "realtek,bee-timer", "realtek,bee-basic-timer";
+			reg = <0x40002064 0x10>;
+			clocks = <&cctl APB_CLK(TIMER)>;
+			interrupts = <8 0>;
+			status = "disabled";
+
+			counter {
+				compatible = "realtek,bee-counter-timer";
+				status = "disabled";
+			};
+		};
+
+		/* enhanced timers */
+		timer6: timer@40003000 {
+			compatible = "realtek,bee-timer", "realtek,bee-enhanced-timer";
+			reg = <0x40003000 0x400>;
+			clocks = <&cctl APB_CLK(ENHTIMER)>;
+			interrupts = <24 0>;
+			status = "disabled";
+
+			counter {
+				compatible = "realtek,bee-counter-timer";
+				status = "disabled";
+			};
+		};
+
+		timer7: timer@40003024 {
+			compatible = "realtek,bee-timer", "realtek,bee-enhanced-timer";
+			reg = <0x40003024 0x400>;
+			clocks = <&cctl APB_CLK(ENHTIMER)>;
+			interrupts = <25 0>;
+			status = "disabled";
+
+			counter {
+				compatible = "realtek,bee-counter-timer";
+				status = "disabled";
+			};
+		};
+
+		keyscan: keyscan@40005000 {
+			compatible = "realtek,bee-keyscan";
+			reg = <0x40005000 0x34>;
+			interrupts = <19 0>;
+			clocks = <&cctl APB_CLK(KEYSCAN)>;
 			status = "disabled";
 		};
 	};

@@ -3,6 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-watchdog0: &wdt010 {
+&wdt010 {
 	status = "okay";
 };

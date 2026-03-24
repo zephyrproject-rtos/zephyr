@@ -28,7 +28,7 @@ jobs:
       group: zephyr-runner-v2-linux-x64-4xlarge
     if: github.repository_owner == 'zephyrproject-rtos'
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.7.20251127
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.0.20260314
       options: '--entrypoint /bin/bash'
     defaults:
       run:
@@ -89,7 +89,7 @@ jobs:
           west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
+        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
         with:
           aws-access-key-id: ${{ vars.AWS_TESTING_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_TESTING_SECRET_ACCESS_KEY }}

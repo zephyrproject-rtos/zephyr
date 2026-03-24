@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+ * SPDX-FileCopyrightText: 2026 Abderrahmane JARMOUNI
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +18,7 @@
  * @brief Interfaces for display controllers.
  * @defgroup display_interface Display
  * @since 1.14
- * @version 0.8.0
+ * @version 0.9.0
  * @ingroup io_interfaces
  * @{
  *
@@ -145,10 +146,24 @@ enum display_pixel_format {
 	PIXEL_FORMAT_AL_88		= BIT(7), /**< 8-bit Grayscale/Luminance with alpha */
 
 	/**
+	 * 32-bit RGB format with 8 bits per component and 8 bits unused.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   Byte 2   Byte 3
+	 *   7......0 15.....8 23....16 31....24
+	 * | Bbbbbbbb Gggggggg Rrrrrrrr Xxxxxxxx | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_XRGB_8888 = BIT(8), /**< 32-bit XRGB */
+
+	/**
 	 * This and higher values are display specific.
 	 * Refer to the display header file.
 	 */
-	PIXEL_FORMAT_PRIV_START = (PIXEL_FORMAT_AL_88 << 1),
+	PIXEL_FORMAT_PRIV_START = (PIXEL_FORMAT_XRGB_8888 << 1),
 };
 
 /**
@@ -167,7 +182,8 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_RGB_565) >> 4) * 16U) +				\
 	(((fmt & PIXEL_FORMAT_RGB_565X) >> 5) * 16U) +				\
 	(((fmt & PIXEL_FORMAT_L_8) >> 6) * 8U) +				\
-	(((fmt & PIXEL_FORMAT_AL_88) >> 7) * 16U))
+	(((fmt & PIXEL_FORMAT_AL_88) >> 7) * 16U) +				\
+	(((fmt & PIXEL_FORMAT_XRGB_8888) >> 8) * 32U))
 
 /**
  * @brief Display screen information
@@ -236,6 +252,62 @@ struct display_buffer_descriptor {
 	/** Indicates that this is not the last write buffer of the frame */
 	bool frame_incomplete;
 };
+
+/** @brief Display event payload */
+struct display_event_data {
+	/** Timestamp to differentiate between events of the same type.
+	 * It can be provided with k_cycle_get_64() For e.g. .
+	 */
+	uint64_t timestamp;
+	/** Event info passed by driver to callback */
+	union {
+		/** For @ref DISPLAY_EVENT_LINE_INT events, set to -1 if unavailable */
+		int line;
+		/** For @ref DISPLAY_EVENT_FRAME_DONE events, set to -1 if unavailable */
+		int buffer_id;
+	} info;
+};
+
+/** @brief Display event types */
+enum display_event {
+	/** Fired when controller reaches a configured scanline */
+	DISPLAY_EVENT_LINE_INT = BIT(0),
+	/** Fired at vertical sync / start of new frame */
+	DISPLAY_EVENT_VSYNC = BIT(1),
+	/** Fired when a frame transfer to the panel or frame buffer update completes */
+	DISPLAY_EVENT_FRAME_DONE = BIT(2),
+};
+
+/** @brief Display event callback return flags. */
+enum display_event_result {
+	/** Let the driver execute its default handling */
+	DISPLAY_EVENT_RESULT_CONTINUE = 0,
+	/** The callback handled the event and the driver
+	 * should skip its default processing for that event
+	 */
+	DISPLAY_EVENT_RESULT_HANDLED = 1,
+};
+
+/**
+ * @typedef display_event_cb_t.
+ *
+ * @brief Called either in ISR context (if arg in_isr=true at register time,
+ * see @ref display_register_event_cb ) or in thread context (if in_isr=false,
+ * driver will schedule work to call it).
+ * When called from ISR context the callback must be extremely fast and must not call
+ * blocking APIs or sleep.
+ *
+ * @param dev Pointer to device structure
+ * @param evt 'enum display_event' bit of event to handle
+ * @param data Driver data passed to callback
+ * @param user_data User data passed by driver to callback
+ *
+ * @return An 'enum display_event_result' flag, see its description for details.
+ */
+typedef enum display_event_result (*display_event_cb_t)(const struct device *dev,
+				  uint32_t evt,
+				  const struct display_event_data *data,
+				  void *user_data);
 
 /**
  * @typedef display_blanking_on_api
@@ -329,6 +401,23 @@ typedef int (*display_set_orientation_api)(const struct device *dev,
 					   orientation);
 
 /**
+ * @typedef display_register_event_cb_api
+ * @brief Callback API to register display event callback
+ * See @ref display_register_event_cb for argument description
+ */
+typedef int (*display_register_event_cb_api)(const struct device *dev,
+					     display_event_cb_t cb, void *user_data,
+					     uint32_t event_mask, bool in_isr,
+					     uint32_t *out_reg_handle);
+
+/**
+ * @typedef display_unregister_event_cb_api
+ * @brief Callback API to unregister display event callback
+ * See @ref display_unregister_event_cb for argument description
+ */
+typedef int (*display_unregister_event_cb_api)(const struct device *dev, uint32_t reg_handle);
+
+/**
  * @brief Display driver API
  * API which a display driver should expose
  */
@@ -344,6 +433,10 @@ __subsystem struct display_driver_api {
 	display_get_capabilities_api get_capabilities;
 	display_set_pixel_format_api set_pixel_format;
 	display_set_orientation_api set_orientation;
+	/** Register display event callback */
+	display_register_event_cb_api register_event_cb;
+	/** Unregister display event callback */
+	display_unregister_event_cb_api unregister_event_cb;
 };
 
 /**
@@ -600,6 +693,67 @@ static inline int display_set_orientation(const struct device *dev,
 	}
 
 	return api->set_orientation(dev, orientation);
+}
+
+/**
+ * @brief Register event callback for a display device.
+ *
+ * @param dev Pointer to device structure
+ * @param cb User callback function pointer, see @ref display_event_cb_t description
+ * @param user_data User data to be passed by driver to event callback
+ * @param event_mask Mask of 'enum display_event' events upon which the callback will be called
+ * @param in_isr If true, callback will be invoked in ISR context (shall be fast, non-blocking).
+ * If false, callback will be invoked in thread/workqueue context.
+ * A driver is allowed to implement just one of the invocation contexts.
+ *
+ * @param out_reg_handle Lets the caller prove ownership of the registration,
+ *                       and allows for safe unregistration
+ *
+ * @note Thread-context delivery should be preferred for non-critical work;
+ *       keep ISR fast and optionally only set flags and schedule work,
+ *       avoid scheduler APIs, mutexes, prints.
+ *
+ * @return 0 and a non-zero out_reg_handle value on success, otherwise a negative errno code.
+ * @retval -EBUSY A callback is already registered.
+ * @retval -ENOTSUP One of the events is not supported,
+ * or the requested invocation context is not supported.
+ * @retval -ENOSYS Not implemented.
+ * @retval -EINVAL Invalid argument.
+ */
+static inline int display_register_event_cb(const struct device *dev,
+					    display_event_cb_t cb, void *user_data,
+					    uint32_t event_mask, bool in_isr,
+					    uint32_t *out_reg_handle)
+{
+	struct display_driver_api *api = (struct display_driver_api *)dev->api;
+
+	if (api->register_event_cb == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->register_event_cb(dev, cb, user_data, event_mask, in_isr, out_reg_handle);
+}
+
+/**
+ * @brief Unregister event callback for a display device.
+ *
+ * @param dev Pointer to device structure
+ * @param reg_handle Handle used to register the callback.
+ *
+ * @return 0 on success, otherwise a negative errno code.
+ * @retval -EINVAL If 'reg_handle == 0'.
+ * @retval -EPERM Not the owner, or already unregistered.
+ * @retval -ENOSYS If it, or register_event_cb, is not implemented.
+ */
+static inline int display_unregister_event_cb(const struct device *dev, uint32_t reg_handle)
+{
+	struct display_driver_api *api = (struct display_driver_api *)dev->api;
+
+	if (api->unregister_event_cb == NULL || api->register_event_cb == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->unregister_event_cb(dev, reg_handle);
 }
 
 #ifdef __cplusplus

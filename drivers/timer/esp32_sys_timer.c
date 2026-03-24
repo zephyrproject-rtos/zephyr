@@ -100,6 +100,10 @@ static void IRAM_ATTR sys_timer_isr(void *arg)
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 #if defined(CONFIG_TICKLESS_KERNEL)
+	if (systimer_hal.dev == NULL) {
+		return;
+	}
+
 	ticks = ticks == K_TICKS_FOREVER ? MAX_TICKS : ticks;
 	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
 
@@ -147,6 +151,10 @@ uint32_t sys_clock_elapsed(void)
 		return 0;
 	}
 
+	if (systimer_hal.dev == NULL) {
+		return 0;
+	}
+
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint32_t ret = ((uint32_t)get_systimer_alarm() - (uint32_t)last_count) / CYC_PER_TICK;
 
@@ -156,11 +164,17 @@ uint32_t sys_clock_elapsed(void)
 
 uint32_t sys_clock_cycle_get_32(void)
 {
+	if (systimer_hal.dev == NULL) {
+		return 0;
+	}
 	return (uint32_t)get_systimer_alarm();
 }
 
 uint64_t sys_clock_cycle_get_64(void)
 {
+	if (systimer_hal.dev == NULL) {
+		return 0;
+	}
 	return get_systimer_alarm();
 }
 
@@ -233,6 +247,9 @@ static int sys_clock_driver_init(void)
 
 	systimer_hal_enable_counter(&systimer_hal, SYSTIMER_COUNTER_OS_TICK);
 	systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_COUNTER_OS_TICK, 0, true);
+#if defined(CONFIG_SMP)
+	systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_COUNTER_OS_TICK, 1, true);
+#endif
 	last_count = get_systimer_alarm();
 	set_systimer_alarm(last_count + CYC_PER_TICK);
 	return 0;

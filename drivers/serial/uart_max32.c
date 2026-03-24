@@ -128,6 +128,7 @@ static void uart_max32_pm_policy_state_lock_get(const struct device *dev,
 	if (atomic_test_and_set_bit(data->pm_policy_state_flag, flag) == 0) {
 		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 	}
 }
 
@@ -139,6 +140,7 @@ static void uart_max32_pm_policy_state_lock_put(const struct device *dev,
 	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, flag) == 1) {
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 	}
 }
 #endif /* CONFIG_PM */
@@ -198,62 +200,58 @@ static int api_configure(const struct device *dev, const struct uart_config *uar
 	/*
 	 *  Set parity
 	 */
-	if (data->conf.parity != uart_cfg->parity) {
-		mxc_uart_parity_t mxc_parity;
+	mxc_uart_parity_t mxc_parity;
 
-		switch (uart_cfg->parity) {
-		case UART_CFG_PARITY_NONE:
-			mxc_parity = ADI_MAX32_UART_CFG_PARITY_NONE;
-			break;
-		case UART_CFG_PARITY_ODD:
-			mxc_parity = ADI_MAX32_UART_CFG_PARITY_ODD;
-			break;
-		case UART_CFG_PARITY_EVEN:
-			mxc_parity = ADI_MAX32_UART_CFG_PARITY_EVEN;
-			break;
-		case UART_CFG_PARITY_MARK:
+	switch (uart_cfg->parity) {
+	case UART_CFG_PARITY_NONE:
+		mxc_parity = ADI_MAX32_UART_CFG_PARITY_NONE;
+		break;
+	case UART_CFG_PARITY_ODD:
+		mxc_parity = ADI_MAX32_UART_CFG_PARITY_ODD;
+		break;
+	case UART_CFG_PARITY_EVEN:
+		mxc_parity = ADI_MAX32_UART_CFG_PARITY_EVEN;
+		break;
+	case UART_CFG_PARITY_MARK:
 #if defined(ADI_MAX32_UART_CFG_PARITY_MARK)
-			mxc_parity = ADI_MAX32_UART_CFG_PARITY_MARK;
-			break;
+		mxc_parity = ADI_MAX32_UART_CFG_PARITY_MARK;
+		break;
 #else
-			return -ENOTSUP;
+		return -ENOTSUP;
 #endif
-		case UART_CFG_PARITY_SPACE:
+	case UART_CFG_PARITY_SPACE:
 #if defined(ADI_MAX32_UART_CFG_PARITY_SPACE)
-			mxc_parity = ADI_MAX32_UART_CFG_PARITY_SPACE;
-			break;
+		mxc_parity = ADI_MAX32_UART_CFG_PARITY_SPACE;
+		break;
 #else
-			return -ENOTSUP;
+		return -ENOTSUP;
 #endif
-		default:
-			return -EINVAL;
-		}
-
-		err = MXC_UART_SetParity(regs, mxc_parity);
-		if (err < 0) {
-			return -ENOTSUP;
-		}
-		/* incase of success keep configuration */
-		data->conf.parity = uart_cfg->parity;
+	default:
+		return -EINVAL;
 	}
+
+	err = MXC_UART_SetParity(regs, mxc_parity);
+	if (err < 0) {
+		return -ENOTSUP;
+	}
+	/* incase of success keep configuration */
+	data->conf.parity = uart_cfg->parity;
 
 	/*
 	 *  Set stop bit
 	 */
-	if (data->conf.stop_bits != uart_cfg->stop_bits) {
-		if (uart_cfg->stop_bits == UART_CFG_STOP_BITS_1) {
-			err = MXC_UART_SetStopBits(regs, MXC_UART_STOP_1);
-		} else if (uart_cfg->stop_bits == UART_CFG_STOP_BITS_2) {
-			err = MXC_UART_SetStopBits(regs, MXC_UART_STOP_2);
-		} else {
-			return -ENOTSUP;
-		}
-		if (err < 0) {
-			return -ENOTSUP;
-		}
-		/* incase of success keep configuration */
-		data->conf.stop_bits = uart_cfg->stop_bits;
+	if (uart_cfg->stop_bits == UART_CFG_STOP_BITS_1) {
+		err = MXC_UART_SetStopBits(regs, MXC_UART_STOP_1);
+	} else if (uart_cfg->stop_bits == UART_CFG_STOP_BITS_2) {
+		err = MXC_UART_SetStopBits(regs, MXC_UART_STOP_2);
+	} else {
+		return -ENOTSUP;
 	}
+	if (err < 0) {
+		return -ENOTSUP;
+	}
+	/* incase of success keep configuration */
+	data->conf.stop_bits = uart_cfg->stop_bits;
 
 	/*
 	 *  Set data bit
@@ -261,37 +259,31 @@ static int api_configure(const struct device *dev, const struct uart_config *uar
 	 *  Valid data for Zepyhr is 0-1-2-3
 	 *  Added +5 to index match.
 	 */
-	if (data->conf.data_bits != uart_cfg->data_bits) {
-		err = MXC_UART_SetDataSize(regs, (5 + uart_cfg->data_bits));
-		if (err < 0) {
-			return -ENOTSUP;
-		}
-		/* incase of success keep configuration */
-		data->conf.data_bits = uart_cfg->data_bits;
+	err = MXC_UART_SetDataSize(regs, (5 + uart_cfg->data_bits));
+	if (err < 0) {
+		return -ENOTSUP;
 	}
+	/* incase of success keep configuration */
+	data->conf.data_bits = uart_cfg->data_bits;
 
 	/*
 	 *  Set flow control
 	 *  Flow control not implemented yet so that only support no flow mode
 	 */
-	if (data->conf.flow_ctrl != uart_cfg->flow_ctrl) {
-		if (uart_cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
-			return -ENOTSUP;
-		}
-		data->conf.flow_ctrl = uart_cfg->flow_ctrl;
+	if (uart_cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
+		return -ENOTSUP;
 	}
+	data->conf.flow_ctrl = uart_cfg->flow_ctrl;
 
 	/*
 	 *  Set baudrate
 	 */
-	if (data->conf.baudrate != uart_cfg->baudrate) {
-		err = Wrap_MXC_UART_SetFrequency(regs, uart_cfg->baudrate, cfg->perclk.clk_src);
-		if (err < 0) {
-			return -ENOTSUP;
-		}
-		/* In case of success keep configuration */
-		data->conf.baudrate = uart_cfg->baudrate;
+	err = Wrap_MXC_UART_SetFrequency(regs, uart_cfg->baudrate, cfg->perclk.clk_src);
+	if (err < 0) {
+		return -ENOTSUP;
 	}
+	/* In case of success keep configuration */
+	data->conf.baudrate = uart_cfg->baudrate;
 	return 0;
 }
 

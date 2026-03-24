@@ -35,6 +35,71 @@
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
+#if defined(CONFIG_PM_S2RAM)
+/* Retained region information (from DTS) */
+#define PWRC_NODE	DT_INST(0, st_stm32wba_pwr)
+#define RETAINED_SRAM12	DT_CHOSEN(zephyr_sram)
+#define RETAINED_SRAM12_START	(DT_REG_ADDR(RETAINED_SRAM12))
+#define RETAINED_SRAM12_END	(RETAINED_SRAM12_START + DT_REG_SIZE(RETAINED_SRAM12))
+
+/* Hardware information */
+#if defined(__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U)
+#define BASE(sramn) CONCAT(sramn, _BASE_S)
+#else
+#define BASE(sramn) CONCAT(sramn, _BASE_NS)
+#endif
+#define SRAM1_PAGE_SIZE (64 * 1024)
+
+/*
+ * @param i1s Start of interval 1 (inclusive)
+ * @param i1e End of interval 1 (exclusive)
+ * @param i2s Start of interval 2 (inclusive)
+ * @param i2e End of interval 2 (exclusive)
+ *
+ * Evaluates as true if there is an overlap between
+ * intervals [i1s, i1e) and [i2s, i2e).
+ */
+#define RANGES_OVERLAP(i1s, i1e, i2s, i2e)					\
+	(((i1e) > (i2s)) && ((i1s) < (i2e)))
+
+#if !defined(PWR_STOP2_SUPPORT) || defined(PWR_STOP3_SUPPORT) /* STM32WBA5x or STM32WBA2x */
+/* No page granularity on STM32WBA5x and STM32WBA2x */
+#define SRAM1_RETENTION_MASK LL_PWR_SRAM1_SB_FULL_RETENTION
+#else /* STM32WBA6x */
+/*
+ * @param pgn Page number as described in RefMan: 1~7
+ *
+ * Evaluates as true if page @p{pgn} is part of the retained
+ * region, false otherwise.
+ */
+#define SRAM1_PAGE_USED(pgn)							\
+	RANGES_OVERLAP(RETAINED_SRAM12_START, RETAINED_SRAM12_END,		\
+		BASE(SRAM1) + (((pgn) - 1) * SRAM1_PAGE_SIZE),			\
+		BASE(SRAM1) + ((pgn) * SRAM1_PAGE_SIZE))
+
+#define SRAM1_PAGE_RETAIN_MASK(pgn, msknum)					\
+	(SRAM1_PAGE_USED(pgn) ?	CONCAT(LL_PWR_SRAM1_SB_PAGE, msknum, _RETENTION) : 0)
+
+#define SRAM1_RETENTION_MASK							\
+	(SRAM1_PAGE_RETAIN_MASK(1, 1) |						\
+	 SRAM1_PAGE_RETAIN_MASK(2, 2) |						\
+	 SRAM1_PAGE_RETAIN_MASK(3, 3) |						\
+	 SRAM1_PAGE_RETAIN_MASK(4, 4) |						\
+	 SRAM1_PAGE_RETAIN_MASK(5, 567) |					\
+	 SRAM1_PAGE_RETAIN_MASK(6, 567) |					\
+	 SRAM1_PAGE_RETAIN_MASK(7, 567))
+
+BUILD_ASSERT(SRAM1_RETENTION_MASK != 0U,
+	"Retained SRAM1/2 region does not contain any SRAM1 page!");
+#endif /* !defined(PWR_STOP2_SUPPORT) || defined(PWR_STOP3_SUPPORT) */
+
+#define RETAINED_SRAM12_OVERLAPS_SRAM2                                 \
+		(RANGES_OVERLAP(RETAINED_SRAM12_START,                 \
+				RETAINED_SRAM12_END,                   \
+				BASE(SRAM2),                           \
+				BASE(SRAM2) + SRAM2_SIZE))
+#endif /* CONFIG_PM_S2RAM */
+
 
 #define HSE_ON (stm32_reg_read_bits(&RCC->CR, RCC_CR_HSEON) == RCC_CR_HSEON)
 
@@ -275,12 +340,26 @@ void stm32_power_init(void)
 	LL_DBGMCU_APB7_GRP1_FreezePeriph(LL_DBGMCU_APB7_GRP1_LPTIM1_STOP);
 #endif
 
-	/* Enable SRAM full retention */
-	LL_PWR_SetSRAM1SBRetention(LL_PWR_SRAM1_SB_FULL_RETENTION);
-	LL_PWR_SetSRAM2SBRetention(LL_PWR_SRAM2_SB_FULL_RETENTION);
+#ifdef CONFIG_PM_S2RAM
+	/*
+	 * According the defined RAM, only the required pages will be retained.
+	 * This memory size can be modified by the overlay mechanism matching
+	 * the RAM required by the application and highlighted in the building report.
+	 */
 
-	/* Enable Radio RAM full retention */
-	LL_PWR_SetRadioSBRetention(LL_PWR_RADIO_SB_FULL_RETENTION);
+	/* Retain only the required SRAM1 pages */
+	LL_PWR_SetSRAM1SBRetention(SRAM1_RETENTION_MASK);
+
+	if (DT_PROP(PWRC_NODE, retain_sram2) || RETAINED_SRAM12_OVERLAPS_SRAM2) {
+		/* Retain SRAM2 if explicitly requested or used by Zephyr as system RAM */
+		LL_PWR_SetSRAM2SBRetention(LL_PWR_SRAM2_SB_FULL_RETENTION);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_STM32WBA) || IS_ENABLED(CONFIG_IEEE802154_STM32WBA)) {
+		/* Retain radio RAM if a radio driver is enabled */
+		LL_PWR_SetRadioSBRetention(LL_PWR_RADIO_SB_FULL_RETENTION);
+	}
+#endif
 
 	/* Enabling  Ultra Low power mode */
 	LL_PWR_EnableUltraLowPowerMode();

@@ -10,6 +10,6 @@ tests:
     harness: ztest
     platform_allow:
       - esp32_devkitc/esp32/procpu
-      - esp32s2_saola
+      - esp32s2_devkitc
     harness_config:
       fixture: gpio_loopback

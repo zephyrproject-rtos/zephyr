@@ -10,6 +10,14 @@ config SOC_SERIES_STM32WBAX
 config SOC_SERIES
 	default "stm32wbax" if SOC_SERIES_STM32WBAX
 
+config SOC_STM32WBA23XX
+	bool
+	select SOC_SERIES_STM32WBAX
+
+config SOC_STM32WBA25XX
+	bool
+	select SOC_SERIES_STM32WBAX
+
 config SOC_STM32WBA52XX
 	bool
 	select SOC_SERIES_STM32WBAX
@@ -23,6 +31,8 @@ config SOC_STM32WBA65XX
 	select SOC_SERIES_STM32WBAX
 
 config SOC
+	default "stm32wba23xx" if SOC_STM32WBA23XX
+	default "stm32wba25xx" if SOC_STM32WBA25XX
 	default "stm32wba52xx" if SOC_STM32WBA52XX
 	default "stm32wba55xx" if SOC_STM32WBA55XX
 	default "stm32wba65xx" if SOC_STM32WBA65XX

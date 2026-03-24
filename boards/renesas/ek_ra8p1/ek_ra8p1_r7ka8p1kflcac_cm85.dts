@@ -159,26 +159,30 @@
 
 &code_mram_cm85 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(64)>;
 		};
 
 		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x10000 DT_SIZE_K(344)>;
 		};
 
 		slot1_partition: partition@66000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x66000 DT_SIZE_K(344)>;
 		};
 
 		storage_partition: partition@bc000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0xbc000 DT_SIZE_K(16)>;
 		};
@@ -193,6 +197,12 @@
 &lcdif {
 	interrupts = <30 1>;
 	interrupt-names = "line";
+};
+
+&drw {
+	interrupt-names = "drw";
+	interrupts = <31 12>;
+	status = "okay";
 };
 
 zephyr_lcdif: &lcdif {};

@@ -3,6 +3,12 @@ append:
   EXTRA_DTC_OVERLAY_FILE: nordic-flpr.overlay
 
 boards:
+  /.*/nrf54l05/cpuapp/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/nrf54l05_cpuapp.overlay
+  /.*/nrf54l10/cpuapp/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/nrf54l10_cpuapp.overlay
   /.*/nrf54l15/cpuapp/:
     append:
       EXTRA_DTC_OVERLAY_FILE: soc/nrf54l15_cpuapp.overlay

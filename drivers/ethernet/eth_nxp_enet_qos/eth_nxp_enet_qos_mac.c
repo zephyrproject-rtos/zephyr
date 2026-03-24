@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,7 +67,7 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 
 	LOG_INF("Link is %s", state->is_up ? "up" : "down");
 
-	/* handle link speed in MAC configuration register */
+	/* handle link speed and duplex in MAC configuration register */
 	if (state->is_up) {
 		const struct nxp_enet_qos_mac_config *config = dev->config;
 		struct nxp_enet_qos_config *module_cfg = ENET_QOS_MODULE_CFG(config->enet_dev);
@@ -79,6 +79,14 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 		} else {
 			LOG_DBG("Link Speed 100MBit or higher");
 			base->MAC_CONFIGURATION |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1);
+		}
+
+		if (PHY_LINK_IS_FULL_DUPLEX(state->speed)) {
+			LOG_DBG("Link Full Duplex");
+			base->MAC_CONFIGURATION |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1);
+		} else {
+			LOG_DBG("Link Half Duplex");
+			base->MAC_CONFIGURATION &= ~ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1);
 		}
 	}
 }
@@ -261,7 +269,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 		CONTAINER_OF(work, struct nxp_enet_qos_rx_data, rx_work);
 	struct nxp_enet_qos_mac_data *data =
 		CONTAINER_OF(rx_data, struct nxp_enet_qos_mac_data, rx);
-	const struct device *dev = data->iface->if_dev->dev;
+	const struct device *dev = net_if_get_device(data->iface);
 	volatile union nxp_enet_qos_rx_desc *desc_arr = data->rx.descriptors;
 	uint32_t desc_idx = rx_data->next_desc_idx;
 	volatile union nxp_enet_qos_rx_desc *desc = &desc_arr[desc_idx];
@@ -505,17 +513,21 @@ static inline void enet_qos_mtl_config_init(enet_qos_t *base)
 		;
 	}
 
+#if defined(ENET_MTL_QUEUE_MTL_TXQX_OP_MODE_TQS) && defined(ENET_MTL_QUEUE_MTL_TXQX_OP_MODE_TXQEN)
 	/* Enable only Transmit Queue 0 (optimization/configuration pending) with maximum size */
 	base->MTL_QUEUE[0].MTL_TXQX_OP_MODE =
 		/* Sets the size */
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_TXQX_OP_MODE, TQS, 0b111) |
 		/* Sets it to on */
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_TXQX_OP_MODE, TXQEN, 0b10);
+#endif
 
 	/* Enable only Receive Queue 0 (optimization/configuration pending) with maximum size */
 	base->MTL_QUEUE[0].MTL_RXQX_OP_MODE |=
+#ifdef ENET_MTL_QUEUE_MTL_RXQX_OP_MODE_RQS
 		/* Sets the size */
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_RXQX_OP_MODE, RQS, 0b111) |
+#endif
 		/* Keep small packets */
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_RXQX_OP_MODE, FUP, 0b1);
 }
@@ -540,24 +552,28 @@ static inline void enet_qos_mac_config_init(enet_qos_t *base, struct nxp_enet_qo
 		base->MAC_PACKET_FILTER |= ENET_MAC_PACKET_FILTER_PM_MASK;
 	}
 
+#ifdef ENET_MAC_ONEUS_TIC_COUNTER_TIC_1US_CNTR
 	/* Set the reference for 1 microsecond of ENET QOS CSR clock cycles */
 	base->MAC_ONEUS_TIC_COUNTER =
 		ENET_QOS_REG_PREP(MAC_ONEUS_TIC_COUNTER, TIC_1US_CNTR,
 					(clk_rate / USEC_PER_SEC) - 1);
+#endif
 
 	base->MAC_CONFIGURATION |=
 		/* For 10/100 Mbps operation */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, PS, 0b1) |
-		/* Full duplex mode */
+		/* Full duplex mode, adjust duplex in phy callback if needed */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1) |
 		/* 100 Mbps mode, adjust link speed in phy callback if needed */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1) |
 		/* Don't talk unless no one else is talking */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, ECRSFD, 0b1);
 
+#ifdef ENET_MAC_RXQ_CTRL_RXQ0EN
 	/* Enable the MAC RX channel 0 */
 	base->MAC_RXQ_CTRL[0] |=
 		ENET_QOS_REG_PREP(MAC_RXQ_CTRL, RXQ0EN, 0b1);
+#endif
 }
 
 static inline void enet_qos_start(enet_qos_t *base)

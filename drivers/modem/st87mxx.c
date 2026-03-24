@@ -1873,7 +1873,7 @@ int st87mxx_getrssi(st87mxx_get_rssi_callback_t *get_rssi_callback_func)
 
 	/* #STENG URC received */
 	if (app_srv_data.rssi_data.get_rssi_callback_func != NULL) {
-		app_srv_data.rssi_data.get_rssi_callback_func((const char * const)mdata.mdm_rssi);
+		app_srv_data.rssi_data.get_rssi_callback_func((const char * const)&mdata.mdm_rssi);
 	}
 
 end:

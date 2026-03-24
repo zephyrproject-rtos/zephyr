@@ -13,6 +13,10 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
+	chosen {
+		zephyr,crc = &crc;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -47,32 +51,9 @@
 			};
 		};
 
-		exti2: interrupt-controller@46230000 {
-			compatible = "st,stm32-exti";
-			interrupt-controller;
-			#interrupt-cells = <1>;
-			#address-cells = <0>;
-			reg = <0x46230000 DT_SIZE_K(1)>;
-			num-lines = <77>;
-			interrupts = <17 0>, <18 0>, <19 0>, <20 0>,
-				     <21 0>, <22 0>, <23 0>, <24 0>,
-				     <25 0>, <26 0>, <27 0>, <28 0>,
-				     <29 0>, <30 0>, <31 0>, <32 0>;
-			interrupt-names = "line0", "line1", "line2", "line3",
-					  "line4", "line5", "line6", "line7",
-					  "line8", "line9", "line10", "line11",
-					  "line12", "line13", "line14", "line15";
-			line-ranges = <0 1>, <1 1>, <2 1>, <3 1>,
-				      <4 1>, <5 1>, <6 1>, <7 1>,
-				      <8 1>, <9 1>, <10 1>, <11 1>,
-				      <12 1>, <13 1>, <14 1>, <15 1>;
-		};
-
 		mailbox: ipcc1@40490000 {
 			compatible = "st,stm32-ipcc-mailbox";
 			reg = <0x40490000 0x400>;
-			interrupts = <171 0>, <172 0>;
-			interrupt-names = "rxo", "txf";
 			status = "disabled";
 		};
 
@@ -87,7 +68,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x44240000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpiob: gpio@44250000 {
@@ -95,7 +75,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x44250000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpioc: gpio@44260000 {
@@ -103,7 +82,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x44260000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpiod: gpio@44270000 {
@@ -111,7 +89,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x44270000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpioe: gpio@44280000 {
@@ -119,7 +96,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x44280000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpiof: gpio@44290000 {
@@ -127,7 +103,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x44290000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpiog: gpio@442a0000 {
@@ -135,7 +110,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x442a0000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpioh: gpio@442b0000 {
@@ -143,7 +117,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x442b0000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpioi: gpio@442c0000 {
@@ -151,7 +124,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x442c0000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpioj: gpio@442d0000 {
@@ -159,7 +131,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x442d0000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpiok: gpio@442e0000 {
@@ -167,7 +138,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x442e0000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 
 			gpioz: gpio@46200000 {
@@ -175,7 +145,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x46200000 DT_SIZE_K(1)>;
-				status = "disabled";
 			};
 		};
 
@@ -184,8 +153,6 @@
 			reg = <0x402d0000 0x400>, <0x40310000 0xd50>;
 			reg-names = "m_can", "message_ram";
 			clocks = <&rcc STM32_CLOCK(FDCAN, STM32_CLK)>;
-			interrupts = <91 0>, <94 0>, <90 0>;
-			interrupt-names = "int0", "int1", "calib";
 			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
 			status = "disabled";
 		};
@@ -195,20 +162,7 @@
 			reg = <0x402e0000 0x400>, <0x40310000 0x1aa0>;
 			reg-names = "m_can", "message_ram";
 			clocks = <&rcc STM32_CLOCK(FDCAN, STM32_CLK)>;
-			interrupts = <92 0>, <95 0>;
-			interrupt-names = "int0", "int1";
 			bosch,mram-cfg = <0xd50 28 8 3 3 0 3 3>;
-			status = "disabled";
-		};
-
-		fdcan3: can@402f0000 {
-			compatible = "st,stm32h7-fdcan";
-			reg = <0x402f0000 0x400>, <0x40310000 0x2800>;
-			reg-names = "m_can", "message_ram";
-			clocks = <&rcc STM32_CLOCK(FDCAN, STM32_CLK)>;
-			interrupts = <93 0>, <96 0>;
-			interrupt-names = "int0", "int1";
-			bosch,mram-cfg = <0x1aa0 28 8 3 3 0 3 3>;
 			status = "disabled";
 		};
 
@@ -218,7 +172,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(SPI1, STM32_CLK)>;
-			interrupts = <112 0>;
 			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
@@ -231,7 +184,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(SPI2, STM32_CLK)>;
-			interrupts = <113 0>;
 			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
@@ -244,7 +196,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(SPI3, STM32_CLK)>;
-			interrupts = <125 0>;
 			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
@@ -257,7 +208,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(SPI4, STM32_CLK)>;
-			interrupts = <152 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
 			fifo-max-transfer-size = <65535>;
@@ -270,33 +220,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(SPI5, STM32_CLK)>;
-			interrupts = <153 0>;
-			st,spi-data-width = "full-4-to-16-bit";
-			fifo-size = <8>;
-			fifo-max-transfer-size = <65535>;
-			status = "disabled";
-		};
-
-		spi6: spi@40350000 {
-			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
-			reg = <0x40350000 DT_SIZE_K(1)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(SPI6, STM32_CLK)>;
-			interrupts = <154 0>;
-			st,spi-data-width = "full-4-to-16-bit";
-			fifo-size = <8>;
-			fifo-max-transfer-size = <65535>;
-			status = "disabled";
-		};
-
-		spi7: spi@40360000 {
-			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
-			reg = <0x40360000 DT_SIZE_K(1)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(SPI7, STM32_CLK)>;
-			interrupts = <155 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
 			fifo-max-transfer-size = <65535>;
@@ -308,7 +231,6 @@
 			reg = <0x40330000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(USART1, STM32_CLK)>;
 			resets = <&rctl STM32_RESET(USART1, STM32_RST)>;
-			interrupts = <114 0>;
 			status = "disabled";
 		};
 
@@ -317,7 +239,6 @@
 			reg = <0x400e0000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(USART2, STM32_CLK)>;
 			resets = <&rctl STM32_RESET(USART2, STM32_RST)>;
-			interrupts = <115 0>;
 			status = "disabled";
 		};
 
@@ -326,7 +247,6 @@
 			reg = <0x400f0000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(USART3, STM32_CLK)>;
 			resets = <&rctl STM32_RESET(USART3, STM32_RST)>;
-			interrupts = <116 0>;
 			status = "disabled";
 		};
 
@@ -335,7 +255,6 @@
 			reg = <0x40100000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(UART4, STM32_CLK)>;
 			resets = <&rctl STM32_RESET(UART4, STM32_RST)>;
-			interrupts = <126 0>;
 			status = "disabled";
 		};
 
@@ -344,7 +263,6 @@
 			reg = <0x40110000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(UART5, STM32_CLK)>;
 			resets = <&rctl STM32_RESET(UART5, STM32_RST)>;
-			interrupts = <127 0>;
 			status = "disabled";
 		};
 
@@ -353,7 +271,6 @@
 			reg = <0x40220000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(USART6, STM32_CLK)>;
 			resets = <&rctl STM32_RESET(USART6, STM32_RST)>;
-			interrupts = <136 0>;
 			status = "disabled";
 		};
 
@@ -362,132 +279,27 @@
 			reg = <0x40370000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(UART7, STM32_CLK)>;
 			resets = <&rctl STM32_RESET(UART7, STM32_RST)>;
-			interrupts = <148 0>;
 			status = "disabled";
 		};
 
-		uart8: serial@40380000 {
-			compatible = "st,stm32-uart";
-			reg = <0x40380000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK(UART8, STM32_CLK)>;
-			resets = <&rctl STM32_RESET(UART8, STM32_RST)>;
-			interrupts = <149 0>;
-			status = "disabled";
-		};
-
-		uart9: serial@402c0000 {
-			compatible = "st,stm32-uart";
-			reg = <0x402c0000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK(UART9, STM32_CLK)>;
-			resets = <&rctl STM32_RESET(UART9, STM32_RST)>;
-			interrupts = <150 0>;
-			status = "disabled";
-		};
-
-		i2c1: i2c@40120000 {
-			compatible = "st,stm32-i2c-v2";
-			reg = <0x40120000 DT_SIZE_K(1)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C1, STM32_CLK)>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <108 0>;
-			interrupt-names = "combined";
-			status = "disabled";
-		};
-
-		i2c2: i2c@40130000 {
-			compatible = "st,stm32-i2c-v2";
-			reg = <0x40130000 DT_SIZE_K(1)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C2, STM32_CLK)>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <110 0>;
-			interrupt-names = "combined";
-			status = "disabled";
-		};
-
-		i2c3: i2c@40140000 {
-			compatible = "st,stm32-i2c-v2";
-			reg = <0x40140000 DT_SIZE_K(1)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C3, STM32_CLK)>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <137 0>;
-			interrupt-names = "combined";
-			status = "disabled";
-		};
-
-		i2c4: i2c@40150000 {
-			compatible = "st,stm32-i2c-v2";
-			reg = <0x40150000 DT_SIZE_K(1)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C4, STM32_CLK)>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <168 0>;
-			interrupt-names = "combined";
-			status = "disabled";
-		};
-
-		i2c5: i2c@40160000 {
-			compatible = "st,stm32-i2c-v2";
-			reg = <0x40160000 DT_SIZE_K(1)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C5, STM32_CLK)>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <181 0>;
-			interrupt-names = "combined";
-			status = "disabled";
-		};
-
-		i2c6: i2c@40170000 {
-			compatible = "st,stm32-i2c-v2";
-			reg = <0x40170000 DT_SIZE_K(1)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C6, STM32_CLK)>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <208 0>;
-			interrupt-names = "combined";
-			status = "disabled";
-		};
-
-		i2c7: i2c@40180000 {
-			compatible = "st,stm32-i2c-v2";
-			reg = <0x40180000 DT_SIZE_K(1)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C7, STM32_CLK)>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <210 0>;
-			interrupt-names = "combined";
-			status = "disabled";
-		};
-
-		i2c8: i2c@46040000 {
-			compatible = "st,stm32-i2c-v2";
-			reg = <0x46040000 DT_SIZE_K(1)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C8, STM32_CLK)>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <212 0>;
-			interrupt-names = "combined";
-			status = "disabled";
-		};
-
-		i3c4: i3c@46080000 {
+		i3c1: i3c@40190000 {
 			compatible = "st,stm32-i3c";
-			reg = <0x46080000 DT_SIZE_K(1)>;
+			reg = <0x40190000 DT_SIZE_K(1)>;
 			#address-cells = <3>;
 			#size-cells = <0>;
-			resets = <&rctl STM32_RESET(I3C4, STM32_RST)>;
-			clocks = <&rcc STM32_CLOCK(I3C4, STM32_CLK)>;
-			interrupts = <213 0>;
+			resets = <&rctl STM32_RESET(I3C1, STM32_RST)>;
+			clocks = <&rcc STM32_CLOCK(I3C1, STM32_CLK)>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		i3c2: i3c@401a0000 {
+			compatible = "st,stm32-i3c";
+			reg = <0x401a0000 DT_SIZE_K(1)>;
+			#address-cells = <3>;
+			#size-cells = <0>;
+			resets = <&rctl STM32_RESET(I3C2, STM32_RST)>;
+			clocks = <&rcc STM32_CLOCK(I3C2, STM32_CLK)>;
 			interrupt-names = "combined";
 			status = "disabled";
 		};
@@ -504,7 +316,13 @@
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x44050000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(WWDG1, STM32_CLK)>;
-			interrupts = <8 0>;
+			status = "disabled";
+		};
+
+		crc: crc@504c0000 {
+			compatible = "st,stm32-crc";
+			reg = <0x504c0000 0x400>;
+			clocks = <&rcc STM32_CLOCK(CRC, STM32_CLK)>;
 			status = "disabled";
 		};
 	};

@@ -10,6 +10,7 @@
 LOG_MODULE_REGISTER(net_sntp, CONFIG_SNTP_LOG_LEVEL);
 
 #include <zephyr/net/sntp.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/sys/clock.h>
 #include "sntp_pkt.h"
 #include <limits.h>
@@ -46,16 +47,16 @@ static void sntp_pkt_dump(struct sntp_pkt *pkt)
 	NET_DBG("tx_tm_f:         %x", net_ntohl(pkt->tx_tm_f));
 }
 
+static int64_t q32_32_s_to_ll_us(uint32_t t_s, uint32_t t_f)
+{
+	return (uint64_t)t_s * USEC_PER_SEC + (((uint64_t)t_f * (uint64_t)USEC_PER_SEC) >> 32);
+}
+
 #if defined(CONFIG_SNTP_UNCERTAINTY)
 static int64_t q16_16_s_to_ll_us(uint32_t t)
 {
 	return (int64_t)(t >> 16) * (int64_t)USEC_PER_SEC +
 	       (((int64_t)(t & 0xFFFF) * (int64_t)USEC_PER_SEC) >> 16);
-}
-
-static int64_t q32_32_s_to_ll_us(uint32_t t_s, uint32_t t_f)
-{
-	return (uint64_t)t_s * USEC_PER_SEC + (((uint64_t)t_f * (uint64_t)USEC_PER_SEC) >> 32);
 }
 #endif
 
@@ -63,7 +64,14 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 			      struct sntp_time *res)
 {
 	struct sntp_pkt *pkt = (struct sntp_pkt *)data;
+	struct timespec client_rx_ts;
+	int64_t client_tx_us;
+	int64_t client_rx_us;
+	int64_t server_rx_us;
+	int64_t server_tx_us;
+	int32_t rtt_us;
 	uint32_t ts;
+	int ret;
 
 	sntp_pkt_dump(pkt);
 
@@ -95,30 +103,31 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_SNTP_UNCERTAINTY)
-	struct timespec dest_ts;
-	int ret;
-
-	ret = sys_clock_gettime(SYS_CLOCK_REALTIME, &dest_ts);
+	/* Compute total round trip time */
+	ret = sys_clock_gettime(SYS_CLOCK_REALTIME, &client_rx_ts);
 	if (ret < 0) {
 		return ret;
 	}
+	client_rx_us = (USEC_PER_SEC * (int64_t)(client_rx_ts.tv_sec + OFFSET_1970_JAN_1)) +
+		       (client_rx_ts.tv_nsec / NSEC_PER_USEC);
+	client_tx_us = q32_32_s_to_ll_us(expected_orig_ts->seconds, expected_orig_ts->fraction);
+	rtt_us = client_rx_us - client_tx_us;
 
-	int64_t dest_ts_us = (USEC_PER_SEC * (int64_t)(dest_ts.tv_sec + OFFSET_1970_JAN_1)) +
-			     (dest_ts.tv_nsec / NSEC_PER_USEC);
-	int64_t orig_ts_us =
-		q32_32_s_to_ll_us(expected_orig_ts->seconds, expected_orig_ts->fraction);
+	server_rx_us = q32_32_s_to_ll_us(net_ntohl(pkt->rx_tm_s), net_ntohl(pkt->rx_tm_f));
+	server_tx_us = q32_32_s_to_ll_us(net_ntohl(pkt->tx_tm_s), net_ntohl(pkt->tx_tm_f));
 
-	int64_t rx_ts_us = q32_32_s_to_ll_us(net_ntohl(pkt->rx_tm_s), net_ntohl(pkt->rx_tm_f));
-	int64_t tx_ts_us = q32_32_s_to_ll_us(net_ntohl(pkt->tx_tm_s), net_ntohl(pkt->tx_tm_f));
+	/* Compute single sided path delay (assumes symmetrical packet delay) */
+	res->rsp_delay_us = (rtt_us - (server_tx_us - server_rx_us)) / 2;
 
-	if (rx_ts_us > tx_ts_us || orig_ts_us > dest_ts_us) {
+#if defined(CONFIG_SNTP_UNCERTAINTY)
+
+	if (server_rx_us > server_tx_us || client_tx_us > client_rx_us) {
 		NET_DBG("Invalid timestamps from SNTP server");
 		return -EINVAL;
 	}
 
-	int64_t d_us = (dest_ts_us - orig_ts_us) - (tx_ts_us - rx_ts_us);
-	int64_t clk_offset_us = ((rx_ts_us - orig_ts_us) + (tx_ts_us - dest_ts_us)) / 2;
+	int64_t d_us = (client_rx_us - client_tx_us) - (server_tx_us - server_rx_us);
+	int64_t clk_offset_us = ((server_rx_us - client_tx_us) + (server_tx_us - client_rx_us)) / 2;
 	int64_t root_dispersion_us = q16_16_s_to_ll_us(net_ntohl(pkt->root_dispersion));
 	int64_t root_delay_us = q16_16_s_to_ll_us(net_ntohl(pkt->root_delay));
 	uint32_t precision_us;
@@ -132,7 +141,7 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 		return -EINVAL;
 	}
 
-	res->uptime_us = dest_ts_us;
+	res->uptime_us = client_rx_us;
 	res->seconds = (res->uptime_us + clk_offset_us) / USEC_PER_SEC;
 	res->fraction = (res->uptime_us + clk_offset_us) % USEC_PER_SEC;
 	res->uncertainty_us = (d_us + root_delay_us + precision_us) / 2 + root_dispersion_us;
@@ -162,7 +171,7 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 	return 0;
 }
 
-int sntp_init(struct sntp_ctx *ctx, struct net_sockaddr *addr, net_socklen_t addr_len)
+int sntp_init(struct sntp_ctx *ctx, const struct net_sockaddr *addr, net_socklen_t addr_len)
 {
 	int ret;
 
@@ -274,7 +283,7 @@ void sntp_close(struct sntp_ctx *ctx)
 
 #ifdef CONFIG_NET_SOCKETS_SERVICE
 
-int sntp_init_async(struct sntp_ctx *ctx, struct net_sockaddr *addr, net_socklen_t addr_len,
+int sntp_init_async(struct sntp_ctx *ctx, const struct net_sockaddr *addr, net_socklen_t addr_len,
 		    const struct net_socket_service_desc *service)
 {
 	int ret;

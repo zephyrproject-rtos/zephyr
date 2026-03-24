@@ -173,15 +173,15 @@ rst_epilog = f"""
    :ltrim:
 .. _Zephyr SDK bundle: https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v{sdk_version}
 .. |sdk-url-linux| replace::
-   `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_linux-x86_64.tar.xz`
+   `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_linux-x86_64_gnu.tar.xz`
 .. |sdk-url-linux-sha| replace::
    `{SDK_URL_BASE}/v{sdk_version}/sha256.sum`
 .. |sdk-url-macos| replace::
-   `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_macos-x86_64.tar.xz`
+   `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_macos-aarch64_gnu.tar.xz`
 .. |sdk-url-macos-sha| replace::
    `{SDK_URL_BASE}/v{sdk_version}/sha256.sum`
 .. |sdk-url-windows| replace::
-   `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_windows-x86_64.7z`
+   `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_windows-x86_64_gnu.7z`
 """
 
 # -- Options for HTML output ----------------------------------------------

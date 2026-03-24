@@ -23,6 +23,7 @@
 
 / {
 	chosen {
+		zephyr,crc = &crc;
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
 	};
@@ -121,6 +122,7 @@
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-deep-powerdown;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -138,6 +140,7 @@
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-deep-powerdown;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -850,6 +853,14 @@
 			interrupts = <64 0>;
 			st,exti-line = <22>;
 			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
+			status = "disabled";
+		};
+
+		crc: crc@40023000 {
+			compatible = "st,stm32-crc";
+			reg = <0x40023000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 12)>;
+			resets = <&rctl STM32_RESET(AHB1, 12)>;
 			status = "disabled";
 		};
 	};

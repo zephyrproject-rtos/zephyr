@@ -10,10 +10,8 @@ compatible: "adi,tmcm3216"
 include: [base.yaml, uart-device.yaml]
 
 properties:
-  module-address:
-    type: int
+  reg:
     required: true
-    description: RS485 module address (1-255)
 
   de-gpios:
     type: phandle-array
@@ -26,23 +24,28 @@ examples:
     &usart2 {
         /* Bus options here, not shown */
 
-        tmcm3216: tmcm3216 {
-            compatible = "adi,tmcm3216";
-            status = "okay";
-            module-address = <1>;
-            de-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+        adi_tmcm3216 {
+            #address-cells = <1>;
+            #size-cells = <0>;
 
-            stepper_driver_0: stepper-driver {
-                compatible = "adi,tmcm3216-stepper-driver";
+            tmcm3216: tmcm3216@1 {
+                compatible = "adi,tmcm3216";
                 status = "okay";
-                idx = <0>;
-                micro-step-res = <16>;
-            };
+                reg = <0x1>;
+                de-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
 
-            stepper_ctrl_0: stepper-ctrl {
-                compatible = "adi,tmcm3216-stepper-ctrl";
-                status = "okay";
-                idx = <0>;
+                stepper_driver_0: stepper-driver {
+                    compatible = "adi,tmcm3216-stepper-driver";
+                    status = "okay";
+                    idx = <0>;
+                    micro-step-res = <16>;
+                };
+
+                stepper_ctrl_0: stepper-ctrl {
+                    compatible = "adi,tmcm3216-stepper-ctrl";
+                    status = "okay";
+                    idx = <0>;
+                };
             };
         };
     };

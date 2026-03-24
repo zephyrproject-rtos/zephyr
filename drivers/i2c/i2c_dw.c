@@ -1252,8 +1252,8 @@ static int i2c_dw_initialize(const struct device *dev)
 	const struct i2c_dw_rom_config *const rom = dev->config;
 	struct i2c_dw_dev_config *const dw = dev->data;
 	union ic_sdahold_register sda_hold;
-	uint32_t reg_base = get_regs(dev);
 	union ic_con_register ic_con;
+	uint32_t reg_base;
 	int ret = 0;
 #ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
 	uint32_t sda_timeout = rom->sda_timeout_value * CONFIG_I2C_DW_CLOCK_SPEED * 1000;
@@ -1317,6 +1317,7 @@ static int i2c_dw_initialize(const struct device *dev)
 	k_sem_init(&dw->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 	k_sem_init(&dw->bus_sem, 1, 1);
 
+	reg_base = get_regs(dev);
 	clear_bit_enable_en(reg_base);
 
 	/* Set up SDAHOLD timing register */

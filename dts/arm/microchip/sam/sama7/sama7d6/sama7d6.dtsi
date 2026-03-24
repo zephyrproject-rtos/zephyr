@@ -83,6 +83,13 @@
 			reg = <0xe001d900 0x8>;
 		};
 
+		sha: sha@e1604000 {
+			compatible = "microchip,sha-g1-crypto";
+			reg = <0xe1604000 0x100>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 78>;
+			status = "disabled";
+		};
+
 		pit64b0: timer@e1800000 {
 			compatible = "microchip,sam-pit64b", "microchip,sam9x60-pit64b";
 			reg = <0xe1800000 0x4000>;

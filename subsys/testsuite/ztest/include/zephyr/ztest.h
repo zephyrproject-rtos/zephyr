@@ -44,6 +44,8 @@ struct arch_esf;
 #include <zephyr/ztest_test.h>
 #include <zephyr/tc_util.h>
 
+#include <zephyr/benchmark.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -13,7 +13,6 @@
 #include <errno.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 
 #include <zephyr/bluetooth/hci.h>
@@ -445,6 +444,17 @@ static void avdtp_tx_frags(struct bt_avdtp *session, struct net_buf *buf,
 
 		if (frag == NULL) {
 			LOG_DBG("No Buff available, wait tx cb to trigger this work again");
+			/* Do NOT call `avdtp_tx_raise` here.
+			 * When there is no idle net_buf available while AVDTP TX is still pending,
+			 * the worker cannot proceed. If `avdtp_tx_raise` is invoked here, it will
+			 * immediately reschedule the worker again, causing it to spin and occupy
+			 * the CPU continuously because TX is pending but no idle net_buf exists.
+			 *
+			 * `avdtp_tx_raise` should only be triggered when at least one idle net_buf
+			 * is available. After the previously transmitted avdtp net_buf is released,
+			 * `avdtp_tx_cb` will run, and that callback will safely trigger
+			 * `avdtp_tx_raise` again.
+			 */
 			return;
 		}
 
@@ -515,6 +525,8 @@ static void avdtp_tx_frags(struct bt_avdtp *session, struct net_buf *buf,
 		avdtp_tx_remove(buf);
 		net_buf_unref(buf);
 	}
+
+	avdtp_tx_raise();
 }
 
 static void avdtp_tx_processor(struct k_work *item)
@@ -547,8 +559,6 @@ static void avdtp_tx_processor(struct k_work *item)
 	}
 
 	avdtp_tx_frags(session, buf, user_data);
-
-	avdtp_tx_raise();
 }
 
 static void avdtp_buf_init_user_data(struct bt_avdtp *session, struct net_buf *buf)
@@ -2654,7 +2664,7 @@ int bt_avdtp_delay_report(struct bt_avdtp *session, struct bt_avdtp_delay_report
 {
 	struct net_buf *buf;
 
-	CHECKIF(param == NULL || session == NULL || param->sep == NULL) {
+	if (param == NULL || session == NULL || param->sep == NULL) {
 		LOG_DBG("Error: parameters not valid");
 		return -EINVAL;
 	}

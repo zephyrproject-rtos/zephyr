@@ -38,13 +38,13 @@ struct partition_entries_t {
 };
 
 struct partition_entries_t partition_entries[] = {
-	{ FIXED_PARTITION_ID(slot0_partition), 0 },
-	{ FIXED_PARTITION_ID(slot1_partition), 0 },
-#if FIXED_PARTITION_EXISTS(slot2_partition)
-	{ FIXED_PARTITION_ID(slot2_partition), 0 },
+	{ PARTITION_ID(slot0_partition), 0 },
+	{ PARTITION_ID(slot1_partition), 0 },
+#if PARTITION_EXISTS(slot2_partition)
+	{ PARTITION_ID(slot2_partition), 0 },
 #endif
-#if FIXED_PARTITION_EXISTS(slot3_partition)
-	{ FIXED_PARTITION_ID(slot3_partition), 0 },
+#if PARTITION_EXISTS(slot3_partition)
+	{ PARTITION_ID(slot3_partition), 0 },
 #endif
 };
 

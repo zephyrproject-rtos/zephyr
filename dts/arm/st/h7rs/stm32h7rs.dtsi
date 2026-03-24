@@ -28,6 +28,7 @@
 
 / {
 	chosen {
+		zephyr,crc = &crc;
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
 	};
@@ -101,6 +102,7 @@
 			status = "disabled";
 		};
 
+		/* controller reset default is on */
 		clk_hsi: clk-hsi {
 			#clock-cells = <0>;
 			compatible = "st,stm32h7-hsi-clock";
@@ -169,11 +171,13 @@
 	mcos {
 		mco1: mco1 {
 			compatible = "st,stm32-clock-mco";
+			clock-names = "clksel";
 			status = "disabled";
 		};
 
 		mco2: mco2 {
 			compatible = "st,stm32-clock-mco";
+			clock-names = "clksel";
 			status = "disabled";
 		};
 	};
@@ -945,6 +949,7 @@
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-deep-powerdown;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -962,6 +967,7 @@
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-deep-powerdown;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -1025,6 +1031,21 @@
 			status = "disabled";
 		};
 
+		hpdma1: dma@52000000 {
+			compatible = "st,stm32u5-dma";
+			#dma-cells = <3>;
+			reg = <0x52000000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 0)>;
+			interrupts = <64 0>, <65 0>, <66 0>, <67 0>,
+				     <68 0>, <69 0>, <70 0>, <71 0>,
+				     <141 0>, <142 0>, <143 0>, <144 0>,
+				     <145 0>, <146 0>, <147 0>, <148 0>;
+			dma-channels = <16>;
+			dma-requests = <20>;
+			dma-offset = <0>;
+			status = "disabled";
+		};
+
 		sai1_a: sai1@42005804 {
 			compatible = "st,stm32-sai";
 			#address-cells = <1>;
@@ -1079,6 +1100,14 @@
 					bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
 				};
 			};
+		};
+
+		crc: crc@58024c00 {
+			compatible = "st,stm32-crc";
+			reg = <0x58024c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB4, 19)>;
+			resets = <&rctl STM32_RESET(AHB4, 19)>;
+			status = "disabled";
 		};
 	};
 

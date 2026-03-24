@@ -14,6 +14,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/http/service.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/sys/base64.h>
 #include <zephyr/net/websocket.h>
 #include <psa/crypto.h>
@@ -45,6 +46,7 @@ int handle_http1_to_websocket_upgrade(struct http_client_ctx *client)
 	size_t key_len;
 	size_t olen;
 	int ret;
+	psa_status_t psa_status;
 
 	key_len = MIN(sizeof(key_accept) - 1, sizeof(client->ws_sec_key));
 	strncpy(key_accept, client->ws_sec_key, key_len);
@@ -53,8 +55,13 @@ int handle_http1_to_websocket_upgrade(struct http_client_ctx *client)
 	olen = MIN(sizeof(key_accept) - 1 - key_len, sizeof(WS_MAGIC) - 1);
 	memcpy(key_accept + key_len, WS_MAGIC, olen);
 
-	psa_hash_compute(PSA_ALG_SHA_1, key_accept, olen + key_len,
+	psa_status = psa_hash_compute(PSA_ALG_SHA_1, key_accept, olen + key_len,
 			 accept, sizeof(accept), &accept_len);
+	if (psa_status != PSA_SUCCESS) {
+		NET_DBG("Failed to compute hash for websocket key (%d)", psa_status);
+		ret = -EIO;
+		goto error;
+	}
 
 	ret = base64_encode(tmp, sizeof(tmp) - 1, &olen, accept, sizeof(accept));
 	if (ret) {

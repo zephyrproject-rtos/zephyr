@@ -45,8 +45,8 @@ Prepare a TF card with MBR and FAT32. In the root directory of the TF card:
 1. Download and place these firmware files:
 
    * `bcm2711-rpi-4-b.dtb <https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/bcm2711-rpi-4-b.dtb>`_
-   * `bootcode.bin <https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/bootcode.bin>`_
    * `start4.elf <https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/start4.elf>`_
+   * `fixup4.dat <https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/fixup4.dat>`_
 
 2. Copy ``build/zephyr/zephyr.bin``
 3. Create a ``config.txt``:

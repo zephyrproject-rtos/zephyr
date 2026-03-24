@@ -7,12 +7,11 @@ common:
 tests:
   drivers.watchdog:
     filter: >
-      not (CONFIG_WDT_SAM or CONFIG_WDT_SAM4L
+      dt_alias_exists("watchdog0") and not (CONFIG_WDT_SAM or CONFIG_WDT_SAM4L
        or dt_compat_enabled("st,stm32-window-watchdog")
        or dt_compat_enabled("st,stm32-watchdog") or CONFIG_SOC_FAMILY_LPC or
        CONFIG_SOC_SERIES_IMXRT6XX or CONFIG_SOC_SERIES_IMXRT5XX or
        CONFIG_SOC_FAMILY_GD_GD32 or SOC_SERIES_GD32VF103 or CONFIG_SOC_MAX32655)
-       and dt_nodelabel_enabled("watchdog0")
     platform_exclude:
       - mec15xxevb_assy6853
       - s32z2xxdc2/s32z270/rtu0
@@ -107,6 +106,7 @@ tests:
       - stm32h7s78_dk
       - nucleo_u385rg_q
       - nucleo_wba55cg
+      - stm32n6570_dk/stm32n657xx/sb
     integration_platforms:
       - nucleo_f091rc
   drivers.watchdog.mec15xxevb_assy6853:
@@ -184,6 +184,7 @@ tests:
       - max78002evkit/max78002/m4
   drivers.watchdog.bflb:
     platform_allow:
+      - 3r_tnh_sensor_lite
       - ai_m62_12f_kit
       - ai_wb2_12f_kit
       - dt_xt_zb1_devkit

@@ -27,8 +27,19 @@ properties:
 
 child-binding:
   description: TCA954x I2C switch channel node
-  include: [i2c-controller.yaml]
+  bus: i2c
   on-bus: i2c
+  properties:
+    "#address-cells":
+      type: int
+      required: true
+    "#size-cells":
+      type: int
+      required: true
+    reg:
+      type: array
+      required: true
+
 
 examples:
   - |
@@ -42,7 +53,6 @@ examples:
         reset-gpios = <&gpio5 3 GPIO_ACTIVE_LOW>;
 
         mux_i2c@0 {
-            compatible = "ti,tca9546a-channel";
             reg = <0>;
             #address-cells = <1>;
             #size-cells = <0>;
@@ -54,7 +64,6 @@ examples:
         };
 
         mux_i2c@1 {
-            compatible = "ti,tca9546a-channel";
             reg = <1>;
             #address-cells = <1>;
             #size-cells = <0>;

@@ -11,6 +11,8 @@ supported:
   - pinctrl
   - gpio
   - uart
+  - counter
+  - bluetooth
 testing:
   ignore_tags:
     - pm

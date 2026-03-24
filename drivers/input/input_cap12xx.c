@@ -198,7 +198,7 @@ static int cap12xx_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C controller device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 
@@ -249,8 +249,7 @@ static int cap12xx_init(const struct device *dev)
 	} else {
 		LOG_DBG("cap12xx driver in interrupt mode");
 		if (!gpio_is_ready_dt(config->int_gpio)) {
-			LOG_ERR("Interrupt GPIO controller device not ready (missing device tree "
-				"node?)");
+			LOG_ERR_DEVICE_NOT_READY(config->int_gpio->port);
 			return -ENODEV;
 		}
 

@@ -1038,6 +1038,8 @@ static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_pa
 			nxp_wlan_network.channel = 0;
 		} else {
 			nxp_wlan_network.channel = params->channel;
+			nxp_wlan_network.chan_list[0] = params->channel;
+			nxp_wlan_network.chan_list_len = 1;
 		}
 
 		if (params->mfp == WIFI_MFP_REQUIRED) {
@@ -1096,6 +1098,13 @@ static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_pa
 	ret = wlan_add_network(&nxp_wlan_network);
 	if (ret != WM_SUCCESS) {
 		status = NXP_WIFI_RET_FAIL;
+	}
+
+	if (params->band != WIFI_FREQ_BAND_UNKNOWN) {
+		ret = wlan_set_network_chanlist(nxp_wlan_network.name, NULL, 0, params->band);
+		if (ret != WM_SUCCESS) {
+			status = NXP_WIFI_RET_FAIL;
+		}
 	}
 
 	ret = wlan_connect(nxp_wlan_network.name);
@@ -1533,7 +1542,7 @@ static void nxp_wifi_auto_connect(void)
 	params.psk_length = psk_len;
 
 	LOG_DBG("AutoConnect SSID[%s]", ssid);
-	nxp_wifi_connect(g_mlan.netif->if_dev->dev, &params);
+	nxp_wifi_connect(net_if_get_device(g_mlan.netif), &params);
 }
 #endif
 

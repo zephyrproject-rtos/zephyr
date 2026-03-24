@@ -600,6 +600,12 @@ static int icm42x70_fetch_from_fifo(const struct device *dev)
 			return status;
 		}
 
+		/* CID 520276: Constrain packet_count to the size of the driver buffer */
+		if (packet_count * packet_size > sizeof(data->driver.fifo_data)) {
+			LOG_WRN("FIFO count (%d) exceeds buffer size, capping.", packet_count);
+			packet_count = sizeof(data->driver.fifo_data) / packet_size;
+		}
+
 		/* Read FIFO data */
 		status |= inv_imu_read_reg(&data->driver, FIFO_DATA, packet_size * packet_count,
 					   (uint8_t *)&data->driver.fifo_data);

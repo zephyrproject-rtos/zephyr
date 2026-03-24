@@ -45,12 +45,9 @@ static int flash_ifx_write(const struct device *dev, off_t offset, const void *d
 {
 	const struct ifx_flash_config *cfg = dev->config;
 	uint32_t write_offset;
-	uint32_t row_base;
 	const uint8_t *src_ptr = data;
 
 	uint32_t row_len = cfg->write_block_size;
-	/* Buffer aligned to 4-byte boundary for uint32_t access required by HAL */
-	__aligned(4) uint8_t row_buf[row_len];
 	cy_en_flashdrv_status_t status;
 
 	if (remaining_len == 0) {
@@ -61,8 +58,13 @@ static int flash_ifx_write(const struct device *dev, off_t offset, const void *d
 		return -EINVAL;
 	}
 
-	if (offset < 0 || (cfg->max_addr - cfg->base_addr) < offset) {
-		/* offset does not fit within range memory range */
+	/* Write offset and size must be aligned to write_block_size */
+	if (((offset % row_len) != 0) || ((remaining_len % row_len) != 0)) {
+		return -EINVAL;
+	}
+
+	if ((cfg->max_addr - cfg->base_addr) < offset) {
+		/* offset does not fit within flash memory range */
 		return -EINVAL;
 	}
 
@@ -72,34 +74,37 @@ static int flash_ifx_write(const struct device *dev, off_t offset, const void *d
 		return -EINVAL;
 	}
 
-	while (remaining_len > 0) {
+	/*
+	 * row_len is always a multiple of 4, so source pointer alignment is
+	 * invariant across iterations — check once before the loop.
+	 */
+	if (((uintptr_t)src_ptr & 0x3) != 0) {
+		/* Source not 4-byte aligned; stage each row through an aligned buffer */
+		uint32_t __aligned(4) row_buf[row_len / sizeof(uint32_t)];
 
-		/* Align address to row boundary */
-		row_base = write_offset & ~(row_len - 1);
+		while (remaining_len > 0) {
+			memcpy(row_buf, src_ptr, row_len);
+			status = Cy_Flash_WriteRow(write_offset, row_buf);
+			if (status != CY_FLASH_DRV_SUCCESS) {
+				return -EIO;
+			}
 
-		uint32_t row_offset = write_offset - row_base;
-
-		uint32_t chunk_len = row_len - row_offset;
-
-		if (chunk_len > remaining_len) {
-			chunk_len = remaining_len;
+			write_offset += row_len;
+			src_ptr += row_len;
+			remaining_len -= row_len;
 		}
+	} else {
+		while (remaining_len > 0) {
+			status = Cy_Flash_WriteRow(write_offset,
+						   (const uint32_t *)src_ptr);
+			if (status != CY_FLASH_DRV_SUCCESS) {
+				return -EIO;
+			}
 
-		if ((row_offset == 0) && (chunk_len == row_len)) {
-			/* Row write aligned to base addr & size */
-			status = Cy_Flash_WriteRow(row_base, (const uint32_t *)src_ptr);
-		} else {
-			/* Read existing flash row data first to preserve existing content */
-			memcpy(row_buf, (const void *)row_base, row_len);
-			/* Copy new data into the row buffer at the correct offset */
-			memcpy(row_buf + row_offset, src_ptr, chunk_len);
-
-			status = Cy_Flash_WriteRow(row_base, (const uint32_t *)row_buf);
+			write_offset += row_len;
+			src_ptr += row_len;
+			remaining_len -= row_len;
 		}
-
-		write_offset += chunk_len;
-		src_ptr += chunk_len;
-		remaining_len -= chunk_len;
 	}
 
 	return 0;

@@ -23,8 +23,10 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <soc.h>
 #include "esp_private/wifi.h"
 #include "esp_event.h"
+#include "esp_rom_sys.h"
 #include "esp_timer.h"
 #include "esp_system.h"
+#include "esp_wifi.h"
 #include "esp_wpa.h"
 #include <esp_mac.h>
 #include "wifi/wifi_event.h"
@@ -382,7 +384,7 @@ static void esp_wifi_handle_ap_connect_event(void *event_data)
 	wifi_mgmt_raise_ap_sta_connected_event(iface, &sta_info);
 
 	if (!(esp32_data.ap_connection_cnt++)) {
-		esp_wifi_internal_reg_rxcb(WIFI_IF_AP, esp32_rx);
+		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, esp32_rx);
 	}
 }
 
@@ -405,7 +407,7 @@ static void esp_wifi_handle_ap_disconnect_event(void *event_data)
 	wifi_mgmt_raise_ap_sta_disconnected_event(iface, &sta_info);
 
 	if (!(--esp32_data.ap_connection_cnt)) {
-		esp_wifi_internal_reg_rxcb(WIFI_IF_AP, NULL);
+		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
 	}
 }
 
@@ -534,6 +536,7 @@ static int esp32_wifi_connect(const struct device *dev,
 		wifi_config.sta.pmf_cfg.required = false;
 		break;
 	case WIFI_SECURITY_TYPE_PSK:
+	case WIFI_SECURITY_TYPE_PSK_SHA256:
 		memcpy(wifi_config.sta.password, params->psk, params->psk_length);
 		wifi_config.sta.password[params->psk_length] = '\0';
 		wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
@@ -541,6 +544,8 @@ static int esp32_wifi_connect(const struct device *dev,
 		data->status.security = WIFI_AUTH_WPA2_PSK;
 		break;
 	case WIFI_SECURITY_TYPE_SAE:
+	case WIFI_SECURITY_TYPE_SAE_H2E:
+	case WIFI_SECURITY_TYPE_SAE_AUTO:
 #if defined(CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE)
 		if (params->sae_password) {
 			memcpy(wifi_config.sta.password, params->sae_password,
@@ -552,7 +557,15 @@ static int esp32_wifi_connect(const struct device *dev,
 		}
 		data->status.security = WIFI_AUTH_WPA3_PSK;
 		wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA3_PSK;
-		wifi_config.sta.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
+		wifi_config.sta.pmf_cfg.capable = true;
+		wifi_config.sta.pmf_cfg.required = true;
+		if (params->security == WIFI_SECURITY_TYPE_SAE_H2E) {
+			wifi_config.sta.sae_pwe_h2e = WPA3_SAE_PWE_HASH_TO_ELEMENT;
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
+			wifi_config.sta.sae_pwe_h2e = WPA3_SAE_PWE_HUNT_AND_PECK;
+		} else {
+			wifi_config.sta.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
+		}
 		break;
 #else
 		LOG_ERR("WPA3 not supported for STA mode. Enable "
@@ -687,6 +700,33 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		data->status.security = WIFI_AUTH_WPA2_PSK;
 		wifi_config.ap.pmf_cfg.required = false;
 		break;
+	case WIFI_SECURITY_TYPE_SAE:
+	case WIFI_SECURITY_TYPE_SAE_H2E:
+	case WIFI_SECURITY_TYPE_SAE_AUTO:
+#if defined(CONFIG_ESP32_WIFI_SOFTAP_SAE_SUPPORT)
+		if (params->sae_password) {
+			strncpy((char *)wifi_config.ap.password, params->sae_password,
+				params->sae_password_length);
+		} else {
+			strncpy((char *)wifi_config.ap.password, params->psk, params->psk_length);
+		}
+		wifi_config.ap.authmode = WIFI_AUTH_WPA3_PSK;
+		data->status.security = WIFI_AUTH_WPA3_PSK;
+		wifi_config.ap.pmf_cfg.capable = true;
+		wifi_config.ap.pmf_cfg.required = true;
+		if (params->security == WIFI_SECURITY_TYPE_SAE_H2E) {
+			wifi_config.ap.sae_pwe_h2e = WPA3_SAE_PWE_HASH_TO_ELEMENT;
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
+			wifi_config.ap.sae_pwe_h2e = WPA3_SAE_PWE_HUNT_AND_PECK;
+		} else {
+			wifi_config.ap.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
+		}
+		break;
+#else
+		LOG_ERR("WPA3 not supported for AP mode. Enable "
+			"CONFIG_ESP32_WIFI_SOFTAP_SAE_SUPPORT");
+		return -EINVAL;
+#endif
 	default:
 		LOG_ERR("Authentication method not supported");
 		return -EINVAL;
@@ -707,7 +747,7 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		return -EINVAL;
 	}
 
-	err = esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
+	err = esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config);
 	if (err) {
 		LOG_ERR("Failed to set Wi-Fi configuration (%d)", err);
 		return -EINVAL;
@@ -1009,7 +1049,7 @@ static int esp32_wifi_reset_stats(const struct device *dev)
 static int esp32_wifi_dev_init(const struct device *dev)
 {
 #if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
-	adc2_init_code_calibration();
+	adc2_cal_include();
 #endif /* CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3 */
 
 	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
@@ -1045,7 +1085,7 @@ static int esp32_wifi_set_config(const struct device *dev, enum ethernet_config_
 			return -EIO;
 		}
 
-		ret = esp_wifi_set_mac(WIFI_IF_STA, config->mac_address.addr);
+		ret = esp_wifi_set_mac(ESP_IF_WIFI_STA, config->mac_address.addr);
 		if (ret != ESP_OK) {
 			LOG_ERR("Failed to set MAC address: %d", ret);
 			return -EIO;

@@ -53,7 +53,7 @@ int sys_mm_drv_map_page_safe(const struct sys_mm_drv_region *virtual_region,
 
 	/* check if memory to be mapped is within given virtual region */
 	if ((POINTER_TO_UINT(virt) >= virtual_region_start) &&
-	    (POINTER_TO_UINT(virt) + CONFIG_MM_DRV_PAGE_SIZE < virtual_region_end)) {
+	    (POINTER_TO_UINT(virt) + CONFIG_MM_DRV_PAGE_SIZE <= virtual_region_end)) {
 		return sys_mm_drv_map_page(virt, phys, flags);
 	}
 

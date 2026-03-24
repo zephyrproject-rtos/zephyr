@@ -8,6 +8,8 @@ common:
     type: one_line
     regex:
       - "clock spec request released"
+  tags:
+    - clock_control
 tests:
   sample.boards.nrf.clock_control.fll16m:
     filter: dt_nodelabel_enabled("fll16m")

@@ -7,6 +7,7 @@
 /* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <hal/gpio_ll.h>
 #include <hal/rtc_io_hal.h>
+#include <soc/gpio_sig_map.h>
 
 #include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -23,16 +24,13 @@
 #define in in.data
 #define out_w1ts out_w1ts.val
 #define out_w1tc out_w1tc.val
-#elif defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32H2)
+#elif defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                  \
+	defined(CONFIG_SOC_SERIES_ESP32H2)
 /* gpio structs in esp32c6/h2 are also different */
 #define out out.out_data_orig
 #define in in.in_data_next
 #define out_w1ts out_w1ts.val
 #define out_w1tc out_w1tc.val
-#endif
-
-#ifndef SOC_GPIO_SUPPORT_RTC_INDEPENDENT
-#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT 0
 #endif
 
 #define ESP32_INVALID_PORT_ADDR          0UL
@@ -86,7 +84,7 @@ static int esp32_pin_apply_config(uint32_t pin, uint32_t flags)
 
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 	if (rtc_gpio_is_valid_gpio(io_pin)) {
-		rtcio_hal_function_select(rtc_io_num_map[io_pin], RTCIO_FUNC_DIGITAL);
+		rtcio_hal_function_select(rtc_io_num_map[io_pin], RTCIO_LL_FUNC_DIGITAL);
 	}
 #endif
 
@@ -96,44 +94,19 @@ static int esp32_pin_apply_config(uint32_t pin, uint32_t flags)
 	}
 
 	/* Set pin function as GPIO */
-	gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[io_pin], PIN_FUNC_GPIO);
+	gpio_ll_func_sel(&GPIO, io_pin, PIN_FUNC_GPIO);
 
+	/*
+	 * Since we always configure the pin in DIGITAL mode (RTCIO_LL_FUNC_DIGITAL),
+	 * we must use the GPIO module's pull resistors, not the RTC IO pull resistors.
+	 * The RTC IO pull resistors only work when the pin is in RTC mode.
+	 */
 	if (flags & ESP32_PULL_UP_FLAG) {
-		if (!rtc_gpio_is_valid_gpio(io_pin) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
-			gpio_ll_pulldown_dis(&GPIO, io_pin);
-			gpio_ll_pullup_en(&GPIO, io_pin);
-		} else {
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-			int rtcio_num = rtc_io_num_map[io_pin];
-
-			rtcio_hal_pulldown_disable(rtc_io_num_map[io_pin]);
-
-			if (rtc_io_desc[rtcio_num].pullup) {
-				rtcio_hal_pullup_enable(rtc_io_num_map[io_pin]);
-			} else {
-				ret = -ENOTSUP;
-				goto end;
-			}
-#endif
-		}
+		gpio_ll_pulldown_dis(&GPIO, io_pin);
+		gpio_ll_pullup_en(&GPIO, io_pin);
 	} else if (flags & ESP32_PULL_DOWN_FLAG) {
-		if (!rtc_gpio_is_valid_gpio(io_pin) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
-			gpio_ll_pullup_dis(&GPIO, io_pin);
-			gpio_ll_pulldown_en(&GPIO, io_pin);
-		} else {
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-			int rtcio_num = rtc_io_num_map[io_pin];
-
-			rtcio_hal_pulldown_enable(rtc_io_num_map[io_pin]);
-
-			if (rtc_io_desc[rtcio_num].pullup) {
-				rtcio_hal_pullup_disable(rtc_io_num_map[io_pin]);
-			} else {
-				ret = -ENOTSUP;
-				goto end;
-			}
-#endif
-		}
+		gpio_ll_pullup_dis(&GPIO, io_pin);
+		gpio_ll_pulldown_en(&GPIO, io_pin);
 	}
 
 	if (flags & ESP32_DIR_OUT_FLAG) {

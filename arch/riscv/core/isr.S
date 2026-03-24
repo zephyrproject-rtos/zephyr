@@ -75,9 +75,6 @@
 
 /* imports */
 GDATA(_sw_isr_table)
-#ifdef CONFIG_RISCV_SOC_EXCEPTION_FROM_IRQ
-GTEXT(__soc_is_irq)
-#endif
 GTEXT(__soc_handle_irq)
 GTEXT(z_riscv_fault)
 GTEXT(z_irq_spurious)
@@ -104,6 +101,11 @@ GDATA(_k_syscall_table)
 GTEXT(__soc_handle_all_irqs)
 #endif
 
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+GTEXT(z_riscv_custom_stack_guard_enable)
+GTEXT(z_riscv_custom_stack_guard_disable)
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
+
 /* exports */
 GTEXT(_isr_wrapper)
 
@@ -122,8 +124,6 @@ GTEXT(_isr_wrapper)
  * what standard behavior is defined). Hence, the arch level code expects
  * the following functions to be provided at the SOC level:
  *
- *     - __soc_is_irq (optional): decide if we're handling an interrupt or an
-         exception
  *     - __soc_handle_irq: handle SoC-specific details for a pending IRQ
  *       (e.g. clear a pending bit in a SoC-specific register)
  *
@@ -328,39 +328,43 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 * Check if exception is the result of an interrupt or not.
 	 * (SOC dependent). Following the RISC-V architecture spec, the MSB
 	 * of the mcause register is used to indicate whether an exception
-	 * is the result of an interrupt or an exception/fault. But for some
-	 * SOCs (like pulpino or riscv-qemu), the MSB is never set to indicate
-	 * interrupt. Hence, check for interrupt/exception via the __soc_is_irq
-	 * function (that needs to be implemented by each SOC). The result is
-	 * returned via register a0 (1: interrupt, 0 exception)
+	 * is the result of an interrupt or an exception/fault.
 	 */
-
-#ifdef CONFIG_RISCV_SOC_EXCEPTION_FROM_IRQ
-	jal ra, __soc_is_irq
-	bnez a0, is_interrupt
-#else
 	csrr t0, mcause
-	srli t0, t0, RISCV_MCAUSE_IRQ_POS
-	bnez t0, is_interrupt
-#endif
+	bltz t0, is_interrupt
 
 	/*
 	 * If the exception is the result of an ECALL, check whether to
 	 * perform a context-switch or an IRQ offload. Otherwise call z_riscv_fault
 	 * to report the exception.
 	 */
-	csrr t0, mcause
+#if CONFIG_RISCV_MCAUSE_EXCEPTION_MASK < ((1LLU << (__riscv_xlen - 1)) - 1LLU)
 	li t2, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
 	and t0, t0, t2
+#endif
 
-	/*
-	 * If mcause == RISCV_EXC_ECALLM, handle system call from
+	/* If mcause == RISCV_EXC_ECALLM, handle system call from
 	 * kernel thread.
 	 */
 	li t1, RISCV_EXC_ECALLM
 	beq t0, t1, is_kernel_syscall
 
 #ifdef CONFIG_USERSPACE
+
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/*
+	 * Enable custom stack guard when entering from user mode
+	 * to protect the privileged stack.
+	 */
+	csrr t1, mstatus
+	li t2, MSTATUS_MPP
+	and t1, t1, t2
+	bnez t1, 1f
+	lr a0, ___cpu_t_current_OFFSET(s0)
+	call z_riscv_custom_stack_guard_enable
+1:
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
+
 	/*
 	 * If mcause == RISCV_EXC_ECALLU, handle system call
 	 * for user mode thread.
@@ -498,6 +502,11 @@ do_irq_offload:
 	sw t2, ___cpu_t_nested_OFFSET(s0)
 	bnez t1, 1f
 
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/* Disable custom stack guard */
+	call z_riscv_custom_stack_guard_disable
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
+
 	/* Switch to interrupt stack */
 	mv t0, sp
 	lr sp, ___cpu_t_irq_stack_OFFSET(s0)
@@ -505,6 +514,20 @@ do_irq_offload:
 	/* Save thread stack pointer on interrupt stack */
 	addi sp, sp, -16
 	sr t0, 0(sp)
+
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/* Enable the custom stack guard for interrupt stack */
+	lr a0, ___cpu_t_current_OFFSET(s0)
+	call z_riscv_custom_stack_guard_enable
+	/*
+	 * Reload the routine and argument from the stack, since the custom
+	 * stack guard hook clobbers a0 and a1.
+	 */
+	lr t0, 0(sp)
+	lr a1, __struct_arch_esf_a0_OFFSET(t0)
+	lr a0, __struct_arch_esf_a1_OFFSET(t0)
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
+
 1:
 	/* Execute provided routine (argument is in a0 already). */
 	jalr ra, a1, 0
@@ -614,6 +637,11 @@ is_interrupt:
 	sw t2, ___cpu_t_nested_OFFSET(s0)
 	bnez t1, on_irq_stack
 
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/* Disable the custom stack guard */
+	call z_riscv_custom_stack_guard_disable
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
+
 	/* Switch to interrupt stack */
 	mv t0, sp
 	lr sp, ___cpu_t_irq_stack_OFFSET(s0)
@@ -624,6 +652,12 @@ is_interrupt:
 	 */
 	addi sp, sp, -16
 	sr t0, 0(sp)
+
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/* Enable the custom stack guard for interrupt stack */
+	lr a0, ___cpu_t_current_OFFSET(s0)
+	call z_riscv_custom_stack_guard_enable
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
 
 on_irq_stack:
 
@@ -683,8 +717,19 @@ irq_done:
 	sw t2, ___cpu_t_nested_OFFSET(s0)
 	bnez t2, no_reschedule
 
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/* Disable the custom stack guard for interrupt stack */
+	call z_riscv_custom_stack_guard_disable
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
+
 	/* nested count is back to 0: Return to thread stack */
 	lr sp, 0(sp)
+
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/* Enable the custom stack guard for thread stack */
+	lr a0, ___cpu_t_current_OFFSET(s0)
+	call z_riscv_custom_stack_guard_enable
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
 
 #ifdef CONFIG_STACK_SENTINEL
 	call z_check_stack_sentinel
@@ -775,6 +820,11 @@ fp_trap_exit:
 	lr a0, ___cpu_t_current_OFFSET(s0)
 	call z_riscv_pmp_usermode_enable
 #endif
+
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/* Disable the custom stack guard in user mode */
+	call z_riscv_custom_stack_guard_disable
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
 
 	/* Set our per-thread usermode flag */
 	li t1, 1

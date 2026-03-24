@@ -1,8 +1,20 @@
 #
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
 board_runner_args(jlink "--device=MIMX9131" "--no-reset" "--flash-sram")
 
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+
+if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
+  AND "$ENV{USE_NXP_SPSDK_IMAGE}" STREQUAL "y"))
+  board_set_flasher_ifnset(spsdk)
+
+  board_runner_args(spsdk "--family=mimx9131")
+  board_runner_args(spsdk "--bootloader=${CMAKE_BINARY_DIR}/zephyr/imx91evk-boot-firmware-6.12.34-2.1.0/imx-boot-imx91evk-sd.bin-flash_singleboot")
+  board_runner_args(spsdk "--flashbin=${CMAKE_BINARY_DIR}/zephyr/flash.bin")
+  board_runner_args(spsdk "--containers=one")
+
+  include(${ZEPHYR_BASE}/boards/common/spsdk.board.cmake)
+endif()

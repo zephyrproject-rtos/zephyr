@@ -352,7 +352,7 @@ static int ch9350l_init(struct device const *dev)
 		    CONFIG_INPUT_CH9350L_FRAME_COUNT);
 
 	if (!device_is_ready(config->uart)) {
-		LOG_ERR("UART device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->uart);
 		return -ENODEV;
 	}
 

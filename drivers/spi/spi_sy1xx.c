@@ -300,8 +300,8 @@ static int32_t sy1xx_spi_full_duplex_transfer_ctx(const struct device *dev)
 
 	buf = &data->dma->write[0];
 
-	/* expected data config (bit-len in bits) and spi transfer type */
-	sys_put_le16(xfer_len * SY1XX_SPI_WORD_SIZE_8_BIT, &buf[0]);
+	/* expected data config (bit-len in bits - 1) and spi transfer type */
+	sys_put_le16(xfer_len * SY1XX_SPI_WORD_SIZE_8_BIT - 1, &buf[0]);
 	buf[2] = SPI_CMD_FULL_DPLX_DATA1();
 	buf[3] = SPI_CMD_FULL_DPLX_DATA0(SY1XX_SPI_WORD_ALIGN);
 

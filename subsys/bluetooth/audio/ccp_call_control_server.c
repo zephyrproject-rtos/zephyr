@@ -13,11 +13,17 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/tbs.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_utf8.h>
+#include <zephyr/toolchain.h>
 
 LOG_MODULE_REGISTER(bt_ccp_call_control_server, CONFIG_BT_CCP_CALL_CONTROL_SERVER_LOG_LEVEL);
+
+#define MUTEX_TIMEOUT K_MSEC(1000U)
 
 /* A service instance can either be a GTBS or a TBS instance */
 struct bt_ccp_call_control_server_bearer {
@@ -25,18 +31,35 @@ struct bt_ccp_call_control_server_bearer {
 	char uci[BT_TBS_MAX_UCI_SIZE];
 	uint8_t tbs_index;
 	bool registered;
+	struct k_mutex mutex;
 };
 
 static struct bt_ccp_call_control_server_bearer
 	bearers[CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_COUNT];
 
+/**
+ * @brief Returns a free bearer
+ *
+ * If the return value is not NULL, the caller is responsible for unlocking the mutex
+ *
+ * @return A free bearer, or NULL
+ */
 static struct bt_ccp_call_control_server_bearer *get_free_bearer(void)
 {
-
 	for (size_t i = 0; i < ARRAY_SIZE(bearers); i++) {
+		int err;
+
+		err = k_mutex_lock(&bearers[i].mutex, K_NO_WAIT);
+		if (err != 0) {
+			continue;
+		}
+
 		if (!bearers[i].registered) {
 			return &bearers[i];
 		}
+
+		err = k_mutex_unlock(&bearers[i].mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 	}
 
 	return NULL;
@@ -46,6 +69,7 @@ int bt_ccp_call_control_server_register_bearer(const struct bt_tbs_register_para
 					       struct bt_ccp_call_control_server_bearer **bearer)
 {
 	struct bt_ccp_call_control_server_bearer *free_bearer;
+	__maybe_unused int err;
 	int ret;
 
 	if (bearer == NULL) {
@@ -64,26 +88,30 @@ int bt_ccp_call_control_server_register_bearer(const struct bt_tbs_register_para
 		LOG_DBG("Failed to register TBS bearer: %d", ret);
 
 		/* Return known errors */
-		if (ret == -EINVAL || ret == -EALREADY || ret == -EAGAIN || ret == -ENOMEM) {
-			return ret;
+		if (!(ret == -EINVAL || ret == -EALREADY || ret == -EAGAIN || ret == -ENOMEM)) {
+			ret = -ENOEXEC;
 		}
+	} else {
+		free_bearer->registered = true;
+		free_bearer->tbs_index = (uint8_t)ret;
+		(void)utf8_lcpy(free_bearer->provider_name, param->provider_name,
+				sizeof(free_bearer->provider_name));
+		(void)utf8_lcpy(free_bearer->uci, param->uci, sizeof(free_bearer->uci));
+		*bearer = free_bearer;
 
-		return -ENOEXEC;
+		ret = 0;
 	}
 
-	free_bearer->registered = true;
-	free_bearer->tbs_index = (uint8_t)ret;
-	(void)utf8_lcpy(free_bearer->provider_name, param->provider_name,
-			sizeof(free_bearer->provider_name));
-	(void)utf8_lcpy(free_bearer->uci, param->uci, sizeof(free_bearer->uci));
-	*bearer = free_bearer;
+	err = k_mutex_unlock(&free_bearer->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
-	return 0;
+	return ret;
 }
 
 int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_server_bearer *bearer)
 {
-	int err;
+	__maybe_unused int err;
+	int ret;
 
 	if (bearer == NULL) {
 		LOG_DBG("bearer is NULL");
@@ -91,31 +119,37 @@ int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_serv
 		return -EINVAL;
 	}
 
+	err = k_mutex_lock(&bearer->mutex, MUTEX_TIMEOUT);
+	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+
 	if (!bearer->registered) {
 		LOG_DBG("Bearer %p already unregistered", bearer);
 
-		return -EALREADY;
-	}
-
-	err = bt_tbs_unregister_bearer(bearer->tbs_index);
-	if (err != 0) {
-		/* Return known errors */
-		if (err == -EINVAL || err == -EALREADY) {
-			return err;
+		ret = -EALREADY;
+	} else {
+		ret = bt_tbs_unregister_bearer(bearer->tbs_index);
+		if (ret == 0) {
+			bearer->registered = false;
+		} else {
+			/* Return known errors */
+			if (!(ret == -EINVAL || ret == -EALREADY)) {
+				ret = -ENOEXEC;
+			}
 		}
-
-		return -ENOEXEC;
 	}
 
-	bearer->registered = false;
+	err = k_mutex_unlock(&bearer->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
-	return 0;
+	return ret;
 }
 
 int bt_ccp_call_control_server_set_bearer_provider_name(
 	struct bt_ccp_call_control_server_bearer *bearer, const char *name)
 {
+	__maybe_unused int err;
 	size_t len;
+	int ret;
 
 	if (bearer == NULL) {
 		LOG_DBG("bearer is NULL");
@@ -127,12 +161,6 @@ int bt_ccp_call_control_server_set_bearer_provider_name(
 		LOG_DBG("name is NULL");
 
 		return -EINVAL;
-	}
-
-	if (!bearer->registered) {
-		LOG_DBG("Bearer %p not registered", bearer);
-
-		return -EFAULT;
 	}
 
 	len = strlen(name);
@@ -142,19 +170,42 @@ int bt_ccp_call_control_server_set_bearer_provider_name(
 		return -EINVAL;
 	}
 
-	if (strcmp(bearer->provider_name, name) == 0) {
-		return 0;
+	err = k_mutex_lock(&bearer->mutex, MUTEX_TIMEOUT);
+	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+
+	if (!bearer->registered) {
+		LOG_DBG("Bearer %p not registered", bearer);
+
+		ret = -EFAULT;
+	} else {
+		if (strcmp(bearer->provider_name, name) != 0) {
+			ret = bt_tbs_set_bearer_provider_name(bearer->tbs_index, name);
+			if (ret == 0) {
+				(void)utf8_lcpy(bearer->provider_name, name,
+						sizeof(bearer->provider_name));
+			} else {
+				/* Return known errors */
+				if (!(ret == -EINVAL || ret == -EBUSY)) {
+					ret = -ENOEXEC;
+				}
+			}
+		} else {
+			ret = 0;
+		}
 	}
 
-	(void)utf8_lcpy(bearer->provider_name, name, sizeof(bearer->provider_name));
+	err = k_mutex_unlock(&bearer->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
-	return bt_tbs_set_bearer_provider_name(bearer->tbs_index, name);
+	return ret;
 }
 
 int bt_ccp_call_control_server_get_bearer_provider_name(
 	struct bt_ccp_call_control_server_bearer *bearer, char *name, size_t name_size)
 {
 	size_t provider_name_len;
+	__maybe_unused int err;
+	int ret;
 
 	if (bearer == NULL) {
 		LOG_DBG("bearer is NULL");
@@ -168,28 +219,40 @@ int bt_ccp_call_control_server_get_bearer_provider_name(
 		return -EINVAL;
 	}
 
+	err = k_mutex_lock(&bearer->mutex, MUTEX_TIMEOUT);
+	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+
 	if (!bearer->registered) {
 		LOG_DBG("Bearer %p not registered", bearer);
 
-		return -EFAULT;
+		ret = -EFAULT;
+	} else {
+		provider_name_len = strlen(bearer->provider_name);
+		if (name_size <= provider_name_len) {
+			LOG_DBG("name buffer not large enough (is <= %zu)", provider_name_len);
+
+			ret = -ENOMEM;
+		} else {
+			(void)memcpy(name, bearer->provider_name, provider_name_len);
+			name[provider_name_len] = '\0';
+
+			ret = 0;
+		}
 	}
 
-	provider_name_len = strlen(bearer->provider_name);
-	if (name_size <= provider_name_len) {
-		LOG_DBG("name buffer not large enough (is <= %zu)", provider_name_len);
+	err = k_mutex_unlock(&bearer->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
-		return -ENOMEM;
-	}
-
-	(void)memcpy(name, bearer->provider_name, provider_name_len);
-	name[provider_name_len] = '\0';
-
-	return 0;
+	return ret;
 }
 
 int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_bearer *bearer,
-					      const char **uci)
+					      char uci[BT_TBS_MAX_UCI_SIZE])
 {
+	__maybe_unused int err;
+	int ret;
+	size_t uci_len;
+
 	if (bearer == NULL) {
 		LOG_DBG("bearer is NULL");
 
@@ -202,13 +265,38 @@ int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_
 		return -EINVAL;
 	}
 
+	err = k_mutex_lock(&bearer->mutex, MUTEX_TIMEOUT);
+	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+
 	if (!bearer->registered) {
 		LOG_DBG("Bearer %p not registered", bearer);
 
-		return -EFAULT;
+		ret = -EFAULT;
+	} else {
+		uci_len = strlen(bearer->uci);
+		__ASSERT_NO_MSG(uci_len < BT_TBS_MAX_UCI_SIZE);
+		(void)memcpy(uci, bearer->uci, uci_len);
+		uci[uci_len] = '\0';
+
+		ret = 0;
 	}
 
-	*uci = bearer->uci;
+	err = k_mutex_unlock(&bearer->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
+}
+
+static int ccp_server_init(void)
+{
+	ARRAY_FOR_EACH_PTR(bearers, bearer) {
+		__maybe_unused int err;
+
+		err = k_mutex_init(&bearer->mutex);
+		__ASSERT(err == 0, "Failed to init mutex: %d", err);
+	}
 
 	return 0;
 }
+
+SYS_INIT(ccp_server_init, APPLICATION, 0);

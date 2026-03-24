@@ -427,6 +427,22 @@
 			resets = <&rctl STM32_RESET(APB4, 26)>;
 			status = "disabled";
 		};
+
+		crc1: crc@58009000 {
+			compatible = "st,stm32-crc";
+			reg = <0x58009000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB6, 20)>;
+			resets = <&rctl STM32_RESET(AHB6, 20)>;
+			status = "disabled";
+		};
+
+		crc2: crc@4c004000 {
+			compatible = "st,stm32-crc";
+			reg = <0x4c004000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 7)>;
+			resets = <&rctl STM32_RESET(AHB3, 7)>;
+			status = "disabled";
+		};
 	};
 
 	smbus5: smbus5 {

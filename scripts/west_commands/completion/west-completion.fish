@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Nancy Sangani
+# SPDX-License-Identifier: Apache-2.0
 # check if we are currently in a west workspace
 # this is used to filter which command to show
 #
@@ -317,27 +319,58 @@ function __zephyr_west_complete_board
     end
 
     if test $is_cache_valid -eq 0
-        set -l boards (west boards --format="{name}|{qualifiers}|{vendor}" 2> /dev/null)
+        set -l targets (west boards --all-targets 2> /dev/null)
 
         if test $status -eq 0
             echo $manifest_hash > $cache_file
         end
 
-        for board in $boards
-            set -l split_b (string split "|" $board)
-            set -l name $split_b[1]
-            set -l qualifiers $split_b[2]
-            set -l vendor $split_b[3]
+        for target in $targets
+            printf "%s\n" $target >> $cache_file
+        end
+    end
 
-            if test $vendor != "None"
-                for qualifier in (string split "," $qualifiers)
-                    printf "%s\t%s\n" $name/$qualifier $vendor >> $cache_file
-                end
-            else
-                for qualifier in (string split "," $qualifiers)
-                    printf "%s\n" $name/$qualifier >> $cache_file
-                end
-            end
+    tail -n +2 $cache_file
+end
+
+function __zephyr_west_complete_shield
+    set -l is_cache_valid 1 # 0: invalid; 1: valid
+
+    set -l manifest_file (__zephyr_west_manifest_path)
+    set -l manifest_dir (path dirname "$manifest_file")
+
+    set -l cache_folder (__zephyr_west_get_cache_dir "$manifest_file")
+    set -l cache_file $cache_folder/fish_shields_completion.cache
+
+    set -l manifest_hash (git --work-tree "$manifest_dir" log -1 --pretty=format:'%H' 2> /dev/null)
+
+    if test $status -ne 0
+        # if the manifest folder is not a git repo, use the hash of the manifest file
+        set manifest_hash (md5sum "$manifest_path")
+    end
+
+    if test ! -f $cache_file
+        mkdir -p $cache_folder
+        touch $cache_file
+
+        set is_cache_valid 0
+    else
+        set -l cache_manifest_hash (head -n 1 $cache_file)
+
+        if test -z "$manifest_hash" -o -z "$cache_manifest_hash" -o "$manifest_hash" != "$cache_manifest_hash"
+            set is_cache_valid 0
+        end
+    end
+
+    if test $is_cache_valid -eq 0
+        set -l shields (west shields 2> /dev/null)
+
+        if test $status -eq 0
+            echo $manifest_hash > $cache_file
+        end
+
+        for shield in $shields
+            printf "%s\n" $shield >> $cache_file
         end
     end
 
@@ -431,16 +464,24 @@ complete -c west -n "__zephyr_west_seen_subcommand_from completion; and __zephyr
 complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in_workspace" -ra boards -d "display information about supported boards"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -o f -l format -d "format string"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -o n -l name -d "name regex"
+complete -c west -n "__zephyr_west_seen_subcommand_from boards" -o a -l all-targets -d "output all board target combinations"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l arch-root -xa "(__zephyr_west_complete_directories)" -d "add an arch root"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l board-root -xa "(__zephyr_west_complete_directories)" -d "add a board root"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l soc-root -xa "(__zephyr_west_complete_directories)" -d "add a soc root"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l board -xa "(__zephyr_west_complete_board)" -d "lookup the specific board"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l board-dir -xa "(__zephyr_west_complete_directories)" -d "only look for boards in this directory"
 
+# shields
+complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in_workspace" -ra shields -d "display list of supported shields"
+complete -c west -n "__zephyr_west_seen_subcommand_from shields" -o f -l format -d "format string"
+complete -c west -n "__zephyr_west_seen_subcommand_from shields" -o n -l name -d "name regex"
+complete -c west -n "__zephyr_west_seen_subcommand_from shields" -l board-root -xa "(__zephyr_west_complete_directories)" -d "add a board root"
+
 # build
 complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in_workspace" -ra build -d "compile a Zephyr application"
 complete -c west -n "__zephyr_west_seen_subcommand_from build" -ra "(__zephyr_west_complete_directories)"
 complete -c west -n "__zephyr_west_seen_subcommand_from build" -o b -l board -xa "(__zephyr_west_complete_board)"
+complete -c west -n "__zephyr_west_seen_subcommand_from build" -l shield -xa "(__zephyr_west_complete_shield)" -d "shield to use"
 complete -c west -n "__zephyr_west_seen_subcommand_from build" -o d -l build-dir -xa "(__zephyr_west_complete_directories)" -d "build directory to create or use"
 complete -c west -n "__zephyr_west_seen_subcommand_from build" -o f -l force -d "ignore errors and continue"
 complete -c west -n "__zephyr_west_seen_subcommand_from build" -l sysbuild -d "create multi-domain build system"
@@ -452,6 +493,117 @@ complete -c west -n "__zephyr_west_seen_subcommand_from build" -o T -l test-item
 complete -c west -n "__zephyr_west_seen_subcommand_from build" -o o -l build-opt -d "options to pass to build tool (make or ninja)"
 complete -c west -n "__zephyr_west_seen_subcommand_from build" -o n -l just-print -l dry-run -l recon -d "just print build commands, don't run them"
 complete -c west -n "__zephyr_west_seen_subcommand_from build" -o p -l pristine -ra "auto always never" -d "pristine build setting"
+
+# twister
+complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in_workspace" -ra twister -d "west twister wrapper"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l aggressive-no-clean -d "do not clean if test case is not a subset of previous run"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o l -l all -d "select all possible test cases"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o D -l all-deltas -d "show all footprint deltas"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l allow-installed-plugin -d "allow the use of installed pytest plugin"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o b -l build-only -d "build only, do not run"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o c -l clobber-output -d "clobber test runner output"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l cmake-only -d "run cmake only"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o C -l coverage -d "generate coverage reports"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l create-rom-ram-report -d "create ROM/RAM report"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l detailed-skipped-report -d "generate detailed report of skipped tests"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l detailed-test-id -d "use a detailed test identifier"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l device-flash-with-test -d "flash device together with test"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l device-testing -d "test on a connected device"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l disable-suite-name-check -d "disable suite name check"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l disable-unrecognized-section-test -d "disable unrecognized section test"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o W -l disable-warnings-as-errors -d "do not treat warnings as errors"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o y -l dry-run -d "do a dry run, no actual build or run"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l emulation-only -d "select only emulation platforms"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l enable-asan -d "enable address sanitizer"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l enable-coverage -d "enable code coverage"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l enable-lsan -d "enable leak sanitizer"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l enable-size-report -d "enable size report"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o S -l enable-slow -d "include slow tests"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l enable-slow-only -d "run only slow tests"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l enable-ubsan -d "enable undefined behavior sanitizer"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l enable-valgrind -d "enable valgrind"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l flash-before -d "flash before running test"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l footprint-from-buildlog -d "extract footprint from build log"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l force-color -d "force colored output"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o K -l force-platform -d "force testing on selected platforms"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l force-toolchain -d "force toolchain"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l ignore-platform-key -d "ignore platform key"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o i -l inline-logs -d "inline logs for failed tests"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o G -l integration -d "integration mode"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o m -l last-metrics -d "compare metrics to the last completed run"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l list-tags -d "list tags"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l list-tests -d "list tests"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o k -l make -d "use make"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o N -l ninja -d "use ninja"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o n -l no-clean -d "do not clean results"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l no-detailed-test-id -d "do not use a detailed test identifier"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o u -l no-update -d "do not update the hardware map"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o f -l only-failed -d "run only tests that failed in last run"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l overflow-as-errors -d "treat overflows as errors"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l persistent-hardware-map -d "create persistent hardware map"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l platform-reports -d "create individual reports for each platform"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l prep-artifacts-for-testing -d "prepare artifacts for testing"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l quarantine-verify -d "verify the quarantine list"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l retry-build-errors -d "retry on build errors"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l short-build-path -d "use short build path"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l show-footprint -d "show footprint"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l shuffle-tests -d "shuffle tests"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l test-only -d "test only, do not build"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l test-tree -d "print the test tree"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l timestamps -d "print timestamps"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o v -l verbose -d "increase verbosity"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o a -l arch -r -d "architecture filter"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o A -l board-root -xa "(__zephyr_west_complete_directories)" -d "add a board root"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l alt-config-root -xa "(__zephyr_west_complete_directories)" -d "alternative configuration root"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l coverage-basedir -xa "(__zephyr_west_complete_directories)" -d "base directory for coverage"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o O -l outdir -xa "(__zephyr_west_complete_directories)" -d "output directory"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o o -l report-dir -xa "(__zephyr_west_complete_directories)" -d "output reports directory"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o T -l testsuite-root -xa "(__zephyr_west_complete_directories)" -d "testsuite root directory"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l compare-report -rF -d "compare against a report"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l device-serial -rF -d "device serial port"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l device-serial-pty -rF -d "device serial PTY"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l gcov-tool -rF -d "path to gcov tool"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l generate-hardware-map -rF -d "generate a hardware map"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l hardware-map -rF -d "use a hardware map"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o F -l load-tests -rF -d "load tests from a file"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l log-file -rF -d "log to a file"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l package-artifacts -rF -d "package artifacts into a file"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l pre-script -rF -d "pre-script to run"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l quarantine-list -rF -d "load a quarantine list"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o E -l save-tests -rF -d "save tests to a file"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o z -l size -rF -d "show binary sizes"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l test-config -rF -d "test configuration file"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l coverage-tool -xa "gcovr lcov" -d "coverage tool"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o P -l exclude-platform -xa "(__zephyr_west_complete_board)" -d "exclude a platform"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l filter -xa "buildable runnable" -d "filter by status"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l log-level -xa "CRITICAL DEBUG ERROR INFO NOTSET WARNING" -d "log level"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o p -l platform -xa "(__zephyr_west_complete_board)" -d "platform filter"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l coverage-platform -xa "(__zephyr_west_complete_board)" -d "platform to use for coverage"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o M -l runtime-artifact-cleanup -xa "all pass" -d "artifact cleanup strategy"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l coverage-formats -r -d "coverage formats"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l device-flash-timeout -r -d "device flash timeout"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l device-serial-baud -r -d "device serial baud rate"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o e -l exclude-tag -r -d "exclude tests with a tag"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o x -l extra-args -r -d "extra CMake arguments"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o X -l fixture -r -d "required fixture"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o H -l footprint-threshold -r -d "footprint threshold"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o j -l jobs -r -d "number of jobs"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l level -r -d "test level"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l pytest-args -r -d "extra pytest arguments"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l report-name -r -d "report name"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l report-suffix -r -d "report suffix"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l retry-failed -r -d "retry failed tests"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l retry-interval -r -d "retry interval"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o s -l scenario -l test -r -d "run only this scenario"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l seed -r -d "random seed"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l shuffle-tests-seed -r -d "shuffle tests seed"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l sub-test -r -d "run only this sub-test"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o B -l subset -r -d "test subset (e.g. 1/5)"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o t -l tag -r -d "tag filter"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l timeout-multiplier -r -d "timeout multiplier"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l vendor -r -d "vendor filter"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l west-flash -r -d "west flash arguments"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l west-runner -r -d "west runner"
 
 # sign
 complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in_workspace" -ra sign -d "sign a Zephyr binary for bootloader chain-loading"

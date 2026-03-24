@@ -61,6 +61,22 @@ family:
     - name: mcxw70ac
     - name: mcxw716c
     - name: mcxw727c
+- name: mcxl
+  series:
+  - name: mcxl25x
+    socs:
+    - name: mcxl255
+      cpuclusters:
+      - name: cpu0
+      - name: cpu1
+    - name: mcxl254
+      cpuclusters:
+      - name: cpu0
+      - name: cpu1
+    - name: mcxl253
+      cpuclusters:
+      - name: cpu0
+      - name: cpu1
 runners:
   run_once:
     '--erase':
@@ -118,6 +134,15 @@ runners:
         - mcxw236
       - qualifiers:
         - mcxa344
+      - qualifiers:
+        - mcxl255/cpu0
+        - mcxl255/cpu1
+      - qualifiers:
+        - mcxl254/cpu0
+        - mcxl254/cpu1
+      - qualifiers:
+        - mcxl253/cpu0
+        - mcxl253/cpu1
       - qualifiers:
         - mcxw70ac
       - qualifiers:
@@ -179,6 +204,15 @@ runners:
         - mcxw236
       - qualifiers:
         - mcxa344
+      - qualifiers:
+        - mcxl255/cpu0
+        - mcxl255/cpu1
+      - qualifiers:
+        - mcxl254/cpu0
+        - mcxl254/cpu1
+      - qualifiers:
+        - mcxl253/cpu0
+        - mcxl253/cpu1
       - qualifiers:
         - mcxw70ac
       - qualifiers:

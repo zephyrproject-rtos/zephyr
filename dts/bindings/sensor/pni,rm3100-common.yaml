@@ -4,8 +4,6 @@
 
 description: PNI RM3100 3-axis Magnetometer.
 
-compatible: "pni,rm3100"
-
 include: sensor-device.yaml
 
 properties:

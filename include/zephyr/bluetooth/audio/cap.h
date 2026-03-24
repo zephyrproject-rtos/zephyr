@@ -47,10 +47,16 @@
 extern "C" {
 #endif
 
-/** @brief Abstract Audio Broadcast Source structure. */
+/**
+ * @struct bt_cap_broadcast_source
+ * @brief Abstract Audio Broadcast Source structure.
+ */
 struct bt_cap_broadcast_source;
 
-/** @brief Abstract CAP Unicast Group structure. */
+/**
+ * @struct bt_cap_unicast_group
+ * @brief Abstract CAP Unicast Group structure.
+ */
 struct bt_cap_unicast_group;
 
 /**
@@ -398,13 +404,13 @@ int bt_cap_unicast_group_add_streams(struct bt_cap_unicast_group *unicast_group,
  */
 int bt_cap_unicast_group_delete(struct bt_cap_unicast_group *unicast_group);
 
-/** Callback function for bt_bap_unicast_group_foreach_stream()
+/** Callback function for bt_cap_unicast_group_foreach_stream()
  *
  * @param stream     The audio stream
  * @param user_data  User data
  *
- * @retval true Stop iterating.
- * @retval false Continue iterating.
+ * @retval true Continue iterating.
+ * @retval false Stop iterating.
  */
 typedef bool (*bt_cap_unicast_group_foreach_stream_func_t)(struct bt_cap_stream *stream,
 							   void *user_data);
@@ -417,7 +423,7 @@ typedef bool (*bt_cap_unicast_group_foreach_stream_func_t)(struct bt_cap_stream 
  * @param user_data      User specified data that is sent to the callback function
  *
  * @retval 0 Success (even if no streams exists in the group).
- * @retval -ECANCELED The @p func returned true.
+ * @retval -ECANCELED The @p func returned false and stopped the iteration.
  * @retval -EINVAL @p unicast_group or @p func were NULL.
  */
 int bt_cap_unicast_group_foreach_stream(struct bt_cap_unicast_group *unicast_group,
@@ -835,8 +841,8 @@ int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcas
  * @param stream     The audio stream
  * @param user_data  User data
  *
- * @retval true Stop iterating.
- * @retval false Continue iterating.
+ * @retval true Continue iterating.
+ * @retval false Stop iterating.
  */
 typedef bool (*bt_cap_initiator_broadcast_foreach_stream_func_t)(struct bt_cap_stream *stream,
 								 void *user_data);
@@ -849,7 +855,7 @@ typedef bool (*bt_cap_initiator_broadcast_foreach_stream_func_t)(struct bt_cap_s
  * @param user_data         User specified data that is sent to the callback function.
  *
  * @retval 0          Success (even if no streams exists in the group).
- * @retval -ECANCELED The @p func returned true.
+ * @retval -ECANCELED The @p func returned false and stopped the iteration.
  * @retval -EINVAL    @p broadcast_source or @p func were NULL.
  */
 int bt_cap_initiator_broadcast_foreach_stream(struct bt_cap_broadcast_source *broadcast_source,

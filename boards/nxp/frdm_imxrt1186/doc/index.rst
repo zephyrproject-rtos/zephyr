@@ -62,6 +62,27 @@ For more information about the i.MX RT1186 SoC and FRDM-iMXRT1186 board, see:
 - `FRDM-iMXRT1186 User Guide`_
 - `FRDM-iMXRT1186 Schematics`_
 
+Board Variants
+==============
+
+This board has three variants available:
+
+- ``frdm_imxrt1186/mimxrt1186/cm33``: Runs on the Cortex-M33 core, using
+  internal SRAM and Flash. This is the default bootable core.
+
+- ``frdm_imxrt1186/mimxrt1186/cm7``: Runs on the Cortex-M7 core, using
+  internal SRAM and Flash. Must be started by the CM33 core.
+
+- ``frdm_imxrt1186/mimxrt1186/cm7/extmem``: Runs on the Cortex-M7 core,
+  using external HyperRAM for ``zephyr,sram`` and external HyperFlash for
+  ``zephyr,flash``. This variant is provided for applications that require
+  more RAM or Flash than available in the internal memory. ITCM and DTCM
+  remain available for time-critical code and data.
+
+.. note::
+   When using the ``extmem`` variant, external memory is initialized through
+   J-Link debug scripts to ensure proper configuration before use.
+
 Supported Features
 ==================
 
@@ -111,6 +132,19 @@ The i.MX RT1186 SoC is configured to use SysTick as the system clock source.
 The Cortex-M33 core can run up to 300 MHz, and the Cortex-M7 core can run up
 to 800 MHz.
 
+ELE Active Timer Requirement
+=============================
+
+The RT1180 platform requires periodic communication with the EdgeLock Enclave (ELE)
+to prevent system reset. According to the RT1180 System Reference Manual (SRM) section
+3.11 "ELE active timer", the ELE must be pinged at least once every 24 hours.
+
+Zephyr implements this requirement using a software timer that automatically pings the
+ELE every 23 hours (instead of 24 hours) to account for potential clock inaccuracies.
+This is transparent to the application and requires no user intervention.
+
+For more details, refer to the RT1180 SRM section 3.11.
+
 ITCM and DTCM
 =============
 
@@ -121,6 +155,49 @@ For example, this overlay moves the CM33 ``zephyr,sram`` to DTCM:
 .. code-block:: none
 
    boards/nxp/frdm_imxrt1186/cm33_sram_dtcm.overlay
+
+Ethernet
+========
+
+NETC Ethernet driver supports to manage the Physical Station Interface (PSI).
+NETC DSA driver supports to manage switch ports. Current DSA support is with
+limitation that only switch function is available without management via
+DSA master port. DSA master port support is TODO work.
+
+For FRDM-iMXRT1186, the following network interfaces present:
+
+- ``swp0`` and ``swp2``: user ports which can be used.
+- ``swp4``: DSA CPU port. Not a user port.
+- ``eth0``: DSA conduit port. Not a user port.
+
+.. note::
+
+   DHCP is expected to work on ``swp0`` and ``swp2``.
+
+.. code-block:: none
+
+                   +--------+                  +--------+
+                   | ENETC1 |                  | ENETC0 |
+                   |        |                  |        |
+                   | Pseudo |                  |  1G    |
+                   |  MAC   |                  |  MAC   |
+                   +--------+                  +--------+
+                       | zero copy interface       |
+   +-------------- +--------+----------------+     |
+   |               | Pseudo |                |     |
+   |               |  MAC   |                |     |
+   |               |        |                |     |
+   |               | Port 4 |                |     |
+   |               +--------+                |     |
+   |           SWITCH       CORE             |     |
+   +--------+ +--------+ +--------+ +--------+     |
+   | Port 0 | | Port 1 | | Port 2 | | Port 3 |     |
+   |        | |        | |        | |        |     |
+   |  1G    | |  1G    | |  1G    | |  1G    |     |
+   |  MAC   | |  MAC   | |  MAC   | |  MAC   |     |
+   +--------+-+--------+-+--------+-+--------+     |
+       |          |          |          |          |
+   NETC External Interfaces (4 switch ports, 1 end-point port)
 
 Serial Port
 ===========

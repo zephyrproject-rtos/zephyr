@@ -24,6 +24,7 @@ from typing import Any
 import zephyr_module
 from twisterlib.constants import SUPPORTED_SIMS, ZEPHYR_BASE
 from twisterlib.coverage import supported_coverage_formats
+from twisterlib.hardwaremap import HardwareMap
 from twisterlib.log_helper import log_command
 
 logger = logging.getLogger('twister')
@@ -1087,7 +1088,7 @@ class TwisterEnv:
                 self.arch_roots.append(project / Path(arch_root))
 
         self.modules = [m.meta for m in modules]
-        self.hwm = None
+        self.hwm: HardwareMap | None = None
 
         self.test_config = options.test_config
 
@@ -1188,5 +1189,10 @@ class TwisterEnv:
         if result['returncode'] != 0:
             print(f"E: {result['returnmsg']}")
             sys.exit(2)
-        self.toolchain = json.loads(result['stdout'])['ZEPHYR_TOOLCHAIN_VARIANT']
-        logger.info(f"Using '{self.toolchain}' toolchain.")
+        _variant = json.loads(result['stdout'])['ZEPHYR_TOOLCHAIN_VARIANT']
+        self.compiler = json.loads(result['stdout'])['TOOLCHAIN_VARIANT_COMPILER']
+        self.toolchain = f"{_variant}"
+        if self.compiler:
+            # Only add "/..." if TOOLCHAIN_VARIANT_COMPILER is not empty
+            self.toolchain += f"/{self.compiler}"
+        logger.info(f"Using '{self.toolchain}' toolchain variant.")

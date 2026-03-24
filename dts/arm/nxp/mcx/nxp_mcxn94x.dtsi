@@ -23,6 +23,7 @@
 
 		flexspi: spi@500c8000 {
 			reg = <0x500c8000 0x1000>, <0x90000000 DT_SIZE_M(8)>;
+			reg-names = "reg_base", "ahb";
 		};
 	};
 };

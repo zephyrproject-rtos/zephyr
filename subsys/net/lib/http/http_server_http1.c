@@ -896,8 +896,12 @@ static int on_header_value(struct http_parser *parser,
 
 			if (ctx->websocket_sec_key_next) {
 #if defined(CONFIG_WEBSOCKET)
-				strncpy(ctx->ws_sec_key, ctx->header_buffer,
-					MIN(sizeof(ctx->ws_sec_key), offset));
+				if (offset >= sizeof(ctx->ws_sec_key)) {
+					LOG_ERR("Sec-WebSocket-Key too long");
+					return -EBADMSG;
+				}
+				memcpy(ctx->ws_sec_key, ctx->header_buffer, offset);
+				ctx->ws_sec_key[offset] = '\0';
 #endif
 				ctx->websocket_sec_key_next = false;
 			}

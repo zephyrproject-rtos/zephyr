@@ -4,3 +4,8 @@ board:
   vendor: wch
   socs:
     - name: ch32v307
+      variants:
+        - name: ram_64k
+        - name: ram_96k
+        - name: ram_128k
+        - name: ram_192k

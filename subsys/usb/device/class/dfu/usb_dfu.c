@@ -141,7 +141,7 @@ struct dev_dfu_mode_descriptor {
 	struct usb_cfg_descriptor cfg_descr;
 	struct usb_sec_dfu_config {
 		struct usb_if_descriptor if0;
-#if FIXED_PARTITION_EXISTS(SLOT1_PARTITION)
+#if PARTITION_EXISTS(SLOT1_PARTITION)
 		struct usb_if_descriptor if1;
 #endif
 		struct dfu_runtime_descriptor dfu_descr;
@@ -197,7 +197,7 @@ struct dev_dfu_mode_descriptor dfu_mode_desc = {
 			.bInterfaceProtocol = DFU_MODE_PROTOCOL,
 			.iInterface = 4,
 		},
-#if FIXED_PARTITION_EXISTS(SLOT1_PARTITION)
+#if PARTITION_EXISTS(SLOT1_PARTITION)
 		.if1 = {
 			.bLength = sizeof(struct usb_if_descriptor),
 			.bDescriptorType = USB_DESC_INTERFACE,
@@ -251,7 +251,7 @@ struct usb_string_desription {
 		uint8_t bString[USB_BSTRING_LENGTH(FIRMWARE_IMAGE_0_LABEL)];
 	} __packed utf16le_image0;
 
-#if FIXED_PARTITION_EXISTS(SLOT1_PARTITION)
+#if PARTITION_EXISTS(SLOT1_PARTITION)
 	struct image_1_descriptor {
 		uint8_t bLength;
 		uint8_t bDescriptorType;
@@ -294,7 +294,7 @@ struct usb_string_desription string_descr = {
 		.bDescriptorType = USB_DESC_STRING,
 		.bString = FIRMWARE_IMAGE_0_LABEL,
 	},
-#if FIXED_PARTITION_EXISTS(SLOT1_PARTITION)
+#if PARTITION_EXISTS(SLOT1_PARTITION)
 	/* Image 1 String Descriptor */
 	.utf16le_image1 = {
 		.bLength = USB_STRING_DESCRIPTOR_LENGTH(
@@ -327,10 +327,10 @@ struct dfu_data_t {
 	uint16_t bwPollTimeout;
 };
 
-#if FIXED_PARTITION_EXISTS(SLOT1_PARTITION)
-	#define DOWNLOAD_FLASH_AREA_ID FIXED_PARTITION_ID(SLOT1_PARTITION)
+#if PARTITION_EXISTS(SLOT1_PARTITION)
+	#define DOWNLOAD_FLASH_AREA_ID PARTITION_ID(SLOT1_PARTITION)
 #else
-	#define DOWNLOAD_FLASH_AREA_ID FIXED_PARTITION_ID(SLOT0_PARTITION)
+	#define DOWNLOAD_FLASH_AREA_ID PARTITION_ID(SLOT0_PARTITION)
 #endif
 
 
@@ -813,9 +813,9 @@ static int dfu_custom_handle_req(struct usb_setup_packet *setup,
 		switch (setup->wValue) {
 		case 0:
 			dfu_data.flash_area_id =
-			    FIXED_PARTITION_ID(SLOT0_PARTITION);
+			    PARTITION_ID(SLOT0_PARTITION);
 			break;
-#if FIXED_PARTITION_EXISTS(SLOT1_PARTITION)
+#if PARTITION_EXISTS(SLOT1_PARTITION)
 		case 1:
 			dfu_data.flash_area_id = DOWNLOAD_FLASH_AREA_ID;
 			break;

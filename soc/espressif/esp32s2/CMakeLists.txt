@@ -2,7 +2,6 @@
 
 zephyr_sources(
   soc.c
-  soc_cache.c
   ../common/loader.c
   )
 

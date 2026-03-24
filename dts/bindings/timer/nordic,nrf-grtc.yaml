@@ -42,6 +42,12 @@ properties:
       Clock frequency information for tick increment operations, this default value comes from
       the nRF54L15 datasheet.
 
+  extended-channels:
+    type: array
+    description: |
+      List of channels in a split-ownership peripheral that are to be owned
+      for use by the compiled CPU.
+
 examples:
   - |
     &grtc {

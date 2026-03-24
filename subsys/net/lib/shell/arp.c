@@ -12,6 +12,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #if defined(CONFIG_NET_ARP)
 #include "ethernet/arp.h"
+#include <zephyr/net/net_if.h>
 #endif
 
 #if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_NATIVE)
@@ -85,12 +86,72 @@ static int cmd_net_arp_flush(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_arp,
-	SHELL_CMD(flush, NULL,
-		  SHELL_HELP("Remove all entries from ARP cache", ""),
+#if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_NATIVE)
+static int cmd_net_arp_add(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_in_addr ip;
+	struct net_eth_addr eth;
+	struct net_if *iface;
+	int ret;
+	int idx;
+	const char *ip_str;
+	const char *mac_str;
+
+	if (argc < 3) {
+		PR_WARNING("Usage: net arp add [<iface_index>] <IPv4> <MAC>\n");
+		return -ENOEXEC;
+	}
+
+	if (argc >= 4) {
+		idx = get_iface_idx(sh, argv[1]);
+		if (idx <= 0) {
+			PR_WARNING("Invalid interface index: %d\n", idx);
+			return -ENOEXEC;
+		}
+		iface = net_if_get_by_index(idx);
+		if (iface == NULL) {
+			PR_WARNING("No such interface index: %d\n", idx);
+			return -ENOEXEC;
+		}
+		ip_str = argv[2];
+		mac_str = argv[3];
+	} else {
+		iface = net_if_get_default();
+		if (iface == NULL) {
+			PR_WARNING("No default interface; specify iface index.\n");
+			return -ENOEXEC;
+		}
+		ip_str = argv[1];
+		mac_str = argv[2];
+	}
+
+	ret = net_addr_pton(NET_AF_INET, ip_str, &ip);
+	if (ret < 0) {
+		PR_WARNING("Invalid IPv4 address: %s\n", ip_str);
+		return -ENOEXEC;
+	}
+
+	if (net_bytes_from_str(eth.addr, sizeof(eth.addr), mac_str) < 0) {
+		PR_WARNING("Invalid MAC address: %s\n", mac_str);
+		return -ENOEXEC;
+	}
+
+	net_arp_update(iface, &ip, &eth, false, true);
+	PR("Added static ARP entry %s -> %s on interface %d\n", net_sprint_ipv4_addr(&ip),
+	   net_sprint_ll_addr(eth.addr, sizeof(eth.addr)), net_if_get_by_iface(iface));
+	return 0;
+}
+#endif /* CONFIG_NET_ARP && CONFIG_NET_NATIVE */
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	net_cmd_arp,
+	SHELL_CMD(flush, NULL, SHELL_HELP("Remove all entries from ARP cache", ""),
 		  cmd_net_arp_flush),
-	SHELL_SUBCMD_SET_END
-);
+#if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_NATIVE)
+	SHELL_CMD(add, NULL, SHELL_HELP("Add a static ARP entry", "[<iface_index>] <IPv4> <MAC>"),
+		  cmd_net_arp_add),
+#endif
+	SHELL_SUBCMD_SET_END);
 
 SHELL_SUBCMD_ADD((net), arp, &net_cmd_arp,
 		 "Print information about IPv4 ARP cache.",

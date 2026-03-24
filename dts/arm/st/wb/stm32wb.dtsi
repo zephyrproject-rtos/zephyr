@@ -21,6 +21,7 @@
 
 / {
 	chosen {
+		zephyr,crc = &crc;
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
 		zephyr,bt-hci = &ble_rf;
@@ -477,6 +478,7 @@
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-differential-support;
 			st,adc-has-deep-powerdown;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -573,6 +575,13 @@
 			status = "disabled";
 		};
 
+		vrefbuf: vrefbuf@40010030 {
+			compatible = "st,stm32-vrefbuf";
+			reg = <0x40010030 0xd0>;
+			ref-voltages = <2048000>, <2500000>;
+			status = "disabled";
+		};
+
 		pwr: power@58000400 {
 			compatible = "st,stm32-pwr";
 			reg = <0x58000400 0x400>; /* PWR register bank */
@@ -594,6 +603,14 @@
 				reg = <0x4>;
 				wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 			};
+		};
+
+		crc: crc@40023000 {
+			compatible = "st,stm32-crc";
+			reg = <0x40023000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 12)>;
+			resets = <&rctl STM32_RESET(AHB1, 12)>;
+			status = "disabled";
 		};
 	};
 

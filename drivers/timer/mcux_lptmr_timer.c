@@ -5,8 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_lptmr
-
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/devicetree.h>
@@ -15,30 +13,35 @@
 #include <fsl_lptmr.h>
 #include <zephyr/irq.h>
 
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
-	     "No LPTMR instance enabled in devicetree");
+BUILD_ASSERT(DT_HAS_CHOSEN(zephyr_system_timer),
+	     "zephyr,system-timer must be set to an nxp,lptmr node");
+BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_system_timer), nxp_lptmr),
+	     "zephyr,system-timer must point to an nxp,lptmr compatible node");
 
 /* Prescaler clock mapping */
 #define TO_LPTMR_CLK_SEL(val) _DO_CONCAT(kLPTMR_PrescalerClock_, val)
 
+/* Devicetree node selected as system timer via zephyr,system-timer chosen */
+#define LPTMR_NODE DT_CHOSEN(zephyr_system_timer)
+
 /* Devicetree properties */
-#define LPTMR_BASE ((LPTMR_Type *)(DT_INST_REG_ADDR(0)))
-#define LPTMR_CLK_SOURCE TO_LPTMR_CLK_SEL(DT_INST_PROP_OR(0, clk_source, 0))
-#define LPTMR_PRESCALER DT_INST_PROP_OR(0, prescale_glitch_filter, 0)
+#define LPTMR_BASE ((LPTMR_Type *)(DT_REG_ADDR(LPTMR_NODE)))
+#define LPTMR_CLK_SOURCE TO_LPTMR_CLK_SEL(DT_PROP_OR(LPTMR_NODE, clk_source, 0))
+#define LPTMR_PRESCALER DT_PROP_OR(LPTMR_NODE, prescale_glitch_filter, 0)
 /*
  * Default must be false so prescale-glitch-filter can be used without requiring
  * an explicit bypass property.
  */
-#define LPTMR_PRESCALER_BYPASS DT_INST_PROP_OR(0, prescale_glitch_filter_bypass, false)
-#define LPTMR_IRQN DT_INST_IRQN(0)
-#define LPTMR_IRQ_PRIORITY DT_INST_IRQ(0, priority)
+#define LPTMR_PRESCALER_BYPASS DT_PROP_OR(LPTMR_NODE, prescale_glitch_filter_bypass, false)
+#define LPTMR_IRQN DT_IRQN(LPTMR_NODE)
+#define LPTMR_IRQ_PRIORITY DT_IRQ(LPTMR_NODE, priority)
 
 /* Timer cycles per tick */
 #define CYCLES_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() \
 			/ (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 
 /* Counter maximum value based on resolution */
-#define LPTMR_RESOLUTION DT_INST_PROP(0, resolution)
+#define LPTMR_RESOLUTION DT_PROP(LPTMR_NODE, resolution)
 #define COUNTER_MAX GENMASK(LPTMR_RESOLUTION - 1, 0)
 
 #define MAX_TICKS ((COUNTER_MAX / CYCLES_PER_TICK) - 1)

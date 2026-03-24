@@ -8,3 +8,7 @@ properties:
     type: int
     required: true
     description: Number of items to expect in a pwm specifier
+
+  channels:
+    type: int
+    description: Number of PWM channels supported by the controller.

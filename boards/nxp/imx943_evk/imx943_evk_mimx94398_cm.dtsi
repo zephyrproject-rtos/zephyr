@@ -77,35 +77,30 @@
 		status = "disabled";
 
 		mux_i2c@0 {
-			compatible = "ti,tca9548a-channel";
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 
 		mux_i2c@1 {
-			compatible = "ti,tca9548a-channel";
 			reg = <1>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 
 		mux_i2c@2 {
-			compatible = "ti,tca9548a-channel";
 			reg = <2>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 
 		mux_i2c@3 {
-			compatible = "ti,tca9548a-channel";
 			reg = <3>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 
 		mux_i2c@4 {
-			compatible = "ti,tca9548a-channel";
 			reg = <4>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -121,21 +116,18 @@
 		};
 
 		mux_i2c@5 {
-			compatible = "ti,tca9548a-channel";
 			reg = <5>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 
 		mux_i2c@6 {
-			compatible = "ti,tca9548a-channel";
 			reg = <6>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 
 		mux_i2c@7 {
-			compatible = "ti,tca9548a-channel";
 			reg = <7>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -156,28 +148,24 @@
 		status = "disabled";
 
 		mux_i2c@0 {
-			compatible = "ti,tca9544a-channel";
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 
 		mux_i2c@1 {
-			compatible = "ti,tca9544a-channel";
 			reg = <1>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 
 		mux_i2c@2 {
-			compatible = "ti,tca9544a-channel";
 			reg = <2>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 
 		mux_i2c@3 {
-			compatible = "ti,tca9544a-channel";
 			reg = <3>;
 			#address-cells = <1>;
 			#size-cells = <0>;

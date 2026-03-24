@@ -151,6 +151,11 @@ config NRFX_IPC
 	bool "IPC driver"
 	depends on $(dt_nodelabel_exists,ipc)
 
+config NRFX_KMU
+	bool "Key Management Unit driver"
+	help
+	   Enable the nrfx_kmu driver.
+
 config NRFX_LPCOMP
 	bool "LPCOMP driver"
 	depends on $(dt_nodelabel_exists,comp) && !SOC_NRF52810 && !SOC_NRF52811 && !SOC_NRF52820
@@ -221,6 +226,9 @@ config NRFX_SYSTICK
 config NRFX_TBM
 	bool "TBM driver"
 	depends on $(dt_nodelabel_exists,tbm)
+
+config NRFX_TDM
+	bool "TDM driver"
 
 config NRFX_TEMP
 	bool "TEMP driver"

@@ -50,7 +50,8 @@ struct i2c_bflb_data {
 	struct k_mutex lock;
 };
 
-#if defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL60X)
+#if defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL60X) \
+	|| defined(CONFIG_SOC_SERIES_BL70XL)
 
 static uint32_t i2c_bflb_get_clk(void)
 {

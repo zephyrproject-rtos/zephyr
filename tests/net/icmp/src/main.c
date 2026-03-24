@@ -35,6 +35,7 @@ LOG_MODULE_REGISTER(net_test, ICMP_LOG_LEVEL);
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/icmp.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_offload.h>
@@ -400,7 +401,7 @@ static void offload_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, ctx->mac, sizeof(ctx->mac), NET_LINK_ETHERNET);
 
 	/* A dummy placeholder to allow network stack to pass offloaded data to our interface */
-	iface->if_dev->offload = &offload_dummy;
+	net_if_offload_set(iface, &offload_dummy);
 
 	/* This will cause ping requests to be re-directed to our offload handler */
 	ret = net_icmp_register_offload_ping(&offload_data, iface, offload_ping_handler);

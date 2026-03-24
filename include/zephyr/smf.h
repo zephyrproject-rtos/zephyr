@@ -66,6 +66,66 @@ enum smf_state_result {
 };
 
 /**
+ * @brief Enum identifying which action type is being executed.
+ * @note This is used for instrumentation purposes.
+ */
+enum smf_action_type {
+	SMF_ACTION_ENTRY, /**< Entry action */
+	SMF_ACTION_RUN,   /**< Run action */
+	SMF_ACTION_EXIT,  /**< Exit action */
+};
+
+/** Error codes reported via the instrumentation error hook */
+#define SMF_ERR_NULL_TRANSITION    1 /**< new_state is NULL in smf_set_state */
+#define SMF_ERR_TRANSITION_IN_EXIT 2 /**< smf_set_state called in exit action */
+
+#if defined(CONFIG_SMF_INSTRUMENTATION) || defined(__DOXYGEN__)
+/* Forward declarations for hook typedefs */
+struct smf_ctx;
+struct smf_state;
+
+/**
+ * @brief Called after the current state pointer is updated, before entry
+ *        actions of the new state execute.
+ *
+ * @param ctx    State machine context
+ * @param source Previous state (before transition)
+ * @param dest   New current state (after transition)
+ */
+typedef void (*smf_transition_hook)(struct smf_ctx *ctx, const struct smf_state *source,
+				    const struct smf_state *dest);
+
+/**
+ * @brief Called before a state action (entry/run/exit) is invoked.
+ *
+ * @param ctx         State machine context
+ * @param state       The state whose action is about to execute
+ * @param action_type Which action (entry, run, or exit)
+ */
+typedef void (*smf_action_hook)(struct smf_ctx *ctx, const struct smf_state *state,
+				enum smf_action_type action_type);
+
+/**
+ * @brief Called when an invalid operation is detected.
+ *
+ * @param ctx        State machine context
+ * @param error_code One of SMF_ERR_* defines
+ */
+typedef void (*smf_error_hook)(struct smf_ctx *ctx, int error_code);
+
+/**
+ * @brief Collection of optional instrumentation hooks.
+ *
+ * Any member may be NULL to skip that notification.
+ */
+struct smf_hooks {
+	smf_transition_hook on_transition; /**< Hook called on transition */
+	smf_action_hook on_action;         /**< Hook called on entry/run/exit actions */
+	smf_error_hook on_error;           /**< Hook called on error */
+};
+#endif /* CONFIG_SMF_INSTRUMENTATION */
+
+/**
  * @brief Function pointer that implements a entry and exit actions
  *        of a state
  *
@@ -140,6 +200,11 @@ struct smf_ctx {
 	 * used to track state machine context
 	 */
 	uint32_t internal;
+
+#ifdef CONFIG_SMF_INSTRUMENTATION
+	/** Optional instrumentation hooks for testing and debugging */
+	const struct smf_hooks *hooks;
+#endif /* CONFIG_SMF_INSTRUMENTATION */
 };
 
 /**
@@ -168,6 +233,22 @@ void smf_set_state(struct smf_ctx *ctx, const struct smf_state *new_state);
  *             function.
  */
 void smf_set_terminate(struct smf_ctx *ctx, int32_t val);
+
+#ifdef CONFIG_SMF_INSTRUMENTATION
+/**
+ * @brief Set instrumentation hooks on a state machine context.
+ *
+ * Must be called **after** smf_set_initial(), because smf_set_initial()
+ * resets the hooks pointer to NULL. Entry actions executed during
+ * smf_set_initial() (the initial state and its ancestors) will not be
+ * captured by these hooks.
+ *
+ * @param ctx   State machine context
+ * @param hooks Pointer to a hooks struct, or NULL to disable hooks.
+ *              The pointed-to struct must outlive the state machine.
+ */
+void smf_set_hooks(struct smf_ctx *ctx, const struct smf_hooks *hooks);
+#endif /* CONFIG_SMF_INSTRUMENTATION */
 
 /**
  * @brief Runs one iteration of a state machine (including any parent states)

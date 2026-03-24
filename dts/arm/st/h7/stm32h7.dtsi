@@ -26,6 +26,7 @@
 
 / {
 	chosen {
+		zephyr,crc = &crc;
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
 	};
@@ -77,6 +78,7 @@
 			status = "disabled";
 		};
 
+		/* controller reset default is on */
 		clk_hsi: clk-hsi {
 			#clock-cells = <0>;
 			compatible = "st,stm32h7-hsi-clock";
@@ -145,11 +147,13 @@
 	mcos {
 		mco1: mco1 {
 			compatible = "st,stm32-clock-mco";
+			clock-names = "clksel";
 			status = "disabled";
 		};
 
 		mco2: mco2 {
 			compatible = "st,stm32-clock-mco";
+			clock-names = "clksel";
 			status = "disabled";
 		};
 	};
@@ -1000,6 +1004,7 @@
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -1018,6 +1023,7 @@
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -1037,6 +1043,7 @@
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -1055,6 +1062,7 @@
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -1272,6 +1280,14 @@
 			interrupts = <137 0>;
 			st,exti-line = <20>;
 			clocks = <&rcc STM32_CLOCK(APB4, 14)>;
+			status = "disabled";
+		};
+
+		crc: crc@58024c00 {
+			compatible = "st,stm32-crc";
+			reg = <0x58024c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB4, 19)>;
+			resets = <&rctl STM32_RESET(AHB4, 19)>;
 			status = "disabled";
 		};
 	};

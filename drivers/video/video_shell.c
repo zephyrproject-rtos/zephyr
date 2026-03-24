@@ -15,6 +15,7 @@
 #include <zephyr/sys/byteorder.h>
 
 #include "video_ctrls.h"
+#include "video_device.h"
 
 #define VIDEO_FRMIVAL_FPS(frmival)  DIV_ROUND_CLOSEST((frmival)->denominator, (frmival)->numerator)
 #define VIDEO_FRMIVAL_MSEC(frmival) (MSEC_PER_SEC * (frmival)->numerator / (frmival)->denominator)
@@ -73,7 +74,7 @@ static const struct device *video_shell_get_dev_by_num(int num)
 	size_t n = z_device_get_all_static(&dev_list);
 
 	for (size_t i = 0; i < n; i++) {
-		if (!DEVICE_API_IS(video, (&dev_list[i]))) {
+		if (!device_is_video_and_ready(&dev_list[i])) {
 			continue;
 		}
 		if (num == 0) {
@@ -109,6 +110,34 @@ static int video_shell_parse_on_off(const struct shell *sh, char const *arg_on_o
 	} else {
 		shell_error(sh, "Endpoint direction must be 'on' or 'off', not '%s'", arg_on_off);
 		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int cmd_video_tree(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	char *arg_device = argv[1];
+	struct video_device *vdev;
+	int ret;
+
+	dev = device_get_binding(arg_device);
+	ret = video_shell_check_device(sh, dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	for (int level = 0; dev != NULL; level++) {
+		vdev = video_find_vdev(dev);
+		if (vdev == NULL) {
+			shell_error(sh, "%s is not a valid video device", dev->name);
+			return -EINVAL;
+		}
+
+		shell_print(sh, "%*s +- %s", level * 2, "", dev->name);
+
+		dev = vdev->src_dev;
 	}
 
 	return 0;
@@ -839,7 +868,7 @@ static void complete_video_ctrl_menu_name(size_t idx, struct shell_static_entry 
 	}
 
 }
-LISTIFY(10, VIDEO_SHELL_COMPLETE_DEFINE, (;), video_ctrl_menu_name);
+LISTIFY(20, VIDEO_SHELL_COMPLETE_DEFINE, (;), video_ctrl_menu_name);
 
 static const union shell_cmd_entry *dsub_video_ctrl_menu_name[] = {
 	&dsub_video_ctrl_menu_name0, &dsub_video_ctrl_menu_name1,
@@ -847,6 +876,11 @@ static const union shell_cmd_entry *dsub_video_ctrl_menu_name[] = {
 	&dsub_video_ctrl_menu_name4, &dsub_video_ctrl_menu_name5,
 	&dsub_video_ctrl_menu_name6, &dsub_video_ctrl_menu_name7,
 	&dsub_video_ctrl_menu_name8, &dsub_video_ctrl_menu_name9,
+	&dsub_video_ctrl_menu_name10, &dsub_video_ctrl_menu_name11,
+	&dsub_video_ctrl_menu_name12, &dsub_video_ctrl_menu_name13,
+	&dsub_video_ctrl_menu_name14, &dsub_video_ctrl_menu_name15,
+	&dsub_video_ctrl_menu_name16, &dsub_video_ctrl_menu_name17,
+	&dsub_video_ctrl_menu_name18, &dsub_video_ctrl_menu_name19,
 };
 
 static void complete_video_ctrl_name_dev(size_t idx, struct shell_static_entry *entry, int devn)
@@ -855,16 +889,14 @@ static void complete_video_ctrl_name_dev(size_t idx, struct shell_static_entry *
 	struct video_ctrl_query *cq = &video_shell_cq;
 	int ret;
 
-
 	entry->handler = NULL;
 	entry->help = NULL;
 	entry->subcmd = NULL;
 	entry->syntax = NULL;
 
 	/* Check which device was selected */
-
 	dev = video_shell_dev = video_shell_get_dev_by_num(devn);
-	if (!device_is_ready(dev)) {
+	if (dev == NULL) {
 		return;
 	}
 
@@ -894,7 +926,7 @@ static void complete_video_ctrl_name_dev(size_t idx, struct shell_static_entry *
 		break;
 	}
 }
-LISTIFY(10, VIDEO_SHELL_COMPLETE_DEFINE, (;), video_ctrl_name_dev);
+LISTIFY(20, VIDEO_SHELL_COMPLETE_DEFINE, (;), video_ctrl_name_dev);
 
 static const union shell_cmd_entry *dsub_video_ctrl_name_dev[] = {
 	&dsub_video_ctrl_name_dev0, &dsub_video_ctrl_name_dev1,
@@ -902,6 +934,11 @@ static const union shell_cmd_entry *dsub_video_ctrl_name_dev[] = {
 	&dsub_video_ctrl_name_dev4, &dsub_video_ctrl_name_dev5,
 	&dsub_video_ctrl_name_dev6, &dsub_video_ctrl_name_dev7,
 	&dsub_video_ctrl_name_dev8, &dsub_video_ctrl_name_dev9,
+	&dsub_video_ctrl_name_dev10, &dsub_video_ctrl_name_dev11,
+	&dsub_video_ctrl_name_dev12, &dsub_video_ctrl_name_dev13,
+	&dsub_video_ctrl_name_dev14, &dsub_video_ctrl_name_dev15,
+	&dsub_video_ctrl_name_dev16, &dsub_video_ctrl_name_dev17,
+	&dsub_video_ctrl_name_dev18, &dsub_video_ctrl_name_dev19,
 };
 
 static void complete_video_ctrl_dev(size_t idx, struct shell_static_entry *entry)
@@ -913,8 +950,12 @@ static void complete_video_ctrl_dev(size_t idx, struct shell_static_entry *entry
 	entry->help = NULL;
 	entry->subcmd = NULL;
 
+	if (idx >= ARRAY_SIZE(dsub_video_ctrl_name_dev)) {
+		return;
+	}
+
 	dev = video_shell_get_dev_by_num(idx);
-	if (!device_is_ready(dev) || idx >= ARRAY_SIZE(dsub_video_ctrl_name_dev)) {
+	if (dev == NULL) {
 		return;
 	}
 
@@ -991,7 +1032,7 @@ static void complete_video_format_dir_dev(size_t idx, struct shell_static_entry 
 	/* Check which device was selected */
 
 	dev = video_shell_dev = video_shell_get_dev_by_num(devn);
-	if (!device_is_ready(dev)) {
+	if (dev == NULL) {
 		return;
 	}
 
@@ -1011,7 +1052,7 @@ static void complete_video_format_dir_dev(size_t idx, struct shell_static_entry 
 		break;
 	}
 }
-LISTIFY(10, VIDEO_SHELL_COMPLETE_DEFINE, (;), video_format_dir_dev);
+LISTIFY(20, VIDEO_SHELL_COMPLETE_DEFINE, (;), video_format_dir_dev);
 
 static const union shell_cmd_entry *dsub_video_format_dir_dev[] = {
 	&dsub_video_format_dir_dev0, &dsub_video_format_dir_dev1,
@@ -1019,6 +1060,11 @@ static const union shell_cmd_entry *dsub_video_format_dir_dev[] = {
 	&dsub_video_format_dir_dev4, &dsub_video_format_dir_dev5,
 	&dsub_video_format_dir_dev6, &dsub_video_format_dir_dev7,
 	&dsub_video_format_dir_dev8, &dsub_video_format_dir_dev9,
+	&dsub_video_format_dir_dev10, &dsub_video_format_dir_dev11,
+	&dsub_video_format_dir_dev12, &dsub_video_format_dir_dev13,
+	&dsub_video_format_dir_dev14, &dsub_video_format_dir_dev15,
+	&dsub_video_format_dir_dev16, &dsub_video_format_dir_dev17,
+	&dsub_video_format_dir_dev18, &dsub_video_format_dir_dev19,
 };
 
 static void complete_video_format_dev(size_t idx, struct shell_static_entry *entry)
@@ -1030,8 +1076,12 @@ static void complete_video_format_dev(size_t idx, struct shell_static_entry *ent
 	entry->help = NULL;
 	entry->subcmd = NULL;
 
+	if (idx >= ARRAY_SIZE(dsub_video_format_dir_dev)) {
+		return;
+	}
+
 	dev = video_shell_get_dev_by_num(idx);
-	if (!device_is_ready(dev) || idx >= ARRAY_SIZE(dsub_video_format_dir_dev)) {
+	if (dev == NULL) {
 		return;
 	}
 
@@ -1171,9 +1221,91 @@ static int cmd_video_selection(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static void complete_video_selection_target(size_t idx, struct shell_static_entry *entry)
+{
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+	video_shell_dev = NULL;
+
+	switch (idx) {
+	case 0:
+		entry->syntax = "crop";
+		break;
+	case 1:
+		entry->syntax = "crop_bound";
+		break;
+	case 2:
+		entry->syntax = "native_size";
+		break;
+	case 3:
+		entry->syntax = "compose";
+		break;
+	case 4:
+		entry->syntax = "compose_bound";
+		break;
+	default:
+		entry->syntax = NULL;
+		break;
+	}
+}
+SHELL_DYNAMIC_CMD_CREATE(dsub_video_selection_target, complete_video_selection_target);
+
+static void complete_video_selection_dir(size_t idx, struct shell_static_entry *entry)
+{
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+	video_shell_dev = NULL;
+
+	switch (idx) {
+	case 0:
+		entry->subcmd = &dsub_video_selection_target;
+		entry->syntax = "in";
+		break;
+	case 1:
+		entry->subcmd = &dsub_video_selection_target;
+		entry->syntax = "out";
+		break;
+	default:
+		entry->syntax = NULL;
+		break;
+	}
+}
+SHELL_DYNAMIC_CMD_CREATE(dsub_video_selection_dir, complete_video_selection_dir);
+
+static void complete_video_selection_dev(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev;
+
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+
+	if (idx >= ARRAY_SIZE(dsub_video_format_dir_dev)) {
+		return;
+	}
+
+	dev = video_shell_get_dev_by_num(idx);
+	if (dev == NULL) {
+		return;
+	}
+
+	entry->syntax = dev->name;
+	entry->subcmd = &dsub_video_selection_dir;
+}
+SHELL_DYNAMIC_CMD_CREATE(dsub_video_selection_dev, complete_video_selection_dev);
+
 /* Video shell commands declaration */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_video_cmds,
+	SHELL_CMD_ARG(tree, &dsub_video_dev,
+		SHELL_HELP("Show the device topology following the source endpoints",
+			   "<device>"),
+		cmd_video_tree, 2, 0),
 	SHELL_CMD_ARG(start, &dsub_video_dev,
 		SHELL_HELP("Start a video device and its sources", "<device>"),
 		cmd_video_start, 2, 0),
@@ -1196,7 +1328,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_video_cmds,
 		SHELL_HELP("Query or set video controls of a device",
 			   "<device> [<ctrl> <value>]"),
 		cmd_video_ctrl, 2, 2),
-	SHELL_CMD_ARG(selection, &dsub_video_format_dev,
+	SHELL_CMD_ARG(selection, &dsub_video_selection_dev,
 		SHELL_HELP("Query or set the video selection of a device",
 			   "<device> <dir> <target> [<left> <top> <width>x<height>]"),
 		cmd_video_selection, 4, 3),

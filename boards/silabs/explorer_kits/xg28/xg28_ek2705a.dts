@@ -1,0 +1,285 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg28/efr32zg28b312f1024im48.dtsi>
+#include <silabs/xg28/clock-hfrcodpll.dtsi>
+#include <silabs/xg28/clock-lfxo.dtsi>
+#include <zephyr/dt-bindings/adc/silabs-adc.h>
+#include <zephyr/dt-bindings/dac/silabs-vdac.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
+
+#include "xg28_ek2705a-pinctrl.dtsi"
+
+/ {
+	compatible = "silabs,xg28_ek2705a";
+	model = "Silicon Labs xG28-EK2705A";
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdog0;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
+			label = "Push Button 0";
+			zephyr,code = <INPUT_BTN_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
+			label = "Push Button 1";
+			zephyr,code = <INPUT_BTN_1>;
+		};
+	};
+
+	chosen {
+		zephyr,bt-hci = &bt_hci_silabs;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &usart0;
+		zephyr,flash = &flash0;
+		zephyr,shell-uart = &usart0;
+		zephyr,sram = &sram0;
+		zephyr,uart-pipe = &usart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+		};
+
+		led1: led_1 {
+			gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <0 0 &gpiob 2 0>,  /* AN   */
+			   <1 0 &gpioc 7 0>,  /* RST  */
+			   <2 0 &gpioc 4 0>,  /* CS   */
+			   <3 0 &gpioc 3 0>,  /* SCK  */
+			   <4 0 &gpioc 2 0>,  /* MISO */
+			   <5 0 &gpioc 1 0>,  /* MOSI */
+			   <6 0 &gpiod 2 0>,  /* PWM  */
+			   <7 0 &gpiob 1 0>,  /* INT  */
+			   <8 0 &gpioa 5 0>,  /* RX   */
+			   <9 0 &gpioa 4 0>,  /* TX   */
+			   <10 0 &gpioa 6 0>, /* SCL  */
+			   <11 0 &gpioa 7 0>; /* SDA  */
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+
+		pwm_led1: pwm_led_1 {
+			pwms = <&timer0_pwm 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	qwiic_connector: stemma-qt-connector {
+		compatible = "stemma-qt-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <0 0 &gpioa 6 0>, /* SCL */
+			   <1 0 &gpioa 7 0>; /* SDA */
+	};
+
+	mikrobus_adc: mikrobus_dac: zephyr,user {
+		io-channels = <&adc0 0>;
+		dac = <&vdac0>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
+};
+
+&adc0 {
+	pinctrl-0 = <&iadc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,input-positive = <IADC_INPUT_PB2>;
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+};
+
+&bt_hci_silabs {
+	status = "okay";
+};
+
+&dcdc {
+	regulator-boot-on;
+	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
+	silabs,pfmx-peak-current-milliamp = <100>;
+	status = "okay";
+};
+
+&eusart1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(8)>;
+	cs-gpios = <&gpioc 4 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&eusart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+mikrobus_spi: &eusart1 {};
+
+zephyr_spi: &eusart1 {};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
+		};
+
+		slot0_partition: partition@c000 {
+			reg = <0xc000 DT_SIZE_K(472)>;
+			label = "image-0";
+		};
+
+		slot1_partition: partition@82000 {
+			reg = <0x00082000 DT_SIZE_K(472)>;
+			label = "image-1";
+		};
+
+		storage_partition: partition@f8000 {
+			reg = <0x000f8000 DT_SIZE_K(32)>;
+			label = "storage";
+		};
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&hfxo {
+	ctune = <100>;
+	precision = <50>;
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+mikrobus_i2c: &i2c0 {};
+
+zephyr_i2c: &i2c0 {};
+
+&itm {
+	pinctrl-0 = <&itm_default>;
+	pinctrl-names = "default";
+};
+
+&lfxo {
+	ctune = <35>;
+	precision = <50>;
+	status = "okay";
+};
+
+&pti {
+	pinctrl-0 = <&pti_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&radio {
+	pa-voltage-mv = <1800>;
+	rf-path-switch-combine;
+	rf-path-switch-control-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+	rf-path-switch-radio-active-gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+};
+
+&se {
+	status = "okay";
+};
+
+&sysrtc0 {
+	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+
+	timer0_pwm: pwm {
+		pinctrl-0 = <&timer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&usart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&vdac0 {
+	pinctrl-0 = <&vdac0_default>;
+	pinctrl-names = "default";
+	voltage-reference = "AVDD";
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		aux-output = <VDAC_OUTPUT_PB2>;
+	};
+};
+
+&wdog0 {
+	status = "okay";
+};

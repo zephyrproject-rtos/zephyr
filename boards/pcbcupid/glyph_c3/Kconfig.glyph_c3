@@ -1,0 +1,9 @@
+# GLYPH-C3 board configuration
+
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright (c) 2026 Nikhil S
+
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_GLYPH_C3
+	select SOC_ESP32C3_WROOM_02_N4

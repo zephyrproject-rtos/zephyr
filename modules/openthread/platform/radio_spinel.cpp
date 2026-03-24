@@ -102,7 +102,7 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 	otMessageSettings settings;
 	bool is_ip4 = PKT_IS_IPv4(pkt);
 
-	NET_DBG("Sending %s packet to ot stack", is_ip4 ? "IPv4" : "IPv6");
+	LOG_DBG("Sending %s packet to ot stack", is_ip4 ? "IPv4" : "IPv6");
 
 	settings.mPriority = OT_MESSAGE_PRIORITY_NORMAL;
 	settings.mLinkSecurityEnabled = true;
@@ -121,7 +121,7 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 
 	for (buf = pkt->buffer; buf; buf = buf->frags) {
 		if (otMessageAppend(message, buf->data, buf->len) != OT_ERROR_NONE) {
-			NET_ERR("Error while appending to otMessage");
+			LOG_ERR("Error while appending to otMessage");
 			otMessageFree(message);
 			goto exit;
 		}
@@ -129,14 +129,14 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 #if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
 	if (is_ip4) {
 		if (otNat64Send(instance, message) != OT_ERROR_NONE) {
-			NET_ERR("Error while calling otNat64Send");
+			LOG_ERR("Error while calling otNat64Send");
 			goto exit;
 		}
 	} else {
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR*/
 
 		if (otIp6Send(instance, message) != OT_ERROR_NONE) {
-			NET_ERR("Error while calling otIp6Send");
+			LOG_ERR("Error while calling otIp6Send");
 			goto exit;
 		}
 #if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)

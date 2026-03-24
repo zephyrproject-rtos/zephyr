@@ -899,7 +899,7 @@ static inline void set_current(struct k_thread *new_thread)
  * copy before calling this function.
  *
  * @param interrupted Handle for the thread that was interrupted or NULL.
- * @retval Handle for the next thread to execute, or @p interrupted when
+ * @return Handle for the next thread to execute, or @p interrupted when
  *         no new thread is to be scheduled.
  */
 void *z_get_next_switch_handle(void *interrupted)
@@ -1175,14 +1175,18 @@ static int32_t z_tick_sleep(k_timeout_t timeout)
 		return 0;
 	}
 
-	/* We require a 32 bit unsigned subtraction to care a wraparound */
+	/* We require a 32 bit unsigned subtraction to handle a wraparound */
 	uint32_t left_ticks = expected_wakeup_ticks - sys_clock_tick_get_32();
 
-	/* To handle a negative value correctly, once type-cast it to signed 32 bit */
-	k_ticks_t ticks = (k_ticks_t)(int32_t)left_ticks;
+	/* Use signed comparison so past-due wakeups (negative remainder) return 0.
+	 * k_ticks_t may be uint32_t (!CONFIG_TIMEOUT_64BIT), so comparing ticks > 0
+	 * directly would be an unsigned comparison and would misinterpret a negative
+	 * remainder as a large positive value.
+	 */
+	int32_t signed_left = (int32_t)left_ticks;
 
-	if (ticks > 0) {
-		return ticks;
+	if (signed_left > 0) {
+		return (k_ticks_t)signed_left;
 	}
 
 	return 0;

@@ -72,10 +72,6 @@ zephyr_udc0: &usb1 {
 	status = "okay";
 };
 
-&edma0 {
-	status = "okay";
-};
-
 &flexcan1 {
 	pinctrl-0 = <&pinmux_flexcan1>;
 	pinctrl-names = "default";

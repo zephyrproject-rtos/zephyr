@@ -27,6 +27,11 @@ struct counter_alarm_cfg cntr_alarm_cfg2;
 /* clang-format off */
 
 #define DEVICE_DT_GET_AND_COMMA(node_id) DEVICE_DT_GET(node_id),
+#define DEVICE_DT_GET_AND_COMMA_IF_NOT_SYSTEM_TIMER(node_id) \
+	COND_CODE_1(DT_HAS_CHOSEN(zephyr_system_timer), \
+		(COND_CODE_1(DT_SAME_NODE(node_id, DT_CHOSEN(zephyr_system_timer)), \
+			(), (DEVICE_DT_GET(node_id),))), \
+		(DEVICE_DT_GET(node_id),))
 /* Generate a list of devices for all instances of the "compat" */
 #define DEVS_FOR_DT_COMPAT(compat) \
 	DT_FOREACH_STATUS_OKAY(compat, DEVICE_DT_GET_AND_COMMA)
@@ -65,6 +70,7 @@ static const struct device *const devices[] = {
 	 */
 	DEVS_FOR_DT_COMPAT(arm_cmsdk_timer)
 	DEVS_FOR_DT_COMPAT(arm_cmsdk_dtimer)
+	DEVS_FOR_DT_COMPAT(microchip_tc_g2_counter)
 	DEVS_FOR_DT_COMPAT(microchip_xec_timer)
 	DEVS_FOR_DT_COMPAT(nxp_imx_epit)
 	DEVS_FOR_DT_COMPAT(nxp_imx_gpt)
@@ -105,6 +111,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_SILABS_BURTC
 	DEVS_FOR_DT_COMPAT(silabs_burtc_counter)
 #endif
+#ifdef CONFIG_COUNTER_SILABS_PROTIMER
+	DEVS_FOR_DT_COMPAT(silabs_protimer)
+#endif
 #ifdef CONFIG_COUNTER_SILABS_TIMER
 	DEVS_FOR_DT_COMPAT(silabs_timer_counter)
 #endif
@@ -139,7 +148,7 @@ static const struct device *const devices[] = {
 	DEVS_FOR_DT_COMPAT(ambiq_counter)
 #endif
 #ifdef CONFIG_COUNTER_MCUX_LPTMR
-	DEVS_FOR_DT_COMPAT(nxp_lptmr)
+	DT_FOREACH_STATUS_OKAY(nxp_lptmr, DEVICE_DT_GET_AND_COMMA_IF_NOT_SYSTEM_TIMER)
 #endif
 #ifdef CONFIG_COUNTER_MCUX_LPIT
 	DEVS_FOR_DT_COMPAT(nxp_lpit_channel)
@@ -183,6 +192,12 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_RENESAS_RZA2M_OSTM
 	DEVS_FOR_DT_COMPAT(renesas_rza2m_ostm_counter)
+#endif
+#ifdef CONFIG_COUNTER_BFLB_TIMER
+	DEVS_FOR_DT_COMPAT(bflb_timer_channel)
+#endif
+#ifdef CONFIG_COUNTER_BEE_TIMER
+	DEVS_FOR_DT_COMPAT(realtek_bee_counter_timer)
 #endif
 };
 

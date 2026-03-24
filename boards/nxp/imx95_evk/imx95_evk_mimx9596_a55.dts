@@ -13,6 +13,10 @@
 	model = "NXP i.MX95 A55";
 	compatible = "fsl,mimx95";
 
+	aliases {
+		watchdog0 = &wdog4;
+	};
+
 	chosen {
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
@@ -45,6 +49,15 @@
 	dram: memory@d0000000 {
 		reg = <0xd0000000 DT_SIZE_M(10)>;
 	};
+
+	can_phy2: can-phy2 {
+		compatible = "nxp,tja1463", "can-transceiver-gpio";
+		enable-gpios = <&gpio_exp0 4 GPIO_ACTIVE_HIGH>;
+		standby-gpios = <&gpio_exp0 3 GPIO_ACTIVE_LOW>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+		status = "okay";
+	};
 };
 
 &emdio {
@@ -72,6 +85,27 @@
 	status = "okay";
 };
 
+&gpio2 {
+	status = "okay";
+};
+
+&lpi2c4 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&lpi2c4_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	gpio_exp0: pcal6408@21 {
+		compatible = "nxp,pcal6408";
+		reg = <0x21>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <8>;
+		int-gpios = <&gpio2 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		status = "okay";
+	};
+};
+
 &lpi2c5 {
 	pinctrl-0 = <&lpi2c5_default>;
 	pinctrl-names = "default";
@@ -89,4 +123,15 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart1_default>;
 	pinctrl-names = "default";
+};
+
+&wdog4 {
+	status = "okay";
+};
+
+&flexcan2 {
+	pinctrl-0 = <&flexcan2_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy2>;
+	status = "okay";
 };

@@ -639,10 +639,9 @@ static int lan9250_rx(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-	net_pkt_set_iface(pkt, ctx->iface);
 
 	/* Feed buffer frame to IP stack */
-	if (net_recv_data(net_pkt_iface(pkt), pkt) < 0) {
+	if (net_recv_data(ctx->iface, pkt) < 0) {
 		net_pkt_unref(pkt);
 	}
 
@@ -783,6 +782,11 @@ static void lan9250_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 
 	net_if_carrier_off(iface);
+
+	k_thread_create(&context->thread, context->thread_stack,
+			CONFIG_ETH_LAN9250_RX_THREAD_STACK_SIZE,
+			lan9250_thread, (void *)dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_ETH_LAN9250_RX_THREAD_PRIO), 0, K_NO_WAIT);
 }
 
 static int lan9250_set_config(const struct device *dev, enum ethernet_config_type type,
@@ -937,11 +941,6 @@ static int lan9250_init(const struct device *dev)
 		LOG_ERR("Set mac address failed");
 		return ret;
 	}
-
-	k_thread_create(&context->thread, context->thread_stack,
-			CONFIG_ETH_LAN9250_RX_THREAD_STACK_SIZE,
-			lan9250_thread, (void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_ETH_LAN9250_RX_THREAD_PRIO), 0, K_NO_WAIT);
 
 	LOG_INF("LAN9250 Initialized");
 

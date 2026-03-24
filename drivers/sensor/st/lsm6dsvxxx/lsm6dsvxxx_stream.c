@@ -276,8 +276,9 @@ static void lsm6dsvxxx_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	}
 
 	uint8_t *buf, *read_buf;
-	uint32_t buf_len, buf_avail;
-	uint32_t req_len = LSM6DSVXXX_FIFO_SIZE(fifo_count) + sizeof(struct lsm6dsvxxx_fifo_data);
+	uint32_t buf_len;
+	uint32_t fifo_read_size = LSM6DSVXXX_FIFO_SIZE(fifo_count);
+	uint32_t req_len = fifo_read_size + sizeof(struct lsm6dsvxxx_fifo_data);
 
 	if (rtio_sqe_rx_buf(data->streaming_sqe, req_len, req_len, &buf, &buf_len) != 0) {
 		LOG_ERR("Failed to get buffer");
@@ -308,7 +309,6 @@ static void lsm6dsvxxx_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 
 	memcpy(buf, &hdr, sizeof(hdr));
 	read_buf = buf + sizeof(hdr);
-	buf_avail = buf_len - sizeof(hdr);
 
 	uint8_t reg_addr = lsm6dsvxxx_bus_reg(data->bus_type, LSM6DSVXXX_FIFO_DATA_OUT_TAG);
 	struct rtio_regs fifo_regs;
@@ -316,7 +316,7 @@ static void lsm6dsvxxx_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 		{
 			reg_addr,
 			read_buf,
-			buf_avail,
+			fifo_read_size,
 		},
 	};
 

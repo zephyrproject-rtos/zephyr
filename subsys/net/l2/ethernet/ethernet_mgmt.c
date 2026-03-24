@@ -177,7 +177,7 @@ static int ethernet_set_config(uint64_t mgmt_request,
 		return -EINVAL;
 	}
 
-	return api->set_config(net_if_get_device(iface), type, &config);
+	return api->set_config(dev, type, &config);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_MAC_ADDRESS,

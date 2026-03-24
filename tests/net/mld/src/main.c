@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #include <zephyr/net/mld.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_core.h>
@@ -185,7 +186,7 @@ static struct dummy_api net_test_if_api = {
 
 static void init_null_iface(struct net_if *iface)
 {
-	struct net_test_mld *context = iface->if_dev->dev->data;
+	struct net_test_mld *context = net_if_get_device(iface)->data;
 
 	memset(&context->mac_addr, 0, sizeof(context->mac_addr));
 

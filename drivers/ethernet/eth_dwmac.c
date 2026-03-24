@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/phy.h>
 #include <zephyr/sys/barrier.h>
 #include <ethernet/eth_stats.h>
 
@@ -165,7 +166,7 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 		sys_cache_data_flush_range(pinned->data, pinned->len);
 		p->tx_frags[d_idx] = pinned;
 		LOG_DBG("d[%d]: frag %p pinned %p len %d", d_idx,
-			frag->data, pinned->data, pinned->len);
+			(void *)frag->data, (void *)pinned->data, pinned->len);
 
 		/* if no more fragments after this one: */
 		if (!frag->frags) {
@@ -236,7 +237,7 @@ static void dwmac_tx_release(struct dwmac_priv *p)
 
 		/* release corresponding fragments */
 		frag = p->tx_frags[d_idx];
-		LOG_DBG("unref frag %p", frag->data);
+		LOG_DBG("unref frag %p", (void *)frag->data);
 		net_pkt_frag_unref(frag);
 
 		/* last packet descriptor: */
@@ -366,12 +367,12 @@ static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
 				k_sem_give(&p->free_rx_descs);
 				break;
 			}
-			LOG_DBG("new frag[%d] at %p", d_idx, frag->data);
+			LOG_DBG("new frag[%d] at %p", d_idx, (void *)frag->data);
 			__ASSERT(frag->size == RX_FRAG_SIZE, "");
 			sys_cache_data_invd_range(frag->data, frag->size);
 			p->rx_frags[d_idx] = frag;
 		} else {
-			LOG_DBG("reusing frag[%d] at %p", d_idx, frag->data);
+			LOG_DBG("reusing frag[%d] at %p", d_idx, (void *)frag->data);
 		}
 
 		/* all is good: initialize the descriptor */
@@ -509,6 +510,56 @@ static int dwmac_set_config(const struct device *dev,
 	return ret;
 }
 
+static void phy_link_state_changed(const struct device *phy_dev,
+				   struct phy_link_state *state,
+				   void *user_data)
+{
+	uint32_t reg_val;
+	struct dwmac_priv *p = (struct dwmac_priv *)user_data;
+
+	ARG_UNUSED(phy_dev);
+
+	if (state->is_up) {
+		reg_val = REG_READ(MAC_CONF);
+
+		switch (state->speed) {
+		case LINK_HALF_10BASE:
+		case LINK_FULL_10BASE:
+			reg_val &= ~MAC_CONF_FES;
+			reg_val |= MAC_CONF_PS;
+			break;
+		case LINK_HALF_100BASE:
+		case LINK_FULL_100BASE:
+			reg_val |= MAC_CONF_FES;
+			reg_val |= MAC_CONF_PS;
+			break;
+		case LINK_HALF_1000BASE:
+		case LINK_FULL_1000BASE:
+			reg_val &= ~MAC_CONF_FES;
+			reg_val &= ~MAC_CONF_PS;
+			break;
+		case LINK_FULL_2500BASE:
+			reg_val |= MAC_CONF_FES;
+			reg_val &= ~MAC_CONF_PS;
+			break;
+		default:
+			LOG_ERR("unknown link speed %d", state->speed);
+		}
+
+		if (PHY_LINK_IS_FULL_DUPLEX(state->speed)) {
+			reg_val |= MAC_CONF_DM;
+		} else {
+			reg_val &= ~MAC_CONF_DM;
+		}
+
+		REG_WRITE(MAC_CONF, reg_val);
+
+		net_eth_carrier_on(p->iface);
+	} else {
+		net_eth_carrier_off(p->iface);
+	}
+}
+
 static void dwmac_iface_init(struct net_if *iface)
 {
 	struct dwmac_priv *p = net_if_get_device(iface)->data;
@@ -522,6 +573,17 @@ static void dwmac_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, p->mac_addr, sizeof(p->mac_addr),
 			     NET_LINK_ETHERNET);
 	dwmac_set_mac_addr(p, p->mac_addr, 0);
+
+	if (p->phy_dev != NULL) {
+		/* Do not start the interface until PHY link is up */
+		net_if_carrier_off(iface);
+
+		if (device_is_ready(p->phy_dev)) {
+			phy_link_callback_set(p->phy_dev, phy_link_state_changed, (void *)p);
+		} else {
+			LOG_ERR("PHY device not ready");
+		}
+	}
 
 	/*
 	 * Semaphores are used to represent number of available descriptors.
@@ -537,7 +599,8 @@ static void dwmac_iface_init(struct net_if *iface)
 	k_thread_create(&p->rx_refill_thread, p->rx_refill_thread_stack,
 			K_KERNEL_STACK_SIZEOF(p->rx_refill_thread_stack),
 			dwmac_rx_refill_thread, p, NULL, NULL,
-			0, K_PRIO_PREEMPT(0), K_NO_WAIT);
+			CONFIG_ETH_DWMAC_RX_REFILL_THREAD_PRIORITY,
+			K_ESSENTIAL, K_NO_WAIT);
 	k_thread_name_set(&p->rx_refill_thread, "dwmac_rx_refill");
 
 	/* start up TX/RX */

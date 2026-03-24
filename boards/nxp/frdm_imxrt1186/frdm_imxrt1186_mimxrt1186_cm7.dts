@@ -22,6 +22,20 @@
 		zephyr,console = &lpuart3;
 		zephyr,shell-uart = &lpuart3;
 		zephyr,flash = &itcm;
+		zephyr,flash-controller = &w25q128jv;
+		nxp,m7-partition = &slot1_partition;
+	};
+
+	hyperram0: memory@28000000 {
+		/* Winbond W957A8MFYA5K */
+		device_type = "memory";
+		reg = <0x28000000 DT_SIZE_M(8)>;
+		/*
+		 * HyperRAM on FRDM-IMXRT1186 is connected to FlexSPI and initialized by ROM
+		 * reading the XMCD configuration from xip/frdmimxrt1186_flexspi_nor_config.c
+		 * CM7 sees HyperRAM at a different address (0x28000000) than CM33 (0x38000000)
+		 */
+		status = "disabled";
 	};
 };
 
@@ -32,6 +46,10 @@
 &lpuart3 {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&flexspi2 {
+	status = "okay";
 };
 
 &lpadc1 {

@@ -1,0 +1,151 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/c5/stm32c5a3Xg.dtsi>
+#include <st/c5/stm32c5(9-a)3z(e-g)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32C5A3ZG-NUCLEO board";
+	compatible = "st,stm32c5a3zg-nucleo";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash0;
+	};
+
+	aliases {
+		led0 = &green_led;
+		sw0 = &user_button;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button {
+			label = "USER";
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		green_led: led_1 {
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+			label = "LD1";
+		};
+
+		red_led: led_2 {
+			gpios = <&gpiog 1 GPIO_ACTIVE_LOW>;
+			label = "LD2";
+		};
+
+		blue_led: led_3 {
+			gpios = <&gpiog 2 GPIO_ACTIVE_LOW>;
+			label = "LD3";
+		};
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(48)>;
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_psis {
+	clock-frequency = <DT_FREQ_M(144)>;
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+		};
+
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 DT_SIZE_K(472)>;
+		};
+
+		slot1_partition: partition@82000 {
+			label = "image-1";
+			reg = <0x00082000 DT_SIZE_K(480)>;
+		};
+
+		storage_partition: partition@fa000 {
+			label = "storage";
+			reg = <0x000fa000 DT_SIZE_K(24)>;
+		};
+	};
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb4>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpdma1 {
+	status = "okay";
+};
+
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pa3 &lpuart1_rx_pa2>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	tx-rx-swap;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&clk_psis>;
+	clock-frequency = <DT_FREQ_M(144)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <2>;
+	apb3-prescaler = <2>;
+	st,psi-frequency = <144>;
+	st,psi-source = "HSE";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB3, 21)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};

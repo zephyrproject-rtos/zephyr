@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2026 BayLibre SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mimx8mm_a53.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "phyboard_polis-pinctrl.dtsi"
+
+/ {
+	model = "phyBOARD-Polis i.MX8M Mini";
+	compatible = "nxp,phyboard_polis";
+
+	aliases {
+		uart-3 = &uart3;
+		led0 = &led_green;
+	};
+
+	chosen {
+		zephyr,console = &uart3;
+		zephyr,shell-uart = &uart3;
+		/* sram node actually locates at DDR DRAM */
+		zephyr,sram = &dram;
+	};
+
+	dram: memory@93c00000 {
+		reg = <0x93c00000 DT_SIZE_M(1)>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_green: led_green {
+			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	psci {
+		compatible = "arm,psci-1.1";
+		method = "smc";
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+/* UART usually used from A53 Core (1st tty on Debug USB connector) */
+&uart3 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart3_default>;
+	pinctrl-names = "default";
+};
+
+/* UART of the M4 Core (2nd tty on Debug USB connector) */
+&uart4 {
+	status = "disabled";
+};

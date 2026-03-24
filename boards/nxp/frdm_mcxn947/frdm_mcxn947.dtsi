@@ -263,7 +263,6 @@ arduino_serial: &flexcomm2_lpuart2 {};
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/*
 		 * Partition sizes must be aligned
@@ -403,6 +402,17 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 &sc_timer {
 	pinctrl-0 = <&pinmux_sctimer>;
 	pinctrl-names = "default";
+};
+
+&tsi0 {
+	pinctrl-0 = <&pinmux_tsi>;
+	pinctrl-names = "default";
+
+	channel-mask = <0x08>;
+	input-codes = <INPUT_BTN_3>;
+	touch-threshold = <60>;
+	release-threshold = <30>;
+	scan-period-ms = <50>;
 };
 
 dvp_20pin_i2c: &flexcomm7_lpi2c7 {};

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,9 @@
 #include <fsl_pmu.h>
 #include <fsl_dcdc.h>
 #include <fsl_ele_base_api.h>
-#include <fsl_trdc.h>
+
+extern void imxrt118x_trdc_enable_all_access(void);
+
 #if defined(CONFIG_WDT_MCUX_RTWDOG)
 #include <fsl_soc_src.h>
 #endif
@@ -25,6 +27,57 @@
 #include <cmsis_core.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
+
+/*
+ * RT118x ELE requires ping every 24 hours, which is mandatory,
+ * otherwise soc may reset.
+ *
+ * Note:
+ *   1. This is generic rule for all RT118x demos.
+ *   2. We ping ELE every 23 (but not 24) hours, in case of any clock inaccuracy.
+ *   3. This requirement comes from RT1180 SRM section 3.11 "ELE active timer".
+ *      Refer to the SRM for more details.
+ */
+#define ELE_PING_INTERVAL_HOURS 23U
+#define ELE_PING_INTERVAL_MS    (ELE_PING_INTERVAL_HOURS * 60UL * 60UL * 1000UL)
+
+/* Software timer for ELE ping */
+static struct k_timer ele_ping_timer;
+
+/* ELE ping timer callback function */
+static void ele_ping_timer_handler(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+
+	status_t status;
+
+	/* Ping ELE to prevent SOC reset */
+	status = ELE_BaseAPI_Ping(MU_RT_S3MUA);
+
+	if (status == kStatus_Success) {
+		LOG_DBG("ELE ping successful");
+	} else {
+		LOG_ERR("ELE ping failed with status: %d", status);
+	}
+}
+
+/* Initialize ELE ping timer */
+static int ele_ping_timer_init(void)
+{
+	/* Initialize the timer */
+	k_timer_init(&ele_ping_timer, ele_ping_timer_handler, NULL);
+
+	/* Start the periodic timer with 23-hour interval */
+	k_timer_start(&ele_ping_timer, K_MSEC(ELE_PING_INTERVAL_MS),
+		      K_MSEC(ELE_PING_INTERVAL_MS));
+
+	LOG_DBG("ELE ping timer initialized, interval: %u hours", ELE_PING_INTERVAL_HOURS);
+
+	return 0;
+}
+
+/* Initialize ELE ping timer at POST_KERNEL level to ensure kernel services are available */
+SYS_INIT(ele_ping_timer_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #if defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_CPU_CORTEX_M33)
 #include <fsl_flexspi_nor_boot.h>
@@ -46,9 +99,10 @@ const __imx_boot_container_section container boot_header = {
 	},
 	.array = {
 		{
-			(uint32_t)(-1 * CONFIG_IMAGE_CONTAINER_OFFSET),
-			(uint32_t)_flash_used,
-			(uint32_t)__rom_region_start,
+			(uint32_t)CONFIG_CONTAINER_USER_IMAGE_OFFSET,
+			(uint32_t)(_flash_used - CONFIG_CONTAINER_USER_IMAGE_OFFSET -
+				CONFIG_IMAGE_CONTAINER_OFFSET),
+			(uint32_t)_vector_start,
 			0x00000000,
 			(uint32_t)__start,
 			0x00000000,
@@ -83,12 +137,6 @@ const __imx_boot_container_section container boot_header = {
 #else
 #define ELE_IS_FAILED(x) false
 #endif
-
-#define ELE_TRDC_AON_ID    0x74
-#define ELE_TRDC_WAKEUP_ID 0x78
-#define ELE_CORE_CM33_ID   0x1
-#define ELE_CORE_CM7_ID    0x2
-#define EDMA_DID           0x7U
 
 /* When CM33 sets TRDC, CM7 must NOT require TRDC ownership from ELE */
 #if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M7)
@@ -187,8 +235,8 @@ __weak void clock_init(void)
 #endif
 
 #if CONFIG_CPU_CORTEX_M7
-	DCDC_SetVDD1P0BuckModeTargetVoltage(DCDC, kDCDC_CORE0, kDCDC_1P0Target1P1V);
-	DCDC_SetVDD1P0BuckModeTargetVoltage(DCDC, kDCDC_CORE1, kDCDC_1P0Target1P1V);
+	DCDC_SetVDD1P0BuckModeTargetVoltage(DCDC, kDCDC_CORE0, kDCDC_1P0Target1P125V);
+	DCDC_SetVDD1P0BuckModeTargetVoltage(DCDC, kDCDC_CORE1, kDCDC_1P0Target1P125V);
 	/* FBB need to be enabled in OverDrive(OD) mode */
 	PMU_EnableFBB(ANADIG_PMU, true);
 #endif
@@ -572,6 +620,14 @@ __weak void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Flexspi1, &rootCfg);
 #endif
 
+#if !(DT_NODE_HAS_COMPAT(DT_PARENT(DT_CHOSEN(zephyr_flash)), nxp_imx_flexspi_nor)) &&  \
+	defined(CONFIG_MEMC_MCUX_FLEXSPI) && DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi2), okay)
+	/* Configure FLEXSPI2 using SYS_PLL3_PFD2_CLK */
+	rootCfg.mux = kCLOCK_FLEXSPI2_ClockRoot_MuxSysPll3Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Flexspi2, &rootCfg);
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(tpm2), okay)
 	/* Configure TPM2 using SYS_PLL3_DIV2_CLK */
 	rootCfg.mux = kCLOCK_TPM2_ClockRoot_MuxSysPll3Div2;
@@ -714,114 +770,7 @@ void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src, uint32_t 
  */
 static ALWAYS_INLINE void trdc_enable_all_access(void)
 {
-	status_t sts;
-	uint8_t i, j;
-
-	/* Get ELE FW status */
-	do {
-		uint32_t ele_fw_sts;
-
-		sts = ELE_BaseAPI_GetFwStatus(MU_RT_S3MUA, &ele_fw_sts);
-	} while (sts != kStatus_Success);
-
-#if defined(CONFIG_CPU_CORTEX_M33)
-	/* Release TRDC AON to CM33 core */
-	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_AON_ID, ELE_CORE_CM33_ID);
-#elif defined(CONFIG_CPU_CORTEX_M7)
-	/* Release TRDC AON to CM7 core */
-	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_AON_ID, ELE_CORE_CM7_ID);
-#endif
-	if (sts != kStatus_Success) {
-		LOG_WRN("warning: TRDC AON permission get failed. If core don't get TRDC "
-			"AON permission, AON domain permission can't be configured.");
-	}
-
-#if defined(CONFIG_CPU_CORTEX_M33)
-	/* Release TRDC Wakeup to CM33 core */
-	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_WAKEUP_ID, ELE_CORE_CM33_ID);
-#elif defined(CONFIG_CPU_CORTEX_M7)
-	/* Release TRDC Wakeup to CM7 core */
-	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_WAKEUP_ID, ELE_CORE_CM7_ID);
-#endif
-	if (sts != kStatus_Success) {
-		LOG_WRN("warning: TRDC Wakeup permission get failed. If core don't get TRDC "
-			"Wakeup permission, Wakeup domain permission can't be configured.");
-	}
-
-	/* Set the master domain access configuration for eDMA3/eDMA4 */
-	trdc_non_processor_domain_assignment_t edmaAssignment;
-
-	/* By default, EDMA access is done in privilege and security mode,
-	 * However, the NSE bit reset value in TRDC is 0, so that TRDC does
-	 * not allow nonsecurity access to other memory by default.
-	 * So by DAC module, EDMA access mode is changed to security/privilege
-	 * mode by the DAC module
-	 */
-	(void)memset(&edmaAssignment, 0, sizeof(edmaAssignment));
-	edmaAssignment.domainId       = EDMA_DID;
-	edmaAssignment.privilegeAttr  = kTRDC_MasterPrivilege;
-	edmaAssignment.secureAttr     = kTRDC_ForceSecure;
-	edmaAssignment.bypassDomainId = true;
-	edmaAssignment.lock           = false;
-
-	TRDC_SetNonProcessorDomainAssignment(TRDC1, kTRDC1_MasterDMA3, &edmaAssignment);
-	TRDC_SetNonProcessorDomainAssignment(TRDC2, kTRDC2_MasterDMA4, &edmaAssignment);
-
-	/* Enable all access modes for MBC and MRC of TRDCA and TRDCW */
-	trdc_hardware_config_t hwConfig;
-	trdc_memory_access_control_config_t memAccessConfig;
-
-	(void)memset(&memAccessConfig, 0, sizeof(memAccessConfig));
-	memAccessConfig.nonsecureUsrX  = 1U;
-	memAccessConfig.nonsecureUsrW  = 1U;
-	memAccessConfig.nonsecureUsrR  = 1U;
-	memAccessConfig.nonsecurePrivX = 1U;
-	memAccessConfig.nonsecurePrivW = 1U;
-	memAccessConfig.nonsecurePrivR = 1U;
-	memAccessConfig.secureUsrX     = 1U;
-	memAccessConfig.secureUsrW     = 1U;
-	memAccessConfig.secureUsrR     = 1U;
-	memAccessConfig.securePrivX    = 1U;
-	memAccessConfig.securePrivW    = 1U;
-	memAccessConfig.securePrivR    = 1U;
-
-	TRDC_GetHardwareConfig(TRDC1, &hwConfig);
-	for (i = 0U; i < hwConfig.mrcNumber; i++) {
-		/* Set TRDC1(A) secure access for eDMA domain, MRC i, all region for i memory */
-		TRDC_MrcDomainNseClear(TRDC1, i, 1UL << EDMA_DID);
-
-		for (j = 0U; j < 8; j++) {
-			TRDC_MrcSetMemoryAccessConfig(TRDC1, &memAccessConfig, i, j);
-		}
-	}
-
-	for (i = 0U; i < hwConfig.mbcNumber; i++) {
-		/* Set TRDC1(A) secure access for eDMA domain, MBC i, all memory blocks */
-		TRDC_MbcNseClearAll(TRDC1, i, 1UL << EDMA_DID, 0xF);
-
-		for (j = 0U; j < 8; j++) {
-			TRDC_MbcSetMemoryAccessConfig(TRDC1, &memAccessConfig, i, j);
-		}
-	}
-
-	TRDC_GetHardwareConfig(TRDC2, &hwConfig);
-	for (i = 0U; i < hwConfig.mrcNumber; i++) {
-		/* Set TRDC2(W) secure access for eDMA domain, MRC i, all region for i memory */
-		TRDC_MrcDomainNseClear(TRDC2, i, 1UL << EDMA_DID);
-
-		for (j = 0U; j < 8; j++) {
-			TRDC_MrcSetMemoryAccessConfig(TRDC2, &memAccessConfig, i, j);
-		}
-	}
-
-	for (i = 0U; i < hwConfig.mbcNumber; i++) {
-		/* Set TRDC2(W) secure access for eDMA domain, MBC i, all memory blocks */
-		TRDC_MbcNseClearAll(TRDC2, i, 1UL << EDMA_DID, 0xF);
-
-		for (j = 0U; j < 8; j++) {
-			TRDC_MbcSetMemoryAccessConfig(TRDC2, &memAccessConfig, i, j);
-		}
-	}
+	imxrt118x_trdc_enable_all_access();
 }
 
 /**
@@ -933,10 +882,16 @@ static int second_core_boot(void)
 	result1 = MU_RT_S3MUA->RR[0];
 	result2 = MU_RT_S3MUA->RR[1];
 
+	/* Disable M7 clock before clearing CPU_WAIT bit */
+	CLOCK_DisableClock(kCLOCK_M7);
+
 	/* Deassert Wait */
 	BLK_CTRL_S_AONMIX->M7_CFG =
 		(BLK_CTRL_S_AONMIX->M7_CFG & (~BLK_CTRL_S_AONMIX_M7_CFG_WAIT_MASK)) |
 		BLK_CTRL_S_AONMIX_M7_CFG_WAIT(0);
+
+	/* Re-enable M7 clock again */
+	CLOCK_EnableClock(kCLOCK_M7);
 
 	return 0;
 }

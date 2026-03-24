@@ -174,9 +174,9 @@ SECTIONS
      * 15. Flash offset (LMA) for start of IROM region
      * 16. Size of IROM region
      */
-    LONG(ADDR(.flash.text))
-    LONG(LOADADDR(.flash.text))
-    LONG(SIZEOF(.flash.text))
+    LONG(ADDR(.text))
+    LONG(LOADADDR(.text))
+    LONG(SIZEOF(.text))
 
     /* DROM metadata:
      * 17. Destination address (VMA) for DROM region
@@ -274,6 +274,7 @@ SECTIONS
     *(.rtc_timer_data_in_rtc_mem .rtc_timer_data_in_rtc_mem.*)
     _rtc_reserved_end = ABSOLUTE(.);
   } GROUP_LINK_IN(rtc_slow_seg)
+  _rtc_reserved_length = (_rtc_reserved_end - _rtc_reserved_start);
 
   /* Get size of rtc slow data based on rtc_data_location alias */
   _rtc_slow_length = (_rtc_force_slow_end - _rtc_data_start);
@@ -380,6 +381,8 @@ SECTIONS
     *libzephyr.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_wrap.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_ops.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:spi_flash_os_func_app.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:spi_flash_os_func_noos.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_mmap.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_flash_api.*(.literal .text .literal.* .text.*)
 
@@ -387,6 +390,8 @@ SECTIONS
     *libzephyr.a:reset_reason.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_err.*(.literal .literal.* .text .text.*)
     *(.literal.esp_system_abort .text.esp_system_abort)
+    *(.literal.esp_restart_noos .text.esp_restart_noos)
+    *(.literal.esp_system_reset_modules_on_exit .text.esp_system_reset_modules_on_exit)
 
     /* [mapping:esp_hw_support] */
     *(.literal.esp_cpu_stall .text.esp_cpu_stall)
@@ -423,7 +428,8 @@ SECTIONS
     *libzephyr.a:esp_rom_hp_regi2c_esp32c6.*(.literal .literal.* .text .text.*)
 
     /* [mapping:esp_mm] */
-    *libzephyr.a:esp_cache.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_cache_utils.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_cache_msync.*(.literal .literal.* .text .text.*)
     *libzephyr.a:cache_utils.*(.literal .text .literal.* .text.*)
 
 #if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
@@ -446,6 +452,8 @@ SECTIONS
     *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
 #endif /* CONFIG_ESP32_WIFI_RX_IRAM_OPT */
 
+  *libbtbb.a:(.iram1 .iram1.*)
+  *libbtbb.a:(.high_perf_code_iram1 .high_perf_code_iram1.*)
   *libble_app.a:(.high_perf_code_iram1 .high_perf_code_iram1.*)
   *libble_app.a:(.bt_iram_text .bt_iram_text.*)
 
@@ -609,11 +617,14 @@ SECTIONS
     *libzephyr.a:spi_flash_wrap.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_ops.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:flash_qio_mode.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_os_func_app.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_os_func_noos.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_mmap.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .srodata .srodata.*)
 
     /* [mapping:esp_mm] */
-    *libzephyr.a:esp_cache.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:esp_cache_utils.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:esp_cache_msync.*(.rodata .rodata.* .srodata .srodata.*)
 
     /* [mapping:esp_hw_support] */
     *(.rodata.esp_cpu_stall)
@@ -637,6 +648,8 @@ SECTIONS
     *libzephyr.a:reset_reason.*(.rodata .rodata.*)
     *libzephyr.a:esp_err.*(.rodata .rodata.*)
     *(.rodata.esp_system_abort)
+    *(.rodata.esp_restart_noos)
+    *(.rodata.esp_system_reset_modules_on_exit)
 
     /* [mapping:esp_rom] */
     *libzephyr.a:esp_rom_crc.*(.rodata .rodata.* .srodata .srodata.*)
@@ -733,6 +746,11 @@ SECTIONS
     *(.user_stacks*)
     z_user_stacks_end = .;
 #endif /* CONFIG_USERSPACE */
+#ifdef CONFIG_LLEXT
+    *(.llext_heap)
+    *(.llext_ext_heap)
+    *(.llext_metadata_heap)
+#endif /* CONFIG_LLEXT */
     . = ALIGN(4);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
@@ -786,7 +804,7 @@ SECTIONS
 
   /* --- END OF DRAM --- */
 
-  /* --- START OF .flash.text --- */
+  /* --- START OF .text --- */
 
   .flash.align_text (NOLOAD):
   {
@@ -795,11 +813,11 @@ SECTIONS
   } GROUP_LINK_IN(ROMABLE_REGION)
 
   /* Symbols used during the application memory mapping */
-  _image_irom_start = LOADADDR(.flash.text);
-  _image_irom_size = SIZEOF(.flash.text);
-  _image_irom_vaddr = ADDR(.flash.text);
+  _image_irom_start = LOADADDR(.text);
+  _image_irom_size = SIZEOF(.text);
+  _image_irom_vaddr = ADDR(.text);
 
-  .flash.text : ALIGN(0x10)
+  .text : ALIGN(0x10)
   {
     _stext = .;
     _instruction_reserved_start = ABSOLUTE(.);
@@ -819,6 +837,7 @@ SECTIONS
     *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
 #endif /* CONFIG_ESP32_WIFI_RX_IRAM_OPT */
 
+    *(.adv_fast_execute_code_iram1 .adv_fast_execute_code_iram1.*)
     *(.literal .text .literal.* .text.*)
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
     *(.irom0.text) /* catch stray ICACHE_RODATA_ATTR */
@@ -848,7 +867,7 @@ SECTIONS
 
   } GROUP_DATA_LINK_IN(FLASH_CODE_REGION, ROMABLE_REGION)
 
-  /* --- END OF .flash.text --- */
+  /* --- END OF .text --- */
 
   /* --- START OF .rodata --- */
 

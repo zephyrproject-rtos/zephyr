@@ -22,6 +22,7 @@
 		zephyr,flash-controller = &w25q128jv;
 		zephyr,flash = &w25q128jv;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,code-m7-partition = &slot1_partition;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 	};
@@ -53,6 +54,10 @@
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&flexspi {
+	status = "okay";
 };
 
 &flexspi2 {

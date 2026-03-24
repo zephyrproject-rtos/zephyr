@@ -10,6 +10,7 @@
 LOG_MODULE_DECLARE(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
+#include <zephyr/net/net_log.h>
 
 #include "sockets_internal.h"
 #include "../../ip/net_private.h"

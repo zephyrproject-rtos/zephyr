@@ -46,10 +46,13 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 
 #if defined(CONFIG_PINCTRL_NXP_PORT)
 	switch ((uint32_t)sub_system) {
+#if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
+/* PORT0 clock is not controlled by syscon for MCXL family */
 #if defined(CONFIG_SOC_FAMILY_MCXA)
 	case MCUX_PORT0_CLK:
 		CLOCK_EnableClock(kCLOCK_GatePORT0);
 		break;
+#endif /* defined(CONFIG_SOC_FAMILY_MCXA) */
 	case MCUX_PORT1_CLK:
 		CLOCK_EnableClock(kCLOCK_GatePORT1);
 		break;
@@ -80,7 +83,7 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	case MCUX_PORT4_CLK:
 		CLOCK_EnableClock(kCLOCK_Port4);
 		break;
-#endif /* defined(CONFIG_SOC_FAMILY_MCXA) */
+#endif /* defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL) */
 	default:
 		break;
 	}
@@ -88,7 +91,11 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 
 #ifdef CONFIG_ETH_NXP_ENET_QOS
 	if ((uint32_t)sub_system == MCUX_ENET_QOS_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_EnableClock(kCLOCK_GateENET0);
+#else
 		CLOCK_EnableClock(kCLOCK_Enet);
+#endif /* defined(CONFIG_PINCTRL_NXP_PORT) */
 	}
 #endif
 
@@ -196,6 +203,12 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(hscmp2))
 	if ((uint32_t)sub_system == MCUX_HSCMP2_CLK) {
 		CLOCK_EnableClock(kCLOCK_Hscmp2);
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(tsi0))
+	if ((uint32_t)sub_system == MCUX_TSI_CLK) {
+		CLOCK_EnableClock(kCLOCK_Tsi);
 	}
 #endif
 
@@ -604,7 +617,11 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 
 #ifdef CONFIG_ETH_NXP_ENET_QOS
 	case MCUX_ENET_QOS_CLK:
+#ifdef CONFIG_SOC_FAMILY_MCXA
+		*rate = CLOCK_GetCoreSysClkFreq();
+#else
 		*rate = CLOCK_GetFreq(kCLOCK_BusClk);
+#endif /* CONFIG_SOC_FAMILY_MCXA */
 		break;
 #endif
 
@@ -665,7 +682,8 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		break;
 #endif /* defined(CONFIG_I2S_MCUX_FLEXCOMM) */
 
-#if (defined(CONFIG_UART_MCUX_LPUART) && CONFIG_SOC_FAMILY_MCXA)
+#if (defined(CONFIG_UART_MCUX_LPUART) && (defined(CONFIG_SOC_FAMILY_MCXA) || \
+	defined(CONFIG_SOC_FAMILY_MCXL)))
 	case MCUX_LPUART0_CLK:
 		*rate = CLOCK_GetLpuartClkFreq(0);
 		break;

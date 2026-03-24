@@ -344,7 +344,7 @@ int flash_stm32_ex_op(const struct device *dev, uint16_t code,
 		rv = 0;
 
 		break;
-	case FLASH_STM32_EX_OP_OPTB_WRITE:
+	case FLASH_STM32_EX_OP_OPTB_WRITE: {
 		int rv2;
 
 		rv = flash_stm32_option_bytes_lock(dev, false);
@@ -363,6 +363,7 @@ int flash_stm32_ex_op(const struct device *dev, uint16_t code,
 		rv = rv2;
 
 		break;
+	}
 #endif
 	}
 

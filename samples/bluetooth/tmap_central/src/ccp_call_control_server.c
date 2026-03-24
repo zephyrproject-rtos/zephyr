@@ -7,10 +7,11 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+#include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/kernel.h>
@@ -51,7 +52,7 @@ int ccp_call_control_server_init(void)
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_TBS_TECHNOLOGY_3G,
-		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+		.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
 	};
 
 	err = bt_tbs_register_bearer(&gtbs_param);

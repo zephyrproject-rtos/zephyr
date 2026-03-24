@@ -11,6 +11,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/dhcpv4.h>
 #include <zephyr/net/dhcpv4_server.h>
 #include <zephyr/net/ethernet.h>
@@ -64,6 +65,7 @@ struct dhcpv4_server_ctx {
 	int sock;
 	struct k_work_delayable timeout_work;
 	struct dhcpv4_addr_slot addr_pool[CONFIG_NET_DHCPV4_SERVER_ADDR_COUNT];
+	struct net_in_addr base_addr;
 	struct net_in_addr server_addr;
 	struct net_in_addr netmask;
 #if defined(DHCPV4_SERVER_ICMP_PROBE)
@@ -71,11 +73,27 @@ struct dhcpv4_server_ctx {
 #endif
 };
 
+static struct net_in_addr net_dhcpv4_server_find_free_address(struct dhcpv4_server_ctx *ctx,
+							  struct dhcpv4_client_id *client_id);
+
+static void *address_validator_callback_user_data;
+static net_dhcpv4_server_address_validator_cb_t address_validator_callback;
+
 static void *address_provider_callback_user_data;
 static net_dhcpv4_server_provider_cb_t address_provider_callback;
+
 static struct dhcpv4_server_ctx server_ctx[CONFIG_NET_DHCPV4_SERVER_INSTANCES];
 static struct zsock_pollfd fds[CONFIG_NET_DHCPV4_SERVER_INSTANCES];
 static K_MUTEX_DEFINE(server_lock);
+
+static void reset_slot(struct dhcpv4_addr_slot *slot)
+{
+	slot->state = DHCPV4_SERVER_ADDR_FREE;
+	slot->addr.s_addr = 0;
+	slot->expiry = sys_timepoint_calc(K_FOREVER);
+	memset(slot->client_id.buf, 0, DHCPV4_CLIENT_ID_MAX_SIZE);
+	slot->client_id.len = 0;
+}
 
 static void dhcpv4_server_timeout_recalc(struct dhcpv4_server_ctx *ctx)
 {
@@ -842,7 +860,7 @@ static enum net_verdict echo_reply_handler(struct net_icmp_ctx *icmp_ctx,
 	probe_ctx->slot->state = DHCPV4_SERVER_ADDR_DECLINED;
 	probe_ctx->slot->expiry = sys_timepoint_calc(ADDRESS_DECLINED_TIMEOUT);
 
-	/* Try to find next free address */
+	/* Try to find next free slot */
 	for (int i = 0; i < ARRAY_SIZE(ctx->addr_pool); i++) {
 		struct dhcpv4_addr_slot *slot = &ctx->addr_pool[i];
 
@@ -858,6 +876,7 @@ static enum net_verdict echo_reply_handler(struct net_icmp_ctx *icmp_ctx,
 		dhcpv4_server_timeout_recalc(ctx);
 		goto out;
 	}
+	new_slot->addr = net_dhcpv4_server_find_free_address(ctx, &probe_ctx->slot->client_id);
 
 	if (dhcpv4_probe_address(ctx, new_slot) < 0) {
 		probe_ctx->slot = NULL;
@@ -930,6 +949,7 @@ static void dhcpv4_server_probe_timeout(struct dhcpv4_server_ctx *ctx,
 	if (dhcpv4_send_offer(ctx, &ctx->probe_ctx.discovery, &slot->addr,
 			      slot->lease_time, &ctx->probe_ctx.params,
 			      &ctx->probe_ctx.client_id) < 0) {
+		reset_slot(slot);
 		slot->state = DHCPV4_SERVER_ADDR_FREE;
 		return;
 	}
@@ -1027,30 +1047,20 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 				}
 			}
 		}
-	}
 
-	/* 4. Allocate new address from pool, if available. */
-	if (selected == NULL) {
-		struct net_in_addr giaddr;
+		/* 4. Allocate new slot from pool, if available. */
+		if (selected == NULL) {
+			for (unsigned int i = 0; i < CONFIG_NET_DHCPV4_SERVER_ADDR_COUNT; ++i) {
+				struct dhcpv4_addr_slot *slot = &ctx->addr_pool[i];
 
-		memcpy(&giaddr, msg->giaddr, sizeof(giaddr));
-		if (!net_ipv4_is_addr_unspecified(&giaddr)) {
-			/* Only addresses in local subnet supported for now. */
-			return;
-		}
-
-		for (int i = 0; i < ARRAY_SIZE(ctx->addr_pool); i++) {
-			struct dhcpv4_addr_slot *slot = &ctx->addr_pool[i];
-
-			if (slot->state == DHCPV4_SERVER_ADDR_FREE) {
-				/* Requested address is free. */
-				selected = slot;
-				probe = true;
-				break;
+				if (slot->state == DHCPV4_SERVER_ADDR_FREE) {
+					selected = slot;
+					probe = true;
+					break;
+				}
 			}
 		}
 	}
-
 	/* In case no free address slot was found, as a last resort, try to
 	 * reuse the oldest declined entry, if present.
 	 */
@@ -1076,6 +1086,28 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 		LOG_ERR("No free address found in address pool");
 	} else {
 		uint32_t lease_time = dhcpv4_get_lease_time(options, optlen);
+
+		if (selected->state == DHCPV4_SERVER_ADDR_DECLINED) {
+			/* Reusing declined address slot, need to clear it first */
+			reset_slot(selected);
+		}
+		if (selected->state == DHCPV4_SERVER_ADDR_FREE) {
+
+			struct net_in_addr selected_addr;
+
+			selected_addr.s_addr = selected->addr.s_addr;
+			if (address_provider_callback != NULL &&
+				address_provider_callback(ctx->iface, &client_id, &selected_addr,
+							address_provider_callback_user_data) == 0) {
+				selected->addr.s_addr = selected_addr.s_addr;
+				probe = false;
+			} else {
+				/* Try to look for next available address */
+				selected->addr = net_dhcpv4_server_find_free_address(ctx,
+							&client_id);
+				probe = true;
+			}
+		}
 
 		if (IS_ENABLED(DHCPV4_SERVER_ICMP_PROBE) && probe) {
 			if (dhcpv4_server_probe_setup(ctx, selected, msg,
@@ -1119,6 +1151,7 @@ static void dhcpv4_handle_request(struct dhcpv4_server_ctx *ctx,
 	struct dhcpv4_client_id client_id;
 	struct net_in_addr requested_ip, server_id, ciaddr, giaddr;
 	int ret;
+	bool success;
 
 	memcpy(&ciaddr, msg->ciaddr, sizeof(ciaddr));
 	memcpy(&giaddr, msg->giaddr, sizeof(giaddr));
@@ -1154,6 +1187,15 @@ static void dhcpv4_handle_request(struct dhcpv4_server_ctx *ctx,
 		if (!net_ipv4_is_addr_unspecified(&ciaddr)) {
 			/* ciaddr MUST be zero */
 			return;
+		}
+
+		if (address_validator_callback != NULL) {
+			success = address_validator_callback(ctx->iface, &client_id, &requested_ip,
+							 address_validator_callback_user_data);
+			if (!success) {
+				dhcpv4_send_nak(ctx, msg, &client_id);
+				return;
+			}
 		}
 
 		for (int i = 0; i < ARRAY_SIZE(ctx->addr_pool); i++) {
@@ -1205,6 +1247,15 @@ static void dhcpv4_handle_request(struct dhcpv4_server_ctx *ctx,
 		if (!net_if_ipv4_addr_mask_cmp(ctx->iface, &requested_ip)) {
 			/* Wrong subnet. */
 			dhcpv4_send_nak(ctx, msg, &client_id);
+		}
+
+		if (address_validator_callback != NULL) {
+			success = address_validator_callback(ctx->iface, &client_id, &requested_ip,
+							 address_validator_callback_user_data);
+			if (!success) {
+				dhcpv4_send_nak(ctx, msg, &client_id);
+				return;
+			}
 		}
 
 		for (int i = 0; i < ARRAY_SIZE(ctx->addr_pool); i++) {
@@ -1379,9 +1430,8 @@ static void dhcpv4_handle_release(struct dhcpv4_server_ctx *ctx,
 			LOG_DBG("DHCPv4 processing Release - %s",
 				net_sprint_ipv4_addr(&slot->addr));
 
-			slot->state = DHCPV4_SERVER_ADDR_FREE;
-			slot->expiry = sys_timepoint_calc(K_FOREVER);
 			dhcpv4_server_timeout_recalc(ctx);
+			reset_slot(slot);
 			break;
 		}
 	}
@@ -1420,13 +1470,13 @@ static void dhcpv4_server_timeout(struct k_work *work)
 			} else {
 				LOG_DBG("Address %s expired",
 					net_sprint_ipv4_addr(&slot->addr));
-				slot->state = DHCPV4_SERVER_ADDR_FREE;
+				reset_slot(slot);
 			}
 		}
 
 		if (slot->state == DHCPV4_SERVER_ADDR_DECLINED &&
 		    sys_timepoint_expired(slot->expiry)) {
-			slot->state = DHCPV4_SERVER_ADDR_FREE;
+			reset_slot(slot);
 		}
 	}
 
@@ -1645,6 +1695,7 @@ int net_dhcpv4_server_start(struct net_if *iface, struct net_in_addr *base_addr)
 	server_ctx[slot].iface = iface;
 	server_ctx[slot].sock = sock;
 	server_ctx[slot].server_addr = *server_addr;
+	server_ctx[slot].base_addr = *base_addr;
 	server_ctx[slot].netmask = netmask;
 
 	k_work_init_delayable(&server_ctx[slot].timeout_work,
@@ -1652,13 +1703,13 @@ int net_dhcpv4_server_start(struct net_if *iface, struct net_in_addr *base_addr)
 
 	LOG_DBG("Started DHCPv4 server, address pool:");
 	for (int i = 0; i < ARRAY_SIZE(server_ctx[slot].addr_pool); i++) {
-		server_ctx[slot].addr_pool[i].state = DHCPV4_SERVER_ADDR_FREE;
-		server_ctx[slot].addr_pool[i].addr.s_addr =
-					net_htonl(net_ntohl(base_addr->s_addr) + i);
+		reset_slot(&server_ctx[slot].addr_pool[i]);
 
-		LOG_DBG("\t%2d: %s", i,
-			net_sprint_ipv4_addr(
-				&server_ctx[slot].addr_pool[i].addr));
+		struct net_in_addr temp_addr = {
+			.s_addr = net_htonl(net_ntohl(base_addr->s_addr) + i)
+		};
+
+		LOG_DBG("\t%2d: %s", i, net_sprint_ipv4_addr(&temp_addr));
 	}
 
 	ret = dhcpv4_server_probing_init(&server_ctx[slot]);
@@ -1799,16 +1850,68 @@ out:
 	return ret;
 }
 
+/*
+ *	Finds a free address, taking the validator callback into account
+ */
+static struct net_in_addr net_dhcpv4_server_find_free_address(struct dhcpv4_server_ctx *ctx,
+							  struct dhcpv4_client_id *client_id)
+{
+	/* Try to look for next available address */
+	struct net_in_addr address;
+
+	for (unsigned int i = 0; i < CONFIG_NET_DHCPV4_SERVER_ADDR_COUNT; ++i) {
+		address.s_addr = net_htonl(net_ntohl(ctx->base_addr.s_addr) + i);
+		bool taken = false;
+
+		/* Skip if address is not assignable by application */
+		if (address_validator_callback != NULL &&
+		    !address_validator_callback(ctx->iface, client_id, &address,
+					       address_validator_callback_user_data)) {
+			continue;
+		}
+
+		/* Check if address is free */
+		for (unsigned int j = 0; j < CONFIG_NET_DHCPV4_SERVER_ADDR_COUNT; ++j) {
+			struct dhcpv4_addr_slot *slot = &ctx->addr_pool[j];
+
+			if (slot->state != DHCPV4_SERVER_ADDR_FREE &&
+			    net_ipv4_addr_cmp(&address, &slot->addr)) {
+				/* Address is not free */
+				taken = true;
+				break;
+			}
+		}
+
+		if (!taken) {
+			return address;
+		}
+	}
+
+	/* No free addresses found */
+	address.s_addr = 0;
+	return address;
+}
+
 void net_dhcpv4_server_set_provider_cb(net_dhcpv4_server_provider_cb_t cb, void *user_data)
 {
 	address_provider_callback_user_data = user_data;
 	address_provider_callback = cb;
 }
 
+void net_dhcpv4_server_set_address_validator_cb(net_dhcpv4_server_address_validator_cb_t cb,
+						void *user_data)
+{
+	address_validator_callback_user_data = user_data;
+	address_validator_callback = cb;
+}
+
 void net_dhcpv4_server_init(void)
 {
 	address_provider_callback = NULL;
 	address_provider_callback_user_data = NULL;
+
+	address_validator_callback_user_data = NULL;
+	address_validator_callback = NULL;
 
 	for (int i = 0; i < ARRAY_SIZE(fds); i++) {
 		fds[i].fd = -1;

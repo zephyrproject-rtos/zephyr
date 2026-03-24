@@ -19,7 +19,7 @@
  *
  * @defgroup flash_area_api flash area Interface
  * @since 1.11
- * @version 1.1.0
+ * @version 1.1.1
  * @ingroup storage_apis
  * @{
  */
@@ -40,6 +40,9 @@
 #include <sys/types.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/devicetree/fixed-partitions.h>
+#include <zephyr/devicetree/mapped-partition.h>
+#include <zephyr/devicetree/partitions.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -139,7 +142,7 @@ void flash_area_close(const struct flash_area *fa);
  * Indicates whether the provided flash area has a device known to be
  * in a state where it can be used with Flash Map API.
  *
- * This can be used with struct flash_area pointers captured from FIXED_PARTITION().
+ * This can be used with struct flash_area pointers captured from PARTITION().
  * At minimum this means that the device has been successfully initialized.
  *
  * @param fa pointer to flash_area object to check.
@@ -349,97 +352,131 @@ const char *flash_area_label(const struct flash_area *fa);
 uint8_t flash_area_erased_val(const struct flash_area *fa);
 
 /**
- * Returns non-0 value if fixed-partition or fixed-subpartition of given
- * DTS node label exists.
+ * Returns non-0 value if partition of given DTS node label exists.
  *
  * @param label DTS node label
  *
- * @return non-0 if fixed-partition node exists and is enabled;
- *	   0 if node does not exist, is not enabled or is not fixed-partition.
+ * @return non-0 if partition node exists and is enabled;
+ *	   0 if node does not exist, is not enabled or is not partition.
  */
-#define FIXED_PARTITION_EXISTS(label) \
-	UTIL_OR(DT_FIXED_PARTITION_EXISTS(DT_NODELABEL(label)), \
-		DT_FIXED_SUBPARTITION_EXISTS(DT_NODELABEL(label)))
+#define PARTITION_EXISTS(label) DT_PARTITION_EXISTS(DT_NODELABEL(label))
 
 /**
- * Get flash area ID from fixed-partition DTS node label
+ * Deprecated macro, replace with PARTITION_EXISTS(), this cannot use __DEPRECATED_MACRO as it
+ * causes usage of the macro to fail with compiler errors
+ */
+#define FIXED_PARTITION_EXISTS(label) PARTITION_EXISTS(label)
+
+/**
+ * Get flash area ID from partition DTS node label
  *
  * @param label DTS node label of a partition
  *
  * @return flash area ID
  */
-#define FIXED_PARTITION_ID(label) DT_FIXED_PARTITION_ID(DT_NODELABEL(label))
+#define PARTITION_ID(label)								\
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_NODELABEL(label), zephyr_mapped_partition),	\
+		    (DT_MAPPED_PARTITION_ID(DT_NODELABEL(label))),			\
+		    (DT_FIXED_PARTITION_ID(DT_NODELABEL(label))))
+
+/** Deprecated macro, replace with PARTITION_ID() */
+#define FIXED_PARTITION_ID(label) PARTITION_ID(label) __DEPRECATED_MACRO
 
 /**
- * Get fixed-partition or fixed-subpartition offset from DTS node label
+ * Get partition offset from DTS node label
  *
  * Note: This only works from a top level ``fixed-partitions`` node, top level
  * ``fixed-subpartitions`` node or ``fixed-partitions`` node inside of 1 layer of a
  * ``fixed-subpartitions`` node, it will not work for multiple layers of ``fixed-subpartitions``
- * nodes.
+ * nodes, though this works on all instances of ``zephyr,mapped-partition`` nodes.
  *
  * @param label DTS node label of a partition
  *
- * @return fixed-partition offset, as defined for the partition in DTS.
+ * @return offset, as defined for the partition in DTS.
  */
-#define FIXED_PARTITION_OFFSET(label) \
-	COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(DT_NODELABEL(label)), \
-		(DT_PROP_BY_IDX(DT_PARENT(DT_NODELABEL(label)), reg, 0) + \
-		 DT_PROP_BY_IDX(DT_NODELABEL(label), reg, 0)), \
-		(DT_PROP_BY_IDX(DT_NODELABEL(label), reg, 0)))
+#define PARTITION_OFFSET(label)									\
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_NODELABEL(label), zephyr_mapped_partition),		\
+		    (DT_MAPPED_PARTITION_OFFSET(DT_NODELABEL(label))),				\
+		    (COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(DT_NODELABEL(label)),		\
+				(DT_PROP_BY_IDX(DT_PARENT(DT_NODELABEL(label)), reg, 0) +	\
+				 DT_PROP_BY_IDX(DT_NODELABEL(label), reg, 0)), \
+				(DT_PROP_BY_IDX(DT_NODELABEL(label), reg, 0)))))
+
+/** Deprecated macro, replace with PARTITION_OFFSET() */
+#define FIXED_PARTITION_OFFSET(label) PARTITION_OFFSET(label) __DEPRECATED_MACRO
 
 /**
- * Get fixed-partition or fixed-subpartition address from DTS node label
+ * Get partition address from DTS node label
  *
- * @param label DTS node label of a partition or subpartition
+ * @param label DTS node label of a partition
  *
- * @return fixed-partition address, as defined for the partition in DTS.
+ * @return address, as defined for the partition in DTS.
  */
-#define FIXED_PARTITION_ADDRESS(label) DT_REG_ADDR(DT_NODELABEL(label))
+#define PARTITION_ADDRESS(label) PARTITION_NODE_ADDRESS(DT_NODELABEL(label))
+
+/** Deprecated macro, replace with PARTITION_ADDRESS() */
+#define FIXED_PARTITION_ADDRESS(label) PARTITION_ADDRESS(label) __DEPRECATED_MACRO
 
 /**
- * Get fixed-partition or fixed-subpartition address from DTS node
+ * Get partition address from DTS node
  *
  * @param node DTS node of a partition
  *
- * @return fixed-partition address, as defined for the partition in DTS.
+ * @return address, as defined for the partition in DTS.
  */
-#define FIXED_PARTITION_NODE_ADDRESS(node) DT_REG_ADDR(node)
+#define PARTITION_NODE_ADDRESS(node)						\
+	COND_CODE_1(DT_NODE_HAS_COMPAT(node, zephyr_mapped_partition),		\
+		    (DT_MAPPED_PARTITION_ADDR(node)),				\
+		    (COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(node),		\
+				 (DT_FIXED_SUBPARTITION_ADDR(node)),		\
+				 (DT_FIXED_PARTITION_ADDR(node)))))
+
+/** Deprecated macro, replace with PARTITION_NODE_ADDRESS() */
+#define FIXED_PARTITION_NODE_ADDRESS(node) PARTITION_NODE_ADDRESS(node) __DEPRECATED_MACRO
 
 /**
- * Get fixed-partition offset from DTS node
+ * Get partition offset from DTS node
  *
  * Note: This only works from a top level ``fixed-partitions`` node, top level
  * ``fixed-subpartitions`` node or ``fixed-partitions`` node inside of 1 layer of a
  * ``fixed-subpartitions`` node, it will not work for multiple layers of ``fixed-subpartitions``
- * nodes.
+ * nodes, though this works on all instances of ``zephyr,mapped-partition`` nodes.
  *
  * @param node DTS node of a partition
  *
- * @return fixed-partition offset, as defined for the partition in DTS.
+ * @return offset, as defined for the partition in DTS.
  */
-#define FIXED_PARTITION_NODE_OFFSET(node) \
-	COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(node), \
-		(DT_PROP_BY_IDX(DT_PARENT(node), reg, 0) + DT_PROP_BY_IDX(node, reg, 0)), \
-		(DT_PROP_BY_IDX(node, reg, 0)))
+#define PARTITION_NODE_OFFSET(node)						\
+	COND_CODE_1(DT_NODE_HAS_COMPAT(node, zephyr_mapped_partition),		\
+		    (DT_MAPPED_PARTITION_OFFSET(node)),				\
+		    (DT_REG_ADDR(node)))
+
+/** Deprecated macro, replace with PARTITION_NODE_OFFSET() */
+#define FIXED_PARTITION_NODE_OFFSET(label) PARTITION_NODE_OFFSET(label) __DEPRECATED_MACRO
 
 /**
- * Get fixed-partition size for DTS node label
+ * Get partition size for DTS node label
  *
  * @param label DTS node label
  *
- * @return fixed-partition offset, as defined for the partition in DTS.
+ * @return size, as defined for the partition in DTS.
  */
-#define FIXED_PARTITION_SIZE(label) DT_REG_SIZE(DT_NODELABEL(label))
+#define PARTITION_SIZE(label) DT_REG_SIZE(DT_NODELABEL(label))
+
+/** Deprecated macro, replace with PARTITION_SIZE() */
+#define FIXED_PARTITION_SIZE(label) PARTITION_SIZE(label) __DEPRECATED_MACRO
 
 /**
  * Get fixed-partition size for DTS node
  *
  * @param node DTS node of a partition
  *
- * @return fixed-partition size, as defined for the partition in DTS.
+ * @return size, as defined for the partition in DTS.
  */
-#define FIXED_PARTITION_NODE_SIZE(node) DT_REG_SIZE(node)
+#define PARTITION_NODE_SIZE(node) DT_REG_SIZE(node)
+
+/** Deprecated macro, replace with PARTITION_NODE_SIZE() */
+#define FIXED_PARTITION_NODE_SIZE(node) PARTITION_NODE_SIZE(node) __DEPRECATED_MACRO
 
 /**
  * Get device pointer for device the area/partition resides on
@@ -448,8 +485,12 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  *
  * @return const struct device type pointer
  */
-#define FLASH_AREA_DEVICE(label) \
-	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(DT_NODE_BY_FIXED_PARTITION_LABEL(label)))
+#define FLASH_AREA_DEVICE(label)							\
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_NODELABEL(label), zephyr_mapped_partition),	\
+		    (DEVICE_DT_GET(DT_MTD_FROM_MAPPED_PARTITION(			\
+					DT_NODE_BY_MAPPED_PARTITION_LABEL(label)))),	\
+		    (DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(				\
+					DT_NODE_BY_FIXED_PARTITION_LABEL(label)))))
 
 /**
  * Get device pointer for device the area/partition resides on
@@ -458,11 +499,11 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  *
  * @return Pointer to a device.
  */
-#define FIXED_PARTITION_DEVICE(label) \
-	DEVICE_DT_GET(COND_CODE_1( \
-		DT_FIXED_SUBPARTITION_EXISTS(DT_NODELABEL(label)), \
-			(DT_MTD_FROM_FIXED_SUBPARTITION(DT_NODELABEL(label))), \
-			(DT_MTD_FROM_FIXED_PARTITION(DT_NODELABEL(label)))))
+#define PARTITION_DEVICE(label)	PARTITION_NODE_DEVICE(DT_NODELABEL(label))
+
+/** Deprecated macro, replace with PARTITION_DEVICE() */
+#define FIXED_PARTITION_DEVICE(label) PARTITION_DEVICE(label) __DEPRECATED_MACRO
+
 /**
  * Get device pointer for device the area/partition resides on
  *
@@ -470,11 +511,15 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  *
  * @return Pointer to a device.
  */
-#define FIXED_PARTITION_NODE_DEVICE(node) \
-	DEVICE_DT_GET(COND_CODE_1( \
-		DT_FIXED_SUBPARTITION_EXISTS(node), \
-			(DT_MTD_FROM_FIXED_SUBPARTITION(node)), \
-			(DT_MTD_FROM_FIXED_PARTITION(node))))
+#define PARTITION_NODE_DEVICE(node)							\
+	COND_CODE_1(DT_NODE_HAS_COMPAT(node, zephyr_mapped_partition),			\
+		    (DEVICE_DT_GET(DT_MTD_FROM_MAPPED_PARTITION(node))),		\
+		    (DEVICE_DT_GET(COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(node),	\
+				   (DT_MTD_FROM_FIXED_SUBPARTITION(node)),		\
+				   (DT_MTD_FROM_FIXED_PARTITION(node))))))
+
+/** Deprecated macro, replace with PARTITION_NODE_DEVICE() */
+#define FIXED_PARTITION_NODE_DEVICE(node) PARTITION_NODE_DEVICE(node) __DEPRECATED_MACRO
 
 /**
  * Get the node identifier of the flash controller the area/partition resides on
@@ -483,11 +528,10 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  *
  * @return Pointer to a device.
  */
-#define FIXED_PARTITION_MTD(label) \
-	COND_CODE_1( \
-		DT_FIXED_SUBPARTITION_EXISTS(DT_NODELABEL(label)), \
-			(DT_MTD_FROM_FIXED_SUBPARTITION(DT_NODELABEL(label))), \
-			(DT_MTD_FROM_FIXED_PARTITION(DT_NODELABEL(label))))
+#define PARTITION_MTD(label) PARTITION_NODE_MTD(DT_NODELABEL(label))
+
+/** Deprecated macro, replace with PARTITION_OFFSET() */
+#define FIXED_PARTITION_MTD(label) PARTITION_MTD(label) __DEPRECATED_MACRO
 
 /**
  * Get the node identifier of the flash controller the area/partition resides on
@@ -496,11 +540,15 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  *
  * @return Pointer to a device.
  */
-#define FIXED_PARTITION_NODE_MTD(node) \
-	COND_CODE_1( \
-		DT_FIXED_SUBPARTITION_EXISTS(node), \
-			(DT_MTD_FROM_FIXED_SUBPARTITION(node)), \
-			(DT_MTD_FROM_FIXED_PARTITION(node)))
+#define PARTITION_NODE_MTD(node)						\
+	COND_CODE_1(DT_NODE_HAS_COMPAT(node, zephyr_mapped_partition),		\
+		    (DT_MTD_FROM_MAPPED_PARTITION(node)),			\
+		    (COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(node),		\
+				 (DT_MTD_FROM_FIXED_SUBPARTITION(node)),	\
+				 (DT_MTD_FROM_FIXED_PARTITION(node)))))
+
+/** Deprecated macro, replace with PARTITION_NODE_MTD() */
+#define FIXED_PARTITION_NODE_MTD(node) PARTITION_NODE_MTD(node) __DEPRECATED_MACRO
 
 /**
  * Get pointer to flash_area object by partition label
@@ -509,7 +557,10 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  *
  * @return Pointer to flash_area type object representing partition
  */
-#define FIXED_PARTITION(label)	FIXED_PARTITION_1(DT_NODELABEL(label))
+#define PARTITION(label) PARTITION_BY_NODE(DT_NODELABEL(label))
+
+/** Deprecated macro, replace with PARTITION() */
+#define FIXED_PARTITION(label) PARTITION(label) __DEPRECATED_MACRO
 
 /**
  * Get pointer to flash_area object by partition node in DTS
@@ -518,7 +569,13 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  *
  * @return Pointer to flash_area type object representing partition
  */
-#define FIXED_PARTITION_BY_NODE(node)	FIXED_PARTITION_1(node)
+#define PARTITION_BY_NODE(node)						\
+	COND_CODE_1(DT_NODE_HAS_COMPAT(node, zephyr_mapped_partition),	\
+		    (MAPPED_PARTITION_1(node)),				\
+		    (FIXED_PARTITION_1(node)))
+
+/** Deprecated macro, replace with PARTITION_OFFSET() */
+#define FIXED_PARTITION_BY_NODE(node) PARTITION_BY_NODE(node) __DEPRECATED_MACRO
 
 /** @cond INTERNAL_HIDDEN */
 #define FIXED_PARTITION_1(node)	FIXED_PARTITION_0(DT_DEP_ORD(node))
@@ -536,6 +593,19 @@ DT_FOREACH_STATUS_OKAY(fixed_partitions, FOR_EACH_PARTITION_TABLE)
 #undef DECLARE_PARTITION
 #undef DECLARE_PARTITION_0
 #undef FOR_EACH_PARTITION_TABLE
+
+#define MAPPED_PARTITION_1(node) MAPPED_PARTITION_0(DT_DEP_ORD(node))
+#define MAPPED_PARTITION_0(ord) \
+	((const struct flash_area *)&DT_CAT(global_zephyr_mapped_partition_ORD_, ord))
+
+#define DECLARE_MAPPED_PARTITION(node) DECLARE_MAPPED_PARTITION_0(DT_DEP_ORD(node))
+#define DECLARE_MAPPED_PARTITION_0(ord) \
+	extern const struct flash_area DT_CAT(global_zephyr_mapped_partition_ORD_, ord);
+
+DT_FOREACH_STATUS_OKAY(zephyr_mapped_partition, DECLARE_MAPPED_PARTITION)
+
+#undef DECLARE_MAPPED_PARTITION
+#undef DECLARE_MAPPED_PARTITION_0
 
 #define FIXED_SUBPARTITION_1(node) FIXED_SUBPARTITION_0(DT_DEP_ORD(node))
 #define FIXED_SUBPARTITION_0(ord)						\

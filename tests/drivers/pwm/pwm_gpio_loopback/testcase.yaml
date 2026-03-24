@@ -11,9 +11,25 @@ tests:
     platform_allow:
       - esp32_devkitc/esp32/procpu
       - esp8684_devkitm
-      - esp32c3_devkitm
+      - esp32c3_devkitc
+      - esp32c5_devkitc/esp32c5/hpcore
       - esp32c6_devkitc/esp32c6/hpcore
-      - esp32s2_saola
+      - esp32h2_devkitm
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+  drivers.pwm.gpio_loopback.esp.pm:
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_COUNTER=y
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp8684_devkitm
+      - esp32c3_devkitc
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
 
   drivers.pwm.gpio_loopback.nrf:

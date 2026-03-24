@@ -23,4 +23,5 @@ supported:
   - dma
   - watchdog
   - flash
+  - netif:eth
 vendor: nxp

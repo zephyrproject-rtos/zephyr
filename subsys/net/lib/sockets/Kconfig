@@ -33,7 +33,7 @@ config NET_SOCKETS_POLL_MAX
 config NET_SOCKETS_CONNECT_TIMEOUT
 	int "Timeout value in milliseconds to CONNECT"
 	default 3000
-	range 0 60000
+	range 0 300000
 	help
 	  This variable specifies time in milliseconds after connect()
 	  API call will timeout if we have not received SYN-ACK from
@@ -139,7 +139,7 @@ config NET_SOCKETS_TLS_CONNECT_TIMEOUT
 	int "Timeout value in milliseconds for TLS handshake"
 	depends on NET_SOCKETS_SOCKOPT_TLS
 	default 10000
-	range 0 60000
+	range 0 300000
 	help
 	  This variable specifies the maximum time in milliseconds that a TLS
 	  handshake can take on a secure socket, before reporting a timeout.

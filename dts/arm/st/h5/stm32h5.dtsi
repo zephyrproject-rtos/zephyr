@@ -18,6 +18,7 @@
 
 / {
 	chosen {
+		zephyr,crc = &crc;
 		zephyr,flash-controller = &flash;
 		zephyr,entropy = &rng;
 	};
@@ -111,11 +112,13 @@
 	mcos {
 		mco1: mco1 {
 			compatible = "st,stm32-clock-mco";
+			clock-names = "clksel";
 			status = "disabled";
 		};
 
 		mco2: mco2 {
 			compatible = "st,stm32-clock-mco";
+			clock-names = "clksel";
 			status = "disabled";
 		};
 	};
@@ -218,7 +221,7 @@
 		};
 
 		pinctrl: pin-controller@42020000 {
-			compatible = "st,stm32-pinctrl";
+			compatible = "st,stm32h5-pinctrl", "st,stm32-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x42020000 0x2000>;
@@ -362,6 +365,7 @@
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-deep-powerdown;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -692,6 +696,14 @@
 			interrupts = <113 0>;
 			interrupt-names = "digi_temp";
 			clocks = <&rcc STM32_CLOCK(APB1_2, 3)>;
+			status = "disabled";
+		};
+
+		crc: crc@40023000 {
+			compatible = "st,stm32-crc";
+			reg = <0x40023000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 12)>;
+			resets = <&rctl STM32_RESET(AHB1, 12)>;
 			status = "disabled";
 		};
 	};

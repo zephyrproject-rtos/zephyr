@@ -57,7 +57,7 @@ toolchain parameters, e.g.
 .. zephyr-app-commands::
    :zephyr-app: samples/userspace/hello_world_user
    :board: qemu_x86
-   :gen-args: -DZEPHYR_TOOLCHAIN_VARIANT=llvm -DLLVM_TOOLCHAIN_PATH=... -DZEPHYR_SCA_VARIANT=clang
+   :gen-args: -DZEPHYR_TOOLCHAIN_VARIANT=host/llvm -DLLVM_TOOLCHAIN_PATH=... -DZEPHYR_SCA_VARIANT=clang
    :goals: build
    :compact:
 
@@ -94,6 +94,6 @@ These parameters can be passed on the command line, or be set as environment var
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: stm32h573i_dk
-   :gen-args: -DZEPHYR_TOOLCHAIN_VARIANT=llvm -DLLVM_TOOLCHAIN_PATH=... -DZEPHYR_SCA_VARIANT=clang -DCLANG_SCA_OPTS="--sarif;--verbose"
+   :gen-args: -DZEPHYR_TOOLCHAIN_VARIANT=host/llvm -DLLVM_TOOLCHAIN_PATH=... -DZEPHYR_SCA_VARIANT=clang -DCLANG_SCA_OPTS="--sarif;--verbose"
    :goals: build
    :compact:

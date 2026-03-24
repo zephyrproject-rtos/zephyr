@@ -501,3 +501,18 @@ test_spi_ade7978: ade7978@3c {
 	reg = <0x3c>;
 	spi-max-frequency = <0>;
 };
+
+test_spi_hx711: hx711@3d {
+	compatible = "avia,hx711-spi";
+	reg = <0>;
+	spi-max-frequency = <1000000>;
+	gain = <64>;
+	avdd = <5000>;
+};
+
+test_spi_adxl355: adxl355@3e {
+	compatible = "adi,adxl355";
+	reg = <0x3e>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+};

@@ -36,7 +36,10 @@
 extern "C" {
 #endif
 
-/** Opaque type representing a connection to a remote device */
+/**
+ * @struct bt_conn
+ * @brief Opaque type representing a connection to a remote device
+ */
 struct bt_conn;
 
 /** Connection parameters for LE connections */
@@ -623,6 +626,8 @@ struct bt_conn_le_cs_capabilities {
 	bool chsel_alg_3c_supported;
 	/** Subfeature: Phase-based Ranging from RTT sounding sequence. */
 	bool pbr_from_rtt_sounding_seq_supported;
+	/** Subfeature: IPT in the CS reflector */
+	bool cs_ipt_reflector;
 	/** Optional T_IP1 time durations during CS steps.
 	 *
 	 *  - Bit 0: 10 us

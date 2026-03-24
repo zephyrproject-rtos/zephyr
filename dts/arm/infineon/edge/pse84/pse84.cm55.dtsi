@@ -208,6 +208,14 @@
 	interrupts = <34 4>;
 };
 
+&can0 {
+	interrupts = <84 4>, <85 4>;
+};
+
+&can1 {
+	interrupts = <86 4>, <87 4>;
+};
+
 &tcpwm0_0 {
 	interrupts = <88 4>;
 };

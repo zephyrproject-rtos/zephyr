@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_mimx9131.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "frdm_imx91-pinctrl.dtsi"
 
 / {
@@ -21,6 +22,29 @@
 
 	dram: memory@80000000 {
 		reg = <0x80000000 DT_SIZE_M(1)>;
+	};
+
+	aliases {
+		watchdog0 = &wdog4;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		/* K2 button on the board */
+		btn_1: btn_1 {
+			label = "BTN1";
+			gpios = <&gpio_exp0 5 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	can_phy0: can-phy0 {
+		compatible = "nxp,tja1051", "can-transceiver-gpio";
+		standby-gpios = <&gpio_exp0 23 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+		status = "okay";
 	};
 };
 
@@ -113,4 +137,49 @@
 		motorcomm,rx-delay-sel = <13>;
 		motorcomm,tx-delay-sel = <13>;
 	};
+};
+
+&wdog4 {
+	status = "okay";
+};
+
+&lpi2c1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	gpio_exp1: pcal6408@20 {
+		compatible = "nxp,pcal6408";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		reset-gpios = <&gpio_exp0 20 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		status = "okay";
+	};
+};
+
+&lpi2c2 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	gpio_exp0: pcal6524@22 {
+		compatible = "nxp,pcal6524";
+		reg = <0x22>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <24>;
+		int-gpios = <&gpio3 27 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		status = "okay";
+	};
+};
+
+&flexcan2 {
+	pinctrl-0 = <&flexcan2_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy0>;
+	status = "okay";
 };

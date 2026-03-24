@@ -37,7 +37,6 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/slist.h>
@@ -49,6 +48,7 @@
 
 #include "addr_internal.h"
 #include "adv.h"
+#include "classic/br.h"
 #include "common/hci_common_internal.h"
 #include "common/bt_str.h"
 #include "common/rpa.h"
@@ -66,10 +66,6 @@
 #include "scan.h"
 #include "settings.h"
 #include "smp.h"
-
-#if defined(CONFIG_BT_CLASSIC)
-#include "classic/br.h"
-#endif
 
 #if defined(CONFIG_BT_DF)
 #include "direction_internal.h"
@@ -343,29 +339,6 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 }
 #endif /* defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL) */
 
-struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
-{
-	struct bt_hci_cmd_hdr *hdr;
-	struct net_buf *buf;
-
-	LOG_DBG("opcode 0x%04x param_len %u", opcode, param_len);
-
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		return NULL;
-	}
-
-	LOG_DBG("buf %p", buf);
-
-	hdr = net_buf_push(buf, sizeof(*hdr));
-	hdr->opcode = sys_cpu_to_le16(opcode);
-	hdr->param_len = param_len;
-
-	net_buf_push_u8(buf, BT_HCI_H4_CMD);
-
-	return buf;
-}
-
 struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout)
 {
 	struct net_buf *buf;
@@ -392,7 +365,15 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 {
 	struct bt_hci_cmd_hdr *hdr;
 
-	if (!buf) {
+	if (buf != NULL) {
+		/* Check for sufficient headeroom, which can only happen if the user passes a
+		 * buffer that was allocated incorrectly, i.e. through some other means than
+		 * bt_hci_cmd_alloc().
+		 */
+		if (net_buf_headroom(buf) < sizeof(uint8_t) + sizeof(*hdr)) {
+			return -EINVAL;
+		}
+	} else {
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
@@ -403,16 +384,11 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 
 	cmd(buf)->opcode = opcode;
 
-	/* TODO: Remove this condition when bt_hci_cmd_create() has been removed (after its
-	 * deprecation period)
-	 */
-	if (net_buf_headroom(buf) >= sizeof(uint8_t) + sizeof(*hdr)) {
-		hdr = net_buf_push(buf, sizeof(*hdr));
-		hdr->opcode = sys_cpu_to_le16(opcode);
-		hdr->param_len = buf->len - sizeof(*hdr);
+	hdr = net_buf_push(buf, sizeof(*hdr));
+	hdr->opcode = sys_cpu_to_le16(opcode);
+	hdr->param_len = buf->len - sizeof(*hdr);
 
-		net_buf_push_u8(buf, BT_HCI_H4_CMD);
-	}
+	net_buf_push_u8(buf, BT_HCI_H4_CMD);
 
 	/* Host Number of Completed Packets can ignore the ncmd value
 	 * and does not generate any cmd complete/status events.
@@ -2210,7 +2186,7 @@ int bt_unpair(uint8_t id, const bt_addr_le_t *addr)
 			unpair(id, addr);
 		}
 	} else {
-		CHECKIF(addr == NULL) {
+		if (addr == NULL) {
 			LOG_DBG("addr is NULL");
 			return -EINVAL;
 		}
@@ -3986,10 +3962,9 @@ static int le_init(void)
 	return  le_set_event_mask();
 }
 
-#if !defined(CONFIG_BT_CLASSIC)
-static int bt_br_init(void)
+static int hci_read_buffer_size(void)
 {
-#if defined(CONFIG_BT_CONN)
+#if !defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_CONN)
 	struct net_buf *rsp;
 	int err;
 
@@ -4005,11 +3980,10 @@ static int bt_br_init(void)
 
 	read_buffer_size_complete(rsp);
 	net_buf_unref(rsp);
-#endif /* CONFIG_BT_CONN */
+#endif /* !CONFIG_BT_CLASSIC */
 
 	return 0;
 }
-#endif /* !defined(CONFIG_BT_CLASSIC) */
 
 static int set_event_mask(void)
 {
@@ -4325,7 +4299,11 @@ static int hci_init(void)
 	}
 
 	if (BT_FEAT_BREDR(bt_dev.features)) {
-		err = bt_br_init();
+		if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+			err = bt_br_init();
+		} else if (IS_ENABLED(CONFIG_BT_CONN)) {
+			err = hci_read_buffer_size();
+		}
 		if (err) {
 			return err;
 		}
@@ -4892,6 +4870,14 @@ int bt_set_name(const char *name)
 
 	if (!strcmp(bt_dev.name, name)) {
 		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		err = bt_br_write_local_name(name);
+		if (err != 0) {
+			LOG_ERR("Unable to set local name %d", err);
+			return err;
+		}
 	}
 
 	memcpy(bt_dev.name, name, len);

@@ -264,3 +264,10 @@ tests:
       - EXTRA_DTC_OVERLAY_FILE="boards/mx25uw63_single_io.overlay;boards/mx25uw63_freq_1M.overlay"
     harness_config:
       fixture: gpio_loopback
+  drivers.flash.common.spi_nand.mikroe_flash_5_click:
+    platform_allow:
+      - frdm_mcxn947/mcxn947/cpu0
+    extra_args:
+      - SHIELD=mikroe_flash_5_click
+      - DTC_OVERLAY_FILE="./boards/mikroe_flash_5_click.overlay"
+      - EXTRA_CONF_FILE="./boards/mikroe_flash_5_click.conf"

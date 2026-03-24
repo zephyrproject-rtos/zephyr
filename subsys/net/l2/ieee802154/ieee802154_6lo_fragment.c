@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_ieee802154_6lo_fragment, CONFIG_NET_L2_IEEE802154_LOG_LE
 
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/udp.h>

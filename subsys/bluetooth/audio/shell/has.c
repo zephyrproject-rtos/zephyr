@@ -19,6 +19,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/toolchain.h>
 
 #include "common/bt_shell_private.h"
 
@@ -159,15 +161,15 @@ struct print_list_entry_data {
 	const struct shell *sh;
 };
 
-static uint8_t print_list_entry(uint8_t index, enum bt_has_properties properties,
-				const char *name, void *user_data)
+static bool print_list_entry(uint8_t index, enum bt_has_properties properties, const char *name,
+			     void *user_data)
 {
 	struct print_list_entry_data *data = user_data;
 
 	shell_print(data->sh, "%d: index 0x%02x prop 0x%02x name %s", ++data->num, index,
 		    properties, name);
 
-	return BT_HAS_PRESET_ITER_CONTINUE;
+	return true;
 }
 
 static int cmd_preset_list(const struct shell *sh, size_t argc, char **argv)
@@ -175,8 +177,10 @@ static int cmd_preset_list(const struct shell *sh, size_t argc, char **argv)
 	struct print_list_entry_data data = {
 		.sh = sh,
 	};
+	__maybe_unused int err;
 
-	bt_has_preset_foreach(0, print_list_entry, &data);
+	err = bt_has_preset_foreach(0, print_list_entry, &data);
+	__ASSERT(err == 0, "bt_has_preset_foreach returned %d", err);
 
 	if (data.num == 0) {
 		shell_print(sh, "No presets registered");

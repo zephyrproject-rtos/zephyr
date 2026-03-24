@@ -16,6 +16,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device.h>
 
 LOG_MODULE_REGISTER(i2s_mcux_flexcomm);
 
@@ -907,7 +908,7 @@ static void i2s_mcux_isr(const struct device *dev)
 	}
 }
 
-static int i2s_mcux_init(const struct device *dev)
+static int i2s_mcux_init_common(const struct device *dev)
 {
 	const struct i2s_mcux_config *cfg = dev->config;
 	struct i2s_mcux_data *const data = dev->data;
@@ -950,6 +951,42 @@ static int i2s_mcux_init(const struct device *dev)
 	LOG_DBG("Device %s inited", dev->name);
 
 	return 0;
+}
+
+static int i2s_mcux_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct i2s_mcux_config *cfg = dev->config;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0 && ret != -ENOENT) {
+			return ret;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_SLEEP);
+		if (ret < 0 && ret != -ENOENT) {
+			return ret;
+		}
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		return i2s_mcux_init_common(dev);
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+	return 0;
+}
+
+static int i2s_mcux_init(const struct device *dev)
+{
+	/* Rest of the init is done from the PM_DEVICE_TURN_ON action
+	 * which is invoked by pm_device_driver_init().
+	 */
+	return pm_device_driver_init(dev, i2s_mcux_pm_action);
 }
 
 #define I2S_DMA_CHANNELS(id)				\
@@ -997,9 +1034,10 @@ static int i2s_mcux_init(const struct device *dev)
 	static struct i2s_mcux_data i2s_mcux_data_##id = {		\
 		I2S_DMA_CHANNELS(id)					\
 	};								\
+	PM_DEVICE_DT_INST_DEFINE(id, i2s_mcux_pm_action);		\
 	DEVICE_DT_INST_DEFINE(id,					\
 			    &i2s_mcux_init,			\
-			    NULL,			\
+			    PM_DEVICE_DT_INST_GET(id),		\
 			    &i2s_mcux_data_##id,			\
 			    &i2s_mcux_config_##id,			\
 			    POST_KERNEL,				\

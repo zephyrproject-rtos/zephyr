@@ -61,6 +61,15 @@ static void cfb_test_after(void *test_fixture)
 	cfb_framebuffer_deinit(dev);
 }
 
+static void verify_rectspace1016_bottom_half_at_origin(void)
+{
+	zassert_true(verify_color_inside_rect(0, 0, 1, 8, 0xFFFFFF));
+	zassert_true(verify_color_inside_rect(9, 0, 1, 8, 0xFFFFFF));
+	zassert_true(verify_color_inside_rect(1, 0, 8, 7, 0x0));
+	zassert_true(verify_color_inside_rect(0, 7, 10, 1, 0xFFFFFF));
+	zassert_true(verify_color_outside_rect(0, 0, 10, 8, 0x0));
+}
+
 /*
  * normal rendering
  */
@@ -105,6 +114,22 @@ ZTEST(print_rectspace1016, test_print_at_11_17)
 	zassert_ok(cfb_framebuffer_finalize(dev));
 
 	zassert_true(verify_image_and_bg(11, 17, rectspace1016, 10, 16, 0));
+}
+
+ZTEST(print_rectspace1016, test_print_missing_glyph_at_0_0)
+{
+	zassert_ok(cfb_print(dev, "~", 0, 0));
+	zassert_ok(cfb_framebuffer_finalize(dev));
+
+	zassert_true(verify_image_and_bg(0, 0, tofu1016, 10, 16, 0));
+}
+
+ZTEST(print_rectspace1016, test_print_missing_glyph_at_9_15)
+{
+	zassert_ok(cfb_print(dev, "~", 9, 15));
+	zassert_ok(cfb_framebuffer_finalize(dev));
+
+	zassert_true(verify_image_and_bg(9, 15, tofu1016, 10, 16, 0));
 }
 
 /*
@@ -155,6 +180,15 @@ ZTEST(print_rectspace1016, test_print_at_11_17_kerning_3)
 	zassert_true(verify_image_and_bg(11, 17, kerning_3_2rectspace1016, 23, 16, 0));
 }
 
+ZTEST(print_rectspace1016, test_print_missing_glyph_at_0_0_kerning_3)
+{
+	cfb_set_kerning(dev, 3);
+	zassert_ok(cfb_print(dev, "~~", 0, 0));
+	zassert_ok(cfb_framebuffer_finalize(dev));
+
+	zassert_true(verify_image_and_bg(0, 0, kerning_3_2tofu1016, 23, 16, 0));
+}
+
 ZTEST(print_rectspace1016, test_print_kerning_3_within_right_border)
 {
 	cfb_set_kerning(dev, 3);
@@ -174,12 +208,38 @@ ZTEST(print_rectspace1016, test_print_kerning_3_text_wrap)
 	zassert_true(verify_image(0, 33, rectspace1016, 10, 16));
 }
 
+ZTEST(print_rectspace1016, test_print_missing_glyph_kerning_3_text_wrap)
+{
+	cfb_set_kerning(dev, 3);
+	zassert_ok(cfb_print(dev, "~~", display_width - 22, 17));
+	zassert_ok(cfb_framebuffer_finalize(dev));
+
+	zassert_true(verify_image(display_width - 22, 17, tofu1016, 10, 16));
+	zassert_true(verify_image(0, 33, tofu1016, 10, 16));
+}
+
 ZTEST(print_rectspace1016, test_print_outside_top_left)
 {
 	zassert_ok(cfb_print(dev, " ", -(10 - 3), -(16 - 4)));
 	zassert_ok(cfb_framebuffer_finalize(dev));
 
 	zassert_true(verify_image_and_bg(0, 0, outside_top_left, 3, 4, 0));
+}
+
+ZTEST(print_rectspace1016, test_print_outside_top_tile_aligned)
+{
+	zassert_ok(cfb_print(dev, " ", 0, -8));
+	zassert_ok(cfb_framebuffer_finalize(dev));
+
+	verify_rectspace1016_bottom_half_at_origin();
+}
+
+ZTEST(print_rectspace1016, test_print_missing_glyph_outside_top_left)
+{
+	zassert_ok(cfb_print(dev, "~", -(10 - 3), -(16 - 4)));
+	zassert_ok(cfb_framebuffer_finalize(dev));
+
+	zassert_true(verify_image_and_bg(0, 0, outside_top_left_tofu1016, 3, 4, 0));
 }
 
 ZTEST(print_rectspace1016, test_print_outside_top_right)
@@ -190,9 +250,25 @@ ZTEST(print_rectspace1016, test_print_outside_top_right)
 	zassert_true(verify_image_and_bg(0, 8, rectspace1016, 10, 16, 0));
 }
 
+ZTEST(print_rectspace1016, test_print_missing_glyph_outside_top_right)
+{
+	zassert_ok(cfb_print(dev, "~", display_width - 5, -8));
+	zassert_ok(cfb_framebuffer_finalize(dev));
+
+	zassert_true(verify_image_and_bg(0, 8, tofu1016, 10, 16, 0));
+}
+
 ZTEST(print_rectspace1016, test_print_outside_bottom_right)
 {
 	zassert_ok(cfb_print(dev, " ", display_width - 3, display_height - 5));
+	zassert_ok(cfb_framebuffer_finalize(dev));
+
+	zassert_true(verify_color_inside_rect(0, 0, display_width, display_height, 0));
+}
+
+ZTEST(print_rectspace1016, test_print_missing_glyph_outside_bottom_right)
+{
+	zassert_ok(cfb_print(dev, "~", display_width - 3, display_height - 5));
 	zassert_ok(cfb_framebuffer_finalize(dev));
 
 	zassert_true(verify_color_inside_rect(0, 0, display_width, display_height, 0));
@@ -204,6 +280,14 @@ ZTEST(print_rectspace1016, test_print_outside_bottom_left)
 	zassert_ok(cfb_framebuffer_finalize(dev));
 
 	zassert_true(verify_image(0, display_height - 14, outside_bottom_left, 3, 14));
+}
+
+ZTEST(print_rectspace1016, test_print_missing_glyph_outside_bottom_left)
+{
+	zassert_ok(cfb_print(dev, "~", -(10 - 3), display_height - 14));
+	zassert_ok(cfb_framebuffer_finalize(dev));
+
+	zassert_true(verify_image(0, display_height - 14, outside_bottom_left_tofu1016, 3, 14));
 }
 
 ZTEST(print_rectspace1016, test_print_wrap_to_3_lines)

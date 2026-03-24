@@ -10,6 +10,7 @@ tests:
       - nucleo_u5a5zj_q
       - nucleo_wba55cg
       - nucleo_wl55jc
+      - stm32n6570_dk/stm32n657xx/sb
     integration_platforms:
       - stm32f746g_disco
     tags: board

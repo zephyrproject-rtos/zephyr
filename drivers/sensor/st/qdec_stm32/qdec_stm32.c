@@ -25,6 +25,12 @@
 
 LOG_MODULE_REGISTER(qdec_stm32, CONFIG_SENSOR_LOG_LEVEL);
 
+#ifdef CONFIG_STM32_HAL2
+#define STM32_TIM_ACTIVEINPUT_DIRECT	LL_TIM_ACTIVEINPUT_DIRECT
+#else /* CONFIG_STM32_HAL2 */
+#define STM32_TIM_ACTIVEINPUT_DIRECT	LL_TIM_ACTIVEINPUT_DIRECTTI
+#endif /* CONFIG_STM32_HAL2 */
+
 /* Device constant configuration parameters */
 struct qdec_stm32_dev_cfg {
 	const struct pinctrl_dev_config *pin_config;
@@ -91,7 +97,7 @@ static void qdec_stm32_initialize_channel(const struct device *dev, uint32_t ll_
 {
 	const struct qdec_stm32_dev_cfg *const dev_cfg = dev->config;
 
-	LL_TIM_IC_SetActiveInput(dev_cfg->timer_inst, ll_channel, LL_TIM_ACTIVEINPUT_DIRECTTI);
+	LL_TIM_IC_SetActiveInput(dev_cfg->timer_inst, ll_channel, STM32_TIM_ACTIVEINPUT_DIRECT);
 	LL_TIM_IC_SetFilter(dev_cfg->timer_inst, ll_channel,
 			    dev_cfg->input_filtering_level * LL_TIM_IC_FILTER_FDIV1_N2);
 	LL_TIM_IC_SetPrescaler(dev_cfg->timer_inst, ll_channel, LL_TIM_ICPSC_DIV1);

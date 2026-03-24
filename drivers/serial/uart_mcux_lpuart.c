@@ -590,7 +590,6 @@ static void mcux_lpuart_async_rx_flush(const struct device *dev)
 		if (notify) {
 			async_evt_rx_rdy(dev);
 		}
-		LPUART_ClearStatusFlags(config->base, kLPUART_RxOverrunFlag);
 	} else {
 		LOG_ERR("Error getting DMA status");
 	}
@@ -606,8 +605,16 @@ static int mcux_lpuart_rx_disable(const struct device *dev)
 
 	LPUART_EnableRx(lpuart, false);
 	(void)k_work_cancel_delayable(&data->async.rx_dma_params.timeout_work);
-	LPUART_DisableInterrupts(lpuart, kLPUART_IdleLineInterruptEnable);
-	LPUART_ClearStatusFlags(lpuart, kLPUART_IdleLineFlag);
+	LPUART_DisableInterrupts(lpuart, kLPUART_IdleLineInterruptEnable |
+					 kLPUART_RxOverrunInterruptEnable |
+					 kLPUART_NoiseErrorInterruptEnable |
+					 kLPUART_FramingErrorInterruptEnable |
+					 kLPUART_ParityErrorInterruptEnable);
+	LPUART_ClearStatusFlags(lpuart, kLPUART_IdleLineFlag |
+					kLPUART_RxOverrunFlag |
+					kLPUART_ParityErrorFlag |
+					kLPUART_FramingErrorFlag |
+					kLPUART_NoiseErrorFlag);
 	LPUART_EnableRxDMA(lpuart, false);
 
 	/* No active RX buffer, cannot disable */
@@ -624,6 +631,7 @@ static int mcux_lpuart_rx_disable(const struct device *dev)
 			/* Release the next buffer as well */
 			async_evt_rx_buf_release(dev);
 		}
+		data->async.rx_dma_params.buf = NULL;
 	}
 	const int ret = dma_stop(config->rx_dma_config.dma_dev,
 				 config->rx_dma_config.dma_channel);
@@ -922,7 +930,11 @@ static int mcux_lpuart_rx_enable(const struct device *dev, uint8_t *buf, const s
 	data->async.next_rx_buffer = NULL;
 	data->async.next_rx_buffer_len = 0U;
 
-	LPUART_EnableInterrupts(config->base, kLPUART_IdleLineInterruptEnable);
+	LPUART_EnableInterrupts(config->base, kLPUART_IdleLineInterruptEnable |
+					      kLPUART_RxOverrunInterruptEnable |
+					      kLPUART_NoiseErrorInterruptEnable |
+					      kLPUART_FramingErrorInterruptEnable |
+					      kLPUART_ParityErrorInterruptEnable);
 	prepare_rx_dma_block_config(dev);
 	const int ret = configure_and_start_rx_dma(config, data, lpuart);
 
@@ -1003,17 +1015,52 @@ static inline void mcux_lpuart_irq_driven_isr(const struct device *dev,
 #endif
 
 #if LPUART_ASYNC_ENABLE
-static inline void mcux_lpuart_async_isr(struct mcux_lpuart_data *data,
-					      const struct mcux_lpuart_config *config,
-					      const uint32_t status) {
+static inline void mcux_lpuart_async_isr(const struct device *dev,
+					 struct mcux_lpuart_data *data,
+					 const struct mcux_lpuart_config *config,
+					 const uint32_t status) {
+	/*
+	 * Handle RX errors first — they stop reception, making idle-line
+	 * processing pointless.  Per the async UART API contract,
+	 * UART_RX_STOPPED must be followed by UART_RX_BUF_RELEASED (for
+	 * each buffer) and UART_RX_DISABLED.  mcux_lpuart_rx_disable()
+	 * provides that full teardown sequence.
+	 */
+	if (status & (kLPUART_RxOverrunFlag | kLPUART_ParityErrorFlag |
+		      kLPUART_FramingErrorFlag | kLPUART_NoiseErrorFlag)) {
+		enum uart_rx_stop_reason reason = 0;
+
+		if (status & kLPUART_RxOverrunFlag) {
+			reason |= UART_ERROR_OVERRUN;
+		}
+		if (status & kLPUART_ParityErrorFlag) {
+			reason |= UART_ERROR_PARITY;
+		}
+		if (status & kLPUART_FramingErrorFlag) {
+			reason |= UART_ERROR_FRAMING;
+		}
+		if (status & kLPUART_NoiseErrorFlag) {
+			reason |= UART_ERROR_NOISE;
+		}
+
+		LPUART_ClearStatusFlags(config->base, kLPUART_RxOverrunFlag |
+						      kLPUART_ParityErrorFlag |
+						      kLPUART_FramingErrorFlag |
+						      kLPUART_NoiseErrorFlag);
+
+		struct uart_event event = {
+			.type = UART_RX_STOPPED,
+			.data.rx_stop.reason = reason,
+		};
+		async_user_callback(dev, &event);
+		mcux_lpuart_rx_disable(dev);
+		return;
+	}
+
 	if (status & kLPUART_IdleLineFlag) {
 		async_timer_start(&data->async.rx_dma_params.timeout_work,
 				  data->async.rx_dma_params.timeout_us);
 		LPUART_ClearStatusFlags(config->base, kLPUART_IdleLineFlag);
-	}
-
-	if (status & kLPUART_RxOverrunFlag) {
-		LPUART_ClearStatusFlags(config->base, kLPUART_RxOverrunFlag);
 	}
 }
 #endif
@@ -1041,12 +1088,12 @@ static void mcux_lpuart_isr(const struct device *dev)
 	if (data->api_type == LPUART_IRQ_DRIVEN) {
 		mcux_lpuart_irq_driven_isr(dev, data, config, status);
 	} else if (data->api_type == LPUART_ASYNC) {
-		mcux_lpuart_async_isr(data, config, status);
+		mcux_lpuart_async_isr(dev, data, config, status);
 	}
 #elif defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	mcux_lpuart_irq_driven_isr(dev, data, config, status);
 #elif LPUART_ASYNC_ENABLE
-	mcux_lpuart_async_isr(data, config, status);
+	mcux_lpuart_async_isr(dev, data, config, status);
 #endif /* API */
 }
 #endif /* CONFIG_UART_MCUX_LPUART_ISR_SUPPORT */

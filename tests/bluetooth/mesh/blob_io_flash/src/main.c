@@ -11,8 +11,8 @@
 #include "mesh/blob.h"
 
 #define SLOT1_PARTITION		slot1_partition
-#define SLOT1_PARTITION_ID	FIXED_PARTITION_ID(SLOT1_PARTITION)
-#define SLOT1_PARTITION_SIZE	FIXED_PARTITION_SIZE(SLOT1_PARTITION)
+#define SLOT1_PARTITION_ID	PARTITION_ID(SLOT1_PARTITION)
+#define SLOT1_PARTITION_SIZE	PARTITION_SIZE(SLOT1_PARTITION)
 /* Chunk size is set to value that is not multiple of 4, to verify that chunks are written correctly
  * even if they are not aligned with word length used in flash
  */

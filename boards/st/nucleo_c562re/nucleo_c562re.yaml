@@ -1,0 +1,17 @@
+identifier: nucleo_c562re
+name: ST Nucleo C562RE
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - gpio
+  - i2c
+  - uart
+ram: 128
+flash: 512
+vendor: st

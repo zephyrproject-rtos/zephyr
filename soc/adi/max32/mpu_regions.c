@@ -30,9 +30,9 @@
  * flash.
  */
 static const struct arm_mpu_region mpu_regions[] = {
-#if FIXED_PARTITION_EXISTS(storage_partition)
-#define STORAGE_ADDR (CONFIG_FLASH_BASE_ADDRESS + FIXED_PARTITION_OFFSET(storage_partition))
-#define STORAGE_SIZE (FIXED_PARTITION_SIZE(storage_partition) >> 10)
+#if PARTITION_EXISTS(storage_partition)
+#define STORAGE_ADDR (CONFIG_FLASH_BASE_ADDRESS + PARTITION_OFFSET(storage_partition))
+#define STORAGE_SIZE (PARTITION_SIZE(storage_partition) >> 10)
 	MAX32_MPU_REGION("FLASH", CONFIG_FLASH_BASE_ADDRESS, REGION_FLASH_ATTR,
 			 KB(CONFIG_FLASH_SIZE - STORAGE_SIZE)),
 	MAX32_MPU_REGION("STORAGE", STORAGE_ADDR, MAX32_FLASH_NON_CACHEABLE, KB(STORAGE_SIZE)),

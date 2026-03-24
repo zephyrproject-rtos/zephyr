@@ -145,7 +145,7 @@ static int mcux_rgpio_configure(const struct device *dev,
 	}
 #endif
 
-#if !defined(__ARM_FEATURE_CMSE)
+#if !defined(__ARM_FEATURE_CMSE) && !defined(CONFIG_CPU_CORTEX_A)
 	base->PCNS &= ~BIT(pin);
 	if (base->PCNS & BIT(pin)) {
 		/* We don't have access to this pin */
@@ -235,7 +235,7 @@ static int mcux_rgpio_pin_interrupt_configure(const struct device *dev,
 	unsigned int key;
 	uint8_t irqs, irqc;
 
-#if !defined(__ARM_FEATURE_CMSE)
+#if !defined(__ARM_FEATURE_CMSE) && !defined(CONFIG_CPU_CORTEX_A)
 	base->ICNS &= ~BIT(config->irq_sel);
 	if (base->ICNS & BIT(config->irq_sel)) {
 		/* We don't have access to this IRQ */

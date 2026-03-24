@@ -2147,6 +2147,23 @@ This has been fixed in main for v4.3.0
 - `PR 98985 fix for 3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/98985>`_
 
+:cve:`2026-0849`
+----------------
+
+crypto: ATAES132A response length allows stack buffer overflow
+
+Malformed ATAES132A responses with an oversized length field overflow a 52-byte
+stack buffer in the Zephyr crypto driver, allowing a compromised device or bus
+attacker to corrupt kernel memory and potentially hijack execution.
+
+- `Zephyr project bug tracker GHSA-ff4p-3ggg-prp6
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-ff4p-3ggg-prp6>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 103163 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/103163>`_
+
 :cve:`2026-1678`
 ----------------
 
@@ -2175,3 +2192,18 @@ This has been fixed in main for v4.4.0
 
 - `PR 99828 fix for 3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/99828>`_
+
+:cve:`2026-4179`
+----------------
+
+stm32: usb: Infinite while loop in Interrupt Handler
+
+Issues in stm32 USB device driver can lead to an infinite while loop.
+
+- `Zephyr project bug tracker GHSA-9xg7-g3q3-9prf
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-9xg7-g3q3-9prf>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 104390 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/104390>`_

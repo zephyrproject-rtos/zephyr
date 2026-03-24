@@ -430,6 +430,7 @@ static int icm4268x_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			data->shift = 9;
 			data->readings[count].temperature =
 				icm4268x_read_temperature_from_packet(buffer);
+		/* coverity[unsigned_compare] */
 		} else if (IS_ACCEL(chan_spec.chan_type) && has_accel) {
 			/* Decode accel */
 			struct sensor_three_axis_data *data =

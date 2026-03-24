@@ -1,7 +1,7 @@
 # DOC: additional dependencies required to generate docs.
 #      Follow the "Getting Started" guide first.
 
-sphinx<8.3.0
+sphinx
 sphinx_rtd_theme~=3.0
 sphinx-tabs
 sphinxcontrib-svg2pdfconverter

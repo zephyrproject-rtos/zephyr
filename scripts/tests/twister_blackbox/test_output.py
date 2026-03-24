@@ -92,7 +92,7 @@ class TestOutput:
         assert str(sys_exit.value) == '1'
 
         rel_path = os.path.relpath(path, ZEPHYR_BASE)
-        build_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr', rel_path, 'always_fail.dummy', 'build.log')
+        build_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr_gnu', rel_path, 'always_fail.dummy', 'build.log')
         with open(build_path) as f:
             build_log = f.read()
 

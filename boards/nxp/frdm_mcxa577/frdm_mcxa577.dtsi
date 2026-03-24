@@ -119,6 +119,13 @@
 	pinctrl-names = "default";
 };
 
+&lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-names = "default";
+};
+
 &lpadc0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
@@ -189,5 +196,28 @@
 			label = "storage";
 			reg = <0x001e0000 DT_SIZE_K(128)>;
 		};
+	};
+};
+
+&enet {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet_qos>;
+	pinctrl-names = "default";
+};
+
+&enet_mac {
+	status = "okay";
+	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
+	phy-handle = <&phy>;
+};
+
+&enet_mdio {
+	status = "okay";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
 	};
 };

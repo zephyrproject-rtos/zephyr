@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(smp_sample);
 #include "common.h"
 
 #define STORAGE_PARTITION_LABEL	storage_partition
-#define STORAGE_PARTITION_ID	FIXED_PARTITION_ID(STORAGE_PARTITION_LABEL)
+#define STORAGE_PARTITION_ID	PARTITION_ID(STORAGE_PARTITION_LABEL)
 
 /* Define an example stats group; approximates seconds since boot. */
 STATS_SECT_START(smp_svr_stats)

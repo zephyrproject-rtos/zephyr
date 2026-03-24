@@ -82,6 +82,14 @@ config LLEXT_HEAP_MEMBLK
 
 endchoice
 
+config LLEXT_HEAP_SIZE
+	int "llext heap memory size in kilobytes"
+	depends on !LLEXT_HEAP_DYNAMIC && !HARVARD && !LLEXT_HEAP_MEMBLK
+	default 8
+	help
+	  Heap size in kilobytes available to llext for dynamic allocation. Replaced by
+	  LLEXT_INSTR_HEAP_SIZE and LLEXT_DATA_HEAP_SIZE if HARVARD is selected.
+
 if LLEXT_HEAP_MEMBLK
 
 config LLEXT_METADATA_HEAP_SIZE
@@ -95,8 +103,8 @@ config LLEXT_EXT_HEAP_SIZE
 	depends on !HARVARD
 	default 16
 	help
-	  Heap size in kilobytes available for LLEXT extension data. Must be a multiple of
-	  LLEXT_HEAP_MEMBLK_BLOCK_SIZE. Replaced by LLEXT_INSTR_HEAP_SIZE and
+	  Heap size in kilobytes available for LLEXT extension regions. Must be a multiple
+	  of LLEXT_HEAP_MEMBLK_BLOCK_SIZE. Replaced by LLEXT_INSTR_HEAP_SIZE and
 	  LLEXT_DATA_HEAP_SIZE if HARVARD is selected.
 
 config LLEXT_HEAP_MEMBLK_BLOCK_SIZE
@@ -111,20 +119,13 @@ config LLEXT_HEAP_MEMBLK_BLOCK_SIZE
 
 endif
 
-config LLEXT_HEAP_SIZE
-	int "llext heap memory size in kilobytes"
-	depends on !LLEXT_HEAP_DYNAMIC && !HARVARD && !LLEXT_HEAP_MEMBLK
-	default 8
-	help
-	  Heap size in kilobytes available to llext for dynamic allocation
-
 config LLEXT_INSTR_HEAP_SIZE
 	int "llext instruction heap memory size in kilobytes"
 	depends on !LLEXT_HEAP_DYNAMIC && HARVARD
 	default 4
 	help
 	  Instruction heap size in kilobytes available to llext.
-	  Only executable sections will be placed in this heap.
+	  Only executable regions will be placed in this heap.
 
 config LLEXT_DATA_HEAP_SIZE
 	int "llext data heap memory size in kilobytes"

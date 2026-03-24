@@ -296,7 +296,8 @@ static int mspi_stm32_xspi_abort_memmap_if_enabled(const struct device *dev)
  * @brief Reads/Writes in memory mapped mode.
  *
  */
-static int read_write_in_memory_map_mode(const struct device *dev, struct mspi_xfer_packet *packet)
+static int read_write_in_memory_map_mode(const struct device *dev,
+					 const struct mspi_xfer_packet *packet)
 {
 	int ret;
 	struct mspi_stm32_data *dev_data = dev->data;
@@ -339,7 +340,7 @@ static int read_write_in_memory_map_mode(const struct device *dev, struct mspi_x
 }
 
 static HAL_StatusTypeDef read_write_in_indirect_mode(const struct device *dev,
-						     struct mspi_xfer_packet *packet,
+						     const struct mspi_xfer_packet *packet,
 						     uint8_t access_mode)
 {
 	HAL_StatusTypeDef hal_ret;
@@ -422,7 +423,7 @@ end:
  * @brief Sends a Command to the NOR and Receive/Transceive data if relevant in IT or DMA mode.
  *
  */
-static int mspi_stm32_xspi_access(const struct device *dev, struct mspi_xfer_packet *packet,
+static int mspi_stm32_xspi_access(const struct device *dev, const struct mspi_xfer_packet *packet,
 				  uint8_t access_mode)
 {
 	HAL_StatusTypeDef hal_ret;
@@ -974,7 +975,7 @@ static int mspi_stm32_xspi_pio_dma_transceive(const struct device *controller,
 	uint32_t packet_idx;
 	struct mspi_stm32_data *dev_data = controller->data;
 	struct mspi_stm32_context *ctx = &dev_data->ctx;
-	struct mspi_xfer_packet *packet;
+	const struct mspi_xfer_packet *packet;
 
 	if (xfer->num_packet == 0 || xfer->packets == NULL ||
 	    xfer->timeout > CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE) {
@@ -990,7 +991,7 @@ static int mspi_stm32_xspi_pio_dma_transceive(const struct device *controller,
 
 	while (ctx->packets_left > 0) {
 		packet_idx = ctx->xfer.num_packet - ctx->packets_left;
-		packet = (const struct mspi_xfer_packet *)&ctx->xfer.packets[packet_idx];
+		packet = &ctx->xfer.packets[packet_idx];
 #ifdef CONFIG_MSPI_DMA
 		const struct mspi_stm32_conf *dev_cfg = controller->config;
 
@@ -1287,7 +1288,8 @@ static int mspi_stm32_xspi_config(const struct mspi_dt_spec *spec)
 		goto end;
 	}
 
-#if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)
+#if (defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)) && \
+	!defined(CONFIG_STM32_XSPIM)
 	/* XSPI I/O manager config */
 	XSPIM_CfgTypeDef mspi_mgr_cfg;
 
@@ -1305,7 +1307,7 @@ static int mspi_stm32_xspi_config(const struct mspi_dt_spec *spec)
 		ret = -EIO;
 		goto end;
 	}
-#endif
+#endif /* (HAL_XSPIM_IOPORT_1 || HAL_XSPIM_IOPORT_2) && !CONFIG_STM32_XSPIM */
 
 #if defined(DLYB_XSPI1) || defined(DLYB_XSPI2) || defined(DLYB_OCTOSPI1) || defined(DLYB_OCTOSPI2)
 	HAL_XSPI_DLYB_CfgTypeDef mspi_delay_block_cfg = {0};

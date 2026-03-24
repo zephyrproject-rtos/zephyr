@@ -77,4 +77,18 @@ config ESP_CONSOLE
 
 endif # $(dt_chosen_enabled,$(DT_CHOSEN_Z_CONSOLE))
 
+config ESP_USB_SERIAL_JTAG_ENABLED
+	bool "Keep USB Serial/JTAG controller enabled"
+	default y
+	depends on SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32S3 || \
+		   SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || \
+		   SOC_SERIES_ESP32H2
+	help
+	  Keep the USB Serial/JTAG controller clock and PHY pads enabled
+	  at boot. This is needed for JTAG debugging over the built-in USB
+	  port, and for USB serial output.
+
+	  Disable this only if you need to save power and do not use the
+	  USB Serial/JTAG port for debugging or console.
+
 endif # SOC_FAMILY_ESPRESSIF_ESP32

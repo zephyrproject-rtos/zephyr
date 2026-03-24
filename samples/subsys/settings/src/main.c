@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <zephyr/storage/flash_map.h>
 #include <zephyr/settings/settings.h>
 
 #include <errno.h>
@@ -18,7 +19,7 @@
 #endif
 
 #define STORAGE_PARTITION	storage_partition
-#define STORAGE_PARTITION_ID	FIXED_PARTITION_ID(STORAGE_PARTITION)
+#define STORAGE_PARTITION_ID	PARTITION_ID(STORAGE_PARTITION)
 
 #define GAMMA_DEFAULT_VAl 0
 #define FAIL_MSG "fail (err %d)\n"

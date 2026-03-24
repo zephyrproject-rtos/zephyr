@@ -15,10 +15,11 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram0_bt;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,entropy = &sec_eng_trng;
+		zephyr,bt-hci = &bt_hci_bflb;
 	};
 
 	aliases {
@@ -67,4 +68,15 @@
 
 &sec_eng_trng {
 	status = "okay";
+};
+
+&bt_hci_bflb {
+	status = "okay";
+};
+
+zephyr_udc0: &usb0 {
+	status = "okay";
+
+	pinctrl-0 = <&usb_default>;
+	pinctrl-names = "default";
 };

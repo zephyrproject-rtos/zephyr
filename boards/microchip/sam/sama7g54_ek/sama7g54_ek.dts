@@ -22,6 +22,7 @@
 	aliases {
 		led0 = &led_green;
 		pwm-led0 = &pwm_led_green;
+		rtc = &rtc;
 		sw0 = &button_user;
 		sdhc0 = &sdmmc0;
 		sdhc1 = &sdmmc1;
@@ -154,6 +155,17 @@
 			size = <256>;
 			timeout = <5>;
 			status = "okay";
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom0_eui48: eui48@fa {
+					reg = <0xfa 6>;
+					#nvmem-cell-cells = <0>;
+				};
+			};
 		};
 
 		eeprom1: eeprom1@53 {
@@ -164,6 +176,17 @@
 			size = <256>;
 			timeout = <5>;
 			status = "okay";
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom1_eui48: eui48@fa {
+					reg = <0xfa 6>;
+					#nvmem-cell-cells = <0>;
+				};
+			};
 		};
 	};
 };
@@ -174,6 +197,9 @@
 	pinctrl-0 = <&pinctrl_gmac0_default>;
 	phy-connection-type = "gmii";
 	phy-handle = <&gmac0_phy>;
+
+	nvmem-cells = <&eeprom0_eui48>;
+	nvmem-cell-names = "mac_address";
 };
 
 &gmac0_mdio {
@@ -187,6 +213,7 @@
 		status = "okay";
 		reg = <7>;
 		int-gpios = <&pioa 31 GPIO_ACTIVE_LOW>;
+		microchip,rgmii-delay = "id";
 	};
 };
 
@@ -197,6 +224,9 @@
 	phy-connection-type = "mii";
 	phy-handle = <&gmac1_phy>;
 	ref-clk-source = "external";
+
+	nvmem-cells = <&eeprom1_eui48>;
+	nvmem-cell-names = "mac_address";
 };
 
 &gmac1_mdio {
@@ -416,6 +446,10 @@
 };
 
 &sha {
+	status = "okay";
+};
+
+&tc0_ch0 {
 	status = "okay";
 };
 

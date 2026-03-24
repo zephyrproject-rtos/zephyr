@@ -15,14 +15,6 @@
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/sys/byteorder.h>
 
-#define CTRL_PIPE_STAGE_SETUP		0
-#define CTRL_PIPE_STAGE_DATA_OUT	1
-#define CTRL_PIPE_STAGE_DATA_IN		2
-#define CTRL_PIPE_STAGE_NO_DATA		3
-#define CTRL_PIPE_STAGE_STATUS_OUT	4
-#define CTRL_PIPE_STAGE_STATUS_IN	5
-#define CTRL_PIPE_STAGE_ERROR		6
-
 /**
  * @brief Get driver's private data
  *
@@ -88,19 +80,6 @@ void udc_ep_set_busy(struct udc_ep_config *const ep_cfg,
  * @return pointer to UDC request or NULL on error.
  */
 struct net_buf *udc_buf_get(struct udc_ep_config *const ep_cfg);
-
-/**
- * @brief Get all UDC request from endpoint FIFO.
- *
- * Get all UDC request from endpoint FIFO as single-linked list.
- * This function removes all request from endpoint FIFO and
- * is typically used to dequeue endpoint FIFO.
- *
- * @param[in] ep_cfg Pointer to endpoint configuration
- *
- * @return pointer to UDC request or NULL on error.
- */
-struct net_buf *udc_buf_get_all(struct udc_ep_config *const ep_cfg);
 
 /**
  * @brief Peek request at the head of endpoint FIFO.
@@ -231,16 +210,6 @@ int udc_register_ep(const struct device *dev,
 		    struct udc_ep_config *const cfg);
 
 /**
- * @brief Set setup flag in requests metadata.
- *
- * A control transfer can be either setup or data OUT,
- * use this function to mark request as setup packet.
- *
- * @param[in] buf    Pointer to UDC request buffer
- */
-void udc_ep_buf_set_setup(struct net_buf *const buf);
-
-/**
  * @brief Checks whether the driver must finish transfer with a ZLP
  *
  * @param[in] buf    Pointer to UDC request buffer
@@ -255,6 +224,38 @@ bool udc_ep_buf_has_zlp(const struct net_buf *const buf);
  * @param[in] buf    Pointer to UDC request buffer
  */
 void udc_ep_buf_clear_zlp(const struct net_buf *const buf);
+
+/**
+ * @brief Cancel all queued UDC requests
+ *
+ * UDC driver must ensure that driver will not access any of queued endpoint
+ * buffers before calling this funcition.
+ *
+ * Remove all queued requests from endpoint FIFO and submit them to USB stack.
+ *
+ * @param[in] dev Pointer to device struct of the driver instance
+ * @param[in] cfg Pointer to endpoint configuration
+ */
+void udc_ep_cancel_queued(const struct device *dev, struct udc_ep_config *const cfg);
+
+/**
+ * @brief Submit control transfer data to USB stack
+ *
+ * UDC driver must ensure that driver will not access any of queued control
+ * endpoint buffers before calling this function.
+ *
+ * This function completes any pending data/status requests, marks endpoints as
+ * not busy and submits data to USB stack. If USB stack is not ready to process
+ * setup data, this function will cache received setup data and submit it once
+ * USB stack is ready.
+ *
+ * This function can only be called from thread context because it depends on
+ * UDC lock for synchronization.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] setup  Pointer to received SETUP data (NULL if not valid)
+ */
+void udc_setup_received(const struct device *dev, const void *const setup);
 
 /**
  * @brief Locking function for the drivers.
@@ -300,208 +301,6 @@ static inline int udc_unlock_internal(const struct device *dev)
 struct net_buf *udc_ctrl_alloc(const struct device *dev,
 			       const uint8_t ep,
 			       const size_t size);
-
-static inline uint16_t udc_data_stage_length(const struct net_buf *const buf)
-{
-	struct usb_setup_packet *setup = (void *)buf->data;
-
-	return sys_le16_to_cpu(setup->wLength);
-}
-
-/**
- * @brief Checks whether the current control transfer stage is Data Stage OUT
- *
- * @param[in] dev   Pointer to device struct of the driver instance
- *
- * @return true if stage is Data Stage OUT
- */
-bool udc_ctrl_stage_is_data_out(const struct device *dev);
-
-/**
- * @brief Checks whether the current control transfer stage is Data Stage IN
- *
- * @param[in] dev   Pointer to device struct of the driver instance
- *
- * @return true if stage is Data Stage IN
- */
-bool udc_ctrl_stage_is_data_in(const struct device *dev);
-
-/**
- * @brief Checks whether the current control transfer stage is Status IN
- *
- * @param[in] dev   Pointer to device struct of the driver instance
- *
- * @return true if stage is Data Stage IN
- */
-bool udc_ctrl_stage_is_status_in(const struct device *dev);
-
-/**
- * @brief Checks whether the current control transfer stage is Status OUT
- *
- * @param[in] dev   Pointer to device struct of the driver instance
- *
- * @return true if stage is Data Stage OUT
- */
-bool udc_ctrl_stage_is_status_out(const struct device *dev);
-
-/**
- * @brief Checks whether the current control transfer stage is Status no-data
- *
- * @param[in] dev   Pointer to device struct of the driver instance
- *
- * @return true if stage is Status no-data
- */
-bool udc_ctrl_stage_is_no_data(const struct device *dev);
-
-/**
- * @brief Submit Control Write (s-out-status) transfer
- *
- * Allocate buffer for data stage IN,
- * submit both setup and data buffer to upper layer.
- *
- * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] dout   Pointer to UDC buffer containing data transaction
- *
- * @return 0 on success, all other values should be treated as error.
- */
-int udc_ctrl_submit_s_out_status(const struct device *dev,
-				 struct net_buf *const dout);
-
-/**
- * @brief Prepare control data IN stage
- *
- * Allocate buffer for data stage IN,
- * submit both setup and data buffer to upper layer.
- *
- * @param[in] dev    Pointer to device struct of the driver instance
- *
- * @return 0 on success, all other values should be treated as error.
- */
-int udc_ctrl_submit_s_in_status(const struct device *dev);
-
-/**
- * @brief Prepare control (no-data) status stage
- *
- * Allocate buffer for status stage IN,
- * submit both setup and status buffer to upper layer.
- *
- * @param[in] dev    Pointer to device struct of the driver instance
- *
- * @return 0 on success, all other values should be treated as error.
- */
-int udc_ctrl_submit_s_status(const struct device *dev);
-
-/**
- * @brief Submit status transaction
- *
- * Submit both status transaction to upper layer.
- *
- * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] dout   Pointer to UDC buffer containing data transaction
- *
- * @return 0 on success, all other values should be treated as error.
- */
-int udc_ctrl_submit_status(const struct device *dev,
-			   struct net_buf *const buf);
-
-/**
- * @brief Update internal control stage status based on the net_buf metadata
- *
- * Use it in the driver to update the stage, typically there are
- * three places where this function should be called:
- * - when a setup packet is received
- * - when a data stage is completed (all data stage transactions)
- * - when a status stage transaction is finished
- *
- * The functions of type udc_ctrl_stage_is_*() can be called before or
- * after this function, depending on the desired action.
- * To keep protocol processing running the following should be taken
- * into account:
- *
- * - Upper layer may not allocate buffers but remove or release buffers
- *   from the chain that are no longer needed. Only control IN transfers may
- *   be enqueued by the upper layer.
- *
- * - For "Control Write" (s-out-status), the driver should allocate the buffer,
- *   insert it as a fragment to setup buffer and perform the Data Stage
- *   transaction. Allocate and insert a fragment for the status (IN) stage to
- *   setup buffer, and then pass setup packet with the chain of s-out-status to
- *   upper layer. Upper layer should either halt control endpoint or
- *   enqueue status buffer for status stage. There should be second
- *   notification to upper layer when the status transaction is finished.
- *
- *   ->driver_foo_setup_rcvd(dev)
- *     ->udc_ctrl_update_stage(dev, buf)
- *     ->udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, wLength)
- *     ->driver_foo_xfer_start(dev, USB_CONTROL_EP_OUT)
- *
- *   ->driver_foo_dout_rcvd(dev)
- *     -...
- *     ->driver_foo_feed_next_dout(dev, ....)
- *     -...
- *     ->udc_ctrl_update_stage(dev, dout_buf)
- *     -...
- *     ->udc_ctrl_submit_s_out_status(dev, dout_buf);
- *
- *   ->driver_foo_din_rcvd(dev)
- *     -...
- *     ->udc_ctrl_submit_status(dev, status_buf);
- *     -...
- *     ->udc_ctrl_update_stage(dev, status_buf)
- *
- * - For "Control Read" (s-in-status), depending on the controller,
- *   the driver should reserve the buffers for subsequent status stage and
- *   setup packet and prepare everything. The driver should allocate the buffer
- *   for IN transaction insert it as a fragment to setup buffer, and pass
- *   the chain of s-in to upper layer. Upper layer should either halt control
- *   endpoint or enqueue (in) buffer. There should be second
- *   notification to upper layer when the status transaction is finished.
- *
- *   ->driver_foo_setup_rcvd(dev)
- *     ->udc_ctrl_update_stage(dev, buf)
- *     ->driver_foo_feed_next_dout(dev, ....)
- *     -...
- *     ->udc_ctrl_submit_s_in_status(dev);
- *
- *   ->driver_foo_din_rcvd(dev)
- *     -...
- *     ->udc_ctrl_update_stage(dev, dout_buf)
- *     -...
- *
- *   ->driver_foo_dout_rcvd(dev)
- *     -...
- *     ->udc_ctrl_submit_status(dev, status_buf);
- *     -...
- *     ->udc_ctrl_update_stage(dev, dout_buf)
- *
- * - For "No-data Control" (s-status), the driver should allocate the buffer
- *   for the status (IN) stage, insert it as a fragment to setup buffer,
- *   and then pass setup packet with the chain of s-status to
- *   upper layer. Upper layer should either halt control endpoint or
- *   enqueue status buffer for status stage. There should be second
- *   notification to upper layer when the status transaction is finished.
- *
- *   ->driver_foo_setup_rcvd(dev)
- *     ->udc_ctrl_update_stage(dev, buf)
- *     ->driver_foo_feed_next_dout(dev, ....)
- *     -...
- *     ->udc_ctrl_submit_s_status(dev);
- *
- *   ->driver_foo_din_rcvd(dev)
- *     -...
- *     ->udc_ctrl_submit_status(dev, status_buf);
- *     -...
- *     ->udc_ctrl_update_stage(dev, status_buf)
- *
- * Please refer to Chapter 8.5.3 Control Transfers USB 2.0 spec.
- *
- * @param[in] dev   Pointer to device struct of the driver instance
- * @param[in] buf   Buffer containing setup packet
- *
- * @return 0 on success, all other values should be treated as error.
- */
-void udc_ctrl_update_stage(const struct device *dev,
-			   struct net_buf *const buf);
 
 #if defined(CONFIG_UDC_WORKQUEUE)
 extern struct k_work_q udc_work_q;

@@ -9,10 +9,6 @@ LOG_MODULE_REGISTER(net_dsa_sample, CONFIG_NET_DSA_LOG_LEVEL);
 
 #include "dsa.h"
 
-#if defined(CONFIG_NET_SAMPLE_DSA_LLDP)
-#include "dsa_lldp.h"
-#endif
-
 struct ud g_user_data = {0};
 
 static void dsa_iface_find_cb(struct net_if *iface, void *user_data)
@@ -30,11 +26,7 @@ static void dsa_iface_find_cb(struct net_if *iface, void *user_data)
 
 		/* Get user interfaces */
 		for (int i = 0; i < ARRAY_SIZE(ifaces->lan); i++) {
-#if defined(CONFIG_NET_DSA_DEPRECATED)
-			struct net_if *user = dsa_get_slave_port(iface, i);
-#else
 			struct net_if *user = dsa_user_get_iface(iface, i);
-#endif
 			if (user == NULL) {
 				continue;
 			}
@@ -78,10 +70,6 @@ int main(void)
 				     event_handler, EVENT_MASK);
 	net_mgmt_add_event_callback(&mgmt_cb);
 #endif /* CONFIG_NET_MGMT_EVENT */
-
-#if defined(CONFIG_NET_SAMPLE_DSA_LLDP)
-	dsa_lldp(&g_user_data);
-#endif
 	LOG_INF("DSA ports init - OK");
 	return 0;
 }

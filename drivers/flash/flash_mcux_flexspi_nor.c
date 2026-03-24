@@ -304,7 +304,7 @@ static int flash_flexspi_nor_page_program(struct flash_flexspi_nor_data *data,
 		.dataSize = len,
 	};
 
-	LOG_DBG("Page programming %d bytes to 0x%08zx", len, (ssize_t) offset);
+	LOG_DBG("Page programming %zu bytes to 0x%08zx", len, (ssize_t) offset);
 
 	return memc_flexspi_transfer(&data->controller, &transfer);
 }
@@ -475,7 +475,7 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 	}
 
 #ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange((uint32_t) dst, size);
+	DCACHE_InvalidateByRange((uintptr_t)dst, size);
 #endif
 
 	return 0;
@@ -568,7 +568,7 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 	}
 
 #ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange((uint32_t) dst, size);
+	DCACHE_InvalidateByRange((uintptr_t)dst, size);
 #endif
 
 	return 0;
@@ -1357,6 +1357,7 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 		}
 		/* Still return an error- we want the JEDEC configuration to run */
 		return -ENOTSUP;
+	case 0x1940ef: /* W25Q256JV-IQ/IN flash, uses identical LUT than W25Q512JV*/
 	case 0x2040ef:
 		/* W25Q512JV-IQ/IN flash, use 4 byte read/write */
 		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(

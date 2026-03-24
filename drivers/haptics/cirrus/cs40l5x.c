@@ -2661,15 +2661,15 @@ __maybe_unused static int cs40l5x_deinit(const struct device *dev)
 		(.interrupt_gpio = {.port = NULL, .pin = 0},))
 
 #define HAPTICS_CS40L5X_FLASH_DEVICE(inst)                                                         \
-	DEVICE_DT_GET_OR_NULL(DT_MTD_FROM_FIXED_PARTITION(DT_INST_PHANDLE(inst, flash_storage)))
+	DEVICE_DT_GET_OR_NULL(DT_MTD_FROM_PARTITION(DT_INST_PHANDLE(inst, flash_storage)))
 
 #define HAPTICS_CS40L5X_FLASH_OFFSET(inst)                                                         \
-	FIXED_PARTITION_NODE_OFFSET(DT_INST_PHANDLE(inst, flash_storage)) +                        \
+	PARTITION_NODE_OFFSET(DT_INST_PHANDLE(inst, flash_storage)) +                        \
 		DT_INST_PROP_OR(inst, flash_offset, 0)
 
 #define HAPTICS_CS40L5X_FLASH(inst)                                                                \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, flash_storage),	\
-		(COND_CODE_1(DT_FIXED_PARTITION_EXISTS(DT_INST_PHANDLE(inst, flash_storage)),	   \
+		(COND_CODE_1(DT_PARTITION_EXISTS(DT_INST_PHANDLE(inst, flash_storage)),	   \
 			(.flash = HAPTICS_CS40L5X_FLASH_DEVICE(inst),				   \
 			 .flash_offset = HAPTICS_CS40L5X_FLASH_OFFSET(inst),),			   \
 			(.flash = DEVICE_DT_GET(DT_INST_PHANDLE(inst, flash_storage)),		   \

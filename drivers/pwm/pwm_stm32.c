@@ -29,6 +29,22 @@
 
 LOG_MODULE_REGISTER(pwm_stm32, CONFIG_PWM_LOG_LEVEL);
 
+#ifdef CONFIG_STM32_HAL2
+#define STM32_TIM_OCIDLESTATE_RESET	LL_TIM_OCIDLESTATE_RESET
+#define STM32_TIM_OCIDLESTATE_SET	LL_TIM_OCIDLESTATE_SET
+#define STM32_TIM_ACTIVEINPUT_DIRECT	LL_TIM_ACTIVEINPUT_DIRECT
+#define STM32_TIM_ACTIVEINPUT_INDIRECT	LL_TIM_ACTIVEINPUT_INDIRECT
+#else /* CONFIG_STM32_HAL2 */
+#ifdef LL_TIM_OCIDLESTATE_LOW
+#define STM32_TIM_OCIDLESTATE_RESET	LL_TIM_OCIDLESTATE_LOW
+#endif /* LL_TIM_OCIDLESTATE_LOW */
+#ifdef LL_TIM_OCIDLESTATE_HIGH
+#define STM32_TIM_OCIDLESTATE_SET	LL_TIM_OCIDLESTATE_HIGH
+#endif /* LL_TIM_OCIDLESTATE_HIGH */
+#define STM32_TIM_ACTIVEINPUT_DIRECT	LL_TIM_ACTIVEINPUT_DIRECTTI
+#define STM32_TIM_ACTIVEINPUT_INDIRECT	LL_TIM_ACTIVEINPUT_INDIRECTTI
+#endif /* CONFIG_STM32_HAL2 */
+
 /* L0 series MCUs only have 16-bit timers and don't have below macro defined */
 #ifndef IS_TIM_32B_COUNTER_INSTANCE
 #define IS_TIM_32B_COUNTER_INSTANCE(INSTANCE) (0)
@@ -338,8 +354,8 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 #endif /* CONFIG_PWM_CAPTURE */
 
 		LL_TIM_OC_SetMode(timer, ll_channel, LL_TIM_OCMODE_PWM1);
-#ifdef LL_TIM_OCIDLESTATE_LOW
-		LL_TIM_OC_SetIdleState(timer, current_ll_channel, LL_TIM_OCIDLESTATE_LOW);
+#ifdef STM32_TIM_OCIDLESTATE_RESET
+		LL_TIM_OC_SetIdleState(timer, current_ll_channel, STM32_TIM_OCIDLESTATE_RESET);
 #endif
 		LL_TIM_CC_EnableChannel(timer, current_ll_channel);
 		LL_TIM_EnableARRPreload(timer);
@@ -365,14 +381,14 @@ static void init_capture_channels(const struct device *dev, uint32_t channel,
 	/* Setup main channel */
 	LL_TIM_IC_SetPrescaler(timer, ll_channel, LL_TIM_ICPSC_DIV1);
 	LL_TIM_IC_SetFilter(timer, ll_channel, LL_TIM_IC_FILTER_FDIV1);
-	LL_TIM_IC_SetActiveInput(timer, ll_channel, LL_TIM_ACTIVEINPUT_DIRECTTI);
+	LL_TIM_IC_SetActiveInput(timer, ll_channel, STM32_TIM_ACTIVEINPUT_DIRECT);
 	LL_TIM_IC_SetPolarity(timer, ll_channel,
 			      is_inverted ? LL_TIM_IC_POLARITY_FALLING : LL_TIM_IC_POLARITY_RISING);
 
 	/* Setup complementary channel */
 	LL_TIM_IC_SetPrescaler(timer, ll_complementary_channel, LL_TIM_ICPSC_DIV1);
 	LL_TIM_IC_SetFilter(timer, ll_complementary_channel, LL_TIM_IC_FILTER_FDIV1);
-	LL_TIM_IC_SetActiveInput(timer, ll_complementary_channel, LL_TIM_ACTIVEINPUT_INDIRECTTI);
+	LL_TIM_IC_SetActiveInput(timer, ll_complementary_channel, STM32_TIM_ACTIVEINPUT_INDIRECT);
 	LL_TIM_IC_SetPolarity(timer, ll_complementary_channel,
 			      is_inverted ? LL_TIM_IC_POLARITY_RISING : LL_TIM_IC_POLARITY_FALLING);
 }

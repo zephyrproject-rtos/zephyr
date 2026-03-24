@@ -3,6 +3,15 @@
 # Copyright (c) 2015 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+config CPU_AARCH32_ARM9
+	bool
+	select CPU_ARM9
+	select HAS_FLASH_LOAD_OFFSET
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  This option signifies the use of a CPU of the ARM9 family.
+
 config CPU_CORTEX_M
 	bool
 	select CPU_CORTEX
@@ -231,6 +240,13 @@ config ARM_STACK_PROTECTION
 	  still has the option to manually select the MPU-based
 	  stack guard, if this is desired.
 
+config ARCH_HAS_STACKWALK
+	bool
+	default y if EXTRA_EXCEPTION_INFO && CPU_CORTEX_M
+	help
+	  Internal config to indicate that the arch_stack_walk() API is implemented
+	  and it can be enabled.
+
 config ARM_SECURE_FIRMWARE
 	bool
 	depends on ARMV8_M_SE
@@ -354,6 +370,7 @@ config FP16_ARITHMETIC
 	  native f16 arithmetic capability, such as Cortex-M processors
 	  with MVE float or Cortex-A processors with NEON.
 
+rsource "arm9/Kconfig"
 rsource "cortex_m/Kconfig"
 rsource "cortex_a_r/Kconfig"
 

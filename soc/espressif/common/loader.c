@@ -17,25 +17,26 @@
 #include <esp_app_format.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/storage/flash_map.h>
-#include <esp_rom_uart.h>
 #include <esp_flash.h>
 #include <esp_log.h>
+#include <esp_rom_serial_output.h>
 #include <bootloader_clock.h>
 #include <bootloader_common.h>
 #include <esp_cpu.h>
 
+#include <zephyr/kernel.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/arch/common/init.h>
 #ifdef CONFIG_XTENSA
 #include <zephyr/zsr.h>
 #endif
 
-#if CONFIG_SOC_SERIES_ESP32C6
+#if CONFIG_SOC_SERIES_ESP32C5 || CONFIG_SOC_SERIES_ESP32C6
 #include <soc/hp_apm_reg.h>
 #include <soc/lp_apm_reg.h>
 #include <soc/lp_apm0_reg.h>
 #include <soc/pcr_reg.h>
-#endif /* CONFIG_SOC_SERIES_ESP32C6 */
+#endif
 
 #include <esp_flash_internal.h>
 #include <bootloader_flash.h>
@@ -88,10 +89,10 @@
 #if DT_NODE_EXISTS(DT_CHOSEN(zephyr_code_partition))
 #define PART_OFFSET DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
 #else
-#define PART_OFFSET FIXED_PARTITION_OFFSET(slot0_partition)
+#define PART_OFFSET PARTITION_OFFSET(slot0_partition)
 #endif
 #else
-#define PART_OFFSET FIXED_PARTITION_OFFSET(slot0_appcpu_partition)
+#define PART_OFFSET PARTITION_OFFSET(slot0_appcpu_partition)
 #endif
 
 void __start(void);
@@ -126,7 +127,7 @@ void map_rom_segments(int core, struct rom_segments *map)
 	/* Traverse segments to fix flash offset changes due to post-build processing */
 #ifndef CONFIG_BOOTLOADER_MCUBOOT
 	esp_image_segment_header_t WORD_ALIGNED_ATTR segment_hdr;
-	size_t offset = FIXED_PARTITION_OFFSET(boot_partition);
+	size_t offset = PARTITION_OFFSET(boot_partition);
 	bool checksum = false;
 	unsigned int segments = 0;
 	unsigned int ram_segments = 0;
@@ -195,13 +196,13 @@ void map_rom_segments(int core, struct rom_segments *map)
 		map->drom_flash_offset, map->drom_map_addr, map->drom_size, map->drom_size);
 #endif /* !CONFIG_BOOTLOADER_MCUBOOT */
 
-	esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+	esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
 #if CONFIG_SOC_SERIES_ESP32
 	Cache_Read_Disable(core);
 	Cache_Flush(core);
 #else
-	cache_hal_disable(CACHE_TYPE_ALL);
+	cache_hal_disable(1, CACHE_TYPE_ALL);
 #endif /* CONFIG_SOC_SERIES_ESP32 */
 
 	/* Clear the MMU entries that are already set up,
@@ -258,7 +259,7 @@ void map_rom_segments(int core, struct rom_segments *map)
 	/* Application will need to do Cache_Flush(1) and Cache_Read_Enable(1) */
 	Cache_Read_Enable(core);
 #else
-	cache_hal_enable(CACHE_TYPE_ALL);
+	cache_hal_enable(1, CACHE_TYPE_ALL);
 #endif /* CONFIG_SOC_SERIES_ESP32 */
 
 #if !defined(CONFIG_SOC_SERIES_ESP32) && !defined(CONFIG_SOC_SERIES_ESP32S2)
@@ -276,13 +277,22 @@ void map_rom_segments(int core, struct rom_segments *map)
 void __start(void)
 {
 #ifdef CONFIG_RISCV_GP
+	/* Set up stack FIRST - before any other operations */
+	__asm__ __volatile__("li sp, %0" ::"i"(DRAM_STACK_START));
 
-	__asm__ __volatile__("li sp, %0" :: "i"(DRAM_STACK_START));
+	/* Disable interrupts before setting up the vector table */
+	csr_read_clear(mstatus, MSTATUS_MIE);
+
 	__asm__ __volatile__("la t0, _vector_table\n"
 			     "csrw mtvec, t0\n");
 
-	/* Disable normal interrupts. */
-	csr_read_clear(mstatus, MSTATUS_MIE);
+#if SOC_INT_CLIC_SUPPORTED
+	/* CLIC: mtvt points to the hardware-vectored interrupt table.
+	 * mtvec mode bits are hardwired to 3 (CLIC) on ESP32-C5.
+	 */
+	__asm__ __volatile__("la t0, _mtvt_table\n"
+			     "csrw 0x307, t0\n"); /* mtvt CSR */
+#endif
 
 	/* Configure the global pointer register
 	 * (This should be the first thing startup does, as any other piece of code could be

@@ -7,7 +7,7 @@
 
 #define DT_DRV_COMPAT espressif_esp32_lcd_cam_dvp
 
-#include <soc/gdma_channel.h>
+#include <hal/gdma_channel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control/esp32_clock_control.h>
 #include <zephyr/drivers/dma.h>
@@ -360,12 +360,11 @@ static void video_esp32_cam_ctrl_init(const struct device *dev)
 
 	const cam_hal_config_t hal_cfg = {
 		.port = 0,
+		.bit_swap_en = cfg->invert_bit_order,
 		.byte_swap_en = cfg->invert_byte_order,
 	};
 
 	cam_hal_init(&data->hal, &hal_cfg);
-
-	cam_ll_reverse_dma_data_bit_order(data->hal.hw, cfg->invert_bit_order);
 	cam_ll_enable_invert_pclk(data->hal.hw, cfg->invert_pclk);
 	cam_ll_set_input_data_width(data->hal.hw, cfg->data_width);
 	cam_ll_enable_invert_de(data->hal.hw, cfg->invert_de);

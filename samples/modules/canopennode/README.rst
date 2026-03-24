@@ -416,19 +416,19 @@ for the FRDM-K64F as follows:
 
    .. code-block:: console
 
-      west flash --skip-rebuild
+      west flash --no-rebuild
 
 #. Confirm the newly flashed firmware image using west:
 
    .. code-block:: console
 
-      west flash --skip-rebuild --domain canopennode --runner canopen --confirm-only
+      west flash --no-rebuild --domain canopennode --runner canopen --confirm-only
 
 #. Finally, perform a program download via CANopen:
 
    .. code-block:: console
 
-      west flash --skip-rebuild --domain canopennode --runner canopen
+      west flash --no-rebuild --domain canopennode --runner canopen
 
 Modifying the Object Dictionary
 *******************************

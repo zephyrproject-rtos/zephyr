@@ -7,6 +7,7 @@
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/net/net_log.h>
 
 #include "zperf_internal.h"
 #include "zperf_session.h"

@@ -3228,7 +3228,7 @@ static void le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct net_b
 	phy_rx = PHY_1M;
 #endif /* CONFIG_BT_CTLR_PHY */
 
-	/* TX LL thread has higher priority than RX thread. It may happen that host succefully
+	/* TX LL thread has higher priority than RX thread. It may happen that host successfully
 	 * disables CTE sampling in the meantime. It should be verified here, to avoid reporting
 	 * IQ samples after the functionality was disabled.
 	 */
@@ -5532,7 +5532,7 @@ static void vs_le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct ne
 	phy_rx = PHY_1M;
 #endif /* CONFIG_BT_CTLR_PHY */
 
-	/* TX LL thread has higher priority than RX thread. It may happen that host succefully
+	/* TX LL thread has higher priority than RX thread. It may happen that host successfully
 	 * disables CTE sampling in the meantime. It should be verified here, to avoid reporting
 	 * IQ samples after the functionality was disabled.
 	 */

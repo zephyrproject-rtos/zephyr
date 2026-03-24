@@ -25,7 +25,6 @@ from twisterlib.constants import SUPPORTED_SIMS_IN_PYTEST
 from twisterlib.environment import PYTEST_PLUGIN_INSTALLED, ZEPHYR_BASE
 from twisterlib.error import ConfigurationError, StatusAttributeError
 from twisterlib.handlers import DeviceHandler, Handler, terminate_process
-from twisterlib.hardwaredata import CompoundHardwareData
 from twisterlib.harnessconfig import TWISTER_PYTEST_CONFIG_FILE, HarnessPytestConfig
 from twisterlib.reports import ReportStatus
 from twisterlib.statuses import TwisterStatus
@@ -378,7 +377,6 @@ class Pytest(Harness):
         self.source_dir = instance.testsuite.source_dir
         self.report_file = os.path.join(self.running_dir, 'report.xml')
         self.pytest_log_file_path = os.path.join(self.running_dir, 'twister_harness.log')
-        self.reserved_dut = None
         self._output = []
         self.pytest_config_file = os.path.join(self.running_dir, TWISTER_PYTEST_CONFIG_FILE)
         self.pytest_params = HarnessPytestConfig(platform=instance.platform.name)
@@ -394,8 +392,6 @@ class Pytest(Harness):
         finally:
             self.instance.record(self.recording)
             self._update_test_status()
-            if self.reserved_dut:
-                self.instance.handler.make_dut_available(self.reserved_dut)
 
     def generate_command(self):
         config = self.instance.testsuite.harness_config
@@ -424,6 +420,7 @@ class Pytest(Harness):
 
         if handler.type_str == 'device':
             self._generate_parameters_for_hardware(handler)
+            self.pytest_params.duts = self.instance.reserved_duts
         else:
             for fixture in handler.options.fixture:
                 self.pytest_params.twister_fixtures.append(fixture)
@@ -458,14 +455,6 @@ class Pytest(Harness):
             )
 
     def _generate_parameters_for_hardware(self, handler: DeviceHandler):
-        hardware = handler.get_hardware()
-        if not hardware:
-            raise PytestHarnessException('Hardware is not available')
-        # update the instance with the device id to have it in the summary report
-        self.instance.dut = hardware.id
-
-        self.reserved_dut = hardware
-
         options = handler.options
         if options.west_runner:
             self.pytest_params.runner = options.west_runner
@@ -481,12 +470,6 @@ class Pytest(Harness):
 
         # Platform flash_before is intended for boards with USB reset issues during flashing
         self.pytest_params.flash_before = self.instance.platform.flash_before
-
-        # Prepare DUT configuration for pytest
-        compound_hardware = CompoundHardwareData.from_dict(hardware.to_dict())
-        compound_hardware.entries = handler.get_other_duts_with_same_id(hardware)
-
-        self.pytest_params.duts.append(compound_hardware)
 
     def run_command(self, cmd, timeout):
         cmd, env = self._update_command_with_env_dependencies(cmd)

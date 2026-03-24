@@ -140,7 +140,8 @@ static int create_free_list(struct k_mem_slab *slab)
  *
  * Perform any initialization that wasn't done at build time.
  *
- * @return 0 on success, fails otherwise.
+ * @retval 0 Success.
+ * @retval -EINVAL Slab contains invalid configuration and/or values.
  */
 static int init_mem_slab_obj_core_list(void)
 {

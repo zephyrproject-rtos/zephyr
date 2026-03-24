@@ -71,7 +71,6 @@ struct ifx_i2s_data {
 	struct queue_item rx_queue_buffer[RX_QUEUE_SIZE];
 	struct queue_item tx_queue_buffer[TX_QUEUE_SIZE];
 	struct ifx_cat1_clock clock;
-	struct ifx_cat1_resource_inst resource;
 	uint8_t clock_peri_group;
 	bool tx_waiting_to_start;
 };
@@ -969,11 +968,6 @@ static DEVICE_API(i2s, ifx_i2s_api) = {
 			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),                 \
 			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
 		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
-	},                                                                                         \
-	.resource = {                                                                              \
-		.type = DT_INST_PROP_BY_PHANDLE(n, clocks, resource_type),                         \
-		.block_num = DT_INST_PROP_BY_PHANDLE(n, clocks, resource_instance),                \
-		.channel_num = DT_INST_PROP_BY_PHANDLE(n, clocks, resource_channel),               \
 	},                                                                                         \
 	.clock_peri_group = DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),
 

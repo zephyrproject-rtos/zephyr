@@ -18,6 +18,7 @@
 #include <zephyr/pm/pm.h>
 #include "linklayer_plat.h"
 #include <linklayer_plat_local.h>
+#include <hci_if.h>
 
 #include <zephyr/sys/byteorder.h>
 
@@ -66,7 +67,6 @@ struct aci_reset {
 #define BT_HCI_STATE_CLOSED                   2
 
 static uint8_t bt_hci_state = BT_HCI_STATE_DEINIT;
-
 extern uint8_t ll_state_busy;
 
 static bool is_hci_event_discardable(const uint8_t *evt_data)
@@ -357,11 +357,49 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 	return 0;
 }
 
+static void stm32wba_set_stack_options(BleStack_init_t *init_params_p)
+{
+	init_params_p->options = 0;
+
+	/* - bit 0:   1: LL only                   0: LL + host */
+	init_params_p->options = BLE_OPTIONS_LL_ONLY;
+
+	/* - bit 1:   1: no service change desc.   0: with service change desc. */
+	/* NA for LL only */
+
+	/* - bit 2:   1: device name Read-Only     0: device name R/W */
+	/* NA for LL only */
+
+	/* - bit 3:   1: extended adv supported    0: extended adv not supported */
+#if defined(CONFIG_BT_EXT_ADV)
+	init_params_p->options |= BLE_OPTIONS_EXTENDED_ADV;
+#endif
+
+	/* - bit 5:   1: Reduced GATT db in NVM    0: Full GATT db in NVM */
+	/* NA for LL only */
+
+	/* - bit 6:   1: GATT caching is used      0: GATT caching is not used */
+	/* NA for LL only */
+
+	/* - bit 7:   1: LE Power Class 1          0: Other LE Power Classes */
+	/* Set to 0: Other LE Power Classes */
+
+	/* - bit 8:   1: appearance Writable       0: appearance Read-Only */
+	/* NA for LL only */
+
+	/* - bit 9:   1: Enhanced ATT supported    0: Enhanced ATT not supported */
+	/* NA for LL only */
+}
+
 static int bt_ble_ctlr_init(void)
 {
 	BleStack_init_t init_params_p = {0};
 
-	init_params_p.options = BLE_OPTIONS_LL_ONLY | BLE_OPTIONS_EXTENDED_ADV;
+	/**
+	 * Set BLE Options, Options_extension, max_adv_set_nbr,
+	 * max_adv_data_len and MaxAddEattBearers according zephyr KConfig
+	 */
+	stm32wba_set_stack_options(&init_params_p);
 
 	if (BleStack_Init(&init_params_p) != BLE_STATUS_SUCCESS) {
 		return -EIO;
@@ -374,6 +412,11 @@ static int bt_hci_stm32wba_open(const struct device *dev, bt_hci_recv_t recv)
 {
 	struct hci_data *data = dev->data;
 	int ret = 0;
+	/* Initialization of the thread dedicated to BLE Host Controller IP */
+	stm32wba_ble_ctlr_thread_init();
+
+	/* Initialization of the thread dedicated to Link Layer Controller IP */
+	stm32wba_ll_ctlr_thread_init();
 
 	if (bt_hci_state == BT_HCI_STATE_CLOSED) {
 #if !defined(CONFIG_IEEE802154_STM32WBA)
@@ -402,25 +445,23 @@ static int bt_hci_stm32wba_open(const struct device *dev, bt_hci_recv_t recv)
 
 static int bt_hci_stm32wba_close(const struct device *dev)
 {
-	struct aci_reset *param;
-	struct net_buf *buf;
-	int err;
+	int err = 0;
+	uint8_t aci_reset_cmd[9];
 
 	ARG_UNUSED(dev);
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		return -ENOBUFS;
-	}
+	aci_reset_cmd[0] = BT_HCI_H4_CMD;
+	aci_reset_cmd[1] = (uint8_t)ACI_RESET;
+	aci_reset_cmd[2] = (uint8_t)(ACI_RESET >> 8);
+	aci_reset_cmd[3] = 5;
+	aci_reset_cmd[4] = 0;
+	aci_reset_cmd[5] = (uint8_t)CFG_BLE_OPTIONS;
+	aci_reset_cmd[6] = (uint8_t)(CFG_BLE_OPTIONS >> 8);
+	aci_reset_cmd[7] = (uint8_t)(CFG_BLE_OPTIONS >> 16);
+	aci_reset_cmd[8] = (uint8_t)(CFG_BLE_OPTIONS >> 24);
 
-	param = net_buf_add(buf, sizeof(*param));
-	param->mode = 0;
-	param->options = CFG_BLE_OPTIONS;
+	BleStack_Request(aci_reset_cmd);
 
-	err = bt_hci_cmd_send_sync(ACI_RESET, buf, NULL);
-	if (err) {
-		return err;
-	}
 	bt_hci_state = BT_HCI_STATE_CLOSED;
 
 #if !defined(CONFIG_IEEE802154_STM32WBA)
@@ -488,36 +529,45 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 				 const struct bt_hci_setup_params *params)
 {
 	bt_addr_t *uid_addr;
-	struct aci_set_ble_addr *param;
-	struct net_buf *buf;
-	int err;
+	uint8_t aci_set_ble_addr_cmd[12];
+	uint16_t event_length;
+
+	ARG_UNUSED(dev);
 
 	uid_addr = bt_get_ble_addr();
 	if (!uid_addr) {
 		return -ENOMSG;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	param = net_buf_add(buf, sizeof(*param));
-	param->config_offset = HCI_CONFIG_DATA_PUBADDR_OFFSET;
-	param->length = 6;
+	aci_set_ble_addr_cmd[0] = BT_HCI_H4_CMD;
+	aci_set_ble_addr_cmd[1] = (uint8_t)ACI_HAL_WRITE_CONFIG_DATA;
+	aci_set_ble_addr_cmd[2] = (uint8_t)(ACI_HAL_WRITE_CONFIG_DATA >> 8);
+	aci_set_ble_addr_cmd[3] = 8;
+	aci_set_ble_addr_cmd[4] = HCI_CONFIG_DATA_PUBADDR_OFFSET;
+	aci_set_ble_addr_cmd[5] = 6;
 
 	if (bt_addr_eq(&params->public_addr, BT_ADDR_ANY)) {
-		bt_addr_copy((bt_addr_t *)param->value, uid_addr);
+		memcpy(&aci_set_ble_addr_cmd[6], uid_addr, 6);
 	} else {
-		bt_addr_copy((bt_addr_t *)param->value, &(params->public_addr));
+		memcpy(&aci_set_ble_addr_cmd[6], &(params->public_addr), 6);
 	}
 
-	err = bt_hci_cmd_send_sync(ACI_HAL_WRITE_CONFIG_DATA, buf, NULL);
-	if (err) {
-		return err;
+	event_length = BleStack_Request(aci_set_ble_addr_cmd);
+	if (event_length) {
+		/* Get the return status from the event */
+		uint8_t evt_status;
+
+		evt_status = aci_set_ble_addr_cmd[6];
+		if (evt_status != 0) {
+			LOG_ERR("Failed to set BLE address, status: 0x%02X", evt_status);
+			return -EIO;
+		}
+	} else {
+		LOG_ERR("No response received for setting BLE address");
+		return -EIO;
 	}
 
-	return err;
+	return 0;
 }
 #endif /* CONFIG_BT_HCI_SETUP */
 

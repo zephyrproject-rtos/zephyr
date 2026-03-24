@@ -301,7 +301,6 @@ static int lis2dw12_attr_set_act_mode(const struct device *dev,
 					const struct sensor_value *val)
 {
 	const struct lis2dw12_device_config *cfg = dev->config;
-	struct lis2dw12_data *lis2dw12 = dev->data;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	lis2dw12_sleep_on_t sleep_val = val->val1 & 0x03U;
 

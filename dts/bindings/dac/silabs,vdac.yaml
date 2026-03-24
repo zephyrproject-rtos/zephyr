@@ -119,13 +119,6 @@ child-binding:
     Channel configuration.
 
   properties:
-    reg:
-      description: |
-        Channel identifier.
-      type: int
-      enum: [0, 1]
-      required: true
-
     main-output:
       description: |
         Connects the channel to the dedicated output pin.

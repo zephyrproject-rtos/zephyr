@@ -5,6 +5,8 @@ Optimization Tools
 
 The available optimization tools let you analyse :ref:`footprint_tools`
 and :ref:`data_structure_tools` using different build system targets.
+An :ref:`HTML dashboard <dashboard>` can also be generated for a
+more dynamic view of build artifacts and metrics.
 
 .. _footprint_tools:
 
@@ -300,3 +302,37 @@ Pahole will generate something similar to the output below in the console::
     };
     ...
     ...
+
+.. _dashboard:
+
+Dashboard
+*********
+
+An HTML dashboard can be generated that consolidates the various tool
+outputs and artifacts into one simple view. In addition to a basic summary of
+the build results, the following details are included:
+
+* Full memory reports (ram, rom) in drill-down table form as well as
+  :ref:`plots <footprint_tools_plot>` (as per the ``footprint``, ``ram_plot``,
+  and ``rom_plot`` build targets).
+* Kconfig symbol values and sources (as per the ``traceconfig`` build target).
+* Init-levels with function names, and report on any priority issues with sys-init
+  against devicetree (as per the ``initlevels`` build target).
+* Navigable devicetree view with property values and details from any bindings.
+
+Use the ``dashboard`` target with your board, as in the following example.
+If you are using :ref:`sysbuild`, see :ref:`sysbuild_dedicated_image_build_targets` instead.
+
+.. zephyr-app-commands::
+    :tool: all
+    :zephyr-app: samples/hello_world
+    :board: reel_board
+    :goals: dashboard
+
+This will generate the following output file and open it in the default browser::
+
+    build/dashboard/index.html
+
+.. image:: dashboard.webp
+   :align: center
+   :alt: Dashboard

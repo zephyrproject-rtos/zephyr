@@ -42,8 +42,8 @@ enum modem_ppp_receive_state {
 	/* Searching for start of frame and header */
 	MODEM_PPP_RECEIVE_STATE_HDR_SOF = 0,
 	MODEM_PPP_RECEIVE_STATE_HDR_FF,
-	MODEM_PPP_RECEIVE_STATE_HDR_7D,
-	MODEM_PPP_RECEIVE_STATE_HDR_23,
+	MODEM_PPP_RECEIVE_STATE_HDR_CTRL_UNESCAPE,
+	MODEM_PPP_RECEIVE_STATE_HDR_CTRL,
 	/* Writing bytes to network packet */
 	MODEM_PPP_RECEIVE_STATE_WRITING,
 	/* Unescaping next byte before writing to network packet */

@@ -27,16 +27,11 @@
 	aliases {
 		led0 = &led1;
 		sw0 = &button0;
-		sw1 = &button1;
 		watchdog0 = &wdt0;
 	};
 };
 
 &button0 {
-	status = "okay";
-};
-
-&button1 {
 	status = "okay";
 };
 
@@ -106,11 +101,6 @@
 	status = "okay";
 };
 
-&port_irq12 {
-	interrupts = <25 1>;
-	status = "okay";
-};
-
 &port_irq13 {
 	interrupts = <26 1>;
 	status = "okay";
@@ -142,6 +132,10 @@
 	status = "okay";
 };
 
+&trng {
+	status = "okay";
+};
+
 &usbhs {
 	pinctrl-0 = <&usbhs_default>;
 	interrupts = <28 1>;
@@ -155,28 +149,32 @@
 
 &code_mram_cm85 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(64)>;
 		};
 
 		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
-			reg = <0x10000 DT_SIZE_K(472)>;
+			reg = <0x10000 DT_SIZE_K(344)>;
 		};
 
-		slot1_partition: partition@86000 {
+		slot1_partition: partition@66000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
-			reg = <0x86000 DT_SIZE_K(472)>;
+			reg = <0x66000 DT_SIZE_K(344)>;
 		};
 
-		storage_partition: partition@fc000 {
+		storage_partition: partition@bc000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
-			reg = <0xfc000 DT_SIZE_K(16)>;
+			reg = <0xbc000 DT_SIZE_K(16)>;
 		};
 	};
 };
