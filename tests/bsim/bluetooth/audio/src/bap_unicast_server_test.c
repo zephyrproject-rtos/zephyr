@@ -477,6 +477,22 @@ static void update_contexts(void)
 	printk("Contexts successfully updated\n");
 }
 
+static void update_pac(enum bt_audio_dir dir)
+{
+	static struct bt_pacs_cap cap = {
+		.codec_cap = &lc3_codec_cap,
+	};
+	int err;
+
+	err = bt_pacs_cap_register(dir, &cap);
+	if (err != 0) {
+		FAIL("Failed to register capabilities: %d", err);
+		return;
+	}
+
+	printk("PAC records for dir %d successfully updated\n", dir);
+}
+
 static void init(void)
 {
 	static struct bt_pacs_cap cap = {
@@ -578,6 +594,12 @@ static void test_main(void)
 	/* Wait for signal to trigger context type changes */
 	backchannel_sync_wait_any();
 	update_contexts();
+	/* Wait for signal to trigger sink PAC changes */
+	backchannel_sync_wait_any();
+	update_pac(BT_AUDIO_DIR_SINK);
+	/* Wait for signal to trigger source PAC changes */
+	backchannel_sync_wait_any();
+	update_pac(BT_AUDIO_DIR_SOURCE);
 
 	WAIT_FOR_FLAG(flag_stream_configured);
 
