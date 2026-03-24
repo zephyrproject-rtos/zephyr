@@ -3,6 +3,19 @@
 
 if SOC_FAMILY_TI_K3
 
+config TI_K3_OSPI_FLASH_BOOT_MODE_RESET
+	bool "TI K3 OSPI flash boot mode reset"
+	depends on FLASH_MSPI_NOR
+	help
+	  TI K3 ROM bootloader may leave OSPI flash devices in 8D-8D-8D mode
+	  depending on the boot configuration. Enabling this option will
+	  reset the flash in 8D-8D-8D mode so that it resets to the default
+	  1S-1S-1S mode.
+
+	  This is required when the ROM bootloader configures flash devices in
+	  high-speed modes before transferring control to Zephyr, which would
+	  cause normal flash initialization to fail.
+
 rsource "*/Kconfig"
 
 endif # SOC_FAMILY_TI_K3
