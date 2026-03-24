@@ -311,7 +311,6 @@ static void eth_nxp_s32_iface_init(struct net_if *iface)
 
 	/* No PHY available, link is always up and MAC speed/duplex settings are fixed */
 	if (cfg->phy_dev == NULL) {
-		net_if_carrier_on(iface);
 		return;
 	}
 
