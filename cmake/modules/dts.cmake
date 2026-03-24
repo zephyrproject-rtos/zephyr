@@ -184,6 +184,9 @@ set(dts_files
   ${shield_dts_files}
   )
 
+# Guard DTC_OVERLAY_FILE as it will now be consumed and should no longer be changed.
+zephyr_boilerplate_watch(DTC_OVERLAY_FILE)
+
 if(DTC_OVERLAY_FILE)
   zephyr_list(TRANSFORM DTC_OVERLAY_FILE NORMALIZE_PATHS
               OUTPUT_VARIABLE DTC_OVERLAY_FILE_AS_LIST)
