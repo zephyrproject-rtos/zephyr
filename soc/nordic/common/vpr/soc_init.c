@@ -8,6 +8,18 @@
 
 static int vpr_init(void)
 {
+	uint32_t sleep_mode;
+
+	if (IS_ENABLED(CONFIG_NORDIC_VPR_DEEPSLEEP)) {
+		sleep_mode = VPRCSR_NORDIC_VPRNORDICSLEEPCTRL_SLEEPSTATE_DEEPSLEEP;
+	} else if (IS_ENABLED(CONFIG_NORDIC_VPR_HIBERNATE)) {
+		sleep_mode = VPRCSR_NORDIC_VPRNORDICSLEEPCTRL_SLEEPSTATE_HIBERNATE;
+	} else {
+		sleep_mode = VPRCSR_NORDIC_VPRNORDICSLEEPCTRL_SLEEPSTATE_SLEEP;
+	}
+
+	csr_write(VPRCSR_NORDIC_VPRNORDICSLEEPCTRL, sleep_mode);
+
 	/* RT peripherals for VPR all share one enable.
 	 * To prevent redundant calls, do it here once.
 	 */
