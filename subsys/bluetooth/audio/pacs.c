@@ -1132,6 +1132,7 @@ static int pacs_gatt_notify(struct bt_conn *conn,
 	int err;
 	int max_len;
 	struct bt_gatt_notify_params params;
+	uint16_t max_ntf_size;
 
 	memset(&params, 0, sizeof(params));
 	params.uuid = uuid;
@@ -1161,6 +1162,12 @@ static int pacs_gatt_notify(struct bt_conn *conn,
 	}
 
 	atomic_set_bit(pacs.flags, PACS_FLAG_NOTIFY_RDY);
+	max_ntf_size = bt_att_get_max_notify_size(conn, BT_ATT_CHAN_OPT_NONE);
+
+	params.len = MIN(max_ntf_size, len);
+	if (params.len < len) {
+		LOG_DBG("Sending truncated notification (%u / %u)", params.len, len);
+	}
 
 	err = bt_gatt_notify_cb(conn, &params);
 	if (err != 0) {
