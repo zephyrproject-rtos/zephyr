@@ -85,7 +85,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44004800 0x400>;
-			interrupts = <127 1>;
+			interrupts = <127 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
@@ -97,7 +97,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44004c00 0x400>;
-			interrupts = <128 1>;
+			interrupts = <128 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
@@ -109,7 +109,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44005000 0x400>;
-			interrupts = <129 1>;
+			interrupts = <129 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
@@ -121,7 +121,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44005400 0x400>;
-			interrupts = <130 1>;
+			interrupts = <130 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
@@ -260,7 +260,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40014c00 0x400>;
-			interrupts = <82 5>;
+			interrupts = <82 0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 19)>;
 			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
@@ -273,7 +273,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44002000 0x400>;
-			interrupts = <83 5>;
+			interrupts = <83 0>;
 			clocks = <&rcc STM32_CLOCK(APB3, 5)>;
 			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
@@ -286,7 +286,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40015000 0x400>;
-			interrupts = <84 5>;
+			interrupts = <84 0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 20)>;
 			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
