@@ -1,0 +1,118 @@
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Wolfson Microelectronics WM8960 Audio CODEC
+
+include: i2c-device.yaml
+
+compatible: "wolfson,wm8960"
+
+properties:
+  reg:
+    required: true
+
+  clock-source:
+    type: string
+    default: "MCLK"
+    description: |
+      Codec's internal clock signal (SYSCLK) source selection. These options
+      are available:
+      - "MCLK": MCLK pin (supplied by the host)
+      - "FLL":  FLL facility, can be free-running
+      The "MCLK" option is default, as this clock signal is usually supplied
+      by the host.
+    enum:
+      - "MCLK"
+      - "FLL"
+
+  clk-out:
+    type: boolean
+    description: |
+      output the Codec SYSCLK via gpio1
+
+  hp-jd:
+    type: string
+    default: "WM8960_GPIO1"
+    description: |
+      headphone detect pin selected. Options are:
+      - "WM8960_GPIO1"
+      - "WM8960_JD2"
+      - "WM8960_JD3"
+    enum:
+      - "WM8960_GPIO1"
+      - "WM8960_JD2"
+      - "WM8960_JD3"
+
+  gpio1-sel:
+    type: string
+    default: "WM8960_JDO"
+    description: |
+      gpio1 selection. Options are:
+      - "WM8960_JDO": Jack detect input
+      - "WM8960_Reserved": Slave Clock
+      - "WM8960_DJDO": Debounced jack detect output
+      - "WM8960_TEMP_OK" : Temperature OK
+      - "WM8960_SYSCLK_OUT": SYSCLK output
+      - "WM8960_PLL_LOCK": SYSCLK output
+    enum:
+      - "WM8960_JDO"
+      - "WM8960_Reserved"
+      - "WM8960_DJDO"
+      - "WM8960_TEMP_OK"
+      - "WM8960_SYSCLK_OUT"
+      - "WM8960_PLL_LOCK"
+
+  left-input:
+    type: string
+    default: "WM8960_IN_MUTE"
+    description: |
+      Default left audio input. Options are:
+      - "WM8960_IN_MUTE": Muted - no input
+      - "WM8960_IN_MIC_SE_1" : Microphone, single-ended on 1
+      - "WM8960_IN_MIC_SE_2" : Microphone, single-ended on 2
+      - "WM8960_IN_MIC_SE_3" : Microphone, single-ended on 3
+      - "WM8960_IN_MIC_DE_12": Microphone, double ended across 1 and 2
+      - "WM8960_IN_MIC_DE_13": Microphone, double ended across 1 and 3
+      - "WM8960_IN_MIC_DE_23": Microphone, double ended across 2 and 3
+      - "WM8960_IN_LINE_2": Line-level on 2
+      - "WM8960_IN_LINE_3": Line-level on 3
+    enum:
+      - "WM8960_IN_MUTE"
+      - "WM8960_IN_MIC_SE_1"
+      - "WM8960_IN_MIC_SE_2"
+      - "WM8960_IN_MIC_SE_3"
+      - "WM8960_IN_MIC_DE_12"
+      - "WM8960_IN_MIC_DE_13"
+      - "WM8960_IN_MIC_DE_23"
+      - "WM8960_IN_LINE_2"
+      - "WM8960_IN_LINE_3"
+
+  right-input:
+    type: string
+    default: "WM8960_IN_MUTE"
+    description: |
+      Default right audio input. Options are:
+      - "WM8960_IN_MUTE": Muted - no input
+      - "WM8960_IN_MIC_SE_1" : Microphone, single-ended on 1
+      - "WM8960_IN_MIC_SE_2" : Microphone, single-ended on 2
+      - "WM8960_IN_MIC_SE_3" : Microphone, single-ended on 3
+      - "WM8960_IN_MIC_DE_12": Microphone, double ended across 1 and 2
+      - "WM8960_IN_MIC_DE_13": Microphone, double ended across 1 and 3
+      - "WM8960_IN_MIC_DE_23": Microphone, double ended across 2 and 3
+      - "WM8960_IN_LINE_2": Line-level on 2
+      - "WM8960_IN_LINE_3": Line-level on 3
+    enum:
+      - "WM8960_IN_MUTE"
+      - "WM8960_IN_MIC_SE_1"
+      - "WM8960_IN_MIC_SE_2"
+      - "WM8960_IN_MIC_SE_3"
+      - "WM8960_IN_MIC_DE_12"
+      - "WM8960_IN_MIC_DE_13"
+      - "WM8960_IN_MIC_DE_23"
+      - "WM8960_IN_LINE_2"
+      - "WM8960_IN_LINE_3"
+
+  enable-spkr:
+    type: boolean
+    description: |
+      Default state of the speaker (Class D) audio output. Specify to enable.

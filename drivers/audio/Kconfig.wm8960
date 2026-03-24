@@ -1,0 +1,13 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_WM8960
+	bool "Wolfson WM8960 Audio Codec"
+	default y
+	select I2C
+	depends on DT_HAS_WOLFSON_WM8960_ENABLED
+	help
+		Enable Wolfson WM8960 audio codec driver.
+
+		This driver supports the WM8960 stereo audio codec with headphone
+		and line outputs, and microphone inputs.

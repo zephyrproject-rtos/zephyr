@@ -46,6 +46,7 @@ source "drivers/audio/Kconfig.tas6422dac"
 source "drivers/audio/Kconfig.tlv320aic3110"
 source "drivers/audio/Kconfig.tlv320dac"
 source "drivers/audio/Kconfig.wm8904"
+source "drivers/audio/Kconfig.wm8960"
 source "drivers/audio/Kconfig.wm8962"
 # zephyr-keep-sorted-stop
 
