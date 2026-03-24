@@ -483,6 +483,9 @@ device.
      - The node corresponding to the PCIe Controller
    * - zephyr,ppp-uart
      - Sets UART device used by PPP
+   * - zephyr,rtc
+     - Sets the default RTC device (used for example by the :ref:`SNTP library <sntp_interface>` to
+       set the system time when :kconfig:option:`CONFIG_NET_CONFIG_CLOCK_SNTP_SET_RTC` is enabled)
    * - zephyr,settings-partition
      - Fixed partition node. If defined this selects the partition used
        by the NVS and FCB settings backends.
