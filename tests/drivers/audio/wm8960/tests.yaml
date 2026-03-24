@@ -1,0 +1,7 @@
+tests:
+  drivers.audio.wm8960:
+    platform_allow: native_sim
+    tags:
+      - drivers
+      - audio
+      - codec
