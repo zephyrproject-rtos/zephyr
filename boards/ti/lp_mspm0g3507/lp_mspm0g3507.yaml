@@ -8,6 +8,7 @@ toolchain:
   - xtools
 ram: 32
 flash: 128
+twister: false
 supported:
   - uart
   - gpio
