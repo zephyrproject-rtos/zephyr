@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2023 Linaro Limited
+ * SPDX-FileCopyrightText: Copyright (c) 2023 Linaro Limited
+ * SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
