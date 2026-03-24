@@ -8,7 +8,7 @@
 &pinctrl {
 	pinmux_lpuart0: pinmux_lpuart0 {
 		group0 {
-			pinmux = <LPUART0_RX_PTA16>, <LPUART0_TX_PTA17>;
+			pinmux = <LPUART0_RX_PTA18>, <LPUART0_TX_PTA17>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -17,27 +17,6 @@
 	pinmux_lpuart1: pinmux_lpuart1 {
 		group0 {
 			pinmux = <LPUART1_RX_PTC2>, <LPUART1_TX_PTC3>;
-			drive-strength = "low";
-			slew-rate = "fast";
-		};
-	};
-
-	pinmux_nbu_hdi: pinmux_nbu_hdi {
-		group0 {
-			pinmux = <HDI_PTB0>,
-				 <HDI_PTB1>,
-				 <HDI_PTB2>,
-				 <HDI_PTB3>,
-				 <HDI_PTB4>,
-				 <HDI_PTB5>,
-				 <HDI_PTC0>,
-				 <HDI_PTC1>,
-				 <HDI_PTC2>,
-				 <HDI_PTC3>,
-				 <HDI_PTC4>,
-				 <HDI_PTC5>,
-				 <HDI_PTC6>,
-				 <HDI_PTC7>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
