@@ -23,6 +23,7 @@
 		sdhc0 = &usdhc1;
 		mcuboot-button0 = &user_button;
 		rtc = &counter_rtc;
+		i2s-codec-tx = &sai1;
 	};
 
 	chosen {
@@ -148,6 +149,20 @@ nxp_parallel_i2c: &lpi2c1 {};
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+	};
+
+	audio_codec: wm8960@1a {
+		compatible = "wolfson,wm8960";
+		reg = <0x1a>;
+		clock-source = "MCLK";
+		clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
+		clock-names = "mclk";
+		status = "okay";
+		hp-jd = "WM8960_JD3";
+		clk-out;
+		gpio1-sel = "WM8960_SYSCLK_OUT";
+		left-input = "WM8960_IN_MIC_DE_13";
+		right-input = "WM8960_IN_MIC_DE_12";
 	};
 };
 
@@ -361,5 +376,16 @@ dvp_fpc24_i2c: &lpi2c1 {};
 dvp_fpc24_interface: &csi {};
 
 &counter_rtc {
+	status = "okay";
+};
+
+&sai1 {
+	pinctrl-0 = <&pinmux_sai1>;
+	pinctrl-names = "default";
+
+	nxp,rx-sync-mode;
+	mclk-output;
+	podf = <32>;
+
 	status = "okay";
 };
