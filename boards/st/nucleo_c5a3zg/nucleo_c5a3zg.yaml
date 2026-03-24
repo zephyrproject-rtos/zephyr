@@ -12,6 +12,7 @@ supported:
   - arduino_serial
   - arduino_spi
   - counter
+  - dac
   - dma
   - gpio
   - i2c
