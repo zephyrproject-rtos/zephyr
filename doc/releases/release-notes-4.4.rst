@@ -1007,6 +1007,7 @@ New Drivers
 
 * Firmware
 
+   * :dtcompatible:`arm,scmi-smc` (:github:`103584`)
    * :dtcompatible:`arm,scmi-system` (:github:`99037`)
    * :dtcompatible:`qemu,fw-cfg-ioport` (:github:`103717`)
    * :dtcompatible:`qemu,fw-cfg-mmio` (:github:`103717`)
@@ -1433,6 +1434,7 @@ New Samples
 * :zephyr:code-sample:`regulator_shell`
 * :zephyr:code-sample:`renesas_lvd`
 * :zephyr:code-sample:`rtk0eg0019b01002bj`
+* :zephyr:code-sample:`scmi`
 * :zephyr:code-sample:`sct2024`
 * :zephyr:code-sample:`shell-devmem-load`
 * :zephyr:code-sample:`stm32_pwm_mastermode`
