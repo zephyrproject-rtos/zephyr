@@ -40,10 +40,6 @@ Contributors are granted the following rights and responsibilities:
 * Right to contribute code, documentation, translations, artwork, etc.
 * Right to report defects (bugs) and suggestions for enhancement.
 * Right to participate in the process of reviewing contributions by others.
-* Right to initiate and participate in discussions in any communication
-  methods.
-* Right to approach any member of the community with matters they believe
-  to be important.
 * Right to participate in the feature development process.
 * Responsibility to abide by decisions, once made. They are welcome to
   provide new, relevant information to reopen decisions.
