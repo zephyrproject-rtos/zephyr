@@ -80,6 +80,14 @@
 	status = "okay";
 };
 
+&dac1 {
+	clocks = <&rcc STM32_CLOCK(AHB2, 11)>,
+		 <&rcc STM32_SRC_PSIK ADCDAC_SEL(2)>;
+	pinctrl-0 = <&dac1_out1_pa4>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &die_temp {
 	status = "okay";
 };
