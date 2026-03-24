@@ -34,3 +34,11 @@
     . = DT_REG_SIZE(DT_NODELABEL(SHARED_MEM_LABEL));
 } > SHARED_MEM_REGION
 #endif
+
+#ifdef CONFIG_SOC_MCXW70AC
+/* place main stack at the beginning of the ram */
+.main_stack (NOLOAD) : ALIGN(4)
+{
+    *(".noinit.*zephyr/kernel/init.c*")
+} > RAM
+#endif

@@ -16,6 +16,4 @@ zephyr_linker_sources_ifdef(CONFIG_NXP_MCXW7XX_BOOT_HEADER
 
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
 
-if(CONFIG_NXP_NBU)
-  zephyr_linker_sources(RAM_SECTIONS sections.ld)
-endif()
+zephyr_linker_sources(RAM_SECTIONS sections.ld)
