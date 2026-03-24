@@ -276,7 +276,6 @@ static void esp_hosted_init(struct net_if *iface)
 	/* Configure interface */
 	ethernet_init(iface);
 	net_if_dormant_on(iface);
-	net_if_carrier_on(iface);
 
 	/* Register a managed interface. */
 	wifi_nm_register_mgd_type_iface(

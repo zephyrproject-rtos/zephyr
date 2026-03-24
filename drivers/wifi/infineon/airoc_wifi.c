@@ -537,9 +537,6 @@ static void airoc_mgmt_init(struct net_if *iface)
 
 	/* Not currently connected to a network */
 	net_if_dormant_on(iface);
-
-	/* L1 network layer (physical layer) is up */
-	net_if_carrier_on(data->iface);
 }
 
 static int airoc_mgmt_scan(const struct device *dev, struct wifi_scan_params *params,
