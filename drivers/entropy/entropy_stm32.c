@@ -152,7 +152,16 @@ static int entropy_stm32_suspend(void)
  * ignore the check on this series.
  */
 #if defined(PKA) && !defined(CONFIG_SOC_SERIES_STM32WB0X)
-	if (__HAL_RCC_PKA_IS_CLK_ENABLED() && LL_PKA_IsEnabled(PKA)) {
+#if defined(LL_AHB1_GRP1_PERIPH_PKA)
+	uint32_t pka_clock_enabled = LL_AHB1_GRP1_IsEnabledClock(LL_AHB1_GRP1_PERIPH_PKA);
+#elif defined(LL_AHB2_GRP1_PERIPH_PKA)
+	uint32_t pka_clock_enabled = LL_AHB2_GRP1_IsEnabledClock(LL_AHB2_GRP1_PERIPH_PKA);
+#elif defined(LL_AHB3_GRP1_PERIPH_PKA)
+	uint32_t pka_clock_enabled = LL_AHB3_GRP1_IsEnabledClock(LL_AHB3_GRP1_PERIPH_PKA);
+#elif defined(LL_AHB5_GRP1_PERIPH_PKA)
+	uint32_t pka_clock_enabled = LL_AHB5_GRP1_IsEnabledClock(LL_AHB5_GRP1_PERIPH_PKA);
+#endif /* LL_AHBx_GRP1_PERIPH_PKA */
+	if (pka_clock_enabled && LL_PKA_IsEnabled(PKA)) {
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 		z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
