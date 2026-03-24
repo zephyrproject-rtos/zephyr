@@ -42,23 +42,16 @@ LOG_MODULE_REGISTER(video_emul_imager, CONFIG_VIDEO_LOG_LEVEL);
 /* Emulated register bank */
 uint8_t emul_imager_fake_regs[10];
 
-enum emul_imager_fmt_id {
-	RGB565_320x240,
-	YUYV_320x240,
+enum {
+	EMUL_IMAGER_320x240_RGB565,
+	EMUL_IMAGER_320x240_YUYV,
+	EMUL_IMAGER_160x120_RGB565,
+	EMUL_IMAGER_160x120_YUYV,
 };
 
 struct emul_imager_reg {
 	uint16_t addr;
 	uint8_t value;
-};
-
-struct emul_imager_mode {
-	/* List of registers lists to configure the various properties of the sensor.
-	 * This permits to deduplicate the list of registers in case some lare sections
-	 * are repeated across modes, such as the resolution for different FPS.
-	 */
-	const struct emul_imager_reg *regs[3];
-	/* More fields can be added according to the needs of the sensor driver */
 };
 
 struct emul_imager_config {
@@ -74,8 +67,6 @@ struct emul_imager_data {
 	uint8_t framebuffer[320 * sizeof(uint16_t)];
 	/* Other fields are shared with real hardware drivers */
 	uint32_t frame_rate;
-	const struct emul_imager_mode *mode;
-	enum emul_imager_fmt_id fmt_id;
 	struct video_format fmt;
 	struct emul_imager_ctrls ctrls;
 };
@@ -92,18 +83,25 @@ static const struct emul_imager_reg emul_imager_init_regs[] = {
 	{0x1209, 0x7f},
 	{0},
 };
-static const struct emul_imager_reg emul_imager_rgb565[] = {
+static const struct emul_imager_reg emul_imager_320x240_rgb565[] = {
 	{EMUL_IMAGER_REG_FORMAT, 0x01},
-	{0},
+	{EMUL_IMAGER_REG_TIMING1, 32},
+	{EMUL_IMAGER_REG_TIMING2, 24},
 };
-static const struct emul_imager_reg emul_imager_yuyv[] = {
+static const struct emul_imager_reg emul_imager_320x240_yuyv[] = {
 	{EMUL_IMAGER_REG_FORMAT, 0x02},
-	{0},
+	{EMUL_IMAGER_REG_TIMING1, 32},
+	{EMUL_IMAGER_REG_TIMING2, 24},
 };
-static const struct emul_imager_reg emul_imager_320x240[] = {
-	{EMUL_IMAGER_REG_TIMING1, 0x32},
-	{EMUL_IMAGER_REG_TIMING2, 0x24},
-	{0},
+static const struct emul_imager_reg emul_imager_160x120_rgb565[] = {
+	{EMUL_IMAGER_REG_FORMAT, 0x01},
+	{EMUL_IMAGER_REG_TIMING1, 16},
+	{EMUL_IMAGER_REG_TIMING2, 12},
+};
+static const struct emul_imager_reg emul_imager_160x120_yuyv[] = {
+	{EMUL_IMAGER_REG_FORMAT, 0x02},
+	{EMUL_IMAGER_REG_TIMING1, 16},
+	{EMUL_IMAGER_REG_TIMING2, 12},
 };
 static const struct emul_imager_reg emul_imager_15fps[] = {
 	{EMUL_IMAGER_REG_TIMING3, 15},
@@ -118,26 +116,7 @@ static const struct emul_imager_reg emul_imager_60fps[] = {
 	{0},
 };
 
-/* Description of "modes", that pick lists of registesr that will be all sentto the imager */
-struct emul_imager_mode emul_imager_rgb565_320x240_modes[] = {
-	{.regs = {emul_imager_320x240, emul_imager_rgb565}},
-	{},
-};
-struct emul_imager_mode emul_imager_yuyv_320x240_modes[] = {
-	{.regs = {emul_imager_320x240, emul_imager_yuyv}},
-	{},
-};
-
-/* Summary of all the modes of all the frame formats, with indexes matching those of fmts[]. */
-static const struct emul_imager_mode *emul_imager_modes[] = {
-	[RGB565_320x240] = emul_imager_rgb565_320x240_modes,
-	[YUYV_320x240] = emul_imager_yuyv_320x240_modes,
-};
-
-/* Video device capabilities where the supported resolutions and pixel formats are listed.
- * The format ID is used as index to fetch the matching mode from the list above.
- */
-#define EMUL_IMAGER_VIDEO_FORMAT_CAP(format, width, height)                                        \
+#define EMUL_IMAGER_CAP(format, width, height)                                                     \
 	{                                                                                          \
 		/* For a real imager, the width and height would be macro parameters */            \
 		.pixelformat = (format),                                                           \
@@ -149,8 +128,10 @@ static const struct emul_imager_mode *emul_imager_modes[] = {
 		.height_step = 0,                                                                  \
 	}
 static const struct video_format_cap fmts[] = {
-	[RGB565_320x240] = EMUL_IMAGER_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_RGB565, 320, 240),
-	[YUYV_320x240] = EMUL_IMAGER_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_YUYV, 320, 240),
+	[EMUL_IMAGER_320x240_RGB565]	= EMUL_IMAGER_CAP(VIDEO_PIX_FMT_RGB565, 320, 240),
+	[EMUL_IMAGER_320x240_YUYV]	= EMUL_IMAGER_CAP(VIDEO_PIX_FMT_YUYV, 320, 240),
+	[EMUL_IMAGER_160x120_RGB565]	= EMUL_IMAGER_CAP(VIDEO_PIX_FMT_RGB565, 160, 120),
+	[EMUL_IMAGER_160x120_YUYV]	= EMUL_IMAGER_CAP(VIDEO_PIX_FMT_YUYV, 160, 120),
 	{0},
 };
 
@@ -197,53 +178,53 @@ static int emul_imager_set_ctrl(const struct device *dev, uint32_t id)
 	return emul_imager_write_reg(dev, EMUL_IMAGER_REG_CUSTOM, data->ctrls.custom.val);
 }
 
-/* Customize this function according to your "struct emul_imager_mode". */
-static int emul_imager_set_mode(const struct device *dev, const struct emul_imager_mode *mode)
+static int emul_imager_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	struct emul_imager_data *data = dev->data;
-	int ret;
-
-	if (data->mode == mode) {
-		return 0;
-	}
-
-	LOG_DBG("Applying mode %p", mode);
-
-	/* Apply all the configuration registers for that mode */
-	for (int i = 0; i < 2; i++) {
-		ret = emul_imager_write_multi(dev, mode->regs[i]);
-		if (ret < 0) {
-			goto err;
-		}
-	}
-
-	data->mode = mode;
+	caps->format_caps = fmts;
 	return 0;
-err:
-	LOG_ERR("Could not apply mode %p", mode);
-	return ret;
 }
 
-static int emul_imager_set_fmt(const struct device *const dev, struct video_format *fmt)
+static int emul_imager_set_fmt(const struct device *dev, struct video_format *fmt)
 {
+	const struct emul_imager_config *cfg = dev->config;
 	struct emul_imager_data *data = dev->data;
-	size_t fmt_id;
+	size_t idx;
 	int ret;
 
-	if (memcmp(&data->fmt, fmt, sizeof(data->fmt)) == 0) {
-		return 0;
-	}
-
-	ret = video_format_caps_index(fmts, fmt, &fmt_id);
+	ret = video_format_caps_index(fmts, fmt, &idx);
 	if (ret < 0) {
-		LOG_ERR("Format %x %ux%u not found", fmt->pixelformat, fmt->width, fmt->height);
-		return ret;
+		LOG_ERR("Format requested '%s' %ux%u not supported",
+			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height);
+		return -ENOTSUP;
 	}
 
-	ret = emul_imager_set_mode(dev, &emul_imager_modes[fmt_id][0]);
+	ret = video_estimate_fmt_size(fmt);
 	if (ret < 0) {
 		return ret;
 	}
+
+	switch (idx) {
+	case EMUL_IMAGER_320x240_RGB565:
+		ret = emul_imager_write_multi(dev, emul_imager_320x240_rgb565);
+		break;
+	case EMUL_IMAGER_320x240_YUYV:
+		ret = emul_imager_write_multi(dev, emul_imager_320x240_yuyv);
+		break;
+	case EMUL_IMAGER_160x120_RGB565:
+		ret = emul_imager_write_multi(dev, emul_imager_160x120_rgb565);
+		break;
+	case EMUL_IMAGER_160x120_YUYV:
+		ret = emul_imager_write_multi(dev, emul_imager_160x120_yuyv);
+		break;
+	default:
+		CODE_UNREACHABLE;
+		return -EINVAL;
+	}
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->fmt = *fmt;
 
 	/* For the purpose of simulation, fill the image line buffer with 50% gray, this data
 	 * will be collected by the video_emul_rx driver.
@@ -256,8 +237,6 @@ static int emul_imager_set_fmt(const struct device *const dev, struct video_form
 		memset(data->framebuffer, 0x7f, fmt->pitch);
 	}
 
-	data->fmt_id = fmt_id;
-	data->fmt = *fmt;
 	return 0;
 }
 
@@ -266,12 +245,7 @@ static int emul_imager_get_fmt(const struct device *dev, struct video_format *fm
 	struct emul_imager_data *data = dev->data;
 
 	*fmt = data->fmt;
-	return 0;
-}
 
-static int emul_imager_get_caps(const struct device *dev, struct video_caps *caps)
-{
-	caps->format_caps = fmts;
 	return 0;
 }
 
