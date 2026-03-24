@@ -739,7 +739,25 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 			LOG_DBG("No slot available to upload to");
 			return IMG_MGMT_ERR_NO_FREE_SLOT;
 		}
-
+#if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1
+		for (size_t i = 0; i < req->image; i++) {
+			/** If the detected swap type of the active slot is revert,
+			 *  it means that the image is in test mode.
+			 */
+			if (img_mgmt_swap_type(img_mgmt_active_slot(i))
+			    == IMG_MGMT_SWAP_TYPE_REVERT) {
+				/** This issue cannot be solved inside MCUBoot,
+				 *  as it is indistinguishable from a situation where the
+				 *  device is rebooted in the middle of the update process,
+				 *  after one of the images has already been copied.
+				 */
+				LOG_WRN("Updating a higher-numbered image while a lower-numbered "
+					"image remains in test mode. If the image in test mode is "
+					"not confirmed, its revert will be delayed by one additional "
+					"additional boot cycle.");
+			}
+		}
+#endif
 		rc = flash_area_open(action->area_id, &fa);
 		if (rc) {
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
