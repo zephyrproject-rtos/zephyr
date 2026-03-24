@@ -5,10 +5,6 @@ config SOC_SERIES_ESP32C5
 	bool
 	select SOC_FAMILY_ESPRESSIF_ESP32
 
-config SOC_ESP32_C5_WROOM_1_N8R4
-	bool
-	select SOC_ESP32C5
-
 config SOC_ESP32C5
 	bool
 	select SOC_SERIES_ESP32C5
@@ -28,6 +24,3 @@ config SOC_SERIES
 
 config SOC
 	default "esp32c5" if SOC_ESP32C5
-
-config SOC_PART_NUMBER
-	default "ESP32_C5_WROOM_1_N8R4" if SOC_ESP32_C5_WROOM_1_N8R4

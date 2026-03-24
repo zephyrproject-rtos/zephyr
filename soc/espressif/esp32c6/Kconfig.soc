@@ -5,14 +5,6 @@ config SOC_SERIES_ESP32C6
 	bool
 	select SOC_FAMILY_ESPRESSIF_ESP32
 
-config SOC_ESP32_C6_WROOM_1U_N4
-	bool
-	select SOC_ESP32C6
-
-config SOC_ESP32_C6_WROOM_1U_N8
-	bool
-	select SOC_ESP32C6
-
 config SOC_ESP32C6
 	bool
 	select SOC_SERIES_ESP32C6
@@ -32,7 +24,3 @@ config SOC_SERIES
 
 config SOC
 	default "esp32c6" if SOC_ESP32C6
-
-config SOC_PART_NUMBER
-	default "ESP32_C6_WROOM_1U_N4" if SOC_ESP32_C6_WROOM_1U_N4
-	default "ESP32_C6_WROOM_1U_N8" if SOC_ESP32_C6_WROOM_1U_N8
