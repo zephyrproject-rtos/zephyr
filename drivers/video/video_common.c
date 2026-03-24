@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019, Linaro Limited
  * Copyright (c) 2024-2025, tinyVision.ai Inc.
+ * Copyright (c) 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -531,10 +532,16 @@ int video_estimate_fmt_size(struct video_format *fmt)
 
 	switch (fmt->pixelformat) {
 	case VIDEO_PIX_FMT_JPEG:
+	case VIDEO_PIX_FMT_PNG:
 	case VIDEO_PIX_FMT_H264:
 		/* Rough estimate for the worst case (quality = 100) */
 		fmt->pitch = 0;
 		fmt->size = fmt->width * fmt->height * 2;
+		break;
+	case VIDEO_PIX_FMT_NV12:
+	case VIDEO_PIX_FMT_NV21:
+		fmt->pitch = fmt->width;
+		fmt->size = fmt->pitch * fmt->height * 2U;
 		break;
 	default:
 		/* Uncompressed format */
