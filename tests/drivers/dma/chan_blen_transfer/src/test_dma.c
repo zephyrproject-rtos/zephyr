@@ -22,6 +22,9 @@
 
 #include "test_buffers.h"
 
+static K_SEM_DEFINE(transfer_end_sem, 0, 1);
+static int dma_complete_status;
+
 static int check_overflow_buffer(const uint8_t *buf, int len)
 {
 	for (int i = 0; i < len; ++i) {
@@ -36,17 +39,15 @@ static int check_overflow_buffer(const uint8_t *buf, int len)
 static void test_done(const struct device *dma_dev, void *arg,
 		      uint32_t id, int status)
 {
-	if (status >= 0) {
-		TC_PRINT("DMA transfer done\n");
-	} else {
-		TC_PRINT("DMA transfer met an error\n");
-	}
+	dma_complete_status = status;
+	k_sem_give((struct k_sem *)arg);
 }
 
 static int test_task(const struct device *dma, uint32_t chan_id, uint32_t blen)
 {
 	struct dma_config dma_cfg = { 0 };
 	struct dma_block_config dma_block_cfg = { 0 };
+	int res;
 
 	if (!device_is_ready(dma)) {
 		TC_PRINT("dma controller device is not ready\n");
@@ -59,6 +60,7 @@ static int test_task(const struct device *dma, uint32_t chan_id, uint32_t blen)
 	dma_cfg.source_burst_length = blen;
 	dma_cfg.dest_burst_length = blen;
 	dma_cfg.dma_callback = test_done;
+	dma_cfg.user_data = &transfer_end_sem;
 	dma_cfg.complete_callback_en = 0U;
 	dma_cfg.error_callback_dis = 0U;
 	dma_cfg.block_count = 1U;
@@ -87,12 +89,33 @@ static int test_task(const struct device *dma, uint32_t chan_id, uint32_t blen)
 		return TC_FAIL;
 	}
 
+	k_sem_reset(&transfer_end_sem);
+
 	if (dma_start(dma, chan_id)) {
 		TC_PRINT("ERROR: transfer\n");
 		return TC_FAIL;
 	}
-	k_sleep(K_MSEC(2000));
 
+	/*
+	 * Use a timeout to ensure the test never deadlocks
+	 * even if the DMA driver is buggy and doesn't call
+	 * the registered user callback.
+	 */
+	res = k_sem_take(&transfer_end_sem, K_MSEC(2000));
+	if (res == -EAGAIN) {
+		TC_PRINT("ERROR: transfer timeout (dma_callback not called)\n");
+		if (dma_stop(dma, chan_id)) {
+			TC_PRINT("ERROR: failed to stop DMA transfer");
+		}
+		return TC_FAIL;
+	} /* else: res == 0 (-EBUSY cannot have been returned here)*/
+
+	if (dma_complete_status != DMA_STATUS_COMPLETE) {
+		TC_PRINT("DMA transfer error\n");
+		return TC_FAIL;
+	}
+
+	TC_PRINT("DMA transfer successful\n");
 	TC_PRINT("%s\n", rx_data);
 	if (strcmp(tx_data, rx_data) != 0) {
 		return TC_FAIL;
