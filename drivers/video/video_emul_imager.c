@@ -171,17 +171,22 @@ static int emul_imager_write_multi(const struct device *const dev,
 	return 0;
 }
 
-static int emul_imager_set_ctrl(const struct device *dev, uint32_t id)
-{
-	struct emul_imager_data *data = dev->data;
-
-	return emul_imager_write_reg(dev, EMUL_IMAGER_REG_CUSTOM, data->ctrls.custom.val);
-}
-
 static int emul_imager_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->format_caps = fmts;
 	return 0;
+}
+
+static int emul_imager_set_ctrl(const struct device *dev, unsigned int cid)
+{
+	struct emul_imager_data *data = dev->data;
+
+	switch (cid) {
+	case EMUL_IMAGER_CID_CUSTOM:
+		return emul_imager_write_reg(dev, EMUL_IMAGER_REG_CUSTOM, data->ctrls.custom.val);
+	default:
+		return -ENOTSUP;
+	}
 }
 
 static int emul_imager_set_fmt(const struct device *dev, struct video_format *fmt)
