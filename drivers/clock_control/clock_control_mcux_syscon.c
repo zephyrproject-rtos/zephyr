@@ -296,6 +296,15 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if defined(CONFIG_COUNTER_NXP_OSTIMER)
+	if ((uint32_t)sub_system == MCUX_OSTIMER_CLK) {
+		CLOCK_EnableClock(kCLOCK_OsTimer0);
+#if defined(PMC_OSTIMER_CLOCKENABLE_MASK)
+		PMC->OSTIMERr |= PMC_OSTIMER_CLOCKENABLE_MASK;
+#endif
+	}
+#endif
+
 	return 0;
 }
 
@@ -746,6 +755,11 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
 	case MCUX_MICFIL_CLK:
 		*rate = CLOCK_GetMicfilClkFreq();
+		break;
+#endif
+#if defined(CONFIG_COUNTER_NXP_OSTIMER)
+	case MCUX_OSTIMER_CLK:
+		*rate = CLOCK_GetOSTimerClkFreq();
 		break;
 #endif
 	}

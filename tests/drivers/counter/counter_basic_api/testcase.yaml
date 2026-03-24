@@ -132,3 +132,17 @@ tests:
       - xg24_rb4187c/efr32mg24b220f1536im48
     extra_args:
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
+  drivers.counter.basic_api.nxp_ostimer:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow:
+      - mcxw23_evk
+      - frdm_mcxw23
+    timeout: 600
+    extra_configs:
+      - CONFIG_MCUX_OS_TIMER=n
+      - CONFIG_CORTEX_M_SYSTICK=y
+      - CONFIG_COUNTER_NXP_OSTIMER=y
+      - CONFIG_COUNTER_64BITS_TICKS=y

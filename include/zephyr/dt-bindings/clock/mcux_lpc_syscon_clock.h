@@ -162,4 +162,7 @@
 /** TSI (Touch Sensing Input) clock identifier */
 #define MCUX_TSI_CLK MCUX_LPC_CLK_ID(0x25, 0x0)
 
+/** OSTIMER peripheral clock identifier. */
+#define MCUX_OSTIMER_CLK MCUX_LPC_CLK_ID(0x26, 0x00)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */

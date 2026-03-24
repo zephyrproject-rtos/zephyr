@@ -51,6 +51,10 @@ endif # BT
 
 if PM
 
+# OSTIMER is used as systick LPM timer in power.c, can't be used as counter.
+configdefault COUNTER_NXP_OSTIMER
+	default n
+
 # Enable PM_DEVICE for Suspend mode and Standby mode,
 # because some devices can't work in these modes.
 configdefault PM_DEVICE

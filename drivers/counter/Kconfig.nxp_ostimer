@@ -1,0 +1,12 @@
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_NXP_OSTIMER
+	bool "NXP OS Timer (OSTIMER) counter driver"
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_OS_TIMER),role,counter)
+	select COUNTER_SUPPORTS_64BITS_TICKS
+	help
+	  Enable counter driver for the NXP OS Timer (OSTIMER) peripheral.
+	  OSTIMER is a 64-bit free-running counter with a single match register
+	  for one-shot alarms.
