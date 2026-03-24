@@ -152,7 +152,13 @@ static int entropy_stm32_suspend(void)
  * ignore the check on this series.
  */
 #if defined(PKA) && !defined(CONFIG_SOC_SERIES_STM32WB0X)
-	if (__HAL_RCC_PKA_IS_CLK_ENABLED() && LL_PKA_IsEnabled(PKA)) {
+#if defined(CONFIG_STM32_HAL2)
+	uint32_t pka_clock_enabled = HAL_RCC_PKA_IsEnabledClock();
+#else /* CONFIG_STM32_HAL2 */
+	uint32_t pka_clock_enabled = __HAL_RCC_PKA_IS_CLK_ENABLED();
+#endif /* CONFIG_STM32_HAL2 */
+
+	if (pka_clock_enabled && LL_PKA_IsEnabled(PKA)) {
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 		z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
