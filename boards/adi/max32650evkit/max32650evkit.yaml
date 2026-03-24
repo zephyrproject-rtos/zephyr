@@ -16,5 +16,6 @@ supported:
   - counter
   - rtc_counter
   - usbd
+  - memc
 ram: 256
 flash: 3072
