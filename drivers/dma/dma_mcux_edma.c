@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2025 NXP
+ * Copyright 2020-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1150,6 +1150,9 @@ static int dma_mcux_edma_init(const struct device *dev)
 #define EDMA_TCDPOOL_CACHE_ATTR
 #elif defined(CONFIG_DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS)
 #define EDMA_TCDPOOL_CACHE_ATTR __dtcm_noinit_section
+#elif defined(CONFIG_CPU_HAS_NXP_SYSMPU)
+/* Kinetis LMEM parts keep the default SRAM region outside the cached area. */
+#define EDMA_TCDPOOL_CACHE_ATTR
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define EDMA_TCDPOOL_CACHE_ATTR __nocache
 #else
