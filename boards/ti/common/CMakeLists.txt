@@ -2,3 +2,4 @@
 
 zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_BOARD_CC1352_LP_SKY13317 board_antenna.c)
+zephyr_library_sources_ifdef(CONFIG_BOARD_TI_MSPI_FLASH_BOOT_MODE_RESET mspi_flash_boot_reset.c)
