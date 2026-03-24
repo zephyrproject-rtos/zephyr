@@ -16,6 +16,7 @@ supported:
   - crc
   - dac
   - dma
+  - entropy
   - gpio
   - i2c
   - pwm
