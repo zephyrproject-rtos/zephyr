@@ -65,6 +65,11 @@
 			interrupt-controller;
 			reg = <0xf00c0000 0x00008000>;
 			riscv,max-priority = <15>;
+
+			/* Need to wait for usable PIC implementation in whisper
+			 * when PMP is enabled.
+			 */
+			status = "disabled";
 		};
 
 		timer: timer@44a00000 {

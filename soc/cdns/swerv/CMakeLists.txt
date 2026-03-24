@@ -8,5 +8,9 @@ zephyr_sources(
   soc_irq.S
 )
 
+if(NOT CONFIG_SWERV_PIC)
+  zephyr_sources(irq_no_pic.c)
+endif()
+
 add_subdirectory(s400)
 add_subdirectory(s420)
