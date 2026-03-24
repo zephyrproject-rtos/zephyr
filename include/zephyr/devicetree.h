@@ -2613,10 +2613,10 @@
  *     #define REG_SIZE(node_id, idx) DT_REG_SIZE_BY_IDX(node_id, idx),
  *
  *     const uint64_t reg_addrs[] = {
- *             DT_FOREACH_REG(DT_NODELABEL(n), REG_ADDR),
+ *             DT_FOREACH_REG(DT_NODELABEL(n), REG_ADDR)
  *     };
  *     const uint64_t reg_sizes[] = {
- *             DT_FOREACH_REG(DT_NODELABEL(n), REG_SIZE),
+ *             DT_FOREACH_REG(DT_NODELABEL(n), REG_SIZE)
  *     };
  * @endcode
  *
