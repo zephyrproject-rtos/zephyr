@@ -53,7 +53,6 @@ struct emul_imager_reg {
 };
 
 struct emul_imager_mode {
-	uint8_t fps;
 	/* List of registers lists to configure the various properties of the sensor.
 	 * This permits to deduplicate the list of registers in case some lare sections
 	 * are repeated across modes, such as the resolution for different FPS.
@@ -74,6 +73,7 @@ struct emul_imager_data {
 	/* First field is a line buffer for I/O emulation purpose */
 	uint8_t framebuffer[320 * sizeof(uint16_t)];
 	/* Other fields are shared with real hardware drivers */
+	uint32_t frame_rate;
 	const struct emul_imager_mode *mode;
 	enum emul_imager_fmt_id fmt_id;
 	struct video_format fmt;
@@ -120,15 +120,12 @@ static const struct emul_imager_reg emul_imager_60fps[] = {
 
 /* Description of "modes", that pick lists of registesr that will be all sentto the imager */
 struct emul_imager_mode emul_imager_rgb565_320x240_modes[] = {
-	{.fps = 15, .regs = {emul_imager_320x240, emul_imager_rgb565, emul_imager_15fps}},
-	{.fps = 30, .regs = {emul_imager_320x240, emul_imager_rgb565, emul_imager_30fps}},
-	{.fps = 60, .regs = {emul_imager_320x240, emul_imager_rgb565, emul_imager_60fps}},
-	{0},
+	{.regs = {emul_imager_320x240, emul_imager_rgb565}},
+	{},
 };
 struct emul_imager_mode emul_imager_yuyv_320x240_modes[] = {
-	{.fps = 15, .regs = {emul_imager_320x240, emul_imager_yuyv, emul_imager_15fps}},
-	{.fps = 30, .regs = {emul_imager_320x240, emul_imager_yuyv, emul_imager_30fps}},
-	{0},
+	{.regs = {emul_imager_320x240, emul_imager_yuyv}},
+	{},
 };
 
 /* Summary of all the modes of all the frame formats, with indexes matching those of fmts[]. */
@@ -210,7 +207,7 @@ static int emul_imager_set_mode(const struct device *dev, const struct emul_imag
 		return 0;
 	}
 
-	LOG_DBG("Applying mode %p at %d FPS", mode, mode->fps);
+	LOG_DBG("Applying mode %p", mode);
 
 	/* Apply all the configuration registers for that mode */
 	for (int i = 0; i < 2; i++) {
@@ -223,52 +220,8 @@ static int emul_imager_set_mode(const struct device *dev, const struct emul_imag
 	data->mode = mode;
 	return 0;
 err:
-	LOG_ERR("Could not apply mode %p (%u FPS)", mode, mode->fps);
+	LOG_ERR("Could not apply mode %p", mode);
 	return ret;
-}
-
-static int emul_imager_set_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	struct emul_imager_data *data = dev->data;
-	struct video_frmival_enum fie = {.format = &data->fmt, .discrete = *frmival};
-	int ret;
-
-	ret = video_closest_frmival(dev, &fie);
-	if (ret < 0) {
-		return ret;
-	}
-
-	LOG_DBG("Applying frame interval number %u", fie.index);
-	return emul_imager_set_mode(dev, &emul_imager_modes[data->fmt_id][fie.index]);
-}
-
-static int emul_imager_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	struct emul_imager_data *data = dev->data;
-
-	frmival->numerator = 1;
-	frmival->denominator = data->mode->fps;
-	return 0;
-}
-
-static int emul_imager_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
-{
-	const struct emul_imager_mode *mode;
-	size_t fmt_id;
-	int ret;
-
-	ret = video_format_caps_index(fmts, fie->format, &fmt_id);
-	if (ret < 0) {
-		return ret;
-	}
-
-	mode = &emul_imager_modes[fmt_id][fie->index];
-
-	fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
-	fie->discrete.numerator = 1;
-	fie->discrete.denominator = mode->fps;
-
-	return mode->fps == 0;
 }
 
 static int emul_imager_set_fmt(const struct device *const dev, struct video_format *fmt)
@@ -319,6 +272,77 @@ static int emul_imager_get_fmt(const struct device *dev, struct video_format *fm
 static int emul_imager_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->format_caps = fmts;
+	return 0;
+}
+
+enum {
+	EMUL_IMAGER_60FPS_IDX,
+	EMUL_IMAGER_30FPS_IDX,
+	EMUL_IMAGER_15FPS_IDX,
+};
+
+enum {
+	EMUL_IMAGER_60FPS = 60,
+	EMUL_IMAGER_30FPS = 30,
+	EMUL_IMAGER_15FPS = 15,
+};
+
+static const uint32_t emul_imager_framerates[] = {
+	[EMUL_IMAGER_60FPS_IDX] = EMUL_IMAGER_60FPS,
+	[EMUL_IMAGER_30FPS_IDX] = EMUL_IMAGER_30FPS,
+	[EMUL_IMAGER_15FPS_IDX] = EMUL_IMAGER_15FPS,
+};
+
+static int emul_imager_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
+{
+	if (fie->index >= ARRAY_SIZE(emul_imager_framerates)) {
+		return -EINVAL;
+	}
+
+	fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
+	fie->discrete.numerator = 1;
+	fie->discrete.denominator = emul_imager_framerates[fie->index];
+
+	return 0;
+}
+
+static int emul_imager_set_frmival(const struct device *dev, struct video_frmival *frmival)
+{
+	struct emul_imager_data *data = dev->data;
+	struct video_frmival_enum fie = {.format = &data->fmt, .discrete = *frmival};
+	int ret;
+
+	switch (fie.index) {
+	case EMUL_IMAGER_60FPS_IDX:
+		ret = emul_imager_write_multi(dev, emul_imager_60fps);
+		break;
+	case EMUL_IMAGER_30FPS_IDX:
+		ret = emul_imager_write_multi(dev, emul_imager_30fps);
+		break;
+	case EMUL_IMAGER_15FPS_IDX:
+		ret = emul_imager_write_multi(dev, emul_imager_15fps);
+		break;
+	default:
+		CODE_UNREACHABLE;
+		return -EINVAL;
+	}
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	frmival->numerator = 1;
+	frmival->denominator = data->frame_rate = emul_imager_framerates[fie.index];
+
+	return 0;
+}
+
+static int emul_imager_get_frmival(const struct device *dev, struct video_frmival *frmival)
+{
+	struct emul_imager_data *data = dev->data;
+
+	frmival->numerator = 1;
+	frmival->denominator = data->frame_rate;
 	return 0;
 }
 

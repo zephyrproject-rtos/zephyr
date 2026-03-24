@@ -123,7 +123,7 @@ ZTEST(video_common, test_video_frmival)
 			zexpect_ok(video_set_frmival(imager_dev, &q));
 			zexpect_ok(video_get_frmival(imager_dev, &a));
 
-			zexpect_equal(video_frmival_nsec(&fie.discrete), video_frmival_nsec(&a),
+			zexpect_equal(video_frmival_nsec(&q), video_frmival_nsec(&a),
 				      "query %u/%u (%u nsec) answer %u/%u (%u nsec, discrete)",
 				      q.numerator, q.denominator, video_frmival_nsec(&q),
 				      a.numerator, a.denominator, video_frmival_nsec(&a));
