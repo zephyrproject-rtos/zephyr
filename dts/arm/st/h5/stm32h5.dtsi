@@ -274,7 +274,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44004400 0x400>;
-			interrupts = <64 1>;
+			interrupts = <64 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
@@ -286,7 +286,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40009400 0x400>;
-			interrupts = <70 1>;
+			interrupts = <70 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
@@ -338,7 +338,7 @@
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x40002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
-			interrupts = <0 7>;
+			interrupts = <0 0>;
 			status = "disabled";
 		};
 
@@ -545,7 +545,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
-			interrupts = <55 5>;
+			interrupts = <55 0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI1_SEL(0)>;
 			st,spi-data-width = "full-4-to-32-bit";
@@ -559,7 +559,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
-			interrupts = <56 5>;
+			interrupts = <56 0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI2_SEL(0)>;
 			st,spi-data-width = "full-4-to-32-bit";
@@ -573,7 +573,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003c00 0x400>;
-			interrupts = <57 5>;
+			interrupts = <57 0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI3_SEL(0)>;
 			st,spi-data-width = "full-4-to-32-bit";
@@ -640,7 +640,7 @@
 			       <&gpdma1 1 6 (STM32_DMA_PERIPH_RX | STM32_DMA_16BITS |
 					     STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "tx", "rx";
-			interrupts = <55 3>;
+			interrupts = <55 0>;
 			status = "disabled";
 		};
 
@@ -656,7 +656,7 @@
 			       <&gpdma1 3 8 (STM32_DMA_PERIPH_RX | STM32_DMA_16BITS |
 					     STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "tx", "rx";
-			interrupts = <56 3>;
+			interrupts = <56 0>;
 			status = "disabled";
 		};
 
@@ -672,7 +672,7 @@
 			       <&gpdma1 5 10 (STM32_DMA_PERIPH_RX | STM32_DMA_16BITS |
 					      STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "tx", "rx";
-			interrupts = <57 3>;
+			interrupts = <57 0>;
 			status = "disabled";
 		};
 

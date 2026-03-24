@@ -576,7 +576,7 @@
 			reg = <0x40013000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI1_SEL(0)>;
-			interrupts = <35 3>;
+			interrupts = <35 0>;
 			status = "disabled";
 		};
 
@@ -639,7 +639,7 @@
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x40002c00 0x1000>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
-			interrupts = <4 7>;
+			interrupts = <4 0>;
 			status = "disabled";
 		};
 
@@ -936,7 +936,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40002400 0x400>;
-			interrupts = <119 1>;
+			interrupts = <119 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
