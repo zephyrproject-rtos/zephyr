@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Arm Limited (or its affiliates)
+# SPDX-License-Identifier: Apache-2.0
+
+config FVP_S6LEDS
+	bool "FVP LED driver"
+	default y
+	depends on DT_HAS_ARM_FVP_LEDS_ENABLED
+	help
+	  Enable driver for Arm FVP LEDs. These are labelled as "S6LEDs" in the FVP GUI.
