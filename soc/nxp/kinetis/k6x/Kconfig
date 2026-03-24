@@ -1,6 +1,6 @@
 # Kinetis K6x series configuration
 
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_K6X
@@ -22,6 +22,9 @@ config SOC_MK66F18
 	select HAS_MCUX
 	select HAS_OSC
 	select HAS_MCG
+	select HAS_MCUX_CACHE
+	select HAS_MCUX_LMEM_CACHE
+	select CPU_HAS_ICACHE
 	select CPU_HAS_FPU
 
 
