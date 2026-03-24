@@ -490,6 +490,14 @@ New APIs and options
   * :c:macro:`VIDEO_FOREACH_COMPRESSED`
   * :c:func:`video_import_buffer`
 
+* Zbus
+
+   * :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT`
+   * :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_IPC`
+   * :c:macro:`ZBUS_PROXY_AGENT_DEFINE`
+   * :c:macro:`ZBUS_PROXY_ADD_CHAN`
+   * :c:macro:`ZBUS_SHADOW_CHAN_DEFINE`
+
 .. zephyr-keep-sorted-stop
 
 New Boards
@@ -1443,6 +1451,7 @@ New Samples
 * :zephyr:code-sample:`veml6046`
 * :zephyr:code-sample:`virtiofs`
 * :zephyr:code-sample:`zbus-async-listeners`
+* :zephyr:code-sample:`zbus-proxy-agent-ipc`
 
 ..
   Same as above, this will also be recomputed at the time of the release.
@@ -1496,6 +1505,12 @@ Libraries / Subsystems
   * Added :kconfig:option:`CONFIG_MBEDTLS_VERSION_C` to simplify the
     export of version information from Mbed TLS. If enabled, the
     :c:func:`mbedtls_version_get_number()` function will be available.
+
+* Zbus
+
+   * Added experimental proxy-agent communication with IPC backend support for
+     forwarding channel data across domains.
+   * Added :zephyr:code-sample:`zbus-proxy-agent-ipc`.
 
 Other notable changes
 *********************
