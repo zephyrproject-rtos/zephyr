@@ -10,7 +10,6 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/net/dsa.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
@@ -74,9 +73,6 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 			/* semaphore taken and receive packets */
 			while ((pkt = eth_stm32_rx(dev)) != NULL) {
 				iface = net_pkt_iface(pkt);
-#if defined(CONFIG_NET_DSA_DEPRECATED)
-				iface = dsa_net_recv(iface, &pkt);
-#endif
 				res = net_recv_data(iface, pkt);
 				if (res < 0) {
 					eth_stats_update_errors_rx(
@@ -266,10 +262,6 @@ static void eth_iface_init(struct net_if *iface)
 			     sizeof(dev_data->mac_addr),
 			     NET_LINK_ETHERNET);
 
-#if defined(CONFIG_NET_DSA_DEPRECATED)
-	dsa_register_master_tx(iface, &eth_stm32_tx);
-#endif
-
 	ethernet_init(iface);
 
 	eth_stm32_setup_mac_filter(heth);
@@ -321,9 +313,6 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 		| ETHERNET_HW_RX_CHKSUM_OFFLOAD
 		| ETHERNET_HW_TX_CHKSUM_OFFLOAD
 #endif
-#if defined(CONFIG_NET_DSA_DEPRECATED)
-		| ETHERNET_DSA_CONDUIT_PORT
-#endif
 #if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
 		| ETHERNET_HW_FILTERING
 #endif
@@ -353,11 +342,7 @@ static const struct ethernet_api eth_api = {
 	.get_capabilities = eth_stm32_hal_get_capabilities,
 	.set_config = eth_stm32_hal_set_config,
 	.get_phy = eth_stm32_hal_get_phy,
-#if defined(CONFIG_NET_DSA_DEPRECATED)
-	.send = dsa_tx,
-#else
 	.send = eth_stm32_tx,
-#endif
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = eth_stm32_hal_get_stats,
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */

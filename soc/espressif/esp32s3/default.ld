@@ -198,9 +198,9 @@ SECTIONS
      * 15. Flash offset (LMA) for start of IROM region
      * 16. Size of IROM region
      */
-    LONG(ADDR(.flash.text))
-    LONG(LOADADDR(.flash.text))
-    LONG(SIZEOF(.flash.text))
+    LONG(ADDR(.text))
+    LONG(LOADADDR(.text))
+    LONG(SIZEOF(.text))
 
     /* DROM metadata:
      * 17. Destination address (VMA) for DROM region
@@ -867,17 +867,17 @@ SECTIONS
   /* --- START OF IROM --- */
 
   /* Symbols used during the application memory mapping */
-  _image_irom_start = LOADADDR(.flash.text);
-  _image_irom_size = LOADADDR(.flash.text) + SIZEOF(.flash.text) - _image_irom_start;
-  _image_irom_vaddr = ADDR(.flash.text);
+  _image_irom_start = LOADADDR(.text);
+  _image_irom_size = LOADADDR(.text) + SIZEOF(.text) - _image_irom_start;
+  _image_irom_vaddr = ADDR(.text);
 
   /* Align next section to 64k to allow mapping */
-  .flash.text_dummy (NOLOAD) :
+  .text_dummy (NOLOAD) :
   {
     . = ALIGN(CACHE_ALIGN);
   } GROUP_LINK_IN(ROMABLE_REGION)
 
-  .flash.text : ALIGN(0x10)
+  .text : ALIGN(0x10)
   {
     _stext = .;
     _instruction_reserved_start = ABSOLUTE(.);
@@ -922,13 +922,13 @@ SECTIONS
 
   /* --- START OF DROM --- */
 
-  /* This dummy section represents the .flash.text section but in default_rodata_seg.
+  /* This dummy section represents the .text section but in default_rodata_seg.
    * Thus, it must have its alignment and (at least) its size.
    */
   .flash.rodata_dummy (NOLOAD):
   {
     _flash_rodata_dummy_start = ABSOLUTE(.);
-    . += SIZEOF(.flash.text);
+    . += SIZEOF(.text);
     . = ALIGN(CACHE_ALIGN);
   } GROUP_LINK_IN(RODATA_REGION)
 

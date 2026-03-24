@@ -199,6 +199,8 @@ New APIs and options
   * :c:macro:`ADC_DT_SPEC_INST_GET_BY_IDX_OR`
   * :c:macro:`ADC_DT_SPEC_INST_GET_BY_NAME_OR`
   * :c:macro:`ADC_DT_SPEC_INST_GET_OR`
+  * :c:member:`adc_sequence.priority`
+  * :kconfig:option:`CONFIG_ADC_SEQUENCE_PRIORITY`
 
 * Architectures
 
@@ -221,6 +223,7 @@ New APIs and options
     * :kconfig:option:`CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH`
     * :c:member:`bt_cap_handover_cb.unicast_to_broadcast_created`
     * :c:func:`bt_tbs_client_get_by_index`
+    * :c:member:`bt_bap_unicast_client_cb.supported_contexts`
 
   * Host
 
@@ -271,6 +274,30 @@ New APIs and options
 * DAC
 
   * Added new DAC driver (:dtcompatible:`nxp,hpdac`) (:github:`104642`).
+  * Added new DAC driver APIs (:github:`104630`)
+
+    * :c:struct:`dac_dt_spec`
+    * :c:macro:`DAC_CHANNEL_CFG_DT`
+    * :c:macro:`DAC_DT_SPEC_GET_BY_NAME`
+    * :c:macro:`DAC_DT_SPEC_GET_BY_NAME_OR`
+    * :c:macro:`DAC_DT_SPEC_INST_GET_BY_NAME`
+    * :c:macro:`DAC_DT_SPEC_INST_GET_BY_NAME_OR`
+    * :c:macro:`DAC_DT_SPEC_GET_BY_IDX`
+    * :c:macro:`DAC_DT_SPEC_GET_BY_IDX_OR`
+    * :c:macro:`DAC_DT_SPEC_INST_GET_BY_IDX`
+    * :c:macro:`DAC_DT_SPEC_INST_GET_BY_IDX_OR`
+    * :c:macro:`DAC_DT_SPEC_GET`
+    * :c:macro:`DAC_DT_SPEC_GET_OR`
+    * :c:macro:`DAC_DT_SPEC_INST_GET`
+    * :c:macro:`DAC_DT_SPEC_INST_GET_OR`
+    * :c:func:`dac_channel_setup_dt`
+    * :c:func:`dac_write_value_dt`
+    * :c:func:`dac_millivolts_to_raw`
+    * :c:func:`dac_microvolts_to_raw`
+    * :c:func:`dac_x_to_raw_dt_chan`
+    * :c:func:`dac_millivolts_to_raw_dt`
+    * :c:func:`dac_microvolts_to_raw_dt`
+    * :c:func:`dac_is_ready_dt`
 
 * DMA
 
@@ -388,6 +415,10 @@ New APIs and options
 * Shell
 
   * :c:func:`shell_readline` for :ref:`user input <shell-readline>`
+
+* Stepper
+
+  * :c:func:`stepper_ctrl_configure_ramp`
 
 * Sys
 
@@ -1404,6 +1435,7 @@ New Samples
 * :zephyr:code-sample:`shell-devmem-load`
 * :zephyr:code-sample:`stm32_pwm_mastermode`
 * :zephyr:code-sample:`t1s`
+* :zephyr:code-sample:`tmcm3216`
 * :zephyr:code-sample:`veml6046`
 * :zephyr:code-sample:`virtiofs`
 * :zephyr:code-sample:`zbus-async-listeners`

@@ -11,23 +11,30 @@
 	soc {
 		mram-controller@4013c000 {
 			code_mram_cm85: mram@2000000 {
-				compatible = "renesas,ra-nv-mram";
+				compatible = "renesas,ra-nv-mram", "soc-nv-flash";
 				reg = <0x2000000 DT_SIZE_K(768)>;
+				ranges = <0x0 0x2000000 DT_SIZE_K(768)>;
 				write-block-size = <1>;
 				erase-block-size = <32>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 
 			code_mram_cm33: mram@20c0000 {
-				compatible = "renesas,ra-nv-mram";
+				compatible = "renesas,ra-nv-mram", "soc-nv-flash";
 				reg = <0x20c0000 DT_SIZE_K(256)>;
+				ranges = <0x0 0x20c0000 DT_SIZE_K(256)>;
 				write-block-size = <1>;
 				erase-block-size = <32>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 
 		sram0: memory@22000000 {
 			compatible = "mmio-sram";
 			reg = <0x22000000 DT_SIZE_M(1)>;
+			ranges = <0x0 0x22000000 DT_SIZE_M(1)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 		};
@@ -35,6 +42,7 @@
 		sram1: memory@22100000 {
 			compatible = "mmio-sram";
 			reg = <0x22100000 DT_SIZE_K(640)>;
+			ranges = <0x0 0x22100000 DT_SIZE_K(640)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 		};

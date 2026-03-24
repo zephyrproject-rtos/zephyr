@@ -66,27 +66,6 @@ Programming and Debugging
 Applications for the ``fpb_rx261`` board can be built, flashed, and debugged using standard Zephyr workflows.
 Refer to :ref:`build_an_application` and :ref:`application_run` for more details.
 
-**Note:** Currently, the RX261 is built and programmed using the Renesas GCC RX toolchain.
-Please follow the steps below to program it onto the board:
-
-  - Download and install GCC for RX toolchain:
-
-    https://llvm-gcc-renesas.com/rx-download-toolchains/
-
-  - Set env variable:
-
-   .. code-block:: console
-
-      export ZEPHYR_TOOLCHAIN_VARIANT=cross-compile
-      export CROSS_COMPILE=<Path/to/your/toolchain>/bin/rx-elf-
-
-  - Build the Blinky Sample for FPB-RX261
-
-   .. code-block:: console
-
-      cd ~/zephyrproject/zephyr
-      west build -p always -b fpb_rx261 samples/basic/blinky
-
 Flashing
 ========
 

@@ -796,6 +796,17 @@ Broadcom Platforms:
     - soc/brcm/
     - boards/brcm/
 
+Build Dashboard:
+  status: maintained
+  maintainers:
+    - grahamroff-dev
+  collaborators:
+    - mbolivar
+  files:
+    - scripts/dashboard/
+  labels:
+    - "area: Build Dashboard"
+
 Build system:
   status: maintained
   maintainers:
@@ -1770,6 +1781,7 @@ Documentation Infrastructure:
     - de-nordic
   collaborators:
     - rghaddab
+    - Albort12138
   files:
     - drivers/flash/
     - dts/bindings/flash_controller/
@@ -2814,6 +2826,9 @@ Espressif Platforms:
     - name: Espressif hosted Wi-Fi driver
       files:
         - drivers/wifi/esp_hosted
+    - name: Espressif ESP-AT Wi-Fi driver
+      files:
+        - drivers/wifi/esp_at
   labels:
     - "platform: ESP32"
 
@@ -5059,6 +5074,9 @@ Security:
   maintainers:
     - ceolin
     - d3zd3z
+  collaborators:
+    - tomi-font
+    - valeriosetti
   files:
     - doc/security/
   labels:
@@ -6674,6 +6692,7 @@ West:
   collaborators:
     - wearyzen
     - ithinuel
+    - ceolin
   files:
     - modules/trusted-firmware-a/
   labels:

@@ -999,7 +999,7 @@ static isoal_sdu_status_t isoal_check_seg_header(struct pdu_iso_sdu_sh *seg_hdr,
  * the time offset to create an approximate reference.
  *
  * This information is in-turn used to decided if SDUs are missing or lost and
- * when they should be released. This approach is inherrently bursty with the
+ * when they should be released. This approach is inherently bursty with the
  * most probable worst case burst being 2 x (ISO interval / SDU Interval) SDUs,
  * which would occur when only padding is seen in one event followed by all the
  * SDUs from the next event in one PDU.

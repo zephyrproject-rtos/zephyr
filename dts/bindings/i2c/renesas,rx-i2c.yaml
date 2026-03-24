@@ -12,9 +12,6 @@ properties:
     required: true
     type: int
 
-  interrupts:
-    required: true
-
   interrupt-names:
     required: true
 

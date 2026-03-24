@@ -172,7 +172,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: a9b1991ad956e24468ebc841d3f90398729d46b5
+      revision: cbf74978350266a45edbfb4508553a3990341dd2
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -213,7 +213,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: d5a3b40c05699689c692021d82171dff3e94b38e
+      revision: b342e847b851e2c3e2d7d909a8c4eb871164f9a6
       path: modules/hal/nxp
       groups:
         - hal
@@ -229,12 +229,12 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: c8f99f7de0b8ea5817dd1873e0b31208be3fb63b
+      revision: 84a7fd556d95a411ee3cbf4ed29478eced58fb35
       groups:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 59414fee28d89de23673d2e6b3789d711942436d
+      revision: 06282060fa20cbd21d4ebbc7d46a1fc9533fd24e
       groups:
         - hal
     - name: hal_rpi_pico
@@ -278,7 +278,7 @@ manifest:
       groups:
         - hal
     - name: hal_wch
-      revision: 6dd313768b5f4cc69baeac4ce6e59f2038eb8ce5
+      revision: dd3855ea624b05de7e6e95584789615d2058a0f3
       path: modules/hal/wch
       groups:
         - hal
@@ -400,7 +400,7 @@ manifest:
       groups:
         - crypto
     - name: trusted-firmware-a
-      revision: 44bcc378b6ec4af8693d008f43983e488f1f5740
+      revision: 4aef38a5bf03edfa615c1f8af5a49e7065f9fb3f
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee

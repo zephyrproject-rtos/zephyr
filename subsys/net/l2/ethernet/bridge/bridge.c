@@ -97,7 +97,7 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 	int count = 0;
 	int ret;
 
-#if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+#if defined(CONFIG_NET_DSA)
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET) ||
 	    (eth_ctx->dsa_port != DSA_USER_PORT &&
 	     !(net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE))) {
@@ -144,7 +144,7 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 		return -ENOMEM;
 	}
 
-#if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+#if defined(CONFIG_NET_DSA)
 	if (eth_ctx->dsa_port != DSA_USER_PORT) {
 		ret = net_eth_promisc_mode(iface, true);
 		if (ret != 0 && ret != -EALREADY) {

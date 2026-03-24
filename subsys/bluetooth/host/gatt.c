@@ -34,7 +34,6 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
@@ -2828,14 +2827,14 @@ static int gatt_notify_multiple_verify_args(struct bt_conn *conn,
 	__ASSERT(params, "invalid parameters\n");
 	__ASSERT(params->attr, "invalid parameters\n");
 
-	CHECKIF(num_params < 2) {
+	if (num_params < 2) {
 		/* Use the standard notification API when sending only one
 		 * notification.
 		 */
 		return -EINVAL;
 	}
 
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		/* Use the standard notification API to send to all connected
 		 * peers.
 		 */
@@ -3355,7 +3354,7 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 			LOG_ERR("Read method not set");
 			return false;
 		}
-		/* The characterstic properties is the first byte of the attribute value */
+		/* The characteristic properties is the first byte of the attribute value */
 		len = attr->read(NULL, attr, &properties, sizeof(properties), 0);
 		if (len < 0) {
 			LOG_ERR("Failed to read attribute %p (err %zd)", attr, len);
@@ -6011,7 +6010,7 @@ static uint8_t ccc_save(const struct bt_gatt_attr *attr, uint16_t handle,
 
 	LOG_DBG("Storing CCCs handle 0x%04x value 0x%04x", handle, cfg->value);
 
-	CHECKIF(save->count >= CCC_STORE_MAX) {
+	if (save->count >= CCC_STORE_MAX) {
 		LOG_ERR("Too many Client Characteristic Configuration. "
 				"See CONFIG_BT_SETTINGS_CCC_STORE_MAX\n");
 		return BT_GATT_ITER_STOP;

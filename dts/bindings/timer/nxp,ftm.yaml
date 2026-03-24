@@ -41,7 +41,7 @@ properties:
           provides higher timer resolution than the other two clock sources.
         * fixed: it's a fixed clock defined by chip integration.
         * external: it's a clock that can be accessed externally to the chip and
-          passes through a sychronizer clocked by the FTM bus interface clock.
+          passes through a synchronizer clocked by the FTM bus interface clock.
 
       This clock source selection is independent of the bus interface clock
       driving the FTM module. Refer to the chip specific documentation for

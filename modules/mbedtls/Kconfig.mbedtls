@@ -227,6 +227,7 @@ config MBEDTLS_SSL_DTLS_CONNECTION_ID
 
 config MBEDTLS_X509_CRL_PARSE_C
 	bool "X.509 CRL parsing"
+	select MBEDTLS_X509_USE_C
 	help
 	  Used by X.509 CRL parsing
 
@@ -237,6 +238,7 @@ config MBEDTLS_X509_CSR_WRITE_C
 
 config MBEDTLS_X509_CSR_PARSE_C
 	bool "X.509 Certificate Signing Request parsing"
+	select MBEDTLS_X509_USE_C
 	help
 	  For reading X.509 certificate request.
 
@@ -244,6 +246,7 @@ config MBEDTLS_X509_CRT_WRITE_C
 	bool "X.509 certificate creation"
 
 config MBEDTLS_X509_CRT_PARSE_C
-	bool "X.509 certificate persing"
+	bool "X.509 certificate parsing"
+	select MBEDTLS_X509_USE_C
 
 endmenu # Mbed TLS configuration
