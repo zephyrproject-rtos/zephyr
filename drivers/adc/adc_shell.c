@@ -45,6 +45,9 @@ LOG_MODULE_REGISTER(adc_shell);
 #define CMD_HELP_GAIN	SHELL_HELP("Configure gain", NULL)
 #define CMD_HELP_PRINT	SHELL_HELP("Print current configuration", NULL)
 
+static const char *cmd_adc_dev_get_help =
+	SHELL_HELP("Select subcommand for ADC property label", NULL);
+
 #define ADC_HDL_LIST_ENTRY(node_id)                                                                \
 	{                                                                                          \
 		.dev = DEVICE_DT_GET(node_id),                                                     \
@@ -495,7 +498,7 @@ static void cmd_adc_dev_get(size_t idx, struct shell_static_entry *entry)
 		entry->syntax  = adc_list[idx].dev->name;
 		entry->handler = NULL;
 		entry->subcmd  = &sub_adc_cmds;
-		entry->help    = SHELL_HELP("Select subcommand for ADC property label", NULL);
+		entry->help    = cmd_adc_dev_get_help;
 	} else {
 		entry->syntax  = NULL;
 	}
