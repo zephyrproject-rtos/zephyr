@@ -36,7 +36,9 @@ static enum nrf_wifi_band nrf_wifi_map_zep_band_to_rpu(enum wifi_frequency_bands
 	}
 }
 
-int nrf_wifi_disp_scan_zep(const struct device *dev, struct wifi_scan_params *params,
+int nrf_wifi_disp_scan_zep(const struct device *dev,
+			   struct net_if *iface __unused,
+			   struct wifi_scan_params *params,
 			   scan_result_cb_t cb)
 {
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;

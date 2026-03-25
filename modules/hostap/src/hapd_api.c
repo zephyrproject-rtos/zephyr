@@ -50,15 +50,14 @@ static struct wifi_enterprise_creds_params hapd_enterprise_creds;
 	status;								\
 })
 
-static inline struct hostapd_iface *get_hostapd_handle(const struct device *dev)
+static inline struct hostapd_iface *get_hostapd_handle(struct net_if *iface)
 {
-	struct net_if *iface = net_if_lookup_by_dev(dev);
 	char if_name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
 	struct hostapd_iface *hapd;
 	int ret;
 
 	if (!iface) {
-		wpa_printf(MSG_ERROR, "Interface for device %s not found", dev->name);
+		wpa_printf(MSG_ERROR, "Interface is NULL");
 		return NULL;
 	}
 
@@ -346,7 +345,8 @@ out:
 	return -1;
 }
 
-int hostapd_add_enterprise_creds(const struct device *dev,
+int hostapd_add_enterprise_creds(const struct device *dev __unused,
+				 struct net_if *net_iface __unused,
 				 struct wifi_enterprise_creds_params *creds)
 {
 	int ret = 0;
@@ -365,21 +365,20 @@ out:
 }
 #endif
 
-int hostapd_ap_reg_domain(const struct device *dev,
-	struct wifi_reg_domain *reg_domain)
+int hostapd_ap_reg_domain(const struct device *dev __unused, struct net_if *net_iface,
+			  struct wifi_reg_domain *reg_domain)
 {
 	struct hostapd_iface *iface;
 	int ret = 0;
 
-	iface = get_hostapd_handle(dev);
+	iface = get_hostapd_handle(net_iface);
 	if (iface == NULL) {
-		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
 		ret = -ENODEV;
 		goto out;
 	}
 
 	if (iface->state == HAPD_IFACE_ENABLED) {
-		wpa_printf(MSG_ERROR, "Interface %s is operational and in SAP mode", dev->name);
+		wpa_printf(MSG_ERROR, "Interface is operational and in SAP mode");
 		ret = -EACCES;
 		goto out;
 	}
@@ -643,7 +642,8 @@ out:
 	return -1;
 }
 
-static int set_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params)
+static int set_ap_config_params(const struct device *dev, struct net_if *net_iface,
+				struct wifi_ap_config_params *params)
 {
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
 
@@ -651,15 +651,16 @@ static int set_ap_config_params(const struct device *dev, struct wifi_ap_config_
 		return -ENOTSUP;
 	}
 
-	return wifi_mgmt_api->ap_config_params(dev, params);
+	return wifi_mgmt_api->ap_config_params(dev, net_iface, params);
 }
 
-int hostapd_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params)
+int hostapd_ap_config_params(const struct device *dev, struct net_if *net_iface,
+			     struct wifi_ap_config_params *params)
 {
 	struct hostapd_iface *iface;
 	int ret = 0;
 
-	ret = set_ap_config_params(dev, params);
+	ret = set_ap_config_params(dev, net_iface, params);
 	if (ret && (ret != -ENOTSUP)) {
 		wpa_printf(MSG_ERROR, "Failed to set ap config params");
 		return -EINVAL;
@@ -667,10 +668,9 @@ int hostapd_ap_config_params(const struct device *dev, struct wifi_ap_config_par
 
 	k_mutex_lock(&hostapd_mutex, K_FOREVER);
 
-	iface = get_hostapd_handle(dev);
+	iface = get_hostapd_handle(net_iface);
 	if (iface == NULL) {
 		ret = -ENOENT;
-		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
 		goto out;
 	}
 
@@ -712,7 +712,8 @@ out:
 	return ret;
 }
 
-int hostapd_ap_status(const struct device *dev, struct wifi_iface_status *status)
+int hostapd_ap_status(const struct device *dev __unused, struct net_if *net_iface,
+		      struct wifi_iface_status *status)
 {
 	int ret = 0;
 	struct hostapd_iface *iface;
@@ -727,31 +728,30 @@ int hostapd_ap_status(const struct device *dev, struct wifi_iface_status *status
 
 	k_mutex_lock(&hostapd_mutex, K_FOREVER);
 
-	iface = get_hostapd_handle(dev);
+	iface = get_hostapd_handle(net_iface);
 	if (!iface) {
 		ret = -1;
-		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
 		goto out;
 	}
 
 	conf = iface->conf;
 	if (!conf) {
 		ret = -1;
-		wpa_printf(MSG_ERROR, "Conf %s not found", dev->name);
+		wpa_printf(MSG_ERROR, "Conf %d not found", net_if_get_by_iface(net_iface));
 		goto out;
 	}
 
 	bss = conf->bss[0];
 	if (!bss) {
 		ret = -1;
-		wpa_printf(MSG_ERROR, "Bss_conf %s not found", dev->name);
+		wpa_printf(MSG_ERROR, "Bss_conf %d not found", net_if_get_by_iface(net_iface));
 		goto out;
 	}
 
 	hapd = iface->bss[0];
 	if (!hapd) {
 		ret = -1;
-		wpa_printf(MSG_ERROR, "Bss %s not found", dev->name);
+		wpa_printf(MSG_ERROR, "Bss %d not found", net_if_get_by_iface(net_iface));
 		goto out;
 	}
 
@@ -790,22 +790,22 @@ out:
 	return ret;
 }
 
-int hostapd_11n_cfg(const struct device *dev, uint8_t enable)
+int hostapd_11n_cfg(const struct device *dev __unused, struct net_if *net_iface, uint8_t enable)
 {
 	int ret = 0;
 	struct hostapd_iface *iface;
 
 	k_mutex_lock(&hostapd_mutex, K_FOREVER);
 
-	iface = get_hostapd_handle(dev);
+	iface = get_hostapd_handle(net_iface);
 	if (!iface) {
-		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
 		ret = -ENODEV;
 		goto out;
 	}
 
 	if (iface->state == HAPD_IFACE_ENABLED) {
-		wpa_printf(MSG_ERROR, "Interface %s is operational and in SAP mode", dev->name);
+		wpa_printf(MSG_ERROR, "Interface %d is operational and in SAP mode",
+			   net_if_get_by_iface(net_iface));
 		ret = -EACCES;
 		goto out;
 	}
@@ -822,22 +822,22 @@ out:
 }
 
 #if CONFIG_WIFI_NM_WPA_SUPPLICANT_11AC
-int hostapd_11ac_cfg(const struct device *dev, uint8_t enable)
+int hostapd_11ac_cfg(const struct device *dev __unused, struct net_if *net_iface, uint8_t enable)
 {
 	int ret = 0;
 	struct hostapd_iface *iface;
 
 	k_mutex_lock(&hostapd_mutex, K_FOREVER);
 
-	iface = get_hostapd_handle(dev);
+	iface = get_hostapd_handle(net_iface);
 	if (!iface) {
-		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
 		ret = -ENODEV;
 		goto out;
 	}
 
 	if (iface->state == HAPD_IFACE_ENABLED) {
-		wpa_printf(MSG_ERROR, "Interface %s is operational and in SAP mode", dev->name);
+		wpa_printf(MSG_ERROR, "Interface %d is operational and in SAP mode",
+			   net_if_get_by_iface(net_iface));
 		ret = -EACCES;
 		goto out;
 	}
@@ -855,22 +855,22 @@ out:
 #endif
 
 #if CONFIG_WIFI_NM_WPA_SUPPLICANT_11AX
-int hostapd_11ax_cfg(const struct device *dev, uint8_t enable)
+int hostapd_11ax_cfg(const struct device *dev __unused, struct net_if *net_iface, uint8_t enable)
 {
 	int ret = 0;
 	struct hostapd_iface *iface;
 
 	k_mutex_lock(&hostapd_mutex, K_FOREVER);
 
-	iface = get_hostapd_handle(dev);
+	iface = get_hostapd_handle(net_iface);
 	if (!iface) {
-		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
 		ret = -ENODEV;
 		goto out;
 	}
 
 	if (iface->state == HAPD_IFACE_ENABLED) {
-		wpa_printf(MSG_ERROR, "Interface %s is operational and in SAP mode", dev->name);
+		wpa_printf(MSG_ERROR, "Interface %d is operational and in SAP mode",
+			   net_if_get_by_iface(net_iface));
 		ret = -EACCES;
 		goto out;
 	}
@@ -888,23 +888,23 @@ out:
 #endif
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_WPS
-static int hapd_ap_wps_pbc(const struct device *dev)
+static int hapd_ap_wps_pbc(struct net_if *net_iface)
 {
 	struct hostapd_iface *iface;
 	int ret = -1;
 
 	k_mutex_lock(&hostapd_mutex, K_FOREVER);
 
-	iface = get_hostapd_handle(dev);
+	iface = get_hostapd_handle(net_iface);
 	if (!iface) {
 		ret = -1;
-		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
 		goto out;
 	}
 
 	if (iface->state != HAPD_IFACE_ENABLED) {
 		ret = -EBUSY;
-		wpa_printf(MSG_ERROR, "Interface %s is not in enable state", dev->name);
+		wpa_printf(MSG_ERROR, "Interface %d is not in enable state",
+			   net_if_get_by_iface(net_iface));
 		goto out;
 	}
 
@@ -919,7 +919,7 @@ out:
 	return ret;
 }
 
-static int hapd_ap_wps_pin(const struct device *dev, struct wifi_wps_config_params *params)
+static int hapd_ap_wps_pin(struct net_if *net_iface, struct wifi_wps_config_params *params)
 {
 #define WPS_PIN_EXPIRE_TIME 120
 	struct hostapd_iface *iface;
@@ -928,16 +928,16 @@ static int hapd_ap_wps_pin(const struct device *dev, struct wifi_wps_config_para
 
 	k_mutex_lock(&hostapd_mutex, K_FOREVER);
 
-	iface = get_hostapd_handle(dev);
+	iface = get_hostapd_handle(net_iface);
 	if (!iface) {
 		ret = -1;
-		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
 		goto out;
 	}
 
 	if (iface->state != HAPD_IFACE_ENABLED) {
 		ret = -EBUSY;
-		wpa_printf(MSG_ERROR, "Interface %s is not in enable state", dev->name);
+		wpa_printf(MSG_ERROR, "Interface %d is not in enable state",
+			   net_if_get_by_iface(net_iface));
 		goto out;
 	}
 
@@ -965,21 +965,22 @@ out:
 	return ret;
 }
 
-int hostapd_ap_wps_config(const struct device *dev, struct wifi_wps_config_params *params)
+int hostapd_ap_wps_config(const struct device *dev __unused, struct net_if *net_iface,
+			  struct wifi_wps_config_params *params)
 {
 	int ret = 0;
 
 	if (params->oper == WIFI_WPS_PBC) {
-		ret = hapd_ap_wps_pbc(dev);
+		ret = hapd_ap_wps_pbc(net_iface);
 	} else if (params->oper == WIFI_WPS_PIN_GET || params->oper == WIFI_WPS_PIN_SET) {
-		ret = hapd_ap_wps_pin(dev, params);
+		ret = hapd_ap_wps_pin(net_iface, params);
 	}
 
 	return ret;
 }
 #endif
 
-int hostapd_ap_enable(const struct device *dev,
+int hostapd_ap_enable(const struct device *dev, struct net_if *net_iface,
 		      struct wifi_connect_req_params *params)
 {
 	struct hostapd_iface *iface;
@@ -987,14 +988,14 @@ int hostapd_ap_enable(const struct device *dev,
 	struct wpa_driver_capa capa;
 	int ret;
 
-	if (!net_if_is_admin_up(net_if_lookup_by_dev(dev))) {
+	if (!net_if_is_admin_up(net_iface)) {
 		wpa_printf(MSG_ERROR,
-			   "Interface %s is down, dropping connect",
-			   dev->name);
+			   "Interface %d is down, dropping connect",
+			   net_if_get_by_iface(net_iface));
 		return -1;
 	}
 
-	ret = set_ap_bandwidth(dev, params->bandwidth);
+	ret = set_ap_bandwidth(dev, net_iface, params->bandwidth);
 	if (ret && (ret != -ENOTSUP)) {
 		wpa_printf(MSG_ERROR, "Failed to set ap bandwidth");
 		return -EINVAL;
@@ -1002,10 +1003,9 @@ int hostapd_ap_enable(const struct device *dev,
 
 	k_mutex_lock(&hostapd_mutex, K_FOREVER);
 
-	iface = get_hostapd_handle(dev);
+	iface = get_hostapd_handle(net_iface);
 	if (!iface) {
 		ret = -1;
-		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
 		goto out;
 	}
 
@@ -1013,7 +1013,8 @@ int hostapd_ap_enable(const struct device *dev,
 
 	if (iface->state == HAPD_IFACE_ENABLED) {
 		ret = -EBUSY;
-		wpa_printf(MSG_ERROR, "Interface %s is not in disable state", dev->name);
+		wpa_printf(MSG_ERROR, "Interface %d is not in disable state",
+			   net_if_get_by_iface(net_iface));
 		goto out;
 	}
 
@@ -1051,23 +1052,23 @@ out:
 	return ret;
 }
 
-int hostapd_ap_disable(const struct device *dev)
+int hostapd_ap_disable(const struct device *dev __unused, struct net_if *net_iface)
 {
 	struct hostapd_iface *iface;
 	int ret = 0;
 
 	k_mutex_lock(&hostapd_mutex, K_FOREVER);
 
-	iface = get_hostapd_handle(dev);
+	iface = get_hostapd_handle(net_iface);
 	if (!iface) {
 		ret = -ENOENT;
-		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
 		goto out;
 	}
 
 	if (iface->state != HAPD_IFACE_ENABLED) {
 		ret = -EBUSY;
-		wpa_printf(MSG_ERROR, "Interface %s is not in enable state", dev->name);
+		wpa_printf(MSG_ERROR, "Interface %d is not in enable state",
+			   net_if_get_by_iface(net_iface));
 		goto out;
 	}
 
@@ -1082,7 +1083,7 @@ out:
 	return ret;
 }
 
-int hostapd_ap_sta_disconnect(const struct device *dev,
+int hostapd_ap_sta_disconnect(const struct device *dev __unused, struct net_if *net_iface,
 			      const uint8_t *mac_addr)
 {
 	struct hostapd_iface *iface;
@@ -1090,16 +1091,16 @@ int hostapd_ap_sta_disconnect(const struct device *dev,
 
 	k_mutex_lock(&hostapd_mutex, K_FOREVER);
 
-	iface = get_hostapd_handle(dev);
+	iface = get_hostapd_handle(net_iface);
 	if (!iface) {
 		ret = -1;
-		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
 		goto out;
 	}
 
 	if (iface->state != HAPD_IFACE_ENABLED) {
 		ret = -EBUSY;
-		wpa_printf(MSG_ERROR, "Interface %s is not in enable state", dev->name);
+		wpa_printf(MSG_ERROR, "Interface %d is not in enable state",
+			   net_if_get_by_iface(net_iface));
 		goto out;
 	}
 
@@ -1121,7 +1122,8 @@ out:
 }
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
-int hostapd_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params)
+int hostapd_dpp_dispatch(const struct device *dev __unused, struct net_if *net_iface,
+			 struct wifi_dpp_params *params)
 {
 	int ret;
 	char *cmd = NULL;
@@ -1131,9 +1133,8 @@ int hostapd_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *param
 		return -EINVAL;
 	}
 
-	iface = get_hostapd_handle(dev);
+	iface = get_hostapd_handle(net_iface);
 	if (!iface) {
-		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
 		return -ENOENT;
 	}
 

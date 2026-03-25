@@ -485,7 +485,7 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 	}
 }
 
-static int esp32_wifi_disconnect(const struct device *dev)
+static int esp32_wifi_disconnect(const struct device *dev __unused, struct net_if *iface __unused)
 {
 	int ret = esp_wifi_disconnect();
 
@@ -498,10 +498,10 @@ static int esp32_wifi_disconnect(const struct device *dev)
 }
 
 static int esp32_wifi_connect(const struct device *dev,
+			    struct net_if *iface,
 			    struct wifi_connect_req_params *params)
 {
 	struct esp32_wifi_runtime *data = dev->data;
-	struct net_if *iface = net_if_lookup_by_dev(dev);
 	wifi_mode_t mode;
 	int ret;
 
@@ -633,7 +633,9 @@ static int esp32_wifi_connect(const struct device *dev,
 	return 0;
 }
 
-static int esp32_wifi_scan(const struct device *dev, struct wifi_scan_params *params,
+static int esp32_wifi_scan(const struct device *dev,
+			   struct net_if *iface __unused,
+			   struct wifi_scan_params *params,
 			   scan_result_cb_t cb)
 {
 	struct esp32_wifi_runtime *data = dev->data;
@@ -689,11 +691,10 @@ static int esp32_wifi_scan(const struct device *dev, struct wifi_scan_params *pa
 	return 0;
 };
 
-static int esp32_wifi_ap_enable(const struct device *dev,
-			 struct wifi_connect_req_params *params)
+static int esp32_wifi_ap_enable(const struct device *dev, struct net_if *iface,
+				struct wifi_connect_req_params *params)
 {
 	struct esp32_wifi_runtime *data = dev->data;
-	struct net_if *iface = net_if_lookup_by_dev(dev);
 	esp_err_t err = 0;
 
 	/* Build Wi-Fi configuration for AP mode */
@@ -803,11 +804,10 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 	return 0;
 };
 
-static int esp32_wifi_ap_disable(const struct device *dev)
+static int esp32_wifi_ap_disable(const struct device *dev, struct net_if *iface __maybe_unused)
 {
 #if !defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 	struct esp32_wifi_runtime *data = dev->data;
-	struct net_if *iface = net_if_lookup_by_dev(dev);
 #endif
 	int err = 0;
 	wifi_mode_t mode;
@@ -836,7 +836,9 @@ static int esp32_wifi_ap_disable(const struct device *dev)
 	return 0;
 };
 
-static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status *status)
+static int esp32_wifi_status(const struct device *dev,
+			     struct net_if *iface __unused,
+			     struct wifi_iface_status *status)
 {
 	struct esp32_wifi_runtime *data = dev->data;
 	wifi_mode_t mode;
@@ -938,7 +940,9 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 	return 0;
 }
 
-static int esp32_wifi_set_power_save(const struct device *dev, struct wifi_ps_params *params)
+static int esp32_wifi_set_power_save(const struct device *dev,
+				     struct net_if *iface __unused,
+				     struct wifi_ps_params *params)
 {
 	wifi_config_t config;
 	esp_err_t rc;
@@ -1040,7 +1044,9 @@ static void esp32_wifi_init_ap(struct net_if *iface)
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
-static int esp32_wifi_get_stats(const struct device *dev, struct net_stats_wifi *stats)
+static int esp32_wifi_get_stats(const struct device *dev,
+				struct net_if *iface __unused,
+				struct net_stats_wifi *stats)
 {
 	struct esp32_wifi_runtime *data = dev->data;
 
@@ -1060,7 +1066,8 @@ static int esp32_wifi_get_stats(const struct device *dev, struct net_stats_wifi 
 	return 0;
 }
 
-static int esp32_wifi_reset_stats(const struct device *dev)
+static int esp32_wifi_reset_stats(const struct device *dev,
+				  struct net_if *iface __unused)
 {
 	struct esp32_wifi_runtime *data = dev->data;
 

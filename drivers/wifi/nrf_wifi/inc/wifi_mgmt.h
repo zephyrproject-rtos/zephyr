@@ -29,10 +29,12 @@ struct twt_interval_float {
 };
 
 int nrf_wifi_set_power_save(const struct device *dev,
+			    struct net_if *iface,
 			    struct wifi_ps_params *params);
 
 int nrf_wifi_set_twt(const struct device *dev,
-	struct wifi_twt_params *twt_params);
+		     struct net_if *iface,
+		     struct wifi_twt_params *twt_params);
 
 void nrf_wifi_event_proc_twt_setup_zep(void *vif_ctx,
 		struct nrf_wifi_umac_cmd_config_twt *twt_setup_info,
@@ -50,7 +52,8 @@ int nrf_wifi_twt_teardown_flows(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep,
 		unsigned char start_flow_id, unsigned char end_flow_id);
 
 int nrf_wifi_get_power_save_config(const struct device *dev,
-		struct wifi_ps_config *ps_config);
+				   struct net_if *iface,
+				   struct wifi_ps_config *ps_config);
 
 void nrf_wifi_event_proc_get_power_save_info(void *vif_ctx,
 		struct nrf_wifi_umac_event_power_save_info *ps_info,
@@ -59,25 +62,31 @@ void nrf_wifi_event_proc_get_power_save_info(void *vif_ctx,
 
 #ifdef CONFIG_NRF70_SYSTEM_WITH_RAW_MODES
 int nrf_wifi_mode(const struct device *dev,
+		  struct net_if *iface,
 		  struct wifi_mode_info *mode);
 #endif
 
 #if defined(CONFIG_NRF70_RAW_DATA_TX) || defined(CONFIG_NRF70_RAW_DATA_RX)
 int nrf_wifi_channel(const struct device *dev,
+		     struct net_if *iface,
 		     struct wifi_channel_info *channel);
 #endif /* CONFIG_NRF70_RAW_DATA_TX || CONFIG_NRF70_RAW_DATA_RX */
 
 #if defined(CONFIG_NRF70_RAW_DATA_RX) || defined(CONFIG_NRF70_PROMISC_DATA_RX)
 int nrf_wifi_filter(const struct device *dev,
+		    struct net_if *iface,
 		    struct wifi_filter_info *filter);
 #endif /* CONFIG_NRF70_RAW_DATA_RX || CONFIG_NRF70_PROMISC_DATA_RX */
 
 int nrf_wifi_set_rts_threshold(const struct device *dev,
+			       struct net_if *iface,
 			       unsigned int rts_threshold);
 
 int nrf_wifi_get_rts_threshold(const struct device *dev,
+			       struct net_if *iface,
 			       unsigned int *rts_threshold);
 
 int nrf_wifi_set_bss_max_idle_period(const struct device *dev,
+				     struct net_if *iface,
 				     unsigned short bss_max_idle_period);
 #endif /*  __ZEPHYR_WIFI_MGMT_H__ */

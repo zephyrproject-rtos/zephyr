@@ -97,7 +97,9 @@ out:
 	return ret ? -EIO : 0;
 }
 
-int siwx91x_set_power_save(const struct device *dev, struct wifi_ps_params *params)
+int siwx91x_set_power_save(const struct device *dev,
+			   struct net_if *iface __unused,
+			   struct wifi_ps_params *params)
 {
 	struct siwx91x_dev *sidev = dev->data;
 	int ret;
@@ -154,7 +156,9 @@ int siwx91x_set_power_save(const struct device *dev, struct wifi_ps_params *para
 	return 0;
 }
 
-int siwx91x_get_power_save_config(const struct device *dev, struct wifi_ps_config *config)
+int siwx91x_get_power_save_config(const struct device *dev,
+				 struct net_if *iface __unused,
+				 struct wifi_ps_config *config)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	sl_wifi_performance_profile_v2_t sl_ps_profile;
@@ -314,7 +318,9 @@ static int siwx91x_set_twt_teardown(struct wifi_twt_params *params)
 	return 0;
 }
 
-int siwx91x_set_twt(const struct device *dev, struct wifi_twt_params *params)
+int siwx91x_set_twt(const struct device *dev,
+		    struct net_if *iface __unused,
+		    struct wifi_twt_params *params)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	struct siwx91x_dev *sidev = dev->data;
