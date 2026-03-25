@@ -137,8 +137,8 @@ static void uart_bridge_handle_rx(const struct device *dev,
 		&data->peer[uart_bridge_get_idx(dev, bridge_dev, true)];
 
 	uint8_t *recv_buf;
-	int rb_len, recv_len;
-	int ret;
+	uint32_t rb_len;
+	int recv_len;
 
 	if (ring_buf_space_get(&own_data->rb) < RING_BUF_FULL_THRESHOLD) {
 		LOG_DBG("%s: buffer full: pause", dev->name);
@@ -147,7 +147,7 @@ static void uart_bridge_handle_rx(const struct device *dev,
 		return;
 	}
 
-	rb_len = ring_buf_put_claim(&own_data->rb, &recv_buf, RING_BUF_SIZE);
+	rb_len = ring_buf_put_ptr(&own_data->rb, &recv_buf, 0);
 	if (rb_len == 0) {
 		LOG_WRN("%s: ring_buf full", dev->name);
 		return;
@@ -155,17 +155,11 @@ static void uart_bridge_handle_rx(const struct device *dev,
 
 	recv_len = uart_fifo_read(dev, recv_buf, rb_len);
 	if (recv_len < 0) {
-		ring_buf_put_finish(&own_data->rb, 0);
 		LOG_ERR("%s: rx error: %d", dev->name, recv_len);
 		return;
 	}
 
-	ret = ring_buf_put_finish(&own_data->rb, recv_len);
-	if (ret < 0) {
-		LOG_ERR("%s: ring_buf_put_finish error: %d", dev->name, rb_len);
-		return;
-	}
-
+	ring_buf_commit(&own_data->rb, (uint32_t)recv_len);
 	uart_irq_tx_enable(peer_dev);
 }
 
@@ -181,10 +175,10 @@ static void uart_bridge_handle_tx(const struct device *dev,
 		&data->peer[uart_bridge_get_idx(dev, bridge_dev, false)];
 
 	uint8_t *send_buf;
-	int rb_len, sent_len;
-	int ret;
+	uint32_t rb_len;
+	int sent_len;
 
-	rb_len = ring_buf_get_claim(&peer_data->rb, &send_buf, RING_BUF_SIZE);
+	rb_len = ring_buf_get_ptr(&peer_data->rb, &send_buf, 0);
 	if (rb_len == 0) {
 		LOG_DBG("%s: buffer empty, disable tx irq", dev->name);
 		uart_irq_tx_disable(dev);
@@ -193,16 +187,11 @@ static void uart_bridge_handle_tx(const struct device *dev,
 
 	sent_len = uart_fifo_fill(dev, send_buf, rb_len);
 	if (sent_len < 0) {
-		ring_buf_get_finish(&peer_data->rb, 0);
 		LOG_ERR("%s: tx error: %d", dev->name, sent_len);
 		return;
 	}
 
-	ret = ring_buf_get_finish(&peer_data->rb, sent_len);
-	if (ret < 0) {
-		LOG_ERR("ring_buf_get_finish error: %d", ret);
-		return;
-	}
+	ring_buf_consume(&peer_data->rb, (uint32_t)sent_len);
 
 	if (peer_data->paused &&
 	    ring_buf_space_get(&peer_data->rb) > RING_BUF_FULL_THRESHOLD) {
