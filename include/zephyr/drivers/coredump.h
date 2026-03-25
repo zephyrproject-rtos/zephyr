@@ -115,10 +115,7 @@ __subsystem struct coredump_driver_api {
 static inline bool coredump_device_register_memory(const struct device *dev,
 	struct coredump_mem_region_node *region)
 {
-	const struct coredump_driver_api *api =
-		(const struct coredump_driver_api *)dev->api;
-
-	return api->register_memory(dev, region);
+	return DEVICE_API_GET(coredump, dev)->register_memory(dev, region);
 }
 
 /**
@@ -134,10 +131,7 @@ static inline bool coredump_device_register_memory(const struct device *dev,
 static inline bool coredump_device_unregister_memory(const struct device *dev,
 	struct coredump_mem_region_node *region)
 {
-	const struct coredump_driver_api *api =
-		(const struct coredump_driver_api *)dev->api;
-
-	return api->unregister_memory(dev, region);
+	return DEVICE_API_GET(coredump, dev)->unregister_memory(dev, region);
 }
 
 /**
@@ -152,10 +146,7 @@ static inline bool coredump_device_unregister_memory(const struct device *dev,
 static inline bool coredump_device_register_callback(const struct device *dev,
 	coredump_dump_callback_t callback)
 {
-	const struct coredump_driver_api *api =
-		(const struct coredump_driver_api *)dev->api;
-
-	return api->register_callback(dev, callback);
+	return DEVICE_API_GET(coredump, dev)->register_callback(dev, callback);
 }
 
 /**
