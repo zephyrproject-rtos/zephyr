@@ -5,6 +5,7 @@
  */
 
 #include <renesas/rcar/gen5/rcar_gen5_cr52.dtsi>
+#include <renesas/r8a78000_power_domains.dtsi>
 #include <zephyr/dt-bindings/clock/r8a78000_cpg_mssr.h>
 
 / {
