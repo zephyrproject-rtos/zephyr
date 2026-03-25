@@ -1746,11 +1746,11 @@ static void modem_cmux_transmit_handler(struct k_work *item)
 			break;
 		}
 
-		reserved_size = ring_buf_get_claim(&cmux->transmit_rb, &reserved, UINT32_MAX);
+		reserved_size = ring_buf_get_ptr(&cmux->transmit_rb,
+						 &reserved);
 
 		ret = modem_pipe_transmit(cmux->pipe, reserved, reserved_size);
 		if (ret < 0) {
-			ring_buf_get_finish(&cmux->transmit_rb, 0);
 			if (ret != -EPERM) {
 				LOG_ERR("Failed to %s %u bytes. (%d)",
 					"transmit", reserved_size, ret);
@@ -1758,7 +1758,7 @@ static void modem_cmux_transmit_handler(struct k_work *item)
 			break;
 		}
 
-		ring_buf_get_finish(&cmux->transmit_rb, (uint32_t)ret);
+		ring_buf_consume(&cmux->transmit_rb, (uint32_t)ret);
 
 		if (ret < reserved_size) {
 			LOG_DBG("Transmitted only %u out of %u bytes at once.", ret, reserved_size);
