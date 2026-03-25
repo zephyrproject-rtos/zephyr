@@ -269,8 +269,7 @@ static void tx_work_handler(struct k_work *work)
 		return;
 	}
 
-	len = ring_buf_get_claim(dev_data->tx_ringbuf, &data,
-				 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);
+	len = ring_buf_get_ptr(dev_data->tx_ringbuf, &data);
 
 	if (!len) {
 		LOG_DBG("Nothing to send");
@@ -294,7 +293,7 @@ static void tx_work_handler(struct k_work *work)
 	usb_transfer(ep, data, len, USB_TRANS_WRITE,
 		     cdc_acm_write_cb, dev_data);
 
-	ring_buf_get_finish(dev_data->tx_ringbuf, len);
+	ring_buf_consume(dev_data->tx_ringbuf, len);
 }
 
 static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
