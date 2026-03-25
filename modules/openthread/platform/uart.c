@@ -57,38 +57,20 @@ static uint16_t write_length;
 
 static void uart_rx_handle(const struct device *dev)
 {
+	int rc;
 	uint8_t *data;
-	uint32_t len;
-	uint32_t rd_len;
-	bool new_data = false;
 
-	do {
-		len = ring_buf_put_claim(
-			ot_uart.rx_ringbuf, &data,
-			ot_uart.rx_ringbuf->size);
-		if (len > 0) {
-			rd_len = uart_fifo_read(dev, data, len);
-			if (rd_len > 0) {
-				new_data = true;
-			}
-
-			int err = ring_buf_put_finish(
-				ot_uart.rx_ringbuf, rd_len);
-			(void)err;
-			__ASSERT_NO_MSG(err == 0);
-		} else {
-			uint8_t dummy;
-
-			/* No space in the ring buffer - consume byte. */
+	while (0 < uart_irq_update(dev) && 0 < uart_irq_rx_ready(dev)) {
+		rc = ring_buf_put_ptr(ot_uart.rx_ringbuf, &data);
+		if (rc == 0) {
 			LOG_WRN("RX ring buffer full.");
-
-			rd_len = uart_fifo_read(dev, &dummy, 1);
+			ring_buf_consume(ot_uart.rx_ringbuf, 1);
+			rc = ring_buf_put_ptr(ot_uart.rx_ringbuf, &data);
 		}
-	} while (rd_len && (rd_len == len));
-
-	if (new_data) {
-		otSysEventSignalPending();
+		ring_buf_commit(ot_uart.rx_ringbuf, uart_fifo_read(dev, data, len));
 	}
+
+	otSysEventSignalPending();
 }
 
 static void uart_tx_handle(const struct device *dev)
@@ -187,18 +169,9 @@ void platformUartProcess(otInstance *aInstance)
 	const uint8_t *data;
 
 	/* Process UART RX */
-	while ((len = ring_buf_get_claim(
-			ot_uart.rx_ringbuf,
-			(uint8_t **)&data,
-			ot_uart.rx_ringbuf->size)) > 0) {
-		int err;
-
+	while ((len = ring_buf_get_ptr(ot_uart.rx_ringbuf, (uint8_t **)&data)) > 0) {
 		otPlatUartReceived(data, len);
-		err = ring_buf_get_finish(
-				ot_uart.rx_ringbuf,
-				len);
-		(void)err;
-		__ASSERT_NO_MSG(err == 0);
+		ring_buf_consume(ot_uart.rx_ringbuf, len);
 	}
 
 	/* Process UART TX */
