@@ -684,10 +684,7 @@ __syscall int espi_config(const struct device *dev, struct espi_cfg *cfg);
 static inline int z_impl_espi_config(const struct device *dev,
 				     struct espi_cfg *cfg)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	return api->config(dev, cfg);
+	return DEVICE_API_GET(espi, dev)->config(dev, cfg);
 }
 
 /**
@@ -708,10 +705,7 @@ __syscall bool espi_get_channel_status(const struct device *dev,
 static inline bool z_impl_espi_get_channel_status(const struct device *dev,
 						  enum espi_channel ch)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	return api->get_channel_status(dev, ch);
+	return DEVICE_API_GET(espi, dev)->get_channel_status(dev, ch);
 }
 
 /**
@@ -734,8 +728,7 @@ __syscall int espi_read_request(const struct device *dev,
 static inline int z_impl_espi_read_request(const struct device *dev,
 					   struct espi_request_packet *req)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->read_request) {
 		return -ENOTSUP;
@@ -764,8 +757,7 @@ __syscall int espi_write_request(const struct device *dev,
 static inline int z_impl_espi_write_request(const struct device *dev,
 					    struct espi_request_packet *req)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->write_request) {
 		return -ENOTSUP;
@@ -798,8 +790,7 @@ static inline int z_impl_espi_read_lpc_request(const struct device *dev,
 					       enum lpc_peripheral_opcode op,
 					       uint32_t *data)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->read_lpc_request) {
 		return -ENOTSUP;
@@ -831,8 +822,7 @@ static inline int z_impl_espi_write_lpc_request(const struct device *dev,
 						enum lpc_peripheral_opcode op,
 						uint32_t *data)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->write_lpc_request) {
 		return -ENOTSUP;
@@ -864,10 +854,7 @@ static inline int z_impl_espi_send_vwire(const struct device *dev,
 					 enum espi_vwire_signal signal,
 					 uint8_t level)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	return api->send_vwire(dev, signal, level);
+	return DEVICE_API_GET(espi, dev)->send_vwire(dev, signal, level);
 }
 
 /**
@@ -890,10 +877,7 @@ static inline int z_impl_espi_receive_vwire(const struct device *dev,
 					    enum espi_vwire_signal signal,
 					    uint8_t *level)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	return api->receive_vwire(dev, signal, level);
+	return DEVICE_API_GET(espi, dev)->receive_vwire(dev, signal, level);
 }
 
 /**
@@ -913,8 +897,7 @@ __syscall int espi_send_oob(const struct device *dev,
 static inline int z_impl_espi_send_oob(const struct device *dev,
 				       struct espi_oob_packet *pckt)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->send_oob) {
 		return -ENOTSUP;
@@ -940,8 +923,7 @@ __syscall int espi_receive_oob(const struct device *dev,
 static inline int z_impl_espi_receive_oob(const struct device *dev,
 					  struct espi_oob_packet *pckt)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->receive_oob) {
 		return -ENOTSUP;
@@ -969,8 +951,7 @@ __syscall int espi_read_flash(const struct device *dev,
 static inline int z_impl_espi_read_flash(const struct device *dev,
 					 struct espi_flash_packet *pckt)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->flash_read) {
 		return -ENOTSUP;
@@ -998,8 +979,7 @@ __syscall int espi_write_flash(const struct device *dev,
 static inline int z_impl_espi_write_flash(const struct device *dev,
 					  struct espi_flash_packet *pckt)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->flash_write) {
 		return -ENOTSUP;
@@ -1027,8 +1007,7 @@ __syscall int espi_flash_erase(const struct device *dev,
 static inline int z_impl_espi_flash_erase(const struct device *dev,
 					  struct espi_flash_packet *pckt)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->flash_erase) {
 		return -ENOTSUP;
@@ -1132,8 +1111,7 @@ static inline void espi_init_callback(struct espi_callback *callback,
 static inline int espi_add_callback(const struct device *dev,
 				    struct espi_callback *callback)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->manage_callback) {
 		return -ENOTSUP;
@@ -1161,8 +1139,7 @@ static inline int espi_add_callback(const struct device *dev,
 static inline int espi_remove_callback(const struct device *dev,
 				       struct espi_callback *callback)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->manage_callback) {
 		return -ENOTSUP;
