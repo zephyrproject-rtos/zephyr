@@ -265,9 +265,9 @@ static void uart_bitbang_tx_counter_top_interrupt(const struct device *dev, void
 	switch (data->tx_state) {
 	case UART_BITBANG_IDLE:
 		/* Claim the next data */
-		size = ring_buf_get_claim(data->tx_ringbuf, (uint8_t **)&data->tx_data,
-					  sizeof(uint16_t));
-		if (size == sizeof(uint16_t)) {
+		size = ring_buf_get_ptr(data->tx_ringbuf,
+					(uint8_t **)&data->tx_data);
+		if (sizeof(uint16_t) <= size) {
 			/* Start next transmission */
 			data->tx_index = 0;
 			data->tx_parity = uart_bitbang_compute_parity(uart_dev, *data->tx_data);
@@ -333,7 +333,7 @@ static void uart_bitbang_tx_counter_top_interrupt(const struct device *dev, void
 		break;
 	case UART_BITBANG_COMPLETE:
 		/* Terminate current transfer */
-		ring_buf_get_finish(data->tx_ringbuf, sizeof(uint16_t));
+		ring_buf_consume(data->tx_ringbuf, sizeof(uint16_t));
 		data->tx_state = UART_BITBANG_IDLE;
 		break;
 	}

@@ -139,7 +139,7 @@ static void tx_work_handler(struct k_work *work)
 		 * peers, and the same chunk is sent to everyone. This avoids
 		 * managing separate read pointers: one per connection.
 		 */
-		len = ring_buf_get_claim(dev_data->uart.tx_ringbuf, &data, chunk_size);
+		len = MIN(ring_buf_get_ptr(dev_data->uart.tx_ringbuf, &data), chunk_size);
 		if (len > 0) {
 			err = bt_nus_inst_send(NULL, dev_data->bt.inst, data, len);
 			if (err) {
@@ -147,7 +147,7 @@ static void tx_work_handler(struct k_work *work)
 			}
 		}
 
-		ring_buf_get_finish(dev_data->uart.tx_ringbuf, len);
+		ring_buf_consume(dev_data->uart.tx_ringbuf, len);
 	} while (len > 0 && !err);
 
 	if ((ring_buf_space_get(dev_data->uart.tx_ringbuf) > 0) && dev_data->uart.tx_irq_ena) {
