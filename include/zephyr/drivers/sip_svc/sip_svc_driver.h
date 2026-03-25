@@ -13,8 +13,6 @@
 #include <zephyr/drivers/sip_svc/sip_svc_proto.h>
 #include <zephyr/sip_svc/sip_svc_controller.h>
 
-#define DEV_API(dev) ((struct svc_driver_api *)(dev)->api)
-
 /**
  * @brief Length of SVC conduit name.
  *
@@ -128,7 +126,7 @@ static inline void z_impl_sip_supervisory_call(const struct device *dev, unsigne
 					       unsigned long arg6, struct arm_smccc_res *res)
 {
 	__ASSERT(dev, "dev shouldn't be NULL");
-	const struct svc_driver_api *api = DEV_API(dev);
+	const struct svc_driver_api *api = DEVICE_API_GET(svc, dev);
 
 	__ASSERT(api->sip_supervisory_call, "sip_supervisory_call shouldn't be NULL");
 	__ASSERT(res, "response pointer shouldn't be NULL");
@@ -152,7 +150,7 @@ static inline bool z_impl_sip_svc_plat_func_id_valid(const struct device *dev, u
 						     uint32_t func_id)
 {
 	__ASSERT(dev, "dev shouldn't be NULL");
-	const struct svc_driver_api *api = DEV_API(dev);
+	const struct svc_driver_api *api = DEVICE_API_GET(svc, dev);
 
 	__ASSERT(api->sip_svc_plat_func_id_valid,
 		 "sip_svc_plat_func_id_valid func shouldn't be NULL");
@@ -175,7 +173,7 @@ static inline uint32_t z_impl_sip_svc_plat_format_trans_id(const struct device *
 							   uint32_t client_idx, uint32_t trans_idx)
 {
 	__ASSERT(dev, "dev shouldn't be NULL");
-	const struct svc_driver_api *api = DEV_API(dev);
+	const struct svc_driver_api *api = DEVICE_API_GET(svc, dev);
 
 	__ASSERT(api->sip_svc_plat_format_trans_id,
 		 "sip_svc_plat_format_trans_id func shouldn't be NULL");
@@ -196,7 +194,7 @@ static inline uint32_t z_impl_sip_svc_plat_get_trans_idx(const struct device *de
 							 uint32_t trans_id)
 {
 	__ASSERT(dev, "dev shouldn't be NULL");
-	const struct svc_driver_api *api = DEV_API(dev);
+	const struct svc_driver_api *api = DEVICE_API_GET(svc, dev);
 
 	__ASSERT(api->sip_svc_plat_get_trans_idx,
 		 "sip_svc_plat_get_trans_idx func shouldn't be NULL");
@@ -218,7 +216,7 @@ static inline void z_impl_sip_svc_plat_update_trans_id(const struct device *dev,
 						       uint32_t trans_id)
 {
 	__ASSERT(dev, "dev shouldn't be NULL");
-	const struct svc_driver_api *api = DEV_API(dev);
+	const struct svc_driver_api *api = DEVICE_API_GET(svc, dev);
 
 	__ASSERT(api->sip_svc_plat_update_trans_id,
 		 "sip_svc_plat_update_trans_id func shouldn't be NULL");
@@ -241,7 +239,7 @@ static inline uint32_t z_impl_sip_svc_plat_get_error_code(const struct device *d
 							  struct arm_smccc_res *res)
 {
 	__ASSERT(dev, "dev shouldn't be NULL");
-	const struct svc_driver_api *api = DEV_API(dev);
+	const struct svc_driver_api *api = DEVICE_API_GET(svc, dev);
 
 	__ASSERT(api->sip_svc_plat_get_error_code,
 		 "sip_svc_plat_get_error_code func shouldn't be NULL");
@@ -278,7 +276,7 @@ static inline int z_impl_sip_svc_plat_async_res_req(const struct device *dev, un
 						    unsigned long *a7, char *buf, size_t size)
 {
 	__ASSERT(dev, "dev shouldn't be NULL");
-	const struct svc_driver_api *api = DEV_API(dev);
+	const struct svc_driver_api *api = DEVICE_API_GET(svc, dev);
 
 	__ASSERT(api->sip_svc_plat_async_res_req,
 		 "sip_svc_plat_async_res_req func shouldn't be NULL");
@@ -315,7 +313,7 @@ static inline int z_impl_sip_svc_plat_async_res_res(const struct device *dev,
 						    size_t *size, uint32_t *trans_id)
 {
 	__ASSERT(dev, "dev shouldn't be NULL");
-	const struct svc_driver_api *api = DEV_API(dev);
+	const struct svc_driver_api *api = DEVICE_API_GET(svc, dev);
 
 	__ASSERT(api->sip_svc_plat_async_res_res,
 		 "sip_svc_plat_async_res_res func shouldn't be NULL");
@@ -339,7 +337,7 @@ static inline void z_impl_sip_svc_plat_free_async_memory(const struct device *de
 							 struct sip_svc_request *request)
 {
 	__ASSERT(dev, "dev shouldn't be NULL");
-	const struct svc_driver_api *api = DEV_API(dev);
+	const struct svc_driver_api *api = DEVICE_API_GET(svc, dev);
 
 	__ASSERT(api->sip_svc_plat_free_async_memory,
 		 "sip_svc_plat_free_async_memory func shouldn't be NULL");
