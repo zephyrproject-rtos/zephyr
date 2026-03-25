@@ -336,6 +336,14 @@ struct uarte_nrfx_data {
 	(baudrate) == 921600 ? NRF_UARTE_BAUDRATE_921600 :	\
 	(baudrate) == 1000000 ? NRF_UARTE_BAUDRATE_1000000 : 0)
 
+/* Convert Zephyr data bits enum to HAL enum. Use 8 bit data size first as it is the most common. */
+#define DATABITS_TO_NRF_FRAMESIZE(data_bits)					\
+	((data_bits) == UART_CFG_DATA_BITS_8 ? NRF_UARTE_FRAME_SIZE_8_BIT :	\
+	 (data_bits) == UART_CFG_DATA_BITS_5 ? NRF_UARTE_FRAME_SIZE_5_BIT :	\
+	 (data_bits) == UART_CFG_DATA_BITS_6 ? NRF_UARTE_FRAME_SIZE_6_BIT :	\
+	 (data_bits) == UART_CFG_DATA_BITS_7 ? NRF_UARTE_FRAME_SIZE_7_BIT :	\
+	 NRF_UARTE_FRAME_SIZE_9_BIT)
+
 #define UARTE_MIN_BUF_SWAP_LEN 10
 
 #define UARTE_US_TO_BYTES(baudrate) \
@@ -618,9 +626,11 @@ static int uarte_nrfx_configure(const struct device *dev,
 	}
 #endif
 
+#ifndef NRF_UARTE_HAS_FRAME_SIZE
 	if (cfg->data_bits != UART_CFG_DATA_BITS_8) {
 		return -ENOTSUP;
 	}
+#endif
 
 	switch (cfg->flow_ctrl) {
 	case UART_CFG_FLOW_CTRL_NONE:
@@ -662,7 +672,7 @@ static int uarte_nrfx_configure(const struct device *dev,
 #endif
 
 #if NRF_UARTE_HAS_FRAME_SIZE
-	uarte_cfg.frame_size = NRF_UARTE_FRAME_SIZE_8_BIT;
+	uarte_cfg.frame_size = DATABITS_TO_NRF_FRAMESIZE(cfg->data_bits);
 	uarte_cfg.endian = NRF_UARTE_ENDIAN_MSB;
 #endif
 
@@ -3241,6 +3251,28 @@ static int uarte_instance_deinit(const struct device *dev)
 #define UARTE_DISABLE_RX_INIT(node_id) \
 	.disable_rx = DT_PROP(node_id, disable_rx)
 
+#define _NRF_DT_FRAMESIZE(data_bits) ((data_bits) == 5 ? NRF_UARTE_FRAME_SIZE_5_BIT :	\
+		(data_bits) == 6 ? NRF_UARTE_FRAME_SIZE_6_BIT :				\
+		(data_bits) == 7 ? NRF_UARTE_FRAME_SIZE_7_BIT :				\
+		(data_bits) == 8 ? NRF_UARTE_FRAME_SIZE_8_BIT : NRF_UARTE_FRAME_SIZE_9_BIT)
+
+/* Convert DT numeric value to HAL enum. */
+#define NRF_DT_FRAMESIZE(idx)							\
+	COND_CODE_1(UARTE_HAS_PROP(idx, data_bits),				\
+		    (_NRF_DT_FRAMESIZE(UARTE_PROP(idx, data_bits))),		\
+		    (NRF_UARTE_FRAME_SIZE_8_BIT))
+
+#define _CFG_DATA_BITS(data_bits) ((data_bits) == 5 ? UART_CFG_DATA_BITS_5 :	\
+		(data_bits) == 6 ? UART_CFG_DATA_BITS_6 :			\
+		(data_bits) == 7 ? UART_CFG_DATA_BITS_7 :			\
+		(data_bits) == 8 ? UART_CFG_DATA_BITS_8 : UART_CFG_DATA_BITS_9)
+
+/* Convert DT numeric value used for data bits to enum specified in the API. */
+#define CFG_DATA_BITS(idx)								\
+	COND_CODE_1(UTIL_AND(NRF_UARTE_HAS_FRAME_SIZE, UARTE_HAS_PROP(idx, data_bits)),	\
+		    (_CFG_DATA_BITS(UARTE_PROP(idx, data_bits))),			\
+		    (UART_CFG_DATA_BITS_8))
+
 /* Get frequency divider that is used to adjust the BAUDRATE value. */
 #define UARTE_GET_BAUDRATE_DIV(f_pclk) (f_pclk / NRF_UARTE_BASE_FREQUENCY_16MHZ)
 
@@ -3269,12 +3301,14 @@ static int uarte_instance_deinit(const struct device *dev)
 			(.paritytype = NRF_UARTE_PARITYTYPE_EVEN,))		\
 		IF_ENABLED(UARTE_HAS_FRAME_TIMEOUT,				\
 			(.frame_timeout = NRF_UARTE_FRAME_TIMEOUT_EN,))		\
+		IF_ENABLED(NRF_UARTE_HAS_FRAME_SIZE,				\
+			(.frame_size = NRF_DT_FRAMESIZE(idx),))			\
 	}
 
 /* Macro for setting zephyr specific configuration structures. */
 #define UARTE_CONFIG(idx) {						       \
 		.baudrate = UARTE_PROP(idx, current_speed),		       \
-		.data_bits = UART_CFG_DATA_BITS_8,			       \
+		.data_bits = CFG_DATA_BITS(idx),			       \
 		.stop_bits = UART_CFG_STOP_BITS_1,			       \
 		.parity = IS_ENABLED(CONFIG_UART_##idx##_NRF_PARITY_BIT)       \
 			  ? UART_CFG_PARITY_EVEN			       \
