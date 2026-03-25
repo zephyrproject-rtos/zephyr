@@ -149,7 +149,6 @@
 	};
 
 	nor_flash: mx25r6435f@1 {
-		status = "okay";
 		compatible = "jedec,spi-nor";
 		size = <0x4000000>;
 		reg = <1>;

@@ -138,7 +138,6 @@ arduino_i2c: &flexcomm2 {
 };
 
 &flexspi {
-	status = "okay";
 	ahb-bufferable;
 	ahb-prefetch;
 	ahb-cacheable;

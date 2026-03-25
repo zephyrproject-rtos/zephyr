@@ -109,7 +109,6 @@
 };
 
 &spi3 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";

@@ -46,7 +46,6 @@
 				mspi-hardware-ce-num = <0>;
 				read-command = <0xeb>;
 				write-command = <0x38>; /* PP_1_4_4 */
-				mspi-hardware-ce-num = <0>;
 				command-length = "INSTR_1_BYTE";
 				address-length = "ADDR_3_BYTE";
 				tx-dummy = <0>;
