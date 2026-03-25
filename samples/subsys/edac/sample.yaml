@@ -15,3 +15,8 @@ tests:
     integration_platforms:
       - intel_ehl_crb
     tags: edac
+  sample.subsys.edac.nxp_sram_noecc:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="sram_noecc.overlay"
+    depends_on: edac
+    platform_allow:
+      - frdm_mcxa156
