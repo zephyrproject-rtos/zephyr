@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/sys/byteorder.h>
 #include "net_private.h"
 #include "connection.h"
 #include "net_stats.h"
@@ -387,9 +388,10 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT)) {
+		uint16_t frag = sys_get_be16(hdr->offset);
+
 		/* Check if this is a fragmented packet, and if so, handle reassembly */
-		if ((net_ntohs(*((uint16_t *)&hdr->offset[0])) &
-		     (NET_IPV4_FRAGH_OFFSET_MASK | NET_IPV4_MORE_FRAG_MASK)) != 0) {
+		if ((frag & (NET_IPV4_FRAGH_OFFSET_MASK | NET_IPV4_MORE_FRAG_MASK)) != 0U) {
 			return net_ipv4_handle_fragment_hdr(pkt, hdr);
 		}
 	}
@@ -487,7 +489,7 @@ enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt)
 		entry = net_pmtu_get_entry((struct net_sockaddr *)&dst);
 		if (entry == NULL) {
 			ret = net_pmtu_update_mtu((struct net_sockaddr *)&dst,
-						  net_if_get_mtu(net_pkt_iface(pkt)));
+					  net_if_get_mtu(net_pkt_iface(pkt)));
 			if (ret < 0) {
 				NET_DBG("Cannot update PMTU for %s (%d)",
 					net_sprint_ipv4_addr(&dst.sin_addr),

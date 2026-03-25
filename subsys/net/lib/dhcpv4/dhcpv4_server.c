@@ -469,9 +469,9 @@ static uint8_t *dhcpv4_encode_header(uint8_t *buf, size_t *buflen,
 	reply_msg->htype = msg->htype;
 	reply_msg->hlen = msg->hlen;
 	reply_msg->hops = 0;
-	reply_msg->xid = msg->xid;
-	reply_msg->secs = 0;
-	reply_msg->flags = msg->flags;
+	dhcp_msg_set_xid(reply_msg, dhcp_msg_get_xid(msg));
+	dhcp_msg_set_secs(reply_msg, 0U);
+	dhcp_msg_set_flags(reply_msg, dhcp_msg_get_flags(msg));
 	memcpy(reply_msg->ciaddr, msg->ciaddr, sizeof(reply_msg->ciaddr));
 	if (yiaddr != NULL) {
 		memcpy(reply_msg->yiaddr, yiaddr, sizeof(struct net_in_addr));
@@ -600,7 +600,7 @@ static int dhcpv4_send(struct dhcpv4_server_ctx *ctx, enum net_dhcpv4_msg_type t
 		 * messages to the address in 'ciaddr'.
 		 */
 		dst_addr.sin_addr = ciaddr;
-	} else if (net_ntohs(msg->flags) & DHCPV4_MSG_BROADCAST) {
+	} else if (dhcp_msg_get_flags(msg) & DHCPV4_MSG_BROADCAST) {
 		/* If 'giaddr' is zero and 'ciaddr' is zero, and the broadcast
 		 * bit is set, then the server broadcasts DHCPOFFER and DHCPACK
 		 * messages to 0xffffffff.

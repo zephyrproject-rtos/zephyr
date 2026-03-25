@@ -15,6 +15,7 @@ LOG_MODULE_DECLARE(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/random/random.h>
+#include <zephyr/sys/byteorder.h>
 #include "net_private.h"
 #include "connection.h"
 #include "icmpv4.h"
@@ -328,8 +329,8 @@ enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt, struct net_ip
 	int ret;
 	int i;
 
-	flag = net_ntohs(*((uint16_t *)&hdr->offset));
-	id = net_ntohs(*((uint16_t *)&hdr->id));
+	flag = sys_get_be16(hdr->offset);
+	id = sys_get_be16(hdr->id);
 
 	more = (flag & NET_IPV4_MORE_FRAG_MASK) ? true : false;
 	net_pkt_set_ipv4_fragment_flags(pkt, flag);
@@ -531,8 +532,7 @@ int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 		return -EINVAL;
 	}
 
-	/* Check if the DF (Don't Fragment) flag is set, if so, we cannot fragment the packet */
-	flag = net_ntohs(*((uint16_t *)&frag_hdr->offset));
+	flag = sys_get_be16(frag_hdr->offset);
 
 	if (flag & NET_IPV4_DO_NOT_FRAG_MASK) {
 		/* This packet cannot be fragmented */

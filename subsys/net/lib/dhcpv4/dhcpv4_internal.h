@@ -12,6 +12,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/sys/byteorder.h>
+
 #ifndef __INTERNAL_DHCPV4_H
 #define __INTERNAL_DHCPV4_H
 
@@ -35,6 +37,36 @@ struct dhcp_msg {
 	uint8_t giaddr[4];		/* Relat agent IP address */
 	uint8_t chaddr[16];	/* Client hardware address */
 } __packed;
+
+static inline uint32_t dhcp_msg_get_xid(const struct dhcp_msg *msg)
+{
+	return sys_get_be32((uint8_t *)UNALIGNED_MEMBER_ADDR(msg, xid));
+}
+
+static inline uint16_t dhcp_msg_get_secs(const struct dhcp_msg *msg)
+{
+	return sys_get_be16((uint8_t *)UNALIGNED_MEMBER_ADDR(msg, secs));
+}
+
+static inline uint16_t dhcp_msg_get_flags(const struct dhcp_msg *msg)
+{
+	return sys_get_be16((uint8_t *)UNALIGNED_MEMBER_ADDR(msg, flags));
+}
+
+static inline void dhcp_msg_set_xid(struct dhcp_msg *msg, uint32_t xid)
+{
+	sys_put_be32(xid, (uint8_t *)UNALIGNED_MEMBER_ADDR(msg, xid));
+}
+
+static inline void dhcp_msg_set_secs(struct dhcp_msg *msg, uint16_t secs)
+{
+	sys_put_be16(secs, (uint8_t *)UNALIGNED_MEMBER_ADDR(msg, secs));
+}
+
+static inline void dhcp_msg_set_flags(struct dhcp_msg *msg, uint16_t flags)
+{
+	sys_put_be16(flags, (uint8_t *)UNALIGNED_MEMBER_ADDR(msg, flags));
+}
 
 #define SIZE_OF_SNAME		64
 #define SIZE_OF_FILE		128

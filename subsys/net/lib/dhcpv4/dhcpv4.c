@@ -307,9 +307,9 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 	msg->op    = DHCPV4_MSG_BOOT_REQUEST;
 	msg->htype = HARDWARE_ETHERNET_TYPE;
 	msg->hlen  = net_if_get_link_addr(iface)->len;
-	msg->xid   = net_htonl(iface->config.dhcpv4.xid);
-	msg->flags = IS_ENABLED(CONFIG_NET_DHCPV4_ACCEPT_UNICAST) ?
-		     net_htons(DHCPV4_MSG_UNICAST) : net_htons(DHCPV4_MSG_BROADCAST);
+	dhcp_msg_set_xid(msg, iface->config.dhcpv4.xid);
+	dhcp_msg_set_flags(msg, IS_ENABLED(CONFIG_NET_DHCPV4_ACCEPT_UNICAST) ?
+			  DHCPV4_MSG_UNICAST : DHCPV4_MSG_BROADCAST);
 
 	if (ciaddr) {
 		/* The ciaddr field was zero'd out above, if we are
@@ -1593,8 +1593,8 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 
 	NET_DBG("Received dhcp msg [op=0x%x htype=0x%x hlen=%u xid=0x%x "
 		"secs=%u flags=0x%x chaddr=%s",
-		msg->op, msg->htype, msg->hlen, net_ntohl(msg->xid),
-		msg->secs, msg->flags,
+		msg->op, msg->htype, msg->hlen, dhcp_msg_get_xid(msg),
+		dhcp_msg_get_secs(msg), dhcp_msg_get_flags(msg),
 		net_sprint_ll_addr(msg->chaddr, 6));
 	NET_DBG("  ciaddr=%d.%d.%d.%d",
 		msg->ciaddr[0], msg->ciaddr[1], msg->ciaddr[2], msg->ciaddr[3]);
@@ -1608,12 +1608,12 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	k_mutex_lock(&lock, K_FOREVER);
 
 	if (!(msg->op == DHCPV4_MSG_BOOT_REPLY &&
-	      iface->config.dhcpv4.xid == net_ntohl(msg->xid) &&
+	      iface->config.dhcpv4.xid == dhcp_msg_get_xid(msg) &&
 	      !memcmp(msg->chaddr, net_if_get_link_addr(iface)->addr,
 		      net_if_get_link_addr(iface)->len))) {
 
 		NET_DBG("Unexpected op (%d), xid (%x vs %x) or chaddr",
-			msg->op, iface->config.dhcpv4.xid, net_ntohl(msg->xid));
+			msg->op, iface->config.dhcpv4.xid, dhcp_msg_get_xid(msg));
 		goto drop;
 	}
 
@@ -2089,7 +2089,7 @@ bool net_dhcpv4_accept_unicast(struct net_pkt *pkt)
 		goto out;
 	}
 
-	if (udp_hdr->dst_port != net_htons(DHCPV4_CLIENT_PORT)) {
+	if (net_udp_get_dst_port(udp_hdr) != net_htons(DHCPV4_CLIENT_PORT)) {
 		goto out;
 	}
 

@@ -862,8 +862,8 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 	if (pkt_family == NET_AF_INET || pkt_family == NET_AF_INET6) {
 		if (IS_ENABLED(CONFIG_NET_UDP) && proto == NET_IPPROTO_UDP) {
-			src_port = proto_hdr->udp->src_port;
-			dst_port = proto_hdr->udp->dst_port;
+			src_port = net_udp_get_src_port(proto_hdr->udp);
+			dst_port = net_udp_get_dst_port(proto_hdr->udp);
 		} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == NET_IPPROTO_TCP) {
 			if (proto_hdr->tcp == NULL) {
 				return NET_DROP;

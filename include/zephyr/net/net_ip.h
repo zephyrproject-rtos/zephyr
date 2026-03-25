@@ -640,6 +640,26 @@ struct net_udp_hdr {
 	uint16_t chksum;
 } __packed;
 
+static inline uint16_t net_udp_get_src_port(const struct net_udp_hdr *hdr)
+{
+	return UNALIGNED_GET(UNALIGNED_MEMBER_ADDR(hdr, src_port));
+}
+
+static inline uint16_t net_udp_get_dst_port(const struct net_udp_hdr *hdr)
+{
+	return UNALIGNED_GET(UNALIGNED_MEMBER_ADDR(hdr, dst_port));
+}
+
+static inline uint16_t net_udp_get_len(const struct net_udp_hdr *hdr)
+{
+	return UNALIGNED_GET(UNALIGNED_MEMBER_ADDR(hdr, len));
+}
+
+static inline uint16_t net_udp_get_chksum(const struct net_udp_hdr *hdr)
+{
+	return UNALIGNED_GET(UNALIGNED_MEMBER_ADDR(hdr, chksum));
+}
+
 struct net_tcp_hdr {
 	uint16_t src_port;
 	uint16_t dst_port;

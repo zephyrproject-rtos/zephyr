@@ -849,7 +849,7 @@ static int sock_get_pkt_src_addr(struct net_context *ctx,
 			goto error;
 		}
 
-		*port = udp_hdr->src_port;
+		*port = net_udp_get_src_port(udp_hdr);
 	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == NET_IPPROTO_TCP) {
 		NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
 		struct net_tcp_hdr *tcp_hdr;
