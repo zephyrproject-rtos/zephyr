@@ -1003,6 +1003,20 @@ static void work_timeout(struct _timeout *to)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	struct k_work_q *queue = NULL;
 
+	/*
+	 * If the timeout handler has been canceled between the point in time
+	 * when sys_clock_announce() called it and this handler wins <lock>
+	 * then there is nothing to do. As the current lock is required to be
+	 * held before _this_ timeout can be aborted, it is safe to test for
+	 * the cancellation of the handler without explicitly holding the
+	 * timeout lock.
+	 */
+
+	if (z_is_timeout_handler_canceled(to)) {
+		k_spin_unlock(&lock, key);
+		return;
+	}
+
 	/* If the work is still marked delayed (should be) then clear that
 	 * state and submit it to the queue.  If successful the queue will be
 	 * notified of new work at the next reschedule point.
