@@ -5,8 +5,8 @@
  */
 
 /dts-v1/;
-#include <synaptics/sr100.dtsi>
-#include <synaptics/sr100_pinctrl.dtsi>
+#include <syna/sr100.dtsi>
+#include <syna/sr100_pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
