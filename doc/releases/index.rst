@@ -15,6 +15,81 @@ The technical documentation for current and past releases is available at
 https://docs.zephyrproject.org/ (use the version selector to select your release
 of interest).
 
+.. _supported_releases:
+
+Supported Releases
+******************
+
+The table below lists all actively supported releases. For most users, the
+recommended starting point is either the **latest stable release** or the
+**current LTS release**.
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :glob:
+   :reversed:
+
+   release-notes-3.7
+   release-notes-4.[2-4]
+   migration-guide-3.7
+   migration-guide-4.[2-4]
+
+.. note::
+   | The next planned release is **Zephyr 4.4**, targeted for **April 2026**.
+   | The working drafts of the associated :doc:`Release Notes <release-notes-4.4>`
+     and :doc:`Migration Guide <migration-guide-4.4>` are already available.
+
+.. list-table::
+    :header-rows: 1
+
+    * - Release
+      - Release Date
+      - EOL
+      - Status
+      - Supporting Documentation
+    * - `Zephyr 4.3.0`_
+      - 2025-11-14
+      - 2026-10-15
+      - Latest stable
+      - * :doc:`Release Notes <release-notes-4.3>`
+        * :doc:`Migration Guide <migration-guide-4.3>`
+    * - `Zephyr 4.2.0`_
+      - 2025-07-18
+      - 2026-03-20
+      - Stable
+      - * :doc:`Release Notes <release-notes-4.2>`
+        * :doc:`Migration Guide <migration-guide-4.2>`
+    * - `Zephyr 3.7.0 (LTS3)`_
+      - 2024-07-26
+      - 2029-07-27
+      - Long Term Support
+      - * :doc:`Release Notes <release-notes-3.7>`
+        * :doc:`Migration Guide <migration-guide-3.7>`
+
+Previous LTS releases that have reached end-of-life:
+
++-------------------------+---------------+
+| Release                 | EOL           |
++=========================+===============+
+| `Zephyr 2.7.6 (LTS2)`_  | 2025-01-26    |
++-------------------------+---------------+
+| `Zephyr 1.14.1 (LTS1)`_ | 2022-01-01    |
++-------------------------+---------------+
+
+End-of-life releases
+=====================
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+
+   eol_releases
+
+End-of-life releases are no longer maintained and do not receive security fixes.
+The release notes and migration guides for these releases are available
+:ref:`here <eol_releases>`.
+
 .. _zephyr_release_cycle:
 
 Release Life Cycle and Maintenance
@@ -97,34 +172,17 @@ following releases:
 
 For more information, see  :ref:`Security Vulnerability Reporting <reporting>`.
 
-.. _supported_releases:
+Release documentation
+*********************
 
-Supported Releases
-******************
+Each release includes two companion documents:
 
-+------------------------+----------------+---------------+
-| Release                | Release date   | EOL           |
-+========================+================+===============+
-| `Zephyr 4.3.0`_        | 2025-11-14     | 2026-10-15    |
-+------------------------+----------------+---------------+
-| `Zephyr 4.2.0`_        | 2025-07-18     | 2026-03-20    |
-+------------------------+----------------+---------------+
-| `Zephyr 3.7.0 (LTS3)`_ | 2024-07-26     | 2029-07-27    |
-+------------------------+----------------+---------------+
-
-Previous LTS
-************
-
-+-------------------------+---------------+
-| Release                 | EOL           |
-+=========================+===============+
-| `Zephyr 2.7.6 (LTS2)`_  | 2025-01-26    |
-+-------------------------+---------------+
-| `Zephyr 1.14.1 (LTS1)`_ | 2022-01-01    |
-+-------------------------+---------------+
+- Release notes summarize changes made across the project during the release cycle.
+- Migration guides describe changes that require action when moving an application from one major
+  release to the next.
 
 Release Notes
-*************
+=============
 
 Release notes contain a list of changes that have been made to the different
 areas of the project during the development cycle of the release.
@@ -137,16 +195,8 @@ style, typographical fixes and to upmerge the notes from maintenance release
 branches with the sole purpose of keeping the latest documentation consistent
 with the changes in the project.
 
-.. toctree::
-   :maxdepth: 1
-   :glob:
-   :reversed:
-
-   release-notes-3.7
-   release-notes-4.[2-4]
-
 Migration Guides
-****************
+================
 
 Zephyr provides migration guides for all major releases, in order to assist
 users transition from the previous release.
@@ -168,26 +218,6 @@ in the migration guide. This includes:
 Each entry in the migration guide must include a brief explanation of the change
 as well as refer to the Pull Request that introduced it, in order for the user
 to be able to understand the context of the change.
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-   :reversed:
-
-   migration-guide-3.7
-   migration-guide-4.[2-4]
-
-End-of-life Releases
-********************
-
-.. toctree::
-   :hidden:
-   :maxdepth: 1
-
-   eol_releases
-
-Release notes and migration guides for end-of-life releases of Zephyr RTOS can be accessed
-:ref:`here <eol_releases>`.
 
 .. _`GitHub repository`: https://github.com/zephyrproject-rtos/zephyr
 .. _`GitHub tagged releases`: https://github.com/zephyrproject-rtos/zephyr/tags
