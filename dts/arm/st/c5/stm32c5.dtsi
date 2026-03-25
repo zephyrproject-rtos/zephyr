@@ -103,6 +103,20 @@
 		};
 	};
 
+	mcos {
+		mco1: mco1 {
+			compatible = "st,stm32-clock-mco";
+			clock-names = "clksel";
+			status = "disabled";
+		};
+
+		mco2: mco2 {
+			compatible = "st,stm32-clock-mco";
+			clock-names = "clksel";
+			status = "disabled";
+		};
+	};
+
 	soc {
 		adc1: adc@42028000 {
 			compatible = "st,stm32n6-adc", "st,stm32-adc";
