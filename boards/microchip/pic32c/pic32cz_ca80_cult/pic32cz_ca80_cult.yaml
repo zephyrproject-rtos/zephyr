@@ -11,6 +11,7 @@ flash: 8192
 ram: 1024
 supported:
   - clock_control
+  - dma
   - gpio
   - pinctrl
   - uart
