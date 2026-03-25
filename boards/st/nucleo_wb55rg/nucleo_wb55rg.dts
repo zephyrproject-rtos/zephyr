@@ -259,3 +259,7 @@ zephyr_udc0: &usb {
 &vbat {
 	status = "okay";
 };
+
+&crc {
+	status = "okay";
+};

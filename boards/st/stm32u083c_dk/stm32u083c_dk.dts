@@ -221,3 +221,7 @@ zephyr_udc0: &usb {
 		};
 	};
 };
+
+&crc {
+	status = "okay";
+};
