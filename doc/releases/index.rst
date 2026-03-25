@@ -3,13 +3,9 @@
 Releases
 ########
 
-Zephyr project is provided as source code and build scripts for different target
-architectures and configurations, and not as a binary image. Updated versions of
-the Zephyr project are released approximately every six months.
-
-All Zephyr project source code is maintained in a `GitHub repository`_. In order
-to use a released version of the Zephyr project, it is recommended that you use
-:ref:`west` to :ref:`get_the_code` of the release you are interested in.
+Zephyr is distributed as source code and build scripts, not as a binary image.
+Use :ref:`west` to :ref:`get the code <get_the_code>` for a specific version,
+and see the `GitHub repository`_ for the full history of tagged releases.
 
 The technical documentation for current and past releases is available at
 https://docs.zephyrproject.org/ (use the version selector to select your release
