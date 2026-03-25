@@ -568,7 +568,7 @@ static void handle_csip_disconnect(struct bt_csip_set_member_svc_inst *svc_inst,
 
 static void csip_disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	LOG_DBG("Disconnected: %s (reason %u)", bt_addr_le_str(bt_conn_get_dst(conn)), reason);
+	LOG_DBG("Disconnected: %s (reason %u)", bt_conn_dst_str(conn), reason);
 
 	if (!bt_le_bond_exists(conn->id, &conn->le.dst)) {
 		for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
@@ -624,8 +624,7 @@ static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 	 *    the oldest entry, following the behavior of the key storage.
 	 */
 
-	LOG_DBG("%s paired (%sbonded)", bt_addr_le_str(bt_conn_get_dst(conn)),
-		bonded ? "" : "not ");
+	LOG_DBG("%s paired (%sbonded)", bt_conn_dst_str(conn), bonded ? "" : "not ");
 
 	if (!bonded) {
 		return;
@@ -810,14 +809,11 @@ static void add_bonded_addr_to_client_list(const struct bt_bond_info *info, void
 		for (size_t j = 0U; j < ARRAY_SIZE(svc_inst->clients); j++) {
 			/* Check if device is registered, it not, add it */
 			if (!atomic_test_bit(svc_inst->clients[j].flags, FLAG_ACTIVE)) {
-				char addr_str[BT_ADDR_LE_STR_LEN];
-
 				atomic_set_bit(svc_inst->clients[j].flags, FLAG_ACTIVE);
 				memcpy(&svc_inst->clients[j].addr, &info->addr,
 				       sizeof(bt_addr_le_t));
-				bt_addr_le_to_str(&svc_inst->clients[j].addr, addr_str,
-						  sizeof(addr_str));
-				LOG_DBG("Added %s to bonded list\n", addr_str);
+				LOG_DBG("Added %s to bonded list\n",
+					bt_addr_le_str(&svc_inst->clients[j].addr));
 				return;
 			}
 		}
