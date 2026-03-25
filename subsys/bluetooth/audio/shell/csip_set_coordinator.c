@@ -53,19 +53,16 @@ static bool is_discovered(const bt_addr_le_t *addr)
 
 static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	uint8_t conn_index;
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (err != 0) {
-		bt_shell_error("Failed to connect to %s (%u)", addr, err);
+		bt_shell_error("Failed to connect to %s (%u)", bt_conn_dst_str(conn), err);
 		return;
 	}
 
 	conn_index = bt_conn_index(conn);
 
-	bt_shell_print("[%u]: Connected to %s", conn_index, addr);
+	bt_shell_print("[%u]: Connected to %s", conn_index, bt_conn_dst_str(conn));
 
 	/* TODO: Handle RPAs */
 
@@ -214,10 +211,8 @@ static bool csip_found(struct bt_data *data, void *user_data)
 {
 	if (bt_csip_set_coordinator_is_set_member(cur_inst->info.sirk, data)) {
 		bt_addr_le_t *addr = user_data;
-		char addr_str[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-		bt_shell_print("Found CSIP advertiser with address %s", addr_str);
+		bt_shell_print("Found CSIP advertiser with address %s", bt_addr_le_str(addr));
 
 		if (is_discovered(addr)) {
 			bt_shell_print("Set member already found");
@@ -269,7 +264,6 @@ static int cmd_csip_set_coordinator_discover(const struct shell *sh,
 					     size_t argc, char *argv[])
 {
 	unsigned long member_index = 0U;
-	char addr[BT_ADDR_LE_STR_LEN];
 	static bool initialized;
 	struct bt_conn *conn;
 	int err = 0;
@@ -300,10 +294,8 @@ static int cmd_csip_set_coordinator_discover(const struct shell *sh,
 
 	conn = conns[member_index];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	shell_print(sh, "Discovering for member[%u] (%s)",
-		    (uint8_t)member_index, addr);
+		    (uint8_t)member_index, bt_conn_dst_str(conn));
 	err = bt_csip_set_coordinator_discover(conn);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
