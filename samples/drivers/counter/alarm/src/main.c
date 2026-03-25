@@ -38,6 +38,8 @@ struct counter_alarm_cfg alarm_cfg;
 #define SAMPLE_TIMER DT_INST(0, xlnx_xps_timer_1_00_a)
 #elif defined(CONFIG_COUNTER_TMR_ESP32)
 #define SAMPLE_TIMER DT_INST(0, espressif_esp32_counter)
+#elif defined(CONFIG_COUNTER_MCUX_SYSCTR)
+#define SAMPLE_TIMER DT_NODELABEL(sys_ctr)
 #elif defined(CONFIG_COUNTER_MCUX_CTIMER)
 #define SAMPLE_TIMER DT_NODELABEL(ctimer0)
 #elif defined(CONFIG_COUNTER_MSPM0_TIMER)
