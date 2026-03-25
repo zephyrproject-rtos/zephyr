@@ -2827,6 +2827,43 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 	return &conn->le.dst;
 }
 
+struct bt_conn_tmp_str bt_conn_dst_tmp_str(const struct bt_conn *conn)
+{
+	struct bt_conn_tmp_str val;
+
+	switch (conn->type) {
+#if defined(CONFIG_BT_CLASSIC)
+	case BT_CONN_TYPE_BR:
+		(void)bt_addr_to_str(&conn->br.dst, val.str, sizeof(val.str));
+		break;
+	case BT_CONN_TYPE_SCO:
+		if (conn->sco.acl != NULL) {
+			(void)bt_addr_to_str(&conn->sco.acl->br.dst, val.str, sizeof(val.str));
+		} else {
+			val.str[0] = '\0';
+		}
+		break;
+#endif /* CONFIG_BT_CLASSIC */
+	case BT_CONN_TYPE_LE:
+		(void)bt_addr_le_to_str(&conn->le.dst, val.str, sizeof(val.str));
+		break;
+#if defined(CONFIG_BT_ISO)
+	case BT_CONN_TYPE_ISO:
+		if (conn->iso.acl != NULL) {
+			(void)bt_addr_le_to_str(&conn->iso.acl->le.dst, val.str, sizeof(val.str));
+		} else {
+			val.str[0] = '\0';
+		}
+		break;
+#endif /* CONFIG_BT_ISO */
+	default:
+		val.str[0] = '\0';
+		break;
+	}
+
+	return val;
+}
+
 static enum bt_conn_state conn_internal_to_public_state(bt_conn_state_t state)
 {
 	switch (state) {
