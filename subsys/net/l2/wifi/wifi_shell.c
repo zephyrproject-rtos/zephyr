@@ -1266,8 +1266,10 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 					  sizeof(mac_string_buf)));
 		PR("Band: %s\n", wifi_band_txt(status.band));
 		PR("Channel: %d\n", status.channel);
-		PR("Security: %s %s\n", wifi_wpa3_enterprise_txt(status.wpa3_ent_type),
-								wifi_security_txt(status.security));
+		PR("Security: %s %s%s\n",
+		   wifi_wpa3_enterprise_txt(status.wpa3_ent_type),
+		   wifi_security_txt(status.security),
+		   wifi_wep_key_type_txt(status.wep_key_type));
 		PR("MFP: %s\n", wifi_mfp_txt(status.mfp));
 		if (status.iface_mode == WIFI_MODE_INFRA) {
 			PR("RSSI: %d\n", status.rssi);
