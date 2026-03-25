@@ -76,6 +76,17 @@ config VIDEO_ENCODER_H264
 config VIDEO_ENCODER_JPEG
 	bool "JPEG video encoder support"
 
+config VIDEO_COMPRESSED_SIZE_RATIO
+	int "Compression size ratio (% of compressed size relative to uncompressed)"
+	range 1 100
+	default 100
+	help
+		Estimated size ratio (in percent) of the compressed image relative to the
+		uncompressed image size (assuming 2 bytes per pixel, e.g. RGB565). For example:
+		- 50 means the compressed size is half the uncompressed size.
+		This value is used to estimate the buffer size requirement for compressed
+		formats such as JPEG, PNG, H.264, etc.
+
 # zephyr-keep-sorted-start
 source "drivers/video/Kconfig.emul_imager"
 source "drivers/video/Kconfig.emul_rx"

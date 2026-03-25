@@ -452,6 +452,7 @@ New APIs and options
   * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE`
   * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION`
   * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME`
+  * :kconfig:option:`CONFIG_VIDEO_COMPRESSED_SIZE_RATIO`
   * :c:func:`video_transform_cap`
   * :c:macro:`VIDEO_PIX_FMT_SBGGR8P16`
   * :c:macro:`VIDEO_PIX_FMT_SGBRG8P16`
