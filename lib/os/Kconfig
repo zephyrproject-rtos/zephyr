@@ -125,6 +125,15 @@ config P4WQ_INIT_STAGE_EARLY
 
 endif
 
+config P4WQ_PRIORITY_NEGATIVE
+	int "Negative P4WQ thread priority"
+	default NUM_COOP_PRIORITIES
+	help
+	  By default P4WQ threads run with the highest available priority, this
+	  option can be used to change that. Note, that the actual priority is
+	  equal to the negative of this value. So, e.g., to set priority to 1,
+	  set -1 here.
+
 config REBOOT
 	bool "Reboot functionality"
 	help

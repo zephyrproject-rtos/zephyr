@@ -144,7 +144,7 @@ void k_p4wq_add_thread(struct k_p4wq *queue, struct k_thread *thread,
 {
 	k_thread_create(thread, stack, stack_size,
 			p4wq_loop, queue, NULL, NULL,
-			K_HIGHEST_THREAD_PRIO, 0,
+			-CONFIG_P4WQ_PRIORITY_NEGATIVE, 0,
 			queue->flags & K_P4WQ_DELAYED_START ? K_FOREVER : K_NO_WAIT);
 }
 
