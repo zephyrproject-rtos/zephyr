@@ -1,6 +1,7 @@
 /*
  * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * SPDX-FileCopyrightText: Copyright (c) 2025 - 2026 Siemens Mobility GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2025 - 2026 Texas Instruments
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,11 +25,14 @@
 
 LOG_MODULE_REGISTER(mspi_cadence, CONFIG_MSPI_LOG_LEVEL);
 
+#define DEV_CFG(dev)  ((const struct mspi_cadence_config *)dev->config)
+#define DEV_DATA(dev) ((struct mspi_cadence_data *)dev->data)
+
 struct mspi_cadence_config {
 	DEVICE_MMIO_ROM;
+	DEVICE_MMIO_NAMED_ROM(fifo);
 	struct mspi_cfg mspi_config;
 	const struct pinctrl_dev_config *pinctrl;
-	const uint32_t fifo_addr;
 	const uint32_t sram_allocated_for_read;
 	const uint32_t reference_frequency;
 	const uint32_t nss_delay_ns;
@@ -39,6 +43,7 @@ struct mspi_cadence_config {
 
 struct mspi_cadence_data {
 	DEVICE_MMIO_RAM;
+	DEVICE_MMIO_NAMED_RAM(fifo);
 	struct k_mutex access_lock;
 	struct k_sem transfer_lock;
 	const struct mspi_dev_id *current_peripheral;
@@ -190,6 +195,7 @@ static void mspi_cadence_configure_delays(const struct device *controller, const
 static int mspi_cadence_init(const struct device *dev)
 {
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+	DEVICE_MMIO_NAMED_MAP(dev, fifo, K_MEM_CACHE_NONE);
 	const struct mspi_cadence_config *config = dev->config;
 	struct mspi_cadence_data *data = dev->data;
 	const mem_addr_t base_addr = DEVICE_MMIO_GET(dev);
@@ -481,7 +487,7 @@ static int mspi_cadence_indirect_read(const struct device *controller, const str
 				      uint32_t index, const uint64_t start_time)
 {
 	const mem_addr_t base_address = DEVICE_MMIO_GET(controller);
-	const struct mspi_cadence_config *config = controller->config;
+	const mem_addr_t fifo_address = DEVICE_MMIO_NAMED_GET(controller, fifo);
 	const struct mspi_xfer_packet *packet = &req->packets[index];
 
 	uint32_t dev_instr_rd_cfg =
@@ -549,7 +555,7 @@ static int mspi_cadence_indirect_read(const struct device *controller, const str
 
 		num_new_words = FIELD_GET(CADENCE_MSPI_SRAM_FILL_REG_INDAC_READ_MASK, indac_read);
 		while (remaining_bytes > 0 && num_new_words > 0) {
-			current_new_word = sys_read32(config->fifo_addr);
+			current_new_word = sys_read32(fifo_address);
 			bytes_to_copy_from_current_word = MIN(remaining_bytes, 4);
 			memcpy(write_ptr, &current_new_word, bytes_to_copy_from_current_word);
 			write_ptr += bytes_to_copy_from_current_word;
@@ -589,6 +595,7 @@ static int mspi_cadence_indirect_write(const struct device *controller, const st
 				       uint32_t index, const uint64_t start_time)
 {
 	const mem_addr_t base_address = DEVICE_MMIO_GET(controller);
+	const mem_addr_t fifo_address = DEVICE_MMIO_NAMED_GET(controller, fifo);
 	const struct mspi_cadence_config *config = controller->config;
 	const struct mspi_xfer_packet *packet = &req->packets[index];
 
@@ -660,7 +667,7 @@ static int mspi_cadence_indirect_write(const struct device *controller, const st
 			current_word_to_write = 0;
 			memcpy(&current_word_to_write, &packet->data_buf[read_offset],
 			       MIN(remaining_bytes, 4));
-			sys_write32(current_word_to_write, config->fifo_addr);
+			sys_write32(current_word_to_write, fifo_address);
 			remaining_bytes = (remaining_bytes > 4 ? remaining_bytes - 4 : 0);
 			read_offset += 4;
 			--free_words;
@@ -1207,9 +1214,9 @@ static DEVICE_API(mspi, mspi_cadence_driver_api) = {
 	PINCTRL_DT_DEFINE(DT_DRV_INST(n));                                                         \
 	static const struct mspi_cadence_config mspi_cadence_config_##n = {                        \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
+		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(fifo, DT_DRV_INST(n)),                          \
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                      \
 		.mspi_config = MSPI_CONFIG(n),                                                     \
-		.fifo_addr = DT_REG_ADDR_BY_IDX(DT_DRV_INST(n), 1),                                \
 		.sram_allocated_for_read = DT_PROP(DT_DRV_INST(n), read_buffer_size),              \
 		.reference_frequency = DT_PROP(DT_DRV_INST(n), clock_frequency),                   \
 		.nss_delay_ns = DT_INST_PROP(n, cdns_nss_delay_ns),                                \
