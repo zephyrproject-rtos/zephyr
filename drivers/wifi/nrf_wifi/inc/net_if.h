@@ -56,16 +56,18 @@ enum nrf_wifi_status nrf_wifi_if_carr_state_chg(void *os_vif_ctx,
 						enum nrf_wifi_fmac_if_carr_state carr_state);
 
 int nrf_wifi_stats_get(const struct device *dev,
+		       struct net_if *iface,
 		       struct net_stats_wifi *stats);
 
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 struct net_stats_eth *nrf_wifi_eth_stats_get_type(const struct device *dev,
-						   uint32_t type);
+						  struct net_if *iface,
+						  uint32_t type);
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
 void nrf_wifi_set_iface_event_handler(void *os_vif_ctx,
 						struct nrf_wifi_umac_event_set_interface *event,
 						unsigned int event_len);
 
-int nrf_wifi_stats_reset(const struct device *dev);
+int nrf_wifi_stats_reset(const struct device *dev, struct net_if *iface);
 #endif /* __ZEPHYR_NET_IF_H__ */

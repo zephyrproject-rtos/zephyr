@@ -570,7 +570,9 @@ static int nxp_wifi_wlan_start(void)
 
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 
-static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_params *params)
+static int nxp_wifi_start_ap(const struct device *dev,
+			     struct net_if *iface __unused,
+			     struct wifi_connect_req_params *params)
 {
 	int status = NXP_WIFI_RET_SUCCESS;
 	int ret;
@@ -717,7 +719,7 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 	return 0;
 }
 
-static int nxp_wifi_stop_ap(const struct device *dev)
+static int nxp_wifi_stop_ap(const struct device *dev, struct net_if *iface __unused)
 {
 	int status = NXP_WIFI_RET_SUCCESS;
 	int ret;
@@ -747,7 +749,9 @@ static int nxp_wifi_stop_ap(const struct device *dev)
 	return 0;
 }
 
-static int nxp_wifi_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params)
+static int nxp_wifi_ap_config_params(const struct device *dev,
+				     struct net_if *iface __unused,
+				     struct wifi_ap_config_params *params)
 {
 	int status = NXP_WIFI_RET_SUCCESS;
 	int ret = WM_SUCCESS;
@@ -882,7 +886,9 @@ out:
 	return WM_SUCCESS;
 }
 
-static int nxp_wifi_scan(const struct device *dev, struct wifi_scan_params *params,
+static int nxp_wifi_scan(const struct device *dev,
+			 struct net_if *iface __unused,
+			 struct wifi_scan_params *params,
 			 scan_result_cb_t cb)
 {
 	int ret;
@@ -982,7 +988,9 @@ do_scan:
 	return 0;
 }
 
-static int nxp_wifi_version(const struct device *dev, struct wifi_version *params)
+static int nxp_wifi_version(const struct device *dev __unused,
+			    struct net_if *iface __unused,
+			    struct wifi_version *params)
 {
 	int status = NXP_WIFI_RET_SUCCESS;
 
@@ -1002,7 +1010,9 @@ static int nxp_wifi_version(const struct device *dev, struct wifi_version *param
 	return 0;
 }
 
-static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_params *params)
+static int nxp_wifi_connect(const struct device *dev,
+			    struct net_if *iface,
+			    struct wifi_connect_req_params *params)
 {
 	int status = NXP_WIFI_RET_SUCCESS;
 	int ret;
@@ -1010,13 +1020,13 @@ static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_pa
 
 	if (s_nxp_wifi_State != NXP_WIFI_STARTED) {
 		LOG_ERR("Wi-Fi not started");
-		wifi_mgmt_raise_connect_result_event(g_mlan.netif, -1);
+		wifi_mgmt_raise_connect_result_event(iface, -1);
 		return -EALREADY;
 	}
 
 	if (if_handle->state.interface != WLAN_BSS_TYPE_STA) {
 		LOG_ERR("Wi-Fi not in station mode");
-		wifi_mgmt_raise_connect_result_event(g_mlan.netif, -1);
+		wifi_mgmt_raise_connect_result_event(iface, -1);
 		return -EIO;
 	}
 
@@ -1119,7 +1129,7 @@ static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_pa
 	return 0;
 }
 
-static int nxp_wifi_disconnect(const struct device *dev)
+static int nxp_wifi_disconnect(const struct device *dev, struct net_if *iface)
 {
 	int status = NXP_WIFI_RET_SUCCESS;
 	int ret;
@@ -1138,7 +1148,7 @@ static int nxp_wifi_disconnect(const struct device *dev)
 	wlan_get_connection_state(&connection_state);
 	if (connection_state == WLAN_DISCONNECTED) {
 		s_nxp_wifi_StaConnected = false;
-		wifi_mgmt_raise_disconnect_result_event(g_mlan.netif, -1);
+		wifi_mgmt_raise_disconnect_result_event(iface, -1);
 		return NXP_WIFI_RET_SUCCESS;
 	}
 
@@ -1151,17 +1161,19 @@ static int nxp_wifi_disconnect(const struct device *dev)
 
 	if (status != NXP_WIFI_RET_SUCCESS) {
 		LOG_ERR("Failed to disconnect from AP");
-		wifi_mgmt_raise_disconnect_result_event(g_mlan.netif, -1);
+		wifi_mgmt_raise_disconnect_result_event(iface, -1);
 		return -EAGAIN;
 	}
 
-	wifi_mgmt_raise_disconnect_result_event(g_mlan.netif, 0);
+	wifi_mgmt_raise_disconnect_result_event(iface, 0);
 
 	return 0;
 }
 
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-static int nxp_wifi_uap_disconnect_sta(const struct device *dev, const uint8_t *mac)
+static int nxp_wifi_uap_disconnect_sta(const struct device *dev __unused,
+				       struct net_if *iface __unused,
+				       const uint8_t *mac)
 {
 	int ret;
 
@@ -1291,7 +1303,9 @@ static int nxp_wifi_uap_status(const struct device *dev, struct wifi_iface_statu
 }
 #endif
 
-static int nxp_wifi_status(const struct device *dev, struct wifi_iface_status *status)
+static int nxp_wifi_status(const struct device *dev,
+			  struct net_if *iface __unused,
+			  struct wifi_iface_status *status)
 {
 	enum wlan_connection_state connection_state = WLAN_DISCONNECTED;
 	struct interface *if_handle = (struct interface *)dev->data;
@@ -1405,7 +1419,9 @@ static int nxp_wifi_get_detail_stats(int bss_type, wlan_pkt_stats_t *stats)
 }
 #endif
 
-static int nxp_wifi_stats(const struct device *dev, struct net_stats_wifi *stats)
+static int nxp_wifi_stats(const struct device *dev,
+			  struct net_if *iface,
+			  struct net_stats_wifi *stats)
 {
 	struct interface *if_handle = (struct interface *)dev->data;
 #ifdef CONFIG_NXP_WIFI_GET_LOG
@@ -1427,7 +1443,7 @@ static int nxp_wifi_stats(const struct device *dev, struct net_stats_wifi *stats
 	stats->unicast.tx = if_handle->stats.unicast.tx;
 	stats->overrun_count = if_handle->stats.errors.rx + if_handle->stats.errors.tx;
 
-	if (!net_if_is_admin_up(net_if_lookup_by_dev(dev))) {
+	if (!net_if_is_admin_up(iface)) {
 		return 0;
 	}
 
@@ -1468,7 +1484,7 @@ static int nxp_wifi_stats(const struct device *dev, struct net_stats_wifi *stats
 	return 0;
 }
 
-int nxp_wifi_reset_stats(const struct device *dev)
+int nxp_wifi_reset_stats(const struct device *dev, struct net_if *iface)
 {
 	struct interface *if_handle = (struct interface *)dev->data;
 #ifdef CONFIG_NXP_WIFI_GET_LOG
@@ -1479,7 +1495,7 @@ int nxp_wifi_reset_stats(const struct device *dev)
 	/* clear local statistics */
 	memset(&if_handle->stats, 0, sizeof(if_handle->stats));
 
-	if (!net_if_is_admin_up(net_if_lookup_by_dev(dev))) {
+	if (!net_if_is_admin_up(iface)) {
 		return 0;
 	}
 
@@ -1551,7 +1567,9 @@ static void nxp_wifi_auto_connect(void)
 #endif
 
 #ifdef CONFIG_NXP_WIFI_11K
-static int nxp_wifi_11k_cfg(const struct device *dev, struct wifi_11k_params *params)
+static int nxp_wifi_11k_cfg(const struct device *dev,
+			    struct net_if *iface __unused,
+			    struct wifi_11k_params *params)
 {
 	if (params->oper == WIFI_MGMT_GET) {
 		params->enable_11k = wlan_get_host_11k_status();
@@ -1562,7 +1580,9 @@ static int nxp_wifi_11k_cfg(const struct device *dev, struct wifi_11k_params *pa
 	return 0;
 }
 
-static int nxp_wifi_11k_neighbor_request(const struct device *dev, struct wifi_11k_params *params)
+static int nxp_wifi_11k_neighbor_request(const struct device *dev,
+					 struct net_if *iface __unused,
+					 struct wifi_11k_params *params)
 {
 	int ret = WM_SUCCESS;
 
@@ -1584,13 +1604,17 @@ static int nxp_wifi_11k_neighbor_request(const struct device *dev, struct wifi_1
 #endif
 
 #ifdef CONFIG_NXP_WIFI_11V
-static int nxp_wifi_btm_query(const struct device *dev, uint8_t reason)
+static int nxp_wifi_btm_query(const struct device *dev,
+			      struct net_if *iface __unused,
+			      uint8_t reason)
 {
 	return wlan_host_11v_bss_trans_query(reason);
 }
 #endif
 
-static int nxp_wifi_power_save(const struct device *dev, struct wifi_ps_params *params)
+static int nxp_wifi_power_save(const struct device *dev,
+			       struct net_if *iface __unused,
+			       struct wifi_ps_params *params)
 {
 	int status = NXP_WIFI_RET_SUCCESS;
 	int ret = WM_SUCCESS;
@@ -1754,7 +1778,9 @@ static int nxp_wifi_power_save(const struct device *dev, struct wifi_ps_params *
 	return 0;
 }
 
-int nxp_wifi_get_power_save(const struct device *dev, struct wifi_ps_config *config)
+int nxp_wifi_get_power_save(const struct device *dev,
+			    struct net_if *iface __unused,
+			    struct wifi_ps_config *config)
 {
 	int status = NXP_WIFI_RET_SUCCESS;
 	struct interface *if_handle = (struct interface *)dev->data;
@@ -1807,7 +1833,8 @@ int nxp_wifi_get_power_save(const struct device *dev, struct wifi_ps_config *con
 	return 0;
 }
 
-static int nxp_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_domain)
+static int nxp_wifi_reg_domain(const struct device *dev, struct net_if *iface __unused,
+			       struct wifi_reg_domain *reg_domain)
 {
 	int ret;
 	uint8_t index = 0;
@@ -1873,7 +1900,9 @@ static int nxp_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain 
 }
 
 #ifdef CONFIG_NXP_WIFI_11AX_TWT
-static int nxp_wifi_set_twt(const struct device *dev, struct wifi_twt_params *params)
+static int nxp_wifi_set_twt(const struct device *dev,
+			    struct net_if *iface __unused,
+			    struct wifi_twt_params *params)
 {
 	wlan_twt_setup_config_t twt_setup_conf;
 	wlan_twt_teardown_config_t teardown_conf;
@@ -1909,7 +1938,9 @@ static int nxp_wifi_set_twt(const struct device *dev, struct wifi_twt_params *pa
 }
 
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-static int nxp_wifi_set_btwt(const struct device *dev, struct wifi_twt_params *params)
+static int nxp_wifi_set_btwt(const struct device *dev,
+			     struct net_if *iface __unused,
+			     struct wifi_twt_params *params)
 {
 	wlan_btwt_config_t btwt_config;
 
@@ -1936,7 +1967,9 @@ static int nxp_wifi_set_btwt(const struct device *dev, struct wifi_twt_params *p
 #endif
 #endif
 
-static int nxp_wifi_set_rts_threshold(const struct device *dev, unsigned int rts_threshold)
+static int nxp_wifi_set_rts_threshold(const struct device *dev,
+				      struct net_if *iface __unused,
+				      unsigned int rts_threshold)
 {
 	int ret = -1;
 
@@ -1952,7 +1985,9 @@ static int nxp_wifi_set_rts_threshold(const struct device *dev, unsigned int rts
 }
 
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-static int nxp_wifi_ap_set_rts_threshold(const struct device *dev, unsigned int rts_threshold)
+static int nxp_wifi_ap_set_rts_threshold(const struct device *dev,
+					 struct net_if *iface __unused,
+					 unsigned int rts_threshold)
 {
 	int ret = -1;
 

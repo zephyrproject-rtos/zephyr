@@ -140,7 +140,9 @@ siwx91x_configure_scan_dwell_time(sl_wifi_scan_type_t scan_type, uint16_t dwell_
 	}
 }
 
-int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_scan_config,
+int siwx91x_scan(const struct device *dev,
+		 struct net_if *iface __unused,
+		 struct wifi_scan_params *z_scan_config,
 		 scan_result_cb_t cb)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();

@@ -138,7 +138,7 @@ unsigned int siwx91x_on_join(sl_wifi_event_t event, unsigned int status,
 	return 0;
 }
 
-int siwx91x_disconnect(const struct device *dev)
+int siwx91x_disconnect(const struct device *dev, struct net_if *iface)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	struct siwx91x_dev *sidev = dev->data;
@@ -151,18 +151,19 @@ int siwx91x_disconnect(const struct device *dev)
 
 	ret = sl_wifi_disconnect(interface);
 	if (ret) {
-		wifi_mgmt_raise_disconnect_result_event(sidev->iface, ret);
+		wifi_mgmt_raise_disconnect_result_event(iface, ret);
 		return -EIO;
 	}
 
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE)) {
-		net_if_dormant_on(sidev->iface);
+		net_if_dormant_on(iface);
 	}
 
 	return 0;
 }
 
 static int siwx91x_disconnect_if_required(const struct device *dev,
+					  struct net_if *iface,
 					  struct wifi_connect_req_params *new_params)
 {
 	struct wifi_iface_status prev_params = { };
@@ -171,13 +172,13 @@ static int siwx91x_disconnect_if_required(const struct device *dev,
 	sl_net_credential_type_t psk_type;
 	int ret;
 
-	ret = siwx91x_status(dev, &prev_params);
+	ret = siwx91x_status(dev, iface, &prev_params);
 	if (ret < 0) {
 		return ret;
 	}
 
 	if (siwx91x_param_changed(&prev_params, new_params)) {
-		return siwx91x_disconnect(dev);
+		return siwx91x_disconnect(dev, iface);
 	}
 
 	if (new_params->security != WIFI_SECURITY_TYPE_NONE) {
@@ -190,7 +191,7 @@ static int siwx91x_disconnect_if_required(const struct device *dev,
 
 		if (new_params->psk_length != prev_psk_length ||
 		    memcmp(new_params->psk, prev_psk, prev_psk_length) != 0) {
-			return siwx91x_disconnect(dev);
+			return siwx91x_disconnect(dev, iface);
 		}
 	}
 
@@ -198,7 +199,9 @@ static int siwx91x_disconnect_if_required(const struct device *dev,
 	return -EALREADY;
 }
 
-int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *params)
+int siwx91x_connect(const struct device *dev,
+		    struct net_if *iface,
+		    struct wifi_connect_req_params *params)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	sl_wifi_client_configuration_t wifi_config = {
@@ -210,9 +213,9 @@ int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *pa
 	int ret;
 
 	if (sidev->state == WIFI_STATE_COMPLETED) {
-		ret = siwx91x_disconnect_if_required(dev, params);
+		ret = siwx91x_disconnect_if_required(dev, iface, params);
 		if (ret < 0) {
-			wifi_mgmt_raise_connect_result_event(sidev->iface, WIFI_STATUS_CONN_FAIL);
+			wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_FAIL);
 			return ret;
 		}
 	}
@@ -270,7 +273,7 @@ int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *pa
 
 	if (ret) {
 		LOG_ERR("Failed to set credentials: 0x%x", ret);
-		wifi_mgmt_raise_connect_result_event(sidev->iface, WIFI_STATUS_CONN_FAIL);
+		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_FAIL);
 		return -EINVAL;
 	}
 
@@ -280,7 +283,7 @@ int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *pa
 	ret = sl_wifi_set_mfp(interface, (sl_wifi_mfp_mode_t)params->mfp);
 	if (ret != SL_STATUS_OK) {
 		LOG_ERR("Failed to set MFP: 0x%x", ret);
-		wifi_mgmt_raise_connect_result_event(sidev->iface, WIFI_STATUS_CONN_FAIL);
+		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_FAIL);
 		return -EINVAL;
 	}
 
@@ -295,7 +298,7 @@ int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *pa
 
 	ret = sl_wifi_connect(interface, &wifi_config, 0);
 	if (ret != SL_STATUS_IN_PROGRESS) {
-		wifi_mgmt_raise_connect_result_event(sidev->iface, WIFI_STATUS_CONN_FAIL);
+		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_FAIL);
 		return -EIO;
 	}
 
