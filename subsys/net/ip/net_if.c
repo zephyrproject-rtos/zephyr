@@ -621,7 +621,7 @@ struct net_if *net_if_get_default(void)
 	}
 
 #if defined(CONFIG_NET_DEFAULT_IF_ETHERNET)
-	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	iface = net_if_get_first_ethernet();
 #endif
 #if defined(CONFIG_NET_DEFAULT_IF_IEEE802154)
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(IEEE802154));
