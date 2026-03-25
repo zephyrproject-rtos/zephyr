@@ -139,6 +139,10 @@
 	status = "okay";
 };
 
+&crc {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";

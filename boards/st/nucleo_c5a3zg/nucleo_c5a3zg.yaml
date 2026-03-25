@@ -13,6 +13,7 @@ supported:
   - arduino_spi
   - can
   - counter
+  - crc
   - dac
   - dma
   - gpio
