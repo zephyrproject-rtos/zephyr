@@ -165,7 +165,6 @@
 		#size-cells = <0>;
 
 		mux_i2c@1 {
-			compatible = "ti,tca9544a-channel";
 			reg = <1>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -181,7 +180,6 @@
 		};
 
 		mux_i2c@3 {
-			compatible = "ti,tca9544a-channel";
 			reg = <3>;
 			#address-cells = <1>;
 			#size-cells = <0>;
