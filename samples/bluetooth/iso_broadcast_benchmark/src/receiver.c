@@ -80,7 +80,6 @@ static bool data_cb(struct bt_data *data, void *user_data)
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
 	char name[DEVICE_NAME_LEN];
 
 	if (broadcaster_found) {
@@ -100,10 +99,8 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		return;
 	}
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	LOG_INF("Found broadcaster with address %s (RSSI %i)",
-		le_addr, info->rssi);
+		bt_addr_le_str(info->addr), info->rssi);
 
 	broadcaster_found = true;
 
