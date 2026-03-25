@@ -52,7 +52,7 @@ static void modem_iface_uart_isr(const struct device *uart_dev,
 {
 	struct modem_context *ctx;
 	struct modem_iface_uart_data *data;
-	int rx = 0, ret;
+	int rx = 0;
 	uint8_t *dst;
 	uint32_t partial_size = 0;
 	uint32_t total_size = 0;
@@ -64,20 +64,16 @@ static void modem_iface_uart_isr(const struct device *uart_dev,
 	if (!ctx || !ctx->iface.iface_data) {
 		return;
 	}
+	uart_irq_update(ctx->iface.dev);
+
+	if (uart_irq_rx_ready(ctx->iface.dev) <= 0) {
+		return;
+	}
 
 	data = (struct modem_iface_uart_data *)(ctx->iface.iface_data);
 	/* get all of the data off UART as fast as we can */
 	while (true) {
-		uart_irq_update(ctx->iface.dev);
-
-		if (uart_irq_rx_ready(ctx->iface.dev) <= 0) {
-			break;
-		}
-
-		if (!partial_size) {
-			partial_size = ring_buf_put_claim(&data->rx_rb, &dst,
-							  UINT32_MAX);
-		}
+		partial_size = ring_buf_put_ptr(&data->rx_rb, &dst);
 		if (!partial_size) {
 			if (data->hw_flow_control) {
 				uart_irq_rx_disable(ctx->iface.dev);
@@ -90,16 +86,11 @@ static void modem_iface_uart_isr(const struct device *uart_dev,
 
 		rx = uart_fifo_read(ctx->iface.dev, dst, partial_size);
 		if (rx <= 0) {
-			continue;
+			break;
 		}
-
-		dst += rx;
+		ring_buf_commit(&data->rx_rb, rx);
 		total_size += rx;
-		partial_size -= rx;
 	}
-
-	ret = ring_buf_put_finish(&data->rx_rb, total_size);
-	__ASSERT_NO_MSG(ret == 0);
 
 	if (total_size > 0) {
 		k_sem_give(&data->rx_sem);
