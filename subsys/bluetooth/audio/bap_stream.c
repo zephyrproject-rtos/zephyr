@@ -856,8 +856,8 @@ static bool bap_stream_valid_ase_op(const struct bt_conn *conn, const struct bt_
 		valid_op = false;
 	}
 
-	LOG_DBG("ASE operation (dir %d) %u in state %s is%s valid", ep_dir, ase_op,
-		bt_bap_ep_state_str(ep_state), valid_op ? "" : " not");
+	LOG_DBG("ASE operation (dir %s) %u in state %s is%s valid", bt_audio_dir_str(ep_dir),
+		ase_op, bt_bap_ep_state_str(ep_state), valid_op ? "" : " not");
 
 	return valid_op;
 }
@@ -1076,7 +1076,7 @@ bool bt_bap_stream_valid_state_transition(const struct bt_bap_ep *ep, enum bt_ba
 		valid_transition = false;
 	}
 
-	LOG_DBG("state transition (dir %d): %s -> %s is%s valid", ep_dir,
+	LOG_DBG("state transition (dir %s): %s -> %s is%s valid", bt_audio_dir_str(ep_dir),
 		bt_bap_ep_state_str(ep_state), bt_bap_ep_state_str(state),
 		valid_transition ? "" : " not");
 
