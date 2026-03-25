@@ -266,7 +266,7 @@ enum smf_state_result tc_attached_snk_run(void *obj)
 	const struct device *vbus = data->vbus;
 
 	/* Detach detection */
-	if (usbc_vbus_check_level(vbus, TC_VBUS_PRESENT) == false) {
+	if (usbc_vbus_check_level(vbus, TC_VBUS_REMOVED)) {
 		usbc_vbus_enable(vbus, false);
 		tc_set_state(dev, TC_UNATTACHED_SNK_STATE);
 		return SMF_EVENT_PROPAGATE;
