@@ -493,7 +493,8 @@ static int esp32_wifi_scan(const struct device *dev,
 	ret |= esp_wifi_scan_start(&scan_config, false);
 
 	if (ret != ESP_OK) {
-		LOG_ERR("Failed to start Wi-Fi scanning");
+		LOG_ERR("Failed to start Wi-Fi scanning (%d)", ret);
+		data->scan_cb = NULL;
 		return -EAGAIN;
 	}
 
