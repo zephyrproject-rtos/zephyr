@@ -35,17 +35,24 @@ choice MBEDTLS_IMPLEMENTATION
 	default MBEDTLS_BUILTIN
 
 config MBEDTLS_BUILTIN
-	bool "Use Zephyr in-tree mbedTLS version"
+	bool "Zephyr in-tree mbedTLS version"
 	help
 	  Link with mbedTLS sources included with Zephyr distribution.
 	  Included mbedTLS version is well integrated with and supported
 	  by Zephyr, and the recommended choice for most users.
 
+config MBEDTLS_CUSTOM
+	bool "Custom mbedTLS library"
+	help
+	  The mbedTLS library must be configured and added out of tree.
+
 config MBEDTLS_LIBRARY
-	bool "Use external mbedTLS library"
+	bool "External mbedTLS library [DEPRECATED]"
+	select DEPRECATED
 	help
 	  Use external, out-of-tree prebuilt mbedTLS library. For advanced
 	  users only.
+	  This option is deprecated. Use MBEDTLS_CUSTOM instead.
 
 if MBEDTLS_LIBRARY
 
