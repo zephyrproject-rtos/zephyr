@@ -423,19 +423,8 @@ if(CONFIG_BUILD_WITH_TFM)
     ${TFM_INTERFACE_INCLUDE_DIR}/crypto_keys
     ${ZEPHYR_BASE}/modules/mbedtls/configs
     )
-  # MBEDTLS_CONFIG_FILE and TF_PSA_CRYPTO_CONFIG_FILE are exposed by mbedTLS interface
-  # library. Here we need to override MBEDTLS_CONFIG_FILE because when building TF-M
-  # interface it relies on Mbed TLS 3.6.5 includes files and there MBEDTLS_CONFIG_FILE
-  # had both TLS/X.509 and crypto.
-  # Note: overriding is done by undefining + defining, because otherwise CMake would emit
-  #       a warning for variable re-definition.
-  target_compile_options(tfm_api PRIVATE
-    -UMBEDTLS_CONFIG_FILE
-    -UTF_PSA_CRYPTO_CONFIG_FILE
-    -DMBEDTLS_CONFIG_FILE="${CONFIG_TF_PSA_CRYPTO_CONFIG_FILE}"
-  )
 
-  # Add interface headers to zephyr_interface.
+  # Add interface include directory (exported by TF-M) to zephyr_interface
   zephyr_include_directories(
     ${TFM_INTERFACE_INCLUDE_DIR}
   )
