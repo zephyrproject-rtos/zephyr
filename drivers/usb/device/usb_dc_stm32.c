@@ -233,13 +233,13 @@ static struct usb_dc_stm32_state usb_dc_stm32_state;
  */
 #define SEND_MSG_TO_LOWERHALF(_status_field, _status, _target)			\
 	do {									\
-		struct usb_dc_stm32_msg _msg = {				\
+		struct usb_dc_stm32_msg msg = {					\
 			. _status_field = _status,				\
 			.target = _target,					\
 		};								\
 										\
 		int _errcode = k_msgq_put(					\
-			&usb_dc_stm32_state.isr_msgq, &_msg, K_NO_WAIT);	\
+			&usb_dc_stm32_state.isr_msgq, &msg, K_NO_WAIT);		\
 		if (_errcode != 0) {						\
 			LOG_ERR("k_msgq_put() failed: %d", _errcode);		\
 			__ASSERT_NO_MSG(0);					\

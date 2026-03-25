@@ -509,3 +509,10 @@ test_spi_hx711: hx711@3d {
 	gain = <64>;
 	avdd = <5000>;
 };
+
+test_spi_adxl355: adxl355@3e {
+	compatible = "adi,adxl355";
+	reg = <0x3e>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+};

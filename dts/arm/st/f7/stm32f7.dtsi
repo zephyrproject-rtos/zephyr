@@ -898,6 +898,7 @@
 			st,adc-sequencer = "programmable";
 			st,adc-oversampler = "none";
 			st,adc-internal-regulator = "none";
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -914,6 +915,7 @@
 			st,adc-sequencer = "programmable";
 			st,adc-oversampler = "none";
 			st,adc-internal-regulator = "none";
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -930,6 +932,7 @@
 			st,adc-sequencer = "programmable";
 			st,adc-oversampler = "none";
 			st,adc-internal-regulator = "none";
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 

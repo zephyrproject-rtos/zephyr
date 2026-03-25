@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
+#include <soc.h>
 
 #include "clock_manager.h"
 #include "image_header.h"
@@ -79,6 +80,13 @@ void soc_early_reset_hook(void)
 	/* Initialize silicon flow data and apply FT parameters. */
 	si_flow_data_init();
 	ft_paras_apply();
+
+	/*
+	 * Connect the Level 1 interrupt ISR (Peripheral_Handler,
+	 * which is implemented in ROM) to the Zephyr interrupt subsystem.
+	 */
+	IRQ_CONNECT(Peripheral_IRQn, 0, Peripheral_Handler, NULL, 0);
+	irq_enable(Peripheral_IRQn);
 
 	/* Enable cache */
 	share_cache_ram();

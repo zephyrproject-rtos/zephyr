@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/stm32c5_clock.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -102,6 +103,24 @@
 	};
 
 	soc {
+		adc1: adc@42028000 {
+			compatible = "st,stm32n6-adc", "st,stm32-adc";
+			reg = <0x42028000 0x100>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
+				 <&rcc STM32_SRC_PSIS ADCDAC_SEL(1)>;
+			clock-names = "adcx", "adc_ker";
+			interrupts = <32 0>;
+			#io-channel-cells = <1>;
+			st,adc-resolutions = <12 10 8 6>;
+			sampling-times = <3 5 8 13 25 48 139 289>;
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "extended";
+			st,adc-internal-regulator = "startup-hw-status";
+			st,adc-has-deep-powerdown;
+			st,adc-has-channel-preselection;
+			status = "disabled";
+		};
+
 		exti: interrupt-controller@44022000 {
 			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
@@ -186,6 +205,13 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 21)>;
 			interrupts = <44 0>, <45 0>;
 			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		iwdg: watchdog@40003000 {
+			compatible = "st,stm32-watchdog";
+			reg = <0x40003000 0x400>;
+			interrupts = <31 0>;
 			status = "disabled";
 		};
 
@@ -296,6 +322,32 @@
 			clocks = <&rcc STM32_CLOCK(APB3, 21)>;
 			prescaler = <32768>;
 			alarms-count = <2>;
+			status = "disabled";
+		};
+
+		spi1: spi@40013000 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			interrupts = <48 0>;
+			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
+			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
+			status = "disabled";
+		};
+
+		spi2: spi@40003800 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			interrupts = <49 0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -521,6 +573,35 @@
 			interrupts = <55 0>;
 			status = "disabled";
 		};
+
+		wwdg: wwdg1: watchdog@40002c00 {
+			compatible = "st,stm32-window-watchdog";
+			reg = <0x40002c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
+			interrupts = <0 0>;
+			status = "disabled";
+		};
+	};
+
+	die_temp: dietemp {
+		compatible = "st,stm32-temp-cal";
+		nvmem-cells = <&ts_cal1_otp>, <&ts_cal2_otp>;
+		nvmem-cell-names = "TS_CAL1", "TS_CAL2";
+		ts-cal1-temp = <30>;
+		ts-cal2-temp = <140>;
+		ts-cal-vrefanalog = <3300>;
+		ts-cal-resolution = <12>;
+		io-channels = <&adc1 12>;
+		status = "disabled";
+	};
+
+	vref: vref {
+		compatible = "st,stm32-vref";
+		nvmem-cells = <&vrefint_otp>;
+		vrefint-cal-mv = <3300>;
+		vrefint-cal-resolution = <12>;
+		io-channels = <&adc1 13>;
+		status = "disabled";
 	};
 };
 

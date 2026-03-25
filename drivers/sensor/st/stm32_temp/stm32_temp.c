@@ -19,6 +19,12 @@
 
 LOG_MODULE_REGISTER(stm32_temp, CONFIG_SENSOR_LOG_LEVEL);
 
+#ifdef CONFIG_STM32_HAL2
+#define STM32_ADC_COMMON_INSTANCE	ADC_COMMON_INSTANCE
+#else /* CONFIG_STM32_HAL2 */
+#define STM32_ADC_COMMON_INSTANCE	__LL_ADC_COMMON_INSTANCE
+#endif /* CONFIG_STM32_HAL2 */
+
 #define CAL_RES			12U
 #define MAX_CALIB_POINTS	2
 
@@ -88,21 +94,21 @@ struct stm32_temp_config {
 	bool is_ntc;
 };
 
-static inline void adc_enable_tempsensor_channel(ADC_TypeDef *adc)
+static void stm32_temp_enable_tempsensor_channel(ADC_TypeDef *adc)
 {
-	const uint32_t path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
+	const uint32_t path = LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc));
 
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
+	LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
 					path | LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 
 	k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
 }
 
-static inline void adc_disable_tempsensor_channel(ADC_TypeDef *adc)
+__maybe_unused static void stm32_temp_disable_tempsensor_channel(ADC_TypeDef *adc)
 {
-	const uint32_t path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
+	const uint32_t path = LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc));
 
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
+	LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
 					path & ~LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 }
 
@@ -203,22 +209,26 @@ static int stm32_temp_sample_fetch(const struct device *dev, enum sensor_channel
 	k_mutex_lock(&data->mutex, K_FOREVER);
 	pm_device_runtime_get(cfg->adc);
 
+#ifndef CONFIG_STM32_TEMP_INJECTED
 	rc = adc_channel_setup(cfg->adc, &cfg->adc_cfg);
-	if (rc) {
+	if (rc != 0) {
 		LOG_DBG("Setup AIN%u got %d", cfg->adc_cfg.channel_id, rc);
 		goto unlock;
 	}
 
-	adc_enable_tempsensor_channel(cfg->adc_base);
+	stm32_temp_enable_tempsensor_channel(cfg->adc_base);
+#endif /* CONFIG_STM32_TEMP_INJECTED */
 
 	rc = adc_read(cfg->adc, sp);
 	if (rc == 0) {
 		data->raw = data->sample_buffer;
 	}
 
-	adc_disable_tempsensor_channel(cfg->adc_base);
+#ifndef CONFIG_STM32_TEMP_INJECTED
+	stm32_temp_disable_tempsensor_channel(cfg->adc_base);
 
 unlock:
+#endif /* CONFIG_STM32_TEMP_INJECTED */
 	pm_device_runtime_put(cfg->adc);
 	k_mutex_unlock(&data->mutex);
 
@@ -323,7 +333,21 @@ static int stm32_temp_init(const struct device *dev)
 		.buffer = &data->sample_buffer,
 		.buffer_size = sizeof(data->sample_buffer),
 		.resolution = CAL_RES,
+#ifdef CONFIG_STM32_TEMP_INJECTED
+		.priority = 1,
+#endif /* CONFIG_STM32_TEMP_INJECTED */
 	};
+
+#ifdef CONFIG_STM32_TEMP_INJECTED
+	int rc = adc_channel_setup(cfg->adc, &cfg->adc_cfg);
+
+	if (rc != 0) {
+		LOG_DBG("Setup AIN%u got %d", cfg->adc_cfg.channel_id, rc);
+		return rc;
+	}
+
+	stm32_temp_enable_tempsensor_channel(cfg->adc_base);
+#endif /* CONFIG_STM32_TEMP_INJECTED */
 
 	return 0;
 }

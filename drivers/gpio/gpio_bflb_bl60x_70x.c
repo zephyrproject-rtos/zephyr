@@ -46,10 +46,18 @@ LOG_MODULE_REGISTER(gpio_bl60x_bl70x);
 #define GPIO_BFLB_TRIG_MODE_SYNC_LOW       0
 #define GPIO_BFLB_TRIG_MODE_SYNC_HIGH      1
 #define GPIO_BFLB_TRIG_MODE_SYNC_LEVEL     2
+#define GPIO_BFLB_TRIG_MODE_SYNC_EDGE_BOTH 4
 
+#if defined(CONFIG_SOC_SERIES_BL70XL)
+#define GPIO_BFLB_PIN_INT_PER_REG    8
+#define GPIO_BFLB_PIN_INT_REG_SIZE   4
+#define GPIO_BFLB_PIN_INT_REG_MSK    GENMASK(3, 0)
+#else
 #define GPIO_BFLB_PIN_INT_PER_REG    10
 #define GPIO_BFLB_PIN_INT_REG_SIZE   3
 #define GPIO_BFLB_PIN_INT_REG_MSK    GENMASK(2, 0)
+#endif
+
 #define GPIO_BFLB_PIN_REG_SIZE_SHIFT 2
 
 #define GPIO_BFLB_BL70X_PSRAM_START 23
@@ -151,13 +159,24 @@ static void gpio_bflb_port_interrupt_configure_mode(const struct device *dev, ui
 	tmp &= ~(GPIO_BFLB_PIN_INT_REG_MSK
 		<< ((pin % GPIO_BFLB_PIN_INT_PER_REG) * GPIO_BFLB_PIN_INT_REG_SIZE));
 
+#ifdef CONFIG_SOC_SERIES_BL70XL
+	if ((trig & GPIO_INT_HIGH_1) != 0
+		&& (trig & GPIO_INT_LOW_0) != 0
+		&& (mode & GPIO_INT_EDGE)) {
+		trig_mode |= GPIO_BFLB_TRIG_MODE_SYNC_EDGE_BOTH;
+	} else if ((trig & GPIO_INT_HIGH_1) != 0) {
+		trig_mode |= GPIO_BFLB_TRIG_MODE_SYNC_HIGH;
+	}
+#else
 	if ((trig & GPIO_INT_HIGH_1) != 0) {
 		trig_mode |= GPIO_BFLB_TRIG_MODE_SYNC_HIGH;
 	}
+#endif
 
 	if ((mode & GPIO_INT_EDGE) == 0) {
 		trig_mode |= GPIO_BFLB_TRIG_MODE_SYNC_LEVEL;
 	}
+
 	tmp |= (trig_mode << ((pin % GPIO_BFLB_PIN_INT_PER_REG) * GPIO_BFLB_PIN_INT_REG_SIZE));
 	sys_write32(tmp, cfg->base_reg + GLB_GPIO_INT_MODE_SET1_OFFSET
 		+ ((pin / GPIO_BFLB_PIN_INT_PER_REG) << GPIO_BFLB_PIN_REG_SIZE_SHIFT));

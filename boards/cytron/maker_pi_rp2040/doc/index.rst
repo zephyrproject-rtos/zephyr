@@ -25,7 +25,7 @@ Hardware
 - 2 RGB LEDs (Neopixels)
 - Piezo buzzer with mute switch
 - 4 servo ports
-- 2 Motor drivers, with 4 manual test bottons
+- 2 Motor drivers, with 4 manual test buttons
 - 7 Grove connectors, of which one can be used as a Maker/Qwiic/Stemma QT/zephyr_i2c connector
 - 13 status indicators for digital pins
 

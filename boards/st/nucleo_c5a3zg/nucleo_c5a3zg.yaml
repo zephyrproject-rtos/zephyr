@@ -6,16 +6,20 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
   - arduino_gpio
   - arduino_i2c
   - arduino_serial
+  - arduino_spi
   - counter
   - dma
   - gpio
   - i2c
   - pwm
   - rtc
+  - spi
   - uart
+  - watchdog
 ram: 256
 flash: 1024
 vendor: st

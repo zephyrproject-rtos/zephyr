@@ -1445,8 +1445,8 @@ static void cdns_i3c_start_transfer(const struct device *dev)
 	}
 
 	/* kickoff transfer */
-	sys_write32(CTRL_MCS | sys_read32(config->base + CTRL), config->base + CTRL);
 	sys_write32(MST_INT_CMDD_EMP, config->base + MST_IER);
+	sys_write32(CTRL_MCS | sys_read32(config->base + CTRL), config->base + CTRL);
 }
 
 /**
@@ -1569,7 +1569,7 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 			 * write the address of num_xfer and err which is to be updated upon
 			 * message completion
 			 */
-			cmd->num_xfer = &(payload->targets.payloads[i].num_xfer);
+			cmd->num_xfer = (uint32_t *)&(payload->targets.payloads[i].num_xfer);
 			cmd->sdr_err = &(payload->targets.payloads[i].err);
 		}
 	} else {
@@ -1587,7 +1587,7 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 			/* write the address of num_xfer which is to be updated upon message
 			 * completion
 			 */
-			cmd->num_xfer = &(payload->ccc.num_xfer);
+			cmd->num_xfer = (uint32_t *)&(payload->ccc.num_xfer);
 		} else {
 			/* no data to transfer */
 			cmd->len = 0;

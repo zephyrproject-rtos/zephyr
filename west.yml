@@ -172,7 +172,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: a9b1991ad956e24468ebc841d3f90398729d46b5
+      revision: cbf74978350266a45edbfb4508553a3990341dd2
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -198,7 +198,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: f35096e9b10a002bc4f319ac22382c1abaaf6af7
+      revision: 86f3ea6b389d860332bd81ae8b97543def619395
       path: modules/hal/microchip
       groups:
         - hal
@@ -208,12 +208,12 @@ manifest:
       groups:
         - hal
     - name: hal_nuvoton
-      revision: 8f1bf948a94cf59926ea7b686985e1d6c6f954c7
+      revision: fe26f3a5b3b85fb6b61cc3f744f195e3ab391194
       path: modules/hal/nuvoton
       groups:
         - hal
     - name: hal_nxp
-      revision: d95e637c2859f2813f8cabdb2ef318d7fc0e44c4
+      revision: cbf42f141066d999441696d12c206fc38929f3ea
       path: modules/hal/nxp
       groups:
         - hal
@@ -229,12 +229,12 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: c8f99f7de0b8ea5817dd1873e0b31208be3fb63b
+      revision: 84a7fd556d95a411ee3cbf4ed29478eced58fb35
       groups:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 59414fee28d89de23673d2e6b3789d711942436d
+      revision: 06282060fa20cbd21d4ebbc7d46a1fc9533fd24e
       groups:
         - hal
     - name: hal_rpi_pico
@@ -258,7 +258,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: b6c5718872a4e08b2754e5c5c0ebcf5019a65330
+      revision: 4ceafbebc77571f540d2ff9957468a1bfedb41d5
       path: modules/hal/stm32
       groups:
         - hal
@@ -273,7 +273,7 @@ manifest:
       groups:
         - hal
     - name: hal_ti
-      revision: b0347dba143798dafa3b57babfb754228398e5c5
+      revision: afbcfffd393be03ca2c9b41f9ce8d94a4c2f2fbd
       path: modules/hal/ti
       groups:
         - hal
@@ -358,7 +358,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 2b09581c7654f4dfd38681270350c9ae6b0438a2
+      revision: 63ccab2988bf4c144b3cd324a0277e03206fa413
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: cebea8e27ceb91a7d4580d17db65f93669befe72
@@ -400,12 +400,12 @@ manifest:
       groups:
         - crypto
     - name: trusted-firmware-a
-      revision: 44bcc378b6ec4af8693d008f43983e488f1f5740
+      revision: 4aef38a5bf03edfa615c1f8af5a49e7065f9fb3f
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 7e8bf231496cc4d43b2fab0bc133425b47756065
+      revision: 6e2e07aa785cb69354272fcc95eb36bf85c4a9d3
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

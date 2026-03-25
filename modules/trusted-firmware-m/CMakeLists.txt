@@ -288,6 +288,11 @@ if(CONFIG_BUILD_WITH_TFM)
     )
   endif()
 
+  if(CONFIG_SOC_SERIES_PSE84)
+    include(${ZEPHYR_BASE}/soc/infineon/edge/pse84/pse84_metadata.cmake)
+    list(APPEND TFM_CMAKE_ARGS -DIFX_EPC=epc2)
+  endif()
+
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
   add_custom_target(tfm_cmake
     DEPENDS ${TFM_BINARY_DIR}/CMakeCache.txt
@@ -607,11 +612,19 @@ if(CONFIG_BUILD_WITH_TFM)
   endif()
 
   if(NOT CONFIG_TFM_BL2)
+    # Default: use unsigned TF-M secure image for merging
+    set(TFM_S_MERGE_HEX_FILE $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>)
+
+    if(CONFIG_SOC_SERIES_PSE84)
+      pse84_add_metadata_secure_hex(${TFM_S_HEX_FILE} ${S_SIGNED_HEX_FILE})
+      set(TFM_S_MERGE_HEX_FILE ${S_SIGNED_HEX_FILE})
+    endif()
+
     # Merge tfm_s and zephyr (NS) image to a single binary.
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
         -o ${MERGED_HEX_FILE}
-        $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
+        ${TFM_S_MERGE_HEX_FILE}
         ${NS_HEX_APP_FILE}
     )
 

@@ -1931,10 +1931,6 @@ static int eth_sam_gmac_set_config(const struct device *dev,
 			dev_data->mac_addr[2], dev_data->mac_addr[3],
 			dev_data->mac_addr[4], dev_data->mac_addr[5]);
 
-		/* Register Ethernet MAC Address with the upper layer */
-		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
-				     sizeof(dev_data->mac_addr),
-				     NET_LINK_ETHERNET);
 		break;
 	}
 	default:

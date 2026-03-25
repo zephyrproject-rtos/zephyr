@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Vitor Massaru Iha <vitor@massaru.org>
- * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2025-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <string.h>
 #include <zephyr/drivers/pwm.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
@@ -336,6 +337,9 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 	ledc_hal_init(&data->hal, channel->speed_mode);
 
 	if ((pulse_cycles == period_cycles) || (pulse_cycles == 0)) {
+		channel->freq = 0;
+		channel->duty_val = 0;
+
 		/* For duty 0% and 100% stop PWM, set output level and return */
 		pwm_led_esp32_stop(data, channel, (pulse_cycles == period_cycles));
 		goto sem_give;
@@ -362,6 +366,47 @@ sem_give:
 	k_sem_give(&data->cmd_sem);
 
 	return ret;
+}
+
+static int pwm_led_esp32_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct pwm_ledc_esp32_config *config = dev->config;
+	struct pwm_ledc_esp32_data *data = dev->data;
+	struct pwm_ledc_esp32_channel_config *channel;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_RESUME:
+
+		for (int i = 0; i < config->channel_len; ++i) {
+			channel = &config->channel_config[i];
+
+			/* Stop or restart PWM only if channel is active
+			 * and duty is neither 0% nor 100%
+			 */
+			if (channel->freq > 0) {
+				ledc_hal_init(&data->hal, channel->speed_mode);
+
+				if (action == PM_DEVICE_ACTION_SUSPEND) {
+					pwm_led_esp32_stop(data, channel, channel->inverted);
+					ledc_hal_timer_rst(&data->hal, channel->timer_num);
+				} else {
+					pwm_led_esp32_start(data, channel);
+				}
+			}
+		}
+
+		break;
+
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
 }
 
 int pwm_led_esp32_init(const struct device *dev)
@@ -421,7 +466,7 @@ int pwm_led_esp32_init(const struct device *dev)
 		return ret;
 	}
 
-	return 0;
+	return pm_device_driver_init(dev, pwm_led_esp32_pm_action);
 }
 
 static DEVICE_API(pwm, pwm_led_esp32_api) = {
@@ -459,5 +504,8 @@ static struct pwm_ledc_esp32_data pwm_ledc_esp32_data = {
 	.cmd_sem = Z_SEM_INITIALIZER(pwm_ledc_esp32_data.cmd_sem, 1, 1),
 };
 
-DEVICE_DT_INST_DEFINE(0, &pwm_led_esp32_init, NULL, &pwm_ledc_esp32_data, &pwm_ledc_esp32_config,
-		      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &pwm_led_esp32_api);
+PM_DEVICE_DT_INST_DEFINE(0, pwm_led_esp32_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, &pwm_led_esp32_init, PM_DEVICE_DT_INST_GET(0), &pwm_ledc_esp32_data,
+		      &pwm_ledc_esp32_config, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,
+		      &pwm_led_esp32_api);

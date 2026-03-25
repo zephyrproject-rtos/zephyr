@@ -4,6 +4,7 @@
  */
 
 #include <zephyr/sys/poweroff.h>
+#include <power.h>
 
 #include <esp_sleep.h>
 #if SOC_PMU_SUPPORTED
@@ -25,5 +26,8 @@ void z_sys_poweroff(void)
 	pmu_ll_hp_clear_sw_intr_status(&PMU);
 #endif
 
+#if CONFIG_PM
+	esp32_sleep_gpio_prepare();
+#endif
 	esp_deep_sleep_start();
 }

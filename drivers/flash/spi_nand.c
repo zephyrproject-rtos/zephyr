@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022-2025 Macronix International Co., Ltd.
  * Copyright (c) 2025 Embeint Pty Ltd
+ * Copyright (c) 2026 CodeWrights GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,6 +85,9 @@ struct spi_nand_data {
 /* Indicates that a dummy byte is to be sent following the address.
  */
 #define NAND_ACCESS_DUMMY_BYTE BIT(6)
+
+/* Offset of the bad block marker in the spare area */
+#define BAD_BLOCK_MARKER_OFFSET 0x00
 
 LOG_MODULE_REGISTER(spi_nand, CONFIG_FLASH_LOG_LEVEL);
 
@@ -584,18 +588,133 @@ static void spi_nand_pages_layout(const struct device *dev,
 
 #if defined(CONFIG_FLASH_EX_OP_ENABLED)
 
+static int spi_nand_is_bad_block(const struct device *dev, off_t addr,
+				 enum flash_block_status *status)
+{
+	const struct spi_nand_config *config = dev->config;
+	const uint32_t bad_block_marker_offset =
+		config->parameters->write_block_size + BAD_BLOCK_MARKER_OFFSET;
+	uint32_t page_address;
+	uint8_t bad_block_marker;
+	int ret;
+
+	/* Address must be in subregion of device */
+	if (!valid_region(dev, addr, 1)) {
+		return -EINVAL;
+	}
+
+	/* Address must be aligned to erase block */
+	if (addr % config->block_size) {
+		return -EINVAL;
+	}
+
+	page_address = addr >> config->addr_page_shift;
+
+	/* Copy data from main storage to cache (ignore ECC errors) */
+	ret = spi_nand_page_read_to_cache(dev, page_address);
+	if ((ret != 0) && (ret != -EBADMSG)) {
+		LOG_DBG("Copy from NAND to device cache failed (%d)", ret);
+		return ret;
+	}
+
+	/* Read bad block marker out of cache */
+	ret = spi_nand_read_from_cache(dev, bad_block_marker_offset, &bad_block_marker,
+				       sizeof(bad_block_marker));
+	if (ret != 0) {
+		LOG_DBG("Read from device cache failed (%d)", ret);
+		return ret;
+	}
+
+	/* Verify bad block marker */
+	if (bad_block_marker != 0xff) {
+		LOG_DBG("Block at address %06x is bad (marker %02x)", page_address,
+			bad_block_marker);
+		*status = FLASH_BLOCK_BAD;
+	} else {
+		LOG_DBG("Block at address %06x is good", page_address);
+		*status = FLASH_BLOCK_GOOD;
+	}
+
+	return 0;
+}
+
+static int spi_nand_mark_bad_block(const struct device *dev, off_t addr)
+{
+	const struct spi_nand_config *config = dev->config;
+	const uint32_t bad_block_marker_offset =
+		config->parameters->write_block_size + BAD_BLOCK_MARKER_OFFSET;
+	uint8_t bad_block_marker = 0x00;
+	uint32_t page_address;
+	uint8_t status;
+	int ret;
+
+	/* Address must be in subregion of device */
+	if (!valid_region(dev, addr, 1)) {
+		return -EINVAL;
+	}
+
+	/* Address must be aligned to erase block */
+	if (addr % config->block_size) {
+		return -EINVAL;
+	}
+
+	page_address = addr >> config->addr_page_shift;
+	LOG_DBG("Marking block starting at %06x as bad", page_address);
+
+	/* Enable write operation */
+	ret = spi_nand_cmd_write(dev, SPI_NAND_CMD_WRITE_ENABLE);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Copy bad block marker to cache (all other bytes stay reset at 0xff) */
+	ret = spi_nand_access(dev, SPI_NAND_CMD_PROGRAM_LOAD,
+			      NAND_ACCESS_WRITE | NAND_ACCESS_ADDRESSED | NAND_ACCESS_16BIT_ADDR,
+			      bad_block_marker_offset, &bad_block_marker, sizeof(bad_block_marker));
+	if (ret != 0) {
+		LOG_DBG("Copy to device cache failed (%d)", ret);
+		return ret;
+	}
+
+	/* Program the cache to the appropriate page */
+	ret = spi_nand_access(dev, SPI_NAND_CMD_PROGRAM_EXECUTE,
+			      NAND_ACCESS_WRITE | NAND_ACCESS_ADDRESSED | NAND_ACCESS_24BIT_ADDR,
+			      page_address, NULL, 0);
+	if (ret != 0) {
+		LOG_DBG("Program from cache to NAND failed (%d)", ret);
+		return ret;
+	}
+
+	/* Wait for the write to complete (poll every 0.1ms) */
+	ret = spi_nand_wait_until_ready(dev, "write", config->page_program_us, 100, &status);
+	if (ret != 0) {
+		return ret;
+	}
+	if (status & SPI_NAND_FEATURE_STATUS_PROGRAM_FAIL) {
+		LOG_ERR("Program operation failed");
+		ret = -EIO;
+		return ret;
+	}
+
+	return 0;
+}
+
 static int spi_nand_ex_op(const struct device *dev, uint16_t code, const uintptr_t in, void *out)
 {
 	int ret;
-
-	ARG_UNUSED(in);
-	ARG_UNUSED(out);
 
 	acquire_device(dev);
 
 	switch (code) {
 	case FLASH_EX_OP_RESET:
 		ret = spi_nand_reset(dev);
+		break;
+	case FLASH_EX_OP_IS_BAD_BLOCK:
+		ret = spi_nand_is_bad_block(dev, *(const off_t *)in,
+					    (enum flash_block_status *)out);
+		break;
+	case FLASH_EX_OP_MARK_BAD_BLOCK:
+		ret = spi_nand_mark_bad_block(dev, *(const off_t *)in);
 		break;
 	default:
 		ret = -ENOTSUP;

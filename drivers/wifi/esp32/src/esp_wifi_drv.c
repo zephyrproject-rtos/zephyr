@@ -536,6 +536,7 @@ static int esp32_wifi_connect(const struct device *dev,
 		wifi_config.sta.pmf_cfg.required = false;
 		break;
 	case WIFI_SECURITY_TYPE_PSK:
+	case WIFI_SECURITY_TYPE_PSK_SHA256:
 		memcpy(wifi_config.sta.password, params->psk, params->psk_length);
 		wifi_config.sta.password[params->psk_length] = '\0';
 		wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
@@ -543,6 +544,8 @@ static int esp32_wifi_connect(const struct device *dev,
 		data->status.security = WIFI_AUTH_WPA2_PSK;
 		break;
 	case WIFI_SECURITY_TYPE_SAE:
+	case WIFI_SECURITY_TYPE_SAE_H2E:
+	case WIFI_SECURITY_TYPE_SAE_AUTO:
 #if defined(CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE)
 		if (params->sae_password) {
 			memcpy(wifi_config.sta.password, params->sae_password,
@@ -554,7 +557,15 @@ static int esp32_wifi_connect(const struct device *dev,
 		}
 		data->status.security = WIFI_AUTH_WPA3_PSK;
 		wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA3_PSK;
-		wifi_config.sta.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
+		wifi_config.sta.pmf_cfg.capable = true;
+		wifi_config.sta.pmf_cfg.required = true;
+		if (params->security == WIFI_SECURITY_TYPE_SAE_H2E) {
+			wifi_config.sta.sae_pwe_h2e = WPA3_SAE_PWE_HASH_TO_ELEMENT;
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
+			wifi_config.sta.sae_pwe_h2e = WPA3_SAE_PWE_HUNT_AND_PECK;
+		} else {
+			wifi_config.sta.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
+		}
 		break;
 #else
 		LOG_ERR("WPA3 not supported for STA mode. Enable "
@@ -689,6 +700,33 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		data->status.security = WIFI_AUTH_WPA2_PSK;
 		wifi_config.ap.pmf_cfg.required = false;
 		break;
+	case WIFI_SECURITY_TYPE_SAE:
+	case WIFI_SECURITY_TYPE_SAE_H2E:
+	case WIFI_SECURITY_TYPE_SAE_AUTO:
+#if defined(CONFIG_ESP32_WIFI_SOFTAP_SAE_SUPPORT)
+		if (params->sae_password) {
+			strncpy((char *)wifi_config.ap.password, params->sae_password,
+				params->sae_password_length);
+		} else {
+			strncpy((char *)wifi_config.ap.password, params->psk, params->psk_length);
+		}
+		wifi_config.ap.authmode = WIFI_AUTH_WPA3_PSK;
+		data->status.security = WIFI_AUTH_WPA3_PSK;
+		wifi_config.ap.pmf_cfg.capable = true;
+		wifi_config.ap.pmf_cfg.required = true;
+		if (params->security == WIFI_SECURITY_TYPE_SAE_H2E) {
+			wifi_config.ap.sae_pwe_h2e = WPA3_SAE_PWE_HASH_TO_ELEMENT;
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
+			wifi_config.ap.sae_pwe_h2e = WPA3_SAE_PWE_HUNT_AND_PECK;
+		} else {
+			wifi_config.ap.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
+		}
+		break;
+#else
+		LOG_ERR("WPA3 not supported for AP mode. Enable "
+			"CONFIG_ESP32_WIFI_SOFTAP_SAE_SUPPORT");
+		return -EINVAL;
+#endif
 	default:
 		LOG_ERR("Authentication method not supported");
 		return -EINVAL;
@@ -1054,8 +1092,6 @@ static int esp32_wifi_set_config(const struct device *dev, enum ethernet_config_
 		}
 
 		memcpy(dev_data->mac_addr, config->mac_address.addr, sizeof(dev_data->mac_addr));
-		net_if_set_link_addr(esp32_wifi_iface, dev_data->mac_addr,
-				     sizeof(dev_data->mac_addr), NET_LINK_ETHERNET);
 
 		return 0;
 	}

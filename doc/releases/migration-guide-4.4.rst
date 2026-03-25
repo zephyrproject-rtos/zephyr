@@ -23,6 +23,7 @@ the :ref:`release notes<zephyr_4.4>`.
 Common
 ******
 
+* The minimum required Zephyr SDK version is now 1.0.0.
 * The minimum required Python version is now 3.12 (from 3.10).
 
 Build System
@@ -590,6 +591,13 @@ Ethernet
 
 * The ``phy-handle`` property of :dtcompatible:`microchip,lan865x` must now be set to the phy node.
 
+* ``CONFIG_NET_DSA_DEPRECATED`` has been removed. The drivers for the compatibles
+  ``microchip,ksz8463``, ``microchip,ksz8794`` and ``microchip,ksz8863`` were removed, as they
+  haven't been migrated to the new DSA subsystem. (:github:`105926`)
+
+* Ethernet drivers no longer need to call :c:func:`net_if_set_link_addr` themselves, when
+  the mac address is changed via ``ETHERNET_CONFIG_TYPE_MAC_ADDRESS``. (:github:`105931`)
+
 File System
 ===========
 
@@ -699,6 +707,12 @@ Input
   * ``CONFIG_INPUT_CST816S_EV_DEVICE`` → :kconfig:option:` CONFIG_INPUT_CST8XX_EV_DEVICE`
 
   The dt-binding macro prefix have also been updated from ``CST816S_*`` to ``CST8XX_*``.
+
+Interrupt Controller
+====================
+
+* :dtcompatible:`swerv,pic` is now :dtcompatible:`cdns,swerv-pic` by adding vendor
+  prefix.
 
 Keyboard matrix
 ===============
@@ -1009,6 +1023,15 @@ USB
 ===
 
 * :dtcompatible:`maxim,max3421e_spi` has been renamed to :dtcompatible:`maxim,max3421e-spi`.
+* USB control transfer buffer allocation has been moved away from UDC to USB device_next.
+  Out-of-tree UDC drivers will have to be reworked. (:github:`103493`).
+
+* UVC device application API got modified:
+
+  * ``uvc_set_video_dev`` has been renamed to :c:func:`uvc_device_init`
+  * ``uvc_add_format`` has been renamed to :c:func:`uvc_device_add_format`
+  * :c:func:`uvc_device_enable` has been introduced
+  * :c:func:`uvc_device_shutdown` has been introduced
 
 USB-C
 =====
@@ -1110,6 +1133,14 @@ Bluetooth Audio
 * ``CONFIG_BT_TBS_SUPPORTED_FEATURES`` has been removed. Applications should use the defined macros
   :c:macro:`BT_TBS_FEATURE_HOLD` and :c:macro:`BT_TBS_FEATURE_JOIN` to set their supported features.
   (:github:`102666`)
+* :c:func:`bt_bap_unicast_server_foreach_ep` and :c:func:`bt_has_preset_foreach` may now return an
+  error if the iteration stopped early, or if provided with invalid parameters. (:github:`105462`)
+* The callbacks for :c:func:`bt_bap_unicast_server_foreach_ep`,
+  :c:func:`bt_bap_unicast_group_foreach_stream`, :c:func:`bt_bap_broadcast_source_foreach_stream`,
+  :c:func:`bt_cap_unicast_group_foreach_stream`, :c:func:`bt_cap_initiator_broadcast_foreach_stream`
+  and :c:func:`bt_has_preset_foreach` now return ``true`` to continue the iteration,
+  and ``false`` to stop the iteration. Any callbacks for these functions need to be updated to
+  reflect the new return types and values. (:github:`105462`)
 
 Bluetooth Mesh
 ==============
@@ -1125,6 +1156,13 @@ Bluetooth HCI
 
 Networking
 **********
+
+* :c:struct:`wifi_channel_info` gained a ``band`` field for set-channel. Behaviour
+  is backwards compatible for 2.4 GHz (channels 1–14) and 5 GHz (36–165): omit or
+  leave ``band`` as :c:macro:`WIFI_FREQ_BAND_UNKNOWN` and the driver infers the
+  band. For 6 GHz, set ``band`` to :c:macro:`WIFI_FREQ_BAND_6_GHZ` (channel
+  numbers overlap 1–14 with 2.4 GHz). Recompile so ``sizeof(struct
+  wifi_channel_info)`` is correct when calling net_mgmt.
 
 * Networking APIs found in
 

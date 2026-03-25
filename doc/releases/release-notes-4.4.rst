@@ -49,6 +49,8 @@ The following CVEs are addressed by this release:
 * :cve:`2026-0849` `Zephyr project bug tracker GHSA-ff4p-3ggg-prp6
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-ff4p-3ggg-prp6>`_
 
+* :cve:`2026-1677` Under embargo until 2026-04-15
+
 * :cve:`2026-1678` `Zephyr project bug tracker GHSA-536f-h63g-hj42
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-536f-h63g-hj42>`_
 
@@ -199,6 +201,8 @@ New APIs and options
   * :c:macro:`ADC_DT_SPEC_INST_GET_BY_IDX_OR`
   * :c:macro:`ADC_DT_SPEC_INST_GET_BY_NAME_OR`
   * :c:macro:`ADC_DT_SPEC_INST_GET_OR`
+  * :c:member:`adc_sequence.priority`
+  * :kconfig:option:`CONFIG_ADC_SEQUENCE_PRIORITY`
 
 * Architectures
 
@@ -221,6 +225,7 @@ New APIs and options
     * :kconfig:option:`CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH`
     * :c:member:`bt_cap_handover_cb.unicast_to_broadcast_created`
     * :c:func:`bt_tbs_client_get_by_index`
+    * :c:member:`bt_bap_unicast_client_cb.supported_contexts`
 
   * Host
 
@@ -271,6 +276,30 @@ New APIs and options
 * DAC
 
   * Added new DAC driver (:dtcompatible:`nxp,hpdac`) (:github:`104642`).
+  * Added new DAC driver APIs (:github:`104630`)
+
+    * :c:struct:`dac_dt_spec`
+    * :c:macro:`DAC_CHANNEL_CFG_DT`
+    * :c:macro:`DAC_DT_SPEC_GET_BY_NAME`
+    * :c:macro:`DAC_DT_SPEC_GET_BY_NAME_OR`
+    * :c:macro:`DAC_DT_SPEC_INST_GET_BY_NAME`
+    * :c:macro:`DAC_DT_SPEC_INST_GET_BY_NAME_OR`
+    * :c:macro:`DAC_DT_SPEC_GET_BY_IDX`
+    * :c:macro:`DAC_DT_SPEC_GET_BY_IDX_OR`
+    * :c:macro:`DAC_DT_SPEC_INST_GET_BY_IDX`
+    * :c:macro:`DAC_DT_SPEC_INST_GET_BY_IDX_OR`
+    * :c:macro:`DAC_DT_SPEC_GET`
+    * :c:macro:`DAC_DT_SPEC_GET_OR`
+    * :c:macro:`DAC_DT_SPEC_INST_GET`
+    * :c:macro:`DAC_DT_SPEC_INST_GET_OR`
+    * :c:func:`dac_channel_setup_dt`
+    * :c:func:`dac_write_value_dt`
+    * :c:func:`dac_millivolts_to_raw`
+    * :c:func:`dac_microvolts_to_raw`
+    * :c:func:`dac_x_to_raw_dt_chan`
+    * :c:func:`dac_millivolts_to_raw_dt`
+    * :c:func:`dac_microvolts_to_raw_dt`
+    * :c:func:`dac_is_ready_dt`
 
 * DMA
 
@@ -388,6 +417,10 @@ New APIs and options
 * Shell
 
   * :c:func:`shell_readline` for :ref:`user input <shell-readline>`
+
+* Stepper
+
+  * :c:func:`stepper_ctrl_configure_ramp`
 
 * Sys
 
@@ -974,6 +1007,7 @@ New Drivers
 
 * Firmware
 
+   * :dtcompatible:`arm,scmi-smc` (:github:`103584`)
    * :dtcompatible:`arm,scmi-system` (:github:`99037`)
    * :dtcompatible:`qemu,fw-cfg-ioport` (:github:`103717`)
    * :dtcompatible:`qemu,fw-cfg-mmio` (:github:`103717`)
@@ -1400,10 +1434,12 @@ New Samples
 * :zephyr:code-sample:`regulator_shell`
 * :zephyr:code-sample:`renesas_lvd`
 * :zephyr:code-sample:`rtk0eg0019b01002bj`
+* :zephyr:code-sample:`scmi`
 * :zephyr:code-sample:`sct2024`
 * :zephyr:code-sample:`shell-devmem-load`
 * :zephyr:code-sample:`stm32_pwm_mastermode`
 * :zephyr:code-sample:`t1s`
+* :zephyr:code-sample:`tmcm3216`
 * :zephyr:code-sample:`veml6046`
 * :zephyr:code-sample:`virtiofs`
 * :zephyr:code-sample:`zbus-async-listeners`

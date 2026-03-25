@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_ESPRESSIF_ESP32
+
+module = ESP_HAL
+module-str = esp_hal
+source "subsys/logging/Kconfig.template.log_config"
+
+config ESP_HAL_EARLY_LOG_LEVEL
+	int "Early boot log level for ESP HAL"
+	default 3
+	range 0 4
+	help
+	  Controls log output from ESP_EARLY_LOGx and ESP_DRAM_LOGx macros
+	  that run before Zephyr's logging subsystem is initialized.
+	  These use esp_rom_printf and are independent of CONFIG_LOG.
+	  0 = Off, 1 = Error, 2 = Warning, 3 = Info, 4 = Debug
+
+endif # SOC_FAMILY_ESPRESSIF_ESP32
+
+# Include the HAL's own Kconfig
+osource "$(ZEPHYR_HAL_ESPRESSIF_MODULE_DIR)/zephyr/Kconfig"

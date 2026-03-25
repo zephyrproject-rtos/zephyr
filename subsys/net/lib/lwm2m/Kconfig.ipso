@@ -185,6 +185,19 @@ config LWM2M_IPSO_ACCELEROMETER_VERSION_1_1
 
 endchoice
 
+config LWM2M_IPSO_MAGNETOMETER
+	bool "IPSO Magnetometer Support"
+	help
+	  This Object is used to represent a 1-3 axis magnetometer.
+
+config LWM2M_IPSO_MAGNETOMETER_INSTANCE_COUNT
+	int "Maximum # of IPSO Magnetometer object instances"
+	default 1
+	depends on LWM2M_IPSO_MAGNETOMETER
+	help
+	  This setting establishes the total count of IPSO Magnetometer
+	  instances available to the LWM2M client.
+
 config LWM2M_IPSO_BUZZER
 	bool "IPSO Buzzer Support"
 	help

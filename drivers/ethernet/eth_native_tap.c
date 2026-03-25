@@ -469,27 +469,11 @@ static int set_config(const struct device *dev,
 
 		memcpy(context->mac_addr, config->mac_address.addr,
 		       sizeof(context->mac_addr));
-		ret = net_if_set_link_addr(context->iface, context->mac_addr,
-					   sizeof(context->mac_addr),
-					   NET_LINK_ETHERNET);
+		return 0;
 	}
 
 	return ret;
 }
-
-#if defined(CONFIG_NET_VLAN)
-static int vlan_setup(const struct device *dev, struct net_if *iface,
-		      uint16_t tag, bool enable)
-{
-	if (enable) {
-		net_lldp_set_lldpdu(iface);
-	} else {
-		net_lldp_unset_lldpdu(iface);
-	}
-
-	return 0;
-}
-#endif /* CONFIG_NET_VLAN */
 
 static const struct ethernet_api eth_if_api = {
 	.iface_api.init = eth_iface_init,
@@ -497,10 +481,6 @@ static const struct ethernet_api eth_if_api = {
 	.get_capabilities = eth_native_tap_get_capabilities,
 	.set_config = set_config,
 	.send = eth_send,
-
-#if defined(CONFIG_NET_VLAN)
-	.vlan_setup = vlan_setup,
-#endif
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = get_stats,
 #endif

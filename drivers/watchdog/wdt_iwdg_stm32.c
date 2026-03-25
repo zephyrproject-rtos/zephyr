@@ -22,29 +22,27 @@
 
 #include "wdt_iwdg_stm32.h"
 
-#define IWDG_PRESCALER_MIN	(4U)
+#define IWDG_PRESCALER_MIN	4U
 
 #if defined(LL_IWDG_PRESCALER_1024)
-#define IWDG_PRESCALER_MAX (1024U)
+#define IWDG_PRESCALER_MAX	1024U
+#define IWDG_LL_PRESCALER_MAX	LL_IWDG_PRESCALER_1024
 #else
-#define IWDG_PRESCALER_MAX (256U)
+#define IWDG_PRESCALER_MAX	256U
+#define IWDG_LL_PRESCALER_MAX	LL_IWDG_PRESCALER_256
 #endif
 
-#define IWDG_RELOAD_MIN		(0x0000U)
-#define IWDG_RELOAD_MAX		(0x0FFFU)
+#define IWDG_RELOAD_MIN		0U
+#define IWDG_RELOAD_MAX		IWDG_RLR_RL
+
+#define IWDG_TIMEOUT(presc, reload)	((uint64_t)(presc) * ((reload) + 1U) * \
+					 USEC_PER_SEC / LSI_VALUE)
 
 /* Minimum timeout in microseconds. */
-#define IWDG_TIMEOUT_MIN	(IWDG_PRESCALER_MIN * (IWDG_RELOAD_MIN + 1U) \
-				 * USEC_PER_SEC / LSI_VALUE)
+#define IWDG_TIMEOUT_MIN	IWDG_TIMEOUT(IWDG_PRESCALER_MIN, IWDG_RELOAD_MIN)
 
 /* Maximum timeout in microseconds. */
-#define IWDG_TIMEOUT_MAX	((uint64_t)IWDG_PRESCALER_MAX * \
-				 (IWDG_RELOAD_MAX + 1U) * \
-				 USEC_PER_SEC / LSI_VALUE)
-
-#define IS_IWDG_TIMEOUT(__TIMEOUT__)		\
-	(((__TIMEOUT__) >= IWDG_TIMEOUT_MIN) &&	\
-	 ((__TIMEOUT__) <= IWDG_TIMEOUT_MAX))
+#define IWDG_TIMEOUT_MAX	IWDG_TIMEOUT(IWDG_PRESCALER_MAX, IWDG_RELOAD_MAX)
 
 /*
  * Status register needs 5 LSI clock cycles divided by prescaler to be updated.
@@ -134,6 +132,10 @@ static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
 #elif defined(CONFIG_SOC_SERIES_STM32L0X)
 		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
+#endif
+
+#if defined(CONFIG_SOC_SERIES_STM32C5X)
+		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_IWDG_STOP);
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
 		LL_DBGMCU_APB4_GRP1_FreezePeriph(LL_DBGMCU_APB4_GRP1_IWDG1_STOP);
 #elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
@@ -225,8 +227,9 @@ static int iwdg_stm32_install_timeout(const struct device *dev,
 	/* Calculating parameters to be applied later, on setup */
 	iwdg_stm32_convert_timeout(timeout, &prescaler, &reload);
 
-	if (!(IS_IWDG_TIMEOUT(timeout) && IS_IWDG_PRESCALER(prescaler) &&
-	    IS_IWDG_RELOAD(reload))) {
+	if (!IN_RANGE(timeout, IWDG_TIMEOUT_MIN, IWDG_TIMEOUT_MAX) ||
+	    prescaler > IWDG_LL_PRESCALER_MAX ||
+	    reload > IWDG_RELOAD_MAX) {
 		/* One of the parameters provided is invalid */
 		return -EINVAL;
 	}

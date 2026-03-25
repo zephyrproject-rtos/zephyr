@@ -28,10 +28,6 @@
 #include <zephyr/net/ptp_time.h>
 #include <zephyr/random/random.h>
 
-#if defined(CONFIG_NET_DSA_DEPRECATED)
-#include <zephyr/net/dsa.h>
-#endif
-
 #if defined(CONFIG_NVMEM)
 #include <zephyr/nvmem.h>
 #endif
@@ -212,7 +208,6 @@ enum ethernet_hw_caps {
 
 /** @cond INTERNAL_HIDDEN */
 
-#if !defined(CONFIG_NET_DSA_DEPRECATED)
 enum dsa_port_type {
 	NON_DSA_PORT,
 	DSA_CONDUIT_PORT,
@@ -220,7 +215,6 @@ enum dsa_port_type {
 	DSA_CPU_PORT,
 	DSA_PORT,
 };
-#endif
 
 enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_MAC_ADDRESS,
@@ -701,22 +695,7 @@ struct ethernet_context {
 	int port;
 #endif
 
-#if defined(CONFIG_NET_DSA_DEPRECATED)
-	/** DSA RX callback function - for custom processing - like e.g.
-	 * redirecting packets when MAC address is caught
-	 */
-	dsa_net_recv_cb_t dsa_recv_cb;
-
-	/** Switch physical port number */
-	uint8_t dsa_port_idx;
-
-	/** DSA context pointer */
-	struct dsa_context *dsa_ctx;
-
-	/** Send a network packet via DSA master port */
-	dsa_send_t dsa_send;
-
-#elif defined(CONFIG_NET_DSA)
+#if defined(CONFIG_NET_DSA)
 	/** DSA port tpye */
 	enum dsa_port_type dsa_port;
 
@@ -937,7 +916,7 @@ enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api = (struct ethernet_api *)dev->api;
 	enum ethernet_hw_caps caps = (enum ethernet_hw_caps)0;
-#if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+#if defined(CONFIG_NET_DSA)
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 
 	if (eth_ctx->dsa_port == DSA_CONDUIT_PORT) {
