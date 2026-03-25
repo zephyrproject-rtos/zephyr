@@ -860,7 +860,7 @@
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
-"./tests/ztest/ztest_param/pytest/test_parameters.py" = [
+"./tests/ztest/shell/pytest/test_shell.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
@@ -1135,5 +1135,5 @@ exclude = [
     "./tests/net/socket/tls_configurations/pytest/test_app_vs_openssl.py",
     "./tests/net/socket/udp/generate-c-string.py",
     "./tests/subsys/debug/gdbstub/pytest/test_gdbstub.py",
-    "./tests/ztest/ztest_param/pytest/test_parameters.py",
+    "./tests/ztest/shell/pytest/test_shell.py",
 ]

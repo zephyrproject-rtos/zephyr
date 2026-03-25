@@ -1,5 +1,5 @@
 tests:
-  testing.ztest.ztest_params.ztest_params:
+  testing.ztest.shell:
     platform_allow:
       - qemu_x86
     tags: test_framework
