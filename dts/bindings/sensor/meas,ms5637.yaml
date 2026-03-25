@@ -1,0 +1,22 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TE Connectivity MS5637 digital pressure and temperature sensor.
+  Communicates via I2C at fixed address 0x76.
+
+compatible: "meas,ms5637"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+examples:
+  - |
+    i2c {
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      ms5637@76 {
+        compatible = "meas,ms5637";
+        reg = <0x76>;
+      };
+    };
