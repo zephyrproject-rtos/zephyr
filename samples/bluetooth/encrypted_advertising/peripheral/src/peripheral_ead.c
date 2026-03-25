@@ -183,41 +183,31 @@ static int stop_and_delete_adv(struct bt_le_ext_adv *adv)
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (err) {
-		LOG_ERR("Failed to connect to %s %u %s", addr, err, bt_hci_err_to_str(err));
+		LOG_ERR("Failed to connect to %s %u %s", bt_conn_dst_str(conn),
+			err, bt_hci_err_to_str(err));
 		return;
 	}
 
-	LOG_DBG("Connected to %s", addr);
+	LOG_DBG("Connected to %s", bt_conn_dst_str(conn));
 
 	default_conn = conn;
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_DBG("Disconnected from %s, reason 0x%02x %s", addr, reason, bt_hci_err_to_str(reason));
+	LOG_DBG("Disconnected from %s, reason 0x%02x %s", bt_conn_dst_str(conn),
+		reason, bt_hci_err_to_str(reason));
 
 	k_poll_signal_raise(&disconn_signal, 0);
 }
 
 static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (!err) {
-		LOG_DBG("Security changed: %s level %u", addr, level);
+		LOG_DBG("Security changed: %s level %u", bt_conn_dst_str(conn), level);
 	} else {
-		LOG_DBG("Security failed: %s level %u err %s(%d)", addr, level,
+		LOG_DBG("Security failed: %s level %u err %s(%d)", bt_conn_dst_str(conn), level,
 			bt_security_err_to_str(err), err);
 	}
 }
@@ -225,13 +215,10 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
 {
 	char passkey_str[7];
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	snprintk(passkey_str, ARRAY_SIZE(passkey_str), "%06u", passkey);
 
-	printk("Passkey for %s: %s\n", addr, passkey_str);
+	printk("Passkey for %s: %s\n", bt_conn_dst_str(conn), passkey_str);
 
 	k_poll_signal_raise(&passkey_enter_signal, 0);
 }
@@ -239,22 +226,15 @@ static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 {
 	char passkey_str[7];
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	snprintk(passkey_str, ARRAY_SIZE(passkey_str), "%06u", passkey);
 
-	LOG_DBG("Passkey for %s: %s", addr, passkey_str);
+	LOG_DBG("Passkey for %s: %s", bt_conn_dst_str(conn), passkey_str);
 }
 
 static void auth_cancel(struct bt_conn *conn)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_DBG("Pairing cancelled: %s", addr);
+	LOG_DBG("Pairing cancelled: %s", bt_conn_dst_str(conn));
 }
 
 static int init_bt(void)

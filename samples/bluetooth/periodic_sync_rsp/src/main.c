@@ -29,11 +29,9 @@ static void sync_cb(struct bt_le_per_adv_sync *sync, struct bt_le_per_adv_sync_s
 {
 	struct bt_le_per_adv_sync_subevent_params params;
 	uint8_t subevents[1];
-	char le_addr[BT_ADDR_LE_STR_LEN];
 	int err;
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-	printk("Synced to %s with %d subevents\n", le_addr, info->num_subevents);
+	printk("Synced to %s with %d subevents\n", bt_addr_le_str(info->addr), info->num_subevents);
 
 	default_sync = sync;
 
@@ -55,10 +53,6 @@ static void sync_cb(struct bt_le_per_adv_sync *sync, struct bt_le_per_adv_sync_s
 static void term_cb(struct bt_le_per_adv_sync *sync,
 		    const struct bt_le_per_adv_sync_term_info *info)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	printk("Sync terminated (reason %d)\n", info->reason);
 
 	default_sync = NULL;

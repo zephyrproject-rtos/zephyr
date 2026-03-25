@@ -143,7 +143,6 @@ static void get_tx_power(uint8_t handle_type, uint16_t handle, int8_t *tx_pwr_lv
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	int8_t txp;
 	int ret;
 
@@ -157,10 +156,8 @@ static void connected(struct bt_conn *conn, uint8_t err)
 			printk("No connection handle (err %d)\n", ret);
 		} else {
 			/* Send first at the default selected power */
-			bt_addr_le_to_str(bt_conn_get_dst(conn),
-							  addr, sizeof(addr));
 			printk("Connected via connection (%d) at %s\n",
-			       default_conn_handle, addr);
+			       default_conn_handle, bt_conn_dst_str(conn));
 			get_tx_power(BT_HCI_VS_LL_HANDLE_TYPE_CONN,
 				     default_conn_handle, &txp);
 			printk("Connection (%d) - Initial Tx Power = %d\n",

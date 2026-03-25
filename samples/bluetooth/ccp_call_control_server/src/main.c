@@ -46,10 +46,7 @@ static K_SEM_DEFINE(sem_state_change, 0, 1);
 
 static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-	LOG_INF("Connected: %s", addr);
+	LOG_INF("Connected: %s", bt_conn_dst_str(conn));
 
 	peer_conn = bt_conn_ref(conn);
 	k_sem_give(&sem_state_change);
@@ -57,14 +54,12 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
 	if (conn != peer_conn) {
 		return;
 	}
 
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-	LOG_INF("Disconnected: %s (reason 0x%02x)", addr, reason);
+	LOG_INF("Disconnected: %s (reason 0x%02x)", bt_conn_dst_str(conn),
+		reason);
 
 	bt_conn_unref(peer_conn);
 	peer_conn = NULL;

@@ -105,10 +105,7 @@ static void mtu_exchange_cb(struct bt_conn *conn, uint8_t err,
 
 static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-	printk("Connected to %s (err 0x%02X)\n", addr, err);
+	printk("Connected to %s (err 0x%02X)\n", bt_conn_dst_str(conn), err);
 
 	__ASSERT(connection == conn, "Unexpected connected callback");
 
@@ -217,7 +214,6 @@ static bool data_cb(struct bt_data *data, void *user_data)
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	char name[NAME_LEN] = {};
 	int err;
 
@@ -245,7 +241,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
 				&connection);
 	if (err) {
-		printk("Create conn to %s failed (%u)\n", addr_str, err);
+		printk("Create conn to %s failed (%u)\n", bt_addr_le_str(addr), err);
 	}
 }
 

@@ -100,11 +100,8 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 static void add_bonded_addr_to_filter_list(const struct bt_bond_info *info, void *data)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
-
 	bt_le_filter_accept_list_add(&info->addr);
-	bt_addr_le_to_str(&info->addr, addr_str, sizeof(addr_str));
-	printk("Added %s to advertising accept filter list\n", addr_str);
+	printk("Added %s to advertising accept filter list\n", bt_addr_le_str(&info->addr));
 	bond_count++;
 }
 
