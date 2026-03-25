@@ -21,6 +21,7 @@
 #include <zephyr/settings/settings.h>
 
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/l2cap.h>
@@ -106,7 +107,6 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 static void br_device_found(const bt_addr_t *addr, int8_t rssi, const uint8_t cod[3],
 			    const uint8_t eir[240])
 {
-	char br_addr[BT_ADDR_STR_LEN];
 	char name[239];
 	int len = 240;
 
@@ -145,9 +145,7 @@ static void br_device_found(const bt_addr_t *addr, int8_t rssi, const uint8_t co
 		eir += eir[0] + 1;
 	}
 
-	bt_addr_to_str(addr, br_addr, sizeof(br_addr));
-
-	bt_shell_print("[DEVICE]: %s, RSSI %i %s", br_addr, rssi, name);
+	bt_shell_print("[DEVICE]: %s, RSSI %i %s", bt_addr_str(addr), rssi, name);
 }
 
 static struct bt_br_discovery_result br_discovery_results[5];
@@ -974,7 +972,6 @@ static int cmd_pscan_param(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_oob(const struct shell *sh, size_t argc, char *argv[])
 {
-	char addr[BT_ADDR_STR_LEN];
 	struct bt_br_oob oob;
 	int err;
 
@@ -984,10 +981,8 @@ static int cmd_oob(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	bt_addr_to_str(&oob.addr, addr, sizeof(addr));
-
 	shell_print(sh, "BR/EDR OOB data:");
-	shell_print(sh, "  addr %s", addr);
+	shell_print(sh, "  bt_addr_str(&oob.addr) %s", bt_addr_str(&oob.addr));
 	return 0;
 }
 
@@ -1193,17 +1188,14 @@ parse_record:
 static uint8_t sdp_hfp_ag_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
 			       const struct bt_sdp_discover_params *params)
 {
-	char addr[BT_ADDR_STR_LEN];
 	uint16_t param, version;
 	uint16_t features;
 	int err;
 
-	conn_addr_str(conn, addr, sizeof(addr));
-
 	if (result && result->resp_buf) {
 		bt_shell_print("SDP HFPAG data@%p (len %u) hint %u from remote %s",
 			       result->resp_buf, result->resp_buf->len, result->next_record_hint,
-			       addr);
+			       bt_conn_dst_str(conn));
 
 		/*
 		 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
@@ -1235,7 +1227,7 @@ static uint8_t sdp_hfp_ag_user(struct bt_conn *conn, struct bt_sdp_client_result
 		}
 		bt_shell_print("HFPAG Supported Features param 0x%04x", features);
 	} else {
-		bt_shell_print("No SDP HFPAG data from remote %s", addr);
+		bt_shell_print("No SDP HFPAG data from remote %s", bt_conn_dst_str(conn));
 	}
 done:
 	return BT_SDP_DISCOVER_UUID_CONTINUE;
@@ -1245,17 +1237,14 @@ static uint8_t sdp_hfp_hf_user(struct bt_conn *conn,
 			       struct bt_sdp_client_result *result,
 			       const struct bt_sdp_discover_params *params)
 {
-	char addr[BT_ADDR_STR_LEN];
 	uint16_t param, version;
 	uint16_t features;
 	int err;
 
-	conn_addr_str(conn, addr, sizeof(addr));
-
 	if (result && result->resp_buf) {
 		bt_shell_print("SDP HFPHF data@%p (len %u) hint %u from remote %s",
 			       result->resp_buf, result->resp_buf->len, result->next_record_hint,
-			       addr);
+			       bt_conn_dst_str(conn));
 
 		/*
 		 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
@@ -1287,7 +1276,7 @@ static uint8_t sdp_hfp_hf_user(struct bt_conn *conn,
 		}
 		bt_shell_print("HFPHF Supported Features param 0x%04x", features);
 	} else {
-		bt_shell_print("No SDP HFPHF data from remote %s", addr);
+		bt_shell_print("No SDP HFPHF data from remote %s", bt_conn_dst_str(conn));
 	}
 done:
 	return BT_SDP_DISCOVER_UUID_CONTINUE;
@@ -1296,21 +1285,18 @@ done:
 static uint8_t sdp_a2src_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
 			      const struct bt_sdp_discover_params *params)
 {
-	char addr[BT_ADDR_STR_LEN];
 	uint16_t param, version;
 	uint16_t features;
 	int err;
 
-	conn_addr_str(conn, addr, sizeof(addr));
-
 	if (result == NULL || result->resp_buf == NULL) {
-		bt_shell_print("No SDP A2SRC data from remote %s", addr);
+		bt_shell_print("No SDP A2SRC data from remote %s", bt_conn_dst_str(conn));
 		goto done;
 	}
 
 	bt_shell_print("SDP A2SRC data@%p (len %u) hint %u from remote %s",
 		       result->resp_buf, result->resp_buf->len, result->next_record_hint,
-		       addr);
+		       bt_conn_dst_str(conn));
 
 	/*
 	 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
@@ -1361,21 +1347,18 @@ done:
 static uint8_t sdp_a2snk_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
 			      const struct bt_sdp_discover_params *params)
 {
-	char addr[BT_ADDR_STR_LEN];
 	uint16_t param, version;
 	uint16_t features;
 	int err;
 
-	conn_addr_str(conn, addr, sizeof(addr));
-
 	if (result == NULL || result->resp_buf == NULL) {
-		bt_shell_print("No SDP A2SNK data from remote %s", addr);
+		bt_shell_print("No SDP A2SNK data from remote %s", bt_conn_dst_str(conn));
 		goto done;
 	}
 
 	bt_shell_print("SDP A2SNK data@%p (len %u) hint %u from remote %s",
 		       result->resp_buf, result->resp_buf->len, result->next_record_hint,
-		       addr);
+		       bt_conn_dst_str(conn));
 
 	/*
 	 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
@@ -1426,20 +1409,18 @@ done:
 static uint8_t sdp_avrcp_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
 			      const struct bt_sdp_discover_params *params)
 {
-	char addr[BT_ADDR_STR_LEN];
 	uint16_t param, version;
 	uint16_t features;
 	int err;
 
-	conn_addr_str(conn, addr, sizeof(addr));
-
 	if (result == NULL || result->resp_buf == NULL) {
-		bt_shell_print("No SDP AVRCP data from remote %s", addr);
+		bt_shell_print("No SDP AVRCP data from remote %s", bt_conn_dst_str(conn));
 		return BT_SDP_DISCOVER_UUID_CONTINUE;
 	}
 
 	bt_shell_print("SDP AVRCP data@%p (len %u) hint %u from remote %s",
-		       result->resp_buf, result->resp_buf->len, result->next_record_hint, addr);
+		       result->resp_buf, result->resp_buf->len, result->next_record_hint,
+		       bt_conn_dst_str(conn));
 
 	err = bt_sdp_get_proto_param(result->resp_buf, BT_SDP_PROTO_L2CAP, &param);
 	if (err < 0) {
@@ -1469,15 +1450,13 @@ done:
 static uint8_t sdp_pnp_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
 			    const struct bt_sdp_discover_params *params)
 {
-	char addr[BT_ADDR_STR_LEN];
 	uint16_t vendor_id, product_id;
 	int err;
 
-	conn_addr_str(conn, addr, sizeof(addr));
-
 	if ((result != NULL) && (result->resp_buf != NULL)) {
 		bt_shell_print("SDP PNP data@%p (len %u) hint %u from remote %s", result->resp_buf,
-			       result->resp_buf->len, result->next_record_hint, addr);
+			       result->resp_buf->len, result->next_record_hint,
+			       bt_conn_dst_str(conn));
 
 		err = bt_sdp_get_vendor_id(result->resp_buf, &vendor_id);
 		if (err < 0) {
@@ -1495,7 +1474,7 @@ static uint8_t sdp_pnp_user(struct bt_conn *conn, struct bt_sdp_client_result *r
 
 		bt_shell_print("PNP product id param 0x%04x", product_id);
 	} else {
-		bt_shell_print("No SDP PNP data from remote %s", addr);
+		bt_shell_print("No SDP PNP data from remote %s", bt_conn_dst_str(conn));
 	}
 done:
 	return BT_SDP_DISCOVER_UUID_CONTINUE;
@@ -1612,11 +1591,9 @@ discover:
 
 static void bond_info(const struct bt_br_bond_info *info, void *user_data)
 {
-	char addr[BT_ADDR_STR_LEN];
 	int *bond_count = user_data;
 
-	bt_addr_to_str(&info->addr, addr, sizeof(addr));
-	bt_shell_print("Remote Identity: %s", addr);
+	bt_shell_print("Remote Identity: %s", bt_addr_str(&info->addr));
 	(*bond_count)++;
 }
 
@@ -1665,7 +1642,6 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 {
-	char addr_str[BT_ADDR_STR_LEN];
 	struct bt_conn *conn;
 	bt_addr_t addr;
 	int err;
@@ -1688,8 +1664,7 @@ static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 
 	default_conn = conn;
 
-	bt_addr_to_str(&addr, addr_str, sizeof(addr_str));
-	shell_print(sh, "Selected conn is now: %s", addr_str);
+	shell_print(sh, "Selected conn is now: %s", bt_conn_dst_str(conn));
 
 	return 0;
 }
@@ -1750,10 +1725,7 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 		    info.id);
 
 	if (info.type == BT_CONN_TYPE_BR) {
-		char addr_str[BT_ADDR_STR_LEN];
-
-		bt_addr_to_str(info.br.dst, addr_str, sizeof(addr_str));
-		shell_print(sh, "Peer address %s", addr_str);
+		shell_print(sh, "Peer address %s", bt_addr_str(info.br.dst));
 	}
 
 done:
