@@ -283,3 +283,7 @@ zephyr_udc0: &usbotg_fs {
 &hash {
 	status = "okay";
 };
+
+&crc {
+	status = "okay";
+};
