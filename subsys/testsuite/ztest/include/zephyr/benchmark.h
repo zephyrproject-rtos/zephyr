@@ -96,7 +96,7 @@ void benchmark_main(void);
  */
 #define ZTEST_BENCHMARK_SETUP_TEARDOWN(suite_name, benchmark, samples, setup_fn, teardown_fn)	\
 	static __noinline void benchmark##_fn(void);						\
-	static const STRUCT_SECTION_ITERABLE(ztest_benchmark, benchmark) =			\
+	static const STRUCT_SECTION_ITERABLE(ztest_benchmark, benchmark##_struct) =		\
 	{											\
 		.name = #benchmark,								\
 		.iterations = samples,								\
@@ -119,7 +119,7 @@ void benchmark_main(void);
  */
 #define ZTEST_BENCHMARK_TIMED_SETUP_TEARDOWN(testsuite, benchmark, duration, setup_fn, teardown_fn)\
 	static __noinline void benchmark##_fn(void);						\
-	static const STRUCT_SECTION_ITERABLE(ztest_benchmark_timed, benchmark) =		\
+	static const STRUCT_SECTION_ITERABLE(ztest_benchmark_timed, benchmark##_struct) =	\
 	{											\
 		.name = #benchmark,								\
 		.duration_ms = duration,							\
