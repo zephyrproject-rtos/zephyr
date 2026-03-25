@@ -1431,8 +1431,7 @@ int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
 static inline int i3c_configure(const struct device *dev,
 				enum i3c_config_type type, void *config)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->configure == NULL) {
 		return -ENOSYS;
@@ -1507,8 +1506,7 @@ static inline int i3c_configure_target(const struct device *dev,
 static inline int i3c_config_get(const struct device *dev,
 				 enum i3c_config_type type, void *config)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->config_get == NULL) {
 		return -ENOSYS;
@@ -1573,8 +1571,7 @@ static inline int i3c_config_get_target(const struct device *dev,
  */
 static inline int i3c_recover_bus(const struct device *dev)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->recover_bus == NULL) {
 		return -ENOSYS;
@@ -1715,8 +1712,7 @@ int i3c_detach_i2c_device(struct i3c_i2c_device_desc *target);
  */
 static inline int i3c_do_daa(const struct device *dev)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->do_daa == NULL) {
 		return -ENOSYS;
@@ -1744,8 +1740,7 @@ __syscall int i3c_do_ccc(const struct device *dev,
 static inline int z_impl_i3c_do_ccc(const struct device *dev,
 				    struct i3c_ccc_payload *payload)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->do_ccc == NULL) {
 		return -ENOSYS;
@@ -1791,10 +1786,7 @@ __syscall int i3c_transfer(struct i3c_device_desc *target,
 static inline int z_impl_i3c_transfer(struct i3c_device_desc *target,
 				      struct i3c_msg *msgs, uint8_t num_msgs)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)target->bus->api;
-
-	return api->i3c_xfers(target->bus, target, msgs, num_msgs);
+	return DEVICE_API_GET(i3c, target->bus)->i3c_xfers(target->bus, target, msgs, num_msgs);
 }
 
 /** @} */
@@ -1817,8 +1809,7 @@ static inline
 struct i3c_device_desc *i3c_device_find(const struct device *dev,
 					const struct i3c_device_id *id)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->i3c_device_find == NULL) {
 		return NULL;
@@ -1849,8 +1840,7 @@ struct i3c_device_desc *i3c_device_find(const struct device *dev,
 static inline int i3c_ibi_hj_response(const struct device *dev,
 				      bool ack)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->ibi_hj_response == NULL) {
 		return -ENOSYS;
@@ -1874,8 +1864,7 @@ static inline int i3c_ibi_hj_response(const struct device *dev,
 static inline int i3c_ibi_raise(const struct device *dev,
 				struct i3c_ibi *request)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->ibi_raise == NULL) {
 		return -ENOSYS;
@@ -1901,8 +1890,7 @@ static inline int i3c_ibi_raise(const struct device *dev,
  */
 static inline int i3c_ibi_enable(struct i3c_device_desc *target)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)target->bus->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, target->bus);
 
 	if (api->ibi_enable == NULL) {
 		return -ENOSYS;
@@ -1925,8 +1913,7 @@ static inline int i3c_ibi_enable(struct i3c_device_desc *target)
  */
 static inline int i3c_ibi_disable(struct i3c_device_desc *target)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)target->bus->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, target->bus);
 
 	if (api->ibi_disable == NULL) {
 		return -ENOSYS;
@@ -2761,7 +2748,7 @@ static inline void i3c_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct i3c_iodev_data *data =
 		(const struct i3c_iodev_data *)iodev_sqe->sqe.iodev->data;
-	const struct i3c_driver_api *api = (const struct i3c_driver_api *)data->bus->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, data->bus);
 
 	if (api->iodev_submit == NULL) {
 		rtio_iodev_sqe_err(iodev_sqe, -ENOSYS);
