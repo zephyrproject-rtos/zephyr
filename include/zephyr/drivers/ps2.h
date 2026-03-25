@@ -82,10 +82,7 @@ __syscall int ps2_config(const struct device *dev,
 static inline int z_impl_ps2_config(const struct device *dev,
 				    ps2_callback_t callback_isr)
 {
-	const struct ps2_driver_api *api =
-				(struct ps2_driver_api *)dev->api;
-
-	return api->config(dev, callback_isr);
+	return DEVICE_API_GET(ps2, dev)->config(dev, callback_isr);
 }
 
 /**
@@ -101,10 +98,7 @@ __syscall int ps2_write(const struct device *dev, uint8_t value);
 
 static inline int z_impl_ps2_write(const struct device *dev, uint8_t value)
 {
-	const struct ps2_driver_api *api =
-			(const struct ps2_driver_api *)dev->api;
-
-	return api->write(dev, value);
+	return DEVICE_API_GET(ps2, dev)->write(dev, value);
 }
 
 /**
@@ -119,10 +113,7 @@ __syscall int ps2_read(const struct device *dev,  uint8_t *value);
 
 static inline int z_impl_ps2_read(const struct device *dev, uint8_t *value)
 {
-	const struct ps2_driver_api *api =
-			(const struct ps2_driver_api *)dev->api;
-
-	return api->read(dev, value);
+	return DEVICE_API_GET(ps2, dev)->read(dev, value);
 }
 
 /**
@@ -136,8 +127,7 @@ __syscall int ps2_enable_callback(const struct device *dev);
 
 static inline int z_impl_ps2_enable_callback(const struct device *dev)
 {
-	const struct ps2_driver_api *api =
-			(const struct ps2_driver_api *)dev->api;
+	const struct ps2_driver_api *api = DEVICE_API_GET(ps2, dev);
 
 	if (api->enable_callback == NULL) {
 		return -ENOSYS;
@@ -157,8 +147,7 @@ __syscall int ps2_disable_callback(const struct device *dev);
 
 static inline int z_impl_ps2_disable_callback(const struct device *dev)
 {
-	const struct ps2_driver_api *api =
-			(const struct ps2_driver_api *)dev->api;
+	const struct ps2_driver_api *api = DEVICE_API_GET(ps2, dev);
 
 	if (api->disable_callback == NULL) {
 		return -ENOSYS;
