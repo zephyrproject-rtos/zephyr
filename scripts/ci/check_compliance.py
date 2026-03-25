@@ -158,6 +158,16 @@ def zephyr_doc_detail_builder(doc_subpath: str) -> str:
     return f"See https://docs.zephyrproject.org/latest{doc_subpath} for more details."
 
 
+def get_set_from_file(path) -> set[str]:
+    """
+    Load the contents of a file into a set, one element per line,
+    lines starting with # ignored, content after # ignored, whitespace stripped
+    """
+    with open(path) as f:
+        output = [line.split('#')[0].strip() for line in f.readlines() if not line.startswith('#')]
+    return set(output)
+
+
 class FmtdFailure(Failure):
     def __init__(
         self, severity, title, file, line=None, col=None, desc="", end_line=None, end_col=None
@@ -1447,6 +1457,12 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             cwd=GIT_TOP,
         )
 
+        # Load extensions to UNDEF_KCONFIG_ALLOWLIST
+        undef_kconfig_allowlist_extra = []
+        if path := os.environ.get("UNDEF_KCONFIG_OUTSIDE_ALLOWLIST_FILE", None):
+            logging.info(f"Loading extra UNDEF_KCONFIG_ALLOWLIST values from {path}")
+            undef_kconfig_allowlist_extra = get_set_from_file(path)
+
         # splitlines() supports various line terminators
         for grep_line in grep_stdout.splitlines():
             path, lineno, line = grep_line.split("\0")
@@ -1458,6 +1474,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
                 if (
                     sym_name not in defined_syms
                     and sym_name not in self.UNDEF_KCONFIG_ALLOWLIST
+                    and sym_name not in undef_kconfig_allowlist_extra
                     and not (sym_name.endswith("_MODULE") and sym_name[:-7] in defined_syms)
                     and not sym_name.startswith("BOARD_REVISION_")
                     and not (sym_name.startswith("DT_HAS_") and sym_name.endswith("_ENABLED"))
