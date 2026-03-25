@@ -34,44 +34,29 @@ __subsystem struct its_driver_api {
 
 static inline int its_alloc_intid(const struct device *dev)
 {
-	const struct its_driver_api *api =
-		(const struct its_driver_api *)dev->api;
-
-	return api->alloc_intid(dev);
+	return DEVICE_API_GET(its, dev)->alloc_intid(dev);
 }
 
 static inline int its_setup_deviceid(const struct device *dev, uint32_t device_id,
 				     unsigned int nites)
 {
-	const struct its_driver_api *api =
-		(const struct its_driver_api *)dev->api;
-
-	return api->setup_deviceid(dev, device_id, nites);
+	return DEVICE_API_GET(its, dev)->setup_deviceid(dev, device_id, nites);
 }
 
 static inline int its_map_intid(const struct device *dev, uint32_t device_id,
 				uint32_t event_id, unsigned int intid)
 {
-	const struct its_driver_api *api =
-		(const struct its_driver_api *)dev->api;
-
-	return api->map_intid(dev, device_id, event_id, intid);
+	return DEVICE_API_GET(its, dev)->map_intid(dev, device_id, event_id, intid);
 }
 
 static inline int its_send_int(const struct device *dev, uint32_t device_id, uint32_t event_id)
 {
-	const struct its_driver_api *api =
-		(const struct its_driver_api *)dev->api;
-
-	return api->send_int(dev, device_id, event_id);
+	return DEVICE_API_GET(its, dev)->send_int(dev, device_id, event_id);
 }
 
 static inline uint32_t its_get_msi_addr(const struct device *dev)
 {
-	const struct its_driver_api *api =
-		(const struct its_driver_api *)dev->api;
-
-	return api->get_msi_addr(dev);
+	return DEVICE_API_GET(its, dev)->get_msi_addr(dev);
 }
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_GICV3_ITS_H_ */
