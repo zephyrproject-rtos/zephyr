@@ -603,7 +603,6 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 {
 	const struct bt_le_scan_recv_info *info = user_data;
 	struct bt_le_per_adv_sync_param param = {0};
-	char le_addr[BT_ADDR_LE_STR_LEN];
 	struct bt_uuid_16 adv_uuid;
 	uint32_t broadcast_id;
 	int err;
@@ -626,10 +625,8 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	LOG_INF("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X\n", broadcast_id,
-		le_addr, info->sid);
+		bt_addr_le_str(info->addr), info->sid);
 
 	bt_addr_le_copy(&param.addr, info->addr);
 	param.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;

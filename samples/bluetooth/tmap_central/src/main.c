@@ -86,12 +86,9 @@ static int init(void)
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (err != 0) {
-		printk("Failed to connect to %s %u %s\n", addr, err, bt_hci_err_to_str(err));
+		printk("Failed to connect to %s %u %s\n", bt_conn_dst_str(conn),
+		       err, bt_hci_err_to_str(err));
 
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
@@ -104,21 +101,18 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 
-	printk("Connected: %s\n", addr);
+	printk("Connected: %s\n", bt_conn_dst_str(conn));
 	k_sem_give(&sem_connected);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
 	if (conn != default_conn) {
 		return;
 	}
 
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
+	printk("Disconnected: %s, reason 0x%02x %s\n", bt_conn_dst_str(conn),
+	       reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
@@ -203,8 +197,6 @@ static bool check_audio_support_and_connect(struct bt_data *data, void *user_dat
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 					struct net_buf_simple *buf)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
 	if (default_conn != NULL) {
 		/* Already connected */
 		return;
@@ -213,8 +205,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	/* Check for connectable, extended advertising */
 	if (((info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0) ||
 		((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE)) != 0) {
-		bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-		printk("[DEVICE]: %s, ", le_addr);
+		printk("[DEVICE]: %s, ", bt_addr_le_str(info->addr));
 		/* Check for TMAS support in advertising data */
 		bt_data_parse(buf, check_audio_support_and_connect, (void *)info->addr);
 	}

@@ -44,15 +44,6 @@ static const struct bt_data scan_rsp_data[] = {
 	BT_DATA(BT_DATA_MANUFACTURER_DATA, scan_data, sizeof(scan_data)),
 };
 
-static const char *bt_addr_le_str(const bt_addr_le_t *addr)
-{
-	static char str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(addr, str, sizeof(str));
-
-	return str;
-}
-
 /* Bluetooth specification doesn't allow the scan request event with legacy advertisements.
  * Ref: Bluetooth Core Specification v5.4, section 7.7.65.19 "LE Scan Request Received event" :
  *      "This event shall only be generated if advertising was enabled using the

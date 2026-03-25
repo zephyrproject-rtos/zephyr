@@ -95,7 +95,6 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	const struct bt_le_conn_param *conn_param =
 		BT_LE_CONN_PARAM(BT_GAP_MS_TO_CONN_INTERVAL(60), BT_GAP_MS_TO_CONN_INTERVAL(60), 0,
 				 BT_GAP_MS_TO_CONN_TIMEOUT(4000));
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	int err;
 
 	if (default_conn) {
@@ -108,8 +107,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		return;
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
+	printk("Device found: %s (RSSI %d)\n", bt_addr_le_str(addr), rssi);
 
 	/* connect only to devices in close proximity */
 	if (rssi < -50) {
@@ -122,7 +120,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, conn_param, &default_conn);
 	if (err) {
-		printk("Create conn to %s failed (%u)\n", addr_str, err);
+		printk("Create conn to %s failed (%u)\n", bt_addr_le_str(addr), err);
 		start_scan();
 	}
 }
@@ -193,14 +191,12 @@ static struct bt_iso_chan_qos iso_qos = {
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	int iso_err;
 	struct bt_iso_connect_param connect_param;
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (err) {
-		printk("Failed to connect to %s %u %s\n", addr, err, bt_hci_err_to_str(err));
+		printk("Failed to connect to %s %u %s\n", bt_conn_dst_str(conn),
+		       err, bt_hci_err_to_str(err));
 
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
@@ -213,7 +209,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 
-	printk("Connected: %s\n", addr);
+	printk("Connected: %s\n", bt_conn_dst_str(conn));
 
 	connect_param.acl = conn;
 	connect_param.iso_chan = &iso_chan;
@@ -228,15 +224,12 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
 	if (conn != default_conn) {
 		return;
 	}
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
+	printk("Disconnected: %s, reason 0x%02x %s\n", bt_conn_dst_str(conn),
+	       reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;

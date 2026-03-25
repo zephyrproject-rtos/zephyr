@@ -164,11 +164,8 @@ static bool eir_found(struct bt_data *data, void *user_data)
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
-	char dev[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(addr, dev, sizeof(dev));
 	printk("[DEVICE]: %s, AD evt type %u, AD data len %u, RSSI %i\n",
-	       dev, type, ad->len, rssi);
+	       bt_addr_le_str(addr), type, ad->len, rssi);
 
 	/* We're only interested in legacy connectable events or
 	 * possible extended advertising that are connectable.
@@ -211,13 +208,10 @@ static void start_scan(void)
 
 static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	int err;
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (conn_err) {
-		printk("Failed to connect to %s (%u)\n", addr, conn_err);
+		printk("Failed to connect to %s (%u)\n", bt_conn_dst_str(conn), conn_err);
 
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
@@ -226,7 +220,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 		return;
 	}
 
-	printk("Connected: %s\n", addr);
+	printk("Connected: %s\n", bt_conn_dst_str(conn));
 
 	total_rx_count = 0U;
 
@@ -248,11 +242,8 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
+	printk("Disconnected: %s, reason 0x%02x %s\n", bt_conn_dst_str(conn),
+	       reason, bt_hci_err_to_str(reason));
 
 	if (default_conn != conn) {
 		return;
