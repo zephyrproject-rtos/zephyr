@@ -398,7 +398,7 @@ __syscall uint32_t counter_get_frequency(const struct device *dev);
 static inline uint32_t z_impl_counter_get_frequency(const struct device *dev)
 {
 	const struct counter_config_info *config = (const struct counter_config_info *)dev->config;
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (api->get_freq) {
 		return api->get_freq(dev);
@@ -420,7 +420,7 @@ static inline uint32_t z_impl_counter_get_frequency(const struct device *dev)
 static inline uint32_t z_impl_counter_get_frequency(const struct device *dev)
 {
 	const struct counter_config_info *config = (const struct counter_config_info *)dev->config;
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	return api->get_freq ? api->get_freq(dev) : config->freq;
 }
@@ -440,7 +440,7 @@ static inline uint64_t z_impl_counter_get_frequency_64(const struct device *dev)
 {
 #ifdef CONFIG_COUNTER_64BITS_FREQ
 	const struct counter_config_info *config = (const struct counter_config_info *)dev->config;
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (api->get_freq_64) {
 		return api->get_freq_64(dev);
@@ -617,9 +617,7 @@ __syscall int counter_start(const struct device *dev);
 
 static inline int z_impl_counter_start(const struct device *dev)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
-
-	return api->start(dev);
+	return DEVICE_API_GET(counter, dev)->start(dev);
 }
 
 /**
@@ -635,9 +633,7 @@ __syscall int counter_stop(const struct device *dev);
 
 static inline int z_impl_counter_stop(const struct device *dev)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
-
-	return api->stop(dev);
+	return DEVICE_API_GET(counter, dev)->stop(dev);
 }
 
 /**
@@ -652,9 +648,7 @@ __syscall int counter_get_value(const struct device *dev, uint32_t *ticks);
 
 static inline int z_impl_counter_get_value(const struct device *dev, uint32_t *ticks)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
-
-	return api->get_value(dev, ticks);
+	return DEVICE_API_GET(counter, dev)->get_value(dev, ticks);
 }
 
 /**
@@ -668,7 +662,7 @@ __syscall int counter_reset(const struct device *dev);
 
 static inline int z_impl_counter_reset(const struct device *dev)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (!api->reset) {
 		return -ENOSYS;
@@ -689,7 +683,7 @@ __syscall int counter_set_value(const struct device *dev, uint32_t ticks);
 
 static inline int z_impl_counter_set_value(const struct device *dev, uint32_t ticks)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (!api->set_value) {
 		return -ENOSYS;
@@ -724,7 +718,7 @@ __syscall int counter_set_channel_alarm(const struct device *dev, uint8_t chan_i
 static inline int z_impl_counter_set_channel_alarm(const struct device *dev, uint8_t chan_id,
 						   const struct counter_alarm_cfg *alarm_cfg)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (chan_id >= counter_get_num_of_channels(dev)) {
 		return -ENOTSUP;
@@ -749,7 +743,7 @@ __syscall int counter_cancel_channel_alarm(const struct device *dev, uint8_t cha
 
 static inline int z_impl_counter_cancel_channel_alarm(const struct device *dev, uint8_t chan_id)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (chan_id >= counter_get_num_of_channels(dev)) {
 		return -ENOTSUP;
@@ -791,7 +785,7 @@ __syscall int counter_set_top_value(const struct device *dev, const struct count
 static inline int z_impl_counter_set_top_value(const struct device *dev,
 					       const struct counter_top_cfg *cfg)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (cfg->ticks > counter_get_max_top_value(dev)) {
 		return -EINVAL;
@@ -817,9 +811,7 @@ __syscall uint32_t counter_get_pending_int(const struct device *dev);
 
 static inline uint32_t z_impl_counter_get_pending_int(const struct device *dev)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
-
-	return api->get_pending_int(dev);
+	return DEVICE_API_GET(counter, dev)->get_pending_int(dev);
 }
 
 /**
@@ -833,9 +825,7 @@ __syscall uint32_t counter_get_top_value(const struct device *dev);
 
 static inline uint32_t z_impl_counter_get_top_value(const struct device *dev)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
-
-	return api->get_top_value(dev);
+	return DEVICE_API_GET(counter, dev)->get_top_value(dev);
 }
 
 /**
@@ -895,7 +885,7 @@ __syscall int counter_set_guard_period(const struct device *dev, uint32_t ticks,
 static inline int z_impl_counter_set_guard_period(const struct device *dev, uint32_t ticks,
 						  uint32_t flags)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (!api->set_guard_period) {
 		return -ENOSYS;
@@ -919,7 +909,7 @@ __syscall uint32_t counter_get_guard_period(const struct device *dev, uint32_t f
 
 static inline uint32_t z_impl_counter_get_guard_period(const struct device *dev, uint32_t flags)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	return (api->get_guard_period) ? api->get_guard_period(dev, flags) : 0;
 }
@@ -976,7 +966,7 @@ static inline int z_impl_counter_set_top_value_64(const struct device *dev,
 						  const struct counter_top_cfg_64 *cfg)
 {
 #ifdef CONFIG_COUNTER_64BITS_TICKS
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (cfg->ticks > counter_get_max_top_value_64(dev)) {
 		return -EINVAL;
@@ -1017,7 +1007,7 @@ static inline int z_impl_counter_set_channel_alarm_64(const struct device *dev, 
 						      const struct counter_alarm_cfg_64 *alarm_cfg)
 {
 #ifdef CONFIG_COUNTER_64BITS_TICKS
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (chan_id >= counter_get_num_of_channels(dev)) {
 		return -ENOTSUP;
@@ -1044,9 +1034,7 @@ __syscall uint64_t counter_get_top_value_64(const struct device *dev);
 static inline uint64_t z_impl_counter_get_top_value_64(const struct device *dev)
 {
 #ifdef CONFIG_COUNTER_64BITS_TICKS
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
-
-	return api->get_top_value_64(dev);
+	return DEVICE_API_GET(counter, dev)->get_top_value_64(dev);
 #else
 	ARG_UNUSED(dev);
 	return 0;
@@ -1111,7 +1099,7 @@ static inline int z_impl_counter_set_guard_period_64(const struct device *dev, u
 						     uint32_t flags)
 {
 #ifdef CONFIG_COUNTER_64BITS_TICKS
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (!api->set_guard_period_64) {
 		return -ENOSYS;
@@ -1142,7 +1130,7 @@ __syscall uint64_t counter_get_guard_period_64(const struct device *dev, uint32_
 static inline uint64_t z_impl_counter_get_guard_period_64(const struct device *dev, uint32_t flags)
 {
 #ifdef CONFIG_COUNTER_64BITS_TICKS
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	return (api->get_guard_period_64) ? api->get_guard_period_64(dev, flags) : 0;
 #else
@@ -1165,7 +1153,7 @@ __syscall int counter_get_value_64(const struct device *dev, uint64_t *ticks);
 static inline int z_impl_counter_get_value_64(const struct device *dev, uint64_t *ticks)
 {
 #ifdef CONFIG_COUNTER_64BITS_TICKS
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (!api->get_value_64) {
 		return -ENOSYS;
@@ -1192,7 +1180,7 @@ __syscall int counter_set_value_64(const struct device *dev, uint64_t ticks);
 static inline int z_impl_counter_set_value_64(const struct device *dev, uint64_t ticks)
 {
 #ifdef CONFIG_COUNTER_64BITS_TICKS
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (!api->set_value_64) {
 		return -ENOSYS;
