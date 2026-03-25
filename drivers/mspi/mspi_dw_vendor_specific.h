@@ -187,11 +187,6 @@ typedef struct {
 
 #define VENDOR_SPECIFIC_DATA_GET(inst) (void *)&mspi_dw_##inst##_vendor_data
 
-/* Temporarily hard-coded as not in MDK yet */
-#define QSPI_TMOD_OFFSET	(0x490UL)
-#define QSPI_TMOD_TX_AND_RX	(0x0)
-#define QSPI_TMOD_TX_ONLY	(0x1)
-#define QSPI_TMOD_RX_ONLY	(0x2)
 static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 {
 	struct mspi_dw_data *dev_data = dev->data;
@@ -207,7 +202,6 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 	MSPI_TRANSFER_LIST_Type *transfer_list = vendor_data->transfer_list;
 	EVDMA_JOB_Type *joblist = vendor_data->joblist;
 
-	int tmod = 0;
 	int job_idx = 0;
 
 	/* Set up tx job pointer to the first job */
@@ -237,14 +231,14 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 		joblist[job_idx] = EVDMA_NULL_JOB();
 		/* rx_job is always EVDMA_NULL_JOB() for transmit */
 		transfer_list->rx_job = &joblist[job_idx];
-		tmod = QSPI_TMOD_TX_ONLY;
+		preg->TMOD = MSPI_TMOD_TMOD_TXONLY;
 	} else {
 		preg->CONFIG.RXTRANSFERLENGTH = ((packet->num_bytes) >>
 						dev_data->bytes_per_frame_exp);
 
 		/* If sending address or command while being configured as controller */
 		if (job_idx > 0 && config->op_mode == MSPI_OP_MODE_CONTROLLER) {
-			tmod = QSPI_TMOD_TX_AND_RX;
+			preg->TMOD = MSPI_TMOD_TMOD_TXANDRX;
 
 			/* After command and address, setup RX job for data */
 			joblist[job_idx++] = EVDMA_NULL_JOB();
@@ -254,7 +248,7 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 			joblist[job_idx]   = EVDMA_NULL_JOB();
 		} else {
 			/* Sending command or address while configured as target isn't supported */
-			tmod = QSPI_TMOD_RX_ONLY;
+			preg->TMOD = MSPI_TMOD_TMOD_RXONLY;
 
 			transfer_list->rx_job = &joblist[0];
 			joblist[0] = EVDMA_JOB(packet->data_buf, packet->num_bytes,
@@ -276,14 +270,6 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 	/* Command and address length (in 32-bit words)*/
 	preg->FORMAT.CILEN = CEIL_DIV_32(dev_data->xfer.addr_length) +
 			     CEIL_DIV_32(dev_data->xfer.cmd_length);
-
-	/*
-	 * In slave mode, a tmod register in the wrapper also needs to be set. Currently
-	 * the address not in MDK so this is a temporary fix.
-	 */
-	uintptr_t tmod_addr = (uintptr_t)preg + QSPI_TMOD_OFFSET;
-
-	sys_write32(tmod, tmod_addr);
 
 	preg->CONFIG.TXBURSTLENGTH = config->tx_fifo_depth_minus_1 + 1
 				   - config->dma_tx_data_level;
