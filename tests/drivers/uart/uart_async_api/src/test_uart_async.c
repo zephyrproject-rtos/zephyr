@@ -1149,10 +1149,13 @@ static ZTEST_BMEM uint8_t tx_buffer[VAR_LENGTH_TX_BUF_SIZE];
 ZTEST_USER(uart_async_var_buf_length, test_var_buf_length)
 {
 	struct uart_config uart_cfg;
+	uint32_t baudrate;
 
 	zassert_equal(uart_config_get(uart_dev, &uart_cfg), 0);
+	baudrate = uart_cfg.baudrate;
 	if (uart_cfg.baudrate > CONFIG_VAR_LENGTH_BUFFER_TEST_BUADRATE_LIMIT) {
-		ztest_test_skip();
+		uart_cfg.baudrate = CONFIG_VAR_LENGTH_BUFFER_TEST_BUADRATE_LIMIT;
+		zassert_ok(uart_configure(uart_dev, &uart_cfg));
 	}
 
 	for (size_t buf_len = 1; buf_len < CONFIG_VAR_LENGTH_BUFFER_MAX_SIZE; ++buf_len) {
@@ -1160,6 +1163,9 @@ ZTEST_USER(uart_async_var_buf_length, test_var_buf_length)
 			test_uart_async_var_buf(buf_len, tx_len);
 		}
 	}
+
+	uart_cfg.baudrate = baudrate;
+	zassert_ok(uart_configure(uart_dev, &uart_cfg));
 }
 
 ZTEST_SUITE(uart_async_single_read, NULL, single_read_setup,
