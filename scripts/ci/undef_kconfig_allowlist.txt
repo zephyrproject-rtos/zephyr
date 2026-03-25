@@ -1,0 +1,165 @@
+# Many of these are symbols used as examples. Note that the list is sorted
+# alphabetically, and skips the CONFIG_ prefix.
+# zephyr-keep-sorted-start re(^\s+")
+ALSO_MISSING
+APP_LINK_WITH_
+# Application log level is not detected correctly as
+# the option is defined using a template, so it can't
+# be grepped
+APP_LOG_LEVEL
+APP_LOG_LEVEL_DBG
+# The ARMCLANG_STD_LIBC is defined in the
+# toolchain Kconfig which is sourced based on
+# Zephyr toolchain variant and therefore not
+# visible to compliance.
+ARMCLANG_STD_LIBC
+BINDESC_  # Used in documentation as a prefix
+BOARD_  # Used as regex in scripts/utils/board_v1_to_v2.py
+BOARD_MPS2_AN521_CPUTEST  # Used for board and SoC extension feature tests
+BOARD_NATIVE_SIM_NATIVE_64_TWO  # Used for board and SoC extension feature tests
+BOARD_NATIVE_SIM_NATIVE_ONE  # Used for board and SoC extension feature tests
+BOARD_UNIT_TESTING  # Used for tests/unit
+BOOT_DIRECT_XIP  # Used in sysbuild for MCUboot configuration
+BOOT_DIRECT_XIP_REVERT  # Used in sysbuild for MCUboot configuration
+BOOT_ENCRYPTION_KEY_FILE  # Used in sysbuild
+BOOT_ENCRYPT_ALG_AES_128  # Used in sysbuild
+BOOT_ENCRYPT_ALG_AES_256  # Used in sysbuild
+BOOT_ENCRYPT_IMAGE  # Used in sysbuild
+BOOT_FIRMWARE_LOADER  # Used in sysbuild for MCUboot configuration
+BOOT_FIRMWARE_LOADER_BOOT_MODE  # Used in sysbuild for MCUboot configuration
+BOOT_IMAGE_EXECUTABLE_RAM_SIZE  # MCUboot setting
+BOOT_IMAGE_EXECUTABLE_RAM_START  # MCUboot setting
+BOOT_MAX_IMG_SECTORS_AUTO  # Used in sysbuild
+BOOT_RAM_LOAD  # Used in sysbuild for MCUboot configuration
+BOOT_RAM_LOAD_REVERT  # Used in sysbuild for MCUboot configuration
+BOOT_SERIAL_BOOT_MODE  # Used in (sysbuild-based) test/documentation
+BOOT_SERIAL_CDC_ACM  # Used in (sysbuild-based) test
+BOOT_SERIAL_ENTRANCE_GPIO  # Used in (sysbuild-based) test
+BOOT_SERIAL_IMG_GRP_HASH  # Used in documentation
+BOOT_SERIAL_UART  # Used in (sysbuild-based) test
+BOOT_SHARE_BACKEND_RETENTION  # Used in Kconfig text
+BOOT_SHARE_DATA  # Used in Kconfig text
+BOOT_SHARE_DATA_BOOTINFO  # Used in (sysbuild-based) test
+BOOT_SIGNATURE_KEY_FILE  # MCUboot setting used by sysbuild
+BOOT_SIGNATURE_TYPE_ECDSA_P256  # MCUboot setting used by sysbuild
+BOOT_SIGNATURE_TYPE_ED25519  # MCUboot setting used by sysbuild
+BOOT_SIGNATURE_TYPE_NONE  # MCUboot setting used by sysbuild
+BOOT_SIGNATURE_TYPE_RSA  # MCUboot setting used by sysbuild
+BOOT_SWAP_USING_MOVE  # Used in sysbuild for MCUboot configuration
+BOOT_SWAP_USING_OFFSET  # Used in sysbuild for MCUboot configuration
+BOOT_SWAP_USING_SCRATCH  # Used in sysbuild for MCUboot configuration
+# Used in example adjusting MCUboot config, but
+# symbol is defined in MCUboot itself.
+BOOT_UPGRADE_ONLY
+BOOT_VALIDATE_SLOT0  # Used in (sysbuild-based) test
+BOOT_WATCHDOG_FEED  # Used in (sysbuild-based) test
+BT_6LOWPAN  # Defined in Linux, mentioned in docs
+CDC_ACM_PORT_NAME_
+CHRE  # Optional module
+CHRE_LOG_LEVEL_DBG  # Optional module
+CLOCK_STM32_SYSCLK_SRC_
+CMD_CACHE  # Defined in U-Boot, mentioned in docs
+CMU
+COMPILER_RT_RTLIB
+CRC  # Used in TI CC13x2 / CC26x2 SDK comment
+DEEP_SLEEP  # #defined by RV32M1 in ext/
+DESCRIPTION
+DT_HAS_  # example from doc/build/dts/dt-vs-kconfig.rst
+ERR
+ESP_DIF_LIBRARY  # Referenced in CMake comment
+EXPERIMENTAL
+EXTRA_FIRMWARE_DIR  # Linux, in boards/xtensa/intel_adsp_cavs25/doc
+FFT  # Used as an example in cmake/extensions.cmake
+FLAG  # Used as an example
+FOO
+FOO_LOG_LEVEL
+FOO_SETTING_1
+FOO_SETTING_2
+HEAP_MEM_POOL_ADD_SIZE_  # Used as an option matching prefix
+HUGETLBFS  # Linux, in boards/xtensa/intel_adsp_cavs25/doc
+IAR_BUFFERED_WRITE
+IAR_DATA_INIT
+IAR_LIBCPP
+IAR_SEMIHOSTING
+IAR_ZEPHYR_INIT
+# Used in ICMsg tests for intercompatibility
+# with older versions of the ICMsg.
+IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS
+LIBGCC_RTLIB
+LLEXT_EXPORT_SYMBOL_GROUP_  # Used in regexp by
+# scripts/build/llext_inspect_discarded_groups.py
+LLVM_USE_LD  # Both LLVM_USE_* are in cmake/toolchain/llvm/Kconfig
+# which are only included if LLVM is selected but
+# not other toolchains. Compliance check would complain,
+# for example, if you are using GCC.
+LLVM_USE_LLD
+LOG_BACKEND_MOCK_OUTPUT_DEFAULT  # Referenced in tests/subsys/logging/log_syst
+LOG_BACKEND_MOCK_OUTPUT_SYST  # Referenced in testcase.yaml of log_syst test
+LSM6DSO_INT_PIN
+MCUBOOT_ACTION_HOOKS  # Used in (sysbuild-based) test
+MCUBOOT_CLEANUP_ARM_CORE  # Used in (sysbuild-based) test
+MCUBOOT_DOWNGRADE_PREVENTION  # but symbols are defined in MCUboot itself.
+MCUBOOT_LOG_LEVEL_DBG
+MCUBOOT_LOG_LEVEL_INF
+MCUBOOT_LOG_LEVEL_WRN  # Used in example adjusting MCUboot config,
+MCUBOOT_SERIAL  # Used in (sysbuild-based) test/documentation
+MCUMGR_GRP_EXAMPLE_OTHER_HOOK  # Used in documentation
+# Used in modules/hal_nxp/mcux/mcux-sdk-ng/device/device.cmake.
+# It is a variable used by MCUX SDK CMake.
+MCUX_HW_CORE
+# Used in modules/hal_nxp/mcux/mcux-sdk-ng/device/device.cmake.
+# It is a variable used by MCUX SDK CMake.
+MCUX_HW_DEVICE_CORE
+# Used in modules/hal_nxp/mcux/mcux-sdk-ng/device/device.cmake.
+# It is a variable used by MCUX SDK CMake.
+MCUX_HW_FPU_TYPE
+MISSING
+MODULES
+MODVERSIONS  # Linux, in boards/xtensa/intel_adsp_cavs25/doc
+MYFEATURE
+MY_DRIVER_0
+NORMAL_SLEEP  # #defined by RV32M1 in ext/
+NRF_WIFI_FW_BIN  # Directly passed from CMakeLists.txt
+OPT
+OPT_0
+PEDO_THS_MIN
+PSA_H  # This is used in config-psa.h as guard for the header file
+REG1
+REG2
+RIMAGE_SIGNING_SCHEMA  # Optional module
+SECURITY_LOADPIN  # Linux, in boards/xtensa/intel_adsp_cavs25/doc
+SEL
+SHIFT
+SINGLE_APPLICATION_SLOT  # Used in sysbuild for MCUboot configuration
+SINGLE_APPLICATION_SLOT_RAM_LOAD  # Used in sysbuild for MCUboot configuration
+SOC_NORDIC_BSP_PATH_OVERRIDE  # Used in modules/hal_nordic/nrfx/CMakeLists.txt
+SOC_SDKNG_UNSUPPORTED  # Used in modules/hal_nxp/mcux/CMakeLists.txt
+SOC_SERIES_  # Used as regex in scripts/utils/board_v1_to_v2.py
+SOC_WATCH  # Issue 13749
+SOME_BOOL
+SOME_INT
+SOME_OTHER_BOOL
+SOME_STRING
+SRAM2  # Referenced in a comment in samples/application_development
+STACK_SIZE  # Used as an example in the Kconfig docs
+STD_CPP  # Referenced in CMake comment
+TEST1
+TFM_SPM_BACKEND_IPC  # Used in TFM sample dummy partition - belongs to TFM
+TFM_SPM_BACKEND_SFN  # Used in TFM sample dummy partition - belongs to TFM
+# Defined in modules/hal_nxp/mcux/mcux-sdk-ng/basic.cmake.
+# It is used by MCUX SDK cmake functions to add content
+# based on current toolchain.
+TOOLCHAIN
+# The symbol is defined in the toolchain
+# Kconfig which is sourced based on Zephyr
+# toolchain variant and therefore not visible
+# to compliance.
+TOOLCHAIN_ARCMWDT_SUPPORTS_THREAD_LOCAL_STORAGE
+TYPE_BOOLEAN
+USB_CONSOLE
+USE_STDC_
+WHATEVER
+ZEPHYR_TRY_MASS_ERASE  # MCUBoot setting described in sysbuild documentation
+ZTEST_FAIL_TEST_  # regex in tests/ztest/fail/CMakeLists.txt
+ZVFS_OPEN_ADD_SIZE_  # Used as an option matching prefix
+# zephyr-keep-sorted-stop
