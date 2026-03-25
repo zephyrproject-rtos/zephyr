@@ -204,7 +204,7 @@ __syscall int crc_begin(const struct device *dev, struct crc_ctx *ctx);
 
 static inline int z_impl_crc_begin(const struct device *dev, struct crc_ctx *ctx)
 {
-	const struct crc_driver_api *api = (const struct crc_driver_api *)dev->api;
+	const struct crc_driver_api *api = DEVICE_API_GET(crc, dev);
 
 	if (api->begin == NULL) {
 		return -ENOSYS;
@@ -231,7 +231,7 @@ __syscall int crc_update(const struct device *dev, struct crc_ctx *ctx, const vo
 static inline int z_impl_crc_update(const struct device *dev, struct crc_ctx *ctx,
 				    const void *buffer, size_t bufsize)
 {
-	const struct crc_driver_api *api = (const struct crc_driver_api *)dev->api;
+	const struct crc_driver_api *api = DEVICE_API_GET(crc, dev);
 
 	if (api->update == NULL) {
 		return -ENOSYS;
@@ -254,7 +254,7 @@ __syscall int crc_finish(const struct device *dev, struct crc_ctx *ctx);
 
 static inline int z_impl_crc_finish(const struct device *dev, struct crc_ctx *ctx)
 {
-	const struct crc_driver_api *api = (const struct crc_driver_api *)dev->api;
+	const struct crc_driver_api *api = DEVICE_API_GET(crc, dev);
 
 	if (api->finish == NULL) {
 		return -ENOSYS;
