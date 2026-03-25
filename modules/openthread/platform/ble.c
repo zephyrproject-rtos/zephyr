@@ -311,7 +311,6 @@ otError otPlatBleGapDisconnect(otInstance *aInstance)
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	struct bt_conn_info info;
-	char addr[BT_ADDR_LE_STR_LEN];
 	uint16_t mtu;
 	otError error = OT_ERROR_NONE;
 
@@ -324,8 +323,6 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	} else if (bt_conn_get_info(conn, &info)) {
 		LOG_WRN("Could not parse connection info");
 	} else {
-		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 		error = otPlatBleGattMtuGet(ble_openthread_instance, &mtu);
 		if (error != OT_ERROR_NONE) {
 			LOG_WRN("Error retrieving mtu: %s", otThreadErrorToString(error));
@@ -361,15 +358,12 @@ static void le_param_updated(struct bt_conn *conn, uint16_t interval, uint16_t l
 			     uint16_t timeout)
 {
 	struct bt_conn_info info;
-	char addr[BT_ADDR_LE_STR_LEN];
 	uint16_t mtu;
 	otError error = OT_ERROR_NONE;
 
 	if (bt_conn_get_info(conn, &info)) {
 		LOG_INF("Could not parse connection info");
 	} else {
-		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 		error = otPlatBleGattMtuGet(ble_openthread_instance, &mtu);
 
 		if (error != OT_ERROR_NONE) {
