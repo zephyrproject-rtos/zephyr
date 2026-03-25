@@ -101,6 +101,7 @@ static void async_callback(const struct device *dev, struct uart_event *evt, voi
 
 static void uart_rx_handle(const struct device *dev, struct shell_uart_int_driven *sh_uart)
 {
+	int rc;
 	uint8_t *data;
 	uint32_t len;
 	uint32_t rd_len;
@@ -110,11 +111,12 @@ static void uart_rx_handle(const struct device *dev, struct shell_uart_int_drive
 #endif
 
 	do {
-		len = ring_buf_put_claim(&sh_uart->rx_ringbuf, &data,
-					 sh_uart->rx_ringbuf.size);
+		len = ring_buf_put_ptr(&sh_uart->rx_ringbuf, &data, 0);
 
 		if (len > 0) {
-			rd_len = uart_fifo_read(dev, data, len);
+			rc = uart_fifo_read(dev, data, len);
+			__ASSERT_NO_MSG(rc >= 0);
+			rd_len = (rc >= 0) ? (uint32_t)rc : 0;
 
 			/* If there is any new data to be either taken into
 			 * ring buffer or consumed by the SMP, signal the
@@ -137,16 +139,15 @@ static void uart_rx_handle(const struct device *dev, struct shell_uart_int_drive
 				}
 			}
 #endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
-			int err = ring_buf_put_finish(&sh_uart->rx_ringbuf, rd_len);
-			(void)err;
-			__ASSERT_NO_MSG(err == 0);
+			ring_buf_commit(&sh_uart->rx_ringbuf, rd_len);
 		} else {
 			uint8_t dummy;
 
 			/* No space in the ring buffer - consume byte. */
 			LOG_WRN("RX ring buffer full.");
 
-			rd_len = uart_fifo_read(dev, &dummy, 1);
+			rc = uart_fifo_read(dev, &dummy, 1);
+			rd_len = (rc > 0) ? (uint32_t)rc : 0;
 #ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
 			/* If successful in getting byte from the fifo, try
 			 * feeding it to SMP as a part of mcumgr frame.
@@ -198,8 +199,9 @@ static void dtr_timer_handler(struct k_timer *timer)
 
 static void uart_tx_handle(const struct device *dev, struct shell_uart_int_driven *sh_uart)
 {
+	int rc;
 	uint32_t len;
-	const uint8_t *data;
+	uint8_t *data;
 
 	if (!uart_dtr_check(dev)) {
 		/* Wait for DTR signal before sending anything to output. */
@@ -208,15 +210,12 @@ static void uart_tx_handle(const struct device *dev, struct shell_uart_int_drive
 		return;
 	}
 
-	len = ring_buf_get_claim(&sh_uart->tx_ringbuf, (uint8_t **)&data,
-				 sh_uart->tx_ringbuf.size);
+	len = ring_buf_get_ptr(&sh_uart->tx_ringbuf, &data, 0);
 	if (len) {
-		int err;
-
-		len = uart_fifo_fill(dev, data, len);
-		err = ring_buf_get_finish(&sh_uart->tx_ringbuf, len);
-		__ASSERT_NO_MSG(err == 0);
-		ARG_UNUSED(err);
+		rc = uart_fifo_fill(dev, data, len);
+		__ASSERT_NO_MSG(rc >= 0);
+		len = (rc >= 0) ? (uint32_t)rc : 0;
+		ring_buf_consume(&sh_uart->tx_ringbuf, len);
 	} else {
 		uart_irq_tx_disable(dev);
 		atomic_set(&sh_uart->tx_busy, 0);
