@@ -1,0 +1,153 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf93m1dk_nrf54l15-pinctrl.dtsi"
+#include <zephyr/dt-bindings/regulator/npm13xx.h>
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+
+		led0: led_0 {
+			gpios = <&gpio2 9 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
+		};
+
+		led1: led_1 {
+			gpios = <&gpio2 8 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+
+		led2: led_2 {
+			gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		status = "okay";
+
+		button0: button_0 {
+			gpios = <&gpio1 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpio1 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdt31;
+		i2c-controller = &i2c21;
+		modem-uart = &uart30;
+		battery = &npm1300_charger;
+		modem = &modem;
+	};
+};
+
+&gpio1 {
+	modem-reset {
+		gpio-hog;
+		gpios = <12 GPIO_ACTIVE_HIGH>;
+		output-low;
+	};
+
+	modem-powerkey {
+		gpio-hog;
+		gpios = <13 GPIO_ACTIVE_HIGH>;
+		output-low;
+	};
+};
+
+&uart20 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart20_default>;
+	pinctrl-1 = <&uart20_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart30 {
+	status = "okay";
+	current-speed = <115200>;
+	hw-flow-control;
+	pinctrl-0 = <&uart30_default>;
+	pinctrl-1 = <&uart30_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	modem: modem {
+		compatible = "nordic,nrf93m1";
+		mdm-power-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+		mdm-reset-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&i2c21 {
+	pinctrl-0 = <&i2c21_default>;
+	pinctrl-1 = <&i2c21_sleep>;
+	pinctrl-names = "default", "sleep";
+	zephyr,concat-buf-size = <256>;
+	status = "okay";
+
+	pmic_main: npm1300@6b {
+		compatible = "nordic,npm1300";
+		status = "okay";
+		reg = <0x6b>;
+
+		regulators {
+			compatible = "nordic,npm1300-regulator";
+			status = "okay";
+
+			/* Main 1.8 V regulator */
+			vdd_nrf: BUCK1 {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <1800000>;
+				regulator-always-on;
+			};
+
+			vdd_dbgr: BUCK2 {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <1800000>;
+				regulator-always-on;
+			};
+
+			/* LDO1 is used for powering the LEDs and level shifters */
+			ldo1_3v3: LDO1 {
+				regulator-initial-mode = <NPM13XX_LDSW_MODE_LDO>;
+				regulator-allowed-modes = <NPM13XX_LDSW_MODE_LDO>;
+				regulator-init-microvolt = <3300000>;
+				regulator-boot-on;
+			};
+		};
+
+		npm1300_charger: charger {
+			compatible = "nordic,npm1300-charger";
+			status = "okay";
+			vbus-limit-microamp = <1500000>;
+			/* Battery specs from LiPol LP803448 datasheet (Dwg. nr. FD_3245_70) */
+			term-microvolt = <4200000>;
+			current-microamp = <675000>; /* 0.5C charging current */
+			dischg-limit-microamp = <1000000>; /* Maximum value for PMIC */
+			thermistor-cold-millidegrees = <0>;
+			thermistor-cool-millidegrees = <0>;
+			thermistor-warm-millidegrees = <45000>;
+			thermistor-hot-millidegrees = <45000>;
+			thermistor-ohms = <10000>;
+			thermistor-beta = <3435>;
+			charging-enable;
+		};
+	};
+};

@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# DK does no have 32kHz crystal, use the internal RC oscillator
+CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y
+
+CONFIG_ARM_MPU=y
+CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
+CONFIG_ARM_TRUSTZONE_M=y
+
+# This Board implies building Non-Secure firmware
+CONFIG_TRUSTED_EXECUTION_NONSECURE=y
+
+# Don't enable the cache in the non-secure image as it is a
+# secure-only peripheral on 54l
+CONFIG_CACHE_MANAGEMENT=n
+CONFIG_EXTERNAL_CACHE=n
+
+CONFIG_UART_CONSOLE=y
+CONFIG_CONSOLE=y
+CONFIG_SERIAL=y
+CONFIG_GPIO=y
+
+# Start SYSCOUNTER on driver init
+CONFIG_NRF_GRTC_START_SYSCOUNTER=y
+
+# Disable TFM BL2 since it is not supported
+CONFIG_TFM_BL2=n
+
+# The oscillators are configured as secure and cannot be configured
+# from the non secure application directly. This needs to be set
+# otherwise nrfx will try to configure them, resulting in a bus
+# fault.
+CONFIG_NRF_SKIP_CLOCK_CONFIG=y
+
+CONFIG_TFM_SECURE_UART=n
+CONFIG_TFM_LOG_LEVEL_SILENCE=y
+CONFIG_REGULATOR=y
+CONFIG_REGULATOR_NPM13XX=y
+CONFIG_SENSOR=y
+CONFIG_NPM13XX_CHARGER=y
+CONFIG_I2C=y
+CONFIG_POWER_DOMAIN=y

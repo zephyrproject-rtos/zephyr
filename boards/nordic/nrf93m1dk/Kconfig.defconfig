@@ -1,0 +1,63 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
+if BOARD_NRF93M1DK_NRF54L15_CPUAPP_NS
+
+config BOARD_NRF93M1DK
+	select USE_DT_CODE_PARTITION if BOARD_NRF93M1DK_NRF54L15_CPUAPP_NS
+
+config HAS_BT_CTLR
+	default BT
+
+# By default, if we build for a Non-Secure version of the board,
+# enable building with TF-M as the Secure Execution Environment.
+config BUILD_WITH_TFM
+	default y
+
+# If building with TF-M, disable UART in TF-M to avoid conflicts with
+# the UART used by the modem
+if BUILD_WITH_TFM
+
+config TFM_SECURE_UART
+	default n
+
+config TFM_LOG_LEVEL_SILENCE
+	default n
+
+endif # BUILD_WITH_TFM
+
+endif # BOARD_NRF93M1DK_NRF54L15_CPUAPP_NS
+
+if BOARD_NRF93M1DK_NRF54L15_CPUAPP_NS || BOARD_NRF93M1DK_NRF54L15_CPUAPP
+
+# Configure default init priority:
+# 1. I2C
+# 2. NPM13xx MFD (CONFIG_MFD_INIT_PRIORITY)
+# 3. NPM13xx charger (CONFIG_SENSOR_INIT_PRIORITY)
+# 4. board.c set the current limits (CONFIG_BOARD_NRF93M1DK_INIT_PRIORITY)
+# 5. Power domain GPIO (CONFIG_POWER_DOMAIN_GPIO_INIT_PRIORITY)
+# 6. Cellular modem (CONFIG_MODEM_CELLULAR_INIT_PRIORITY)
+#
+
+config I2C_INIT_PRIORITY
+	default 50
+
+config MFD_INIT_PRIORITY
+	default 80
+
+config SENSOR_INIT_PRIORITY
+	default 90
+
+config BOARD_NRF93M1DK_INIT_PRIORITY
+	default 91
+
+config POWER_DOMAIN_GPIO_INIT_PRIORITY
+	default 92
+
+config MODEM_CELLULAR_INIT_PRIORITY
+	default 93
+
+endif # BOARD_NRF93M1DK_NRF54L15_CPUAPP_NS || BOARD_NRF93M1DK_NRF54L15_CPUAPP
