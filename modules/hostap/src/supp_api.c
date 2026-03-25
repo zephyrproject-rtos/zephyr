@@ -404,6 +404,11 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 
 			for (int i = 0; i < NUM_WEP_KEYS; i++) {
 				if (ssid->wep_key_len[i] > 0) {
+					if (ssid->auth_alg == WPA_AUTH_ALG_OPEN) {
+						return WIFI_SECURITY_TYPE_WEP_OPEN;
+					} else if (ssid->auth_alg == WPA_AUTH_ALG_SHARED) {
+						return WIFI_SECURITY_TYPE_WEP_SHARED;
+					}
 					return WIFI_SECURITY_TYPE_WEP;
 				}
 			}
@@ -1483,6 +1488,19 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 		status->band = wpas_band_to_zephyr(wpas_freq_to_band(wpa_s->assoc_freq));
 		status->wpa3_ent_type = wpas_key_mgmt_to_zephyr_wpa3_ent(key_mgmt);
 		status->security = wpas_key_mgmt_to_zephyr(0, ssid, key_mgmt, proto, sae_pwe);
+#ifdef CONFIG_WEP
+		if (status->security == WIFI_SECURITY_TYPE_WEP ||
+		    status->security == WIFI_SECURITY_TYPE_WEP_OPEN ||
+		    status->security == WIFI_SECURITY_TYPE_WEP_SHARED) {
+			size_t klen = ssid->wep_key_len[ssid->wep_tx_keyidx];
+
+			if (klen == 5 || klen == 10) {
+				status->wep_key_type = WIFI_WEP_KEY_TYPE_64;
+			} else if (klen == 13 || klen == 26) {
+				status->wep_key_type = WIFI_WEP_KEY_TYPE_128;
+			}
+		}
+#endif
 		status->mfp = get_mfp(ssid->ieee80211w);
 		ieee80211_freq_to_chan(wpa_s->assoc_freq, &channel);
 		status->channel = channel;

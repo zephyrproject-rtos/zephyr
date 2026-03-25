@@ -104,6 +104,19 @@ const char *wifi_security_txt(enum wifi_security_type security)
 	}
 }
 
+const char *wifi_wep_key_type_txt(enum wifi_wep_key_type wep_key_type)
+{
+	switch (wep_key_type) {
+	case WIFI_WEP_KEY_TYPE_64:
+		return " (64-bit key)";
+	case WIFI_WEP_KEY_TYPE_128:
+		return " (128-bit key)";
+	case WIFI_WEP_KEY_TYPE_UNKNOWN:
+	default:
+		return "";
+	}
+}
+
 const char *wifi_wpa3_enterprise_txt(enum wifi_wpa3_enterprise_type wpa3_ent)
 {
 	switch (wpa3_ent) {
