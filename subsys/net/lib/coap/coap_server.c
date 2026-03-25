@@ -654,6 +654,13 @@ send:
 	}
 	__ASSERT_NO_MSG(ret == cpkt->offset);
 
+	// zsock_sendto() internally calls net_context_connect() which locks the connections remote address
+	// to the destination. Clear it so the server socket accepts packets from any source again.
+	static const struct sockaddr_in reset_addr = { .sin_family = AF_UNSPEC };
+	(void)zsock_connect(service->data->sock_fd,
+			    (const struct sockaddr *)&reset_addr,
+			    sizeof(reset_addr));
+
 	return 0;
 }
 
