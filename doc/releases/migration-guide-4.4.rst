@@ -542,6 +542,14 @@ ESP32-S3
   ``lcd_cam_dvp`` child node, and  ``zephyr,camera`` chosen property should
   point to ``lcd_cam_dvp`` instead.
 
+ESPI
+====
+
+* Updated :dtcompatible:`microchip,xec-espi-v2` for PCR and GIRQ properties to use new macros (:github:`105308`).
+  Two new properties, host-memmap-addr-high and sram-bar-addr-high were added. These properties
+  provide bits[47:32] of the Host address for all memory mapped peripheral channel devices and SRAM
+  BARs.
+
 Ethernet
 ========
 
