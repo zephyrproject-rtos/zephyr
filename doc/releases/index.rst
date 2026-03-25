@@ -95,23 +95,17 @@ The release notes and migration guides for these releases are available
 Release Life Cycle and Maintenance
 **********************************
 
-Major and Maintenance Release Cadence
-=====================================
+Major and Maintenance Releases
+==============================
 
-The Zephyr Project delivers major releases using a six month cadence roughly timed
-each April and October of the year.
+Zephyr delivers major releases on a **six-month cadence**, targeting April and
+October each year. This schedule provides regular, well-tested releases without
+overwhelming users with too-frequent updates, and avoids major holidays across
+geographies.
 
-This timescale facilitates regular releases that have strong QA cycles while
-not overwhelming users with too many new releases.
-
-The cadence is predictable and avoids many major holidays in various geographies.
-
-The Zephyr project delivers maintenance releases on an unscheduled basis and
-are usually driven by the accumulation of enough significant fixes or enhancements
-to the associated major release.
-
-The point release indicates a point in the major release branch where a full QA
-cycle and release process validates the content of the new branch.
+Maintenance (point) releases are published on an unscheduled basis when enough
+significant fixes have accumulated on a major release branch. Each point release
+goes through a full QA cycle before publishing.
 
 Long Term Support and Maintenance
 =================================
