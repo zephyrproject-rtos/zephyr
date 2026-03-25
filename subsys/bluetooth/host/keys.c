@@ -82,7 +82,7 @@ static void find_key_in_use(struct bt_conn *conn, void *data)
 		if (key == &key_pool[kdata->id]) {
 			kdata->in_use = true;
 			LOG_DBG("Connected device %s is using key_pool[%d]",
-				bt_addr_le_str(bt_conn_get_dst(conn)), kdata->id);
+				bt_conn_dst_str(conn), kdata->id);
 		}
 	}
 }
