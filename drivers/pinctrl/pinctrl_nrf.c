@@ -486,19 +486,20 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			input = NRF_GPIO_PIN_INPUT_DISCONNECT;
 			break;
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_exmif) */
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_qspi_v2)
-		/* No PSEL for QSPI_V2, pins only controlled by CTRLSEL */
-		case NRF_FUN_QSPI_SCK:
-		case NRF_FUN_QSPI_CSN:
-		case NRF_FUN_QSPI_IO0:
-		case NRF_FUN_QSPI_IO1:
-		case NRF_FUN_QSPI_IO2:
-		case NRF_FUN_QSPI_IO3:
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_mspi)
+		/* No PSEL for MSPI, pins only controlled by CTRLSEL */
+		case NRF_FUN_MSPI_SCK:
+		case NRF_FUN_MSPI_CSN:
+		case NRF_FUN_MSPI_IO0:
+		case NRF_FUN_MSPI_IO1:
+		case NRF_FUN_MSPI_IO2:
+		case NRF_FUN_MSPI_IO3:
+			/* Pin sel for MSPI is labelled as QSPI in MDK. This is unavoidable */
 			nrf_gpio_pin_control_select(psel, NRF_GPIO_PIN_SEL_QSPI);
 			dir = NRF_GPIO_PIN_DIR_OUTPUT;
 			input = NRF_GPIO_PIN_INPUT_CONNECT;
 			break;
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_qspi_v2) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_mspi) */
 #if defined(NRF_PSEL_TWIS)
 		case NRF_FUN_TWIS_SCL:
 			NRF_PSEL_TWIS(reg, SCL) = psel;

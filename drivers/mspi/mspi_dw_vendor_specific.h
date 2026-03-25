@@ -97,7 +97,7 @@ static inline int vendor_specific_xip_disable(const struct device *dev,
 }
 #endif /* defined(CONFIG_MSPI_XIP) */
 
-#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_qspi_v2)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_mspi)
 #include <nrfx.h>
 
 #if defined(MSPI_PRESENT) && !defined(QSPI_PRESENT)

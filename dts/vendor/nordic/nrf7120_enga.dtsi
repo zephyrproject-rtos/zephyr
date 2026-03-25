@@ -305,8 +305,8 @@
 				status = "disabled";
 			};
 
-			qspi00: qspi@5b000 {
-				compatible = "nordic,nrf-qspi-v2", "snps,designware-ssi";
+			mspi00: mspi@5b000 {
+				compatible = "nordic,nrf-mspi", "snps,designware-ssi";
 				interrupts = <91 NRF_DEFAULT_IRQ_PRIORITY>;
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -320,8 +320,8 @@
 				status = "disabled";
 			};
 
-			qspi01: qspi@5c000 {
-				compatible = "nordic,nrf-qspi-v2", "snps,designware-ssi";
+			mspi01: mspi@5c000 {
+				compatible = "nordic,nrf-mspi", "snps,designware-ssi";
 				interrupts = <92 NRF_DEFAULT_IRQ_PRIORITY>;
 				#address-cells = <1>;
 				#size-cells = <0>;
