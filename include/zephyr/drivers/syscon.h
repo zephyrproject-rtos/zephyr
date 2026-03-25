@@ -80,7 +80,7 @@ __syscall int syscon_get_base(const struct device *dev, uintptr_t *addr);
 
 static inline int z_impl_syscon_get_base(const struct device *dev, uintptr_t *addr)
 {
-	const struct syscon_driver_api *api = (const struct syscon_driver_api *)dev->api;
+	const struct syscon_driver_api *api = DEVICE_API_GET(syscon, dev);
 
 	if ((api == NULL) || (api->get_base == NULL)) {
 		return -ENOSYS;
@@ -106,7 +106,7 @@ __syscall int syscon_read_reg(const struct device *dev, uint16_t reg, uint32_t *
 
 static inline int z_impl_syscon_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
 {
-	const struct syscon_driver_api *api = (const struct syscon_driver_api *)dev->api;
+	const struct syscon_driver_api *api = DEVICE_API_GET(syscon, dev);
 
 	if ((api == NULL) || (api->read == NULL)) {
 		return -ENOSYS;
@@ -132,7 +132,7 @@ __syscall int syscon_write_reg(const struct device *dev, uint16_t reg, uint32_t 
 
 static inline int z_impl_syscon_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
 {
-	const struct syscon_driver_api *api = (const struct syscon_driver_api *)dev->api;
+	const struct syscon_driver_api *api = DEVICE_API_GET(syscon, dev);
 
 	if ((api == NULL) || (api->write == NULL)) {
 		return -ENOSYS;
@@ -154,7 +154,7 @@ __syscall int syscon_get_size(const struct device *dev, size_t *size);
 
 static inline int z_impl_syscon_get_size(const struct device *dev, size_t *size)
 {
-	const struct syscon_driver_api *api = (const struct syscon_driver_api *)dev->api;
+	const struct syscon_driver_api *api = DEVICE_API_GET(syscon, dev);
 
 	if ((api == NULL) || (api->get_size == NULL)) {
 		return -ENOSYS;
