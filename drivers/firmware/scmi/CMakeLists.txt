@@ -11,6 +11,7 @@ zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_SMC_TRANSPORT smc.c)
 # SCMI protocol helper files
 zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_BASE_HELPERS base.c)
 zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_CLK_HELPERS clk.c)
+zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_RESET_HELPERS reset.c)
 zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_PINCTRL_HELPERS pinctrl.c)
 zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_POWER_DOMAIN_HELPERS power.c)
 zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_REBOOT reboot.c)
