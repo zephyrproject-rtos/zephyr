@@ -299,6 +299,20 @@ static int gpio_cc13xx_cc26xx_port_get_direction(const struct device *port, gpio
 }
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 
+#ifdef CONFIG_GPIO_RAW_REGS
+static int gpio_cc13xx_cc26xx_port_get_raw_regs(const struct device *dev,
+						struct gpio_raw_regs *regs)
+{
+	regs->in = (mem_addr_t)HWREG(GPIO_BASE + GPIO_O_DIN31_0);
+	regs->out = (mem_addr_t)HWREG(GPIO_BASE + GPIO_O_DOUT31_0);
+	regs->set = (mem_addr_t)&HWREG(GPIO_BASE + GPIO_O_DOUTSET31_0);
+	regs->clear = (mem_addr_t)&HWREG(GPIO_BASE + GPIO_O_DOUTCLR31_0);
+	regs->toggle = (mem_addr_t)&HWREG(GPIO_BASE + GPIO_O_DOUTTGL31_0);
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_RAW_REGS */
+
 static DEVICE_API(gpio, gpio_cc13xx_cc26xx_driver_api) = {
 	.pin_configure = gpio_cc13xx_cc26xx_config,
 	.port_get_raw = gpio_cc13xx_cc26xx_port_get_raw,
@@ -312,6 +326,9 @@ static DEVICE_API(gpio, gpio_cc13xx_cc26xx_driver_api) = {
 #ifdef CONFIG_GPIO_GET_DIRECTION
 	.port_get_direction = gpio_cc13xx_cc26xx_port_get_direction,
 #endif /* CONFIG_GPIO_GET_DIRECTION */
+#ifdef CONFIG_GPIO_RAW_REGS
+	.port_get_raw_regs = gpio_cc13xx_cc26xx_port_get_raw_regs,
+#endif /* CONFIG_GPIO_RAW_REGS */
 };
 
 DEVICE_DT_INST_DEFINE(0, gpio_cc13xx_cc26xx_init,
