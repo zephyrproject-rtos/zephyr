@@ -22,6 +22,8 @@ from collections import OrderedDict
 from itertools import islice
 from pathlib import Path
 
+from twisterlib import ZEPHYR_BASE
+
 import snippets
 
 try:
@@ -30,6 +32,7 @@ except ImportError:
     print("Install the anytree module to use the --test-tree option")
 
 import scl
+from devicetree import edtlib  # pylint: disable=unused-import
 from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.environment import TwisterEnv
 from twisterlib.error import TwisterRuntimeError
@@ -40,17 +43,6 @@ from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite, scan_testsuite_path
 
 logger = logging.getLogger('twister')
-
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-if not ZEPHYR_BASE:
-    sys.exit("$ZEPHYR_BASE environment variable undefined")
-
-# This is needed to load edt.pickle files.
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
-                                "python-devicetree", "src"))
-from devicetree import edtlib  # pylint: disable=unused-import
-
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
 
 
 class Filters:
