@@ -130,6 +130,16 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             if cmd is not None:
                 return Path(cmd)
 
+            match platform.machine():
+                case "arm64":
+                    subdir = "Resources"
+                case "x86_64":
+                    subdir = "MacOs"
+                case other:
+                    raise NotImplementedError(
+                        f"Unsupported macOS architecture: {other}"
+                    )
+
             return (
                 Path("/Applications")
                 / "STMicroelectronics"
@@ -137,7 +147,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
                 / "STM32CubeProgrammer"
                 / "STM32CubeProgrammer.app"
                 / "Contents"
-                / "MacOs"
+                / subdir
                 / "bin"
                 / "STM32_Programmer_CLI"
             )
