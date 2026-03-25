@@ -353,6 +353,7 @@ static inline void ring_buf_commit(struct ring_buf *buf, size_t size)
  * @return Size of allocated buffer which can be smaller than requested if
  *	   there is not enough free space or buffer wraps.
  */
+__deprecated /* use ring_buf_put_ptr(...) & ring_buf_commit(...) instead */
 static inline uint32_t ring_buf_put_claim(struct ring_buf *buf,
 					  uint8_t **data,
 					  uint32_t size)
@@ -384,6 +385,7 @@ static inline uint32_t ring_buf_put_claim(struct ring_buf *buf,
  * @retval 0 Successful operation.
  * @retval -EINVAL Provided @a size exceeds free space in the ring buffer.
  */
+__deprecated /* use ring_buf_put_ptr(...) & ring_buf_commit(...) instead */
 static inline int ring_buf_put_finish(struct ring_buf *buf, uint32_t size)
 {
 	return ring_buf_area_finish(buf, &buf->put, size);
@@ -490,6 +492,7 @@ static inline void ring_buf_consume(struct ring_buf *buf, size_t size)
  * @return Number of valid bytes in the provided buffer which can be smaller
  *	   than requested if there is not enough free space or buffer wraps.
  */
+__deprecated /* use ring_buf_get_ptr(...) & ring_buf_consume(...) instead */
 static inline uint32_t ring_buf_get_claim(struct ring_buf *buf,
 					  uint8_t **data,
 					  uint32_t size)
@@ -521,6 +524,7 @@ static inline uint32_t ring_buf_get_claim(struct ring_buf *buf,
  * @retval 0 Successful operation.
  * @retval -EINVAL Provided @a size exceeds valid bytes in the ring buffer.
  */
+__deprecated /* use ring_buf_get_ptr(...) & ring_buf_consume(...) instead */
 static inline int ring_buf_get_finish(struct ring_buf *buf, uint32_t size)
 {
 	return ring_buf_area_finish(buf, &buf->get, size);
