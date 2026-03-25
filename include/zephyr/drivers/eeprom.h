@@ -86,10 +86,7 @@ __syscall int eeprom_read(const struct device *dev, off_t offset, void *data,
 static inline int z_impl_eeprom_read(const struct device *dev, off_t offset,
 				     void *data, size_t len)
 {
-	const struct eeprom_driver_api *api =
-		(const struct eeprom_driver_api *)dev->api;
-
-	return api->read(dev, offset, data, len);
+	return DEVICE_API_GET(eeprom, dev)->read(dev, offset, data, len);
 }
 
 /**
@@ -109,10 +106,7 @@ __syscall int eeprom_write(const struct device *dev, off_t offset,
 static inline int z_impl_eeprom_write(const struct device *dev, off_t offset,
 				      const void *data, size_t len)
 {
-	const struct eeprom_driver_api *api =
-		(const struct eeprom_driver_api *)dev->api;
-
-	return api->write(dev, offset, data, len);
+	return DEVICE_API_GET(eeprom, dev)->write(dev, offset, data, len);
 }
 
 /**
@@ -126,10 +120,7 @@ __syscall size_t eeprom_get_size(const struct device *dev);
 
 static inline size_t z_impl_eeprom_get_size(const struct device *dev)
 {
-	const struct eeprom_driver_api *api =
-		(const struct eeprom_driver_api *)dev->api;
-
-	return api->size(dev);
+	return DEVICE_API_GET(eeprom, dev)->size(dev);
 }
 
 #ifdef __cplusplus
