@@ -5788,14 +5788,6 @@ void net_if_foreach(net_if_cb_t cb, void *user_data)
 	}
 }
 
-bool net_if_is_offloaded(struct net_if *iface)
-{
-	return (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
-		net_if_is_ip_offloaded(iface)) ||
-	       (IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD) &&
-		net_if_is_socket_offloaded(iface));
-}
-
 static void rejoin_multicast_groups(struct net_if *iface)
 {
 #if defined(CONFIG_NET_NATIVE_IPV6)
