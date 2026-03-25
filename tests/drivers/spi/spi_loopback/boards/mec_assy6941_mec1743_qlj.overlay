@@ -13,7 +13,7 @@
 
 &qspi0 {
 	status = "okay";
-	compatible = "microchip,mec5-qspi";
+	compatible = "microchip,xec-qmspi-ldma";
 	clock-frequency = <12000000>;
 
 	pinctrl-0 = <&qspi_shd_cs0_n_gpio055 &qspi_shd_clk_gpio056
