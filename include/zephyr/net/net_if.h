@@ -3554,6 +3554,11 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 #define NET_IF_DECLARE(dev_id, inst) \
 	static struct net_if NET_IF_GET_NAME(dev_id, inst)
 
+#define Z_NET_DEVICE_IF_INIT_INSTANCE(dev_id, instance, l2,		\
+				      l2_ctx_type, mtu)			\
+	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
+	NET_IF_INIT(dev_id, instance, l2, mtu)
+
 #define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
 				   init_fn, pm, data, config, prio,	\
 				   api, l2, l2_ctx_type, mtu)		\
@@ -3562,14 +3567,51 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 			Z_DEVICE_DT_FLAGS(node_id), pm, data,		\
 			config, POST_KERNEL, prio, api,			\
 			&Z_DEVICE_STATE_NAME(dev_id));			\
-	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
-	NET_IF_INIT(dev_id, instance, l2, mtu)
+	Z_NET_DEVICE_IF_INIT_INSTANCE(dev_id, instance, l2,		\
+				      l2_ctx_type, mtu)
 
 #define Z_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
 			  config, prio, api, l2, l2_ctx_type, mtu)	\
 	Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, 0, init_fn,	\
 				   pm, data, config, prio, api, l2,	\
 				   l2_ctx_type, mtu)
+
+/**
+ * @brief Forward declaration of a network interface
+ *
+ * @param node_id Device node identifier
+ * @param instance Instance identifier
+ */
+#define NET_IF_DT_DECLARE(node_id, instance) \
+	NET_IF_DECLARE(Z_DEVICE_DT_DEV_ID(node_id), instance)
+
+/**
+ * @brief Forward declaration of a network interface
+ *
+ * @param inst instance number.  This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to NET_DEVICE_DT_ADD_IFACE.
+ * @param ... other parameters as expected by NET_DEVICE_DT_ADD_IFACE.
+ */
+#define NET_IF_DT_INST_DECLARE(inst, ...) NET_IF_DT_DECLARE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Get a network interface that was created with NET_DEVICE_DT_DEFINE or
+ * NET_DEVICE_DT_ADD_IFACE.
+ *
+ * @param node_id Device node identifier
+ * @param instance Instance identifier
+ */
+#define NET_IF_DT_GET(node_id, instance) NET_IF_GET(Z_DEVICE_DT_DEV_ID(node_id), instance)
+
+/**
+ * @brief Get a network interface that was created with NET_DEVICE_DT_DEFINE or
+ * NET_DEVICE_DT_ADD_IFACE.
+ *
+ * @param inst instance number.  This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to NET_IF_DT_GET.
+ * @param ... other parameters as expected by NET_DEVICE_DT_ADD_IFACE.
+ */
+#define NET_IF_DT_INST_GET(inst, ...) NET_IF_DT_GET(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
  * @brief Create a network interface and bind it to network device.
@@ -3594,6 +3636,31 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 			api, l2, l2_ctx_type, mtu)			\
 	Z_NET_DEVICE_INIT(DT_INVALID_NODE, dev_id, name, init_fn, pm,	\
 			  data, config, prio, api, l2, l2_ctx_type, mtu)
+
+/**
+ * @brief Adds a second (or more) network interface(s) to a network device created with
+ * NET_DEVICE_DT_DEFINE.
+ *
+ * @param node_id The devicetree node identifier.
+ * @param l2 Network L2 layer for this network interface.
+ * @param l2_ctx_type Type of L2 context data.
+ * @param mtu Maximum transfer unit in bytes for this network interface.
+ * @param instance Instance identifier (0 is reserved for the first interface, created with
+ * NET_DEVICE_DT_DEFINE, start from 1 for additional interfaces).
+ */
+#define NET_DEVICE_DT_ADD_IFACE(node_id, l2, l2_ctx_type, mtu, instance)                           \
+	Z_NET_DEVICE_IF_INIT_INSTANCE(Z_DEVICE_DT_DEV_ID(node_id), instance, l2, l2_ctx_type, mtu)
+
+/**
+ * @brief Like NET_DEVICE_DT_ADD_IFACE for an instance of a DT_DRV_COMPAT compatible
+ *
+ * @param inst instance number.  This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to NET_DEVICE_DT_ADD_IFACE.
+ *
+ * @param ... other parameters as expected by NET_DEVICE_DT_ADD_IFACE.
+ */
+#define NET_DEVICE_DT_INST_ADD_IFACE(inst, ...) \
+	NET_DEVICE_DT_ADD_IFACE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
  * @brief Like NET_DEVICE_INIT but taking metadata from a devicetree node.
