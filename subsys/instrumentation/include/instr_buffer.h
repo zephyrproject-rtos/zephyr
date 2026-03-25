@@ -45,22 +45,20 @@ uint32_t instr_buffer_capacity_get(void);
  *
  * @param data Pointer to the address. It's set to a location
  *             within the instrumentation buffer.
- * @param size Requested buffer size (in bytes).
  *
- * @return Size of allocated buffer which can be smaller than
- *         requested if there isn't enough free space or buffer wraps.
+ * @return size of available buffer space which can be smaller
+ *	than instr_buffer_space_get() if buffer wraps.
+ *
  */
-uint32_t instr_buffer_put_claim(uint8_t **data, uint32_t size);
+uint32_t instr_buffer_put_claim(uint8_t **data);
 
 /**
  * @brief Indicate number of bytes written to the allocated buffer.
  *
  * @param size Number of bytes written to the allocated buffer.
  *
- * @retval 0 Successful operation.
- * @retval -EINVAL Given @a size exceeds free space of instrumentation buffer.
  */
-int instr_buffer_put_finish(uint32_t size);
+void instr_buffer_put_finish(uint32_t size);
 
 /**
  * @brief Write data to instrumentation buffer.
@@ -77,22 +75,19 @@ uint32_t instr_buffer_put(uint8_t *data, uint32_t size);
  *
  * @param data Pointer to the address. It's set to a location pointing to
  *             the first valid data within the instrumentation buffer.
- * @param size Requested buffer size (in bytes).
  *
- * @return Size of valid buffer which can be smaller than requested
- *         if there isn't enough valid data or buffer wraps.
+ * @return Size of available data which can be smaller than
+ *	instr_buffer_size_get() if buffer wraps.
  */
-uint32_t instr_buffer_get_claim(uint8_t **data, uint32_t size);
+uint32_t instr_buffer_get_claim(uint8_t **data);
 
 /**
  * @brief Indicate number of bytes read from claimed buffer.
  *
  * @param size Number of bytes read from claimed buffer.
  *
- * @retval 0 Successful operation.
- * @retval -EINVAL Given @a size exceeds available data of instrumentation buffer.
  */
-int instr_buffer_get_finish(uint32_t size);
+void instr_buffer_get_finish(uint32_t size);
 
 /**
  * @brief Read data from instrumentation buffer to output buffer.

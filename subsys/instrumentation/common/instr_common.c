@@ -297,7 +297,7 @@ void instr_dump_buffer_uart(void)
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	uint8_t *transferring_buf;
-	uint32_t transferring_length, instr_buffer_max_length;
+	uint32_t transferring_length;
 
 	/* Make sure instrumentation is disabled. */
 	instr_disable();
@@ -305,13 +305,8 @@ void instr_dump_buffer_uart(void)
 	/* Initiator mark */
 	printk("-*-#");
 
-	instr_buffer_max_length = instr_buffer_capacity_get();
-
 	while (!instr_buffer_is_empty()) {
-		transferring_length =
-			instr_buffer_get_claim(
-					&transferring_buf,
-					instr_buffer_max_length);
+		transferring_length = instr_buffer_get_claim(&transferring_buf);
 
 		for (uint32_t i = 0; i < transferring_length; i++) {
 			uart_poll_out(uart_dev, transferring_buf[i]);
@@ -507,30 +502,12 @@ static void set_up_record(struct instr_record *record, enum instr_event_types ty
 
 static bool instr_record_data_put(struct instr_record *record)
 {
-	uint32_t total_size = 0U;
-
-	uint8_t *data = (uint8_t *) record, *buf;
-	uint32_t length = sizeof(struct instr_record), claimed_size;
-
 	/* If record won't fit, free enough space in the buffer */
 	if (instr_buffer_space_get() < sizeof(struct instr_record)) {
-		instr_buffer_get(NULL, sizeof(struct instr_record));
+		instr_buffer_get_finish(sizeof(struct instr_record));
 	}
 
-	do {
-		claimed_size = instr_buffer_put_claim(&buf, length);
-		memcpy(buf, data, claimed_size);
-		total_size += claimed_size;
-		length -= claimed_size;
-		data += claimed_size;
-	} while (length && claimed_size);
-
-	if (length && claimed_size == 0) {
-		instr_buffer_put_finish(0);
-		return false;
-	}
-
-	instr_buffer_put_finish(total_size);
+	instr_buffer_put((uint8_t *)record, sizeof(struct instr_record));
 	return true;
 }
 
