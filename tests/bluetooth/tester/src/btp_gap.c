@@ -139,21 +139,9 @@ static struct bt_gatt_read_params read_car_params = {
 static void le_connected(struct bt_conn *conn, uint8_t err)
 {
 	struct btp_gap_device_connected_ev ev;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	struct bt_conn_info info;
 
-	(void)memset(addr_str, 0, sizeof(addr_str));
-
-	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
-	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
-		(void)bt_addr_to_str(bt_conn_get_dst_br(conn), addr_str, sizeof(addr_str));
-	} else {
-		LOG_WRN("Unsupported transport");
-		return;
-	}
-
-	LOG_DBG("%s: 0x%02x", addr_str, err);
+	LOG_DBG("%s: 0x%02x", bt_conn_dst_str(conn), err);
 
 	if (err) {
 		return;
@@ -187,27 +175,18 @@ static void le_connected(struct bt_conn *conn, uint8_t err)
 static void le_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct btp_gap_device_disconnected_ev ev;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 
 	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		const bt_addr_le_t *addr;
-
-		addr = bt_conn_get_dst(conn);
-		(void)bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-		bt_addr_le_copy(&ev.address, addr);
+		bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
-		const bt_addr_t *br_addr;
-
-		br_addr = bt_conn_get_dst_br(conn);
-		(void)bt_addr_to_str(br_addr, addr_str, sizeof(addr_str));
 		ev.address.type = BTP_BR_ADDRESS_TYPE;
-		bt_addr_copy(&ev.address.a, br_addr);
+		bt_addr_copy(&ev.address.a, bt_conn_get_dst_br(conn));
 	} else {
 		LOG_WRN("Unsupported transport");
 		return;
 	}
 
-	LOG_DBG("%s: 0x%02x", addr_str, reason);
+	LOG_DBG("%s: 0x%02x", bt_conn_dst_str(conn), reason);
 
 	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_DEVICE_DISCONNECTED, &ev, sizeof(ev));
 }
@@ -426,10 +405,6 @@ static void oob_data_request(struct bt_conn *conn,
 		return;
 	}
 
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
-
 	switch (oob_info->type) {
 	case BT_CONN_OOB_LE_SC:
 	{
@@ -440,7 +415,7 @@ static void oob_data_request(struct bt_conn *conn,
 
 		LOG_DBG("Set %s OOB SC data for %s, ",
 			oob_config_str(oob_info->lesc.oob_config),
-			addr);
+			bt_addr_le_str(info.le.dst));
 
 		struct bt_le_oob_sc_data *oobd_local =
 			oob_info->lesc.oob_config != BT_CONN_OOB_REMOTE_ONLY ?
@@ -461,9 +436,8 @@ static void oob_data_request(struct bt_conn *conn,
 
 		if (oobd_local &&
 		    !bt_addr_le_eq(info.le.local, &oob_sc_local.addr)) {
-			bt_addr_le_to_str(info.le.local, addr, sizeof(addr));
 			LOG_DBG("No OOB data available for local %s",
-				addr);
+				bt_addr_le_str(info.le.local));
 			bt_conn_auth_cancel(conn);
 			return;
 		}
@@ -482,7 +456,8 @@ static void oob_data_request(struct bt_conn *conn,
 			break;
 		}
 
-		LOG_DBG("Legacy OOB TK requested from remote %s", addr);
+		LOG_DBG("Legacy OOB TK requested from remote %s",
+			bt_addr_le_str(info.le.dst));
 
 		err = bt_le_oob_set_legacy_tk(conn, oob_legacy_tk);
 		if (err < 0) {

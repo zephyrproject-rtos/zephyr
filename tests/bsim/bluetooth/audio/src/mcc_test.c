@@ -2458,10 +2458,7 @@ void test_main(void)
 
 		WAIT_FOR_FLAG(flag_connected);
 
-		char addr[BT_ADDR_LE_STR_LEN];
-
-		bt_addr_le_to_str(bt_conn_get_dst(default_conn), addr, sizeof(addr));
-		printk("Connected: %s\n", addr);
+		printk("Connected: %s\n", bt_conn_dst_str(default_conn));
 
 		bt_conn_le_param_update(default_conn,
 					BT_LE_CONN_PARAM(BT_GAP_US_TO_CONN_INTERVAL(7500),

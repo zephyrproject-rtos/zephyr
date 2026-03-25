@@ -91,12 +91,9 @@ static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *info,
 				uint32_t broadcast_id)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	printk("Scan Recv: [DEVICE]: %s, broadcast_id 0x%06X, "
 	       "interval (ms) %u), SID 0x%x, RSSI %i\n",
-	       le_addr, broadcast_id, info->interval * 5 / 4,
+	       bt_addr_le_str(info->addr), broadcast_id, info->interval * 5 / 4,
 	       info->sid, info->rssi);
 
 	(void)memcpy(&g_broadcaster_info, info, sizeof(g_broadcaster_info));
@@ -121,7 +118,6 @@ static void bap_broadcast_assistant_recv_state_cb(
 	struct bt_conn *conn, int err,
 	const struct bt_bap_scan_delegator_recv_state *state)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
 	char bad_code[BT_ISO_BROADCAST_CODE_SIZE * 2 + 1];
 
 	if (err != 0) {
@@ -136,10 +132,10 @@ static void bap_broadcast_assistant_recv_state_cb(
 		return;
 	}
 
-	bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
 	(void)bin2hex(state->bad_code, BT_ISO_BROADCAST_CODE_SIZE, bad_code, sizeof(bad_code));
 	printk("BASS recv state: src_id %u, addr %s, sid %u, sync_state %u, encrypt_state %u%s%s\n",
-	       state->src_id, le_addr, state->adv_sid, state->pa_sync_state, state->encrypt_state,
+	       state->src_id, bt_addr_le_str(&state->addr), state->adv_sid, state->pa_sync_state,
+	       state->encrypt_state,
 	       state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE ? ", bad code: " : "",
 	       state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE ? bad_code : "");
 
@@ -304,13 +300,9 @@ static struct bt_gatt_cb gatt_callbacks = {
 static void sync_cb(struct bt_le_per_adv_sync *sync,
 		    struct bt_le_per_adv_sync_synced_info *info)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
 	       "Interval 0x%04x (%u ms), PHY %s\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr, info->interval,
+	       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr), info->interval,
 	       info->interval * 5 / 4, phy2str(info->phy));
 
 	SET_FLAG(flag_pa_synced);
@@ -319,12 +311,8 @@ static void sync_cb(struct bt_le_per_adv_sync *sync,
 static void term_cb(struct bt_le_per_adv_sync *sync,
 		    const struct bt_le_per_adv_sync_term_info *info)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr);
+	       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr));
 
 	SET_FLAG(flag_pa_terminated);
 }
@@ -487,13 +475,8 @@ static void test_bass_add_source(void)
 	WAIT_FOR_FLAG(flag_recv_state_updated);
 
 	if (!bt_addr_le_eq(&recv_state.addr, &add_src_param.addr)) {
-		char addr[BT_ADDR_LE_STR_LEN];
-		char expected_addr[BT_ADDR_LE_STR_LEN];
-
-		bt_addr_le_to_str(&recv_state.addr, addr, sizeof(addr));
-		bt_addr_le_to_str(&add_src_param.addr, expected_addr, sizeof(expected_addr));
-
-		FAIL("Unexpected addr %s != %s\n", addr, expected_addr);
+		FAIL("Unexpected bt_addr_le_str(&recv_state.addr) %s != %s\n",
+		     bt_addr_le_str(&recv_state.addr), bt_addr_le_str(&add_src_param.addr));
 		return;
 	}
 
