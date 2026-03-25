@@ -1,0 +1,228 @@
+/*
+ * Copyright (c) 2026 Christian Hirsch
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "micromod9151_nrf9151_common-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "digidrip MicroMod nRF9151 SoM";
+	compatible = "digidrip,micromod9151-nrf9151";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+	};
+
+	gpios {
+		compatible = "gpio-leds";
+
+		led_status: led_status {
+			gpios = <&mcp23s18 13 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+			label = "Onboard Status LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		boot_button: boot_button {
+			gpios = <&gpio0 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Boot Button";
+		};
+	};
+
+	micromod_header: connector {
+		compatible = "sparkfun,micromod-gpio";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 13 0>,	/* A0 */
+		<1 0 &gpio0 14 0>,	/* A1 */
+		<2 0 &mcp23s18 10 0>,	/* D0 */
+		<3 0 &mcp23s18 11 0>,	/* D1/CAM_TRIG */
+		<4 0 &gpio0 10 0>,	/* I2C_INT# */
+		<5 0 &gpio0 17 0>,	/* G0/BUS0 */
+		<6 0 &gpio0 18 0>,	/* G1/BUS1 */
+		<7 0 &mcp23s18 0 0>,	/* G2/BUS2 */
+		<8 0 &mcp23s18 1 0>,	/* G3/BUS3 */
+		<9 0 &mcp23s18 2 0>,	/* G4/BUS4 */
+		<10 0 &mcp23s18 3 0>,	/* G5/BUS5 */
+		<11 0 &mcp23s18 4 0>,	/* G6/BUS6 */
+		<12 0 &mcp23s18 5 0>,	/* G7/BUS7 */
+		<13 0 &mcp23s18 6 0>,	/* G8 */
+		<14 0 &mcp23s18 7 0>,	/* G9/ADC_D-/CAM_HSYNC */
+		<15 0 &mcp23s18 8 0>,	/* G10/ADC_D+/CAM_VSYNC */
+		<16 0 &mcp23s18 9 0>,	/* G11/SWO */
+		<17 0 &gpio0 2 0>;	/* SPI_CS */
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led_status;
+		watchdog0 = &wdt0;
+		/*vspi-flash0 = &mx25r64; */
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c2 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-1 = <&i2c2_sleep>;
+	pinctrl-names = "default", "sleep";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi3 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	cs-gpios = <&gpio0 23 (GPIO_ACTIVE_LOW)>, <&gpio0 25 GPIO_ACTIVE_LOW>;
+
+	mcp23s18: mcp23s18@0 {
+		status = "okay";
+		//compatible = "microchip,mcp23sxx";
+		compatible = "microchip,mcp23s18";
+		spi-max-frequency = <1000000>;
+		reg = <0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+	};
+
+	/*
+	mx25r64: mx25r6435f@1 {
+		compatible = "jedec,spi-nor";
+		status = "disabled";
+		reg = <1>;
+		spi-max-frequency = <8000000>;
+		jedec-id = [c2 28 17];
+		sfdp-bfp = [
+		e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
+		ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
+		10 d8 00 ff  23 72 f5 00  82 ed 04 cc  44 83 48 44
+		30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
+		];
+		size = <67108864>;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <35000>;
+	};
+	*/
+	mx25r32: mx25r3235f@1 {
+		compatible = "jedec,spi-nor";
+		status = "okay";
+		reg = <1>;
+		spi-max-frequency = <8000000>;
+		jedec-id = [c2 28 16];
+		size = <33554432>;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <35000>;
+		mxicy,mx25r-power-mode = "low-power";
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x10000>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+		};
+		slot0_ns_partition: partition@50000 {
+			label = "image-0-nonsecure";
+		};
+		slot1_partition: partition@85000 {
+			label = "image-1";
+		};
+		slot1_ns_partition: partition@c5000 {
+			label = "image-1-nonsecure";
+		};
+		storage_partition: partition@fa000 {
+			label = "storage";
+			reg = <0x000fa000 0x00006000>;
+		};
+	};
+};
+
+/ {
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+		};
+
+		sram0_modem: image_modem@20016000 {
+			/* Modem (shared) memory */
+		};
+
+		sram0_ns: image_ns@20020000 {
+			/* Non-Secure image memory */
+		};
+	};
+};
+
+micromod_1_uart: &uart0 {};
+
+micromod_2_uart: &uart1 {};
+
+micromod_0_i2c: &i2c2 {};
+
+/* micromod_1_i2c: &i2c1 {}; */
+
+micromod_0_spi: &spi3 {};
+
+/* Include partition configuration file */
+#include "micromod9151_nrf9151_partition_conf.dtsi"
