@@ -68,6 +68,21 @@ struct offloaded_if_api {
 BUILD_ASSERT(offsetof(struct offloaded_if_api, iface_api) == 0);
 
 /**
+ * @brief Check if the offloaded network interface supports Ethernet.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if interface supports Ethernet, False otherwise.
+ */
+static inline bool net_off_is_ethernet_offloaded(struct net_if *iface)
+{
+	const struct offloaded_if_api *api = (const struct offloaded_if_api *)
+		net_if_get_device(iface)->api;
+
+	return api->get_type && api->get_type() == L2_OFFLOADED_NET_IF_TYPE_ETHERNET;
+}
+
+/**
  * @brief Check if the offloaded network interface supports Wi-Fi.
  *
  * @param iface Pointer to network interface

@@ -1529,6 +1529,21 @@ static inline void net_eth_set_ptp_port(struct net_if *iface, int port)
 #endif /* CONFIG_NET_L2_PTP */
 
 /**
+ * @brief Check if the Ethernet L2 network interface can perform Ethernet.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if interface supports Ethernet, False otherwise.
+ */
+static inline bool net_eth_type_is_ethernet(struct net_if *iface)
+{
+	const struct ethernet_context *ctx = (struct ethernet_context *)
+		net_if_l2_data(iface);
+
+	return ctx->eth_if_type == L2_ETH_IF_TYPE_ETHERNET;
+}
+
+/**
  * @brief Check if the Ethernet L2 network interface can perform Wi-Fi.
  *
  * @param iface Pointer to network interface

@@ -3376,6 +3376,22 @@ bool net_if_is_suspended(struct net_if *iface);
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
 
 /**
+ * @brief Check if the network interface supports Ethernet.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if interface supports Ethernet, False otherwise.
+ */
+bool net_if_is_ethernet(struct net_if *iface);
+
+/**
+ * @brief Get first Ethernet network interface.
+ *
+ * @return Pointer to network interface, NULL if not found.
+ */
+struct net_if *net_if_get_first_ethernet(void);
+
+/**
  * @brief Check if the network interface supports Wi-Fi.
  *
  * @param iface Pointer to network interface
