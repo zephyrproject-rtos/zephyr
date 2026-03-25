@@ -427,7 +427,6 @@ static const struct bt_gmap_cb gmap_cb = {
 
 static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf_simple *buf)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	struct bt_conn *conn;
 	int err;
 
@@ -444,8 +443,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf
 		return;
 	}
 
-	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
-	printk("Device found: %s (RSSI %d)\n", addr_str, info->rssi);
+	printk("Device found: %s (RSSI %d)\n", bt_addr_le_str(info->addr), info->rssi);
 
 	/* connect only to devices in close proximity */
 	if (info->rssi < -70) {

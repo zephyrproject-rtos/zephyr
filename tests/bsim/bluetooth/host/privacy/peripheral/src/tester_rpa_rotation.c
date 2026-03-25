@@ -99,8 +99,7 @@ static void test_address(bt_addr_le_t *addr)
 	adv_set_data[adv_index].addr_set = true;
 
 	printk("Ad set %d: Old addr %s, new addr %s\n", adv_index,
-	       bt_testlib_addr_to_str(&adv_set_data[adv_index].old_addr),
-	       bt_testlib_addr_to_str(addr));
+	       bt_addr_le_str(&adv_set_data[adv_index].old_addr), bt_addr_le_str(addr));
 
 	adv_set_data[adv_index].rpa_rotations++;
 

@@ -52,14 +52,12 @@ static void sent_cb(struct bt_l2cap_chan *chan)
 
 static int recv_cb(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	struct tester *tester = get_tester(chan->conn);
 
 	tester->sdu_count += 1;
 
-	bt_addr_le_to_str(bt_conn_get_dst(chan->conn), addr, sizeof(addr));
-
-	LOG_INF("Received SDU %d / %d from (%s)", tester->sdu_count, SDU_NUM, addr);
+	LOG_INF("Received SDU %d / %d from (%s)", tester->sdu_count, SDU_NUM,
+		bt_conn_dst_str(chan->conn));
 
 	return 0;
 }
@@ -113,7 +111,6 @@ static struct bt_conn *connect_tester(void)
 	int err;
 	bt_addr_le_t tester = {};
 	struct bt_conn *conn = NULL;
-	char addr[BT_ADDR_LE_STR_LEN];
 
 	/* The device address will not change. Scan only once in order to reduce
 	 * test time.
@@ -125,8 +122,7 @@ static struct bt_conn *connect_tester(void)
 	err = bt_testlib_connect(&tester, &conn);
 	TEST_ASSERT(!err, "Failed to initiate connection (err %d)", err);
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-	LOG_DBG("Connected to %s", addr);
+	LOG_DBG("Connected to %s", bt_conn_dst_str(conn));
 
 	return conn;
 }

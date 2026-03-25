@@ -83,15 +83,13 @@ static void stop_scan_and_connect(const bt_addr_le_t *addr,
 				  uint8_t type,
 				  struct net_buf_simple *ad)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	int err;
 
 	if (g_conn != NULL) {
 		return;
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	printk("Got scan result, connecting.. dst %s, RSSI %d\n", addr_str, rssi);
+	printk("Got scan result, connecting.. dst %s, RSSI %d\n", bt_addr_le_str(addr), rssi);
 
 	err = bt_le_scan_stop();
 	TEST_ASSERT(!err, "Err bt_le_scan_stop %d", err);

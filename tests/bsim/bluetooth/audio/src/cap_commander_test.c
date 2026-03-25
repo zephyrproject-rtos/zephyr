@@ -325,7 +325,6 @@ static int pa_sync_create(void)
 static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 {
 	const struct bt_le_scan_recv_info *info = user_data;
-	char le_addr[BT_ADDR_LE_STR_LEN];
 	struct bt_uuid_16 adv_uuid;
 	uint32_t broadcast_id;
 
@@ -353,10 +352,8 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	printk("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X\n", broadcast_id,
-	       le_addr, info->sid);
+	       bt_addr_le_str(info->addr), info->sid);
 	printk("Adv type %02X interval %u\n", info->adv_type, info->interval);
 
 	SET_FLAG(flag_broadcaster_found);
@@ -485,7 +482,6 @@ static void
 bap_broadcast_assistant_recv_state_cb(struct bt_conn *conn, int err,
 				      const struct bt_bap_scan_delegator_recv_state *state)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
 	char bad_code[BT_ISO_BROADCAST_CODE_SIZE * 2 + 1];
 	size_t acceptor_count = get_dev_cnt() - 2;
 
@@ -499,11 +495,11 @@ bap_broadcast_assistant_recv_state_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
 	(void)bin2hex(state->bad_code, BT_ISO_BROADCAST_CODE_SIZE, bad_code, sizeof(bad_code));
 	printk("BASS recv state: src_id %u, addr %s, sid %u, sync_state %u, "
 	       "encrypt_state %u%s%s\n",
-	       state->src_id, le_addr, state->adv_sid, state->pa_sync_state, state->encrypt_state,
+	       state->src_id, bt_addr_le_str(&state->addr), state->adv_sid, state->pa_sync_state,
+	       state->encrypt_state,
 	       state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE ? ", bad code" : "", bad_code);
 
 	if (state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
@@ -555,7 +551,6 @@ static struct bt_bap_broadcast_assistant_cb ba_cbs = {
 
 static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_data)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_t *addr = user_data;
 	const struct bt_uuid *uuid;
 	uint16_t uuid_val;
@@ -578,8 +573,7 @@ static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_
 		return true; /* Continue parsing to next AD data type */
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	printk("Device found: %s\n", addr_str);
+	printk("Device found: %s\n", bt_addr_le_str(addr));
 
 	printk("Stopping scan\n");
 	if (bt_le_scan_stop()) {

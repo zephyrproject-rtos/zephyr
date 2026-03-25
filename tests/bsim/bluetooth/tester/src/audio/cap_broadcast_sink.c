@@ -26,7 +26,6 @@ LOG_MODULE_REGISTER(bsim_cap_broadcast_sink, CONFIG_BSIM_BTTESTER_LOG_LEVEL);
 static void test_cap_broadcast_sink(void)
 {
 	const uint16_t pa_sync_timeout = BT_GAP_PER_ADV_MAX_TIMEOUT;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	const uint16_t pa_sync_skip = 0U;
 	const uint8_t src_id = 0U; /* BASS receive state source ID */
 	bt_addr_le_t remote_addr;
@@ -47,8 +46,7 @@ static void test_cap_broadcast_sink(void)
 
 	bsim_btp_bap_broadcast_scan_start();
 	bsim_btp_wait_for_bap_baa_found(&remote_addr, &broadcast_id, &adv_sid);
-	bt_addr_le_to_str(&remote_addr, addr_str, sizeof(addr_str));
-	LOG_INF("Found remote device %s", addr_str);
+	LOG_INF("Found remote device %s", bt_addr_le_str(&remote_addr));
 	bsim_btp_bap_broadcast_scan_stop();
 
 	bsim_btp_bap_broadcast_sink_sync(&remote_addr, broadcast_id, adv_sid, pa_sync_skip,
