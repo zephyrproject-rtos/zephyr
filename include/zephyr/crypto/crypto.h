@@ -107,10 +107,8 @@ __subsystem struct crypto_driver_api {
  */
 static inline int crypto_query_hwcaps(const struct device *dev)
 {
-	struct crypto_driver_api *api;
+	const struct crypto_driver_api *api = DEVICE_API_GET(crypto, dev);
 	int tmp;
-
-	api = (struct crypto_driver_api *) dev->api;
 
 	tmp = api->query_hw_caps(dev);
 
@@ -162,10 +160,9 @@ static inline int cipher_begin_session(const struct device *dev,
 				       enum cipher_mode  mode,
 				       enum cipher_op optype)
 {
-	struct crypto_driver_api *api;
+	const struct crypto_driver_api *api = DEVICE_API_GET(crypto, dev);
 	uint32_t flags;
 
-	api = (struct crypto_driver_api *) dev->api;
 	ctx->device = dev;
 	ctx->ops.cipher_mode = mode;
 
@@ -201,11 +198,7 @@ static inline int cipher_begin_session(const struct device *dev,
 static inline int cipher_free_session(const struct device *dev,
 				      struct cipher_ctx *ctx)
 {
-	struct crypto_driver_api *api;
-
-	api = (struct crypto_driver_api *) dev->api;
-
-	return api->cipher_free_session(dev, ctx);
+	return DEVICE_API_GET(crypto, dev)->cipher_free_session(dev, ctx);
 }
 
 /**
@@ -225,16 +218,13 @@ static inline int cipher_free_session(const struct device *dev,
 static inline int cipher_callback_set(const struct device *dev,
 				      cipher_completion_cb cb)
 {
-	struct crypto_driver_api *api;
-
-	api = (struct crypto_driver_api *) dev->api;
+	const struct crypto_driver_api *api = DEVICE_API_GET(crypto, dev);
 
 	if (api->cipher_async_callback_set) {
 		return api->cipher_async_callback_set(dev, cb);
 	}
 
 	return -ENOTSUP;
-
 }
 
 /**
@@ -382,10 +372,9 @@ static inline int hash_begin_session(const struct device *dev,
 				     struct hash_ctx *ctx,
 				     enum hash_algo algo)
 {
+	const struct crypto_driver_api *api = DEVICE_API_GET(crypto, dev);
 	uint32_t flags;
-	struct crypto_driver_api *api;
 
-	api = (struct crypto_driver_api *) dev->api;
 	ctx->device = dev;
 
 	flags = (ctx->flags & (CAP_INPLACE_OPS | CAP_SEPARATE_IO_BUFS));
@@ -416,11 +405,7 @@ static inline int hash_begin_session(const struct device *dev,
 static inline int hash_free_session(const struct device *dev,
 				    struct hash_ctx *ctx)
 {
-	struct crypto_driver_api *api;
-
-	api = (struct crypto_driver_api *) dev->api;
-
-	return api->hash_free_session(dev, ctx);
+	return DEVICE_API_GET(crypto, dev)->hash_free_session(dev, ctx);
 }
 
 /**
@@ -440,16 +425,13 @@ static inline int hash_free_session(const struct device *dev,
 static inline int hash_callback_set(const struct device *dev,
 				    hash_completion_cb cb)
 {
-	struct crypto_driver_api *api;
-
-	api = (struct crypto_driver_api *) dev->api;
+	const struct crypto_driver_api *api = DEVICE_API_GET(crypto, dev);
 
 	if (api->hash_async_callback_set) {
 		return api->hash_async_callback_set(dev, cb);
 	}
 
 	return -ENOTSUP;
-
 }
 
 /**
