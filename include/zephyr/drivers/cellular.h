@@ -242,7 +242,7 @@ __subsystem struct cellular_driver_api {
 static inline int cellular_configure_networks(const struct device *dev,
 					      const struct cellular_network *networks, uint8_t size)
 {
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
 
 	if (api->configure_networks == NULL) {
 		return -ENOSYS;
@@ -266,7 +266,7 @@ static inline int cellular_get_supported_networks(const struct device *dev,
 						  const struct cellular_network **networks,
 						  uint8_t *size)
 {
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
 
 	if (api->get_supported_networks == NULL) {
 		return -ENOSYS;
@@ -290,7 +290,7 @@ static inline int cellular_get_supported_networks(const struct device *dev,
 static inline int cellular_get_signal(const struct device *dev,
 				      const enum cellular_signal_type type, int16_t *value)
 {
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
 
 	if (api->get_signal == NULL) {
 		return -ENOSYS;
@@ -316,7 +316,7 @@ static inline int cellular_get_modem_info(const struct device *dev,
 					  const enum cellular_modem_info_type type, char *info,
 					  size_t size)
 {
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
 
 	if (api->get_modem_info == NULL) {
 		return -ENOSYS;
@@ -341,7 +341,7 @@ static inline int cellular_get_registration_status(const struct device *dev,
 						   enum cellular_access_technology tech,
 						   enum cellular_registration_status *status)
 {
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
 
 	if (api->get_registration_status == NULL) {
 		return -ENOSYS;
@@ -368,7 +368,7 @@ static inline int cellular_get_registration_status(const struct device *dev,
  */
 static inline int cellular_set_apn(const struct device *dev, const char *apn)
 {
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
 
 	if (api->set_apn == NULL) {
 		return -ENOSYS;
@@ -394,7 +394,7 @@ static inline int cellular_set_apn(const struct device *dev, const char *apn)
 static inline int cellular_set_callback(const struct device *dev, cellular_event_mask_t mask,
 					cellular_event_cb_t cb, void *user_data)
 {
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
 
 	if (api->set_callback == NULL) {
 		return -ENOSYS;
