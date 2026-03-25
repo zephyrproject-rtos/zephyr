@@ -55,25 +55,98 @@ code base has begun.
 Stabilization Phase
 *******************
 
-Over the following weeks and depending on the release milestone, only stabilization,
-cosmetic updates, bug fixes, documentation improvements, and new tests for
-existing features are permitted. (See :ref:`table <release_milestones>` below).
-
-On occasion, more significant changes and new features will be allowed, but such
-occasions are rare and require a TSC approval and a justification. As a general
-rule, if you miss submitting your code during the development phase for a given
-feature, the best thing to do is to wait for the next development cycle. (An
-occasional exception is made for drivers for previously unsupported hardware; if
-they do not touch any other in-tree code, they cannot cause regressions and
-should be safe to add at any time).
-
 As fixes make their way into the mainline, the patch rate will slow over time.
 The mainline release owner releases new -rc drops once or twice a week; a normal
 series will get up to somewhere between -rc4 and -rc6 before the code base is
 considered to be sufficiently stable and the release criteria have been achieved
-at which point the final 3.1.0 release is made.
+at which point the final release is made.
 
 At that point, the whole process starts over again.
+
+Below is the criteria for accepting pull requests after the
+feature freeze milestone (e.g. after RC1) and during the stabilization
+phase of a release.
+
+Allowed Changes
+===============
+
+After feature freeze, **only** stabilization-related changes **shall** be accepted:
+
+* Bug fixes addressing functional defects
+* Stabilization fixes improving reliability, build stability, or test behavior
+* Documentation updates (clarifications, corrections, improvements)
+* Tests for existing functionality (no new feature enablement)
+
+For more details on when certain changes are accepted, see :ref:`table <release_milestones>`.
+
+Exceptions to these allowed changes are rare and require both explicit
+justification and TSC approval. As a general rule, if a feature misses the
+development phase window, it should wait for the next development cycle.
+
+Disallowed Changes
+==================
+
+The following changes **shall not** be accepted after feature freeze:
+
+* New features or feature enhancements
+* API changes, unless required to resolve a critical defect
+* Refactoring not directly tied to a bug fix or stabilization effort
+* New subsystems, drivers, boards, or architectural changes
+
+
+Issue Tracking
+==============
+
+Referencing a GitHub issue in a pull request is **recommended** but **not required**
+during the stabilization phase.
+
+Pull requests **must** include a clear description of:
+
+* The issue being addressed
+* The impact of the issue
+* How the change resolves the issue
+
+Maintainers and release engineers **may** request additional clarification when
+the intent or scope of a pull request is not clear.
+
+
+Mandatory Issue Usage
+=====================
+
+A GitHub issue **shall** be required in the following cases:
+
+* Release blockers
+* Fixes targeting maintenance of already released branches
+
+
+Review and Approval
+===================
+
+All pull requests **shall** follow the standard review and approval process.
+
+Maintainers **shall** ensure that:
+
+* Changes comply with this policy
+* Scope is minimal and focused on stabilization
+* Risk is appropriate for the release phase
+
+Release engineers **may**:
+
+* Reject or defer changes based on risk assessment
+* Request changes or additional justification
+
+
+Risk Expectations
+=================
+
+Changes accepted during stabilization **shall** be:
+
+* Minimal in scope
+* Low risk
+* Adequately tested
+
+Changes introducing significant risk **may** be deferred to a future release,
+even if they qualify as bug fixes.
 
 .. _merge_criteria:
 
