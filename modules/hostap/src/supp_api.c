@@ -925,6 +925,12 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 
 			if (params->wpa3_ent_mode == WIFI_WPA3_ENTERPRISE_SUITEB_192) {
 				if (params->TLS_cipher == WIFI_EAP_TLS_ECC_P384) {
+					snprintf(phase1, sizeof(phase1), "tls_disable_tlsv1_3=1");
+					if (!wpa_cli_cmd_v("set_network %d phase1 \"%s\"",
+							resp.network_id, &phase1[0])) {
+						goto out;
+					}
+
 					if (!wpa_cli_cmd_v("set_network %d openssl_ciphers \"%s\"",
 							resp.network_id,
 							cipher_config.openssl_ciphers)) {
