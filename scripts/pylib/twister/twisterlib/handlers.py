@@ -26,15 +26,13 @@ from pathlib import Path
 from queue import Empty, Queue
 
 import psutil
+from domains import Domains
 from serial.tools import list_ports
-from twisterlib.constants import ZEPHYR_BASE
+from twisterlib import ZEPHYR_BASE
 from twisterlib.environment import strip_ansi_sequences
 from twisterlib.hardwaredata import CompoundHardwareData
 from twisterlib.platform import Platform
 from twisterlib.statuses import TwisterStatus
-
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
-from domains import Domains
 
 try:
     import serial
