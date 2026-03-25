@@ -1222,6 +1222,7 @@ static uint32_t rf_adjust_tstamp_from_app(uint32_t time_us)
 phyStatus_t pd_mac_sap_handler(void *msg, instanceId_t instance)
 {
 	pdDataToMacMessage_t *data_msg = (pdDataToMacMessage_t *)msg;
+	bool free_msg = true;
 
 	__ASSERT_NO_MSG(msg != NULL);
 
@@ -1285,6 +1286,9 @@ phyStatus_t pd_mac_sap_handler(void *msg, instanceId_t instance)
 		/* add the rx message in queue */
 		if (k_msgq_put(&mcxw_ctx.rx_msgq, &rx_frame, K_NO_WAIT) < 0) {
 			LOG_ERR("Failed to push RX data to message queue");
+		} else {
+			/* message will be freed by the rx thread, k_msgq_put does a shallow copy */
+			free_msg = false;
 		}
 		break;
 
@@ -1292,8 +1296,10 @@ phyStatus_t pd_mac_sap_handler(void *msg, instanceId_t instance)
 		break;
 	}
 
-	/* The message has been allocated by the Phy, we have to free it */
-	k_free(msg);
+	/* The message has been allocated by the Phy, free it if needed */
+	if (free_msg) {
+		k_free(msg);
+	}
 
 	/* Always stop, the CSL restarts as needed */
 	stop_csl_receiver();
