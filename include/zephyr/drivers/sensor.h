@@ -810,8 +810,7 @@ static inline int z_impl_sensor_attr_set(const struct device *dev,
 					 enum sensor_attribute attr,
 					 const struct sensor_value *val)
 {
-	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->api;
+	const struct sensor_driver_api *api = DEVICE_API_GET(sensor, dev);
 
 	if (api->attr_set == NULL) {
 		return -ENOSYS;
@@ -842,8 +841,7 @@ static inline int z_impl_sensor_attr_get(const struct device *dev,
 					 enum sensor_attribute attr,
 					 struct sensor_value *val)
 {
-	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->api;
+	const struct sensor_driver_api *api = DEVICE_API_GET(sensor, dev);
 
 	if (api->attr_get == NULL) {
 		return -ENOSYS;
@@ -878,8 +876,7 @@ static inline int sensor_trigger_set(const struct device *dev,
 				     const struct sensor_trigger *trig,
 				     sensor_trigger_handler_t handler)
 {
-	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->api;
+	const struct sensor_driver_api *api = DEVICE_API_GET(sensor, dev);
 
 	if (api->trigger_set == NULL) {
 		return -ENOSYS;
@@ -910,10 +907,7 @@ __syscall int sensor_sample_fetch(const struct device *dev);
 
 static inline int z_impl_sensor_sample_fetch(const struct device *dev)
 {
-	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->api;
-
-	return api->sample_fetch(dev, SENSOR_CHAN_ALL);
+	return DEVICE_API_GET(sensor, dev)->sample_fetch(dev, SENSOR_CHAN_ALL);
 }
 
 /**
@@ -943,10 +937,7 @@ __syscall int sensor_sample_fetch_chan(const struct device *dev,
 static inline int z_impl_sensor_sample_fetch_chan(const struct device *dev,
 						  enum sensor_channel type)
 {
-	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->api;
-
-	return api->sample_fetch(dev, type);
+	return DEVICE_API_GET(sensor, dev)->sample_fetch(dev, type);
 }
 
 /**
@@ -978,10 +969,7 @@ static inline int z_impl_sensor_channel_get(const struct device *dev,
 					    enum sensor_channel chan,
 					    struct sensor_value *val)
 {
-	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->api;
-
-	return api->channel_get(dev, chan, val);
+	return DEVICE_API_GET(sensor, dev)->channel_get(dev, chan, val);
 }
 
 #if defined(CONFIG_SENSOR_ASYNC_API) || defined(__DOXYGEN__)
@@ -1060,7 +1048,7 @@ __syscall int sensor_get_decoder(const struct device *dev,
 static inline int z_impl_sensor_get_decoder(const struct device *dev,
 					    const struct sensor_decoder_api **decoder)
 {
-	const struct sensor_driver_api *api = (const struct sensor_driver_api *)dev->api;
+	const struct sensor_driver_api *api = DEVICE_API_GET(sensor, dev);
 
 	__ASSERT_NO_MSG(api != NULL);
 
