@@ -22,6 +22,18 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(crc_stm32, CONFIG_CRC_LOG_LEVEL);
 
+#ifdef CONFIG_STM32_HAL2
+#define STM32_CRC_POLY_SIZE_32B		LL_CRC_POLY_SIZE_32B
+#define STM32_CRC_POLY_SIZE_16B		LL_CRC_POLY_SIZE_16B
+#define STM32_CRC_POLY_SIZE_8B		LL_CRC_POLY_SIZE_8B
+#define STM32_CRC_POLY_SIZE_7B		LL_CRC_POLY_SIZE_7B
+#else /* CONFIG_STM32_HAL2 */
+#define STM32_CRC_POLY_SIZE_32B		LL_CRC_POLYLENGTH_32B
+#define STM32_CRC_POLY_SIZE_16B		LL_CRC_POLYLENGTH_16B
+#define STM32_CRC_POLY_SIZE_8B		LL_CRC_POLYLENGTH_8B
+#define STM32_CRC_POLY_SIZE_7B		LL_CRC_POLYLENGTH_7B
+#endif /* CONFIG_STM32_HAL2 */
+
 struct crc_stm32_config {
 	CRC_TypeDef *base;
 	struct stm32_pclken pclken[1];
@@ -61,18 +73,18 @@ static int crc_stm32_get_poly_size(struct crc_ctx *ctx, uint32_t *size)
 
 	switch (ctx->type) {
 	case CRC7_BE:
-		*size = LL_CRC_POLYLENGTH_7B;
+		*size = STM32_CRC_POLY_SIZE_7B;
 		break;
 	case CRC8:
-		*size = LL_CRC_POLYLENGTH_8B;
+		*size = STM32_CRC_POLY_SIZE_8B;
 		break;
 	case CRC16:
 	case CRC16_CCITT:
-		*size = LL_CRC_POLYLENGTH_16B;
+		*size = STM32_CRC_POLY_SIZE_16B;
 		break;
 	case CRC32_C:
 	case CRC32_IEEE:
-		*size = LL_CRC_POLYLENGTH_32B;
+		*size = STM32_CRC_POLY_SIZE_32B;
 		break;
 	default:
 		res = -ENOTSUP;
