@@ -168,7 +168,7 @@ __syscall int psi5_start_sync(const struct device *dev, uint8_t channel);
 
 static inline int z_impl_psi5_start_sync(const struct device *dev, uint8_t channel)
 {
-	const struct psi5_driver_api *api = (const struct psi5_driver_api *)dev->api;
+	const struct psi5_driver_api *api = DEVICE_API_GET(psi5, dev);
 
 	if (api->start_sync) {
 		return api->start_sync(dev, channel);
@@ -191,7 +191,7 @@ __syscall int psi5_stop_sync(const struct device *dev, uint8_t channel);
 
 static inline int z_impl_psi5_stop_sync(const struct device *dev, uint8_t channel)
 {
-	const struct psi5_driver_api *api = (const struct psi5_driver_api *)dev->api;
+	const struct psi5_driver_api *api = DEVICE_API_GET(psi5, dev);
 
 	if (api->stop_sync) {
 		return api->stop_sync(dev, channel);
@@ -229,7 +229,7 @@ static inline int z_impl_psi5_send(const struct device *dev, uint8_t channel, co
 				   k_timeout_t timeout, psi5_tx_callback_t callback,
 				   void *user_data)
 {
-	const struct psi5_driver_api *api = (const struct psi5_driver_api *)dev->api;
+	const struct psi5_driver_api *api = DEVICE_API_GET(psi5, dev);
 
 	if (api->send) {
 		return api->send(dev, channel, data, timeout, callback, user_data);
@@ -256,7 +256,7 @@ __syscall int psi5_register_callback(const struct device *dev, uint8_t channel,
 static inline int z_impl_psi5_register_callback(const struct device *dev, uint8_t channel,
 						struct psi5_rx_callback_configs callback_configs)
 {
-	const struct psi5_driver_api *api = (const struct psi5_driver_api *)dev->api;
+	const struct psi5_driver_api *api = DEVICE_API_GET(psi5, dev);
 
 	if (api->register_callback) {
 		return api->register_callback(dev, channel, callback_configs);
