@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2026 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nuvoton/m3351kjc.dtsi>
+#include "numaker_m3351ki-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Nuvoton NuMaker M3351KI board";
+	compatible = "nuvoton,numaker-m3351ki";
+
+	aliases {
+		led0 = &green_led;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		green_led: led_0 {
+			gpios = <&gpiob 14 GPIO_ACTIVE_LOW>;
+			label = "User LD0";
+		};
+	};
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 0xfe00>;
+		};
+
+		slot0_partition: partition@fe00 {
+			label = "image-0";
+			reg = <0xfe00 0x74100>;
+		};
+
+		slot1_partition: partition@83f00 {
+			label = "image-1";
+			reg = <0x83f00 0x74100>;
+		};
+
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0xf8000 0x8000>;
+		};
+	};
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(128)>;
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
