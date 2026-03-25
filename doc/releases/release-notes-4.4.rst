@@ -1481,6 +1481,11 @@ Kernel
 Libraries / Subsystems
 **********************
 
+* CFB
+
+   * :c:func:`cfb_print`, :c:func:`cfb_invert_area`, and :c:struct:`cfb_position`
+      changed to use signed integer instead of unsigned integer.
+
 * LoRa/LoRaWAN
 
    * :c:func:`lora_airtime`
