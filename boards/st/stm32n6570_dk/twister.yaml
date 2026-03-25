@@ -11,6 +11,7 @@ supported:
   - adc
   - can
   - counter
+  - crc
   - dma
   - i2c
   - gpio

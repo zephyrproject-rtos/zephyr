@@ -13,6 +13,7 @@ supported:
   - arduino_i2c
   - can
   - counter
+  - crc
   - dma
   - gpio
   - i2c

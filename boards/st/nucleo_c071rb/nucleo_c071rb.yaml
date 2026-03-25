@@ -9,6 +9,7 @@ supported:
   - adc
   - arduino_gpio
   - counter
+  - crc
   - dma
   - gpio
   - i2c
