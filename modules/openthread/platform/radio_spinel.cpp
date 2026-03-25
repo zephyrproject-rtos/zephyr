@@ -544,10 +544,7 @@ extern "C" void platformRadioInit(void)
 						iidList, OT_ARRAY_LENGTH(iidList)));
 
 	memset(&callbacks, 0, sizeof(callbacks));
-#if OPENTHREAD_CONFIG_DIAG_ENABLE
-	callbacks.mDiagReceiveDone = otPlatDiagRadioReceiveDone;
-	callbacks.mDiagTransmitDone = otPlatDiagRadioTransmitDone;
-#endif /* OPENTHREAD_CONFIG_DIAG_ENABLE */
+
 	callbacks.mEnergyScanDone = otPlatRadioEnergyScanDone;
 	callbacks.mReceiveDone = otPlatRadioReceiveDone;
 	callbacks.mTransmitDone = otPlatRadioTxDone;
