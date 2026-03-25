@@ -101,10 +101,7 @@ __syscall size_t ivshmem_get_mem(const struct device *dev,
 static inline size_t z_impl_ivshmem_get_mem(const struct device *dev,
 					    uintptr_t *memmap)
 {
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->get_mem(dev, memmap);
+	return DEVICE_API_GET(ivshmem, dev)->get_mem(dev, memmap);
 }
 
 /**
@@ -118,10 +115,7 @@ __syscall uint32_t ivshmem_get_id(const struct device *dev);
 
 static inline uint32_t z_impl_ivshmem_get_id(const struct device *dev)
 {
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->get_id(dev);
+	return DEVICE_API_GET(ivshmem, dev)->get_id(dev);
 }
 
 /**
@@ -135,10 +129,7 @@ __syscall uint16_t ivshmem_get_vectors(const struct device *dev);
 
 static inline uint16_t z_impl_ivshmem_get_vectors(const struct device *dev)
 {
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->get_vectors(dev);
+	return DEVICE_API_GET(ivshmem, dev)->get_vectors(dev);
 }
 
 /**
@@ -156,10 +147,7 @@ __syscall int ivshmem_int_peer(const struct device *dev,
 static inline int z_impl_ivshmem_int_peer(const struct device *dev,
 					  uint32_t peer_id, uint16_t vector)
 {
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->int_peer(dev, peer_id, vector);
+	return DEVICE_API_GET(ivshmem, dev)->int_peer(dev, peer_id, vector);
 }
 
 /**
@@ -185,10 +173,7 @@ static inline int z_impl_ivshmem_register_handler(const struct device *dev,
 						  struct k_poll_signal *signal,
 						  uint16_t vector)
 {
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->register_handler(dev, signal, vector);
+	return DEVICE_API_GET(ivshmem, dev)->register_handler(dev, signal, vector);
 }
 
 #ifdef CONFIG_IVSHMEM_V2
@@ -207,10 +192,7 @@ __syscall size_t ivshmem_get_rw_mem_section(const struct device *dev,
 static inline size_t z_impl_ivshmem_get_rw_mem_section(const struct device *dev,
 						       uintptr_t *memmap)
 {
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->get_rw_mem_section(dev, memmap);
+	return DEVICE_API_GET(ivshmem, dev)->get_rw_mem_section(dev, memmap);
 }
 
 /**
@@ -230,10 +212,7 @@ static inline size_t z_impl_ivshmem_get_output_mem_section(const struct device *
 							   uint32_t peer_id,
 							   uintptr_t *memmap)
 {
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->get_output_mem_section(dev, peer_id, memmap);
+	return DEVICE_API_GET(ivshmem, dev)->get_output_mem_section(dev, peer_id, memmap);
 }
 
 /**
@@ -250,10 +229,7 @@ __syscall uint32_t ivshmem_get_state(const struct device *dev,
 static inline uint32_t z_impl_ivshmem_get_state(const struct device *dev,
 						uint32_t peer_id)
 {
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->get_state(dev, peer_id);
+	return DEVICE_API_GET(ivshmem, dev)->get_state(dev, peer_id);
 }
 
 /**
@@ -270,10 +246,7 @@ __syscall int ivshmem_set_state(const struct device *dev,
 static inline int z_impl_ivshmem_set_state(const struct device *dev,
 					   uint32_t state)
 {
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->set_state(dev, state);
+	return DEVICE_API_GET(ivshmem, dev)->set_state(dev, state);
 }
 
 /**
@@ -287,10 +260,7 @@ __syscall uint32_t ivshmem_get_max_peers(const struct device *dev);
 
 static inline uint32_t z_impl_ivshmem_get_max_peers(const struct device *dev)
 {
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->get_max_peers(dev);
+	return DEVICE_API_GET(ivshmem, dev)->get_max_peers(dev);
 }
 
 /**
@@ -304,10 +274,7 @@ __syscall uint16_t ivshmem_get_protocol(const struct device *dev);
 
 static inline uint16_t z_impl_ivshmem_get_protocol(const struct device *dev)
 {
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->get_protocol(dev);
+	return DEVICE_API_GET(ivshmem, dev)->get_protocol(dev);
 }
 
 /**
@@ -324,10 +291,7 @@ __syscall int ivshmem_enable_interrupts(const struct device *dev,
 static inline int z_impl_ivshmem_enable_interrupts(const struct device *dev,
 						   bool enable)
 {
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->enable_interrupts(dev, enable);
+	return DEVICE_API_GET(ivshmem, dev)->enable_interrupts(dev, enable);
 }
 
 #endif /* CONFIG_IVSHMEM_V2 */
