@@ -16,6 +16,9 @@
 
 #define ADC_EMUL_HDL_LIST_ENTRY(node_id) { .dev = DEVICE_DT_GET(node_id) },
 
+static const char *cmd_adc_emul_dev_get_help =
+	SHELL_HELP("Select subcommand for ADC emulator device", NULL);
+
 static const struct {
 	const struct device *dev;
 } adc_emul_list[] = {
@@ -130,7 +133,7 @@ static void cmd_adc_emul_dev_get(size_t idx, struct shell_static_entry *entry)
 		entry->syntax = adc_emul_list[idx].dev->name;
 		entry->handler = NULL;
 		entry->subcmd = &sub_adc_emul_cmds;
-		entry->help = SHELL_HELP("Select subcommand for ADC emulator device", NULL);
+		entry->help = cmd_adc_emul_dev_get_help;
 	} else {
 		entry->syntax = NULL;
 	}
