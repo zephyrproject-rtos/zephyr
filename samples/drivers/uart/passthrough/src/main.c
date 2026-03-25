@@ -68,7 +68,7 @@ static void uart_cb(const struct device *dev, void *ctx)
 			break;
 		}
 
-		len = ring_buf_put_claim(patch->rx_ring_buf, &buf, RING_BUF_SIZE);
+		len = ring_buf_put_ptr(patch->rx_ring_buf, &buf);
 		if (len == 0) {
 			/* no space for Rx, disable the IRQ */
 			uart_irq_rx_disable(patch->rx_dev);
@@ -85,7 +85,7 @@ static void uart_cb(const struct device *dev, void *ctx)
 		}
 		len = ret;
 
-		ret = ring_buf_put_finish(patch->rx_ring_buf, len);
+		ring_buf_commit(patch->rx_ring_buf, len);
 		if (ret != 0) {
 			patch->rx_error = true;
 			break;
@@ -109,7 +109,7 @@ static void passthrough(struct patch_info *patch)
 		patch->rx_overflow = false;
 	}
 
-	len = ring_buf_get_claim(patch->rx_ring_buf, &buf, RING_BUF_SIZE);
+	len = ring_buf_get_ptr(patch->rx_ring_buf, &buf);
 	if (len == 0) {
 		goto done;
 	}
@@ -120,7 +120,7 @@ static void passthrough(struct patch_info *patch)
 	}
 	len = ret;
 
-	ret = ring_buf_get_finish(patch->rx_ring_buf, len);
+	ring_buf_consume(patch->rx_ring_buf, len);
 	if (ret < 0) {
 		goto error;
 	}
