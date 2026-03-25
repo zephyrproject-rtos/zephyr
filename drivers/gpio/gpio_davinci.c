@@ -139,13 +139,32 @@ static int gpio_davinci_port_toggle_bits(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_GPIO_RAW_REGS
+static int gpio_davinci_port_get_raw_regs(const struct device *dev, struct gpio_raw_regs *regs)
+{
+	volatile struct gpio_davinci_regs *port_regs = DEV_REGS(dev);
+
+	regs->in = (mem_addr_t)&port_regs->in_data;
+	regs->out = (mem_addr_t)&port_regs->out_data;
+	regs->set = (mem_addr_t)&port_regs->set_data;
+	regs->clear = (mem_addr_t)&port_regs->clr_data;
+	/* NOT supported */
+	regs->toggle = 0;
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_RAW_REGS */
+
 static DEVICE_API(gpio, gpio_davinci_driver_api) = {
 	.pin_configure = gpio_davinci_configure,
 	.port_get_raw = gpio_davinci_port_get_raw,
 	.port_set_masked_raw = gpio_davinci_port_set_masked_raw,
 	.port_set_bits_raw = gpio_davinci_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_davinci_port_clear_bits_raw,
-	.port_toggle_bits = gpio_davinci_port_toggle_bits
+	.port_toggle_bits = gpio_davinci_port_toggle_bits,
+#ifdef CONFIG_GPIO_RAW_REGS
+	.port_get_raw_regs = gpio_davinci_port_get_raw_regs,
+#endif /* CONFIG_GPIO_RAW_REGS */
 };
 
 static int gpio_davinci_init(const struct device *dev)
