@@ -221,6 +221,7 @@ choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
 
 config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 	bool "Cryptographically secure driver"
+	depends on !(CTR_DRBG_CSPRNG_GENERATOR || PSA_CSPRNG_GENERATOR)
 	help
 	  Use a cryptographically secure random generator to provide random data
 	  instead of legacy Mbed TLS modules. This has a smaller footprint
@@ -233,12 +234,9 @@ config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 
 config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 	bool "Mbed TLS legacy modules (ENTROPY + [CTR|HMAC]_DRBG)"
+	depends on TEST_RANDOM_GENERATOR || ENTROPY_HAS_DRIVER
 	select MBEDTLS_ENTROPY_C
 	select MBEDTLS_HMAC_DRBG_C if !MBEDTLS_CTR_DRBG_C
-	# If there is any entropy driver in the system, then the choice would be
-	# CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG. If we fall here, then the only
-	# way to get some random data is to enable CONFIG_TEST_RANDOM_GENERATOR.
-	select TEST_RANDOM_GENERATOR
 	help
 	  Use legacy Mbed TLS modules to generate random data. In this
 	  configuration the entropy module is used to gather some data and then

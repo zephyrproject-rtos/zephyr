@@ -159,7 +159,6 @@ config PSA_CSPRNG_GENERATOR
 	  cryptographically secure random numbers suitable for
 	  security-sensitive applications.
 
-
 config TEST_CSPRNG_GENERATOR
 	bool "Use insecure CSPRNG for testing purposes"
 	depends on TEST_RANDOM_GENERATOR
