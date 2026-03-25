@@ -1332,8 +1332,10 @@ static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 
 	/*
 	* This if statement sets the appropriate test argument for ztest_set_test_args.
-	* If the optional argument is used (opt_num == 1), it sets the test argument to the third element (argv[3]).
-	* If the optional argument is not used, it sets the test argument to the first element (argv[1]).
+	* If the optional argument is used (opt_num == 1), it sets the test argument
+	* to the third element (argv[3]).
+	* If the optional argument is not used, it sets the test argument to the first
+	* element (argv[1]).
 	*/
 	if (opt_num == 1) {
 		ztest_set_test_args(argv[3]);
