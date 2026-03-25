@@ -4,6 +4,7 @@ tests:
   sample.board.stm32.mco:
     build_only: true
     platform_allow:
+      - nucleo_c5a3zg
       - nucleo_f411re
       - nucleo_f446ze
       - stm32f746g_disco
