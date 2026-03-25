@@ -980,7 +980,11 @@ static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 
 	/* Enable the MMU and data cache */
 	val = read_sctlr_el1();
+#if defined(CONFIG_DCACHE)
 	write_sctlr_el1(val | SCTLR_M_BIT | SCTLR_C_BIT);
+#else
+	write_sctlr_el1(val | SCTLR_M_BIT);
+#endif
 
 	/* Ensure the MMU enable takes effect immediately */
 	barrier_isync_fence_full();

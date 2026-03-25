@@ -46,7 +46,11 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset_prep_c)
 3:
 #if !defined(CONFIG_ARMV8_R)
 	/* Reinitialize SCTLR from scratch in EL3 */
+#if defined(CONFIG_ICACHE)
 	ldr	w0, =(SCTLR_EL3_RES1 | SCTLR_I_BIT | SCTLR_SA_BIT)
+#else
+	ldr	w0, =(SCTLR_EL3_RES1 | SCTLR_SA_BIT)
+#endif
 	msr	sctlr_el3, x0
 	isb
 
