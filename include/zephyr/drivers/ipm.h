@@ -170,10 +170,7 @@ static inline int z_impl_ipm_send(const struct device *ipmdev, int wait,
 				  uint32_t id,
 				  const void *data, int size)
 {
-	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->api;
-
-	return api->send(ipmdev, wait, id, data, size);
+	return DEVICE_API_GET(ipm, ipmdev)->send(ipmdev, wait, id, data, size);
 }
 
 /**
@@ -187,10 +184,7 @@ static inline int z_impl_ipm_send(const struct device *ipmdev, int wait,
 static inline void ipm_register_callback(const struct device *ipmdev,
 					 ipm_callback_t cb, void *user_data)
 {
-	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->api;
-
-	api->register_callback(ipmdev, cb, user_data);
+	DEVICE_API_GET(ipm, ipmdev)->register_callback(ipmdev, cb, user_data);
 }
 
 /**
@@ -207,10 +201,7 @@ __syscall int ipm_max_data_size_get(const struct device *ipmdev);
 
 static inline int z_impl_ipm_max_data_size_get(const struct device *ipmdev)
 {
-	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->api;
-
-	return api->max_data_size_get(ipmdev);
+	return DEVICE_API_GET(ipm, ipmdev)->max_data_size_get(ipmdev);
 }
 
 
@@ -228,10 +219,7 @@ __syscall uint32_t ipm_max_id_val_get(const struct device *ipmdev);
 
 static inline uint32_t z_impl_ipm_max_id_val_get(const struct device *ipmdev)
 {
-	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->api;
-
-	return api->max_id_val_get(ipmdev);
+	return DEVICE_API_GET(ipm, ipmdev)->max_id_val_get(ipmdev);
 }
 
 /**
@@ -248,10 +236,7 @@ __syscall int ipm_set_enabled(const struct device *ipmdev, int enable);
 static inline int z_impl_ipm_set_enabled(const struct device *ipmdev,
 					 int enable)
 {
-	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->api;
-
-	return api->set_enabled(ipmdev, enable);
+	return DEVICE_API_GET(ipm, ipmdev)->set_enabled(ipmdev, enable);
 }
 
 /**
@@ -273,8 +258,7 @@ __syscall void ipm_complete(const struct device *ipmdev);
 static inline void z_impl_ipm_complete(const struct device *ipmdev)
 {
 #ifdef CONFIG_IPM_CALLBACK_ASYNC
-	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->api;
+	const struct ipm_driver_api *api = DEVICE_API_GET(ipm, ipmdev);
 
 	if (api->complete != NULL) {
 		api->complete(ipmdev);
