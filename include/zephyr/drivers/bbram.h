@@ -100,8 +100,7 @@ __syscall int bbram_check_invalid(const struct device *dev);
 
 static inline int z_impl_bbram_check_invalid(const struct device *dev)
 {
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
+	const struct bbram_driver_api *api = DEVICE_API_GET(bbram, dev);
 
 	if (!api->check_invalid) {
 		return -ENOTSUP;
@@ -122,8 +121,7 @@ __syscall int bbram_check_standby_power(const struct device *dev);
 
 static inline int z_impl_bbram_check_standby_power(const struct device *dev)
 {
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
+	const struct bbram_driver_api *api = DEVICE_API_GET(bbram, dev);
 
 	if (!api->check_standby_power) {
 		return -ENOTSUP;
@@ -145,8 +143,7 @@ __syscall int bbram_check_power(const struct device *dev);
 
 static inline int z_impl_bbram_check_power(const struct device *dev)
 {
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
+	const struct bbram_driver_api *api = DEVICE_API_GET(bbram, dev);
 
 	if (!api->check_power) {
 		return -ENOTSUP;
@@ -166,8 +163,7 @@ __syscall int bbram_get_size(const struct device *dev, size_t *size);
 
 static inline int z_impl_bbram_get_size(const struct device *dev, size_t *size)
 {
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
+	const struct bbram_driver_api *api = DEVICE_API_GET(bbram, dev);
 
 	if (!api->get_size) {
 		return -ENOTSUP;
@@ -191,8 +187,7 @@ __syscall int bbram_read(const struct device *dev, size_t offset, size_t size,
 static inline int z_impl_bbram_read(const struct device *dev, size_t offset,
 				    size_t size, uint8_t *data)
 {
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
+	const struct bbram_driver_api *api = DEVICE_API_GET(bbram, dev);
 
 	if (!api->read) {
 		return -ENOTSUP;
@@ -216,8 +211,7 @@ __syscall int bbram_write(const struct device *dev, size_t offset, size_t size,
 static inline int z_impl_bbram_write(const struct device *dev, size_t offset,
 				     size_t size, const uint8_t *data)
 {
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
+	const struct bbram_driver_api *api = DEVICE_API_GET(bbram, dev);
 
 	if (!api->write) {
 		return -ENOTSUP;
