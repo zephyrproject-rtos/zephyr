@@ -9,19 +9,19 @@ config SOC_SERIES
 	default "rtl8752h" if SOC_SERIES_RTL8752H
 
 config SOC_RTL8752HJL
-	bool "SOC_RTL8752HJL"
+	bool
 	select SOC_SERIES_RTL8752H
 
 config SOC_RTL8752HMF
-	bool "SOC_RTL8752HMF"
+	bool
 	select SOC_SERIES_RTL8752H
 
 config SOC_RTL8752HKF
-	bool "SOC_RTL8752HKF"
+	bool
 	select SOC_SERIES_RTL8752H
 
 config SOC_RTL8752HJF
-	bool "SOC_RTL8752HJF"
+	bool
 	select SOC_SERIES_RTL8752H
 
 config SOC
