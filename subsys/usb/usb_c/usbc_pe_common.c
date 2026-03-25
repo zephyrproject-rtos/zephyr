@@ -1251,7 +1251,7 @@ static enum smf_state_result pe_sender_response_run(void *obj)
 			pe_set_state(dev, PE_SNK_HARD_RESET);
 			break;
 		case PE_DRS_SEND_SWAP:
-			pe_set_state(dev, PE_SNK_READY);
+			pe_set_ready_state(dev);
 			break;
 
 		/* This should not happen. Implementation error */
