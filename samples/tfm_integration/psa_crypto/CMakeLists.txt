@@ -15,10 +15,6 @@ target_sources(app PRIVATE src/util_app_cfg.c)
 target_sources(app PRIVATE src/util_app_log.c)
 target_sources(app PRIVATE src/util_sformat.c)
 
-target_include_directories(app PRIVATE
-  $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
-)
-
 set_property(TARGET zephyr_property_target
              APPEND PROPERTY TFM_CMAKE_OPTIONS
              -DPROJECT_CONFIG_HEADER_FILE=${CMAKE_CURRENT_SOURCE_DIR}/src/configs/config_tfm.h
