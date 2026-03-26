@@ -1375,6 +1375,14 @@ Settings
 
 * ``CONFIG_SETTINGS_TFM_ITS`` has been renamed to :kconfig:option:`CONFIG_SETTINGS_TFM_PSA`.
 
+Net buf
+========
+
+* The return type of :c:type:`net_buf_simple_max_len` has changed from ``uint16_t`` to
+  ``size_t``. (:github:`98144`)
+* The return type of :c:type:`net_buf_max_len` has changed from ``uint16_t`` to
+  ``size_t``. (:github:`98144`)
+
 Modules
 *******
 
