@@ -30,6 +30,12 @@ enum uaol_direction {
 	UAOL_DIR_CAPTURE  = 1, /**< Device-to-host USB endpoint */
 };
 
+/** @brief UAOL device speed. */
+enum uaol_device_speed {
+	UAOL_DEVICE_SPEED_FULL = 0, /**< Full-speed USB device */
+	UAOL_DEVICE_SPEED_HIGH = 1, /**< High-speed USB device */
+};
+
 /** @brief UAOL stream configuration data. */
 struct uaol_config {
 	uint8_t xhci_bus;                /**< xHCI controller bus */
@@ -43,8 +49,13 @@ struct uaol_config {
 	uint32_t service_interval;       /**< Service interval for PCM stream operation in us */
 	uint32_t sio_credit_size;        /**< SIO credit packet size in bytes */
 	uint16_t fifo_start_offset;      /**< UAOL FIFO start address offset */
-	uint16_t channel_map;            /**< HDA link stream and channels mapping for UAOL FIFO */
+	uint16_t hda_link_map;           /**< HDA link stream and channels bound to the stream */
 	enum uaol_direction direction;   /**< USB stream/endpoint direction */
+	uint32_t feedback_stream;        /**< UAOL feedback stream index */
+	uint32_t feedback_service_interval; /**< Feedback service interval in us */
+	uint32_t feedback_packet_size;   /**< Feedback endpoint packet size in bytes */
+	uint16_t feedback_hda_link_map;  /**< HDA link stream bound to the feedback stream */
+	enum uaol_device_speed device_speed; /**< Full- or High-speed device */
 };
 
 /** @brief UAOL stream endpoint table entry. */

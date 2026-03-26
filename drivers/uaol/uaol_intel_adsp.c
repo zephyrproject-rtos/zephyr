@@ -64,6 +64,7 @@ struct uaol_intel_adsp_data {
 	uint16_t art_divider_n;
 	struct stream_id_pair *stream_map;
 	size_t stream_map_length;
+	enum uaol_device_speed device_speed;
 };
 
 /* Helper macros for accessing registers */
@@ -422,6 +423,43 @@ static void uaol_intel_adsp_program_format(const struct device *dev, int stream,
 }
 
 /*
+ * Program the feedback stream paired with a playback @stream: its FIFO area,
+ * the HDA link stream it is read through and the feedback packet format.
+ */
+static void uaol_intel_adsp_program_feedback(const struct device *dev, int stream,
+					     const struct uaol_config *cfg)
+{
+	struct uaol_intel_adsp_data *dp = dev->data;
+	int fb_stream = cfg->feedback_stream;
+	uint16_t fifo_start_address;
+	union UAOLxPCMSyCTL pcms_ctl;
+
+	/*
+	 * Must match the host's receive FIFO layout.
+	 * TODO: consider receiving the feedback FSA from the host, as is done for
+	 * the audio stream FSA.
+	 */
+	fifo_start_address = stream * 8;
+	sys_write16(fifo_start_address, UAOLxPCMSyFSA_ADDR(dp, fb_stream));
+
+	sys_write16(cfg->feedback_hda_link_map, UAOLxPCMSyCM_ADDR(dp, fb_stream));
+
+	/* feedback packet is 3 bytes (10.14) at FS and 4 bytes (16.16) at HS */
+	pcms_ctl.full = sys_read64(UAOLxPCMSyCTL_ADDR(dp, fb_stream));
+	pcms_ctl.part.si = uaol_intel_adsp_encode_service_interval(cfg->feedback_service_interval);
+	pcms_ctl.part.ass = cfg->feedback_packet_size - 1;
+	pcms_ctl.part.asbs = cfg->feedback_packet_size;
+	pcms_ctl.part.aps = cfg->feedback_packet_size;
+	pcms_ctl.part.mps = cfg->feedback_packet_size;
+	pcms_ctl.part.pm = 1;
+	sys_write64(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, fb_stream));
+
+	LOG_INF("feedback stream %d for stream %d: FSA 0x%04x, CM 0x%04x, si %uus, mps %u",
+		fb_stream, stream, fifo_start_address, cfg->feedback_hda_link_map,
+		cfg->feedback_service_interval, cfg->feedback_packet_size);
+}
+
+/*
  * Program M/N rate adjustment for UAOL stream.
  */
 static void uaol_intel_adsp_program_rate_adjustment(const struct device *dev, int stream,
@@ -696,12 +734,14 @@ static int uaol_intel_adsp_config(const struct device *dev, int stream, struct u
 		dp->is_initialized = true;
 	}
 
-	/* Program the FIFO Start Address Offset and Channel Mapping */
+	dp->device_speed = cfg->device_speed;
+
+	/* Program the FIFO Start Address Offset and the HDA link stream mapping */
 	sys_write16(cfg->fifo_start_offset, UAOLxPCMSyFSA_ADDR(dp, stream));
-	sys_write16(cfg->channel_map, UAOLxPCMSyCM_ADDR(dp, stream));
+	sys_write16(cfg->hda_link_map, UAOLxPCMSyCM_ADDR(dp, stream));
 
 	LOG_INF("stream %d: FSA 0x%04x, CM 0x%04x", stream, cfg->fifo_start_offset,
-		cfg->channel_map);
+		cfg->hda_link_map);
 
 	uaol_intel_adsp_program_format(dev, stream, cfg->sample_rate, cfg->channels,
 				       cfg->sample_bits, cfg->sio_credit_size,
@@ -709,6 +749,10 @@ static int uaol_intel_adsp_config(const struct device *dev, int stream, struct u
 
 	uaol_intel_adsp_program_rate_adjustment(dev, stream, cfg->sample_rate,
 						cfg->service_interval);
+
+	if (cfg->feedback_stream) {
+		uaol_intel_adsp_program_feedback(dev, stream, cfg);
+	}
 
 out:
 	k_spin_unlock(&lock, key);
