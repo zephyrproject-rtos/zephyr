@@ -29,7 +29,6 @@ OpenOCD supports Zephyr RTOS thread awareness, allowing GDB to:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: <board>
    :goals: debug
    :gen-args: -DCONFIG_DEBUG_THREAD_INFO=y -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
@@ -41,7 +40,6 @@ To use the Espressif OpenOCD, specify the path when building:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: <board>
    :goals: debug
    :gen-args: -DOPENOCD=/path/to/openocd -DOPENOCD_DEFAULT_PATH=/path/to/openocd/scripts
 
