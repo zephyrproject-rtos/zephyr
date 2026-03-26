@@ -707,6 +707,11 @@ function(ExternalZephyrProject_Cmake)
   file(WRITE ${dotconfigsysbuild} ${config_content})
 
   string(REPLACE "${LIST_SEPARATOR}" "\\;" CMAKE_ARGS "${CMAKE_ARGS}")
+  if(CMAKE_HOST_UNIX)
+    set(EXECUTE_PROCESS_TERMINAL_OPTIONS OUTPUT_FILE /dev/stdout ERROR_FILE /dev/stderr)
+  else()
+    set(EXECUTE_PROCESS_TERMINAL_OPTIONS "")
+  endif()
   execute_process(
     COMMAND ${CMAKE_COMMAND}
       -G${CMAKE_GENERATOR}
@@ -716,6 +721,7 @@ function(ExternalZephyrProject_Cmake)
       -S${SOURCE_DIR}
     RESULT_VARIABLE   return_val
     WORKING_DIRECTORY ${BINARY_DIR}
+    ${EXECUTE_PROCESS_TERMINAL_OPTIONS}
   )
 
   if(return_val)
