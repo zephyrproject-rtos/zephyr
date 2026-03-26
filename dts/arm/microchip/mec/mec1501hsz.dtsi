@@ -518,8 +518,8 @@
 			compatible = "microchip,xec-tach";
 			reg = <0x40006000 0x10>;
 			interrupts = <71 4>;
-			girqs = <17 1>;
-			pcrs = <1 2>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 1)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 2)>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -529,8 +529,8 @@
 			compatible = "microchip,xec-tach";
 			reg = <0x40006010 0x10>;
 			interrupts = <72 4>;
-			girqs = <17 2>;
-			pcrs = <1 11>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 2)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 11)>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -540,8 +540,8 @@
 			compatible = "microchip,xec-tach";
 			reg = <0x40006020 0x10>;
 			interrupts = <73 4>;
-			girqs = <17 3>;
-			pcrs = <1 12>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 3)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 12)>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -551,8 +551,8 @@
 			compatible = "microchip,xec-tach";
 			reg = <0x40006030 0x10>;
 			interrupts = <159 4>;
-			girqs = <17 4>;
-			pcrs = <1 13>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 4)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 13)>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
