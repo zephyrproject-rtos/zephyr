@@ -104,6 +104,9 @@ struct nxp_enet_mac_data {
 	enet_handle_t enet_handle;
 	struct k_sem tx_buf_sem;
 	struct k_work rx_work;
+#if defined(CONFIG_ETH_NXP_ENET_RX_POLL_FALLBACK)
+	struct k_work_delayable rx_poll_work;
+#endif
 	const struct device *dev;
 	struct k_sem rx_thread_sem;
 	struct k_mutex rx_frame_buf_mutex;
@@ -461,6 +464,21 @@ static void eth_nxp_enet_rx_thread(struct k_work *work)
 	ENET_EnableInterrupts(data->base, kENET_RxFrameInterrupt);
 }
 
+#if defined(CONFIG_ETH_NXP_ENET_RX_POLL_FALLBACK)
+static void eth_nxp_enet_rx_poll(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct nxp_enet_mac_data *data =
+		CONTAINER_OF(dwork, struct nxp_enet_mac_data, rx_poll_work);
+
+	LOG_DBG("RX poll fallback trigger");
+	k_sem_give(&data->rx_thread_sem);
+	k_work_submit_to_queue(&rx_work_queue, &data->rx_work);
+	k_work_reschedule(&data->rx_poll_work,
+		K_MSEC(CONFIG_ETH_NXP_ENET_RX_POLL_INTERVAL_MS));
+}
+#endif
+
 static void nxp_enet_phy_cb(const struct device *phy,
 				struct phy_link_state *state,
 				void *eth_dev)
@@ -517,6 +535,11 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 	phy_link_callback_set(config->phy_dev, nxp_enet_phy_cb, (void *)dev);
 
 	config->irq_config_func();
+
+#if defined(CONFIG_ETH_NXP_ENET_RX_POLL_FALLBACK)
+	k_work_reschedule(&data->rx_poll_work,
+		K_MSEC(CONFIG_ETH_NXP_ENET_RX_POLL_INTERVAL_MS));
+#endif
 
 #ifdef CONFIG_MDIO_NXP_ENET
 	nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_INTERRUPT_ENABLED, NULL);
@@ -694,6 +717,9 @@ static int eth_nxp_enet_init(const struct device *dev)
 	k_sem_init(&data->rx_thread_sem, 0, CONFIG_ETH_NXP_ENET_RX_BUFFERS);
 	k_sem_init(&data->tx_buf_sem,
 		   CONFIG_ETH_NXP_ENET_TX_BUFFERS, CONFIG_ETH_NXP_ENET_TX_BUFFERS);
+#if defined(CONFIG_ETH_NXP_ENET_RX_POLL_FALLBACK)
+	k_work_init_delayable(&data->rx_poll_work, eth_nxp_enet_rx_poll);
+#endif
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	k_sem_init(&data->ptp.ptp_ts_sem, 0, 1);
 #endif

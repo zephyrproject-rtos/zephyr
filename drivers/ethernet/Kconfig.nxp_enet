@@ -72,6 +72,22 @@ config ETH_NXP_ENET_RX_THREAD_PRIORITY
 	  ENET MAC Driver handles RX in cooperative workqueue thread.
 	  This options sets the priority of that thread.
 
+config ETH_NXP_ENET_RX_POLL_FALLBACK
+	bool "Enable RX polling fallback"
+	default n
+	help
+	  Periodically submit the RX worker even if no RX interrupt is observed.
+	  This is intended as a diagnostic/proof option for toolchain or IRQ-path
+	  issues and is not intended as the default runtime mode.
+
+config ETH_NXP_ENET_RX_POLL_INTERVAL_MS
+	int "RX polling fallback interval (ms)"
+	default 10
+	range 1 1000
+	depends on ETH_NXP_ENET_RX_POLL_FALLBACK
+	help
+	  Poll interval in milliseconds for the RX fallback worker trigger.
+
 config ETH_NXP_ENET_RMII_EXT_CLK
 	bool "RMII clock from external sources"
 	help
