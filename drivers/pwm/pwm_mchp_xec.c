@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
- * Copyright (c) 2022 Microchip Technololgy Inc.
+ * Copyright (c) 2022 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,10 +13,6 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/pwm.h>
-#ifdef CONFIG_SOC_SERIES_MEC172X
-#include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
-#include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
-#endif
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
@@ -52,8 +48,7 @@ LOG_MODULE_REGISTER(pwm_mchp_xec, CONFIG_PWM_LOG_LEVEL);
 
 struct pwm_xec_config {
 	struct pwm_regs * const regs;
-	uint8_t pcr_idx;
-	uint8_t pcr_pos;
+	uint8_t enc_pcr;
 	const struct pinctrl_dev_config *pcfg;
 };
 
@@ -426,8 +421,11 @@ static DEVICE_API(pwm, pwm_xec_driver_api) = {
 static int pwm_xec_init(const struct device *dev)
 {
 	const struct pwm_xec_config * const cfg = dev->config;
-	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	int ret;
 
+	soc_xec_pcr_sleep_en_clear(cfg->enc_pcr);
+
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
 		LOG_ERR("XEC PWM pinctrl init failed (%d)", ret);
 		return ret;
@@ -439,8 +437,7 @@ static int pwm_xec_init(const struct device *dev)
 #define XEC_PWM_CONFIG(inst)							\
 	static struct pwm_xec_config pwm_xec_config_##inst = {			\
 		.regs = (struct pwm_regs * const)DT_INST_REG_ADDR(inst),	\
-		.pcr_idx = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 0),		\
-		.pcr_pos = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 1),		\
+		.enc_pcr = (uint8_t)DT_INST_PROP(inst, pcr_scr),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
 	};
 
