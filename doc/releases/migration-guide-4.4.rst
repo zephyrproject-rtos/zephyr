@@ -1085,6 +1085,8 @@ Watchdog
 
 .. zephyr-keep-sorted-stop
 
+* Updated :dtcompatible:`microchip,xec-watchdog` for PCR and GIRQ properties to use new macros (:github:`105668`).
+
 Bluetooth
 *********
 
