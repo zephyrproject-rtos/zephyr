@@ -10,7 +10,7 @@
 	model = "PJRC TEENSY Micromod board";
 
 	chosen {
-		zephyr,flash-controller = &w25q128jvxgim;
+		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,flash = &w25q128jvxgim;
 	};
 
@@ -47,7 +47,7 @@
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
 
 	/* WINBOND flash memory*/
-	w25q128jvxgim: w25q128jvxgim@0 {
+	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(16 * 8)>;
 		reg = <0>;
@@ -55,8 +55,16 @@
 		status = "okay";
 		jedec-id = [ef 70 18];
 
-		erase-block-size = <4096>;
-		write-block-size = <1>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x60000000 DT_SIZE_M(16)>;
+
+		w25q128jvxgim: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(16)>;
+			erase-block-size = <4096>;
+			write-block-size = <1>;
+		};
 	};
 };
 

@@ -184,21 +184,30 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	rx-clock-source = <1>;
 
 	/* WINBOND flash memory*/
-	w25q64jwtbjq: w25q64jwtbjq@0 {
+	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		status = "disabled";
 		size = <DT_SIZE_M(64)>;
 		reg = <0>;
 		spi-max-frequency = <DT_SIZE_M(133)>;
 		jedec-id = [ef 60 17];
-		erase-block-size = <DT_SIZE_K(4)>;
-		write-block-size = <1>;
 		cs-interval-unit = <1>;
 		cs-interval = <2>;
 		cs-hold-time = <3>;
 		cs-setup-time = <3>;
 		data-valid-time = <2>;
 		column-space = <0>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
+
+		w25q64jwtbjq: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(8)>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			write-block-size = <1>;
+		};
 	};
 };
 

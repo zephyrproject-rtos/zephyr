@@ -18,7 +18,7 @@
 		zephyr,flash = &itcm;
 		zephyr,sram = &dtcm;
 
-		zephyr,flash-controller = &mt35xu01gbba;
+		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,console = &lpuart3;
 		zephyr,shell-uart = &lpuart3;
 	};
@@ -63,15 +63,24 @@
 	pinctrl-0 = <&flexspi_default>;
 	pinctrl-names = "default";
 
-	mt35xu01gbba: mt35xu01gbba@0 {
+	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(1024)>;
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(200)>;
 		status = "okay";
 		jedec-id = [2c 5b 1b];
-		erase-block-size = <DT_SIZE_K(4)>;
-		write-block-size = <2>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x28000000 DT_SIZE_M(128)>;
+
+		mt35xu01gbba: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(128)>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			write-block-size = <2>;
+		};
 	};
 };
 
