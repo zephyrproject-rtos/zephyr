@@ -1269,10 +1269,12 @@ static int i2c_dw_initialize(const struct device *dev)
 	}
 #endif
 
-#if defined(CONFIG_PINCTRL)
-	ret = pinctrl_apply_state(rom->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret) {
-		return ret;
+#if I2C_DW_PINCTRL_ENABLED
+	if (rom->pcfg != NULL) {
+		ret = pinctrl_apply_state(rom->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 #endif
 
@@ -1381,9 +1383,13 @@ static int i2c_dw_initialize(const struct device *dev)
 	return ret;
 }
 
-#if defined(CONFIG_PINCTRL)
-#define PINCTRL_DW_DEFINE(n) PINCTRL_DT_INST_DEFINE(n)
-#define PINCTRL_DW_CONFIG(n) .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#if I2C_DW_PINCTRL_ENABLED
+#define PINCTRL_DW_DEFINE(n)							\
+	IF_ENABLED(DT_INST_PINCTRL_HAS_NAME(n, default),			\
+		    (PINCTRL_DT_INST_DEFINE(n)))
+#define PINCTRL_DW_CONFIG(n)							\
+	IF_ENABLED(DT_INST_PINCTRL_HAS_NAME(n, default),			\
+		    (.pcfg = (void *)PINCTRL_DT_INST_DEV_CONFIG_GET(n),))
 #else
 #define PINCTRL_DW_DEFINE(n)
 #define PINCTRL_DW_CONFIG(n)
