@@ -122,8 +122,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 			lptim_pre_idle = z_xtensa_lptim_hook_on_lpm_entry(timeout_us);
 			ccount_pre_idle = ccount();
 			timeout_idle = true;
-		} else {
-			timeout_idle = false;
 		}
 	} else {
 		ARG_UNUSED(idle);
