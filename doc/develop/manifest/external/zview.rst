@@ -36,9 +36,9 @@ Your application must be compiled and running with the appropriate Kconfig optio
 
 .. code-block:: cfg
 
-CONFIG_INIT_STACKS=y
-CONFIG_THREAD_MONITOR=y
-CONFIG_THREAD_STACK_INFO=y
+   CONFIG_INIT_STACKS=y
+   CONFIG_THREAD_MONITOR=y
+   CONFIG_THREAD_STACK_INFO=y
 
 Then update the workspace and run ZView through the integrated west command:
 
