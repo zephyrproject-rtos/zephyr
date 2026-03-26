@@ -6,7 +6,10 @@ description: Microchip XEC ADC
 
 compatible: "microchip,xec-adc"
 
-include: [adc-controller.yaml, pinctrl-device.yaml]
+include:
+  - name: adc-controller.yaml
+  - name: pinctrl-device.yaml
+  - name: microchip,dmec-ecia-girq.yaml
 
 properties:
   reg:
@@ -18,15 +21,11 @@ properties:
   "#io-channel-cells":
     const: 1
 
-  girqs:
-    type: array
+  pcr-scr:
+    type: int
     required: true
-    description: Array of pairs of GIRQ number and bit position
-
-  pcrs:
-    type: array
-    required: true
-    description: ADC PCR register index and bit position
+    description: |
+      ADC Power Clock Reset(PCR) peripheral index and bit position
 
   clktime:
     type: int
