@@ -273,6 +273,8 @@ struct dai_config {
 	size_t block_size;
 	/** DAI specific link configuration. */
 	uint16_t link_config;
+	/** DAI specific link configuration of an extra stream, if any (e.g. UAOL feedback). */
+	uint16_t extra_link_config;
 	/** tdm slot group number*/
 	uint32_t tdm_slot_group;
 };
