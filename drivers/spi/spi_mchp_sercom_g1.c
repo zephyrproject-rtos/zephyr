@@ -7,7 +7,7 @@
 #include <soc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/mchp_clock_control.h>
 #if CONFIG_SPI_MCHP_DMA_DRIVEN

@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(spi_bitbang);
 
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include "spi_context.h"
 
 struct spi_bitbang_data {

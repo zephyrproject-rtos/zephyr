@@ -13,7 +13,7 @@
 #endif
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <zephyr/drivers/clock_control/adi_max32_clock_control.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>

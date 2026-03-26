@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT nordic_nrf_spim
 
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <zephyr/cache.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
