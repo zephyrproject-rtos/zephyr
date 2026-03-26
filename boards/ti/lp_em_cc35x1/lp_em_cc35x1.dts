@@ -53,6 +53,61 @@
 	status = "okay";
 };
 
+&flash0 {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		vendor_image_partition: partition@0 {
+			label = "vendor-image";
+			reg = <0x0 0x2fb000>;
+		};
+	};
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		wifi_fw_slot1_partition: partition@68000 {
+			label = "wifi-fw-1";
+			reg = <0x68000 0x72000>;
+		};
+
+		wifi_fw_slot2_partition: partition@da000 {
+			label = "wifi-fw-2";
+			reg = <0xda000 0x2b000>;
+		};
+	};
+};
+
+&flash2 {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* WiFi/BLE NVS: profiles, BLE security, connection policy */
+		/* 8 sectors = 32 KB with wear-leveling */
+		wifi_nvs_partition: partition@0 {
+			label = "wifi-nvs";
+			reg = <0x0 0x8000>;
+		};
+
+		storage_partition: partition@8000 {
+			label = "storage";
+			reg = <0x8000 0x23000>;
+		};
+	};
+};
+
 &uart0 {
 	status = "okay";
 	pinctrl-0 = <&uart0_default>;
