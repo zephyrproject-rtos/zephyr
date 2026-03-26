@@ -244,3 +244,9 @@
 		disk-name = "sd";
 	};
 };
+
+&main_epwm0 {
+	pinctrl-0 = <&main_epwm0_a &main_epwm0_b>;
+	pinctrl-names = "default";
+	status = "okay";
+};
