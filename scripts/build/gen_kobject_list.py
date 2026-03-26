@@ -632,6 +632,7 @@ def find_kobjects(elf, syms):
                 | (loc.value[7] << 48)
                 | (loc.value[8] << 56)
             )
+            uconst_idx = 9
         else:
             addr = (
                 (loc.value[1] << 0)
@@ -639,11 +640,22 @@ def find_kobjects(elf, syms):
                 | (loc.value[3] << 16)
                 | (loc.value[4] << 24)
             )
+            uconst_idx = 5
 
-            # Handle a DW_FORM_exprloc that contains a DW_OP_addr, followed immediately by
-            # a DW_OP_plus_uconst.
-            if len(loc.value) >= 7 and loc.value[5] == DW_OP_plus_uconst:
-                addr += loc.value[6]
+        # Handle a DW_FORM_exprloc that contains a DW_OP_addr, followed immediately by
+        # a DW_OP_plus_uconst. The offset is ULEB128-encoded and may span multiple bytes.
+        if len(loc.value) > uconst_idx and loc.value[uconst_idx] == DW_OP_plus_uconst:
+            offset = 0
+            shift = 0
+            idx = uconst_idx + 1
+            while idx < len(loc.value):
+                byte = loc.value[idx]
+                offset |= (byte & 0x7F) << shift
+                idx += 1
+                if (byte & 0x80) == 0:
+                    break
+                shift += 7
+            addr += offset
 
         if addr == 0:
             # Never linked; gc-sections deleted it
