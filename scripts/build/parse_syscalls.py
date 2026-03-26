@@ -53,11 +53,36 @@ struct\s+                       # struct keyword is next
 [{]                             # Open curly bracket
 '''
 
+api_extends_regex = re.compile(
+    r'''
+^\s*DEVICE_API_EXTENDS\s*       # macro name
+\(\s*                           # opening paren
+(\w+)\s*,\s*                    # child class
+(\w+)\s*,\s*                    # parent class
+\w+\s*                          # member name (not captured)
+\)                              # closing paren
+''',
+    regex_flags,
+)
+
 
 def tagged_struct_update(target_list, tag, contents):
     regex = re.compile(tagged_struct_decl_template % tag, regex_flags)
     items = [mo.groups()[0].strip() for mo in regex.finditer(contents)]
     target_list.extend(items)
+
+
+def api_extends_update(extends_map, contents):
+    for mo in api_extends_regex.finditer(contents):
+        child, parent = mo.groups()
+        extends_map[child + "_driver_api"] = parent + "_driver_api"
+
+
+def merge_extends_into_tagged(tagged_list, extends_map):
+    """Replace plain string entries with {name, extends} objects where applicable."""
+    for i, item in enumerate(tagged_list):
+        if isinstance(item, str) and item in extends_map:
+            tagged_list[i] = {"name": item, "extends": extends_map[item]}
 
 
 def analyze_headers(include_dir, scan_dir, file_list):
@@ -66,6 +91,7 @@ def analyze_headers(include_dir, scan_dir, file_list):
 
     for tag in struct_tags:
         tagged_ret[tag] = []
+    extends_map = {}
 
     syscall_files = dict()
 
@@ -137,11 +163,14 @@ def analyze_headers(include_dir, scan_dir, file_list):
                 syscall_result.append((groups, fn, to_emit))
             for tag in struct_tags:
                 tagged_struct_update(tagged_ret[tag], tag, contents)
+            api_extends_update(extends_map, contents)
         except Exception as e:
             sys.stderr.write(f"While parsing {fn}\n")
             raise e
 
         syscall_ret.extend(syscall_result)
+
+    merge_extends_into_tagged(tagged_ret["__subsystem"], extends_map)
 
     return syscall_ret, tagged_ret
 
