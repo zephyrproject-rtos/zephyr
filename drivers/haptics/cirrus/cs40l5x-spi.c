@@ -39,7 +39,18 @@ static int cs40l5x_read_spi(const struct device *const dev, const uint32_t addr,
 	return -EPERM;
 }
 
-static int cs40l5x_write_spi(const struct device *const dev, uint32_t *const tx, const uint32_t len)
+static int cs40l5x_write_spi(const struct device *const dev, const uint32_t addr,
+			     uint32_t *const tx, const uint32_t len)
+{
+	__maybe_unused const struct cs40l5x_config *const config = dev->config;
+
+	LOG_INST_ERR(config->log, "SPI not currently supported (%d)", -EPERM);
+
+	return -EPERM;
+}
+
+static int cs40l5x_raw_write_spi(const struct device *const dev, const uint32_t addr,
+				 uint32_t *const tx, const uint32_t len)
 {
 	__maybe_unused const struct cs40l5x_config *const config = dev->config;
 
@@ -53,5 +64,6 @@ const struct cs40l5x_bus_io cs40l5x_bus_io_spi = {
 	.get_device = cs40l5x_get_device_spi,
 	.read = cs40l5x_read_spi,
 	.write = cs40l5x_write_spi,
+	.raw_write = cs40l5x_raw_write_spi,
 };
 #endif /* CONFIG_HAPTICS_CS40L5X_SPI */
