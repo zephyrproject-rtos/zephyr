@@ -68,27 +68,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define RING_ID 0
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) && \
-	CONFIG_ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
-#define _nxp_enet_dma_desc_section __dtcm_bss_section
-#define _nxp_enet_dma_buffer_section __dtcm_noinit_section
-#define _nxp_enet_driver_buffer_section __dtcm_noinit_section
-#define driver_cache_maintain	false
-#define NXP_ENET_DMA_MEM_CFG	"dtcm"
-#elif defined(CONFIG_NOCACHE_MEMORY)
-#define _nxp_enet_dma_desc_section __nocache
-#define _nxp_enet_dma_buffer_section __nocache
-#define _nxp_enet_driver_buffer_section __nocache
-#define driver_cache_maintain	false
-#define NXP_ENET_DMA_MEM_CFG	"nocache"
-#else
-#define _nxp_enet_dma_desc_section
-#define _nxp_enet_dma_buffer_section
-#define _nxp_enet_driver_buffer_section
-#define driver_cache_maintain	true
-#define NXP_ENET_DMA_MEM_CFG	"cached-maintained"
-#endif
-
 enum mac_address_source {
 	MAC_ADDR_SOURCE_UNIQUE,
 	MAC_ADDR_SOURCE_FUSED,
@@ -377,7 +356,6 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	status = ENET_GetRxFrameSize(&data->enet_handle,
 				     (uint32_t *)&frame_length, RING_ID);
 	if (status == kStatus_ENET_RxFrameEmpty) {
-		LOG_DBG("RX empty");
 		return 0;
 	} else if (status == kStatus_ENET_RxFrameError) {
 		enet_data_error_stats_t error_stats;
@@ -388,8 +366,6 @@ static int eth_nxp_enet_rx(const struct device *dev)
 					     &error_stats, RING_ID);
 		goto flush;
 	}
-
-	LOG_DBG("RX frame_length=%u", frame_length);
 
 	if (frame_length > NET_ETH_MAX_FRAME_SIZE) {
 		LOG_ERR("Frame too large (%d)", frame_length);
@@ -408,8 +384,6 @@ static int eth_nxp_enet_rx(const struct device *dev)
 				data->rx_frame_buf, frame_length, RING_ID, &ts);
 	k_mutex_unlock(&data->rx_frame_buf_mutex);
 
-	LOG_DBG("RX read status=%d ts=%u", (int)status, ts);
-
 	if (status) {
 		LOG_ERR("ENET_ReadFrame failed: %d", (int)status);
 		goto error;
@@ -419,11 +393,6 @@ static int eth_nxp_enet_rx(const struct device *dev)
 		LOG_ERR("Unable to write frame into the packet");
 		goto error;
 	}
-
-	LOG_DBG("RX first bytes: %02x %02x %02x %02x %02x %02x %02x %02x",
-		data->rx_frame_buf[0], data->rx_frame_buf[1], data->rx_frame_buf[2],
-		data->rx_frame_buf[3], data->rx_frame_buf[4], data->rx_frame_buf[5],
-		data->rx_frame_buf[6], data->rx_frame_buf[7]);
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	k_mutex_lock(data->ptp.ptp_mutex, K_FOREVER);
@@ -569,11 +538,9 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 
 	switch (event) {
 	case kENET_RxEvent:
-		LOG_DBG("callback RX event");
 		k_sem_give(&data->rx_thread_sem);
 		break;
 	case kENET_TxEvent:
-		LOG_DBG("callback TX event");
 		ts_register_tx_event(dev, frameinfo);
 		k_sem_give(&data->tx_buf_sem);
 		break;
@@ -601,14 +568,12 @@ static void eth_nxp_enet_isr(const struct device *dev)
 	uint32_t eir = ENET_GetInterruptStatus(data->base);
 
 	if (eir & (kENET_RxFrameInterrupt)) {
-		LOG_DBG("ISR RX interrupt eir=0x%08x", eir);
 		ENET_ReceiveIRQHandler(ENET_IRQ_HANDLER_ARGS(data->base, &data->enet_handle));
 		ENET_DisableInterrupts(data->base, kENET_RxFrameInterrupt);
 		k_work_submit_to_queue(&rx_work_queue, &data->rx_work);
 	}
 
 	if (eir & kENET_TxFrameInterrupt) {
-		LOG_DBG("ISR TX interrupt eir=0x%08x", eir);
 		ENET_TransmitIRQHandler(ENET_IRQ_HANDLER_ARGS(data->base, &data->enet_handle));
 	}
 
@@ -745,13 +710,6 @@ static int eth_nxp_enet_init(const struct device *dev)
 		return err;
 	}
 
-	LOG_INF("DMA config: %s, maintain=%d, rx_buf=%p, tx_buf=%p, rx_desc=%p, tx_desc=%p",
-		NXP_ENET_DMA_MEM_CFG, driver_cache_maintain,
-		config->buffer_config->rxBufferAlign,
-		config->buffer_config->txBufferAlign,
-		config->buffer_config->rxBdStartAddrAlign,
-		config->buffer_config->txBdStartAddrAlign);
-
 	ENET_GetDefaultConfig(&enet_config);
 
 	if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {
@@ -877,6 +835,24 @@ static const struct ethernet_api api_funcs = {
 				0);						\
 		irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));			\
 	} while (false);
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) && \
+	CONFIG_ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
+#define _nxp_enet_dma_desc_section __dtcm_bss_section
+#define _nxp_enet_dma_buffer_section __dtcm_noinit_section
+#define _nxp_enet_driver_buffer_section __dtcm_noinit_section
+#define driver_cache_maintain	false
+#elif defined(CONFIG_NOCACHE_MEMORY)
+#define _nxp_enet_dma_desc_section __nocache
+#define _nxp_enet_dma_buffer_section
+#define _nxp_enet_driver_buffer_section
+#define driver_cache_maintain	true
+#else
+#define _nxp_enet_dma_desc_section
+#define _nxp_enet_dma_buffer_section
+#define _nxp_enet_driver_buffer_section
+#define driver_cache_maintain	true
+#endif
 
 /* Use ENET_FRAME_MAX_VLANFRAMELEN for VLAN frame size
  * Use ENET_FRAME_MAX_FRAMELEN for Ethernet frame size
