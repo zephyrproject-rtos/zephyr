@@ -17,6 +17,11 @@
 		reg-names = "debug_messages";
 		reg = <0x44043000 0xfe0>;
 		status = "disabled";
+
+		k3_clks: clock-controller {
+			compatible = "ti,k2g-sci-clk";
+			#clock-cells = <2>;
+		};
 	};
 
 	secure_proxy_main: mailbox0@4d000000 {
