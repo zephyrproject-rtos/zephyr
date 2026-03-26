@@ -28,7 +28,7 @@ doxmlparser
 anytree
 
 # Used to generate API coverage reports
-coverxygen
+coverxygen!=1.8.2 # See https://github.com/psycofdj/coverxygen/issues/37
 
 # Used by Kconfig extension
 python-dotenv
