@@ -237,3 +237,48 @@
 	interrupts = <0 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
+
+&main_epwm0 {
+	interrupts = <0 108 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_epwm1 {
+	interrupts = <0 110 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_epwm2 {
+	interrupts = <0 112 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_epwm3 {
+	interrupts = <0 114 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_epwm4 {
+	interrupts = <0 116 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_epwm5 {
+	interrupts = <0 118 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_epwm6 {
+	interrupts = <0 146 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_epwm7 {
+	interrupts = <0 148 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_epwm8 {
+	interrupts = <0 150 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};

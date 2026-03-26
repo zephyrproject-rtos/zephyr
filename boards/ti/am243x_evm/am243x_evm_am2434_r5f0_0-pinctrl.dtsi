@@ -72,6 +72,14 @@
 	spi0_d1: spi0_d1_default {
 		pinmux = <K3_PINMUX(0x218, PIN_OUTPUT, MUX_MODE_0)>;
 	};
+
+	main_epwm0_a: epwm0_a_default {
+		pinmux = <K3_PINMUX(0x48, PIN_OUTPUT, MUX_MODE_3)>; /* (U20) EHRPWM0_A */
+	};
+
+	main_epwm0_b: epwm0_b_default {
+		pinmux = <K3_PINMUX(0x4C, PIN_OUTPUT, MUX_MODE_3)>; /* (U18) EHRPWM0_A */
+	};
 };
 
 &mcu_pinctrl {
