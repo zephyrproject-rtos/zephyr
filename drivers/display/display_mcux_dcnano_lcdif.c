@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 NXP
+ * Copyright 2023-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,7 @@
 
 LOG_MODULE_REGISTER(display_mcux_dcnano_lcdif, CONFIG_DISPLAY_LOG_LEVEL);
 
-#if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
+#if DT_INST_ENUM_HAS_VALUE(0, version, dc8000)
 #define MCUX_DCNANO_LCDIF_FB_PITCH_ALIGN (64)
 #else
 #define MCUX_DCNANO_LCDIF_FB_PITCH_ALIGN (1)
@@ -116,7 +116,7 @@ static int mcux_dcnano_lcdif_write(const struct device *dev, const uint16_t x,
 		(uint32_t)data->active_fb);
 	LCDIF_SetFrameBufferConfig(config->base, 0, &data->fb_config);
 
-#if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
+#if DT_INST_ENUM_HAS_VALUE(0, version, dc8000)
 	LCDIF_Start(config->base);
 	LCDIF_SetUpdateReady(config->base);
 #endif
@@ -147,7 +147,7 @@ static void mcux_dcnano_lcdif_get_capabilities(const struct device *dev,
 	case kLCDIF_PixelFormatRGB565:
 		capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565;
 		break;
-#if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
+#if DT_INST_ENUM_HAS_VALUE(0, version, dc8000)
 	case kLCDIF_PixelFormatARGB8888:
 #else
 	case kLCDIF_PixelFormatXRGB8888:
@@ -194,7 +194,7 @@ static int mcux_dcnano_lcdif_set_pixel_format(const struct device *dev,
 		data->pixel_bytes = 2;
 		break;
 	case PIXEL_FORMAT_ARGB_8888:
-#if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
+#if DT_INST_ENUM_HAS_VALUE(0, version, dc8000)
 		data->fb_config.format = kLCDIF_PixelFormatARGB8888;
 #else
 		data->fb_config.format = kLCDIF_PixelFormatXRGB8888;
@@ -250,7 +250,7 @@ static int mcux_dcnano_lcdif_init(const struct device *dev)
 
 	LCDIF_DpiModeSetConfig(config->base, 0, &config->dpi_config);
 
-#if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
+#if DT_INST_ENUM_HAS_VALUE(0, version, dc8000)
 	lcdif_panel_config_t panel_config;
 
 	LCDIF_PanelGetDefaultConfig(&panel_config);
@@ -310,7 +310,7 @@ static DEVICE_API(display, mcux_dcnano_lcdif_api) = {
 
 #define MCUX_DCNANO_LCDIF_FRAMEBUFFER(n) mcux_dcnano_lcdif_frame_buffer_##n
 
-#if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
+#if DT_INST_ENUM_HAS_VALUE(0, version, dc8000)
 #define MCUX_DCNANO_LCDIF_FB_CONFIG(n)						\
 		.fb_config = {							\
 			.enable = true,						\
