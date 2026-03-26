@@ -386,52 +386,54 @@ if(CONFIG_BUILD_WITH_TFM)
     TFM_S_NS_SIGNED_BIN_FILE ${TFM_S_NS_SIGNED_BIN_FILE} # Merged TFM Secure/Nonsecure FW (signed)
     )
 
-  zephyr_library_named(tfm_api)
+  if(NOT CONFIG_TFM_USE_NS_APP)
+    zephyr_library_named(tfm_api)
 
-  zephyr_library_sources(
-    src/zephyr_tfm_log.c
-    interface/interface.c
+    zephyr_library_sources(
+      src/zephyr_tfm_log.c
+      interface/interface.c
+      )
+
+    # A dependency on tfm_s.hex for zephyr.elf will not cause a Zephyr re-link when
+    # tfm_s.hex is updated, as the hex is not a direct input on the executable.
+    # Instead we establish a source file dependency which ensures that tfm_api is
+    # updated when there are changes in tfm itself, this again will trigger an re-link
+    # of Zephyr.elf.
+    set_property(SOURCE interface/interface.c APPEND PROPERTY OBJECT_DEPENDS ${TFM_S_HEX_FILE})
+
+    # Non-Secure interface to request system reboot
+    if(CONFIG_TFM_PARTITION_PLATFORM AND NOT CONFIG_TFM_PARTITION_PLATFORM_CUSTOM_REBOOT)
+      zephyr_library_sources(src/reboot.c)
+    endif()
+
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PROTECTED_STORAGE        ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_CRYPTO                   ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION      ${TFM_INTERFACE_SOURCE_DIR}/tfm_attest_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE          ${TFM_INTERFACE_SOURCE_DIR}/tfm_fwu_api.c)
+
+    zephyr_library_sources(${TFM_INTERFACE_SOURCE_DIR}/tfm_tz_psa_ns_api.c)
+
+    if(CONFIG_SOC_FAMILY_NORDIC_NRF)
+      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM               ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c)
+    endif()
+
+    target_include_directories(tfm_api PUBLIC
+      ${TFM_INTERFACE_INCLUDE_DIR}
+      ${TFM_INTERFACE_INCLUDE_DIR}/crypto_keys
+      ${ZEPHYR_BASE}/modules/mbedtls/configs
+      )
+
+    # Add interface include directory (exported by TF-M) to zephyr_interface
+    zephyr_include_directories(
+      ${TFM_INTERFACE_INCLUDE_DIR}
     )
 
-  # A dependency on tfm_s.hex for zephyr.elf will not cause a Zephyr re-link when
-  # tfm_s.hex is updated, as the hex is not a direct input on the executable.
-  # Instead we establish a source file dependency which ensures that tfm_api is
-  # updated when there are changes in tfm itself, this again will trigger an re-link
-  # of Zephyr.elf.
-  set_property(SOURCE interface/interface.c APPEND PROPERTY OBJECT_DEPENDS ${TFM_S_HEX_FILE})
-
-  # Non-Secure interface to request system reboot
-  if(CONFIG_TFM_PARTITION_PLATFORM AND NOT CONFIG_TFM_PARTITION_PLATFORM_CUSTOM_REBOOT)
-    zephyr_library_sources(src/reboot.c)
-  endif()
-
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_api.c)
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PROTECTED_STORAGE        ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_api.c)
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_api.c)
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_CRYPTO                   ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_api.c)
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION      ${TFM_INTERFACE_SOURCE_DIR}/tfm_attest_api.c)
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE          ${TFM_INTERFACE_SOURCE_DIR}/tfm_fwu_api.c)
-
-  zephyr_library_sources(${TFM_INTERFACE_SOURCE_DIR}/tfm_tz_psa_ns_api.c)
-
-  if(CONFIG_SOC_FAMILY_NORDIC_NRF)
-    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM               ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c)
-  endif()
-
-  target_include_directories(tfm_api PUBLIC
-    ${TFM_INTERFACE_INCLUDE_DIR}
-    ${TFM_INTERFACE_INCLUDE_DIR}/crypto_keys
-    ${ZEPHYR_BASE}/modules/mbedtls/configs
+    zephyr_library_link_libraries(
+      ${TFM_INTERFACE_LIB_DIR}/s_veneers.o
     )
-
-  # Add interface include directory (exported by TF-M) to zephyr_interface
-  zephyr_include_directories(
-    ${TFM_INTERFACE_INCLUDE_DIR}
-  )
-
-  zephyr_library_link_libraries(
-    ${TFM_INTERFACE_LIB_DIR}/s_veneers.o
-    )
+  endif(NOT CONFIG_TFM_USE_NS_APP)
 
   # Ensure that the generated syscall include headers of Zephyr are available to TF-M
   # because some platforms might use the same source files for both builds.
