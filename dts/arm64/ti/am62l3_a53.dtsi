@@ -171,3 +171,18 @@
 	interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&gic>;
 };
+
+&main_epwm0 {
+	interrupts = <GIC_SPI 136 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_epwm1 {
+	interrupts = <GIC_SPI 138 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_epwm2 {
+	interrupts = <GIC_SPI 140 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};

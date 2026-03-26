@@ -9,6 +9,15 @@
 #include "am62l_power_domains.dtsi"
 
 / {
+	main_mmr_cfg3: syscon@9180000 {
+		compatible = "ti,control-module", "syscon";
+		reg = <0x9180000 DT_SIZE_K(512)>;
+		ranges = <0x00 0x9180000 DT_SIZE_K(512)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		#epwm-tbclk-cells = <2>;
+	};
+
 	main_uart0: serial@2800000 {
 		compatible = "ns16550";
 		reg = <0x02800000 0x100>;
@@ -302,6 +311,36 @@
 		clock-frequency = <DT_FREQ_M(50)>;
 		clocks = <&scmi_clk 308>;
 		ti,spi-num-cs = <4>;
+		status = "disabled";
+	};
+
+	main_epwm0: pwm@23000000 {
+		compatible = "ti,am3352-ehrpwm";
+		reg = <0x23000000 0x100>;
+		tbclk = <&main_mmr_cfg3 0x69100 0>;
+		#pwm-cells = <3>;
+		power-domains = <&main_epwm0_pd>;
+		clocks = <&scmi_clk 164>;
+		status = "disabled";
+	};
+
+	main_epwm1: pwm@23010000 {
+		compatible = "ti,am3352-ehrpwm";
+		reg = <0x23010000 0x100>;
+		tbclk = <&main_mmr_cfg3 0x69100 1>;
+		#pwm-cells = <3>;
+		power-domains = <&main_epwm1_pd>;
+		clocks = <&scmi_clk 165>;
+		status = "disabled";
+	};
+
+	main_epwm2: pwm@23020000 {
+		compatible = "ti,am3352-ehrpwm";
+		reg = <0x23020000 0x100>;
+		tbclk = <&main_mmr_cfg3 0x69100 2>;
+		#pwm-cells = <3>;
+		power-domains = <&main_epwm2_pd>;
+		clocks = <&scmi_clk 166>;
 		status = "disabled";
 	};
 };
