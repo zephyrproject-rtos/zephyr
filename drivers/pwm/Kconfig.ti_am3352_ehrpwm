@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_TI_AM3352_EHRPWM
+	bool "TI EHRPWM based PWM controller"
+	default y
+	depends on DT_HAS_TI_AM3352_EHRPWM_ENABLED
+	depends on CLOCK_CONTROL
+	select PINCTRL
+	select SYSCON
+	help
+	  Enable EHRPWM controller for TI SoCs
