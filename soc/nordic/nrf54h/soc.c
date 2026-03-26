@@ -6,7 +6,6 @@
 
 #include <zephyr/cache.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/storage/flash_map.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -38,18 +37,27 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define HSFLL_NODE DT_NODELABEL(cpurad_hsfll)
 #endif
 
-#ifdef CONFIG_USE_DT_CODE_PARTITION
-#define FLASH_LOAD_ADDRESS DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
-#elif defined(CONFIG_FLASH_LOAD_OFFSET)
-#define FLASH_LOAD_ADDRESS (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
-#endif
+#define FIXED_PARTITION_ADDRESS(label)                                                             \
+	(DT_REG_ADDR(DT_NODELABEL(label)) +                                                        \
+	 DT_REG_ADDR(COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(DT_NODELABEL(label)),                \
+			(DT_GPARENT(DT_PARENT(DT_NODELABEL(label)))),                              \
+			(DT_GPARENT(DT_NODELABEL(label))))))
+#define FIXED_PARTITION_NODE_MTD(node) \
+	COND_CODE_1( \
+		DT_FIXED_SUBPARTITION_EXISTS(node), \
+			(DT_MTD_FROM_FIXED_SUBPARTITION(node)), \
+			(DT_MTD_FROM_FIXED_PARTITION(node)))
 
+#ifdef CONFIG_USE_DT_CODE_PARTITION
+#define FLASH_LOAD_OFFSET DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
+#elif defined(CONFIG_FLASH_LOAD_OFFSET)
+#define FLASH_LOAD_OFFSET CONFIG_FLASH_LOAD_OFFSET
+#endif
 #define FIXED_PARTITION_IS_RUNNING_APP_PARTITION(label)                                            \
 	DT_SAME_NODE(FIXED_PARTITION_NODE_MTD(DT_CHOSEN(zephyr_code_partition)),                   \
-		     FIXED_PARTITION_MTD(label)) &&                                                \
-		(FIXED_PARTITION_ADDRESS(label) <= FLASH_LOAD_ADDRESS &&                           \
-		 FIXED_PARTITION_ADDRESS(label) + FIXED_PARTITION_SIZE(label) >                    \
-			 FLASH_LOAD_ADDRESS)
+		FIXED_PARTITION_NODE_MTD(DT_NODELABEL(label))) &&                                  \
+	(DT_REG_ADDR(DT_NODELABEL(label)) <= FLASH_LOAD_OFFSET &&                                  \
+	 DT_REG_ADDR(DT_NODELABEL(label)) + DT_REG_SIZE(DT_NODELABEL(label)) > FLASH_LOAD_OFFSET)
 
 #define FICR_ADDR_GET(node_id, name)                                           \
 	DT_REG_ADDR(DT_PHANDLE_BY_NAME(node_id, nordic_ficrs, name)) +         \

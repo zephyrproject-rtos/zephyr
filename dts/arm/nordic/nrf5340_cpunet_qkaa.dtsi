@@ -9,7 +9,6 @@
 
 &flash1 {
 	reg = <0x01000000 DT_SIZE_K(256)>;
-	ranges = <0x0 0x01000000 DT_SIZE_K(256)>;
 };
 
 &sram0 {
