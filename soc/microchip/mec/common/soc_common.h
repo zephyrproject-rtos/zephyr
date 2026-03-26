@@ -6,7 +6,10 @@
 #ifndef _ZEPHYR_SOC_MICROCHIP_MEC_COMMON_SOC_COMMON_H_
 #define _ZEPHYR_SOC_MICROCHIP_MEC_COMMON_SOC_COMMON_H_
 
-/* common peripheral register defines */
+#ifndef SHLU32
+#define SHLU32(v, n) ((uint32_t)(v) << (n))
+#endif
+
 #include <reg/mec_acpi_ec.h>
 #include <reg/mec_adc.h>
 #include <reg/mec_global_cfg.h>
