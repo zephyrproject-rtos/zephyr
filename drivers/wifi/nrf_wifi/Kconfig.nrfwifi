@@ -228,6 +228,13 @@ config NRF70_SR_COEX_SWCTRL1_OUTPUT
 config NRF70_SR_COEX_BT_GRANT_ACTIVE_LOW
 	int "Configure BT grant active low"
 	default 1
+
+config NRF70_BT_SLOT_TIME
+	int "BT slot allocation time in Wi-Fi scan (ms)"
+	range 0 255
+	default 0
+	help
+	  Time allocated in milliseconds for SR between successive Wi-Fi channel scan.
 endif # NRF70_SR_COEX
 
 config NRF70_WORKQ_STACK_SIZE
