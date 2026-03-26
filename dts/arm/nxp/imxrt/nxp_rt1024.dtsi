@@ -44,15 +44,24 @@
 	reg-names = "reg_base", "ahb";
 
 	/* 32 megabit internal flash present on chip */
-	w25q32jvwj0: w25q32jvwj@0 {
+	soc_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(4 * 8)>;
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
 		status = "okay";
 		jedec-id = [ef 40 16];
-		erase-block-size = <DT_SIZE_K(4)>;
-		write-block-size = <1>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x60000000 DT_SIZE_M(4)>;
+
+		w25q32jvwj0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(4)>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			write-block-size = <1>;
+		};
 	};
 };
 

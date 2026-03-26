@@ -18,7 +18,7 @@
 
 	chosen {
 		zephyr,flash = &w25q64jwtbjq;
-		zephyr,flash-controller = &w25q64jwtbjq;
+		zephyr,flash-controller = &ext_flash_ctrl;
 	};
 };
 

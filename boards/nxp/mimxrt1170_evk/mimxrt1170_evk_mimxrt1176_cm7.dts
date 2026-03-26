@@ -25,7 +25,7 @@
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan3;
-		zephyr,flash-controller = &is25wp128;
+		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,flash = &is25wp128;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,uart-mcumgr = &lpuart1;
