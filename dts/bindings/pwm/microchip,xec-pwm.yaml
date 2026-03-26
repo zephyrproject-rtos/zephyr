@@ -11,10 +11,11 @@ properties:
   reg:
     required: true
 
-  pcrs:
-    type: array
+  pcr-scr:
+    type: int
     required: true
-    description: PWM PCR register index and bit position
+    description: |
+      PWM Power Clock Reset(PCR) peripheral index and bit position
 
   "#pwm-cells":
     const: 3
