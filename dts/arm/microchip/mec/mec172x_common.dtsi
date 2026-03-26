@@ -1045,12 +1045,12 @@ espi0: espi@400f3400 {
 	};
 
 	rtc0: rtc@400f5000 {
-		compatible = "microchip,xec-espi-host-dev";
+		compatible = "microchip,xec-rtc";
 		reg = <0x400f5000 0x100>;
 		interrupts = <119 3>, <120 3>;
 		girqs = <MCHP_XEC_ECIA(21, 8, 13, 119)
 			 MCHP_XEC_ECIA(21, 9, 13, 120)>;
-		pcrs = <2 18>;
+		pcr-scr = <MCHP_XEC_SCR_ENCODE(2, 18)>;
 		ldn = <20>;
 		status = "disabled";
 	};

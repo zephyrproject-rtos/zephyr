@@ -393,10 +393,14 @@
 		};
 
 		rtc0: rtc@400f5000 {
+			compatible = "microchip,xec-rtc";
 			reg = <0x400f5000 0x100>;
 			interrupts = <119 3>, <120 3>;
 			interrupt-names = "rtc", "rtc_alarm";
-			girqs = <21 8>, <21 9>;
+			girqs = <MCHP_XEC_ECIA(21, 8, 13, 119)
+				 MCHP_XEC_ECIA(21, 9, 13, 120)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(2, 18)>;
+			ldn = <20>;
 			status = "disabled";
 		};
 

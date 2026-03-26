@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC RTC timer
+
+include: base.yaml
+
+compatible: "microchip,xec-rtc"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  girqs:
+    type: array
+    required: true
+    description: Array of GIRQ numbers [8:26] and bit positions [0:31].
+
+  pcr-scr:
+    type: int
+    required: true
+    description: PCR sleep enable register index and bit position.
+
+  ldn:
+    type: int
+    required: true
+    description: logical device number
