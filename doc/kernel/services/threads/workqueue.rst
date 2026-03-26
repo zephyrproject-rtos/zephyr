@@ -543,6 +543,8 @@ Configuration Options
 Related configuration options:
 
 * :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE`
+* :kconfig:option-regex:`CONFIG_SYSTEM_WORKQUEUE_STACK_MIN_SIZE_.*`
+* :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_IGNORE_MIN`
 * :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_PRIORITY`
 * :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_NO_YIELD`
 
