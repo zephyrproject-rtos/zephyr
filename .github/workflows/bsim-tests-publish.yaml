@@ -19,12 +19,12 @@ jobs:
 
     steps:
       - name: Download artifacts
-        uses: dawidd6/action-download-artifact@1f8785ff7a5130826f848e7f72725c85d241860f # v18
+        uses: dawidd6/action-download-artifact@8a338493df3d275e4a7a63bcff3b8fe97e51a927 # v19
         with:
           run_id: ${{ github.event.workflow_run.id }}
 
       - name: Publish BabbleSim Test Results
-        uses: EnricoMi/publish-unit-test-result-action@27d65e188ec43221b20d26de30f4892fad91df2f # v2.22.0
+        uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040 # v2.23.0
         with:
           check_name: BabbleSim Test Results
           comment_mode: off
