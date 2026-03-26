@@ -364,8 +364,11 @@ static int eth_nxp_enet_rx(const struct device *dev)
 
 		ENET_GetRxErrBeforeReadFrame(&data->enet_handle,
 					     &error_stats, RING_ID);
+		LOG_DBG("RX frame error before read on ring %d", RING_ID);
 		goto flush;
 	}
+
+	LOG_DBG("RX frame size %u", frame_length);
 
 	if (frame_length > NET_ETH_MAX_FRAME_SIZE) {
 		LOG_ERR("Frame too large (%d)", frame_length);
@@ -388,6 +391,8 @@ static int eth_nxp_enet_rx(const struct device *dev)
 		LOG_ERR("ENET_ReadFrame failed: %d", (int)status);
 		goto error;
 	}
+
+	LOG_DBG("RX frame read ok len=%u ts=%u", frame_length, ts);
 
 	if (net_pkt_write(pkt, data->rx_frame_buf, frame_length)) {
 		LOG_ERR("Unable to write frame into the packet");
@@ -449,8 +454,10 @@ static void eth_nxp_enet_rx_thread(struct k_work *work)
 
 	do {
 		ret = eth_nxp_enet_rx(dev);
+		LOG_DBG("RX worker iteration ret=%d", ret);
 	} while (ret == 1);
 
+	LOG_DBG("RX worker done, re-enable RX interrupt");
 	ENET_EnableInterrupts(data->base, kENET_RxFrameInterrupt);
 }
 
@@ -568,8 +575,10 @@ static void eth_nxp_enet_isr(const struct device *dev)
 	uint32_t eir = ENET_GetInterruptStatus(data->base);
 
 	if (eir & (kENET_RxFrameInterrupt)) {
+		LOG_DBG("RX interrupt eir=0x%08x", eir);
 		ENET_ReceiveIRQHandler(ENET_IRQ_HANDLER_ARGS(data->base, &data->enet_handle));
 		ENET_DisableInterrupts(data->base, kENET_RxFrameInterrupt);
+		LOG_DBG("Submit RX worker");
 		k_work_submit_to_queue(&rx_work_queue, &data->rx_work);
 	}
 
