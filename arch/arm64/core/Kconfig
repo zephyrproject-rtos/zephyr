@@ -210,6 +210,7 @@ config ARCH_HAS_STACKWALK
 	bool
 	default y
 	depends on FRAME_POINTER
+	imply THREAD_STACK_INFO
 	help
 	  Internal config to indicate that the arch_stack_walk() API is implemented
 	  and it can be enabled.
