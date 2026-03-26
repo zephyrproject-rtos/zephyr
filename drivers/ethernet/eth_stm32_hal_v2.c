@@ -610,6 +610,23 @@ int eth_stm32_hal_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+	/* Workaround for STM32N6 HAL: ETH_MACDMAConfig() sets the DMA
+	 * DSL to ETH_DMA_DESC_SKIP_LENGTH_32 (DSL=1, stride=20 bytes),
+	 * but sizeof(ETH_DMADescTypeDef) is 24 bytes (4 HW words + 2 SW
+	 * backup words). The mismatch causes the DMA hardware to read
+	 * every descriptor after the first from the wrong address.
+	 * Correct value: DSL=2 -> stride = 16 + 2*4 = 24.
+	 */
+	for (int ch = 0; ch < ETH_DMA_CH_CNT; ch++) {
+		uint32_t dmaccr = heth->Instance->DMA_CH[ch].DMACCR;
+
+		dmaccr &= ~ETH_DMACxCR_DSL;
+		dmaccr |= ETH_DMACxCR_DSL_64BIT;
+		heth->Instance->DMA_CH[ch].DMACCR = dmaccr;
+	}
+#endif
+
 #if defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32F7X)
 	/* Workaround for F4x and F7x as the HAL_ETH_Init function
 	 * does not set back the MDIO clock range after resetting
