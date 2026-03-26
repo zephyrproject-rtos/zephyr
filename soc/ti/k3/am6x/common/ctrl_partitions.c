@@ -25,7 +25,7 @@
 	IF_ENABLED(DT_NODE_HAS_PROP(node_id, ti_unlock_offsets),                                   \
 		   (K3_UNLOCK_CONTROL_MODULE_(node_id)))
 
-#if DT_HAS_COMPAT_STATUS_OKAY(ti_control_module)
+#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_control_module, ti_unlock_offsets)
 static void k3_unlock_partition(mem_addr_t kick0_address)
 {
 	sys_write32(KICK0_UNLOCK_VAL, kick0_address);
@@ -35,7 +35,7 @@ static void k3_unlock_partition(mem_addr_t kick0_address)
 
 void k3_unlock_all_ctrl_partitions(void)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(ti_control_module)
+#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_control_module, ti_unlock_offsets)
 	uintptr_t base;
 
 	DT_FOREACH_STATUS_OKAY(ti_control_module, K3_UNLOCK_CONTROL_MODULE)
