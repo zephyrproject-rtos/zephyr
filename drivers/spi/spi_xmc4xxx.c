@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(spi_xmc4xxx);
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 
 #include <xmc_spi.h>
 #include <xmc_usic.h>

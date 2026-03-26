@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT gaisler_spimctrl
 
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_spimctrl);
