@@ -22,7 +22,7 @@ extern "C" {
  * @retval 0 if the register read is valid.
  * @retval -EINVAL if the read is invalid.
  */
-static inline int syscon_sanitize_reg(uint16_t *reg, size_t reg_size, uint8_t reg_width)
+static inline int syscon_sanitize_reg(uint32_t *reg, size_t reg_size, uint8_t reg_width)
 {
 	/* Avoid unaligned readings */
 	*reg = ROUND_DOWN(*reg, reg_width);

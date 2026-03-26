@@ -41,14 +41,14 @@ typedef int (*syscon_api_get_base)(const struct device *dev, uintptr_t *addr);
  *
  * @see syscon_read_reg
  */
-typedef int (*syscon_api_read_reg)(const struct device *dev, uint16_t reg, uint32_t *val);
+typedef int (*syscon_api_read_reg)(const struct device *dev, uint32_t reg, uint32_t *val);
 
 /**
  * API template to write a single register.
  *
  * @see syscon_write_reg
  */
-typedef int (*syscon_api_write_reg)(const struct device *dev, uint16_t reg, uint32_t val);
+typedef int (*syscon_api_write_reg)(const struct device *dev, uint32_t reg, uint32_t val);
 
 /**
  * API template to get the size of the syscon register.
@@ -102,9 +102,9 @@ static inline int z_impl_syscon_get_base(const struct device *dev, uintptr_t *ad
  * @retval 0 on success.
  * @retval -ENOSYS If the API or function isn't implemented.
  */
-__syscall int syscon_read_reg(const struct device *dev, uint16_t reg, uint32_t *val);
+__syscall int syscon_read_reg(const struct device *dev, uint32_t reg, uint32_t *val);
 
-static inline int z_impl_syscon_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
+static inline int z_impl_syscon_read_reg(const struct device *dev, uint32_t reg, uint32_t *val)
 {
 	const struct syscon_driver_api *api = (const struct syscon_driver_api *)dev->api;
 
@@ -128,9 +128,9 @@ static inline int z_impl_syscon_read_reg(const struct device *dev, uint16_t reg,
  * @retval 0 on success.
  * @retval -ENOSYS If the API or function isn't implemented.
  */
-__syscall int syscon_write_reg(const struct device *dev, uint16_t reg, uint32_t val);
+__syscall int syscon_write_reg(const struct device *dev, uint32_t reg, uint32_t val);
 
-static inline int z_impl_syscon_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
+static inline int z_impl_syscon_write_reg(const struct device *dev, uint32_t reg, uint32_t val)
 {
 	const struct syscon_driver_api *api = (const struct syscon_driver_api *)dev->api;
 
