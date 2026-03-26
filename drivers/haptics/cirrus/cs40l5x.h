@@ -35,14 +35,17 @@ typedef bool (*cs40l5x_io_bus_is_ready)(const struct device *const dev);
 typedef const struct device *const (*cs40l5x_io_bus_get_device)(const struct device *const dev);
 typedef int (*cs40l5x_io_bus_read)(const struct device *const dev, const uint32_t addr,
 				   uint32_t *const rx, const uint32_t len);
-typedef int (*cs40l5x_io_bus_write)(const struct device *const dev, uint32_t *const tx,
-				    const uint32_t len);
+typedef int (*cs40l5x_io_bus_write)(const struct device *const dev, const uint32_t addr,
+				    uint32_t *const tx, const uint32_t len);
+typedef int (*cs40l5x_io_bus_raw_write)(const struct device *const dev, const uint32_t addr,
+					uint32_t *const tx, const uint32_t len);
 
 struct cs40l5x_bus_io {
 	cs40l5x_io_bus_is_ready is_ready;
 	cs40l5x_io_bus_get_device get_device;
 	cs40l5x_io_bus_read read;
 	cs40l5x_io_bus_write write;
+	cs40l5x_io_bus_raw_write raw_write;
 };
 
 #if CONFIG_HAPTICS_CS40L5X_I2C
