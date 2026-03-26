@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/irq.h>
@@ -17,10 +18,20 @@
 #include <esp_private/systimer.h>
 #include <hal/gpio_hal.h>
 
+#if SOC_PAU_SUPPORTED
+#include <esp_private/sleep_clock.h>
+#endif
+#if defined(CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP)
+#include <esp_private/sleep_cpu.h>
+#endif
+#if defined(CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+#include <esp_private/sleep_sys_periph.h>
+#endif
+
 #include <power.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
+LOG_MODULE_REGISTER(power, CONFIG_SOC_LOG_LEVEL);
 
 #define MIN_RESIDENCY_SLEEP_US DT_PROP(DT_NODELABEL(light_sleep), min_residency_us)
 #define WAKEUP_MARGIN_US       200
@@ -254,3 +265,35 @@ uint64_t esp32_lptim_hook_get_freq(void)
 	return LACT_TICKS_PER_US * 1000000ULL;
 #endif
 }
+
+/* Sleep retention initialization */
+
+#if defined(SOC_PAU_SUPPORTED)
+static int sleep_retention_init(void)
+{
+	esp_err_t err;
+
+	err = sleep_clock_startup_init();
+	if (err != ESP_OK) {
+		LOG_ERR("sleep_clock_startup_init failed (%d)", err);
+	}
+
+#if defined(CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP)
+	err = sleep_cpu_configure(true);
+	if (err != ESP_OK) {
+		LOG_ERR("sleep_cpu_configure failed (%d)", err);
+	}
+#endif
+
+#if defined(CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+	err = sleep_sys_periph_startup_init();
+	if (err != ESP_OK) {
+		LOG_ERR("sleep_sys_periph_startup_init failed (%d)", err);
+	}
+#endif
+
+	return 0;
+}
+
+SYS_INIT(sleep_retention_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif /* SOC_PAU_SUPPORTED */
