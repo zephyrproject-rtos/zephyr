@@ -113,6 +113,17 @@ config QEMU_UEFI_BOOT
 	  This option indicates that QEMU will use UEFI bootable method
 	  to boot up.
 
+config QEMU_USE_SYSTEM
+	bool "Use system or custom QEMU (env QEMU_BIN_PATH or /usr/bin)"
+	default n
+	depends on QEMU_TARGET
+	help
+	  When enabled, the run target uses QEMU from the path given by
+	  QEMU_BIN_PATH environment variable if set, otherwise from
+	  /usr/bin (system install). Use this when the default (e.g. SDK)
+	  QEMU is not desired (e.g. for graphical display with UEFI GOP).
+	  QEMU_BIN_PATH overrides the /usr/bin choice when both are in effect.
+
 config QEMU_GDBSERVER_LISTEN_DEV
 	string "QEMU gdbserver listen device"
 	default "tcp::1234"

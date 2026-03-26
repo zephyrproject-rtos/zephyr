@@ -16,7 +16,15 @@ else()
   set_ifndef(QEMU_binary_suffix ${ARCH})
 endif()
 
-set(qemu_alternate_path $ENV{QEMU_BIN_PATH})
+# QEMU path: QEMU_BIN_PATH env (directory or path to binary), or when
+# CONFIG_QEMU_USE_SYSTEM use /usr/bin. Otherwise use default from PATH (e.g. SDK).
+if(DEFINED ENV{QEMU_BIN_PATH} AND NOT "$ENV{QEMU_BIN_PATH}" STREQUAL "")
+  set(qemu_alternate_path $ENV{QEMU_BIN_PATH})
+elseif(CONFIG_QEMU_USE_SYSTEM)
+  set(qemu_alternate_path "/usr/bin")
+else()
+  set(qemu_alternate_path "")
+endif()
 if(qemu_alternate_path)
   find_program(
     QEMU
@@ -32,15 +40,36 @@ else()
 endif()
 
 # We need to set up uefi-run and OVMF environment
-# for testing UEFI method on qemu platforms
+# for testing UEFI method on qemu platforms.
+# New OVMF (split CODE + VARS): set OVMF_CODE_FD_PATH and OVMF_VARS_FD_PATH
+# to use pflash mode (uefi-run --pflash). Legacy single OVMF: set
+# OVMF_FD_PATH for -b mode.
 if(CONFIG_QEMU_UEFI_BOOT)
   find_program(UEFI NAMES uefi-run REQUIRED)
-  if(DEFINED ENV{OVMF_FD_PATH})
-    set(OVMF_FD_PATH $ENV{OVMF_FD_PATH})
-  else()
-    message(FATAL_ERROR "Couldn't find an valid OVMF_FD_PATH.")
+  set(UEFI_PFLASH_MODE OFF)
+  if(DEFINED ENV{OVMF_CODE_FD_PATH} AND NOT "$ENV{OVMF_CODE_FD_PATH}" STREQUAL "")
+    if(DEFINED ENV{OVMF_VARS_FD_PATH} AND NOT "$ENV{OVMF_VARS_FD_PATH}" STREQUAL "")
+      set(OVMF_CODE_FD_PATH $ENV{OVMF_CODE_FD_PATH})
+      set(OVMF_VARS_FD_PATH $ENV{OVMF_VARS_FD_PATH})
+      set(UEFI_PFLASH_MODE ON)
+    elseif(DEFINED ENV{OVMF_VAR_FD_PATH} AND NOT "$ENV{OVMF_VAR_FD_PATH}" STREQUAL "")
+      set(OVMF_CODE_FD_PATH $ENV{OVMF_CODE_FD_PATH})
+      set(OVMF_VARS_FD_PATH $ENV{OVMF_VAR_FD_PATH})
+      set(UEFI_PFLASH_MODE ON)
+    endif()
   endif()
-  list(APPEND UEFI -b ${OVMF_FD_PATH} -q ${QEMU})
+  if(UEFI_PFLASH_MODE)
+    list(APPEND UEFI --pflash
+      --ovmf-code ${OVMF_CODE_FD_PATH}
+      --ovmf-vars ${OVMF_VARS_FD_PATH}
+      -q ${QEMU})
+  else()
+    if(NOT DEFINED ENV{OVMF_FD_PATH} OR "$ENV{OVMF_FD_PATH}" STREQUAL "")
+      message(FATAL_ERROR "Set OVMF_FD_PATH (legacy) or both OVMF_CODE_FD_PATH and OVMF_VARS_FD_PATH (pflash).")
+    endif()
+    set(OVMF_FD_PATH $ENV{OVMF_FD_PATH})
+    list(APPEND UEFI -b ${OVMF_FD_PATH} -q ${QEMU})
+  endif()
   set(QEMU ${UEFI})
 endif()
 
@@ -98,7 +127,11 @@ else()
   list(APPEND QEMU_FLAGS -mon chardev=con,mode=readline)
 endif()
 
-if(CONFIG_QEMU_RAMFB_DISPLAY)
+if(CONFIG_QEMU_UEFI_BOOT AND CONFIG_DISPLAY_EFI_GOP)
+  # Use graphics (GOP) when running UEFI with EFI GOP display: -vga std only,
+  # -display left at QEMU default. Otherwise no display.
+  list(APPEND QEMU_FLAGS_${ARCH} -vga std)
+elseif(CONFIG_QEMU_RAMFB_DISPLAY)
   if(CMAKE_HOST_APPLE)
     set(QEMU_DISPLAY_BACKEND cocoa)
   else()

@@ -1,0 +1,14 @@
+# Copyright (c) 2025 rede97
+# SPDX-License-Identifier: Apache-2.0
+
+config DISPLAY_EFI_GOP
+	bool "EFI GOP (Graphics Output Protocol) framebuffer display"
+	default n
+	depends on DISPLAY && X86_EFI && DT_HAS_ZEPHYR_EFI_GOP_DISPLAY_ENABLED
+	help
+	  Display driver for the EFI GOP framebuffer. Uses GOP information
+	  (address, size, resolution, pitch) saved by the Zephyr EFI loader
+	  (zefi) when it initializes the screen. The framebuffer is mapped
+	  into the kernel and exposed via the display API.
+	  Only available when booted via x86 EFI with GOP provided by the
+	  bootloader.

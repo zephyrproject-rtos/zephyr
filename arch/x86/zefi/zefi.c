@@ -40,6 +40,14 @@
 		.Data4 = { 0x8e, 0x3f, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b } \
 	}
 
+#define EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID				\
+	{								\
+		.Data1 = 0x9042a9de,					\
+		.Data2 = 0x23dc,					\
+		.Data3 = 0x4a38,					\
+		.Data4 = { 0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a }, \
+	}
+
 /* The linker places this dummy last in the data memory.  We can't use
  * traditional linker address symbols because we're relocatable; the
  * linker doesn't know what the runtime address will be.  The compiler
@@ -118,6 +126,104 @@ static void efi_prepare_boot_arg(void)
 	}
 }
 
+/*
+ * Get GOP from ConOut handle and save info for Zephyr display driver;
+ * only compiled when CONFIG_DISPLAY_EFI_GOP is set.
+ *
+ * When started from UEFI Shell, ConOut may not have GOP (returns
+ * EFI_UNSUPPORTED). Fall back to LocateProtocol to find GOP from
+ * the system in that case.
+ */
+static void efi_init_gop_save(void)
+{
+#if defined(CONFIG_DISPLAY_EFI_GOP)
+	struct efi_gop *gop = NULL;
+	efi_status_t st;
+	struct efi_boot_services *bs;
+	efi_guid_t gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+
+	if (efi == NULL || efi->BootServices == NULL) {
+		return;
+	}
+	bs = efi->BootServices;
+
+	/* Try ConOut first (works when booting .efi directly). */
+	if (efi->ConsoleOutHandle != NULL && bs->HandleProtocol != NULL) {
+		st = bs->HandleProtocol(efi->ConsoleOutHandle,
+					(efi_guid_t *)&gop_guid, (void **)&gop);
+		if (st == EFI_SUCCESS && gop != NULL && gop->Mode != NULL) {
+			printf("GOP found from ConOut\n");
+		} else {
+			gop = NULL;
+		}
+	}
+
+	/*
+	 * Fallback via LocateProtocol: when started from UEFI Shell,
+	 * ConOut often does not expose GOP.
+	 */
+	if ((gop == NULL || gop->Mode == NULL) && bs->LocateProtocol != NULL) {
+		st = bs->LocateProtocol((efi_guid_t *)&gop_guid, NULL, (void **)&gop);
+		if (st != EFI_SUCCESS || gop == NULL) {
+			printf("GOP not found by LocateProtocol: (0x%lx)\n",
+			       (unsigned long)st);
+			return;
+		}
+	}
+
+	if (gop == NULL || gop->Mode == NULL) {
+		printf("GOP not found via ConOut or LocateProtocol\n");
+		return;
+	}
+
+	{
+		struct efi_gop_mode *mode = gop->Mode;
+		struct efi_gop_mode_info *info = NULL;
+		uintptr_t size_of_info = 0;
+		uint32_t width, height, pitch;
+
+		/*
+		 * Use QueryMode to get mode info; avoids dereferencing
+		 * mode->Info which may point to unmapped firmware memory
+		 * when started from UEFI Shell.
+		 */
+		if (gop->QueryMode != NULL) {
+			st = gop->QueryMode(gop, mode->Mode, &size_of_info, &info);
+			if (st != 0 || info == NULL) {
+				printf("GOP QueryMode failed (0x%lx)\n",
+				       (unsigned long)st);
+				return;
+			}
+		} else {
+			info = mode->Info;
+		}
+
+		if (info == NULL ||
+		    (info->PixelFormat != PixelRedGreenBlueReserved8BitPerColor &&
+		     info->PixelFormat != PixelBlueGreenRedReserved8BitPerColor)) {
+			return;
+		}
+
+		width = info->HorizontalResolution;
+		height = info->VerticalResolution;
+		pitch = info->PixelsPerScanLine;
+
+		if (mode->FrameBufferBase == 0 || mode->FrameBufferSize == 0) {
+			printf("GOP framebuffer invalid\n");
+			return;
+		}
+
+		/* Save GOP info for Zephyr display driver. */
+		efi_arg.gop_fb_base = mode->FrameBufferBase;
+		efi_arg.gop_fb_size = mode->FrameBufferSize;
+		efi_arg.gop_width = width;
+		efi_arg.gop_height = height;
+		efi_arg.gop_pitch = pitch;
+		efi_arg.gop_pixel_format = info->PixelFormat;
+	}
+#endif /* CONFIG_DISPLAY_EFI_GOP */
+}
+
 /* Existing x86_64 EFI environments have a bad habit of leaving the
  * HPET timer running.  This then fires later on, once the OS has
  * started.  If the timing isn't right, it can happen before the OS
@@ -152,6 +258,8 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 	printf("*** Zephyr EFI Loader ***\n");
 
 	efi_prepare_boot_arg();
+
+	efi_init_gop_save();
 
 	for (int i = 0; i < sizeof(zefi_zsegs)/sizeof(zefi_zsegs[0]); i++) {
 		int bytes = zefi_zsegs[i].sz;

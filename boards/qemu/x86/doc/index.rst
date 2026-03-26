@@ -101,7 +101,18 @@ some environment configurations as follows:
 * Please install uefi-run in your system environment according to this
   reference link https://github.com/Richard-W/uefi-run. Note that uefi-run
   from snapstore may not work because of strict snap confinements.
-  The preferred method is installing with cargo.
+  The preferred method is installing with cargo:
+
+  .. code-block:: console
+
+     cargo install uefi-run
+
+  If you need pflash mode support (required for newer split OVMF images),
+  use the fork that adds ``--pflash`` support:
+
+  .. code-block:: console
+
+     cargo install --git https://github.com/rede97/uefi-run uefi-run
 
 * Please install OVMF in your system environment according to this
   reference link https://github.com/tianocore/tianocore.github.io/wiki/OVMF.
@@ -112,12 +123,56 @@ some environment configurations as follows:
 
      sudo apt install ovmf
 
-* Set system environment variable OVMF_FD_PATH,
-  for example:
+* Set OVMF firmware via environment variables (choose one):
+
+  **Legacy (single FD)**: Set ``OVMF_FD_PATH``.
 
   .. code-block:: console
 
      export OVMF_FD_PATH=/usr/share/OVMF/OVMF_CODE.fd
+
+  **New pflash (CODE + VARS)**: Set both ``OVMF_CODE_FD_PATH`` and
+  ``OVMF_VARS_FD_PATH`` to use uefi-run in pflash mode (recommended with
+  newer OVMF):
+
+  .. code-block:: console
+
+     export OVMF_CODE_FD_PATH=/usr/share/OVMF/OVMF_CODE_4M.fd
+     export OVMF_VARS_FD_PATH=/usr/share/OVMF/OVMF_VARS_4M.fd
+
+  When using UEFI with graphical display (GOP), at least 256MB RAM is used automatically.
+
+* **UEFI with graphics (GOP)**: When ``CONFIG_QEMU_UEFI_BOOT`` and
+  ``CONFIG_DISPLAY_EFI_GOP`` are enabled, the run target adds ``-vga std``
+  so that the EFI GOP display works. The ``-display`` option is not set
+  (QEMU default is used). To get a graphical window, use a QEMU that
+  supports your display (e.g. system QEMU with default GTK/SDL).
+
+* **QEMU executable**: By default the run target uses the first
+  ``qemu-system-x86_64`` found in ``PATH`` (often from the SDK). To use
+  system or custom QEMU:
+
+  **Environment variable** (overrides other settings): set ``QEMU_BIN_PATH``
+  to the directory containing ``qemu-system-x86_64``, or to the full path
+  of the binary:
+
+  .. code-block:: console
+
+     export QEMU_BIN_PATH=/usr/bin
+     # or
+     export QEMU_BIN_PATH=/opt/myqemu/bin
+
+  **Kconfig option**: Enable **Use system or custom QEMU**
+  (``CONFIG_QEMU_USE_SYSTEM``) in menuconfig (Board options). Then QEMU is
+  taken from ``QEMU_BIN_PATH`` if set, otherwise from ``/usr/bin``.
+
+* **KVM (hardware acceleration)**: On Linux with a supported CPU, enable
+  KVM to avoid TCG warnings (e.g. ``TCG doesn't support requested feature:
+  CPUID.01H:ECX.x2apic``) and improve performance:
+
+  .. code-block:: console
+
+     export QEMU_EXTRA_FLAGS="-accel kvm"
 
 Now you can build application, for example UEFI boot test sample found under
 :zephyr_file:`tests/boot/uefi`:
