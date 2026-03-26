@@ -999,8 +999,8 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 
 /**
  * Start directed advertising with a peer address with or without RPA.
- * If privacy is enabled and the peer does not support Central Address Resolution,
- * the advertisement will be started as undirected with RPA.
+ * If privacy is enabled and the peer does not support Central Address
+ * Resolution PTS expects IUT request to fail.
  */
 static uint8_t start_directed_advertising(const void *cmd, uint16_t cmd_len,
 					  void *rsp, uint16_t *rsp_len)
@@ -1010,35 +1010,49 @@ static uint8_t start_directed_advertising(const void *cmd, uint16_t cmd_len,
 	struct bt_le_adv_param adv_param = BT_LE_ADV_PARAM_INIT(
 		BT_LE_ADV_OPT_CONN, BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL);
 	uint16_t options = sys_le16_to_cpu(cp->options);
+	bool peer_car_supported = false;
 
 	if (bt_addr_le_eq(&cp->address, &bt_addr_le_any)) {
 		LOG_ERR("Invalid peer address");
 		return BTP_STATUS_FAILED;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_PRIVACY) && (options & BTP_GAP_START_DIRECTED_ADV_PEER_RPA)) {
-		/**
-		 * In accordance with the test spec for test case GAP/CONN/DCON/BV-05-C, if the peer
-		 * does not support Central Address Resolution, the advertisement will be started
-		 * as undirected.
-		 */
+	/*
+	 * For GAP/CONN/DCON/BV-05-C PTS expects IUT to fail operation
+	 * if the peer does not support Central Address Resolution.
+	 *
+	 * In Test Set there is ALT to start undirected advertising instead
+	 * but PTS interpretation is that IUT shall reject directed request
+	 * regardless and may then later on follow up with underected
+	 * advertising (which PTS doesn't validate). To keep this simple
+	 * just reject here.
+	 */
+	if ((options & BTP_GAP_START_DIRECTED_ADV_PEER_RPA) != 0U) {
+		if (!IS_ENABLED(CONFIG_BT_PRIVACY)) {
+			return BTP_STATUS_FAILED;
+		}
+
 		for (int i = 0; i < CONFIG_BT_MAX_PAIRED; i++) {
 			if (bt_addr_le_eq(&cp->address, &peers_with_car[i].addr) &&
 			    peers_with_car[i].supported) {
-				adv_param.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
-				adv_param.peer = &cp->address;
-				if ((options & BTP_GAP_START_DIRECTED_ADV_HD) == 0U) {
-					adv_param.options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
-				}
+				peer_car_supported = true;
 				break;
 			}
 		}
-	} else {
-		adv_param.peer = &cp->address;
-		if ((options & BTP_GAP_START_DIRECTED_ADV_HD) == 0U) {
-			adv_param.options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
+
+		if (peer_car_supported == false) {
+			LOG_WRN("Peer doesn't support CAR");
+			return BTP_STATUS_FAILED;
 		}
+
+		adv_param.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
 	}
+
+	if ((options & BTP_GAP_START_DIRECTED_ADV_HD) == 0U) {
+		adv_param.options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
+	}
+
+	adv_param.peer = &cp->address;
 
 	if (bt_le_adv_start(&adv_param, NULL, 0, NULL, 0) < 0) {
 		LOG_ERR("Failed to start advertising");
