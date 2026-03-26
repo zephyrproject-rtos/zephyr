@@ -22,6 +22,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/storage/flash_map.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
@@ -194,6 +195,10 @@ LOG_MODULE_REGISTER(CS40L5X, CONFIG_HAPTICS_LOG_LEVEL);
 #define CS40L5X_FLASH_MEMORY_ERASED     0xFFFFFFFFU
 #define CS40L5X_NUM_IRQ1_INT            16
 
+#define CS40L5X_WRITE_BE32(...)                                                                    \
+	.buf = (uint32_t[]){FOR_EACH(sys_cpu_to_be32, (,), __VA_ARGS__)},                          \
+	.len = NUM_VA_ARGS(__VA_ARGS__)
+
 enum cs40l5x_irq {
 	CS40L5X_INT1,
 	CS40L5X_INT2,
@@ -214,147 +219,91 @@ enum cs40l5x_irq {
 };
 
 struct cs40l5x_multi_write {
+	uint32_t addr;
 	uint32_t *buf;
 	size_t len;
 };
 
 static const struct cs40l5x_multi_write cs40l5x_b0_internal_boost[] = {
-	{.buf = (uint32_t[]){0x00002018U, 0x00003321U, 0x04000010U}, .len = 3},
+	{.addr = 0x00002018U, CS40L5X_WRITE_BE32(0x00003321U, 0x04000010U)},
 };
 
 static const struct cs40l5x_multi_write cs40l5x_b0_external_boost[] = {
-	{.buf = (uint32_t[]){0x00002018U, 0x00003201U}, .len = 2},
-	{.buf = (uint32_t[]){0x00004404U, 0x01000000U}, .len = 2},
+	{.addr = 0x00002018U, CS40L5X_WRITE_BE32(0x00003201U)},
+	{.addr = 0x00004404U, CS40L5X_WRITE_BE32(0x01000000U)},
 };
 
 static const struct cs40l5x_multi_write cs40l5x_b0_errata[] = {
-	{.buf = (uint32_t[]){0x00000040U, 0x00000055U}, .len = 2},
-	{.buf = (uint32_t[]){0x00000040U, 0x000000AAU}, .len = 2},
-	{.buf = (uint32_t[]){0x00003014U, 0x08012E16U}, .len = 2},
-	{.buf = (uint32_t[]){0x00003808U, 0xC0000004U}, .len = 2},
-	{.buf = (uint32_t[]){0x0000380CU, 0xC8710230U}, .len = 2},
-	{.buf = (uint32_t[]){0x0000388CU, 0x04E0FFFFU}, .len = 2},
-	{.buf = (uint32_t[]){0x0000649CU, 0x01818461U}, .len = 2},
-	{.buf = (uint32_t[]){0x00000040U, 0x00000000U}, .len = 2},
-	{.buf = (uint32_t[]){0x02BC21B8U, 0x00000302U, 0x00000001U, 0x00018B41U, 0x00009920U},
-	 .len = 5}};
+	{.addr = 0x00000040U, CS40L5X_WRITE_BE32(0x00000055U)},
+	{.addr = 0x00000040U, CS40L5X_WRITE_BE32(0x000000AAU)},
+	{.addr = 0x00003014U, CS40L5X_WRITE_BE32(0x08012E16U)},
+	{.addr = 0x00003808U, CS40L5X_WRITE_BE32(0xC0000004U)},
+	{.addr = 0x0000380CU, CS40L5X_WRITE_BE32(0xC8710230U)},
+	{.addr = 0x0000388CU, CS40L5X_WRITE_BE32(0x04E0FFFFU)},
+	{.addr = 0x0000649CU, CS40L5X_WRITE_BE32(0x01818461U)},
+	{.addr = 0x00000040U, CS40L5X_WRITE_BE32(0x00000000U)},
+	{.addr = 0x02BC21B8U,
+	 CS40L5X_WRITE_BE32(0x00000302U, 0x00000001U, 0x00018B41U, 0x00009920U)},
+};
 
 static const struct cs40l5x_multi_write cs40l5x_b0_errata_external_boost[] = {
-	{.buf = (uint32_t[]){0x00000040U, 0x00000055U}, .len = 2},
-	{.buf = (uint32_t[]){0x00000040U, 0x000000AAU}, .len = 2},
-	{.buf = (uint32_t[]){0x00005C00U, 0x00000400U}, .len = 2},
-	{.buf = (uint32_t[]){0x00004220U, 0x8000007DU}, .len = 2},
-	{.buf = (uint32_t[]){0x00004200U, 0x00000008U}, .len = 2},
-	{.buf = (uint32_t[]){0x00004240U, 0x510002B5U}, .len = 2},
-	{.buf = (uint32_t[]){0x00006024U, 0x00522303U}, .len = 2},
-	{.buf = (uint32_t[]){0x00000040U, 0x00000000U}, .len = 2},
-	{.buf = (uint32_t[]){0x02804348U, 0x00040020U, 0x00183201U, 0x00050044U, 0x00040100U,
-			     0x00FD0001U, 0x0004005CU, 0x00000400U, 0x00000000U, 0x00422080U,
-			     0x0000007DU, 0x00040042U, 0x00000008U, 0x00050042U, 0x00405100U,
-			     0x00040060U, 0x00242303U, 0x00FFFFFFU},
-	 .len = 18}};
+	{.addr = 0x00000040U, CS40L5X_WRITE_BE32(0x00000055U)},
+	{.addr = 0x00000040U, CS40L5X_WRITE_BE32(0x000000AAU)},
+	{.addr = 0x00005C00U, CS40L5X_WRITE_BE32(0x00000400U)},
+	{.addr = 0x00004220U, CS40L5X_WRITE_BE32(0x8000007DU)},
+	{.addr = 0x00004200U, CS40L5X_WRITE_BE32(0x00000008U)},
+	{.addr = 0x00004240U, CS40L5X_WRITE_BE32(0x510002B5U)},
+	{.addr = 0x00006024U, CS40L5X_WRITE_BE32(0x00522303U)},
+	{.addr = 0x00000040U, CS40L5X_WRITE_BE32(0x00000000U)},
+	{.addr = 0x02804348U,
+	 CS40L5X_WRITE_BE32(0x00040020U, 0x00183201U, 0x00050044U, 0x00040100U, 0x00FD0001U,
+			    0x0004005CU, 0x00000400U, 0x00000000U, 0x00422080U, 0x0000007DU,
+			    0x00040042U, 0x00000008U, 0x00050042U, 0x00405100U, 0x00040060U,
+			    0x00242303U, 0x00FFFFFFU)}};
 
 static const struct cs40l5x_multi_write cs40l5x_irq_clear[] = {
-	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_INT_1, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU,
-			     0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU,
-			     0xFFFFFFFFU, 0xFFFFFFFFU},
-	 .len = 11},
-	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_INT_14, 0xFFFFFFFFU}, .len = 2},
-	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_INT_18, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU,
-			     0xFFFFFFFFU, 0xFFFFFFFFU},
-	 .len = 6},
+	{.addr = CS40L5X_REG_IRQ1_INT_1,
+	 CS40L5X_WRITE_BE32(0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU,
+			    0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU)},
+	{.addr = CS40L5X_REG_IRQ1_INT_14, CS40L5X_WRITE_BE32(0xFFFFFFFFU)},
+	{.addr = CS40L5X_REG_IRQ1_INT_18,
+	 CS40L5X_WRITE_BE32(0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU)},
 };
 
 static const struct cs40l5x_multi_write cs40l5x_irq_masks[] = {
-	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_MASK_1, 0x03FFFFFFU, 0xFFDF7FFFU}, .len = 3},
-	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_MASK_4, 0xE0FFFFFFU}, .len = 2},
-	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_MASK_8, 0x7C000FFFU, 0x0101C033U, 0x0000F00CU},
-	 .len = 4},
-	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_MASK_20, 0x15FFF000U}, .len = 2},
+	{.addr = CS40L5X_REG_IRQ1_MASK_1, CS40L5X_WRITE_BE32(0x03FFFFFFU, 0xFFDF7FFFU)},
+	{.addr = CS40L5X_REG_IRQ1_MASK_4, CS40L5X_WRITE_BE32(0xE0FFFFFFU)},
+	{.addr = CS40L5X_REG_IRQ1_MASK_8,
+	 CS40L5X_WRITE_BE32(0x7C000FFFU, 0x0101C033U, 0x0000F00CU)},
+	{.addr = CS40L5X_REG_IRQ1_MASK_20, CS40L5X_WRITE_BE32(0x15FFF000U)},
 };
 
 static const struct cs40l5x_multi_write cs40l5x_pseq[] = {
-	{.buf = (uint32_t[]){CS40L5X_REG_WSEQ_POWER,
-			     0x00000000U,
-			     0x00E09003U,
-			     0x00FFFFFFU,
-			     0x000304FFU,
-			     0x00DF7FFFU,
-			     0x00000000U,
-			     0x00E09CE0U,
-			     0x00FFFFFFU,
-			     0x00000000U,
-			     0x00E0AC7CU,
-			     0x00000FFFU,
-			     0x00030401U,
-			     0x0001C033U,
-			     0x00030400U,
-			     0x0000F00CU,
-			     0x00000000U,
-			     0x00E0DC15U,
-			     0x00FFF000U,
-			     0x00000000U,
-			     0x00004000U,
-			     0x00000055U,
-			     0x00030000U,
-			     0x000000AAU,
-			     0x00000000U,
-			     0x00301408U,
-			     0x00012E16U,
-			     0x00000000U,
-			     0x003808C0U,
-			     0x00000004U,
-			     0x000304C8U,
-			     0x00710230U,
-			     0x00038004U,
-			     0x00E0FFFFU,
-			     0x00000000U,
-			     0x00649C01U,
-			     0x00818461U,
-			     0x00000000U,
-			     0x00004000U,
-			     0x00000000U,
-			     CS40L5X_WSEQ_TERMINATOR},
-	 .len = 41},
+	{.addr = CS40L5X_REG_WSEQ_POWER,
+	 CS40L5X_WRITE_BE32(
+		 0x00000000U, 0x00E09003U, 0x00FFFFFFU, 0x000304FFU, 0x00DF7FFFU, 0x00000000U,
+		 0x00E09CE0U, 0x00FFFFFFU, 0x00000000U, 0x00E0AC7CU, 0x00000FFFU, 0x00030401U,
+		 0x0001C033U, 0x00030400U, 0x0000F00CU, 0x00000000U, 0x00E0DC15U, 0x00FFF000U,
+		 0x00000000U, 0x00004000U, 0x00000055U, 0x00030000U, 0x000000AAU, 0x00000000U,
+		 0x00301408U, 0x00012E16U, 0x00000000U, 0x003808C0U, 0x00000004U, 0x000304C8U,
+		 0x00710230U, 0x00038004U, 0x00E0FFFFU, 0x00000000U, 0x00649C01U, 0x00818461U,
+		 0x00000000U, 0x00004000U, 0x00000000U, CS40L5X_WSEQ_TERMINATOR)},
 };
 
 static const struct cs40l5x_multi_write cs40l5x_pseq_internal[] = {
-	{.buf = (uint32_t[]){CS40L5X_REG_WSEQ_POWER, 0x00000000U, 0x00201800U, 0x00003321U,
-			     0x00030404U, 0x00000010U, CS40L5X_WSEQ_TERMINATOR},
-	 .len = 7},
+	{.addr = CS40L5X_REG_WSEQ_POWER + (cs40l5x_pseq[0].len - 1) * CS40L5X_REG_WIDTH,
+	 CS40L5X_WRITE_BE32(0x00000000U, 0x00201800U, 0x00003321U, 0x00030404U, 0x00000010U,
+			    CS40L5X_WSEQ_TERMINATOR)},
 };
 
 static const struct cs40l5x_multi_write cs40l5x_pseq_external[] = {
-	{.buf = (uint32_t[]){CS40L5X_REG_WSEQ_POWER,
-			     0x00000000U,
-			     0x00201800U,
-			     0x00003201U,
-			     0x00000000U,
-			     0x00440401U,
-			     0x00000000U,
-			     0x00000000U,
-			     0x00004000U,
-			     0x00000055U,
-			     0x00030000U,
-			     0x000000AAU,
-			     0x00000000U,
-			     0x005C0000U,
-			     0x00000400U,
-			     0x00000000U,
-			     0x00420000U,
-			     0x00000008U,
-			     0x00032080U,
-			     0x0000007DU,
-			     0x00032051U,
-			     0x000002B5U,
-			     0x00000000U,
-			     0x00602400U,
-			     0x00522303U,
-			     0x00000000U,
-			     0x00004000U,
-			     0x00000000U,
-			     CS40L5X_WSEQ_TERMINATOR},
-	 .len = 29},
+	{.addr = CS40L5X_REG_WSEQ_POWER + (cs40l5x_pseq[0].len - 1) * CS40L5X_REG_WIDTH,
+	 CS40L5X_WRITE_BE32(0x00000000U, 0x00201800U, 0x00003201U, 0x00000000U, 0x00440401U,
+			    0x00000000U, 0x00000000U, 0x00004000U, 0x00000055U, 0x00030000U,
+			    0x000000AAU, 0x00000000U, 0x005C0000U, 0x00000400U, 0x00000000U,
+			    0x00420000U, 0x00000008U, 0x00032080U, 0x0000007DU, 0x00032051U,
+			    0x000002B5U, 0x00000000U, 0x00602400U, 0x00522303U, 0x00000000U,
+			    0x00004000U, 0x00000000U, CS40L5X_WSEQ_TERMINATOR)},
 };
 
 /* Source attenuation in decibels (dB) stored in signed Q21.2 format */
@@ -399,30 +348,31 @@ static int cs40l5x_burst_read(const struct device *const dev, const uint32_t add
 	return config->bus_io->read(dev, addr, rx, len);
 }
 
-static int cs40l5x_write(const struct device *const dev, const uint32_t addr, const uint32_t val)
+static int cs40l5x_write(const struct device *const dev, const uint32_t addr, uint32_t val)
 {
 	const struct cs40l5x_config *const config = dev->config;
-	uint32_t tx[2] = {addr, val};
 
-	return config->bus_io->write(dev, tx, ARRAY_SIZE(tx));
+	return config->bus_io->write(dev, addr, &val, 1);
 }
 
-static int cs40l5x_burst_write(const struct device *const dev, uint32_t *const tx,
-			       const uint32_t len)
+static int cs40l5x_burst_write(const struct device *const dev, const uint32_t addr,
+			       uint32_t *const tx, const uint32_t len)
 {
 	const struct cs40l5x_config *const config = dev->config;
 
-	return config->bus_io->write(dev, tx, len);
+	return config->bus_io->write(dev, addr, tx, len);
 }
 
 static int cs40l5x_multi_write(const struct device *const dev,
 			       const struct cs40l5x_multi_write *const multi_write,
 			       const uint32_t len)
 {
+	const struct cs40l5x_config *const config = dev->config;
 	int ret;
 
 	for (int i = 0; i < len; i++) {
-		ret = cs40l5x_burst_write(dev, multi_write[i].buf, multi_write[i].len);
+		ret = config->bus_io->raw_write(dev, multi_write[i].addr, multi_write[i].buf,
+						multi_write[i].len);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1008,17 +958,11 @@ static int cs40l5x_pseq_config(const struct device *const dev)
 		return ret;
 	}
 
-	if (config->external_boost != NULL) {
-		cs40l5x_pseq_external[0].buf[0] += (cs40l5x_pseq[0].len - 2) * CS40L5X_REG_WIDTH;
-
-		return cs40l5x_multi_write(dev, cs40l5x_pseq_external,
-					   ARRAY_SIZE(cs40l5x_pseq_external));
-	} else {
-		cs40l5x_pseq_internal[0].buf[0] += (cs40l5x_pseq[0].len - 2) * CS40L5X_REG_WIDTH;
-
-		return cs40l5x_multi_write(dev, cs40l5x_pseq_internal,
-					   ARRAY_SIZE(cs40l5x_pseq_internal));
-	}
+	return (config->external_boost != NULL)
+		       ? cs40l5x_multi_write(dev, cs40l5x_pseq_external,
+					     ARRAY_SIZE(cs40l5x_pseq_external))
+		       : cs40l5x_multi_write(dev, cs40l5x_pseq_internal,
+					     ARRAY_SIZE(cs40l5x_pseq_internal));
 }
 
 static int cs40l5x_dsp_config(const struct device *const dev)
@@ -1049,23 +993,23 @@ static int cs40l5x_dsp_config(const struct device *const dev)
 
 static int cs40l5x_timeout_config(const struct device *const dev)
 {
-	uint32_t active_timeout[3], standby_timeout[3];
+	uint32_t active_timeout[2], standby_timeout[2];
 	int ret;
 
-	active_timeout[0] = CS40L5X_REG_ACTIVE_TIMEOUT;
-	active_timeout[1] = FIELD_GET(GENMASK(23, 0), CONFIG_HAPTICS_CS40L5X_PM_ACTIVE_TIMEOUT_MS);
-	active_timeout[2] = FIELD_GET(GENMASK(31, 24), CONFIG_HAPTICS_CS40L5X_PM_ACTIVE_TIMEOUT_MS);
+	active_timeout[0] = FIELD_GET(GENMASK(23, 0), CONFIG_HAPTICS_CS40L5X_PM_ACTIVE_TIMEOUT_MS);
+	active_timeout[1] = FIELD_GET(GENMASK(31, 24), CONFIG_HAPTICS_CS40L5X_PM_ACTIVE_TIMEOUT_MS);
 
-	standby_timeout[0] = CS40L5X_REG_STDBY_TIMEOUT;
-	standby_timeout[1] = FIELD_GET(GENMASK(23, 0), CONFIG_HAPTICS_CS40L5X_PM_STDBY_TIMEOUT_MS);
-	standby_timeout[2] = FIELD_GET(GENMASK(31, 24), CONFIG_HAPTICS_CS40L5X_PM_STDBY_TIMEOUT_MS);
+	standby_timeout[0] = FIELD_GET(GENMASK(23, 0), CONFIG_HAPTICS_CS40L5X_PM_STDBY_TIMEOUT_MS);
+	standby_timeout[1] = FIELD_GET(GENMASK(31, 24), CONFIG_HAPTICS_CS40L5X_PM_STDBY_TIMEOUT_MS);
 
-	ret = cs40l5x_burst_write(dev, active_timeout, ARRAY_SIZE(active_timeout));
+	ret = cs40l5x_burst_write(dev, CS40L5X_REG_ACTIVE_TIMEOUT, active_timeout,
+				  ARRAY_SIZE(active_timeout));
 	if (ret < 0) {
 		return ret;
 	}
 
-	return cs40l5x_burst_write(dev, standby_timeout, ARRAY_SIZE(standby_timeout));
+	return cs40l5x_burst_write(dev, CS40L5X_REG_STDBY_TIMEOUT, standby_timeout,
+				   ARRAY_SIZE(standby_timeout));
 }
 
 static int cs40l5x_write_errata(const struct device *const dev)
@@ -1780,19 +1724,19 @@ static int cs40l5x_upload_pcm_header(const struct device *const dev,
 				     const enum cs40l5x_custom_index index, const uint16_t redc,
 				     const uint16_t f0, const uint16_t num_samples)
 {
-	uint32_t header[3];
+	uint32_t header[2];
 	int ret;
 
-	header[0] = cs40l5x_custom_header(index, CS40L5X_HEADER_2);
-	header[1] = FIELD_PREP(GENMASK(21, 0), num_samples);
-	header[2] = FIELD_PREP(GENMASK(23, 12), f0) | FIELD_PREP(GENMASK(11, 0), redc);
+	header[0] = FIELD_PREP(GENMASK(21, 0), num_samples);
+	header[1] = FIELD_PREP(GENMASK(23, 12), f0) | FIELD_PREP(GENMASK(11, 0), redc);
 
 	ret = cs40l5x_write(dev, cs40l5x_custom_header(index, CS40L5X_HEADER_1), CS40L5X_WRITE_PCM);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return cs40l5x_burst_write(dev, header, ARRAY_SIZE(header));
+	return cs40l5x_burst_write(dev, cs40l5x_custom_header(index, CS40L5X_HEADER_2), header,
+				   ARRAY_SIZE(header));
 }
 
 static int cs40l5x_upload_pcm_data(const struct device *const dev,
@@ -1887,15 +1831,14 @@ static int cs40l5x_upload_pwle_header(const struct device *const dev,
 				      const struct cs40l5x_pwle_section *const sections,
 				      const uint8_t num_sections)
 {
-	uint32_t header[5];
+	uint32_t header[4];
 	int ret;
 
-	header[0] = cs40l5x_custom_header(index, CS40L5X_HEADER_2);
-	header[1] = CS40L5X_PWLE_RESERVED_VALUE;
-	header[2] = FIELD_PREP(GENMASK(3, 0), FIELD_GET(GENMASK(7, 4), num_sections));
-	header[3] = FIELD_PREP(GENMASK(23, 20), FIELD_GET(GENMASK(3, 0), num_sections)) |
+	header[0] = CS40L5X_PWLE_RESERVED_VALUE;
+	header[1] = FIELD_PREP(GENMASK(3, 0), FIELD_GET(GENMASK(7, 4), num_sections));
+	header[2] = FIELD_PREP(GENMASK(23, 20), FIELD_GET(GENMASK(3, 0), num_sections)) |
 		    FIELD_PREP(GENMASK(3, 0), FIELD_GET(GENMASK(11, 8), sections[0].level));
-	header[4] = FIELD_PREP(GENMASK(23, 16), FIELD_GET(GENMASK(7, 0), sections[0].level)) |
+	header[3] = FIELD_PREP(GENMASK(23, 16), FIELD_GET(GENMASK(7, 0), sections[0].level)) |
 		    FIELD_PREP(GENMASK(15, 4), CS40L5X_PWLE_DEFAULT_FREQ) |
 		    FIELD_PREP(GENMASK(3, 0), CS40L5X_PWLE_DEFAULT_FLAGS);
 
@@ -1905,7 +1848,8 @@ static int cs40l5x_upload_pwle_header(const struct device *const dev,
 		return ret;
 	}
 
-	return cs40l5x_burst_write(dev, header, ARRAY_SIZE(header));
+	return cs40l5x_burst_write(dev, cs40l5x_custom_header(index, CS40L5X_HEADER_2), header,
+				   ARRAY_SIZE(header));
 }
 
 static int cs40l5x_upload_pwle_data(const struct device *const dev,
