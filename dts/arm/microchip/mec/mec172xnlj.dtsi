@@ -70,7 +70,7 @@
 		pwm9: pwm@40005890 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005890 0x20>;
-			pcrs = <3 31>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(3, 31)>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -78,7 +78,7 @@
 		pwm10: pwm@400058a0 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x400058a0 0x20>;
-			pcrs = <4 0>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(4, 0)>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -86,7 +86,7 @@
 		pwm11: pwm@400058b0 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x400058b0 0x20>;
-			pcrs = <4 1>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(4, 1)>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
