@@ -859,14 +859,7 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param,
 		}
 		break;
 	case BTP_GAP_ADDR_TYPE_NON_RESOLVABLE_PRIVATE:
-		if (!IS_ENABLED(CONFIG_BT_PRIVACY)) {
-			return -EINVAL;
-		}
-
-		/* NRPA is used only for non-connectable advertising */
-		if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_CONNECTABLE)) {
-			return -EINVAL;
-		}
+		param->options |= BT_LE_ADV_OPT_USE_NRPA;
 		break;
 	default:
 		return -EINVAL;
