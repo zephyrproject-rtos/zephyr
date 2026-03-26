@@ -445,6 +445,7 @@ void net_buf_unref(struct net_buf *buf)
 	while (buf) {
 		struct net_buf *frags = buf->frags;
 		struct net_buf_pool *pool;
+		k_spinlock_key_t key;
 
 		__ASSERT(buf->ref, "buf %p double free", buf);
 		if (!buf->ref) {
@@ -457,19 +458,24 @@ void net_buf_unref(struct net_buf *buf)
 		NET_BUF_DBG("buf %p ref %u pool_id %u frags %p", buf, buf->ref,
 			    buf->pool_id, buf->frags);
 
+		pool = net_buf_pool_get(buf->pool_id);
+
+		key = k_spin_lock(&pool->lock);
+
 		if (--buf->ref > 0) {
+			k_spin_unlock(&pool->lock, key);
 			return;
 		}
 
 		buf->data = NULL;
 		buf->frags = NULL;
 
-		pool = net_buf_pool_get(buf->pool_id);
-
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 		atomic_inc(&pool->avail_count);
 		__ASSERT_NO_MSG(atomic_get(&pool->avail_count) <= pool->buf_count);
 #endif
+
+		k_spin_unlock(&pool->lock, key);
 
 		if (pool->destroy) {
 			pool->destroy(buf);
