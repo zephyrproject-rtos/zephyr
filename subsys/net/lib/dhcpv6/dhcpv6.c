@@ -1834,6 +1834,9 @@ static int dhcpv6_handle_reply(struct net_if *iface, struct net_pkt *pkt,
 			net_dhcpv6_stop(iface);
 			return -EFAULT;
 		}
+
+		NET_INFO("Received: %s",
+			net_sprint_ipv6_addr(&ia_na.iaaddr.addr));
 	}
 
 prefix:
