@@ -1,0 +1,23 @@
+# AD5529R DAC configuration options
+
+# Copyright (c) 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_AD5529R
+	bool "Analog Devices AD5529R DAC driver"
+	default y
+	select SPI
+	depends on DT_HAS_ADI_AD5529R_ENABLED
+	help
+	  Enable the driver for the Analog Devices AD5529R 16-channel,
+	  16-bit voltage output DAC.
+
+if DAC_AD5529R
+
+config DAC_AD5529R_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  Analog Devices AD5529R DAC device driver initialization priority.
+
+endif # DAC_AD5529R
