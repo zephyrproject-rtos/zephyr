@@ -84,6 +84,11 @@ static inline int app_setup_display(const struct device *const display_dev, cons
 			}
 		}
 		break;
+	case VIDEO_PIX_FMT_RGBA32:
+		if (capabilities.current_pixel_format != PIXEL_FORMAT_ABGR_8888) {
+			ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_ABGR_8888);
+		}
+		break;
 	default:
 		LOG_ERR("Display pixel format not supported by this sample");
 		return -ENOTSUP;
