@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2017 Intel Corporation
- * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2025-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,17 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/device.h>
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
+#define WDT_SLEEP_RETENTION_ENABLED 1
+#else
+#define WDT_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if WDT_SLEEP_RETENTION_ENABLED
+#include <hal/mwdt_periph.h>
+#include <esp_private/sleep_retention.h>
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_esp32, CONFIG_WDT_LOG_LEVEL);
@@ -145,6 +156,43 @@ static int wdt_esp32_install_timeout(const struct device *dev,
 	return 0;
 }
 
+#if WDT_SLEEP_RETENTION_ENABLED
+static uint32_t wdt_group_ids[2];
+
+static esp_err_t wdt_create_sleep_retention_cb(void *arg)
+{
+	uint32_t group_id = *(uint32_t *)arg;
+	sleep_retention_module_t module =
+		(group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_WDT : SLEEP_RETENTION_MODULE_TG1_WDT;
+
+	return sleep_retention_entries_create(tg_wdt_regs_retention[group_id].link_list,
+					      tg_wdt_regs_retention[group_id].link_num,
+					      REGDMA_LINK_PRI_SYS_PERIPH_LOW, module);
+}
+
+static void wdt_esp32_sleep_retention_init(uint32_t group_id)
+{
+	sleep_retention_module_t module =
+		(group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_WDT : SLEEP_RETENTION_MODULE_TG1_WDT;
+
+	wdt_group_ids[group_id] = group_id;
+
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = wdt_create_sleep_retention_cb,
+				   .arg = &wdt_group_ids[group_id]}},
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)};
+
+	esp_err_t err = sleep_retention_module_init(module, &init_param);
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_allocate(module);
+	}
+	if (err != ESP_OK) {
+		LOG_WRN("WDT%d sleep retention init failed (%d)", group_id, err);
+	}
+}
+#endif /* WDT_SLEEP_RETENTION_ENABLED */
+
 static int wdt_esp32_init(const struct device *dev)
 {
 	const struct wdt_esp32_config *const config = dev->config;
@@ -169,6 +217,10 @@ static int wdt_esp32_init(const struct device *dev)
 		LOG_ERR("could not allocate interrupt (err %d)", ret);
 		return ret;
 	}
+
+#if WDT_SLEEP_RETENTION_ENABLED
+	wdt_esp32_sleep_retention_init(config->wdt_inst - WDT_MWDT0);
+#endif
 
 	return 0;
 }
