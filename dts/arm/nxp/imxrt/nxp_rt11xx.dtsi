@@ -806,7 +806,7 @@
 		};
 
 		enet1g: ethernet@40420000 {
-			compatible = "nxp,enet1g";
+			compatible = "nxp,enet";
 			reg = <0x40420000 0x628>;
 			clocks = <&ccm IMX_CCM_ENET1G_CLK 0 0>;
 			status = "disabled";
