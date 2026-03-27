@@ -601,6 +601,8 @@ static int uart_async_sf32lb_rx_disable(const struct device *dev)
 	int err;
 	struct uart_event evt = {0};
 
+	key = irq_lock();
+
 	k_work_cancel_delayable(&data->async.rx.timeout_work);
 
 	sf32lb_dma_get_status_dt(&config->rx_dma, &dma_stat);
@@ -608,8 +610,6 @@ static int uart_async_sf32lb_rx_disable(const struct device *dev)
 		err = -EBUSY;
 		goto unlock;
 	}
-
-	key = irq_lock();
 
 	if (data->async.rx.len == 0U) {
 		err = -EINVAL;
@@ -720,6 +720,8 @@ static int uart_async_sf32lb_tx_abort(const struct device *dev)
 	int err;
 	unsigned int key;
 
+	key = irq_lock();
+
 	sf32lb_dma_get_status_dt(&config->tx_dma, &dma_stat);
 	if (dma_stat.busy) {
 		err = -EBUSY;
@@ -727,8 +729,6 @@ static int uart_async_sf32lb_tx_abort(const struct device *dev)
 	}
 
 	k_work_cancel_delayable(&data->async.tx.timeout_work);
-
-	key = irq_lock();
 
 	sys_clear_bit(config->base + UART_CR3, USART_CR3_DMAT_Pos);
 
