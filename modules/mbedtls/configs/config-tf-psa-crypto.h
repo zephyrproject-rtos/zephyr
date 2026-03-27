@@ -7,6 +7,10 @@
 #ifndef TF_PSA_CRYPTO_CONFIG_H
 #define TF_PSA_CRYPTO_CONFIG_H
 
+#if defined(CONFIG_TF_PSA_CRYPTO_USER_CONFIG)
+#define TF_PSA_CRYPTO_USER_CONFIG_FILE CONFIG_TF_PSA_CRYPTO_USER_CONFIG_FILE
+#endif
+
 /*
  * "config-psa.h" contains all the Kconfig -> build symbols matching for
  * the "PSA_WANT_xxx", whereas "config-tf-psa-crypto.h" contains the same
