@@ -446,6 +446,17 @@ static int gpio_dw_initialize(const struct device *port)
 	const struct gpio_dw_config *config = port->config;
 	mm_reg_t base_addr;
 
+#if defined(CONFIG_CLOCK_CONTROL)
+	int ret;
+
+	if (config->clk_dev) {
+		ret = clock_control_on(config->clk_dev, config->clk_id);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+#endif
+
 	DEVICE_MMIO_NAMED_MAP(port, reg_base, K_MEM_CACHE_NONE);
 
 	if (dw_interrupt_support(config)) {
@@ -476,6 +487,15 @@ static int gpio_dw_initialize(const struct device *port)
 			    DEVICE_DT_INST_GET(n), INST_IRQ_FLAGS(n));				\
 		irq_enable(DT_INST_IRQN_BY_IDX(n, idx));					\
 
+#if defined(CONFIG_CLOCK_CONTROL)
+#define CLOCK_DW_CONFIG(n)									\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(0, clocks),						\
+		   (.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),				\
+		    .clk_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, clkid),))
+#else
+#define CLOCK_DW_CONFIG(n)
+#endif
+
 #define GPIO_DW_INIT(n)										\
 	static void gpio_config_##n##_irq(const struct device *port)				\
 	{											\
@@ -489,6 +509,7 @@ static int gpio_dw_initialize(const struct device *port)
 		.irq_num = COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0), (DT_INST_IRQN(n)), (0)),	\
 		.ngpios = DT_INST_PROP(n, ngpios),						\
 		.config_func = gpio_config_##n##_irq,						\
+		CLOCK_DW_CONFIG(n)								\
 	};											\
 												\
 	static struct gpio_dw_runtime gpio_##n##_runtime;					\

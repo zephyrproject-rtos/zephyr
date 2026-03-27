@@ -9,6 +9,9 @@
 
 #include <zephyr/types.h>
 #include <zephyr/drivers/gpio.h>
+#if defined(CONFIG_CLOCK_CONTROL)
+#include <zephyr/drivers/clock_control.h>
+#endif
 #include "gpio_dw_registers.h"
 
 #ifdef __cplusplus
@@ -24,6 +27,10 @@ struct gpio_dw_config {
 	uint32_t ngpios;
 	uint32_t irq_num; /* set to 0 if GPIO port cannot interrupt */
 	gpio_config_irq_t config_func;
+#if defined(CONFIG_CLOCK_CONTROL)
+	const struct device *clk_dev;
+	const clock_control_subsys_t clk_id;
+#endif
 };
 
 struct gpio_dw_runtime {
