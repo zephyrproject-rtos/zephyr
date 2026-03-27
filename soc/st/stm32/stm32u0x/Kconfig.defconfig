@@ -5,9 +5,18 @@
 
 if SOC_SERIES_STM32U0X
 
+configdefault SHARED_INTERRUPTS
+	# USART2 - LPUART2 : IRQn 28
+	default y if $(dt_nodelabel_enabled,usart2) && $(dt_nodelabel_enabled,lpuart2)
+	# USART3 - LPUART1 : IRQn 29
+	default y if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,lpuart1)
+	# USART4 - LPUART3 : IRQn 30
+	default y if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,lpuart3)
+
 if I2C_STM32
 
 configdefault SHARED_INTERRUPTS
+	# I2C2 - I2C3 - I2C4 : IRQn 24
 	default y if $(dt_nodelabel_enabled,i2c2) && $(dt_nodelabel_enabled,i2c3)
 	default y if $(dt_nodelabel_enabled,i2c2) && $(dt_nodelabel_enabled,i2c4)
 	default y if $(dt_nodelabel_enabled,i2c3) && $(dt_nodelabel_enabled,i2c4)

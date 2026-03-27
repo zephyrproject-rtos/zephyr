@@ -15,4 +15,129 @@ config TASK_WDT_HW_FALLBACK_DELAY
 	depends on TASK_WDT_HW_FALLBACK
 	default 100
 
+# USARTs 3-8 share IRQn 29 on various F0 variants (f030Xc, f070Xb, f071,
+# f072, f091, f098).  The exact set of nodes present depends on the SoC;
+# dt_nodelabel_enabled evaluates to false for nodes that do not exist, so
+# listing all pairwise combinations here is safe.
+# Note: the C(6,N) combinations below were generated programmatically.
+#
+# SHARED_IRQ_MAX_NUM_CLIENTS: set to the total count of enabled UART
+# instances on IRQn 29.  Because Kconfig defaults are evaluated in order,
+# list from highest to lowest.  Only variants with >=3 enabled instances
+# need an explicit entry (the Kconfig default of 2 covers pairs).
+configdefault SHARED_IRQ_MAX_NUM_CLIENTS
+	# All six (f091/f098 only)
+	default 6 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) \
+		&& $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6) \
+		&& $(dt_nodelabel_enabled,usart7) && $(dt_nodelabel_enabled,usart8)
+	# Five of six (f091/f098)
+	default 5 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) \
+		&& $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6) \
+		&& $(dt_nodelabel_enabled,usart7)
+	default 5 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) \
+		&& $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6) \
+		&& $(dt_nodelabel_enabled,usart8)
+	default 5 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) \
+		&& $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart7) \
+		&& $(dt_nodelabel_enabled,usart8)
+	default 5 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) \
+		&& $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,usart7) \
+		&& $(dt_nodelabel_enabled,usart8)
+	default 5 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart5) \
+		&& $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,usart7) \
+		&& $(dt_nodelabel_enabled,usart8)
+	default 5 if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5) \
+		&& $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,usart7) \
+		&& $(dt_nodelabel_enabled,usart8)
+	# Four of six (f030Xc or f091/f098 with some disabled)
+	default 4 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) \
+		&& $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6)
+	default 4 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) \
+		&& $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart7)
+	default 4 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) \
+		&& $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart8)
+	default 4 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) \
+		&& $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,usart7)
+	default 4 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) \
+		&& $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,usart8)
+	default 4 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) \
+		&& $(dt_nodelabel_enabled,usart7) && $(dt_nodelabel_enabled,usart8)
+	default 4 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart5) \
+		&& $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,usart7)
+	default 4 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart5) \
+		&& $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,usart8)
+	default 4 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart5) \
+		&& $(dt_nodelabel_enabled,usart7) && $(dt_nodelabel_enabled,usart8)
+	default 4 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart6) \
+		&& $(dt_nodelabel_enabled,usart7) && $(dt_nodelabel_enabled,usart8)
+	default 4 if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5) \
+		&& $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,usart7)
+	default 4 if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5) \
+		&& $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,usart8)
+	default 4 if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5) \
+		&& $(dt_nodelabel_enabled,usart7) && $(dt_nodelabel_enabled,usart8)
+	default 4 if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart6) \
+		&& $(dt_nodelabel_enabled,usart7) && $(dt_nodelabel_enabled,usart8)
+	default 4 if $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6) \
+		&& $(dt_nodelabel_enabled,usart7) && $(dt_nodelabel_enabled,usart8)
+	# Three of six
+	default 3 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) \
+		&& $(dt_nodelabel_enabled,usart5)
+	default 3 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) \
+		&& $(dt_nodelabel_enabled,usart6)
+	default 3 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) \
+		&& $(dt_nodelabel_enabled,usart7)
+	default 3 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) \
+		&& $(dt_nodelabel_enabled,usart8)
+	default 3 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart5) \
+		&& $(dt_nodelabel_enabled,usart6)
+	default 3 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart5) \
+		&& $(dt_nodelabel_enabled,usart7)
+	default 3 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart5) \
+		&& $(dt_nodelabel_enabled,usart8)
+	default 3 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart6) \
+		&& $(dt_nodelabel_enabled,usart7)
+	default 3 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart6) \
+		&& $(dt_nodelabel_enabled,usart8)
+	default 3 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart7) \
+		&& $(dt_nodelabel_enabled,usart8)
+	default 3 if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5) \
+		&& $(dt_nodelabel_enabled,usart6)
+	default 3 if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5) \
+		&& $(dt_nodelabel_enabled,usart7)
+	default 3 if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5) \
+		&& $(dt_nodelabel_enabled,usart8)
+	default 3 if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart6) \
+		&& $(dt_nodelabel_enabled,usart7)
+	default 3 if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart6) \
+		&& $(dt_nodelabel_enabled,usart8)
+	default 3 if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart7) \
+		&& $(dt_nodelabel_enabled,usart8)
+	default 3 if $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6) \
+		&& $(dt_nodelabel_enabled,usart7)
+	default 3 if $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6) \
+		&& $(dt_nodelabel_enabled,usart8)
+	default 3 if $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart7) \
+		&& $(dt_nodelabel_enabled,usart8)
+	default 3 if $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,usart7) \
+		&& $(dt_nodelabel_enabled,usart8)
+
+configdefault SHARED_INTERRUPTS
+	# USART3/4/5/6/7/8 : IRQn 29 (subset depends on SoC variant)
+	default y if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4)
+	default y if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart5)
+	default y if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart6)
+	default y if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart7)
+	default y if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart8)
+	default y if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5)
+	default y if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart6)
+	default y if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart7)
+	default y if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart8)
+	default y if $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6)
+	default y if $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart7)
+	default y if $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart8)
+	default y if $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,usart7)
+	default y if $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,usart8)
+	default y if $(dt_nodelabel_enabled,usart7) && $(dt_nodelabel_enabled,usart8)
+
 endif # SOC_SERIES_STM32F0X

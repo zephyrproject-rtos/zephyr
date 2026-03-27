@@ -20,10 +20,9 @@
 		};
 
 		/*
-		 * USARTs 3-6 share the same IRQ on stm32f030Xc devices. This
-		 * configuration is not currently supported, so at most one of
-		 * these may be enabled at a time. Enabling more than one will
-		 * result in a build failure.
+		 * USARTs 3-6 share the same IRQ on STM32F030xC devices.
+		 * CONFIG_SHARED_INTERRUPTS is enabled by default by the
+		 * SoC Kconfig when two or more of these are active.
 		 */
 		usart3: serial@40004800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";

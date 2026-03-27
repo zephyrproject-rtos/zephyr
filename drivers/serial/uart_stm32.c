@@ -2589,9 +2589,34 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 
 #define STM32_UART_IRQ_HANDLER_FUNC(index)					\
 	.irq_config_func = uart_stm32_irq_config_func_##index,
+
+/*
+ * Detect at build time if multiple enabled UART instances share the same IRQ
+ * number (common on STM32G0, STM32F0, and similar series with limited NVIC
+ * lines). When sharing is detected, CONFIG_SHARED_INTERRUPTS must be enabled
+ * so gen_isr_tables can wire up z_shared_isr to dispatch to each driver ISR.
+ * This could be detected and reported by gen_isr_table with a user-friendly
+ * error message but is not done today. This should be dropped when a more
+ * generic solution is implemented at gen_isr_table level.
+ */
+#define STM32_UART_COUNT_MATCHING_IRQ(inst, irq_num)				\
+	+ ((DT_INST_IRQN(inst) == (irq_num)) ? 1 : 0)
+
+#define STM32_UART_CHECK_SHARED_IRQ(index)					\
+	BUILD_ASSERT(								\
+		(0 DT_INST_FOREACH_STATUS_OKAY_VARGS(				\
+			STM32_UART_COUNT_MATCHING_IRQ,				\
+			DT_INST_IRQN(index))) <= 1 ||				\
+		IS_ENABLED(CONFIG_SHARED_INTERRUPTS),				\
+		"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
+		" shares its interrupt line with another "			\
+		"st,stm32-uart instance: "					\
+		"enable CONFIG_SHARED_INTERRUPTS");
+
 #else
 #define STM32_UART_IRQ_HANDLER_DEFINE(index) /* Not used */
 #define STM32_UART_IRQ_HANDLER_FUNC(index) /* Not used */
+#define STM32_UART_CHECK_SHARED_IRQ(index) /* Not used */
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM */
 
 #ifdef CONFIG_UART_ASYNC_API
@@ -2750,6 +2775,7 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 	STM32_UART_CHECK_DT_PARITY(index)					\
 	STM32_UART_CHECK_DT_DATA_BITS(index)					\
 	STM32_UART_CHECK_DT_STOP_BITS_0_5(index)				\
-	STM32_UART_CHECK_DT_STOP_BITS_1_5(index)
+	STM32_UART_CHECK_DT_STOP_BITS_1_5(index)				\
+	STM32_UART_CHECK_SHARED_IRQ(index)
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_UART_INIT)
