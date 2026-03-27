@@ -428,16 +428,30 @@ int add_ptr_record(const struct dns_sd_rec *inst, uint32_t ttl,
 
 	/* copy the service name. e.g. "._foo._tcp.local." */
 	for (i = 1; i < ARRAY_SIZE(labels); ++i) {
-		label_size = strlen(labels[i]);
-		buf[offset++] = strlen(labels[i]);
-		memcpy(&buf[offset], labels[i], label_size);
-		offset += label_size;
-		if (i == ARRAY_SIZE(labels) - 1) {
-			/* terminator */
-			buf[offset++] = '\0';
+		/* Hardcoded for Airprint. Only works for IPP, not IPPS! */
+		if (i == 1 && strcmp(labels[i], "_universal._sub._ipp") == 0) {
+			/* This is absolutely not safe, since memory size is checked above but does not take into account these longer responses.
+			But in practice, since PTR is the first record, there should be sufficient memory. */
+			int bytes_written = sprintf(&buf[offset], "%c%s%c%s%c%s", 10, "_universal", 4, "_sub", 4, "_ipp");
+			// TODO: IPPS?
+			offset += bytes_written;
+			/* service offset is updated to point to _ipp instead of to _universal._sub._ipp.
+			Reason: the reported service should always be the main type, not the subtype. */
+			svc_offs += 16;
+			*service_offset = svc_offs;
+		} else {
+			label_size = strlen(labels[i]);
+			buf[offset++] = strlen(labels[i]);
+			memcpy(&buf[offset], labels[i], label_size);
+			offset += label_size;
+			if (i == ARRAY_SIZE(labels) - 1) {
+				/* terminator */
+				buf[offset++] = '\0';
+			}
 		}
 	}
 
+	/* This assert no longer holds due to the airprint changes in the code above */
 	__ASSERT_NO_MSG(svc_offs + sp_size == offset);
 
 	rr = (struct dns_rr *)&buf[offset];
