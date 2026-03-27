@@ -13,7 +13,4 @@ testing:
   ignore_tags:
     - net
     - bluetooth
-  only_tags:
-    - kernel
-    - arch
 vendor: qemu
