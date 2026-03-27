@@ -166,7 +166,16 @@ int boot_read_bank_header(uint8_t area_id,
  *
  * @return flash area id for the active image slot
  */
-uint8_t boot_fetch_active_slot(void);
+uint8_t boot_fetch_active_slot_area_id(void);
+
+/**
+ * @brief Get slot number of the active image.
+ *
+ * Note that slot number may be different from area id or partition id.
+ *
+ * @return slot number of the active image
+ */
+uint8_t boot_fetch_active_slot_number(void);
 
 /**
  * @brief Check if the currently running image is confirmed as OK.

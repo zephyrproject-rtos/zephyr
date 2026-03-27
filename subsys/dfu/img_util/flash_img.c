@@ -265,7 +265,7 @@ uint8_t flash_img_get_upload_slot(void)
 {
 	uint8_t slot;
 
-	slot = boot_fetch_active_slot();
+	slot = boot_fetch_active_slot_area_id();
 
 	if (slot == PARTITION_ID(slot0_partition)) {
 		return PARTITION_ID(slot1_partition);

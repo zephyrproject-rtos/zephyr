@@ -8,6 +8,10 @@ if BOARD_FRDM_RW612
 configdefault NET_L2_ETHERNET
 	default y if DT_HAS_NXP_ENET_MAC_ENABLED
 
+# MCUboot header must be padded to remapping alignment when HW_IMAGE_SWAP is used
+config ROM_START_OFFSET
+	default 0x1000 if BOOTLOADER_MCUBOOT && MEMC_MCUX_FLEXSPI_PROVIDE_HW_IMAGE_SWAP
+
 if LVGL
 
 # Enable DMA for LCDIC

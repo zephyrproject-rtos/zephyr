@@ -146,6 +146,8 @@ arduino_i2c: &flexcomm2 {
 	rx-clock-source-b = <3>;
 	pinctrl-0 = <&pinmux_flexspi>;
 	pinctrl-names = "default";
+	nxp,remap-alignment = <4096>;
+	nxp,remap-provide-hwimageswap;
 	status = "okay";
 
 	ext_flash_ctrl: flash-controller@0 {
