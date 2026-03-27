@@ -23,7 +23,9 @@
 LOG_MODULE_REGISTER(usdhc, CONFIG_SDHC_LOG_LEVEL);
 
 #include <fsl_usdhc.h>
+#ifdef CONFIG_HAS_MCUX_CACHE
 #include <fsl_cache.h>
+#endif
 #include <zephyr/irq.h>
 
 enum transfer_callback_status {
