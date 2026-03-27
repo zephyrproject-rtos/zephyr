@@ -1624,3 +1624,8 @@ test_i2c_htu31d: htu31d@d2 {
 	compatible = "meas,htu31d";
 	reg = <0xd2>;
 };
+
+test_i2c_ms5637: ms5637@d3 {
+	compatible = "meas,ms5637";
+	reg = <0xd3>;
+};
