@@ -57,6 +57,8 @@ The following CVEs are addressed by this release:
 * :cve:`2026-1679` `Zephyr project bug tracker GHSA-qx3g-5g22-fq5w
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-qx3g-5g22-fq5w>`_
 
+* :cve:`2026-1681` Under embargo until 2026-04-15
+
 * :cve:`2026-4179` `Zephyr project bug tracker GHSA-9xg7-g3q3-9prf
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-9xg7-g3q3-9prf>`_
 
