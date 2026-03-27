@@ -8,7 +8,7 @@ menu "Mbed TLS configuration"
 	depends on MBEDTLS_BUILTIN
 
 config MBEDTLS_CONFIG_FILE
-	string "mbed TLS configuration file"
+	string "Mbed TLS configuration file"
 	default MBEDTLS_CFG_FILE if MBEDTLS_CFG_FILE != "" # deprecated
 	default "config-mbedtls.h"
 	help
@@ -18,6 +18,17 @@ config MBEDTLS_CONFIG_FILE
 	  but has relatively many features enabled. To optimize resources for
 	  special TLS usage, use available Kconfig options, or select an
 	  alternative config.
+
+config MBEDTLS_USER_CONFIG_FILE
+	string "User configuration file for Mbed TLS"
+	default MBEDTLS_CFG_FILE if MBEDTLS_USER_CONFIG_ENABLE
+	help
+	  If defined, this is a header which will be included after MBEDTLS_CONFIG_FILE.
+	  This allows you to modify the default configuration,
+	  including the ability to undefine options that are enabled.
+
+config MBEDTLS_USER_CONFIG
+	def_bool MBEDTLS_USER_CONFIG_FILE != ""
 
 menu "TLS"
 
@@ -163,18 +174,6 @@ endmenu
 
 config MBEDTLS_DEBUG_C
 	bool "Debug functions (only for TLS and X.509)"
-
-config MBEDTLS_USER_CONFIG_ENABLE
-	bool "User mbedTLS config file"
-	help
-	  Enable user mbedTLS config file that will be included at the end of
-	  the generic config file.
-
-config MBEDTLS_USER_CONFIG_FILE
-	string "User configuration file for mbed TLS" if MBEDTLS_USER_CONFIG_ENABLE
-	help
-	  User config file that can contain mbedTLS configs that were not
-	  covered by the generic config file.
 
 config MBEDTLS_SSL_SERVER_NAME_INDICATION
 	bool "Support for RFC 6066 server name indication (SNI) in SSL"

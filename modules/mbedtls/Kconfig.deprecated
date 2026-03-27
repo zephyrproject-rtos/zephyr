@@ -13,6 +13,12 @@ config MBEDTLS_CFG_FILE_DEPRECATED
 	def_bool MBEDTLS_CFG_FILE != ""
 	select DEPRECATED
 
+config MBEDTLS_USER_CONFIG_ENABLE
+	bool "User mbedTLS config file [DEPRECATED]"
+	select DEPRECATED
+	help
+	  This Kconfig option is deprecated. Define MBEDTLS_USER_CONFIG_FILE directly instead.
+
 config MBEDTLS_MD
 	bool "Generic message digest layer [DEPRECATED]"
 	select DEPRECATED
