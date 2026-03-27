@@ -112,3 +112,9 @@ tests:
   sample.net.sockets.echo_client.802154.subg:
     extra_args: EXTRA_CONF_FILE="overlay-802154-subg.conf"
     platform_allow: beagleconnect_freedom
+  sample.net.sockets.echo_client.wifi.nrf70dk:
+    extra_args:
+      - SNIPPET=wifi-ipv4
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    platform_allow:
+      - nrf7002dk/nrf5340/cpuapp
