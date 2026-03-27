@@ -9,6 +9,7 @@
 #include <zephyr/usb/usbh.h>
 
 #include "usbh_ch9.h"
+#include "usbh_desc.h"
 #include "usbh_device.h"
 
 #include <zephyr/logging/log.h>
@@ -40,7 +41,9 @@ USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
 static int test_cmp_string_desc(struct net_buf *const buf, const int idx)
 {
 	static struct usbd_desc_node *desc_nd;
-	size_t len;
+	char ascii_str[253];
+	uint16_t len;
+	int err;
 
 	if (idx == test_mfg.str.idx) {
 		desc_nd = &test_mfg;
@@ -52,19 +55,15 @@ static int test_cmp_string_desc(struct net_buf *const buf, const int idx)
 		return -ENOTSUP;
 	}
 
-	if (net_buf_pull_u8(buf) != desc_nd->bLength) {
-		return -EINVAL;
+	err = usbh_desc_str_utf16le_to_ascii(buf, ascii_str, sizeof(ascii_str));
+	if (err != 0) {
+		return err;
 	}
 
-	if (net_buf_pull_u8(buf) != USB_DESC_STRING) {
-		return -EINVAL;
-	}
-
-	LOG_HEXDUMP_DBG(buf->data, buf->len, "");
-	len = MIN(buf->len / 2, desc_nd->bLength / 2);
+	len = MIN(sizeof(ascii_str), desc_nd->bLength / 2);
 	for (size_t i = 0; i < len; i++) {
-		uint16_t a = net_buf_pull_le16(buf);
-		uint16_t b = ((uint8_t *)(desc_nd->ptr))[i];
+		char a = ascii_str[i];
+		char b = ((uint8_t *)(desc_nd->ptr))[i];
 
 		if (a != b) {
 			LOG_INF("%c != %c", a, b);
@@ -77,9 +76,9 @@ static int test_cmp_string_desc(struct net_buf *const buf, const int idx)
 
 ZTEST(device_next, test_get_desc_string)
 {
-	const uint8_t type = USB_DESC_STRING;
-	const uint16_t id = 0x0409;
 	static struct usb_device *udev;
+	const uint16_t our_id = 0x0409;
+	uint16_t lang_ids[2];
 	struct net_buf *buf;
 	int err;
 
@@ -92,19 +91,25 @@ ZTEST(device_next, test_get_desc_string)
 	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
 	zassert_equal(err, 0, "Failed to lock device");
 
-	err = usbh_req_desc(udev, type, 1, id, UINT8_MAX, buf);
+	err = usbh_desc_get_supported_langs(udev, lang_ids, ARRAY_SIZE(lang_ids));
+	zassert_true(err > 0, 0, "Failed to get LANGIDs");
+
+	zassert_true(err == 1, 0, "Wrong number of LANGIDs");
+	zassert_equal(lang_ids[0], our_id, "Wrong LANGID");
+
+	err = usbh_req_desc_str(udev, 1, our_id, buf);
 	zassert_equal(err, 0, "Transfer status is an error");
 	err = test_cmp_string_desc(buf, 1);
 	zassert_equal(err, 0, "Descriptor comparison failed");
 
 	net_buf_reset(buf);
-	err = usbh_req_desc(udev, type, 2, id, UINT8_MAX, buf);
+	err = usbh_req_desc_str(udev, 2, our_id, buf);
 	zassert_equal(err, 0, "Transfer status is an error");
 	err = test_cmp_string_desc(buf, 2);
 	zassert_equal(err, 0, "Descriptor comparison failed");
 
 	net_buf_reset(buf);
-	err = usbh_req_desc(udev, type, 3, id, UINT8_MAX, buf);
+	err = usbh_req_desc_str(udev, 3, our_id, buf);
 	zassert_equal(err, 0, "Transfer status is an error");
 	err = test_cmp_string_desc(buf, 3);
 	zassert_equal(err, 0, "Descriptor comparison failed");
