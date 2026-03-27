@@ -17,3 +17,5 @@ zephyr_code_relocate_ifdef(CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL70X_L
 zephyr_code_relocate_ifdef(CONFIG_CACHE_BFLB_L1C LIBRARY drivers__cache LOCATION ITCM NOKEEP)
 zephyr_code_relocate_ifdef(CONFIG_SOC_FLASH_BFLB FILES ${ZEPHYR_BASE}/drivers/flash/flash_bflb.c
   LOCATION ITCM NOKEEP)
+zephyr_code_relocate_ifdef(CONFIG_FLASH_BFLB_BL70X_L_PSRAM
+  FILES ${ZEPHYR_BASE}/drivers/flash/flash_bflb_bl70x_l_psram.c LOCATION ITCM NOKEEP)
