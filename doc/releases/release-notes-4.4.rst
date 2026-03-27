@@ -1508,6 +1508,9 @@ Other notable changes
 * NXP SoC DTSI files have been reorganized by moving them into family-specific
   subdirectories under ``dts/arm/nxp``.
 
+* :zephyr:board:`native_sim` based targets can now be :ref:`cross-compiled<posix_arch_cross_compile>`
+  (:github:`100182`)
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
