@@ -8,6 +8,16 @@ config TF_PSA_CRYPTO_CONFIG_FILE
 	  Specify the configuration header file to be used when building
 	  TF-PSA-Crypto. The default one can be tweaked with Kconfig.
 
+config TF_PSA_CRYPTO_USER_CONFIG_FILE
+	string "User configuration file for TF-PSA-Crypto"
+	help
+	  If defined, this is a header which will be included after TF_PSA_CRYPTO_CONFIG_FILE.
+	  This allows you to modify the default configuration,
+	  including the ability to undefine options that are enabled.
+
+config TF_PSA_CRYPTO_USER_CONFIG
+	def_bool TF_PSA_CRYPTO_USER_CONFIG_FILE != ""
+
 config MBEDTLS_ECP_NIST_OPTIM
 	bool "NIST curves optimization"
 	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
