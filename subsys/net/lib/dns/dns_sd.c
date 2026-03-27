@@ -807,6 +807,17 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct in_addr 
 	rsp->ancount++;
 	offset += r;
 
+	if (strcmp(inst->service, "_universal._sub._ipp") == 0) {
+		/* Airprint specific change:
+		 	If the service subtype is reported (PTR), the main service also needs to be reported in an additional PTR record.
+			This can be done by actually copying the first PTR record excluding the first "._universal._sub" (16 bytes on the wire).
+			This memcpy is safe since it does not involve overlapping regions. */
+		uint16_t new_ptr_record_size = offset - sizeof(struct dns_header) - 16;
+		memcpy(&buf[offset], &buf[sizeof(struct dns_header)] + 16, new_ptr_record_size);
+		offset += new_ptr_record_size;
+		rsp->ancount++;
+	}
+
 	/* then add the additional records */
 	r = add_txt_record(inst, DNS_SD_TXT_TTL, instance_offset, buf, offset, buf_size - offset);
 	if (r < 0) {
