@@ -628,3 +628,8 @@ extern "C" void platformRadioProcess(otInstance *aInstance)
 	psSpinelDriver->Process(aInstance);
 	psRadioSpinel->Process(aInstance);
 }
+
+extern "C" void *platformGetRadioSpinel(void)
+{
+    return psRadioSpinel;
+}
