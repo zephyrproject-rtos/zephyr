@@ -2437,11 +2437,6 @@ __maybe_unused static void numaker_usbd_isr(const struct device *dev)
 		numaker_usbd_sof_th(dev);
 	}
 
-	/* Setup event */
-	if (usbd_intsts & USBD_INTSTS_SETUP) {
-		numaker_usbd_setup_th(dev);
-	}
-
 	/* Endpoint events */
 	if (usbd_intsts & USBD_INTSTS_USB) {
 		uint32_t epintsts;
@@ -2460,6 +2455,19 @@ __maybe_unused static void numaker_usbd_isr(const struct device *dev)
 			/* Have handled this EP and go next */
 			epintsts &= ~BIT(ep_hw_idx);
 		}
+	}
+
+	/* Setup event
+	 *
+	 * This must be placed in back of Data/Status so that the
+	 * order Data/Status->Setup can be kept when both flags are
+	 * asserted at the same time for delayed message handling.
+	 * Both flags asserted for the order Setup->Data/Status is an
+	 * error condition because the Data/Status transfer won't be
+	 * armed until the Setup packet is processed.
+	 */
+	if (usbd_intsts & USBD_INTSTS_SETUP) {
+		numaker_usbd_setup_th(dev);
 	}
 }
 
