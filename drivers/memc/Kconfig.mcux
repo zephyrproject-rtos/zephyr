@@ -85,6 +85,18 @@ config FLASH_MCUX_FLEXSPI_OVRDVAL
 	help
 	  Raw value to be stored in the DDLCR->OVRDVAL field.
 
+DT_FLEXSPI_REMAP_PROP := nxp,remap-provide-hwimageswap
+
+config MEMC_MCUX_FLEXSPI_PROVIDE_HW_IMAGE_SWAP
+	bool "Use FlexSPI address remapping for swapping MCUboot's images"
+	default y
+	depends on MEMC_MCUX_FLEXSPI
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_IMX_FLEXSPI),$(DT_FLEXSPI_REMAP_PROP),True)
+	help
+	  FlexSPI supports address remapping which can be used for zero overhead
+	  image swapping. MCUboot must be configured to use DIRECT_XIP based mode
+	  together with BOOT_HW_IMAGE_SWAP option.
+
 config MEMC_MCUX_FLEXSPI
 	bool
 	select PINCTRL

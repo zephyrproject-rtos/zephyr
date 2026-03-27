@@ -87,7 +87,7 @@ static const char *swap_state_flag_str(uint8_t flag)
 static int cmd_mcuboot_erase(const struct shell *sh, size_t argc,
 			     char **argv)
 {
-	unsigned int id;
+	unsigned int id, active_slot;
 	int err;
 
 	id = strtoul(argv[1], NULL, 0);
@@ -100,12 +100,17 @@ static int cmd_mcuboot_erase(const struct shell *sh, size_t argc,
 	}
 #endif
 
-#if DT_PARTITION_EXISTS(DT_CHOSEN(zephyr_code_partition))
-	if (id == DT_PARTITION_ID(DT_CHOSEN(zephyr_code_partition))) {
+	active_slot = boot_fetch_active_slot_area_id();
+
+	if (active_slot == BOOT_INVALID_SLOT_ID) {
+		shell_error(sh, "Failed to determive active partition");
+		return -EFAULT;
+	}
+
+	if (id == active_slot) {
 		shell_error(sh, "Cannot erase active partitions");
 		return -EACCES;
 	}
-#endif
 
 	err = boot_erase_img_bank(id);
 	if (err) {

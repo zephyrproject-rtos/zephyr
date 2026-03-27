@@ -161,6 +161,14 @@ config MCUBOOT_DIRECT_XIP_GENERATE_VARIANT
 	  as the main image, with an extra dts overlay that changes the chosen flash partition to
 	  slot1_partition, and will be named ``<app>_slot_1_variant``.
 
+config MCUBOOT_DIRECT_XIP_USE_HW_IMAGE_SWAP
+	bool "Image swapping by HW in combination with DirectXIP based mode"
+	depends on MCUBOOT_MODE_DIRECT_XIP || MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT
+	help
+	  This enables HW image swapping on the bootloader and application side. This is only
+	  possible in combination with DirectXIP based mode and HW with memory controller that
+	  implements some way of address remapping.
+
 config MCUBOOT_MODE_FIRMWARE_UPDATER_BOOT_MODE_ENTRANCE
 	bool "Firmware updater retention boot mode entrance"
 	depends on MCUBOOT_MODE_FIRMWARE_UPDATER
