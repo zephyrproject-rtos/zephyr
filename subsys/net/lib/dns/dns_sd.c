@@ -798,7 +798,7 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct in_addr 
 	}
 
 	/* first add the answer record */
-	r = add_ptr_record(inst, DNS_SD_PTR_TTL, buf, offset, buf_size - offset, &service_offset,
+	r = add_ptr_record(inst, DNS_SD_PTR_TTL, buf, offset, buf_size, &service_offset,
 			   &instance_offset, &domain_offset);
 	if (r < 0) {
 		return r; /* LCOV_EXCL_LINE */
@@ -819,7 +819,7 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct in_addr 
 	}
 
 	/* then add the additional records */
-	r = add_txt_record(inst, DNS_SD_TXT_TTL, instance_offset, buf, offset, buf_size - offset);
+	r = add_txt_record(inst, DNS_SD_TXT_TTL, instance_offset, buf, offset, buf_size);
 	if (r < 0) {
 		return r; /* LCOV_EXCL_LINE */
 	}
@@ -828,7 +828,7 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct in_addr 
 	offset += r;
 
 	r = add_srv_record(inst, DNS_SD_SRV_TTL, instance_offset, domain_offset, buf, offset,
-			   buf_size - offset, &host_offset);
+			   buf_size, &host_offset);
 	if (r < 0) {
 		return r; /* LCOV_EXCL_LINE */
 	}
@@ -838,7 +838,7 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct in_addr 
 
 	if (addr6 != NULL) {
 		r = add_aaaa_record(inst, DNS_SD_AAAA_TTL, host_offset, addr6->s6_addr, buf, offset,
-				    buf_size - offset); /* LCOV_EXCL_LINE */
+				    buf_size); /* LCOV_EXCL_LINE */
 		if (r < 0) {
 			return r; /* LCOV_EXCL_LINE */
 		}
@@ -850,7 +850,7 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct in_addr 
 	if (addr4 != NULL) {
 		tmp = htonl(*(addr4->s4_addr32));
 		r = add_a_record(inst, DNS_SD_A_TTL, host_offset, tmp, buf, offset,
-				 buf_size - offset);
+				 buf_size);
 		if (r < 0) {
 			return r; /* LCOV_EXCL_LINE */
 		}
