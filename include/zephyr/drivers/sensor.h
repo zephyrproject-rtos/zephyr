@@ -71,19 +71,19 @@ enum sensor_channel {
 	SENSOR_CHAN_ACCEL_Z,
 	/** Acceleration on the X, Y and Z axes. */
 	SENSOR_CHAN_ACCEL_XYZ,
-	/** Angular velocity around the X axis, in radians/s. */
+	/** Angular velocity around the X axis, in rad/s. */
 	SENSOR_CHAN_GYRO_X,
-	/** Angular velocity around the Y axis, in radians/s. */
+	/** Angular velocity around the Y axis, in rad/s. */
 	SENSOR_CHAN_GYRO_Y,
-	/** Angular velocity around the Z axis, in radians/s. */
+	/** Angular velocity around the Z axis, in rad/s. */
 	SENSOR_CHAN_GYRO_Z,
 	/** Angular velocity around the X, Y and Z axes. */
 	SENSOR_CHAN_GYRO_XYZ,
-	/** Magnetic field on the X axis, in Gauss. */
+	/** Magnetic field on the X axis, in G. */
 	SENSOR_CHAN_MAGN_X,
-	/** Magnetic field on the Y axis, in Gauss. */
+	/** Magnetic field on the Y axis, in G. */
 	SENSOR_CHAN_MAGN_Y,
-	/** Magnetic field on the Z axis, in Gauss. */
+	/** Magnetic field on the Z axis, in G. */
 	SENSOR_CHAN_MAGN_Z,
 	/** Magnetic field on the X, Y and Z axes. */
 	SENSOR_CHAN_MAGN_XYZ,
@@ -226,7 +226,7 @@ enum sensor_channel {
 	SENSOR_CHAN_GAME_ROTATION_VECTOR,
 	/** Gravity Vector (X/Y/Z components in m/s^2) */
 	SENSOR_CHAN_GRAVITY_VECTOR,
-	/** Gyroscope bias (X/Y/Z components in radians/s) */
+	/** Gyroscope bias (X/Y/Z components in rad/s) */
 	SENSOR_CHAN_GBIAS_XYZ,
 
 	/** Raw quadrature decoder count, in counts */
