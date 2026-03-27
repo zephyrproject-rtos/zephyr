@@ -16,6 +16,7 @@
 
 #include <driverlib/clkctl.h>
 #include <driverlib/gpio.h>
+#include <driverlib/ioc.h>
 #include <inc/hw_ioc.h>
 #include <inc/hw_types.h>
 
@@ -33,11 +34,6 @@ struct gpio_cc23x0_data {
 	struct gpio_driver_data common;
 	sys_slist_t callbacks;
 };
-
-static void set_pin_mask_non_atomic(uint8_t index, uint32_t registerBaseAddress)
-{
-	GPIOSetConfigDio(GPIO_BASE + registerBaseAddress, BIT(index));
-}
 
 static int gpio_cc23x0_config(const struct device *port, gpio_pin_t pin, gpio_flags_t flags)
 {
@@ -77,7 +73,7 @@ static int gpio_cc23x0_config(const struct device *port, gpio_pin_t pin, gpio_fl
 		config |= IOC_IOC0_INPEN_EN | IOC_IOC0_HYSTEN_EN;
 	}
 
-	GPIOSetConfigDio(iocfg_reg, config);
+	IOCSetConfigAndMux(pin, config, IOC_MUX_GPIO);
 
 	if (flags & GPIO_OUTPUT) {
 
@@ -98,8 +94,8 @@ static int gpio_cc23x0_config(const struct device *port, gpio_pin_t pin, gpio_fl
 static int gpio_cc23x0_get_config(const struct device *port, gpio_pin_t pin, gpio_flags_t *flags)
 {
 	uint32_t out_flag = 0;
-	uint32_t iocfg_reg = IOC_ADDR(pin);
-	uint32_t config = GPIOGetConfigDio(iocfg_reg);
+
+	uint32_t config = IOCGetConfig(pin);
 
 	/* GPIO input/output configuration flags */
 	if (config & IOC_IOC0_INPEN_EN) {
@@ -111,7 +107,7 @@ static int gpio_cc23x0_get_config(const struct device *port, gpio_pin_t pin, gpi
 
 		if (GPIOReadDioOutputBuffer(pin)) {
 
-			outFlag |= GPIO_OUTPUT_INIT_HIGH;
+			out_flag |= GPIO_OUTPUT_INIT_HIGH;
 		} else {
 			/* This is the default value. If not explicitly set,
 			 * the returned config will not be symmetric
@@ -139,9 +135,9 @@ static int gpio_cc23x0_get_config(const struct device *port, gpio_pin_t pin, gpi
 	/* GPIO pin drive flags */
 	if (!(config & IOC_IOC0_IOMODE_NORMAL)) {
 		if (config & IOC_IOC0_IOMODE_OPEND) {
-			outFlag |= GPIO_OPEN_DRAIN;
+			out_flag |= GPIO_OPEN_DRAIN;
 		} else if (config & IOC_IOC0_IOMODE_OPENS) {
-			outFlag |= GPIO_OPEN_SOURCE;
+			out_flag |= GPIO_OPEN_SOURCE;
 		}
 	}
 
@@ -154,10 +150,10 @@ static int gpio_cc23x0_get_config(const struct device *port, gpio_pin_t pin, gpi
 	}
 
 	if (config & IOC_IOC0_WUENSB) {
-		outFlag |= GPIO_INT_WAKEUP;
+		out_flag |= GPIO_INT_WAKEUP;
 	}
 
-	*flags = outFlag;
+	*flags = out_flag;
 
 	return 0;
 }
@@ -205,15 +201,15 @@ static int gpio_cc23x0xx_pin_interrupt_configure(const struct device *port, gpio
 		return -ENOTSUP;
 	}
 
-	uint32_t config = GPIOGetConfigDio(IOC_ADDR(pin)) & ~IOC_IOC0_EDGEDET_M;
+	uint32_t config = IOCGetConfig(pin) & ~IOC_IOC0_EDGEDET_M;
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		config |= IOC_IOC0_EDGEDET_EDGE_DIS;
 
-		GPIOSetConfigDio(IOC_ADDR(pin), config);
+		IOCSetConfigAndMux(pin, config, IOC_MUX_GPIO);
 
 		/* Disable interrupt mask */
-		set_pin_mask_non_atomic(pin, GPIO_O_IMCLR);
+		GPIODisableEventDio(pin);
 
 	} else if (mode == GPIO_INT_MODE_EDGE) {
 		switch (trig) {
@@ -233,11 +229,11 @@ static int gpio_cc23x0xx_pin_interrupt_configure(const struct device *port, gpio
 		/* Allow interrupts to trigger in standby */
 		config |= IOC_IOC0_WUENSB;
 
-		GPIOSetConfigDio(IOC_ADDR(pin), config);
+		IOCSetConfigAndMux(pin, config, IOC_MUX_GPIO);
 
 		/* Enable interrupt mask */
-		set_pin_mask_non_atomic(pin, GPIO_O_ICLR);
-		set_pin_mask_non_atomic(pin, GPIO_O_IMSET);
+		GPIOClearEventDio(pin);
+		GPIOEnableEventDio(pin);
 	}
 
 	return 0;
@@ -253,14 +249,14 @@ static int gpio_cc23x0_manage_callback(const struct device *port, struct gpio_ca
 
 static uint32_t gpio_cc23x0_get_pending_int(const struct device *dev)
 {
-	return GPIOGetEventMultiDio(GPIO_DIO_ALL_MASK);
+	return GPIOGetEventMultiDio(GPIO_DIO_ALL_MASK, true);
 }
 
 static void gpio_cc23x0_isr(const struct device *dev)
 {
 	struct gpio_cc23x0_data *data = dev->data;
 
-	uint32_t status = GPIOGetEventMultiDio(GPIO_DIO_ALL_MASK);
+	uint32_t status = GPIOGetEventMultiDio(GPIO_DIO_ALL_MASK, true);
 
 	GPIOClearEventMultiDio(status);
 

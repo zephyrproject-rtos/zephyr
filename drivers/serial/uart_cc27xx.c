@@ -233,11 +233,11 @@ static int uart_cc27xx_configure(const struct device *dev, const struct uart_con
 	UARTConfigSetExpClk(config->reg, config->sys_clk_freq, cfg->baudrate, line_ctrl);
 
 	if (flow_ctrl) {
-		UARTEnableCTS(config->reg);
-		UARTEnableRTS(config->reg);
+		UARTEnableCts(config->reg);
+		UARTEnableRts(config->reg);
 	} else {
-		UARTDisableCTS(config->reg);
-		UARTDisableRTS(config->reg);
+		UARTDisableCts(config->reg);
+		UARTDisableRts(config->reg);
 	}
 
 	/* Re-enable UART */
