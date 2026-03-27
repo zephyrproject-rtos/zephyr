@@ -149,12 +149,12 @@ int main(void)
 
 		printf("X-NUCLEO-IKS01A4 sensor dashboard\n\n");
 
-		printf("LSM6DSV16X: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("LSM6DSV16X: Accel (m/s^2): x: %.3f, y: %.3f, z: %.3f\n",
 			sensor_value_to_double(&lsm6dsv16x_xl[0]),
 			sensor_value_to_double(&lsm6dsv16x_xl[1]),
 			sensor_value_to_double(&lsm6dsv16x_xl[2]));
 
-		printf("LSM6DSV16X: Gyro (dps): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("LSM6DSV16X: Gyro (rad/s): x: %.3f, y: %.3f, z: %.3f\n",
 			sensor_value_to_double(&lsm6dsv16x_gy[0]),
 			sensor_value_to_double(&lsm6dsv16x_gy[1]),
 			sensor_value_to_double(&lsm6dsv16x_gy[2]));
@@ -166,7 +166,7 @@ int main(void)
 #endif
 
 #ifdef CONFIG_LSM6DSV16X_EXT_LIS2MDL
-		printf("LSM6DSV16X: Magn (gauss): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("LSM6DSV16X: Magn (G): x: %.3f, y: %.3f, z: %.3f\n",
 		       sensor_value_to_double(&lis2mdl_magn[0]),
 		       sensor_value_to_double(&lis2mdl_magn[1]),
 		       sensor_value_to_double(&lis2mdl_magn[2]));
@@ -176,7 +176,7 @@ int main(void)
 		printf("LSM6DSV16X: Temperature: %.1f C\n",
 		       sensor_value_to_double(&lps22df_temp));
 
-		printf("LSM6DSV16X: Pressure:%.3f kpa\n",
+		printf("LSM6DSV16X: Pressure:%.3f kPa\n",
 		       sensor_value_to_double(&lps22df_press));
 #endif
 

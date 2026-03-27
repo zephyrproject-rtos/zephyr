@@ -55,11 +55,11 @@ Sample Output
 
     HTS221: Temperature: 26.3 C
     HTS221: Relative Humidity: 44.5%
-    LPS22HB: Pressure:99.220 kpa
+    LPS22HB: Pressure:99.220 kPa
     LPS22HB: Temperature: 26.1 C
-    LSM6DSL: Accel (m.s-2): x: -0.0, y: -0.1, z: 10.0
-    LSM6DSL: Gyro (dps): x: 0.028, y: -0.025, z: 0.014
-    LSM303AGR: Accel (m.s-2): x: 0.3, y: -0.1, z: 9.7
-    LSM303AGR: Magn (gauss): x: -0.221, y: -0.042, z: -0.458
+    LSM6DSL: Accel (m/s^2): x: -0.0, y: -0.1, z: 10.0
+    LSM6DSL: Gyro (rad/s): x: 0.028, y: -0.025, z: 0.014
+    LSM303AGR: Accel (m/s^2): x: 0.3, y: -0.1, z: 9.7
+    LSM303AGR: Magn (G): x: -0.221, y: -0.042, z: -0.458
 
     <updated endlessly every 2 seconds>
