@@ -590,11 +590,13 @@
 			reg = <0x40007c00 0x90>;
 			interrupts = <78 3>, <79 3>;
 			interrupt-names = "single", "repeat";
-			girqs = <17 8>, <17 9>;
-			interrupt-names = "single", "repeat";
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 8)>,
+				<MCHP_XEC_ECIA_GIRQ_ENC(17, 9)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(3, 3)>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 			clktime = <32>;
+			channels = <16>;
 		};
 
 		peci0: peci@40006400 {
