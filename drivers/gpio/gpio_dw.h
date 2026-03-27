@@ -11,6 +11,9 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/reset.h>
+#if defined(CONFIG_CLOCK_CONTROL)
+#include <zephyr/drivers/clock_control.h>
+#endif
 
 #include "gpio_dw_registers.h"
 
@@ -29,6 +32,10 @@ struct gpio_dw_config {
 	gpio_config_irq_t config_func;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
 	const struct reset_dt_spec reset;
+#endif
+#if defined(CONFIG_CLOCK_CONTROL)
+	const struct device *clk_dev;
+	const clock_control_subsys_t clk_id;
 #endif
 };
 

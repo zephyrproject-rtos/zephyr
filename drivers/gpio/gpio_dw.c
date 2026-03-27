@@ -475,13 +475,23 @@ static int gpio_dw_initialize(const struct device *port)
 {
 	const struct gpio_dw_config *config = DEV_CFG(port);
 	mem_addr_t base_addr;
+#if defined(CONFIG_CLOCK_CONTROL) || DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
+	int ret;
+#endif
+
+#if defined(CONFIG_CLOCK_CONTROL)
+	if (config->clk_dev) {
+		ret = clock_control_on(config->clk_dev, config->clk_id);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+#endif
 
 	DEVICE_MMIO_NAMED_MAP(port, gpio_mmio, K_MEM_CACHE_NONE);
 
 	/* Reset GPIO only if reset controller driver is supported */
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
-	int ret;
-
 	if (config->reset.dev != NULL) {
 		if (!device_is_ready(config->reset.dev)) {
 			LOG_ERR("Reset controller device not ready");
@@ -527,6 +537,15 @@ static int gpio_dw_initialize(const struct device *port)
 #define GPIO_DW_RESET_SPEC_INIT(n)								\
 	.reset = RESET_DT_SPEC_INST_GET(n),							\
 
+#if defined(CONFIG_CLOCK_CONTROL)
+#define CLOCK_DW_CONFIG(n)									\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(0, clocks),						\
+		   (.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),				\
+		    .clk_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, clkid),))
+#else
+#define CLOCK_DW_CONFIG(n)
+#endif
+
 #define GPIO_DW_INIT(n)										\
 	static void gpio_config_##n##_irq(const struct device *port)				\
 	{											\
@@ -542,6 +561,7 @@ static int gpio_dw_initialize(const struct device *port)
 		.config_func = gpio_config_##n##_irq,						\
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),					\
 			(GPIO_DW_RESET_SPEC_INIT(n)))						\
+		CLOCK_DW_CONFIG(n)								\
 	};											\
 												\
 	static struct gpio_dw_runtime gpio_##n##_runtime;					\
