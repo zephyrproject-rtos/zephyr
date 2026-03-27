@@ -183,7 +183,12 @@ int main(void)
 	}
 
 	/* Create a non-connectable advertising set */
+#if IS_ENABLED(CONFIG_BT_PRIVACY)
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, &adv_cb, &pawr_adv);
+#else
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_IDENTITY, &adv_cb, &pawr_adv);
+#endif
+
 	if (err) {
 		printk("Failed to create advertising set (err %d)\n", err);
 		return 0;
