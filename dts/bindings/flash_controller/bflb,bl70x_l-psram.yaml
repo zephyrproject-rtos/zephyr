@@ -1,0 +1,22 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  BL70x/BL70xL external SPI PSRAM via SF_CTRL.
+
+  The BL70x and BL70xL manage external PSRAM through the same SF_CTRL
+  peripheral that handles flash (bank 2, SF2 pad set). This node is a
+  child of the flash controller and describes the memory-mapped PSRAM
+  region.
+
+compatible: "bflb,bl70x_l-psram"
+
+include:
+  - base.yaml
+  - name: zephyr,memory-region.yaml
+    property-allowlist:
+      - zephyr,memory-region
+
+properties:
+  reg:
+    required: true

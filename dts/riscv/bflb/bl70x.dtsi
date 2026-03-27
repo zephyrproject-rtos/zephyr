@@ -342,6 +342,13 @@
 
 			interrupts = <39 0>;
 			interrupt-parent = <&clic>;
+
+			psram0: psram@26000000 {
+				compatible = "bflb,bl70x_l-psram", "mmio-sram";
+				reg = <0x26000000 DT_SIZE_M(2)>;
+				zephyr,memory-region = "PSRAM";
+				status = "disabled";
+			};
 		};
 
 		usb0: usb@4000d800 {
