@@ -1765,6 +1765,58 @@ def test_projectbuilder_cleanup_device_testing_artifacts(
     pb._sanitize_files.assert_called_once()
 
 
+def test_projectbuilder_cleanup_device_testing_artifacts_sysbuild(
+    caplog,
+    mocked_jobserver
+):
+    bins = [os.path.join('zephyr', 'file.bin')]
+
+    instance_mock = mock.Mock()
+    instance_mock.sysbuild = True
+    instance_mock.domains = mock.Mock()
+    domain_main = mock.Mock()
+    domain_main.name = 'main'
+    domain_ipc_radio = mock.Mock()
+    domain_ipc_radio.name = 'ipc_radio'
+    instance_mock.domains.get_domains.return_value = [
+        domain_main,
+        domain_ipc_radio,
+    ]
+    build_dir = os.path.join('build', 'dir')
+    instance_mock.build_dir = build_dir
+    env_mock = mock.Mock()
+
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb._get_binaries = mock.Mock(return_value=bins)
+    pb.cleanup_artifacts = mock.Mock()
+    pb._sanitize_files = mock.Mock()
+
+    pb.cleanup_device_testing_artifacts()
+
+    assert f'Cleaning up for Device Testing {build_dir}' in caplog.text
+
+    pb.cleanup_artifacts.assert_called_once_with(
+        [
+            os.path.join('zephyr', 'file.bin'),
+            os.path.join('zephyr', 'runners.yaml'),
+            'domains.yaml',
+            os.path.join('main', 'build.ninja'),
+            os.path.join('main', 'CMakeCache.txt'),
+            os.path.join('main', 'CMakeFiles', 'rules.ninja'),
+            os.path.join('main', 'Makefile'),
+            os.path.join('main', 'zephyr', '.config'),
+            os.path.join('main', 'zephyr', 'runners.yaml'),
+            os.path.join('ipc_radio', 'build.ninja'),
+            os.path.join('ipc_radio', 'CMakeCache.txt'),
+            os.path.join('ipc_radio', 'CMakeFiles', 'rules.ninja'),
+            os.path.join('ipc_radio', 'Makefile'),
+            os.path.join('ipc_radio', 'zephyr', '.config'),
+            os.path.join('ipc_radio', 'zephyr', 'runners.yaml'),
+        ]
+    )
+    pb._sanitize_files.assert_called_once()
+
+
 TESTDATA_9 = [
     (
         None,
@@ -1872,51 +1924,109 @@ def test_projectbuilder_get_binaries_from_runners(
 
 def test_projectbuilder_sanitize_files(mocked_jobserver):
     instance_mock = mock.Mock()
+    instance_mock.sysbuild = False
     env_mock = mock.Mock()
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
     pb._sanitize_runners_file = mock.Mock()
     pb._sanitize_zephyr_base_from_files = mock.Mock()
+    pb._sanitize_domains_file = mock.Mock()
 
     pb._sanitize_files()
 
-    pb._sanitize_runners_file.assert_called_once()
-    pb._sanitize_zephyr_base_from_files.assert_called_once()
+    pb._sanitize_runners_file.assert_called_once_with()
+    pb._sanitize_zephyr_base_from_files.assert_called_once_with()
+    pb._sanitize_domains_file.assert_not_called()
+
+
+
+def test_projectbuilder_sanitize_files_sysbuild(mocked_jobserver):
+    instance_mock = mock.Mock()
+    instance_mock.sysbuild = True
+    instance_mock.domains = mock.Mock()
+    domain_main = mock.Mock()
+    domain_main.name = 'main'
+    domain_ipc_radio = mock.Mock()
+    domain_ipc_radio.name = 'ipc_radio'
+    instance_mock.domains.get_domains.return_value = [
+        domain_main,
+        domain_ipc_radio,
+    ]
+    env_mock = mock.Mock()
+
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb._sanitize_runners_file = mock.Mock()
+    pb._sanitize_zephyr_base_from_files = mock.Mock()
+    pb._sanitize_domains_file = mock.Mock()
+
+    pb._sanitize_files()
+
+    assert pb._sanitize_runners_file.call_args_list == [
+        mock.call(),
+        mock.call('main'),
+        mock.call('ipc_radio'),
+    ]
+    assert pb._sanitize_zephyr_base_from_files.call_args_list == [
+        mock.call(),
+        mock.call('main'),
+        mock.call('ipc_radio'),
+    ]
+    pb._sanitize_domains_file.assert_called_once_with()
 
 
 
 TESTDATA_11 = [
-    (None, None),
-    ('dummy: []', None),
+    (None, None, None),
+    ('no-config', None, None),
     (
-"""
-config:
-  elf_file: relative/path/dummy.elf
-  hex_file: /absolute/path/build_dir/zephyr/dummy.hex
-""",
-"""
+        os.path.abspath(os.path.join(os.sep, 'absolute', 'path', 'build_dir', 'zephyr', 'dummy.hex')),
+        """
 config:
   elf_file: relative/path/dummy.elf
   hex_file: dummy.hex
-"""
+""",
+        None,
+    ),
+    (
+        os.path.abspath(
+            os.path.join(os.sep, 'absolute', 'path', 'build_dir', 'ipc_radio', 'zephyr', 'dummy.hex')
+        ),
+        """
+config:
+  elf_file: relative/path/dummy.elf
+  hex_file: dummy.hex
+""",
+        'ipc_radio',
     ),
 ]
 
 @pytest.mark.parametrize(
-    'runners_text, expected_write_text',
+    'binary_path, expected_write_text, domain',
     TESTDATA_11,
-    ids=['no file', 'no config', 'valid']
+    ids=['no file', 'no config', 'valid', 'valid domain']
 )
 def test_projectbuilder_sanitize_runners_file(
     mocked_jobserver,
-    runners_text,
-    expected_write_text
+    binary_path,
+    expected_write_text,
+    domain,
 ):
+    if binary_path is None:
+        runners_text = None
+    elif binary_path == 'no-config':
+        runners_text = 'dummy: []'
+    else:
+        runners_text = f"""
+config:
+  elf_file: relative/path/dummy.elf
+  hex_file: {binary_path}
+"""
+
     def mock_exists(fname):
         return runners_text is not None
 
     instance_mock = mock.Mock()
-    instance_mock.build_dir = '/absolute/path/build_dir'
+    instance_mock.build_dir = os.path.abspath(os.path.join(os.sep, 'absolute', 'path', 'build_dir'))
     env_mock = mock.Mock()
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
@@ -1924,12 +2034,44 @@ def test_projectbuilder_sanitize_runners_file(
     with mock.patch('os.path.exists', mock_exists), \
          mock.patch('builtins.open',
                     mock.mock_open(read_data=runners_text)) as f:
-        pb._sanitize_runners_file()
+        pb._sanitize_runners_file(domain or '')
 
     if expected_write_text is not None:
         f().write.assert_called_with(expected_write_text)
     else:
         f().write.assert_not_called()
+
+
+def test_projectbuilder_sanitize_domains_file(mocked_jobserver):
+    top_build_dir = os.path.abspath(os.path.join(os.sep, 'absolute', 'path', 'build_dir'))
+    domains_text = f"""
+default: main
+build_dir: {top_build_dir}
+flash_order:
+  - main
+  - ipc_radio
+domains:
+  - name: main
+    build_dir: {os.path.join(top_build_dir, 'main')}
+  - name: ipc_radio
+    build_dir: {os.path.join(top_build_dir, 'ipc_radio')}
+"""
+
+    instance_mock = mock.Mock()
+    instance_mock.build_dir = top_build_dir
+    env_mock = mock.Mock()
+
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+
+    with mock.patch('os.path.exists', return_value=True), \
+         mock.patch('builtins.open', mock.mock_open(read_data=domains_text)) as f:
+        pb._sanitize_domains_file()
+
+    written = ''.join(call.args[0] for call in f().write.call_args_list)
+    assert 'build_dir: .' in written
+    assert 'build_dir: main' in written
+    assert 'build_dir: ipc_radio' in written
+    assert top_build_dir not in written
 
 
 TESTDATA_12 = [

@@ -255,6 +255,33 @@ build_dir: dummy
         assert result == expected_result
 
 
+def test_domains_resolve_relative_build_dirs():
+    top = os.path.join('tmp', 'pkg', 'sample.ipc.openamp')
+    doms = domains.Domains.from_yaml(
+        """
+        default: openamp
+        build_dir: .
+        domains:
+          - name: openamp
+            build_dir: openamp
+          - name: openamp_remote
+            build_dir: openamp_remote
+        flash_order:
+          - openamp
+          - openamp_remote
+        """,
+        top,
+    )
+
+    assert doms.get_top_build_dir() == top
+    assert doms.get_default_domain() == domains.Domain('openamp', os.path.join(top, 'openamp'))
+    expected_flash_order = [
+        domains.Domain('openamp', os.path.join(top, 'openamp')),
+        domains.Domain('openamp_remote', os.path.join(top, 'openamp_remote')),
+    ]
+    assert doms.get_domains(default_flash_order=True) == expected_flash_order
+
+
 def test_domain():
     name = 'Domain Name'
     build_dir = 'build/dir'
