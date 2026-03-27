@@ -878,6 +878,24 @@ static int addr_res_enable(uint8_t enable)
 				    buf, NULL);
 }
 
+static int hci_id_del(const bt_addr_le_t *addr)
+{
+	struct bt_hci_cp_le_rem_dev_from_rl *cp;
+	struct net_buf *buf;
+
+	LOG_DBG("addr %s", bt_addr_le_str(addr));
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_le_copy(&cp->peer_id_addr, addr);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_RL, buf, NULL);
+}
+
 static int hci_id_add(uint8_t id, const bt_addr_le_t *addr, uint8_t peer_irk[16])
 {
 	struct bt_hci_cp_le_add_dev_to_rl *cp;
@@ -967,8 +985,8 @@ static void find_rl_conflict(struct bt_keys *resident, void *user_data)
 		return;
 	}
 
-	/* Test against committed bonds only. */
-	if ((resident->state & BT_KEYS_ID_ADDED) == 0) {
+	/* Test against committed bonds and bonds currently being added only. */
+	if ((resident->state & (BT_KEYS_ID_ADDED | BT_KEYS_ID_ADD_IN_PROGRESS)) == 0) {
 		return;
 	}
 
@@ -1007,18 +1025,31 @@ void bt_id_add(struct bt_keys *keys)
 		return;
 	}
 
+	/* Set ADD_IN_PROGRESS for race detection. If bt_keys_clear() or bt_id_del()
+	 * is called during a blocking HCI call, allowing us to detect the race and
+	 * rollback the add operation.
+	 */
+	keys->state |= BT_KEYS_ID_ADD_IN_PROGRESS;
+
 	struct bt_conn *conn;
 	int err;
 	bool enable_controller_res = true;
+	bt_addr_le_t addr;
 
 	LOG_DBG("addr %s", bt_addr_le_str(&keys->addr));
 
 	__ASSERT_NO_MSG(keys != NULL);
 	/* We assume (and could assert) !bt_id_find_conflict(keys) here. */
 
+	/* Save address for potential rollback if key is cleared during
+	 * a blocking HCI call (race condition with bt_keys_clear).
+	 */
+	bt_addr_le_copy(&addr, &keys->addr);
+
 	/* Nothing to be done if host-side resolving is used */
 	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 		bt_dev.le.rl_entries++;
+		keys->state &= ~BT_KEYS_ID_ADD_IN_PROGRESS;
 		keys->state |= BT_KEYS_ID_ADDED;
 		return;
 	}
@@ -1027,6 +1058,7 @@ void bt_id_add(struct bt_keys *keys)
 	if (conn) {
 		bt_id_pending_keys_update_set(keys, BT_KEYS_ID_PENDING_ADD);
 		bt_conn_unref(conn);
+		keys->state &= ~BT_KEYS_ID_ADD_IN_PROGRESS;
 		return;
 	}
 
@@ -1038,6 +1070,7 @@ void bt_id_add(struct bt_keys *keys)
 		if (adv_enabled) {
 			bt_id_pending_keys_update_set(keys,
 						   BT_KEYS_ID_PENDING_ADD);
+			keys->state &= ~BT_KEYS_ID_ADD_IN_PROGRESS;
 			return;
 		}
 	}
@@ -1099,7 +1132,14 @@ void bt_id_add(struct bt_keys *keys)
 		goto done;
 	}
 
+	/* If the key was cleared during the blocking HCI call, rollback the add operation. */
+	if (!(keys->state & BT_KEYS_ID_ADD_IN_PROGRESS)) {
+		hci_id_del(&addr);
+		goto done;
+	}
+
 	bt_dev.le.rl_entries++;
+	keys->state &= ~BT_KEYS_ID_ADD_IN_PROGRESS;
 	keys->state |= BT_KEYS_ID_ADDED;
 
 	/*
@@ -1114,13 +1154,16 @@ void bt_id_add(struct bt_keys *keys)
 	 * a private address, even if the peer device has distributed its IRK in
 	 * the past.
 	 */
-	err = le_set_privacy_mode(&keys->addr, BT_HCI_LE_PRIVACY_MODE_DEVICE);
+	err = le_set_privacy_mode(&addr, BT_HCI_LE_PRIVACY_MODE_DEVICE);
 	if (err) {
 		LOG_ERR("Failed to set privacy mode");
 		goto done;
 	}
 
 done:
+
+	keys->state &= ~BT_KEYS_ID_ADD_IN_PROGRESS;
+
 	if (enable_controller_res) {
 		addr_res_enable(BT_HCI_ADDR_RES_ENABLE);
 	}
@@ -1141,24 +1184,6 @@ static void keys_add_id(struct bt_keys *keys, void *data)
 	if (keys->state & BT_KEYS_ID_ADDED) {
 		hci_id_add(keys->id, &keys->addr, keys->irk.val);
 	}
-}
-
-static int hci_id_del(const bt_addr_le_t *addr)
-{
-	struct bt_hci_cp_le_rem_dev_from_rl *cp;
-	struct net_buf *buf;
-
-	LOG_DBG("addr %s", bt_addr_le_str(addr));
-
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	bt_addr_le_copy(&cp->peer_id_addr, addr);
-
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_RL, buf, NULL);
 }
 
 void bt_id_del(struct bt_keys *keys)
