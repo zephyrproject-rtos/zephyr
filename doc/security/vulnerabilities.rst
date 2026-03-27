@@ -2213,6 +2213,10 @@ This has been fixed in main for v4.4.0
 - `PR 102119 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/102119>`_
 
+:cve:`2026-1681`
+----------------
+
+Under embargo until 2026-04-15
 
 :cve:`2026-4179`
 ----------------
