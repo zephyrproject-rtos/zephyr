@@ -1548,6 +1548,31 @@ function(zephyr_code_relocate)
   if(CODE_REL_PHDR)
     set(CODE_REL_LOCATION "${CODE_REL_LOCATION}\ :${CODE_REL_PHDR}")
   endif()
+  # Disable LTO for relocated files. LTO changes section names (e.g. .text
+  # becomes .gnu.debuglto_.text) which breaks gen_relocate_app.py section
+  # parsing. See issue #69730.
+  if(CODE_REL_FILES AND NOT no_genex STREQUAL CODE_REL_FILES)
+    # File list contains generator expressions - LTO cannot be disabled
+    # statically. Warn so the developer is aware LTO remains active for
+    # these files and the section name mangling issue (#69730) may still
+    # occur.
+    message(WARNING "zephyr_code_relocate(): file list contains generator "
+      "expressions, LTO cannot be disabled for these files. "
+      "Avoid combining CONFIG_LTO with CONFIG_CODE_DATA_RELOCATION when "
+      "using generator expressions (see issue #69730).")
+  elseif(CODE_REL_FILES)
+    set_source_files_properties(${file_list} PROPERTIES
+      COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
+  elseif(CODE_REL_LIBRARY)
+    # DEFER is required here: library targets such as drivers__serial are
+    # created later in the CMake configure step (after the SoC CMakeLists.txt
+    # runs), so the target does not exist yet when zephyr_code_relocate() is
+    # called. cmake_language(DEFER CALL ...) defers the set_property() call
+    # until the end of the current directory scope, by which point all targets
+    # have been created.
+    cmake_language(DEFER CALL set_property TARGET ${CODE_REL_LIBRARY} APPEND PROPERTY
+      COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
+  endif()
   # Each code relocation directive is placed on an independent line, instead of
   # using set_property(APPEND) to produce a ";"-separated CMake list. This way,
   # each directive can embed multiple CMake lists, representing flags and files,
