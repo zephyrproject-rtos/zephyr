@@ -351,7 +351,7 @@ int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksi
 		return EACCES;
 	}
 
-	if (!__attr_is_initialized(attr) || stacksize == 0 || stacksize < PTHREAD_STACK_MIN ||
+	if (!__attr_is_initialized(attr) || stacksize < PTHREAD_STACK_MIN ||
 	    stacksize > PTHREAD_STACK_MAX) {
 		LOG_DBG("Invalid stacksize %zu", stacksize);
 		return EINVAL;
