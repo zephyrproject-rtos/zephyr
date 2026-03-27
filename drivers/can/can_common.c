@@ -254,7 +254,19 @@ static int can_calc_timing_internal(const struct device *dev, struct can_timing 
 				    const struct can_timing *min, const struct can_timing *max,
 				    uint32_t bitrate, uint16_t sample_pnt)
 {
-	uint32_t total_tq = CAN_SYNC_SEG + max->prop_seg + max->phase_seg1 + max->phase_seg2;
+	/*
+	 * Accept up to 0.5% bitrate error (5000 ppm). CiA 601 allows up to
+	 * 1.58% for nominal bitrate; 0.5% gives comfortable margin while
+	 * unlocking prescalers that would otherwise be skipped when the core
+	 * clock is not an exact integer multiple of (prescaler * bitrate).
+	 */
+	const uint32_t TOLERANCE_PPM = 5000U;
+
+	/* Total-TQ bounds from hardware segment limits */
+	const uint32_t tq_min = CAN_SYNC_SEG + min->prop_seg + min->phase_seg1 + min->phase_seg2;
+	const uint32_t tq_max = CAN_SYNC_SEG + max->prop_seg + max->phase_seg1 + max->phase_seg2;
+
+	uint32_t total_tq = tq_max;
 	struct can_timing tmp_res = { 0 };
 	int err_min = INT_MAX;
 	uint32_t core_clock;
@@ -273,20 +285,41 @@ static int can_calc_timing_internal(const struct device *dev, struct can_timing 
 		sample_pnt = sample_point_for_bitrate(bitrate);
 	}
 
-	for (int prescaler = MAX(core_clock / (total_tq * bitrate), min->prescaler);
-	     prescaler <= max->prescaler;
-	     prescaler++) {
+	for (int prescaler = MAX(core_clock / (tq_max * bitrate), (uint32_t)min->prescaler);
+	     prescaler <= (int)max->prescaler; prescaler++) {
 
-		if (core_clock % (prescaler * bitrate)) {
-			/* No integer total_tq for this prescaler setting */
+		/*
+		 * Round total_tq to the nearest integer instead of requiring
+		 * exact divisibility. This prevents skipping all prescalers on
+		 * targets whose core clock is not an integer multiple of the
+		 * requested bitrate (e.g. PLL-derived clocks on NXP Kinetis,
+		 * certain STM32 and Nordic configurations).
+		 */
+		uint64_t prod = (uint64_t)prescaler * (uint64_t)bitrate;
+
+		total_tq = (uint32_t)((core_clock + (prod / 2U)) / prod);
+
+		/* Skip prescalers that produce a total_tq outside segment limits */
+		if (total_tq < tq_min || total_tq > tq_max) {
 			continue;
 		}
 
-		total_tq = core_clock / (prescaler * bitrate);
+		/* Compute the actually achievable bitrate for this (prescaler, total_tq) */
+		uint32_t real_bitrate = (uint32_t)(core_clock / ((uint64_t)prescaler * total_tq));
+		int32_t ppm = (int32_t)((int64_t)real_bitrate - (int64_t)bitrate);
+
+		if (ppm < 0) {
+			ppm = -ppm;
+		}
+		ppm = (int32_t)((int64_t)ppm * 1000000LL / (int64_t)bitrate);
+		if ((uint32_t)ppm > TOLERANCE_PPM) {
+			/* Bitrate deviation exceeds tolerance; skip */
+			continue;
+		}
 
 		err = update_sample_pnt(total_tq, sample_pnt, &tmp_res, min, max);
 		if (err < 0) {
-			/* Sample point cannot be met for this prescaler setting */
+			/* Sample point cannot be met for this (prescaler, total_tq) */
 			continue;
 		}
 
@@ -298,8 +331,8 @@ static int can_calc_timing_internal(const struct device *dev, struct can_timing 
 			res->phase_seg2 = tmp_res.phase_seg2;
 			res->prescaler = (uint16_t)prescaler;
 
-			if (err == 0) {
-				/* Perfect sample point match */
+			/* Perfect SP and exact bitrate: no need to continue searching */
+			if (err == 0 && real_bitrate == bitrate) {
 				break;
 			}
 		}
@@ -309,11 +342,11 @@ static int can_calc_timing_internal(const struct device *dev, struct can_timing 
 		LOG_DBG("Sample point error: %d 1/1000", err_min);
 	}
 
-	/* Calculate default sjw as phase_seg2 / 2 and clamp the result */
-	res->sjw = MIN(res->phase_seg1, res->phase_seg2 / 2);
+	/* Default SJW = min(phase_seg1, phase_seg2/2), clamped to limits */
+	res->sjw = MIN(res->phase_seg1, res->phase_seg2 / 2U);
 	res->sjw = CLAMP(res->sjw, min->sjw, max->sjw);
 
-	return err_min == INT_MAX ? -ENOTSUP : err_min;
+	return (err_min == INT_MAX) ? -ENOTSUP : err_min;
 }
 
 int z_impl_can_calc_timing(const struct device *dev, struct can_timing *res,
