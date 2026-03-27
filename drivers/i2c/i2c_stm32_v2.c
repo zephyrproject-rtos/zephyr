@@ -237,12 +237,11 @@ static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
 }
 
 #if defined(CONFIG_I2C_TARGET)
-static void i2c_stm32_target_event(const struct device *dev)
+static struct i2c_target_config *i2c_stm32_target_cfg_get(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
-	const struct i2c_target_callbacks *target_cb;
 	struct i2c_target_config *target_cfg = NULL;
 
 	if (data->target_cfg != NULL) {
@@ -274,6 +273,78 @@ static void i2c_stm32_target_event(const struct device *dev)
 		 */
 		target_cfg = data->target2_cfg;
 	}
+
+	return target_cfg;
+}
+
+static void i2c_stm32_target_addr_setup(const struct device *dev,
+					struct i2c_target_config *target_cfg)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	I2C_TypeDef *i2c = cfg->i2c;
+	const struct i2c_target_callbacks *target_cb = target_cfg->callbacks;
+	uint32_t dir = LL_I2C_GetTransferDirection(i2c);
+
+	if (dir == LL_I2C_DIRECTION_WRITE) {
+		if (target_cb->write_requested(target_cfg) < 0) {
+			LOG_ERR("Error initiating writing");
+		} else {
+			LL_I2C_EnableIT_RX(i2c);
+		}
+	} else {
+		uint8_t val;
+
+		if (target_cb->read_requested(target_cfg, &val) < 0) {
+			LOG_ERR("Error initiating reading");
+		} else {
+			LL_I2C_TransmitData8(i2c, val);
+			LL_I2C_EnableIT_TX(i2c);
+		}
+	}
+
+	LL_I2C_EnableIT_STOP(i2c);
+	LL_I2C_EnableIT_NACK(i2c);
+	LL_I2C_EnableIT_TC(i2c);
+	LL_I2C_EnableIT_ERR(i2c);
+}
+
+static void i2c_stm32_target_own_addr_controller_abort(const struct device *dev)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
+	I2C_TypeDef *i2c = cfg->i2c;
+	struct i2c_target_config *target_cfg = i2c_stm32_target_cfg_get(dev);
+	unsigned int key;
+
+	if (target_cfg == NULL) {
+		__ASSERT_NO_MSG(0);
+		return;
+	}
+
+	/*
+	 * Follow the STM32 errata workaround for own-address recognition
+	 * while START is still pending in controller mode.
+	 */
+	key = irq_lock();
+	LL_I2C_ClearFlag_ADDR(i2c);
+	stm32_reg_clear_bits(&i2c->CR2, I2C_CR2_START);
+	irq_unlock(key);
+
+	data->current.is_arlo = 1U;
+	data->controller_active = false;
+
+	i2c_stm32_disable_transfer_interrupts(dev);
+	k_sem_give(&data->device_sync_sem);
+
+	i2c_stm32_target_addr_setup(dev, target_cfg);
+}
+
+static void i2c_stm32_target_event(const struct device *dev)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	I2C_TypeDef *i2c = cfg->i2c;
+	const struct i2c_target_callbacks *target_cb;
+	struct i2c_target_config *target_cfg = i2c_stm32_target_cfg_get(dev);
 
 	if (target_cfg == NULL) {
 		__ASSERT_NO_MSG(0);
@@ -326,32 +397,8 @@ static void i2c_stm32_target_event(const struct device *dev)
 	}
 
 	if (LL_I2C_IsActiveFlag_ADDR(i2c)) {
-		uint32_t dir;
-
 		LL_I2C_ClearFlag_ADDR(i2c);
-
-		dir = LL_I2C_GetTransferDirection(i2c);
-		if (dir == LL_I2C_DIRECTION_WRITE) {
-			if (target_cb->write_requested(target_cfg) < 0) {
-				LOG_ERR("Error initiating writing");
-			} else {
-				LL_I2C_EnableIT_RX(i2c);
-			}
-		} else {
-			uint8_t val;
-
-			if (target_cb->read_requested(target_cfg, &val) < 0) {
-				LOG_ERR("Error initiating reading");
-			} else {
-				LL_I2C_TransmitData8(i2c, val);
-				LL_I2C_EnableIT_TX(i2c);
-			}
-		}
-
-		LL_I2C_EnableIT_STOP(i2c);
-		LL_I2C_EnableIT_NACK(i2c);
-		LL_I2C_EnableIT_TC(i2c);
-		LL_I2C_EnableIT_ERR(i2c);
+		i2c_stm32_target_addr_setup(dev, target_cfg);
 	}
 }
 
@@ -502,9 +549,16 @@ void i2c_stm32_event(const struct device *dev)
 	uint32_t isr = stm32_reg_read(&regs->ISR);
 
 #if defined(CONFIG_I2C_TARGET)
-	if (data->target_attached && !data->controller_active) {
-		i2c_stm32_target_event(dev);
-		return;
+	if (data->target_attached) {
+		if (data->controller_active && ((isr & I2C_ISR_ADDR) != 0U)) {
+			i2c_stm32_target_own_addr_controller_abort(dev);
+			return;
+		}
+
+		if (!data->controller_active) {
+			i2c_stm32_target_event(dev);
+			return;
+		}
 	}
 #endif
 
@@ -680,6 +734,7 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 	struct i2c_stm32_data *data = dev->data;
 	const struct i2c_stm32_config *cfg = dev->config;
 	bool keep_enabled = (msg->flags & I2C_MSG_STOP) == 0U;
+	bool disable_i2c;
 	int ret;
 
 	/* Wait for IRQ to complete or timeout */
@@ -726,8 +781,15 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 		keep_enabled = true;
 	}
 
-	/* If I2C no longer need to be enabled or on error */
-	if (!keep_enabled || (ret != 0)) {
+	disable_i2c = !keep_enabled || (ret != 0);
+#if defined(CONFIG_I2C_TARGET)
+	if (data->target_attached) {
+		disable_i2c = false;
+	}
+#endif
+
+	/* If I2C no longer need to be enabled and no other mode keeps it alive */
+	if (disable_i2c) {
 		LL_I2C_Disable(cfg->i2c);
 	}
 
@@ -842,9 +904,15 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
 	if (dma_xfer_start(dev, msg) != 0) {
-		LL_I2C_Disable(regs);
 #if defined(CONFIG_I2C_TARGET)
 		data->controller_active = false;
+		if (!data->target_attached && !data->smbalert_active) {
+			LL_I2C_Disable(regs);
+		}
+#else
+		if (!data->smbalert_active) {
+			LL_I2C_Disable(regs);
+		}
 #endif
 		return -EIO;
 	}
@@ -868,6 +936,14 @@ static inline int check_errors(const struct device *dev, const char *funcname)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
+#if defined(CONFIG_I2C_TARGET)
+	struct i2c_stm32_data *data = dev->data;
+
+	if (data->current.is_arlo) {
+		LOG_DBG("%s: ARLO", funcname);
+		goto error;
+	}
+#endif
 
 	if (LL_I2C_IsActiveFlag_NACK(i2c)) {
 		LL_I2C_ClearFlag_NACK(i2c);
@@ -908,6 +984,8 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
+
+	data->current.is_arlo = 0U;
 
 	if (LL_I2C_IsEnabledReloadMode(i2c)) {
 		LL_I2C_SetTransferSize(i2c, msg->len);
