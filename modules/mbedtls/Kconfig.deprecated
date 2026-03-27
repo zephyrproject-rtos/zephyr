@@ -4,6 +4,15 @@
 # Copyright (c) 2025 BayLibre SAS
 # SPDX-License-Identifier: Apache-2.0
 
+config MBEDTLS_CFG_FILE
+	string "mbed TLS configuration file [DEPRECATED]"
+	help
+	  This Kconfig option is deprecated. Use MBEDTLS_CONFIG_FILE instead.
+
+config MBEDTLS_CFG_FILE_DEPRECATED
+	def_bool MBEDTLS_CFG_FILE != ""
+	select DEPRECATED
+
 config MBEDTLS_MD
 	bool "Generic message digest layer [DEPRECATED]"
 	select DEPRECATED
