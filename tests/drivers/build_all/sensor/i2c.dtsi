@@ -1557,3 +1557,8 @@ test_i2c_adxl355: adxl55@cd {
 	reg = <0xcd>;
 	int1-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_ms5637: ms5637@ce {
+	compatible = "meas,ms5637";
+	reg = <0xce>;
+};
