@@ -2198,6 +2198,22 @@ This has been fixed in main for v4.4.0
 - `PR 99828 fix for 3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/99828>`_
 
+:cve:`2026-1679`
+----------------
+
+The eswifi socket offload driver copies user-provided payloads into a fixed buffer without checking
+available space; oversized sends overflow eswifi->buf, corrupting kernel memory (CWE-120). Exploit
+requires local code that can call the socket send API; no remote attacker can reach it directly.
+
+- `Zephyr project bug tracker GHSA-qx3g-5g22-fq5w
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-qx3g-5g22-fq5w>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 102119 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/102119>`_
+
+
 :cve:`2026-4179`
 ----------------
 
