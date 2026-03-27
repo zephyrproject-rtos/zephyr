@@ -419,11 +419,10 @@ if(CONFIG_BUILD_WITH_TFM)
       zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM               ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c)
     endif()
 
-    target_include_directories(tfm_api PUBLIC
-      ${TFM_INTERFACE_INCLUDE_DIR}
+    # TFM_INTERFACE_INCLUDE_DIR is already added to zephyr_interface below
+    zephyr_library_include_directories(
       ${TFM_INTERFACE_INCLUDE_DIR}/crypto_keys
-      ${ZEPHYR_BASE}/modules/mbedtls/configs
-      )
+    )
 
     # Add interface include directory (exported by TF-M) to zephyr_interface
     zephyr_include_directories(
