@@ -2212,3 +2212,8 @@ This has been fixed in main for v4.4.0
 
 - `PR 104390 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/104390>`_
+
+:cve:`2026-5066`
+----------------
+
+Under embargo until 2026-06-01
