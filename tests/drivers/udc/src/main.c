@@ -364,6 +364,7 @@ static void test_udc_ep_mps(uint8_t type)
 		.wMaxPacketSize = sys_cpu_to_le16(0),
 		.bInterval = 0,
 	};
+	bool ep_type_supported = false;
 	const struct device *dev;
 	uint16_t supported = 0;
 	int err;
@@ -387,22 +388,23 @@ static void test_udc_ep_mps(uint8_t type)
 					ed.bInterval);
 		if (!err) {
 			ed.bEndpointAddress = i;
+			ep_type_supported = true;
 			break;
 		}
 	}
 
-	zassert_ok(err, "Failed to determine MPS");
+	if (ep_type_supported) {
+		for (int i = 0; i < ARRAY_SIZE(mps); i++) {
+			if (mps[i] > supported) {
+				continue;
+			}
 
-	for (int i = 0; i < ARRAY_SIZE(mps); i++) {
-		if (mps[i] > supported) {
-			continue;
+			ed.wMaxPacketSize = sys_cpu_to_le16(mps[i]);
+			test_udc_ep_api(dev, &ed);
+
+			ed.bEndpointAddress |= USB_EP_DIR_IN;
+			test_udc_ep_api(dev, &ed);
 		}
-
-		ed.wMaxPacketSize = sys_cpu_to_le16(mps[i]);
-		test_udc_ep_api(dev, &ed);
-
-		ed.bEndpointAddress |= USB_EP_DIR_IN;
-		test_udc_ep_api(dev, &ed);
 	}
 
 	err = udc_disable(dev);
@@ -410,6 +412,11 @@ static void test_udc_ep_mps(uint8_t type)
 
 	err = udc_shutdown(dev);
 	zassert_ok(err, "Failed to shoot-down UDC driver");
+
+	if (!ep_type_supported) {
+		TC_PRINT("endpoint type not supported\n");
+		ztest_test_skip();
+	}
 }
 
 static void *test_udc_device_get(void)
