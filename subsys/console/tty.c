@@ -39,10 +39,9 @@ static void uart_rx_handle(const struct device *dev, struct tty_serial *tty)
 	uint32_t len;
 	int rd_len;
 	bool new_data = false;
-	int err;
 
 	do {
-		len = ring_buf_put_claim(&tty->rx_buf, &data, ring_buf_capacity_get(&tty->rx_buf));
+		len = ring_buf_put_ptr(&tty->rx_buf, &data);
 		if (len > 0) {
 			rd_len = uart_fifo_read(dev, data, len);
 
@@ -50,9 +49,7 @@ static void uart_rx_handle(const struct device *dev, struct tty_serial *tty)
 				new_data = true;
 			}
 
-			err = ring_buf_put_finish(&tty->rx_buf, rd_len);
-			__ASSERT_NO_MSG(err == 0);
-			ARG_UNUSED(err);
+			ring_buf_commit(&tty->rx_buf, rd_len);
 			if (rd_len < len) {
 				/* No more data in the FIFO, exit loop. */
 				break;
@@ -78,14 +75,11 @@ static void uart_tx_handle(const struct device *dev, struct tty_serial *tty)
 {
 	uint32_t len;
 	uint8_t *data;
-	int err;
 
-	len = ring_buf_get_claim(&tty->tx_buf, &data, ring_buf_capacity_get(&tty->tx_buf));
+	len = ring_buf_get_ptr(&tty->tx_buf, &data);
 	if (len > 0) {
 		len = uart_fifo_fill(dev, data, len);
-		err = ring_buf_get_finish(&tty->tx_buf, len);
-		__ASSERT_NO_MSG(err == 0);
-		ARG_UNUSED(err);
+		ring_buf_consume(&tty->tx_buf, len);
 	} else {
 		uart_irq_tx_disable(dev);
 		atomic_clear(&tty->tx_busy);
