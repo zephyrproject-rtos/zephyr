@@ -1619,3 +1619,8 @@ test_i2c_fdc1004: fdc1004@d1 {
 	measure-rate = <100>;
 	ti,capdac = <0 0 0 0>;
 };
+
+test_i2c_htu31d: htu31d@d2 {
+	compatible = "meas,htu31d";
+	reg = <0xd2>;
+};
