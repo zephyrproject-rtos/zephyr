@@ -575,10 +575,13 @@ static void report_multicast_complete(struct coap_client_internal_request *inter
 
 static bool timeout_expired(const struct coap_client_internal_request *internal_req)
 {
+	if (!internal_req->request_ongoing) {
+		return false;
+	}
+
 #if defined(CONFIG_COAP_CLIENT_MULTICAST)
-	if (internal_req->is_mcast && internal_req->request_ongoing &&
-	    sys_timepoint_expired(internal_req->mcast_timeout)) {
-		return true;
+	if (internal_req->is_mcast) {
+		return sys_timepoint_expired(internal_req->mcast_timeout);
 	}
 #endif
 
@@ -586,8 +589,7 @@ static bool timeout_expired(const struct coap_client_internal_request *internal_
 		return false;
 	}
 
-	return (internal_req->request_ongoing &&
-		internal_req->pending.timeout <= (k_uptime_get() - internal_req->pending.t0));
+	return internal_req->pending.timeout <= (k_uptime_get() - internal_req->pending.t0);
 }
 
 static int resend_request(struct coap_client *client,
