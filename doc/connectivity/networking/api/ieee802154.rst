@@ -37,6 +37,102 @@ Zephyr supports both, native IEEE 802.15.4 and Thread, with 6LoWPAN. Zephyr's
 <https://openthread.io/>`_. The IPv6 header compression in 6LoWPAN is used for
 native IEEE 802.15.4.
 
+Supported Drivers
+*****************
+
+Zephyr includes a number of in-tree IEEE 802.15.4 radio drivers for various
+hardware platforms. The following table provides an overview of all available
+drivers, their vendors, supported frequency bands, bus interfaces, and the
+Kconfig option used to enable each driver.
+
+.. list-table:: IEEE 802.15.4 In-Tree Radio Drivers
+   :header-rows: 1
+   :widths: 15 15 30 15 10
+
+   * - Driver
+     - Vendor
+     - Compatible
+     - Frequency Band
+     - Bus
+   * - CC1200
+     - Texas Instruments
+     - :dtcompatible:`ti,cc1200`
+     - Sub-GHz
+     - SPI
+   * - CC13xx/CC26xx
+     - Texas Instruments
+     - :dtcompatible:`ti,cc13xx-cc26xx-ieee802154`
+     - 2.4 GHz
+     - On-chip
+   * - CC13xx/CC26xx Sub-GHz
+     - Texas Instruments
+     - :dtcompatible:`ti,cc13xx-cc26xx-ieee802154-subghz`
+     - Sub-GHz
+     - On-chip
+   * - CC2520
+     - Texas Instruments
+     - :dtcompatible:`ti,cc2520`
+     - 2.4 GHz
+     - SPI
+   * - DW1000
+     - Decawave (Qorvo)
+     - :dtcompatible:`decawave,dw1000`
+     - UWB (3.5–6.5 GHz)
+     - SPI
+   * - ESP32
+     - Espressif
+     - :dtcompatible:`espressif,esp32-ieee802154`
+     - 2.4 GHz
+     - On-chip
+   * - KW41Z
+     - NXP
+     - :dtcompatible:`nxp,kw41z-ieee802154`
+     - 2.4 GHz
+     - On-chip
+   * - MCR20A
+     - NXP
+     - :dtcompatible:`nxp,mcr20a`
+     - 2.4 GHz
+     - SPI
+   * - MCXW
+     - NXP
+     - :dtcompatible:`nxp,mcxw-ieee802154`
+     - 2.4 GHz
+     - On-chip
+   * - nRF5
+     - Nordic Semiconductor
+     - :dtcompatible:`nordic,nrf-ieee802154`
+     - 2.4 GHz
+     - On-chip
+   * - RF2XX (AT86RF2xx)
+     - Atmel (Microchip)
+     - :dtcompatible:`atmel,rf2xx`
+     - 2.4 GHz / Sub-GHz
+     - SPI
+   * - STM32WBA
+     - STMicroelectronics
+     - :dtcompatible:`st,stm32wba-ieee802154`
+     - 2.4 GHz
+     - On-chip
+   * - Telink B91
+     - Telink Semiconductor
+     - :dtcompatible:`telink,b91-zb`
+     - 2.4 GHz
+     - On-chip
+   * - UART Pipe
+     - Virtual (QEMU)
+     - :dtcompatible:`zephyr,ieee802154-uart-pipe`
+     - N/A (emulated)
+     - UART
+
+.. note::
+   The UART Pipe driver is a virtual driver used for testing IEEE 802.15.4
+   networking in QEMU environments. It is not intended for use with real
+   radio hardware.
+
+For detailed configuration options of each driver, refer to the corresponding
+Kconfig file in :zephyr_file:`drivers/ieee802154/`.
+
 API Reference
 *************
 
