@@ -1561,3 +1561,9 @@ test_i2c_htu21d: htu21d@ce {
 	compatible = "meas,htu21d";
 	reg = <0xce>;
 };
+
+test_i2c_cht8315: cht8315@cf {
+	compatible = "sensylink,cht8315";
+	reg = <0xcf>;
+	alert-gpios = <&test_gpio 0 0>;
+};
