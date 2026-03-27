@@ -1818,6 +1818,49 @@ static struct numaker_usbd_ep *numaker_usbd_ep_mgmt_bind_ep(const struct device 
 	return ep_cur;
 }
 
+static bool numaker_usbd_xfer_can_arm(const struct device *dev, uint8_t ep)
+{
+	const struct udc_numaker_config *config = dev->config;
+
+	if (config->is_hsusbd) {
+		struct udc_numaker_data *priv = udc_get_private(dev);
+		HSUSBD_T *base = config->base;
+		struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
+		struct net_buf *buf;
+		struct udc_buf_info *bi;
+
+		buf = udc_buf_peek(ep_cfg);
+		if (buf == NULL) {
+			return false;
+		}
+
+		bi = udc_get_buf_info(buf);
+		if (bi->setup) {
+			return false;
+		}
+
+		if (ep == USB_CONTROL_EP_OUT && bi->data) {
+			/* Endpoint seems to get automatically armed for Data
+			 * OUT stage reception. Now that Data stage buffer is
+			 * queued we can allow processing.
+			 */
+			base->CEPINTEN |= HSUSBD_CEPINTEN_RXPKIEN_Msk;
+			return false;
+		}
+
+		if (bi->status) {
+			priv->status_out = USB_EP_DIR_IS_OUT(ep);
+
+			/* Unleash Status stage */
+			base->CEPCTL = HSUSBD_CEPCTL_NAKCLR;
+
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static int numaker_usbd_xfer_out(const struct device *dev, uint8_t ep, bool strict)
 {
 	struct net_buf *buf;
@@ -2151,7 +2194,9 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 
 next_xfer:
 	/* Continue with next DATA OUT transaction on request */
-	numaker_usbd_xfer_out(dev, ep, false);
+	if (numaker_usbd_xfer_can_arm(dev, ep)) {
+		numaker_usbd_xfer_out(dev, ep, false);
+	}
 
 	return 0;
 }
@@ -2200,7 +2245,9 @@ static int numaker_usbd_msg_handle_in(const struct device *dev, struct numaker_u
 
 xfer_next:
 	/* Continue with next DATA IN transaction on request */
-	numaker_usbd_xfer_in(dev, ep, false);
+	if (numaker_usbd_xfer_can_arm(dev, ep)) {
+		numaker_usbd_xfer_in(dev, ep, false);
+	}
 
 	return 0;
 }
@@ -2247,51 +2294,14 @@ static int numaker_usbd_msg_handle_status(const struct device *dev, struct numak
 /* Message handler for queued transfer re-activated */
 static int numaker_usbd_msg_handle_xfer(const struct device *dev, struct numaker_usbd_msg *msg)
 {
-	const struct udc_numaker_config *config = dev->config;
 	uint8_t ep;
 
 	__ASSERT_NO_MSG(msg->type == NUMAKER_USBD_MSG_TYPE_XFER);
 
 	ep = msg->xfer.ep;
 
-	if (config->is_hsusbd) {
-		struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
-		struct net_buf *buf;
-		struct udc_buf_info *bi;
-
-		buf = udc_buf_peek(ep_cfg);
-		if (buf == NULL) {
-			return 0;
-		}
-
-		bi = udc_get_buf_info(buf);
-
-		if (bi->setup) {
-			return 0;
-		}
-
-		if (ep == USB_CONTROL_EP_OUT && bi->data) {
-			HSUSBD_T *base = config->base;
-
-			/* Endpoint seems to get automatically armed for Data
-			 * OUT stage reception. Now that Data stage buffer is
-			 * queued we can allow processing.
-			 */
-			base->CEPINTEN |= HSUSBD_CEPINTEN_RXPKIEN_Msk;
-			return 0;
-		}
-
-		if (bi->status) {
-			struct udc_numaker_data *priv = udc_get_private(dev);
-			HSUSBD_T *base = config->base;
-
-			priv->status_out = USB_EP_DIR_IS_OUT(ep);
-
-			/* Unleash Status stage */
-			base->CEPCTL = HSUSBD_CEPCTL_NAKCLR;
-
-			return 0;
-		}
+	if (!numaker_usbd_xfer_can_arm(dev, ep)) {
+		return 0;
 	}
 
 	if (USB_EP_DIR_IS_OUT(ep)) {
