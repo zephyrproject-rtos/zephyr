@@ -1,0 +1,63 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MS5637
+	bool "MS5637 Pressure and Temperature Sensor"
+	default y
+	depends on DT_HAS_MEAS_MS5637_ENABLED
+	select I2C
+	help
+	  Enable driver for the TE Connectivity MS5637 digital
+	  pressure and temperature sensor over I2C.
+
+if MS5637
+
+choice
+	prompt "Default pressure oversampling"
+	default MS5637_PRES_OVER_2048X
+
+config MS5637_PRES_OVER_256X
+	bool "x256"
+
+config MS5637_PRES_OVER_512X
+	bool "x512"
+
+config MS5637_PRES_OVER_1024X
+	bool "x1024"
+
+config MS5637_PRES_OVER_2048X
+	bool "x2048"
+
+config MS5637_PRES_OVER_4096X
+	bool "x4096"
+
+config MS5637_PRES_OVER_8192X
+	bool "x8192"
+
+endchoice
+
+choice
+	prompt "Default temperature oversampling"
+	default MS5637_TEMP_OVER_2048X
+
+config MS5637_TEMP_OVER_256X
+	bool "x256"
+
+config MS5637_TEMP_OVER_512X
+	bool "x512"
+
+config MS5637_TEMP_OVER_1024X
+	bool "x1024"
+
+config MS5637_TEMP_OVER_2048X
+	bool "x2048"
+
+config MS5637_TEMP_OVER_4096X
+	bool "x4096"
+
+config MS5637_TEMP_OVER_8192X
+	bool "x8192"
+
+endchoice
+
+endif # MS5637

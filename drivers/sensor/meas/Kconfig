@@ -3,5 +3,6 @@
 
 # zephyr-keep-sorted-start
 source "drivers/sensor/meas/ms5607/Kconfig"
+source "drivers/sensor/meas/ms5637/Kconfig"
 source "drivers/sensor/meas/ms5837/Kconfig"
 # zephyr-keep-sorted-stop
