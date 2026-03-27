@@ -837,6 +837,22 @@ static int gpio_emul_port_get_direction(const struct device *port, gpio_port_pin
 }
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 
+#ifdef CONFIG_GPIO_RAW_REGS
+static int gpio_emul_port_get_raw_regs(const struct device *dev, struct gpio_raw_regs *regs)
+{
+	struct gpio_emul_data *drv_data =
+		(struct gpio_emul_data *)dev->data;
+
+	regs->in = (mem_addr_t)&drv_data->input_vals;
+	regs->out = (mem_addr_t)&drv_data->output_vals;
+	regs->set = 0;
+	regs->clear = 0;
+	regs->toggle = 0;
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_RAW_REGS */
+
 static DEVICE_API(gpio, gpio_emul_driver) = {
 	.pin_configure = gpio_emul_pin_configure,
 #ifdef CONFIG_GPIO_GET_CONFIG
@@ -850,6 +866,9 @@ static DEVICE_API(gpio, gpio_emul_driver) = {
 	.pin_interrupt_configure = gpio_emul_pin_interrupt_configure,
 	.manage_callback = gpio_emul_manage_callback,
 	.get_pending_int = gpio_emul_get_pending_int,
+#ifdef CONFIG_GPIO_RAW_REGS
+	.port_get_raw_regs = gpio_emul_port_get_raw_regs,
+#endif /* CONFIG_GPIO_RAW_REGS */
 #ifdef CONFIG_GPIO_GET_DIRECTION
 	.port_get_direction = gpio_emul_port_get_direction,
 #endif /* CONFIG_GPIO_GET_DIRECTION */
