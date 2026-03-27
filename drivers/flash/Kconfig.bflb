@@ -12,6 +12,16 @@ config SOC_FLASH_BFLB
 	help
 	  Enables Bouffalolab flash driver for the flash controller
 
+config FLASH_BFLB_BL70X_L_PSRAM
+	bool "BL70x/BL70xL SPI PSRAM support via SF_CTRL"
+	default y
+	depends on SOC_FLASH_BFLB
+	depends on DT_HAS_BFLB_BL70X_L_PSRAM_ENABLED
+	help
+	  Initialize external SPI PSRAM connected to SF_CTRL bank 2
+	  during flash controller init. The PSRAM is memory-mapped at
+	  0x26000000 after initialization. Supports both BL70x and BL70xL.
+
 config SOC_FLASH_BFLB_DIRECT_ACCESS
 	bool "Bouffalolab flash driver read mode"
 	default n

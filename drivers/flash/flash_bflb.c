@@ -29,6 +29,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_bflb, CONFIG_FLASH_LOG_LEVEL);
 
+#ifdef CONFIG_FLASH_BFLB_BL70X_L_PSRAM
+#include "flash_bflb_bl70x_l_psram.h"
+#endif
+
 #define ERASE_VALUE	0xFF
 #define WRITE_SIZE	DT_PROP(DT_CHOSEN(zephyr_flash), write_block_size)
 #define ERASE_SIZE	DT_PROP(DT_CHOSEN(zephyr_flash), erase_block_size)
@@ -1525,7 +1529,15 @@ static int flash_bflb_init(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_FLASH_BFLB_BL70X_L_PSRAM
+	ret = flash_bflb_bl70x_l_psram_init(cfg->reg);
+#endif
+
 	irq_unlock(locker);
+
+	if (ret != 0) {
+		LOG_WRN("PSRAM init failed: %d", ret);
+	}
 
 	cfg->irq_config_func(dev);
 
