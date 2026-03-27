@@ -390,6 +390,12 @@ SECTIONS
 		*(".noinit.*")
 	*(".kernel_noinit.*")
 
+#ifdef CONFIG_LLEXT
+	*(.llext_heap)
+	*(.llext_ext_heap)
+	*(.llext_metadata_heap)
+#endif /* CONFIG_LLEXT */
+
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
