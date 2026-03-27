@@ -71,7 +71,7 @@ Sample Output
 
     accel (-3.184000 -0.697000 9.207000) m/s2
     gyro (0.065000 -0.029000 0.002000) dps
-    magn (-0.042000 0.294000 -0.408000) gauss
+    magn (-0.042000 0.294000 -0.408000) G
     - (0) (trig_cnt: 190474)
 
     <repeats endlessly every 2 seconds>

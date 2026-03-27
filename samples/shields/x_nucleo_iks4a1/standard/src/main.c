@@ -363,7 +363,7 @@ int main(void)
 		printf("X-NUCLEO-IKS4A1 sensor dashboard\n\n");
 
 		/* lis2mdl */
-		printf("LIS2MDL: Magn (gauss): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("LIS2MDL: Magn (G): x: %.3f, y: %.3f, z: %.3f\n",
 		       sensor_value_to_double(&lis2mdl_magn[0]),
 		       sensor_value_to_double(&lis2mdl_magn[1]),
 		       sensor_value_to_double(&lis2mdl_magn[2]));
@@ -371,12 +371,12 @@ int main(void)
 		printf("LIS2MDL: Temperature: %.1f C\n",
 		       sensor_value_to_double(&lis2mdl_temp));
 
-		printf("LSM6DSO16IS: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("LSM6DSO16IS: Accel (m/s^2): x: %.3f, y: %.3f, z: %.3f\n",
 			sensor_value_to_double(&lsm6dso16is_xl[0]),
 			sensor_value_to_double(&lsm6dso16is_xl[1]),
 			sensor_value_to_double(&lsm6dso16is_xl[2]));
 
-		printf("LSM6DSO16IS: Gyro (dps): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("LSM6DSO16IS: Gyro (rad/s): x: %.3f, y: %.3f, z: %.3f\n",
 			sensor_value_to_double(&lsm6dso16is_gy[0]),
 			sensor_value_to_double(&lsm6dso16is_gy[1]),
 			sensor_value_to_double(&lsm6dso16is_gy[2]));
@@ -387,12 +387,12 @@ int main(void)
 		       sensor_value_to_double(&lsm6dso16is_temp));
 #endif
 
-		printf("LSM6DSV16X: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("LSM6DSV16X: Accel (m/s^2): x: %.3f, y: %.3f, z: %.3f\n",
 			sensor_value_to_double(&lsm6dsv16x_xl[0]),
 			sensor_value_to_double(&lsm6dsv16x_xl[1]),
 			sensor_value_to_double(&lsm6dsv16x_xl[2]));
 
-		printf("LSM6DSV16X: GYro (dps): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("LSM6DSV16X: Gyro (rad/s): x: %.3f, y: %.3f, z: %.3f\n",
 			sensor_value_to_double(&lsm6dsv16x_gy[0]),
 			sensor_value_to_double(&lsm6dsv16x_gy[1]),
 			sensor_value_to_double(&lsm6dsv16x_gy[2]));
@@ -404,9 +404,9 @@ int main(void)
 #endif
 
 		printf("LPS22DF: Temperature: %.1f C\n", sensor_value_to_double(&lps22df_temp));
-		printf("LPS22DF: Pressure:%.3f kpa\n", sensor_value_to_double(&lps22df_press));
+		printf("LPS22DF: Pressure:%.3f kPa\n", sensor_value_to_double(&lps22df_press));
 
-		printf("LIS2DUXS12: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("LIS2DUXS12: Accel (m/s^2): x: %.3f, y: %.3f, z: %.3f\n",
 			sensor_value_to_double(&lis2duxs12_xl[0]),
 			sensor_value_to_double(&lis2duxs12_xl[1]),
 			sensor_value_to_double(&lis2duxs12_xl[2]));

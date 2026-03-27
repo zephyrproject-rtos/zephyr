@@ -69,12 +69,12 @@ Sample Output
 
     X-NUCLEO-IKS01A3 sensor dashboard
 
-    LIS2DW12: Accel (m.s-2): x: -0.077, y: 0.536, z: 9.648
-    LSM6DSO: Accel (m.s-2): x: -0.062, y: -0.028, z: 10.035
-    LSM6DSO: GYro (dps): x: -0.003, y: -0.001, z: 0.000
-    LSM6DSO: Magn (gauss): x: -0.052, y: -0.222, z: -0.059
+    LIS2DW12: Accel (m/s^2): x: -0.077, y: 0.536, z: 9.648
+    LSM6DSO: Accel (m/s^2): x: -0.062, y: -0.028, z: 10.035
+    LSM6DSO: Gyro (rad/s): x: -0.003, y: -0.001, z: 0.000
+    LSM6DSO: Magn (G): x: -0.052, y: -0.222, z: -0.059
     LSM6DSO: Temperature: 27.9 C
-    LSM6DSO: Pressure:100.590 kpa
+    LSM6DSO: Pressure:100.590 kPa
     1:: lsm6dso acc trig 208
     1:: lsm6dso gyr trig 208
 

@@ -412,13 +412,13 @@ int main(void)
 		       sensor_value_to_double(&stts22h_temp));
 
 		/* iis2dlpc */
-		printf("IIS2DLPC: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("IIS2DLPC: Accel (m/s^2): x: %.3f, y: %.3f, z: %.3f\n",
 			sensor_value_to_double(&iis2dlpc_accel[0]),
 			sensor_value_to_double(&iis2dlpc_accel[1]),
 			sensor_value_to_double(&iis2dlpc_accel[2]));
 
 		/* iis2mdc */
-		printf("IIS2MDC: Magn (gauss): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("IIS2MDC: Magn (G): x: %.3f, y: %.3f, z: %.3f\n",
 		       sensor_value_to_double(&iis2mdc_magn[0]),
 		       sensor_value_to_double(&iis2mdc_magn[1]),
 		       sensor_value_to_double(&iis2mdc_magn[2]));
@@ -427,18 +427,18 @@ int main(void)
 		       sensor_value_to_double(&iis2mdc_temp));
 
 		/* ism330dhcx */
-		printf("ISM330DHCX: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("ISM330DHCX: Accel (m/s^2): x: %.3f, y: %.3f, z: %.3f\n",
 			sensor_value_to_double(&ism330dhcx_accel[0]),
 			sensor_value_to_double(&ism330dhcx_accel[1]),
 			sensor_value_to_double(&ism330dhcx_accel[2]));
 
-		printf("ISM330DHCX: Gyro (dps): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("ISM330DHCX: Gyro (rad/s): x: %.3f, y: %.3f, z: %.3f\n",
 			sensor_value_to_double(&ism330dhcx_gyro[0]),
 			sensor_value_to_double(&ism330dhcx_gyro[1]),
 			sensor_value_to_double(&ism330dhcx_gyro[2]));
 
 		/* iis2iclx */
-		printf("IIS2ICLX: Accel (m.s-2): x: %.3f, y: %.3f\n",
+		printf("IIS2ICLX: Accel (m/s^2): x: %.3f, y: %.3f\n",
 			sensor_value_to_double(&iis2iclx_accel[0]),
 			sensor_value_to_double(&iis2iclx_accel[1]));
 
@@ -447,7 +447,7 @@ int main(void)
 		       sensor_value_to_double(&ilps22qs_temp));
 
 		/* pressure */
-		printf("ILPS22QS: Pressure: %.3f kpa\n",
+		printf("ILPS22QS: Pressure: %.3f kPa\n",
 		       sensor_value_to_double(&ilps22qs_press));
 
 #ifdef CONFIG_STTS22H_TRIGGER

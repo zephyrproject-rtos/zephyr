@@ -65,11 +65,11 @@ The sample code outputs sensors data on the SensorTile.box console.
     HTS221: Temperature: 26.4 C
     HTS221: Relative Humidity: 60.5%
     LPS22HH: Temperature: 28.4 C
-    LPS22HH: Pressure:99.694 kpa
-    LIS2DW12: Accel (m.s-2): x: 0.306, y: -0.459, z: 10.031
-    IIS3DHHC: Accel (m.s-2): x: -0.581, y: 0.880, z: -9.933
-    LSM6DSOX: Accel (m.s-2): x: -0.158, y: 0.158, z: 9.811
-    LSM6DSOX: GYro (dps): x: 0.003, y: 0.000, z: -0.005
+    LPS22HH: Pressure:99.694 kPa
+    LIS2DW12: Accel (m/s^2): x: 0.306, y: -0.459, z: 10.031
+    IIS3DHHC: Accel (m/s^2): x: -0.581, y: 0.880, z: -9.933
+    LSM6DSOX: Accel (m/s^2): x: -0.158, y: 0.158, z: 9.811
+    LSM6DSOX: Gyro (rad/s): x: 0.003, y: 0.000, z: -0.005
     STTS751: Temperature: 27.0 C
     1:: lps22hh trig 206
     1:: lis2dw12 trig 410

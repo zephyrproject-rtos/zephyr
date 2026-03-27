@@ -62,10 +62,10 @@ The sample code outputs sensors data on the SensorTile.box Pro console.
     SensorTile.box Pro dashboard
 
     LPS22DF: Temperature: 28.4 C
-    LPS22DF: Pressure:99.694 kpa
-    LSM6DSV16X: Accel (m.s-2): x: -0.158, y: 0.158, z: 9.811
-    LSM6DSV16X: GYro (dps): x: 0.003, y: 0.000, z: -0.005
-    LIS2DU12: Accel (m.s-2): x: -0.756, y: -0.249, z: -9.629
+    LPS22DF: Pressure:99.694 kPa
+    LSM6DSV16X: Accel (m/s^2): x: -0.158, y: 0.158, z: 9.811
+    LSM6DSV16X: Gyro (rad/s): x: 0.003, y: 0.000, z: -0.005
+    LIS2DU12: Accel (m/s^2): x: -0.756, y: -0.249, z: -9.629
     1:: lps22df trig 199
     1:: lsm6dsv16x acc trig 836
     1:: lsm6dsv16x gyr trig 836

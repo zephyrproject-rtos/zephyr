@@ -63,11 +63,11 @@ terminal emulator, such as minicom, to capture the output.
 
     proxy: 1  ;
     distance: 0 m -- 09 cm;
-    temp: 30.35 C; press: 97.466259
-    humidity: 43.500000
-    accel (0.004000 -0.540000 9.757000) m/s2
-    gyro (0.065000 -0.029000 -0.001000) dps
-    magn (0.049500 0.208500 -0.544500) gauss
+    temp: 30.35 C; press: 97.466259 kPa
+    humidity: 43.500000 %RH
+    accel (0.004000 -0.540000 9.757000) m/s^2
+    gyro (0.065000 -0.029000 -0.001000) rad/s
+    magn (0.049500 0.208500 -0.544500) G
     - (6) (trig_cnt: 1878)
 
     <repeats endlessly every 2s>

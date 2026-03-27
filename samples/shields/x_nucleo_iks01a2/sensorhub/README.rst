@@ -57,9 +57,9 @@ Sample Output
 
     X-NUCLEO-IKS01A2 sensor dashboard
 
-    LSM6DSL: Accel (m.s-2): x: 0.0, y: 0.2, z: 10.0
-    LSM6DSL: Gyro (dps): x: 0.029, y: -0.030, z: 0.016
-    LSM6DSL: Magn (gauss): x: 0.363, y: -0.002, z: -0.559
+    LSM6DSL: Accel (m/s^2): x: 0.0, y: 0.2, z: 10.0
+    LSM6DSL: Gyro (rad/s): x: 0.029, y: -0.030, z: 0.016
+    LSM6DSL: Magn (G): x: 0.363, y: -0.002, z: -0.559
     9:: lsm6dsl acc trig 1668
 
     <updated endlessly every 2 seconds>
