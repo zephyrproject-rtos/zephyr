@@ -1,0 +1,8 @@
+tests:
+  drivers.gpio.raw_regs:
+    tags:
+      - drivers
+      - gpio
+    depends_on: gpio
+    platform_allow:
+      - native_sim
