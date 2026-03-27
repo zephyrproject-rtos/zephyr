@@ -756,7 +756,8 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		}
 
 		flag_clear(&queue->flags, K_WORK_QUEUE_BUSY_BIT);
-		yield = !flag_test(&queue->flags, K_WORK_QUEUE_NO_YIELD_BIT);
+		yield = (!flag_test(&queue->flags, K_WORK_QUEUE_NO_YIELD_BIT) &&
+			 !sys_slist_is_empty(&queue->pending));
 		k_spin_unlock(&lock, key);
 
 		/* Optionally yield to prevent the work queue from
