@@ -2217,3 +2217,8 @@ This has been fixed in main for v4.4.0
 ----------------
 
 Under embargo until 2026-06-01
+
+:cve:`2026-5067`
+----------------
+
+Under embargo until 2026-05-23
