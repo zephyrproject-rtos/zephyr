@@ -83,28 +83,33 @@ A ring buffer instance is declared using
 :c:macro:`RING_BUF_DECLARE()` and accessed using:
 :c:func:`ring_buf_put_claim`, :c:func:`ring_buf_put_finish`,
 :c:func:`ring_buf_get_claim`, :c:func:`ring_buf_get_finish`,
+:c:func:`ring_buf_put_ptr`, :c:func:`ring_buf_commit`,
+:c:func:`ring_buf_get_ptr`, :c:func:`ring_buf_consume`, and
 :c:func:`ring_buf_put` and :c:func:`ring_buf_get`.
 
 Data can be copied into the ring buffer (see
 :c:func:`ring_buf_put`) or ring buffer memory can be used
 directly by the user. In the latter case, the operation is split into three stages:
 
-1. allocating the buffer (:c:func:`ring_buf_put_claim`) when
-   user requests the destination location where data can be written.
+1. Accessing the ring buffers internal buffer (:c:func:`ring_buf_put_ptr`)
+   to get a pointer to the next location where data can be written, and the
+   amount of contiguous space available at that location.
 #. writing the data by the user (e.g. buffer written by DMA).
 #. indicating the amount of data written to the provided buffer
-   (:c:func:`ring_buf_put_finish`). The amount
-   can be less than or equal to the allocated amount.
+   (:c:func:`ring_buf_commit`). The amount committed can be less than or equal to the amount
+   provided by :c:func:`ring_buf_put_ptr`.
+
 
 Data can be retrieved from a ring buffer through copying
 (see :c:func:`ring_buf_get`) or accessed directly by address. In the latter
 case, the operation is split into three stages:
 
-1. retrieving source location with valid data written to a ring buffer
-   (see :c:func:`ring_buf_get_claim`).
-#. processing data
-#. freeing processed data (see :c:func:`ring_buf_get_finish`).
-   The amount freed can be less than or equal or to the retrieved amount.
+1. Accessing the ring buffers internal buffer (see :c:func:`ring_buf_get_ptr`) to get a pointer to
+   the next location where data can be read, and the amount of contiguous data available at that
+   location.
+#. Processing data
+#. Signal to the ring buffer that the data has been consumed (see :c:func:`ring_buf_get_finish`).
+   The amount consumed can be less than or equal to the amount provided by :c:func:`ring_buf_get_ptr`.
 
 Concurrency
 ===========
