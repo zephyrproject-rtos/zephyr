@@ -916,6 +916,13 @@ static int adv_start_legacy(struct bt_le_ext_adv *adv,
 		return -EALREADY;
 	}
 
+	/* Add any IRK keys that are still pending (e.g. loaded from settings
+	 * but not yet pushed to the controller RL) before advertising begins.
+	 */
+	if (IS_ENABLED(CONFIG_BT_SMP) && atomic_test_bit(bt_dev.flags, BT_DEV_ID_PENDING)) {
+		bt_id_pending_keys_update();
+	}
+
 	(void)memset(&set_param, 0, sizeof(set_param));
 
 	set_param.min_interval = sys_cpu_to_le16(param->interval_min);
@@ -1496,6 +1503,10 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 
 	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		return -EALREADY;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SMP) && atomic_test_bit(bt_dev.flags, BT_DEV_ID_PENDING)) {
+		bt_id_pending_keys_update();
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&

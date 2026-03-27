@@ -391,6 +391,10 @@ static void select_scan_params(struct bt_le_scan_param *scan_param)
 
 static int start_scan(struct bt_le_scan_param *scan_param)
 {
+	if (IS_ENABLED(CONFIG_BT_SMP) && atomic_test_bit(bt_dev.flags, BT_DEV_ID_PENDING)) {
+		bt_id_pending_keys_update();
+	}
+
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		return start_le_scan_ext(scan_param);
 	}
