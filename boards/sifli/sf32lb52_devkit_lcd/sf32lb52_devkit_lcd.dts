@@ -68,8 +68,19 @@
 	clock-frequency = <DT_FREQ_M(240)>;
 };
 
+&lxt32 {
+	status = "okay";
+};
+
 &hxt48 {
 	status = "okay";
+};
+
+&pmuc_clk {
+	status = "okay";
+
+	pinctrl-0 = <&lxt32_default>;
+	pinctrl-names = "default";
 };
 
 &rcc_clk {
