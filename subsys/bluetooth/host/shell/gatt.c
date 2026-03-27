@@ -821,6 +821,7 @@ static const struct bt_uuid_128 vnd_long_uuid2 = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x12340, 0x5678cefaadde));
 
 static uint8_t vnd_value[6] = { 'V', 'e', 'n', 'd', 'o', 'r' };
+BUILD_ASSERT(sizeof(vnd_value) <= BT_ATT_MAX_ATTRIBUTE_LEN);
 
 static const struct bt_uuid_128 vnd1_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x12340, 0x56789abcdef4));
@@ -850,9 +851,8 @@ static ssize_t write_vnd1(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 static ssize_t read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
-	uint8_t *value = attr->user_data;
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, value, sizeof(vnd_value));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, vnd_value,
+				 (uint16_t)sizeof(vnd_value));
 }
 
 static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -870,9 +870,10 @@ static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
-#define MAX_DATA 30
-static uint8_t vnd_long_value1[MAX_DATA] = { 'V', 'e', 'n', 'd', 'o', 'r' };
-static uint8_t vnd_long_value2[MAX_DATA] = { 'S', 't', 'r', 'i', 'n', 'g' };
+#define MAX_VND_LONG_DATA 30U
+static uint8_t vnd_long_value1[MAX_VND_LONG_DATA] = { 'V', 'e', 'n', 'd', 'o', 'r' };
+static uint8_t vnd_long_value2[MAX_VND_LONG_DATA] = { 'S', 't', 'r', 'i', 'n', 'g' };
+BUILD_ASSERT(MAX_VND_LONG_DATA <= BT_ATT_MAX_ATTRIBUTE_LEN);
 
 static ssize_t read_long_vnd(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
@@ -880,8 +881,7 @@ static ssize_t read_long_vnd(struct bt_conn *conn,
 {
 	uint8_t *value = attr->user_data;
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
-				 sizeof(vnd_long_value1));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value, MAX_VND_LONG_DATA);
 }
 
 static ssize_t write_long_vnd(struct bt_conn *conn,
@@ -894,7 +894,7 @@ static ssize_t write_long_vnd(struct bt_conn *conn,
 		return 0;
 	}
 
-	if (offset + len > sizeof(vnd_long_value1)) {
+	if (offset + len > MAX_VND_LONG_DATA) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
