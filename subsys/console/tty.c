@@ -35,39 +35,35 @@ static void tty_uart_isr(const struct device *dev, void *user_data)
 
 static void uart_rx_handle(const struct device *dev, struct tty_serial *tty)
 {
-	uint8_t *data;
+	int rc;
 	uint32_t len;
-	int rd_len;
+	uint8_t *data;
 	bool new_data = false;
-	int err;
 
-	do {
-		len = ring_buf_put_claim(&tty->rx_buf, &data, ring_buf_capacity_get(&tty->rx_buf));
-		if (len > 0) {
-			rd_len = uart_fifo_read(dev, data, len);
+	while (true) {
+		len = ring_buf_put_ptr(&tty->rx_buf, &data, 0);
+		if (len == 0) {
+			/* No space in the ring buffer - drop one byte and warn user. */
+			uint8_t dummy;
 
-			if (rd_len > 0) {
-				new_data = true;
-			}
-
-			err = ring_buf_put_finish(&tty->rx_buf, rd_len);
-			__ASSERT_NO_MSG(err == 0);
-			ARG_UNUSED(err);
-			if (rd_len < len) {
-				/* No more data in the FIFO, exit loop. */
+			tty_write(tty, "~", 1);
+			if (uart_fifo_read(dev, &dummy, 1) <= 0) {
 				break;
 			}
-		} else {
-			uint8_t dummy;
-			const char dummy_char = '~';
-
-			/* Try to give a clue to user that some input was lost */
-			tty_write(tty, &dummy_char, sizeof(dummy_char));
-
-			/* No space in the ring buffer - consume byte. */
-			rd_len = uart_fifo_read(dev, &dummy, 1);
+			continue;
 		}
-	} while (rd_len > 0);
+
+		rc = uart_fifo_read(dev, data, len);
+		__ASSERT_NO_MSG(rc >= 0);
+		if (rc <= 0) {
+			break;
+		}
+		ring_buf_commit(&tty->rx_buf, (uint32_t)rc);
+		new_data = true;
+		if (rc < len) {
+			break;
+		}
+	}
 
 	if (new_data) {
 		k_event_post(&tty->signal_event, TTY_SIGNAL_RXRDY);
@@ -76,16 +72,17 @@ static void uart_rx_handle(const struct device *dev, struct tty_serial *tty)
 
 static void uart_tx_handle(const struct device *dev, struct tty_serial *tty)
 {
-	uint32_t len;
+	int rc;
+	uint32_t available;
 	uint8_t *data;
-	int err;
 
-	len = ring_buf_get_claim(&tty->tx_buf, &data, ring_buf_capacity_get(&tty->tx_buf));
-	if (len > 0) {
-		len = uart_fifo_fill(dev, data, len);
-		err = ring_buf_get_finish(&tty->tx_buf, len);
-		__ASSERT_NO_MSG(err == 0);
-		ARG_UNUSED(err);
+	available = ring_buf_get_ptr(&tty->tx_buf, &data, 0);
+	if (available > 0) {
+		rc = uart_fifo_fill(dev, data, available);
+		__ASSERT(rc >= 0, "uart_fifo_fill() failed:%d", rc);
+		if (likely(rc > 0)) {
+			ring_buf_consume(&tty->tx_buf, (uint32_t)rc);
+		}
 	} else {
 		uart_irq_tx_disable(dev);
 		atomic_clear(&tty->tx_busy);
