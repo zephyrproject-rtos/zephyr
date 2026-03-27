@@ -68,13 +68,13 @@ Zephyr workflows. Refer to :ref:`build_an_application` and :ref:`application_run
 Flashing
 ========
 
-The program can be flashed to RSK-RX140 using the **E2OB** by connecting the board to the host PC
+The program can be flashed to FPB-RX140 using the **E2OB** by connecting the board to the host PC
 and open Jumper J4.
 Here’s an example for building and flashing the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: rsk_rx140
+   :board: fpb_rx140
    :goals: build flash
 
 Debugging
