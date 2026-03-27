@@ -31,6 +31,10 @@
 #include DeviceFamily_constructPath(cmsis/core/cmsis_compiler.h)
 #include DeviceFamily_constructPath(driverlib/systick.h)
 
+/* The range of pins available on this device */
+const uint_least8_t GPIO_pinLowerBound = 0;
+const uint_least8_t GPIO_pinUpperBound = 25;
+
 #ifdef CONFIG_PM
 
 static void pm_cc23x0_enter_standby(void);
