@@ -8,3 +8,13 @@ tests:
     - esp32c3_devkitc
     tags: esp32
     build_only: true
+  sample.board.esp32.light_sleep.peri_powerdown:
+    platform_allow:
+    - esp32c5_devkitc/esp32c5/hpcore
+    - esp32c6_devkitc/esp32c6/hpcore
+    - esp32h2_devkitm
+    tags: esp32
+    build_only: true
+    extra_configs:
+    - CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+    - CONFIG_HEAP_MEM_POOL_SIZE=8192
