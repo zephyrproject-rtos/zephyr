@@ -1261,7 +1261,7 @@ void coap_client_cancel_request(struct coap_client *client, struct coap_client_r
 		    requests_match(&client->requests[i].coap_request, req)) {
 			LOG_DBG("Cancelling request %d", i);
 			report_callback_error(&client->requests[i], -ECANCELED);
-			release_internal_request(&client->requests[i]);
+			reset_internal_request(&client->requests[i]);
 		}
 	}
 
