@@ -77,6 +77,31 @@ config PTP_CLOCK_TYPE
 	default 0x02 if PTP_TRANSPARENT_P2P_CLOCK
 	default 0x03 if PTP_TRANSPARENT_E2E_CLOCK
 
+choice
+	prompt "PTP Delay Mechanism"
+	default PTP_DM_E2E
+	help
+	  Select the delay mechanism used to measure the propagation delay.
+	  E2E (End-to-End)
+	  P2P (Peer-to-Peer)
+
+config PTP_DM_E2E
+	bool "End-to-End (E2E)"
+	help
+	  The delay is measured between the timeReceiver and the timeTransmitter.
+
+config PTP_DM_P2P
+	bool "Peer-to-Peer (P2P)"
+	help
+	  The delay is measured between each pair of adjacent ports.
+
+endchoice
+
+config PTP_DELAY_MECHANISM
+	hex
+	default 0x01 if PTP_DM_E2E
+	default 0x02 if PTP_DM_P2P
+
 config PTP_NUM_PORTS
 	int "Number of PTP Ports"
 	default 1 if PTP_ORDINARY_CLOCK

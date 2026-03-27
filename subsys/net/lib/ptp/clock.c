@@ -587,6 +587,20 @@ void ptp_clock_delay(uint64_t egress, uint64_t ingress)
 	ptp_clk.current_ds.mean_delay = clock_ns_to_timeinterval(delay);
 }
 
+void ptp_clock_pdelay(int64_t t1, int64_t t2, int64_t t3, int64_t t4, int64_t c1, int64_t c2)
+{
+	int64_t t3c, t23, t41, delay;
+
+	t3c = t3 + (c1 + c2);
+	t23 = t2 - t3c;
+	t41 = t4 - t1;
+
+	delay = (t23 + t41) / 2;
+
+	LOG_DBG("Delay %lldns", delay);
+	ptp_clk.current_ds.mean_delay = clock_ns_to_timeinterval(delay);
+}
+
 sys_slist_t *ptp_clock_ports_list(void)
 {
 	return &ptp_clk.ports_list;

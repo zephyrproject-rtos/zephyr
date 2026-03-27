@@ -125,6 +125,20 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress);
  * @param[in] ingress Timestamp of the message reception on the remote node in nanoseconds.
  */
 void ptp_clock_delay(uint64_t egress, uint64_t ingress);
+
+/**
+ * @brief Function updating PTP Clock link delay.
+ *
+ * @param[in] t1 Timestamp of Pdelay_Req transmission by the local port in nanoseconds.
+ * @param[in] t2 Timestamp of Pdelay_Req reception by the peer in nanoseconds.
+ * @param[in] t3 Timestamp of Pdelay_Resp transmission by the peer in nanoseconds.
+ * @param[in] t4 Timestamp of Pdelay_Resp reception by the local port in nanoseconds.
+ * @param[in] c1 Correction from the Pdelay_Resp correction field plus delay asymmetry in
+ * nanoseconds.
+ * @param[in] c2 Correction from the Pdelay_Resp_Follow_Up correction field in nanoseconds.
+ */
+void ptp_clock_pdelay(int64_t t1, int64_t t2, int64_t t3, int64_t t4, int64_t c1, int64_t c2);
+
 /**
  * @brief Function for getting list of PTP Ports for the PTP Clock instance.
  *

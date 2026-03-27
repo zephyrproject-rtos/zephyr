@@ -24,9 +24,12 @@ union mcast_addr {
 
 #if CONFIG_PTP_UDP_IPv4_PROTOCOL
 static union mcast_addr mcast_addr = {.ipv4 = {{{224, 0, 1, 129}}}};
+static union mcast_addr mcast_addr_p2p = {.ipv4 = {{{224, 0, 0, 107}}}};
 #elif CONFIG_PTP_UDP_IPv6_PROTOCOL
-static union mcast_addr mcast_addr = {.ipv6 = {{{0xff, 0xe, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-						 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x81}}}};
+static union mcast_addr mcast_addr = {.ipv6 = {{{0xff, 0xe, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+						 0x0, 0x0, 0x0, 0x0, 0x1, 0x81}}}};
+static union mcast_addr mcast_addr_p2p = {.ipv6 = {{{0xff, 0x2, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+						     0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x6b}}}};
 #else
 #error "Chosen PTP transport protocol not implemented"
 #endif
@@ -99,6 +102,14 @@ static int transport_join_multicast(struct ptp_port *port)
 
 		zsock_setsockopt(port->socket[1], NET_IPPROTO_IP,
 				 ZSOCK_IP_ADD_MEMBERSHIP, &mreqn, sizeof(mreqn));
+
+		if (CONFIG_PTP_DELAY_MECHANISM == PTP_DM_P2P) {
+			memcpy(&mreqn.imr_multiaddr, &mcast_addr_p2p, sizeof(struct net_in_addr));
+			mreqn.imr_ifindex = net_if_get_by_iface(port->iface);
+
+			zsock_setsockopt(port->socket[1], NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+					 &mreqn, sizeof(mreqn));
+		}
 	} else {
 		struct net_ipv6_mreq mreqn = {0};
 
@@ -107,6 +118,15 @@ static int transport_join_multicast(struct ptp_port *port)
 
 		zsock_setsockopt(port->socket[0], NET_IPPROTO_IPV6,
 				 ZSOCK_IPV6_ADD_MEMBERSHIP, &mreqn, sizeof(mreqn));
+
+		if (CONFIG_PTP_DELAY_MECHANISM == PTP_DM_P2P) {
+			memcpy(&mreqn.ipv6mr_multiaddr, &mcast_addr_p2p,
+			       sizeof(struct net_in6_addr));
+			mreqn.ipv6mr_ifindex = net_if_get_by_iface(port->iface);
+
+			zsock_setsockopt(port->socket[0], NET_IPPROTO_IPV6,
+					 ZSOCK_IPV6_ADD_MEMBERSHIP, &mreqn, sizeof(mreqn));
+		}
 	}
 
 	return 0;
@@ -207,17 +227,30 @@ static int transport_send(int socket, int port, void *buf, int length, struct ne
 	int cnt;
 
 	if (!addr) {
+		uint8_t msg_type = ((struct ptp_msg *)buf)->header.type_major_sdo_id;
+
 		if (IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL)) {
 			m_addr.sa_family = NET_AF_INET;
 			net_sin(&m_addr)->sin_port = net_htons(port);
-			net_sin(&m_addr)->sin_addr.s_addr = mcast_addr.ipv4.s_addr;
 
+			if (msg_type == PTP_MSG_PDELAY_REQ || msg_type == PTP_MSG_PDELAY_RESP ||
+			    msg_type == PTP_MSG_PDELAY_RESP_FOLLOW_UP) {
+				net_sin(&m_addr)->sin_addr.s_addr = mcast_addr_p2p.ipv4.s_addr;
+			} else {
+				net_sin(&m_addr)->sin_addr.s_addr = mcast_addr.ipv4.s_addr;
+			}
 		} else if (IS_ENABLED(CONFIG_PTP_UDP_IPv6_PROTOCOL)) {
 			m_addr.sa_family = NET_AF_INET6;
 			net_sin6(&m_addr)->sin6_port = net_htons(port);
-			memcpy(&net_sin6(&m_addr)->sin6_addr,
-			       &mcast_addr,
-			       sizeof(struct net_in6_addr));
+
+			if (msg_type == PTP_MSG_PDELAY_REQ || msg_type == PTP_MSG_PDELAY_RESP ||
+			    msg_type == PTP_MSG_PDELAY_RESP_FOLLOW_UP) {
+				memcpy(&net_sin6(&m_addr)->sin6_addr, &mcast_addr_p2p,
+				       sizeof(struct net_in6_addr));
+			} else {
+				memcpy(&net_sin6(&m_addr)->sin6_addr, &mcast_addr,
+				       sizeof(struct net_in6_addr));
+			}
 		}
 		addr = &m_addr;
 	}
