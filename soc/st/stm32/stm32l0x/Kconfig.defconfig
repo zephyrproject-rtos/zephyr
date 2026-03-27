@@ -12,4 +12,8 @@ config TASK_WDT_HW_FALLBACK_DELAY
 	depends on TASK_WDT_HW_FALLBACK
 	default 200
 
+configdefault SHARED_INTERRUPTS
+	# USART4 - USART5 : IRQn 14
+	default y if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5)
+
 endif # SOC_SERIES_STM32L0X
