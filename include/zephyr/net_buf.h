@@ -1004,6 +1004,18 @@ static inline void net_buf_simple_restore(struct net_buf_simple *buf,
  * count going to 0 will free the net_buf but no the data pointer in it.
  */
 #define NET_BUF_EXTERNAL_DATA  BIT(0)
+/**
+ * Flag indicating the net_buf is allocated on the stack. This flags can't be
+ * set without NET_BUF_EXTERNAL_DATA. This never needs to be explicitly set or
+ * unset by the net_buf API user. Such net_buf is exclusively instantiated via
+ * NET_BUF_DEFINE_STACK() macro.
+ */
+#define NET_BUF_ON_STACK       BIT(1)
+
+/**
+ * Pool ID to be used with NET_BUF_ON_STACK
+ */
+#define NET_BUF_ON_STACK_POOL_ID 0xFF
 
 /**
  * @brief Network buffer representation.
@@ -1513,6 +1525,35 @@ struct net_buf * __must_check net_buf_alloc_with_data(struct net_buf_pool *pool,
 #endif
 
 /**
+ * @brief Allocate net_buf on the stack.
+ *
+ * FIXME
+ */
+#define NET_BUF_DEFINE_STACK(NAME, DATA, DATA_SIZE, USERDATA_SIZE)            \
+	__cleanup(__net_buf_stack_allocated_cleanup) struct {                 \
+		struct net_buf buf;                                           \
+		uint8_t user_data[USERDATA_SIZE];                             \
+	} NAME##_container = {                                                \
+		.buf.pool_id = NET_BUF_ON_STACK_POOL_ID,                      \
+		.buf.__buf = (uint8_t *)DATA,                                 \
+		.buf.data = (uint8_t *)DATA,                                  \
+		.buf.size = DATA_SIZE,                                        \
+		.buf.len = DATA_SIZE,                                         \
+		.buf.ref = 1,                                                 \
+		.buf.flags = NET_BUF_ON_STACK | NET_BUF_EXTERNAL_DATA,        \
+		.buf.user_data_size = USERDATA_SIZE,                          \
+	};                                                                    \
+	struct net_buf *NAME = &NAME##_container.buf
+
+static inline void __net_buf_stack_allocated_cleanup(void *obj)
+{
+	__maybe_unused struct net_buf *buf = (struct net_buf *)obj;
+
+	__ASSERT(buf->ref == 1, "Corrupted reference counter");
+}
+
+
+/**
  * @brief Destroy buffer from custom destroy callback
  *
  * This helper is only intended to be used from custom destroy callbacks.
@@ -1525,6 +1566,7 @@ static inline void net_buf_destroy(struct net_buf *buf)
 {
 	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
+	__ASSERT(pool, "Can't destroy stack allocated buffer");
 	if (buf->__buf) {
 		if (!(buf->flags & NET_BUF_EXTERNAL_DATA)) {
 			pool->alloc->cb->unref(buf, buf->__buf);
