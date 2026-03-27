@@ -59,6 +59,8 @@ The following CVEs are addressed by this release:
 
 * :cve:`2026-5066` Under embargo until 2026-06-01
 
+* :cve:`2026-5067` Under embargo until 2026-05-23
+
 API Changes
 ***********
 
