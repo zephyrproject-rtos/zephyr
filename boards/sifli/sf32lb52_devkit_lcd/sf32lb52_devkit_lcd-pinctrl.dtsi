@@ -39,4 +39,10 @@
 			bias-pull-down;
 		};
 	};
+
+	usb_default: usb_default {
+		group1 {
+			pinmux = <PA35_ANALOG>, <PA36_ANALOG>;
+		};
+	};
 };
