@@ -6,6 +6,7 @@
 config SOC_SERIES_STM32U3X
 	select ARM
 	select CPU_CORTEX_M33
+	select ARM_TRUSTZONE_M
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
