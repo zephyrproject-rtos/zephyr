@@ -7,6 +7,9 @@
 CONFIG_ARM_MPU=y
 CONFIG_HW_STACK_PROTECTION=y
 
+# MPU null-pointer detection not functional (flash at 0x8000000, not near address 0)
+CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
+
 # Enable console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
