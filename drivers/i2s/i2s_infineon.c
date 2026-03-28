@@ -18,10 +18,13 @@
 #include <cy_tdm.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(i2s_infineon);
+LOG_MODULE_REGISTER(i2s_infineon, CONFIG_I2S_LOG_LEVEL);
 
 #define RX_QUEUE_SIZE CONFIG_I2S_INFINEON_RX_QUEUE_SIZE
 #define TX_QUEUE_SIZE CONFIG_I2S_INFINEON_TX_QUEUE_SIZE
+#define TX_DUMMY_ELEMENTS          (6U)
+#define MAX_TRANSFER_SIZE_ELEMENTS (64U)
+#define MAX_TX_TRIGGER_LEVEL       (48U)
 
 static int start_dma_tx_transfer(const struct device *dev);
 static int start_dma_rx_transfer(const struct device *dev);
@@ -50,7 +53,7 @@ struct i2s_stream {
 	struct k_msgq queue;
 	void *mem_block;
 	size_t mem_block_len;
-	bool xfer_pending;
+	uint32_t max_transfer_size; /* bytes */
 	bool last_block;
 	bool drain;
 };
@@ -60,6 +63,7 @@ struct dma_channel {
 	uint32_t channel_num;
 	struct dma_config dma_cfg;
 	struct dma_block_config blk_cfg;
+	uint32_t remaining_block_size;
 };
 
 /* Device run time data */
@@ -83,17 +87,18 @@ static void dma_tx_callback(const struct device *dma_dev, void *arg, uint32_t ch
 	const struct ifx_i2s_config *config = dev->config;
 	TDM_TX_STRUCT_Type *tdm_tx = &((TDM_STRUCT_Type *)config->reg_addr)->TDM_TX_STRUCT;
 
-	k_mem_slab_free(data->tx.cfg.mem_slab, data->tx.mem_block);
-	data->tx.mem_block = NULL;
+	if (data->dma_tx.remaining_block_size == 0) {
+		if (data->tx.mem_block == NULL) {
+			LOG_ERR("TX block buffer is NULL in DMA callback");
+			data->tx.state = I2S_STATE_ERROR;
+		} else {
+			k_mem_slab_free(data->tx.cfg.mem_slab, data->tx.mem_block);
+			data->tx.mem_block = NULL;
+		}
+	}
 
 	Cy_AudioTDM_ClearTxInterrupt(tdm_tx, CY_TDM_INTR_TX_FIFO_TRIGGER);
 	Cy_AudioTDM_SetTxInterruptMask(tdm_tx, CY_TDM_INTR_TX_MASK);
-
-	if (data->tx.xfer_pending) {
-		LOG_WRN("TX: transfer pending");
-		data->tx.xfer_pending = false;
-		(void)start_dma_tx_transfer(dev);
-	}
 
 	if (data->tx_waiting_to_start) {
 		data->tx_waiting_to_start = false;
@@ -112,26 +117,23 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg, uint32_t ch
 	TDM_RX_STRUCT_Type *tdm_rx = &(((TDM_STRUCT_Type *)config->reg_addr)->TDM_RX_STRUCT);
 	struct queue_item queue_element;
 
-	queue_element.buffer = data->rx.mem_block;
-	queue_element.size = data->rx.mem_block_len;
+	if (data->dma_rx.remaining_block_size == 0) {
+		queue_element.buffer = data->rx.mem_block;
+		queue_element.size = data->rx.mem_block_len;
 
-	if (0 != k_msgq_put(&data->rx.queue, &queue_element, K_NO_WAIT)) {
-		LOG_ERR("RX overflow, no space in RX queue");
-		data->rx.state = I2S_STATE_ERROR;
-		return;
-	}
-	data->rx.mem_block = NULL;
+		if (0 != k_msgq_put(&data->rx.queue, &queue_element, K_NO_WAIT)) {
+			LOG_ERR("RX overflow, no space in RX queue");
+			data->rx.state = I2S_STATE_ERROR;
+			return;
+		}
 
-	if (data->rx.last_block) {
-		i2s_rx_stream_disable(dev, false);
-		data->rx.state = I2S_STATE_READY;
-		return;
-	}
+		data->rx.mem_block = NULL;
 
-	if (data->rx.xfer_pending) {
-		LOG_WRN("RX: transfer pending");
-		data->rx.xfer_pending = false;
-		start_dma_rx_transfer(dev);
+		if (data->rx.last_block) {
+			i2s_rx_stream_disable(dev, false);
+			data->rx.state = I2S_STATE_READY;
+			return;
+		}
 	}
 
 	Cy_AudioTDM_ClearRxInterrupt(tdm_rx, CY_TDM_INTR_RX_FIFO_TRIGGER);
@@ -152,28 +154,22 @@ static void tx_fifo_trigger_handler(const struct device *dev)
 		/* Continue transmission */
 		Cy_AudioTDM_SetTxInterruptMask(tdm_tx,
 					       CY_TDM_INTR_TX_MASK & ~CY_TDM_INTR_TX_FIFO_TRIGGER);
-		if (stream->mem_block == NULL) {
-			if (stream->last_block) {
-				/* Don't start the next DMA transfer if the last block is
-				 * currently being transmitted. Wait for the remaining data
-				 * in the HW FIFO to be sent
-				 */
+		if (stream->last_block && data->dma_tx.remaining_block_size == 0) {
+			/* Don't start the next DMA transfer if the last block is
+			 * currently being transmitted. Wait for the remaining data
+			 * in the HW FIFO to be sent
+			 */
+			stream->drain = true;
 
-				/* Write some dummy samples to the TX buffer to keep the TX
-				 * channel from shutting off before the RX channel is done
-				 * receiving data
-				 */
-				for (int i = 0; i < 6; ++i) {
-					Cy_AudioTDM_WriteTxData(tdm_tx, 0);
-				}
-
-				stream->drain = true;
-			} else {
-				(void)start_dma_tx_transfer(dev);
+			/* Write some dummy samples to the TX buffer to keep the TX
+			 * channel from shutting off before the RX channel is done
+			 * receiving data
+			 */
+			for (int i = 0; i < TX_DUMMY_ELEMENTS; ++i) {
+				Cy_AudioTDM_WriteTxData(tdm_tx, 0);
 			}
 		} else {
-			/* Previous DMA transfer still in progress */
-			data->tx.xfer_pending = true;
+			start_dma_tx_transfer(dev);
 		}
 		break;
 	case I2S_STATE_ERROR:
@@ -194,13 +190,7 @@ static void rx_fifo_trigger_handler(const struct device *dev)
 	switch (stream->state) {
 	case I2S_STATE_RUNNING:
 	case I2S_STATE_STOPPING:
-		/* Continue transmission */
-		if (stream->mem_block == NULL) {
-			start_dma_rx_transfer(dev);
-		} else {
-			/* Previous DMA transfer still in progress */
-			data->rx.xfer_pending = true;
-		}
+		start_dma_rx_transfer(dev);
 		break;
 	case I2S_STATE_ERROR:
 		i2s_rx_stream_disable(dev, false);
@@ -220,34 +210,54 @@ static int start_dma_tx_transfer(const struct device *dev)
 	TDM_TX_STRUCT_Type *tdm_tx = &((TDM_STRUCT_Type *)config->reg_addr)->TDM_TX_STRUCT;
 	struct dma_channel *dma_ch = &data->dma_tx;
 	struct queue_item queue_element;
+	uint32_t transfer_size;
+	uint32_t addr_offset = 0;
 
-	ret = k_msgq_get(&stream->queue, &queue_element, K_NO_WAIT);
-	if (ret != 0) {
-		/* No more data in the tx queue. Continue transmitting until an underflow
-		 * interrupt is triggered and let the ISR determine the state transition
-		 */
-		if (stream->state == I2S_STATE_STOPPING) {
-			stream->last_block = true;
-			stream->drain = true;
+	/* Only get a new block if the previous one has been fully transmitted */
+	if (dma_ch->remaining_block_size == 0) {
+		ret = k_msgq_get(&stream->queue, &queue_element, K_NO_WAIT);
+		if (ret != 0) {
+			/* No more data in the tx queue. Continue transmitting until an underflow
+			 * interrupt is triggered and let the ISR determine the state transition
+			 */
+			if (stream->state == I2S_STATE_STOPPING) {
+				stream->last_block = true;
+				stream->drain = true;
+			}
+
+			/* Write some dummy samples to the TX buffer to keep the TX
+			 * channel from shutting off before the RX channel is done
+			 * receiving data
+			 */
+			Cy_AudioTDM_SetTxInterruptMask(tdm_tx,
+						CY_TDM_INTR_TX_MASK & ~CY_TDM_INTR_TX_FIFO_TRIGGER);
+			for (int i = 0; i < TX_DUMMY_ELEMENTS; ++i) {
+				Cy_AudioTDM_WriteTxData(tdm_tx, 0);
+			}
+
+			return ret;
 		}
 
-		/* Write some dummy samples to the TX buffer to keep the TX
-		 * channel from shutting off before the RX channel is done
-		 * receiving data
-		 */
-		Cy_AudioTDM_SetTxInterruptMask(tdm_tx,
-					       CY_TDM_INTR_TX_MASK & ~CY_TDM_INTR_TX_FIFO_TRIGGER);
-		for (int i = 0; i < 6; ++i) {
-			Cy_AudioTDM_WriteTxData(tdm_tx, 0);
-		}
-
-		return ret;
+		dma_ch->remaining_block_size = queue_element.size;
+		stream->mem_block = queue_element.buffer;
+		stream->mem_block_len = queue_element.size;
 	}
 
-	stream->mem_block = queue_element.buffer;
-	stream->mem_block_len = queue_element.size;
-	dma_ch->blk_cfg.source_address = (uint32_t)queue_element.buffer;
-	dma_ch->blk_cfg.block_size = (uint32_t)queue_element.size;
+	/* compute the size of the next DMA transfer */
+	if (dma_ch->remaining_block_size < data->tx.max_transfer_size) {
+		transfer_size = dma_ch->remaining_block_size;
+	} else {
+		transfer_size = data->tx.max_transfer_size;
+	}
+
+	/* Determine the offset into the destination buffer where the next transfer should begin
+	 * and update the remaining_block_size based on the calculated transfer size.
+	 */
+	addr_offset = stream->mem_block_len - dma_ch->remaining_block_size;
+	dma_ch->remaining_block_size -= transfer_size;
+
+	dma_ch->blk_cfg.source_address = (uint32_t)stream->mem_block + addr_offset;
+	dma_ch->blk_cfg.block_size = (uint32_t)transfer_size;
 
 	ret = dma_config(dma_ch->dev_dma, dma_ch->channel_num, &dma_ch->dma_cfg);
 	if (ret < 0) {
@@ -274,18 +284,39 @@ static int start_dma_rx_transfer(const struct device *dev)
 	struct ifx_i2s_data *data = dev->data;
 	struct i2s_stream *stream = &data->rx;
 	struct dma_channel *dma_ch = &data->dma_rx;
+	uint32_t transfer_size;
+	uint32_t addr_offset = 0;
 
-	ret = k_mem_slab_alloc(stream->cfg.mem_slab, &stream->mem_block, K_NO_WAIT);
-	if (ret != 0) {
-		LOG_WRN("No free memory block available for reception");
-		i2s_rx_stream_disable(dev, false);
-		stream->state = I2S_STATE_ERROR;
-		return ret;
+	/* Only allocate a new block if the previous one has been fully transmitted */
+	if (data->dma_rx.remaining_block_size == 0) {
+		ret = k_mem_slab_alloc(stream->cfg.mem_slab, &stream->mem_block, K_NO_WAIT);
+		if (ret != 0) {
+			LOG_WRN("No free memory block available for reception");
+			i2s_rx_stream_disable(dev, false);
+			stream->state = I2S_STATE_ERROR;
+			return ret;
+		}
+		memset(stream->mem_block, 0xff, stream->cfg.block_size);
+
+		stream->mem_block_len = stream->cfg.block_size;
+		data->dma_rx.remaining_block_size = stream->cfg.block_size;
 	}
-	stream->mem_block_len = stream->cfg.block_size;
 
-	dma_ch->blk_cfg.dest_address = (uint32_t)stream->mem_block;
-	dma_ch->blk_cfg.block_size = (uint32_t)stream->mem_block_len;
+	/* compute the size of the next DMA transfer */
+	if (data->dma_rx.remaining_block_size < data->rx.max_transfer_size) {
+		transfer_size = data->dma_rx.remaining_block_size;
+	} else {
+		transfer_size = data->rx.max_transfer_size;
+	}
+
+	/* Determine the offset into the destination buffer where the next transfer should begin
+	 * and update the remaining_block_size based on the calculated transfer size.
+	 */
+	addr_offset = stream->mem_block_len - data->dma_rx.remaining_block_size;
+	data->dma_rx.remaining_block_size -= transfer_size;
+
+	dma_ch->blk_cfg.dest_address = (uint32_t)stream->mem_block + addr_offset;
+	dma_ch->blk_cfg.block_size = (uint32_t)transfer_size;
 
 	ret = dma_config(dma_ch->dev_dma, dma_ch->channel_num, &dma_ch->dma_cfg);
 	if (ret < 0) {
@@ -312,6 +343,7 @@ static int i2s_tx_stream_start(const struct device *dev)
 	struct ifx_i2s_data *const data = dev->data;
 
 	data->tx_waiting_to_start = true;
+	data->dma_tx.remaining_block_size = 0;
 	ret = start_dma_tx_transfer(dev);
 	if (ret != 0) {
 		LOG_ERR("Failed to start TX DMA transfer: %d", ret);
@@ -324,7 +356,10 @@ static int i2s_tx_stream_start(const struct device *dev)
 static int i2s_rx_stream_start(const struct device *dev)
 {
 	const struct ifx_i2s_config *config = dev->config;
+	struct ifx_i2s_data *data = dev->data;
 	TDM_RX_STRUCT_Type *tdm_rx = &(((TDM_STRUCT_Type *)config->reg_addr)->TDM_RX_STRUCT);
+
+	data->dma_rx.remaining_block_size = 0;
 
 	Cy_AudioTDM_ClearRxInterrupt(tdm_rx, CY_TDM_INTR_RX_MASK);
 	Cy_AudioTDM_SetRxInterruptMask(tdm_rx, CY_TDM_INTR_RX_MASK);
@@ -554,9 +589,28 @@ static int ifx_i2s_configure(const struct device *dev, enum i2s_dir dir,
 		config->tdm_config.rx_config->enable = true;
 		config->tdm_config.rx_config->wordSize = tdm_word_size;
 		config->tdm_config.rx_config->masterMode = master_mode;
-		/* Rx Trigger level should simply be the size of one mem_slab block */
-		config->tdm_config.rx_config->fifoTriggerLevel =
-			i2s_cfg->block_size / dma_data_size_bytes;
+
+		/* if the block size is smaller than the maximum transfer size, set the
+		 * trigger level and transfer size to match the block size.
+		 */
+		if ((i2s_cfg->block_size / dma_data_size_bytes) < MAX_TRANSFER_SIZE_ELEMENTS) {
+			data->rx.max_transfer_size = i2s_cfg->block_size;
+			config->tdm_config.rx_config->fifoTriggerLevel =
+				i2s_cfg->block_size / dma_data_size_bytes;
+		} else {
+			data->rx.max_transfer_size =
+				MAX_TRANSFER_SIZE_ELEMENTS * dma_data_size_bytes;
+		}
+		LOG_DBG("RX FIFO Trigger Level set to %u",
+			config->tdm_config.rx_config->fifoTriggerLevel);
+
+		if (((i2s_cfg->block_size / dma_data_size_bytes) %
+			config->tdm_config.rx_config->fifoTriggerLevel) != 0) {
+			/* if the block size is not a multiple of the RX FIFO Trigger Level,
+			 * the final chunk of a block will not trigger the DMA in loopback mode
+			 */
+			LOG_DBG("Block size not a multiple of RX FIFO Trigger Level");
+		}
 
 		/* configure DMA data sizes */
 		data->dma_rx.dma_cfg.source_data_size = dma_data_size_bytes;
@@ -569,16 +623,22 @@ static int ifx_i2s_configure(const struct device *dev, enum i2s_dir dir,
 		config->tdm_config.tx_config->enable = true;
 		config->tdm_config.tx_config->wordSize = tdm_word_size;
 		config->tdm_config.tx_config->masterMode = master_mode;
-		/* The hw fifo size is 128 elements (64 samples) and the trigger level is
-		 * half the block size. The maximum block size needs to be limited so that
-		 * trigger level + block size is smaller than the hardware fifo size
+
+		/* if the block size is smaller than the maximum transfer size, set the
+		 * trigger level and transfer size to match the block size.
 		 */
-		if (i2s_cfg->block_size / dma_data_size_bytes > 84) {
-			LOG_ERR("TX block size too large, must be 84 entries or less");
-			return -EINVAL;
+		if (i2s_cfg->block_size / dma_data_size_bytes < MAX_TRANSFER_SIZE_ELEMENTS) {
+			data->tx.max_transfer_size = i2s_cfg->block_size;
+
+			if (((i2s_cfg->block_size / dma_data_size_bytes) - 1) <
+				MAX_TX_TRIGGER_LEVEL) {
+				config->tdm_config.tx_config->fifoTriggerLevel =
+					(i2s_cfg->block_size / dma_data_size_bytes) - 1;
+			}
+		} else {
+			data->tx.max_transfer_size =
+				MAX_TRANSFER_SIZE_ELEMENTS * dma_data_size_bytes;
 		}
-		config->tdm_config.tx_config->fifoTriggerLevel =
-			i2s_cfg->block_size / dma_data_size_bytes / 2;
 		LOG_DBG("TX FIFO Trigger Level set to %u",
 			config->tdm_config.tx_config->fifoTriggerLevel);
 
@@ -653,13 +713,13 @@ static int ifx_i2s_read(const struct device *dev, void **mem_block, size_t *size
 	int ret = 0;
 
 	if (stream->state == I2S_STATE_NOT_READY) {
-		LOG_DBG("invalid state %d", stream->state);
+		LOG_DBG("Read: invalid state %d", stream->state);
 		return -EIO;
 	}
 
 	ret = k_msgq_get(&stream->queue, &queue_element, SYS_TIMEOUT_MS(stream->cfg.timeout));
-
 	if (ret != 0) {
+		LOG_DBG("I2S Read: k_msgq_get failed %d", ret);
 		if (stream->state == I2S_STATE_ERROR) {
 			return -EIO;
 		} else {
@@ -683,7 +743,7 @@ static int ifx_i2s_write(const struct device *dev, void *mem_block, size_t size)
 	};
 
 	if ((stream->state != I2S_STATE_RUNNING) && (stream->state != I2S_STATE_READY)) {
-		LOG_DBG("invalid state (%d)", stream->state);
+		LOG_DBG("Write: invalid state (%d)", stream->state);
 		return -EIO;
 	}
 
@@ -726,7 +786,6 @@ static int ifx_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 			break;
 		}
 
-		stream->xfer_pending = false;
 		stream->last_block = false;
 		stream->drain = false;
 		if (dir == I2S_DIR_TX) {
@@ -899,6 +958,7 @@ static void i2s_tx_isr(const struct device *dev)
 		if (stream->last_block && stream->drain) {
 			data->tx.state = I2S_STATE_READY;
 		} else {
+			LOG_DBG("I2S TX FIFO underflow");
 			stream->state = I2S_STATE_ERROR;
 		}
 	}
@@ -941,12 +1001,6 @@ static void i2s_rx_isr(const struct device *dev)
 	}
 
 	if (rx_int_status & CY_TDM_INTR_RX_FIFO_TRIGGER) {
-		if (stream->state == I2S_STATE_STOPPING) {
-			/* stop receiving new data but allow DMA to
-			 * copy one more block off the hw fifo
-			 */
-			Cy_AudioTDM_DeActivateRx(tdm_rx);
-		}
 		rx_fifo_trigger_handler(dev);
 	}
 
@@ -1017,7 +1071,7 @@ static DEVICE_API(i2s, ifx_i2s_api) = {
 		.fsyncFormat = CY_TDM_CH_PERIOD,       /* fixed for i2s mode */                    \
 		.channelNum = 2,                       /* fixed for i2s mode */                    \
 		.channelSize = 16,                                                                 \
-		.fifoTriggerLevel = 32,                                                            \
+		.fifoTriggerLevel = MAX_TX_TRIGGER_LEVEL,                                          \
 		.chEn = 0x3,                                                                       \
 		.signalInput = 0,                                                                  \
 		.i2sMode = true}; /* fixed for i2s mode */                                         \
@@ -1038,7 +1092,7 @@ static DEVICE_API(i2s, ifx_i2s_api) = {
 		.fsyncFormat = CY_TDM_CH_PERIOD, /* fixed for i2s mode */                          \
 		.channelNum = 2,                 /* fixed for i2s mode */                          \
 		.channelSize = 16,                                                                 \
-		.fifoTriggerLevel = 32,                                                            \
+		.fifoTriggerLevel = MAX_TRANSFER_SIZE_ELEMENTS,                                    \
 		.chEn = 0x3,                                                                       \
 		.signalInput = 0,                                                                  \
 		.i2sMode = true}; /* fixed for i2s mode */                                         \
