@@ -410,6 +410,9 @@ static int32_t ism6hg256x_gyro_set_mode(const struct device *dev, int32_t mode)
 	case 1: /* High Accuracy */
 		mode = ISM6HG256X_GY_HIGH_ACCURACY_ODR_MD;
 		break;
+	case 3: /* ODR triggered */
+		mode = ISM6HG256X_GY_ODR_TRIGGERED_MD;
+		break;
 	case 4: /* Sleep */
 		mode = ISM6HG256X_GY_SLEEP_MD;
 		break;
@@ -447,6 +450,9 @@ static int32_t ism6hg256x_gyro_get_mode(const struct device *dev, int32_t *mode)
 		break;
 	case ISM6HG256X_GY_HIGH_ACCURACY_ODR_MD:
 		*mode = 1;
+		break;
+	case ISM6HG256X_GY_ODR_TRIGGERED_MD:
+		*mode = 3;
 		break;
 	case ISM6HG256X_GY_SLEEP_MD:
 		*mode = 4;

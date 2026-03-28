@@ -406,6 +406,9 @@ static int32_t lsm6dsv80x_gyro_set_mode(const struct device *dev, int32_t mode)
 	case 1: /* High Accuracy */
 		mode = LSM6DSV80X_GY_HIGH_ACCURACY_ODR_MD;
 		break;
+	case 3: /* ODR triggered */
+		mode = LSM6DSV80X_GY_ODR_TRIGGERED_MD;
+		break;
 	case 4: /* Sleep */
 		mode = LSM6DSV80X_GY_SLEEP_MD;
 		break;
@@ -443,6 +446,9 @@ static int32_t lsm6dsv80x_gyro_get_mode(const struct device *dev, int32_t *mode)
 		break;
 	case LSM6DSV80X_GY_HIGH_ACCURACY_ODR_MD:
 		*mode = 1;
+		break;
+	case LSM6DSV80X_GY_ODR_TRIGGERED_MD:
+		*mode = 3;
 		break;
 	case LSM6DSV80X_GY_SLEEP_MD:
 		*mode = 4;
