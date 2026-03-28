@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  subsys.morse.tx:
+    tags:
+      - morse
+      - subsys
+    platform_allow:
+      - native_sim
+    timeout: 120
