@@ -21,7 +21,9 @@ LOG_MODULE_REGISTER(ws2812_gpio);
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
+#if defined(CONFIG_SOC_FAMILY_NRF)
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#endif
 #include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/sys/util_macro.h>
 
@@ -36,7 +38,8 @@ struct ws2812_gpio_cfg {
  * GPIO set/clear (these make assumptions about assembly details
  * below).
  *
- * This uses OUTCLR == OUTSET+4.
+ * nRF: This uses OUTCLR == OUTSET+4.
+ * SAM0: This uses OUTSET == OUTCLR+4.
  *
  * We should be able to make this portable using the results of
  * https://github.com/zephyrproject-rtos/zephyr/issues/11917.
@@ -47,8 +50,19 @@ struct ws2812_gpio_cfg {
  * Per Arm docs, both Rd and Rn must be r0-r7, so we use the "l"
  * constraint in the below assembly.
  */
+
+#if defined(CONFIG_SOC_FAMILY_NRF)
+/* nRF: base = &OUTSET, OUTCLR is at base + 4 */
 #define SET_HIGH "str %[p], [%[r], #0]\n" /* OUTSET = BIT(LED_PIN) */
 #define SET_LOW "str %[p], [%[r], #4]\n"  /* OUTCLR = BIT(LED_PIN) */
+#elif defined(CONFIG_SOC_FAMILY_ATMEL_SAM0)
+/* SAM0: base = &OUTCLR, OUTSET is at base + 4. Anchoring at OUTCLR
+ * avoids a negative offset. */
+#define SET_HIGH "str %[p], [%[r], #4]\n" /* OUTSET = BIT(LED_PIN) */
+#define SET_LOW  "str %[p], [%[r], #0]\n" /* OUTCLR = BIT(LED_PIN) */
+#else
+#error "ws2812_gpio: unsupported SoC family"
+#endif
 
 #define NOPS(i, _) "nop\n"
 #define NOP_N_TIMES(n) LISTIFY(n, NOPS, ())
@@ -73,16 +87,21 @@ struct ws2812_gpio_cfg {
 			[r] "l" (base),				\
 			[p] "l" (pin)); } while (false)
 
-static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
+static
+#if defined(CONFIG_SOC_FAMILY_ATMEL_SAM0)
+__ramfunc
+#endif
+int send_buf(const struct device *dev, uint8_t *buf, size_t len)
 {
 	const struct ws2812_gpio_cfg *config = dev->config;
+	unsigned int key;
+	int rc;
+#if defined(CONFIG_SOC_FAMILY_NRF)
 	volatile uint32_t *base = (uint32_t *)&NRF_GPIO->OUTSET;
 	const uint32_t val = BIT(config->gpio.pin);
 	struct onoff_manager *mgr =
 		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 	struct onoff_client cli;
-	unsigned int key;
-	int rc;
 
 	sys_notify_init_spinwait(&cli.notify);
 	rc = onoff_request(mgr, &cli);
@@ -93,6 +112,20 @@ static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
 	while (sys_notify_fetch_result(&cli.notify, &rc)) {
 		/* pend until clock is up and running */
 	}
+#elif defined(CONFIG_SOC_FAMILY_ATMEL_SAM0)
+	/* config->gpio.port->config is cast to access PortGroup *regs (APB address).
+	 * Use pointer arithmetic from PORT/PORT_IOBUS bases to find the IOBUS group index.
+	 * PORT_IOBUS uses single-cycle IOBUS writes for tighter timing. */
+	const struct {
+		struct gpio_driver_config common;
+		PortGroup *regs;
+	} *gcfg = config->gpio.port->config;
+	uint8_t group = ((uintptr_t)gcfg->regs - (uintptr_t)PORT->Group) / sizeof(PortGroup);
+	/* base = &OUTCLR so that SET_HIGH (base+4) hits OUTSET and SET_LOW (base+0) hits OUTCLR */
+	volatile uint32_t *base = (uint32_t *)&PORT_IOBUS->Group[group].OUTCLR.reg;
+	const uint32_t val = BIT(config->gpio.pin);
+	rc = 0;
+#endif
 
 	key = irq_lock();
 
@@ -122,9 +155,11 @@ static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
 
 	irq_unlock(key);
 
+#if defined(CONFIG_SOC_FAMILY_NRF)
 	rc = onoff_release(mgr);
 	/* Returns non-negative value on success. Cap to 0 as API states. */
 	rc = MIN(rc, 0);
+#endif
 
 	return rc;
 }
