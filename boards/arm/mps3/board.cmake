@@ -53,7 +53,7 @@ elseif(CONFIG_BOARD_MPS3_CORSTONE310_FVP OR CONFIG_BOARD_MPS3_CORSTONE310_FVP_NS
   endif()
 endif()
 
-board_set_debugger_ifnset(qemu)
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)
 
 if(CONFIG_BUILD_WITH_TFM)
   # Override the binary used by qemu, to use the combined
