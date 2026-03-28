@@ -32,7 +32,7 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
     - name: Check if Documentation related files changed
-      uses: tj-actions/changed-files@e0021407031f5be11a464abee9a0776171c79891 # v47.0.1
+      uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323 # v47.0.5
       id: check-doc-files
       with:
         files: |
@@ -150,7 +150,7 @@ jobs:
         genhtml --no-function-coverage --no-branch-coverage new.info -o coverage-report
 
     - name: Set up Node.js
-      uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
       with:
         node-version: 24
 
@@ -242,19 +242,19 @@ jobs:
         tar --use-compress-program="xz -T0" -cf accessibility-report.tar.xz pa11y-ci-report
 
     - name: Upload accessibility report
-      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
       with:
         name: accessibility-report
         path: accessibility-report.tar.xz
 
     - name: Upload HTML output
-      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
       with:
         name: html-output
         path: html-output.tar.xz
 
     - name: Upload Doxygen coverage artifacts
-      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
       with:
         name: api-coverage
         path: api-coverage.tar.xz
@@ -280,7 +280,7 @@ jobs:
 
 
     - name: Upload PR number
-      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
       if: github.event_name == 'pull_request'
       with:
         name: pr_num
@@ -356,7 +356,7 @@ jobs:
 
     - name: upload-build
       if: always()
-      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
       with:
         name: pdf-output
         if-no-files-found: ignore
