@@ -101,6 +101,9 @@ static inline void device_map(mm_reg_t *virt_addr, uintptr_t phys_addr,
 	/* Pass along flags and add that we want supervisor mode
 	 * read-write access.
 	 */
+	if (IS_ENABLED(CONFIG_KERNEL_DIRECT_MAP)) {
+		flags |= K_MEM_DIRECT_MAP;
+	}
 	k_mem_map_phys_bare((uint8_t **)virt_addr, phys_addr, size,
 			    flags | K_MEM_PERM_RW);
 #else
