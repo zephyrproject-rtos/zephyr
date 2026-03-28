@@ -118,6 +118,8 @@ SECTIONS
         *(.iplt)
     }
 
+#include <snippets-sections-preamble.ld>
+
     GROUP_START(ROMABLE_REGION)
 
 #if defined(CONFIG_XIP)

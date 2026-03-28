@@ -290,6 +290,7 @@ SECTIONS
 	lnkr_pinned_noinit_size = lnkr_pinned_noinit_end - lnkr_pinned_noinit_start;
 
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
+#include <snippets-sections-preamble.ld>
 
 	GROUP_START(ROMABLE_REGION)
 
