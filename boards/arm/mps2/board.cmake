@@ -63,8 +63,6 @@ elseif(CONFIG_BOARD_MPS2_AN521_CPU0 OR CONFIG_BOARD_MPS2_AN521_CPU0_NS OR CONFIG
   endif()
 endif()
 
-board_set_debugger_ifnset(qemu)
-
 set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
 -C fvp_mps2.telnetterminal0.start_telnet=0
 -C fvp_mps2.telnetterminal1.start_telnet=0
@@ -77,3 +75,5 @@ set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
 -C fvp_mps2.UART2.unbuffered_output=1
 -C fvp_mps2.mps2_visualisation.disable-visualisation=1
 )
+
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

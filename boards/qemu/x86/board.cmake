@@ -2,7 +2,6 @@
 # Copyright (c) 2019 Intel Corp.
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
-
 if(NOT CONFIG_REBOOT)
   set(REBOOT_FLAG -no-reboot)
 endif()
@@ -78,11 +77,6 @@ if(NOT CONFIG_ACPI)
   list(APPEND QEMU_FLAGS_${ARCH} -machine acpi=off)
 endif()
 
-# TODO: Support debug
-# board_set_debugger_ifnset(qemu)
-# debugserver: QEMU_EXTRA_FLAGS += -s -S
-# debugserver: qemu
-
 if(CONFIG_BOARD_QEMU_X86_TINY AND CONFIG_DEMAND_PAGING
    AND NOT CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
   # This is to map the flash so it is accessible.
@@ -90,3 +84,4 @@ if(CONFIG_BOARD_QEMU_X86_TINY AND CONFIG_DEMAND_PAGING
   set(X86_EXTRA_GEN_MMU_ARGUMENTS
       --map ${CONFIG_FLASH_BASE_ADDRESS},${QEMU_FLASH_SIZE_KB},W)
 endif()
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)
