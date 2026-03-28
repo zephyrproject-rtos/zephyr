@@ -58,27 +58,11 @@
 		 Z_RISCV_STACK_PMP_ALIGN)
 #define ARCH_KERNEL_STACK_OBJ_ALIGN	Z_RISCV_STACK_PMP_ALIGN
 #endif
-#elif defined(CONFIG_CUSTOM_STACK_GUARD)
-/*
- * The custom stack guard reserved area is located at the bottom of the
- * kernel-mode stack. When a stack overflow occurs, this area is used to
- * save the exception stack frame and to handle the resulting fault.
- * Therefore, the reserved area must be large enough to hold the esf, plus
- * some configurable stack wiggle room to execute fault-handling code safely.
- */
-#define Z_RISCV_STACK_GUARD_SIZE \
-	ROUND_UP(sizeof(struct arch_esf) + CONFIG_CUSTOM_STACK_GUARD_RESERVED_SIZE, \
-		 ARCH_STACK_PTR_ALIGN)
-#else /* !CONFIG_PMP_STACK_GUARD && !CONFIG_CUSTOM_STACK_GUARD */
-#define Z_RISCV_STACK_GUARD_SIZE 0
-#endif
 
-#if defined(CONFIG_PMP_STACK_GUARD) || defined(CONFIG_CUSTOM_STACK_GUARD)
 /* Kernel-only stacks have the following layout if a stack guard is enabled:
  *
  * +------------+ <- thread.stack_obj
- * | Guard /    | } Z_RISCV_STACK_GUARD_SIZE
- * | Reserved   |
+ * | Guard      | } Z_RISCV_STACK_GUARD_SIZE
  * +------------+ <- thread.stack_info.start
  * | Kernel     |
  * | stack      |
@@ -88,6 +72,9 @@
  * +------------+ <- thread.stack_info.start + thread.stack_info.size
  */
 #define ARCH_KERNEL_STACK_RESERVED	Z_RISCV_STACK_GUARD_SIZE
+
+#else /* !CONFIG_PMP_STACK_GUARD */
+#define Z_RISCV_STACK_GUARD_SIZE 0
 #endif
 
 #ifdef CONFIG_PMP_POWER_OF_TWO_ALIGNMENT
@@ -95,8 +82,7 @@
  * generated at build time by gen_kobject_list.py
  *
  * +------------+ <- thread.arch.priv_stack_start
- * | Guard /    | } Z_RISCV_STACK_GUARD_SIZE
- * | Reserved   |
+ * | Guard      | } Z_RISCV_STACK_GUARD_SIZE
  * +------------+
  * | Priv Stack | } CONFIG_PRIVILEGED_STACK_SIZE
  * +------------+ <- thread.arch.priv_stack_start +
@@ -107,8 +93,7 @@
  * mode so we need to make room for a possible stack guard area when enabled:
  *
  * +------------+ <- thread.stack_obj
- * | Guard /    | } Z_RISCV_STACK_GUARD_SIZE
- * | Reserved   |
+ * | Guard      | } Z_RISCV_STACK_GUARD_SIZE
  * +............| <- thread.stack_info.start
  * | Thread     |
  * | stack      |
@@ -138,12 +123,11 @@
 
 #else /* !CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
 
-/* The stack object will contain the PMP guard (or custom stack guard reserved area),
- * the privilege stack, and then the usermode stack buffer in that order:
+/* The stack object will contain the PMP guard, the privilege stack, and then
+ * the usermode stack buffer in that order:
  *
  * +------------+ <- thread.stack_obj
- * | Guard /    | } Z_RISCV_STACK_GUARD_SIZE
- * | Reserved   |
+ * | Guard      | } Z_RISCV_STACK_GUARD_SIZE
  * +------------+
  * | Priv Stack | } CONFIG_PRIVILEGED_STACK_SIZE
  * +------------+ <- thread.stack_info.start
@@ -175,7 +159,12 @@
  */
 
 #define MSTATUS_IEN     (1UL << 3)
-#define MSTATUS_MPP_M   (3UL << 11)
+/** @brief mstatus MPP field value for User mode */
+#define MSTATUS_MPP_U   (PRV_U << 11)
+/** @brief mstatus MPP field value for Supervisor mode */
+#define MSTATUS_MPP_S   (PRV_S << 11)
+/** @brief mstatus MPP field value for Machine mode */
+#define MSTATUS_MPP_M   (PRV_M << 11)
 #define MSTATUS_MPIE_EN (1UL << 7)
 
 #define MSTATUS_FS_OFF   (0UL << 13)
@@ -183,18 +172,45 @@
 #define MSTATUS_FS_CLEAN (2UL << 13)
 #define MSTATUS_FS_DIRTY (3UL << 13)
 
-/* This comes from openisa_rv32m1, but doesn't seem to hurt on other
+/**
+ * @brief Default status register value to restore when starting a new thread.
+ *
+ * This comes from openisa_rv32m1, but doesn't seem to hurt on other
  * platforms:
  * - Preserve machine privileges in MPP. If you see any documentation
  *   telling you that MPP is read-only on this SoC, don't believe its
  *   lies.
  * - Enable interrupts when exiting from exception into a new thread
  *   by setting MPIE now, so it will be copied into IE on mret.
+ *
+ * In S-mode (CONFIG_RISCV_S_MODE), use the sstatus equivalents:
+ * - SPP=1 so that sret returns to S-mode (not U-mode)
+ * - SPIE=1 so that interrupts are enabled after sret
  */
-#define MSTATUS_DEF_RESTORE (MSTATUS_MPP_M | MSTATUS_MPIE_EN)
+#ifdef CONFIG_RISCV_S_MODE
+#define RV_STATUS_DEF_RESTORE (SSTATUS_SPP | SSTATUS_SPIE)
+#else
+#define RV_STATUS_DEF_RESTORE (MSTATUS_MPP_M | MSTATUS_MPIE_EN)
+#endif
+
+/* Previous-privilege field and its user-mode value, abstracted across M/S mode.
+ * Use as: (esf->mstatus & RV_STATUS_PP) == RV_STATUS_PP_U
+ */
+#ifdef CONFIG_RISCV_S_MODE
+/** @brief Previous-privilege field mask in the status CSR (S-mode: SPP) */
+#define RV_STATUS_PP    SSTATUS_SPP
+/** @brief Previous-privilege field value representing User mode (S-mode) */
+#define RV_STATUS_PP_U  0
+#else
+/** @brief Previous-privilege field mask in the status CSR (M-mode: MPP) */
+#define RV_STATUS_PP    MSTATUS_MPP
+/** @brief Previous-privilege field value representing User mode (M-mode) */
+#define RV_STATUS_PP_U  PRV_U
+#endif
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -244,6 +260,52 @@ struct arch_mem_domain {
 
 extern void z_irq_spurious(const void *unused);
 
+/* Privilege-level abstraction for IRQ enable/disable CSR and bit */
+#ifdef CONFIG_RISCV_S_MODE
+/** @brief Name of the interrupt-status CSR as a string literal (S-mode) */
+#define RV_STATUS_CSR "sstatus"
+/** @brief Interrupt-enable bit in the status CSR (S-mode: SIE) */
+#define RV_STATUS_IE  SSTATUS_SIE
+/** @brief Previous interrupt-enable bit in the status CSR (S-mode: SPIE) */
+#define RV_STATUS_PIE SSTATUS_SPIE
+#else
+/** @brief Name of the interrupt-status CSR as a string literal (M-mode) */
+#define RV_STATUS_CSR "mstatus"
+/** @brief Interrupt-enable bit in the status CSR (M-mode: MIE) */
+#define RV_STATUS_IE  MSTATUS_IEN
+/** @brief Previous interrupt-enable bit in the status CSR (M-mode: MPIE) */
+#define RV_STATUS_PIE MSTATUS_MPIE_EN
+#endif
+
+/**
+ * @brief Read the privilege-level status register (mstatus or sstatus).
+ *
+ * In M-mode this reads mstatus; in S-mode this reads sstatus.
+ */
+static ALWAYS_INLINE unsigned long z_riscv_status_read(void)
+{
+	unsigned long __rv;
+
+	__asm__ volatile ("csrr %0, " RV_STATUS_CSR : "=r" (__rv));
+	return __rv;
+}
+
+/**
+ * @brief Set bits in the privilege-level status register.
+ */
+static ALWAYS_INLINE void z_riscv_status_set(unsigned long val)
+{
+	__asm__ volatile ("csrs " RV_STATUS_CSR ", %0" : : "rK" (val) : "memory");
+}
+
+/**
+ * @brief Clear bits in the privilege-level status register.
+ */
+static ALWAYS_INLINE void z_riscv_status_clear(unsigned long val)
+{
+	__asm__ volatile ("csrc " RV_STATUS_CSR ", %0" : : "rK" (val) : "memory");
+}
+
 /*
  * use atomic instruction csrrc to lock global irq
  * csrrc: atomic read and clear bits in CSR register
@@ -255,9 +317,9 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 #else
 	unsigned int key;
 
-	__asm__ volatile ("csrrc %0, mstatus, %1"
+	__asm__ volatile ("csrrc %0, " RV_STATUS_CSR ", %1"
 			  : "=r" (key)
-			  : "rK" (MSTATUS_IEN)
+			  : "rK" (RV_STATUS_IE)
 			  : "memory");
 
 	return key;
@@ -273,9 +335,9 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 #ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
 	z_soc_irq_unlock(key);
 #else
-	__asm__ volatile ("csrs mstatus, %0"
+	__asm__ volatile ("csrs " RV_STATUS_CSR ", %0"
 			  :
-			  : "r" (key & MSTATUS_IEN)
+			  : "r" (key & RV_STATUS_IE)
 			  : "memory");
 #endif
 }
@@ -285,7 +347,7 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 #ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
 	return z_soc_irq_unlocked(key);
 #else
-	return (key & MSTATUS_IEN) != 0;
+	return (key & RV_STATUS_IE) != 0;
 #endif
 }
 

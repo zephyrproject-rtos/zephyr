@@ -40,6 +40,15 @@ properties:
     type: string-array
     required: true
 
+  riscv,privilege-modes:
+    description: |
+      Privilege modes supported by the hart. Each element is one of "m"
+      (Machine), "s" (Supervisor), or "u" (User). When absent, only M-mode
+      is assumed. Used to prevent enabling CONFIG_RISCV_S_MODE on harts that
+      do not implement Supervisor mode.
+    type: string-array
+    default: ["m"]
+
   riscv,isa-omissions:
     description: |
       Elements of the base ISA expected but not supported by the hart. Currently, the
