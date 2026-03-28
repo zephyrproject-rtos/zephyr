@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_MCHP_TRNG_G1
+	bool "Microchip MCHP G1 Entropy Driver"
+	default y
+	depends on DT_HAS_MICROCHIP_TRNG_G1_ENTROPY_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  This option enables Entropy driver for group (g1).

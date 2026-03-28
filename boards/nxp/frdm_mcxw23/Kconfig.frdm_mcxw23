@@ -1,0 +1,6 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FRDM_MCXW23
+	select SOC_MCXW236
+	select SOC_PART_NUMBER_MCXW236BIHNAR

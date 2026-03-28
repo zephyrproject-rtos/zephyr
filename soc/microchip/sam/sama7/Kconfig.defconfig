@@ -1,0 +1,16 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_FAMILY_MICROCHIP_SAMA7
+
+configdefault SOC_EARLY_INIT_HOOK
+	default y
+
+configdefault CLOCK_CONTROL
+	default y
+
+endif # SOC_FAMILY_MICROCHIP_SAMA7
+
+rsource "*/Kconfig.defconfig"

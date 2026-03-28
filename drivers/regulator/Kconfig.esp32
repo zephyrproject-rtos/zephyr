@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_ESP32
+	bool "Espressif on-chip regulator driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_REGULATOR_ENABLED
+	help
+	  Enable support for the Espressif on-chip voltage
+	  regulators.
+
+config REGULATOR_ESP32_INIT_PRIORITY
+	int "Espressif regulator driver init priority"
+	default 20
+	depends on REGULATOR_ESP32
+	help
+	  Init priority for the Espressif regulator driver.
+	  Must be lower than consumers such as PSRAM/MEMC drivers.

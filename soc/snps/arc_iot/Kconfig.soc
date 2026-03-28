@@ -1,0 +1,11 @@
+# Copyright (c) 2014 Wind River Systems, Inc.
+# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_ARC_IOT
+	bool
+	help
+	  Synopsys ARC IoT SoC
+
+config SOC
+	default "arc_iot" if SOC_ARC_IOT

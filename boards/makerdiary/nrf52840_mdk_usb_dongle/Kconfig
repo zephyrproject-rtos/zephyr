@@ -1,0 +1,13 @@
+# nRF52840 MDK USB Dongle board configuration
+
+# Copyright (c) 2022 Nikola Trifunovic
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_HAS_NRF5_BOOTLOADER
+	bool "Board has nRF5 bootloader"
+	default y
+	depends on BOARD_NRF52840_MDK_USB_DONGLE
+	help
+	  If selected, applications are linked so that they can be loaded by Nordic
+	  nRF5 bootloader.

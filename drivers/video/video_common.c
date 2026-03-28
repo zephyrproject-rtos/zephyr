@@ -1,0 +1,588 @@
+/*
+ * Copyright (c) 2019, Linaro Limited
+ * Copyright (c) 2024-2025, tinyVision.ai Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <string.h>
+
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/video/video.h>
+#include <zephyr/drivers/video-controls.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+
+#include "video_common.h"
+
+LOG_MODULE_REGISTER(video_common, CONFIG_VIDEO_LOG_LEVEL);
+
+#if defined(CONFIG_VIDEO_BUFFER_USE_SHARED_MULTI_HEAP)
+#include <zephyr/multi_heap/shared_multi_heap.h>
+
+#define VIDEO_COMMON_HEAP_ALLOC(align, size, timeout)                                              \
+	shared_multi_heap_aligned_alloc(CONFIG_VIDEO_BUFFER_SMH_ATTRIBUTE, align, size)
+#define VIDEO_COMMON_FREE(block) shared_multi_heap_free(block)
+#else
+
+#if !defined(CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION)
+#define VIDEO_BUFFER_POOL_REGION_NAME __noinit_named(kheap_buf_video_buffer_pool)
+#else
+#define VIDEO_BUFFER_POOL_REGION_NAME Z_GENERIC_SECTION(CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME)
+#endif
+
+/*
+ * The k_heap is manually initialized instead of using directly Z_HEAP_DEFINE_IN_SECT
+ * since the section might not be yet accessible from the beginning, making it impossible
+ * to initialize it if done via Z_HEAP_DEFINE_IN_SECT
+ */
+static char VIDEO_BUFFER_POOL_REGION_NAME __aligned(8)
+	video_buffer_pool_mem[MAX(CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE, Z_HEAP_MIN_SIZE)];
+static struct k_heap video_buffer_pool;
+static bool video_buffer_pool_initialized;
+
+static void *video_buffer_k_heap_aligned_alloc(size_t align, size_t bytes, k_timeout_t timeout)
+{
+	if (!video_buffer_pool_initialized) {
+		k_heap_init(&video_buffer_pool, video_buffer_pool_mem,
+			    MAX(CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE, Z_HEAP_MIN_SIZE));
+		video_buffer_pool_initialized = true;
+	}
+
+	return k_heap_aligned_alloc(&video_buffer_pool, align, bytes, timeout);
+}
+
+#define VIDEO_COMMON_HEAP_ALLOC(align, size, timeout)                                              \
+	video_buffer_k_heap_aligned_alloc(align, size, timeout)
+#define VIDEO_COMMON_FREE(block) k_heap_free(&video_buffer_pool, block)
+#endif
+
+static struct video_buffer video_buf[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
+
+struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_timeout_t timeout)
+{
+	struct video_buffer *vbuf = NULL;
+
+	/* find available video buffer */
+	for (uint16_t i = 0; i < ARRAY_SIZE(video_buf); i++) {
+		if (video_buf[i].buffer == NULL) {
+			vbuf = &video_buf[i];
+			vbuf->index = i;
+			break;
+		}
+	}
+
+	if (vbuf == NULL) {
+		return NULL;
+	}
+
+	/* Alloc buffer memory */
+	vbuf->buffer = VIDEO_COMMON_HEAP_ALLOC(align, size, timeout);
+	if (vbuf->buffer == NULL) {
+		return NULL;
+	}
+
+	vbuf->memory = VIDEO_MEMORY_INTERNAL;
+	vbuf->size = size;
+	vbuf->bytesused = 0;
+
+	return vbuf;
+}
+
+struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout)
+{
+	return video_buffer_aligned_alloc(size, sizeof(void *), timeout);
+}
+
+int video_buffer_release(struct video_buffer *vbuf)
+{
+	if (vbuf == NULL || vbuf->index >= ARRAY_SIZE(video_buf)) {
+		LOG_ERR("Invalid buffer index: %u", vbuf->index);
+		return -EINVAL;
+	}
+
+	if (video_buf[vbuf->index].buffer == NULL) {
+		LOG_ERR("Buffer %u is already released", vbuf->index);
+		return -EINVAL;
+	}
+
+	if (video_buf[vbuf->index].memory == VIDEO_MEMORY_INTERNAL) {
+		VIDEO_COMMON_FREE(video_buf[vbuf->index].buffer);
+	}
+
+	video_buf[vbuf->index].buffer = NULL;
+
+	return 0;
+}
+
+int video_import_buffer(uint8_t *mem, size_t sz, uint16_t *idx)
+{
+	uint16_t ind;
+
+	if (mem == NULL || sz == 0) {
+		LOG_ERR("Invalid memory address or size");
+		return -EINVAL;
+	}
+
+	/* Find the 1st available slot in the video buffer pool */
+	for (ind = 0; ind < ARRAY_SIZE(video_buf); ind++) {
+		if (video_buf[ind].buffer == NULL) {
+			break;
+		}
+	}
+
+	if (ind == ARRAY_SIZE(video_buf)) {
+		return -ENOBUFS;
+	}
+
+	/* Populate the internal buffer */
+	video_buf[ind].index = ind;
+	video_buf[ind].size = sz;
+	video_buf[ind].memory = VIDEO_MEMORY_EXTERNAL;
+	video_buf[ind].buffer = mem;
+	video_buf[ind].bytesused = 0;
+	video_buf[ind].timestamp = 0;
+
+	/* Return the buffer index to the requester */
+	*idx = ind;
+
+	return 0;
+}
+
+int video_enqueue(const struct device *dev, struct video_buffer *buf)
+{
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+
+	if (dev == NULL || buf == NULL || buf->index >= CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
+	    (buf->type != VIDEO_BUF_TYPE_INPUT && buf->type != VIDEO_BUF_TYPE_OUTPUT)) {
+		return -EINVAL;
+	}
+
+	api = (const struct video_driver_api *)dev->api;
+	if (api->enqueue == NULL) {
+		return -ENOSYS;
+	}
+
+	video_buf[buf->index].type = buf->type;
+
+	return api->enqueue(dev, &video_buf[buf->index]);
+}
+
+int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,
+			    size_t *idx)
+{
+	if (fmts == NULL || fmt == NULL || idx == NULL) {
+		return -EINVAL;
+	}
+
+	for (int i = 0; fmts[i].pixelformat != 0; i++) {
+		if (fmts[i].pixelformat == fmt->pixelformat &&
+		    IN_RANGE(fmt->width, fmts[i].width_min, fmts[i].width_max) &&
+		    IN_RANGE(fmt->height, fmts[i].height_min, fmts[i].height_max)) {
+			*idx = i;
+			return 0;
+		}
+	}
+	return -ENOENT;
+}
+
+int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
+				   const struct video_frmival *desired,
+				   struct video_frmival *match)
+{
+	if (stepwise == NULL || desired == NULL || match == NULL) {
+		return -EINVAL;
+	}
+
+	uint64_t min = stepwise->min.numerator;
+	uint64_t max = stepwise->max.numerator;
+	uint64_t step = stepwise->step.numerator;
+	uint64_t goal = desired->numerator;
+
+	/* Set a common denominator to all values */
+	min *= stepwise->max.denominator * stepwise->step.denominator * desired->denominator;
+	max *= stepwise->min.denominator * stepwise->step.denominator * desired->denominator;
+	step *= stepwise->min.denominator * stepwise->max.denominator * desired->denominator;
+	goal *= stepwise->min.denominator * stepwise->max.denominator * stepwise->step.denominator;
+
+	/* Prevent division by zero */
+	if (step == 0U) {
+		return -EINVAL;
+	}
+	/* Saturate the desired value to the min/max supported */
+	goal = CLAMP(goal, min, max);
+
+	/* Compute a numerator and denominator */
+	match->numerator = min + DIV_ROUND_CLOSEST(goal - min, step) * step;
+	match->denominator = stepwise->min.denominator * stepwise->max.denominator *
+			     stepwise->step.denominator * desired->denominator;
+
+	return 0;
+}
+
+int video_closest_frmival(const struct device *dev, struct video_frmival_enum *match)
+{
+	if (dev == NULL || match == NULL || match->type == VIDEO_FRMIVAL_TYPE_STEPWISE) {
+		return -EINVAL;
+	}
+
+	struct video_frmival desired = match->discrete;
+	struct video_frmival_enum fie = {.format = match->format};
+	uint64_t best_diff_nsec = INT32_MAX;
+	uint64_t goal_nsec = video_frmival_nsec(&desired);
+	int ret = 0;
+
+	for (fie.index = 0; video_enum_frmival(dev, &fie) == 0; fie.index++) {
+		struct video_frmival tmp = {0};
+		uint64_t diff_nsec = 0;
+		uint64_t tmp_nsec;
+
+		switch (fie.type) {
+		case VIDEO_FRMIVAL_TYPE_DISCRETE:
+			tmp = fie.discrete;
+			break;
+		case VIDEO_FRMIVAL_TYPE_STEPWISE:
+			ret = video_closest_frmival_stepwise(&fie.stepwise, &desired, &tmp);
+			break;
+		default:
+			CODE_UNREACHABLE;
+		}
+
+		tmp_nsec = video_frmival_nsec(&tmp);
+		diff_nsec = tmp_nsec > goal_nsec ? tmp_nsec - goal_nsec : goal_nsec - tmp_nsec;
+
+		if (diff_nsec < best_diff_nsec) {
+			best_diff_nsec = diff_nsec;
+			match->index = fie.index;
+			match->discrete = tmp;
+		}
+
+		if (diff_nsec == 0) {
+			/* Exact match, stop searching a better match */
+			break;
+		}
+	}
+
+	return ret;
+}
+
+static int video_read_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, size_t size_w,
+				uint8_t *buf_r, size_t size_r)
+{
+	int ret;
+
+	for (int i = 0;; i++) {
+		ret = i2c_write_read_dt(i2c, buf_w, size_w, buf_r, size_r);
+		if (ret == 0) {
+			break;
+		}
+		if (i == CONFIG_VIDEO_I2C_RETRY_NUM) {
+			LOG_HEXDUMP_ERR(buf_w, size_w, "failed to write-read to I2C register");
+			return ret;
+		}
+		if (CONFIG_VIDEO_I2C_RETRY_NUM > 0) {
+			k_sleep(K_MSEC(1));
+		}
+	}
+
+	return 0;
+}
+
+int video_read_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32_t *reg_data)
+{
+	size_t addr_size = FIELD_GET(VIDEO_REG_ADDR_SIZE_MASK, reg_addr);
+	size_t data_size = FIELD_GET(VIDEO_REG_DATA_SIZE_MASK, reg_addr);
+	bool big_endian = FIELD_GET(VIDEO_REG_ENDIANNESS_MASK, reg_addr);
+	uint16_t addr = FIELD_GET(VIDEO_REG_ADDR_MASK, reg_addr);
+	uint8_t buf_w[sizeof(uint16_t)] = {0};
+	uint8_t *data_ptr;
+	int ret;
+
+	if (i2c == NULL || reg_data == NULL || addr_size == 0 || data_size == 0) {
+		return -EINVAL;
+	}
+
+	*reg_data = 0;
+
+	if (big_endian) {
+		/* Casting between data sizes in big-endian requires re-aligning */
+		data_ptr = (uint8_t *)reg_data + sizeof(*reg_data) - data_size;
+	} else {
+		/* Casting between data sizes in little-endian is a no-op */
+		data_ptr = (uint8_t *)reg_data;
+	}
+
+	for (int i = 0; i < data_size; i++) {
+		if (addr_size == 1) {
+			buf_w[0] = addr + i;
+		} else {
+			sys_put_be16(addr + i, &buf_w[0]);
+		}
+
+		ret = video_read_reg_retry(i2c, buf_w, addr_size, &data_ptr[i], 1);
+		if (ret < 0) {
+			LOG_ERR("Failed to read from register 0x%x", addr + i);
+			return ret;
+		}
+
+		LOG_HEXDUMP_DBG(buf_w, addr_size, "Data written to the I2C device...");
+		LOG_HEXDUMP_DBG(&data_ptr[i], 1, "... data read back from the I2C device");
+	}
+
+	*reg_data = big_endian ? sys_be32_to_cpu(*reg_data) : sys_le32_to_cpu(*reg_data);
+
+	return 0;
+}
+
+static int video_write_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, size_t size)
+{
+	int ret;
+
+	if (i2c == NULL || buf_w == NULL) {
+		return -EINVAL;
+	}
+
+	for (int i = 0;; i++) {
+		ret = i2c_write_dt(i2c, buf_w, size);
+		if (ret == 0) {
+			break;
+		}
+		if (i == CONFIG_VIDEO_I2C_RETRY_NUM) {
+			LOG_HEXDUMP_ERR(buf_w, size, "failed to write to I2C register");
+			return ret;
+		}
+		if (CONFIG_VIDEO_I2C_RETRY_NUM > 0) {
+			k_sleep(K_MSEC(1));
+		}
+	}
+
+	return 0;
+}
+
+int video_write_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32_t reg_data)
+{
+	size_t addr_size = FIELD_GET(VIDEO_REG_ADDR_SIZE_MASK, reg_addr);
+	size_t data_size = FIELD_GET(VIDEO_REG_DATA_SIZE_MASK, reg_addr);
+	bool big_endian = FIELD_GET(VIDEO_REG_ENDIANNESS_MASK, reg_addr);
+	uint16_t addr = FIELD_GET(VIDEO_REG_ADDR_MASK, reg_addr);
+	uint8_t buf_w[sizeof(uint16_t) + sizeof(uint32_t)] = {0};
+	uint8_t *data_ptr;
+	int ret;
+
+	if (i2c == NULL || addr_size == 0 || data_size == 0) {
+		return -EINVAL;
+	}
+
+	if (big_endian) {
+		/* Casting between data sizes in big-endian requires re-aligning */
+		reg_data = sys_cpu_to_be32(reg_data);
+		data_ptr = (uint8_t *)&reg_data + sizeof(reg_data) - data_size;
+	} else {
+		/* Casting between data sizes in little-endian is a no-op */
+		reg_data = sys_cpu_to_le32(reg_data);
+		data_ptr = (uint8_t *)&reg_data;
+	}
+
+	for (int i = 0; i < data_size; i++) {
+		/* The address is always big-endian as per CCI standard */
+		if (addr_size == 1) {
+			buf_w[0] = addr + i;
+		} else {
+			sys_put_be16(addr + i, &buf_w[0]);
+		}
+
+		buf_w[addr_size] = data_ptr[i];
+
+		LOG_HEXDUMP_DBG(buf_w, addr_size + 1, "Data written to the I2C device");
+
+		ret = video_write_reg_retry(i2c, buf_w, addr_size + 1);
+		if (ret < 0) {
+			LOG_ERR("Failed to write to register 0x%x", addr + i);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int video_modify_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32_t field_mask,
+			 uint32_t field_value)
+{
+	uint32_t reg;
+	int ret;
+
+	ret = video_read_cci_reg(i2c, reg_addr, &reg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return video_write_cci_reg(i2c, reg_addr, (reg & ~field_mask) | field_value);
+}
+
+int video_write_cci_multiregs(const struct i2c_dt_spec *i2c, const struct video_reg *regs,
+			      size_t num_regs)
+{
+	int ret;
+
+	if (regs == NULL) {
+		return -EINVAL;
+	}
+
+	for (int i = 0; i < num_regs; i++) {
+		ret = video_write_cci_reg(i2c, regs[i].addr, regs[i].data);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int video_write_cci_multiregs8(const struct i2c_dt_spec *i2c, const struct video_reg8 *regs,
+			       size_t num_regs)
+{
+	int ret;
+
+	if (regs == NULL) {
+		return -EINVAL;
+	}
+
+	for (int i = 0; i < num_regs; i++) {
+		ret = video_write_cci_reg(i2c, regs[i].addr | VIDEO_REG_ADDR8_DATA8, regs[i].data);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int video_write_cci_multiregs16(const struct i2c_dt_spec *i2c, const struct video_reg16 *regs,
+				size_t num_regs)
+{
+	int ret;
+
+	if (regs == NULL) {
+		return -EINVAL;
+	}
+
+	for (int i = 0; i < num_regs; i++) {
+		ret = video_write_cci_reg(i2c, regs[i].addr | VIDEO_REG_ADDR16_DATA8, regs[i].data);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t lane_nb)
+{
+	struct video_control ctrl = {
+		.id = VIDEO_CID_LINK_FREQ,
+	};
+	struct video_ctrl_query ctrl_query = {
+		.dev = dev,
+		.id = VIDEO_CID_LINK_FREQ,
+	};
+	int ret;
+
+	/* Try to get the LINK_FREQ value from the source device */
+	ret = video_get_ctrl(dev, &ctrl);
+	if (ret < 0) {
+		goto fallback;
+	}
+
+	ret = video_query_ctrl(&ctrl_query);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (!IN_RANGE(ctrl.val, ctrl_query.range.min, ctrl_query.range.max)) {
+		return -ERANGE;
+	}
+
+	if (ctrl_query.int_menu == NULL) {
+		return -EINVAL;
+	}
+
+	return (int64_t)ctrl_query.int_menu[ctrl.val];
+
+fallback:
+	/* If VIDEO_CID_LINK_FREQ is not available, approximate from VIDEO_CID_PIXEL_RATE */
+	ctrl.id = VIDEO_CID_PIXEL_RATE;
+	ret = video_get_ctrl(dev, &ctrl);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* CSI D-PHY is using a DDR data bus so bitrate is twice the frequency */
+	return ctrl.val64 * bpp / (2 * lane_nb);
+}
+
+int video_estimate_fmt_size(struct video_format *fmt)
+{
+	if (fmt == NULL) {
+		return -EINVAL;
+	}
+
+	switch (fmt->pixelformat) {
+	case VIDEO_PIX_FMT_JPEG:
+	case VIDEO_PIX_FMT_H264:
+		/* Rough estimate for the worst case (quality = 100) */
+		fmt->pitch = 0;
+		fmt->size = fmt->width * fmt->height * 2;
+		break;
+	default:
+		/* Uncompressed format */
+		fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+		if (fmt->pitch == 0) {
+			return -ENOTSUP;
+		}
+		fmt->size = fmt->pitch * fmt->height;
+		break;
+	}
+
+	return 0;
+}
+
+int video_set_compose_format(const struct device *dev, struct video_format *fmt)
+{
+	struct video_selection sel = {
+		.type = fmt->type,
+		.target = VIDEO_SEL_TGT_COMPOSE,
+		.rect.left = 0,
+		.rect.top = 0,
+		.rect.width = fmt->width,
+		.rect.height = fmt->height,
+	};
+	int ret;
+
+	ret = video_set_selection(dev, &sel);
+	if (ret < 0 && ret != -ENOSYS) {
+		LOG_ERR("Unable to set selection compose");
+		return ret;
+	}
+
+	return video_set_format(dev, fmt);
+}
+
+int video_transfer_buffer(const struct device *src, const struct device *sink,
+			  enum video_buf_type src_type, enum video_buf_type sink_type,
+			  k_timeout_t timeout)
+{
+	struct video_buffer *buf = &(struct video_buffer){.type = src_type};
+	int ret;
+
+	ret = video_dequeue(src, &buf, timeout);
+	if (ret < 0) {
+		return ret;
+	}
+
+	buf->type = sink_type;
+
+	return video_enqueue(sink, buf);
+}

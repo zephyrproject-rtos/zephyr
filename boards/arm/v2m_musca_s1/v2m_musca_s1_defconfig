@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2019-2020 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+CONFIG_RUNTIME_NMI=y
+CONFIG_ARM_TRUSTZONE_M=y
+CONFIG_ARM_MPU=y
+
+# Serial
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_SERIAL=y

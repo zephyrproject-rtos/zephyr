@@ -1,0 +1,19 @@
+tests:
+  arch.x86.info:
+    arch_allow: x86
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "info: complete"
+    filter: CONFIG_X86_PC_COMPATIBLE
+  arch.x86.info.userspace:
+    arch_allow: x86
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "info: complete"
+    filter: CONFIG_X86_PC_COMPATIBLE

@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	/delete-node/ partitions;
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(8)>;
+};
+
+#include <espressif/partitions_0x1000_amp_8M.dtsi>

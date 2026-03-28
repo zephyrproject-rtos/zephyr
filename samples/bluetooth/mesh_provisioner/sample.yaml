@@ -1,0 +1,12 @@
+sample:
+  name: Bluetooth Mesh Provisioner
+tests:
+  sample.bluetooth.mesh_provisioner:
+    harness: bluetooth
+    platform_allow:
+      - qemu_x86
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp/ns
+    integration_platforms:
+      - qemu_x86
+    tags: bluetooth

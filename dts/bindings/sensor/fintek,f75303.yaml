@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    F75303 temperature sensor IC. This device has three temperature
+    channels - one local (on-chip), and two remote.
+
+compatible: "fintek,f75303"
+
+include: [sensor-device.yaml, i2c-device.yaml]

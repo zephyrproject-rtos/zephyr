@@ -1,0 +1,6 @@
+board:
+  name: adafruit_feather_scorpio_rp2040
+  full_name: RP2040 Scorpio Feather
+  vendor: adafruit
+  socs:
+  - name: rp2040

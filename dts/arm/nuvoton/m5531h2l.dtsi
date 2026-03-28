@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <nuvoton/m55m1x.dtsi>
+
+/ {
+	sram0: memory@20100000 {
+		compatible = "mmio-sram";
+		reg = <0x20100000 DT_SIZE_K(1344)>;
+	};
+
+	dtcm: memory@20000000 {
+		compatible = "zephyr,memory-region", "arm,dtcm";
+		reg = <0x20000000 DT_SIZE_K(128)>;
+		zephyr,memory-region = "DTCM";
+	};
+
+	itcm: memory@0 {
+		compatible = "zephyr,memory-region", "arm,itcm";
+		reg = <0x00000000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "ITCM";
+	};
+
+	soc {
+		fmc: flash-controller@40044000 {
+			flash0: flash@100000 {
+				reg = <0x100000 DT_SIZE_K(2048)>;
+			};
+		};
+	};
+};

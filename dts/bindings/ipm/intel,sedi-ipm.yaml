@@ -1,0 +1,21 @@
+# Copyright (c) 2020-2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: INTEL SEDI IPM controller.
+
+compatible: "intel,sedi-ipm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  peripheral-id:
+    type: int
+    required: true
+    description: sedi instance id of ipm

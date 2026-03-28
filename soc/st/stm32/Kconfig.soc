@@ -1,0 +1,12 @@
+# ST Microelectronics STM32 MCU line
+
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_STM32
+	bool
+
+config SOC_FAMILY
+	default "stm32" if SOC_FAMILY_STM32
+
+rsource "*/Kconfig.soc"

@@ -1,0 +1,9 @@
+/*
+ * Copyright 2022-2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "rd_rw612_bga.dtsi"

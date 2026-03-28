@@ -1,0 +1,9 @@
+# Copyright (c) 2020 Carlo Caione <ccaione@baylibre.com>
+# Copyright (c) 2023, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Power State Coordination Interface (PSCI) version 0.2.
+
+compatible: "arm,psci-0.2"
+
+include: arm_psci.yaml

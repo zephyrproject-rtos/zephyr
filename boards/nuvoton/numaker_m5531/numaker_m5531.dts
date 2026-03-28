@@ -1,0 +1,122 @@
+/*
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nuvoton/m5531h2l.dtsi>
+#include "numaker_m5531-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Nuvoton NuMaker M5531 board";
+	compatible = "nuvoton,numaker-m5531";
+
+	aliases {
+		led0 = &green_led;
+		led1 = &yellow_led;
+		sw0 = &btn0;
+		sw1 = &btn1;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,canbus = &canfd0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		green_led: led_0 {
+			gpios = <&gpiod 5 GPIO_ACTIVE_LOW>;
+			label = "User LD0";
+		};
+
+		yellow_led: led_1 {
+			gpios = <&gpiod 6 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		btn0: btn0 {
+			label = "BTN0";
+			gpios = <&gpioi 11 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		btn1: btn1 {
+			label = "BTN1";
+			gpios = <&gpioh 1 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioh {
+	status = "okay";
+};
+
+&gpioi {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 0x8000>;
+		};
+
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x8000 0xf8000>;
+		};
+
+		slot1_partition: partition@100000 {
+			label = "image-1";
+			reg = <0x100000 0xf8000>;
+		};
+
+		storage_partition: partition@1f8000 {
+			label = "storage";
+			reg = <0x1f8000 0x8000>;
+		};
+	};
+};
+
+&sram0 {
+	reg = <0x20100000 DT_SIZE_K(1344)>;
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* On enabled, usbd is required to be clocked in 48MHz. */
+zephyr_udc0: &usbd {
+	pinctrl-0 = <&usbd_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

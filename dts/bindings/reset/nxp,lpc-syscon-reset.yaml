@@ -1,0 +1,15 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: LPC SYSCON Peripheral reset controller
+
+compatible: "nxp,lpc-syscon-reset"
+
+include: [reset-controller.yaml]
+
+properties:
+  "#reset-cells":
+    const: 1
+
+reset-cells:
+  - id

@@ -1,0 +1,7 @@
+family:
+  - name: intel_niosv
+    series:
+      - name: niosv
+        socs:
+          - name: niosv_g
+          - name: niosv_m

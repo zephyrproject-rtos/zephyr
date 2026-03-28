@@ -1,0 +1,8 @@
+# Copyright (c) 2022, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_GD32E50X
+
+rsource "Kconfig.defconfig.gd32*"
+
+endif # SOC_SERIES_GD32E50X

@@ -1,0 +1,6 @@
+board:
+  name: raytac_mdbt50q_cx_40_dongle
+  full_name: MDBT50Q-CX-40 Dongle
+  vendor: raytac
+  socs:
+  - name: nrf52840

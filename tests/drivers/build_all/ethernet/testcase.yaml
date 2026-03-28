@@ -1,0 +1,37 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - ethernet
+  depends_on:
+    - eth
+tests:
+  net.ethernet.build.default: {}
+
+  net.ethernet.build.spi:
+    extra_args: DTC_OVERLAY_FILE="spi_devices.overlay"
+    extra_configs:
+      - CONFIG_SPI=y
+      - CONFIG_NET_L2_ETHERNET=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+
+  net.ethernet.build.stm32_ethernet:
+    filter: dt_compat_enabled("st,stm32-ethernet")
+    extra_configs:
+      - CONFIG_ETH_STM32_MULTICAST_FILTER=y
+    platform_allow:
+      - stm32h573i_dk
+
+  net.ethernet.build.stm32_dwmac:
+    extra_args: DTC_OVERLAY_FILE="mdio_gpio.overlay"
+    extra_configs:
+      - CONFIG_ETH_STM32_HAL=n
+      - CONFIG_MDIO_ST_STM32_HAL=n
+      - CONFIG_ETH_DWMAC_STM32H7X=y
+    platform_allow:
+      - stm32h735g_disco
+      - nucleo_h753zi
+      - stm32h7s78_dk/stm32h7s7xx/ext_flash_app
+      - stm32h573i_dk

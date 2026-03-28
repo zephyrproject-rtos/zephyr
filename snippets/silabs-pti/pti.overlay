@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pti {
+	pinctrl-0 = <&pti_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

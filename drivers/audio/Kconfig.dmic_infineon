@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon DMIC configuration options
+
+config AUDIO_DMIC_INFINEON
+	bool "Infineon DMIC driver"
+	default y
+	depends on DT_HAS_INFINEON_PDM_ENABLED
+	select USE_INFINEON_PDM_PCM
+	select PINCTRL
+	select DMA
+	help
+	  Enable Infineon DMIC driver.
+
+if AUDIO_DMIC_INFINEON
+
+config DMIC_INFINEON_QUEUE_SIZE
+	int "Receive queue length"
+	default 8
+	help
+	  This option sets the number elements allocated for the rx software
+	  queue. This should match the number of blocks in the memory slab
+	  that will hold the received PCM samples.
+
+endif # AUDIO_DMIC_INFINEON

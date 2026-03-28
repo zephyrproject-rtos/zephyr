@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "fixed-partitions";
+
+		/* Set 3Kb of storage at the end of the of 1Mb flash 0 */
+		storage_partition: partition@ff400 {
+			label = "storage";
+			reg = <0xff400 DT_SIZE_K(3)>;
+		};
+	};
+};

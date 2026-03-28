@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_TESTS_BSIM_BLUETOOTH_HOST_L2CAP_REASSEMBLY_SRC_DATA_H_
+#define ZEPHYR_TESTS_BSIM_BLUETOOTH_HOST_L2CAP_REASSEMBLY_SRC_DATA_H_
+
+#define GATT_HANDLE 0x1337
+#define PEER_NAME "peer"
+#define TEST_ITERATIONS 20
+#define NOTIFICATION_PAYLOAD "the !ification"
+
+#endif /* ZEPHYR_TESTS_BSIM_BLUETOOTH_HOST_L2CAP_REASSEMBLY_SRC_DATA_H_ */

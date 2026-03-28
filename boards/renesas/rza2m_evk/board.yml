@@ -1,0 +1,6 @@
+board:
+  name: rza2m_evk
+  full_name: RZ/A2M Evaluation Kit
+  vendor: renesas
+  socs:
+  - name: r7s921053vcbg

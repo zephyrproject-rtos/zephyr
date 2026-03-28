@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		uart,passthrough = &uart2;
+	};
+};
+
+&uart2 {
+	status = "okay";
+};

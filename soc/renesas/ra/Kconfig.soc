@@ -1,0 +1,10 @@
+# Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_RENESAS_RA
+	bool
+
+config SOC_FAMILY
+	default "renesas_ra" if SOC_FAMILY_RENESAS_RA
+
+rsource "*/Kconfig.soc"

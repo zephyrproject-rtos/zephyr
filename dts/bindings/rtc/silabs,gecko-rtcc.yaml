@@ -1,0 +1,12 @@
+# Copyright (c) 2019, Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+description: Silabs Gecko RTCC (Real-Time Counter)
+
+compatible: "silabs,gecko-rtcc"
+
+include: rtc.yaml
+
+properties:
+  reg:
+    required: true

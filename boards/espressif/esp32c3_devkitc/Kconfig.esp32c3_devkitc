@@ -1,0 +1,7 @@
+# ESP32C3 devkitc board configuration
+
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32C3_DEVKITC
+	select SOC_ESP32C3_WROOM_02_N4

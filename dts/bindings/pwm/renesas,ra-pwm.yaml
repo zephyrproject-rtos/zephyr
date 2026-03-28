@@ -1,0 +1,75 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA Pulse Width Modulation
+
+compatible: "renesas,ra-pwm"
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  divider:
+    type: int
+    required: true
+
+  channel:
+    type: int
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  renesas-elcs:
+    type: phandle-array
+    description: |
+      Phandle array pointing to the Renesas ELC node.
+      The cell configuration must follow the Renesas
+      ELC bindings "#renesas-elc-cells".
+
+  renesas-elc-names:
+    type: string-array
+    description: |
+      Optional names given to the Renesas ELC specifiers
+      in the "renesas-elcs" property.
+
+  start-source:
+    type: string
+    description: Signal source name for start
+    enum:
+      - "GPT_SOURCE_NONE"
+      - "GPT_SOURCE_GPT_A"
+      - "GPT_SOURCE_GPT_B"
+      - "GPT_SOURCE_GPT_C"
+      - "GPT_SOURCE_GPT_D"
+      - "GPT_SOURCE_GPT_E"
+      - "GPT_SOURCE_GPT_F"
+      - "GPT_SOURCE_GPT_G"
+      - "GPT_SOURCE_GPT_H"
+
+  stop-source:
+    type: string
+    description: Signal source name for stop
+    enum:
+      - "GPT_SOURCE_NONE"
+      - "GPT_SOURCE_GPT_A"
+      - "GPT_SOURCE_GPT_B"
+      - "GPT_SOURCE_GPT_C"
+      - "GPT_SOURCE_GPT_D"
+      - "GPT_SOURCE_GPT_E"
+      - "GPT_SOURCE_GPT_F"
+      - "GPT_SOURCE_GPT_G"
+      - "GPT_SOURCE_GPT_H"
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

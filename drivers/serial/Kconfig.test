@@ -1,0 +1,11 @@
+# Copyright (c) 2021, Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+# Hidden option to enable the vnd,serial dummy driver used in testing.
+config SERIAL_TEST
+	def_bool DT_HAS_VND_SERIAL_ENABLED
+	depends on DT_HAS_VND_SERIAL_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_SUPPORT_ASYNC
+	select RING_BUFFER if (UART_INTERRUPT_DRIVEN || UART_ASYNC_API)

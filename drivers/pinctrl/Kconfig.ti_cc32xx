@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_TI_CC32XX
+	bool "TI CC32XX pinctrl driver"
+	default y
+	depends on DT_HAS_TI_CC32XX_PINCTRL_ENABLED
+	help
+	  Enable the TI CC32XX pinctrl driver

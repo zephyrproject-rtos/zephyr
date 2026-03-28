@@ -1,0 +1,39 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RA8D1
+	select ARM
+	select CPU_CORTEX_M85
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_SAU
+	select ARMV8_M_DSP
+	select FPU
+	select HAS_SWO
+	select XIP
+	select CLOCK_CONTROL_RENESAS_RA_CGC if CLOCK_CONTROL
+	select HAS_RENESAS_RA_FSP
+	select GPIO_RA_HAS_VBTICTLR
+	select HAS_PM
+	select SOC_RA_DYNAMIC_INTERRUPT_NUMBER
+
+if SOC_SERIES_RA8D1
+
+config RENESAS_PN_PACKAGE_TYPE
+	int
+	range 1 2
+	default 1 if SOC_R7FA8D1BHECBD
+	help
+	  Package type:
+	  1 -> BD: FBGA 224 pins
+	  2 -> FC: LQFP 176 pins
+
+config RENESAS_PN_FEATURE_SET
+	hex
+	default 0x42 if SOC_R7FA8D1BHECBD
+	help
+	  Feature set (Convert the feature set character into its ASCII hex value):
+	  - A (0x41): MIPI DSI is not available
+	  - B (0x42): MIPI DSI is available
+
+endif # SOC_SERIES_RA8D1

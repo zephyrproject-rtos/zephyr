@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+config CRYPTO_RTS5912_SHA
+	bool "Realtek embedded controller (EC) SHA2 driver"
+	depends on DT_HAS_REALTEK_RTS5912_SHA_ENABLED
+	default y
+	help
+	  Enable SHA driver.

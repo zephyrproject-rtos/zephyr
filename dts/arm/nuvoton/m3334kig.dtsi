@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <nuvoton/m333x.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(320)>;
+	};
+
+	soc {
+		fmc: flash-controller@4000c000 {
+			flash0: flash@0 {
+				reg = <0 DT_SIZE_K(512)>;
+			};
+		};
+
+		hsusbd: hsusbd@40019000 {
+			compatible = "nuvoton,numaker-hsusbd";
+			reg = <0x40019000 0x1000>;
+			interrupts = <65 0>;
+			resets = <&rst NUMAKER_HSUSBD_RST>;
+			clocks = <&pcc NUMAKER_HSUSBD_MODULE 0 0>;
+			dma-buffer-size = <4096>;
+			status = "disabled";
+			/* 2 more for Control OUT/IN */
+			num-bidir-endpoints = <14>;
+		};
+	};
+};

@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_NPM2100
+	bool "nPM2100 GPIO driver"
+	default y
+	depends on DT_HAS_NORDIC_NPM2100_GPIO_ENABLED
+	select I2C
+	select MFD
+	help
+	  Enable the nPM2100 GPIO driver.
+
+config GPIO_NPM2100_INIT_PRIORITY
+	int "nPM2100 GPIO driver initialization priority"
+	depends on GPIO_NPM2100
+	default 80
+	help
+	  Initialization priority for the nPM2100 GPIO driver. It must be
+	  greater than the I2C controller init priority.

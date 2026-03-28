@@ -1,0 +1,248 @@
+/*
+ * Copyright (c) 2025 Christoph Jans
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg23/efm32pg23b310f512im48.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
+#include "pg23_pk2504a-pinctrl.dtsi"
+
+/ {
+	model = "Silicon Labs PG23 Pro Kit";
+	compatible = "silabs,pg23_pk2504a", "silabs,efm32pg23";
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &eusart0;
+		zephyr,flash = &flash0;
+		zephyr,shell-uart = &eusart0;
+		zephyr,sram = &sram0;
+		zephyr,uart-pipe = &eusart0;
+	};
+
+	aliases {
+		dht0 = &si7021;
+		led0 = &led0;
+		led1 = &led1;
+		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdog0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>;
+			label = "LED 0";
+		};
+
+		led1: led_1 {
+			gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+			label = "LED 1";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM LED 0";
+		};
+
+		pwm_led1: pwm_led_1 {
+			pwms = <&timer0_pwm 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM LED 1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map = <9 0 &gpioa 5 0>,
+			   <11 0 &gpiob 4 0>,
+			   <12 0 &gpiob 5 0>,
+			   <13 0 &gpioc 9 0>,
+			   <14 0 &gpiob 6 0>,
+			   <15 0 &gpioa 8 0>,
+			   <16 0 &gpioa 7 0>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+	};
+};
+
+&timer0 {
+	status = "okay";
+
+	timer0_pwm: pwm {
+		pinctrl-0 = <&timer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&cpu0 {
+	clock-frequency = <78000000>;
+};
+
+&hfxo {
+	status = "okay";
+	ctune = <106>;
+	precision = <50>;
+};
+
+&lfxo {
+	status = "okay";
+	ctune = <38>;
+	precision = <50>;
+};
+
+&hfrcodpll {
+	clock-frequency = <DT_FREQ_M(78)>;
+	clocks = <&hfxo>;
+	dpll-autorecover;
+	dpll-edge = "fall";
+	dpll-lock = "phase";
+	dpll-m = <1919>;
+	dpll-n = <3839>;
+};
+
+&em23grpaclk {
+	clocks = <&lfxo>;
+};
+
+&em4grpaclk {
+	clocks = <&lfxo>;
+};
+
+&sysrtcclk {
+	clocks = <&lfxo>;
+};
+
+&wdog0clk {
+	clocks = <&lfxo>;
+};
+
+&wdog1clk {
+	clocks = <&lfxo>;
+};
+
+&eusart0 {
+	compatible = "silabs,eusart-uart";
+	current-speed = <115200>;
+	pinctrl-0 = <&eusart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	si7021: si7021@40 {
+		compatible = "silabs,si7006";
+		reg = <0x40>;
+	};
+};
+
+&gpio {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+
+	/* VCOM Isolation. Set PB1 to HIGH to enable VCOM_{RX,TX}. */
+	board-controller-enable {
+		gpio-hog;
+		gpios = <1 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&wdog0 {
+	status = "okay";
+};
+
+&sysrtc0 {
+	status = "okay";
+};
+
+&se {
+	status = "okay";
+};
+
+&dcdc {
+	regulator-boot-on;
+	silabs,pfmx-peak-current-milliamp = <80>;
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserve 48 kB for the bootloader */
+		boot_partition: partition@0 {
+			reg = <0x0 DT_SIZE_K(48)>;
+			label = "mcuboot";
+			read-only;
+		};
+
+		/* Reserve 216 kB for the application in slot 0 */
+		slot0_partition: partition@c000 {
+			reg = <0x0000c000 DT_SIZE_K(216)>;
+			label = "image-0";
+		};
+
+		/* Reserve 216 kB for the application in slot 1 */
+		slot1_partition: partition@42000 {
+			reg = <0x00042000 DT_SIZE_K(216)>;
+			label = "image-1";
+		};
+
+		/* Reserve 32 kB for the storage partition */
+		storage_partition: partition@78000 {
+			reg = <0x00078000 DT_SIZE_K(32)>;
+			label = "storage";
+		};
+	};
+};

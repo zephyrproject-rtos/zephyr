@@ -1,0 +1,12 @@
+# SOF HDA configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DAI_INTEL_HDA
+	bool "Intel HDA driver for Dai interface"
+	default y
+	depends on DT_HAS_INTEL_HDA_DAI_ENABLED
+	select DMA
+	help
+	  Select this to enable Intel HDA driver.

@@ -1,0 +1,49 @@
+#
+# Copyright (c) 2024 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig NRF70_BUSLIB
+	bool "NRF70 Bus Library"
+	help
+	  Enable the NRF70 Bus Library for the nRF7002 Wi-Fi shield.
+
+if NRF70_BUSLIB
+
+config NRF70_ON_QSPI
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7002_QSPI)) ||\
+			 $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7001_QSPI)) ||\
+			 $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7000_QSPI))
+	select NRFX_QSPI
+
+config NRF70_ON_SPI
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7002_SPI)) ||\
+			 $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7001_SPI)) ||\
+			 $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7000_SPI))
+	select SPI
+
+module = WIFI_NRF70_BUSLIB
+module-dep = LOG
+module-str = Log level for Wi-Fi nRF70 bus library
+source "$(ZEPHYR_BASE)/subsys/logging/Kconfig.template.log_config"
+
+config WIFI_NRF70_BUSLIB_LOG_LEVEL
+	# Enable error by default
+	default 1
+
+config NRF70_LOG_VERBOSE
+	bool "Maintains the verbosity of information in logs"
+	default y
+
+config NRF70_SPI_PM_CLAIM_WHILE_ACTIVE
+	bool "Keep SPI bus in ACTIVE state while nRF70 is powered"
+	depends on PM_DEVICE_RUNTIME
+	depends on NRF70_ON_SPI
+	help
+	  Requesting and releasing the SPI bus on every bus transaction when PM
+	  device runtime is enabled has a negative impact on data throughput.
+	  Enabling this option keeps the bus in the active state while the interface
+	  is powered up.
+
+endif # NRF70_BUSLIB

@@ -1,0 +1,118 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/renesas/rz/rza/r7s9210.dtsi>
+#include <freq.h>
+#include "rza2m_evk-pinctrl.dtsi"
+
+/ {
+	model = "Renesas RZA2M EVK";
+	compatible = "renesas,rza2m_evk";
+
+	chosen {
+		zephyr,sram = &ram;
+		zephyr,flash = &mx25l51245g;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &scif4;
+		zephyr,shell-uart = &scif4;
+	};
+
+	aliases {
+		led0 = &led1_green;
+		led1 = &led1_red;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1_red: led1_red {
+			gpios = <&gpio6 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		led1_green: led1_green {
+			gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&osc {
+	clock-frequency = <DT_FREQ_M(24)>;
+};
+
+&iclk {
+	clock-frequency = <DT_FREQ_M(528)>;
+};
+
+&bclk {
+	clock-frequency = <DT_FREQ_M(132)>;
+};
+
+&p1clk {
+	clock-frequency = <DT_FREQ_M(66)>;
+};
+
+&ostm0 {
+	status = "okay";
+
+	os_timer {
+		status = "okay";
+	};
+};
+
+/* Currently, the maximum supported baud rate on the USB Micro port (CN5) is 115200 */
+&scif4 {
+	pinctrl-0 = <&scif4_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&adc {
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spibsc {
+	pinctrl-0 = <&spibsc_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	mx25l51245g: qspi-nor-flash@20000000 {
+		compatible = "renesas,rza2m-qspi-spibsc";
+		reg = <0x20000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		ranges = <0x0 0x20000000 DT_SIZE_M(64)>;
+		write-block-size = <2>;
+		erase-block-size = <4096>;
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			loader_program: partition@0 {
+				label = "loader-program";
+				reg = <0x00000000 DT_SIZE_K(56)>;
+				read-only;
+			};
+
+			slot0_partition: partition@e000 {
+				label = "image-0";
+				reg = <0x0000e000 (DT_SIZE_M(64) - DT_SIZE_K(56))>;
+				read-only;
+			};
+		};
+	};
+};

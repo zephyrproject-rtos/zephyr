@@ -1,0 +1,10 @@
+common:
+  platform_allow:
+    - qemu_riscv32
+    - qemu_riscv64
+  filter: CONFIG_RISCV_PMP
+  tags: pmp
+
+tests:
+  arch.riscv.pmp.soc_regions:
+    harness: ztest

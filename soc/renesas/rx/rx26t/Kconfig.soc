@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RX26T
+	bool
+	select SOC_FAMILY_RENESAS_RX
+	help
+	  Renesas RX26T series
+
+config SOC_R5F526TFDDFP
+	bool
+	select SOC_SERIES_RX26T
+	help
+	  SOC_R5F526TFDDFP
+
+config SOC_SERIES
+	default "rx26t" if SOC_SERIES_RX26T
+
+config SOC
+	default "r5f526tfddfp" if SOC_R5F526TFDDFP

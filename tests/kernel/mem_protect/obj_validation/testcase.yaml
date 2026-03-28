@@ -1,0 +1,9 @@
+tests:
+  kernel.memory_protection.obj_validation:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    arch_exclude:
+      - posix
+    tags:
+      - kernel
+      - security
+      - userspace

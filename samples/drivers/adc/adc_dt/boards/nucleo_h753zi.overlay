@@ -1,0 +1,28 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 Witekio
+ */
+
+/ {
+	zephyr,user {
+		io-channels = <&adc3 5>;
+	};
+};
+
+&adc3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* Differential input: must specify pinctrl for both +/- inputs */
+	pinctrl-0 = <&adc3_inp5_pf3 &adc3_inn5_pf4>;
+
+	channel@5 {
+		reg = <5>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <12>;
+		zephyr,differential;
+	};
+};

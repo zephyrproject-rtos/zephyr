@@ -1,0 +1,9 @@
+sample:
+  name: Instrumentation subsystem sample
+tests:
+  sample.instrumentation:
+    platform_allow:
+      - b_u585i_iot02a
+      - mps2/an385
+    tags: instrumentation
+    build_only: true

@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/c0/stm32c051.dtsi>
+
+/ {
+	clocks {
+		/* Node representing the HSIUSB48 generator */
+		clk_hsi48: clk-hsi48 {
+			#clock-cells = <0>;
+			compatible = "st,stm32-hsi48-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			status = "disabled";
+		};
+	};
+
+	soc {
+		compatible = "st,stm32c071", "st,stm32c0", "simple-bus";
+
+		usb: usb@40005c00 {
+			compatible = "st,stm32-usb";
+			reg = <0x40005c00 0x400>;
+			interrupts = <8 0>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <8>;
+			ram-size = <2048>;
+			maximum-speed = "full-speed";
+			phys = <&usb_fs_phy>;
+			clocks = <&rcc STM32_CLOCK(APB1, 13)>,
+				 <&rcc STM32_SRC_HSE USB_SEL(1)>;
+			status = "disabled";
+		};
+	};
+
+	usb_fs_phy: usbphy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+	};
+};
+
+&exti {
+	num-lines = <36>;
+};

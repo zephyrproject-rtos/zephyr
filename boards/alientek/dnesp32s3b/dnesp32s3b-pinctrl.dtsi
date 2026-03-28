@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2025 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO43>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO44>;
+			bias-pull-up;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SCL_GPIO45>,
+				 <I2C0_SDA_GPIO48>;
+			drive-open-drain;
+		};
+	};
+
+	lcd_cam_default: lcd_cam_default {
+		group1 {
+			pinmux = <LCD_CAM_DATA_OUT0_GPIO40>, /* LCD_D0 */
+				 <LCD_CAM_DATA_OUT1_GPIO39>, /* LCD_D1 */
+				 <LCD_CAM_DATA_OUT2_GPIO38>, /* LCD_D2 */
+				 <LCD_CAM_DATA_OUT3_GPIO12>, /* LCD_D3 */
+				 <LCD_CAM_DATA_OUT4_GPIO11>, /* LCD_D4 */
+				 <LCD_CAM_DATA_OUT5_GPIO10>, /* LCD_D5 */
+				 <LCD_CAM_DATA_OUT6_GPIO9>,  /* LCD_D6 */
+				 <LCD_CAM_DATA_OUT7_GPIO46>, /* LCD_D7 */
+				 <LCD_CAM_LCD_CLK_GPIO42>,   /* LCD_WR */
+				 <LCD_CAM_DC_GPIO2>;         /* LCD_RS */
+			output-enable;
+			bias-disable;
+		};
+
+		group2 {
+			/* Not really used by display, but we need to pull it up
+			 * to avoid the floating state stucking the bus in read
+			 * mode.
+			 */
+			pinmux = <LCD_CAM_CAM_PCLK_GPIO41>;  /* LCD_RD */
+			output-enable;
+			bias-pull-up;
+		};
+	};
+};

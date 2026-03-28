@@ -1,0 +1,5 @@
+# Copyright (c) 2020, Erwin Rol <erwin@erwinrol.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SEGGER_TRB_STM32F407
+	select SOC_STM32F407XE

@@ -1,0 +1,12 @@
+# Copyright (c) 2022 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip EC Subsystem
+
+compatible: "microchip,xec-ecs"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

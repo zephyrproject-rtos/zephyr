@@ -1,0 +1,52 @@
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32H7 series Comparator
+
+include:
+  - name: st,stm32-comp.yaml
+    property-blocklist:
+      - st,blank-sel
+      - negative-input
+
+compatible: "st,stm32h7-comp"
+
+properties:
+  negative-input:
+    required: true
+    type: string
+    enum:
+      - 1_4VREFINT
+      - 1_2VREFINT
+      - 3_4VREFINT
+      - VREFINT
+      - DAC1_CH1
+      - DAC1_CH2
+      - IN0
+      - IN1
+      - TPSENS_DAC2CH1
+      - VBAT_VDDAP
+
+  st,power-mode:
+    type: string
+    description: |
+      Select comparator speed vs power mode.
+      Typical modes: fast (higher current), medium, low power, ultra-low power.
+      Availability varies by series.
+    enum:
+      - HIGHSPEED
+      - MEDIUMSPEED
+      - ULTRALOWPOWER
+
+  st,blank-sel:
+    type: string
+    enum:
+      - NONE
+      - TIM1_OC5
+      - TIM2_OC3
+      - TIM3_OC3
+      - TIM3_OC4
+      - TIM8_OC5
+      - TIM15_OC1
+    default: NONE

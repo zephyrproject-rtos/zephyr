@@ -1,0 +1,8 @@
+# nRF51 DK NRF51822 board configuration
+
+# Copyright (c) 2016 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF51DK_NRF51822
+
+endif # BOARD_NRF51DK_NRF51822

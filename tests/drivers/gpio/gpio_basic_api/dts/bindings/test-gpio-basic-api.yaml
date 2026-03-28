@@ -1,0 +1,28 @@
+#
+# Copyright (c) 2019 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    This binding provides resources required to build and run the
+    tests/drivers/gpio/gpio_basic_api test in Zephyr.
+
+compatible: "test-gpio-basic-api"
+
+properties:
+  out-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Identity of a GPIO that will be configured as an output.  This
+      must be on the same device as in-gpios, and physically
+      connected to in-gpios.
+
+  in-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Identity of a GPIO that will be configured as an input.  This
+      must be on the same device as out-gpios,and physically
+      connected to out-gpios.

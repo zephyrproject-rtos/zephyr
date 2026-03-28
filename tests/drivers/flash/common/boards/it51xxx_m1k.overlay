@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,flash = &flash_m1k0;
+		zephyr,flash-controller = &manual_flash_1k;
+	};
+};
+
+&manual_flash_1k {
+	status = "okay";
+
+	m1k-sel-access-flash = "external-fspi-cs1";
+
+	pinctrl-0 = <&fspi_fsce1_gpg6_default
+		     &fspi_fdio2_gph5_default
+		     &fspi_fdio3_gph6_default
+		     &fspi_fsck_gpg7_default>;
+	pinctrl-names = "default";
+
+	flash_m1k0: flash_m1k0@0 {
+		compatible = "soc-nv-flash";
+		reg = <0 DT_SIZE_M(1)>;
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+	};
+};
+
+&flash_m1k0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@40000 {
+			label = "storage";
+			reg = <0x00040000 DT_SIZE_K(256)>;
+		};
+	};
+};

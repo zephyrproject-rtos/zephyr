@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Sequans Communications
+# SPDX-License-Identifier: Apache-2.0
+
+description: Common fields for HW spinlock controllers
+
+properties:
+  "#hwlock-cells":
+    type: int
+    required: true
+    description: Number of items to expect in a HW spinlock specifier

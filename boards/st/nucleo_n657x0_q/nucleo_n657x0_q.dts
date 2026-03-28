@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "nucleo_n657x0_q_common.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32N657X0-Q-NUCLEO board";
+	compatible = "st,stm32n657x0-q-nucleo";
+};

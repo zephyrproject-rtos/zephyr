@@ -1,0 +1,23 @@
+identifier: mgm260p_rb4350a
+name: MGM260P 2.4 GHz +10 dBm Radio Board (MGM260P-RB4350A, BRD4350A)
+type: mcu
+arch: arm
+ram: 512
+flash: 3200
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - comparator
+  - counter
+  - dac
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: silabs

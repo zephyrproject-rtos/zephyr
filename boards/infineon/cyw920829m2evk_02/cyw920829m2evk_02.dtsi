@@ -1,0 +1,95 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/infineon/cat1b/cyw20829/system_clocks.dtsi>
+#include "cyw920829m2evk_02-memory_map.dtsi"
+#include "cyw920829m2evk_02-common.dtsi"
+#include "cyw920829m2evk_02-pinctrl.dtsi"
+
+/ {
+	aliases {
+		watchdog0 = &watchdog0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,bt-hci = &bluetooth;
+	};
+};
+
+uart2: &scb2 {
+	compatible = "infineon,uart";
+	status = "okay";
+	current-speed = <115200>;
+	hw-flow-control;
+
+	pinctrl-0 = <&p3_3_scb2_uart_tx &p3_2_scb2_uart_rx &p3_1_scb2_uart_rts &p3_0_scb2_uart_cts>;
+	pinctrl-names = "default";
+
+	dmas = <&dma0 8>, <&dma0 9>;
+	dma-names = "tx", "rx";
+};
+
+&dma0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "infineon,dma";
+	status = "okay";
+};
+
+&fll0 {
+	status = "okay";
+};
+
+&path_mux0 {
+	status = "okay";
+};
+
+&path_mux1 {
+	status = "okay";
+};
+
+&path_mux2 {
+	status = "okay";
+};
+
+&path_mux3 {
+	status = "okay";
+};
+
+&clk_hf0 {
+	status = "okay";
+	clocks = <&fll0>;
+};
+
+&clk_hf1 {
+	status = "okay";
+};
+
+&clk_hf2 {
+	status = "okay";
+};
+
+&clk_hf3 {
+	status = "okay";
+};
+
+&watchdog0 {
+	status = "okay";
+};
+
+&mcwdt0 {
+	status = "okay";
+};
+
+&bluetooth {
+	status = "okay";
+};

@@ -1,0 +1,23 @@
+# Copyright (c) 2021 G-Technologies Sdn. Bhd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Winsen MHZ-19B CO2 Sensor
+
+compatible: "winsen,mhz19b"
+
+include: [sensor-device.yaml, uart-device.yaml]
+
+properties:
+  maximum-range:
+    type: int
+    required: true
+    description: CO2 detection range.
+    enum:
+      - 2000
+      - 5000
+      - 10000
+
+  abc-on:
+    type: boolean
+    description: |
+      Enable ABC self-calibration function

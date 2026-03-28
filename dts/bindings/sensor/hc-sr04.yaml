@@ -1,0 +1,22 @@
+# Copyright (c) 2024, Adrien Leravat
+# SPDX-License-Identifier: Apache-2.0
+
+description: HC-SR04 ultrasound sensor.
+
+compatible: "hc-sr04"
+
+include: sensor-device.yaml
+
+properties:
+  trigger-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Output pin used to trigger the distance measurement.
+  echo-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Input pin. The pulse received on this pin corresponds to
+      the duration between the ultrasonic pulse emission and
+      the reception of its "echo".

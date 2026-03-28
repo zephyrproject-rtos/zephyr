@@ -1,0 +1,11 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_DMIC_NRFX_PDM
+	bool "nRF PDM nrfx driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_PDM_ENABLED
+	select NRFX_PDM
+	select PINCTRL
+	help
+	  Enable support for nrfx PDM driver for nRF MCU series.

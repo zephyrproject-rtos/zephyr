@@ -1,0 +1,16 @@
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Low Power Flexcomm
+
+compatible: "nxp,lp-flexcomm"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

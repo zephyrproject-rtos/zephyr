@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&agt0 {
+	interrupts = <62 1>, <63 1>;
+	interrupt-names = "agti", "agtcmai";
+	renesas,count-source = "AGT_CLOCK_LOCO";
+	renesas,prescaler = <4>;
+	status = "okay";
+
+	counter0: counter {
+		status = "okay";
+	};
+};

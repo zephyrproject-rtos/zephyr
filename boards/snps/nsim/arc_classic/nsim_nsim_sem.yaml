@@ -1,0 +1,17 @@
+identifier: nsim/nsim_sem
+name: SEM nSIM simulator
+type: sim
+arch: arc
+simulation:
+  - name: nsim
+    exec: nsimdrv
+toolchain:
+  - zephyr
+  - cross-compile
+  - arcmwdt
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: snps

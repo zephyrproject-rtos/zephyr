@@ -1,0 +1,9 @@
+tests:
+  pmci.mctp.i3c.ping_pong:
+    platform_allow:
+      - npcx4m8f_evb
+    tags:
+      - mctp
+      - i3c
+    harness_config:
+      fixture: i3c_loopback

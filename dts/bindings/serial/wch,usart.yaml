@@ -1,0 +1,9 @@
+description: WCH CH32V00x UART
+
+compatible: "wch,usart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true

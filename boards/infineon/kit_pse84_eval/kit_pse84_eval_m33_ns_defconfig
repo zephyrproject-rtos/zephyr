@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable FPU
+CONFIG_FPU=y
+CONFIG_FPU_SHARING=y
+
+# General configuration
+CONFIG_BUILD_OUTPUT_HEX=y
+
+CONFIG_ARM_MPU=y
+CONFIG_HW_STACK_PROTECTION=y
+
+# Enable GPIO driver
+CONFIG_GPIO=y
+
+# Enable Clock Control driver
+CONFIG_CLOCK_CONTROL=y
+
+CONFIG_ARM_TRUSTZONE_M=y
+
+CONFIG_TRUSTED_EXECUTION_NONSECURE=y
+
+CONFIG_CODE_DATA_RELOCATION=y
+
+CONFIG_BUILD_WITH_TFM=y
+CONFIG_TFM_PROFILE_TYPE_MEDIUM=y

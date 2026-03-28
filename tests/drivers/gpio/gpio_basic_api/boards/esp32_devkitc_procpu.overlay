@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2019 Mohamed ElShahawi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio0 18 0>;
+		in-gpios = <&gpio0 19 0>;
+	};
+};
+
+/*
+ * Notes about esp32 pins:
+ *    GPIO pins 34-39 are not suitable for this test because:
+ *    1. input-only
+ *    2. No internal pull-up/pull-down circuitry.
+ *
+ *    GPIO pins 16-17 are reserved for PSRAM on ESP32-WROVER modules.
+ *    GPIO pins 6-11 are reserved for SPI flash.
+ *
+ *    Using GPIO 18 and 19 which are available on WROVER modules.
+ */

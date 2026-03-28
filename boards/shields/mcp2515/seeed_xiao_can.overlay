@@ -1,0 +1,37 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <freq.h>
+
+/ {
+	chosen {
+		zephyr,canbus = &mcp2515_seeed_xiao_can;
+	};
+};
+
+/* Disable XIAO serial function, avoid conflict with CS & INT. */
+&xiao_serial {
+	status = "disabled";
+};
+
+&xiao_spi {
+	status = "okay";
+	cs-gpios = <&xiao_d 7 GPIO_ACTIVE_LOW>;
+
+	mcp2515_seeed_xiao_can: can@0 {
+		compatible = "microchip,mcp2515";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		osc-freq = <DT_FREQ_M(16)>;
+		int-gpios = <&xiao_d 6 GPIO_ACTIVE_LOW>;
+		status = "okay";
+
+		can-transceiver {
+			max-bitrate = <1000000>;
+		};
+	};
+};

@@ -1,0 +1,18 @@
+# Private config options for PTP sample app
+
+# Copyright (c) 2024 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "PTP sample application"
+
+if PTP
+
+config NET_SAMPLE_RUN_DURATION
+	int "Run the application this many seconds"
+	default 0
+	help
+	  A value of zero means that the sample application is run forever.
+
+endif
+
+source "Kconfig.zephyr"

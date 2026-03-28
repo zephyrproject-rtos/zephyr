@@ -1,0 +1,26 @@
+identifier: w5500_evb_pico
+name: Wiznet W5500 Evaluation Board
+type: mcu
+arch: arm
+flash: 16384
+ram: 264
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - pico_gpio
+  - pico_i2c
+  - pico_spi
+  - pico_serial
+  - uart
+  - gpio
+  - adc
+  - i2c
+  - spi
+  - hwinfo
+  - watchdog
+  - pwm
+  - flash
+  - dma
+  - counter
+  - clock

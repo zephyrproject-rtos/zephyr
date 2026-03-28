@@ -1,0 +1,8 @@
+board:
+  name: stm32f469i_disco
+  full_name: STM32F469I Discovery
+  vendor: st
+  socs:
+    - name: stm32f469xx
+      variants:
+        - name: au1       # This variant uses the newer nt35510 device for the screen

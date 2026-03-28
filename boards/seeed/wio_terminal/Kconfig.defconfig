@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Joel Guittet
+# Wio Terminal  board configuration
+
+# SPDX-License-Identifier: Apache-2.0
+
+configdefault LV_COLOR_16_SWAP
+	default y if LVGL
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"

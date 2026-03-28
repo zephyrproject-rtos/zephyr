@@ -1,0 +1,13 @@
+# STM32WBA65RI Nucleo board configuration
+
+# Copyright (c) 2025 STMicroelectronics
+
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_WBA65RI
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_NUCLEO_WBA65RI

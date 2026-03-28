@@ -1,0 +1,12 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: RW SOC controller node
+
+compatible: "nxp,rw-soc-ctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,10 @@
+description: NXP PCA9633 LED
+
+compatible: "nxp,pca9633"
+
+include: i2c-device.yaml
+
+properties:
+  disable-allcall:
+    type: boolean
+    description: Disable response to LED All Call address request

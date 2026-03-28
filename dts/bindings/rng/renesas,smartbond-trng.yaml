@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas Smartbond TRNG
+
+compatible: "renesas,smartbond-trng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic DPPIC Channel Linking
+
+properties:
+  source-channels:
+    type: array
+    description: |
+      Channels that are linked to channels of DPPIC instances on separate
+      bridges as publishing sources.
+
+  sink-channels:
+    type: array
+    description: |
+      Channels that are linked to channels of DPPIC instances on separate
+      bridges as subscribing sinks.

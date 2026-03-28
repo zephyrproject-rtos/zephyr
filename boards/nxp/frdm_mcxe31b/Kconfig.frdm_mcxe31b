@@ -1,0 +1,5 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FRDM_MCXE31B
+	select SOC_PART_NUMBER_MCXE31BMPB

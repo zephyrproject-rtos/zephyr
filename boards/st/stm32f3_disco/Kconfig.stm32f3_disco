@@ -1,0 +1,5 @@
+# Copyright (c) 2017 I-SENSE group of ICCS
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32F3_DISCO
+	select SOC_STM32F303XC

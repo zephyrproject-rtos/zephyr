@@ -1,0 +1,5 @@
+# Copyright (c) 2021 Hubert Miś <hubert.mis@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_FTDI_VM800C
+	def_bool $(shields_list_contains,ftdi_vm800c)

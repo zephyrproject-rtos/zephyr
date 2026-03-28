@@ -1,0 +1,5 @@
+# Copyright 2025 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_DVP_20PIN_OV7670
+	def_bool $(shields_list_contains,dvp_20pin_ov7670)

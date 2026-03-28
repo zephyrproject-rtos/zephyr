@@ -1,0 +1,39 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_MCHP_SERCOM
+	bool
+	help
+	  Common options for Microchip SPI SERCOM drivers.
+
+config SPI_MCHP_SERCOM_G1
+	bool
+	default y
+	depends on DT_HAS_MICROCHIP_SERCOM_G1_SPI_ENABLED
+	select PINCTRL
+	select GPIO
+	select SPI_MCHP_SERCOM
+	help
+	  Enable support for the Microchip SERCOM SPI driver.
+
+if SPI_MCHP_SERCOM
+
+config SPI_MCHP_INTER_CHARACTER_SPACE
+	int "Microchip SERCOM SPI Inter-Character Spacing (in clock cycles)"
+	default 63 if SPI_SLAVE
+	default 0
+	range 0 63
+	depends on SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+	help
+	  Number of clock cycles to delay between characters on SPI bus.
+
+config SPI_MCHP_DMA_DRIVEN
+	bool "Microchip SPI DMA Mode"
+	default y
+	depends on DMA
+	depends on $(dt_compat_all_has_prop,$(DT_COMPAT_MICROCHIP_SERCOM_G1_SPI),dmas)
+	help
+	  This enables DMA driven transfers for the SPI peripheral.
+	  Requires DMA controller and dmas property in device tree.
+
+endif # SPI_MCHP_SERCOM

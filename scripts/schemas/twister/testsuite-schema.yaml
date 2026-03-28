@@ -1,0 +1,230 @@
+#
+# Schema to validate a YAML file describing a Zephyr test platform
+#
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$defs:
+  scenario:
+    type: object
+    properties:
+      arch_exclude: {}
+      arch_allow: {}
+      vendor_exclude:
+        type: array
+        items:
+          type: string
+      vendor_allow:
+        type: array
+        items:
+          type: string
+      testcases:
+        type: array
+        items:
+          type: string
+      build_only:
+        type: boolean
+      build_on_all:
+        type: boolean
+      depends_on: {}
+      extra_args: {}
+      extra_configs:
+        type: array
+        items:
+          type: string
+      extra_conf_files:
+        type: array
+        items:
+          type: string
+      extra_overlay_confs:
+        type: array
+        items:
+          type: string
+      extra_dtc_overlay_files:
+        type: array
+        items:
+          type: string
+      extra_sections: {}
+      expect_reboot:
+        type: boolean
+      required_applications:
+        type: array
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+            platform:
+              type: string
+          required: [name]
+          additionalProperties: false
+      required_snippets:
+        type: array
+        items:
+          type: string
+      filter:
+        type: string
+      levels:
+        type: array
+        items:
+          type: string
+          enum: ["smoke", "unit", "integration", "acceptance", "system", "regression"]
+      integration_platforms:
+        type: array
+        items:
+          type: string
+      integration_toolchains:
+        type: array
+        items:
+          type: string
+      ignore_faults:
+        type: boolean
+      ignore_qemu_crash:
+        type: boolean
+      harness:
+        type: string
+      harness_config:
+        type: object
+        properties:
+          power_measurements: {}
+          shell_commands_file:
+            type: string
+          shell_commands:
+            type: array
+            items:
+              type: object
+              properties:
+                command:
+                  type: string
+                expected:
+                  type: string
+              required: [command]
+              additionalProperties: false
+          display_capture_config:
+            type: string
+          type:
+            type: string
+          fixture:
+            type: string
+          ordered:
+            type: boolean
+          pytest_root:
+            type: array
+            items:
+              type: string
+          pytest_args:
+            type: array
+            items:
+              type: string
+          pytest_dut_scope:
+            type: string
+            enum: ["function", "class", "module", "package", "session"]
+          ctest_args:
+            type: array
+            items:
+              type: string
+          regex:
+            type: array
+            items:
+              type: string
+          robot_testsuite: {}
+          robot_option: {}
+          record:
+            type: object
+            properties:
+              regex:
+                type: array
+                items:
+                  type: string
+              merge:
+                type: boolean
+              as_json:
+                type: array
+                items:
+                  type: string
+            required: [regex]
+            additionalProperties: false
+          bsim_exe_name:
+            type: string
+          ztest_suite_repeat:
+            type: integer
+          ztest_test_repeat:
+            type: integer
+          ztest_test_shuffle:
+            type: boolean
+        additionalProperties: false
+      min_ram:
+        type: integer
+      min_flash:
+        type: integer
+      modules:
+        type: array
+        items:
+          type: string
+      platform_exclude: {}
+      platform_allow: {}
+      platform_type:
+        type: array
+        items:
+          type: string
+          enum: ["mcu", "qemu", "sim", "unit", "native"]
+      platform_key:
+        type: array
+        items:
+          type: string
+      simulation_exclude:
+        type: array
+        items:
+          type: string
+          enum:
+            - qemu
+            - simics
+            - xt-sim
+            - renode
+            - nsim
+            - mdb-nsim
+            - tsim
+            - armfvp
+            - native
+            - custom
+      tags: {}
+      timeout:
+        type: integer
+      toolchain_exclude: {}
+      toolchain_allow: {}
+      type:
+        type: string
+        enum: ["unit"]
+      skip:
+        type: boolean
+      slow:
+        type: boolean
+      sysbuild:
+        type: boolean
+    additionalProperties: false
+
+type: object
+properties:
+  common:
+    $ref: "#/$defs/scenario"
+  # The sample descriptor, if present
+  sample:
+    type: object
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+    required: [name]
+    additionalProperties: false
+  # The list of testcases -- IDK why this is a sequence of
+  # maps maps, shall just be a sequence of maps
+  # maybe it is just an artifact?
+  tests:
+    type: object
+    patternProperties:
+      # The key for the testname is any
+      "[a-zA-Z0-9_]+":
+        $ref: "#/$defs/scenario"
+    additionalProperties: false
+required:
+  - tests
+additionalProperties: false

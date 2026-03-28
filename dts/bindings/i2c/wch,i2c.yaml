@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Andrei-Edward Popa
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH I2C controller
+
+compatible: "wch,i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

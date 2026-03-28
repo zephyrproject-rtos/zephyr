@@ -1,0 +1,147 @@
+/*
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#include "rp2350b_core-pinctrl.dtsi"
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &qmi;
+		zephyr,code-partition = &slot0_partition;
+		uart,passthrough = &uart0;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+			label = "LED";
+		};
+	};
+
+	pwm_leds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm 9 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM_LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button_0: sw0 {
+			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		pwm-led0 = &pwm_led0;
+		sw0 = &button_0;
+	};
+};
+
+&flash0 {
+	reg = <0x10000000 DT_SIZE_M(16)>;
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x0 0x400000>;
+		};
+
+		slot1_partition: partition@400000 {
+			label = "image-1";
+			reg = <0x400000 0x400000>;
+		};
+
+		storage_partition: partition@800000 {
+			label = "storage";
+			reg = <0x800000 0x800000>;
+		};
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+gpio0_lo: &gpio0 {
+	status = "okay";
+};
+
+gpio1: &gpio0_hi {
+	status = "okay";
+};
+
+&spi0 {
+	clock-frequency = <DT_FREQ_M(20)>;
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_FAST_PLUS>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pwm {
+	pinctrl-0 = <&pwm_ch4b_default>;
+	pinctrl-names = "default";
+	divider-int-0 = <255>;
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>

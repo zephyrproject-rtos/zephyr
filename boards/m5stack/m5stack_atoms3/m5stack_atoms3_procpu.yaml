@@ -1,0 +1,17 @@
+identifier: m5stack_atoms3/esp32s3/procpu
+name: M5Stack AtomS3 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - regulator
+  - uart
+  - pinmux
+  - nvs
+  - display
+vendor: m5stack

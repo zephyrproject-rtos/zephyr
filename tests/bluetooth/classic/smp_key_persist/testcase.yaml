@@ -1,0 +1,24 @@
+tests:
+  bluetooth.classic.smp.key_persist:
+    platform_allow:
+    - native_sim
+    integration_platforms:
+    - native_sim
+    tags:
+    - bluetooth
+    - smp
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      fixture: usb_hci
+    timeout: 600
+  bluetooth.classic.smp.key_persist.no_blobs:
+    platform_allow:
+    - mimxrt1170_evk@B/mimxrt1176/cm7
+    tags:
+    - bluetooth
+    - smp
+    extra_args:
+    - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    timeout: 600
+    build_only: true

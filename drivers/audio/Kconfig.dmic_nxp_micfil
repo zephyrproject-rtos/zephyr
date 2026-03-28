@@ -1,0 +1,22 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_DMIC_NXP_MICFIL
+	bool "NXP MICFIL driver"
+	default y
+	depends on DT_HAS_NXP_MICFIL_ENABLED
+	select CLOCK_CONTROL
+	select PINCTRL
+	help
+	  Enable NXP MICFIL driver.
+
+if AUDIO_DMIC_NXP_MICFIL
+
+config DMIC_NXP_MICFIL_QUEUE_SIZE
+	int "Message queue depth"
+	default 4
+	help
+	  Depth of the message queue used to pass filled buffers to the app.
+
+endif # AUDIO_DMIC_NXP_MICFIL

@@ -1,0 +1,11 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_ANDES
+	bool "Andes system ID"
+	default y
+	depends on SOC_FAMILY_ANDES_V5
+	depends on SYSCON
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable Andes hwinfo driver

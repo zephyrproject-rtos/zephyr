@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "WiSeConnect configuration"
+	depends on HAS_SILABS_WISECONNECT
+
+config SILABS_SISDK_SLEEPTIMER
+	bool "Sleeptimer service"
+	select SRAM_VECTOR_TABLE
+	select CODE_DATA_RELOCATION_SRAM
+	help
+	  Set if the Sleeptimer HAL module is used.
+
+endmenu

@@ -1,0 +1,10 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+ */
+
+&timer0 {
+	status = "okay";
+	prescaler = <44999>;
+};

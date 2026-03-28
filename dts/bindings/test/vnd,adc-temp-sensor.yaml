@@ -1,0 +1,20 @@
+# Copyright (c) 2018, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test ADC-based temperature sensor
+
+compatible: "vnd,adc-temp-sensor"
+
+include: [base.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  io-channels:
+    required: true
+    description: ADC conversion channels
+
+  io-channel-names:
+    required: true
+    description: conversion channel names
+
+  clocks:
+    required: true

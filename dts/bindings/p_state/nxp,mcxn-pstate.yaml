@@ -1,0 +1,22 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP MCXN series implementation of custom properties for performance state (pstate)
+
+compatible: "nxp,mcxn-pstate"
+
+include:
+  - "zephyr,pstate.yaml"
+
+properties:
+  cpu-frequency-level:
+    type: string
+    enum:
+      - low
+      - medium
+      - high
+    description: |
+      CPU frequency level associated with this performance state. The frequency
+      level correspond to predefined CPU frequency levels supported by the SoC.

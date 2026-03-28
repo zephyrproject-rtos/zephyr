@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+choice GNSS_RTK_PROTOCOL
+	prompt "GNSS RTK Protocol selection"
+	default GNSS_RTK_PROTOCOL_RTCM3
+	help
+	  Select the GNSS RTK Protocol to use in data-correction
+
+config GNSS_RTK_PROTOCOL_RTCM3
+	bool "RTCM3 Protocol"
+	select CRC
+	help
+	  Select RTCM3 protocol as GNSS RTK corrections
+
+endchoice

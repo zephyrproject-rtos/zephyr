@@ -1,0 +1,61 @@
+description: Renesas SmartBond(tm) UART
+
+compatible: "renesas,smartbond-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  periph-clock-config:
+    type: int
+    description: Peripheral clock register configuration (COM domain)
+    required: true
+
+  current-speed:
+    description: |
+      Initial baud rate setting for UART. Only a fixed set of baud
+      rates are selectable on these devices.
+    enum:
+      - 4800
+      - 9600
+      - 14400
+      - 19200
+      - 28800
+      - 38400
+      - 57600
+      - 115200
+      - 230400
+      - 500000
+      - 921600
+      - 1000000
+      - 2000000
+
+  hw-flow-control-supported:
+    type: boolean
+    description: Set to indicate RTS/CTS flow control is supported.
+
+  rx-wake-gpios:
+    type: phandle-array
+    description: GPIO configured as wake source
+
+  rx-wake-timeout:
+    type: int
+    description: |
+      Time to prevent UART entering sleep mode after receiving data (ms)
+
+  dtr-gpios:
+    type: phandle-array
+    description: |
+      DTR pin specification. DTR pin when active tells that the driver that there
+      is active client on the other side of serial line.
+      The device driver does not use DTR for hardware flow control.
+      When device is connected to computer serial converter usually asserts DTR
+      line when serial port is opened and ready for communication.
+      This line can be used in Smartbond(tm) driver to detect remote client presence.
+      If client is not present the device can disable UART, allowing for
+      power system management to enter more efficient power levels.

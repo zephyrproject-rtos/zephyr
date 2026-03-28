@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2017 Piotr Mienkowski
+ * Copyright (c) 2017 Justin Watson
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <atmel/samx7x.dtsi>

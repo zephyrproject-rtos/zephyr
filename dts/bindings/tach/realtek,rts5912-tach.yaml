@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+description: Realtek rts5912 tachometer controller
+
+compatible: "realtek,rts5912-tach"
+
+include: [tach.yaml, pinctrl-device.yaml, sensor-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  pulses-per-round:
+    type: int
+    required: true
+    description: number of pulses per round of tachometer's input

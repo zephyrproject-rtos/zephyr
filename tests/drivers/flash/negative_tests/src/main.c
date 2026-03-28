@@ -1,0 +1,468 @@
+/*
+ * Copyright (c) 2020-2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/storage/flash_map.h>
+
+#if defined(CONFIG_NORDIC_QSPI_NOR)
+#define TEST_AREA_DEV_NODE DT_INST(0, nordic_qspi_nor)
+#elif defined(CONFIG_SPI_NOR)
+#define TEST_AREA_DEV_NODE DT_INST(0, jedec_spi_nor)
+#else
+#define TEST_AREA storage_partition
+#endif
+
+/* TEST_AREA is only defined for configurations that rely on
+ * fixed-partition nodes.
+ */
+#if defined(TEST_AREA)
+#define TEST_AREA_OFFSET PARTITION_OFFSET(TEST_AREA)
+#define TEST_AREA_SIZE   PARTITION_SIZE(TEST_AREA)
+#define TEST_AREA_DEVICE PARTITION_DEVICE(TEST_AREA)
+
+#if defined(CONFIG_SOC_SERIES_NRF54L) || defined(CONFIG_SOC_FAMILY_MICROCHIP_SAM_D5X_E5X)
+#define TEST_FLASH_START (DT_REG_ADDR(DT_MEM_FROM_PARTITION(DT_NODELABEL(TEST_AREA))))
+#define TEST_FLASH_SIZE  (DT_REG_SIZE(DT_MEM_FROM_PARTITION(DT_NODELABEL(TEST_AREA))))
+#elif defined(CONFIG_SOC_NRF54H20)
+#define TEST_FLASH_START (DT_REG_ADDR(DT_PARENT(DT_PARENT(DT_NODELABEL(TEST_AREA)))))
+#define TEST_FLASH_SIZE  (DT_REG_SIZE(DT_PARENT(DT_PARENT(DT_NODELABEL(TEST_AREA)))))
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+/* For PSoC4, storage_partition is a child of partitions, which is a child of flash0 */
+/* We need to go up two levels: storage_partition -> partitions -> flash0 */
+#define TEST_FLASH_START (DT_REG_ADDR(DT_PARENT(DT_PARENT(DT_NODELABEL(TEST_AREA)))))
+#define TEST_FLASH_SIZE  (DT_REG_SIZE(DT_PARENT(DT_PARENT(DT_NODELABEL(TEST_AREA)))))
+#elif defined(CONFIG_SOC_SERIES_IMXRT118X)
+/* For i.MX RT118x, storage_partition -> partitions -> external FlexSPI NOR.
+ * Prefer /chosen zephyr,flash-controller for flash geometry.
+ * Flash operations use offsets from 0, not physical addresses.
+ */
+#define TEST_FLASH_START 0
+#define TEST_FLASH_SIZE  DT_PROP(DT_CHOSEN(zephyr_flash_controller), size)
+#else
+#error "Missing definition of TEST_FLASH_START and TEST_FLASH_SIZE for this target"
+#endif
+
+#else
+#error "Unsupported configuration"
+#endif
+
+#define EXPECTED_SIZE 512
+
+#if !defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE) && !defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
+#error There is no flash device enabled or it is missing Kconfig options
+#endif
+
+static const struct device *const flash_dev = TEST_AREA_DEVICE;
+static struct flash_pages_info page_info;
+static uint8_t __aligned(4) expected[EXPECTED_SIZE];
+
+static void *flash_driver_setup(void)
+{
+	int rc;
+
+	zassert_true(device_is_ready(flash_dev));
+
+	TC_PRINT("Test will run on device %s\n", flash_dev->name);
+	TC_PRINT("TEST_AREA_OFFSET = 0x%lx\n", (unsigned long)TEST_AREA_OFFSET);
+	TC_PRINT("TEST_AREA_SIZE   = 0x%lx\n", (unsigned long)TEST_AREA_SIZE);
+	TC_PRINT("TEST_FLASH_START = 0x%lx\n", (unsigned long)TEST_FLASH_START);
+	TC_PRINT("TEST_FLASH_SIZE  = 0x%lx\n", (unsigned long)TEST_FLASH_SIZE);
+
+	rc = flash_get_page_info_by_offs(flash_dev, TEST_AREA_OFFSET, &page_info);
+	zassert_true(rc == 0, "flash_get_page_info_by_offs returned %d", rc);
+	TC_PRINT("Test Page Info:\n");
+	TC_PRINT("start_offset = 0x%lx\n", (unsigned long)page_info.start_offset);
+	TC_PRINT("size         = 0x%lx\n", (unsigned long)page_info.size);
+	TC_PRINT("index        = %d\n", page_info.index);
+	TC_PRINT("===================================================================\n");
+
+	return NULL;
+}
+
+/*  Acceptable values of erase size and offset are subject to
+ *  hardware-specific multiples of page size and offset.
+ */
+ZTEST(flash_driver_negative, test_negative_flash_erase_zero_length)
+{
+	int rc;
+
+#if !defined(TEST_AREA)
+	/* Flash memory boundaries are correctly calculated
+	 * only for storage_partition.
+	 */
+	ztest_test_skip();
+#endif
+
+	/* Erasing 0 bytes shall succeed */
+	rc = flash_erase(flash_dev, TEST_AREA_OFFSET, 0);
+	zassert_true(rc == 0, "flash_erase 0 bytes returned %d", rc);
+}
+
+ZTEST(flash_driver_negative, test_negative_flash_erase_oversized_length)
+{
+	int rc;
+
+#if !defined(TEST_AREA)
+	/* Flash memory boundaries are correctly calculated
+	 * only for storage_partition.
+	 */
+	ztest_test_skip();
+#endif
+
+	/* Check error returned when erasing too large chunk of memory */
+	rc = flash_erase(flash_dev, TEST_AREA_OFFSET, (TEST_FLASH_SIZE + 1));
+	zassert_true(rc < 0,
+		     "Invalid use of flash_erase (erasing too large chunk of memory) returned %d",
+		     rc);
+}
+
+ZTEST(flash_driver_negative, test_negative_flash_erase_wrong_address)
+{
+	int rc;
+
+#if !defined(TEST_AREA)
+	/* Flash memory boundaries are correctly calculated
+	 * only for storage_partition.
+	 */
+	ztest_test_skip();
+#endif
+
+	/* Check error returned when erasing memory at wrong address (too low) */
+	rc = flash_erase(flash_dev, (TEST_FLASH_START - page_info.size), page_info.size);
+	zassert_true(rc < 0,
+		     "Invalid use of flash_erase (erasing memory at wrong address (too low)) "
+		     "returned %d",
+		     rc);
+
+	/* Check error returned when erasing memory at wrong address (too high) */
+	rc = flash_erase(flash_dev, (TEST_FLASH_START + TEST_FLASH_SIZE), page_info.size);
+	zassert_true(rc < 0,
+		     "Invalid use of flash_erase (erasing memory at wrong address (too high)) "
+		     "returned %d",
+		     rc);
+}
+
+ZTEST(flash_driver_negative, test_negative_flash_erase_unaligned)
+{
+	int rc;
+
+#if !defined(TEST_AREA)
+	/* Flash memory boundaries are correctly calculated
+	 * only for storage_partition.
+	 */
+	ztest_test_skip();
+#endif
+
+	/* Check error returned when erasing unaligned memory */
+	rc = flash_erase(flash_dev, (TEST_AREA_OFFSET + 1), page_info.size);
+	zassert_true(rc < 0, "Invalid use of flash_erase (unaligned erase size) returned %d", rc);
+
+	/* Check error returned when erasing unaligned size */
+	rc = flash_erase(flash_dev, TEST_AREA_OFFSET, page_info.size + 1);
+	zassert_true(rc < 0, "Invalid use of flash_erase (unaligned size) returned %d", rc);
+}
+
+/*  Erase page offset and size are constrains of paged, explicit erase devices,
+ *  but can be relaxed with devices without such requirement.
+ */
+ZTEST(flash_driver_negative, test_negative_flash_fill_zero_length)
+{
+	int rc;
+	uint8_t fill_val = 0xA; /* Dummy value */
+
+#if !defined(TEST_AREA)
+	/* Flash memory boundaries are correctly calculated
+	 * only for storage_partition.
+	 */
+	ztest_test_skip();
+#endif
+
+	/* Filling 0 bytes shall succeed */
+	rc = flash_fill(flash_dev, fill_val, TEST_AREA_OFFSET, 0);
+	zassert_true(rc == 0, "flash_fill 0 bytes returned %d", rc);
+}
+
+ZTEST(flash_driver_negative, test_negative_flash_fill_wrong_address)
+{
+	int rc;
+	uint8_t fill_val = 0xA; /* Dummy value */
+
+#if !defined(TEST_AREA)
+	/* Flash memory boundaries are correctly calculated
+	 * only for storage_partition.
+	 */
+	ztest_test_skip();
+#endif
+
+	/* Check error returned when filling memory at wrong address (too low) */
+	rc = flash_fill(flash_dev, fill_val, (TEST_FLASH_START - page_info.size), page_info.size);
+	zassert_true(
+		rc < 0,
+		"Invalid use of flash_fill (filling memory at wrong address (too low)) returned %d",
+		rc);
+
+	/* Check error returned when filling memory at wrong address (too high) */
+	rc = flash_fill(flash_dev, fill_val, (TEST_FLASH_START + TEST_FLASH_SIZE), page_info.size);
+	zassert_true(rc < 0,
+		     "Invalid use of flash_fill (filling memory at wrong address (too high)) "
+		     "returned %d",
+		     rc);
+}
+
+ZTEST(flash_driver_negative, test_negative_flash_fill_unaligned)
+{
+	int rc;
+	uint8_t fill_val = 0xA; /* Dummy value */
+	size_t write_block_size;
+
+#if !defined(TEST_AREA)
+	/* Flash memory boundaries are correctly calculated
+	 * only for storage_partition.
+	 */
+	ztest_test_skip();
+#endif
+
+	write_block_size = flash_get_write_block_size(flash_dev);
+
+	if (write_block_size <= 1) {
+		ztest_test_skip();
+	}
+	/* Check error returned when filling unaligned memory */
+	rc = flash_fill(flash_dev, fill_val, TEST_AREA_OFFSET + 1, page_info.size);
+	zassert_true(rc < 0, "Invalid use of flash_fill returned %d", rc);
+
+	/* Check error returned when filling unaligned size */
+	rc = flash_fill(flash_dev, fill_val, TEST_AREA_OFFSET, page_info.size + 1);
+	zassert_true(rc < 0, "Invalid use of flash_fill returned %d", rc);
+}
+
+/*  Erase page offset and size are constrains of paged, explicit erase devices,
+ *  but can be relaxed with devices without such requirement.
+ */
+ZTEST(flash_driver_negative, test_negative_flash_flatten_zero_length)
+{
+	int rc;
+
+#if !defined(TEST_AREA)
+	/* Flash memory boundaries are correctly calculated
+	 * only for storage_partition.
+	 */
+	ztest_test_skip();
+#endif
+
+	/* Flatten 0 bytes shall succeed */
+	rc = flash_flatten(flash_dev, TEST_AREA_OFFSET, 0);
+	zassert_true(rc == 0, "flash_flatten 0 bytes returned %d", rc);
+}
+
+ZTEST(flash_driver_negative, test_negative_flash_flatten_wrong_address)
+{
+	int rc;
+
+#if !defined(TEST_AREA)
+	/* Flash memory boundaries are correctly calculated
+	 * only for storage_partition.
+	 */
+	ztest_test_skip();
+#endif
+
+	/* Check error returned when flatten memory at wrong address (too low) */
+	rc = flash_flatten(flash_dev, (TEST_FLASH_START - page_info.size), page_info.size);
+	zassert_true(rc < 0,
+		     "Invalid use of flash_flatten (flatten memory at wrong address (too low)) "
+		     "returned %d",
+		     rc);
+
+	/* Check error returned when flatten memory at wrong address (too high) */
+	rc = flash_flatten(flash_dev, (TEST_FLASH_START + TEST_FLASH_SIZE), page_info.size);
+	zassert_true(rc < 0,
+		     "Invalid use of flash_flatten (flatten memory at wrong address (too high)) "
+		     "returned %d",
+		     rc);
+}
+
+ZTEST(flash_driver_negative, test_negative_flash_flatten_unaligned)
+{
+	int rc;
+
+#if !defined(TEST_AREA)
+	/* Flash memory boundaries are correctly calculated
+	 * only for storage_partition.
+	 */
+	ztest_test_skip();
+#endif
+
+	/* Check error returned when flatten unaligned memory */
+	rc = flash_flatten(flash_dev, (TEST_AREA_OFFSET + 1), page_info.size);
+	zassert_true(rc < 0, "Invalid use of flash_flatten (unaligned flatten size) returned %d",
+		     rc);
+
+	rc = flash_flatten(flash_dev, TEST_AREA_OFFSET, (page_info.size + 1));
+	zassert_true(rc < 0, "Invalid use of flash_flatten (unaligned size) returned %d", rc);
+}
+
+/*  All flash drivers support reads without alignment restrictions on
+ *  the read offset, the read size, or the destination address.
+ */
+ZTEST(flash_driver_negative, test_negative_flash_read_zero_length)
+{
+	int rc;
+	uint8_t read_buf[EXPECTED_SIZE];
+
+#if !defined(TEST_AREA)
+	/* Flash memory boundaries are correctly calculated
+	 * only for storage_partition.
+	 */
+	ztest_test_skip();
+#endif
+
+	/* Reading 0 bytes shall succeed */
+	rc = flash_read(flash_dev, TEST_AREA_OFFSET, read_buf, 0);
+	zassert_true(rc == 0, "flash_read 0 bytes returned %d", rc);
+}
+
+ZTEST(flash_driver_negative, test_negative_flash_read_oversized_length)
+{
+	int rc;
+	uint8_t read_buf[EXPECTED_SIZE];
+
+#if !defined(TEST_AREA)
+	/* Flash memory boundaries are correctly calculated
+	 * only for storage_partition.
+	 */
+	ztest_test_skip();
+#endif
+
+	/* Check error returned when reading too many data */
+	rc = flash_read(flash_dev, TEST_AREA_OFFSET, read_buf, (TEST_FLASH_SIZE + page_info.size));
+	zassert_true(rc < 0, "Invalid use of flash_read (reading too many data) returned %d", rc);
+}
+
+ZTEST(flash_driver_negative, test_negative_flash_read_wrong_address)
+{
+	int rc;
+	uint8_t read_buf[EXPECTED_SIZE];
+
+#if !defined(TEST_AREA)
+	/* Flash memory boundaries are correctly calculated
+	 * only for storage_partition.
+	 */
+	ztest_test_skip();
+#endif
+
+	/* Check error returned when reading from a wrong address (too low) */
+	rc = flash_read(flash_dev, (TEST_FLASH_START - page_info.size), read_buf, EXPECTED_SIZE);
+	zassert_true(
+		rc < 0,
+		"Invalid use of flash_read (reading from a wrong address (too low)) returned %d",
+		rc);
+
+	/* Check error returned when reading from a wrong address (too high) */
+	rc = flash_read(flash_dev, (TEST_FLASH_START + TEST_FLASH_SIZE), read_buf, EXPECTED_SIZE);
+	zassert_true(
+		rc < 0,
+		"Invalid use of flash_read (reading from a wrong address (too high)) returned %d",
+		rc);
+}
+
+ZTEST(flash_driver_negative, test_negative_flash_write_zero_length)
+{
+	int rc;
+
+#if !defined(TEST_AREA)
+	/* Flash memory boundaries are correctly calculated
+	 * only for storage_partition.
+	 */
+	ztest_test_skip();
+#endif
+
+	/*  Write size and offset must be multiples of the minimum write block size
+	 *  supported by the driver.
+	 */
+
+	/* Writing 0 bytes shall succeed */
+	rc = flash_write(flash_dev, TEST_AREA_OFFSET, expected, 0);
+	zassert_true(rc == 0, "flash_write 0 bytes returned %d", rc);
+}
+
+ZTEST(flash_driver_negative, test_negative_flash_write_oversized_length)
+{
+	int rc;
+
+#if !defined(TEST_AREA)
+	/* Flash memory boundaries are correctly calculated
+	 * only for storage_partition.
+	 */
+	ztest_test_skip();
+#endif
+
+	/* Check error returned when writing too large chunk of memory */
+	rc = flash_write(flash_dev, TEST_AREA_OFFSET, expected, (TEST_FLASH_SIZE + 1));
+	zassert_true(rc < 0,
+		     "Invalid use of flash_write (writing too large chunk of memory) returned %d",
+		     rc);
+}
+
+ZTEST(flash_driver_negative, test_negative_flash_write_wrong_address)
+{
+	int rc;
+
+#if !defined(TEST_AREA)
+	/* Flash memory boundaries are correctly calculated
+	 * only for storage_partition.
+	 */
+	ztest_test_skip();
+#endif
+
+	/* Check error returned when writing to a wrong address (too low) */
+	rc = flash_write(flash_dev, (TEST_FLASH_START - page_info.size), expected, page_info.size);
+	zassert_true(
+		rc < 0,
+		"Invalid use of flash_write (writing to a wrong address (too low)) returned %d",
+		rc);
+
+	/* Check error returned when writing to a wrong address (too high) */
+	rc = flash_write(flash_dev, (TEST_FLASH_START + TEST_FLASH_SIZE), expected, page_info.size);
+	zassert_true(
+		rc < 0,
+		"Invalid use of flash_write (writing to a wrong address (too high)) returned %d",
+		rc);
+}
+
+ZTEST(flash_driver_negative, test_negative_flash_write_unaligned)
+{
+	int rc;
+	size_t write_block_size;
+
+#if !defined(TEST_AREA)
+	/* Flash memory boundaries are correctly calculated
+	 * only for storage_partition.
+	 */
+	ztest_test_skip();
+#endif
+
+	/*  Write size and offset must be multiples of the minimum write block size
+	 *  supported by the driver.
+	 */
+
+	write_block_size = flash_get_write_block_size(flash_dev);
+
+	if (write_block_size <= 1) {
+		ztest_test_skip();
+	}
+	/* Check error returned when writing at unaligned memory */
+	rc = flash_write(flash_dev, (TEST_AREA_OFFSET + 1), expected, page_info.size);
+	zassert_true(rc < 0, "Invalid use of flash_write (unaligned write size) returned %d", rc);
+
+	/* Check error returned when writing unaligned size */
+	rc = flash_write(flash_dev, TEST_AREA_OFFSET, expected, page_info.size + 1);
+	zassert_true(rc < 0, "Invalid use of flash_write (unaligned size) returned %d", rc);
+}
+
+ZTEST_SUITE(flash_driver_negative, NULL, flash_driver_setup, NULL, NULL, NULL);

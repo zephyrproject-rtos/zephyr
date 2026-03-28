@@ -1,0 +1,5 @@
+# Copyright (c) 2020 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MIKROE_ETH_CLICK
+	def_bool $(shields_list_contains,mikroe_eth_click)

@@ -1,0 +1,8 @@
+# Copyright (c) 2018, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMicroelectronics LSM6DS0 6-axis accelerometer and gyrometer
+
+compatible: "st,lsm6ds0"
+
+include: [sensor-device.yaml, i2c-device.yaml]

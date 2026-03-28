@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+# SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: sparkfun_rp2040_mikrobus
+name: Sparkfun RP2040 mikroBUS Development Board
+type: mcu
+arch: arm
+flash: 1024
+ram: 264
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - gpio
+  - adc
+  - i2c
+  - spi
+  - hwinfo
+  - watchdog
+  - pwm
+  - flash
+  - dma
+  - counter
+  - clock
+  - usbd
+  - feather_serial
+  - feather_i2c
+  - feather_spi
+  - feather_adc
+  - zephyr_serial
+  - zephyr_i2c
+  - zephyr_spi
+  - zephyr_adc

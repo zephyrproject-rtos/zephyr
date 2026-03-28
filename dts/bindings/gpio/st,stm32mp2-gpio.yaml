@@ -1,0 +1,23 @@
+# Copyright (C) 2025 Savoir-faire Linux, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32MP2 GPIO Controller
+
+compatible: "st,stm32mp2-gpio"
+
+include:
+  - name: st,stm32-gpio.yaml
+    property-blocklist:
+      - clocks
+
+properties:
+  clocks:
+    type: phandle-array
+    description: |
+      The clocks property is optional for STM32MP2 GPIO controllers.
+      This property is not required when the Cortex-A core is responsible for
+      GPIO initialization and acts as the resource manager, as defined by the
+      RIF (Resource Isolation Framework) peripheral. Adding the GPIO clocks
+      in that case would only trigger an IAC event.
+      If the Cortex-M core is designated as the resource manager, then the
+      clocks property must be defined and added to the device tree.

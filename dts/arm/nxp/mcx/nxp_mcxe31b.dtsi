@@ -1,0 +1,109 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	chosen {
+		zephyr,flash-controller = &c40fc;
+	};
+
+	soc {
+		itcm: memory@0 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x0 DT_SIZE_K(32)>;
+			zephyr,memory-region = "ITCM";
+		};
+
+		itcm1: memory@11400000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x11400000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "ITCM1";
+		};
+
+		dtcm: memory@20000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(64)>;
+			zephyr,memory-region = "DTCM";
+		};
+
+		/* stdby_ram memory supports content retention in Standby mode */
+		stdby_ram: memory@20400000 {
+			compatible = "mmio-sram";
+			reg = <0x20400000 DT_SIZE_K(32)>;
+		};
+
+		/* sram memory is available only in Run mode */
+		sram: memory@20408000 {
+			compatible = "mmio-sram";
+			reg = <0x20408000 DT_SIZE_K(288)>;
+		};
+
+		dtcm1: memory@21400000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x21400000 DT_SIZE_K(64)>;
+			zephyr,memory-region = "DTCM1";
+		};
+
+		peripheral: peripheral@40000000 {
+			ranges = <0x0 0x40000000 0x10000000>;
+		};
+	};
+};
+
+#include <nxp/mcx/nxp_mcxe31x_common.dtsi>
+
+&eim0_channel0 {
+	start-address = <0x20408000>;
+	size = <DT_SIZE_K(160)>;
+};
+
+&eim0_channel14 {
+	start-address = <0x20008000>;
+	size = <DT_SIZE_K(32)>;
+};
+
+&eim0_channel15 {
+	start-address = <0x20010000>;
+	size = <DT_SIZE_K(32)>;
+};
+
+&flexcan_0 {
+	number-of-mb = <96>;
+};
+
+&flexcan_1 {
+	number-of-mb = <64>;
+};
+
+&flexcan_2 {
+	number-of-mb = <64>;
+};
+
+&flexcan_3 {
+	number-of-mb = <32>;
+};
+
+&flexcan_4 {
+	number-of-mb = <32>;
+};
+
+&flexcan_5 {
+	number-of-mb = <32>;
+};
+
+&c40fc {
+	status = "okay";
+	ranges = <0x0 0x00400000 DT_SIZE_K(3920)>;
+
+	flash0: flash@0 {
+		compatible = "nxp,c40-flash";
+		reg = <0x0 DT_SIZE_K(3920)>;
+		erase-block-size = <DT_SIZE_K(8)>;
+		write-block-size = <8>;
+	};
+};

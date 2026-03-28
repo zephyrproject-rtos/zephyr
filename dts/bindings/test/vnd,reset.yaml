@@ -1,0 +1,18 @@
+# Copyright (c) 2022 Andrei-Edward Popa
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test Reset Controller
+
+compatible: "vnd,reset"
+
+include: [base.yaml, reset-controller.yaml]
+
+properties:
+  reg-width:
+    type: int
+    description: Register width
+  "#reset-cells":
+    const: 1
+
+reset-cells:
+  - id

@@ -1,0 +1,6 @@
+board:
+  name: frdm_mcxa153
+  full_name: FRDM-MCXA153
+  vendor: nxp
+  socs:
+  - name: mcxa153

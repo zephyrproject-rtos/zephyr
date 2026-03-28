@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon HPPASS SAR ADC configuration options
+
+config ADC_INFINEON_HPPASS_SAR
+	bool "Infineon HPPASS SAR ADC driver"
+	default y
+	depends on DT_HAS_INFINEON_HPPASS_SAR_ADC_ENABLED
+	select USE_INFINEON_HPPASS_SAR_ADC
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  This option enables the ADC driver for Infineon PSOC C3
+	  HPPASS (High Performance Programmable Analog Sub-System) SAR ADC.
+
+	  The HPPASS SAR ADC provides 12-bit analog-to-digital
+	  conversion capabilities
+
+if ADC_INFINEON_HPPASS_SAR
+
+config ADC_INFINEON_HPPASS_SAR_INIT_PRIORITY
+	int "Infineon HPPASS SAR ADC driver init priority"
+	default 80
+	help
+	  Infineon HPPASS SAR ADC driver initialization priority.
+	  This should be higher than the HPPASS_ANALOG_INIT_PRIORITY
+	  to ensure the analog subsystem is initialized first.
+
+endif # ADC_INFINEON_HPPASS_SAR

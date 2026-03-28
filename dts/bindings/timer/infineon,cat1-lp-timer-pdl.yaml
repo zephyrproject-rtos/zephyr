@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon CAT1 low power timer
+
+compatible: "infineon,cat1-lp-timer-pdl"
+
+include: [base.yaml, "infineon,system-interrupts.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    default: 32768
+    description: |
+      Clock frequency (Hz) for tick increment operations

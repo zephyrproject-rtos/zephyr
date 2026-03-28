@@ -1,0 +1,15 @@
+common:
+  filter: CONFIG_FULL_LIBC_SUPPORTED
+sample:
+  name: Maxim DS3231 RTC
+tests:
+  sample.basic.maxim_ds3231:
+    build_only: true
+    platform_allow:
+      - sltb004a
+      - frdm_k64f
+      - nrf51dk/nrf51822
+      - nucleo_l476rg
+      - particle_xenon
+    integration_platforms:
+      - sltb004a

@@ -1,0 +1,28 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &eth_phy;
+/delete-node/ &mdio;
+
+/ {
+	mdio: mdio {
+		compatible = "zephyr,mdio-gpio";
+		mdc-gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
+		mdio-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		eth_phy: ethernet-phy@0 {
+			compatible = "ethernet-phy";
+			reg = <0x00>;
+		};
+	};
+};
+
+&mac {
+	phy-handle = <&eth_phy>;
+};

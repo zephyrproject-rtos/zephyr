@@ -1,0 +1,250 @@
+# Copyright (c) 2020 arithmetics.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments FDC2X1X capacitive sensor
+
+compatible: "ti,fdc2x1x"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  sd-gpios:
+    type: phandle-array
+    description: |
+      The SD pin defaults to active high when consumed by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  intb-gpios:
+    type: phandle-array
+    description: |
+      The INTB pin defaults to active low when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  fdc2x14:
+    type: boolean
+    description: |
+      Set to identify the sensor as FDC2114 or FDC2214 (4-channel version)
+
+  autoscan:
+    type: boolean
+    description: |
+      Set the Auto-Scan Mode.
+
+      false = Continuous conversion on the single channel selected by
+      "active-channel" (single channel mode).
+
+      true = Auto-Scan conversions as selected by "rr-sequence"
+      (multichannel mode).
+
+  fref:
+    type: int
+    required: true
+    description: |
+      Reference frequency of the used clock source in KHz.
+      The internal clock oscillates at around 43360 KHz (43.36 MHz)
+      at 20 degrees Celsius.
+      Recommended external clock source frequency is 40000 KHz (40 MHz).
+
+  rr-sequence:
+    type: int
+    default: 0
+    description: |
+      Auto-Scan Sequence Configuration.
+      The FDC will perform a single conversion on each channel
+      in the sequence selected, and then restart the sequence continuously.
+
+      The sensor performs conversion on Channel 0 to 1 by default after
+      power-on-reset. This setting only applies if autoscan=true
+      (multichannel mode).
+
+      0 = Ch0, Ch1
+      1 = Ch0, Ch1, Ch2 (FDC2114, FDC2214 only)
+      2 = Ch0, Ch1, Ch2, Ch3 (FDC2114, FDC2214 only)
+    enum:
+      - 0
+      - 1
+      - 2
+
+  active-channel:
+    type: int
+    default: 0
+    description: |
+      Selects channel for continuous conversions.
+
+      The sensor performs continuous conversion on Channel 0 by default after
+      power-on-reset. This setting only applies if autoscan=false
+      (single channel mode).
+
+      0 = Perform continuous conversions on Channel 0
+      1 = Perform continuous conversions on Channel 1
+      2 = Perform continuous conversions on Channel 2 (FDC2114, FDC2214 only)
+      3 = Perform continuous conversions on Channel 3 (FDC2114, FDC2214 only)
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  deglitch:
+    type: int
+    required: true
+    description: |
+      Input deglitch filter bandwidth. Select the lowest setting that exceeds
+      the oscillation tank oscillation frequency.
+
+      1 = 1MHz
+      4 = 3.3MHz
+      5 = 10MHz
+      7 = 33MHz
+    enum:
+      - 1
+      - 4
+      - 5
+      - 7
+
+  sensor-activate-sel:
+    type: string
+    default: "low-power"
+    description: |
+      Sensor Activation Mode Selection.
+
+      The sensor uses low-power activation mode by default after
+      power-on-reset.
+
+      full-current = the FDC will drive maximum
+      sensor current for a shorter sensor activation time.
+
+      low-power = the FDC uses the value programmed by "idrive" during
+      sensor activation to minimize power consumption.
+    enum:
+      - "full-current"
+      - "low-power"
+
+  ref-clk-src:
+    type: string
+    default: "internal"
+    description: |
+      Select Reference Frequency Source.
+
+      The sensor uses the internal clock by default after power-on-reset.
+
+      internal = Use Internal oscillator as reference frequency
+      external = Reference frequency is provided from CLKIN pin.
+    enum:
+      - "internal"
+      - "external"
+
+  current-drive:
+    type: string
+    default: "normal"
+    description: |
+      Select Current Sensor Drive.
+
+      The sensor uses normal current drive by default after power-on-reset.
+      High current drive is not supported if autoscan=false and will default
+      to normal.
+
+      normal = The FDC will drive all channels with normal sensor current
+      (1.5mA max).
+
+      high = The FDC will drive channel 0 with current >1.5mA.
+    enum:
+      - "normal"
+      - "high"
+
+  output-gain:
+    type: int
+    default: 0
+    description: |
+      Output gain control (FDC2112, FDC2114 only)
+
+      The default output gain is 0 after power-on-reset.
+
+      0 = Gain = 1   | Effective Resolution 12 bits | 100% full scale
+      1 = Gain = 4   | Effective Resolution 14 bits | 25% full scale
+      2 = Gain = 8   | Effective Resolution 15 bits | 12.5% full scale
+      3 = Gain = 16  | Effective Resolution 16 bits | 6.25% full scale
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+child-binding:
+  description: |
+    Settings for each channel 0-1 (FDC2112 and FDC2212) or
+    0-3 (FDC2114 and FDC2214)
+
+  properties:
+    rcount:
+      type: int
+      required: true
+      description: |
+        Channel X Reference Count Conversion Interval Time.
+        Valid range: 256 - 65535
+
+    offset:
+      type: int
+      default: 0
+      description: |
+        Channel X Conversion Offset (FDC2112 and FDC2212 only).
+        The default offset value after power-on-reset is 0.
+        Valid range: 0 - 65535
+
+    settlecount:
+      type: int
+      required: true
+      description: |
+        Channel X Conversion Settling.
+
+        The FDC will use this settling time to allow the LC sensor to
+        stabilize before initiation of a conversion on Channel X.
+        Valid range: 0 - 65535
+
+    fref-divider:
+      type: int
+      required: true
+      description: |
+        Channel X Reference Divider.
+
+        Sets the divider for Channel X reference.
+        Use this to scale the maximum conversion frequency.
+        Valid range: 1 - 1023
+
+    idrive:
+      type: int
+      required: true
+      description: |
+        Channel X Sensor drive current.
+
+        This field defines the Drive Current used during the settling +
+        conversion time of Channel X sensor clock.
+        Valid range: 0 - 31
+
+    fin-sel:
+      type: int
+      required: true
+      description: |
+        Channel X Sensor frequency select.
+
+        For differential sensor configuration:
+        1 = divide by 1. Choose for sensor frequencies between
+        0.01MHz and 8.75MHz
+        2 = divide by 2. Choose for sensor frequencies between 5MHz
+        and 10MHz
+
+        For single-ended sensor configuration:
+        2 = divide by 2. Choose for sensor frequencies between
+        0.01MHz and 10MHz
+      enum:
+        - 1 # Divide by 1
+        - 2 # Divide by 2
+
+    inductance:
+      type: int
+      required: true
+      description: |
+        Inductor value used on the PCB for the sensing network of the
+        specific channel, which is usually 18uH.

@@ -1,0 +1,8 @@
+# Copyright (c) 2018 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMicroelectronics LIS3DH 3-axis accelerometer
+
+compatible: "st,lis3dh"
+
+include: ["i2c-device.yaml", "st,lis2dh-common.yaml"]

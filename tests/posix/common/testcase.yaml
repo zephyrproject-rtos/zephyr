@@ -1,0 +1,76 @@
+common:
+  tags: posix
+  min_ram: 64
+  timeout: 240
+  # 1 tier0 platform per supported architecture
+  platform_key:
+    - arch
+    - simulation
+  filter: not CONFIG_NATIVE_LIBC
+tests:
+  portability.posix.common: {}
+  portability.posix.common.minimal:
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  portability.posix.common.newlib:
+    platform_exclude:
+      - intel_ehl_crb
+      - lpcxpresso55s06
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  portability.posix.common.armclang_std_libc:
+    toolchain_allow: armclang
+    extra_configs:
+      - CONFIG_ARMCLANG_STD_LIBC=y
+  portability.posix.common.arcmwdtlib:
+    toolchain_allow: arcmwdt
+    extra_configs:
+      - CONFIG_ARCMWDT_LIBC=y
+  portability.posix.common.tls:
+    platform_exclude:
+      - intel_ehl_crb
+    filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=n
+      - CONFIG_THREAD_LOCAL_STORAGE=y
+  portability.posix.common.tls.newlib:
+    platform_exclude:
+      - intel_ehl_crb
+      - lpcxpresso55s06
+    filter: TOOLCHAIN_HAS_NEWLIB == 1 and CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and
+      CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_THREAD_LOCAL_STORAGE=y
+  portability.posix.common.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+  portability.posix.common.no_spin_validate:
+    extra_configs:
+      - CONFIG_SPIN_VALIDATE=n
+  portability.posix.common.signal.strsignal_no_desc:
+    extra_configs:
+      - CONFIG_POSIX_SIGNAL_STRING_DESC=n
+  portability.posix.common.signal.big_nsig:
+    extra_configs:
+      - CONFIG_POSIX_RTSIG_MAX=1024
+  portability.posix.common.dynamic_stack:
+    extra_configs:
+      - CONFIG_DYNAMIC_THREAD=y
+      - CONFIG_THREAD_STACK_INFO=y
+      - CONFIG_HEAP_MEM_POOL_SIZE=16384
+      - CONFIG_POSIX_THREAD_KEYS_MAX=2048
+      - CONFIG_TEST_EXTRA_STACK_SIZE=16384
+  portability.posix.common.static_stack:
+    extra_configs:
+      - CONFIG_DYNAMIC_THREAD=n
+      - CONFIG_THREAD_STACK_INFO=n
+  portability.posix.common.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags:
+      - userspace
+    extra_configs:
+      - CONFIG_USERSPACE=y

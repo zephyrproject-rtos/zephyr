@@ -1,0 +1,11 @@
+# Si7210 Hall Effect Magnetic Position and Temperature Sensor configuration options
+# Copyright (c) 2019 Actinius
+# SPDX-License-Identifier: Apache-2.0
+
+config SI7210
+	bool "Si7210 Hall Effect Magnetic Position and Temperature Sensor"
+	default y
+	depends on DT_HAS_SILABS_SI7210_ENABLED
+	select I2C
+	help
+	  Enable driver for Si7210 Hall Effect Magnetic Position and Temperature Sensor.

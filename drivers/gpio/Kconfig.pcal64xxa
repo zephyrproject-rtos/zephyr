@@ -1,0 +1,20 @@
+# PCAL6408a GPIO configuration options
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# Copyright (c) 2023 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_PCAL64XXA
+	bool "PCAL64XXA I2C GPIO chip"
+	default y
+	depends on DT_HAS_NXP_PCAL6408A_ENABLED || DT_HAS_NXP_PCAL6416A_ENABLED
+	select I2C
+	help
+	  Enable driver for PCAL64XXA I2C GPIO chip.
+
+config GPIO_PCAL64XXA_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	depends on GPIO_PCAL64XXA
+	help
+	  Device driver initialization priority.

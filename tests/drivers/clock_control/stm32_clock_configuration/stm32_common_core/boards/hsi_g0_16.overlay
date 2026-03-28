@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay performs configuration from clean sheet.
+ * It is assumed that it is applied after clear_clocks.overlay file.
+ */
+
+&clk_hsi {		/* HSI RC: 16MHz, hsi_clk = 16MHz */
+	status = "okay";
+	hsi-div = <1>;
+};
+
+&rcc {
+	clocks = <&clk_hsi>;
+	clock-frequency = <DT_FREQ_M(16)>;
+};

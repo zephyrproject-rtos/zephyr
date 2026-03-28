@@ -1,0 +1,7 @@
+common:
+  tags:
+    - bluetooth
+    - host
+tests:
+  bluetooth.host.bt_id_read_public_addr.default:
+    type: unit

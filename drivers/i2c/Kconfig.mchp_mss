@@ -1,0 +1,11 @@
+# Microchip PolarFire SoC Icicle Kit I2C configuration options
+
+# Copyright (c) 2023 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_MCHP_MSS
+	bool "Microchip PolarFire SoC I2C driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MPFS_I2C_ENABLED
+	help
+	  Enable PolarFire SoC Icicle Kit I2C driver.

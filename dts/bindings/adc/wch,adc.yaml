@@ -1,0 +1,36 @@
+# Copyright (c) 2025 Michael Hope <michaelh@juju.nz>
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH32V00x ADC
+
+compatible: "wch,adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  vref-mv:
+    type: int
+    default: 3300
+    description: |
+      Reference voltage in mV. This is typically VDD.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

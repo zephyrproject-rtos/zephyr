@@ -1,0 +1,7 @@
+common:
+  tags:
+    - bluetooth
+    - host
+tests:
+  bluetooth.gap.test:
+    type: unit

@@ -1,0 +1,14 @@
+# Copyright 2024 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+# RISCV64 OpenHW Group cva6 configuration options
+
+# Shared properties
+config SOC_CV64A6
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
+	select USE_SWITCH_SUPPORTED
+	select USE_SWITCH
+	select SCHED_IPI_SUPPORTED
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE

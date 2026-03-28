@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 Siratul Islam
+
+description: TM1637 7-segment LED display controller
+
+compatible: "titanmec,tm1637"
+
+include: base.yaml
+
+properties:
+  clk-gpios:
+    type: phandle-array
+    required: true
+    description: Clock GPIO pin
+
+  dio-gpios:
+    type: phandle-array
+    required: true
+    description: Data I/O GPIO pin
+
+  bit-delay-us:
+    type: int
+    default: 100
+    description: |
+      Bit delay in microseconds for GPIO bit-banging protocol.
+      TM1637 datasheet specifies minimum timings of 100ns (setup/hold)
+      and 400ns (clock pulse width). Default of 100µs provides safe
+      margin for software GPIO operations across different platforms.

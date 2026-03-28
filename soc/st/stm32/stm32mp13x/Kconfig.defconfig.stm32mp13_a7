@@ -1,0 +1,11 @@
+# STMicroelectronics STM32MP13_A7 MPU
+
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32MP135FXX
+
+config NUM_IRQS
+	default 181
+
+endif # SOC_STM32MP135FXX

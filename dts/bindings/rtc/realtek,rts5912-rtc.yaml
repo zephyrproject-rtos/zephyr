@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Realtek, SIBG-SD7
+# SPDX-License-Identifier: Apache-2.0
+
+description: RTC on Realtek RTS5912 EC
+
+compatible: "realtek,rts5912-rtc"
+
+include: rtc-device.yaml
+
+properties:
+  reg:
+    required: true

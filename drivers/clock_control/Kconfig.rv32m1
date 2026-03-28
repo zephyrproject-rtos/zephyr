@@ -1,0 +1,11 @@
+# OpenISA RV32M1 PPC
+
+# Copyright (c) 2018 Foundries.io
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_RV32M1_PCC
+	bool "RV32M1 PCC driver"
+	default y
+	depends on DT_HAS_OPENISA_RV32M1_PCC_ENABLED
+	help
+	  Enable support for RV32M1 PCC driver.

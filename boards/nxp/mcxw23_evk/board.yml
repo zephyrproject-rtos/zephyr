@@ -1,0 +1,6 @@
+board:
+  name: mcxw23_evk
+  full_name: MCXW23-EVK
+  vendor: nxp
+  socs:
+    - name: mcxw236

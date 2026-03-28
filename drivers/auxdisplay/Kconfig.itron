@@ -1,0 +1,11 @@
+# Copyright (c) 2022 Jamie McCrae
+# SPDX-License-Identifier: Apache-2.0
+
+config AUXDISPLAY_ITRON
+	bool "Noritake Itron VFD driver"
+	default y
+	select GPIO
+	select SERIAL
+	depends on DT_HAS_NORITAKE_ITRON_ENABLED
+	help
+	  Enable driver for Noritake Itron VFD.

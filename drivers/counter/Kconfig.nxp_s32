@@ -1,0 +1,10 @@
+# Copyright 2022-2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_NXP_S32_SYS_TIMER
+	bool "NXP S32 System Timer Module driver"
+	default y
+	depends on DT_HAS_NXP_S32_SYS_TIMER_ENABLED
+	select CLOCK_CONTROL
+	help
+	  Enable support for NXP S32 System Timer Module (STM) driver.

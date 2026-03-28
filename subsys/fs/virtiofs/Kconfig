@@ -1,0 +1,52 @@
+# Copyright (c) 2025 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config FILE_SYSTEM_VIRTIOFS
+	bool "Virtiofs file system support"
+	depends on FILE_SYSTEM
+	select FUSE_CLIENT
+	help
+	  Enable virtiofs file system support.
+
+config VIRTIOFS_DEBUG
+	bool "Print virtiofs verbose debug information"
+	help
+	  Enables printing of virtiofs verbose debug information
+
+config VIRTIOFS_MAX_FILES
+	int "Virtiofs max open files"
+	default 1024
+	help
+	  Virtiofs max simultaneously open files
+
+config VIRTIOFS_MAX_VQUEUE_SIZE
+	int "Virtiofs max virtqueue size"
+	default 1024
+	help
+	  Maximum size of virtqueue
+
+config VIRTIOFS_NO_NOTIFICATION_QUEUE_SLOT
+	bool "Omit notification queue (idx 1) and assume that idx 1 is the first request queue"
+	default y
+	help
+	  According to virtio specification v1.3 section 5.11.2 queue at idx 1 is notification queue and
+	  request queues start at idx 2, however on qemu+virtiofsd thats not true and idx 1 is
+	  the first request queue
+
+config VIRTIOFS_VIRTIOFSD_UNLINK_QUIRK
+	bool "Fix unlink() with some virtiofsd versions"
+	default y
+	help
+	  Some virtiofsd versions (at least Debian 1:7.2+dfsg-7+deb12u7)
+	  will fail with EIO on unlink if the file wasn't looked up before
+
+config VIRTIOFS_CREATE_MODE_VALUE
+	int "Virtiofs mode value used during file/directory creation"
+	default 438 #0666
+	help
+	  During creation of file or directory we have to set mode, this config allows
+	  configuring that value. This determines access permissions for created files and directories.
+
+module = VIRTIOFS
+module-str = virtiofs
+source "subsys/logging/Kconfig.template.log_config"

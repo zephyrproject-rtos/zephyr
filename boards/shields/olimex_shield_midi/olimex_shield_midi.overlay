@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Titouan Christophe
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	leds {
+		midi_green_led: midi-green-led {
+			gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		midi_red_led: midi-red-led {
+			gpios = <&arduino_header 12 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+midi_serial: &arduino_serial {
+	current-speed = <31250>;
+};

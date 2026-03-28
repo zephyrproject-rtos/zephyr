@@ -1,0 +1,94 @@
+# Copyright (c) 2024 ELAN Microelectronics Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ELAN EM32F967 PWM Controller
+
+  The EM32F967 features a dedicated 6-channel PWM controller with:
+  - 6 independent PWM channels (PWMA through PWMF)
+  - Complementary outputs (P and N) for each channel
+  - Programmable dead-time insertion with 4-level prescaler
+  - Flexible pin multiplexing (PA0-5 or PB10-15)
+
+  Pin Assignments:
+  - Port A (use-port-a = true, PWM_S=0):
+    PA0: PWMA_P, PA1: PWMA_N
+    PA2: PWMB_P, PA3: PWMB_N
+    PA4: PWMC_P, PA5: PWMC_N
+
+  - Port B (use-port-a = false, PWM_S=1):
+    PB10: PWMA_P, PB11: PWMA_N
+    PB12: PWMB_P, PB13: PWMB_N
+    PB14: PWMC_P, PB15: PWMC_N
+
+  Output Type:
+  - 0 (PWM_EM32_OUTPUT_P): P output only
+  - 1 (PWM_EM32_OUTPUT_N): N output only
+  - 2 (PWM_EM32_OUTPUT_BOTH): Both P and N outputs
+
+  Example usage for PWMB_N on PA3:
+
+    &pwm0 {
+        status = "okay";
+        use-port-a;
+        output-type = <1>;  /* N output only */
+        pinctrl-0 = <&pwmb_pa3_n>;
+        pinctrl-names = "default";
+    };
+
+compatible: "elan,em32-pwm"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    type: array
+    required: true
+
+  clocks:
+    type: phandle-array
+    required: true
+
+  interrupts:
+    type: array
+    description: |
+      Interrupt lines for each PWM channel.
+      Order: PWMA, PWMB, PWMC, PWMD, PWME, PWMF
+
+  interrupt-names:
+    type: string-array
+    description: |
+      Names for the interrupt lines.
+      Should be: "pwma", "pwmb", "pwmc", "pwmd", "pwme", "pwmf"
+
+  "#pwm-cells":
+    type: int
+    const: 3
+    description: |
+      Number of cells in a PWM specifier:
+      - channel: PWM channel number (0-5 for PWMA-PWMF)
+      - period: PWM period in nanoseconds
+      - flags: PWM flags (e.g., PWM_POLARITY_INVERTED)
+
+  use-port-a:
+    type: boolean
+    description: |
+      Use Port A pins (PA0-PA5) for PWM output instead of Port B (PB10-PB15).
+      When true, sets IP_Share[18] (PWM_S) = 0 for PA pins.
+      When false or not specified, sets PWM_S = 1 for PB pins.
+
+  output-type:
+    type: int
+    default: 0
+    description: |
+      PWM output type selection:
+      0 = P output only (default)
+      1 = N output only (complementary output, e.g., for PA3 PWMB_N)
+      2 = Both P and N outputs (complementary pair with dead-time)
+
+pwm-cells:
+  - channel
+  - period
+  - flags

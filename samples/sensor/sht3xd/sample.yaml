@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2018 Peter Bigot Consulting, LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+sample:
+  name: SHT3XD Sensor Sample
+common:
+  platform_allow:
+    - sltb004a
+    - frdm_k64f
+    - nrf51_ble400
+    - nrf52840dk/nrf52840
+    - nucleo_l476rg
+  integration_platforms:
+    - nrf52840dk/nrf52840
+  tags: sensors
+  build_only: true
+tests:
+  sample.sensor.sht3xd: {}
+  sample.sensor.sht3xd.trigger:
+    extra_args: CONF_FILE="trigger.conf"

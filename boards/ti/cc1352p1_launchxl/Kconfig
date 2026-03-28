@@ -1,0 +1,6 @@
+# TI CC1352R LaunchXL board
+
+# Copyright (c) 2024 Alexandre Bailon
+# SPDX-License-Identifier: Apache-2.0
+
+source "boards/ti/common/Kconfig"

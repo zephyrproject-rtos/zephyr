@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2021 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "nucleo_u575zi_q-common.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32U575ZI-NUCLEO-Q board";
+	compatible = "st,stm32u575zi-nucleo-q";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,canbus = &fdcan1;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		led0 = &blue_led_1;
+		sw0 = &user_button;
+		pwm-led0 = &pwm_led_1;
+		pwm-led1 = &pwm_led_2;
+		watchdog0 = &iwdg;
+		volt-sensor0 = &vref1;
+		volt-sensor1 = &vbat4;
+		die-temp0 = &die_temp;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Following flash partition is dedicated to the use of nucleo_u575zi_q
+		 * with TZEN=0 (so w/o TFM).
+		 * The board has in total 2048 KiB of flash memory
+		 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(928)>;
+		};
+
+		slot1_partition: partition@f8000 {
+			label = "image-1";
+			reg = <0x000f8000 DT_SIZE_K(928)>;
+		};
+
+		storage_partition: partition@1e0000 {
+			label = "storage";
+			reg = <0x001e0000 DT_SIZE_K(128)>;
+		};
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&gpdma1 {
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};

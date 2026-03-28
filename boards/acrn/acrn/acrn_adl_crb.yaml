@@ -1,0 +1,11 @@
+identifier: acrn_adl_crb
+name: ACRN on ADL configuration
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+ram: 8192
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

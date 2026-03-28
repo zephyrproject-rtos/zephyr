@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024 Ian Morris
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,bt-hci = &bt_hci_uart;
+	};
+};
+
+&mikrobus_serial {
+	status = "okay";
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+
+		da1453x {
+			compatible = "renesas,bt-hci-da1453x";
+			reset-gpios = <&mikrobus_header 1 GPIO_ACTIVE_HIGH>;
+			status = "okay";
+		};
+	};
+};

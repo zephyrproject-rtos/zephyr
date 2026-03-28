@@ -1,0 +1,91 @@
+# Copyright 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Common properties for Zephyr cellular modems
+
+include: uart-device.yaml
+
+properties:
+  mdm-power-gpios:
+    type: phandle-array
+    description: GPIO for modem power control
+
+  mdm-reset-gpios:
+    type: phandle-array
+    description: GPIO for modem reset
+
+  zephyr,mdm-reset-behavior:
+    type: string-array
+    enum:
+      - "hold_on_suspend"
+      - "toggle_on_resume"
+      - "toggle_on_recovery"
+    description: |
+      Behavior of modem reset GPIOs. Supported values are:
+      - hold_on_suspend: Hold the reset GPIOs asserted (logical high) when the modem is suspended.
+                         Release the reset GPIOs (logical low) when the modem is resumed from idle.
+      - toggle_on_resume: Toggle the modem reset GPIOs during resume from suspend.
+      - toggle_on_recovery: Toggle the modem reset GPIOs when a modem recovery is triggered,
+                            for example when modem fails to respond to initialization AT commands.
+
+      Multiple behaviors can be specified as a string array.
+
+  mdm-wake-gpios:
+    type: phandle-array
+    description: GPIO for modem wake
+
+  mdm-ring-gpios:
+    type: phandle-array
+    description: GPIO for modem ring indicator
+
+  mdm-dtr-gpios:
+    type: phandle-array
+    description: |
+      GPIO for modem data terminal ready.
+
+      Asserted (logical high) when UART is active and
+      deasserted (logical low) when UART is inactive, powered down or in low power mode.
+
+  cmux-enable-runtime-power-save:
+    type: boolean
+    description: |
+      Enable runtime power saving using CMUX PSC commands.
+      This requires modem to support CMUX and PSC commands while keeping the data
+      connection active.
+
+  cmux-close-pipe-on-power-save:
+    type: boolean
+    description: |
+      Close the modem pipe when entering power save mode.
+      When runtime power management is enabled, this closes the UART.
+      This requires modem to support waking up the UART using RING signal.
+
+  cmux-idle-timeout-ms:
+    type: int
+    description: Time in milliseconds after which CMUX will enter power save mode.
+    default: 10000
+
+  zephyr,use-default-pdp-ctx:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Modem automatically configures and connects the default PDP context (cid=0) when
+      registered to the network.
+      If this is set to 1, the modem driver will not configure any APN or activate any
+      PDP contexts with AT+CGACT command.
+
+      Use enum to allow specific device bindings to override the default value.
+
+  zephyr,use-default-apn:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Modem automatically configures the APN name when registering to the network.
+      If this is set to 1, the modem driver will supply empty string as APN name when
+      configuring the PDP context with AT+CGDCONT=1,"IP","" command.
+
+      Use enum to allow specific device bindings to override the default value.

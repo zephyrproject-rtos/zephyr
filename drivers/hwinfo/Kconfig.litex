@@ -1,0 +1,11 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_LITEX
+	bool "LiteX device ID"
+	default y
+	depends on SOC_LITEX_VEXRISCV
+	depends on DT_HAS_LITEX_DNA0_ENABLED
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable LiteX hwinfo driver

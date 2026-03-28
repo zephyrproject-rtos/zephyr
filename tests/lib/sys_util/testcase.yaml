@@ -1,0 +1,5 @@
+tests:
+  libraries.sys_util:
+    tags: sys_util
+    integration_platforms:
+      - native_sim

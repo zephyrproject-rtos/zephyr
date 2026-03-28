@@ -1,0 +1,73 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip TCC G1 timer counter peripheral.
+
+description: |
+  Microchip TCC G1 timer counter peripheral.
+
+  This peripheral is used for generating PWM signals.
+  This compatible string is to be used for the following peripherals:
+    - module name="TCC" id="U2213" version="3.1.0"
+
+compatible: "microchip,tcc-g1"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    description: |
+      Specifies the base address and size of the register set for the timer counter peripheral.
+    required: true
+
+  interrupts:
+    description: |
+      Defines the interrupt lines used by the timer counter peripheral.
+
+      This property specifies the interrupt number and priority.
+    required: true
+
+  clocks:
+    description: |
+      Specifies the clock sources and their configurations for the timer counter peripheral.
+
+      This property ensures the peripheral is provided with the necessary clock signals.
+    required: true
+
+  prescaler:
+    type: int
+    description: |
+      Timer prescaler values.
+
+      The prescaler divides the input clock frequency to
+      achieve the desired timer frequency.
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 64
+      - 256
+      - 1024
+
+  channels:
+    type: int
+    required: true
+    description: |
+      This specifies the maximum number of channels available for the peripheral instance.
+
+  max-bit-width:
+    type: int
+    required: true
+    description: |
+      Maximum bit width supported by the counter.
+
+      This property specifies the resolution of the counter. The value provided in the device tree
+      should reflect the maximum supported by the hardware instance. It should only be overridden
+      after consulting the relevant family datasheet to ensure compatibility.
+    enum:
+      - 16
+      - 24

@@ -1,0 +1,60 @@
+# ENS210 Digital Temperature and Humidity sensor configuration options
+
+# Copyright (c) 2018 Alexander Wachter.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ENS210
+	bool "ENS210 Digital Temperature and Humidity sensor"
+	default y
+	depends on DT_HAS_AMS_ENS210_ENABLED
+	select I2C
+	help
+	  Enable driver for ENS210 Digital Temperature and Humidity sensor.
+if ENS210
+
+choice
+	prompt "Temperature measurement mode"
+	default ENS210_TEMPERATURE_CONTINUOUS
+	help
+	  Enable/disable temperature measurements and set measurement mode.
+config ENS210_TEMPERATURE_OFF
+	bool "Disable temperature measurements"
+config ENS210_TEMPERATURE_SINGLE
+	bool "Temperature measurements in single shot mode"
+config ENS210_TEMPERATURE_CONTINUOUS
+	bool "Temperature measurements in continuous mode"
+endchoice
+
+choice
+	prompt "Humidity measurement mode"
+	default ENS210_HUMIDITY_CONTINUOUS
+	help
+	  Enable/disable relative humidity measurements and set measurement mode.
+config ENS210_HUMIDITY_OFF
+	bool "Disable relative humidity measurements"
+config ENS210_HUMIDITY_SINGLE
+	bool "Relative humidity measurements in single shot mode"
+config ENS210_HUMIDITY_CONTINUOUS
+	bool "Relative humidity measurements in continuous mode"
+endchoice
+
+config ENS210_CRC_CHECK
+	bool "CRC Check"
+	default y
+	help
+	  Check the crc value after data reading.
+
+config ENS210_MAX_STAT_RETRIES
+	int "Number of status read retries"
+	default 4
+	help
+	  Number of retries when status reading failed or device not ready.
+
+config ENS210_MAX_READ_RETRIES
+	int "Number of value reading retries"
+	default 4
+	help
+	  Number of retries when value reading failed, value not valid
+	  or crc not ok.
+
+endif # ENS210

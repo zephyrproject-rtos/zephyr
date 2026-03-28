@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Test requires loopback between P0.06 and P0.07.
+ * No other driver on SPI_CLK and SPI_CS.
+ */
+
+/ {
+	spibb0: spibb0 {
+		compatible = "zephyr,spi-bitbang";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clk-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+		miso-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpiote130 {
+	status = "okay";
+	owned-channels = <7>;
+};

@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_E4
+	bool
+	select SOC_FAMILY_ENSEMBLE
+
+config SOC_SERIES
+	default "e4" if SOC_SERIES_E4
+
+config SOC_AE402FA0E5597LE0
+	bool
+	select SOC_SERIES_E4
+	help
+	  Alif Ensemble E4 (AE402FA0E5597LE0)
+
+config SOC_AE402FA0E5597LE0_RTSS_HE
+	bool
+	select SOC_AE402FA0E5597LE0
+	help
+	  AE402FA0E5597LE0 High Efficiency Real Time Subsystem (RTSS-HE).
+	  Cortex-M55 core optimized for power efficiency with a maximum frequency of 160 MHz.
+
+config SOC_AE402FA0E5597LE0_RTSS_HP
+	bool
+	select SOC_AE402FA0E5597LE0
+	help
+	  AE402FA0E5597LE0 High Performance Real Time Subsystem (RTSS-HP).
+	  Cortex-M55 core optimized for compute performance with a maximum frequency of 400 MHz.
+
+config SOC
+	default "ae402fa0e5597le0" if SOC_AE402FA0E5597LE0

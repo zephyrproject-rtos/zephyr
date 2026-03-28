@@ -1,0 +1,16 @@
+sample:
+  description: SMBus sample
+  name: smbus sample
+common:
+  platform_allow:
+    - qemu_x86_64
+    - intel_ehl_crb
+    - intel_rpl_s_crb
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Start SMBUS shell sample"
+tests:
+  sample.drivers.smbus.shell:
+    tags: smbus

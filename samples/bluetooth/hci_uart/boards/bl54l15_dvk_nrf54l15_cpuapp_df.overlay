@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Ezurio LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&uart20 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <1000000>;
+	status = "okay";
+	hw-flow-control;
+};
+
+&radio {
+	status = "okay";
+	/* This is an example number of antennas that may be available
+	 * on antenna matrix board.
+	 */
+	dfe-antenna-num = <10>;
+	/* This is an example switch pattern that will be used to set an
+	 * antenna for Tx PDU (period before start of Tx CTE).
+	 */
+	dfe-pdu-antenna = <0x0>;
+
+	/* These are example GPIO pin numbers that are provided to
+	 * Radio peripheral. The pins will be acquired by Radio to
+	 * drive antenna switching when AoD is enabled.
+	 */
+	dfegpio0-gpios = <&gpio1 4 0>;
+	dfegpio1-gpios = <&gpio1 5 0>;
+	dfegpio2-gpios = <&gpio1 6 0>;
+	dfegpio3-gpios = <&gpio1 7 0>;
+};

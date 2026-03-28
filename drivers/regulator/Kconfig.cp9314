@@ -1,0 +1,19 @@
+# Copyright (c) 2023 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_CP9314
+	bool "CP9314 Switched Cap Converter regulator driver"
+	default y
+	depends on DT_HAS_CIRRUS_CP9314_ENABLED
+	help
+	  Enable the Cirrus Logic CP9314 Switched Cap Converter
+	  regulator driver
+
+config REGULATOR_CP9314_INIT_PRIORITY
+	int "CP9314 regulator driver init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	depends on REGULATOR_CP9314
+	help
+	  Init priority for the Cirrus Logic CP9314 Switched Cap
+	  Converter regulator driver. It must be greater than I2C
+	  init priority.

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Schlumberger
+
+config BOARD_XMC47_RELAX_KIT
+	select SOC_XMC4700
+	select SOC_PART_NUMBER_F144X2048

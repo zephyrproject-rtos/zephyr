@@ -1,0 +1,31 @@
+# Copyright (c) 2025, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32MP13 CPU Clock
+  Describes the STM32MP13 CPU armv7 timer multiplexer.
+  For the STM32MP13 the CPU armv7 timer input can either be the HSI or the HSE.
+  For instance:
+  cpusw: cpusw {
+    #clock-cells = <0>;
+    clocks = <&clk_hsi>;
+    clock-frequency = <DT_FREQ_M(64)>;
+    compatible = "st,stm32mp13-cpu-clock-mux", "st,stm32-clock-mux";
+    status = "okay";
+  };
+
+compatible: "st,stm32mp13-cpu-clock-mux"
+
+include:
+  - name: base.yaml
+    property-allowlist:
+      - status
+      - compatible
+      - clocks
+
+properties:
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      default frequency in Hz for the timer

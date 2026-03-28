@@ -1,0 +1,50 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: "Renesas RZ/A2M ADC driver"
+
+compatible: "renesas,rza2m-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  vref-mv:
+    type: int
+    required: true
+    description: Indicates the reference voltage of the ADC in mV.
+
+  channel-available-mask:
+    type: int
+    required: true
+    description: Mask for ADC channels existed in each board
+
+  clocks:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input
+
+child-binding:
+  properties:
+    zephyr,acquisition-time:
+      description: |
+        Acquisition time for ADC sampling in ADCLK cycles (ticks).
+        Only the ADC_ACQ_TIME_TICKS unit is supported on this device.
+        The acquisition time value (in ticks) must be between 5 and 255.
+        When ADC_ACQ_TIME_DEFAULT is specified, the hardware uses 11 ticks as the default
+        acquisition time.
+    zephyr,oversampling:
+      description: |
+        Oversampling setting to be used for the channel.
+        When specified, each sample is averaged from 2^N conversion results
+        (where N is the provided value).
+        On this device, N = 0, 1, 2.

@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags: shell
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+
+tests:
+  shell.device:
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "device@0 \\(READY\\)"
+        - "device@1 \\(READY\\)"
+        - "device@2 \\(READY\\)"
+        - "device@3 \\(READY\\)"
+        - "device@4 \\(READY\\)"
+  shell.device_pm_device:
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "device@0 \\(READY\\)"
+        - "device@1 \\(active\\)"
+        - "device@2 \\(suspended\\)"
+        - "device@3 \\(active\\)"
+        - "device@4 \\(active\\)"
+  shell.device_pm_device_runtime:
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "device@0 \\(READY\\)"
+        - "device@1 \\(active\\)"
+        - "device@2 \\(suspended\\)"
+        - "device@3 \\(suspended, usage=0\\)"
+        - "device@4 \\(active, usage=1\\)"

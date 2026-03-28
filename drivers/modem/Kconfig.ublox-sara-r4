@@ -1,0 +1,123 @@
+# u-blox SARA R4 driver options
+
+# Copyright (c) 2019 Foundries.io
+# SPDX-License-Identifier: Apache-2.0
+
+config MODEM_UBLOX_SARA
+	bool "U-blox SARA modem driver"
+	select MODEM_CONTEXT
+	select MODEM_CMD_HANDLER
+	select MODEM_IFACE_UART
+	select MODEM_SOCKET
+	select NET_OFFLOAD
+	select NET_SOCKETS_OFFLOAD
+	help
+	  Choose this setting to enable u-blox SARA-R4 LTE-CatM1/NB-IoT modem
+	  driver.
+
+if MODEM_UBLOX_SARA
+
+choice MODEM_UBLOX_SARA_VARIANT
+	bool "u-blox SARA variant selection"
+	default MODEM_UBLOX_SARA_R4
+
+config MODEM_UBLOX_SARA_R4
+	bool "u-blox SARA-R4"
+	help
+	  Enable support for SARA-R4 modem
+
+config MODEM_UBLOX_SARA_U2
+	bool "u-blox SARA-U2"
+	help
+	  Enable support for SARA-U2 modem
+
+config MODEM_UBLOX_SARA_AUTODETECT_VARIANT
+	bool "detect automatically"
+	help
+	  Enable automatic detection of modem variant (SARA-R4 or SARA-U2)
+
+endchoice
+
+config MODEM_UBLOX_SARA_R4_RX_STACK_SIZE
+	int "Stack size for the u-blox SARA-R4 modem driver RX thread"
+	default 1028
+	help
+	  This stack is used by the u-blox SARA-R4 RX thread.
+
+config MODEM_UBLOX_SARA_R4_RX_WORKQ_STACK_SIZE
+	int "Stack size for the u-blox SARA-R4 modem driver work queue"
+	default 2048
+	help
+	  This stack is used by the work queue to pass off net_pkt data
+	  to the rest of the network stack, letting the rx thread continue
+	  processing data.
+
+config MODEM_UBLOX_SARA_R4_APN
+	string "APN for establishing network connection"
+	default "hologram"
+	help
+	  This setting is used in the AT+CGDCONT command to set the APN name
+	  for the network connection context.  This value is specific to
+	  the network provider and may need to be changed.
+
+config MODEM_UBLOX_SARA_AUTODETECT_APN
+	bool "detect APN automatically"
+	help
+	  Enable automatic detection of the APN, based on the IMSI
+	  If the detection fails, the configured APN will be used
+
+config MODEM_UBLOX_SARA_AUTODETECT_APN_PROFILES
+	string "list of profiles to search when autodetecting APN"
+	default "hologram=23450, wm=20601 29505 29509 23450 53703 90143"
+	help
+	  Set a comma separated list of profiles, each containing of:
+	  <apn>=<IMSI_1> ... <IMSI_n>
+
+config MODEM_UBLOX_SARA_R4_MANUAL_MCCMNO
+	string "MCC/MNOfor establishing network connection"
+	help
+	  This setting is used in the AT+COPS command to set the MCC/MNO
+	  for the network connection context.  This value is specific to
+	  the network provider and may need to be changed if auto is not
+	  selected.
+
+config MODEM_UBLOX_SARA_R4_INIT_PRIORITY
+	int "u-blox SARA-R4 driver init priority"
+	default 80
+	help
+	  u-blox SARA-R4 device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.
+
+config MODEM_UBLOX_SARA_R4_NET_STATUS
+	bool "Support for network status indication"
+	help
+	  Choose this setting to use a modem GPIO pin as network indication.
+
+if MODEM_UBLOX_SARA_R4_NET_STATUS
+
+config MODEM_UBLOX_SARA_R4_NET_STATUS_PIN
+	int "Network status indication GPIO ID"
+	default 16
+	help
+	  This setting is used to configure one of the modem's GPIO pins
+	  as a network status indication.  See the manual for the gpio ids
+	  and how they map to pin numbers.
+
+endif # MODEM_UBLOX_SARA_R4_NET_STATUS
+
+config MODEM_UBLOX_SARA_RSSI_WORK
+	bool "RSSI polling work"
+	default y
+	help
+	  u-blox SARA-R4 device is configured to poll for RSSI
+
+config MODEM_UBLOX_SARA_RSSI_WORK_PERIOD
+	int "Configure RSSI WORK polling frequency"
+	depends on MODEM_UBLOX_SARA_RSSI_WORK
+	default 30
+	help
+	  This settings is used to configure the period of RSSI polling
+
+endif # MODEM_UBLOX_SARA

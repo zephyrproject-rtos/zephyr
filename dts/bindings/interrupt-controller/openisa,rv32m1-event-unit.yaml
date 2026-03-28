@@ -1,0 +1,19 @@
+# Copyright (c) 2018, Linaro Inc.
+# Copyright (c) 2018, Foundries.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: RV32M1 Event Unit
+
+compatible: "openisa,rv32m1-event-unit"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#interrupt-cells":
+    const: 1
+
+interrupt-cells:
+  - irq

@@ -1,0 +1,8 @@
+# Copyright 2023, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Driver that uses the NXP LPC RTC High resolution counter
+
+compatible: "nxp,lpc-rtc-highres"
+
+include: base.yaml

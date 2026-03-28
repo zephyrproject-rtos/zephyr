@@ -1,0 +1,110 @@
+# Capture network packets
+
+# Copyright (c) 2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config NET_CAPTURE
+	bool "Network packet capture support"
+	select NET_L2_VIRTUAL
+	select NET_L2_VIRTUAL_MGMT
+	select NET_L2_IPIP
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_CONTEXT_NET_PKT_POOL
+	help
+	  This option allows user to capture network packets.
+	  The captured packets are sent to another host for processing.
+	  User can use network packet analyzer like Wireshark to
+	  process the packets.
+	  The captured network packets are sent using IPIP tunnel
+	  as a payload in UDP datagrams.
+
+if NET_CAPTURE
+
+config NET_CAPTURE_PKT_COUNT
+	int "How many network packets to allocate for capture"
+	default 4
+	help
+	  This tells how many net_pkt to allocate for capturing
+	  network traffic. Each network frame sent or received
+	  will allocate one net_pkt for network metadata.
+	  Each net_pkt will contain a list of net_buf's that contain
+	  the actual network data.
+
+config NET_CAPTURE_BUF_COUNT
+	int "How many network buffers to allocate for capture"
+	default 16
+	help
+	  This tells how many net_buf to allocate for capturing
+	  network traffic.
+
+config NET_CAPTURE_DEVICE_COUNT
+	int "Number of network capture devices"
+	default 1
+	help
+	  Number of network capture devices. Usually one is enough but
+	  if one needs to send captured data to multiple different devices,
+	  then you need to increase the value.
+
+config NET_CAPTURE_COOKED_MODE
+	bool "Capture non-IP packets a.k.a cooked (SLL) mode [EXPERIMENTAL]"
+	select NET_PSEUDO_IFACE
+	select NET_L2_DUMMY
+	select NET_L2_VIRTUAL
+	select EXPERIMENTAL
+	help
+	  This enables application to capture packets in so called
+	  Linux cooked mode (sll). Here a synthetic link layer header
+	  is used instead of real network link header.
+
+choice NET_CAPTURE_COOKED_MODE_SLL_VERSION
+	prompt "SLL version to use"
+	depends on NET_CAPTURE_COOKED_MODE
+	default NET_CAPTURE_COOKED_MODE_SLLV1
+	help
+	  What SLL header version to use.
+
+config NET_CAPTURE_COOKED_MODE_SLLV1
+	bool "SLL version 1"
+	depends on NET_CAPTURE_COOKED_MODE
+	help
+	  Use SLL version 1 (header is 16 bytes)
+
+config NET_CAPTURE_COOKED_MODE_SLLV2
+	bool "SLL version 2"
+	depends on NET_CAPTURE_COOKED_MODE
+	help
+	  Use SLL version 2 (header is 20 bytes)
+
+endchoice
+
+config NET_CAPTURE_COOKED_MODE_INTERFACE_NAME
+	string "Name of the cooked mode network interface"
+	default "cooked"
+	depends on NET_CAPTURE_COOKED_MODE
+	help
+	  This sets the name of the cooked mode capture network interface.
+
+config NET_CAPTURE_COOKED_MODE_MAX_LINK_TYPES
+	int "How many link types (ETH_P_*) to capture at the same time"
+	default 2
+	range 1 64
+	depends on NET_CAPTURE_COOKED_MODE
+	help
+	  This defines how many ETH_P_* link type values can be captured
+	  at the same time in cooked mode.
+
+module = NET_CAPTURE
+module-dep = NET_LOG
+module-str = Log level for network capture API
+module-help = Enables network capture API debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_CAPTURE_TX_DEBUG
+	bool "Debug sent packets"
+	depends on NET_CAPTURE_LOG_LEVEL_DBG
+	help
+	  Enables printing of sent network packet.
+	  This can produce lot of output so it is disabled by default.
+
+endif # NET_CAPTURE

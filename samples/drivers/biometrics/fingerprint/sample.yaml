@@ -1,0 +1,19 @@
+sample:
+  name: Fingerprint Sensor
+  description: Fingerprint sensor driver test based on the biometrics API
+
+tests:
+  sample.drivers.biometrics.fingerprint:
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Test complete"
+    tags:
+      - drivers
+      - biometrics
+      - fingerprint
+    filter: dt_alias_exists("fingerprint")
+    platform_allow:
+      - native_sim
+      - native_sim/native/64

@@ -1,0 +1,20 @@
+identifier: qemu_x86_64/atom/nokpti
+name: QEMU Emulation for X86_64 (KPTI disabled)
+type: qemu
+arch: x86
+toolchain:
+  - zephyr
+supported:
+  - smp
+simulation:
+  - name: qemu
+testing:
+  default: true
+  only_tags:
+    - kernel
+    - userspace
+    - llext
+  ignore_tags:
+    - benchmark
+ram: 3000
+vendor: qemu

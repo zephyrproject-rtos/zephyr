@@ -1,0 +1,43 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	chosen {
+		zephyr,ipc_shm = &sram_shared_mem_m33;
+		zephyr,ipc = &mailbox_a;
+		zephyr,ipc_shm_hifi4 = &sram_shared_mem_hifi4;
+		zephyr,ipc_hifi4 = &mailbox_a_hifi4;
+	};
+
+	mailbox_a: ipm-mbox {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox1_a 1>, <&mbox1_a 0>;
+		mbox-names = "tx", "rx";
+	};
+
+	mailbox_a_hifi4: ipm-mbox-hifi4 {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox4_a 1>, <&mbox4_a 0>;
+		mbox-names = "tx", "rx";
+	};
+
+	/* Define memory regions */
+	sram_shared_mem_m33: memory@20580000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20580000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAM_SHARED_M33";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
+	};
+
+	sram_shared_mem_hifi4: memory@20584000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20584000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAM_SHARED_HIFI4";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
+	};
+};

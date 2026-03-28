@@ -1,0 +1,64 @@
+# Copyright 2022-2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP SIUL2 External Interrupts Request controller
+
+compatible: "nxp,siul2-eirq"
+
+include: [interrupt-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  filter-prescaler:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    description: |
+      Interrupt filter clock prescaler. The prescaler is applied to the input
+      clock to SIUL2, which is the peripheral clock counter in the SIUL2.
+      The prescaled filter clock period is:
+        TIRC * (IFCP + 1)
+      where:
+        * TIRC is the internal oscillator period.
+        * IFCP is 0 to 15.
+
+child-binding:
+  description: |
+    NXP SIUL2 External Interrupt configuration. Specific filter requirements
+    for each interrupt can be specified by adding a child node to the interrupt
+    controller, labeled `irq_<interrupt-number>`. For example:
+
+      irq_0: irq_0 {
+          max-filter-counter = <5>;
+      };
+
+    This will enable a digital filter counter on the corresponding interrupt
+    pads to filter out glitches on the inputs. The digital filter will be
+    disabled for interrupt lines without specified configuration node.
+
+  properties:
+    max-filter-counter:
+      type: int
+      required: true
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+      description: |
+        Maximum Interrupt Filter Counter setting. This value configures the
+        filter counter associated with the digital glitch filter.
+        A value of 0 to 2, sets the filter as an all pass filter.
+        A value of 3 to 15, sets the filter period to (TCK * MAXCNT + n * TCK),
+        where:
+          * n can be in the range 0 to 4, and accounts for the uncertainty
+            factor in filter period calculation.
+          * TCK is the prescaled filter clock period.
+
+interrupt-cells:
+  - gpio-pin
+  - eirq-line

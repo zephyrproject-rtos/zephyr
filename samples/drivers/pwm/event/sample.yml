@@ -1,0 +1,12 @@
+sample:
+  name: PWM event
+  description: precisely time 5 PWM periods using the PWM event API
+common:
+  tags:
+    - drivers
+    - pwm
+  depends_on: pwm
+tests:
+  sample.drivers.pwm.event:
+    platform_allow:
+      - sam4s_xplained

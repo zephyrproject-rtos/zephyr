@@ -1,0 +1,31 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+
+compatible: "nxp,lcd-8080"
+
+description: |
+    GPIO pins exposed on NXP LCD 8080 interface (e.g., used on LCD-PAR-035 panel).
+    These pins are exposed on a 32 pin connector. The pins have the
+    following assignments:
+
+      Pin Number    Usage
+      1             Not connected
+      2             VBUS
+      3             Not connected
+      4             GND
+      5             VCC
+      6             GND
+      7             LCD touch controller I2C SCL
+      8             LCD touch controller I2C SDA
+      9             LCD touch interrupt
+      10            GPIO to control LCD backlight
+      11            LCD and touch reset
+      12            LCD 8080 interface D/C pin
+      13            LCD 8080 interface CS pin
+      14            LCD 8080 interface WR pin
+      15            LCD 8080 interface RD pin
+      16            LCD TE(tearing effect) pin
+      17-32         LCD 8080 interface D0 - D15
+
+include: [gpio-nexus.yaml, base.yaml]

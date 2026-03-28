@@ -1,0 +1,5 @@
+description: Raspberry Pi Pico UART
+
+compatible: "raspberrypi,pico-uart"
+
+include: "arm,pl011.yaml"

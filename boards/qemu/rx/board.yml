@@ -1,0 +1,6 @@
+board:
+  name: qemu_rx
+  full_name: QEMU Emulation for Renesas RX
+  vendor: renesas
+  socs:
+  - name: r5f562n8

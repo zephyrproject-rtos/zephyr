@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 S&C Electric Company <Michael.Banducci@sandc.com>
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# By default SERIAL peripherals are assigned to m7
+
+# Enable uart driver
+#CONFIG_SERIAL=y
+
+# Console
+#CONFIG_CONSOLE=y
+#CONFIG_UART_CONSOLE=y

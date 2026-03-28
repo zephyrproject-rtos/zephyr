@@ -1,0 +1,21 @@
+#
+# Copyright 2025 The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    TI INA232 Bidirectional Current and Power Monitor.
+    The <zephyr/dt-bindings/sensor/ina230.h> file includes the
+    macro for initializing the config register so it should
+    be included.
+
+compatible: "ti,ina232"
+
+include: ti,ina230.yaml
+
+properties:
+  high-precision:
+    type: boolean
+    description: |
+      Enable high precision mode (4x the resolution).

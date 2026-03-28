@@ -1,0 +1,10 @@
+# NXP MCUX SDMA driver configuration options
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_MCUX_SDMA
+	bool "NXP MCUX Video SMARTDMA driver"
+	default y
+	select DMA
+	depends on DT_HAS_NXP_VIDEO_SMARTDMA_ENABLED

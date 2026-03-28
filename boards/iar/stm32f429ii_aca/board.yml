@@ -1,0 +1,6 @@
+board:
+  name: stm32f429ii_aca
+  full_name: STM32F429II-ACA
+  vendor: iar
+  socs:
+    - name: stm32f429xx

@@ -1,0 +1,10 @@
+tests:
+  drivers.gpio.enable_disable_interrupt:
+    tags:
+      - drivers
+      - gpio
+    depends_on: gpio
+    filter: dt_compat_enabled("test-gpio-enable-disable-interrupt")
+    platform_allow:
+      - native_sim
+      - native_sim/native/64

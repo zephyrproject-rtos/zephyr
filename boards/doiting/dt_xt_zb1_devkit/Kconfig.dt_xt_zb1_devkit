@@ -1,0 +1,5 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_DT_XT_ZB1_DEVKIT
+	select SOC_BL702C10Q2H

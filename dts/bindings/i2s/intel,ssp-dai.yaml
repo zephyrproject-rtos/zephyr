@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel SSP DAI node
+
+compatible: "intel,ssp-dai"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

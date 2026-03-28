@@ -1,0 +1,23 @@
+# DAC configuration options
+
+# Copyright (C) 2023 Marcus Folkesson <marcus.folkesson@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_LTC166X
+	bool "Linear Technology LTC166X DAC"
+	default y
+	select SPI
+	depends on DT_HAS_LLTC_LTC1660_ENABLED || DT_HAS_LLTC_LTC1665_ENABLED
+	help
+	  Enable the driver for the Linear Technology LTC166X DAC
+
+if DAC_LTC166X
+
+config DAC_LTC166X_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  Linear Technology LTC166X DAC device driver initialization priority.
+
+endif # DAC_LTC166X

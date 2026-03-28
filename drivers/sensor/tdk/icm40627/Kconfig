@@ -1,0 +1,22 @@
+# ICM40627 Six-Axis Motion Tracking device configuration options
+#
+# Copyright (c) 2025 PHYTEC America LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ICM40627
+	bool "ICM40627 Six-Axis Motion Tracking Device"
+	default y
+	depends on DT_HAS_INVENSENSE_ICM40627_ENABLED
+	select I2C
+	help
+	  Enable driver for ICM40627 I2C-based six-axis motion tracking device.
+
+if ICM40627
+
+module = ICM40627
+thread_priority = 10
+thread_stack_size = 1024
+source "drivers/sensor/Kconfig.trigger_template"
+
+endif # ICM40627

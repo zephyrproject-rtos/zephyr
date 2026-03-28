@@ -1,0 +1,15 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Multirate Timer Channel
+
+  Must be a child node of an nxp,mrt compatible node.
+
+compatible: "nxp,mrt-channel"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

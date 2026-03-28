@@ -1,0 +1,15 @@
+identifier: ra8d1_vision_board
+name: ra8d1 vision board
+type: mcu
+arch: arm
+ram: 1024
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+  - watchdog
+  - memc
+vendor: ruiside

@@ -1,0 +1,8 @@
+# Copyright (c) 2018, Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+description: Silicon Labs Gecko flash controller
+
+compatible: "silabs,gecko-flash-controller"
+
+include: flash-controller.yaml

@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM Timer Counter (TC) node
+
+compatible: "atmel,sam-tc"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  channel:
+    type: int
+    description: |
+      Timer / Counter channel to use, channel 0 is the default.
+      Valid range: 0 - 2
+
+  clk:
+    type: int
+    description: |
+      Clock source selection as defined by TCCLKS bit-field of TC_CMR
+      register. Consult the datasheet for the details.
+
+  nodivclk:
+    type: boolean
+    description: |
+      If set to true the `clk` property is ignored. Instead the TC module is
+      driven directly via MCLK. Only supported on sam4e, same70, same70b,
+      samv71, samv71b SoC series.
+
+  reg-cmr:
+    type: int
+    description: |
+      Alternate value of the CMR (Channel Mode Register) register.
+      If specified this value will be written to the register during driver
+      instance initialization instead of the default. It can be used to
+      configure the timer / counter in the custom mode. Together with other
+      properties like channel-num, pinctrl-0 this allows e.g. to configure
+      the driver to count events generated on the TIOA, TIOB signal connected
+      to the external pin.
+
+  reg-rc:
+    type: int
+    description: |
+      Register C compare/match value. RC can be used as compare/match unit
+      for an specific timer unit. Their use depends on how timer channel
+      is configured,see reg-cmr. It can be used as trigger for both input
+      capture or counter mode, or even as event source. The RC register
+      behavior is SoC dependent. For more information and use cases,
+      check SoC datasheet and application notes.

@@ -1,0 +1,5 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ADAFRUIT_FEATHERWING_128X32_OLED
+	def_bool $(shields_list_contains,adafruit_featherwing_128x32_oled)

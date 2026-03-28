@@ -1,0 +1,14 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SAM_SDMMC
+	bool "Microchip SAM SDMMC driver"
+	default y
+	depends on DT_HAS_MICROCHIP_SAMA7G5_SDMMC_ENABLED
+	select CACHE_MANAGEMENT
+	select PINCTRL
+	select SDHC_SUPPORTS_NATIVE_MODE
+	help
+	  Enable the Microchip SAM SDMMC MMC/SD card driver.

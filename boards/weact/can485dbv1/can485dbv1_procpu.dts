@@ -1,0 +1,210 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <freq.h>
+
+#include <espressif/esp32/esp32_d0wd_v3.dtsi>
+#include <espressif/partitions_0x1000_amp_8M.dtsi>
+
+#include "can485dbv1-pinctrl.dtsi"
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/led/worldsemi_ws2812c.h>
+
+/ {
+	model = "CAN485 DevBoard V1 PROCPU";
+	compatible = "weact,can485dbv1", "espressif,esp32";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &zephyr_serial;
+		zephyr,shell-uart = &zephyr_serial;
+		zephyr,canbus = &zephyr_can;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
+
+	aliases {
+		sw0 = &button0;
+		led-strip = &status_rgb_led;
+		uart-0 = &zephyr_serial;
+		watchdog0 = &wdt0;
+	};
+
+	zephyr,user {
+		io-channels = <&zephyr_adc 0>;	/* SENSOR VP: VIN (1:12) */
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "PRG Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(8)>;
+};
+
+zephyr_serial: &uart0 {
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+zephyr_rs485: &uart1 {
+	status = "okay";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+
+	/* Modbus RTU typically defaults (widely used). */
+	current-speed = <19200>;
+	data-bits = <8>; /* 8 (for RTU), 7 (for ASCII) */
+	parity = "even"; /* Even (typical default), Odd, or None */
+	stop-bits = "1"; /* 1 (if parity is used), 2 (if parity is none) */
+
+	modbus0 {
+		compatible = "zephyr,modbus-serial";
+		de-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>; /* RS485_DE */
+	};
+};
+
+zephyr_can: &twai {
+	status = "okay";
+	pinctrl-0 = <&twai_default>;
+	pinctrl-names = "default";
+
+	can-transceiver {
+		max-bitrate = <1000000>;
+	};
+};
+
+zephyr_adc: &adc0 {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	line-idle-low;
+
+	status_rgb_led: ws2812@0 {
+		compatible = "worldsemi,ws2812-spi";
+		status = "okay";
+
+		reg = <0>;
+		spi-max-frequency = <WS2812C_SPI_FREQ>;
+
+		chain-length = <1>;
+		color-mapping = <LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_BLUE>;
+		spi-one-frame = <WS2812C_ONE_FRAME>;
+		spi-zero-frame = <WS2812C_ZERO_FRAME>;
+		reset-delay = <250>;
+	};
+};
+
+&spi3 {
+	status = "okay";
+	pinctrl-0 = <&spim3_default>;
+	pinctrl-names = "default";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	dma-enabled;
+	cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+
+	sd0: sd@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		status = "okay";
+
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(25)>;
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+			disk-name = "SD";
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+
+	counter0: counter {
+		status = "okay";
+	};
+};
+
+&timer1 {
+	status = "okay";
+
+	counter1: counter {
+		status = "okay";
+	};
+};
+
+&timer2 {
+	status = "okay";
+
+	counter2: counter {
+		status = "okay";
+	};
+};
+
+&timer3 {
+	status = "okay";
+
+	counter3: counter {
+		status = "okay";
+	};
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};

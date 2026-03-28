@@ -1,0 +1,13 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for SMBus devices
+
+include: [base.yaml, power.yaml]
+
+on-bus: smbus
+
+properties:
+  reg:
+    required: true
+    description: device address on SMBus bus

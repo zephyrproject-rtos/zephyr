@@ -1,0 +1,15 @@
+identifier: it51xxx_evb/it51526aw
+name: ITE-IT51XXX-EVB-IT51526AW
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 128
+supported:
+  - flash
+  - gpio
+  - i2c
+  - pinctrl
+  - pm
+  - uart
+vendor: ite

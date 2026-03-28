@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_BG29_RB4420A
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+	depends on LOG_BACKEND_SWO
+
+if SOC_GECKO_USE_RAIL
+
+config FPU
+	default y
+
+endif # SOC_GECKO_USE_RAIL
+
+if BT
+
+config FPU
+	default y
+
+config MAIN_STACK_SIZE
+	default 3072 if PM
+	default 2304
+
+endif # BT
+
+endif # BOARD_BG29_RB4420A

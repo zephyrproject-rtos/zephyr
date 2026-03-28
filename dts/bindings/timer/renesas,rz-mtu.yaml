@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ MTU controller
+
+compatible: "renesas,rz-mtu"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  channel:
+    type: int
+    description: channel MTU
+
+  prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 256
+      - 1024
+    description: Input clock prescaler.

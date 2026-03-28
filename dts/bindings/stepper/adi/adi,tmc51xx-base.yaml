@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common properties for Analog Devices TMC51XX Stepper Motor Controller
+
+include:
+  - name: adi,trinamic-gconf.yaml
+    property-allowlist:
+      - en-pwm-mode
+      - test-mode
+
+properties:
+  shaft:
+    type: boolean
+    description: |
+      Inverse motor direction
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      The frequency of the clock signal provided to the TMC51XX.
+      This is used for real world conversion.
+
+      Hint: µstep velocity v[Hz] µsteps / s v[Hz] = v[51xx] * ( fCLK[Hz]/2 / 2^23 )
+            where v[51xx] is the value written to the TMC51XX.

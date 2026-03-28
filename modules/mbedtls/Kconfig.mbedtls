@@ -1,0 +1,252 @@
+# TLS/DTLS related options
+
+# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Mbed TLS configuration"
+	depends on MBEDTLS_BUILTIN
+
+config MBEDTLS_CONFIG_FILE
+	string "mbed TLS configuration file"
+	default "config-mbedtls.h"
+	help
+	  Use a specific mbedTLS configuration file. The default config file
+	  file can be tweaked with Kconfig. The default configuration is
+	  suitable to communicate with majority of HTTPS servers on the Internet,
+	  but has relatively many features enabled. To optimize resources for
+	  special TLS usage, use available Kconfig options, or select an
+	  alternative config.
+
+menu "TLS"
+
+config MBEDTLS_SSL_PROTO_TLS1_2
+	bool "Support for TLS 1.2 (DTLS 1.2)"
+	select MBEDTLS_CIPHER
+	select MBEDTLS_MD_C
+
+if MBEDTLS_SSL_PROTO_TLS1_2
+
+config MBEDTLS_SSL_PROTO_DTLS
+	bool "Support for DTLS"
+
+if MBEDTLS_SSL_PROTO_DTLS
+
+config MBEDTLS_SSL_DTLS_CONNECTION_ID
+	bool "DTLS Connection ID extension"
+	help
+	  Enable support for the DTLS Connection ID extension
+	  which allows to identify DTLS connections across changes
+	  in the underlying transport.
+
+endif # MBEDTLS_SSL_PROTO_DTLS
+
+endif # MBEDTLS_SSL_PROTO_TLS1_2
+
+config MBEDTLS_SSL_PROTO_TLS1_3
+	bool "Support for TLS 1.3"
+	select PSA_WANT_ALG_HKDF_EXTRACT
+	select PSA_WANT_ALG_HKDF_EXPAND
+
+if MBEDTLS_SSL_PROTO_TLS1_3
+
+config MBEDTLS_SSL_SESSION_TICKETS
+	bool "Support for RFC 5077 session tickets in TLS 1.3"
+
+endif # MBEDTLS_SSL_PROTO_TLS1_3
+
+if MBEDTLS_SSL_PROTO_TLS1_2 || MBEDTLS_SSL_PROTO_TLS1_3
+
+config MBEDTLS_SSL_ALPN
+	bool "Support for setting the supported Application Layer Protocols"
+
+endif # MBEDTLS_SSL_PROTO_TLS1_2 || MBEDTLS_SSL_PROTO_TLS1_3
+
+config MBEDTLS_SSL_MAX_CONTENT_LEN
+	int "Max payload size for TLS protocol message"
+	default 1500
+	help
+	  The TLS standards mandate max payload size of 16384 bytes. So, for
+	  maximum operability and for general-purpose usage, that value must
+	  be used. For specific usages, that value can be largely decreased.
+	  E.g. for DTLS, payload size is limited by UDP datagram size, and
+	  even for HTTPS REST API, the payload can be limited to max size of
+	  (REST request, REST response, server certificate(s)).
+	  mbedTLS uses this value separate for input and output buffers, so
+	  twice this value will be allocated (on mbedTLS own heap, so the
+	  value of MBEDTLS_HEAP_SIZE should accommodate that).
+
+endmenu # TLS
+
+menu "Ciphersuite configuration"
+
+comment "Supported key exchange modes"
+
+config MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
+	bool "All available ciphersuite modes"
+	select MBEDTLS_MD_C
+	select MBEDTLS_X509_CRT_PARSE_C
+	select MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
+
+config MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
+	bool "PSK based ciphersuite modes"
+
+config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
+	bool "ECDHE-PSK based ciphersuite modes"
+	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+
+config MBEDTLS_PSK_MAX_LEN
+	int "Max size of TLS pre-shared keys"
+	default 32
+	help
+	  Max size of TLS pre-shared keys, in bytes. It has no effect if no
+	  PSK key exchange is used.
+
+config MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+	bool "ECDHE-RSA based ciphersuite modes"
+	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+	depends on PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC
+	depends on MBEDTLS_X509_CRT_PARSE_C
+
+config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+	bool "ECDHE-ECDSA based ciphersuite modes"
+	depends on PSA_WANT_ALG_ECDH && PSA_WANT_ALG_ECDSA
+	depends on MBEDTLS_X509_CRT_PARSE_C
+
+config MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+	bool "ECDH-ECDSA based ciphersuite modes"
+	depends on PSA_WANT_ALG_ECDH && PSA_WANT_ALG_ECDSA
+	depends on MBEDTLS_X509_CRT_PARSE_C
+
+config MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
+	bool "ECDH-RSA based ciphersuite modes"
+	depends on PSA_WANT_ALG_ECDH
+	depends on MBEDTLS_X509_CRT_PARSE_C
+
+config MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
+	bool "ECJPAKE based ciphersuite modes"
+	depends on PSA_WANT_ALG_JPAKE
+
+if MBEDTLS_SSL_PROTO_TLS1_3
+
+config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED
+	bool "TLS 1.3 PSK key exchange mode"
+
+config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED
+	bool "TLS 1.3 ephemeral key exchange mode"
+	select MBEDTLS_X509_CRT_PARSE_C
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	imply PSA_WANT_ALG_ECDH
+	imply PSA_WANT_ECC_SECP_R1_256
+	help
+	  By default ECDH algorithm with secp256r1 elliptic curve is implied
+	  by this Kconfig option. Other elliptic curves or FFDH are also possible.
+
+config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED
+	bool "TLS 1.3 PSK ephemeral key exchange mode"
+
+endif # MBEDTLS_SSL_PROTO_TLS1_3
+
+config MBEDTLS_SSL_KEYING_MATERIAL_EXPORT
+	bool "TLS keying material export support"
+
+endmenu
+
+config MBEDTLS_DEBUG_C
+	bool "Debug functions (only for TLS and X.509)"
+
+config MBEDTLS_USER_CONFIG_ENABLE
+	bool "User mbedTLS config file"
+	help
+	  Enable user mbedTLS config file that will be included at the end of
+	  the generic config file.
+
+config MBEDTLS_USER_CONFIG_FILE
+	string "User configuration file for mbed TLS" if MBEDTLS_USER_CONFIG_ENABLE
+	help
+	  User config file that can contain mbedTLS configs that were not
+	  covered by the generic config file.
+
+config MBEDTLS_SSL_SERVER_NAME_INDICATION
+	bool "Support for RFC 6066 server name indication (SNI) in SSL"
+	depends on MBEDTLS_X509_CRT_PARSE_C
+
+config MBEDTLS_HAVE_TIME_DATE
+	bool "Date/time validation in mbed TLS"
+	help
+	  System has time.h, time(), and an implementation for gmtime_r().
+	  There also need to be a valid time source in the system, as mbedTLS
+	  expects a valid date/time for certificate validation.
+
+config MBEDTLS_SSL_CACHE_C
+	bool "SSL session cache support"
+	help
+	  This option enables simple SSL cache implementation (server side).
+
+if MBEDTLS_SSL_CACHE_C
+
+config MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT
+	int "Default timeout for SSL cache entries"
+	default 86400
+
+config MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES
+	int "Maximum number of SSL cache entries"
+	default 5
+
+endif # MBEDTLS_SSL_CACHE_C
+
+config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
+	bool "(D)TLS Extended Master Secret extension"
+	depends on MBEDTLS_SSL_PROTO_TLS1_2
+	help
+	  Enable support for the (D)TLS Extended Master Secret extension
+	  which ensures that master secrets are different for every
+	  connection and every session.
+
+config MBEDTLS_VERSION_C
+	bool "Support version information"
+	help
+	  Enable the mbedtls_version_get_number() function to get version
+	  information from Mbed TLS.
+
+config MBEDTLS_SSL_DTLS_CONNECTION_ID
+	bool "DTLS Connection ID extension"
+	depends on MBEDTLS_SSL_PROTO_DTLS
+	help
+	  Enable support for the DTLS Connection ID extension
+	  which allows to identify DTLS connections across changes
+	  in the underlying transport.
+
+config MBEDTLS_X509_CRL_PARSE_C
+	bool "X.509 CRL parsing"
+	select MBEDTLS_X509_USE_C
+	help
+	  Used by X.509 CRL parsing
+
+config MBEDTLS_X509_CSR_WRITE_C
+	bool "X.509 Certificate Signing Requests writing"
+	help
+	  For X.509 certificate request writing.
+
+config MBEDTLS_X509_CSR_PARSE_C
+	bool "X.509 Certificate Signing Request parsing"
+	select MBEDTLS_X509_USE_C
+	help
+	  For reading X.509 certificate request.
+
+config MBEDTLS_X509_CRT_WRITE_C
+	bool "X.509 certificate creation"
+
+config MBEDTLS_X509_CRT_PARSE_C
+	bool "X.509 certificate parsing"
+	select MBEDTLS_X509_USE_C
+
+endmenu # Mbed TLS configuration

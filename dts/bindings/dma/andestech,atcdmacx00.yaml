@@ -1,0 +1,87 @@
+#
+#  Copyright (c) 2021 Andes Technology Corporation.
+#
+#  SPDX-License-Identifier: Apache-2.0
+
+compatible: "andestech,atcdmacx00"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  chain-transfer:
+    type: int
+
+  max-data-width:
+    type: int
+
+  "#dma-cells":
+    const: 3
+
+dma-cells:
+  - channel
+  - slot
+  - channel-config
+
+description: |
+  Andes DMA controller
+  channel: a phandle to the DMA controller plus the following four integer cells:
+    1. channel: the dma channel
+    2. slot: DMA peripheral request ID
+    3. channel-config: A 32bit mask specifying the DMA channel configuration
+    which is device dependent:
+        -bit 0-1 : Direction  (see dma.h)
+                0x0: MEM to MEM
+                0x1: MEM to PERIPH
+                0x2: PERIPH to MEM
+                0x3: reserved for PERIPH to PERIPH
+        -bit 2 : Peripheral Increment Address
+                0x0: no address increment between transfers
+                0x1: increment address between transfers
+        -bit 3 : Memory Increment Address
+                0x0: no address increment between transfers
+                0x1: increment address between transfers
+        -bit 4-6 : Peripheral data size
+                0x0: Byte (8 bits)
+                0x1: Half-word (16 bits)
+                0x2: Word (32 bits)
+                0x3: Double word (64 bits)
+                0x4: Quad word (128 bits)
+                0x5: Eight word (256 bits)
+                0x6-0x7: reserved
+        -bit 7-9 : Memory data size
+                0x0: Byte (8 bits)
+                0x1: Half-word (16 bits)
+                0x2: Word (32 bits)
+                0x3: Double word (64 bits)
+                0x4: Quad word (128 bits)
+                0x5: Eight word (256 bits)
+                0x6-0x7: reserved
+        -bit 10 : Priority level
+                0x0: lower priority
+                0x1: higher priority
+
+    examples for andes_v5_ae350 DMA instance
+    dma0: dma0@f0c00000 {
+         compatible = "andestech,atcdmac300";
+         ...
+         dma-channels = <8>;
+         dma-requests = <16>;
+         status = "disabled";
+         label = "DMA_0";
+    };
+
+    For the client part, example for andes_ae350 DMA instance
+    Tx using channel 2, slot 0
+    Rx using channel 3, slot 1
+    spi1: spi@f0f00000 {
+         compatible = "andestech,atcspi200"
+         dmas = <&dma0 2 0 0x0129>,
+                <&dma0 3 1 0x012A>;
+         dma-names = "tx", "rx";
+    };

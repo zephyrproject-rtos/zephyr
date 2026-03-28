@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_HM0360
+	bool "HM0360 CMOS digital image sensor"
+	select I2C
+	depends on DT_HAS_HIMAX_HM0360_ENABLED
+	default y
+	help
+	  Enable driver for HM0360 CMOS digital image sensor device.

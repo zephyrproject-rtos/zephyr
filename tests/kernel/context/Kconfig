@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config MAX_IDLE_WAKES
+	int "Maximum number of spurious wakes during k_cpu_idle() test"
+	default 1 if NRF53_SYNC_RTC
+	default 0
+	help
+	  The platform may have some component running in the background while the k_cpu_idle test is
+	  running causing the CPU to awake. With this option we allow for a maximum number of wakes
+	  for each 10ms idle test, which by default should be 0.
+
+# Include Zephyr's Kconfig
+source "Kconfig"

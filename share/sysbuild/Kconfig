@@ -1,0 +1,84 @@
+# Copyright (c) 2021-2023 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	string
+	default "$(BOARD)"
+	help
+	  This option holds the name of the board and is used to locate the files
+	  related to the board in the source tree (under boards/).
+	  The Board is the first location where we search for a linker.ld file,
+	  if not found we look for the linker file in
+	  soc/<arch>/<family>/<series>
+
+config BOARD_REVISION
+	def_string "$(BOARD_REVISION)"
+	help
+	  If the BOARD has a revision field set, this is the revision.
+	  Otherwise, it is the empty string. For example, if BOARD is
+	  "plank@foo", this option will be "foo". If BOARD is "plank",
+	  this option will be the empty string.
+
+config BOARD_DEPRECATED_RELEASE
+	string
+	help
+	  This hidden option is set in the board configuration and indicates
+	  the Zephyr release that the board configuration will be removed.
+	  When set, any build for that board will generate a clearly visible
+	  deprecation warning.
+
+source "boards/Kconfig.v2"
+source "soc/Kconfig.v2"
+
+comment "Sysbuild image configuration"
+
+osource "$(KCONFIG_BOARD_DIR)/Kconfig.sysbuild"
+osource "$(KCONFIG_BINARY_DIR)/soc/Kconfig.sysbuild"
+
+menu "Modules"
+
+source "modules/Kconfig.sysbuild"
+
+endmenu
+
+config EXPERIMENTAL
+	bool
+	help
+	  Symbol that must be selected by a feature if it is considered to be
+	  at an experimental implementation stage.
+
+config WARN_EXPERIMENTAL
+	bool
+	prompt "Warn on experimental usage"
+	help
+	  Print a warning when the Kconfig tree is parsed if any experimental
+	  features are enabled.
+
+config DEPRECATED
+	bool
+	help
+	  Symbol that must be selected by a feature or module if it is
+	  considered to be deprecated.
+
+config WARN_DEPRECATED
+	bool
+	default y
+	prompt "Warn on deprecated usage"
+	help
+	  Print a warning when the Kconfig tree is parsed if any deprecated
+	  features are enabled.
+
+config NOT_SECURE
+	bool
+	help
+	  Symbol to be selected by a feature to indicate that feature is
+	  not secure.
+
+rsource "images/Kconfig"
+
+menu "Build options"
+
+rsource "build/Kconfig"
+
+endmenu

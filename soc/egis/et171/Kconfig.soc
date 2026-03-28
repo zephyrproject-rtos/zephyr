@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Egis Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_EGIS_ET171
+	bool
+	help
+	  Egis ET171 SoC implementation
+
+config SOC
+	default "et171" if SOC_EGIS_ET171

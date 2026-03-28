@@ -1,0 +1,7 @@
+# Copyright (c) 2022, Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+# Hidden option to enable the vnd,w1 1-Wire host driver used in testing.
+config W1_TEST
+	def_bool DT_HAS_VND_W1_ENABLED
+	depends on DT_HAS_VND_W1_ENABLED

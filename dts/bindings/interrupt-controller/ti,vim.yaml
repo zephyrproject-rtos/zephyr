@@ -1,0 +1,22 @@
+# Copyright (C) 2023 BeagleBoard.org Foundation
+# Copyright (C) 2023 S Prashanth
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI Vectored Interrupt Manager is a external interrupt controller
+  (TI specific IP) which is compatible with R5F VIC port.
+
+compatible: "ti,vim"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+interrupt-cells:
+  - type
+  - irq
+  - flags
+  - priority

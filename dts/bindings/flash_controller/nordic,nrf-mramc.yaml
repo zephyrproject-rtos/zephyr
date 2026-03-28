@@ -1,0 +1,16 @@
+#
+# Copyright (c) 2025 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Nordic MRAMC (Magnetoresistive Random Access Memory Controller)
+
+  The Magnetoresistive random access memory controller (MRAMC) is used for writing
+  the internal MRAM memory, the secure information configuration registers (SICR),
+  and the user information configuration registers (UICR).
+
+compatible: "nordic,nrf-mramc"
+
+include: base.yaml

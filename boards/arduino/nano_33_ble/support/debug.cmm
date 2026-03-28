@@ -1,0 +1,8 @@
+; Copyright 2022 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+; SPDX-License-Identifier: Apache-2.0
+
+ENTRY %LINE &args
+
+DO ~~~~/startup.cmm command=debug &args
+
+ENDDO

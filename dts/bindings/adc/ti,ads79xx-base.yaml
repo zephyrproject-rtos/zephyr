@@ -1,0 +1,21 @@
+# Copyright (c) 2026 James Walmsley <james@fullfat-fs.co.uk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI ADS79xx-Q1 SPI ADC (ADS7950..ADS7961 family)
+
+include: [spi-device.yaml, adc-controller.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+  ti,range:
+    type: int
+    default: 1
+    enum: [1, 2]
+    description: |
+      Input range selection for manual mode:
+      1 = 0..Vref (default device state)
+      2 = 0..2*Vref (requires 2*Vref <= VA)
+
+io-channel-cells:
+  - input

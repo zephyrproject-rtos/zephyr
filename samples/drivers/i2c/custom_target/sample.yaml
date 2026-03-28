@@ -1,0 +1,8 @@
+sample:
+  name: I2C custom target sample
+tests:
+  sample.drivers.i2c.custom_target:
+    tags: i2c_target
+    platform_allow:
+      - lpcxpresso55s69/lpc55s69/cpu0
+    harness: TBD

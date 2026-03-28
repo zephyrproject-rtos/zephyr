@@ -1,0 +1,10 @@
+sample:
+  name: DRV2605 Haptic Driver sample
+tests:
+  sample.haptics.drv2605:
+    build_only: true
+    tags: haptics
+    platform_allow:
+      - adafruit_qt_py_rp2040/rp2040
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_drv2605l"

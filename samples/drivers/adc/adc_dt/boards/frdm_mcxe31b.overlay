@@ -1,0 +1,40 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	zephyr,user {
+		io-channels = <&adc_0 0x0>, <&adc_0 0x1>;
+	};
+};
+
+&adc_0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* logic channel 0 => physical channel 48 (Internal 1.2v bandgap) */
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <15>;
+		zephyr,input-positive = <48>;
+	};
+
+	/* logic channel 1 => physical channel 55 (VREFH 3.3v) */
+	channel@1 {
+		reg = <0x1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <15>;
+		zephyr,input-positive = <55>;
+	};
+};

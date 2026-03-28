@@ -1,0 +1,27 @@
+# Copyright (c) 2024, Felipe Neves
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_IVSHMEM
+	bool "MBOX driver based on IVSHMEM-Doorbell"
+	default y
+	depends on DT_HAS_LINARO_IVSHMEM_MBOX_ENABLED
+	depends on IVSHMEM
+	depends on IVSHMEM_DOORBELL
+	help
+	  Mailbox driver using IVSHMEM Doorbell mechanism.
+
+if MBOX_IVSHMEM
+
+config MBOX_IVSHMEM_EVENT_LOOP_STACK_SIZE
+	int "Stack size in bytes of IVSHMEM MBOX Event loop task"
+	default 8192
+	help
+	  Adjust the stack size, in bytes of the ivshmem event loop task.
+
+config MBOX_IVSHMEM_EVENT_LOOP_PRIO
+	int "Priority of IVSHMEM MBOX Event loop task"
+	default 2
+	help
+	  Adjust the priority of the ivshmem event loop task.
+
+endif

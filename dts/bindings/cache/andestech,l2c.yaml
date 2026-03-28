@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2024, Andes Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: AndesTech L2 cache
+
+compatible: "andestech,l2c"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

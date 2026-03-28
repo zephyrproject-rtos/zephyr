@@ -1,0 +1,15 @@
+sample:
+  name: LSM6DSL accelerometer and gyrometer sensor
+tests:
+  sample.sensor.lsm6dsl:
+    harness: console
+    tags: sensors
+    depends_on: lsm6dsl
+    timeout: 15
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "accel x:[-.0-9]* ms/2 y:[-.0-9]* ms/2 z:[-.0-9]* ms/2"
+        - "gyro x:[-.0-9]* dps y:[-.0-9]* dps z:[-.0-9]* dps"
+        - "loop:[0-9]* trig_cnt:[0-9]*"

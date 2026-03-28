@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+source "samples/subsys/ipc/rpmsg_service/Kconfig"
+
+config APP_REMOTE_TASK_STACK_SIZE
+	int "Remote application task size"
+	default 2048 if SOC_SERIES_ESP32
+	default 1024

@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf54h20dk_nrf54h20_common.dtsi"
+
+&spi131 {
+	memory-regions = <&cpurad_dma_region>;
+};

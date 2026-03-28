@@ -1,0 +1,5 @@
+description: Xen Dom0/Dom0less Platform HVC ConsoleIO
+
+compatible: "xen,hvc-consoleio"
+
+include: uart-controller.yaml

@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2025 Ayush Singh, BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "pocketbeagle_2_m4-common.dtsi"

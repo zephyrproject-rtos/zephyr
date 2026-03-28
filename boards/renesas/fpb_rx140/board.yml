@@ -1,0 +1,6 @@
+board:
+  name: fpb_rx140
+  full_name: Fast Prototyping Board for RX140
+  vendor: renesas
+  socs:
+    - name: r5f51406bgfn

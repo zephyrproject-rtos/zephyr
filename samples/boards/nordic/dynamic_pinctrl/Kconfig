@@ -1,0 +1,14 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Dynamic pin control sample"
+
+config REMAP_INIT_PRIORITY
+	int "Remap routine initialization priority"
+	default 50
+	help
+	  Initialization priority of the remap routine within the PRE_KERNEL1 level.
+	  This priority must be greater than GPIO_INIT_PRIORITY and lower than
+	  UART_INIT_PRIORITY.
+
+source "Kconfig.zephyr"

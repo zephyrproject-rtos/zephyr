@@ -1,0 +1,11 @@
+common:
+  harness: net
+  depends_on: netif
+sample:
+  description: Network packet capture
+  name: Network packet capture sample application
+tests:
+  sample.net.capture:
+    tags:
+      - net
+      - capture

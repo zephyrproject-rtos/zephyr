@@ -1,0 +1,9 @@
+# Copyright 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config POWER_DOMAIN_NRFS_SWEXT
+	bool "NRFS SWEXT power domain driver"
+	depends on DT_HAS_NORDIC_NRFS_SWEXT_ENABLED
+	select NRFS
+	select NRFS_SWEXT_SERVICE_ENABLED
+	default y

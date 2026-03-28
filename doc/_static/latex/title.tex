@@ -1,0 +1,44 @@
+% LaTeX documentation title page
+%
+% Copyright (c) 2021 Nordic Semiconductor ASA
+% SPDX-License-Identifier: Apache-2.0
+
+\makeatletter
+\newgeometry{top=3cm,left=0cm,right=0cm,bottom=2.5cm}
+
+\backgroundsetup{
+    scale=2.3,
+    contents={\sphinxlogo},
+    opacity=0.2,
+    angle=0,
+    position={0.25\textwidth,-0.4\textheight}
+}
+
+\BgThispage
+
+\begin{minipage}{2cm}
+    \color{bg-color} \rule{2cm}{1.7cm}
+\end{minipage}
+\hspace{0.2cm}
+\begin{minipage}{3cm}
+    \sphinxlogo
+\end{minipage}
+\hspace{0.2cm}
+\begin{minipage}{15cm}
+    \Huge \textbf{\@title}\\
+    \LARGE \py@release\releaseinfo
+\end{minipage}
+
+\vspace{21cm}
+
+\begin{flushright}
+    \begin{minipage}{7cm}
+        \large \@author\\\@date
+    \end{minipage}
+    \begin{minipage}{1.5cm}
+        \color{bg-color} \rule{1.5cm}{1.3cm}
+    \end{minipage}
+\end{flushright}
+
+\restoregeometry
+\makeatother

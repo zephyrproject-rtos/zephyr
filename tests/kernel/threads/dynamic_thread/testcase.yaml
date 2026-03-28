@@ -1,0 +1,12 @@
+tests:
+  kernel.threads.dynamic:
+    tags:
+      - kernel
+      - threads
+      - userspace
+    ignore_faults: true
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    arch_exclude:
+      - posix
+    integration_platforms:
+      - qemu_x86

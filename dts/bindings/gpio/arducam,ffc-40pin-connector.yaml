@@ -1,0 +1,67 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+title: ArduCam FFC 40-pin camera connector.
+
+description: |
+  GPIO pins and high-speed differential pairs exposed on an ArduCam FFC 40-pin
+  camera connector supporting either DVP or MIPI CSI-2 interfaces.
+
+  The connector layout is depicted below:
+
+    1   GND
+    2   D11
+    3   D10
+    4   GND
+    5   D9 / MIPI_CSI_DL1_P
+    6   D8 / MIPI_CSI_DL1_P
+    7   GND
+    8   D7 / MIPI_CSI_CL_P
+    9   D6 / MIPI_CSI_CL_P
+    10  GND
+    11  D5 / MIPI_CSI_DL0_P
+    12  D4 / MIPI_CSI_DL0_P
+    13  GND
+    14  D3
+    15  D2
+    16  GND
+    17  D1
+    18  D0
+    19  GND
+    20  SCL
+    21  SDA
+    22  GND
+    23  VSYNC
+    24  HSYNC
+    25  RESET
+    26  XCLK
+    27  PCLK
+    28  INT
+    29  GND
+    30  GND
+    31  3V3
+    32  GND
+    33  GND
+    34  3V3
+    35  3V3
+    36  3V3
+    37  GND
+    38  GND
+    39  3V3
+    40  GND
+
+  The following node labels can be used in devicetree:
+
+  - arducam_ffc_40pin_interface: the video interface that receives the video
+    feed and use with the zephyr,camera chosen node.
+
+  - arducam_ffc_40pin_i2c: the I2C device for camera control.
+
+  - arducam_ffc_40pin_connector: the GPIO nexus using the arducam,ffc-40pin-connector
+    that defines the camera pins.
+
+  See <zephyr/dt-bindings/gpio/arducam-ffc-40pin-connector.h> for pin description.
+
+compatible: "arducam,ffc-40pin-connector"
+
+include: [gpio-nexus.yaml, base.yaml]

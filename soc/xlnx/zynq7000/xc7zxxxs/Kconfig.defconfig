@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2021 Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_XC7ZXXXS
+
+config MP_MAX_NUM_CPUS
+	default 1
+
+endif # SOC_SERIES_XC7ZXXXS

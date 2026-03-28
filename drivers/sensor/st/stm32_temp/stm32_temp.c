@@ -1,0 +1,417 @@
+/*
+ * Copyright (c) 2021 Eug Krashtan
+ * Copyright (c) 2022 Wouter Cappelle
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/nvmem.h>
+#include <zephyr/pm/device_runtime.h>
+#include <stm32_ll_adc.h>
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#include <zephyr/cache.h>
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
+LOG_MODULE_REGISTER(stm32_temp, CONFIG_SENSOR_LOG_LEVEL);
+
+#ifdef CONFIG_STM32_HAL2
+#define STM32_ADC_COMMON_INSTANCE	ADC_COMMON_INSTANCE
+#else /* CONFIG_STM32_HAL2 */
+#define STM32_ADC_COMMON_INSTANCE	__LL_ADC_COMMON_INSTANCE
+#endif /* CONFIG_STM32_HAL2 */
+
+#define CAL_RES			12U
+#define MAX_CALIB_POINTS	2
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp)
+#define DT_DRV_COMPAT st_stm32_temp
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp_cal)
+#define DT_DRV_COMPAT st_stm32_temp_cal
+#define HAS_DUAL_CALIBRATION 1
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32c0_temp_cal)
+#define DT_DRV_COMPAT st_stm32c0_temp_cal
+#define HAS_SINGLE_CALIBRATION 1
+#else
+#error "No compatible devicetree node found"
+#endif
+
+#if defined(HAS_SINGLE_CALIBRATION) || defined(HAS_DUAL_CALIBRATION)
+#define HAS_CALIBRATION 1
+#endif
+
+union stm32_dietemp_calib_data {
+	uint16_t raw[MAX_CALIB_POINTS];
+
+	struct {
+		uint16_t ts_cal1;
+#if defined(HAS_DUAL_CALIBRATION)
+		uint16_t ts_cal2;
+#endif /* HAS_DUAL_CALIBRATION */
+	};
+};
+
+struct stm32_temp_data {
+	struct adc_sequence adc_seq;
+	struct k_mutex mutex;
+#if defined(HAS_CALIBRATION)
+	union stm32_dietemp_calib_data calib_data;
+#endif /* HAS_CALIBRATION */
+	int16_t sample_buffer;
+	int16_t raw; /* raw adc Sensor value */
+};
+
+#if defined(CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM)
+typedef struct nvmem_cell calib_info_t;
+#else
+typedef const void *calib_info_t;
+#endif /* CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM */
+
+struct stm32_temp_config {
+	const struct device *adc;
+	struct adc_channel_cfg adc_cfg;
+	ADC_TypeDef *adc_base;
+
+#if !defined(HAS_CALIBRATION)
+	float average_slope;		/** Unit: mV/°C */
+	int v25;			/** Unit: mV */
+#else /* HAS_CALIBRATION */
+	unsigned int calib_vrefanalog;	/** Unit: mV */
+	unsigned int calib_data_shift;
+	calib_info_t ts_cal1;
+	int ts_cal1_temp;		/** Unit: °C */
+#if defined(HAS_SINGLE_CALIBRATION)
+	float average_slope;		/** Unit: mV/°C */
+#else /* HAS_DUAL_CALIBRATION */
+	calib_info_t ts_cal2;
+	int ts_cal2_temp;		/** Unit: °C */
+#endif
+#endif /* HAS_CALIBRATION */
+	bool is_ntc;
+};
+
+static void stm32_temp_enable_tempsensor_channel(ADC_TypeDef *adc)
+{
+	const uint32_t path = LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc));
+
+	LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
+					path | LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+
+	k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
+}
+
+__maybe_unused static void stm32_temp_disable_tempsensor_channel(ADC_TypeDef *adc)
+{
+	const uint32_t path = LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc));
+
+	LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
+					path & ~LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+}
+
+static float convert_adc_sample_to_temperature(const struct device *dev)
+{
+	struct stm32_temp_data *data = dev->data;
+	const struct stm32_temp_config *cfg = dev->config;
+	const uint16_t vdda_mv = adc_ref_internal(cfg->adc);
+	float temperature;
+
+#if !defined(HAS_CALIBRATION)
+	/**
+	 * Series without calibration (STM32F1/F2):
+	 *   Tjunction = ((Dividend) / Avg_Slope) + 25
+	 *
+	 *  where Dividend is:
+	 *   - (V25 - Vsense) on STM32F1 series ("ntc")
+	 *   - (Vsense - V25) on STM32F2 series
+	 *  and Vsense = (ADC raw data) / ADC_MAX_VALUE * Vdda
+	 *  and ADC_MAX_VALUE = 4095 (12-bit ADC resolution)
+	 *
+	 * References:
+	 *  - RM0008 §11.10 "Temperature sensor" (STM32F100)
+	 *  - RM0041 §10.9  "Temperature sensor" (STM32F101/F102/F103/F105/F107)
+	 *  - RM0033 §10.10 "Temperature sensor" (STM32F2)
+	 */
+	/* Perform multiplication first for higher accuracy */
+	const int vsense = ((int)data->raw * vdda_mv) / 4095;
+
+	if (cfg->is_ntc) {
+		temperature = (float)(cfg->v25 - vsense);
+	} else {
+		temperature = (float)(vsense - cfg->v25);
+	}
+	temperature /= cfg->average_slope;
+	temperature += 25.0f;
+#else /* HAS_CALIBRATION */
+	const union stm32_dietemp_calib_data *cd = &data->calib_data;
+	const float sense_data = ((float)vdda_mv / cfg->calib_vrefanalog) * data->raw;
+
+#if defined(HAS_SINGLE_CALIBRATION)
+	/**
+	 * Series with one calibration point (STM32C0,STM32F030/F070):
+	 *  Tjunction = ((Dividend) / Avg_Slope_Code) + TS_CAL1_TEMP
+	 *
+	 *  where Dividend is:
+	 *   - (TS_CAL1 - Sense_Data) on STM32F030/STM32F070 ("ntc")
+	 *   - (Sense_Data - TS_CAL1) on STM32C0 series
+	 *
+	 *  and Avg_SlopeCode = (Avg_Slope * 4096 / calibration Vdda)
+	 *
+	 * References:
+	 *  - RM0360 §12.8  "Temperature sensor" (STM32F030/STM32F070)
+	 *  - RM0490 §14.10 "Temperature sensor and internal reference voltage" (STM32C0)
+	 */
+	const float avg_slope_code =
+		(cfg->average_slope / cfg->calib_vrefanalog) * 4096.f;
+	float dividend;
+
+	if (cfg->is_ntc) {
+		dividend = ((float)(cd->ts_cal1 >> cfg->calib_data_shift) - sense_data);
+	} else {
+		dividend = (sense_data - (cd->ts_cal1 >> cfg->calib_data_shift));
+	}
+
+	temperature = (dividend / avg_slope_code) + cfg->ts_cal1_temp;
+#else /* HAS_DUAL_CALIBRATION */
+	/**
+	 * Series with two calibration points:
+	 *  Tjunction = (Slope * (Sense_Data - TS_CAL1)) + TS_CAL1_TEMP
+	 *
+	 *                 (TS_CAL2_TEMP - TS_CAL1_TEMP)
+	 *  where Slope =  -----------------------------
+	 *                      (TS_CAL2 - TS_CAL1)
+	 */
+	const float slope = ((float)(cfg->ts_cal2_temp - cfg->ts_cal1_temp))
+					/ ((cd->ts_cal2 - cd->ts_cal1) >> cfg->calib_data_shift);
+
+	temperature = (slope * (sense_data - (cd->ts_cal1 >> cfg->calib_data_shift)))
+			+ cfg->ts_cal1_temp;
+#endif /* HAS_SINGLE_CALIBRATION */
+#endif /* HAS_CALIBRATION */
+
+	return temperature;
+}
+
+static int stm32_temp_sample_fetch(const struct device *dev, enum sensor_channel chan)
+{
+	const struct stm32_temp_config *cfg = dev->config;
+	struct stm32_temp_data *data = dev->data;
+	struct adc_sequence *sp = &data->adc_seq;
+	int rc;
+
+	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_DIE_TEMP) {
+		return -ENOTSUP;
+	}
+
+	k_mutex_lock(&data->mutex, K_FOREVER);
+	pm_device_runtime_get(cfg->adc);
+
+#ifndef CONFIG_STM32_TEMP_INJECTED
+	rc = adc_channel_setup(cfg->adc, &cfg->adc_cfg);
+	if (rc != 0) {
+		LOG_DBG("Setup AIN%u got %d", cfg->adc_cfg.channel_id, rc);
+		goto unlock;
+	}
+
+	stm32_temp_enable_tempsensor_channel(cfg->adc_base);
+#endif /* CONFIG_STM32_TEMP_INJECTED */
+
+	rc = adc_read(cfg->adc, sp);
+	if (rc == 0) {
+		data->raw = data->sample_buffer;
+	}
+
+#ifndef CONFIG_STM32_TEMP_INJECTED
+	stm32_temp_disable_tempsensor_channel(cfg->adc_base);
+
+unlock:
+#endif /* CONFIG_STM32_TEMP_INJECTED */
+	pm_device_runtime_put(cfg->adc);
+	k_mutex_unlock(&data->mutex);
+
+	return rc;
+}
+
+static int stm32_temp_channel_get(const struct device *dev, enum sensor_channel chan,
+				  struct sensor_value *val)
+{
+	if (chan != SENSOR_CHAN_DIE_TEMP) {
+		return -ENOTSUP;
+	}
+
+	const float temp = convert_adc_sample_to_temperature(dev);
+
+	return sensor_value_from_float(val, temp);
+}
+
+static DEVICE_API(sensor, stm32_temp_driver_api) = {
+	.sample_fetch = stm32_temp_sample_fetch,
+	.channel_get = stm32_temp_channel_get,
+};
+
+#if defined(HAS_CALIBRATION) && !defined(CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM)
+static uint32_t fetch_mfg_data(const void *addr)
+{
+	/* On all STM32 series, the calibration data is stored
+	 * as 16-bit data in the manufacturing flash region
+	 */
+	return sys_read16((mem_addr_t)addr);
+}
+#endif /* HAS_CALIBRATION && !CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM */
+
+#if defined(HAS_CALIBRATION)
+static int read_calibration_data(const struct stm32_temp_config *cfg,
+				  union stm32_dietemp_calib_data *cd)
+{
+# if defined(CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM)
+	int res;
+
+	res = nvmem_cell_read(&cfg->ts_cal1, &cd->raw[0], 0, sizeof(cd->raw[0]));
+	if (res < 0) {
+		LOG_ERR("Failed to read TS_CAL1: %d", res);
+		return res;
+	}
+
+#  if defined(HAS_DUAL_CALIBRATION)
+	res = nvmem_cell_read(&cfg->ts_cal2, &cd->raw[1], 0, sizeof(cd->raw[1]));
+	if (res < 0) {
+		LOG_ERR("Failed to read TS_CAL2: %d", res);
+		return res;
+	}
+#  endif /* HAS_DUAL_CALIBRATION */
+# else /* CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM */
+#  if defined(CONFIG_SOC_SERIES_STM32H5X)
+	/* Disable the ICACHE to ensure all memory accesses are non-cacheable.
+	 * This is required on STM32H5, where the manufacturing flash must be
+	 * accessed in non-cacheable mode - otherwise, a bus error occurs.
+	 */
+	sys_cache_instr_disable();
+#  endif /* CONFIG_SOC_SERIES_STM32H5X */
+
+	cd->raw[0] = fetch_mfg_data(cfg->ts_cal1);
+#  if defined(HAS_DUAL_CALIBRATION)
+	cd->raw[1] = fetch_mfg_data(cfg->ts_cal2);
+#  endif
+
+#  if defined(CONFIG_SOC_SERIES_STM32H5X)
+	/* Re-enable the ICACHE (unconditionally - it should always be turned on) */
+	sys_cache_instr_enable();
+#  endif /* CONFIG_SOC_SERIES_STM32H5X */
+# endif /* CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM */
+
+	return 0;
+}
+#endif /* HAS_CALIBRATION */
+
+static int stm32_temp_init(const struct device *dev)
+{
+	const struct stm32_temp_config *cfg = dev->config;
+	struct stm32_temp_data *data = dev->data;
+	struct adc_sequence *asp = &data->adc_seq;
+
+	k_mutex_init(&data->mutex);
+
+	if (!device_is_ready(cfg->adc)) {
+		LOG_ERR("Device %s is not ready", cfg->adc->name);
+		return -ENODEV;
+	}
+
+#if defined(HAS_CALIBRATION)
+	/* Read calibration data once during init */
+	int res = read_calibration_data(cfg, &data->calib_data);
+
+	if (res < 0) {
+		return res;
+	}
+#endif
+
+	*asp = (struct adc_sequence){
+		.channels = BIT(cfg->adc_cfg.channel_id),
+		.buffer = &data->sample_buffer,
+		.buffer_size = sizeof(data->sample_buffer),
+		.resolution = CAL_RES,
+#ifdef CONFIG_STM32_TEMP_INJECTED
+		.priority = 1,
+#endif /* CONFIG_STM32_TEMP_INJECTED */
+	};
+
+#ifdef CONFIG_STM32_TEMP_INJECTED
+	int rc = adc_channel_setup(cfg->adc, &cfg->adc_cfg);
+
+	if (rc != 0) {
+		LOG_DBG("Setup AIN%u got %d", cfg->adc_cfg.channel_id, rc);
+		return rc;
+	}
+
+	stm32_temp_enable_tempsensor_channel(cfg->adc_base);
+#endif /* CONFIG_STM32_TEMP_INJECTED */
+
+	return 0;
+}
+
+/**
+ * Verify that the ADC instance which this driver uses to measure temperature
+ * is enabled. On STM32 MCUs with more than one ADC, it is possible to compile
+ * this driver even if the ADC used for measurement is disabled. In such cases,
+ * fail build with an explicit error message.
+ */
+#if !DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(0))
+
+/* Use BUILD_ASSERT to get preprocessing on the message */
+BUILD_ASSERT(0,	"ADC '" DT_NODE_FULL_NAME(DT_INST_IO_CHANNELS_CTLR(0)) "' needed by "
+		"temperature sensor '" DT_NODE_FULL_NAME(DT_DRV_INST(0)) "' is not enabled");
+
+/* To reduce noise in the compiler error log, do not attempt
+ * to instantiate device if the sensor's ADC is not enabled.
+ */
+#else
+
+#if defined(CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM)
+#define INIT_PARAMETER(inst, cell_name) NVMEM_CELL_INST_GET_BY_NAME(inst, cell_name)
+#else
+/* MMIO address = base of OTP flash area + offset of cell in OTP */
+#define INIT_PARAM_INNER(nvmc)							\
+	((void *)(DT_REG_ADDR(DT_MTD_FROM_NVMEM_CELL(nvmc)) + DT_REG_ADDR(nvmc)))
+#define INIT_PARAMETER(inst, cell_name)							\
+	INIT_PARAM_INNER(DT_INST_NVMEM_CELL_BY_NAME(inst, cell_name))
+#endif /* CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM */
+
+static struct stm32_temp_data stm32_temp_dev_data;
+
+static const struct stm32_temp_config stm32_temp_dev_config = {
+	.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(0)),
+	.adc_base = (ADC_TypeDef *)DT_REG_ADDR(DT_INST_IO_CHANNELS_CTLR(0)),
+	.adc_cfg = {
+		.gain = ADC_GAIN_1,
+		.reference = ADC_REF_INTERNAL,
+		.acquisition_time = ADC_ACQ_TIME_MAX,
+		.channel_id = DT_INST_IO_CHANNELS_INPUT(0),
+		.differential = 0
+	},
+#if defined(HAS_CALIBRATION)
+	.ts_cal1 = INIT_PARAMETER(0, ts_cal1),
+	.ts_cal1_temp = DT_INST_PROP(0, ts_cal1_temp),
+#if defined(HAS_SINGLE_CALIBRATION)
+	.average_slope = ((float)DT_INST_STRING_UNQUOTED(0, avgslope)),
+#else /* HAS_DUAL_CALIBRATION */
+	.ts_cal2 = INIT_PARAMETER(0, ts_cal2),
+	.ts_cal2_temp = DT_INST_PROP(0, ts_cal2_temp),
+#endif
+	.calib_data_shift = (DT_INST_PROP(0, ts_cal_resolution) - CAL_RES),
+	.calib_vrefanalog = DT_INST_PROP(0, ts_cal_vrefanalog),
+#else
+	.average_slope = ((float)DT_INST_STRING_UNQUOTED(0, avgslope)),
+	.v25 = DT_INST_PROP(0, v25),
+#endif
+	.is_ntc = DT_INST_PROP_OR(0, ntc, false)
+};
+
+SENSOR_DEVICE_DT_INST_DEFINE(0, stm32_temp_init, NULL,
+			     &stm32_temp_dev_data, &stm32_temp_dev_config,
+			     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+			     &stm32_temp_driver_api);
+
+#endif /* !DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(0)) */

@@ -1,0 +1,38 @@
+# Intel VT-D interrupt remapping controller configuration
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INTEL_VTD_ICTL
+	bool "Intel VT-D interrupt remapping controller"
+	default y
+	depends on DT_HAS_INTEL_VT_D_ENABLED
+	depends on !BOARD_QEMU_X86_64 && ACPI && X86 && 64BIT && PCIE_MSI_MULTI_VECTOR
+	select CACHE_MANAGEMENT
+	help
+	  Such interrupt remapping hardware is provided through Intel VT-D
+	  technology. It's being used, currently, only for MSI/MSI-X
+	  multi-vector support. If you have such PCIe device requiring
+	  multi-vector support, you will need to enable this.
+
+if INTEL_VTD_ICTL
+
+config INTEL_VTD_ICTL_XAPIC_PASSTHROUGH
+	bool "XAPIC mode pass-through"
+	depends on !X2APIC
+	help
+	  If XAPIC mode is enabled, it will avoid remapping all interrupts.
+
+config INTEL_VTD_ICTL_NO_SRC_ID_CHECK
+	bool "Never check the source id"
+	help
+	  Disable the source id check in IRTE.
+
+config INTEL_VTD_ICTL_INIT_PRIORITY
+	int "Initialization priority"
+	default 40
+	help
+	  This device should be initialized as soon as possible, before any
+	  other device that would require it for MSI/MSI-X multi-vector support.
+
+endif # INTEL_VTD_ICTL

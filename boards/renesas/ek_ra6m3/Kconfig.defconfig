@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_EK_RA6M3
+
+configdefault NET_L2_ETHERNET
+	default y
+
+endif # BOARD_EK_RA6M3

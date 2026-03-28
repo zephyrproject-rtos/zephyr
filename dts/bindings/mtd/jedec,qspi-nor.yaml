@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic NOR flash on QSPI bus
+
+compatible: "jedec,qspi-nor"
+
+on-bus: qspi
+
+include: [base.yaml, "jedec,spi-nor-common.yaml"]

@@ -1,0 +1,26 @@
+identifier: adafruit_feather_rp2040
+name: Adafruit Feather RP2040
+type: mcu
+arch: arm
+flash: 8192
+ram: 264
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - gpio
+  - i2c
+  - spi
+  - hwinfo
+  - watchdog
+  - pwm
+  - flash
+  - dma
+  - counter
+  - clock
+  - led_strip
+  - feather_serial
+  - feather_i2c
+  - feather_spi
+vendor: adafruit

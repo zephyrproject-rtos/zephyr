@@ -1,0 +1,12 @@
+# Copyright (c) 2022 Actinius
+# SPDX-License-Identifier: Apache-2.0
+
+config ACTINIUS_BOARD_CONTROL_INIT_PRIORITY
+	int "Init priority"
+	default 99
+	help
+	  Sets the init priority for the Board Control module.
+
+module = ACTINIUS_BOARD_CONTROL
+module-str = Board Control
+source "subsys/logging/Kconfig.template.log_config"

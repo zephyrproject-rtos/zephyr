@@ -1,0 +1,66 @@
+# Copyright (c) 2023 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Twister BlackBox TestSuite
+
+on:
+  pull_request:
+    branches:
+    - main
+    - collab-*
+    - v*-branch
+    paths:
+    - 'scripts/pylib/twister/**'
+    - 'scripts/twister'
+    - 'scripts/tests/twister_blackbox/**'
+    - '.github/workflows/twister_tests_blackbox.yml'
+
+permissions:
+  contents: read
+
+env:
+  PYTHONIOENCODING: utf-8
+
+jobs:
+  twister-tests:
+    name: Twister Black Box Tests
+    strategy:
+      matrix:
+        python-version: ['3.12', '3.13']
+      fail-fast: false
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        path: zephyr
+        fetch-depth: 0
+
+    - name: Set Up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: pip
+        cache-dependency-path: scripts/requirements-actions.txt
+
+    - name: Setup Zephyr project
+      uses: zephyrproject-rtos/action-zephyr-setup@360ff9b36e58499d9eb28015cdcde7ca03a5b04d # v1.0.12
+      with:
+        app-path: zephyr
+        toolchains: 'arm-zephyr-eabi:riscv64-zephyr-elf:x86_64-zephyr-elf'
+        enable-ccache: false
+        west-group-filter: -tools,-bootloader,-babblesim,-hal
+        west-project-filter: -nrf_hw_models,+cmsis,+hal_xtensa,+cmsis_6
+
+    - name: Run Pytest For Twister Black Box Tests
+      working-directory: zephyr
+      shell: bash
+      env:
+        ZEPHYR_BASE: ./
+        ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+      run: |
+        export ZEPHYR_SDK_INSTALL_DIR=${{ github.workspace }}/zephyr-sdk
+        sudo apt-get install -y lcov
+        echo "Run twister tests"
+        source zephyr-env.sh
+        PYTHONPATH="./scripts/tests" pytest ./scripts/tests/twister_blackbox/

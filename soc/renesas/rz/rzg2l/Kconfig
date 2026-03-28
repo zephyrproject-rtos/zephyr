@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RZG2L
+	select ARM
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_MPU
+	select HAS_RENESAS_RZ_FSP
+	select CPU_CORTEX_M_HAS_DWT
+	select SOC_EARLY_INIT_HOOK

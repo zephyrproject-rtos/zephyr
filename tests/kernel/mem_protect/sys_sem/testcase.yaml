@@ -1,0 +1,12 @@
+tests:
+  kernel.memory_protection.sys_sem:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    arch_exclude:
+      - posix
+    tags:
+      - kernel
+      - userspace
+  kernel.memory_protection.sys_sem.nouser:
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
+    tags: kernel

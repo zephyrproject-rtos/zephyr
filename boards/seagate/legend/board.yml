@@ -1,0 +1,13 @@
+board:
+  name: legend
+  full_name: Legend
+  vendor: seagate
+  revision:
+    format: custom
+    default: "25hdd"
+    revisions:
+      - name: "25hdd"
+      - name: "25ssd"
+      - name: "35"
+  socs:
+    - name: stm32f070xb

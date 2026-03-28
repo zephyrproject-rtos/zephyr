@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_NPM2100
+	bool "nPM2100 Watchdog driver"
+	default y
+	depends on DT_HAS_NORDIC_NPM2100_WDT_ENABLED
+	select I2C
+	select MFD
+	help
+	  Enable nPM2100 Watchdog driver
+
+config WDT_NPM2100_INIT_PRIORITY
+	int "nPM2100 Watchdog driver initialization priority"
+	depends on WDT_NPM2100
+	default 85
+	help
+	  Initialization priority for the nPM2100 Watchdog driver.
+	  It must be greater than GPIO_NPM2100_INIT_PRIORITY.

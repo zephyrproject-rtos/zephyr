@@ -1,0 +1,14 @@
+# STM32N657X0_Q Nucleo board configuration
+
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_N657X0_Q
+
+configdefault NET_L2_ETHERNET
+	default y
+
+configdefault OTP
+	default y if ETH_STM32_HAL && NVMEM
+
+endif # BOARD_NUCLEO_N657X0_Q

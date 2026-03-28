@@ -1,0 +1,1000 @@
+#!/usr/bin/env python3
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+"""
+Tests for hardwaremap.py classes' methods
+"""
+
+import sys
+from pathlib import Path
+from unittest import mock
+
+import pytest
+from twisterlib.error import NoDeviceAvailableException, TwisterException
+from twisterlib.hardwaremap import DUT, HardwareMap
+
+
+@pytest.fixture
+def mocked_hm():
+    duts = [
+        DUT(platform='p1', id=1, serial='s1', product='pr1', connected=True),
+        DUT(platform='p2', id=2, serial='s2', product='pr2', connected=False),
+        DUT(platform='p3', id=3, serial='s3', product='pr3', connected=True),
+        DUT(platform='p4', id=4, serial='s4', product='pr4', connected=False),
+        DUT(platform='p5', id=5, serial='s5', product='pr5', connected=True),
+        DUT(platform='p6', id=6, serial='s6', product='pr6', connected=False),
+        DUT(platform='p7', id=7, serial='s7', product='pr7', connected=True),
+        DUT(platform='p8', id=8, serial='s8', product='pr8', connected=False)
+    ]
+
+    hm = HardwareMap(env=mock.Mock())
+    hm.duts = duts
+
+    return hm
+
+
+TESTDATA_1 = [
+    (
+        {},
+        {'serial_baud': 115200, 'flash_timeout': 60},
+        '<None (None) on None>'
+    ),
+    (
+        {
+            'id': 'dummy id',
+            'serial': 'dummy serial',
+            'serial_baud': 4400,
+            'platform': 'dummy platform',
+            'product': 'dummy product',
+            'serial_pty': 'dummy serial pty',
+            'connected': True,
+            'runner_params': ['dummy', 'runner', 'params'],
+            'pre_script': 'dummy pre script',
+            'post_script': 'dummy post script',
+            'post_flash_script': 'dummy post flash script',
+            'runner': 'dummy runner',
+            'flash_timeout': 30,
+            'flash_with_test': True,
+            'script_param': {
+                'pre_script_timeout' : 30,
+                'post_flash_timeout' : 30,
+                'post_script_timeout' : 30,
+                }
+        },
+        {
+            'id': 'dummy id',
+            'serial': 'dummy serial',
+            'serial_baud': 4400,
+            'platform': 'dummy platform',
+            'product': 'dummy product',
+            'serial_pty': 'dummy serial pty',
+            'connected': True,
+            'runner_params': ['dummy', 'runner', 'params'],
+            'pre_script': 'dummy pre script',
+            'post_script': 'dummy post script',
+            'post_flash_script': 'dummy post flash script',
+            'runner': 'dummy runner',
+            'flash_timeout': 30,
+            'flash_with_test': True,
+            'script_param': {
+                'pre_script_timeout' : 30,
+                'post_flash_timeout' : 30,
+                'post_script_timeout' : 30,
+                }
+        },
+        '<dummy platform (dummy product) on dummy serial>'
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    'kwargs, expected_dict, expected_repr',
+    TESTDATA_1,
+    ids=['no information', 'full information']
+)
+def test_dut(kwargs, expected_dict, expected_repr):
+    d = DUT(**kwargs)
+
+    assert d.available
+    assert d.counter == 0
+
+    d.available = False
+    d.counter = 1
+
+    assert not d.available
+    assert d.counter == 1
+
+    assert d.to_dict() == expected_dict
+    assert d.__repr__() == expected_repr
+
+
+TESTDATA_2 = [
+    ('ghm.yaml', mock.ANY, mock.ANY, [], mock.ANY, mock.ANY, mock.ANY, 0,
+     True, True, False, False, False, False, []),
+    (None, False, 'hm.yaml', [], mock.ANY, mock.ANY, mock.ANY, 0,
+     False, False, True, True, False, False, []),
+    (None, True, 'hm.yaml', [], mock.ANY, mock.ANY, ['fix'], 1,
+     False, False, True, False, False, True, ['p1', 'p3', 'p5', 'p7']),
+    (None, True, 'hm.yaml', ['pX'], mock.ANY, mock.ANY, ['fix'], 1,
+     False, False, True, False, False, True, ['pX']),
+    (None, True, None, ['p'], 's', None, ['fix'], 1,
+     False, False, False, False, True, True, ['p']),
+    (None, True, None, ['p'], None, 'spty', ['fix'], 1,
+     False, False, False, False, True, True, ['p']),
+]
+
+
+@pytest.mark.parametrize(
+    'generate_hardware_map, device_testing, hardware_map, platform,' \
+    ' device_serial, device_serial_pty, fixtures,' \
+    ' return_code, expect_scan, expect_save, expect_load,' \
+    ' expect_dump, expect_add_device, expect_fixtures, expected_platforms',
+    TESTDATA_2,
+    ids=['generate hardware map', 'existing hardware map',
+         'device testing with hardware map, no platform',
+         'device testing with hardware map with platform',
+         'device testing with device serial',
+         'device testing with device serial pty']
+)
+def test_hardwaremap_discover(
+    caplog,
+    mocked_hm,
+    generate_hardware_map,
+    device_testing,
+    hardware_map,
+    platform,
+    device_serial,
+    device_serial_pty,
+    fixtures,
+    return_code,
+    expect_scan,
+    expect_save,
+    expect_load,
+    expect_dump,
+    expect_add_device,
+    expect_fixtures,
+    expected_platforms
+):
+    def mock_load(*args):
+        mocked_hm.platform = platform
+
+    mocked_hm.scan = mock.Mock()
+    mocked_hm.save = mock.Mock()
+    mocked_hm.load = mock.Mock(side_effect=mock_load)
+    mocked_hm.dump = mock.Mock()
+    mocked_hm.add_device = mock.Mock()
+
+    mocked_hm.options.device_flash_with_test = True
+    mocked_hm.options.device_flash_timeout = 15
+    mocked_hm.options.pre_script = 'dummy pre script'
+    mocked_hm.options.platform = platform
+    mocked_hm.options.device_serial = device_serial
+    mocked_hm.options.device_serial_pty = device_serial_pty
+    mocked_hm.options.device_testing = device_testing
+    mocked_hm.options.hardware_map = hardware_map
+    mocked_hm.options.persistent_hardware_map = mock.Mock()
+    mocked_hm.options.generate_hardware_map = generate_hardware_map
+    mocked_hm.options.fixture = fixtures
+
+    returncode = mocked_hm.discover()
+
+    assert returncode == return_code
+
+    if expect_scan:
+        mocked_hm.scan.assert_called_once_with(
+            persistent=mocked_hm.options.persistent_hardware_map
+        )
+    if expect_save:
+        mocked_hm.save.assert_called_once_with(
+            mocked_hm.options.generate_hardware_map, mock.ANY
+        )
+    if expect_load:
+        mocked_hm.load.assert_called_once_with(
+            mocked_hm.options.hardware_map
+        )
+    if expect_dump:
+        mocked_hm.dump.assert_called_once_with(
+            connected_only=True
+        )
+    if expect_add_device:
+        mocked_hm.add_device.assert_called_once()
+
+    if expect_fixtures:
+        assert all(
+            [all(
+                    [fixture in dut.fixtures for fixture in fixtures]
+            ) for dut in mocked_hm.duts]
+        )
+
+    assert sorted(expected_platforms) == sorted(mocked_hm.options.platform)
+
+
+def test_hardwaremap_summary(capfd, mocked_hm):
+    selected_platforms = ['p0', 'p1', 'p6', 'p7']
+
+    mocked_hm.summary(selected_platforms)
+
+    expected = """
+Hardware distribution summary:
+
+| Board   |   ID |   Counter |   Failures |
+|---------|------|-----------|------------|
+| p1      |    1 |         0 |          0 |
+| p7      |    7 |         0 |          0 |
+"""
+
+    out, err = capfd.readouterr()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+
+    assert expected in out
+
+
+TESTDATA_3 = [
+    (True),
+    (False)
+]
+
+
+@pytest.mark.parametrize(
+    'is_pty',
+    TESTDATA_3,
+    ids=['pty', 'not pty']
+)
+def test_hardwaremap_add_device(is_pty):
+    hm = HardwareMap(env=mock.Mock())
+
+    serial = 'dummy'
+    platform = 'p0'
+    pre_script = 'dummy pre script'
+    hm.add_device(serial, platform, pre_script, is_pty)
+
+    assert len(hm.duts) == 1
+    if is_pty:
+        assert hm.duts[0].serial_pty == 'dummy' if is_pty else None
+        assert hm.duts[0].serial is None
+    else:
+        assert hm.duts[0].serial_pty is None
+        assert hm.duts[0].serial == 'dummy'
+
+
+def test_hardwaremap_load():
+    map_file = \
+"""
+- id: id0
+  platform: p0
+  product: pr0
+  runner: r0
+  flash_with_test: True
+  flash_timeout: 15
+  serial_baud: 14400
+  fixtures:
+  - dummy fixture 1
+  - dummy fixture 2
+  connected: True
+  serial: 'dummy'
+- id: id1
+  platform: p1
+  product: pr1
+  runner: r1
+  connected: True
+  serial_pty: 'dummy'
+- id: id2
+  platform: p2
+  product: pr2
+  runner: r2
+  connected: True
+"""
+    map_filename = 'map-file.yaml'
+
+    builtin_open = open
+
+    def mock_open(*args, **kwargs):
+        if args[0] == map_filename:
+            return mock.mock_open(read_data=map_file)(*args, **kwargs)
+        return builtin_open(*args, **kwargs)
+
+    hm = HardwareMap(env=mock.Mock())
+    hm.options.device_flash_timeout = 30
+    hm.options.device_flash_with_test = False
+
+    with mock.patch('builtins.open', mock_open):
+        hm.load(map_filename)
+
+    expected = {
+        'id0': {
+            'platform': 'p0',
+            'product': 'pr0',
+            'runner': 'r0',
+            'flash_timeout': 15,
+            'flash_with_test': True,
+            'serial_baud': 14400,
+            'fixtures': ['dummy fixture 1', 'dummy fixture 2'],
+            'connected': True,
+            'serial': 'dummy',
+            'serial_pty': None,
+        },
+        'id1': {
+            'platform': 'p1',
+            'product': 'pr1',
+            'runner': 'r1',
+            'flash_timeout': 30,
+            'flash_with_test': False,
+            'serial_baud': 115200,
+            'fixtures': [],
+            'connected': True,
+            'serial_pty': 'dummy',
+        },
+    }
+
+    for dut in hm.duts:
+        assert dut.id in expected
+        assert all([getattr(dut, k) == v for k, v in expected[dut.id].items()])
+
+
+TESTDATA_4 = [
+    (
+        True,
+        'Linux',
+        ['<unknown (TI product) on /dev/serial/by-id/basic-file1>',
+         '<unknown (product123) on dummy device>',
+         '<unknown (unknown) on /dev/serial/by-id/basic-file2-link>']
+    ),
+    (
+        True,
+        'nt',
+        ['<unknown (TI product) on /dev/serial/by-id/basic-file1>',
+         '<unknown (product123) on dummy device>',
+         '<unknown (unknown) on /dev/serial/by-id/basic-file2>']
+    ),
+    (
+        False,
+        'Linux',
+        ['<unknown (TI product) on /dev/serial/by-id/basic-file1>',
+         '<unknown (product123) on dummy device>',
+         '<unknown (unknown) on /dev/serial/by-id/basic-file2>']
+    )
+]
+
+
+@pytest.mark.parametrize(
+    'persistent, system, expected_reprs',
+    TESTDATA_4,
+    ids=['linux persistent map', 'no map (not linux)', 'no map (nonpersistent)']
+)
+def test_hardwaremap_scan(
+    caplog,
+    mocked_hm,
+    persistent,
+    system,
+    expected_reprs
+):
+    def mock_resolve(path):
+        if str(path).endswith('-link'):
+            return Path(str(path)[:-5])
+        return path
+
+    def mock_iterdir(path):
+        return [
+            Path(path / 'basic-file1'),
+            Path(path / 'basic-file2-link')
+        ]
+
+    def mock_exists(path):
+        return True
+
+    mocked_hm.manufacturer = ['dummy manufacturer', 'Texas Instruments']
+    mocked_hm.runner_mapping = {
+        'dummy runner': ['product[0-9]+',],
+        'other runner': ['other TI product', 'TI product']
+    }
+
+    comports_mock = [
+        mock.Mock(
+            manufacturer='wrong manufacturer',
+            location='wrong location',
+            serial_number='wrong number',
+            product='wrong product',
+            device='wrong device'
+        ),
+        mock.Mock(
+            manufacturer='dummy manufacturer',
+            location='dummy location',
+            serial_number='dummy number',
+            product=None,
+            device='/dev/serial/by-id/basic-file2'
+        ),
+        mock.Mock(
+            manufacturer='dummy manufacturer',
+            location='dummy location',
+            serial_number='dummy number',
+            product='product123',
+            device='dummy device'
+        ),
+        mock.Mock(
+            manufacturer='Texas Instruments',
+            location='serial1',
+            serial_number='TI1',
+            product='TI product',
+            device='TI device1'
+        ),
+        mock.Mock(
+            manufacturer='Texas Instruments',
+            location='serial0',
+            serial_number='TI0',
+            product='TI product',
+            device='/dev/serial/by-id/basic-file1'
+        ),
+    ]
+
+    with mock.patch('platform.system', return_value=system), \
+         mock.patch('serial.tools.list_ports.comports',
+                    return_value=comports_mock), \
+         mock.patch('twisterlib.hardwaremap.Path.resolve',
+                    autospec=True, side_effect=mock_resolve), \
+         mock.patch('twisterlib.hardwaremap.Path.iterdir',
+                    autospec=True, side_effect=mock_iterdir), \
+         mock.patch('twisterlib.hardwaremap.Path.exists',
+                    autospec=True, side_effect=mock_exists):
+        detected = mocked_hm.scan(persistent)
+
+    assert sorted([d.__repr__() for d in detected]) == \
+           sorted(expected_reprs)
+
+    assert 'Scanning connected hardware...' in caplog.text
+    assert 'Unsupported device (wrong manufacturer): %s' % comports_mock[0] \
+           in caplog.text
+
+
+TESTDATA_5 = [
+    (
+        None,
+        [{
+            'platform': 'p1',
+            'id': 1,
+            'runner': mock.ANY,
+            'serial': 's1',
+            'product': 'pr1',
+            'connected': True
+        },
+        {
+            'platform': 'p2',
+            'id': 2,
+            'runner': mock.ANY,
+            'serial': 's2',
+            'product': 'pr2',
+            'connected': False
+        },
+        {
+            'platform': 'p3',
+            'id': 3,
+            'runner': mock.ANY,
+            'serial': 's3',
+            'product': 'pr3',
+            'connected': True
+        },
+        {
+            'platform': 'p4',
+            'id': 4,
+            'runner': mock.ANY,
+            'serial': 's4',
+            'product': 'pr4',
+            'connected': False
+        },
+        {
+            'platform': 'p5',
+            'id': 5,
+            'runner': mock.ANY,
+            'serial': 's5',
+            'product': 'pr5',
+            'connected': True
+        }]
+    ),
+    (
+        '',
+        [{
+            'serial': 's1',
+            'serial_baud': 115200,
+            'platform': 'p1',
+            'connected': True,
+            'id': 1,
+            'product': 'pr1',
+            'flash_timeout': 60
+        },
+        {
+            'serial': 's2',
+            'serial_baud': 115200,
+            'platform': 'p2',
+            'id': 2,
+            'product': 'pr2',
+            'flash_timeout': 60
+        },
+        {
+            'serial': 's3',
+            'serial_baud': 115200,
+            'platform': 'p3',
+            'connected': True,
+            'id': 3,
+            'product': 'pr3',
+            'flash_timeout': 60
+        },
+        {
+            'serial': 's4',
+            'serial_baud': 115200,
+            'platform': 'p4',
+            'id': 4,
+            'product': 'pr4',
+            'flash_timeout': 60
+        },
+        {
+            'serial': 's5',
+            'serial_baud': 115200,
+            'platform': 'p5',
+            'connected': True,
+            'id': 5,
+            'product': 'pr5',
+            'flash_timeout': 60
+        }]
+    ),
+    (
+"""
+- id: 4
+  platform: p4
+  product: pr4
+  connected: True
+  serial: s4
+- id: 0
+  platform: p0
+  product: pr0
+  connected: True
+  serial: s0
+- id: 10
+  platform: p10
+  product: pr10
+  connected: False
+  serial: s10
+- id: 5
+  platform: p5-5
+  product: pr5-5
+  connected: True
+  serial: s5-5
+""",
+        [{
+            'id': 0,
+            'platform': 'p0',
+            'product': 'pr0',
+            'connected': False,
+        },
+        {
+            'id': 4,
+            'platform': 'p4',
+            'product': 'pr4',
+            'connected': True,
+            'serial': 's4'
+        },
+        {
+            'id': 5,
+            'platform': 'p5-5',
+            'product': 'pr5-5',
+            'connected': False,
+        },
+        {
+            'id': 10,
+            'platform': 'p10',
+            'product': 'pr10',
+            'connected': False,
+        },
+        {
+            'serial': 's1',
+            'serial_baud': 115200,
+            'platform': 'p1',
+            'connected': True,
+            'id': 1,
+            'product': 'pr1',
+            'flash_timeout': 60
+        },
+        {
+            'serial': 's2',
+            'serial_baud': 115200,
+            'platform': 'p2',
+            'id': 2,
+            'product': 'pr2',
+            'flash_timeout': 60
+        },
+        {
+            'serial': 's3',
+            'serial_baud': 115200,
+            'platform': 'p3',
+            'connected': True,
+            'id': 3,
+            'product': 'pr3',
+            'flash_timeout': 60
+        },
+        {
+            'serial': 's5',
+            'serial_baud': 115200,
+            'platform': 'p5',
+            'connected': True,
+            'id': 5,
+            'product': 'pr5',
+            'flash_timeout': 60
+        }]
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    'hwm, expected_dump',
+    TESTDATA_5,
+    ids=['no map', 'empty map', 'map exists']
+)
+def test_hardwaremap_save(mocked_hm, hwm, expected_dump):
+    read_mock = mock.mock_open(read_data=hwm)
+    write_mock = mock.mock_open()
+
+    def mock_open(filename, mode='r'):
+        if mode == 'r':
+            return read_mock()
+        elif mode == 'w':
+            return write_mock()
+
+
+    mocked_hm.load = mock.Mock()
+    mocked_hm.dump = mock.Mock()
+
+    open_mock = mock.Mock(side_effect=mock_open)
+    dump_mock = mock.Mock()
+
+    with mock.patch('os.path.exists', return_value=hwm is not None), \
+         mock.patch('builtins.open', open_mock), \
+         mock.patch('twisterlib.hardwaremap.yaml.dump', dump_mock):
+        mocked_hm.save('hwm.yaml', detected=mocked_hm.duts[:5])
+
+    dump_mock.assert_called_once_with(expected_dump, mock.ANY, Dumper=mock.ANY,
+                                      default_flow_style=mock.ANY)
+
+
+TESTDATA_6 = [
+    (
+        ['p1', 'p3', 'p5', 'p7'],
+        [],
+        True,
+        True,
+"""
+| Platform   |   ID | Serial device   |
+|------------|------|-----------------|
+| p1         |    1 | s1              |
+| p3         |    3 | s3              |
+| p5         |    5 | s5              |
+"""
+    ),
+    (
+        [],
+        ['?', '??', '???'],
+        False,
+        False,
+"""
+| ?   |   ?? | ???   |
+|-----|------|-------|
+| p1  |    1 | s1    |
+| p2  |    2 | s2    |
+| p3  |    3 | s3    |
+| p4  |    4 | s4    |
+| p5  |    5 | s5    |
+| p6  |    6 | s6    |
+| p7  |    7 | s7    |
+| p8  |    8 | s8    |
+"""
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    'filtered, header, connected_only, detected, expected_out',
+    TESTDATA_6,
+    ids=['detected no header', 'all with header']
+)
+def test_hardwaremap_dump(
+    capfd,
+    mocked_hm,
+    filtered,
+    header,
+    connected_only,
+    detected,
+    expected_out
+):
+    detected_duts = mocked_hm.duts[:5] if detected else None
+    mocked_hm.dump(filtered, header, connected_only, detected_duts)
+
+    out, err = capfd.readouterr()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+
+    assert out.strip() == expected_out.strip()
+
+def _run_save_and_get_dump(mocked_hm, *, exists, filename='hwm.yaml', read_data=None):
+    """
+    Run HardwareMap.save() with mocked file I/O and return the object passed to yaml.dump()
+    """
+    dump_mock = mock.Mock()
+
+    if read_data is None:
+        write_mock = mock.mock_open()
+        open_mock = mock.Mock(return_value=write_mock())
+    else:
+        read_mock = mock.mock_open(read_data=read_data)
+        write_mock = mock.mock_open()
+
+        def mock_open(filename, mode='r'):
+            if mode == 'r':
+                return read_mock()
+            if mode == 'w':
+                return write_mock()
+            raise AssertionError(f"unexpected mode {mode}")
+
+        open_mock = mock.Mock(side_effect=mock_open)
+
+    mocked_hm.load = mock.Mock()
+    mocked_hm.dump = mock.Mock()
+
+    with mock.patch('os.path.exists', return_value=exists), \
+         mock.patch('builtins.open', open_mock), \
+         mock.patch('twisterlib.hardwaremap.yaml.dump', dump_mock):
+        mocked_hm.save(filename, detected=mocked_hm.duts[:5])
+
+    return dump_mock.call_args.args[0]
+
+def test_hardwaremap_save_omits_serial_when_none(mocked_hm):
+    """
+    Verify 'serial' key is omitted when from the generated hardware map
+    when it is unknown. 'serial' is not required.
+    """
+    # Force one detected device to have no serial
+    mocked_hm.duts = list(mocked_hm.duts)
+    mocked_hm.duts[1].serial = None  # id=2 in mocked_hm fixture
+
+    dumped = _run_save_and_get_dump(mocked_hm, exists=False, filename='hwm.yaml')
+
+    entry = next(d for d in dumped if d['id'] == 2)
+    assert 'serial' not in entry
+
+    # And ensure nobody writes serial=None
+    assert all(d.get('serial') is not None for d in dumped if 'serial' in d)
+
+def test_hardwaremap_save_existing_map_disconnect_omits_serial(mocked_hm):
+    """
+    If the hardware map contained a 'serial' value, then the next time a
+    hardmap is generated and the device is disconnected, and the serial value
+    is unknown, then the new file should not contain the 'serial'.
+    """
+    mocked_hm.duts = []  # simulate unplugged
+
+    hwm = """
+- id: 4
+  platform: p4
+  product: pr4
+  runner: r4
+  connected: True
+  serial: s4
+"""
+
+    dumped = _run_save_and_get_dump(
+        mocked_hm,
+        exists=True,
+        filename='hwmap1.yaml',
+        read_data=hwm,
+    )
+
+    entry = next(d for d in dumped if d['id'] == 4)
+    assert entry['connected'] is False
+    assert 'serial' not in entry
+
+    # And ensure nobody writes serial=None
+    assert all(d.get('serial') is not None for d in dumped if 'serial' in d)
+
+
+TESTDATA_10 = [
+    (
+        'dummy_platform',
+        'dummy fixture',
+        [
+            mock.Mock(
+                fixtures=[],
+                platform='dummy_platform',
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='another_platform',
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=None,
+                serial=None,
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=mock.Mock(),
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=mock.Mock(),
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            )
+        ],
+        3
+    ),
+    (
+        'dummy_platform',
+        'dummy fixture',
+        [
+            mock.Mock(
+                fixtures=[],
+                platform='dummy_platform',
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='another_platform',
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=None,
+                serial=None,
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=mock.Mock(),
+                available=1,
+                failures=1,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=mock.Mock(),
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            )
+        ],
+        4
+    ),
+    (
+        'dummy_platform',
+        'dummy fixture',
+        [],
+        TwisterException
+    ),
+    (
+        'dummy_platform',
+        'dummy fixture',
+        [
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=mock.Mock(),
+                counter_increment=mock.Mock(),
+                failures=0,
+                available=0
+            ),
+            mock.Mock(
+                fixtures=['another fixture'],
+                platform='dummy_platform',
+                serial_pty=mock.Mock(),
+                counter_increment=mock.Mock(),
+                failures=0,
+                available=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial=mock.Mock(),
+                counter_increment=mock.Mock(),
+                failures=0,
+                available=0
+            ),
+            mock.Mock(
+                fixtures=['another fixture'],
+                platform='dummy_platform',
+                serial=mock.Mock(),
+                counter_increment=mock.Mock(),
+                failures=0,
+                available=0
+            )
+        ],
+        NoDeviceAvailableException
+    )
+]
+
+@pytest.mark.parametrize(
+    'platform_name, fixture, duts, expected',
+    TESTDATA_10,
+    ids=['two good duts, select the first one',
+         'two duts, the first was failed once, select the second not failed',
+         'exception - no duts', 'no available duts']
+)
+def test_hardwaremap_reserve_dut(
+    platform_name,
+    fixture,
+    duts,
+    expected
+):
+    hm = HardwareMap(env=mock.Mock())
+    hm.duts = duts
+
+    if isinstance(expected, int):
+        device = hm.reserve_dut(platform_name, fixture)
+
+        assert device == duts[expected]
+        assert device.available == 0
+        device.counter_increment.assert_called_once()
+    elif isinstance(expected, type):
+        with pytest.raises(expected):
+            hm.reserve_dut(platform_name, fixture)
+    else:
+        pytest.fail(f"Unexpected expected value: {expected}")
+
+
+def test_hardwaremap_release_dut():
+    serial = mock.Mock(name='dummy_serial')
+    duts = [
+        mock.Mock(available=0, serial=serial, serial_pty=None),
+        mock.Mock(available=0, serial=None, serial_pty=serial),
+        mock.Mock(
+            available=0,
+            serial=mock.Mock('another_serial'),
+            serial_pty=None
+        )
+    ]
+
+    hm = HardwareMap(env=mock.Mock())
+    hm.duts = duts
+
+    hm.release_dut(duts[1])
+
+    assert len([None for d in hm.duts if d.available == 1]) == 1
+    assert hm.duts[0].available == 0
+    assert hm.duts[2].available == 0
+
+    hm.release_dut(duts[0])
+
+    assert len([None for d in hm.duts if d.available == 1]) == 2
+    assert hm.duts[2].available == 0

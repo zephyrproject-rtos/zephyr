@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Croxel, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Pin Inversion fields for UART controllers
+
+properties:
+  tx-invert:
+    type: boolean
+    description: |
+      Invert the binary logic of tx pin. When enabled, physical logic levels are inverted and
+      we use 1=Low, 0=High instead of 1=High, 0=Low.
+  rx-invert:
+    type: boolean
+    description: |
+      Invert the binary logic of rx pin. When enabled, physical logic levels are inverted and
+      we use 1=Low, 0=High instead of 1=High, 0=Low.

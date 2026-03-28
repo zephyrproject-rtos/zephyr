@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config $(module)_LOG_MESSAGE_QUEUE_SIZE
+	int "Log message queue size"
+	default $(default-size)
+	help
+	  Size of buffer for messages that can be enqueued in order to be processed
+	  by shell thread. Too small queue may lead to the logger thread being blocked
+	  (see $(module)_LOG_MESSAGE_QUEUE_TIMEOUT). Too big queue on relatively
+	  slow shell transport may lead to situations where logs are dropped
+	  because all log messages are enqueued.

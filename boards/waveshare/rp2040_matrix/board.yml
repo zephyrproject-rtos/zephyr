@@ -1,0 +1,6 @@
+board:
+  name: rp2040_matrix
+  full_name: RP2040-Matrix
+  vendor: waveshare
+  socs:
+  - name: rp2040

@@ -1,0 +1,23 @@
+identifier: nucleo_wb05kz
+name: ST Nucleo WB05KZ
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 24
+flash: 192
+supported:
+  - adc
+  - arduino_i2c
+  - arduino_spi
+  - counter
+  - dma
+  - gpio
+  - i2c
+  - pwm
+  - rtc
+  - spi
+  - watchdog
+  - bluetooth
+vendor: st

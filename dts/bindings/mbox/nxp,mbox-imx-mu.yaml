@@ -1,0 +1,29 @@
+description: |
+  NXP i.MX Message Unit as Zephyr MBOX
+
+compatible: "nxp,mbox-imx-mu"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  rx-channels:
+    type: int
+    enum: [1, 2, 3, 4]
+    description: |
+      Number of receive channels enabled on this instance.
+      Setting this value to N, will enable channels 0 to N-1, consecutively.
+      It should be set by the receiver core coupled with this MU instance.
+
+      For example, if receiver A wants to Rx on channels 0 to 3, then A must
+      set rx-channels of muA as follows:
+
+        mruA {
+          rx-channels = <4>;
+          status = "okay";
+        };
+
+mbox-cells:
+  - channel

@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Eve Redero
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_APEX_PRO_MINI
+	select SOC_STM32L412XX

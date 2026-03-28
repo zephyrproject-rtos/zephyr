@@ -1,0 +1,4 @@
+series:
+- name: bcm2711
+  socs:
+  - name: bcm2711

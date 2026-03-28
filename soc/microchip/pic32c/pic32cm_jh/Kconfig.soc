@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_MICROCHIP_PIC32CM_JH
+	bool
+
+config SOC_FAMILY
+	default "microchip_pic32cm_jh" if SOC_FAMILY_MICROCHIP_PIC32CM_JH
+
+# List of Peripheral IPs available in SOC_FAMILY_MICROCHIP_PIC32CM_JH family
+if SOC_FAMILY_MICROCHIP_PIC32CM_JH
+
+config GPIO_MCHP_PORT_U2210_3_1_0
+	bool
+	default y
+	help
+	  Enable PORT GPIO peripheral IP version id="U2210" version="3.1.0".
+
+config PINCTRL_MCHP_PORT_U2210_3_1_0
+	bool
+	default y
+	help
+	  Enable PORT pinctrl peripheral IP version 3.1.0 (U2210).
+
+endif # SOC_FAMILY_MICROCHIP_PIC32CM_JH
+
+rsource "*/Kconfig.soc"

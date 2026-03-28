@@ -1,0 +1,25 @@
+description: Silabs SiWx91x GPIO Port
+
+compatible: "silabs,siwx91x-gpio-port"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+
+  reg:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+  silabs,pads:
+    type: uint8-array
+    required: true
+    description: |
+      Contains the map of what pad number is used for each GPIO.
+      0xFF if a GPIO has no pad.
+      0 if the pad is directly configured using port and pin number.
+
+gpio-cells:
+  - pin
+  - flags

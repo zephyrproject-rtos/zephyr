@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <st/f0/stm32f070.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(16)>;
+	};
+
+	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				erase-block-size = <2048>;
+				reg = <0x08000000 DT_SIZE_K(128)>;
+			};
+		};
+
+		/*
+		 * USARTs 3-4 share the same IRQ on stm32f070Xb devices. This
+		 * configuration is not currently supported, so at most one of
+		 * these may be enabled at a time. Enabling more than one will
+		 * result in a build failure.
+		 */
+		usart3: serial@40004800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004800 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 18)>;
+			resets = <&rctl STM32_RESET(APB1, 18)>;
+			interrupts = <29 0>;
+			status = "disabled";
+		};
+
+		usart4: serial@40004c00 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 19)>;
+			resets = <&rctl STM32_RESET(APB1, 19)>;
+			interrupts = <29 0>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@40005800 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40005800 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
+			interrupts = <24 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			interrupts = <26 3>;
+			st,spi-data-width = "full-4-to-16-bit";
+			status = "disabled";
+		};
+
+		timers6: timers@40001000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 4)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1, 4)>;
+			interrupts = <17 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+		};
+
+		timers7: timers@40001400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 5)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1, 5)>;
+			interrupts = <18 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+		};
+	};
+
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
+		status = "disabled";
+	};
+};

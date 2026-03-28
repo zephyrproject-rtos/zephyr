@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Configure pin control bias mode for uart pins */
+&p0_1_scb0_uart_tx {
+	drive-push-pull;
+};
+
+&p0_0_scb0_uart_rx {
+	input-enable;
+};
+
+&p0_2_scb0_uart_rts {
+	drive-push-pull;
+};
+
+&p0_3_scb0_uart_cts {
+	input-enable;
+};

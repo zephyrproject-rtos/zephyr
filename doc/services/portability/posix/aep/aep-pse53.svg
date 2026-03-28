@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg version="1.1" width="225.805" height="225.805" viewBox="-112.9025 -112.9025 225.805 225.805" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="0" fill="#786bb0" r="100"/>
+  <circle cx="25" fill="#e6e5e3" opacity="0.5" r="75"/>
+  <circle cx="50" fill="#e6e5e3" opacity="0.5" r="50"/>
+  <circle cx="75" fill="#e6e5e3" opacity="0.5" r="25"/>
+  /* TODO: Change color based on dark / light modes */
+  <g font-family="Arial" font-size="10" text-anchor="middle">
+    <text y="8">
+      <tspan x="75" dy="-1.2em">System</tspan>
+      <tspan x="75" dy="1.2em">Interfaces</tspan>
+    </text>
+    <text x="25">PSE51</text>
+    <text x="-25">PSE52</text>
+    <text x="-75">PSE53</text>
+  </g>
+</svg>

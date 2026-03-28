@@ -1,0 +1,22 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_S32_EMIOS
+	bool "NXP S32 eMIOS drivers"
+	depends on DT_HAS_NXP_S32_EMIOS_ENABLED
+	help
+	  Enable drivers for NXP S32 EMIOS
+
+if NXP_S32_EMIOS
+
+module = NXP_S32_EMIOS
+module-str = NXP S32 eMIOS
+source "subsys/logging/Kconfig.template.log_config"
+
+config NXP_S32_EMIOS_INIT_PRIORITY
+	int "NXP S32 eMIOS initialization priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  System initialization priority for NXP S32 eMIOS drivers.
+
+endif

@@ -1,0 +1,16 @@
+identifier: rcar_salvator_x/r8a77951/r7
+name: Cortex r7 for Renesas H3 Salvator-X
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - i2c
+  - gpio
+  - clock_control
+  - uart
+testing:
+  ignore_tags:
+    - isotp
+vendor: renesas

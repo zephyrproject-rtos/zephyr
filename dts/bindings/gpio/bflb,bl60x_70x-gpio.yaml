@@ -1,0 +1,25 @@
+# Copyright (c) 2021-2025 Gerson Fernando Budke <nandojve@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bouffalo Lab BL60x and BL70x GPIO node
+
+compatible: "bflb,bl60x_70x-gpio"
+
+include:
+  - name: base.yaml
+  - name: gpio-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

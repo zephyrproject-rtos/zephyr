@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_MSPM0
+	bool "TI MSPM0 hwinfo"
+	default y
+	depends on SOC_FAMILY_TI_MSPM0
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable TI MSPM0 hwinfo driver

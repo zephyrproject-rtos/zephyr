@@ -1,0 +1,5 @@
+tests:
+  test_c.check_1:
+    tags: test_c
+  test_c.check_2:
+    tags: test_c

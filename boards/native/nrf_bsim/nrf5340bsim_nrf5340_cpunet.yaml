@@ -1,0 +1,16 @@
+identifier: nrf5340bsim/nrf5340/cpunet
+name: NRF53 Net Core BabbleSim board
+type: native
+arch: posix
+simulation:
+  - name: native
+env:
+  - BSIM_OUT_PATH
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - modem
+    - bsim_skip_CI
+supported:
+  - gpio

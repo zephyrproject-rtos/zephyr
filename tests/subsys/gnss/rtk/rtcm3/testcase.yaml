@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  gnss.rtk.decoder.rtcm3:
+    tags: rtk
+    platform_allow:
+      - native_sim

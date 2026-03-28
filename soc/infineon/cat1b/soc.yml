@@ -1,0 +1,57 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: cat1b
+  series:
+  - name: cyw20829
+    socs:
+    - name: cyw20829b0lkml
+    - name: cyw89829b0232
+    - name: cyw20829b0000
+    - name: cyw20829b0010
+    - name: cyw20829b1240
+    - name: cyw20829b1340
+    - name: cyw89829b0062
+    - name: cyw89829b1062
+    - name: cyw20829b1000
+    - name: cyw20829b1010
+    - name: cyw89829b1232
+  - name: psc3
+    socs:
+    - name: psc3m5fds2afq1
+    - name: psc3m5fds2lgq1
+    - name: psc3m5fds2acq1
+    - name: psc3m5fds2lhq1
+    - name: psc3m5fds2abq1
+    - name: psc3m5edafq1
+    - name: psc3m5edlgq1
+    - name: psc3m5edacq1
+    - name: psc3m5edlhq1
+    - name: psc3m5edabq1
+    - name: psc3p5edlgq1
+    - name: psc3p5fds2lgq1
+    - name: psc3p5edacq1
+    - name: psc3p5fds2acq1
+    - name: psc3p5edlhq1
+    - name: psc3p5fds2lhq1
+    - name: psc3p5edabq1
+    - name: psc3p5fds2abq1
+    - name: psc3p2edlgq1
+    - name: psc3p2fds2lgq1
+    - name: psc3m3edlgq1
+    - name: psc3m3fds2lgq1
+    - name: psc3p2edacq1
+    - name: psc3p2fds2acq1
+    - name: psc3m3edacq1
+    - name: psc3m3fds2acq1
+    - name: psc3p2edlhq1
+    - name: psc3p2fds2lhq1
+    - name: psc3m3edlhq1
+    - name: psc3m3fds2lhq1
+    - name: psc3p2edabq1
+    - name: psc3p2fds2abq1
+    - name: psc3m3edabq1
+    - name: psc3m3fds2abq1

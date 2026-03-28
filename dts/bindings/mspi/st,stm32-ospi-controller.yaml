@@ -1,0 +1,138 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 OSPI controller
+
+compatible: "st,stm32-ospi-controller"
+
+include: [base.yaml, pinctrl-device.yaml, mspi-controller.yaml]
+
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clock-names:
+    required: true
+
+  clocks:
+    required: true
+
+  dmas:
+    description: |
+      Optional DMA channel specifier, required for DMA transactions.
+
+      For example dmas for TX/RX on MSPI
+         dmas = <&dma1 5 41 0x10000>;
+
+  dma-names:
+    description: DMA channel name.
+    enum:
+      - "tx_rx"
+
+  st,dlyb-bypass:
+    type: boolean
+    description: |
+      Enables Delay Block (DLYB) Bypass.
+
+  st,ssht-enable:
+    type: boolean
+    description: |
+      Enables Sample Shifting half-cycle.
+
+      It is recommended to be enabled in STR mode and disabled in DTR mode.
+
+  st,io-low-port:
+    type: string
+    enum:
+      - "IOPORT_NONE"
+      - "IOPORT_1_LOW"
+      - "IOPORT_1_HIGH"
+      - "IOPORT_2_LOW"
+      - "IOPORT_2_HIGH"
+    description: |
+      Specifies which port of the OCTOSPI IO Manager is used for the IO[3:0] pins.
+
+      If absent, then `IOPORT_<n>_LOW` is used where `n` is the OSPI
+      instance number.
+
+      Note: You might need to enable the OCTOSPI I/O manager clock to use the
+            property. Please refer to Reference Manual.
+            The clock can be enabled in the devicetree.
+
+  st,io-high-port:
+    type: string
+    enum:
+      - "IOPORT_NONE"
+      - "IOPORT_1_LOW"
+      - "IOPORT_1_HIGH"
+      - "IOPORT_2_LOW"
+      - "IOPORT_2_HIGH"
+    description: |
+      Specifies which port of the OCTOSPI IO Manager is used for the IO[7:4] pins.
+
+      If absent, then `IOPORT_<n>_HIGH` is used where `n` is the OSPI
+      instance number.
+
+      Can be set to `IOPORT_NONE` for Single SPI, Dual SPI and Quad SPI.
+
+      Note: You might need to enable the OCTOSPI I/O manager clock to use the
+            property. Please refer to Reference Manual.
+            The clock can be enabled in the devicetree.
+
+  st,clk-port:
+    type: int
+    enum:
+      - 1
+      - 2
+    description: |
+      Specifies which port of the OCTOSPI IO Manager is used for the clk pin.
+
+      If absent, then n is used where `n` is the OSPI
+      instance number.
+
+      Note: You might need to enable the OCTOSPI I/O manager clock to use the
+            property. Please refer to Reference Manual.
+            The clock can be enabled in the devicetree.
+
+  st,dqs-port:
+    type: int
+    enum:
+      - 1
+      - 2
+    description: |
+      Specifies which port of the OCTOSPI IO Manager is used for the dqs pin.
+
+      If absent, then n is used where `n` is the OSPI
+      instance number.
+
+      Note: You might need to enable the OCTOSPI I/O manager clock to use the
+            property. Please refer to Reference Manual.
+            The clock can be enabled in the devicetree.
+
+  st,ncs-port:
+    type: int
+    enum:
+      - 1
+      - 2
+    description: |
+      Specifies which port of the OCTOSPI IO Manager is used for the ncs pin.
+
+      If absent, then n is used where `n` is the OSPI
+      instance number.
+
+      Note: You might need to enable the OCTOSPI I/O manager clock to use the
+            property. Please refer to Reference Manual.
+            The clock can be enabled in the devicetree.
+
+  clock-frequency:
+    required: true

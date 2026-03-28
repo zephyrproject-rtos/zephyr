@@ -1,0 +1,18 @@
+# Copyright (c) 2024, EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas R-Car HSCIF controller
+
+compatible: "renesas,rcar-hscif"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  current-speed:
+    required: true

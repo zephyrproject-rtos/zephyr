@@ -1,0 +1,17 @@
+# Copyright (c) 2020 Rohit Gujarathi
+# SPDX-License-Identifier: Apache-2.0
+
+config LS0XX
+	bool "LS0XX memory display controller driver"
+	default y
+	depends on DT_HAS_SHARP_LS0XX_ENABLED
+	select SPI
+	help
+	  Enable driver for sharp memory display series LS0XXX7DXXX
+
+config LS0XX_VCOM_THREAD_PRIO
+	int "Priority for the VCOM inversion thread"
+	default 3
+	depends on LS0XX
+	help
+	  Set the VCOM inversion thread priority

@@ -1,0 +1,42 @@
+# Copyright (c) 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INPUT_TMA525B
+	bool "TMA525B capacitive touch controller"
+	default y
+	depends on DT_HAS_PARADE_TMA525B_ENABLED
+	select I2C
+	select INPUT_TOUCH
+	help
+	  Enable support for Parade Tech TMA525B capacitive touch controller.
+
+if INPUT_TMA525B
+
+config INPUT_TMA525B_INTERRUPT
+	bool "Interrupt mode"
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_PARADE_TMA525B),int-gpios)
+	help
+	  Enable interrupt mode for TMA525B touch controller. If disabled,
+	  the driver will use polling mode.
+
+config INPUT_TMA525B_PERIOD_MS
+	int "Polling period (ms)"
+	default 10
+	depends on !INPUT_TMA525B_INTERRUPT
+	help
+	  Polling period in milliseconds when the controller is in polling mode.
+
+config INPUT_TMA525B_MAX_TOUCH_POINTS
+	int "Maximum number of touch points"
+	default 1
+	range 1 4
+	help
+	  Maximum number of touch points supported by the controller.
+
+config INPUT_TMA525B_RETRY_TIMES
+	int "Retry times for controller to enter application mode"
+	default 10
+	help
+	  Retry times for controller to enter application mode after power up.
+
+endif # INPUT_TMA525B

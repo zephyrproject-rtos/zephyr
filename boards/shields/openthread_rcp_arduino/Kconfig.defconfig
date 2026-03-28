@@ -1,0 +1,19 @@
+# Copyright 2025 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_OPENTHREAD_RCP_ARDUINO_SERIAL || SHIELD_OPENTHREAD_RCP_ARDUINO_SPI
+
+if OPENTHREAD
+
+config SERIAL
+	default y if SHIELD_OPENTHREAD_RCP_ARDUINO_SERIAL
+
+config SPI
+	default y if SHIELD_OPENTHREAD_RCP_ARDUINO_SPI
+
+config HDLC_RCP_IF
+	default y
+
+endif # OPENTHREAD
+
+endif

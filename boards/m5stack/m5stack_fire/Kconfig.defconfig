@@ -1,0 +1,29 @@
+# M5Stack Core2 board configuration
+# Copyright (c) 2022 AVSystem Sławomir Wolf Sp.j. (AVSystem)
+# Copyright (c) 2023 Martin Kiepfer <m.kiepfer@teleschirm.org>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_M5STACK_FIRE_ESP32_PROCPU
+
+config KERNEL_MEM_POOL
+	default y
+
+config GPIO_HOGS_INIT_PRIORITY
+	default 70
+
+config INPUT
+	default y
+
+configdefault LV_COLOR_16_SWAP
+	default y if LVGL
+
+# Increase initialization priority of MIPI DBI device, so that it initializes
+# after the GPIO controller
+if MIPI_DBI
+
+config MIPI_DBI_INIT_PRIORITY
+	default 82
+
+endif # MIPI_DBI
+
+endif # BOARD_M5STACK_FIRE_ESP32_PROCPU

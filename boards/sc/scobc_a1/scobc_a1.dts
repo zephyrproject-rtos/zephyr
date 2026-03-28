@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2021 Space Cubics, LLC. <yashi@spacecubics.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/armv7-m.dtsi>
+#include <mem.h>
+
+/ {
+	model = "SC-OBC Module A1";
+
+	chosen {
+		zephyr,console = &uartlite0;
+		zephyr,shell-uart = &uartlite0;
+		zephyr,sram = &hrmem;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m3";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	soc {
+		hrmem: memory@0 {
+			compatible = "sc,hrmem";
+			reg = <0x00000000 DT_SIZE_M(4)>;
+		};
+
+		uartlite0: uartlite@4f010000 {
+			compatible = "xlnx,xps-uartlite-1.00.a";
+			interrupts = <0 0>;
+			reg = <0x4f010000 0x10000>;
+		};
+
+		sysreg: sysreg@4f000000 {
+			compatible = "sc,sysreg";
+			reg = <0x4f000000 0x10000>;
+		};
+
+		sysmon: sysmon@4f040000 {
+			compatible = "sc,sysmon";
+			reg = <0x4f040000 0x1000>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

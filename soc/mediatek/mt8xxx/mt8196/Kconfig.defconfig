@@ -1,0 +1,15 @@
+# Copyright 2024 The ChromiumOS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MT8196
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 2
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 1
+
+config 2ND_LVL_INTR_01_OFFSET
+	default 2
+
+endif

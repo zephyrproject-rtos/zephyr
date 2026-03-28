@@ -1,0 +1,21 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq I2C
+
+compatible: "ambiq,i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  scl-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the I2C SCL signal is routed. This is only needed for I2C bus recovery
+      support.
+
+  sda-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the I2C SDA signal is routed. This is only needed for I2C bus recovery
+      support.

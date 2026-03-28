@@ -1,0 +1,20 @@
+# Copyright 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DBI_BFLB
+	bool "Bouffalolab MIPI DBI driver"
+	default y
+	depends on DT_HAS_BFLB_DBI_ENABLED
+	select DMA
+	help
+	  Enable support for the Bouffalolab DBI controller
+
+if MIPI_DBI_BFLB
+
+config MIPI_DBI_BFLB_ASSUME_HOLD_ON_CS
+	bool "Default to HOLD_ON_CS mode"
+	default y
+	help
+	  Pretend SPI_HOLD_ON_CS was passed by the display driver, as this is the expectation.
+
+endif # MIPI_DBI_BFLB

@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Silicon Labs
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_SILABS_DBUS
+	bool "Silabs DBUS pin controller driver"
+	default y
+	depends on DT_HAS_SILABS_DBUS_PINCTRL_ENABLED
+	help
+	  Silabs DBUS pin controller driver. This driver is used by series
+	  using the DBUS (Digital Bus) for pin multiplexing.

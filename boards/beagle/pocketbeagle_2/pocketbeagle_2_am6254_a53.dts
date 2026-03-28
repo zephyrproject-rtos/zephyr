@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2025 Ayush Singh, BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/ti_am6254_a53.dtsi>
+#include "pocketbeagle_2_am62_a53-common.dtsi"
+
+/ {
+	cpus {
+		cpu@0 {
+			status = "okay";
+		};
+
+		cpu@1 {
+			status = "okay";
+		};
+
+		cpu@2 {
+			status = "okay";
+		};
+
+		cpu@3 {
+			status = "okay";
+		};
+	};
+};

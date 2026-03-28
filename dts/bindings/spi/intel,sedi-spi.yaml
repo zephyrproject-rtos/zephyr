@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2023 Intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Intel SEDI SPI controller
+
+compatible: "intel,sedi-spi"
+
+include: spi-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  peripheral-id:
+    type: int
+    description: Peripheral Instance ID
+    required: true

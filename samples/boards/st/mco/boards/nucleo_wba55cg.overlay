@@ -1,0 +1,30 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 STMicroelectronics
+ */
+
+/* The clock that is output must be enabled. */
+&clk_lse {
+	status = "okay";
+};
+
+/ {
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+	};
+};
+
+&usart1 {
+	/* Do not use the console RX pin : dedicated to the MCO */
+	pinctrl-0 = <&usart1_tx_pb12 &analog_pa8>;
+};
+
+&mco1 {
+	status = "okay";
+	clocks = <&rcc STM32_SRC_LSE MCO1_SEL(MCO_SEL_LSE)>;
+	prescaler = <MCO1_PRE(MCO_PRE_DIV_2)>;
+	pinctrl-0 = <&rcc_mco_pa8>;
+	pinctrl-names = "default";
+};

@@ -1,0 +1,5 @@
+# Copyright (c) 2020 Ruuvi Innovations Ltd (Oy)
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RUUVI_RUUVITAG
+	select SOC_NRF52832_QFAA

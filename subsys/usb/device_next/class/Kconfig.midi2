@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Titouan Christophe
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config USBD_MIDI2_CLASS
+	bool "USB MIDI 2.0 class support [EXPERIMENTAL]"
+	select RING_BUFFER
+	help
+	  Enable the USB MIDI 2.0 device class support.
+
+if USBD_MIDI2_CLASS
+
+module = USBD_MIDI2
+module-str = usbd midi2
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

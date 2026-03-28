@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025 Framework Computer Inc
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+
+&pinctrl {
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <RP2XXX_PINMUX(26, RP2_PINCTRL_GPIO_FUNC_I2C)>,
+				 <RP2XXX_PINMUX(27, RP2_PINCTRL_GPIO_FUNC_I2C)>;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+};

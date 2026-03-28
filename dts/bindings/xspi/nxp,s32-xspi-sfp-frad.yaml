@@ -1,0 +1,30 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 eXpanded Serial Peripheral Interface (XSPI) Secure Flash Protection SFP FRAD.
+
+  The SFP FRAD performs second-level checks on input flash write and erase transactions,
+  based on the address range of each transaction.
+
+compatible: "nxp,s32-xspi-sfp-frad"
+
+child-binding:
+
+  properties:
+    reg:
+      type: array
+      required: true
+
+    master-domain-acp-policy:
+      type: int
+      required: true
+      description: |
+        Selects the master domain access control policy, defined in dt-bindings/xspi/nxp-s32-xspi.h:
+        - NXP_S32_XSPI_NON_SECURE: Selects the non-secure access control policy.
+        - NXP_S32_XSPI_SECURE: Selects the secure access control policy.
+        - NXP_S32_XSPI_PRIVILEGE: Selects the privilege access control policy.
+        Allowed combinations:
+        - NXP_S32_XSPI_SECURE
+        - NXP_S32_XSPI_SECURE | NXP_S32_XSPI_PRIVILEGE
+        - NXP_S32_XSPI_NON_SECURE | NXP_S32_XSPI_PRIVILEGE
+        - NXP_S32_XSPI_NON_SECURE | NXP_S32_XSPI_SECURE | NXP_S32_XSPI_PRIVILEGE

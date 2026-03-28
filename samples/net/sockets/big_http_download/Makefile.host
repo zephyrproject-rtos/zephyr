@@ -1,0 +1,6 @@
+# This makefile builds the sample for a POSIX system, like Linux
+# It required mbedTLS to be installed on the system, e.g.
+# libmbedtls-dev package on Debian/Ubuntu Linux.
+
+big_http_download: src/big_http_download.c
+	$(CC) $^ -lmbedcrypto -o $@

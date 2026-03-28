@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_NPCM
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_NPCM

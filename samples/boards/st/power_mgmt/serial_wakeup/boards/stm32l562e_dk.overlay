@@ -1,0 +1,53 @@
+/ {
+	chosen {
+		/* Comment out these lines to use usart1 as console/shell */
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+	};
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hsi {
+	/* Comment out this line to use HSI as clk source */
+	status = "disabled";
+};
+
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_rx_pb10 &lpuart1_tx_pb11>;
+	pinctrl-1 = <&analog_pb10 &analog_pb11>;
+	pinctrl-names = "default", "sleep";
+
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000001>,
+		 <&rcc STM32_SRC_LSE LPUART1_SEL(3)>;
+
+	current-speed = <9600>;
+
+	wakeup-source;
+
+	/* Enable FIFO to avoid losing chars on device wakeup */
+	fifo-enable;
+
+	status = "okay";
+};
+
+&usart1 {
+	pinctrl-1 = <&analog_pa9 &analog_pa10>;
+	pinctrl-names = "default", "sleep";
+
+	/* Uncomment out this line to use usart1 as wakeup source */
+	/* wakeup-source; */
+
+	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>,
+		 <&rcc STM32_SRC_HSI USART1_SEL(2)>;
+
+	status = "okay";
+};
+
+&usart3 {
+	status = "okay";
+	pinctrl-1 = <&analog_pc10 &analog_pc11>;
+	pinctrl-names = "default", "sleep";
+};

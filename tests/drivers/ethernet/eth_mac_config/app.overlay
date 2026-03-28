@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2025 Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	eth_mac_local: eth-mac-local {
+		compatible = "vnd,ethernet";
+		local-mac-address = [00 01 02 03 04 05];
+	};
+
+	eth_mac_random: eth-mac-random {
+		compatible = "vnd,ethernet";
+		/* local-mac-address is ignored if random is enabled */
+		local-mac-address = [00 01 02 03 04 05];
+		zephyr,random-mac-address;
+	};
+
+	eth_mac_random_prefix: eth-mac-random-prefix {
+		compatible = "vnd,ethernet";
+		zephyr,mac-address-prefix = [00 22 44];
+		zephyr,random-mac-address;
+	};
+
+	eth_mac_nvmem: eth-mac-nvmem {
+		compatible = "vnd,ethernet";
+		nvmem-cells = <&cell0>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	eth_mac_nvmem_prefix: eth-mac-nvmem-prefix {
+		compatible = "vnd,ethernet";
+		zephyr,mac-address-prefix = [00 33 66];
+		nvmem-cells = <&cell6>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	eth_mac_none: eth-mac-none {
+		compatible = "vnd,ethernet";
+	};
+};
+
+&eeprom0 {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cell0: cell@0 {
+			reg = <0x0 0x6>;
+			#nvmem-cell-cells = <0>;
+		};
+
+		cell6: cell@6 {
+			reg = <0x6 0x3>;
+			#nvmem-cell-cells = <0>;
+		};
+	};
+};

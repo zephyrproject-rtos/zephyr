@@ -1,0 +1,23 @@
+identifier: xg27_rb4194a
+name: EFR32xG27 2.4 GHz 8 dBm (xG27-RB4194A, BRD4194A)
+type: mcu
+arch: arm
+ram: 64
+flash: 768
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - bluetooth
+  - comparator
+  - counter
+  - dma
+  - entropy
+  - gpio
+  - flash
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: silabs

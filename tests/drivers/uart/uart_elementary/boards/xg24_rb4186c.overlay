@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025, Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Need to connect PC1 and PC2 of the Expension Pin header
+ */
+
+dut: &eusart1 {
+	compatible = "silabs,eusart-uart";
+	pinctrl-0 = <&eusart1_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+	/delete-property/ cs-gpios;
+};

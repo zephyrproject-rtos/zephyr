@@ -1,0 +1,39 @@
+# CC3220/CC32XX SDK HAL configuration
+
+config HAS_CC3220SDK
+	bool
+
+# Notes:
+# Selecting ERRNO lets host driver use Zephyr's __errno
+# Selecting POSIX_SEMAPHORES, POSIX_THREADS, POSIX_TIMERS, and POSIX_SYSTEM_INTERFACES which are
+# needed to build the host driver
+config SIMPLELINK_HOST_DRIVER
+	bool "Build the SimpleLink WiFi Host Driver"
+	depends on HAS_CC3220SDK
+	depends on MULTITHREADING
+	select ERRNO
+	select POSIX_SYSTEM_INTERFACES
+	select POSIX_SEMAPHORES
+	select POSIX_THREADS
+	select POSIX_TIMERS
+	help
+	  Build the SimpleLink host driver
+
+# MSP432 SDK HAL configuration
+
+config HAS_MSP432P4XXSDK
+	bool
+	select HAS_CMSIS_CORE
+
+# CC13X2 / CC26X2 SDK HAL configuration
+
+config HAS_CC13X2_CC26X2_SDK
+	bool
+
+config HAS_CC13X2X7_CC26X2X7_SDK
+	bool
+
+# CC23X0 SDK HAL configuration
+
+config HAS_CC23X0_SDK
+	bool

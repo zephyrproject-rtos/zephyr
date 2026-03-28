@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A generic blocking target device used for testing async RTIO APIs
+
+compatible: "zephyr,blocking-emul"
+
+include: i2c-device.yaml

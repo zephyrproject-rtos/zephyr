@@ -1,0 +1,18 @@
+# Copyright (c) 2023 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig TEE
+	bool "Trusted Environment Drivers"
+	help
+	  Include TEE drivers in system config
+
+if TEE
+
+module = TEE
+module-str = tee
+
+comment "Device Drivers"
+
+source "drivers/tee/optee/Kconfig"
+
+endif # TEE

@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,ieee802154 = &ieee802154_atmel_rf2xx_mikrobus;
+	};
+};
+
+&mikrobus_spi {
+	status = "okay";
+
+	/* CS */
+	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+
+	ieee802154_atmel_rf2xx_mikrobus: rf2xx@0 {
+		compatible = "atmel,rf2xx";
+		reg = <0x0>;
+		spi-max-frequency = <6000000>;
+		/* INT */
+		irq-gpios = <&mikrobus_header 7
+			     (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		/*  AN */
+		reset-gpios = <&mikrobus_header 0 GPIO_ACTIVE_LOW>;
+		/* PWM */
+		slptr-gpios = <&mikrobus_header 6 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};

@@ -1,0 +1,34 @@
+# Configuration options for NXP HDLC RCP SPI communication Interface
+
+# Copyright (c) 2025 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config HDLC_RCP_IF_SPI
+	bool "SPI HDLC interface for Zephyr Openthread RCP host"
+	default y
+	depends on DT_HAS_SPI_HDLC_RCP_IF_ENABLED
+	depends on SPI
+
+if HDLC_RCP_IF_SPI
+
+config HDLC_RCP_IF_SPI_MAX_FRAME_SIZE
+	int "HDLC RCP IF SPI maximum frame size"
+	default 2048
+	help
+	  Maximum frame size for the OpenThread HDLC host SPI.
+
+config HDLC_RCP_IF_SPI_ALIGN_ALLOWANCE
+	int "HDLC RCP IF SPI RX align allowance"
+	default 0
+	range 0 16
+	help
+	  Specify the maximum number of 0xFF bytes to clip from the start of MISO frames.
+
+config HDLC_RCP_IF_SPI_SMALL_PACKET_SIZE
+	int "HDLC RCP IF SPI small packet size"
+	default 32
+	help
+	  Specify the smallest packet we can receive in a single transaction.
+	  Larger packets will require multiple transactions.
+
+endif

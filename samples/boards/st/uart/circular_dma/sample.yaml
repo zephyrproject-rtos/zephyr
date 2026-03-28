@@ -1,0 +1,11 @@
+sample:
+  name: UART driver sample
+tests:
+  sample.boards.stm32.uart.circular_dma:
+    integration_platforms:
+      - nucleo_g071rb
+    tags:
+      - serial
+      - uart
+    filter: dt_chosen_enabled("zephyr,shell-uart") and CONFIG_SOC_FAMILY_STM32
+    harness: keyboard

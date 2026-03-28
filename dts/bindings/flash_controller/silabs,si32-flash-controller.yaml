@@ -1,0 +1,9 @@
+# Copyright (c) 2024 GARDENA GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "silabs,si32-flash-controller"
+
+description: Silabs Si32 flash controller
+
+include: flash-controller.yaml

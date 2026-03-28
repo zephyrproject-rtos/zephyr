@@ -1,0 +1,376 @@
+# Copyright (c) 2020 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Documentation Build
+
+on:
+  push:
+    branches:
+    - main
+    tags:
+    - v*
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  DOXYGEN_VERSION: 1.15.0
+  DOXYGEN_SHA256SUM: 0ec2e5b2c3cd82b7106d19cb42d8466450730b8cb7a9e85af712be38bf4523a1
+  JOB_COUNT: 8
+
+jobs:
+  doc-file-check:
+    name: Check for doc changes
+    runs-on: ubuntu-24.04
+    outputs:
+      file_check: ${{ steps.check-doc-files.outputs.any_modified }}
+    steps:
+    - name: checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+    - name: Check if Documentation related files changed
+      uses: tj-actions/changed-files@e0021407031f5be11a464abee9a0776171c79891 # v47.0.1
+      id: check-doc-files
+      with:
+        files: |
+          doc/
+          boards/**/doc/
+          **.rst
+          include/
+          kernel/include/kernel_arch_interface.h
+          lib/libc/**
+          subsys/testsuite/ztest/include/**
+          **/Kconfig*
+          west.yml
+          scripts/dts/
+          doc/requirements.txt
+          .github/workflows/doc-build.yml
+          scripts/pylib/pytest-twister-harness/src/twister_harness/device/device_adapter.py
+          scripts/pylib/pytest-twister-harness/src/twister_harness/helpers/shell.py
+
+  doc-build-html:
+    name: "Documentation Build (HTML)"
+    needs: [doc-file-check]
+    if: >
+      needs.doc-file-check.outputs.file_check == 'true' || github.event_name != 'pull_request'
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.0.20260314
+      options: '--entrypoint /bin/bash'
+    timeout-minutes: 60
+    concurrency:
+      group: doc-build-html-${{ github.ref }}
+      cancel-in-progress: true
+    env:
+      BASE_REF: ${{ github.base_ref }}
+
+
+    steps:
+
+    - name: Print cloud service information
+      run: |
+        echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
+        echo "ZEPHYR_RUNNER_CLOUD_NODE = ${ZEPHYR_RUNNER_CLOUD_NODE}"
+        echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
+
+    - name: Apply container owner mismatch workaround
+      run: |
+        # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+        #        match the container user UID because of the way GitHub
+        #        Actions runner is implemented. Remove this workaround when
+        #        GitHub comes up with a fundamental fix for this problem.
+        git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+    - name: Clone cached Zephyr repository
+      continue-on-error: true
+      run: |
+        git clone --shared /repo-cache/zephyrproject/zephyr .
+        git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
+
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+
+    - name: Environment Setup
+      run: |
+        if [ "${{github.event_name}}" = "pull_request" ]; then
+          git config --global user.email "bot@zephyrproject.org"
+          git config --global user.name "Zephyr Builder"
+          rm -fr ".git/rebase-apply"
+          rm -fr ".git/rebase-merge"
+          git rebase origin/${BASE_REF}
+          git clean -f -d
+          git log  --pretty=oneline | head -n 10
+        fi
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+        west init -l . || true
+        west config --global update.narrow true
+        west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /repo-cache/zephyrproject)
+        west forall -c 'git reset --hard HEAD'
+
+        echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
+
+    - name: Install Python packages required for documentation build
+      run: |
+        pip install -r scripts/requirements-actions.txt --require-hashes
+        pip install -r doc/requirements.txt --require-hashes
+
+    - name: Build HTML documentation
+      shell: bash
+      run: |
+        if [[ "$GITHUB_REF" =~ "refs/tags/v" ]]; then
+          DOC_TAG="release"
+        else
+          DOC_TAG="development"
+        fi
+
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          DOC_TARGET="html-fast"
+        else
+          DOC_TARGET="html"
+        fi
+
+        DOC_TAG=${DOC_TAG} \
+        SPHINXOPTS="-j ${JOB_COUNT} -W --keep-going -T" \
+        SPHINXOPTS_EXTRA="-q -t publish" \
+        make -C doc ${DOC_TARGET}
+
+        # API documentation coverage
+        python3 -m coverxygen --xml-dir  doc/_build/html/doxygen/xml/ --src-dir include/ --output doc-coverage.info
+        # deprecated page causing issues
+        lcov --remove doc-coverage.info \*/deprecated > new.info
+        genhtml --no-function-coverage --no-branch-coverage new.info -o coverage-report
+
+    - name: Set up Node.js
+      uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+      with:
+        node-version: 24
+
+    - name: Run accessibility check (pa11y)
+      run: |
+        apt-get update -qq && apt-get install -y --no-install-recommends \
+          libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
+          libxkbcommon0 libxdamage1 libgbm1 libpango-1.0-0 \
+          libcairo2 libasound2t64
+
+        npm install -g pa11y-ci@4 pa11y-ci-reporter-html@7
+        npx puppeteer browsers install chrome
+
+        python3 -m http.server 8000 --directory doc/_build/html &
+        SERVER_PID=$!
+        sleep 1
+
+        cat <<EOF > .pa11y-ci.json
+        {
+          "defaults": {
+            "timeout": 240000,
+            "runners": [
+              "axe",
+              "htmlcs"
+            ],
+            "concurrency": 2,
+            "chromeLaunchConfig": {
+              "args": [
+                "--disable-dev-shm-usage",
+                "--no-sandbox"
+              ]
+            }
+          },
+          "urls": [
+            {
+              "url": "http://localhost:8000/index.html?mode=light",
+              "screenCapture": "./pa11y-ci-report/index.png"
+            },
+            {
+              "url": "http://localhost:8000/index.html?mode=dark",
+              "screenCapture": "./pa11y-ci-report/index-dark.png"
+            },
+            {
+              "url": "http://localhost:8000/boards/index.html?mode=light#name=devkit",
+              "screenCapture": "./pa11y-ci-report/boards.png"
+            },
+            {
+              "url": "http://localhost:8000/boards/index.html?mode=dark#name=devkit",
+              "screenCapture": "./pa11y-ci-report/boards-dark.png"
+            },
+            {
+              "url": "http://localhost:8000/samples/index.html?mode=light",
+              "screenCapture": "./pa11y-ci-report/samples.png"
+            },
+            {
+              "url": "http://localhost:8000/samples/index.html?mode=dark",
+              "screenCapture": "./pa11y-ci-report/samples-dark.png"
+            },
+            {
+              "url": "http://localhost:8000/develop/getting_started/index.html?mode=light",
+              "screenCapture": "./pa11y-ci-report/getting-started.png"
+            },
+            {
+              "url": "http://localhost:8000/develop/getting_started/index.html?mode=dark",
+              "screenCapture": "./pa11y-ci-report/getting-started-dark.png"
+            },
+            {
+              "url": "http://localhost:8000/contribute/documentation/guidelines.html?mode=light",
+              "screenCapture": "./pa11y-ci-report/guidelines.png"
+            },
+            {
+              "url": "http://localhost:8000/contribute/documentation/guidelines.html?mode=dark",
+              "screenCapture": "./pa11y-ci-report/guidelines-dark.png"
+            }
+          ]
+        }
+        EOF
+
+        mkdir -p pa11y-ci-report
+        pa11y-ci -c .pa11y-ci.json -T 9999 --reporter=pa11y-ci-reporter-html
+
+        kill $SERVER_PID
+
+    - name: Compress documentation build artifacts
+      run: |
+        tar --use-compress-program="xz -T0" -cf html-output.tar.xz --exclude html/_sources --exclude html/doxygen/xml --directory=doc/_build html
+        tar --use-compress-program="xz -T0" -cf api-output.tar.xz --directory=doc/_build html/doxygen/html
+        tar --use-compress-program="xz -T0" -cf api-coverage.tar.xz coverage-report
+        tar --use-compress-program="xz -T0" -cf accessibility-report.tar.xz pa11y-ci-report
+
+    - name: Upload accessibility report
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      with:
+        name: accessibility-report
+        path: accessibility-report.tar.xz
+
+    - name: Upload HTML output
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      with:
+        name: html-output
+        path: html-output.tar.xz
+
+    - name: Upload Doxygen coverage artifacts
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      with:
+        name: api-coverage
+        path: api-coverage.tar.xz
+
+
+    - name: Summarize PR documentation URLs
+      if: github.event_name == 'pull_request'
+      run: |
+        REPO_NAME="${{ github.event.repository.name }}"
+        PR_NUM="${{ github.event.pull_request.number }}"
+        DOC_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/docs/"
+        API_DOC_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/docs/doxygen/html/"
+        API_COVERAGE_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/api-coverage/"
+        A11Y_REPORT_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/accessibility-report/"
+
+        echo "${PR_NUM}" > pr_num
+        echo "Build results will be available shortly at the following URLs:" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- Documentation: ${DOC_URL}" >> $GITHUB_STEP_SUMMARY
+        echo "- API Documentation: ${API_DOC_URL}" >> $GITHUB_STEP_SUMMARY
+        echo "- API Coverage Report: ${API_COVERAGE_URL}" >> $GITHUB_STEP_SUMMARY
+        echo "- Accessibility Report: ${A11Y_REPORT_URL}" >> $GITHUB_STEP_SUMMARY
+
+
+    - name: Upload PR number
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      if: github.event_name == 'pull_request'
+      with:
+        name: pr_num
+        path: pr_num
+
+  doc-build-pdf:
+    name: "Documentation Build (PDF)"
+    needs: [doc-file-check]
+    if: |
+      github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    concurrency:
+      group: doc-build-pdf-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        path: zephyr
+
+    - name: Set up Python
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: 3.12
+        cache: pip
+        cache-dependency-path: doc/requirements.txt
+
+    - name: install-pkgs
+      run: |
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends graphviz librsvg2-bin \
+          texlive-latex-base texlive-latex-extra latexmk \
+          texlive-fonts-recommended texlive-fonts-extra texlive-xetex \
+          imagemagick fonts-noto xindy
+        wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
+        echo "${DOXYGEN_SHA256SUM}  doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz" | sha256sum -c
+        if [ $? -ne 0 ]; then
+          echo "Failed to verify doxygen tarball"
+          exit 1
+        fi
+        sudo tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz -C /opt
+        echo "/opt/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
+
+    - name: Setup Zephyr project
+      uses: zephyrproject-rtos/action-zephyr-setup@360ff9b36e58499d9eb28015cdcde7ca03a5b04d # v1.0.12
+      with:
+        app-path: zephyr
+        toolchains: 'arm-zephyr-eabi'
+        enable-ccache: false
+
+    - name: install-pip-pkgs
+      working-directory: zephyr
+      run: |
+        pip install -r doc/requirements.txt --require-hashes
+
+    - name: build-docs
+      shell: bash
+      working-directory: zephyr
+      continue-on-error: true
+      run: |
+        if [[ "$GITHUB_REF" =~ "refs/tags/v" ]]; then
+          DOC_TAG="release"
+        else
+          DOC_TAG="development"
+        fi
+
+        DOC_TAG=${DOC_TAG} \
+        SPHINXOPTS="-q -j ${JOB_COUNT}" \
+        LATEXMKOPTS="-quiet -halt-on-error" \
+        make -C doc pdf
+
+    - name: upload-build
+      if: always()
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      with:
+        name: pdf-output
+        if-no-files-found: ignore
+        path: |
+          zephyr/doc/_build/latex/zephyr.pdf
+          zephyr/doc/_build/latex/zephyr.log
+
+  doc-build-status-check:
+    if: always()
+    name: "Documentation Build Status"
+    needs:
+    - doc-build-pdf
+    - doc-file-check
+    - doc-build-html
+    uses: ./.github/workflows/ready-to-merge.yml
+    with:
+      needs_context: ${{ toJson(needs) }}

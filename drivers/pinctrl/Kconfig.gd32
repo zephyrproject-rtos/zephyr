@@ -1,0 +1,18 @@
+# Copyright (c) 2021 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_GD32_AF
+	bool "GD32 AF pin controller driver"
+	default y
+	depends on DT_HAS_GD_GD32_PINCTRL_AF_ENABLED
+	help
+	  GD32 AF pin controller driver. This driver is used by series using the
+	  AF pin multiplexing model.
+
+config PINCTRL_GD32_AFIO
+	bool "GD32 AFIO pin controller driver"
+	default y
+	depends on DT_HAS_GD_GD32_PINCTRL_AFIO_ENABLED
+	help
+	  GD32 AFIO pin controller driver. This driver is used by series using the
+	  AFIO pin multiplexing model.

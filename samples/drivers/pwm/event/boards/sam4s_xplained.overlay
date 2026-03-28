@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 Basalte bv
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	pwm0_default: pwm0_default {
+		group1 {
+			pinmux = <PA11B_PWM_PWMH0>;
+		};
+	};
+};

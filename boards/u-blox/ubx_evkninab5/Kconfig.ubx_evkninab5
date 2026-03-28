@@ -1,0 +1,7 @@
+# Copyright 2026 NXP
+# Copyright 2026 u-blox
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_UBX_EVKNINAB5
+	select SOC_MCXW716C
+	select SOC_PART_NUMBER_MCXW716CMFTA

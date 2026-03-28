@@ -1,0 +1,13 @@
+# Copyright 2024 The ChromiumOS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MT8186
+
+# FIXME: move this to 818x series code to share w/8188
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 2
+
+endif

@@ -1,0 +1,97 @@
+.. _ieee802154_interface:
+
+IEEE 802.15.4
+#############
+
+.. contents::
+    :local:
+    :depth: 2
+
+Introduction
+************
+
+IEEE 802.15.4 is a technical standard which defines the operation of low-rate
+wireless personal area networks (LR-WPANs). For a more detailed overview of this
+standard, see the `IEEE 802.15.4 Wikipedia article
+<https://en.wikipedia.org/wiki/IEEE_802.15.4>`_.
+
+The most recent version of the standard is accessible through the `IEEE GET
+Program
+<https://ieeexplore.ieee.org/browse/standards/get-program/page/series?id=68>`_.
+You need to create a free IEEE account and can then downloading it.
+
+We're currently following the IEEE 802.15.4-2020 specification. This version is
+backwards compatible with IEEE 802.15.4-2015, parts of which are contained in
+the Thread protocol stack. The 2020 version also includes prior extensions that
+were accepted into the standard, namely IEEE 802.15.4g (SUN FSK) and IEEE
+802.15.4e (TSCH) which are of relevance to industrial IoT and automation. For
+recent developments in UWB ranging technology, see IEEE 802.15.4z which is not
+yet integrated into the standard's mainline.
+
+Whenever sections from the standard are cited in the documentation, they refer
+to IEEE 802.15.4-2020 section, table and figure numbering - unless otherwise
+specified.
+
+Zephyr supports both, native IEEE 802.15.4 and Thread, with 6LoWPAN. Zephyr's
+:ref:`thread_protocol_interface` implementation is based on `OpenThread
+<https://openthread.io/>`_. The IPv6 header compression in 6LoWPAN is used for
+native IEEE 802.15.4.
+
+API Reference
+*************
+
+IEEE 802.15.4 API Overview
+==========================
+
+Gives an introduction and overview over the whole IEEE 802.15.4 subsystem and
+all of its APIs, configuration and user interfaces for all audiences.
+
+.. doxygengroup:: ieee802154
+
+
+.. _ieee802154_mgmt_api:
+
+IEEE 802.15.4 Management API
+============================
+
+This is the main subsystem-specific API of interest to IEEE 802.15.4
+**application developers** as it allows to configure the IEEE 802.15.4 subsystem
+at runtime.  Other relevant interfaces for application developers are the
+typical shell, socket, Kconfig and devicetree APIs that can be accessed through
+Zephyr's generic subsystem-independent documentation. Look out for
+IEEE802154/ieee802154 prefixes there.
+
+.. doxygengroup:: ieee802154_mgmt
+
+
+.. _ieee802154_driver_api:
+
+IEEE 802.15.4 Driver API
+========================
+
+This is the main API of interest to IEEE 802.15.4 **driver developers**.
+
+.. doxygengroup:: ieee802154_driver
+
+
+.. _ieee802154_l2_api:
+
+IEEE 802.15.4 L2 / Native Stack API
+===================================
+
+This documents the IEEE 802.15.4 L2 native stack, which neither applications nor
+drivers will ever access directly. It is called internally by Zephyr's upper
+network layers (L3+), its socket and network context abstractions. This API is
+therefore of interest to IEEE 802.15.4 **subsystem contributors** only.
+
+.. doxygengroup:: ieee802154_l2
+
+OpenThread L2 Adaptation Layer API
+==================================
+
+Zephyr's OpenThread L2 platform adaptation layer glues the external OpenThread
+stack together with Zephyr's IEEE 802.15.4 protocol agnostic driver API. This
+API is of interest to OpenThread L2 **subsystem contributors** only.
+
+The OpenThread API is part of the :ref:`thread_protocol_interface` subsystem and
+documented there.

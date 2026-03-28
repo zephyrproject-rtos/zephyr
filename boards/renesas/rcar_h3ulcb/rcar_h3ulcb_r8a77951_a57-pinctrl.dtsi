@@ -1,0 +1,143 @@
+/*
+ * Copyright (c) 2023 EPAM Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-r8a77951.h>
+
+&pfc {
+	scif2_data_a_tx_default: scif2_data_a_tx_default {
+		pin = <PIN_TX2_A FUNC_TX2_A>;
+	};
+
+	scif2_data_a_rx_default: scif2_data_a_rx_default {
+		pin = <PIN_RX2_A FUNC_RX2_A>;
+	};
+
+	sd0_clk: sd0_clk {
+		pin = <PIN_SD0_CLK FUNC_SD0_CLK>;
+		power-source = <PIN_VOLTAGE_3P3V>;
+	};
+
+	sd0_cmd: sd0_cmd {
+		pin = <PIN_SD0_CMD FUNC_SD0_CMD>;
+		power-source = <PIN_VOLTAGE_3P3V>;
+	};
+
+	sd0_data0: sd0_data0 {
+		pin = <PIN_SD0_DATA0 FUNC_SD0_DAT0>;
+		power-source = <PIN_VOLTAGE_3P3V>;
+	};
+
+	sd0_data1: sd0_data1 {
+		pin = <PIN_SD0_DATA1 FUNC_SD0_DAT1>;
+		power-source = <PIN_VOLTAGE_3P3V>;
+	};
+
+	sd0_data2: sd0_data2 {
+		pin = <PIN_SD0_DATA2 FUNC_SD0_DAT2>;
+		power-source = <PIN_VOLTAGE_3P3V>;
+	};
+
+	sd0_data3: sd0_data3 {
+		pin = <PIN_SD0_DATA3 FUNC_SD0_DAT3>;
+		power-source = <PIN_VOLTAGE_3P3V>;
+	};
+
+	sd0_clk_uhs: sd0_clk_uhs {
+		pin = <PIN_SD0_CLK FUNC_SD0_CLK>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	sd0_cmd_uhs: sd0_cmd_uhs {
+		pin = <PIN_SD0_CMD FUNC_SD0_CMD>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	sd0_data0_uhs: sd0_data0_uhs {
+		pin = <PIN_SD0_DATA0 FUNC_SD0_DAT0>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	sd0_data1_uhs: sd0_data1_uhs {
+		pin = <PIN_SD0_DATA1 FUNC_SD0_DAT1>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	sd0_data2_uhs: sd0_data2_uhs {
+		pin = <PIN_SD0_DATA2 FUNC_SD0_DAT2>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	sd0_data3_uhs: sd0_data3_uhs {
+		pin = <PIN_SD0_DATA3 FUNC_SD0_DAT3>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	/* note: CD pin is fixed at 3.3V */
+	sd0_cd: sd0_cd {
+		pin = <PIN_SD0_CD FUNC_SD0_CD>;
+		power-source = <PIN_VOLTAGE_3P3V>;
+	};
+
+	/* note: WP pin is fixed at 3.3V */
+	sd0_wp: sd0_wp {
+		pin = <PIN_SD0_WP FUNC_SD0_WP>;
+		power-source = <PIN_VOLTAGE_3P3V>;
+	};
+
+	emmc2_clk: emmc2_clk {
+		pin = <PIN_SD2_CLK FUNC_SD2_CLK>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	emmc2_cmd: emmc2_cmd {
+		pin = <PIN_SD2_CMD FUNC_SD2_CMD>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	emmc2_data0: emmc2_data0 {
+		pin = <PIN_SD2_DATA0 FUNC_SD2_DAT0>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	emmc2_data1: emmc2_data1 {
+		pin = <PIN_SD2_DATA1 FUNC_SD2_DAT1>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	emmc2_data2: emmc2_data2 {
+		pin = <PIN_SD2_DATA2 FUNC_SD2_DAT2>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	emmc2_data3: emmc2_data3 {
+		pin = <PIN_SD2_DATA3 FUNC_SD2_DAT3>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	emmc2_data4: emmc2_data4 {
+		pin = <PIN_SD1_DATA0 FUNC_SD2_DAT4>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	emmc2_data5: emmc2_data5 {
+		pin = <PIN_SD1_DATA1 FUNC_SD2_DAT5>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	emmc2_data6: emmc2_data6 {
+		pin = <PIN_SD1_DATA2 FUNC_SD2_DAT6>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	emmc2_data7: emmc2_data7 {
+		pin = <PIN_SD1_DATA3 FUNC_SD2_DAT7>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	emmc2_ds: emmc2_ds {
+		pin = <PIN_SD2_DS FUNC_SD2_DS>;
+	};
+};

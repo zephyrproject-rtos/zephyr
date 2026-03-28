@@ -1,0 +1,25 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+choice APP_FORMATTER
+	prompt "Select print formatter"
+	default APP_FORMATTER_PRINTK
+
+config APP_FORMATTER_PRINTK
+	bool "Emit with printk"
+
+config APP_FORMATTER_PRINTF
+	bool "Emit with printf"
+
+config APP_FORMATTER_PRINTFCB
+	bool "Emit with printfcb"
+
+config APP_FORMATTER_FPRINTF
+	bool "Emit with fprintf"
+
+config APP_FORMATTER_FPRINTFCB
+	bool "Emit with fprintfcb"
+
+endchoice # APP_FORMATTER
+
+source "Kconfig.zephyr"

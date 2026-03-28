@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Example of a components Kconfig file with one enabling symbol and two config symbols
+
+# start-after-here
+
+# Symbol to enable/disable the feature ("enabling symbol")
+menuconfig ADC_AD4114
+	bool "AD4114 ADC driver"
+	depends on DT_HAS_ADI_AD4114_ADC_ENABLED
+	select SPI
+	default y
+	help
+	  Enable the AD4114 ADC driver.
+
+if ADC_AD4114
+
+# Symbol to configure the behavior of the feature ("config symbol")
+config ADC_AD4114_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the data acquisition thread"
+	default 512
+	help
+	  Size of the stack used for the internal data acquisition
+	  thread.
+
+# Symbol to configure the behavior of the feature ("config symbol")
+config ADC_AD4114_ACQUISITION_THREAD_PRIO
+	int "Priority for the data acquisition thread"
+	default 0
+	help
+	  Priority level for the internal ADC data acquisition thread.
+
+endif # ADC_AD4114

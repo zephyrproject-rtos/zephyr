@@ -1,0 +1,24 @@
+description: Silabs SiWx91x DMA
+
+compatible: "silabs,siwx91x-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  silabs,sram-region:
+    type: phandle
+    description: |
+        SRAM Address for UDMA Descriptor Storage. Some instance require this
+        buffer to be placed in a specific area. If the instance doesn't have
+        this requirement, this attribute is not required and the memory will
+        will be automatically allocated.
+
+  "#dma-cells":
+    const: 1
+
+# Parameter syntax
+dma-cells:
+  - channel

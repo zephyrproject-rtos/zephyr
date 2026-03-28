@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 Siratul Islam
+
+description: |
+  ADH GT5X Series Optical Fingerprint Sensor
+
+  This binding supports fingerprint sensor modules from ADH Technology,
+  including GT-511C1R, GT-511C3, GT-521F32, and GT-521F52 models.
+
+  These sensors use a fixed 12-byte command/response protocol over UART
+  and support 3-stage enrollment. Model-specific parameters must be
+  configured via device tree properties to match the hardware variant.
+
+compatible: "adh-tech,gt5x"
+
+include: [uart-device.yaml]
+
+properties:
+  max-templates:
+    type: int
+    required: true
+    description: |
+      Maximum number of fingerprint templates the device can store.
+      - GT-511C1R: 20
+      - GT-511C3: 200
+      - GT-521F32: 200
+      - GT-521F52: 3000
+
+  template-size:
+    type: int
+    required: true
+    description: |
+      Size of each fingerprint template in bytes.
+      - GT-511C1R: 506 bytes
+      - GT-511C3/GT-521F32/GT-521F52: 498 bytes

@@ -1,0 +1,20 @@
+# Copyright (c) 2023 bytes at work AG
+# SPDX-License-Identifier: Apache-2.0
+
+config OTM8009A
+	bool "OTM8009A display driver"
+	default y
+	depends on DT_HAS_ORISETECH_OTM8009A_ENABLED
+	select MIPI_DSI
+	help
+	  Enable driver for OTM8009A display driver.
+
+if OTM8009A
+
+config DISPLAY_OTM8009A_INIT_PRIORITY
+	int "Initialization priority"
+	default DISPLAY_INIT_PRIORITY
+	help
+	  OTM8009A display driver initialization priority.
+
+endif

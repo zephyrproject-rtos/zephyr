@@ -1,0 +1,175 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Low Power Comparator (LPCMP)
+
+compatible: "nxp,lpcmp"
+
+include:
+  - base.yaml
+  - pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  power-mode:
+    type: string
+    enum:
+      - "low_speed"
+      - "high_speed"
+    description: |
+      Select comparator power/speed mode.
+
+  hysteresis-mode:
+    type: string
+    enum:
+      - "LEVEL0"
+      - "LEVEL1"
+      - "LEVEL2"
+      - "LEVEL3"
+    description: |
+      Comparator hysteresis level.
+
+  enable-stop-mode:
+    type: boolean
+    description: |
+      Allow the comparator to remain enabled in STOP/STANDBY mode.
+      NOTE: This property is not available on MCXN23x devices.
+
+  invert-output:
+    type: boolean
+    description: |
+      Invert comparator output.
+
+  enable-pin-out:
+    type: boolean
+    description: |
+      Drive comparator output on the associated pin.
+
+  use-unfiltered-output:
+    type: boolean
+    description: |
+      Route unfiltered comparator output (COUTA) to the module output.
+      When false, the filtered output (COUT) is used and filter parameters
+      are taken from filter-count and filter-period.
+
+  filter-count:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Number of consecutive samples that must agree before updating
+      the filtered output. Set to 0 to bypass the filter.
+
+  filter-period:
+    type: int
+    description: |
+      Sampling period for the filter in bus clock cycles.
+      Valid range: 0 - 255.
+
+  dac-vref-source:
+    type: string
+    enum:
+      - "VREFH0"
+      - "VREFH1"
+    description: |
+      DAC reference high-voltage source selection.
+
+  dac-value:
+    type: int
+    description: |
+      8-bit DAC code used when an input is set to DAC output.
+      Valid range: 0 - 255.
+
+  positive-mux-input:
+    type: string
+    enum:
+      - "IN0"
+      - "IN1"
+      - "IN2"
+      - "IN3"
+      - "IN4"
+      - "IN5"
+      - "IN6"
+      - "IN7"
+      - "DAC"
+    required: true
+    description: |
+      Positive input selection. "DAC" routes the internal DAC output.
+      NOTE: For MCXN/A devices, IN6 and IN7 are not available, only
+      IN0-IN5 and DAC.
+
+  negative-mux-input:
+    type: string
+    enum:
+      - "IN0"
+      - "IN1"
+      - "IN2"
+      - "IN3"
+      - "IN4"
+      - "IN5"
+      - "IN6"
+      - "IN7"
+      - "DAC"
+    required: true
+    description: |
+      Negative input selection. "DAC" routes the internal DAC output.
+      NOTE: For MCXN/A devices, IN6 and IN7 are not available, only
+      IN0-IN5 and DAC.
+
+  enable-output-pin:
+    type: boolean
+    description: |
+      Enable the comparator in selected pin.
+
+  enable-output-invert:
+    type: boolean
+    description: |
+      Invert the comparator output.
+
+  hysteresis-level:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    default: 0
+    description: |
+      LPCMP hysteresis mode.
+      The default corresponds to the reset value of the register field.
+
+  power-level:
+    type: string
+    enum:
+      - "low"
+      - "high"
+      - "nano"
+    default: "low"
+    description: |
+      LPCMP power mode.
+      The default corresponds to the reset value of the register field.
+
+  function-clock:
+    type: string
+    enum:
+      - "Reserved"
+      - "FRO_16K"
+      - "XTAL32K"
+      - "CMP_CLOCK"
+    default: "Reserved"
+    description: |
+      LPCMP function clock.
+      The default corresponds to the reset value of the register field.
+
+  "#io-channel-cells":
+    type: int
+    const: 2
+
+io-channel-cells:
+  - positive
+  - negative

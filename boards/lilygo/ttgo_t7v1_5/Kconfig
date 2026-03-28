@@ -1,0 +1,7 @@
+# Copyright 2024 Tobias Kässer <t.kaesser@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BOARD_TTGO_T7V1_5_ESP32_PROCPU
+	default 256 if BOARD_TTGO_T7V1_5_ESP32_APPCPU

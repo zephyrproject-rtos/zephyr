@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH32V00x PLL
+
+compatible: "wch,ch32v00x-pll-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  clocks:
+    type: phandle-array
+    required: true

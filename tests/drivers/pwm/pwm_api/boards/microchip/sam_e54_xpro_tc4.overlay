@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&tcc0 {
+	status = "disabled";
+};
+
+&tc4 {
+	status = "okay";
+	compatible = "microchip,tc-g1-pwm";
+	prescaler = <1>;
+	#pwm-cells = <3>;
+	pinctrl-0 = <&tc4_pwm_default>;
+	pinctrl-names = "default";
+};
+
+&pinctrl {
+	tc4_pwm_default: tc4_pwm_default {
+		group1 {
+			pinmux = <PA22E_TC4_WO0>,
+				 <PA23E_TC4_WO1>;
+		};
+	};
+};

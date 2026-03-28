@@ -1,0 +1,12 @@
+sample:
+  name: Input Dump
+common:
+  tags: input
+  build_only: true
+  integration_platforms:
+    - native_sim
+tests:
+  sample.input.input_dump: {}
+  sample.input.input_dump_shell:
+    extra_configs:
+      - CONFIG_SHELL=y

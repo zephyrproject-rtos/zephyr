@@ -1,0 +1,8 @@
+board:
+  name: circuitdojo_feather
+  full_name: nRF9160 Feather
+  vendor: circuitdojo
+  socs:
+  - name: nrf9160
+    variants:
+    - name: 'ns'

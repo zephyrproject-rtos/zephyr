@@ -1,0 +1,6 @@
+# Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ARDUINO_MKRZERO
+	select SOC_SAMD21G18A

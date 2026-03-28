@@ -1,0 +1,116 @@
+/*
+ * Copyright 2025-2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/MCXA577VPN-pinctrl.h>
+
+&pinctrl {
+	pinmux_lpuart0: pinmux_lpuart0 {
+		group0 {
+			pinmux = <LPUART0_RXD_P0_2>,
+				 <LPUART0_TXD_P0_3>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpuart1: pinmux_lpuart1 {
+		group0 {
+			pinmux = <LPUART1_RXD_P1_8>,
+				 <LPUART1_TXD_P1_9>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpuart2: pinmux_lpuart2 {
+		group0 {
+			pinmux = <LPUART2_RXD_P2_11>,
+				 <LPUART2_TXD_P2_10>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpadc0: pinmux_lpadc0 {
+		group0 {
+			pinmux = <ADC0_A9_P0_19>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_lpspi2: pinmux_lpspi2 {
+		group0 {
+			pinmux = <LPSPI2_SDO_P4_4>,
+				 <LPSPI2_SCK_P4_3>,
+				 <LPSPI2_SDI_P4_5>,
+				 <LPSPI2_PCS1_P4_0>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_lpi2c0: pinmux_lpi2c0 {
+		group0 {
+			pinmux = <LPI2C0_SDA_P0_20>,
+				 <LPI2C0_SCL_P0_21>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
+
+	pinmux_lpi2c3: pinmux_lpi2c3 {
+		group0 {
+			pinmux = <LPI2C3_SDA_P3_20>,
+				 <LPI2C3_SCL_P3_21>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
+
+	pinmux_enet_qos: pinmux_enet_qos {
+		mdio_group {
+			pinmux = <ENET0_MDC_P1_2>,
+				 <ENET0_MDIO_P1_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+
+		mac_group {
+			pinmux = <ENET0_RXDV_P1_13>,
+				 <ENET0_RXD0_P1_11>,
+				 <ENET0_RXD1_P1_12>,
+				 <ENET0_TX_CLK_P1_4>,
+				 <ENET0_TXEN_P1_5>,
+				 <ENET0_TXD0_P1_6>,
+				 <ENET0_TXD1_P1_7>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_t1s: pinmux_t1s {
+		pmd_group {
+			pinmux = <TENBASET1S_TX_P1_2>,
+				 <TENBASET1S_RX_P1_0>,
+				 <TENBASET1S_ED_P1_1>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+};

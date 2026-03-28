@@ -1,0 +1,7 @@
+# QUILL NRF52840 MESH board configuration
+
+# Copyright (c) 2025 Chiho Sin
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QUILL_NRF52840_MESH
+	select SOC_NRF52840_QIAA

@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_ESP32
+	bool "ESP32 device ID"
+	default y
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable ESP32 hwinfo driver.

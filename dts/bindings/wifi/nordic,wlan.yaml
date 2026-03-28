@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic Wi-Fi network interface.
+
+  This binding defines a Wi-Fi network interface for Nordic nRF70 series
+  Wi-Fi chips. The interface is used to identify and name Wi-Fi network
+  interfaces like wlan0.
+
+compatible: "nordic,wlan"

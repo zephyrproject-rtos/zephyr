@@ -1,0 +1,30 @@
+sample:
+  name: USB DFU sample
+common:
+  min_ram: 64
+  depends_on:
+    - usbd
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "USB DFU sample is initialized"
+tests:
+  sample.usbd.dfu:
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf54h20dk/nrf54h20/cpuapp
+      - frdm_k64f
+      - stm32f723e_disco
+      - nucleo_f413zh
+      - mimxrt685_evk/mimxrt685s/cm33
+      - mimxrt1060_evk/mimxrt1062/qspi
+    tags: usb
+  sample.usbd.dfu-flash:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - frdm_k64f
+    min_flash: 1024
+    tags: usb
+    extra_configs:
+      - CONFIG_APP_USB_DFU_USE_FLASH_BACKEND=y

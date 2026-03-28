@@ -1,0 +1,48 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_NUMAKER
+	bool "Nuvoton NuMaker USB device controller"
+	default y
+	depends on DT_HAS_NUVOTON_NUMAKER_USBD_ENABLED \
+		|| DT_HAS_NUVOTON_NUMAKER_HSUSBD_ENABLED
+	select PINCTRL
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT if DT_HAS_NUVOTON_NUMAKER_HSUSBD_ENABLED
+	help
+	  Enable Nuvoton NuMaker USB device controller driver
+
+if UDC_NUMAKER
+
+config UDC_NUMAKER_MSG_QUEUE_SIZE
+	int "UDC NuMaker message queue size"
+	default 32
+	help
+	  Maximum number of messages the driver can queue for interrupt bottom half processing.
+
+config UDC_NUMAKER_THREAD_STACK_SIZE
+	int "UDC NuMaker driver internal thread stack size"
+	default 1536
+	help
+	  Size of the stack for the driver internal thread.
+
+config UDC_NUMAKER_THREAD_PRIORITY
+	int "UDC NuMaker driver internal thread priority"
+	default 8
+	help
+	  Priority of the driver internal thread.
+
+config UDC_NUMAKER_DMA
+	bool "UDC NuMaker DMA support"
+	default y
+	depends on DT_HAS_NUVOTON_NUMAKER_HSUSBD_ENABLED
+	help
+	  This enables DMA transfer between user buffer and USB buffer.
+
+config UDC_NUMAKER_DMA_TIMEOUT_MS
+	int "UDC NuMaker DMA timeout"
+	default 2000
+	depends on UDC_NUMAKER_DMA
+	help
+	  This configures timeout of DMA transfer in milliseconds.
+
+endif # UDC_NUMAKER

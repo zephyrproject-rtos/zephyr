@@ -1,0 +1,37 @@
+#
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+rsource "interoperability/Kconfig"
+
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
+
+config IPC_TEST_MSG_HEAP_SIZE
+	int "The heap to copy processed messages"
+	default 512
+	help
+		Internal heap where all the message data would be copied to be processed
+		linearry in tests.
+
+config IPC_TEST_SKIP_CORE_RESET
+	bool "Skip the tests that includes core resetting"
+	help
+		Some of the cores cannot be safely restarted.
+		Skip the tests that require it in such a cases.
+
+config IPC_TEST_BLOCK_SIZE
+	int "Block size for multiple transfers test"
+	default 32
+
+config IPC_TEST_BLOCK_CNT
+	int "Number of blocks for multiple transfers test"
+	default 8000
+
+config IPC_TEST_SKIP_UNBOUND
+	bool "Skip unbound tests"
+	help
+		Whether to skip tests that requires unbound callback functionality.

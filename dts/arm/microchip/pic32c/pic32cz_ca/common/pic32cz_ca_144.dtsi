@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <microchip/pic32c/pic32cz_ca/common/pic32cz_ca.dtsi>
+
+/ {
+	soc {
+		sercom5: sercom@45804000 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x45804000 0x36>;
+			interrupts = <90 0>, <91 0>, <92 0>, <93 0>, <94 0>, <95 0>, <96 0>;
+			interrupt-names = "error", "rxbrk", "dre", "txc", "rxc", "rxs", "ctsic";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_SERCOM5>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM5_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		sercom4: sercom@46004000 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x46004000 0x36>;
+			interrupts = <83 0>, <84 0>, <85 0>, <86 0>, <87 0>, <88 0>, <89 0>;
+			interrupt-names = "error", "rxbrk", "dre", "txc", "rxc", "rxs", "ctsic";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_SERCOM4>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM4_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+	};
+};

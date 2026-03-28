@@ -1,0 +1,15 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sai1 {
+	mclk-output;
+	podf = <15>;
+	pll-clocks = <&anatop 0 0 0>,
+		     <&anatop 0 0 30>,
+		     <&anatop 0 0 1>,
+		     <&anatop 0 0 106>,
+		     <&anatop 0 0 1000>;
+};

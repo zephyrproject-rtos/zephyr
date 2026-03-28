@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config NATIVE_USE_NSI_ERRNO
+	bool
+	help
+	  Build the native simulator nsi_errno component with the Zephyr embedded code.
+	  This component allows translating errno values from/to the embedded libC to/from the host libC.

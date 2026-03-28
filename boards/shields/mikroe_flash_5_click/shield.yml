@@ -1,0 +1,6 @@
+shield:
+  name: mikroe_flash_5_click
+  full_name: Flash 5 Click
+  vendor: mikroe
+  supported_features:
+    - mtd

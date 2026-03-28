@@ -1,0 +1,4 @@
+series:
+- name: nitrogen
+  socs:
+  - name: elemrv_n

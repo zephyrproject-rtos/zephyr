@@ -1,0 +1,67 @@
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMX9596_A55
+
+# GIC ITS depends on kernel heap which init priority is 30, so set
+# GIC to be 31, mailbox and SCMI will be initialized by the order
+# according to dts dependency although they use the same init priority.
+configdefault INTC_INIT_PRIORITY
+	default 31
+
+configdefault MBOX_INIT_PRIORITY
+	default 31
+
+configdefault ARM_SCMI_SHMEM_INIT_PRIORITY
+	default 31
+
+configdefault ARM_SCMI_TRANSPORT_INIT_PRIORITY
+	default 31
+
+configdefault CLOCK_CONTROL_INIT_PRIORITY
+	default 31
+
+if NETWORKING
+
+configdefault GIC_V3_ITS
+	default y
+
+# The GICv3 & ITS drivers allocation needs are:
+# - LPI prop table: global 1x64K aligned on 64K
+# - LPI pend table: for each redistributor/cpu 1x64K aligned on 64K
+# - Devices table: 128x4K aligned on 4K
+# - Interrupt Collections table: 1x4K aligned on 4K
+#
+# This makes 11x64K to permit all allocations to success.
+#
+# Note, will need 64K HEAP_MEM per CPUs added.
+#
+# This doesn't necessarily include the Interrupt Translation Table, which are
+# 256bytes aligned tables, for reference a 32 ITEs table needs 256bytes.
+#
+# To permit allocating 256 ITT tables of 32 ITEs, 13x64K HEAP_MEM is needed
+configdefault HEAP_MEM_POOL_SIZE
+	default 851968
+
+configdefault NET_L2_ETHERNET
+	default y
+
+# Enlarge default networking stack
+configdefault NET_TX_STACK_SIZE
+	default 2048
+
+configdefault NET_RX_STACK_SIZE
+	default 2048
+
+configdefault NET_TCP_WORKQ_STACK_SIZE
+	default 2048
+
+configdefault NET_MGMT_EVENT_STACK_SIZE
+	default 2048
+
+configdefault NET_SOCKETS_SERVICE_STACK_SIZE
+	default 2048
+
+endif # NETWORKING
+
+endif # SOC_MIMX9596_A55

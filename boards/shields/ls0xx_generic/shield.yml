@@ -1,0 +1,6 @@
+shield:
+  name: ls013b7dh03
+  full_name: Sharp memory display generic shield
+  vendor: sharp
+  supported_features:
+    - display

@@ -1,0 +1,17 @@
+# Copyright (c) 2018, Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments temperature and humidity sensor (e.g. HDC1008)
+
+compatible: "ti,hdc"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  drdy-gpios:
+    type: phandle-array
+    description: Data ready pin.
+
+      The DRDYn pin of HDC sensor is open-drain, active low.
+      If connected directly the MCU pin should be configured
+      as pull-up, active low.

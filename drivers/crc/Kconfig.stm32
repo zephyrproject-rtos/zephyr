@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CRC_STM32
+	bool "STM32 CRC driver"
+	default y
+	depends on DT_HAS_ST_STM32_CRC_ENABLED
+	select CRC_DRIVER_HAS_CRC7_BE
+	select CRC_DRIVER_HAS_CRC8
+	select CRC_DRIVER_HAS_CRC16
+	select CRC_DRIVER_HAS_CRC16_CCITT
+	select CRC_DRIVER_HAS_CRC16_REFLECT
+	select CRC_DRIVER_HAS_CRC32_C
+	select CRC_DRIVER_HAS_CRC32_IEEE
+	help
+	  Enables STM32 family CRC driver.
+
+if CRC_STM32
+
+config CRC_STM32_DMA
+	bool "DMA support"
+	select DMA
+	help
+	  Enable the DMA transfer for CRC instance
+	  That enables dma channel in their device tree node
+	  for transferring data to the CRC input
+
+if CRC_STM32_DMA
+
+config CRC_STM32_DMA_THRESHOLD
+	int "Minimal buffer size for DMA transfers"
+	default 1
+	range 1 $(UINT32_MAX)
+	help
+	  Minimum size required to use DMA transfers for copy of
+	  buffer provided to crc_update() towards CRC peripheral.
+
+	  If buffer size is superior or equal to this option's value,
+	  a DMA transfer is used to copy the buffer's contents towards
+	  the CRC peripheral using a DMA transfer (while the transfer
+	  is ongoing, another thread can execute on the CPU).
+
+	  If buffer size is strictly less than this option's value,
+	  the CPU is used to copy the buffer's contents towards the
+	  CRC peripheral (busy CPU copy / DMA not used).
+
+	  The default value of 1 forces a DMA transfer to be used
+	  unconditionally by crc_update() regardless of buffer size.
+
+endif # CRC_STM32_DMA
+
+endif # CRC_STM32

@@ -1,0 +1,89 @@
+# PCIe/new PCI configuration options
+
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PCIE
+	bool "New PCI/PCIe Root Complex support"
+	help
+	  This option enables support for new PCI(e) drivers.
+
+if PCIE
+
+module = PCIE
+module-str = pcie
+source "subsys/logging/Kconfig.template.log_config"
+
+config PCIE_INIT_PRIORITY
+	int "PCIe initialization priority"
+	default 41
+	help
+	  PCIe host drivers initialization priority.
+
+config PCIE_CONTROLLER
+	bool "PCIe Controller management"
+	help
+	  Add support for PCIe Controller management when not handled by a
+	  system firmware like on x86 platforms.
+
+if PCIE_CONTROLLER
+
+config PCIE_ECAM
+	bool "Support for PCIe ECAM Controllers"
+	help
+	  Add support for Enhanced Configuration Address Mapping configured
+	  PCIe Controllers allowing all outgoing I/O and MEM TLPs to be mapped
+	  from memory space into any 256 MB region of the PCIe configuration space.
+
+endif # PCIE_CONTROLLER
+
+config PCIE_MSI
+	bool "Support for PCI(e) MSI"
+	help
+	  Use Message-Signaled Interrupts where possible. With this option
+	  enabled, PCI(e) devices which support MSI will be configured (at
+	  runtime) to use them. This is typically required for PCIe devices
+	  to generate interrupts at all.
+
+if PCIE_MSI
+
+config PCIE_MSI_MULTI_VECTOR
+	bool "MSI multi-vector support"
+	help
+	  MSI can support up to 32 different messages. This will enable the
+	  support of such capability so each message can get a vector
+	  assigned to it. This will require for the selected architecture
+	  to provide the necessary logic to make it work. Disable this if
+	  the vectors cannot be managed by the hardware or if none of the
+	  peripheral require this.
+
+config PCIE_MSI_X
+	bool "MSI-X support"
+	help
+	  If one or more device support MSI-X, you'll need to enable this.
+	  If a device exposes support for both MSI-X and MSI, MSI-X will be
+	  used and MSI disabled on that device. Enable PCIE_MSI_MULTI_VECTOR
+	  if you want to support multi-vector on MSI-X as well.
+
+endif # PCIE_MSI
+
+config PCIE_PTM
+	bool "Support for PCI(e) Precision Time Management (PTM)"
+	help
+	  This will enable support both PTM root and PTM requester features.
+	  Up to the PCIe device driver to enable its PTM requester capability.
+
+config PCIE_PRT
+	bool "Support for IRQ information retrieve via ACPI PRT (PCI Routing Table)"
+	default y if ACPI_DSDT_SUPPORT
+	help
+	  This will enable retrieve interrupt routing information for PCI legacy
+	  interrupt via ACPI PRT (PCI Routing Table)
+
+config PCIE_SHELL
+	bool "PCIe/new PCI Shell"
+	depends on SHELL
+	help
+	  Enable commands for debugging PCI(e) using the built-in shell.
+
+endif # PCIE

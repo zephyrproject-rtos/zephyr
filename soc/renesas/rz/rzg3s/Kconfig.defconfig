@@ -1,0 +1,29 @@
+# Copyright (c) 2024 EPAM Systems
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RZG3S
+
+config NUM_IRQS
+	default 480
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default	$(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config FLASH_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+config SYS_CLOCK_EXISTS
+	default y
+
+# This is required to support debug with xSPI boot when Zephyr already booted by TF-A
+config INIT_ARCH_HW_AT_BOOT
+	default y
+
+config BUILD_OUTPUT_S19
+	default y
+
+endif # SOC_SERIES_RZG3S

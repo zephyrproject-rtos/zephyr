@@ -1,0 +1,19 @@
+common:
+  harness: ztest
+  tags:
+    - drivers
+    - flash
+  timeout: 240
+tests:
+  boards.nrf.xip:
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+  boards.nrf.xip.enabled_at_boot.qspi:
+    extra_configs:
+      - CONFIG_NORDIC_QSPI_NOR_XIP=y
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp

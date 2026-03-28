@@ -1,0 +1,9 @@
+#
+# Copyright (c) 2020 Antony Pavlov <antonynpavlov@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_QEMU_MALTA
+	select QEMU_TARGET
+	select BIG_ENDIAN if BOARD_QEMU_MALTA_QEMU_MALTA_BE

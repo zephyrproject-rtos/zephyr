@@ -1,0 +1,16 @@
+# Copyright (C) 2023 BeagleBoard.org Foundation
+# Copyright (C) 2023 S Prashanth
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI Dual-Mode Timer
+
+compatible: "ti,am654-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

@@ -1,0 +1,41 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+description: |
+    This will perform signal comparison with threshold established.
+
+compatible: "nuvoton,adc-cmp"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    type: phandle-array
+    required: true
+    description: |
+      ADC channel that will perform measurement.
+
+  threshold-mv:
+    type: int
+    description: |
+      Value in millivolts present on ADC data as threshold assert.
+
+  comparison:
+    type: string
+    description: |
+      Determines the condition to be met between ADC data and
+      threshold assert value that will trigger comparator event.
+    enum:
+      - ADC_CMP_NPCX_GREATER
+      - ADC_CMP_NPCX_LESS_OR_EQUAL
+
+  thr-sel:
+    type: string
+    description: |
+        Determines the register for threshold control and event.
+    enum:
+      - ADC_CMP_NPCX_THRCTL1
+      - ADC_CMP_NPCX_THRCTL2
+      - ADC_CMP_NPCX_THRCTL3
+      - ADC_CMP_NPCX_THRCTL4
+      - ADC_CMP_NPCX_THRCTL5
+      - ADC_CMP_NPCX_THRCTL6

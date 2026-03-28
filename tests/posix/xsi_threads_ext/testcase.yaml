@@ -1,0 +1,28 @@
+common:
+  filter: not CONFIG_NATIVE_LIBC
+  tags:
+    - posix
+    - xsi_threads_ext
+  # 1 tier0 platform per supported architecture
+  platform_key:
+    - arch
+    - simulation
+  min_flash: 64
+  min_ram: 32
+tests:
+  portability.posix.xsi_threads_ext: {}
+  portability.posix.xsi_threads_ext.minimal:
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  portability.posix.xsi_threads_ext.newlib:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  portability.posix.xsi_threads_ext.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+  portability.posix.xsi_threads_ext.static_stack:
+    extra_configs:
+      - CONFIG_DYNAMIC_THREAD_ALLOC=n
