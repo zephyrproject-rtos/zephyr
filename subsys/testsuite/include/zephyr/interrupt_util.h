@@ -180,6 +180,14 @@ static inline void trigger_irq(int irq)
 {
 	irq_set_pending(irq);
 }
+#elif defined(CONFIG_RISCV_S_MODE)
+/* In S-mode mip is read-only; set bits via sip (SSIP is writable via sip) */
+static inline void trigger_irq(int irq)
+{
+	uint32_t sip;
+
+	__asm__ volatile("csrrs %0, sip, %1\n" : "=r"(sip) : "r"(1 << irq));
+}
 #else
 static inline void trigger_irq(int irq)
 {
