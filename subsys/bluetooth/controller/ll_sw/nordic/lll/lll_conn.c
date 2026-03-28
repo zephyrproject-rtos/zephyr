@@ -189,7 +189,7 @@ int lll_conn_central_is_abort_cb(void *next, void *curr,
 		return -EBUSY;
 	}
 
-	LL_ASSERT_DBG(trx_busy_iteration < CENTRAL_TRX_BUSY_ITERATION_MAX);
+	LL_ASSERT_DBG(trx_busy_iteration <= CENTRAL_TRX_BUSY_ITERATION_MAX);
 
 	return -ECANCELED;
 }
@@ -223,7 +223,7 @@ int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
 		return -EBUSY;
 	}
 
-	LL_ASSERT_DBG(trx_busy_iteration < PERIPHERAL_TRX_BUSY_ITERATION_MAX);
+	LL_ASSERT_DBG(trx_busy_iteration <= PERIPHERAL_TRX_BUSY_ITERATION_MAX);
 
 	return -ECANCELED;
 }
