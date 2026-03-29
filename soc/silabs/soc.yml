@@ -6,6 +6,7 @@ family:
           - name: efm32wg990f256
       - name: efm32hg
         socs:
+          - name: efm32hg309f64
           - name: efm32hg322f64
       - name: efm32tg
         socs:
