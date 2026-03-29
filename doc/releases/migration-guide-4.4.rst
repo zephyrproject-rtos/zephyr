@@ -570,6 +570,9 @@ Ethernet
   * :dtcompatible:`wiznet,w5500` (:github:`100919`)
   * :dtcompatible:`snps,designware-ethernet` (:github:`105090`)
 
+  MAC address should now be set as a child node of a :dtcompatible:`nvmem-layout`.
+  See the documentation of :ref:`MAC address configuration <mac_address_config>`.
+
 * The ``fixed-link`` property has been removed from :dtcompatible:`ethernet-phy`. Use
   the new :dtcompatible:`ethernet-phy-fixed-link` compatible instead, if that functionality
   is needed. There you need to specify the fixed link parameters using the ``default-speeds``
