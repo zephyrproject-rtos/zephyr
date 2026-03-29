@@ -13,4 +13,5 @@ supported:
   - pinctrl
   - uart
   - spi
+  - vref
 vendor: ti
