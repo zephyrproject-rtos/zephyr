@@ -1385,9 +1385,6 @@ int nrf_wifi_stats_get(const struct device *dev, struct net_stats_wifi *zstats)
 	zstats->errors.rx = stats.host.total_rx_drop_pkts +
 			stats.fw.umac.interface_data_stats.rx_checksum_error_count;
 	zstats->overrun_count = stats.host.total_tx_drop_pkts + stats.host.total_rx_drop_pkts;
-#ifdef CONFIG_NRF70_RAW_DATA_TX
-	zstats->errors.tx += sys_dev_ctx->raw_pkt_stats.raw_pkt_send_failure;
-#endif /* CONFIG_NRF70_RAW_DATA_TX */
 
 	/* FMAC statistics */
 	status = nrf_wifi_sys_fmac_stats_get(rpu_ctx_zep->rpu_ctx,
