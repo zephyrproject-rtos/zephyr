@@ -2137,12 +2137,38 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	}
 
 	value_changed = cfg->value != value;
+	uint16_t old_cfg_value = cfg->value;
 	cfg->value = value;
 
 	LOG_DBG("handle 0x%04x value %u", attr->handle, cfg->value);
 
 	/* Update cfg if don't match */
 	if (cfg->value != ccc->value) {
+		const struct bt_gatt_attr *value_attr = NULL;
+		/* To find the Characteristic Value Handle that owns the CCC */
+		STRUCT_SECTION_FOREACH(bt_gatt_service_static, svc) {
+			if (attr < &svc->attrs[0] || attr > &svc->attrs[svc->attr_count - 1]) {
+				continue;
+			}
+
+			for (const struct bt_gatt_attr *a = attr - 1; a >= &svc->attrs[0]; a--) {
+				if (!bt_uuid_cmp(a->uuid, BT_UUID_GATT_CHRC)) {
+					value_attr = a + 1;
+					break;
+				}
+			}
+		}
+
+		if (value_attr) {
+			int perm_result = bt_gatt_check_perm(conn, value_attr,
+						BT_GATT_PERM_READ_ENCRYPT_MASK);
+
+			if (perm_result) {
+				cfg->value = old_cfg_value;
+				/* insufficient permission; client may initiate pairing */
+				return BT_GATT_ERR(perm_result);
+			}
+		}
 		gatt_ccc_changed(attr, ccc);
 	}
 
