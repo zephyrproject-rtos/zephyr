@@ -658,7 +658,7 @@ ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf, uint32_t off
 			break;
 		}
 
-		size_t to_write = MIN(nbytes, block_size - block_off);
+		size_t to_write = MIN(nbytes - written, block_size - block_off);
 
 		memcpy(inode_current_block_mem(inode) + block_off, (uint8_t *)buf + written,
 				to_write);
