@@ -27,9 +27,6 @@
 
 LOG_MODULE_REGISTER(VL53L0X, CONFIG_SENSOR_LOG_LEVEL);
 
-#define VL53L0X_FIXPOINT1616_SCALE_FACTOR (65536)
-#define VL53L0X_SENSOR_CHANNEL_VAL2_FACTOR (1000000)
-
 /* All the values used in this driver are coming from ST datasheet and examples.
  * It can be found here:
  *   https://www.st.com/en/embedded-software/stsw-img005.html
@@ -55,9 +52,81 @@ struct vl53l0x_config {
 
 struct vl53l0x_data {
 	bool started;
+	bool continuous_running;
 	VL53L0X_Dev_t vl53l0x;
 	VL53L0X_RangingMeasurementData_t RangingMeasurementData;
+	VL53L0X_DeviceModes current_mode;
 };
+
+/* Profile application helper */
+
+static int vl53l0x_apply_profile(struct vl53l0x_data *data,
+				 enum vl53l0x_profile profile)
+{
+	VL53L0X_DEV dev = &data->vl53l0x;
+	VL53L0X_Error ret;
+	bool was_running = data->continuous_running;
+
+	if (was_running) {
+		VL53L0X_StopMeasurement(dev);
+		data->continuous_running = false;
+	}
+
+	switch (profile) {
+	case VL53L0X_PROFILE_DEFAULT:
+	case VL53L0X_PROFILE_LONG_RANGE:
+		ret  = VL53L0X_SetMeasurementTimingBudgetMicroSeconds(dev, 33000);
+		ret |= VL53L0X_SetLimitCheckValue(dev,
+			VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE,
+			(FixPoint1616_t)(0.1 * 65536));
+		ret |= VL53L0X_SetLimitCheckValue(dev,
+			VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE,
+			(FixPoint1616_t)(60 * 65536));
+		ret |= VL53L0X_SetVcselPulsePeriod(dev,
+			VL53L0X_VCSEL_PERIOD_PRE_RANGE, 18);
+		ret |= VL53L0X_SetVcselPulsePeriod(dev,
+			VL53L0X_VCSEL_PERIOD_FINAL_RANGE, 14);
+		break;
+
+	case VL53L0X_PROFILE_HIGH_SPEED:
+		ret  = VL53L0X_SetMeasurementTimingBudgetMicroSeconds(dev, 20000);
+		ret |= VL53L0X_SetLimitCheckValue(dev,
+			VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE,
+			(FixPoint1616_t)(0.25 * 65536));
+		ret |= VL53L0X_SetLimitCheckValue(dev,
+			VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE,
+			(FixPoint1616_t)(32 * 65536));
+		break;
+
+	case VL53L0X_PROFILE_HIGH_ACCURACY:
+		ret  = VL53L0X_SetMeasurementTimingBudgetMicroSeconds(dev, 200000);
+		ret |= VL53L0X_SetLimitCheckValue(dev,
+			VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE,
+			(FixPoint1616_t)(0.25 * 65536));
+		ret |= VL53L0X_SetLimitCheckValue(dev,
+			VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE,
+			(FixPoint1616_t)(32 * 65536));
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	if (ret) {
+		LOG_ERR("apply_profile failed: %d", ret);
+		return -EIO;
+	}
+
+	if (was_running) {
+		ret = VL53L0X_StartMeasurement(dev);
+		if (ret) {
+			return -EIO;
+		}
+		data->continuous_running = true;
+	}
+
+	return 0;
+}
 
 static int vl53l0x_setup_single_shot(const struct device *dev)
 {
@@ -100,6 +169,7 @@ static int vl53l0x_setup_single_shot(const struct device *dev)
 			dev->name);
 		goto exit;
 	}
+	drv_data->current_mode = VL53L0X_DEVICEMODE_SINGLE_RANGING;
 
 	ret = VL53L0X_SetLimitCheckEnable(&drv_data->vl53l0x,
 					  VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE,
@@ -263,12 +333,39 @@ static int vl53l0x_sample_fetch(const struct device *dev,
 		}
 	}
 
-	ret = VL53L0X_PerformSingleRangingMeasurement(&drv_data->vl53l0x,
-						      &drv_data->RangingMeasurementData);
-	if (ret < 0) {
-		LOG_ERR("[%s] Could not perform measurement (error=%d)",
-			dev->name, ret);
-		return -EINVAL;
+	if (drv_data->current_mode == VL53L0X_DEVICEMODE_SINGLE_RANGING) {
+		ret = VL53L0X_PerformSingleRangingMeasurement(
+			&drv_data->vl53l0x,
+			&drv_data->RangingMeasurementData);
+		if (ret < 0) {
+			LOG_ERR("[%s] Could not perform measurement (error=%d)",
+				dev->name, ret);
+			return -EINVAL;
+		}
+	} else {
+		uint8_t ready = 0;
+
+		ret = VL53L0X_GetMeasurementDataReady(&drv_data->vl53l0x,
+						      &ready);
+		if (ret) {
+			return -EIO;
+		}
+		if (!ready) {
+			return -EAGAIN;
+		}
+
+		ret = VL53L0X_GetRangingMeasurementData(
+			&drv_data->vl53l0x,
+			&drv_data->RangingMeasurementData);
+		if (ret) {
+			return -EIO;
+		}
+
+		ret = VL53L0X_ClearInterruptMask(&drv_data->vl53l0x, 0);
+		if (ret) {
+			LOG_WRN("[%s] ClearInterrupt failed: %d",
+				dev->name, ret);
+		}
 	}
 
 	return 0;
@@ -292,27 +389,278 @@ static int vl53l0x_channel_get(const struct device *dev,
 	} else if (chan == SENSOR_CHAN_DISTANCE) {
 		val->val1 = drv_data->RangingMeasurementData.RangeMilliMeter / 1000;
 		val->val2 = (drv_data->RangingMeasurementData.RangeMilliMeter % 1000) * 1000;
-	} else if ((enum sensor_channel_vl53l0x)chan ==
-			SENSOR_CHAN_VL53L0X_EFFECTIVE_SPAD_RTN_COUNT) {
-		val->val1 = drv_data->RangingMeasurementData.EffectiveSpadRtnCount / 256;
-		val->val2 = 0;
-	} else if ((enum sensor_channel_vl53l0x)chan == SENSOR_CHAN_VL53L0X_AMBIENT_RATE_RTN_CPS) {
-		val->val1 = (drv_data->RangingMeasurementData.AmbientRateRtnMegaCps >> 16) +
-			(((drv_data->RangingMeasurementData.AmbientRateRtnMegaCps & 0xFFFF) *
-			  VL53L0X_SENSOR_CHANNEL_VAL2_FACTOR) / VL53L0X_FIXPOINT1616_SCALE_FACTOR);
-		val->val2 = 0;
-	} else if ((enum sensor_channel_vl53l0x)chan == SENSOR_CHAN_VL53L0X_SIGNAL_RATE_RTN_CPS) {
-		val->val1 = (drv_data->RangingMeasurementData.SignalRateRtnMegaCps >> 16) +
-			(((drv_data->RangingMeasurementData.SignalRateRtnMegaCps & 0xFFFF) *
-			  VL53L0X_SENSOR_CHANNEL_VAL2_FACTOR) / VL53L0X_FIXPOINT1616_SCALE_FACTOR);
-		val->val2 = 0;
-	} else if ((enum sensor_channel_vl53l0x)chan == SENSOR_CHAN_VL53L0X_RANGE_DMAX) {
-		val->val1 = drv_data->RangingMeasurementData.RangeDMaxMilliMeter / 1000;
-		val->val2 = (drv_data->RangingMeasurementData.RangeDMaxMilliMeter % 1000) * 1000;
-	} else if ((enum sensor_channel_vl53l0x)chan == SENSOR_CHAN_VL53L0X_RANGE_STATUS) {
-		val->val1 = drv_data->RangingMeasurementData.RangeStatus;
-		val->val2 = 0;
 	} else {
+		switch ((enum sensor_channel_vl53l0x)chan) {
+		case SENSOR_CHAN_VL53L0X_RANGE_STATUS:
+			val->val1 = drv_data->RangingMeasurementData.RangeStatus;
+			val->val2 = 0;
+			break;
+		case SENSOR_CHAN_VL53L0X_RANGE_DMAX:
+			val->val1 = drv_data->RangingMeasurementData.RangeDMaxMilliMeter / 1000;
+			val->val2 = (drv_data->RangingMeasurementData.RangeDMaxMilliMeter % 1000)
+				    * 1000;
+			break;
+		case SENSOR_CHAN_VL53L0X_SIGNAL_RATE_RTN_CPS:
+			val->val1 = drv_data->RangingMeasurementData.SignalRateRtnMegaCps >> 16;
+			val->val2 = 0;
+			break;
+		case SENSOR_CHAN_VL53L0X_AMBIENT_RATE_RTN_CPS:
+			val->val1 = drv_data->RangingMeasurementData.AmbientRateRtnMegaCps >> 16;
+			val->val2 = 0;
+			break;
+		case SENSOR_CHAN_VL53L0X_EFFECTIVE_SPAD_RTN_COUNT:
+			val->val1 = drv_data->RangingMeasurementData.EffectiveSpadRtnCount / 256;
+			val->val2 = 0;
+			break;
+		default:
+			return -ENOTSUP;
+		}
+	}
+
+	return 0;
+}
+
+static int vl53l0x_set_mode(const struct device *dev,
+			    struct vl53l0x_data *drv_data,
+			    VL53L0X_DeviceModes mode)
+{
+	VL53L0X_DEV vl = &drv_data->vl53l0x;
+	VL53L0X_Error ret;
+
+	if (drv_data->continuous_running) {
+		VL53L0X_StopMeasurement(vl);
+		drv_data->continuous_running = false;
+	}
+
+	ret = VL53L0X_SetDeviceMode(vl, mode);
+	if (ret) {
+		LOG_ERR("[%s] SetDeviceMode(%d) failed: %d",
+			dev->name, mode, ret);
+		return -EIO;
+	}
+	drv_data->current_mode = mode;
+
+	if (mode != VL53L0X_DEVICEMODE_SINGLE_RANGING) {
+		ret = VL53L0X_StartMeasurement(vl);
+		if (ret) {
+			LOG_ERR("[%s] StartMeasurement failed: %d",
+				dev->name, ret);
+			return -EIO;
+		}
+		drv_data->continuous_running = true;
+	}
+
+	return 0;
+}
+
+static int vl53l0x_attr_set(const struct device *dev,
+			    enum sensor_channel chan,
+			    enum sensor_attribute attr,
+			    const struct sensor_value *val)
+{
+	struct vl53l0x_data *drv_data = dev->data;
+	VL53L0X_DEV vl = &drv_data->vl53l0x;
+	VL53L0X_Error ret;
+
+	if (!drv_data->started) {
+		return -ENODEV;
+	}
+
+	switch ((enum sensor_attribute_vl53l0x)attr) {
+	case SENSOR_ATTR_VL53L0X_MODE:
+		return vl53l0x_set_mode(dev, drv_data,
+					(VL53L0X_DeviceModes)val->val1);
+
+	case SENSOR_ATTR_VL53L0X_TIMING_BUDGET:
+		ret = VL53L0X_SetMeasurementTimingBudgetMicroSeconds(vl,
+			(uint32_t)val->val1);
+		if (ret) {
+			return -EIO;
+		}
+		break;
+
+	case SENSOR_ATTR_VL53L0X_INTER_MEASUREMENT_PERIOD:
+		ret = VL53L0X_SetInterMeasurementPeriodMilliSeconds(vl,
+			(uint32_t)val->val1);
+		if (ret) {
+			return -EIO;
+		}
+		break;
+
+	case SENSOR_ATTR_VL53L0X_VCSEL_PRE_RANGE:
+		ret = VL53L0X_SetVcselPulsePeriod(vl,
+			VL53L0X_VCSEL_PERIOD_PRE_RANGE, (uint8_t)val->val1);
+		if (ret) {
+			return -EIO;
+		}
+		break;
+
+	case SENSOR_ATTR_VL53L0X_VCSEL_FINAL_RANGE:
+		ret = VL53L0X_SetVcselPulsePeriod(vl,
+			VL53L0X_VCSEL_PERIOD_FINAL_RANGE, (uint8_t)val->val1);
+		if (ret) {
+			return -EIO;
+		}
+		break;
+
+	case SENSOR_ATTR_VL53L0X_SIGNAL_RATE_LIMIT:
+		ret = VL53L0X_SetLimitCheckValue(vl,
+			VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE,
+			(FixPoint1616_t)val->val1);
+		if (ret) {
+			return -EIO;
+		}
+		break;
+
+	case SENSOR_ATTR_VL53L0X_SIGMA_LIMIT:
+		ret = VL53L0X_SetLimitCheckValue(vl,
+			VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE,
+			(FixPoint1616_t)val->val1);
+		if (ret) {
+			return -EIO;
+		}
+		break;
+
+	case SENSOR_ATTR_VL53L0X_PROFILE:
+		return vl53l0x_apply_profile(drv_data,
+					     (enum vl53l0x_profile)val->val1);
+
+	case SENSOR_ATTR_VL53L0X_OFFSET_CAL:
+		ret = VL53L0X_SetOffsetCalibrationDataMicroMeter(vl,
+			(int32_t)val->val1);
+		if (ret) {
+			return -EIO;
+		}
+		break;
+
+	case SENSOR_ATTR_VL53L0X_XTALK_RATE:
+		ret = VL53L0X_SetXTalkCompensationRateMegaCps(vl,
+			(FixPoint1616_t)val->val1);
+		if (ret) {
+			return -EIO;
+		}
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int vl53l0x_attr_get(const struct device *dev,
+			    enum sensor_channel chan,
+			    enum sensor_attribute attr,
+			    struct sensor_value *val)
+{
+	struct vl53l0x_data *drv_data = dev->data;
+	VL53L0X_DEV vl = &drv_data->vl53l0x;
+	VL53L0X_Error ret;
+
+	if (!drv_data->started) {
+		return -ENODEV;
+	}
+
+	val->val2 = 0;
+
+	switch ((enum sensor_attribute_vl53l0x)attr) {
+	case SENSOR_ATTR_VL53L0X_MODE:
+		val->val1 = (int32_t)drv_data->current_mode;
+		break;
+
+	case SENSOR_ATTR_VL53L0X_TIMING_BUDGET: {
+		uint32_t budget;
+
+		ret = VL53L0X_GetMeasurementTimingBudgetMicroSeconds(vl, &budget);
+		if (ret) {
+			return -EIO;
+		}
+		val->val1 = (int32_t)budget;
+		break;
+	}
+
+	case SENSOR_ATTR_VL53L0X_INTER_MEASUREMENT_PERIOD: {
+		uint32_t period;
+
+		ret = VL53L0X_GetInterMeasurementPeriodMilliSeconds(vl, &period);
+		if (ret) {
+			return -EIO;
+		}
+		val->val1 = (int32_t)period;
+		break;
+	}
+
+	case SENSOR_ATTR_VL53L0X_VCSEL_PRE_RANGE: {
+		uint8_t period;
+
+		ret = VL53L0X_GetVcselPulsePeriod(vl,
+			VL53L0X_VCSEL_PERIOD_PRE_RANGE, &period);
+		if (ret) {
+			return -EIO;
+		}
+		val->val1 = (int32_t)period;
+		break;
+	}
+
+	case SENSOR_ATTR_VL53L0X_VCSEL_FINAL_RANGE: {
+		uint8_t period;
+
+		ret = VL53L0X_GetVcselPulsePeriod(vl,
+			VL53L0X_VCSEL_PERIOD_FINAL_RANGE, &period);
+		if (ret) {
+			return -EIO;
+		}
+		val->val1 = (int32_t)period;
+		break;
+	}
+
+	case SENSOR_ATTR_VL53L0X_SIGNAL_RATE_LIMIT: {
+		FixPoint1616_t limit;
+
+		ret = VL53L0X_GetLimitCheckValue(vl,
+			VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, &limit);
+		if (ret) {
+			return -EIO;
+		}
+		val->val1 = (int32_t)limit;
+		break;
+	}
+
+	case SENSOR_ATTR_VL53L0X_SIGMA_LIMIT: {
+		FixPoint1616_t limit;
+
+		ret = VL53L0X_GetLimitCheckValue(vl,
+			VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, &limit);
+		if (ret) {
+			return -EIO;
+		}
+		val->val1 = (int32_t)limit;
+		break;
+	}
+
+	case SENSOR_ATTR_VL53L0X_OFFSET_CAL: {
+		int32_t offset;
+
+		ret = VL53L0X_GetOffsetCalibrationDataMicroMeter(vl, &offset);
+		if (ret) {
+			return -EIO;
+		}
+		val->val1 = offset;
+		break;
+	}
+
+	case SENSOR_ATTR_VL53L0X_XTALK_RATE: {
+		FixPoint1616_t rate;
+
+		ret = VL53L0X_GetXTalkCompensationRateMegaCps(vl, &rate);
+		if (ret) {
+			return -EIO;
+		}
+		val->val1 = (int32_t)rate;
+		break;
+	}
+
+	default:
 		return -ENOTSUP;
 	}
 
@@ -322,6 +670,8 @@ static int vl53l0x_channel_get(const struct device *dev,
 static DEVICE_API(sensor, vl53l0x_api_funcs) = {
 	.sample_fetch = vl53l0x_sample_fetch,
 	.channel_get = vl53l0x_channel_get,
+	.attr_set = vl53l0x_attr_set,
+	.attr_get = vl53l0x_attr_get,
 };
 
 static int vl53l0x_init(const struct device *dev)
@@ -335,6 +685,8 @@ static int vl53l0x_init(const struct device *dev)
 	 */
 	drv_data->vl53l0x.I2cDevAddr = VL53L0X_INITIAL_ADDR;
 	drv_data->vl53l0x.i2c = config->i2c.bus;
+	drv_data->continuous_running = false;
+	drv_data->current_mode = VL53L0X_DEVICEMODE_SINGLE_RANGING;
 
 #if defined(CONFIG_VL53L0X_RECONFIGURE_ADDRESS) || defined(CONFIG_PM_DEVICE)
 	if (config->xshut.port == NULL) {
