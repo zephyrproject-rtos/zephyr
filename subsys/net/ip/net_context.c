@@ -2830,6 +2830,7 @@ skip_alloc:
 
 		net_pkt_set_ll_proto_type(pkt, net_ntohs(ll_dst_addr->sll_protocol));
 
+		net_stats_update_raw_sent(net_pkt_iface(pkt), len);
 		net_if_try_queue_tx(net_pkt_iface(pkt), pkt, timeout);
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == NET_AF_CAN &&
 		   net_context_get_proto(context) == NET_CAN_RAW) {
