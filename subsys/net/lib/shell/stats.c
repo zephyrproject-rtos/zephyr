@@ -585,6 +585,16 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, udp.chkerr));
 #endif
 
+#if defined(CONFIG_NET_STATISTICS_RAW)
+	PR("Raw recv       %u\tsent\t%u\tdrop\t%u\n",
+	   GET_STAT(iface, raw.recv),
+	   GET_STAT(iface, raw.sent),
+	   GET_STAT(iface, raw.drop));
+	PR("Raw bytes recv %llu\tsent\t%llu\n",
+	   GET_STAT(iface, raw.bytes.received),
+	   GET_STAT(iface, raw.bytes.sent));
+#endif
+
 #if defined(CONFIG_NET_STATISTICS_TCP) && defined(CONFIG_NET_NATIVE_TCP)
 	PR("TCP bytes recv %llu\tsent\t%llu\tresent\t%u\n",
 	   GET_STAT(iface, tcp.bytes.received),
