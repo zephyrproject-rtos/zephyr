@@ -1081,8 +1081,8 @@ symcr: symcr@40100000 {
 	compatible = "microchip,xec-symcr";
 	reg = <0x40100000 0x1000>;
 	interrupts = <68 1>;
-	clocks = <&pcr 3 26 MCHP_XEC_PCR_CLK_PERIPH>;
-	girqs = <16 3>;
+	pcr = <MCHP_XEC_SCR_ENCODE(3, 26)>;
+	girqs = <MCHP_XEC_ECIA_GIRQ_ENC(16, 3)>;
 	status = "disabled";
 	#address-cells = <1>;
 	#size-cells = <1>;
