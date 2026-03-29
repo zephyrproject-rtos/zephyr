@@ -97,7 +97,7 @@ static int numaker_vbus_discharge(const struct device *dev, bool enable)
 }
 
 /**
- * @brief Controls a pin that enables VBUS measurments
+ * @brief Controls a pin that enables VBUS measurements
  *
  * @retval 0 on success
  * @retval -EIO on failure

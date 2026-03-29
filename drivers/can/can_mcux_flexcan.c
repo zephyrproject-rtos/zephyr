@@ -438,7 +438,7 @@ static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 	}
 
 	if ((mode & CAN_MODE_FD) != 0 && (mode & CAN_MODE_3_SAMPLES) != 0) {
-		LOG_ERR("triple samling is not supported in CAN FD mode");
+		LOG_ERR("triple sampling is not supported in CAN FD mode");
 		return -ENOTSUP;
 	}
 

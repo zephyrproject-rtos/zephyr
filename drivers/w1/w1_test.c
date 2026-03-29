@@ -8,7 +8,7 @@
 
 /*
  * This is not a real 1-Wire driver. It is only used to instantiate struct
- * devices for the "vnd,w1" devicetree compatibe used in test code.
+ * devices for the "vnd,w1" devicetree compatible used in test code.
  */
 #include <zephyr/drivers/w1.h>
 

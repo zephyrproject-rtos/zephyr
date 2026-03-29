@@ -947,7 +947,7 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 #endif /* !(CONFIG_SPI_RTIO && CONFIG_SPI_STM32_DMA) */
 
 #ifdef CONFIG_SPI_RTIO
-/* Forward declaration for RTIO handlers conveniance */
+/* Forward declaration for RTIO handlers convenience */
 static void spi_stm32_iodev_complete(const struct device *dev, int status);
 static int spi_stm32_configure(const struct device *dev,
 			       const struct spi_config *config,

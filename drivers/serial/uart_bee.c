@@ -136,25 +136,25 @@ static int uart_bee_configure(const struct device *dev, const struct uart_config
 
 	baudrate_idx = uart_bee_cfg2idx_baudrate(cfg->baudrate);
 	if (baudrate_idx < 0) {
-		LOG_ERR("Unspported baudrate: %d", cfg->baudrate);
+		LOG_ERR("Unsupported baudrate: %d", cfg->baudrate);
 		return -ENOTSUP;
 	}
 
 	wordlen = uart_bee_cfg2mac_data_bits(cfg->data_bits);
 	if (wordlen < 0) {
-		LOG_ERR("Unspported data_bits: %d", cfg->data_bits);
+		LOG_ERR("Unsupported data_bits: %d", cfg->data_bits);
 		return -ENOTSUP;
 	}
 
 	stopbits = uart_bee_cfg2mac_stopbits(cfg->stop_bits);
 	if (stopbits < 0) {
-		LOG_ERR("Unspported stop_bits: %d", cfg->stop_bits);
+		LOG_ERR("Unsupported stop_bits: %d", cfg->stop_bits);
 		return -ENOTSUP;
 	}
 
 	parity = uart_bee_cfg2mac_parity(cfg->parity);
 	if (parity < 0) {
-		LOG_ERR("Unspported parity: %d", cfg->parity);
+		LOG_ERR("Unsupported parity: %d", cfg->parity);
 		return -ENOTSUP;
 	}
 
@@ -404,13 +404,13 @@ static void uart_bee_irq_callback_set(const struct device *dev, uart_irq_callbac
 #ifdef CONFIG_UART_LINE_CTRL
 int uart_bee_line_ctrl_set(const struct device *dev, uint32_t ctrl, uint32_t val)
 {
-	LOG_ERR("Unsupport line_ctrl_set function");
+	LOG_ERR("Unsupported line_ctrl_set function");
 	return -ENOTSUP;
 }
 
 int uart_bee_line_ctrl_get(const struct device *dev, uint32_t ctrl, uint32_t *val)
 {
-	LOG_ERR("Unsupport line_ctrl_get function");
+	LOG_ERR("Unsupported line_ctrl_get function");
 	return -ENOTSUP;
 }
 #endif
@@ -418,7 +418,7 @@ int uart_bee_line_ctrl_get(const struct device *dev, uint32_t ctrl, uint32_t *va
 #ifdef CONFIG_UART_DRV_CMD
 int uart_bee_drv_cmd(const struct device *dev, uint32_t cmd, uint32_t p)
 {
-	LOG_ERR("Unsupport drv_cmd function");
+	LOG_ERR("Unsupported drv_cmd function");
 	return -ENOTSUP;
 }
 #endif

@@ -94,7 +94,7 @@ static int serial_tx_rx(const struct device *dev, const uint8_t *tx_data, uint8_
 	return ret;
 }
 
-/* Concurretly tranmits and receives one 1-Wire byte */
+/* Concurretly transmits and receives one 1-Wire byte */
 static int serial_tx_rx_byte(const struct device *dev, uint8_t tx_byte, uint8_t *rx_byte)
 {
 	__ASSERT_NO_MSG(rx_byte != NULL);

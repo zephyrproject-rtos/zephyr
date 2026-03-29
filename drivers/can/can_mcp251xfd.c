@@ -273,7 +273,7 @@ static int mcp251xfd_reg_check_value_wtimeout(const struct device *dev, uint16_t
 		}
 
 		if (--retries < 0) {
-			LOG_ERR("Timeout validing 0x%x", addr);
+			LOG_ERR("Timeout validating 0x%x", addr);
 			return -EIO;
 		}
 

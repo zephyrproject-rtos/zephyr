@@ -632,8 +632,8 @@ static int hid_dev_submit_report(const struct device *dev,
 	return 0;
 }
 
-static inline int hid_dev_set_out_polling(const struct device *dev,
-					  const unsigned int period_us)
+static __maybe_unused int hid_dev_set_out_polling(const struct device *dev,
+						  const unsigned int period_us)
 {
 	const struct hid_device_config *const dcfg = dev->config;
 	struct hid_device_data *const ddata = dev->data;
@@ -662,8 +662,8 @@ static inline int hid_dev_set_out_polling(const struct device *dev,
 	return 0;
 }
 
-static inline int hid_dev_set_in_polling(const struct device *dev,
-					 const unsigned int period_us)
+static __maybe_unused int hid_dev_set_in_polling(const struct device *dev,
+						 const unsigned int period_us)
 {
 	const struct hid_device_config *const dcfg = dev->config;
 	struct hid_device_data *const ddata = dev->data;

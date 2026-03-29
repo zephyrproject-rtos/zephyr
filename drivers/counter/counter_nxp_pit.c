@@ -254,7 +254,7 @@ static DEVICE_API(counter, nxp_pit_driver_api) = {
 		POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,					\
 		&nxp_pit_driver_api);
 
-/* Creates a decleration for each pit channel */
+/* Creates a declaration for each pit channel */
 #define NXP_PIT_CHANNEL_DECLARATIONS(node)  static struct nxp_pit_channel_data			\
 	nxp_pit_channel_data_##node;
 

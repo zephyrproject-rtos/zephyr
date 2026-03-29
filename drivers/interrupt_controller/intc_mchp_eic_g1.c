@@ -27,11 +27,11 @@ LOG_MODULE_REGISTER(intc_mchp_eic_g1, CONFIG_INTC_LOG_LEVEL);
 #define EIC_CONFIG_EIC_LINE_MSK              0xf
 /* This is used to get the EIC config register index (0 or 1) */
 #define EIC_CONFIG_REG_IDX(eic_line)         ((eic_line) >> 3)
-/* Gets the offset inside the config register that is to be updated. Atmost 8 eic lines
+/* Gets the offset inside the config register that is to be updated. At most 8 eic lines
  * configuration is present inside the config register.
  */
 #define EIC_CONFIG_EIC_LINE_OFFSET(eic_line) ((eic_line) & 7)
-/* Denotes the alloted bits for each bits inside config structure*/
+/* Denotes the allotted bits for each bits inside config structure*/
 #define NUM_OF_BITS_FOR_EACH_LINE            4
 /* finds out the trig type bit position inside the configX register*/
 #define EIC_TRIG_TYPE_BIT_POS(eic_line)                                                            \

@@ -58,8 +58,7 @@ class Reporting:
         self.outdir = os.path.abspath(env.options.outdir)
         self.instance_fail_count = plan.instance_fail_count
         self.footprint = None
-        self.coverage_status = None
-
+        self.coverage_status: bool = False
 
     @staticmethod
     def process_log(log_file):
@@ -70,7 +69,6 @@ class Reporting:
                 filtered_string = ''.join(filter(lambda x: x in string.printable, log))
 
         return filtered_string
-
 
     @staticmethod
     def xunit_testcase(

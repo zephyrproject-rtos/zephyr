@@ -897,7 +897,7 @@ static int spi_smartbond_dma_config(const struct device *dev)
 
 	/* Do not change */
 	rx_block->source_addr_adj = 0x2;
-	/* Incremenetal */
+	/* Incremental */
 	rx_block->dest_addr_adj = 0x0;
 	rx_block->source_address = (uint32_t)&config->regs->SPI_RX_TX_REG;
 
@@ -1024,7 +1024,7 @@ static int spi_smartbond_dma_trigger(const struct device *dev)
 			/*
 			 * Regardless of whether or not the RX FIFO is enabled, received
 			 * bytes are pushed into it. As such, the RXI FIFO should be
-			 * flushed so that a next read access retrives the correct bytes
+			 * flushed so that a next read access retrieves the correct bytes
 			 * and not old ones.
 			 */
 			if (!ctx->rx_buf) {

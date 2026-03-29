@@ -226,7 +226,7 @@ static int gpio_max14917_init(const struct device *dev)
 		return err;
 	}
 
-	/* Initialize satus and fault flags to 0 */
+	/* Initialize status and fault flags to 0 */
 	data->gpios_ON = 0;
 	data->gpios_fault = 0;
 

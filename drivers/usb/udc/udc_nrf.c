@@ -43,6 +43,8 @@ enum udc_nrf_event_type {
 	UDC_NRF_EVT_RESUME,
 	/* Remote Wakeup initiated */
 	UDC_NRF_EVT_WUREQ,
+	/* Endpoint dequeue requested */
+	UDC_NRF_EVT_DEQUEUE,
 };
 
 /* Main events the driver thread waits for */
@@ -69,6 +71,7 @@ static bool udc_nrf_ctrl_data_in_finished;
 static bool udc_nrf_setup_set_addr, udc_nrf_fake_setup;
 static uint8_t udc_nrf_address;
 const static struct device *udc_nrf_dev;
+static bool vbus_present;
 
 #define NRF_USBD_COMMON_EPIN_CNT      9
 #define NRF_USBD_COMMON_EPOUT_CNT     9
@@ -166,6 +169,11 @@ static uint32_t m_ep_dma_waiting;
  * IN endpoint armed means that device will respond with DATA packet.
  */
 static uint32_t m_ep_armed;
+
+/* Set bit indicates that endpoint is requested to be dequeued. */
+static uint32_t m_ep_dequeue;
+
+static K_CONDVAR_DEFINE(ep_dequeued);
 
 /* Semaphore to guard EasyDMA access.
  * In USBD there is only one DMA channel working in background, and new transfer
@@ -419,6 +427,15 @@ static void nrf_usbd_dma_finished(nrf_usbd_common_ep_t ep)
 		m_ep_armed |= BIT(ep2bit(ep));
 	}
 
+	/* Set default dma_ep value that has no special meaning, so we do not
+	 * need to have separate dma_ep_valid flag (in the hot interrupt path).
+	 * This is necessary to avoid false positives in ev_sof_handler() and
+	 * on EVENTS_EP0SETUP check when dma_available is held in thread context
+	 * (e.g. when thread wants to call usbd_ep_abort()), i.e. when thread
+	 * prevents DMA operation.
+	 */
+	dma_ep = NRF_USBD_COMMON_EPIN1;
+
 	k_sem_give(&dma_available);
 }
 
@@ -431,6 +448,15 @@ static void ev_sof_handler(void)
 	if (NRF_USBD->SIZE.ISOOUT) {
 		iso_ready_mask |= (1U << ep2bit(NRF_USBD_COMMON_EPOUT8));
 	}
+
+	if (k_sem_count_get(&dma_available) == 0) {
+		/* DMA may have been active across SOF which means that endpoint
+		 * data may be corrupted (if DMA was to isochronous endpoint).
+		 * Do not mark the endpoint as ready if this is the case.
+		 */
+		iso_ready_mask &= ~BIT(ep2bit(dma_ep));
+	}
+
 	m_ep_ready |= iso_ready_mask;
 
 	m_ep_armed &= ~USBD_EPISO_BIT_MASK;
@@ -1386,6 +1412,16 @@ static int udc_event_xfer_setup(const struct device *dev)
 	return 0;
 }
 
+static void udc_handle_ep_dequeue(const struct device *dev,
+				  struct udc_ep_config *cfg)
+{
+	nrf_usbd_legacy_ep_abort(cfg->addr);
+
+	udc_ep_cancel_queued(dev, cfg);
+
+	udc_ep_set_busy(cfg, false);
+}
+
 static void udc_nrf_thread_handler(const struct device *dev)
 {
 	uint32_t evt;
@@ -1454,6 +1490,30 @@ static void udc_nrf_thread_handler(const struct device *dev)
 	if (evt & BIT(UDC_NRF_EVT_SETUP)) {
 		udc_event_xfer_setup(dev);
 	}
+
+	if (evt & BIT(UDC_NRF_EVT_DEQUEUE)) {
+		udc_lock_internal(dev, K_FOREVER);
+
+		while (m_ep_dequeue) {
+			struct udc_ep_config *ep_cfg;
+			uint8_t bitpos = NRF_CTZ(m_ep_dequeue);
+
+			ep_cfg = udc_get_ep_cfg(dev, bit2ep(bitpos));
+			udc_handle_ep_dequeue(dev, ep_cfg);
+
+			/* If transfer actually finished before dequeue, then
+			 * xfer_finished bit may be set. Just clear it.
+			 */
+			atomic_clear_bit(&xfer_finished, bitpos);
+
+			m_ep_dequeue &= ~BIT(bitpos);
+		}
+
+		/* Notify requestors that requested endpoints are dequeued */
+		k_condvar_broadcast(&ep_dequeued);
+
+		udc_unlock_internal(dev);
+	}
 }
 
 static void udc_nrf_thread(void *p1, void *p2, void *p3)
@@ -1474,6 +1534,7 @@ static void udc_nrf_power_handler(nrfx_power_usb_evt_t pwr_evt)
 	case NRFX_POWER_USB_EVT_DETECTED:
 		LOG_DBG("POWER event detected");
 		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_READY, 0);
+		vbus_present = true;
 		break;
 	case NRFX_POWER_USB_EVT_READY:
 		LOG_DBG("POWER event ready");
@@ -1482,6 +1543,7 @@ static void udc_nrf_power_handler(nrfx_power_usb_evt_t pwr_evt)
 	case NRFX_POWER_USB_EVT_REMOVED:
 		LOG_DBG("POWER event removed");
 		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_REMOVED, 0);
+		vbus_present = false;
 		break;
 	default:
 		LOG_ERR("Unknown power event %d", pwr_evt);
@@ -1503,11 +1565,23 @@ static int udc_nrf_ep_enqueue(const struct device *dev,
 static int udc_nrf_ep_dequeue(const struct device *dev,
 			      struct udc_ep_config *cfg)
 {
-	nrf_usbd_legacy_ep_abort(cfg->addr);
+	struct udc_data *data = dev->data;
 
-	udc_ep_cancel_queued(dev, cfg);
+	/* Signal that we want to dequeue, variable is protected by UDC mutex */
+	m_ep_dequeue |= BIT(ep2bit(cfg->addr));
 
-	udc_ep_set_busy(cfg, false);
+	/* Avoid context switch immediately after posting event */
+	k_sched_lock();
+
+	/* Inform nRF UDC driver that there are endpoints to be dequeued */
+	k_event_post(&drv_evt, BIT(UDC_NRF_EVT_DEQUEUE));
+
+	/* Wait for endpoints to be dequeued, UDC mutex was acquired via
+	 * api->lock() called in udc_ep_dequeue().
+	 */
+	k_condvar_wait(&ep_dequeued, &data->mutex, K_FOREVER);
+
+	k_sched_unlock();
 
 	return 0;
 }
@@ -1675,6 +1749,10 @@ static int udc_nrf_init(const struct device *dev)
 	const struct udc_nrf_config *cfg = dev->config;
 
 	hfxo_mgr = z_nrf_clock_control_get_onoff(cfg->clock);
+
+	if (vbus_present) {
+		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_READY, 0);
+	}
 
 #ifdef CONFIG_HAS_HW_NRF_USBREG
 	/* Use CLOCK/POWER priority for compatibility with other series where

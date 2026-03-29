@@ -188,8 +188,8 @@ static int mcux_qtmr_configure_capture(const struct device *dev,
 
 	if (flags & PWM_CAPTURE_TYPE_PERIOD) {
 		data->capture.pulse_capture = false;
-		/* set reloadOnCapture to true to reload counter when capture event happends,
-		 * so only second caputre value is needed when calculating ticks
+		/* set reloadOnCapture to true to reload counter when capture event happens,
+		 * so only second capture value is needed when calculating ticks
 		 */
 		QTMR_SetupInputCapture(config->base,
 					(qtmr_channel_selection_t)channel,

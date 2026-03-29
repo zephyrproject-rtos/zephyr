@@ -22,7 +22,7 @@ config SPI_PW_LPSS_DMA
 	depends on SPI_PW_INTERRUPT
 	help
 	  This option enables SPI DMA feature to be used for synchrounous
-	  data transfers. All Tx operaton are done using dma channel 0 and
+	  data transfers. All Tx operation are done using dma channel 0 and
 	  all Rx operations are done using dma channel 1.
 
 endif # SPI_PW

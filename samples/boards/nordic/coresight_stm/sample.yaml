@@ -57,6 +57,7 @@ tests:
       type: multi_line
       ordered: true
       regex:
+        - "test with 64bit argument 4398046511104"
         - "Timing for log message with 0 arguments:"
         - "Timing for log message with 1 argument:"
         - "Timing for log message with 2 arguments:"

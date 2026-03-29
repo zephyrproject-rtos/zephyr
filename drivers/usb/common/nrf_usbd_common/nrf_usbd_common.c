@@ -136,9 +136,9 @@ LOG_MODULE_REGISTER(nrf_usbd_common, CONFIG_NRF_USBD_COMMON_LOG_LEVEL);
  *
  * @return Initialized event constant variable.
  */
-#define NRF_USBD_COMMON_EP_TRANSFER_EVENT(name, endpont, ep_stat)                                  \
+#define NRF_USBD_COMMON_EP_TRANSFER_EVENT(name, endpoint, ep_stat)                                 \
 	const nrf_usbd_common_evt_t name = {NRF_USBD_COMMON_EVT_EPTRANSFER,                        \
-				      .data = {.eptransfer = {.ep = endpont, .status = ep_stat}}}
+				      .data = {.eptransfer = {.ep = endpoint, .status = ep_stat}}}
 
 /* Check it the bit positions values match defined DATAEPSTATUS bit positions */
 BUILD_ASSERT(
@@ -400,21 +400,6 @@ static bool nrf_usbd_common_feeder(nrf_usbd_common_ep_transfer_t *p_next,
 	} else {
 		return (p_transfer->size != 0);
 	}
-}
-
-/**
- * @brief Change Driver endpoint number to HAL endpoint number.
- *
- * @param ep Driver endpoint identifier.
- *
- * @return Endpoint identifier in HAL.
- *
- * @sa nrf_usbd_common_ep_from_hal
- */
-static inline uint8_t ep_to_hal(nrf_usbd_common_ep_t ep)
-{
-	NRF_USBD_COMMON_ASSERT_EP_VALID(ep);
-	return (uint8_t)ep;
 }
 
 /**
@@ -813,7 +798,7 @@ static uint8_t usbd_dma_scheduler_algorithm(uint32_t req)
  *
  * @return The size of endpoint buffer.
  */
-static inline size_t usbd_ep_iso_capacity(nrf_usbd_common_ep_t ep)
+static __maybe_unused inline size_t usbd_ep_iso_capacity(nrf_usbd_common_ep_t ep)
 {
 	(void)ep;
 

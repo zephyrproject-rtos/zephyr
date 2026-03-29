@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#define FLASH_LAYOUT_STM32WBA2X /* see stm32wba.dtsi */
 #include <st/wba/stm32wba.dtsi>
 
 / {
@@ -21,9 +22,52 @@
 			status = "disabled";
 		};
 
+		adc4: adc@46021000 {
+			interrupts = <59 0>;
+		};
+
+		i2c1: i2c@40005400 {
+			interrupts = <41 0>, <42 0>;
+		};
+
+		i2c3: i2c@46002800 {
+			interrupts = <49 0>, <50 0>;
+		};
+
+		lptim1: timers@46004400 {
+			interrupts = <45 1>;
+		};
+
+		lptim2: timers@40009400 {
+			interrupts = <46 1>;
+		};
+
+		lpuart1: serial@46002400 {
+			interrupts = <44 0>;
+		};
+
+		rng: rng@420c0800 {
+			interrupts = <53 0>;
+		};
+
+		spi3: spi@46002000 {
+			interrupts = <57 0>;
+		};
+
+		timers2: timers@40000000 {
+			interrupts = <40 0>;
+		};
+
+		timers16: timers@40014400 {
+			interrupts = <47 0>;
+		};
+
+		timers17: timers@40014800 {
+			interrupts = <48 0>;
+		};
+
 		usart1: serial@40013800 {
 			interrupts = <43 0>;
-			status = "disabled";
 		};
 	};
 };

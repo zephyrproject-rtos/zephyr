@@ -258,7 +258,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 4ceafbebc77571f540d2ff9957468a1bfedb41d5
+      revision: 39130f29ae37c1db34095478ca02b6419b70dcdc
       path: modules/hal/stm32
       groups:
         - hal
@@ -324,7 +324,7 @@ manifest:
       revision: 85aa60d18b3d5e5588d7b247abf90198f07c8a63
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: 26158d1c012477e77765d138b26a791db917c881
+      revision: a83ab39d828981ca1fd8a62e335a73556d35c123
       path: modules/crypto/mbedtls
       groups:
         - crypto
@@ -345,8 +345,8 @@ manifest:
         - debug
       revision: 5a9d6055b62edc54566d6d0034d9daec91749b98
     - name: mldsa-native
-      revision: 5772b4f4a0105694b1203abb582273f78fa951b7
-      path: modules/crypto/mbedtls/tf-psa-crypto/drivers/pqpc/mldsa-native
+      revision: a2be3a55efafa398f094dd347d3ef43d99182b47
+      path: modules/crypto/mldsa-native
       groups:
         - crypto
     - name: nanopb
@@ -358,7 +358,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 63ccab2988bf4c144b3cd324a0277e03206fa413
+      revision: 158b9710d6e10c57b2c623f8f4178f0bbc85c23f
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: cebea8e27ceb91a7d4580d17db65f93669befe72
@@ -395,8 +395,8 @@ manifest:
         - testing
         - tee
     - name: tf-psa-crypto
-      revision: 6820f1dadc67c289d2dc63aec495519c9d589d8e
-      path: modules/crypto/mbedtls/tf-psa-crypto
+      revision: b84929dde09b2e88d8d6c3581e6473ffa7bfe14f
+      path: modules/crypto/tf-psa-crypto
       groups:
         - crypto
     - name: trusted-firmware-a
@@ -405,7 +405,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 6e2e07aa785cb69354272fcc95eb36bf85c4a9d3
+      revision: 9a4cb1a280b63a5e66bd469e82eb75f2b3e05a78
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

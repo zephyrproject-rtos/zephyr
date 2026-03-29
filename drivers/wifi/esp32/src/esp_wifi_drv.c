@@ -239,6 +239,7 @@ static void scan_done_handler(void)
 		strncpy(res.ssid, ap_record.ssid, ssid_len);
 		res.rssi = ap_record.rssi;
 		res.channel = ap_record.primary;
+		res.band = ap_record.primary <= 14 ? WIFI_FREQ_BAND_2_4_GHZ : WIFI_FREQ_BAND_5_GHZ;
 
 		memcpy(res.mac, ap_record.bssid, WIFI_MAC_ADDR_LEN);
 		res.mac_length = WIFI_MAC_ADDR_LEN;
@@ -647,18 +648,21 @@ static int esp32_wifi_scan(const struct device *dev, struct wifi_scan_params *pa
 
 	if (ret) {
 		LOG_ERR("Failed to set Wi-Fi mode (%d)", ret);
+		data->scan_cb = NULL;
 		return -EINVAL;
 	}
 
 	ret = esp_wifi_start();
 	if (ret) {
 		LOG_ERR("Failed to start Wi-Fi driver (%d)", ret);
+		data->scan_cb = NULL;
 		return -EAGAIN;
 	}
 
 	ret = esp_wifi_scan_start(&scan_config, false);
 	if (ret != ESP_OK) {
-		LOG_ERR("Failed to start Wi-Fi scanning");
+		LOG_ERR("Failed to start Wi-Fi scanning (%d)", ret);
+		data->scan_cb = NULL;
 		return -EAGAIN;
 	}
 

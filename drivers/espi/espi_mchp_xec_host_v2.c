@@ -487,7 +487,7 @@ static void kbc0_ibf_isr(const struct device *dev)
 #else
 	/* Windows solution */
 	/* The high byte contains information from the host,
-	 * and the lower byte speficies if the host sent
+	 * and the lower byte specifies if the host sent
 	 * a command or data. 1 = Command.
 	 */
 	uint32_t isr_data = ((kbc_hw->EC_KBC_STS & MCHP_KBC_STS_CD) << E8042_ISR_CMD_DATA_POS);

@@ -45,6 +45,9 @@ void soc_early_init_hook(void)
 #ifdef CONFIG_ARM_MPU
 	disable_mpu_rasr_xn();
 #endif /* CONFIG_ARM_MPU */
+
+	/* Initialize SystemCoreClock variable. */
+	SystemCoreClockUpdate();
 }
 
 void soc_late_init_hook(void)

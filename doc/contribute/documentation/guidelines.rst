@@ -752,6 +752,7 @@ charts, and other types of diagrams that can be expressed as a graph.
 To include a Graphviz diagram in a document, use the :rst:dir:`graphviz` directive. For example::
 
    .. graphviz::
+      :caption: An example graph using Graphviz
 
       digraph G {
          rankdir=LR;
@@ -763,6 +764,7 @@ To include a Graphviz diagram in a document, use the :rst:dir:`graphviz` directi
 Would render as:
 
    .. graphviz::
+      :caption: An example graph using Graphviz
 
       digraph G {
          rankdir=LR;
