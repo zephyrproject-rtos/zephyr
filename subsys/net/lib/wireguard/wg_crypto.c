@@ -842,6 +842,12 @@ static bool wg_create_handshake_init(struct wg_iface_context *ctx,
 	/* Hi := Hash(Hi || Spubr) */
 	wg_mix_hash(handshake->hash, peer->key.public_key, WG_PUBLIC_KEY_LEN);
 
+	/* Free any leftover ephemeral private key from a previous unanswered init */
+	if (handshake->ephemeral_private_id != PSA_KEY_ID_NULL) {
+		wg_psa_destroy_key(handshake->ephemeral_private_id);
+		handshake->ephemeral_private_id = PSA_KEY_ID_NULL;
+	}
+
 	/* (Eprivi, Epubi) := DH-Generate() */
 	psa_ret = wg_psa_generate_x25519_keypair(&handshake->ephemeral_private_id,
 						 msg_ephemeral);
