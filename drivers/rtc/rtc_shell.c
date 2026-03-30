@@ -151,8 +151,34 @@ static char *strptime(const char *s, const char *format, struct tm *tm_time)
 	}
 }
 
-static int derive_wday(const char *format, struct tm *tm_time)
+static const char *get_rtc_format(const char *str)
 {
+	if (strchr(str, 'T')) {
+		return format_iso8601;
+	} else if (strchr(str, '-')) {
+		return format_date;
+	} else {
+		return format_time;
+	}
+}
+
+static int parse_rtc_time(const char *str, struct tm *tm_time)
+{
+	const char *format = get_rtc_format(str);
+
+	char *parse_res = strptime(str, format, tm_time);
+
+	if (!parse_res || *parse_res != '\0') {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int derive_wday(const char *str, struct tm *tm_time)
+{
+	const char *format = get_rtc_format(str);
+
 	if (format != format_iso8601 && format != format_date) {
 		return 0;
 	}
@@ -172,6 +198,205 @@ static int derive_wday(const char *format, struct tm *tm_time)
 	return 0;
 }
 
+#ifdef CONFIG_RTC_ALARM
+static int parse_uint16(const struct shell *sh, const char *str, uint16_t *out)
+{
+	char *endptr;
+	unsigned long val = strtoul(str, &endptr, 0);
+
+	if (endptr == str || *endptr != '\0') {
+		shell_error(sh, "Invalid value '%s'", str);
+		return -EINVAL;
+	}
+
+	if (val > UINT16_MAX) {
+		shell_error(sh, "Value '%s' out of range", str);
+		return -EINVAL;
+	}
+	*out = (uint16_t)val;
+
+	return 0;
+}
+
+static int cmd_set_alarm(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev = shell_device_get_binding(argv[1]);
+	int res;
+	uint16_t id, mask, mask_supported;
+
+	if (!device_is_ready(dev)) {
+		shell_error(sh, "Device %s not ready", argv[1]);
+		return -ENODEV;
+	}
+
+	struct rtc_time rtctime = {0};
+	struct tm *tm_time = rtc_time_to_tm(&rtctime);
+
+	if (parse_uint16(sh, argv[2], &id) != 0 || parse_uint16(sh, argv[3], &mask) != 0) {
+		return -EINVAL;
+	}
+
+	if (parse_rtc_time(argv[4], tm_time) != 0) {
+		shell_error(sh, "Error in argument format");
+		return -EINVAL;
+	}
+
+	res = rtc_alarm_get_supported_fields(dev, id, &mask_supported);
+	if (res < 0) {
+		switch (res) {
+		case -EINVAL:
+			shell_error(sh, "Invalid alarm id");
+			break;
+		case -ENOTSUP:
+			shell_error(sh, "Alarm not supported by hardware");
+			break;
+		default:
+			shell_error(sh, "Failed to get supported fields: %d", res);
+			break;
+		}
+		return res;
+	}
+
+	if (mask & ~mask_supported) {
+		shell_error(sh, "Unsupported alarm mask: 0x%04x (supported: 0x%04x)", mask,
+			    mask_supported);
+		return -EINVAL;
+	}
+
+	if (mask & RTC_ALARM_TIME_MASK_WEEKDAY) {
+		/* Derive weekday from parsed datetime */
+		if (derive_wday(argv[4], tm_time) != 0) {
+			shell_error(sh, "Error in time");
+			return -EINVAL;
+		}
+	}
+
+	res = rtc_alarm_set_time(dev, id, mask, &rtctime);
+	if (res < 0) {
+		switch (res) {
+		case -EINVAL:
+			shell_error(sh, "Invalid alarm id or time is invalid");
+			break;
+		case -ENOTSUP:
+			shell_error(sh, "Alarm not supported by hardware");
+			break;
+		default:
+			shell_error(sh, "Failed to set alarm: %d", res);
+			break;
+		}
+		return res;
+	}
+
+	return res;
+}
+
+static int cmd_get_alarm(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev = shell_device_get_binding(argv[1]);
+	int res;
+	uint16_t id, mask;
+
+	if (!device_is_ready(dev)) {
+		shell_error(sh, "device %s not ready", argv[1]);
+		return -ENODEV;
+	}
+
+	if (parse_uint16(sh, argv[2], &id) != 0) {
+		return -EINVAL;
+	}
+
+	struct rtc_time rtctime = {0};
+
+	res = rtc_alarm_get_time(dev, id, &mask, &rtctime);
+	if (res < 0) {
+		switch (res) {
+		case -EINVAL:
+			shell_error(sh, "Invalid alarm id");
+			break;
+		case -ENOTSUP:
+			shell_error(sh, "Alarm not supported by hardware");
+			break;
+		default:
+			shell_error(sh, "Failed to get alarm: %d", res);
+			break;
+		}
+		return res;
+	}
+
+	struct tm *tm_time = rtc_time_to_tm(&rtctime);
+
+	shell_print(sh, "Alarm %d: %04d-%02d-%02dT%02d:%02d:%02d (mask=0x%x)", id,
+		    tm_time->tm_year + 1900, tm_time->tm_mon + 1, tm_time->tm_mday,
+		    tm_time->tm_hour, tm_time->tm_min, tm_time->tm_sec, mask);
+
+	return 0;
+}
+
+static int cmd_get_alarm_mask(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev = shell_device_get_binding(argv[1]);
+	int res;
+	uint16_t id, mask;
+
+	if (!device_is_ready(dev)) {
+		shell_error(sh, "device %s not ready", argv[1]);
+		return -ENODEV;
+	}
+
+	if (parse_uint16(sh, argv[2], &id) != 0) {
+		return -EINVAL;
+	}
+
+	res = rtc_alarm_get_supported_fields(dev, id, &mask);
+	if (res < 0) {
+		switch (res) {
+		case -EINVAL:
+			shell_error(sh, "Invalid alarm id");
+			break;
+		case -ENOTSUP:
+			shell_error(sh, "Alarm not supported by hardware");
+			break;
+		default:
+			shell_error(sh, "Failed to get supported fields: %d", res);
+			break;
+		}
+		return res;
+	}
+
+	shell_print(sh, "Supported mask: 0x%04x", mask);
+
+	if (mask & RTC_ALARM_TIME_MASK_SECOND) {
+		shell_print(sh, "  SECOND");
+	}
+	if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
+		shell_print(sh, "  MINUTE");
+	}
+	if (mask & RTC_ALARM_TIME_MASK_HOUR) {
+		shell_print(sh, "  HOUR");
+	}
+	if (mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
+		shell_print(sh, "  MONTHDAY");
+	}
+	if (mask & RTC_ALARM_TIME_MASK_MONTH) {
+		shell_print(sh, "  MONTH");
+	}
+	if (mask & RTC_ALARM_TIME_MASK_YEAR) {
+		shell_print(sh, "  YEAR");
+	}
+	if (mask & RTC_ALARM_TIME_MASK_WEEKDAY) {
+		shell_print(sh, "  WEEKDAY");
+	}
+	if (mask & RTC_ALARM_TIME_MASK_YEARDAY) {
+		shell_print(sh, "  YEARDAY");
+	}
+	if (mask & RTC_ALARM_TIME_MASK_NSEC) {
+		shell_print(sh, "  NSEC");
+	}
+
+	return 0;
+}
+#endif /* CONFIG_RTC_ALARM */
+
 static int cmd_set(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = shell_device_get_binding(argv[1]);
@@ -189,25 +414,13 @@ static int cmd_set(const struct shell *sh, size_t argc, char **argv)
 
 	(void)rtc_get_time(dev, &rtctime);
 
-	const char *format;
-
-	if (strchr(argv[1], 'T')) {
-		format = format_iso8601;
-	} else if (strchr(argv[1], '-')) {
-		format = format_date;
-	} else {
-		format = format_time;
-	}
-
-	char *parseRes = strptime(argv[1], format, tm_time);
-
-	if (!parseRes || *parseRes != '\0') {
+	if (parse_rtc_time(argv[1], tm_time) != 0) {
 		shell_error(sh, "Error in argument format");
 		return -EINVAL;
 	}
 
 	/* Derive weekday from parsed datetime */
-	if (derive_wday(format, tm_time) != 0) {
+	if (derive_wday(argv[1], tm_time) != 0) {
 		shell_error(sh, "Error in time");
 		return -EINVAL;
 	}
@@ -331,21 +544,34 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	SHELL_HELP("Set UTC time",                                                                 \
 		   "<device> <YYYY-MM-DDThh:mm:ss> | <YYYY-MM-DD> | <hh:mm:ss>")
 
+#ifdef CONFIG_RTC_ALARM
+#define RTC_SET_ALARM_HELP                                                                         \
+	SHELL_HELP("Set RTC alarm",                                                                \
+		   "<device> <id> <mask> <YYYY-MM-DDThh:mm:ss> | <YYYY-MM-DD> | <hh:mm:ss>")
+#define RTC_GET_ALARM_HELP      SHELL_HELP("Get RTC alarm", "<device> <id>")
+#define RTC_GET_ALARM_MASK_HELP SHELL_HELP("Get supported alarm fields", "<device> <id>")
+#endif /* CONFIG_RTC_ALARM */
+
 #define RTC_GET_CALIBRATION_HELP SHELL_HELP("Get calibration", "<device>")
 #define RTC_SET_CALIBRATION_HELP SHELL_HELP("Set calibration", "<device> <ppb>")
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_rtc,
-			       /* Alphabetically sorted */
-			       SHELL_CMD_ARG(set, &dsub_device_name, RTC_SET_HELP, cmd_set, 3, 0),
-			       SHELL_CMD_ARG(get, &dsub_device_name, RTC_GET_HELP, cmd_get, 2, 0),
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_rtc, SHELL_CMD_ARG(set, &dsub_device_name, RTC_SET_HELP, cmd_set, 3, 0),
+	SHELL_CMD_ARG(get, &dsub_device_name, RTC_GET_HELP, cmd_get, 2, 0),
+#ifdef CONFIG_RTC_ALARM
+	SHELL_CMD_ARG(set_alarm, &dsub_device_name, RTC_SET_ALARM_HELP, cmd_set_alarm, 5, 0),
+	SHELL_CMD_ARG(get_alarm, &dsub_device_name, RTC_GET_ALARM_HELP, cmd_get_alarm, 3, 0),
+	SHELL_CMD_ARG(get_alarm_mask, &dsub_device_name, RTC_GET_ALARM_MASK_HELP,
+		      cmd_get_alarm_mask, 3, 0),
+#endif /* CONFIG_RTC_ALARM */
 #ifdef CONFIG_RTC_CALIBRATION
-			       SHELL_CMD_ARG(get_calibration, &dsub_device_name,
-					     RTC_GET_CALIBRATION_HELP, cmd_get_calibration, 2, 0),
-			       SHELL_CMD_ARG(set_calibration, &dsub_device_name,
-					     RTC_SET_CALIBRATION_HELP, cmd_set_calibration, 3, 0),
+	SHELL_CMD_ARG(get_calibration, &dsub_device_name, RTC_GET_CALIBRATION_HELP,
+		      cmd_get_calibration, 2, 0),
+	SHELL_CMD_ARG(set_calibration, &dsub_device_name, RTC_SET_CALIBRATION_HELP,
+		      cmd_set_calibration, 3, 0),
 #endif /* CONFIG_RTC_CALIBRATION */
-			       SHELL_SUBCMD_SET_END);
+	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(rtc, &sub_rtc, "RTC commands", NULL);
