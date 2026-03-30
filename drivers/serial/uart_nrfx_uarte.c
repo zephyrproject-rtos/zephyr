@@ -1575,11 +1575,11 @@ static void cbwt_rx_enable(const struct device *dev, bool with_timeout)
 static int cbwt_uarte_async_init(const struct device *dev)
 {
 	const struct uarte_nrfx_config *cfg = dev->config;
-	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
 	static const uint32_t rx_int_mask = NRF_UARTE_INT_ERROR_MASK |
 						NRF_UARTE_INT_RXTO_MASK;
-
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
+
 	cbwt_data->bounce_buf_swap_len = cfg->bounce_buf_swap_len;
 #endif
 
