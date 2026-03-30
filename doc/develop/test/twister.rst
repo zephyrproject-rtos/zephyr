@@ -1816,6 +1816,116 @@ Would result in calling ``./custom_flash_script.py
 --build-dir <build directory> --board-id <board identification>
 --flag "complex, argument"``.
 
+Hardware Hooks
+--------------
+
+Twister supports running custom scripts at specific points during the
+device test lifecycle. These are called **hooks** and can be defined in the
+hardware map file using the ``hooks`` field. Hooks replace the legacy
+``pre_script``, ``post_script``, ``post_flash_script``, and ``script_param``
+fields, which are still supported for backward compatibility.
+
+Each hook is an object with the following properties:
+
+- ``type`` *(required)*: The point in the lifecycle when the hook runs.
+  Supported values are:
+
+  - ``pre`` – runs before the serial connection is opened and the device is
+    flashed.
+  - ``pre_flash`` – runs immediately before flashing starts.
+  - ``post_flash`` – runs immediately after flashing completes.
+  - ``post`` – runs after the test finishes and the serial connection is
+    closed.
+
+- ``script`` *(required)*: Path to the script or executable to run.
+- ``args`` *(optional)*: A list of string arguments passed to the script.
+  Defaults to an empty list.
+- ``timeout`` *(optional)*: Maximum time in seconds to wait for the script
+  to complete. Defaults to 60 seconds. If the timeout is exceeded, the
+  process is killed and an error is logged.
+
+Example hardware map entry with hooks:
+
+.. code-block:: yaml
+
+   - connected: true
+     id: 000683759358
+     platform: nrf52840dk/nrf52840
+     product: J-Link
+     runner: nrfjprog
+     serial: /dev/ttyACM0
+     hooks:
+       - type: pre
+         script: /path/to/pre_test_setup.sh
+         args:
+           - --reset
+           - --verbose
+         timeout: 30
+       - type: pre_flash
+         script: /path/to/pre_flash_setup.sh
+         timeout: 10
+       - type: post_flash
+         script: /path/to/verify_flash.sh
+         timeout: 15
+       - type: post
+         script: /path/to/cleanup.sh
+
+The hooks are executed in the context of the running test. Environment
+variables from the test environment are passed to the hook scripts. If the
+script exits with a non-zero return code, an error is logged but test
+execution continues.
+
+Legacy Script Fields (Deprecated)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following fields are still supported but are converted internally to the
+``hooks`` format. New configurations should use ``hooks`` instead.
+
+- ``pre_script``: Equivalent to a hook with ``type: pre``.
+- ``post_script``: Equivalent to a hook with ``type: post``.
+- ``post_flash_script``: Equivalent to a hook with ``type: post_flash``.
+- ``script_param``: An object that previously controlled timeouts for the
+  above scripts via ``pre_script_timeout``, ``post_script_timeout``, and
+  ``post_flash_timeout``. These are now specified directly in the hook's
+  ``timeout`` field.
+
+Example using legacy fields (still functional):
+
+.. code-block:: yaml
+
+   - connected: true
+     id: 000683759358
+     platform: stm32n6570_dk/stm32n657xx/sb
+     product: BOOT-SERIAL
+     runner: stm32cubeprogrammer
+     serial: /dev/ttyACM0
+     pre_script: /path/to/board_power_reset.sh
+     post_flash_script: /path/to/verify.sh
+     script_param:
+       pre_script_timeout: 30
+       post_flash_timeout: 15
+
+The equivalent configuration using the new ``hooks`` format:
+
+.. code-block:: yaml
+
+   - connected: true
+     id: 000683759358
+     platform: stm32n6570_dk/stm32n657xx/sb
+     product: BOOT-SERIAL
+     runner: stm32cubeprogrammer
+     serial: /dev/ttyACM0
+     hooks:
+       - type: pre
+         script: /path/to/board_power_reset.sh
+         timeout: 30
+       - type: post_flash
+         script: /path/to/verify.sh
+         timeout: 15
+
+If both ``hooks`` and legacy script fields are present in a hardware map
+entry, the ``hooks`` field takes precedence.
+
 Fixtures
 --------
 

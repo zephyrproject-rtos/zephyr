@@ -422,8 +422,21 @@ To do so, it is advised to use Twister's hardware map feature with the following
 
    - platform: stm32n6570_dk/stm32n657xx/sb
      product: BOOT-SERIAL
-     pre_script: <path_to_zephyr>/boards/st/common/scripts/board_power_reset.sh
      runner: stm32cubeprogrammer
+     hooks:
+       - type: pre
+         script: <path_to_zephyr>/boards/st/common/scripts/board_power_reset.sh
+
+.. note::
+
+   The legacy ``pre_script`` field is still supported for backward compatibility:
+
+   .. code-block:: yaml
+
+      - platform: stm32n6570_dk/stm32n657xx/sb
+        product: BOOT-SERIAL
+        pre_script: <path_to_zephyr>/boards/st/common/scripts/board_power_reset.sh
+        runner: stm32cubeprogrammer
 
 .. _STM32N6570_DK website:
    https://www.st.com/en/evaluation-tools/stm32n6570-dk.html
