@@ -9,6 +9,14 @@ set(hal_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-dsl-pse8xxgp/hal)
 set(pdl_drv_dir ${pdl_dir}/drivers)
 set(pdl_dev_edge_dir ${pdl_dir}/devices)
 
+if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
+  set(sram_code M33SCODE)
+elseif(CONFIG_CPU_CORTEX_M33)
+  set(sram_code M33CODE)
+else()
+  set(sram_code ITCM)
+endif()
+
 # Generate PDL specific SOC defines
 zephyr_library_compile_definitions($<UPPER_CASE:${CONFIG_SOC}>)
 
@@ -22,8 +30,10 @@ zephyr_library_sources(${pdl_dev_edge_dir}/source/cy_device.c)
 
 if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "armclang")
   zephyr_library_sources(${pdl_drv_dir}/source/TOOLCHAIN_ARM/cy_syslib_ext.S)
+  zephyr_code_relocate(FILES ${pdl_drv_dir}/source/TOOLCHAIN_ARM/cy_syslib_ext.S LOCATION ${sram_code})
 else()
   zephyr_library_sources(${pdl_drv_dir}/source/TOOLCHAIN_GCC_ARM/cy_syslib_ext.S)
+  zephyr_code_relocate(FILES ${pdl_drv_dir}/source/TOOLCHAIN_GCC_ARM/cy_syslib_ext.S LOCATION ${sram_code})
 endif()
 
 # Peripheral drivers
@@ -56,22 +66,22 @@ endif()
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_DMA ${pdl_drv_dir}/source/cy_dma.c)
 
 zephyr_library_sources(${pdl_drv_dir}/source/cy_syspm_v4.c)
-zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_syspm_v4.c LOCATION RAM)
+zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_syspm_v4.c LOCATION ${sram_code})
 
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SMIF ${pdl_drv_dir}/source/cy_smif.c)
-zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif.c LOCATION RAM)
+zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif.c LOCATION ${sram_code})
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SMIF ${pdl_drv_dir}/source/cy_smif_sfdp.c)
-zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif_sfdp.c LOCATION RAM)
+zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif_sfdp.c LOCATION ${sram_code})
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SMIF ${pdl_drv_dir}/source/cy_smif_memslot.c)
-zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif_memslot.c LOCATION RAM)
+zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif_memslot.c LOCATION ${sram_code})
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SMIF ${pdl_drv_dir}/source/cy_smif_hb_flash.c)
-zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif_hb_flash.c LOCATION RAM)
+zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif_hb_flash.c LOCATION ${sram_code})
 
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SMIF ${pdl_drv_dir}/source/cy_smif_memnum.c)
-zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif_memnum.c LOCATION RAM)
+zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif_memnum.c LOCATION ${sram_code})
 
 zephyr_library_sources(${pdl_drv_dir}/source/cy_syslib.c)
-zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_syslib.c LOCATION RAM)
+zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_syslib.c LOCATION ${sram_code})
 
 zephyr_library_sources(${pdl_drv_dir}/source/cy_autanalog.c)
 zephyr_library_sources(${pdl_drv_dir}/source/cy_autanalog_sar.c)
