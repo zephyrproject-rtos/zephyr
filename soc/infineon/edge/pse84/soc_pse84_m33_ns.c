@@ -10,44 +10,17 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 
-/*
- * This function will allow execute from sram region.
- */
-#ifdef CONFIG_ARM_MPU
-void disable_mpu_rasr_xn(void)
-{
-	uint32_t index;
+#define PSE84_CPU_FREQ_HZ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 
-	/*
-	 * Kept the max index as 8(irrespective of soc) because the sram
-	 * would most likely be set at index 2.
-	 */
-	for (index = 0U; index < 8; index++) {
-		MPU->RNR = index;
-#if defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)
-		if (MPU->RBAR & MPU_RBAR_XN_Msk) {
-			MPU->RBAR ^= MPU_RBAR_XN_Msk;
-		}
-#else
-		if (MPU->RASR & MPU_RASR_XN_Msk) {
-			MPU->RASR ^= MPU_RASR_XN_Msk;
-		}
-#endif /* CONFIG_ARMV8_M_BASELINE || CONFIG_ARMV8_M_MAINLINE */
-	}
-}
-#endif /* CONFIG_ARM_MPU */
 
 void soc_early_init_hook(void)
 {
-#ifdef CONFIG_ARM_MPU
-	disable_mpu_rasr_xn();
-#endif /* CONFIG_ARM_MPU */
-
 	/* Initialize SystemCoreClock variable. */
-	SystemCoreClockUpdate();
+	SystemCoreClockSetup(PSE84_CPU_FREQ_HZ, PSE84_CPU_FREQ_HZ);
 }
 
 void soc_late_init_hook(void)
