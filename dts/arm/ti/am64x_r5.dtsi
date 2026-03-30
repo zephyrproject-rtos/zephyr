@@ -247,3 +247,18 @@
 	interrupts = <0 166 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
+
+&main_ecap0 {
+	interrupts = <0 140 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_ecap1 {
+	interrupts = <0 141 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_ecap2 {
+	interrupts = <0 142 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};

@@ -156,6 +156,10 @@
 	mmc1_clklb: mmc1_clklb_default {
 		pinmux = <K3_PINMUX(0x0290, PIN_INPUT, MUX_MODE_0)>;
 	};
+
+	main_ecap0_in: ecap0_in_default {
+		pinmux = <K3_PINMUX(0x270, PIN_INPUT, MUX_MODE_0)>; /* (D18) ECAP0_IN_APWM_OUT */
+	};
 };
 
 &mcu_pinctrl {

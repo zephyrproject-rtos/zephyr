@@ -447,4 +447,31 @@
 		ti,otap-del-sel-ddr50 = <0x9>;
 		status = "disabled";
 	};
+
+	main_ecap0: pwm@23100000 {
+		compatible = "ti,am3352-ecap";
+		reg = <0x23100000 0x100>;
+		#pwm-cells = <3>;
+		power-domains = <&ecap0_pd>;
+		clocks = <&k3_clks 51 0>;
+		status = "disabled";
+	};
+
+	main_ecap1: pwm@23110000 {
+		compatible = "ti,am3352-ecap";
+		reg = <0x23110000 0x100>;
+		#pwm-cells = <3>;
+		power-domains = <&ecap1_pd>;
+		clocks = <&k3_clks 52 0>;
+		status = "disabled";
+	};
+
+	main_ecap2: pwm@23120000 {
+		compatible = "ti,am3352-ecap";
+		reg = <0x23120000 0x100>;
+		#pwm-cells = <3>;
+		power-domains = <&ecap2_pd>;
+		clocks = <&k3_clks 53 0>;
+		status = "disabled";
+	};
 };
