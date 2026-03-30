@@ -1,0 +1,47 @@
+# Copyright (c) 2026 Siemens
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bitbang PWM controller.
+
+  Generates PWM signals on arbitrary GPIO pins using a hardware timer
+  as the time base. Each channel maps to one GPIO pin.
+  The period is the same for all PWM channels.
+
+examples:
+  - |
+     bitbang_pwm: bitbang-pwm {
+         compatible = "zephyr,pwm-bitbang";
+         status = "okay";
+         #pwm-cells = <3>;
+         timer = <&timer2>;
+         pwm-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>,
+                     <&gpiob 3 GPIO_ACTIVE_HIGH>;
+     };
+
+compatible: "zephyr,pwm-bitbang"
+
+include: [pwm-controller.yaml, base.yaml]
+
+properties:
+  timer:
+    type: phandle
+    required: true
+    description: |
+      Reference to the hardware timer peripheral used as a time base
+      for generating the timer interrupts (e.g., &timer2).
+
+  pwm-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      List of GPIO pins that serve as PWM output channels. Each entry
+      corresponds to one PWM channel.
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags
