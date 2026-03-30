@@ -46,3 +46,12 @@ config ETH_W5500_MONITOR_PERIOD
 	  Monitor task execution period in milliseconds. The monitor task is
 	  periodically executed to detect and report any changes in the
 	  link status to the operating system.
+
+config ETH_W5500_POLL_PERIOD
+	int "W5500 polling period in milliseconds"
+	depends on ETH_W5500
+	default 10
+	help
+	  Polling interval in milliseconds for RX data and link status
+	  when operating in polling mode (no int-gpios defined in
+	  devicetree).
