@@ -36,6 +36,15 @@ static const struct arm_mpu_region mpu_regions[] = {
 			DT_REG_SIZE(DT_NODELABEL(m33_allocatable_shared)))),
 #endif
 
+#if DT_NODE_EXISTS(DT_NODELABEL(m55_allocatable_shared))
+	MPU_REGION_ENTRY(
+		"SHARED_MEMORY_M55",
+		DT_REG_ADDR(DT_NODELABEL(m55_allocatable_shared)),
+		REGION_RAM_NOCACHE_ATTR(
+			DT_REG_ADDR(DT_NODELABEL(m55_allocatable_shared)),
+			DT_REG_SIZE(DT_NODELABEL(m55_allocatable_shared)))),
+#endif
+
 #if DT_NODE_EXISTS(DT_NODELABEL(itcm))
 	MPU_REGION_ENTRY(
 		"ITCM",
