@@ -836,30 +836,5 @@ def main():
         build.open_browser()
 
 
-def fix_pygments_devicetree_lexer():
-    '''
-    Fix the Pygments devicetree lexer to avoid a catastrophic backtracking pattern issue.
-
-    Pygments (at least up to 2.19.2) devicetree lexer has a bug when parsing properties
-    with a large number of spaces in them. The regex used results in a "catastropic
-    backtracking pattern" and the time taken grows exponentially with the number of
-    spaces. The cleanly indented dts that Zephyr creates hits this problem.
-
-    *** Remove this code when the bug is fixed in Pygments. ***
-    '''
-    from pygments.token import Name
-
-    ws = DevicetreeLexer._ws
-    bad_expr = r'[a-zA-Z_][\w-]*(?=(?:\s*,\s*[a-zA-Z_][\w-]*|(?:' + ws + r'))*\s*[=;])'
-    fixed_expr = r'[a-zA-Z_][\w-]*(?=(?:\s*,' + ws + r'[a-zA-Z_][\w-]*)*' + ws + r'[=;])'
-
-    for idx, statement in enumerate(DevicetreeLexer.tokens['statements']):
-        if statement[0] == bad_expr:
-            logger.info("Fixing buggy pygments Devicetree lexer.")
-            DevicetreeLexer.tokens['statements'][idx] = (fixed_expr, Name)
-            break
-
-
 if __name__ == "__main__":
-    fix_pygments_devicetree_lexer()
     main()
