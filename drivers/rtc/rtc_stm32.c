@@ -485,8 +485,11 @@ static int rtc_stm32_init(const struct device *dev)
 
 	int err = 0;
 
+	stm32_backup_domain_enable_access();
+
 	/* Enable RTC bus clock */
 	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]) != 0) {
+		stm32_backup_domain_disable_access();
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}
@@ -520,8 +523,6 @@ static int rtc_stm32_init(const struct device *dev)
 		/* Do nothing - loop itself burns enough cycles */
 	}
 #endif /* CONFIG_SOC_SERIES_STM32WB0X */
-
-	stm32_backup_domain_enable_access();
 
 #if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
 	/* Must be configured before selecting the RTC clock source */
