@@ -140,3 +140,9 @@
 	ti,fails-without-test-cd;
 	status = "disabled";
 };
+
+&main_ecap0 {
+	pinctrl-0 = <&main_ecap0_in>;
+	pinctrl-names = "default";
+	status = "okay";
+};

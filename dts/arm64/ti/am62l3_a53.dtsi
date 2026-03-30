@@ -186,3 +186,18 @@
 	interrupts = <GIC_SPI 238 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&gic>;
 };
+
+&main_ecap0 {
+	interrupts = <GIC_SPI 154 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_ecap1 {
+	interrupts = <GIC_SPI 155 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_ecap2 {
+	interrupts = <GIC_SPI 156 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
