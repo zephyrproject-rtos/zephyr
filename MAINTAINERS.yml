@@ -5201,10 +5201,10 @@ SiFli SF32LB Platforms:
   status: maintained
   maintainers:
     - gmarull
+    - HalfSweet
   collaborators:
     - cameled
     - ck-telecom
-    - HalfSweet
   files:
     - boards/sifli/
     - drivers/*/*sf32lb*
@@ -6259,6 +6259,7 @@ West:
   status: maintained
   maintainers:
     - gmarull
+    - HalfSweet
   collaborators:
     - cameled
   files:
