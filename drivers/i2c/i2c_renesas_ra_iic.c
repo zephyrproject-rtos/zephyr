@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(renesas_ra_iic, CONFIG_I2C_LOG_LEVEL);
 #define OPERATION(msg) (((struct i2c_msg *)msg)->flags & I2C_MSG_RW_MASK)
 
 struct i2c_ra_iic_config {
+	DEVICE_MMIO_ROM;
 	const struct pinctrl_dev_config *pcfg;
 	const struct device *clock_dev;
 	const struct clock_control_ra_subsys_cfg clock_subsys;
@@ -44,7 +45,11 @@ struct i2c_ra_iic_config {
 #endif /* CONFIG_I2C_RENESAS_RA_IIC_BUS_RECOVERY */
 };
 
+#define I2C_RENESAS_RA_MAX_TARGETS 3
+#define DEV_I2C_BASE(dev)          ((volatile R_IIC0_Type *)DEVICE_MMIO_GET(dev))
+
 struct i2c_ra_iic_data {
+	DEVICE_MMIO_RAM;
 	iic_master_instance_ctrl_t control_ctrl;
 	i2c_master_cfg_t ctrl_fconfig;
 	i2c_master_event_t ctrl_event;
@@ -53,7 +58,8 @@ struct i2c_ra_iic_data {
 	iic_slave_instance_ctrl_t target_ctrl;
 	i2c_slave_cfg_t target_fconfig;
 	iic_slave_extended_cfg_t iic_target_ext_cfg;
-	struct i2c_target_config *target_cfg;
+	struct i2c_target_config *target_cfgs[I2C_RENESAS_RA_MAX_TARGETS];
+	struct i2c_target_config *active_target_cfg;
 	bool transaction_completed;
 #ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 	uint8_t target_buf[CONFIG_I2C_TARGET_RENESAS_RA_IIC_BUFFER_SIZE];
@@ -321,13 +327,28 @@ static void i2c_ra_iic_ctrl_callback(i2c_master_callback_args_t *p_args)
 
 #ifdef CONFIG_I2C_TARGET
 
+/* If multiple target addresses defined, see which one is active */
+static int i2c_ra_iic_active_address_index(const struct device *dev)
+{
+	volatile R_IIC0_Type *regs = DEV_I2C_BASE(dev);
+
+	if (regs->ICSR1_b.AAS0) {
+		return 0;
+	} else if (regs->ICSR1_b.AAS1) {
+		return 1;
+	} else if (regs->ICSR1_b.AAS2) {
+		return 2;
+	}
+	return -1;
+}
+
 static void i2c_ra_iic_target_callback(i2c_slave_callback_args_t *p_args)
 {
 	const struct device *dev = p_args->p_context;
 	struct i2c_ra_iic_data *data = dev->data;
-	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
+	const struct i2c_target_callbacks *target_cb = data->active_target_cfg->callbacks;
 	fsp_err_t fsp_err;
-	int err;
+	int err, idx;
 #ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 	uint8_t *buf = NULL;
 	uint32_t len;
@@ -338,17 +359,21 @@ static void i2c_ra_iic_target_callback(i2c_slave_callback_args_t *p_args)
 #ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 	case I2C_SLAVE_EVENT_RX_COMPLETE:
 		if (p_args->bytes > 0) {
-			target_cb->buf_write_received(data->target_cfg, data->target_buf,
+			target_cb->buf_write_received(data->active_target_cfg, data->target_buf,
 						      p_args->bytes);
 		}
 		__fallthrough;
 	case I2C_SLAVE_EVENT_TX_COMPLETE:
 		if (data->transaction_completed) {
-			target_cb->stop(data->target_cfg);
+			target_cb->stop(data->active_target_cfg);
 		}
 		break;
 	case I2C_SLAVE_EVENT_RX_REQUEST:
-		err = target_cb->write_requested(data->target_cfg);
+		idx = i2c_ra_iic_active_address_index(dev);
+		__ASSERT_NO_MSG(idx >= 0);
+		data->active_target_cfg = data->target_cfgs[idx];
+		target_cb = data->active_target_cfg->callbacks;
+		err = target_cb->write_requested(data->active_target_cfg);
 		if (err == 0) {
 			fsp_err = R_IIC_SLAVE_Read(&data->target_ctrl, data->target_buf,
 						   sizeof(data->target_buf));
@@ -362,7 +387,11 @@ static void i2c_ra_iic_target_callback(i2c_slave_callback_args_t *p_args)
 		data->transaction_completed = false;
 		break;
 	case I2C_SLAVE_EVENT_TX_REQUEST:
-		err = target_cb->buf_read_requested(data->target_cfg, &buf, &len);
+		idx = i2c_ra_iic_active_address_index(dev);
+		__ASSERT_NO_MSG(idx >= 0);
+		data->active_target_cfg = data->target_cfgs[idx];
+		target_cb = data->active_target_cfg->callbacks;
+		err = target_cb->buf_read_requested(data->active_target_cfg, &buf, &len);
 		if (err == 0) {
 			if (buf != NULL && len != 0) {
 				fsp_err = R_IIC_SLAVE_Write(&data->target_ctrl, buf, len);
@@ -383,7 +412,7 @@ static void i2c_ra_iic_target_callback(i2c_slave_callback_args_t *p_args)
 		__ASSERT_NO_MSG(fsp_err == FSP_SUCCESS);
 		LOG_ERR("The buffer is full, target device cannot receive more data. Please "
 			"increase I2C_TARGET_RENESAS_RA_IIC_BUFFER_SIZE");
-		target_cb->stop(data->target_cfg);
+		target_cb->stop(data->active_target_cfg);
 		break;
 	case I2C_SLAVE_EVENT_TX_MORE_REQUEST:
 		LOG_ERR("Out of data to send to the controller device, Controller device will read "
@@ -393,16 +422,20 @@ static void i2c_ra_iic_target_callback(i2c_slave_callback_args_t *p_args)
 
 	case I2C_SLAVE_EVENT_RX_COMPLETE:
 		if (p_args->bytes > 0) {
-			target_cb->write_received(data->target_cfg, data->target_buf);
+			target_cb->write_received(data->active_target_cfg, data->target_buf);
 		}
 		__fallthrough;
 	case I2C_SLAVE_EVENT_TX_COMPLETE:
 		if (data->transaction_completed) {
-			target_cb->stop(data->target_cfg);
+			target_cb->stop(data->active_target_cfg);
 		}
 		break;
 	case I2C_SLAVE_EVENT_RX_REQUEST:
-		err = target_cb->write_requested(data->target_cfg);
+		idx = i2c_ra_iic_active_address_index(dev);
+		__ASSERT_NO_MSG(idx >= 0);
+		data->active_target_cfg = data->target_cfgs[idx];
+		target_cb = data->active_target_cfg->callbacks;
+		err = target_cb->write_requested(data->active_target_cfg);
 		if (err == 0) {
 			/* Continue to receive data */
 			fsp_err = R_IIC_SLAVE_Read(&data->target_ctrl, &data->target_buf, 1);
@@ -417,7 +450,11 @@ static void i2c_ra_iic_target_callback(i2c_slave_callback_args_t *p_args)
 		data->transaction_completed = false;
 		break;
 	case I2C_SLAVE_EVENT_TX_REQUEST:
-		err = target_cb->read_requested(data->target_cfg, &data->target_buf);
+		idx = i2c_ra_iic_active_address_index(dev);
+		__ASSERT_NO_MSG(idx >= 0);
+		data->active_target_cfg = data->target_cfgs[idx];
+		target_cb = data->active_target_cfg->callbacks;
+		err = target_cb->read_requested(data->active_target_cfg, &data->target_buf);
 		if (err == 0) {
 			fsp_err = R_IIC_SLAVE_Write(&data->target_ctrl, &data->target_buf, 1);
 			__ASSERT_NO_MSG(fsp_err == FSP_SUCCESS);
@@ -429,7 +466,7 @@ static void i2c_ra_iic_target_callback(i2c_slave_callback_args_t *p_args)
 		data->transaction_completed = false;
 		break;
 	case I2C_SLAVE_EVENT_RX_MORE_REQUEST:
-		err = target_cb->write_received(data->target_cfg, data->target_buf);
+		err = target_cb->write_received(data->active_target_cfg, data->target_buf);
 		if (err == 0) {
 			/* Continue to receive data */
 			fsp_err = R_IIC_SLAVE_Read(&data->target_ctrl, &data->target_buf, 1);
@@ -443,7 +480,7 @@ static void i2c_ra_iic_target_callback(i2c_slave_callback_args_t *p_args)
 		}
 		break;
 	case I2C_SLAVE_EVENT_TX_MORE_REQUEST:
-		err = target_cb->read_processed(data->target_cfg, &data->target_buf);
+		err = target_cb->read_processed(data->active_target_cfg, &data->target_buf);
 		if (err == 0) {
 			fsp_err = R_IIC_SLAVE_Write(&data->target_ctrl, &data->target_buf, 1);
 			__ASSERT_NO_MSG(fsp_err == FSP_SUCCESS);
@@ -468,6 +505,8 @@ static int i2c_ra_iic_init(const struct device *dev)
 	struct i2c_ra_iic_data *data = (struct i2c_ra_iic_data *)dev->data;
 	fsp_err_t fsp_err;
 	int ret = 0;
+
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
 	/* Configure dt provided device signals when available */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
@@ -738,60 +777,137 @@ static int calc_iic_target_clock_setting(const struct device *dev, const uint32_
 	return 0;
 }
 
+static int i2c_ra_iic_target_count(struct i2c_ra_iic_data *data)
+{
+	int count = 0;
+
+	for (int i = 0; i < I2C_RENESAS_RA_MAX_TARGETS; i++) {
+		if (data->target_cfgs[i] != NULL) {
+			count++;
+		}
+	}
+	return count;
+}
+
+/* Add a second or third target address after target mode was opened */
+static int i2c_ra_iic_enable_address(const struct device *dev, uint16_t addr, uint16_t flags,
+				     int idx)
+{
+	volatile R_IIC0_Type *regs = DEV_I2C_BASE(dev);
+
+	if (idx >= I2C_RENESAS_RA_MAX_TARGETS) {
+		return -EINVAL;
+	}
+
+	/* Set Slave address in SARLx and SARUx. and Set ICSER */
+	if (I2C_TARGET_FLAGS_ADDR_10_BITS & flags) {
+		/* 10 bit mode selected, set SARU and SARL */
+		regs->SAR[idx].U = (((addr >> 7U) | 0x01U) & 0x07U);
+		regs->SAR[idx].L = (uint8_t)addr;
+	} else {
+		/* 7 bit mode selected, clear SARU and set SARL */
+		regs->SAR[idx].U = 0U;
+		regs->SAR[idx].L = (uint8_t)(addr << 1U);
+	}
+
+	/* Enable the target address */
+	regs->ICSER |= (0x1 << idx);
+
+	return 0;
+}
+
+/* Disable second or third address without closing target mode */
+static int i2c_ra_iic_disable_address(const struct device *dev, int idx)
+{
+	volatile R_IIC0_Type *regs = DEV_I2C_BASE(dev);
+
+	if (idx >= I2C_RENESAS_RA_MAX_TARGETS) {
+		return -EINVAL;
+	}
+
+	/* Disable data for this target address */
+	regs->ICSER &= ~(0x1 << idx);
+
+	return 0;
+}
+
 static int i2c_ra_iic_target_register(const struct device *dev, struct i2c_target_config *cfg)
 {
 	struct i2c_ra_iic_data *data = dev->data;
 	fsp_err_t fsp_err;
-	int ret;
+	int ret = 0, idx;
 
 	if (!cfg) {
 		return -EINVAL;
 	}
 
+	if (i2c_ra_iic_target_count(data) == I2C_RENESAS_RA_MAX_TARGETS) {
+		/* Already three targets registered */
+		return -ENOMEM;
+	}
+
 	k_mutex_lock(&data->bus_mutex, K_FOREVER);
 
-	if (data->control_ctrl.open == 0) {
-		LOG_ERR("%s: I2C Controller instance is not opened.", __func__);
-		ret = -EIO;
-		goto RELEASE_BUS;
-	}
-
-	fsp_err = R_IIC_MASTER_Close(&data->control_ctrl);
-	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("%s: Failed to close I2C Controller instance. FSP_ERR=%d", __func__,
-			fsp_err);
-		ret = -EIO;
-		goto RELEASE_BUS;
-	}
-
-	if (I2C_TARGET_FLAGS_ADDR_10_BITS & cfg->flags) {
-		data->target_fconfig.addr_mode = I2C_SLAVE_ADDR_MODE_10BIT;
-	} else {
-		data->target_fconfig.addr_mode = I2C_SLAVE_ADDR_MODE_7BIT;
-	}
-	data->target_cfg = cfg;
-	data->target_fconfig.slave = cfg->address;
-	data->target_fconfig.rate = data->ctrl_fconfig.rate;
-
-	ret = calc_iic_target_clock_setting(dev, data->target_fconfig.rate,
-					    &data->iic_target_ext_cfg.clock_settings);
-	if (ret != 0) {
-		LOG_ERR("Failed to calculate I2C Target clock settings");
-		ret = -EIO;
-		goto RELEASE_BUS;
-	}
-
-	data->target_fconfig.p_callback = i2c_ra_iic_target_callback;
-
-	fsp_err = R_IIC_SLAVE_Open(&data->target_ctrl, &data->target_fconfig);
-	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("%s: Failed to enter I2C Target mode. Try to re-open Controller mode",
-			__func__);
-		fsp_err = R_IIC_MASTER_Open(&data->control_ctrl, &data->ctrl_fconfig);
-		if (fsp_err != FSP_SUCCESS) {
-			LOG_ERR("Failed to re-open I2C Controller instance: %s", dev->name);
+	if (i2c_ra_iic_target_count(data) == 0) {
+		/* First target, open target device */
+		if (data->control_ctrl.open == 0) {
+			LOG_ERR("%s: I2C Controller instance is not opened.", __func__);
+			ret = -EIO;
+			goto RELEASE_BUS;
 		}
-		ret = -EIO;
+
+		fsp_err = R_IIC_MASTER_Close(&data->control_ctrl);
+		if (fsp_err != FSP_SUCCESS) {
+			LOG_ERR("%s: Failed to close I2C Controller instance. FSP_ERR=%d", __func__,
+				fsp_err);
+			ret = -EIO;
+			goto RELEASE_BUS;
+		}
+
+		if (I2C_TARGET_FLAGS_ADDR_10_BITS & cfg->flags) {
+			data->target_fconfig.addr_mode = I2C_SLAVE_ADDR_MODE_10BIT;
+		} else {
+			data->target_fconfig.addr_mode = I2C_SLAVE_ADDR_MODE_7BIT;
+		}
+		data->target_cfgs[0] = cfg;
+		data->active_target_cfg = cfg;
+		data->target_fconfig.slave = cfg->address;
+		data->target_fconfig.rate = data->ctrl_fconfig.rate;
+
+		ret = calc_iic_target_clock_setting(dev, data->target_fconfig.rate,
+						    &data->iic_target_ext_cfg.clock_settings);
+		if (ret != 0) {
+			LOG_ERR("Failed to calculate I2C Target clock settings");
+			ret = -EIO;
+			goto RELEASE_BUS;
+		}
+
+		data->target_fconfig.p_callback = i2c_ra_iic_target_callback;
+
+		fsp_err = R_IIC_SLAVE_Open(&data->target_ctrl, &data->target_fconfig);
+		if (fsp_err != FSP_SUCCESS) {
+			LOG_ERR("%s: Failed to enter I2C Target mode. Try to re-open Controller "
+				"mode",
+				__func__);
+			fsp_err = R_IIC_MASTER_Open(&data->control_ctrl, &data->ctrl_fconfig);
+			if (fsp_err != FSP_SUCCESS) {
+				LOG_ERR("Failed to re-open I2C Controller instance: %s", dev->name);
+			}
+			ret = -EIO;
+		}
+	} else {
+		/* target already opened, add new target address */
+		for (idx = 0; idx < I2C_RENESAS_RA_MAX_TARGETS; idx++) {
+			if (data->target_cfgs[idx] == NULL) {
+				break;
+			}
+		}
+		if (idx == I2C_RENESAS_RA_MAX_TARGETS) {
+			ret = -ENOMEM;
+		} else {
+			i2c_ra_iic_enable_address(dev, cfg->address, cfg->flags, idx);
+			data->target_cfgs[idx] = cfg;
+		}
 	}
 
 RELEASE_BUS:
@@ -804,33 +920,47 @@ static int i2c_ra_iic_target_unregister(const struct device *dev, struct i2c_tar
 {
 	struct i2c_ra_iic_data *data = dev->data;
 	fsp_err_t fsp_err;
-	int ret = 0;
+	int ret = 0, idx;
 
-	if (data->target_cfg != cfg) {
+	for (idx = 0; idx < I2C_RENESAS_RA_MAX_TARGETS; idx++) {
+		if (data->target_cfgs[idx] == cfg) {
+			break;
+		}
+	}
+	if (idx == I2C_RENESAS_RA_MAX_TARGETS) {
+		/* Did not find this cfg registered */
 		return -EINVAL;
 	}
 
 	k_mutex_lock(&data->bus_mutex, K_FOREVER);
 
-	if (data->target_ctrl.open == 0) {
-		LOG_ERR("%s: I2C Target instance is not opened.", __func__);
-		ret = -EINVAL;
-		goto RELEASE_BUS;
-	}
+	if (i2c_ra_iic_target_count(data) == 1) {
+		/* Last target registered, close it down */
+		if (data->target_ctrl.open == 0) {
+			LOG_ERR("%s: I2C Target instance is not opened.", __func__);
+			ret = -EINVAL;
+			goto RELEASE_BUS;
+		}
 
-	fsp_err = R_IIC_SLAVE_Close(&data->target_ctrl);
-	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("%s: Failed to close I2C Target instance. FSP_ERR=%d", __func__, fsp_err);
-		ret = -EIO;
-		goto RELEASE_BUS;
-	}
+		fsp_err = R_IIC_SLAVE_Close(&data->target_ctrl);
+		if (fsp_err != FSP_SUCCESS) {
+			LOG_ERR("%s: Failed to close I2C Target instance. FSP_ERR=%d", __func__,
+				fsp_err);
+			ret = -EIO;
+			goto RELEASE_BUS;
+		}
 
-	data->target_cfg = NULL;
+		data->target_cfgs[idx] = NULL;
 
-	fsp_err = R_IIC_MASTER_Open(&data->control_ctrl, &data->ctrl_fconfig);
-	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Failed to re-open I2C Controller instance: %s", dev->name);
-		return -EIO;
+		fsp_err = R_IIC_MASTER_Open(&data->control_ctrl, &data->ctrl_fconfig);
+		if (fsp_err != FSP_SUCCESS) {
+			LOG_ERR("Failed to re-open I2C Controller instance: %s", dev->name);
+			return -EIO;
+		}
+	} else {
+		/* More targets registered, just remove this one */
+		i2c_ra_iic_disable_address(dev, idx);
+		data->target_cfgs[idx] = NULL;
 	}
 RELEASE_BUS:
 	k_mutex_unlock(&data->bus_mutex);
@@ -1072,6 +1202,7 @@ void iic_eri_isr(const struct device *dev)
 		     "The desire clock-frequency in devicetree exceeds max-bitrate-supported");    \
                                                                                                    \
 	static const struct i2c_ra_iic_config i2c_ra_iic_config_##index = {                        \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(index)),                                          \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(index)),                            \
 		.clock_subsys =                                                                    \
