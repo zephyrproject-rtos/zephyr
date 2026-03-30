@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_MUSB
+	bool "MUSB USB device controller driver"
+	default y
+	depends on DT_HAS_MENTOR_MUSB_ENABLED
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
+	select EVENTS
+	help
+	  Mentor Graphics MUSB USB device controller driver.
+
+if UDC_MUSB
+
+config UDC_MUSB_STACK_SIZE
+	int "UDC MUSB driver internal thread stack size"
+	default 1024
+	help
+	  MUSB driver internal thread stack size.
+
+config UDC_MUSB_THREAD_PRIORITY
+	int "UDC MUSB driver thread priority"
+	default 8
+	help
+	  MUSB driver thread priority.
+
+config UDC_MUSB_VBUS_POLL_PERIOD_MS
+	int "VBUS polling period in milliseconds"
+	default 100
+	range 10 1000
+	help
+	  Period between successive system work queue polls for VBUS levels.
+
+endif # UDC_MUSB
