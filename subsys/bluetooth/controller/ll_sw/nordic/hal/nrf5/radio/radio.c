@@ -584,6 +584,11 @@ uint32_t radio_is_address(void)
 	return (NRF_RADIO->EVENTS_ADDRESS != 0);
 }
 
+#if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR)
+static radio_tmr_isr_cb_t isr_radio_tmr_cb;
+static void *isr_radio_tmr_cb_param;
+#endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
+
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 static uint32_t last_pdu_end_latency_us;
 static uint32_t prev_pdu_end_us;
@@ -603,8 +608,37 @@ uint32_t radio_is_done(void)
 		 * Note: this depends on the function being called exactly once
 		 * in the ISR function.
 		 */
+		uint32_t elapsed_us;
+
 		prev_pdu_end_us = last_pdu_end_us;
-		last_pdu_end_us += EVENT_TIMER->CC[HAL_EVENT_TIMER_TRX_END_CC_OFFSET];
+		elapsed_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_TRX_END_CC_OFFSET];
+		last_pdu_end_us += elapsed_us;
+
+#if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR)
+		if (isr_radio_tmr_cb != NULL) {
+			uint32_t actual_us;
+
+			actual_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET];
+			if (actual_us > elapsed_us) {
+				actual_us -= elapsed_us;
+			} else {
+				actual_us = 0U;
+			}
+
+			if (actual_us > 1U) {
+				nrf_timer_cc_set(EVENT_TIMER,
+						 HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET, actual_us);
+			} else {
+				radio_tmr_isr_cb_t cb;
+
+				cb = isr_radio_tmr_cb;
+				isr_radio_tmr_cb = NULL;
+
+				cb(isr_radio_tmr_cb_param, 1U);
+			}
+		}
+#endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
+
 		return 1;
 	} else {
 		return 0;
@@ -1146,21 +1180,27 @@ uint32_t radio_bc_has_match(void)
 }
 
 #if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR)
-static radio_isr_cb_t isr_radio_tmr_cb;
-static void           *isr_radio_tmr_cb_param;
-
 void isr_radio_tmr(void)
 {
-	irq_disable(TIMER0_IRQn);
-	nrf_timer_int_disable(EVENT_TIMER, TIMER_INTENSET_COMPARE2_Msk);
+	irq_disable(EVENT_TIMER_IRQn);
+	nrf_timer_int_disable(EVENT_TIMER, HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
 	nrf_timer_event_clear(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
 
-	isr_radio_tmr_cb(isr_radio_tmr_cb_param);
+	if (isr_radio_tmr_cb != NULL) {
+		radio_tmr_isr_cb_t cb;
+
+		cb = isr_radio_tmr_cb;
+		isr_radio_tmr_cb = NULL;
+
+		cb(isr_radio_tmr_cb_param, 0U);
+	}
 }
 
-uint32_t radio_tmr_isr_set(uint32_t start_us, radio_isr_cb_t cb, void *param)
+uint32_t radio_tmr_isr_set(uint32_t start_us, radio_tmr_isr_cb_t cb, void *param)
 {
-	irq_disable(TIMER0_IRQn);
+	irq_disable(EVENT_TIMER_IRQn);
+	nrf_timer_int_disable(EVENT_TIMER, HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
+	NVIC_ClearPendingIRQ(EVENT_TIMER_IRQn);
 
 	isr_radio_tmr_cb_param = param;
 	isr_radio_tmr_cb = cb;
@@ -1177,6 +1217,8 @@ uint32_t radio_tmr_isr_set(uint32_t start_us, radio_isr_cb_t cb, void *param)
 	/* start_us could be the current count in the timer */
 	uint32_t now_us = start_us;
 	uint32_t actual_us;
+
+	uint32_t cc = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
 
 	/* Setup timer compare while determining the latency in doing so */
 	do {
@@ -1197,13 +1239,36 @@ uint32_t radio_tmr_isr_set(uint32_t start_us, radio_isr_cb_t cb, void *param)
 	} while ((now_us > start_us) &&
 		 (EVENT_TIMER->EVENTS_COMPARE[HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET] == 0U));
 
-	nrf_timer_int_enable(EVENT_TIMER, TIMER_INTENSET_COMPARE2_Msk);
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_CC_OFFSET, cc);
 
-	NVIC_ClearPendingIRQ(TIMER0_IRQn);
+	nrf_timer_int_enable(EVENT_TIMER, HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
 
-	irq_enable(TIMER0_IRQn);
+	irq_enable(EVENT_TIMER_IRQn);
+
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	actual_us += last_pdu_end_us;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	return actual_us;
+}
+
+uint32_t radio_tmr_isr_clear(void **param)
+{
+	uint32_t prev_us;
+
+	irq_disable(EVENT_TIMER_IRQn);
+	nrf_timer_int_disable(EVENT_TIMER, HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
+
+	if (param != NULL) {
+		*param = isr_radio_tmr_cb_param;
+	}
+
+	isr_radio_tmr_cb_param = NULL;
+	isr_radio_tmr_cb = NULL;
+
+	prev_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET];
+
+	return prev_us;
 }
 #endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
 
@@ -1422,6 +1487,50 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 
 	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_CC_OFFSET, remainder_us);
 
+#if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR)
+	if (isr_radio_tmr_cb != NULL) {
+		uint32_t ticks_start_old = radio_tmr_start_get();
+		uint32_t ticks_elapsed = (ticks_start - ticks_start_old) & HAL_TICKER_CNTR_MASK;
+
+		if ((ticks_elapsed != 0U) && ((ticks_elapsed & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U)) {
+			uint32_t elapsed_us;
+			uint32_t actual_us;
+
+			elapsed_us = HAL_TICKER_TICKS_TO_US(ticks_elapsed);
+			actual_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET];
+
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+			actual_us += last_pdu_end_us;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+			if (actual_us > elapsed_us) {
+				actual_us -= elapsed_us;
+			} else {
+				actual_us = 0U;
+			}
+
+			if (actual_us > 1U) {
+				nrf_timer_cc_set(EVENT_TIMER,
+						 HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET, actual_us);
+			} else {
+				radio_tmr_isr_cb_t cb;
+
+				cb = isr_radio_tmr_cb;
+				isr_radio_tmr_cb = NULL;
+
+				cb(isr_radio_tmr_cb_param, 1U);
+			}
+		} else {
+			radio_tmr_isr_cb_t cb;
+
+			cb = isr_radio_tmr_cb;
+			isr_radio_tmr_cb = NULL;
+
+			cb(isr_radio_tmr_cb_param, 1U);
+		}
+	}
+#endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
+
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
 	uint32_t cntr_l, cntr_h, cntr_h_overflow, stale;
 
@@ -1546,6 +1655,50 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 
 	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_CC_OFFSET, remainder_us);
 
+#if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR)
+	if (isr_radio_tmr_cb != NULL) {
+		uint32_t ticks_start_old = radio_tmr_start_get();
+		uint32_t ticks_elapsed = (ticks_start - ticks_start_old) & HAL_TICKER_CNTR_MASK;
+
+		if ((ticks_elapsed != 0U) && ((ticks_elapsed & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U)) {
+			uint32_t elapsed_us;
+			uint32_t actual_us;
+
+			elapsed_us = HAL_TICKER_TICKS_TO_US(ticks_elapsed);
+			actual_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET];
+
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+			actual_us += last_pdu_end_us;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+			if (actual_us > elapsed_us) {
+				actual_us -= elapsed_us;
+			} else {
+				actual_us = 0U;
+			}
+
+			if (actual_us > 1U) {
+				nrf_timer_cc_set(EVENT_TIMER,
+						 HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET, actual_us);
+			} else {
+				radio_tmr_isr_cb_t cb;
+
+				cb = isr_radio_tmr_cb;
+				isr_radio_tmr_cb = NULL;
+
+				cb(isr_radio_tmr_cb_param, 1U);
+			}
+		} else {
+			radio_tmr_isr_cb_t cb;
+
+			cb = isr_radio_tmr_cb;
+			isr_radio_tmr_cb = NULL;
+
+			cb(isr_radio_tmr_cb_param, 1U);
+		}
+	}
+#endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
+
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
 	uint32_t cntr_l, cntr_h, cntr_h_overflow, stale;
 
@@ -1663,6 +1816,8 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 	uint32_t now_us = start_us;
 	uint32_t actual_us;
 
+	uint32_t cc = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
+
 	/* Setup timer compare while determining the latency in doing so */
 	do {
 		/* Set start to be, now plus the determined latency */
@@ -1695,6 +1850,8 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 	} while ((now_us > start_us) &&
 		 (EVENT_TIMER->EVENTS_COMPARE[HAL_EVENT_TIMER_TRX_CC_OFFSET] == 0U));
 
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_CC_OFFSET, cc);
+
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	actual_us += last_pdu_end_us;
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
@@ -1708,9 +1865,13 @@ uint32_t radio_tmr_start_now(uint8_t trx)
 
 	/* PPI/DPPI configuration will be done in radio_tmr_start_us() */
 
+	uint32_t cc = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
+
 	/* Capture the current time */
 	nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
 	start_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
+
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_CC_OFFSET, cc);
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	/* As timer is reset on every radio end, add the accumulated
@@ -1900,33 +2061,21 @@ uint32_t radio_tmr_tifs_base_get(void)
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 }
 
-#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 static uint32_t tmr_sample_val;
-#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 void radio_tmr_sample(void)
 {
-#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-	uint32_t cc;
+	uint32_t cc = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
 
-	cc = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
 	nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
-
 	tmr_sample_val = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
-	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_CC_OFFSET, cc);
 
-#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-	nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_CC_OFFSET, cc);
 }
 
 uint32_t radio_tmr_sample_get(void)
 {
-#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	return tmr_sample_val;
-#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-	return EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 }
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || \
