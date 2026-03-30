@@ -11,6 +11,7 @@ common:
     - nrf54l15dk/nrf54l15/cpuapp/ns
     - nrf54l15dk/nrf54l10/cpuapp/ns
     - nrf54lm20dk/nrf54lm20a/cpuapp/ns
+    - nrf7120dk/nrf7120/cpuapp/ns
     - bl5340_dvk/nrf5340/cpuapp/ns
   integration_platforms:
     - nrf5340dk/nrf5340/cpuapp/ns
