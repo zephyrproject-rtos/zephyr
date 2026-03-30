@@ -50,6 +50,8 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define ANY_INST_HAS_T_EXIT_DPD DT_ANY_INST_HAS_PROP_STATUS_OKAY(t_exit_dpd)
 #define ANY_INST_HAS_DPD_WAKEUP_SEQUENCE DT_ANY_INST_HAS_PROP_STATUS_OKAY(dpd_wakeup_sequence)
 #define ANY_INST_HAS_RESET_GPIOS DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#define ANY_INST_HAS_SUPPLY_GPIOS DT_ANY_INST_HAS_PROP_STATUS_OKAY(supply_gpios)
+#define ANY_INST_HAS_T_RESET_RECOVERY DT_ANY_INST_HAS_PROP_STATUS_OKAY(t_reset_recovery)
 #define ANY_INST_HAS_WP_GPIOS DT_ANY_INST_HAS_PROP_STATUS_OKAY(wp_gpios)
 #define ANY_INST_HAS_HOLD_GPIOS DT_ANY_INST_HAS_PROP_STATUS_OKAY(hold_gpios)
 #define ANY_INST_USE_4B_ADDR_OPCODES DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_4b_addr_opcodes)
@@ -80,6 +82,12 @@ struct spi_nor_config {
 
 #if ANY_INST_HAS_RESET_GPIOS
 	const struct gpio_dt_spec reset;
+#endif
+#if ANY_INST_HAS_SUPPLY_GPIOS
+	struct gpio_dt_spec supply;
+#endif
+#if ANY_INST_HAS_T_RESET_RECOVERY
+	uint32_t reset_recovery_us;
 #endif
 
 	/* Runtime SFDP stores no static configuration. */
@@ -1517,8 +1525,20 @@ static int spi_nor_configure(const struct device *dev)
 		return -ENODEV;
 	}
 
-#if ANY_INST_HAS_RESET_GPIOS
+#if ANY_INST_HAS_SUPPLY_GPIOS
+	if (cfg->supply.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->supply)) {
+			LOG_ERR("Supply GPIO port is not ready");
+			return -ENODEV;
+		}
+		if (gpio_pin_configure_dt(&cfg->supply, GPIO_OUTPUT_ACTIVE)) {
+			LOG_ERR("Failed to activate power supply GPIO");
+			return -EIO;
+		}
+	}
+#endif
 
+#if ANY_INST_HAS_RESET_GPIOS
 	if (cfg->reset_gpios_exist) {
 		if (!gpio_is_ready_dt(&cfg->reset)) {
 			LOG_ERR("Reset pin not ready");
@@ -1532,6 +1552,12 @@ static int spi_nor_configure(const struct device *dev)
 		if (rc) {
 			return rc;
 		}
+	}
+#endif
+
+#if ANY_INST_HAS_T_RESET_RECOVERY
+	if (cfg->reset_recovery_us != 0) {
+		k_busy_wait(cfg->reset_recovery_us);
 	}
 #endif
 
@@ -1853,6 +1879,11 @@ static DEVICE_API(flash, spi_nor_api) = {
 
 #define INIT_RESET_GPIOS(idx) .reset = GPIO_DT_SPEC_INST_GET_OR(idx, reset_gpios, {0})
 
+#define INIT_SUPPLY_GPIOS(idx) .supply = GPIO_DT_SPEC_INST_GET_OR(idx, supply_gpios, {0})
+
+#define INIT_T_RESET_RECOVERY(idx) \
+	.reset_recovery_us = DT_INST_PROP_OR(idx, t_reset_recovery, 0) / NSEC_PER_USEC
+
 #define INST_CONFIG_STRUCT_GEN(idx)								\
 	DEFINE_PAGE_LAYOUT(idx)									\
 	.flash_size = DT_INST_PROP(idx, size) / 8,						\
@@ -1884,6 +1915,8 @@ static DEVICE_API(flash, spi_nor_api) = {
 		IF_ENABLED(ANY_INST_HAS_MXICY_MX25R_POWER_MODE,					\
 			(INIT_MXICY_MX25R_POWER_MODE(idx),))					\
 		IF_ENABLED(ANY_INST_HAS_RESET_GPIOS, (INIT_RESET_GPIOS(idx),))			\
+		IF_ENABLED(ANY_INST_HAS_SUPPLY_GPIOS, (INIT_SUPPLY_GPIOS(idx),))		\
+		IF_ENABLED(ANY_INST_HAS_T_RESET_RECOVERY, (INIT_T_RESET_RECOVERY(idx),))	\
 		IF_ENABLED(ANY_INST_HAS_WP_GPIOS, (INIT_WP_GPIOS(idx),))			\
 		IF_ENABLED(ANY_INST_HAS_HOLD_GPIOS, (INIT_HOLD_GPIOS(idx),))			\
 		IF_DISABLED(CONFIG_SPI_NOR_SFDP_RUNTIME, (INST_CONFIG_STRUCT_GEN(idx)))};
