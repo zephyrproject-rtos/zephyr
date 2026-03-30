@@ -64,4 +64,16 @@ config ENTROPY_STM32_CLK_CHECK
 	  available, CED is enabled by default). Disable this check if CED is
 	  disabled.
 
+config ENTROPY_STM32_CLK_SOURCE_CHECK
+	bool "Runtime RNG kernel clock source check"
+	default y
+	help
+	  When enabled, the driver verifies at init time that the RNG
+	  domain clock is provided in the device tree and running at a
+	  non-zero rate using clock_control_get_rate(). If no domain clock
+	  is in the device tree, a warning is logged and the rate check is
+	  skipped so boards that only describe the bus clock keep working.
+	  If a domain clock is present but the rate check fails, the driver
+	  returns an error instead of hanging indefinitely.
+
 endif # ENTROPY_STM32_RNG
