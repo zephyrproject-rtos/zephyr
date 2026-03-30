@@ -317,51 +317,96 @@ static void w5500_update_link_status(const struct device *dev)
 	}
 }
 
+static uint8_t w5500_check_for_ir(const struct device *dev)
+{
+	uint8_t ir;
+	struct w5500_runtime *ctx = dev->data;
+
+	w5500_spi_read(dev, W5500_S0_IR, &ir, 1);
+
+	if (ir != 0U) {
+		w5500_spi_write(dev, W5500_S0_IR, &ir, 1);
+		LOG_DBG("IR received");
+
+		if ((ir & S0_IR_SENDOK) != 0U) {
+			k_sem_give(&ctx->tx_sem);
+			LOG_DBG("TX Done");
+		}
+
+		if ((ir & S0_IR_RECV) != 0U) {
+			w5500_rx(dev);
+			LOG_DBG("RX Done");
+		}
+	}
+
+	return ir;
+}
+
+#if !DT_ALL_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+static void w5500_thread_poll(const struct device *dev)
+{
+	struct w5500_runtime *ctx = dev->data;
+
+	if (!ctx->state.is_up) {
+		k_msleep(CONFIG_ETH_W5500_POLL_PERIOD);
+		w5500_update_link_status(dev);
+		return;
+	}
+
+	k_msleep(CONFIG_ETH_W5500_POLL_PERIOD);
+
+	if (w5500_check_for_ir(dev) == 0U) {
+		w5500_update_link_status(dev);
+	}
+}
+#endif
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+static void w5500_thread_interrupt(const struct device *dev)
+{
+	int res;
+	struct w5500_runtime *ctx = dev->data;
+	const struct w5500_config *config = dev->config;
+
+	res = k_sem_take(&ctx->int_sem, K_MSEC(CONFIG_ETH_W5500_MONITOR_PERIOD));
+
+	if (res == 0) {
+		if (!ctx->state.is_up) {
+			w5500_update_link_status(dev);
+		}
+
+		while (gpio_pin_get_dt(&config->interrupt)) {
+			w5500_check_for_ir(dev);
+		}
+	} else if (res == -EAGAIN) {
+		w5500_update_link_status(dev);
+	}
+}
+#endif
+
 static void w5500_thread(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
 	const struct device *dev = p1;
-	uint8_t ir;
-	int res;
-	struct w5500_runtime *ctx = dev->data;
-	const struct w5500_config *config = dev->config;
 
 	while (true) {
-		res = k_sem_take(&ctx->int_sem, K_MSEC(CONFIG_ETH_W5500_MONITOR_PERIOD));
 
-		if (res == 0) {
-			/* semaphore taken, update link status and receive packets */
-			if (!ctx->state.is_up) {
-				w5500_update_link_status(dev);
-			}
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+		const struct w5500_config *config = dev->config;
 
-			while (gpio_pin_get_dt(&(config->interrupt))) {
-				/* Read interrupt */
-				w5500_spi_read(dev, W5500_S0_IR, &ir, 1);
-
-				if (ir) {
-					/* Clear interrupt */
-					w5500_spi_write(dev, W5500_S0_IR, &ir, 1);
-
-					LOG_DBG("IR received");
-
-					if (ir & S0_IR_SENDOK) {
-						k_sem_give(&ctx->tx_sem);
-						LOG_DBG("TX Done");
-					}
-
-					if (ir & S0_IR_RECV) {
-						w5500_rx(dev);
-						LOG_DBG("RX Done");
-					}
-				}
-			}
-		} else if (res == -EAGAIN) {
-			/* semaphore timeout period expired, check link status */
-			w5500_update_link_status(dev);
+		if (DT_ALL_INST_HAS_PROP_STATUS_OKAY(int_gpios) ||
+			(config->interrupt.port != NULL)) {
+			w5500_thread_interrupt(dev);
+			continue;
 		}
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY */
+
+#if !DT_ALL_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+		/* polling mode, no INT pin is defined */
+		w5500_thread_poll(dev);
+#endif /* !DT_ALL_INST_HAS_PROP_STATUS_OKAY */
 	}
 }
 
@@ -369,6 +414,11 @@ static void w5500_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct w5500_runtime *ctx = dev->data;
+
+	/* configure Socket 0 with MACRAW mode and MAC filtering enabled */
+	uint8_t mode = S0_MR_MACRAW | BIT(W5500_S0_MR_MF);
+
+	w5500_spi_write(dev, W5500_S0_MR, &mode, 1);
 
 	net_if_set_link_addr(iface, ctx->mac_addr,
 			     sizeof(ctx->mac_addr),
@@ -457,11 +507,8 @@ static int w5500_set_config(const struct device *dev,
 
 static int w5500_hw_start(const struct device *dev)
 {
-	uint8_t mode = S0_MR_MACRAW | BIT(W5500_S0_MR_MF);
 	uint8_t mask = IR_S0;
 
-	/* configure Socket 0 with MACRAW mode and MAC filtering enabled */
-	w5500_spi_write(dev, W5500_S0_MR, &mode, 1);
 	w5500_command(dev, S0_CR_OPEN);
 
 	/* enable interrupt */
@@ -532,6 +579,7 @@ static int w5500_soft_reset(const struct device *dev)
 	return w5500_spi_write(dev, W5500_SIMR, &mask, 1);
 }
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 static void w5500_gpio_callback(const struct device *dev,
 				struct gpio_callback *cb,
 				uint32_t pins)
@@ -541,6 +589,7 @@ static void w5500_gpio_callback(const struct device *dev,
 
 	k_sem_give(&ctx->int_sem);
 }
+#endif
 
 static void w5500_set_macaddr(const struct device *dev)
 {
@@ -577,31 +626,40 @@ static int w5500_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (!gpio_is_ready_dt(&config->interrupt)) {
-		LOG_ERR("GPIO port %s not ready", config->interrupt.port->name);
-		return -EINVAL;
-	}
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	if (DT_ALL_INST_HAS_PROP_STATUS_OKAY(int_gpios) || (config->interrupt.port != NULL)) {
+		if (!gpio_is_ready_dt(&config->interrupt)) {
+			LOG_ERR("GPIO port %s not ready", config->interrupt.port->name);
+			return -EINVAL;
+		}
 
-	err = gpio_pin_configure_dt(&config->interrupt, GPIO_INPUT);
-	if (err < 0) {
-		LOG_ERR("Unable to configure GPIO pin %u", config->interrupt.pin);
-		return err;
-	}
+		err = gpio_pin_configure_dt(&config->interrupt, GPIO_INPUT);
+		if (err < 0) {
+			LOG_ERR("Unable to configure GPIO pin %u", config->interrupt.pin);
+			return err;
+		}
 
-	gpio_init_callback(&(ctx->gpio_cb), w5500_gpio_callback,
-			   BIT(config->interrupt.pin));
-	err = gpio_add_callback(config->interrupt.port, &(ctx->gpio_cb));
-	if (err < 0) {
-		LOG_ERR("Unable to add GPIO callback %u", config->interrupt.pin);
-		return err;
-	}
+		gpio_init_callback(&(ctx->gpio_cb), w5500_gpio_callback,
+				BIT(config->interrupt.pin));
+		err = gpio_add_callback(config->interrupt.port, &(ctx->gpio_cb));
+		if (err < 0) {
+			LOG_ERR("Unable to add GPIO callback %u", config->interrupt.pin);
+			return err;
+		}
 
-	err = gpio_pin_interrupt_configure_dt(&config->interrupt,
-					      GPIO_INT_EDGE_FALLING);
-	if (err < 0) {
-		LOG_ERR("Unable to enable GPIO INT %u", config->interrupt.pin);
-		return err;
+		err = gpio_pin_interrupt_configure_dt(&config->interrupt,
+							GPIO_INT_EDGE_FALLING);
+		if (err < 0) {
+			LOG_ERR("Unable to enable GPIO INT %u", config->interrupt.pin);
+			return err;
+		}
+		LOG_INF("%s: interrupt mode", dev->name);
+	} else {
+		LOG_INF("%s: polling mode", dev->name);
 	}
+#else
+	LOG_INF("%s: polling mode", dev->name);
+#endif
 
 	if (config->reset.port != NULL) {
 		if (!gpio_is_ready_dt(&config->reset)) {
@@ -658,7 +716,9 @@ static struct w5500_runtime w5500_0_runtime = {
 
 static const struct w5500_config w5500_0_config = {
 	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8)),
-	.interrupt = GPIO_DT_SPEC_INST_GET(0, int_gpios),
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	.interrupt = GPIO_DT_SPEC_INST_GET_OR(0, int_gpios, { 0 }),
+#endif
 	.reset = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, { 0 }),
 	.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0),
 	.phy_dev = DEVICE_GET(eth_w5500_phy_0),
