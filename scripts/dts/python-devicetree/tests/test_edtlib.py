@@ -939,6 +939,68 @@ def test_child_dependencies():
     assert edt.get_node("/child-binding/child-1/grandchild") in dep_node.required_by
     assert edt.get_node("/child-binding/child-2") in dep_node.required_by
 
+def test_child_phandle_circular_dependency(tmp_path):
+    '''Test parent phandles to child states do not create dependency cycles.'''
+
+    binding_dir = tmp_path / "bindings"
+    binding_dir.mkdir()
+
+    binding_file = binding_dir / "test-stm.yaml"
+    binding_file.write_text("""
+description: Generic child state dependency test
+
+compatible: "test,stm"
+
+properties:
+  states:
+    type: phandles
+
+child-binding:
+  description: state node
+  properties:
+    next-state:
+      type: int
+""", encoding="utf-8")
+
+    dts_file = tmp_path / "child-descendant-ref.dts"
+    dts_file.write_text("""
+/dts-v1/;
+
+/ {
+	test_stm {
+		compatible = "test,stm";
+		states = <&state1 &state2 &state3>;
+
+		state1: state1 {
+			next-state = <2>;
+		};
+
+		state2: state2 {
+			next-state = <3>;
+		};
+
+		state3: state3 {
+			next-state = <1>;
+		};
+	};
+};
+""", encoding="utf-8")
+
+    edt = edtlib.EDT(os.fspath(dts_file), [os.fspath(binding_dir)])
+
+    parent = edt.get_node("/test_stm")
+    states = [
+        edt.get_node("/test_stm/state1"),
+        edt.get_node("/test_stm/state2"),
+        edt.get_node("/test_stm/state3"),
+    ]
+
+    assert parent.props["states"].val == states
+    for state in states:
+        assert parent not in state.required_by
+        assert state not in parent.depends_on
+        assert parent in state.depends_on
+
 def test_slice_errs(tmp_path):
     '''Test error messages from the internal _slice() helper'''
 
