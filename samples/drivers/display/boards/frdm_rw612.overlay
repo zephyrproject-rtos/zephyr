@@ -7,3 +7,7 @@
 &standby {
 	status = "okay";
 };
+
+&st7796s {
+	zephyr,pm-device-runtime-auto;
+};
