@@ -40,4 +40,5 @@ zephyr_library_sources_ifdef(CONFIG_MEMC_STM32_OSPI_PSRAM memc_stm32_ospi_psram.
 zephyr_library_sources_ifdef(CONFIG_MEMC_STM32_SDRAM memc_stm32_sdram.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_STM32_XSPI_PSRAM memc_stm32_xspi_psram.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_STM32_PSRAM_V2 memc_stm32_psram_v2.c)
+zephyr_library_sources_ifdef(CONFIG_MEMC_STM32_PSRAM_V2 psram_spi.c)
 # zephyr-keep-sorted-stop
