@@ -10,7 +10,6 @@ Tests for handlers.py classes' methods
 import itertools
 import os
 import signal
-import subprocess
 import sys
 from contextlib import nullcontext
 from importlib import reload
@@ -731,56 +730,6 @@ def test_devicehandler_monitor_serial_splitlines(mocked_instance):
     assert harness.handle.call_count == 2
 
 
-TESTDATA_11 = [
-    (mock.Mock(pid=0, returncode=0), False),
-    (mock.Mock(pid=0, returncode=1), False),
-    (mock.Mock(pid=0, returncode=1), True)
-]
-
-@pytest.mark.parametrize(
-    'mock_process, raise_timeout',
-    TESTDATA_11,
-    ids=['proper script', 'error', 'timeout']
-)
-def test_devicehandler_run_custom_script(caplog, mock_process, raise_timeout):
-    def raise_timeout_fn(timeout=-1):
-        if raise_timeout and timeout != -1:
-            raise subprocess.TimeoutExpired(None, timeout)
-        else:
-            return mock.Mock(), mock.Mock()
-
-    def assert_popen(command, *args, **kwargs):
-        return mock.Mock(
-            __enter__=mock.Mock(return_value=mock_process),
-            __exit__=mock.Mock(return_value=None)
-        )
-
-    mock_process.communicate = mock.Mock(side_effect=raise_timeout_fn)
-
-    script = [os.path.join('test','script', 'path'), 'arg']
-    timeout = 60
-
-    with mock.patch('subprocess.Popen', side_effect=assert_popen):
-        DeviceHandler.run_custom_script(script, timeout)
-
-    if raise_timeout:
-        assert all(
-            t in caplog.text.lower() for t in [str(script), 'timed out']
-        )
-        mock_process.assert_has_calls(
-            [
-                mock.call.communicate(timeout=timeout),
-                mock.call.kill(),
-                mock.call.communicate()
-            ]
-        )
-    elif mock_process.returncode == 0:
-        assert not any([r.levelname == 'ERROR' for r in caplog.records])
-    else:
-        assert 'timed out' not in caplog.text.lower()
-        assert 'custom script failure' in caplog.text.lower()
-
-
 TESTDATA_13 = [
     (
         None,
@@ -1183,7 +1132,6 @@ def test_devicehandler_handle(
     )
     handler._start_serial_pty = mock.Mock(side_effect=mock_start_serial_pty)
     handler._create_command = mock.Mock(return_value=['dummy', 'command'])
-    handler.run_custom_script = mock.Mock()
     handler._create_serial_connection = mock.Mock(
         side_effect=mock_create_serial
     )
@@ -1218,18 +1166,8 @@ def test_devicehandler_handle(
     messages = [record.msg for record in caplog.records]
     assert all([msg in messages for msg in expected_logs])
 
-    handler.run_custom_script.assert_has_calls([
-        mock.call('dummy pre script', mock.ANY)
-    ])
-
     if raise_create_serial:
         return
-
-    handler.run_custom_script.assert_has_calls([
-        mock.call('dummy pre script', mock.ANY),
-        mock.call('dummy post flash script', mock.ANY),
-        mock.call('dummy post script', mock.ANY)
-    ])
 
     if expected_reason:
         assert handler.instance.reason == expected_reason
