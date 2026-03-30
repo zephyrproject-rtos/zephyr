@@ -2081,8 +2081,13 @@ static int numaker_usbd_msg_handle_setup(const struct device *dev, struct numake
 		 * is not done in-place here and rely on USB reset handler to do it
 		 * as catch-all.
 		 */
-		numaker_usbd_ep_abort(ep_cur, true);
-		numaker_usbd_ep_abort(ep_cur + 1, true);
+		if (usb_reqtype_is_to_host(setup)) {
+			numaker_usbd_ep_abort(ep_cur, false);
+			numaker_usbd_ep_abort(ep_cur + 1, false);
+		} else {
+			numaker_usbd_ep_abort(ep_cur, true);
+			numaker_usbd_ep_abort(ep_cur + 1, true);
+		}
 	} else {
 		numaker_usbd_ep_abort(ep_cur, false);
 		numaker_usbd_ep_abort(ep_cur + 1, false);
