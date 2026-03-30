@@ -673,10 +673,10 @@ static void ethernet_update_tx_stats(struct net_if *iface, struct net_pkt *pkt)
 	eth_stats_update_bytes_tx(iface, net_pkt_get_len(pkt));
 	eth_stats_update_pkts_tx(iface);
 
-	if (net_eth_is_addr_multicast(&hdr->dst)) {
-		eth_stats_update_multicast_tx(iface);
-	} else if (net_eth_is_addr_broadcast(&hdr->dst)) {
+	if (net_eth_is_addr_broadcast(&hdr->dst)) {
 		eth_stats_update_broadcast_tx(iface);
+	} else if (net_eth_is_addr_multicast(&hdr->dst)) {
+		eth_stats_update_multicast_tx(iface);
 	}
 }
 
