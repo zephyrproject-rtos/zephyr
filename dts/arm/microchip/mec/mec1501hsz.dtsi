@@ -312,8 +312,8 @@
 			max-value = <0xffff>;
 			prescaler = <0>;
 			status = "disabled";
-			girqs = <23 0>;
-			pcrs = <1 30>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 0)>;
+			pcr-src = <MCHP_XEC_SCR_ENCODE(1, 30)>;
 		};
 
 		timer1: timer@40000c20 {
@@ -324,8 +324,8 @@
 			max-value = <0xffff>;
 			prescaler = <0>;
 			status = "disabled";
-			girqs = <23 1>;
-			pcrs = <1 31>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 1)>;
+			pcr-src = <MCHP_XEC_SCR_ENCODE(1, 31)>;
 		};
 
 		/*
@@ -341,8 +341,8 @@
 			interrupts = <140 0>;
 			max-value = <0xffffffff>;
 			prescaler = <0>;
-			girqs = <23 4>;
-			pcrs = <3 23>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 4)>;
+			pcr-src = <MCHP_XEC_SCR_ENCODE(3, 23)>;
 			status = "disabled";
 		};
 
@@ -353,8 +353,8 @@
 			interrupts = <141 0>;
 			max-value = <0xffffffff>;
 			prescaler = <0>;
-			girqs = <23 5>;
-			pcrs = <3 24>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 5)>;
+			pcr-src = <MCHP_XEC_SCR_ENCODE(3, 24)>;
 		};
 
 		hibtimer0: timer@40009800 {
