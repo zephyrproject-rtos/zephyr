@@ -5,12 +5,23 @@
  */
 
 #include <mem.h>
-#include <arm/armv8-m.dtsi>
+#include <arm/armv6-m.dtsi>
 
 / {
+	cpus: cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
+			reg = <1>;
+		};
+	};
+
 	soc {
 		sram: sram@0 {
-			ranges = <0x00000000 0x00000000 DT_SIZE_K(32)>;
+			reg = <0x00000000 DT_SIZE_K(32)>;
 		};
 
 		aon_peripheral: aon_peripheral@a0000000 {
@@ -19,12 +30,20 @@
 			ranges = <0x0 0xa0000000 0x10000000>;
 		};
 	};
+
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,port-pinctrl";
+		status = "okay";
+	};
 };
 
-#include "nxp_mcxl.dtsi"
+#include "nxp_mcxl_aon.dtsi"
 
-/ {
-	cpus {
-		/delete-node/ cpu@0;
-	};
+&systick {
+	status = "disabled";
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
 };
