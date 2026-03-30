@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+
+shield:
+  name: m5stack_unit_minioled
+  full_name: M5Stack Unit Mini OLED
+  vendor: m5stack
+  supported_features:
+    - display
