@@ -244,7 +244,6 @@ irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
  * @warning
  * As long as all recursive calls to irq_lock() have not been balanced with
  * corresponding irq_unlock() calls, the caller "holds the interrupt lock".
- *
  * "Holding the interrupt lock" when a context switch occurs is illegal.
  *
  * @warning
