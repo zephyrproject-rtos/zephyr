@@ -53,7 +53,8 @@ typedef struct pinctrl_soc_pin {
 	 (DT_PROP(node_id, input_enable) << MCHP_PINCTRL_INPUTENABLE_POS) |                        \
 	 (DT_PROP(node_id, output_enable) << MCHP_PINCTRL_OUTPUTENABLE_POS) |                      \
 	 (DT_PROP(node_id, drive_open_drain) << MCHP_PINCTRL_OPENDRAIN_POS) |                      \
-	 (DT_ENUM_IDX(node_id, slew_rate) << MCHP_PINCTRL_SLEWRATE_POS)),
+	 (DT_ENUM_IDX(node_id, slew_rate) << MCHP_PINCTRL_SLEWRATE_POS) |                          \
+	 (DT_PROP(node_id, non_secure_enable) << MCHP_PINCTRL_NONSECENABLE_POS)),
 
 /**
  * @brief Utility macro to initialize each pin.
@@ -87,7 +88,7 @@ typedef struct pinctrl_soc_pin {
 
 #define MCHP_PINCTRL_FLAGS_DEFAULT     (0U)
 #define MCHP_PINCTRL_FLAGS_POS         (0U)
-#define MCHP_PINCTRL_FLAGS_MASK        (0x3F << MCHP_PINCTRL_FLAGS_POS)
+#define MCHP_PINCTRL_FLAGS_MASK        (0xFF << MCHP_PINCTRL_FLAGS_POS)
 #define MCHP_PINCTRL_FLAG_MASK         (1U)
 #define MCHP_PINCTRL_PULLUP_POS        (MCHP_PINCTRL_FLAGS_POS)
 #define MCHP_PINCTRL_PULLUP            (1U << MCHP_PINCTRL_PULLUP_POS)
@@ -99,10 +100,10 @@ typedef struct pinctrl_soc_pin {
 #define MCHP_PINCTRL_INPUTENABLE       (1U << MCHP_PINCTRL_INPUTENABLE_POS)
 #define MCHP_PINCTRL_OUTPUTENABLE_POS  (MCHP_PINCTRL_INPUTENABLE_POS + 1U)
 #define MCHP_PINCTRL_OUTPUTENABLE      (1U << MCHP_PINCTRL_OUTPUTENABLE_POS)
-#define MCHP_PINCTRL_DRIVESTRENGTH_POS (MCHP_PINCTRL_OUTPUTENABLE_POS + 1U)
-#define MCHP_PINCTRL_DRIVESTRENGTH     (1U << MCHP_PINCTRL_DRIVESTRENGTH_POS)
-#define MCHP_PINCTRL_SLEWRATE_POS      (MCHP_PINCTRL_DRIVESTRENGTH_POS + 1U)
+#define MCHP_PINCTRL_SLEWRATE_POS      (MCHP_PINCTRL_OUTPUTENABLE_POS + 1U)
 #define MCHP_PINCTRL_SLEWRATE          (3U << MCHP_PINCTRL_SLEWRATE_POS)
+#define MCHP_PINCTRL_NONSECENABLE_POS  (MCHP_PINCTRL_SLEWRATE_POS + 2U)
+#define MCHP_PINCTRL_NONSECENABLE      (1U << MCHP_PINCTRL_NONSECENABLE_POS)
 
 /** @} */
 
