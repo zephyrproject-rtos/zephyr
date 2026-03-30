@@ -46,6 +46,7 @@ static const uint32_t mchp_port_addrs[] = {
 	MCHP_PORT_ADDR_OR_NONE(portf)
 	MCHP_PORT_ADDR_OR_NONE(portg)
 };
+
 /* clang-format on */
 
 /**
@@ -166,6 +167,15 @@ static void pinctrl_set_flags(const pinctrl_soc_pin_t *pin)
 			pRegister->PORT_PINCFG[pin_num] &= ~PORT_PINCFG_DRVSTR(1);
 		}
 #endif /* CONFIG_PIN_DRIVE_STRENGTH */
+
+#ifdef CONFIG_ARM_TRUSTZONE_M
+		/* if non-secure access is enabled, set the corresponding bit in PORT_NONSEC reg */
+		if ((pin->pinflag & MCHP_PINCTRL_NONSECENABLE) != 0) {
+			pRegister->PORT_NONSEC |= BIT(pin_num);
+		} else {
+			pRegister->PORT_NONSEC &= ~BIT(pin_num);
+		}
+#endif /* CONFIG_ARM_TRUSTZONE_M */
 	}
 }
 
