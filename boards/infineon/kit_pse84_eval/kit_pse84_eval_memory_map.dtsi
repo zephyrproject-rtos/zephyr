@@ -57,6 +57,8 @@
 		};
 
 		m55_allocatable_shared: memory@240ff000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "SHARED_MEMORY_M55";
 			reg = <0x240ff000 DT_SIZE_K(4)>;
 		};
 
