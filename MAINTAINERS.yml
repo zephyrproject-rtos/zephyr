@@ -6261,6 +6261,7 @@ West:
     - gmarull
   collaborators:
     - cameled
+    - ck-telecom
   files:
     - modules/hal_sifli/
   labels:
