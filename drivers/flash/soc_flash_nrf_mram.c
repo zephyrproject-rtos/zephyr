@@ -248,9 +248,14 @@ static int nrf_mram_write(const struct device *dev, off_t offset, const void *da
 
 	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
 #if defined(CONFIG_MRAM_LATENCY)
-		mram_no_latency_sync_request();
+		ret = mram_no_latency_sync_request();
+		if (ret) {
+			LOG_ERR("Failed to request no-latency mode for MRAM write");
+			goto unlock;
+		}
 #endif
 	}
+
 	for (uint32_t i = 0; i < (len / MRAM_WORD_SIZE); i++) {
 		while (!nrf_mram_ready(addr + (i * MRAM_WORD_SIZE), ironside_se_ver)) {
 			/* Wait until MRAM controller is ready */
@@ -259,17 +264,22 @@ static int nrf_mram_write(const struct device *dev, off_t offset, const void *da
 			addr + (i * MRAM_WORD_SIZE),
 			(void *)((uintptr_t)data + (i * MRAM_WORD_SIZE)), MRAM_WORD_SIZE);
 		if (ret) {
-			goto unlock;
+			goto latency_release;
 		}
 	}
 
+latency_release:
 	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
 #if defined(CONFIG_MRAM_LATENCY)
-		mram_no_latency_sync_release();
+		ret = mram_no_latency_sync_release();
+		if (ret) {
+			LOG_ERR("Failed to release no-latency mode for MRAM write");
+		}
 #endif
 	}
-
+#if defined(CONFIG_MRAM_LATENCY)
 unlock:
+#endif
 	k_mutex_unlock(&nrf_mram_data->nrf_mram_mutex);
 	return ret;
 }
@@ -293,26 +303,36 @@ static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
 	/* Ensure that the mramc banks are powered on */
 	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
 #if defined(CONFIG_MRAM_LATENCY)
-		mram_no_latency_sync_request();
+		ret = mram_no_latency_sync_request();
+		if (ret) {
+			LOG_ERR("Failed to request no-latency mode for MRAM erase");
+			goto unlock;
+		}
 #endif
 	}
+
 	for (uint32_t i = 0; i < (size / MRAM_WORD_SIZE); i++) {
 		while (!nrf_mram_ready(addr + (i * MRAM_WORD_SIZE), ironside_se_ver)) {
 			/* Wait until MRAM controller is ready */
 		}
 		ret = nrf_mram_erase_and_verify_word(addr + (i * MRAM_WORD_SIZE), MRAM_WORD_SIZE);
 		if (ret) {
-			goto unlock;
+			goto latency_release;
 		}
 	}
 
+latency_release:
 	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
 #if defined(CONFIG_MRAM_LATENCY)
-		mram_no_latency_sync_release();
+		ret = mram_no_latency_sync_release();
+		if (ret) {
+			LOG_ERR("Failed to release no-latency mode for MRAM erase");
+		}
 #endif
 	}
-
+#if defined(CONFIG_MRAM_LATENCY)
 unlock:
+#endif
 	k_mutex_unlock(&nrf_mram_data->nrf_mram_mutex);
 	return ret;
 }
