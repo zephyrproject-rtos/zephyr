@@ -14,6 +14,7 @@ common:
     - nrf54lm20dk/nrf54lm20b/cpuapp
     - nrf54lm20dk/nrf54lm20b/cpuflpr
     - nrf7120dk/nrf7120/cpuapp
+    - nrf7120dk/nrf7120/cpuapp/ns
     - ophelia4ev/nrf54l15/cpuapp
     - ophelia4ev/nrf54l15/cpuflpr
   integration_platforms:
