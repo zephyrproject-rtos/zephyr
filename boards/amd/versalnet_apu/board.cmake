@@ -4,8 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-include(${ZEPHYR_BASE}/boards/common/xsdb.board.cmake)
-
 # Set TF-A platform for ARM Trusted Firmware builds
 if(CONFIG_BUILD_WITH_TFA)
   set(TFA_PLAT "versal_net")
@@ -19,4 +17,8 @@ if(CONFIG_BUILD_WITH_TFA)
   else()
     set(BUILD_FOLDER "release")
   endif()
+  set(XSDB_BL31_PATH ${PROJECT_BINARY_DIR}/../tfa/versal_net/${BUILD_FOLDER}/bl31/bl31.elf)
+  board_runner_args(xsdb "--bl31=${XSDB_BL31_PATH}")
 endif()
+
+include(${ZEPHYR_BASE}/boards/common/xsdb.board.cmake)
