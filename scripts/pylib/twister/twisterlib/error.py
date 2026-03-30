@@ -39,3 +39,7 @@ class StatusAttributeError(TwisterException):
 
 class NoDeviceAvailableException(RuntimeError):
     """Raised when no free device is available for reservation."""
+
+
+class NoRequiredApplicationNotReadyException(RuntimeError):
+    """Raised when required applications are not ready."""
