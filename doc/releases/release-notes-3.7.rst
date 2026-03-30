@@ -168,6 +168,11 @@ These GitHub issues were addressed since the previous 3.7.1 tagged release:
 * :github:`104652` - net: socketcan: length not always verified
 * :github:`104748` - [mcumgr] error codes of group "stat" incorrect
 * :github:`104948` - net: lib: socket: tls: Potential out-of-bounds write in socket_op_vtable::connect
+* :github:`61464` - USB device stack (new and old) assertion on STM32
+* :github:`105106` - arc: mpu: MPUv6 buffer validation race condition causes spurious access denials
+* :github:`105374` - drivers: gpio: sam: callback called when interrupt disabled
+* :github:`105754` - net: sockets: msg->msg_iovlen is not validated in zsock_recvmsg() sys call
+* :github:`105977` - [backport] v3.7 twister broken on current python set of packages
 
 Mbed TLS
 ********
