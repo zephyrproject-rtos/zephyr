@@ -17,15 +17,16 @@ description: |
       signals labeled from D0 at the bottom D7 at the top;
     * A 10-pin header (opposite Power Supply).  This has six additional
       digital input signals labelled from D8 at the bottom through D13
-      towards the top, skipping two pins, then finishing with D14 and
-      D15 at the top.
+      towards the top, skipping two pins, then finishing with SDA and
+      SCL at the top.
 
     This binding provides a nexus mapping for 20 pins where parent pins 0
-    through 5 correspond to A0 through A5, and parent pins 6 through 21
-    correspond to D0 through D15, as depicted below:
+    through 5 map to A0 through A5, parent pins 6 through 19 map to D0
+    through D13, and finally 20 and 21 map to SDA and SCL, as depicted
+    below:
 
-                                 D15  21
-                                 D14  20
+                                 SCL  21
+                                 SDA  20
                                  AREF -
                                  GND  -
         - N/C                    D13  19
@@ -45,7 +46,9 @@ description: |
         5 A5                     D0    6
 
     Use ARDUINO_HEADER_R3_* constants in <zephyr/dt-bindings/gpio/arduino-header-r3.h> to refer to
-    specific pins using convenient constant names.
+    specific pins using convenient constant names. Note that SCL and SDA were also referred to as
+    D14 and D15 in previous versions of this Zephyr binding, but this is now deprecated.
+
 
 compatible: "arduino-header-r3"
 
