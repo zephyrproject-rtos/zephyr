@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
 #include <zephyr/kernel.h>
@@ -50,7 +49,6 @@ int main(void)
 {
 	LOG_INF("MCTP Endpoint EID:%d on %s\n", LOCAL_HELLO_EID, CONFIG_BOARD_TARGET);
 
-	mctp_set_alloc_ops(malloc, free, realloc);
 	mctp_ctx = mctp_init();
 	__ASSERT_NO_MSG(mctp_ctx != NULL);
 	mctp_register_bus(mctp_ctx, &mctp_endpoint.binding, LOCAL_HELLO_EID);
