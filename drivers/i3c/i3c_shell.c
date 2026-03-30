@@ -444,7 +444,7 @@ static int i3c_read_to_buffer(const struct shell *sh, char *s_dev_name, char *s_
 	}
 	tdev = shell_device_get_binding(s_tdev_name);
 	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", s_dev_name);
+		shell_error(sh, "I3C: Device driver %s not found.", s_tdev_name);
 		return -ENODEV;
 	}
 	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
@@ -1088,6 +1088,10 @@ static int cmd_i3c_ccc_rstact(const struct shell *sh, size_t argc, char **argv)
 	if (strcmp(argv[3], "get") == 0) {
 		ret = i3c_ccc_do_rstact_fmt3(desc, action, &data);
 	} else if (strcmp(argv[3], "set") == 0) {
+		if (action >= 0x80) {
+			shell_error(sh, "I3C: defining bytes >= 0x80 are only valid for get");
+			return -EINVAL;
+		}
 		ret = i3c_ccc_do_rstact_fmt2(desc, action);
 	} else {
 		shell_error(sh, "I3C: invalid parameter");
@@ -1759,8 +1763,8 @@ static int cmd_i3c_reattach(const struct shell *sh, size_t argc, char **argv)
 		return ret;
 	}
 
-	if (argc > 2) {
-		old_dyn_addr = strtol(argv[2], NULL, 16);
+	if (argc > 3) {
+		old_dyn_addr = strtol(argv[3], NULL, 16);
 	}
 
 	ret = i3c_reattach_i3c_device(desc, old_dyn_addr);
@@ -1951,7 +1955,7 @@ static int cmd_i3c_ibi_hj_response(const struct shell *sh, size_t argc, char **a
 	bool ack;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
 		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
 		return -ENODEV;

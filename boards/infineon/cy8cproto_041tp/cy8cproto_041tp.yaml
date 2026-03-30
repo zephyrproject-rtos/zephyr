@@ -16,4 +16,13 @@ supported:
   - uart
   - clock_control
   - pinctrl
+  - gpio
+  - dma
+  - spi
+  - i2c
+  - adc
+  - counter
+  - watchdog
+  - pwm
+  - flash
 vendor: infineon

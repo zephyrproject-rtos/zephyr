@@ -84,6 +84,7 @@ endif # WDT_COUNTER
 source "drivers/watchdog/Kconfig.adi_max42500"
 source "drivers/watchdog/Kconfig.ambiq"
 source "drivers/watchdog/Kconfig.andes_atcwdt200"
+source "drivers/watchdog/Kconfig.bflb"
 source "drivers/watchdog/Kconfig.cc13xx_cc26xx"
 source "drivers/watchdog/Kconfig.cc23x0"
 source "drivers/watchdog/Kconfig.cc32xx"

@@ -7,6 +7,7 @@ menuconfig I2C_RTS5912
 	depends on DT_HAS_REALTEK_RTS5912_I2C_ENABLED
 	select I2C_ALLOW_NO_STOP_TRANSACTIONS
 	select I2C_DW_EXTENDED_SUPPORT
+	select I2C_DW_PM_POLICY_STATE_LOCK
 	help
 	  Enable the Realtek RTS5912 I2C driver
 

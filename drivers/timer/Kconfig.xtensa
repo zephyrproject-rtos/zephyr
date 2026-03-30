@@ -1,6 +1,7 @@
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Cadence Design Systems, Inc.
 # Copyright (c) 2019 Intel Corp.
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
 config XTENSA_TIMER
@@ -23,3 +24,29 @@ config XTENSA_TIMER_ID
 	  them can be unmaskable (and thus not usable by OS code that
 	  need synchronization, like the timer subsystem!).  In
 	  general timer zero is guaranteed to be present and usable.
+
+choice XTENSA_TIMER_LPM_TIMER
+	prompt "Xtensa CCOUNT low-power mode support"
+	depends on XTENSA_TIMER
+	default XTENSA_TIMER_LPM_TIMER_NONE
+	help
+	  CCOUNT stops when the CPU clock is gated during low-power modes.
+	  A companion timer that remains active can be used to compensate
+	  for the missed cycles.
+
+config XTENSA_TIMER_LPM_TIMER_NONE
+	bool "No compensation"
+	help
+	  Use no additional device as low-power mode timer.
+	  The SoC must never enter a low-power mode where CCOUNT stops
+	  when this option is selected.
+
+config XTENSA_TIMER_LPM_TIMER_HOOK
+	bool "Hook-based compensation"
+	depends on PM && TICKLESS_KERNEL
+	help
+	  The platform provides a hook returning the number of
+	  CPU cycles missed while CCOUNT was stopped during
+	  low-power mode.
+
+endchoice

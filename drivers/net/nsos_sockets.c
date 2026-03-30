@@ -927,7 +927,6 @@ return_ret:
 static ssize_t nsos_recvfrom(void *obj, void *buf, size_t len, int flags,
 			     struct net_sockaddr *addr, net_socklen_t *addrlen)
 {
-	struct net_if *iface = NET_IF_GET(nsos_socket, 0);
 	struct nsos_socket *sock = obj;
 	struct nsos_mid_sockaddr_storage addr_storage_mid;
 	struct nsos_mid_sockaddr *addr_mid = (struct nsos_mid_sockaddr *)&addr_storage_mid;
@@ -961,7 +960,6 @@ return_ret:
 		return -1;
 	}
 
-	conn_mgr_if_used(iface);
 	return ret;
 }
 
@@ -1402,6 +1400,52 @@ static int nsos_setsockopt(void *obj, int level, int optname,
 	return -1;
 }
 
+static int nsos_getpeername(void *obj, struct net_sockaddr *addr, net_socklen_t *addrlen)
+{
+	struct nsos_socket *sock = obj;
+	struct nsos_mid_sockaddr_storage addr_storage_mid;
+	struct nsos_mid_sockaddr *addr_mid = (struct nsos_mid_sockaddr *)&addr_storage_mid;
+	size_t addrlen_mid = sizeof(addr_storage_mid);
+	int ret;
+
+	ret = nsos_adapt_getpeername(sock->poll.mid.fd, addr_mid, &addrlen_mid);
+	if (ret < 0) {
+		errno = nsi_errno_from_mid(-ret);
+		return -1;
+	}
+
+	ret = sockaddr_from_nsos_mid(addr, addrlen, addr_mid, addrlen_mid);
+	if (ret < 0) {
+		errno = nsi_errno_from_mid(-ret);
+		return -1;
+	}
+
+	return 0;
+}
+
+static int nsos_getsockname(void *obj, struct net_sockaddr *addr, net_socklen_t *addrlen)
+{
+	struct nsos_socket *sock = obj;
+	struct nsos_mid_sockaddr_storage addr_storage_mid;
+	struct nsos_mid_sockaddr *addr_mid = (struct nsos_mid_sockaddr *)&addr_storage_mid;
+	size_t addrlen_mid = sizeof(addr_storage_mid);
+	int ret;
+
+	ret = nsos_adapt_getsockname(sock->poll.mid.fd, addr_mid, &addrlen_mid);
+	if (ret < 0) {
+		errno = nsi_errno_from_mid(-ret);
+		return -1;
+	}
+
+	ret = sockaddr_from_nsos_mid(addr, addrlen, addr_mid, addrlen_mid);
+	if (ret < 0) {
+		errno = nsi_errno_from_mid(-ret);
+		return -1;
+	}
+
+	return 0;
+}
+
 static const struct socket_op_vtable nsos_socket_fd_op_vtable = {
 	.fd_vtable = {
 		.read = nsos_read,
@@ -1419,6 +1463,8 @@ static const struct socket_op_vtable nsos_socket_fd_op_vtable = {
 	.recvmsg = nsos_recvmsg,
 	.getsockopt = nsos_getsockopt,
 	.setsockopt = nsos_setsockopt,
+	.getpeername = nsos_getpeername,
+	.getsockname = nsos_getsockname,
 };
 
 static bool nsos_is_supported(int family, int type, int proto)
@@ -1603,7 +1649,7 @@ static int nsos_socket_offload_init(const struct device *arg)
 
 static void nsos_iface_api_init(struct net_if *iface)
 {
-	iface->if_dev->socket_offload = nsos_socket_create;
+	net_if_socket_offload_set(iface, nsos_socket_create);
 
 	socket_offload_dns_register(&nsos_dns_ops);
 }

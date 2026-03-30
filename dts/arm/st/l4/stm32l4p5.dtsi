@@ -40,7 +40,7 @@
 
 		pllsai2: pllsai2 {
 			#clock-cells = <0>;
-			compatible = "st,stm32l4-pllsai-clock";
+			compatible = "st,stm32l4-pll-clock";
 			status = "disabled";
 		};
 	};
@@ -342,6 +342,16 @@
 			};
 		};
 
+		ltdc: display-controller@40016800 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x40016800 0x200>;
+			interrupts = <91 0>, <92 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK(APB2, 26)>;
+			resets = <&rctl STM32_RESET(APB2, 26)>;
+			status = "disabled";
+		};
+
 		can1: can@40006400 {
 			compatible = "st,stm32-bxcan";
 			reg = <0x40006400 0x400>;
@@ -392,8 +402,9 @@
 			interrupt-names = "dcmi";
 			clocks = <&rcc STM32_CLOCK(AHB2, 14)>;
 			dmas = <&dma1 1 91 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
-				STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
-				STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
+					    STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS |
+					    STM32_DMA_MEM_32BITS |
+					    STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
 			status = "disabled";
 		};
 

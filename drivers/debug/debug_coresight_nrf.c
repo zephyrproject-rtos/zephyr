@@ -62,7 +62,7 @@ static void nrf_cti_for_tpiu_init(void)
 
 	coresight_unlock(cti210);
 
-	/* Connect CTI channel to TPIU formatter flushin */
+	/* Connect CTI channel to TPIU formatter flushing */
 	sys_write32(BIT(CTI_CH_TPIU_FLUSH_REQ_OFFSET), cti210 + CTI_CTIOUTEN0_OFFSET);
 	sys_write32(BIT(CTI_CH_TPIU_FLUSH_REQ_OFFSET), cti210 + CTI_CTIGATE_OFFSET);
 	sys_write32(CTI_CTICONTROL_GLBEN_Msk, cti210 + CTI_CTICONTROL_OFFSET);

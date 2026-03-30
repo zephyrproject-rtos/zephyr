@@ -16,6 +16,7 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/clock.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -204,7 +205,6 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 		 */
 		if (IS_ENABLED(CONFIG_SPI_SLAVE) && spi_context_is_slave(ctx)) {
 			timeout = K_FOREVER;
-			timeout_ms = UINT32_MAX;
 		} else {
 			uint32_t tx_len = spi_context_total_tx_len(ctx);
 			uint32_t rx_len = spi_context_total_rx_len(ctx);
@@ -221,7 +221,7 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 			return -ETIMEDOUT;
 		}
 #else
-		if (timeout_ms == UINT32_MAX) {
+		if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 			/* In slave mode, we wait indefinitely, so we can go idle. */
 			unsigned int key = irq_lock();
 
@@ -233,15 +233,14 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 			ctx->ready = 0;
 			irq_unlock(key);
 		} else {
-			const uint32_t tms = k_uptime_get_32();
+			k_timepoint_t end = sys_timepoint_calc(timeout);
 
-			while (!atomic_get(&ctx->ready) && (k_uptime_get_32() - tms < timeout_ms)) {
+			while (!atomic_get(&ctx->ready)) {
+				if (sys_timepoint_expired(end)) {
+					LOG_ERR("Timeout waiting for transfer complete");
+					return -ETIMEDOUT;
+				}
 				k_busy_wait(1);
-			}
-
-			if (!ctx->ready) {
-				LOG_ERR("Timeout waiting for transfer complete");
-				return -ETIMEDOUT;
 			}
 
 			ctx->ready = 0;
@@ -262,7 +261,7 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 /* For synchronous transfers, this will signal to a thread waiting
  * on spi_context_wait for completion.
  *
- * For asynchronous tranfers, this will call the async callback function
+ * For asynchronous transfers, this will call the async callback function
  * with the user data.
  */
 static inline void spi_context_complete(struct spi_context *ctx,
@@ -302,13 +301,6 @@ static inline void spi_context_complete(struct spi_context *ctx,
 #endif /* CONFIG_SPI_ASYNC */
 }
 
-#ifdef DT_SPI_CTX_HAS_NO_CS_GPIOS
-#define spi_context_cs_configure_all(...) 0
-#define spi_context_cs_get_all(...) 0
-#define spi_context_cs_put_all(...) 0
-#define _spi_context_cs_control(...) (void) 0
-#define spi_context_cs_control(...) (void) 0
-#else /* DT_SPI_CTX_HAS_NO_CS_GPIOS */
 /*
  * This function initializes all the chip select GPIOs associated with a spi controller.
  * The context first must be initialized using the SPI_CONTEXT_CS_GPIOS_INITIALIZE macro.
@@ -319,6 +311,7 @@ static inline void spi_context_complete(struct spi_context *ctx,
  */
 static inline int spi_context_cs_configure_all(struct spi_context *ctx)
 {
+#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
 	int ret;
 	const struct gpio_dt_spec *cs_gpio;
 
@@ -334,10 +327,14 @@ static inline int spi_context_cs_configure_all(struct spi_context *ctx)
 			return ret;
 		}
 	}
+#else
+	ARG_UNUSED(ctx);
+#endif
 
 	return 0;
 }
 
+#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
 /* Helper function to power manage the GPIO CS pins, not meant to be used directly by drivers */
 static inline int _spi_context_cs_pm_all(struct spi_context *ctx, bool get)
 {
@@ -358,6 +355,7 @@ static inline int _spi_context_cs_pm_all(struct spi_context *ctx, bool get)
 
 	return 0;
 }
+#endif
 
 /* This function should be called by drivers to pm get all the chip select lines in
  * master mode in the case of any CS being a GPIO. This should be called from the
@@ -365,7 +363,12 @@ static inline int _spi_context_cs_pm_all(struct spi_context *ctx, bool get)
  */
 static inline int spi_context_cs_get_all(struct spi_context *ctx)
 {
+#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
 	return _spi_context_cs_pm_all(ctx, true);
+#else
+	ARG_UNUSED(ctx);
+	return 0;
+#endif
 }
 
 /* This function should be called by drivers to pm put all the chip select lines in
@@ -374,9 +377,18 @@ static inline int spi_context_cs_get_all(struct spi_context *ctx)
  */
 static inline int spi_context_cs_put_all(struct spi_context *ctx)
 {
+#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
 	return _spi_context_cs_pm_all(ctx, false);
+#else
+	ARG_UNUSED(ctx);
+	return 0;
+#endif
 }
 
+#ifdef DT_SPI_CTX_HAS_NO_CS_GPIOS
+#define _spi_context_cs_control(...) (void) 0
+#define spi_context_cs_control(...) (void) 0
+#else /* DT_SPI_CTX_HAS_NO_CS_GPIOS */
 /* Helper function to control the GPIO CS, not meant to be used directly by drivers */
 static inline void _spi_context_cs_control(struct spi_context *ctx,
 					   bool on, bool force_off)

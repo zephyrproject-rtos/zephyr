@@ -83,11 +83,14 @@ config PREEMPT_ENABLED
 
 config PRIORITY_CEILING
 	int "Priority inheritance ceiling"
-	default -127
+	default -128
+	range -128 127
 	help
-	  This defines the minimum priority value (i.e. the logically
-	  highest priority) that a thread will acquire as part of
-	  k_mutex priority inheritance.
+	  This defines the minimum priority value (i.e. the logically highest
+	  priority) that a thread will acquire as part of the k_mutex priority
+	  inheritance. Setting this to a priority level at or lower than the
+	  the idle thread's priority level disables the k_mutex priority
+	  inheritance algorithm.
 
 config NUM_METAIRQ_PRIORITIES
 	int "Number of very-high priority 'preemptor' threads"
@@ -157,7 +160,7 @@ config SCHED_CPU_MASK_PIN_ONLY
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
-	default 512 if ZTEST && !(RISCV || X86 || ARM || ARC)
+	default 512 if ZTEST && !(RISCV || X86 || ARM || ARC || OPENRISC)
 	default 1024
 	help
 	  When the initialization is complete, the thread executing it then
@@ -297,15 +300,8 @@ endchoice # DYNAMIC_THREAD_PREFER
 
 endif # DYNAMIC_THREADS
 
-config SCHED_DUMB
-	bool "Simple linked-list ready queue"
-	select DEPRECATED
-	help
-	  Deprecated in favour of SCHED_SIMPLE.
-
 choice SCHED_ALGORITHM
 	prompt "Scheduler priority queue algorithm"
-	default SCHED_SIMPLE if SCHED_DUMB
 	default SCHED_SIMPLE
 	help
 	  The kernel can be built with several choices for the
@@ -357,15 +353,8 @@ config SCHED_MULTIQ
 
 endchoice # SCHED_ALGORITHM
 
-config WAITQ_DUMB
-	bool "Simple linked-list wait_q"
-	select DEPRECATED
-	help
-	  Deprecated in favour of WAITQ_SIMPLE.
-
 choice WAITQ_ALGORITHM
 	prompt "Wait queue priority algorithm"
-	default WAITQ_SIMPLE if WAITQ_DUMB
 	default WAITQ_SIMPLE
 	help
 	  The wait_q abstraction used in IPC primitives to pend

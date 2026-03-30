@@ -28,12 +28,9 @@ LOG_MODULE_REGISTER(wdt_mcux_wdog32);
 
 struct mcux_wdog32_config {
 	DEVICE_MMIO_NAMED_ROM(reg);
-#if DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency)
 	uint32_t clock_frequency;
-#else  /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
-#endif /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
 	wdog32_clock_source_t clk_source;
 	wdog32_clock_prescaler_t clk_divider;
 	void (*irq_config_func)(const struct device *dev);
@@ -49,6 +46,30 @@ struct mcux_wdog32_data {
 static inline WDOG_Type *get_base_address(const struct device *dev)
 {
 	return (WDOG_Type *)DEVICE_MMIO_NAMED_GET(dev, reg);
+}
+
+static inline int mcux_wdog32_get_clock_frequency(const struct device *dev, uint32_t *freq)
+{
+	const struct mcux_wdog32_config *config = DEV_CFG(dev);
+	int ret = 0;
+
+	if (config->clock_frequency != 0U) {
+		*freq = config->clock_frequency;
+		return ret;
+	}
+
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
+	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, freq);
+	if (ret) {
+		LOG_ERR("Failed to get clock frequency: %d", ret);
+		return ret;
+	}
+
+	return 0;
 }
 
 /* When system is boot up, WDOG32 is disabled. app must wait for at least 2.5
@@ -70,6 +91,7 @@ static int mcux_wdog32_setup(const struct device *dev, uint8_t options)
 	WDOG_Type *base = get_base_address(dev);
 	uint32_t clock_freq;
 	int divider;
+	int ret;
 
 	if (!data->timeout_valid) {
 		LOG_ERR("No valid timeouts installed");
@@ -80,18 +102,11 @@ static int mcux_wdog32_setup(const struct device *dev, uint8_t options)
 
 	data->wdog_config.workMode.enableDebug = (options & WDT_OPT_PAUSE_HALTED_BY_DBG) == 0U;
 
-#if DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency)
-	clock_freq = config->clock_frequency;
-#else  /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
-	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
+	ret = mcux_wdog32_get_clock_frequency(dev, &clock_freq);
+	if (ret) {
+		return ret;
 	}
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq)) {
-		return -EINVAL;
-	}
-#endif /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
 	divider = config->clk_divider == kWDOG32_ClockPrescalerDivide1 ? 1U : 256U;
 	WDOG32_CONFIG_WAIT(clock_freq, divider);
 	WDOG32_Init(base, &data->wdog_config);
@@ -121,24 +136,17 @@ static int mcux_wdog32_install_timeout(const struct device *dev, const struct wd
 	struct mcux_wdog32_data *data = dev->data;
 	uint32_t clock_freq;
 	int div;
+	int ret;
 
 	if (data->timeout_valid) {
 		LOG_ERR("No more timeouts can be installed");
 		return -ENOMEM;
 	}
 
-#if DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency)
-	clock_freq = config->clock_frequency;
-#else  /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
-	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
+	ret = mcux_wdog32_get_clock_frequency(dev, &clock_freq);
+	if (ret) {
+		return ret;
 	}
-
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq)) {
-		return -EINVAL;
-	}
-#endif /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
 
 	div = config->clk_divider == kWDOG32_ClockPrescalerDivide1 ? 1U : 256U;
 
@@ -206,27 +214,25 @@ static int mcux_wdog32_init(const struct device *dev)
 {
 	const struct mcux_wdog32_config *config = dev->config;
 
-#if (!DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency))
-	int ret;
+	if (config->clock_frequency == 0U) {
+		int ret;
 
-	ret = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
-	if (ret != 0) {
-		/* Check if error is due to lack of support */
-		if (ret != -ENOSYS) {
+		ret = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+		if (ret && ret != -ENOSYS) {
 			/* Real error occurred */
 			LOG_ERR("Failed to configure clock: %d", ret);
 			return ret;
 		}
-	}
 
 #if FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL
-	ret = clock_control_on(config->clock_dev, config->clock_subsys);
-	if (ret) {
-		LOG_ERR("Failed to enable clock: %d", ret);
-		return ret;
-	}
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret) {
+			LOG_ERR("Failed to enable clock: %d", ret);
+			return ret;
+		}
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
-#endif
+	}
+
 	/* Map the named MMIO region */
 	DEVICE_MMIO_NAMED_MAP(dev, reg, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
@@ -245,47 +251,49 @@ static DEVICE_API(wdt, mcux_wdog32_api) = {
 #define TO_WDOG32_CLK_SRC(val) _DO_CONCAT(kWDOG32_ClockSource, val)
 #define TO_WDOG32_CLK_DIV(val) _DO_CONCAT(kWDOG32_ClockPrescalerDivide, val)
 
-#define WDOG32_CLK_SOURCE(id) DT_INST_PROP(id, clk_source)
+#define WDOG32_CLK_SOURCE(id)      DT_INST_PROP(id, clk_source)
 #define WDOG32_CLK_SOURCE_NAME(id) CONCAT(clksrc, WDOG32_CLK_SOURCE(id))
 
-#define WDOG32_INST_CLOCKS_FROM_CLK_SOURCE(id)							\
-	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, WDOG32_CLK_SOURCE_NAME(id))), \
-	.clock_subsys = (clock_control_subsys_t)						\
-		DT_INST_CLOCKS_CELL_BY_NAME(id, WDOG32_CLK_SOURCE_NAME(id), name)
+#define WDOG32_HAS_FIXED_CLOCK_FREQ(id)                                                            \
+	DT_NODE_HAS_PROP(DT_INST_PHANDLE(id, clocks), clock_frequency)
 
-#define WDOG32_INST_CLOCKS(id)							\
-	WDOG32_INST_CLOCKS_FROM_CLK_SOURCE(id)
-
-#define WDOG32_CHECK_CLK_SOURCES(id)				\
-	IF_DISABLED(DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency),		\
-	(BUILD_ASSERT(DT_INST_CLOCKS_HAS_NAME(id, WDOG32_CLK_SOURCE_NAME(id)),		\
+#define WDOG32_CHECK_CLK_SOURCES(id)                                                               \
+	IF_DISABLED(WDOG32_HAS_FIXED_CLOCK_FREQ(id),						\
+	(BUILD_ASSERT(DT_INST_CLOCKS_HAS_NAME(id, WDOG32_CLK_SOURCE_NAME(id)),			\
 			"WDOG32 instance " STRINGIFY(id) " clk-source without named clock")))
 
-static void mcux_wdog32_config_func_0(const struct device *dev);
+#define MCUX_WDOG32_INIT_CONFIG(id)                                                                \
+	static void mcux_wdog32_config_func_##id(const struct device *dev);                        \
+                                                                                                   \
+	WDOG32_CHECK_CLK_SOURCES(id);                                                              \
+                                                                                                   \
+	static const struct mcux_wdog32_config mcux_wdog32_config_##id = {                         \
+		DEVICE_MMIO_NAMED_ROM_INIT(reg, DT_DRV_INST(id)),                                  \
+		.clock_frequency =                                                                 \
+			COND_CODE_1(WDOG32_HAS_FIXED_CLOCK_FREQ(id),                               \
+				    (DT_INST_PROP_BY_PHANDLE(id, clocks, clock_frequency)), (0)),  \
+		.clock_dev = COND_CODE_1(WDOG32_HAS_FIXED_CLOCK_FREQ(id), (NULL),                  \
+					 (DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(               \
+						 id, WDOG32_CLK_SOURCE_NAME(id))))),               \
+		.clock_subsys = COND_CODE_1(WDOG32_HAS_FIXED_CLOCK_FREQ(id), (NULL),               \
+					    ((clock_control_subsys_t)(DT_INST_CLOCKS_CELL_BY_NAME( \
+						    id, WDOG32_CLK_SOURCE_NAME(id), name)))),      \
+		.clk_source = TO_WDOG32_CLK_SRC(DT_INST_PROP(id, clk_source)),                     \
+		.clk_divider = TO_WDOG32_CLK_DIV(DT_INST_PROP(id, clk_divider)),                   \
+		.irq_config_func = mcux_wdog32_config_func_##id,                                   \
+	};                                                                                         \
+                                                                                                   \
+	static struct mcux_wdog32_data mcux_wdog32_data_##id;                                      \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(id, &mcux_wdog32_init, NULL, &mcux_wdog32_data_##id,                 \
+			      &mcux_wdog32_config_##id, POST_KERNEL,                               \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &mcux_wdog32_api);               \
+                                                                                                   \
+	static void mcux_wdog32_config_func_##id(const struct device *dev)                         \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), mcux_wdog32_isr,          \
+			    DEVICE_DT_INST_GET(id), 0);                                            \
+		irq_enable(DT_INST_IRQN(id));                                                      \
+	}
 
-WDOG32_CHECK_CLK_SOURCES(0);
-
-static const struct mcux_wdog32_config mcux_wdog32_config_0 = {
-	DEVICE_MMIO_NAMED_ROM_INIT(reg, DT_DRV_INST(0)),
-#if DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency)
-	.clock_frequency = DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency),
-#else /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
-	WDOG32_INST_CLOCKS(0),
-#endif /* DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
-	.clk_source = TO_WDOG32_CLK_SRC(DT_INST_PROP(0, clk_source)),
-	.clk_divider = TO_WDOG32_CLK_DIV(DT_INST_PROP(0, clk_divider)),
-	.irq_config_func = mcux_wdog32_config_func_0,
-};
-
-static struct mcux_wdog32_data mcux_wdog32_data_0;
-
-DEVICE_DT_INST_DEFINE(0, &mcux_wdog32_init, NULL, &mcux_wdog32_data_0, &mcux_wdog32_config_0,
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &mcux_wdog32_api);
-
-static void mcux_wdog32_config_func_0(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), mcux_wdog32_isr,
-		    DEVICE_DT_INST_GET(0), 0);
-
-	irq_enable(DT_INST_IRQN(0));
-}
+DT_INST_FOREACH_STATUS_OKAY(MCUX_WDOG32_INIT_CONFIG)

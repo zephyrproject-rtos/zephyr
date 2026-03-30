@@ -11,9 +11,3 @@ description: |
 compatible: "nordic,nrf-dppic-local"
 
 include: ["nordic,nrf-dppic.yaml", "nordic,nrf-dppic-links.yaml"]
-
-properties:
-  channels:
-    type: int
-    required: true
-    description: Number of channels implemented by the DPPIC instance.

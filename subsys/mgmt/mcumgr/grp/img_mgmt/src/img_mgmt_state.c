@@ -640,7 +640,7 @@ static int img_mgmt_set_next_boot_slot_common(int slot, int active_slot, bool co
 	rc = boot_set_next(fa, slot == active_slot, confirm);
 	if (rc != 0) {
 		/* Failed to set next slot for boot as desired */
-		LOG_ERR("Faled boot_set_next with code %d, for slot %d,"
+		LOG_ERR("Failed boot_set_next with code %d, for slot %d,"
 			" with active slot %d and confirm %d",
 			 rc, slot, active_slot, confirm);
 

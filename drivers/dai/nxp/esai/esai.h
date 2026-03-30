@@ -247,13 +247,13 @@ struct esai_bespoke_config {
 struct esai_transceiver_config {
 	/* enable/disable the HCLK prescaler */
 	bool hclk_prescaler_en;
-	/* controls the divison value of HCLK (i.e: TPM0-TPM7) */
+	/* controls the division value of HCLK (i.e: TPM0-TPM7) */
 	uint32_t hclk_div_ratio;
 	/* controls the division value of HCLK before reaching
 	 * BCLK consumers (i.e: TFP0-TFP3)
 	 */
 	uint32_t bclk_div_ratio;
-	/* should the HCLK divison be bypassed or not?
+	/* should the HCLK division be bypassed or not?
 	 * If in bypass, HCLK pad will be the same as EXTAL
 	 */
 	bool hclk_bypass;
@@ -287,7 +287,7 @@ struct esai_transceiver_config {
 	 */
 	bool fsync_early;
 
-	/* FSYNC divison value - for network mode this is
+	/* FSYNC division value - for network mode this is
 	 * the same as the number of slots - 1.
 	 */
 	uint32_t fsync_div;

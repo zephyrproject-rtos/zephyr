@@ -66,12 +66,12 @@ extern void net_process_tx_packet(struct net_pkt *pkt);
 
 extern struct net_if_addr *net_if_ipv4_addr_get_first_by_index(int ifindex);
 
-extern int net_icmp_call_ipv4_handlers(struct net_pkt *pkt,
-				       struct net_ipv4_hdr *ipv4_hdr,
-				       struct net_icmp_hdr *icmp_hdr);
-extern int net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
-				       struct net_ipv6_hdr *ipv6_hdr,
-				       struct net_icmp_hdr *icmp_hdr);
+extern enum net_verdict net_icmp_call_ipv4_handlers(struct net_pkt *pkt,
+						    struct net_ipv4_hdr *ipv4_hdr,
+						    struct net_icmp_hdr *icmp_hdr);
+extern enum net_verdict net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
+						    struct net_ipv6_hdr *ipv6_hdr,
+						    struct net_icmp_hdr *icmp_hdr);
 
 extern struct net_if *net_ipip_get_virtual_interface(struct net_if *input_iface);
 
@@ -444,3 +444,17 @@ static inline void net_pkt_print_buffer_info(struct net_pkt *pkt, const char *st
  * @param pkt The network packet to initialize.
  */
 void net_pkt_tx_init(struct net_pkt *pkt);
+
+/** Rejoin IGMP mcast group w/o registering address, for internal use only. */
+#if defined(CONFIG_NET_IPV4_IGMP)
+int net_ipv4_igmp_rejoin(struct net_if *iface, const struct net_in_addr *addr);
+#else
+#define net_ipv4_igmp_rejoin(...) -ENOSYS
+#endif
+
+/** Rejoin MLD mcast group w/o registering address, for internal use only. */
+#if defined(CONFIG_NET_IPV6_MLD)
+int net_ipv6_mld_rejoin(struct net_if *iface, const struct net_in6_addr *addr);
+#else
+#define net_ipv6_mld_rejoin(...) -ENOSYS
+#endif

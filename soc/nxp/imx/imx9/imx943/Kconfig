@@ -58,5 +58,6 @@ config SOC_IMX943_PM_MCORE
 	default y
 	depends on PM
 	depends on SOC_MIMX94398_M33 || SOC_MIMX94398_M7_0 || SOC_MIMX94398_M7_1
+	depends on NXP_SCMI_CPU_DOMAIN_HELPERS
 	help
 	  Common PM flow for Cortex-M cores (M33/M7) on i.MX943

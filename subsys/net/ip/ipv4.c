@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 
 #include <errno.h>
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_context.h>
@@ -364,8 +365,11 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 
 	if (net_ipv4_is_addr_mcast_raw(hdr->dst)) {
 		struct net_if *iface = net_pkt_iface(pkt);
-		struct net_if_mcast_addr *if_mcast_addr = net_if_ipv4_maddr_lookup(
-				(struct net_in_addr *)hdr->dst, &iface);
+		struct net_if_mcast_addr *if_mcast_addr;
+		struct net_in_addr dst;
+
+		net_ipv4_addr_copy_raw(dst.s4_addr, hdr->dst);
+		if_mcast_addr = net_if_ipv4_maddr_lookup(&dst, &iface);
 		if (!net_if_ipv4_maddr_is_joined(if_mcast_addr)) {
 			NET_DBG("DROP: mcast not for me");
 			goto drop;

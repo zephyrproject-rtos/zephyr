@@ -5,8 +5,6 @@
 
 if SOC_SERIES_STM32U0X
 
-rsource "Kconfig.defconfig.stm32u0*"
-
 if I2C_STM32
 
 configdefault SHARED_INTERRUPTS

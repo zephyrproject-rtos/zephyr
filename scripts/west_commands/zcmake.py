@@ -64,13 +64,16 @@ def run_cmake(args, cwd=None, capture_output=False, dry_run=False, env=None):
     log.dbg('Running CMake:', quote_sh_list(cmd), level=log.VERBOSE_NORMAL)
     p = subprocess.Popen(cmd, env=env, **kwargs)
     out, _ = p.communicate()
+    out = out.decode(sys.getdefaultencoding()) if out else None
     if p.returncode == 0:
         if out:
-            return out.decode(sys.getdefaultencoding()).splitlines()
+            return out.splitlines()
         else:
             return None
     else:
         # A real error occurred, raise an exception
+        if out:
+            log.err(out)
         raise subprocess.CalledProcessError(p.returncode, p.args)
 
 

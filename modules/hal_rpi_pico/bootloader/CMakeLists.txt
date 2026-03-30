@@ -58,7 +58,7 @@ target_link_options(boot_stage2 PRIVATE
 
 # The second stage bootloader is compiled without kconfig definitions.
 # Therefore, in order to use toolchain.h, it needs to define CONFIG_ARM.
-target_compile_definitions(boot_stage2 PRIVATE -DCONFIG_ARM=1)
+target_compile_definitions(boot_stage2 PRIVATE CONFIG_ARM=1)
 
 # Generates a binary file from the compiled bootloader
 add_custom_command(TARGET boot_stage2

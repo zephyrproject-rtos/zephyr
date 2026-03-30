@@ -32,6 +32,20 @@ extern "C" {
  */
 
 /**
+ * @brief Full/sequentially-consistent data memory barrier across cores.
+ *
+ * This routine acts as a synchronization fence between threads/cores and
+ * prevents re-ordering of data accesses instructions across the barrier
+ * instruction.
+ */
+static ALWAYS_INLINE void barrier_sync_synchronize(void)
+{
+#if defined(CONFIG_BARRIER_OPERATIONS_ARCH) || defined(CONFIG_BARRIER_OPERATIONS_BUILTIN)
+	z_barrier_sync_synchronize();
+#endif
+}
+
+/**
  * @brief Full/sequentially-consistent data memory barrier.
  *
  * This routine acts as a synchronization fence between threads and prevents

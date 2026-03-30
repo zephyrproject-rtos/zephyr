@@ -181,8 +181,6 @@ extern "C" {
 enum bt_iso_state {
 	/** Channel disconnected */
 	BT_ISO_STATE_DISCONNECTED,
-	/** Channel is pending ACL encryption before connecting */
-	BT_ISO_STATE_ENCRYPT_PENDING,
 	/** Channel in connecting state */
 	BT_ISO_STATE_CONNECTING,
 	/** Channel ready for upper layer traffic on it */
@@ -213,19 +211,6 @@ struct bt_iso_chan {
 	struct bt_iso_chan_qos		*qos;
 	/** Channel state */
 	enum bt_iso_state		state;
-#if (defined(CONFIG_BT_SMP) && defined(CONFIG_BT_ISO_UNICAST)) || defined(__DOXYGEN__)
-	/**
-	 * @brief The required security level of the channel
-	 *
-	 * This value can be set as the central before connecting a CIS
-	 * with bt_iso_chan_connect().
-	 * The value is overwritten to @ref bt_iso_server::sec_level for the
-	 * peripheral once a channel has been accepted.
-	 *
-	 * Only available when @kconfig{CONFIG_BT_SMP} is enabled.
-	 */
-	bt_security_t			required_sec_level;
-#endif /* CONFIG_BT_SMP && CONFIG_BT_ISO_UNICAST */
 	/** @internal Node used internally by the stack */
 	sys_snode_t node;
 };
@@ -391,8 +376,10 @@ struct bt_iso_tx_info {
 	uint16_t seq_num;
 };
 
-
-/** Opaque type representing an Connected Isochronous Group (CIG). */
+/**
+ * @struct bt_iso_cig
+ * @brief Opaque type representing a Connected Isochronous Group (CIG).
+ */
 struct bt_iso_cig;
 
 /** @brief Connected Isochronous Group (CIG) parameters */
@@ -503,7 +490,10 @@ struct bt_iso_connect_param {
 	struct bt_conn *acl;
 };
 
-/** Opaque type representing a Broadcast Isochronous Group (BIG). */
+/**
+ * @struct bt_iso_big
+ * @brief Opaque type representing a Broadcast Isochronous Group (BIG).
+ */
 struct bt_iso_big;
 
 /** @brief Broadcast Isochronous Group (BIG) creation parameters */
@@ -729,6 +719,9 @@ struct bt_iso_chan_ops {
 	 *
 	 * For the above reason it is still possible to use bt_iso_chan_get_info() on the @p chan.
 	 *
+	 * If the @p chan is a unicast (CIS) channel, then this callback will always be called
+	 * before @ref bt_conn_cb.disconnected when the associated ACL connection also disconnects.
+	 *
 	 * @param chan   The channel that has been Disconnected
 	 * @param reason BT_HCI_ERR_* reason for the disconnection.
 	 */
@@ -794,15 +787,6 @@ struct bt_iso_accept_info {
 
 /** @brief ISO Server structure. */
 struct bt_iso_server {
-#if defined(CONFIG_BT_SMP) || defined(__DOXYGEN__)
-	/**
-	 * @brief Required minimum security level.
-	 *
-	 * Only available when @kconfig{CONFIG_BT_SMP} is enabled.
-	 */
-	bt_security_t		sec_level;
-#endif /* CONFIG_BT_SMP */
-
 	/**
 	 * @brief Server accept callback
 	 *

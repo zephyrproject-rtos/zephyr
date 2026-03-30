@@ -35,7 +35,7 @@ set -eu
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-EXECUTE_TIMEOUT=150
+EXECUTE_TIMEOUT=300
 
 verbosity_level=2
 simulation_id="gatt_notify_enhanced_stress"

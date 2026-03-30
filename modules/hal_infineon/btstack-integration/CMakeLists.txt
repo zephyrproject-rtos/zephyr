@@ -98,6 +98,16 @@ if(CONFIG_CYW20829B1_BT_FW_TX10)
   set(blob_hcd_file ${hal_blobs_dir}/COMPONENT_CYW20829B1/COMPONENT_BTFW-TX10/bt_firmware.hcd)
 endif()
 
+# CYW55513 Discrete Module
+if(CONFIG_CYW55513IUBG_SM)
+  set(blob_hcd_file  ${hal_blobs_dir}/COMPONENT_CYW55513/COMPONENT_BTFW/bt_firmware.hcd)
+endif()
+
+# CYW55513 Murata 2FY Module
+if(CONFIG_CYW55513_MURATA_2FY)
+  set(blob_hcd_file  ${hal_blobs_dir}/COMPONENT_CYW55513/COMPONENT_BTFW_MURATA-2FY/bt_firmware.hcd)
+endif()
+
 # use user provided FIRMWARE HCD file (path must be defined in CONFIG_AIROC_CUSTOM_FIRMWARE_HCD_BLOB)
 if(CONFIG_AIROC_CUSTOM_FIRMWARE_HCD_BLOB)
   # Allowed to pass absolute path to HCD blob file, or relative path from Application folder.

@@ -88,10 +88,13 @@ extern "C" {
 #define CRC24_PGP_INIT_VALUE 0x00B704CEU
 
 /** CRC32_C initial value */
+#define CRC32_C_INIT_VAL 0xFFFFFFFFU
+
+/** CRC32_IEEE initial value */
 #define CRC32_IEEE_INIT_VAL 0xFFFFFFFFU
 
 /** CRC32_K_4_2 initial value */
-#define CRC32_C_INIT_VAL 0xFFFFFFFFU
+#define CRC32_K_4_2_INIT_VAL 0xFFFFFFFFU
 
 /** @endcond */
 
@@ -146,29 +149,46 @@ struct crc_ctx {
 };
 
 /**
- * @brief Callback API upon CRC calculation begin
- * See @a crc_begin() for argument description
+ * @def_driverbackendgroup{CRC,crc_interface}
+ * @ingroup crc_interface
+ * @{
+ */
+
+/**
+ * @brief Callback API to configure the CRC unit for calculation.
+ *
+ * See @a crc_begin() for argument description.
  */
 typedef int (*crc_api_begin)(const struct device *dev, struct crc_ctx *ctx);
 
 /**
- * @brief Callback API upon CRC calculation stream update
- * See @a crc_update() for argument description
+ * @brief Callback API to feed data into an in-progress CRC calculation.
+ *
+ * See @a crc_update() for argument description.
  */
 typedef int (*crc_api_update)(const struct device *dev, struct crc_ctx *ctx, const void *buffer,
 			      size_t bufsize);
 
 /**
- * @brief Callback API upon CRC calculation finish
- * See @a crc_finish() for argument description
+ * @brief Callback API to finalize CRC calculation.
+ *
+ * See @a crc_finish() for argument description.
  */
 typedef int (*crc_api_finish)(const struct device *dev, struct crc_ctx *ctx);
 
+/**
+ * @driver_ops{CRC}
+ */
 __subsystem struct crc_driver_api {
+	/** @driver_ops_optional @copybrief crc_begin */
 	crc_api_begin begin;
+	/** @driver_ops_optional @copybrief crc_update */
 	crc_api_update update;
+	/** @driver_ops_optional @copybrief crc_finish */
 	crc_api_finish finish;
 };
+
+/** @} */
 
 /**
  * @brief  Configure CRC unit for calculation

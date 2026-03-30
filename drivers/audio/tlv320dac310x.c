@@ -91,7 +91,11 @@ static int codec_configure(const struct device *dev,
 	/* Configure reset GPIO, and set the line to inactive, which will also
 	 * de-assert the reset line and thus enable the codec.
 	 */
-	gpio_pin_configure_dt(&dev_cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
+	ret = gpio_pin_configure_dt(&dev_cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure reset GPIO (%d)", ret);
+		return ret;
+	}
 
 	codec_soft_reset(dev);
 
@@ -405,12 +409,21 @@ static void codec_configure_output(const struct device *dev)
 	val |= HEADPHONE_DRV_CM(CM_VOLTAGE_1P65) | HEADPHONE_DRV_RESERVED;
 	codec_write_reg(dev, HEADPHONE_DRV_ADDR, val);
 
+#if DT_INST_PROP(0, use_volume_control_pin)
+	/*
+	 * set mic detect and volume control pin to volume control function.
+	 * See chapter "6.3.10.2 DAC Digital-Volume Control" and chapter
+	 * "6.3.10.3 Volume Control Pin" in the TLV320DAC3100 datasheet.
+	 */
+	codec_write_reg(dev, VOL_MICDET_ADC_CTRL_ADDR, VOL_MICDET_VOL_CTRL_PIN);
+#endif
+
 	/* enable pop removal on power down/up */
 	codec_read_reg(dev, HP_OUT_POP_RM_ADDR, &val);
 	codec_write_reg(dev, HP_OUT_POP_RM_ADDR, val | HP_OUT_POP_RM_ENABLE);
 
-	/* route DAC output to Headphone */
-	val = OUTPUT_ROUTING_HPL | OUTPUT_ROUTING_HPR;
+	/* route DAC output to Mixer Amplifier -> so that volume control has effect */
+	val = OUTPUT_ROUTING_MIXERL | OUTPUT_ROUTING_MIXERR;
 	codec_write_reg(dev, OUTPUT_ROUTING_ADDR, val);
 
 	/* enable volume control on Headphone out */

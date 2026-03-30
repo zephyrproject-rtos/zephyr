@@ -14,6 +14,7 @@
 
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/dns_sd.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>

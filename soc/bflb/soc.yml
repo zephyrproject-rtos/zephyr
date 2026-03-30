@@ -22,7 +22,13 @@ family:
     - name: bl702sa0q2i
     - name: bl702s10q2i
     - name: bl702c10q2h
+    - name: bl706c00q2i
     - name: bl706c10q2i
     - name: bl706s10q2i
     - name: bl706c22q2i
+  - name: bl70xl
+    socs:
+    - name: bl702l10q2i
+    - name: bl704l10q2i
+    - name: bl704l22q2h
 vendor: bflb

@@ -9,10 +9,24 @@ menu "Native (POSIX) Architecture Options"
 config ARCH
 	default "posix"
 
+config ARCH_POSIX_UPDATE_STACK_INFO
+	bool "Update thread stack info with real pthread stack bounds"
+	depends on THREAD_STACK_INFO
+	help
+	  When enabled, the POSIX architecture will update each thread's
+	  stack_info to reflect the actual pthread stack instead of the
+	  Zephyr-allocated stack. This is useful for applications that
+	  perform their own stack overflow checking against the real
+	  stack bounds.
+
 config ARCH_POSIX_RECOMMENDED_STACK_SIZE
 	int
+	default 60 if 64BIT && ARCH_POSIX_UPDATE_STACK_INFO && STACK_SENTINEL
+	default 56 if 64BIT && ARCH_POSIX_UPDATE_STACK_INFO
 	default 44 if 64BIT && STACK_SENTINEL
 	default 40 if 64BIT
+	default 36 if ARCH_POSIX_UPDATE_STACK_INFO && STACK_SENTINEL
+	default 32 if ARCH_POSIX_UPDATE_STACK_INFO
 	default 28 if STACK_SENTINEL
 	default 24
 	help

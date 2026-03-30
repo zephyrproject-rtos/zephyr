@@ -18,6 +18,7 @@
 
 / {
 	chosen {
+		zephyr,crc = &crc;
 		zephyr,flash-controller = &flash;
 		zephyr,entropy = &rng;
 	};
@@ -129,6 +130,42 @@
 				erase-block-size = <2048>;
 				/* maximum erase time(ms) for a 2K sector */
 				max-erase-time = <40>;
+			};
+
+			st_nvm_user_otp: flash@1fff6800 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1fff6800 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			/* "Non-user area" */
+			flash@1fff6c00 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1fff6c00 DT_SIZE_K(5)>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					ts_cal1_otp: ts-cal1@268 {
+						reg = <0x268 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					ts_cal2_otp: ts-cal2@28a {
+						reg = <0x28a 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					vrefint_otp: vrefint@2a4 {
+						reg = <0x2a4 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+				};
 			};
 		};
 
@@ -608,6 +645,14 @@
 			resets = <&rctl STM32_RESET(AHB1, 24)>;
 			interrupts = <21 0>;
 			interrupt-names = "global";
+			status = "disabled";
+		};
+
+		crc: crc@40023000 {
+			compatible = "st,stm32-crc";
+			reg = <0x40023000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 12)>;
+			resets = <&rctl STM32_RESET(AHB1, 12)>;
 			status = "disabled";
 		};
 	};

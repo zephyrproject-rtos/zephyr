@@ -10,9 +10,19 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	flash0: flash@0 {
-		compatible = "soc-nv-flash";
-		reg = <0x00000000 0x20000>;  /* 128 KB Flash */
+	flash_controller: flash-controller@40100004 {
+		compatible = "infineon,flash-controller";
+		reg = <0x40100004 0x104>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "okay";
+
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x00000000 0x20000>;  /* 128 KB Flash */
+			write-block-size = <256>;
+			erase-block-size = <256>;
+		};
 	};
 
 	sram0: memory@20000000 {
@@ -66,34 +76,39 @@
 			#gpio-cells = <2>;
 		};
 
-		gpio_prt4: gpio@40040400 {
-			compatible = "infineon,gpio";
-			reg = <0x40040400 0x100>;
+		gpio_shared: gpio_shared@40040400 {
+			compatible = "infineon,shared-gpio";
+			reg = <0x40040400 0x300>;
 			interrupts = <4 3>;
-			gpio-controller;
-			ngpios = <8>;
-			status = "disabled";
-			#gpio-cells = <2>;
-		};
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		gpio_prt5: gpio@40040500 {
-			compatible = "infineon,gpio";
-			reg = <0x40040500 0x100>;
-			interrupts = <4 3>;
-			gpio-controller;
-			ngpios = <8>;
-			status = "disabled";
-			#gpio-cells = <2>;
-		};
+			gpio_prt4: gpio@40040400 {
+				compatible = "infineon,gpio";
+				reg = <0x40040400 0x100>;
+				gpio-controller;
+				ngpios = <8>;
+				status = "disabled";
+				#gpio-cells = <2>;
+			};
 
-		gpio_prt6: gpio@40040600 {
-			compatible = "infineon,gpio";
-			reg = <0x40040600 0x100>;
-			interrupts = <4 3>;
-			gpio-controller;
-			ngpios = <8>;
-			status = "disabled";
-			#gpio-cells = <2>;
+			gpio_prt5: gpio@40040500 {
+				compatible = "infineon,gpio";
+				reg = <0x40040500 0x100>;
+				gpio-controller;
+				ngpios = <8>;
+				status = "disabled";
+				#gpio-cells = <2>;
+			};
+
+			gpio_prt6: gpio@40040600 {
+				compatible = "infineon,gpio";
+				reg = <0x40040600 0x100>;
+				gpio-controller;
+				ngpios = <8>;
+				status = "disabled";
+				#gpio-cells = <2>;
+			};
 		};
 
 		scb0: scb@40240000 {
@@ -143,6 +158,25 @@
 			status = "disabled";
 		};
 
+		adc0: adc@403a0000 {
+			compatible = "infineon,sar-adc";
+			infineon,version = <3>;
+			reg = <0x403a0000 0xf08>;
+			interrupts = <22 0>;
+			#io-channel-cells = <1>;
+			clocks = <&peri_clk_div4>;
+			clk-dst = <0xc>;
+		};
+
+		dma0: dma@40101000 {
+			#dma-cells = <1>;
+			compatible = "infineon,dmac";
+			reg = <0x40101000 0x900>;
+			interrupts = <14 1>;
+			dma-channels = <8>;
+			status = "disabled";
+		};
+
 		tcpwm0: tcpwm0@40200000 {
 			reg = <0x40200000 0x280>;
 			#address-cells = <1>;
@@ -151,7 +185,9 @@
 			tcpwm0_0: tcpwm0_0@40200100 {
 				compatible = "infineon,tcpwm";
 				reg = <0x40200100 0x40>;
+				interrupts = <16 3>;
 				resolution = <16>;
+				index = <0>;
 				clk-dst = <0x5>;
 				status = "disabled";
 
@@ -170,7 +206,9 @@
 			tcpwm0_1: tcpwm0_1@40200140 {
 				compatible = "infineon,tcpwm";
 				reg = <0x40200140 0x40>;
+				interrupts = <17 3>;
 				resolution = <16>;
+				index = <1>;
 				clk-dst = <0x6>;
 				status = "disabled";
 
@@ -189,7 +227,9 @@
 			tcpwm0_2: tcpwm0_2@40200180 {
 				compatible = "infineon,tcpwm";
 				reg = <0x40200180 0x40>;
+				interrupts = <18 3>;
 				resolution = <16>;
+				index = <2>;
 				clk-dst = <0x7>;
 				status = "disabled";
 
@@ -208,7 +248,9 @@
 			tcpwm0_3: tcpwm0_3@402001c0 {
 				compatible = "infineon,tcpwm";
 				reg = <0x402001c0 0x40>;
+				interrupts = <19 3>;
 				resolution = <16>;
+				index = <3>;
 				clk-dst = <0x8>;
 				status = "disabled";
 
@@ -227,7 +269,9 @@
 			tcpwm0_4: tcpwm0_4@40200200 {
 				compatible = "infineon,tcpwm";
 				reg = <0x40200200 0x40>;
+				interrupts = <20 3>;
 				resolution = <16>;
+				index = <4>;
 				clk-dst = <0x9>;
 				status = "disabled";
 
@@ -246,7 +290,9 @@
 			tcpwm0_5: tcpwm0_5@40200240 {
 				compatible = "infineon,tcpwm";
 				reg = <0x40200240 0x40>;
+				interrupts = <21 3>;
 				resolution = <16>;
+				index = <5>;
 				clk-dst = <0xa>;
 				status = "disabled";
 

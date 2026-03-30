@@ -13,10 +13,14 @@ include:
       - ntc
 
 properties:
-  ts-cal2-addr:
-    type: int
-    required: true
-    description: Address of TS_CAL2 calibration parameter
+  nvmem-cell-names:
+    description: |
+      Two NVMEM cells must be provided:
+        - TS_CAL1
+        - TS_CAL2
+
+      Each cell corresponds to the eponymous calibration parameter.
+    enum: ["TS_CAL1", "TS_CAL2"]
 
   ts-cal2-temp:
     type: int

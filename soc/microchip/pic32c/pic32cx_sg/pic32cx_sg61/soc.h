@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,8 @@
 #else
 #error "Library does not support the specified device."
 #endif
+
+#include "pic32cx_sg.h"
 
 #endif /* _ASMLANGUAGE */
 

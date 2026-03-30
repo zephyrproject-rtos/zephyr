@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Microchip Technology Inc.
+# Copyright (c) 2025-2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config UART_MCHP_SERCOM_G1
@@ -21,3 +21,11 @@ config UART_MCHP_ASYNC
 	depends on DMA
 
 endif # UART_MCHP_SERCOM_G1
+
+config UART_MCHP_DBGU_G1
+	bool "Microchip SAM Debug Unit (DBGU) driver"
+	default y
+	depends on DT_HAS_MICROCHIP_DBGU_G1_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	help
+	  This option enables UART driver for group (g1) of DBGU peripherals.

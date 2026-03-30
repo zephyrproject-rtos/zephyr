@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2026, Realtek Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timer2 {
+	prescaler = <1>;
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&timer3 {
+	prescaler = <1>;
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&timer4 {
+	prescaler = <1>;
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&timer5 {
+	prescaler = <1>;
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&timer6 {
+	prescaler = <1>;
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&timer7 {
+	prescaler = <1>;
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};

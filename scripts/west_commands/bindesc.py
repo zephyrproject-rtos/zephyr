@@ -100,15 +100,14 @@ class Bindesc(WestCommand):
 
         super().__init__(
             'bindesc',
-            'work with Binary Descriptors',
-            dedent('''
+            '',
+            description=dedent('''
             Work with Binary Descriptors - constant data objects
             describing a binary image
             '''))
 
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(self.name,
-                                         help=self.help,
                                          description=self.description)
 
         subparsers = parser.add_subparsers(help='sub-command to run', required=True)

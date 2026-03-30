@@ -162,6 +162,11 @@ struct net_if_mcast_addr {
 	/** IP address */
 	struct net_addr address;
 
+	/** Reference counter. Used to track multicast group joining/leaving
+	 *  from various subsystems.
+	 */
+	atomic_t atomic_ref;
+
 	/** Rejoining multicast groups list node */
 	sys_snode_t rejoin_node;
 
@@ -1130,6 +1135,26 @@ static inline struct net_offload *net_if_offload(struct net_if *iface)
 }
 
 /**
+ * @brief Set the IP offload plugin
+ *
+ * @param iface Network interface
+ * @param offload Offload plugin to set
+ */
+static inline void net_if_offload_set(struct net_if *iface, struct net_offload *offload)
+{
+#if defined(CONFIG_NET_OFFLOAD)
+	if (iface == NULL || iface->if_dev == NULL) {
+		return;
+	}
+
+	iface->if_dev->offload = offload;
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(offload);
+#endif
+}
+
+/**
  * @brief Return the socket offload status
  *
  * @param iface Network interface
@@ -1288,7 +1313,7 @@ static inline void net_if_nbr_reachability_hint(struct net_if *iface,
 /** @cond INTERNAL_HIDDEN */
 
 static inline int net_if_set_link_addr_unlocked(struct net_if *iface,
-						uint8_t *addr, uint8_t len,
+						const uint8_t *addr, uint8_t len,
 						enum net_link_type type)
 {
 	int ret;
@@ -1312,7 +1337,7 @@ static inline int net_if_set_link_addr_unlocked(struct net_if *iface,
 }
 
 int net_if_set_link_addr_locked(struct net_if *iface,
-				uint8_t *addr, uint8_t len,
+				const uint8_t *addr, uint8_t len,
 				enum net_link_type type);
 
 #if CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG
@@ -1354,7 +1379,7 @@ extern struct net_if_addr *net_if_addr_ref(struct net_if *iface,
  * @return 0 on success
  */
 static inline int net_if_set_link_addr(struct net_if *iface,
-				       uint8_t *addr, uint8_t len,
+				       const uint8_t *addr, uint8_t len,
 				       enum net_link_type type)
 {
 #if defined(CONFIG_NET_RAW_MODE)
@@ -1960,12 +1985,14 @@ void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
  *
  * @param iface Network interface
  * @param addr IPv6 address
- * @param router_lifetime Lifetime of the router
+ * @param is_default Is this router the default one
+ * @param router_lifetime Lifetime of the router. 0 if the router never expire.
  *
  * @return Pointer to router information, NULL if could not be added
  */
 struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 					     const struct net_in6_addr *addr,
+					     bool is_default,
 					     uint16_t router_lifetime);
 
 /**
@@ -2614,7 +2641,7 @@ struct net_if_router *net_if_ipv4_router_find_default(struct net_if *iface,
  * @param iface Network interface
  * @param addr IPv4 address
  * @param is_default Is this router the default one
- * @param router_lifetime Lifetime of the router
+ * @param router_lifetime Lifetime of the router. 0 if the router never expire.
  *
  * @return Pointer to router information, NULL if could not be added
  */
@@ -2969,8 +2996,18 @@ enum net_if_checksum_type {
  *
  * @return True if checksum needs to be calculated, false otherwise.
  */
+#if defined(CONFIG_NET_CHECKSUM_OFFLOAD)
 bool net_if_need_calc_rx_checksum(struct net_if *iface,
 				  enum net_if_checksum_type chksum_type);
+#else /* CONFIG_NET_CHECKSUM_OFFLOAD */
+static inline bool net_if_need_calc_rx_checksum(struct net_if *iface,
+						enum net_if_checksum_type chksum_type)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(chksum_type);
+	return true;
+}
+#endif /* CONFIG_NET_CHECKSUM_OFFLOAD */
 
 /**
  * @brief Check if network packet checksum calculation can be avoided or not
@@ -2983,8 +3020,18 @@ bool net_if_need_calc_rx_checksum(struct net_if *iface,
  *
  * @return True if checksum needs to be calculated, false otherwise.
  */
+#if defined(CONFIG_NET_CHECKSUM_OFFLOAD)
 bool net_if_need_calc_tx_checksum(struct net_if *iface,
 				  enum net_if_checksum_type chksum_type);
+#else /* CONFIG_NET_CHECKSUM_OFFLOAD */
+static inline bool net_if_need_calc_tx_checksum(struct net_if *iface,
+						enum net_if_checksum_type chksum_type)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(chksum_type);
+	return true;
+}
+#endif /* CONFIG_NET_CHECKSUM_OFFLOAD */
 
 /**
  * @brief Get interface according to index

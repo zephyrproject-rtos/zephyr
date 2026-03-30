@@ -13,12 +13,25 @@
 #include <zephyr/cpu_freq/cpu_freq.h>
 #include <zephyr/cpu_freq/pstate.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/drivers/timer/system_timer.h>
 
 LOG_MODULE_REGISTER(mcxn_cpu_freq, CONFIG_CPU_FREQ_LOG_LEVEL);
 
 static int mcxn_set_cpu_frequency_to_150mhz(void);
 static int mcxn_set_cpu_frequency_to_48mhz(void);
 static int mcxn_set_cpu_frequency_to_12mhz(void);
+
+static ALWAYS_INLINE void mcxn_update_system_timer_hz(uint32_t new_hz)
+{
+	SystemCoreClock = new_hz;
+
+#if defined(CONFIG_CORTEX_M_SYSTICK)
+#if !defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
+#error "MCXN CPU_FREQ with SysTick requires CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE"
+#endif
+	z_sys_clock_hw_cycles_per_sec_update((uint32_t)SystemCoreClock);
+#endif
+}
 
 /* MCXN frequency levels. */
 typedef enum {
@@ -132,6 +145,7 @@ static int mcxn_set_cpu_frequency_to_150mhz(void)
 	/* Attach PLL0 (150MHz) to MainClock, set clock divider to 1 */
 	CLOCK_AttachClk(kPLL0_to_MAIN_CLK);
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U);
+	mcxn_update_system_timer_hz(150000000U);
 
 	return 0;
 }
@@ -169,6 +183,7 @@ static int mcxn_set_cpu_frequency_to_48mhz(void)
 	CLOCK_SetupFROHFClocking(48000000U);
 	CLOCK_AttachClk(kFRO_HF_to_MAIN_CLK);
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U);
+	mcxn_update_system_timer_hz(48000000U);
 
 	return 0;
 }
@@ -178,6 +193,7 @@ static int mcxn_set_cpu_frequency_to_12mhz(void)
 	/* Attach FRO12M to MainClock, set clock divider to 1 */
 	CLOCK_AttachClk(kFRO12M_to_MAIN_CLK);
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U);
+	mcxn_update_system_timer_hz(12000000U);
 
 	/* Set the LDO_CORE VDD regulator to 1.0 V voltage level */
 	spc_active_mode_core_ldo_option_t ldo_cfg = {

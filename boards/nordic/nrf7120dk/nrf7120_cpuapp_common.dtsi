@@ -21,7 +21,7 @@
 		zephyr,wifi = &wlan0;
 	};
 
-	/* TODO: Fine tune the sizes */
+	/* Single IPC channel: 4KB shared memory for TX+RX */
 	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -29,26 +29,18 @@
 
 		ipc_shm_area_cpuapp_cpuuma: memory@200c0000 {
 			compatible = "mmio-sram";
-			reg = <0x200c0000 0x2000>;
-			ranges = <0x0 0x200c0000 0x2000>;
+			reg = <0x200c0000 0x1000>;
+			ranges = <0x0 0x200c0000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
 
 			ipc_shm_cpuapp_cpuuma_0: memory@0 {
-				reg = <0x0 DT_SIZE_K(2)>;
+				reg = <0x0 0x800>;
 			};
 
 			ipc_shm_cpuuma_cpuapp_0: memory@800 {
-				reg = <0x800 DT_SIZE_K(2)>;
-			};
-
-			ipc_shm_cpuapp_cpuuma_1: memory@1000 {
-				reg = <0x1000 DT_SIZE_K(2)>;
-			};
-
-			ipc_shm_cpuuma_cpuapp_1: memory@1800 {
-				reg = <0x1800 DT_SIZE_K(2)>;
+				reg = <0x800 0x800>;
 			};
 		};
 	};
@@ -63,16 +55,6 @@
 			mbox-names = "tx", "rx";
 			status = "okay";
 		};
-
-		ipc1: ipc1 {
-			compatible = "zephyr,ipc-icmsg";
-			tx-region = <&ipc_shm_cpuapp_cpuuma_1>;
-			rx-region = <&ipc_shm_cpuuma_cpuapp_1>;
-			mboxes = <&wifi_bellboard 3>,
-				 <&cpuapp_bellboard 1>;
-			mbox-names = "tx", "rx";
-			status = "okay";
-		};
 	};
 };
 
@@ -81,7 +63,8 @@
 };
 
 &grtc {
-	owned-channels = <0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15>;
+	/* Channels 14-15 are reserved for Wi-Fi domain */
+	owned-channels = <0 1 2 3 4 5 6 7 8 9 10 11 12 13>;
 	/* Channels 7-11 reserved for Zero Latency IRQs, 3-4 for FLPR */
 	child-owned-channels = <3 4 7 8 9 10 11>;
 	status = "okay";

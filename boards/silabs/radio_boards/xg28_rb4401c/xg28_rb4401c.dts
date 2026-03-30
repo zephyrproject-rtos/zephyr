@@ -6,6 +6,8 @@
 
 /dts-v1/;
 #include <silabs/xg28/efr32zg28b322f1024im68.dtsi>
+#include <silabs/xg28/clock-hfrcodpll.dtsi>
+#include <silabs/xg28/clock-lfxo.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
@@ -112,23 +114,11 @@
 	status = "okay";
 };
 
-&cpu0 {
-	clock-frequency = <78000000>;
-};
-
 &dcdc {
 	regulator-boot-on;
 	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
 	silabs,pfmx-peak-current-milliamp = <100>;
 	status = "okay";
-};
-
-&em23grpaclk {
-	clocks = <&lfxo>;
-};
-
-&em4grpaclk {
-	clocks = <&lfxo>;
 };
 
 &eusart1 {
@@ -209,16 +199,6 @@
 	status = "okay";
 };
 
-&hfrcodpll {
-	clock-frequency = <DT_FREQ_M(78)>;
-	clocks = <&hfxo>;
-	dpll-n = <3839>;
-	dpll-m = <1919>;
-	dpll-edge = "fall";
-	dpll-lock = "phase";
-	dpll-autorecover;
-};
-
 &hfxo {
 	ctune = <115>;
 	precision = <50>;
@@ -231,16 +211,18 @@
 	status = "okay";
 };
 
+&radio {
+	rf-path-switch-combine;
+	rf-path-switch-control-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
+	rf-path-switch-radio-active-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
+};
+
 &se {
 	status = "okay";
 };
 
 &sysrtc0 {
 	status = "okay";
-};
-
-&sysrtcclk {
-	clocks = <&lfxo>;
 };
 
 &timer0 {
@@ -255,14 +237,6 @@
 
 &wdog0 {
 	status = "okay";
-};
-
-&wdog0clk {
-	clocks = <&lfxo>;
-};
-
-&wdog1clk {
-	clocks = <&lfxo>;
 };
 
 &flash0 {

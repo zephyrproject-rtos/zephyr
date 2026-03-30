@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2023 Linaro Limited
+ * SPDX-FileCopyrightText: Copyright (c) 2023 Linaro Limited
+ * SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -190,21 +191,18 @@ struct udc_stm32_config {
 	uint8_t num_clocks;
 };
 
-static int udc_stm32_clock_enable(const struct device *);
-static int udc_stm32_clock_disable(const struct device *);
+#define hpcd2data(hpcd) CONTAINER_OF(hpcd, struct udc_stm32_data, pcd)
 
-static void udc_stm32_lock(const struct device *dev)
-{
-	udc_lock_internal(dev, K_FOREVER);
-}
-
-static void udc_stm32_unlock(const struct device *dev)
-{
-	udc_unlock_internal(dev);
-}
-
-#define hpcd2data(hpcd) CONTAINER_OF(hpcd, struct udc_stm32_data, pcd);
-
+/*
+ * The callbacks below are invoked by HAL_PCD_IRQHandler() when appropriate.
+ * HAL_PCD_IRQHandler() is registered as ISR for this driver because it just
+ * so happens to match the Zephyr ISR calling convention, and we don't need
+ * to do any additional processing upon interrupt: this saves a few cycles
+ * when taking an interrupt and ought to consume less ROM too.
+ *
+ * (As an exception, the Setup/DataIn/DataOut callback are right above their
+ *  ISR lower half/worker thread handler functions rather than grouped here)
+ */
 void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
@@ -263,19 +261,6 @@ void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
 	udc_submit_event(priv->dev, UDC_EVT_RESUME, 0);
 }
 
-void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
-{
-	struct udc_stm32_data *priv = hpcd2data(hpcd);
-	struct udc_stm32_msg msg = {.type = UDC_STM32_MSG_SETUP};
-	int err;
-
-	err = k_msgq_put(&priv->msgq_data, &msg, K_NO_WAIT);
-
-	if (err < 0) {
-		LOG_ERR("UDC Message queue overrun");
-	}
-}
-
 void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
@@ -283,65 +268,15 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 	udc_submit_sof_event(priv->dev);
 }
 
-/*
- * Prepare OUT EP0 for reception.
- *
- * @param dev		USB controller
- * @param length	wLength from SETUP packet for s-out-status
- *                      0 for s-in-status ZLP
- */
-static int udc_stm32_prep_out_ep0_rx(const struct device *dev, const size_t length)
+void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
 {
-	struct udc_stm32_data *priv = udc_get_private(dev);
-	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-	struct net_buf *buf;
-	uint32_t buf_size;
+	struct udc_stm32_data *priv = hpcd2data(hpcd);
+	const struct udc_stm32_config *cfg = priv->dev->config;
 
-	udc_ep_set_busy(ep_cfg, true);
-
-	/*
-	 * Make sure OUT EP0 can receive bMaxPacketSize0 bytes
-	 * from each Data packet by rounding up allocation size
-	 * even if "device behaviour is undefined if the host
-	 * should send more data than specified in wLength"
-	 * according to the USB Specification.
-	 *
-	 * Note that ROUND_UP() will return 0 for ZLP.
-	 */
-	buf_size = ROUND_UP(length, UDC_STM32_EP0_MAX_PACKET_SIZE);
-
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, buf_size);
-	if (buf == NULL) {
-		return -ENOMEM;
+	if (cfg->disconnect_gpio.port != NULL) {
+		gpio_pin_configure_dt(&cfg->disconnect_gpio,
+				      state ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE);
 	}
-
-	k_fifo_put(&ep_cfg->fifo, buf);
-
-	/*
-	 * Keep track of how much data we're expecting from
-	 * host so we know when the transfer is complete.
-	 * Unlike other endpoints, this bookkeeping isn't
-	 * done by the HAL for OUT EP0.
-	 */
-	priv->ep0_out_wlength = length;
-
-	/* Don't try to receive more than bMaxPacketSize0 */
-	if (HAL_PCD_EP_Receive(&priv->pcd, ep_cfg->addr, net_buf_tail(buf),
-			       UDC_STM32_EP0_MAX_PACKET_SIZE) != HAL_OK) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static void udc_stm32_flush_tx_fifo(const struct device *dev)
-{
-	struct udc_stm32_data *priv = udc_get_private(dev);
-	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-	HAL_StatusTypeDef __maybe_unused status;
-
-	status = HAL_PCD_EP_Receive(&priv->pcd, ep_cfg->addr, NULL, 0);
-	__ASSERT_NO_MSG(status == HAL_OK);
 }
 
 static int udc_stm32_tx(const struct device *dev, struct udc_ep_config *ep_cfg,
@@ -376,42 +311,145 @@ static int udc_stm32_tx(const struct device *dev, struct udc_ep_config *ep_cfg,
 
 	udc_ep_set_busy(ep_cfg, true);
 
-	if (ep_cfg->addr == USB_CONTROL_EP_IN && len > 0U) {
-		/* Wait for an empty package from the host.
-		 * This also flushes the TX FIFO to the host.
+	return 0;
+}
+
+/* Start accepting packets (OUT transfers) */
+static int udc_stm32_initiate_ep_rx(const struct device *dev,
+				    struct udc_ep_config *const ep_cfg,
+				    struct net_buf *const buf)
+{
+	struct udc_stm32_data *priv = udc_get_private(dev);
+	HAL_StatusTypeDef status;
+	uint32_t rx_size;
+
+	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		if (bi->setup) {
+			/* SETUP data will be received without any action */
+			return 0;
+		}
+	}
+
+	/*
+	 * NOTE: we don't check udc_ep_is_busy(ep_cfg) here because
+	 * this may be called while the endpoint is still *marked*
+	 * as busy even though a transaction just ended. In such
+	 * situation, the call to `udc_ep_set_busy(true)` at the
+	 * end of this function is a no-op.
+	 */
+
+	LOG_DBG("RX ep 0x%02x len %u", ep_cfg->addr, buf->size);
+
+	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
+		/*
+		 * Keep track of how much data we're expecting from
+		 * host so we know when the transfer is complete.
+		 * Unlike other endpoints, this bookkeeping isn't
+		 * done by the HAL for OUT EP0.
 		 */
-		if (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)) {
-			udc_stm32_flush_tx_fifo(dev);
-		} else {
-			udc_stm32_prep_out_ep0_rx(dev, 0);
+		priv->ep0_out_wlength = buf->size;
+
+		/* We can receive only up to bMaxPacketSize0 per
+		 * call to HAL_PCD_EP_Receive(), regardless of
+		 * how much data the host wants to send in total.
+		 */
+		rx_size = MIN(buf->size, UDC_STM32_EP0_MAX_PACKET_SIZE);
+	} else {
+		/* One call to HAL_PCD_EP_Receive() is enough,
+		 * the HAL will split in multiple receive transfers
+		 * and perform all bookkeeping internally.
+		 */
+		rx_size = buf->size;
+	}
+
+	status = HAL_PCD_EP_Receive(&priv->pcd, ep_cfg->addr, buf->data, rx_size);
+	if (status != HAL_OK) {
+		LOG_ERR("HAL_PCD_EP_Receive failed(0x%02x), %d", ep_cfg->addr, (int)status);
+		return -EIO;
+	}
+
+	/* RX started - mark endpoint as busy */
+	udc_ep_set_busy(ep_cfg, true);
+
+	return 0;
+}
+
+
+static int udc_stm32_clock_enable(const struct device *dev)
+{
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct udc_stm32_config *cfg = dev->config;
+	int err;
+
+	if (cfg->num_clocks > 1) {
+		if (clock_control_configure(clk, &cfg->pclken[1], NULL) != 0) {
+			LOG_ERR("Could not select USB domain clock");
+			return -EIO;
+		}
+	}
+
+	if (clock_control_on(clk, &cfg->pclken[0]) != 0) {
+		LOG_ERR("Unable to enable USB clock");
+		return -EIO;
+	}
+
+	if (IS_ENABLED(CONFIG_UDC_STM32_CLOCK_CHECK) && cfg->num_clocks > 1) {
+		uint32_t usb_clock_rate;
+
+		if (clock_control_get_rate(clk, &cfg->pclken[1], &usb_clock_rate) != 0) {
+			LOG_ERR("Failed to get USB domain clock rate");
+			return -EIO;
+		}
+
+		if (usb_clock_rate != MHZ(48)) {
+			LOG_ERR("USB Clock is not 48MHz (%d)", usb_clock_rate);
+			return -ENOTSUP;
+		}
+	}
+
+	/* Previous check won't work in case of F1/F3. Add build time check */
+#if defined(RCC_CFGR_OTGFSPRE) || defined(RCC_CFGR_USBPRE)
+
+#if (MHZ(48) == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) && !defined(STM32_PLL_USBPRE)
+	/* PLL output clock is set to 48MHz, it should not be divided */
+#warning USBPRE/OTGFSPRE should be set in rcc node
+#endif
+
+#endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
+
+	/* Configure PHY if applicable (must be after enabling UDC clock) */
+	if (cfg->phy != NULL) {
+		err = cfg->phy->enable(cfg->phy);
+		if (err != 0) {
+			LOG_ERR("Failed to enable USB PHY: %d", err);
+			return err;
 		}
 	}
 
 	return 0;
 }
 
-static int udc_stm32_rx(const struct device *dev, struct udc_ep_config *ep_cfg,
-			struct net_buf *buf)
+static int udc_stm32_clock_disable(const struct device *dev)
 {
-	struct udc_stm32_data *priv = udc_get_private(dev);
-	HAL_StatusTypeDef status;
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct udc_stm32_config *cfg = dev->config;
+	int err;
 
-	/* OUT EP0 requires special logic! */
-	__ASSERT_NO_MSG(ep_cfg->addr != USB_CONTROL_EP_OUT);
-
-	LOG_DBG("RX ep 0x%02x len %u", ep_cfg->addr, buf->size);
-
-	if (udc_ep_is_busy(ep_cfg)) {
-		return 0;
+	/* Per API contract, disable PHY before USB controller */
+	if (cfg->phy != NULL) {
+		err = cfg->phy->disable(cfg->phy);
+		if (err != 0) {
+			LOG_ERR("Failed to disable USB PHY: %d", err);
+			return err;
+		}
 	}
 
-	status = HAL_PCD_EP_Receive(&priv->pcd, ep_cfg->addr, buf->data, buf->size);
-	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_Receive failed(0x%02x), %d", ep_cfg->addr, (int)status);
+	if (clock_control_off(clk, &cfg->pclken[0]) != 0) {
+		LOG_ERR("Unable to disable USB clock");
 		return -EIO;
 	}
-
-	udc_ep_set_busy(ep_cfg, true);
 
 	return 0;
 }
@@ -424,21 +462,6 @@ void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 		.type = UDC_STM32_MSG_DATA_OUT,
 		.ep = epnum,
 		.rx_count = rx_count,
-	};
-	int err;
-
-	err = k_msgq_put(&priv->msgq_data, &msg, K_NO_WAIT);
-	if (err != 0) {
-		LOG_ERR("UDC Message queue overrun");
-	}
-}
-
-void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
-{
-	struct udc_stm32_data *priv = hpcd2data(hpcd);
-	struct udc_stm32_msg msg = {
-		.type = UDC_STM32_MSG_DATA_IN,
-		.ep = epnum,
 	};
 	int err;
 
@@ -470,71 +493,50 @@ static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint
 	net_buf_add(buf, rx_count);
 
 	if (ep == USB_CONTROL_EP_OUT) {
-		/*
-		 * OUT EP0 is used for two purposes:
-		 *  - receive 'out' Data packets during s-(out)-status
-		 *  - receive Status OUT ZLP during s-in-(status)
-		 */
-		if (udc_ctrl_stage_is_status_out(dev)) {
-			/*
-			 * s-in-status completed (ZLP)
-			 *
-			 * Dequeue packet and submit it to stack.
-			 */
-			__ASSERT_NO_MSG(rx_count == 0);
-			buf = udc_buf_get(ep_cfg);
-			udc_ctrl_update_stage(dev, buf);
-			udc_ctrl_submit_status(dev, buf);
-		} else {
-			/* Verify that host did not send more data than it promised */
-			__ASSERT(buf->len <= priv->ep0_out_wlength,
-				 "Received more data from Host than expected!");
+		/* Verify that host did not send more data than it promised */
+		__ASSERT(buf->len <= priv->ep0_out_wlength,
+				"Received more data from Host than expected!");
 
-			/* Check if the data stage is complete */
-			if (buf->len < priv->ep0_out_wlength) {
-				HAL_StatusTypeDef __maybe_unused status;
+		/* Check if the data stage is complete */
+		if (rx_count == UDC_STM32_EP0_MAX_PACKET_SIZE &&
+		    buf->len < priv->ep0_out_wlength) {
+			HAL_StatusTypeDef __maybe_unused status;
+			uint32_t rx_size = MIN(net_buf_tailroom(buf),
+					       UDC_STM32_EP0_MAX_PACKET_SIZE);
 
-				/* Not yet - prepare to receive more data and wait */
-				status = HAL_PCD_EP_Receive(&priv->pcd, ep_cfg->addr,
-							    net_buf_tail(buf),
-							    UDC_STM32_EP0_MAX_PACKET_SIZE);
-				__ASSERT_NO_MSG(status == HAL_OK);
-				return;
-			} /* else: buf->len == priv->ep0_out_wlength */
-
-			/*
-			 * Data stage is complete: update to next step
-			 * which should be Status IN, then submit the
-			 * Setup+Data phase buffers to UDC stack and
-			 * let it handle the next stage. Don't forget
-			 * to dequeue packet before submitting it.
-			 */
-			buf = udc_buf_get(ep_cfg);
-			udc_ctrl_update_stage(dev, buf);
-			__ASSERT_NO_MSG(udc_ctrl_stage_is_status_in(dev));
-			udc_ctrl_submit_s_out_status(dev, buf);
-		}
-	} else {
-		/* All data received - dequeue packet and submit it to stack */
-		buf = udc_buf_get(ep_cfg);
-		udc_submit_ep_event(dev, buf, 0);
+			/* Not yet - prepare to receive more data and wait */
+			status = HAL_PCD_EP_Receive(&priv->pcd, ep_cfg->addr,
+						    net_buf_tail(buf), rx_size);
+			__ASSERT_NO_MSG(status == HAL_OK);
+			return;
+		} /* else: buf->len == priv->ep0_out_wlength */
 	}
 
-	/* Endpoint is no longer busy */
-	udc_ep_set_busy(ep_cfg, false);
+	/* All data received - dequeue packet and submit it to stack */
+	buf = udc_buf_get(ep_cfg);
+	udc_submit_ep_event(dev, buf, 0);
 
 	/* Prepare next transfer for EP if its queue is not empty */
 	buf = udc_buf_peek(ep_cfg);
 	if (buf != NULL) {
-		/*
-		 * Only the driver is allowed to queue transfers on OUT EP0,
-		 * and it should only be doing so once per Control transfer.
-		 * If it has a queued transfer, something must be wrong.
-		 */
-		__ASSERT(ep_cfg->addr != USB_CONTROL_EP_OUT,
-			 "OUT EP0 should never have pending transfers!");
+		udc_stm32_initiate_ep_rx(dev, ep_cfg, buf);
+	} else { /* Nothing left to receive: EP is no longer busy */
+		udc_ep_set_busy(ep_cfg, false);
+	}
+}
 
-		udc_stm32_rx(dev, ep_cfg, buf);
+void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
+{
+	struct udc_stm32_data *priv = hpcd2data(hpcd);
+	struct udc_stm32_msg msg = {
+		.type = UDC_STM32_MSG_DATA_IN,
+		.ep = epnum,
+	};
+	int err;
+
+	err = k_msgq_put(&priv->msgq_data, &msg, K_NO_WAIT);
+	if (err != 0) {
+		LOG_ERR("UDC Message queue overrun");
 	}
 }
 
@@ -583,76 +585,27 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 		return;
 	}
 
-	udc_buf_get(ep_cfg);
-
-	if (ep == USB_CONTROL_EP_IN) {
-		if (udc_ctrl_stage_is_status_in(dev) ||
-		    udc_ctrl_stage_is_no_data(dev)) {
-			/* Status stage finished, notify upper layer */
-			udc_ctrl_submit_status(dev, buf);
-		}
-
-		/* Update to next stage of control transfer */
-		udc_ctrl_update_stage(dev, buf);
-
-		if (udc_ctrl_stage_is_status_out(dev)) {
-			/*
-			 * IN transfer finished, release buffer,
-			 * control OUT buffer should be already fed.
-			 */
-			net_buf_unref(buf);
-		}
-
-		return;
-	}
-
+	/* drop reference to packet and submit to stack */
+	buf = udc_buf_get(ep_cfg);
 	udc_submit_ep_event(dev, buf, 0);
 
+	/* enqueue */
 	buf = udc_buf_peek(ep_cfg);
 	if (buf != NULL) {
 		udc_stm32_tx(dev, ep_cfg, buf);
 	}
 }
 
-static void handle_msg_setup(struct udc_stm32_data *priv)
+void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 {
-	struct usb_setup_packet *setup = (void *)priv->pcd.Setup;
-	const struct device *dev = priv->dev;
-	struct net_buf *buf;
+	struct udc_stm32_data *priv = hpcd2data(hpcd);
+	struct udc_stm32_msg msg = {.type = UDC_STM32_MSG_SETUP};
 	int err;
 
-	/* Drop all transfers in control endpoints queue upon new SETUP */
-	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT));
-	if (buf != NULL) {
-		net_buf_unref(buf);
-	}
+	err = k_msgq_put(&priv->msgq_data, &msg, K_NO_WAIT);
 
-	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_IN));
-	if (buf != NULL) {
-		net_buf_unref(buf);
-	}
-
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, sizeof(struct usb_setup_packet));
-	if (buf == NULL) {
-		LOG_ERR("Failed to allocate for setup");
-		return;
-	}
-
-	udc_ep_buf_set_setup(buf);
-	net_buf_add_mem(buf, setup, sizeof(struct usb_setup_packet));
-
-	udc_ctrl_update_stage(dev, buf);
-
-	if (udc_ctrl_stage_is_data_out(dev)) {
-		/*  Allocate and feed buffer for data OUT stage */
-		err = udc_stm32_prep_out_ep0_rx(dev, udc_data_stage_length(buf));
-		if (err == -ENOMEM) {
-			udc_submit_ep_event(dev, buf, err);
-		}
-	} else if (udc_ctrl_stage_is_data_in(dev)) {
-		udc_ctrl_submit_s_in_status(dev);
-	} else {
-		udc_ctrl_submit_s_status(dev);
+	if (err < 0) {
+		LOG_ERR("UDC Message queue overrun");
 	}
 }
 
@@ -666,7 +619,8 @@ static void udc_stm32_thread_handler(void *arg1, void *arg2, void *arg3)
 		k_msgq_get(&priv->msgq_data, &msg, K_FOREVER);
 		switch (msg.type) {
 		case UDC_STM32_MSG_SETUP:
-			handle_msg_setup(priv);
+			/* HAL copies SETUP packet contents to pcd.Setup */
+			udc_setup_received(dev, priv->pcd.Setup);
 			break;
 		case UDC_STM32_MSG_DATA_IN:
 			handle_msg_data_in(priv, msg.ep);
@@ -676,66 +630,6 @@ static void udc_stm32_thread_handler(void *arg1, void *arg2, void *arg3)
 			break;
 		}
 	}
-}
-
-void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
-{
-	struct udc_stm32_data *priv = hpcd2data(hpcd);
-	const struct udc_stm32_config *cfg = priv->dev->config;
-
-	if (cfg->disconnect_gpio.port != NULL) {
-		gpio_pin_configure_dt(&cfg->disconnect_gpio,
-				      state ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE);
-	}
-}
-
-/*
- * The callbacks above are invoked by HAL_PCD_IRQHandler() when appropriate.
- * HAL_PCD_IRQHandler() is registered as ISR for this driver because it just
- * so happens to match the Zephyr ISR calling convention, and we don't need
- * to do any additional processing upon interrupt: this saves a few cycles
- * when taking an interrupt and ought to consume less ROM too.
- */
-
-int udc_stm32_init(const struct device *dev)
-{
-	struct udc_stm32_data *priv = udc_get_private(dev);
-	const struct udc_stm32_config *cfg = dev->config;
-	HAL_StatusTypeDef status;
-	int err;
-
-	err = stm32_usb_pwr_enable();
-	if (err != 0) {
-		LOG_ERR("Error enabling USB power: %d", err);
-		return err;
-	}
-
-	if (udc_stm32_clock_enable(dev) < 0) {
-		LOG_ERR("Error enabling clock(s)");
-		return -EIO;
-	}
-
-	/* Wipe and (re)initialize HAL context */
-	memset(&priv->pcd, 0, sizeof(priv->pcd));
-
-	priv->pcd.Instance = cfg->base;
-	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
-	priv->pcd.Init.ep0_mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
-	priv->pcd.Init.phy_itface = cfg->selected_phy;
-	priv->pcd.Init.speed = cfg->selected_speed;
-	priv->pcd.Init.Sof_enable = IS_ENABLED(CONFIG_UDC_ENABLE_SOF);
-
-	status = HAL_PCD_Init(&priv->pcd);
-	if (status != HAL_OK) {
-		LOG_ERR("PCD_Init failed, %d", (int)status);
-		return -EIO;
-	}
-
-	if (HAL_PCD_Stop(&priv->pcd) != HAL_OK) {
-		return -EIO;
-	}
-
-	return 0;
 }
 
 /*
@@ -763,9 +657,22 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	const struct udc_stm32_config *cfg = dev->config;
+	const bool isochronous = ep_cfg->caps.iso;
 	uint32_t size;
 
-	size = MIN(udc_mps_ep_size(ep_cfg), cfg->ep_mps);
+	/*
+	 * Round up request size because the PMA must be accessed
+	 * using only word-aligned addresses.
+	 */
+	size = ROUND_UP(MIN(udc_mps_ep_size(ep_cfg), cfg->ep_mps), 4U);
+
+	if (isochronous) {
+		/*
+		 * Isochronous EP must be double-buffered.
+		 * Allocate two buffers of requested size.
+		 */
+		size *= 2;
+	}
 
 	if (!enable) {
 		priv->occupied_mem -= size;
@@ -778,8 +685,24 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 	}
 
 	/* Configure PMA offset for the endpoint */
-	if (HAL_PCDEx_PMAConfig(&priv->pcd, ep_cfg->addr, PCD_SNG_BUF,
-				priv->occupied_mem) != HAL_OK) {
+	uint32_t buftype, bufs;
+
+	if (isochronous) {
+		/*
+		 * HAL_PCDEx_PMAConfig() `pmaaddress` parameter takes two 16-bit
+		 * PMA addresses in the high/low 16 bits of fourth u32 parameter
+		 */
+		const uint16_t buf1_pma_addr = priv->occupied_mem;
+		const uint16_t buf2_pma_addr = priv->occupied_mem + (size / 2);
+
+		buftype = PCD_DBL_BUF;
+		bufs = ((uint32_t)buf2_pma_addr << 16) | buf1_pma_addr;
+	} else {
+		buftype = PCD_SNG_BUF;
+		bufs = priv->occupied_mem;
+	}
+
+	if (HAL_PCDEx_PMAConfig(&priv->pcd, ep_cfg->addr, buftype, bufs) != HAL_OK) {
 		return -EIO;
 	}
 
@@ -870,6 +793,104 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 	return 0;
 }
 #endif
+
+/* Initializes ep_cfg->addr and ep_cfg->caps (except caps.mps) */
+static void udc_stm32_init_ep_addr_caps(struct udc_ep_config *ep_cfg, uint8_t ep_addr)
+{
+	const uint8_t ep_idx = USB_EP_GET_IDX(ep_addr);
+	const uint8_t dir = USB_EP_GET_DIR(ep_addr);
+
+	ep_cfg->addr = ep_addr;
+
+	if (dir == USB_EP_DIR_OUT) {
+		ep_cfg->caps.out = 1;
+	} else {
+		ep_cfg->caps.in = 1;
+	}
+
+	if (ep_idx == 0u) {
+		ep_cfg->caps.control = 1;
+	} else {
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
+		/* OTG IP: non-control endpoints can be used in any mode */
+		ep_cfg->caps.bulk = 1;
+		ep_cfg->caps.interrupt = 1;
+		ep_cfg->caps.iso = 1;
+#else /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb) */
+		/*
+		 * ST USB IP non-control endpoints allocation:
+		 *  - first ISO_OUT_EP_NUM accept isochronous OUT only
+		 *  - next ISO_IN_EP_NUM accept isochronous IN
+		 *  - all others accept bulk/interrupt in any direction
+		 */
+		const uint32_t num_iso_out = CONFIG_UDC_STM32_STUSB_ISO_OUT_EP_NUM;
+		const uint32_t num_iso_in = CONFIG_UDC_STM32_STUSB_ISO_IN_EP_NUM;
+
+		if (ep_idx <= num_iso_out) {
+			/* First M endpoints: ISO OUT only */
+			ep_cfg->caps.iso = (dir == USB_EP_DIR_OUT) ? 1 : 0;
+		} else if (ep_idx <= (num_iso_out + num_iso_in)) {
+			/* Next N endpoints: ISO IN only */
+			ep_cfg->caps.iso = (dir == USB_EP_DIR_IN) ? 1 : 0;
+		} else {
+			/* Remaining endpoints: bulk/interrupt mode */
+			ep_cfg->caps.bulk = 1;
+			ep_cfg->caps.interrupt = 1;
+		}
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb) */
+	}
+}
+
+static void udc_stm32_lock(const struct device *dev)
+{
+	udc_lock_internal(dev, K_FOREVER);
+}
+
+static void udc_stm32_unlock(const struct device *dev)
+{
+	udc_unlock_internal(dev);
+}
+
+int udc_stm32_init(const struct device *dev)
+{
+	struct udc_stm32_data *priv = udc_get_private(dev);
+	const struct udc_stm32_config *cfg = dev->config;
+	HAL_StatusTypeDef status;
+	int err;
+
+	err = stm32_usb_pwr_enable();
+	if (err != 0) {
+		LOG_ERR("Error enabling USB power: %d", err);
+		return err;
+	}
+
+	if (udc_stm32_clock_enable(dev) < 0) {
+		LOG_ERR("Error enabling clock(s)");
+		return -EIO;
+	}
+
+	/* Wipe and (re)initialize HAL context */
+	memset(&priv->pcd, 0, sizeof(priv->pcd));
+
+	priv->pcd.Instance = cfg->base;
+	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
+	priv->pcd.Init.ep0_mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
+	priv->pcd.Init.phy_itface = cfg->selected_phy;
+	priv->pcd.Init.speed = cfg->selected_speed;
+	priv->pcd.Init.Sof_enable = IS_ENABLED(CONFIG_UDC_ENABLE_SOF);
+
+	status = HAL_PCD_Init(&priv->pcd);
+	if (status != HAL_OK) {
+		LOG_ERR("PCD_Init failed, %d", (int)status);
+		return -EIO;
+	}
+
+	if (HAL_PCD_Stop(&priv->pcd) != HAL_OK) {
+		return -EIO;
+	}
+
+	return 0;
+}
 
 static int udc_stm32_enable(const struct device *dev)
 {
@@ -1099,6 +1120,7 @@ static int udc_stm32_ep_clear_halt(const struct device *dev,
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	HAL_StatusTypeDef status;
 	struct net_buf *buf;
+	int ret = 0;
 
 	LOG_DBG("Clear halt for ep 0x%02x", ep_cfg->addr);
 
@@ -1124,29 +1146,12 @@ static int udc_stm32_ep_clear_halt(const struct device *dev,
 
 		if (USB_EP_DIR_IS_IN(ep_cfg->addr) && !busy) {
 			udc_stm32_tx(dev, ep_cfg, buf);
-		} else if (USB_EP_DIR_IS_OUT(ep_cfg->addr) && busy) {
-			udc_stm32_rx(dev, ep_cfg, buf);
+		} else if (USB_EP_DIR_IS_OUT(ep_cfg->addr) && !busy) {
+			ret = udc_stm32_initiate_ep_rx(dev, ep_cfg, buf);
 		}
 	}
-	return 0;
-}
 
-static int udc_stm32_ep_flush(const struct device *dev,
-			      struct udc_ep_config *ep_cfg)
-{
-	struct udc_stm32_data *priv = udc_get_private(dev);
-	HAL_StatusTypeDef status;
-
-	LOG_DBG("Flush ep 0x%02x", ep_cfg->addr);
-
-	status = HAL_PCD_EP_Flush(&priv->pcd, ep_cfg->addr);
-	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_Flush failed(0x%02x), %d",
-			ep_cfg->addr, (int)status);
-		return -EIO;
-	}
-
-	return 0;
+	return ret;
 }
 
 static int udc_stm32_ep_enqueue(const struct device *dev,
@@ -1156,9 +1161,9 @@ static int udc_stm32_ep_enqueue(const struct device *dev,
 	unsigned int lock_key;
 	int ret = 0;
 
-	udc_buf_put(ep_cfg, buf);
-
 	lock_key = irq_lock();
+
+	udc_buf_put(ep_cfg, buf);
 
 	if (USB_EP_DIR_IS_IN(ep_cfg->addr)) {
 		if (ep_cfg->stat.halted) {
@@ -1167,7 +1172,9 @@ static int udc_stm32_ep_enqueue(const struct device *dev,
 			ret = udc_stm32_tx(dev, ep_cfg, buf);
 		}
 	} else {
-		ret = udc_stm32_rx(dev, ep_cfg, buf);
+		if (!udc_ep_is_busy(ep_cfg)) {
+			ret = udc_stm32_initiate_ep_rx(dev, ep_cfg, buf);
+		}
 	}
 
 	irq_unlock(lock_key);
@@ -1178,14 +1185,15 @@ static int udc_stm32_ep_enqueue(const struct device *dev,
 static int udc_stm32_ep_dequeue(const struct device *dev,
 				struct udc_ep_config *ep_cfg)
 {
-	struct net_buf *buf;
+	struct udc_stm32_data *priv = udc_get_private(dev);
+	__maybe_unused HAL_StatusTypeDef status;
 
-	udc_stm32_ep_flush(dev, ep_cfg);
+	LOG_DBG("Flush ep 0x%02x", ep_cfg->addr);
 
-	buf = udc_buf_get_all(ep_cfg);
-	if (buf != NULL) {
-		udc_submit_ep_event(dev, buf, -ECONNABORTED);
-	}
+	status = HAL_PCD_EP_Flush(&priv->pcd, ep_cfg->addr);
+	__ASSERT_NO_MSG(status == HAL_OK);
+
+	udc_ep_cancel_queued(dev, ep_cfg);
 
 	udc_ep_set_busy(ep_cfg, false);
 
@@ -1233,83 +1241,6 @@ static const struct udc_api udc_stm32_api = {
 	.device_speed = udc_stm32_device_speed,
 };
 
-static int udc_stm32_clock_enable(const struct device *dev)
-{
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	const struct udc_stm32_config *cfg = dev->config;
-	int err;
-
-	if (cfg->num_clocks > 1) {
-		if (clock_control_configure(clk, &cfg->pclken[1], NULL) != 0) {
-			LOG_ERR("Could not select USB domain clock");
-			return -EIO;
-		}
-	}
-
-	if (clock_control_on(clk, &cfg->pclken[0]) != 0) {
-		LOG_ERR("Unable to enable USB clock");
-		return -EIO;
-	}
-
-	if (IS_ENABLED(CONFIG_UDC_STM32_CLOCK_CHECK) && cfg->num_clocks > 1) {
-		uint32_t usb_clock_rate;
-
-		if (clock_control_get_rate(clk, &cfg->pclken[1], &usb_clock_rate) != 0) {
-			LOG_ERR("Failed to get USB domain clock rate");
-			return -EIO;
-		}
-
-		if (usb_clock_rate != MHZ(48)) {
-			LOG_ERR("USB Clock is not 48MHz (%d)", usb_clock_rate);
-			return -ENOTSUP;
-		}
-	}
-
-	/* Previous check won't work in case of F1/F3. Add build time check */
-#if defined(RCC_CFGR_OTGFSPRE) || defined(RCC_CFGR_USBPRE)
-
-#if (MHZ(48) == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) && !defined(STM32_PLL_USBPRE)
-	/* PLL output clock is set to 48MHz, it should not be divided */
-#warning USBPRE/OTGFSPRE should be set in rcc node
-#endif
-
-#endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
-
-	/* Configure PHY if applicable (must be after enabling UDC clock) */
-	if (cfg->phy != NULL) {
-		err = cfg->phy->enable(cfg->phy);
-		if (err != 0) {
-			LOG_ERR("Failed to enable USB PHY: %d", err);
-			return err;
-		}
-	}
-
-	return 0;
-}
-
-static int udc_stm32_clock_disable(const struct device *dev)
-{
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	const struct udc_stm32_config *cfg = dev->config;
-	int err;
-
-	/* Per API contract, disable PHY before USB controller */
-	if (cfg->phy != NULL) {
-		err = cfg->phy->disable(cfg->phy);
-		if (err != 0) {
-			LOG_ERR("Failed to disable USB PHY: %d", err);
-			return err;
-		}
-	}
-
-	if (clock_control_off(clk, &cfg->pclken[0]) != 0) {
-		LOG_ERR("Unable to disable USB clock");
-		return -EIO;
-	}
-
-	return 0;
-}
-
 static int udc_stm32_driver_preinit(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
@@ -1318,18 +1249,13 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 	int err;
 
 	for (unsigned int i = 0; i < cfg->num_endpoints; i++) {
-		cfg->out_eps[i].caps.out = 1;
+		udc_stm32_init_ep_addr_caps(cfg->out_eps + i, USB_EP_DIR_OUT | i);
 		if (i == 0) {
-			cfg->out_eps[i].caps.control = 1;
 			cfg->out_eps[i].caps.mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
 		} else {
-			cfg->out_eps[i].caps.bulk = 1;
-			cfg->out_eps[i].caps.interrupt = 1;
-			cfg->out_eps[i].caps.iso = 1;
 			cfg->out_eps[i].caps.mps = cfg->ep_mps;
 		}
 
-		cfg->out_eps[i].addr = USB_EP_DIR_OUT | i;
 		err = udc_register_ep(dev, cfg->out_eps + i);
 		if (err != 0) {
 			LOG_ERR("Failed to register endpoint");
@@ -1338,18 +1264,13 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 	}
 
 	for (unsigned int i = 0; i < cfg->num_endpoints; i++) {
-		cfg->in_eps[i].caps.in = 1;
+		udc_stm32_init_ep_addr_caps(cfg->in_eps + i, USB_EP_DIR_IN | i);
 		if (i == 0) {
-			cfg->in_eps[i].caps.control = 1;
 			cfg->in_eps[i].caps.mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
 		} else {
-			cfg->in_eps[i].caps.bulk = 1;
-			cfg->in_eps[i].caps.interrupt = 1;
-			cfg->in_eps[i].caps.iso = 1;
 			cfg->in_eps[i].caps.mps = cfg->ep_mps;
 		}
 
-		cfg->in_eps[i].addr = USB_EP_DIR_IN | i;
 		err = udc_register_ep(dev, cfg->in_eps + i);
 		if (err != 0) {
 			LOG_ERR("Failed to register endpoint");
@@ -1358,7 +1279,6 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 	}
 
 	data->caps.rwup = true;
-	data->caps.out_ack = false;
 	data->caps.addr_before_status = true;
 	data->caps.mps0 = UDC_MPS0_64;
 	if (cfg->selected_speed == PCD_SPEED_HIGH) {
@@ -1418,6 +1338,16 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 	return 0;
 }
 
+/*
+ * Note the usage of device ordinals to create per-instance symbol
+ * names, whereas most other STM32 drivers use the "instance number"
+ * for this purpose instead. Unlike most drivers, we can instantiate
+ * devices with different compatibles *in a single build* such as on
+ * SoCs with one OTGHS + one OTGFS. The instance number is unique only
+ * for *one* given compatible so it cannot be used here because there
+ * are multiple compatibles. Device ordinals are globally unique and
+ * look similar to instance numbers so they fit nice as replacement.
+ */
 #define UDC_STM32_DEFINE(node_id, phy_node, ord, _irq_name)					\
 	K_THREAD_STACK_DEFINE(CONCAT(udc, ord, _thr_stk), CONFIG_UDC_STM32_STACK_SIZE);		\
 												\

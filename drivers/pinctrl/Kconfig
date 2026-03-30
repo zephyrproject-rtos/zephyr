@@ -39,6 +39,7 @@ config PINCTRL_KEEP_SLEEP_STATE
 	default y if PM || PM_DEVICE || DEVICE_DEINIT_SUPPORT
 
 # zephyr-keep-sorted-start
+source "drivers/pinctrl/Kconfig.alif"
 source "drivers/pinctrl/Kconfig.ambiq"
 source "drivers/pinctrl/Kconfig.ameba"
 source "drivers/pinctrl/Kconfig.arm_mps2"
@@ -47,6 +48,7 @@ source "drivers/pinctrl/Kconfig.arm_mps4"
 source "drivers/pinctrl/Kconfig.arm_v2m_beetle"
 source "drivers/pinctrl/Kconfig.b91"
 source "drivers/pinctrl/Kconfig.bcm2711"
+source "drivers/pinctrl/Kconfig.bee"
 source "drivers/pinctrl/Kconfig.bflb"
 source "drivers/pinctrl/Kconfig.cc13xx_cc26xx"
 source "drivers/pinctrl/Kconfig.cc23x0"
@@ -82,6 +84,7 @@ source "drivers/pinctrl/Kconfig.silabs_dbus"
 source "drivers/pinctrl/Kconfig.siwx91x"
 source "drivers/pinctrl/Kconfig.stm32"
 source "drivers/pinctrl/Kconfig.sy1xx"
+source "drivers/pinctrl/Kconfig.syna_sr100"
 source "drivers/pinctrl/Kconfig.ti_cc32xx"
 source "drivers/pinctrl/Kconfig.ti_k3"
 source "drivers/pinctrl/Kconfig.wch_00x_afio"

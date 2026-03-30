@@ -258,7 +258,7 @@ static int litex_clk_wait(uint32_t reg)
 		k_sleep(K_MSEC(1));
 	}
 	if (timeout == 0) {
-		LOG_WRN("Timeout occured when waiting for the register: 0x%x", reg);
+		LOG_WRN("Timeout occurred when waiting for the register: 0x%x", reg);
 		return -ETIME;
 	}
 	return 0;
@@ -956,17 +956,6 @@ static int litex_clk_calc_duty_normal(struct litex_clk_clkout *lcko,
 	lcko->frac.frac_wf_r = 0;
 
 	return 0;
-}
-
-/* Calculates duty high_time for given divider and ratio */
-static inline int litex_clk_calc_duty_high_time(struct clk_duty *duty,
-						   uint32_t divider)
-{
-	uint32_t high_duty;
-
-	high_duty = litex_clk_calc_duty_percent(duty) * divider;
-
-	return litex_round(high_duty, 100);
 }
 
 /* Set duty cycle with given ratio */

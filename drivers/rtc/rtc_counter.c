@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/nvmem.h>
 #include <zephyr/types.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/timeutil.h>
@@ -21,11 +22,16 @@ struct rtc_counter_config {
 	const struct device *counter_dev;
 	/* Number of alarm channels */
 	uint8_t alarms_count;
+#if defined(CONFIG_RTC_COUNTER_NVMEM)
+	struct nvmem_cell epoch_offset_cell;
+#endif
 };
 
 struct rtc_counter_data {
 	/* Offset in counter ticks between raw counter and Unix epoch */
 	int64_t epoch_offset;
+	/* true once rtc_set_time() establishes epoch_offset */
+	bool epoch_valid;
 	/* protects epoch_offset */
 	struct k_spinlock lock;
 #ifdef CONFIG_RTC_ALARM
@@ -124,15 +130,26 @@ static void rtc_counter_alarm_callback(const struct device *counter_dev, uint8_t
 {
 	struct rtc_counter_data *data = (struct rtc_counter_data *)user_data;
 	const struct device *rtc_dev = data->rtc_dev;
+	rtc_alarm_callback cb = NULL;
+	void *cb_user_data = NULL;
 
-	if (chan_id < data->num_alarm_chans && data->alarm_callback[chan_id] != NULL) {
-		data->alarm_callback[chan_id](rtc_dev, chan_id, data->alarm_user_data[chan_id]);
-		data->alarm_pending[chan_id] = false;
-	} else if (chan_id < data->num_alarm_chans) {
-		data->alarm_pending[chan_id] = true;
-	} else {
+	ARG_UNUSED(counter_dev);
+	ARG_UNUSED(ticks);
+
+	if (chan_id >= data->num_alarm_chans) {
 		LOG_DBG("Spurious alarm callback on channel %u (max %u)", chan_id,
 			data->num_alarm_chans ? (data->num_alarm_chans - 1U) : 0U);
+		return;
+	}
+
+	K_SPINLOCK(&data->lock) {
+		data->alarm_pending[chan_id] = true;
+		cb = data->alarm_callback[chan_id];
+		cb_user_data = data->alarm_user_data[chan_id];
+	}
+
+	if (cb != NULL) {
+		cb(rtc_dev, chan_id, cb_user_data);
 	}
 }
 
@@ -171,6 +188,7 @@ static int rtc_counter_alarm_set_time(const struct device *dev, uint16_t id, uin
 	uint32_t alarm_ticks;
 	uint32_t now_raw;
 	struct counter_alarm_cfg alarm_cfg;
+	bool epoch_valid;
 
 	if (!data->alarm_capable) {
 		return -ENOTSUP;
@@ -213,6 +231,16 @@ static int rtc_counter_alarm_set_time(const struct device *dev, uint16_t id, uin
 	/* Convert desired absolute Unix time to a raw tick value for the counter */
 	K_SPINLOCK(&data->lock) {
 		epoch = data->epoch_offset;
+		epoch_valid = data->epoch_valid;
+		/* Record configured mask and time for get_time; clear pending */
+		data->alarm_mask[id] = mask;
+		data->alarm_time[id] = *timeptr;
+		data->alarm_pending[id] = false;
+	}
+
+	/* Allow configuring alarms before rtc_set_time(). Arm them on set_time(). */
+	if (!epoch_valid) {
+		return 0;
 	}
 
 	raw_alarm_ticks_64 = (int64_t)desired_ticks - epoch;
@@ -245,14 +273,16 @@ static int rtc_counter_alarm_set_time(const struct device *dev, uint16_t id, uin
 	alarm_cfg.user_data = data;
 	alarm_cfg.flags = COUNTER_ALARM_CFG_ABSOLUTE | COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE;
 
-	/* Record configured mask and time for get_time; clear pending */
-	K_SPINLOCK(&data->lock) {
-		data->alarm_mask[id] = mask;
-		data->alarm_time[id] = *timeptr;
-		data->alarm_pending[id] = false;
+	ret = counter_set_channel_alarm(config->counter_dev, (uint8_t)id, &alarm_cfg);
+	if (ret == -ETIME) {
+		/* Treat "late" as an immediate expiry when EXPIRE_WHEN_LATE was requested. */
+		K_SPINLOCK(&data->lock) {
+			data->alarm_pending[id] = true;
+		}
+		return 0;
 	}
 
-	return counter_set_channel_alarm(config->counter_dev, (uint8_t)id, &alarm_cfg);
+	return ret;
 }
 
 static int rtc_counter_alarm_get_time(const struct device *dev, uint16_t id, uint16_t *mask,
@@ -420,8 +450,15 @@ static void rtc_counter_reschedule_alarms(const struct device *dev)
 		alarm_cfg.ticks = alarm_ticks;
 		alarm_cfg.user_data = data;
 		alarm_cfg.flags = COUNTER_ALARM_CFG_ABSOLUTE | COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE;
+		int set_ret;
 
-		(void)counter_set_channel_alarm(config->counter_dev, (uint8_t)id, &alarm_cfg);
+		set_ret = counter_set_channel_alarm(config->counter_dev, (uint8_t)id,
+					   &alarm_cfg);
+		if (set_ret == -ETIME) {
+			K_SPINLOCK(&data->lock) {
+				data->alarm_pending[id] = true;
+			}
+		}
 	}
 }
 
@@ -464,6 +501,7 @@ static int rtc_counter_set_time(const struct device *dev, const struct rtc_time 
 	/* Update the software offset (in ticks): offset = desired_ticks - now_ticks */
 	K_SPINLOCK(&data->lock) {
 		data->epoch_offset = (int64_t)desired_ticks - (int64_t)now_ticks;
+		data->epoch_valid = true;
 	}
 
 #ifdef CONFIG_RTC_ALARM
@@ -475,6 +513,16 @@ static int rtc_counter_set_time(const struct device *dev, const struct rtc_time 
 	if (ret < 0) {
 		return ret;
 	}
+
+#if defined(CONFIG_RTC_COUNTER_NVMEM)
+	if (nvmem_cell_is_ready(&config->epoch_offset_cell)) {
+		ret = nvmem_cell_write(&config->epoch_offset_cell, &data->epoch_offset, 0,
+				       sizeof(int64_t));
+		if (ret < 0) {
+			LOG_ERR("Failed to write epoch offset (%d)", ret);
+		}
+	}
+#endif
 
 	return 0;
 }
@@ -578,6 +626,19 @@ static int rtc_counter_init(const struct device *dev)
 
 	/* Start with zero offset until rtc_set_time is called */
 	data->epoch_offset = 0;
+	data->epoch_valid = false;
+
+#if defined(CONFIG_RTC_COUNTER_NVMEM)
+	if (nvmem_cell_is_ready(&config->epoch_offset_cell)) {
+		int ret = nvmem_cell_read(&config->epoch_offset_cell, &data->epoch_offset, 0,
+					  sizeof(int64_t));
+		if (ret < 0) {
+			LOG_ERR("Failed to read epoch offset (%d)", ret);
+		} else {
+			data->epoch_valid = true;
+		}
+	}
+#endif
 
 #ifdef CONFIG_RTC_ALARM
 	data->rtc_dev = dev;
@@ -644,6 +705,9 @@ DT_INST_FOREACH_STATUS_OKAY(RTC_COUNTER_DECLARE_ALARM_STORAGE)
 	static const struct rtc_counter_config rtc_counter_config_##n = {           \
 		.counter_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                        \
 		.alarms_count = DT_PROP_OR(DT_DRV_INST(n), alarms_count, 0),            \
+		IF_ENABLED(CONFIG_RTC_COUNTER_NVMEM, (                             \
+			.epoch_offset_cell = NVMEM_CELL_INST_GET_BY_NAME_OR(n, epoch_offset, {0}), \
+		))                                                                  \
 	};                                                                          \
 	static struct rtc_counter_data rtc_counter_data_##n = {                     \
 		IF_ENABLED(CONFIG_RTC_ALARM, (                                          \

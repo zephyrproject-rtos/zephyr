@@ -13,6 +13,11 @@ Current Time Service
 
 .. doxygengroup:: bt_cts
 
+Elapsed Time Service
+********************
+
+.. doxygengroup:: bt_ets
+
 Heart Rate Service
 ******************
 

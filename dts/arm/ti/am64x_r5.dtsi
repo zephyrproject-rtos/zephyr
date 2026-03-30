@@ -21,7 +21,7 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "arm,cortex-r5";
+			compatible = "arm,cortex-r5f";
 			reg = <0>;
 			clock-frequency = <DT_FREQ_M(800)>;
 		};
@@ -56,16 +56,6 @@
 		interrupt-controller;
 		#interrupt-cells = <4>; /* {IRQ/FIQ, IRQ_NUM, IRQ_TYPE, IRQ_PRIO} */
 	};
-};
-
-&dmsc {
-	ti,host-id = <36>;
-	mboxes = <&secure_proxy_main 2>, <&secure_proxy_main 3>;
-};
-
-&secure_proxy_main {
-	interrupts = <0 65 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-	interrupt-parent = <&vim>;
 };
 
 &main_timer0 {

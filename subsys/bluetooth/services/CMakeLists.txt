@@ -4,7 +4,11 @@ zephyr_sources_ifdef(CONFIG_BT_ANS ans.c)
 
 zephyr_sources_ifdef(CONFIG_BT_DIS dis.c)
 
+zephyr_sources_ifdef(CONFIG_BT_GAP_SVC gap_svc.c)
+
 zephyr_sources_ifdef(CONFIG_BT_CTS cts.c)
+
+zephyr_sources_ifdef(CONFIG_BT_ETS ets.c)
 
 zephyr_sources_ifdef(CONFIG_BT_HRS hrs.c)
 

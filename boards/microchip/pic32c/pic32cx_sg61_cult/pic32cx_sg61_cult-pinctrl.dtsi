@@ -54,4 +54,11 @@
 				 <PC3B_ADC1_AIN5>;	/* J900 pin 8 - AN */
 		};
 	};
+
+	dac_default: dac_default {
+		group1 {
+			pinmux = <PA2B_DAC_VOUT0>,	/* J600 pin 1 */
+				 <PA5B_DAC_VOUT1>;	/* J600 pin 3 */
+		};
+	};
 };

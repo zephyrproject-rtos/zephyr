@@ -51,7 +51,7 @@ UF2 Flashing
 ============
 
 To enter the bootloader, connect the USB port of the XIAO BLE to your host, and
-double tap the reset botton to the left of the USB connector. A mass storage
+double tap the reset button to the left of the USB connector. A mass storage
 device named ``XIAO BLE`` should appear on the host. Using the command line, or
 your file manager copy the :file:`zephyr/zephyr.uf2` file from your build to the base
 of the ``XIAO BLE`` mass storage device. The XIAO BLE will automatically reset

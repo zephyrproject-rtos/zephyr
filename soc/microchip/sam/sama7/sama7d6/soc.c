@@ -35,6 +35,10 @@ static const struct arm_mmu_region mmu_regions[] = {
 
 	MMU_REGION_FLAT_ENTRY("sckc", SCKC_BASE_ADDRESS, 0x4,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+
+	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(microchip_sha_g1_crypto),
+		   (MMU_REGION_FLAT_ENTRY("sha", SHA_BASE_ADDRESS, 0x100,
+					  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
 };
 
 const struct arm_mmu_config mmu_config = {

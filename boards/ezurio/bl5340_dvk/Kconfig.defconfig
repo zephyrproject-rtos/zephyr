@@ -58,7 +58,7 @@ config FLASH_LOAD_SIZE
 endif # BOARD_BL5340_DVK_NRF5340_CPUAPP_NS
 
 config BT_HCI_IPC
-	default y if BT
+	default y if BT_HCI
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
@@ -76,9 +76,6 @@ if LVGL
 
 config LV_Z_VDB_SIZE
 	default 64
-
-config LV_Z_BITS_PER_PIXEL
-	default 16
 
 choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_16

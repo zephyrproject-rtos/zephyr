@@ -101,7 +101,7 @@
 			zephyr,memory-region = "NRF_KMU_CRACEN_EXCHANGE";
 		};
 
-		nrf_mpc_region: memory@50041000 {
+		nrf_mpc: memory@50041000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
 			compatible = "nordic,nrf-mpc";
@@ -137,7 +137,9 @@
 		uicr: uicr@ffd000 {
 			compatible = "nordic,nrf-uicr";
 			reg = <0xffd000 0x1000>;
-			status = "disabled";
+			ranges = <0x0 0xffd000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 #endif
 
@@ -192,18 +194,22 @@
 				compatible = "nordic,nrf-dppic";
 				reg = <0x42000 0x1000>;
 				status = "disabled";
+				channels = <16>;
+				groups = <2>;
 			};
 
 			ppib00: ppib@44000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x44000 0x1000>;
 				status = "disabled";
+				channels = <12>;
 			};
 
 			ppib01: ppib@45000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x45000 0x1000>;
 				status = "disabled";
+				channels = <8>;
 			};
 
 			ccm00: ccm@4a000 {
@@ -346,18 +352,22 @@
 				compatible = "nordic,nrf-dppic";
 				reg = <0x82000 0x1000>;
 				status = "disabled";
+				channels = <24>;
+				groups = <6>;
 			};
 
 			ppib10: ppib@83000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x83000 0x1000>;
 				status = "disabled";
+				channels = <12>;
 			};
 
 			ppib11: ppib@84000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x84000 0x1000>;
 				status = "disabled";
+				channels = <16>;
 			};
 
 			timer10: timer@85000 {
@@ -415,24 +425,29 @@
 				compatible = "nordic,nrf-dppic";
 				reg = <0xc2000 0x1000>;
 				status = "disabled";
+				channels = <16>;
+				groups = <6>;
 			};
 
 			ppib20: ppib@c3000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0xc3000 0x1000>;
 				status = "disabled";
+				channels = <8>;
 			};
 
 			ppib21: ppib@c4000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0xc4000 0x1000>;
 				status = "disabled";
+				channels = <16>;
 			};
 
 			ppib22: ppib@c5000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0xc5000 0x1000>;
 				status = "disabled";
+				channels = <4>;
 			};
 
 			spi20: spi@c6000 {
@@ -797,12 +812,15 @@
 				compatible = "nordic,nrf-dppic";
 				reg = <0x102000 0x1000>;
 				status = "disabled";
+				channels = <4>;
+				groups = <2>;
 			};
 
 			ppib30: ppib@103000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x103000 0x1000>;
 				status = "disabled";
+				channels = <4>;
 			};
 
 			spi30: spi@104000 {
@@ -878,6 +896,32 @@
 				status = "disabled";
 			};
 
+			power: power@10e000 {
+				compatible = "nordic,nrf-power";
+				reg = <0x10e000 0x1000>;
+				ranges = <0x0 0x10e000 0x1000>;
+				interrupts = <261 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				gpregret1: gpregret1@500 {
+					#address-cells = <1>;
+					#size-cells = <1>;
+					compatible = "nordic,nrf-gpregret";
+					reg = <0x500 0x1>;
+					status = "disabled";
+				};
+
+				gpregret2: gpregret2@504 {
+					#address-cells = <1>;
+					#size-cells = <1>;
+					compatible = "nordic,nrf-gpregret";
+					reg = <0x504 0x1>;
+					status = "disabled";
+				};
+			};
+
 			audio_auxpll: auxpll@130000 {
 				compatible = "nordic,nrf-auxpll";
 				reg = <0x130000 0x1000>;
@@ -939,8 +983,8 @@
 
 			cpuapp_mram: mram@0 {
 				compatible = "soc-nv-flash";
-				reg = <0 DT_SIZE_K(4084)>;
-				ranges = <0x0 0 DT_SIZE_K(4084)>;
+				reg = <0 DT_SIZE_K(4076)>;
+				ranges = <0x0 0 DT_SIZE_K(4076)>;
 				erase-block-size = <4096>;
 				write-block-size = <4>;
 				#address-cells = <1>;

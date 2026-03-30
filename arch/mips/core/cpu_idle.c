@@ -10,7 +10,9 @@
 
 static ALWAYS_INLINE void mips_idle(unsigned int key)
 {
+#if defined(CONFIG_TRACING)
 	sys_trace_idle();
+#endif
 
 	/* unlock interrupts */
 	irq_unlock(key);

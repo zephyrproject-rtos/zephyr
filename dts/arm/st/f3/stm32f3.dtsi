@@ -21,6 +21,7 @@
 
 / {
 	chosen {
+		zephyr,crc = &crc;
 		zephyr,flash-controller = &flash;
 	};
 
@@ -93,6 +94,39 @@
 				erase-block-size = <2048>;
 				/* maximum erase time for a 2K sector */
 				max-erase-time = <40>;
+			};
+
+			/*
+			 * Device-unique information is stored
+			 * at the end of the System memory area.
+			 */
+			flash@1ffff700 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1ffff700 256>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					ts_cal1_otp: ts-cal1@b8 {
+						reg = <0xb8 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					vrefint_otp: vrefint@ba {
+						reg = <0xba 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					ts_cal2_otp: ts-cal2@c2 {
+						reg = <0xc2 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+				};
 			};
 		};
 
@@ -411,12 +445,20 @@
 			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
 			status = "disabled";
 		};
+
+		crc: crc@40023000 {
+			compatible = "st,stm32-crc";
+			reg = <0x40023000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 6)>;
+			resets = <&rctl STM32_RESET(AHB1, 6)>;
+			status = "disabled";
+		};
 	};
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		ts-cal1-addr = <0x1ffff7b8>;
-		ts-cal2-addr = <0x1ffff7c2>;
+		nvmem-cells = <&ts_cal1_otp>, <&ts_cal2_otp>;
+		nvmem-cell-names = "TS_CAL1", "TS_CAL2";
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <110>;
 		ts-cal-vrefanalog = <3300>;
@@ -426,7 +468,7 @@
 
 	vref: vref {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x1ffff7ba>;
+		nvmem-cells = <&vrefint_otp>;
 		vrefint-cal-mv = <3300>;
 		io-channels = <&adc1 18>;
 		status = "disabled";

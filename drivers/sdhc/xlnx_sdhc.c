@@ -173,7 +173,7 @@ static void xlnx_sdhc_clear_intr(volatile struct reg_base *reg)
 
 /**
  * @brief
- * Setup ADMA2 discriptor table for data transfer
+ * Setup ADMA2 descriptor table for data transfer
  */
 static int xlnx_sdhc_setup_adma(const struct device *dev, const struct sdhc_data *data)
 {
@@ -246,6 +246,14 @@ static uint16_t xlnx_sdhc_cmd_frame(struct sdhc_command *cmd, bool data, uint8_t
 
 	case SD_RSP_TYPE_R3:
 		command |= RESP_R3;
+		break;
+
+	case SD_RSP_TYPE_R4:
+		command |= RESP_R3;
+		break;
+
+	case SD_RSP_TYPE_R5:
+		command |= RESP_R1;
 		break;
 
 	case SD_RSP_TYPE_R6:
@@ -533,6 +541,23 @@ static int xlnx_sdhc_request(const struct device *dev, struct sdhc_command *cmd,
 
 	case SD_WRITE_SINGLE_BLOCK:
 		dev_data->transfermode &= ~XLNX_SDHC_TM_DAT_DIR_SEL_MASK;
+		ret = xlnx_sdhc_transfer(dev, cmd, data);
+		break;
+
+	case SDIO_RW_EXTENDED:
+		if (IS_BIT_SET(cmd->arg, SDIO_CMD_ARG_RW_SHIFT)) {
+			dev_data->transfermode &= ~XLNX_SDHC_TM_DAT_DIR_SEL_MASK;
+		}
+		if (data->blocks > 1) {
+			dev_data->transfermode |= XLNX_SDHC_TM_MUL_SIN_BLK_SEL_MASK;
+		}
+		ret = xlnx_sdhc_transfer(dev, cmd, data);
+		break;
+
+	case SDIO_RW_DIRECT:
+		if (IS_BIT_SET(cmd->arg, SDIO_CMD_ARG_RW_SHIFT)) {
+			dev_data->transfermode &= ~XLNX_SDHC_TM_DAT_DIR_SEL_MASK;
+		}
 		ret = xlnx_sdhc_transfer(dev, cmd, data);
 		break;
 

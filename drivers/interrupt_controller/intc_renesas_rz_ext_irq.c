@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Renesas Electronics Corporation
+ * Copyright (c) 2024-2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 
 #if CONFIG_DT_HAS_RENESAS_RZ_INTC_ENABLED
 #include "r_intc_irq.h"
-#elif CONFIG_DT_HAS_RENESAS_RZ_ICU_ENABLED
+#elif CONFIG_DT_HAS_RENESAS_RZ_ICU_ENABLED || CONFIG_DT_HAS_RENESAS_RZ_ICU_V2_ENABLED
 #include "r_icu.h"
 #endif
 
@@ -45,7 +45,7 @@ struct intc_rz_ext_irq_data {
 void r_intc_irq_isr(void *irq);
 void r_intc_nmi_isr(void *irq);
 #define INTC_IRQ_ISR r_intc_irq_isr
-#elif CONFIG_DT_HAS_RENESAS_RZ_ICU_ENABLED
+#elif CONFIG_DT_HAS_RENESAS_RZ_ICU_ENABLED || CONFIG_DT_HAS_RENESAS_RZ_ICU_V2_ENABLED
 void r_icu_isr(void *irq);
 #define INTC_IRQ_ISR r_icu_isr
 #endif
@@ -254,6 +254,6 @@ static void intc_rz_ext_irq_isr_handle(const struct device *dev)
 
 #if CONFIG_DT_HAS_RENESAS_RZ_INTC_ENABLED
 DT_INST_FOREACH_STATUS_OKAY(INTC_RZ_EXT_IRQ_INIT)
-#elif CONFIG_DT_HAS_RENESAS_RZ_ICU_ENABLED
+#elif CONFIG_DT_HAS_RENESAS_RZ_ICU_ENABLED || CONFIG_DT_HAS_RENESAS_RZ_ICU_V2_ENABLED
 DT_INST_FOREACH_STATUS_OKAY(INTC_RZ_ICU_EXT_IRQ_INIT)
 #endif

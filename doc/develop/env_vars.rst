@@ -220,8 +220,9 @@ the :ref:`toolchain <gs_toolchain>` used to build Zephyr applications.
 .. envvar:: {TOOLCHAIN}_TOOLCHAIN_PATH
 
    Path to the toolchain specified by :envvar:`ZEPHYR_TOOLCHAIN_VARIANT`. For
-   example, if ``ZEPHYR_TOOLCHAIN_VARIANT=llvm``, use ``LLVM_TOOLCHAIN_PATH``.
-   (Note the capitalization when forming the environment variable name.)
+   example, if ``ZEPHYR_TOOLCHAIN_VARIANT=host/llvm``, use
+   ``LLVM_TOOLCHAIN_PATH``.  (Note the capitalization when forming the
+   environment variable name.)
 
 You might need to update some of these variables when you
 :ref:`update the Zephyr SDK toolchain <gs_toolchain_update>`.

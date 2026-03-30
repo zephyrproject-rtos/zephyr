@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Microchip Technology Inc.
+# Copyright (c) 2025-2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 title: Microchip PORT Pinctrl container node
@@ -15,6 +15,7 @@ description: |
     - module name="PORT" id="U2210" version="2.2.0"
     - module name="PORT" id="U2210" version="3.1.0"
     - module name="PORT" id="03720" version="4a0"
+    - module name="PORT" id="U2210" version="v1"
 
   The node has the 'pinctrl' node label set in your SoC's devicetree, so you can
   modify it like this:
@@ -74,6 +75,7 @@ description: |
       - "slow4"
       - "slow8"
       - "slow12"
+  - slew-limit-en: Enable internal slew rate limit for the pin configured as an output.
 
   To link pin configurations with a device, use a pinctrl-N property for some
   number N, like this example you could place in your board's DTS file:
@@ -149,3 +151,15 @@ child-binding:
             slow4: Slew rate control enabled (4x slower).
             slow8: Slew rate control enabled (8x slower).
             slow12: Slew rate control enabled (12x slower).
+          Only applicable to pic32cz ca family
+      slew-limit-en:
+        type: int
+        enum:
+          - 0
+          - 1
+        default: 0
+        description: |
+          This enables the internal slew rate limit of an I/O pin configured as an output.
+            0: Output Driver Slew Rate Limit is disabled.
+            1: Output Driver Slew Rate Limit is enabled.
+          Only applicable to pic32cm pl family

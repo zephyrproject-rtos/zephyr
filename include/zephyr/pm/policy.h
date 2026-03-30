@@ -212,10 +212,15 @@ bool pm_policy_state_any_active(void);
  * event, the policy manager will be able to decide whether certain power states
  * are worth entering or not.
  *
- * CPU is woken up before the time passed in cycle to minimize event handling
- * latency. Once woken up, the CPU will be kept awake until the event has been
- * handled, which is signaled by pm_policy_event_unregister() or moving event
- * into the future using pm_policy_event_update().
+ * Events are tracked in uptime ticks, and the policy uses the earliest (soonest)
+ * event time when calculating the time to the next wakeup.
+ *
+ * A given @p evt must be registered at most once at a time. Re-registering an
+ * already registered event behaves like pm_policy_event_update().
+ *
+ * Once woken up, the CPU is expected to remain awake until the event has been
+ * handled, which is signaled by pm_policy_event_unregister() or moving the
+ * event into the future using pm_policy_event_update().
  *
  * @param evt Event.
  * @param uptime_ticks When the event will occur, in uptime ticks.
@@ -230,6 +235,8 @@ void pm_policy_event_register(struct pm_policy_event *evt, int64_t uptime_ticks)
  * This shortcut allows for moving the time an event will occur without the
  * need for an unregister + register cycle.
  *
+ * If @p evt is not currently registered, this function has no effect.
+ *
  * @param evt Event.
  * @param uptime_ticks When the event will occur, in uptime ticks.
  *
@@ -240,6 +247,8 @@ void pm_policy_event_update(struct pm_policy_event *evt, int64_t uptime_ticks);
 /**
  * @brief Unregister an event.
  *
+ * If @p evt is not currently registered, this function has no effect.
+ *
  * @param evt Event.
  *
  * @see pm_policy_event_register
@@ -247,25 +256,16 @@ void pm_policy_event_update(struct pm_policy_event *evt, int64_t uptime_ticks);
 void pm_policy_event_unregister(struct pm_policy_event *evt);
 
 /**
- * @brief Check if a state will disable a device
- *
- * This function allows client code to check if a state will disable a device.
- *
- * @param dev Device reference.
- * @param state The state to check on whether it disables the device.
- * @param substate_id The substate to check on whether it disables the device.
- *
- * @retval true if the state disables the device
- * @retval false if the state does not disable the device
- */
-bool pm_policy_device_is_disabling_state(const struct device *dev,
-					 enum pm_state state, uint8_t substate_id);
-
-/**
  * @brief Returns the ticks until the next event
  *
- * If an event is registred, it will return the number of ticks until the next event, if the
- * "next"/"oldest" registered event is in the past, it will return 0. Otherwise it returns -1.
+ * Returns a relative timeout, in uptime ticks, until the earliest (soonest)
+ * registered event.
+ *
+ * The return value follows these rules:
+ * - If at least one event is registered and its scheduled time is in the future,
+ *   returns the number of ticks until that event.
+ * - If the earliest event is due now or already in the past, returns 0.
+ * - If no events are registered, returns -1.
  *
  * @retval >0 If next registered event is in the future
  * @retval 0 If next registered event is now or in the past
@@ -377,6 +377,21 @@ void pm_policy_device_power_lock_get(const struct device *dev);
  */
 void pm_policy_device_power_lock_put(const struct device *dev);
 
+/**
+ * @brief Check if a state will disable a device
+ *
+ * This function allows client code to check if a state will disable a device.
+ *
+ * @param dev Device reference.
+ * @param state The state to check on whether it disables the device.
+ * @param substate_id The substate to check on whether it disables the device.
+ *
+ * @retval true if the state disables the device
+ * @retval false if the state does not disable the device
+ */
+bool pm_policy_device_is_disabling_state(const struct device *dev,
+					 enum pm_state state, uint8_t substate_id);
+
 #else
 
 static inline void pm_policy_device_power_lock_get(const struct device *dev)
@@ -387,6 +402,17 @@ static inline void pm_policy_device_power_lock_get(const struct device *dev)
 static inline void pm_policy_device_power_lock_put(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+}
+
+static inline bool pm_policy_device_is_disabling_state(const struct device *dev,
+						       enum pm_state state,
+						       uint8_t substate_id)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+
+	return false;
 }
 #endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
 

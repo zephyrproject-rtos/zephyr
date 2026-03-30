@@ -111,6 +111,7 @@ void xtensa_arch_kernel_oops(int reason_p, void *ssf);
 		arch_syscall_invoke1(reason_p, \
 			K_SYSCALL_XTENSA_USER_FAULT); \
 	} else { \
+		compiler_barrier(); \
 		xtensa_arch_except(reason_p); \
 	} \
 	CODE_UNREACHABLE; \

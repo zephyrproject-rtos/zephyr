@@ -341,7 +341,7 @@ static DEVICE_API(gpio, gpio_bcm2711_api) = {
 	}                                                                                          \
                                                                                                    \
 	static const struct gpio_bcm2711_config gpio_bcm2711_cfg_##n = {                           \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0)},                   \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_INST_PARENT(n)),                           \
 		.irq_config_func = gpio_bcm2711_irq_config_func_##n,                               \
 		.offset = DT_INST_REG_ADDR(n),                                                     \

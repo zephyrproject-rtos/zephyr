@@ -16,29 +16,18 @@ import shutil
 import subprocess
 import sys
 from collections.abc import Generator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from importlib import metadata
 from pathlib import Path
 from typing import Any
 
 import zephyr_module
-from twisterlib.constants import SUPPORTED_SIMS
+from twisterlib.constants import SUPPORTED_SIMS, ZEPHYR_BASE
 from twisterlib.coverage import supported_coverage_formats
+from twisterlib.hardwaremap import HardwareMap
 from twisterlib.log_helper import log_command
 
 logger = logging.getLogger('twister')
-
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-if not ZEPHYR_BASE:
-    sys.exit("$ZEPHYR_BASE environment variable undefined")
-
-# Use this for internal comparisons; that's what canonicalization is
-# for. Don't use it when invoking other components of the build system
-# to avoid confusing and hard to trace inconsistencies in error messages
-# and logs, generated Makefiles, etc. compared to when users invoke these
-# components directly.
-# Note "normalization" is different from canonicalization, see os.path.
-canonical_zephyr_base = os.path.realpath(ZEPHYR_BASE)
 
 
 def _get_installed_packages() -> Generator[str, None, None]:
@@ -268,6 +257,16 @@ Artificially long but functional example:
         E.g "twister --device-testing --device-serial /dev/ttyACM0
                          --west-flash --west-runner=pyocd"
         will translate to "west flash --runner pyocd"
+        """
+    )
+
+    parser.add_argument(
+        "--west-flash-cmd", choices=['flash', 'debug'],
+        help="""Uses the specified west command. twister will use flash if not set
+
+        E.g "twister --device-testing --device-serial /dev/ttyACM0
+                         --west-flash-cmd="flash"
+        will translate to "west flash ..."
         """
     )
 
@@ -1089,7 +1088,7 @@ class TwisterEnv:
                 self.arch_roots.append(project / Path(arch_root))
 
         self.modules = [m.meta for m in modules]
-        self.hwm = None
+        self.hwm: HardwareMap | None = None
 
         self.test_config = options.test_config
 
@@ -1110,7 +1109,7 @@ class TwisterEnv:
     def discover(self):
         self.check_zephyr_version()
         self.get_toolchain()
-        self.run_date = datetime.now(timezone.utc).isoformat(timespec='seconds')
+        self.run_date = datetime.now(UTC).isoformat(timespec='seconds')
 
     def check_zephyr_version(self):
         try:
@@ -1190,5 +1189,10 @@ class TwisterEnv:
         if result['returncode'] != 0:
             print(f"E: {result['returnmsg']}")
             sys.exit(2)
-        self.toolchain = json.loads(result['stdout'])['ZEPHYR_TOOLCHAIN_VARIANT']
-        logger.info(f"Using '{self.toolchain}' toolchain.")
+        _variant = json.loads(result['stdout'])['ZEPHYR_TOOLCHAIN_VARIANT']
+        self.compiler = json.loads(result['stdout'])['TOOLCHAIN_VARIANT_COMPILER']
+        self.toolchain = f"{_variant}"
+        if self.compiler:
+            # Only add "/..." if TOOLCHAIN_VARIANT_COMPILER is not empty
+            self.toolchain += f"/{self.compiler}"
+        logger.info(f"Using '{self.toolchain}' toolchain variant.")

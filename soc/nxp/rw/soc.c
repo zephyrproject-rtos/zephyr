@@ -47,6 +47,12 @@ extern void z_arm_pendsv(void);
 extern void sys_clock_isr(void);
 extern void z_arm_exc_spurious(void);
 
+#ifdef CONFIG_USE_SWITCH
+#define PENDSV_VEC z_arm_exc_spurious
+#else
+#define PENDSV_VEC z_arm_pendsv
+#endif
+
 __imx_boot_ivt_section void (*const image_vector_table[])(void) = {
 	(void (*)())(z_main_stack + CONFIG_MAIN_STACK_SIZE), /* 0x00 */
 	z_arm_reset,                                         /* 0x04 */
@@ -66,7 +72,7 @@ __imx_boot_ivt_section void (*const image_vector_table[])(void) = {
 	z_arm_svc,                      /* 0x2C */
 	z_arm_debug_monitor,            /* 0x30 */
 	(void (*)())image_vector_table, /* 0x34, imageLoadAddress. */
-	z_arm_pendsv,                   /* 0x38 */
+	PENDSV_VEC,                     /* 0x38 */
 #if defined(CONFIG_SYS_CLOCK_EXISTS) && defined(CONFIG_CORTEX_M_SYSTICK_INSTALL_ISR)
 	sys_clock_isr, /* 0x3C */
 #else
@@ -126,13 +132,16 @@ __weak __ramfunc void clock_init(void)
 	CLOCK_SetClkDiv(kCLOCK_DivSystickClk, 1U);
 	CLOCK_AttachClk(kSYSTICK_DIV_to_SYSTICK_CLK);
 
-	SystemCoreClockUpdate();
-
 	/* Set PLL FRG clock to 20MHz. */
 	CLOCK_SetClkDiv(kCLOCK_DivPllFrgClk, 13U);
 
 	/* Call function set_flexspi_clock() to set flexspi clock source to aux0_pll_clk in XIP. */
 	set_flexspi_clock(FLEXSPI, 2U, 2U);
+
+	/* Deinitialization of the AVPLL. */
+	CLOCK_DeinitAvPll();
+	/* Deinitialize TDDR PLL. */
+	CLOCK_DeinitTddrRefClk();
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(os_timer), nxp_os_timer, okay)
 	CLOCK_AttachClk(kLPOSC_to_OSTIMER_CLK);

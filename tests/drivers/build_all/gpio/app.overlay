@@ -599,9 +599,9 @@
 				ngpios = <8>;
 				crc-en;
 				spi-addr = <0>;
-				ow-on-en = <0 0 0 0>;
-				ow-off-en = <0 0 0 0>;
-				sh-vdd-en = <0 0 0 0>;
+				ow-on-en = <0 0 0 0 0 0 0 0>;
+				ow-off-en = <0 0 0 0 0 0 0 0>;
+				sh-vdd-en = <0 0 0 0 0 0 0 0>;
 				drdy-gpios = <&test_gpio 0 0>;
 				fault-gpios = <&test_gpio 0 0>;
 				sync-gpios = <&test_gpio 0 0>;

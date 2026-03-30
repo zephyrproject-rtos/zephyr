@@ -115,12 +115,12 @@ static struct bt_conn_cb conn_callbacks = {
 	.disconnected = disconnected,
 };
 
-static int test_provider_name(void)
+static int test_provider_name(uint8_t bearer_index)
 {
 	int err;
 
 	printk("%s\n", __func__);
-	err = bt_tbs_set_bearer_provider_name(0, "BabblesimTBS");
+	err = bt_tbs_set_bearer_provider_name(bearer_index, "BabblesimTBS");
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not set bearer provider name: %d\n", err);
 		return err;
@@ -131,12 +131,12 @@ static int test_provider_name(void)
 	return err;
 }
 
-static int test_set_signal_strength(void)
+static int test_set_signal_strength(uint8_t bearer_index)
 {
 	int err;
 
 	printk("%s\n", __func__);
-	err = bt_tbs_set_signal_strength(0, 6);
+	err = bt_tbs_set_signal_strength(bearer_index, 6);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not set bearer provider name: %d\n", err);
 		return err;
@@ -147,12 +147,12 @@ static int test_set_signal_strength(void)
 	return err;
 }
 
-static int test_set_bearer_technology(void)
+static int test_set_bearer_technology(uint8_t bearer_index)
 {
 	int err;
 
 	printk("%s\n", __func__);
-	err = bt_tbs_set_bearer_technology(0, BT_TBS_TECHNOLOGY_GSM);
+	err = bt_tbs_set_bearer_technology(bearer_index, BT_TBS_TECHNOLOGY_GSM);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not set bearer technology: %d\n", err);
 		return err;
@@ -163,12 +163,12 @@ static int test_set_bearer_technology(void)
 	return err;
 }
 
-static int test_set_status_flags(void)
+static int test_set_status_flags(uint8_t bearer_index)
 {
 	int err;
 
 	printk("%s\n", __func__);
-	err = bt_tbs_set_status_flags(0, 3);
+	err = bt_tbs_set_status_flags(bearer_index, 3);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not set status flags: %d\n", err);
 		return err;
@@ -179,13 +179,13 @@ static int test_set_status_flags(void)
 	return err;
 }
 
-static int test_answer_terminate(void)
+static int test_answer_terminate(uint8_t bearer_index)
 {
 	int err;
 
 	printk("%s\n", __func__);
 	printk("Placing call\n");
-	err = bt_tbs_originate(0, "tel:000000000001", &g_call_index);
+	err = bt_tbs_originate(bearer_index, "tel:000000000001", &g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not originate call: %d\n", err);
 		return err;
@@ -210,12 +210,12 @@ static int test_answer_terminate(void)
 	return err;
 }
 
-static int test_hold_retrieve(void)
+static int test_hold_retrieve(uint8_t bearer_index)
 {
 	int err;
 
 	printk("%s\n", __func__);
-	err = bt_tbs_originate(0, "tel:000000000001", &g_call_index);
+	err = bt_tbs_originate(bearer_index, "tel:000000000001", &g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not originate call: %d\n", err);
 		return err;
@@ -253,14 +253,14 @@ static int test_hold_retrieve(void)
 	return err;
 }
 
-static int test_join(void)
+static int test_join(uint8_t bearer_index)
 {
 	int err;
 	uint8_t call_indexes[2];
 
 	printk("%s\n", __func__);
 	printk("Placing first call\n");
-	err = bt_tbs_originate(0, "tel:000000000001", &g_call_index);
+	err = bt_tbs_originate(bearer_index, "tel:000000000001", &g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not originate first call: %d\n", err);
 		return err;
@@ -277,7 +277,7 @@ static int test_join(void)
 	call_indexes[0] = (uint8_t)g_call_index;
 
 	printk("Placing second call\n");
-	err = bt_tbs_originate(0, "tel:000000000002", &g_call_index);
+	err = bt_tbs_originate(bearer_index, "tel:000000000002", &g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not originate second call: %d\n", err);
 		return err;
@@ -317,15 +317,15 @@ static int test_join(void)
 	return err;
 }
 
-static void test_tbs_server_only(void)
+static void test_tbs_server_only(uint8_t bearer_index)
 {
-	test_answer_terminate();
-	test_hold_retrieve();
-	test_join();
-	test_provider_name();
-	test_set_signal_strength();
-	test_set_bearer_technology();
-	test_set_status_flags();
+	test_answer_terminate(bearer_index);
+	test_hold_retrieve(bearer_index);
+	test_join(bearer_index);
+	test_provider_name(bearer_index);
+	test_set_signal_strength(bearer_index);
+	test_set_bearer_technology(bearer_index);
+	test_set_status_flags(bearer_index);
 }
 
 static void init(void)
@@ -333,11 +333,11 @@ static void init(void)
 	const struct bt_tbs_register_param gtbs_param = {
 		.provider_name = "Generic TBS",
 		.uci = "un000",
-		.uri_schemes_supported = "tel,skype",
+		.uri_schemes_supported = "skype",
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_TBS_TECHNOLOGY_3G,
-		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+		.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
 	};
 	int err;
 
@@ -385,7 +385,7 @@ static void init(void)
 			.authorization_required = false,
 			/* Set different technologies per bearer */
 			.technology = (i % BT_TBS_TECHNOLOGY_WCDMA) + 1,
-			.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+			.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
 		};
 
 		snprintf(prov_name, sizeof(prov_name), "Telephone Bearer #%d", i);
@@ -448,7 +448,8 @@ static void tbs_test_server_only(void)
 {
 	init();
 
-	test_tbs_server_only();
+	test_tbs_server_only(0);
+	test_tbs_server_only(BT_TBS_GTBS_INDEX);
 
 	PASS("TBS server tests passed\n");
 }

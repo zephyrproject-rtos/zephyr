@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+# Default configurations applied to the whole Ensemble family
+
+if SOC_FAMILY_ENSEMBLE
+
+# Source series Kconfig files first, so SoCs
+# can override the defaults given here
+rsource "*/Kconfig.defconfig"
+
+config CLOCK_CONTROL
+	default y
+
+config CACHE_MANAGEMENT
+	default y
+
+endif # SOC_FAMILY_ENSEMBLE

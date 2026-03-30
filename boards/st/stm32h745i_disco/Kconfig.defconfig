@@ -10,7 +10,7 @@ configdefault NET_L2_ETHERNET
 	default y
 
 config MEMC
-	default y if DISPLAY
+	default y if STM32_LTDC
 
 
 endif # BOARD_STM32H745I_DISCO

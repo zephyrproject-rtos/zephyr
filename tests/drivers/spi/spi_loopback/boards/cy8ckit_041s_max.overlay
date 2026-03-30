@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+spi: &scb1 {
+	compatible = "infineon,spi";
+	status = "okay";
+
+	pinctrl-0 = <&p2_0_scb1_spi_m_mosi &p2_1_scb1_spi_m_miso &p2_2_scb1_spi_m_clk>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio_prt2 3 GPIO_ACTIVE_LOW>;
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+	};
+};
+
+&gpio_prt2 {
+	status = "okay";
+};

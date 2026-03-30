@@ -17,23 +17,22 @@
 
 LOG_MODULE_REGISTER(retained_mem_zephyr_ram, CONFIG_RETAINED_MEM_LOG_LEVEL);
 
-#ifdef CONFIG_RETAINED_MEM_MUTEXES
-struct zephyr_retained_mem_ram_data {
-	struct k_mutex lock;
-};
-#endif
-
 struct zephyr_retained_mem_ram_config {
 	uint8_t *address;
 	size_t size;
+#ifdef CONFIG_RETAINED_MEM_MUTEXES
+	struct k_mutex *lock;
+#endif
 };
 
 static inline void zephyr_retained_mem_ram_lock_take(const struct device *dev)
 {
 #ifdef CONFIG_RETAINED_MEM_MUTEXES
-	struct zephyr_retained_mem_ram_data *data = dev->data;
+	const struct zephyr_retained_mem_ram_config *config = dev->config;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
+	if (!k_is_pre_kernel()) {
+		k_mutex_lock(config->lock, K_FOREVER);
+	}
 #else
 	ARG_UNUSED(dev);
 #endif
@@ -42,23 +41,14 @@ static inline void zephyr_retained_mem_ram_lock_take(const struct device *dev)
 static inline void zephyr_retained_mem_ram_lock_release(const struct device *dev)
 {
 #ifdef CONFIG_RETAINED_MEM_MUTEXES
-	struct zephyr_retained_mem_ram_data *data = dev->data;
+	const struct zephyr_retained_mem_ram_config *config = dev->config;
 
-	k_mutex_unlock(&data->lock);
+	if (!k_is_pre_kernel()) {
+		k_mutex_unlock(config->lock);
+	}
 #else
 	ARG_UNUSED(dev);
 #endif
-}
-
-static int zephyr_retained_mem_ram_init(const struct device *dev)
-{
-#ifdef CONFIG_RETAINED_MEM_MUTEXES
-	struct zephyr_retained_mem_ram_data *data = dev->data;
-
-	k_mutex_init(&data->lock);
-#endif
-
-	return 0;
 }
 
 static ssize_t zephyr_retained_mem_ram_size(const struct device *dev)
@@ -128,22 +118,20 @@ static DEVICE_API(retained_mem, zephyr_retained_mem_ram_api) = {
 
 #define ZEPHYR_RETAINED_MEM_RAM_DEVICE(inst)							\
 	IF_ENABLED(CONFIG_RETAINED_MEM_MUTEXES,							\
-		   (static struct zephyr_retained_mem_ram_data					\
-		    zephyr_retained_mem_ram_data_##inst;)					\
-	)											\
+		   (static K_MUTEX_DEFINE(zephyr_retained_mem_ram_config_lock##inst);))		\
 	static const struct zephyr_retained_mem_ram_config					\
 			zephyr_retained_mem_ram_config_##inst = {				\
 		.address = (uint8_t *)DT_REG_ADDR(DT_PARENT(DT_INST(inst, DT_DRV_COMPAT))),	\
 		.size = DT_REG_SIZE(DT_PARENT(DT_INST(inst, DT_DRV_COMPAT))),			\
+		IF_ENABLED(CONFIG_RETAINED_MEM_MUTEXES,						\
+			(.lock = &zephyr_retained_mem_ram_config_lock##inst,))			\
 	};											\
 	DEVICE_DT_INST_DEFINE(inst,								\
-			      &zephyr_retained_mem_ram_init,					\
 			      NULL,								\
-			      COND_CODE_1(CONFIG_RETAINED_MEM_MUTEXES,				\
-					  (&zephyr_retained_mem_ram_data_##inst), (NULL)	\
-			      ),								\
+			      NULL,								\
+			      NULL,								\
 			      &zephyr_retained_mem_ram_config_##inst,				\
-			      POST_KERNEL,							\
+			      PRE_KERNEL_1,							\
 			      CONFIG_RETAINED_MEM_INIT_PRIORITY,				\
 			      &zephyr_retained_mem_ram_api);
 

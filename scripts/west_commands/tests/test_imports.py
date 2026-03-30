@@ -38,6 +38,7 @@ def test_runner_imports():
         'mdb-nsim',
         'minichlink',
         'misc-flasher',
+        'mpcli',
         'native',
         'nrfjprog',
         'nrfutil',
@@ -60,6 +61,8 @@ def test_runner_imports():
         'teensy',
         'trace32',
         'uf2',
+        'wchisp',
+        'wlink',
         'xsdb',
         'xtensa',
         # zephyr-keep-sorted-stop

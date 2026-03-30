@@ -3,16 +3,25 @@
 # Copyright (c) 2015 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+config CPU_AARCH32_ARM9
+	bool
+	select CPU_ARM9
+	select HAS_FLASH_LOAD_OFFSET
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  This option signifies the use of a CPU of the ARM9 family.
+
 config CPU_CORTEX_M
 	bool
 	select CPU_CORTEX
-	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN if !USE_SWITCH
 	select HAS_CMSIS_CORE
 	select HAS_FLASH_LOAD_OFFSET
 	select ARCH_HAS_SINGLE_THREAD_SUPPORT
-	select ARCH_HAS_THREAD_ABORT
+	select ARCH_HAS_THREAD_ABORT if  !USE_SWITCH
 	select ARCH_HAS_TRUSTED_EXECUTION if ARM_TRUSTZONE_M
-	select ARCH_HAS_STACK_PROTECTION if (ARM_MPU && !ARMV6_M_ARMV8_M_BASELINE) || CPU_CORTEX_M_HAS_SPLIM
+	select ARCH_HAS_STACK_PROTECTION if ARM_MPU || CPU_CORTEX_M_HAS_SPLIM
 	select ARCH_HAS_USERSPACE if ARM_MPU
 	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT if ARM_MPU && CPU_HAS_ARM_MPU && CPU_HAS_DCACHE
 	select ARCH_HAS_RAMFUNC_SUPPORT
@@ -157,6 +166,22 @@ config STACK_ALIGN_DOUBLE_WORD
 	  Note that for ARMv6-M, ARMv8-M, and Cortex-M7 MCUs stack alignment
 	  on exception entry is enabled by default and it is not configurable.
 
+config SLOW_FLASH_DATA
+	bool
+	depends on !ARMV6_M_ARMV8_M_BASELINE
+	help
+	 On some SoC, accessing the rodata is slower than accessing the instructions (generally
+	 because data cache is missing). Therefore, all accesses to data stored in flash penalize
+	 performance. Use this option to use assembly instructions rather than literal pools (data
+	 interleaved with code).
+
+	 With current GCC versions (14.x), this option is incompatible with Thread Local Storage
+	 (TLS). User may either:
+	   - Use a patched version of gcc (preferred option), or
+	   - Rebuild libc (CONFIG_PICOLIBC_USE_MODULE=y) without TLS support
+	     (CONFIG_THREAD_LOCAL_STORAGE=n). In this case, access to "errno" will no longer be
+	     thread-safe.
+
 config RUNTIME_NMI
 	bool "Attach an NMI handler at runtime"
 	select REBOOT
@@ -214,6 +239,13 @@ config ARM_STACK_PROTECTION
 	  prioritized over the MPU-based stack guard. The developer
 	  still has the option to manually select the MPU-based
 	  stack guard, if this is desired.
+
+config ARCH_HAS_STACKWALK
+	bool
+	default y if EXTRA_EXCEPTION_INFO && CPU_CORTEX_M
+	help
+	  Internal config to indicate that the arch_stack_walk() API is implemented
+	  and it can be enabled.
 
 config ARM_SECURE_FIRMWARE
 	bool
@@ -295,7 +327,7 @@ config FP_SOFTABI
 endchoice
 
 config FP16
-	bool "Half-precision floating point support"
+	bool "Half-precision floating point storage support"
 	default y
 	help
 	  This option enables the half-precision (16-bit) floating point support
@@ -327,6 +359,18 @@ config FP16_ALT
 
 endchoice
 
+config FP16_ARITHMETIC
+	bool "Half-precision floating point arithmetic support"
+	default y
+	depends on FP16
+	depends on ARMV8_1_M_MVEF || CPU_CORTEX_A
+	help
+	  This option indicates that the target supports half-precision
+	  (16-bit) floating-point arithmetic. This requires hardware with
+	  native f16 arithmetic capability, such as Cortex-M processors
+	  with MVE float or Cortex-A processors with NEON.
+
+rsource "arm9/Kconfig"
 rsource "cortex_m/Kconfig"
 rsource "cortex_a_r/Kconfig"
 

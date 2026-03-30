@@ -339,6 +339,13 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 		k_yield();
 	}
 
+	/* Ensure compensated count fits in 16-bit WDT match register */
+	if (dev_data->ilo_compensated_counts > UINT16_MAX) {
+		LOG_WRN("ILO compensated count %u exceeds 16-bit match register, clamping to %u",
+			dev_data->ilo_compensated_counts, UINT16_MAX);
+		dev_data->ilo_compensated_counts = UINT16_MAX;
+	}
+
 	Cy_WDT_SetIgnoreBits(dev_data->wdt_ignore_bits);
 	Cy_WDT_SetMatch(dev_data->ilo_compensated_counts);
 #elif defined(CY_IP_MXS40SRSS) && (CY_IP_MXS40SRSS_VERSION >= 2)

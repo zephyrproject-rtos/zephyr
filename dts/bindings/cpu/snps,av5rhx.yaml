@@ -5,4 +5,4 @@ description: Synopsys ARC-V RHX RISC-V CPU
 
 compatible: "snps,av5rhx"
 
-include: riscv,cpus.yaml
+include: riscv-common.yaml

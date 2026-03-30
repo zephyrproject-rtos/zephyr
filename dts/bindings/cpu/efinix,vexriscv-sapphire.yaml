@@ -6,4 +6,4 @@ description: VexRiscv core with the configuration as used in the Efinix Sapphire
 
 compatible: "efinix,vexriscv-sapphire"
 
-include: riscv,cpus.yaml
+include: riscv-common.yaml

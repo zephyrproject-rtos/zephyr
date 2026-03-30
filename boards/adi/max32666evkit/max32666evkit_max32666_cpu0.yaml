@@ -10,6 +10,7 @@ supported:
   - dma
   - i2c
   - gpio
+  - display
   - serial
   - trng
   - watchdog

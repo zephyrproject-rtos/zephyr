@@ -6,6 +6,7 @@
 
 #include <stm32_common.h>
 #include <stm32_ll_pwr.h>
+#include <stm32_ll_system.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/poweroff.h>
@@ -16,6 +17,7 @@ void z_sys_poweroff(void)
 	LL_PWR_ClearFlag_WU();
 
 	LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
+	LL_DBGMCU_DisableDBGStandbyMode();
 
 	stm32_enter_poweroff();
 }

@@ -52,6 +52,7 @@
 };
 
 &radio {
+	pa-max-power-dbm = <10>;
 	pa-voltage-mv = <1800>;
 };
 

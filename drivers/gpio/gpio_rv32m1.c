@@ -308,9 +308,7 @@ static DEVICE_API(gpio, gpio_rv32m1_driver_api) = {
 	static int gpio_rv32m1_##n##_init(const struct device *dev);	\
 									\
 	static const struct gpio_rv32m1_config gpio_rv32m1_##n##_config = {\
-		.common = {						\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),\
-		},							\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),			\
 		.gpio_base = (GPIO_Type *) DT_INST_REG_ADDR(n),		\
 		.port_base = (PORT_Type *) INST_DT_PORT_ADDR(n),	\
 		.flags = GPIO_INT_ENABLE,				\

@@ -171,7 +171,7 @@ static int ft5336_init(const struct device *dev)
 	int r;
 
 	if (!device_is_ready(config->bus.bus)) {
-		LOG_ERR("I2C controller device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->bus.bus);
 		return -ENODEV;
 	}
 
@@ -201,7 +201,7 @@ static int ft5336_init(const struct device *dev)
 
 #ifdef CONFIG_INPUT_FT5336_INTERRUPT
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("Interrupt GPIO controller device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 		return -ENODEV;
 	}
 

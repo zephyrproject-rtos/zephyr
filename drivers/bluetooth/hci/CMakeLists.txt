@@ -29,10 +29,16 @@ if(CONFIG_DT_HAS_RENESAS_BT_HCI_DA1469X_ENABLED)
   zephyr_blobs_verify(MODULE hal_renesas REQUIRED)
 endif()
 
+if(CONFIG_BT_BFLB_BL70X)
+  zephyr_blobs_verify(MODULE hal_bouffalolab REQUIRED)
+endif()
+
 endif() # CONFIG_BUILD_ONLY_NO_BLOBS
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_BT_AMBIQ_HCI hci_ambiq.c apollox_blue.c)
+zephyr_library_sources_ifdef(CONFIG_BT_BEE hci_bee.c)
+zephyr_library_sources_ifdef(CONFIG_BT_BFLB_BL70X hci_bflb_bl70x.c)
 zephyr_library_sources_ifdef(CONFIG_BT_CYW208XX hci_infineon_cyw208xx.c)
 zephyr_library_sources_ifdef(CONFIG_BT_DA1453X hci_da1453x.c)
 zephyr_library_sources_ifdef(CONFIG_BT_DA1469X hci_da1469x.c)

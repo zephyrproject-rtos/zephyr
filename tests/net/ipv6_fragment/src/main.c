@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net_buf.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_log.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
@@ -2217,11 +2218,11 @@ static uint8_t ipv6_reass_frag2[] = {
 
 static uint16_t test_recv_payload_len = 1300U;
 
-static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
-				  struct net_pkt *pkt,
-				  struct net_icmp_ip_hdr *ip_hdr,
-				  struct net_icmp_hdr *icmp_hdr,
-				  void *user_data)
+static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
+					       struct net_pkt *pkt,
+					       struct net_icmp_ip_hdr *ip_hdr,
+					       struct net_icmp_hdr *icmp_hdr,
+					       void *user_data)
 {
 	const struct net_ipv6_hdr *hdr = NET_IPV6_HDR(pkt);
 	uint8_t verify_buf[NET_IPV6H_LEN];

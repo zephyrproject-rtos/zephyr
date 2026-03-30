@@ -65,9 +65,9 @@ int set_socketoptions(struct lwm2m_ctx *ctx)
 		int ret;
 
 		/* Enable CID */
-		int cid = TLS_DTLS_CID_ENABLED;
+		int cid = ZSOCK_TLS_DTLS_CID_ENABLED;
 
-		ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_DTLS_CID, &cid,
+		ret = zsock_setsockopt(ctx->sock_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_DTLS_CID, &cid,
 				       sizeof(cid));
 		if (ret) {
 			ret = -errno;
@@ -80,10 +80,10 @@ int set_socketoptions(struct lwm2m_ctx *ctx)
 		uint32_t min = 100;
 		uint32_t max = 500;
 
-		zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_DTLS_HANDSHAKE_TIMEOUT_MIN, &min,
-				 sizeof(min));
-		zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_DTLS_HANDSHAKE_TIMEOUT_MAX, &max,
-				 sizeof(max));
+		zsock_setsockopt(ctx->sock_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_DTLS_HANDSHAKE_TIMEOUT_MIN,
+				 &min, sizeof(min));
+		zsock_setsockopt(ctx->sock_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_DTLS_HANDSHAKE_TIMEOUT_MAX,
+				 &max, sizeof(max));
 	}
 	return lwm2m_set_default_sockopt(ctx);
 }

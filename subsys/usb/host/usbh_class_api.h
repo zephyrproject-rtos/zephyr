@@ -23,16 +23,14 @@
  * It can be used to initialize underlying systems.
  *
  * @param[in] c_data Pointer to USB host class data
- * @param[in] uhs_ctx USB host context to assign to this class
  * @return 0 on success, negative error code on failure.
  */
-static inline int usbh_class_init(struct usbh_class_data *const c_data,
-				  struct usbh_context *const uhs_ctx)
+static inline int usbh_class_init(struct usbh_class_data *const c_data)
 {
 	const struct usbh_class_api *api = c_data->api;
 
 	if (api->init != NULL) {
-		return api->init(c_data, uhs_ctx);
+		return api->init(c_data);
 	}
 
 	return -ENOTSUP;

@@ -8,6 +8,7 @@
 LOG_MODULE_REGISTER(net_eth_bridge_input, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 
 #include <zephyr/net/ethernet_bridge.h>
+#include <zephyr/net/net_log.h>
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
 #include <zephyr/net/ethernet_bridge_fdb.h>

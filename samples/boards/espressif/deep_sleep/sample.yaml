@@ -6,7 +6,8 @@ tests:
     build_only: true
     platform_allow:
       - esp32_devkitc/esp32/procpu
-      - esp32c3_devkitm
+      - esp32c3_devkitc
+      - esp32c5_devkitc/esp32c5/hpcore
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
@@ -14,13 +15,12 @@ tests:
       - esp8684_devkitm
   sample.esp32.deep_sleep.dut:
     extra_args:
-      - CONFIG_EXAMPLE_EXT1_WAKEUP=n
-      - CONFIG_EXAMPLE_GPIO_WAKEUP=n
       - CONFIG_EXAMPLE_WAKEUP_TIME_SEC=1
       - CONFIG_ESP32_USE_UNSUPPORTED_REVISION=y
     platform_allow:
       - esp32_devkitc/esp32/procpu
-      - esp32c3_devkitm
+      - esp32c3_devkitc
+      - esp32c5_devkitc/esp32c5/hpcore
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu

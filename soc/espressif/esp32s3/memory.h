@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
+
 /* SRAM0 (32k), SRAM1 (416k), SRAM2 (64k) memories
  * Ibus and Dbus address space
  */
@@ -43,47 +45,46 @@
  * Used to convert between 0x403xxxxx and 0x3fcxxxxx addresses.
  */
 #define IRAM_DRAM_OFFSET         0x6f0000
-#define DRAM_BUFFERS_START       0x3fcd7e00
-#define DRAM_BUFFERS_END         0x3fce9704
+#define DRAM_SHARED_BUFFERS_START       0x3fcd7e00
+#define DRAM_SHARED_BUFFERS_END         0x3fce9704
 #define DRAM_PROCPU_STACK_START  0x3fce9710
 #define DRAM_STACK_START DRAM_PROCPU_STACK_START
 #define DRAM_APPCPU_STACK_START  0x3fceb710
 #define DRAM_ROM_BSS_DATA_START  0x3fcf0000
 
-/* Set the limit for the application runtime dynamic allocations */
-#define DRAM_RESERVED_START      DRAM_BUFFERS_END
+/* Upper boundary of user-usable SRAM */
+#define DRAM_USER_END      DRAM_SHARED_BUFFERS_END
 
-/* For safety margin between bootloader data section and startup stacks */
-#define BOOTLOADER_STACK_OVERHEAD      0x0
-#define BOOTLOADER_DRAM_SEG_LEN        0x15000
+/* Safety margin between MCUboot segments and ROM stack */
+#define BOOTLOADER_STACK_OVERHEAD      0x2000
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x1a00
-#define BOOTLOADER_IRAM_SEG_LEN        0xc000
 
-/* Base address used for calculating memory layout
- * counted from Dbus backwards and back to the Ibus
- */
-#define BOOTLOADER_USER_DRAM_END (DRAM_BUFFERS_START - BOOTLOADER_STACK_OVERHEAD)
+/* Upper limit of SRAM available for MCUboot bootloader segments */
+#define BOOTLOADER_USER_DRAM_END \
+	((DRAM_SHARED_BUFFERS_END - BOOTLOADER_STACK_OVERHEAD) & ~0xFF)
 
-/* Start of the lower region is determined by region size and the end of the higher region */
 #define BOOTLOADER_IRAM_LOADER_SEG_START                                                           \
 	(BOOTLOADER_USER_DRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN + IRAM_DRAM_OFFSET)
-#define BOOTLOADER_IRAM_SEG_START (BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_LEN)
-#define BOOTLOADER_DRAM_SEG_END   (BOOTLOADER_IRAM_SEG_START - IRAM_DRAM_OFFSET)
-#define BOOTLOADER_DRAM_SEG_START (BOOTLOADER_DRAM_SEG_END - BOOTLOADER_DRAM_SEG_LEN)
 
-/* The "USER_IRAM_END" represents the end of staticaly allocated memory.
- * This address is where 2nd stage bootloader starts allocating memory,
- * and it should not be overlapped by the user image.
- * When there is no 2nd stage bootloader the bootstrapping is done
- * by the so-called SIMPLE_BOOT.
- * NOTE: AMP is supported only if MCUboot is enabled.
+/* MCUboot iram/dram segments: stacked in upper SRAM, below iram_loader_seg.
+ * On Xtensa split-bus SoCs, iram_seg and dram_seg MUST occupy separate physical
+ * SRAM regions (IRAM and DRAM buses map to the same physical memory).
+ * Layout (in physical/DRAM space, top-down):
+ *   iram_loader_seg  (IRAM bus)
+ *   iram_seg         (IRAM bus, 1024-byte aligned start for Xtensa VECBASE)
+ *   dram_seg         (DRAM bus)
  */
-#ifdef CONFIG_ESP_SIMPLE_BOOT
-#define USER_DRAM_END BOOTLOADER_USER_DRAM_END
-#else
-#define USER_DRAM_END (BOOTLOADER_IRAM_LOADER_SEG_START - IRAM_DRAM_OFFSET)
-#endif
-#define USER_IRAM_END (USER_DRAM_END + IRAM_DRAM_OFFSET)
+#define BOOTLOADER_IRAM_SEG_TARGET_LEN \
+	((BOOTLOADER_IRAM_LOADER_SEG_START - IRAM_DRAM_OFFSET - SRAM1_DRAM_START) / 4)
+#define BOOTLOADER_IRAM_SEG_START \
+	ALIGN_UP(BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_TARGET_LEN, 0x400)
+#define BOOTLOADER_IRAM_SEG_LEN \
+	(BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_START)
+#define BOOTLOADER_DRAM_SEG_LEN   BOOTLOADER_IRAM_SEG_LEN
+#define BOOTLOADER_DRAM_SEG_START \
+	(BOOTLOADER_IRAM_SEG_START - IRAM_DRAM_OFFSET - BOOTLOADER_DRAM_SEG_LEN)
+
+/* Upper boundary for user DRAM allocation */
 
 /* AMP */
 #if defined(CONFIG_SOC_ESP32S3_APPCPU)
@@ -92,8 +93,8 @@
 #define APPCPU_DRAM_SIZE CONFIG_ESP_APPCPU_DRAM_SIZE
 #define AMP_COMM_SIZE DT_REG_SIZE(DT_NODELABEL(ipmmem0)) + DT_REG_SIZE(DT_NODELABEL(shm0)) +       \
 		      DT_REG_SIZE(DT_NODELABEL(ipm0)) + DT_REG_SIZE(DT_NODELABEL(mbox0))
-#undef DRAM_RESERVED_START
-#define DRAM_RESERVED_START 0x3fce5000
+#undef DRAM_USER_END
+#define DRAM_USER_END DT_REG_ADDR(DT_NODELABEL(ipmmem0))
 #define APPCPU_IROM_SIZE CONFIG_ESP_APPCPU_IROM_SIZE
 #define APPCPU_DROM_SIZE CONFIG_ESP_APPCPU_DROM_SIZE
 #else
@@ -113,6 +114,18 @@
 
 #define APPCPU_SRAM_SIZE (APPCPU_IRAM_SIZE + APPCPU_DRAM_SIZE)
 #define APPCPU_ROM_SIZE (APPCPU_IROM_SIZE + APPCPU_DROM_SIZE)
+
+/* Upper boundary for user DRAM allocation.
+ * For AMP builds, capped at IPC shared memory start.
+ */
+#ifdef CONFIG_ESP_SIMPLE_BOOT
+#define USER_DRAM_END DRAM_SHARED_BUFFERS_END
+#elif defined(CONFIG_SOC_ENABLE_APPCPU)
+#define USER_DRAM_END DRAM_USER_END
+#else
+#define USER_DRAM_END (BOOTLOADER_IRAM_LOADER_SEG_START - IRAM_DRAM_OFFSET)
+#endif
+#define USER_IRAM_END (USER_DRAM_END + IRAM_DRAM_OFFSET)
 
 /* Cached memory */
 #define ICACHE0_START DT_REG_ADDR(DT_NODELABEL(icache0))

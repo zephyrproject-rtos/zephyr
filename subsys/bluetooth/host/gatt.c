@@ -34,7 +34,6 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
@@ -104,96 +103,6 @@ enum gatt_global_flags {
 
 static ATOMIC_DEFINE(gatt_flags, GATT_NUM_FLAGS);
 
-static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 void *buf, uint16_t len, uint16_t offset)
-{
-	const char *name = bt_get_name();
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, name,
-				 strlen(name));
-}
-
-#if defined(CONFIG_BT_DEVICE_NAME_GATT_WRITABLE)
-
-static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,
-			  uint16_t len, uint16_t offset, uint8_t flags)
-{
-	/* adding one to fit the terminating null character */
-	char value[CONFIG_BT_DEVICE_NAME_MAX + 1] = {};
-
-	if (offset > 0) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	}
-
-	if (offset + len > CONFIG_BT_DEVICE_NAME_MAX) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	}
-
-	memcpy(value, buf, len);
-
-	value[len] = '\0';
-
-	bt_set_name(value);
-
-	return len;
-}
-
-#endif /* CONFIG_BT_DEVICE_NAME_GATT_WRITABLE */
-
-static ssize_t read_appearance(struct bt_conn *conn,
-			       const struct bt_gatt_attr *attr, void *buf,
-			       uint16_t len, uint16_t offset)
-{
-	uint16_t appearance = sys_cpu_to_le16(bt_get_appearance());
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &appearance,
-				 sizeof(appearance));
-}
-
-#if defined(CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE)
-static ssize_t write_appearance(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 const void *buf, uint16_t len, uint16_t offset,
-			 uint8_t flags)
-{
-	uint16_t appearance;
-	int err;
-
-	if (offset > 0) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	}
-
-	if (len != sizeof(appearance)) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	}
-
-	appearance = sys_get_le16(buf);
-
-	err = bt_set_appearance(appearance);
-
-	if (err) {
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
-	}
-
-	return len;
-}
-#endif /* CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE */
-
-#if defined(CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE)
-	#define GAP_APPEARANCE_PROPS (BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE)
-#if defined(CONFIG_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN)
-	#define GAP_APPEARANCE_PERMS (BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_AUTHEN)
-#elif defined(CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE_ENCRYPT)
-	#define GAP_APPEARANCE_PERMS (BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT)
-#else
-	#define GAP_APPEARANCE_PERMS (BT_GATT_PERM_READ | BT_GATT_PERM_WRITE)
-#endif
-	#define GAP_APPEARANCE_WRITE_HANDLER write_appearance
-#else
-	#define GAP_APPEARANCE_PROPS BT_GATT_CHRC_READ
-	#define GAP_APPEARANCE_PERMS BT_GATT_PERM_READ
-	#define GAP_APPEARANCE_WRITE_HANDLER NULL
-#endif
-
 #if defined (CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
 /* This checks if the range entered is valid */
 BUILD_ASSERT(!(CONFIG_BT_PERIPHERAL_PREF_MIN_INT > 3200 &&
@@ -208,72 +117,7 @@ BUILD_ASSERT((CONFIG_BT_PERIPHERAL_PREF_MIN_INT == 0xffff) ||
 BUILD_ASSERT((CONFIG_BT_PERIPHERAL_PREF_TIMEOUT * 4U) >
 	     ((1U + CONFIG_BT_PERIPHERAL_PREF_LATENCY) *
 	      CONFIG_BT_PERIPHERAL_PREF_MAX_INT));
-
-static ssize_t read_ppcp(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 void *buf, uint16_t len, uint16_t offset)
-{
-	struct __packed {
-		uint16_t min_int;
-		uint16_t max_int;
-		uint16_t latency;
-		uint16_t timeout;
-	} ppcp;
-
-	ppcp.min_int = sys_cpu_to_le16(CONFIG_BT_PERIPHERAL_PREF_MIN_INT);
-	ppcp.max_int = sys_cpu_to_le16(CONFIG_BT_PERIPHERAL_PREF_MAX_INT);
-	ppcp.latency = sys_cpu_to_le16(CONFIG_BT_PERIPHERAL_PREF_LATENCY);
-	ppcp.timeout = sys_cpu_to_le16(CONFIG_BT_PERIPHERAL_PREF_TIMEOUT);
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &ppcp,
-				 sizeof(ppcp));
-}
 #endif
-
-#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PRIVACY)
-static ssize_t read_central_addr_res(struct bt_conn *conn,
-				     const struct bt_gatt_attr *attr, void *buf,
-				     uint16_t len, uint16_t offset)
-{
-	uint8_t central_addr_res = BT_GATT_CENTRAL_ADDR_RES_SUPP;
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 &central_addr_res, sizeof(central_addr_res));
-}
-#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_PRIVACY */
-
-BT_GATT_SERVICE_DEFINE(_2_gap_svc,
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
-#if defined(CONFIG_BT_DEVICE_NAME_GATT_WRITABLE)
-	/* Require pairing for writes to device name */
-	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
-			       BT_GATT_PERM_READ |
-#if defined(CONFIG_DEVICE_NAME_GATT_WRITABLE_AUTHEN)
-			       BT_GATT_PERM_WRITE_AUTHEN,
-#elif defined(CONFIG_DEVICE_NAME_GATT_WRITABLE_ENCRYPT)
-			       BT_GATT_PERM_WRITE_ENCRYPT,
-#else
-			       BT_GATT_PERM_WRITE,
-#endif
-			       read_name, write_name, bt_dev.name),
-#else
-	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ,
-			       BT_GATT_PERM_READ, read_name, NULL, NULL),
-#endif /* CONFIG_BT_DEVICE_NAME_GATT_WRITABLE */
-	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, GAP_APPEARANCE_PROPS,
-			       GAP_APPEARANCE_PERMS, read_appearance,
-			       GAP_APPEARANCE_WRITE_HANDLER, NULL),
-#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PRIVACY)
-	BT_GATT_CHARACTERISTIC(BT_UUID_CENTRAL_ADDR_RES,
-			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
-			       read_central_addr_res, NULL, NULL),
-#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_PRIVACY */
-#if defined(CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
-	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_PPCP, BT_GATT_CHRC_READ,
-			       BT_GATT_PERM_READ, read_ppcp, NULL, NULL),
-#endif
-);
-
 struct sc_data {
 	uint16_t start;
 	uint16_t end;
@@ -1943,7 +1787,7 @@ ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
 				   void *buf, uint16_t len, uint16_t offset)
 {
 	if ((attr == NULL) || (attr->user_data == NULL)) {
-		return -EINVAL;
+		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
 	struct bt_gatt_attr *incl = attr->user_data;
@@ -2983,14 +2827,14 @@ static int gatt_notify_multiple_verify_args(struct bt_conn *conn,
 	__ASSERT(params, "invalid parameters\n");
 	__ASSERT(params->attr, "invalid parameters\n");
 
-	CHECKIF(num_params < 2) {
+	if (num_params < 2) {
 		/* Use the standard notification API when sending only one
 		 * notification.
 		 */
 		return -EINVAL;
 	}
 
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		/* Use the standard notification API to send to all connected
 		 * peers.
 		 */
@@ -3510,7 +3354,7 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 			LOG_ERR("Read method not set");
 			return false;
 		}
-		/* The characterstic properties is the first byte of the attribute value */
+		/* The characteristic properties is the first byte of the attribute value */
 		len = attr->read(NULL, attr, &properties, sizeof(properties), 0);
 		if (len < 0) {
 			LOG_ERR("Failed to read attribute %p (err %zd)", attr, len);
@@ -6166,7 +6010,7 @@ static uint8_t ccc_save(const struct bt_gatt_attr *attr, uint16_t handle,
 
 	LOG_DBG("Storing CCCs handle 0x%04x value 0x%04x", handle, cfg->value);
 
-	CHECKIF(save->count >= CCC_STORE_MAX) {
+	if (save->count >= CCC_STORE_MAX) {
 		LOG_ERR("Too many Client Characteristic Configuration. "
 				"See CONFIG_BT_SETTINGS_CCC_STORE_MAX\n");
 		return BT_GATT_ITER_STOP;

@@ -6,9 +6,17 @@
 if SOC_MAX32657
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768 if MAX32_WUT_TIMER
 	default $(dt_node_int_prop_int,/clocks/clk_ipo,clock-frequency)
 
 config NUM_IRQS
 	default 54
+
+# if PM_S2RAM selected, HAS_PM_S2RAM_CUSTOM_MARKING must be selected
+config PM_S2RAM
+	select HAS_PM_S2RAM_CUSTOM_MARKING
+
+config SYSTEM_TIMER_RESET_BY_LPM
+	default y if PM_S2RAM && !SYSTEM_TIMER_LPM_COMPANION_NONE
 
 endif # SOC_MAX32657

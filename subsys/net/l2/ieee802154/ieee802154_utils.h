@@ -15,6 +15,7 @@
 #define __IEEE802154_UTILS_H__
 
 #include <zephyr/net/ieee802154_radio.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/sys/util_macro.h>
 
 /**

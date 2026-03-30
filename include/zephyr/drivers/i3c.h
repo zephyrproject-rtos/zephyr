@@ -1272,6 +1272,32 @@ struct i3c_driver_data {
 		&((struct i3c_driver_data *)(bus->data))->attached_dev.devices.i2c, desc, node)
 
 /**
+ * @brief safely iterate over all I3C devices present on the bus
+ *
+ * @param bus: the I3C bus device pointer
+ * @param desc: an I3C device descriptor pointer updated to point to the current slot
+ *	 at each iteration of the loop
+ * @param desc_s: an I3C device descriptor pointer used as a safe temp variable
+ */
+#define I3C_BUS_FOR_EACH_I3CDEV_SAFE(bus, desc, desc_s)                                            \
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(                                                         \
+		&((struct i3c_driver_data *)(bus->data))->attached_dev.devices.i3c, desc, desc_s,  \
+		node)
+
+/**
+ * @brief safely iterate over all I2C devices present on the bus
+ *
+ * @param bus: the I3C bus device pointer
+ * @param desc: an I2C device descriptor pointer updated to point to the current slot
+ *	 at each iteration of the loop
+ * @param desc_s: an I2C device descriptor pointer used as a safe temp variable
+ */
+#define I3C_BUS_FOR_EACH_I2CDEV_SAFE(bus, desc, desc_s)                                            \
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(                                                         \
+		&((struct i3c_driver_data *)(bus->data))->attached_dev.devices.i2c, desc, desc_s,  \
+		node)
+
+/**
  * @brief Find a I3C target device descriptor by ID.
  *
  * This finds the I3C target device descriptor in the device list

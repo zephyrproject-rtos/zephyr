@@ -25,7 +25,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			cpu-power-states = <&idle &standby &powerdown>;
+			cpu-power-states = <&idle &standby &backup &powerdown>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
@@ -48,6 +48,14 @@
 				power-state-name = "standby";
 				min-residency-us = <1000>;
 				exit-latency-us = <20>;
+			};
+
+			/* Backup Mode */
+			backup: backup {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				min-residency-us = <5000>;
+				exit-latency-us = <4000>;
 			};
 
 			/* Powerdown Mode */
@@ -104,27 +112,27 @@
 	#size-cells = <1>;
 
 	sram0: memory@0 {
-		compatible = "mmio-sram";
+		compatible = "adi,max32-backup-sram", "mmio-sram";
 		reg = <0x0 DT_SIZE_K(32)>;
 	};
 
 	sram1: memory@8000 {
-		compatible = "mmio-sram";
+		compatible = "adi,max32-backup-sram", "mmio-sram";
 		reg = <0x8000 DT_SIZE_K(32)>;
 	};
 
 	sram2: memory@10000 {
-		compatible = "mmio-sram";
+		compatible = "adi,max32-backup-sram", "mmio-sram";
 		reg = <0x10000 DT_SIZE_K(64)>;
 	};
 
 	sram3: memory@20000 {
-		compatible = "mmio-sram";
+		compatible = "adi,max32-backup-sram", "mmio-sram";
 		reg = <0x20000 DT_SIZE_K(64)>;
 	};
 
 	sram4: memory@30000 {
-		compatible = "mmio-sram";
+		compatible = "adi,max32-backup-sram", "mmio-sram";
 		reg = <0x30000 DT_SIZE_K(64)>;
 	};
 };
@@ -176,6 +184,7 @@
 		clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 		interrupts = <11 0>;
 		status = "disabled";
+		zephyr,pm-device-runtime-auto;
 	};
 
 	trng: trng@4d000 {
@@ -330,6 +339,12 @@
 		counter {
 			compatible = "adi,max32-wut";
 			status = "disabled";
+			zephyr,pm-device-runtime-auto;
+		};
+
+		timer {
+			compatible = "adi,max32-wut-timer";
+			status = "disabled";
 		};
 	};
 
@@ -342,6 +357,12 @@
 
 		counter {
 			compatible = "adi,max32-wut";
+			status = "disabled";
+			zephyr,pm-device-runtime-auto;
+		};
+
+		timer {
+			compatible = "adi,max32-wut-timer";
 			status = "disabled";
 		};
 	};

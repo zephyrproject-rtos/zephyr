@@ -1,6 +1,7 @@
 # SDL based emulated display configuration options
 
 # Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# Copyright (c) 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SDL_DISPLAY
@@ -22,6 +23,9 @@ choice SDL_DISPLAY_DEFAULT_PIXEL_FORMAT
 	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ARGB_8888
 		bool "ARGB 8888"
 
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_XRGB_8888
+		bool "XRGB 8888"
+
 	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_888
 		bool "RGB 888"
 
@@ -42,6 +46,18 @@ choice SDL_DISPLAY_DEFAULT_PIXEL_FORMAT
 
 	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88
 		bool "Grayscale 8bit with Alpha"
+
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_888
+		bool "BGR 888"
+
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ABGR_8888
+		bool "ABGR 8888"
+
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGBA_8888
+		bool "RGBA 8888"
+
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGRA_8888
+		bool "BGRA 8888"
 
 endchoice
 

@@ -21,6 +21,7 @@ config HWSPINLOCK_INIT_PRIORITY
 	  HW spinlock driver device initialization priority.
 
 # zephyr-keep-sorted-start
+source "drivers/hwspinlock/Kconfig.nxp_sema42"
 source "drivers/hwspinlock/Kconfig.sqn"
 source "drivers/hwspinlock/Kconfig.test"
 # zephyr-keep-sorted-stop

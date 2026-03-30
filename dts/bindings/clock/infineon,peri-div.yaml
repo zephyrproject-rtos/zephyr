@@ -50,29 +50,3 @@ properties:
       The fraction part of the divider. The fractional divider can be 0-31, thus
       it divides the clock by 1/32 for each count. To divide the clock by 11/32nds
       set this value to 11.
-
-  resource-type:
-    type: int
-    required: true
-    description: |
-      Resource type that the peripheral clock is assigned to:
-      &scb3     : resource-type = IFX_RSC_SCB
-      &tcpwm0_0 : resource-type = IFX_RSC_TCPWM
-
-  resource-instance:
-    type: int
-    required: true
-    description: |
-      Resource instance that the peripheral clock is assigned to:
-      &scb0 : resource-instance = <0>
-      &scb3 : resource-instance = <3>
-      &scb5 : resource-instance = <5>
-      &tcpwm0_3: resource-instance = <0>
-
-  resource-channel:
-    type: int
-    description: |
-      Resource instance's channel that the peripheral clock is assigned to:
-      &tcpwm0_0 : resource-channel = <0>
-      &tcpwm0_4 : resource-channel = <4>
-      &tcpwm1_2 : resource-channel = <2>

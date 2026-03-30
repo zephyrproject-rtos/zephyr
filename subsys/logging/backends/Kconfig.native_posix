@@ -11,6 +11,14 @@ config LOG_BACKEND_NATIVE_POSIX
 
 if LOG_BACKEND_NATIVE_POSIX
 
+config LOG_BACKEND_NATIVE_POSIX_STDOUT_BUF_SIZE
+	int "Standard output buffer size"
+	default 256
+	help
+	  Size of the buffer used to buffer log messages before flushing
+	  to the host terminal. Messages are flushed on newline or when the
+	  buffer is full.
+
 backend = NATIVE_POSIX
 backend-str = native_posix
 source "subsys/logging/Kconfig.template.log_format_config"

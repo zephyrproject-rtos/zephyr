@@ -327,7 +327,7 @@ class CheckPatch(ComplianceTest):
             except subprocess.CalledProcessError as ex:
                 output = ex.output.decode("utf-8")
                 regex = (
-                    r'^\s*\S+:(\d+):\s*(ERROR|WARNING):(.+?):(.+)(?:\n|\r\n?)+'
+                    r'^\s*\S+:(\d+):\s*(ERROR|WARNING):(.+?):(.+)[\r\n]+'
                     r'^\s*#(\d+):\s*FILE:\s*(.+):(\d+):'
                 )
 
@@ -448,7 +448,7 @@ class ClangFormatCheck(ComplianceTest):
 
 class DevicetreeBindingsCheck(ComplianceTest):
     """
-    Checks if we are introducing any unwanted properties in Devicetree Bindings.
+    Checks for devicetree bindings.
     """
 
     name = "DevicetreeBindings"
@@ -466,15 +466,18 @@ class DevicetreeBindingsCheck(ComplianceTest):
         if nodiff:
             self.skip('no changes to bindings were made')
 
-        for binding in bindings:
-            self.check(binding, self.check_yaml_property_name)
-            self.check(binding, self.required_false_check)
+        def check(binding, callback, children=True):
+            if children:
+                while binding is not None:
+                    callback(binding)
+                    binding = binding.child_binding
+            else:
+                callback(binding)
 
-    @staticmethod
-    def check(binding, callback):
-        while binding is not None:
-            callback(binding)
-            binding = binding.child_binding
+        for binding in bindings:
+            check(binding, self.check_yaml_property_name)
+            check(binding, self.required_false_check)
+            check(binding, self.compatible_and_file_name_match_check, children=False)
 
     def get_yaml_bindings(self):
         """
@@ -525,6 +528,26 @@ class DevicetreeBindingsCheck(ComplianceTest):
                 self.failure(
                     f'{binding.path}: property "{prop_name}": '
                     "'required: false' is redundant, please remove"
+                )
+
+    def compatible_and_file_name_match_check(self, binding):
+        allowed = [f"{binding.compatible}.yaml"]
+        if binding.on_bus is not None:
+            allowed.append(f"{binding.compatible}-{binding.on_bus}.yaml")
+
+        actual_filename = Path(binding.path).name
+
+        if actual_filename not in allowed:
+            if len(allowed) > 1:
+                allowed_names = ", ".join(f"'{filename}'" for filename in allowed)
+                self.failure(
+                    f"{binding.path}: bad file name for compatible '{binding.compatible}'.\n"
+                    f"\tThe allowed file names for this binding are: {allowed_names}"
+                )
+            else:
+                self.failure(
+                    f"{binding.path}: bad file name for compatible '{binding.compatible}'; "
+                    f"this should be named '{allowed[0]}' instead"
                 )
 
 
@@ -1419,6 +1442,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             regex,
             "--",
             ":!/doc/releases",
+            ":!/doc/develop/manifest/external",
             ":!/doc/security/vulnerabilities.rst",
             cwd=GIT_TOP,
         )
@@ -2160,9 +2184,9 @@ class BinaryFiles(ComplianceTest):
     doc = "No binary files allowed."
 
     def run(self):
-        BINARY_ALLOW_PATHS = ("doc/", "boards/", "samples/")
+        BINARY_ALLOW_PATHS = ("doc/", "boards/", "samples/", "scripts/dashboard/static/font/")
         # svg files are always detected as binary, see .gitattributes
-        BINARY_ALLOW_EXT = (".jpg", ".jpeg", ".png", ".svg", ".webp")
+        BINARY_ALLOW_EXT = (".jpg", ".jpeg", ".png", ".svg", ".webp", ".woff2")
 
         for stat in git("diff", "--numstat", "--diff-filter=A", COMMIT_RANGE).splitlines():
             added, deleted, fname = stat.split("\t")
@@ -2546,7 +2570,7 @@ class PythonCompatCheck(ComplianceTest):
     name = "PythonCompat"
     doc = "Check that Python files are compatible with Zephyr minimum supported Python version."
 
-    MAX_VERSION = (3, 10)
+    MAX_VERSION = (3, 12)
     MAX_VERSION_STR = f"{MAX_VERSION[0]}.{MAX_VERSION[1]}"
 
     def run(self):

@@ -85,14 +85,26 @@
 	clocks {
 		hfxo: hfxo {
 			compatible = "fixed-clock";
+			status = "disabled";
 			#clock-cells = <0>;
-			clock-frequency = <DT_FREQ_M(32)>;
+			clock-frequency = <DT_FREQ_M(64)>;
+		};
+
+		lfxo: lfxo {
+			compatible = "fixed-clock";
+			status = "disabled";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
 		};
 
 		fll16m: fll16m {
-			compatible = "fixed-clock";
+			compatible = "nordic,nrf-fll16m";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(16)>;
+			open-loop-accuracy-ppm = <20000>;
+			open-loop-startup-time-us = <200>; /* To be measured */
+			clocks = <&hfxo>, <&lfxo>;
+			clock-names = "hfxo", "lfxo";
 		};
 
 		hsfll120: hsfll120 {
@@ -105,20 +117,41 @@
 						       256000000
 						       320000000>;
 		};
+
+		lfclk: lfclk {
+			compatible = "nordic,nrf-lfclk";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+			status = "okay";
+			lfrc-accuracy-ppm = <500>;
+			lflprc-accuracy-ppm = <1000>;
+			lfrc-startup-time-us = <200>; /* To be measured */
+			lflprc-startup-time-us = <200>; /* To be measured */
+			clocks = <&hfxo>, <&lfxo>;
+			clock-names = "hfxo", "lfxo";
+		};
 	};
 
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		mram1x: mram@e000000 {
+		mram1x_controller: mram-controller@5f092000 {
 			compatible = "nordic,mram";
-			reg = <0xe000000 DT_SIZE_K(8192)>;
+			reg = <0x5f092000 0x2000>;
 			ranges = <0x0 0xe000000 DT_SIZE_K(8192)>;
-			erase-block-size = <4096>;
-			write-block-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			mram1x: mram-memory@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x0 DT_SIZE_K(8192)>;
+				ranges;
+				erase-block-size = <4096>;
+				write-block-size = <16>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
 		};
 
 		uicr: uicr@fff8000 {
@@ -258,6 +291,7 @@
 				compatible = "nordic,nrf-dppic-local";
 				reg = <0x22000 0x1000>;
 				channels = <32>;
+				groups = <4>;
 				status = "disabled";
 			};
 
@@ -479,6 +513,8 @@
 				compatible = "nordic,nrf-dppic-global";
 				reg = <0x8e1000 0x1000>;
 				status = "disabled";
+				channels = <8>;
+				groups = <2>;
 			};
 
 			timer120: timer@8e2000 {
@@ -581,6 +617,8 @@
 				compatible = "nordic,nrf-dppic-global";
 				reg = <0x922000 0x1000>;
 				status = "disabled";
+				channels = <8>;
+				groups = <2>;
 			};
 
 			rtc130: rtc@928000 {
@@ -710,6 +748,8 @@
 				compatible = "nordic,nrf-dppic-global";
 				reg = <0x981000 0x1000>;
 				status = "disabled";
+				channels = <8>;
+				groups = <2>;
 			};
 
 			adc: adc@982000 {
@@ -743,6 +783,8 @@
 				compatible = "nordic,nrf-dppic-global";
 				reg = <0x991000 0x1000>;
 				status = "disabled";
+				channels = <8>;
+				groups = <2>;
 			};
 
 			qdec130: qdec@994000 {
@@ -764,12 +806,17 @@
 				reg = <0x99c000 0x1000>;
 				status = "disabled";
 				cc-num = <16>;
+				clocks = <&lfclk>, <&fll16m>;
+				clock-names = "lfclock", "hfclock";
+				extended-channels = <0>;
 			};
 
 			dppic133: dppic@9a1000 {
 				compatible = "nordic,nrf-dppic-global";
 				reg = <0x9a1000 0x1000>;
 				status = "disabled";
+				channels = <8>;
+				groups = <2>;
 			};
 
 			timer130: timer@9a2000 {
@@ -885,6 +932,8 @@
 				compatible = "nordic,nrf-dppic-global";
 				reg = <0x9b1000 0x1000>;
 				status = "disabled";
+				channels = <8>;
+				groups = <2>;
 			};
 
 			timer132: timer@9b2000 {
@@ -1000,6 +1049,8 @@
 				compatible = "nordic,nrf-dppic-global";
 				reg = <0x9c1000 0x1000>;
 				status = "disabled";
+				channels = <8>;
+				groups = <2>;
 			};
 
 			timer134: timer@9c2000 {
@@ -1115,6 +1166,8 @@
 				compatible = "nordic,nrf-dppic-global";
 				reg = <0x9d1000 0x1000>;
 				status = "disabled";
+				channels = <8>;
+				groups = <2>;
 			};
 
 			timer136: timer@9d2000 {

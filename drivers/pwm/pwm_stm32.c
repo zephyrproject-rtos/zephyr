@@ -2,6 +2,7 @@
  * Copyright (c) 2016 Linaro Limited.
  * Copyright (c) 2020 Teslabs Engineering S.L.
  * Copyright (c) 2023 Nobleo Technology
+ * Copyright (c) 2025 Siemens SA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,9 +29,33 @@
 
 LOG_MODULE_REGISTER(pwm_stm32, CONFIG_PWM_LOG_LEVEL);
 
+#ifdef CONFIG_STM32_HAL2
+#define STM32_TIM_OCIDLESTATE_RESET	LL_TIM_OCIDLESTATE_RESET
+#define STM32_TIM_OCIDLESTATE_SET	LL_TIM_OCIDLESTATE_SET
+#define STM32_TIM_ACTIVEINPUT_DIRECT	LL_TIM_ACTIVEINPUT_DIRECT
+#define STM32_TIM_ACTIVEINPUT_INDIRECT	LL_TIM_ACTIVEINPUT_INDIRECT
+#else /* CONFIG_STM32_HAL2 */
+#ifdef LL_TIM_OCIDLESTATE_LOW
+#define STM32_TIM_OCIDLESTATE_RESET	LL_TIM_OCIDLESTATE_LOW
+#endif /* LL_TIM_OCIDLESTATE_LOW */
+#ifdef LL_TIM_OCIDLESTATE_HIGH
+#define STM32_TIM_OCIDLESTATE_SET	LL_TIM_OCIDLESTATE_HIGH
+#endif /* LL_TIM_OCIDLESTATE_HIGH */
+#define STM32_TIM_ACTIVEINPUT_DIRECT	LL_TIM_ACTIVEINPUT_DIRECTTI
+#define STM32_TIM_ACTIVEINPUT_INDIRECT	LL_TIM_ACTIVEINPUT_INDIRECTTI
+#endif /* CONFIG_STM32_HAL2 */
+
 /* L0 series MCUs only have 16-bit timers and don't have below macro defined */
 #ifndef IS_TIM_32B_COUNTER_INSTANCE
 #define IS_TIM_32B_COUNTER_INSTANCE(INSTANCE) (0)
+#endif
+
+/* Some series (e.g., WB0) don't support this feature and lack the macro */
+#ifdef IS_TIM_MASTER_INSTANCE
+#define HAS_MASTERMODE_SUPPORT 1
+#else
+#define HAS_MASTERMODE_SUPPORT 0
+#define IS_TIM_MASTER_INSTANCE(INSTANCE) 0
 #endif
 
 #ifdef CONFIG_PWM_CAPTURE
@@ -91,6 +116,7 @@ struct pwm_stm32_config {
 	uint32_t prescaler;
 	uint32_t countermode;
 	uint32_t deadtime;
+	uint32_t mastermode;
 	const struct stm32_pclken *pclken;
 	size_t pclk_len;
 	const struct pinctrl_dev_config *pcfg;
@@ -184,6 +210,18 @@ static void __maybe_unused (*const clear_capture_interrupt[])(TIM_TypeDef *) = {
 	LL_TIM_ClearFlag_CC3, LL_TIM_ClearFlag_CC4
 };
 
+/* Channel to enable DMA request flag mapping. */
+static void __maybe_unused (*const enable_dma_interrupt[])(TIM_TypeDef *) = {
+	LL_TIM_EnableDMAReq_CC1, LL_TIM_EnableDMAReq_CC2,
+	LL_TIM_EnableDMAReq_CC3, LL_TIM_EnableDMAReq_CC4
+};
+
+/* Channel to disable DMA request flag mapping. */
+static void __maybe_unused (*const disable_dma_interrupt[])(TIM_TypeDef *) = {
+	LL_TIM_DisableDMAReq_CC1, LL_TIM_DisableDMAReq_CC2,
+	LL_TIM_DisableDMAReq_CC3, LL_TIM_DisableDMAReq_CC4
+};
+
 /**
  * Obtain LL polarity from PWM flags.
  *
@@ -212,6 +250,16 @@ static inline bool is_center_aligned(const uint32_t ll_countermode)
 	return ((ll_countermode == LL_TIM_COUNTERMODE_CENTER_DOWN) ||
 		(ll_countermode == LL_TIM_COUNTERMODE_CENTER_UP) ||
 		(ll_countermode == LL_TIM_COUNTERMODE_CENTER_UP_DOWN));
+}
+
+static void ll_tim_set_trigger_output(TIM_TypeDef *timer, uint32_t mode)
+{
+#if HAS_MASTERMODE_SUPPORT
+	LL_TIM_SetTriggerOutput(timer, mode);
+#else
+	ARG_UNUSED(timer);
+	ARG_UNUSED(mode);
+#endif
 }
 
 static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
@@ -306,8 +354,8 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 #endif /* CONFIG_PWM_CAPTURE */
 
 		LL_TIM_OC_SetMode(timer, ll_channel, LL_TIM_OCMODE_PWM1);
-#ifdef LL_TIM_OCIDLESTATE_LOW
-		LL_TIM_OC_SetIdleState(timer, current_ll_channel, LL_TIM_OCIDLESTATE_LOW);
+#ifdef STM32_TIM_OCIDLESTATE_RESET
+		LL_TIM_OC_SetIdleState(timer, current_ll_channel, STM32_TIM_OCIDLESTATE_RESET);
 #endif
 		LL_TIM_CC_EnableChannel(timer, current_ll_channel);
 		LL_TIM_EnableARRPreload(timer);
@@ -333,14 +381,14 @@ static void init_capture_channels(const struct device *dev, uint32_t channel,
 	/* Setup main channel */
 	LL_TIM_IC_SetPrescaler(timer, ll_channel, LL_TIM_ICPSC_DIV1);
 	LL_TIM_IC_SetFilter(timer, ll_channel, LL_TIM_IC_FILTER_FDIV1);
-	LL_TIM_IC_SetActiveInput(timer, ll_channel, LL_TIM_ACTIVEINPUT_DIRECTTI);
+	LL_TIM_IC_SetActiveInput(timer, ll_channel, STM32_TIM_ACTIVEINPUT_DIRECT);
 	LL_TIM_IC_SetPolarity(timer, ll_channel,
 			      is_inverted ? LL_TIM_IC_POLARITY_FALLING : LL_TIM_IC_POLARITY_RISING);
 
 	/* Setup complementary channel */
 	LL_TIM_IC_SetPrescaler(timer, ll_complementary_channel, LL_TIM_ICPSC_DIV1);
 	LL_TIM_IC_SetFilter(timer, ll_complementary_channel, LL_TIM_IC_FILTER_FDIV1);
-	LL_TIM_IC_SetActiveInput(timer, ll_complementary_channel, LL_TIM_ACTIVEINPUT_INDIRECTTI);
+	LL_TIM_IC_SetActiveInput(timer, ll_complementary_channel, STM32_TIM_ACTIVEINPUT_INDIRECT);
 	LL_TIM_IC_SetPolarity(timer, ll_complementary_channel,
 			      is_inverted ? LL_TIM_IC_POLARITY_RISING : LL_TIM_IC_POLARITY_FALLING);
 }
@@ -611,6 +659,51 @@ static void pwm_stm32_isr(const struct device *dev)
 
 #endif /* CONFIG_PWM_CAPTURE */
 
+#ifdef CONFIG_PWM_WITH_DMA
+static int pwm_stm32_enable_dma(const struct device *dev,
+					uint32_t channel)
+{
+	const struct pwm_stm32_config *cfg = dev->config;
+
+	/* DMA requests are only supported on Capture/Compare channels.
+	 * However, these DMA request can also be used in PWM output mode to
+	 * dynamically update the duty cycle once per period. Therefore, enabling
+	 * or disabling DMA requests on PWM channels should not be limited to
+	 * Capture/Compare driver functions.
+	 */
+	if ((channel < 1u) || (channel > 4u)) {
+		LOG_ERR("DMA for PWM only exists on channels 1, 2, 3 and 4.");
+		return -ENOTSUP;
+	}
+
+	enable_dma_interrupt[channel - 1](cfg->timer);
+
+	return 0;
+}
+
+static int pwm_stm32_disable_dma(const struct device *dev,
+					uint32_t channel)
+{
+	const struct pwm_stm32_config *cfg = dev->config;
+
+	/* DMA requests are only supported on Capture/Compare channels.
+	 * However, these DMA requests can also be used in PWM output mode to
+	 * dynamically update the duty cycle once per period. Therefore, enabling
+	 * or disabling DMA requests on PWM channels should not be limited to
+	 * Capture/Compare driver functions.
+	 */
+	if ((channel < 1u) || (channel > 4u)) {
+		LOG_ERR("DMA for PWM only exists on channels 1, 2, 3 and 4.");
+		return -ENOTSUP;
+	}
+
+	disable_dma_interrupt[channel - 1](cfg->timer);
+
+	return 0;
+}
+
+#endif /* CONFIG_PWM_WITH_DMA */
+
 static int pwm_stm32_get_cycles_per_sec(const struct device *dev,
 					uint32_t channel, uint64_t *cycles)
 {
@@ -630,6 +723,10 @@ static DEVICE_API(pwm, pwm_stm32_driver_api) = {
 	.enable_capture = pwm_stm32_enable_capture,
 	.disable_capture = pwm_stm32_disable_capture,
 #endif /* CONFIG_PWM_CAPTURE */
+#ifdef CONFIG_PWM_WITH_DMA
+	.enable_dma = pwm_stm32_enable_dma,
+	.disable_dma = pwm_stm32_disable_dma,
+#endif /* CONFIG_PWM_WITH_DMA */
 };
 
 static int pwm_stm32_init(const struct device *dev)
@@ -695,6 +792,15 @@ static int pwm_stm32_init(const struct device *dev)
 		LL_TIM_SetRepetitionCounter(timer, 0U);
 	}
 #endif
+
+	if (IS_TIM_MASTER_INSTANCE(timer)) {
+		ll_tim_set_trigger_output(timer, cfg->mastermode);
+	} else {
+		if (cfg->mastermode != 0) {
+			LOG_ERR("%s: Timer does not support mastermode", dev->name);
+			return -ENOTSUP;
+		}
+	}
 
 #ifdef IS_TIM_BREAK_INSTANCE
 	/* Use the macro IS_TIM_BREAK_INSTANCE to check for supporting the
@@ -781,6 +887,11 @@ static int pwm_stm32_init(const struct device *dev)
 		.prescaler = DT_PROP(PWM(index), st_prescaler),			\
 		.countermode = DT_PROP(PWM(index), st_countermode),		\
 		.deadtime = DT_PROP(PWM(index), st_deadtime),			\
+		.mastermode = COND_CODE_1(HAS_MASTERMODE_SUPPORT,		\
+					  (CONCAT(LL_TIM_TRGO_,			\
+						  DT_STRING_TOKEN(PWM(index),	\
+						  st_mastermode))),		\
+					  (0)),					\
 		.pclken = pclken_##index,					\
 		.pclk_len = DT_NUM_CLOCKS(PWM(index)),				\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\

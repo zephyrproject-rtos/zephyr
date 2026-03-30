@@ -35,6 +35,7 @@ static struct ping_context {
 	/* Ping parameters */
 	uint32_t count;
 	uint32_t interval;
+	uint16_t identifier;
 	uint32_t sequence;
 	uint16_t payload_size;
 	uint8_t tos;
@@ -45,11 +46,11 @@ static void ping_done(struct ping_context *ctx);
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
 
-static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
-				  struct net_pkt *pkt,
-				  struct net_icmp_ip_hdr *hdr,
-				  struct net_icmp_hdr *icmp_hdr,
-				  void *user_data)
+static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
+					       struct net_pkt *pkt,
+					       struct net_icmp_ip_hdr *hdr,
+					       struct net_icmp_hdr *icmp_hdr,
+					       void *user_data)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
 					      struct net_icmpv6_echo_req);
@@ -61,14 +62,19 @@ static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 	icmp_echo = (struct net_icmpv6_echo_req *)net_pkt_get_data(pkt,
 								&icmp_access);
 	if (icmp_echo == NULL) {
-		return -EIO;
+		return NET_CONTINUE;
+	}
+
+	if (net_ntohs(icmp_echo->identifier) != ping_ctx.identifier ||
+	    net_ntohs(icmp_echo->sequence) != ping_ctx.sequence) {
+		return NET_CONTINUE;
 	}
 
 	net_pkt_skip(pkt, sizeof(*icmp_echo));
 
 	if (net_pkt_remaining_data(pkt) >= sizeof(uint32_t)) {
 		if (net_pkt_read_be32(pkt, &cycles)) {
-			return -EIO;
+			return NET_DROP;
 		}
 
 		cycles = k_cycle_get_32() - cycles;
@@ -104,14 +110,14 @@ static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 		ping_done(&ping_ctx);
 	}
 
-	return 0;
+	return NET_OK;
 }
 #else
-static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
-				  struct net_pkt *pkt,
-				  struct net_icmp_ip_hdr *hdr,
-				  struct net_icmp_hdr *icmp_hdr,
-				  void *user_data)
+static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
+					       struct net_pkt *pkt,
+					       struct net_icmp_ip_hdr *hdr,
+					       struct net_icmp_hdr *icmp_hdr,
+					       void *user_data)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(pkt);
@@ -119,17 +125,17 @@ static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 	ARG_UNUSED(icmp_hdr);
 	ARG_UNUSED(user_data);
 
-	return -ENOTSUP;
+	return NET_CONTINUE;
 }
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_NATIVE_IPV4)
 
-static int handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
-				  struct net_pkt *pkt,
-				  struct net_icmp_ip_hdr *hdr,
-				  struct net_icmp_hdr *icmp_hdr,
-				  void *user_data)
+static enum net_verdict handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
+					       struct net_pkt *pkt,
+					       struct net_icmp_ip_hdr *hdr,
+					       struct net_icmp_hdr *icmp_hdr,
+					       void *user_data)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
 					      struct net_icmpv4_echo_req);
@@ -141,14 +147,20 @@ static int handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
 	icmp_echo = (struct net_icmpv4_echo_req *)net_pkt_get_data(pkt,
 								&icmp_access);
 	if (icmp_echo == NULL) {
-		return -EIO;
+		return NET_CONTINUE;
 	}
+
+	if (net_ntohs(icmp_echo->identifier) != ping_ctx.identifier ||
+	    net_ntohs(icmp_echo->sequence) != ping_ctx.sequence) {
+		return NET_CONTINUE;
+	}
+
 
 	net_pkt_skip(pkt, sizeof(*icmp_echo));
 
 	if (net_pkt_remaining_data(pkt) >= sizeof(uint32_t)) {
 		if (net_pkt_read_be32(pkt, &cycles)) {
-			return -EIO;
+			return NET_DROP;
 		}
 
 		cycles = k_cycle_get_32() - cycles;
@@ -178,14 +190,14 @@ static int handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
 		ping_done(&ping_ctx);
 	}
 
-	return 0;
+	return NET_OK;
 }
 #else
-static int handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
-				  struct net_pkt *pkt,
-				  struct net_icmp_ip_hdr *hdr,
-				  struct net_icmp_hdr *icmp_hdr,
-				  void *user_data)
+static enum net_verdict handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
+					       struct net_pkt *pkt,
+					       struct net_icmp_ip_hdr *hdr,
+					       struct net_icmp_hdr *icmp_hdr,
+					       void *user_data)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(pkt);
@@ -193,7 +205,7 @@ static int handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
 	ARG_UNUSED(icmp_hdr);
 	ARG_UNUSED(user_data);
 
-	return -ENOTSUP;
+	return NET_CONTINUE;
 }
 #endif /* CONFIG_NET_IPV4 */
 
@@ -251,6 +263,7 @@ static void ping_work(struct k_work *work)
 	struct net_icmp_ping_params params;
 	int ret;
 
+	ctx->identifier = sys_rand16_get();
 	ctx->sequence++;
 
 	if (ctx->sequence > ctx->count) {
@@ -265,7 +278,7 @@ static void ping_work(struct k_work *work)
 		k_work_reschedule(&ctx->work, K_SECONDS(2));
 	}
 
-	params.identifier = sys_rand32_get();
+	params.identifier = ctx->identifier;
 	params.sequence = ctx->sequence;
 	params.tc_tos = ctx->tos;
 	params.priority = ctx->priority;
@@ -490,10 +503,10 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ping,
-	SHELL_CMD(--help, NULL,
-		  "'net ping [-c count] [-i interval ms] [-I <iface index>] "
-		  "[-Q tos] [-s payload size] [-p priority] <host>' "
-		  "Send ICMPv4 or ICMPv6 Echo-Request to a network host.",
+	SHELL_CMD(ping, NULL,
+		  SHELL_HELP("Send ICMPv4 or ICMPv6 Echo-Request to a network host",
+			     "[-c count] [-i interval ms] [-I <iface index>]\n"
+			     "[-Q tos] [-s payload size] [-p priority] <host>"),
 		  cmd_net_ping),
 	SHELL_SUBCMD_SET_END
 );

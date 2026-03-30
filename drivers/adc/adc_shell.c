@@ -16,41 +16,37 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_shell);
 
-#define CMD_HELP_ACQ_TIME 			\
-	"Configure acquisition time."		\
-	"\nUsage: acq_time <time> <unit>"	\
-	"\nunits: us, ns, ticks\n"
+#define CMD_HELP_ACQ_TIME \
+	SHELL_HELP("Configure acquisition time", \
+		   "<time> <unit>\nunits: us, ns, ticks")
 
-#define CMD_HELP_CHANNEL			\
-	"Configure ADC channel\n"		\
+#define CMD_HELP_CHANNEL \
+	SHELL_HELP("Configure ADC channel", "<subcommand> [args]")
 
-#define CMD_HELP_CH_ID				\
-	"Configure channel id\n"		\
-	"Usage: id <channel_id>\n"
+#define CMD_HELP_CH_ID \
+	SHELL_HELP("Configure channel id", "<channel_id>")
 
-#define CMD_HELP_DIFF				\
-	"Configure differential\n"		\
-	"Usage: differential <0||1>\n"
+#define CMD_HELP_DIFF \
+	SHELL_HELP("Configure differential", "<0|1>")
 
-#define CMD_HELP_CH_NEG				\
-	"Configure channel negative input\n"	\
-	"Usage: negative <negative_input_id>\n"
+#define CMD_HELP_CH_NEG \
+	SHELL_HELP("Configure channel negative input", "<negative_input_id>")
 
-#define CMD_HELP_CH_POS				\
-	"Configure channel positive input\n"	\
-	"Usage: positive <positive_input_id>\n"
+#define CMD_HELP_CH_POS \
+	SHELL_HELP("Configure channel positive input", "<positive_input_id>")
 
-#define CMD_HELP_READ				\
-	"Read adc value\n"			\
-	"Usage: read <channel>\n"
+#define CMD_HELP_READ \
+	SHELL_HELP("Read adc value", "<channel>")
 
-#define CMD_HELP_RES				\
-	"Configure resolution\n"		\
-	"Usage: resolution <resolution>\n"
+#define CMD_HELP_RES \
+	SHELL_HELP("Configure resolution", "<resolution>")
 
-#define CMD_HELP_REF	"Configure reference\n"
-#define CMD_HELP_GAIN	"Configure gain.\n"
-#define CMD_HELP_PRINT	"Print current configuration"
+#define CMD_HELP_REF	SHELL_HELP("Configure reference", NULL)
+#define CMD_HELP_GAIN	SHELL_HELP("Configure gain", NULL)
+#define CMD_HELP_PRINT	SHELL_HELP("Print current configuration", NULL)
+
+static const char *cmd_adc_dev_get_help =
+	SHELL_HELP("Select subcommand for ADC property label", NULL);
 
 #define ADC_HDL_LIST_ENTRY(node_id)                                                                \
 	{                                                                                          \
@@ -99,8 +95,10 @@ static struct adc_hdl {
 	DT_FOREACH_STATUS_OKAY(maxim_max11117, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(maxim_max11253, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(maxim_max11254, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(maxim_max2253x, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(microchip_mcp3204, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(microchip_mcp3208, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(microchip_mcp3221, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(microchip_xec_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(nordic_nrf_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(nordic_nrf_saadc, ADC_HDL_LIST_ENTRY)
@@ -500,11 +498,11 @@ static void cmd_adc_dev_get(size_t idx, struct shell_static_entry *entry)
 		entry->syntax  = adc_list[idx].dev->name;
 		entry->handler = NULL;
 		entry->subcmd  = &sub_adc_cmds;
-		entry->help    = "Select subcommand for ADC property label.";
+		entry->help    = cmd_adc_dev_get_help;
 	} else {
 		entry->syntax  = NULL;
 	}
 }
 SHELL_DYNAMIC_CMD_CREATE(sub_adc_dev, cmd_adc_dev_get);
 
-SHELL_CMD_REGISTER(adc, &sub_adc_dev, "ADC commands", NULL);
+SHELL_CMD_REGISTER(adc, &sub_adc_dev, SHELL_HELP("ADC commands", NULL), NULL);

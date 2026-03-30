@@ -90,9 +90,9 @@ void stm32_tsc_start(const struct device *dev)
 	/* enable end of acquisition and max count error interrupts */
 	sys_set_bits((mem_addr_t)&config->tsc->IER, TSC_IER_EOAIE | TSC_IER_MCEIE);
 
-	/* TODO: When sync acqusition mode is enabled, both this bit and an external input signal
-	 * should be set. When the acqusition stops this bit is cleared, so even if a sync signal is
-	 * present, the next acqusition will not start until this bit is set again.
+	/* TODO: When sync acquisition mode is enabled, both this bit and an external input signal
+	 * should be set. When the acquisition stops this bit is cleared, so even if a sync signal
+	 * is present, the next acquisition will not start until this bit is set again.
 	 */
 	/* start acquisition */
 	sys_set_bit((mem_addr_t)&config->tsc->CR, TSC_CR_START_Pos);
@@ -177,7 +177,7 @@ static int stm32_tsc_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(clk)) {
-		LOG_ERR("%s: clock controller device not ready", dev->name);
+		LOG_ERR_DEVICE_NOT_READY(clk);
 		return -ENODEV;
 	}
 
@@ -397,7 +397,7 @@ static int input_tsc_keys_init(const struct device *dev)
 	struct input_tsc_keys_data *data = dev->data;
 
 	if (!device_is_ready(config->tsc_dev)) {
-		LOG_ERR("%s: TSC device not ready", config->tsc_dev->name);
+		LOG_ERR_DEVICE_NOT_READY(config->tsc_dev);
 		return -ENODEV;
 	}
 

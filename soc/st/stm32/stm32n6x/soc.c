@@ -49,9 +49,12 @@ void soc_reset_hook(void)
 
 static void soc_rif_config(void)
 {
+#if defined(CONFIG_TRUSTED_EXECUTION_SECURE)
 	/* Enable the clock for the RIFSC (RIF Security Controller) */
 	__HAL_RCC_RIFSC_CLK_ENABLE();
 
+	/* ADC */
+	RIF_SLAVE_SEC_PRIV(ADC12);
 	/* DCMIPP */
 	RIF_MASTER_CID1_SEC_PRIV(DCMIPP);
 	RIF_SLAVE_SEC_PRIV(DCMIPP);
@@ -66,12 +69,15 @@ static void soc_rif_config(void)
 	/* LTDC Layer 1 */
 	RIF_MASTER_CID1_SEC_PRIV(LTDC1);
 	RIF_SLAVE_SEC_PRIV(LTDCL1);
+#ifdef NPU_PRESENT
 	/* NPU */
 	RIF_MASTER_CID1_SEC_PRIV(NPU);
 	RIF_SLAVE_SEC_PRIV(NPU);
+#endif
 	/* VENC */
 	RIF_MASTER_CID1_SEC_PRIV(VENC);
 	RIF_SLAVE_SEC_PRIV(VENC);
+#endif /* CONFIG_TRUSTED_EXECUTION_SECURE */
 }
 
 /**
@@ -102,10 +108,6 @@ void soc_early_init_hook(void)
 	LL_PWR_EnableVddIO3();
 	LL_PWR_EnableVddIO4();
 	LL_PWR_EnableVddIO5();
-
-	/* Set Vdd IO2 and IO3 to 1.8V */
-	LL_PWR_SetVddIO2VoltageRange(LL_PWR_VDDIO_VOLTAGE_RANGE_1V8);
-	LL_PWR_SetVddIO3VoltageRange(LL_PWR_VDDIO_VOLTAGE_RANGE_1V8);
 
 	/* RIF configuration */
 	if (IS_ENABLED(CONFIG_STM32N6_RIF_OPEN)) {

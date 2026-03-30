@@ -484,9 +484,7 @@ static int gpio_dw_initialize(const struct device *port)
 	}											\
 												\
 	static const struct gpio_dw_config gpio_dw_config_##n = {				\
-		.common = {									\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),			\
-		},										\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),					\
 		.base_addr = DT_INST_REG_ADDR(n),						\
 		.irq_num = COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0), (DT_INST_IRQN(n)), (0)),	\
 		.ngpios = DT_INST_PROP(n, ngpios),						\

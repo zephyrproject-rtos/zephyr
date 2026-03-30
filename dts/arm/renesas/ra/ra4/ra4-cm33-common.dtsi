@@ -34,12 +34,6 @@
 	soc {
 		interrupt-parent = <&nvic>;
 
-		system: system@4001e000 {
-			compatible = "renesas,ra-system";
-			reg = <0x4001e000 0x1000>;
-			status = "okay";
-		};
-
 		elc: elc@40082000 {
 			compatible = "renesas,ra-elc";
 			reg = <0x40082000 0x70>;

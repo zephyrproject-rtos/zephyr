@@ -22,25 +22,27 @@ typedef void (*irq_config_func_t)(const struct device *port);
 struct spi_stm32_config {
 	SPI_TypeDef *spi;
 	const struct pinctrl_dev_config *pcfg;
+	const struct stm32_pclken *pclken;
+	size_t pclk_len;
+	int datawidth;
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	irq_config_func_t irq_config;
 #ifdef CONFIG_SOC_SERIES_STM32H7X
 	uint32_t irq_line;
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 #endif
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
-	bool use_subghzspi_nss;
-#endif
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	int midi_clocks;
 	int mssi_clocks;
+	uint32_t fifo_max_transfer_size;
+	uint8_t fifo_size;
 #endif
-	size_t pclk_len;
-	const struct stm32_pclken *pclken;
-	int datawidth;
 	bool fifo_enabled: 1;
 	bool ioswp: 1;
 	bool soft_nss: 1;
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
+	bool use_subghzspi_nss: 1;
+#endif
 };
 
 #ifdef CONFIG_SPI_STM32_DMA
@@ -71,11 +73,16 @@ struct spi_stm32_data {
 	struct spi_rtio *rtio_ctx;
 #endif /* CONFIG_SPI_RTIO */
 	struct spi_context ctx;
+	uint32_t tx_len;
+	uint32_t rx_len;
+	uint8_t fifo_threshold;
 #ifdef CONFIG_SPI_STM32_DMA
 	struct k_sem status_sem;
 	volatile uint32_t status_flags;
 	struct stream dma_rx;
 	struct stream dma_tx;
+	bool tx_dma_done;
+	bool rx_dma_done;
 #endif /* CONFIG_SPI_STM32_DMA */
 	bool pm_policy_state_on;
 };
@@ -110,6 +117,26 @@ static inline uint32_t ll_spi_dma_busy(SPI_TypeDef *spi)
 #endif /* LL_SPI_SR_TXC */
 }
 #endif /* st_stm32h7_spi */
+
+static inline void ll_set_transfer_direction(SPI_TypeDef *spi, uint32_t direction)
+{
+	LL_SPI_SetTransferDirection(spi, direction);
+#if defined(CONFIG_STM32_HAL2)
+	LL_SPI_SetHalfDuplexDirection(spi, direction);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
+static inline uint32_t ll_get_transfer_direction(SPI_TypeDef *spi)
+{
+#if defined(CONFIG_STM32_HAL2)
+	uint32_t xfer_dir = LL_SPI_GetTransferDirection(spi);
+	uint32_t hd_dir = LL_SPI_GetHalfDuplexDirection(spi);
+
+	return hd_dir | xfer_dir;
+#else
+	return LL_SPI_GetTransferDirection(spi);
+#endif /* CONFIG_STM32_HAL2 */
+}
 
 static inline uint32_t ll_tx_is_not_full(SPI_TypeDef *spi)
 {
@@ -215,29 +242,6 @@ static inline uint32_t ll_spi_is_busy(SPI_TypeDef *spi)
 #endif /* st_stm32h7_spi */
 }
 
-/* Header is compiled first, this switch avoid the compiler to lookup for
- * non-existing LL FIFO functions for SoC without SPI FIFO
- */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
-static inline void ll_set_fifo_threshold_8bit(SPI_TypeDef *spi)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	LL_SPI_SetFIFOThreshold(spi, LL_SPI_FIFO_TH_01DATA);
-#else
-	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_QUARTER);
-#endif /* st_stm32h7_spi */
-}
-
-static inline void ll_set_fifo_threshold_16bit(SPI_TypeDef *spi)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	LL_SPI_SetFIFOThreshold(spi, LL_SPI_FIFO_TH_02DATA);
-#else
-	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_HALF);
-#endif /* st_stm32h7_spi */
-}
-#endif /* st_stm32_spi_fifo */
-
 static inline void ll_disable_spi(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
@@ -254,4 +258,15 @@ static inline void ll_disable_spi(SPI_TypeDef *spi)
 	}
 }
 
-#endif	/* ZEPHYR_DRIVERS_SPI_SPI_STM32_H_ */
+#if defined(SPI_CFG2_IOSWP)
+static inline void ll_spi_swap_mosi_miso(SPI_TypeDef *spi)
+{
+#if defined(CONFIG_STM32_HAL2)
+	LL_SPI_EnableMosiMisoSwap(spi);
+#else /* CONFIG_STM32_HAL2 */
+	LL_SPI_EnableIOSwap(spi);
+#endif /* CONFIG_STM32_HAL2 */
+}
+#endif /* SPI_CFG2_IOSWP */
+
+#endif	/* ZEPHYR_DRIVERS_SPI_SPI_LL_STM32_H_ */

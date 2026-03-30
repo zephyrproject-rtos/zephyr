@@ -302,10 +302,7 @@ static int gpio_axp192_init(const struct device *dev)
 
 #define GPIO_AXP192_DEFINE(inst)                                                                   \
 	static const struct gpio_axp192_config gpio_axp192_config##inst = {                        \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),            \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),                                      \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
 		.ngpios = DT_INST_PROP(inst, ngpios),                                              \

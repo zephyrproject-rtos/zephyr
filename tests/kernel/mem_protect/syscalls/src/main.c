@@ -18,6 +18,8 @@
 #elif defined(CONFIG_BOARD_INTEL_ADSP_ACE30_PTL_SIM) ||                                            \
 	defined(CONFIG_BOARD_INTEL_ADSP_ACE40_NVL_SIM)
 #define SLEEP_MS_LONG	300
+#elif defined(CONFIG_WHISPER_TARGET)
+#define SLEEP_MS_LONG	300
 #else
 #define SLEEP_MS_LONG	15000
 #endif
@@ -26,8 +28,8 @@
 	|| defined(CONFIG_BOARD_NUCLEO_L073RZ) \
 	|| defined(CONFIG_BOARD_RONOTH_LODEV)
 #define FAULTY_ADDRESS 0x0FFFFFFF
-#elif defined(CONFIG_BOARD_QEMU_CORTEX_R5)
-#define FAULTY_ADDRESS 0xBFFFFFFF
+#elif defined(CONFIG_BOARD_QEMU_CORTEX_R5) || defined(CONFIG_BOARD_VERSAL_RPU)
+#define FAULTY_ADDRESS 0x3FFFFFFF
 #elif CONFIG_MMU
 /* Just past the zephyr image mapping should be a non-present page */
 #define FAULTY_ADDRESS K_MEM_VM_FREE_START

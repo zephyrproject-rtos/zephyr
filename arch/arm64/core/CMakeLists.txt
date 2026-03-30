@@ -3,7 +3,7 @@
 zephyr_library()
 
 zephyr_library_sources(
-  cpu_idle.S
+  cpu_idle.c
   early_mem_funcs.S
   fatal.c
   irq_init.c

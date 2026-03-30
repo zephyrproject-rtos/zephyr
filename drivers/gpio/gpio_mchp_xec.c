@@ -292,10 +292,6 @@ static int gpio_xec_pin_interrupt_config(const struct device *dev, gpio_pin_t pi
 	idet_curr = MEC_GPIO_CR1_IDET_GET(cr1);
 	idet = gen_gpio_ctrl_icfg(mode, trig);
 
-	if (idet_curr == idet) {
-		return 0;
-	}
-
 	if ((idet == MEC_GPIO_CR1_IDET_LL) || (idet == MEC_GPIO_CR1_IDET_LH)) {
 		data->level_intr_bm |= BIT(pin);
 	} else {
@@ -543,10 +539,7 @@ static DEVICE_API(gpio, gpio_xec_driver_api) = {
 	}                                                                                          \
 	static struct gpio_xec_data gpio_xec_port_data##i;                                         \
 	static const struct gpio_xec_devcfg gpio_xec_dcfg##i = {                                   \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(i),               \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(i),                                      \
 		.port_base = (uintptr_t)DT_INST_REG_ADDR_BY_IDX(i, 0),                             \
 		.parin_addr = (uintptr_t)DT_INST_REG_ADDR_BY_IDX(i, 1),                            \
 		.parout_addr = (uintptr_t)DT_INST_REG_ADDR_BY_IDX(i, 2),                           \

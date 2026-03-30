@@ -72,6 +72,25 @@ kernel_sources(
   version.c
   )
 
+# Toolchain workaround: on ARM Thumb, gcc will normally enable
+# -fomit-frame-pointer at all optimization levels except -O0.  When
+# frame pointers ARE enabled, gcc will also infuriatingly disallow a
+# clobber of the r7 frame pointer register in inline assembly
+# (vs. just spilling filling as needed).  Our optimized arch_switch
+# requires the ability to clobber this (callee-saved) register.  Turn
+# the flag back on for the two files that need it.  (The error
+# behavior only gets modified at the level of a whole file, I tried
+# #pragmas and attributes to change the code generation for the
+# specific functions without success).
+if(CONFIG_CPU_CORTEX_M)
+  if(CONFIG_NO_OPTIMIZATIONS)
+    if(${COMPILER} STREQUAL "gcc")
+      set_source_files_properties(init.c PROPERTIES COMPILE_OPTIONS -fomit-frame-pointer)
+      set_source_files_properties(sched.c PROPERTIES COMPILE_OPTIONS -fomit-frame-pointer)
+    endif()
+  endif()
+endif()
+
 kernel_sources_ifdef(CONFIG_SCHED_CPU_MASK
   cpu_mask.c
   )
@@ -125,6 +144,9 @@ set_target_properties(
 
 target_sources_ifdef(CONFIG_REQUIRES_STACK_CANARIES   kernel PRIVATE compiler_stack_protect.c)
 target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      kernel PRIVATE timeout.c timer.c)
+if(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME OR CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
+  target_sources(kernel PRIVATE sys_clock_hw_cycles.c)
+endif()
 target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   kernel PRIVATE atomic_c.c)
 target_sources_ifdef(CONFIG_MMU                   kernel PRIVATE mmu.c)
 target_sources_ifdef(CONFIG_POLL                  kernel PRIVATE poll.c)

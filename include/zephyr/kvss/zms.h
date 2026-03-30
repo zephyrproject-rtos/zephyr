@@ -5,8 +5,8 @@
  *
  * ZMS: Zephyr Memory Storage
  */
-#ifndef ZEPHYR_INCLUDE_FS_ZMS_H_
-#define ZEPHYR_INCLUDE_FS_ZMS_H_
+#ifndef ZEPHYR_INCLUDE_KVSS_ZMS_H_
+#define ZEPHYR_INCLUDE_KVSS_ZMS_H_
 
 #include <sys/types.h>
 #include <zephyr/drivers/flash.h>
@@ -101,6 +101,21 @@ typedef uint32_t zms_id_t;
  * @retval -EIO if there is a memory read/write error.
  */
 int zms_mount(struct zms_fs *fs);
+
+/**
+ * @brief Mount a ZMS file system onto the device specified in `fs`, wiping the partition if
+ * mounting fails the first time.
+ *
+ * @param fs Pointer to the file system.
+ *
+ * @retval 0 on success.
+ * @retval -ENOTSUP if the detected file system is not ZMS.
+ * @retval -EPROTONOSUPPORT if the ZMS version is not supported.
+ * @retval -EINVAL if `fs` is NULL or any of the flash parameters or the sector layout is invalid.
+ * @retval -ENXIO if there is a device error.
+ * @retval -EIO if there is a memory read/write error.
+ */
+int zms_mount_force(struct zms_fs *fs);
 
 /**
  * @brief Clear the ZMS file system from device. The ZMS file system must be re-mounted after this
@@ -265,4 +280,4 @@ int zms_sector_use_next(struct zms_fs *fs);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_FS_ZMS_H_ */
+#endif /* ZEPHYR_INCLUDE_KVSS_ZMS_H_ */

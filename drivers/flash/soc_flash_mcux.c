@@ -46,7 +46,11 @@ LOG_MODULE_REGISTER(flash_mcux);
 #if defined(SOC_HAS_IAP) && !defined(CONFIG_SOC_LPC55S36)
 #include "fsl_iap.h"
 #elif defined(CONFIG_SOC_FAMILY_MCXA)
+#if defined(CONFIG_SOC_SERIES_MCXAXX7)
+#include "fsl_flash.h"
+#else
 #include "fsl_romapi.h"
+#endif
 #define FLASH_Erase   FLASH_EraseSector
 #define FLASH_Program FLASH_ProgramPhrase
 #elif defined(CONFIG_MCUX_FLASH_K4_API)
@@ -126,6 +130,10 @@ static void clear_flash_caches(void)
 {
 	FLASH_CacheClear();
 }
+#elif CONFIG_SOC_MCXW70AC
+/* cache is managed by flash driver */
+#undef SOC_FLASH_NEED_CLEAR_CACHES
+#define clear_flash_caches(...)
 #else
 static void clear_flash_caches(void)
 {

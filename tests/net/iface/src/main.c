@@ -385,9 +385,9 @@ static void *iface_setup(void)
 	net_if_dormant_on(iface1);
 
 	/* Operational state should be "oper down" */
-	zassert_equal(iface1->if_dev->oper_state, NET_IF_OPER_DOWN,
+	zassert_equal(net_if_oper_state(iface1), NET_IF_OPER_DOWN,
 		      "Invalid operational state (%d)",
-		      iface1->if_dev->oper_state);
+		      net_if_oper_state(iface1));
 
 	/* Mark the device ready and take the interface up */
 	dev->state->init_res = 0;
@@ -401,14 +401,14 @@ static void *iface_setup(void)
 	ret = net_if_up(iface1);
 	zassert_equal(ret, 0, "Interface 1 is not up (%d)", ret);
 
-	zassert_equal(iface1->if_dev->oper_state, NET_IF_OPER_DORMANT,
+	zassert_equal(net_if_oper_state(iface1), NET_IF_OPER_DORMANT,
 		      "Invalid operational state (%d)",
-		      iface1->if_dev->oper_state);
+		      net_if_oper_state(iface1));
 
 	net_if_dormant_off(iface1);
-	zassert_equal(iface1->if_dev->oper_state, NET_IF_OPER_UP,
+	zassert_equal(net_if_oper_state(iface1), NET_IF_OPER_UP,
 		      "Invalid operational state (%d)",
-		      iface1->if_dev->oper_state);
+		      net_if_oper_state(iface1));
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
 				      NET_ADDR_MANUAL, 0);
@@ -939,9 +939,13 @@ static void v6_addr_add(void)
 static void v6_addr_add_mcast_twice(void)
 {
 	struct net_if_mcast_addr *maddr;
+	struct net_if_mcast_addr *maddr2;
 
-	maddr = net_if_ipv6_maddr_add(iface1, &in6addr_mcast);
-	zassert_equal(maddr, NULL, "Address was added twice");
+	maddr = net_if_ipv6_maddr_lookup(&in6addr_mcast, &iface1);
+	zassert_not_null(maddr, "Address not found");
+
+	maddr2 = net_if_ipv6_maddr_add(iface1, &in6addr_mcast);
+	zassert_equal(maddr, maddr2, "Address was added twice");
 }
 
 static void v6_addr_lookup(void)
@@ -1001,12 +1005,12 @@ ZTEST(net_iface, test_v6_addr_add_rm_solicited)
 				      NET_ADDR_AUTOCONF, 0);
 	zassert_not_null(ifaddr, "Cannot add IPv6 global unicast address");
 
-	/* Add the corresponding solicited-node multicast address (should exist) */
+	/* Corresponding solicited-node multicast address should already exist */
 	net_ipv6_addr_create_solicited_node(&unicast_addr, &unicast_addr_mcast);
 	zassert_mem_equal(&unicast_addr_mcast, &iid_addr_mcast,
 			  sizeof(struct net_in6_addr));
-	maddr = net_if_ipv6_maddr_add(iface4, &unicast_addr_mcast);
-	zassert_is_null(maddr, "Solicited-node multicast address was added twice");
+	maddr = net_if_ipv6_maddr_lookup(&iid_addr_mcast, &iface4);
+	zassert_not_null(maddr, "Solicited-node multicast address was removed");
 
 	/* Remove the global unicast address */
 	ret = net_if_ipv6_addr_rm(iface4, &unicast_addr);

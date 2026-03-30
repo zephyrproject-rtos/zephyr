@@ -208,7 +208,10 @@ extern "C" {
  */
 #define BT_TBS_MAX_UCI_SIZE 6
 
-/** @brief Opaque Telephone Bearer Service instance. */
+/**
+ * @struct bt_tbs_instance
+ * @brief Opaque Telephone Bearer Service instance.
+ */
 struct bt_tbs_instance;
 
 /**
@@ -460,13 +463,11 @@ int bt_tbs_set_status_flags(uint8_t bearer_index, uint16_t status_flags);
  * @brief Sets the URI scheme list of a bearer.
  *
  * @param bearer_index  The index of the Telephone Bearer.
- * @param uri_list      List of URI prefixes (e.g. {"skype", "tel"}).
- * @param uri_count     Number of URI prefixies in @p uri_list.
+ * @param uri_scheme_list Comma-separated list of URI prefixes (e.g. "skype,tel").
  *
  * @return BT_TBS_RESULT_CODE_* if positive or 0, errno value if negative.
  */
-int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list,
-			       uint8_t uri_count);
+int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char *uri_scheme_list);
 /**
  * @brief Register the callbacks for TBS.
  *
@@ -1129,6 +1130,16 @@ int bt_tbs_client_register_cb(struct bt_tbs_client_cb *cbs);
  */
 struct bt_tbs_instance *bt_tbs_client_get_by_ccid(const struct bt_conn *conn,
 						  uint8_t ccid);
+
+/**
+ * @brief Look up Telephone Bearer Service instance by index
+ *
+ * @param conn The connection to the TBS server.
+ * @param index The index to lookup a service instance for.
+ *
+ * @return Pointer to a Telephone Bearer Service instance if found else NULL.
+ */
+struct bt_tbs_instance *bt_tbs_client_get_by_index(const struct bt_conn *conn, uint8_t index);
 
 #ifdef __cplusplus
 }

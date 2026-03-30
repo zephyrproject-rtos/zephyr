@@ -422,8 +422,16 @@ static int gpio_mcux_lpc_pm_action(const struct device *dev, enum pm_device_acti
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (error < 0 && error != -ENOENT) {
+			return error;
+		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
+		error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (error < 0 && error != -ENOENT) {
+			return error;
+		}
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
@@ -489,9 +497,7 @@ static DEVICE_API(gpio, gpio_mcux_lpc_driver_api) = {
 	static int lpc_gpio_init_##n(const struct device *dev);				\
 											\
 	static const struct gpio_mcux_lpc_config gpio_mcux_lpc_config_##n = {		\
-		.common = {								\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),		\
-		},									\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),				\
 		.gpio_base = (GPIO_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),		\
 		.pinmux_base = PINMUX_BASE,						\
 		.int_source = DT_INST_ENUM_IDX(n, int_source),				\

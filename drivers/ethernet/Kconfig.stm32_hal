@@ -11,8 +11,8 @@ menuconfig ETH_STM32_HAL
 	select USE_STM32_HAL_ETH
 	select NOCACHE_MEMORY if (SOC_SERIES_STM32H7X && CPU_CORTEX_M7) || SOC_SERIES_STM32N6X
 	select HWINFO
-	select ETH_DSA_SUPPORT_DEPRECATED
 	select PINCTRL
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET && !SOC_SERIES_STM32H5X
 	imply NVMEM if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_ETHERNET),nvmem-cells)
 	imply CRC
 	help
@@ -82,6 +82,7 @@ config ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER
 config ETH_STM32_HW_CHECKSUM
 	bool "Use TX and RX hardware checksum"
 	depends on !SOC_SERIES_STM32H5X
+	depends on NET_CHECKSUM_OFFLOAD
 	help
 	  Enable receive and transmit checksum offload to enhance throughput
 	  performances.

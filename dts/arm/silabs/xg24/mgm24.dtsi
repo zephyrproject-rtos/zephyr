@@ -5,3 +5,7 @@
  */
 
 #include <silabs/xg24/efr32xg24.dtsi>
+
+&radio {
+	pa-2p4ghz = "highest";
+};

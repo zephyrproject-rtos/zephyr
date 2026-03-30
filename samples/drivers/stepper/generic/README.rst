@@ -40,7 +40,7 @@ Sample Output
    *** Booting Zephyr OS build v4.1.0-568-gad33d28d0348 ***
    [00:00:00.000,000] <inf> stepper: Starting generic stepper sample
    [00:00:00.000,000] <dbg> stepper: main: stepper is 0x80086b8, name is gpio_stepper
-   [00:00:00.000,000] <dbg> gpio_stepper_motor_controller: gpio_stepper_set_microstep_interval: Setting Motor step interval to 1000000
+   [00:00:00.000,000] <dbg> gpio_stepper_ctrl_controller: gpio_stepper_ctrl_set_microstep_interval: Setting Motor step interval to 1000000
    [00:00:00.000,000] <dbg> stepper: monitor_thread: Actual position: 0
    [00:00:00.491,000] <inf> stepper: mode: enable
    [00:00:00.876,000] <inf> stepper: mode: ping pong relative

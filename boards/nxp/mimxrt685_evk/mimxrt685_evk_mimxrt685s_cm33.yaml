@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, NXP
+# Copyright (c) 2020, 2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -19,6 +19,7 @@ supported:
   - arduino_i2c
   - arduino_serial
   - arduino_spi
+  - comparator
   - counter
   - dma
   - flash

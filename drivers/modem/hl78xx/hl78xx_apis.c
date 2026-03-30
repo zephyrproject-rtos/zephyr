@@ -16,6 +16,9 @@
 #ifdef CONFIG_HL78XX_GNSS
 #include "hl78xx_gnss.h"
 #endif /* CONFIG_HL78XX_GNSS */
+#include "hl78xx_cfg.h"
+#include <zephyr/drivers/modem/hl78xx_apis.h>
+
 LOG_MODULE_REGISTER(hl78xx_apis, CONFIG_MODEM_LOG_LEVEL);
 
 /* Wrapper to centralize modem_dynamic_cmd_send calls and reduce repetition.
@@ -29,8 +32,15 @@ static int hl78xx_send_cmd(struct hl78xx_data *data, const char *cmd,
 	if (data == NULL || cmd == NULL) {
 		return -EINVAL;
 	}
-	return modem_dynamic_cmd_send(data, chat_cb, cmd, (uint16_t)strlen(cmd), matches,
-				      match_count, MDM_CMD_TIMEOUT, true);
+	return modem_dynamic_cmd_send_req(data, &(const struct hl78xx_dynamic_cmd_request){
+							.script_user_callback = chat_cb,
+							.cmd = (const uint8_t *)cmd,
+							.cmd_len = (uint16_t)strlen(cmd),
+							.response_matches = matches,
+							.matches_size = match_count,
+							.response_timeout = MDM_CMD_TIMEOUT,
+							.user_cmd = true,
+						});
 }
 
 int hl78xx_api_func_get_signal(const struct device *dev, const enum cellular_signal_type type,
@@ -277,6 +287,7 @@ int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 			      hl78xx_get_ok_match_size());
 	if (ret == 0) {
 		data->status.phone_functionality.in_progress = true;
+		data->status.phone_functionality.functionality = functionality;
 	}
 
 	return ret;
@@ -303,8 +314,15 @@ int hl78xx_api_func_modem_dynamic_cmd_send(const struct device *dev, const char 
 		return -EINVAL;
 	}
 	/* respect provided matches_size and serialize modem access */
-	return modem_dynamic_cmd_send(data, NULL, cmd, cmd_size, response_matches, matches_size,
-				      MDM_CMD_TIMEOUT, true);
+	return modem_dynamic_cmd_send_req(data, &(const struct hl78xx_dynamic_cmd_request){
+							.script_user_callback = NULL,
+							.cmd = (const uint8_t *)cmd,
+							.cmd_len = cmd_size,
+							.response_matches = response_matches,
+							.matches_size = matches_size,
+							.response_timeout = MDM_CMD_TIMEOUT,
+							.user_cmd = true,
+						});
 }
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 int hl78xx_start_airvantage_dm_session(const struct device *dev)
@@ -312,10 +330,16 @@ int hl78xx_start_airvantage_dm_session(const struct device *dev)
 	int ret = 0;
 	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
 
-	ret = modem_dynamic_cmd_send(data, NULL, WDSI_USER_INITIATED_CONNECTION_START_CMD,
-				     strlen(WDSI_USER_INITIATED_CONNECTION_START_CMD),
-				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
-				     MDM_CMD_TIMEOUT, false);
+	ret = modem_dynamic_cmd_send_req(
+		data, &(const struct hl78xx_dynamic_cmd_request){
+			      .script_user_callback = NULL,
+			      .cmd = (const uint8_t *)WDSI_USER_INITIATED_CONNECTION_START_CMD,
+			      .cmd_len = strlen(WDSI_USER_INITIATED_CONNECTION_START_CMD),
+			      .response_matches = hl78xx_get_ok_match(),
+			      .matches_size = hl78xx_get_ok_match_size(),
+			      .response_timeout = MDM_CMD_TIMEOUT,
+			      .user_cmd = false,
+		      });
 	if (ret < 0) {
 		LOG_ERR("Start DM session error %d", ret);
 		return ret;
@@ -328,10 +352,16 @@ int hl78xx_stop_airvantage_dm_session(const struct device *dev)
 	int ret = 0;
 	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
 
-	ret = modem_dynamic_cmd_send(data, NULL, WDSI_USER_INITIATED_CONNECTION_STOP_CMD,
-				     strlen(WDSI_USER_INITIATED_CONNECTION_STOP_CMD),
-				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
-				     MDM_CMD_TIMEOUT, false);
+	ret = modem_dynamic_cmd_send_req(
+		data, &(const struct hl78xx_dynamic_cmd_request){
+			      .script_user_callback = NULL,
+			      .cmd = (const uint8_t *)WDSI_USER_INITIATED_CONNECTION_STOP_CMD,
+			      .cmd_len = strlen(WDSI_USER_INITIATED_CONNECTION_STOP_CMD),
+			      .response_matches = hl78xx_get_ok_match(),
+			      .matches_size = hl78xx_get_ok_match_size(),
+			      .response_timeout = MDM_CMD_TIMEOUT,
+			      .user_cmd = false,
+		      });
 	if (ret < 0) {
 		LOG_ERR("Stop DM session error %d", ret);
 		return ret;
@@ -339,6 +369,46 @@ int hl78xx_stop_airvantage_dm_session(const struct device *dev)
 	return 0;
 }
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+int hl78xx_wakeup_modem(const struct device *dev)
+{
+	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
+
+	if (data == NULL) {
+		return -EINVAL;
+	}
+
+	if (data->status.state != MODEM_HL78XX_STATE_SLEEP &&
+	    data->status.state != MODEM_HL78XX_STATE_IDLE) {
+		LOG_DBG("Modem not in sleep state (state=%d), wakeup not needed",
+			data->status.state);
+		return -EALREADY;
+	}
+
+	LOG_INF("User-initiated modem wakeup from low power mode");
+	hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_RESUME);
+	return 0;
+}
+
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+int hl78xx_edrx_get_time_to_sleep(const struct device *dev)
+{
+	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
+
+	if (data == NULL) {
+		return -EINVAL;
+	}
+
+	if (!hl78xx_is_edrx_idle_scheduled(data)) {
+		LOG_DBG("Not scheduled eDRX idle state, time to sleep not available");
+		return -ENODATA;
+	}
+
+	return hl78xx_edrx_idle_get_remaining_timetosleep(data);
+}
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
 #ifdef CONFIG_HL78XX_GNSS
 

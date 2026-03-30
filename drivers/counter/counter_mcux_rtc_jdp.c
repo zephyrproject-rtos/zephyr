@@ -20,6 +20,16 @@ LOG_MODULE_REGISTER(mcux_rtc_jdp, CONFIG_COUNTER_LOG_LEVEL);
 #define RTC_ALARM_CHANNEL 0U
 #define API_ALARM_CHANNEL 1U
 
+/*
+ * Safety window (in RTC counter cycles) to avoid missing compares programmed
+ * too close to the current count.
+ *
+ * Per RTC_JDP IP/SDK guidance, the minimum valid compare values also provide
+ * a practical lower bound that avoids invalid/too-close programming.
+ */
+#define RTC_JDP_SAFETY_WINDOW_CYCLES(chan_id) \
+	(((chan_id) == API_ALARM_CHANNEL) ? MINIMUM_APIVAL : MINIMUM_RTCVAL)
+
 struct mcux_rtc_jdp_data {
 	counter_alarm_callback_t alarm_callback[RTC_CHANNEL_COUNT];
 	counter_top_callback_t top_callback;
@@ -94,14 +104,61 @@ static inline int mcux_rtc_jdp_program_compare(const struct mcux_rtc_jdp_config 
 			val = MINIMUM_APIVAL + 1U;
 		}
 		RTC_SetAPIValue(config->base, val);
-		/* Wait to allow the compare value to latch */
-		k_busy_wait(100U);
 		RTC_EnableInterrupts(config->base, kRTC_APIInterruptEnable);
 		RTC_EnableAPI(config->base);
 		return 0;
 	}
 
 	return -EINVAL;
+}
+
+static inline void mcux_rtc_jdp_alarm_drop(struct mcux_rtc_jdp_data *data, uint8_t chan_id)
+{
+	data->alarm_callback[chan_id] = NULL;
+	data->alarm_user_data[chan_id] = NULL;
+}
+
+static inline void mcux_rtc_jdp_alarm_sw_pend(struct mcux_rtc_jdp_data *data,
+				     const struct mcux_rtc_jdp_config *config,
+				     uint8_t chan_id)
+{
+	data->sw_pending_mask |= BIT(chan_id);
+	irq_enable(config->irqn);
+	NVIC_SetPendingIRQ(config->irqn);
+}
+
+static inline int mcux_rtc_jdp_alarm_handle_late_or_drop(struct mcux_rtc_jdp_data *data,
+					const struct mcux_rtc_jdp_config *config,
+					uint8_t chan_id,
+					bool irq_on_late,
+					int *retp,
+					int ret)
+{
+	if (retp != NULL) {
+		*retp = ret;
+	}
+
+	if (irq_on_late != false) {
+		mcux_rtc_jdp_alarm_sw_pend(data, config, chan_id);
+	} else {
+		mcux_rtc_jdp_alarm_drop(data, chan_id);
+	}
+
+	return 1;
+}
+
+static inline int mcux_rtc_jdp_alarm_handle_sw_pend(struct mcux_rtc_jdp_data *data,
+					    const struct mcux_rtc_jdp_config *config,
+					    uint8_t chan_id,
+					    int *retp,
+					    int ret)
+{
+	if (retp != NULL) {
+		*retp = ret;
+	}
+
+	mcux_rtc_jdp_alarm_sw_pend(data, config, chan_id);
+	return 1;
 }
 
 /* Evaluate late/immediate and handle (SW fire or drop).
@@ -116,43 +173,61 @@ static inline int mcux_rtc_jdp_eval_and_handle(const struct device *dev, uint8_t
 		CONTAINER_OF(info, struct mcux_rtc_jdp_config, info);
 	struct mcux_rtc_jdp_data *data = dev->data;
 	uint32_t now2 = RTC_GetCountValue(config->base);
-	/* now - target (wrap-safe) */
-	uint32_t back = now2 - target;
+	/* target - now (wrap-safe) */
+	uint32_t fwd = target - now2;
 	/* (target - 1) - now (wrap-safe) */
 	uint32_t diff = (target - 1U) - now2;
+	uint32_t abs_late_thresh;
 
-	if (is_abs != false) {
-		if (back <= data->guard_period) {
-			if (retp != NULL) {
-				*retp = -ETIME;
-			}
-			if (irq_on_late != false) {
-				data->sw_pending_mask |= BIT(chan_id);
-				irq_enable(config->irqn);
-				NVIC_SetPendingIRQ(config->irqn);
-			} else {
-				data->alarm_callback[chan_id] = NULL;
-				data->alarm_user_data[chan_id] = NULL;
-			}
-			return 1;
+	if (is_abs) {
+		/*
+		 * Late-to-set detection for absolute alarms.
+		 *
+		 * Zephyr's counter tests expect that setting an absolute alarm for the
+		 * current tick (or slightly in the past) is treated as "late" and returns
+		 * -ETIME, while still expiring immediately when EXPIRE_WHEN_LATE is set.
+		 */
+		abs_late_thresh = MAX(data->guard_period, 1U) + 1U;
+		/*
+		 * Determine whether the counter has just passed the intended target.
+		 *
+		 * Per Zephyr counter API, an absolute alarm set "in the past" may be treated
+		 * as either late (return -ETIME) or intentional wrap-around. The guard period
+		 * lets the driver decide: if the target is within the guard window behind the
+		 * current tick, treat it as late; otherwise allow wrap-around.
+		 *
+		 * Use wrap-safe unsigned arithmetic; avoid signed deltas (targets may set bit 31).
+		 */
+		uint32_t back = now2 - target;
+
+		if (back <= abs_late_thresh) {
+			return mcux_rtc_jdp_alarm_handle_late_or_drop(data, config, chan_id,
+							     irq_on_late, retp, -ETIME);
 		}
+
+		/*
+		 * For close-future absolute deadlines, avoid missing the compare due to
+		 * RTCVAL/APIVAL synchronization by expiring via SW-pending.
+		 */
+		if (fwd <= RTC_JDP_SAFETY_WINDOW_CYCLES(chan_id)) {
+			return mcux_rtc_jdp_alarm_handle_sw_pend(data, config, chan_id, retp, 0);
+		}
+
 		return 0;
+	}
+
+	/*
+	 * If the compare is within the synchronization safety window, don't rely on
+	 * hardware match; trigger a SW-pending interrupt to deliver the callback.
+	 */
+	if (fwd <= RTC_JDP_SAFETY_WINDOW_CYCLES(chan_id)) {
+		return mcux_rtc_jdp_alarm_handle_sw_pend(data, config, chan_id, retp, 0);
 	}
 
 	/* Relative */
 	if ((diff > max_rel_val) || (diff == 0U)) {
-		if (retp != NULL) {
-			*retp = 0;
-		}
-		if (irq_on_late != false) {
-			data->sw_pending_mask |= BIT(chan_id);
-			irq_enable(config->irqn);
-			NVIC_SetPendingIRQ(config->irqn);
-		} else {
-			data->alarm_callback[chan_id] = NULL;
-			data->alarm_user_data[chan_id] = NULL;
-		}
-		return 1;
+		return mcux_rtc_jdp_alarm_handle_late_or_drop(data, config, chan_id,
+							     irq_on_late, retp, 0);
 	}
 
 	return 0;

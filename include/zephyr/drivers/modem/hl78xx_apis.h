@@ -249,6 +249,65 @@ struct hl78xx_agnss_status {
 };
 #endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
 
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+/**
+ * @brief Power down event types
+ *
+ * Types of power down events reported by the modem
+ */
+enum power_down_event {
+	/** Power down event: Modem is entering power down mode */
+	POWER_DOWN_EVENT_ENTER = 0,
+	/** Power down event: Modem is exiting power down mode */
+	POWER_DOWN_EVENT_EXIT,
+	/** No power down event */
+	POWER_DOWN_EVENT_NONE,
+};
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+/**
+ * @brief eDRX event types
+ *
+ * Types of eDRX events reported by the modem
+ */
+enum hl78xx_edrx_event {
+	/** Modem exited eDRX idle mode */
+	HL78XX_EDRX_EVENT_IDLE_EXIT = 0,
+	/** Modem entered eDRX idle mode */
+	HL78XX_EDRX_EVENT_IDLE_ENTER,
+	/** No eDRX event */
+	HL78XX_EDRX_EVENT_IDLE_NONE,
+};
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+#ifdef CONFIG_MODEM_HL78XX_PSM
+/**
+ * @brief PSM event types
+ *
+ * Types of Power Saving Mode events reported by the modem
+ */
+enum hl78xx_psmev_event {
+	/** Modem exited PSM mode */
+	HL78XX_PSM_EVENT_EXIT = 0,
+	/** Modem entered PSM mode */
+	HL78XX_PSM_EVENT_ENTER,
+	/** No PSM event */
+	HL78XX_PSM_EVENT_NONE,
+};
+#endif /* CONFIG_MODEM_HL78XX_PSM */
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+
+/**
+ * @brief Cellular measurement signal information.
+ *
+ * Holds received signal power values reported by the modem during
+ * cell measurement procedures.
+ */
+struct k_cellmeas_signal_info {
+	/** Reference Signal Received Power (RSRP) in dBm. */
+	int16_t rsrp;
+};
 /**
  * @brief Cellular network structure
  *
@@ -301,6 +360,24 @@ enum hl78xx_evt_type {
 	/** GNSS mode exited - modem is now in airplane mode, user can decide next step */
 	HL78XX_GNSS_EVENT_MODE_EXITED,
 #endif /* CONFIG_HL78XX_GNSS */
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+	/** eDRX idle mode entered */
+	HL78XX_EDRX_IDLE_UPDATE,
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+#ifdef CONFIG_MODEM_HL78XX_PSM
+	/** Modem PSM event update */
+	HL78XX_LTE_PSMEV_UPDATE,
+#endif /* CONFIG_MODEM_HL78XX_PSM */
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+	/** Modem power-down event update */
+	HL78XX_POWER_DOWN_UPDATE,
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+	/** Cellular measurement update */
+	HL78XX_CELLMEAS_UPDATE,
+	/** Event type count */
+	HL78XX_EVT_TYPE_COUNT
 };
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 /**
@@ -422,6 +499,22 @@ struct hl78xx_evt {
 		/** GNSS position event type */
 		enum gnss_position_events position_event;
 #endif /* CONFIG_HL78XX_GNSS */
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+#ifdef CONFIG_MODEM_HL78XX_PSM
+		/* PSM event */
+		enum hl78xx_psmev_event psm_event;
+#endif /* CONFIG_MODEM_HL78XX_PSM */
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+		/* eDRX event */
+		enum hl78xx_edrx_event edrx_event;
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+		/* Power-down event */
+		enum power_down_event power_down_event;
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+		/** Cellular measurement event content */
+		struct k_cellmeas_signal_info cellmeas;
 		/** Boolean status value */
 		bool status;
 		/** Integer value */
@@ -1027,14 +1120,64 @@ int hl78xx_start_airvantage_dm_session(const struct device *dev);
 int hl78xx_stop_airvantage_dm_session(const struct device *dev);
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+/**
+ * @brief Wake the modem from PSM sleep
+ *
+ * Sends a wakeup signal to the modem, triggering the RESUME event in the
+ * driver state machine. The modem will re-open the UART bus and proceed
+ * to either GNSS (if a GNSS request is pending in post-PSM mode) or
+ * LTE registration (AWAIT_REGISTERED).
+ *
+ * This is the user-facing API for the POST-PSM GNSS workflow:
+ * 1. hl78xx_enter_gnss_mode() — queues GNSS, modem enters PSM
+ * 2. (modem sleeps, waits for user trigger)
+ * 3. hl78xx_wakeup_modem() — wakes the modem, GNSS runs before LTE
+ * 4. GNSS completes, modem returns to LTE registration
+ *
+ * Can also be used independently of GNSS to wake the modem for any
+ * purpose (e.g. sending data earlier than the next PSM cycle).
+ *
+ * @param dev Pointer to the modem device
+ * @return 0 on success
+ * @return -EALREADY if modem is not in sleep state
+ * @return -EINVAL if dev is invalid
+ */
+int hl78xx_wakeup_modem(const struct device *dev);
+
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+/**
+ * @brief Get the remaining time for the modem to go in eDRX idle state
+ *
+ * @param dev Pointer to the modem device
+ * @return Remaining time in milliseconds, or negative errno on failure
+ */
+int hl78xx_edrx_get_time_to_sleep(const struct device *dev);
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+
 #ifdef CONFIG_HL78XX_GNSS
 /**
  * @brief Enter GNSS mode
  *
- * Switches modem from LTE mode to GNSS mode. This will:
- * 1. Put modem in airplane mode (AT+CFUN=4)
- * 2. Initialize GNSS engine
- * 3. Fire HL78XX_GNSS_ENGINE_READY event when complete
+ * Switches modem from LTE mode to GNSS mode. The exact transition depends
+ * on the modem's current power state:
+ *
+ * **Without low-power mode (default / airplane mode path):**
+ * 1. Carrier off (notify app, close sockets)
+ * 2. Put modem in airplane mode (AT+CFUN=4)
+ * 3. Initialize GNSS engine
+ * 4. Fire HL78XX_GNSS_ENGINE_READY event when complete
+ *
+ * **With low-power mode (PSM path):**
+ * 1. Mark GNSS as pending
+ * 2. Wait for modem to enter PSM sleep (PSMEV:1)
+ * 3. Wake modem (UART only - LTE stays hibernating)
+ * 4. Initialize GNSS engine (no CFUN=4 needed, RF path already free)
+ * 5. Fire HL78XX_GNSS_ENGINE_READY event when complete
+ *
+ * Per HL78xx GNSS App Note 5.3: "GNSS can be used in PSM mode" because
+ * the LTE modem is unavailable and the shared RF Rx path is free.
  *
  * After entering GNSS mode, call hl78xx_queue_gnss_search() to start fix acquisition.
  *
@@ -1048,8 +1191,17 @@ int hl78xx_enter_gnss_mode(const struct device *dev);
  *
  * Switches modem from GNSS mode back to LTE mode. This will:
  * 1. Stop any active GNSS search
- * 2. Restore full phone functionality (AT+CFUN=1)
- * 3. Modem will re-register to the network
+ * 2. Fire HL78XX_GNSS_EVENT_MODE_EXITED event
+ *
+ * After the event fires, the next step depends on the power mode:
+ * - **Airplane mode**: User must call
+ *   hl78xx_api_func_set_phone_functionality(dev, HL78XX_FULLY_FUNCTIONAL, ...)
+ *   to restore LTE.
+ * - **PSM mode**: The driver automatically transitions back to
+ *   AWAIT_REGISTERED and the modem will re-register to LTE.
+ *
+ *  * - **LOW-POWER-PSM mode**: User does not need to do anything, the modem will automatically
+ * transition back to LTE registration after the kcellmeasure or socket data transmission starts.
  *
  * @param dev Pointer to the modem device
  * @return 0 on success, -EALREADY if not in GNSS mode, negative errno on failure

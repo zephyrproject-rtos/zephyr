@@ -13,6 +13,7 @@ if MBOX
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
 # zephyr-keep-sorted-start
+source "drivers/mbox/Kconfig.adi_max32"
 source "drivers/mbox/Kconfig.andes"
 source "drivers/mbox/Kconfig.esp32"
 source "drivers/mbox/Kconfig.ivshmem"
@@ -26,6 +27,7 @@ source "drivers/mbox/Kconfig.nxp_mailbox"
 source "drivers/mbox/Kconfig.nxp_s32"
 source "drivers/mbox/Kconfig.renesas_ra"
 source "drivers/mbox/Kconfig.renesas_rz"
+source "drivers/mbox/Kconfig.rpi_pico"
 source "drivers/mbox/Kconfig.stm32_hsem"
 source "drivers/mbox/Kconfig.ti_omap"
 source "drivers/mbox/Kconfig.ti_secproxy"

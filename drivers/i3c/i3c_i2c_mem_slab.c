@@ -17,7 +17,7 @@ K_MEM_SLAB_DEFINE(i3c_i2c_device_desc_pool, sizeof(struct i3c_i2c_device_desc),
 
 struct i3c_i2c_device_desc *i3c_i2c_device_desc_alloc(void)
 {
-	struct i3c_i2c_device_desc *desc;
+	struct i3c_i2c_device_desc *desc = NULL;
 
 	if (k_mem_slab_alloc(&i3c_i2c_device_desc_pool, (void **)&desc, K_NO_WAIT) == 0) {
 		memset(desc, 0, sizeof(struct i3c_i2c_device_desc));

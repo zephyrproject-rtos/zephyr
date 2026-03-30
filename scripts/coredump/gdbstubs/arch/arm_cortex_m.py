@@ -38,6 +38,7 @@ class RegNum:
 class GdbStub_ARM_CortexM(GdbStub):
     ARCH_DATA_BLK_STRUCT = "<IIIIIIIII"
     ARCH_DATA_BLK_STRUCT_V2 = "<IIIIIIIIIIIIIIIII"
+    ARCH_DATA_BLK_STRUCT_V3 = "<IIIIIIIIIIIIIIIIIII"
 
     GDB_SIGNAL_DEFAULT = 7
 
@@ -47,6 +48,7 @@ class GdbStub_ARM_CortexM(GdbStub):
         super().__init__(logfile=logfile, elffile=elffile)
         self.registers = None
         self.gdb_signal = self.GDB_SIGNAL_DEFAULT
+        self.callee_saved_offset = None
 
         self.parse_arch_data_block()
 
@@ -58,6 +60,8 @@ class GdbStub_ARM_CortexM(GdbStub):
             tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT, arch_data_blk)
         elif arch_data_ver == 2:
             tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT_V2, arch_data_blk)
+        elif arch_data_ver == 3:
+            tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT_V3, arch_data_blk)
 
         self.registers = dict()
 
@@ -80,6 +84,11 @@ class GdbStub_ARM_CortexM(GdbStub):
             self.registers[RegNum.R9] = tu[14]
             self.registers[RegNum.R10] = tu[15]
             self.registers[RegNum.R11] = tu[16]
+
+        if arch_data_ver > 2:
+            callee_saved_valid = tu[17]
+            if callee_saved_valid:
+                self.callee_saved_offset = tu[18]
 
     def send_registers_packet(self, registers):
         reg_fmt = "<I"
@@ -186,5 +195,21 @@ class GdbStub_ARM_CortexM(GdbStub):
 
                     # Set R7 to match the stack pointer in case the frame pointer is not omitted
                     thread_registers[RegNum.R7] = thread_registers[RegNum.SP]
+
+                # Read callee-saved registers (r4-r11) from _callee_saved struct.
+                if self.callee_saved_offset is not None:
+                    callee_saved_bytes = self.get_memory(
+                        thread_ptr + self.callee_saved_offset, size_t_size * 8
+                    )
+                    if callee_saved_bytes is not None:
+                        callee_regs = struct.unpack("<IIIIIIII", callee_saved_bytes)
+                        thread_registers[RegNum.R4] = callee_regs[0]
+                        thread_registers[RegNum.R5] = callee_regs[1]
+                        thread_registers[RegNum.R6] = callee_regs[2]
+                        thread_registers[RegNum.R7] = callee_regs[3]
+                        thread_registers[RegNum.R8] = callee_regs[4]
+                        thread_registers[RegNum.R9] = callee_regs[5]
+                        thread_registers[RegNum.R10] = callee_regs[6]
+                        thread_registers[RegNum.R11] = callee_regs[7]
 
             self.send_registers_packet(thread_registers)

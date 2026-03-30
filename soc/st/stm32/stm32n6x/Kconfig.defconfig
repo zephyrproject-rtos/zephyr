@@ -5,8 +5,6 @@
 
 if SOC_SERIES_STM32N6X
 
-rsource "Kconfig.defconfig.stm32n6*"
-
 DT_STM32_CPU_CLOCK_PATH := $(dt_nodelabel_path,cpusw)
 DT_STM32_CPU_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_CPU_CLOCK_PATH),clock-frequency)
 
@@ -29,5 +27,15 @@ config STM32_LTDC_FB_SMH_ALIGN
 
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
+
+if STM32_IOCELL
+
+configdefault OTP
+	default y
+
+configdefault NVMEM
+	default y
+
+endif # STM32_IOCELL
 
 endif # SOC_SERIES_STM32N6X

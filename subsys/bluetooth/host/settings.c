@@ -24,6 +24,7 @@
 
 #include "common/bt_settings_commit.h"
 #include "common/bt_str.h"
+#include "classic/br.h"
 #include "hci_core.h"
 #include "settings.h"
 #include "sys/types.h"
@@ -320,7 +321,25 @@ static int commit_settings(void)
 
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 	if (bt_dev.name[0] == '\0') {
-		bt_set_name(CONFIG_BT_DEVICE_NAME);
+		/* No name in flash — populate bt_dev.name with the default.
+		 * Skip bt_set_name() to avoid an unnecessary flash write.
+		 */
+		strncpy(bt_dev.name, CONFIG_BT_DEVICE_NAME,
+			CONFIG_BT_DEVICE_NAME_MAX);
+		bt_dev.name[CONFIG_BT_DEVICE_NAME_MAX] = '\0';
+	}
+
+	/* Push the name (restored or default) to all transports.
+	 * For BLE the GAP device name is already handled by the
+	 * advertising / scan-response path; for BR/EDR we must
+	 * issue the HCI Write Local Name command explicitly.
+	 */
+	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+		err = bt_br_write_local_name(bt_dev.name);
+		if (err != 0) {
+			LOG_ERR("Unable to set BR/EDR local name (err %d)", err);
+			return err;
+		}
 	}
 #endif
 	if (!bt_dev.id_count) {

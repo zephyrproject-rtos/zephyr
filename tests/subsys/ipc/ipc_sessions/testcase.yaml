@@ -72,3 +72,12 @@ tests:
       - ipc_sessions_SNIPPET=nordic-ppr
       - CONFIG_IPC_TEST_SKIP_UNBOUND=y
       - remote_CONFIG_IPC_SERVICE_BACKEND_ICMSG_V1=y
+  sample.ipc.ipc_sessions.max32:
+    platform_allow:
+      - max32655evkit/max32655/m4
+      - max32690evkit/max32690/m4
+      - max78002evkit/max78002/m4
+    integration_platforms:
+      - max32655evkit/max32655/m4
+      - max32690evkit/max32690/m4
+      - max78002evkit/max78002/m4

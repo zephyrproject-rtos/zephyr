@@ -76,7 +76,7 @@ static int cmd_tbs_init(const struct shell *sh, size_t argc, char *argv[])
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_TBS_TECHNOLOGY_3G,
-		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+		.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
 	};
 	int err;
 
@@ -99,7 +99,7 @@ static int cmd_tbs_init(const struct shell *sh, size_t argc, char *argv[])
 			.authorization_required = false,
 			/* Set different technologies per bearer */
 			.technology = (i % BT_TBS_TECHNOLOGY_WCDMA) + 1,
-			.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+			.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
 		};
 
 		snprintf(prov_name, sizeof(prov_name), "Telephone Bearer #%d", i);
@@ -698,9 +698,7 @@ static int cmd_tbs_set_uri_scheme_list(const struct shell *sh, size_t argc,
 		service_index = BT_TBS_GTBS_INDEX;
 	}
 
-	result = bt_tbs_set_uri_scheme_list((uint8_t)service_index,
-					    (const char **)&argv[2],
-					    argc - 2);
+	result = bt_tbs_set_uri_scheme_list((uint8_t)service_index, argv[2]);
 
 	if (result != BT_TBS_RESULT_CODE_SUCCESS) {
 		shell_print(sh, "Could not set URI prefix list: %d", result);
@@ -794,8 +792,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(tbs_cmds,
 		      cmd_tbs_set_status_flags, 2, 1),
 	SHELL_CMD_ARG(set_uri_scheme, NULL,
 		      "Set the URI prefix list <bearer_idx> "
-		      "<uri1 [uri2 [uri3 [...]]]>",
-		      cmd_tbs_set_uri_scheme_list, 3, 30),
+		      "<uri1[,uri2[,uri3[,...]]]>",
+		      cmd_tbs_set_uri_scheme_list, 3, 0),
 	SHELL_CMD_ARG(print_calls, NULL,
 		      "Output all calls in the debug log",
 		      cmd_tbs_print_calls, 1, 0),

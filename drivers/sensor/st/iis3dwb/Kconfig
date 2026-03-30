@@ -9,6 +9,7 @@ menuconfig IIS3DWB
 	depends on DT_HAS_ST_IIS3DWB_ENABLED
 	depends on ZEPHYR_HAL_ST_MODULE
 	select SPI
+	select SPI_RTIO if SENSOR_ASYNC_API
 	select HAS_STMEMSC
 	select USE_STDC_IIS3DWB
 	help

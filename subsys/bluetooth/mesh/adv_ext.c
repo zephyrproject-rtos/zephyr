@@ -386,7 +386,7 @@ static bool schedule_send(struct bt_mesh_ext_adv *ext_adv)
 		 * current advertising is finished, which is done through the `adv_sent` callback.
 		 *
 		 * The proxy advertisement in turns doesn't timeout or stop quickly and has less
-		 * priority than regular mesh messages, thus needs to be stopped immeditaly.
+		 * priority than regular mesh messages, thus needs to be stopped immediately.
 		 */
 		if (!atomic_test_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
 			return false;

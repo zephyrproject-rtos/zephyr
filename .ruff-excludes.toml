@@ -962,7 +962,6 @@ exclude = [
     "./scripts/pylib/twister/twisterlib/testinstance.py",
     "./scripts/pylib/twister/twisterlib/testplan.py",
     "./scripts/pylib/twister/twisterlib/testsuite.py",
-    "./scripts/pylib/twister/twisterlib/twister_main.py",
     "./scripts/pylint/checkers/argparse-checker.py",
     "./scripts/release/bug_bash.py",
     "./scripts/release/list_backports.py",

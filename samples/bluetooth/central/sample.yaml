@@ -17,11 +17,20 @@ tests:
       - esp32_devkitc/esp32/procpu
       - esp32s3_devkitc/esp32s3/procpu
       - esp8684_devkitm
-      - esp32c3_devkitm
+      - esp32c3_devkitc
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32h2_devkitm
       - sltb010a/efr32bg22c224f512im40
       - xg24_rb4187c/efr32mg24b220f1536im48
       - xg27_dk2602a/efr32bg27c140f768im40
       - xg29_rb4412a/efr32mg29b140f1024im40
+    build_only: true
+  sample.bluetooth.central.64b_ts:
+    extra_args:
+      - CONFIG_BT_DEBUG_MONITOR_UART=y
+      - CONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+      - CONFIG_LOG=y
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+    platform_allow:
+      - qemu_cortex_m3
     build_only: true

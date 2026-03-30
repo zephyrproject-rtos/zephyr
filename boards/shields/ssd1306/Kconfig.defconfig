@@ -14,9 +14,6 @@ config LV_DPI_DEF
 	default 116 if SHIELD_SH1106_128X64
 	default 148
 
-config LV_Z_BITS_PER_PIXEL
-	default 1
-
 config LV_Z_COLOR_MONO_HW_INVERSION
 	default y
 

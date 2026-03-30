@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(net_icmp, ICMP_LOG_LEVEL);
 #include <errno.h>
 #include <zephyr/random/random.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/icmp.h>
 
@@ -507,12 +508,12 @@ int net_icmp_send_echo_request_no_wait(struct net_icmp_ctx *ctx,
 						  K_NO_WAIT);
 }
 
-static int icmp_call_handlers(struct net_pkt *pkt,
-			      struct net_icmp_ip_hdr *ip_hdr,
-			      struct net_icmp_hdr *icmp_hdr)
+static enum net_verdict icmp_call_handlers(struct net_pkt *pkt,
+					   struct net_icmp_ip_hdr *ip_hdr,
+					   struct net_icmp_hdr *icmp_hdr)
 {
 	struct net_icmp_ctx *ctx;
-	int ret = -ENOENT;
+	enum net_verdict ret = NET_DROP;
 
 	k_mutex_lock(&lock, K_FOREVER);
 
@@ -531,22 +532,27 @@ static int icmp_call_handlers(struct net_pkt *pkt,
 			}
 
 			ret = ctx->handler(ctx, pkt, ip_hdr, icmp_hdr, ctx->user_data);
-			if (ret < 0) {
-				goto out;
+			if (ret == NET_CONTINUE) {
+				continue;
 			}
+
+			/**
+			 * Any handler returning NET_OK or NET_DROP has processed and
+			 * possibly modified the pkt
+			 */
+			break;
 		}
 	}
 
-out:
 	k_mutex_unlock(&lock);
 
 	return ret;
 }
 
 
-int net_icmp_call_ipv4_handlers(struct net_pkt *pkt,
-				struct net_ipv4_hdr *ipv4_hdr,
-				struct net_icmp_hdr *icmp_hdr)
+enum net_verdict net_icmp_call_ipv4_handlers(struct net_pkt *pkt,
+					     struct net_ipv4_hdr *ipv4_hdr,
+					     struct net_icmp_hdr *icmp_hdr)
 {
 	struct net_icmp_ip_hdr ip_hdr;
 
@@ -556,9 +562,9 @@ int net_icmp_call_ipv4_handlers(struct net_pkt *pkt,
 	return icmp_call_handlers(pkt, &ip_hdr, icmp_hdr);
 }
 
-int net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
-				struct net_ipv6_hdr *ipv6_hdr,
-				struct net_icmp_hdr *icmp_hdr)
+enum net_verdict net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
+					     struct net_ipv6_hdr *ipv6_hdr,
+					     struct net_icmp_hdr *icmp_hdr)
 {
 	struct net_icmp_ip_hdr ip_hdr;
 

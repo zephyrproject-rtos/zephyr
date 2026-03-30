@@ -96,7 +96,7 @@ config SOC_NRF54LX_DISABLE_FICR_TRIMCNF
 
 config SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE
 	bool "Skip disabling glitch detector"
-	default y if TRUSTED_EXECUTION_NONSECURE
+	default y if TRUSTED_EXECUTION_NONSECURE || MCUBOOT
 	help
 	  With this option, the glitch detector is not disabled during system initialization.
 	  The CPU runs with the default state of glitch detector.
@@ -106,5 +106,26 @@ config SOC_NRF54L_ANOMALY_56_WORKAROUND
 	default y
 	help
 	   This option enables configuration workaround 56 for nRF54L Series SoCs.
+
+config SOC_NRF54LM20A_DEVELOP_IN_NRF54LM20B
+	bool
+	help
+	  The nrf54lm20dk board can be used to develop the nRF54LM20A or nRF54LM20B SoCs
+	  onto the nRF54LM20B DK. This symbol needs to be considered by certain system
+	  initialization functionality residing in SoC erratas.
+
+config SOC_NRF54L10_DEVELOP_IN_NRF54L15
+	bool
+	help
+	  The nrf54l15dk board can be used to develop the nRF54L10 SoC onto the nRF54L15 DK.
+	  This symbol needs to be considered by certain system initialization functionality
+	  residing in system_nrf54l.c and SoC erratas.
+
+config SOC_NRF54L05_DEVELOP_IN_NRF54L15
+	bool
+	help
+	  The nrf54l15dk board can be used to develop the nRF54L05 SoC onto the nRF54L15 DK.
+	  This symbol needs to be considered by certain system initialization functionality
+	  residing in system_nrf54l.c and SoC erratas.
 
 endif # SOC_SERIES_NRF54L

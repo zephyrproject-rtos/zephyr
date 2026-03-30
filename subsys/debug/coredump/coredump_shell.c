@@ -287,7 +287,7 @@ static int print_raw_data(const struct shell *sh,
 		}
 
 		ret = coredump_cmd(COREDUMP_CMD_COPY_STORED_DUMP, copy);
-		if (ret != 0) {
+		if (ret < 0) {
 			return -EINVAL;
 		}
 
@@ -346,7 +346,7 @@ static int parse_and_print_coredump(const struct shell *sh,
 	}
 
 	ret = coredump_cmd(COREDUMP_CMD_COPY_STORED_DUMP, copy);
-	if (ret != 0) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -393,8 +393,8 @@ static int parse_and_print_coredump(const struct shell *sh,
 		}
 
 		ret = coredump_cmd(COREDUMP_CMD_COPY_STORED_DUMP, copy);
-		if (ret != 0) {
-			return -ENOMEM;
+		if (ret < 0) {
+			return ret;
 		}
 
 		hdr = (struct coredump_mem_hdr_t *)copy->buffer;

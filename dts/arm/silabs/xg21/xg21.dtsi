@@ -2,6 +2,7 @@
  * Copyright (c) 2020 TriaGnoSys GmbH
  * Copyright (c) 2021 Safran Passenger Innovations Germany GmbH
  * Copyright (c) 2025 Silicon Laboratories Inc.
+ * Copyright (c) 2026 Phuc Hoang <donp172748@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +18,7 @@
 / {
 	chosen {
 		silabs,sleeptimer = &rtcc0;
+		zephyr,crc = &gpcrc;
 		zephyr,entropy = &se;
 		zephyr,flash-controller = &msc;
 	};
@@ -164,7 +166,7 @@
 	};
 
 	hwinfo: hwinfo {
-		compatible = "silabs,gecko-hwinfo";
+		compatible = "silabs,series2-hwinfo";
 		status = "disabled";
 	};
 
@@ -242,6 +244,7 @@
 			reg = <0x50030000 0x4000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_HCLK>;
 			interrupt-names = "msc";
 			interrupts = <51 2>;
 
@@ -337,6 +340,11 @@
 			interrupts = <6 2>;
 			status = "disabled";
 
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "silabs,timer-pwm";
 				#pwm-cells = <3>;
@@ -353,6 +361,11 @@
 			interrupt-names = "timer1";
 			interrupts = <7 2>;
 			status = "disabled";
+
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
 
 			pwm {
 				compatible = "silabs,timer-pwm";
@@ -371,6 +384,11 @@
 			interrupts = <8 2>;
 			status = "disabled";
 
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "silabs,timer-pwm";
 				#pwm-cells = <3>;
@@ -387,6 +405,11 @@
 			interrupt-names = "timer3";
 			interrupts = <9 2>;
 			status = "disabled";
+
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
 
 			pwm {
 				compatible = "silabs,timer-pwm";
@@ -423,7 +446,7 @@
 		};
 
 		burtc0: burtc@50064000 {
-			compatible = "silabs,gecko-burtc";
+			compatible = "silabs,burtc-counter";
 			reg = <0x50064000 0x4000>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM4GRPACLK>;
 			interrupt-names = "burtc";
@@ -447,6 +470,13 @@
 			compatible = "silabs,buram";
 			reg = <0x50080000 0x80>;
 			status = "disabled";
+		};
+
+		gpcrc: gpcrc@50088000 {
+			compatible = "silabs,gpcrc";
+			reg = <0x50088000 0x4000>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_HCLK>;
+			status = "okay";
 		};
 
 		rtcc0: rtcc@58000000 {

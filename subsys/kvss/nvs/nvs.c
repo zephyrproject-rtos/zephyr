@@ -1,6 +1,7 @@
 /*  NVS: non volatile storage in flash
  *
  * Copyright (c) 2018 Laczen
+ * Copyright (c) 2026 Lingao Meng
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,47 +100,114 @@ static inline size_t nvs_al_size(struct nvs_fs *fs, size_t len)
 /* end basic routines */
 
 /* flash routines */
-/* basic aligned flash write to nvs address */
-static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
-			     size_t len)
-{
-	const uint8_t *data8 = (const uint8_t *)data;
-	int rc = 0;
-	off_t offset;
-	size_t blen;
-	uint8_t buf[NVS_BLOCK_SIZE];
 
-	if (!len) {
-		/* Nothing to write, avoid changing the flash protection */
+/* Write the data described by @p strm to flash at the given NVS address,
+ * respecting the flash write block alignment requirements. The write
+ * may include a header, primary data, and a tail. All buffers are
+ * written as a single contiguous stream.
+ */
+ZTESTABLE_STATIC int nvs_flash_al_wrt_streams(struct nvs_fs *fs, uint32_t addr,
+					      const struct nvs_flash_wrt_stream *strm)
+{
+	const struct flash_parameters *fp = fs->flash_parameters;
+	size_t wbs = fp->write_block_size;
+	uint8_t buf[NVS_BLOCK_SIZE];
+	size_t stream_idx = 0U;
+	size_t full_bytes = 0U;
+	size_t buf_fill = 0U;
+	size_t copy = 0U;
+	off_t offset;
+	int rc;
+
+	/* Nothing to write */
+	if ((strm->head.len + strm->data.len + strm->tail.len) == 0U) {
 		return 0;
 	}
 
+	/* Convert NVS address to flash offset */
 	offset = fs->offset;
 	offset += fs->sector_size * (addr >> ADDR_SECT_SHIFT);
 	offset += addr & ADDR_OFFS_MASK;
 
-	blen = len & ~(fs->flash_parameters->write_block_size - 1U);
-	if (blen > 0) {
-		rc = flash_write(fs->flash_device, offset, data8, blen);
-		if (rc) {
-			/* flash write error */
-			goto end;
+	/* Logical write stream: head -> data -> tail */
+	struct nvs_flash_buf streams[] = {
+		strm->head,
+		strm->data,
+		strm->tail,
+	};
+
+	while (stream_idx < ARRAY_SIZE(streams)) {
+		if (streams[stream_idx].len == 0U) {
+			stream_idx++;
+			continue;
 		}
-		len -= blen;
-		offset += blen;
-		data8 += blen;
-	}
-	if (len) {
-		memcpy(buf, data8, len);
-		(void)memset(buf + len, fs->flash_parameters->erase_value,
-			fs->flash_parameters->write_block_size - len);
 
-		rc = flash_write(fs->flash_device, offset, buf,
-				 fs->flash_parameters->write_block_size);
+		/* Direct write of aligned full blocks */
+		if (buf_fill == 0) {
+			/* number of full blocks = len & ~(wbs - 1) */
+			full_bytes = streams[stream_idx].len & ~(wbs - 1);
+
+			if (full_bytes > 0U) {
+				rc = flash_write(fs->flash_device, offset,
+						 streams[stream_idx].ptr,
+						 full_bytes);
+				if (rc) {
+					return rc;
+				}
+
+				streams[stream_idx].ptr += full_bytes;
+				streams[stream_idx].len -= full_bytes;
+				offset += full_bytes;
+				continue;
+			}
+		}
+
+		/* Copy to buffer to assemble a full block */
+		copy = MIN(wbs - buf_fill, streams[stream_idx].len);
+		if (copy > 0U) {
+			(void)memcpy(buf + buf_fill, streams[stream_idx].ptr, copy);
+
+			streams[stream_idx].ptr += copy;
+			streams[stream_idx].len -= copy;
+			buf_fill += copy;
+		}
+
+		/* If buffer full, write to flash */
+		if (buf_fill == wbs) {
+			rc = flash_write(fs->flash_device, offset, buf, wbs);
+			if (rc) {
+				return rc;
+			}
+
+			offset += wbs;
+			buf_fill = 0U;
+		}
 	}
 
-end:
-	return rc;
+
+	if (buf_fill > 0U) {
+		(void)memset(buf + buf_fill, fp->erase_value, wbs - buf_fill);
+
+		rc = flash_write(fs->flash_device, offset, buf, wbs);
+		if (rc) {
+			return rc;
+		}
+	}
+
+	return 0;
+}
+
+static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
+			    size_t len)
+{
+	struct nvs_flash_wrt_stream strm = {
+		.data = {
+			.ptr = data,
+			.len = len,
+		},
+	};
+
+	return nvs_flash_al_wrt_streams(fs, addr, &strm);
 }
 
 /* basic flash read from nvs address */
@@ -176,47 +244,39 @@ static int nvs_flash_ate_wrt(struct nvs_fs *fs, const struct nvs_ate *entry)
 }
 
 /* data write */
-static int nvs_flash_data_wrt(struct nvs_fs *fs, const void *data, size_t len, bool compute_crc)
+static int nvs_flash_data_al_wrt(struct nvs_fs *fs,
+				 struct nvs_flash_wrt_stream *strm,
+				 bool compute_crc)
 {
+	uint32_t data_crc;
 	int rc;
 
 	/* Only add the CRC if required (ignore deletion requests, i.e. when len is 0) */
-	if (IS_ENABLED(CONFIG_NVS_DATA_CRC) && compute_crc && (len > 0)) {
-		size_t aligned_len, data_len = len;
-		uint8_t *data8 = (uint8_t *)data, buf[NVS_BLOCK_SIZE + NVS_DATA_CRC_SIZE], *pbuf;
-		uint32_t data_crc;
+	if (IS_ENABLED(CONFIG_NVS_DATA_CRC) && compute_crc && (strm->data.len > 0)) {
+		data_crc = crc32_ieee(strm->data.ptr, strm->data.len);
 
-		/* Write as much aligned data as possible, so the CRC can be concatenated at
-		 * the end of the unaligned data later
-		 */
-		aligned_len = len & ~(fs->flash_parameters->write_block_size - 1U);
-		rc = nvs_flash_al_wrt(fs, fs->data_wra, data8, aligned_len);
-		fs->data_wra += aligned_len;
-		if (rc) {
-			return rc;
-		}
-		data8 += aligned_len;
-		len -= aligned_len;
-
-		/* Create a buffer with the unaligned data if any */
-		pbuf = buf;
-		if (len) {
-			memcpy(pbuf, data8, len);
-			pbuf += len;
-		}
-
-		/* Append the CRC */
-		data_crc = crc32_ieee(data, data_len);
-		memcpy(pbuf, &data_crc, sizeof(data_crc));
-		len += sizeof(data_crc);
-
-		rc = nvs_flash_al_wrt(fs, fs->data_wra, buf, len);
-	} else {
-		rc = nvs_flash_al_wrt(fs, fs->data_wra, data, len);
+		strm->tail.ptr = (void *)&data_crc;
+		strm->tail.len = sizeof(data_crc);
 	}
-	fs->data_wra += nvs_al_size(fs, len);
+
+	rc = nvs_flash_al_wrt_streams(fs, fs->data_wra, strm);
+
+	fs->data_wra += nvs_al_size(fs, strm->head.len + strm->data.len + strm->tail.len);
 
 	return rc;
+}
+
+static int nvs_flash_data_wrt(struct nvs_fs *fs, const void *data, size_t len,
+			      bool compute_crc)
+{
+	struct nvs_flash_wrt_stream strm = {
+		.data = {
+			.ptr = data,
+			.len = len,
+		},
+	};
+
+	return nvs_flash_data_al_wrt(fs, &strm, compute_crc);
 }
 
 /* flash ate read */
@@ -295,34 +355,88 @@ static int nvs_flash_cmp_const(struct nvs_fs *fs, uint32_t addr, uint8_t value,
 	return 0;
 }
 
-/* flash block move: move a block at addr to the current data write location
- * and updates the data write location.
+/* flash block move (GC-only helper)
+ *
+ * Move data starting at @addr to the current data write location during GC.
+ *
+ * This function writes data in write_block_size-aligned chunks only.
+ * If the total length is not aligned to write_block_size, the tail bytes
+ * (less than one write block) are read into @buf but NOT written immediately.
+ *
+ * The number of buffered but unwritten bytes is returned via @ctx->buffer_pos.
+ * The caller is responsible for flushing these remaining bytes later
+ * (typically before writing the corresponding ATE).
+ *
+ * Notes:
+ * - This function is intended to be used ONLY during GC.
+ * - @ctx->buffer_pos is guaranteed to be < write_block_size.
+ * - No padding or alignment is added to the data.
  */
-static int nvs_flash_block_move(struct nvs_fs *fs, uint32_t addr, size_t len)
+static int nvs_flash_block_move(struct nvs_fs *fs, uint32_t addr, struct nvs_block_move_ctx *ctx,
+				struct nvs_ate *gc_ate)
 {
+	size_t wbs = fs->flash_parameters->write_block_size;
+	size_t bytes_to_copy, block_size, tail_len;
+	size_t len = gc_ate->len;
 	int rc;
-	size_t bytes_to_copy, block_size;
-	uint8_t buf[NVS_BLOCK_SIZE];
 
-	block_size =
-		NVS_BLOCK_SIZE & ~(fs->flash_parameters->write_block_size - 1U);
+	/* Include any buffered tail bytes in the length */
+	len += ctx->buffer_pos;
 
+	/*
+	 * Split the total length into:
+	 * - a multiple of write_block_size (block_size)
+	 * - a remaining tail smaller than write_block_size (tail_len)
+	 */
+	tail_len = len & (wbs - 1U);
+	block_size = NVS_BLOCK_SIZE & ~(wbs - 1U);
+	len -= tail_len;
+
+	/* Update ATE offset to the new data location.
+	 * ctx.buffer_pos accounts for any buffered but unwritten
+	 * data carried over from previous moves.
+	 */
+	gc_ate->offset = (uint16_t)((fs->data_wra + ctx->buffer_pos)
+				    & ADDR_OFFS_MASK);
+
+	/* Copy and write only write_block_size-aligned data.
+	 * Any previously buffered bytes (ctx->buffer_pos) are prepended
+	 * to the newly read data to form a full aligned write.
+	 */
 	while (len) {
-		bytes_to_copy = MIN(block_size, len);
-		rc = nvs_flash_rd(fs, addr, buf, bytes_to_copy);
+		bytes_to_copy = MIN(block_size, len) - ctx->buffer_pos;
+
+		rc = nvs_flash_rd(fs, addr, ctx->buffer + ctx->buffer_pos, bytes_to_copy);
 		if (rc) {
 			return rc;
 		}
+
 		/* Just rewrite the whole record, no need to recompute the CRC as the data
 		 * did not change
 		 */
-		rc = nvs_flash_data_wrt(fs, buf, bytes_to_copy, false);
+		rc = nvs_flash_data_wrt(fs, ctx->buffer, bytes_to_copy + ctx->buffer_pos, false);
 		if (rc) {
 			return rc;
 		}
-		len -= bytes_to_copy;
+
+		len  -= bytes_to_copy + ctx->buffer_pos;
 		addr += bytes_to_copy;
+		ctx->buffer_pos = 0U;
 	}
+
+	/* Read the remaining unaligned tail into buffer.
+	 * This data is not written now and will be combined with the next data block.
+	 */
+	if (tail_len) {
+		rc = nvs_flash_rd(fs, addr, ctx->buffer + ctx->buffer_pos,
+				  tail_len - ctx->buffer_pos);
+		if (rc) {
+			return rc;
+		}
+
+		ctx->buffer_pos = tail_len;
+	}
+
 	return 0;
 }
 
@@ -357,6 +471,11 @@ static int nvs_flash_erase_sector(struct nvs_fs *fs, uint32_t addr)
 	}
 
 	return rc;
+}
+
+static inline uint16_t nvs_data_len_with_crc(size_t len)
+{
+	return (uint16_t)(len ? len + NVS_DATA_CRC_SIZE : 0U);
 }
 
 /* crc update on allocation entry */
@@ -451,7 +570,7 @@ static int nvs_flash_wrt_entry(struct nvs_fs *fs, uint16_t id, const void *data,
 
 	entry.id = id;
 	entry.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
-	entry.len = (uint16_t)len;
+	entry.len = nvs_data_len_with_crc(len);
 	entry.part = 0xff;
 
 	rc = nvs_flash_data_wrt(fs, data, len, true);
@@ -459,12 +578,6 @@ static int nvs_flash_wrt_entry(struct nvs_fs *fs, uint16_t id, const void *data,
 		return rc;
 	}
 
-#ifdef CONFIG_NVS_DATA_CRC
-	/* No CRC has been added if this is a deletion write request */
-	if (len > 0) {
-		entry.len += NVS_DATA_CRC_SIZE;
-	}
-#endif
 	nvs_ate_crc8_update(&entry);
 
 	rc = nvs_flash_ate_wrt(fs, &entry);
@@ -495,7 +608,7 @@ static int nvs_recover_last_ate(struct nvs_fs *fs, uint32_t *addr)
 	*addr -= ate_size;
 	ate_end_addr = *addr;
 	data_end_addr = *addr & ADDR_SECT_MASK;
-	while (ate_end_addr > data_end_addr) {
+	while ((ate_end_addr >= data_end_addr) && (ate_end_addr & ADDR_OFFS_MASK) != 0U) {
 		rc = nvs_flash_ate_rd(fs, ate_end_addr, &end_ate);
 		if (rc) {
 			return rc;
@@ -621,16 +734,87 @@ static int nvs_add_gc_done_ate(struct nvs_fs *fs)
 	return nvs_flash_ate_wrt(fs, &gc_done_ate);
 }
 
+/* Attempt to write a new entry during garbage collection
+ * and flush any remaining tail.
+ */
+static int nvs_gc_flush_and_try_write(struct nvs_fs *fs,
+				      struct nvs_block_move_ctx *bm_ctx,
+				      struct nvs_gc_write_entry *entry)
+{
+	struct nvs_flash_wrt_stream strm = {
+		.head = {
+			.ptr = bm_ctx->buffer,
+			.len = bm_ctx->buffer_pos,
+		},
+	};
+	size_t required_space = 0U;
+	struct nvs_ate wrt_ate;
+	size_t ate_size;
+	int rc;
+
+	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
+
+	if (entry) {
+		required_space = ate_size +
+			nvs_al_size(fs, bm_ctx->buffer_pos + nvs_data_len_with_crc(entry->len));
+	}
+
+	if (!entry || (fs->ate_wra < (fs->data_wra + required_space))) {
+		/* Not enough space for entry, only flush buffer if needed */
+		if (bm_ctx->buffer_pos > 0U) {
+			rc = nvs_flash_data_al_wrt(fs, &strm, false);
+			if (rc) {
+				return rc;
+			}
+		}
+
+		return 0;
+	}
+
+	strm.data.ptr = entry->data;
+	strm.data.len = entry->len;
+
+	/* Update ATE offset to the new data location.
+	 * bm_ctx->buffer_pos accounts for any buffered but unwritten
+	 * data carried over from previous moves.
+	 */
+	wrt_ate.offset = (uint16_t)((fs->data_wra + bm_ctx->buffer_pos)
+				    & ADDR_OFFS_MASK);
+
+	rc = nvs_flash_data_al_wrt(fs, &strm, true);
+	if (rc) {
+		return rc;
+	}
+
+	wrt_ate.id = entry->id;
+	wrt_ate.len = nvs_data_len_with_crc(entry->len);
+	wrt_ate.part = 0xff;
+
+	nvs_ate_crc8_update(&wrt_ate);
+
+	rc = nvs_flash_ate_wrt(fs, &wrt_ate);
+	if (rc) {
+		return rc;
+	}
+
+	entry->is_written = true;
+
+	return 0;
+}
+
 /* garbage collection: the address ate_wra has been updated to the new sector
  * that has just been started. The data to gc is in the sector after this new
  * sector.
  */
-static int nvs_gc(struct nvs_fs *fs)
+static int nvs_gc(struct nvs_fs *fs, struct nvs_gc_write_entry *entry)
 {
 	int rc;
 	struct nvs_ate close_ate, gc_ate, wlk_ate;
 	uint32_t sec_addr, gc_addr, gc_prev_addr, wlk_addr, wlk_prev_addr,
 	      data_addr, stop_addr;
+	struct nvs_block_move_ctx ctx = {
+		.buffer_pos = 0U,
+	};
 	size_t ate_size;
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
@@ -700,23 +884,48 @@ static int nvs_gc(struct nvs_fs *fs)
 			}
 		} while (wlk_addr != fs->ate_wra);
 
-		/* if walk has reached the same address as gc_addr copy is
-		 * needed unless it is a deleted item.
+		/* If the walk cursor reaches the same entry as the GC cursor,
+		 * the data must be moved unless this entry represents a deleted item
+		 * (len == 0).
+		 *
+		 * During GC, data is compacted and rewritten to the current data
+		 * write location. Data may be packed back-to-back without alignment
+		 * padding; write alignment is handled internally by buffering.
 		 */
 		if ((wlk_prev_addr == gc_prev_addr) && gc_ate.len) {
+			/* If we have a matching entry already in the sector being GC'd:
+			 * - Check that the entry ID matches the current GC ATE
+			 * - Check that the existing entry's data + CRC fits within the GC
+			 *   ATE length
+			 *
+			 * Entry matches the GC target and fits in the allocation.
+			 * Do not write it now; it will be written later during the final GC
+			 * flush.
+			 */
+			if (entry && (entry->id == gc_ate.id) &&
+			    (nvs_data_len_with_crc(entry->len) <= gc_ate.len)) {
+				LOG_DBG("Skipping entry id %d, len %d; will write later",
+					 gc_ate.id, gc_ate.len);
+				continue;
+			}
+
 			/* copy needed */
 			LOG_DBG("Moving %d, len %d", gc_ate.id, gc_ate.len);
 
 			data_addr = (gc_prev_addr & ADDR_SECT_MASK);
 			data_addr += gc_ate.offset;
 
-			gc_ate.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
-			nvs_ate_crc8_update(&gc_ate);
-
-			rc = nvs_flash_block_move(fs, data_addr, gc_ate.len);
+			/* Move the data to the new location.
+			 * Data is written in write_block_size-aligned chunks only.
+			 * Any remaining unaligned bytes are buffered in ctx.buffer and
+			 * reported back via ctx.buffer_pos.
+			 */
+			rc = nvs_flash_block_move(fs, data_addr, &ctx, &gc_ate);
 			if (rc) {
 				return rc;
 			}
+
+			nvs_ate_crc8_update(&gc_ate);
 
 			rc = nvs_flash_ate_wrt(fs, &gc_ate);
 			if (rc) {
@@ -724,6 +933,11 @@ static int nvs_gc(struct nvs_fs *fs)
 			}
 		}
 	} while (gc_prev_addr != stop_addr);
+
+	rc = nvs_gc_flush_and_try_write(fs, &ctx, entry);
+	if (rc) {
+		return rc;
+	}
 
 gc_done:
 
@@ -928,7 +1142,7 @@ static int nvs_startup(struct nvs_fs *fs)
 			fs->lookup_cache[i] = fs->ate_wra;
 		}
 #endif
-		rc = nvs_gc(fs);
+		rc = nvs_gc(fs, NULL);
 		goto end;
 	}
 
@@ -1085,6 +1299,7 @@ int nvs_mount(struct nvs_fs *fs)
 ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 {
 	int rc, gc_count;
+	struct nvs_gc_write_entry wrt_entry;
 	size_t ate_size, data_size;
 	struct nvs_ate wlk_ate;
 	uint32_t wlk_addr, rd_addr;
@@ -1097,7 +1312,7 @@ ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 	}
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
-	data_size = nvs_al_size(fs, len);
+	data_size = nvs_al_size(fs, nvs_data_len_with_crc(len));
 
 	/* The maximum data size is sector size - 4 ate
 	 * where: 1 ate for data, 1 ate for sector close, 1 ate for gc done,
@@ -1105,7 +1320,7 @@ ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 	 * Also take into account the data CRC that is appended at the end of the data field,
 	 * if any.
 	 */
-	if ((len > (fs->sector_size - 4 * ate_size - NVS_DATA_CRC_SIZE)) ||
+	if ((data_size > (fs->sector_size - 4 * ate_size)) ||
 	    ((len > 0) && (data == NULL))) {
 		return -EINVAL;
 	}
@@ -1176,7 +1391,7 @@ no_cached_entry:
 	/* calculate required space if the entry contains data */
 	if (data_size) {
 		/* Leave space for delete ate */
-		required_space = data_size + ate_size + NVS_DATA_CRC_SIZE;
+		required_space = data_size + ate_size;
 	}
 
 	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
@@ -1206,17 +1421,29 @@ no_cached_entry:
 			break;
 		}
 
-
 		rc = nvs_sector_close(fs);
 		if (rc) {
 			goto end;
 		}
 
-		rc = nvs_gc(fs);
+		/* Initialize pending write request for GC processing */
+		if (gc_count == 0) {
+			wrt_entry.id = id;
+			wrt_entry.data = data;
+			wrt_entry.len = len;
+			wrt_entry.is_written = false;
+		}
+
+		rc = nvs_gc(fs, &wrt_entry);
 		if (rc) {
 			goto end;
 		}
 		gc_count++;
+
+		/* Exit if the entry has been written during GC */
+		if (wrt_entry.is_written) {
+			break;
+		}
 	}
 	rc = len;
 end:
@@ -1427,7 +1654,7 @@ int nvs_sector_use_next(struct nvs_fs *fs)
 		goto end;
 	}
 
-	ret = nvs_gc(fs);
+	ret = nvs_gc(fs, NULL);
 
 end:
 	k_mutex_unlock(&fs->nvs_lock);

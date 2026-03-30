@@ -109,7 +109,6 @@ struct eth_xmc4xxx_data {
 	sys_slist_t tx_frame_list;
 	struct net_buf *rx_frag_list[NUM_RX_DMA_DESCRIPTORS];
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
-	const struct device *ptp_clock;
 	uint32_t timestamp_addend;
 #endif
 };
@@ -117,6 +116,9 @@ struct eth_xmc4xxx_data {
 struct eth_xmc4xxx_config {
 	ETH_GLOBAL_TypeDef *regs;
 	const struct device *phy_dev;
+#if defined(CONFIG_PTP_CLOCK_XMC4XXX)
+	const struct device *ptp_clock;
+#endif
 	void (*irq_config_func)(void);
 	const struct pinctrl_dev_config *pcfg;
 	const uint8_t phy_connection_type;
@@ -228,6 +230,138 @@ static inline void eth_xmc4xxx_trigger_dma_rx(ETH_GLOBAL_TypeDef *regs)
 	regs->RECEIVE_POLL_DEMAND = 0U;
 }
 
+static inline void pkt_hexdump(struct net_pkt *pkt, const char *str)
+{
+	struct net_buf *buf = pkt->buffer;
+
+	while (buf) {
+		LOG_HEXDUMP_DBG(buf->data, buf->len, str);
+		buf = buf->frags;
+	}
+}
+
+/* Clears the checksum field of an ICMPv4 packet. */
+static int eth_xmc4xxx_clear_checksum_icmpv4(struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_DEFINE(icmpv4_access, struct net_icmp_hdr);
+	struct net_icmp_hdr *icmp_hdr;
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_HDR_OPTIONS)) {
+		if (net_pkt_skip(pkt, net_pkt_ipv4_opts_len(pkt))) {
+			return -ENOBUFS;
+		}
+	}
+
+	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmpv4_access);
+	if (!icmp_hdr) {
+		return -ENOBUFS;
+	}
+
+	icmp_hdr->chksum = 0;
+	net_pkt_set_chksum_done(pkt, true);
+
+	return net_pkt_set_data(pkt, &icmpv4_access);
+}
+
+/* Clears the checksum value in packets that will go through checksum
+ * offloading.
+ */
+static int eth_xmc4xxx_clear_checksum(struct net_pkt *pkt)
+{
+	int ret = 0;
+	uint16_t p_type = 0xFFFF;
+	uint8_t next_header = 0xFF;
+	struct net_eth_hdr *eth_hdr;
+	struct net_pkt_cursor backup;
+	bool overwrite;
+	const char *msg = NULL;
+	const char *msg_does_not_apply = "<does not apply>";
+	const char *p_type_str = msg_does_not_apply;
+	const char *next_header_str = msg_does_not_apply;
+	const char *msg_error_skipping_pkt = "Error skipping pkt";
+
+	overwrite = net_pkt_is_being_overwritten(pkt);
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	eth_hdr = NET_ETH_HDR(pkt);
+	ret = net_pkt_skip(pkt, sizeof(struct net_eth_hdr));
+	if (ret) {
+		msg = msg_error_skipping_pkt;
+		goto end;
+	}
+	p_type = net_ntohs(eth_hdr->type);
+	switch (p_type) {
+	case NET_ETH_PTYPE_IP: {
+		NET_PKT_DATA_ACCESS_DEFINE(ip_access, struct net_ipv4_hdr);
+		struct net_ipv4_hdr *ip_hdr;
+
+		p_type_str = "IPv4";
+		ip_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(pkt, &ip_access);
+		next_header = ip_hdr->proto;
+		ret = net_pkt_skip(pkt, sizeof(struct net_ipv4_hdr));
+		if (ret) {
+			msg = msg_error_skipping_pkt;
+			goto end;
+		}
+
+		break;
+	}
+	case NET_ETH_PTYPE_IPV6: {
+		NET_PKT_DATA_ACCESS_DEFINE(ip_access, struct net_ipv6_hdr);
+		struct net_ipv6_hdr *ip_hdr;
+
+		p_type_str = "IPv6";
+		ip_hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ip_access);
+		next_header = ip_hdr->nexthdr;
+		ret = net_pkt_skip(pkt, sizeof(struct net_ipv6_hdr));
+		if (ret) {
+			msg = msg_error_skipping_pkt;
+			goto end;
+		}
+
+		break;
+	}
+	case NET_ETH_PTYPE_ARP:
+		p_type_str = "ARP";
+		goto end;
+	default:
+		p_type_str = "Unknown";
+		msg = "Unknown protocol type";
+		goto end;
+	}
+
+	switch (next_header) {
+	case NET_IPPROTO_TCP:
+		next_header_str = "TCP";
+		break;
+	case NET_IPPROTO_UDP:
+		next_header_str = "UDP";
+		break;
+	case NET_IPPROTO_ICMP:
+		next_header_str = "ICMPv4";
+		ret = eth_xmc4xxx_clear_checksum_icmpv4(pkt);
+		break;
+	case NET_IPPROTO_ICMPV6:
+		next_header_str = "ICMPv6";
+		break;
+	default:
+		next_header_str = "Unknown";
+		msg = "Unknown next header";
+		break;
+	}
+
+end:
+	net_pkt_cursor_restore(pkt, &backup);
+	net_pkt_set_overwrite(pkt, overwrite);
+	if (msg) {
+		LOG_DBG("p_type = 0x%04x (%s), next_header = 0x%02x (%s)", /**/
+			p_type, p_type_str, next_header, next_header_str);
+		pkt_hexdump(pkt, msg);
+	}
+	return ret;
+}
+
 static int eth_xmc4xxx_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_xmc4xxx_data *dev_data = dev->data;
@@ -336,6 +470,23 @@ static int eth_xmc4xxx_send(const struct device *dev, struct net_pkt *pkt)
 #endif
 		LOG_DBG("Dropping frame. Buffered Tx frames were flushed in ISR.");
 		return -EIO;
+	}
+
+	/* Due to checksum offloading, the checksum field must be zero before
+	 * sending the packet to the ethernet controller, otherwise the computed
+	 * checksum will be incorrect.
+	 *
+	 * If the packet is bridged, it already has the correct checksum in
+	 * place, which will cause the automatically computed checksum to
+	 * incorrectly become zero.
+	 *
+	 * Here we give bridged packets the special attention they need.
+	 */
+	if (net_pkt_is_l2_bridged(pkt)) {
+		ret = eth_xmc4xxx_clear_checksum(pkt);
+		if (ret) {
+			return ret;
+		}
 	}
 
 	unsigned int key = irq_lock();
@@ -991,8 +1142,6 @@ static int eth_xmc4xxx_set_config(const struct device *dev, enum ethernet_config
 			dev_data->mac_addr[3], dev_data->mac_addr[4], dev_data->mac_addr[5]);
 
 		eth_xmc4xxx_set_mac_address(dev_cfg->regs, dev_data->mac_addr);
-		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
-				     sizeof(dev_data->mac_addr), NET_LINK_ETHERNET);
 		return 0;
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE: {
@@ -1025,9 +1174,9 @@ static void eth_xmc4xxx_irq_config(void)
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
 static const struct device *eth_xmc4xxx_get_ptp_clock(const struct device *dev)
 {
-	struct eth_xmc4xxx_data *dev_data = dev->data;
+	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 
-	return dev_data->ptp_clock;
+	return dev_cfg->ptp_clock;
 }
 #endif
 
@@ -1072,10 +1221,17 @@ static const struct ethernet_api eth_xmc4xxx_api = {
 
 PINCTRL_DT_INST_DEFINE(0);
 
+#if defined(CONFIG_PTP_CLOCK_XMC4XXX)
+DEVICE_DECLARE(xmc4xxx_ptp_clock_0);
+#endif
+
 static struct eth_xmc4xxx_config eth_xmc4xxx_config = {
 	.regs = (ETH_GLOBAL_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(0)),
 	.irq_config_func = eth_xmc4xxx_irq_config,
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
+#if defined(CONFIG_PTP_CLOCK_XMC4XXX)
+	.ptp_clock = DEVICE_GET(xmc4xxx_ptp_clock_0),
+#endif
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.port_ctrl = {
 		.rxd0 = DT_INST_ENUM_IDX(0, rxd0_port_ctrl),
@@ -1100,16 +1256,9 @@ ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_xmc4xxx_init, NULL, &eth_xmc4xxx_data, &eth
 
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
 
-struct ptp_context {
-	const struct device *eth_dev;
-};
-
-static struct ptp_context ptp_xmc4xxx_context_0;
-
 static int eth_xmc4xxx_ptp_clock_set(const struct device *dev, struct net_ptp_time *tm)
 {
-	struct ptp_context *ptp_context = dev->data;
-	const struct eth_xmc4xxx_config *dev_cfg = ptp_context->eth_dev->config;
+	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 
 	dev_cfg->regs->SYSTEM_TIME_NANOSECONDS_UPDATE = tm->nanosecond;
 	dev_cfg->regs->SYSTEM_TIME_SECONDS_UPDATE = tm->second;
@@ -1125,8 +1274,7 @@ static int eth_xmc4xxx_ptp_clock_set(const struct device *dev, struct net_ptp_ti
 
 static int eth_xmc4xxx_ptp_clock_get(const struct device *dev, struct net_ptp_time *tm)
 {
-	struct ptp_context *ptp_context = dev->data;
-	const struct eth_xmc4xxx_config *dev_cfg = ptp_context->eth_dev->config;
+	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 
 	uint32_t nanosecond_0 = dev_cfg->regs->SYSTEM_TIME_NANOSECONDS;
 	uint32_t second_0 = dev_cfg->regs->SYSTEM_TIME_SECONDS;
@@ -1149,8 +1297,7 @@ static int eth_xmc4xxx_ptp_clock_get(const struct device *dev, struct net_ptp_ti
 
 static int eth_xmc4xxx_ptp_clock_adjust(const struct device *dev, int increment)
 {
-	struct ptp_context *ptp_context = dev->data;
-	const struct eth_xmc4xxx_config *dev_cfg = ptp_context->eth_dev->config;
+	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 	uint32_t increment_tmp;
 
 	if ((increment <= -(int)NSEC_PER_SEC) || (increment >= (int)NSEC_PER_SEC)) {
@@ -1178,9 +1325,8 @@ static int eth_xmc4xxx_ptp_clock_adjust(const struct device *dev, int increment)
 
 static int eth_xmc4xxx_ptp_clock_rate_adjust(const struct device *dev, double ratio)
 {
-	struct ptp_context *ptp_context = dev->data;
-	const struct eth_xmc4xxx_config *dev_cfg = ptp_context->eth_dev->config;
-	struct eth_xmc4xxx_data *dev_data = ptp_context->eth_dev->data;
+	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
+	struct eth_xmc4xxx_data *dev_data = dev->data;
 	uint64_t K = dev_data->timestamp_addend;
 
 	if (ratio < ETH_PTP_RATE_ADJUST_RATIO_MIN || ratio > ETH_PTP_RATE_ADJUST_RATIO_MAX) {
@@ -1211,20 +1357,8 @@ static DEVICE_API(ptp_clock, ptp_api_xmc4xxx) = {
 	.rate_adjust = eth_xmc4xxx_ptp_clock_rate_adjust,
 };
 
-static int ptp_clock_xmc4xxx_init(const struct device *port)
-{
-	const struct device *const eth_dev = DEVICE_DT_INST_GET(0);
-	struct eth_xmc4xxx_data *dev_data = eth_dev->data;
-	struct ptp_context *ptp_context = port->data;
-
-	dev_data->ptp_clock = port;
-	ptp_context->eth_dev = eth_dev;
-
-	return 0;
-}
-
-DEVICE_DEFINE(xmc4xxx_ptp_clock_0, PTP_CLOCK_NAME, ptp_clock_xmc4xxx_init, NULL,
-	      &ptp_xmc4xxx_context_0, NULL, POST_KERNEL, CONFIG_PTP_CLOCK_INIT_PRIORITY,
+DEVICE_DEFINE(xmc4xxx_ptp_clock_0, PTP_CLOCK_NAME, NULL,  NULL,
+	      &eth_xmc4xxx_data, &eth_xmc4xxx_config, POST_KERNEL, CONFIG_ETH_INIT_PRIORITY,
 	      &ptp_api_xmc4xxx);
 
 #endif /* CONFIG_PTP_CLOCK_XMC4XXX */

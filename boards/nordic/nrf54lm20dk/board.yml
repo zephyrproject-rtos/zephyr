@@ -7,14 +7,10 @@ board:
     variants:
     - name: ns
       cpucluster: cpuapp
-    - name: xip
-      cpucluster: cpuflpr
   - name: nrf54lm20b
     variants:
     - name: ns
       cpucluster: cpuapp
-    - name: xip
-      cpucluster: cpuflpr
 runners:
   run_once:
     '--recover':
@@ -27,7 +23,9 @@ runners:
         - nrf54lm20dk/nrf54lm20a/cpuapp
         - nrf54lm20dk/nrf54lm20a/cpuapp/ns
         - nrf54lm20dk/nrf54lm20a/cpuflpr
-        - nrf54lm20dk/nrf54lm20a/cpuflpr/xip
+        - nrf54lm20dk/nrf54lm20b/cpuapp
+        - nrf54lm20dk/nrf54lm20b/cpuapp/ns
+        - nrf54lm20dk/nrf54lm20b/cpuflpr
     '--erase':
     - runners:
       - nrfjprog
@@ -39,7 +37,9 @@ runners:
         - nrf54lm20dk/nrf54lm20a/cpuapp
         - nrf54lm20dk/nrf54lm20a/cpuapp/ns
         - nrf54lm20dk/nrf54lm20a/cpuflpr
-        - nrf54lm20dk/nrf54lm20a/cpuflpr/xip
+        - nrf54lm20dk/nrf54lm20b/cpuapp
+        - nrf54lm20dk/nrf54lm20b/cpuapp/ns
+        - nrf54lm20dk/nrf54lm20b/cpuflpr
     '--reset':
     - runners:
       - nrfjprog
@@ -51,4 +51,6 @@ runners:
         - nrf54lm20dk/nrf54lm20a/cpuapp
         - nrf54lm20dk/nrf54lm20a/cpuapp/ns
         - nrf54lm20dk/nrf54lm20a/cpuflpr
-        - nrf54lm20dk/nrf54lm20a/cpuflpr/xip
+        - nrf54lm20dk/nrf54lm20b/cpuapp
+        - nrf54lm20dk/nrf54lm20b/cpuapp/ns
+        - nrf54lm20dk/nrf54lm20b/cpuflpr

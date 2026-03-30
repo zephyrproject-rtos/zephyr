@@ -42,6 +42,10 @@
 	ngpios = <3>;
 };
 
+&radio {
+	pa-max-power-dbm = <6>;
+};
+
 &sram0 {
 	reg = <0x20000000 DT_SIZE_K(64)>;
 };

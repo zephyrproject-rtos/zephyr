@@ -41,10 +41,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/drivers/ptp_clock.h>
 #endif
 
-#ifdef CONFIG_NET_DSA_DEPRECATED
-#include <zephyr/net/dsa.h>
-#endif
-
 #if defined(CONFIG_NET_POWER_MANAGEMENT) && defined(CONFIG_PM_DEVICE)
 #include <zephyr/pm/device.h>
 #endif
@@ -264,12 +260,12 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 		ETHERNET_PTP |
 #endif
-#if defined(CONFIG_NET_DSA_DEPRECATED)
-		ETHERNET_DSA_CONDUIT_PORT |
-#endif
 #if defined(CONFIG_ETH_NXP_ENET_HW_ACCELERATION)
 		ETHERNET_HW_TX_CHKSUM_OFFLOAD |
 		ETHERNET_HW_RX_CHKSUM_OFFLOAD |
+#endif
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+		ETHERNET_PROMISC_MODE |
 #endif
 		ETHERNET_LINK_100BASE;
 
@@ -293,9 +289,6 @@ static int eth_nxp_enet_set_config(const struct device *dev,
 		       cfg->mac_address.addr,
 		       sizeof(data->mac_addr));
 		ENET_SetMacAddr(data->base, data->mac_addr);
-		net_if_set_link_addr(data->iface, data->mac_addr,
-				     sizeof(data->mac_addr),
-				     NET_LINK_ETHERNET);
 		LOG_DBG("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x",
 			dev->name,
 			data->mac_addr[0], data->mac_addr[1],
@@ -310,6 +303,14 @@ static int eth_nxp_enet_set_config(const struct device *dev,
 		} else {
 			ENET_LeaveMulticastGroup(data->base,
 						 (uint8_t *)cfg->filter.mac_address.addr);
+		}
+		return 0;
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		/* Promiscuous mode is enabled at eth_nxp_enet_init and
+		 * cannot be disabled at runtime
+		 */
+		if (!cfg->promisc_mode) {
+			return -EINVAL;
 		}
 		return 0;
 	default:
@@ -414,9 +415,6 @@ static int eth_nxp_enet_rx(const struct device *dev)
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
 	iface = get_iface(data);
-#if defined(CONFIG_NET_DSA_DEPRECATED)
-	iface = dsa_net_recv(iface, &pkt);
-#endif
 	if (net_recv_data(iface, pkt) < 0) {
 		goto error;
 	}
@@ -504,13 +502,7 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 			     sizeof(data->mac_addr),
 			     NET_LINK_ETHERNET);
 
-	if (data->iface == NULL) {
-		data->iface = iface;
-	}
-
-#if defined(CONFIG_NET_DSA_DEPRECATED)
-	dsa_register_master_tx(iface, &eth_nxp_enet_tx);
-#endif
+	data->iface = iface;
 
 	ethernet_init(iface);
 	net_if_carrier_off(iface);
@@ -822,19 +814,13 @@ static int eth_nxp_enet_device_pm_action(const struct device *dev, enum pm_devic
 #define ETH_NXP_ENET_PM_DEVICE_GET(n) NULL
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
 
-#ifdef CONFIG_NET_DSA_DEPRECATED
-#define NXP_ENET_SEND_FUNC dsa_tx
-#else
-#define NXP_ENET_SEND_FUNC eth_nxp_enet_tx
-#endif /* CONFIG_NET_DSA_DEPRECATED */
-
 static const struct ethernet_api api_funcs = {
 	.iface_api.init		= eth_nxp_enet_iface_init,
 	.get_capabilities	= eth_nxp_enet_get_capabilities,
 	.get_phy                = eth_nxp_enet_get_phy,
 	.set_config		= eth_nxp_enet_set_config,
 	.get_config		= eth_nxp_enet_get_config,
-	.send			= NXP_ENET_SEND_FUNC,
+	.send			= eth_nxp_enet_tx,
 #if defined(CONFIG_PTP_CLOCK)
 	.get_ptp_clock		= eth_nxp_enet_get_ptp_clock,
 #endif
@@ -1052,10 +1038,9 @@ static const struct nxp_enet_mod_config nxp_enet_mod_cfg_##n = {			\
 											\
 static struct nxp_enet_mod_data nxp_enet_mod_data_##n;					\
 											\
-/* Init the module before any of the MAC, MDIO, or PTP clock */				\
 DEVICE_DT_INST_DEFINE(n, nxp_enet_mod_init, NULL,					\
 		&nxp_enet_mod_data_##n, &nxp_enet_mod_cfg_##n,				\
-		POST_KERNEL, 0, NULL);
+		POST_KERNEL, CONFIG_ETH_INIT_PRIORITY, NULL);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_enet
@@ -1073,10 +1058,9 @@ static const struct nxp_enet_mod_config nxp_enet1g_mod_cfg_##n = {			\
 											\
 static struct nxp_enet_mod_data nxp_enet1g_mod_data_##n;				\
 											\
-/* Init the module before any of the MAC, MDIO, or PTP clock */				\
 DEVICE_DT_INST_DEFINE(n, nxp_enet_mod_init, NULL,					\
 		&nxp_enet1g_mod_data_##n, &nxp_enet1g_mod_cfg_##n,			\
-		POST_KERNEL, 0, NULL);
+		POST_KERNEL, CONFIG_ETH_INIT_PRIORITY, NULL);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_enet1g

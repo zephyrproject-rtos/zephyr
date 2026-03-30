@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(net_sock_can, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/net/net_context.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/internal/syscall_handler.h>
@@ -256,7 +257,9 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		dest_addr = (struct net_sockaddr *)&can_addr;
 	}
 
-	NET_ASSERT(len == sizeof(struct socketcan_frame));
+	if (len != sizeof(struct socketcan_frame)) {
+		return -EINVAL;
+	}
 
 	socketcan_to_can_frame((struct socketcan_frame *)buf, &zframe);
 

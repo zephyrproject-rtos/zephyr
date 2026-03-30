@@ -27,8 +27,8 @@
 set_property(TARGET bintools PROPERTY elfconvert_command ${CMAKE_OBJCOPY})
 
 # List of format the tool supports for converting, for example,
-# GNU tools uses objectcopy, which supports the following: ihex, srec, binary, mot
-set_property(TARGET bintools PROPERTY elfconvert_formats ihex srec binary mot)
+# GNU tools uses objectcopy, which supports the following: ihex, srec, binary, mot, verilog
+set_property(TARGET bintools PROPERTY elfconvert_formats ihex srec binary mot verilog)
 
 set_property(TARGET bintools PROPERTY elfconvert_flag "")
 set_property(TARGET bintools PROPERTY elfconvert_flag_final "")
@@ -54,6 +54,8 @@ set_property(TARGET bintools PROPERTY elfconvert_flag_lma_adjust "--change-secti
 # `--gap-file <value>` instead of `--gap-fill<value>` (The latter would result in an error)
 set_property(TARGET bintools PROPERTY elfconvert_flag_gapfill "--gap-fill;")
 set_property(TARGET bintools PROPERTY elfconvert_flag_srec_len "--srec-len=")
+
+set_property(TARGET bintools PROPERTY elfconvert_flag_verilog_data_width "--verilog-data-width=")
 
 set_property(TARGET bintools PROPERTY elfconvert_flag_infile "")
 set_property(TARGET bintools PROPERTY elfconvert_flag_outfile "")

@@ -79,7 +79,7 @@ static void uhc_mcux_isr(const struct device *dev)
 	USB_HostEhciIsrFunction((void *)(&priv->mcux_host));
 }
 
-/* MCUX controller dirver uses this callback to notify upper layer suspend related event */
+/* MCUX controller driver uses this callback to notify upper layer suspend related event */
 static usb_status_t mcux_host_callback(usb_device_handle deviceHandle,
 				       usb_host_configuration_handle configurationHandle,
 				       uint32_t eventCode)
@@ -176,10 +176,13 @@ static void uhc_mcux_transfer_callback(void *param, usb_host_transfer_t *transfe
 		memcpy(net_buf_tail(xfer->buf), transfer->transferBuffer, transfer->transferSofar);
 #endif
 		net_buf_add(xfer->buf, transfer->transferSofar);
-#if defined(CONFIG_NOCACHE_MEMORY)
-		uhc_mcux_nocache_free(transfer->transferBuffer);
-#endif
 	}
+
+#if defined(CONFIG_NOCACHE_MEMORY)
+	if (transfer->transferBuffer != NULL && transfer->transferLength != 0) {
+		uhc_mcux_nocache_free(transfer->transferBuffer);
+	}
+#endif
 
 	transfer->setupPacket = NULL;
 	transfer->transferBuffer = NULL;

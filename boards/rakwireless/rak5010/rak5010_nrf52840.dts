@@ -37,6 +37,7 @@
 		accel0 = &lis3dh;
 		modem-uart = &uart0;
 		modem = &modem;
+		dht0 = &shtc3;
 	};
 };
 
@@ -104,6 +105,14 @@
 	lps22hb-press@5c {
 		compatible = "st,lps22hb-press";
 		reg = <0x5c>;
+	};
+
+	/* Sensiron SHTCx humidity and temperature sensor*/
+	shtc3: shtc3@70 {
+		compatible = "sensirion,shtc3", "sensirion,shtcx";
+		reg = <0x70>;
+		measure-mode = "normal";
+		clock-stretching;
 	};
 };
 

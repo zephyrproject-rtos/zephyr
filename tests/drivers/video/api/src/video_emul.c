@@ -25,7 +25,7 @@ ZTEST(video_common, test_video_device)
 
 ZTEST(video_common, test_video_format)
 {
-	struct video_caps caps = {0};
+	struct video_caps caps = {.type = VIDEO_BUF_TYPE_OUTPUT};
 	struct video_format fmt = {0};
 
 	zexpect_ok(video_get_caps(imager_dev, &caps));

@@ -32,7 +32,7 @@ jobs:
       fullrun: ${{ steps.output-services.outputs.fullrun }}
     env:
       MATRIX_SIZE: 10
-      PUSH_MATRIX_SIZE: 20
+      PUSH_MATRIX_SIZE: 25
       WEEKLY_MATRIX_SIZE: 200
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
@@ -127,7 +127,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.7.20251127
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.0.20260314
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false

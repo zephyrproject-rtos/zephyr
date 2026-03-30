@@ -18,6 +18,7 @@
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
+#include <zephyr/dt-bindings/power/stm32h7rs_iocell.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -27,6 +28,7 @@
 
 / {
 	chosen {
+		zephyr,crc = &crc;
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
 	};
@@ -100,6 +102,7 @@
 			status = "disabled";
 		};
 
+		/* controller reset default is on */
 		clk_hsi: clk-hsi {
 			#clock-cells = <0>;
 			compatible = "st,stm32h7-hsi-clock";
@@ -168,11 +171,13 @@
 	mcos {
 		mco1: mco1 {
 			compatible = "st,stm32-clock-mco";
+			clock-names = "clksel";
 			status = "disabled";
 		};
 
 		mco2: mco2 {
 			compatible = "st,stm32-clock-mco";
+			clock-names = "clksel";
 			status = "disabled";
 		};
 	};
@@ -192,6 +197,36 @@
 				erase-block-size = <DT_SIZE_K(8)>;
 				/* maximum erase time for a 8K sector */
 				max-erase-time = <3>;
+			};
+
+			/* "FLASH read-only area" */
+			flash@8fff800 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x08fff800 512>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					vrefint_otp: vrefint@10 {
+						reg = <0x10 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					ts_cal1_otp: ts-cal1@14 {
+						reg = <0x14 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					ts_cal2_otp: ts-cal2@18 {
+						reg = <0x18 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+				};
 			};
 		};
 
@@ -469,6 +504,8 @@
 				 <&rcc STM32_SRC_PLL1_Q SPI1_SEL(0)>;
 			interrupts = <58 0>;
 			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -481,6 +518,8 @@
 				 <&rcc STM32_SRC_PLL1_Q SPI23_SEL(0)>;
 			interrupts = <59 0>;
 			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -493,6 +532,8 @@
 				 <&rcc STM32_SRC_PLL1_Q SPI23_SEL(0)>;
 			interrupts = <60 0>;
 			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -504,6 +545,8 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 13)>;
 			interrupts = <61 0>;
 			st,spi-data-width = "full-4-to-16-bit";
+			fifo-size = <8>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -516,6 +559,8 @@
 			interrupts = <62 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
+			fifo-size = <8>;
+			fifo-max-transfer-size = <65535>;
 		};
 
 		i2s1: i2s@40013000 {
@@ -904,6 +949,7 @@
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-deep-powerdown;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -921,6 +967,7 @@
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-deep-powerdown;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -984,6 +1031,21 @@
 			status = "disabled";
 		};
 
+		hpdma1: dma@52000000 {
+			compatible = "st,stm32u5-dma";
+			#dma-cells = <3>;
+			reg = <0x52000000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 0)>;
+			interrupts = <64 0>, <65 0>, <66 0>, <67 0>,
+				     <68 0>, <69 0>, <70 0>, <71 0>,
+				     <141 0>, <142 0>, <143 0>, <144 0>,
+				     <145 0>, <146 0>, <147 0>, <148 0>;
+			dma-channels = <16>;
+			dma-requests = <20>;
+			dma-offset = <0>;
+			status = "disabled";
+		};
+
 		sai1_a: sai1@42005804 {
 			compatible = "st,stm32-sai";
 			#address-cells = <1>;
@@ -992,7 +1054,7 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 				 <&rcc STM32_SRC_PLL3_P SAI1_SEL(2)>;
 			dmas = <&gpdma1 1 63 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				STM32_DMA_16BITS)>;
+					      STM32_DMA_16BITS)>;
 			status = "disabled";
 		};
 
@@ -1004,7 +1066,7 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 				 <&rcc STM32_SRC_PLL3_P SAI1_SEL(2)>;
 			dmas = <&gpdma1 0 64 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				STM32_DMA_16BITS)>;
+					      STM32_DMA_16BITS)>;
 			status = "disabled";
 		};
 
@@ -1039,6 +1101,31 @@
 				};
 			};
 		};
+
+		crc: crc@58024c00 {
+			compatible = "st,stm32-crc";
+			reg = <0x58024c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB4, 19)>;
+			resets = <&rctl STM32_RESET(AHB4, 19)>;
+			status = "disabled";
+		};
+	};
+
+	iocell: iocell {
+		compatible = "st,stm32-iocell";
+		status = "disabled";
+
+		vddio {
+			domain = <STM32_DT_IOCELL_VDDIO>;
+		};
+
+		vddxspi1 {
+			domain = <STM32_DT_IOCELL_XSPI1>;
+		};
+
+		vddxspi2 {
+			domain = <STM32_DT_IOCELL_XSPI2>;
+		};
 	};
 
 	otgfs_phy: otgfs_phy {
@@ -1048,8 +1135,8 @@
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		ts-cal1-addr = <0x08fff814>;
-		ts-cal2-addr = <0x08fff818>;
+		nvmem-cells = <&ts_cal1_otp>, <&ts_cal2_otp>;
+		nvmem-cell-names = "TS_CAL1", "TS_CAL2";
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3300>;
@@ -1067,7 +1154,7 @@
 
 	vref: vref {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x08fff810>;
+		nvmem-cells = <&vrefint_otp>;
 		vrefint-cal-mv = <3300>;
 		status = "disabled";
 		io-channels = <&adc1 17>;

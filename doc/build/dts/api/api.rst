@@ -441,8 +441,6 @@ device.
      - Selects the CRC device used as an accelerator by the CRC subsystem
    * - zephyr,display
      - Sets the default display controller
-   * - zephyr,keyboard-scan
-     - Sets the default keyboard scan controller
    * - zephyr,dtcm
      - Data Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,entropy
@@ -474,6 +472,9 @@ device.
        If defined, the UART log backend would output to the devices listed in this node.
    * - zephyr,ocm
      - On-chip memory node on Xilinx Zynq-7000 and ZynqMP SoCs
+   * - zephyr,openthread-counter
+     - Selects the counter device used by the OpenThread platform for microsecond alarm
+       timers when :kconfig:option:`CONFIG_OPENTHREAD_ALARM_COUNTER` is enabled.
    * - zephyr,osdp-uart
      - Sets UART device used by OSDP subsystem
    * - zephyr,ot-uart
@@ -490,6 +491,13 @@ device.
    * - zephyr,sram
      - A node whose ``reg`` sets the base address and size of SRAM memory
        available to the Zephyr image, used during linking
+   * - zephyr,system-timer
+     - Selects the hardware timer instance used as the Zephyr system timer.
+       Used when devicetree selects which timer instance provides that
+       singleton system function.
+   * - zephyr,system-timer-companion
+     - Selects the device used to keep time while the primary system timer is
+       inactive in low-power states
    * - zephyr,tracing-uart
      - Sets UART device used by tracing subsystem
    * - zephyr,uart-mcumgr

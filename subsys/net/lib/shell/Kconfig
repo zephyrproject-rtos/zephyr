@@ -60,6 +60,11 @@ config NET_SHELL_EVENT_MONITOR_SUPPORTED
 	default y
 	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_MGMT_EVENT_MONITOR
 
+config NET_SHELL_FTP_SUPPORTED
+	bool "FTP client"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || FTP_CLIENT
+
 config NET_SHELL_GPTP_SUPPORTED
 	bool "gPTP monitoring"
 	default y
@@ -162,6 +167,11 @@ config NET_SHELL_QBV_SUPPORTED
 	help
 	  Enable Qbv Shell.
 	  The Qbv shell currently supports set/enable operations.
+
+config NET_SHELL_WIREGUARD_SUPPORTED
+	bool "Wireguard VPN config and status"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || WIREGUARD_SHELL
 
 config NET_SHELL_DYN_CMD_COMPLETION
 	bool "Network shell dynamic command completion"

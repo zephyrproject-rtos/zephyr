@@ -337,7 +337,7 @@ static bool unicast_group_foreach_stream_cb(struct bt_cap_stream *cap_stream, vo
 
 	(*cnt)++;
 
-	return false;
+	return true;
 }
 
 static ZTEST_F(cap_initiator_test_unicast_group, test_initiator_unicast_group_foreach_stream)
@@ -373,7 +373,7 @@ static bool unicast_group_foreach_stream_return_early_cb(struct bt_cap_stream *s
 
 	(*cnt)++;
 
-	return true;
+	return false;
 }
 
 static ZTEST_F(cap_initiator_test_unicast_group,

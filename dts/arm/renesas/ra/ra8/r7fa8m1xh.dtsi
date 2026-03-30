@@ -8,6 +8,8 @@
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <zephyr/dt-bindings/misc/renesas/ra-elc/ra8m1-elc.h>
 
+/delete-node/ &drw;
+
 / {
 	clocks: clocks {
 		#address-cells = <1>;
@@ -260,13 +262,6 @@
 				compatible = "renesas,ra-udc";
 				status = "disabled";
 			};
-		};
-
-		ceu: ceu@40348000 {
-			compatible = "renesas,ra-ceu";
-			reg = <0x40348000 0x8000>;
-			clocks = <&pclka MSTPC 16>;
-			status = "disabled";
 		};
 	};
 

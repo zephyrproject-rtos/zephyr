@@ -61,7 +61,7 @@ static int bq27z746_read_mac(const struct device *dev, uint16_t cmd, uint8_t *da
 	uint8_t buf[BQ27Z746_MAC_COMPLETE_LEN];
 	const struct bq27z746_config *cfg = dev->config;
 
-	/* Instead of MAC, ALTMAC is used as reccommended in the datasheet */
+	/* Instead of MAC, ALTMAC is used as recommended in the datasheet */
 	int ret = bq27z746_write16(dev, BQ27Z746_ALTMANUFACTURERACCESS, cmd);
 
 	if (ret != 0) {
@@ -192,6 +192,10 @@ static int bq27z746_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	case FUEL_GAUGE_DESIGN_CAPACITY:
 		rc = bq27z746_read16(dev, BQ27Z746_DESIGNCAPACITY, &tmp_val);
 		val->design_cap = tmp_val;
+		break;
+	case FUEL_GAUGE_STATE_OF_HEALTH:
+		rc = bq27z746_read16(dev, BQ27Z746_STATEOFHEALTH, &tmp_val);
+		val->state_of_health = tmp_val;
 		break;
 	default:
 		rc = -ENOTSUP;

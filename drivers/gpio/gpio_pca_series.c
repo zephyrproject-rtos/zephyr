@@ -190,7 +190,7 @@ struct gpio_pca_series_config {
 struct gpio_pca_series_data {
 	struct gpio_driver_data common; /** gpio_driver_data needs to be first */
 	struct k_sem lock;
-	void *cache;  /** device spicific reg cache
+	void *cache;  /** device specific reg cache
 			*  - if CONFIG_GPIO_PCA_SERIES_CACHE_ALL is set,
 			*    it points to device specific cache memory.
 			*  - if CONFIG_GPIO_PCA_SERIES_CACHE_ALL is not set,
@@ -2589,9 +2589,7 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal6534 = {
  */
 #define GPIO_PCA_SERIES_DEVICE_INSTANCE(inst, part_no) \
 	static const struct gpio_pca_series_config gpio_##part_no##_##inst##_cfg = { \
-		.common = { \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst), \
-		}, \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst), \
 		.i2c = I2C_DT_SPEC_INST_GET(inst), \
 		.part_cfg = GPIO_PCA_GET_PART_CFG_BY_PART_NO(part_no), \
 		.gpio_rst = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}), \

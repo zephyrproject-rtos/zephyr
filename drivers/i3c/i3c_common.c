@@ -413,6 +413,7 @@ int i3c_sec_get_basic_info(const struct device *dev, uint8_t dynamic_addr, uint8
 	/* First try to look up if this is a known device in the list by PID */
 	ret = i3c_ccc_do_getpid(&temp_desc, &getpid);
 	if (ret != 0) {
+		i3c_detach_i3c_device(&temp_desc);
 		return ret;
 	}
 
@@ -424,6 +425,7 @@ int i3c_sec_get_basic_info(const struct device *dev, uint8_t dynamic_addr, uint8
 		/* device was not found so allocate a descriptor */
 		desc = i3c_device_desc_alloc();
 		if (!desc) {
+			i3c_detach_i3c_device(&temp_desc);
 			return -ENOMEM;
 		}
 		desc->pid = id.pid;
@@ -475,13 +477,15 @@ int i3c_sec_i2c_attach(const struct device *dev, uint8_t static_addr, uint8_t lv
 static void i3c_sec_bus_reset(const struct device *dev)
 {
 	struct i3c_device_desc *i3c_desc;
+	struct i3c_device_desc *i3c_desc_safe;
 	struct i3c_i2c_device_desc *i3c_i2c_desc;
+	struct i3c_i2c_device_desc *i3c_i2c_desc_safe;
 
-	I3C_BUS_FOR_EACH_I3CDEV(dev, i3c_desc) {
+	I3C_BUS_FOR_EACH_I3CDEV_SAFE(dev, i3c_desc, i3c_desc_safe) {
 		i3c_detach_i3c_device(i3c_desc);
 	}
 
-	I3C_BUS_FOR_EACH_I2CDEV(dev, i3c_i2c_desc) {
+	I3C_BUS_FOR_EACH_I2CDEV_SAFE(dev, i3c_i2c_desc, i3c_i2c_desc_safe) {
 		i3c_detach_i2c_device(i3c_i2c_desc);
 	}
 }
@@ -1182,6 +1186,7 @@ int i3c_bus_setmrl(struct i3c_device_desc *desc, uint16_t mrl, uint8_t ibi_len)
 	int ret;
 
 	mrl_cmd.len = mrl;
+	mrl_cmd.ibi_len = ibi_len;
 
 	ret = i3c_ccc_do_setmrl(desc, &mrl_cmd);
 	if (ret != 0) {

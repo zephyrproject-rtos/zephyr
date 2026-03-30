@@ -22,8 +22,8 @@ static void adxl367_thread_cb(const struct device *dev)
 	uint8_t status;
 	int ret;
 
-	/* Clear the status */
-	ret = drv_data->hw_tf->read_reg(dev, ADXL367_STATUS, &status);
+	/* Check status_copy register to determine trigger source */
+	ret = drv_data->hw_tf->read_reg(dev, ADXL367_STATUS_COPY, &status);
 	if (ret != 0) {
 		return;
 	}

@@ -177,6 +177,7 @@ static int pcf857x_port_set_raw(const struct device *dev, uint16_t mask, uint16_
 		return -EOPNOTSUPP;
 	}
 
+	k_sem_take(&drv_data->lock, K_FOREVER);
 	tx_buf = (drv_data->pins_cfg.outputs_state & ~mask);
 	tx_buf |= (value & mask);
 	tx_buf ^= toggle;
@@ -186,9 +187,9 @@ static int pcf857x_port_set_raw(const struct device *dev, uint16_t mask, uint16_
 	rc = i2c_write_dt(&drv_cfg->i2c, tx_buf_p, drv_data->num_bytes);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to write output port: %d", dev->name, rc);
+		k_sem_give(&drv_data->lock);
 		return -EIO;
 	}
-	k_sem_take(&drv_data->lock, K_FOREVER);
 	drv_data->pins_cfg.outputs_state = tx_buf;
 	k_sem_give(&drv_data->lock);
 
@@ -385,10 +386,7 @@ static DEVICE_API(gpio, pcf857x_drv_api) = {
 
 #define GPIO_PCF857X_INST(idx)                                                                     \
 	static const struct pcf857x_drv_cfg pcf857x_cfg##idx = {                                   \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),             \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx),                                    \
 		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(idx, int_gpios, {0}),                         \
 		.i2c = I2C_DT_SPEC_INST_GET(idx),                                                  \
 	};                                                                                         \

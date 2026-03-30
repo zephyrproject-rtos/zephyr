@@ -8,6 +8,7 @@ menuconfig SPI_STM32
 	default y
 	depends on DT_HAS_ST_STM32_SPI_ENABLED
 	select PINCTRL
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_SPI),cs-gpios)
 	help
 	  Enable SPI support on the STM32 family of processors.
 
@@ -26,6 +27,8 @@ config SPI_STM32_DMA
 	help
 	  Enable the SPI DMA mode for SPI instances
 	  that enable dma channels in their device tree node.
+	  This can be used with the SPI_RTIO config to have SPI
+	  transactions using DMA + RTIO
 
 config SPI_STM32_ERRATA_BUSY
 	bool

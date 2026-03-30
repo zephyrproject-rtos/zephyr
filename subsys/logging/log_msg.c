@@ -46,7 +46,10 @@ void z_log_msg_finalize(struct log_msg *msg, const void *source,
 	msg->hdr.desc = desc;
 	msg->hdr.source = source;
 #if CONFIG_LOG_THREAD_ID_PREFIX
-	msg->hdr.tid = k_is_in_isr() ? NULL : k_current_get();
+	msg->hdr.tid = (k_is_in_isr() || k_is_pre_kernel()) ? NULL : k_current_get();
+#endif
+#if CONFIG_LOG_CORE_ID_PREFIX
+	msg->hdr.core_id = arch_proc_id();
 #endif
 	z_log_msg_commit(msg);
 }
@@ -372,10 +375,11 @@ void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
 	struct log_msg_desc desc =
 		Z_LOG_MSG_DESC_INITIALIZER(domain_id, level, plen, dlen);
 
-	if (IS_ENABLED(CONFIG_USERSPACE) && k_is_user_context()) {
+	if (k_is_user_context()) {
 		pkg = alloca(plen);
 		msg = NULL;
 	} else if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) && BACKENDS_IN_USE()) {
+		compiler_barrier();
 		msg = z_log_msg_alloc(msg_wlen);
 		if (IS_ENABLED(CONFIG_LOG_FRONTEND) && msg == NULL) {
 			pkg = alloca(plen);
@@ -383,6 +387,7 @@ void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
 			pkg = msg ? msg->data : NULL;
 		}
 	} else {
+		compiler_barrier();
 		msg = alloca(msg_wlen * sizeof(int));
 		pkg = msg->data;
 	}
@@ -392,9 +397,10 @@ void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
 		__ASSERT_NO_MSG(plen >= 0);
 	}
 
-	if (IS_ENABLED(CONFIG_USERSPACE) && k_is_user_context()) {
+	if (k_is_user_context()) {
 		z_log_msg_static_create(source, desc, pkg, data);
 	} else {
+		compiler_barrier();
 		if (IS_ENABLED(CONFIG_LOG_FRONTEND) &&
 		    frontend_runtime_filtering(source, desc.level)) {
 			log_frontend_msg(source, desc, pkg, data);

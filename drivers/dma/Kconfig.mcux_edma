@@ -50,9 +50,13 @@ if DMA_MCUX_EDMA || DMA_MCUX_EDMA_V3 || DMA_MCUX_EDMA_V4
 
 config DMA_TCD_QUEUE_SIZE
 	int "number of TCD in a queue for SG mode"
+	default 4 if I2S_MCUX_SAI
 	default 2
 	help
-	  number of TCD in a queue for SG mode
+	  Number of TCDs in a queue for SG mode.
+	  The MCUX SAI I2S driver preloads 3 RX DMA blocks and also requires
+	  additional queue space for TX, so it needs this queue size to be
+	  greater than 3.
 
 config DMA_MCUX_TEST_SLOT_START
 	int "test slot start num"

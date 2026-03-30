@@ -441,7 +441,7 @@ static void adc_bflb_calibrate_gnd_offset(const struct device *dev)
 	data->cal_off = offset / 5;
 }
 
-#if defined(CONFIG_SOC_SERIES_BL70X)
+#if defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL70XL)
 static int adc_bflb_calibrate_efuse(const struct device *dev)
 {
 	struct adc_bflb_data *data = dev->data;
@@ -499,7 +499,8 @@ static int adc_bflb_calibrate_efuse(const struct device *dev)
 }
 #endif
 
-#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X)
+#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) || \
+	defined(CONFIG_SOC_SERIES_BL70XL)
 static void adc_bflb_init_clock(const struct device *dev)
 {
 	uint32_t tmp;
@@ -542,6 +543,7 @@ static int adc_bflb_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
+		LOG_ERR("Failed to configure pins for ADC. err=%d", ret);
 		return ret;
 	}
 
@@ -582,6 +584,11 @@ static int adc_bflb_init(const struct device *dev)
 	tmp |= (ADC_RESOLUTION_12B_ID << AON_GPADC_RES_SEL_SHIFT);
 	tmp &= ~AON_GPADC_CONT_CONV_EN;
 	tmp &= ~AON_GPADC_SCAN_EN;
+#if defined(CONFIG_SOC_SERIES_BL70XL)
+	tmp |= AON_GPADC_LOWV_DET_EN;
+	tmp |= AON_GPADC_VCM_HYST_SEL;
+	tmp |= AON_GPADC_VCM_SEL_EN;
+#endif
 	sys_write32(tmp, cfg->reg_AON + AON_GPADC_REG_CONFIG1_OFFSET);
 
 	clock_bflb_settle();
@@ -595,8 +602,10 @@ static int adc_bflb_init(const struct device *dev)
 	tmp |= (2 << AON_GPADC_CHOP_MODE_SHIFT);
 	/* "gain 1" is 1 */
 	tmp |= (1 << AON_GPADC_PGA1_GAIN_SHIFT);
-	/* "gain 2" is 1 */
+#if !defined(CONFIG_SOC_SERIES_BL70XL)
+	/* "gain 2" is 1 (BL702L: PGA2 gain must be 0) */
 	tmp |= (1 << AON_GPADC_PGA2_GAIN_SHIFT);
+#endif
 	/* enable gain */
 	tmp |= AON_GPADC_PGA_EN;
 	/* "offset calibration" value */
@@ -627,7 +636,7 @@ static int adc_bflb_init(const struct device *dev)
 		| GPIP_GPADC_FIFO_UNDERRUN_CLR
 		| GPIP_GPADC_FIFO_OVERRUN_CLR
 		| GPIP_GPADC_RDY_CLR);
-#ifdef CONFIG_SOC_SERIES_BL70X
+#if defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL70XL)
 	tmp |= (GPIP_GPADC_FIFO_RDY_MASK | GPIP_GPADC_FIFO_RDY);
 #endif
 	tmp |= GPIP_GPADC_FIFO_CLR;
@@ -655,7 +664,7 @@ static int adc_bflb_init(const struct device *dev)
 #else
 	ret = adc_bflb_calibrate_efuse(dev);
 	if (ret < 0) {
-		LOG_ERR("Couldn't calibrate via efuses");
+		LOG_ERR("Couldn't calibrate via efuses. err=%d", ret);
 		return ret;
 	}
 	adc_bflb_calibrate_gnd_offset(dev);

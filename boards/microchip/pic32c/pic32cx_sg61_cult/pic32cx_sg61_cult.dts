@@ -37,13 +37,13 @@
 		compatible = "gpio-leds";
 
 		led1: led_1 {
-			gpios = <&portc 21 GPIO_ACTIVE_HIGH>;
-			label = "Yellow LED";
+			gpios = <&portc 21 GPIO_ACTIVE_LOW>;
+			label = "LED1";
 		};
 
 		led2: led_2 {
-			gpios = <&porta 16 GPIO_ACTIVE_HIGH>;
-			label = "Yellow LED";
+			gpios = <&porta 16 GPIO_ACTIVE_LOW>;
+			label = "LED2";
 		};
 	};
 
@@ -60,9 +60,15 @@
 		compatible = "gpio-keys";
 
 		button0: button_0 {
-			gpios = <&portb 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "SW1";
+			gpios = <&portd 00 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW 1";
 			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&portd 01 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW 2";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 };
@@ -180,6 +186,12 @@
 			gclkperiph-src = "gclk1";
 			gclkperiph-en = <0>;
 		};
+
+		dac {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_DAC>;
+			gclkperiph-src = "gclk1";
+			gclkperiph-en = <0>;
+		};
 	};
 
 	mclkperiph: mclkperiph {
@@ -205,6 +217,13 @@
 	status = "okay";
 };
 
+&tc0 {
+	compatible = "microchip,tc-g1-counter";
+	max-bit-width = <32>;
+	prescaler = <8>;
+	status = "okay";
+};
+
 &porta {
 	status = "okay";
 };
@@ -214,6 +233,10 @@
 };
 
 &portc {
+	status = "okay";
+};
+
+&portd {
 	status = "okay";
 };
 
@@ -272,4 +295,18 @@
 	pinctrl-0 = <&adc1_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&dac {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&dac_default>;
+	pinctrl-names = "default";
+	refsel = "int_ref";
+	status = "okay";
+
+	dac0: channel@0 {
+		reg = <0>;
+		rate = <1000>;
+	};
 };

@@ -3,11 +3,12 @@ sample:
 common:
   tags:
     - adc
-  depends_on: adc
   filter: dt_node_has_prop("/zephyr,user","io-channels")
 
 tests:
   sample.drivers.adc.adc_dt:
+    depends_on:
+      - adc
     platform_allow:
       - nucleo_l073rz
       - nucleo_h753zi
@@ -19,10 +20,12 @@ tests:
       - stm32h735g_disco
       - nrf51dk/nrf51822
       - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
       - mec172xevb_assy6906
       - gd32f350r_eval
@@ -30,8 +33,8 @@ tests:
       - gd32vf103v_eval
       - gd32f403z_eval
       - esp32_devkitc/esp32/procpu
-      - esp32s2_saola
-      - esp32c3_devkitm
+      - esp32s2_devkitc
+      - esp32c3_devkitc
       - gd32l233r_eval
       - lpcxpresso55s36
       - mr_canhubk3
@@ -52,9 +55,11 @@ tests:
       - frdm_mcxa366
       - frdm_mcxa344
       - frdm_mcxe247
+      - frdm_mcxa577
       - s32k148_evb
       - raytac_an54lq_db_15/nrf54l15/cpuapp
       - mck_ra4t1
+      - fpb_ra8e1
     integration_platforms:
       - nucleo_l073rz
       - nrf52840dk/nrf52840
@@ -65,3 +70,12 @@ tests:
       regex:
         - "ADC reading\\[\\d+\\]:"
         - "- .+, channel \\d+: -?\\d+"
+  sample.drivers.adc.adc_dt.eval_cn0391_ardz:
+    extra_args:
+      - SHIELD=eval_cn0391_ardz
+    depends_on:
+      - arduino_spi
+    platform_allow:
+      - apard32690/max32690/m4
+    integration_platforms:
+      - apard32690/max32690/m4

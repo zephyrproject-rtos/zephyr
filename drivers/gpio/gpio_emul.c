@@ -896,10 +896,7 @@ static int gpio_emul_pm_device_pm_action(const struct device *dev,
 		gpio_emul_flags_##_num[DT_INST_PROP(_num, ngpios)];	\
 									\
 	static const struct gpio_emul_config gpio_emul_config_##_num = {\
-		.common = {						\
-			.port_pin_mask =				\
-				GPIO_PORT_PIN_MASK_FROM_DT_INST(_num),	\
-		},							\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(_num),	\
 		.num_pins = DT_INST_PROP(_num, ngpios),			\
 		.interrupt_caps = GPIO_EMUL_INT_CAPS(_num)		\
 	};								\

@@ -12,6 +12,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/shell/shell_uart.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/coap_mgmt.h>
 #include <zephyr/net/ethernet_mgmt.h>
 
@@ -686,9 +687,11 @@ void events_enable(void)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_events,
-	SHELL_CMD(on, NULL, "Turn on network event monitoring.",
+	SHELL_CMD(on, NULL,
+		  SHELL_HELP("Turn on network event monitoring", ""),
 		  cmd_net_events_on),
-	SHELL_CMD(off, NULL, "Turn off network event monitoring.",
+	SHELL_CMD(off, NULL,
+		  SHELL_HELP("Turn off network event monitoring", ""),
 		  cmd_net_events_off),
 	SHELL_SUBCMD_SET_END
 );

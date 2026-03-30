@@ -16,18 +16,18 @@ properties:
     description: |
       The number of column in the keyboard matrix.
 
-  poll-period-ms:
+  poll-period-us:
     type: int
-    default: 5
+    default: 5000
     description: |
-      Defines the poll period in msecs between between matrix scans, set to 0
-      to never exit poll mode. Defaults to 5ms if unspecified.
+      Defines the poll period in usecs between between matrix scans, set to 0
+      to never exit poll mode. Defaults to 5,000us if unspecified.
 
-  stable-poll-period-ms:
+  stable-poll-period-us:
     type: int
     description: |
-      Defines the poll period in msecs between matrix scans when the matrix is
-      stable, defaults to poll-period-ms value if unspecified.
+      Defines the poll period in usecs between matrix scans when the matrix is
+      stable, defaults to poll-period-us value if unspecified.
 
   poll-timeout-ms:
     type: int

@@ -3,6 +3,7 @@
 
 config GPIO_STEPPER
 	bool
+	select STEPPER_CTRL_EVENT_HANDLER
 	help
 	  Enable library used for gpio based stepper controllers.
 
@@ -14,9 +15,5 @@ config GPIO_STEPPER_COUNTER_TIMING
 	default y
 	help
 	  Enable usage of a counter device for accurate stepping.
-
-module = GPIO_STEPPER
-module-str = gpio_stepper
-source "drivers/stepper/Kconfig.stepper_event_template"
 
 endif # GPIO_STEPPER

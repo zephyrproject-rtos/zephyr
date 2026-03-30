@@ -51,10 +51,12 @@ bool pm_suspend_devices(void)
 		if ((ret == -ENOSYS) || (ret == -ENOTSUP) || (ret == -EALREADY)) {
 			continue;
 		} else if (ret < 0) {
-			LOG_ERR("Device %s did not enter %s state (%d)",
-				dev->name,
-				pm_device_state_str(PM_DEVICE_STATE_SUSPENDED),
-				ret);
+			if (ret != -EBUSY) {
+				LOG_ERR("Device %s did not enter %s state (%d)",
+					dev->name,
+					pm_device_state_str(PM_DEVICE_STATE_SUSPENDED),
+					ret);
+			}
 			return false;
 		}
 
@@ -68,8 +70,13 @@ bool pm_suspend_devices(void)
 void pm_resume_devices(void)
 {
 	for (int i = (num_susp - 1); i >= 0; i--) {
-		pm_device_action_run(TYPE_SECTION_START(pm_device_slots)[i],
-				    PM_DEVICE_ACTION_RESUME);
+		const struct device *dev = TYPE_SECTION_START(pm_device_slots)[i];
+		int ret;
+
+		ret = pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
+		if (ret < 0) {
+			LOG_WRN("Failed to resume device %s (%d)", dev->name, ret);
+		}
 	}
 
 	num_susp = 0;

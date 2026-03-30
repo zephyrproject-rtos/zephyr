@@ -15,7 +15,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_STEPPER_STEPPER_DRV84XX_H_
 
 #include <stdint.h>
-#include <zephyr/drivers/stepper.h>
+#include <zephyr/drivers/stepper/stepper.h>
 
 #ifdef __cplusplus
 extern "C" {

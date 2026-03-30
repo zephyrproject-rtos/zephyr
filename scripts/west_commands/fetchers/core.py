@@ -6,6 +6,11 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Type
 
+from west.commands import WestCommand
+
+class ZephyrBlobException(Exception):
+    pass
+
 class ZephyrBlobFetcher(ABC):
 
     @staticmethod
@@ -19,5 +24,5 @@ class ZephyrBlobFetcher(ABC):
         '''Return this fetcher's schemes.'''
 
     @abstractmethod
-    def fetch(self, url: str, path: Path):
+    def fetch(self, west_command: WestCommand, blob: dict, path: Path):
         ''' Fetch a blob and store it '''

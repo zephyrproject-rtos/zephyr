@@ -21,6 +21,13 @@ config ADC_SHELL
 	help
 	  Enable ADC Shell for testing.
 
+config ADC_EMUL_SHELL
+	bool "ADC emulator shell"
+	depends on SHELL
+	depends on ADC_EMUL
+	help
+	  Enable ADC emulator (zephyr,adc-emul) shell commands.
+
 # By selecting or not this option particular ADC drivers indicate if it is
 # required to explicitly specify analog inputs when configuring channels or
 # just the channel identifier is sufficient.
@@ -37,6 +44,22 @@ config ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
 # allow a configurable voltage bias pin.
 config ADC_CONFIGURABLE_VBIAS_PIN
 	bool
+
+# By selecting or not this option particular ADC drivers indicate if they
+# support the sequence priority feature.
+config ADC_HAS_SEQUENCE_PRIORITY
+	bool
+
+config ADC_SEQUENCE_PRIORITY
+	bool "Sequence priority support"
+	depends on ADC_HAS_SEQUENCE_PRIORITY
+	help
+	  This option allows assigning a priority to ADC sequences.
+
+	  The priority assigned to a sequence reflects how time-sensitive it is
+	  compared to other sequences. The number of priority levels supported
+	  and the exact behavior obtained by assigning a specific priority to a
+	  sequence are hardware-specific.
 
 config ADC_ASYNC
 	bool "Asynchronous call support"
@@ -100,15 +123,18 @@ source "drivers/adc/Kconfig.gd32"
 source "drivers/adc/Kconfig.infineon"
 source "drivers/adc/Kconfig.infineon_autanalog_sar"
 source "drivers/adc/Kconfig.infineon_hppass_sar"
+source "drivers/adc/Kconfig.infineon_sar"
 source "drivers/adc/Kconfig.it51xxx"
 source "drivers/adc/Kconfig.it8xxx2"
 source "drivers/adc/Kconfig.lmp90xxx"
 source "drivers/adc/Kconfig.ltc2451"
 source "drivers/adc/Kconfig.max11102_17"
 source "drivers/adc/Kconfig.max1125x"
+source "drivers/adc/Kconfig.max2253x"
 source "drivers/adc/Kconfig.max32"
 source "drivers/adc/Kconfig.mchp"
 source "drivers/adc/Kconfig.mcp320x"
+source "drivers/adc/Kconfig.mcp3221"
 source "drivers/adc/Kconfig.mcp356xr"
 source "drivers/adc/Kconfig.mcux"
 source "drivers/adc/Kconfig.npcx"

@@ -72,6 +72,21 @@ struct bt_uuid_128 {
 	uint8_t val[BT_UUID_SIZE_128];
 };
 
+/** @brief Helper type that can store any UUID size. */
+struct bt_uuid_any {
+	/** Union of all supported UUID sizes. */
+	union {
+		/** Generic UUID view. */
+		struct bt_uuid uuid;
+		/** 16-bit UUID view. */
+		struct bt_uuid_16 u16;
+		/** 32-bit UUID view. */
+		struct bt_uuid_32 u32;
+		/** 128-bit UUID view. */
+		struct bt_uuid_128 u128;
+	};
+};
+
 /** @brief Initialize a 16-bit UUID.
  *
  *  @param value 16-bit UUID value in host endianness.
@@ -643,6 +658,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_PAMS \
 	BT_UUID_DECLARE_16(BT_UUID_PAMS_VAL)
+/**
+ *  @brief Elapsed Time Service UUID value
+ */
+#define BT_UUID_ETS_VAL 0x183f
+/**
+ *  @brief Elapsed Time Service
+ */
+#define BT_UUID_ETS \
+	BT_UUID_DECLARE_16(BT_UUID_ETS_VAL)
 /**
  *  @brief Audio Input Control Service UUID value
  */
@@ -5082,6 +5106,15 @@ struct bt_uuid_128 {
 #define BT_UUID_BAS_BATTERY_ENERGY_STATUS \
 	BT_UUID_DECLARE_16(BT_UUID_BAS_BATTERY_ENERGY_STATUS_VAL)
 /**
+ *  @brief ETS Characteristic Current Elapsed Time UUID Value
+ */
+#define BT_UUID_ETS_CURRENT_ELAPSED_TIME_VAL 0x2bf2
+/**
+ *  @brief ETS Characteristic Current Elapsed Time
+ */
+#define BT_UUID_ETS_CURRENT_ELAPSED_TIME \
+	BT_UUID_DECLARE_16(BT_UUID_ETS_CURRENT_ELAPSED_TIME_VAL)
+/**
  *  @brief GATT Characteristic LE GATT Security Levels UUID Value
  */
 #define BT_UUID_GATT_SL_VAL 0x2bf5
@@ -5248,6 +5281,53 @@ bool bt_uuid_create(struct bt_uuid *uuid, const uint8_t *data, uint8_t data_len)
  *  @param len length of str
  */
 void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len);
+
+/** @brief Convert a UUID string to a Bluetooth UUID.
+ *
+ *  Parses a UUID string and stores the result in a @ref bt_uuid_any. The UUID
+ *  type (16/32/128-bit) is determined by the input string length.
+ *
+ *  Accepted formats:
+ *   - 4 hex digits (e.g. "180D") -> BT_UUID_TYPE_16
+ *   - 8 hex digits (e.g. "0000180D") -> BT_UUID_TYPE_32
+ *   - 36-char canonical form (e.g. "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")
+ *     -> BT_UUID_TYPE_128
+ *
+ *  A full 128-bit UUID string always produces BT_UUID_TYPE_128, even if it
+ *  matches the Bluetooth Base UUID pattern. Use the short forms (4 or 8 hex
+ *  chars) to obtain 16-bit or 32-bit types.
+ *
+ *  Notes:
+ *   - No "0x" prefix.
+ *   - No leading/trailing whitespace.
+ *   - Only hexadecimal characters (case-insensitive).
+ *   - 128-bit UUIDs must include hyphens in the standard positions.
+ *   - 16/32-bit UUIDs must not include separators or hyphens.
+ *
+ *  @param str Pointer to the UUID string.
+ *  @param uuid Pointer to a @ref bt_uuid_any to receive the result.
+ *
+ *  @return 0 on success, or a negative error code on failure.
+ */
+int bt_uuid_from_str(const char *str, struct bt_uuid_any *uuid);
+
+/** @brief Compress a 128-bit UUID to 16-bit or 32-bit if it matches the
+ *         Bluetooth Base UUID.
+ *
+ *  If @p src is already 16-bit or 32-bit it is copied as-is.
+ *  A 128-bit UUID whose bytes [4..15] match the Bluetooth Base UUID is
+ *  compressed to 16-bit (when bytes [0..1] of the RFC 9562 form are zero)
+ *  or 32-bit. Non-matching 128-bit UUIDs are not compressed and cause the
+ *  function to return -ENOTSUP without modifying @p dst.
+ *
+ *  @param[in]  src  Source UUID to compress.
+ *  @param[out] dst  Destination to receive the (possibly shorter) UUID.
+ *
+ *  @retval 0        UUID was compressed (or copied for 16/32-bit input).
+ *  @retval -ENOTSUP 128-bit UUID does not match the Bluetooth Base UUID;
+ *                   @p dst is left unmodified.
+ */
+int bt_uuid_compress(const struct bt_uuid *src, struct bt_uuid_any *dst);
 
 #ifdef __cplusplus
 }

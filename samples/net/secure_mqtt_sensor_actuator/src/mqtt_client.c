@@ -502,11 +502,11 @@ int app_mqtt_init(struct mqtt_client *client)
 	tls_config->cipher_list = NULL;
 	tls_config->sec_tag_list = m_sec_tags;
 	tls_config->sec_tag_count = ARRAY_SIZE(m_sec_tags);
-#if defined(CONFIG_MBEDTLS_SERVER_NAME_INDICATION)
+#if defined(CONFIG_MBEDTLS_SSL_SERVER_NAME_INDICATION)
 	tls_config->hostname = TLS_SNI_HOSTNAME;
 #else
 	tls_config->hostname = NULL;
-#endif /* CONFIG_MBEDTLS_SERVER_NAME_INDICATION */
+#endif /* CONFIG_MBEDTLS_SSL_SERVER_NAME_INDICATION */
 #endif /* CONFIG_MQTT_LIB_TLS */
 
 	return rc;

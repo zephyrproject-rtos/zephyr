@@ -18,10 +18,11 @@ source "drivers/ethernet/phy/Kconfig.tja11xx"
 source "drivers/ethernet/phy/Kconfig.tja1103"
 source "drivers/ethernet/phy/Kconfig.dm8806"
 source "drivers/ethernet/phy/Kconfig.microchip_t1s"
+source "drivers/ethernet/phy/Kconfig.nxp_t1s"
 
 config PHY_INIT_PRIORITY
 	int "Ethernet PHY driver init priority"
-	default 70
+	default ETH_INIT_PRIORITY
 	help
 	  Ethernet PHY device driver initialization priority.
 	  Do not mess with it unless you know what you are doing.
@@ -134,6 +135,16 @@ config PHY_QUALCOMM_AR8031
 	help
 	  Enable Qualcomm Atheros AR8031 Ethernet PHY Driver
 
+config PHY_MAXLINEAR_GPY111
+	bool "Maxlinear GPY111 PHY Driver"
+	default y
+	depends on DT_HAS_MAXLINEAR_GPY111_ENABLED
+	select MDIO
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_MAXLINEAR_GPY111),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_MAXLINEAR_GPY111),int-gpios))
+	help
+	  Enable Maxlinear GPY111 Ethernet PHY Driver
+
 config PHY_AUTONEG_TIMEOUT_MS
 	int "Auto-negotiation timeout value in milliseconds"
 	default 4000
@@ -161,11 +172,12 @@ config PHY_VERIFY_DEVICE_IDENTIFICATION
 	  by the phy chip.
 
 config PHY_MOTORCOMM_YT8521
-	bool "Motorcomm YT8521 Ethernet PHY Driver"
+	bool "Motorcomm YT8521/YT8531 Ethernet PHY Driver"
 	default y
-	depends on DT_HAS_MOTORCOMM_YT8521_ENABLED
+	depends on DT_HAS_MOTORCOMM_YT8521_ENABLED || DT_HAS_MOTORCOMM_YT8531_ENABLED
 	select MDIO
 	help
-	  Enable Motorcomm YT8521 Ethernet PHY Driver
+	  Enable Motorcomm YT8521/YT8531 Ethernet PHY Driver.
+	  This driver supports both YT8521 and YT8531 PHY chips.
 
 endif # "Ethernet PHY Drivers"

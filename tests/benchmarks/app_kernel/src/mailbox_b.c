@@ -111,5 +111,5 @@ void mailbox_put(uint32_t size, int count, uint32_t *time)
 	}
 	end = timing_timestamp_get();
 	t = timing_cycles_get(&start, &end);
-	*time = timing_cycles_to_ns_avg(t, count);
+	*time = test_timing_cycles_to_ns_avg(t, count);
 }

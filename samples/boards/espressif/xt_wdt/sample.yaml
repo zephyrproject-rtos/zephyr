@@ -4,7 +4,7 @@ sample:
 tests:
   sample.board.esp32.xt_wdt:
     platform_allow:
-      - esp32c3_devkitm
-      - esp32s2_saola
+      - esp32c3_devkitc
+      - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
     tags: esp32

@@ -27,6 +27,9 @@
 		compatible = "swir,hl7812";
 		status = "okay";
 		mdm-reset-gpios = <&gpiod 5 GPIO_ACTIVE_LOW>;
+		mdm-vgpio-gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+		mdm-gpio6-gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
+		mdm-wake-gpios = <&gpioe 15 GPIO_ACTIVE_HIGH>;
 
 		socket_offload: socket_offload {
 			compatible = "swir,hl7812-offload";

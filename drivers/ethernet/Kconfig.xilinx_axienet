@@ -10,6 +10,7 @@ config ETH_XILINX_AXIENET
 	default y
 	depends on DT_HAS_XLNX_AXI_ETHERNET_1_00_A_ENABLED
 	depends on DMA_XILINX_AXI_DMA
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	help
 		Enable Xilinx 1G / 2.5G AXI Ethernet driver,
 		commonly found on FPGAs.

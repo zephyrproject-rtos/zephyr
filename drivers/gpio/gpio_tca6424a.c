@@ -554,9 +554,7 @@ static int tca6424a_init(const struct device *dev)
 
 #define TCA6424A_INST(idx)                                                                         \
 	static const struct tca6424a_drv_cfg tca6424a_cfg##idx = {                                 \
-		.common = {                                                                        \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),                     \
-		},                                                                                 \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx),                                    \
 		.i2c_spec = I2C_DT_SPEC_INST_GET(idx),                                             \
 		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(idx, int_gpios, {0}),                         \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(idx, reset_gpios, {0}),                     \

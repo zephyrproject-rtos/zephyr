@@ -34,6 +34,8 @@ LOG_MODULE_REGISTER(bt_driver);
 
 #define BLE_TX_RX_PRIO      0
 #define BLE_TX_RX_FLAGS     0
+#define BLE_RRM_PRIO        0
+#define BLE_RRM_FLAGS       0
 #define BLE_RXTX_SEQ_PRIO   3
 #define BLE_RXTX_SEQ_FLAGS  0
 #define PKA_PRIO	    2
@@ -277,6 +279,11 @@ void HAL_RADIO_TxRxCallback(uint32_t flags)
 	k_work_schedule(&ble_stack_work, K_NO_WAIT);
 }
 
+void HAL_RADIO_RRMCallback(uint32_t ble_irq_status)
+{
+	BLE_STACK_RRMHandler(ble_irq_status);
+}
+
 ISR_DIRECT_DECLARE(RADIO_TXRX_IRQHandler)
 {
 	HAL_RADIO_TXRX_IRQHandler();
@@ -287,6 +294,13 @@ ISR_DIRECT_DECLARE(RADIO_TXRX_IRQHandler)
 ISR_DIRECT_DECLARE(RADIO_TXRX_SEQ_IRQHandler)
 {
 	HAL_RADIO_TXRX_SEQ_IRQHandler();
+	ISR_DIRECT_PM(); /* PM done after servicing interrupt for best latency */
+	return 1;
+}
+
+ISR_DIRECT_DECLARE(RADIO_RRM_IRQHandler)
+{
+	HAL_RADIO_RRM_IRQHandler();
 	ISR_DIRECT_PM(); /* PM done after servicing interrupt for best latency */
 	return 1;
 }
@@ -307,6 +321,7 @@ static void _PKA_IRQHandler(void *args)
 static void ble_isr_installer(void)
 {
 	IRQ_DIRECT_CONNECT(RADIO_TXRX_IRQn, BLE_TX_RX_PRIO, RADIO_TXRX_IRQHandler, BLE_TX_RX_FLAGS);
+	IRQ_DIRECT_CONNECT(RADIO_RRM_IRQn, BLE_RRM_PRIO, RADIO_RRM_IRQHandler, BLE_RRM_FLAGS);
 	IRQ_DIRECT_CONNECT(RADIO_TXRX_SEQ_IRQn, BLE_RXTX_SEQ_PRIO, RADIO_TXRX_SEQ_IRQHandler,
 			   BLE_RXTX_SEQ_FLAGS);
 	IRQ_CONNECT(PKA_IRQn, PKA_PRIO, _PKA_IRQHandler, NULL, PKA_FLAGS);
@@ -316,20 +331,24 @@ static void ble_isr_installer(void)
 static int ble_pm_action(const struct device *dev,
 			 enum pm_device_action action)
 {
-	static uint32_t pka_cr_vr;
+	static uint32_t pka_cr_vr, ble_rrm_irq_enable_vr;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
 		LL_PWR_EnableWU_EWBLE();
 		pka_cr_vr = PKA->CR;
 		/* TBD: Manage PKA save for WB06 & WB07 */
+
+		ble_rrm_irq_enable_vr = RRM->BLE_IRQ_ENABLE;
 		break;
 	case PM_DEVICE_ACTION_RESUME:
 		LL_PWR_DisableWU_EWBLE();
 		/* TBD: Manage PKA restore for WB06 & WB07 */
 		PKA->CLRFR = PKA_CLRFR_PROCENDFC | PKA_CLRFR_RAMERRFC | PKA_CLRFR_ADDRERRFC;
 		PKA->CR = pka_cr_vr;
+		RRM->BLE_IRQ_ENABLE = ble_rrm_irq_enable_vr;
 		irq_enable(RADIO_TXRX_IRQn);
+		irq_enable(RADIO_RRM_IRQn);
 		irq_enable(RADIO_TXRX_SEQ_IRQn);
 		irq_enable(PKA_IRQn);
 		break;
@@ -517,6 +536,7 @@ static int bt_hci_stm32wb0_open(const struct device *dev, bt_hci_recv_t recv)
 		.NumOfBrcBIS = CFG_BLE_NUM_BRC_BIS_MAX,
 		.NumOfCIG = CFG_BLE_NUM_CIG_MAX,
 		.NumOfCIS = CFG_BLE_NUM_CIS_MAX,
+		.ExtraLLProcedureContexts = CFG_BLE_EXTRA_LL_PROCEDURE_CONTEXTS,
 		.isr0_fifo_size = CFG_BLE_ISR0_FIFO_SIZE,
 		.isr1_fifo_size = CFG_BLE_ISR1_FIFO_SIZE,
 		.user_fifo_size = CFG_BLE_USER_FIFO_SIZE

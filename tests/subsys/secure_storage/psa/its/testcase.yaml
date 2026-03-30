@@ -6,6 +6,9 @@ common:
     - qemu_cortex_m0 # settings subsystem initialization fails
     - nrf54h20dk/nrf54h20/cpuapp
     - nrf54h20dk/nrf54h20/cpurad
+    - max78002evkit/max78002/rv32 # Erase of flash nukes the ARM core host app
+    - max32690evkit/max32690/rv32 # Erase of flash nukes the ARM core host app
+    - max32655evkit/max32655/rv32 # Erase of flash nukes the ARM core host app
   timeout: 600
   tags:
     - psa.secure_storage
@@ -21,6 +24,7 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf5340dk/nrf5340/cpuapp
       - nrf52840dk/nrf52840
+      - nrf7120dk/nrf7120/cpuapp
       - nrf9151dk/nrf9151
       - nrf9160dk/nrf9160
       - nrf9161dk/nrf9161

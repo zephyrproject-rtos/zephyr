@@ -53,7 +53,7 @@ Compile the ``ptp4l`` daemon and start it like this:
 
 .. code-block:: console
 
-    sudo ./ptp4l -4 -f -i zeth -m -q -l 6 -S
+    sudo ./ptp4l -4 -i zeth -m -q -l 6 -S
 
 Compile Zephyr application.
 

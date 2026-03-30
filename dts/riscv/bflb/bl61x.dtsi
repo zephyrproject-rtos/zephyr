@@ -24,7 +24,29 @@
 		clk_rc32m: clk-rc32m {
 			#clock-cells = <0>;
 			compatible = "fixed-clock";
-			clock-frequency = <DT_FREQ_M(32)>;
+			clock-frequency = <BFLB_RC32M_FREQUENCY>;
+			status = "okay";
+		};
+
+		clk_xtal32k: clk-xtal32k {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <BFLB_F32K_FREQUENCY>;
+			status = "disabled";
+		};
+
+		clk_rc32k: clk-rc32k {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <BFLB_F32K_FREQUENCY>;
+			status = "okay";
+		};
+
+		clk_f32k: clk-f32k {
+			#clock-cells = <0>;
+			compatible = "bflb,f32k";
+			clock-frequency = <BFLB_F32K_FREQUENCY>;
+			clocks = <&clk_rc32k>;
 			status = "okay";
 		};
 
@@ -37,22 +59,24 @@
 
 		clk_wifipll: clk-wifipll {
 			#clock-cells = <1>;
-			compatible = "bflb,bl61x-wifipll";
+			compatible = "bflb,pll";
 			clocks = <&clk_crystal>;
+			top-frequency = <BL61X_WIFIPLL_TOP_FREQ>;
 			status = "okay";
 		};
 
 		clk_aupll: clk-aupll {
 			#clock-cells = <1>;
-			compatible = "bflb,bl61x-aupll";
+			compatible = "bflb,pll";
 			clocks = <&clk_rc32m>;
+			top-frequency = <BL61X_AUPLL_TOP_FREQ>;
 			status = "disabled";
 		};
 
 		clk_root: clk-root {
 			#clock-cells = <0>;
-			compatible = "bflb,bl61x-root-clk";
-			clocks = <&clk_wifipll BL61X_WIFIPLL_320MHz>;
+			compatible = "bflb,root-clk";
+			clocks = <&clk_wifipll BL61X_WIFIPLL_ID_DIV1>;
 			divider = <1>;
 			status = "okay";
 		};
@@ -66,7 +90,7 @@
 
 		clk_flash: clk-flash {
 			#clock-cells = <0>;
-			compatible = "bflb,bl61x-flash-clk";
+			compatible = "bflb,flash-clk";
 			clocks = <&clk_bclk>;
 			divider = <2>;
 			status = "okay";
@@ -127,17 +151,32 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
+		};
 
-			gpio0: gpio@20000000 {
-				compatible = "bflb,bl61x-gpio";
-				reg = <0x20000000 0x1000>;
+		gpios: gpio@20000000 {
+			compatible = "bflb,bl61x-gpio";
+			reg = <0x20000000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			interrupts = <60 1>, <47 1>;
+			interrupt-names = "gpio", "fifo";
+			interrupt-parent = <&clic>;
+
+			gpio0: gpio@0 {
 				#gpio-cells = <2>;
-				#bflb,pin-cells = <2>;
+				reg = <0>;
+				ngpios = <32>;
 				status = "disabled";
-
 				gpio-controller;
-				interrupts = <60 1>;
-				interrupt-parent = <&clic>;
+			};
+
+			gpio1: gpio@1 {
+				#gpio-cells = <2>;
+				reg = <1>;
+				ngpios = <3>;
+				status = "disabled";
+				gpio-controller;
 			};
 		};
 
@@ -147,22 +186,14 @@
 			#clock-cells = <1>;
 			status = "okay";
 			clocks = <&clk_rc32m>, <&clk_crystal>,
-				 <&clk_wifipll BL61X_WIFIPLL_320MHz>,
-				 <&clk_wifipll BL61X_WIFIPLL_240MHz>,
-				 <&clk_wifipll BL61X_WIFIPLL_OC_480MHz>,
-				 <&clk_wifipll BL61X_WIFIPLL_OC_360MHz>,
-				 <&clk_wifipll BL61X_WIFIPLL_OCMAX_640MHz>,
-				 <&clk_wifipll BL61X_WIFIPLL_OCMAX_480MHz>,
-				 <&clk_aupll BL61X_AUPLL_DIV1>, <&clk_aupll BL61X_AUPLL_DIV2>,
+				 <&clk_rc32k>, <&clk_xtal32k>, <&clk_f32k>,
+				 <&clk_wifipll BL61X_WIFIPLL_ID_DIV1>,
+				 <&clk_aupll BL61X_AUPLL_ID_DIV1>,
 				 <&clk_root>, <&clk_bclk>, <&clk_flash>;
 			clock-names = "rc32m", "crystal",
-				      "wifipll_320",
-				      "wifipll_240",
-				      "wifipll_oc_480",
-				      "wifipll_oc_360",
-				      "wifipll_ocmax_640",
-				      "wifipll_ocmax_480",
-				      "aupll_div1", "aupll_div2",
+				      "rc32k", "xtal32k", "f32k",
+				      "wifipll_top",
+				      "aupll_top",
 				      "root", "bclk", "flash";
 		};
 
@@ -176,6 +207,32 @@
 
 			interrupts = <41 1>;
 			interrupt-parent = <&clic>;
+		};
+
+		sec_eng_trng: trng@20004000 {
+			compatible = "bflb,sec-eng-trng";
+			reg = <0x20004000 0x100>;
+			interrupts = <28 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		sec_eng_sha: sha@20004000 {
+			compatible = "bflb,sec-eng-sha";
+			reg = <0x20004000 0x100>, <0x20004000 0x600>;
+			reg-names = "sha", "sec_eng";
+			interrupts = <26 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		sec_eng_aes: aes@20004100 {
+			compatible = "bflb,sec-eng-aes";
+			reg = <0x20004100 0x100>, <0x20004000 0x600>;
+			reg-names = "aes", "sec_eng";
+			interrupts = <26 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		uart0: uart@2000a000 {
@@ -259,6 +316,42 @@
 			interrupt-parent = <&clic>;
 		};
 
+		wdt0: watchdog@2000a500 {
+			compatible = "bflb,wdt";
+			reg = <0x2000a500 0x100>;
+			status = "disabled";
+
+			interrupts = <54 1>;
+			interrupt-parent = <&clic>;
+		};
+
+		timer: timer@2000a500 {
+			compatible = "bflb,timer";
+			reg = <0x2000a500 0x100>;
+			clocks = <&clk_crystal>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			timer0: channel@0 {
+				compatible = "bflb,timer-channel";
+				reg = <0>;
+				status = "disabled";
+
+				interrupts = <52 1>;
+				interrupt-parent = <&clic>;
+			};
+
+			timer1: channel@1 {
+				compatible = "bflb,timer-channel";
+				reg = <1>;
+				status = "disabled";
+
+				interrupts = <53 1>;
+				interrupt-parent = <&clic>;
+			};
+		};
+
 		flashctrl: flash-controller@2000b000 {
 			compatible = "bflb,flash-controller";
 			reg = <0x2000b000 0x1000>;
@@ -307,6 +400,12 @@
 			compatible = "bflb,aon-regulator";
 			reg = <0x2000f000 0x1000>;
 			status = "okay";
+		};
+
+		rtc0: rtc@2000f000 {
+			compatible = "bflb,rtc";
+			reg = <0x2000f000 0x20>;
+			status = "disabled";
 		};
 
 		retram: memory@20010000 {

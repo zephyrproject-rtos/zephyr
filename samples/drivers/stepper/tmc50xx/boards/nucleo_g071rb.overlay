@@ -6,8 +6,8 @@
 
 / {
 	aliases {
-		stepper-drv = &tmc_stepper_driver;
-		stepper = &tmc_motion_controller;
+		stepper-driver = &tmc_stepper_driver;
+		stepper-ctrl = &tmc_motion_controller;
 	};
 };
 
@@ -25,17 +25,17 @@
 		clock-frequency = <DT_FREQ_M(10)>; /* Internal/External Clock frequency */
 
 		/* common stepper controller settings */
-		tmc_stepper_driver: stepper_driver {
+		tmc_stepper_driver: stepper-driver {
 			micro-step-res = <256>;
 			idx = <0>;
-			compatible = "adi,tmc50xx-stepper-drv";
+			compatible = "adi,tmc50xx-stepper-driver";
 			/* ADI TMC stallguard settings specific to TMC50XX */
 			stallguard2-threshold = <30>;
 		};
 
 		/* ADI TMC ramp generator as well as current settings */
-		tmc_motion_controller: motion_controller {
-			compatible = "adi,tmc50xx-stepper";
+		tmc_motion_controller: motion-controller {
+			compatible = "adi,tmc50xx-stepper-ctrl";
 			idx = <0>;
 			vstart = <1000>;
 			vstop = <10>;

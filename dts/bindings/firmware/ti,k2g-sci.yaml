@@ -16,6 +16,10 @@ properties:
     required: true
     description: Host ID for processor
 
+  ti,is-secure:
+    type: boolean
+    description: Indicates if the host is a secure entity
+
   mboxes:
     description: phandle to the MBOX controller (TX and RX are required)
     required: true

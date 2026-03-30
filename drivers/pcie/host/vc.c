@@ -141,7 +141,7 @@ int pcie_vc_map_tc(pcie_bdf_t bdf, struct pcie_vctc_map *map)
 		return -EINVAL;
 	}
 
-	/* Veryfying that map is sane */
+	/* Verifying that map is sane */
 	for (idx = 0; idx < map->vc_count; idx++) {
 		if (idx == 0 && !(map->vc_tc[idx] & PCIE_VC_SET_TC0)) {
 			/* TC0 is on VC0 and cannot be unset */

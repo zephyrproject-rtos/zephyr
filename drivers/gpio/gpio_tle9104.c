@@ -228,9 +228,7 @@ static int tle9104_gpio_init(const struct device *dev)
 
 #define TLE9104_GPIO_INIT(inst)                                                                    \
 	static const struct tle9104_gpio_config tle9104_gpio_##inst##_config = {                   \
-		.common = {                                                                        \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),                    \
-		},                                                                                 \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.parent = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                             \
 		.parallel_mode_out12 = DT_PROP(DT_PARENT(DT_DRV_INST(inst)), parallel_out12),      \
 		.parallel_mode_out34 = DT_PROP(DT_PARENT(DT_DRV_INST(inst)), parallel_out34),      \

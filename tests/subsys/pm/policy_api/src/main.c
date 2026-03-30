@@ -224,6 +224,17 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 
+	/* update latency requirement to exactly PM_STATE_RUNTIME_IDLE latency,
+	 * so PM_STATE_RUNTIME_IDLE should remain available.
+	 */
+	pm_policy_latency_request_update(&req1, 10000);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
+
+	/* restore intermediate latency requirement for subsequent checks. */
+	pm_policy_latency_request_update(&req1, 50000);
+
 	/* add a new latency requirement with a maximum value below the
 	 * latency given by any state, so we should stay active all the time
 	 * since it overrides the previous one.
@@ -288,6 +299,26 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	expected_latency = SYS_FOREVER_US;
 	pm_policy_latency_request_remove(&req1);
 	zassert_equal(latency_cb_call_cnt, 1);
+}
+
+ZTEST(policy_api, test_pm_policy_latency_subscribe_null_disables)
+{
+	struct pm_policy_latency_request req;
+	struct pm_policy_latency_subscription sreq;
+
+	pm_policy_latency_changed_subscribe(&sreq, on_pm_policy_latency_changed);
+
+	latency_cb_call_cnt = 0;
+	expected_latency = 10000;
+	pm_policy_latency_request_add(&req, 10000);
+	zassert_equal(latency_cb_call_cnt, 1);
+
+	pm_policy_latency_changed_subscribe(&sreq, NULL);
+
+	latency_cb_call_cnt = 0;
+	expected_latency = SYS_FOREVER_US;
+	pm_policy_latency_request_remove(&req);
+	zassert_equal(latency_cb_call_cnt, 0);
 }
 
 /**
@@ -411,6 +442,11 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	ztest_test_skip();
 }
 
+ZTEST(policy_api, test_pm_policy_latency_subscribe_null_disables)
+{
+	ztest_test_skip();
+}
+
 ZTEST(policy_api, test_pm_policy_state_constraints)
 {
 	ztest_test_skip();
@@ -451,31 +487,58 @@ ZTEST(policy_api, test_pm_policy_events)
 	struct pm_policy_event evt1;
 	struct pm_policy_event evt2;
 	int64_t now_uptime_ticks;
-	int64_t evt1_1_uptime_ticks;
-	int64_t evt1_2_uptime_ticks;
+	int64_t evt1_short_uptime_ticks;
+	int64_t evt1_long_uptime_ticks;
 	int64_t evt2_uptime_ticks;
+	int64_t short_delta;
+	int64_t mid_delta;
+	int64_t long_delta;
+	int64_t tol;
 
 	now_uptime_ticks = k_uptime_ticks();
-	evt1_1_uptime_ticks = now_uptime_ticks + 100;
-	evt1_2_uptime_ticks = now_uptime_ticks + 200;
-	evt2_uptime_ticks = now_uptime_ticks + 2000;
+	short_delta = (int64_t)k_ms_to_ticks_ceil32(500);
+	mid_delta = (int64_t)k_ms_to_ticks_ceil32(1500);
+	long_delta = (int64_t)k_ms_to_ticks_ceil32(5000);
+	tol = (int64_t)k_ms_to_ticks_ceil32(250);
+
+	evt1_short_uptime_ticks = now_uptime_ticks + short_delta;
+	evt1_long_uptime_ticks = now_uptime_ticks + long_delta;
+	evt2_uptime_ticks = now_uptime_ticks + mid_delta;
 
 	zassert_equal(pm_policy_next_event_ticks(), -1);
-	pm_policy_event_register(&evt1, evt1_1_uptime_ticks);
-	pm_policy_event_register(&evt2, evt2_uptime_ticks);
-	zassert_within(pm_policy_next_event_ticks(), 100, 50);
+
+	/* update/unregister on an unregistered event are no-ops */
+	pm_policy_event_update(&evt1, evt1_short_uptime_ticks);
+	zassert_equal(pm_policy_next_event_ticks(), -1);
 	pm_policy_event_unregister(&evt1);
-	zassert_within(pm_policy_next_event_ticks(), 2000, 50);
+	zassert_equal(pm_policy_next_event_ticks(), -1);
+
+	/* Register one event far in the future */
+	pm_policy_event_register(&evt1, evt1_long_uptime_ticks);
+	zassert_within(pm_policy_next_event_ticks(), long_delta, tol);
+
+	/* Re-registering an already registered event behaves like an update */
+	pm_policy_event_register(&evt1, evt1_short_uptime_ticks);
+	zassert_within(pm_policy_next_event_ticks(), short_delta, tol);
+
+	/* Register another event and ensure the earliest one is selected */
+	pm_policy_event_register(&evt2, evt2_uptime_ticks);
+	zassert_within(pm_policy_next_event_ticks(), short_delta, tol);
+
+	/* Unregister evt1: evt2 becomes the earliest */
+	pm_policy_event_unregister(&evt1);
+	zassert_within(pm_policy_next_event_ticks(), mid_delta, tol);
+
+	/* Unregistering an already unregistered event is a no-op */
+	pm_policy_event_unregister(&evt1);
+	zassert_within(pm_policy_next_event_ticks(), mid_delta, tol);
+
+	/* Update evt2 still works */
+	pm_policy_event_update(&evt2, now_uptime_ticks + long_delta);
+	zassert_within(pm_policy_next_event_ticks(), long_delta, tol);
+
 	pm_policy_event_unregister(&evt2);
 	zassert_equal(pm_policy_next_event_ticks(), -1);
-	pm_policy_event_register(&evt2, evt2_uptime_ticks);
-	zassert_within(pm_policy_next_event_ticks(), 2000, 50);
-	pm_policy_event_register(&evt1, evt1_1_uptime_ticks);
-	zassert_within(pm_policy_next_event_ticks(), 100, 50);
-	pm_policy_event_update(&evt1, evt1_2_uptime_ticks);
-	zassert_within(pm_policy_next_event_ticks(), 200, 50);
-	pm_policy_event_unregister(&evt1);
-	pm_policy_event_unregister(&evt2);
 }
 
 ZTEST_SUITE(policy_api, NULL, NULL, NULL, NULL, NULL);

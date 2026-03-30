@@ -52,13 +52,11 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #define HTTP_HEADER_CONTENT_TYPE_JSON "application/json;charset=UTF-8"
 
 #define SLOT1_LABEL slot1_partition
-#define SLOT1_SIZE  FIXED_PARTITION_SIZE(SLOT1_LABEL)
+#define SLOT1_SIZE  PARTITION_SIZE(SLOT1_LABEL)
 
 static uint32_t poll_sleep = (CONFIG_HAWKBIT_POLL_INTERVAL * SEC_PER_MIN);
 
 static bool hawkbit_initialized;
-
-#ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
 
 #ifdef CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY
 #define AUTH_HEADER_START "Authorization: GatewayToken "
@@ -71,8 +69,6 @@ static bool hawkbit_initialized;
 #else
 #define AUTH_HEADER_FULL AUTH_HEADER_START CONFIG_HAWKBIT_DDI_SECURITY_TOKEN HTTP_CRLF
 #endif /* CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME */
-
-#endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
 
 #ifdef CONFIG_DNS_RESOLVER_MAX_QUERY_LEN
 #define SERVER_ADDR_LEN CONFIG_DNS_RESOLVER_MAX_QUERY_LEN
@@ -90,9 +86,7 @@ static struct hawkbit_config {
 	char server_domain[CONFIG_HAWKBIT_DOMAIN_NAME_MAX_LEN + 1];
 #endif
 	char server_port[sizeof(STRINGIFY(__UINT16_MAX__))];
-#ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
 	char ddi_security_token[DDI_SECURITY_TOKEN_SIZE + 1];
-#endif
 #ifdef CONFIG_HAWKBIT_USE_DYNAMIC_CERT_TAG
 	sec_tag_t tls_tag;
 #endif
@@ -115,17 +109,15 @@ static struct hawkbit_config {
 #define HAWKBIT_PORT_INT CONFIG_HAWKBIT_PORT
 #endif /* CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME */
 
-#ifdef CONFIG_HAWKBIT_DDI_NO_SECURITY
-#define HAWKBIT_DDI_SECURITY_TOKEN NULL
-#elif defined(CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME)
+#ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
 #define HAWKBIT_DDI_SECURITY_TOKEN hb_cfg.ddi_security_token
 #else
 #define HAWKBIT_DDI_SECURITY_TOKEN CONFIG_HAWKBIT_DDI_SECURITY_TOKEN
-#endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
+#endif /* CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME */
 
 #ifdef CONFIG_HAWKBIT_USE_DYNAMIC_CERT_TAG
 #define HAWKBIT_CERT_TAG hb_cfg.tls_tag
-#elif defined(HAWKBIT_USE_STATIC_CERT_TAG)
+#elif defined(CONFIG_HAWKBIT_USE_STATIC_CERT_TAG)
 #define HAWKBIT_CERT_TAG CONFIG_HAWKBIT_STATIC_CERT_TAG
 #else
 #define HAWKBIT_CERT_TAG 0
@@ -352,9 +344,6 @@ static int hawkbit_settings_set(const char *name, size_t len, settings_read_cb r
 	}
 
 	if (settings_name_steq(name, "ddi_token", &next) && !next) {
-#ifdef CONFIG_HAWKBIT_DDI_NO_SECURITY
-		rc = read_cb(cb_arg, NULL, 0);
-#else
 		if (len != sizeof(hb_cfg.ddi_security_token)) {
 			return -EINVAL;
 		}
@@ -364,7 +353,6 @@ static int hawkbit_settings_set(const char *name, size_t len, settings_read_cb r
 		if (rc >= 0) {
 			return 0;
 		}
-#endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
 		return rc;
 	}
 #else  /* CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME */
@@ -400,10 +388,8 @@ static int hawkbit_settings_export(int (*cb)(const char *name, const void *value
 #endif /* CONFIG_HAWKBIT_USE_DOMAIN_NAME */
 	uint16_t hawkbit_port = atoi(hb_cfg.server_port);
 	(void)cb("hawkbit/server_port", &hawkbit_port, sizeof(hawkbit_port));
-#ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
 	(void)cb("hawkbit/ddi_token", &hb_cfg.ddi_security_token,
 		 sizeof(hb_cfg.ddi_security_token));
-#endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
 #endif /* CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME */
 	return 0;
 }
@@ -848,14 +834,12 @@ int hawkbit_set_config(struct hawkbit_runtime_config *config)
 				 config->server_port);
 			LOG_DBG("configured %s: %s", "hawkbit/server_port", hb_cfg.server_port);
 		}
-#ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
 		if (config->auth_token != NULL) {
 			strncpy(hb_cfg.ddi_security_token, config->auth_token,
 				sizeof(hb_cfg.ddi_security_token));
 			LOG_DBG("configured %s: %s", "hawkbit/ddi_token",
 				hb_cfg.ddi_security_token);
 		}
-#endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
 #ifdef CONFIG_HAWKBIT_USE_DYNAMIC_CERT_TAG
 		if (config->tls_tag != 0) {
 			hb_cfg.tls_tag = config->tls_tag;
@@ -1093,7 +1077,6 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 	int ret = 0;
 	uint8_t recv_buf_tcp[RECV_BUFFER_SIZE] = {0};
 	struct http_request http_req = {0};
-#ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
 #ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
 	char header[DDI_SECURITY_TOKEN_SIZE + sizeof(AUTH_HEADER_START) + sizeof(HTTP_CRLF) - 1];
 
@@ -1102,7 +1085,6 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 #else
 	static const char *const headers[] = {AUTH_HEADER_FULL, NULL};
 #endif /* CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME */
-#endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
 #ifdef CONFIG_HAWKBIT_SAVE_PROGRESS
 	char header_range[RANGE_HEADER_SIZE] = {0};
 	char const *headers_range[] = {header_range, NULL};
@@ -1114,9 +1096,7 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 	http_req.response = response_cb;
 	http_req.recv_buf = recv_buf_tcp;
 	http_req.recv_buf_len = sizeof(recv_buf_tcp);
-#ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
 	http_req.header_fields = (const char **)headers;
-#endif
 	hb_context->final_data_received = false;
 	hb_context->type = type;
 
@@ -1242,7 +1222,6 @@ static bool check_hawkbit_server(void)
 		}
 	}
 
-#ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
 	if (strlen(HAWKBIT_DDI_SECURITY_TOKEN) == 0) {
 		if (sizeof(CONFIG_HAWKBIT_DDI_SECURITY_TOKEN) > 1) {
 			hawkbit_set_ddi_security_token(CONFIG_HAWKBIT_DDI_SECURITY_TOKEN);
@@ -1251,7 +1230,6 @@ static bool check_hawkbit_server(void)
 			return false;
 		}
 	}
-#endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
 
 	return true;
 }

@@ -20,6 +20,7 @@ config SPI_MAX32_DMA
 	bool "MAX32 MCU SPI DMA Support"
 	select DMA
 	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
+	select SPI_MAX32_INTERRUPT if SPI_MAX32_RTIO
 	help
 	  Enable DMA support for MAX32 MCU SPI driver.
 
@@ -46,5 +47,9 @@ config SPI_MAX32_RTIO_CQ_SIZE
 	default 8 # Sensible default that covers most common spi transactions
 
 endif # SPI_MAX32_RTIO
+
+config SPI_MAX32_REG_WRITE_WAIT_WORKAROUND
+	bool
+	default y if SOC_MAX32666_CPU0
 
 endif # SPI_MAX32

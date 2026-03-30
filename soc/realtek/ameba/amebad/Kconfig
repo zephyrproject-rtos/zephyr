@@ -14,3 +14,4 @@ config SOC_SERIES_AMEBAD
 	select ARM_MPU
 	select ARM_TRUSTZONE_M
 	select ARM_ON_EXIT_CPU_IDLE
+	select CLOCK_CONTROL

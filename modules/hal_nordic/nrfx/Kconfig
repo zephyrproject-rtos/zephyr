@@ -54,7 +54,7 @@ config NRFX_COMP
 
 config NRFX_CRACEN
 	bool "CRACEN drivers"
-	depends on SOC_COMPATIBLE_NRF54LX
+	depends on SOC_COMPATIBLE_NRF54LX || SOC_COMPATIBLE_NRF71
 	select NRFX_CRACEN_BSIM_SUPPORT if SOC_SERIES_BSIM_NRFXX
 
 config NRFX_CRACEN_BSIM_SUPPORT
@@ -114,37 +114,7 @@ config NRFX_EGU130
 	select NRFX_EGU
 
 config NRFX_GPIOTE
-	bool
-
-config NRFX_GPIOTE0
-	bool "GPIOTE0 driver instance"
-	depends on $(dt_nodelabel_exists,gpiote0)
-	select NRFX_GPIOTE
-
-config NRFX_GPIOTE1
-	bool "GPIOTE1 driver instance"
-	depends on $(dt_nodelabel_exists,gpiote1)
-	select NRFX_GPIOTE
-
-config NRFX_GPIOTE20
-	bool "NRFX_GPIOTE20 driver instance"
-	depends on $(dt_nodelabel_exists,gpiote20)
-	select NRFX_GPIOTE
-
-config NRFX_GPIOTE30
-	bool "NRFX_GPIOTE30 driver instance"
-	depends on $(dt_nodelabel_exists,gpiote30)
-	select NRFX_GPIOTE
-
-config NRFX_GPIOTE130
-	bool "NRFX_GPIOTE130 driver instance"
-	depends on $(dt_nodelabel_exists,gpiote130)
-	select NRFX_GPIOTE
-
-config NRFX_GPIOTE131
-	bool "NRFX_GPIOTE131 driver instance"
-	depends on $(dt_nodelabel_exists,gpiote131)
-	select NRFX_GPIOTE
+	bool "GPIOTE driver"
 
 config NRFX_GPIOTE_NONUNIFORM_INSTANCES
 	def_bool $(dt_nodelabel_enabled,gpiote0)
@@ -167,7 +137,6 @@ config NRFX_GPPI
 config NRFX_GPPI_V1
 	bool "GPPI layer legacy"
 	depends on NRFX_GPPI
-	default y if SOC_SERIES_NRF54H
 	help
 	  When enabled then legacy version of Generic PPI layer is used.
 
@@ -181,6 +150,11 @@ config NRFX_I2S
 config NRFX_IPC
 	bool "IPC driver"
 	depends on $(dt_nodelabel_exists,ipc)
+
+config NRFX_KMU
+	bool "Key Management Unit driver"
+	help
+	   Enable the nrfx_kmu driver.
 
 config NRFX_LPCOMP
 	bool "LPCOMP driver"
@@ -228,54 +202,14 @@ config NRFX_RRAMC
 	depends on $(dt_nodelabel_exists,rram_controller)
 
 config NRFX_RTC
-	bool
-
-config NRFX_RTC0
-	bool "RTC0 driver instance"
-	depends on $(dt_nodelabel_exists,rtc0)
-	select NRFX_RTC
-
-config NRFX_RTC1
-	bool "RTC1 driver instance"
-	depends on $(dt_nodelabel_exists,rtc1)
-	select NRFX_RTC
-
-config NRFX_RTC2
-	bool "RTC2 driver instance"
-	depends on $(dt_nodelabel_exists,rtc2)
-	select NRFX_RTC
-
-config NRFX_RTC130
-	bool "RTC130 driver instance"
-	depends on $(dt_nodelabel_exists,rtc130)
-	select NRFX_RTC
-
-config NRFX_RTC131
-	bool "RTC131 driver instance"
-	depends on $(dt_nodelabel_exists,rtc131)
-	select NRFX_RTC
+	bool "RTC driver"
 
 config NRFX_SAADC
 	bool "SAADC driver"
 	depends on $(dt_nodelabel_exists,adc) && !SOC_SERIES_NRF51
 
 config NRFX_SPI
-	bool
-
-config NRFX_SPI0
-	bool "SPI0 driver instance"
-	depends on $(dt_nodelabel_exists,spi0) && (SOC_SERIES_NRF51 || SOC_SERIES_NRF52)
-	select NRFX_SPI
-
-config NRFX_SPI1
-	bool "SPI1 driver instance"
-	depends on $(dt_nodelabel_exists,spi1) && (SOC_SERIES_NRF51 || SOC_SERIES_NRF52)
-	select NRFX_SPI
-
-config NRFX_SPI2
-	bool "SPI2 driver instance"
-	depends on $(dt_nodelabel_exists,spi2) && SOC_SERIES_NRF52
-	select NRFX_SPI
+	bool "SPI driver"
 
 config NRFX_SPIM
 	bool "SPIM driver"
@@ -293,6 +227,9 @@ config NRFX_TBM
 	bool "TBM driver"
 	depends on $(dt_nodelabel_exists,tbm)
 
+config NRFX_TDM
+	bool "TDM driver"
+
 config NRFX_TEMP
 	bool "TEMP driver"
 	depends on $(dt_nodelabel_exists,temp)
@@ -301,17 +238,7 @@ config NRFX_TIMER
 	bool "TIMER driver"
 
 config NRFX_TWI
-	bool
-
-config NRFX_TWI0
-	bool "TWI0 driver instance"
-	depends on $(dt_nodelabel_exists,i2c0) && (SOC_SERIES_NRF51 || SOC_SERIES_NRF52)
-	select NRFX_TWI
-
-config NRFX_TWI1
-	bool "TWI1 driver instance"
-	depends on $(dt_nodelabel_exists,i2c1) && (SOC_SERIES_NRF51 || SOC_SERIES_NRF52)
-	select NRFX_TWI
+	bool "NRFX driver for TWI peripheral"
 
 config NRFX_TWIM
 	bool "NRFX driver for TWIM peripheral"
@@ -320,12 +247,7 @@ config NRFX_TWIS
 	bool "NRFX driver for TWIS peripheral"
 
 config NRFX_UART
-	bool
-
-config NRFX_UART0
-	bool "UART0 driver instance"
-	depends on $(dt_nodelabel_exists,uart0) && (SOC_SERIES_NRF51 || SOC_SERIES_NRF52)
-	select NRFX_UART
+	bool "UART driver"
 
 config NRFX_UARTE
 	bool "UARTE driver"
@@ -380,6 +302,26 @@ config NRFX_PRS_BOX_3
 
 config NRFX_PRS_BOX_4
 	bool "PRS box 4"
+	select NRFX_PRS
+
+config NRFX_PRS_BOX_5
+	bool "PRS box 5"
+	select NRFX_PRS
+
+config NRFX_PRS_BOX_6
+	bool "PRS box 6"
+	select NRFX_PRS
+
+config NRFX_PRS_BOX_7
+	bool "PRS box 7"
+	select NRFX_PRS
+
+config NRFX_PRS_BOX_8
+	bool "PRS box 8"
+	select NRFX_PRS
+
+config NRFX_PRS_BOX_9
+	bool "PRS box 9"
 	select NRFX_PRS
 
 endmenu

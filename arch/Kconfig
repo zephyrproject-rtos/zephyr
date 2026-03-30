@@ -68,6 +68,16 @@ config MIPS
 	help
 	  MIPS architecture
 
+config OPENRISC
+	bool
+	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_BUILTIN
+	select BIG_ENDIAN
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  OpenRISC architecture
+
 config SPARC
 	bool
 	select ARCH_IS_SET
@@ -112,6 +122,8 @@ config RISCV
 	select ATOMIC_OPERATIONS_BUILTIN if RISCV_ISA_EXT_A
 	select ARCH_SUPPORTS_COREDUMP
 	select ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
+	select ARCH_SUPPORTS_COREDUMP_THREADS if !SMP
+	select ARCH_SUPPORTS_COREDUMP_STACK_PTR
 	select ARCH_SUPPORTS_ROM_START if !SOC_FAMILY_ESPRESSIF_ESP32
 	select ARCH_SUPPORTS_EMPTY_IRQ_SPURIOUS
 	select ARCH_HAS_CODE_DATA_RELOCATION
@@ -120,7 +132,7 @@ config RISCV
 	select USE_SWITCH
 	select SCHED_IPI_SUPPORTED if SMP
 	select ARCH_HAS_DIRECTED_IPIS
-	select BARRIER_OPERATIONS_BUILTIN
+	select BARRIER_OPERATIONS_BUILTIN if RISCV_ISA_BASE_FENCE
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	depends on DT_HAS_RISCV_ENABLED
 	help
@@ -239,7 +251,7 @@ config XIP
 	  option increases both the code and data footprint of the image.
 
 
-if ARC || ARM || ARM64 || X86 || RISCV || RX || ARCH_POSIX
+if ARC || ARM || ARM64 || X86 || RISCV || RX || OPENRISC || ARCH_POSIX
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -262,7 +274,7 @@ config FLASH_BASE_ADDRESS
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARM64 || ARC || X86 || RISCV || RX || ARCH_POSIX
+endif # ARM || ARM64 || ARC || X86 || RISCV || RX || OPENRISC || ARCH_POSIX
 
 if ARCH_HAS_TRUSTED_EXECUTION
 
@@ -480,6 +492,7 @@ config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
 config ISR_TABLES_LOCAL_DECLARATION
 	bool "ISR tables created locally and placed by linker"
 	depends on ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+	depends on GEN_IRQ_VECTOR_TABLE
 	help
 	  Enable new scheme of interrupt tables generation.
 	  This is totally different generator that would create tables entries locally
@@ -1046,7 +1059,7 @@ config FPU
 
 config FPU_SHARING
 	bool "FPU register sharing"
-	depends on FPU && MULTITHREADING
+	depends on FPU
 	help
 	  This option enables preservation of the hardware floating point registers
 	  across context switches to allow multiple threads to perform concurrent

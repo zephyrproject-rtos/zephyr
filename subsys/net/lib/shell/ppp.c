@@ -212,10 +212,10 @@ static void iface_ppp_index_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ppp,
 	SHELL_CMD(ping, IFACE_PPP_DYN_CMD,
-		  "'net ppp ping <index>' sends Echo-request to PPP interface.",
+		  SHELL_HELP("Sends Echo-request to PPP interface", "<index>"),
 		  cmd_net_ppp_ping),
 	SHELL_CMD(status, NULL,
-		  "'net ppp status' prints information about PPP.",
+		  SHELL_HELP("Prints information about PPP", ""),
 		  cmd_net_ppp_status),
 	SHELL_SUBCMD_SET_END
 );

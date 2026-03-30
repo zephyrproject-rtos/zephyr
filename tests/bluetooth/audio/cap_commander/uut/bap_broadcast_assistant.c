@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
@@ -130,7 +131,7 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 	inst->recv_states.broadcast_id = param->broadcast_id;
 	inst->pa_sync_state = param->pa_sync;
 	inst->num_subgroups = param->num_subgroups;
-	state.pa_sync_state = param->pa_sync;
+	state.pa_sync_state = param->pa_sync ? BT_BAP_PA_STATE_SYNCED : BT_BAP_PA_STATE_NOT_SYNCED;
 	state.src_id = max_src_id;
 	state.num_subgroups = param->num_subgroups;
 	for (size_t i = 0; i < param->num_subgroups; i++) {
@@ -205,6 +206,9 @@ int bt_bap_broadcast_assistant_rem_src(struct bt_conn *conn, uint8_t src_id)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&broadcast_assistant_cbs, listener, next, _node) {
 		if (listener->rem_src != NULL) {
 			listener->rem_src(conn, 0);
+		}
+		if (listener->recv_state_removed != NULL) {
+			listener->recv_state_removed(conn, src_id);
 		}
 	}
 

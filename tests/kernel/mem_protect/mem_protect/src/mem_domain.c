@@ -8,7 +8,7 @@
 #include <kernel_internal.h> /* For z_main_thread */
 #include <zephyr/sys/libc-hooks.h> /* for z_libc_partition */
 
-struct k_thread child_thread;
+static struct k_thread child_thread;
 K_THREAD_STACK_DEFINE(child_stack, KOBJECT_STACK_SIZE);
 
 /* Special memory domain for test case purposes */
@@ -47,7 +47,7 @@ static void zzz_entry(void *p1, void *p2, void *p3)
 static K_THREAD_DEFINE(zzz_thread, 256 + CONFIG_TEST_EXTRA_STACK_SIZE,
 		       zzz_entry, NULL, NULL, NULL, 0, 0, 0);
 
-void test_mem_domain_setup(void)
+void *test_mem_domain_setup(void)
 {
 	int max_parts = arch_mem_domain_max_partitions_get();
 	struct k_mem_partition *parts[] = {
@@ -84,6 +84,18 @@ void test_mem_domain_setup(void)
 	for (unsigned int j = 0; j < MEM_REGION_ALLOC; j++) {
 		ro_buf[j] = (j % 256U);
 	}
+
+	return NULL;
+}
+
+void test_mem_domain_teardown(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
+	zassert_equal(k_mem_domain_deinit(&test_domain), 0,
+		      "failed to de-initialize memory domain");
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
 }
 
 /* Helper function; run a function under a child user thread.
@@ -228,6 +240,11 @@ static void mem_domain_init_entry(void *p1, void *p2, void *p3)
 	zassert_equal(
 		k_mem_domain_init(&no_access_domain, 0, NULL),
 		0, "failed to initialize memory domain");
+
+#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
+	zassert_equal(k_mem_domain_deinit(&no_access_domain), 0,
+		      "failed to de-initialize memory domain");
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
 }
 
 static void mem_domain_add_partition_entry(void *p1, void *p2, void *p3)
@@ -498,6 +515,58 @@ ZTEST(mem_protect_domain, test_mem_domain_init_fail)
 		k_mem_domain_init(&test_domain_fail, ARRAY_SIZE(no_parts),
 				  no_parts),
 		0, "should fail to initialize memory domain");
+
+#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
+	zassert_equal(k_mem_domain_deinit(&test_domain_fail), 0,
+		      "cannot de-initialize memory domain");
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
+}
+
+/**
+ * @brief Test error case of de-initializing memory domain fail
+ *
+ * @details Try to de-initialize a domain with various invalid
+ * conditions.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+ZTEST(mem_protect_domain, test_mem_domain_deinit_fail)
+{
+#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
+	set_fault_valid(false);
+
+	/* Should not be able to de-init the default domain. */
+	zassert_equal(k_mem_domain_deinit(&k_mem_domain_default), -EINVAL,
+		      "should fail de-initializing default domain");
+
+	/* Create a thread and attach it to the test_domain.
+	 * We should not be able to de-initialize the domain while
+	 * there is a thread attached to it.
+	 */
+	k_thread_create(&child_thread, child_stack, K_THREAD_STACK_SIZEOF(child_stack),
+			rw_part_access,	NULL, NULL, NULL, 0, K_USER, K_FOREVER);
+	k_thread_name_set(&child_thread, "child_thread");
+	k_mem_domain_add_thread(&test_domain, &child_thread);
+
+	zassert_equal(k_mem_domain_deinit(&test_domain), -EBUSY,
+		      "should fail de-initializing test domain with threads attached");
+
+	/* Let the thread run to the end so any memory domain related
+	 * cleanup will be done.
+	 */
+	k_thread_start(&child_thread);
+	k_thread_join(&child_thread, K_FOREVER);
+
+	/* Note that we cannot test the proper de-initialization of test_domain
+	 * here (... where this should succeed). It is because the test_domain
+	 * is still being used for other tests in this test suite.
+	 * Instead, it will be tested in test_mem_domain_teardown() when all
+	 * tests have run.
+	 */
+
+#else  /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
+	ztest_test_skip();
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
 }
 
 /**
@@ -600,13 +669,5 @@ ZTEST(mem_protect_domain, test_mem_part_remove_error_zerosize)
 		0, "should fail to remove memory partition");
 }
 
-/* setup function */
-void *mem_domain_setup(void)
-{
-	test_mem_domain_setup();
-
-	return NULL;
-}
-
-ZTEST_SUITE(mem_protect_domain, NULL, mem_domain_setup, NULL,
-		NULL, NULL);
+ZTEST_SUITE(mem_protect_domain, NULL, test_mem_domain_setup, NULL,
+		NULL, test_mem_domain_teardown);

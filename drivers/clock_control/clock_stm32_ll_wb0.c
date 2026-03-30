@@ -5,6 +5,7 @@
  */
 
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
@@ -250,8 +251,9 @@ static int stm32_clock_control_configure(const struct device *dev,
 					 void *data)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)sub_system;
-	const uint32_t shift = STM32_DT_CLKSEL_SHIFT_GET(pclken->enr);
-	mem_addr_t reg = RCC_REG(STM32_DT_CLKSEL_REG_GET(pclken->enr));
+	uint32_t enr = pclken->enr;
+	uint32_t reg = STM32_DT_CLKSEL_REG_GET(enr);
+	uint32_t shift = STM32_DT_CLKSEL_SHIFT_GET(enr);
 	int err;
 
 	ARG_UNUSED(dev);
@@ -268,8 +270,9 @@ static int stm32_clock_control_configure(const struct device *dev,
 		return 0;
 	}
 
-	sys_clear_bits(reg, STM32_DT_CLKSEL_MASK_GET(pclken->enr) << shift);
-	sys_set_bits(reg, STM32_DT_CLKSEL_VAL_GET(pclken->enr) << shift);
+	stm32_reg_modify_bits((uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + reg),
+			      STM32_DT_CLKSEL_MASK_GET(enr) << shift,
+			      STM32_DT_CLKSEL_VAL_GET(enr) << shift);
 
 	return 0;
 }
@@ -724,7 +727,7 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Unconditionally enable SYSCFG clock for other drivers */
 	LL_APB0_GRP1_EnableClock(LL_APB0_GRP1_PERIPH_SYSCFG);
 
-	/* Set up indiviual enabled clocks */
+	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
 	/* Set up the slow clock mux */

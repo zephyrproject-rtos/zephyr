@@ -28,6 +28,7 @@ tests:
   benchmark.sched_queues.scalable:
     extra_configs:
       - CONFIG_SCHED_SCALABLE=y
+      - CONFIG_ARM_GCC_FP_WORKAROUND=y
 
   benchmark.sched_queues.multiq:
     extra_configs:

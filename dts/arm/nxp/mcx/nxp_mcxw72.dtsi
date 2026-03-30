@@ -8,6 +8,7 @@
 
 &fast_peripheral1 {
 	smu2: smu2@1c0000 {
+		ranges = <0x0 0x1c0000 DT_SIZE_K(80)>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "zephyr,memory-region", "mmio-sram";
@@ -69,10 +70,11 @@
 	reg = <0x45000 0xf0>;
 };
 
-&smu2 {
-	ranges = <0x0 0x1c0000 DT_SIZE_K(80)>;
-};
-
 &rtc {
 	reg = <0x4002c000 0x60>;
+};
+
+&nbu {
+	rfmc-xo-cdac = <0x0a>;
+	rfmc-xo-isel = <0x0b>;
 };

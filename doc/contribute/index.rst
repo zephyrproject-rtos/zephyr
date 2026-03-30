@@ -21,6 +21,7 @@ General Guidelines
    style/index.rst
    proposals_and_rfcs.rst
    modifying_contributions.rst
+   pr_lifecycle_policy.rst
 
 
 :ref:`contribute_guidelines`
@@ -53,6 +54,10 @@ General Guidelines
 :ref:`modifying_contributions`
    Guidelines for modifying contributions made by other developers and how to deal with stale pull
    requests.
+
+:ref:`pr_lifecycle_policy`
+   Policy for keeping open pull requests focused on work that is actively progressing and likely to
+   merge.
 
 Documentation
 =============

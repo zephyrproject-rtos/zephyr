@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #endif /* CONFIG_NET_IPV6_IID_STABLE */
 
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_context.h>
@@ -207,6 +208,7 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 {
 	uint16_t exthdr_len = 0U;
 	uint16_t length = 0U;
+	uint16_t offset = 0U;
 
 	{
 		uint8_t val = 0U;
@@ -217,9 +219,15 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 		exthdr_len = val * 8U + 8;
 	}
 
-	if (exthdr_len > pkt_len) {
+	/* Since the caller read 1 byte (next header) and we just read 1 byte (length),
+	 * the header started 2 bytes before the current cursor position.
+	 */
+	offset = net_pkt_get_current_offset(pkt) - 2;
+
+	if (exthdr_len > (pkt_len - offset)) {
 		NET_DBG("Corrupted packet, extension header %d too long "
-			"(max %d bytes)", exthdr_len, pkt_len);
+			"(max %d bytes)",
+			exthdr_len, (pkt_len > offset) ? (pkt_len - offset) : 0);
 		return -EINVAL;
 	}
 
@@ -251,26 +259,29 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 			break;
 		case NET_IPV6_EXT_HDR_OPT_PADN:
 			NET_DBG("PADN option");
-			length += opt_len + 2;
-			net_pkt_skip(pkt, opt_len);
-			break;
-		default:
-			/* Make sure that the option length is not too large.
-			 * The former 1 + 1 is the length of extension type +
-			 * length fields.
-			 * The latter 1 + 1 is the length of the sub-option
-			 * type and length fields.
-			 */
-			if (opt_len > (exthdr_len - (1 + 1 + 1 + 1))) {
+			/* Ensure PADN doesn't exceed the extension header boundary */
+			if (opt_len > (exthdr_len - length - 2U)) {
 				return -EINVAL;
 			}
 
+			length += opt_len + 2;
+			if (net_pkt_skip(pkt, opt_len) != 0) {
+				NET_ERR("PADN overruns physical buffer");
+				return -ENOBUFS;
+			}
+
+			break;
+		default:
+			/* Make sure that the option length is not too large */
+			if (opt_len > (exthdr_len - length - 2U)) {
+				return -EINVAL;
+			}
 			if (ipv6_drop_on_unknown_option(pkt, hdr,
 							opt_type, opt_type_offset)) {
 				return -ENOTSUP;
 			}
 
-			if (net_pkt_skip(pkt, opt_len)) {
+			if (net_pkt_skip(pkt, opt_len) != 0) {
 				return -ENOBUFS;
 			}
 

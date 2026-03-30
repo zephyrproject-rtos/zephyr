@@ -86,6 +86,9 @@ extern "C" {
 #define BEEP_LEN_MIB_ADDR	(struct reg_addr){0, 74}
 #define BEEP_LEN_LSB_ADDR	(struct reg_addr){0, 75}
 
+#define VOL_MICDET_ADC_CTRL_ADDR (struct reg_addr){0, 116}
+#define VOL_MICDET_VOL_CTRL_PIN  (BIT(7))
+
 /* Page 1 registers */
 #define HEADPHONE_DRV_ADDR	(struct reg_addr){1, 31}
 #define HEADPHONE_DRV_POWERUP	(BIT(7) | BIT(6))
@@ -97,8 +100,10 @@ extern "C" {
 #define HP_OUT_POP_RM_ENABLE	(BIT(7))
 
 #define OUTPUT_ROUTING_ADDR	(struct reg_addr){1, 35}
-#define OUTPUT_ROUTING_HPL	(2 << 6)
-#define OUTPUT_ROUTING_HPR	(2 << 2)
+#define OUTPUT_ROUTING_HPL	  (2 << 6)
+#define OUTPUT_ROUTING_MIXERL (1 << 6)
+#define OUTPUT_ROUTING_HPR	  (2 << 2)
+#define OUTPUT_ROUTING_MIXERR (1 << 2)
 
 #define HPL_ANA_VOL_CTRL_ADDR	(struct reg_addr){1, 36}
 #define HPR_ANA_VOL_CTRL_ADDR	(struct reg_addr){1, 37}

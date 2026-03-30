@@ -42,7 +42,7 @@ static ALWAYS_INLINE int err_fsp2zep(int fsp_err)
 		ret = -ENODEV; /* SD card not inserted (requires CD signal) */
 		break;
 	case FSP_ERR_INVALID_STATE:
-		ret = -EACCES; /* SD card write-protected (requires WP sinal) */
+		ret = -EACCES; /* SD card write-protected (requires WP signal) */
 		break;
 	case FSP_ERR_RESPONSE:
 	default:

@@ -423,19 +423,63 @@
 			status = "disabled";
 		};
 
-		flexio3: flexio@4d100000 {
-			compatible = "nxp,flexio";
-			reg = <0x4d100000 DT_SIZE_K(4)>;
-			interrupts = <50 0>;
-			clocks = <&scmi_clk IMX943_CLK_FLEXIO3>;
+		i2s2: i2s@4265000 {
+			compatible = "nxp,mcux-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x42650000 DT_SIZE_K(64)>;
+			clocks = <&scmi_clk IMX943_CLK_SAI2>;
+			interrupts = <101 0>;
+			nxp,tx-channel = <1>;
 			status = "disabled";
 		};
 
-		flexio4: flexio@4d110000 {
-			compatible = "nxp,flexio";
-			reg = <0x4d110000 DT_SIZE_K(4)>;
-			interrupts = <51 0>;
-			clocks = <&scmi_clk IMX943_CLK_FLEXIO4>;
+		i2s3: i2s@4266000 {
+			compatible = "nxp,mcux-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x42660000 DT_SIZE_K(64)>;
+			clocks = <&scmi_clk IMX943_CLK_SAI3>;
+			interrupts = <102 0>;
+			nxp,tx-channel = <1>;
+			status = "disabled";
+		};
+
+		i2s4: i2s@4267000 {
+			compatible = "nxp,mcux-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x42670000 DT_SIZE_K(64)>;
+			clocks = <&scmi_clk IMX943_CLK_SAI4>;
+			interrupts = <103 0>;
+			nxp,tx-channel = <1>;
+			status = "disabled";
+		};
+
+		edma1: dma@44000000 {
+			compatible = "nxp,mcux-edma";
+			reg = <0x44000000 0x210000>;
+			interrupts = <230 0>, <231 0>,
+				     <232 0>, <233 0>,
+				     <234 0>, <235 0>,
+				     <236 0>, <237 0>,
+				     <238 0>, <239 0>,
+				     <240 0>, <241 0>,
+				     <242 0>, <243 0>,
+				     <244 0>, <245 0>,
+				     <246 0>, <247 0>,
+				     <248 0>, <249 0>,
+				     <250 0>, <251 0>,
+				     <252 0>, <253 0>,
+				     <254 0>, <255 0>,
+				     <256 0>, <257 0>,
+				     <258 0>, <259 0>,
+				     <260 0>, <261 0>;
+			#dma-cells = <2>;
+			nxp,version = <4>;
+			dma-channels = <32>;
+			dma-requests = <32>;
+			no-error-irq;
 			status = "disabled";
 		};
 
@@ -537,6 +581,21 @@
 			reg = <0x44390000 DT_SIZE_K(64)>;
 			interrupts = <22 3>;
 			clocks = <&scmi_clk IMX943_CLK_LPUART2>;
+			status = "disabled";
+		};
+
+		i2s1: i2s@443b0000 {
+			compatible = "nxp,mcux-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x443b0000 DT_SIZE_K(64)>;
+			clocks = <&scmi_clk IMX943_CLK_SAI1>;
+			interrupts = <38 0>;
+			nxp,tx-channel = <1>;
+			dmas = <&edma1 24 24>, <&edma1 25 25>;
+			dma-names = "tx", "rx";
+			nxp,tx-dma-channel = <24>;
+			nxp,rx-dma-channel = <25>;
 			status = "disabled";
 		};
 
@@ -722,6 +781,22 @@
 					status = "disabled";
 				};
 			};
+		};
+
+		flexio3: flexio@4d100000 {
+			compatible = "nxp,flexio";
+			reg = <0x4d100000 DT_SIZE_K(4)>;
+			interrupts = <50 0>;
+			clocks = <&scmi_clk IMX943_CLK_FLEXIO3>;
+			status = "disabled";
+		};
+
+		flexio4: flexio@4d110000 {
+			compatible = "nxp,flexio";
+			reg = <0x4d110000 DT_SIZE_K(4)>;
+			interrupts = <51 0>;
+			clocks = <&scmi_clk IMX943_CLK_FLEXIO4>;
+			status = "disabled";
 		};
 
 		mu_m33s_secure_m71_for_m71: mbox@4d120000 {

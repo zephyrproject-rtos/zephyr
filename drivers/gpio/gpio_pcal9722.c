@@ -469,10 +469,7 @@ static DEVICE_API(gpio, api_table) = {
 #define GPIO_PCAL9722_INIT(n)                                                                      \
 	static const struct pcal9722_config pcal9722_cfg_##n = {                                   \
 		.spi = SPI_DT_SPEC_INST_GET(n, SPI_OP_MODE_MASTER | SPI_WORD_SET(8)),              \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		.addr = DT_INST_PROP(n, addr),                                                     \
 		IRQ_GPIO(n)};                                                                      \
 	static K_SEM_DEFINE(pcal9722_drvdata_##n_lock, 1, 1);                                      \

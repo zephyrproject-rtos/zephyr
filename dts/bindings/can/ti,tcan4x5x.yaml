@@ -39,6 +39,17 @@ properties:
     description: |
       GPIO connected to the TCAN4x5x nINT interrupt output. This signal is open-drain, active low.
 
+  ti,nwkrq-voltage-vio:
+    type: boolean
+    description: |
+      nWKRQ pin GPO buffer voltage rail configuration.
+
+      If set, the nWKRQ pin GPO buffer is configured as open-drain, requiring an external pull-up
+      resistor to the VIO rail.
+
+      If unset, the nWKRQ pin GPO buffer is configured as push-pull based off an internal voltage
+      rail.
+
 examples:
   - |
     &spi0 {
@@ -52,6 +63,7 @@ examples:
         reset-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
         int-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
         bosch,mram-cfg = <0x0 15 15 5 5 0 10 10>;
+        ti,nwkrq-voltage-vio;
         status = "okay";
 
         can-transceiver {

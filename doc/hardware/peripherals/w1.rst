@@ -69,6 +69,15 @@ Related configuration options:
 * :kconfig:option:`CONFIG_W1_NET`
 
 
+W1 Serial Driver
+****************
+
+The ``zephyr,w1-serial`` driver implements the 1-Wire interface using a UART
+peripheral. Individual 1-Wire bits are encoded as bytes sent over the UART.
+For standard speed, it uses 115200 Baud for data and 9600 Baud for
+reset/presence detection. For overdrive speed, it uses configurable baud rates
+with a default of 1000000 Baud for data and 115200 Baud for reset/presence.
+
 API Reference
 *************
 

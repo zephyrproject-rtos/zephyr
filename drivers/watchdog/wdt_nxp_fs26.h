@@ -24,7 +24,7 @@
 /* Device status flags */
 #define FS26_DEV_STATUS_SHIFT                (24)
 #define FS26_DEV_STATUS_MASK                 (0xff << FS26_DEV_STATUS_SHIFT)
-#define FS26_GET_DEV_STATUS(n)               (((n) << FS26_DEV_STATUS_SHIFT) & FS26_DEV_STATUS_MASK)
+#define FS26_GET_DEV_STATUS(n)               (((n) & FS26_DEV_STATUS_MASK) >> FS26_DEV_STATUS_SHIFT)
 /* Main State machine availability (M_AVAL) */
 #define FS26_M_AVAL                          (0x1 << 31)
 /* Fail Safe State machine status (FS_EN) */
@@ -273,7 +273,8 @@
 #define WD_ERR_CNT_SHIFT                     (0)
 #define WD_ERR_CNT_MASK                      (0xf << WD_ERR_CNT_SHIFT)
 #define WD_ERR_CNT(n)                        \
-	(((n) & (0x7 << WD_RFR_CNT_SHIFT)) > 11) ? (11) : (((n) & (0x7 << WD_RFR_CNT_SHIFT)))
+	((((n) & WD_ERR_CNT_MASK) >> WD_ERR_CNT_SHIFT) > 11U) ? \
+		(11U) : ((((n) & WD_ERR_CNT_MASK) >> WD_ERR_CNT_SHIFT))
 
 /* FS26_FS_I_SAFE_INPUTS register */
 
@@ -338,8 +339,8 @@
 
 /* Reaction on RSTB or Fail Safe output in case of fault detection on ERRMON */
 #define ERRMON_FS_REACTION_SHIFT             (2)
-#define ERRMON_FS_REACTION_MASK              (0x1 << FCCU2_FS_REACTION_SHIFT)
-#define ERRMON_FS_REACTION                   (FCCU2_FS_REACTION_MASK)
+#define ERRMON_FS_REACTION_MASK              (0x1 << ERRMON_FS_REACTION_SHIFT)
+#define ERRMON_FS_REACTION                   (ERRMON_FS_REACTION_MASK)
 
 /* FCCU pin filtering time settings */
 #define FCCU12_FILT_SHIFT                    (0)
@@ -396,7 +397,8 @@
 #define FLT_ERR_CNT_SHIFT                    (0)
 #define FLT_ERR_CNT_MASK                     (0xf << FLT_ERR_CNT_SHIFT)
 #define FLT_ERR_CNT(n)                       \
-	((n & (0x7 << FLT_ERR_CNT_SHIFT)) > 12) ? (12) : ((n & (0x7 << FLT_ERR_CNT_SHIFT)))
+	((((n) & FLT_ERR_CNT_MASK) >> FLT_ERR_CNT_SHIFT) > 12U) ? \
+		(12U) : ((((n) & FLT_ERR_CNT_MASK) >> FLT_ERR_CNT_SHIFT))
 
 /* FS26_FS_WDW_DURATION register */
 
@@ -423,11 +425,11 @@
 /* Watchdog window duty cycle */
 #define WDW_DC_SHIFT                         (6)
 #define WDW_DC_MASK                          (0x7 << WDW_DC_SHIFT)
-#define WDW_DC_31_68                         (0x0 << WDW_PERIOD_SHIFT)
-#define WDW_DC_37_62                         (0x1 << WDW_PERIOD_SHIFT)
-#define WDW_DC_50_50                         (0x2 << WDW_PERIOD_SHIFT)
-#define WDW_DC_62_37                         (0x3 << WDW_PERIOD_SHIFT)
-#define WDW_DC_68_31                         (0x4 << WDW_PERIOD_SHIFT)
+#define WDW_DC_31_68                         (0x0 << WDW_DC_SHIFT)
+#define WDW_DC_37_62                         (0x1 << WDW_DC_SHIFT)
+#define WDW_DC_50_50                         (0x2 << WDW_DC_SHIFT)
+#define WDW_DC_62_37                         (0x3 << WDW_DC_SHIFT)
+#define WDW_DC_68_31                         (0x4 << WDW_DC_SHIFT)
 
 /* Watchdog window period */
 #define WDW_RECOVERY_SHIFT                   (0)

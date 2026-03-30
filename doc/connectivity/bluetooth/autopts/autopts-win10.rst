@@ -129,7 +129,7 @@ and flash board with built earlier elf file:
 
 .. code-block::
 
-    west flash --skip-rebuild --board-dir /dev/ttyS2 --elf-file ~/zephyrproject/build/zephyr/zephyr.elf
+    west flash --no-rebuild --board-dir /dev/ttyS2 --elf-file ~/zephyrproject/build/zephyr/zephyr.elf
 
 Note that west does not accept COMs, so use /dev/ttyS2 as the COM3 equivalent,
 /dev/ttyS2 as the COM3 equivalent, etc.(/dev/ttyS + decremented COM number).

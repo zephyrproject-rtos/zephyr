@@ -18,6 +18,7 @@ supported:
   - sdhc
   - spi
   - uart
+  - usbd
   - watchdog
   - xpro_gpio
   - xpro_i2c

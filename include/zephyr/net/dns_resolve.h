@@ -284,9 +284,9 @@ int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx);
  * Enumerate the extensions that are available in the address info
  */
 enum dns_resolve_extension {
-	DNS_RESOLVE_NONE = 0, /*<< No extension in use   */
-	DNS_RESOLVE_TXT,      /*<< TXT field is returned */
-	DNS_RESOLVE_SRV,      /*<< SRV field is returned */
+	DNS_RESOLVE_NONE = 0, /**< No extension in use   */
+	DNS_RESOLVE_TXT,      /**< TXT field is returned */
+	DNS_RESOLVE_SRV,      /**< SRV field is returned */
 };
 
 /** TXT record information */

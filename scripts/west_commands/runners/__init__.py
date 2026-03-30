@@ -46,6 +46,7 @@ _names = [
     'mdb',
     'minichlink',
     'misc',
+    'mpcli',
     'native',
     'nrfjprog',
     'nrfutil',
@@ -70,6 +71,8 @@ _names = [
     'teensy',
     'trace32',
     'uf2',
+    'wchisp',
+    'wlink',
     'xsdb',
     'xtensa',
     # zephyr-keep-sorted-stop

@@ -1,13 +1,18 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <nxp/mcx/nxp_mcxc_common.dtsi>
 
-&sram0 {
-	reg = <0x1fffe000 DT_SIZE_K(32)>;
+/delete-node/ &sram0;
+
+/ {
+	sram0: memory@1fffe000 {
+		compatible = "mmio-sram";
+		reg = <0x1fffe000 DT_SIZE_K(32)>;
+	};
 };
 
 &flash0 {

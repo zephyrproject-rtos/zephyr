@@ -3,21 +3,25 @@
 #
 # Copyright (c) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
+# pylint: disable=unexpected-keyword-arg
 from __future__ import annotations
 
 import logging
 import os
 import platform
 import re
-from dataclasses import asdict, dataclass, field
+from collections.abc import Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass
 from multiprocessing import Lock, Value
 from pathlib import Path
-from typing import Any
 
 import scl
 import yaml
 from natsort import natsorted
-from twisterlib.environment import ZEPHYR_BASE
+from twisterlib.constants import ZEPHYR_BASE
+from twisterlib.error import NoDeviceAvailableException, TwisterException
+from twisterlib.hardwaredata import CompoundHardwareData, HardwareData
 
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
@@ -36,28 +40,8 @@ logger = logging.getLogger('twister')
 
 
 @dataclass
-class DUT:
-    """Device Under Test configuration."""
-    id: str | None = None
-    serial: str | None = None
-    serial_baud: int = 115200
-    platform: str | None = None
-    product: str | None = None
-    serial_pty: str | None = None
-    connected: bool = False
-    runner_params: str | None = None
-    pre_script: str | None = None
-    post_script: str | None = None
-    post_flash_script: str | None = None
-    script_param: str | None = None
-    runner: str | None = None
-    flash_timeout: int = 60
-    flash_with_test: bool = False
-    flash_before: bool = False
-    fixtures: list[str] = field(default_factory=list)
-    probe_id: str | None = None
-    notes: str | None = None
-    match: bool = False
+class DUT(HardwareData):
+    """Device Under Test with runtime data."""
 
     def __post_init__(self):
         """Initialize non-serializable objects after dataclass initialization."""
@@ -66,8 +50,10 @@ class DUT:
         self._available = Value("i", 1)
         self._failures = Value("i", 0)
         self.lock = Lock()
+
         # Ensure serial_baud has a default value
         self.serial_baud = self.serial_baud or 115200
+
 
     @property
     def available(self):
@@ -106,12 +92,6 @@ class DUT:
     def failures_increment(self, value=1):
         with self._failures.get_lock():
             self._failures.value += value
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert DUT dataclass to dictionary for YAML serialization."""
-        result = asdict(self)
-        # Remove None and False values and empty lists to keep YAML clean
-        return {k: v for k, v in result.items() if v}
 
     def __repr__(self):
         return f"<{self.platform} ({self.product}) on {self.serial}>"
@@ -159,15 +139,14 @@ class HardwareMap:
     }
 
     def __init__(self, env=None):
-        self.detected: list[DUT] = []
         self.duts: list[DUT] = []
         self.options = env.options
 
     def discover(self):
 
         if self.options.generate_hardware_map:
-            self.scan(persistent=self.options.persistent_hardware_map)
-            self.save(self.options.generate_hardware_map)
+            detected = self.scan(persistent=self.options.persistent_hardware_map)
+            self.save(self.options.generate_hardware_map, detected)
             return 0
 
         if not self.options.device_testing and self.options.hardware_map:
@@ -288,6 +267,7 @@ class HardwareMap:
             product = dut.get('product')
             fixtures = dut.get('fixtures', [])
             connected = dut.get('connected') and ((serial or serial_pty) is not None)
+            west_flash_cmd = dut.get('west_flash_cmd', "")
             if not connected:
                 continue
             for plat in platforms:
@@ -306,13 +286,16 @@ class HardwareMap:
                               post_flash_script=post_flash_script,
                               script_param=script_param,
                               flash_timeout=flash_timeout,
-                              flash_with_test=flash_with_test)
+                              flash_with_test=flash_with_test,
+                              west_flash_cmd=west_flash_cmd)
                 new_dut.fixtures = fixtures
                 new_dut.counter = 0
                 self.duts.append(new_dut)
 
-    def scan(self, persistent=False):
+    def scan(self, persistent=False) -> list[DUT]:
         from serial.tools import list_ports
+
+        detected: list[DUT] = []
 
         if persistent and platform.system() == 'Linux':
             # On Linux, /dev/serial/by-id provides symlinks to
@@ -379,16 +362,18 @@ class HardwareMap:
 
                 s_dev.connected = True
                 s_dev.lock = None
-                self.detected.append(s_dev)
+                detected.append(s_dev)
             else:
                 logger.warning(f"Unsupported device ({d.manufacturer}): {d}")
 
-    def save(self, hwm_file):
+        return detected
+
+    def save(self, hwm_file, detected: list[DUT]):
         # list of board ids with boot-serial sequence
         boot_ids = []
 
         # use existing map
-        self.detected = natsorted(self.detected, key=lambda x: x.serial or '')
+        detected = natsorted(detected, key=lambda x: x.serial or '')
         if os.path.exists(hwm_file):
             with open(hwm_file) as yaml_file:
                 hwm = yaml.load(yaml_file, Loader=SafeLoader)
@@ -403,7 +388,7 @@ class HardwareMap:
                         else :
                             boot_ids.append(h['id'])
 
-                    for _detected in self.detected:
+                    for _detected in detected:
                         for h in hwm:
                             if all([
                                 _detected.id == h['id'],
@@ -417,7 +402,7 @@ class HardwareMap:
                                 _detected.match = True
                                 break
 
-                new_duts = list(filter(lambda d: not d.match, self.detected))
+                new_duts = list(filter(lambda d: not d.match, detected))
                 new = []
                 for d in new_duts:
                     new.append(d.to_dict())
@@ -442,7 +427,7 @@ class HardwareMap:
         else:
             # create new file
             dl = []
-            for _connected in self.detected:
+            for _connected in detected:
                 platform  = _connected.platform
                 id = _connected.id
                 runner = _connected.runner
@@ -460,9 +445,11 @@ class HardwareMap:
             with open(hwm_file, 'w') as yaml_file:
                 yaml.dump(dl, yaml_file, Dumper=Dumper, default_flow_style=False)
             logger.info("Detected devices:")
-            self.dump(detected=True)
+            self.dump(detected=detected)
 
-    def dump(self, filtered=None, header=None, connected_only=False, detected=False):
+    def dump(
+        self, filtered=None, header=None, connected_only=False, detected: list[DUT] | None = None
+    ):
         if filtered is None:
             filtered = []
         if header is None:
@@ -470,7 +457,7 @@ class HardwareMap:
         print("")
         table = []
         if detected:
-            to_show = self.detected
+            to_show = detected
         else:
             to_show = self.duts
 
@@ -486,3 +473,77 @@ class HardwareMap:
                 table.append([platform, p.id, p.serial])
 
         print(tabulate(table, headers=header, tablefmt="github"))
+
+    @staticmethod
+    @contextmanager
+    def acquire_dut_locks(duts: list[DUT]) -> Iterator[None]:
+        try:
+            for d in duts:
+                d.lock.acquire()
+            yield
+        finally:
+            for d in duts:
+                d.lock.release()
+
+    def reserve_dut(self, device: str, fixture: str | None) -> DUT:
+        """Reserve a DUT matching the specified device and fixture."""
+        duts_found: list[DUT] = []
+
+        for d in self.duts:
+            if fixture and fixture not in (f.split(sep=':')[0] for f in d.fixtures):
+                continue
+            if d.platform != device or (d.serial is None and d.serial_pty is None):
+                continue
+            duts_found.append(d)
+
+        if not duts_found:
+            raise TwisterException(f"No device to serve as {device} platform.")
+
+        # Select an available DUT with less failures
+        for d in sorted(duts_found, key=lambda _dut: _dut.failures):
+            # get all DUTs with the same id
+            duts_shared_hw = [_d for _d in self.duts if _d.id == d.id]
+            with self.acquire_dut_locks(duts_shared_hw):
+                avail = False
+                if d.available:
+                    for _d in duts_shared_hw:
+                        _d.available = 0
+                    d.counter_increment()
+                    avail = True
+                    logger.debug(f"Retain DUT:{d.platform}, Id:{d.id}, "
+                                 f"counter:{d.counter}, failures:{d.failures}")
+            if avail:
+                return d
+
+        raise NoDeviceAvailableException(f"No free {device} devices available")
+
+    def release_dut(self, dut: DUT) -> None:
+        """Release a previously reserved DUT, making it available for future reservations."""
+        logger.debug(f"Release DUT:{dut.platform}, Id:{dut.id}, "
+                     f"counter:{dut.counter}, failures:{dut.failures}")
+        # get all DUTs with the same id
+        duts_shared_hw = [_d for _d in self.duts if _d.id == dut.id]
+        with self.acquire_dut_locks(duts_shared_hw):
+            for _d in duts_shared_hw:
+                _d.available = 1
+
+    def _get_other_duts_with_same_id(self, hardware: DUT) -> list[DUT]:
+        """Get all DUTs that share the same hardware ID as the provided DUT,
+        excluding the provided DUT itself."""
+        duts: list[DUT] = []
+        # get all DUTs with the same id
+        duts_shared_hw = [_d for _d in self.duts if _d.id == hardware.id]
+        serials = {hardware.serial}
+        for d in duts_shared_hw:
+            if d.serial and d.serial not in serials:
+                duts.append(d)
+                serials.add(d.serial)
+        return duts
+
+    def create_compound_hardware_data(self, hardware: DUT) -> CompoundHardwareData:
+        """Create a CompoundHardwareData object for the provided DUT,
+        including any auxiliary connections that share the same hardware ID."""
+        compound_hardware = CompoundHardwareData.from_dict(hardware.to_dict())
+        for dut in self._get_other_duts_with_same_id(hardware):
+            compound_hardware.entries.append(HardwareData(**dut.to_dict()))
+        return compound_hardware

@@ -173,19 +173,16 @@ static int eth_set_config(const struct device *dev, enum ethernet_config_type ty
 			  const struct ethernet_config *config)
 {
 	struct eth_litex_dev_data *context = dev->data;
-	int ret = -ENOTSUP;
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(context->mac_addr, config->mac_address.addr, sizeof(context->mac_addr));
-		ret = net_if_set_link_addr(context->iface, context->mac_addr,
-					   sizeof(context->mac_addr), NET_LINK_ETHERNET);
-		break;
+		return 0;
 	default:
 		break;
 	}
 
-	return ret;
+	return -ENOTSUP;
 }
 
 static int eth_start(const struct device *dev)
@@ -246,9 +243,7 @@ static void eth_iface_init(struct net_if *iface)
 	struct eth_litex_dev_data *context = port->data;
 
 	/* set interface */
-	if (context->iface == NULL) {
-		context->iface = iface;
-	}
+	context->iface = iface;
 
 	/* initialize ethernet L2 */
 	ethernet_init(iface);

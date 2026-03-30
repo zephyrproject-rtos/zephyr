@@ -232,7 +232,7 @@ if(CONFIG_BUILD_WITH_TFM)
   if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "zephyr")
     set(TFM_TOOLCHAIN_FILE "toolchain_GNUARM.cmake")
     set(TFM_TOOLCHAIN_PREFIX "arm-zephyr-eabi")
-    set(TFM_TOOLCHAIN_PATH ${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi/bin)
+    set(TFM_TOOLCHAIN_PATH ${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi/bin)
   elseif(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "gnuarmemb")
     set(TFM_TOOLCHAIN_FILE "toolchain_GNUARM.cmake")
     set(TFM_TOOLCHAIN_PREFIX "arm-none-eabi")
@@ -249,6 +249,10 @@ if(CONFIG_BUILD_WITH_TFM)
       "with TF-M due to licensing issues with a dependent library. This "
       "restriction will be removed once licensing issues have been resolved."
       )
+  endif()
+
+  if(CONFIG_TFM_ZEPHYR_4_0_TO_4_2_COMPATIBILITY)
+    list(APPEND TFM_CMAKE_ARGS -DPROFILE_DEFINITION_LARGE=ON)
   endif()
 
   string(REPLACE "toolchain" "toolchain_ns" TFM_TOOLCHAIN_NS_FILE ${TFM_TOOLCHAIN_FILE})
@@ -284,6 +288,11 @@ if(CONFIG_BUILD_WITH_TFM)
     )
   endif()
 
+  if(CONFIG_SOC_SERIES_PSE84)
+    include(${ZEPHYR_BASE}/soc/infineon/edge/pse84/pse84_metadata.cmake)
+    list(APPEND TFM_CMAKE_ARGS -DIFX_EPC=epc2)
+  endif()
+
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
   add_custom_target(tfm_cmake
     DEPENDS ${TFM_BINARY_DIR}/CMakeCache.txt
@@ -301,7 +310,7 @@ if(CONFIG_BUILD_WITH_TFM)
       -DPython3_EXECUTABLE=${Python3_EXECUTABLE}
       ${TFM_CMAKE_ARGS}
       $<GENEX_EVAL:$<TARGET_PROPERTY:zephyr_property_target,TFM_CMAKE_OPTIONS>>
-      -DMBEDCRYPTO_PATH=$<IF:$<BOOL:$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>>,$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>,${ZEPHYR_MBEDTLS_MODULE_DIR}>
+      -DMBEDCRYPTO_PATH=$<IF:$<BOOL:$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>>,$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>,${ZEPHYR_MBEDTLS_3_6_MODULE_DIR}>
       -DCMSIS_PATH=${ZEPHYR_CMSIS_6_MODULE_DIR}
       ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}
     WORKING_DIRECTORY ${TFM_BINARY_DIR}
@@ -377,51 +386,53 @@ if(CONFIG_BUILD_WITH_TFM)
     TFM_S_NS_SIGNED_BIN_FILE ${TFM_S_NS_SIGNED_BIN_FILE} # Merged TFM Secure/Nonsecure FW (signed)
     )
 
-  zephyr_library_named(tfm_api)
+  if(NOT CONFIG_TFM_USE_NS_APP)
+    zephyr_library_named(tfm_api)
 
-  zephyr_library_sources(
-    src/zephyr_tfm_log.c
-    interface/interface.c
+    zephyr_library_sources(
+      src/zephyr_tfm_log.c
+      interface/interface.c
+      )
+
+    # A dependency on tfm_s.hex for zephyr.elf will not cause a Zephyr re-link when
+    # tfm_s.hex is updated, as the hex is not a direct input on the executable.
+    # Instead we establish a source file dependency which ensures that tfm_api is
+    # updated when there are changes in tfm itself, this again will trigger an re-link
+    # of Zephyr.elf.
+    set_property(SOURCE interface/interface.c APPEND PROPERTY OBJECT_DEPENDS ${TFM_S_HEX_FILE})
+
+    # Non-Secure interface to request system reboot
+    if(CONFIG_TFM_PARTITION_PLATFORM AND NOT CONFIG_TFM_PARTITION_PLATFORM_CUSTOM_REBOOT)
+      zephyr_library_sources(src/reboot.c)
+    endif()
+
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PROTECTED_STORAGE        ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_CRYPTO                   ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION      ${TFM_INTERFACE_SOURCE_DIR}/tfm_attest_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE          ${TFM_INTERFACE_SOURCE_DIR}/tfm_fwu_api.c)
+
+    zephyr_library_sources(${TFM_INTERFACE_SOURCE_DIR}/tfm_tz_psa_ns_api.c)
+
+    if(CONFIG_SOC_FAMILY_NORDIC_NRF)
+      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM               ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c)
+    endif()
+
+    # TFM_INTERFACE_INCLUDE_DIR is already added to zephyr_interface below
+    zephyr_library_include_directories(
+      ${TFM_INTERFACE_INCLUDE_DIR}/crypto_keys
     )
 
-  # A dependency on tfm_s.hex for zephyr.elf will not cause a Zephyr re-link when
-  # tfm_s.hex is updated, as the hex is not a direct input on the executable.
-  # Instead we establish a source file dependency which ensures that tfm_api is
-  # updated when there are changes in tfm itself, this again will trigger an re-link
-  # of Zephyr.elf.
-  set_property(SOURCE interface/interface.c APPEND PROPERTY OBJECT_DEPENDS ${TFM_S_HEX_FILE})
-
-  # Non-Secure interface to request system reboot
-  if(CONFIG_TFM_PARTITION_PLATFORM AND NOT CONFIG_TFM_PARTITION_PLATFORM_CUSTOM_REBOOT)
-    zephyr_library_sources(src/reboot.c)
-  endif()
-
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_api.c)
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PROTECTED_STORAGE        ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_api.c)
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_api.c)
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_CRYPTO                   ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_api.c)
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION      ${TFM_INTERFACE_SOURCE_DIR}/tfm_attest_api.c)
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE          ${TFM_INTERFACE_SOURCE_DIR}/tfm_fwu_api.c)
-
-  zephyr_library_sources(${TFM_INTERFACE_SOURCE_DIR}/tfm_tz_psa_ns_api.c)
-
-  if(CONFIG_SOC_FAMILY_NORDIC_NRF)
-    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM               ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c)
-  endif()
-
-  target_include_directories(tfm_api PUBLIC
-    ${TFM_INTERFACE_INCLUDE_DIR}
-    ${TFM_INTERFACE_INCLUDE_DIR}/crypto_keys
-    ${ZEPHYR_BASE}/modules/mbedtls/configs
-    )
-  # Pass down the MbedTLS configuration file to use.
-  target_compile_definitions(tfm_api PUBLIC
-    MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
+    # Add interface include directory (exported by TF-M) to zephyr_interface
+    zephyr_include_directories(
+      ${TFM_INTERFACE_INCLUDE_DIR}
     )
 
-  zephyr_library_link_libraries(
-    ${TFM_INTERFACE_LIB_DIR}/s_veneers.o
+    zephyr_library_link_libraries(
+      ${TFM_INTERFACE_LIB_DIR}/s_veneers.o
     )
+  endif(NOT CONFIG_TFM_USE_NS_APP)
 
   # Ensure that the generated syscall include headers of Zephyr are available to TF-M
   # because some platforms might use the same source files for both builds.
@@ -589,11 +600,19 @@ if(CONFIG_BUILD_WITH_TFM)
   endif()
 
   if(NOT CONFIG_TFM_BL2)
+    # Default: use unsigned TF-M secure image for merging
+    set(TFM_S_MERGE_HEX_FILE $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>)
+
+    if(CONFIG_SOC_SERIES_PSE84)
+      pse84_add_metadata_secure_hex(${TFM_S_HEX_FILE} ${S_SIGNED_HEX_FILE})
+      set(TFM_S_MERGE_HEX_FILE ${S_SIGNED_HEX_FILE})
+    endif()
+
     # Merge tfm_s and zephyr (NS) image to a single binary.
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
         -o ${MERGED_HEX_FILE}
-        $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
+        ${TFM_S_MERGE_HEX_FILE}
         ${NS_HEX_APP_FILE}
     )
 

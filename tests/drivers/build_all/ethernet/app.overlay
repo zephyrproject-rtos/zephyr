@@ -19,7 +19,7 @@
 		test_ethernet: ethernet {
 			compatible = "vnd,ethernet";
 
-			test_mdio: mdio {
+			test_mdio0: mdio {
 				compatible = "zephyr,mdio-gpio";
 				mdc-gpios = <&test_gpio 0 0>;
 				mdio-gpios = <&test_gpio 0 0>;
@@ -44,24 +44,6 @@
 				ethernet-phy@2 {
 					reg = <0x2>;
 					compatible = "microchip,ksz8081";
-					status = "okay";
-					reset-gpios = <&test_gpio 0 0>;
-					int-gpios = <&test_gpio 0 0>;
-					microchip,interface-type = "rmii";
-				};
-
-				ethernet-phy@3 {
-					reg = <0x3>;
-					compatible = "microchip,ksz8794";
-					status = "okay";
-					reset-gpios = <&test_gpio 0 0>;
-					int-gpios = <&test_gpio 0 0>;
-					microchip,interface-type = "rmii";
-				};
-
-				ethernet-phy@4 {
-					reg = <0x4>;
-					compatible = "microchip,ksz8863";
 					status = "okay";
 					reset-gpios = <&test_gpio 0 0>;
 					int-gpios = <&test_gpio 0 0>;
@@ -114,6 +96,15 @@
 					reset-deassertion-timeout-ms = <10>;
 				};
 			};
+		};
+
+		test_mdio1: mdio {
+			compatible = "zephyr,mdio-gpio";
+			mdc-gpios = <&test_gpio 0 0>;
+			mdio-gpios = <&test_gpio 0 0>;
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 	};
 };

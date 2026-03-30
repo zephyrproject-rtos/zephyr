@@ -33,6 +33,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
@@ -93,7 +94,10 @@ extern "C" {
  */
 #define BT_CSIP_DATA_RSI(_rsi) BT_DATA(BT_DATA_CSIS_RSI, _rsi, BT_CSIP_RSI_SIZE)
 
-/** @brief Opaque Coordinated Set Identification Service instance. */
+/**
+ * @struct bt_csip_set_member_svc_inst
+ * @brief Opaque Coordinated Set Identification Service instance.
+ */
 struct bt_csip_set_member_svc_inst;
 
 /** Callback structure for the Coordinated Set Identification Service */

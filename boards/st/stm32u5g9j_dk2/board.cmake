@@ -11,6 +11,9 @@ board_runner_args(openocd "--tcl-port=6666")
 board_runner_args(openocd --cmd-pre-init "gdb_report_data_abort enable")
 board_runner_args(openocd "--no-halt")
 
+board_runner_args(stlink_gdbserver "--extload=MX66LM1G45G_STM32U5G9J-DK2.stldr")
+
 # keep first
 include(${ZEPHYR_BASE}/boards/common/stm32cubeprogrammer.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/openocd-stm32.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/stlink_gdbserver.board.cmake)

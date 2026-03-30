@@ -97,9 +97,7 @@ static void lan865x_iface_init(struct net_if *iface)
 
 	net_if_set_link_addr(iface, ctx->mac_address, sizeof(ctx->mac_address), NET_LINK_ETHERNET);
 
-	if (ctx->iface == NULL) {
-		ctx->iface = iface;
-	}
+	ctx->iface = iface;
 
 	ethernet_init(iface);
 
@@ -131,8 +129,7 @@ static int lan865x_set_config(const struct device *dev, enum ethernet_config_typ
 
 		lan865x_write_macaddress(dev);
 
-		return net_if_set_link_addr(ctx->iface, ctx->mac_address, sizeof(ctx->mac_address),
-					    NET_LINK_ETHERNET);
+		return 0;
 	}
 
 	if (type == ETHERNET_CONFIG_TYPE_T1S_PARAM) {
@@ -481,8 +478,7 @@ static const struct ethernet_api lan865x_api_func = {
 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),                                \
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
 		.reset = GPIO_DT_SPEC_INST_GET(inst, rst_gpios),                                   \
-		.phy = DEVICE_DT_GET(                                                              \
-			DT_CHILD(DT_INST_CHILD(inst, lan865x_mdio), ethernet_phy_##inst)),         \
+		.phy = DEVICE_DT_GET(DT_INST_PHANDLE(inst, phy_handle)),                           \
 		.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(inst),                                  \
 	};                                                                                         \
                                                                                                    \

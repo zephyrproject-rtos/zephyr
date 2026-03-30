@@ -25,14 +25,14 @@
  * @brief Compute the CRC5 value for an array of bytes when writing to MAX149X6
  * @param data - array of data to encode
  * @param encode - action to be performed - true(encode), false(decode)
+ * @param check_byte - SDO check byte masked to top 3 bits (A1|A0|ThrErr); for encode pass 0
  * @return the resulted CRC5
  */
-static uint8_t max149x6_crc(uint8_t *data, bool encode)
+static uint8_t max149x6_crc(uint8_t *data, bool encode, uint8_t check_byte)
 {
 	uint8_t crc5_start = 0x1f;
 	uint8_t crc5_poly = 0x15;
 	uint8_t crc5_result = crc5_start;
-	uint8_t extra_byte = 0x00;
 	uint8_t data_bit;
 	uint8_t result_bit;
 	int i;
@@ -64,7 +64,7 @@ static uint8_t max149x6_crc(uint8_t *data, bool encode)
 	}
 
 	for (i = 0; i < 3; i++) {
-		data_bit = (extra_byte >> (7 - i)) & 0x01;
+		data_bit = (check_byte >> (7 - i)) & 0x01;
 		result_bit = (crc5_result & 0x10) >> 4;
 		if (data_bit ^ result_bit) {
 			crc5_result = crc5_poly ^ ((crc5_result << 1) & 0x1f);
@@ -82,6 +82,8 @@ static uint8_t max149x6_crc(uint8_t *data, bool encode)
  * @param dev - MAX149x6 device config.
  * @param addr - Register value to which data is written.
  * @param val - Value which is to be written to requested register.
+ * @param rx_diag_buff - Optional buffer for received diagnostic bytes.
+ * @param rw - Transaction direction (MAX149x6_READ or MAX149x6_WRITE).
  * @return 0 in case of success, negative error code otherwise.
  */
 static int max149x6_reg_transceive(const struct device *dev, uint8_t addr, uint8_t val,
@@ -114,7 +116,7 @@ static int max149x6_reg_transceive(const struct device *dev, uint8_t addr, uint8
 
 	/* If CRC enabled calculate it */
 	if (config->crc_en) {
-		local_tx_buff[2] = max149x6_crc(&local_tx_buff[0], true);
+		local_tx_buff[2] = max149x6_crc(&local_tx_buff[0], true, 0);
 	}
 
 	/* write cmd & read resp at once */
@@ -125,26 +127,31 @@ static int max149x6_reg_transceive(const struct device *dev, uint8_t addr, uint8
 		return ret;
 	}
 
-	/* if CRC enabled check readed */
+	/* if CRC enabled check read */
 	if (config->crc_en) {
-		crc = max149x6_crc(&local_rx_buff[0], false);
+		crc = max149x6_crc(&local_rx_buff[0], false, local_rx_buff[2] & 0xE0);
 		if (crc != (local_rx_buff[2] & 0x1F)) {
 			LOG_ERR("READ CRC ERR (%d)-(%d)\n", crc, (local_rx_buff[2] & 0x1F));
 			return -EINVAL;
 		}
 	}
 
+	/* byte0 is first diagnostic byte */
 	if (rx_diag_buff != NULL) {
 		rx_diag_buff[0] = local_rx_buff[0];
 	}
 
-	/* In case of write we are getting 2 diagnostic bytes - byte0 & byte1
-	 * and pass them to diag buffer to be parsed in next stage
-	 */
-	if ((MAX149x6_WRITE == rw) && (rx_diag_buff != NULL)) {
-		rx_diag_buff[1] = local_rx_buff[1];
-	} else {
-		ret = local_rx_buff[1];
+	/* byte1 for WRITE: second diagnostic byte */
+	if (MAX149x6_WRITE == rw) {
+		if (rx_diag_buff != NULL) {
+			rx_diag_buff[1] = local_rx_buff[1];
+		}
+		return ret;
+	}
+
+	/* byte1 for READ: register value returned to caller */
+	if (MAX149x6_READ == rw) {
+		return local_rx_buff[1];
 	}
 
 	return ret;

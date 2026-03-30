@@ -109,6 +109,16 @@ templates_path = ["_templates"]
 
 exclude_patterns = ["_build"]
 
+# EOL release notes and migration guides are not built (to avoid dead links etc.)
+RELEASE_NOTES_GLOB_PATTERNS = [
+    "releases/release-notes-[12].*.rst",
+    "releases/release-notes-3.[0-6].rst",
+    "releases/release-notes-4.[01].rst",
+    "releases/migration-guide-3.[56].rst",
+    "releases/migration-guide-4.[01].rst",
+]
+exclude_patterns.extend(RELEASE_NOTES_GLOB_PATTERNS)
+
 if not west_found:
     exclude_patterns.append("**/*west-apis*")
 else:
@@ -163,15 +173,15 @@ rst_epilog = f"""
    :ltrim:
 .. _Zephyr SDK bundle: https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v{sdk_version}
 .. |sdk-url-linux| replace::
-   `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_linux-x86_64.tar.xz`
+   `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_linux-x86_64_gnu.tar.xz`
 .. |sdk-url-linux-sha| replace::
    `{SDK_URL_BASE}/v{sdk_version}/sha256.sum`
 .. |sdk-url-macos| replace::
-   `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_macos-x86_64.tar.xz`
+   `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_macos-aarch64_gnu.tar.xz`
 .. |sdk-url-macos-sha| replace::
    `{SDK_URL_BASE}/v{sdk_version}/sha256.sum`
 .. |sdk-url-windows| replace::
-   `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_windows-x86_64.7z`
+   `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_windows-x86_64_gnu.7z`
 """
 
 # -- Options for HTML output ----------------------------------------------
@@ -280,7 +290,14 @@ doxybridge_projects = {"zephyr": doxyrunner_projects["zephyr"]["outdir"]}
 
 # -- Options for html_redirect plugin -------------------------------------
 
-html_redirect_pages = redirects.REDIRECTS
+html_redirect_pages = (
+    *redirects.REDIRECTS,
+    *(
+        (f"releases/{p.stem}", "releases/eol_releases")
+        for pattern in RELEASE_NOTES_GLOB_PATTERNS
+        for p in (ZEPHYR_BASE / "doc").glob(pattern)
+    ),
+)
 
 # -- Options for zephyr.link-roles ----------------------------------------
 

@@ -389,11 +389,11 @@ enum sensor_attribute {
 
 	/** Hardware batch duration in ticks */
 	SENSOR_ATTR_BATCH_DURATION,
-	/* Configure the gain of a sensor. */
+	/** Configure the gain of a sensor. */
 	SENSOR_ATTR_GAIN,
-	/* Configure the resolution of a sensor. */
+	/** Configure the resolution of a sensor. */
 	SENSOR_ATTR_RESOLUTION,
-	/* Chip ID of the sensor*/
+	/** Chip ID of a sensor */
 	SENSOR_ATTR_CHIP_ID,
 	/**
 	 * Number of all common sensor attributes.
@@ -423,9 +423,12 @@ typedef void (*sensor_trigger_handler_t)(const struct device *dev,
 					 const struct sensor_trigger *trigger);
 
 /**
- * @typedef sensor_attr_set_t
- * @brief Callback API upon setting a sensor's attributes
- *
+ * @def_driverbackendgroup{Sensor,sensor_interface}
+ * @{
+ */
+
+/**
+ * @brief Callback API to set a sensor attribute.
  * See sensor_attr_set() for argument description
  */
 typedef int (*sensor_attr_set_t)(const struct device *dev,
@@ -434,9 +437,7 @@ typedef int (*sensor_attr_set_t)(const struct device *dev,
 				 const struct sensor_value *val);
 
 /**
- * @typedef sensor_attr_get_t
- * @brief Callback API upon getting a sensor's attributes
- *
+ * @brief Callback API to get a sensor attribute.
  * See sensor_attr_get() for argument description
  */
 typedef int (*sensor_attr_get_t)(const struct device *dev,
@@ -445,31 +446,84 @@ typedef int (*sensor_attr_get_t)(const struct device *dev,
 				 struct sensor_value *val);
 
 /**
- * @typedef sensor_trigger_set_t
- * @brief Callback API for setting a sensor's trigger and handler
- *
+ * @brief Callback API to set a sensor trigger and handler.
  * See sensor_trigger_set() for argument description
  */
 typedef int (*sensor_trigger_set_t)(const struct device *dev,
 				    const struct sensor_trigger *trig,
 				    sensor_trigger_handler_t handler);
+
 /**
- * @typedef sensor_sample_fetch_t
- * @brief Callback API for fetching data from a sensor
- *
- * See sensor_sample_fetch() for argument description
+ * @brief Callback API to fetch a sensor sample into the driver buffer.
+ * See sensor_sample_fetch_chan() for argument description
  */
 typedef int (*sensor_sample_fetch_t)(const struct device *dev,
 				     enum sensor_channel chan);
+
 /**
- * @typedef sensor_channel_get_t
- * @brief Callback API for getting a reading from a sensor
- *
+ * @brief Callback API to read a sensor channel from the driver buffer.
  * See sensor_channel_get() for argument description
  */
 typedef int (*sensor_channel_get_t)(const struct device *dev,
 				    enum sensor_channel chan,
 				    struct sensor_value *val);
+
+/* Forward declaration */
+struct sensor_decoder_api;
+
+/**
+ * @brief Callback API to get the sensor decoder implementation.
+ * See sensor_get_decoder() for argument description
+ */
+typedef int (*sensor_get_decoder_t)(const struct device *dev,
+				    const struct sensor_decoder_api **api);
+
+/**
+ * @brief Callback API to service an RTIO submission for a sensor device.
+ *
+ * Invoked when the asynchronous sensor path dispatches work to the driver.
+ *
+ * @param sensor The sensor device
+ * @param sqe The RTIO submission queue entry
+ */
+typedef void (*sensor_submit_t)(const struct device *sensor, struct rtio_iodev_sqe *sqe);
+
+/**
+ * @driver_ops{Sensor}
+ */
+__subsystem struct sensor_driver_api {
+	/**
+	 * @driver_ops_optional @copybrief sensor_attr_set
+	 */
+	sensor_attr_set_t attr_set;
+	/**
+	 * @driver_ops_optional @copybrief sensor_attr_get
+	 */
+	sensor_attr_get_t attr_get;
+	/**
+	 * @driver_ops_optional @copybrief sensor_trigger_set
+	 */
+	sensor_trigger_set_t trigger_set;
+	/**
+	 * @driver_ops_mandatory @copybrief sensor_sample_fetch
+	 */
+	sensor_sample_fetch_t sample_fetch;
+	/**
+	 * @driver_ops_mandatory @copybrief sensor_channel_get
+	 */
+	sensor_channel_get_t channel_get;
+	/**
+	 * @driver_ops_optional @copybrief sensor_get_decoder
+	 */
+	sensor_get_decoder_t get_decoder;
+	/**
+	 * @driver_ops_optional Handler for RTIO submissions to this sensor.
+	 */
+	sensor_submit_t submit;
+};
+/**
+ * @}
+ */
 
 /**
  * @brief Sensor Channel Specification
@@ -636,15 +690,6 @@ int sensor_natively_supported_channel_size_info(struct sensor_chan_spec channel,
 						size_t *frame_size);
 
 /**
- * @typedef sensor_get_decoder_t
- * @brief Get the decoder associate with the given device
- *
- * @see sensor_get_decoder for more details
- */
-typedef int (*sensor_get_decoder_t)(const struct device *dev,
-				    const struct sensor_decoder_api **api);
-
-/**
  * @brief Options for what to do with the associated data when a trigger is consumed
  */
 enum sensor_stream_data_opt {
@@ -737,24 +782,11 @@ struct sensor_read_config {
 	};                                                                                         \
 	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, &_CONCAT(__sensor_read_config_, name))
 
-/* Used to submit an RTIO sqe to the sensor's iodev */
-typedef void (*sensor_submit_t)(const struct device *sensor, struct rtio_iodev_sqe *sqe);
-
 /* The default decoder API */
 extern const struct sensor_decoder_api __sensor_default_decoder;
 
 /* The default sensor iodev API */
 extern const struct rtio_iodev_api __sensor_iodev_api;
-
-__subsystem struct sensor_driver_api {
-	sensor_attr_set_t attr_set;
-	sensor_attr_get_t attr_get;
-	sensor_trigger_set_t trigger_set;
-	sensor_sample_fetch_t sample_fetch;
-	sensor_channel_get_t channel_get;
-	sensor_get_decoder_t get_decoder;
-	sensor_submit_t submit;
-};
 
 /**
  * @brief Set an attribute for a sensor

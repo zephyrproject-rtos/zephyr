@@ -3,6 +3,7 @@ family:
   series:
   - name: cc13x2_cc26x2
     socs:
+    - name: cc1312r
     - name: cc1352p
     - name: cc1352r
     - name: cc2652p

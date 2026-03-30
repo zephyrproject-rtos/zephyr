@@ -254,9 +254,7 @@ int gpio_psoc6_init(const struct device *dev)
 	static void port_##n##_psoc6_config_func(const struct device *dev); \
 									\
 	static const struct gpio_psoc6_config port_##n##_psoc6_config = { \
-		.common = {						\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),\
-		},							\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),		\
 		.regs = (GPIO_PRT_Type *)DT_INST_REG_ADDR(n),		\
 		.config_func = port_##n##_psoc6_config_func,		\
 	};								\

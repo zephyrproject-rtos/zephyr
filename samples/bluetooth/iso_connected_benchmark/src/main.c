@@ -48,7 +48,6 @@ enum sdu_dir {
 #define DEFAULT_CIS_PACKING     0
 #define DEFAULT_CIS_FRAMING     0
 #define DEFAULT_CIS_COUNT       1U
-#define DEFAULT_CIS_SEC_LEVEL   BT_SECURITY_L1
 
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 #define DEFAULT_CIS_NSE          BT_ISO_NSE_MIN
@@ -428,9 +427,6 @@ static int iso_accept(const struct bt_iso_accept_info *info,
 }
 
 static struct bt_iso_server iso_server = {
-#if defined(CONFIG_BT_SMP)
-	.sec_level = DEFAULT_CIS_SEC_LEVEL,
-#endif /* CONFIG_BT_SMP */
 	.accept = iso_accept,
 };
 

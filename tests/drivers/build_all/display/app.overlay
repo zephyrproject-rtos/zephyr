@@ -389,6 +389,40 @@
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 				grayscale-table = [02 02 02 02 02 02 02 02 03 04 05 06 07 07 07];
 			};
+
+			ac057tc1: ac057tc1@22 {
+				compatible = "eink,ac057tc1";
+				reg = <22>;
+				mipi-max-frequency = <2000000>;
+				width = <600>;
+				height = <448>;
+				busy-gpios = <&test_gpio 0 0>;
+			};
+
+			test_mipi_dbi_ili9163c: ili9163c@23 {
+				compatible = "ilitek,ili9163c";
+				reg = <23>;
+				mipi-max-frequency = <25000000>;
+				pixel-format = <0>;
+				rotation = <270>;
+				width = <128>;
+				height = <160>;
+			};
+
+			test_spi_st7586s: st7586s@24 {
+				compatible = "sitronix,st7586s";
+				mipi-max-frequency = <10000000>;
+				reg = <24>;
+				width = <384>;
+				height = <160>;
+				duty = <159>;
+				framerate = <24>;
+				start-line = <0>;
+				display-offset = <0x0>;
+				bias-ratio = <2>;
+				flip-configuration = <0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
@@ -410,6 +444,17 @@
 				rotation = <270>;
 				width = <320>;
 				height = <240>;
+			};
+
+			test_mipi_dbi_xfr_16bit_ili163c: ili9163c@1 {
+				compatible = "ilitek,ili9163c";
+				reg = <1>;
+				mipi-max-frequency = <25000000>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+				pixel-format = <0>;
+				rotation = <270>;
+				width = <128>;
+				height = <160>;
 			};
 		};
 

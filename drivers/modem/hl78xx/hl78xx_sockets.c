@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* Required for strnlen() */
+#include <string.h>
+#include <stdlib.h>
+#include <stddef.h>
+
 #include <zephyr/modem/chat.h>
 #include <zephyr/modem/backend/uart.h>
 #include <zephyr/kernel.h>
@@ -20,9 +27,6 @@
 #include <zephyr/net/tls_credentials.h>
 #endif
 
-#include <string.h>
-#include <stdlib.h>
-#include <stddef.h>
 #include "hl78xx.h"
 #include "hl78xx_chat.h"
 #include "hl78xx_cfg.h"
@@ -62,6 +66,8 @@ LOG_MODULE_REGISTER(hl78xx_socket, CONFIG_MODEM_LOG_LEVEL);
 /* set when OK token was matched after payload */
 #define PARSER_FLAG_OK_DETECTED   BIT(2)
 
+/* LPM wakeup timeout in seconds (used for PSM, eDRX and Power Down) */
+#define HL78XX_LPM_WAKEUP_TIMEOUT_SECONDS 60
 struct hl78xx_dns_info {
 #ifdef CONFIG_NET_IPV4
 	char v4_string[NET_IPV4_ADDR_LEN];
@@ -174,6 +180,9 @@ struct hl78xx_socket_data {
 	uint16_t parser_size_of_socketdata;
 
 	atomic_t parser_flags;
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	struct k_sem lpm_wakeup_sem;
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 };
 
 static struct hl78xx_socket_data *socket_data_global;
@@ -308,6 +317,116 @@ static inline struct hl78xx_socket_data *hl78xx_socket_data_from_sock(struct mod
 	return result;
 }
 
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+void hl78xx_release_socket_comms(struct hl78xx_data *data)
+{
+	struct hl78xx_socket_data *socket_data =
+		(struct hl78xx_socket_data *)data->offload_dev->data;
+
+	k_sem_give(&socket_data->lpm_wakeup_sem);
+}
+
+void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data)
+{
+	struct hl78xx_socket_data *socket_data =
+		(struct hl78xx_socket_data *)data->offload_dev->data;
+
+	if (!socket_data) {
+		return;
+	}
+
+	LOG_DBG("Invalidating all modem socket contexts (HL7800 sleep entry)");
+
+	for (int i = 0; i < MDM_MAX_SOCKETS; i++) {
+		struct modem_socket *sock = &socket_data->sockets[i];
+
+		if (modem_socket_id_is_assigned(&socket_data->socket_config, sock)) {
+			LOG_DBG("Invalidating socket fd=%d modem_id=%d", sock->sock_fd, sock->id);
+			sock->id = socket_data->socket_config.base_socket_id +
+				   socket_data->socket_config.sockets_len;
+			sock->is_connected = false;
+		}
+
+		/* Reset TCP/UDP connection status tracking */
+		socket_data->tcp_conn_status[i].is_connected = false;
+		socket_data->tcp_conn_status[i].is_created = false;
+		socket_data->tcp_conn_status[i].err_code = TCP_SOCKET_ERROR;
+		socket_data->udp_conn_status[i].is_created = false;
+		socket_data->udp_conn_status[i].err_code = UDP_SOCKET_ERROR;
+	}
+}
+
+static void hl78xx_send_wakeup_signal(struct hl78xx_socket_data *socket_data)
+{
+	hl78xx_delegate_event(socket_data->mdata_global, MODEM_HL78XX_EVENT_RESUME);
+}
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+
+static int hl78xx_ensure_modem_awake(struct hl78xx_socket_data *socket_data)
+{
+	if (hl78xx_is_registered(socket_data->mdata_global) &&
+	    !IS_ENABLED(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)) {
+		return 0;
+	}
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	struct hl78xx_data *mdata = socket_data->mdata_global;
+#if defined(CONFIG_MODEM_HL78XX_PSM) || defined(CONFIG_MODEM_HL78XX_EDRX)
+	const struct hl78xx_config *config = (const struct hl78xx_config *)mdata->dev->config;
+#endif /* CONFIG_MODEM_HL78XX_PSM || CONFIG_MODEM_HL78XX_EDRX */
+	bool in_lpm = false;
+
+#ifdef CONFIG_MODEM_HL78XX_PSM
+	LOG_DBG("PSMEV previous: %d, current: %d, socket_lpm_recreate_required: %d",
+		mdata->status.psmev.previous, mdata->status.psmev.current,
+		config->variant->socket_lpm_recreate_required);
+	/* HL7800: keep ENTER->EXIT transition as "still in LPM" until restore completes.
+	 * HL7812: sockets/context are retained; treat ENTER->EXIT as awake.
+	 */
+	in_lpm = in_lpm || (mdata->status.psmev.current == HL78XX_PSM_EVENT_ENTER) ||
+		 ((mdata->status.psmev.current == HL78XX_PSM_EVENT_EXIT) &&
+		  (mdata->status.psmev.previous == HL78XX_PSM_EVENT_ENTER) &&
+		  config->variant->socket_lpm_recreate_required);
+#endif /* CONFIG_MODEM_HL78XX_PSM */
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+	{
+		bool early_return = false;
+
+		if (config->variant->check_lpm_state) {
+			config->variant->check_lpm_state(mdata, &in_lpm, &early_return);
+		}
+
+		LOG_DBG("EDRX status: current=%d previous=%d is_edrx_idle_requested=%d",
+			mdata->status.edrxev.current, mdata->status.edrxev.previous,
+			mdata->status.edrxev.is_edrx_idle_requested);
+
+		if (early_return) {
+			return 0;
+		}
+	}
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+	in_lpm = in_lpm || (mdata->status.power_down.current == POWER_DOWN_EVENT_ENTER);
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+	if (in_lpm) {
+		k_sem_reset(&socket_data->lpm_wakeup_sem);
+		LOG_DBG("Modem in PSM/EDRX/Power Down, sending wakeup signal");
+		hl78xx_send_wakeup_signal(socket_data);
+		int ret = k_sem_take(&socket_data->lpm_wakeup_sem,
+				     K_SECONDS(HL78XX_LPM_WAKEUP_TIMEOUT_SECONDS));
+		if (ret == 0) {
+			return 0;
+		}
+		LOG_WRN("Timeout waiting for modem wakeup");
+	}
+	if (hl78xx_is_registered(mdata)) {
+		/* LPM is configured but modem is not sleeping — it is awake */
+		return 0;
+	}
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+	LOG_ERR("Modem not registered, cannot ensure awake");
+	errno = EAGAIN;
+	return -1;
+}
 /* ===== Chat callbacks (grouped) =====================================
  * Group all chat/URC handlers together to make the socket TU easier to
  * scan. These handlers are registered via hl78xx_chat getters in
@@ -460,6 +579,19 @@ exit:
 		modem_socket_put(&socket_data->socket_config, sock->sock_fd);
 	}
 }
+void hl78xx_on_cme_error(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
+{
+	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
+	struct hl78xx_socket_data *socket_data =
+		(struct hl78xx_socket_data *)data->offload_dev->data;
+
+	if (!data || !socket_data) {
+		LOG_ERR("%s: invalid user_data", __func__);
+		return;
+	}
+
+	socket_data->socket_data_error = true;
+}
 /* Chat/URC handler for socket-create/indication responses
  * Matches +KUDPCFG: <id>
  *         +KUDP_IND: <id>,... (or +KTCP_IND)
@@ -517,7 +649,7 @@ exit:
 }
 
 #ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
-#ifdef CONFIG_MODEM_HL78XX_12
+#ifdef CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC
 /**
  * @brief Handle modem state update from +KSTATE URC of RAT Scan Finish.
  * This command is intended to report events for different important state transitions and system
@@ -557,7 +689,7 @@ void hl78xx_on_kstatev_parser(struct hl78xx_data *data, int state, int rat_mode)
 		break;
 	}
 }
-#endif
+#endif /* CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC */
 /**
  * @brief This function doesn't handle incoming UDP data.
  * It is just a placeholder for verbose debug logging of incoming UDP data.
@@ -1116,13 +1248,11 @@ static int modem_process_handler(struct hl78xx_data *data)
 	for (int i = 0; i < recv_len; i++) {
 		socket_process_bytes(socket_data, work_buf_local[i]);
 	}
-
-	LOG_DBG("post-process state=%d recv_len=%d recv_buf.len=%u "
-		"expected=%u collected=%u socket_data_received=%d",
-		socket_data->parser_state, recv_len, socket_data->receive_buf.len,
-		socket_data->expected_buf_len, socket_data->collected_buf_len,
-		atomic_test_bit(&socket_data->parser_flags, PARSER_FLAG_DATA_RECEIVED));
-
+	HL78XX_LOG_DBG("post-process state=%d recv_len=%d recv_buf.len=%u "
+		       "expected=%u collected=%u socket_data_received=%d",
+		       socket_data->parser_state, recv_len, socket_data->receive_buf.len,
+		       socket_data->expected_buf_len, socket_data->collected_buf_len,
+		       atomic_test_bit(&socket_data->parser_flags, PARSER_FLAG_DATA_RECEIVED));
 	/* Check if we've completed reception */
 	if (atomic_test_bit(&socket_data->parser_flags, PARSER_FLAG_EOF_DETECTED) &&
 	    atomic_test_bit(&socket_data->parser_flags, PARSER_FLAG_OK_DETECTED) &&
@@ -1180,7 +1310,7 @@ void notif_carrier_on(const struct device *dev)
 	net_if_carrier_on(socket_data->net_iface);
 }
 
-void iface_status_work_cb(struct hl78xx_data *data, modem_chat_script_callback script_user_callback)
+int iface_status_work_cb(struct hl78xx_data *data, modem_chat_script_callback script_user_callback)
 {
 
 	const char *cmd = "AT+CGCONTRDP=1";
@@ -1189,9 +1319,18 @@ void iface_status_work_cb(struct hl78xx_data *data, modem_chat_script_callback s
 	ret = modem_dynamic_cmd_send(data, script_user_callback, cmd, strlen(cmd),
 				     hl78xx_get_cgdcontrdp_match(), 1, MDM_CMD_TIMEOUT, false);
 	if (ret < 0) {
-		LOG_ERR("Failed to send AT+CGCONTRDP command: %d", ret);
-		return;
+		int err = (errno > 0) ? -errno : ret;
+
+		if (err == -EBUSY) {
+			LOG_WRN("AT+CGCONTRDP busy, will retry");
+		} else {
+			LOG_ERR("Failed to send AT+CGCONTRDP command: %d", err);
+		}
+
+		return err;
 	}
+
+	return 0;
 }
 
 int dns_work_cb(const struct device *dev, bool hard_reset)
@@ -1215,8 +1354,8 @@ int dns_work_cb(const struct device *dev, bool hard_reset)
 	if (strlen(socket_data->dns.v4_string) > 0) {
 		struct net_sockaddr_in *addr4 = (struct net_sockaddr_in *)&dns_addr;
 
-		if (net_addr_pton(AF_INET, socket_data->dns.v4_string, &addr4->sin_addr) == 0) {
-			addr4->sin_family = AF_INET;
+		if (net_addr_pton(NET_PF_INET, socket_data->dns.v4_string, &addr4->sin_addr) == 0) {
+			addr4->sin_family = NET_PF_INET;
 			addr4->sin_port = 0;
 			valid_address = true;
 		}
@@ -1226,8 +1365,9 @@ int dns_work_cb(const struct device *dev, bool hard_reset)
 	if (!valid_address && strlen(socket_data->dns.v6_string) > 0) {
 		struct net_sockaddr_in6 *addr6 = (struct net_sockaddr_in6 *)&dns_addr;
 
-		if (net_addr_pton(AF_INET6, socket_data->dns.v6_string, &addr6->sin6_addr) == 0) {
-			addr6->sin6_family = AF_INET6;
+		if (net_addr_pton(NET_PF_INET6, socket_data->dns.v6_string, &addr6->sin6_addr) ==
+		    0) {
+			addr6->sin6_family = NET_PF_INET6;
 			addr6->sin6_port = 0;
 			valid_address = true;
 		}
@@ -1584,6 +1724,7 @@ static int offload_close(void *obj)
 	}
 	/* make sure socket is allocated and assigned an id */
 	if (modem_socket_id_is_assigned(&socket_data->socket_config, sock) == false) {
+		modem_socket_put(&socket_data->socket_config, sock->sock_fd);
 		return 0;
 	}
 	if (validate_socket(sock, socket_data) == 0) {
@@ -2115,7 +2256,7 @@ static int handle_tls_sockopts(void *obj, int optname, const void *optval, net_s
 		return 0;
 
 	case ZSOCK_TLS_PEER_VERIFY:
-		if (*(const uint32_t *)optval != TLS_PEER_VERIFY_REQUIRED) {
+		if (*(const uint32_t *)optval != ZSOCK_TLS_PEER_VERIFY_REQUIRED) {
 			LOG_WRN("Disabling peer verification is not supported");
 		}
 		return 0;
@@ -2161,9 +2302,9 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 		errno = EINVAL;
 		return -1;
 	}
-	if (!hl78xx_is_registered(socket_data->mdata_global)) {
-		LOG_ERR("Modem currently not attached to the network!");
-		return -EAGAIN;
+	if (hl78xx_ensure_modem_awake(socket_data) < 0) {
+		LOG_ERR("Modem not registered, cannot send data %d", errno);
+		return -1;
 	}
 	/* Do some sanity checks. */
 	if (!buf || len == 0) {
@@ -2179,6 +2320,39 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 		errno = ENOTCONN;
 		return -1;
 	}
+
+#if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)
+	/* HL7800: after PSM/eDRX wake, modem-side socket contexts are lost.
+	 * If the socket ID was invalidated, transparently re-create it.
+	 * For TCP, offload_connect() handles this. For UDP, sendto() is
+	 * the first point of contact so we re-create here.
+	 */
+	const struct hl78xx_config *config =
+		(const struct hl78xx_config *)socket_data->mdata_global->dev->config;
+
+	if (config->variant->socket_lpm_recreate_required &&
+	    !modem_socket_id_is_assigned(&socket_data->socket_config, sock)) {
+		const struct net_sockaddr *recreate_addr = to ? to : &sock->dst;
+
+		if (recreate_addr->sa_family == 0) {
+			recreate_addr = &sock->src;
+		}
+		if (recreate_addr->sa_family == 0) {
+			LOG_ERR("Cannot re-create socket: no saved address");
+			errno = ENOTCONN;
+			return -1;
+		}
+		LOG_DBG("HL7800: re-creating socket fd=%d after PSM/eDRX wake", sock->sock_fd);
+		ret = create_socket(sock, recreate_addr, socket_data);
+		if (ret < 0) {
+			LOG_ERR("Failed to re-create socket after wake: %d", ret);
+			errno = EIO;
+			return -1;
+		}
+		LOG_DBG("Socket fd=%d re-created with modem_id=%d", sock->sock_fd, sock->id);
+	}
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+
 	/* Only send up to MTU bytes. */
 	if (len > MDM_MAX_DATA_LENGTH) {
 		len = MDM_MAX_DATA_LENGTH;
@@ -2204,10 +2378,11 @@ static int offload_ioctl(void *obj, unsigned int request, va_list args)
 	struct k_poll_event **pev;
 	struct k_poll_event *pev_end;
 	/* sanity check: does parent == parent->offload_dev->data ? */
-	if (socket_data && socket_data->offload_dev &&
+	if (!socket_data || !socket_data->offload_dev ||
 	    socket_data->offload_dev->data != socket_data) {
-		LOG_WRN("parent mismatch: parent != offload_dev->data (%p != %p)", socket_data,
-			socket_data->offload_dev->data);
+		LOG_WRN("ioctl: socket_data lookup failed or parent mismatch (%p)", socket_data);
+		errno = EINVAL;
+		return -1;
 	}
 	switch (request) {
 	case ZFD_IOCTL_POLL_PREPARE:
@@ -2572,6 +2747,9 @@ static int hl78xx_socket_init(const struct device *dev)
 	hl78xx_set_socket_global(data);
 	atomic_set(&data->mdata_global->state_leftover, 0);
 	atomic_set(&data->parser_flags, 0);
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	k_sem_init(&data->lpm_wakeup_sem, 0, 1);
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 	return 0;
 }
 

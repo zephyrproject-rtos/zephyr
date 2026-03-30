@@ -5,7 +5,7 @@ tests:
     integration_platforms:
       - native_sim
     tags: pm
-  pm.power_doamin.isr_safe:
+  pm.power_domain.isr_safe:
     platform_allow:
       - native_sim
     integration_platforms:

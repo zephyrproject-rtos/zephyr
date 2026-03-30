@@ -250,21 +250,24 @@ static int cmd_net_capture_disable(const struct shell *sh, size_t argc, char *ar
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_capture,
-	SHELL_CMD(setup, NULL, "Setup network packet capture.\n"
-		  "'net capture setup <remote-ip-addr> <local-addr> <peer-addr>'\n"
-		  "<remote> is the (outer) endpoint IP address,\n"
-		  "<local> is the (inner) local IP address,\n"
-		  "<peer> is the (inner) peer IP address\n"
-		  "Local and Peer addresses can have UDP port number in them (optional)\n"
-		  "like 198.0.51.2:9000 or [2001:db8:100::2]:4242",
+	SHELL_CMD(setup, NULL,
+		  SHELL_HELP("Setup network packet capture",
+			"<remote-ip-addr> <local-addr> <peer-addr>\n"
+			"<remote> is the (outer) endpoint IP address,\n"
+			"<local> is the (inner) local IP address,\n"
+			"<peer> is the (inner) peer IP address\n"
+			"Local and Peer addresses can have UDP port number in them (optional)\n"
+			"like 198.0.51.2:9000 or [2001:db8:100::2]:4242"),
 		  cmd_net_capture_setup),
-	SHELL_CMD(cleanup, NULL, "Cleanup network packet capture.",
+	SHELL_CMD(cleanup, NULL,
+		  SHELL_HELP("Cleanup network packet capture", ""),
 		  cmd_net_capture_cleanup),
-	SHELL_CMD(enable, NULL, "Enable network packet capture for a given "
-		  "network interface.\n"
-		  "'net capture enable <interface index>'",
+	SHELL_CMD(enable, NULL,
+		  SHELL_HELP("Enable network packet capture for a given network interface",
+			     "<index>"),
 		  cmd_net_capture_enable),
-	SHELL_CMD(disable, NULL, "Disable network packet capture.",
+	SHELL_CMD(disable, NULL,
+		  SHELL_HELP("Disable network packet capture", ""),
 		  cmd_net_capture_disable),
 	SHELL_SUBCMD_SET_END
 );

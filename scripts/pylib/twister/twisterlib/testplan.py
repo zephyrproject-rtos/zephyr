@@ -31,6 +31,7 @@ except ImportError:
 
 import scl
 from twisterlib.config_parser import TwisterConfigParser
+from twisterlib.environment import TwisterEnv
 from twisterlib.error import TwisterRuntimeError
 from twisterlib.platform import Platform, generate_platforms
 from twisterlib.quarantine import Quarantine
@@ -148,6 +149,7 @@ class TestConfiguration:
 
         return levels
 
+
 class TestPlan:
     __test__ = False  # for pytest to skip this class when collects tests
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
@@ -163,7 +165,7 @@ class TestPlan:
     SAMPLE_FILENAME = 'sample.yaml'
     TESTSUITE_FILENAME = 'testcase.yaml'
 
-    def __init__(self, env: Namespace):
+    def __init__(self, env: TwisterEnv):
 
         self.options = env.options
         self.env = env
@@ -896,11 +898,10 @@ class TestPlan:
                 if itoolchain:
                     toolchain = itoolchain
                 elif plat.arch in ['posix', 'unit']:
-                    # workaround until toolchain variant in zephyr is overhauled and improved.
-                    if self.env.toolchain in ['llvm']:
-                        toolchain = 'llvm'
+                    if self.env.toolchain in ['host/llvm']:
+                        toolchain = 'host/llvm'
                     else:
-                        toolchain = 'host'
+                        toolchain = 'host/gnu'
                 else:
                     toolchain = "zephyr" if not self.env.toolchain else self.env.toolchain
 
@@ -1010,7 +1011,9 @@ class TestPlan:
                     instance.add_filter("Native platform requires Linux", Filters.ENVIRONMENT)
 
                 if not force_toolchain \
-                        and toolchain and (toolchain not in plat.supported_toolchains):
+                        and toolchain and (toolchain not in plat.supported_toolchains) and \
+                                        (toolchain.split('/')[0] not in plat.supported_toolchains):
+
                     instance.add_filter(
                         f"Not supported by the toolchain: {toolchain}",
                         Filters.PLATFORM

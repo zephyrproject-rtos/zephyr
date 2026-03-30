@@ -5,7 +5,10 @@ description: Microchip I2C/SMB V2 controller
 
 compatible: "microchip,xec-i2c-v2"
 
-include: [i2c-controller.yaml, pinctrl-device.yaml]
+include:
+  - "i2c-controller.yaml"
+  - "pinctrl-device.yaml"
+  - "microchip,dmec-ecia-girq.yaml"
 
 properties:
   reg:
@@ -16,18 +19,31 @@ properties:
     description: soc block mapping to pin
     required: true
 
-  girqs:
-    type: array
+  pcr-scr:
+    type: int
     required: true
-    description: array of GIRQ numbers [8:26] and bit positions [0:31]
-
-  pcrs:
-    type: array
-    required: true
-    description: PCR sleep register index and bit position
+    description: |
+      Encoded PCR index and bit position used for peripheral sleep enable
+      and reset.
 
   pinctrl-0:
     required: true
 
   pinctrl-names:
     required: true
+
+  sda-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      I2C controller versions older than v3.8 do not make pin
+      state monitoring visible in the bit-bang register without
+      switching the pins from I2C control to bit-bang control.
+      This can cause disruption of an open I2C session. For older
+      hardware access pin state using the GPIO driver.
+
+  scl-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Refer to the description of sda-gpios.

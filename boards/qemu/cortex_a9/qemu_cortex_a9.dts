@@ -20,6 +20,8 @@
 		cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-a9";
+			i-cache-line-size = <32>;
+			d-cache-line-size = <32>;
 			reg = <0>;
 		};
 	};

@@ -300,7 +300,7 @@ struct uarte_nrfx_data {
 #define UARTE_CFG_FLAG_VOLATILE_BAUDRATE BIT(5)
 
 /* Formula for getting the baudrate settings is following:
- * 2^12 * (2^20 / (f_PCLK / desired_baudrate)) where f_PCLK is a frequency that
+ * 2^12 * floor(2^20 / round(f_PCLK / desired_baudrate)) where f_PCLK is a frequency that
  * drives the UARTE.
  *
  * @param f_pclk Frequency of the clock that drives the peripheral.
@@ -308,7 +308,8 @@ struct uarte_nrfx_data {
  *
  * @return Baudrate setting to be written to the BAUDRATE register
  */
-#define UARTE_GET_CUSTOM_BAUDRATE(f_pclk, baudrate) ((BIT(20) / (f_pclk / baudrate)) << 12)
+#define UARTE_GET_CUSTOM_BAUDRATE(f_pclk, baudrate)                                                \
+	((BIT(20) / DIV_ROUND_CLOSEST(f_pclk, baudrate)) << 12)
 
 /* Macro for converting numerical baudrate to register value. It is convenient
  * to use this approach because for constant input it can calculate nrf setting
@@ -1494,7 +1495,7 @@ static void timer_isr(const void *arg)
 		usr_buf_complete(dev);
 	}
 
-	/* Must be after user buf complet CC handling. */
+	/* Must be after user buf complete CC handling. */
 	if (timer_ch_evt_check_clear(cfg->timer_regs, UARTE_TIMER_BUF_SWITCH_CH)) {
 		bounce_buf_switch(dev);
 	}
@@ -2960,7 +2961,7 @@ static void uarte_pm_resume(const struct device *dev)
 	}
 }
 
-static void uarte_pm_suspend(const struct device *dev)
+static int uarte_pm_suspend(const struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	const struct uarte_nrfx_config *cfg = dev->config;
@@ -2970,11 +2971,11 @@ static void uarte_pm_suspend(const struct device *dev)
 
 #ifdef UARTE_ANY_ASYNC
 	if (data->async) {
-		/* Entering inactive state requires device to be no
-		 * active asynchronous calls.
-		 */
-		__ASSERT_NO_MSG(!data->async->rx.enabled);
-		__ASSERT_NO_MSG(!data->async->tx.len);
+		/* Entering inactive state requires device to have no active asynchronous calls. */
+		if (data->async->rx.enabled || (data->async->tx.len > 0)) {
+			return -EAGAIN;
+		}
+
 		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 			/* If runtime PM is enabled then reference counting ensures that
 			 * suspend will not occur when TX is active.
@@ -3025,20 +3026,22 @@ static void uarte_pm_suspend(const struct device *dev)
 	}
 
 	nrf_uarte_disable(uarte);
-	(void)pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+	return pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
 }
 
 static int uarte_nrfx_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	int err = 0;
+
 	if (action == PM_DEVICE_ACTION_RESUME) {
 		uarte_pm_resume(dev);
 	} else if (IS_ENABLED(CONFIG_PM_DEVICE) && (action == PM_DEVICE_ACTION_SUSPEND)) {
-		uarte_pm_suspend(dev);
+		err = uarte_pm_suspend(dev);
 	} else {
-		return -ENOTSUP;
+		err = -ENOTSUP;
 	}
 
-	return 0;
+	return err;
 }
 
 static int uarte_tx_path_init(const struct device *dev)

@@ -7,7 +7,6 @@ config SOC_LITEX_VEXRISCV
 	# There are varriants of the Vexriscv without cache, be able to set it
 	select CPU_HAS_ICACHE if $(dt_node_int_prop_int,/cpus/cpu@0,i-cache-line-size) > 0
 	select CPU_HAS_DCACHE if $(dt_node_int_prop_int,/cpus/cpu@0,d-cache-line-size) > 0
-	imply XIP
 
 if SOC_LITEX_VEXRISCV
 

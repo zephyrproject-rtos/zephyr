@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <silabs/xg24/clock-hfrcodpll.dtsi>
+#include <silabs/xg24/clock-lfxo.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
@@ -19,6 +21,7 @@
 		zephyr,shell-uart = &usart0;
 		zephyr,sram = &sram0;
 		zephyr,uart-pipe = &usart0;
+		zephyr,openthread-counter = &protimer;
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -106,14 +109,9 @@
 	};
 };
 
-&cpu0 {
-	clock-frequency = <78000000>;
-};
-
 &itm {
 	pinctrl-0 = <&itm_default>;
 	pinctrl-names = "default";
-	swo-ref-frequency = <DT_FREQ_M(78)>;
 };
 
 &hfxo {
@@ -126,36 +124,6 @@
 	ctune = <44>;
 	precision = <50>;
 	status = "okay";
-};
-
-&hfrcodpll {
-	clock-frequency = <DT_FREQ_M(78)>;
-	clocks = <&hfxo>;
-	dpll-autorecover;
-	dpll-edge = "fall";
-	dpll-lock = "phase";
-	dpll-m = <1919>;
-	dpll-n = <3839>;
-};
-
-&em23grpaclk {
-	clocks = <&lfxo>;
-};
-
-&em4grpaclk {
-	clocks = <&lfxo>;
-};
-
-&sysrtcclk {
-	clocks = <&lfxo>;
-};
-
-&wdog0clk {
-	clocks = <&lfxo>;
-};
-
-&wdog1clk {
-	clocks = <&lfxo>;
 };
 
 &usart0 {
@@ -218,6 +186,14 @@
 	timer0_pwm: pwm {
 		pinctrl-0 = <&timer0_default>;
 		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&timer1 {
+	status = "okay";
+
+	timer1_counter: counter {
 		status = "okay";
 	};
 };
@@ -309,5 +285,9 @@
 };
 
 &bt_hci_silabs {
+	status = "okay";
+};
+
+&protimer {
 	status = "okay";
 };

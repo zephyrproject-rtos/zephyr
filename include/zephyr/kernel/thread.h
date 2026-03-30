@@ -274,13 +274,21 @@ struct k_thread {
 #endif /* CONFIG_POLL */
 
 #if defined(CONFIG_EVENTS)
+#if defined(CONFIG_WAITQ_SCALABLE)
+	/*
+	 * Used to build a list of threads that are
+	 * pending on a k_event and should be woken
+	 * up due to a k_event_post/set() call.
+	 *
+	 * Needed only when red-black tree is used for
+	 * wait queues because it is forbidden to mutate
+	 * an rbtree waitq while walking it.
+	 */
 	struct k_thread *next_event_link;
+#endif /* CONFIG_WAITQ_SCALABLE */
 
 	uint32_t   events; /* dual purpose - wait on and then received */
 	uint32_t   event_options;
-
-	/** true if timeout should not wake the thread */
-	bool no_wake_on_timeout;
 #endif /* CONFIG_EVENTS */
 
 #if defined(CONFIG_THREAD_MONITOR)

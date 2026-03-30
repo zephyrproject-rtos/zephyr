@@ -4,26 +4,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <freq.h>
+
+/ {
+	chosen {
+		zephyr,canbus = &mcp2515_adafruit_can_picowbell;
+	};
+};
+
 &pico_spi {
 	status = "okay";
 	cs-gpios = <&pico_header 20 GPIO_ACTIVE_LOW>;
 
 	mcp2515_adafruit_can_picowbell: can@0 {
 		compatible = "microchip,mcp2515";
-		spi-max-frequency = <1000000>;
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		osc-freq = <DT_FREQ_M(16)>;
 		int-gpios = <&pico_header 21 GPIO_ACTIVE_LOW>;
 		status = "okay";
-		reg = <0x0>;
-		osc-freq = <16000000>;
 
 		can-transceiver {
 			max-bitrate = <1000000>;
 		};
-	};
-};
-
-/ {
-	chosen {
-		zephyr,canbus = &mcp2515_adafruit_can_picowbell;
 	};
 };

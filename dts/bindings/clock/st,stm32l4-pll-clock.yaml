@@ -2,10 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32L4/L5 main PLL.
+  PLL node binding for STM32L4 and L5 devices
 
   It can be used to describe 3 different PLLs: PLL, PLLSAI1 and PLLSAI2.
-  Only main PLL is supported for now.
 
   These PLLs could take one of clk_hse, clk_hsi or clk_msi as input clock, with
   an input frequency from 4 to 16 MHz. PLLM factor is used to set the input
@@ -14,11 +13,11 @@ description: |
   Each PLL can have up to 3 output clocks and for each output clock, the
   frequency can be computed with the following formulae:
 
-    f(PLL_P) = f(VCO clock) / PLLP  --> PLLSAI3CLK
-    f(PLL_Q) = f(VCO clock) / PLLQ  --> PLL48M1CLK
-    f(PLL_R) = f(VCO clock) / PLLR  --> PLLCLK (System Clock)
+    f(PLLx_P) = f(VCO clock) / PLLxP
+    f(PLLx_Q) = f(VCO clock) / PLLxQ
+    f(PLLx_R) = f(VCO clock) / PLLxR
 
-      with f(VCO clock) = f(PLL clock input) × (PLLN / PLLM)
+      with f(VCO clock) = f(PLL clock input) × (PLLxN / PLLxM)
 
   The PLL output frequency must not exceed 80 MHz.
 
@@ -37,29 +36,29 @@ properties:
     type: int
     required: true
     description: |
-        Division factor for the main PLL and audio PLLs (PLLSAI1 and PLLSAI2)
-        input clock
-        Valid range: 1 - 8
+        Division factor for the PLL input clock.
+        On L4 series, the division factor M is shared between PLL, PLLSAI1
+        and PLLSAI2. For these series, valid range is 1 - 8.
+        On L4+ and L5 series, each PLL has an independent division factor M.
+        For these series, valid range is 1 - 16.
 
   mul-n:
     type: int
     required: true
     description: |
-        Main PLL multiplication factor for VCO
-        Valid range: 8 - 86
+        Multiplication factor for VCO. Valid range is 8 - 127 for L4+
+        series and 8 - 86 for other series.
 
   div-p:
     type: int
     description: |
-        Main PLL division factor for PLLSAI3CLK
-    enum:
-      - 7
-      - 17
+        Division factor for PLLx_P. Valid values are 2 - 31 for all
+        series except L47x/48x for which valid values are 7 or 17.
 
   div-q:
     type: int
     description: |
-        Main PLL division factor for PLL48M1CLK (48 MHz clock).
+        Division factor for PLLx_Q.
     enum:
       - 2
       - 4
@@ -68,11 +67,22 @@ properties:
 
   div-r:
     type: int
-    required: true
     description: |
-        Main PLL division factor for PLLCLK (system clock)
+        Division factor for PLLx_R.
     enum:
       - 2
       - 4
       - 6
       - 8
+
+  post-div-r:
+    type: int
+    description: |
+        Division factor after PLLSAI2_R for LTDC pixel clock. Only available
+        on PLLSAI2 of STM32L4+ series. If available, this property must be
+        provided when PLLSAI2_R is enabled (i.e., if `div-r` is provided).
+    enum:
+      - 2
+      - 4
+      - 8
+      - 16

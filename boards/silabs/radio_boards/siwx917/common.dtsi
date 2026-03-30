@@ -1,0 +1,145 @@
+/*
+ * Copyright (c) 2023 Antmicro
+ * Copyright (c) 2024-2026 Silicon Laboratories Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/siwg917m111mgtba.dtsi>
+#include <zephyr/dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
+#include <zephyr/dt-bindings/adc/silabs-siwx91x-adc.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <freq.h>
+
+/ {
+	chosen {
+		zephyr,bt-hci = &bt_hci0;
+		zephyr,code-partition = &code_partition;
+		zephyr,console = &ulpuart;
+		zephyr,shell-uart = &ulpuart;
+		zephyr,sram = &sram0;
+		zephyr,uart-pipe = &ulpuart;
+	};
+
+	aliases {
+		dht0 = &si7021;
+		led0 = &led0;
+		sw0 = &button0;
+		adc0 = &adc0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&ulpgpio 2 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&uulpgpio 2 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	zephyr,user {
+		io-channels = <&adc0 0>;
+	};
+};
+
+&pinctrl0 {
+	ulpi2c_default: ulpi2c_default {
+		group {
+			pinmux = <ULPI2C_SDA_ULP6>, <ULPI2C_SCL_ULP7>;
+		};
+	};
+
+	ulpuart_default: ulpuart_default {
+		out {
+			pinmux = <ULPUART_TX_ULP11>;
+		};
+
+		in {
+			pinmux = <ULPUART_RX_ULP9>;
+		};
+	};
+
+	adc0_default: adc0_default {
+		group {
+			pinmux = <ADC_TOPGPIO_HP28>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <180000000>;
+};
+
+&ulpuart {
+	pinctrl-0 = <&ulpuart_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&ulpi2c {
+	clock-frequency = <DT_FREQ_K(100)>;
+	pinctrl-0 = <&ulpi2c_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	si7021: si7021@40 {
+		compatible = "silabs,si7006";
+		reg = <0x40>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@202000 {
+			reg = <0x00202000 DT_SIZE_K(2008)>;
+			label = "code_partition";
+		};
+
+		storage_partition: partition@3f8000 {
+			reg = <0x003f8000 DT_SIZE_K(32)>;
+			label = "storage";
+		};
+	};
+};
+
+&sysrtc0 {
+	status = "okay";
+};
+
+&bt_hci0 {
+	status = "okay";
+};
+
+&wifi0 {
+	status = "okay";
+};
+
+&adc0 {
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	silabs,adc-ref-voltage = <3300>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <SIWX91X_ADC_INPUT_HP28>;
+	};
+
+	status = "okay";
+};

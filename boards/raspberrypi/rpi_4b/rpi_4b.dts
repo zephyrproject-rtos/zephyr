@@ -8,9 +8,8 @@
 /dts-v1/;
 
 #include <broadcom/bcm2711.dtsi>
+#include <broadcom/bcm2711-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
-
-#include "rpi_4b-pinctrl.dtsi"
 
 / {
 	model = "Raspberry Pi 4 Model B";

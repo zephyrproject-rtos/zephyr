@@ -541,9 +541,7 @@ static void gpio_b91_irq_connect_4(void)
 /* GPIO driver registration */
 #define GPIO_B91_INIT(n)						    \
 	static const struct gpio_b91_config gpio_b91_config_##n = {	    \
-		.common = {						    \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n) \
-		},							    \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),		    \
 		.gpio_base = DT_INST_REG_ADDR(n),			    \
 		.irq_num = DT_INST_IRQN(n),				    \
 		.irq_priority = DT_INST_IRQ(n, priority),		    \

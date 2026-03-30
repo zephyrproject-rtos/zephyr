@@ -14,7 +14,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/drivers/usb/udc_buf.h>
+#include <zephyr/drivers/usb/usb_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/usb/usb_ch9.h>
 
@@ -38,7 +38,11 @@ struct udc_device_caps {
 	uint32_t hs : 1;
 	/** Controller supports USB remote wakeup */
 	uint32_t rwup : 1;
-	/** Controller performs status OUT stage automatically */
+	/**
+	 * Controller performs Status OUT stage automatically after Data IN.
+	 *
+	 * When set, USB stack will not enqueue Status OUT buffer.
+	 */
 	uint32_t out_ack : 1;
 	/** Controller expects device address to be set before status stage */
 	uint32_t addr_before_status : 1;
@@ -285,12 +289,14 @@ struct udc_data {
 	const void *event_ctx;
 	/** USB device controller status */
 	atomic_t status;
-	/** Internal used Control Sequence Stage */
-	int stage;
-	/** Pointer to buffer containing setup packet */
-	struct net_buf *setup;
 	/** Driver private data */
 	void *priv;
+	/** Last cached setup data (not necessarily last received setup data) */
+	uint8_t setup[8];
+	/** Cached setup data is waiting for USB stack */
+	bool setup_pending;
+	/** Last cached setup data is valid (8 bytes, CRC OK) */
+	bool setup_valid;
 };
 
 /**
@@ -298,7 +304,7 @@ struct udc_data {
  * @defgroup udc_api USB Device Controller
  * @ingroup usb_interfaces
  * @since 3.3
- * @version 0.1.0
+ * @version 0.1.1
  * @{
  */
 
@@ -636,6 +642,26 @@ int udc_ep_clear_halt(const struct device *dev, const uint8_t ep);
 int udc_ep_enqueue(const struct device *dev, struct net_buf *const buf);
 
 /**
+ * @brief Purges control endpoint queues after controller shutdown
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @return -EBUSY controller is not shutdown
+ */
+int udc_purge_queues(const struct device *dev);
+
+/**
+ * @brief Determines if endpoint queue is empty
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] ep     Endpoint address
+ *
+ * @return true if endpoint queue is empty, false otherwise
+ */
+bool udc_ep_queue_is_empty(const struct device *dev, const uint8_t ep);
+
+/**
  * @brief Remove all USB device controller requests from endpoint queue
  *
  * UDC_EVT_EP_REQUEST event will be generated when the driver
@@ -667,6 +693,45 @@ int udc_ep_dequeue(const struct device *dev, const uint8_t ep);
 struct net_buf *udc_ep_buf_alloc(const struct device *dev,
 				 const uint8_t ep,
 				 const size_t size);
+
+/**
+ * @brief Allocate UDC control transfer SETUP buffer
+ *
+ * Allocate a new buffer from common control transfer buffer pool.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ *
+ * @return pointer to allocated request or NULL on error.
+ */
+struct net_buf *udc_ctrl_setup_alloc(const struct device *dev);
+
+/**
+ * @brief Allocate UDC control transfer data stage buffer
+ *
+ * Allocate a new buffer from common control transfer buffer pool.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] ep     Control endpoint address
+ * @param[in] size   Size of the request buffer
+ *
+ * @return pointer to allocated request or NULL on error.
+ */
+struct net_buf *udc_ctrl_data_alloc(const struct device *dev,
+				    const uint8_t ep,
+				    const size_t size);
+
+/**
+ * @brief Allocate UDC control transfer status stage buffer
+ *
+ * Allocate a new buffer from common control transfer buffer pool.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] ep     Control endpoint address
+ *
+ * @return pointer to allocated request or NULL on error.
+ */
+struct net_buf *udc_ctrl_status_alloc(const struct device *dev,
+				      const uint8_t ep);
 
 /**
  * @brief Free UDC request buffer

@@ -23,14 +23,15 @@ static void scmi_mbox_cb(const struct device *mbox,
 
 static int scmi_mbox_send_message(const struct device *transport,
 				  struct scmi_channel *chan,
-				  struct scmi_message *msg)
+				  struct scmi_message *msg,
+				  bool use_polling)
 {
 	struct scmi_mbox_channel *mbox_chan;
 	int ret;
 
 	mbox_chan = chan->data;
 
-	ret = scmi_shmem_write_message(mbox_chan->shmem, msg);
+	ret = scmi_shmem_write_message(mbox_chan->shmem, msg, use_polling);
 	if (ret < 0) {
 		LOG_ERR("failed to write message to shmem: %d", ret);
 		return ret;
@@ -95,11 +96,6 @@ static int scmi_mbox_setup_chan(const struct device *transport,
 	if (ret < 0) {
 		LOG_ERR("failed to enable tx reply dbell");
 	}
-
-	/* enable interrupt-based communication */
-	scmi_shmem_update_flags(mbox_chan->shmem,
-				SCMI_SHMEM_CHAN_FLAG_IRQ_BIT,
-				SCMI_SHMEM_CHAN_FLAG_IRQ_BIT);
 
 	return 0;
 }

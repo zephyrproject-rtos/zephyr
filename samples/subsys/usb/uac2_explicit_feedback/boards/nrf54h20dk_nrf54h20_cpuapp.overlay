@@ -34,37 +34,10 @@ i2s_tx: &tdm130 {
 	status = "okay";
 };
 
-/* PPI channel 0 for TDM130 MAXCNT */
-&dppic132 {
-	compatible = "nordic,nrf-dppic-global";
-	owned-channels = <0>;
-	source-channels = <0>;
-	nonsecure-channels = <0>;
-	status = "okay";
-};
-
 /* PPI channel 1 for GPIOTE used for feedback in edge counter mode */
 &gpiote130 {
 	status = "okay";
 	owned-channels = <1>;
-};
-
-/* GPIOTE130 and TDM130 PPI needs routing to TIMER131 through main APB */
-&dppic130 {
-	compatible = "nordic,nrf-dppic-global";
-	owned-channels = <0 1>;
-	sink-channels = <0 1>;
-	source-channels = <0 1>;
-	nonsecure-channels = <0 1>;
-	status = "okay";
-};
-
-/* TIMER131 PPI channel 2 is used for SOF */
-&dppic133 {
-	compatible = "nordic,nrf-dppic-global";
-	owned-channels = <0 1 2>;
-	sink-channels = <0 1 2>;
-	status = "okay";
 };
 
 &timer131 {

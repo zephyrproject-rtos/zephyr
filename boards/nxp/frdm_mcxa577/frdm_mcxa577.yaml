@@ -17,6 +17,11 @@ supported:
   - gpio
   - uart
   - counter
+  - adc
+  - i2c
+  - spi
   - dma
   - watchdog
+  - flash
+  - netif:eth
 vendor: nxp

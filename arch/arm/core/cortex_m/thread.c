@@ -90,8 +90,6 @@ static void setup_priv_stack(struct k_thread *thread)
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *stack_ptr,
 		     k_thread_entry_t entry, void *p1, void *p2, void *p3)
 {
-	struct __basic_sf *iframe;
-
 #ifdef CONFIG_MPU_STACK_GUARD
 #if defined(CONFIG_USERSPACE)
 	if (z_stack_is_user_capable(stack)) {
@@ -127,19 +125,29 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 #endif
 #endif
 
-	iframe = Z_STACK_PTR_TO_FRAME(struct __basic_sf, stack_ptr);
+	void *entry_wrapper = z_thread_entry;
+
 #if defined(CONFIG_USERSPACE)
 	thread->arch.priv_stack_start = 0;
 	if ((thread->base.user_options & K_USER) != 0) {
+		entry_wrapper = (void *)arch_user_mode_enter;
+	}
+#endif
+
+#ifdef CONFIG_USE_SWITCH
+	thread->switch_handle = arm_m_new_stack((char *)stack, stack_ptr - (char *)stack,
+						entry_wrapper, entry, p1, p2, p3);
+	thread->arch.iciit_pc = 0;
+#else
+	struct __basic_sf *iframe = Z_STACK_PTR_TO_FRAME(struct __basic_sf, stack_ptr);
+
+#if defined(CONFIG_USERSPACE)
+	if ((thread->base.user_options & K_USER) != 0) {
 		setup_priv_stack(thread);
 		iframe = Z_STACK_PTR_TO_FRAME(struct __basic_sf, thread->arch.priv_stack_end);
-		iframe->pc = (uint32_t)arch_user_mode_enter;
-	} else {
-		iframe->pc = (uint32_t)z_thread_entry;
 	}
-#else
-	iframe->pc = (uint32_t)z_thread_entry;
 #endif
+	iframe->pc = (uint32_t)entry_wrapper;
 
 	/* force ARM mode by clearing LSB of address */
 	iframe->pc &= 0xfffffffe;
@@ -151,7 +159,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 	iframe->xpsr = 0x01000000UL; /* clear all, thumb bit is 1, even if RO */
 
 	thread->callee_saved.psp = (uint32_t)iframe;
+#endif
+
+#ifndef CONFIG_USE_SWITCH
 	thread->arch.basepri = 0;
+#endif
 
 #ifdef CONFIG_ARM_PAC_PER_THREAD
 	/* Generate PAC key and save it in thread context to be set later
@@ -394,7 +406,7 @@ void configure_builtin_stack_guard(struct k_thread *thread)
  * @return The lowest allowed stack frame pointer, if error is a
  *         thread stack corruption, otherwise return 0.
  */
-uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp)
+static uint32_t min_stack(const uint32_t fault_addr, const uint32_t psp)
 {
 #if defined(CONFIG_MULTITHREADING)
 	const struct k_thread *thread = _current;
@@ -457,6 +469,17 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 
 	return 0;
 }
+
+uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp)
+{
+	uint32_t sp = min_stack(fault_addr, psp);
+
+	if (sp != 0 && IS_ENABLED(CONFIG_USE_SWITCH)) {
+		sp += arm_m_switch_stack_buffer;
+	}
+	return sp;
+}
+
 #endif /* CONFIG_MPU_STACK_GUARD || CONFIG_USERSPACE */
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
@@ -600,14 +623,25 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 			 "msr   PSP, %1\n" /* __set_PSP(stack_ptr) */
 
 			 "movs  r0,  #0\n" /* arch_irq_unlock(0) */
+#ifdef CONFIG_SLOW_FLASH_DATA
+			 "movw  r3, #:lower16:arch_irq_unlock_outlined\n"
+			 "movt  r3, #:upper16:arch_irq_unlock_outlined\n"
+#else
 			 "ldr   r3, =arch_irq_unlock_outlined\n"
+#endif
 			 "blx   r3\n"
 
 			 "mov   r0, r4\n" /* z_thread_entry(_main, NULL, NULL, NULL) */
 			 "movs  r1, #0\n"
 			 "movs  r2, #0\n"
 			 "movs  r3, #0\n"
+#ifdef CONFIG_SLOW_FLASH_DATA
+			 "movw  r4, #:lower16:z_thread_entry\n"
+			 "movt  r4, #:upper16:z_thread_entry\n"
+#else
 			 "ldr   r4, =z_thread_entry\n"
+#endif
+
 			 /* We don’t intend to return, so there is no need to link. */
 			 "bx    r4\n"
 			 /* Force a literal pool placement for the addresses referenced above */

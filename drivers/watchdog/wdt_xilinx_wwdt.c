@@ -159,7 +159,7 @@ static int wdt_xilinx_wwdt_feed(const struct device *dev, int channel_id)
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	if (channel_id != 0 || !data->timeout_active) {
+	if (channel_id != 0 || !data->timeout_active || !data->wdt_started) {
 		ret = -EINVAL;
 		goto out;
 	}

@@ -16,6 +16,10 @@ LOG_MODULE_REGISTER(wdt_sf32lb, CONFIG_WDT_LOG_LEVEL);
 #define WDT_CR          offsetof(WDT_TypeDef, WDT_CR)
 #define WDT_CCR         offsetof(WDT_TypeDef, WDT_CCR)
 
+#define PMUC_WER        offsetof(PMUC_TypeDef, WER)
+
+#define HPSYS_CFG_SYSCR offsetof(HPSYS_CFG_TypeDef, SYSCR)
+
 #define WDT_CMD_START 0x00000076U
 #define WDT_CMD_STOP  0x00000034U
 
@@ -30,6 +34,9 @@ LOG_MODULE_REGISTER(wdt_sf32lb, CONFIG_WDT_LOG_LEVEL);
 
 struct wdt_sf32lb_config {
 	uintptr_t base;
+	uintptr_t pmuc;
+	uintptr_t cfg;
+	bool reset_all;
 };
 
 struct wdt_sf32lb_data {
@@ -149,12 +156,23 @@ static int wdt_sf32lb_init(const struct device *dev)
 	cr |= WDT_WDT_CR_RESPONSE_MODE1;
 	sys_write32(cr, config->base + WDT_CR);
 
+	sys_set_bit(config->pmuc + PMUC_WER, PMUC_WER_WDT1_Pos);
+
+	if (config->reset_all) {
+		sys_set_bit(config->cfg + HPSYS_CFG_SYSCR, HPSYS_CFG_SYSCR_WDT1_REBOOT_Pos);
+	} else {
+		sys_clear_bit(config->cfg + HPSYS_CFG_SYSCR, HPSYS_CFG_SYSCR_WDT1_REBOOT_Pos);
+	}
+
 	return 0;
 }
 
 #define WDT_SF32LB_INIT(index)                                                                     \
 	static const struct wdt_sf32lb_config wdt_sf32lb_config_##index = {                        \
 		.base = DT_INST_REG_ADDR(index),                                                   \
+		.pmuc = DT_REG_ADDR(DT_INST_PHANDLE(index, sifli_pmuc)),                           \
+		.cfg = DT_REG_ADDR(DT_INST_PHANDLE(index, sifli_cfg)),                             \
+		.reset_all = DT_INST_PROP(index, sifli_reset_all),                                 \
 	};                                                                                         \
 	static struct wdt_sf32lb_data wdt_sf32lb_data_##index;                                     \
 	DEVICE_DT_INST_DEFINE(index, wdt_sf32lb_init, NULL, &wdt_sf32lb_data_##index,              \

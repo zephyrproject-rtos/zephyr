@@ -98,6 +98,32 @@ Supported Features
      |      -      |      -      |        -       |       -       |    OFF    |     ON     |      -      |      -      |
      +-------------+-------------+----------------+---------------+-----------+------------+-------------+-------------+
 
+Dual Core Operation
+*******************
+
+The EK-RA8D2 supports dual core operation with both the Cortex-M85 (CPU0) and Cortex-M33 (CPU1) cores.
+By default, the CM85 core is the boot core and is responsible for initializing the system and
+starting the CM33 core.
+
+Memory Usage
+============
+
+By default, MRAM (Flash) and SRAM are split evenly between the two cores.
+Users can manually change the address and size for MRAM (Flash) and SRAM as follows node:
+
+   - CPU0: &code_mram_cm85, &sram0
+   - CPU1: &code_mram_cm33, &sram1
+
+.. note::
+
+   - MRAM usable range: 0x0200_0000 ... 0x0210_0000 (1 MB)
+   - SRAM usable range: 0x2200_0000 ... 0x221A_0000 (1664 KB)
+
+Dual Core Flashing
+==================
+
+When flashing or debugging dual-core samples, ensure that CONFIG_SOC_RA_ENABLE_START_SECOND_CORE is selected
+for the CM85 image. The CM85 core is responsible for starting the CM33 core in soc_late_init_hook.
 
 Programming and Debugging
 *************************
@@ -123,6 +149,16 @@ see the following message in the terminal:
 
    ***** Booting Zephyr OS v4.2.0-xxx-xxxxxxxxxxxxx *****
    Hello World! ek_ra8d2/r7ka8d2kflcac/cm85
+
+For the CM33 core, you can use the ``--sysbuild`` flow to build a minimal first-core launcher image that
+starts the CM33 core.
+
+.. zephyr-app-commands::
+   :tool: west
+   :zephyr-app: samples/hello_world
+   :board: ek_ra8d2/r7ka8d2kflcac/cm33
+   :goals: build flash
+   :west-args: --sysbuild
 
 Flashing
 ========

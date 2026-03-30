@@ -45,7 +45,7 @@ This framework is commonly used as follow:
         .attr = SMH_REG_ATTR_CACHEABLE,
    };
 
-   shared_multi_heap_add(&cacheable_r0, NULL);
+   shared_multi_heap_add(&cacheable_r1, NULL);
 
    // Add a non-cacheable region
    struct shared_multi_heap_region non_cacheable_r2 = {

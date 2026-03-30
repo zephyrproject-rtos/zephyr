@@ -17,6 +17,7 @@ import sys
 import time
 import traceback
 from collections import deque
+from collections.abc import Iterator
 from math import log10
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
@@ -28,9 +29,14 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from packaging import version
 from twisterlib.cmakecache import CMakeCache
-from twisterlib.environment import canonical_zephyr_base
-from twisterlib.error import BuildError, ConfigurationError, StatusAttributeError
-from twisterlib.hardwaremap import DUT
+from twisterlib.constants import canonical_zephyr_base
+from twisterlib.error import (
+    BuildError,
+    ConfigurationError,
+    NoDeviceAvailableException,
+    StatusAttributeError,
+    TwisterException,
+)
 from twisterlib.log_helper import setup_logging
 from twisterlib.statuses import TwisterStatus
 
@@ -41,7 +47,7 @@ if version.parse(elftools.__version__) < version.parse('0.24'):
 if sys.platform == 'linux':
     from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient
 
-from twisterlib.environment import ZEPHYR_BASE
+from twisterlib.constants import ZEPHYR_BASE
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from domains import Domains
@@ -885,7 +891,6 @@ class ProjectBuilder(FilterBuilder):
         self.filtered_tests = 0
         self.options = env.options
         self.env = env
-        self.duts: list[DUT] = []
 
     @property
     def trace(self) -> bool:
@@ -1113,14 +1118,16 @@ class ProjectBuilder(FilterBuilder):
 
         # Run the generated binary using one of the supported handlers
         elif op == "run":
+            processing_queue_updated = False
             try:
-                logger.debug(f"run test: {self.instance.name}")
-                self.run()
-                logger.debug(f"run status: {self.instance.name} {self.instance.status}")
+                with self.reserve_hardware() as ready_to_run:
+                    if ready_to_run:
+                        logger.debug(f"run test: {self.instance.name}")
+                        self.run()
+                        logger.debug(f"run status: {self.instance.name} {self.instance.status}")
 
                 # to make it work with pickle
                 self.instance.handler.thread = None
-                self.instance.handler.duts = None
 
                 next_op = "coverage" if self.options.coverage else "report"
                 additionals = {
@@ -1135,8 +1142,16 @@ class ProjectBuilder(FilterBuilder):
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
                 additionals = {}
+            except NoDeviceAvailableException:
+                # no device available to run the test,
+                # add the task back to the pipeline to process it later
+                processing_queue.appendleft(message)
+                processing_queue_updated = True
+                # to avoid busy waiting
+                time.sleep(1)
             finally:
-                self._add_to_processing_queue(processing_queue, next_op, additionals)
+                if not processing_queue_updated:
+                    self._add_to_processing_queue(processing_queue, next_op, additionals)
 
         # Run per-instance code coverage
         elif op == "coverage":
@@ -1587,8 +1602,8 @@ class ProjectBuilder(FilterBuilder):
                 if instance.handler.ready and instance.run:
                     more_info = instance.handler.type_str
                     htime = instance.execution_time
-                    if instance.dut:
-                        more_info += f": {instance.dut},"
+                    if instance.hardware_id:
+                        more_info += f": {instance.hardware_id},"
                     if htime:
                         more_info += f" {htime:.3f}s"
                 else:
@@ -1755,9 +1770,6 @@ class ProjectBuilder(FilterBuilder):
             logger.debug(f"Reset instance status from '{instance.status}' to None before run.")
             instance.status = TwisterStatus.NONE
 
-            if instance.handler.type_str == "device":
-                instance.handler.duts = self.duts
-
             if(self.options.seed is not None and instance.platform.name.startswith("native_")):
                 self.parse_generated()
                 if('CONFIG_FAKE_ENTROPY_NATIVE_SIM' in self.defconfig and
@@ -1818,14 +1830,47 @@ class ProjectBuilder(FilterBuilder):
                 instance.metrics["available_ram"] = 0
             instance.metrics["handler_time"] = instance.execution_time
 
+    @contextlib.contextmanager
+    def reserve_hardware(self) -> Iterator[bool]:
+        """Context manager for reserving hardware for a test instance.
+
+        Yields True if the hardware was successfully reserved, False otherwise.
+        The hardware is automatically released when the context is exited.
+        """
+        if self.instance.handler.type_str == "device":
+            hwm = self.env.hwm
+            hardware = None
+            try:
+                device = self.instance.platform.name
+                fixture = self.instance.testsuite.harness_config.get("fixture")
+                hardware = hwm.reserve_dut(device, fixture)
+                compound_hardware = hwm.create_compound_hardware_data(hardware)
+                self.instance.reserved_duts.append(compound_hardware)
+                self.instance.hardware_id = hardware.id
+                yield True
+            except TwisterException as error:
+                self.instance.status = TwisterStatus.FAIL
+                self.instance.reason = str(error)
+                logger.error(self.instance.reason)
+                yield False
+            finally:
+                if hardware:
+                    if self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
+                        hardware.failures_increment()
+                    hwm.release_dut(hardware)
+                    self.instance.reserved_duts = []
+        else:
+            # No hardware reservation needed for non-device handlers
+            yield True
+
+
 class TwisterRunner:
 
-    def __init__(self, instances, suites, env=None) -> None:
+    def __init__(self, instances, suites, env) -> None:
         self.options = env.options
         self.env = env
         self.instances: dict[str, TestInstance] = instances
         self.suites: dict[str, TestSuite] = suites
-        self.duts: list[DUT] = []
         self.jobs = 1
         self.results = None
         self.jobserver = None
@@ -2051,7 +2096,6 @@ class TwisterRunner:
                     continue
 
                 pb = ProjectBuilder(instance, self.env, self.jobserver)
-                pb.duts = self.duts
                 pb.process(processing_queue, processing_ready, task, lock, results)
                 if (
                     self.env.options.quit_on_failure

@@ -16,6 +16,7 @@
 / {
 	chosen {
 		silabs,sleeptimer = &rtcc0;
+		zephyr,crc = &gpcrc;
 		zephyr,entropy = &trng;
 		zephyr,flash-controller = &msc;
 	};
@@ -361,6 +362,11 @@
 			interrupts = <7 2>;
 			status = "disabled";
 
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "silabs,timer-pwm";
 				#pwm-cells = <3>;
@@ -377,6 +383,11 @@
 			interrupt-names = "timer1";
 			interrupts = <8 2>;
 			status = "disabled";
+
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
 
 			pwm {
 				compatible = "silabs,timer-pwm";
@@ -395,6 +406,11 @@
 			interrupts = <9 2>;
 			status = "disabled";
 
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "silabs,timer-pwm";
 				#pwm-cells = <3>;
@@ -412,6 +428,11 @@
 			interrupts = <10 2>;
 			status = "disabled";
 
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "silabs,timer-pwm";
 				#pwm-cells = <3>;
@@ -428,6 +449,11 @@
 			interrupt-names = "timer4";
 			interrupts = <11 2>;
 			status = "disabled";
+
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
 
 			pwm {
 				compatible = "silabs,timer-pwm";
@@ -455,7 +481,7 @@
 		};
 
 		burtc0: burtc@50064000 {
-			compatible = "silabs,gecko-burtc";
+			compatible = "silabs,burtc-counter";
 			reg = <0x50064000 0x4000>;
 			clocks = <&cmu CLOCK_BURTC CLOCK_BRANCH_EM4GRPACLK>;
 			interrupt-names = "burtc";
@@ -480,6 +506,13 @@
 			reg = <0x50080000 0x80>;
 			clocks = <&cmu CLOCK_BURAM CLOCK_BRANCH_INVALID>;
 			status = "disabled";
+		};
+
+		gpcrc: gpcrc@50088000 {
+			compatible = "silabs,gpcrc";
+			reg = <0x50088000 0x4000>;
+			clocks = <&cmu CLOCK_GPCRC0 CLOCK_BRANCH_PCLK>;
+			status = "okay";
 		};
 
 		dcdc: dcdc@50094000 {

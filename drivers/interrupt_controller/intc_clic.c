@@ -11,6 +11,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/riscv/csr.h>
+#include <zephyr/arch/riscv/icsr.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
 #include "intc_clic.h"
@@ -117,15 +118,16 @@ static ALWAYS_INLINE uint8_t read_clic8(const struct device *dev, uint32_t offse
  */
 void riscv_clic_irq_enable(uint32_t irq)
 {
-	if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
-		const struct device *dev = DEVICE_DT_INST_GET(0);
-		union CLICINTIE clicintie = {.b = {.IE = 0x1}};
+#ifdef CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	union CLICINTIE clicintie = {.b = {.IE = 0x1}};
 
-		write_clic8(dev, CLIC_INTIE(irq), clicintie.w);
-	} else {
-		csr_write(CSR_MISELECT, CLIC_INTIE(irq));
-		csr_set(CSR_MIREG2, BIT(irq % 32));
-	}
+	write_clic8(dev, CLIC_INTIE(irq), clicintie.w);
+#elif CONFIG_RISCV_ISA_EXT_SMCSRIND
+	micsr2_set(CLIC_INTIE(irq), BIT(irq % 32));
+#else
+	#error "CLIC platforms must support either memory-mapped or SMCSRIND access"
+#endif
 }
 
 /**
@@ -133,15 +135,16 @@ void riscv_clic_irq_enable(uint32_t irq)
  */
 void riscv_clic_irq_disable(uint32_t irq)
 {
-	if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
-		const struct device *dev = DEVICE_DT_INST_GET(0);
-		union CLICINTIE clicintie = {.b = {.IE = 0x0}};
+#ifdef CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	union CLICINTIE clicintie = {.b = {.IE = 0x0}};
 
-		write_clic8(dev, CLIC_INTIE(irq), clicintie.w);
-	} else {
-		csr_write(CSR_MISELECT, CLIC_INTIE(irq));
-		csr_clear(CSR_MIREG2, BIT(irq % 32));
-	}
+	write_clic8(dev, CLIC_INTIE(irq), clicintie.w);
+#elif CONFIG_RISCV_ISA_EXT_SMCSRIND
+	micsr2_clear(CLIC_INTIE(irq), BIT(irq % 32));
+#else
+	#error "CLIC platforms must support either memory-mapped or SMCSRIND access"
+#endif
 }
 
 /**
@@ -151,15 +154,16 @@ int riscv_clic_irq_is_enabled(uint32_t irq)
 {
 	int is_enabled = 0;
 
-	if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
-		const struct device *dev = DEVICE_DT_INST_GET(0);
-		union CLICINTIE clicintie = {.w = read_clic8(dev, CLIC_INTIE(irq))};
+#ifdef CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	union CLICINTIE clicintie = {.w = read_clic8(dev, CLIC_INTIE(irq))};
 
-		is_enabled = clicintie.b.IE;
-	} else {
-		csr_write(CSR_MISELECT, CLIC_INTIE(irq));
-		is_enabled = csr_read(CSR_MIREG2) & BIT(irq % 32);
-	}
+	is_enabled = clicintie.b.IE;
+#elif CONFIG_RISCV_ISA_EXT_SMCSRIND
+	is_enabled = micsr2_read(CLIC_INTIE(irq)) & BIT(irq % 32);
+#else
+	#error "CLIC platforms must support either memory-mapped or SMCSRIND access"
+#endif
 
 	return !!is_enabled;
 }
@@ -171,6 +175,9 @@ void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
 {
 	const struct device *dev = DEVICE_DT_INST_GET(0);
 	const struct clic_data *data = dev->data;
+#ifdef CONFIG_RISCV_ISA_EXT_SMCSRIND
+	uint32_t bit_offset = 8 * (irq % 4);
+#endif
 
 	/*
 	 * Set the interrupt level and the interrupt priority.
@@ -191,32 +198,34 @@ void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
 			  (MIN(pri, max_level) << (8U - data->nlbits)) |
 			  BIT_MASK(8U - data->intctlbits);
 
-	if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
-		write_clic8(dev, CLIC_INTCTRL(irq), intctrl);
-	} else {
-		uint32_t clicintctl, bit_offset = 8 * (irq % 4);
+#ifdef CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS
+	write_clic8(dev, CLIC_INTCTRL(irq), intctrl);
+#elif CONFIG_RISCV_ISA_EXT_SMCSRIND
+	uint32_t clicintctl;
 
-		csr_write(CSR_MISELECT, CLIC_INTCTRL(irq));
-		clicintctl = csr_read(CSR_MIREG);
-		clicintctl &= ~GENMASK(bit_offset + 7, bit_offset);
-		clicintctl |= intctrl << bit_offset;
-		csr_write(CSR_MIREG, clicintctl);
-	}
+	clicintctl = micsr_read(CLIC_INTCTRL(irq));
+	clicintctl &= ~GENMASK(bit_offset + 7, bit_offset);
+	clicintctl |= intctrl << bit_offset;
+	micsr_write(CLIC_INTCTRL(irq), clicintctl);
+#else
+	#error "CLIC platforms must support either memory-mapped or SMCSRIND access"
+#endif
 
 	/* Set the IRQ operates in machine mode, non-vectoring and the trigger type. */
 	union CLICINTATTR clicattr = {.b = {.mode = 0x3, .shv = 0x0, .trg = flags & BIT_MASK(3)}};
 
-	if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
-		write_clic8(dev, CLIC_INTATTR(irq), clicattr.w);
-	} else {
-		uint32_t clicintattr, bit_offset = 8 * (irq % 4);
+#ifdef CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS
+	write_clic8(dev, CLIC_INTATTR(irq), clicattr.w);
+#elif CONFIG_RISCV_ISA_EXT_SMCSRIND
+	uint32_t clicintattr;
 
-		csr_write(CSR_MISELECT, CLIC_INTATTR(irq));
-		clicintattr = csr_read(CSR_MIREG2);
-		clicintattr &= ~GENMASK(bit_offset + 7, bit_offset);
-		clicintattr |= clicattr.w << bit_offset;
-		csr_write(CSR_MIREG2, clicintattr);
-	}
+	clicintattr = micsr2_read(CLIC_INTATTR(irq));
+	clicintattr &= ~GENMASK(bit_offset + 7, bit_offset);
+	clicintattr |= clicattr.w << bit_offset;
+	micsr2_write(CLIC_INTATTR(irq), clicintattr);
+#else
+	#error "CLIC platforms must support either memory-mapped or SMCSRIND access"
+#endif
 }
 
 /**
@@ -224,22 +233,24 @@ void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
  */
 void riscv_clic_irq_vector_set(uint32_t irq)
 {
-	if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
-		const struct device *dev = DEVICE_DT_INST_GET(0);
-		union CLICINTATTR clicattr = {.w = read_clic8(dev, CLIC_INTATTR(irq))};
+#ifdef CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	union CLICINTATTR clicattr = {.w = read_clic8(dev, CLIC_INTATTR(irq))};
 
-		/* Set Selective Hardware Vectoring. */
-		clicattr.b.shv = 1;
-		write_clic8(dev, CLIC_INTATTR(irq), clicattr.w);
-	} else {
-		uint32_t clicintattr, bit_offset = 8 * (irq % 4);
-		union CLICINTATTR clicattr = {.b = {.shv = 1}};
+	/* Set Selective Hardware Vectoring. */
+	clicattr.b.shv = 1;
+	write_clic8(dev, CLIC_INTATTR(irq), clicattr.w);
+#elif CONFIG_RISCV_ISA_EXT_SMCSRIND
+	uint32_t clicintattr;
+	union CLICINTATTR clicattr = {.b = {.shv = 1}};
+	uint32_t bit_offset = 8 * (irq % 4);
 
-		csr_write(CSR_MISELECT, CLIC_INTATTR(irq));
-		clicintattr = csr_read(CSR_MIREG2);
-		clicintattr |= clicattr.w << bit_offset;
-		csr_write(CSR_MIREG2, clicintattr);
-	}
+	clicintattr = micsr2_read(CLIC_INTATTR(irq));
+	clicintattr |= clicattr.w << bit_offset;
+	micsr2_write(CLIC_INTATTR(irq), clicintattr);
+#else
+	#error "CLIC platforms must support either memory-mapped or SMCSRIND access"
+#endif
 }
 
 /**
@@ -247,15 +258,16 @@ void riscv_clic_irq_vector_set(uint32_t irq)
  */
 void riscv_clic_irq_set_pending(uint32_t irq)
 {
-	if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
-		const struct device *dev = DEVICE_DT_INST_GET(0);
-		union CLICINTIP clicintip = {.b = {.IP = 0x1}};
+#ifdef CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	union CLICINTIP clicintip = {.b = {.IP = 0x1}};
 
-		write_clic8(dev, CLIC_INTIP(irq), clicintip.w);
-	} else {
-		csr_write(CSR_MISELECT, CLIC_INTIP(irq));
-		csr_set(CSR_MIREG, BIT(irq % 32));
-	}
+	write_clic8(dev, CLIC_INTIP(irq), clicintip.w);
+#elif CONFIG_RISCV_ISA_EXT_SMCSRIND
+	micsr_set(CLIC_INTIP(irq), BIT(irq % 32));
+#else
+	#error "CLIC platforms must support either memory-mapped or SMCSRIND access"
+#endif
 }
 
 static int clic_init(const struct device *dev)
@@ -282,41 +294,42 @@ static int clic_init(const struct device *dev)
 	}
 
 	if (IS_ENABLED(CONFIG_CLIC_SMCLICCONFIG_EXT)) {
-		if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
-			/* Configure the number of bits assigned to interrupt levels. */
-			union CLICCFG cliccfg = {.qw = read_clic32(dev, CLIC_CFG)};
+#ifdef CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS
+		/* Configure the number of bits assigned to interrupt levels. */
+		union CLICCFG cliccfg = {.qw = read_clic32(dev, CLIC_CFG)};
 
-			cliccfg.w.nlbits = data->nlbits;
-			write_clic32(dev, CLIC_CFG, cliccfg.qw);
-		} else {
-			csr_write(CSR_MISELECT, CLIC_CFG);
-			union CLICCFG cliccfg = {.qw = csr_read(CSR_MIREG)};
+		cliccfg.w.nlbits = data->nlbits;
+		write_clic32(dev, CLIC_CFG, cliccfg.qw);
+#elif CONFIG_RISCV_ISA_EXT_SMCSRIND
+		union CLICCFG cliccfg = {.qw = micsr_read(CLIC_CFG)};
 
-			cliccfg.w.nlbits = data->nlbits;
-			csr_write(CSR_MIREG, cliccfg.qw);
-		}
+		cliccfg.w.nlbits = data->nlbits;
+		micsr_write(CLIC_CFG, cliccfg.qw);
+#else
+		#error "CLIC platforms must support either memory-mapped or SMCSRIND access"
+#endif
 	}
 
-	if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
-		/* Reset all interrupt control register. */
-		for (int i = 0; i < CONFIG_NUM_IRQS; i++) {
-			write_clic32(dev, CLIC_CTRL(i), 0);
-		}
-	} else {
-		/* Reset all clicintip, clicintie register. */
-		for (int i = 0; i < CONFIG_NUM_IRQS; i += 32) {
-			csr_write(CSR_MISELECT, CLIC_INTIP(i));
-			csr_write(CSR_MIREG, 0);
-			csr_write(CSR_MIREG2, 0);
-		}
-
-		/* Reset all clicintctl, clicintattr register. */
-		for (int i = 0; i < CONFIG_NUM_IRQS; i += 4) {
-			csr_write(CSR_MISELECT, CLIC_INTCTRL(i));
-			csr_write(CSR_MIREG, 0);
-			csr_write(CSR_MIREG2, 0);
-		}
+#ifdef CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS
+	/* Reset all interrupt control register. */
+	for (int i = 0; i < CONFIG_NUM_IRQS; i++) {
+		write_clic32(dev, CLIC_CTRL(i), 0);
 	}
+#elif CONFIG_RISCV_ISA_EXT_SMCSRIND
+	/* Reset all clicintip, clicintie register. */
+	for (int i = 0; i < CONFIG_NUM_IRQS; i += 32) {
+		micsr_write(CLIC_INTIP(i), 0);
+		micsr2_write(CLIC_INTIE(i), 0);
+	}
+
+	/* Reset all clicintctl, clicintattr register. */
+	for (int i = 0; i < CONFIG_NUM_IRQS; i += 4) {
+		micsr_write(CLIC_INTCTRL(i), 0);
+		micsr2_write(CLIC_INTATTR(i), 0);
+	}
+#else
+	#error "CLIC platforms must support either memory-mapped or SMCSRIND access"
+#endif
 
 	return 0;
 }

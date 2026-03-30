@@ -42,14 +42,6 @@ static inline uint32_t rotl(const uint32_t x, int k)
 	return (x << k) | (x >> (32 - k));
 }
 
-static int xoshiro128_initialize(void)
-{
-	if (!device_is_ready(entropy_driver)) {
-		return -ENODEV;
-	}
-	return 0;
-}
-
 static void xoshiro128_init_state(void)
 {
 	int rc;
@@ -112,9 +104,3 @@ void z_impl_sys_rand_get(void *dst, size_t outlen)
 		memcpy(unaligned, &ret, rem);
 	}
 }
-
-/* In-tree entropy drivers will initialize in PRE_KERNEL_1; ensure that they're
- * initialized properly before initializing ourselves.
- */
-SYS_INIT(xoshiro128_initialize, PRE_KERNEL_2,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

@@ -26,4 +26,12 @@ void mtk_adsp_mbox_set_handler(const struct device *mbox, uint32_t chan,
 /* Signal an interrupt on the specified channel for the other side */
 void mtk_adsp_mbox_signal(const struct device *mbox, uint32_t chan);
 
+typedef void (*mtk_adsp_ipi_handler_t)(const struct device *ipi, void *arg);
+
+void mtk_adsp_ipi_set_handler(const struct device *ipi, uint32_t chan,
+			       mtk_adsp_ipi_handler_t handler, void *arg);
+
+/* Signal an interrupt on the specified channel for the other side */
+void mtk_adsp_ipi_signal(const struct device *ipi, uint32_t chan);
+
 #endif /* ZEPHYR_SOC_MTK_SOC_H */

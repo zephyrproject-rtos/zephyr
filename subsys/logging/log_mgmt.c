@@ -354,8 +354,15 @@ void z_log_runtime_filters_init(void)
 	 */
 	for (int i = 0; i < z_log_sources_count(); i++) {
 		uint32_t *filters = z_log_dynamic_filters_get(i);
-		uint8_t level = log_compiled_level_get(Z_LOG_LOCAL_DOMAIN_ID, i);
+		uint8_t level;
 
+#ifdef CONFIG_LOG_RUNTIME_DEFAULT_LEVEL
+		/* Use configured runtime default level for initial filter */
+		level = CONFIG_LOG_RUNTIME_DEFAULT_LEVEL;
+#else
+		/* Fall back to compile-time level */
+		level = log_compiled_level_get(Z_LOG_LOCAL_DOMAIN_ID, i);
+#endif
 		level = MAX(level, CONFIG_LOG_OVERRIDE_LEVEL);
 		LOG_FILTER_SLOT_SET(filters,
 				    LOG_FILTER_AGGR_SLOT_IDX,

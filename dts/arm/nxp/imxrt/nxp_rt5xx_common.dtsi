@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,7 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
+			clock-frequency = <DT_FREQ_M(198)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			cpu-power-states = <&idle &suspend>;
@@ -120,10 +121,12 @@
 
 	flexspi: spi@134000 {
 		reg = <0x134000 0x1000>, <0x18000000 DT_SIZE_M(128)>;
+		reg-names = "reg_base", "ahb";
 	};
 
 	flexspi2: spi@13c000 {
 		reg = <0x13c000 0x1000>, <0x38000000 DT_SIZE_M(128)>;
+		reg-names = "reg_base", "ahb";
 	};
 
 	clkctl0: clkctl@1000 {
@@ -536,6 +539,7 @@
 	wwdt0: watchdog@e000 {
 		compatible = "nxp,lpc-wwdt";
 		reg = <0xe000 0x1000>;
+		clocks = <&clkctl0 MCUX_WWDT0_CLK>;
 		interrupts = <0 0>;
 		status = "disabled";
 		clk-divider = <1>;
@@ -544,6 +548,7 @@
 	wwdt1: watchdog@2e000 {
 		compatible = "nxp,lpc-wwdt";
 		reg = <0x2e000 0x1000>;
+		clocks = <&clkctl0 MCUX_WWDT1_CLK>;
 		interrupts = <52 0>;
 		status = "disabled";
 		clk-divider = <1>;

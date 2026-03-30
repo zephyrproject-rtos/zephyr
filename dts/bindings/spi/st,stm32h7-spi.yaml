@@ -32,3 +32,13 @@ properties:
   fifo-enable:
     type: boolean
     description: Enable the SPI FIFO usage for performance improvement.
+
+  fifo-size:
+    type: int
+    required: true
+    description: Size of the Tx and Rx FIFOs (in bytes).
+
+  fifo-max-transfer-size:
+    type: int
+    required: true
+    description: Maximal transfer size (in bytes) when FIFO is used.

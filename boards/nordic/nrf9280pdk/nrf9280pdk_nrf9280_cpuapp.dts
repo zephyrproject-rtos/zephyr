@@ -227,7 +227,8 @@ slot1_partition: &cpuapp_slot1_partition {
 &grtc {
 	status = "okay";
 	child-owned-channels = <5 6>;
-	nonsecure-channels = <5 6>;
+	/* Workaround for a GRTC related issue with SoC1.1, set channel 4 to nonsecure. */
+	nonsecure-channels = <4 5 6>;
 	owned-channels = <4 5 6>;
 };
 

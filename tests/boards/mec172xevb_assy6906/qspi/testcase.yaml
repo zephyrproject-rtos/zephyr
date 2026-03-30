@@ -4,4 +4,3 @@ tests:
     tags:
       - drivers
       - spi
-      - qspi

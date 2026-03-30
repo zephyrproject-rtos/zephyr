@@ -49,17 +49,23 @@ extern "C" {
 #define BIT64(_n) (1ULL << (_n))
 
 /**
- * @brief Set or clear a bit depending on a boolean value
+ * @brief Set or clear a bit depending on a boolean value in an unsigned integer
  *
- * The argument @p var is a variable whose value is written to as a
- * side effect.
+ * The argument @p var is a variable whose value is written to as a side effect.
  *
  * @param var Variable to be altered
  * @param bit Bit number
  * @param set if 0, clears @p bit in @p var; any other value sets @p bit
  */
-#define WRITE_BIT(var, bit, set) \
-	((var) = (set) ? ((var) | BIT(bit)) : ((var) & ~BIT(bit)))
+#define WRITE_BIT(var, bit, set)                                                                   \
+	do {                                                                                       \
+		__typeof__(var) __mask = ((__typeof__(var))1U << (bit));                           \
+		if (set) {                                                                         \
+			(var) |= __mask;                                                           \
+		} else {                                                                           \
+			(var) &= ~__mask;                                                          \
+		}                                                                                  \
+	} while (0)
 
 /**
  * @brief Bit mask with bits 0 through <tt>n-1</tt> (inclusive) set,

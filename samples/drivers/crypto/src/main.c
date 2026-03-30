@@ -23,6 +23,8 @@ LOG_MODULE_REGISTER(main);
 #define CRYPTO_DEV_COMPAT st_stm32_cryp
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
 #define CRYPTO_DEV_COMPAT st_stm32_aes
+#elif DT_HAS_COMPAT_STATUS_OKAY(microchip_aes_g1)
+#define CRYPTO_DEV_COMPAT microchip_aes_g1
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_dcp)
 #define CRYPTO_DEV_COMPAT nxp_mcux_dcp
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_s32_crypto_hse_mu)
@@ -37,6 +39,10 @@ LOG_MODULE_REGISTER(main);
 #define CRYPTO_DEV_COMPAT silabs_si32_aes
 #elif CONFIG_CRYPTO_ESP32_AES
 #define CRYPTO_DEV_COMPAT espressif_esp32_aes
+#elif DT_HAS_COMPAT_STATUS_OKAY(sifli_sf32lb_crypto)
+#define CRYPTO_DEV_COMPAT sifli_sf32lb_crypto
+#elif DT_HAS_COMPAT_STATUS_OKAY(bflb_sec_eng_aes)
+#define CRYPTO_DEV_COMPAT bflb_sec_eng_aes
 #else
 #error "You need to enable one crypto device"
 #endif

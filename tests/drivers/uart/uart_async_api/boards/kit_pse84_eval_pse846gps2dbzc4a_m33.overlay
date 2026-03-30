@@ -33,7 +33,5 @@ dut: &scb5 {
 
 &peri0_group1_16bit_1 {
 	status = "okay";
-	resource-type = <IFX_RSC_SCB>;
-	resource-instance = <5>;
 	clock-div = <109>;
 };

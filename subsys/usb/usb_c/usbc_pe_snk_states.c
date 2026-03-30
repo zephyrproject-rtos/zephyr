@@ -78,9 +78,13 @@ void pe_snk_startup_entry(void *obj)
 	/* Set power role to Sink */
 	pe->power_role = TC_ROLE_SINK;
 
+	/* Notify DPM of power role */
+	policy_notify(dev, POWER_ROLE_IS_SINK);
+
 	/* Invalidate explicit contract */
 	atomic_clear_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT);
 
+	/* Inform Device Policy Manager that PD is not connected */
 	policy_notify(dev, NOT_PD_CONNECTED);
 }
 
@@ -241,8 +245,6 @@ void pe_snk_select_capability_entry(void *obj)
 
 	/* Send Request */
 	pe_send_request_msg(dev, rdo);
-	/* Inform Device Policy Manager that we are PD Connected */
-	policy_notify(dev, PD_CONNECTED);
 }
 
 /**
@@ -294,8 +296,6 @@ enum smf_state_result pe_snk_select_capability_run(void *obj)
 		 */
 		/* Only look at control messages */
 		if (received_control_message(dev, header, PD_CTRL_ACCEPT)) {
-			/* explicit contract is now in place */
-			atomic_set_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT);
 			pe_set_state(dev, PE_SNK_TRANSITION_SINK);
 		} else if (received_control_message(dev, header, PD_CTRL_REJECT) ||
 			   received_control_message(dev, header, PD_CTRL_WAIT)) {
@@ -375,6 +375,14 @@ enum smf_state_result pe_snk_transition_sink_run(void *obj)
 			 * the Power Supply
 			 */
 			policy_notify(dev, TRANSITION_PS);
+			/*
+			 * Only notify DPM PD_CONNECTED if this is the first contract
+			 * and not a renegotiation.
+			 */
+			if (!atomic_test_and_set_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT)) {
+				/* Inform Device Policy Manager that PD is connected */
+				policy_notify(dev, PD_CONNECTED);
+			}
 			pe_set_state(dev, PE_SNK_READY);
 		} else {
 			/* Protocol Error */

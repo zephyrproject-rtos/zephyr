@@ -358,7 +358,7 @@ class Binding:
 
                     if elem:
                         # We've popped out all the valid keys.
-                        _err(f"'include:' in {binding_path} should not have "
+                        _err(f"'include:' in '{binding_path}' should not have "
                              f"these unexpected contents: {elem}")
 
                     _check_include_dict(name, allowlist, blocklist,
@@ -370,13 +370,13 @@ class Binding:
                                        child_filter, binding_path)
                     _merge_props(merged, contents, None, binding_path, False)
                 else:
-                    _err(f"all elements in 'include:' in {binding_path} "
+                    _err(f"all elements in 'include:' in '{binding_path}' "
                          "should be either strings or maps with a 'name' key "
                          "and optional 'property-allowlist' or "
                          f"'property-blocklist' keys, but got: {elem}")
         else:
             # Invalid item.
-            _err(f"'include:' in {binding_path} "
+            _err(f"'include:' in '{binding_path}' "
                  f"should be a string or list, but has type {type(include)}")
 
         # Next, merge the merged included files into 'raw'. Error out if
@@ -591,6 +591,7 @@ class PropertySpec:
         self.binding: Binding = binding
         self.name: str = name
         self._raw: dict[str, Any] = self.binding.raw["properties"][name]
+        self._check_special_properties()
 
     def __repr__(self) -> str:
         return f"<PropertySpec {self.name} type '{self.type}'>"
@@ -669,6 +670,23 @@ class PropertySpec:
     def specifier_space(self) -> Optional[str]:
         "See the class docstring"
         return self._raw.get("specifier-space")
+
+    def _check_special_properties(self):
+        # Add checks for properties which have special meaning
+        # according to the specification.
+        def invalid_default(prop, default, spec):
+            _err(f"invalid default value '{default}' specified for property '{prop}' "
+                 f"in binding {self.binding.path}; this property's default behavior is "
+                 f"defined in DT Specification §{spec} and a default in a binding is invalid")
+
+        if self.name == "status" and self.default is not None:
+            invalid_default("status", self.default, "2.3.4")
+
+        if self.name == "#address-cells" and self.default is not None:
+            invalid_default("#address-cells", self.default, "2.3.5")
+
+        if self.name == "#size-cells" and self.default is not None:
+            invalid_default("#size-cells", self.default, "2.3.5")
 
 PropertyValType = Union[int, str,
                         list[int], list[str],
@@ -1770,7 +1788,7 @@ class Node:
         if prop and deprecated:
             msg = (
                 f"'{name}' is marked as deprecated in 'properties:' "
-                f"in {binding_path} for node {node.path}."
+                f"in '{binding_path}' for node {node.path}."
             )
             if err_on_deprecated:
                 _err(msg)
@@ -1781,7 +1799,7 @@ class Node:
             if required and self.status == "okay":
                 _err(
                     f"'{name}' is marked as required in 'properties:' in "
-                    f"{binding_path}, but does not appear in {node!r}"
+                    f"'{binding_path}', but does not appear in {node!r}"
                 )
 
             if default is not None:
@@ -1798,7 +1816,7 @@ class Node:
         if prop_type == "boolean":
             if prop.type != Type.EMPTY:
                 _err(f"'{name}' in {node!r} is defined with 'type: boolean' "
-                     f"in {binding_path}, but is assigned a value ('{prop}') "
+                     f"in '{binding_path}', but is assigned a value ('{prop}') "
                      f"instead of being empty ('{name};')")
             return True
 
@@ -2052,15 +2070,19 @@ class Node:
         # unspecified.
 
         if not specifier_space:
-            if prop.name.endswith("gpios"):
-                # There's some slight special-casing for *-gpios properties in that
-                # e.g. foo-gpios still maps to #gpio-cells rather than
-                # #foo-gpio-cells
-                specifier_space = "gpio"
-            else:
-                # Strip -s. We've already checked that property names end in -s
-                # if there is no specifier space in _check_prop_by_type().
-                specifier_space = prop.name[:-1]
+            specifier_space_groups = {"gpio", "io-channel"}
+            for group in specifier_space_groups:
+                if prop.name.endswith(group + 's'):
+                    # There's some slight special-casing for some properties in that
+                    # e.g. foo-gpios and bar-io-channels still map to #gpio-cells and
+                    # #io-channels rather than #foo-gpio-cells and bar-io-channels
+                    # respectively.
+                    specifier_space = group
+
+        if not specifier_space:
+            # Strip -s. We've already checked that property names end in -s
+            # if there is no specifier space in _check_prop_by_type().
+            specifier_space = prop.name[:-1]
 
         res: list[Optional[ControllerAndData]] = []
 
@@ -2384,6 +2406,22 @@ class EDT:
         # 'phandles', or 'phandle-array' property values.
         for prop in props_node.props.values():
             if prop.type == 'phandle':
+                # According to the DT spec, a property named 'phy-handle' is required when
+                # the Ethernet device is connected a physical layer device (PHY).
+                # But the 'phy-handle' property can point to a child node of the Ethernet device,
+                # so we need to check for that and not add a dependency in that case, otherwise
+                # we'll get a cycle in the graph.
+                if prop.name == "phy-handle":
+                    def _is_child(parent_node: Node, child_node: Optional[Node]) -> bool:
+                        if child_node is None:
+                            return False
+                        if parent_node is child_node:
+                            return True
+                        return _is_child(parent_node, child_node.parent)
+                    if TYPE_CHECKING:
+                        assert isinstance(prop.val, Node)
+                    if _is_child(props_node, prop.val):
+                        continue
                 self._graph.add_edge(root_node, prop.val)
             elif prop.type == 'phandles':
                 if TYPE_CHECKING:
@@ -2738,7 +2776,7 @@ def _binding_paths(bindings_dirs: list[str]) -> list[str]:
     # Returns a list with the paths to all bindings (.yaml files) in
     # 'bindings_dirs'
 
-    return [os.path.join(root, filename)
+    return [os.path.normpath(os.path.join(root, filename))
             for bindings_dir in bindings_dirs
             for root, _, filenames in os.walk(bindings_dir)
             for filename in filenames
@@ -2761,11 +2799,11 @@ def _check_include_dict(name: Optional[str],
     # child-binding filter 'child_filter' has valid structure.
 
     if name is None:
-        _err(f"'include:' element in {binding_path} "
+        _err(f"'include:' element in '{binding_path}' "
              "should have a 'name' key")
 
     if allowlist is not None and blocklist is not None:
-        _err(f"'include:' of file '{name}' in {binding_path} "
+        _err(f"'include:' of file '{name}' in '{binding_path}' "
              "should not specify both 'property-allowlist:' "
              "and 'property-blocklist:'")
 
@@ -2780,12 +2818,12 @@ def _check_include_dict(name: Optional[str],
 
         if child_copy:
             # We've popped out all the valid keys.
-            _err(f"'include:' of file '{name}' in {binding_path} "
+            _err(f"'include:' of file '{name}' in '{binding_path}' "
                  "should not have these unexpected contents in a "
                  f"'child-binding': {child_copy}")
 
         if child_allowlist is not None and child_blocklist is not None:
-            _err(f"'include:' of file '{name}' in {binding_path} "
+            _err(f"'include:' of file '{name}' in '{binding_path}' "
                  "should not specify both 'property-allowlist:' and "
                  "'property-blocklist:' in a 'child-binding:'")
 
@@ -2846,7 +2884,7 @@ def _check_prop_filter(name: str, value: Optional[list[str]],
         return
 
     if not isinstance(value, list):
-        _err(f"'{name}' value {value} in {binding_path} should be a list")
+        _err(f"'{name}' value {value} in '{binding_path}' should be a list")
 
 
 def _merge_props(to_dict: dict,
@@ -2880,7 +2918,7 @@ def _merge_props(to_dict: dict,
         elif prop not in to_dict:
             to_dict[prop] = from_dict[prop]
         elif _bad_overwrite(to_dict, from_dict, prop, check_required):
-            _err(f"{binding_path} (in '{parent}'): '{prop}' "
+            _err(f"'{binding_path}' (in '{parent}'): '{prop}' "
                  f"from included file overwritten ('{from_dict[prop]}' "
                  f"replaced with '{to_dict[prop]}')")
         elif prop == "required":
@@ -2889,7 +2927,7 @@ def _merge_props(to_dict: dict,
             if not (isinstance(from_dict["required"], bool) and
                     isinstance(to_dict["required"], bool)):
                 _err(f"malformed 'required:' setting for '{parent}' in "
-                     f"'properties' in {binding_path}, expected true/false")
+                     f"'properties' in '{binding_path}', expected true/false")
 
             # 'required: true' takes precedence
             to_dict["required"] = to_dict["required"] or from_dict["required"]
@@ -2942,14 +2980,14 @@ def _check_prop_by_type(prop_name: str,
 
     if prop_type is None:
         _err(f"missing 'type:' for '{prop_name}' in 'properties' in "
-             f"{binding_path}")
+             f"'{binding_path}'")
 
     ok_types = {"boolean", "int", "array", "uint8-array", "string",
                 "string-array", "phandle", "phandles", "phandle-array",
                 "path", "compound"}
 
     if prop_type not in ok_types:
-        _err(f"'{prop_name}' in 'properties:' in {binding_path} "
+        _err(f"'{prop_name}' in 'properties:' in '{binding_path}' "
              f"has unknown type '{prop_type}', expected one of " +
              ", ".join(ok_types))
 
@@ -2960,7 +2998,7 @@ def _check_prop_by_type(prop_name: str,
     if (prop_type == "phandle-array"
         and not prop_name.endswith("s")
         and "specifier-space" not in options):
-        _err(f"'{prop_name}' in 'properties:' in {binding_path} "
+        _err(f"'{prop_name}' in 'properties:' in '{binding_path}' "
              f"has type 'phandle-array' and its name does not end in 's', "
              f"but no 'specifier-space' was provided.")
 
@@ -2968,7 +3006,7 @@ def _check_prop_by_type(prop_name: str,
     # for PropertySpec.const.
     const_types = {"int", "array", "uint8-array", "string", "string-array"}
     if const and prop_type not in const_types:
-        _err(f"const in {binding_path} for property '{prop_name}' "
+        _err(f"const in '{binding_path}' for property '{prop_name}' "
              f"has type '{prop_type}', expected one of " +
              ", ".join(const_types))
 
@@ -2981,7 +3019,7 @@ def _check_prop_by_type(prop_name: str,
                      "phandle-array", "path"}:
         _err("'default:' can't be combined with "
              f"'type: {prop_type}' for '{prop_name}' in "
-             f"'properties:' in {binding_path}")
+             f"'properties:' in '{binding_path}'")
 
     def ok_default() -> bool:
         # Returns True if 'default' is an okay default for the property's type.
@@ -3011,7 +3049,7 @@ def _check_prop_by_type(prop_name: str,
 
     if not ok_default():
         _err(f"'default: {default}' is invalid for '{prop_name}' "
-             f"in 'properties:' in {binding_path}, "
+             f"in 'properties:' in '{binding_path}', "
              f"which has type {prop_type}")
 
 

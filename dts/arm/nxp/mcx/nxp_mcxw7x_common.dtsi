@@ -23,6 +23,7 @@
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,entropy = &trng;
 		zephyr,nbu = &nbu;
+		zephyr,system-timer = &lptmr0;
 	};
 
 	cpus {
@@ -32,6 +33,7 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
+			clock-frequency = <DT_FREQ_M(96)>;
 			cpu-power-states = <&sleep &deep_sleep>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -46,13 +48,13 @@
 			sleep: sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
-				exit-latency-us = <10>;
+				exit-latency-us = <140>;
 			};
 
 			deep_sleep: deep-sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
-				exit-latency-us = <11>;
+				exit-latency-us = <140>;
 			};
 		};
 
@@ -364,6 +366,7 @@
 		compatible = "nxp,nbu";
 		interrupts = <48 2>;
 		interrupt-names = "nbu_rx_int";
+		wakeup-source;
 	};
 
 	hci: hci_ble {
@@ -379,7 +382,7 @@
 	};
 
 	flexcan0: can@3b000 {
-		compatible = "nxp,flexcan";
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
 		reg = <0x3b000 0x3080>;
 		interrupts = <47 0>;
 		interrupt-names = "common";

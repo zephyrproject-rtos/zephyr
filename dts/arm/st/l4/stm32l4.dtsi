@@ -22,6 +22,7 @@
 
 / {
 	chosen {
+		zephyr,crc = &crc;
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
 	};
@@ -110,7 +111,7 @@
 
 		pllsai1: pllsai1 {
 			#clock-cells = <0>;
-			compatible = "st,stm32l4-pllsai-clock";
+			compatible = "st,stm32l4-pll-clock";
 			status = "disabled";
 		};
 	};
@@ -118,6 +119,7 @@
 	mcos {
 		mco1: mco1 {
 			compatible = "st,stm32-clock-mco";
+			clock-names = "clksel";
 			status = "disabled";
 		};
 	};
@@ -139,6 +141,42 @@
 				erase-block-size = <2048>;
 				/* maximum erase time(ms) for a 2K sector */
 				max-erase-time = <25>;
+			};
+
+			st_nvm_user_otp: flash@1fff7000 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1fff7000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			/* Undocumented/unnamed RO area */
+			flash@1fff7500 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1fff7500 768>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					ts_cal1_otp: ts-cal1@a8 {
+						reg = <0xa8 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					vrefint_otp: vrefint@aa {
+						reg = <0xaa 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					ts_cal2_otp: ts-cal2@ca {
+						reg = <0xca 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+				};
 			};
 		};
 
@@ -440,6 +478,7 @@
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-deep-powerdown;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -457,6 +496,7 @@
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-deep-powerdown;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -548,12 +588,20 @@
 				reg = <0x5>;
 			};
 		};
+
+		crc: crc@40023000 {
+			compatible = "st,stm32-crc";
+			reg = <0x40023000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 12)>;
+			resets = <&rctl STM32_RESET(AHB1, 12)>;
+			status = "disabled";
+		};
 	};
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		ts-cal1-addr = <0x1fff75a8>;
-		ts-cal2-addr = <0x1fff75ca>;
+		nvmem-cells = <&ts_cal1_otp>, <&ts_cal2_otp>;
+		nvmem-cell-names = "TS_CAL1", "TS_CAL2";
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3000>;
@@ -563,7 +611,7 @@
 
 	vref: vref {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x1fff75aa>;
+		nvmem-cells = <&vrefint_otp>;
 		vrefint-cal-mv = <3000>;
 		io-channels = <&adc1 0>;
 		status = "disabled";

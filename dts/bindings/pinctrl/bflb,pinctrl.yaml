@@ -80,10 +80,10 @@ child-binding:
         type: int
         default: 0
         enum:
-          - 0     # Default value, lower strength, 8mA
-          - 1     # 9.6mA
-          - 2     # 11.2mA
-          - 3     # highest strength, 12.8mA
+          - 0     # Default value, lower strength, ~4mA (BL60x, BL70x), ~3mA (BL61x)
+          - 1     # ~8mA (BL60x, BL70x), ~10mA (BL61x)
+          - 2     # ~12mA (BL60x, BL70x), ~17mA (BL61x)
+          - 3     # highest strength, ~16mA (BL60x, BL70x), ~24mA (BL61x)
         description: |
           Pin drive strength. It tunes pin max current where 0 means lower
           value, which is the default, and 3 represents max drive strength.

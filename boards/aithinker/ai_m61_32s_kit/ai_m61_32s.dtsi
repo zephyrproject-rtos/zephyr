@@ -18,6 +18,11 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,entropy = &sec_eng_trng;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
 	};
 };
 
@@ -61,5 +66,9 @@
 };
 
 &gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
 	status = "okay";
 };

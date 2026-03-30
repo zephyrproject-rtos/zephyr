@@ -21,6 +21,7 @@ tests:
       - stm32n6570_dk/stm32n657xx/sb
       - stm32u083c_dk
       - nucleo_c071rb
+      - nucleo_c5a3zg
       - nucleo_g071rb
       - nucleo_f207zg
       - nucleo_f401re
@@ -60,6 +61,7 @@ tests:
       - frdm_mcxa366
       - frdm_mcxa344
       - frdm_mcxc242
+      - frdm_mcxa577
       - max32655evkit/max32655/m4
       - max32662evkit
       - max32666evkit/max32666/cpu0
@@ -73,6 +75,8 @@ tests:
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
       - s32k5xxcvb/s32k566/m7
       - s32k5xxcvb/s32k566/r52

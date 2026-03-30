@@ -36,7 +36,7 @@
 /* TXEN->TXIDLE + TXIDLE->TX (with fast Radio ramp-up mode)
  * in microseconds for LE 1M PHY.
  */
-#define HAL_RADIO_NRF5340_TXEN_TXIDLE_TX_1M_FAST_NS 41000
+#define HAL_RADIO_NRF5340_TXEN_TXIDLE_TX_1M_FAST_NS 40000
 #define HAL_RADIO_NRF5340_TXEN_TXIDLE_TX_1M_FAST_US \
 	HAL_RADIO_NS2US_ROUND(HAL_RADIO_NRF5340_TXEN_TXIDLE_TX_1M_FAST_NS)
 
@@ -81,7 +81,7 @@
 /* TXEN->TXIDLE + TXIDLE->TX (with fast Radio ramp-up mode)
  * in microseconds for LE CODED PHY [S2].
  */
-#define HAL_RADIO_NRF5340_TXEN_TXIDLE_TX_S2_FAST_NS 42000
+#define HAL_RADIO_NRF5340_TXEN_TXIDLE_TX_S2_FAST_NS 40000
 #define HAL_RADIO_NRF5340_TXEN_TXIDLE_TX_S2_FAST_US \
 	HAL_RADIO_NS2US_ROUND(HAL_RADIO_NRF5340_TXEN_TXIDLE_TX_S2_FAST_NS)
 
@@ -104,7 +104,7 @@
 /* TXEN->TXIDLE + TXIDLE->TX (with fast Radio ramp-up mode)
  * in microseconds for LE CODED PHY [S8].
  */
-#define HAL_RADIO_NRF5340_TXEN_TXIDLE_TX_S8_FAST_NS 42000
+#define HAL_RADIO_NRF5340_TXEN_TXIDLE_TX_S8_FAST_NS 40000
 #define HAL_RADIO_NRF5340_TXEN_TXIDLE_TX_S8_FAST_US \
 	HAL_RADIO_NS2US_ROUND(HAL_RADIO_NRF5340_TXEN_TXIDLE_TX_S8_FAST_NS)
 /* TXEN->TXIDLE + TXIDLE->TX (with default Radio ramp-up mode)
@@ -383,6 +383,7 @@ static inline void hal_radio_tx_power_high_voltage_clear(void);
 
 static inline void hal_radio_reset(void)
 {
+	/* Nothing to be done for this target */
 }
 
 static inline void hal_radio_stop(void)
@@ -395,6 +396,7 @@ static inline void hal_radio_stop(void)
 
 static inline void hal_radio_ram_prio_setup(void)
 {
+	/* Nothing to be done for this target */
 }
 
 static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
@@ -402,8 +404,8 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 	uint32_t mode;
 
 	switch (phy) {
-	case BIT(0):
 	default:
+	case BIT(0):
 		mode = RADIO_MODE_MODE_Ble_1Mbit;
 		break;
 

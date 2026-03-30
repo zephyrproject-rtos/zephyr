@@ -22,6 +22,66 @@
 				pinmux = <DT_CAT1_PINMUX(3, 1, HSIOM_SEL_ACT_15)>;
 			};
 
+			/* pdm0_pdm_clk */
+			/omit-if-no-ref/ p14_1_pdm0_pdm_clk: p14_1_pdm0_pdm_clk {
+				pinmux = <DT_CAT1_PINMUX(14, 1, HSIOM_SEL_ACT_9)>;
+			};
+
+			/* pdm0_pdm_data */
+			/omit-if-no-ref/ p14_4_pdm0_pdm_data: p14_4_pdm0_pdm_data {
+				pinmux = <DT_CAT1_PINMUX(14, 4, HSIOM_SEL_ACT_9)>;
+			};
+
+			/* pdm1_pdm_clk */
+			/omit-if-no-ref/ p13_2_pdm1_pdm_clk: p13_2_pdm1_pdm_clk {
+				pinmux = <DT_CAT1_PINMUX(13, 2, HSIOM_SEL_ACT_9)>;
+			};
+
+			/* pdm1_pdm_data */
+			/omit-if-no-ref/ p13_3_pdm1_pdm_data: p13_3_pdm1_pdm_data {
+				pinmux = <DT_CAT1_PINMUX(13, 3, HSIOM_SEL_ACT_9)>;
+			};
+
+			/* pdm2_pdm_clk */
+			/omit-if-no-ref/ p8_2_pdm2_pdm_clk: p8_2_pdm2_pdm_clk {
+				pinmux = <DT_CAT1_PINMUX(8, 2, HSIOM_SEL_ACT_9)>;
+			};
+
+			/* pdm2_pdm_data */
+			/omit-if-no-ref/ p8_4_pdm2_pdm_data: p8_4_pdm2_pdm_data {
+				pinmux = <DT_CAT1_PINMUX(8, 4, HSIOM_SEL_ACT_9)>;
+			};
+
+			/* pdm3_pdm_clk */
+			/omit-if-no-ref/ p8_5_pdm3_pdm_clk: p8_5_pdm3_pdm_clk {
+				pinmux = <DT_CAT1_PINMUX(8, 5, HSIOM_SEL_ACT_9)>;
+			};
+
+			/* pdm3_pdm_data */
+			/omit-if-no-ref/ p8_6_pdm3_pdm_data: p8_6_pdm3_pdm_data {
+				pinmux = <DT_CAT1_PINMUX(8, 6, HSIOM_SEL_ACT_9)>;
+			};
+
+			/* pdm4_pdm_clk */
+			/omit-if-no-ref/ p9_2_pdm4_pdm_clk: p9_2_pdm4_pdm_clk {
+				pinmux = <DT_CAT1_PINMUX(9, 2, HSIOM_SEL_ACT_9)>;
+			};
+
+			/* pdm4_pdm_data */
+			/omit-if-no-ref/ p9_3_pdm4_pdm_data: p9_3_pdm4_pdm_data {
+				pinmux = <DT_CAT1_PINMUX(9, 3, HSIOM_SEL_ACT_9)>;
+			};
+
+			/* pdm5_pdm_clk */
+			/omit-if-no-ref/ p9_0_pdm5_pdm_clk: p9_0_pdm5_pdm_clk {
+				pinmux = <DT_CAT1_PINMUX(9, 0, HSIOM_SEL_ACT_9)>;
+			};
+
+			/* pdm5_pdm_data */
+			/omit-if-no-ref/ p9_1_pdm5_pdm_data: p9_1_pdm5_pdm_data {
+				pinmux = <DT_CAT1_PINMUX(9, 1, HSIOM_SEL_ACT_9)>;
+			};
+
 			/* scb_i2c_scl */
 			/omit-if-no-ref/ p6_5_scb2_i2c_scl: p6_5_scb2_i2c_scl {
 				pinmux = <DT_CAT1_PINMUX(6, 5, HSIOM_SEL_ACT_7)>;
@@ -1904,6 +1964,112 @@
 
 			/omit-if-no-ref/ p21_7_pwm1_14: p21_7_pwm1_14_compl {
 				pinmux = <DT_CAT1_PINMUX(21, 7, HSIOM_SEL_ACT_2)>;
+			};
+
+			/* tdm_i2s_rx_fsync */
+			/omit-if-no-ref/ p11_5_tdm_i2s1_rx_fsync: p11_5_tdm_i2s1_rx_fsync {
+				pinmux = <DT_CAT1_PINMUX(11, 5, HSIOM_SEL_ACT_5)>;
+			};
+
+			/omit-if-no-ref/ p21_5_tdm_i2s0_rx_fsync: p21_5_tdm_i2s0_rx_fsync {
+				pinmux = <DT_CAT1_PINMUX(21, 5, HSIOM_SEL_ACT_7)>;
+			};
+
+			/* tdm_i2s_rx_mck */
+			/omit-if-no-ref/ p11_3_tdm_i2s1_rx_mck: p11_3_tdm_i2s1_rx_mck {
+				pinmux = <DT_CAT1_PINMUX(11, 3, HSIOM_SEL_ACT_5)>;
+			};
+
+			/omit-if-no-ref/ p21_7_tdm_i2s0_rx_mck: p21_7_tdm_i2s0_rx_mck {
+				pinmux = <DT_CAT1_PINMUX(21, 7, HSIOM_SEL_ACT_7)>;
+			};
+
+			/* tdm_i2s_rx_sck */
+			/omit-if-no-ref/ p11_4_tdm_i2s1_rx_sck: p11_4_tdm_i2s1_rx_sck {
+				pinmux = <DT_CAT1_PINMUX(11, 4, HSIOM_SEL_ACT_5)>;
+			};
+
+			/omit-if-no-ref/ p21_6_tdm_i2s0_rx_sck: p21_6_tdm_i2s0_rx_sck {
+				pinmux = <DT_CAT1_PINMUX(21, 6, HSIOM_SEL_ACT_7)>;
+			};
+
+			/* tdm_i2s_rx_sd */
+			/omit-if-no-ref/ p11_6_tdm_i2s1_rx_sd: p11_6_tdm_i2s1_rx_sd {
+				pinmux = <DT_CAT1_PINMUX(11, 6, HSIOM_SEL_ACT_5)>;
+			};
+
+			/omit-if-no-ref/ p21_4_tdm_i2s0_rx_sd: p21_4_tdm_i2s0_rx_sd {
+				pinmux = <DT_CAT1_PINMUX(21, 4, HSIOM_SEL_ACT_7)>;
+			};
+
+			/* tdm_i2s_tx_fsync */
+			/omit-if-no-ref/ p11_1_tdm_i2s1_tx_fsync: p11_1_tdm_i2s1_tx_fsync {
+				pinmux = <DT_CAT1_PINMUX(11, 1, HSIOM_SEL_ACT_5)>;
+			};
+
+			/omit-if-no-ref/ p12_3_tdm_i2s0_tx_fsync: p12_3_tdm_i2s0_tx_fsync {
+				pinmux = <DT_CAT1_PINMUX(12, 3, HSIOM_SEL_ACT_7)>;
+			};
+
+			/* tdm_i2s_tx_mck */
+			/omit-if-no-ref/ p11_7_tdm_i2s1_tx_mck: p11_7_tdm_i2s1_tx_mck {
+				pinmux = <DT_CAT1_PINMUX(11, 7, HSIOM_SEL_ACT_5)>;
+			};
+
+			/omit-if-no-ref/ p21_3_tdm_i2s0_tx_mck: p21_3_tdm_i2s0_tx_mck {
+				pinmux = <DT_CAT1_PINMUX(21, 3, HSIOM_SEL_ACT_7)>;
+			};
+
+			/* tdm_i2s_tx_sck */
+			/omit-if-no-ref/ p11_0_tdm_i2s1_tx_sck: p11_0_tdm_i2s1_tx_sck {
+				pinmux = <DT_CAT1_PINMUX(11, 0, HSIOM_SEL_ACT_5)>;
+			};
+
+			/omit-if-no-ref/ p21_2_tdm_i2s0_tx_sck: p21_2_tdm_i2s0_tx_sck {
+				pinmux = <DT_CAT1_PINMUX(21, 2, HSIOM_SEL_ACT_7)>;
+			};
+
+			/* tdm_i2s_tx_sd */
+			/omit-if-no-ref/ p11_2_tdm_i2s1_tx_sd: p11_2_tdm_i2s1_tx_sd {
+				pinmux = <DT_CAT1_PINMUX(11, 2, HSIOM_SEL_ACT_5)>;
+			};
+
+			/omit-if-no-ref/ p21_1_tdm_i2s0_tx_sd: p21_1_tdm_i2s0_tx_sd {
+				pinmux = <DT_CAT1_PINMUX(21, 1, HSIOM_SEL_ACT_7)>;
+			};
+
+			/* canfd_ttcan_rx */
+			/omit-if-no-ref/ p16_0_can0_rx: p16_0_can0_rx {
+				pinmux = <DT_CAT1_PINMUX(16, 0, HSIOM_SEL_ACT_4)>;
+			};
+
+			/omit-if-no-ref/ p16_2_can1_rx: p16_2_can1_rx {
+				pinmux = <DT_CAT1_PINMUX(16, 2, HSIOM_SEL_ACT_4)>;
+			};
+
+			/omit-if-no-ref/ p20_4_can0_rx: p20_4_can0_rx {
+				pinmux = <DT_CAT1_PINMUX(20, 4, HSIOM_SEL_ACT_4)>;
+			};
+
+			/omit-if-no-ref/ p20_6_can1_rx: p20_6_can1_rx {
+				pinmux = <DT_CAT1_PINMUX(20, 6, HSIOM_SEL_ACT_4)>;
+			};
+
+			/* canfd_ttcan_tx */
+			/omit-if-no-ref/ p16_1_can0_tx: p16_1_can0_tx {
+				pinmux = <DT_CAT1_PINMUX(16, 1, HSIOM_SEL_ACT_4)>;
+			};
+
+			/omit-if-no-ref/ p16_3_can1_tx: p16_3_can1_tx {
+				pinmux = <DT_CAT1_PINMUX(16, 3, HSIOM_SEL_ACT_4)>;
+			};
+
+			/omit-if-no-ref/ p20_5_can0_tx: p20_5_can0_tx {
+				pinmux = <DT_CAT1_PINMUX(20, 5, HSIOM_SEL_ACT_4)>;
+			};
+
+			/omit-if-no-ref/ p20_7_can1_tx: p20_7_can1_tx {
+				pinmux = <DT_CAT1_PINMUX(20, 7, HSIOM_SEL_ACT_4)>;
 			};
 		};
 	};

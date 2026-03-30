@@ -34,6 +34,7 @@ static int ethernet_set_config(uint64_t mgmt_request,
 	const struct ethernet_api *api = dev->api;
 	struct ethernet_config config = { 0 };
 	enum ethernet_config_type type;
+	int ret;
 
 	if (!api) {
 		return -ENOENT;
@@ -72,7 +73,17 @@ static int ethernet_set_config(uint64_t mgmt_request,
 		memcpy(&config.mac_address, &params->mac_address,
 		       sizeof(struct net_eth_addr));
 		type = ETHERNET_CONFIG_TYPE_MAC_ADDRESS;
-	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_QAV_PARAM) {
+
+		ret = api->set_config(dev, type, &config);
+		if (ret < 0) {
+			return ret;
+		}
+
+		return net_if_set_link_addr(iface, params->mac_address.addr,
+					    sizeof(struct net_eth_addr), NET_LINK_ETHERNET);
+	}
+
+	if (mgmt_request == NET_REQUEST_ETHERNET_SET_QAV_PARAM) {
 		if (!is_hw_caps_supported(dev, ETHERNET_QAV)) {
 			return -ENOTSUP;
 		}
@@ -177,7 +188,7 @@ static int ethernet_set_config(uint64_t mgmt_request,
 		return -EINVAL;
 	}
 
-	return api->set_config(net_if_get_device(iface), type, &config);
+	return api->set_config(dev, type, &config);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_MAC_ADDRESS,

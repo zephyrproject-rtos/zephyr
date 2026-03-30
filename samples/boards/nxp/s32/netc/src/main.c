@@ -21,8 +21,8 @@ static int setup_iface(struct net_if *iface, const char *ipv6_addr,
 		       const char *ipv4_addr, const char *netmask)
 {
 	struct net_if_addr *ifaddr;
-	struct in_addr addr4;
-	struct in6_addr addr6;
+	struct net_in_addr addr4;
+	struct net_in6_addr addr6;
 
 	LOG_INF("Configuring iface %d (%p)", net_if_get_by_iface(iface), iface);
 
@@ -54,7 +54,7 @@ static int setup_iface(struct net_if *iface, const char *ipv6_addr,
 		LOG_INF("IPv4 address: %s", ipv4_addr);
 
 		if (netmask && netmask[0]) {
-			struct in_addr nm;
+			struct net_in_addr nm;
 
 			if (net_addr_pton(NET_AF_INET, netmask, &nm)) {
 				LOG_ERR("Invalid netmask: %s", netmask);

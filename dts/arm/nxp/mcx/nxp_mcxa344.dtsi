@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,10 +59,6 @@
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
 		status = "okay";
-	};
-
-	cmc {
-		compatible = "nxp,cmc-reset-cause";
 	};
 
 	soc {
@@ -504,6 +500,7 @@
 		wwdt0: watchdog@4000c000 {
 			compatible = "nxp,lpc-wwdt";
 			reg = <0x4000c000 0x1000>;
+			clocks = <&syscon MCUX_WWDT0_CLK>;
 			interrupts = <60 0>;
 			status = "disabled";
 			clk-divider = <1>;

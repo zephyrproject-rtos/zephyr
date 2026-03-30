@@ -86,6 +86,9 @@
 		uicr: uicr@ffd000 {
 			compatible = "nordic,nrf-uicr";
 			reg = <0xffd000 0x1000>;
+			ranges = <0x0 0xffd000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 #endif
 
@@ -119,18 +122,22 @@
 				compatible = "nordic,nrf-dppic";
 				reg = <0x42000 0x808>;
 				status = "disabled";
+				channels = <8>;
+				groups = <2>;
 			};
 
 			ppib00: ppib@43000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x43000 0x1000>;
 				status = "disabled";
+				channels = <8>;
 			};
 
 			ppib01: ppib@44000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x44000 0x1000>;
 				status = "disabled";
+				channels = <8>;
 			};
 
 			spi00: spi@4a000 {
@@ -171,6 +178,7 @@
 				#size-cells = <1>;
 				status = "disabled";
 				enable-secure;
+				hibernation-ram-block = <32>;
 
 				cpuflpr_clic: interrupt-controller@f0000000 {
 					compatible = "nordic,nrf-clic";
@@ -207,18 +215,22 @@
 				compatible = "nordic,nrf-dppic";
 				reg = <0x82000 0x808>;
 				status = "disabled";
+				channels = <24>;
+				groups = <6>;
 			};
 
 			ppib10: ppib@83000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x83000 0x1000>;
 				status = "disabled";
+				channels = <8>;
 			};
 
 			ppib11: ppib@84000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x84000 0x1000>;
 				status = "disabled";
+				channels = <16>;
 			};
 
 			timer10: timer@85000 {
@@ -268,24 +280,29 @@
 				compatible = "nordic,nrf-dppic";
 				reg = <0xc2000 0x808>;
 				status = "disabled";
+				channels = <16>;
+				groups = <6>;
 			};
 
 			ppib20: ppib@c3000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0xc3000 0x1000>;
 				status = "disabled";
+				channels = <8>;
 			};
 
 			ppib21: ppib@c4000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0xc4000 0x1000>;
 				status = "disabled";
+				channels = <16>;
 			};
 
 			ppib22: ppib@c5000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0xc5000 0x1000>;
 				status = "disabled";
+				channels = <4>;
 			};
 
 			i2c20: i2c@c6000 {
@@ -295,6 +312,7 @@
 				reg = <0xc6000 0x1000>;
 				interrupts = <198 NRF_DEFAULT_IRQ_PRIORITY>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
@@ -334,6 +352,7 @@
 				reg = <0xc7000 0x1000>;
 				interrupts = <199 NRF_DEFAULT_IRQ_PRIORITY>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
@@ -373,6 +392,7 @@
 				reg = <0xc8000 0x1000>;
 				interrupts = <200 NRF_DEFAULT_IRQ_PRIORITY>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
@@ -574,18 +594,22 @@
 				clocks = <&lfxo>, <&pclk>;
 				clock-names = "lfclock", "hfclock";
 				status = "disabled";
+				extended-channels = <0>;
 			};
 
 			dppic30: dppic@102000 {
 				compatible = "nordic,nrf-dppic";
 				reg = <0x102000 0x808>;
 				status = "disabled";
+				channels = <4>;
+				groups = <2>;
 			};
 
 			ppib30: ppib@103000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x103000 0x1000>;
 				status = "disabled";
+				channels = <4>;
 			};
 
 			i2c30: i2c@104000 {
@@ -595,6 +619,7 @@
 				reg = <0x104000 0x1000>;
 				interrupts = <260 NRF_DEFAULT_IRQ_PRIORITY>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
@@ -727,6 +752,7 @@
 		rram_controller: rram-controller@5004b000 {
 			compatible = "nordic,rram-controller";
 			reg = <0x5004b000 0x1000>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			interrupts = <75 NRF_DEFAULT_IRQ_PRIORITY>;
@@ -735,6 +761,7 @@
 				compatible = "soc-nv-flash";
 				erase-block-size = <4096>;
 				write-block-size = <16>;
+				status = "okay";
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};

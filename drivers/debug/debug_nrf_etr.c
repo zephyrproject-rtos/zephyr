@@ -105,10 +105,10 @@ static const uint16_t stm_m_id[] = {0x21, 0x22, 0x23, 0x2c, 0x2d, 0x2e, 0x24, 0x
 static uint32_t source_id_buf[ARRAY_SIZE(stm_m_id) * 8];
 static const char *const stm_m_name[] = {"sec", "app", "rad", "sys", "flpr", "ppr", "mod", "hw"};
 static const char *const hw_evts[] = {
-	"CTI211_0",  /* 0 CTI211 triger out 1 */
-	"CTI211_1",  /* 1 CTI211 triger out 1 inverted */
-	"CTI211_2",  /* 2 CTI211 triger out 2 */
-	"CTI211_3",  /* 3 CTI211 triger out 2 inverted*/
+	"CTI211_0",  /* 0 CTI211 trigger out 1 */
+	"CTI211_1",  /* 1 CTI211 trigger out 1 inverted */
+	"CTI211_2",  /* 2 CTI211 trigger out 2 */
+	"CTI211_3",  /* 3 CTI211 trigger out 2 inverted*/
 	"Sec up",    /* 4 Secure Domain up */
 	"Sec down",  /* 5 Secure Domain down */
 	"App up",    /* 6 Application Domain up */
@@ -271,7 +271,8 @@ static void log_message_process(struct log_frontend_stmesp_demux_log *packet)
 	uint16_t dlen = packet->hdr.total_len - (plen + sname_len);
 	uint8_t *data = dlen ? &packet->data[plen + sname_len] : NULL;
 
-	log_output_process(&log_output, ts, dname, sname, NULL, level, package, data, dlen, flags);
+	log_output_process(&log_output, ts, dname, sname, NULL,
+			   0, level, package, data, dlen, flags);
 }
 
 /** @brief Process a trace point message. */
@@ -299,7 +300,7 @@ static void trace_point_process(struct log_frontend_stmesp_demux_trace_point *pa
 		const char *source =
 			log_frontend_stmesp_demux_sname_get(packet->major, packet->source_id);
 
-		log_output_process(&log_output, packet->timestamp, dname, source, NULL, level,
+		log_output_process(&log_output, packet->timestamp, dname, source, NULL, 0, level,
 				   (const uint8_t *)tp_log, NULL, 0, flags);
 		return;
 	} else if (packet->has_data) {
@@ -308,7 +309,7 @@ static void trace_point_process(struct log_frontend_stmesp_demux_trace_point *pa
 			.desc = {.len = 4 /* hdr + fmt + id + data */}};
 		uint32_t tp_d32_p[] = {(uint32_t)desc.raw, (uint32_t)tp_d32, id, packet->data};
 
-		log_output_process(&log_output, packet->timestamp, dname, sname, NULL, 1,
+		log_output_process(&log_output, packet->timestamp, dname, sname, NULL, 0, 1,
 				   (const uint8_t *)tp_d32_p, NULL, 0, flags);
 		return;
 	}
@@ -316,7 +317,7 @@ static void trace_point_process(struct log_frontend_stmesp_demux_trace_point *pa
 	static const union cbprintf_package_hdr desc = {.desc = {.len = 3 /* hdr + fmt + id */}};
 	uint32_t tp_p[] = {(uint32_t)desc.raw, (uint32_t)tp, packet->id};
 
-	log_output_process(&log_output, packet->timestamp, dname, sname, NULL,
+	log_output_process(&log_output, packet->timestamp, dname, sname, NULL, 0,
 			   1, (const uint8_t *)tp_p, NULL, 0, flags);
 }
 
@@ -331,7 +332,7 @@ static void hw_event_process(struct log_frontend_stmesp_demux_hw_event *packet)
 	static const union cbprintf_package_hdr desc = {.desc = {.len = 3 /* hdr + fmt + id */}};
 	uint32_t tp_p[] = {(uint32_t)desc.raw, (uint32_t)tp, (uint32_t)evt_name};
 
-	log_output_process(&log_output, packet->timestamp, dname, sname, NULL,
+	log_output_process(&log_output, packet->timestamp, dname, sname, NULL, 0,
 			   1, (const uint8_t *)tp_p, NULL, 0, flags);
 }
 

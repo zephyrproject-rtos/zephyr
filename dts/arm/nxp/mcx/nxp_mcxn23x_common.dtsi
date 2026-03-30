@@ -668,6 +668,7 @@
 	wwdt0: watchdog@16000 {
 		compatible = "nxp,lpc-wwdt";
 		reg = <0x16000 0x1000>;
+		clocks = <&syscon MCUX_WWDT0_CLK>;
 		interrupts = <152 0>;
 		status = "disabled";
 		clk-divider = <1>;
@@ -865,6 +866,7 @@
 		#io-channel-cells = <1>;
 		clocks = <&syscon MCUX_LPADC1_CLK>;
 		nxp,references = <&vref 1800>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown>;
 	};
 
 	temp0: temp0 {

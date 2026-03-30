@@ -17,6 +17,13 @@ properties:
     description: |
       The index of SPI channel
 
+  clocks:
+    required: true
+
+  dtc:
+    type: phandle
+    description: DTC controller
+
   ssl-assert:
     type: int
     default: 0

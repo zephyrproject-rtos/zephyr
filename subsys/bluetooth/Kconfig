@@ -154,7 +154,6 @@ config BT_HCI_ACL_FLOW_CONTROL
 	default y if !HAS_BT_CTLR && !BT_STM32_IPM && !BT_ESP32  && !BT_STM32WBA
 	# Enable if building a Controller-only build
 	default y if BT_HCI_RAW
-	select POLL
 	help
 	  Enable support for throttling ACL buffers from the controller
 	  to the host. This is particularly useful when the host and

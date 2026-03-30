@@ -11,11 +11,17 @@ common:
     pytest_dut_scope: session
 
 tests:
-  sample.sysbuild.hello_world.nrf5340dk_cpuapp_cpunet:
+  sample.sysbuild.hello_world:
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
+      - max32655evkit/max32655/m4
+      - max32690evkit/max32690/m4
+      - max78002evkit/max78002/m4
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
+      - max32655evkit/max32655/m4
+      - max32690evkit/max32690/m4
+      - max78002evkit/max78002/m4
   sample.sysbuild.hello_world.nrf54h20dk_cpuapp_cpurad:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
@@ -73,3 +79,10 @@ tests:
     extra_args:
       - SB_CONFIG_REMOTE_NRF54H20_CPUFLPR_XIP_CORE=y
       - hello_world_SNIPPET=nordic-flpr-xip
+  sample.sysbuild.hello_world.nrf7120_cpuflpr:
+    platform_allow:
+      - nrf7120dk/nrf7120/cpuapp
+    integration_platforms:
+      - nrf7120dk/nrf7120/cpuapp
+    extra_args:
+      - hello_world_SNIPPET=nordic-flpr

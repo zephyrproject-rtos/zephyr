@@ -6,4 +6,4 @@ description: QEMU RISC-V virt machine CPU
 
 compatible: "qemu,riscv-virt"
 
-include: riscv,cpus.yaml
+include: riscv-common.yaml

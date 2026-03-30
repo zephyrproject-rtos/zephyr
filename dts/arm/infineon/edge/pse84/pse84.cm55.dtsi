@@ -173,6 +173,25 @@
 	interrupts = <120 4>;
 };
 
+&i2s0 {
+	interrupts = <135 4>, /* RX Structure */
+		     <136 4>; /* TX Structure */
+};
+
+&i2s1 {
+	interrupts = <137 4>, /* RX Structure */
+		     <138 4>; /* TX Structure */
+};
+
+&dmic0 {
+	interrupts = <142 4>, /* Channel 0 */
+		     <143 4>, /* Channel 1 */
+		     <144 4>, /* Channel 2 */
+		     <145 4>, /* Channel 3 */
+		     <146 4>, /* Channel 4 */
+		     <147 4>; /* Channel 5 */
+};
+
 &i3c0 {
 	interrupts = <153 4>;
 };
@@ -187,6 +206,14 @@
 
 &mcwdt1 {
 	interrupts = <34 4>;
+};
+
+&can0 {
+	interrupts = <84 4>, <85 4>;
+};
+
+&can1 {
+	interrupts = <86 4>, <87 4>;
 };
 
 &tcpwm0_0 {

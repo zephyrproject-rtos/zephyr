@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -148,6 +148,7 @@
 
 	flexspi: spi@134000 {
 		reg = <0x134000 0x1000>, <0x18000000 DT_SIZE_M(128)>;
+		reg-names = "reg_base", "ahb";
 	};
 
 	clkctl0: clkctl@1000 {
@@ -210,6 +211,7 @@
 	wwdt: watchdog@e000 {
 		compatible = "nxp,lpc-wwdt";
 		reg = <0xe000 0x1000>;
+		clocks = <&clkctl0 MCUX_WWDT0_CLK>;
 		interrupts = <0 0>;
 		status = "disabled";
 		power-domains = <&peripheral_domain>;
@@ -600,7 +602,7 @@
 			reg = <0x38200 0x30>;
 			interrupts = <108 0>;
 			status = "disabled";
-			#io-channel-cells = <0>;
+			#io-channel-cells = <1>;
 			power-domains = <&peripheral_domain>;
 		};
 

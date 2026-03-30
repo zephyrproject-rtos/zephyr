@@ -50,7 +50,7 @@
 #define DM8806_SPEED_100MBPS_FULL_DUPLEX 0x03u
 /* Speed and duplex mode status offset. */
 #define DM8806_SPEED_AND_DUPLEX_OFFSET   0x01u
-/* Speed and duplex mode staus mask. */
+/* Speed and duplex mode status mask. */
 #define DM8806_SPEED_AND_DUPLEX_MASK     0x07u
 /* Link status mask. */
 #define DM8806_LINK_STATUS_MASK          0x1u
@@ -61,7 +61,7 @@
 /* Address Table Control And Status Register Register SAddress */
 #define DM8806_ADDR_TAB_CTRL_STAT_REG_ADDR 0x10u
 
-/* Address Table Access bussy flag offset */
+/* Address Table Access busy flag offset */
 #define DM8806_ATB_S_OFFSET  0xf
 /* Address Table Command Result flag offset */
 #define DM8806_ATB_CR_OFFSET 0xd
@@ -182,8 +182,8 @@
  * 100M link ok and no TX/RX activity   - LED on
  * 100M link ok and TX/RX activity      - LED blinking
  * SPD_LED:
- * No colision:                         - LED off
- * Colision:                            - LED blinking
+ * No collision:                        - LED off
+ * Collision:                           - LED blinking
  * FDX_LED:
  * 10M link fail                        - LED off
  * 10M link ok and no TX/RX activity    - LED on

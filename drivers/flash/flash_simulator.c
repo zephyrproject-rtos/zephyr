@@ -16,6 +16,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/random/random.h>
 #include <zephyr/stats/stats.h>
+#include <zephyr/pm/device.h>
 #include <string.h>
 
 #include <zephyr/drivers/flash/flash_simulator.h>
@@ -402,6 +403,18 @@ flash_sim_get_parameters(const struct device *dev)
 	return cfg->flash_parameters;
 }
 
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+int flash_sim_ex_op(const struct device *dev, uint16_t code, const uintptr_t in, void *out)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(code);
+	ARG_UNUSED(in);
+	ARG_UNUSED(out);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
+
 static DEVICE_API(flash, flash_sim_api) = {
 	.read = flash_sim_read,
 	.write = flash_sim_write,
@@ -411,6 +424,9 @@ static DEVICE_API(flash, flash_sim_api) = {
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sim_page_layout,
 #endif
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+	.ex_op = flash_sim_ex_op,
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
 };
 
 #ifdef CONFIG_ARCH_POSIX
@@ -451,12 +467,24 @@ static int flash_mock_init(const struct device *dev)
 }
 #endif /* CONFIG_ARCH_POSIX */
 
+static int flash_sim_pm_control(const struct device *dev, enum pm_device_action action)
+{
+	/* No action needed, exists only to enable validating get/put balancing in tests */
+	return 0;
+}
+
 static int flash_init(const struct device *dev)
 {
+	int rc;
+
 	FLASH_SIM_STATS_INIT_AND_REG(flash_sim_stats, STATS_SIZE_32, "flash_sim_stats");
 	FLASH_SIM_STATS_INIT_AND_REG(flash_sim_thresholds, STATS_SIZE_32,
 			   "flash_sim_thresholds");
-	return flash_mock_init(dev);
+	rc = flash_mock_init(dev);
+	if (rc == 0) {
+		rc = pm_device_driver_init(dev, flash_sim_pm_control);
+	}
+	return rc;
 }
 
 /* Extension to generic flash driver API */
@@ -532,6 +560,14 @@ const struct flash_simulator_params *z_vrfy_flash_simulator_get_params(const str
 #define FLASH_SIMULATOR_PAGE_COUNT(n)                                                              \
 	(FLASH_SIMULATOR_FLASH_SIZE(n) / FLASH_SIMULATOR_ERASE_UNIT(n))
 
+/* Resolve the no_explicit_erase capability per device instance.
+ * DT_INST_PROP for a boolean type is 0 when absent, 1 when set in DTS,
+ * so a logical OR with the Kconfig fallback covers all cases correctly.
+ */
+#define FLASH_SIMULATOR_NO_EXPLICIT_ERASE(n)                                                       \
+	(DT_INST_PROP(n, no_explicit_erase) ||                                                     \
+	 !IS_ENABLED(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE))
+
 #define MOCK_FLASH_SECTION(n)                                                                      \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, memory_region),                                       \
 	(Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME(DT_INST_PHANDLE(n, memory_region)))), ())
@@ -553,7 +589,7 @@ const struct flash_simulator_params *z_vrfy_flash_simulator_get_params(const str
 		.write_block_size = FLASH_SIMULATOR_PROG_UNIT(n),                                  \
 		.erase_value = FLASH_SIMULATOR_ERASE_VALUE(n),                                     \
 		.caps = {                                                                          \
-			.no_explicit_erase = !IS_ENABLED(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE),   \
+			.no_explicit_erase = FLASH_SIMULATOR_NO_EXPLICIT_ERASE(n),                 \
 		},                                                                                 \
 	};                                                                                         \
                                                                                                    \
@@ -595,7 +631,8 @@ const struct flash_simulator_params *z_vrfy_flash_simulator_get_params(const str
 	BUILD_ASSERT((FLASH_SIMULATOR_ERASE_UNIT(n) % FLASH_SIMULATOR_PROG_UNIT(n)) == 0,          \
 		     "Erase unit must be a multiple of program unit");                             \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, flash_init, NULL, &flash_simulator_data_##n,                      \
+	PM_DEVICE_DT_INST_DEFINE(n, flash_sim_pm_control);					   \
+	DEVICE_DT_INST_DEFINE(n, flash_init, PM_DEVICE_DT_INST_GET(n), &flash_simulator_data_##n,  \
 			      &flash_simulator_config_##n, POST_KERNEL,                            \
 			      CONFIG_FLASH_INIT_PRIORITY, &flash_sim_api);
 

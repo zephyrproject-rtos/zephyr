@@ -22,7 +22,8 @@ memory slab is referenced by its memory address.
 A memory slab has the following key properties:
 
 * The **block size** of each block, measured in bytes.
-  It must be at least 4N bytes long, where N is greater than 0.
+  It must be at least 4N bytes long on 32-bit platforms and at least 8N bytes
+  long on 64-bit platforms, where N is greater than 0.
 
 * The **number of blocks** available for allocation.
   It must be greater than zero.
@@ -30,10 +31,10 @@ A memory slab has the following key properties:
 * A **buffer** that provides the memory for the memory slab's blocks.
   It must be at least "block size" times "number of blocks" bytes long.
 
-The memory slab's buffer must be aligned to an N-byte boundary, where
-N is a power of 2 larger than 2 (i.e. 4, 8, 16, ...). To ensure that
-all memory blocks in the buffer are similarly aligned to this boundary,
-the block size must also be a multiple of N.
+The memory slab's buffer must be aligned to an N-byte boundary, where N is a
+power of 2. N must be at least 4 on 32-bit platforms and at least 8 on 64-bit
+platforms. To ensure that all memory blocks in the buffer are similarly aligned
+to this boundary, the block size must also be a multiple of N.
 
 A memory slab must be initialized before it can be used. This marks all of
 its blocks as unused.
@@ -58,8 +59,10 @@ Internal Operation
 A memory slab's buffer is an array of fixed-size blocks,
 with no wasted space between the blocks.
 
-The memory slab keeps track of unallocated blocks using a linked list;
-the first 4 bytes of each unused block provide the necessary linkage.
+The memory slab keeps track of unallocated blocks using a linked list.
+32-bit platforms use the first 4 bytes of each unused block to provide the
+necessary linkage, while 64-bit platforms use the first 8 bytes of each
+unused block.
 
 Implementation
 **************
@@ -71,12 +74,12 @@ A memory slab is defined using a variable of type :c:type:`k_mem_slab`.
 It must then be initialized by calling :c:func:`k_mem_slab_init`.
 
 The following code defines and initializes a memory slab that has 6 blocks
-that are 400 bytes long, each of which is aligned to a 4-byte boundary.
+that are 400 bytes long, each of which is aligned to an 8-byte boundary.
 
 .. code-block:: c
 
     struct k_mem_slab my_slab;
-    char __aligned(4) my_slab_buffer[6 * 400];
+    char __aligned(8) my_slab_buffer[6 * 400];
 
     k_mem_slab_init(&my_slab, my_slab_buffer, 400, 6);
 
@@ -88,13 +91,13 @@ that the macro defines both the memory slab and its buffer.
 
 .. code-block:: c
 
-    K_MEM_SLAB_DEFINE(my_slab, 400, 6, 4);
+    K_MEM_SLAB_DEFINE(my_slab, 400, 6, 8);
 
 Similarly, you can define a memory slab in private scope:
 
 .. code-block:: c
 
-    K_MEM_SLAB_DEFINE_STATIC(my_slab, 400, 6, 4);
+    K_MEM_SLAB_DEFINE_STATIC(my_slab, 400, 6, 8);
 
 Allocating a Memory Block
 =========================

@@ -52,6 +52,7 @@ config ETH_QEMU_EXTRA_ARGS
 # zephyr-keep-sorted-start
 source "drivers/ethernet/Kconfig.adin2111"
 source "drivers/ethernet/Kconfig.cyclonev"
+source "drivers/ethernet/Kconfig.dm9051"
 source "drivers/ethernet/Kconfig.dwmac"
 source "drivers/ethernet/Kconfig.e1000"
 source "drivers/ethernet/Kconfig.enc28j60"
@@ -68,6 +69,7 @@ source "drivers/ethernet/Kconfig.nxp_enet"
 source "drivers/ethernet/Kconfig.nxp_s32_gmac"
 source "drivers/ethernet/Kconfig.nxp_s32_netc"
 source "drivers/ethernet/Kconfig.renesas_ra"
+source "drivers/ethernet/Kconfig.renesas_ra_rmac"
 source "drivers/ethernet/Kconfig.sam_gmac"
 source "drivers/ethernet/Kconfig.smsc911x"
 source "drivers/ethernet/Kconfig.smsc91x"
@@ -77,6 +79,8 @@ source "drivers/ethernet/Kconfig.sy1xx_mac"
 source "drivers/ethernet/Kconfig.test"
 source "drivers/ethernet/Kconfig.virtio_net"
 source "drivers/ethernet/Kconfig.w5500"
+source "drivers/ethernet/Kconfig.w6100"
+source "drivers/ethernet/Kconfig.wch"
 source "drivers/ethernet/Kconfig.xilinx_axi_ethernet_lite"
 source "drivers/ethernet/Kconfig.xilinx_axienet"
 source "drivers/ethernet/Kconfig.xlnx_gem"
@@ -93,8 +97,8 @@ endif # "Ethernet Drivers"
 
 config ETH_INIT_PRIORITY
 	int "Ethernet driver init priority"
-	default 80
-	depends on NET_L2_ETHERNET || ETH_DRIVER
+	default 60
+	depends on NET_L2_ETHERNET || ETH_DRIVER || MDIO
 	help
 	  Ethernet device driver initialization priority.
 	  Do not mess with it unless you know what you are doing.
@@ -110,3 +114,5 @@ config ETH_NET_IF_NO_AUTO_START
 	  net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET).
 	  When all configurations are done net_if_up() has to be invoked to
 	  bring the interface up.
+
+source "drivers/ethernet/mdio/Kconfig"

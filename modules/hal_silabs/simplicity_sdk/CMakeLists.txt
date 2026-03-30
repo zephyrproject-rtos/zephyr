@@ -52,13 +52,23 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
 
   zephyr_compile_definitions(
     SL_RAIL_UTIL_PA_CONFIG_HEADER="sl_rail_util_pa_config.h"
+    SL_CATALOG_SL_RAIL_UTIL_RF_PATH_SWITCH_PRESENT=1
   )
 
   zephyr_include_directories(
     ${RADIO_DIR}/rail_lib/common
-    ${RADIO_DIR}/rail_lib/plugin/pa-conversions
     ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_compatible_pa
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_rf_path_switch
     ${BLUETOOTH_DIR}/bgstack/ll/inc
+  )
+
+  zephyr_include_directories_ifdef(CONFIG_SILABS_DEVICE_IS_MODULE
+    ${RADIO_DIR}/rail_lib/plugin/pa-conversions
+  )
+  zephyr_include_directories_ifndef(CONFIG_SILABS_DEVICE_IS_MODULE
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_conversions
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_tables
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_tables/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}
   )
 
   # sl_protocol_crypto
@@ -96,11 +106,19 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
 
   if(CONFIG_SOC_GECKO_USE_RAIL)
     # rail
+    zephyr_library_sources(
+      ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_rf_path_switch/sl_rail_util_rf_path_switch.c
+      ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_sequencer/sl_rail_util_sequencer.c
+    )
+
     # PA curve for the modules comes from their config archive - omit the compilation of the SoC curves on modules
-    if(NOT CONFIG_SILABS_DEVICE_IS_MODULE)
-      zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_curves_efr32.c)
-    endif()
-    zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_conversions_efr32.c)
+    zephyr_library_sources_ifdef(CONFIG_SILABS_DEVICE_IS_MODULE
+      ${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_conversions_efr32.c
+    )
+    zephyr_library_sources_ifndef(CONFIG_SILABS_DEVICE_IS_MODULE
+      ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_conversions/sl_rail_util_pa_conversions.c
+      ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_conversions/sl_rail_util_pa_tables.c
+    )
 
     if(CONFIG_SILABS_SISDK_RAIL_MULTIPROTOCOL)
       zephyr_compile_definitions(SL_RAIL_LIB_MULTIPROTOCOL_SUPPORT=1)
@@ -233,11 +251,13 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_SYSTEM         ${PERIPHERAL_DIR}/src/sl_hal_system.c)
 
-#Keep em_iadc.c for compatibility for now. Not used anymore.
+# Keep em_iadc.c for compatibility for now. Not used anymore.
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_IADC         ${EMLIB_DIR}/src/em_iadc.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_IADC         ${PERIPHERAL_DIR}/src/sl_hal_iadc.c)
 
+# Keep em_burtc.c becaused used in gecko_burtc_timer.c
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_BURTC     ${EMLIB_DIR}/src/em_burtc.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_BURTC     ${PERIPHERAL_DIR}/src/sl_hal_burtc.c)
 
 # Device Init
 if(CONFIG_SILABS_SISDK_DEVICE_INIT)
@@ -316,9 +336,16 @@ if(CONFIG_SILABS_SISDK_I2C)
   )
 endif()
 
+# GPCRC
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_GPCRC     ${PERIPHERAL_DIR}/src/sl_hal_gpcrc.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LETIMER   ${PERIPHERAL_DIR}/src/sl_hal_letimer.c)
-zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_TIMER     ${PERIPHERAL_DIR}/src/sl_hal_timer.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_VDAC      ${PERIPHERAL_DIR}/src/sl_hal_vdac.c)
+
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_TIMER
+  ${PERIPHERAL_DIR}/src/sl_hal_timer.c
+  # em_timer.c is still needed e.g. by RAIL for Bluetooth CS
+  ${EMLIB_DIR}/src/em_timer.c
+)
 
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LDMA
   ${EMDRV_DIR}/dmadrv/src/dmadrv.c
@@ -363,6 +390,12 @@ zephyr_library_sources_ifdef(
   CONFIG_BUILD_ONLY_NO_BLOBS
   src/blob_stubs.c
 )
+if(CONFIG_SILABS_DEVICE_IS_MODULE)
+  zephyr_library_sources_ifdef(
+    CONFIG_BUILD_ONLY_NO_BLOBS
+    src/blob_stubs_module.c
+  )
+endif()
 
 zephyr_linker_sources(ROM_SECTIONS linker/code_classification_text.ld)
 zephyr_linker_sources(RAMFUNC_SECTION linker/code_classification_ramfunc.ld)

@@ -26,60 +26,60 @@ CAN_MSGQ_DEFINE(can_msgq, 5);
  * @brief Standard (11-bit) CAN ID frame 1.
  */
 const struct can_frame test_std_frame_1 = {
-	.flags   = 0,
-	.id      = TEST_CAN_STD_ID_1,
-	.dlc     = 8,
-	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
+	.flags = 0,
+	.id = TEST_CAN_STD_ID_1,
+	.dlc = 8,
+	.data = {1, 2, 3, 4, 5, 6, 7, 8},
 };
 
 /**
  * @brief Standard (11-bit) CAN ID frame 2.
  */
 const struct can_frame test_std_frame_2 = {
-	.flags   = 0,
-	.id      = TEST_CAN_STD_ID_2,
-	.dlc     = 8,
-	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
+	.flags = 0,
+	.id = TEST_CAN_STD_ID_2,
+	.dlc = 8,
+	.data = {1, 2, 3, 4, 5, 6, 7, 8},
 };
 
 /**
  * @brief Extended (29-bit) CAN ID frame 1.
  */
 const struct can_frame test_ext_frame_1 = {
-	.flags   = CAN_FRAME_IDE,
-	.id      = TEST_CAN_EXT_ID_1,
-	.dlc     = 8,
-	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
+	.flags = CAN_FRAME_IDE,
+	.id = TEST_CAN_EXT_ID_1,
+	.dlc = 8,
+	.data = {1, 2, 3, 4, 5, 6, 7, 8},
 };
 
 /**
  * @brief Extended (29-bit) CAN ID frame 1.
  */
 const struct can_frame test_ext_frame_2 = {
-	.flags   = CAN_FRAME_IDE,
-	.id      = TEST_CAN_EXT_ID_2,
-	.dlc     = 8,
-	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
+	.flags = CAN_FRAME_IDE,
+	.id = TEST_CAN_EXT_ID_2,
+	.dlc = 8,
+	.data = {1, 2, 3, 4, 5, 6, 7, 8},
 };
 
 /**
  * @brief Standard (11-bit) CAN ID RTR frame 1.
  */
 const struct can_frame test_std_rtr_frame_1 = {
-	.flags   = CAN_FRAME_RTR,
-	.id      = TEST_CAN_STD_ID_1,
-	.dlc     = 0,
-	.data    = {0}
+	.flags = CAN_FRAME_RTR,
+	.id = TEST_CAN_STD_ID_1,
+	.dlc = 0,
+	.data = {0},
 };
 
 /**
  * @brief Extended (29-bit) CAN ID RTR frame 1.
  */
 const struct can_frame test_ext_rtr_frame_1 = {
-	.flags   = CAN_FRAME_IDE | CAN_FRAME_RTR,
-	.id      = TEST_CAN_EXT_ID_1,
-	.dlc     = 0,
-	.data    = {0}
+	.flags = CAN_FRAME_IDE | CAN_FRAME_RTR,
+	.id = TEST_CAN_EXT_ID_1,
+	.dlc = 0,
+	.data = {0},
 };
 
 #ifdef CONFIG_CAN_FD_MODE
@@ -87,28 +87,26 @@ const struct can_frame test_ext_rtr_frame_1 = {
  * @brief Standard (11-bit) CAN ID frame 1 with CAN FD payload.
  */
 const struct can_frame test_std_fdf_frame_1 = {
-	.flags   = CAN_FRAME_FDF | CAN_FRAME_BRS,
-	.id      = TEST_CAN_STD_ID_1,
-	.dlc     = 0xf,
-	.data    = { 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
-		    16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
-		    31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
-		    46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,
-		    61, 62, 63, 64 }
+	.flags = CAN_FRAME_FDF | CAN_FRAME_BRS,
+	.id = TEST_CAN_STD_ID_1,
+	.dlc = 0xf,
+	.data = {1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16,
+		 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+		 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48,
+		 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64},
 };
 
 /**
  * @brief Standard (11-bit) CAN ID frame 1 with CAN FD payload.
  */
 const struct can_frame test_std_fdf_frame_2 = {
-	.flags   = CAN_FRAME_FDF | CAN_FRAME_BRS,
-	.id      = TEST_CAN_STD_ID_2,
-	.dlc     = 0xf,
-	.data    = { 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
-		    16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
-		    31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
-		    46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,
-		    61, 62, 63, 64 }
+	.flags = CAN_FRAME_FDF | CAN_FRAME_BRS,
+	.id = TEST_CAN_STD_ID_2,
+	.dlc = 0xf,
+	.data = {1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16,
+		 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+		 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48,
+		 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64},
 };
 #endif /* CONFIG_CAN_FD_MODE */
 
@@ -119,7 +117,7 @@ const struct can_frame test_std_fdf_frame_2 = {
 const struct can_filter test_std_filter_1 = {
 	.flags = 0U,
 	.id = TEST_CAN_STD_ID_1,
-	.mask = CAN_STD_ID_MASK
+	.mask = CAN_STD_ID_MASK,
 };
 
 /**
@@ -129,7 +127,7 @@ const struct can_filter test_std_filter_1 = {
 const struct can_filter test_std_filter_2 = {
 	.flags = 0U,
 	.id = TEST_CAN_STD_ID_2,
-	.mask = CAN_STD_ID_MASK
+	.mask = CAN_STD_ID_MASK,
 };
 
 /**
@@ -139,7 +137,7 @@ const struct can_filter test_std_filter_2 = {
 const struct can_filter test_std_masked_filter_1 = {
 	.flags = 0U,
 	.id = TEST_CAN_STD_MASK_ID_1,
-	.mask = TEST_CAN_STD_MASK
+	.mask = TEST_CAN_STD_MASK,
 };
 
 /**
@@ -149,7 +147,7 @@ const struct can_filter test_std_masked_filter_1 = {
 const struct can_filter test_std_masked_filter_2 = {
 	.flags = 0U,
 	.id = TEST_CAN_STD_MASK_ID_2,
-	.mask = TEST_CAN_STD_MASK
+	.mask = TEST_CAN_STD_MASK,
 };
 
 /**
@@ -159,7 +157,7 @@ const struct can_filter test_std_masked_filter_2 = {
 const struct can_filter test_ext_filter_1 = {
 	.flags = CAN_FILTER_IDE,
 	.id = TEST_CAN_EXT_ID_1,
-	.mask = CAN_EXT_ID_MASK
+	.mask = CAN_EXT_ID_MASK,
 };
 
 /**
@@ -169,7 +167,7 @@ const struct can_filter test_ext_filter_1 = {
 const struct can_filter test_ext_filter_2 = {
 	.flags = CAN_FILTER_IDE,
 	.id = TEST_CAN_EXT_ID_2,
-	.mask = CAN_EXT_ID_MASK
+	.mask = CAN_EXT_ID_MASK,
 };
 
 /**
@@ -179,7 +177,7 @@ const struct can_filter test_ext_filter_2 = {
 const struct can_filter test_ext_masked_filter_1 = {
 	.flags = CAN_FILTER_IDE,
 	.id = TEST_CAN_EXT_MASK_ID_1,
-	.mask = TEST_CAN_EXT_MASK
+	.mask = TEST_CAN_EXT_MASK,
 };
 
 /**
@@ -189,7 +187,7 @@ const struct can_filter test_ext_masked_filter_1 = {
 const struct can_filter test_ext_masked_filter_2 = {
 	.flags = CAN_FILTER_IDE,
 	.id = TEST_CAN_EXT_MASK_ID_2,
-	.mask = TEST_CAN_EXT_MASK
+	.mask = TEST_CAN_EXT_MASK,
 };
 
 /**
@@ -199,7 +197,7 @@ const struct can_filter test_ext_masked_filter_2 = {
 const struct can_filter test_std_some_filter = {
 	.flags = 0U,
 	.id = TEST_CAN_SOME_STD_ID,
-	.mask = CAN_STD_ID_MASK
+	.mask = CAN_STD_ID_MASK,
 };
 
 /**
@@ -209,8 +207,7 @@ const struct can_filter test_std_some_filter = {
  * @param frame2  Second CAN frame.
  * @param id_mask CAN ID mask.
  */
-void assert_frame_equal(const struct can_frame *frame1,
-			const struct can_frame *frame2,
+void assert_frame_equal(const struct can_frame *frame1, const struct can_frame *frame2,
 			uint32_t id_mask)
 {
 	zassert_equal(frame1->flags, frame2->flags, "Flags do not match");
@@ -221,6 +218,31 @@ void assert_frame_equal(const struct can_frame *frame1,
 		zassert_mem_equal(frame1->data, frame2->data, can_dlc_to_bytes(frame1->dlc),
 				  "Received data differ");
 	}
+}
+
+int can_common_add_rx_msgq(const struct device *dev, const struct can_filter *filter)
+{
+	int filter_id;
+
+	filter_id = can_add_rx_filter_msgq(dev, &can_msgq, filter);
+	zassert_not_equal(filter_id, -ENOSPC, "no filters available");
+	zassert_true(filter_id >= 0, "negative filter number");
+
+	return filter_id;
+}
+
+int can_common_add_rx_filter(const struct device *dev, const struct can_filter *filter,
+			     can_rx_callback_t callback)
+{
+	int filter_id;
+
+	k_sem_reset(&rx_callback_sem);
+
+	filter_id = can_add_rx_filter(dev, callback, (void *)filter, filter);
+	zassert_not_equal(filter_id, -ENOSPC, "no filters available");
+	zassert_true(filter_id >= 0, "negative filter number");
+
+	return filter_id;
 }
 
 void can_common_test_setup(can_mode_t initial_mode)
@@ -238,9 +260,9 @@ void can_common_test_setup(can_mode_t initial_mode)
 	(void)can_stop(can_dev);
 
 	err = can_set_mode(can_dev, initial_mode);
-	zassert_equal(err, 0, "failed to set initial mode (err %d)", err);
+	zassert_ok(err, "failed to set initial mode (err %d)", err);
 	zassert_equal(initial_mode, can_get_mode(can_dev));
 
 	err = can_start(can_dev);
-	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+	zassert_ok(err, "failed to start CAN controller (err %d)", err);
 }

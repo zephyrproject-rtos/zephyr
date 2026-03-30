@@ -54,7 +54,7 @@ int main(void)
 	k_msleep(1100);
 	LOG_INF("Sleeping for 1.2 seconds, we should enter SUSPEND_TO_IDLE");
 	k_msleep(1200);
-	LOG_INF("Sleeping for 1.3 seconds, we should enter SUSPEND_TO_IDLE");
+	LOG_INF("Sleeping for 1.3 seconds, we should enter STANDBY");
 	k_msleep(1300);
 
 	/* open test device (adds its own latency constraint) */
@@ -64,9 +64,9 @@ int main(void)
 	/* test with application + driver latency constraints */
 	LOG_INF("Sleeping for 1.1 seconds, we should enter RUNTIME_IDLE");
 	k_msleep(1100);
-	LOG_INF("Sleeping for 1.2 seconds, we should enter RUNTIME_IDLE");
+	LOG_INF("Sleeping for 1.2 seconds, we should enter SUSPEND_TO_IDLE");
 	k_msleep(1200);
-	LOG_INF("Sleeping for 1.3 seconds, we should enter RUNTIME_IDLE");
+	LOG_INF("Sleeping for 1.3 seconds, we should enter SUSPEND_TO_IDLE");
 	k_msleep(1300);
 
 	/* update application level latency constraint */
@@ -74,11 +74,11 @@ int main(void)
 	pm_policy_latency_request_update(&req, 10000);
 
 	/* test with updated application + driver latency constraints */
-	LOG_INF("Sleeping for 1.1 seconds, we should stay ACTIVE");
+	LOG_INF("Sleeping for 1.1 seconds, we should enter RUNTIME_IDLE");
 	k_msleep(1100);
-	LOG_INF("Sleeping for 1.2 seconds, we should stay ACTIVE");
+	LOG_INF("Sleeping for 1.2 seconds, we should enter RUNTIME_IDLE");
 	k_msleep(1200);
-	LOG_INF("Sleeping for 1.3 seconds, we should stay ACTIVE");
+	LOG_INF("Sleeping for 1.3 seconds, we should enter RUNTIME_IDLE");
 	k_msleep(1300);
 
 	/* restore application level latency constraint */
@@ -94,7 +94,7 @@ int main(void)
 	k_msleep(1100);
 	LOG_INF("Sleeping for 1.2 seconds, we should enter SUSPEND_TO_IDLE");
 	k_msleep(1200);
-	LOG_INF("Sleeping for 1.3 seconds, we should enter SUSPEND_TO_IDLE");
+	LOG_INF("Sleeping for 1.3 seconds, we should enter STANDBY");
 	k_msleep(1300);
 
 	/* remove application level constraint and terminate */

@@ -28,7 +28,7 @@
 	-dmp_peripheral
 	-smart_stack_entries=8
 	-mpu
-	-mpu_regions=8
+	-mpu_regions=16
 	-interrupts=20
 	-interrupt_priorities=4
 	-ext_interrupts=16

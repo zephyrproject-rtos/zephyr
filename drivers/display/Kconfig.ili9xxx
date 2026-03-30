@@ -19,6 +19,15 @@ config ILI9XXX_READ
 	  the requirement to bitshift data read from the ILI9XXX. Note the
 	  API only supports RGB565 mode.
 
+config ILI9163C
+	bool "ILI9163C display driver"
+	default y
+	depends on DT_HAS_ILITEK_ILI9163C_ENABLED
+	select MIPI_DBI
+	select ILI9XXX
+	help
+	  Enable driver for ILI9163C display driver.
+
 config ILI9340
 	bool "ILI9340 display driver"
 	default y

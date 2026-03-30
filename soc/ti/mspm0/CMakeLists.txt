@@ -6,5 +6,5 @@ add_subdirectory(common)
 
 if(CONFIG_SOC_FAMILY_TI_MSPM0)
   string(TOUPPER ${CONFIG_SOC} SDK_SOC_SELECT)
-  zephyr_compile_definitions(-D__${SDK_SOC_SELECT}__)
+  zephyr_compile_definitions(__${SDK_SOC_SELECT}__)
 endif()

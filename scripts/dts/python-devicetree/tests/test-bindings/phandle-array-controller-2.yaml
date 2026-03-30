@@ -7,3 +7,6 @@ compatible: "phandle-array-controller-2"
 phandle-array-foo-cells:
   - one
   - two
+
+io-channel-cells:
+  - io-channel-one

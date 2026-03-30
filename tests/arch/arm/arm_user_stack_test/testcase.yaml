@@ -2,9 +2,11 @@ common:
   tags:
     - arm
   timeout: 120
-  # TODO: remove the platform_exclude once the issue with MPS2/AN385 is fixed.
+  # TODO: remove the platform_exclude once the MPS2 issue is fixed
+  # (this seems to be an issue with QEMU as these tests pass in FVP)
   platform_exclude:
     - mps2/an385
+    - mps2/an386
 tests:
   arch.arm.user.stack:
     filter: CONFIG_CPU_CORTEX_M

@@ -1,0 +1,37 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bee UART.
+
+compatible: "realtek,bee-uart"
+
+include: [uart-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+bus: uart
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  rx-threshold:
+    type: int
+    description: |
+      The Rx threshold level to trigger rx interrupt, range from 1 to 29.
+
+  flow-ctrl:
+    type: boolean
+    description: |
+      Enable CTS and RTS or not.

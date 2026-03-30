@@ -271,9 +271,7 @@ static DEVICE_API(gpio, gpio_sc18im_driver_api) = {
 
 #define GPIO_SC18IM704_DEFINE(n)								\
 	static const struct gpio_sc18im_config gpio_sc18im_config_##n = {			\
-		.common = {									\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),			\
-		},										\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),					\
 		.bridge = GPIO_SC18IM704_I2C_SIBLING(n),					\
 	};											\
 	static struct gpio_sc18im_data gpio_sc18im_data_##n = {					\

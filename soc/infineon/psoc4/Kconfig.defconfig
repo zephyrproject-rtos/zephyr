@@ -3,8 +3,4 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_INFINEON_PSOC4
-
 rsource "*/Kconfig.defconfig"
-
-endif # SOC_FAMILY_INFINEON_PSOC4

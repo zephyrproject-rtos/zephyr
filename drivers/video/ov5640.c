@@ -571,7 +571,7 @@ static const struct ov5640_mode_config csi2_modes[] = {
 		.def_frmrate = OV5640_30_FPS,
 	}};
 
-static const int ov5640_frame_rates[] = {OV5640_15_FPS, OV5640_30_FPS, OV5640_60_FPS};
+static const int ov5640_frame_rates[] = {OV5640_60_FPS, OV5640_30_FPS, OV5640_15_FPS};
 
 /* Initialization sequence for QQVGA resolution (160x120) */
 static const struct video_reg16 dvp_160x120_res_params[] = {
@@ -1167,6 +1167,7 @@ static int ov5640_init_controls(const struct device *dev)
 	int ret;
 	struct ov5640_data *drv_data = dev->data;
 	struct ov5640_ctrls *ctrls = &drv_data->ctrls;
+	struct video_ctrl *auto_ctrls = &ctrls->auto_gain;
 
 	ret = video_init_ctrl(&ctrls->auto_gain, dev, VIDEO_CID_AUTOGAIN,
 			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
@@ -1181,7 +1182,10 @@ static int ov5640_init_controls(const struct device *dev)
 		return ret;
 	}
 
-	video_auto_cluster_ctrl(&ctrls->auto_gain, 2, true);
+	ret = video_auto_cluster_ctrl(auto_ctrls, 2, true);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ret = video_init_ctrl(
 		&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS,

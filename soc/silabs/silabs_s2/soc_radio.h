@@ -11,3 +11,8 @@
  */
 
 void rail_isr_installer(void);
+
+/**
+ * @brief Initialize radio on Silicon Labs Series 2 SoCs
+ */
+void soc_radio_init(void);

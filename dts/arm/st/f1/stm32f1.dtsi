@@ -22,7 +22,7 @@
 / {
 	chosen {
 		zephyr,flash-controller = &flash;
-		zephyr,cortex-m-idle-timer = &rtc;
+		zephyr,system-timer-companion = &rtc;
 	};
 
 	cpus {
@@ -98,6 +98,7 @@
 	mcos {
 		mco1: mco1 {
 			compatible = "st,stm32f1-clock-mco";
+			clock-names = "clksel";
 			status = "disabled";
 		};
 	};
@@ -407,6 +408,7 @@
 			st,adc-sequencer = "programmable";
 			st,adc-oversampler = "none";
 			st,adc-internal-regulator = "none";
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 

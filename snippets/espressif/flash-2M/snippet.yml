@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: flash-2M
+name: espressif-flash-2M
 
 boards:
   /.*/esp32/.*/:

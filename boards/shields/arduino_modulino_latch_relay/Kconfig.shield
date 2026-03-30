@@ -1,0 +1,5 @@
+# Copyright 2026 Silicon Labs
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ARDUINO_MODULINO_LATCH_RELAY
+	def_bool $(shields_list_contains,arduino_modulino_latch_relay)

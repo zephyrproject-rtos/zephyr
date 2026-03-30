@@ -116,6 +116,7 @@ struct tbs_inst {
 
 static struct tbs_inst svc_insts[CONFIG_BT_TBS_BEARER_COUNT];
 static struct tbs_inst gtbs_inst;
+static bool try_change_dialing_call_to_alerting(struct tbs_inst *inst);
 
 #define READ_BUF_SIZE                                                                             \
 	MAX(BT_ATT_MAX_ATTRIBUTE_LEN,                                                             \
@@ -322,6 +323,13 @@ static struct tbs_inst *lookup_inst_by_uri_scheme(const uint8_t *uri, uint8_t ur
 
 	/* Look for ':' between the first and last char */
 	for (uint8_t i = 1U; i < uri_len - 1U; i++) {
+		/* If the size of the URI scheme of `uri` is larger than what we support, then we
+		 * do not need to search any instances, as we cannot possibly support it.
+		 */
+		if (i > (sizeof(uri_scheme) - 1U /* NULL terminator */)) {
+			return NULL;
+		}
+
 		if (uri[i] == ':') {
 			(void)memcpy(uri_scheme, uri, i);
 			break;
@@ -351,11 +359,11 @@ static struct tbs_inst *lookup_inst_by_uri_scheme(const uint8_t *uri, uint8_t ur
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	/* Clear pending notifications */
-	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
-		const uint8_t conn_index = bt_conn_index(conn);
-		int err;
+	const uint8_t conn_index = bt_conn_index(conn);
+	int err;
 
+	/* Clear pending TBS notifications */
+	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
 		err = k_mutex_lock(&svc_insts[i].mutex, MUTEX_TIMEOUT);
 		if (err != 0) {
 			LOG_WRN("Failed to take mutex: %d", err);
@@ -365,15 +373,39 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		}
 
 		if (svc_insts[i].cp_ntf.pending && conn_index == svc_insts[i].cp_ntf.conn_index) {
-			memset(&svc_insts[i].cp_ntf, 0, sizeof(svc_insts[i].cp_ntf));
+			(void)memset(&svc_insts[i].cp_ntf, 0, sizeof(svc_insts[i].cp_ntf));
 		}
 
-		memset(&svc_insts[i].flags[conn_index], 0, sizeof(svc_insts[i].flags[conn_index]));
+		(void)memset(&svc_insts[i].flags[conn_index], 0,
+			     sizeof(svc_insts[i].flags[conn_index]));
 
 		if (err == 0) { /* if mutex was locked */
+			/* Try to promote after clearing flags */
+			(void)try_change_dialing_call_to_alerting(&svc_insts[i]);
 			err = k_mutex_unlock(&svc_insts[i].mutex);
 			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 		}
+	}
+
+	/* Clear pending GTBS notifications */
+	err = k_mutex_lock(&gtbs_inst.mutex, MUTEX_TIMEOUT);
+	if (err != 0) {
+		LOG_WRN("Failed to take mutex: %d", err);
+		/* In this case we still need to clear the data, so continue and hope for
+		 * the best
+		 */
+	}
+
+	if (gtbs_inst.cp_ntf.pending && conn_index == gtbs_inst.cp_ntf.conn_index) {
+		(void)memset(&gtbs_inst.cp_ntf, 0, sizeof(gtbs_inst.cp_ntf));
+	}
+
+	(void)memset(&gtbs_inst.flags[conn_index], 0, sizeof(gtbs_inst.flags[conn_index]));
+
+	if (err == 0) { /* if mutex was locked */
+		(void)try_change_dialing_call_to_alerting(&gtbs_inst);
+		err = k_mutex_unlock(&gtbs_inst.mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 	}
 }
 
@@ -402,7 +434,7 @@ static int notify(struct bt_conn *conn, const struct bt_uuid *uuid,
 struct tbs_notify_cb_info {
 	struct tbs_inst *inst;
 	const struct bt_gatt_attr *attr;
-	void (*value_cb)(struct tbs_flags *flags);
+	void (*value_cb)(struct tbs_flags *flags, bool set);
 };
 
 static void set_value_changed_cb(struct bt_conn *conn, void *data)
@@ -422,22 +454,31 @@ static void set_value_changed_cb(struct bt_conn *conn, void *data)
 		return;
 	}
 
-	if (!bt_gatt_is_subscribed(conn, attr, BT_GATT_CCC_NOTIFY)) {
-		/* Not subscribed */
-		return;
+	if (bt_gatt_is_subscribed(conn, attr, BT_GATT_CCC_NOTIFY)) {
+		/* Set the specific flag based on the provided callback */
+		cb_info->value_cb(flags, true);
+
+		/* We may schedule the same work multiple times, but that is OK as scheduling the
+		 * same work multiple times is a no-op
+		 */
+		err = k_work_schedule(&inst->notify_work, K_NO_WAIT);
+		__ASSERT(err >= 0, "Failed to schedule work: %d", err);
+	} else {
+		/* Not subscribed, set the specific flag based on the provided callback */
+		cb_info->value_cb(flags, false);
+
+		/* Check if all flags are cleared, and if so then cancel any pending k_work */
+		/* Ideally only _changed flags would be checked, but _dirty flags are
+		 * included too. A cleaner check would require splitting the struct
+		 */
+		if (util_memeq(flags, &(struct tbs_flags){0}, sizeof(*flags))) {
+			(void)k_work_cancel_delayable(&inst->notify_work);
+		}
 	}
-
-	/* Set the specific flag based on the provided callback */
-	cb_info->value_cb(flags);
-
-	/* We may schedule the same work multiple times, but that is OK as scheduling the same work
-	 * multiple times is a no-op
-	 */
-	err = k_work_schedule(&inst->notify_work, K_NO_WAIT);
-	__ASSERT(err >= 0, "Failed to schedule work: %d", err);
 }
 
-static void set_value_changed(struct tbs_inst *inst, void (*value_cb)(struct tbs_flags *flags),
+static void set_value_changed(struct tbs_inst *inst,
+			      void (*value_cb)(struct tbs_flags *flags, bool set),
 			      const struct bt_uuid *uuid)
 {
 	struct tbs_notify_cb_info cb_info = {
@@ -450,13 +491,13 @@ static void set_value_changed(struct tbs_inst *inst, void (*value_cb)(struct tbs
 	bt_conn_foreach(BT_CONN_TYPE_LE, set_value_changed_cb, &cb_info);
 }
 
-static void set_terminate_reason_changed_cb(struct tbs_flags *flags)
+static void set_terminate_reason_changed_cb(struct tbs_flags *flags, bool set)
 {
-	if (flags->termination_reason_changed) {
+	if (set && flags->termination_reason_changed) {
 		LOG_DBG("pending notification replaced");
 	}
 
-	flags->termination_reason_changed = true;
+	flags->termination_reason_changed = set;
 }
 
 static void tbs_set_terminate_reason(struct tbs_inst *inst, uint8_t call_index, uint8_t reason)
@@ -692,24 +733,115 @@ static void net_buf_put_uri_scheme_list(const struct tbs_inst *inst, struct net_
 	}
 }
 
-static void set_call_state_changed_cb(struct tbs_flags *flags)
+static void set_call_state_changed_cb(struct tbs_flags *flags, bool set)
 {
-	if (flags->call_state_changed) {
+	if (set && flags->call_state_changed) {
 		LOG_DBG("pending notification replaced");
 	}
 
-	flags->call_state_changed = true;
-	flags->call_state_dirty = true;
+	flags->call_state_changed = set;
+	if (set) {
+		flags->call_state_dirty = true;
+	}
 }
 
-static void set_list_current_calls_changed_cb(struct tbs_flags *flags)
+static void set_list_current_calls_changed_cb(struct tbs_flags *flags, bool set)
 {
-	if (flags->bearer_list_current_calls_changed) {
+	if (set && flags->bearer_list_current_calls_changed) {
 		LOG_DBG("pending notification replaced");
 	}
 
-	flags->bearer_list_current_calls_changed = true;
-	flags->bearer_list_current_calls_dirty = true;
+	flags->bearer_list_current_calls_changed = set;
+	if (set) {
+		flags->bearer_list_current_calls_dirty = true;
+	}
+}
+
+static void set_incoming_call_target_bearer_uri_changed_cb(struct tbs_flags *flags, bool set)
+{
+	if (set && flags->incoming_call_target_bearer_uri_changed) {
+		LOG_DBG("pending notification replaced");
+	}
+
+	flags->incoming_call_target_bearer_uri_changed = set;
+	if (set) {
+		flags->incoming_call_target_bearer_uri_dirty = true;
+	}
+}
+
+static void set_incoming_call_changed_cb(struct tbs_flags *flags, bool set)
+{
+	if (set && flags->incoming_call_changed) {
+		LOG_DBG("pending notification replaced");
+	}
+
+	flags->incoming_call_changed = set;
+	if (set) {
+		flags->incoming_call_dirty = true;
+	}
+}
+
+static void set_call_friendly_name_changed_cb(struct tbs_flags *flags, bool set)
+{
+	if (set && flags->call_friendly_name_changed) {
+		LOG_DBG("pending notification replaced");
+	}
+
+	flags->call_friendly_name_changed = set;
+	if (set) {
+		flags->call_friendly_name_dirty = true;
+	}
+}
+
+static void set_bearer_provider_name_changed_cb(struct tbs_flags *flags, bool set)
+{
+	if (set && flags->bearer_provider_name_changed) {
+		LOG_DBG("pending notification replaced");
+	}
+
+	flags->bearer_provider_name_changed = set;
+	if (set) {
+		flags->bearer_provider_name_dirty = true;
+	}
+}
+
+static void set_bearer_technology_changed_cb(struct tbs_flags *flags, bool set)
+{
+	if (set && flags->bearer_technology_changed) {
+		LOG_DBG("pending notification replaced");
+	}
+
+	flags->bearer_technology_changed = set;
+}
+
+static void set_signal_strength_changed_cb(struct tbs_flags *flags, bool set)
+{
+	if (set && flags->bearer_signal_strength_changed) {
+		LOG_DBG("pending notification replaced");
+	}
+
+	flags->bearer_signal_strength_changed = set;
+}
+
+static void set_status_flags_changed_cb(struct tbs_flags *flags, bool set)
+{
+	if (set && flags->status_flags_changed) {
+		LOG_DBG("pending notification replaced");
+	}
+
+	flags->status_flags_changed = set;
+}
+
+static void set_bearer_uri_schemes_supported_list_changed_cb(struct tbs_flags *flags, bool set)
+{
+	if (set && flags->bearer_uri_schemes_supported_list_changed) {
+		LOG_DBG("pending notification replaced");
+	}
+
+	flags->bearer_uri_schemes_supported_list_changed = set;
+	if (set) {
+		flags->bearer_uri_schemes_supported_list_dirty = true;
+	}
 }
 
 static int inst_notify_calls(struct tbs_inst *inst)
@@ -745,63 +877,125 @@ static int notify_calls(struct tbs_inst *inst)
 	return 0;
 }
 
-/**
- * @brief Attempt to move a call in an instance from dialing to alerting
- *
- * This function will look through the state of an instance to see if there are any calls in the
- * instance that are in the dialing state, and move them to the dialing state if we do not have any
- * pending call state notification. The reason for this is that we do not have an API for the
- * application to change from dialing to alterting state at this point, but the qualification tests
- * require us to do this state change.
- * Since we only notify the latest value, we need to notify dialing first for both current calls and
- * call states, and then switch to the alerting state for the call and then notify again.
- *
- * @param inst The instance to attempt the state change on
- * @retval true There was a state change
- * @retval false There was not a state change
- */
-static bool try_change_dialing_call_to_alerting(struct tbs_inst *inst)
+static bool inst_has_pending_call_state_notifications(const struct tbs_inst *inst)
 {
-	bool state_changed = false;
-
-	/* If we still have pending state change notifications, we cannot change the state
-	 * autonomously
-	 */
 	for (size_t i = 0U; i < ARRAY_SIZE(inst->flags); i++) {
 		const struct tbs_flags *flags = &inst->flags[i];
 
 		if (flags->bearer_list_current_calls_changed || flags->call_state_changed) {
-			return false;
+			return true;
 		}
 	}
 
-	if (!inst_is_gtbs(inst)) {
-		/* If inst is not the GTBS then we also need to ensure that GTBS is done notifying
-		 * before changing state
-		 */
-		for (size_t i = 0U; i < ARRAY_SIZE(gtbs_inst.flags); i++) {
-			const struct tbs_flags *flags = &gtbs_inst.flags[i];
+	return false;
+}
 
-			if (flags->bearer_list_current_calls_changed || flags->call_state_changed) {
-				return false;
-			}
-		}
+/**
+ * @brief Promote a BT_TBS_CALL_STATE_DIALING call to BT_TBS_CALL_STATE_ALERTING
+ * on a single instance.
+ *
+ * IMPORTANT:
+ *  - This function MUST NOT be called unless both:
+ *        inst_has_pending_call_state_notifications(inst) == false
+ *    AND inst_has_pending_call_state_notifications(&gtbs_inst) == false.
+ *
+ *  - The caller is responsible for checking these conditions.
+ *    This helper performs no validation and assumes that pending
+ *    notifications have already been flushed.
+ *
+ *  - This split makes the API lightweight but also easy to misuse,
+ *    so all callers must enforce the above preconditions.
+ *
+ * @return true if a call was promoted, false otherwise.
+ */
+static bool promote_dialing_call_to_alerting(struct tbs_inst *inst)
+{
+	if (inst_has_pending_call_state_notifications(inst)) {
+		return false;
 	}
 
-	/* Check if we have any calls in the dialing state */
 	for (size_t i = 0U; i < ARRAY_SIZE(inst->calls); i++) {
 		if (inst->calls[i].state == BT_TBS_CALL_STATE_DIALING) {
 			inst->calls[i].state = BT_TBS_CALL_STATE_ALERTING;
-			state_changed = true;
-			break;
+			notify_calls(inst);
+			return true;
 		}
 	}
 
-	if (state_changed) {
-		notify_calls(inst);
+	return false;
+}
+
+/**
+ * @brief Attempt to move a call in an instance from DIALING to ALERTING.
+ *
+ * This function checks the state of the given instance and promotes any
+ * BT_TBS_CALL_STATE_DIALING call to the BT_TBS_CALL_STATE_ALERTING state,
+ * provided that there are no pending.
+ * call-state or current-calls notifications that must be flushed first.
+ *
+ * Notification ordering requirement:
+ *   - We must first notify the BT_TBS_CALL_STATE_DIALING state.
+ *   - Only after all pending notifications have been completed may the call
+ *     be promoted to BT_TBS_CALL_STATE_ALERTING.
+ *   - Once promoted, the BT_TBS_CALL_STATE_ALERTING state is notified immediately.
+ *
+ * GTBS/TBS behavior:
+ *   - For a regular TBS instance, promotion may only occur once GTBS has
+ *     finished sending its pending notifications.
+ *   - For GTBS, promotion is attempted first on GTBS-owned calls, and if none
+ *     exist, on all registered TBS bearers.
+ *
+ * NOTE:
+ *   The lower-level helper promote_dialing_call_to_alerting() must never be
+ *   called directly unless the caller has ensured that both the target
+ *   instance and GTBS have no pending notifications. This function performs
+ *   all required safety checks and is the only safe entry point.
+ *
+ * @param inst The instance (GTBS or TBS) to attempt the promotion on.
+ * @retval true  A call was promoted to ALERTING.
+ * @retval false No promotion occurred.
+ */
+
+ /* Caller must lock inst->mutex before calling this function */
+static bool try_change_dialing_call_to_alerting(struct tbs_inst *inst)
+{
+	bool promoted = false;
+
+	/* Non-GTBS: only promote on this bearer, and only once GTBS
+	 * is done sending its own notifications.
+	 */
+	if (!inst_is_gtbs(inst)) {
+		/* Check GTBS pending notifications */
+		if (inst_has_pending_call_state_notifications(&gtbs_inst)) {
+			return false;
+		}
+
+		if (promote_dialing_call_to_alerting(inst)) {
+			promoted = true;
+		}
+
+		return promoted;
 	}
 
-	return state_changed;
+	/* GTBS path: Promote GTBS-owned calls */
+	if (promote_dialing_call_to_alerting(&gtbs_inst)) {
+		promoted = true;
+	}
+
+	/* Promote calls on all TBS bearers */
+	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
+		struct tbs_inst *tbs_inst = &svc_insts[i];
+
+		if (!inst_is_registered(tbs_inst)) {
+			continue;
+		}
+
+		if (promote_dialing_call_to_alerting(tbs_inst)) {
+			promoted = true;
+		}
+	}
+
+	return promoted;
 }
 
 static void notify_handler_cb(struct bt_conn *conn, void *data)
@@ -1052,11 +1246,31 @@ static ssize_t read_provider_name(struct bt_conn *conn, const struct bt_gatt_att
 	return ret;
 }
 
+static void cfg_changed_clear_pending(struct tbs_inst *inst, uint16_t value,
+				      void (*value_cb)(struct tbs_flags *flags, bool set),
+				      const struct bt_uuid *uuid)
+{
+	if (value == 0U) {
+		int err = k_mutex_lock(&inst->mutex, MUTEX_TIMEOUT);
+
+		if (err != 0) {
+			LOG_DBG("Failed to lock mutex");
+		} else {
+			set_value_changed(inst, value_cb, uuid);
+			err = k_mutex_unlock(&inst->mutex);
+			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+		}
+	}
+}
+
 static void provider_name_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-	const struct tbs_inst *inst = lookup_inst_by_attr(attr);
+	struct tbs_inst *inst = lookup_inst_by_attr(attr);
 
 	if (inst != NULL) {
+		/* Clear any pending notifications for any connections that unsubscribe */
+		cfg_changed_clear_pending(inst, value, set_bearer_provider_name_changed_cb,
+					  BT_UUID_TBS_PROVIDER_NAME);
 		LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
 	}
 }
@@ -1084,9 +1298,12 @@ static ssize_t read_technology(struct bt_conn *conn, const struct bt_gatt_attr *
 
 static void technology_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-	const struct tbs_inst *inst = lookup_inst_by_attr(attr);
+	struct tbs_inst *inst = lookup_inst_by_attr(attr);
 
 	if (inst != NULL) {
+		/* Clear any pending notifications for any connections that unsubscribe */
+		cfg_changed_clear_pending(inst, value, set_bearer_technology_changed_cb,
+					  BT_UUID_TBS_TECHNOLOGY);
 		LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
 	}
 }
@@ -1123,9 +1340,13 @@ static ssize_t read_uri_scheme_list(struct bt_conn *conn, const struct bt_gatt_a
 
 static void uri_scheme_list_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-	const struct tbs_inst *inst = lookup_inst_by_attr(attr);
+	struct tbs_inst *inst = lookup_inst_by_attr(attr);
 
 	if (inst != NULL) {
+		/* Clear any pending notifications for any connections that unsubscribe */
+		cfg_changed_clear_pending(inst, value,
+					  set_bearer_uri_schemes_supported_list_changed_cb,
+					  BT_UUID_TBS_URI_LIST);
 		LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
 	}
 }
@@ -1143,9 +1364,12 @@ static ssize_t read_signal_strength(struct bt_conn *conn, const struct bt_gatt_a
 
 static void signal_strength_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-	const struct tbs_inst *inst = lookup_inst_by_attr(attr);
+	struct tbs_inst *inst = lookup_inst_by_attr(attr);
 
 	if (inst != NULL) {
+		/* Clear any pending notifications for any connections that unsubscribe */
+		cfg_changed_clear_pending(inst, value, set_signal_strength_changed_cb,
+					  BT_UUID_TBS_SIGNAL_STRENGTH);
 		LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
 	}
 }
@@ -1195,8 +1419,28 @@ static void current_calls_cfg_changed(const struct bt_gatt_attr *attr, uint16_t 
 {
 	struct tbs_inst *inst = lookup_inst_by_attr(attr);
 
-	if (inst != NULL) {
-		LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
+	if (inst == NULL) {
+		return;
+	}
+
+	LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
+
+	if (value == 0U) {
+		int err = k_mutex_lock(&inst->mutex, K_FOREVER);
+
+		if (err != 0) {
+			LOG_DBG("Failed to lock mutex: %d", err);
+			return;
+		}
+
+		(void)try_change_dialing_call_to_alerting(inst);
+
+		/* Clear any pending notifications for any connections that unsubscribe */
+		set_value_changed(inst, set_list_current_calls_changed_cb,
+				  BT_UUID_TBS_LIST_CURRENT_CALLS);
+
+		err = k_mutex_unlock(&inst->mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 	}
 }
 
@@ -1261,9 +1505,12 @@ static ssize_t read_status_flags(struct bt_conn *conn, const struct bt_gatt_attr
 
 static void status_flags_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-	const struct tbs_inst *inst = lookup_inst_by_attr(attr);
+	struct tbs_inst *inst = lookup_inst_by_attr(attr);
 
 	if (inst != NULL) {
+		/* Clear any pending notifications for any connections that unsubscribe */
+		cfg_changed_clear_pending(inst, value, set_status_flags_changed_cb,
+					  BT_UUID_TBS_STATUS_FLAGS);
 		LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
 	}
 }
@@ -1315,9 +1562,13 @@ static ssize_t read_incoming_uri(struct bt_conn *conn, const struct bt_gatt_attr
 
 static void incoming_uri_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-	const struct tbs_inst *inst = lookup_inst_by_attr(attr);
+	struct tbs_inst *inst = lookup_inst_by_attr(attr);
 
 	if (inst != NULL) {
+		/* Clear any pending notifications for any connections that unsubscribe */
+		cfg_changed_clear_pending(inst, value,
+					  set_incoming_call_target_bearer_uri_changed_cb,
+					  BT_UUID_TBS_INCOMING_URI);
 		LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
 	}
 }
@@ -1363,8 +1614,27 @@ static void call_state_cfg_changed(const struct bt_gatt_attr *attr, uint16_t val
 {
 	struct tbs_inst *inst = lookup_inst_by_attr(attr);
 
-	if (inst != NULL) {
-		LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
+	if (inst == NULL) {
+		return;
+	}
+
+	LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
+
+	if (value == 0U) {
+		int err = k_mutex_lock(&inst->mutex, K_FOREVER);
+
+		if (err != 0) {
+			LOG_DBG("Failed to lock mutex: %d", err);
+			return;
+		}
+
+		(void)try_change_dialing_call_to_alerting(inst);
+
+		/* Clear any pending notifications for any connections that unsubscribe */
+		set_value_changed(inst, set_call_state_changed_cb, BT_UUID_TBS_CALL_STATE);
+
+		err = k_mutex_unlock(&inst->mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 	}
 }
 
@@ -1557,26 +1827,27 @@ static uint8_t join_calls(struct tbs_inst *inst, const struct bt_tbs_call_cp_joi
 		if (call_state == BT_TBS_CALL_STATE_INCOMING) {
 			return BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
 		}
-
-		if (call_state != BT_TBS_CALL_STATE_LOCALLY_HELD &&
-		    call_state != BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD &&
-		    call_state != BT_TBS_CALL_STATE_ACTIVE) {
-			return BT_TBS_RESULT_CODE_STATE_MISMATCH;
-		}
 	}
 
 	/* Join all calls */
 	for (int i = 0; i < call_index_cnt; i++) {
 		call_state = joined_calls[i]->state;
 
-		if (call_state == BT_TBS_CALL_STATE_LOCALLY_HELD) {
+		if (call_state == BT_TBS_CALL_STATE_ACTIVE) {
+			/* Remain active */
+		} else if (call_state == BT_TBS_CALL_STATE_LOCALLY_HELD) {
 			joined_calls[i]->state = BT_TBS_CALL_STATE_ACTIVE;
+		} else if (call_state == BT_TBS_CALL_STATE_REMOTELY_HELD) {
+			/* Remain remotely held */
 		} else if (call_state == BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD) {
 			joined_calls[i]->state = BT_TBS_CALL_STATE_REMOTELY_HELD;
-		} else if (call_state == BT_TBS_CALL_STATE_INCOMING) {
-			joined_calls[i]->state = BT_TBS_CALL_STATE_ACTIVE;
+		} else if (call_state == BT_TBS_CALL_STATE_ALERTING) {
+			/* Implementation specific - Treat as no-op */
+		} else if (call_state == BT_TBS_CALL_STATE_DIALING) {
+			/* Implementation specific - Treat as no-op */
+		} else {
+			__ASSERT(false, "Invalid call state: 0x%02X", call_state);
 		}
-		/* else active => Do nothing */
 	}
 
 	hold_other_calls(inst, call_index_cnt, ccp->call_indexes);
@@ -1850,6 +2121,7 @@ static ssize_t write_call_cp(struct bt_conn *conn, const struct bt_gatt_attr *at
 	if (tbs != NULL && status == BT_TBS_RESULT_CODE_SUCCESS) {
 		notify_calls(tbs);
 		calls_changed = true;
+		(void)try_change_dialing_call_to_alerting(tbs);
 	}
 
 	if (conn != NULL && bt_gatt_is_subscribed(conn, attr, BT_GATT_CCC_NOTIFY)) {
@@ -1878,13 +2150,59 @@ static ssize_t write_call_cp(struct bt_conn *conn, const struct bt_gatt_attr *at
 	return len;
 }
 
+struct pending_cp_ntf_subscribed_info {
+	const struct bt_gatt_attr *attr;
+	uint8_t conn_index;
+	bool subscribed;
+};
+
+static void pending_cp_ntf_subscribed_cb(struct bt_conn *conn, void *data)
+{
+	struct pending_cp_ntf_subscribed_info *info = data;
+
+	if (bt_conn_index(conn) == info->conn_index) {
+		info->subscribed = bt_gatt_is_subscribed(conn, info->attr, BT_GATT_CCC_NOTIFY);
+	}
+}
+
+static bool pending_cp_ntf_subscribed(const struct tbs_inst *inst, const struct bt_gatt_attr *attr)
+{
+	struct pending_cp_ntf_subscribed_info info = {
+		.attr = attr,
+		.conn_index = inst->cp_ntf.conn_index,
+		.subscribed = false,
+	};
+
+	bt_conn_foreach(BT_CONN_TYPE_LE, pending_cp_ntf_subscribed_cb, &info);
+
+	return info.subscribed;
+}
+
 static void call_cp_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-	const struct tbs_inst *inst = lookup_inst_by_attr(attr);
+	struct tbs_inst *inst = lookup_inst_by_attr(attr);
 
-	if (inst != NULL) {
-		LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
+	if (inst == NULL) {
+		return;
 	}
+
+	/* Clear the pending notification only when its owning connection unsubscribes */
+	if (value == 0U) {
+		int err = k_mutex_lock(&inst->mutex, MUTEX_TIMEOUT);
+
+		if (err != 0) {
+			LOG_DBG("Failed to lock mutex");
+		} else {
+			if (inst->cp_ntf.pending && !pending_cp_ntf_subscribed(inst, attr)) {
+				inst->cp_ntf.pending = false;
+			}
+
+			err = k_mutex_unlock(&inst->mutex);
+			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+		}
+	}
+
+	LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
 }
 
 static ssize_t read_optional_opcodes(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -1901,9 +2219,12 @@ static ssize_t read_optional_opcodes(struct bt_conn *conn, const struct bt_gatt_
 
 static void terminate_reason_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-	const struct tbs_inst *inst = lookup_inst_by_attr(attr);
+	struct tbs_inst *inst = lookup_inst_by_attr(attr);
 
 	if (inst != NULL) {
+		/* Clear any pending notifications for any connections that unsubscribe */
+		cfg_changed_clear_pending(inst, value, set_terminate_reason_changed_cb,
+					  BT_UUID_TBS_TERMINATE_REASON);
 		LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
 	}
 }
@@ -1953,9 +2274,12 @@ static ssize_t read_friendly_name(struct bt_conn *conn, const struct bt_gatt_att
 
 static void friendly_name_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-	const struct tbs_inst *inst = lookup_inst_by_attr(attr);
+	struct tbs_inst *inst = lookup_inst_by_attr(attr);
 
 	if (inst != NULL) {
+		/* Clear any pending notifications for any connections that unsubscribe */
+		cfg_changed_clear_pending(inst, value, set_call_friendly_name_changed_cb,
+					  BT_UUID_TBS_FRIENDLY_NAME);
 		LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
 	}
 }
@@ -2005,9 +2329,12 @@ static ssize_t read_incoming_call(struct bt_conn *conn, const struct bt_gatt_att
 
 static void in_call_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-	const struct tbs_inst *inst = lookup_inst_by_attr(attr);
+	struct tbs_inst *inst = lookup_inst_by_attr(attr);
 
 	if (inst != NULL) {
+		/* Clear any pending notifications for any connections that unsubscribe */
+		cfg_changed_clear_pending(inst, value, set_incoming_call_changed_cb,
+					  BT_UUID_TBS_INCOMING_CALL);
 		LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
 	}
 }
@@ -2492,6 +2819,7 @@ int bt_tbs_originate(uint8_t bearer_index, char *remote_uri, uint8_t *call_index
 	struct tbs_inst *inst = inst_lookup_index(bearer_index);
 	uint8_t buf[CONFIG_BT_TBS_MAX_URI_LENGTH + sizeof(struct bt_tbs_call_cp_originate)];
 	struct bt_tbs_call_cp_originate *ccp = (struct bt_tbs_call_cp_originate *)buf;
+	struct tbs_inst *target_inst = NULL;
 	size_t uri_len;
 	int err;
 	int ret;
@@ -2499,30 +2827,50 @@ int bt_tbs_originate(uint8_t bearer_index, char *remote_uri, uint8_t *call_index
 	if (inst == NULL) {
 		LOG_DBG("Could not find TBS instance from index %u", bearer_index);
 		return -EINVAL;
-	} else if (!bt_tbs_valid_uri((uint8_t *)remote_uri, strlen(remote_uri))) {
+	}
+
+	if (remote_uri == NULL) {
+		LOG_DBG("remote_uri is NULL");
+		return -EINVAL;
+	}
+
+	if (call_index == NULL) {
+		LOG_DBG("call_index is NULL");
+		return -EINVAL;
+	}
+
+	uri_len = strlen(remote_uri);
+	if (!bt_tbs_valid_uri((uint8_t *)remote_uri, uri_len)) {
 		LOG_DBG("Invalid URI %s", remote_uri);
 		return -EINVAL;
 	}
 
-	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
+	if (inst_is_gtbs(inst)) {
+		target_inst = lookup_inst_by_uri_scheme((uint8_t *)remote_uri, uri_len);
+		if (target_inst == NULL) {
+			return -ENODEV;
+		}
+	} else {
+		target_inst = inst;
+	}
+
+	err = k_mutex_lock(&target_inst->mutex, K_NO_WAIT);
 	if (err != 0) {
 		LOG_DBG("Failed to lock mutex");
 		return -EBUSY;
 	}
 
-	uri_len = strlen(remote_uri);
-
 	ccp->opcode = BT_TBS_CALL_OPCODE_ORIGINATE;
 	(void)memcpy(ccp->uri, remote_uri, uri_len);
 
-	ret = originate_call(inst, ccp, uri_len, call_index);
+	ret = originate_call(target_inst, ccp, uri_len, call_index);
 
 	/* In the case that we are not connected to any TBS clients, we won't notify and we can
 	 * attempt to change state from dialing to alerting immediately
 	 */
-	(void)try_change_dialing_call_to_alerting(inst);
+	(void)try_change_dialing_call_to_alerting(target_inst);
 
-	err = k_mutex_unlock(&inst->mutex);
+	err = k_mutex_unlock(&target_inst->mutex);
 	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
 	return ret;
@@ -2725,36 +3073,6 @@ int bt_tbs_remote_terminate(uint8_t call_index)
 	return ret;
 }
 
-static void set_incoming_call_target_bearer_uri_changed_cb(struct tbs_flags *flags)
-{
-	if (flags->incoming_call_target_bearer_uri_changed) {
-		LOG_DBG("pending notification replaced");
-	}
-
-	flags->incoming_call_target_bearer_uri_changed = true;
-	flags->incoming_call_target_bearer_uri_dirty = true;
-}
-
-static void set_incoming_call_changed_cb(struct tbs_flags *flags)
-{
-	if (flags->incoming_call_changed) {
-		LOG_DBG("pending notification replaced");
-	}
-
-	flags->incoming_call_changed = true;
-	flags->incoming_call_dirty = true;
-}
-
-static void set_call_friendly_name_changed_cb(struct tbs_flags *flags)
-{
-	if (flags->call_friendly_name_changed) {
-		LOG_DBG("pending notification replaced");
-	}
-
-	flags->call_friendly_name_changed = true;
-	flags->call_friendly_name_dirty = true;
-}
-
 static void tbs_inst_remote_incoming(struct tbs_inst *inst, const char *to, const char *from,
 				     const char *friendly_name, const struct bt_tbs_call *call)
 {
@@ -2831,12 +3149,6 @@ int bt_tbs_remote_incoming(uint8_t bearer_index, const char *to, const char *fro
 	return call->index;
 }
 
-static void set_bearer_provider_name_changed_cb(struct tbs_flags *flags)
-{
-	flags->bearer_provider_name_changed = true;
-	flags->bearer_provider_name_dirty = true;
-}
-
 int bt_tbs_set_bearer_provider_name(uint8_t bearer_index, const char *name)
 {
 	struct tbs_inst *inst = inst_lookup_index(bearer_index);
@@ -2867,11 +3179,6 @@ int bt_tbs_set_bearer_provider_name(uint8_t bearer_index, const char *name)
 	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
 	return 0;
-}
-
-static void set_bearer_technology_changed_cb(struct tbs_flags *flags)
-{
-	flags->bearer_technology_changed = true;
 }
 
 int bt_tbs_set_bearer_technology(uint8_t bearer_index, uint8_t new_technology)
@@ -2934,11 +3241,6 @@ int bt_tbs_set_signal_strength(uint8_t bearer_index, uint8_t new_signal_strength
 	return 0;
 }
 
-static void set_status_flags_changed_cb(struct tbs_flags *flags)
-{
-	flags->status_flags_changed = true;
-}
-
 int bt_tbs_set_status_flags(uint8_t bearer_index, uint16_t status_flags)
 {
 	struct tbs_inst *inst = inst_lookup_index(bearer_index);
@@ -2970,17 +3272,10 @@ int bt_tbs_set_status_flags(uint8_t bearer_index, uint16_t status_flags)
 	return 0;
 }
 
-static void set_bearer_uri_schemes_supported_list_changed_cb(struct tbs_flags *flags)
+int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char *uri_scheme_list)
 {
-	flags->bearer_uri_schemes_supported_list_changed = true;
-	flags->bearer_uri_schemes_supported_list_dirty = true;
-}
-
-int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint8_t uri_count)
-{
-	char uri_scheme_list[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH];
-	size_t len = 0;
 	struct tbs_inst *inst = inst_lookup_index(bearer_index);
+	size_t uri_scheme_list_len;
 	int err;
 
 	if (inst == NULL) {
@@ -2988,35 +3283,18 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint
 		return -EINVAL;
 	}
 
-	(void)memset(uri_scheme_list, 0, sizeof(uri_scheme_list));
+	if (uri_scheme_list == NULL) {
+		LOG_DBG("uri_scheme_list is NULL");
 
-	for (int i = 0; i < uri_count; i++) {
-		if (strlen(uri_scheme_list) > 0) {
-			if ((len + 1) > sizeof(uri_scheme_list) - 1) {
-				return -ENOMEM;
-			}
-
-			strcat(uri_scheme_list, ",");
-		}
-
-		len += strlen(uri_list[i]);
-
-		if (len > sizeof(uri_scheme_list) - 1) {
-			return -ENOMEM;
-		} else {
-			if (is_tbs_uri_unique(inst->uri_scheme_list, uri_list[i])) {
-				len -= strlen(uri_list[i]);
-			}
-
-			/* Store list in temp list */
-			strcat(uri_scheme_list, uri_list[i]);
-		}
+		return -EINVAL;
 	}
 
-	if ((len == 0) && (strlen(inst->uri_scheme_list) == strlen(uri_scheme_list))) {
-		/* no new uri-scheme added; don't update or notify */
-		LOG_DBG("All requested uri prefix are already in TBS uri-scheme list");
-		return 0;
+	uri_scheme_list_len = strlen(uri_scheme_list);
+	if (uri_scheme_list_len >= sizeof(inst->uri_scheme_list)) {
+		LOG_DBG("Cannot store uri_scheme_list of size %zu in buffer of size %zu",
+			uri_scheme_list_len, sizeof(inst->uri_scheme_list));
+
+		return -ENOMEM;
 	}
 
 	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
@@ -3025,19 +3303,30 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint
 		return -EBUSY;
 	}
 
-	/* Store final result */
-	(void)utf8_lcpy(inst->uri_scheme_list, uri_scheme_list, sizeof(inst->uri_scheme_list));
+	if (strcmp(inst->uri_scheme_list, uri_scheme_list) == 0) {
+		/* No URI scheme changes */
+		LOG_DBG("URI scheme \"%s\" was identical to existing for %p", uri_scheme_list,
+			inst);
+	} else {
 
-	set_value_changed(inst, set_bearer_uri_schemes_supported_list_changed_cb,
-			  BT_UUID_TBS_URI_LIST);
+		/* Store final result */
+		(void)memcpy(inst->uri_scheme_list, uri_scheme_list, uri_scheme_list_len);
+		inst->uri_scheme_list[uri_scheme_list_len] = '\0';
 
-	LOG_DBG("TBS instance %u uri prefix list is updated to {%s}", bearer_index,
-		 inst->uri_scheme_list);
-
-	if (!inst_is_gtbs(inst)) {
-		/* If the instance is different than GTBS notify on the GTBS instance as well */
-		set_value_changed(&gtbs_inst, set_bearer_uri_schemes_supported_list_changed_cb,
+		set_value_changed(inst, set_bearer_uri_schemes_supported_list_changed_cb,
 				  BT_UUID_TBS_URI_LIST);
+
+		LOG_DBG("TBS instance %u uri prefix list is updated to {%s}", bearer_index,
+			inst->uri_scheme_list);
+
+		if (!inst_is_gtbs(inst)) {
+			/* If the instance is different than GTBS notify on the GTBS instance as
+			 * well
+			 */
+			set_value_changed(&gtbs_inst,
+					  set_bearer_uri_schemes_supported_list_changed_cb,
+					  BT_UUID_TBS_URI_LIST);
+		}
 	}
 
 	err = k_mutex_unlock(&inst->mutex);

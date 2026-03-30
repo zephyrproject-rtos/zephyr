@@ -7,8 +7,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <errno.h>
+
 #include <zephyr/bluetooth/hci_types.h>
-#include "isoal.h"
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -18,8 +19,11 @@
 #include "pdu_df.h"
 #include "lll/pdu_vendor.h"
 #include "pdu.h"
+
 #include "lll.h"
 #include "lll_conn.h"
+
+#include "isoal.h"
 
 #include "ull_iso_types.h"
 #include "ull_conn_internal.h"
@@ -68,12 +72,15 @@ uint8_t ll_configure_data_path(uint8_t data_path_dir, uint8_t data_path_id,
 	return 0;
 }
 
-void ll_data_path_tx_pdu_release(uint16_t handle, struct node_tx_iso *node_tx)
+int ll_data_path_tx_pdu_release(uint16_t handle, struct node_tx_iso *node_tx)
 {
-	/* FIXME: ll_tx_ack_put is not LLL callable as it is
-	 * used by ACL connections in ULL context to dispatch
-	 * ack.
+	/* Process as TX ack, we are in LLL execution context here.
+	 *
+	 * Call Path:
+	 *   ull_iso_lll_ack_enqueue() --> ll_data_path_tx_pdu_release()
+	 *   (this function).
+	 *
+	 * Fallback to using MFIFO to safely transition from LLL to ULL context.
 	 */
-	ll_tx_ack_put(handle, (void *)node_tx);
-	ll_rx_sched();
+	return -ENOTSUP;
 }

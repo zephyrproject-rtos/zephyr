@@ -82,7 +82,7 @@ LOG_MODULE_REGISTER(wdt_wwdg_stm32);
 #define ABS_DIFF_UINT(a, b)  ((a) > (b) ? (a) - (b) : (b) - (a))
 #define WWDG_TIMEOUT_ERROR_MARGIN(__TIMEOUT__)   (__TIMEOUT__ / 10)
 #define IS_WWDG_TIMEOUT(__TIMEOUT_GOLDEN__, __TIMEOUT__)  \
-	(__TIMEOUT__ - __TIMEOUT_GOLDEN__) < \
+	ABS_DIFF_UINT(__TIMEOUT__, __TIMEOUT_GOLDEN__) < \
 	WWDG_TIMEOUT_ERROR_MARGIN(__TIMEOUT_GOLDEN__)
 
 static void wwdg_stm32_irq_config(const struct device *dev);
@@ -177,6 +177,8 @@ static int wwdg_stm32_setup(const struct device *dev, uint8_t options)
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32MP2X)
 		LL_DBGMCU_APB3_GRP1_FreezePeriph(LL_DBGMCU_APB3_GRP1_WWDG1_STOP);
+#elif defined(CONFIG_SOC_SERIES_STM32C5X)
+		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_WWDG_STOP);
 #elif defined(CONFIG_SOC_SERIES_STM32MP1X)
 		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_WWDG1_STOP);
 #else
@@ -226,7 +228,7 @@ static int wwdg_stm32_install_timeout(const struct device *dev,
 	LOG_DBG("Desired WDT: %d us", timeout);
 	LOG_DBG("Set WDT:     %d us", calculated_timeout);
 
-	if (!(IS_WWDG_COUNTER(counter) &&
+	if (!(IN_RANGE(counter, WWDG_COUNTER_MIN, WWDG_COUNTER_MAX) &&
 	      IS_WWDG_TIMEOUT(timeout, calculated_timeout))) {
 		/* One of the parameters provided is invalid */
 		return -EINVAL;

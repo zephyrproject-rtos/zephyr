@@ -5,12 +5,6 @@
 
 if BOARD_ADI_EVAL_ADIN2111EBZ
 
-configdefault MDIO_INIT_PRIORITY
-	default 81
-
-configdefault PHY_INIT_PRIORITY
-	default 82
-
 configdefault SPI_STM32_DMA
 	default y
 

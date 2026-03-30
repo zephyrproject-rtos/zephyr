@@ -10,6 +10,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
@@ -70,6 +71,7 @@ static struct cap_acceptor {
 static size_t connected_conn_cnt;
 static struct bt_cap_broadcast_source *broadcast_source;
 static struct bt_cap_unicast_group *unicast_group;
+static struct bt_le_ext_adv *ext_adv;
 static bt_addr_le_t remote_dev_addr;
 
 CREATE_FLAG(flag_dev_found);
@@ -167,6 +169,35 @@ static void unicast_stop_complete_cb(int err, struct bt_conn *conn)
 	SET_FLAG(flag_stopped);
 }
 
+static void unicast_to_broadcast_created_cb(struct bt_cap_broadcast_source *source)
+{
+	struct bt_data per_ad;
+	int err;
+
+	if (broadcast_source != NULL) {
+		FAIL("Unexpected call to unicast_to_broadcast_created");
+	}
+
+	broadcast_source = source;
+
+	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
+
+	err = bt_cap_initiator_broadcast_get_base(source, &base_buf);
+	if (err != 0) {
+		FAIL("Failed to get encoded BASE: %d\n", err);
+		return;
+	}
+
+	per_ad.type = BT_DATA_SVC_DATA16;
+	per_ad.data_len = base_buf.len;
+	per_ad.data = base_buf.data;
+	err = bt_le_per_adv_set_data(ext_adv, &per_ad, 1);
+	if (err != 0) {
+		FAIL("Failed to set periodic advertising data: %d\n", err);
+		return;
+	}
+}
+
 static void unicast_to_broadcast_complete_cb(int err, struct bt_conn *conn,
 					     struct bt_cap_unicast_group *group,
 					     struct bt_cap_broadcast_source *source)
@@ -179,7 +210,6 @@ static void unicast_to_broadcast_complete_cb(int err, struct bt_conn *conn,
 
 	LOG_DBG("Unicast to broadcast handover completed with new source %p", source);
 
-	broadcast_source = source;
 	SET_FLAG(flag_handover_unicast_to_broadcast);
 }
 
@@ -394,6 +424,7 @@ static void init(void)
 		.recv_state = bap_broadcast_assistant_recv_state_cb,
 	};
 	static struct bt_cap_handover_cb cap_handover_cb = {
+		.unicast_to_broadcast_created = unicast_to_broadcast_created_cb,
 		.unicast_to_broadcast_complete = unicast_to_broadcast_complete_cb,
 		.broadcast_to_unicast_complete = broadcast_to_unicast_complete_cb,
 	};
@@ -690,7 +721,7 @@ static void unicast_audio_stop(void)
 	WAIT_FOR_FLAG(flag_stopped);
 }
 
-static void handover_unicast_to_broadcast(struct bt_le_ext_adv *ext_adv, uint32_t broadcast_id)
+static void handover_unicast_to_broadcast(uint32_t broadcast_id)
 {
 	static struct bt_cap_initiator_broadcast_stream_param
 		stream_params[ARRAY_SIZE(cap_acceptors)];
@@ -764,7 +795,7 @@ static void handover_unicast_to_broadcast(struct bt_le_ext_adv *ext_adv, uint32_
 }
 
 static void handover_broadcast_to_unicast(
-	const struct bt_le_ext_adv *ext_adv, uint8_t adv_sid, uint32_t broadcast_id,
+	uint8_t adv_sid, uint32_t broadcast_id,
 	struct bt_cap_commander_broadcast_reception_stop_param *reception_stop_param)
 {
 	struct bt_cap_unicast_audio_start_stream_param stream_params[ARRAY_SIZE(cap_acceptors)] = {
@@ -817,31 +848,7 @@ static void handover_broadcast_to_unicast(
 	LOG_DBG("Handover procedure completed");
 }
 
-static void set_base_data(struct bt_le_ext_adv *ext_adv)
-{
-	struct bt_data per_ad;
-	int err;
-
-	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
-
-	err = bt_cap_initiator_broadcast_get_base(broadcast_source, &base_buf);
-	if (err != 0) {
-		FAIL("Failed to get encoded BASE: %d\n", err);
-		return;
-	}
-
-	per_ad.type = BT_DATA_SVC_DATA16;
-	per_ad.data_len = base_buf.len;
-	per_ad.data = base_buf.data;
-	err = bt_le_per_adv_set_data(ext_adv, &per_ad, 1);
-	if (err != 0) {
-		FAIL("Failed to set periodic advertising data: %d\n", err);
-		return;
-	}
-}
-
-static void test_main_cap_handover_central_common(const size_t acceptor_cnt, uint32_t broadcast_id,
-						  struct bt_le_ext_adv **ext_adv)
+static void test_main_cap_handover_central_common(const size_t acceptor_cnt, uint32_t broadcast_id)
 {
 
 	if (acceptor_cnt > CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT) {
@@ -871,12 +878,11 @@ static void test_main_cap_handover_central_common(const size_t acceptor_cnt, uin
 	/* Wait for acceptors to receive some data */
 	backchannel_sync_wait_all();
 
-	setup_broadcast_adv(ext_adv);
+	setup_broadcast_adv(&ext_adv);
+	start_broadcast_adv(ext_adv);
 
-	handover_unicast_to_broadcast(*ext_adv, broadcast_id);
+	handover_unicast_to_broadcast(broadcast_id);
 	unicast_group = NULL;
-	set_base_data(*ext_adv);
-	start_broadcast_adv(*ext_adv);
 
 	/* Wait for acceptors to receive some data */
 	backchannel_sync_wait_all();
@@ -886,12 +892,11 @@ static void test_main_cap_handover_central(void)
 {
 	const size_t acceptor_cnt = get_dev_cnt() - 1; /* Assume all other devices are acceptors */
 	uint32_t broadcast_id = 0x123456;
-	struct bt_le_ext_adv *ext_adv;
 	uint8_t adv_sid = 0x00;
 
-	test_main_cap_handover_central_common(acceptor_cnt, broadcast_id, &ext_adv);
+	test_main_cap_handover_central_common(acceptor_cnt, broadcast_id);
 
-	handover_broadcast_to_unicast(ext_adv, adv_sid, broadcast_id, NULL);
+	handover_broadcast_to_unicast(adv_sid, broadcast_id, NULL);
 	broadcast_source = NULL;
 
 	/* Wait for acceptors to receive some data */
@@ -911,10 +916,9 @@ static void test_main_cap_handover_central_reception_stop(void)
 		member_param[CONFIG_BT_MAX_CONN] = {0};
 	const size_t acceptor_cnt = get_dev_cnt() - 1; /* Assume all other devices are acceptors */
 	uint32_t broadcast_id = 0x123456;
-	struct bt_le_ext_adv *ext_adv;
 	uint8_t adv_sid = 0x00;
 
-	test_main_cap_handover_central_common(acceptor_cnt, broadcast_id, &ext_adv);
+	test_main_cap_handover_central_common(acceptor_cnt, broadcast_id);
 
 	reception_stop_param.type = BT_CAP_SET_TYPE_AD_HOC;
 	reception_stop_param.param = member_param;
@@ -925,7 +929,7 @@ static void test_main_cap_handover_central_reception_stop(void)
 		reception_stop_param.param[i].num_subgroups = broadcast_create_param.subgroup_count;
 	}
 
-	handover_broadcast_to_unicast(ext_adv, adv_sid, broadcast_id, &reception_stop_param);
+	handover_broadcast_to_unicast(adv_sid, broadcast_id, &reception_stop_param);
 	broadcast_source = NULL;
 
 	/* Wait for acceptors to receive some data */

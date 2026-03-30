@@ -11,13 +11,13 @@ manifest:
       groups:
         - optional
     - name: chre
-      revision: 3b32c76efee705af146124fb4190f71be5a4e36e
+      revision: c4c2f49fdcaa2fed49eb1db027696a5734a010d2
       path: modules/lib/chre
       remote: upstream
       groups:
         - optional
     - name: tflite-micro
-      revision: 8d404de73acf7687831e16d88e86e4f73cfddf8e
+      revision: fcc760af130f3a595b5802cdebcc77461e54f382
       path: optional/modules/lib/tflite-micro
       repo-path: tflite-micro
       remote: upstream

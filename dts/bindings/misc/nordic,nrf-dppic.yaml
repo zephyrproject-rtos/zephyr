@@ -11,3 +11,13 @@ include: base.yaml
 properties:
   reg:
     required: true
+
+  channels:
+    type: int
+    required: true
+    description: Number of channels implemented by the DPPIC instance.
+
+  groups:
+    type: int
+    required: true
+    description: Number of channel groups implemented by the DPPIC instance.

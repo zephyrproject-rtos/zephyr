@@ -168,6 +168,10 @@
 #define HCR_APK_BIT		BIT(40)	/* Trap pointer authentication key registers */
 #define HCR_API_BIT		BIT(41)	/* Trap pointer authentication instructions */
 
+/* CNTHCTL_EL2: Counter-timer Hypervisor Control register */
+#define CNTHCTL_EL2_EL1PCTEN	BIT(0)	/* Enable EL1 access to physical counter timer */
+#define CNTHCTL_EL2_EL1PCEN	BIT(1)	/* Enable EL1 access to physical counter */
+
 /* PAC Key Registers - System register encodings */
 #define APIAKeyLo_EL1		S3_0_C2_C1_0
 #define APIAKeyHi_EL1		S3_0_C2_C1_1
@@ -204,7 +208,7 @@
 #define ICC_SRE_ELx_SRE_BIT	BIT(0)
 #define ICC_SRE_ELx_DFB_BIT	BIT(1)
 #define ICC_SRE_ELx_DIB_BIT	BIT(2)
-#define ICC_SRE_EL3_EN_BIT	BIT(3)
+#define ICC_SRE_ELx_EN_BIT	BIT(3) /**< ICC SRE Enable */
 
 /* ICC SGI macros */
 #define SGIR_TGT_MASK		(0xffff)

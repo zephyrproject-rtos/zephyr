@@ -1,6 +1,6 @@
 # Renesas FSP HAL config
 
-# Copyright (c) 2024-2025 Renesas Electronics Corporation
+# Copyright (c) 2024-2026 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config HAS_RENESAS_RA_FSP
@@ -80,6 +80,11 @@ config USE_RA_FSP_MRAM
 	help
 	  Enable RA FSP MRAM driver
 
+config USE_RA_FSP_SAU_UART
+	bool
+	help
+	  Enable RA FSP SAU UART driver
+
 if USE_RA_FSP_SCE
 
 config HAS_RENESAS_RA_RSIP_E11A
@@ -103,6 +108,13 @@ config HAS_RENESAS_RA_RSIP_E51A
 	depends on DT_HAS_RENESAS_RA_RSIP_E51A_TRNG_ENABLED
 	help
 	  Includes RSIP-E51A implementation for SCE driver
+
+config HAS_RENESAS_RA_RSIP_E50D
+	bool
+	default y
+	depends on DT_HAS_RENESAS_RA_RSIP_E50D_TRNG_ENABLED
+	help
+	  Includes RSIP-E50D implementation for SCE driver
 
 config HAS_RENESAS_RA_SCE9
 	bool
@@ -183,6 +195,16 @@ config USE_RA_FSP_ETHER
 	bool
 	help
 	  Enable RA FSP Ethernet driver
+
+config USE_RA_FSP_RMAC
+	bool
+	help
+	  Enable RA FSP Ethernet RMAC driver
+
+config USE_RA_FSP_LAYER3_SWITCH
+	bool
+	help
+	  Enable RA FSP Ethernet Layer3 Switch driver
 
 config USE_RA_FSP_USB_DEVICE
 	bool
@@ -297,6 +319,11 @@ config USE_RA_FSP_RTC
 	bool
 	help
 	  Enable RA FSP RTC driver
+
+config USE_RA_FSP_DRW
+	bool
+	help
+	  Enable RA FSP DRW driver
 
 endif # HAS_RENESAS_RA_FSP
 

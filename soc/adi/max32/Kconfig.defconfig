@@ -12,4 +12,30 @@ choice PM_PREWAKEUP_CONV_MODE
 
 endchoice # PM_PREWAKEUP_CONV_MODE
 
+if SOC_FAMILY_MAX32_RV32
+
+config RISCV_TRAP_HANDLER_ALIGNMENT
+	default 256
+
+config ARCH_SW_ISR_TABLE_ALIGN
+	default 32
+
+config RISCV_SOC_CONTEXT_SAVE
+	default y
+
+config RISCV_SOC_OFFSETS
+	default y
+
+config RISCV_MCAUSE_EXCEPTION_MASK
+	default 0xFFF
+
+config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+	default n
+
+endif
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 8192 if MAX32_WUT_TIMER
+	default 10000
+
 endif # SOC_FAMILY_MAX32

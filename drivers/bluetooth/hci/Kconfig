@@ -267,11 +267,13 @@ config BT_AIROC
 	  Infineon's AIROC™ Wi-Fi & combos portfolio integrates
 	  IEEE 802.11a/b/g/n/ac/ax Wi-Fi and Bluetooth® 5.2 in a single-chip
 	  solution to enable small-form-factor IoT designs.
+source "drivers/bluetooth/hci/Kconfig.bflb"
 source "drivers/bluetooth/hci/Kconfig.esp32"
 source "drivers/bluetooth/hci/Kconfig.infineon"
 source "drivers/bluetooth/hci/Kconfig.nxp"
 source "drivers/bluetooth/hci/Kconfig.stm32"
 source "drivers/bluetooth/hci/Kconfig.silabs"
+source "drivers/bluetooth/hci/Kconfig.bee"
 
 config BT_DRIVER_QUIRK_NO_AUTO_DLE
 	bool "Host auto-initiated Data Length Update quirk"
@@ -325,6 +327,7 @@ config BT_DRV_RX_STACK_SIZE
 	default BT_STM32_IPM_RX_STACK_SIZE if BT_STM32_IPM
 	default HCI_NXP_RX_STACK_SIZE if HCI_NXP_RX_THREAD
 	default 1024 if BT_SF32LB
+	default 1024 if BT_BFLB_BL70X
 	default 512
 	help
 	  Stack size for the HCI driver's RX thread.

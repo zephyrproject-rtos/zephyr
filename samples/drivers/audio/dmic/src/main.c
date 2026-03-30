@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(dmic_sample);
 
 #define MAX_SAMPLE_RATE  16000
 #define SAMPLE_BIT_WIDTH CONFIG_SAMPLE_BIT_WIDTH
+#define PDM_CTL_IDX      CONFIG_HW_CHANNEL_INDEX
 #define BYTES_PER_SAMPLE SAMPLE_BIT_WIDTH / 8
 /* Milliseconds to wait for a block to be read. */
 #define READ_TIMEOUT     1000
@@ -108,7 +109,7 @@ int main(void)
 
 	cfg.channel.req_num_chan = 1;
 	cfg.channel.req_chan_map_lo =
-		dmic_build_channel_map(0, 0, PDM_CHAN_LEFT);
+		dmic_build_channel_map(0, PDM_CTL_IDX, PDM_CHAN_LEFT);
 	cfg.streams[0].pcm_rate = MAX_SAMPLE_RATE;
 	cfg.streams[0].block_size =
 		BLOCK_SIZE(cfg.streams[0].pcm_rate, cfg.channel.req_num_chan);
@@ -120,8 +121,8 @@ int main(void)
 
 	cfg.channel.req_num_chan = 2;
 	cfg.channel.req_chan_map_lo =
-		dmic_build_channel_map(0, 0, PDM_CHAN_LEFT) |
-		dmic_build_channel_map(1, 0, PDM_CHAN_RIGHT);
+		dmic_build_channel_map(0, PDM_CTL_IDX, PDM_CHAN_LEFT) |
+		dmic_build_channel_map(1, PDM_CTL_IDX, PDM_CHAN_RIGHT);
 	cfg.streams[0].pcm_rate = MAX_SAMPLE_RATE;
 	cfg.streams[0].block_size =
 		BLOCK_SIZE(cfg.streams[0].pcm_rate, cfg.channel.req_num_chan);

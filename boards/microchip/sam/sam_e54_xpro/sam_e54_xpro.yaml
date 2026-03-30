@@ -21,12 +21,12 @@ supported:
   - gpio
   - hwinfo
   - i2c
+  - interrupt_controller
   - mcuboot
   - pinctrl
   - pwm
   - reset
   - rtc
-  - shell
   - spi
   - uart
   - watchdog

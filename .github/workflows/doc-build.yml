@@ -59,7 +59,7 @@ jobs:
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.7.20251127
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.0.20260314
       options: '--entrypoint /bin/bash'
     timeout-minutes: 60
     concurrency:
@@ -149,11 +149,103 @@ jobs:
         lcov --remove doc-coverage.info \*/deprecated > new.info
         genhtml --no-function-coverage --no-branch-coverage new.info -o coverage-report
 
+    - name: Set up Node.js
+      uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+      with:
+        node-version: 24
+
+    - name: Run accessibility check (pa11y)
+      run: |
+        apt-get update -qq && apt-get install -y --no-install-recommends \
+          libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
+          libxkbcommon0 libxdamage1 libgbm1 libpango-1.0-0 \
+          libcairo2 libasound2t64
+
+        npm install -g pa11y-ci@4 pa11y-ci-reporter-html@7
+        npx puppeteer browsers install chrome
+
+        python3 -m http.server 8000 --directory doc/_build/html &
+        SERVER_PID=$!
+        sleep 1
+
+        cat <<EOF > .pa11y-ci.json
+        {
+          "defaults": {
+            "timeout": 240000,
+            "runners": [
+              "axe",
+              "htmlcs"
+            ],
+            "concurrency": 2,
+            "chromeLaunchConfig": {
+              "args": [
+                "--disable-dev-shm-usage",
+                "--no-sandbox"
+              ]
+            }
+          },
+          "urls": [
+            {
+              "url": "http://localhost:8000/index.html?mode=light",
+              "screenCapture": "./pa11y-ci-report/index.png"
+            },
+            {
+              "url": "http://localhost:8000/index.html?mode=dark",
+              "screenCapture": "./pa11y-ci-report/index-dark.png"
+            },
+            {
+              "url": "http://localhost:8000/boards/index.html?mode=light#name=devkit",
+              "screenCapture": "./pa11y-ci-report/boards.png"
+            },
+            {
+              "url": "http://localhost:8000/boards/index.html?mode=dark#name=devkit",
+              "screenCapture": "./pa11y-ci-report/boards-dark.png"
+            },
+            {
+              "url": "http://localhost:8000/samples/index.html?mode=light",
+              "screenCapture": "./pa11y-ci-report/samples.png"
+            },
+            {
+              "url": "http://localhost:8000/samples/index.html?mode=dark",
+              "screenCapture": "./pa11y-ci-report/samples-dark.png"
+            },
+            {
+              "url": "http://localhost:8000/develop/getting_started/index.html?mode=light",
+              "screenCapture": "./pa11y-ci-report/getting-started.png"
+            },
+            {
+              "url": "http://localhost:8000/develop/getting_started/index.html?mode=dark",
+              "screenCapture": "./pa11y-ci-report/getting-started-dark.png"
+            },
+            {
+              "url": "http://localhost:8000/contribute/documentation/guidelines.html?mode=light",
+              "screenCapture": "./pa11y-ci-report/guidelines.png"
+            },
+            {
+              "url": "http://localhost:8000/contribute/documentation/guidelines.html?mode=dark",
+              "screenCapture": "./pa11y-ci-report/guidelines-dark.png"
+            }
+          ]
+        }
+        EOF
+
+        mkdir -p pa11y-ci-report
+        pa11y-ci -c .pa11y-ci.json -T 9999 --reporter=pa11y-ci-reporter-html
+
+        kill $SERVER_PID
+
     - name: Compress documentation build artifacts
       run: |
         tar --use-compress-program="xz -T0" -cf html-output.tar.xz --exclude html/_sources --exclude html/doxygen/xml --directory=doc/_build html
         tar --use-compress-program="xz -T0" -cf api-output.tar.xz --directory=doc/_build html/doxygen/html
         tar --use-compress-program="xz -T0" -cf api-coverage.tar.xz coverage-report
+        tar --use-compress-program="xz -T0" -cf accessibility-report.tar.xz pa11y-ci-report
+
+    - name: Upload accessibility report
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      with:
+        name: accessibility-report
+        path: accessibility-report.tar.xz
 
     - name: Upload HTML output
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -176,11 +268,16 @@ jobs:
         DOC_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/docs/"
         API_DOC_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/docs/doxygen/html/"
         API_COVERAGE_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/api-coverage/"
+        A11Y_REPORT_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/accessibility-report/"
 
         echo "${PR_NUM}" > pr_num
-        echo "Documentation will be available shortly at: ${DOC_URL}" >> $GITHUB_STEP_SUMMARY
-        echo "API Documentation will be available shortly at: ${API_DOC_URL}" >> $GITHUB_STEP_SUMMARY
-        echo "API Coverage Report will be available shortly at: ${API_COVERAGE_URL}" >> $GITHUB_STEP_SUMMARY
+        echo "Build results will be available shortly at the following URLs:" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- Documentation: ${DOC_URL}" >> $GITHUB_STEP_SUMMARY
+        echo "- API Documentation: ${API_DOC_URL}" >> $GITHUB_STEP_SUMMARY
+        echo "- API Coverage Report: ${API_COVERAGE_URL}" >> $GITHUB_STEP_SUMMARY
+        echo "- Accessibility Report: ${A11Y_REPORT_URL}" >> $GITHUB_STEP_SUMMARY
+
 
     - name: Upload PR number
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

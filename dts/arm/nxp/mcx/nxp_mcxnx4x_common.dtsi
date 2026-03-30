@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -742,6 +742,9 @@
 			reg = <0 DT_SIZE_M(2)>;
 			erase-block-size = <DT_SIZE_K(8)>;
 			write-block-size = <16>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 		};
 
 		uuid: uuid@1100000 {
@@ -863,6 +866,7 @@
 	wwdt0: watchdog@16000 {
 		compatible = "nxp,lpc-wwdt";
 		reg = <0x16000 0x1000>;
+		clocks = <&syscon MCUX_WWDT0_CLK>;
 		interrupts = <152 0>;
 		status = "disabled";
 		clk-divider = <1>;
@@ -925,6 +929,20 @@
 			status = "disabled";
 			run-in-wait;
 		};
+	};
+
+	qdc0: qdc@cf000 {
+		compatible = "nxp,mcux-qdc";
+		reg = <0xcf000 0x1000>;
+		interrupts = <124 0>, <125 0>, <126 0>, <127 0>;
+		status = "disabled";
+	};
+
+	qdc1: qdc@d1000 {
+		compatible = "nxp,mcux-qdc";
+		reg = <0xd1000 0x1000>;
+		interrupts = <128 0>, <129 0>, <130 0>, <131 0>;
+		status = "disabled";
 	};
 
 	ctimer0: ctimer@c000 {
@@ -1272,6 +1290,15 @@
 		compatible = "nxp,vbat";
 		reg = <0x59000 0x1000>;
 		interrupts = <99 0>;
+	};
+
+	sema42: hwspinlock@b1000 {
+		compatible = "nxp,sema42";
+		reg = <0x0b1000 0x1000>;
+		clocks = <&syscon MCUX_SEMA42_CLK>;
+		#hwlock-cells = <1>;
+		num-locks = <16>;
+		status = "disabled";
 	};
 };
 

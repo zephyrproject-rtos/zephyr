@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/stepper.h>
+#include <zephyr/drivers/stepper/stepper.h>
 #include <zephyr/drivers/gpio.h>
 #include <step_dir_stepper_common.h>
 
@@ -15,11 +15,11 @@ LOG_MODULE_REGISTER(tmc22xx, CONFIG_STEPPER_LOG_LEVEL);
 
 struct tmc22xx_config {
 	struct step_dir_stepper_common_config common;
-	enum stepper_drv_micro_step_resolution *msx_resolutions;
+	enum stepper_micro_step_resolution *msx_resolutions;
 };
 
 struct tmc22xx_data {
-	enum stepper_drv_micro_step_resolution resolution;
+	enum stepper_micro_step_resolution resolution;
 };
 
 STEP_DIR_STEPPER_STRUCT_CHECK(struct tmc22xx_config);
@@ -41,7 +41,7 @@ static int tmc22xx_disable(const struct device *dev)
 }
 
 static int tmc22xx_set_micro_step_res(const struct device *dev,
-				      enum stepper_drv_micro_step_resolution micro_step_res)
+				      enum stepper_micro_step_resolution micro_step_res)
 {
 	struct tmc22xx_data *data = dev->data;
 	const struct tmc22xx_config *config = dev->config;
@@ -81,7 +81,7 @@ static int tmc22xx_set_micro_step_res(const struct device *dev,
 }
 
 static int tmc22xx_get_micro_step_res(const struct device *dev,
-				      enum stepper_drv_micro_step_resolution *micro_step_res)
+				      enum stepper_micro_step_resolution *micro_step_res)
 {
 	struct tmc22xx_data *data = dev->data;
 
@@ -153,7 +153,7 @@ static int tmc22xx_stepper_init(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(stepper_drv, tmc22xx_stepper_api) = {
+static DEVICE_API(stepper, tmc22xx_stepper_api) = {
 	.enable = tmc22xx_enable,
 	.disable = tmc22xx_disable,
 	.set_micro_step_res = tmc22xx_set_micro_step_res,
@@ -173,11 +173,11 @@ static DEVICE_API(stepper_drv, tmc22xx_stepper_api) = {
 			      &tmc22xx_stepper_api);
 
 #define DT_DRV_COMPAT adi_tmc2209
-static enum stepper_drv_micro_step_resolution tmc2209_msx_resolutions[MSX_PIN_STATE_COUNT] = {
-	STEPPER_DRV_MICRO_STEP_8,
-	STEPPER_DRV_MICRO_STEP_32,
-	STEPPER_DRV_MICRO_STEP_64,
-	STEPPER_DRV_MICRO_STEP_16,
+static enum stepper_micro_step_resolution tmc2209_msx_resolutions[MSX_PIN_STATE_COUNT] = {
+	STEPPER_MICRO_STEP_8,
+	STEPPER_MICRO_STEP_32,
+	STEPPER_MICRO_STEP_64,
+	STEPPER_MICRO_STEP_16,
 };
 DT_INST_FOREACH_STATUS_OKAY_VARGS(TMC22XX_STEPPER_DEFINE, tmc2209_msx_resolutions)
 #undef DT_DRV_COMPAT

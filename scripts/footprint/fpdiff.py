@@ -16,7 +16,7 @@
 
 from anytree.importer import DictImporter
 from anytree import PreOrderIter, AnyNode
-from anytree.search  import find
+from anytree.search  import find, CountError
 
 import colorama
 from colorama import Fore
@@ -63,8 +63,13 @@ def main():
         for node in PreOrderIter(root1):
             n1_size = nodesz(node)
 
-            # pylint: disable=undefined-loop-variable
-            n = find(root2, lambda node2: node2.identifier == node.identifier)
+            try:
+                # pylint: disable=undefined-loop-variable
+                n = find(root2, lambda node2: node2.identifier == node.identifier)
+            except CountError:
+                print(f"W: ignored duplicate symbol {node.identifier} (@ {node.address:#08x})")
+                continue
+
             if n:
                 n2_size = nodesz(n)
                 if n2_size != n1_size:
@@ -82,11 +87,15 @@ def main():
                     print(f"{node.identifier} ({Fore.GREEN}-{n1_size}{Fore.RESET}) disappeared.")
 
         for node in PreOrderIter(root2):
-            n = find(root1, lambda node2: node2.identifier == node.identifier)
+            try:
+                n = find(root1, lambda node2: node2.identifier == node.identifier)
+            except CountError:
+                print(f"W: ignored duplicate symbol {node.identifier} (@ {node.address:#08x})")
+                continue
+
             if not n:
                 if not node.children and node.size != 0:
                     print(f"{node.identifier} ({Fore.RED}+{nodesz(node)}{Fore.RESET}) is new.")
-
 
 if __name__ == "__main__":
     main()

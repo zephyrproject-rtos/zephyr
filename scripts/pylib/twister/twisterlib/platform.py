@@ -14,8 +14,7 @@ from itertools import groupby
 
 import list_boards
 import scl
-from twisterlib.constants import SUPPORTED_SIMS
-from twisterlib.environment import ZEPHYR_BASE
+from twisterlib.constants import SUPPORTED_SIMS, ZEPHYR_BASE
 
 logger = logging.getLogger('twister')
 
@@ -164,6 +163,7 @@ class Platform:
           "arm": ["zephyr", "gnuarmemb", "armclang", "llvm"],
           "arm64": ["zephyr", "cross-compile"],
           "mips": ["zephyr"],
+          "openrisc": ["zephyr"],
           "riscv": ["zephyr", "cross-compile"],
           "posix": ["host", "llvm"],
           "sparc": ["zephyr"],

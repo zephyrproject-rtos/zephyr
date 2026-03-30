@@ -248,9 +248,7 @@ static void mss_gpio_irq_handler(const struct device *dev)
 	static void gpio_mss_gpio_cfg_func_##n(void);	\
 	\
 	static const struct mss_gpio_config mss_gpio_config_##n = {	\
-		.common = {	\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
-		},	\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),	\
 		.gpio_base_addr = DT_INST_REG_ADDR(n),	\
 		.gpio_irq_base  = DT_INST_IRQN(n),	\
 		.gpio_cfg_func = gpio_mss_gpio_cfg_func_##n,	\

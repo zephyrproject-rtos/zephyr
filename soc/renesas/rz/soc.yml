@@ -25,6 +25,11 @@ family:
           - name: r9a08g045s33gbg
             cpuclusters:
               - name: cm33
+      - name: rzg3e
+        socs:
+          - name: r9a09g047e57gbg
+            cpuclusters:
+              - name: cm33
       - name: rzv2l
         socs:
           - name: r9a07g054l23gbg
@@ -44,6 +49,16 @@ family:
       - name: rzn2l
         socs:
           - name: r9a07g084m04gbg
+      - name: rzn2h
+        socs:
+          - name: r9a09g087m44gbg
+            cpuclusters:
+              - name: cr52_0
+      - name: rzt2h
+        socs:
+          - name: r9a09g077m44gbg
+            cpuclusters:
+              - name: cr52_0
       - name: rzt2l
         socs:
           - name: r9a07g074m04gbg

@@ -32,7 +32,6 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -53,6 +52,7 @@
 #include "common/bt_str.h"
 #include "conn_internal.h"
 #include "direction_internal.h"
+#include "gatt_gap_svc_validate.h"
 #include "hci_core.h"
 #include "id.h"
 #include "iso_internal.h"
@@ -787,9 +787,6 @@ error_return:
 	return err;
 }
 
-static struct k_poll_signal conn_change =
-		K_POLL_SIGNAL_INITIALIZER(conn_change);
-
 static void conn_destroy(struct bt_conn *conn, void *data)
 {
 	if (conn->state == BT_CONN_CONNECTED ||
@@ -956,7 +953,7 @@ static struct bt_conn *get_conn_ready(void)
 			continue;
 		}
 
-		CHECKIF(dont_have_methods(conn)) {
+		if (dont_have_methods(conn)) {
 			/* When a connection is missing mandatory methods, try next connection. */
 			LOG_DBG("conn %p (type %d) is missing mandatory methods", conn, conn->type);
 			prev = &conn->_conn_ready;
@@ -1184,7 +1181,6 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			}
 			break;
 		}
-		k_poll_signal_raise(&conn_change, 0);
 
 		if (bt_conn_is_iso(conn)) {
 			bt_iso_connected(conn);
@@ -2153,29 +2149,6 @@ static int send_conn_le_param_update(struct bt_conn *conn,
 	return bt_l2cap_update_conn_param(conn, param);
 }
 
-#if defined(CONFIG_BT_ISO_UNICAST)
-static struct bt_conn *conn_lookup_iso(struct bt_conn *conn)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(iso_conns); i++) {
-		struct bt_conn *iso = bt_conn_ref(&iso_conns[i]);
-
-		if (iso == NULL) {
-			continue;
-		}
-
-		if (iso->iso.acl == conn) {
-			return iso;
-		}
-
-		bt_conn_unref(iso);
-	}
-
-	return NULL;
-}
-#endif /* CONFIG_BT_ISO */
-
 #if defined(CONFIG_BT_CLASSIC)
 static struct bt_conn *conn_lookup_sco(struct bt_conn *conn)
 {
@@ -2209,7 +2182,7 @@ static void deferred_work(struct k_work *work)
 
 	if (conn->state == BT_CONN_DISCONNECTED) {
 #if defined(CONFIG_BT_ISO_UNICAST)
-		struct bt_conn *iso;
+		bool acl_coupled_with_cis;
 
 		if (bt_conn_is_iso(conn)) {
 			/* bt_iso_disconnected is responsible for unref'ing the
@@ -2220,23 +2193,36 @@ static void deferred_work(struct k_work *work)
 			return;
 		}
 
-		/* Mark all ISO channels associated
-		 * with ACL conn as not connected, and
-		 * remove ACL reference
+		/* Mark all CIS still associated with the ACL conn as disconnecting.
+		 * If any CIS are associated with the ACL, we postpone the disconnect work until
+		 * after the CIS has been disconnected from a HCI Disconnect event.
 		 */
-		iso = conn_lookup_iso(conn);
-		while (iso != NULL) {
-			struct bt_iso_chan *chan = iso->iso.chan;
+		acl_coupled_with_cis = false;
+		ARRAY_FOR_EACH_PTR(iso_conns, iso_conn) {
+			struct bt_conn *iso = bt_conn_ref(iso_conn);
 
-			if (chan != NULL) {
-				bt_iso_chan_set_state(chan,
-						      BT_ISO_STATE_DISCONNECTING);
+			if (iso == NULL) {
+				continue;
 			}
 
-			bt_iso_cleanup_acl(iso);
+			if (iso->iso.acl == conn) {
+				struct bt_iso_chan *chan = iso->iso.chan;
+
+				if (chan != NULL) {
+					bt_iso_chan_set_state(chan, BT_ISO_STATE_DISCONNECTING);
+				}
+
+				acl_coupled_with_cis = true;
+			}
 
 			bt_conn_unref(iso);
-			iso = conn_lookup_iso(conn);
+		}
+
+		if (acl_coupled_with_cis) {
+			LOG_DBG("acl %p is pending on CIS disconnects, wait for CIS disconnects",
+				conn);
+
+			return;
 		}
 #endif
 #if defined(CONFIG_BT_CLASSIC)
@@ -2577,9 +2563,6 @@ void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 {
 	reset_pairing(conn);
 	bt_l2cap_security_changed(conn, hci_err);
-	if (IS_ENABLED(CONFIG_BT_ISO_CENTRAL)) {
-		bt_iso_security_changed(conn, hci_err);
-	}
 
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->security_changed) {
@@ -2696,7 +2679,7 @@ int bt_conn_cb_register(struct bt_conn_cb *cb)
 
 int bt_conn_cb_unregister(struct bt_conn_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -3452,8 +3435,8 @@ static bool le_conn_rate_common_params_valid(const struct bt_conn_le_conn_rate_p
 		return false;
 	}
 
-	if (!IN_RANGE(param->supervision_timeout_10ms, BT_HCI_LE_SUPERVISON_TIMEOUT_MIN,
-		     BT_HCI_LE_SUPERVISON_TIMEOUT_MAX)) {
+	if (!IN_RANGE(param->supervision_timeout_10ms, BT_HCI_LE_SUPERVISION_TIMEOUT_MIN,
+		     BT_HCI_LE_SUPERVISION_TIMEOUT_MAX)) {
 		return false;
 	}
 
@@ -4060,11 +4043,11 @@ int bt_conn_le_create(const bt_addr_le_t *peer, const struct bt_conn_le_create_p
 	struct bt_conn *conn;
 	int err;
 
-	CHECKIF(ret_conn == NULL) {
+	if (ret_conn == NULL) {
 		return -EINVAL;
 	}
 
-	CHECKIF(*ret_conn != NULL) {
+	if (*ret_conn != NULL) {
 		/* This rule helps application developers prevent leaks of connection references. If
 		 * a bt_conn variable is not null, it presumably holds a reference and must not be
 		 * overwritten. To avoid this warning, initialize the variables to null, and set
@@ -4142,11 +4125,11 @@ int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
 	struct bt_conn *conn;
 	int err;
 
-	CHECKIF(ret_conn == NULL) {
+	if (ret_conn == NULL) {
 		return -EINVAL;
 	}
 
-	CHECKIF(*ret_conn != NULL) {
+	if (*ret_conn != NULL) {
 		/* This rule helps application developers prevent leaks of connection references. If
 		 * a bt_conn variable is not null, it presumably holds a reference and must not be
 		 * overwritten. To avoid this warning, initialize the variables to null, and set
@@ -4280,7 +4263,7 @@ int bt_conn_auth_cb_overlay(struct bt_conn *conn, const struct bt_conn_auth_cb *
 
 int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -4295,7 +4278,7 @@ int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb)
 
 int bt_conn_auth_info_cb_unregister(struct bt_conn_auth_info_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -4432,6 +4415,14 @@ int bt_conn_init(void)
 	}
 
 	bt_att_init();
+
+	if (IS_ENABLED(CONFIG_BT_GATT_GAP_SVC_VALIDATE)) {
+		err = gatt_gap_svc_validate();
+		if (err != 0) {
+			LOG_DBG("GATT GAP service validation failed (err %d)", err);
+			return err;
+		}
+	}
 
 	err = bt_smp_init();
 	if (err) {

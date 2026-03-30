@@ -11,3 +11,6 @@ properties:
   mdm-reset-gpios:
     type: phandle-array
     required: true
+
+  zephyr,mdm-reset-behavior:
+    default: ["toggle_on_resume", "toggle_on_recovery"]

@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_hostname, CONFIG_NET_HOSTNAME_LOG_LEVEL);
 
 #include <zephyr/net/hostname.h>
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/logging/log_backend_net.h>
 

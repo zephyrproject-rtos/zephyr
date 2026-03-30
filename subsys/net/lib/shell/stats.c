@@ -829,20 +829,20 @@ static int cmd_net_stats(const struct shell *sh, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_stats,
 	SHELL_CMD(all, NULL,
-		  "Show network statistics for all network interfaces.\n"
-		  "Usage: net stats all [common|vendor|all] [key-value|hex-blob|both]",
+		  SHELL_HELP("Show network statistics for all network interfaces",
+			     "[common|vendor|all] [key-value|hex-blob|both]"),
 		  cmd_net_stats_all),
 	SHELL_CMD(iface, IFACE_DYN_CMD,
-		  "'net stats <index> [options]' shows network statistics for "
-		  "one specific network interface.\n"
-		  "Type filter:\n"
-		  "  common: Only common stats (skips FW query)\n"
-		  "  vendor: Only vendor-specific stats\n"
-		  "  all:    All stats (default)\n"
-		  "Vendor stats format (only applies when vendor stats shown):\n"
-		  "  key-value: Key-value pairs (default)\n"
-		  "  hex-blob:  Hex blob for parsing\n"
-		  "  both:      Both formats",
+		  SHELL_HELP("Shows network statistics for one specific network interface",
+			     "<index> [options]\n"
+			     "Type filter:\n"
+			     "common: Only common stats (skips FW query)\n"
+			     "vendor: Only vendor-specific stats\n"
+			     "all:    All stats (default)\n"
+			     "Vendor stats format (only applies when vendor stats shown):\n"
+			     "key-value: Key-value pairs (default)\n"
+			     "hex-blob:  Hex blob for parsing\n"
+			     "both:      Both formats"),
 		  cmd_net_stats_iface),
 	SHELL_SUBCMD_SET_END
 );

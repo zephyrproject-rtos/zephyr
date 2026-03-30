@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(net_trickle, CONFIG_NET_TRICKLE_LOG_LEVEL);
 #include <zephyr/random/random.h>
 
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/trickle.h>
 
 #define TICK_MAX ~0

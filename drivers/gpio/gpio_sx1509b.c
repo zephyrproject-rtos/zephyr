@@ -721,9 +721,7 @@ int sx1509b_led_intensity_pin_set(const struct device *dev, gpio_pin_t pin,
 
 #define GPIO_SX1509B_DEFINE(inst)                                              \
 	static const struct sx1509b_config sx1509b_cfg##inst = {               \
-		.common = {                                                    \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),\
-		},                                                             \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                             \
 		IF_ENABLED(CONFIG_GPIO_SX1509B_INTERRUPT,                      \
 			   (GPIO_DT_SPEC_INST_GET(inst, nint_gpios)))          \

@@ -94,6 +94,9 @@ unsigned int siwx91x_wifi_module_stats_event_handler(sl_wifi_event_t event, unsi
 		sidev->state = WIFI_STATE_COMPLETED;
 		break;
 	case STATE_UNASSOCIATED:
+		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE)) {
+			net_if_dormant_on(sidev->iface);
+		}
 		wifi_mgmt_raise_disconnect_result_event(sidev->iface,
 							WIFI_REASON_DISCONN_SUCCESS);
 

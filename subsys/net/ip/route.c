@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_route, CONFIG_NET_ROUTE_LOG_LEVEL);
 
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_ip.h>
@@ -1012,20 +1013,26 @@ bool net_route_get_info(struct net_if *iface,
 
 		ret = true;
 		goto exit;
-	} else {
-		/* No specific route to this host, use the default
-		 * route instead.
-		 */
-		router = net_if_ipv6_router_find_default(NULL, dst);
-		if (!router) {
-			goto exit;
-		}
+	}
 
-		*nexthop = &router->address.in6_addr;
-
-		ret = true;
+	/* Check if destination is on-link on any interface before
+	 * falling back to the default router.
+	 */
+	if (net_if_ipv6_addr_onlink(NULL, dst)) {
 		goto exit;
 	}
+
+	/* No specific route to this host, use the default
+	 * route instead.
+	 */
+	router = net_if_ipv6_router_find_default(NULL, dst);
+	if (router == NULL) {
+		goto exit;
+	}
+
+	*nexthop = &router->address.in6_addr;
+	ret = true;
+	goto exit;
 
 exit:
 	net_ipv6_nbr_unlock();

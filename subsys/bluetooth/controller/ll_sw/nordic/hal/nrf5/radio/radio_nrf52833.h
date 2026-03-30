@@ -366,7 +366,7 @@
 
 static inline void hal_radio_reset(void)
 {
-
+	/* Nothing to be done for this target */
 }
 
 static inline void hal_radio_stop(void)

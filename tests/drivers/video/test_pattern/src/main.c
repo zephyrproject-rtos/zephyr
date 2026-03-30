@@ -13,6 +13,7 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/ztest.h>
 
 LOG_MODULE_REGISTER(test_pattern, LOG_LEVEL_INF);
@@ -74,17 +75,18 @@ static inline CIELAB rgb888_to_lab(const uint8_t r, const uint8_t g, const uint8
 	return lab;
 }
 
-static inline CIELAB xrgb32_to_lab(const uint32_t color)
+static inline CIELAB xrgb32_to_lab(const uint32_t *color_p)
 {
-	uint8_t r = (color >> 16) & 0xFF;
-	uint8_t g = (color >> 8) & 0xFF;
-	uint8_t b = color & 0xFF;
+	uint8_t r = ((const uint8_t *)color_p)[1];
+	uint8_t g = ((const uint8_t *)color_p)[2];
+	uint8_t b = ((const uint8_t *)color_p)[3];
 
 	return rgb888_to_lab(r, g, b);
 }
 
-static inline CIELAB rgb565_to_lab(const uint16_t color)
+static inline CIELAB rgb565_to_lab(const uint16_t *color_p)
 {
+	uint32_t color = sys_le16_to_cpu(*color_p);
 	uint8_t r5 = (color >> 11) & 0x1F;
 	uint8_t g6 = (color >> 5) & 0x3F;
 	uint8_t b5 = color & 0x1F;
@@ -135,14 +137,14 @@ static inline bool is_colorbar_ok(const uint8_t *const buf, const struct video_f
 					(uint32_t *)&buf[4 * (h * fmt->width + bw / 2 + i * bw)];
 
 				for (int j = -PIXELS_NUM / 2; j <= PIXELS_NUM / 2; j++) {
-					sum_lab(&colorbars[i], xrgb32_to_lab(*(pixel + j)));
+					sum_lab(&colorbars[i], xrgb32_to_lab(pixel + j));
 				}
 			} else if (fmt->pixelformat == VIDEO_PIX_FMT_RGB565) {
 				uint16_t *pixel =
 					(uint16_t *)&buf[2 * (h * fmt->width + bw / 2 + i * bw)];
 
 				for (int j = -PIXELS_NUM / 2; j <= PIXELS_NUM / 2; j++) {
-					sum_lab(&colorbars[i], rgb565_to_lab(*(pixel + j)));
+					sum_lab(&colorbars[i], rgb565_to_lab(pixel + j));
 				}
 			} else {
 				printk("Format %d is not supported", fmt->pixelformat);

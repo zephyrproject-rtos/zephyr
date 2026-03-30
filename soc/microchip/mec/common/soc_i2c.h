@@ -36,15 +36,4 @@
 #define MCHP_I2C_PORT_15	15
 #define MCHP_I2C_PORT_MAX	16
 
-/*
- * Read pin states of specified I2C port.
- * We GPIO control register always active RO pad input bit.
- * lines b[0]=SCL pin state at pad, b[1]=SDA pin state at pad
- * Returns 0 success or -EINVAL if port is not support or lines is NULL.
- */
-#define SOC_I2C_SCL_POS		0
-#define SOC_I2C_SDA_POS		1
-
-int soc_i2c_port_lines_get(uint8_t port, uint32_t *lines);
-
 #endif /* _MICROCHIP_MEC_SOC_I2C_H_ */

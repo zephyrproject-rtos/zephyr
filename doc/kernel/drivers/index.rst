@@ -253,12 +253,6 @@ implementation of both the subsystem API and the specific APIs:
 Applications use the device through both the subsystem and specific
 APIs.
 
-.. note::
-   Public API for device-specific extensions should be prefixed with the
-   compatible for the device to which it applies.  For example, if
-   adding special functions to support the Maxim DS3231 the identifier
-   fragment ``specific`` in the examples above would be ``maxim_ds3231``.
-
 Single Driver, Multiple Instances
 *********************************
 

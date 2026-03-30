@@ -40,23 +40,23 @@
 			#include "uart.dtsi"
 		};
 
-		zephyr_gpio_step_dir_workq: zephyr_gpio_step_dir_workq {
-			compatible = "zephyr,gpio-step-dir-stepper";
+		zephyr_gpio_step_dir_workq: zephyr-gpio-step-dir {
+			compatible = "zephyr,gpio-step-dir-stepper-ctrl";
 			step-gpios = <&test_gpio 0 0>;
 			dir-gpios = <&test_gpio 0 0>;
-			stepper-drv = <&adi_tmc2209>;
+			stepper-driver = <&adi_tmc2209>;
 		};
 
-		zephyr_gpio_step_dir_counter: zephyr_gpio_step_dir_counter {
-			compatible = "zephyr,gpio-step-dir-stepper";
+		zephyr_gpio_step_dir_counter: zephyr-gpio-step-dir-counter {
+			compatible = "zephyr,gpio-step-dir-stepper-ctrl";
 			step-gpios = <&test_gpio 0 0>;
 			dir-gpios = <&test_gpio 0 0>;
 			counter = <&counter0>;
-			stepper-drv = <&ti_drv84xx>;
+			stepper-driver = <&ti_drv84xx>;
 		};
 
-		zephyr_h_bridge_stepper_workq: zephyr_h_bridge_stepper_workq {
-			compatible = "zephyr,h-bridge-stepper";
+		zephyr_h_bridge_stepper_workq: zephyr-h-bridge-stepper {
+			compatible = "zephyr,h-bridge-stepper-ctrl";
 			status = "okay";
 			lut-step-gap = <1>;
 			gpios = <&test_gpio 0 0>,
@@ -65,8 +65,8 @@
 				<&test_gpio 0 0>;
 		};
 
-		zephyr_h_bridge_stepper_counter: zephyr_h_bridge_stepper_counter {
-			compatible = "zephyr,h-bridge-stepper";
+		zephyr_h_bridge_stepper_counter: zephyr-h-bridge-stepper-counter {
+			compatible = "zephyr,h-bridge-stepper-ctrl";
 			status = "okay";
 			lut-step-gap = <1>;
 			counter = <&counter0>;

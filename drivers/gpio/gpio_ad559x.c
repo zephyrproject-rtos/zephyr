@@ -219,10 +219,7 @@ static int gpio_ad559x_init(const struct device *dev)
 
 #define GPIO_AD559X_DEFINE(inst)							\
 	static const struct gpio_ad559x_config gpio_ad559x_config##inst = {		\
-		.common = {								\
-			.port_pin_mask =						\
-			GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),				\
-		},									\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),			\
 		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),				\
 	};										\
 											\

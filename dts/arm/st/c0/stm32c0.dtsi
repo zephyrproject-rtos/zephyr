@@ -72,8 +72,9 @@
 
 / {
 	chosen {
+		zephyr,crc = &crc;
 		zephyr,flash-controller = &flash;
-		zephyr,cortex-m-idle-timer = &rtc;
+		zephyr,system-timer-companion = &rtc;
 	};
 
 	cpus {
@@ -142,11 +143,13 @@
 	mcos {
 		mco1: mco1 {
 			compatible = "st,stm32-clock-mco";
+			clock-names = "clksel";
 			status = "disabled";
 		};
 
 		mco2: mco2 {
 			compatible = "st,stm32-clock-mco";
+			clock-names = "clksel";
 			status = "disabled";
 		};
 	};
@@ -168,6 +171,36 @@
 				erase-block-size = <2048>;
 				/* maximum erase time(ms) for a 2K sector */
 				max-erase-time = <40>;
+			};
+
+			st_nvm_user_otp: flash@1fff7000 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1fff7000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			/* "Engineering bytes" */
+			flash@1fff7500 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1fff7500 768>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					ts_cal1_otp: ts-cal1@68 {
+						reg = <0x68 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					vrefint_otp: vrefint@6a {
+						reg = <0x6a 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+				};
 			};
 		};
 
@@ -493,11 +526,20 @@
 			dma-requests = <49>;
 			status = "disabled";
 		};
+
+		crc: crc@40023000 {
+			compatible = "st,stm32-crc";
+			reg = <0x40023000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 12)>;
+			resets = <&rctl STM32_RESET(AHB1, 12)>;
+			status = "disabled";
+		};
 	};
 
 	die_temp: dietemp {
 		compatible = "st,stm32c0-temp-cal";
-		ts-cal1-addr = <0x1fff7568>;
+		nvmem-cells = <&ts_cal1_otp>;
+		nvmem-cell-names = "TS_CAL1";
 		ts-cal1-temp = <30>;
 		ts-cal-vrefanalog = <3000>;
 		avgslope = "2.53";
@@ -507,7 +549,7 @@
 
 	vref: vref {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x1fff756a>;
+		nvmem-cells = <&vrefint_otp>;
 		vrefint-cal-mv = <3000>;
 		io-channels = <&adc1 10>;
 		status = "disabled";

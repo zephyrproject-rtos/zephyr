@@ -1,11 +1,13 @@
 # SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/stepper.h)
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/stepper/stepper.h)
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/stepper/stepper_ctrl.h)
 
 # zephyr-keep-sorted-start
 add_subdirectory(adi_tmc)
 add_subdirectory(allegro)
+add_subdirectory(event_handler)
 add_subdirectory(gpio_stepper)
 add_subdirectory(step_dir)
 add_subdirectory(ti)

@@ -1,0 +1,13 @@
+identifier: fpb_ra8e1
+name: Renesas FPB-RA8E1
+type: mcu
+arch: arm
+ram: 512
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+vendor: renesas

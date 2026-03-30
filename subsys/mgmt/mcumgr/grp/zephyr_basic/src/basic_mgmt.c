@@ -16,7 +16,7 @@
 LOG_MODULE_REGISTER(mcumgr_zbasic_grp, CONFIG_MCUMGR_GRP_ZBASIC_LOG_LEVEL);
 
 #define ERASE_TARGET		storage_partition
-#define ERASE_TARGET_ID		FIXED_PARTITION_ID(ERASE_TARGET)
+#define ERASE_TARGET_ID		PARTITION_ID(ERASE_TARGET)
 
 static int storage_erase(void)
 {

@@ -20,7 +20,6 @@ from twisterlib.harness import (
     Harness,
     HarnessImporter,
     Pytest,
-    PytestHarnessException,
     Robot,
     Test,
 )
@@ -521,15 +520,7 @@ def test_console_handle(
     assert console.capture_coverage == exp_capture
 
 
-TEST_DATA_5 = [("serial_pty", 0), (None, 0), (None, 1)]
-
-
-@pytest.mark.parametrize(
-    "pty_value, hardware_value",
-    TEST_DATA_5,
-    ids=["hardware pty", "hardware", "non hardware"],
-)
-def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_value):
+def test_pytest__generate_parameters_for_hardware(tmp_path):
     # Arrange
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
@@ -548,60 +539,19 @@ def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_
 
     handler = mock.Mock()
     handler.instance = instance
-
-    hardware = mock.Mock()
-    hardware.serial_pty = pty_value
-    hardware.serial = "serial"
-    hardware.serial_baud = 115200
-    hardware.runner = "runner"
-    hardware.runner_params = ["--runner-param1", "runner-param2"]
-    hardware.fixtures = ["fixture1:option1", "fixture2"]
-
     options = handler.options
     options.west_flash = "args"
     options.flash_command = "flash_command"
-
-    hardware.probe_id = "123"
-    hardware.product = "product"
-    hardware.pre_script = "pre_script"
-    hardware.post_flash_script = "post_flash_script"
-    hardware.post_script = "post_script"
 
     pytest_test = Pytest()
     pytest_test.configure(instance)
 
     # Act
-    if hardware_value == 0:
-        handler.get_hardware.return_value = hardware
-        handler.get_more_serials_from_device = mock.Mock(return_value=[])
-        command = pytest_test._generate_parameters_for_hardware(handler)
-    else:
-        handler.get_hardware.return_value = None
+    pytest_test._generate_parameters_for_hardware(handler)
 
     # Assert
-    if hardware_value == 1:
-        with pytest.raises(PytestHarnessException) as exinfo:
-            pytest_test._generate_parameters_for_hardware(handler)
-        assert str(exinfo.value) == "Hardware is not available"
-    else:
-        assert "--device-type=hardware" in command
-        if pty_value == "serial_pty":
-            assert "--device-serial-pty=serial_pty" in command
-        else:
-            assert "--device-serial=serial" in command
-            assert "--device-serial-baud=115200" in command
-        assert "--runner=runner" in command
-        assert "--runner-params=--runner-param1" in command
-        assert "--runner-params=runner-param2" in command
-        assert "--west-flash-extra-args=args" in command
-        assert "--flash-command=flash_command" in command
-        assert "--device-id=123" in command
-        assert "--device-product=product" in command
-        assert "--pre-script=pre_script" in command
-        assert "--post-flash-script=post_flash_script" in command
-        assert "--post-script=post_script" in command
-        assert "--twister-fixture=fixture1:option1" in command
-        assert "--twister-fixture=fixture2" in command
+    assert pytest_test.pytest_params.west_flash_extra_args == "args"
+    assert pytest_test.pytest_params.flash_command == "flash_command"
 
 
 def test_pytest__update_command_with_env_dependencies():

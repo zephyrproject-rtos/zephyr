@@ -152,6 +152,13 @@ enum video_colorfx {
  */
 #define VIDEO_CID_BAND_STOP_FILTER (VIDEO_CID_BASE + 33)
 
+/**
+ * @brief Rotate control
+ *
+ * Rotate the image by a given angle, e.g. 90, 180, 270 degree.
+ */
+#define VIDEO_CID_ROTATE (VIDEO_CID_BASE + 34)
+
 /** Sets the alpha color component.
  * Some devices produce data with a user-controllable alpha component. Set the value applied to
  * the alpha channel of every pixel produced.
@@ -284,6 +291,21 @@ enum video_exposure_type {
  */
 #define VIDEO_CID_IRIS_RELATIVE (VIDEO_CID_CAMERA_CLASS_BASE + 18)
 
+/**
+ * @brief Automatic exposure compensation.
+ *
+ * Determines the automatic exposure compensation. It is effective only when
+ * VIDEO_CID_EXPOSURE_AUTO control is set to AUTO, SHUTTER_PRIORITY, or
+ * APERTURE_PRIORITY. It is expressed in terms of EV; drivers should interpret
+ * the values as 0.001 EV units, where the value 1000 stands for +1 EV.
+ *
+ * Increasing the exposure compensation value is equivalent to decreasing the
+ * exposure value (EV) and will increase the amount of light at the image sensor.
+ * The camera performs the exposure compensation by adjusting absolute exposure
+ * time and/or aperture.
+ */
+#define VIDEO_CID_AUTO_EXPOSURE_BIAS (VIDEO_CID_CAMERA_CLASS_BASE + 19)
+
 /** Enables or disables the camera's wide dynamic range feature.
  * This feature allows to obtain clear images in situations where intensity of the illumination
  * varies significantly throughout the scene, i.e. there are simultaneously very dark and very
@@ -367,7 +389,13 @@ enum video_camera_orientation {
  */
 #define VIDEO_CID_IMAGE_SOURCE_CLASS_BASE 0x009e0900
 
-/** Analogue gain control. */
+/**
+ * @brief Analogue gain control
+ *
+ * Analogue gain is gain affecting all colour components in the pixel
+ * matrix. The gain operation is performed in the analogue domain
+ * before A/D conversion.
+ */
 #define VIDEO_CID_ANALOGUE_GAIN (VIDEO_CID_IMAGE_SOURCE_CLASS_BASE + 3)
 
 /**
@@ -388,6 +416,17 @@ enum video_camera_orientation {
 
 /** Selection of the type of test pattern to represent */
 #define VIDEO_CID_TEST_PATTERN (VIDEO_CID_IMAGE_PROC_CLASS_BASE + 3)
+
+/**
+ * @brief Digital gain control
+ *
+ * Digital gain is the value by which all colour components
+ * are multiplied by. Typically the digital gain applied is the
+ * control value divided by e.g. 0x100, meaning that to get no
+ * digital gain the control value needs to be 0x100. The no-gain
+ * configuration is also typically the default.
+ */
+#define VIDEO_CID_DIGITAL_GAIN (VIDEO_CID_IMAGE_PROC_CLASS_BASE + 5)
 
 /**
  * @}

@@ -5,14 +5,18 @@ common:
   modules:
     - tf-m-tests
   platform_allow:
-    - nrf5340dk/nrf5340/cpuapp/ns
+    # Disabling this platform as there are currently build issues at link
+    # time with 'tfm_platform_gpio_pin_mcu_select'. Since NS app is the official
+    # one from TF-M the fix has to be sumbitted upstream.
+    # - nrf5340dk/nrf5340/cpuapp/ns
     - nrf9160dk/nrf9160/ns
     - nrf9161dk/nrf9161/ns
     - v2m_musca_s1/musca_s1/ns
     - stm32h573i_dk/stm32h573xx/ns
     - frdm_mcxn947/mcxn947/cpu0/ns
+    - frdm_mcxa577/mcxa577/ns
   integration_platforms:
-    - nrf5340dk/nrf5340/cpuapp/ns
+    - nrf9161dk/nrf9161/ns
   harness: console
   harness_config:
     type: multi_line

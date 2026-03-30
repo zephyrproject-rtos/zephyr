@@ -33,15 +33,15 @@ examples:
             clock-frequency = <DT_FREQ_M(16)>; /* Internal/External Clock frequency */
             en-pwm-mode, shaft; /* ADI TMC Global configuration flags */
 
-            tmc51xx_1_stepper_driver: tmc51xx_1_stepper_driver {
-              compatible = "adi,tmc51xx-stepper-drv";
+            tmc51xx_1_stepper_driver: stepper-driver-1 {
+              compatible = "adi,tmc51xx-stepper-driver";
               micro-step-res = <256>;
               /* ADI TMC stallguard settings specific to TMC51XX */
               stallguard2-threshold=<9>;
             };
 
-            tmc51xx_1_motion_controller: tmc51xx_1_motion_controller {
-              compatible = "adi,tmc51xx-stepper";
+            tmc51xx_1_motion_controller: motion-controller-1 {
+              compatible = "adi,tmc51xx-stepper-ctrl";
 
               /* ADI TMC stallguard settings specific to TMC5160 */
               activate-stallguard2;

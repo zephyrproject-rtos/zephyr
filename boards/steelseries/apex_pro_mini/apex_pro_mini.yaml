@@ -10,7 +10,6 @@ ram: 40
 flash: 64
 supported:
   - gpio
-  - usb
   - spi
   - flash
   - kbd-matrix

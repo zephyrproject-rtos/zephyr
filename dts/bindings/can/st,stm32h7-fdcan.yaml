@@ -1,4 +1,8 @@
-description: STM32H7 series FDCAN CAN FD controller
+title: STM32H7 series (and compatible) FDCAN CAN FD controller
+
+description: |
+  STM32 Controller Area Network (CAN) controller with Flexible Data (FD) rate and Clock Calibration
+  Unit (CCU).
 
 compatible: "st,stm32h7-fdcan"
 
@@ -37,8 +41,22 @@ properties:
       - 28
       - 30
     description: |
-      Divides the kernel clock giving the time quanta clock that is fed to the FDCAN core
-      (FDCAN_CCU->CCFG CDIV register bits). Note that the divisor is common to all
-      'st,stm32h7-fdcan' instances.
+      FDCAN kernel/domain clock divider. The resulting clock is fed to the FDCAN time quanta
+      clock. Note that the divisor is common to all 'st,stm32h7-fdcan' instances.
 
-      Divide by 1 is the peripherals reset value and remains set unless this property is configured.
+      The clock divider, which is set via the FDCAN_CCU->CCFG_CDIV register, defaults to divide by 1
+      unless this property is provided.
+
+examples:
+  - |
+      fdcan1: can@4000a000 {
+        compatible = "st,stm32h7-fdcan";
+        reg = <0x4000a000 0x400>, <0x4000ac00 0x350>;
+        reg-names = "m_can", "message_ram";
+        clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
+                 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
+        interrupts = <19 0>, <21 0>, <63 0>;
+        interrupt-names = "int0", "int1", "calib";
+        bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+        status = okay";
+      };

@@ -33,15 +33,27 @@
 
 LOG_MODULE_REGISTER(main, CONFIG_MODEM_LOG_LEVEL);
 
+#define KCELLMEAS_MIN_RSRP_DBM -120
+
 static K_SEM_DEFINE(network_connected_sem, 0, 1);
+static bool waiting_post_gnss_lpm_reconnect;
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 static K_SEM_DEFINE(fota_complete_rerun, 0, 1);
-const static struct device *modem = DEVICE_DT_GET(DT_ALIAS(modem));
+#endif
+static const struct device *modem = DEVICE_DT_GET(DT_ALIAS(modem));
 
 /* GNSS support */
 #ifdef CONFIG_HL78XX_GNSS
 #define GNSS_DEVICE DEVICE_DT_GET(DT_ALIAS(gnss))
 static K_SEM_DEFINE(gnss_sem, 0, 1);
 static K_SEM_DEFINE(gnss_exit_sem, 0, 1);
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+static K_SEM_DEFINE(power_down_enter_sem, 0, 1);
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+#if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)
+static void k_work_wake_fn(struct k_work *work);
+K_WORK_DELAYABLE_DEFINE(gnss_wake_work, k_work_wake_fn);
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 #endif
 
 /* Zephyr NET management event callback structures. */
@@ -50,8 +62,18 @@ static struct net_mgmt_event_callback conn_cb;
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 static int fota_update_status = -1;
 #endif
+#ifdef CONFIG_MODEM_HL78XX_12
+#if defined(CONFIG_MODEM_HL78XX_PSM)
+static enum hl78xx_psmev_event mdm_psmev_current = HL78XX_PSM_EVENT_NONE;
+#endif /* CONFIG_MODEM_HL78XX_PSM */
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+static enum hl78xx_edrx_event mdm_edrxev_current = HL78XX_EDRX_EVENT_IDLE_NONE;
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+#endif /* CONFIG_MODEM_HL78XX_12 */
+static enum cellular_registration_status registration_status;
+
 /** Convert RAT mode enum to string */
-static const char *rat_get_in_string(enum hl78xx_cell_rat_mode rat)
+static const char *rat_to_string(enum hl78xx_cell_rat_mode rat)
 {
 	switch (rat) {
 	case HL78XX_RAT_CAT_M1:
@@ -71,9 +93,9 @@ static const char *rat_get_in_string(enum hl78xx_cell_rat_mode rat)
 	}
 }
 /** Convert registration status to string */
-static const char *reg_status_get_in_string(enum cellular_registration_status rat)
+static const char *reg_status_to_string(enum cellular_registration_status status)
 {
-	switch (rat) {
+	switch (status) {
 	case CELLULAR_REGISTRATION_NOT_REGISTERED:
 		return "Not Registered";
 	case CELLULAR_REGISTRATION_REGISTERED_HOME:
@@ -91,9 +113,8 @@ static const char *reg_status_get_in_string(enum cellular_registration_status ra
 	}
 }
 
-/** Convert module status code to string */
 /** Convert hl78xx module status enum to string */
-const char *hl78xx_module_status_to_string(enum hl78xx_module_status status)
+static const char *hl78xx_module_status_to_string(enum hl78xx_module_status status)
 {
 	switch (status) {
 	case HL78XX_MODULE_READY:
@@ -115,7 +136,7 @@ const char *hl78xx_module_status_to_string(enum hl78xx_module_status status)
 	}
 }
 
-/* Zephyr NET management event callback structures. */
+/* Network event handlers */
 static void on_net_event_l4_disconnected(void)
 {
 	LOG_INF("Disconnected from network");
@@ -124,6 +145,7 @@ static void on_net_event_l4_disconnected(void)
 static void on_net_event_l4_connected(void)
 {
 	LOG_INF("Connected to network");
+	waiting_post_gnss_lpm_reconnect = false;
 	k_sem_give(&network_connected_sem);
 }
 
@@ -271,13 +293,21 @@ GNSS_AUX_DATA_CALLBACK_DEFINE(GNSS_DEVICE, gnss_aux_data_cb);
 static void evnt_listener(struct hl78xx_evt *event, struct hl78xx_evt_monitor_entry *context)
 {
 	switch (event->type) {
-		/* Do something */
 	case HL78XX_LTE_RAT_UPDATE:
 		LOG_INF("%d HL78XX modem rat mode changed: %d", __LINE__, event->content.rat_mode);
 		break;
 	case HL78XX_LTE_REGISTRATION_STAT_UPDATE:
-		LOG_INF("%d HL78XX modem registration status: %d", __LINE__,
-			event->content.reg_status);
+		registration_status = event->content.reg_status;
+#if defined(CONFIG_MODEM_HL78XX_12) && defined(CONFIG_HL78XX_GNSS) &&                              \
+	defined(CONFIG_MODEM_HL78XX_PSM)
+		LOG_INF("%d HL78XX modem registration status: %d %d", __LINE__,
+			event->content.reg_status, mdm_psmev_current);
+		if ((event->content.reg_status == CELLULAR_REGISTRATION_REGISTERED_HOME ||
+		     event->content.reg_status == CELLULAR_REGISTRATION_REGISTERED_ROAMING) &&
+		    mdm_psmev_current == HL78XX_PSM_EVENT_EXIT) {
+			mdm_psmev_current = HL78XX_PSM_EVENT_NONE;
+		}
+#endif /* CONFIG_MODEM_HL78XX_12 && CONFIG_HL78XX_GNSS && CONFIG_MODEM_HL78XX_PSM */
 		break;
 	case HL78XX_LTE_MODEM_STARTUP:
 		LOG_INF("%d HL78XX modem startup status: %s", __LINE__,
@@ -348,6 +378,7 @@ static void evnt_listener(struct hl78xx_evt *event, struct hl78xx_evt_monitor_en
 		 */
 		LOG_WRN("GNSS blocked by LTE! Enter airplane mode to start GNSS");
 		LOG_WRN("Hint: Use hl78xx_set_phone_functionality(dev, HL78XX_AIRPLANE)");
+		k_sem_give(&gnss_sem);
 		break;
 
 	case HL78XX_GNSS_EVENT_SEARCH_TIMEOUT:
@@ -382,17 +413,101 @@ static void evnt_listener(struct hl78xx_evt *event, struct hl78xx_evt_monitor_en
 
 	case HL78XX_GNSS_EVENT_MODE_EXITED:
 		/*
-		 * GNSS mode exit complete. Modem is now in airplane mode.
-		 * User can decide to:
-		 * 1. Return to LTE: hl78xx_api_func_set_phone_functionality(dev,
-		 * HL78XX_FULLY_FUNCTIONAL, false)
-		 * 2. Stay in airplane mode for low power operation
+		 * GNSS mode exit complete.
+		 * In airplane mode: modem stays in CFUN=4, user must restore LTE.
+		 * In PSM mode:      driver auto-transitions to AWAIT_REGISTERED.
 		 */
-		LOG_INF("GNSS mode exited - modem in airplane mode");
+		if (event->content.status) {
+			LOG_INF("GNSS mode exited (user-requested)");
+		} else {
+			LOG_INF("GNSS mode exited (auto-stopped by LTE)");
+		}
 		k_sem_give(&gnss_exit_sem);
 		break;
 #endif /* CONFIG_HL78XX_GNSS */
 
+#if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+	case HL78XX_EDRX_IDLE_UPDATE:
+#ifdef CONFIG_MODEM_HL78XX_12
+		mdm_edrxev_current = event->content.edrx_event;
+#endif /* CONFIG_MODEM_HL78XX_12 */
+		if (event->content.edrx_event == HL78XX_EDRX_EVENT_IDLE_ENTER) {
+			LOG_INF("Modem entered eDRX idle mode");
+#if defined(CONFIG_HL78XX_GNSS)
+			k_sem_give(&gnss_sem);
+#endif
+		} else if (event->content.edrx_event == HL78XX_EDRX_EVENT_IDLE_EXIT) {
+			LOG_INF("Modem exited eDRX idle mode");
+		} else {
+			LOG_INF("Modem eDRX event: NONE");
+		}
+		break;
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+#ifdef CONFIG_MODEM_HL78XX_PSM
+	case HL78XX_LTE_PSMEV_UPDATE:
+#ifdef CONFIG_MODEM_HL78XX_12
+		mdm_psmev_current = event->content.psm_event;
+#endif /* CONFIG_MODEM_HL78XX_12 */
+		if (event->content.psm_event == HL78XX_PSM_EVENT_ENTER) {
+			LOG_INF("Modem entered PSM");
+#ifdef CONFIG_HL78XX_GNSS
+			k_sem_give(&gnss_sem);
+#endif
+		} else if (event->content.psm_event == HL78XX_PSM_EVENT_EXIT) {
+			LOG_INF("Modem exited PSM");
+		} else {
+			LOG_INF("Modem PSM event: NONE");
+		}
+		break;
+#endif /* CONFIG_MODEM_HL78XX_PSM */
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+	case HL78XX_POWER_DOWN_UPDATE:
+		if (event->content.power_down_event == POWER_DOWN_EVENT_ENTER) {
+			LOG_INF("Modem entered power down mode - driver will wake modem within 60s "
+				"for GNSS");
+#ifdef CONFIG_HL78XX_GNSS
+			k_sem_give(&power_down_enter_sem);
+#endif
+			k_work_schedule(&gnss_wake_work, K_SECONDS(60));
+		} else if (event->content.power_down_event == POWER_DOWN_EVENT_EXIT) {
+			LOG_INF("Modem exited power down mode");
+		} else {
+			LOG_INF("Modem power down event: NONE");
+		}
+		break;
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+	case HL78XX_CELLMEAS_UPDATE:
+		LOG_INF("Cellular measurement update: RSRP=%d dBm", event->content.cellmeas.rsrp);
+#if defined(CONFIG_MODEM_HL78XX_12) && defined(CONFIG_HL78XX_GNSS) &&                              \
+	defined(CONFIG_MODEM_HL78XX_PSM)
+		if ((registration_status == CELLULAR_REGISTRATION_REGISTERED_HOME ||
+		     registration_status == CELLULAR_REGISTRATION_REGISTERED_ROAMING) &&
+		    mdm_psmev_current == HL78XX_PSM_EVENT_NONE && waiting_post_gnss_lpm_reconnect) {
+			if (event->content.cellmeas.rsrp <= 0 &&
+			    event->content.cellmeas.rsrp >= KCELLMEAS_MIN_RSRP_DBM) {
+				waiting_post_gnss_lpm_reconnect = false;
+				k_sem_give(&network_connected_sem);
+			} else {
+				LOG_WRN("Ignoring KCELLMEAS (RSRP=%d dBm), waiting for acceptable "
+					"signal",
+					event->content.cellmeas.rsrp);
+			}
+		}
+#endif /* CONFIG_MODEM_HL78XX_12 && CONFIG_HL78XX_GNSS && CONFIG_MODEM_HL78XX_PSM */
+#if defined(CONFIG_MODEM_HL78XX_12) && defined(CONFIG_HL78XX_GNSS) &&                              \
+	defined(CONFIG_MODEM_HL78XX_EDRX)
+		if ((registration_status == CELLULAR_REGISTRATION_REGISTERED_HOME ||
+		     registration_status == CELLULAR_REGISTRATION_REGISTERED_ROAMING) &&
+		    mdm_edrxev_current == HL78XX_EDRX_EVENT_IDLE_EXIT &&
+		    waiting_post_gnss_lpm_reconnect) {
+			mdm_edrxev_current = HL78XX_EDRX_EVENT_IDLE_NONE;
+			waiting_post_gnss_lpm_reconnect = false;
+			k_sem_give(&network_connected_sem);
+		}
+#endif /* CONFIG_MODEM_HL78XX_12 && CONFIG_HL78XX_GNSS */
+		break;
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 	default:
 #ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
 		LOG_DBG("%d HL78XX modem Event Received: %d", __LINE__, event->type);
@@ -412,17 +527,18 @@ static void hl78xx_on_ok(struct modem_chat *chat, char **argv, uint16_t argc, vo
 }
 
 /**
- * @brief resolve_broker_addr - Resolve the broker address and port.
+ * @brief Resolve test server hostname to an IPv4 address.
  * @param broker Pointer to sockaddr_in structure to store the resolved address.
+ * @return 0 on success, negative errno on failure.
  */
-static int resolve_broker_addr(struct sockaddr_in *broker)
+static int resolve_broker_addr(struct net_sockaddr_in *broker)
 {
 	int ret;
 	struct zsock_addrinfo *ai = NULL;
 
 	const struct zsock_addrinfo hints = {
-		.ai_family = AF_INET,
-		.ai_socktype = SOCK_STREAM,
+		.ai_family = NET_PF_INET,
+		.ai_socktype = NET_SOCK_STREAM,
 		.ai_protocol = 0,
 	};
 	char port_string[6] = {0};
@@ -430,12 +546,12 @@ static int resolve_broker_addr(struct sockaddr_in *broker)
 	snprintf(port_string, sizeof(port_string), "%d", TEST_SERVER_PORT);
 	ret = zsock_getaddrinfo(TEST_SERVER_ENDPOINT, port_string, &hints, &ai);
 	if (ret == 0) {
-		char addr_str[INET_ADDRSTRLEN];
+		char addr_str[NET_INET_ADDRSTRLEN];
 
-		memcpy(broker, ai->ai_addr, MIN(ai->ai_addrlen, sizeof(struct sockaddr_storage)));
+		memcpy(broker, ai->ai_addr, ai->ai_addrlen);
 
-		zsock_inet_ntop(AF_INET, &broker->sin_addr, addr_str, sizeof(addr_str));
-		LOG_INF("Resolved: %s:%u", addr_str, htons(broker->sin_port));
+		zsock_inet_ntop(NET_PF_INET, &broker->sin_addr, addr_str, sizeof(addr_str));
+		LOG_INF("Resolved: %s:%u", addr_str, net_htons(broker->sin_port));
 	} else {
 		LOG_ERR("failed to resolve hostname err = %d (errno = %d)", ret, errno);
 	}
@@ -448,17 +564,494 @@ static int resolve_broker_addr(struct sockaddr_in *broker)
 MODEM_CHAT_MATCH_DEFINE(ok_match, "OK", "", hl78xx_on_ok);
 
 HL78XX_EVT_MONITOR(listener_evt, evnt_listener);
+#if defined(CONFIG_HL78XX_GNSS) && defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)
+static void k_work_wake_fn(struct k_work *work)
+{
+	/* Wake modem from LPM sleep so the GNSS engine stays active */
+	LOG_DBG("LPM wake work triggered, waking modem for GNSS");
+	hl78xx_wakeup_modem(modem);
+}
+#endif /* CONFIG_HL78XX_GNSS && CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+
+enum app_flow_result {
+	APP_FLOW_MONITOR = 0,
+	APP_FLOW_RERUN,
+	APP_FLOW_POST_LPM,
+};
+
+static int app_wait_for_network(void)
+{
+	LOG_INF("Waiting for network connection...");
+	return k_sem_take(&network_connected_sem, K_FOREVER);
+}
+
+static int app_collect_and_log_modem_info(void)
+{
+	char manufacturer[MDM_MANUFACTURER_LENGTH] = {0};
+	char fw_ver[MDM_REVISION_LENGTH] = {0};
+	char apn[MDM_APN_MAX_LENGTH] = {0};
+	char operator[MDM_MODEL_LENGTH] = {0};
+	char imei[MDM_IMEI_LENGTH] = {0};
+	char serial_number[MDM_SERIAL_NUMBER_LENGTH] = {0};
+	enum hl78xx_cell_rat_mode tech;
+	enum cellular_registration_status status;
+	int16_t signal_strength = 0;
+	uint32_t current_baudrate = 0;
+	const char *newapn = "";
+	const char *sample_cmd = "AT";
+
+#ifndef CONFIG_MODEM_HL78XX_AUTORAT
+#if defined(CONFIG_MODEM_HL78XX_RAT_M1)
+	tech = HL78XX_RAT_CAT_M1;
+#elif defined(CONFIG_MODEM_HL78XX_RAT_NB1)
+	tech = HL78XX_RAT_NB1;
+#elif defined(CONFIG_MODEM_HL78XX_RAT_GSM)
+	tech = HL78XX_RAT_GSM;
+#elif defined(CONFIG_MODEM_HL78XX_RAT_NBNTN)
+	tech = HL78XX_RAT_NBNTN;
+#else
+#error "No rat has been selected."
+#endif
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
+
+	cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_MANUFACTURER, manufacturer,
+				sizeof(manufacturer));
+	cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_FW_VERSION, fw_ver, sizeof(fw_ver));
+	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_APN, apn, sizeof(apn));
+	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_SERIAL_NUMBER, serial_number,
+			      sizeof(serial_number));
+	cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_IMEI, imei, sizeof(imei));
+
+#ifdef CONFIG_MODEM_HL78XX_AUTORAT
+	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_CURRENT_RAT,
+			      (enum cellular_access_technology *)&tech, sizeof(tech));
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
+
+	cellular_get_registration_status(modem, hl78xx_rat_to_access_tech(tech), &status);
+#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
+	cellular_get_signal(modem, CELLULAR_SIGNAL_RSSI, &signal_strength);
+#else
+	cellular_get_signal(modem, CELLULAR_SIGNAL_RSRP, &signal_strength);
+#endif
+	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_NETWORK_OPERATOR, operator,
+			      sizeof(operator));
+	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_CURRENT_BAUD_RATE, &current_baudrate,
+			      sizeof(current_baudrate));
+
+	LOG_RAW("\n**********************************************************\n");
+	LOG_RAW("********* Hello HL78XX Modem Sample Application **********\n");
+	LOG_RAW("**********************************************************\n");
+	LOG_INF("Manufacturer: %s", manufacturer);
+	LOG_INF("Firmware Version: %s", fw_ver);
+	LOG_INF("Module Serial Number: %s", serial_number);
+	LOG_INF("APN: \"%s\"", apn);
+	LOG_INF("Imei: %s", imei);
+	LOG_INF("RAT: %s", rat_to_string(tech));
+	LOG_INF("Connection status: %s(%d)", reg_status_to_string(status), status);
+#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
+	LOG_INF("RSSI : %d", signal_strength);
+#else
+	LOG_INF("RSRP : %d", signal_strength);
+#endif
+	LOG_INF("Operator: %s", (strlen(operator) > 0) ? operator : "\"\"");
+	LOG_INF("Current Baudrate: %dbps", current_baudrate);
+	LOG_RAW("**********************************************************\n\n");
+
+	LOG_INF("Setting new APN: %s", newapn);
+	int ret = cellular_set_apn(modem, newapn);
+	if (ret < 0) {
+		LOG_ERR("Failed to set new APN, error: %d", ret);
+	}
+
+	k_sem_reset(&network_connected_sem);
+	ret = app_wait_for_network();
+	if (ret < 0) {
+		return ret;
+	}
+
+	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_APN, apn, sizeof(apn));
+	hl78xx_modem_cmd_send(modem, sample_cmd, strlen(sample_cmd), &ok_match, 1);
+	LOG_INF("New APN: %s", (strlen(apn) > 0) ? apn : "\"\"");
+
+	return 0;
+}
+
+static void app_resolve_test_endpoint(void)
+{
+	struct net_sockaddr_in test_endpoint_addr;
+	int ret;
+
+	LOG_INF("Test endpoint: %s:%d", TEST_SERVER_ENDPOINT, TEST_SERVER_PORT);
+	ret = resolve_broker_addr(&test_endpoint_addr);
+	if (ret < 0) {
+		LOG_WRN("Unable to resolve test endpoint, continuing anyway");
+	}
+}
+
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+static bool app_run_airvantage_flow(void)
+{
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_CONNECT_AIRVANTAGE
+	int ret;
+
+	LOG_INF("Starting AirVantage DM session...");
+	hl78xx_start_airvantage_dm_session(modem);
+	k_sem_reset(&fota_complete_rerun);
+	LOG_INF("Waiting for AirVantage FOTA Creation...");
+	ret = k_sem_take(&fota_complete_rerun, K_SECONDS(120));
+	if (ret < 0) {
+		LOG_WRN("AirVantage DM session timed out waiting for FOTA download request.%d",
+			ret);
+		return false;
+	}
+
+	k_sem_reset(&fota_complete_rerun);
+	LOG_INF("Waiting for AirVantage FOTA Completion...");
+	ret = k_sem_take(&fota_complete_rerun, K_FOREVER);
+	if (ret < 0) {
+		LOG_WRN("AirVantage FOTA completion wait failed: %d", ret);
+		return false;
+	}
+
+	if (fota_update_status == (int)WDSI_FIRMWARE_UPDATE_SUCCESS) {
+		LOG_INF("FOTA update successful, restarting application to apply update.");
+		return IS_ENABLED(CONFIG_MODEM_HL78XX_BOOT_IN_FULLY_FUNCTIONAL_MODE);
+	}
+
+	if (fota_update_status == (int)WDSI_FIRMWARE_UPDATE_FAILED) {
+		LOG_WRN("FOTA update failed.");
+	} else {
+		LOG_WRN("FOTA update status unknown.");
+	}
+	return false;
+#else
+	LOG_WRN("AirVantage User Agreement not accepted, cannot start DM session.");
+	return false;
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_CONNECT_AIRVANTAGE */
+}
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+
+#ifdef CONFIG_HL78XX_GNSS
+static enum app_flow_result app_post_gnss_flow_result(void)
+{
+	if (!IS_ENABLED(CONFIG_MODEM_HL78XX_BOOT_IN_FULLY_FUNCTIONAL_MODE)) {
+		LOG_INF("Demo complete, entering LTE mode...");
+		return APP_FLOW_RERUN;
+	}
+
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	LOG_INF("Demo complete, re-entering LPM cycle...");
+	return APP_FLOW_POST_LPM;
+#else
+	return APP_FLOW_MONITOR;
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+}
+
+static enum app_flow_result app_gnss_demo_abort(void)
+{
+	LOG_RAW("**********************************************************\n\n");
+	return app_post_gnss_flow_result();
+}
+
+#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
+static void app_gnss_prepare_assisted_data(void)
+{
+	int ret;
+	struct hl78xx_agnss_status agnss_status;
+
+	ret = hl78xx_gnss_assist_data_get_status(modem, &agnss_status);
+	if (ret == 0 && agnss_status.mode == HL78XX_AGNSS_MODE_VALID) {
+		LOG_INF("A-GNSS valid, expires in %d days %d:%d", agnss_status.days,
+			agnss_status.hours, agnss_status.minutes);
+	}
+	LOG_DBG("A-GNSS mode: %d", agnss_status.mode);
+	if (agnss_status.mode == HL78XX_AGNSS_MODE_INVALID) {
+		ret = hl78xx_gnss_assist_data_download(modem, HL78XX_AGNSS_DAYS_2);
+		if (ret < 0) {
+			LOG_ERR("Failed to download A-GNSS data: %d", ret);
+		} else {
+			LOG_INF("A-GNSS data download started");
+		}
+	}
+}
+
+static void app_gnss_cleanup_assisted_data(const struct device *gnss_dev)
+{
+	int ret;
+
+	ret = hl78xx_gnss_assist_data_delete(gnss_dev);
+	if (ret < 0) {
+		LOG_WRN("Failed to delete A-GNSS data: %d", ret);
+	}
+}
+#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
+
+static int app_gnss_enter_and_wait_ready(const struct device *gnss_dev)
+{
+	int ret;
+
+#if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE) &&                                                 \
+	!defined(CONFIG_MODEM_HL78XX_BOOT_IN_AIRPLANE_MODE) &&                                     \
+	!defined(CONFIG_MODEM_HL78XX_POWER_DOWN)
+	LOG_INF("LPM GNSS mode: requesting GNSS (pending until PSM/eDRX entry)...");
+	k_sem_reset(&gnss_sem);
+	ret = hl78xx_enter_gnss_mode(gnss_dev);
+	if (ret < 0 && ret != -EALREADY) {
+		LOG_ERR("Failed to request GNSS mode: %d", ret);
+		return ret;
+	}
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+	LOG_INF("Waiting for modem to enter eDRX...%d ms left",
+		hl78xx_edrx_get_time_to_sleep(modem));
+#endif
+	ret = k_sem_take(&gnss_sem, K_FOREVER);
+	if (ret < 0) {
+		LOG_WRN("PSM/eDRX entry wait failed: %d", ret);
+		return ret;
+	}
+
+	k_sem_reset(&gnss_sem);
+	LOG_INF("PSM/eDRX entered - driver will wake modem within 60s for GNSS");
+	k_work_schedule(&gnss_wake_work, K_SECONDS(60));
+	ret = k_sem_take(&gnss_sem, K_SECONDS(160));
+	if (ret < 0) {
+		LOG_WRN("GNSS engine init timeout after PSM/eDRX wake");
+		return ret;
+	}
+	LOG_INF("GNSS engine initialized (LPM path)");
+#else
+	LOG_INF("Entering GNSS mode...");
+	ret = hl78xx_enter_gnss_mode(gnss_dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to enter GNSS mode: %d", ret);
+		return ret;
+	}
+
+	ret = k_sem_take(&gnss_sem, K_SECONDS(30));
+	if (ret < 0) {
+		LOG_WRN("GNSS engine init timeout, failing demo.");
+		return ret;
+	}
+	LOG_INF("GNSS engine initialized");
+#endif
+
+	return 0;
+}
+
+static void app_gnss_configure(const struct device *gnss_dev)
+{
+	int ret;
+	uint32_t fix_rate_ms;
+	gnss_systems_t systems;
+
+#ifdef CONFIG_PM_DEVICE
+	LOG_INF("Powering on GNSS...");
+	ret = pm_device_action_run(gnss_dev, PM_DEVICE_ACTION_RESUME);
+	if (ret < 0 && ret != -EALREADY) {
+		LOG_ERR("Failed to power on GNSS: %d", ret);
+	} else {
+		LOG_INF("GNSS powered on");
+	}
+#endif
+
+	ret = gnss_get_fix_rate(gnss_dev, &fix_rate_ms);
+	if (ret == 0) {
+		LOG_INF("Current fix rate: %u ms", fix_rate_ms);
+	}
+
+	ret = gnss_get_supported_systems(gnss_dev, &systems);
+	if (ret == 0) {
+		LOG_INF("Supported GNSS systems: 0x%08x", systems);
+		if (systems & GNSS_SYSTEM_GPS) {
+			LOG_INF("  - GPS");
+		}
+		if (systems & GNSS_SYSTEM_GLONASS) {
+			LOG_INF("  - GLONASS");
+		}
+	}
+
+	LOG_INF("Setting GNSS fix rate to 1000 ms...");
+	ret = gnss_set_fix_rate(gnss_dev, 1000);
+	if (ret == 0) {
+		LOG_INF("GNSS fix rate set to 1000 ms");
+	}
+
+	LOG_INF("Enabling GPS and GLONASS systems...");
+	ret = gnss_set_enabled_systems(gnss_dev, GNSS_SYSTEM_GPS | GNSS_SYSTEM_GLONASS);
+	if (ret < 0) {
+		LOG_WRN("Failed to set enabled GNSS systems: %d", ret);
+	}
+
+	LOG_INF("Configuring GNSS for NMEA output...");
+#ifdef CONFIG_HL78XX_GNSS_SOURCE_NMEA
+	hl78xx_gnss_set_nmea_output(gnss_dev, NMEA_OUTPUT_SAME_PORT);
+#else
+	hl78xx_gnss_set_nmea_output(gnss_dev, NMEA_OUTPUT_NONE);
+#endif
+	hl78xx_gnss_set_search_timeout(gnss_dev, 20000);
+	k_sem_reset(&gnss_sem);
+	k_sem_reset(&gnss_exit_sem);
+}
+
+static int app_gnss_collect_and_exit(const struct device *gnss_dev)
+{
+	int ret;
+
+	LOG_INF("Queueing GNSS search...");
+	ret = hl78xx_queue_gnss_search(gnss_dev);
+	if (ret) {
+		LOG_INF("GNSS search already queued or in progress");
+	} else {
+		LOG_INF("GNSS search started - waiting for fix...");
+	}
+
+	LOG_INF("Collecting GNSS data...");
+	ret = k_sem_take(&gnss_sem, K_FOREVER);
+	if (ret < 0) {
+		LOG_WRN("GNSS data collection failed");
+		return ret;
+	}
+
+#ifdef CONFIG_HL78XX_GNSS_SOURCE_LOC
+	LOG_INF("GNSS data collection complete.");
+	ret = hl78xx_gnss_get_latest_known_fix(GNSS_DEVICE);
+	if (ret == -EBUSY) {
+		LOG_DBG("Skipping GNSSLOC query - modem busy");
+	}
+#endif /* CONFIG_HL78XX_GNSS_SOURCE_LOC */
+
+	LOG_INF("Exiting GNSS mode...");
+	ret = hl78xx_exit_gnss_mode(gnss_dev);
+	if (ret < 0 && ret != -EALREADY) {
+		LOG_ERR("Failed to exit GNSS mode: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("Waiting for GNSS mode exit to complete...");
+	ret = k_sem_take(&gnss_exit_sem, K_FOREVER);
+	if (ret < 0) {
+		LOG_WRN("GNSS mode exit timeout");
+	} else {
+		LOG_INF("GNSS mode exit complete");
+	}
+
+	return 0;
+}
+
+static void app_gnss_restore_lte_connectivity(void)
+{
+#if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE) &&                                                 \
+	!defined(CONFIG_MODEM_HL78XX_BOOT_IN_AIRPLANE_MODE) &&                                     \
+	!defined(CONFIG_MODEM_HL78XX_POWER_DOWN)
+	LOG_INF("LPM GNSS done - waiting for network re-registration...");
+	waiting_post_gnss_lpm_reconnect = true;
+	k_sem_reset(&network_connected_sem);
+	k_sem_take(&network_connected_sem, K_FOREVER);
+#else
+	int ret;
+	static bool is_reset_required;
+
+	if (!IS_ENABLED(CONFIG_MODEM_HL78XX_BOOT_IN_FULLY_FUNCTIONAL_MODE) && !is_reset_required) {
+		is_reset_required = true;
+	} else {
+		is_reset_required = false;
+	}
+
+	LOG_INF("Returning to LTE mode (AT+CFUN=1)...");
+	ret = hl78xx_api_func_set_phone_functionality(modem, HL78XX_FULLY_FUNCTIONAL,
+						      is_reset_required);
+	if (ret < 0) {
+		LOG_ERR("Failed to set full functionality: %d", ret);
+	} else {
+		LOG_INF("Phone functionality restored, modem returning to LTE");
+	}
+
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+	LOG_INF("Waiting for modem to enter power down mode...");
+	k_sem_reset(&power_down_enter_sem);
+	k_sem_take(&power_down_enter_sem, K_FOREVER);
+
+	LOG_INF("Waiting for modem to reconnect after wake-up...");
+	k_sem_reset(&network_connected_sem);
+	k_sem_take(&network_connected_sem, K_FOREVER);
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+#endif
+}
+
+static enum app_flow_result app_run_gnss_demo(void)
+{
+	const struct device *gnss_dev = GNSS_DEVICE;
+
+	LOG_RAW("\n**********************************************************\n");
+	LOG_RAW("************* HL78XX GNSS Demonstration ******************\n");
+	LOG_RAW("**********************************************************\n");
+
+#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
+	app_gnss_prepare_assisted_data();
+#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
+
+	if (!device_is_ready(gnss_dev)) {
+		LOG_ERR("GNSS device %s is not ready!", gnss_dev->name);
+		return app_gnss_demo_abort();
+	}
+
+	k_sem_reset(&gnss_sem);
+	LOG_INF("GNSS device ready: %s", gnss_dev->name);
+
+	if (app_gnss_enter_and_wait_ready(gnss_dev) < 0) {
+		return app_gnss_demo_abort();
+	}
+
+	app_gnss_configure(gnss_dev);
+
+	if (app_gnss_collect_and_exit(gnss_dev) < 0) {
+		return app_gnss_demo_abort();
+	}
+
+	app_gnss_restore_lte_connectivity();
+
+	LOG_RAW("**********************************************************\n\n");
+
+#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
+	app_gnss_cleanup_assisted_data(gnss_dev);
+#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
+
+	return app_post_gnss_flow_result();
+}
+#endif /* CONFIG_HL78XX_GNSS */
+
+#ifdef CONFIG_HL78XX_GNSS
+static bool app_apply_flow_result(enum app_flow_result flow, bool *skip_modem_info,
+				  bool *run_post_lpm_stage)
+{
+	if (flow == APP_FLOW_RERUN) {
+		*skip_modem_info = false;
+		*run_post_lpm_stage = false;
+		return true;
+	}
+
+	if (flow == APP_FLOW_POST_LPM) {
+		*skip_modem_info = true;
+		*run_post_lpm_stage = true;
+		return true;
+	}
+
+	return false;
+}
+#endif /* CONFIG_HL78XX_GNSS */
 
 int main(void)
 {
 	int ret = 0;
-	static bool is_reset_required;
+	bool skip_modem_info = false;
+	bool run_gnss_before_network = false;
+	bool run_post_lpm_stage = false;
 
 	if (device_is_ready(modem) == false) {
 		LOG_ERR("%d, %s Device %s is not ready", __LINE__, __func__, modem->name);
 	}
 #ifdef CONFIG_PM_DEVICE
-	LOG_INF("Powering on modem\n");
+	LOG_INF("Powering on modem");
 	pm_device_action_run(modem, PM_DEVICE_ACTION_RESUME);
 #endif
 	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER)) {
@@ -487,351 +1080,76 @@ int main(void)
 
 		(void)conn_mgr_if_connect(iface);
 	}
+
 	if (IS_ENABLED(CONFIG_MODEM_HL78XX_BOOT_IN_FULLY_FUNCTIONAL_MODE)) {
 		LOG_INF("Modem configured to boot in fully functional mode.");
 	} else {
 		LOG_INF("Modem configured to boot in minimum functionality mode.");
+#if defined(CONFIG_HL78XX_GNSS) && defined(CONFIG_MODEM_HL78XX_BOOT_IN_AIRPLANE_MODE)
+		LOG_INF("Airplane-mode boot: searching GNSS before LTE");
+		run_gnss_before_network = true;
+#endif
+	}
+
+	while (true) {
 #ifdef CONFIG_HL78XX_GNSS
-		goto gnss_demo_start;
-		LOG_INF("Let's do search for gnss first before lte!");
-#endif
-	}
-#if defined(CONFIG_MODEM_HL78XX_AIRVANTAGE) || defined(CONFIG_HL78XX_GNSS)
-appre_run:
-#endif
-	LOG_INF("Waiting for network connection...");
-	k_sem_take(&network_connected_sem, K_FOREVER);
-	/* Modem information */
-	char manufacturer[MDM_MANUFACTURER_LENGTH] = {0};
-	char fw_ver[MDM_REVISION_LENGTH] = {0};
-	char apn[MDM_APN_MAX_LENGTH] = {0};
-	char operator[MDM_MODEL_LENGTH] = {0};
-	char imei[MDM_IMEI_LENGTH] = {0};
-	char serial_number[MDM_SERIAL_NUMBER_LENGTH] = {0};
-	enum hl78xx_cell_rat_mode tech;
-	enum cellular_registration_status status;
-	int16_t signal_strength = 0;
-	uint32_t current_baudrate = 0;
-	const char *newapn = "";
-	const char *sample_cmd = "AT";
+		if (run_gnss_before_network) {
+			enum app_flow_result startup_flow = app_run_gnss_demo();
 
-#ifndef CONFIG_MODEM_HL78XX_AUTORAT
-#if defined(CONFIG_MODEM_HL78XX_RAT_M1)
-	tech = HL78XX_RAT_CAT_M1;
-#elif defined(CONFIG_MODEM_HL78XX_RAT_NB1)
-	tech = HL78XX_RAT_NB1;
-#elif defined(CONFIG_MODEM_HL78XX_RAT_GSM)
-	tech = HL78XX_RAT_GSM;
-#elif defined(CONFIG_MODEM_HL78XX_RAT_NBNTN)
-	tech = HL78XX_RAT_NBNTN;
-#else
-#error "No rat has been selected."
-#endif
-#endif /* MODEM_HL78XX_AUTORAT */
-
-	cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_MANUFACTURER, manufacturer,
-				sizeof(manufacturer));
-
-	cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_FW_VERSION, fw_ver, sizeof(fw_ver));
-
-	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_APN, (char *)apn, sizeof(apn));
-
-	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_SERIAL_NUMBER, (char *)serial_number,
-			      sizeof(serial_number));
-
-	cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_IMEI, imei, sizeof(imei));
-#ifdef CONFIG_MODEM_HL78XX_AUTORAT
-	/* In auto rat mode, get the current rat from the modem status */
-	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_CURRENT_RAT,
-			      (enum cellular_access_technology *)&tech, sizeof(tech));
-#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
-	/* Get the current registration status */
-	cellular_get_registration_status(modem, hl78xx_rat_to_access_tech(tech), &status);
-	/* Get the current signal strength */
-#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
-	cellular_get_signal(modem, CELLULAR_SIGNAL_RSSI, &signal_strength);
-#else
-	cellular_get_signal(modem, CELLULAR_SIGNAL_RSRP, &signal_strength);
-#endif
-	/* Get the current network operator name */
-	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_NETWORK_OPERATOR, (char *)operator,
-			      sizeof(operator));
-	/* Get the current baudrate */
-	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_CURRENT_BAUD_RATE, &current_baudrate,
-			      sizeof(current_baudrate));
-
-	LOG_RAW("\n**********************************************************\n");
-	LOG_RAW("********* Hello HL78XX Modem Sample Application **********\n");
-	LOG_RAW("**********************************************************\n");
-	LOG_INF("Manufacturer: %s", manufacturer);
-	LOG_INF("Firmware Version: %s", fw_ver);
-	LOG_INF("Module Serial Number: %s", serial_number);
-	LOG_INF("APN: \"%s\"", apn);
-	LOG_INF("Imei: %s", imei);
-	LOG_INF("RAT: %s", rat_get_in_string(tech));
-	LOG_INF("Connection status: %s(%d)", reg_status_get_in_string(status), status);
-#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
-	LOG_INF("RSSI : %d", signal_strength);
-#else
-	LOG_INF("RSRP : %d", signal_strength);
-#endif
-	LOG_INF("Operator: %s", (strlen(operator) > 0) ? operator : "\"\"");
-	LOG_INF("Current Baudrate: %dbps", current_baudrate);
-	LOG_RAW("**********************************************************\n\n");
-
-	LOG_INF("Setting new APN: %s", newapn);
-	ret = cellular_set_apn(modem, newapn);
-	if (ret < 0) {
-		LOG_ERR("Failed to set new APN, error: %d", ret);
-	}
-
-	k_sem_reset(&network_connected_sem);
-	LOG_INF("Waiting for network connection...");
-	k_sem_take(&network_connected_sem, K_FOREVER);
-
-	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_APN, apn, sizeof(apn));
-
-	hl78xx_modem_cmd_send(modem, sample_cmd, strlen(sample_cmd), &ok_match, 1);
-	LOG_INF("New APN: %s", (strlen(apn) > 0) ? apn : "\"\"");
-
-	struct sockaddr_in test_endpoint_addr;
-
-	LOG_INF("Test endpoint: %s:%d", TEST_SERVER_ENDPOINT, TEST_SERVER_PORT);
-
-	resolve_broker_addr(&test_endpoint_addr);
-
-#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
-#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_CONNECT_AIRVANTAGE
-	LOG_INF("Starting AirVantage DM session...");
-	hl78xx_start_airvantage_dm_session(modem);
-	k_sem_reset(&fota_complete_rerun);
-	LOG_INF("Waiting for AirVantage FOTA Creation...");
-	/* Wait for FOTA download request, max 120 seconds */
-	ret = k_sem_take(&fota_complete_rerun, K_SECONDS(120));
-	if (ret < 0) {
-		LOG_WRN("AirVantage DM session timed out waiting for FOTA download request.%d",
-			ret);
-	} else {
-		k_sem_reset(&fota_complete_rerun);
-		LOG_INF("Waiting for AirVantage FOTA Completion...");
-		/* Wait for FOTA completion */
-		ret = k_sem_take(&fota_complete_rerun, K_FOREVER);
-		if (fota_update_status == (int)WDSI_FIRMWARE_UPDATE_SUCCESS) {
-			LOG_INF("FOTA update successful, restarting application to apply update.");
-			/* This is just an additional rerun to see new modem information
-			 * after the fota update.
-			 */
-#ifdef CONFIG_MODEM_HL78XX_BOOT_IN_FULLY_FUNCTIONAL_MODE
-			goto appre_run;
-#endif
-		} else if (fota_update_status == (int)WDSI_FIRMWARE_UPDATE_FAILED) {
-			LOG_WRN("FOTA update failed.");
-		} else {
-			LOG_WRN("FOTA update status unknown.");
+			run_gnss_before_network = false;
+			if (app_apply_flow_result(startup_flow, &skip_modem_info,
+						  &run_post_lpm_stage)) {
+				continue;
+			}
+			break;
 		}
-	}
-
-#else
-	LOG_WRN("AirVantage User Agreement not accepted, cannot start DM session.");
-#endif
-#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
-/* -------------------------------------------------------------------------
- * GNSS Demo
- * -------------------------------------------------------------------------
- */
-#ifdef CONFIG_HL78XX_GNSS
-#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
-	/* we have to download gnss assistance data while we have lte connection */
-	/* Get GNSS assist data status */
-	struct hl78xx_agnss_status agnss_status;
-
-	ret = hl78xx_gnss_assist_data_get_status(modem, &agnss_status);
-	if (ret == 0 && agnss_status.mode == HL78XX_AGNSS_MODE_VALID) {
-		LOG_INF("A-GNSS valid, expires in %d days %d:%d", agnss_status.days,
-			agnss_status.hours, agnss_status.minutes);
-	}
-	LOG_DBG("A-GNSS mode: %d", agnss_status.mode);
-	/* If A-GNSS data is invalid or expiring soon, download new data */
-	if (agnss_status.mode == HL78XX_AGNSS_MODE_INVALID) {
-		/**
-		 * Note 1: Downloading A-GNSS data may take several minutes depending on
-		 * network conditions. The download is performed in the background.
-		 *
-		 * Note 2 Gnssad at command is a bit quirky, sometimes
-		 * it returns cme error 60. So you can try to download it once again if it fails.
-		 *
-		 */
-		/* Download 7 days of assistance data */
-		ret = hl78xx_gnss_assist_data_download(modem, HL78XX_AGNSS_DAYS_7);
-		if (ret < 0) {
-			LOG_ERR("Failed to download A-GNSS data: %d", ret);
-		} else {
-			LOG_INF("A-GNSS data download started");
-		}
-	}
-#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
-gnss_demo_start:
-	LOG_RAW("\n**********************************************************\n");
-	LOG_RAW("************* HL78XX GNSS Demonstration ******************\n");
-	LOG_RAW("**********************************************************\n");
-
-	const struct device *gnss_dev = GNSS_DEVICE;
-
-	/* Check if GNSS device is ready */
-	if (!device_is_ready(gnss_dev)) {
-		LOG_ERR("GNSS device %s is not ready!", gnss_dev->name);
-		goto gnss_demo_end;
-	}
-	k_sem_reset(&gnss_sem);
-	LOG_INF("GNSS device ready: %s", gnss_dev->name);
-	/* Enter GNSS mode - this will:
-	 * 1. Put modem in airplane mode (AT+CFUN=4)
-	 * 2. Initialize GNSS engine
-	 * 3. Fire HL78XX_GNSS_ENGINE_READY event when complete
-	 * Note: GNSS shares RF path with LTE, so LTE must be disabled
-	 */
-	LOG_INF("Entering GNSS mode...");
-	ret = hl78xx_enter_gnss_mode(gnss_dev);
-	if (ret < 0) {
-		LOG_ERR("Failed to enter GNSS mode: %d", ret);
-		goto gnss_demo_end;
-	}
-
-	/* Wait for GNSS engine initialization to complete
-	 * HL78XX_GNSS_ENGINE_READY fires after GNSS init script succeeds
-	 */
-	ret = k_sem_take(&gnss_sem, K_SECONDS(30));
-	if (ret < 0) {
-		LOG_WRN("GNSS engine init timeout, failing demo.");
-		goto gnss_demo_end;
-	}
-	LOG_INF("GNSS engine initialized");
-
-#ifdef CONFIG_PM_DEVICE
-	/* Power on GNSS */
-	LOG_INF("Powering on GNSS...");
-	ret = pm_device_action_run(gnss_dev, PM_DEVICE_ACTION_RESUME);
-	if (ret < 0 && ret != -EALREADY) {
-		LOG_ERR("Failed to power on GNSS: %d", ret);
-	} else {
-		LOG_INF("GNSS powered on");
-	}
-#endif
-
-	/* Get current fix rate */
-	uint32_t fix_rate_ms;
-
-	ret = gnss_get_fix_rate(gnss_dev, &fix_rate_ms);
-	if (ret == 0) {
-		LOG_INF("Current fix rate: %u ms", fix_rate_ms);
-	}
-
-	/* Get supported systems */
-	gnss_systems_t systems;
-
-	ret = gnss_get_supported_systems(gnss_dev, &systems);
-	if (ret == 0) {
-		LOG_INF("Supported GNSS systems: 0x%08x", systems);
-		if (systems & GNSS_SYSTEM_GPS) {
-			LOG_INF("  - GPS");
-		}
-		if (systems & GNSS_SYSTEM_GLONASS) {
-			LOG_INF("  - GLONASS");
-		}
-	}
-	LOG_INF("Setting GNSS fix rate to 1000 ms...");
-	/* Set fix rate to 1000 ms */
-	ret = gnss_set_fix_rate(gnss_dev, 1000);
-	if (ret == 0) {
-		LOG_INF("GNSS fix rate set to 1000 ms");
-	}
-	LOG_INF("Enabling GPS and GLONASS systems...");
-	/* Enable GPS and GLONASS */
-	ret = gnss_set_enabled_systems(gnss_dev, GNSS_SYSTEM_GPS | GNSS_SYSTEM_GLONASS);
-	/* Configure GNSS */
-	LOG_INF("Configuring GNSS for NMEA output...");
-#ifdef CONFIG_HL78XX_GNSS_SOURCE_NMEA
-	hl78xx_gnss_set_nmea_output(gnss_dev, NMEA_OUTPUT_SAME_PORT);
-#else
-	hl78xx_gnss_set_nmea_output(gnss_dev, NMEA_OUTPUT_NONE);
-#endif
-	/* Set search timeout (0 = no timeout) */
-	hl78xx_gnss_set_search_timeout(gnss_dev, 0);
-	k_sem_reset(&gnss_sem);
-	/* Queue GNSS search - already in GNSS mode, search will start */
-	LOG_INF("Queueing GNSS search...");
-	ret = hl78xx_queue_gnss_search(gnss_dev);
-	if (ret) {
-		LOG_INF("GNSS search already queued or in progress");
-	} else {
-		LOG_INF("GNSS search started - waiting for fix...");
-	}
-
-	/* Wait some time to collect GNSS fixes */
-	LOG_INF("Collecting GNSS data...");
-	ret = k_sem_take(&gnss_sem, K_FOREVER);
-	if (ret < 0) {
-		LOG_WRN("GNSS engine init timeout, failing demo.");
-		goto gnss_demo_end;
-	}
-#ifdef CONFIG_HL78XX_GNSS_SOURCE_LOC
-	LOG_INF("GNSS data collection complete.");
-	ret = hl78xx_gnss_get_latest_known_fix(GNSS_DEVICE);
-	if (ret == -EBUSY) {
-		LOG_DBG("Skipping GNSSLOC query - modem busy");
-	}
-#endif /* CONFIG_HL78XX_GNSS_SOURCE_LOC */
-	/* Exit GNSS mode
-	 * This will:
-	 * 1. Stop GNSS search
-	 * 2. Fire HL78XX_GNSS_EVENT_MODE_EXITED when complete
-	 * 3. Modem remains in airplane mode - user decides next step
-	 */
-	LOG_INF("Exiting GNSS mode...");
-	k_sem_reset(&gnss_exit_sem);
-	ret = hl78xx_exit_gnss_mode(gnss_dev);
-	if (ret < 0 && ret != -EALREADY) {
-		LOG_ERR("Failed to exit GNSS mode: %d", ret);
-	} else {
-		/* Wait for GNSS mode exit to complete */
-		LOG_INF("Waiting for GNSS mode exit to complete...");
-		ret = k_sem_take(&gnss_exit_sem, K_SECONDS(10));
-		if (ret < 0) {
-			LOG_WRN("GNSS mode exit timeout");
-		} else {
-			LOG_INF("GNSS mode exit complete");
-		}
-	}
-	/* If modem did not boot in fully functional mode, reset is required to configure lte */
-	if (IS_ENABLED(CONFIG_MODEM_HL78XX_BOOT_IN_FULLY_FUNCTIONAL_MODE) == false &&
-	    is_reset_required == false) {
-		is_reset_required = true;
-	} else {
-		is_reset_required = false;
-	}
-	/* Now explicitly return to LTE mode */
-	LOG_INF("Returning to LTE mode (AT+CFUN=1)...");
-	ret = hl78xx_api_func_set_phone_functionality(modem, HL78XX_FULLY_FUNCTIONAL,
-						      is_reset_required);
-	if (ret < 0) {
-		LOG_ERR("Failed to set full functionality: %d", ret);
-	} else {
-		LOG_INF("Phone functionality restored, modem returning to LTE");
-	}
-
-gnss_demo_end:
-	LOG_RAW("**********************************************************\n\n");
-#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
-	/* Delete assistance data */
-	ret = hl78xx_gnss_assist_data_delete(gnss_dev);
-#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
-	if (IS_ENABLED(CONFIG_MODEM_HL78XX_BOOT_IN_FULLY_FUNCTIONAL_MODE) == false) {
-		LOG_INF("Demo complete, entering LTE mode...");
-		goto appre_run;
-	}
 #endif /* CONFIG_HL78XX_GNSS */
 
+		if (!run_post_lpm_stage) {
+			ret = app_wait_for_network();
+			if (ret < 0) {
+				LOG_ERR("Network wait failed: %d", ret);
+				return ret;
+			}
+
+			if (!skip_modem_info) {
+				ret = app_collect_and_log_modem_info();
+				if (ret < 0) {
+					LOG_ERR("Modem information stage failed: %d", ret);
+					return ret;
+				}
+			}
+		}
+		skip_modem_info = false;
+		run_post_lpm_stage = false;
+
+		app_resolve_test_endpoint();
+
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+		if (app_run_airvantage_flow()) {
+			continue;
+		}
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+
+#ifdef CONFIG_HL78XX_GNSS
+		enum app_flow_result gnss_flow = app_run_gnss_demo();
+
+		if (app_apply_flow_result(gnss_flow, &skip_modem_info, &run_post_lpm_stage)) {
+			continue;
+		}
+#endif /* CONFIG_HL78XX_GNSS */
+
+		break;
+	}
+
 	LOG_INF("Sample application finished.");
+	LOG_INF("Entering monitoring loop...");
+
+	/* Main loop - keep running and receiving callbacks */
+	while (1) {
+		k_sleep(K_SECONDS(60));
+		LOG_INF("Uptime: %lld seconds", k_uptime_get() / 1000);
+	}
 
 	return 0;
 }

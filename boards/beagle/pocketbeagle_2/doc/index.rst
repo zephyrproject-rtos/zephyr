@@ -160,7 +160,10 @@ MSPM0L1105
    Flashing new firmware will also clear the EEPROM contents. So please make backup of EEPROM data
    before attempting to flash firmware to MSPM0L1105.
 
-To test the A53 cores, we build the :zephyr:code-sample:`minimal` sample with the following command.
+.. note::
+   Zephyr by default uses P1.19 and P1.21 as UART RX and TX respectively.
+
+To test the MSPM0L1105, we build the :zephyr:code-sample:`minimal` sample with the following command.
 
 .. zephyr-app-commands::
    :board: pocketbeagle_2/mspm0l1105

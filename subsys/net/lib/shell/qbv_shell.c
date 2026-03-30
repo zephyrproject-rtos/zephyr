@@ -318,18 +318,22 @@ static int cmd_qbv_get_info(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_qbv,
 	SHELL_CMD_ARG(enable, NULL,
-		"Enable: enable <iface_index> <value(off, on)>",
+		      SHELL_HELP("Enable Qbv", "<index> <on, off>"),
 		cmd_qbv_enable, 3, 0),
 	SHELL_CMD_ARG(set_config, NULL,
-		"Set config: set_config <iface_index> <base_time(s)> <base_time(2*(-16)ns)> <cycle_time(s)> <cycle_time(ns)> <cycle_time_ext(ns)> <list_len>",
+		      SHELL_HELP("Set Qbv configuration",
+				 "<index> <base_time(s)> <base_time(2*(-16)ns)>\n"
+				 "<cycle_time(s)> <cycle_time(ns)> <cycle_time_ext(ns)> "
+				 "<list_len>"),
 		cmd_qbv_set_config, 8, 0),
 	SHELL_CMD_ARG(set_gc, NULL,
-		"Set gate control: set_gc <iface_index> <row> <gate_control> <interval>",
+		      SHELL_HELP("Set gate control",
+				 "<index> <row> <gate_control> <interval>"),
 		cmd_qbv_set_gc, 5, 0),
 	SHELL_CMD_ARG(get_info, NULL,
-		"Get info: get_info <iface_index>",
+		      SHELL_HELP("Get information", "<index>"),
 		cmd_qbv_get_info, 2, 0),
-	SHELL_SUBCMD_SET_END     /* Array terminated. */
+	SHELL_SUBCMD_SET_END
 );
 
 SHELL_SUBCMD_ADD((net), qbv, &net_cmd_qbv,

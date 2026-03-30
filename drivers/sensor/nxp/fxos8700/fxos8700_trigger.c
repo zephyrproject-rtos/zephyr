@@ -340,7 +340,7 @@ static int fxos8700_motion_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/* Set motion threshold to maximimum */
+	/* Set motion threshold to maximum */
 	if (config->ops->byte_write(dev, FXOS8700_REG_FF_MT_THS,
 				    FXOS8700_REG_FF_MT_THS)) {
 		return -EIO;

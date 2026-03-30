@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <zephyr/cache.h>
 #include <zephyr/sys/spsc_pbuf.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/sys/byteorder.h>
 
 #define LEN_SZ sizeof(uint32_t)
@@ -126,7 +127,7 @@ struct spsc_pbuf *spsc_pbuf_init(void *buf, size_t blen, uint32_t flags)
 	pb->common.flags = flags;
 	*wr_idx_loc = 0;
 
-	__sync_synchronize();
+	barrier_sync_synchronize();
 	cache_wb(&pb->common, sizeof(pb->common), flags);
 	cache_wb(wr_idx_loc, sizeof(*wr_idx_loc), flags);
 
@@ -150,7 +151,7 @@ int spsc_pbuf_alloc(struct spsc_pbuf *pb, uint16_t len, char **buf)
 	}
 
 	cache_inv(rd_idx_loc, sizeof(*rd_idx_loc), flags);
-	__sync_synchronize();
+	barrier_sync_synchronize();
 
 	uint32_t wr_idx = *wr_idx_loc;
 	uint32_t rd_idx = *rd_idx_loc;
@@ -178,7 +179,7 @@ int spsc_pbuf_alloc(struct spsc_pbuf *pb, uint16_t len, char **buf)
 		} else {
 			/* Padding must be added. */
 			data_loc[wr_idx] = PADDING_MARK;
-			__sync_synchronize();
+			barrier_sync_synchronize();
 			cache_wb(&data_loc[wr_idx], sizeof(uint8_t), flags);
 
 			wr_idx = 0;
@@ -213,7 +214,7 @@ void spsc_pbuf_commit(struct spsc_pbuf *pb, uint16_t len)
 	uint32_t wr_idx = *wr_idx_loc;
 
 	sys_put_be16(len, &data_loc[wr_idx]);
-	__sync_synchronize();
+	barrier_sync_synchronize();
 	cache_wb(&data_loc[wr_idx], len + LEN_SZ, flags);
 
 	wr_idx += len + LEN_SZ;
@@ -221,7 +222,7 @@ void spsc_pbuf_commit(struct spsc_pbuf *pb, uint16_t len)
 	wr_idx = wr_idx == pblen ? 0 : wr_idx;
 
 	*wr_idx_loc = wr_idx;
-	__sync_synchronize();
+	barrier_sync_synchronize();
 	cache_wb(wr_idx_loc, sizeof(*wr_idx_loc), flags);
 }
 
@@ -256,7 +257,7 @@ uint16_t spsc_pbuf_claim(struct spsc_pbuf *pb, char **buf)
 	uint8_t *data_loc = get_data_loc(pb, flags);
 
 	cache_inv(wr_idx_loc, sizeof(*wr_idx_loc), flags);
-	__sync_synchronize();
+	barrier_sync_synchronize();
 
 	uint32_t wr_idx = *wr_idx_loc;
 	uint32_t rd_idx = *rd_idx_loc;
@@ -274,7 +275,7 @@ uint16_t spsc_pbuf_claim(struct spsc_pbuf *pb, char **buf)
 	if (IS_ENABLED(CONFIG_SPSC_PBUF_UTILIZATION) && (bytes_stored > GET_UTILIZATION(flags))) {
 		__ASSERT_NO_MSG(bytes_stored <= BIT_MASK(SPSC_PBUF_UTILIZATION_BITS));
 		pb->common.flags = SET_UTILIZATION(flags, bytes_stored);
-		__sync_synchronize();
+		barrier_sync_synchronize();
 		cache_wb(&pb->common.flags, sizeof(pb->common.flags), flags);
 	}
 
@@ -295,7 +296,7 @@ uint16_t spsc_pbuf_claim(struct spsc_pbuf *pb, char **buf)
 		}
 
 		*rd_idx_loc = rd_idx = 0;
-		__sync_synchronize();
+		barrier_sync_synchronize();
 		cache_wb(rd_idx_loc, sizeof(*rd_idx_loc), flags);
 		/* After reading padding we may find out that buffer is empty. */
 		if (rd_idx == wr_idx) {
@@ -345,7 +346,7 @@ void spsc_pbuf_free(struct spsc_pbuf *pb, uint16_t len)
 	}
 
 	*rd_idx_loc = rd_idx;
-	__sync_synchronize();
+	barrier_sync_synchronize();
 	cache_wb(rd_idx_loc, sizeof(*rd_idx_loc), flags);
 }
 
@@ -380,7 +381,7 @@ int spsc_pbuf_get_utilization(struct spsc_pbuf *pb)
 	}
 
 	cache_inv(&pb->common.flags, sizeof(pb->common.flags), pb->common.flags);
-	__sync_synchronize();
+	barrier_sync_synchronize();
 
 	return GET_UTILIZATION(pb->common.flags);
 }

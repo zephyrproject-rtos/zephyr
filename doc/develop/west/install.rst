@@ -73,7 +73,7 @@ Using the completion scripts:
 
     .. code-block:: bash
 
-      west completion bash > ~/west-completion.bash; echo "source ~/west-completion.bash" >> ~/.bashrc
+      west completion bash > ~/west-completion.bash; printf '\n%s\n' "source ~/west-completion.bash" >> ~/.bashrc
 
   .. group-tab:: zsh
 

@@ -345,6 +345,8 @@ dppic0: dppic: dppic@17000 {
 	compatible = "nordic,nrf-dppic";
 	reg = <0x17000 0x1000>;
 	status = "okay";
+	channels = <32>;
+	groups = <6>;
 };
 
 wdt: wdt0: watchdog@18000 {
@@ -526,21 +528,6 @@ usbreg: regulator@37000 {
 	reg = <0x37000 0x1000>;
 	interrupts = <55 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "okay";
-};
-
-flash_controller: flash-controller@39000 {
-	compatible = "nordic,nrf53-flash-controller";
-	reg = <0x39000 0x1000>;
-	partial-erase;
-
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	flash0: flash@0 {
-		compatible = "soc-nv-flash";
-		erase-block-size = <4096>;
-		write-block-size = <4>;
-	};
 };
 
 kmu: kmu@39000 {

@@ -8,12 +8,15 @@ common:
     fixture: gpio_spi_loopback
   platform_allow:
     - nrf52840dk/nrf52840
+    - nrf5340dk/nrf5340/cpuapp
     - nrf54h20dk/nrf54h20/cpuapp
     - nrf54h20dk/nrf54h20/cpurad
     - nrf54h20dk/nrf54h20/cpuppr
     - nrf54l15dk/nrf54l15/cpuapp
     - nrf54l15dk/nrf54l15/cpuapp/ns
     - nrf54lm20dk/nrf54lm20a/cpuapp
+    - nrf54lm20dk/nrf54lm20b/cpuapp
+    - nrf7120dk/nrf7120/cpuapp
     - ophelia4ev/nrf54l15/cpuapp
 
 tests:
@@ -52,6 +55,7 @@ tests:
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
 
   drivers.spi.spi_2M666666Hz:
     extra_configs:
@@ -60,6 +64,7 @@ tests:
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
 
   drivers.spi.spi_4MHz:
     extra_configs:
@@ -79,11 +84,14 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
     platform_exclude:
       - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.spi.spis_fast:
@@ -93,11 +101,14 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast_spis.overlay"
     platform_exclude:
       - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.spi.pm_runtime:
@@ -117,10 +128,12 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_cross_domain.overlay"
     platform_exclude:
       - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54h20dk/nrf54h20/cpuppr
       - ophelia4ev/nrf54l15/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
 
   drivers.spi.direct_xfer:
     extra_configs:

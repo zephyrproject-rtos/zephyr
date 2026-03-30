@@ -15,6 +15,7 @@
 #include <zephyr/posix/unistd.h>
 #include <zephyr/posix/netdb.h>
 
+#include <zephyr/logging/log.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_context.h>
@@ -326,7 +327,12 @@ int main(void)
 	int i;
 	char *ip = NULL;
 
-	struct ocpp_cp_info cpi = { "basic", "zephyr", .num_of_con = NO_OF_CONN };
+	struct ocpp_cp_info cpi = {
+		"basic",   "zephyr",  .num_of_con = NO_OF_CONN,
+		"SNCP001", "SNBX001", "v0.1",
+		"ICCIS",   "IMSI",    "MPMSN001",
+		"MPMTYPE",
+	};
 	struct ocpp_cs_info csi = {NULL,
 				   CONFIG_NET_SAMPLE_OCPP_WS_PATH,
 				   CONFIG_NET_SAMPLE_OCPP_PORT,

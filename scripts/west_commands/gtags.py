@@ -19,8 +19,8 @@ class Gtags(WestCommand):
     def __init__(self):
         super().__init__(
             "gtags",
-            "create a GNU Global tags file for the current workspace",
-            """\
+            "",
+            description="""\
 Indexes source code files in the west workspace using GNU Global's
 "gtags" tool. For more information on Global and gtags, see:
 
@@ -40,7 +40,6 @@ projects etc., see the west documentation.""",
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(
             self.name,
-            help=self.help,
             description=self.description,
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )

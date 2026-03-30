@@ -37,7 +37,7 @@ static int cmd_ccp_call_control_server_init(const struct shell *sh, size_t argc,
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_TBS_TECHNOLOGY_3G,
-		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+		.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
 	};
 	int err;
 
@@ -60,7 +60,7 @@ static int cmd_ccp_call_control_server_init(const struct shell *sh, size_t argc,
 			.authorization_required = false,
 			/* Set different technologies per bearer */
 			.technology = (i % BT_TBS_TECHNOLOGY_WCDMA) + 1,
-			.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+			.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
 		};
 
 		snprintf(prov_name, sizeof(prov_name), "Telephone Bearer #%d", i);
@@ -132,7 +132,7 @@ static int cmd_ccp_call_control_server_set_bearer_name(const struct shell *sh, s
 static int cmd_ccp_call_control_server_get_bearer_name(const struct shell *sh, size_t argc,
 						       char *argv[])
 {
-	const char *name;
+	char name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 1];
 	int index = 0;
 	int err = 0;
 
@@ -143,7 +143,8 @@ static int cmd_ccp_call_control_server_get_bearer_name(const struct shell *sh, s
 		}
 	}
 
-	err = bt_ccp_call_control_server_get_bearer_provider_name(bearers[index], &name);
+	err = bt_ccp_call_control_server_get_bearer_provider_name(bearers[index], name,
+								  sizeof(name));
 	if (err != 0) {
 		shell_error(sh, "Failed to get bearer[%d] name: %d", index, err);
 
@@ -158,7 +159,7 @@ static int cmd_ccp_call_control_server_get_bearer_name(const struct shell *sh, s
 static int cmd_ccp_call_control_server_get_bearer_uci(const struct shell *sh, size_t argc,
 						      char *argv[])
 {
-	const char *uci;
+	char uci[BT_TBS_MAX_UCI_SIZE];
 	int index = 0;
 	int err = 0;
 
@@ -169,7 +170,7 @@ static int cmd_ccp_call_control_server_get_bearer_uci(const struct shell *sh, si
 		}
 	}
 
-	err = bt_ccp_call_control_server_get_bearer_uci(bearers[index], &uci);
+	err = bt_ccp_call_control_server_get_bearer_uci(bearers[index], uci);
 	if (err != 0) {
 		shell_error(sh, "Failed to get bearer[%d] UCI: %d", index, err);
 

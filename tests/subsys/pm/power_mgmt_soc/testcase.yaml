@@ -25,6 +25,7 @@ tests:
       - ek_ra8m1
       - ek_ra8d1
       - mck_ra8t1
+      - fpb_ra8e1
       - ek_ra8p1/r7ka8p1kflcac/cm85
       - mck_ra8t2/r7ka8t2lflcac/cm85
       - ek_ra8d2/r7ka8d2kflcac/cm85
@@ -40,3 +41,26 @@ tests:
     tags: pm
     integration_platforms:
       - mec15xxevb_assy6853
+  pm.soc.measure:
+    tags: pm
+    harness: power
+    harness_config:
+      fixture: pm_probe
+      pytest_dut_scope: session
+      power_measurements:
+        elements_to_trim: 100
+        min_peak_distance: 40
+        min_peak_height: 0.008
+        peak_padding: 40
+        measurement_duration: 20
+        num_of_transitions: 6
+        expected_rms_values: []
+        tolerance_percentage: 20
+      record:
+        regex:
+          - "not used"
+        as_json: ['metrics']
+    platform_allow:
+      - mimxrt1060_evk@C/mimxrt1062/qspi
+    integration_platforms:
+      - mimxrt1060_evk@C/mimxrt1062/qspi

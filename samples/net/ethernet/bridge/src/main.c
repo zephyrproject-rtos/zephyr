@@ -31,7 +31,7 @@ static void bridge_find_cb(struct eth_bridge_iface_context *br, void *user_data)
 
 static void bridge_add_iface_cb(struct net_if *iface, void *user_data)
 {
-#if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+#if defined(CONFIG_NET_DSA)
 	struct ethernet_context *eth_ctx;
 #endif
 	struct ud *u = user_data;
@@ -52,7 +52,7 @@ static void bridge_add_iface_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
-#if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+#if defined(CONFIG_NET_DSA)
 	eth_ctx = net_if_l2_data(iface);
 
 	if (eth_ctx->dsa_port == DSA_USER_PORT || eth_ctx->dsa_port == NON_DSA_PORT) {

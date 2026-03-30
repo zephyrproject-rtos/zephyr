@@ -13,9 +13,9 @@ Espressif SOCs have 3 main clock subsystems: CPU, RTC_FAST and RTC_SLOW. Each of
 Supported Boards
 ****************
 - esp32_devkitc/esp32/procpu
-- esp32c3_devkitm
+- esp32c3_devkitc
 - esp32c6_devkitc/esp32c6/hpcore
-- esp32s2_saola
+- esp32s2_devkitc
 - esp32s3_devkitc/esp32s3/procpu
 
 Building and Running
@@ -38,7 +38,7 @@ If the external 32K crystal is connect to pins 32K_XP and 32K_XN, the test can b
 
 .. code-block:: console
 
-	west twister -p esp32c3_devkitm --device-testing --device-serial=/dev/ttyUSB0 -vv --flash-before -T tests/boards/espressif/rtc_clk -X external_xtal
+	west twister -p esp32c3_devkitc --device-testing --device-serial=/dev/ttyUSB0 -vv --flash-before -T tests/boards/espressif/rtc_clk -X external_xtal
 
 Sample Output
 =============

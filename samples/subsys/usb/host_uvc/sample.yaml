@@ -1,0 +1,14 @@
+sample:
+  name: USB host video sample
+tests:
+  sample.subsys.usb.host.uvc.camera:
+    tags:
+      - video
+      - usbh
+      - samples
+    extra_configs:
+      - CONFIG_FPU=y
+    platform_allow:
+      - rd_rw612_bga/rw612
+    integration_platforms:
+      - rd_rw612_bga/rw612

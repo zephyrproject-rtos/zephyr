@@ -10,7 +10,6 @@ else()
 
   zephyr_sources(
     soc.c
-    soc_cache.c
     esp32s3-mp.c
     ../common/loader.c
     )
@@ -24,5 +23,5 @@ zephyr_sources_ifndef(CONFIG_BOOTLOADER_MCUBOOT hw_init.c)
 zephyr_library_sources_ifdef(CONFIG_NEWLIB_LIBC newlib_fix.c)
 
 # Power Management
-zephyr_library_sources_ifdef(CONFIG_PM power.c)
-zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
+zephyr_library_sources_ifdef(CONFIG_PM ../common/power.c)
+zephyr_library_sources_ifdef(CONFIG_POWEROFF ../common/poweroff.c)

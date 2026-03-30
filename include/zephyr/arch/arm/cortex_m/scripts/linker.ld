@@ -27,17 +27,11 @@
 #define RAMABLE_REGION RAM
 
 /* Region of the irq vectors and boot-vector SP/PC */
-#if defined(CONFIG_ROMSTART_RELOCATION_ROM)
+#if defined(CONFIG_ROMSTART_RELOCATION_ROM) && defined(CONFIG_XIP)
 #define ROMSTART_ADDR CONFIG_ROMSTART_REGION_ADDRESS
 #define ROMSTART_SIZE (CONFIG_ROMSTART_REGION_SIZE * 1K)
 #else
 #define ROMSTART_REGION ROMABLE_REGION
-#endif
-
-#if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
-#define ROM_ADDR RAM_ADDR
-#else
-#define ROM_ADDR (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
 #endif
 
 #if defined(CONFIG_ROM_END_OFFSET)
@@ -46,11 +40,22 @@
 #define ROM_END_OFFSET 0
 #endif
 
+#if defined(CONFIG_FLASH_USES_MAPPED_PARTITION)
+#define ROM_ADDR (DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition)))
+#define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition)) - ROM_END_OFFSET)
+#else
+#if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
+#define ROM_ADDR RAM_ADDR
+#else
+#define ROM_ADDR (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
+#endif /* !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0) */
+
 #if CONFIG_FLASH_LOAD_SIZE > 0
 #define ROM_SIZE (CONFIG_FLASH_LOAD_SIZE - ROM_END_OFFSET)
 #else
 #define ROM_SIZE (CONFIG_FLASH_SIZE * 1024 - CONFIG_FLASH_LOAD_OFFSET - ROM_END_OFFSET)
 #endif
+#endif /* defined(CONFIG_FLASH_USES_MAPPED_PARTITION) */
 
 #define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
 #define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
@@ -181,7 +186,7 @@ GROUP_END(ITCM)
 
 	__text_region_end = .;
 
-#if defined (CONFIG_CPP) || defined(CONFIG_RUST)
+#if defined (CONFIG_CPP) || defined(CONFIG_RUST) || defined(CONFIG_ARCH_STACKWALK)
 	SECTION_PROLOGUE(.ARM.extab,,)
 	{
 	/*

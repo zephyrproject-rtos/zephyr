@@ -9,8 +9,8 @@
 #include <zephyr/net/sntp.h>
 #include <zephyr/net/socketutils.h>
 
-static int sntp_simple_helper(struct net_sockaddr *addr, net_socklen_t addr_len, uint32_t timeout,
-			      struct sntp_time *ts)
+static int sntp_simple_helper(const struct net_sockaddr *addr, net_socklen_t addr_len,
+			      uint32_t timeout, struct sntp_time *ts)
 {
 	int res;
 	struct sntp_ctx sntp_ctx;

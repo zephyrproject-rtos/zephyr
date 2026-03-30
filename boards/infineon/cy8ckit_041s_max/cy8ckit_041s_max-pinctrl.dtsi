@@ -13,3 +13,16 @@
 &p0_4_scb2_uart_rx {
 	input-enable;
 };
+
+/* Configure pin drive mode for spi pins */
+&p2_0_scb1_spi_m_mosi {
+	drive-push-pull;
+};
+
+&p2_1_scb1_spi_m_miso {
+	input-enable;
+};
+
+&p2_2_scb1_spi_m_clk {
+	drive-push-pull;
+};

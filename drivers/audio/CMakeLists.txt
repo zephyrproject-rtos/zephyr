@@ -3,6 +3,7 @@
 zephyr_library()
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_AW88298 aw88298.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_CS43L22 cs43l22.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_DA7212 da7212.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_MAX98091 max98091.c)
@@ -12,6 +13,7 @@ zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_SHELL codec_shell.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_WM8904 wm8904.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_WM8962 wm8962.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_DMIC_AMBIQ_PDM dmic_ambiq_pdm.c)
+zephyr_library_sources_ifdef(CONFIG_AUDIO_DMIC_INFINEON dmic_infineon.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_DMIC_MCUX dmic_mcux.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_DMIC_NRFX_PDM dmic_nrfx_pdm.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_DMIC_NXP_MICFIL dmic_nxp_micfil.c)

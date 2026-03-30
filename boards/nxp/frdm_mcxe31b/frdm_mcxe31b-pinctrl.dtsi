@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -45,6 +45,48 @@
 
 		group2 {
 			pinmux = <PTA7_CAN0_TX>;
+			output-enable;
+		};
+	};
+
+	pinmux_lpi2c_1: pinmux_lpi2c_1 {
+		group1 {
+			pinmux = <(PTC6_LPI2C1_SDA_I | PTC6_LPI2C1_SDA_O)>,
+				 <(PTC7_LPI2C1_SCL_I | PTC7_LPI2C1_SCL_O)>;
+			input-enable;
+			output-enable;
+			bias-pull-up;
+		};
+	};
+
+	pinmux_flexio_lcd: pinmux_flexio_lcd {
+		group1 {
+			pinmux = <PTC23_FXIO_D16_O>,
+				 <PTC24_FXIO_D17_O>,
+				 <PTC25_FXIO_D18_O>,
+				 <PTC26_FXIO_D19_O>,
+				 <PTC27_FXIO_D20_O>,
+				 <PTC28_FXIO_D21_O>,
+				 <PTC29_FXIO_D22_O>,
+				 <PTC30_FXIO_D23_O>,
+				 <PTC31_FXIO_D24_O>,
+				 <PTD20_FXIO_D25_O>,
+				 <PTD21_FXIO_D26_O>,
+				 <PTD22_FXIO_D27_O>,
+				 <PTD23_FXIO_D28_O>,
+				 <PTD24_FXIO_D29_O>,
+				 <PTD26_FXIO_D30_O>,
+				 <PTD27_FXIO_D31_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTC11_FXIO_D15_O>;
+			output-enable;
+		};
+
+		group3 {
+			pinmux = <PTB0_FXIO_D14_O>;
 			output-enable;
 		};
 	};

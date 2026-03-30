@@ -16,3 +16,10 @@ config COUNTER_RENESAS_RZ_CMTW
 	select USE_RZ_FSP_CMTW
 	help
 	  Enable the counter driver for the Renesas RZ Compare Match Timer W (CMTW).
+
+config COUNTER_RENESAS_RZA2M_OSTM
+	bool "Renesas RZA2M OS Timer (OSTM) Counter driver"
+	default y
+	depends on DT_HAS_RENESAS_RZA2M_OSTM_COUNTER_ENABLED
+	help
+	  Enable the counter driver for the Renesas RZA2M OS Timer (OSTM).

@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(net_mqtt_enc, CONFIG_MQTT_LOG_LEVEL);
 
 #include "mqtt_internal.h"
 #include "mqtt_os.h"
+#include <zephyr/net/net_log.h>
 
 static const struct mqtt_utf8 mqtt_3_1_0_proto_desc =
 	MQTT_UTF8_LITERAL("MQIsdp");

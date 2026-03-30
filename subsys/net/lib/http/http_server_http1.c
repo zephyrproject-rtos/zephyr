@@ -884,7 +884,8 @@ static int on_header_value(struct http_parser *parser,
 			}
 
 			if (ctx->has_upgrade_header) {
-				if (strcasecmp(ctx->header_buffer, "h2c") == 0) {
+				if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) &&
+				    strcasecmp(ctx->header_buffer, "h2c") == 0) {
 					ctx->http2_upgrade = true;
 				} else if (strcasecmp(ctx->header_buffer, "websocket") == 0) {
 					ctx->websocket_upgrade = true;
@@ -895,8 +896,12 @@ static int on_header_value(struct http_parser *parser,
 
 			if (ctx->websocket_sec_key_next) {
 #if defined(CONFIG_WEBSOCKET)
-				strncpy(ctx->ws_sec_key, ctx->header_buffer,
-					MIN(sizeof(ctx->ws_sec_key), offset));
+				if (offset >= sizeof(ctx->ws_sec_key)) {
+					LOG_ERR("Sec-WebSocket-Key too long");
+					return -EBADMSG;
+				}
+				memcpy(ctx->ws_sec_key, ctx->header_buffer, offset);
+				ctx->ws_sec_key[offset] = '\0';
 #endif
 				ctx->websocket_sec_key_next = false;
 			}
@@ -1081,7 +1086,7 @@ int handle_http1_request(struct http_client_ctx *client)
 			goto upgrade_not_found;
 		}
 
-		if (client->http2_upgrade) {
+		if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) && client->http2_upgrade) {
 			ret = handle_http1_to_http2_upgrade(client);
 			if (ret < 0) {
 				goto error;

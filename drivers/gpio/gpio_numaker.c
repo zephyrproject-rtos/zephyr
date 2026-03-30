@@ -236,9 +236,7 @@ static void gpio_numaker_isr(const struct device *dev)
 
 #define GPIO_NUMAKER_DEFINE(n)                                                                     \
 	static const struct gpio_numaker_config gpio_numaker_config##n = {                         \
-		.common = {                                                                        \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		.reg = DT_INST_REG_ADDR(n),                                                        \
 		.gpa_base = DT_REG_ADDR(DT_NODELABEL(gpioa)),                                      \
 		.size = DT_REG_SIZE(DT_NODELABEL(gpioa)),                                          \

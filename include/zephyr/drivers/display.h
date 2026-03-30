@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+ * SPDX-FileCopyrightText: 2026 Abderrahmane JARMOUNI
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +18,7 @@
  * @brief Interfaces for display controllers.
  * @defgroup display_interface Display
  * @since 1.14
- * @version 0.8.0
+ * @version 0.9.0
  * @ingroup io_interfaces
  * @{
  *
@@ -47,7 +48,7 @@ extern "C" {
  */
 enum display_pixel_format {
 	/**
-	 * 24-bit RGB format with 8 bits per component.
+	 * @brief 24-bit RGB format with 8 bits per component.
 	 *
 	 * Below shows how data are organized in memory.
 	 *
@@ -61,7 +62,7 @@ enum display_pixel_format {
 	PIXEL_FORMAT_RGB_888		= BIT(0), /**< 24-bit RGB */
 
 	/**
-	 * 1-bit monochrome format with 1 bit per pixel, thus each byte represent 8 pixels
+	 * @brief 1-bit monochrome format with 1 bit per pixel, thus each byte represent 8 pixels
 	 * Two variants, with black being either represented by 0 or 1
 	 *
 	 * Below shows how data are organized in memory.
@@ -77,7 +78,7 @@ enum display_pixel_format {
 	PIXEL_FORMAT_MONO10		= BIT(2), /**< Monochrome (1=Black 0=White) */
 
 	/**
-	 * 32-bit RGB format with 8 bits per component and 8 bits for alpha.
+	 * @brief 32-bit RGB format with 8 bits per component and 8 bits for alpha.
 	 *
 	 * Below shows how data are organized in memory.
 	 *
@@ -91,7 +92,7 @@ enum display_pixel_format {
 	PIXEL_FORMAT_ARGB_8888		= BIT(3), /**< 32-bit ARGB */
 
 	/**
-	 * 16-bit RGB format packed into two bytes: 5 red bits [15:11], 6
+	 * @brief 16-bit RGB format packed into two bytes: 5 red bits [15:11], 6
 	 * green bits [10:5], 5 blue bits [4:0].
 	 *
 	 * Below shows how data are organized in memory.
@@ -106,7 +107,7 @@ enum display_pixel_format {
 	PIXEL_FORMAT_RGB_565		= BIT(4),
 
 	/**
-	 * 16-bit RGB format packed into two bytes. Byte swapped version of
+	 * @brief 16-bit RGB format packed into two bytes. Byte swapped version of
 	 * the PIXEL_FORMAT_RGB_565 format.
 	 *
 	 * @code{.unparsed}
@@ -118,7 +119,7 @@ enum display_pixel_format {
 	PIXEL_FORMAT_RGB_565X		= BIT(5),
 
 	/**
-	 * 8-bit Greyscale format
+	 * @brief 8-bit Greyscale format
 	 *
 	 * Below shows how data are organized in memory.
 	 *
@@ -132,7 +133,7 @@ enum display_pixel_format {
 						  /**< GRAY, GREY, GRAY8, Y8, R8, etc...        */
 
 	/**
-	 * 16-bit Greyscale format with 8-bit luminance and 8-bit for alpha
+	 * @brief 16-bit Greyscale format with 8-bit luminance and 8-bit for alpha
 	 *
 	 * Below shows how data are organized in memory.
 	 *
@@ -143,6 +144,82 @@ enum display_pixel_format {
 	 * @endcode
 	 */
 	PIXEL_FORMAT_AL_88		= BIT(7), /**< 8-bit Grayscale/Luminance with alpha */
+
+	/**
+	 * @brief 32-bit RGB format with 8 bits per component and 8 bits unused.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   Byte 2   Byte 3
+	 *   7......0 15.....8 23....16 31....24
+	 * | Bbbbbbbb Gggggggg Rrrrrrrr Xxxxxxxx | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_XRGB_8888 = BIT(8), /**< 32-bit XRGB */
+
+	/**
+	 * @brief 24-bit BGR format with 8 bits per component.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   Byte 2
+	 *   7......0 15.....8 23....16
+	 * | Rrrrrrrr Gggggggg Bbbbbbbb | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_BGR_888 = BIT(9), /**< 24-bit BGR */
+
+	/**
+	 * @brief 32-bit BGR format with 8 bits per component and 8 bits for alpha.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   Byte 2   Byte 3
+	 *   7......0 15.....8 23....16 31....24
+	 * | Rrrrrrrr Gggggggg Bbbbbbbb Aaaaaaaa | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_ABGR_8888 = BIT(10), /**< 32-bit ABGR */
+
+	/**
+	 * @brief 32-bit RGB format with 8 bits per component and 8 bits for alpha.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   Byte 2   Byte 3
+	 *   7......0 15.....8 23....16 31....24
+	 * | Aaaaaaaa Bbbbbbbb Gggggggg Rrrrrrrr | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_RGBA_8888 = BIT(11), /**< 32-bit RGBA */
+
+	/**
+	 * @brief 32-bit BGR format with 8 bits per component and 8 bits for alpha.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   Byte 2   Byte 3
+	 *   7......0 15.....8 23....16 31....24
+	 * | Aaaaaaaa Rrrrrrrr Gggggggg Bbbbbbbb | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_BGRA_8888 = BIT(12), /**< 32-bit BGRA */
+
+	/**
+	 * This and higher values are display specific.
+	 * Refer to the display header file.
+	 */
+	PIXEL_FORMAT_PRIV_START = (PIXEL_FORMAT_BGRA_8888 << 1),
 };
 
 /**
@@ -150,7 +227,8 @@ enum display_pixel_format {
  *
  * This macro expands to the number of bits required for a given display
  * format. It can be used to allocate a framebuffer based on a given
- * display format type
+ * display format type. This does not work with any private
+ * pixel formats.
  */
 #define DISPLAY_BITS_PER_PIXEL(fmt)						\
 	((((fmt & PIXEL_FORMAT_RGB_888) >> 0) * 24U) +				\
@@ -160,8 +238,12 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_RGB_565) >> 4) * 16U) +				\
 	(((fmt & PIXEL_FORMAT_RGB_565X) >> 5) * 16U) +				\
 	(((fmt & PIXEL_FORMAT_L_8) >> 6) * 8U) +				\
-	(((fmt & PIXEL_FORMAT_AL_88) >> 7) * 16U))
-
+	(((fmt & PIXEL_FORMAT_AL_88) >> 7) * 16U) +				\
+	(((fmt & PIXEL_FORMAT_XRGB_8888) >> 8) * 32U) +				\
+	(((fmt & PIXEL_FORMAT_BGR_888) >> 9) * 24U) +				\
+	(((fmt & PIXEL_FORMAT_ABGR_8888) >> 10) * 32U) +			\
+	(((fmt & PIXEL_FORMAT_RGBA_8888) >> 11) * 32U) +			\
+	(((fmt & PIXEL_FORMAT_BGRA_8888) >> 12) * 32U))
 /**
  * @brief Display screen information
  */
@@ -230,23 +312,81 @@ struct display_buffer_descriptor {
 	bool frame_incomplete;
 };
 
+/** @brief Display event payload */
+struct display_event_data {
+	/** Timestamp to differentiate between events of the same type.
+	 * It can be provided with k_cycle_get_64() For e.g. .
+	 */
+	uint64_t timestamp;
+	/** Event info passed by driver to callback */
+	union {
+		/** For @ref DISPLAY_EVENT_LINE_INT events, set to -1 if unavailable */
+		int line;
+		/** For @ref DISPLAY_EVENT_FRAME_DONE events, set to -1 if unavailable */
+		int buffer_id;
+	} info;
+};
+
+/** @brief Display event types */
+enum display_event {
+	/** Fired when controller reaches a configured scanline */
+	DISPLAY_EVENT_LINE_INT = BIT(0),
+	/** Fired at vertical sync / start of new frame */
+	DISPLAY_EVENT_VSYNC = BIT(1),
+	/** Fired when a frame transfer to the panel or frame buffer update completes */
+	DISPLAY_EVENT_FRAME_DONE = BIT(2),
+};
+
+/** @brief Display event callback return flags. */
+enum display_event_result {
+	/** Let the driver execute its default handling */
+	DISPLAY_EVENT_RESULT_CONTINUE = 0,
+	/** The callback handled the event and the driver
+	 * should skip its default processing for that event
+	 */
+	DISPLAY_EVENT_RESULT_HANDLED = 1,
+};
+
 /**
- * @typedef display_blanking_on_api
- * @brief Callback API to turn on display blanking
+ * @typedef display_event_cb_t.
+ *
+ * @brief Called either in ISR context (if arg in_isr=true at register time,
+ * see @ref display_register_event_cb ) or in thread context (if in_isr=false,
+ * driver will schedule work to call it).
+ * When called from ISR context the callback must be extremely fast and must not call
+ * blocking APIs or sleep.
+ *
+ * @param dev Pointer to device structure
+ * @param evt 'enum display_event' bit of event to handle
+ * @param data Driver data passed to callback
+ * @param user_data User data passed by driver to callback
+ *
+ * @return An 'enum display_event_result' flag, see its description for details.
+ */
+typedef enum display_event_result (*display_event_cb_t)(const struct device *dev,
+				  uint32_t evt,
+				  const struct display_event_data *data,
+				  void *user_data);
+
+/**
+ * @def_driverbackendgroup{Display,display_interface}
+ * @{
+ */
+
+/**
+ * @brief Callback API to turn on display blanking.
  * See display_blanking_on() for argument description
  */
 typedef int (*display_blanking_on_api)(const struct device *dev);
 
 /**
- * @typedef display_blanking_off_api
- * @brief Callback API to turn off display blanking
+ * @brief Callback API to turn off display blanking.
  * See display_blanking_off() for argument description
  */
 typedef int (*display_blanking_off_api)(const struct device *dev);
 
 /**
- * @typedef display_write_api
- * @brief Callback API for writing data to the display
+ * @brief Callback API for writing data to the display.
  * See display_write() for argument description
  */
 typedef int (*display_write_api)(const struct device *dev, const uint16_t x,
@@ -255,8 +395,7 @@ typedef int (*display_write_api)(const struct device *dev, const uint16_t x,
 				 const void *buf);
 
 /**
- * @typedef display_read_api
- * @brief Callback API for reading data from the display
+ * @brief Callback API for reading data from the display.
  * See display_read() for argument description
  */
 typedef int (*display_read_api)(const struct device *dev, const uint16_t x,
@@ -265,38 +404,33 @@ typedef int (*display_read_api)(const struct device *dev, const uint16_t x,
 				void *buf);
 
 /**
- * @typedef display_clear
- * @brief Callback API for clearing the screen of the display
+ * @brief Callback API for clearing the screen of the display.
  * See display_clear() for argument description
  */
 typedef int (*display_clear_api)(const struct device *dev);
 
 /**
- * @typedef display_get_framebuffer_api
- * @brief Callback API to get framebuffer pointer
+ * @brief Callback API to get framebuffer pointer.
  * See display_get_framebuffer() for argument description
  */
 typedef void *(*display_get_framebuffer_api)(const struct device *dev);
 
 /**
- * @typedef display_set_brightness_api
- * @brief Callback API to set display brightness
+ * @brief Callback API to set display brightness.
  * See display_set_brightness() for argument description
  */
 typedef int (*display_set_brightness_api)(const struct device *dev,
 					  const uint8_t brightness);
 
 /**
- * @typedef display_set_contrast_api
- * @brief Callback API to set display contrast
+ * @brief Callback API to set display contrast.
  * See display_set_contrast() for argument description
  */
 typedef int (*display_set_contrast_api)(const struct device *dev,
 					const uint8_t contrast);
 
 /**
- * @typedef display_get_capabilities_api
- * @brief Callback API to get display capabilities
+ * @brief Callback API to get display capabilities.
  * See display_get_capabilities() for argument description
  */
 typedef void (*display_get_capabilities_api)(const struct device *dev,
@@ -304,8 +438,7 @@ typedef void (*display_get_capabilities_api)(const struct device *dev,
 					     capabilities);
 
 /**
- * @typedef display_set_pixel_format_api
- * @brief Callback API to set pixel format used by the display
+ * @brief Callback API to set pixel format used by the display.
  * See display_set_pixel_format() for argument description
  */
 typedef int (*display_set_pixel_format_api)(const struct device *dev,
@@ -313,8 +446,7 @@ typedef int (*display_set_pixel_format_api)(const struct device *dev,
 					    pixel_format);
 
 /**
- * @typedef display_set_orientation_api
- * @brief Callback API to set orientation used by the display
+ * @brief Callback API to set orientation used by the display.
  * See display_set_orientation() for argument description
  */
 typedef int (*display_set_orientation_api)(const struct device *dev,
@@ -322,22 +454,80 @@ typedef int (*display_set_orientation_api)(const struct device *dev,
 					   orientation);
 
 /**
- * @brief Display driver API
- * API which a display driver should expose
+ * @brief Callback API to register display event callback.
+ * See @ref display_register_event_cb for argument description
+ */
+typedef int (*display_register_event_cb_api)(const struct device *dev,
+					     display_event_cb_t cb, void *user_data,
+					     uint32_t event_mask, bool in_isr,
+					     uint32_t *out_reg_handle);
+
+/**
+ * @brief Callback API to unregister display event callback.
+ * See @ref display_unregister_event_cb for argument description
+ */
+typedef int (*display_unregister_event_cb_api)(const struct device *dev, uint32_t reg_handle);
+
+/**
+ * @driver_ops{Display}
  */
 __subsystem struct display_driver_api {
+	/**
+	 * @driver_ops_optional @copybrief display_blanking_on
+	 */
 	display_blanking_on_api blanking_on;
+	/**
+	 * @driver_ops_optional @copybrief display_blanking_off
+	 */
 	display_blanking_off_api blanking_off;
+	/**
+	 * @driver_ops_mandatory @copybrief display_write
+	 */
 	display_write_api write;
+	/**
+	 * @driver_ops_optional @copybrief display_read
+	 */
 	display_read_api read;
+	/**
+	 * @driver_ops_optional @copybrief display_clear
+	 */
 	display_clear_api clear;
+	/**
+	 * @driver_ops_optional @copybrief display_get_framebuffer
+	 */
 	display_get_framebuffer_api get_framebuffer;
+	/**
+	 * @driver_ops_optional @copybrief display_set_brightness
+	 */
 	display_set_brightness_api set_brightness;
+	/**
+	 * @driver_ops_optional @copybrief display_set_contrast
+	 */
 	display_set_contrast_api set_contrast;
+	/**
+	 * @driver_ops_mandatory @copybrief display_get_capabilities
+	 */
 	display_get_capabilities_api get_capabilities;
+	/**
+	 * @driver_ops_optional @copybrief display_set_pixel_format
+	 */
 	display_set_pixel_format_api set_pixel_format;
+	/**
+	 * @driver_ops_optional @copybrief display_set_orientation
+	 */
 	display_set_orientation_api set_orientation;
+	/**
+	 * @driver_ops_optional @copybrief display_register_event_cb
+	 */
+	display_register_event_cb_api register_event_cb;
+	/**
+	 * @driver_ops_optional @copybrief display_unregister_event_cb
+	 */
+	display_unregister_event_cb_api unregister_event_cb;
 };
+/**
+ * @}
+ */
 
 /**
  * @brief Write data to display
@@ -593,6 +783,67 @@ static inline int display_set_orientation(const struct device *dev,
 	}
 
 	return api->set_orientation(dev, orientation);
+}
+
+/**
+ * @brief Register event callback for a display device.
+ *
+ * @param dev Pointer to device structure
+ * @param cb User callback function pointer, see @ref display_event_cb_t description
+ * @param user_data User data to be passed by driver to event callback
+ * @param event_mask Mask of 'enum display_event' events upon which the callback will be called
+ * @param in_isr If true, callback will be invoked in ISR context (shall be fast, non-blocking).
+ * If false, callback will be invoked in thread/workqueue context.
+ * A driver is allowed to implement just one of the invocation contexts.
+ *
+ * @param out_reg_handle Lets the caller prove ownership of the registration,
+ *                       and allows for safe unregistration
+ *
+ * @note Thread-context delivery should be preferred for non-critical work;
+ *       keep ISR fast and optionally only set flags and schedule work,
+ *       avoid scheduler APIs, mutexes, prints.
+ *
+ * @return 0 and a non-zero out_reg_handle value on success, otherwise a negative errno code.
+ * @retval -EBUSY A callback is already registered.
+ * @retval -ENOTSUP One of the events is not supported,
+ * or the requested invocation context is not supported.
+ * @retval -ENOSYS Not implemented.
+ * @retval -EINVAL Invalid argument.
+ */
+static inline int display_register_event_cb(const struct device *dev,
+					    display_event_cb_t cb, void *user_data,
+					    uint32_t event_mask, bool in_isr,
+					    uint32_t *out_reg_handle)
+{
+	struct display_driver_api *api = (struct display_driver_api *)dev->api;
+
+	if (api->register_event_cb == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->register_event_cb(dev, cb, user_data, event_mask, in_isr, out_reg_handle);
+}
+
+/**
+ * @brief Unregister event callback for a display device.
+ *
+ * @param dev Pointer to device structure
+ * @param reg_handle Handle used to register the callback.
+ *
+ * @return 0 on success, otherwise a negative errno code.
+ * @retval -EINVAL If 'reg_handle == 0'.
+ * @retval -EPERM Not the owner, or already unregistered.
+ * @retval -ENOSYS If it, or register_event_cb, is not implemented.
+ */
+static inline int display_unregister_event_cb(const struct device *dev, uint32_t reg_handle)
+{
+	struct display_driver_api *api = (struct display_driver_api *)dev->api;
+
+	if (api->unregister_event_cb == NULL || api->register_event_cb == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->unregister_event_cb(dev, reg_handle);
 }
 
 #ifdef __cplusplus
