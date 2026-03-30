@@ -2,8 +2,6 @@ common:
   # Default platform_allow & integration_platforms for the tests below, which a few override
   platform_allow:
     - native_sim
-  integration_platforms:
-    - native_sim
   tags:
     - bluetooth
 
@@ -17,38 +15,51 @@ tests:
       - native_sim/native/64
       - nrf52840dk/nrf52840
     integration_platforms:
+      - native_sim
       - qemu_x86
     platform_exclude: nrf52dk/nrf52810
     harness: keyboard
     min_flash: 145
   bluetooth.shell.power_control_request:
+    integration_platforms:
+      - native_sim
     extra_configs:
       - CONFIG_BT_TRANSMIT_POWER_CONTROL=y
       - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
   bluetooth.shell.path_loss_monitoring:
+    integration_platforms:
+      - native_sim
     extra_configs:
       - CONFIG_BT_PATH_LOSS_MONITORING=y
       - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
   bluetooth.shell.subrating:
+    integration_platforms:
+      - native_sim
     extra_configs:
       - CONFIG_BT_SUBRATING=y
       - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
   bluetooth.shell.extended_feature_set:
+    integration_platforms:
+      - native_sim
     extra_configs:
       - CONFIG_BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE=10
       - CONFIG_BT_LE_EXTENDED_FEAT_SET=y
       - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
   bluetooth.shell.frame_space_update:
+    integration_platforms:
+      - native_sim
     extra_configs:
       - CONFIG_BT_FRAME_SPACE_UPDATE=y
       - CONFIG_BT_LE_EXTENDED_FEAT_SET=y
       - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
   bluetooth.shell.shorter_connection_intervals:
+    integration_platforms:
+      - native_sim
     extra_configs:
       - CONFIG_BT_SHORTER_CONNECTION_INTERVALS=y
       - CONFIG_BT_LE_EXTENDED_FEAT_SET=y
@@ -56,6 +67,8 @@ tests:
       - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
   bluetooth.shell.channel_sounding:
+    integration_platforms:
+      - native_sim
     extra_configs:
       - CONFIG_BT_CHANNEL_SOUNDING=y
       - CONFIG_BT_CHANNEL_SOUNDING_TEST=y
@@ -70,6 +83,8 @@ tests:
       - qemu_x86
       - native_sim
       - native_sim/native/64
+    integration_platforms:
+      - native_sim
     platform_exclude: nrf52dk/nrf52810
     harness: keyboard
   bluetooth.shell.shell_br.accept_conn_as_central:
@@ -82,6 +97,8 @@ tests:
       - qemu_x86
       - native_sim
       - native_sim/native/64
+    integration_platforms:
+      - native_sim
     platform_exclude: nrf52dk/nrf52810
     harness: keyboard
   bluetooth.shell.shell_br.did:
@@ -94,12 +111,18 @@ tests:
       - qemu_x86
       - native_sim
       - native_sim/native/64
+    integration_platforms:
+      - native_sim
     platform_exclude: nrf52dk/nrf52810
     harness: keyboard
   bluetooth.shell.no_privacy:
+    integration_platforms:
+      - native_sim
     build_only: true
     extra_args: CONFIG_BT_PRIVACY=n
   bluetooth.shell.log_defaults:
+    integration_platforms:
+      - native_sim
     build_only: true
     extra_args: CONF_FILE="log.conf"
   bluetooth.shell.bt_ctlr_dtm:
@@ -108,38 +131,55 @@ tests:
       - CONFIG_BT_CTLR_DTM_HCI=y
     platform_allow:
       - nrf52840dk/nrf52840
+      - native_sim
+    integration_platforms:
+      - native_sim
 
   # Bluetooth Audio Compile validation tests
   bluetooth.shell.audio:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
   bluetooth.shell.audio.no_bt_conn_dynamic_callbacks:
+    integration_platforms:
+      - native_sim
     extra_args:
       - CONF_FILE="audio.conf"
       - CONFIG_BT_CONN_DYNAMIC_CALLBACKS=n
     build_only: true
   bluetooth.shell.audio.no_testing:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_TESTING=n
   bluetooth.shell.audio.no_logs:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_LOG=n
   bluetooth.shell.audio.no_vcs:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_VCP_VOL_REND=n
   bluetooth.shell.audio.no_vocs:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_VOCS_MAX_INSTANCE_COUNT=0
       - CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT=0
   bluetooth.shell.audio.no_aics:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
@@ -147,6 +187,8 @@ tests:
       - CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT=0
       - CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT=0
   bluetooth.shell.audio.no_aics_vocs:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
@@ -156,89 +198,123 @@ tests:
       - CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT=0
       - CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT=0
   bluetooth.shell.audio.no_vcp_vol_ctlr:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_VCP_VOL_CTLR=n
   bluetooth.shell.audio.no_vcs_vcp_vol_ctlr:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_VCP_VOL_REND=n
       - CONFIG_BT_VCP_VOL_CTLR=n
   bluetooth.shell.audio.vcp_vol_ctlr_no_aics_client:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST=0
   bluetooth.shell.audio.vcp_vol_ctlr_no_vocs_client:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST=0
   bluetooth.shell.audio.no_micp_mic_dev:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_MICP_MIC_DEV=n
   bluetooth.shell.audio.no_micp_mic_ctlr:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_MICP_MIC_CTLR=n
   bluetooth.shell.audio.no_micp_mic_dev_micp_mic_ctlr:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_MICP_MIC_DEV=n
       - CONFIG_BT_MICP_MIC_CTLR=n
   bluetooth.shell.audio.micp_mic_ctlr_no_aics_client:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_MICP_MIC_CTLR_MAX_AICS_INST=0
   bluetooth.shell.audio.no_mcs:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_MCS=n
   bluetooth.shell.audio.no_mcc:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_MCC=n
   bluetooth.shell.audio.no_ots:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_OTS=n
   bluetooth.shell.audio.no_mcc_ots:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_MCC_OTS=n
   bluetooth.shell.audio.mcc_minimal:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_MCC_MINIMAL=y
   bluetooth.shell.audio.no_otsc:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_OTS=n
       - CONFIG_BT_MCC_OTS=n
   bluetooth.audio_shell.no_pac_snk:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_PAC_SNK=n
   bluetooth.audio_shell.no_pac_src:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_PAC_SRC=n
   bluetooth.audio_shell.only_unicast_client:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
@@ -246,6 +322,8 @@ tests:
       - CONFIG_BT_BAP_BROADCAST_SINK=n
       - CONFIG_BT_BAP_BROADCAST_SOURCE=n
   bluetooth.audio_shell.only_unicast_server:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
@@ -253,6 +331,8 @@ tests:
       - CONFIG_BT_BAP_BROADCAST_SINK=n
       - CONFIG_BT_BAP_BROADCAST_SOURCE=n
   bluetooth.audio_shell.only_broadcast_source:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
@@ -260,6 +340,8 @@ tests:
       - CONFIG_BT_BAP_UNICAST_CLIENT=n
       - CONFIG_BT_BAP_BROADCAST_SINK=n
   bluetooth.audio_shell.only_broadcast_sink:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
@@ -268,47 +350,65 @@ tests:
       - CONFIG_BT_BAP_UNICAST_CLIENT=n
       - CONFIG_BT_BAP_BROADCAST_SOURCE=n
   bluetooth.audio_shell.no_unicast_client:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_BAP_UNICAST_CLIENT=n
   bluetooth.audio_shell.no_unicast_server:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_BAP_UNICAST_SERVER=n
       - CONFIG_BT_HAS=n
   bluetooth.audio_shell.no_server_ase_snk:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT=0
   bluetooth.audio_shell.no_server_ase_src:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT=0
   bluetooth.audio_shell.no_client_ase_snk:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT=0
   bluetooth.audio_shell.no_client_ase_src:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT=0
   bluetooth.audio_shell.no_broadcast_source:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_BAP_BROADCAST_SOURCE=n
   bluetooth.audio_shell.no_broadcast_sink:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_BAP_BROADCAST_SINK=n
   bluetooth.audio_shell.no_audio_tx:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
@@ -316,6 +416,8 @@ tests:
       - CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT=0
       - CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT=0
   bluetooth.audio_shell.no_audio_rx:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
@@ -323,27 +425,37 @@ tests:
       - CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT=0
       - CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT=0
   bluetooth.audio_shell.no_has:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_HAS=n
   bluetooth.audio_shell.no_has_client:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_HAS_CLIENT=n
   bluetooth.shell.audio.no_tbs:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_CCP_CALL_CONTROL_SERVER=n
       - CONFIG_BT_TBS=n
   bluetooth.shell.audio.only_gtbs:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_TBS_BEARER_COUNT=0
   bluetooth.shell.audio.no_tbs_client:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
@@ -351,27 +463,37 @@ tests:
       - CONFIG_BT_TBS_CLIENT_GTBS=n
       - CONFIG_BT_CCP_CALL_CONTROL_CLIENT=n
   bluetooth.shell.audio.tbs_only_client:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_TBS_CLIENT_GTBS=n
   bluetooth.shell.audio.gtbs_only_client:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_TBS_CLIENT_TBS=n
       - CONFIG_BT_CCP_CALL_CONTROL_CLIENT_BEARER_COUNT=1
   bluetooth.audio_shell.no_cap_acceptor:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_CAP_ACCEPTOR=n
   bluetooth.audio_shell.no_cap_acceptor_set_member:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER=n
   bluetooth.audio_shell.only_cap_acceptor:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
@@ -379,11 +501,15 @@ tests:
       - CONFIG_BT_CAP_INITIATOR=n
       - CONFIG_BT_CAP_COMMANDER=n
   bluetooth.audio_shell.no_cap_initiator:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_CAP_INITIATOR=n
   bluetooth.audio_shell.only_cap_initiator:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
@@ -391,16 +517,22 @@ tests:
       - CONFIG_BT_CAP_ACCEPTOR=n
       - CONFIG_BT_CAP_COMMANDER=n
   bluetooth.audio_shell.no_gmap:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_GMAP=n
   bluetooth.audio_shell.no_cap_commander:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_CAP_COMMANDER=n
   bluetooth.audio_shell.only_cap_commander:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
@@ -414,6 +546,7 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340_audio_dk/nrf5340/cpuapp
     integration_platforms:
+      - native_sim
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340_audio_dk/nrf5340/cpuapp
     extra_configs:
@@ -426,6 +559,7 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340_audio_dk/nrf5340/cpuapp
     integration_platforms:
+      - native_sim
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340_audio_dk/nrf5340/cpuapp
     extra_configs:
@@ -440,19 +574,26 @@ tests:
     platform_allow:
       - nrf52_bsim
     integration_platforms:
+      - native_sim
       - nrf52_bsim
   bluetooth.shell.audio.no_ccp_call_control_server:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_CCP_CALL_CONTROL_SERVER=n
   bluetooth.shell.audio.no_assert:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_ASSERT=n
     tags: bluetooth
   bluetooth.shell.audio.csip_set_member_rank_no_lock_size_on:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
@@ -462,6 +603,8 @@ tests:
       - CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT=y
     tags: bluetooth
   bluetooth.shell.audio.csip_set_member_lock_no_size:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
@@ -470,6 +613,8 @@ tests:
       - CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT=y
     tags: bluetooth
   bluetooth.shell.audio.csip_set_member_rank_only_no_size:
+    integration_platforms:
+      - native_sim
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
@@ -478,3 +623,18 @@ tests:
       - CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT=n
       - CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT=y
     tags: bluetooth
+
+  bluetooth.shell.main.pytest_demo:
+    platform_allow:
+      - nrf52840dk/nrf52840
+    platform_exclude:
+      - native_sim
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_demo.py"
+      required_devices:
+        # second device required, with the same platform and application
+        - {}
