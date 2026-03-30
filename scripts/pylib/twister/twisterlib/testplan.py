@@ -595,6 +595,22 @@ class TestPlan:
                                 suite.platform_allow,
                                 f"platform_allow in {suite.name}")
 
+                        for req_dev in suite.harness_config.required_devices:
+                            if req_dev.platform:
+                                req_dev.platform = self.verify_platforms_existence(
+                                    [req_dev.platform],
+                                    f"required_devices.platform in {suite.name}"
+                                )[0]
+
+                        for req_app in suite.required_applications:
+                            if platform := req_app.get('platform', None):
+                                req_app['platform'] = self.verify_platforms_existence(
+                                    [platform],
+                                    f"required_applications.platform in {suite.name}"
+                                )[0]
+
+                        suite.update_required_applications()
+
                         if suite.harness in ['ztest', 'test']:
                             if subcases is None:
                                 # scan it only once per testsuite
@@ -1237,16 +1253,7 @@ class TestPlan:
         return instance.status not in do_not_process
 
     def _find_required_instance(self, required_app, instance: TestInstance) -> TestInstance | None:
-        if req_platform := required_app.get("platform", None):
-            platform = self.get_platform(req_platform)
-            if not platform:
-                raise TwisterRuntimeError(
-                    f"Unknown platform {req_platform} in required application"
-                )
-            req_platform = platform.name
-        else:
-            req_platform = instance.platform.name
-
+        req_platform = required_app.get("platform", None) or instance.platform.name
         for inst in self.instances.values():
             if required_app["name"] == inst.testsuite.id and req_platform == inst.platform.name:
                 if self._should_instance_be_processed(inst):
@@ -1287,11 +1294,6 @@ class TestPlan:
                 continue
             if instance.status == TwisterStatus.FILTER:
                 # do not proceed if the test is already filtered
-                continue
-
-            if self.options.subset:
-                instance.add_filter("Required applications are not supported with --subsets",
-                                    Filters.CMD_LINE)
                 continue
 
             if self.options.runtime_artifact_cleanup:
@@ -1340,15 +1342,10 @@ class TestPlan:
                                      " is filtered")
                         break
 
-                if instance.testsuite.id in req_instance.testsuite.required_applications:
-                    instance.add_filter("Circular dependency in required applications",
-                                        Filters.TESTSUITE)
-                    logger.warning(f"{instance.name}: Circular dependency, current app also"
-                                   f" required by {req_instance.name}")
-                    break
                 # keep dependencies to use it in the runner module to synchronize
                 # building of applications
                 instance.required_applications.append(req_instance.name)
+                instance.required_build_dirs.append(req_instance.build_dir)
 
     def add_instances(self, instance_list):
         for instance in instance_list:
