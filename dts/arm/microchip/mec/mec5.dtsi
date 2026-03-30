@@ -266,10 +266,11 @@
 		};
 
 		timer0: timer@40000c00 {
-			compatible = "microchip,xec-basic-timer";
+			compatible = "microchip,xec-timer";
 			reg = <0x40000c00 0x20>;
 			interrupts = <136 0>;
-			girqs = <23 0>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 0)>;
+			pcr-src = <MCHP_XEC_SCR_ENCODE(1, 30)>;
 			clock-frequency = <48000000>;
 			prescaler = <0>;
 			max-value = <0xffff>;
@@ -277,10 +278,11 @@
 		};
 
 		timer1: timer@40000c20 {
-			compatible = "microchip,xec-basic-timer";
+			compatible = "microchip,xec-timer";
 			reg = <0x40000c20 0x20>;
 			interrupts = <137 0>;
-			girqs = <23 1>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 1)>;
+			pcr-src = <MCHP_XEC_SCR_ENCODE(1, 31)>;
 			clock-frequency = <48000000>;
 			prescaler = <0>;
 			max-value = <0xffff>;
@@ -288,10 +290,11 @@
 		};
 
 		timer2: timer@40000c40 {
-			compatible = "microchip,xec-basic-timer";
+			compatible = "microchip,xec-timer";
 			reg = <0x40000c40 0x20>;
 			interrupts = <138 0>;
-			girqs = <23 2>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 2)>;
+			pcr-src = <MCHP_XEC_SCR_ENCODE(3, 21)>;
 			clock-frequency = <48000000>;
 			prescaler = <0>;
 			max-value = <0xffff>;
@@ -299,10 +302,11 @@
 		};
 
 		timer3: timer@40000c60 {
-			compatible = "microchip,xec-basic-timer";
+			compatible = "microchip,xec-timer";
 			reg = <0x40000c60 0x20>;
 			interrupts = <139 0>;
-			girqs = <23 3>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 3)>;
+			pcr-src = <MCHP_XEC_SCR_ENCODE(3, 22)>;
 			clock-frequency = <48000000>;
 			prescaler = <0>;
 			max-value = <0xffff>;
@@ -310,10 +314,11 @@
 		};
 
 		timer4: timer@40000c80 {
-			compatible = "microchip,xec-basic-timer";
+			compatible = "microchip,xec-timer";
 			reg = <0x40000c80 0x20>;
 			interrupts = <140 0>;
-			girqs = <23 4>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 4)>;
+			pcr-src = <MCHP_XEC_SCR_ENCODE(3, 23)>;
 			clock-frequency = <48000000>;
 			prescaler = <0>;
 			max-value = <0xffffffff>;
@@ -321,10 +326,11 @@
 		};
 
 		timer5: timer@40000ca0 {
-			compatible = "microchip,xec-basic-timer";
+			compatible = "microchip,xec-timer";
 			reg = <0x40000ca0 0x20>;
 			interrupts = <141 0>;
-			girqs = <23 5>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 5)>;
+			pcr-src = <MCHP_XEC_SCR_ENCODE(3, 24)>;
 			clock-frequency = <48000000>;
 			prescaler = <0>;
 			max-value = <0xffffffff>;
