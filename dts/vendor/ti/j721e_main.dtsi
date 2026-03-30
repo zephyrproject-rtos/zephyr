@@ -1,0 +1,598 @@
+/* Copyright (C) 2026 BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	main_gpio0: main-gpio0 {
+		#gpio-cells = <2>;
+		gpio-map = <0 0 &main_gpio0_0 0 0>, <1 0 &main_gpio0_0 1 0>,
+			   <2 0 &main_gpio0_0 2 0>, <3 0 &main_gpio0_0 3 0>,
+			   <4 0 &main_gpio0_0 4 0>, <5 0 &main_gpio0_0 5 0>,
+			   <6 0 &main_gpio0_0 6 0>, <7 0 &main_gpio0_0 7 0>,
+			   <8 0 &main_gpio0_0 8 0>, <9 0 &main_gpio0_0 9 0>,
+			   <10 0 &main_gpio0_0 10 0>, <11 0 &main_gpio0_0 11 0>,
+			   <12 0 &main_gpio0_0 12 0>, <13 0 &main_gpio0_0 13 0>,
+			   <14 0 &main_gpio0_0 14 0>, <15 0 &main_gpio0_0 15 0>,
+			   <16 0 &main_gpio0_0 16 0>, <17 0 &main_gpio0_0 17 0>,
+			   <18 0 &main_gpio0_0 18 0>, <19 0 &main_gpio0_0 19 0>,
+			   <20 0 &main_gpio0_0 20 0>, <21 0 &main_gpio0_0 21 0>,
+			   <22 0 &main_gpio0_0 22 0>, <23 0 &main_gpio0_0 23 0>,
+			   <24 0 &main_gpio0_0 24 0>, <25 0 &main_gpio0_0 25 0>,
+			   <26 0 &main_gpio0_0 26 0>, <27 0 &main_gpio0_0 27 0>,
+			   <28 0 &main_gpio0_0 28 0>, <29 0 &main_gpio0_0 29 0>,
+			   <30 0 &main_gpio0_0 30 0>, <31 0 &main_gpio0_0 31 0>,
+			   <32 0 &main_gpio0_1 0 0>, <33 0 &main_gpio0_1 1 0>,
+			   <34 0 &main_gpio0_1 2 0>, <35 0 &main_gpio0_1 3 0>,
+			   <36 0 &main_gpio0_1 4 0>, <37 0 &main_gpio0_1 5 0>,
+			   <38 0 &main_gpio0_1 6 0>, <39 0 &main_gpio0_1 7 0>,
+			   <40 0 &main_gpio0_1 8 0>, <41 0 &main_gpio0_1 9 0>,
+			   <42 0 &main_gpio0_1 10 0>, <43 0 &main_gpio0_1 11 0>,
+			   <44 0 &main_gpio0_1 12 0>, <45 0 &main_gpio0_1 13 0>,
+			   <46 0 &main_gpio0_1 14 0>, <47 0 &main_gpio0_1 15 0>,
+			   <48 0 &main_gpio0_1 16 0>, <49 0 &main_gpio0_1 17 0>,
+			   <50 0 &main_gpio0_1 18 0>, <51 0 &main_gpio0_1 19 0>,
+			   <52 0 &main_gpio0_1 20 0>, <53 0 &main_gpio0_1 21 0>,
+			   <54 0 &main_gpio0_1 22 0>, <55 0 &main_gpio0_1 23 0>,
+			   <56 0 &main_gpio0_1 24 0>, <57 0 &main_gpio0_1 25 0>,
+			   <58 0 &main_gpio0_1 26 0>, <59 0 &main_gpio0_1 27 0>,
+			   <60 0 &main_gpio0_1 28 0>, <61 0 &main_gpio0_1 29 0>,
+			   <62 0 &main_gpio0_1 30 0>, <63 0 &main_gpio0_1 31 0>,
+			   <64 0 &main_gpio0_2 0 0>, <65 0 &main_gpio0_2 1 0>,
+			   <66 0 &main_gpio0_2 2 0>, <67 0 &main_gpio0_2 3 0>,
+			   <68 0 &main_gpio0_2 4 0>, <69 0 &main_gpio0_2 5 0>,
+			   <70 0 &main_gpio0_2 6 0>, <71 0 &main_gpio0_2 7 0>,
+			   <72 0 &main_gpio0_2 8 0>, <73 0 &main_gpio0_2 9 0>,
+			   <74 0 &main_gpio0_2 10 0>, <75 0 &main_gpio0_2 11 0>,
+			   <76 0 &main_gpio0_2 12 0>, <77 0 &main_gpio0_2 13 0>,
+			   <78 0 &main_gpio0_2 14 0>, <79 0 &main_gpio0_2 15 0>,
+			   <80 0 &main_gpio0_2 16 0>, <81 0 &main_gpio0_2 17 0>,
+			   <82 0 &main_gpio0_2 18 0>, <83 0 &main_gpio0_2 17 0>,
+			   <84 0 &main_gpio0_2 20 0>, <85 0 &main_gpio0_2 21 0>,
+			   <86 0 &main_gpio0_2 22 0>, <87 0 &main_gpio0_2 23 0>,
+			   <88 0 &main_gpio0_2 24 0>, <89 0 &main_gpio0_2 25 0>,
+			   <90 0 &main_gpio0_2 26 0>, <91 0 &main_gpio0_2 27 0>,
+			   <90 0 &main_gpio0_2 28 0>, <91 0 &main_gpio0_2 29 0>,
+			   <90 0 &main_gpio0_2 30 0>, <91 0 &main_gpio0_2 31 0>,
+			   <64 0 &main_gpio0_3 0 0>, <65 0 &main_gpio0_3 1 0>,
+			   <66 0 &main_gpio0_3 2 0>, <67 0 &main_gpio0_3 3 0>,
+			   <68 0 &main_gpio0_3 4 0>, <69 0 &main_gpio0_3 5 0>,
+			   <70 0 &main_gpio0_3 6 0>, <71 0 &main_gpio0_3 7 0>,
+			   <72 0 &main_gpio0_3 8 0>, <73 0 &main_gpio0_3 9 0>,
+			   <74 0 &main_gpio0_3 10 0>, <75 0 &main_gpio0_3 11 0>,
+			   <76 0 &main_gpio0_3 12 0>, <77 0 &main_gpio0_3 13 0>,
+			   <78 0 &main_gpio0_3 14 0>, <79 0 &main_gpio0_3 15 0>,
+			   <80 0 &main_gpio0_3 16 0>, <81 0 &main_gpio0_3 17 0>,
+			   <82 0 &main_gpio0_3 18 0>, <83 0 &main_gpio0_3 17 0>,
+			   <84 0 &main_gpio0_3 20 0>, <85 0 &main_gpio0_3 21 0>,
+			   <86 0 &main_gpio0_3 22 0>, <87 0 &main_gpio0_3 23 0>,
+			   <88 0 &main_gpio0_3 24 0>, <89 0 &main_gpio0_3 25 0>,
+			   <90 0 &main_gpio0_3 26 0>, <91 0 &main_gpio0_3 27 0>,
+			   <90 0 &main_gpio0_3 28 0>, <91 0 &main_gpio0_3 29 0>,
+			   <90 0 &main_gpio0_3 30 0>, <91 0 &main_gpio0_3 31 0>;
+		gpio-map-mask = <0xffff 0x0>;
+		gpio-map-pass-thru = <0x0 0x1>;
+	};
+
+	main_gpio0_0: gpio@600010 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00600010 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio0_1: gpio@600038 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00600038 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio0_2: gpio@600060 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00600060 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio0_3: gpio@600088 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00600088 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio1: main-gpio1 {
+		#gpio-cells = <2>;
+		gpio-map = <0 0 &main_gpio1_0 0 0>, <1 0 &main_gpio1_0 1 0>,
+			   <2 0 &main_gpio1_0 2 0>, <3 0 &main_gpio1_0 3 0>,
+			   <4 0 &main_gpio1_0 4 0>, <5 0 &main_gpio1_0 5 0>,
+			   <6 0 &main_gpio1_0 6 0>, <7 0 &main_gpio1_0 7 0>,
+			   <8 0 &main_gpio1_0 8 0>, <9 0 &main_gpio1_0 9 0>,
+			   <10 0 &main_gpio1_0 10 0>, <11 0 &main_gpio1_0 11 0>,
+			   <12 0 &main_gpio1_0 12 0>, <13 0 &main_gpio1_0 13 0>,
+			   <14 0 &main_gpio1_0 14 0>, <15 0 &main_gpio1_0 15 0>,
+			   <16 0 &main_gpio1_0 16 0>, <17 0 &main_gpio1_0 17 0>,
+			   <18 0 &main_gpio1_0 18 0>, <19 0 &main_gpio1_0 19 0>,
+			   <20 0 &main_gpio1_0 20 0>, <21 0 &main_gpio1_0 21 0>,
+			   <22 0 &main_gpio1_0 22 0>, <23 0 &main_gpio1_0 23 0>,
+			   <24 0 &main_gpio1_0 24 0>, <25 0 &main_gpio1_0 25 0>,
+			   <26 0 &main_gpio1_0 26 0>, <27 0 &main_gpio1_0 27 0>,
+			   <28 0 &main_gpio1_0 28 0>, <29 0 &main_gpio1_0 29 0>,
+			   <30 0 &main_gpio1_0 30 0>, <31 0 &main_gpio1_0 31 0>,
+			   <32 0 &main_gpio1_1 0 0>, <33 0 &main_gpio1_1 1 0>,
+			   <34 0 &main_gpio1_1 2 0>, <35 0 &main_gpio1_1 3 0>;
+		gpio-map-mask = <0xffff 0x0>;
+		gpio-map-pass-thru = <0x0 0x1>;
+	};
+
+	main_gpio1_0: gpio@601010 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00601010 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio1_1: gpio@601038 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00601038 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <4>;
+		status = "disabled";
+	};
+
+	main_gpio2: main-gpio2 {
+		#gpio-cells = <2>;
+		gpio-map = <0 0 &main_gpio2_0 0 0>, <1 0 &main_gpio2_0 1 0>,
+			   <2 0 &main_gpio2_0 2 0>, <3 0 &main_gpio2_0 3 0>,
+			   <4 0 &main_gpio2_0 4 0>, <5 0 &main_gpio2_0 5 0>,
+			   <6 0 &main_gpio2_0 6 0>, <7 0 &main_gpio2_0 7 0>,
+			   <8 0 &main_gpio2_0 8 0>, <9 0 &main_gpio2_0 9 0>,
+			   <10 0 &main_gpio2_0 10 0>, <11 0 &main_gpio2_0 11 0>,
+			   <12 0 &main_gpio2_0 12 0>, <13 0 &main_gpio2_0 13 0>,
+			   <14 0 &main_gpio2_0 14 0>, <15 0 &main_gpio2_0 15 0>,
+			   <16 0 &main_gpio2_0 16 0>, <17 0 &main_gpio2_0 17 0>,
+			   <18 0 &main_gpio2_0 18 0>, <19 0 &main_gpio2_0 19 0>,
+			   <20 0 &main_gpio2_0 20 0>, <21 0 &main_gpio2_0 21 0>,
+			   <22 0 &main_gpio2_0 22 0>, <23 0 &main_gpio2_0 23 0>,
+			   <24 0 &main_gpio2_0 24 0>, <25 0 &main_gpio2_0 25 0>,
+			   <26 0 &main_gpio2_0 26 0>, <27 0 &main_gpio2_0 27 0>,
+			   <28 0 &main_gpio2_0 28 0>, <29 0 &main_gpio2_0 29 0>,
+			   <30 0 &main_gpio2_0 30 0>, <31 0 &main_gpio2_0 31 0>,
+			   <32 0 &main_gpio2_1 0 0>, <33 0 &main_gpio2_1 1 0>,
+			   <34 0 &main_gpio2_1 2 0>, <35 0 &main_gpio2_1 3 0>,
+			   <36 0 &main_gpio2_1 4 0>, <37 0 &main_gpio2_1 5 0>,
+			   <38 0 &main_gpio2_1 6 0>, <39 0 &main_gpio2_1 7 0>,
+			   <40 0 &main_gpio2_1 8 0>, <41 0 &main_gpio2_1 9 0>,
+			   <42 0 &main_gpio2_1 10 0>, <43 0 &main_gpio2_1 11 0>,
+			   <44 0 &main_gpio2_1 12 0>, <45 0 &main_gpio2_1 13 0>,
+			   <46 0 &main_gpio2_1 14 0>, <47 0 &main_gpio2_1 15 0>,
+			   <48 0 &main_gpio2_1 16 0>, <49 0 &main_gpio2_1 17 0>,
+			   <50 0 &main_gpio2_1 18 0>, <51 0 &main_gpio2_1 19 0>,
+			   <52 0 &main_gpio2_1 20 0>, <53 0 &main_gpio2_1 21 0>,
+			   <54 0 &main_gpio2_1 22 0>, <55 0 &main_gpio2_1 23 0>,
+			   <56 0 &main_gpio2_1 24 0>, <57 0 &main_gpio2_1 25 0>,
+			   <58 0 &main_gpio2_1 26 0>, <59 0 &main_gpio2_1 27 0>,
+			   <60 0 &main_gpio2_1 28 0>, <61 0 &main_gpio2_1 29 0>,
+			   <62 0 &main_gpio2_1 30 0>, <63 0 &main_gpio2_1 31 0>,
+			   <64 0 &main_gpio2_2 0 0>, <65 0 &main_gpio2_2 1 0>,
+			   <66 0 &main_gpio2_2 2 0>, <67 0 &main_gpio2_2 3 0>,
+			   <68 0 &main_gpio2_2 4 0>, <69 0 &main_gpio2_2 5 0>,
+			   <70 0 &main_gpio2_2 6 0>, <71 0 &main_gpio2_2 7 0>,
+			   <72 0 &main_gpio2_2 8 0>, <73 0 &main_gpio2_2 9 0>,
+			   <74 0 &main_gpio2_2 10 0>, <75 0 &main_gpio2_2 11 0>,
+			   <76 0 &main_gpio2_2 12 0>, <77 0 &main_gpio2_2 13 0>,
+			   <78 0 &main_gpio2_2 14 0>, <79 0 &main_gpio2_2 15 0>,
+			   <80 0 &main_gpio2_2 16 0>, <81 0 &main_gpio2_2 17 0>,
+			   <82 0 &main_gpio2_2 18 0>, <83 0 &main_gpio2_2 17 0>,
+			   <84 0 &main_gpio2_2 20 0>, <85 0 &main_gpio2_2 21 0>,
+			   <86 0 &main_gpio2_2 22 0>, <87 0 &main_gpio2_2 23 0>,
+			   <88 0 &main_gpio2_2 24 0>, <89 0 &main_gpio2_2 25 0>,
+			   <90 0 &main_gpio2_2 26 0>, <91 0 &main_gpio2_2 27 0>,
+			   <90 0 &main_gpio2_2 28 0>, <91 0 &main_gpio2_2 29 0>,
+			   <90 0 &main_gpio2_2 30 0>, <91 0 &main_gpio2_2 31 0>,
+			   <64 0 &main_gpio2_3 0 0>, <65 0 &main_gpio2_3 1 0>,
+			   <66 0 &main_gpio2_3 2 0>, <67 0 &main_gpio2_3 3 0>,
+			   <68 0 &main_gpio2_3 4 0>, <69 0 &main_gpio2_3 5 0>,
+			   <70 0 &main_gpio2_3 6 0>, <71 0 &main_gpio2_3 7 0>,
+			   <72 0 &main_gpio2_3 8 0>, <73 0 &main_gpio2_3 9 0>,
+			   <74 0 &main_gpio2_3 10 0>, <75 0 &main_gpio2_3 11 0>,
+			   <76 0 &main_gpio2_3 12 0>, <77 0 &main_gpio2_3 13 0>,
+			   <78 0 &main_gpio2_3 14 0>, <79 0 &main_gpio2_3 15 0>,
+			   <80 0 &main_gpio2_3 16 0>, <81 0 &main_gpio2_3 17 0>,
+			   <82 0 &main_gpio2_3 18 0>, <83 0 &main_gpio2_3 17 0>,
+			   <84 0 &main_gpio2_3 20 0>, <85 0 &main_gpio2_3 21 0>,
+			   <86 0 &main_gpio2_3 22 0>, <87 0 &main_gpio2_3 23 0>,
+			   <88 0 &main_gpio2_3 24 0>, <89 0 &main_gpio2_3 25 0>,
+			   <90 0 &main_gpio2_3 26 0>, <91 0 &main_gpio2_3 27 0>,
+			   <90 0 &main_gpio2_3 28 0>, <91 0 &main_gpio2_3 29 0>,
+			   <90 0 &main_gpio2_3 30 0>, <91 0 &main_gpio2_3 31 0>;
+		gpio-map-mask = <0xffff 0x0>;
+		gpio-map-pass-thru = <0x0 0x1>;
+	};
+
+	main_gpio2_0: gpio@610010 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00610010 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio2_1: gpio@610038 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00610038 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio2_2: gpio@610060 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00610060 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio2_3: gpio@610088 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00610088 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio3: main-gpio3 {
+		#gpio-cells = <2>;
+		gpio-map = <0 0 &main_gpio3_0 0 0>, <1 0 &main_gpio3_0 1 0>,
+			   <2 0 &main_gpio3_0 2 0>, <3 0 &main_gpio3_0 3 0>,
+			   <4 0 &main_gpio3_0 4 0>, <5 0 &main_gpio3_0 5 0>,
+			   <6 0 &main_gpio3_0 6 0>, <7 0 &main_gpio3_0 7 0>,
+			   <8 0 &main_gpio3_0 8 0>, <9 0 &main_gpio3_0 9 0>,
+			   <10 0 &main_gpio3_0 10 0>, <11 0 &main_gpio3_0 11 0>,
+			   <12 0 &main_gpio3_0 12 0>, <13 0 &main_gpio3_0 13 0>,
+			   <14 0 &main_gpio3_0 14 0>, <15 0 &main_gpio3_0 15 0>,
+			   <16 0 &main_gpio3_0 16 0>, <17 0 &main_gpio3_0 17 0>,
+			   <18 0 &main_gpio3_0 18 0>, <19 0 &main_gpio3_0 19 0>,
+			   <20 0 &main_gpio3_0 20 0>, <21 0 &main_gpio3_0 21 0>,
+			   <22 0 &main_gpio3_0 22 0>, <23 0 &main_gpio3_0 23 0>,
+			   <24 0 &main_gpio3_0 24 0>, <25 0 &main_gpio3_0 25 0>,
+			   <26 0 &main_gpio3_0 26 0>, <27 0 &main_gpio3_0 27 0>,
+			   <28 0 &main_gpio3_0 28 0>, <29 0 &main_gpio3_0 29 0>,
+			   <30 0 &main_gpio3_0 30 0>, <31 0 &main_gpio3_0 31 0>,
+			   <32 0 &main_gpio3_1 0 0>, <33 0 &main_gpio3_1 1 0>,
+			   <34 0 &main_gpio3_1 2 0>, <35 0 &main_gpio3_1 3 0>;
+		gpio-map-mask = <0xffff 0x0>;
+		gpio-map-pass-thru = <0x0 0x1>;
+	};
+
+	main_gpio3_0: gpio@611010 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00611010 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio3_1: gpio@611038 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00611038 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <4>;
+		status = "disabled";
+	};
+
+	main_gpio4: main-gpio4 {
+		#gpio-cells = <2>;
+		gpio-map = <0 0 &main_gpio4_0 0 0>, <1 0 &main_gpio4_0 1 0>,
+			   <2 0 &main_gpio4_0 2 0>, <3 0 &main_gpio4_0 3 0>,
+			   <4 0 &main_gpio4_0 4 0>, <5 0 &main_gpio4_0 5 0>,
+			   <6 0 &main_gpio4_0 6 0>, <7 0 &main_gpio4_0 7 0>,
+			   <8 0 &main_gpio4_0 8 0>, <9 0 &main_gpio4_0 9 0>,
+			   <10 0 &main_gpio4_0 10 0>, <11 0 &main_gpio4_0 11 0>,
+			   <12 0 &main_gpio4_0 12 0>, <13 0 &main_gpio4_0 13 0>,
+			   <14 0 &main_gpio4_0 14 0>, <15 0 &main_gpio4_0 15 0>,
+			   <16 0 &main_gpio4_0 16 0>, <17 0 &main_gpio4_0 17 0>,
+			   <18 0 &main_gpio4_0 18 0>, <19 0 &main_gpio4_0 19 0>,
+			   <20 0 &main_gpio4_0 20 0>, <21 0 &main_gpio4_0 21 0>,
+			   <22 0 &main_gpio4_0 22 0>, <23 0 &main_gpio4_0 23 0>,
+			   <24 0 &main_gpio4_0 24 0>, <25 0 &main_gpio4_0 25 0>,
+			   <26 0 &main_gpio4_0 26 0>, <27 0 &main_gpio4_0 27 0>,
+			   <28 0 &main_gpio4_0 28 0>, <29 0 &main_gpio4_0 29 0>,
+			   <30 0 &main_gpio4_0 30 0>, <31 0 &main_gpio4_0 31 0>,
+			   <32 0 &main_gpio4_1 0 0>, <33 0 &main_gpio4_1 1 0>,
+			   <34 0 &main_gpio4_1 2 0>, <35 0 &main_gpio4_1 3 0>,
+			   <36 0 &main_gpio4_1 4 0>, <37 0 &main_gpio4_1 5 0>,
+			   <38 0 &main_gpio4_1 6 0>, <39 0 &main_gpio4_1 7 0>,
+			   <40 0 &main_gpio4_1 8 0>, <41 0 &main_gpio4_1 9 0>,
+			   <42 0 &main_gpio4_1 10 0>, <43 0 &main_gpio4_1 11 0>,
+			   <44 0 &main_gpio4_1 12 0>, <45 0 &main_gpio4_1 13 0>,
+			   <46 0 &main_gpio4_1 14 0>, <47 0 &main_gpio4_1 15 0>,
+			   <48 0 &main_gpio4_1 16 0>, <49 0 &main_gpio4_1 17 0>,
+			   <50 0 &main_gpio4_1 18 0>, <51 0 &main_gpio4_1 19 0>,
+			   <52 0 &main_gpio4_1 20 0>, <53 0 &main_gpio4_1 21 0>,
+			   <54 0 &main_gpio4_1 22 0>, <55 0 &main_gpio4_1 23 0>,
+			   <56 0 &main_gpio4_1 24 0>, <57 0 &main_gpio4_1 25 0>,
+			   <58 0 &main_gpio4_1 26 0>, <59 0 &main_gpio4_1 27 0>,
+			   <60 0 &main_gpio4_1 28 0>, <61 0 &main_gpio4_1 29 0>,
+			   <62 0 &main_gpio4_1 30 0>, <63 0 &main_gpio4_1 31 0>,
+			   <64 0 &main_gpio4_2 0 0>, <65 0 &main_gpio4_2 1 0>,
+			   <66 0 &main_gpio4_2 2 0>, <67 0 &main_gpio4_2 3 0>,
+			   <68 0 &main_gpio4_2 4 0>, <69 0 &main_gpio4_2 5 0>,
+			   <70 0 &main_gpio4_2 6 0>, <71 0 &main_gpio4_2 7 0>,
+			   <72 0 &main_gpio4_2 8 0>, <73 0 &main_gpio4_2 9 0>,
+			   <74 0 &main_gpio4_2 10 0>, <75 0 &main_gpio4_2 11 0>,
+			   <76 0 &main_gpio4_2 12 0>, <77 0 &main_gpio4_2 13 0>,
+			   <78 0 &main_gpio4_2 14 0>, <79 0 &main_gpio4_2 15 0>,
+			   <80 0 &main_gpio4_2 16 0>, <81 0 &main_gpio4_2 17 0>,
+			   <82 0 &main_gpio4_2 18 0>, <83 0 &main_gpio4_2 17 0>,
+			   <84 0 &main_gpio4_2 20 0>, <85 0 &main_gpio4_2 21 0>,
+			   <86 0 &main_gpio4_2 22 0>, <87 0 &main_gpio4_2 23 0>,
+			   <88 0 &main_gpio4_2 24 0>, <89 0 &main_gpio4_2 25 0>,
+			   <90 0 &main_gpio4_2 26 0>, <91 0 &main_gpio4_2 27 0>,
+			   <90 0 &main_gpio4_2 28 0>, <91 0 &main_gpio4_2 29 0>,
+			   <90 0 &main_gpio4_2 30 0>, <91 0 &main_gpio4_2 31 0>,
+			   <64 0 &main_gpio4_3 0 0>, <65 0 &main_gpio4_3 1 0>,
+			   <66 0 &main_gpio4_3 2 0>, <67 0 &main_gpio4_3 3 0>,
+			   <68 0 &main_gpio4_3 4 0>, <69 0 &main_gpio4_3 5 0>,
+			   <70 0 &main_gpio4_3 6 0>, <71 0 &main_gpio4_3 7 0>,
+			   <72 0 &main_gpio4_3 8 0>, <73 0 &main_gpio4_3 9 0>,
+			   <74 0 &main_gpio4_3 10 0>, <75 0 &main_gpio4_3 11 0>,
+			   <76 0 &main_gpio4_3 12 0>, <77 0 &main_gpio4_3 13 0>,
+			   <78 0 &main_gpio4_3 14 0>, <79 0 &main_gpio4_3 15 0>,
+			   <80 0 &main_gpio4_3 16 0>, <81 0 &main_gpio4_3 17 0>,
+			   <82 0 &main_gpio4_3 18 0>, <83 0 &main_gpio4_3 17 0>,
+			   <84 0 &main_gpio4_3 20 0>, <85 0 &main_gpio4_3 21 0>,
+			   <86 0 &main_gpio4_3 22 0>, <87 0 &main_gpio4_3 23 0>,
+			   <88 0 &main_gpio4_3 24 0>, <89 0 &main_gpio4_3 25 0>,
+			   <90 0 &main_gpio4_3 26 0>, <91 0 &main_gpio4_3 27 0>,
+			   <90 0 &main_gpio4_3 28 0>, <91 0 &main_gpio4_3 29 0>,
+			   <90 0 &main_gpio4_3 30 0>, <91 0 &main_gpio4_3 31 0>;
+		gpio-map-mask = <0xffff 0x0>;
+		gpio-map-pass-thru = <0x0 0x1>;
+	};
+
+	main_gpio4_0: gpio@620010 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00620010 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio4_1: gpio@620038 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00620038 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio4_2: gpio@620060 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00620060 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio4_3: gpio@620088 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00620088 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio5: main-gpio5 {
+		#gpio-cells = <2>;
+		gpio-map = <0 0 &main_gpio5_0 0 0>, <1 0 &main_gpio5_0 1 0>,
+			   <2 0 &main_gpio5_0 2 0>, <3 0 &main_gpio5_0 3 0>,
+			   <4 0 &main_gpio5_0 4 0>, <5 0 &main_gpio5_0 5 0>,
+			   <6 0 &main_gpio5_0 6 0>, <7 0 &main_gpio5_0 7 0>,
+			   <8 0 &main_gpio5_0 8 0>, <9 0 &main_gpio5_0 9 0>,
+			   <10 0 &main_gpio5_0 10 0>, <11 0 &main_gpio5_0 11 0>,
+			   <12 0 &main_gpio5_0 12 0>, <13 0 &main_gpio5_0 13 0>,
+			   <14 0 &main_gpio5_0 14 0>, <15 0 &main_gpio5_0 15 0>,
+			   <16 0 &main_gpio5_0 16 0>, <17 0 &main_gpio5_0 17 0>,
+			   <18 0 &main_gpio5_0 18 0>, <19 0 &main_gpio5_0 19 0>,
+			   <20 0 &main_gpio5_0 20 0>, <21 0 &main_gpio5_0 21 0>,
+			   <22 0 &main_gpio5_0 22 0>, <23 0 &main_gpio5_0 23 0>,
+			   <24 0 &main_gpio5_0 24 0>, <25 0 &main_gpio5_0 25 0>,
+			   <26 0 &main_gpio5_0 26 0>, <27 0 &main_gpio5_0 27 0>,
+			   <28 0 &main_gpio5_0 28 0>, <29 0 &main_gpio5_0 29 0>,
+			   <30 0 &main_gpio5_0 30 0>, <31 0 &main_gpio5_0 31 0>,
+			   <32 0 &main_gpio5_1 0 0>, <33 0 &main_gpio5_1 1 0>,
+			   <34 0 &main_gpio5_1 2 0>, <35 0 &main_gpio5_1 3 0>;
+		gpio-map-mask = <0xffff 0x0>;
+		gpio-map-pass-thru = <0x0 0x1>;
+	};
+
+	main_gpio5_0: gpio@621010 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00621010 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio5_1: gpio@621038 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00621038 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <4>;
+		status = "disabled";
+	};
+
+	main_gpio6: main-gpio6 {
+		#gpio-cells = <2>;
+		gpio-map = <0 0 &main_gpio6_0 0 0>, <1 0 &main_gpio6_0 1 0>,
+			   <2 0 &main_gpio6_0 2 0>, <3 0 &main_gpio6_0 3 0>,
+			   <4 0 &main_gpio6_0 4 0>, <5 0 &main_gpio6_0 5 0>,
+			   <6 0 &main_gpio6_0 6 0>, <7 0 &main_gpio6_0 7 0>,
+			   <8 0 &main_gpio6_0 8 0>, <9 0 &main_gpio6_0 9 0>,
+			   <10 0 &main_gpio6_0 10 0>, <11 0 &main_gpio6_0 11 0>,
+			   <12 0 &main_gpio6_0 12 0>, <13 0 &main_gpio6_0 13 0>,
+			   <14 0 &main_gpio6_0 14 0>, <15 0 &main_gpio6_0 15 0>,
+			   <16 0 &main_gpio6_0 16 0>, <17 0 &main_gpio6_0 17 0>,
+			   <18 0 &main_gpio6_0 18 0>, <19 0 &main_gpio6_0 19 0>,
+			   <20 0 &main_gpio6_0 20 0>, <21 0 &main_gpio6_0 21 0>,
+			   <22 0 &main_gpio6_0 22 0>, <23 0 &main_gpio6_0 23 0>,
+			   <24 0 &main_gpio6_0 24 0>, <25 0 &main_gpio6_0 25 0>,
+			   <26 0 &main_gpio6_0 26 0>, <27 0 &main_gpio6_0 27 0>,
+			   <28 0 &main_gpio6_0 28 0>, <29 0 &main_gpio6_0 29 0>,
+			   <30 0 &main_gpio6_0 30 0>, <31 0 &main_gpio6_0 31 0>,
+			   <32 0 &main_gpio6_1 0 0>, <33 0 &main_gpio6_1 1 0>,
+			   <34 0 &main_gpio6_1 2 0>, <35 0 &main_gpio6_1 3 0>,
+			   <36 0 &main_gpio6_1 4 0>, <37 0 &main_gpio6_1 5 0>,
+			   <38 0 &main_gpio6_1 6 0>, <39 0 &main_gpio6_1 7 0>,
+			   <40 0 &main_gpio6_1 8 0>, <41 0 &main_gpio6_1 9 0>,
+			   <42 0 &main_gpio6_1 10 0>, <43 0 &main_gpio6_1 11 0>,
+			   <44 0 &main_gpio6_1 12 0>, <45 0 &main_gpio6_1 13 0>,
+			   <46 0 &main_gpio6_1 14 0>, <47 0 &main_gpio6_1 15 0>,
+			   <48 0 &main_gpio6_1 16 0>, <49 0 &main_gpio6_1 17 0>,
+			   <50 0 &main_gpio6_1 18 0>, <51 0 &main_gpio6_1 19 0>,
+			   <52 0 &main_gpio6_1 20 0>, <53 0 &main_gpio6_1 21 0>,
+			   <54 0 &main_gpio6_1 22 0>, <55 0 &main_gpio6_1 23 0>,
+			   <56 0 &main_gpio6_1 24 0>, <57 0 &main_gpio6_1 25 0>,
+			   <58 0 &main_gpio6_1 26 0>, <59 0 &main_gpio6_1 27 0>,
+			   <60 0 &main_gpio6_1 28 0>, <61 0 &main_gpio6_1 29 0>,
+			   <62 0 &main_gpio6_1 30 0>, <63 0 &main_gpio6_1 31 0>,
+			   <64 0 &main_gpio6_2 0 0>, <65 0 &main_gpio6_2 1 0>,
+			   <66 0 &main_gpio6_2 2 0>, <67 0 &main_gpio6_2 3 0>,
+			   <68 0 &main_gpio6_2 4 0>, <69 0 &main_gpio6_2 5 0>,
+			   <70 0 &main_gpio6_2 6 0>, <71 0 &main_gpio6_2 7 0>,
+			   <72 0 &main_gpio6_2 8 0>, <73 0 &main_gpio6_2 9 0>,
+			   <74 0 &main_gpio6_2 10 0>, <75 0 &main_gpio6_2 11 0>,
+			   <76 0 &main_gpio6_2 12 0>, <77 0 &main_gpio6_2 13 0>,
+			   <78 0 &main_gpio6_2 14 0>, <79 0 &main_gpio6_2 15 0>,
+			   <80 0 &main_gpio6_2 16 0>, <81 0 &main_gpio6_2 17 0>,
+			   <82 0 &main_gpio6_2 18 0>, <83 0 &main_gpio6_2 17 0>,
+			   <84 0 &main_gpio6_2 20 0>, <85 0 &main_gpio6_2 21 0>,
+			   <86 0 &main_gpio6_2 22 0>, <87 0 &main_gpio6_2 23 0>,
+			   <88 0 &main_gpio6_2 24 0>, <89 0 &main_gpio6_2 25 0>,
+			   <90 0 &main_gpio6_2 26 0>, <91 0 &main_gpio6_2 27 0>,
+			   <90 0 &main_gpio6_2 28 0>, <91 0 &main_gpio6_2 29 0>,
+			   <90 0 &main_gpio6_2 30 0>, <91 0 &main_gpio6_2 31 0>,
+			   <64 0 &main_gpio6_3 0 0>, <65 0 &main_gpio6_3 1 0>,
+			   <66 0 &main_gpio6_3 2 0>, <67 0 &main_gpio6_3 3 0>,
+			   <68 0 &main_gpio6_3 4 0>, <69 0 &main_gpio6_3 5 0>,
+			   <70 0 &main_gpio6_3 6 0>, <71 0 &main_gpio6_3 7 0>,
+			   <72 0 &main_gpio6_3 8 0>, <73 0 &main_gpio6_3 9 0>,
+			   <74 0 &main_gpio6_3 10 0>, <75 0 &main_gpio6_3 11 0>,
+			   <76 0 &main_gpio6_3 12 0>, <77 0 &main_gpio6_3 13 0>,
+			   <78 0 &main_gpio6_3 14 0>, <79 0 &main_gpio6_3 15 0>,
+			   <80 0 &main_gpio6_3 16 0>, <81 0 &main_gpio6_3 17 0>,
+			   <82 0 &main_gpio6_3 18 0>, <83 0 &main_gpio6_3 17 0>,
+			   <84 0 &main_gpio6_3 20 0>, <85 0 &main_gpio6_3 21 0>,
+			   <86 0 &main_gpio6_3 22 0>, <87 0 &main_gpio6_3 23 0>,
+			   <88 0 &main_gpio6_3 24 0>, <89 0 &main_gpio6_3 25 0>,
+			   <90 0 &main_gpio6_3 26 0>, <91 0 &main_gpio6_3 27 0>,
+			   <90 0 &main_gpio6_3 28 0>, <91 0 &main_gpio6_3 29 0>,
+			   <90 0 &main_gpio6_3 30 0>, <91 0 &main_gpio6_3 31 0>;
+		gpio-map-mask = <0xffff 0x0>;
+		gpio-map-pass-thru = <0x0 0x1>;
+	};
+
+	main_gpio6_0: gpio@630010 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00630010 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio6_1: gpio@630038 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00630038 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio6_2: gpio@630060 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00630060 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio6_3: gpio@630088 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00630088 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio7: main-gpio7 {
+		#gpio-cells = <2>;
+		gpio-map = <0 0 &main_gpio7_0 0 0>, <1 0 &main_gpio7_0 1 0>,
+			   <2 0 &main_gpio7_0 2 0>, <3 0 &main_gpio7_0 3 0>,
+			   <4 0 &main_gpio7_0 4 0>, <5 0 &main_gpio7_0 5 0>,
+			   <6 0 &main_gpio7_0 6 0>, <7 0 &main_gpio7_0 7 0>,
+			   <8 0 &main_gpio7_0 8 0>, <9 0 &main_gpio7_0 9 0>,
+			   <10 0 &main_gpio7_0 10 0>, <11 0 &main_gpio7_0 11 0>,
+			   <12 0 &main_gpio7_0 12 0>, <13 0 &main_gpio7_0 13 0>,
+			   <14 0 &main_gpio7_0 14 0>, <15 0 &main_gpio7_0 15 0>,
+			   <16 0 &main_gpio7_0 16 0>, <17 0 &main_gpio7_0 17 0>,
+			   <18 0 &main_gpio7_0 18 0>, <19 0 &main_gpio7_0 19 0>,
+			   <20 0 &main_gpio7_0 20 0>, <21 0 &main_gpio7_0 21 0>,
+			   <22 0 &main_gpio7_0 22 0>, <23 0 &main_gpio7_0 23 0>,
+			   <24 0 &main_gpio7_0 24 0>, <25 0 &main_gpio7_0 25 0>,
+			   <26 0 &main_gpio7_0 26 0>, <27 0 &main_gpio7_0 27 0>,
+			   <28 0 &main_gpio7_0 28 0>, <29 0 &main_gpio7_0 29 0>,
+			   <30 0 &main_gpio7_0 30 0>, <31 0 &main_gpio7_0 31 0>,
+			   <32 0 &main_gpio7_1 0 0>, <33 0 &main_gpio7_1 1 0>,
+			   <34 0 &main_gpio7_1 2 0>, <35 0 &main_gpio7_1 3 0>;
+		gpio-map-mask = <0xffff 0x0>;
+		gpio-map-pass-thru = <0x0 0x1>;
+	};
+
+	main_gpio7_0: gpio@631010 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00631010 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio7_1: gpio@631038 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00631038 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <4>;
+		status = "disabled";
+	};
+};
