@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&wkup_pinctrl {
+	main_gpio0_89_fet_sel0: main_gpio0_89_fet_sel0_default {
+		pinmux = <K3_PINMUX(0x1a8, PIN_OUTPUT, MUX_MODE_7)>; /* (E13) GPIO0_89 */
+	};
+};
+
+&main_gpio0_2 {
+	pinctrl-0 = <&main_gpio0_89_fet_sel0>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	vout_fet_sel0 {
+		gpio-hog;
+		output-high;
+		gpios = <25 GPIO_ACTIVE_HIGH>; /* GPIO0_89 */
+		line-name = "vout-fet-sel0";
+	};
+};
