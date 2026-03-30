@@ -1,0 +1,43 @@
+# Delta Firmware Update
+#
+# Copyright (c) 2026 Clovis Corde
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DELTA_UPDATE
+	bool "Delta Firmware Update"
+	help
+	  Enable support for Delta Firmware Update.
+	  This allows applying binary delta patches to update firmware,
+	  significantly reducing the data transfer size compared to full
+	  firmware updates.
+
+if DELTA_UPDATE
+
+module = DELTA_UPDATE
+module-str = delta_update
+source "subsys/logging/Kconfig.template.log_config"
+
+choice DELTA_ALGORITHM
+	prompt "Delta patch algorithm"
+	default BSDIFF_HS_ALGO
+	help
+	  Select the algorithm used to apply delta patches.
+
+config BSDIFF_HS_ALGO
+	bool "bsdiff algorithm and heatshrink compression"
+	select HEATSHRINK
+	help
+	  Use the bsdiff algorithm and heatshrink compression for applying
+	  delta patches.
+
+endchoice
+
+config DELTA_INPUT_BUFFER_SIZE
+	int "Input buffer size for delta patch decompression"
+	default 64
+	depends on BSDIFF_HS_ALGO
+	help
+	  Size in bytes of the buffer used to read compressed patch data
+	  from storage before sinking into the heatshrink decoder.
+
+endif # DELTA_UPDATE

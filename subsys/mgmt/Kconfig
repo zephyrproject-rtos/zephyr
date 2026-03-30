@@ -14,4 +14,6 @@ source "subsys/mgmt/updatehub/Kconfig"
 
 source "subsys/mgmt/osdp/Kconfig"
 
+source "subsys/mgmt/delta/Kconfig"
+
 endmenu

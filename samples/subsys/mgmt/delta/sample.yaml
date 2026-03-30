@@ -1,0 +1,21 @@
+sample:
+  description: Delta Firmware Over The Air (DFOTA) update sample demonstrating
+    how to apply binary delta patches to update firmware efficiently.
+  name: dfota
+common:
+  sysbuild: true
+  tags:
+    - dfu
+    - delta
+  depends_on:
+    - flash
+  modules:
+    - heatshrink
+tests:
+  sample.subsys.mgmt.delta:
+    tags:
+      - dfu
+      - delta
+    platform_allow:
+      - nrf7002dk/nrf5340/cpuapp
+
