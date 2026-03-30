@@ -142,13 +142,13 @@ class HardwareAdapter(DeviceAdapter):
             logger.error(msg)
             raise TwisterHarnessException(msg)
 
-        if self.device_config.pre_script:
-            self._run_custom_script(self.device_config.pre_script, self.base_timeout)
+        self._run_hook('pre')
 
         if self.device_config.id:
             logger.debug('Flashing device %s', self.device_config.id)
         log_command(logger, 'Flashing command', self.command, level=logging.DEBUG)
 
+        self._run_hook('pre_flash')
         process = stdout = None
         try:
             process = subprocess.Popen(
@@ -169,8 +169,7 @@ class HardwareAdapter(DeviceAdapter):
                 stdout_decoded = stdout.decode(errors='ignore')
                 with open(self.device_log_path, 'a+') as log_file:
                     log_file.write(stdout_decoded)
-            if self.device_config.post_flash_script:
-                self._run_custom_script(self.device_config.post_flash_script, self.base_timeout)
+            self._run_hook('post_flash')
             if process is not None and process.returncode == 0:
                 logger.debug('Flashing finished')
             else:
@@ -181,13 +180,23 @@ class HardwareAdapter(DeviceAdapter):
     def _close_device(self) -> None:
         # Run post script only if the reader thread is started to avoid running it
         # multiple times and when in initialization phase
-        if self.is_reader_started() and self.device_config.post_script:
-            self._run_custom_script(self.device_config.post_script, self.base_timeout)
+        if self.is_reader_started():
+            self._run_hook('post')
 
-    @staticmethod
-    def _run_custom_script(script_path: str | Path, timeout: float) -> None:
+    def _run_hook(self, hook_type: str) -> None:
+        """Run a hook script by type (pre, post, post_flash, pre_flash)."""
+        hook = self.device_config.get_hook_for_type(hook_type)
+        if not hook:
+            return
+
+        script = hook.get('script')
+        args = hook.get('args', [])
+        cmd = [script] + args
+        timeout = hook.get('timeout', 60)
+
+        logger.info('Running %s hook: %s', hook_type, cmd)
         with subprocess.Popen(
-            str(script_path), stderr=subprocess.PIPE, stdout=subprocess.PIPE
+            cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=self.env
         ) as proc:
             try:
                 stdout, stderr = proc.communicate(timeout=timeout)
@@ -200,6 +209,8 @@ class HardwareAdapter(DeviceAdapter):
             except subprocess.TimeoutExpired as exc:
                 terminate_process(proc)
                 proc.communicate(timeout=timeout)
-                msg = f'Timeout occurred ({timeout}s) during execution custom script: {script_path}'
+                msg = (
+                    f'Timeout occurred ({timeout}s) during execution of {hook_type} hook: {script}'
+                )
                 logger.error(msg)
                 raise TwisterHarnessTimeoutException(msg) from exc
