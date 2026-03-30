@@ -97,5 +97,23 @@
 			reg = <56>;
 			#power-domain-cells = <0>;
 		};
+
+		main_ecap0_pd: power-domain@16 {
+			compatible = "arm,scmi-power-domain";
+			reg = <22>;
+			#power-domain-cells = <0>;
+		};
+
+		main_ecap1_pd: power-domain@17 {
+			compatible = "arm,scmi-power-domain";
+			reg = <23>;
+			#power-domain-cells = <0>;
+		};
+
+		main_ecap2_pd: power-domain@18 {
+			compatible = "arm,scmi-power-domain";
+			reg = <24>;
+			#power-domain-cells = <0>;
+		};
 	};
 };
