@@ -1,0 +1,13 @@
+#
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+CONFIG_TRUSTED_EXECUTION_SECURE=y
+CONFIG_ARM_TRUSTZONE_M=y
+
+# Enable SPI and NOR FLASH
+CONFIG_SPI=y
+CONFIG_SPI_NOR=y
