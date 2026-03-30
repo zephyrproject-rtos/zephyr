@@ -12,6 +12,7 @@ the TI AM62L platform. The board configuration provides support for:
    - ARM Generic Timer (arch_timer)
    - On-chip SRAM (oc_sram)
    - UART interfaces (uart0 to uart6)
+   - Optional I/O expander
 
 The board configuration also enables support for the semihosting debugging console.
 
@@ -36,6 +37,32 @@ Supported Features
 ==================
 
 .. zephyr:board-supported-hw::
+
+I/O Expander Configuration
+===========================
+Enabling I/O Expander Support
+-----------------------------
+
+To enable I/O expander functionality, set the following configuration option:
+
+.. code-block:: kconfig
+
+   CONFIG_AM62L_EVM_IO_EXPANDER=y
+
+This can be added to your application's ``prj.conf`` file or passed via the command line:
+
+.. zephyr-app-commands::
+   :zephyr-app: <app>
+   :board: am62l_evm/am62l3/a53
+   :goals: build
+   :gen-args: -DCONFIG_AM62L_EVM_IO_EXPANDER=y
+   :compact:
+
+This configuration option:
+- Automatically enables the ``GPIO`` subsystem
+- Sets ``GPIO_SOC_VOUT0_FET_SEL0_PIN`` high during POST_KERNEL phase
+
+The pinmux configuration is defined in the device tree and automatically applied.
 
 Devices
 ========
