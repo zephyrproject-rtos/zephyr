@@ -2,7 +2,7 @@ description: Quectel EG915U modem
 
 compatible: "quectel,eg915u"
 
-include: uart-device.yaml
+include: zephyr,cellular-modem-device.yaml
 
 properties:
   mdm-power-gpios:
