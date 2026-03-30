@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Siemens
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_BITBANG
+	bool "Bitbang PWM driver"
+	default y
+	depends on DT_HAS_ZEPHYR_PWM_BITBANG_ENABLED
+	depends on GPIO
+	depends on COUNTER
+	help
+	  Generic software-based PWM driver using hardware timer interrupts.
+	  Use this as a fallback only if you don't have dedicated hardware PWM
+	  pins left and understand the CPU overhead implications.
+	  The period is the same for all channels.
+
+config PWM_BITBANG_INIT_PRIORITY
+	int "PWM bitbang initialization priority"
+	default COUNTER_INIT_PRIORITY
+	depends on PWM_BITBANG
+	help
+	  System initialization priority for the bitbang PWM driver.
+	  Must be equal or larger than CONFIG_COUNTER_INIT_PRIORITY.
