@@ -163,8 +163,8 @@
 			   <ARDUINO_HEADER_R3_D11 0 &piod 21 0>, /* SPI0_MOSI   y */
 			   <ARDUINO_HEADER_R3_D12 0 &piod 20 0>, /* SPI0_MISO   y */
 			   <ARDUINO_HEADER_R3_D13 0 &piod 22 0>, /* SPI0_SPCK   y */
-			   <ARDUINO_HEADER_R3_D14 0 &pioa  3 0>, /* TWD0        y */
-			   <ARDUINO_HEADER_R3_D15 0 &pioa  4 0>; /* TWCK0       y */
+			   <ARDUINO_HEADER_R3_SDA 0 &pioa  3 0>, /* TWD0        y */
+			   <ARDUINO_HEADER_R3_SCL 0 &pioa  4 0>; /* TWCK0       y */
 		/* dts-format on */
 	};
 };

@@ -32,8 +32,8 @@
 			   <ARDUINO_HEADER_R3_D11 0 &pico_header 19 0>,
 			   <ARDUINO_HEADER_R3_D12 0 &pico_header 16 0>,
 			   <ARDUINO_HEADER_R3_D13 0 &pico_header 18 0>,
-			   <ARDUINO_HEADER_R3_D14 0 &pico_header 20 0>,
-			   <ARDUINO_HEADER_R3_D15 0 &pico_header 21 0>;
+			   <ARDUINO_HEADER_R3_SDA 0 &pico_header 20 0>,
+			   <ARDUINO_HEADER_R3_SCL 0 &pico_header 21 0>;
 	};
 };
 
