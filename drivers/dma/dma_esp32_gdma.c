@@ -27,6 +27,25 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/pm/policy.h>
 
+#if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
+#define GDMA_SLEEP_RETENTION_ENABLED 1
+#else
+#define GDMA_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if GDMA_SLEEP_RETENTION_ENABLED
+#include <hal/gdma_periph.h>
+#include <esp_private/sleep_retention.h>
+
+static esp_err_t gdma_create_sleep_retention_cb(void *arg)
+{
+	const gdma_chx_reg_ctx_link_t *ctx = (const gdma_chx_reg_ctx_link_t *)arg;
+
+	return sleep_retention_entries_create(ctx->link_list, ctx->link_num,
+					      REGDMA_LINK_PRI_GDMA, ctx->module_id);
+}
+#endif
+
 #define DMA_MAX_CHANNEL GDMA_LL_PAIRS_PER_INST
 
 /*
@@ -684,6 +703,25 @@ static int dma_esp32_init(const struct device *dev)
 	};
 	gdma_ahb_hal_init(&data->hal, &hal_config);
 	gdma_ll_force_enable_reg_clock(data->hal.dev, true);
+
+#if GDMA_SLEEP_RETENTION_ENABLED
+	for (uint8_t pair = 0; pair < GDMA_LL_PAIRS_PER_INST; pair++) {
+		const gdma_chx_reg_ctx_link_t *ctx =
+			&gdma_chx_regs_retention[hal_config.group_id][pair];
+		sleep_retention_module_init_param_t init_param = {
+			.cbs = {.create = {.handle = gdma_create_sleep_retention_cb,
+					   .arg = (void *)ctx}},
+		};
+		esp_err_t err = sleep_retention_module_init(ctx->module_id, &init_param);
+
+		if (err == ESP_OK) {
+			err = sleep_retention_module_allocate(ctx->module_id);
+		}
+		if (err != ESP_OK) {
+			LOG_WRN("Failed to init GDMA sleep retention for pair %d", pair);
+		}
+	}
+#endif
 
 	return 0;
 }
