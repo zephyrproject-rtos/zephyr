@@ -47,6 +47,7 @@ LOG_MODULE_REGISTER(ft5336, CONFIG_INPUT_LOG_LEVEL);
 #define POSITION_H_MSK		0x0FU
 
 /* REG_G_PMODE: Power Consume Mode */
+#define PMOD_MONITOR            0x01U
 #define PMOD_HIBERNATE		0x03U
 
 /** FT5336 configuration (DT). */
@@ -250,14 +251,17 @@ static int ft5336_pm_action(const struct device *dev,
 #endif
 	int ret;
 
-	if (config->reset_gpio.port == NULL) {
-		return -ENOTSUP;
-	}
-
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
+#ifdef CONFIG_INPUT_FT5336_PM_MODE_MONITOR
+		ret = i2c_reg_write_byte_dt(&config->bus, REG_G_PMODE, PMOD_MONITOR);
+#else
+		if (config->reset_gpio.port == NULL) {
+			return -ENOTSUP;
+		}
 		ret = i2c_reg_write_byte_dt(&config->bus,
 					    REG_G_PMODE, PMOD_HIBERNATE);
+#endif
 		if (ret < 0) {
 			return ret;
 		}
@@ -267,6 +271,10 @@ static int ft5336_pm_action(const struct device *dev,
 #endif
 		break;
 	case PM_DEVICE_ACTION_RESUME:
+#ifndef CONFIG_INPUT_FT5336_PM_MODE_MONITOR
+		if (config->reset_gpio.port == NULL) {
+			return -ENOTSUP;
+		}
 		ret = gpio_pin_set_dt(&config->reset_gpio, 1);
 		if (ret < 0) {
 			return ret;
@@ -278,8 +286,19 @@ static int ft5336_pm_action(const struct device *dev,
 		if (ret < 0) {
 			return ret;
 		}
+#endif /* !CONFIG_INPUT_FT5336_PM_MODE_MONITOR */
 
-#ifndef CONFIG_INPUT_FT5336_INTERRUPT
+#ifdef CONFIG_INPUT_FT5336_INTERRUPT
+		ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
+#else
 		k_timer_start(&data->timer,
 			      K_MSEC(CONFIG_INPUT_FT5336_PERIOD),
 			      K_MSEC(CONFIG_INPUT_FT5336_PERIOD));
