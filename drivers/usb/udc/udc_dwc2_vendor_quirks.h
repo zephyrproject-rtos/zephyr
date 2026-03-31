@@ -60,8 +60,8 @@ static inline int stm32f4_fsotg_enable_clk(const struct usb_dw_stm32_clk *const 
 
 static inline int stm32f4_fsotg_enable_phy(const struct device *dev)
 {
-	const struct udc_dwc2_config *const config = dev->config;
-	mem_addr_t ggpio_reg = (mem_addr_t)&config->base->ggpio;
+	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
+	mem_addr_t ggpio_reg = (mem_addr_t)&base->ggpio;
 
 	sys_set_bits(ggpio_reg, USB_DWC2_GGPIO_STM32_PWRDWN | USB_DWC2_GGPIO_STM32_VBDEN);
 
@@ -70,8 +70,8 @@ static inline int stm32f4_fsotg_enable_phy(const struct device *dev)
 
 static inline int stm32f4_fsotg_disable_phy(const struct device *dev)
 {
-	const struct udc_dwc2_config *const config = dev->config;
-	mem_addr_t ggpio_reg = (mem_addr_t)&config->base->ggpio;
+	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
+	mem_addr_t ggpio_reg = (mem_addr_t)&base->ggpio;
 
 	sys_clear_bits(ggpio_reg, USB_DWC2_GGPIO_STM32_PWRDWN | USB_DWC2_GGPIO_STM32_VBDEN);
 
@@ -278,8 +278,7 @@ static inline int usbhs_is_phy_clk_off(const struct device *dev)
 
 static inline int usbhs_post_hibernation_entry(const struct device *dev)
 {
-	const struct udc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
 
 	sys_set_bits((mem_addr_t)&base->pcgcctl, USB_DWC2_PCGCCTL_GATEHCLK);
@@ -293,8 +292,7 @@ static inline int usbhs_post_hibernation_entry(const struct device *dev)
 
 static inline int usbhs_pre_hibernation_exit(const struct device *dev)
 {
-	const struct udc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
 
 	sys_clear_bits((mem_addr_t)&base->pcgcctl, USB_DWC2_PCGCCTL_GATEHCLK);
@@ -488,8 +486,7 @@ static inline int usbhs_is_phy_clk_off(const struct device *dev)
 
 static inline int usbhs_post_hibernation_entry(const struct device *dev)
 {
-	const struct udc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
 
 	sys_set_bits((mem_addr_t)&base->pcgcctl, USB_DWC2_PCGCCTL_GATEHCLK);
@@ -501,8 +498,7 @@ static inline int usbhs_post_hibernation_entry(const struct device *dev)
 
 static inline int usbhs_pre_hibernation_exit(const struct device *dev)
 {
-	const struct udc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
 
 	sys_clear_bits((mem_addr_t)&base->pcgcctl, USB_DWC2_PCGCCTL_GATEHCLK);
