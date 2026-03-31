@@ -12,12 +12,26 @@ if MCTP
 
 config MCTP_HEAP_SIZE
 	int "MCTP Heap Size"
-	default 1024
+	default 2048
 	help
 	  MCTP requires a heap for allocating packet buffers. A dedicated
 	  heap is provided to MCTP at startup avoiding the need to specify
 	  libmctp's allocation operations. This setting defines the size of
 	  the dedicated MCTP heap in bytes. Defaults to 1KB for small packets.
+
+	  When multi-packet message reassembly is required, this must be large
+	  enough to hold at least one MCTP context struct plus one reassembly
+	  buffer of CONFIG_MCTP_MAX_MESSAGE_SIZE bytes per active endpoint.
+
+config MCTP_MAX_MESSAGE_SIZE
+	int "Maximum MCTP reassembly message size"
+	default 1024
+	help
+	  Maximum size in bytes of an MCTP message that can be reassembled
+	  from multiple MCTP packets. libmctp allocates a buffer of this size
+	  from the MCTP heap whenever a multi-packet message begins arriving,
+	  so CONFIG_MCTP_HEAP_SIZE must be large enough to hold at least one
+	  such buffer per concurrently-active reassembly context.
 
 config MCTP_UART
 	bool "MCTP UART Binding"
