@@ -945,10 +945,17 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 			 * ACL event, taking latency into consideration. Adjust ticker periodicity
 			 * with increased window widening.
 			 */
-			uint32_t acl_latency_us;
+			uint64_t acl_latency_us;
 			uint32_t iso_interval_us;
 
-			acl_latency_us = instant_latency * conn->lll.interval * CONN_INT_UNIT_US;
+			acl_latency_us = (uint64_t)instant_latency * conn->lll.interval *
+					 CONN_INT_UNIT_US;
+			LL_ASSERT_ERR(acl_latency_us <= UINT32_MAX);
+
+			/* Avoid the requirement of explicit cast when assigning to 32-bit parameter
+			 */
+			acl_latency_us &= 0xFFFFFFFFULL;
+
 			iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
 			cig_offset_us = cig_instant_latency_calc(cig, cis, acl_latency_us,
 								 iso_interval_us, &ticks_at_expire,
@@ -979,9 +986,15 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 			/* Try to start the CIG late by finding the CIG event relative to current
 			 * ACL event, taking latency into consideration.
 			 */
-			uint32_t acl_latency_us;
+			uint64_t acl_latency_us;
 
-			acl_latency_us = instant_latency * acl_interval_us;
+			acl_latency_us = (uint64_t)instant_latency * acl_interval_us;
+			LL_ASSERT_ERR(acl_latency_us <= UINT32_MAX);
+
+			/* Avoid the requirement of explicit cast when assigning to 32-bit parameter
+			 */
+			acl_latency_us &= 0xFFFFFFFFULL;
+
 			cig_offset_us = cig_instant_latency_calc(cig, cis, acl_latency_us,
 								 iso_interval_us, &ticks_at_expire,
 								 remainder);
@@ -1143,11 +1156,29 @@ static uint32_t cig_instant_latency_calc(struct ll_conn_iso_group *cig,
 	uint32_t cig_offset_us;
 
 	if (acl_latency_us > iso_interval_us) {
+		LL_ASSERT_DBG(acl_latency_us >= cis->offset);
+
 		/* Latency is greater than the ISO interval - find the offset from
 		 * this ACL event to the next active ISO event, and adjust the event
 		 * counter accordingly.
 		 */
 		lost_cig_events = DIV_ROUND_UP(acl_latency_us - cis->offset, iso_interval_us);
+
+		/* Clamp lost_cig_events to an 8-bit value to keep the 16-bit cis->event_expire
+		 * bounded, regardless of its initial value (it may be CONN_ESTAB_COUNTDOWN or a
+		 * computed multiple of the ISO interval). This limits how far the establishment
+		 * can be deferred and caps the amount of event/loss accounting performed. If a
+		 * very large number of CIG events are effectively lost, let the anchor point sync
+		 * fail and eventually lead to connection failed to be established; this is an
+		 * acceptable compromise. Keep a debug assertion to catch such extreme conditions
+		 * during development.
+		 */
+		LL_ASSERT_DBG(lost_cig_events < UINT8_MAX);
+		if (lost_cig_events >= UINT8_MAX) {
+			/* Consider possible lost_cig_events++ done below in case of ACL overlap */
+			lost_cig_events = UINT8_MAX - 1U;
+		}
+
 		cis_offset_us = cis->offset + (lost_cig_events * iso_interval_us) - acl_latency_us;
 	} else {
 		/* Latency is less than- or equal to one ISO interval - start at
