@@ -4822,6 +4822,7 @@ Realtek Bee Platforms:
   status: maintained
   maintainers:
     - ZhiyuanTang17
+    - YuzhuoLiuRTK
   files:
     - boards/realtek/rtl87x2g*/
     - boards/realtek/rtl8752h*/
@@ -6280,10 +6281,13 @@ West:
   status: maintained
   maintainers:
     - zjian-zhang
+    - ZhiyuanTang17
+  collaborators:
     - Derek-RTK
+    - YuzhuoLiuRTK
   files: []
   labels:
-    - "platform: Ameba"
+    - "platform: Realtek"
 
 "West project: hal_renesas":
   status: maintained
