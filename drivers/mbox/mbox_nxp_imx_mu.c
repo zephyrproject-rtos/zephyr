@@ -10,6 +10,7 @@
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/sys/device_mmio.h>
 #include <fsl_mu.h>
 
 #define LOG_LEVEL CONFIG_MBOX_LOG_LEVEL
@@ -41,19 +42,24 @@ const static uint32_t g_rx_flag_mask[MU_MAX_CHANNELS] = {kMU_Rx0FullFlag, kMU_Rx
 							 kMU_Rx2FullFlag, kMU_Rx3FullFlag};
 
 struct nxp_imx_mu_data {
+	DEVICE_MMIO_RAM;
 	mbox_callback_t cb[MU_MAX_CHANNELS];
 	void *user_data[MU_MAX_CHANNELS];
 	uint32_t received_data;
 };
 
 struct nxp_imx_mu_config {
-	MU_Type *base;
+	DEVICE_MMIO_ROM;
 };
+
+static inline MU_Type *get_base(const struct device *dev)
+{
+	return (MU_Type *)DEVICE_MMIO_GET(dev);
+}
 
 static int nxp_imx_mu_send(const struct device *dev, uint32_t channel, const struct mbox_msg *msg)
 {
 	uint32_t __aligned(4) data32;
-	const struct nxp_imx_mu_config *cfg = dev->config;
 
 	if (channel >= MU_MAX_CHANNELS) {
 		return -EINVAL;
@@ -61,7 +67,7 @@ static int nxp_imx_mu_send(const struct device *dev, uint32_t channel, const str
 
 	/* Signalling mode. */
 	if (msg == NULL) {
-		if (MU_TriggerInterrupts(cfg->base, g_gen_int_trig_mask[channel]) !=
+		if (MU_TriggerInterrupts(get_base(dev), g_gen_int_trig_mask[channel]) !=
 		    kStatus_Success) {
 			/* Ignore any error returned by MU_TriggerInterrupts().
 			 * It can return failure if the interrupt is already pending, but
@@ -87,7 +93,7 @@ static int nxp_imx_mu_send(const struct device *dev, uint32_t channel, const str
 
 	/* memcpy to avoid issues when msg->data is not word-aligned. */
 	memcpy(&data32, msg->data, msg->size);
-	MU_SendMsg(cfg->base, channel, data32);
+	MU_SendMsg(get_base(dev), channel, data32);
 	return 0;
 }
 
@@ -121,7 +127,6 @@ static uint32_t nxp_imx_mu_max_channels_get(const struct device *dev)
 static int nxp_imx_mu_set_enabled(const struct device *dev, uint32_t channel, bool enable)
 {
 	struct nxp_imx_mu_data *data = dev->data;
-	const struct nxp_imx_mu_config *cfg = dev->config;
 
 	if (channel >= MU_MAX_CHANNELS) {
 		return -EINVAL;
@@ -132,13 +137,13 @@ static int nxp_imx_mu_set_enabled(const struct device *dev, uint32_t channel, bo
 			LOG_WRN("Enabling channel without a registered callback");
 		}
 		MU_EnableInterrupts(
-			cfg->base, kMU_GenInt0InterruptEnable | kMU_GenInt1InterruptEnable |
+			get_base(dev), kMU_GenInt0InterruptEnable | kMU_GenInt1InterruptEnable |
 					   kMU_GenInt2InterruptEnable | kMU_GenInt3InterruptEnable |
 					   kMU_Rx0FullInterruptEnable | kMU_Rx1FullInterruptEnable |
 					   kMU_Rx2FullInterruptEnable | kMU_Rx3FullInterruptEnable);
 	} else {
 		MU_DisableInterrupts(
-			cfg->base, kMU_GenInt0InterruptEnable | kMU_GenInt1InterruptEnable |
+			get_base(dev), kMU_GenInt0InterruptEnable | kMU_GenInt1InterruptEnable |
 					   kMU_GenInt2InterruptEnable | kMU_GenInt3InterruptEnable |
 					   kMU_Rx0FullInterruptEnable | kMU_Rx1FullInterruptEnable |
 					   kMU_Rx2FullInterruptEnable | kMU_Rx3FullInterruptEnable);
@@ -160,12 +165,12 @@ static void mu_isr(const struct device *dev);
 #define MU_INSTANCE_DEFINE(idx)                                                                    \
 	static struct nxp_imx_mu_data nxp_imx_mu_##idx##_data;                                     \
 	const static struct nxp_imx_mu_config nxp_imx_mu_##idx##_config = {                        \
-		.base = (MU_Type *)DT_INST_REG_ADDR(idx),                                          \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(idx)),                                            \
 	};                                                                                         \
 	static int nxp_imx_mu_##idx##_init(const struct device *dev)                               \
 	{                                                                                          \
-		ARG_UNUSED(dev);                                                                   \
-		MU_Init(nxp_imx_mu_##idx##_config.base);                                           \
+		DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);                                            \
+		MU_Init(get_base(dev));                                                            \
 		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), mu_isr,                 \
 			    DEVICE_DT_INST_GET(idx), 0);                                           \
 		irq_enable(DT_INST_IRQN(idx));                                                     \
@@ -180,8 +185,7 @@ DT_INST_FOREACH_STATUS_OKAY(MU_INSTANCE_DEFINE)
 static void mu_isr(const struct device *dev)
 {
 	struct nxp_imx_mu_data *data = dev->data;
-	const struct nxp_imx_mu_config *config = dev->config;
-	uint32_t flags = MU_GetStatusFlags(config->base);
+	uint32_t flags = MU_GetStatusFlags(get_base(dev));
 
 	for (int i_channel = 0; i_channel < MU_MAX_CHANNELS; i_channel++) {
 		/* Handle notification interrupt for the channel first and
@@ -194,7 +198,7 @@ static void mu_isr(const struct device *dev)
 		const uint32_t gen_int_mask = g_gen_int_pend_mask[i_channel];
 
 		if ((flags & gen_int_mask) == gen_int_mask) {
-			MU_ClearStatusFlags(config->base, gen_int_mask);
+			MU_ClearStatusFlags(get_base(dev), gen_int_mask);
 			if (data->cb[i_channel]) {
 				data->cb[i_channel](dev, i_channel, data->user_data[i_channel],
 						    NULL);
@@ -211,7 +215,7 @@ static void mu_isr(const struct device *dev)
 		const uint32_t rx_int_mask = g_rx_flag_mask[i_channel];
 
 		if ((flags & rx_int_mask) == rx_int_mask) {
-			data->received_data = MU_ReceiveMsgNonBlocking(config->base, i_channel);
+			data->received_data = MU_ReceiveMsgNonBlocking(get_base(dev), i_channel);
 			struct mbox_msg msg = {(const void *)&data->received_data, MU_MBOX_SIZE};
 
 			if (data->cb[i_channel]) {
