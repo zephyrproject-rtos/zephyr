@@ -594,16 +594,13 @@ harness_config: <harness configuration options>
     only those platforms that fulfill this external dependency.
 
 
-    fixture: <expression>
+    fixture: <string or list>
         Specify a test scenario dependency on an external device(e.g., sensor),
         and identify setups that fulfill this dependency. It depends on
         specific test setup and board selection logic to pick the particular
         board(s) out of multiple boards that fulfill the dependency in an
         automation setup based on ``fixture`` keyword. Some sample fixture names
         are i2c_hts221, i2c_bme280, i2c_FRAM, ble_fw and gpio_loop.
-
-        Only one fixture can be defined per test scenario and the fixture name has to
-        be unique across all tests in the test suite.
 
     ztest_suite_repeat: <int> (default 1)
         This parameter specifies the number of times the entire test suite should be repeated.
@@ -752,6 +749,8 @@ required_snippets: <list of needed snippets>
               - cdc-acm-console
               - user-snippet-example
 
+.. _required_applications:
+
 required_applications: <list of required applications> (default empty)
     Specify a list of test applications that must be built before current test can run.
     It enables sharing of built applications between test scenarios, allowing tests
@@ -787,7 +786,9 @@ required_applications: <list of required applications> (default empty)
           sample.shared_app:
             build_only: true
 
-    Limitations: Not supported with ``--subset`` or ``--runtime-artifact-cleanup`` options.
+    Limitations: Not supported with the ``--runtime-artifact-cleanup`` option,
+    as build artifacts of required applications must be retained for use
+    by the main test application.
 
 expect_reboot: <True|False> (default False)
     Notify twister that the test scenario is expected to reboot while executing.
@@ -1039,6 +1040,92 @@ pytest_dut_scope: <function|class|module|package|session> (default function)
               - test_file_2.py::test_A
               - test_file_2.py::test_B[param_a]
 
+.. _required_devices:
+
+required_devices: <list of required device entries> (default empty)
+    Specify additional DUTs required for a multi-DUT test scenario.
+    Each entry configures one extra device to reserve and flash alongside
+    the main DUT. An empty entry ``{}`` reserves a second device with
+    the same platform and application as the main DUT.
+
+    Multi-DUT testing is supported for hardware device testing and
+    ``native_sim`` simulation. QEMU
+    is not supported. For simulation targets, Twister
+    automatically creates the required placeholder DUT entries, no
+    hardware map is needed. For hardware testing, provide a hardware map
+    file (``--hardware-map``) with a matching entry per required device.
+    More details in
+    :ref:`twister_multi_duts_testing` section.
+
+    Each entry supports the following optional fields:
+
+
+    platform: <string> (optional, defaults to current test's platform)
+        Platform to use for this required device. If not specified,
+        the same platform as the main DUT is used.
+
+    application: <string> (optional, defaults to current test application)
+        Test application ID to flash on this required device. When
+        specified, Twister builds the application separately and assigns its build
+        directory to the reserved DUT before flashing.
+        If not specified, the same application as the main DUT is used.
+
+        It uses same mechanism as :ref:`required_applications <required_applications>`,
+        so the application must be available in the source tree.
+
+    fixture: <list of fixture names> (optional, defaults to empty)
+        List of fixture names that must be present on the reserved device.
+        See :ref:`Fixtures <twister_fixtures>` for details.
+
+        Fixtures support an optional parameter suffix using the ``name:param``
+        syntax (e.g., ``io_adapter:channel_a``). When the main DUT has a fixture
+        with a parameter, Twister uses that parameter value to match required
+        devices - only devices carrying the **same parameter** for that fixture
+        name are considered. This ensures that physically connected DUT pairs
+        (e.g., two boards wired together and registered with the same fixture
+        parameter in the hardware map) are always reserved together and not
+        mixed with unrelated boards.
+
+        Example hardware map entries for a paired setup:
+
+        .. code-block:: yaml
+
+            - id: 01
+              platform: nrf52840dk/nrf52840
+              serial: /dev/ttyACM0
+              fixtures:
+                - io_adapter:channel_a
+            - id: 02
+              platform: nrf52840dk/nrf52840
+              serial: /dev/ttyACM1
+              fixtures:
+                - io_adapter:channel_a
+
+        With ``fixture: [io_adapter]`` on both the main DUT and the required
+        device, Twister selects only boards sharing the same ``channel_a``
+        parameter, guaranteeing the physically paired boards are picked.
+
+
+    Example configurations with multiple required devices:
+
+    .. code-block:: yaml
+
+        tests:
+          # Two DUTs, same platform and application
+          multidut.basic:
+            harness_config:
+              required_devices:
+                - {}
+          # Second DUT fixed to a specific platform
+          multidut.fixed_platform:
+            harness_config:
+              required_devices:
+                - platform: nrf52840dk/nrf52840
+          # Second DUT flashed with a different application
+          multidut.other_app:
+            harness_config:
+              required_devices:
+                - application: multidut.basic
 
 .. _twister_console_harness:
 
@@ -1816,6 +1903,8 @@ Would result in calling ``./custom_flash_script.py
 --build-dir <build directory> --board-id <board identification>
 --flag "complex, argument"``.
 
+.. _twister_fixtures:
+
 Fixtures
 --------
 
@@ -1942,6 +2031,67 @@ For example:
 Both instances share the same device ID but have different serial ports, allowing
 tests to interact with multiple cores simultaneously. Each connection
 is handled independently with separate log files.
+
+.. _twister_multi_duts_testing:
+
+Multi-DUTs testing support
+--------------------------
+
+Twister supports test scenarios that require more than one device.
+This feature works only with the pytest harness (``harness: pytest``).
+Hardware and ``native_sim`` execution environments are supported.
+
+To declare that a test needs an additional device, add
+``required_devices`` under ``harness_config`` in the test's YAML file.
+Each entry in the list describes one extra DUT. An empty entry ``{}``
+reserves a second device with the same platform and application as the
+main DUT. See :ref:`required_devices <required_devices>` for all available options.
+
+Example test configuration:
+
+.. code-block:: yaml
+
+    tests:
+      multidut.basic:
+        harness: pytest
+        harness_config:
+          required_devices:
+            - {}
+
+The hardware map must contain at least one entry per required device.
+Each entry needs a matching platform and a serial connection:
+
+.. code-block:: yaml
+
+    - connected: true
+      id: 01
+      platform: nrf52840dk/nrf52840
+      serial: /dev/ttyACM0
+    - connected: true
+      id: 02
+      platform: nrf52840dk/nrf52840
+      serial: /dev/ttyACM1
+
+Run the test on hardware with:
+
+.. code-block:: console
+
+    $ west twister -vv -ll debug -T tests/subsys/testsuite/multidut \
+      --device-testing --hardware-map map.yaml
+
+Run the test on ``native_sim`` (no hardware map required):
+
+.. code-block:: console
+
+    $ west twister -vv -ll debug -T tests/subsys/testsuite/multidut -p native_sim
+
+Twister reserves all required devices (or creates placeholder entries if ``native_sim`` is used),
+then passes them to pytest with all necessary information
+(platform, serial connection, build artifacts to flash, etc.) so the
+test can interact with all devices.
+
+An example multi-DUT test can be found at
+:zephyr_file:`tests/subsys/testsuite/multidut`.
 
 Quarantine
 ----------
