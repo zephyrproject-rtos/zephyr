@@ -1,0 +1,26 @@
+# Copyright (c) 2025 JUMO GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+config LT7680
+	bool "LT7680 display driver"
+	default y
+	depends on DT_HAS_LEVETOP_LT7680_ENABLED
+	select SPI
+	help
+	  Levetop Ltd. LT7680 display driver.
+
+if LT7680
+
+config LT7680_TRANSMIT_DATA_AS_BURST
+	bool "Transmit data as burst without FIFO check"
+	default y
+	help
+	  Enable this option to transmit data as a burst without checking the FIFO.
+
+config LT7680_READ_DATA_AS_BURST
+	bool "Read data as burst"
+	default y
+	help
+	  Enable this option to read data as a burst.
+
+endif
