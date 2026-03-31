@@ -1590,6 +1590,14 @@ Libraries / Subsystems
     export of version information from Mbed TLS. If enabled, the
     :c:func:`mbedtls_version_get_number()` function will be available.
 
+  * Mbed TLS has been upgraded to version 4.1.0. From now on this repo will only include TLS
+    and X.509, while crypto support was moved to TF-PSA-Crypto. A new west module
+    has been introduced for the latter and it's based on upstream release 1.1.0.
+    Release notes for both projects can be found here:
+
+    * https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-4.1.0
+    * https://github.com/Mbed-TLS/TF-PSA-Crypto/releases/tag/tf-psa-crypto-1.1.0
+
 * Zbus
 
    * Added experimental proxy-agent communication with IPC backend support for
@@ -1603,6 +1611,9 @@ Other notable changes
 
   * https://trustedfirmware-m.readthedocs.io/en/tf-mv2.2.2/releases/2.2.1.html
   * https://trustedfirmware-m.readthedocs.io/en/tf-mv2.2.2/releases/2.2.2.html
+
+* TF-M NS interface headers are now automatically available to non-secure applications via the
+  ``zephyr_interface`` CMake library, removing the need to explicitly link against ``tfm_api``.
 
 * NXP SoC DTSI files have been reorganized by moving them into family-specific
   subdirectories under ``dts/arm/nxp``.

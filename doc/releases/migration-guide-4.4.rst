@@ -1388,6 +1388,88 @@ Settings
 
 * ``CONFIG_SETTINGS_TFM_ITS`` has been renamed to :kconfig:option:`CONFIG_SETTINGS_TFM_PSA`.
 
+Mbed TLS
+========
+
+* Mbed TLS has been upgraded to version 4.1.0. From now on this repo will only include TLS
+  and X.509, while crypto support was moved to TF-PSA-Crypto. A new west module
+  has been introduced for the latter and it's based on upstream release 1.1.0.
+  TF-M continues to build with Mbed TLS 3.6.5.
+  Crypto-wise there are many changes introduced with this change, so it's strongly
+  suggested to take a look to the official `Mbed TLS 3.x to TF-PSA-Crypto 1.x migration guide
+  <https://github.com/Mbed-TLS/TF-PSA-Crypto/blob/development/docs/1.0-migration-guide.md>`.
+
+* ``CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR`` has been renamed to
+  :kconfig:option:`CONFIG_MBEDTLS_PSA_DRIVER_GET_ENTROPY`.
+
+* The following PSA related Kconfig symbols have been removed as they are no longer
+  supported by TF-PSA-Crypto:
+
+  * ``CONFIG_PSA_WANT_KEY_TYPE_DES``
+  * ``CONFIG_PSA_WANT_ECC_SECP_R1_192``
+  * ``CONFIG_PSA_WANT_ECC_SECP_K1_192``
+  * ``CONFIG_PSA_WANT_ECC_SECP_R1_224``
+
+* The following Mbed TLS Kconfig symbols have been removed:
+
+  * ``CONFIG_MBEDTLS_CHACHAPOLY_AEAD_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_AES_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_CAMELLIA_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_CCM_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_CHACHA20_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_DES_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_GCM_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_MODE_CBC_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_MODE_CTR_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_MODE_XTS_ENABLED``
+  * ``CONFIG_MBEDTLS_CMAC``
+  * ``CONFIG_MBEDTLS_DHM_C``
+  * ``CONFIG_MBEDTLS_ECDH_C``
+  * ``CONFIG_MBEDTLS_ECDSA_C``
+  * ``CONFIG_MBEDTLS_ECDSA_DETERMINISTIC``
+  * ``CONFIG_MBEDTLS_ECJPAKE_C``
+  * ``CONFIG_MBEDTLS_ECP_ALL_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_C``
+  * ``CONFIG_MBEDTLS_ECP_DP_BP256R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_BP384R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_BP512R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_CURVE25519_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_CURVE448_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP192K1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP192R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP224K1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP224R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP256K1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP384R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP521R1_ENABLED``
+  * ``CONFIG_MBEDTLS_GENPRIME_ENABLED``
+  * ``CONFIG_MBEDTLS_HKDF_C``
+  * ``CONFIG_MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED``
+  * ``CONFIG_MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED``
+  * ``CONFIG_MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED``
+  * ``CONFIG_MBEDTLS_MD5``
+  * ``CONFIG_MBEDTLS_PKCS1_V15``
+  * ``CONFIG_MBEDTLS_PKCS1_V21``
+  * ``CONFIG_MBEDTLS_POLY1305``
+  * ``CONFIG_MBEDTLS_RSA_C``
+  * ``CONFIG_MBEDTLS_RSA_ENABLE_LEGACY_APIS``
+  * ``CONFIG_MBEDTLS_SHA1``
+  * ``CONFIG_MBEDTLS_SHA224``
+  * ``CONFIG_MBEDTLS_SHA256``
+  * ``CONFIG_MBEDTLS_SHA384``
+  * ``CONFIG_MBEDTLS_SHA512``
+  * ``CONFIG_MBEDTLS_USE_PSA_CRYPTO``
+
+* The following PSA Crypto API changes are introduced with TF-PSA-Crypto 1.1:
+
+  * ``psa_open_key()`` has been removed. Keys are now automatically loaded from persistent storage
+    when they are used.
+  * ``psa_close_key()`` has been replaced by :c:func:`psa_purge_key`. Update all call sites
+    accordingly.
+  * ``psa_key_handle_t`` has been replaced by ``psa_key_id_t``. Update type declarations and
+    variable definitions accordingly.
+
 Modules
 *******
 
@@ -1418,6 +1500,11 @@ OpenThread
   for Secure Storage (Settings, ZMS, or a custom one) to be configured.
 
 * :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA` is now enabled by default.
+
+* Following Mbed TLS bump to version 4.1.0, legacy crypto support is no longer available
+  in Zephyr. Therefore ``CONFIG_OPENTHREAD_CRYPTO_LEGACY_MBEDTLS_CONFIG`` has been removed.
+  :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA_CONFIG` was already the default choice for
+  crypto support and it is now the only supported crypto option.
 
 Trusted Firmware-M
 ==================
