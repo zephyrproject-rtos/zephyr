@@ -21,6 +21,8 @@ supported:
   - net
   - smp
 testing:
+  binaries:
+    - flash.bin
   ignore_tags:
     - bluetooth
 vendor: nxp
