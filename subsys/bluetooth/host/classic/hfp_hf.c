@@ -779,9 +779,9 @@ static void set_call_incoming_flag(struct bt_hfp_hf_call *call, bool incoming)
 	call_count = get_using_call_count(call->hf);
 	if (call_count > 1) {
 		if (incoming) {
-			atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING_3WAY);
+			atomic_set_bit(call->flags, BT_HFP_HF_CALL_INCOMING_3WAY);
 		} else {
-			atomic_test_bit(call->flags, BT_HFP_HF_CALL_OUTGOING_3WAY);
+			atomic_set_bit(call->flags, BT_HFP_HF_CALL_OUTGOING_3WAY);
 		}
 	} else {
 		atomic_set_bit_to(call->flags, BT_HFP_HF_CALL_INCOMING, incoming);
