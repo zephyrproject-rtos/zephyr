@@ -757,13 +757,14 @@ class DeviceHandler(Handler):
         # Connect to device after flashing it
         if hardware.flash_before:
             try:
-                if serial_pty:
-                    ser_pty_process = self._start_serial_pty(serial_pty, ser_pty_master)
                 logger.debug(f"Attach serial device {serial_device} @ {hardware.serial_baud} baud")
                 ser.port = serial_device
 
-                # Apply ESP32-specific RTS/DTR reset logic
-                if runner == "esp32":
+                if serial_pty:
+                    ser_pty_process = self._start_serial_pty(serial_pty, ser_pty_master)
+                    ser.open()
+                elif runner == "esp32":
+                    # Apply ESP32-specific RTS/DTR reset logic
                     logger.debug("Applying ESP32 RTS/DTR reset sequence")
 
                     # Prepare: IO0=HIGH (DTR=True), EN=HIGH (RTS=False)
