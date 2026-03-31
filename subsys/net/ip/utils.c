@@ -724,13 +724,13 @@ uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
 
 	sum = pkt_calc_chksum(pkt, sum);
 
-	sum = (sum == 0U) ? 0xffff : net_htons(sum);
-
 	net_pkt_cursor_restore(pkt, &backup);
 
 	net_pkt_set_overwrite(pkt, ow);
 
-	return ~sum;
+	sum = ~net_htons(sum);
+
+	return (sum == 0U) ? 0xffff : sum;
 }
 #endif
 
@@ -743,9 +743,9 @@ uint16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
 			  net_pkt_ip_hdr_len(pkt) +
 			  net_pkt_ipv4_opts_len(pkt));
 
-	sum = (sum == 0U) ? 0xffff : net_htons(sum);
+	sum = ~net_htons(sum);
 
-	return ~sum;
+	return (sum == 0U) ? 0xffff : sum;
 }
 #endif /* CONFIG_NET_NATIVE_IPV4 */
 
