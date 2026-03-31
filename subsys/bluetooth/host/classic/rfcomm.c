@@ -872,6 +872,9 @@ static int rfcomm_send_fcoff(struct bt_rfcomm_session *session, uint8_t cr)
 	return rfcomm_send(session, buf);
 }
 
+/* The size of credits field. */
+#define BT_RFCOMM_CREDITS_SIZE 0x01
+
 static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 {
 	dlc->state = BT_RFCOMM_STATE_CONNECTED;
@@ -897,6 +900,14 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 
 	k_fifo_init(&dlc->tx_queue);
 	k_work_init(&dlc->tx_work, rfcomm_dlc_tx_worker);
+
+	/* For CFC supported cases, the space of credits should be discounted from the maximum
+	 * frame size. It is used to avoid the SDU length exceeding the maximum frame size if the
+	 * credits field is included.
+	 */
+	if (dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
+		dlc->mtu -= BT_RFCOMM_CREDITS_SIZE;
+	}
 
 	if (dlc->ops && dlc->ops->connected) {
 		dlc->ops->connected(dlc);
