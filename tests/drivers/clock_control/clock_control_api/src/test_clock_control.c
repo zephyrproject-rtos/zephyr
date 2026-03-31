@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
@@ -260,7 +262,7 @@ ZTEST(clock_control, test_async_on_stopped)
 }
 
 /*
- * Test checks that the second start returns error.
+ * Second clock_control_on may return success or -EALREADY; clock must stay on.
  */
 static void test_double_start_on_instance(const struct device *dev,
 						clock_control_subsys_t subsys,
@@ -277,7 +279,12 @@ static void test_double_start_on_instance(const struct device *dev,
 	zassert_equal(0, err, "%s: Unexpected err (%d)", dev->name, err);
 
 	err = clock_control_on(dev, subsys);
-	zassert_true(err < 0, "%s: Unexpected return value:%d", dev->name, err);
+	zassert_true(err == 0 || err == -EALREADY,
+		     "%s: Unexpected return value:%d", dev->name, err);
+
+	status = clock_control_get_status(dev, subsys);
+	zassert_equal(CLOCK_CONTROL_STATUS_ON, status,
+		      "%s: Clock should still be on (%d)", dev->name, status);
 }
 
 ZTEST(clock_control, test_double_start)
