@@ -66,6 +66,11 @@ static void thread_eval_cb(const struct k_thread *thread, void *user_data)
 {
 	struct pressure_stats *pressure = user_data;
 
+	if (thread->base.prio < 0) {
+		LOG_DBG("Skipping cooperative thread: %p with prio: %d", thread, thread->base.prio);
+		return;
+	}
+
 	LOG_DBG("Evaluating thread: %p with prio: %d status: %d", thread, thread->base.prio,
 		thread->base.thread_state);
 
@@ -101,8 +106,8 @@ static int get_normalized_sys_pressure(void)
 }
 
 /*
- * The pressure policy iterates through the threads currently sitting in the ready queue at the time
- * of evaluation and accumulates the sum of their priorities, normalizing them around
+ * The pressure policy iterates through preemptible threads (priority >= 0) at the time of
+ * evaluation and accumulates the sum of their priorities, normalizing them around
  * CPU_FREQ_POLICY_PRESSURE_THRESHOLD, configured by the user. The policy then iterates through the
  * list of available P-states and selects the first P-state where the current normalized system
  * pressure is greater than or equal to the load threshold of the P-state. If the calculated
