@@ -32,6 +32,17 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 #include "spi_esp32_spim.h"
 
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_SPI_SUPPORT_SLEEP_RETENTION
+#define SPI_SLEEP_RETENTION_ENABLED 1
+#else
+#define SPI_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if SPI_SLEEP_RETENTION_ENABLED
+#include <soc/spi_periph.h>
+#include <esp_private/sleep_retention.h>
+#endif
+
 #if defined(CONFIG_SOC_SERIES_ESP32S2) && defined(CONFIG_ADC_ESP32_DMA) &&                         \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(spi3)) && DT_PROP(DT_NODELABEL(spi3), dma_enabled)
 #error "spi3 must not have dma-enabled if ADC_ESP32_DMA is enabled for ESP32-S2"
@@ -453,6 +464,40 @@ static int spi_esp32_init_dma(const struct device *dev)
 	return 0;
 }
 
+#if SPI_SLEEP_RETENTION_ENABLED
+static esp_err_t spi_esp32_create_sleep_retention_cb(void *arg)
+{
+	const struct device *dev = arg;
+	const struct spi_esp32_config *cfg = dev->config;
+	unsigned int idx = cfg->dma_host;
+
+	return sleep_retention_entries_create(
+		spi_reg_retention_info[idx].entry_array, spi_reg_retention_info[idx].array_size,
+		REGDMA_LINK_PRI_GPSPI, spi_reg_retention_info[idx].module_id);
+}
+
+static void spi_esp32_sleep_retention_init(const struct device *dev)
+{
+	const struct spi_esp32_config *cfg = dev->config;
+	unsigned int idx = cfg->dma_host;
+
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = spi_esp32_create_sleep_retention_cb,
+				   .arg = (void *)dev}},
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)};
+
+	esp_err_t err =
+		sleep_retention_module_init(spi_reg_retention_info[idx].module_id, &init_param);
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_allocate(spi_reg_retention_info[idx].module_id);
+	}
+	if (err != ESP_OK) {
+		LOG_WRN("SPI sleep retention init failed (%d)", err);
+	}
+}
+#endif /* SPI_SLEEP_RETENTION_ENABLED */
+
 static int spi_esp32_init(const struct device *dev)
 {
 	int err;
@@ -525,6 +570,10 @@ static int spi_esp32_init(const struct device *dev)
 	}
 
 	spi_context_unlock_unconditionally(&data->ctx);
+
+#if SPI_SLEEP_RETENTION_ENABLED
+	spi_esp32_sleep_retention_init(dev);
+#endif
 
 	return 0;
 }
