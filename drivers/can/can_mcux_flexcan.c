@@ -305,18 +305,7 @@ static int mcux_flexcan_start(const struct device *dev)
 	timing.rJumpwidth = data->timing.sjw - 1U;
 	timing.phaseSeg1 = data->timing.phase_seg1 - 1U;
 	timing.phaseSeg2 = data->timing.phase_seg2 - 1U;
-#if (defined(FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG) && \
-	     FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG)
-	if (UTIL_AND(IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD), config->flexcan_fd)) {
-		/* No propagation segment configuration, so prop_seg must be 0 */
-		timing.propSeg = data->timing.prop_seg;
-	} else {
-		/* Use standard configuration for classic CAN mode */
-		timing.propSeg = data->timing.prop_seg - 1U;
-	}
-#else
 	timing.propSeg = data->timing.prop_seg - 1U;
-#endif
 	FLEXCAN_SetTimingConfig(base, &timing);
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
@@ -1294,11 +1283,6 @@ static int mcux_flexcan_init(const struct device *dev)
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 	if (config->flexcan_fd) {
-#if (defined(FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG) && \
-	     FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG)
-		/* No propagation segment configuration, so prop_seg must be 0 */
-		flexcan_config.timingConfig.propSeg = data->timing.prop_seg;
-#endif
 		flexcan_config.timingConfig.frJumpwidth = data->timing_data.sjw - 1U;
 		flexcan_config.timingConfig.fpropSeg = data->timing_data.prop_seg;
 		flexcan_config.timingConfig.fphaseSeg1 = data->timing_data.phase_seg1 - 1U;
