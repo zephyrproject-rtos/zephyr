@@ -41,3 +41,4 @@ list(APPEND QEMU_FLAGS_${ARCH}
   )
 
 set(BOARD_DEBUG_RUNNER qemu)
+board_finalize_runner_args(qemu)

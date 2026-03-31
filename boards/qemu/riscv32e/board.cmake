@@ -35,3 +35,4 @@ set(QEMU_FLAGS_${ARCH}
   )
 
 board_set_debugger_ifnset(qemu)
+board_finalize_runner_args(qemu)

@@ -10,3 +10,4 @@ set(QEMU_FLAGS_${ARCH}
   -serial null
   )
 board_set_debugger_ifnset(qemu)
+board_finalize_runner_args(qemu)

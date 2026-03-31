@@ -18,3 +18,4 @@ set(QEMU_KERNEL_OPTION
   )
 
 board_set_debugger_ifnset(qemu)
+board_finalize_runner_args(qemu)

@@ -15,3 +15,4 @@ if(CONFIG_XIP)
 endif()
 
 board_set_debugger_ifnset(qemu)
+board_finalize_runner_args(qemu)
