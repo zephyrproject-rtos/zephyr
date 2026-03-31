@@ -113,4 +113,6 @@ source "drivers/counter/Kconfig.xlnx"
 
 source "drivers/counter/Kconfig.rv3032_counter"
 
+source "drivers/counter/Kconfig.ti_am3352_eqep"
+
 endif # COUNTER
