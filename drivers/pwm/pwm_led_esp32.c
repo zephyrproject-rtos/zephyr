@@ -23,6 +23,17 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
 
+#if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_LEDC_SUPPORT_SLEEP_RETENTION
+#define LEDC_SLEEP_RETENTION_ENABLED 1
+#else
+#define LEDC_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if LEDC_SLEEP_RETENTION_ENABLED
+#include <hal/ledc_periph.h>
+#include <esp_private/sleep_retention.h>
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_ledc_esp32, CONFIG_PWM_LOG_LEVEL);
 
@@ -370,6 +381,62 @@ sem_give:
 	return ret;
 }
 
+#if LEDC_SLEEP_RETENTION_ENABLED
+static esp_err_t pwm_led_esp32_create_sleep_retention_cb(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	sleep_retention_module_t module = ledc_reg_retention_info[0].module_id;
+
+	esp_err_t err = sleep_retention_entries_create(
+		ledc_reg_retention_info[0].common.regdma_entry_array,
+		ledc_reg_retention_info[0].common.array_size, REGDMA_LINK_PRI_LEDC, module);
+
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	for (int i = 0; i < SOC_LEDC_TIMER_NUM; i++) {
+		err = sleep_retention_entries_create(
+			ledc_reg_retention_info[0].timer[i].regdma_entry_array,
+			ledc_reg_retention_info[0].timer[i].array_size, REGDMA_LINK_PRI_LEDC,
+			module);
+		if (err != ESP_OK) {
+			return err;
+		}
+	}
+
+	for (int j = 0; j < SOC_LEDC_CHANNEL_NUM; j++) {
+		err = sleep_retention_entries_create(
+			ledc_reg_retention_info[0].channel[j].regdma_entry_array,
+			ledc_reg_retention_info[0].channel[j].array_size, REGDMA_LINK_PRI_LEDC,
+			module);
+		if (err != ESP_OK) {
+			return err;
+		}
+	}
+
+	return ESP_OK;
+}
+
+static void pwm_led_esp32_sleep_retention_init(void)
+{
+	sleep_retention_module_t module = ledc_reg_retention_info[0].module_id;
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = pwm_led_esp32_create_sleep_retention_cb, .arg = NULL}},
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)};
+
+	esp_err_t err = sleep_retention_module_init(module, &init_param);
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_allocate(module);
+	}
+	if (err != ESP_OK) {
+		LOG_WRN("LEDC sleep retention init failed (%d)", err);
+	}
+}
+#endif /* LEDC_SLEEP_RETENTION_ENABLED */
+
 static int pwm_led_esp32_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct pwm_ledc_esp32_config *config = dev->config;
@@ -400,6 +467,11 @@ static int pwm_led_esp32_pm_action(const struct device *dev, enum pm_device_acti
 		break;
 
 	case PM_DEVICE_ACTION_TURN_ON:
+#if LEDC_SLEEP_RETENTION_ENABLED
+		pwm_led_esp32_sleep_retention_init();
+#endif
+		break;
+
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
 
