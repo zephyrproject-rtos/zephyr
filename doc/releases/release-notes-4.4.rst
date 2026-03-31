@@ -240,7 +240,6 @@ Deprecated APIs and options
 
     * Deprecated the ``mcux_lpcmp`` driver (:zephyr_file:`drivers/sensor/nxp/mcux_lpcmp/mcux_lpcmp.c`). It is
       currently scheduled to be removed in Zephyr 4.6, along with the ``mcux_lpcmp`` sample. (:github:`100998`).
-    * Added new temperature sensor driver (:dtcompatible:`nxp,tempsense`) (:github:`101525`).
 
 * Timer
 
@@ -355,7 +354,6 @@ New APIs and options
 
 * DAC
 
-  * Added new DAC driver (:dtcompatible:`nxp,hpdac`) (:github:`104642`).
   * Added new DAC driver APIs (:github:`104630`)
 
     * :c:struct:`dac_dt_spec`
