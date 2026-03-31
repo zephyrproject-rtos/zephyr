@@ -369,7 +369,7 @@ config RISCV_PMP
 	select ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS
 	select MEM_DOMAIN_ISOLATED_STACKS if USERSPACE
 	select PMP_KERNEL_MODE_DYNAMIC if MEM_ATTR
-	select ARCH_HAS_EXECUTABLE_PAGE_BIT if PMP_SLOTS >= 8 && !PMP_NO_NAPOT && !PMP_NO_LOCK_GLOBAL && !CODE_DATA_RELOCATION
+	select ARCH_HAS_EXECUTABLE_PAGE_BIT if PMP_DATA_EXECUTION_PREVENTION
 	help
 	  MCU implements Physical Memory Protection.
 
@@ -458,11 +458,31 @@ config PMP_STACK_GUARD_MIN_SIZE
 	  wiggle room to accommodate the eventual overflow exception
 	  stack usage.
 
+config PMP_DATA_EXECUTION_PREVENTION
+	bool "Prevent data execution"
+	default y
+	depends on PMP_SLOTS >= 8 && !PMP_NO_NAPOT && !PMP_NO_LOCK_GLOBAL && !CODE_DATA_RELOCATION
+	select PMP_KERNEL_MODE_DYNAMIC if USERSPACE
+	help
+	  Configure PMP to prevent execution of data sections. This requires locked
+	  entries and currently does not work with relocation, because the target
+	  memory would need to be marked as executable after copying the code.
+	  For user threads a dedicated PMP register needs to be enabled, requiring
+	  dynamic kernel mode.
+
 config PMP_KERNEL_MODE_DYNAMIC
 	bool
+	select PMP_KERNEL_MODE_DYNAMIC_CATCHALL if !PMP_DATA_EXECUTION_PREVENTION
 	help
 	  Enable this to dynamically reconfigure and activate PMP entries for
 	  Machine mode when switching between kernel (ISR, syscall) and threads.
+
+config PMP_KERNEL_MODE_DYNAMIC_CATCHALL
+	bool
+	help
+	  Require a catch-all entry to be configured for kernel threads.
+	  PMP_DATA_EXECUTION_PREVENTION always creates a catch-all entry and
+	  therefore does not need this.
 
 # Implement the null pointer detection using the Physical Memory Protection
 # (PMP) Unit.

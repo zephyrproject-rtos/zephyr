@@ -60,7 +60,7 @@ LOG_MODULE_REGISTER(mpu);
 
 #define PMP_PERM_MASK (PMP_R | PMP_W | PMP_X)
 
-#ifdef CONFIG_EXECUTE_XOR_WRITE
+#ifdef CONFIG_PMP_DATA_EXECUTION_PREVENTION
 /*
  * To prevent data execution for kernel threads, we need to reserve the last
  * PMP slot. In case of userspace, we need the second to last as well.
@@ -72,7 +72,7 @@ LOG_MODULE_REGISTER(mpu);
 #endif /* CONFIG_USERSPACE */
 #else
 #define PMP_USABLE_SLOTS CONFIG_PMP_SLOTS
-#endif /* CONFIG_EXECUTE_XOR_WRITE */
+#endif /* CONFIG_PMP_DATA_EXECUTION_PREVENTION */
 
 /**
  * @brief Decodes PMP configuration and address registers into a memory region's
@@ -340,10 +340,7 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 	return ok;
 }
 
-/*
- * CONFIG_EXECUTE_XOR_WRITE already places a catchall entry at the bottom.
- */
-#if defined(CONFIG_PMP_KERNEL_MODE_DYNAMIC) && !defined(CONFIG_EXECUTE_XOR_WRITE)
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL
 static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
 					 unsigned long *pmp_addr, unsigned long *pmp_cfg,
 					 unsigned int index_limit)
@@ -371,7 +368,7 @@ static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
 
 	return ok;
 }
-#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC && !CONFIG_EXECUTE_XOR_WRITE */
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL */
 
 /**
  * @brief Write a range of PMP entries to corresponding PMP registers
@@ -681,7 +678,7 @@ void z_riscv_pmp_init(void)
 	ARG_UNUSED(attr_cnt);
 	ARG_UNUSED(pmp_n_cfg);
 
-#ifdef CONFIG_EXECUTE_XOR_WRITE
+#ifdef CONFIG_PMP_DATA_EXECUTION_PREVENTION
 	/*
 	 * Remove execute permission from whole address space. This is placed
 	 * in the last register so that it has the least priority and can be
@@ -691,7 +688,7 @@ void z_riscv_pmp_init(void)
 	 */
 	pmp_addr[CONFIG_PMP_SLOTS - 1] = PMP_ADDR_NAPOT(0, 0);
 	pmp_n_cfg[CONFIG_PMP_SLOTS - 1] = PMP_R | PMP_W | PMP_L | PMP_NAPOT;
-#endif /* CONFIG_EXECUTE_XOR_WRITE */
+#endif /* CONFIG_PMP_DATA_EXECUTION_PREVENTION */
 
 #ifdef CONFIG_NULL_POINTER_EXCEPTION_DETECTION_PMP
 	/*
@@ -765,7 +762,7 @@ void z_riscv_pmp_init(void)
 	attr_cnt = set_pmp_mem_attr(&index, pmp_addr, pmp_cfg, PMP_USABLE_SLOTS);
 #endif /* CONFIG_MEM_ATTR */
 
-#if defined(CONFIG_PMP_KERNEL_MODE_DYNAMIC) && !defined(CONFIG_EXECUTE_XOR_WRITE)
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL
 	/*
 	 * This early, we want to protect unlock PMP entries as soon as
 	 * possible. But we need a temporary default "catch all" PMP entry for
@@ -776,12 +773,12 @@ void z_riscv_pmp_init(void)
 
 	/* And forget about that last entry as we won't need it later */
 	index--;
-#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC && !CONFIG_EXECUTE_XOR_WRITE */
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL */
 
 	/*
 	 * Write entries to PMP regs.
-	 * Because CONFIG_EXECUTE_XOR_WRITE uses the last one, we always write all
-	 * entries during one-time initialization.
+	 * Because CONFIG_PMP_DATA_EXECUTION_PREVENTION uses the last one, we always write
+	 * all entries during one-time initialization.
 	 */
 	write_pmp_entries(0, CONFIG_PMP_SLOTS, false, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
@@ -874,7 +871,7 @@ static inline unsigned int z_riscv_pmp_thread_init(enum pmp_mode mode,
 }
 #endif
 
-#if defined(CONFIG_USERSPACE) && defined(CONFIG_EXECUTE_XOR_WRITE)
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_PMP_DATA_EXECUTION_PREVENTION)
 /*
  * Because the last register needs to be locked to apply to kernel
  * threads, we cannot remove it before changing to userspace. To prevent
@@ -906,7 +903,7 @@ static void set_userspace_blocker(bool set)
 
 	write_pmp_entries(index, index + 1, false, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 }
-#endif /* CONFIG_USERSPACE && CONFIG_EXECUTE_XOR_WRITE */
+#endif /* CONFIG_USERSPACE && CONFIG_PMP_DATA_EXECUTION_PREVENTION */
 
 #ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 /**
@@ -935,16 +932,14 @@ void z_riscv_pmp_kernelmode_prepare(struct k_thread *thread)
 		      PMP_M_MODE(thread));
 #endif /* CONFIG_PMP_STACK_GUARD */
 
-#ifndef CONFIG_EXECUTE_XOR_WRITE
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL
 	set_pmp_mprv_catchall(&index, PMP_M_MODE(thread));
-#endif /* !CONFIG_EXECUTE_XOR_WRITE */
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL */
 
 	/* remember how many entries we use */
 	thread->arch.m_mode_pmp_end_index = index;
 }
-#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 
-#if defined(CONFIG_PMP_KERNEL_MODE_DYNAMIC) || defined(CONFIG_EXECUTE_XOR_WRITE)
 /**
  * @brief Write PMP kernel mode content to actual PMP registers
  *
@@ -952,9 +947,10 @@ void z_riscv_pmp_kernelmode_prepare(struct k_thread *thread)
  */
 void z_riscv_pmp_kernelmode_enable(struct k_thread *thread)
 {
+	unsigned int global_end_index;
+
 	LOG_DBG("pmp_kernelmode_enable for thread %p", thread);
 
-#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 	/*
 	 * Disable (non-locked) PMP entries for m-mode while we update them.
 	 * While at it, also clear MSTATUS_MPP as it must be cleared for
@@ -962,54 +958,48 @@ void z_riscv_pmp_kernelmode_enable(struct k_thread *thread)
 	 */
 	csr_clear(mstatus, MSTATUS_MPRV | MSTATUS_MPP);
 
-	/* Write our m-mode MPP entries */
 #ifdef CONFIG_USERSPACE
-	write_pmp_entries(global_pmp_end_index[U_MODE],
-			  thread->arch.m_mode_pmp_end_index,
-			  false /* no need to clear to the end */,
-			  PMP_M_MODE(thread));
+	global_end_index = global_pmp_end_index[U_MODE];
 #else
-	write_pmp_entries(global_pmp_end_index[M_MODE],
-			  thread->arch.m_mode_pmp_end_index,
-			  false /* no need to clear to the end */,
-			  PMP_M_MODE(thread));
+	global_end_index = global_pmp_end_index[M_MODE];
 #endif /* CONFIG_USERSPACE */
-#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 
-#if defined(CONFIG_USERSPACE) && defined(CONFIG_EXECUTE_XOR_WRITE)
+	/* Write our m-mode MPP entries */
+	if (thread->arch.m_mode_pmp_end_index > global_end_index) {
+		write_pmp_entries(global_end_index, thread->arch.m_mode_pmp_end_index,
+				  false /* no need to clear to the end */, PMP_M_MODE(thread));
+	}
+
+#if defined(CONFIG_PMP_DATA_EXECUTION_PREVENTION) && defined(CONFIG_USERSPACE)
 	set_userspace_blocker(false);
-#endif /* CONFIG_USERSPACE && CONFIG_EXECUTE_XOR_WRITE */
+#endif /* CONFIG_PMP_DATA_EXECUTION_PREVENTION && CONFIG_USERSPACE */
 
 	if (PMP_DEBUG_DUMP) {
 		dump_pmp_regs("m-mode register dump");
 	}
 
-#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 	/* Activate our non-locked PMP entries in m-mode */
 	csr_set(mstatus, MSTATUS_MPRV);
-#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 }
-#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC || CONFIG_EXECUTE_XOR_WRITE */
 
-#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 /**
  * @brief Remove PMP kernel mode content to actual PMP registers
  */
 void z_riscv_pmp_kernelmode_disable(void)
 {
-#ifndef CONFIG_EXECUTE_XOR_WRITE
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL
 	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
 	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
 	unsigned int index = global_pmp_end_index[M_MODE];
 
 	/* Retrieve the pmpaddr value matching the last global PMP slot. */
 	pmp_addr[index - 1] = global_pmp_last_addr[M_MODE];
-#endif /* !CONFIG_EXECUTE_XOR_WRITE */
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL */
 
 	/* Disable (non-locked) PMP entries for m-mode while we update them. */
 	csr_clear(mstatus, MSTATUS_MPRV);
 
-#ifndef CONFIG_EXECUTE_XOR_WRITE
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL
 	/*
 	 * Set a temporary default "catch all" PMP entry for MPRV to work,
 	 * except for the global locked entries.
@@ -1023,7 +1013,7 @@ void z_riscv_pmp_kernelmode_disable(void)
 	if (PMP_DEBUG_DUMP) {
 		dump_pmp_regs("catch all register dump");
 	}
-#endif /* !CONFIG_EXECUTE_XOR_WRITE */
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL */
 }
 #endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 
@@ -1185,9 +1175,9 @@ void z_riscv_pmp_usermode_enable(struct k_thread *thread)
 			  PMP_U_MODE(thread));
 	/* clang-format on */
 
-#ifdef CONFIG_EXECUTE_XOR_WRITE
+#ifdef CONFIG_PMP_DATA_EXECUTION_PREVENTION
 	set_userspace_blocker(true);
-#endif /* CONFIG_EXECUTE_XOR_WRITE */
+#endif /* CONFIG_PMP_DATA_EXECUTION_PREVENTION */
 
 	if (PMP_DEBUG_DUMP) {
 		dump_pmp_regs("u-mode register dump");
