@@ -119,13 +119,13 @@ int video_buffer_release(struct video_buffer *vbuf)
 	return 0;
 }
 
-int video_import_buffer(uint8_t *mem, size_t sz, uint16_t *idx)
+struct video_buffer *video_import_buffer(uint8_t *mem, size_t sz)
 {
 	uint16_t ind;
 
 	if (mem == NULL || sz == 0) {
 		LOG_ERR("Invalid memory address or size");
-		return -EINVAL;
+		return NULL;
 	}
 
 	/* Find the 1st available slot in the video buffer pool */
@@ -136,7 +136,7 @@ int video_import_buffer(uint8_t *mem, size_t sz, uint16_t *idx)
 	}
 
 	if (ind == ARRAY_SIZE(video_buf)) {
-		return -ENOBUFS;
+		return NULL;
 	}
 
 	/* Populate the internal buffer */
@@ -147,10 +147,7 @@ int video_import_buffer(uint8_t *mem, size_t sz, uint16_t *idx)
 	video_buf[ind].bytesused = 0;
 	video_buf[ind].timestamp = 0;
 
-	/* Return the buffer index to the requester */
-	*idx = ind;
-
-	return 0;
+	return &video_buf[ind];
 }
 
 int video_enqueue(const struct device *dev, struct video_buffer *buf)
