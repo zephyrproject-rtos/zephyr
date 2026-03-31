@@ -335,16 +335,17 @@ void __start(void)
 	}
 #endif
 
+	soc_random_enable();
+
 #if defined(CONFIG_ESP_SIMPLE_BOOT) || defined(CONFIG_BOOTLOADER_MCUBOOT)
 	map_rom_segments(0, &map);
-
-	/* Disable RNG entropy source as it was already used */
-	soc_random_disable();
 
 	/* Disable glitch detection as it can be falsely triggered by EMI interference */
 	ana_clock_glitch_reset_config(false);
 
 	ESP_EARLY_LOGI(TAG, "libc heap size %d kB.", libc_heap_size / 1024);
+
+	soc_random_disable();
 
 	__esp_platform_app_start();
 #endif /* CONFIG_ESP_SIMPLE_BOOT || CONFIG_BOOTLOADER_MCUBOOT */
