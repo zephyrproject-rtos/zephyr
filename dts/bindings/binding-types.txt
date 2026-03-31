@@ -92,7 +92,7 @@ opamp	OPAMP (Operational Amplifier)
 options	Options
 ospi	OCTOSPI (Octal Serial Peripheral Interface)
 otp	OTP (One-Time Programmable) memory
-p_state Power state
+p_state	Performance state
 pcie	PCIe (Peripheral Component Interconnect Express)
 peci	PECI (Platform Environment Control Interface)
 phy	PHY
