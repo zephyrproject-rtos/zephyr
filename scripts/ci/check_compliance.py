@@ -2631,6 +2631,60 @@ class PythonCompatCheck(ComplianceTest):
             )
 
 
+class DeviceMmioCheck(ComplianceTest):
+    """
+    Check that drivers use the device MMIO API instead of raw DT_REG_ADDR()
+    for register access.
+
+    Drivers that cast DT_INST_REG_ADDR() or DT_REG_ADDR() to a pointer and
+    store it directly will fail on systems with an MMU, where physical
+    addresses must be mapped before access.
+    """
+
+    name = "DeviceMmioCheck"
+    doc = zephyr_doc_detail_builder("/hardware/peripherals/index.html")
+
+    # Pattern: cast DT_INST_REG_ADDR or DT_REG_ADDR to a pointer type
+    RAW_REG_ADDR_RE = re.compile(r'\(\s*\w+\s*\*\s*\)\s*DT_(INST_)?REG_ADDR\b')
+
+    MMIO_API_RE = re.compile(
+        r'DEVICE_MMIO_ROM\b|DEVICE_MMIO_MAP\b|DEVICE_MMIO_NAMED|'
+        r'DEVICE_MMIO_TOPLEVEL\b|device_map\s*\('
+    )
+
+    def run(self):
+        for fname in get_files(filter='d'):
+            if not fname.startswith('drivers/') or not fname.endswith('.c'):
+                continue
+
+            path = GIT_TOP / fname
+            raw_match_line = None
+            has_mmio_api = False
+
+            with open(path, encoding='utf-8', errors='ignore') as f:
+                for line_no, line in enumerate(f, start=1):
+                    if raw_match_line is None and self.RAW_REG_ADDR_RE.search(line):
+                        raw_match_line = line_no
+                    if self.MMIO_API_RE.search(line):
+                        has_mmio_api = True
+                        break
+
+            if raw_match_line is not None and not has_mmio_api:
+                self.fmtd_failure(
+                    'warning',
+                    'DeviceMmioCheck',
+                    fname,
+                    line=raw_match_line,
+                    desc=(
+                        "Driver casts DT_REG_ADDR() to a pointer without "
+                        "using the device MMIO API. On systems with an MMU, "
+                        "physical addresses must be mapped before access. "
+                        "Use DEVICE_MMIO_ROM / DEVICE_MMIO_MAP instead of "
+                        "storing raw DT_REG_ADDR() in the config struct."
+                    ),
+                )
+
+
 class TextEncoding(ComplianceTest):
     """
     Check that any text file is encoded in ascii or utf-8.
