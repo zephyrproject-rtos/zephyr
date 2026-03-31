@@ -48,6 +48,30 @@
 		};
 	};
 
+	main_eqep0: counter@23200000 {
+		compatible = "ti,am3352-eqep";
+		reg = <0x23200000 0x100>;
+		power-domains = <&eqep0_pd>;
+		clocks = <&k3_clks 59 0>;
+		status = "disabled";
+	};
+
+	main_eqep1: counter@23210000 {
+		compatible = "ti,am3352-eqep";
+		reg = <0x23210000 0x100>;
+		power-domains = <&eqep1_pd>;
+		clocks = <&k3_clks 60 0>;
+		status = "disabled";
+	};
+
+	main_eqep2: counter@23220000 {
+		compatible = "ti,am3352-eqep";
+		reg = <0x23220000 0x100>;
+		power-domains = <&eqep2_pd>;
+		clocks = <&k3_clks 62 0>;
+		status = "disabled";
+	};
+
 	main_timer0: timer@2400000 {
 		compatible = "ti,am654-timer";
 		reg = <0x2400000 DT_SIZE_K(1)>;
