@@ -41,6 +41,8 @@ LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
 #define R_ARM_THM_MOVW_PREL_NC 49
 #define R_ARM_THM_MOVT_PREL    50
 
+#define R_ARM_TLS_LE32       108
+
 #define OPCODE2ARMMEM(x) ((uint32_t)(x))
 #define OPCODE2THM16MEM(x) ((uint16_t)(x))
 #define MEM2ARMOPCODE(x) OPCODE2ARMMEM(x)
@@ -358,6 +360,7 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 
 	case R_ARM_ABS32:
 	case R_ARM_TARGET1:
+	case R_ARM_TLS_LE32:
 		*(uint32_t *)loc += sym_base_addr;
 		break;
 
