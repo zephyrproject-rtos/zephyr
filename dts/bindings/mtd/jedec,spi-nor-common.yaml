@@ -133,3 +133,15 @@ properties:
       output data at a higher clock rate than the standard read command.  This
       property indicates that the device supports the fast read command with
       8 dummy cycles after the address phase of the command.
+
+  spi-rx-bus-width:
+    type: int
+    description:
+      Bus width to the SPI bus used for read transfers.
+    enum: [1, 2, 4]
+
+  spi-tx-bus-width:
+    type: int
+    description:
+      Bus width to the SPI bus used for write transfers.
+    enum: [1, 2, 4]

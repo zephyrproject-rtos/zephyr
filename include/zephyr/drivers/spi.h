@@ -625,6 +625,8 @@ struct spi_buf {
 	void *buf;
 	/** Length of the buffer @a buf in bytes, or length of NOP */
 	size_t len;
+	/** Bus width for write and read transfers */
+	size_t bus_width;
 };
 
 /**
@@ -1263,7 +1265,7 @@ static inline int spi_transceive_signal(const struct device *dev,
 {
 	const struct spi_driver_api *api =
 		(const struct spi_driver_api *)dev->api;
-	spi_callback_t cb = (sig == NULL) ? NULL : z_spi_transfer_signal_cb;
+	spi_callback_t cb = (sig == NULL) ? NULL : &z_spi_transfer_signal_cb;
 
 	return api->transceive_async(dev, config, tx_bufs, rx_bufs, cb, sig);
 }
