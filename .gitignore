@@ -97,6 +97,7 @@ Checkpatch.txt
 ClangFormat.txt
 CMakeStyle.txt
 DeviceAPI.txt
+DeviceMmioCheck.txt
 DevicetreeBindings.txt
 DevicetreeLinting.txt
 GitDiffCheck.txt
