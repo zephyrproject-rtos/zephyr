@@ -1,15 +1,28 @@
-board:
-  name: pocketbeagle_2
-  full_name: PocketBeagle 2
-  vendor: beagle
-  socs:
-    - name: am6232
-    - name: am6254
-    - name: mspm0l1105
-  revision:
-    format: custom
-    exact: true
-    default: "A1"
-    revisions:
-      - name: "A0"
-      - name: "A1"
+boards:
+  - name: pocketbeagle_2
+    full_name: PocketBeagle 2
+    vendor: beagle
+    socs:
+      - name: am6232
+      - name: am6254
+      - name: mspm0l1105
+    revision:
+      format: custom
+      exact: true
+      default: "A1"
+      revisions:
+        - name: "A0"
+        - name: "A1"
+
+  - name: pocketbeagle_2_industrial
+    full_name: PocketBeagle 2 Industrial
+    vendor: beagle
+    socs:
+      - name: am6254
+      - name: mspm0l1105
+    revision:
+      format: custom
+      exact: true
+      default: "A1"
+      revisions:
+        - name: "A1"
