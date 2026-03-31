@@ -2475,6 +2475,7 @@ static inline void dwc2_handle_rxflvl(const struct device *dev)
 		break;
 	case USB_DWC2_GRXSTSR_PKTSTS_SETUP_DONE:
 		LOG_DBG("SETUP pktsts DONE");
+		break;
 	case USB_DWC2_GRXSTSR_PKTSTS_GLOBAL_OUT_NAK:
 		LOG_DBG("Global OUT NAK");
 		break;
