@@ -1075,10 +1075,12 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
 
 		qsize = 4;
 		memcpy(label[1], &query[21], qsize);
+		label[1][qsize] = 0;
 		size[1] = qsize;
 
 		qsize = 5;
 		memcpy(label[2], &query[26], qsize);
+		label[2][qsize] = 0;
 		size[2] = qsize;
 
 		record->service = label[0];
