@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon AutAnalog CT DAC configuration options
+
+config DAC_INFINEON_AUTANALOG
+	bool "Infineon AutAnalog CT DAC driver"
+	default y
+	depends on DT_HAS_INFINEON_AUTANALOG_CTDAC_ENABLED
+	select MFD
+	help
+	  This option enables the CT DAC driver for Infineon MCUs using
+	  the AutAnalog CT DAC subsystem. The CT DAC is a 12-bit
+	  continuous-time segmented DAC. This driver supports FW channel
+	  (#15) for direct value writes via the Zephyr DAC API, and
+	  waveform channels (#0-#14) for autonomous LUT-based output.
+
+config DAC_INFINEON_AUTANALOG_INIT_PRIORITY
+	int "Infineon AutAnalog DAC init priority"
+	default 43
+	depends on DAC_INFINEON_AUTANALOG
+	help
+	  Initialization priority for the AutAnalog DAC driver.  Must be
+	  higher than CONFIG_MFD_INFINEON_AUTANALOG_INIT_PRIORITY (MFD parent)
+	  and lower than CONFIG_MFD_INFINEON_AUTANALOG_AC_START_PRIORITY so
+	  that the DAC hardware configuration is loaded before the Autonomous
+	  Controller starts and triggers the DAC via the STT.
