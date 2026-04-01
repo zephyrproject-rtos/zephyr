@@ -5,10 +5,21 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
 extern const uint32_t __rom_region_start;
 extern const uint32_t __rom_region_mpu_size_bits;
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ipc_shm), okay)
+BUILD_ASSERT((DT_REG_SIZE(DT_CHOSEN(zephyr_ipc_shm)) % 1024U) == 0U,
+	     "zephyr,ipc_shm size must be a multiple of 1 KiB");
+BUILD_ASSERT(REGION_CUSTOMED_MEMORY_SIZE(DT_REG_SIZE(DT_CHOSEN(zephyr_ipc_shm)) / 1024U) !=
+		     REGION_SIZE_UNSUPPORTED,
+	     "zephyr,ipc_shm size is not representable by the ARMv7-R MPU");
+#define ZYNQMP_IPC_SHM_REGION_SIZE \
+	REGION_CUSTOMED_MEMORY_SIZE(DT_REG_SIZE(DT_CHOSEN(zephyr_ipc_shm)) / 1024U)
+#endif
 
 static const struct arm_mpu_region mpu_regions[] = {
 	/* Basic SRAM mapping is all data, R/W + XN */
@@ -29,7 +40,8 @@ static const struct arm_mpu_region mpu_regions[] = {
 			 NORMAL_OUTER_INNER_WRITE_BACK_NON_SHAREABLE}),
 	/* RAM contains R/W data, non-executable */
 #else /* !CONFIG_XIP */
-	/* .text and .rodata are in RAM, flash is data only -> RO + XN */
+#if CONFIG_FLASH_SIZE > 0
+	/* Keep any real flash window RO + XN when executing from RAM. */
 	MPU_REGION_ENTRY(
 		"flash",
 		CONFIG_FLASH_BASE_ADDRESS,
@@ -37,6 +49,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 		{.rasr = P_RO_U_RO_Msk |
 			 NORMAL_OUTER_INNER_WRITE_BACK_NON_SHAREABLE |
 			 NOT_EXEC}),
+#endif
 	/* add rom_region mapping for SRAM which is RO + executable */
 	MPU_REGION_ENTRY(
 		"rom_region",
@@ -60,6 +73,14 @@ static const struct arm_mpu_region mpu_regions[] = {
 		{.rasr = FULL_ACCESS_Msk |
 			 STRONGLY_ORDERED_SHAREABLE |
 			 NOT_EXEC}),
+#endif
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ipc_shm), okay)
+	MPU_REGION_ENTRY(
+		"ipc_shm",
+		DT_REG_ADDR(DT_CHOSEN(zephyr_ipc_shm)),
+		ZYNQMP_IPC_SHM_REGION_SIZE,
+		{.rasr = P_RW_U_NA_Msk |
+			 NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE}),
 #endif
 	/*
 	 * The address of the vectors is determined by arch/arm/core/cortex_a_r/prep_c.c
