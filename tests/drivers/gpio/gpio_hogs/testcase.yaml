@@ -24,6 +24,11 @@ tests:
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
       - lp_em_cc35x1/cc3551e
+      - lp_em_cc2340r5
+      - lp_em_cc2340r53
+      - lp_em_cc2755p10
+      - lp_em_cc2745r10_q1/cc2745r10_q1
+      - lp_em_cc2745r10_q1/cc2755r10
       - xg29_rb4412a
       - bg29_rb4420a
       - sam_e54_xpro

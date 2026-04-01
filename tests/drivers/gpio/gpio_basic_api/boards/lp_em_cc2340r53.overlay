@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		/* Use DIO0 and DIO19 for GPIO loopback testing */
+		out-gpios = <&gpio0 0 0>;  /* DIO0 */
+		in-gpios = <&gpio0 19 0>;  /* DIO19 */
+	};
+};

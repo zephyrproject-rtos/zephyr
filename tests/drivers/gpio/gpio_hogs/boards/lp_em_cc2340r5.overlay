@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	zephyr,user {
+		output-high-gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>; /* DIO15, Green LED */
+		output-low-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;  /* DIO14, Red LED */
+		input-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;        /* DIO10, Button 1 */
+	};
+};
+
+&gpio0 {
+	hog1 {
+		gpio-hog;
+		gpios = <15 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+
+	hog2 {
+		gpio-hog;
+		gpios = <14 GPIO_ACTIVE_HIGH>;
+		output-low;
+	};
+
+	hog3 {
+		gpio-hog;
+		gpios = <10 GPIO_ACTIVE_LOW>;
+		input;
+	};
+};
