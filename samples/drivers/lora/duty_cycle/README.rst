@@ -7,9 +7,13 @@
 Overview
 ********
 
-This sample demonstrates how to use ``lora_recv_duty_cycle_async()`` to let the
-radio autonomously alternate between short RX windows and sleep, waking
-the MCU only when a packet is received.
+This sample demonstrates how to use ``lora_recv_duty_cycle()`` (blocking) and
+``lora_recv_duty_cycle_async()`` (callback-based) to let the radio autonomously
+alternate between short RX windows and sleep, waking the MCU only when a
+packet is received.
+
+The receiver first uses the blocking API to receive 4 packets, then switches
+to the asynchronous API for 10 more.
 
 Two boards are needed.  By default the sample starts in **receiver** mode.
 Hold **button 0** during boot to select **sender** mode.
@@ -36,10 +40,15 @@ Sample Output (receiver)
 
 .. code-block:: console
 
-   [00:00:00.235,000] <inf> lora_duty_cycle: RX duty cycle started (rx=10 ms, sleep=490 ms)
+   [00:00:00.235,000] <inf> lora_duty_cycle: Synchronous duty cycle reception (rx=50 ms, sleep=450 ms)
    [00:00:01.456,000] <inf> lora_duty_cycle: RX 12 bytes, RSSI: -55 dBm, SNR: 9 dB
    [00:00:01.456,000] <inf> lora_duty_cycle: payload
                                              64 75 74 79 63 79 63 6c  65 20 20 30  |dutycycle  0
+   ...
+   [00:00:20.000,000] <inf> lora_duty_cycle: Asynchronous duty cycle reception
+   [00:00:25.000,000] <inf> lora_duty_cycle: RX 12 bytes, RSSI: -55 dBm, SNR: 9 dB
+   [00:00:25.000,000] <inf> lora_duty_cycle: payload
+                                             64 75 74 79 63 79 63 6c  65 20 20 34  |dutycycle  4
 
 Sample Output (sender)
 ======================

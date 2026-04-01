@@ -300,6 +300,19 @@ typedef int (*lora_api_cad_async)(const struct device *dev, lora_cad_cb cb,
 				  void *user_data);
 
 /**
+ * @typedef lora_api_recv_duty_cycle()
+ * @brief Callback API for blocking receive with duty cycling
+ *
+ * @see lora_recv_duty_cycle() for argument descriptions.
+ */
+typedef int (*lora_api_recv_duty_cycle)(const struct device *dev,
+					k_timeout_t rx_period,
+					k_timeout_t sleep_period,
+					uint8_t *data, uint8_t size,
+					k_timeout_t timeout,
+					int16_t *rssi, int8_t *snr);
+
+/**
  * @typedef lora_api_recv_duty_cycle_async()
  * @brief Callback API for receive duty cycling (wake-on-radio)
  *
@@ -328,6 +341,7 @@ __subsystem struct lora_driver_api {
 	lora_api_recv_async recv_async;
 	lora_api_cad cad;
 	lora_api_cad_async cad_async;
+	lora_api_recv_duty_cycle recv_duty_cycle;
 	lora_api_recv_duty_cycle_async recv_duty_cycle_async;
 	lora_api_test_cw test_cw;
 };
@@ -498,6 +512,45 @@ static inline int lora_cad_async(const struct device *dev, lora_cad_cb cb,
 	}
 
 	return api->cad_async(dev, cb, user_data);
+}
+
+/**
+ * @brief Receive data using duty cycling (wake-on-radio)
+ *
+ * The radio autonomously alternates between sleep and listening for
+ * a LoRa preamble. Blocks until a valid packet is received or the
+ * operation times out, then stops the duty cycle.
+ *
+ * @note This is a blocking call.
+ *
+ * The transmitter must use a preamble longer than
+ * (@p sleep_period + @p rx_period) to guarantee detection.
+ *
+ * @param dev           LoRa device
+ * @param rx_period     Listen window duration
+ * @param sleep_period  Sleep duration between listen windows
+ * @param data          Buffer to hold received data
+ * @param size          Size of the buffer. Max 255.
+ * @param timeout       Duration to wait for a packet
+ * @param rssi          RSSI of received data
+ * @param snr           SNR of received data
+ * @return Length of the data received on success, negative on error
+ */
+static inline int lora_recv_duty_cycle(const struct device *dev,
+				       k_timeout_t rx_period,
+				       k_timeout_t sleep_period,
+				       uint8_t *data, uint8_t size,
+				       k_timeout_t timeout,
+				       int16_t *rssi, int8_t *snr)
+{
+	const struct lora_driver_api *api = DEVICE_API_GET(lora, dev);
+
+	if (api->recv_duty_cycle == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->recv_duty_cycle(dev, rx_period, sleep_period,
+				    data, size, timeout, rssi, snr);
 }
 
 /**
