@@ -41,6 +41,15 @@
 		};
 	};
 
+	pwm0_default: pwm0_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('A', 12, AMEBA_PWM_HS)>,/* Channel 0 Output Pin */
+				 <AMEBA_PINMUX('A', 13, AMEBA_PWM_HS)>,
+				 <AMEBA_PINMUX('B', 2, AMEBA_TIMINPUT_HS)>; /* TRGI */
+			bias-pull-up;
+		};
+	};
+
 	/* NOTE: PB4~PB7 CANNOT be selected by ADC and CTC simultaneously!!! */
 	/omit-if-no-ref/ adc_in0_pb4: adc_in0_pb4 {
 		pinmux = <AMEBA_PINMUX('B', 4, AMEBA_GPIO)>;

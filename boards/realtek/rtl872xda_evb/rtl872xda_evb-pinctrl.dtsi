@@ -48,6 +48,15 @@
 		};
 	};
 
+	pwm0_default: pwm0_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('B', 19, AMEBA_PWM0)>, /* Channel 0 Output Pin */
+				 <AMEBA_PINMUX('B', 18, AMEBA_PWM1)>,
+				 <AMEBA_PINMUX('B', 16, AMEBA_TIMER)>; /* TRGI */
+			bias-pull-up;
+		};
+	};
+
 	/* NOTE: PB16~PB19 CANNOT be selected by ADC and CTC simultaneously!!! */
 	/omit-if-no-ref/ adc_in0_pb19: adc_in0_pb19 {
 		pinmux = <AMEBA_PINMUX('B', 19, AMEBA_ADC)>;
