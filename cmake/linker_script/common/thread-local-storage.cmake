@@ -2,6 +2,14 @@
 # Please keep in sync
 
 if(CONFIG_THREAD_LOCAL_STORAGE)
+  if(CONFIG_STACK_CANARIES_TLS_PREPEND)
+    # Stack canary section placed before tdata so the canary is at a
+    # fixed offset (0) from the TLS base pointer.
+    zephyr_linker_section(NAME .stack_chk LMA FLASH NOINPUT)
+    zephyr_linker_section_configure(SECTION .stack_chk INPUT ".stack_chk.guard" KEEP)
+    # GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+  endif()
+
   zephyr_linker_section(NAME .tdata LMA FLASH NOINPUT)
   zephyr_linker_section_configure(SECTION .tdata INPUT ".tdata")
   zephyr_linker_section_configure(SECTION .tdata INPUT ".tdata.*")
