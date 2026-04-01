@@ -598,6 +598,16 @@
 				data-lanes = <4>;
 				pixel-format = <0>;
 			};
+
+			test_rm692c9: rm692c9@9 {
+				status = "okay";
+				compatible = "raydium,rm692c9";
+				reg = <9>;
+				bl-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+				data-lanes = <4>;
+				pixel-format = <0>;
+			};
 		};
 
 		test_spi: spi@33334444 {
