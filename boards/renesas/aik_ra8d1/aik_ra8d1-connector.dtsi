@@ -155,7 +155,7 @@ zephyr_lcdif: &lcdif {};
 
 zephyr_mipi_dsi: &mipi_dsi {};
 
-renesas_disp_int: &port_irq13 {};
+renesas_disp_int: &port_irq12 {};
 
 dvp_20pin_interface: &ceu {};
 
