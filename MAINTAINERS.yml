@@ -3061,6 +3061,37 @@ ITE Platforms:
   labels:
     - "platform: ITE"
 
+Infineon AURIX Platforms:
+  status: maintained
+  maintainers:
+    - go2sh
+    - parthitce
+  files:
+    - soc/infineon/aurix/
+    - soc/qemu/tc3x/
+    - soc/qemu/tc4x/
+    - boards/infineon/kit_a3g_tc4d7_lite/
+    - boards/infineon/kit_a2g_tc375_lite/
+    - boards/infineon/kit_a2g_tc397xa_3v3_tft/
+    - boards/qemu/tricore/
+    - drivers/clock_control/*aurix*
+    - drivers/clock_control/*tc3x*
+    - drivers/clock_control/*tc4x*
+    - drivers/gpio/*tc3x*
+    - drivers/gpio/*tc4x*
+    - drivers/interrupt_controller/*aurix*
+    - drivers/pinctrl/*aurix*
+    - drivers/pinctrl/*tc3x*
+    - drivers/pinctrl/*tc4x*
+    - drivers/serial/*asclin*
+    - drivers/timer/*tc3x*
+    - drivers/timer/*tc4x*
+  labels:
+    - "platform: Infineon AURIX"
+  description: >-
+    Infineon AURIX TriCore SoC family (TC3x, TC4x), boards, devicetree
+    and related drivers.
+
 Infineon Platforms:
   status: maintained
   maintainers:
@@ -5006,6 +5037,21 @@ SPARC arch:
     - boards/qemu/leon3/
   labels:
     - "area: SPARC"
+
+TriCore arch:
+  status: maintained
+  maintainers:
+    - go2sh
+    - parthitce
+  files:
+    - arch/tricore/
+    - include/zephyr/arch/tricore/
+    - dts/tricore/
+    - dts/bindings/*/infineon,aurix*
+    - dts/bindings/*/infineon,tc*
+    - dts/bindings/*/infineon,asclin*
+  labels:
+    - "area: TriCore"
 
 SPDX Tooling:
   status: maintained
