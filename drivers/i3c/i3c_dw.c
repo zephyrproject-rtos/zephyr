@@ -301,6 +301,7 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define DEV_ADDR_TABLE_LEGACY_I2C_DEV    BIT(31)
 #define DEV_ADDR_TABLE_DYNAMIC_ADDR_MASK GENMASK(23, 16)
 #define DEV_ADDR_TABLE_DYNAMIC_ADDR(x)   (((x) << 16) & GENMASK(23, 16))
+#define DEV_ADDR_TABLE_MR_REJECT         BIT(14)
 #define DEV_ADDR_TABLE_SIR_REJECT        BIT(13)
 #define DEV_ADDR_TABLE_IBI_WITH_DATA     BIT(12)
 #define DEV_ADDR_TABLE_STATIC_ADDR(x)    ((x) & GENMASK(6, 0))
@@ -1160,6 +1161,30 @@ static int dw_i3c_controller_ibi_hj_response(const struct device *dev, bool ack)
 	}
 
 	sys_write32(ctrl, config->regs + DEVICE_CTRL);
+
+	return 0;
+}
+
+static int dw_i3c_controller_ibi_crr_response(struct i3c_device_desc *target, bool ack)
+{
+	const struct device *dev = target->bus;
+	const struct dw_i3c_config *config = dev->config;
+	struct dw_i3c_data *data = dev->data;
+	int pos;
+	uint32_t reg;
+
+	pos = get_i3c_addr_pos(dev, target->dynamic_addr, false);
+	if (pos < 0) {
+		return pos;
+	}
+
+	reg = sys_read32(config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
+	if (ack) {
+		reg &= ~DEV_ADDR_TABLE_MR_REJECT;
+	} else {
+		reg |= DEV_ADDR_TABLE_MR_REJECT;
+	}
+	sys_write32(reg, config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
 
 	return 0;
 }
@@ -2671,6 +2696,7 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 #ifdef CONFIG_I3C_USE_IBI
 #ifdef CONFIG_I3C_CONTROLLER
 	.ibi_hj_response = dw_i3c_controller_ibi_hj_response,
+	.ibi_crr_response = dw_i3c_controller_ibi_crr_response,
 	.ibi_enable = dw_i3c_controller_enable_ibi,
 	.ibi_disable = dw_i3c_controller_disable_ibi,
 #endif /* CONFIG_I3C_CONTROLLER */
