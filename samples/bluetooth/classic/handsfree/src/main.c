@@ -261,7 +261,7 @@ static void bt_ready(int err)
 	printk("BR/EDR set connectable and discoverable done\n");
 }
 
-static void handsfree_enable(void)
+void handsfree_enable(void)
 {
 	int err;
 

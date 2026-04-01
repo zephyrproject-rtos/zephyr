@@ -1,0 +1,30 @@
+#
+# Copyright 2024-2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Bluetooth: PBAP PSE"
+
+config BT_PBAP_PSE_DISCOVER_RESULT_COUNT
+	int "Maximum result count per device discovery"
+	default 10
+
+config BT_PBAP_PSE_RFCOMM_CHANNEL
+        int "RFCOMM channel for PBAP PSE"
+        default 3
+
+config BT_PBAP_PSE_L2CAP_PSM
+        hex "L2CAP PSM for PBAP PSE"
+        default 0x1009
+
+config BT_PBAP_PSE_SUPPORTED_REPOSITORIES
+        hex "Supported repositories bitmask for PBAP PSE"
+        default 0xf
+
+config BT_PBAP_PSE_SUPPORTED_FEATURES
+	hex "Supported features bitmask for PBAP PSE"
+        default 0x3ff
+
+source "Kconfig.zephyr"
+
