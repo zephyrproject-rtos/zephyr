@@ -17,4 +17,16 @@
 			bias-pull-up;
 		};
 	};
+
+	sdhc0_default: sdhc0_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('A', 11, AMEBA_SDIO_MST)>, /* CLK */
+				 <AMEBA_PINMUX('A', 10, AMEBA_SDIO_MST)>, /* CMD */
+				 <AMEBA_PINMUX('A', 7, AMEBA_SDIO_MST)>, /* D0 */
+				 <AMEBA_PINMUX('A', 8, AMEBA_SDIO_MST)>, /* D1 */
+				 <AMEBA_PINMUX('A', 6, AMEBA_SDIO_MST)>, /* D2 */
+				 <AMEBA_PINMUX('A', 9, AMEBA_SDIO_MST)>; /* D3 */
+			bias-pull-up;
+		};
+	};
 };
