@@ -249,4 +249,10 @@ config MBEDTLS_X509_CRT_PARSE_C
 	bool "X.509 certificate parsing"
 	select MBEDTLS_X509_USE_C
 
+config MBEDTLS_X509_RSASSA_PSS_SUPPORT
+	bool "X.509 RSA-PSS signature support"
+	help
+	  Enable verification of X.509 certificates signed with
+	  the RSASSA-PSS algorithm.
+
 endmenu # Mbed TLS configuration
