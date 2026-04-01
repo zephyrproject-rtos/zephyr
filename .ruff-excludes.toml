@@ -1067,7 +1067,6 @@ exclude = [
     "./scripts/west_commands/runners/openocd.py",
     "./scripts/west_commands/runners/probe_rs.py",
     "./scripts/west_commands/runners/pyocd.py",
-    "./scripts/west_commands/runners/qemu.py",
     "./scripts/west_commands/runners/renode-robot.py",
     "./scripts/west_commands/runners/renode.py",
     "./scripts/west_commands/runners/silabs_commander.py",
