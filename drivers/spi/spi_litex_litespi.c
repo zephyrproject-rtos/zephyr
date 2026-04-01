@@ -26,6 +26,8 @@ LOG_MODULE_REGISTER(spi_litex_litespi);
 BUILD_ASSERT(SPI_LITEX_ANY_HAS_MASTER_CLK_DIVISOR == SPI_LITEX_ALL_HAS_MASTER_CLK_DIVISOR,
 	     "Either all or no one should have a master_clk_divisor register");
 
+#define SPI_LITEX_ANY_HAS_PHY_MODE DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(phy_mode)
+
 #define SPIFLASH_MASTER_PHYCONFIG_LEN_OFFSET   0x0
 #define SPIFLASH_MASTER_PHYCONFIG_WIDTH_OFFSET 0x1
 #define SPIFLASH_MASTER_PHYCONFIG_MASK_OFFSET  0x2
@@ -41,12 +43,18 @@ BUILD_ASSERT(SPI_LITEX_ANY_HAS_MASTER_CLK_DIVISOR == SPI_LITEX_ALL_HAS_MASTER_CL
 #define SPI_LITEX_WIDTH BIT(0)
 #define SPI_LITEX_MASK  BIT(0)
 
+#define SPI_LITEX_SPI_MODE_0 0x0
+#define SPI_LITEX_SPI_MODE_3 0x3
+
 struct spi_litex_dev_config {
 	mem_addr_t master_cs_addr;
 	mem_addr_t master_phyconfig_addr;
 	mem_addr_t master_rxtx_addr;
 	mem_addr_t master_status_addr;
 	mem_addr_t clk_divisor_addr;
+#if SPI_LITEX_ANY_HAS_PHY_MODE
+	mem_addr_t phy_mode_addr;
+#endif
 #if SPI_LITEX_ANY_HAS_IRQ
 #if !SPI_LITEX_ALL_HAS_IRQ
 	bool has_irq;
@@ -81,6 +89,33 @@ static void spi_litex_set_frequency(const struct device *dev, const struct spi_c
 	}
 
 	litex_write32(divisor, dev_config->clk_divisor_addr);
+}
+
+static bool spi_litex_set_mode(const struct device *dev, const struct spi_config *config)
+{
+#if SPI_LITEX_ANY_HAS_PHY_MODE
+	const struct spi_litex_dev_config *dev_config = dev->config;
+
+	if (dev_config->phy_mode_addr != 0U) {
+		switch (config->operation & (SPI_MODE_CPOL | SPI_MODE_CPHA)) {
+		case 0:
+			litex_write8(SPI_LITEX_SPI_MODE_0, dev_config->phy_mode_addr);
+			return true;
+		case SPI_MODE_CPOL | SPI_MODE_CPHA:
+			litex_write8(SPI_LITEX_SPI_MODE_3, dev_config->phy_mode_addr);
+			return true;
+		default:
+			return false;
+		}
+	}
+#endif /* SPI_LITEX_ANY_HAS_PHY_MODE */
+
+	if ((config->operation & (SPI_MODE_CPOL | SPI_MODE_CPHA)) > 0) {
+		/* If no phy_mode register, we can only support mode 0 */
+		return false;
+	}
+
+	return true;
 }
 
 /* Helper Functions */
@@ -124,8 +159,8 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 		return -ENOTSUP;
 	}
 
-	if (config->operation & (SPI_MODE_CPOL | SPI_MODE_CPHA)) {
-		LOG_ERR("Only supports CPOL=CPHA=0");
+	if (!spi_litex_set_mode(dev, config)) {
+		LOG_ERR("Invalid CPOL CPHA configuration");
 		return -ENOTSUP;
 	}
 
@@ -421,6 +456,8 @@ static DEVICE_API(spi, spi_litex_api) = {
 			(DT_INST_REG_ADDR_BY_NAME(n, master_clk_divisor)),                         \
 			(DT_INST_REG_ADDR_BY_NAME_OR(n, phy_clk_divisor, 0))),                     \
 		IF_ENABLED(SPI_LITEX_ANY_HAS_IRQ, (SPI_LITEX_IRQ_CONFIG(n)))                       \
+		IF_ENABLED(SPI_LITEX_ANY_HAS_PHY_MODE,                                             \
+			(.phy_mode_addr = DT_INST_REG_ADDR_BY_NAME_OR(n, phy_mode, 0),))           \
 	};                                                                                         \
                                                                                                    \
 	SPI_DEVICE_DT_INST_DEFINE(n, spi_litex_init, NULL, &spi_litex_data_##n,                    \
