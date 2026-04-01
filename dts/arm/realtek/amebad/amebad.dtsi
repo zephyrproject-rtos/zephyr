@@ -53,6 +53,42 @@
 			reg = <0x10003020 0x00074000>;
 		};
 
+		timer0: counter@40002000 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x40002000 0x20>;
+			clocks = <&rcc AMEBA_LTIM0_CLK>;
+			interrupts = <17 0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer1: counter@40002080 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x40002080 0x20>;
+			clocks = <&rcc AMEBA_LTIM1_CLK>;
+			interrupts = <18 0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer2: counter@40002100 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x40002100 0x20>;
+			clocks = <&rcc AMEBA_LTIM2_CLK>;
+			interrupts = <19 0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer3: counter@40002180 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x40002180 0x20>;
+			clocks = <&rcc AMEBA_LTIM3_CLK>;
+			interrupts = <20 0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@48000400 {
 			compatible = "realtek,ameba-pinctrl";
 			reg = <0x48000400 0x200>;
