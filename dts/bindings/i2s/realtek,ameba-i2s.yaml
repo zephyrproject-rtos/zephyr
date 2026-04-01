@@ -1,0 +1,65 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: AMEBA I2S controller
+
+compatible: "realtek,ameba-i2s"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  dmas:
+    required: true
+
+  dma-names:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  mclk-multiple:
+    type: int
+    description: The multiple relationship between CPU clock and mclk, we often use 128 and 256.
+    enum:
+      - 64
+      - 128
+      - 256
+
+  mclk-fixed-max:
+    type: int
+    description: Whether to use the max fixed mclk.
+    enum:
+      - 20000000
+      - 0
+
+  multiio:
+    type: int
+    description: Whether to use I2S multi-io mode.
+    enum:
+      - 0
+      - 1
+
+  clock-mode:
+    type: int
+    description: Select SPORT clock, use XTAL40M or I2S PLL
+    enum:
+      - 40000000
+      - 98304000
+      - 45158400
+
+  pll-tune:
+    type: int
+    description: PLL clock tune.
+    enum:
+      - 0 # auto
+      - 1 # faster
+      - 2 # slower
