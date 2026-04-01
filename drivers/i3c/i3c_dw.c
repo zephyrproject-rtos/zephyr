@@ -416,6 +416,14 @@ struct dw_i3c_data {
 	uint8_t deftgts_count;
 #endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_TARGET */
 };
+
+static inline bool dw_i3c_is_current_controller(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	return !!(sys_read32(config->regs + PRESENT_STATE) & PRESENT_STATE_CURRENT_MASTER);
+}
+
 #ifdef CONFIG_I3C_CONTROLLER
 static uint8_t get_free_pos(uint32_t free_pos)
 {
@@ -617,7 +625,7 @@ static void dw_i3c_end_xfer(const struct device *dev)
 		cmd->error = RESPONSE_PORT_ERR_STATUS(resp);
 #ifdef CONFIG_I3C_TARGET
 		/* if we are in target mode */
-		if (!(sys_read32(config->regs + PRESENT_STATE) & PRESENT_STATE_CURRENT_MASTER)) {
+		if (!dw_i3c_is_current_controller(dev)) {
 			const struct i3c_target_callbacks *target_cb =
 				data->target_config->callbacks;
 
@@ -692,10 +700,8 @@ static void start_xfer(const struct device *dev)
 	struct dw_i3c_data *data = dev->data;
 	struct dw_i3c_xfer *xfer = &data->xfer;
 	struct dw_i3c_cmd *cmd;
-	uint32_t thld_ctrl, present_state;
+	uint32_t thld_ctrl;
 	int32_t i;
-
-	present_state = sys_read32(config->regs + PRESENT_STATE);
 
 	/* Push data to TXFIFO */
 	for (i = 0; i < xfer->ncmds; i++) {
@@ -715,7 +721,7 @@ static void start_xfer(const struct device *dev)
 	for (i = 0; i < xfer->ncmds; i++) {
 		cmd = &xfer->cmds[i];
 		/* Only cmd_lo is used when it is a target */
-		if (present_state & PRESENT_STATE_CURRENT_MASTER) {
+		if (dw_i3c_is_current_controller(dev)) {
 			sys_write32(cmd->cmd_hi, config->regs + COMMAND_QUEUE_PORT);
 		}
 		sys_write32(cmd->cmd_lo, config->regs + COMMAND_QUEUE_PORT);
@@ -770,10 +776,8 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 	struct dw_i3c_data *data = dev->data;
 	struct dw_i3c_xfer *xfer = &data->xfer;
 	int32_t ret, i, pos, nrxwords = 0, ntxwords = 0;
-	uint32_t present_state;
 
-	present_state = sys_read32(config->regs + PRESENT_STATE);
-	if (!(present_state & PRESENT_STATE_CURRENT_MASTER)) {
+	if (!dw_i3c_is_current_controller(dev)) {
 		return -EACCES;
 	}
 
@@ -997,10 +1001,8 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 	struct dw_i3c_data *data = dev->data;
 	struct dw_i3c_xfer *xfer = &data->xfer;
 	int32_t ret, i, pos, nrxwords = 0, ntxwords = 0;
-	uint32_t present_state;
 
-	present_state = sys_read32(config->regs + PRESENT_STATE);
-	if (!(present_state & PRESENT_STATE_CURRENT_MASTER)) {
+	if (!dw_i3c_is_current_controller(dev)) {
 		return -EACCES;
 	}
 
@@ -1504,10 +1506,8 @@ static void dw_i3c_update_interrupt_mask(const struct device *dev)
 {
 	const struct dw_i3c_config *config = dev->config;
 	uint32_t intr_mask;
-	bool is_master = !!(sys_read32(config->regs + PRESENT_STATE) &
-			    PRESENT_STATE_CURRENT_MASTER);
 
-	if (is_master) {
+	if (dw_i3c_is_current_controller(dev)) {
 		intr_mask = INTR_MASTER_MASK | INTR_BUSOWNER_UPDATE_STAT;
 	} else {
 		intr_mask = INTR_SLAVE_MASK | INTR_BUSOWNER_UPDATE_STAT;
@@ -1526,7 +1526,6 @@ static int i3c_dw_irq(const struct device *dev)
 	uint32_t status;
 #ifdef CONFIG_I3C_TARGET
 	struct dw_i3c_data *data = dev->data;
-	uint32_t present_state;
 #endif /* CONFIG_I3C_TARGET */
 
 	status = sys_read32(config->regs + INTR_STATUS);
@@ -1546,8 +1545,7 @@ static int i3c_dw_irq(const struct device *dev)
 #endif /* CONFIG_I3C_CONTROLLER */
 #ifdef CONFIG_I3C_TARGET
 	/* target mode related interrupts */
-	present_state = sys_read32(config->regs + PRESENT_STATE);
-	if (!(present_state & PRESENT_STATE_CURRENT_MASTER)) {
+	if (!dw_i3c_is_current_controller(dev)) {
 		const struct i3c_target_callbacks *target_cb =
 			data->target_config ? data->target_config->callbacks : NULL;
 
@@ -1579,8 +1577,7 @@ static int i3c_dw_irq(const struct device *dev)
 		dw_i3c_role_switch_resume(dev);
 		dw_i3c_update_interrupt_mask(dev);
 
-		if (sys_read32(config->regs + PRESENT_STATE) & PRESENT_STATE_CURRENT_MASTER) {
-			/* begin workq for handoff procedure */
+		if (dw_i3c_is_current_controller(dev)) {
 			i3c_ibi_work_enqueue_cb(dev, i3c_sec_handoffed);
 			if (data->target_config != NULL &&
 			    data->target_config->callbacks != NULL &&
@@ -1882,15 +1879,12 @@ static uint8_t odd_parity(uint8_t p)
  */
 static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *payload)
 {
-	const struct dw_i3c_config *config = dev->config;
 	struct dw_i3c_data *data = dev->data;
 	struct dw_i3c_xfer *xfer = &data->xfer;
 	struct dw_i3c_cmd *cmd;
 	int ret, i, pos;
-	uint32_t present_state;
 
-	present_state = sys_read32(config->regs + PRESENT_STATE);
-	if (!(present_state & PRESENT_STATE_CURRENT_MASTER)) {
+	if (!dw_i3c_is_current_controller(dev)) {
 		return -EACCES;
 	}
 
@@ -2073,10 +2067,8 @@ static int dw_i3c_do_daa(const struct device *dev)
 	uint32_t olddevs, newdevs;
 	uint8_t p, idx, last_addr = 0;
 	int32_t pos, addr, ret;
-	uint32_t present_state;
 
-	present_state = sys_read32(config->regs + PRESENT_STATE);
-	if (!(present_state & PRESENT_STATE_CURRENT_MASTER)) {
+	if (!dw_i3c_is_current_controller(dev)) {
 		return -EACCES;
 	}
 
@@ -2231,12 +2223,7 @@ static int dw_i3c_config_get(const struct device *dev, enum i3c_config_type type
 		reg = sys_read32(dev_config->regs + SLV_PID_VALUE);
 		target_config->pid |= reg;
 
-		if (!(sys_read32(dev_config->regs + PRESENT_STATE) &
-		      PRESENT_STATE_CURRENT_MASTER)) {
-			target_config->enabled = true;
-		} else {
-			target_config->enabled = false;
-		}
+		target_config->enabled = !dw_i3c_is_current_controller(dev);
 #else
 		return -ENOTSUP;
 #endif /* CONFIG_I3C_TARGET */
@@ -2373,14 +2360,11 @@ static struct i3c_device_desc *dw_i3c_device_find(const struct device *dev,
 static int dw_i3c_target_tx_write(const struct device *dev, uint8_t *buf, uint16_t len,
 				  uint8_t hdr_mode)
 {
-	const struct dw_i3c_config *config = dev->config;
 	struct dw_i3c_data *data = dev->data;
 	struct dw_i3c_xfer *xfer = &data->xfer;
-	uint32_t present_state;
 
 	/* check if we are in target mode */
-	present_state = sys_read32(config->regs + PRESENT_STATE);
-	if (present_state & PRESENT_STATE_CURRENT_MASTER) {
+	if (dw_i3c_is_current_controller(dev)) {
 		return -EACCES;
 	}
 
