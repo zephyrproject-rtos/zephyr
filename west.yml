@@ -282,7 +282,7 @@ manifest:
       revision: 2b498e6f36d6b82ae1da12c8b7742e318624ecf5
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: be1dd5b11d8f59af0ab0995985e348a429999013
+      revision: 11c0f18ab888fed4363eeeb43fd734246dc3c93b
       path: modules/crypto/mbedtls
       groups:
         - crypto
