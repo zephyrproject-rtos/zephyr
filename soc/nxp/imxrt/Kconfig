@@ -147,15 +147,14 @@ config NXP_IMX_EXTERNAL_HYPERRAM
 	  HYPERRAM memory space.
 
 config SECOND_CORE_MCUX
-	bool "Dual core operation on the RT11xx series"
+	bool "Dual core operation on the RT multi-core series"
 	depends on SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X || SOC_SERIES_IMXRT7XX
 	help
 	  Indicates the second core will be enabled, and the part will run
-	  in dual core mode. Enables dual core operation on the RT11xx series,
-	  by booting an image targeting the Cortex-M4 from the Cortex-M7 CPU.
-	  The M4 image will be loaded from flash into RAM based off a
-	  generated header specifying the VMA and LMA of each memory section
-	  to load
+	  in dual core mode. The primary core boots an image targeting the
+	  secondary core. The second core image will be loaded from flash
+	  into RAM based off a generated header specifying the VMA and LMA
+	  of each memory section to load.
 
 config SECOND_CORE_MCUX_REMOTE_DIR
 	string "Directory to with output image header from second core"
