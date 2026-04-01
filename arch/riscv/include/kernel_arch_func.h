@@ -35,7 +35,7 @@ extern "C" {
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
-#if defined(CONFIG_THREAD_LOCAL_STORAGE) && !defined(CONFIG_STACK_CANARIES_TLS)
+#if defined(CONFIG_THREAD_LOCAL_STORAGE) && !defined(CONFIG_STACK_CANARIES_TLS_PREPEND)
 	__asm__ volatile ("li tp, 0");
 #endif
 #if defined(CONFIG_SMP) || defined(CONFIG_USERSPACE)
