@@ -73,4 +73,17 @@
 			bias-pull-up;
 		};
 	};
+
+	i2s0_default: i2s0_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('A', 4, AMEBA_I2S0_DIO0)>,
+				 <AMEBA_PINMUX('A', 5, AMEBA_I2S0_DIO1)>,
+				 <AMEBA_PINMUX('A', 6, AMEBA_I2S0_DIO2)>,
+				 <AMEBA_PINMUX('A', 7, AMEBA_I2S0_DIO3)>,
+				 <AMEBA_PINMUX('A', 8, AMEBA_I2S0_MCLK)>,
+				 <AMEBA_PINMUX('B', 16, AMEBA_I2S0_BCLK)>,
+				 <AMEBA_PINMUX('B', 17, AMEBA_I2S0_WS)>;
+			bias-pull-up;
+		};
+	};
 };
