@@ -27,7 +27,7 @@
 		zephyr,console = &uart4;
 		zephyr,shell-uart = &uart4;
 		zephyr,entropy = &trng;
-		zephyr,canbus = &canfd1;
+		zephyr,canbus = &canfd0;
 		zephyr,crc = &crc;
 	};
 
