@@ -2807,15 +2807,27 @@ def resolve_path_hint(hint):
 
 def parse_args(argv):
     default_range = 'HEAD~1..HEAD'
+    # Git root empty tree sha1 (represents a tree with no files)
+    empty_tree = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
     parser = argparse.ArgumentParser(
         description="Check for coding style and documentation warnings.", allow_abbrev=False
     )
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         '-c',
         '--commits',
         default=default_range,
         help=f'''Commit range in the form: a..[b], default is
                         {default_range}''',
+    )
+    group.add_argument(
+        '--all-commits',
+        action='store_const',
+        dest='commits',
+        const=f'{empty_tree}..HEAD',
+        help="""The full history commit range. Useful for testing purposes.
+                WARNING: Should not be set for checks that perform per-commit actions, such as
+                GitDiffCheck/GitLint/Identity.""",
     )
     parser.add_argument(
         '-o',
