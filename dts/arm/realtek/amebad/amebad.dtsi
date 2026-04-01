@@ -8,6 +8,7 @@
 #include <freq.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/amebad_clock.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -80,6 +81,20 @@
 				erase-block-size = <DT_SIZE_K(4)>;
 				write-block-size = <4>;
 			};
+		};
+
+		i2c0: i2c0@4800c000 {
+			compatible = "realtek,ameba-i2c";
+			reg = <0x4800c000 0x100>;
+			interrupts = <6 0>;
+			clocks = <&rcc AMEBA_I2C0_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			dmas = <&dma 3 22 0>,
+				<&dma 2 21 0>;
+			dma-names = "rx", "tx";
+			status = "disabled";
 		};
 
 		gpioa: gpio@48014000 {
