@@ -594,11 +594,7 @@ static void test_main(void)
 	/* Wait for signal to trigger context type changes */
 	backchannel_sync_wait_any();
 	update_contexts();
-	/* Wait for signal to trigger sink PAC changes */
-	backchannel_sync_wait_any();
 	update_pac(BT_AUDIO_DIR_SINK);
-	/* Wait for signal to trigger source PAC changes */
-	backchannel_sync_wait_any();
 	update_pac(BT_AUDIO_DIR_SOURCE);
 
 	WAIT_FOR_FLAG(flag_stream_configured);

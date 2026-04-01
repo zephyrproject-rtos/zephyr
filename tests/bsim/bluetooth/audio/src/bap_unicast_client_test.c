@@ -1139,19 +1139,13 @@ static void test_main(void)
 	UNSET_FLAG(flag_source_supp_ctx_changed);
 	UNSET_FLAG(flag_source_pac_changed);
 
-	/* Trigger context change */
+	/* Trigger context and PAC record changes */
 	backchannel_sync_send_all();
 	WAIT_FOR_FLAG(flag_sink_avail_ctx_changed);
 	WAIT_FOR_FLAG(flag_sink_supp_ctx_changed);
 	WAIT_FOR_FLAG(flag_source_avail_ctx_changed);
 	WAIT_FOR_FLAG(flag_source_supp_ctx_changed);
-
-	/* Trigger sink PAC change */
-	backchannel_sync_send_all();
 	WAIT_FOR_FLAG(flag_sink_pac_changed);
-
-	/* Trigger source PAC change */
-	backchannel_sync_send_all();
 	WAIT_FOR_FLAG(flag_source_pac_changed);
 
 	/* Run the stream setup multiple time to ensure states are properly
