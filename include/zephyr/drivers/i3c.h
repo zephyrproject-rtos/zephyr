@@ -760,6 +760,19 @@ __subsystem struct i3c_driver_api {
 			       bool ack);
 
 	/**
+	 * ACK or NACK IBI Controller Role Requests
+	 *
+	 * @see i3c_ibi_crr_response()
+	 *
+	 * @param target Pointer to target device descriptor.
+	 * @param ack True to ack, False to nack
+	 *
+	 * @return See i3c_ibi_crr_response()
+	 */
+	int (*ibi_crr_response)(struct i3c_device_desc *target,
+				bool ack);
+
+	/**
 	 * Enable receiving IBI from a target.
 	 *
 	 * Controller only API.
@@ -1850,6 +1863,31 @@ static inline int i3c_ibi_hj_response(const struct device *dev,
 	}
 
 	return api->ibi_hj_response(dev, ack);
+}
+
+/**
+ * @brief ACK or NACK IBI Controller Role Requests
+ *
+ * This tells the controller to Acknowledge or Not Acknowledge
+ * In-Band Interrupt Controller Role Requests from a specific target.
+ *
+ * @param target Pointer to target device descriptor.
+ * @param ack True to ack, False to nack
+ *
+ * @retval 0 if operation is successful.
+ * @retval -EIO General input / output error.
+ */
+static inline int i3c_ibi_crr_response(struct i3c_device_desc *target,
+					bool ack)
+{
+	const struct i3c_driver_api *api =
+		(const struct i3c_driver_api *)target->bus->api;
+
+	if (api->ibi_crr_response == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->ibi_crr_response(target, ack);
 }
 #endif /* CONFIG_I3C_CONTROLLER */
 #if defined(CONFIG_I3C_TARGET) || defined(__DOXYGEN__)
