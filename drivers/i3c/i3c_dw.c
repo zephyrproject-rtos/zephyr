@@ -2027,19 +2027,39 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos)
 	tmp = sys_read32(config->regs + DEV_CHAR_TABLE_LOC2(data->dctstartaddr, pos));
 	pid |= DEV_CHAR_TABLE_LSB_PID(tmp);
 
+	tmp = sys_read32(config->regs + DEV_CHAR_TABLE_LOC3(data->dctstartaddr, pos));
+	uint8_t bcr = DEV_CHAR_TABLE_BCR(tmp);
+	uint8_t dcr = DEV_CHAR_TABLE_DCR(tmp);
+
 	/* lookup known pids */
 	const struct i3c_device_id i3c_id = I3C_DEVICE_ID(pid);
 	struct i3c_device_desc *target = i3c_device_find(dev, &i3c_id);
 
 	if (target == NULL) {
+		target = i3c_device_desc_alloc();
+		if (target != NULL) {
+			*(const struct device **)&target->bus = dev;
+			*(uint64_t *)&target->pid = pid;
+			target->dynamic_addr = dyn_addr;
+			target->bcr = bcr;
+			target->dcr = dcr;
+
+			data->dw_i3c_i2c_priv_data[pos].id = pos;
+			target->controller_priv = &data->dw_i3c_i2c_priv_data[pos];
+
+			sys_slist_append(&data->common.attached_dev.devices.i3c, &target->node);
+		}
+
 		LOG_INF("%s: PID 0x%012llx is not in registered device "
 			"list, given DA 0x%02x",
 			dev->name, pid, dyn_addr);
 	} else {
 		target->dynamic_addr = dyn_addr;
-		tmp = sys_read32(config->regs + DEV_CHAR_TABLE_LOC3(data->dctstartaddr, pos));
-		target->bcr = DEV_CHAR_TABLE_BCR(tmp);
-		target->dcr = DEV_CHAR_TABLE_DCR(tmp);
+		target->bcr = bcr;
+		target->dcr = dcr;
+
+		data->dw_i3c_i2c_priv_data[pos].id = pos;
+		target->controller_priv = &data->dw_i3c_i2c_priv_data[pos];
 
 		LOG_DBG("%s: PID 0x%012llx assigned dynamic address 0x%02x", dev->name, pid,
 			dyn_addr);
