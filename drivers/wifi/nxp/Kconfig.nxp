@@ -897,8 +897,9 @@ config NXP_WIFI_CSI_LOCAL_BUF_ENTRY_SIZE
 config NXP_WIFI_RESET
 	bool "Wi-Fi reset"
 	default y
-	imply NXP_WIFI_IND_DNLD if NXP_IW610 && !NXP_WIFI_CUSTOM_HOST
-	imply NXP_WIFI_IND_RESET if NXP_IW610 && !NXP_WIFI_CUSTOM_HOST
+	imply NXP_WIFI_IND_DNLD if NXP_IW610
+	imply NXP_WIFI_IND_RESET if NXP_IW610
+	imply NXP_WIFI_IND_OOB_RESET if NXP_IW610 && !NXP_WIFI_CUSTOM_HOST
 	help
 	  This option is used to enable/disable/reset Wi-Fi.
 
@@ -1193,6 +1194,11 @@ config NXP_WIFI_IND_RESET
 	help
 	  This option enables the use of Wi-Fi independent reset support.
 
+config NXP_WIFI_IND_OOB_RESET
+	bool "Wi-Fi Independent Out-of-band Reset"
+	depends on NXP_WIFI_IND_RESET && NXP_WIFI_IND_DNLD
+	help
+	  Add another Wi-Fi independent reset option by external GPIO.
 endif
 
 config NXP_WIFI_SMOKE_TESTS
