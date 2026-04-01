@@ -8,6 +8,7 @@
 '''Runner for openocd.'''
 
 import argparse
+import logging
 import re
 import subprocess
 from os import name as os_name
@@ -26,6 +27,8 @@ except ImportError:
     pass
 
 from runners.core import FileType, RunnerCaps, ZephyrBinaryRunner
+
+_logger = logging.getLogger('runners')
 
 DEFAULT_OPENOCD_TCL_PORT = 6333
 DEFAULT_OPENOCD_TELNET_PORT = 4444
@@ -219,8 +222,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     def do_create(cls, cfg, args):
         # Handle deprecated --use-* flags
         if args.use_image_type:
-            cls.logger.warning('--use-hex/--use-elf/--use-bin are deprecated, '
-                               'use --file-type instead')
+            _logger.warning('--use-hex/--use-elf/--use-bin are deprecated, '
+                            'use --file-type instead')
             if cfg.file_type == FileType.OTHER or cfg.file_type is None:
                 # Map deprecated string to FileType enum
                 type_map = {'hex': FileType.HEX, 'elf': FileType.ELF, 'bin': FileType.BIN}
