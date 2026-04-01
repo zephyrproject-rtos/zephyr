@@ -26,9 +26,8 @@ config ESP_SPIRAM_HEAP_SIZE
 
 config ESP_SPIRAM_MEMTEST
 	bool "Run memory test on SPI RAM initialization"
-	default y
 	help
-	  Runs a memory test on initialization. Disable this for faster startup.
+	  Runs a memory test on initialization.
 
 choice SPIRAM_MODE
 	prompt "Mode (QUAD/OCT) of SPI RAM chip in use"
