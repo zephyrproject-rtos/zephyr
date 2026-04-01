@@ -27,16 +27,16 @@ LOG_MODULE_REGISTER(i2c_litex_litei2c, CONFIG_I2C_LOG_LEVEL);
 #define MASTER_STATUS_NACK_OFFSET     0x8
 
 struct i2c_litex_litei2c_config {
-	uint32_t phy_speed_mode_addr;
-	uint32_t master_active_addr;
-	uint32_t master_settings_addr;
-	uint32_t master_addr_addr;
-	uint32_t master_rxtx_addr;
-	uint32_t master_status_addr;
+	mem_addr_t phy_speed_mode_addr;
+	mem_addr_t master_active_addr;
+	mem_addr_t master_settings_addr;
+	mem_addr_t master_addr_addr;
+	mem_addr_t master_rxtx_addr;
+	mem_addr_t master_status_addr;
 	uint32_t bitrate;
 #if I2C_LITEX_ANY_HAS_IRQ
-	uint32_t master_ev_pending_addr;
-	uint32_t master_ev_enable_addr;
+	mem_addr_t master_ev_pending_addr;
+	mem_addr_t master_ev_enable_addr;
 	void (*irq_config_func)(const struct device *dev);
 #if !I2C_LITEX_ALL_HAS_IRQ
 	bool has_irq;
