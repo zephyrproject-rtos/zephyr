@@ -67,11 +67,12 @@
 
 static int init_reset(void);
 static uint32_t cig_offset_calc(struct ll_conn_iso_group *cig, struct ll_conn_iso_stream *cis,
-				uint32_t cis_offset, uint32_t *ticks_at_expire, uint32_t remainder);
+				uint32_t cis_offset, uint32_t ticks_at_expire,
+				uint32_t remainder_us);
 static uint32_t cig_instant_latency_calc(struct ll_conn_iso_group *cig,
 					 struct ll_conn_iso_stream *cis, uint32_t acl_latency_us,
-					 uint32_t iso_interval_us, uint32_t *ticks_at_expire,
-					 uint32_t remainder);
+					 uint32_t iso_interval_us, uint32_t ticks_at_expire,
+					 uint32_t remainder_us);
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 static void cis_lazy_fill(struct ll_conn_iso_stream *cis);
 static void mfy_cis_lazy_fill(void *param);
@@ -900,9 +901,13 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 		return;
 	}
 
-	ticker_id = TICKER_ID_CONN_ISO_BASE + ll_conn_iso_group_handle_get(cig);
+	uint32_t remainder_us = remainder;
 
-	cig_offset_us = cig_offset_calc(cig, cis, cis->offset, &ticks_at_expire, remainder);
+	hal_ticker_remove_jitter(&ticks_at_expire, &remainder_us);
+
+	cig_offset_us = cig_offset_calc(cig, cis, cis->offset, ticks_at_expire, remainder_us);
+
+	ticker_id = TICKER_ID_CONN_ISO_BASE + ll_conn_iso_group_handle_get(cig);
 
 	if (false) {
 
@@ -961,8 +966,8 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 
 			iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
 			cig_offset_us = cig_instant_latency_calc(cig, cis, acl_latency_us,
-								 iso_interval_us, &ticks_at_expire,
-								 remainder);
+								 iso_interval_us, ticks_at_expire,
+								 remainder_us);
 
 			/* Adjust for extra window widening */
 			iso_interval_us_frac = EVENT_US_TO_US_FRAC(iso_interval_us);
@@ -1002,8 +1007,8 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 			acl_latency_us &= 0xFFFFFFFFULL;
 
 			cig_offset_us = cig_instant_latency_calc(cig, cis, acl_latency_us,
-								 iso_interval_us, &ticks_at_expire,
-								 remainder);
+								 iso_interval_us, ticks_at_expire,
+								 remainder_us);
 		}
 
 		ticks_periodic  = HAL_TICKER_US_TO_TICKS(iso_interval_us);
@@ -1112,14 +1117,11 @@ void ull_conn_iso_cis_terminate_done(struct node_rx_pdu *rx)
 }
 
 static uint32_t cig_offset_calc(struct ll_conn_iso_group *cig, struct ll_conn_iso_stream *cis,
-				uint32_t cis_offset, uint32_t *ticks_at_expire, uint32_t remainder)
+				uint32_t cis_offset, uint32_t ticks_at_expire,
+				uint32_t remainder_us)
 {
 	uint32_t acl_to_cig_ref_point;
 	uint32_t cis_offs_to_cig_ref;
-	uint32_t remainder_us;
-
-	remainder_us = remainder;
-	hal_ticker_remove_jitter(ticks_at_expire, &remainder_us);
 
 	cis_offs_to_cig_ref = cig->sync_delay - cis->sync_delay;
 
@@ -1132,7 +1134,7 @@ static uint32_t cig_offset_calc(struct ll_conn_iso_group *cig, struct ll_conn_is
 	 * calculation is inaccurate. However it is the best estimate available
 	 * until the first anchor point for the leading CIS is available.
 	 */
-	cig->cig_ref_point = isoal_get_wrapped_time_us(HAL_TICKER_TICKS_TO_US(*ticks_at_expire),
+	cig->cig_ref_point = isoal_get_wrapped_time_us(HAL_TICKER_TICKS_TO_US(ticks_at_expire),
 						       remainder_us + EVENT_OVERHEAD_START_US +
 						       acl_to_cig_ref_point);
 	/* Calculate initial ticker offset */
@@ -1141,8 +1143,8 @@ static uint32_t cig_offset_calc(struct ll_conn_iso_group *cig, struct ll_conn_is
 
 static uint32_t cig_instant_latency_calc(struct ll_conn_iso_group *cig,
 					 struct ll_conn_iso_stream *cis, uint32_t acl_latency_us,
-					 uint32_t iso_interval_us, uint32_t *ticks_at_expire,
-					 uint32_t remainder)
+					 uint32_t iso_interval_us, uint32_t ticks_at_expire,
+					 uint32_t remainder_us)
 {
 	uint32_t lost_cig_events;
 	uint32_t lost_payloads;
@@ -1205,7 +1207,7 @@ static uint32_t cig_instant_latency_calc(struct ll_conn_iso_group *cig,
 	}
 	cis->lll.tx.payload_count += lost_payloads;
 
-	cig_offset_us = cig_offset_calc(cig, cis, cis_offset_us, ticks_at_expire, remainder);
+	cig_offset_us = cig_offset_calc(cig, cis, cis_offset_us, ticks_at_expire, remainder_us);
 
 	return cig_offset_us;
 }
