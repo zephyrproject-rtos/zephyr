@@ -330,7 +330,7 @@ manifest:
         - crypto
     - name: mbedtls-3.6 # Required for TF-M build until we bump it to v2.3
       repo-path: mbedtls
-      revision: 93344a458295c891f71fe31beaa3a3a8d8057790
+      revision: a00e23de17b6b0a0de28e180cb186da6f0008836
       path: modules/crypto/mbedtls-3.6
       groups:
         - crypto
