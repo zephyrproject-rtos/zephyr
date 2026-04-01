@@ -200,7 +200,7 @@
 	status = "okay";
 };
 
-&port_irq13 {
+&port_irq12 {
 	interrupts = <2 12>;
 };
 
