@@ -199,6 +199,9 @@ struct _cpu {
 	sys_dlist_t ipi_workq;
 #endif
 
+	/* Used to notify lower layers that scheduler is already locked */
+	bool do_not_lock_sched;
+
 	/* Per CPU architecture specifics */
 	struct _cpu_arch arch;
 };

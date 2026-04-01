@@ -975,15 +975,32 @@ void *z_get_next_switch_handle(void *interrupted)
 }
 #endif /* CONFIG_USE_SWITCH */
 
+/**
+ * This routine is only called by k_heap_free() and only under a very specific
+ * case has the scheduler been already locked. To prevent a recursive locking
+ * of _sched_spinlock, we test the 'do_not_lock_sched' flag of the current CPU.
+ * This flag is only set to 'true' in halt_thread() prior to calling
+ * k_thread_perms_all_clear().
+ */
 int z_unpend_all(_wait_q_t *wait_q)
 {
 	int need_sched = 0;
 	struct k_thread *thread;
+	k_spinlock_key_t key;
+
+	if (!_current_cpu->do_not_lock_sched) {
+		key = k_spin_lock(&_sched_spinlock);
+	}
 
 	for (thread = z_waitq_head(wait_q); thread != NULL; thread = z_waitq_head(wait_q)) {
-		z_unpend_thread(thread);
-		z_ready_thread(thread);
+		unpend_thread_no_timeout(thread);
+		z_abort_thread_timeout(thread);
+		ready_thread(thread);
 		need_sched = 1;
+	}
+
+	if (!_current_cpu->do_not_lock_sched) {
+		k_spin_unlock(&_sched_spinlock, key);
 	}
 
 	return need_sched;
@@ -1365,7 +1382,16 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 
 #ifdef CONFIG_USERSPACE
 		z_mem_domain_exit_thread(thread);
+		/*
+		 * The scheduler is presently locked. Flag 'do_not_lock_sched'
+		 * to prevent a recursive locking of _sched_spinlock that
+		 * would otherwise occur when k_thread_perms_all_clear() is
+		 * called. See z_unpend_all().
+		 */
+		_current_cpu->do_not_lock_sched = true;
 		k_thread_perms_all_clear(thread);
+		_current_cpu->do_not_lock_sched = false;
+
 		k_object_uninit(thread->stack_obj);
 		k_object_uninit(thread);
 #endif /* CONFIG_USERSPACE */
