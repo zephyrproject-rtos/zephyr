@@ -10,7 +10,7 @@
 	};
 };
 
-&w25q512jvfiq {
+&ext_flash_ctrl {
 	/*
 	 * Lower max FlexSPI frequency to 109MHz, as the PSRAM does not support
 	 * higher frequencies at 3.3V
