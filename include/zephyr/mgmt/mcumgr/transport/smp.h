@@ -163,6 +163,8 @@ enum smp_transport_type {
 	SMP_UDP_IPV6_TRANSPORT,
 	/** SMP LoRaWAN */
 	SMP_LORAWAN_TRANSPORT,
+	/** SMP SPI */
+	SMP_SPI_TRANSPORT,
 	/** SMP user defined type */
 	SMP_USER_DEFINED_TRANSPORT
 };
