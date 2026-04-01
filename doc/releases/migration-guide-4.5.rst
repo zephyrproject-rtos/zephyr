@@ -81,6 +81,32 @@ GPIO
 
 * On STM32F1 series, GPIO output pins now use 50 MHz max. speed instead of 10 MHz. (:github:`104690`)
 
+SD Host Controller
+==================
+
+* Renamed the Kconfig option ``CONFIG_SDHC_STM32_POLLING_SUPPORT`` to
+  :kconfig:option:`CONFIG_SDHC_STM32_POLLING_MODE` to better reflect that the
+  symbol controls polling mode. (:github:`101617`)
+
+* Renamed the Kconfig option ``CONFIG_SDHC_STM32_SDIO`` to
+  :kconfig:option:`CONFIG_SDHC_STM32_SDMMC`. (:github:`101617`)
+
+* The devicetree compatible ``st,stm32-sdio`` was renamed. Use
+  :dtcompatible:`st,stm32-sdmmc` instead. With this compatible, the legacy
+  disk driver and the SDHC driver can target the same node. To migrate to the
+  SDHC STM32 SDMMC driver, disable the legacy disk driver and enable SDHC:
+
+  .. code-block:: kconfig
+
+     CONFIG_SDMMC_STM32=n
+     CONFIG_SDHC_STM32_SDMMC=y
+
+  (:github:`101617`)
+
+* For :dtcompatible:`st,stm32-sdmmc`, the ``sdhi-on-gpios`` property has been
+  consolidated into the existing ``pwr-gpios`` property. Replace
+  ``sdhi-on-gpios`` with ``pwr-gpios`` in out-of-tree devicetree nodes.
+
 STM32
 =====
 
