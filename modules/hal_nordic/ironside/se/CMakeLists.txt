@@ -1,7 +1,11 @@
 # Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-include(./ironside_support_dir.cmake)
+if(EXISTS ${ZEPHYR_HAL_NORDIC_CMAKE_DIR}/ironside/se/ironside_support_dir.cmake)
+  include(${ZEPHYR_HAL_NORDIC_CMAKE_DIR}/ironside/se/ironside_support_dir.cmake)
+else()
+  include(${ZEPHYR_BASE}/modules/hal_nordic/ironside/se/ironside_support_dir.cmake)
+endif()
 
 zephyr_include_directories(include)
 zephyr_include_directories(${IRONSIDE_SUPPORT_DIR}/se/include)

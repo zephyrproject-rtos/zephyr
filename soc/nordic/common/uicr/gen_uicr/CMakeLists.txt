@@ -18,7 +18,11 @@ find_package(Zephyr
   )
 
 # Needed since the CMakeLists.txt that would normally set this is not run in this image.
-include(${ZEPHYR_BASE}/modules/hal_nordic/ironside/se/ironside_support_dir.cmake)
+if(EXISTS ${ZEPHYR_HAL_NORDIC_CMAKE_DIR}/ironside/se/ironside_support_dir.cmake)
+  include(${ZEPHYR_HAL_NORDIC_CMAKE_DIR}/ironside/se/ironside_support_dir.cmake)
+else()
+  include(${ZEPHYR_BASE}/modules/hal_nordic/ironside/se/ironside_support_dir.cmake)
+endif()
 
 project(uicr)
 
