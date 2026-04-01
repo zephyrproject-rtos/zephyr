@@ -312,6 +312,15 @@ config XTENSA_SYSCALL_USE_HELPER
 	  This is a workaround for toolchains where they have
 	  issue modeling register usage.
 
+config XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE
+	bool "Emulate unsupported unsigned loads / stores"
+	depends on COMPILER_CODEGEN_VLIW_DISABLED
+	help
+	  When an unsigned load / store instruction triggers an unsupported
+	  load / store exception, the exception handler will perform the
+	  operation itself with supported word sized and aligned loads /
+	  stores. Does not currently support VLIW.
+
 config XTENSA_INSECURE_USERSPACE
 	bool
 	default y

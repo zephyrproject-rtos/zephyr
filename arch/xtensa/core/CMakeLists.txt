@@ -96,6 +96,7 @@ add_custom_command(OUTPUT ${ZSR_H} DEPENDS ${CORE_ISA_DM}
   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_zsr.py
                                $<$<BOOL:${CONFIG_XTENSA_MMU}>:--mmu>
                                $<$<BOOL:${MAY_NEED_SYSCALL_SCRATCH_REG}>:--syscall-scratch>
+                               $<$<BOOL:${CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE}>:--load-store-emulation>
                                $<$<BOOL:${NEED_FLUSH_SCRATCH_REG}>:--flush-reg>
                                ${CORE_ISA_DM} ${ZSR_H})
 add_custom_target(zsr_h DEPENDS ${ZSR_H})
