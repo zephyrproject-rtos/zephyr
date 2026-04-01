@@ -60,6 +60,9 @@ struct max32_spi_data {
 
 #ifdef CONFIG_SPI_MAX32_DMA
 	volatile uint8_t dma_stat;
+	/** Full @ref dma_config applied; use @ref dma_reload when SPI/DMA settings unchanged. */
+	bool dma_prepared;
+	uint16_t dma_spi_operation;
 #endif /* CONFIG_SPI_MAX32_DMA */
 
 #ifdef CONFIG_SPI_ASYNC
@@ -83,7 +86,7 @@ struct max32_spi_data {
 
 #if defined(CONFIG_SPI_MAX32_INTERRUPT)
 static void spi_max32_callback(mxc_spi_req_t *req, int error);
-#endif /* CONFIG_SPI_MAX32_INTERRUPT */
+#endif
 
 static int spi_configure(const struct device *dev, const struct spi_config *config)
 {
@@ -295,13 +298,13 @@ static int spi_max32_transceive_sync(mxc_spi_regs_t *spi, struct max32_spi_data 
 
 	return ret;
 }
-#endif /* CONFIG_SPI_MAX32_INTERRUPT */
+#endif /* !CONFIG_SPI_MAX32_INTERRUPT && !CONFIG_SPI_MAX32_RTIO */
 
 #ifdef CONFIG_SPI_MAX32_DMA
 static int spi_max32_tx_dma_setup(const struct device *dev, const uint8_t *buf, uint32_t len,
-				  uint32_t word_count, uint8_t dfs_shift);
+				  uint32_t word_count, uint8_t dfs_shift, bool use_reload);
 static int spi_max32_rx_dma_setup(const struct device *dev, const uint8_t *buf, uint32_t len,
-				  uint32_t word_count, uint8_t dfs_shift);
+				  uint32_t word_count, uint8_t dfs_shift, bool use_reload);
 #endif
 
 static int spi_max32_transceive(const struct device *dev)
@@ -443,20 +446,44 @@ static int spi_max32_transceive(const struct device *dev)
 			return -ENOTSUP;
 		}
 
-		MXC_SPI_SetSlave(cfg->regs, ctx->config->slave);
-
-		ret = spi_max32_rx_dma_setup(dev, data->req.rxData, data->req.rxLen,
-					     data->req.rxLen >> dfs_shift, dfs_shift);
-		if (ret < 0) {
-			LOG_ERR("RX DMA setup failed: %d", ret);
-			goto dma_rtio_exit;
+		ret = spi_configure(dev, ctx->config);
+		if (ret != 0) {
+			return ret;
 		}
 
-		ret = spi_max32_tx_dma_setup(dev, data->req.txData, data->req.txLen,
-					     data->req.txLen >> dfs_shift, dfs_shift);
-		if (ret < 0) {
-			LOG_ERR("TX DMA setup failed: %d", ret);
-			goto dma_rtio_exit;
+		if (data->dma_prepared && data->dma_spi_operation != ctx->config->operation) {
+			data->dma_prepared = false;
+		}
+
+		/* Assert the CS line */
+		spi_cs_assert(dev);
+
+		MXC_SPI_SetSlave(cfg->regs, ctx->config->slave);
+
+		{
+			bool use_dma_reload = data->dma_prepared &&
+					      (data->dma_spi_operation == ctx->config->operation);
+
+			ret = spi_max32_rx_dma_setup(dev, data->req.rxData, data->req.rxLen,
+						     data->req.rxLen >> dfs_shift, dfs_shift,
+						     use_dma_reload);
+			if (ret < 0) {
+				LOG_ERR("RX DMA setup failed: %d", ret);
+				goto dma_rtio_exit;
+			}
+
+			ret = spi_max32_tx_dma_setup(dev, data->req.txData, data->req.txLen,
+						     data->req.txLen >> dfs_shift, dfs_shift,
+						     use_dma_reload);
+			if (ret < 0) {
+				LOG_ERR("TX DMA setup failed: %d", ret);
+				goto dma_rtio_exit;
+			}
+
+			if (!use_dma_reload) {
+				data->dma_prepared = true;
+				data->dma_spi_operation = ctx->config->operation;
+			}
 		}
 
 		MXC_SPI_StartTransmission(cfg->regs);
@@ -466,6 +493,7 @@ dma_rtio_exit:
 			MXC_SPI_DisableInt(cfg->regs, ADI_MAX32_SPI_INT_EN_TX_EMPTY);
 			dma_stop(cfg->tx_dma.dev, cfg->tx_dma.channel);
 			dma_stop(cfg->rx_dma.dev, cfg->rx_dma.channel);
+			data->dma_prepared = false;
 		}
 
 		return ret;
@@ -591,6 +619,7 @@ static void spi_max32_dma_callback(const struct device *dev, void *arg, uint32_t
 
 	if (status < 0) {
 		LOG_ERR("DMA callback error for channel %u: %d", channel, status);
+		data->dma_prepared = false;
 #ifndef CONFIG_SPI_MAX32_RTIO
 #ifdef CONFIG_SPI_ASYNC
 		if (data->ctx.asynchronous) {
@@ -665,13 +694,26 @@ static void spi_max32_dma_callback(const struct device *dev, void *arg, uint32_t
 }
 
 static int spi_max32_tx_dma_load(const struct device *dev, const uint8_t *buf, uint32_t len,
-				 uint8_t dfs_shift)
+				 uint8_t dfs_shift, bool use_reload)
 {
 	int ret;
 	const struct max32_spi_config *config = dev->config;
 	struct max32_spi_data *data = dev->data;
 	struct dma_config dma_cfg = {0};
 	struct dma_block_config dma_blk = {0};
+
+	if (use_reload) {
+		uint32_t src = buf ? (uint32_t)buf : (uint32_t)data->dummy;
+
+		/* Peripheral address is fixed by channel reqsel from dma_config; same as dest=0 there */
+		ret = dma_reload(config->tx_dma.dev, config->tx_dma.channel, src, 0, len);
+		if (ret < 0) {
+			LOG_ERR("Error reloading Tx DMA (%d)", ret);
+			return ret;
+		}
+
+		return dma_start(config->tx_dma.dev, config->tx_dma.channel);
+	}
 
 	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 	dma_cfg.dma_callback = spi_max32_dma_callback;
@@ -700,7 +742,7 @@ static int spi_max32_tx_dma_load(const struct device *dev, const uint8_t *buf, u
 }
 
 static int spi_max32_tx_dma_setup(const struct device *dev, const uint8_t *buf, uint32_t len,
-				  uint32_t word_count, uint8_t dfs_shift)
+				  uint32_t word_count, uint8_t dfs_shift, bool use_reload)
 {
 	const struct max32_spi_config *cfg = dev->config;
 	struct max32_spi_data *data = dev->data;
@@ -715,17 +757,30 @@ static int spi_max32_tx_dma_setup(const struct device *dev, const uint8_t *buf, 
 
 	data->dma_stat = 0;
 
-	return spi_max32_tx_dma_load(dev, buf, len, dfs_shift);
+	return spi_max32_tx_dma_load(dev, buf, len, dfs_shift, use_reload);
 }
 
 static int spi_max32_rx_dma_load(const struct device *dev, const uint8_t *buf, uint32_t len,
-				 uint8_t dfs_shift)
+				 uint8_t dfs_shift, bool use_reload)
 {
 	int ret;
 	const struct max32_spi_config *config = dev->config;
 	struct max32_spi_data *data = dev->data;
 	struct dma_config dma_cfg = {0};
 	struct dma_block_config dma_blk = {0};
+
+	if (use_reload) {
+		uint32_t dst = buf ? (uint32_t)buf : (uint32_t)data->dummy;
+
+		/* Peripheral address is fixed by channel reqsel from dma_config; same as source=0 there */
+		ret = dma_reload(config->rx_dma.dev, config->rx_dma.channel, 0, dst, len);
+		if (ret < 0) {
+			LOG_ERR("Error reloading Rx DMA (%d)", ret);
+			return ret;
+		}
+
+		return dma_start(config->rx_dma.dev, config->rx_dma.channel);
+	}
 
 	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	dma_cfg.dma_callback = spi_max32_dma_callback;
@@ -753,7 +808,7 @@ static int spi_max32_rx_dma_load(const struct device *dev, const uint8_t *buf, u
 }
 
 static int spi_max32_rx_dma_setup(const struct device *dev, const uint8_t *buf, uint32_t len,
-				  uint32_t word_count, uint8_t dfs_shift)
+				  uint32_t word_count, uint8_t dfs_shift, bool use_reload)
 {
 	const struct max32_spi_config *cfg = dev->config;
 	mxc_spi_regs_t *spi = cfg->regs;
@@ -765,7 +820,7 @@ static int spi_max32_rx_dma_setup(const struct device *dev, const uint8_t *buf, 
 	spi->dma |= ADI_MAX32_SPI_DMA_RX_DMA_EN;
 	MXC_SPI_SetRXThreshold(spi, dfs_shift ? 1 : 0);
 
-	return spi_max32_rx_dma_load(dev, buf, len, dfs_shift);
+	return spi_max32_rx_dma_load(dev, buf, len, dfs_shift, use_reload);
 }
 
 #if !defined(CONFIG_SPI_MAX32_RTIO)
@@ -779,6 +834,7 @@ static int spi_max32_transceive_dma(const struct device *dev)
 	uint32_t len, word_count;
 	uint8_t dfs_shift;
 	uint8_t dfs;
+	bool use_dma_reload;
 
 	len = spi_context_max_continuous_chunk(ctx);
 	dfs_shift = spi_max32_get_dfs_shift(ctx);
@@ -802,14 +858,24 @@ static int spi_max32_transceive_dma(const struct device *dev)
 		return ret;
 	}
 
-	ret = spi_max32_rx_dma_setup(dev, ctx->rx_buf, len, word_count, dfs_shift);
+	use_dma_reload = data->dma_prepared &&
+			 (data->dma_spi_operation == ctx->config->operation);
+
+	ret = spi_max32_rx_dma_setup(dev, ctx->rx_buf, len, word_count, dfs_shift, use_dma_reload);
 	if (ret < 0) {
+		data->dma_prepared = false;
 		return ret;
 	}
 
-	ret = spi_max32_tx_dma_setup(dev, ctx->tx_buf, len, word_count, dfs_shift);
+	ret = spi_max32_tx_dma_setup(dev, ctx->tx_buf, len, word_count, dfs_shift, use_dma_reload);
 	if (ret < 0) {
+		data->dma_prepared = false;
 		return ret;
+	}
+
+	if (!use_dma_reload) {
+		data->dma_prepared = true;
+		data->dma_spi_operation = ctx->config->operation;
 	}
 
 	MXC_SPI_StartTransmission(spi);
@@ -827,6 +893,7 @@ void spi_max32_dma_work_handler(struct k_work *work)
 
 	ret = spi_max32_transceive_dma(dev);
 	if (ret < 0) {
+		data->dma_prepared = false;
 		spi_context_complete(&data->ctx, dev, -EIO);
 	}
 }
@@ -866,9 +933,17 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 		goto unlock;
 	}
 
+	if (!spi_context_configured(&data->ctx, config)) {
+		data->dma_prepared = false;
+	}
+
 	ret = spi_configure(dev, config);
 	if (ret != 0) {
 		goto unlock;
+	}
+
+	if (data->dma_prepared && data->dma_spi_operation != ctx->config->operation) {
+		data->dma_prepared = false;
 	}
 
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, 1);
@@ -885,6 +960,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 	if (ret < 0) {
 		dma_stop(cfg->tx_dma.dev, cfg->tx_dma.channel);
 		dma_stop(cfg->rx_dma.dev, cfg->rx_dma.channel);
+		data->dma_prepared = false;
 	}
 
 unlock:
