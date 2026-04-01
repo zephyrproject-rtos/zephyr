@@ -145,6 +145,7 @@
 		spic: flash-controller@48080000 {
 			compatible = "realtek,ameba-flash-controller";
 			reg = <0x48080000 0x200>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -154,6 +155,8 @@
 				compatible = "soc-nv-flash";
 				erase-block-size = <DT_SIZE_K(4)>;
 				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 
