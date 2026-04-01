@@ -225,7 +225,7 @@ class ComplianceTest:
 
     def _result(self, res, text):
         res.text = text.rstrip()
-        self.case.result += [res]
+        self.case.append(res)
 
     def error(self, text, msg=None, type_="error"):
         """
