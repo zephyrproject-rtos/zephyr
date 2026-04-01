@@ -185,6 +185,11 @@ Boards
   Zephyr is expected to execute in the non-secure state of the processor, the board or project
   must explicitly enable :kconfig:option:`CONFIG_TRUSTED_EXECUTION_NON_SECURE`.
 
+* The following WCH SoC Kconfigs have been renamed. Kconfig/CMake/code
+  needs to be updated if they reference the old Kconfigs:
+
+  * ``CONFIG_SOC_SERIES_CH32V00X`` with :kconfig:option:`CONFIG_SOC_SERIES_QINGKE_V2C`
+
 Device Drivers and Devicetree
 *****************************
 
