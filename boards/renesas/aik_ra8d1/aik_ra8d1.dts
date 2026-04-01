@@ -98,11 +98,10 @@
 	status = "okay";
 };
 
-&subclk {
-	status = "okay";
-};
-
 &pll {
+	clocks = <&xtal>;
+	div = <2>;
+	mul = <80 0>;
 	status = "okay";
 
 	pllp {
