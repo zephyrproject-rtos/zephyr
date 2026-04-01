@@ -314,6 +314,11 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define DEV_CHAR_TABLE_DCR(x)           ((x) & GENMASK(7, 0))
 #define DEV_CHAR_TABLE_BCR(x)           (((x) & GENMASK(15, 8)) >> 8)
 
+#define SDCT_DYNAMIC_ADDR(x) ((x) & GENMASK(7, 0))
+#define SDCT_DCR(x)          (((x) & GENMASK(15, 8)) >> 8)
+#define SDCT_BCR(x)          (((x) & GENMASK(23, 16)) >> 16)
+#define SDCT_STATIC_ADDR(x)  (((x) & GENMASK(31, 24)) >> 24)
+
 #define I3C_BUS_SDR1_SCL_RATE       8000000
 #define I3C_BUS_SDR2_SCL_RATE       6000000
 #define I3C_BUS_SDR3_SCL_RATE       4000000
@@ -405,6 +410,11 @@ struct dw_i3c_data {
 	enum i3c_bus_mode mode;
 	struct dw_i3c_i2c_dev_data dw_i3c_i2c_priv_data[DW_I3C_MAX_DEVS];
 #endif /* CONFIG_I3C_CONTROLLER */
+#if defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_TARGET)
+	const struct device *dev;
+	struct k_work deftgts_work;
+	uint8_t deftgts_count;
+#endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_TARGET */
 };
 #ifdef CONFIG_I3C_CONTROLLER
 static uint8_t get_free_pos(uint32_t free_pos)
@@ -508,6 +518,64 @@ static void read_ibi_fifo(const struct device *dev, uint8_t *buf, int32_t nbytes
 #endif /* CONFIG_I3C_CONTROLLER */
 #endif /* CONFIG_I3C_USE_IBI */
 
+#if defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_TARGET)
+static void dw_i3c_deftgts_work_fn(struct k_work *work)
+{
+	struct dw_i3c_data *data = CONTAINER_OF(work, struct dw_i3c_data, deftgts_work);
+	const struct device *dev = data->dev;
+	const struct dw_i3c_config *config = dev->config;
+	uint16_t count = data->deftgts_count;
+	uint32_t sdct_val;
+	uint8_t n = 0;
+
+	if (data->common.deftgts) {
+		k_free(data->common.deftgts);
+		data->common.deftgts = NULL;
+	}
+
+	data->common.deftgts =
+		k_malloc(sizeof(uint8_t) + sizeof(struct i3c_ccc_deftgts_active_controller) +
+			 ((count - 1) * sizeof(struct i3c_ccc_deftgts_target)));
+	if (!data->common.deftgts) {
+		LOG_ERR("%s: Failed to allocate memory for DEFTGTS", dev->name);
+		return;
+	}
+
+	data->common.deftgts->count = count - 1;
+
+	/* First SDCT entry is the active controller */
+	sdct_val = sys_read32(config->regs + data->dctstartaddr);
+	data->common.deftgts->active_controller.addr = SDCT_DYNAMIC_ADDR(sdct_val);
+	data->common.deftgts->active_controller.dcr = SDCT_DCR(sdct_val);
+	data->common.deftgts->active_controller.bcr = SDCT_BCR(sdct_val);
+	data->common.deftgts->active_controller.static_addr = SDCT_STATIC_ADDR(sdct_val);
+
+	/* Remaining SDCT entries are targets */
+	for (uint16_t i = 1; i < count; i++) {
+		sdct_val = sys_read32(config->regs + data->dctstartaddr + (i * 4));
+		uint8_t addr = SDCT_DYNAMIC_ADDR(sdct_val);
+		uint8_t bcr = SDCT_BCR(sdct_val);
+		uint8_t dcr_lvr = SDCT_DCR(sdct_val);
+		uint8_t static_addr = SDCT_STATIC_ADDR(sdct_val);
+
+		if (addr != 0) {
+			data->common.deftgts->targets[n].addr = addr;
+			data->common.deftgts->targets[n].dcr = dcr_lvr;
+			data->common.deftgts->targets[n].bcr = bcr;
+			data->common.deftgts->targets[n].static_addr = static_addr;
+		} else {
+			data->common.deftgts->targets[n].addr = 0;
+			data->common.deftgts->targets[n].lvr = dcr_lvr;
+			data->common.deftgts->targets[n].bcr = 0;
+			data->common.deftgts->targets[n].static_addr = static_addr;
+		}
+		n++;
+	}
+
+	data->common.deftgts_refreshed = true;
+}
+#endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_TARGET */
+
 /**
  * @brief End the I3C transfer and process responses.
  *
@@ -537,7 +605,10 @@ static void dw_i3c_end_xfer(const struct device *dev)
 		resp = sys_read32(config->regs + RESPONSE_QUEUE_PORT);
 		tid = RESPONSE_PORT_TID(resp);
 		if (tid == 0xf) {
-			/* TODO: handle vendor extension ccc or hdr header in target mode */
+#if defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_TARGET)
+			data->deftgts_count = RESPONSE_PORT_DATA_LEN(resp);
+			k_work_submit(&data->deftgts_work);
+#endif
 			continue;
 		}
 
@@ -1507,6 +1578,18 @@ static int i3c_dw_irq(const struct device *dev)
 	if (status & INTR_BUSOWNER_UPDATE_STAT) {
 		dw_i3c_role_switch_resume(dev);
 		dw_i3c_update_interrupt_mask(dev);
+
+		if (sys_read32(config->regs + PRESENT_STATE) & PRESENT_STATE_CURRENT_MASTER) {
+			/* begin workq for handoff procedure */
+			i3c_ibi_work_enqueue_cb(dev, i3c_sec_handoffed);
+			if (data->target_config != NULL &&
+			    data->target_config->callbacks != NULL &&
+			    data->target_config->callbacks->controller_handoff_cb != NULL) {
+				data->target_config->callbacks->controller_handoff_cb(
+					data->target_config);
+			}
+		}
+
 		sys_write32(INTR_BUSOWNER_UPDATE_STAT, config->regs + INTR_STATUS);
 	}
 #endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_TARGET && CONFIG_I3C_USE_IBI */
@@ -2423,6 +2506,10 @@ static int dw_i3c_init(const struct device *dev)
 #endif /* CONFIG_I3C_USE_IBI */
 	k_sem_init(&data->sem_xfer, 0, 1);
 	k_mutex_init(&data->mt);
+#if defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_TARGET)
+	data->dev = dev;
+	k_work_init(&data->deftgts_work, dw_i3c_deftgts_work_fn);
+#endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_TARGET */
 
 	dw_i3c_pinctrl_enable(dev, true);
 #ifdef CONFIG_I3C_CONTROLLER
