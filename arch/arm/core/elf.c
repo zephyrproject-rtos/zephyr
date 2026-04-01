@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2023 Intel Corporation
  * Copyright (c) 2024 Schneider Electric
+ * Copyright (c) 2025 Arduino SA
  *
  * SPDX-License-Identifier: Apache-2.0
  */

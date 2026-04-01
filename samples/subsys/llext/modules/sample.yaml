@@ -17,7 +17,7 @@ common:
 
 sample:
   name: CONFIG_MODULES test
-  description: Call code directly and from extensions
+  description: Call code directly and from extensions.
 
 tests:
   sample.llext.modules.module_build:
