@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ameba watchdog
+
+compatible: "realtek,ameba-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  early-int-cnt:
+    type: int
+    default: 500
+    description: |
+      WDG parameter specifies the watchdog early interrupt trigger threshold,
+      expressed in milliseconds.
+      This parameter must be set to a value in the 1-65535 range.
+      Default is 500 ms, which provides sufficient time for firmware to
+      perform recovery or logging before the watchdog reset occurs.
