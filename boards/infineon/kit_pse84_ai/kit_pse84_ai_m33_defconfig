@@ -5,7 +5,6 @@
 
 # Enable FPU
 CONFIG_FPU=y
-CONFIG_FPU_SHARING=y
 
 # General configuration
 CONFIG_CORTEX_M_SYSTICK=y
