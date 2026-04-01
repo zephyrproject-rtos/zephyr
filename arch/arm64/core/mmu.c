@@ -24,6 +24,7 @@
 #include <zephyr/sys/util.h>
 #include <mmu.h>
 
+#include "boot.h"
 #include "mmu.h"
 #include "paging.h"
 
