@@ -93,8 +93,8 @@ struct i2s_litex_data {
 
 /* Device const configuration */
 struct i2s_litex_cfg {
-	uint32_t base;
-	uint32_t fifo_base;
+	mem_addr_t base;
+	mem_addr_t fifo_base;
 	uint16_t fifo_depth;
 	void (*irq_config)(const struct device *dev);
 };
