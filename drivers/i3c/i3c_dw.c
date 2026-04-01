@@ -1195,6 +1195,27 @@ static void dw_i3c_handle_hj(const struct device *dev, uint32_t ibi_status)
 	}
 }
 
+static void dw_i3c_handle_mr(const struct device *dev, uint32_t ibi_status)
+{
+	uint8_t addr = IBI_QUEUE_IBI_ADDR(ibi_status);
+
+	if (IBI_QUEUE_STATUS_IBI_STS(ibi_status) & BIT(3)) {
+		LOG_DBG("%s: NAK for MR from 0x%02x", dev->name, addr);
+		return;
+	}
+
+	struct i3c_device_desc *desc = i3c_dev_list_i3c_addr_find(dev, addr);
+
+	if (desc == NULL) {
+		LOG_ERR("%s: MR from unknown addr 0x%02x", dev->name, addr);
+		return;
+	}
+
+	if (i3c_ibi_work_enqueue_controller_request(desc) != 0) {
+		LOG_ERR("%s: Error enqueue IBI MR work", dev->name);
+	}
+}
+
 static void ibis_handle(const struct device *dev)
 {
 	const struct dw_i3c_config *config = dev->config;
@@ -1209,8 +1230,10 @@ static void ibis_handle(const struct device *dev)
 			dw_i3c_handle_tir(dev, ibi_stat);
 		} else if (IBI_TYPE_HJ(ibi_stat)) {
 			dw_i3c_handle_hj(dev, ibi_stat);
+		} else if (IBI_TYPE_MR(ibi_stat)) {
+			dw_i3c_handle_mr(dev, ibi_stat);
 		} else {
-			LOG_WRN("%s: Controller Role Request Not implemented", dev->name);
+			LOG_ERR("%s: Unknown IBI type", dev->name);
 		}
 	}
 }
@@ -1333,6 +1356,49 @@ static int dw_i3c_target_ibi_raise_tir(const struct device *dev, struct i3c_ibi 
 	}
 }
 
+static int dw_i3c_target_ibi_raise_mr(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+	struct dw_i3c_data *data = dev->data;
+	int ret;
+
+	if (!(sys_read32(config->regs + HW_CAPABILITY) & HW_CAPABILITY_SLV_IBI_CAP)) {
+		LOG_ERR("%s: IBI not supported by HW", dev->name);
+		return -ENOTSUP;
+	}
+
+	if (!(sys_read32(config->regs + DEVICE_ADDR) & DEVICE_ADDR_DYNAMIC_ADDR_VALID)) {
+		LOG_ERR("%s: MR not available, DA not assigned", dev->name);
+		return -EACCES;
+	}
+
+	if (!(sys_read32(config->regs + SLV_EVENT_STATUS) & SLV_EVENT_STATUS_MR_EN)) {
+		LOG_ERR("%s: MR requests are currently disabled by DISEC", dev->name);
+		return -EAGAIN;
+	}
+
+	sys_write32(sys_read32(config->regs + SLV_INTR_REQ) | SLV_INTR_REQ_MR,
+		    config->regs + SLV_INTR_REQ);
+
+	ret = k_sem_take(&data->ibi_sts_sem, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
+	if (ret) {
+		return -ETIMEDOUT;
+	}
+
+	uint32_t slv_ibi_resp = sys_read32(config->regs + SLV_IBI_RESP);
+
+	switch (SLV_IBI_RESP_IBI_STS(slv_ibi_resp)) {
+	case SLV_IBI_RESP_IBI_STS_ACK:
+		LOG_DBG("%s: Controller ACKed MR", dev->name);
+		return 0;
+	case SLV_IBI_RESP_IBI_STS_NACK:
+		LOG_ERR("%s: Controller NACKed MR", dev->name);
+		return -EAGAIN;
+	default:
+		return -EIO;
+	}
+}
+
 static int dw_i3c_target_ibi_raise(const struct device *dev, struct i3c_ibi *request)
 {
 	if (request == NULL) {
@@ -1343,8 +1409,7 @@ static int dw_i3c_target_ibi_raise(const struct device *dev, struct i3c_ibi *req
 	case I3C_IBI_TARGET_INTR:
 		return dw_i3c_target_ibi_raise_tir(dev, request);
 	case I3C_IBI_CONTROLLER_ROLE_REQUEST:
-		/* TODO: Synopsys I3C can support CR, but not implemented yet */
-		return -ENOTSUP;
+		return dw_i3c_target_ibi_raise_mr(dev);
 	case I3C_IBI_HOTJOIN:
 		return dw_i3c_target_ibi_raise_hj(dev);
 	default:
@@ -1352,6 +1417,36 @@ static int dw_i3c_target_ibi_raise(const struct device *dev, struct i3c_ibi *req
 	}
 }
 #endif /* CONFIG_I3C_TARGET */
+
+#if defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_TARGET)
+static void dw_i3c_role_switch_resume(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	sys_write32(RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO | RESET_CTRL_CMD_QUEUE,
+		    config->regs + RESET_CTRL);
+	sys_write32(sys_read32(config->regs + DEVICE_CTRL) | DEV_CTRL_RESUME,
+		    config->regs + DEVICE_CTRL);
+}
+
+static void dw_i3c_update_interrupt_mask(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+	uint32_t intr_mask;
+	bool is_master = !!(sys_read32(config->regs + PRESENT_STATE) &
+			    PRESENT_STATE_CURRENT_MASTER);
+
+	if (is_master) {
+		intr_mask = INTR_MASTER_MASK | INTR_BUSOWNER_UPDATE_STAT;
+	} else {
+		intr_mask = INTR_SLAVE_MASK | INTR_BUSOWNER_UPDATE_STAT;
+	}
+
+	sys_write32(INTR_ALL, config->regs + INTR_STATUS);
+	sys_write32(intr_mask, config->regs + INTR_STATUS_EN);
+	sys_write32(intr_mask, config->regs + INTR_SIGNAL_EN);
+}
+#endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_TARGET */
 #endif /* CONFIG_I3C_USE_IBI */
 
 static int i3c_dw_irq(const struct device *dev)
@@ -1407,6 +1502,15 @@ static int i3c_dw_irq(const struct device *dev)
 #endif /* CONFIG_I3C_USE_IBI */
 	}
 #endif /* CONFIG_I3C_TARGET */
+
+#if defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_TARGET) && defined(CONFIG_I3C_USE_IBI)
+	if (status & INTR_BUSOWNER_UPDATE_STAT) {
+		dw_i3c_role_switch_resume(dev);
+		dw_i3c_update_interrupt_mask(dev);
+		sys_write32(INTR_BUSOWNER_UPDATE_STAT, config->regs + INTR_STATUS);
+	}
+#endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_TARGET && CONFIG_I3C_USE_IBI */
+
 	return 0;
 }
 
@@ -1654,6 +1758,9 @@ static void enable_interrupts(const struct device *dev)
 	/* Enable interrupts */
 #if defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_TARGET)
 	intr_mask = INTR_MASTER_MASK | INTR_SLAVE_MASK;
+#if defined(CONFIG_I3C_USE_IBI)
+	intr_mask |= INTR_BUSOWNER_UPDATE_STAT;
+#endif /* CONFIG_I3C_USE_IBI */
 #elif defined(CONFIG_I3C_CONTROLLER)
 	intr_mask = INTR_MASTER_MASK;
 #elif defined(CONFIG_I3C_TARGET)
