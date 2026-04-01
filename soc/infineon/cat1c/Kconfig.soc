@@ -10,5 +10,10 @@ config SOC_FAMILY_INFINEON_CAT1C
 	bool
 	select SOC_FAMILY_INFINEON_CAT1
 
+config SOC_FAMILY_INFINEON_TRAVEO
+	bool
+	help
+	  Apply to PDL-based drivers for Infineon TRAVEO SoCs.
+
 # MPNs definitions
 rsource "*/Kconfig.soc"
