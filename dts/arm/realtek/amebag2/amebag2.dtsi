@@ -81,6 +81,7 @@
 		spic: flash-controller@4011d000 {
 			compatible = "realtek,ameba-flash-controller";
 			reg = <0x4011d000 0x400>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
