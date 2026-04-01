@@ -6,4 +6,11 @@ if BOARD_FVP_CORSTONE1000
 config BUILD_OUTPUT_BIN
 	default y
 
+# FVP atomic instruction emulation doesn't properly implement cache
+# coherency guarantees for SMP. Use board-specific atomics with DMB
+# barriers as workaround. See fvp_base_revc_2xaem for details.
+config ATOMIC_OPERATIONS_ARCH
+	depends on SMP
+	default y
+
 endif # BOARD_FVP_CORSTONE1000
