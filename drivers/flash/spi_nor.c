@@ -11,6 +11,7 @@
 #define DT_DRV_COMPAT jedec_spi_nor
 
 #include <errno.h>
+#include <stdint.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
@@ -156,6 +157,7 @@ struct spi_nor_config {
 	bool hold_gpios_exist:1;
 	bool has_flsr: 1;
 	bool use_fast_read: 1;
+	bool bus_is_nxp_dspi: 1;
 };
 
 /**
@@ -859,6 +861,83 @@ static int mxicy_configure(const struct device *dev, const uint8_t *jedec_id)
 
 #endif /* ANY_INST_HAS_MXICY_MX25R_POWER_MODE */
 
+#define SPI_NOR_READ_ONEBUF_LEN 1U
+#define SPI_NOR_READ_CMD_SIZE 6U
+
+static bool spi_nor_use_dspi_onebuf_read(const struct device *dev, size_t length)
+{
+	const struct spi_nor_config *cfg = dev->config;
+
+	return cfg->bus_is_nxp_dspi && (length == SPI_NOR_READ_ONEBUF_LEN);
+}
+
+static int spi_nor_access_read_onebuf(const struct device *const dev,
+				      uint8_t opcode, unsigned int access,
+				      off_t addr, void *data, size_t length)
+{
+	const struct spi_nor_config *const driver_cfg = dev->config;
+	struct spi_nor_data *const driver_data = dev->data;
+	bool is_addressed = (access & NOR_ACCESS_ADDRESSED) != 0U;
+	bool has_dummy = (access & NOR_ACCESS_DUMMY_BYTE) != 0U;
+	uint8_t tx_buf[SPI_NOR_READ_CMD_SIZE + SPI_NOR_READ_ONEBUF_LEN] = { opcode };
+	uint8_t rx_buf[SPI_NOR_READ_CMD_SIZE + SPI_NOR_READ_ONEBUF_LEN] = { 0 };
+	struct spi_buf spi_buf_tx = {
+		.buf = tx_buf,
+		.len = 1,
+	};
+	struct spi_buf spi_buf_rx = {
+		.buf = rx_buf,
+		.len = 1,
+	};
+	const struct spi_buf_set tx_set = {
+		.buffers = &spi_buf_tx,
+		.count = 1,
+	};
+	const struct spi_buf_set rx_set = {
+		.buffers = &spi_buf_rx,
+		.count = 1,
+	};
+	int ret;
+
+	if (is_addressed) {
+		bool access_24bit = (access & NOR_ACCESS_24BIT_ADDR) != 0U;
+		bool access_32bit = (access & NOR_ACCESS_32BIT_ADDR) != 0U;
+		bool use_32bit = (access_32bit
+				  || (!access_24bit && driver_data->flag_access_32bit));
+		union {
+			uint32_t u32;
+			uint8_t u8[4];
+		} addr32 = {
+			.u32 = sys_cpu_to_be32(addr),
+		};
+
+		if (use_32bit) {
+			memcpy(&tx_buf[1], &addr32.u8[0], 4);
+			spi_buf_tx.len += 4;
+			spi_buf_rx.len += 4;
+		} else {
+			memcpy(&tx_buf[1], &addr32.u8[1], 3);
+			spi_buf_tx.len += 3;
+			spi_buf_rx.len += 3;
+		}
+	}
+
+	if (has_dummy) {
+		spi_buf_tx.len++;
+		spi_buf_rx.len++;
+	}
+
+	spi_buf_tx.len += length;
+	spi_buf_rx.len += length;
+
+	ret = spi_transceive_dt(&driver_cfg->spi, &tx_set, &rx_set);
+	if (ret == 0) {
+		memcpy(data, &rx_buf[spi_buf_rx.len - length], length);
+	}
+
+	return ret;
+}
+
 static int spi_nor_read(const struct device *dev, off_t addr, void *dest,
 			size_t size)
 {
@@ -877,34 +956,88 @@ static int spi_nor_read(const struct device *dev, off_t addr, void *dest,
 	}
 
 	acquire_device(dev);
-
-	if (IS_ENABLED(ANY_INST_USE_4B_ADDR_OPCODES) && cfg->use_4b_addr_opcodes) {
-		if (addr > SPI_NOR_3B_ADDR_MAX) {
-			if (IS_ENABLED(ANY_INST_USE_FAST_READ) && cfg->use_fast_read) {
-				ret = spi_nor_cmd_addr_fast_read_4b(dev, SPI_NOR_CMD_READ_FAST_4B,
-								    addr, dest, size);
+	if (spi_nor_use_dspi_onebuf_read(dev, size)) {
+		if (IS_ENABLED(ANY_INST_USE_4B_ADDR_OPCODES) && cfg->use_4b_addr_opcodes) {
+			if (addr > SPI_NOR_3B_ADDR_MAX) {
+				if (IS_ENABLED(ANY_INST_USE_FAST_READ) && cfg->use_fast_read) {
+					ret = spi_nor_access_read_onebuf(
+						dev, SPI_NOR_CMD_READ_FAST_4B,
+						NOR_ACCESS_32BIT_ADDR |
+							NOR_ACCESS_ADDRESSED |
+							NOR_ACCESS_DUMMY_BYTE,
+						addr, dest, size);
+				} else {
+					ret = spi_nor_access_read_onebuf(
+						dev, SPI_NOR_CMD_READ_4B,
+						NOR_ACCESS_32BIT_ADDR |
+							NOR_ACCESS_ADDRESSED,
+						addr, dest, size);
+				}
 			} else {
-				ret = spi_nor_cmd_addr_read_4b(dev, SPI_NOR_CMD_READ_4B, addr, dest,
-							       size);
+				if (IS_ENABLED(ANY_INST_USE_FAST_READ) && cfg->use_fast_read) {
+					ret = spi_nor_access_read_onebuf(
+						dev, SPI_NOR_CMD_READ_FAST,
+						NOR_ACCESS_24BIT_ADDR |
+							NOR_ACCESS_ADDRESSED |
+							NOR_ACCESS_DUMMY_BYTE,
+						addr, dest, size);
+				} else {
+					ret = spi_nor_access_read_onebuf(
+						dev, SPI_NOR_CMD_READ,
+						NOR_ACCESS_24BIT_ADDR |
+							NOR_ACCESS_ADDRESSED,
+						addr, dest, size);
+				}
 			}
 		} else {
 			if (IS_ENABLED(ANY_INST_USE_FAST_READ) && cfg->use_fast_read) {
-				ret = spi_nor_cmd_addr_fast_read_3b(dev, SPI_NOR_CMD_READ_FAST,
-								    addr, dest, size);
+				ret = spi_nor_access_read_onebuf(
+					dev, SPI_NOR_CMD_READ_FAST,
+					NOR_ACCESS_ADDRESSED |
+						NOR_ACCESS_DUMMY_BYTE,
+					addr, dest, size);
 			} else {
-				ret = spi_nor_cmd_addr_read_3b(dev, SPI_NOR_CMD_READ, addr, dest,
-							       size);
+				ret = spi_nor_access_read_onebuf(
+					dev, SPI_NOR_CMD_READ,
+					NOR_ACCESS_ADDRESSED,
+					addr, dest, size);
 			}
 		}
 	} else {
-		if (IS_ENABLED(ANY_INST_USE_FAST_READ) && cfg->use_fast_read) {
-			ret = spi_nor_cmd_addr_fast_read(dev, SPI_NOR_CMD_READ_FAST, addr, dest,
-							 size);
+		if (IS_ENABLED(ANY_INST_USE_4B_ADDR_OPCODES) && cfg->use_4b_addr_opcodes) {
+			if (addr > SPI_NOR_3B_ADDR_MAX) {
+				if (IS_ENABLED(ANY_INST_USE_FAST_READ) && cfg->use_fast_read) {
+					ret = spi_nor_cmd_addr_fast_read_4b(
+						dev, SPI_NOR_CMD_READ_FAST_4B,
+						addr, dest, size);
+				} else {
+					ret = spi_nor_cmd_addr_read_4b(
+						dev, SPI_NOR_CMD_READ_4B,
+						addr, dest, size);
+				}
+			} else {
+				if (IS_ENABLED(ANY_INST_USE_FAST_READ) && cfg->use_fast_read) {
+					ret = spi_nor_cmd_addr_fast_read_3b(
+						dev, SPI_NOR_CMD_READ_FAST,
+						addr, dest, size);
+				} else {
+					ret = spi_nor_cmd_addr_read_3b(
+						dev, SPI_NOR_CMD_READ,
+						addr, dest, size);
+				}
+			}
 		} else {
-			ret = spi_nor_cmd_addr_read(dev, SPI_NOR_CMD_READ, addr, dest, size);
+			if (IS_ENABLED(ANY_INST_USE_FAST_READ) && cfg->use_fast_read) {
+				ret = spi_nor_cmd_addr_fast_read(
+					dev, SPI_NOR_CMD_READ_FAST,
+					addr, dest, size);
+			} else {
+				ret = spi_nor_cmd_addr_read(
+					dev, SPI_NOR_CMD_READ,
+					addr, dest, size);
+			}
 		}
 	}
-
 	release_device(dev);
 
 	/* Release flash power requirement */
@@ -1873,6 +2006,7 @@ static DEVICE_API(flash, spi_nor_api) = {
 		.requires_ulbpr_exist = DT_INST_PROP(idx, requires_ulbpr),			\
 		.wp_gpios_exist = DT_INST_NODE_HAS_PROP(idx, wp_gpios),				\
 		.hold_gpios_exist = DT_INST_NODE_HAS_PROP(idx, hold_gpios),			\
+		.bus_is_nxp_dspi = DT_NODE_HAS_COMPAT(DT_BUS(DT_DRV_INST(idx)), nxp_dspi),	\
 		.use_4b_addr_opcodes = DT_INST_PROP(idx, use_4b_addr_opcodes),			\
 		.has_flsr = DT_INST_PROP(idx, use_flag_status_register),			\
 		.use_fast_read = DT_INST_PROP(idx, use_fast_read),				\
