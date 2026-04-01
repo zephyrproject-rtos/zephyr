@@ -135,6 +135,13 @@
 			interrupts = <27 0>;
 			status = "disabled";
 		};
+
+		trng: trng@41001000 {
+			compatible = "realtek,ameba-trng";
+			reg = <0x41001000 0x200>;
+			clocks = <&rcc AMEBA_TRNG_CLK>;
+			status = "disabled";
+		};
 	};
 };
 
