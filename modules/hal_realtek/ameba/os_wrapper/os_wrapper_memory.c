@@ -96,7 +96,7 @@ uint32_t rtos_mem_get_free_heap_size(void)
 {
 	uint32_t size = 0;
 
-#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+#if defined(CONFIG_SYS_HEAP_RUNTIME_STATS) && (K_HEAP_MEM_POOL_SIZE > 0)
 	struct sys_memory_stats stats;
 
 	sys_heap_runtime_stats_get(_SYSTEM_HEAP, &stats);
@@ -111,7 +111,7 @@ uint32_t rtos_mem_get_minimum_ever_free_heap_size(void)
 {
 	uint32_t size = 0;
 
-#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+#if defined(CONFIG_SYS_HEAP_RUNTIME_STATS) && (K_HEAP_MEM_POOL_SIZE > 0)
 	struct sys_memory_stats stats;
 
 	sys_heap_runtime_stats_get(_SYSTEM_HEAP, &stats);
