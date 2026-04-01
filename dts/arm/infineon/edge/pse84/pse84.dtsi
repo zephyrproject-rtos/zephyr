@@ -344,6 +344,38 @@
 				#size-cells = <0>;
 			};
 
+			dac0: dac0@60000 {
+				compatible = "infineon,autanalog-ctdac";
+				reg = <0x60000 0x1000>;
+				clk-dst = <0x200>;
+				status = "disabled";
+				#io-channel-cells = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				/* FW channel (default) */
+				channel@f {
+					reg = <15>;
+					zephyr,resolution = <12>;
+				};
+			};
+
+			dac1: dac1@70000 {
+				compatible = "infineon,autanalog-ctdac";
+				reg = <0x70000 0x1000>;
+				clk-dst = <0x201>;
+				status = "disabled";
+				#io-channel-cells = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				/* FW channel (default): direct value writes via Zephyr DAC API */
+				channel@f {
+					reg = <15>;
+					zephyr,resolution = <12>;
+				};
+			};
+
 			adc0: adc0@80000 {
 				compatible = "infineon,autanalog-sar-adc";
 				/* Offset within AutAnalog subsystem */
