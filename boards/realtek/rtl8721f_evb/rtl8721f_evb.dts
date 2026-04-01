@@ -19,6 +19,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,entropy = &trng;
+		zephyr,flash-controller = &spic;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &bt;
 	};
@@ -75,5 +76,9 @@
 };
 
 &wifi1 {
+	status = "okay";
+};
+
+&spic {
 	status = "okay";
 };
