@@ -8,7 +8,6 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/arch/riscv/csr.h>
-#include <stdio.h>
 #include <pmp.h>
 
 #ifdef CONFIG_USERSPACE
