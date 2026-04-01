@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/dma/ameba_dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	cpus {
@@ -173,6 +174,16 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			interrupts = <29 0>;
+			status = "disabled";
+		};
+
+		adc: adc@41011000 {
+			compatible = "realtek,ameba-adc";
+			reg = <0x41011000 0xb8>;
+			clocks = <&rcc AMEBA_ADC_CLK>;
+			interrupts = <47 0>;
+			channel-count = <7>;
+			#io-channel-cells = <1>;
 			status = "disabled";
 		};
 
