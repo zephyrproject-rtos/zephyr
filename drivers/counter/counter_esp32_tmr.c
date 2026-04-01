@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,17 @@
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#define COUNTER_SLEEP_RETENTION_ENABLED 1
+#else
+#define COUNTER_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if COUNTER_SLEEP_RETENTION_ENABLED
+#include <hal/timer_periph.h>
+#include <esp_private/sleep_retention.h>
+#endif
 
 LOG_MODULE_REGISTER(esp32_counter, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -53,6 +64,43 @@ struct counter_esp32_data {
 	uint32_t clock_src_hz;
 	timer_hal_context_t hal_ctx;
 };
+
+#if COUNTER_SLEEP_RETENTION_ENABLED
+static esp_err_t counter_esp32_create_sleep_retention_cb(void *arg)
+{
+	const struct device *dev = arg;
+	const struct counter_esp32_config *cfg = dev->config;
+
+	return sleep_retention_entries_create(
+		soc_timg_gptimer_retention_infos[cfg->group][cfg->index].regdma_entry_array,
+		soc_timg_gptimer_retention_infos[cfg->group][cfg->index].array_size,
+		REGDMA_LINK_PRI_GPTIMER,
+		soc_timg_gptimer_retention_infos[cfg->group][cfg->index].module);
+}
+
+static void counter_esp32_sleep_retention_init(const struct device *dev)
+{
+	const struct counter_esp32_config *cfg = dev->config;
+	const soc_timg_gptimer_retention_desc_t *info =
+		&soc_timg_gptimer_retention_infos[cfg->group][cfg->index];
+
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = counter_esp32_create_sleep_retention_cb,
+				   .arg = (void *)dev}},
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM),
+	};
+
+	esp_err_t err = sleep_retention_module_init(info->module, &init_param);
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_allocate(info->module);
+	}
+	if (err != ESP_OK) {
+		LOG_WRN("GPTimer sleep retention init failed (%d) group=%u index=%u", err,
+			(unsigned int)cfg->group, (unsigned int)cfg->index);
+	}
+}
+#endif /* COUNTER_SLEEP_RETENTION_ENABLED */
 
 static int counter_esp32_init(const struct device *dev)
 {
@@ -98,9 +146,14 @@ static int counter_esp32_init(const struct device *dev)
 
 	if (ret != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", ret);
+		return ret;
 	}
 
-	return ret;
+#if COUNTER_SLEEP_RETENTION_ENABLED
+	counter_esp32_sleep_retention_init(dev);
+#endif
+
+	return 0;
 }
 
 static int counter_esp32_start(const struct device *dev)
