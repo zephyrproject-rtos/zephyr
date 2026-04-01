@@ -14,7 +14,7 @@
 
 LOG_MODULE_REGISTER(scmi_smc);
 
-#define DT_DRV_COMPAT arm_scmi_smc
+#define DT_DRV_COMPAT DT_SCMI_TRANSPORT_COMPATIBLE
 
 /* SMC channel structure */
 struct scmi_smc_channel {
