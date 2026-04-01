@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_AMEBA
+	bool "AMEBA SD Host Controller"
+	default y
+	depends on DT_HAS_REALTEK_AMEBA_SDHOST_ENABLED
+	select PINCTRL
+	select GPIO
+	select SDHC_SUPPORTS_NATIVE_MODE
+	help
+	  Enables the Realtek Ameba SD Host controller driver
+
+if SDHC_AMEBA
+
+config SDHC_BUFFER_ALIGNMENT
+	default 32 if DCACHE
+	default 4
+endif
