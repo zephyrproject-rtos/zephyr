@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	cpus {
@@ -256,6 +257,19 @@
 			clocks = <&rcc AMEBA_LTIM7_CLK>;
 			interrupts = <17 0>;
 			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		/* The PWM Timer (TIM8) support Input Capture Mode or PWM Mode */
+		pwm0: pwm@41100000 {
+			compatible = "realtek,ameba-pwm";
+			reg = <0x41100000 0x88>;
+			interrupts = <18 0>;
+			channel-count = <8>;
+			index = <0>;
+			clocks = <&rcc AMEBA_PWM0_CLK>;
+			prescale = <39>;
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
