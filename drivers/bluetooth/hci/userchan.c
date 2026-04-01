@@ -58,16 +58,19 @@ static unsigned int port;
 static char socket_path[UNIX_ADDR_BUFF_SIZE];
 static bool arg_found;
 
-static bool is_hci_event_discardable(const struct bt_hci_evt_hdr *evt)
+static bool is_hci_event_discardable(const uint8_t *data)
 {
-	switch (evt->evt) {
+	const struct bt_hci_evt_hdr *evt_hdr = (const void *)data;
+
+	switch (evt_hdr->evt) {
 #if defined(CONFIG_BT_CLASSIC)
 	case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
 	case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
 		return true;
 #endif
 	case BT_HCI_EVT_LE_META_EVENT: {
-		const struct bt_hci_evt_le_meta_event *meta_evt = (const void *)evt->data;
+		const void *evt_data = (const void *)(data + sizeof(*evt_hdr));
+		const struct bt_hci_evt_le_meta_event *meta_evt = (const void *)evt_data;
 
 		switch (meta_evt->subevent) {
 		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
@@ -94,7 +97,7 @@ static bool is_hci_event_discardable(const struct bt_hci_evt_hdr *evt)
 static struct net_buf *get_rx_evt(const uint8_t *data)
 {
 	const struct bt_hci_evt_hdr *evt = (const void *)data;
-	const bool discardable = is_hci_event_discardable(evt);
+	const bool discardable = is_hci_event_discardable(data);
 	const k_timeout_t timeout = discardable ? K_NO_WAIT : K_SECONDS(1);
 	struct net_buf *buf;
 

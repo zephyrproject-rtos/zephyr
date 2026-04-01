@@ -60,7 +60,6 @@ struct bt_hci_sco_hdr {
 struct bt_hci_evt_hdr {
 	uint8_t  evt;
 	uint8_t  len;
-	uint8_t  data[];
 } __packed;
 #define BT_HCI_EVT_HDR_SIZE             2
 
