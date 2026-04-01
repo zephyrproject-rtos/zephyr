@@ -34,19 +34,19 @@ LOG_MODULE_REGISTER(spi_litex_litespi);
 #define SPI_LITEX_MASK  BIT(0)
 
 struct spi_litex_dev_config {
-	uint32_t master_cs_addr;
-	uint32_t master_phyconfig_addr;
-	uint32_t master_rxtx_addr;
-	uint32_t master_status_addr;
-	uint32_t phy_clk_divisor_addr;
+	mem_addr_t master_cs_addr;
+	mem_addr_t master_phyconfig_addr;
+	mem_addr_t master_rxtx_addr;
+	mem_addr_t master_status_addr;
+	mem_addr_t phy_clk_divisor_addr;
 	bool phy_clk_divisor_exists;
 #if SPI_LITEX_ANY_HAS_IRQ
 #if !SPI_LITEX_ALL_HAS_IRQ
 	bool has_irq;
 #endif /* !SPI_LITEX_ALL_HAS_IRQ */
 	void (*irq_config_func)(const struct device *dev);
-	uint32_t master_ev_pending_addr;
-	uint32_t master_ev_enable_addr;
+	mem_addr_t master_ev_pending_addr;
+	mem_addr_t master_ev_enable_addr;
 #endif /* SPI_LITEX_ANY_HAS_IRQ */
 };
 
