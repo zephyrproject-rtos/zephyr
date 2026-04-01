@@ -19,9 +19,9 @@
 #define NUMBER_OF_CHANNELS        1
 
 struct pwm_litex_cfg {
-	uint32_t reg_en;
-	uint32_t reg_width;
-	uint32_t reg_period;
+	mem_addr_t reg_en;
+	mem_addr_t reg_width;
+	mem_addr_t reg_period;
 };
 
 int pwm_litex_init(const struct device *dev)
