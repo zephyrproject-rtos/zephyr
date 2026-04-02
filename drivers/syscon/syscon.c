@@ -45,7 +45,7 @@ static int syscon_generic_read_nolock(const struct device *dev, uint16_t reg, ui
 		return -EINVAL;
 	}
 
-	if (syscon_sanitize_reg(&reg, data->size, config->reg_width)) {
+	if (syscon_sanitize_reg(reg, data->size, config->reg_width)) {
 		return -EINVAL;
 	}
 
@@ -74,7 +74,7 @@ static int syscon_generic_write_nolock(const struct device *dev, uint16_t reg, u
 	struct syscon_generic_data *data = dev->data;
 	uintptr_t base_address;
 
-	if (syscon_sanitize_reg(&reg, data->size, config->reg_width)) {
+	if (syscon_sanitize_reg(reg, data->size, config->reg_width)) {
 		return -EINVAL;
 	}
 
