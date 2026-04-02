@@ -104,6 +104,7 @@ static struct modem_cmux_dlci *modem_cmux_find_dlci(struct modem_cmux *cmux, uin
 static void modem_cmux_dlci_notify_transmit_idle(struct modem_cmux *cmux);
 static void modem_cmux_tx_bypass(struct modem_cmux *cmux, const uint8_t *data, size_t len);
 static void runtime_pm_keepalive(struct modem_cmux *cmux);
+static void modem_cmux_dlci_pipes_release(struct modem_cmux *cmux);
 
 static void set_state(struct modem_cmux *cmux, enum modem_cmux_state state)
 {
@@ -805,6 +806,7 @@ static void disconnect(struct modem_cmux *cmux)
 	cmux->flow_control_on = false;
 	k_mutex_unlock(&cmux->transmit_rb_lock);
 	modem_cmux_raise_event(cmux, MODEM_CMUX_EVENT_DISCONNECTED);
+	modem_cmux_dlci_pipes_release(cmux);
 }
 
 static void modem_cmux_on_cld_command(struct modem_cmux *cmux, struct modem_cmux_command *command)
