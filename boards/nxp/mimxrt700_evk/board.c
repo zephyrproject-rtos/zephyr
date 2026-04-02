@@ -201,18 +201,6 @@ void board_early_init_hook(void)
 	edma_enable_all_request(1);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon))
-	RESET_ClearPeripheralReset(kIOPCTL0_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon1))
-	RESET_ClearPeripheralReset(kIOPCTL1_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon2))
-	RESET_ClearPeripheralReset(kIOPCTL2_RST_SHIFT_RSTn);
-#endif
-
 #ifdef CONFIG_BOARD_MIMXRT700_EVK_MIMXRT798S_CM33_CPU0
 	CLOCK_AttachClk(kOSC_CLK_to_FCCLK0);
 	CLOCK_SetClkDiv(kCLOCK_DivFcclk0Clk, 1U);
@@ -318,50 +306,6 @@ void board_early_init_hook(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio))
 	CLOCK_AttachClk(kFRO0_DIV1_to_FLEXIO);
 	CLOCK_SetClkDiv(kCLOCK_DivFlexioClk, 1U);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio0))
-	RESET_ClearPeripheralReset(kGPIO0_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
-	RESET_ClearPeripheralReset(kGPIO1_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio2))
-	RESET_ClearPeripheralReset(kGPIO2_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio3))
-	RESET_ClearPeripheralReset(kGPIO3_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio4))
-	RESET_ClearPeripheralReset(kGPIO4_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio5))
-	RESET_ClearPeripheralReset(kGPIO5_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio6))
-	RESET_ClearPeripheralReset(kGPIO6_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio7))
-	RESET_ClearPeripheralReset(kGPIO7_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio8))
-	RESET_ClearPeripheralReset(kGPIO8_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio9))
-	RESET_ClearPeripheralReset(kGPIO9_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio10))
-	RESET_ClearPeripheralReset(kGPIO10_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
