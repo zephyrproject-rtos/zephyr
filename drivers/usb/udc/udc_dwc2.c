@@ -2390,6 +2390,9 @@ static void dwc2_on_bus_reset(const struct device *dev)
 	/* Clear device address during reset. */
 	sys_clear_bits((mem_addr_t)&base->dcfg, USB_DWC2_DCFG_DEVADDR_MASK);
 
+	/* Reset TxFIFO so we don't try to access the old address after reset */
+	priv->txf_set = 0;
+
 	/* Speed enumeration must happen after reset. */
 	priv->enumdone = 0;
 }
