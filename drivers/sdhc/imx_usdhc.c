@@ -12,6 +12,7 @@
 #include <zephyr/sd/sd_spec.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -81,6 +82,7 @@ struct usdhc_config {
 	bool mmc_hs200_1_8v;
 	bool mmc_hs400_1_8v;
 	const struct pinctrl_dev_config *pincfg;
+	struct reset_dt_spec reset;
 	void (*irq_config_func)(const struct device *dev);
 };
 
@@ -1111,6 +1113,19 @@ static int imx_usdhc_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (cfg->reset.dev != NULL) {
+		if (!device_is_ready(cfg->reset.dev)) {
+			LOG_ERR("reset controller not ready");
+			return -ENODEV;
+		}
+
+		ret = reset_line_deassert_dt(&cfg->reset);
+		if (ret != 0) {
+			LOG_ERR("Failed to deassert reset line (%d)", ret);
+			return ret;
+		}
+	}
+
 	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
 		return ret;
@@ -1222,6 +1237,7 @@ static DEVICE_API(sdhc, usdhc_api) = {
 		.power_delay_ms = DT_INST_PROP(n, power_delay_ms),                                 \
 		.mmc_hs200_1_8v = DT_INST_PROP(n, mmc_hs200_1_8v),                                 \
 		.mmc_hs400_1_8v = DT_INST_PROP(n, mmc_hs400_1_8v),                                 \
+		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),                                        \
 		.irq_config_func = usdhc_##n##_irq_config_func,                                    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 	};                                                                                         \
