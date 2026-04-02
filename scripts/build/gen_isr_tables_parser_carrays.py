@@ -253,23 +253,58 @@ typedef void (* ISR)(const void *);
 
         fp.write("};\n")
 
-    def write_source(self, fp):
-        fp.write(self.source_header)
+    def write_isr_switch_start(self, fp):
+        fp.write("void __sw_isr_table ")
+        fp.write("get_isr_entry(int irq_index, struct _isr_table_entry *entry)\n")
+        fp.write("{\n")
+        fp.write("\tswitch (irq_index)\n")
+        fp.write("\t{\n")
 
-        if self.__config.check_shared_interrupts():
-            self.__write_shared_table(fp)
+    def write_isr_case_block(self, fp, i, isr, arg):
+        fp.write(f"\t\tcase {i}:\n")
+        fp.write("\t\t{\n")
+        fp.write(f"\t\t\tentry->isr = (ISR){isr:#x};\n")
+        fp.write(f"\t\t\tentry->arg = (const void *){arg};\n")
+        fp.write("\t\t\tbreak;\n")
+        fp.write("\t\t}\n")
 
-        if self.__vt:
-            if self.__config.check_sym("CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS"):
-                self.__write_address_irq_vector_table(fp)
-            elif self.__config.check_sym("CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE"):
-                self.__write_code_irq_vector_table(fp)
+    def write_isr_case_single_irq(self, fp, i):
+        arg = f"{self.__swt[i][0][0]:#x}"
+        isr = self.__swt[i][0][1]
+        self.write_isr_case_block(fp, i, isr, arg)
+
+    def write_isr_case_shared_irq(self, fp, i):
+        arg = f"&z_shared_sw_isr_table[{i}]"
+        isr = self.__config.swt_shared_handler
+        self.write_isr_case_block(fp, i, isr, arg)
+
+    def write_isr_case_default_block(self, fp):
+        fp.write("\t\tdefault:\n")
+        fp.write("\t\t{\n")
+        fp.write(f"\t\t\tentry->isr = (ISR){self.__config.swt_spurious_handler};\n")
+        fp.write("\t\t\tentry->arg = (const void *)0x0;\n")
+        fp.write("\t\t\tbreak;\n")
+        fp.write("\t\t}\n")
+        fp.write("\t}\n")
+        fp.write("}\n")
+
+    def write_isr_table_switch(self, fp):
+        self.write_isr_switch_start(fp)
+
+        for i in range(self.__nv):
+            if len(self.__swt[i]) == 0:
+                # Unused interrupt - default will be used
+                continue
+            elif len(self.__swt[i]) == 1:
+                # Single interrupt
+                self.write_isr_case_single_irq(fp, i)
             else:
-                self.__log.error("CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_{ADDRESS,CODE} not set")
+                # Shared interrupt
+                self.write_isr_case_shared_irq(fp, i)
 
-        if not self.__swt:
-            return
+        self.write_isr_case_default_block(fp)
 
+    def write_isr_table_array(self, fp):
         if not self.__config.check_sym("CONFIG_DYNAMIC_INTERRUPTS"):
             fp.write("const ")
         fp.write(f"struct _isr_table_entry __sw_isr_table _sw_isr_table[{self.__nv}] = {{\n")
@@ -303,3 +338,29 @@ typedef void (* ISR)(const void *);
 
             fp.write(f"\t{{(const void *){param}, (ISR){func_as_string}}}, /* {i} */\n")
         fp.write("};\n")
+
+    def write_source(self, fp):
+        fp.write(self.source_header)
+
+        if self.__config.check_shared_interrupts():
+            self.__write_shared_table(fp)
+
+        if self.__vt:
+            if self.__config.check_sym("CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS"):
+                self.__write_address_irq_vector_table(fp)
+            elif self.__config.check_sym("CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE"):
+                self.__write_code_irq_vector_table(fp)
+            else:
+                self.__log.error("CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_{ADDRESS,CODE} not set")
+
+        if not self.__swt:
+            return
+
+        fp.write("\n")
+
+        if self.__config.get_sym("CONFIG_GEN_SW_ISR_TABLE_ARRAY"):
+            self.write_isr_table_array(fp)
+        elif self.__config.get_sym("CONFIG_GEN_SW_ISR_TABLE_SWITCH"):
+            self.write_isr_table_switch(fp)
+        else:
+            raise ValueError("Unsupported CONFIG_GEN_SW_ISR_TABLE_TYPE")
