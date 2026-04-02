@@ -555,7 +555,7 @@ __weak void clock_init(void)
 #endif
 #endif
 
-#if !(DT_NODE_HAS_COMPAT(DT_PARENT(DT_CHOSEN(zephyr_flash)), nxp_imx_flexspi)) &&  \
+#if !(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_flash_controller), nxp_imx_flexspi_nor)) &&  \
 	defined(CONFIG_MEMC_MCUX_FLEXSPI) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi))
 	/* Configure FLEXSPI1 using OSC_RC_48M_DIV2 */
 	rootCfg.mux = kCLOCK_FLEXSPI1_ClockRoot_MuxOscRc48MDiv2;
@@ -563,7 +563,7 @@ __weak void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Flexspi1, &rootCfg);
 #endif
 
-#if !(DT_NODE_HAS_COMPAT(DT_PARENT(DT_CHOSEN(zephyr_flash)), nxp_imx_flexspi)) &&  \
+#if !(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_flash_controller), nxp_imx_flexspi_nor)) &&  \
 	defined(CONFIG_MEMC_MCUX_FLEXSPI) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi2))
 	/* Configure FLEXSPI2 using OSC_RC_48M_DIV2 */
 	rootCfg.mux = kCLOCK_FLEXSPI2_ClockRoot_MuxOscRc48MDiv2;
