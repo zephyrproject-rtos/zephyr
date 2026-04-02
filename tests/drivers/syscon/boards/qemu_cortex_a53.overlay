@@ -11,7 +11,7 @@
 
 		res: memory@47000000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0 0x47000000 0 0x8>;
+			reg = <0 0x47000000 0 0x18>;
 			zephyr,memory-region = "RES";
 		};
 	};
@@ -21,5 +21,12 @@
 		status = "okay";
 		reg = <0 0x47000000 0 0x8>;
 		reg-io-width = <1>;
+	};
+
+	syscon32: syscon@47000008 {
+		compatible = "syscon";
+		status = "okay";
+		reg = <0 0x47000008 0 0x10>;
+		reg-io-width = <4>;
 	};
 };
