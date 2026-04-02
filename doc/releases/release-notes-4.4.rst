@@ -451,6 +451,36 @@ New APIs and options
 
 * Networking
 
+  * CoAP
+
+    * :kconfig:option:`CONFIG_COAP_CLIENT_MULTICAST`
+
+  * DHCP
+
+    * :c:func:`net_dhcpv4_server_set_address_validator_cb`
+
+  * LwM2M
+
+    * :kconfig:option:`CONFIG_LWM2M_SEND_SCHEDULER`
+    * :kconfig:option:`CONFIG_LWM2M_IPSO_MAGNETOMETER`
+    * :c:func:`lwm2m_cache_free_slots_get`
+
+  * Misc
+
+    * :kconfig:option:`CONFIG_WIREGUARD`
+    * :kconfig:option:`CONFIG_NET_ZPERF_RAW_TX`
+    * :kconfig:option:`CONFIG_FTP_CLIENT`
+
+  * OpenThread
+
+    * :kconfig:option:`CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR`
+
+  * Sockets
+
+    * DTLS server socket now supports multiple parallel client sessions on a
+      single socket.
+    * :kconfig:option:`CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT`
+
   * Wi-Fi
 
     * Add support for Wi-Fi Direct (P2P) mode.
