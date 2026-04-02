@@ -38,6 +38,7 @@
 	rstctl1: reset-controller@40000 {
 		compatible = "nxp,rstctl";
 		reg = <0x40000 0x1000>;
+		offset-base = <6>;
 		#reset-cells = <1>;
 	};
 
