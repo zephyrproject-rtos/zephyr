@@ -706,6 +706,7 @@ int net_calc_chksum(struct net_pkt *pkt, uint8_t proto, uint16_t *out_chksum)
 	uint16_t sum = 0U;
 	struct net_pkt_cursor backup;
 	bool ow;
+	int ret;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) &&
 	    net_pkt_family(pkt) == NET_AF_INET) {
@@ -732,10 +733,22 @@ int net_calc_chksum(struct net_pkt *pkt, uint8_t proto, uint16_t *out_chksum)
 	ow = net_pkt_is_being_overwritten(pkt);
 	net_pkt_set_overwrite(pkt, true);
 
-	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) - len);
+	ret = net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) - len);
+	if (ret < 0) {
+		NET_DBG("Failed to skip IP header");
+		net_pkt_cursor_restore(pkt, &backup);
+		net_pkt_set_overwrite(pkt, ow);
+		return ret;
+	}
 
 	sum = calc_chksum(sum, pkt->cursor.pos, len);
-	net_pkt_skip(pkt, len + net_pkt_ip_opts_len(pkt));
+	ret = net_pkt_skip(pkt, len + net_pkt_ip_opts_len(pkt));
+	if (ret < 0) {
+		NET_DBG("Failed to skip options");
+		net_pkt_cursor_restore(pkt, &backup);
+		net_pkt_set_overwrite(pkt, ow);
+		return ret;
+	}
 
 	sum = pkt_calc_chksum(pkt, sum);
 
