@@ -8,7 +8,6 @@
 menuconfig SHELL
 	bool "Shell"
 	imply LOG_RUNTIME_FILTERING
-	select EVENTS
 
 if SHELL
 
@@ -16,6 +15,14 @@ module = SHELL
 module-str = Shell
 source "subsys/logging/Kconfig.template.log_config"
 source "subsys/shell/backends/Kconfig.backends"
+
+config SHELL_LOCAL
+	bool
+	depends on !SHELL_REMOTE_CLI
+	select EVENTS
+	default y
+	help
+	  Indicates that the shell is local, not remote client.
 
 config SHELL_MINIMAL
 	bool "Default config to reduce flash and memory requirements"
@@ -249,6 +256,7 @@ config SHELL_STATS
 config SHELL_CMDS
 	bool "Built-in commands"
 	default y if !SHELL_MINIMAL
+	depends on !SHELL_REMOTE_CLI
 	help
 	  Enable built-in commands like 'clear', 'history', etc.
 
@@ -387,6 +395,76 @@ config SHELL_BYPASS_READ_BUF_SIZE
 	  When using RTT backend, this defaults to SEGGER_RTT_BUFFER_SIZE_DOWN
 	  for backward compatibility.
 
+config SHELL_REMOTE
+	depends on IPC_SERVICE
+	bool "Shell remote host"
+	help
+	  If enabled, the shell supports remote clients.
+
+if SHELL_REMOTE
+
+config SHELL_REMOTE_MULTI_CLI
+	bool "Multiple remote clients support"
+	help
+	  If enabled, the shell supports multiple remote clients.
+
+config SHELL_REMOTE_TMP_BUF_SIZE
+	int "Temporary buffer size for remote shell command data"
+	range 16 2048
+	default 128
+	help
+	  Buffer size on the shell host for remote command syntax and help text,
+	  and for packing exec messages sent to the remote shell client.
+	  If the buffer is too small, the help string will be truncated.
+
+endif # SHELL_REMOTE
+
+config SHELL_REMOTE_CLI
+	bool "Shell remote client"
+	depends on IPC_SERVICE
+	imply SHELL_MINIMAL
+	help
+	  If enabled, the shell works as a remote client.
+
+config SHELL_REMOTE_EP_NAME
+	string "Shell remote endpoint name"
+	default "shell_remote"
+	depends on SHELL_REMOTE || SHELL_REMOTE_CLI
+
+config SHELL_REMOTE_TIMEOUT_MS
+	int "Shell remote timeout in milliseconds"
+	default 100
+	help
+	  The timeout in milliseconds for the IPC communication.
+
+if SHELL_REMOTE_CLI
+
+config SHELL_REMOTE_CLI_SKIP_RO_STRINGS
+	bool "Skip read-only strings in remote message"
+	default y
+	help
+	  When enabled, read-only strings are not included in the remote message.
+	  This can save some memory (for example, stack space) and reduces the size of
+	  IPC messages.
+
+config SHELL_REMOTE_CLI_BUF_SIZE
+	int "Internal buffer size"
+	range 64 2048
+	default 128 if SHELL_REMOTE_CLI_SKIP_RO_STRINGS
+	default 256
+	help
+	  Size of the internal buffer used for remote messages.
+
+config SHELL_REMOTE_CLI_KWORK
+	bool "Use kwork context for command execution"
+	default y
+
+config SHELL_REMOTE_CLI_STACK_SIZE
+	int "Thread stack size"
+	default 2048
+	depends on !SHELL_REMOTE_CLI_KWORK
+
+endif
 source "subsys/shell/modules/Kconfig"
 
 endif # SHELL
