@@ -54,6 +54,7 @@
 
 	aliases {
 		led0 = &green_led_2;
+		rtc = &rtc;
 		sw0 = &user_button;
 		pwm-led0 = &green_pwm_led;
 		watchdog0 = &iwdg;
