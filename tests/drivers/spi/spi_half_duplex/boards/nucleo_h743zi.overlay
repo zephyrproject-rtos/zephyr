@@ -1,0 +1,21 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2026 Bhavin Umatiya
+ */
+
+/ {
+	aliases {
+		dut-spi-dt = &spi1;
+		dut-spis = &spi2;
+	};
+};
+
+&spi1 {
+	status = "okay";
+};
+
+&spi2 {
+	status = "okay";
+	peripheral-cs = <0>;
+};
