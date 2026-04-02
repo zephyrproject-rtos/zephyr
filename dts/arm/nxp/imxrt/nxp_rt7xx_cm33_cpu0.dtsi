@@ -209,6 +209,7 @@
 		compatible = "nxp,lpc-iocon";
 		reg = <0x4000 0x1000>;
 		clocks = <&clkctl0 MCUX_IOCON0_CLK>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(0, 6)>;
 		status = "okay";
 	};
 
@@ -218,6 +219,7 @@
 		reg = <0x100000 0x1000>, <0x4000 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl0 MCUX_GPIO0_CLK>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(2, 18)>;
 		interrupts = <91 0>, <92 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -230,6 +232,7 @@
 		reg = <0x102000 0x1000>, <0x4080 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl0 MCUX_GPIO1_CLK>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(2, 19)>;
 		interrupts = <93 0>, <94 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -242,6 +245,7 @@
 		reg = <0x104000 0x1000>, <0x4100 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl0 MCUX_GPIO2_CLK>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(2, 20)>;
 		interrupts = <95 0>, <96 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -254,6 +258,7 @@
 		reg = <0x106000 0x1000>, <0x4180 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl0 MCUX_GPIO3_CLK>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(2, 21)>;
 		interrupts = <97 0>, <98 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -266,6 +271,7 @@
 		reg = <0x108000 0x1000>, <0xa5000 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl0 MCUX_GPIO4_CLK>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(2, 22)>;
 		interrupts = <99 0>, <100 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -278,6 +284,7 @@
 		reg = <0x10a000 0x1000>, <0xa5080 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl0 MCUX_GPIO5_CLK>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(2, 23)>;
 		interrupts = <101 0>, <102 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -290,6 +297,7 @@
 		reg = <0x10c000 0x1000>, <0xa5100 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl0 MCUX_GPIO6_CLK>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(2, 24)>;
 		interrupts = <103 0>, <104 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -302,6 +310,7 @@
 		reg = <0x10e000 0x1000>, <0xa5180 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl0 MCUX_GPIO7_CLK>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(2, 25)>;
 		interrupts = <105 0>, <106 0>;
 		gpio-controller;
 		#gpio-cells = <2>;

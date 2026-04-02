@@ -190,6 +190,7 @@
 		compatible = "nxp,lpc-iocon";
 		reg = <0x64000 0x1000>;
 		clocks = <&clkctl3 MCUX_IOCON1_CLK>;
+		resets = <&rstctl3 NXP_SYSCON_RESET(8, 0)>;
 		status = "okay";
 	};
 
@@ -197,6 +198,7 @@
 		compatible = "nxp,lpc-iocon";
 		reg = <0xa5000 0x1000>;
 		clocks = <&clkctl4 MCUX_IOCON2_CLK>;
+		resets = <&rstctl2 NXP_SYSCON_RESET(7, 1)>;
 		status = "okay";
 	};
 
