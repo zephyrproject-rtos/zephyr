@@ -137,6 +137,26 @@ void z_sched_ready_locked(struct k_thread *thread);
  */
 void z_sched_add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
 
+/**
+ * @brief Remove a thread from the run queue (scheduler spinlock must be held).
+ *
+ * Called by sleep.c to unready the current thread before arming its wakeup
+ * timeout.  Callers must already hold _sched_spinlock.
+ *
+ * @param thread Thread to remove from the run queue.
+ */
+void z_sched_unready_locked(struct k_thread *thread);
+
+/**
+ * @brief Yield the current thread's remaining time slice.
+ *
+ * Moves _current to the end of its priority group in the run queue, updates
+ * the scheduler cache, and context-switches away.  Equivalent to the body
+ * of k_yield(); exposed so that thread.c can implement k_yield() without
+ * depending on sched.c internals.
+ */
+void z_sched_yield(void);
+
 static inline void z_reschedule_unlocked(void)
 {
 	(void) z_reschedule_irqlock(arch_irq_lock());
