@@ -304,34 +304,3 @@ void *realloc(void *ptr, size_t size)
 #endif /* else no malloc arena */
 
 #endif /* CONFIG_COMMON_LIBC_MALLOC */
-
-#ifdef CONFIG_COMMON_LIBC_CALLOC
-void *calloc(size_t nmemb, size_t size)
-{
-	void *ret;
-
-	if (size_mul_overflow(nmemb, size, &size)) {
-		errno = ENOMEM;
-		return NULL;
-	}
-
-	ret = malloc(size);
-
-	if (ret != NULL) {
-		(void)memset(ret, 0, size);
-	}
-
-	return ret;
-}
-#endif /* CONFIG_COMMON_LIBC_CALLOC */
-
-#ifdef CONFIG_COMMON_LIBC_REALLOCARRAY
-void *reallocarray(void *ptr, size_t nmemb, size_t size)
-{
-	if (size_mul_overflow(nmemb, size, &size)) {
-		errno = ENOMEM;
-		return NULL;
-	}
-	return realloc(ptr, size);
-}
-#endif /* CONFIG_COMMON_LIBC_REALLOCARRAY */
