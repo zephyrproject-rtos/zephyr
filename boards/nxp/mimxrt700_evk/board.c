@@ -32,7 +32,6 @@
 #define SET_UP_FLEXCOMM_CLOCK(x)                                                                   \
 	do {                                                                                       \
 		CLOCK_AttachClk(kFCCLK0_to_FLEXCOMM##x);                                           \
-		RESET_ClearPeripheralReset(kFC##x##_RST_SHIFT_RSTn);                               \
 		CLOCK_EnableClock(kCLOCK_LPFlexComm##x);                                           \
 	} while (0)
 
@@ -281,21 +280,18 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO1_DIV1_to_LPSPI14);
 	CLOCK_SetClkDiv(kCLOCK_DivLpspi14Clk, 3U);
 	CLOCK_EnableClock(kCLOCK_LPSpi14);
-	RESET_ClearPeripheralReset(kLPSPI14_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c15))
 	CLOCK_AttachClk(kSENSE_BASE_to_LPI2C15);
 	CLOCK_SetClkDiv(kCLOCK_DivLpi2c15Clk, 2U);
 	CLOCK_EnableClock(kCLOCK_LPI2c15);
-	RESET_ClearPeripheralReset(kLPI2C15_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi16))
 	CLOCK_AttachClk(kFRO0_DIV1_to_LPSPI16);
 	CLOCK_SetClkDiv(kCLOCK_DivLpspi16Clk, 1U);
 	CLOCK_EnableClock(kCLOCK_LPSpi16);
-	RESET_ClearPeripheralReset(kLPSPI16_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm17))
