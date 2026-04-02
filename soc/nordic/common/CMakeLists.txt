@@ -27,6 +27,8 @@ if(CONFIG_HAS_NORDIC_DMM)
   zephyr_library_sources(dmm.c)
 endif()
 
+zephyr_library_sources_ifdef(CONFIG_SHELL_REMOTE_MULTI_CLI shell_remote.c)
+
 if(CONFIG_NRFX_GPPI AND NOT CONFIG_NRFX_GPPI_V1)
   zephyr_library_sources(gppi_init.c)
   zephyr_library_sources_ifdef(CONFIG_NRFX_GPPI_SD2PPI_GLOBAL nrfx_gppi_sd2ppi_global.c)
