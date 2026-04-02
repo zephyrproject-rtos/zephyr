@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/ipc/icmsg.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <string.h>
 #include <zephyr/drivers/mbox.h>
@@ -126,6 +127,11 @@ static void submit_mbox_work(struct icmsg_data_t *dev_data)
 static int initialize_tx_with_sid_disabled(struct icmsg_data_t *dev_data)
 {
 	int ret;
+	uint8_t init_packet[sizeof(magic) + sizeof(uint16_t)];
+
+	/* In init packet send information about max RX buffer size. */
+	memcpy(init_packet, magic, sizeof(magic));
+	sys_put_be16(CONFIG_PBUF_RX_READ_BUF_SIZE, &init_packet[sizeof(magic)]);
 
 	ret = pbuf_tx_init(dev_data->tx_pb);
 
@@ -134,15 +140,15 @@ static int initialize_tx_with_sid_disabled(struct icmsg_data_t *dev_data)
 		return ret;
 	}
 
-	ret = pbuf_write(dev_data->tx_pb, magic, sizeof(magic));
+	ret = pbuf_write(dev_data->tx_pb, init_packet, sizeof(init_packet));
 
 	if (ret < 0) {
 		__ASSERT_NO_MSG(false);
 		return ret;
 	}
 
-	if (ret < (int)sizeof(magic)) {
-		__ASSERT_NO_MSG(ret == sizeof(magic));
+	if (ret < (int)sizeof(init_packet)) {
+		__ASSERT_NO_MSG(ret == sizeof(init_packet));
 		return -EINVAL;
 	}
 
@@ -164,13 +170,14 @@ static bool callback_process(struct icmsg_data_t *dev_data)
 #if UNBOUND_DETECT
 	case ICMSG_STATE_INITIALIZING_SID_DETECT: {
 		/* Initialization with detection of remote session awareness */
-		volatile char *magic_buf;
-		uint16_t magic_len;
+		volatile char *init_packet_buf;
+		uint16_t init_packet_len;
+		uint16_t expected_init_packet_len = sizeof(magic) + sizeof(uint16_t);
 
-		ret = pbuf_get_initial_buf(dev_data->rx_pb, &magic_buf, &magic_len);
+		ret = pbuf_get_initial_buf(dev_data->rx_pb, &init_packet_buf, &init_packet_len);
 
-		if (ret == 0 && magic_len == sizeof(magic) &&
-		    memcmp((void *)magic_buf, magic, sizeof(magic)) == 0) {
+		if (ret == 0 && init_packet_len == expected_init_packet_len &&
+		    memcmp((void *)init_packet_buf, magic, sizeof(magic)) == 0) {
 			/* Remote initialized in session-unaware mode, so we do old way of
 			 * initialization.
 			 */
@@ -185,6 +192,9 @@ static bool callback_process(struct icmsg_data_t *dev_data)
 				return false;
 			}
 			/* We got magic data, so we can handle it later. */
+			uint8_t *max_tx_len_ptr = (uint8_t *)&init_packet_buf[sizeof(magic)];
+
+			dev_data->max_tx_len = sys_get_be16(max_tx_len_ptr);
 			notify_remote = true;
 			rerun = true;
 			atomic_set(&dev_data->state, ICMSG_STATE_INITIALIZING_SID_DISABLED);
@@ -295,10 +305,12 @@ static bool callback_process(struct icmsg_data_t *dev_data)
 				dev_data->cb->received(rx_buffer, len, dev_data->ctx);
 			}
 		} else {
+			size_t expected_init_packet_len = sizeof(magic) + sizeof(uint16_t);
+
 			/* Allow magic number longer than sizeof(magic) for future protocol
 			 * version.
 			 */
-			bool endpoint_invalid = (len < sizeof(magic) ||
+			bool endpoint_invalid = (len < expected_init_packet_len ||
 						memcmp(magic, rx_buffer, sizeof(magic)));
 
 			if (endpoint_invalid) {
@@ -306,6 +318,7 @@ static bool callback_process(struct icmsg_data_t *dev_data)
 				return false;
 			}
 
+			dev_data->max_tx_len = sys_get_be16(&rx_buffer[sizeof(magic)]);
 			atomic_set(&dev_data->state, ICMSG_STATE_CONNECTED_SID_DISABLED);
 
 			if (dev_data->cb->bound) {
@@ -518,6 +531,10 @@ int icmsg_send(const struct icmsg_config_t *conf,
 	/* Empty message is not allowed */
 	if (len == 0) {
 		return -ENODATA;
+	}
+
+	if ((dev_data->max_tx_len != 0) && (len > dev_data->max_tx_len)) {
+		return -ENOSPC;
 	}
 
 	ret = reserve_tx_buffer_if_unused(dev_data);

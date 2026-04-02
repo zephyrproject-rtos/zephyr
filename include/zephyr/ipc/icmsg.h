@@ -101,6 +101,7 @@ struct icmsg_data_t {
 	uint16_t remote_sid;
 	uint16_t local_sid;
 	atomic_t state;
+	uint16_t max_tx_len;
 };
 
 /** @brief Open an icmsg instance
