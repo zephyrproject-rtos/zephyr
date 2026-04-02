@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -30,6 +31,7 @@ struct mcux_dcnano_lcdif_config {
 	LCDIF_Type *base;
 	void (*irq_config_func)(const struct device *dev);
 	const struct gpio_dt_spec backlight_gpio;
+	struct reset_dt_spec reset;
 	lcdif_dpi_config_t dpi_config;
 	/* Pointer to start of first framebuffer */
 	uint8_t *fb_ptr;
@@ -240,6 +242,19 @@ static int mcux_dcnano_lcdif_init(const struct device *dev)
 		return ret;
 	}
 
+	if (config->reset.dev != NULL) {
+		if (!device_is_ready(config->reset.dev)) {
+			LOG_ERR("reset controller not ready");
+			return -ENODEV;
+		}
+
+		ret = reset_line_deassert_dt(&config->reset);
+		if (ret != 0) {
+			LOG_ERR("Failed to deassert reset line (%d)", ret);
+			return ret;
+		}
+	}
+
 	/* Convert pixel format from devicetree to the format used by HAL */
 	ret = mcux_dcnano_lcdif_set_pixel_format(dev, data->fb_config.format);
 	if (ret) {
@@ -355,6 +370,7 @@ static DEVICE_API(display, mcux_dcnano_lcdif_api) = {
 		.base = (LCDIF_Type *) DT_INST_REG_ADDR(n),			\
 		.irq_config_func = mcux_dcnano_lcdif_config_func_##n,		\
 		.backlight_gpio = GPIO_DT_SPEC_INST_GET(n, backlight_gpios),	\
+		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),			\
 		.dpi_config = {							\
 			.panelWidth = DT_INST_PROP(n, width),			\
 			.panelHeight = DT_INST_PROP(n, height),			\
