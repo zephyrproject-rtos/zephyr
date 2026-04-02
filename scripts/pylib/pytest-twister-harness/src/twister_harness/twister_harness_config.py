@@ -22,6 +22,29 @@ class DeviceSerialConfig:
     port: str
     baud: int = 115200
     serial_pty: str = ''
+    rtt_config: RTTConfig | None = None
+
+@dataclass
+class RTTConfig:
+    command: str
+
+    @classmethod
+    def create(cls, build_dir: Path, rtt_runner: str, id: str) -> RTTConfig:
+        """Return command to connect to the device via RTT."""
+
+        command = ["west", "rtt", "--skip-rebuild", "-d", str(build_dir)]
+
+        if rtt_runner:
+            command.append("--runner")
+            command.append(rtt_runner)
+
+            if rtt_runner in ("jlink", "pyocd"):
+                command.append("--dev-id")
+                command.append(id)
+
+        # Since _open_pty expects a string, we need to convert the command list into one.
+        return cls(" ".join(command))
+
 
 
 @dataclass
@@ -122,11 +145,33 @@ class TwisterHarnessConfig:
         for dut in test_params.duts:
             serial_configs: list[DeviceSerialConfig] = []
             for _dut in [dut] + dut.entries:
+
+                # TODO: The test_params comes from a config yaml file that Twister
+                # generates. I think that you need to reimplement support inside the
+                # Twister first and then come back here to fix below added snippet.
+
+                if config.option.device_rtt:
+                    rtt_config = RTTConfig.create(
+                        build_dir=build_dir,
+                        rtt_runner=config.option.rtt_runner,
+                        id=config.option.device_id or dut.id,
+                    )
+                else:
+                    rtt_config = None
+
                 serial_configs.append(
                     DeviceSerialConfig(
-                        port=_dut.serial, baud=_dut.serial_baud, serial_pty=_dut.serial_pty
+                        port=_dut.serial,
+                        baud=_dut.serial_baud,
+                        serial_pty=_dut.serial_pty,
+                        rtt_config=rtt_config,
                     )
                 )
+
+            if config.option.device_rtt:
+                flash_before = True
+            else:
+                flash_before = config.option.flash_before or test_params.flash_before or dut.flash_before
 
             device = DeviceConfig(
                 type=device_type,
@@ -139,7 +184,7 @@ class TwisterHarnessConfig:
                 runner_params=runner_params or dut.runner_params,
                 id=config.option.device_id or dut.id,
                 product=config.option.device_product or dut.product,
-                flash_before=config.option.flash_before or test_params.flash_before or dut.flash_before,
+                flash_before=flash_before,
                 west_flash_extra_args=west_flash_extra_args,
                 west_flash_cmd=config.option.west_flash_cmd or test_params.west_flash_cmd or dut.west_flash_cmd,
                 flash_command=flash_command,

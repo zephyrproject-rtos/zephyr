@@ -75,12 +75,16 @@ def pytest_addoption(parser: pytest.Parser):
     )
     twister_harness_group.addoption(
         '--runner',
-        help='Use the specified west runner (pyocd, nrfjprog, etc.).'
+        help='Use the specified west runner (pyocd, nrfjprog, etc.) when running west flash.'
     )
     twister_harness_group.addoption(
         '--runner-params',
         action='append',
         help='Use the specified west runner params.'
+    )
+    twister_harness_group.addoption(
+        '--rtt-runner',
+        help='Use the specified west runner (pyocd, nrfjprog, etc.) when running west rtt.'
     )
     twister_harness_group.addoption(
         '--device-id',
@@ -93,6 +97,11 @@ def pytest_addoption(parser: pytest.Parser):
     twister_harness_group.addoption(
         '--device-serial-pty',
         help='Script for controlling pseudoterminal.'
+    )
+    twister_harness_group.addoption(
+        '--device-rtt',
+        type=bool,
+        help='Use RTT as communication transport.',
     )
     twister_harness_group.addoption(
         '--flash-before',
