@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_remote.h>
 #if defined(CONFIG_SHELL_BACKEND_DUMMY)
 #include <zephyr/shell/shell_dummy.h>
 #endif
@@ -517,10 +518,12 @@ static void partial_autocomplete(const struct shell *sh,
 	}
 }
 
-static int exec_cmd(const struct shell *sh, size_t argc, const char **argv,
+static int exec_cmd(const struct shell *sh, size_t argc, const char **argv, size_t cmd_lvl,
 		    const struct shell_static_entry *help_entry)
 {
 	int ret_val = 0;
+	size_t cmd_argc = argc - cmd_lvl;
+	char **cmd_argv = (char **)&argv[cmd_lvl];
 
 	if (sh->ctx->active_cmd.handler == NULL) {
 		if ((help_entry != NULL) && IS_ENABLED(CONFIG_SHELL_HELP)) {
@@ -546,7 +549,7 @@ static int exec_cmd(const struct shell *sh, size_t argc, const char **argv,
 		uint8_t opt8 = sh->ctx->active_cmd.args.optional;
 		uint32_t opt = (opt8 == SHELL_OPT_ARG_CHECK_SKIP) ?
 				UINT16_MAX : opt8;
-		const bool in_range = IN_RANGE(argc, mand, mand + opt);
+		const bool in_range = IN_RANGE(cmd_argc, mand, mand + opt);
 
 		/* Check if argc is within allowed range */
 		ret_val = cmd_precheck(sh, in_range);
@@ -562,8 +565,14 @@ static int exec_cmd(const struct shell *sh, size_t argc, const char **argv,
 		 * shell context to other thread to avoid mutex deadlock.
 		 */
 		z_shell_unlock(sh);
-		ret_val = sh->ctx->active_cmd.handler(sh, argc,
-							 (char **)argv);
+		if (IS_ENABLED(CONFIG_SHELL_REMOTE) &&
+		    (sh->ctx->active_cmd.args.remote_cmd &
+		     (SHELL_CMD_FLAG_REMOTE_ROOT | SHELL_CMD_FLAG_REMOTE_SUBCMD))) {
+			ret_val = z_shell_remote_cmd_exec(sh, &sh->ctx->active_cmd,
+							  argc, argv, cmd_lvl);
+		} else {
+			ret_val = sh->ctx->active_cmd.handler(sh, cmd_argc, cmd_argv);
+		}
 		/* Bring back mutex to shell thread. */
 		z_shell_lock(sh);
 		z_flag_cmd_ctx_set(sh, false);
@@ -807,8 +816,7 @@ static int execute(const struct shell *sh)
 	}
 
 	/* Executing the deepest found handler. */
-	return exec_cmd(sh, cmd_lvl - cmd_with_handler_lvl,
-			&argv[cmd_with_handler_lvl], &help_entry);
+	return exec_cmd(sh, cmd_lvl, argv, cmd_with_handler_lvl, &help_entry);
 }
 
 static void toggle_logs_output(const struct shell *sh)
@@ -1545,14 +1553,8 @@ const struct shell *shell_backend_get_by_name(const char *backend_name)
 	return NULL;
 }
 
-/* This function mustn't be used from shell context to avoid deadlock.
- * It also must not be called with interrupts locked (e.g. inside a
- * K_SPINLOCK block) or from ISR context, as the implementation may
- * block on kernel primitives that require a context switch.
- * However it can be used in shell command handlers.
- */
-void shell_vfprintf(const struct shell *sh, enum shell_vt100_color color,
-		   const char *fmt, va_list args)
+static void z_shell_print(const struct shell *sh, enum shell_vt100_color color, bool do_cbprintf,
+			void *ptr, va_list args)
 {
 	__ASSERT_NO_MSG(sh);
 	__ASSERT(!k_is_in_isr(), "Thread context required.");
@@ -1569,7 +1571,6 @@ void shell_vfprintf(const struct shell *sh, enum shell_vt100_color color,
 	__ASSERT_NO_MSG(z_flag_cmd_ctx_get(sh) ||
 			(k_current_get() != sh->ctx->tid));
 	__ASSERT_NO_MSG(sh->fprintf_ctx);
-	__ASSERT_NO_MSG(fmt);
 
 	/* Sending a message to a non-active shell leads to a dead lock. */
 	if (state_get(sh) != SHELL_STATE_ACTIVE) {
@@ -1584,66 +1585,45 @@ void shell_vfprintf(const struct shell *sh, enum shell_vt100_color color,
 	if (!z_flag_cmd_ctx_get(sh) && !sh->ctx->bypass && z_flag_use_vt100_get(sh)) {
 		z_shell_cmd_line_erase(sh);
 	}
-	z_shell_vfprintf(sh, color, fmt, args);
+
+	if (do_cbprintf) {
+		z_shell_cbpprintf(sh, color, ptr);
+	} else {
+		z_shell_vfprintf(sh, color, ptr, args);
+	}
+
 	if (!z_flag_cmd_ctx_get(sh) && !sh->ctx->bypass && z_flag_use_vt100_get(sh)) {
 		z_shell_print_prompt_and_cmd(sh);
 	}
 	z_transport_buffer_flush(sh);
-
 	z_shell_unlock(sh);
 }
 
-/* These functions mustn't be used from shell context to avoid deadlock:
- * - shell_fprintf_impl
- * - shell_fprintf_info
- * - shell_fprintf_normal
- * - shell_fprintf_warn
- * - shell_fprintf_error
- * However, they can be used in shell command handlers.
+void shell_cbpprintf(const struct shell *sh, enum shell_vt100_color color, void *package)
+{
+	va_list no_used = {0};
+
+	z_shell_print(sh, color, true, package, no_used);
+}
+
+/* This function mustn't be used from shell context to avoid deadlock.
+ * It also must not be called with interrupts locked (e.g. inside a
+ * K_SPINLOCK block) or from ISR context, as the implementation may
+ * block on kernel primitives that require a context switch.
+ * However it can be used in shell command handlers.
  */
-void shell_fprintf_impl(const struct shell *sh, enum shell_vt100_color color,
-		   const char *fmt, ...)
+void shell_vfprintf(const struct shell *sh, enum shell_vt100_color color, const char *fmt,
+		    va_list args)
 {
-	va_list args;
-
-	va_start(args, fmt);
-	shell_vfprintf(sh, color, fmt, args);
-	va_end(args);
+	z_shell_print(sh, color, false, (void *)fmt, args);
 }
 
-void shell_fprintf_info(const struct shell *sh, const char *fmt, ...)
+void shell_fprintf_impl(const struct shell *sh, enum shell_vt100_color color, const char *fmt, ...)
 {
 	va_list args;
 
 	va_start(args, fmt);
-	shell_vfprintf(sh, SHELL_INFO, fmt, args);
-	va_end(args);
-}
-
-void shell_fprintf_normal(const struct shell *sh, const char *fmt, ...)
-{
-	va_list args;
-
-	va_start(args, fmt);
-	shell_vfprintf(sh, SHELL_NORMAL, fmt, args);
-	va_end(args);
-}
-
-void shell_fprintf_warn(const struct shell *sh, const char *fmt, ...)
-{
-	va_list args;
-
-	va_start(args, fmt);
-	shell_vfprintf(sh, SHELL_WARNING, fmt, args);
-	va_end(args);
-}
-
-void shell_fprintf_error(const struct shell *sh, const char *fmt, ...)
-{
-	va_list args;
-
-	va_start(args, fmt);
-	shell_vfprintf(sh, SHELL_ERROR, fmt, args);
+	z_shell_print(sh, color, false, (void *)fmt, args);
 	va_end(args);
 }
 

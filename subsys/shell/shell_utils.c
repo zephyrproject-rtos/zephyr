@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/shell/shell_remote.h>
 #include <stdlib.h>
 #include "shell_utils.h"
 #include "shell_wildcard.h"
@@ -296,8 +297,14 @@ const struct shell_static_entry *z_shell_cmd_get(
 
 	__ASSERT_NO_MSG(dloc != NULL);
 
+	if (IS_ENABLED(CONFIG_SHELL_REMOTE) && (parent->args.remote_cmd)) {
+		/* Remote command */
+		return z_shell_remote_cmd_get(parent, idx, dloc);
+	}
+
 	if (parent->subcmd) {
 		if (is_dynamic_cmd(parent->subcmd)) {
+			dloc->args.remote_cmd = 0;
 			parent->subcmd->dynamic_get(idx, dloc);
 			if (dloc->syntax != NULL) {
 				res = dloc;
