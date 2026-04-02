@@ -61,6 +61,7 @@
 		led0 = &green_led;
 		led1 = &yellow_led;
 		pwm-led0 = &red_pwm_led;
+		rtc = &rtc;
 		sw0 = &user_button;
 		volt-sensor1 = &vbat;
 		watchdog0 = &iwdg;

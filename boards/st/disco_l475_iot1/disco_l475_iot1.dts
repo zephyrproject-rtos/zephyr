@@ -78,6 +78,7 @@
 		eswifi0 = &wifi0;
 		watchdog0 = &iwdg;
 		accel0 = &lsm6dsl;
+		rtc = &rtc;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
 		die-temp0 = &die_temp;

@@ -28,6 +28,7 @@
 		die-temp0 = &die_temp;
 		led0 = &green_led;
 		sw0 = &user_button;
+		rtc = &rtc;
 		volt-sensor0 = &vref;
 		watchdog0 = &iwdg;
 	};
