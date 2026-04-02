@@ -577,3 +577,7 @@ zephyr_jpegenc: &jpeg {
 &crc {
 	status = "okay";
 };
+
+&gpu2d {
+	status = "okay";
+};

@@ -45,4 +45,24 @@ config VIDEO_STM32_VENC_HEAP_ZEPHYR_REGION_NAME
 endif # VIDEO_STM32_VENC
 endif # VIDEO
 
+# Enable Neochrom GPU2D graphic acceleration using nemaGFX
+if LVGL
+
+config LV_ATTRIBUTE_MEM_ALIGN_SIZE
+	default 4 if NEOCHROM_GPU2D
+
+config GRAPHICS_ACCELERATOR
+	default y
+
+if NEOCHROM_GPU2D
+
+config LV_USE_NEMA_GFX
+	default y
+
+config LV_USE_NEMA_LIB
+	default 3
+
+endif # NEOCHROM_GPU2D
+
+endif #LVGL
 endif # BOARD_STM32N6570_DK
