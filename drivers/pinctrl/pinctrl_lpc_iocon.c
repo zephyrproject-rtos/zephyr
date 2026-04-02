@@ -7,7 +7,9 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/util.h>
 
 #if !defined(CONFIG_SOC_SERIES_LPC11U6X)
 #include <fsl_clock.h>
@@ -30,6 +32,12 @@ static uint32_t volatile *iocon[] = {
 #else
 	NULL,
 #endif
+};
+
+static const struct reset_dt_spec iocon_resets[] = {
+	RESET_DT_SPEC_GET_OR(DT_NODELABEL(iocon), {0}),
+	RESET_DT_SPEC_GET_OR(DT_NODELABEL(iocon1), {0}),
+	RESET_DT_SPEC_GET_OR(DT_NODELABEL(iocon2), {0}),
 };
 
 #define OFFSET(mux) (((mux) & 0xFFF00000) >> 20)
@@ -88,8 +96,26 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 	return 0;
 }
 
-static int pinctrl_clock_init(void)
+static int pinctrl_iocon_init(void)
 {
+	for (size_t i = 0; i < ARRAY_SIZE(iocon_resets); i++) {
+		const struct reset_dt_spec *reset = &iocon_resets[i];
+
+		if (reset->dev == NULL) {
+			continue;
+		}
+
+		if (!device_is_ready(reset->dev)) {
+			return -ENODEV;
+		}
+
+		int ret = reset_line_deassert_dt(reset);
+
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
 	/* LPC family (except 11u6x) needs iocon clock to be enabled */
 #if defined(CONFIG_SOC_FAMILY_LPC) && !defined(CONFIG_SOC_SERIES_LPC11U6X)
 	/* Enable IOCon clock */
@@ -127,4 +153,4 @@ static int pinctrl_clock_init(void)
 	return 0;
 }
 
-SYS_INIT(pinctrl_clock_init, PRE_KERNEL_1, 0);
+SYS_INIT(pinctrl_iocon_init, PRE_KERNEL_1, UTIL_DEC(CONFIG_KERNEL_INIT_PRIORITY_DEFAULT));
