@@ -1085,8 +1085,11 @@ static uint8_t *tcp_options_get(struct net_pkt *pkt, int tcp_options_len,
 
 	net_pkt_cursor_backup(pkt, &backup);
 	net_pkt_cursor_init(pkt);
-	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) +
-		     sizeof(struct tcphdr));
+	if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) +
+				      sizeof(struct tcphdr)) < 0) {
+		net_pkt_cursor_restore(pkt, &backup);
+		return NULL;
+	}
 	ret = net_pkt_read(pkt, buf, MIN(tcp_options_len, buf_len));
 	if (ret < 0) {
 		buf = NULL;
@@ -1309,7 +1312,9 @@ static enum net_verdict tcp_data_get(struct tcp *conn, struct net_pkt *pkt, size
 		net_pkt_cursor_init(pkt);
 		net_pkt_set_overwrite(pkt, true);
 
-		net_pkt_skip(pkt, net_pkt_get_len(pkt) - *len);
+		if (net_pkt_skip(pkt, net_pkt_get_len(pkt) - *len) < 0) {
+			return NET_DROP;
+		}
 
 		tcp_update_recv_wnd(conn, -*len);
 		if (*len > conn->recv_win_sent) {
@@ -1712,8 +1717,13 @@ static int tcp_pkt_peek(struct net_pkt *to, struct net_pkt *from, size_t pos,
 	net_pkt_cursor_init(from);
 
 	if (pos) {
+		int ret;
 		net_pkt_set_overwrite(from, true);
-		net_pkt_skip(from, pos);
+
+		ret = net_pkt_skip(from, pos);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	return net_pkt_copy(to, from, len);
@@ -4365,11 +4375,15 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 	bool responded = false;
 	static char buf[512];
 	enum net_verdict verdict = NET_DROP;
+	size_t data_len;
 
 	net_pkt_cursor_init(pkt);
 	net_pkt_set_overwrite(pkt, true);
-	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
-		     net_pkt_ip_opts_len(pkt) + sizeof(*uh));
+
+	data_len = net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) + sizeof(*uh);
+	if (net_pkt_skip(pkt, data_len) < 0) {
+		return NET_DROP;
+	}
 	net_pkt_read(pkt, buf, data_len);
 	buf[data_len] = '\0';
 	data_len += 1;
@@ -4380,8 +4394,10 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 
 	net_pkt_cursor_init(pkt);
 	net_pkt_set_overwrite(pkt, true);
-	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
-		     net_pkt_ip_opts_len(pkt) + sizeof(*uh));
+	data_len = net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) + sizeof(*uh);
+	if (net_pkt_skip(pkt, data_len) < 0) {
+		return NET_DROP;
+	}
 	net_pkt_read(pkt, buf, data_len);
 	buf[data_len] = '\0';
 	data_len += 1;
