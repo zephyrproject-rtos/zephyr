@@ -63,6 +63,8 @@
 #define SPI_NOR_CMD_RESET_EN    0x66    /* Reset Enable */
 #define SPI_NOR_CMD_RESET_MEM   0x99    /* Reset Memory */
 #define SPI_NOR_CMD_BULKE       0x60    /* Bulk Erase */
+#define SPI_NOR_CMD_PE_SUSPEND  0x75    /* Program/Erase Suspend */
+#define SPI_NOR_CMD_PE_RESUME   0x7A    /* Program/Erase Resume */
 #define SPI_NOR_CMD_READ_4B      0x13  /* Read data 4 Byte Address */
 #define SPI_NOR_CMD_READ_FAST_4B 0x0C  /* Fast Read 4 Byte Address */
 #define SPI_NOR_CMD_DREAD_4B     0x3C  /* Read data (1-1-2) 4 Byte Address */
