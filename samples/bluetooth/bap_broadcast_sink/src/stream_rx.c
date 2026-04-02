@@ -35,9 +35,9 @@ LOG_MODULE_REGISTER(stream_rx, CONFIG_LOG_DEFAULT_LEVEL);
 static void log_stream_rx(const struct stream_rx *stream, const struct bt_iso_recv_info *info,
 			  const struct net_buf *buf)
 {
-/* THis is a lot of overhead. This information could be saved from the start.
-	 If there is a way to save the BIS_info.sync_receiver.bis_number to the stream_rx struct,
-	a lot of oveadehad from function calls can be removed. */
+	/* THis is a lot of overhead. This information could be saved from the start.
+	* If there is a way to save the BIS_info.sync_receiver.bis_number to the stream_rx struct,
+	*a lot of oveadehad from function calls can be removed. */
 	struct bt_iso_info BIS_info;
 	
 	bt_iso_chan_get_info(stream->stream.iso, &BIS_info); 
