@@ -312,7 +312,7 @@ static mbedtls_ssl_cache_context server_cache;
 
 #if defined(CONFIG_NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT)
 
-#define TLS_SETTINGS_PREFIX "tls_cache"
+#define TLS_SETTINGS_PREFIX CONFIG_NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT_PREFIX
 
 static int tls_session_cache_settings_set(const char *key, size_t len, settings_read_cb read_cb,
 					  void *cb_arg)
