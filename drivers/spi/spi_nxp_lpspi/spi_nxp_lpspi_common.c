@@ -359,15 +359,35 @@ int lpspi_configure(const struct device *dev, const struct spi_config *spi_cfg)
 	return lpspi_wait_tx_fifo_empty(dev);
 }
 
-static void lpspi_module_system_init(LPSPI_Type *base)
+static int lpspi_module_system_init(const struct device *dev)
 {
+	const struct lpspi_config *config = dev->config;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+
 #ifdef LPSPI_CLOCKS
 	CLOCK_EnableClock(lpspi_get_clock(base));
 #endif
 
+	if (config->reset.dev != NULL) {
+		int ret;
+
+		if (!device_is_ready(config->reset.dev)) {
+			LOG_ERR("reset controller not ready");
+			return -ENODEV;
+		}
+
+		ret = reset_line_deassert_dt(&config->reset);
+		if (ret != 0) {
+			LOG_ERR("Failed to deassert reset line (%d)", ret);
+			return ret;
+		}
+	} else {
 #ifdef LPSPI_RSTS
 	RESET_ReleasePeripheralReset(lpspi_get_reset(base));
 #endif
+	}
+
+	return 0;
 }
 
 int spi_nxp_init_common(const struct device *dev)
@@ -394,7 +414,10 @@ int spi_nxp_init_common(const struct device *dev)
 		}
 	}
 
-	lpspi_module_system_init(base);
+	err = lpspi_module_system_init(dev);
+	if (err != 0) {
+		return err;
+	}
 
 	data->major_version = (base->VERID & LPSPI_VERID_MAJOR_MASK) >> LPSPI_VERID_MAJOR_SHIFT;
 
