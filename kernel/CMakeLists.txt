@@ -120,6 +120,7 @@ endif() # CONFIG_MULTITHREADING
 
 
 kernel_sources_ifdef(CONFIG_TIMESLICING timeslicing.c)
+kernel_sources_ifdef(CONFIG_SCHED_DEADLINE deadline.c)
 kernel_sources_ifdef(CONFIG_SPIN_VALIDATE spinlock_validate.c)
 kernel_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 kernel_sources_ifdef(CONFIG_BOOTARGS boot_args.c)
