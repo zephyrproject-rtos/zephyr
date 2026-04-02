@@ -11,6 +11,13 @@ properties:
   reg:
     required: true
 
+  offset-base:
+    type: int
+    description: |
+      Base PRSTCTL register index for this RSTCTL instance when a SoC encodes
+      reset IDs in a single global namespace across multiple reset-controller
+      instances. If omitted, reset IDs are interpreted as instance-local.
+
   "#reset-cells":
     const: 1
 
