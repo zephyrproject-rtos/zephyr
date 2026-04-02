@@ -1,0 +1,83 @@
+# Copyright (c) 2020-2021 Nordic Semiconductor (ASA)
+# SPDX-License-Identifier: Apache-2.0
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_IPC := zephyr,ipc
+DT_CHOSEN_Z_IPC_TX := zephyr,ipc_tx
+DT_CHOSEN_Z_IPC_RX := zephyr,ipc_rx
+
+config RPMSG_SERVICE_SINGLE_IPM_SUPPORT
+	bool
+	default $(dt_chosen_enabled,$(DT_CHOSEN_Z_IPC))
+	help
+	  This option must be selected when single IPM is used for
+	  both TX and RX communication
+
+config RPMSG_SERVICE_DUAL_IPM_SUPPORT
+	bool
+	default $(dt_chosen_enabled,$(DT_CHOSEN_Z_IPC_TX)) && \
+		$(dt_chosen_enabled,$(DT_CHOSEN_Z_IPC_RX))
+	help
+	  This option must be selected when separate IPMs are used for
+	  TX and RX communication
+
+menuconfig RPMSG_SERVICE
+	bool "RPMsg service for multiple users"
+	select IPM
+	select OPENAMP
+	help
+	  Enables support for a service that can be shared by multiple
+	  users to establish RPMsg endpoints for given channel.
+
+if RPMSG_SERVICE
+
+choice RPMSG_SERVICE_MODE
+	prompt "RPMsg Service mode"
+
+config RPMSG_SERVICE_MODE_MASTER
+	bool "RPMsg master"
+	select OPENAMP_MASTER
+
+config RPMSG_SERVICE_MODE_REMOTE
+	bool "RPMsg remote"
+	select OPENAMP_SLAVE
+
+endchoice
+
+config RPMSG_SERVICE_NUM_ENDPOINTS
+	int "Max number of registered endpoints"
+	default 2
+	help
+	  Maximal number of endpoints that can be registered for given
+	  RPMsg service.
+
+config RPMSG_SERVICE_WORK_QUEUE_STACK_SIZE
+	int "Size of RX work queue stack"
+	default 2048
+	help
+	  Size of stack used by work queue RX thread. This work queue is
+	  created in the RPMsg Service backend module to prevent notifying
+	  service users about received data from the system work queue.
+
+config RPMSG_SERVICE_INIT_PRIORITY
+	int "Initialization priority of RPMsg service"
+	default 48
+	help
+	  The order of RPMsg Service initialization and endpoints registration
+	  is important to avoid race conditions in RPMsg endpoints handshake.
+
+	  If in doubt, do not modify this value.
+
+config RPMSG_SERVICE_EP_REG_PRIORITY
+	int "Initialization priority of modules registering RPMsg endpoints"
+	default 47
+	help
+	  The endpoints must be registered before RPMsg Service is initialized.
+
+	  If in doubt, do not modify this value.
+
+module = RPMSG_SERVICE
+module-str = RPMsg service and backend
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # RPMSG_SERVICE

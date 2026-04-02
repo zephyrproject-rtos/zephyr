@@ -1,0 +1,8 @@
+sample:
+  name: BBC micro:bit Sound
+tests:
+  sample.board.bbc_microbit.sound:
+    platform_allow:
+      - bbc_microbit
+      - bbc_microbit_v2
+    tags: sound

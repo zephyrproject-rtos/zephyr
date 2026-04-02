@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_BFLB
+	bool "Bouffalo Lab hwinfo driver"
+	default y
+	depends on SOC_FAMILY_BFLB
+	depends on SYSCON_BFLB_EFUSE
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable Bouffalo Lab hwinfo driver.
+	  Uses the factory-programmed MAC address from efuse as a unique
+	  device ID.

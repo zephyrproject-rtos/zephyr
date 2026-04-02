@@ -1,0 +1,10 @@
+tests:
+  kernel.memory_protection.protection:
+    platform_exclude:
+      - twr_ke18f
+      - ucans32k1sic
+    filter: CONFIG_SRAM_REGION_PERMISSIONS
+    tags:
+      - kernel
+      - security
+    ignore_faults: true

@@ -1,0 +1,12 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_AMBIQ
+	bool "AMBIQ hwinfo"
+	default y
+	depends on SOC_SERIES_APOLLO4X || SOC_SERIES_APOLLO5X
+	select HWINFO_HAS_DRIVER
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_HWINFO
+	help
+	  Enable AMBIQ hwinfo driver

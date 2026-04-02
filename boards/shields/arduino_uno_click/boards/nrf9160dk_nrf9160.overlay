@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2024 Golioth, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf9160dk_nrf9160_arduino_uno_click_common.dtsi"

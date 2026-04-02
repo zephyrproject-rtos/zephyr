@@ -1,0 +1,8 @@
+# nRF51 BLENANO board configuration
+
+# Copyright (c) 2016 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF51_BLENANO
+
+endif # BOARD_NRF51_BLENANO

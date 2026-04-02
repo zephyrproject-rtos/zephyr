@@ -1,0 +1,37 @@
+[
+  {
+    "section": "High Priority Bugs",
+    "labels": ["bug", "priority: high"],
+    "threshold": 0
+  },
+  {
+    "section": "Medium Priority Bugs",
+    "labels": ["bug", "priority: medium"],
+    "threshold": 20
+  },
+  {
+    "section": "Low Priority Bugs",
+    "labels": ["bug", "priority: low"],
+    "threshold": 100
+  },
+  {
+    "section": "Enhancements",
+    "labels": ["Enhancement"],
+    "threshold": 500
+  },
+  {
+    "section": "Features",
+    "labels": ["Feature"],
+    "threshold": 100
+  },
+  {
+    "section": "Questions",
+    "labels": ["question"],
+    "threshold": 100
+  },
+  {
+    "section": "Static Analysis",
+    "labels": ["Coverity"],
+    "threshold": 100
+  }
+]

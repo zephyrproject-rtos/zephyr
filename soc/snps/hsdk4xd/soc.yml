@@ -1,0 +1,4 @@
+series:
+- name: arc_hsdk4xd
+  socs:
+  - name: arc_hsdk4xd

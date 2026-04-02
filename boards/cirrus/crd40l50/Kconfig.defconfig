@@ -1,0 +1,12 @@
+# Cirrus CRD40L50 Blackstar board configuration
+
+# Copyright (c) 2026 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CRD40L50
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_CRD40L50

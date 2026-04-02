@@ -1,0 +1,6 @@
+board:
+  name: nucleo_f072rb
+  full_name: Nucleo F072RB
+  vendor: st
+  socs:
+    - name: stm32f072xb

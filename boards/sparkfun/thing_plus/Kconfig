@@ -1,0 +1,11 @@
+# Sparkfun nRF9160 Thing Plus configuration
+
+# Copyright (c) 2018-2020 Nordic Semiconductor ASA
+# Copyright (c) 2020 Circuit Dojo LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SPARKFUN_THING_PLUS
+	# The GPIO driver is required by this board's initialization code
+	# (board.c), so it is forced here to be enabled always, not only
+	# enabled by default (in defconfig).
+	select GPIO

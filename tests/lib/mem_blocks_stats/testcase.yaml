@@ -1,0 +1,7 @@
+tests:
+  libraries.mem_blocks.stats:
+    tags:
+      - heap
+      - mem_blocks.stats
+    integration_platforms:
+      - native_sim

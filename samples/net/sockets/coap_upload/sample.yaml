@@ -1,0 +1,14 @@
+sample:
+  description: CoAP client upload example
+  name: socket_coap_upload
+common:
+  harness: net
+  depends_on: netif
+  tags:
+    - net
+    - coap
+tests:
+  sample.net.sockets.coap_upload:
+    platform_allow:
+      - native_sim
+      - qemu_x86

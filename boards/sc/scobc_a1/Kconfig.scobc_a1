@@ -1,0 +1,7 @@
+# SC-OBC Module A1 configuration
+
+# Copyright (c) 2021 Space Cubics, LLC. <yashi@spacecubics.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SCOBC_A1
+	select SOC_DESIGNSTART_FPGA_CORTEX_M3

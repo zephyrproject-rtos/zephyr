@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2020, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include "skeleton.dtsi"
+
+#define DT_FLASH_SIZE		DT_SIZE_M(4)
+#define DT_SRAM_SIZE		DT_SIZE_M(4)
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	intc: arcv2-intc {
+		compatible = "snps,arcv2-intc";
+		interrupt-controller;
+		#interrupt-cells = <2>;
+	};
+
+	timer0: timer0 {
+		compatible = "snps,arc-timer";
+		interrupts = <16 1>;
+		interrupt-parent = <&intc>;
+	};
+
+	timer1: timer1 {
+		compatible = "snps,arc-timer";
+		interrupts = <17 1>;
+		interrupt-parent = <&intc>;
+	};
+
+	/* We are carving out of DRAM for a pseudo flash and sram region */
+	flash0: flash@80000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x80000000 DT_FLASH_SIZE>;
+	};
+
+	sram0: sram@80400000 {
+		device_type = "memory";
+		reg = <0x80400000 DT_SRAM_SIZE>;
+	};
+
+	ns16550_uart0: uart@f0000000 {
+		compatible = "ns16550";
+		clock-frequency = <10000000>;
+		reg = <0xf0000000 0x400>;
+		current-speed = <115200>;
+		interrupt-parent = <&intc>;
+		interrupts = <24 1>;
+		reg-shift = <2>;
+	};
+
+	ns16550_uart1: uart@f0002000 {
+		compatible = "ns16550";
+		clock-frequency = <10000000>;
+		reg = <0xf0002000 0x400>;
+		current-speed = <115200>;
+		interrupt-parent = <&intc>;
+		interrupts = <25 1>;
+		reg-shift = <2>;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &ns16550_uart0;
+		zephyr,shell-uart = &ns16550_uart0;
+		zephyr,uart-pipe = &ns16550_uart1;
+	};
+};

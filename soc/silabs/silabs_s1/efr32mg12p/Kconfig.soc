@@ -1,0 +1,28 @@
+# Copyright (c) 2018 Diego Sueiro
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFR32MG12P
+	bool
+	select SOC_FAMILY_SILABS_S1
+	help
+	  Silicon Labs EFR32MG12P (Mighty Gecko) Series MCU
+
+config SOC_EFR32MG12P332F1024GL125
+	bool
+	select SOC_SERIES_EFR32MG12P
+
+config SOC_EFR32MG12P433F1024GM68
+	bool
+	select SOC_SERIES_EFR32MG12P
+
+config SOC_EFR32MG12P432F1024GL125
+	bool
+	select SOC_SERIES_EFR32MG12P
+
+config SOC_SERIES
+	default "efr32mg12p" if SOC_SERIES_EFR32MG12P
+
+config SOC
+	default "efr32mg12p332f1024gl125" if SOC_EFR32MG12P332F1024GL125
+	default "efr32mg12p432f1024gl125" if SOC_EFR32MG12P432F1024GL125
+	default "efr32mg12p433f1024gm68" if SOC_EFR32MG12P433F1024GM68

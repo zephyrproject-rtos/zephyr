@@ -1,0 +1,7 @@
+board:
+  extend: native_sim
+  variants:
+    - name: one
+      qualifier: native
+    - name: two
+      qualifier: native/64

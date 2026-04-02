@@ -1,0 +1,9 @@
+# Copyright (c) 2025 James Bennion-Pedley <james@bojit.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_WCH
+	bool "WCH MDIO controller driver"
+	default y
+	depends on DT_HAS_WCH_MDIO_ENABLED
+	help
+	  Enable WCH MDIO support.

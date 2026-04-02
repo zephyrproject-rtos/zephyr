@@ -1,0 +1,14 @@
+sample:
+  description: A sample for running TTCN-3 based sanity check for TCP
+  name: tcp
+tests:
+  sample.net.socket.tcp:
+    filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
+    harness: net
+    platform_allow: qemu_x86
+    tags:
+      - socket
+      - net
+      - tcp
+    integration_platforms:
+      - qemu_x86

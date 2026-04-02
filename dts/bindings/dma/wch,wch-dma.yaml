@@ -1,0 +1,33 @@
+# Copyright (c) 2024 Paul Wedeck <paulwedeck@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  WCH DMA controller
+
+  The WCH DMA controller is a general-purpose direct memory access controller
+  featuring between 7 and 11 independent channels.
+  Every channel is capable of memory-to-memory, memory-to-peripheral, and
+  peripheral-to-memory access.
+
+  Mapping of peripheral requests to DMA channels is limited and SoC specific.
+  Commonly, each peripheral request maps to just a single DMA channel.
+  The controller supports 8, 16, and 32 bit width memory access.
+
+  It is present on WCH CH32V and CH32X series SoCs.
+
+compatible: "wch,wch-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#dma-cells":
+    const: 1
+
+dma-cells:
+  - channel

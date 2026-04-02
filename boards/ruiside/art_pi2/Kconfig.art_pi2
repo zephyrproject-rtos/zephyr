@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Shan Pen <bricle031@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ART_PI2
+	select SOC_STM32H7R7XX

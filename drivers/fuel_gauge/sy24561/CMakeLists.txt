@@ -1,0 +1,4 @@
+zephyr_library_sources(sy24561.c)
+
+zephyr_include_directories_ifdef(CONFIG_EMUL_SY24561 .)
+zephyr_library_sources_ifdef(CONFIG_EMUL_SY24561 emul_sy24561.c)

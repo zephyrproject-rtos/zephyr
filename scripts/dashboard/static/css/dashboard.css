@@ -1,0 +1,283 @@
+/**
+ * Styles used in the build dashboard pages. Aligned with the Zephyr
+ * documentation styles from doc/_static/css/custom.css.
+ * Relies on variables defined in light.css.
+
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* ==========================================================================
+ * Theme-based CSS overrides.
+ * ==========================================================================
+ */
+
+body {
+    font-family: var(--system-font-family);
+    color: var(--body-color);
+}
+
+h1 {
+    font-weight: 600;
+    font-family: var(--header-font-family);
+    font-size: 175%;
+}
+
+a {
+    color: var(--link-color);
+}
+
+a:hover {
+    color: var(--link-color-hover);
+    text-decoration: underline;
+}
+
+a:active {
+    color: var(--link-color-active);
+}
+
+a:visited {
+    color: var(--link-color-visited);
+}
+
+hr {
+    border-color: var(--hr-color);
+}
+
+footer {
+    color: var(--footer-color);
+}
+
+/* ==========================================================================
+ * General Styles
+ * ==========================================================================
+ */
+
+:root {
+     /* Use system font stacks for better performance (no Web fonts required) */
+     --system-font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+     --header-font-family: Seravek, 'Gill Sans Nova', Ubuntu, Calibri, 'DejaVu Sans', source-sans-pro, sans-serif;
+     --monospace-font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;
+     --monospace-font-size: 14px;
+}
+
+.text-viewer code {
+    padding: 1em;
+    display: block;
+    white-space: pre-wrap;
+    background-color: #f8f8f8;
+}
+
+code {
+    font-size: 14px;
+    background-color: var(--code-background-color);
+    border: 1px solid var(--code-border-color);
+    padding: 2px 5px;
+    border-radius: 4px;
+}
+
+.bold-lt {
+    font-weight: 500;
+}
+
+.callout {
+    border-left: solid lightblue;
+    border-left-width: 0.25rem;
+}
+
+.font-small {
+    font-size: small;
+}
+
+.card-danger > .card-header {
+    background-color: var(--bs-danger-bg-subtle);
+}
+
+/* Page title style, copied from main documentation custom.css. */
+
+h1.section-title {
+    font-weight: 700;
+    margin-bottom: 2.5rem;
+    position: relative;
+    line-height: 1;
+    z-index: 1;
+}
+
+h1.section-title::before {
+    content: '';
+    position: absolute;
+    z-index:-1;
+    left: 0;
+    right: 0;
+    height: 4px;
+    bottom: -1px;
+    background: linear-gradient(to right, var(--admonition-note-title-background-color), var(--admonition-note-title-background-color) 50%, var(--admonition-note-background-color) 80%, transparent); /* Example gradient */
+    opacity:50%;
+}
+
+/* ==========================================================================
+ * Side-bar
+ * ==========================================================================
+ */
+
+#sidebar {
+    background-color: var(--navbar-background-color);
+    height: 100vh;
+}
+
+.nav-link {
+    text-decoration: none !important;
+}
+
+.logo {
+    opacity: var(--logo-opacity);
+    width: 210px;
+    height: 105px;
+}
+
+/* Navigation caption - borrowed from the main docs custom.css */
+
+.wy-menu-vertical p.caption {
+    color: var(--navbar-heading-color);
+    letter-spacing: 0.75px;
+    line-height: 32px;
+    margin: 12px 0 0;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 85%;
+    white-space: nowrap
+}
+
+/* Navigation items - borrowed from the main docs custom.css */
+
+.wy-menu-vertical a {
+    color: var(--navbar-level-1-color);
+}
+
+.wy-menu-vertical a:hover {
+    background-color: var(--navbar-background-color-hover);
+    color: var(--navbar-level-1-color);
+}
+
+.wy-menu-vertical a:active {
+    background-color: var(--navbar-background-color-active);
+}
+
+/* Selected navigation item - borrowed from the main docs custom.css  */
+
+.wy-menu-vertical li.current a {
+    background-color: var(--navbar-current-background-color);
+    color: var(--navbar-level-2-color);
+    border-color: var(--navbar-current-background-color);
+}
+
+.wy-menu-vertical li.current a:hover {
+    background-color: var(--navbar-current-background-color-hover);
+}
+
+.wy-menu-vertical li.current a:active {
+    background-color: var(--navbar-current-background-color-active);
+}
+
+/* ==========================================================================
+ * TreeTable
+ * ==========================================================================
+ */
+
+tr.tt-selected > td {
+    --bs-table-bg: #fcfad6;
+}
+
+tr.tt-selected:hover > td {
+    --bs-table-hover-bg: #d6d5ba !important;
+}
+
+tr.tt-filter-match td {
+    --bs-table-bg: #cff4fc;
+    --bs-table-hover-bg: #bfe2e9;
+}
+
+/* ==========================================================================
+ * Kconfig Page
+ * ==========================================================================
+ */
+
+#kconfigTable {
+    width: auto;
+}
+
+#kconfigFilter {
+    width: 80%;
+}
+
+tr.text-secondary > td {
+    --bs-table-color: var(--bs-secondary-rgb);
+    --bs-table-hover-color: var(--bs-secondary-rgb);
+}
+
+/* ==========================================================================
+ * Memory Report Page
+ * ==========================================================================
+ */
+
+.tt-cell-content > span.memory-type {
+    float: right;
+    font-size: smaller;
+}
+
+div.memory-plot {
+    background-color: var(--bs-table-bg);
+    border-style: solid;
+    border-width: 1px;
+    border-color: var(--bs-table-border-color);
+    padding-top: 20px;
+    padding-bottom: 20px;
+    overflow-x: hidden;
+}
+
+tr.mem-rpt-file span.tt-cell-content {
+    color: rgba(var(--bs-primary-rgb));
+}
+
+tr.mem-rpt-symbol span.tt-cell-content {
+    color: rgba(var(--bs-success-rgb));
+}
+
+/* ==========================================================================
+ * Device Tree Page
+ * ==========================================================================
+ */
+
+.dt-prop-value {
+    font-family: var(--monospace-font-family);
+    font-size: var(--monospace-font-size);
+}
+
+.dt-prop-info {
+    font-size: smaller;
+}
+
+a.node-ref {
+    text-decoration: none;
+}
+
+a.node-ref:hover {
+    text-decoration: underline;
+}
+
+/* Hide the DT details unless selected. */
+#edtTree:not(.show-info) tr:not(.tt-selected) .dt-prop-info {
+    display: none;
+}
+
+/* Set the info / property value column to be as large as possible, with
+   a little extra padding on the first column for visual appeal. */
+
+#edtTree td:first-of-type {
+    padding-right: 1rem;
+}
+
+#edtTree td:nth-of-type(2) {
+    width: 100%;
+}

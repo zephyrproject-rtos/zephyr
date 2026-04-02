@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Linaro
+# SPDX-License-Identifier: Apache-2.0
+
+description: Inter processor message based on IVSHMEM
+
+compatible: "linaro,ivshmem-ipm"
+
+include: base.yaml
+
+properties:
+
+  ivshmem:
+    type: phandle
+    required: true
+    description: ivshmem device node

@@ -1,0 +1,6 @@
+shields:
+  - name: st_lcd_dsi_mb1835
+    full_name: ST LCD DSI MB1835
+    vendor: st
+    supported_features:
+      - display

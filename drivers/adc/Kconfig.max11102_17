@@ -1,0 +1,32 @@
+# Copyright (c) 2023 SILA  Embedded Solutions GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ADC_MAX11102_17
+	bool "Maxim Integrated MAX11102-MAX11117"
+	default y
+	depends on DT_HAS_MAXIM_MAX11102_ENABLED \
+		|| DT_HAS_MAXIM_MAX11103_ENABLED \
+		|| DT_HAS_MAXIM_MAX11105_ENABLED \
+		|| DT_HAS_MAXIM_MAX11106_ENABLED \
+		|| DT_HAS_MAXIM_MAX11110_ENABLED \
+		|| DT_HAS_MAXIM_MAX11111_ENABLED \
+		|| DT_HAS_MAXIM_MAX11115_ENABLED \
+		|| DT_HAS_MAXIM_MAX11116_ENABLED \
+		|| DT_HAS_MAXIM_MAX11117_ENABLED
+	select SPI
+	help
+	  Enable the driver implementation for the MAX11102-MAX11117 family
+
+config ADC_MAX11102_17_ACQUISITION_THREAD_INIT_PRIO
+	int "ADC data acquisition thread priority"
+	default 0
+	depends on ADC_MAX11102_17 && ADC_ASYNC
+
+config ADC_MAX11102_17_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the ADC data acquisition thread"
+	default 400
+	depends on ADC_MAX11102_17 && ADC_ASYNC
+	help
+	  Size of the stack used for the internal data acquisition
+	  thread.

@@ -1,0 +1,10 @@
+# PCIe controller configuration options
+
+# Copyright 2024 TSN Lab, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if PCIE_CONTROLLER
+
+source "drivers/pcie/controller/Kconfig.brcmstb"
+
+endif # PCIE_CONTROLLER

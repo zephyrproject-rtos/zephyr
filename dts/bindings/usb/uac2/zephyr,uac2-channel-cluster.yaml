@@ -1,0 +1,117 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: USB Audio Class 2 Audio Channel Cluster
+
+properties:
+  front-left:
+    type: boolean
+    description: Front Left channel present in the cluster
+
+  front-right:
+    type: boolean
+    description: Front Right channel present in the cluster
+
+  front-center:
+    type: boolean
+    description: Front Center channel present in the cluster
+
+  low-frequency-effects:
+    type: boolean
+    description: Low Frequency Effects channel present in the cluster
+
+  back-left:
+    type: boolean
+    description: Back Left channel present in the cluster
+
+  back-right:
+    type: boolean
+    description: Back Right channel present in the cluster
+
+  front-left-of-center:
+    type: boolean
+    description: Front Left of Center channel present in the cluster
+
+  front-right-of-center:
+    type: boolean
+    description: Front Right of Center channel present in the cluster
+
+  back-center:
+    type: boolean
+    description: Back Center channel present in the cluster
+
+  side-left:
+    type: boolean
+    description: Side Left channel present in the cluster
+
+  side-right:
+    type: boolean
+    description: Side Right channel present in the cluster
+
+  top-center:
+    type: boolean
+    description: Top Center channel present in the cluster
+
+  top-front-left:
+    type: boolean
+    description: Top Front Left channel present in the cluster
+
+  top-front-center:
+    type: boolean
+    description: Top Front Center channel present in the cluster
+
+  top-front-right:
+    type: boolean
+    description: Top Front Right channel present in the cluster
+
+  top-back-left:
+    type: boolean
+    description: Top Back Left channel present in the cluster
+
+  top-back-center:
+    type: boolean
+    description: Top Back Center channel present in the cluster
+
+  top-back-right:
+    type: boolean
+    description: Top Back Right channel present in the cluster
+
+  top-front-left-of-center:
+    type: boolean
+    description: Top Front Left of Center channel present in the cluster
+
+  top-front-right-of-center:
+    type: boolean
+    description: Top Front Right of Center channel present in the cluster
+
+  left-low-frequency-effects:
+    type: boolean
+    description: Left Low Frequency Effects channel present in the cluster
+
+  right-low-frequency-effects:
+    type: boolean
+    description: Right Low Frequency Effects channel present in the cluster
+
+  top-side-left:
+    type: boolean
+    description: Top Side Left channel present in the cluster
+
+  top-side-right:
+    type: boolean
+    description: Top Side Right channel present in the cluster
+
+  bottom-center:
+    type: boolean
+    description: Bottom Center channel present in the cluster
+
+  back-left-of-center:
+    type: boolean
+    description: Back Left of Center channel present in the cluster
+
+  back-right-of-center:
+    type: boolean
+    description: Back Right of Center channel present in the cluster
+
+  raw-data:
+    type: boolean
+    description: Raw Data, mutually exclusive with all other spatial locations

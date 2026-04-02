@@ -1,0 +1,29 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config NATIVE_LINUX_EVDEV
+	bool "Native Linux evdev based input device"
+	default y
+	depends on DT_HAS_ZEPHYR_NATIVE_LINUX_EVDEV_ENABLED
+	depends on ARCH_POSIX
+	depends on MULTITHREADING
+	help
+	  Enable reading input from a Linux evdev device, requires specifying
+	  an evdev device path in the --evdev command line argument.
+
+if NATIVE_LINUX_EVDEV
+
+config NATIVE_LINUX_EVDEV_THREAD_PRIORITY
+	int "Priority for the Linux evdev thread"
+	default 0
+	help
+	  Priority level of the internal thread handling Linux input events.
+
+config NATIVE_LINUX_THREAD_SLEEP_MS
+	int "Sleep period for the Linux evdev thread"
+	default 10
+	help
+	  How long to sleep between checking for new events in the Linux input
+	  events thread.
+
+endif

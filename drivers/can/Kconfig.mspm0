@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_MSPM0_CANFD
+	bool "MSPM0 CANFD driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_CANFD_ENABLED
+	select CAN_MCAN
+	select USE_MSPM0_DL_MCAN
+	select PINCTRL
+	help
+	  Enable support for CANFD on the TI MSPM0 series.

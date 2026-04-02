@@ -1,0 +1,7 @@
+Supported Features
+==================
+
+In addition to the standard architecture devices (HPET, local and I/O APICs,
+etc.), Zephyr supports the following ISH-specific SoC devices:
+
+* HSUART

@@ -1,0 +1,5 @@
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_X_NUCLEO_IKS01A2
+	def_bool $(shields_list_contains,x_nucleo_iks01a2)

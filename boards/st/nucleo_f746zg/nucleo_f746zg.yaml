@@ -1,0 +1,30 @@
+identifier: nucleo_f746zg
+name: ST Nucleo F746ZG
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 256
+flash: 1024
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - backup_sram
+  - can
+  - counter
+  - dac
+  - dma
+  - gpio
+  - i2c
+  - netif:eth
+  - pwm
+  - rtc
+  - spi
+  - uart
+  - usb_device
+  - usbd
+  - watchdog
+vendor: st

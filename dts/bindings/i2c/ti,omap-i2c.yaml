@@ -1,0 +1,20 @@
+description: TI OMAP I2C Controller
+compatible: "ti,omap-i2c"
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+properties:
+  reg:
+    description: Base address and size of the I2C registers.
+    required: true
+  interrupts:
+    description: Interrupt specifier for the I2C controller.
+    required: true
+  pinctrl-0:
+    description: Pin control groups for this I2C instance.
+    required: true
+  pinctrl-names:
+    description: Names for the pin control groups.
+    required: true
+  clock-frequency:
+    description: The frequency of the I2C bus.
+    default: 100000
+    required: true

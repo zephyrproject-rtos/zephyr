@@ -1,0 +1,51 @@
+# Copyright (c) 2024 Jerónimo Agulló
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on micromod headers.
+
+    The micromod standard leverages the M.2 connector with 76 pins for
+    swap between a myriad of supported boards and carriers.
+
+    The micromod standard consists of two lanes with the following
+    supported buses:
+    * An 6-pin Power Supply header.  No pins on this header are exposed
+      by this binding.
+    * Reset, Boot pins and SWD pins not exposed by this binding.
+    * 2 UART buses. First with RTS and CTS pins, while the 2nd with only
+    RX and TX pins. Neither of them are exposed by this binding.
+    * 2 i2c buses. Only the corresponding interrupt pin is exposed by
+    this binding.
+    * 2 SPI buses not exposed by this binding. Only SPI CS control pin
+      is exposed by this binding.
+    * Audio line not exposed by this binding.
+    * 2 analog pins (A0 and A1).
+    * 2 digital pins (D0 and D1).
+    * 12 General purpose pins (G0 - G11).
+
+    This binding provides a nexus mapping for the analog, digital and
+    general purpose gpios in the order depicted below:
+
+      - 00 -> A0                      PIN 34
+      - 01 -> A1                      PIN 38
+      - 02 -> D0                      PIN 10
+      - 03 -> D1/CAM_TRIG             PIN 18
+      - 04 -> I2C_INT#                PIN 16
+      - 05 -> G0/BUS0                 PIN 40
+      - 06 -> G1/BUS1                 PIN 42
+      - 07 -> G2/BUS2                 PIN 44
+      - 08 -> G3/BUS3                 PIN 46
+      - 09 -> G4/BUS4                 PIN 48
+      - 10 -> G5/BUS5                 PIN 73
+      - 11 -> G6/BUS6                 PIN 71
+      - 12 -> G7/BUS7                 PIN 69
+      - 13 -> G8                      PIN 67
+      - 14 -> G9/ADC_D-/CAM_HSYNC     PIN 65
+      - 15 -> G10/ADC_D+/CAM_VSYNC    PIN 63
+      - 16 -> G11/SWO                 PIN  8
+      - 17 -> SPI_CS                  PIN 55
+
+
+compatible: "sparkfun,micromod-gpio"
+
+include: [gpio-nexus.yaml, base.yaml]

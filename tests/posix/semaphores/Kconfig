@@ -1,0 +1,11 @@
+# Copyright (c) 2023, Meta
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_SEM_N_LOOPS
+	int "Number of loops in semaphore test"
+	range 16 1024
+	default 32
+	help
+	  This option is specific to semaphore.test_named_semaphore in semaphore.c
+
+source "Kconfig.zephyr"

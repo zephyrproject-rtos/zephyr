@@ -1,0 +1,22 @@
+identifier: stm32h7s78_dk
+name: ST STM32H7S78 Discovery Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 456
+flash: 64
+supported:
+  - adc
+  - arduino_gpio
+  - dma
+  - entropy
+  - gpio
+  - memc
+  - octospi
+  - rtc
+  - uart
+  - usb_device
+  - usbd
+  - watchdog
+vendor: st

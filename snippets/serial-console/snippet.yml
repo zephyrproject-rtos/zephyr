@@ -1,0 +1,3 @@
+name: serial-console
+append:
+  EXTRA_CONF_FILE: serial-console.conf

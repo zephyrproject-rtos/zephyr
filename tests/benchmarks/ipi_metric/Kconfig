@@ -1,0 +1,37 @@
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "IPI-Metric RTOS Test Suite"
+
+choice IPI_METRIC_TEST
+	prompt "Select an IPI-Metric test to execute"
+	default IPI_METRIC_PREEMPTIVE
+	help
+	  The IPI-Metric benchmark suite has a single CPU in an SMP system
+	  dedicated to generating IPIs under varying conditions while the
+	  remaining CPUs perform their "work" and process IPIs. These tests
+	  track the amount of "work" and the number of IPIs processed
+	  during 30 second time intervals.
+
+config IPI_METRIC_PREEMPTIVE
+	bool "IPIs are generated due threads preempting one another"
+	help
+	  The CPU generating the IPIs does so as a byproduct of resuming and
+	  suspending a series of preemptible threads.
+
+config IPI_METRIC_PRIMITIVE_BROADCAST
+	bool "IPIs are generated using primitive arch_sched_broadcast_ipi()"
+	help
+	  The CPU generating the IPIs does so by directly calling
+	  arch_sched_broadcast_ipi() to broadcast them to all CPUs.
+
+config IPI_METRIC_PRIMITIVE_DIRECTED
+	bool "IPIs are generated using primitive arch_sched_directed_ipi()"
+	depends on ARCH_HAS_DIRECTED_IPIS
+	help
+	  The CPU generating the IPIs does so by directly calling
+	  arch_sched_directed_ipi() to direct them to a single CPU.
+
+endchoice
+
+source "Kconfig.zephyr"

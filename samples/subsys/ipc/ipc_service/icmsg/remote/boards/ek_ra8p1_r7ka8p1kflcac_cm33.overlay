@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2025-2026 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-icmsg";
+			tx-region = <&sram_tx>;
+			rx-region = <&sram_rx>;
+			dcache-alignment = <32>;
+			mboxes = <&mbox0 0>, <&mbox0 0>;
+			mbox-names = "tx", "rx";
+			status = "okay";
+		};
+	};
+
+	soc {
+		/* Define shared memory regions for IPC */
+		reserved-memory {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			sram_tx: memory@2219f000 {
+				reg = <0x2219f000 0x800>;
+			};
+
+			sram_rx: memory@2219f800 {
+				reg = <0x2219f800 0x800>;
+			};
+		};
+	};
+};
+
+/* Redefine sram size for CPU1 */
+&sram1 {
+	reg = <0x22100000 DT_SIZE_K(636)>;
+};
+
+&mbox0 {
+	interrupts = <94 1>;
+	status = "okay";
+};

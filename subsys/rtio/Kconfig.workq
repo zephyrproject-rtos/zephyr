@@ -1,0 +1,34 @@
+# Copyright (c) 2024 Croxel Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config RTIO_WORKQ
+	bool "RTIO Work-queues service to process Sync operations"
+	select RTIO_CONSUME_SEM
+	help
+	  Enable RTIO Work-queues to allow processing synchronous operations
+	  in an asynchronous non-blocking fashion.
+
+if RTIO_WORKQ
+
+config RTIO_WORKQ_THREADS_POOL_PRIO
+	int "Priority of RTIO Workqueue Threads Pool"
+	default MAIN_THREAD_PRIORITY
+
+config RTIO_WORKQ_THREADS_POOL_STACK_SIZE
+	int "Stack size of RTIO Workqueue Threads"
+	default 1024
+
+config RTIO_WORKQ_THREADS_POOL
+	int "Number of threads to use for processing work-items"
+	default 2 if SPI_RTIO || I2C_RTIO || I3C_RTIO
+	default 1
+
+config RTIO_WORKQ_POOL_ITEMS
+	int "Pool of work items to use with the RTIO Work-queues"
+	default 4
+	help
+	  Configure the Pool of work items appropriately to your
+	  application, the more simultaneous requests you expect
+	  to issue, the bigger this pool should be.
+
+endif # RTIO_WORKQ

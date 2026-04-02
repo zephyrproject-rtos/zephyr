@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg24/mgm240pb32vna.dtsi>
+#include "xgm240_rb431xa.dtsi"
+
+/ {
+	model = "Silicon Labs xGM240P +20 dBm Module Radio Board (xGM240-RB4317A, BRD4317A)";
+	compatible = "silabs,xgm240_rb4317a", "silabs,mgm24";
+};

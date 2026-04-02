@@ -1,0 +1,190 @@
+/*
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/mchp_pic32cz_ca_clock.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	soc {
+		flash0: flash@8000000 {
+			compatible = "soc-nv-flash";
+			write-block-size = <8>;
+		};
+
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
+
+		clock: clock@44052000 {
+			compatible = "microchip,pic32cz-ca-clock";
+			reg = <0x44052000 0x60>, <0x44040000 0x8c>,
+			      <0x44042000 0x20>, <0x44050000 0x180>, <0x44020000 0x30>;
+			reg-names = "mclk", "oscctrl",
+				    "osc32kctrl", "gclk", "supc";
+			interrupts = <5 0>, <6 0>, <7 0>, <8 0>,
+				     <9 0>, <10 0>, <11 0>, <12 0>;
+			interrupt-names = "xosc-fail", "xosc-rdy", "dfll-rdy", "dfll-status",
+					  "pll-lock", "xosc32k-fail", "xosc32k-rdy", "mclk-rdy";
+
+			xosc: xosc {
+				compatible = "microchip,pic32cz-ca-xosc";
+			};
+
+			dfll48m: dfll48m {
+				compatible = "microchip,pic32cz-ca-dfll48m";
+			};
+
+			dpll: dpll {
+				compatible = "microchip,pic32cz-ca-dpll";
+
+				dpll0: dpll0 {
+					subsystem = <CLOCK_MCHP_DPLL_ID_DPLL0>;
+				};
+
+				dpll1: dpll1 {
+					subsystem = <CLOCK_MCHP_DPLL_ID_DPLL1>;
+				};
+			};
+
+			rtcclock: rtcclock {
+				compatible = "microchip,pic32cz-ca-rtc";
+				#clock-cells = <1>;
+			};
+
+			xosc32k: xosc32k {
+				compatible = "microchip,pic32cz-ca-xosc32k";
+			};
+
+			gclkgen: gclkgen {
+				compatible = "microchip,pic32cz-ca-gclkgen";
+			};
+
+			gclkperiph: gclkperiph {
+				compatible = "microchip,pic32cz-ca-gclkperiph";
+				#clock-cells = <1>;
+			};
+
+			mclkdomain: mclkdomain {
+				compatible = "microchip,pic32cz-ca-mclkdomain";
+			};
+
+			mclkperiph: mclkperiph {
+				compatible = "microchip,pic32cz-ca-mclkperiph";
+				#clock-cells = <1>;
+			};
+		};
+
+		pinctrl: pinctrl@44840000 {
+			compatible = "microchip,port-g1-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x44840000 0x44840000 0x380>;
+
+			porta: gpio@44840000 {
+				compatible = "microchip,port-g1-gpio";
+				reg = <0x44840000 0x80>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#microchip,pin-cells = <2>;
+				status = "disabled";
+			};
+
+			portb: gpio@44840080 {
+				compatible = "microchip,port-g1-gpio";
+				reg = <0x44840080 0x80>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#microchip,pin-cells = <2>;
+				status = "disabled";
+			};
+
+			portc: gpio@44840100 {
+				compatible = "microchip,port-g1-gpio";
+				reg = <0x44840100 0x80>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#microchip,pin-cells = <2>;
+				status = "disabled";
+			};
+
+			portd: gpio@44840180 {
+				compatible = "microchip,port-g1-gpio";
+				reg = <0x44840180 0x80>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#microchip,pin-cells = <2>;
+				status = "disabled";
+			};
+		};
+
+		sercom2: sercom@45800000 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x45800000 0x36>;
+			interrupts = <69 0>, <70 0>, <71 0>, <72 0>, <73 0>, <74 0>, <75 0>;
+			interrupt-names = "error", "rxbrk", "dre", "txc", "rxc", "rxs", "ctsic";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_SERCOM2>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM2_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		sercom3: sercom@45802000 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x45802000 0x36>;
+			interrupts = <76 0>, <77 0>, <78 0>, <79 0>, <80 0>, <81 0>, <82 0>;
+			interrupt-names = "error", "rxbrk", "dre", "txc", "rxc", "rxs", "ctsic";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_SERCOM3>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM3_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		sercom0: sercom@46000000 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x46000000 0x36>;
+			interrupts = <55 0>, <56 0>, <57 0>, <58 0>, <59 0>, <60 0>, <61 0>;
+			interrupt-names = "error", "rxbrk", "dre", "txc", "rxc", "rxs", "ctsic";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_SERCOM0>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM0_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		sercom1: sercom@46002000 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x46002000 0x36>;
+			interrupts = <62 0>, <63 0>, <64 0>, <65 0>, <66 0>, <67 0>, <68 0>;
+			interrupt-names = "error", "rxbrk", "dre", "txc", "rxc", "rxs", "ctsic";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_SERCOM1>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM1_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

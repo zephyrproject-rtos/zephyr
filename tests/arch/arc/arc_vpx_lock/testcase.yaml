@@ -1,0 +1,11 @@
+tests:
+  arch.arc.vpx_lock:
+    filter: CONFIG_ISA_ARCV2
+    toolchain_allow: arcmwdt
+    platform_allow: nsim/nsim_vpx5
+  arch.arc.vpx_lock.cpu_mask:
+    filter: CONFIG_ISA_ARCV2 and (CONFIG_MP_MAX_NUM_CPUS > 1)
+    toolchain_allow: arcmwdt
+    platform_allow: nsim/nsim_vpx5
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y

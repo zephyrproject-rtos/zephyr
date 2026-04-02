@@ -1,0 +1,13 @@
+common:
+  harness: display
+  tags: display
+sample:
+  description: Character framebuffer test
+  name: cfb sample
+tests:
+  sample.display.cfb.ssd1306:
+    platform_allow: frdm_k64f
+    extra_args: SHIELD=ssd1306_128x64
+    tags: shield
+  sample.display.cfb.ssd16xx:
+    platform_allow: reel_board

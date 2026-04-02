@@ -1,0 +1,90 @@
+# Atmel SAMD21 MCU series
+
+# Copyright (c) 2017 Google LLC.
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SAMD21
+	bool
+	select SOC_FAMILY_ATMEL_SAM0
+	help
+	  Enable support for Atmel SAMD21 Cortex-M0+ microcontrollers.
+
+config SOC_SERIES
+	default "samd21" if SOC_SERIES_SAMD21
+
+config SOC_SAMD21E15A
+	bool
+	select SOC_SERIES_SAMD21
+
+config SOC_SAMD21E16A
+	bool
+	select SOC_SERIES_SAMD21
+
+config SOC_SAMD21E17A
+	bool
+	select SOC_SERIES_SAMD21
+
+config SOC_SAMD21E18A
+	bool
+	select SOC_SERIES_SAMD21
+
+config SOC_SAMD21E19A
+	bool
+	select SOC_SERIES_SAMD21
+
+config SOC_SAMD21G15A
+	bool
+	select SOC_SERIES_SAMD21
+
+config SOC_SAMD21G16A
+	bool
+	select SOC_SERIES_SAMD21
+
+config SOC_SAMD21G17A
+	bool
+	select SOC_SERIES_SAMD21
+
+config SOC_SAMD21G18A
+	bool
+	select SOC_SERIES_SAMD21
+
+config SOC_SAMD21G17AU
+	bool
+	select SOC_SERIES_SAMD21
+
+config SOC_SAMD21G18AU
+	bool
+	select SOC_SERIES_SAMD21
+
+config SOC_SAMD21J15A
+	bool
+	select SOC_SERIES_SAMD21
+
+config SOC_SAMD21J16A
+	bool
+	select SOC_SERIES_SAMD21
+
+config SOC_SAMD21J17A
+	bool
+	select SOC_SERIES_SAMD21
+
+config SOC_SAMD21J18A
+	bool
+	select SOC_SERIES_SAMD21
+
+config SOC
+	default "samd21e15a" if SOC_SAMD21E15A
+	default "samd21e16a" if SOC_SAMD21E16A
+	default "samd21e17a" if SOC_SAMD21E17A
+	default "samd21e18a" if SOC_SAMD21E18A
+	default "samd21g15a" if SOC_SAMD21G15A
+	default "samd21g16a" if SOC_SAMD21G16A
+	default "samd21g17a" if SOC_SAMD21G17A
+	default "samd21g18a" if SOC_SAMD21G18A
+	default "samd21g17au" if SOC_SAMD21G17AU
+	default "samd21g18au" if SOC_SAMD21G18AU
+	default "samd21j15a" if SOC_SAMD21J15A
+	default "samd21j16a" if SOC_SAMD21J16A
+	default "samd21j17a" if SOC_SAMD21J17A
+	default "samd21j18a" if SOC_SAMD21J18A

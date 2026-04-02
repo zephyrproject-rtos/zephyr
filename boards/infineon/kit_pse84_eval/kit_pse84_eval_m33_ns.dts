@@ -1,0 +1,81 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <infineon/edge/mpns/pse846gps2dbzc4a.dtsi>
+#include <infineon/edge/pse84/pse84.cm33.dtsi>
+#include <infineon/edge/pse84/system_clocks.dtsi>
+
+#include "kit_pse84_eval_memory_map.dtsi"
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "kit_pse84_eval";
+	compatible = "kit_pse84_eval";
+
+	aliases {
+		led0 = &led_red;
+		led1 = &led_green;
+		led2 = &led_blue;
+		sw0 = &user_bt;
+	};
+
+	chosen {
+		zephyr,flash = &m33_xip;
+		zephyr,sram = &m33_data;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_red: led_0 {
+			label = "LED_0";
+			gpios = <&gpio_prt16 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_green: led_1 {
+			label = "LED_1";
+			gpios = <&gpio_prt16 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_blue: led_2 {
+			label = "LED_2";
+			gpios = <&gpio_prt16 5 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_bt: button_0 {
+			label = "SW_1";
+			gpios = <&gpio_prt8 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&clk_iho {
+	status = "disabled";
+};
+
+&clk_pilo {
+	status = "disabled";
+};
+
+&mcwdt0 {
+	status = "okay";
+};
+
+&gpio_prt8 {
+	status = "okay";
+};
+
+&gpio_prt16 {
+	status = "okay";
+};

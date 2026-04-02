@@ -1,0 +1,52 @@
+# Copyright (c) 2020 Linaro Limited.
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+name: Devicetree script tests
+
+on:
+  push:
+    branches:
+    - main
+    - v*-branch
+    paths:
+    - 'scripts/dts/**'
+    - '.github/workflows/devicetree_checks.yml'
+  pull_request:
+    branches:
+    - main
+    - v*-branch
+    paths:
+    - 'scripts/dts/**'
+    - '.github/workflows/devicetree_checks.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  devicetree-checks:
+    name: Devicetree script tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ['3.12', '3.13']
+        os: [ubuntu-24.04, macos-14, windows-2022]
+    steps:
+    - name: checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: pip
+        cache-dependency-path: scripts/requirements-actions.txt
+
+    - name: Install Python packages
+      run: |
+        pip install -r scripts/requirements-actions.txt --require-hashes
+
+    - name: run tox
+      working-directory: scripts/dts/python-devicetree
+      run: |
+        tox

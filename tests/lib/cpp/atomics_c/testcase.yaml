@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  cpp.atomics_c:
+    tags: cpp kernel
+    arch_exclude: posix
+    build_only: true
+    filter: CONFIG_ATOMIC_OPERATIONS_C
+    integration_platforms:
+      - rpi_pico
+      - robokit1

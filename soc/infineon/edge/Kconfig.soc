@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Family definitions
+config SOC_FAMILY_INFINEON_EDGE
+	bool
+
+config SOC_FAMILY
+	default "infineon_edge" if SOC_FAMILY_INFINEON_EDGE
+
+# MPNs definitions
+rsource "*/Kconfig.soc"

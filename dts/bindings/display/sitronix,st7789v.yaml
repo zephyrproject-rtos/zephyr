@@ -1,0 +1,112 @@
+# Copyright (c) 2019, Marc Reilly <marc@cpdesign.com.au>
+# Copyright (c) 2019, PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+title: Sitronix ST7789V display controller
+
+description: |
+    The Sitronix ST7789V is a 262K colors TFT-LCD controller
+    with a maximum 240RGBx320 resolution.
+
+compatible: "sitronix,st7789v"
+
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+
+properties:
+  x-offset:
+    type: int
+    required: true
+    description: The column offset in pixels of the LCD to the controller memory
+
+  y-offset:
+    type: int
+    required: true
+    description: The row offset in pixels of the LCD to the controller memory
+
+  vcom:
+    type: int
+    required: true
+    description: VCOM Setting
+
+  gctrl:
+    type: int
+    required: true
+    description: Gate Control
+
+  vrhs:
+    type: int
+    description: VRH Setting
+
+  vdvs:
+    type: int
+    description: VDV Setting
+
+  mdac:
+    type: int
+    required: true
+    description: Memory Data Access Control
+
+  lcm:
+    type: int
+    required: true
+    description: LCM Setting
+
+  colmod:
+    type: int
+    required: true
+    description: Interface Pixel Format
+
+  gamma:
+    type: int
+    required: true
+    description: Gamma Setting
+
+  inversion-off:
+    type: boolean
+    description: Inversion Off
+
+  porch-param:
+    type: uint8-array
+    required: true
+    description: Porch Setting
+
+  cmd2en-param:
+    type: uint8-array
+    required: true
+    description: Command 2 Enable Parameter
+
+  pwctrl1-param:
+    type: uint8-array
+    required: true
+    description: Power Control 1 Parameter
+
+  pvgam-param:
+    type: uint8-array
+    required: true
+    description: Positive Voltage Gamma Control Parameter
+
+  nvgam-param:
+    type: uint8-array
+    required: true
+    description: Negative Voltage Gamma Control Parameter
+
+  ram-param:
+    type: uint8-array
+    required: true
+    description: RAM Control Parameter
+
+  rgb-param:
+    type: uint8-array
+    required: true
+    description: RGB Interface Control Parameter
+
+  ready-time-ms:
+    type: int
+    default: 40
+    description: |
+      Time it takes for the device from power up to become responsive and
+      accepting commands. Defaults to 40ms (found by trial and error) if not
+      provided.
+
+  mipi-mode:
+    required: true

@@ -1,0 +1,21 @@
+# Copyright (c) 2025 John Lin
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon CYW43 GPIO controller.
+
+  Exposes the CYW43 WL_GPIO pins as a standard GPIO controller.
+  This is a child node of the CYW43 WiFi device node.
+
+compatible: "infineon,cyw43-gpio"
+
+include: gpio-controller.yaml
+
+properties:
+  ngpios:
+    required: true
+    description: Number of WL_GPIO pins exposed.
+
+gpio-cells:
+  - pin
+  - flags

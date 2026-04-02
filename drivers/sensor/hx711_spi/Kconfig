@@ -1,0 +1,44 @@
+# Copyright (c) 2026 Zephyr Project Developers
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HX711_SPI
+	bool "Avia Semiconductor HX711 24-bit ADC Specialized for Load Cells / Strain Gauges on SPI bus"
+	default y
+	depends on DT_HAS_AVIA_HX711_SPI_ENABLED
+	select SPI
+	help
+	  Enable driver for Avia Semiconductor HX711 24-bit ADC Specialized for
+	  Load Cells / Strain Gauges on SPI bus.
+
+if HX711_SPI
+
+config HX711_SPI_TRIGGER
+	bool "Use data ready trigger"
+	depends on GPIO
+	help
+	  Trigger data transfer when data is ready by interrupting on the falling
+	  edge of the DOUT line.
+
+config HX711_SPI_TRIGGER_OWN_THREAD
+	bool "Use own workqueue thread"
+	select HX711_SPI_TRIGGER
+	help
+	  When interrupted, the interrupt handler submits a work to execute user
+	  callback. By default, the work is submitted to the system workqueue.
+	  Enable this option to submit work to the driver's own workquere.
+
+config HX711_SPI_THREAD_PRIORITY
+	int "Thread priority"
+	depends on HX711_SPI_TRIGGER_OWN_THREAD && HX711_SPI_TRIGGER
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config HX711_SPI_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on HX711_SPI_TRIGGER_OWN_THREAD && HX711_SPI_TRIGGER
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # HX711_SPI

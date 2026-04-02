@@ -1,0 +1,5 @@
+# Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CANBARDO
+	select SOC_SAME70N20B

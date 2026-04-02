@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 The Zephyr Contributors.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		eth0: ethernet@40000000 {
+			compatible = "snps,designware-ethernet";
+			reg = <0x40000000 0x2000>;
+			interrupts = <GIC_SPI 29 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			local-mac-address = [00 11 22 33 44 55];
+		};
+	};
+};

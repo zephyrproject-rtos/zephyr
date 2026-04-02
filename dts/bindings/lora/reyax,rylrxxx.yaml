@@ -1,0 +1,13 @@
+# Copyright (c) 2024 David Ullmann
+# SPDX-License-Identifier: Apache-2.0
+
+description: Reyax lora module with AT-command serial interface
+
+compatible: "reyax,rylrxxx"
+
+include: uart-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true

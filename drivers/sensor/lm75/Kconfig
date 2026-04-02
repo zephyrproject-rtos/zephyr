@@ -1,0 +1,53 @@
+# LM75 temperature sensor config
+
+# Copyright (c) 2021 Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+config LM75
+	bool "LM75 Temperature Sensor"
+	default y
+	depends on DT_HAS_LM75_ENABLED
+	select I2C
+	help
+	  Enable the driver for the LM75 digital temperature Sensor with 2-wire
+	  interface.
+
+if LM75
+
+choice
+	prompt "Trigger mode"
+	default LM75_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config LM75_TRIGGER_NONE
+	bool "No trigger"
+
+config LM75_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_LM75),int-gpios)
+	depends on GPIO
+	select LM75_TRIGGER
+
+endchoice
+
+config LM75_TRIGGER
+	bool
+
+if LM75_TRIGGER
+
+config LM75_TRIGGER_THREAD_STACK_SIZE
+	int "Stack size for the trigger workqueue thread"
+	default 512
+	help
+	  Size of the stack used for the internal trigger workqueue thread.
+
+config LM75_TRIGGER_THREAD_PRIO
+	int "Priority for the trigger workqueue thread"
+	default 0
+	help
+	  Priority level for the internal trigger workqueue thread.
+
+endif # LM75_TRIGGER
+
+endif # LM75

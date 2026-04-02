@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <microchip/pic32c/pic32cm_pl/common/pic32cm_pl.dtsi>
+
+&pinctrl {
+	portb: gpio@41000080 {
+		compatible = "microchip,port-g1-gpio";
+		reg = <0x41000080 0x80>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		#microchip,pin-cells = <2>;
+		status = "disabled";
+	};
+};

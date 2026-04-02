@@ -1,0 +1,43 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Real Time Clock (RTC) — JDP-generation RTC IP.
+
+  This RTC device features a SoC-specific clock-source
+  mux and a programmable prescaler. It is not interchangeable with
+  "nxp,rtc" compatible device.
+
+compatible: "nxp,rtc-jdp"
+
+include:
+  - rtc.yaml
+  - rtc-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-source:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Select the RTC clock source (chip-specific mux). No binding-wide default
+      is provided because the hardware reset default differs by SoC. The SoC
+      dtsi must set this to the correct value for each instance.
+
+  prescaler:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 32
+      - 512
+      - 16384
+    description: |
+      Divider for the RTC clock source. Supported divide values are 1, 32, 512, or 16384.

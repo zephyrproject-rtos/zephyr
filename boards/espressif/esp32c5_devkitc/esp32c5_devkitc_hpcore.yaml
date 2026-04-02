@@ -1,0 +1,27 @@
+identifier: esp32c5_devkitc/esp32c5/hpcore
+name: ESP32-C5-DevKitC-1 HP Core
+vendor: espressif
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - gpio
+  - watchdog
+  - uart
+  - dma
+  - pwm
+  - spi
+  - counter
+  - entropy
+  - i2c
+  - i2s
+  - netif:openthread
+  - netif:wifi
+  - crypto
+  - retained_mem
+
+testing:
+  ignore_tags:
+    - bluetooth

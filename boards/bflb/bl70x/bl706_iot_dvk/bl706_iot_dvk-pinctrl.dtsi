@@ -1,0 +1,45 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	usb_default: usb_default {
+		group1 {
+			pinmux = <GPIO7_USB_DP>,
+				 <GPIO8_USB_DM>;
+		};
+	};
+
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <GPIO14_UART0_TX>,
+				 <GPIO15_UART0_RX>;
+		};
+	};
+
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <GPIO18_UART1_TX>,
+				 <GPIO19_UART1_RX>;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <GPIO5_I2C_SDA>,
+				 <GPIO6_I2C_SCL>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <GPIO3_SPI_SCLK>,
+				 <GPIO4_SPI_MOSI>,
+				 <GPIO5_SPI_MISO>,
+				 <GPIO6_SPI_SS>;
+		};
+	};
+};

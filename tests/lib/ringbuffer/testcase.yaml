@@ -1,0 +1,18 @@
+common:
+  tags:
+    - ring_buffer
+    - circular_buffer
+  timeout: 150
+
+tests:
+  libraries.ring_buffer:
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+
+  libraries.ring_buffer.concurrent:
+    platform_allow: qemu_x86
+    extra_configs:
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100000
+    integration_platforms:
+      - qemu_x86

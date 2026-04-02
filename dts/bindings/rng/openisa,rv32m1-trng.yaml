@@ -1,0 +1,15 @@
+# Copyright (c) 2020, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: OpenISA TRNG (True Random Number Generator)
+
+compatible: "openisa,rv32m1-trng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

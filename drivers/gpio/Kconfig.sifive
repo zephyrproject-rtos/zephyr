@@ -1,0 +1,13 @@
+# SiFive Freedom GPIO configuration option
+
+# Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_SIFIVE
+	bool "SiFive Freedom Processor GPIO driver"
+	default y
+	depends on DT_HAS_SIFIVE_GPIO0_ENABLED
+	help
+	  Enable driver for the SiFive Freedom GPIO controller.
+
+	  Says n if not sure.

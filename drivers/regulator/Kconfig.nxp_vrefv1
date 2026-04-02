@@ -1,0 +1,24 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_NXP_VREFV1
+	bool "NXP VREF peripheral driver"
+	default y
+	depends on DT_HAS_NXP_VREFV1_ENABLED
+	help
+	  Enable the NXP VREF driver
+
+config REGULATOR_NXP_VREFV1_INIT_PRIORITY
+	int "NXP VREF peripheral driver init priority"
+	default 45
+	depends on REGULATOR_NXP_VREFV1
+	help
+	  Init priority for the NXP VREF peripheral.
+
+config REGULATOR_NXP_VREFV1_READY_TIMEOUT_MS
+	int "NXP VREF ready timeout (ms)"
+	default 10
+	depends on REGULATOR_NXP_VREFV1
+	help
+	  Timeout in milliseconds to wait for the VREF
+	  to become ready.

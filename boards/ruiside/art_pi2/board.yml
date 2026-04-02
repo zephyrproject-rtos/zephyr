@@ -1,0 +1,6 @@
+board:
+  name: art_pi2
+  full_name: ART-Pi2
+  vendor: ruiside
+  socs:
+    - name: stm32h7r7xx

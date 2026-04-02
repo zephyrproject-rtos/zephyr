@@ -1,0 +1,32 @@
+#
+# Schema to validate a YAML file providing the list of configurations
+# under quarantine
+#
+$schema: "https://json-schema.org/draft/2020-12/schema"
+type: array
+items:
+  type: object
+  properties:
+    scenarios:
+      type: array
+      items:
+        type: string
+      uniqueItems: true
+    platforms:
+      type: array
+      items:
+        type: string
+      uniqueItems: true
+    architectures:
+      type: array
+      items:
+        type: string
+      uniqueItems: true
+    simulations:
+      type: array
+      items:
+        type: string
+      uniqueItems: true
+    comment:
+      type: string
+  additionalProperties: false

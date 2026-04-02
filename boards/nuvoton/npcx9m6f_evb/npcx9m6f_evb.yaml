@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: npcx9m6f_evb
+name: Nuvoton NPCX9M6F EVB
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 256
+supported:
+  - adc
+  - clock
+  - gpio
+  - i2c
+  - pm
+  - pwm
+  - psl
+  - tach
+  - uart
+  - watchdog

@@ -1,0 +1,5 @@
+# Copyright (c) 2022-2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_INTEL_RPL_S_CRB
+	select SOC_RAPTOR_LAKE

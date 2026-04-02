@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Baylibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: RV3032C7 temperature sensor
+
+compatible: "microcrystal,rv3032-temp"
+
+include: sensor-device.yaml
+
+properties:
+  low-temp:
+    type: int
+    default: -40
+    description: |
+      Low temperature value
+      According to datasheet supported value is in range from -128 to 127
+      Default value is standard minimum operation temperature -40
+  high-temp:
+    type: int
+    default: 85
+    description: |
+      High temperature value
+      According to datasheet supported value is in range from -128 to 127
+      Default value is standard maximum operation temperature +85

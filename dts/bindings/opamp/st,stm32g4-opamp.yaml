@@ -1,0 +1,258 @@
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32G4 OPAMP (Operational Amplifier)
+
+description: |
+  One OPAMP has two inputs and one output. The three I/Os can be connected
+  to the external pins, enabling any type of external interconnection.
+  An OPAMP can be configured internally:
+    - standalone amplifier (external gain setting mode)
+    - follower
+    - non-inverting amplifier with gains ranging from 2 to 64
+    - inverting amplifier with gains ranging from -1 to -63
+
+  The positive input (INP) can be connected to the internal DAC.
+  The output (VOUT) can be connected to the internal ADC.
+
+  Main features:
+    - Rail-to-rail input voltage range
+    - Low input bias current
+    - Low input offset voltage
+    - High frequency gain bandwidth
+    - High-speed mode to achieve a better slew rate
+    - Self calibration support for better offset voltage adjustment
+      of the input NMOS and PMOS transistors
+
+  Minimal DTS examples for OPAMP2:
+
+    - Standalone amplifier (external gain):
+      ```
+      &opamp2 {
+        pinctrl-0 = <&opamp2_vinm_pa5 &opamp2_vinp_pa7 &opamp2_vout_pa6>;
+        pinctrl-names = "default";
+        functional-mode = "standalone";
+        inp = "VINP0";
+        status = "okay";
+      };
+      ```
+      NOTES: Following points regarding standalone mode are to be considered:
+        - inm is tied to VINM0 independently of the value provided in DTS
+
+    - Follower (voltage buffer):
+      ```
+      &opamp2 {
+        pinctrl-0 = <&opamp2_vout_pa6>;
+        pinctrl-names = "default";
+        functional-mode = "follower";
+        inp = "DAC";
+        status = "okay";
+      };
+      ```
+
+    - Non-inverting PGA (gain 2..64):
+      ```
+      &opamp2 {
+        pinctrl-0 = <&opamp2_vinp_pb14 &opamp2_vout_pa6>;
+        pinctrl-names = "default";
+        functional-mode = "non_inverting";
+        inp = "VINP1";
+        status = "okay";
+      };
+      ```
+
+    - Inverting PGA (gain -1..-63):
+      ```
+      &opamp2 {
+        pinctrl-0 = <&opamp2_vinm_pc5 &opamp2_vinp_pb0
+                     &opamp2_vout_pa6>;
+        pinctrl-names = "default";
+        functional-mode = "inverting";
+        inp = "VINP2"; /* shall be routed to external bias voltage */
+        inm = "VINM0"; /* VINM0 is only allowed choice */
+        status = "okay";
+      };
+      ```
+
+  Timer-controlled input MUX (non-inverting PGA):
+    - Switch between VINP0 and VINP3 on TIM1_CH6 trigger.
+    ```
+    &opamp2 {
+      pinctrl-0 = <&opamp2_vinm_pa5 &opamp2_vinm_pc5
+                   &opamp2_vinp_pa7 &opamp2_vout_pa6>;
+      pinctrl-names = "default";
+      functional-mode = "standalone";
+      st,inputs-mux-mode = "TIM1_CH6";
+      inp = "VINP0", "VINP3";
+      status = "okay";
+    };
+    ```
+
+  Usage with an ADC:
+    ```
+    / {
+        zephyr,user {
+          opamp = <&opamp2>;
+        };
+      };
+
+      &adc2 {
+        st,adc-clock-source = "SYNC";
+        st,adc-prescaler = <4>;
+        status = "okay";
+
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        channel@3 {
+          reg = <3>;
+          zephyr,gain = "ADC_GAIN_1";
+          zephyr,reference = "ADC_REF_INTERNAL";
+          zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+          zephyr,resolution = <12>;
+          zephyr,vref-mv = <3300>;
+        };
+      };
+
+      &opamp2 {
+        pinctrl-0 = <&opamp2_vinm_pa5 &opamp2_vinp_pa7>;
+        pinctrl-names = "default";
+        functional-mode = "non_inverting";
+        inm = "VINM0";
+        inp = "VINP0";
+        io-channels = <&adc2 3>;
+        status = "okay";
+      };
+      ```
+    NOTE: ADC can be read from the code with usual ADC API.
+
+  NOTE: It is highly recommended to take a look at RM0440 Rev 9 and AN5306
+        for more details about STM32G4 OPAMP features and usage.
+
+  References:
+    - AN5306:
+      https://www.st.com/resource/en/application_note/an5306-operational-amplifier-opamp-usage-in-stm32g4-series-stmicroelectronics.pdf
+    - RM0440 Rev 9:
+      https://www.st.com/content/ccc/resource/technical/document/reference_manual/group0/7c/b0/25/29/1b/a2/42/b2/DM00355726/files/DM00355726.pdf/jcr:content/translations/en.DM00355726.pdf
+
+include:
+  - st,stm32-opamp.yaml
+
+compatible: st,stm32g4-opamp
+
+properties:
+  st,power-mode:
+    type: string
+    description: |
+      OPAMP power mode has impact on slew-rate:
+        - NORMAL - slew-rate 6.5 V/µs with low power consumption.
+        - HIGHSPEED - slew-rate 45 V/µs with higher power consumption.
+      source: https://www.st.com/resource/en/product_training/STM32G4-Analog-OPAMP_OPAMP.pdf
+    enum:
+      - NORMAL
+      - HIGHSPEED
+    default: NORMAL
+
+  st,lock-enable:
+    type: boolean
+    description: |
+      Lock the OPAMP configuration after it has been configured by the driver.
+      Resetting the lock mode can only be done by a system reset.
+      If not set, the OPAMP configuration will be unlocked by default.
+      The lock property is used to prevent accidental changes to the OPAMP
+      configuration after it has been set.
+      NOTES:
+        - In st,inputs-mux-mode the timer mux register will be locked too
+
+  st,enable-self-calibration:
+    type: boolean
+    description: |
+      Enable self-calibration mode.
+      If not set, the self-calibration mode will be disabled by default.
+      The self-calibration mode is used to calibrate the OPAMP for optimal
+      performance.
+      NOTES:
+        - This step will be executed at OPAMP initialization
+
+  inp:
+    required: true
+    type: string-array
+    description: |
+      Non-Inverting input selection.
+      Please refer to RM0440 Rev 9, Table 204. pp. 777/2140 for more details.
+      NOTES:
+        - Selecting st,inputs-mux-mode expects secondary input entry too
+    enum:
+      - VINP0
+      - VINP1
+      - VINP2
+      - VINP3
+      - DAC
+
+  inm:
+    type: string-array
+    description: |
+      Inverting input selection.
+      Please refer to RM0440 Rev 9, Table 204. pp. 777/2140 for more details.
+      NOTES:
+        - In case st,inputs-mux-mode is selected:
+          * In standalone mode muxed between VINM0 and VINM1 (VM_SEL = '00' or '01')
+          * In inverting/non_inverting (VM_SEL = '10') or follower (VM_SEL = '11') mode
+            muxed between resistor feedback and VOUT.
+            Basically, multiplexing happens between PGA and follower modes.
+            ATTENTION: No VINM0/VINM1 multiplexing happens here!
+        - The values in the array shall be ordered (e.g. VINM0, VINM1)
+    enum:
+      - VINM0
+      - VINM1
+
+  st,inm-filtering:
+    type: string
+    description: |
+      Inverting input filtering selection.
+      Please refer to RM0440 Rev 9 pp. 783-784/2140 for more details.
+      NOTES:
+        - Only applicable in inverting/non_inverting PGA modes
+    enum:
+      - NONE
+      - VINM0
+      - VINM1
+    default: NONE
+
+  st,inputs-mux-mode:
+    type: string
+    description: |
+      Timer controlled multiplexer mode.
+      The selection of the OPAMP inverting and non inverting inputs can be done automatically. In
+      this case, the switch from one input to another is done automatically. This automatic switch
+      is triggered by the TIM1 CC6 or TIM8 CC6 or TIM20 CC6 output arriving on the OPAMP
+      input multiplexers.
+      This is useful for dual motor control with a need to measure the currents on the 3 phases
+      simultaneously on a first motor and then on the second motor.
+      Please refer to RM0440 Rev 9, 25.3.8 Timer controlled Multiplexer mode, pp. 786/2140
+    enum:
+      - DISABLE
+      - TIM1_CH6
+      - TIM8_CH6
+      - TIM20_CH6
+    default: DISABLE
+
+  st,pmos-trimming-value:
+    type: int
+    description: |
+      OPAMP PMOS transistor offset trimming value.
+      The value will be applied directly to TRIMOFFSETP[4:0] (Bits 23:19 in OPAMPx_CST register).
+      If value is present and self-calibration is enabled, this value will overwrite values
+      calculated during self-calibration.
+      Please refer to RM0440 Rev 9, pp. 789/2140 for more details.
+      NOTE: Acceptable range is 0x00 to 0x1f.
+
+  st,nmos-trimming-value:
+    type: int
+    description: |
+      OPAMP NMOS transistor offset trimming value.
+      The value will be applied directly to TRIMOFFSETN[4:0] (Bits 28:24 in OPAMPx_CST register).
+      If value is present and self-calibration is enabled, this value will overwrite values
+      calculated during self-calibration.
+      Please refer to RM0440 Rev 9, pp. 789/2140 for more details.
+      NOTE: Acceptable range is 0x00 to 0x1f.

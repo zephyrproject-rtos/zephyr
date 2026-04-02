@@ -1,0 +1,12 @@
+# Copyright (c) 2018 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMicroelectronics LSM9DS0-GYRO 3-axis gyro
+
+compatible: "st,lsm9ds0-gyro"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  irq-gpios:
+    type: phandle-array

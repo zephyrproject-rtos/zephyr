@@ -1,0 +1,19 @@
+# Copyright (c) 2022 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_MIKROE_WIFI_BT_CLICK || \
+	SHIELD_MIKROE_WIFI_BT_CLICK_MIKROBUS || \
+	SHIELD_MIKROE_WIFI_BT_CLICK_ARDUINO
+
+if NETWORKING
+
+choice WIFI_ESP_AT_VERSION
+	default WIFI_ESP_AT_VERSION_2_0
+	depends on WIFI_ESP_AT
+endchoice
+
+orsource "boards/*.defconfig"
+
+endif # NETWORKING
+
+endif   # SHIELD_MIKROE_WIFI_BT_CLICK

@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* To test this sample, connect
+ * SCL0 P000  -->  SCL1 P109
+ * SDA0 P401  -->  SDA1 P400
+ * Need to connect I2C pull up with 4.7k ohms
+ */
+
+&pinctrl {
+	iic1_default: iic1_default {
+		group1 {
+			/* SCL1 SDA1 */
+			psels = <RA_PSEL(RA_PSEL_I2C, 1, 9)>,
+				<RA_PSEL(RA_PSEL_I2C, 4, 0)>;
+			drive-strength = "medium";
+		};
+	};
+};
+
+&iic0 {
+	status = "okay";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		address-width = <8>;
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&iic1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+	interrupts = <27 1>, <28 1>, <30 1>, <31 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};

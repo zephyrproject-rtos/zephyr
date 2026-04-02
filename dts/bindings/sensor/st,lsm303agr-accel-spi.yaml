@@ -1,0 +1,9 @@
+# Copyright (c) 2019 Grinn
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics LSM303AGR 3-axis accelerometer accessed through SPI bus
+
+compatible: "st,lsm303agr-accel"
+
+include: ["spi-device.yaml", "st,lis2dh-common.yaml"]

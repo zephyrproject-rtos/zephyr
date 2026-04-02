@@ -1,0 +1,19 @@
+# Private config options for nanopb app
+
+# Copyright (c) 2024 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Nanopb protobuf sample application"
+
+config SAMPLE_BUFFER_SIZE
+	int "Simple message buffer size"
+	default 8
+	help
+	  Configure the simple message buffer field's size.
+
+config SAMPLE_UNLUCKY_NUMBER
+	bool "Unlucky number field"
+	help
+	  Enable the unlucky number field.
+
+source "Kconfig.zephyr"

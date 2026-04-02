@@ -1,0 +1,6 @@
+	nsim_isa_family=rv32
+	nsim_isa_ext=-all.i.m.a.c.s.u.h.zicsr.zifencei.zihintpause.zca.zcb.zcmp.zcmt.zba.zbb.zbc.zbs.zicond.zicbom.zicbop
+	nsim_isa_big_endian=0
+	nsim_mmio_base=2560
+	nsim_mem-dev=uart0,kind=16550,base=0x10000000,irq=24
+	nsim_mem-interface=ARCV_PMP,num_regions=16,granule=1

@@ -1,0 +1,54 @@
+# Copyright (c) 2024 ANITRA system s.r.o.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Micro Crystal RV3028 RTC
+
+compatible: "microcrystal,rv3028"
+
+include:
+  - name: rtc-device.yaml
+  - name: i2c-device.yaml
+
+properties:
+  clkout-frequency:
+    type: int
+    enum:
+      - 32768
+      - 8192
+      - 1024
+      - 64
+      - 32
+      - 1
+    description: |
+      Frequency of the CLKOUT signal in Hertz (Hz). If omitted, the CLKOUT pin is LOW.
+
+  backup-switch-mode:
+    type: string
+    required: true
+    enum:
+      - disabled
+      - direct
+      - level
+    description: |
+      Automatic backup switchover function selection:
+        - disabled: The switchover function is disabled - only one power supply available (VDD)
+        - direct: Direct Switching Mode (DSM): when VDD < VBACKUP, switchover occurs from VDD to
+          VBACKUP without requiring VDD to drop below VTH:LSM (2.0 V)
+        - level: Level Switching Mode (LSM): when VDD < VTH:LSM (2.0 V) AND VBACKUP > VTH:LSM,
+          switchover occurs from VDD to VBACKUP
+
+  trickle-resistor-ohms:
+    type: int
+    enum:
+      - 3000
+      - 5000
+      - 9000
+      - 15000
+    description: |
+      Enable the trickle charger with provided current-limiting resistance in ohms. The trickle
+      charger allows a battery or supercapacitor connected to VBACKUP to be charged.
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the RV3028 INT interrupt output. This signal is open-drain, active low.

@@ -1,0 +1,17 @@
+# Copyright (c) 2023 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for SysTick of ARM Cortex-M chips
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  external-clock-source:
+    type: boolean
+    description: |
+      For ARM Cortex-M SysTick timer, the CLKSOURCE bit in the
+      SysTick Control and Status Register (CSR) selects the clock source.
+      If this property is present, the external reference clock is selected.
+      If absent, the processor/core clock is selected.

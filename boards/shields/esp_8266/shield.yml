@@ -1,0 +1,18 @@
+shields:
+  - name: esp_8266
+    full_name: ESP-8266 Module
+    vendor: espressif
+    supported_features:
+      - wifi
+
+  - name: esp_8266_arduino
+    full_name: ESP-8266 Module (Arduino)
+    vendor: espressif
+    supported_features:
+      - wifi
+
+  - name: esp_8266_mikrobus
+    full_name: ESP-8266 Module (MikroBus)
+    vendor: espressif
+    supported_features:
+      - wifi

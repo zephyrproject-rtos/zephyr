@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "intel-rvp,board-power"
+
+description: |
+  Board GPIO power rails binding for Modular Embedded Controller cards that are connected to
+  Intel RVP and get power from it.
+  Provides GPIOs involved in eSPI controller-target handshake also known as power sequencing.
+  Intended for use in board device trees where power rail status and ready signaling are required.
+
+properties:
+  pwrg-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Board GPIO input(s) used to detect that power rails are stable.
+
+  rsm-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Board GPIO output(s) used to notify the controller/target that power has
+      stabilized and minimum initialization is complete, so the controller/target
+      can proceed with further handshake or initialization.

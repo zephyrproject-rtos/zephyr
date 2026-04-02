@@ -1,0 +1,152 @@
+/*
+ * Copyright (c) 2025 PHYTEC America LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <phytec/phycore_rt1170_mimxrt1176_cm7.dtsi>
+#include "phyboard_atlas.dtsi"
+
+/ {
+	model = "PHYTEC phyBOARD-Atlas i.MX RT1170 CM7";
+	compatible = "phytec,phyboard_atlas";
+
+	aliases {
+		mipi-dsi = &mipi_dsi;
+	};
+
+	chosen {
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,canbus = &flexcan3;
+	};
+
+	nxp_mipi_connector: mipi-connector {
+		compatible = "gpio-nexus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio9 29 0>,   /* Pin 1, LEDK */
+			   <21 0 &gpio9 30 0>,  /* Pin 21, RESET */
+			   <28 0 &gpio9 0 0>,   /* Pin 28, CTP_RST */
+			   <29 0 &gpio2 31 0>,  /* Pin 29, CTP_INT */
+			   <32 0 &gpio11 16 0>, /* Pin 32, PWR_EN */
+			   <34 0 &gpio9 29 0>;  /* Pin 34, BL_PWM */
+	};
+
+	nxp_cam_connector: cam-connector {
+		compatible = "nxp,cam-44pins-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <9 0 &gpio11 15 0>, /* Pin 9, RESETB */
+			   <17 0 &gpio9 25 0>; /* Pin 17, PWDN */
+	};
+};
+
+&user_button {
+	status = "okay";
+};
+
+&board_green_led {
+	status = "okay";
+};
+
+&board_red_led {
+	status = "okay";
+};
+
+&flexcan3 {
+	status = "okay";
+	phys = <&transceiver0>;
+};
+
+&lpspi1 {
+	dmas = <&edma0 0 36>, <&edma0 1 37>;
+	dma-names = "rx", "tx";
+	status = "disabled"; /* LPSPI1 conflicts with LPUART5 */
+};
+
+&lpspi5 {
+	status = "okay";
+};
+
+&edma0 {
+	status = "okay";
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpuart5 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpuart8 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+nxp_mipi_i2c: &lpi2c5 {
+	pinctrl-0 = <&pinmux_lpi2c5>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+&sai1 {
+	status = "okay";
+};
+
+zephyr_udc0: &usb1 {
+	status = "okay";
+	phy-handle = <&usbphy1>;
+};
+
+&usbphy1 {
+	status = "okay";
+	tx-d-cal = <7>;
+	tx-cal-45-dp-ohms = <6>;
+	tx-cal-45-dm-ohms = <6>;
+};
+
+&usb2 {
+	status = "disabled";
+	phy-handle = <&usbphy2>;
+};
+
+&usbphy2 {
+	status = "okay";
+	tx-d-cal = <7>;
+	tx-cal-45-dp-ohms = <6>;
+	tx-cal-45-dm-ohms = <6>;
+};
+
+&usdhc1 {
+	status = "okay";
+	detect-dat3;
+	no-1-8-v;
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
+};
+
+zephyr_lcdif: &lcdif {};
+
+zephyr_mipi_dsi: &mipi_dsi {
+	dphy-ref-frequency = <24000000>;
+	phy-clock = <792000000>;
+};
+
+nxp_cam_i2c: &lpi2c2 {};
+
+nxp_mipi_csi: &mipi_csi2rx {};
+
+nxp_csi: &csi {};

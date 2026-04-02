@@ -1,0 +1,44 @@
+#  ADC CMP NPCX driver configuration options
+
+# Copyright (c) 2022 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+if ADC_NPCX
+
+config ADC_CMP_NPCX
+	bool "Nuvoton NPCX ADC threshold detection interruption"
+	default y
+	depends on DT_HAS_NUVOTON_ADC_CMP_ENABLED
+	help
+	  This option enables threshold interruption using sensor
+	  trigger API.
+
+if ADC_CMP_NPCX
+
+config ADC_CMP_NPCX_WORKQUEUE
+	bool "NPCX ADC threshold detection uses internal work queue"
+	help
+	  Threshold detection ISR utilizes system work queue for calling
+	  trigger handlers; set this option to use dedicated work queue instead.
+
+if ADC_CMP_NPCX_WORKQUEUE
+
+config ADC_CMP_NPCX_WORKQUEUE_PRIORITY
+	int "Nuvoton NPCX ADC trheshold detection work queue priority"
+	default SYSTEM_WORKQUEUE_PRIORITY
+	help
+	  This option sets internal ADC NPCX threshold detection workqueue
+	  priority.
+
+config ADC_CMP_NPCX_WORKQUEUE_STACK_SIZE
+	int "Nuvoton NPCX ADC trheshold detection work queue stack size"
+	default 768
+	help
+	  This option sets internal ADC NPCX threshold detection workqueue
+	  stack size.
+
+endif # ADC_CMP_NPCX_WORKQUEUE
+
+endif # ADC_CMP_NPCX
+
+endif # ADC_NPCX

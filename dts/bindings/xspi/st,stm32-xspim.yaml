@@ -1,0 +1,49 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32 XSPI Controller Manager
+
+    XSPIM configuration provides the XSPI manager state used when exiting first
+    stage application (typically a bootloader).
+    Its configuration only happens once across all target binaries.
+
+compatible: "st,stm32-xspim"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  io-port-1:
+    type: phandles
+    required: true
+    description: |
+      List of XSPI controllers mapped to XSPIM I/O port 1
+
+  io-port-2:
+    type: phandles
+    required: true
+    description: |
+      List of XSPI controllers mapped to XSPIM I/O port 2
+
+  ncs-override:
+    type: string
+    enum: ["disabled", "ncs1", "ncs2"]
+    default: "disabled"
+    description: |
+      Chip select signal override configuration:
+        - Override disabled
+        - XSPI Chip select signal sent to ncs1
+        - XSPI Chip select signal sent to ncs2
+
+  req2ack-time:
+    type: int
+    default: 1
+    description: |
+      In multiplexed mode, defines time between two transactions,
+      in XSPI clock cycles.

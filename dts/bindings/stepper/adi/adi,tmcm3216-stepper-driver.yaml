@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Alexis Czezar C Torreno
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADI TMCM-3216 stepper motor driver
+
+compatible: "adi,tmcm3216-stepper-driver"
+
+properties:
+  idx:
+    type: int
+    required: true
+    description: Motor index (0, 1, or 2)
+
+  micro-step-res:
+    type: int
+    required: true
+    default: 16
+    description: |
+      Default microstep resolution. Valid values are:
+      1, 2, 4, 8, 16, 32, 64, 128, 256

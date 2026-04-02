@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,canbus = &canfd1;
+	};
+};
+
+&pinctrl {
+	canfd1_default: canfd1_default {
+		group1 {
+			/* CRX1 CTX1 */
+			psels = <RA_PSEL(RA_PSEL_CANFD, 12, 15)>,
+				<RA_PSEL(RA_PSEL_CANFD, 13, 0)>;
+			drive-strength = "high";
+		};
+	};
+};
+
+&canfdclk {
+	status = "okay";
+};
+
+&canfd_global {
+	interrupts = <95 1>, <94 1>;
+	interrupt-names = "rxf", "glerr";
+	status = "okay";
+
+	canfd1 {
+		pinctrl-0 = <&canfd1_default>;
+		pinctrl-names = "default";
+		rx-max-filters = <16>;
+		interrupts = <93 1>, <92 1>, <91 1>;
+		interrupt-names = "err", "tx", "rx";
+		status = "okay";
+	};
+};

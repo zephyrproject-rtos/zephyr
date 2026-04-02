@@ -1,0 +1,4 @@
+&wdt0 {
+	/* uncomment to use Non-Maskable interrupt instead of the normal one */
+	/* interrupt-nmi; */
+};

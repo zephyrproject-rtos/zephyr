@@ -1,0 +1,10 @@
+common:
+  tags:
+    - spdx
+  integration_platforms:
+    - qemu_cortex_m3
+  platform_allow:
+    - qemu_cortex_m3
+  harness: ctest
+tests:
+  buildsystem.sbom.spdx: {}

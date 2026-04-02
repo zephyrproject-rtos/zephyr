@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NPCM400_EVB
+	select SOC_NPCM400

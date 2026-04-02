@@ -1,0 +1,22 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - wifi
+tests:
+  drivers.wifi.build.spi:
+    extra_args: DTC_OVERLAY_FILE="spi_devices.overlay"
+    extra_configs:
+      - CONFIG_SPI=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+
+  drivers.wifi.build.uart:
+    extra_args: DTC_OVERLAY_FILE="uart_devices.overlay"
+    extra_configs:
+      - CONFIG_SERIAL=y
+      - CONFIG_WIFI_ESWIFI_BUS_UART=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64

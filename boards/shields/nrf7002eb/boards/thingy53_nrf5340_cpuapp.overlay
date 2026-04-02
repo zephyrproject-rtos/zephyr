@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * This uses gpio0 pin 8 which conflicts with STATUS pin of Wi-Fi SR coex
+ */
+&npm1100_force_pwm_mode {
+	status = "disabled";
+};
+
+/*
+ * Pins P0.9, P0.10, P0.11, P0.12 conflict with SPI4 and nrf7002 host irq
+ */
+&uart0 {
+	status = "disabled";
+};

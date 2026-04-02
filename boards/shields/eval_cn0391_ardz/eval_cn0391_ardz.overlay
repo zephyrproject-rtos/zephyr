@@ -1,0 +1,134 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/ad7124-adc.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+/ {
+	aliases {
+		adc0 = &ad7124_eval_cn0391_ardz;
+	};
+};
+
+&arduino_spi {
+	status = "okay";
+
+	ad7124_eval_cn0391_ardz: ad7124@0 {
+		compatible = "adi,ad7124-adc";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#io-channel-cells = <1>;
+		active-device = <1>;
+		reference-enable;
+		status = "okay";
+
+		/* P1 - Measure */
+		channel@0 {
+			reg = <0>;
+			zephyr,gain = "ADC_GAIN_32";
+			zephyr,reference = "ADC_REF_INTERNAL";
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+			zephyr,resolution = <24>;
+			zephyr,input-positive = <AD7124_ADC_AIN0>;
+			zephyr,input-negative = <AD7124_ADC_AIN15>;
+		};
+
+		/* P1 - Current Source */
+		channel@1 {
+			reg = <1>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_INTERNAL";
+			zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 1000)>;
+			zephyr,resolution = <24>;
+			zephyr,input-positive = <AD7124_ADC_AIN1>;
+			zephyr,input-negative = <AD7124_ADC_AIN8>;
+			zephyr,current-source-pin = [0d 01];
+		};
+
+		/* P2 - Measure */
+		channel@2 {
+			reg = <2>;
+			zephyr,gain = "ADC_GAIN_32";
+			zephyr,reference = "ADC_REF_INTERNAL";
+			zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 1000)>;
+			zephyr,resolution = <24>;
+			zephyr,input-positive = <AD7124_ADC_AIN2>;
+			zephyr,input-negative = <AD7124_ADC_AIN15>;
+		};
+
+		/* P2 - Current Source */
+		channel@3 {
+			reg = <3>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_INTERNAL";
+			zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 1000)>;
+			zephyr,resolution = <24>;
+			zephyr,input-positive = <AD7124_ADC_AIN3>;
+			zephyr,input-negative = <AD7124_ADC_AIN8>;
+			zephyr,current-source-pin = [0d 03];
+		};
+
+		/* P3 - Measure */
+		channel@4 {
+			reg = <4>;
+			zephyr,gain = "ADC_GAIN_32";
+			zephyr,reference = "ADC_REF_INTERNAL";
+			zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 1000)>;
+			zephyr,resolution = <24>;
+			zephyr,input-positive = <AD7124_ADC_AIN4>;
+			zephyr,input-negative = <AD7124_ADC_AIN15>;
+		};
+
+		/* P3 - Current Source */
+		channel@5 {
+			reg = <5>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_INTERNAL";
+			zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 1000)>;
+			zephyr,resolution = <24>;
+			zephyr,input-positive = <AD7124_ADC_AIN5>;
+			zephyr,input-negative = <AD7124_ADC_AIN8>;
+			zephyr,current-source-pin = [0d 05];
+		};
+
+		/* P4 - Measure */
+		channel@6 {
+			reg = <6>;
+			zephyr,gain = "ADC_GAIN_32";
+			zephyr,reference = "ADC_REF_INTERNAL";
+			zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 1000)>;
+			zephyr,resolution = <24>;
+			zephyr,input-positive = <AD7124_ADC_AIN6>;
+			zephyr,input-negative = <AD7124_ADC_AIN15>;
+		};
+
+		/* P4 - Current Source */
+		channel@7 {
+			reg = <7>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_INTERNAL";
+			zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 1000)>;
+			zephyr,resolution = <24>;
+			zephyr,input-positive = <AD7124_ADC_AIN7>;
+			zephyr,input-negative = <AD7124_ADC_AIN8>;
+			zephyr,current-source-pin = [0d 07];
+		};
+
+		/* Reference */
+		channel@9 {
+			reg = <9>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_INTERNAL";
+			zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 1000)>;
+			zephyr,resolution = <24>;
+			zephyr,input-positive = <AD7124_ADC_AIN8>;
+			zephyr,input-negative = <AD7124_ADC_AIN15>;
+		};
+	};
+};

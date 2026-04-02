@@ -1,0 +1,9 @@
+board:
+  name: bl5340_dvk
+  full_name: BL5340 DVK
+  vendor: ezurio
+  socs:
+  - name: 'nrf5340'
+    variants:
+    - name: 'ns'
+      cpucluster: 'cpuapp'

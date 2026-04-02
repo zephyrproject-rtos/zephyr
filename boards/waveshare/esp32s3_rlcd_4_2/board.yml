@@ -1,0 +1,6 @@
+board:
+  name: esp32s3_rlcd_4_2
+  full_name: ESP32-S3-RLCD-4.2
+  vendor: waveshare
+  socs:
+  - name: esp32s3

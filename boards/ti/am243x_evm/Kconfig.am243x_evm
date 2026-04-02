@@ -1,0 +1,9 @@
+# Texas Instruments Sitara AM243x EVM
+#
+# Copyright (c) 2025 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_AM243X_EVM
+	select SOC_AM2434_M4 if BOARD_AM243X_EVM_AM2434_M4
+	select SOC_AM2434_R5F0_0 if BOARD_AM243X_EVM_AM2434_R5F0_0

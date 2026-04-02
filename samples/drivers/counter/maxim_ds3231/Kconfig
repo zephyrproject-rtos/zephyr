@@ -1,0 +1,12 @@
+# Copyright (c) 2019 Peter Bigot Consulting, LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config APP_SET_ALIGNED_CLOCK
+	bool "Option to align RTC with time-since-boot"
+	help
+	  If enabled this reads the RTC then sets it so that uptime
+	  shows as being relative to the start of the next hour.
+
+source "Kconfig"

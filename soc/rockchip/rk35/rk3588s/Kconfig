@@ -1,0 +1,10 @@
+# Copyright 2024 Université Gustave Eiffel
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_RK3588S
+	select ARM64
+	select CPU_CORTEX_A55
+	select ARM_ARCH_TIMER if SYS_CLOCK_EXISTS
+
+config SOC_PART_NUMBER
+	default "RK3588S" if SOC_RK3588S

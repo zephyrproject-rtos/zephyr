@@ -1,0 +1,55 @@
+# ADC configuration options
+
+# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2019 Endre Karlson
+# Copyright (c) 2019 Song Qiang <songqiang1304521@gmail.com>
+# Copyright (c) 2021 Marius Scholtz, RIC Electronics
+# Copyright (c) 2022 Hein Wessels, Nobleo Technology
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+ADC_STM32_INJECTED_SUPPORT := st,adc-has-injected-support
+
+config ADC_STM32
+	bool "STM32 ADC driver"
+	default y
+	depends on DT_HAS_ST_STM32_ADC_ENABLED
+	select PINCTRL
+	select ADC_ASYNC if ADC_STREAM
+	select ADC_HAS_SEQUENCE_PRIORITY if \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_ADC),$(ADC_STM32_INJECTED_SUPPORT))
+	help
+	  Enable the driver implementation for the stm32xx ADC
+
+config ADC_STM32WB0
+	bool "STM32WB0 ADC driver"
+	default y
+	depends on DT_HAS_ST_STM32WB0_ADC_ENABLED
+	select PINCTRL
+	help
+	  Enable the driver implementation for the STM32WB0 series ADC
+
+if ADC_STM32 || ADC_STM32WB0
+
+config ADC_STM32_DMA
+	bool "STM32 MCU ADC DMA Support"
+	select DMA
+	help
+	  Enable the ADC DMA mode for ADC instances
+	  that enable dma channels in their device tree node.
+
+config ADC_STM32_INJECTED_CHANNELS
+	def_bool y
+	depends on ADC_SEQUENCE_PRIORITY
+	help
+	  Enable the support for injected channels.
+	  To define a sequence as injected, set the `priority` field of the
+	  `struct adc_sequence` to 1. A regular sequence should have a value
+	  of 0. Any other values will return an error.
+	  When using injected channels, it is recommended to setup all channels
+	  that will be used (both regular and injected) before any measurement
+	  is started, because it is not possible to setup a new channel while
+	  conversions are running (typically, one can't configure an injected
+	  channel if a regular conversion is on-going).
+
+endif

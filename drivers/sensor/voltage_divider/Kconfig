@@ -1,0 +1,13 @@
+# Voltage sensor driver
+#
+# Copyright (c) 2023 FTP Technologies
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config VOLTAGE_DIVIDER
+	bool "Voltage sensor driver"
+	default y
+	depends on DT_HAS_VOLTAGE_DIVIDER_ENABLED
+	select ADC
+	help
+	  Enable voltage sensor driver.

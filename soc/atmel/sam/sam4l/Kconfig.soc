@@ -1,0 +1,107 @@
+# Copyright (c) 2020-2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SAM4L
+	bool
+	select SOC_FAMILY_ATMEL_SAM
+	help
+	  Enable support for Atmel SAM4L Cortex-M4 microcontrollers.
+	  Part No.: SAM4LS8C, SAM4LS8B, SAM4LS8A, SAM4LS4C, SAM4LS4B,
+	  SAM4LS4A, SAM4LS2C, SAM4LS2B, SAM4LS2A, SAM4LC8C, SAM4LC8B,
+	  SAM4LC8A, SAM4LC4C, SAM4LC4B, SAM4LC4A SAM4LC2C, SAM4LC2B,
+	  SAM4LC2A
+
+config SOC_SERIES
+	default "sam4l" if SOC_SERIES_SAM4L
+
+config SOC_SAM4LS2A
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC_SAM4LS2B
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC_SAM4LS2C
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC_SAM4LS4A
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC_SAM4LS4B
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC_SAM4LS4C
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC_SAM4LS8A
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC_SAM4LS8B
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC_SAM4LS8C
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC_SAM4LC2A
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC_SAM4LC2B
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC_SAM4LC2C
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC_SAM4LC4A
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC_SAM4LC4B
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC_SAM4LC4C
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC_SAM4LC8A
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC_SAM4LC8B
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC_SAM4LC8C
+	bool
+	select SOC_SERIES_SAM4L
+
+config SOC
+	default "sam4ls2a" if SOC_SAM4LS2A
+	default "sam4ls2b" if SOC_SAM4LS2B
+	default "sam4ls2c" if SOC_SAM4LS2C
+	default "sam4ls4a" if SOC_SAM4LS4A
+	default "sam4ls4b" if SOC_SAM4LS4B
+	default "sam4ls4c" if SOC_SAM4LS4C
+	default "sam4ls8a" if SOC_SAM4LS8A
+	default "sam4ls8b" if SOC_SAM4LS8B
+	default "sam4ls8c" if SOC_SAM4LS8C
+	default "sam4lc2a" if SOC_SAM4LC2A
+	default "sam4lc2b" if SOC_SAM4LC2B
+	default "sam4lc2c" if SOC_SAM4LC2C
+	default "sam4lc4a" if SOC_SAM4LC4A
+	default "sam4lc4b" if SOC_SAM4LC4B
+	default "sam4lc4c" if SOC_SAM4LC4C
+	default "sam4lc8a" if SOC_SAM4LC8A
+	default "sam4lc8b" if SOC_SAM4LC8B
+	default "sam4lc8c" if SOC_SAM4LC8C

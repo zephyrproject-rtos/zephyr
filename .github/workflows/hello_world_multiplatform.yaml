@@ -1,0 +1,96 @@
+name: Hello World (Multiplatform)
+
+on:
+  push:
+    branches:
+      - main
+      - v*-branch
+      - collab-*
+  pull_request:
+    branches:
+      - main
+      - v*-branch
+      - collab-*
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/hello_world_multiplatform.yaml'
+      - 'SDK_VERSION'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-14, windows-2022]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: zephyr
+          fetch-depth: 0
+
+      - name: Rebase
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        working-directory: zephyr
+        shell: bash
+        run: |
+          git config --global user.email "actions@zephyrproject.org"
+          git config --global user.name "Github Actions"
+          rm -fr ".git/rebase-apply"
+          rm -fr ".git/rebase-merge"
+          git rebase origin/${BASE_REF}
+          git clean -f -d
+          git log --graph --oneline HEAD...${PR_HEAD}
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: 3.12
+
+      - name: Setup Zephyr project
+        uses: zephyrproject-rtos/action-zephyr-setup@360ff9b36e58499d9eb28015cdcde7ca03a5b04d # v1.0.12
+        with:
+          app-path: zephyr
+          toolchains: arm-zephyr-eabi:riscv64-zephyr-elf
+          ccache-cache-key: hw-${{ matrix.os }}
+
+      - name: Build firmware
+        working-directory: zephyr
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
+          elif [ "${{ runner.os }}" = "Windows" ]; then
+            EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O/tmp/twister-out"
+          elif [ "${{ runner.os }}-${{ runner.arch }}" == "Linux-ARM64" ]; then
+            EXTRA_TWISTER_FLAGS="--exclude-platform native_sim/native"
+          fi
+          west twister \
+              -p native_sim -p qemu_cortex_m0 -p qemu_riscv32 -p qemu_riscv64 \
+              --runtime-artifact-cleanup \
+              --force-color \
+              --inline-logs \
+              -T samples/hello_world \
+              -T samples/cpp/hello_world \
+              -v \
+              $EXTRA_TWISTER_FLAGS
+
+      - name: Upload artifacts
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          if-no-files-found: ignore
+          path:
+            zephyr/twister-out/*/samples/hello_world/sample.basic.helloworld/build.log
+            zephyr/twister-out/*/samples/cpp/hello_world/sample.cpp.helloworld/build.log

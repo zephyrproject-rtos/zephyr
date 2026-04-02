@@ -1,0 +1,24 @@
+/dts-v1/;
+#include "beaglev_fire_common.dtsi"
+
+/ {
+	compatible = "beagle,beaglev-fire", "microchip,mpfs";
+
+	cpus {
+		cpu@1 {
+			status = "disabled";
+		};
+
+		cpu@2 {
+			status = "disabled";
+		};
+
+		cpu@3 {
+			status = "disabled";
+		};
+
+		cpu@4 {
+			status = "disabled";
+		};
+	};
+};

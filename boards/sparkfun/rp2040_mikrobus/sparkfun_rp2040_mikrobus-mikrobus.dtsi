@@ -1,0 +1,44 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <0 0 &gpio0 26 0>, /* AN   */
+			   <1 0 &gpio0 13 0>, /* RST  */
+			   <2 0 &gpio0 5 0>,  /* CS   */
+			   <3 0 &gpio0 2 0>,  /* SCK  */
+			   <4 0 &gpio0 4 0>,  /* CIPO */
+			   <5 0 &gpio0 3 0>,  /* COPI */
+			   <6 0 &gpio0 16 0>, /* PWM  */
+			   <7 0 &gpio0 17 0>, /* INT  */
+			   <8 0 &gpio0 1 0>,  /* RX   */
+			   <9 0 &gpio0 0 0>,  /* TX   */
+			   <10 0 &gpio0 7 0>, /* SCL  */
+			   <11 0 &gpio0 6 0>; /* SDA  */
+	};
+
+	mikrobus_adc: mikrobus-adc-channels {
+		io-channels = <&zephyr_adc 0>;
+	};
+};
+
+mikrobus_i2c: &zephyr_i2c {
+	status = "okay";
+};
+
+mikrobus_spi: &zephyr_spi {
+	status = "okay";
+};
+
+mikrobus_serial: &zephyr_serial {
+	status = "okay";
+};

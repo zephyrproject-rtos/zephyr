@@ -1,0 +1,16 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_NPM1100
+	bool "nPM1100 PMIC regulator driver"
+	default y
+	depends on DT_HAS_NORDIC_NPM1100_ENABLED
+	help
+	  Enable the Nordic nPM1100 PMIC regulator driver
+
+config REGULATOR_NPM1100_INIT_PRIORITY
+	int "nPM1100 regulator driver init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	depends on REGULATOR_NPM1100
+	help
+	  Init priority for the Nordic nPM1100 regulator driver.

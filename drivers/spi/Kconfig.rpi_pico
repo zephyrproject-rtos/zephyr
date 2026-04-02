@@ -1,0 +1,21 @@
+# Copyright (c) 2023 Stephen Boylan <stephen.boylan@beechwoods.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_RPI_PICO_PIO
+	bool "Raspberry Pi Pico PIO SPI controller driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_SPI_PIO_ENABLED
+	select PICOSDK_USE_PIO
+	select PICOSDK_USE_CLAIM
+	select PINCTRL
+	help
+	  Enable driving SPI via PIO on the Raspberry Pi Pico
+
+if SPI_RPI_PICO_PIO
+
+config SPI_RPI_PICO_PIO_DMA
+	bool "Raspberry Pi Pico PIO SPI DMA mode"
+	select DMA
+	help
+	  Enables DMA support for Raspberry Pi Pico PIO SPI driver.
+endif

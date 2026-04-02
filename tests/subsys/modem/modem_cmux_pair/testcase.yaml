@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  modem.modem_cmux_pair:
+    tags: modem_cmux
+    harness: ztest
+    platform_allow: native_sim

@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2023, Meta Platforms, Inc. and its affiliates.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/samd20eXab-pinctrl.h>
+
+&pinctrl {
+	sercom0_spi_default: sercom0_spi_default {
+		group1 {
+			pinmux = <PA8C_SERCOM0_PAD0>,
+				 <PA9C_SERCOM0_PAD1>,
+				 <PA11C_SERCOM0_PAD3>;
+		};
+	};
+
+	sercom1_uart_default: sercom1_uart_default {
+		group1 {
+			pinmux = <PA18C_SERCOM1_PAD2>,
+				 <PA19C_SERCOM1_PAD3>;
+		};
+	};
+
+	sercom3_i2c_default: sercom3_i2c_default {
+		group1 {
+			pinmux = <PA17D_SERCOM3_PAD1>,
+				 <PA18D_SERCOM3_PAD2>;
+		};
+	};
+
+	adc_default: adc_default {
+		group1 {
+			pinmux = <PA4B_ADC_AIN4>,
+				 <PA5B_ADC_AIN5>;
+		};
+	};
+};

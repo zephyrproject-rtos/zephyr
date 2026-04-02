@@ -1,0 +1,25 @@
+# Copyright (c) 2019, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC PWM
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+compatible: "microchip,xec-pwm"
+
+properties:
+  reg:
+    required: true
+
+  pcrs:
+    type: array
+    required: true
+    description: PWM PCR register index and bit position
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

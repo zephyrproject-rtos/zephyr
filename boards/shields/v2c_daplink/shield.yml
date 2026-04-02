@@ -1,0 +1,14 @@
+shields:
+  - name: v2c_daplink
+    full_name: ARM V2C-DAPLink for DesignStart FPGA
+    vendor: arm
+    supported_features:
+      - mtd
+      - sdhc
+
+  - name: v2c_daplink_cfg
+    full_name: ARM V2C-DAPLink for DesignStart FPGA (boot from QSPI)
+    vendor: arm
+    supported_features:
+      - mtd
+      - sdhc

@@ -1,0 +1,46 @@
+# Copyright (c) 2023, Meta
+# Copyright (c) 2024, Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "POSIX Threads Benchmark"
+
+source "Kconfig.zephyr"
+
+config TEST_DURATION_S
+	int "Number of seconds to run the test"
+	default 5
+	help
+	   Duration for the test, in seconds.
+
+config TEST_DELAY_US
+	int "Microseconds to delay between pthread join and create"
+	default 0
+	help
+	  If there is a race condition, a value of zero here should
+	  cause a crash.
+
+config TEST_STACK_SIZE
+	int "Size of each thread stack in this test"
+	default 1024 if 64BIT
+	default 1024 if SPARC
+	default 512
+	help
+	  The minimal stack size required to run a minimal thread.
+
+config TEST_KTHREADS
+	bool "Test k_threads"
+	default y
+	help
+	  Run tests for k_threads
+
+config TEST_PTHREADS
+	bool "Test pthreads"
+	default y
+	help
+	  Run tests for pthreads
+
+config TEST_PERIODIC_STATS
+	bool "Print statistics periodically"
+	help
+	  Print statistics periodically throughout the benchmark.

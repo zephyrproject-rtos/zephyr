@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RZG3S
+	bool
+	select SOC_FAMILY_RENESAS_RZ
+	help
+	  Renesas RZ/G3S series
+
+config SOC_SERIES
+	default "rzg3s" if SOC_SERIES_RZG3S
+
+config SOC_R9A08G045S33GBG
+	bool
+	select SOC_SERIES_RZG3S
+	help
+	  R9A08G045S33GBG
+
+config SOC_R9A08G045S33GBG_CM33
+	bool
+	select SOC_R9A08G045S33GBG
+
+config SOC
+	default "r9a08g045s33gbg" if SOC_R9A08G045S33GBG

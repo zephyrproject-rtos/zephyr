@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+module = I3C_MAX32
+module-str = i3c-max32
+source "subsys/logging/Kconfig.template.log_config"
+
+config I3C_MAX32
+	bool "Analog Devices MAX32 I3C driver"
+	depends on DT_HAS_ADI_MAX32_I3C_ENABLED
+	select PINCTRL
+	select I3C_IBI_WORKQUEUE if I3C_USE_IBI
+	default y
+	help
+	  I3C driver for MAX32 SoC family.

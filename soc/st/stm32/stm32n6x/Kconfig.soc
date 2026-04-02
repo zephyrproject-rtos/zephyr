@@ -1,0 +1,18 @@
+# ST Microelectronics STM32N6 MCU series
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32N6X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32n6x" if SOC_SERIES_STM32N6X
+
+config SOC_STM32N657XX
+	bool
+	select SOC_SERIES_STM32N6X
+
+config SOC
+	default "stm32n657xx" if SOC_STM32N657XX

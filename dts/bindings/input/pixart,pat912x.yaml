@@ -1,0 +1,59 @@
+# Copyright 2024 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: PAT9125EL Miniature Optical Navigation Chip
+
+compatible: "pixart,pat912x"
+
+include: i2c-device.yaml
+
+properties:
+  motion-gpios:
+    type: phandle-array
+    required: true
+    description:
+      GPIO connected to the motion pin, active low.
+
+  zephyr,axis-x:
+    type: int
+    description: |
+      The input code for the X axis to report for the device, typically any of
+      INPUT_REL_*. No report produced for the device X axis if unspecified.
+
+  zephyr,axis-y:
+    type: int
+    description: |
+      The input code for the Y axis to report for the device, typically any of
+      INPUT_REL_*. No report produced for the device Y axis if unspecified.
+
+  res-x-cpi:
+    type: int
+    description: |
+      CPI resolution for the X axis, range 0 to 1275, rounded down to the
+      closest supported value in increments of 5.
+
+  res-y-cpi:
+    type: int
+    description: |
+      CPI resolution for the Y axis, range 0 to 1275, rounded down to the
+      closest supported value in increments of 5.
+
+  invert-x:
+    type: boolean
+    description: |
+      Invert X axis values.
+
+  invert-y:
+    type: boolean
+    description: |
+      Invert Y axis values.
+
+  sleep1-enable:
+    type: boolean
+    description: |
+      Enable sleep1 mode.
+
+  sleep2-enable:
+    type: boolean
+    description: |
+      Enable sleep2 mode, only valid if sleep1 is also enabled.

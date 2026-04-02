@@ -1,0 +1,35 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RA8M1
+	select ARM
+	select CPU_CORTEX_M85
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_SAU
+	select ARMV8_M_DSP
+	select FPU
+	select HAS_SWO
+	select XIP
+	select CLOCK_CONTROL_RENESAS_RA_CGC if CLOCK_CONTROL
+	select HAS_RENESAS_RA_FSP
+	select GPIO_RA_HAS_VBTICTLR
+	select HAS_PM
+	select SOC_RA_DYNAMIC_INTERRUPT_NUMBER
+	help
+	  Enable support for Renesas RA8M1 MCU series
+
+if SOC_SERIES_RA8M1
+
+config RENESAS_PN_PACKAGE_TYPE
+	int
+	range 1 4
+	default 1 if SOC_R7FA8M1AHECBD
+	help
+	  Package type:
+	  1 -> BD: FBGA 224 pins
+	  2 -> FC: LQFP 176 pins
+	  3 -> FB: LQFP 144 pins
+	  4 -> FP: LQFP 100 pins
+
+endif # SOC_SERIES_RA8M1

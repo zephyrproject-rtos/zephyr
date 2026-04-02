@@ -1,0 +1,32 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FOLDER_TEST_STRING
+	string "Test string"
+	default "one"
+
+config SOC_FOLDER_TEST_INCLUDE_BOARD
+	bool "Included board Kconfig fragment"
+
+config SOC_FOLDER_TEST_INCLUDE_BOARD_SUFFIX
+	bool "Included board Kconfig fragment with suffix"
+
+config SOC_FOLDER_TEST_INCLUDE_BOARD_QUALIFIERS
+	bool "Included board with qualifiers Kconfig fragment"
+
+config SOC_FOLDER_TEST_INCLUDE_BOARD_OTHER
+	bool "Included other board Kconfig fragment"
+
+config SOC_FOLDER_TEST_INCLUDE_SOC
+	bool "Included soc Kconfig fragment"
+
+config SOC_FOLDER_TEST_INCLUDE_SOC_SUFFIX
+	bool "Included soc overlay Kconfig fragment"
+
+config SOC_FOLDER_TEST_INCLUDE_SOC_OTHER
+	bool "Included other soc overlay Kconfig fragment"
+
+config TEST_TYPE
+	int "Test type"
+
+source "Kconfig.zephyr"

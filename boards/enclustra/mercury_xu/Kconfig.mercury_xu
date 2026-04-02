@@ -1,0 +1,5 @@
+# Copyright (c) 2020, Antmicro
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MERCURY_XU
+	select SOC_XILINX_ZYNQMP_RPU

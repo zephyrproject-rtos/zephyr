@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Required to select STM32F401XE instead of STM32F401XD because the STM32 HAL
+# does not provide a #define for STM32F401xD variants. Because STM32F401xD and
+# STM32F401xE microcontrollers are identical apart from the size of embedded
+# flash memory, we select SOC_STM32F401XE.
+
+config BOARD_CRD40L50
+	select SOC_STM32F401XE

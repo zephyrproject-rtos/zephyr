@@ -1,0 +1,18 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../app.overlay"
+
+/*
+ * Currently there's no support for mcuboot, so create a partition for this test.
+ */
+&mx25l6433f {
+	partitions {
+		slot1_partition: partition@100000 {
+			reg = <0x100000 0x100000>;
+		};
+	};
+};

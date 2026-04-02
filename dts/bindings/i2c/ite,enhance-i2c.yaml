@@ -1,0 +1,49 @@
+# Copyright (c) 2022 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE enhance I2C
+
+compatible: "ite,enhance-i2c"
+
+include: ite,common-i2c.yaml
+
+properties:
+  prescale-scl-low:
+    type: int
+    description: |
+      This option is used to configure the I2C speed prescaler for
+      the SCL low period. When set to >= 1, it will increase the
+      low period of the SCL clock and so reduce the signal frequency.
+      The resulting SCL cycle time is given by the following formula:
+      SCL cycle = 2 * (psr + prescale_tweak + 2) *
+                  SMBus clock cycle
+
+  data-hold-time:
+    type: int
+    default: 3
+    enum:
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+    description: |
+      This option is used to configure the data hold time of the I2C.
+      The unit is number of SMB clock cycles.  The time calculation
+      is (data-hold-time / smb_clk) seconds.
+
+  target-enable:
+    type: boolean
+    description: |
+      This option is used when the I2C target is enabled. It is
+      necessary to prevent the target port from being configured
+      with I2C host related initialization.
+
+  target-pio-mode:
+    type: boolean
+    description: |
+      This option is used when the I2C target is enabled and it can
+      support PIO mode for I2C target transfer.

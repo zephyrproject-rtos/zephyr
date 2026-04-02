@@ -1,0 +1,10 @@
+# WeActStudio CAN485 DevBoard V1 ESP32 configuration
+
+# SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+# SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CAN485DBV1
+	select SOC_ESP32_D0WD_V3
+	select SOC_ESP32_PROCPU if BOARD_CAN485DBV1_ESP32_PROCPU
+	select SOC_ESP32_APPCPU if BOARD_CAN485DBV1_ESP32_APPCPU

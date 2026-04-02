@@ -1,0 +1,51 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Bouffalo Lab BL706_MOD module — BL706C00Q2I with external 4 MB flash
+ * and ceramic antenna. Shared by all carrier boards using this module.
+ */
+
+#include <bflb/bl706.dtsi>
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(144)>;
+};
+
+&flashctrl {
+	flash0: flash@23000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x23000000 DT_SIZE_M(4)>;
+		write-block-size = <256>;
+		erase-block-size = <DT_SIZE_K(4)>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot0_partition: partition@0 {
+				label = "image-0";
+				reg = <0x00000000 DT_SIZE_K(4064)>;
+				read-only;
+			};
+
+			storage_partition: partition@3f8000 {
+				label = "storage";
+				reg = <0x003f8000 DT_SIZE_K(32)>;
+			};
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&sec_eng_trng {
+	status = "okay";
+};
+
+&bt_hci_bflb {
+	status = "okay";
+};

@@ -1,0 +1,19 @@
+sample:
+  description: OSDP Peripheral Device Sample
+  name: osdp
+common:
+  tags: osdp
+  depends_on: gpio
+  filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and
+          dt_chosen_enabled("zephyr,osdp-uart") and CONFIG_SERIAL
+  harness: osdp
+  integration_platforms:
+    - stm32_min_dev@black
+    - stm32_min_dev@blue
+tests:
+  sample.mgmt.osdp.peripheral_device:
+    extra_args: CONF_FILE=prj.conf
+
+  sample.mgmt.osdp.peripheral_device_sc:
+    build_only: true
+    extra_args: CONF_FILE=prj_sc.conf

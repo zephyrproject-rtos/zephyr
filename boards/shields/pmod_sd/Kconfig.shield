@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_PMOD_SD
+	def_bool $(shields_list_contains,pmod_sd)

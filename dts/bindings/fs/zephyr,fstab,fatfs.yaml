@@ -1,0 +1,9 @@
+# Copyright (C) 2025 Endress+Hauser AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Description of pre-defined fatfs file systems.
+
+compatible: "zephyr,fstab,fatfs"
+
+include: zephyr,fstab-common.yaml

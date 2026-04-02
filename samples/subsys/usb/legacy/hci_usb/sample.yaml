@@ -1,0 +1,11 @@
+sample:
+  name: Bluetooth over USB sample
+tests:
+  sample.bluetooth.hci_usb.legacy:
+    depends_on:
+      - usb_device
+      - ble
+    build_only: true
+    tags:
+      - usb
+      - bluetooth

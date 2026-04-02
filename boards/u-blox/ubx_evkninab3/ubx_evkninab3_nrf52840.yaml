@@ -1,0 +1,23 @@
+identifier: ubx_evkninab3/nrf52840
+name: UBX-EVKNINAB3-NRF52840
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - ble
+  - counter
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - usb_device
+  - watchdog
+  - netif:openthread
+vendor: u-blox

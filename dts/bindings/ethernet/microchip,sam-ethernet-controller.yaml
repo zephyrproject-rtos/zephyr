@@ -1,0 +1,15 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip SAM Ethernet Controller
+
+description: |
+  Contains the Ethernet MAC and the MDIO as child nodes.
+
+compatible: "microchip,sam-ethernet-controller"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

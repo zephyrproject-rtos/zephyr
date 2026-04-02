@@ -1,0 +1,28 @@
+#
+# Copyright (c) 2023 FTP Technologies
+#
+
+description: |
+    Microchip MCP9700/9700A MCP9701/9701A
+    Low-Power Linear Active Thermistor IC
+
+compatible: "microchip,mcp970x"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: |
+      Channels available with this divider configuration.
+
+  family:
+    type: string
+    required: true
+    description: |
+      Family            Temperature Coefficient
+        MCP9700/9700A -   10.0mV
+        MCP9701/9701A -   19.5mV
+    enum:
+      - "MCP9700/9700A"
+      - "MCP9701/9701A"

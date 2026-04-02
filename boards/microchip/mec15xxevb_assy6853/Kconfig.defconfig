@@ -1,0 +1,10 @@
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MEC15XXEVB_ASSY6853
+
+config ESPI_XEC
+	default y
+	depends on ESPI
+
+endif # BOARD_MEC15XXEVB_ASSY6853

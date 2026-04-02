@@ -1,0 +1,24 @@
+common:
+  integration_platforms:
+    - qemu_x86
+tests:
+  kernel.threads.tls:
+    tags:
+      - kernel
+      - threads
+    filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+  kernel.threads.tls.userspace:
+    tags:
+      - kernel
+      - threads
+      - userspace
+    filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_ARCH_HAS_USERSPACE and
+      CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+    arch_exclude:
+      - posix
+    platform_exclude:
+      - ucans32k1sic
+    # ARCMWDT can't handle THREAD_LOCAL_STORAGE with USERSPACE, see #52570 for details
+    toolchain_exclude: arcmwdt
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y

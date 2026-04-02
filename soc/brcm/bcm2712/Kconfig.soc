@@ -1,0 +1,8 @@
+# Copyright 2024 Junho Lee <junho@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_BCM2712
+	bool
+
+config SOC
+	default "bcm2712" if SOC_BCM2712

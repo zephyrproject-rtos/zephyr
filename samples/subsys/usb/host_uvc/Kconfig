@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright 2025 - 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "USB host uvc sample application"
+
+menu "Video capture configuration"
+
+config APP_VIDEO_FRAME_HEIGHT
+	int "Height of the video frame"
+	default 0
+	help
+	  Height of the video frame. If set to 0, the default height is used.
+
+config APP_VIDEO_FRAME_WIDTH
+	int "Width of the video frame"
+	default 0
+	help
+	  Width of the video frame. If set to 0, the default width is used.
+
+config APP_VIDEO_TARGET_FPS
+	int "Target frame rate for video capture"
+	default 0
+	help
+	  Target frame rate (FPS) for video capture. If set to 0, the device
+	  default frame rate is used. This value will be used to configure
+	  the video device's frame interval settings.
+
+config APP_VIDEO_PIXEL_FORMAT
+	string "Pixel format of the video frame"
+	help
+	  Pixel format of the video frame. If not set, the default pixel format is used.
+
+endmenu
+
+source "Kconfig.zephyr"

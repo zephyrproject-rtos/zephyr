@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_ARC_HSDK4XD
+	bool
+	help
+	  Synopsys ARC HSDK4XD SoC
+
+config SOC
+	default "arc_hsdk4xd" if SOC_ARC_HSDK4XD

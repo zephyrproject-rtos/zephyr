@@ -1,0 +1,62 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA I2S controller
+
+compatible: "renesas,ra-i2s-ssie"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  channel:
+    required: true
+    type: int
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    enum:
+      - "pclk"
+      - "audio-clock"
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    enum:
+      - "ssi_txi"
+      - "ssi_rxi"
+      - "ssi_if"
+      - "ssi_rt"
+    description: |
+      A list of interrupt identifiers that correspond to the interrupt lines
+      provided in the `interrupts` property. The names must be listed in the
+      same order as their matching entries in `interrupts`.
+
+      Common configurations based on the operating mode:
+
+      - Full-duplex mode: "ssi_txi", "ssi_rxi", "ssi_if"
+          "ssi_txi": Transmit interrupt
+          "ssi_rxi": Receive interrupt
+          "ssi_if" : Idle/Error interrupt
+
+      - Half-duplex mode: "ssi_rt", "ssi_if"
+          "ssi_rt" : Combined receive/transmit interrupt
+          "ssi_if" : Idle/Error interrupt
+
+  full-duplex:
+    type: boolean
+    description: |
+      Indicates whether the device node supports full-duplex operation.

@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Michael Hope
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_CH32V003
+	bool
+	select SOC_SERIES_QINGKE_V2A
+
+config SOC
+	default "ch32v003" if SOC_CH32V003

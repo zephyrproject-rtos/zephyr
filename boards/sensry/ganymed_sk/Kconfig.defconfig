@@ -1,0 +1,5 @@
+# Copyright (c) 2025 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+configdefault NET_L2_ETHERNET
+	default y

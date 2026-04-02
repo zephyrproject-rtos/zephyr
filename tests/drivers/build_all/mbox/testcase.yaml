@@ -1,0 +1,8 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - mbox
+tests:
+  drivers.build_all.mbox:
+    platform_allow: rpi_pico2/rp2350a/m33

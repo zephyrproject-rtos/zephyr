@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2018 Ilya Tagunov <tagunil@gmail.com>
+ * Copyright (c) 2020 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l0/stm32l072.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32l073", "st,stm32l0", "simple-bus";
+	};
+};
