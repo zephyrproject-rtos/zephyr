@@ -1,0 +1,136 @@
+# Copyright (c) 2024 Grant Ramsay <grant.ramsay@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SSH_SERVER
+	bool "SSH Server [EXPERIMENTAL]"
+	depends on NET_TCP && NET_SOCKETS
+	select EXPERIMENTAL
+	select ZVFS
+	select ZVFS_EVENTFD
+	select RING_BUFFER
+	select NET_IPV4_MAPPING_TO_IPV6 if NET_IPV4 && NET_IPV6
+	help
+	  SSH-2 server support.
+
+config SSH_CLIENT
+	bool "SSH client [EXPERIMENTAL]"
+	depends on NET_TCP && NET_SOCKETS
+	select EXPERIMENTAL
+	select ZVFS
+	select ZVFS_EVENTFD
+	select RING_BUFFER
+	select NET_IPV4_MAPPING_TO_IPV6 if NET_IPV4 && NET_IPV6
+	help
+	  SSH-2 client support.
+
+# Hidden option to avoid having multiple individual options that are ORed together
+config SSH
+	bool
+	depends on (SSH_SERVER || SSH_CLIENT)
+	default y
+
+config SSH_CRYPTO
+	bool
+	default y
+	depends on SSH
+	select MBEDTLS if NET_NATIVE
+	imply MBEDTLS_PEM_PARSE_C
+	imply MBEDTLS_PEM_WRITE_C
+	imply MBEDTLS_PK_PARSE_C
+	imply MBEDTLS_PK_WRITE_C
+	imply MBEDTLS_PSA_CRYPTO_C
+	imply PSA_WANT_KEY_TYPE_AES
+	imply PSA_WANT_ALG_CTR
+	imply PSA_WANT_ALG_SHA_256
+	imply PSA_WANT_ALG_HMAC
+	imply PSA_WANT_KEY_TYPE_HMAC
+	imply PSA_WANT_ALG_ECDH
+	imply PSA_WANT_ECC_MONTGOMERY_255
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	imply PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	imply PSA_WANT_ALG_RSA_PKCS1V15_SIGN
+	imply PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE
+	imply PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT
+	imply PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
+
+if SSH_SERVER
+
+config SSH_SERVER_MAX_SERVERS
+	int "SSH Server max instances"
+	default 1
+
+config SSH_SERVER_MAX_CLIENTS
+	int "SSH Server max clients (per server)"
+	default 1
+
+endif
+
+if SSH_CLIENT
+
+config SSH_CLIENT_MAX_CLIENTS
+	int "SSH Client max instances"
+	default 1
+
+endif
+
+if SSH
+
+config SSH_PORT
+	int "SSH listen or connect port"
+	default 22
+	help
+	  Default TCP port where ssh server is listening or
+	  where the ssh client is connecting.
+
+config SSH_MAX_CHANNELS
+	int "SSH max channels (per transport)"
+	default 1
+
+config SSH_CHANNEL_BUF_SIZE
+	int "SSH channel buffer size"
+	default 256
+
+config SSH_MAX_HOST_KEYS
+	int "SSH keygen max host keys"
+	default 1
+
+config SSH_HOST_KEY_RSA
+	bool "RSA host key support"
+	default y
+
+config SSH_HOST_KEY_ALG_RSA_SHA2_256
+	bool "rsa-sha2-256 host key algorithm"
+	default y
+
+config SSH_HOST_KEY_ALG_RSA_SHA2_512
+	bool "rsa-sha2-512 host key algorithm"
+	imply PSA_WANT_ALG_SHA_512
+
+config SSH_IDENTITY_OVERRIDE_ENABLE
+	bool "Override the default SSH identity (useful for testing)"
+
+config SSH_IDENTITY_OVERRIDE
+	string "SSH identity override"
+	depends on SSH_IDENTITY_OVERRIDE_ENABLE
+
+config SSH_DEFAULT_TERMINAL_WIDTH
+	int "Default terminal width"
+	default 80
+
+config SSH_DEFAULT_TERMINAL_HEIGHT
+	int "Default terminal height"
+	default 24
+
+config SSH_DEFAULT_WELCOME_BANNER
+	string "Default SSH welcome banner"
+	default "Welcome to Zephyr OS build "
+	help
+	  The Zephyr SSH build version is appended to this string.
+
+endif
+
+module = SSH
+module-dep = NET_LOG
+module-str = Log level for SSH library
+module-help = Enables SSH code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
