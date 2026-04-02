@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright (c) 2026 Bhavin Umatiya
+# SPDX-License-Identifier: Apache-2.0
+
+config TESTED_SPI_MODE
+	bool "Tested SPI mode"
+	default y
+	help
+	  This is used to identify that the SPI half-duplex is used in the test.
+
+config PREALLOC_BUFFERS
+	bool "Preallocate buffers"
+	default y
+	help
+	  Preallocate buffers used for transceive. Hardware might require
+	  buffers to be in a specific memory region (e.g. using
+	  `memory-region` property).

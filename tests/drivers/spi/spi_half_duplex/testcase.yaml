@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Bhavin Umatiya
+
+common:
+  depends_on: spi
+  tags:
+    - drivers
+    - spi
+  harness: ztest
+tests:
+  drivers.spi.half_duplex:
+    platform_allow:
+      - nucleo_g474re
+      - nucleo_h743zi
