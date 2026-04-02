@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# This should work on most new devices.  Enabled only
+# on Edge for now as it's the only one verified so far
+config HWINFO_INFINEON
+	bool "Infineon unique device ID"
+	default y
+	depends on SOC_FAMILY_INFINEON_EDGE
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable Infineon hwinfo driver.
