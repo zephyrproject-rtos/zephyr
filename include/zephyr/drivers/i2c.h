@@ -536,6 +536,18 @@ static inline bool i2c_is_stop_op(const struct i2c_msg *msg)
 }
 
 /**
+ * @brief Check if the current message includes a restart.
+ *
+ * @param msg The message to check
+ * @return true if the I2C message includes a restart
+ * @return false if the I2C message includes a restart
+ */
+static inline bool i2c_is_reset_op(const struct i2c_msg *msg)
+{
+	return (msg->flags & I2C_MSG_RESTART) == I2C_MSG_RESTART;
+}
+
+/**
  * @brief Dump out an I2C message
  *
  * Dumps out a list of I2C messages. For any that are writes (W), the data is
