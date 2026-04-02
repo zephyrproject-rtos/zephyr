@@ -156,6 +156,17 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
       ${RADIO_DIR}/rail_lib/protocol/ieee802154
     )
   endif()
+
+  if(CONFIG_IEEE802154_SILABS_EFR32 AND NOT CONFIG_BUILD_ONLY_NO_BLOBS)
+    set(SL_OPENTHREAD_PAL_PREBUILT protocol/openthread/build/gcc/cortex-m33/cmake/sl-openthread-library/Release/libsl_openthread.a)
+    if(NOT EXISTS "${BLOBS_DIR}/${SL_OPENTHREAD_PAL_PREBUILT}")
+      message(FATAL_ERROR
+        "IEEE802154_SILABS_EFR32 requires the OpenThread PAL prebuilt library at:\n"
+        "  ${BLOBS_DIR}/${SL_OPENTHREAD_PAL_PREBUILT}\n"
+        "Install the hal_silabs module blobs or use CONFIG_BUILD_ONLY_NO_BLOBS for stubbed builds.")
+    endif()
+    add_prebuilt_library(libsl_openthread ${SL_OPENTHREAD_PAL_PREBUILT})
+  endif()
 endif()
 
 zephyr_include_directories(

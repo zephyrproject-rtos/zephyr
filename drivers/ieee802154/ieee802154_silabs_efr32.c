@@ -2565,6 +2565,8 @@ static int silabs_efr32_init(const struct device *dev)
 		cfg->irq_config_func(dev);
 	}
 
+	sl_openthread_init();
+
 	r = sl_802154_rail_init(dev);
 	if (r != 0) {
 		return r;
