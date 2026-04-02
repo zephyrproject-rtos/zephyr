@@ -472,4 +472,11 @@ config SYS_HEAP_CALLER_LEVEL
 	  which GCC documents as unsafe.  Verify on your
 	  toolchain and architecture before enabling.
 
+config SYS_SYNC_HEAP
+	bool "User-synchronized heaps"
+	help
+	  Enables sys_sync_heap, which is a wrapper on top of sys_heap with
+	  synchronization for user threads. This allows user threads to use
+	  shared heaps.
+
 endmenu
