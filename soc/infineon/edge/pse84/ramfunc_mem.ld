@@ -5,4 +5,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-KEEP(*(.cy_socmem_data))
+KEEP(*(.cy_ramfunc))
