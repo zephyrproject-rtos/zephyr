@@ -81,6 +81,7 @@
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
 		red-pwm-led = &red_pwm_led;
+		rtc = &rtc;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 		die-temp0 = &die_temp;
