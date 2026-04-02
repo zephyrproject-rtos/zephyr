@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* TIFS firmware load region in wakeup SRAM */
+		tifs_reserved: tifs@40000 {
+			reg = <0x40000 DT_SIZE_K(384)>;
+		};
+
+		/* Board configuration blob load region in wakeup SRAM */
+		boardcfg_reserved: boardcfg@6c000 {
+			reg = <0x6c000 DT_SIZE_K(16)>;
+		};
+	};
+};

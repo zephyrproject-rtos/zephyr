@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <ti/am62l-main.dtsi>
 #include <ti/am62l-wakeup.dtsi>
+#include <ti/k3-boot-regions.dtsi>
 
 / {
 	#address-cells = <1>;
@@ -100,6 +101,21 @@
 			reg = <0x01820000 0x10000>;
 			status = "okay";
 		};
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* TF-A BL31 load region in DDR */
+		tfa_reserved: tfa@80000000 {
+			reg = <0x80000000 DT_SIZE_K(512)>;
+		};
+	};
+
+	chosen {
+		ti,k3-spl-load-region = &oc_sram;
 	};
 };
 

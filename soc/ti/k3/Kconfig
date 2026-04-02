@@ -26,4 +26,67 @@ config SOC_FAMILY_TI_K3_BOOT_SPRINGBOARD
 	  by default then this option enables a boot springboard in ATCM to set
 	  executable permissions before jumping to the code area in DRAM
 
+config SOC_FAMILY_TI_K3_TIFS_BIN
+	string "TIFS binary for particular soc"
+	default "ti-fs-firmware-am62lx-hs-enc.bin" if SOC_AM62L3_A53
+	help
+	  TIFS (TI Foundational security) firmware binary.
+
+config SOC_FAMILY_TI_K3_TIFS_CERT_BIN
+	string "TIFS inner certificate bin for particular soc"
+	default "ti-fs-firmware-am62lx-hs-cert.bin" if SOC_AM62L3_A53
+	help
+	  TIFS (TI Foundational security) inner certificate binary.
+
+config SOC_FAMILY_TI_K3_REQUIRES_SEC_CFG
+	bool
+	default y
+	help
+	  Indicates if SoC requires security board configuration.
+
+config SOC_FAMILY_TI_K3_REQUIRES_PM_CFG
+	bool
+	default y if SOC_AM6234_A53 || SOC_AM6232_A53 || SOC_AM6254_A53
+	help
+	  Indicates if SoC requires power management board configuration.
+
+config SOC_FAMILY_TI_K3_REQUIRES_RM_CFG
+	bool
+	default y if SOC_AM6234_A53 || SOC_AM6232_A53 || SOC_AM6254_A53
+	help
+	  Indicates if SoC requires resource management board configuration.
+
+config SOC_FAMILY_TI_K3_BUILD_TIBOOT3
+	bool "Generate tiboot3.bin first-stage bootloader"
+	depends on !SOC_AM62L3_A53 || BUILD_WITH_TFA
+	help
+	  Generate tiboot3.bin (SPL/BL1 + TIFS + board configs).
+
+config SOC_FAMILY_TI_K3_SPL_BIN
+	string "SPL/BL1 binary path for tiboot3.bin"
+	depends on SOC_FAMILY_TI_K3_BUILD_TIBOOT3
+	default "bl1.bin" if SOC_AM62L3_A53 && BUILD_WITH_TFA
+	default ""
+	help
+	  Bootloader stage 1 binary for combined tiboot3.bin image.
+
+config SOC_FAMILY_TI_K3_BUILD_TISPL
+	bool "Generate tispl.bin combined application image"
+	depends on SOC_SERIES_AM62LX_A53
+	depends on BUILD_WITH_TFA
+	help
+	  Generate tispl.bin (BL31 + TIFS + board configs + Application binary).
+
+config SOC_FAMILY_TI_K3_CERT_KEY_PATH
+	string "X.509 certificate signing key path"
+	default "soc/ti/k3/keys/custMpk.pem"
+	help
+	  Path to TI k3 keys in Zephyr base directory.
+
+config SOC_FAMILY_TI_K3_SW_REVISION
+	int "Software Revision"
+	default 1
+	help
+	  Software Revision for the x509 certificate
+
 endif # SOC_FAMILY_TI_K3
