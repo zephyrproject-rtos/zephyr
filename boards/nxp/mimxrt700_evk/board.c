@@ -518,8 +518,6 @@ void board_early_init_hook(void)
 
 	CLOCK_EnableClock(kCLOCK_Lcdif);
 
-	/* Clear LCDIF reset. */
-	RESET_ClearPeripheralReset(kLCDIF_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lcdif), nxp_mipi_dbi_dcnano_lcdif, okay)
@@ -542,8 +540,6 @@ void board_early_init_hook(void)
 
 	CLOCK_EnableClock(kCLOCK_Lcdif);
 
-	/* Clear LCDIF reset. */
-	RESET_ClearPeripheralReset(kLCDIF_RST_SHIFT_RSTn);
 #endif
 
 #if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i3c2)) || \
@@ -570,7 +566,6 @@ void board_early_init_hook(void)
 	POWER_ApplyPD();
 
 	CLOCK_EnableClock(kCLOCK_Lcdif);
-	RESET_ClearPeripheralReset(kLCDIF_RST_SHIFT_RSTn);
 
 
 	CLOCK_InitMainPfd(kCLOCK_Pfd2, 17);
