@@ -216,3 +216,24 @@ void k_heap_free(struct k_heap *heap, void *mem)
 		k_spin_unlock(&heap->lock, key);
 	}
 }
+
+/*
+ * Variant of k_heap_free() for callers that already hold _sched_spinlock.
+ * Uses z_unpend_all_locked() to avoid recursive locking.
+ * Any woken threads are readied but not rescheduled. The caller is
+ * responsible for ensuring a reschedule happens after releasing the
+ * scheduler lock.
+ */
+void k_heap_free_sched_locked(struct k_heap *heap, void *mem)
+{
+	k_spinlock_key_t key = k_spin_lock(&heap->lock);
+
+	sys_heap_free(&heap->heap, mem);
+
+	SYS_PORT_TRACING_OBJ_FUNC(k_heap, free, heap);
+	k_spin_unlock(&heap->lock, key);
+
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		z_unpend_all_locked(&heap->wait_q);
+	}
+}
