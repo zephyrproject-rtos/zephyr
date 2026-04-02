@@ -366,11 +366,11 @@ enum ptp_tlv_type ptp_tlv_type(struct ptp_tlv *tlv);
 /**
  * @brief Function processing TLV after reception, and before processing by PTP stack.
  *
- * @param[in] tlv Pointer to the received TLV.
+ * @param[in] p_tlv Pointer to the pointer to the received TLV.
  *
  * @return Zero on success, otherwise negative.
  */
-int ptp_tlv_post_recv(struct ptp_tlv *tlv);
+int ptp_tlv_post_recv(struct ptp_tlv **p_tlv);
 
 /**
  * @brief Function preparing TLV to on-wire format before transmitting.
