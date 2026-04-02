@@ -68,8 +68,6 @@ static const char *modem_cellular_state_str(enum modem_cellular_state state)
 		return "connect cmux";
 	case MODEM_CELLULAR_STATE_OPEN_DLCI1:
 		return "open dlci1";
-	case MODEM_CELLULAR_STATE_OPEN_DLCI2:
-		return "open dlci2";
 	case MODEM_CELLULAR_STATE_WAIT_FOR_APN:
 		return "wait for apn";
 	case MODEM_CELLULAR_STATE_AWAIT_REGISTERED:
@@ -149,7 +147,6 @@ static bool modem_cellular_apn_change_allowed(enum modem_cellular_state st)
 	case MODEM_CELLULAR_STATE_RUN_INIT_SCRIPT:
 	case MODEM_CELLULAR_STATE_CONNECT_CMUX:
 	case MODEM_CELLULAR_STATE_OPEN_DLCI1:
-	case MODEM_CELLULAR_STATE_OPEN_DLCI2:
 	case MODEM_CELLULAR_STATE_WAIT_FOR_APN:
 		return true;
 	default:
@@ -1108,40 +1105,11 @@ static int modem_cellular_on_open_dlci1_state_enter(struct modem_cellular_data *
 static void modem_cellular_open_dlci1_event_handler(struct modem_cellular_data *data,
 						    enum modem_cellular_event evt)
 {
-	switch (evt) {
-	case MODEM_CELLULAR_EVENT_DLCI1_OPENED:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_OPEN_DLCI2);
-		break;
-
-	case MODEM_CELLULAR_EVENT_SUSPEND:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
-		break;
-
-	default:
-		break;
-	}
-}
-
-static int modem_cellular_on_open_dlci1_state_leave(struct modem_cellular_data *data)
-{
-	modem_pipe_release(data->dlci1_pipe);
-	return 0;
-}
-
-static int modem_cellular_on_open_dlci2_state_enter(struct modem_cellular_data *data)
-{
-	modem_pipe_attach(data->dlci2_pipe, modem_cellular_dlci2_pipe_handler, data);
-	return modem_pipe_open_async(data->dlci2_pipe);
-}
-
-static void modem_cellular_open_dlci2_event_handler(struct modem_cellular_data *data,
-						    enum modem_cellular_event evt)
-{
 	const struct modem_cellular_config *config =
 		(const struct modem_cellular_config *)data->dev->config;
 
 	switch (evt) {
-	case MODEM_CELLULAR_EVENT_DLCI2_OPENED:
+	case MODEM_CELLULAR_EVENT_DLCI1_OPENED:
 		data->cmd_pipe = data->dlci2_pipe;
 
 		if (config->use_default_pdp_context) {
@@ -1162,9 +1130,9 @@ static void modem_cellular_open_dlci2_event_handler(struct modem_cellular_data *
 	}
 }
 
-static int modem_cellular_on_open_dlci2_state_leave(struct modem_cellular_data *data)
+static int modem_cellular_on_open_dlci1_state_leave(struct modem_cellular_data *data)
 {
-	modem_pipe_release(data->dlci2_pipe);
+	modem_pipe_release(data->dlci1_pipe);
 	return 0;
 }
 
@@ -1307,8 +1275,8 @@ static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
 	}
 
-	modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
-	return modem_chat_attach(&data->chat, data->dlci2_pipe);
+	modem_pipe_attach(data->dlci2_pipe, modem_cellular_dlci2_pipe_handler, data);
+	return modem_pipe_open_async(data->dlci2_pipe);
 }
 
 static void modem_cellular_await_registered_event_handler(struct modem_cellular_data *data,
@@ -1347,6 +1315,10 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 	case MODEM_CELLULAR_EVENT_RING:
 		LOG_DBG("RING received!");
 		modem_pipe_open_async(data->uart_pipe);
+		break;
+	case MODEM_CELLULAR_EVENT_DLCI2_OPENED:
+		modem_chat_attach(&data->chat, data->dlci2_pipe);
+		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 		break;
 	default:
 		break;
@@ -1419,6 +1391,10 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data *
 		LOG_DBG("RING received!");
 		modem_pipe_open_async(data->uart_pipe);
 		break;
+	case MODEM_CELLULAR_EVENT_DLCI2_OPENED:
+		modem_chat_attach(&data->chat, data->dlci2_pipe);
+		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		break;
 	default:
 		break;
 	}
@@ -1427,6 +1403,8 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data *
 static int modem_cellular_on_carrier_on_state_leave(struct modem_cellular_data *data)
 {
 	modem_cellular_stop_timer(data);
+	modem_chat_release(&data->chat);
+	modem_pipe_close_async(data->dlci2_pipe);
 
 	return 0;
 }
@@ -1445,6 +1423,7 @@ static void modem_cellular_dormant_event_handler(struct modem_cellular_data *dat
 	case MODEM_CELLULAR_EVENT_RING:
 		LOG_DBG("RING received!");
 		modem_pipe_open_async(data->uart_pipe);
+		break;
 	case MODEM_CELLULAR_EVENT_PPP_DEAD:
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
 		break;
@@ -1465,6 +1444,7 @@ static int modem_cellular_on_dormant_state_leave(struct modem_cellular_data *dat
 
 static int modem_cellular_on_init_power_off_state_enter(struct modem_cellular_data *data)
 {
+	modem_chat_release(&data->chat);
 	modem_cmux_disconnect_async(&data->cmux);
 	modem_cellular_start_timer(data, K_MSEC(2000));
 	return 0;
@@ -1643,10 +1623,6 @@ static int modem_cellular_on_state_enter(struct modem_cellular_data *data)
 		ret = modem_cellular_on_open_dlci1_state_enter(data);
 		break;
 
-	case MODEM_CELLULAR_STATE_OPEN_DLCI2:
-		ret = modem_cellular_on_open_dlci2_state_enter(data);
-		break;
-
 	case MODEM_CELLULAR_STATE_RUN_APN_SCRIPT:
 		ret = modem_cellular_on_run_apn_script_state_enter(data);
 		break;
@@ -1714,10 +1690,6 @@ static int modem_cellular_on_state_leave(struct modem_cellular_data *data)
 
 	case MODEM_CELLULAR_STATE_OPEN_DLCI1:
 		ret = modem_cellular_on_open_dlci1_state_leave(data);
-		break;
-
-	case MODEM_CELLULAR_STATE_OPEN_DLCI2:
-		ret = modem_cellular_on_open_dlci2_state_leave(data);
 		break;
 
 	case MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT:
@@ -1821,10 +1793,6 @@ static void modem_cellular_event_handler(struct modem_cellular_data *data,
 
 	case MODEM_CELLULAR_STATE_OPEN_DLCI1:
 		modem_cellular_open_dlci1_event_handler(data, evt);
-		break;
-
-	case MODEM_CELLULAR_STATE_OPEN_DLCI2:
-		modem_cellular_open_dlci2_event_handler(data, evt);
 		break;
 
 	case MODEM_CELLULAR_STATE_WAIT_FOR_APN:
