@@ -21,6 +21,7 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/timing/timing.h>
 #include <zephyr/sys/util.h>
+#include <metairq.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -41,11 +42,6 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
 static void ready_thread(struct k_thread *thread);
 
-
-BUILD_ASSERT(CONFIG_NUM_COOP_PRIORITIES >= CONFIG_NUM_METAIRQ_PRIORITIES,
-	     "You need to provide at least as many CONFIG_NUM_COOP_PRIORITIES as "
-	     "CONFIG_NUM_METAIRQ_PRIORITIES as Meta IRQs are just a special class of cooperative "
-	     "threads.");
 
 #ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
 TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
@@ -161,26 +157,6 @@ static inline void clear_halting(struct k_thread *thread)
 	}
 }
 
-/* Track cooperative threads preempted by metairqs so we can return to
- * them specifically.  Called at the moment a new thread has been
- * selected to run.
- */
-static void update_metairq_preempt(struct k_thread *thread)
-{
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0)
-	if (thread_is_metairq(thread) && !thread_is_metairq(_current) &&
-	    !thread_is_preemptible(_current)) {
-		/* Record new preemption */
-		_current_cpu->metairq_preempted = _current;
-	} else if (!thread_is_metairq(thread)) {
-		/* Returning from existing preemption */
-		_current_cpu->metairq_preempted = NULL;
-	}
-#else
-	ARG_UNUSED(thread);
-#endif /* CONFIG_NUM_METAIRQ_PRIORITIES > 0 */
-}
-
 #ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
 TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
 #endif
@@ -195,22 +171,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 
 	struct k_thread *thread = runq_best();
 
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0)
-	/* MetaIRQs must always attempt to return back to a
-	 * cooperative thread they preempted and not whatever happens
-	 * to be highest priority now. The cooperative thread was
-	 * promised it wouldn't be preempted (by non-metairq threads)!
-	 */
-	struct k_thread *mirqp = _current_cpu->metairq_preempted;
-
-	if (mirqp != NULL && (thread == NULL || !thread_is_metairq(thread))) {
-		if (z_is_thread_ready(mirqp)) {
-			thread = mirqp;
-		} else {
-			_current_cpu->metairq_preempted = NULL;
-		}
-	}
-#endif /* CONFIG_NUM_METAIRQ_PRIORITIES > 0 */
+	thread = metairq_preempt_recover(thread);
 
 #ifndef CONFIG_SMP
 	/* In uniprocessor mode, we can leave the current thread in
@@ -262,10 +223,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 		 * 4. preempted by a MetaIRQ thread
 		 */
 		if (active && !queued && !z_is_idle_thread_object(_current)
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0)
-		    && (_current != _current_cpu->metairq_preempted)
-#endif
-		   ) {
+		    && metairq_current_requeue_allowed()) {
 			queue_thread(_current);
 		}
 	}
@@ -407,24 +365,6 @@ static void thread_halt_spin(struct k_thread *thread, k_spinlock_key_t key)
 		arch_spin_relax(); /* Requires interrupts be masked */
 		arch_irq_unlock(k);
 	}
-}
-
-/**
- * If the specified thread is recorded as being preempted by a meta IRQ thread,
- * clear that record.
- */
-static ALWAYS_INLINE void z_metairq_preempted_clear(struct k_thread *thread)
-{
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0)
-	unsigned int cpu_id = 0;
-
-#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
-	cpu_id = thread->base.cpu;
-#endif
-	if (_kernel.cpus[cpu_id].metairq_preempted == thread) {
-		_kernel.cpus[cpu_id].metairq_preempted = NULL;
-	}
-#endif
 }
 
 /* Shared handler for k_thread_{suspend,abort}().  Called with the
