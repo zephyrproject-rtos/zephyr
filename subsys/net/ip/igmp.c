@@ -88,7 +88,9 @@ static int igmp_v2_create(struct net_pkt *pkt, const struct net_in_addr *addr,
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_cursor_init(pkt);
 
-	net_pkt_skip(pkt, offsetof(struct net_ipv4_igmp_v2_report, chksum));
+	if (net_pkt_skip(pkt, offsetof(struct net_ipv4_igmp_v2_report, chksum)) < 0) {
+		return -ENOBUFS;
+	}
 	if (net_pkt_write(pkt, &igmp->chksum, sizeof(igmp->chksum))) {
 		return -ENOBUFS;
 	}
@@ -188,7 +190,10 @@ static int igmp_v3_create(struct net_pkt *pkt, uint8_t type, struct net_if_mcast
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_cursor_init(pkt);
 
-	net_pkt_skip(pkt, offsetof(struct net_ipv4_igmp_v3_report, chksum));
+	if (net_pkt_skip(pkt, offsetof(struct net_ipv4_igmp_v3_report, chksum)) < 0) {
+		return -ENOBUFS;
+	}
+
 	if (net_pkt_write(pkt, &igmp->chksum, sizeof(igmp->chksum))) {
 		return -ENOBUFS;
 	}
