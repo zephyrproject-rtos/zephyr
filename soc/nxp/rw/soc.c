@@ -132,16 +132,13 @@ __weak __ramfunc void clock_init(void)
 	CLOCK_SetClkDiv(kCLOCK_DivSystickClk, 1U);
 	CLOCK_AttachClk(kSYSTICK_DIV_to_SYSTICK_CLK);
 
+	SystemCoreClockUpdate();
+
 	/* Set PLL FRG clock to 20MHz. */
 	CLOCK_SetClkDiv(kCLOCK_DivPllFrgClk, 13U);
 
 	/* Call function set_flexspi_clock() to set flexspi clock source to aux0_pll_clk in XIP. */
 	set_flexspi_clock(FLEXSPI, 2U, 2U);
-
-	/* Deinitialization of the AVPLL. */
-	CLOCK_DeinitAvPll();
-	/* Deinitialize TDDR PLL. */
-	CLOCK_DeinitTddrRefClk();
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(os_timer), nxp_os_timer, okay)
 	CLOCK_AttachClk(kLPOSC_to_OSTIMER_CLK);
@@ -270,6 +267,9 @@ __weak __ramfunc void clock_init(void)
 	CLOCK_AttachClk(kAUDIO_PLL_to_MCLK_CLK);
 	CLOCK_SetClkDiv(kCLOCK_DivMclkClk, 1);
 	SYSCTL1->MCLKPINDIR = SYSCTL1_MCLKPINDIR_MCLKPINDIR_MASK;
+#else
+	/* Deinitialization of the AVPLL. */
+	CLOCK_DeinitAvPll();
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lcdic)) && CONFIG_MIPI_DBI_NXP_LCDIC
@@ -305,9 +305,12 @@ __weak __ramfunc void clock_init(void)
 	CLOCK_EnableUsbhsPhyClock();
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet)) && CONFIG_NET_L2_ETHERNET
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet)) && CONFIG_NET_L2_ETHERNET && CONFIG_ETH_DRIVER
 	RESET_PeripheralReset(kENET_IPG_RST_SHIFT_RSTn);
 	RESET_PeripheralReset(kENET_IPG_S_RST_SHIFT_RSTn);
+#else
+	/* Deinitialize TDDR PLL. */
+	CLOCK_DeinitTddrRefClk();
 #endif
 
 }
