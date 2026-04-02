@@ -3528,6 +3528,10 @@ static int bt_do_connect_le(int *ercd, size_t argc, char *argv[])
 			return -ENOENT;
 		}
 	} else {
+		if (argc < 3U) {
+			return SHELL_CMD_HELP_PRINTED;
+		}
+
 		err = bt_addr_le_from_str(argv[1], argv[2], &addr);
 		if (err) {
 			*ercd = err;
