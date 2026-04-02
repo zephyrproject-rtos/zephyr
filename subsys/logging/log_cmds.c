@@ -35,6 +35,30 @@ static const char * const severity_lvls_sorted[] = {
 	"wrn",
 };
 
+/* Get backend associated with the shell. If there are no backends, return NULL.
+ * NULL indicates that frontend is used.
+ * If there is only one backend, return it. If there are multiple backends, return
+ * the one associated with the shell.
+ */
+static const struct log_backend *get_self_backend(const struct shell *sh)
+{
+	size_t count;
+
+	STRUCT_SECTION_COUNT(log_backend, &count);
+	if (count == 0) {
+		return NULL;
+	}
+
+	if (count == 1) {
+		struct log_backend *backend = NULL;
+
+		STRUCT_SECTION_GET(log_backend, 0, &backend);
+		return backend;
+	}
+
+	return sh->log_backend ? sh->log_backend->backend : NULL;
+}
+
 /**
  * @brief Function for finding backend instance with given name.
  *
@@ -58,6 +82,10 @@ static const struct log_backend *backend_find(char const *name)
 
 static bool shell_state_precheck(const struct shell *sh)
 {
+	if (IS_ENABLED(CONFIG_SHELL_REMOTE_CLI)) {
+		return true;
+	}
+
 	if (sh->log_backend &&
 	    (sh->log_backend->control_block->state == SHELL_LOG_BACKEND_UNINIT)) {
 		shell_error(sh, "Shell log backend not initialized.");
@@ -142,7 +170,7 @@ static int cmd_log_self_status(const struct shell *sh,
 		return 0;
 	}
 
-	return log_status(sh, sh->log_backend ? sh->log_backend->backend : NULL, argc, argv);
+	return log_status(sh, get_self_backend(sh), argc, argv);
 }
 
 static int cmd_log_backend_status(const struct shell *sh,
@@ -245,7 +273,7 @@ static int cmd_log_self_enable(const struct shell *sh,
 		return 0;
 	}
 
-	return log_enable(sh, sh->log_backend ? sh->log_backend->backend : NULL, argc, argv);
+	return log_enable(sh, get_self_backend(sh), argc, argv);
 }
 
 static int cmd_log_backend_enable(const struct shell *sh,
@@ -270,7 +298,7 @@ static int cmd_log_self_disable(const struct shell *sh,
 		return 0;
 	}
 
-	return log_disable(sh, sh->log_backend ? sh->log_backend->backend : NULL, argc, argv);
+	return log_disable(sh, get_self_backend(sh), argc, argv);
 }
 
 static int cmd_log_backend_disable(const struct shell *sh,
@@ -326,7 +354,7 @@ static int cmd_log_self_halt(const struct shell *sh,
 		return 0;
 	}
 
-	return log_halt(sh, sh->log_backend ? sh->log_backend->backend : NULL, argc, argv);
+	return log_halt(sh, get_self_backend(sh), argc, argv);
 }
 
 static int cmd_log_backend_halt(const struct shell *sh,
@@ -370,7 +398,7 @@ static int cmd_log_self_go(const struct shell *sh,
 		return 0;
 	}
 
-	return log_go(sh, sh->log_backend ? sh->log_backend->backend : NULL, argc, argv);
+	return log_go(sh, get_self_backend(sh), argc, argv);
 }
 
 static int cmd_log_backend_go(const struct shell *sh,
@@ -456,7 +484,6 @@ static void backend_name_get(size_t idx, struct shell_static_entry *entry)
 
 	STRUCT_SECTION_COUNT(log_backend, &section_count);
 
-
 	if (idx < section_count) {
 		struct log_backend *backend = NULL;
 
@@ -470,21 +497,34 @@ static void backend_name_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_backend_name_dynamic, backend_name_get);
 
+#if	defined(CONFIG_SHELL_LOG_BACKEND) || defined(CONFIG_SHELL_LOG_BACKEND_CUSTOM) || \
+	defined(CONFIG_SHELL_REMOTE_CLI)
+/* Add commands for controlling logging backend associated with the current shell instance. */
+#define SHELL_HAS_DEFAULT_BACKEND 1
+#endif
+
+#if	!defined(CONFIG_LOG_FRONTEND_ONLY) && !defined(CONFIG_SHELL_REMOTE_CLI)
+/* Add commands for multiple log backends. */
+#define MULTI_LOG_BACKEND 1
+#endif
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_log_stat,
-	SHELL_CMD(backend, &dsub_backend_name_dynamic, "Logger backends commands.", NULL),
-	SHELL_COND_CMD_ARG(CONFIG_SHELL_LOG_BACKEND, disable, &dsub_module_name,
+	SHELL_COND_CMD(MULTI_LOG_BACKEND, backend, &dsub_backend_name_dynamic,
+			   "Logger backends commands.", NULL),
+	SHELL_COND_CMD_ARG(SHELL_HAS_DEFAULT_BACKEND, disable, &dsub_module_name,
 			   "'log disable <module_0> .. <module_n>' disables logs in specified "
 			   "modules (all if no modules specified).",
 			   cmd_log_self_disable, 1, 255),
-	SHELL_COND_CMD_ARG(CONFIG_SHELL_LOG_BACKEND, enable, &dsub_severity_lvl,
+	SHELL_COND_CMD_ARG(SHELL_HAS_DEFAULT_BACKEND, enable, &dsub_severity_lvl,
 			   "'log enable <level> <module_0> ...  <module_n>' enables logs up to"
 			   " given level in specified modules (all if no modules specified).",
 			   cmd_log_self_enable, 2, 255),
-	SHELL_COND_CMD(CONFIG_SHELL_LOG_BACKEND, go, NULL, "Resume logging", cmd_log_self_go),
-	SHELL_COND_CMD(CONFIG_SHELL_LOG_BACKEND, halt, NULL, "Halt logging", cmd_log_self_halt),
-	SHELL_CMD_ARG(list_backends, NULL, "Lists logger backends.", cmd_log_backends_list, 1, 0),
-	SHELL_COND_CMD(CONFIG_SHELL_LOG_BACKEND, status, NULL, "Logger status",
+	SHELL_COND_CMD(SHELL_HAS_DEFAULT_BACKEND, go, NULL, "Resume logging", cmd_log_self_go),
+	SHELL_COND_CMD(SHELL_HAS_DEFAULT_BACKEND, halt, NULL, "Halt logging", cmd_log_self_halt),
+	SHELL_COND_CMD_ARG(MULTI_LOG_BACKEND, list_backends, NULL,
+			   "Lists logger backends.", cmd_log_backends_list, 1, 0),
+	SHELL_COND_CMD(SHELL_HAS_DEFAULT_BACKEND, status, NULL, "Logger status",
 		       cmd_log_self_status),
 	SHELL_COND_CMD(CONFIG_LOG_MODE_DEFERRED, mem, NULL, "Logger memory usage",
 		       cmd_log_mem),
