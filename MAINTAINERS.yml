@@ -165,6 +165,7 @@ ADI Platforms:
   files:
     - boards/adi/
     - boards/common/*adi*
+    - boards/shields/ad_apardpfw_sl/
     - boards/shields/eval*ardz/
     - boards/shields/pmod_acl/
     - drivers/*/*max*
