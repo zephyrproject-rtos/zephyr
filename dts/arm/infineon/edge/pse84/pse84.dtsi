@@ -33,6 +33,13 @@
 	};
 
 	soc {
+		npu0: npu@44600000 {
+			compatible = "infineon,edge-npu";
+			reg = <0x44600000 0x1000>;
+			interrupts = <38 4>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@42800000 {
 			compatible = "infineon,pinctrl";
 			reg = <0x42800000 0x20000>;
