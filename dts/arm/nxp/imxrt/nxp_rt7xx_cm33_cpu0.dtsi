@@ -1041,6 +1041,7 @@
 		#pinmux-cells = <2>;
 		reg = <0x152000 0x1000>;
 		clocks = <&clkctl0 MCUX_SAI0_CLK>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 13)>;
 		pinmuxes = <&syscon0 0x240 0x1>;
 		interrupts = <115 0>;
 		dmas = <&edma0 0 81>, <&edma0 1 82>;
@@ -1058,6 +1059,7 @@
 		#pinmux-cells = <2>;
 		reg = <0x153000 0x1000>;
 		clocks = <&clkctl0 MCUX_SAI1_CLK>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 14)>;
 		pinmuxes = <&syscon0 0x240 0x1>;
 		interrupts = <116 0>;
 		dmas = <&edma0 0 83>, <&edma0 0 84>;
@@ -1075,6 +1077,7 @@
 		#pinmux-cells = <2>;
 		reg = <0x154000 0x1000>;
 		clocks = <&clkctl0 MCUX_SAI2_CLK>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 15)>;
 		pinmuxes = <&syscon0 0x240 0x1>;
 		interrupts = <117 0>;
 		dmas = <&edma0 0 85>, <&edma0 0 86>;
