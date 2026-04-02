@@ -21,6 +21,7 @@
 			clk-gpios = <&test_gpio 0 0>;
 			dio-gpios = <&test_gpio 1 0>;
 			bit-delay-us = <100>;
+			aux-columns = <1>;
 			status = "okay";
 		};
 	};
