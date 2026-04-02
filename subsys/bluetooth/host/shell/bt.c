@@ -1666,9 +1666,9 @@ static int cmd_active_scan_on(const struct shell *sh, uint32_t options,
 		shell_print(sh, "Bluetooth active scan enabled");
 	}
 
-	if (timeout != 0) {
+	if (timeout != 0U) {
 		/* Schedule the k_work to act as a timeout */
-		(void)k_work_reschedule(&active_scan_timeout_work, K_SECONDS(timeout));
+		(void)k_work_reschedule(&active_scan_timeout_work, K_MSEC(timeout * 10U));
 	}
 
 	return 0;
