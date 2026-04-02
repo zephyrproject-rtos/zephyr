@@ -16,4 +16,121 @@ config SOC_PART_NUMBER
 	default "AM6442" if SOC_AM6442_M4 || SOC_AM6442_R5F0_0 || SOC_AM6442_R5F0_1 || SOC_AM6442_R5F1_0 || SOC_AM6442_R5F1_1
 	default "J721e" if SOC_J721E_MAIN_R5F0_0
 
+if BUILD_WITH_TFA
+
+config TFA_TARGET_BOARD
+	string "TI target board for TF-A"
+	default "am62lx-evm" if SOC_AM62L3_A53
+	default "generic"
+	help
+	  TF-A TARGET_BOARD parameter.
+
+config TI_K3_TFA_LOAD_ADDRESS
+	hex "TF-A load address in DDR"
+	default 0x80000000
+	help
+	  Load address for BL31 binary in memory.
+
+endif
+
+config TI_K3_TIFS_BIN
+	string "TIFS binary for particular soc"
+	default "ti-fs-firmware-am62lx-hs-enc.bin" if SOC_AM62L3_A53
+	help
+	  TIFS (TI Foundational security) firmware binary.
+
+config TI_K3_TIFS_CERT_BIN
+	string "TIFS inner certificate bin for particular soc"
+	default "ti-fs-firmware-am62lx-hs-cert.bin" if SOC_AM62L3_A53
+	help
+	  TIFS (TI Foundational security) inner certificate binary.
+
+config TI_K3_TIFS_LOAD_ADDRESS
+	hex "TIFS firmware load address"
+	default 0x40000 if SOC_AM62L3_A53
+	help
+	  The load address for TI's Foundation Security firmware. This value is
+	  used to build the x509 certificate to tell boot ROM where to place the
+	  TIFS firmware in memory.
+
+config TI_K3_BOARD_CONFIG_DIR
+	string "Board configuration directory"
+	default "support"
+	help
+	  Board configuration schema directory.
+	  Default: support (resolves to ${BOARD_DIR}/support)
+
+config TI_K3_BOARDCFG_LOAD_ADDRESS
+	hex "Board config load address"
+	default 0x6C000 if SOC_AM62L3_A53
+	help
+	  Load address for board configuration binary blob. This
+	  value is used to build the x509 certificate to tell ROM where to place
+	  the board configuration blob.
+
+config TI_K3_REQUIRES_SEC_CFG
+	bool
+	default y
+	help
+	  Indicates if SoC requires security board configuration.
+
+config TI_K3_REQUIRES_PM_CFG
+	bool
+	default y if SOC_AM6234_A53 || SOC_AM6232_A53 || SOC_AM6254_A53
+	help
+	  Indicates if SoC requires power management board configuration.
+
+config TI_K3_REQUIRES_RM_CFG
+	bool
+	default y if SOC_AM6234_A53 || SOC_AM6232_A53 || SOC_AM6254_A53
+	help
+	  Indicates if SoC requires resource management board configuration.
+
+config TI_K3_BUILD_TIBOOT3
+	bool "Generate tiboot3.bin first-stage bootloader"
+	depends on !SOC_AM62L3_A53 || BUILD_WITH_TFA
+	help
+	  Generate tiboot3.bin (SPL/BL1 + TIFS + board configs).
+
+config TI_K3_SPL_BIN
+	string "SPL/BL1 binary path for tiboot3.bin"
+	depends on TI_K3_BUILD_TIBOOT3
+	default "bl1.bin" if SOC_AM62L3_A53 && BUILD_WITH_TFA
+	default ""
+	help
+	  Bootloader stage 1 binary for combined tiboot3.bin image.
+
+config TI_K3_SPL_LOAD_ADDRESS
+	hex "SPL load address"
+	default 0x70800000 if SOC_AM62L3_A53
+	default 0x43c00000 if SOC_AM6234_A53 || SOC_AM6232_A53 || SOC_AM6254_A53
+	help
+	  The address in memory that SPL/BL1 (Stage 1 bootloader) will be running from.
+
+config TI_K3_BUILD_TISPL
+	bool "Generate tispl.bin combined application image"
+	depends on SOC_SERIES_AM62LX_A53
+	depends on BUILD_WITH_TFA
+	help
+	  Generate tispl.bin (BL31 + TIFS + board configs + Application binary).
+
+config TI_K3_ZEPHYR_APP_BIN_LOAD_ADDRESS
+	hex "TF-A load address in DDR"
+	default 0x82000000
+	help
+	  Load address for application binary as part of combined tispl binary image
+	  in memory.
+
+config TI_K3_CERT_KEY_PATH
+	string "X.509 certificate signing key path"
+	default "$(ZEPHYR_BASE)/soc/ti/k3/keys/custMpk.pem"
+	help
+		Path to TI k3 keys.
+
+config TI_K3_SW_REVISION
+	int "Software Revision"
+	default 1
+	help
+		Software Revision for the x509 certificate
+
 endif # SOC_FAMILY_TI_K3
