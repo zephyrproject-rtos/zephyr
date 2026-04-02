@@ -235,4 +235,10 @@ config SHARED_MULTI_HEAP
 	  different capabilities / attributes (cacheable, non-cacheable,
 	  etc...) defined in the DT.
 
+config SYS_SYNC_HEAP
+	bool "User-synchronized heaps"
+	depends on DYNAMIC_OBJECTS
+	help
+	  Allows multiple user threads to use shared heaps with synchronization.
+
 endmenu

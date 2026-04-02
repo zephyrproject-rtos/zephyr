@@ -23,6 +23,12 @@ Z_THREAD_LOCAL k_tid_t z_tls_current;
 extern Z_THREAD_LOCAL volatile uintptr_t __stack_chk_guard;
 #endif /* CONFIG_STACK_CANARIES_TLS */
 
+#ifdef CONFIG_COMMON_LIBC_MALLOC_TLS
+#include <zephyr/sys/sync_heap.h>
+
+extern Z_THREAD_LOCAL struct sys_sync_heap *malloc_heap;
+#endif /* CONFIG_COMMON_LIBC_MALLOC_TLS */
+
 /*
  * Common thread entry point function (used by all threads)
  *
@@ -57,6 +63,9 @@ FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
 	__stack_chk_guard = stack_guard;
 	__stack_chk_guard <<= 8;
 #endif	/* CONFIG_STACK_CANARIES */
+#ifdef CONFIG_COMMON_LIBC_MALLOC_TLS
+	malloc_heap = k_thread_malloc_heap_get(k_current_get());
+#endif /* CONFIG_COMMON_LIBC_MALLOC_TLS */
 	entry(p1, p2, p3);
 
 	k_thread_abort(k_current_get());

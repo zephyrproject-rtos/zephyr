@@ -11,6 +11,7 @@ zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_LOCALTIME_R_UTC source/time/loca
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_CTIME source/time/ctime.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_TIME source/time/time.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_MALLOC source/stdlib/malloc.c)
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_MALLOC_TLS source/stdlib/malloc_tls.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_CALLOC source/stdlib/calloc.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_REALLOCARRAY source/stdlib/reallocarray.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_STRNLEN source/string/strnlen.c)

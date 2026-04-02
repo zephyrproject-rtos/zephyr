@@ -706,6 +706,9 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	new_thread->base.prio_deadline = 0;
 #endif /* CONFIG_SCHED_DEADLINE */
 	new_thread->resource_pool = _current->resource_pool;
+#ifdef CONFIG_COMMON_LIBC_MALLOC_TLS
+	new_thread->malloc_heap = NULL;
+#endif /* CONFIG_COMMON_LIBC_MALLOC_TLS */
 
 #ifdef CONFIG_SMP
 	z_waitq_init(&new_thread->halt_queue);
@@ -1642,3 +1645,19 @@ static inline void z_vrfy_k_yield(void)
 }
 #include <zephyr/syscalls/k_yield_mrsh.c>
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_COMMON_LIBC_MALLOC_TLS
+struct sys_sync_heap *z_impl_k_thread_malloc_heap_get(struct k_thread *thread)
+{
+	return thread->malloc_heap;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline struct sys_sync_heap *z_vrfy_k_thread_malloc_heap_get(struct k_thread *thread)
+{
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	return z_impl_k_thread_malloc_heap_get(thread);
+}
+#include <zephyr/syscalls/k_thread_malloc_heap_get_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_COMMON_LIBC_MALLOC_TLS */
