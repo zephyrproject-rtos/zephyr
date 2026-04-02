@@ -169,3 +169,11 @@ tpm2: &tpm_2 {
 lptmr0: &lptmr_0 {
 	status = "okay";
 };
+
+lptmr1: &lptmr_1 {
+	status = "okay";
+};
+
+&ieee802154 {
+	counter = <&lptmr1>;
+};

@@ -495,7 +495,6 @@
 
 	ieee802154: ieee802154 {
 		compatible = "nxp,mcxw-ieee802154";
-		status = "disabled";
 	};
 
 	rtc_0: rtc@9000 {
