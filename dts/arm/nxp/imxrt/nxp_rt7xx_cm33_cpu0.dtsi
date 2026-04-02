@@ -304,6 +304,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x110000 0x1000>;
 		interrupts = <7 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(2, 30)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -343,6 +344,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x111000 0x1000>;
 		interrupts = <8 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(2, 31)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -382,6 +384,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x112000 0x1000>;
 		interrupts = <9 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 0)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -421,6 +424,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x113000 0x1000>;
 		interrupts = <10 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 1)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -460,6 +464,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x171000 0x1000>;
 		interrupts = <11 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 2)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -499,6 +504,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x172000 0x1000>;
 		interrupts = <12 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 3)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -538,6 +544,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x173000 0x1000>;
 		interrupts = <35 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 4)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -577,6 +584,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x174000 0x1000>;
 		interrupts = <36 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 5)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -616,6 +624,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x199000 0x1000>;
 		interrupts = <47 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 6)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -655,6 +664,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x19a000 0x1000>;
 		interrupts = <48 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 7)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -694,6 +704,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x19b000 0x1000>;
 		interrupts = <49 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 8)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -733,6 +744,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x19c000 0x1000>;
 		interrupts = <50 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 9)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -772,6 +784,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x19d000 0x1000>;
 		interrupts = <51 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 10)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -811,6 +824,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x19e000 0x1000>;
 		interrupts = <52 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 11)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -882,6 +896,7 @@
 		reg = <0x484000 0x1000>;
 		interrupts = <13 0>;
 		clocks = <&clkctl4 MCUX_LPSPI14_CLK>;
+		resets = <&rstctl4 NXP_SYSCON_RESET(10, 13)>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 		tx-fifo-size = <8>;
@@ -897,6 +912,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		clocks = <&clkctl4 MCUX_LPI2C15_CLK>;
+		resets = <&rstctl3 NXP_SYSCON_RESET(9, 18)>;
 		status = "disabled";
 	};
 
@@ -906,6 +922,7 @@
 		reg = <0x405000 0x1000>;
 		interrupts = <53 0>;
 		clocks = <&clkctl4 MCUX_LPSPI16_CLK>;
+		resets = <&rstctl4 NXP_SYSCON_RESET(10, 14)>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 		tx-fifo-size = <8>;
