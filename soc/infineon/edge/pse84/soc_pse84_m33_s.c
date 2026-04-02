@@ -93,6 +93,9 @@ void soc_early_init_hook(void)
 
 void soc_late_init_hook(void)
 {
+	/* SAU Init */
+	cy_sau_init();
+
 #if defined(CONFIG_SOC_PSE84_M55_ENABLE)
 	ifx_pse84_cm55_startup();
 #endif
