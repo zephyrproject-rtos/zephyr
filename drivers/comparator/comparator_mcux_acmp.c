@@ -13,6 +13,7 @@
 #include <zephyr/drivers/comparator.h>
 #include <zephyr/drivers/comparator/mcux_acmp.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/irq.h>
 
 #include <zephyr/logging/log.h>
@@ -209,6 +210,7 @@ LOG_MODULE_REGISTER(nxp_kinetis_acmp, CONFIG_COMPARATOR_LOG_LEVEL);
 struct mcux_acmp_config {
 	CMP_Type *base;
 	const struct pinctrl_dev_config *pincfg;
+	struct reset_dt_spec reset;
 	void (*irq_init)(void);
 	const struct comp_mcux_acmp_mode_config mode_config;
 	const struct comp_mcux_acmp_input_config input_config;
@@ -553,6 +555,19 @@ static int mcux_acmp_init(const struct device *dev)
 	const struct mcux_acmp_config *config = dev->config;
 	int ret;
 
+	if (config->reset.dev != NULL) {
+		if (!device_is_ready(config->reset.dev)) {
+			LOG_ERR("reset controller not ready");
+			return -ENODEV;
+		}
+
+		ret = reset_line_deassert_dt(&config->reset);
+		if (ret != 0) {
+			LOG_ERR("Failed to deassert reset line (%d)", ret);
+			return ret;
+		}
+	}
+
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
 		LOG_ERR("failed to set %s", "pincfg");
@@ -610,6 +625,7 @@ static int mcux_acmp_init(const struct device *dev)
 	static const struct mcux_acmp_config _CONCAT(config, inst) = {				\
 		.base = (CMP_Type *)DT_INST_REG_ADDR(inst),					\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),					\
+		.reset = RESET_DT_SPEC_INST_GET_OR(inst, {0}),					\
 		.irq_init = MCUX_ACMP_IRQ_HANDLER_SYM(inst),					\
 		.mode_config = MCUX_ACMP_DT_INST_MODE_CONFIG_INIT(inst),			\
 		.input_config = MCUX_ACMP_DT_INST_INPUT_CONFIG_INIT(inst),			\
