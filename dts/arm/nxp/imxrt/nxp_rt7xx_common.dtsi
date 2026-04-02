@@ -128,12 +128,14 @@
 	rstctl2: reset-controller@67000 {
 		compatible = "nxp,rstctl";
 		reg = <0x67000 0x1000>;
+		offset-base = <7>;
 		#reset-cells = <1>;
 	};
 
 	rstctl3: reset-controller@60000 {
 		compatible = "nxp,rstctl";
 		reg = <0x60000 0x1000>;
+		offset-base = <8>;
 		#reset-cells = <1>;
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -147,6 +149,7 @@
 	rstctl4: reset-controller@a0000 {
 		compatible = "nxp,rstctl";
 		reg = <0xa0000 0x1000>;
+		offset-base = <10>;
 		#reset-cells = <1>;
 	};
 
