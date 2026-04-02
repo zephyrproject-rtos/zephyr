@@ -324,7 +324,7 @@ manifest:
       revision: 85aa60d18b3d5e5588d7b247abf90198f07c8a63
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: a83ab39d828981ca1fd8a62e335a73556d35c123
+      revision: a3e190fe44c78d1ba67f55979e1257328cc7d0d8
       path: modules/crypto/mbedtls
       groups:
         - crypto
@@ -345,7 +345,7 @@ manifest:
         - debug
       revision: 5a9d6055b62edc54566d6d0034d9daec91749b98
     - name: mldsa-native
-      revision: a2be3a55efafa398f094dd347d3ef43d99182b47
+      revision: 3fc19982839305d305071f0de0c540bc9c9bea8a
       path: modules/crypto/mldsa-native
       groups:
         - crypto
@@ -395,7 +395,7 @@ manifest:
         - testing
         - tee
     - name: tf-psa-crypto
-      revision: b84929dde09b2e88d8d6c3581e6473ffa7bfe14f
+      revision: c82dfc7be6417aba6b161dda66dde9278e8524de
       path: modules/crypto/tf-psa-crypto
       groups:
         - crypto
