@@ -106,6 +106,7 @@ kernel_sources_ifdef(CONFIG_MULTITHREADING
   condvar.c
   thread.c
   sched.c
+  sleep.c
   pipe.c
   )
 
