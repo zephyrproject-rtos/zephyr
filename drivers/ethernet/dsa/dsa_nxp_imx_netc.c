@@ -558,7 +558,7 @@ static struct dsa_api dsa_netc_api = {
 		.phy_mode = DT_PROP_OR(port, phy_connection_type, ""),                      \
 		.tag_proto = DT_PROP_OR(port, dsa_tag_protocol, DSA_TAG_PROTO_NOTAG),       \
 		.ethernet_connection = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(port, ethernet)),   \
-		IF_ENABLED(CONFIG_PTP_CLOCK_NXP_NETC,				            \
+		IF_ENABLED(NETC_PTP_TIMESTAMPING_SUPPORT,				    \
 			(.ptp_clock = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(port, ptp_clock)),)) \
 		.prv_config = &dsa_netc_##n##_##port##_config,                              \
 	};                                                                                  \
