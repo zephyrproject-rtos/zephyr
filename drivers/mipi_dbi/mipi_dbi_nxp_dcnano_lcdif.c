@@ -10,6 +10,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/mipi_dbi.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -28,6 +29,7 @@ struct mcux_dcnano_lcdif_dbi_config {
 	lcdif_dbi_config_t dbi_config;
 	lcdif_panel_config_t panel_config;
 	const struct pinctrl_dev_config *pincfg;
+	struct reset_dt_spec reset_ctl;
 	const struct gpio_dt_spec reset;
 };
 
@@ -167,6 +169,17 @@ static int mcux_dcnano_lcdif_dbi_init(const struct device *dev)
 		return ret;
 	}
 #endif
+
+	if (config->reset_ctl.dev != NULL) {
+		if (!device_is_ready(config->reset_ctl.dev)) {
+			return -ENODEV;
+		}
+
+		ret = reset_line_deassert_dt(&config->reset_ctl);
+		if (ret != 0) {
+			return ret;
+		}
+	}
 
 	LCDIF_Init(config->base);
 
@@ -351,6 +364,7 @@ static DEVICE_API(mipi_dbi, mcux_dcnano_lcdif_dbi_api) = {
 		.base = (LCDIF_Type *) DT_INST_REG_ADDR(n),				\
 		.irq_config_func = mcux_dcnano_lcdif_dbi_config_func_##n,		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
+		.reset_ctl = RESET_DT_SPEC_INST_GET_OR(n, {0}),				\
 		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),			\
 		.dbi_config = {								\
 			.type = kLCDIF_DbiTypeA_FixedE,					\
