@@ -41,11 +41,11 @@ static int vevif_task_tx_send(const struct device *dev, uint32_t id, const struc
 
 	nrfy_vpr_task_trigger(config->vpr, nrfy_vpr_trigger_task_get(id));
 
-#ifdef CONFIG_SOC_NRF54H20
+#if defined(CONFIG_SOC_NRF54H20) || defined(CONFIG_SOC_NRF54LM20A) || defined(CONFIG_SOC_NRF54LM20B)
 	k_busy_wait(VEVIF_RETRIGGER_DELAY_USEC);
 
 	nrfy_vpr_task_trigger(config->vpr, nrfy_vpr_trigger_task_get(id));
-#endif /* CONFIG_SOC_NRF54H20 */
+#endif /* CONFIG_SOC_NRF54H20 || CONFIG_SOC_NRF54LM20A || CONFIG_SOC_NRF54LM20B */
 
 	return 0;
 }
