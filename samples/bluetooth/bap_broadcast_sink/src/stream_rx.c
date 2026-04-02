@@ -35,9 +35,14 @@ LOG_MODULE_REGISTER(stream_rx, CONFIG_LOG_DEFAULT_LEVEL);
 static void log_stream_rx(const struct stream_rx *stream, const struct bt_iso_recv_info *info,
 			  const struct net_buf *buf)
 {
-	LOG_INF("[%zu]: Incoming audio on stream %p len %u, flags 0x%02X, seq_num %u and ts %u: "
+// THis is a lot of overhead. This information could be saved from the start.
+	// If there is a way to save the BIS_info.sync_receiver.bis_number to the stream_rx struct a lot of oveadehad from function calls can be removed.
+	struct bt_iso_info BIS_info;
+	bt_iso_chan_get_info(stream->stream.iso, &BIS_info); 
+
+	LOG_INF("[%zu]: Incoming audio on stream %p BIS_Number %u len %u, flags 0x%02X, seq_num %u and ts %u: "
 		"Valid %zu | Error %zu | Loss %zu | Dup TS %zu | Dup PSN %zu",
-		stream->reporting_info.recv_cnt, &stream->stream, buf->len, info->flags,
+		stream->reporting_info.recv_cnt, &stream->stream,BIS_info.sync_receiver.bis_number, buf->len, info->flags,
 		info->seq_num, info->ts, stream->reporting_info.valid_cnt,
 		stream->reporting_info.error_cnt, stream->reporting_info.loss_cnt,
 		stream->reporting_info.dup_ts_cnt, stream->reporting_info.dup_psn_cnt);
