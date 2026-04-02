@@ -4,27 +4,11 @@ Overview
 ********
 
 The nRF52840 Dongle (PCA10059) hardware provides support for the Nordic
-Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
-
-* :abbr:`ADC (Analog to Digital Converter)`
-* CLOCK
-* FLASH
-* :abbr:`GPIO (General Purpose Input Output)`
-* :abbr:`I2C (Inter-Integrated Circuit)`
-* :abbr:`MPU (Memory Protection Unit)`
-* :abbr:`NVIC (Nested Vectored Interrupt Controller)`
-* :abbr:`PWM (Pulse Width Modulation)`
-* RADIO (Bluetooth Low Energy and 802.15.4)
-* :abbr:`RTC (nRF RTC System Clock)`
-* :abbr:`SPI (Serial Peripheral Interface)`
-* :abbr:`UART (Universal asynchronous receiver-transmitter)`
-* :abbr:`USB (Universal Serial Bus)`
-* :abbr:`WDT (Watchdog Timer)`
+Semiconductor nRF52840 ARM Cortex-M4F CPU.
 
 More information about the board can be found at the
 `nRF52840 Dongle website`_. The `nRF52840 Dongle guide`_
 contains the processor's information and the datasheet.
-
 
 Hardware
 ********

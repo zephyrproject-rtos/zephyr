@@ -29,22 +29,6 @@ the PPR core on the nRF54H20 SoC executing from RAM.
 The ``nrf54h20dk/nrf54h20/cpuppr/xip`` build target provides support for
 the PPR core on the nRF54H20 SoC executing from MRAM.
 
-nRF54H20 SoC provides support for the following devices:
-
-* :abbr:`ADC (Analog to Digital Converter)`
-* CLOCK
-* :abbr:`GPIO (General Purpose Input Output)`
-* :abbr:`GRTC (Global real-time counter)`
-* :abbr:`I2C (Inter-Integrated Circuit)`
-* MEMCONF
-* MRAM
-* :abbr:`PWM (Pulse Width Modulation)`
-* RADIO (Bluetooth Low Energy and 802.15.4)
-* :abbr:`SPI (Serial Peripheral Interface)`
-* :abbr:`UART (Universal asynchronous receiver-transmitter)`
-* :abbr:`USB (Universal Serial Bus)`
-* :abbr:`WDT (Watchdog Timer)`
-
 Hardware
 ********
 
