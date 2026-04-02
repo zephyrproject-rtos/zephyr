@@ -1646,14 +1646,14 @@ static int cmd_id_select(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_BT_OBSERVER)
 static int cmd_active_scan_on(const struct shell *sh, uint32_t options,
-			      uint16_t timeout)
+			      uint16_t interval, uint16_t window, uint16_t timeout)
 {
 	int err;
 	struct bt_le_scan_param param = {
 			.type       = BT_LE_SCAN_TYPE_ACTIVE,
 			.options    = BT_LE_SCAN_OPT_NONE,
-			.interval   = BT_GAP_SCAN_FAST_INTERVAL,
-			.window     = BT_GAP_SCAN_FAST_WINDOW,
+			.interval   = interval != 0U ? interval : BT_GAP_SCAN_FAST_INTERVAL,
+			.window     = window != 0U ? window : BT_GAP_SCAN_FAST_WINDOW,
 			.timeout    = 0, };
 
 	param.options |= options;
@@ -1675,13 +1675,13 @@ static int cmd_active_scan_on(const struct shell *sh, uint32_t options,
 }
 
 static int cmd_passive_scan_on(const struct shell *sh, uint32_t options,
-			       uint16_t timeout)
+			       uint16_t interval, uint16_t window, uint16_t timeout)
 {
 	struct bt_le_scan_param param = {
 			.type       = BT_LE_SCAN_TYPE_PASSIVE,
 			.options    = BT_LE_SCAN_OPT_NONE,
-			.interval   = 0x10,
-			.window     = 0x10,
+			.interval   = interval != 0U ? interval : 0x10,
+			.window     = window != 0U ? window : 0x10,
 			.timeout    = timeout, };
 	int err;
 
@@ -1728,9 +1728,11 @@ static int cmd_scan_off(const struct shell *sh)
 static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct sys_getopt_state *state = sys_getopt_state_get();
-	enum { TIMEOUT, FILTER_DUPS, FAL, CODED, NO_1M };
+	enum { TIMEOUT, INTERVAL, WINDOW, FILTER_DUPS, FAL, CODED, NO_1M };
 	static const struct sys_getopt_option long_options[] = {
 		{ "timeout", sys_getopt_required_argument, NULL, TIMEOUT },
+		{ "interval", sys_getopt_required_argument, NULL, INTERVAL },
+		{ "window", sys_getopt_required_argument, NULL, WINDOW },
 		{ "filter-dups", sys_getopt_no_argument, NULL, FILTER_DUPS },
 		{ "fal", sys_getopt_no_argument, NULL, FAL },
 		{ "coded", sys_getopt_no_argument, NULL, CODED },
@@ -1742,6 +1744,8 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 	const char *action;
 	uint32_t options = 0;
 	uint16_t timeout = 0;
+	uint16_t interval = 0U;
+	uint16_t window = 0U;
 
 	while (true) {
 		opt = sys_getopt_long(argc, argv, "h", long_options, NULL);
@@ -1752,6 +1756,12 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 		switch (opt) {
 		case TIMEOUT:
 			timeout = shell_strtoul(state->optarg, 0, NULL);
+			break;
+		case INTERVAL:
+			interval = shell_strtoul(state->optarg, 0, NULL);
+			break;
+		case WINDOW:
+			window = shell_strtoul(state->optarg, 0, NULL);
 			break;
 		case FILTER_DUPS:
 			options |= BT_LE_SCAN_OPT_FILTER_DUPLICATE;
@@ -1793,11 +1803,11 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 
 	action = argv[0];
 	if (!strcmp(action, "on")) {
-		return cmd_active_scan_on(sh, options, timeout);
+		return cmd_active_scan_on(sh, options, interval, window, timeout);
 	} else if (!strcmp(action, "off")) {
 		return cmd_scan_off(sh);
 	} else if (!strcmp(action, "passive")) {
-		return cmd_passive_scan_on(sh, options, timeout);
+		return cmd_passive_scan_on(sh, options, interval, window, timeout);
 	} else {
 		shell_help(sh);
 		return SHELL_CMD_HELP_PRINTED;
@@ -5274,9 +5284,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #endif /* CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC */
 #if defined(CONFIG_BT_OBSERVER)
 	SHELL_CMD_ARG(scan, NULL,
-			   "[--timeout <timeout>] [--filter-dups] [--fal] [--coded] [--no-1m] "
-			   "<value: on, passive, off>",
-			   cmd_scan, 2, 4),
+		      "[--timeout <timeout>] [--filter-dups] [--fal] [--coded] [--no-1m] "
+		      "[--interval <n * 0.625 ms] [--window <n * 0.625 ms>] "
+		      "<value: on, passive, off>",
+		      cmd_scan, 2, 11),
 	SHELL_CMD(scan-filter-set, &bt_scan_filter_set_cmds,
 		      "Scan filter set commands",
 		      cmd_default_handler),
