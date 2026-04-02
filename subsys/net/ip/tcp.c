@@ -4215,7 +4215,15 @@ int net_tcp_finalize(struct net_pkt *pkt, bool force_chksum)
 	tcp_hdr->chksum = 0U;
 
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), type) || force_chksum) {
-		tcp_hdr->chksum = net_calc_chksum_tcp(pkt);
+		int ret;
+		uint16_t chksum;
+
+		ret = net_calc_chksum_tcp(pkt, &chksum);
+		if (ret < 0) {
+			return ret;
+		}
+
+		tcp_hdr->chksum = chksum;
 		net_pkt_set_chksum_done(pkt, true);
 	}
 
@@ -4231,10 +4239,15 @@ struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
 
 	if (IS_ENABLED(CONFIG_NET_TCP_CHECKSUM) &&
 	    (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), type) ||
-	     net_pkt_is_ip_reassembled(pkt)) &&
-	    net_calc_chksum_tcp(pkt) != 0U) {
-		NET_DBG("DROP: checksum mismatch");
-		goto drop;
+	     net_pkt_is_ip_reassembled(pkt))) {
+		uint16_t chksum;
+		int ret;
+
+		ret = net_calc_chksum_tcp(pkt, &chksum);
+		if (ret < 0 || chksum != 0U) {
+			NET_DBG("DROP: checksum mismatch");
+			goto drop;
+		}
 	}
 
 	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data(pkt, tcp_access);
