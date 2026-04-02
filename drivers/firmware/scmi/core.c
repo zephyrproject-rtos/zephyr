@@ -114,13 +114,16 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 
 	/*
 	 * Force polling mode if:
-	 * 1. Channel requires polling-only operation (e.g., SMC transport), OR
-	 * 2. Running in PRE_KERNEL state where interrupt-based messaging is
+	 * 1. Platform does not support interrupt-driven mode, OR
+	 * 2. Channel requires polling-only operation (e.g., SMC transport), OR
+	 * 3. Running in PRE_KERNEL state where interrupt-based messaging is
 	 *    forbidden due to lack of kernel primitives (i.e. semaphores)
 	 *    and potentially even interrupts, based on the architecture.
 	 * Otherwise, use the caller's requested polling mode.
 	 */
-	use_polling = (proto->tx->polling_only || k_is_pre_kernel()) ? true : use_polling;
+	use_polling = (IS_ENABLED(CONFIG_ARM_SCMI_POLLING_ONLY) ||
+		       proto->tx->polling_only ||
+		       k_is_pre_kernel()) ? true : use_polling;
 
 	if (!k_is_pre_kernel()) {
 		ret = k_mutex_lock(&proto->tx->lock, K_USEC(SCMI_CHAN_LOCK_TIMEOUT_USEC));
