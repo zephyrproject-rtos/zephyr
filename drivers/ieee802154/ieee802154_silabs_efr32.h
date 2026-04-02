@@ -231,4 +231,9 @@ struct sl_802154_data {
 	bool pan_coordinator;
 };
 
+/* Provided by the Simplicity SDK OpenThread blob, or by blob_stubs.c when
+ * CONFIG_BUILD_ONLY_NO_BLOBS is set.
+ */
+void sl_openthread_init(void);
+
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_SILABS_EFR32_H_ */
