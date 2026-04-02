@@ -253,10 +253,12 @@ static void send_data(struct broadcast_source_stream *source_stream)
 	if ((source_stream->sent_cnt % 1000U) == 0U) {
 
 		/* Only info.broadcaster.bis_number. 
-		BIS_number should be saved to struct so there is no need to call bt_iso_chan_get_info to save this call
-		if the info.broadcaster.bis_number is saved to the broadcast_source_stream then the bt_iso_chan_get_info() whould only need to be called once.
+		*BIS_number should be saved to struct, so there is no need to call bt_iso_chan_get_info to save this call.
+		*if the info.broadcaster.bis_number is saved to the broadcast_source_stream
+		*then the bt_iso_chan_get_info() whould only need to be called once.
 		*/
 		struct bt_iso_info info;
+		
 		bt_iso_chan_get_info(stream->iso, &info); 
 		
 		printk("Stream %p: BIS_Number %u Sent %u total ISO packets\n", stream,info.broadcaster.bis_number, source_stream->sent_cnt);
