@@ -541,6 +541,15 @@ void z_sched_unready_locked(struct k_thread *thread)
 	unready_thread(thread);
 }
 
+void z_sched_yield(void)
+{
+	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+
+	runq_yield();
+	update_cache(1);
+	z_swap(&_sched_spinlock, key);
+}
+
 /* _sched_spinlock must be held */
 #ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
 TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
@@ -987,38 +996,6 @@ static inline void z_vrfy_k_reschedule(void)
 	z_impl_k_reschedule();
 }
 #include <zephyr/syscalls/k_reschedule_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
-bool k_can_yield(void)
-{
-	unsigned int k = arch_irq_lock();
-	bool irq_locked = !arch_irq_unlocked(k);
-
-	arch_irq_unlock(k);
-	return !(k_is_pre_kernel() || k_is_in_isr() || irq_locked ||
-		 z_is_idle_thread_object(_current));
-}
-
-void z_impl_k_yield(void)
-{
-	__ASSERT(!arch_is_in_isr(), "");
-
-	SYS_PORT_TRACING_FUNC(k_thread, yield);
-
-	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
-
-	runq_yield();
-
-	update_cache(1);
-	z_swap(&_sched_spinlock, key);
-}
-
-#ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_yield(void)
-{
-	z_impl_k_yield();
-}
-#include <zephyr/syscalls/k_yield_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 k_tid_t z_impl_k_sched_current_thread_query(void)
