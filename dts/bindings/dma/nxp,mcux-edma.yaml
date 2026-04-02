@@ -5,7 +5,7 @@ description: NXP MCUX EDMA controller
 
 compatible: "nxp,mcux-edma"
 
-include: dma-controller.yaml
+include: [dma-controller.yaml, reset-device.yaml]
 
 properties:
   reg:
