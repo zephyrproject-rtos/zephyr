@@ -85,3 +85,132 @@ Example remaining work
   set of bindings supported by Linux.
 
 - Devicetree source sharing between Zephyr and Linux is not done.
+
+.. _dt-multi-api-hardware:
+
+Modeling hardware exposed through multiple Zephyr APIs
+******************************************************
+
+When a hardware block can be used through different Zephyr APIs, devicetree
+should keep hardware identity separate from the way the system uses each
+instance.
+
+Guidelines
+==========
+
+- Keep ``compatible`` focused on hardware identity. Avoid changing it only to
+  route software API selection. A different ``compatible`` is appropriate when
+  the hardware interfaces are architecturally distinct, for example because
+  they use separate register blocks.
+
+- Use ``/chosen`` for singleton system-wide selection. If the system must
+  select exactly one instance for a global function, such as the system timer,
+  console, or entropy source, represent that choice with a vendor-agnostic
+  chosen property, even if other identical instances are used by other APIs.
+  See also :ref:`devicetree-zephyr-chosen-nodes`.
+
+- Use a property for per-instance software role assignment when the assignment
+  must be expressed independently for each device instance and no singleton
+  system-wide selector applies. In that case, keep the same ``compatible``
+  and use a per-node property to describe that assignment. Use this only when
+  the DT-visible binding schema stays the same for all instances.
+
+- Place the assignment at the right integration level. If it is a
+  silicon-level fixed attribute, describe it in ``soc.dtsi``. If it varies by
+  board, product, or application, describe it in the board devicetree or an
+  overlay.
+
+If different uses of the hardware device require different required
+properties, child nodes, or bus semantics, then they do not share one binding
+schema. In that case, use different ``compatible`` values or model the device
+as a multifunction one.
+
+Examples
+========
+
+**Singleton selection with** ``/chosen``
+
+The system timer is a singleton function. The ``zephyr,system-timer``
+chosen property selects which hardware timer instance provides it, while
+other identical instances remain available for other APIs.
+
+For example, two identical LPTMR timer instances can share the same
+``compatible`` in the hardware description:
+
+.. code-block:: devicetree
+
+   lptmr1: timer@44300000 {
+       compatible = "nxp,lptmr";
+       reg = <0x44300000 0x1000>;
+       /* ... */
+   };
+
+   lptmr2: timer@424d0000 {
+       compatible = "nxp,lptmr";
+       reg = <0x424d0000 0x1000>;
+       /* ... */
+   };
+
+An integration layer can then select which one provides the singleton system
+timer function:
+
+.. code-block:: devicetree
+
+   / {
+       chosen {
+           zephyr,system-timer = &lptmr1;
+       };
+   };
+
+The system-timer driver binds to the ``/chosen`` node. The counter
+driver skips that instance and uses the remaining one.
+
+**Per-instance software role with a property**
+
+When no singleton system-wide selector applies, identical instances
+can keep the same ``compatible`` and use a per-node property to
+distinguish which software role each instance provides.
+
+Consider a SoC with three identical timer instances, where different boards or
+applications may assign timer and counter roles independently while keeping
+the same binding schema for each instance:
+
+.. code-block:: devicetree
+
+   /* hardware description */
+   timer0: timer@40000000 {
+     compatible = "vendor,multitimer";
+     reg = <0x40000000 0x1000>;
+     /* ... */
+   };
+
+   timer1: timer@40001000 {
+     compatible = "vendor,multitimer";
+     reg = <0x40001000 0x1000>;
+     /* ... */
+   };
+
+   timer2: timer@40002000 {
+     compatible = "vendor,multitimer";
+     reg = <0x40002000 0x1000>;
+     /* ... */
+   };
+
+.. code-block:: devicetree
+
+   /* integration-specific role assignment */
+   &timer0 {
+       zephyr,role = "counter";
+   };
+
+   &timer1 {
+       zephyr,role = "timer";
+   };
+
+   &timer2 {
+       zephyr,role = "counter";
+   };
+
+Each driver filters instances by the ``zephyr,role`` value it
+handles. In this example, the node properties and child-node structure stay
+the same regardless of the selected role.

@@ -401,6 +401,8 @@ identifier for a chosen node.
 
 .. doxygengroup:: devicetree-generic-chosen
 
+.. _devicetree-zephyr-chosen-nodes:
+
 Zephyr-specific chosen nodes
 ****************************
 
@@ -492,9 +494,10 @@ device.
      - A node whose ``reg`` sets the base address and size of SRAM memory
        available to the Zephyr image, used during linking
    * - zephyr,system-timer
-     - Selects the hardware timer instance used as the Zephyr system timer.
-       Used when devicetree selects which timer instance provides that
-       singleton system function.
+     - Selects the hardware timer instance used as the Zephyr system timer,
+       which is a singleton system-wide function. Use this when devicetree
+       selects which timer instance provides the system timer, even if other
+       identical timer instances are used by other APIs.
    * - zephyr,system-timer-companion
      - Selects the device used to keep time while the primary system timer is
        inactive in low-power states
