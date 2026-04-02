@@ -26,3 +26,11 @@ properties:
       TM1637 datasheet specifies minimum timings of 100ns (setup/hold)
       and 400ns (clock pulse width). Default of 100µs provides safe
       margin for software GPIO operations across different platforms.
+
+  aux-columns:
+    type: int
+    required: true
+    enum: [1, 2, 3, 4, 5, 6]
+    description: |
+      Ammount of digits used. The TM1637 support up to 6 of 7-segment
+      digits.
