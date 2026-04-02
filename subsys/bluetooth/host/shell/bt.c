@@ -1727,38 +1727,71 @@ static int cmd_scan_off(const struct shell *sh)
 
 static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 {
+	struct sys_getopt_state *state = sys_getopt_state_get();
+	enum { TIMEOUT, FILTER_DUPS, FAL, CODED, NO_1M };
+	static const struct sys_getopt_option long_options[] = {
+		{ "timeout", sys_getopt_required_argument, NULL, TIMEOUT },
+		{ "filter-dups", sys_getopt_no_argument, NULL, FILTER_DUPS },
+		{ "fal", sys_getopt_no_argument, NULL, FAL },
+		{ "coded", sys_getopt_no_argument, NULL, CODED },
+		{ "no-1m", sys_getopt_no_argument, NULL, NO_1M },
+		{ "help", sys_getopt_no_argument, NULL, 'h' },
+		{},
+	};
+	int opt;
 	const char *action;
 	uint32_t options = 0;
 	uint16_t timeout = 0;
 
-	/* Parse duplicate filtering data */
-	for (size_t argn = 2; argn < argc; argn++) {
-		const char *arg = argv[argn];
+	while (true) {
+		opt = sys_getopt_long(argc, argv, "h", long_options, NULL);
+		if (opt == -1) {
+			break;
+		}
 
-		if (!strcmp(arg, "dups")) {
+		switch (opt) {
+		case TIMEOUT:
+			timeout = shell_strtoul(state->optarg, 0, NULL);
+			break;
+		case FILTER_DUPS:
 			options |= BT_LE_SCAN_OPT_FILTER_DUPLICATE;
-		} else if (!strcmp(arg, "nodups")) {
-			options &= ~BT_LE_SCAN_OPT_FILTER_DUPLICATE;
-		} else if (!strcmp(arg, "fal")) {
+			break;
+		case FAL:
 			options |= BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST;
-		} else if (!strcmp(arg, "coded")) {
+			break;
+		case CODED:
 			options |= BT_LE_SCAN_OPT_CODED;
-		} else if (!strcmp(arg, "no-1m")) {
+			break;
+		case NO_1M:
 			options |= BT_LE_SCAN_OPT_NO_1M;
-		} else if (!strcmp(arg, "timeout")) {
-			if (++argn == argc) {
-				shell_help(sh);
-				return SHELL_CMD_HELP_PRINTED;
-			}
-
-			timeout = strtoul(argv[argn], NULL, 16);
-		} else {
+			break;
+		case 'h':
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
+		case '?':
+		case ':':
+			if (state->optind > 0 && argv[state->optind - 1] != NULL) {
+				shell_error(sh, "Invalid option %s", argv[state->optind - 1]);
+			} else {
+				shell_error(sh, "Invalid option");
+			}
+			return -EINVAL;
+		default:
+			shell_error(sh, "Invalid option %c\n", opt);
+			return -EINVAL;
 		}
 	}
 
-	action = argv[1];
+	/* Jump to the beginning of non-getopt parameters */
+	argc -= state->optind;
+	argv += state->optind;
+
+	if (argc < 1) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	action = argv[0];
 	if (!strcmp(action, "on")) {
 		return cmd_active_scan_on(sh, options, timeout);
 	} else if (!strcmp(action, "off")) {
@@ -5241,9 +5274,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #endif /* CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC */
 #if defined(CONFIG_BT_OBSERVER)
 	SHELL_CMD_ARG(scan, NULL,
-		      "<value: on, passive, off> [filter: dups, nodups] [fal]"
-		      EXT_ADV_SCAN_OPT,
-		      cmd_scan, 2, 4),
+			   "[--timeout <timeout>] [--filter-dups] [--fal] [--coded] [--no-1m] "
+			   "<value: on, passive, off>",
+			   cmd_scan, 2, 4),
 	SHELL_CMD(scan-filter-set, &bt_scan_filter_set_cmds,
 		      "Scan filter set commands",
 		      cmd_default_handler),
