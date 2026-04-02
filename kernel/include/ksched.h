@@ -67,6 +67,8 @@ int z_unpend_all_locked(_wait_q_t *wait_q);
 bool z_thread_prio_set(struct k_thread *thread, int prio);
 void *z_get_next_switch_handle(void *interrupted);
 
+void z_thread_suspend_current(struct k_thread *thread);
+
 /* Wrapper around z_get_next_switch_handle() for the benefit of
  * non-SMP platforms that always pass a NULL interrupted handle.
  * Exposes the (extremely) common early exit case in a context that
@@ -94,6 +96,46 @@ void z_ready_thread(struct k_thread *thread);
 void z_requeue_current(struct k_thread *curr);
 struct k_thread *z_swap_next_thread(void);
 void move_current_to_end_of_prio_q(void);
+
+/*
+ * Internal scheduler functions exposed for use by thread lifecycle code
+ * (thread.c). These operate under _sched_spinlock and must not be called
+ * without holding it.
+ */
+
+/**
+ * @brief Halt a thread, suspending or terminating it.
+ *
+ * Shared implementation for k_thread_suspend() and k_thread_abort(). The
+ * caller must hold _sched_spinlock; this function releases it before
+ * returning (possibly after a context switch).
+ *
+ * @param thread  Thread to halt.
+ * @param key     Scheduler spinlock key held by the caller.
+ * @param terminate true to abort (kill) the thread, false to suspend it.
+ */
+void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key, bool terminate);
+
+/**
+ * @brief Ready a thread while the scheduler spinlock is already held.
+ *
+ * Equivalent to the internal ready_thread() helper. Callers must hold
+ * _sched_spinlock.
+ *
+ * @param thread Thread to make ready.
+ */
+void z_sched_ready_locked(struct k_thread *thread);
+
+/**
+ * @brief Add a thread to a wait queue while the scheduler spinlock is held.
+ *
+ * Moves the thread out of the run queue and onto the specified wait queue.
+ * Callers must hold _sched_spinlock.
+ *
+ * @param thread  Thread to pend.
+ * @param wait_q  Wait queue to add the thread to (may be NULL).
+ */
+void z_sched_add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
 
 static inline void z_reschedule_unlocked(void)
 {
