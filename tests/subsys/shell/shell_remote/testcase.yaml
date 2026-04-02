@@ -1,0 +1,26 @@
+common:
+  sysbuild: true
+  tags:
+    - shell
+    - ipc
+  harness: ztest
+tests:
+  shell.shell_remote:
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+  shell.shell_remote.no_multithreading:
+    platform_allow:
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args:
+      - remote_CONFIG_MULTITHREADING=n
