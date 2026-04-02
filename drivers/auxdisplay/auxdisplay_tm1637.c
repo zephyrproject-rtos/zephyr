@@ -53,7 +53,7 @@ struct tm1637_config {
 
 struct tm1637_data {
 	uint8_t current_brightness; /* bits 0-2: level (0-7), bit 3: enabled (1=on) */
-	uint8_t display_buffer[4];  /* raw segment data for 4 digits */
+	uint8_t display_buffer[6];  /* raw segment data for maximum of 6 digits */
 	int16_t cursor_x;
 	int16_t cursor_y;
 };
@@ -143,6 +143,7 @@ static bool tm1637_send_byte(const struct device *dev, uint8_t data_byte)
 static int tm1637_update_display(const struct device *dev)
 {
 	struct tm1637_data *data = dev->data;
+	const struct tm1637_config *cfg = dev->config;
 
 	/* Send data command */
 	tm1637_start_condition(dev);
@@ -153,7 +154,7 @@ static int tm1637_update_display(const struct device *dev)
 	tm1637_start_condition(dev);
 	tm1637_send_byte(dev, TM1637_CMD_ADDR_BASE);
 
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < cfg->capabilities.columns; i++) {
 		tm1637_send_byte(dev, data->display_buffer[i]);
 	}
 
@@ -172,13 +173,14 @@ static int tm1637_update_display(const struct device *dev)
 static int tm1637_auxdisplay_write(const struct device *dev, const uint8_t *buf, uint16_t len)
 {
 	struct tm1637_data *data = dev->data;
+	const struct tm1637_config *cfg = dev->config;
 	uint32_t pos = 0;
 	uint16_t i = 0;
 
 	/* Clear the display buffer first */
 	memset(data->display_buffer, 0, sizeof(data->display_buffer));
 
-	while (i < len && pos < 4) {
+	while (i < len && pos < cfg->capabilities.columns) {
 		char c = buf[i];
 		uint8_t segment_code = 0;
 		bool valid_char = false;
@@ -347,7 +349,7 @@ static DEVICE_API(auxdisplay, tm1637_auxdisplay_api) = {
 		.bit_delay_us = DT_INST_PROP(n, bit_delay_us),                                     \
 		.capabilities =                                                                    \
 			{                                                                          \
-				.columns = 4,                                                      \
+				.columns = DT_INST_PROP(n, aux_columns),                           \
 				.rows = 1,                                                         \
 			},                                                                         \
 	};                                                                                         \
