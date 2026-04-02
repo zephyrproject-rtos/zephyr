@@ -9,7 +9,7 @@ for audio interfaces, and AIROC™ CYW55513IUBGT base Wi-Fi & Bluetooth combo Mu
 connectivity module.  The kit also has 512-Mbit Quad-SPI NOR Flash and 128-Mbit Octal-SPI HYPERRAM™.
 The board features an on-board programmer/debugger (KitProg3), JTAG/SWD debug headers, expansion I/O
 header, USB-C connectors, 6-axis IMU sensor, 3-axis magnetometer, barometric pressure sensor,
-humidity sensor, RADAR sensor, user LEDs, and a user buttor.  The MCU power domain and perihporal
+humidity sensor, RADAR sensor, user LEDs, and a user button.  The MCU power domain and peripheral
 power domain supports operating voltages of 1.8V and 3.3V.
 
 PSOC™ E84 MCU is an ultra-low-power PSOC™ device specifically designed for ML, wearables and IoT

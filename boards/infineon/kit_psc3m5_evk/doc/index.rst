@@ -148,7 +148,7 @@ The path to the installed Infineon OpenOCD executable must be available to the `
             west flash
             west debug
 
-Once the gdb console starts after executing the west debug command, you may now set breakpoints and perform other standard GDB debugging on the CYW20829 CM33 core.
+Once the gdb console starts after executing the west debug command, you may now set breakpoints and perform other standard GDB debugging on the PSOC Control C3 CM33 core.
 
 .. _PSOC Control C3 SoC Website:
     https://www.infineon.com/cms/en/product/microcontroller/32-bit-psoc-arm-cortex-microcontroller/32-bit-psoc-control-arm-cortex-m33-mcu/

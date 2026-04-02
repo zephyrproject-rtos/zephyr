@@ -34,7 +34,7 @@ Kit Features
 - Evaluation board for CYT4BF MCU4 in TEQFP package with 176 pins, dual-core Arm®Cortex® M7 CPUs running at 350-MHz and an Arm® Cortex® M0+ CPU running at 100-MHz
 - Full-system approach on the board, featuring Gigabit Ethernet PHY and connector, CAN FD transceiver, user LEDs, buttons, and potentiometer
 - Headers compatible with Arduino for interfacing Arduino shields
-- Fully compatible with ModusToolbox™ v3.0
+- Fully compatible with ModusToolbox™
 - KitProg3 on-board SWD programmer/debugger, USB-UART, and USB-I2C bridge functionality through USB connector
 - A 512-Mbit external QSPI NOR flash
 - Evaluation board supports operating voltages from 3.3 V to 5.0 V for CYT4BF

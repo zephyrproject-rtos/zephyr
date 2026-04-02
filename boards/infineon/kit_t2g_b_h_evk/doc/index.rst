@@ -37,7 +37,7 @@ Kit Features
 - Full-system approach on the board, featuring Gigabit Ethernet PHY and connector, CAN FD transceiver, user LEDs, buttons, and potentiometer
 - M.2 interface connector for interfacing radio modules based on AIROC™ Wi-Fi & Bluetooth®combos (currently not - supported)
 - Headers compatible with Arduino for interfacing Arduino shields
-- Fully compatible with ModusToolbox™ v3.0
+- Fully compatible with ModusToolbox™
 - KitProg3 on-board SWD programmer/debugger, USB-UART, and USB-I2C bridge functionality through USB connector
 - Digilent dual PMOD SMIF header for interfacing HYPERBUS™ memories (currently not supported)
 - A 512-Mbit external QSPI NOR flash

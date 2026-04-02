@@ -150,10 +150,10 @@ Errata
     https://www.infineon.com/assets/row/public/documents/30/49/infineon-psoc-6-mcu-cy8c62x8-cy8c62xa-datasheet-en.pdf
 
 .. _PSOC 62 MCU Architecture Reference Manual:
-    https://www.cypress.com/documentation/technical-reference-manuals/psoc-6-mcu-psoc-62-architecture-technical-reference-manual
+    https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software/?term=Technical%20Reference%20Manual&view=kwr#!designsupport
 
 .. _PSOC 62 MCU Register Reference Manual:
-    https://www.cypress.com/documentation/technical-reference-manuals/psoc-6-mcu-psoc-62-register-technical-reference-manual-trm
+    https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software/?term=Technical%20Reference%20Manual&view=kwr#!designsupport
 
 .. _CY8CPROTO-062-4343W PSOC 6 Wi-Fi BT Website:
     https://www.infineon.com/cms/en/product/evaluation-boards/cy8cproto-062-4343w/
