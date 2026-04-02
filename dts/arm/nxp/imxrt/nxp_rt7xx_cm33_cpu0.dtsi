@@ -1137,6 +1137,7 @@
 		compatible = "nxp,sema42";
 		reg = <0x18a000 0x1000>;
 		clocks = <&clkctl0 MCUX_SEMA42_CLK>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 30)>;
 		#hwlock-cells = <1>;
 		num-locks = <64>;
 		status = "disabled";
