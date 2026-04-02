@@ -100,6 +100,18 @@
 			status = "okay";
 		};
 	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* TF-A BL31 load region in DDR */
+		tfa_reserved: tfa@80000000 {
+			reg = <0x80000000 DT_SIZE_K(512)>;
+			no-map;
+		};
+	};
 };
 
 &wkup_timer0 {
