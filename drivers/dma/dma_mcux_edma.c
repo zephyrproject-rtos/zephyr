@@ -19,6 +19,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/sys/barrier.h>
 
 #include <fsl_common.h>
@@ -52,6 +53,7 @@ struct dma_mcux_edma_config {
 #if DMA_MCUX_HAS_CHANNEL_GAP
 	uint32_t channel_gap[2];
 #endif
+	struct reset_dt_spec reset;
 	void (*irq_config_func)(const struct device *dev);
 	edma_tcd_t (*tcdpool)[CONFIG_DMA_TCD_QUEUE_SIZE];
 };
@@ -1026,6 +1028,21 @@ static int dma_mcux_edma_init(const struct device *dev)
 
 	DEVICE_MMIO_NAMED_MAP(dev, edma_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
+	if (config->reset.dev != NULL) {
+		int ret;
+
+		if (!device_is_ready(config->reset.dev)) {
+			LOG_ERR("reset controller not ready");
+			return -ENODEV;
+		}
+
+		ret = reset_line_deassert_dt(&config->reset);
+		if (ret != 0) {
+			LOG_ERR("Failed to deassert reset line (%d)", ret);
+			return ret;
+		}
+	}
+
 #if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
 	uint8_t i;
 
@@ -1176,6 +1193,7 @@ static int dma_mcux_edma_init(const struct device *dev)
 		.irq_config_func = dma_imx_config_func_##n,			\
 		.dmamux_reg_offset = DT_INST_PROP(n, dmamux_reg_offset),	\
 		DMA_MCUX_EDMA_CHANNEL_GAP(n)					\
+		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),			\
 		.tcdpool = dma_tcdpool##n,					\
 	};									\
 										\
