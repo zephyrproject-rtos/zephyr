@@ -215,8 +215,8 @@ static uint8_t bme680_calc_gas_wait(uint16_t dur)
 	return durval;
 }
 
-static int bme680_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int bme680_sample_fetch_impl(const struct device *dev, enum sensor_channel chan,
+				    struct bme680_reading *reading)
 {
 	struct bme680_data *data = dev->data;
 	struct bme_data_regs data_regs;
@@ -228,6 +228,10 @@ static int bme680_sample_fetch(const struct device *dev,
 	int ret;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+
+	if (chan != SENSOR_CHAN_ALL) {
+		return -ENOTSUP;
+	}
 
 	/* Trigger the measurement */
 	ret = bme680_reg_write(dev, BME680_REG_CTRL_MEAS, BME680_CTRL_MEAS_VAL);
@@ -251,7 +255,7 @@ static int bme680_sample_fetch(const struct device *dev,
 	} while (!(status & BME680_MSK_NEW_DATA));
 	LOG_DBG("New data after %d ms", cnt);
 
-	ret = bme680_reg_read(dev, BME680_REG_FIELD0, &data_regs, sizeof(data_regs));
+	ret = bme680_reg_read(dev, BME680_REG_FIELD0, (uint8_t *)&data_regs, sizeof(data_regs));
 	if (ret < 0) {
 		return ret;
 	}
@@ -267,8 +271,30 @@ static int bme680_sample_fetch(const struct device *dev,
 	bme680_calc_press(data, adc_press);
 	bme680_calc_humidity(data, adc_hum);
 	bme680_calc_gas_resistance(data, gas_range, adc_gas_res);
+
+	if (reading != NULL) {
+		reading->comp_temp = data->calc_temp;
+		reading->comp_press = data->calc_press;
+		reading->comp_humidity = data->calc_humidity;
+		reading->comp_gas = data->calc_gas_resistance;
+	}
+
 	return 0;
 }
+
+#ifdef CONFIG_SENSOR_ASYNC_API
+int bme680_sample_fetch_helper(const struct device *dev, enum sensor_channel chan,
+			       struct bme680_reading *reading)
+{
+	return bme680_sample_fetch_impl(dev, chan, reading);
+}
+#endif
+
+static int bme680_sample_fetch(const struct device *dev, enum sensor_channel chan)
+{
+	return bme680_sample_fetch_impl(dev, chan, NULL);
+}
+
 
 static int bme680_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
@@ -483,6 +509,10 @@ static int bme680_init(const struct device *dev)
 static DEVICE_API(sensor, bme680_api_funcs) = {
 	.sample_fetch = bme680_sample_fetch,
 	.channel_get = bme680_channel_get,
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = bme680_submit,
+	.get_decoder = bme680_get_decoder,
+#endif
 };
 
 /* Initializes a struct bme680_config for an instance on a SPI bus. */
