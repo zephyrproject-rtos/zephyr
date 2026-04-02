@@ -11,3 +11,5 @@ tests:
     build_only: true
     integration_platforms:
       - mps3/corstone300/fvp
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
