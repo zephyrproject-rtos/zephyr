@@ -24,6 +24,7 @@
 #include <zephyr/logging/log_output_dict.h>
 #include <zephyr/logging/log_output_custom.h>
 #include <zephyr/linker/utils.h>
+#include <zephyr/arch/arch_interface.h>
 
 #if CONFIG_USERSPACE && CONFIG_LOG_ALWAYS_RUNTIME
 #include <zephyr/app_memory/app_memdomain.h>
@@ -69,6 +70,8 @@ LOG_MODULE_REGISTER(log);
 #ifndef CONFIG_LOG_FAILURE_REPORT_PERIOD
 #define CONFIG_LOG_FAILURE_REPORT_PERIOD 0
 #endif
+
+#define LOG_NO_CPU_OWNER (-1)
 
 #ifndef CONFIG_LOG_ALWAYS_RUNTIME
 BUILD_ASSERT(!IS_ENABLED(CONFIG_NO_OPTIMIZATIONS),
@@ -118,6 +121,7 @@ static log_timestamp_t prev_timestamp;
 static atomic_t unordered_cnt;
 static uint64_t last_failure_report;
 static struct k_spinlock process_lock;
+static atomic_t process_lock_owner_cpu = ATOMIC_INIT(LOG_NO_CPU_OWNER);
 
 static STRUCT_SECTION_ITERABLE(log_msg_ptr, log_msg_ptr);
 static STRUCT_SECTION_ITERABLE_ALTERNATE(log_mpsc_pbuf, mpsc_pbuf_buffer, log_buffer);
@@ -681,17 +685,26 @@ struct log_msg *z_log_msg_alloc(uint32_t wlen)
 static void msg_commit(struct mpsc_pbuf_buffer *buffer, struct log_msg *msg)
 {
 	union log_msg_generic *m = (union log_msg_generic *)msg;
+	bool lock_acquired = false;
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		k_spinlock_key_t key;
+#ifdef CONFIG_SMP
+		int curr_cpu = arch_curr_cpu()->id;
+#else
+		int curr_cpu = 0;
+#endif
 
-		if (IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
+		if (IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT) &&
+		    atomic_cas(&process_lock_owner_cpu, LOG_NO_CPU_OWNER, curr_cpu)) {
 			key = k_spin_lock(&process_lock);
+			lock_acquired = true;
 		}
 
 		msg_process(m);
 
-		if (IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
+		if (IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT) && lock_acquired) {
+			atomic_set(&process_lock_owner_cpu, LOG_NO_CPU_OWNER);
 			k_spin_unlock(&process_lock, key);
 		}
 
