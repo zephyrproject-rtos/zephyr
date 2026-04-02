@@ -33,6 +33,8 @@
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
 		zephyr,bt-hci = &bt_hci_uart;
+		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
 	};
 };
 
