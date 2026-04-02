@@ -810,6 +810,20 @@ NXP
   On Kinetis KE1xF, this overlay is also required when
   :kconfig:option:`CONFIG_PM` is enabled.
 
+* :dtcompatible:`nxp,imx-flexspi-nor` compatible nodes now have
+  a :dtcompatible:`soc-nv-flash` compatible child node to describe
+  the flash memory. The ``nxp,imx-flexspi-nor`` node acts as the
+  flash controller (renamed to ``flash-controller@0``),
+  and ``erase-block-size``, ``write-block-size`` properties, as well
+  as ``partitions`` node, are moved into the flash chip node.
+  Out-of-tree boards must update their devicetrees accordingly.
+
+* ``zephyr,flash`` chosen property must point to the
+  :dtcompatible:`soc-nv-flash` compatible node.
+  * ``zephyr,flash-controller`` chosen property must point to the
+  :dtcompatible:`nxp,imx-flexspi-nor` compatible node.
+  * A ``ranges`` property is required on the controller node.
+
 QSPI
 ====
 
