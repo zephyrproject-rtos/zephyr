@@ -4,25 +4,11 @@ Overview
 ********
 
 The nRF51 Development Kit (PCA10028) hardware provides support for the Nordic
-Semiconductor nRF51822 ARM Cortex-M0 CPU and the following devices:
-
-* :abbr:`ADC (Analog to Digital Converter)`
-* CLOCK
-* FLASH
-* :abbr:`GPIO (General Purpose Input Output)`
-* :abbr:`I2C (Inter-Integrated Circuit)`
-* :abbr:`NVIC (Nested Vectored Interrupt Controller)`
-* RADIO (Bluetooth Low Energy)
-* :abbr:`RTC (nRF RTC System Clock)`
-* Segger RTT (RTT Console)
-* :abbr:`SPI (Serial Peripheral Interface)`
-* :abbr:`UART (Universal asynchronous receiver-transmitter)`
-* :abbr:`WDT (Watchdog Timer)`
+Semiconductor nRF51822 ARM Cortex-M0 CPU.
 
 More information about the board can be found at the
 `nRF51 DK website`_. The `nRF51 Development Kit User Guide`_
 contains the processor's information and the datasheet.
-
 
 Hardware
 ********
