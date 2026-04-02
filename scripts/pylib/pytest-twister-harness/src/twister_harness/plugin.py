@@ -75,7 +75,7 @@ def pytest_addoption(parser: pytest.Parser):
     )
     twister_harness_group.addoption(
         '--runner',
-        help='Use the specified west runner (pyocd, nrfjprog, etc.).'
+        help='Use the specified west runner (pyocd, nrfjprog, etc.) when running west flash.'
     )
     twister_harness_group.addoption(
         '--runner-params',

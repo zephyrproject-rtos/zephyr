@@ -115,8 +115,9 @@ class HardwareAdapter(DeviceAdapter):
     def _device_launch(self) -> None:
         """Flash and run application on a device and connect with serial port."""
         if self.device_config.flash_before:
-            # For hardware devices with shared USB or software USB, connect after flashing.
-            # Retry for up to 10 seconds for USB-CDC based devices to enumerate.
+            # For hardware devices with shared USB or software USB or RTT, connect after
+            # flashing. Retry for up to 10 seconds for USB-CDC based devices to
+            # enumerate.
             self._flash_and_run()
             attempt = 0
             while True:
