@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -28,6 +29,7 @@ struct nxp_lp_flexcomm_data {
 
 struct nxp_lp_flexcomm_config {
 	LP_FLEXCOMM_Type *base;
+	struct reset_dt_spec reset;
 	void (*irq_config_func)(const struct device *dev);
 };
 
@@ -109,6 +111,19 @@ static int nxp_lp_flexcomm_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	if (config->reset.dev != NULL) {
+		int ret;
+
+		if (!device_is_ready(config->reset.dev)) {
+			return -ENODEV;
+		}
+
+		ret = reset_line_deassert_dt(&config->reset);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
 	instance = LP_FLEXCOMM_GetInstance(config->base);
 
 	if (uart_found && i2c_found) {
@@ -142,6 +157,7 @@ static int nxp_lp_flexcomm_init(const struct device *dev)
 										\
 	static const struct nxp_lp_flexcomm_config nxp_lp_flexcomm_config_##n = { \
 		.base = (LP_FLEXCOMM_Type *)DT_INST_REG_ADDR(n),		\
+		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),			\
 		.irq_config_func = nxp_lp_flexcomm_config_func_##n,		\
 	};									\
 										\
