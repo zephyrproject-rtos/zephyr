@@ -10,7 +10,7 @@ config TAINT_BLOBS_TFLM
 config TAINT_BLOBS_TFLM_ETHOSU
 	bool "Choose Vela-compiled model targeting Ethos-U"
 	default y
-	depends on ETHOS_U_ARM || ETHOS_U_NUMAKER || ETHOS_U_RENESAS
+	depends on ETHOS_U_ARM || ETHOS_U_NUMAKER || ETHOS_U_RENESAS || ETHOS_U_INFINEON
 	select TAINT_BLOBS_TFLM
 
 config SAMPLE_TFLM_ETHOSU_PMU
