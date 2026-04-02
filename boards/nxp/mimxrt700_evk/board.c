@@ -462,7 +462,6 @@ void board_early_init_hook(void)
 	CLOCK_InitAudioPfd(kCLOCK_Pfd0, 24U); /* Target 400MHZ. */
 	CLOCK_AttachClk(kAUDIO_PLL_PFD0_to_SDIO0);
 	CLOCK_SetClkDiv(kCLOCK_DivSdio0Clk, 1);
-	RESET_ClearPeripheralReset(kUSDHC0_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
