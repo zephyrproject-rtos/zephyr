@@ -2030,12 +2030,90 @@ static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 	bool appearance = false;
 	ssize_t ad_len = 0;
 	ssize_t sd_len = 0;
-	int err;
+	int err = 0;
 	bool with_name = true;
 	bool name_ad = false;
 	bool name_sd = true;
+	enum { INTERVAL, INTERVAL_MIN, INTERVAL_MAX, };
+	struct sys_getopt_state *state = sys_getopt_state_get();
+	static const struct sys_getopt_option long_options[] = {
+		{ "interval", sys_getopt_required_argument, NULL, INTERVAL },
+		{ "int-min", sys_getopt_required_argument, NULL, INTERVAL_MIN },
+		{ "int-max", sys_getopt_required_argument, NULL, INTERVAL_MAX },
+		{ "help", sys_getopt_no_argument, NULL, 'h' },
+		{},
+	};
+	int opt;
 
-	if (!strcmp(argv[1], "off")) {
+	param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
+	param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
+	param.id = selected_id;
+
+	while (true) {
+		unsigned long val;
+
+		opt = sys_getopt_long(argc, argv, "h", long_options, NULL);
+		if (opt == -1) {
+			break;
+		}
+
+		switch (opt) {
+		case INTERVAL:
+			val = shell_strtoul(state->optarg, 0, &err);
+			if (val > UINT16_MAX) {
+				shell_error(sh, "Interval value too large");
+				return -EINVAL;
+			}
+			param.interval_min = val;
+			param.interval_max = param.interval_min;
+			break;
+		case INTERVAL_MIN:
+			val = shell_strtoul(state->optarg, 0, &err);
+			if (val > UINT16_MAX) {
+				shell_error(sh, "Interval value too large");
+				return -EINVAL;
+			}
+			param.interval_min = val;
+			break;
+		case INTERVAL_MAX:
+			val = shell_strtoul(state->optarg, 0, &err);
+			if (val > UINT16_MAX) {
+				shell_error(sh, "Interval value too large");
+				return -EINVAL;
+			}
+			param.interval_max = val;
+			break;
+		case 'h':
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		case '?':
+		case ':':
+			if (state->optind > 0 && argv[state->optind - 1] != NULL) {
+				shell_error(sh, "Invalid option %s", argv[state->optind - 1]);
+			} else {
+				shell_error(sh, "Invalid option");
+			}
+			return -EINVAL;
+		default:
+			shell_error(sh, "Invalid option %c\n", opt);
+			return -EINVAL;
+		}
+	}
+
+	if (err != 0) {
+		shell_error(sh, "Unable to convert integer");
+		return -EINVAL;
+	}
+
+	/* Jump to the beginning of non-getopt parameters */
+	argc -= state->optind;
+	argv += state->optind;
+
+	if (argc < 1U) {
+		goto fail;
+	}
+
+	if (!strcmp(argv[0], "off")) {
 		if (bt_le_adv_stop() < 0) {
 			shell_error(sh, "Failed to stop advertising");
 			return -ENOEXEC;
@@ -2046,19 +2124,15 @@ static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 		return 0;
 	}
 
-	param.id = selected_id;
-	param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
-	param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
-
-	if (!strcmp(argv[1], "on")) {
+	if (!strcmp(argv[0], "on")) {
 		param.options = BT_LE_ADV_OPT_CONN;
-	} else if (!strcmp(argv[1], "nconn")) {
+	} else if (!strcmp(argv[0], "nconn")) {
 		param.options = 0U;
 	} else {
 		goto fail;
 	}
 
-	for (size_t argn = 2; argn < argc; argn++) {
+	for (size_t argn = 1U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (!strcmp(arg, "discov")) {
@@ -5230,11 +5304,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #endif
 #if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advertise, NULL,
+		      "([--int-min <val>] [--int-max <val>] | [--interval <val>]) "
 		      "<type: off, on, nconn> [mode: discov, non_discov] "
 		      "[filter-accept-list: fal, fal-scan, fal-conn] [identity] [no-name] "
 		      "[name-ad] [appearance] "
 		      "[disable-37] [disable-38] [disable-39]",
-		      cmd_advertise, 2, 8),
+		      cmd_advertise, 2, 12),
 #if defined(CONFIG_BT_PERIPHERAL)
 	SHELL_CMD_ARG(directed-adv, NULL, HELP_ADDR_LE " [mode: low] "
 		      "[identity] [dir-rpa]",
