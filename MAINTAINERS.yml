@@ -2542,6 +2542,8 @@ Documentation Infrastructure:
     - tests/drivers/syscon/
   tests:
     - drivers.syscon
+  labels:
+    - "area: Syscon"
 
 "Drivers: System timer":
   status: maintained
