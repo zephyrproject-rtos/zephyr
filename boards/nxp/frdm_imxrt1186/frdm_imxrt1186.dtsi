@@ -15,6 +15,7 @@
 		led2 = &green_led;
 		sw0 = &user_button;
 		eeprom-0 = &eeprom0;
+		die-temp0 = &tmpsns;
 	};
 
 	chosen {
@@ -260,5 +261,9 @@
 /* Internal port connecting switch to CPU */
 &switch_port4 {
 	local-mac-address = [00 00 00 01 08 00];
+	status = "okay";
+};
+
+&tmpsns {
 	status = "okay";
 };
