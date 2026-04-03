@@ -122,7 +122,9 @@ static int nrf_mram_write_and_verify_word(uint32_t addr, const void *data, size_
 	uint8_t retries = CONFIG_NRF_MRAM_MAX_RETRIES;
 
 	while (retries--) {
-		memcpy((void *)addr, data, len);
+		for (size_t i = 0; i < len / 4; i++) {
+			((uint32_t *)addr)[i] = ((const uint32_t *)data)[i];
+		}
 		if (!nrf_mram_detect_corrupt_word(addr)) {
 			return 0;
 		}
@@ -153,7 +155,9 @@ static int nrf_mram_erase_and_verify_word(uint32_t addr, size_t len)
 	uint8_t retries = CONFIG_NRF_MRAM_MAX_RETRIES;
 
 	while (retries--) {
-		memset((void *)addr, ERASE_VALUE, len);
+		for (size_t i = 0; i < len / 4; i++) {
+			((uint32_t *)addr)[i] = 0xffffffffU;
+		}
 		if (!nrf_mram_detect_corrupt_word(addr)) {
 			return 0;
 		}
