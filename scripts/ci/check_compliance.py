@@ -2726,11 +2726,18 @@ def inheritors(klass):
     return subclasses
 
 
-def annotate(res):
+def annotate(res, doc=None):
     """
     https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#about-workflow-commands
     """
-    msg = res.message.replace('%', '%25').replace('\n', '%0A').replace('\r', '%0D')
+
+    def _esc(msg: str) -> str:
+        return msg.replace('%', '%25').replace('\n', '%0A').replace('\r', '%0D')
+
+    msg = _esc(res.message)
+    if doc:
+        msg += '%0A' + _esc(doc)
+
     notice = (
         f'::{res.severity} file={res.file}'
         + (f',line={res.line}' if res.line else '')
@@ -2878,7 +2885,7 @@ def _main(args):
         # Annotate if required
         if args.annotate:
             for res in test.fmtd_failures:
-                annotate(res)
+                annotate(res, test.doc)
 
         suite.add_testcase(test.case)
 
