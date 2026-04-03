@@ -392,6 +392,11 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
 		return -EFAULT;
 	}
 
+	if ((offset + size) < offset) {
+		LOG_ERR("Requested range overflows SIZE_MAX");
+		return -EFAULT;
+	}
+
 	ctx->fdev = fdev;
 	ctx->buf = buf;
 	ctx->buf_len = buf_len;

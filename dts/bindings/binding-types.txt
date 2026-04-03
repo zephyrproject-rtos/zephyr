@@ -92,7 +92,7 @@ opamp	OPAMP (Operational Amplifier)
 options	Options
 ospi	OCTOSPI (Octal Serial Peripheral Interface)
 otp	OTP (One-Time Programmable) memory
-p_state Power state
+p_state	Performance state
 pcie	PCIe (Peripheral Component Interconnect Express)
 peci	PECI (Platform Environment Control Interface)
 phy	PHY
@@ -133,6 +133,7 @@ tcpc	USB Type-C Port Controller
 test	Test
 timer	Timer
 timestamp	Timestamp
+uaol	USB (Universal Serial Bus) Audio Offload Link
 usb	USB (Universal Serial Bus)
 usb-c	USB (Universal Serial Bus) Type-C
 video	Video
@@ -141,6 +142,7 @@ virtualization	Virtualization
 w1	1-Wire
 watchdog	Watchdog
 wifi	Wi-Fi
+wuc	Wakeup Controller
 xen	Xen
 xspi	xSPI (Expanded Serial Peripheral Interface)
 # zephyr-keep-sorted-stop

@@ -83,7 +83,9 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 		status->link_mode = wlan_info.wireless_mode;
 		status->iface_mode = WIFI_MODE_INFRA;
 		status->channel = wlan_info.channel_number;
-		status->twt_capable = true;
+		if (status->link_mode >= WIFI_6) {
+			status->twt_capable = true;
+		}
 
 		ret = sl_wifi_get_mfp(interface, &mfp);
 		if (ret) {

@@ -47,9 +47,6 @@ if version.parse(elftools.__version__) < version.parse('0.24'):
 if sys.platform == 'linux':
     from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient
 
-from twisterlib.constants import ZEPHYR_BASE
-
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from domains import Domains
 from twisterlib.coverage import run_coverage_instance
 from twisterlib.environment import TwisterEnv

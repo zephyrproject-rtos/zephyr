@@ -27,7 +27,7 @@
 		zephyr,console = &uart4;
 		zephyr,shell-uart = &uart4;
 		zephyr,entropy = &trng;
-		zephyr,canbus = &canfd1;
+		zephyr,canbus = &canfd0;
 		zephyr,crc = &crc;
 	};
 
@@ -199,7 +199,7 @@
 	status = "okay";
 };
 
-&port_irq13 {
+&port_irq12 {
 	interrupts = <2 12>;
 };
 
@@ -209,7 +209,7 @@
 	auto-refresh-interval = <SDRAM_AUTO_REFRESH_INTERVAL_10CYCLES>;
 	auto-refresh-count = <SDRAM_AUTO_REFRESH_COUNT_8TIMES>;
 	precharge-cycle-count = <SDRAM_AUTO_PRECHARGE_CYCLE_3CYCLES>;
-	multiplex-addr-shift = "10-bit";
+	multiplex-addr-shift = "9-bit";
 	endian-mode = "little-endian";
 	continuous-access;
 	bus-width = "16-bit";

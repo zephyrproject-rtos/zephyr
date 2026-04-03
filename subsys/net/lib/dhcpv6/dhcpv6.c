@@ -1225,8 +1225,8 @@ static int dhcpv6_parse_option_dns_servers(struct net_pkt *pkt, uint16_t length,
 
 	*server_count = addr_count;
 
-	if (length > 0) {
-		net_pkt_skip(pkt, length);
+	if (net_pkt_skip(pkt, length) < 0) {
+		return -ENOBUFS;
 	}
 
 	return 0;
