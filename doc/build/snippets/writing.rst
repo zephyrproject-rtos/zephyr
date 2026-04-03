@@ -146,7 +146,16 @@ This :file:`snippet.yml` adds :file:`foo.overlay` to the build:
      EXTRA_DTC_OVERLAY_FILE: foo.overlay
 
 The path to :file:`foo.overlay` is relative to the directory containing
-:file:`snippet.yml`.
+:file:`snippet.yml`. Multiple ``.overlay`` files can also be provided as
+a list:
+
+.. code-block:: yaml
+
+   name: foo
+   append:
+     EXTRA_DTC_OVERLAY_FILE:
+       - foo.overlay
+       - bar.overlay
 
 .. _snippets-conf-files:
 
@@ -162,7 +171,8 @@ This :file:`snippet.yml` adds :file:`foo.conf` to the build:
      EXTRA_CONF_FILE: foo.conf
 
 The path to :file:`foo.conf` is relative to the directory containing
-:file:`snippet.yml`.
+:file:`snippet.yml`. Multiple ``.conf`` files can also be provided as
+a list.
 
 Sysbuild ``.conf`` files
 ************************
@@ -176,7 +186,8 @@ This :file:`snippet.yml` adds :file:`foo.conf` to the sysbuild configuration:
      SB_EXTRA_CONF_FILE: foo.conf
 
 The path to :file:`foo.conf` is relative to the directory containing
-:file:`snippet.yml`.
+:file:`snippet.yml`. Multiple sysbuild ``.conf`` files can also be provided
+as a list.
 
 ``DTS_EXTRA_CPPFLAGS``
 **********************

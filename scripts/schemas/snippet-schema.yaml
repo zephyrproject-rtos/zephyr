@@ -42,11 +42,23 @@ $defs:
     type: object
     properties:
       EXTRA_DTC_OVERLAY_FILE:
-        type: string
+        oneOf:
+          - type: string
+          - type: array
+            items:
+              type: string
       EXTRA_CONF_FILE:
-        type: string
+        oneOf:
+          - type: string
+          - type: array
+            items:
+              type: string
       SB_EXTRA_CONF_FILE:
-        type: string
+        oneOf:
+          - type: string
+          - type: array
+            items:
+              type: string
       DTS_EXTRA_CPPFLAGS:
         type: string
     additionalProperties: false
