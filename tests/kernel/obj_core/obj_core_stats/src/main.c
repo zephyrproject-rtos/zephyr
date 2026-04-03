@@ -47,6 +47,7 @@ void busy_thread_entry(void *p1, void *p2, void *p3)
 #if !defined(CONFIG_ARCH_POSIX) && !defined(CONFIG_SPARC) && !defined(CONFIG_MIPS)
 ZTEST(obj_core_stats_system, test_obj_core_stats_system)
 {
+#if defined(CONFIG_OBJ_CORE_SYSTEM)
 	int  status;
 	struct k_cycle_stats  kernel_raw[CONFIG_MP_MAX_NUM_CPUS];
 	struct k_cycle_stats  cpu_raw;
@@ -134,11 +135,15 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_system)
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 	zassert_true(sum_query.idle_cycles >= kernel_query.idle_cycles);
 #endif
+#else
+	ztest_test_skip();
+#endif
 }
 #endif  /* !CONFIG_ARCH_POSIX && !CONFIG_SPARC && !CONFIG_MIPS */
 
 ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_reset)
 {
+#if defined(CONFIG_OBJ_CORE_SYSTEM)
 	int  status;
 
 	for (unsigned int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
@@ -147,10 +152,14 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_reset)
 			      "Expected %d, got %d on CPU%d\n",
 			      -ENOTSUP, status, i);
 	}
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_disable)
 {
+#if defined(CONFIG_OBJ_CORE_SYSTEM)
 	int  status;
 
 	for (unsigned int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
@@ -159,10 +168,14 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_disable)
 			      "Expected %d, got %d on CPU%d\n",
 			      -ENOTSUP, status, i);
 	}
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_enable)
 {
+#if defined(CONFIG_OBJ_CORE_SYSTEM)
 	int  status;
 
 	for (unsigned int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
@@ -171,33 +184,48 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_enable)
 			      "Expected %d, got %d on CPU%d\n",
 			      -ENOTSUP, status, i);
 	}
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core_stats_system, test_obj_core_stats_kernel_reset)
 {
+#if defined(CONFIG_OBJ_CORE_SYSTEM)
 	int  status;
 
 	status = k_obj_core_stats_reset(K_OBJ_CORE(&_kernel));
 	zassert_equal(status, -ENOTSUP, "Expected %d, got %d\n",
 		      -ENOTSUP, status);
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core_stats_system, test_obj_core_stats_kernel_disable)
 {
+#if defined(CONFIG_OBJ_CORE_SYSTEM)
 	int  status;
 
 	status = k_obj_core_stats_disable(K_OBJ_CORE(&_kernel));
 	zassert_equal(status, -ENOTSUP, "Expected %d, got %d\n",
 		      -ENOTSUP, status);
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core_stats_system, test_obj_core_stats_kernel_enable)
 {
+#if defined(CONFIG_OBJ_CORE_SYSTEM)
 	int  status;
 
 	status = k_obj_core_stats_enable(K_OBJ_CORE(&_kernel));
 	zassert_equal(status, -ENOTSUP, "Expected %d, got %d\n",
 		      -ENOTSUP, status);
+#else
+	ztest_test_skip();
+#endif
 }
 
 /***************** THREADS ******************/
@@ -220,6 +248,7 @@ void test_thread_entry(void *p1, void *p2, void *p3)
 
 ZTEST(obj_core_stats_thread, test_obj_core_stats_thread_test)
 {
+#if defined(CONFIG_OBJ_CORE_THREAD)
 	struct k_cycle_stats raw1;
 	struct k_cycle_stats raw2;
 	struct k_thread_runtime_stats  query1;
@@ -376,6 +405,9 @@ ZTEST(obj_core_stats_thread, test_obj_core_stats_thread_test)
 #endif
 
 	k_thread_abort(test_thread);
+#else
+	ztest_test_skip();
+#endif
 }
 #endif /* !CONFIG_ARCH_POSIX && !CONFIG_SPARC && !CONFIG_MIPS */
 
@@ -383,27 +415,36 @@ ZTEST(obj_core_stats_thread, test_obj_core_stats_thread_test)
 
 ZTEST(obj_core_stats_mem_block, test_sys_mem_block_enable)
 {
+#if defined(CONFIG_OBJ_CORE_SYSTEM)
 	int  status;
 
 	status = k_obj_core_stats_enable(K_OBJ_CORE(&mem_block));
 	zassert_equal(status, -ENOTSUP,
 		      "Not supposed to be supported. Got %d, not %d\n",
 		      status, -ENOTSUP);
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core_stats_mem_block, test_sys_mem_block_disable)
 {
+#if defined(CONFIG_OBJ_CORE_SYSTEM)
 	int  status;
 
 	status = k_obj_core_stats_disable(K_OBJ_CORE(&mem_block));
 	zassert_equal(status, -ENOTSUP,
 		      "Not supposed to be supported. Got %d, not %d\n",
 		      status, -ENOTSUP);
+#else
+	ztest_test_skip();
+#endif
 }
 
 static void test_mem_block_raw(const char *str,
 			       struct sys_mem_blocks_info *expected)
 {
+#if defined(CONFIG_OBJ_CORE_SYSTEM)
 	int  status;
 	struct sys_mem_blocks_info  raw;
 
@@ -426,11 +467,15 @@ static void test_mem_block_raw(const char *str,
 		      "%s: Expected max %u used, got %d\n",
 		      str, expected->max_used_blocks, raw.max_used_blocks);
 #endif
+#else
+	ztest_test_skip();
+#endif
 }
 
 static void test_mem_block_query(const char *str,
 				 struct sys_memory_stats *expected)
 {
+#if defined(CONFIG_OBJ_CORE_SYSTEM)
 	struct sys_memory_stats query;
 	int  status;
 
@@ -451,10 +496,14 @@ static void test_mem_block_query(const char *str,
 		      str, expected->max_allocated_bytes,
 		      query.max_allocated_bytes);
 #endif
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core_stats_mem_block, test_obj_core_stats_mem_block)
 {
+#if defined(CONFIG_OBJ_CORE_SYSTEM)
 	struct sys_mem_blocks_info  raw =  {
 		.num_blocks = 4, .blk_sz_shift = 5,
 #ifdef CONFIG_SYS_MEM_BLOCKS_RUNTIME_STATS
@@ -537,32 +586,44 @@ ZTEST(obj_core_stats_mem_block, test_obj_core_stats_mem_block)
 
 	/* Cleanup - Free 2nd block */
 	sys_mem_blocks_free(&mem_block, 1, &mem2);
+#else
+	ztest_test_skip();
+#endif
 }
 
 /***************** MEMORY SLABS *********************/
 
 ZTEST(obj_core_stats_mem_slab,  test_mem_slab_enable)
 {
+#if defined(CONFIG_OBJ_CORE_MEM_SLAB)
 	int  status;
 
 	status = k_obj_core_stats_disable(K_OBJ_CORE(&mem_slab));
 	zassert_equal(status, -ENOTSUP,
 		      "Not supposed to be supported. Got %d, not %d\n",
 		      status, -ENOTSUP);
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core_stats_mem_slab,  test_mem_slab_disable)
 {
+#if defined(CONFIG_OBJ_CORE_MEM_SLAB)
 	int  status;
 
 	status = k_obj_core_stats_disable(K_OBJ_CORE(&mem_slab));
 	zassert_equal(status, -ENOTSUP,
 		      "Not supposed to be supported. Got %d, not %d\n",
 		      status, -ENOTSUP);
+#else
+	ztest_test_skip();
+#endif
 }
 
 static void test_mem_slab_raw(const char *str, struct k_mem_slab_info *expected)
 {
+#if defined(CONFIG_OBJ_CORE_MEM_SLAB)
 	int  status;
 	struct k_mem_slab_info  raw;
 
@@ -585,11 +646,15 @@ static void test_mem_slab_raw(const char *str, struct k_mem_slab_info *expected)
 		      "%s: Expected max %u used, got %u\n",
 		      str, expected->max_used, raw.max_used);
 #endif
+#else
+	ztest_test_skip();
+#endif
 }
 
 static void test_mem_slab_query(const char *str,
 				struct sys_memory_stats *expected)
 {
+#if defined(CONFIG_OBJ_CORE_MEM_SLAB)
 	struct sys_memory_stats query;
 	int  status;
 
@@ -608,10 +673,14 @@ static void test_mem_slab_query(const char *str,
 		      "%s: Expected %zu max_allocated bytes, got %zu\n",
 		      str, expected->max_allocated_bytes,
 		      query.max_allocated_bytes);
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core_stats_mem_slab, test_obj_core_stats_mem_slab)
 {
+#if defined(CONFIG_OBJ_CORE_MEM_SLAB)
 	struct k_mem_slab_info  raw =  {
 		.num_blocks = 4, .block_size = 32, .num_used = 0,
 #ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
@@ -691,6 +760,9 @@ ZTEST(obj_core_stats_mem_slab, test_obj_core_stats_mem_slab)
 
 	/* Cleanup - Free 2nd block */
 	k_mem_slab_free(&mem_slab, mem2);
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST_SUITE(obj_core_stats_system, NULL, NULL,

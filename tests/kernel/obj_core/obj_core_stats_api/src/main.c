@@ -41,16 +41,20 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_enable)
 	 * for statistics (semaphores).
 	 */
 
+#if defined(CONFIG_OBJ_CORE_SEMAPHORE)
+
 	status = k_obj_core_stats_enable(K_OBJ_CORE(&test_sem));
 	zassert_equal(status, -ENOTSUP,
 		      "Expected %d, got %d\n", -ENOTSUP, status);
-
+#endif
+#if defined(CONFIG_OBJ_CORE_THREAD)
 	saved_enable = K_OBJ_CORE(test_thread)->type->stats_desc->enable;
 	K_OBJ_CORE(test_thread)->type->stats_desc->enable = NULL;
 	status = k_obj_core_stats_enable(K_OBJ_CORE(test_thread));
 	zassert_equal(status, -ENOTSUP,
 		      "Expected %d, got %d\n", -ENOTSUP, status);
 	K_OBJ_CORE(test_thread)->type->stats_desc->enable = saved_enable;
+#endif
 
 	/*
 	 * Note: Testing the stats enable function pointer is done in another
@@ -72,16 +76,20 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_disable)
 	 * for statistics (semaphores).
 	 */
 
+#if defined(CONFIG_OBJ_CORE_SEMAPHORE)
 	status = k_obj_core_stats_disable(K_OBJ_CORE(&test_sem));
 	zassert_equal(status, -ENOTSUP,
 		      "Expected %d, got %d\n", -ENOTSUP, status);
+#endif
 
+#if defined(CONFIG_OBJ_CORE_THREAD)
 	saved_disable = K_OBJ_CORE(test_thread)->type->stats_desc->disable;
 	K_OBJ_CORE(test_thread)->type->stats_desc->disable = NULL;
 	status = k_obj_core_stats_disable(K_OBJ_CORE(test_thread));
 	zassert_equal(status, -ENOTSUP,
 		      "Expected %d, got %d\n", -ENOTSUP, status);
 	K_OBJ_CORE(test_thread)->type->stats_desc->disable = saved_disable;
+#endif
 
 	/*
 	 * Note: Testing the stats disable function pointer is done in
@@ -103,17 +111,20 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_reset)
 	 * for statistics (semaphores).
 	 */
 
+#if defined(CONFIG_OBJ_CORE_SEMAPHORE)
 	status = k_obj_core_stats_reset(K_OBJ_CORE(&test_sem));
 	zassert_equal(status, -ENOTSUP,
 		      "Expected %d, got %d\n", -ENOTSUP, status);
+#endif
 
+#if defined(CONFIG_OBJ_CORE_THREAD)
 	saved_reset = K_OBJ_CORE(test_thread)->type->stats_desc->reset;
 	K_OBJ_CORE(test_thread)->type->stats_desc->reset = NULL;
 	status = k_obj_core_stats_reset(K_OBJ_CORE(test_thread));
 	zassert_equal(status, -ENOTSUP,
 		      "Expected %d, got %d\n", -ENOTSUP, status);
 	K_OBJ_CORE(test_thread)->type->stats_desc->reset = saved_reset;
-
+#endif
 	/*
 	 * Note: Testing the stats reset function pointer is done in
 	 * another set of tests.
@@ -135,11 +146,13 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_query)
 	 * for statistics (semaphores).
 	 */
 
+#if defined(CONFIG_OBJ_CORE_SEMAPHORE)
 	status = k_obj_core_stats_query(K_OBJ_CORE(&test_sem), &query,
 					sizeof(struct k_thread_runtime_stats));
 	zassert_equal(status, -ENOTSUP,
 		      "Expected %d, got %d\n", -ENOTSUP, status);
-
+#endif
+#if defined(CONFIG_OBJ_CORE_THREAD)
 	saved_query = K_OBJ_CORE(test_thread)->type->stats_desc->query;
 	K_OBJ_CORE(test_thread)->type->stats_desc->query = NULL;
 	status = k_obj_core_stats_query(K_OBJ_CORE(test_thread),
@@ -147,6 +160,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_query)
 	zassert_equal(status, -ENOTSUP,
 		      "Expected %d, got %d\n", -ENOTSUP, status);
 	K_OBJ_CORE(test_thread)->type->stats_desc->query = saved_query;
+#endif
 
 	/*
 	 * Note: Testing the stats query function pointer is done in
@@ -170,13 +184,14 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_raw)
 	 * for statistics (semaphores).
 	 */
 
+#if defined(CONFIG_OBJ_CORE_SEMAPHORE)
 	status = k_obj_core_stats_raw(K_OBJ_CORE(&test_sem),
 				      buffer, sizeof(buffer));
 	zassert_equal(status, -ENOTSUP,
 		      "Expected %d, got %d\n", -ENOTSUP, status);
-
+#endif
 	/* Force there to be no means to obtain raw data */
-
+#if defined(CONFIG_OBJ_CORE_THREAD)
 	saved_raw = K_OBJ_CORE(test_thread)->type->stats_desc->raw;
 	K_OBJ_CORE(test_thread)->type->stats_desc->raw = NULL;
 	status = k_obj_core_stats_raw(K_OBJ_CORE(test_thread),
@@ -213,7 +228,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_raw)
 	 * Note: Further testing the stats query function pointer is done in
 	 * another set of tests.
 	 */
-
+#endif
 	k_mutex_unlock(&test_mutex);
 }
 
@@ -229,11 +244,13 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_dereg)
 	 * not have them enabled (semaphores).
 	 */
 
+#if defined(CONFIG_OBJ_CORE_SEMAPHORE)
 	status = k_obj_core_stats_deregister(K_OBJ_CORE(&test_sem));
 	zassert_equal(status, -ENOTSUP, "Expected %d, got %d\n", 0, -ENOTSUP);
+#endif
 
 	/* De-register stats for the test thread. */
-
+#if defined(CONFIG_OBJ_CORE_THREAD)
 	status = k_obj_core_stats_deregister(K_OBJ_CORE(test_thread));
 	zassert_equal(status, 0, "Expected %d, got %d\n", 0, status);
 
@@ -249,7 +266,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_dereg)
 	status = k_obj_core_stats_register(K_OBJ_CORE(test_thread),
 					   &test_thread->base.usage,
 					   sizeof(struct k_cycle_stats));
-
+#endif
 	k_mutex_unlock(&test_mutex);
 }
 
@@ -271,6 +288,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_register)
 	 * (which does not currently exist).
 	 */
 
+#if defined(CONFIG_OBJ_CORE_SEMAPHORE)
 	status = k_obj_core_stats_register(K_OBJ_CORE(&test_sem),
 					   (void *)0xBAD0BAD1,
 					   42);
@@ -279,11 +297,12 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_register)
 		      "Expected %d, got %d\n"
 		      "--Were semaphore stats recently implemented?\n",
 		      -ENOTSUP, status);
+#endif
 	/*
 	 * Attempt to register stats for a thread with the wrong buffer
 	 * size.
 	 */
-
+#if defined(CONFIG_OBJ_CORE_THREAD)
 	status = k_obj_core_stats_register(K_OBJ_CORE(test_thread),
 					   buffer, sizeof(buffer) + 42);
 
@@ -318,7 +337,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_register)
 					   sizeof(test_thread->base.usage));
 	zassert_equal(status, 0,
 		      "Expected %d, got %d\n", 0, status);
-
+#endif
 	k_mutex_unlock(&test_mutex);
 }
 

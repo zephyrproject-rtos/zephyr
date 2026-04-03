@@ -126,6 +126,7 @@ static void common_obj_core_test(uint32_t type_id, const char *str,
 
 ZTEST(obj_core, test_obj_core_thread)
 {
+#if defined(CONFIG_OBJ_CORE_THREAD)
 	k_thread_create(&thread2, thread2_stack,
 			K_THREAD_STACK_SIZEOF(thread2_stack), thread_entry,
 			NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
@@ -170,10 +171,14 @@ ZTEST(obj_core, test_obj_core_thread)
 	status = k_obj_type_walk_unlocked(obj_type, obj_core_find_op,
 					  &walk_data);
 	zassert_equal(status, 0, "dynamic thread found with unlocked walk\n");
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core, test_obj_core_system)
 {
+#if defined(CONFIG_OBJ_CORE_SYSTEM)
 	int  i;
 	char cpu_str[16];
 
@@ -190,97 +195,152 @@ ZTEST(obj_core, test_obj_core_system)
 
 	common_obj_core_test(K_OBJ_TYPE_KERNEL_ID, "_kernel",
 			     K_OBJ_CORE(&_kernel), NULL);
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core, test_obj_core_sys_mem_block)
 {
+#if defined(CONFIG_SYS_MEM_BLOCKS)
 	common_obj_core_test(K_OBJ_TYPE_MEM_BLOCK_ID, "memory block",
 			     K_OBJ_CORE(&block1), NULL);
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core, test_obj_core_mem_slab)
 {
+#if defined(CONFIG_OBJ_CORE_MEM_SLAB)
 	k_mem_slab_init(&slab2, slab2_buffer, 32, 8);
 	common_obj_core_test(K_OBJ_TYPE_MEM_SLAB_ID, "memory slab",
 			     K_OBJ_CORE(&slab1), K_OBJ_CORE(&slab2));
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core, test_obj_core_timer)
 {
+#if defined(CONFIG_OBJ_CORE_TIMER)
 	k_timer_init(&timer2, NULL, NULL);
 	common_obj_core_test(K_OBJ_TYPE_TIMER_ID, "timer",
 			     K_OBJ_CORE(&timer1), K_OBJ_CORE(&timer2));
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core, test_obj_core_stack)
 {
+#if defined(CONFIG_OBJ_CORE_STACK)
 	k_stack_init(&stack2, stack2_buffer, 8);
 	common_obj_core_test(K_OBJ_TYPE_STACK_ID, "stack",
 			     K_OBJ_CORE(&stack1), K_OBJ_CORE(&stack2));
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core, test_obj_core_fifo)
 {
+#if defined(CONFIG_OBJ_CORE_FIFO)
 	k_fifo_init(&fifo2);
 	common_obj_core_test(K_OBJ_TYPE_FIFO_ID, "FIFO",
 			     K_OBJ_CORE(&fifo1), K_OBJ_CORE(&fifo2));
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core, test_obj_core_lifo)
 {
+#if defined(CONFIG_OBJ_CORE_LIFO)
 	k_lifo_init(&lifo2);
 	common_obj_core_test(K_OBJ_TYPE_LIFO_ID, "LIFO",
 			     K_OBJ_CORE(&lifo1), K_OBJ_CORE(&lifo2));
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core, test_obj_core_pipe)
 {
+#if defined(CONFIG_OBJ_CORE_PIPE)
 	k_pipe_init(&pipe2, pipe2_buffer, sizeof(pipe2_buffer));
 	common_obj_core_test(K_OBJ_TYPE_PIPE_ID, "pipe",
 			     K_OBJ_CORE(&pipe1), K_OBJ_CORE(&pipe2));
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core, test_obj_core_msgq)
 {
+#if defined(CONFIG_OBJ_CORE_MSGQ)
 	k_msgq_init(&msgq2, msgq2_buffer, 4, 4);
 	common_obj_core_test(K_OBJ_TYPE_MSGQ_ID, "message queue",
 			     K_OBJ_CORE(&msgq1), K_OBJ_CORE(&msgq2));
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core, test_obj_core_mbox)
 {
+#if defined(CONFIG_OBJ_CORE_MAILBOX)
 	k_mbox_init(&mbox2);
 	common_obj_core_test(K_OBJ_TYPE_MBOX_ID, "mailbox",
 			     K_OBJ_CORE(&mbox1), K_OBJ_CORE(&mbox2));
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core, test_obj_core_condvar)
 {
+#if defined(CONFIG_OBJ_CORE_CONDVAR)
 	k_condvar_init(&condvar2);
 	common_obj_core_test(K_OBJ_TYPE_CONDVAR_ID, "condition variable",
 			     K_OBJ_CORE(&condvar1), K_OBJ_CORE(&condvar2));
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core, test_obj_core_event)
 {
+#if defined(CONFIG_OBJ_CORE_EVENT)
 	k_event_init(&event2);
 	common_obj_core_test(K_OBJ_TYPE_EVENT_ID, "event",
 			     K_OBJ_CORE(&event1), K_OBJ_CORE(&event2));
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core, test_obj_core_mutex)
 {
+#if defined(CONFIG_OBJ_CORE_MUTEX)
 	k_mutex_init(&mutex2);
 	common_obj_core_test(K_OBJ_TYPE_MUTEX_ID, "mutex",
 			     K_OBJ_CORE(&mutex1), K_OBJ_CORE(&mutex2));
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(obj_core, test_obj_core_sem)
 {
+#if defined(CONFIG_OBJ_CORE_SEM)
 	k_sem_init(&sem2, 0, 1);
 
 	common_obj_core_test(K_OBJ_TYPE_SEM_ID, "semaphore",
 			     K_OBJ_CORE(&sem1), K_OBJ_CORE(&sem2));
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST_SUITE(obj_core, NULL, NULL,
