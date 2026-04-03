@@ -35,10 +35,14 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	case MCUX_EDMA1_CLK:
 		CLOCK_EnableClock(kCLOCK_Dma1);
 		break;
+	case MCUX_ACMP0_CLK:
+		CLOCK_EnableClock(kCLOCK_Acmp0);
+		break;
 	default:
 		break;
 	}
 #endif
+
 
 #if defined(CONFIG_CAN_NXP_LPC_MCAN)
 	if ((uint32_t)sub_system == MCUX_MCAN_CLK) {

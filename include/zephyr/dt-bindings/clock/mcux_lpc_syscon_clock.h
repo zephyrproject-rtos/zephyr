@@ -186,4 +186,7 @@
 /** EDMA1 peripheral clock identifier. */
 #define MCUX_EDMA1_CLK MCUX_LPC_CLK_ID(0x29, 0x01)
 
+/** ACMP0 peripheral clock identifier. */
+#define MCUX_ACMP0_CLK MCUX_LPC_CLK_ID(0x30, 0x00)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */
