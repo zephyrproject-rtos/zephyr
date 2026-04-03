@@ -515,9 +515,6 @@ void board_early_init_hook(void)
 		kCLOCK_DivLcdifClk,
 		(CLOCK_GetMainPfdFreq(kCLOCK_Pfd2) /
 		  DT_PROP(DT_CHILD(DT_NODELABEL(lcdif), display_timings), clock_frequency)));
-
-	CLOCK_EnableClock(kCLOCK_Lcdif);
-
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lcdif), nxp_mipi_dbi_dcnano_lcdif, okay)
@@ -537,9 +534,6 @@ void board_early_init_hook(void)
 						DT_PROP(DT_NODELABEL(lcdif), clock_frequency));
 	CLOCK_SetClkDiv(kCLOCK_DivMediaMainClk, 1U);
 	CLOCK_AttachClk(kMAIN_PLL_PFD2_to_MEDIA_MAIN);
-
-	CLOCK_EnableClock(kCLOCK_Lcdif);
-
 #endif
 
 #if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i3c2)) || \
@@ -564,8 +558,6 @@ void board_early_init_hook(void)
 	POWER_DisablePD(kPDRUNCFG_APD_LCDIF);
 	POWER_DisablePD(kPDRUNCFG_PPD_LCDIF);
 	POWER_ApplyPD();
-
-	CLOCK_EnableClock(kCLOCK_Lcdif);
 
 
 	CLOCK_InitMainPfd(kCLOCK_Pfd2, 17);
