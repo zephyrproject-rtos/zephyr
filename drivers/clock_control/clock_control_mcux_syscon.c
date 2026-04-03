@@ -18,6 +18,12 @@ LOG_MODULE_REGISTER(clock_control);
 static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 					    clock_control_subsys_t sub_system)
 {
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX)
+	if ((uint32_t)sub_system == MCUX_ACMP0_CLK) {
+		CLOCK_EnableClock(kCLOCK_Acmp0);
+	}
+#endif
+
 #if defined(CONFIG_CAN_NXP_LPC_MCAN)
 	if ((uint32_t)sub_system == MCUX_MCAN_CLK) {
 		CLOCK_EnableClock(kCLOCK_Mcan);
