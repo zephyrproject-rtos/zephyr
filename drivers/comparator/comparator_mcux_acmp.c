@@ -9,6 +9,7 @@
 #include <fsl_acmp.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/drivers/comparator.h>
 #include <zephyr/drivers/comparator/mcux_acmp.h>
@@ -212,6 +213,8 @@ struct mcux_acmp_config {
 	const struct pinctrl_dev_config *pincfg;
 	struct reset_dt_spec reset;
 	void (*irq_init)(void);
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 	const struct comp_mcux_acmp_mode_config mode_config;
 	const struct comp_mcux_acmp_input_config input_config;
 	const struct comp_mcux_acmp_filter_config filter_config;
@@ -574,6 +577,19 @@ static int mcux_acmp_init(const struct device *dev)
 		return ret;
 	}
 
+	if (config->clock_dev != NULL) {
+		if (!device_is_ready(config->clock_dev)) {
+			LOG_ERR("failed to set %s", "clock_dev");
+			return -ENODEV;
+		}
+
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret != 0) {
+			LOG_ERR("failed to set %s", "clock");
+			return ret;
+		}
+	}
+
 	comp_mcux_acmp_init_mode_config(dev, &config->mode_config);
 
 	comp_mcux_acmp_set_input_config(dev, &config->input_config);
@@ -627,6 +643,11 @@ static int mcux_acmp_init(const struct device *dev)
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),					\
 		.reset = RESET_DT_SPEC_INST_GET_OR(inst, {0}),					\
 		.irq_init = MCUX_ACMP_IRQ_HANDLER_SYM(inst),					\
+		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks),			\
+			(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst))), (NULL)),			\
+		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks),		\
+			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name)),		\
+			((clock_control_subsys_t)0U)),						\
 		.mode_config = MCUX_ACMP_DT_INST_MODE_CONFIG_INIT(inst),			\
 		.input_config = MCUX_ACMP_DT_INST_INPUT_CONFIG_INIT(inst),			\
 		.filter_config = MCUX_ACMP_DT_INST_FILTER_CONFIG_INIT(inst),			\
