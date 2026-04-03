@@ -270,6 +270,7 @@ ARM64 arch:
   collaborators:
     - npitre
     - JiafeiPan
+    - carlocaione
   files:
     - arch/arm64/
     - include/zephyr/arch/arm64/
@@ -2533,7 +2534,9 @@ Documentation Infrastructure:
     - drivers.stepper
 
 "Drivers: Syscon":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - carlocaione
   files:
     - include/zephyr/drivers/syscon.h
     - drivers/syscon/
