@@ -1,0 +1,9 @@
+tests:
+  pmci.mctp.i2c_gpio.ping_pong:
+    platform_allow:
+      - npcx4m8f_evb
+    tags:
+      - mctp
+      - i2c_gpio
+    harness_config:
+      fixture: i2c_gpio_loopback

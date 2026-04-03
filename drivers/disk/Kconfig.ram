@@ -1,0 +1,19 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DISK_DRIVER_RAM
+	bool "RAM Disk"
+	depends on DT_HAS_ZEPHYR_RAM_DISK_ENABLED
+	default y
+	help
+	  RAM buffer used to emulate storage disk.
+	  This option can be used to test the file
+	  system.
+
+if DISK_DRIVER_RAM
+
+module = RAMDISK
+module-str = ramdisk
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DISK_DRIVER_RAM

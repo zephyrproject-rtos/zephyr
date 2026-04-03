@@ -1,0 +1,13 @@
+common:
+  platform_key:
+    - simulation
+  tags:
+    - lwm2m
+    - net
+  platform_allow:
+    - native_sim
+tests:
+  net.lwm2m.lwm2m_rd_client:
+    extra_args: EXTRA_CFLAGS=""
+  net.lwm2m.lwm2m_rd_client_dtls:
+    extra_args: EXTRA_CFLAGS=-DCONFIG_LWM2M_DTLS_SUPPORT

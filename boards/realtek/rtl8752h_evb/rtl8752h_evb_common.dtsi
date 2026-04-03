@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) 2026, Realtek Semiconductor Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "rtl8752h_evb-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/realtek-bee-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	chosen {
+		zephyr,code-partition = &app_partition;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,bt-hci = &bee_bt_hci;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
+			label = "LED 0";
+		};
+
+		led1: led_1 {
+			gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
+			label = "LED 1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			label = "Push button switch 0";
+			gpios = <&gpioa 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			label = "Push button switch 1";
+			gpios = <&gpioa 29 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		button2: button_2 {
+			label = "Push button switch 2";
+			gpios = <&gpioa 20 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+
+		button3: button_3 {
+			label = "Push button switch 3";
+			gpios = <&gpioa 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_3>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+	};
+};
+
+&gpioa {
+	pinctrl-0 = <&gpioa_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&uart2 {
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	current-speed = <115200>;
+	parity = "none";
+	stop-bits = "1";
+	data-bits = <8>;
+};
+
+&bee_bt_hci {
+	status = "okay";
+};

@@ -1,0 +1,259 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022 CSIRO
+
+config DEP_Y
+	bool "Dependency that evaluates to enabled"
+	default y
+
+config DEP_N
+	bool "Dependency that evaluates to disabled"
+	default n
+
+# configdefault after main def
+config SYM_Y_1
+	bool "SYM Y 1"
+
+configdefault SYM_Y_1
+	default y if DEP_Y
+
+config SYM_N_1
+	bool "SYM N 1"
+
+configdefault SYM_N_1
+	default y if DEP_N
+
+# configdefault before main def
+configdefault SYM_Y_2
+	default y if DEP_Y
+
+config SYM_Y_2
+	bool "SYM Y 2"
+
+configdefault SYM_N_2
+	default y if DEP_N
+
+config SYM_N_2
+	bool "SYM N 2"
+
+# configdefaults with multiple defaults
+configdefault SYM_Y_3
+	default y if DEP_Y
+	default y if DEP_N
+
+config SYM_Y_3
+	bool "SYM Y 3"
+
+configdefault SYM_N_3
+	default y if DEP_N
+	default y if DEP_N
+
+config SYM_N_3
+	bool "SYM N 3"
+
+# multiple configdefaults
+configdefault SYM_Y_4
+	default y if DEP_Y
+configdefault SYM_Y_4
+	default y if DEP_N
+
+config SYM_Y_4
+	bool "SYM Y 4"
+
+configdefault SYM_N_4
+	default y if DEP_N
+configdefault SYM_N_4
+	default y if DEP_N
+
+config SYM_N_4
+	bool "SYM N 4"
+
+# if surrounding configdefault
+config SYM_Y_5
+	bool "SYM Y 5"
+if DEP_Y
+configdefault SYM_Y_5
+	default y
+endif
+
+config SYM_N_5
+	bool "SYM N 5"
+if DEP_N
+configdefault SYM_N_5
+	default y
+endif
+
+# if surrounding definition
+if DEP_Y
+config SYM_Y_6
+	bool "SYM Y 6"
+endif
+
+configdefault SYM_Y_6
+	default y
+
+if DEP_N
+config SYM_N_6
+	bool "SYM N 6"
+endif
+
+configdefault SYM_N_6
+	default y
+
+# if surrounding complete
+if DEP_Y
+config SYM_Y_7
+	bool "SYM Y 7"
+configdefault SYM_Y_7
+	default y
+endif
+
+if DEP_N
+config SYM_N_7
+	bool "SYM N 7"
+configdefault SYM_N_7
+	default y
+endif
+
+# configdefault default symbol
+config SYM_Y_8
+	bool "SYM Y 8"
+
+configdefault SYM_Y_8
+	default DEP_Y
+
+config SYM_N_8
+	bool "SYM N 8"
+
+configdefault SYM_N_8
+	default DEP_N
+
+# configdefault with "prompt if <conditional==true>"
+configdefault SYM_Y_9
+	default y
+
+config SYM_Y_9
+	bool "SYM Y 9" if DEP_Y
+	default y if DEP_N
+
+configdefault SYM_N_9
+	default n if DEP_Y
+
+config SYM_N_9
+	bool "SYM N 9" if DEP_Y
+	default y
+
+# configdefault with "prompt if <conditional==false>"
+configdefault SYM_Y_10
+	default y if DEP_Y
+
+config SYM_Y_10
+	bool "SYM Y 10" if DEP_N
+
+configdefault SYM_N_10
+	default n if DEP_Y
+
+config SYM_N_10
+	bool "SYM N 10" if DEP_N
+	default y
+
+# configdefault with "prompt if <conditional==true>" and surrounding 'if'
+configdefault SYM_Y_11
+	default y
+
+if DEP_Y
+config SYM_Y_11
+	bool "SYM Y 11" if DEP_Y
+	default y if DEP_N
+endif
+
+configdefault SYM_N_11
+	default y
+
+if DEP_N
+config SYM_N_11
+	bool "SYM N 11" if DEP_Y
+	default n if DEP_N
+endif
+
+# Multiple symbols, no configdefault effect
+configdefault SYM_Y_12
+	default y if DEP_N
+
+config SYM_Y_12
+	bool "SYM Y 12"
+	default y if DEP_N
+	depends on DEP_N
+
+config SYM_Y_12
+	default y
+
+configdefault SYM_N_12
+	default y if DEP_N
+
+config SYM_N_12
+	bool "SYM N 12"
+	default y if DEP_N
+
+config SYM_N_12
+	default n
+
+# configdefault does not define integer
+config SYM_INT_UNDEF
+	int "Undefined integer"
+	default 0
+	depends on DEP_N
+
+configdefault SYM_INT_UNDEF
+	default 1
+
+# Integer default
+config SYM_INT_1
+	int "Int 1"
+	depends on DEP_Y
+
+configdefault SYM_INT_1
+	default 1
+
+# configdefault doesn't overwrite ordering
+config SYM_INT_2
+	int "Int 2"
+	default 2
+
+configdefault SYM_INT_2
+	default 3
+
+configdefault SYM_INT_3
+	default 3
+
+configdefault SYM_INT_3
+	default 4
+
+config SYM_INT_3
+	int "Int 3"
+	default 2
+
+configdefault SYM_INT_4
+	default 3 if DEP_N
+
+configdefault SYM_INT_4
+	default 4
+
+config SYM_INT_4
+	int "Int 4"
+	default 2
+
+# Hex value
+configdefault SYM_HEX_20
+	default 0x20
+
+config SYM_HEX_20
+	hex "Hex 0x20"
+
+# String value
+configdefault SYM_STRING
+	default "TEST"
+
+config SYM_STRING
+	string "Hex 0x20"
+
+source "Kconfig.zephyr"

@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs Series 2 SYSRTC (System Real Time Clock)
+
+description: |
+  The SYSRTC (System Real Time Counter) is a 32-bit counter kept running down to energy mode EM3.
+  It can be used as a sleep timer / wakeup source as well as a timekeeping counter during low energy
+  modes. Multiple groups of capture / compare registers are available to different cores in the
+  system, allowing the peripheral and time base to be shared across cores and save energy.
+
+compatible: "silabs,sysrtc"
+
+include: rtc.yaml
+
+properties:
+  reg:
+    required: true

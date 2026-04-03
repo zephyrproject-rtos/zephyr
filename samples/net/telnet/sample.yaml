@@ -1,0 +1,16 @@
+common:
+  harness: net
+  depends_on: netif
+  tags:
+    - net
+    - telnet
+sample:
+  name: Telnet Server
+tests:
+  sample.net.telnet: {}
+  sample.net.telnet.wifi.nrf70dk:
+    extra_args:
+      - SNIPPET=wifi-ipv4
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    platform_allow:
+      - nrf7002dk/nrf5340/cpuapp

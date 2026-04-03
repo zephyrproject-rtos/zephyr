@@ -1,0 +1,20 @@
+# Copyright (c) 2024, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32H7 Ethernet
+
+  This binding file describes the device tree properties required to configure
+  and use the Ethernet controller on STM32H7 series microcontrollers.
+
+compatible: "st,stm32h7-ethernet"
+
+include:
+  - "st,stm32-ethernet-common.yaml"
+  - "memory-region.yaml"
+
+properties:
+  memory-regions:
+    required: true
+    description: |
+      Reference to SRAM node used for Ethernet DMA buffer and descriptor.

@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2025 Core Devices LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+/ {
+	chosen {
+		zephyr,sram = &ram12;
+		zephyr,dtcm = &ram0;
+	};
+
+	soc {
+		ram0: memory@20000000 {
+			compatible = "zephyr,memory-region", "arm,dtcm";
+			reg = <0x20000000 DT_SIZE_K(128)>;
+			zephyr,memory-region = "DTCM";
+		};
+
+		ram12: memory@20020000 {
+			compatible = "mmio-sram";
+			reg = <0x20020000 DT_SIZE_K(384)>;
+		};
+	};
+};

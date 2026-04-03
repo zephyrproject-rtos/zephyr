@@ -1,0 +1,19 @@
+common:
+  harness: net
+  tags:
+    - net
+    - openthread
+  depends_on: openthread
+  min_flash: 140
+  build_only: true
+  platform_allow:
+    - cc1352p7_lp
+    - nrf52840dk/nrf52840
+sample:
+  description: Runs the OpenThread stack as FTD with CoAP
+  name: OpenThread FTD CoAP
+tests:
+  sample.net.openthread.ftd.coap.client: {}
+  sample.net.openthread.ftd.coap.server:
+    extra_configs:
+      - CONFIG_OT_COAP_SAMPLE_SERVER=y

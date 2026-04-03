@@ -1,0 +1,182 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic LED strip matrix (LED strip arranged in a grid pattern)
+
+compatible: "led-strip-matrix"
+
+include: display-controller.yaml
+
+properties:
+  circulative:
+    type: boolean
+    description: |
+      Use a circulative layout that returns to the left edge of the next row
+      after reaching the right edge.
+      If not set, turn around and go left in a serpentine layout when it reaches
+      the right edge.
+
+      * circulative layout
+        [ 0][ 1][ 2][ 3]
+        [ 4][ 5][ 6][ 7]
+        [ 8][ 9][10][11]
+        [12][13][14][15]
+
+      * serpentine layout
+        [ 0][ 1][ 2][ 3]
+        [ 7][ 6][ 5][ 4]
+        [ 8][ 9][10][11]
+        [15][14][13][12]
+
+  start-from-right:
+    type: boolean
+    description: |
+      Specify if the first LED is at the right.
+
+      * Start from the right with a serpentine layout
+        [ 3][ 2][ 1][ 0]
+        [ 4][ 5][ 6][ 7]
+        [11][10][ 9][ 8]
+        [12][13][14][15]
+
+      * Start from the right with a circulative layout
+        [ 3][ 2][ 1][ 0]
+        [ 7][ 6][ 5][ 4]
+        [11][10][ 9][ 8]
+        [15][14][13][12]
+
+  start-from-bottom:
+    type: boolean
+    description: |
+      Specify if the first LED is at the bottom.
+
+      * Start from the bottom with a circulative layout
+        [12][13][14][15]
+        [ 8][ 9][10][11]
+        [ 4][ 5][ 6][ 7]
+        [ 0][ 1][ 2][ 3]
+
+      * Start from the bottom with a serpentine layout
+        [15][14][13][12]
+        [ 8][ 9][10][11]
+        [ 7][ 6][ 5][ 4]
+        [ 0][ 1][ 2][ 3]
+
+  width:
+    description: |
+      Specifies the overall width of the matrix.
+      If the matrix consists of multiple modules, it is the sum of their widths.
+
+  height:
+    description: |
+      Specifies the overall height of the matrix.
+      If the matrix consists of multiple modules, it is the sum of their heights.
+
+  horizontal-modules:
+    type: int
+    default: 1
+    description: |
+      If the display forms with multiple modules,
+      specify the horizontal number of modules.
+      The number must be able to divide the width value.
+      If not set, it controls a single matrix.
+
+      * 8x4 display with 2 serpentine layout modules
+        [ 0][ 1][ 2][ 3]  [16][17][18][19]
+        [ 7][ 6][ 5][ 4]  [23][22][21][20]
+        [ 8][ 9][10][11]  [24][25][26][27]
+        [15][14][13][12]  [31][30][29][28]
+
+  vertical-modules:
+    type: int
+    default: 1
+    description: |
+      If the display forms with multiple modules,
+      specify the vertical number of modules.
+      The number must be able to divide the height value.
+      If not set, it controls a single matrix.
+
+      * 4x8 display with 2 serpentine layout modules
+        [ 0][ 1][ 2][ 3]
+        [ 7][ 6][ 5][ 4]
+        [ 8][ 9][10][11]
+        [15][14][13][12]
+
+        [16][17][18][19]
+        [23][22][21][20]
+        [24][25][26][27]
+        [31][30][29][28]
+
+  modules-circulative:
+    type: boolean
+    description: |
+      Specifies that the order of the modules that make up the matrix is circulative.
+
+      * circulative module layout
+        [M0][M1][M2]
+        [M3][M4][M5]
+        [M6][M7][M8]
+
+      * serpentine module layout
+        [M0][M1][M2]
+        [M5][M4][M3]
+        [M6][M7][M8]
+
+  modules-start-from-right:
+    type: boolean
+    description: |
+      Specifies that modules are ordered from right to left.
+
+      * Start from the right with a module serpentine layout
+        [M2][M1][M0]
+        [M3][M4][M5]
+        [M8][M7][M6]
+
+      * Start from the right with a module circulative layout
+        [M2][M1][M0]
+        [M5][M4][M3]
+        [M8][M7][M6]
+
+  modules-start-from-bottom:
+    type: boolean
+    description: |
+      Specifies that modules are ordered from bottom to top.
+
+      * Start from the right with a module serpentine layout
+        [M6][M7][M8]
+        [M5][M4][M3]
+        [M0][M1][M2]
+
+      * Start from the right with a module circulative layout
+        [M6][M7][M8]
+        [M3][M4][M5]
+        [M0][M1][M2]
+
+  led-strips:
+    type: phandles
+    required: true
+    description: |
+      Specify the LED strip that is the substance of the matrix.
+      If multiple strips are specified, they are "flattened" and sequentialized.
+      For example, if `strip0` and `strip1` with 128 LEDs are specified,
+      the first LED of `strip1` will be treated as the 129th LED.
+      These LEDs are mapped to coordinates according to the layout rule in order.
+      The amount of LEDs must equal the [width * height] value.
+
+  chain-lengths:
+    type: array
+    description: |
+      Specify the number of LEDs for each strip.
+      It can omit the value if all strip nodes have a `chain-length` property.
+      Each value must be a multiple of the number of LEDs per module
+      [(width / horizontal-modules) * (height / vertical-modules)].
+
+  pixel-format:
+    type: int
+    default: 1
+    description: |
+      Initial Pixel format.
+      See dt-bindings/display/panel.h for a list.
+      This property only accepts PANEL_PIXEL_FORMAT_RGB_888 and PANEL_PIXEL_FORMAT_RRGB_8888.
+      If this property is not set, use PANEL_PIXEL_FORMAT_RGB_888 as a default.

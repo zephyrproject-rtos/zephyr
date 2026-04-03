@@ -1,0 +1,10 @@
+# Copyright (c) 2025 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_KB106X
+	bool
+
+config SOC_FAMILY
+	default "kb106x" if SOC_FAMILY_KB106X
+
+rsource "*/Kconfig.soc"

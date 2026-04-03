@@ -1,0 +1,23 @@
+# ST Microelectronics STM32L5 MCU line
+
+# Copyright (c) 2020 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32L5X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32l5x" if SOC_SERIES_STM32L5X
+
+config SOC_STM32L552XX
+	bool
+	select SOC_SERIES_STM32L5X
+
+config SOC_STM32L562XX
+	bool
+	select SOC_SERIES_STM32L5X
+
+config SOC
+	default "stm32l552xx" if SOC_STM32L552XX
+	default "stm32l562xx" if SOC_STM32L562XX

@@ -1,0 +1,60 @@
+# Copyright (c) 2025 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  AT25XV021A SPI flash variants
+
+  Example datasheet: https://www.renesas.com/en/document/dst/at25xv021a-datasheet
+
+  The AT25XV021A variants add sector protect and unprotect features, which
+  requires additional steps to program or erase data from the device when compared
+  to other devices in the AT25 family.
+
+compatible: "atmel,at25xv021a"
+
+include: "spi-device.yaml"
+
+properties:
+  jedec-id:
+    type: uint8-array
+    default: [0x1f, 0x43, 0x01]
+    description: JEDEC Standard ID
+
+  size:
+    type: int
+    required: true
+    description: Flash capacity in bytes.
+
+  page-size:
+    type: int
+    required: true
+    description: Flash page size in bytes.
+
+  timeout:
+    type: int
+    default: 3
+    description: |
+      Timeout for read/write operations in milliseconds. Per the referenced
+      datasheet, page program operations can take up to 2.5 milliseconds.
+
+  timeout-erase:
+    type: int
+    default: 4000
+    description: |
+      Timeout for erase operations (including chip erase) in milliseconds.
+      Per the referenced datasheet, chip erase can take up to 4 seconds.
+
+  read-only:
+    type: boolean
+    description: Set flash device to be read-only.
+
+  ultra-deep-sleep:
+    type: boolean
+    description: Go into ultra deep sleep mode instead of deep sleep mode.
+
+  wp-gpios:
+    type: phandle-array
+    description: |
+      The WP pin of AT25XV021A is active low.
+      If connected directly the MCU pin should be configured
+      as active low.

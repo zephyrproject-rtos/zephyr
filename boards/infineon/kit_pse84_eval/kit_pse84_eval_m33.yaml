@@ -1,0 +1,23 @@
+# Copyright (c) 2025-2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: kit_pse84_eval/pse846gps2dbzc4a/m33
+name: PSOC Edge84 Evaluation Kit (M33_S)
+type: mcu
+arch: arm
+sysbuild: true
+ram: 5120
+toolchain:
+  - zephyr
+supported:
+  - bluetooth
+  - clock_control
+  - dma
+  - gpio
+  - pinctrl
+  - uart
+  - spi
+  - i2s
+  - watchdog

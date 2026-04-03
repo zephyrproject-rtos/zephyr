@@ -1,0 +1,6 @@
+board:
+  name: ch32v303vct6_evt
+  full_name: WCH CH32V303VCT6_EVT
+  vendor: wch
+  socs:
+    - name: ch32v303

@@ -1,0 +1,9 @@
+sample:
+  name: DHCP Client
+tests:
+  sample.net.dhcpv4_client:
+    harness: net
+    depends_on: netif
+    tags:
+      - net
+      - http

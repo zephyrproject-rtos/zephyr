@@ -1,0 +1,6 @@
+# Copyright (c) 2023 Meta Platforms, Inc. and its affiliates.
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EV11L78A
+	select SOC_SAMD20E16

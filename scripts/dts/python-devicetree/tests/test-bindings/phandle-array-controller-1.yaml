@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Controller with one data value
+
+compatible: "phandle-array-controller-1"
+
+phandle-array-foo-cells:
+  - one
+
+gpio-cells:
+  - gpio-one

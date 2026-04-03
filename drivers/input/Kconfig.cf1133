@@ -1,0 +1,29 @@
+# Copyright (c) 2024 Kickmaker
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INPUT_CF1133
+	bool "CF1133 capacitive touch panel driver"
+	default y
+	depends on DT_HAS_SITRONIX_CF1133_ENABLED
+	select I2C
+	help
+	  Enable driver for Sitronix capacitive touch panel
+	  controller. This driver should support CF1133.
+
+if INPUT_CF1133
+
+config INPUT_CF1133_INTERRUPT
+	bool "Interrupt"
+	default y
+	help
+	  Enable interrupt support (requires all instances
+	  of CF1133 have the INT gpio connected).
+
+config INPUT_CF1133_PERIOD_MS
+	int "Sample period"
+	depends on !INPUT_CF1133_INTERRUPT
+	default 10
+	help
+	  Sample period in milliseconds when in polling mode.
+
+endif # INPUT_CF1133

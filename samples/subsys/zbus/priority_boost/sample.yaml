@@ -1,0 +1,81 @@
+sample:
+  name: Priority boost
+tests:
+  sample.zbus.non_priority_boost:
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "I: 0 -> T1: prio before 5"
+        - "I: 0 ---> L1: T1 prio 5"
+        - "I: 0 ---> L2: T1 prio 5"
+        - "I: 0 -> T1: prio after 5"
+        - "I: 1 -> T1: prio before 5"
+        - "I: 1 ---> L1: T1 prio 5"
+        - "I: 1 ---> L2: T1 prio 5"
+        - "I: 1 -> T1: prio after 5"
+        - "I: 2 -> T1: prio before 5"
+        - "I: 2 ---> L1: T1 prio 5"
+        - "I: 2 ---> L2: T1 prio 5"
+        - "I: 2 -> T1: prio after 5"
+        - "I: 3 -> T1: prio before 5"
+        - "I: 3 ---> L1: T1 prio 5"
+        - "I: 3 ---> L2: T1 prio 5"
+        - "I: 3 -> T1: prio after 5"
+        - "I: 4 -> T1: prio before 5"
+        - "I: 4 ---> L1: T1 prio 5"
+        - "I: 4 ---> L2: T1 prio 5"
+        - "I: 4 -> T1: prio after 5"
+        - "I: 5 -> T1: prio before 5"
+        - "I: 5 ---> L1: T1 prio 5"
+        - "I: 5 ---> L2: T1 prio 5"
+        - "I: 5 -> T1: prio after 5"
+        - "I: 6 -> T1: prio before 5"
+        - "I: 6 ---> L1: T1 prio 5"
+        - "I: 6 ---> L2: T1 prio 5"
+        - "I: 6 -> T1: prio after 5"
+    extra_configs:
+      - CONFIG_ZBUS_PRIORITY_BOOST=n
+    tags: zbus
+    integration_platforms:
+      - qemu_x86
+  sample.zbus.priority_boost:
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "I: 0 -> T1: prio before 5"
+        - "I: 0 ---> L1: T1 prio 1"
+        - "I: 0 ---> L2: T1 prio 1"
+        - "I: 0 -> T1: prio after 5"
+        - "I: 1 -> T1: prio before 5"
+        - "I: 1 ---> L1: T1 prio 1"
+        - "I: 1 ---> L2: T1 prio 1"
+        - "I: 1 -> T1: prio after 5"
+        - "I: 2 -> T1: prio before 5"
+        - "I: 2 ---> L1: T1 prio 2"
+        - "I: 2 ---> L2: T1 prio 2"
+        - "I: 2 -> T1: prio after 5"
+        - "I: 3 -> T1: prio before 5"
+        - "I: 3 ---> L1: T1 prio 2"
+        - "I: 3 ---> L2: T1 prio 2"
+        - "I: 3 -> T1: prio after 5"
+        - "I: 4 -> T1: prio before 5"
+        - "I: 4 ---> L1: T1 prio 3"
+        - "I: 4 ---> L2: T1 prio 3"
+        - "I: 4 -> T1: prio after 5"
+        - "I: 5 -> T1: prio before 5"
+        - "I: 5 ---> L1: T1 prio 3"
+        - "I: 5 ---> L2: T1 prio 3"
+        - "I: 5 -> T1: prio after 5"
+        - "I: 6 -> T1: prio before 5"
+        - "I: 6 ---> L1: T1 prio 1"
+        - "I: 6 ---> L2: T1 prio 1"
+        - "I: 6 -> T1: prio after 5"
+    extra_configs:
+      - CONFIG_ZBUS_PRIORITY_BOOST=y
+    tags: zbus
+    integration_platforms:
+      - qemu_x86

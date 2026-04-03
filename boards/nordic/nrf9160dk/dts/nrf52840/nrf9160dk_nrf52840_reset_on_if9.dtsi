@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* NOTE: this feature is only available in nRF9160 DK v0.14.0 or later. */
+
+&nrf_interface_pin_9_routing {
+	status = "okay";
+};
+
+&reset_input {
+	status = "okay";
+	gpios = <&interface_to_nrf9160 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+};

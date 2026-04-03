@@ -1,0 +1,18 @@
+# Copyright (c) 2018 Marcio Montenegro
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFM32HG
+	bool
+	select SOC_FAMILY_SILABS_S0
+	help
+	  Silicon Labs EFM32HG (Happy Gecko) Series MCU
+
+config SOC_EFM32HG322F64
+	bool
+	select SOC_SERIES_EFM32HG
+
+config SOC_SERIES
+	default "efm32hg" if SOC_SERIES_EFM32HG
+
+config SOC
+	default "efm32hg322f64" if SOC_EFM32HG322F64

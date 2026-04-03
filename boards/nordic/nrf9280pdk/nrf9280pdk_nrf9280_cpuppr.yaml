@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nrf9280pdk/nrf9280/cpuppr
+name: nRF9280-DK-nRF9280-PPR
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+sysbuild: true
+ram: 22
+flash: 22
+supported:
+  - counter
+  - gpio
+  - i2c
+  - pwm
+  - spi

@@ -1,0 +1,7 @@
+shield:
+  name: lmp90100_evb
+  full_name: LMP90100 Sensor AFE Evaluation Board
+  vendor: ti
+  supported_features:
+    - adc
+    - mtd

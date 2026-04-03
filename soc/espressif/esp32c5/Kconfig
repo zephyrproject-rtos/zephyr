@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32C5
+	select RISCV
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	select DYNAMIC_INTERRUPTS if SOC_ESP32C5_HPCORE
+	select CLOCK_CONTROL if SOC_ESP32C5_HPCORE
+	select PINCTRL if SOC_ESP32C5_HPCORE
+	select HAS_ESPRESSIF_HAL
+	select HAS_PM
+	select HAS_POWEROFF
+
+if SOC_SERIES_ESP32C5
+
+config MAC_BB_PD
+	bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"
+	depends on SOC_SERIES_ESP32C5 && TICKLESS_KERNEL
+	help
+	  If enabled, the MAC and baseband of Wi-Fi and Bluetooth will be powered
+	  down when PHY is disabled. Enabling this setting reduces power consumption
+	  by a small amount but increases RAM use by approximately 4 KB(Wi-Fi only),
+	  2 KB(Bluetooth only) or 5.3 KB(Wi-Fi + Bluetooth).
+
+endif # SOC_SERIES_ESP32C5

@@ -1,0 +1,7 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CY8CPROTO_041TP
+	select SOC_CY8C4147AZQ_T495

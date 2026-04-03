@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2023 Meta
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	euart0: uart-emul0 {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+		current-speed = <0>;
+		rx-fifo-size = <256>;
+		tx-fifo-size = <256>;
+	};
+};

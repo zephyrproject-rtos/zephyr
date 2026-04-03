@@ -1,0 +1,25 @@
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensry SY1XX GPIO Port
+
+compatible: "sensry,sy1xx-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Base address for the gpio configuration.
+
+  "#gpio-cells":
+    const: 2
+
+  pad-cfg:
+    type: int
+    required: true
+    description: Offset for gpio pad ctrl registers.
+
+gpio-cells:
+  - pin
+  - flags

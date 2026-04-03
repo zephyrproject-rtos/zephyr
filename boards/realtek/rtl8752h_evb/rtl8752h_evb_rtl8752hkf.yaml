@@ -1,0 +1,19 @@
+identifier: rtl8752h_evb/rtl8752hkf
+name: RTL8752H-EVB-RTL8752HKF
+type: mcu
+arch: arm
+ram: 70
+flash: 924
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - pinctrl
+  - uart
+  - gpio
+  - counter
+  - bluetooth
+testing:
+  ignore_tags:
+    - pm
+vendor: realtek

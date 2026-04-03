@@ -1,0 +1,14 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Maxim MAX44009 Ambient Light Sensor. See datasheet at
+    https://datasheets.maximintegrated.com/en/ds/MAX44009.pdf
+
+compatible: "maxim,max44009"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array

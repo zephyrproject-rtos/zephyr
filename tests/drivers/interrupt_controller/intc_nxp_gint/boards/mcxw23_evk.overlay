@@ -1,0 +1,21 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		led1 = &fake_led;
+	};
+
+	/*
+	 * This test needs node led0 and led1, only the pins are used,
+	 * the pins are not needed to be real LED.
+	 * This board only has led0, so use a unused pin as led1.
+	 */
+	leds {
+		fake_led: fake-led {
+			gpios = <&gpio0 1 0>;
+		};
+	};
+};

@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			npm6001_ek_pmic: pmic@0 {
+				compatible = "nordic,npm6001";
+				reg = <0x0>;
+
+				npm6001_ek_wdt: watchdog {
+					compatible = "nordic,npm6001-wdt";
+				};
+			};
+
+			npm2100_pmic: pmic@1 {
+				compatible = "nordic,npm2100";
+				reg = <0x1>;
+
+				npm2100_wdt: watchdog {
+					compatible = "nordic,npm2100-wdt";
+				};
+			};
+
+			npm1300_pmic: pmic@2 {
+				compatible = "nordic,npm1300";
+				reg = <0x2>;
+
+				npm1300_wdt: watchdog {
+					compatible = "nordic,npm1300-wdt";
+				};
+			};
+
+			npm1304_pmic: pmic@3 {
+				compatible = "nordic,npm1304";
+				reg = <0x3>;
+
+				npm1304_wdt: watchdog {
+					compatible = "nordic,npm1304-wdt";
+				};
+			};
+		};
+	};
+};

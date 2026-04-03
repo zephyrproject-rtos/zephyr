@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+
+config CRYPTO_INTEL_SHA
+	bool "Intel SHA driver"
+	default y
+	depends on DT_HAS_INTEL_ADSP_SHA_ENABLED
+	help
+	  Enable Intel SHA driver. To be used on ACE and CAVS platforms.

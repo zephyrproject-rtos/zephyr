@@ -1,0 +1,18 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for PCIe devices
+
+properties:
+  vendor-id:
+    type: int
+    description: Vendor ID of the device
+  device-id:
+    type: int
+    description: Device ID of the device
+  class-rev:
+    type: int
+    description: Optional class/revision register filter
+  class-rev-mask:
+    type: int
+    description: Class/revision register mask

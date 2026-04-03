@@ -1,0 +1,10 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Semtech SX1278 LoRa Modem
+  A variant of sx1276 targeting sub-525MHz bands.
+
+compatible: "semtech,sx1278"
+
+include: semtech,sx127x-base.yaml

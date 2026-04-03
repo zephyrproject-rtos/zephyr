@@ -1,0 +1,24 @@
+description: NXP Pin interrupt and pattern match engine (PINT)
+
+compatible: "nxp,pint"
+
+include: [base.yaml, interrupt-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  num-lines:
+    type: int
+    required: true
+    description: Number of interrupt lines supported by the interrupt controller.
+
+  num-inputs:
+    type: int
+    required: true
+    description: |
+      Number of inputs available to the PINT engine. These inputs are typically
+      GPIO pins.

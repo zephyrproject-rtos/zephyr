@@ -1,0 +1,27 @@
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_DESIGNSTART
+	bool
+	select SOC_FAMILY_ARM
+	help
+	  ARM DesignStart SoC Series
+
+config SOC_DESIGNSTART_FPGA_CORTEX_M1
+	bool
+	select SOC_SERIES_DESIGNSTART
+	help
+	  ARM Cortex-M1 DesignStart FPGA
+
+config SOC_DESIGNSTART_FPGA_CORTEX_M3
+	bool
+	select SOC_SERIES_DESIGNSTART
+	help
+	  ARM Cortex-M3 DesignStart FPGA
+
+config SOC_SERIES
+	default "designstart" if SOC_SERIES_DESIGNSTART
+
+config SOC
+	default "designstart_fpga_cortex_m1" if SOC_DESIGNSTART_FPGA_CORTEX_M1
+	default "designstart_fpga_cortex_m3" if SOC_DESIGNSTART_FPGA_CORTEX_M3

@@ -1,0 +1,9 @@
+/*
+ * Copyright 2023 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&test_kbd_scan {
+	actual-key-mask = <0x07 0x07 0x03>;
+};

@@ -1,0 +1,552 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <nxp/s32/nxp_s32k566.dtsi>
+#include <freq.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(200)>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <1>;
+			clock-frequency = <DT_FREQ_M(200)>;
+		};
+
+		cpu@2 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <2>;
+			clock-frequency = <DT_FREQ_M(200)>;
+		};
+
+		cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <3>;
+			clock-frequency = <DT_FREQ_M(200)>;
+		};
+	};
+
+	soc {
+		interrupt-parent = <&nvic>;
+
+		stm0: stm@405a4000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x405a4000 0x4000>;
+			interrupts = <93 0>;
+			clocks = <&clock NXP_S32_STM0_IPG_CLK>;
+			status = "disabled";
+		};
+
+		stm1: stm@40b98000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x40b98000 0x4000>;
+			interrupts = <94 0>;
+			clocks = <&clock NXP_S32_STM1_IPG_CLK>;
+			status = "disabled";
+		};
+
+		stm2: stm@40b9c000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x40b9c000 0x4000>;
+			interrupts = <95 0>;
+			clocks = <&clock NXP_S32_STM2_IPG_CLK>;
+			status = "disabled";
+		};
+
+		stm3: stm@40ba0000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x40ba0000 0x4000>;
+			interrupts = <96 0>;
+			clocks = <&clock NXP_S32_STM3_IPG_CLK>;
+			status = "disabled";
+		};
+
+		pit0: pit@405a0000 {
+			compatible = "nxp,pit";
+			reg = <0x405a0000 0x4000>;
+			interrupts = <88 0>;
+			clocks = <&clock NXP_S32_PLTDIV2_CLK>;
+			max-load-value = <0xffffffff>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pit0_channel0: pit0_channel@0 {
+				compatible = "nxp,pit-channel";
+				reg = <0>;
+				status = "disabled";
+			};
+
+			pit0_channel1: pit0_channel@1 {
+				compatible = "nxp,pit-channel";
+				reg = <1>;
+				status = "disabled";
+			};
+
+			pit0_channel2: pit0_channel@2 {
+				compatible = "nxp,pit-channel";
+				reg = <2>;
+				status = "disabled";
+			};
+
+			pit0_channel3: pit0_channel@3 {
+				compatible = "nxp,pit-channel";
+				reg = <3>;
+				status = "disabled";
+			};
+		};
+
+		pit1: pit@40b8c000 {
+			compatible = "nxp,pit";
+			reg = <0x40b8c000 0x4000>;
+			interrupts = <89 0>;
+			clocks = <&clock NXP_S32_PLTDIV2_CLK>;
+			max-load-value = <0xffffffff>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pit1_channel0: pit1_channel@0 {
+				compatible = "nxp,pit-channel";
+				reg = <0>;
+				status = "disabled";
+			};
+
+			pit1_channel1: pit1_channel@1 {
+				compatible = "nxp,pit-channel";
+				reg = <1>;
+				status = "disabled";
+			};
+
+			pit1_channel2: pit1_channel@2 {
+				compatible = "nxp,pit-channel";
+				reg = <2>;
+				status = "disabled";
+			};
+
+			pit1_channel3: pit1_channel@3 {
+				compatible = "nxp,pit-channel";
+				reg = <3>;
+				status = "disabled";
+			};
+		};
+
+		pit2: pit@40b90000 {
+			compatible = "nxp,pit";
+			reg = <0x40b90000 0x4000>;
+			interrupts = <90 0>;
+			clocks = <&clock NXP_S32_PLTDIV2_CLK>;
+			max-load-value = <0xffffffff>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pit2_channel0: pit2_channel@0 {
+				compatible = "nxp,pit-channel";
+				reg = <0>;
+				status = "disabled";
+			};
+
+			pit2_channel1: pit2_channel@1 {
+				compatible = "nxp,pit-channel";
+				reg = <1>;
+				status = "disabled";
+			};
+
+			pit2_channel2: pit2_channel@2 {
+				compatible = "nxp,pit-channel";
+				reg = <2>;
+				status = "disabled";
+			};
+
+			pit2_channel3: pit2_channel@3 {
+				compatible = "nxp,pit-channel";
+				reg = <3>;
+				status = "disabled";
+			};
+		};
+
+		pit3: pit@40b94000 {
+			compatible = "nxp,pit";
+			reg = <0x40b94000 0x4000>;
+			interrupts = <91 0>;
+			clocks = <&clock NXP_S32_PLTDIV2_CLK>;
+			max-load-value = <0xffffffff>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pit3_channel0: pit3_channel@0 {
+				compatible = "nxp,pit-channel";
+				reg = <0>;
+				status = "disabled";
+			};
+
+			pit3_channel1: pit3_channel@1 {
+				compatible = "nxp,pit-channel";
+				reg = <1>;
+				status = "disabled";
+			};
+
+			pit3_channel2: pit3_channel@2 {
+				compatible = "nxp,pit-channel";
+				reg = <2>;
+				status = "disabled";
+			};
+
+			pit3_channel3: pit3_channel@3 {
+				compatible = "nxp,pit-channel";
+				reg = <3>;
+				status = "disabled";
+			};
+		};
+
+		/* SWT_0 -> SWT_3 for Cortex-M7_0 -> Cortex-M7_3 */
+		swt0: watchdog@40b18000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x40b18000 0x4000>;
+			interrupts = <28 0>;
+			clocks = <&clock NXP_S32_SWT0_IPG_COUNTER_CLK>;
+			service-mode = "fixed";
+			status = "disabled";
+		};
+
+		swt1: watchdog@40b1c000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x40b1c000 0x4000>;
+			interrupts = <28 0>;
+			clocks = <&clock NXP_S32_SWT1_IPG_COUNTER_CLK>;
+			service-mode = "fixed";
+			status = "disabled";
+		};
+
+		swt2: watchdog@40b20000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x40b20000 0x4000>;
+			interrupts = <28 0>;
+			clocks = <&clock NXP_S32_SWT2_IPG_COUNTER_CLK>;
+			service-mode = "fixed";
+			status = "disabled";
+		};
+
+		swt3: watchdog@40b24000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x40b24000 0x4000>;
+			interrupts = <28 0>;
+			clocks = <&clock NXP_S32_SWT3_IPG_COUNTER_CLK>;
+			service-mode = "fixed";
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
+
+&eirq0 {
+	interrupts = <29 0>;
+};
+
+&eirq1 {
+	interrupts = <30 0>;
+};
+
+&eirq2 {
+	interrupts = <211 0>;
+};
+
+&eirq3 {
+	interrupts = <31 0>;
+};
+
+&eirq4 {
+	interrupts = <32 0>;
+};
+
+&lpe_lpuart0 {
+	interrupts = <233 0>;
+};
+
+&lpe_lpuart1 {
+	interrupts = <234 0>;
+};
+
+&lpe_lpuart2 {
+	interrupts = <235 0>;
+};
+
+&lpuart0 {
+	interrupts = <155 0>;
+};
+
+&lpuart1 {
+	interrupts = <156 0>;
+};
+
+&lpuart2 {
+	interrupts = <157 0>;
+};
+
+&lpuart3 {
+	interrupts = <158 0>;
+};
+
+&lpuart4 {
+	interrupts = <159 0>;
+};
+
+&lpuart5 {
+	interrupts = <160 0>;
+};
+
+&lpuart6 {
+	interrupts = <161 0>;
+};
+
+&lpuart7 {
+	interrupts = <162 0>;
+};
+
+&lpuart8 {
+	interrupts = <163 0>;
+};
+
+&lpuart9 {
+	interrupts = <164 0>;
+};
+
+&lpuart10 {
+	interrupts = <165 0>;
+};
+
+&lpuart11 {
+	interrupts = <166 0>;
+};
+
+&lpuart12 {
+	interrupts = <167 0>;
+};
+
+&lpuart13 {
+	interrupts = <168 0>;
+};
+
+&lpuart14 {
+	interrupts = <169 0>;
+};
+
+&lpuart15 {
+	interrupts = <170 0>;
+};
+
+&lpuart16 {
+	interrupts = <171 0>;
+};
+
+&lpuart17 {
+	interrupts = <172 0>;
+};
+
+&lpuart18 {
+	interrupts = <173 0>;
+};
+
+&lpuart19 {
+	interrupts = <174 0>;
+};
+
+&lpuart20 {
+	interrupts = <175 0>;
+};
+
+&lpe_flexcan {
+	interrupts = <228 0>, <229 0>;
+};
+
+&flexcan0 {
+	interrupts = <106 0>, <107 0>;
+};
+
+&flexcan1 {
+	interrupts = <108 0>, <109 0>;
+};
+
+&flexcan2 {
+	interrupts = <110 0>, <111 0>;
+};
+
+&flexcan3 {
+	interrupts = <112 0>, <113 0>;
+};
+
+&flexcan4 {
+	interrupts = <114 0>, <115 0>;
+};
+
+&flexcan5 {
+	interrupts = <116 0>, <117 0>;
+};
+
+&flexcan6 {
+	interrupts = <118 0>, <119 0>;
+};
+
+&flexcan7 {
+	interrupts = <120 0>, <121 0>;
+};
+
+&flexcan8 {
+	interrupts = <122 0>, <123 0>;
+};
+
+&flexcan9 {
+	interrupts = <124 0>, <125 0>;
+};
+
+&flexcan10 {
+	interrupts = <126 0>, <127 0>;
+};
+
+&flexcan11 {
+	interrupts = <128 0>, <129 0>;
+};
+
+&flexcan12 {
+	interrupts = <130 0>, <131 0>;
+};
+
+&flexcan13 {
+	interrupts = <132 0>, <133 0>;
+};
+
+&flexcan14 {
+	interrupts = <134 0>, <135 0>;
+};
+
+&flexcan15 {
+	interrupts = <136 0>, <137 0>;
+};
+
+&flexcan16 {
+	interrupts = <138 0>, <139 0>;
+};
+
+&sar_adc0 {
+	interrupts = <64 0>;
+};
+
+&sar_adc1 {
+	interrupts = <65 0>;
+};
+
+&lpe_sar_adc {
+	interrupts = <217 0>;
+};
+
+&emios0 {
+	interrupts = <67 0>, <68 0>, <69 0>,
+		     <70 0>, <71 0>, <72 0>;
+};
+
+&emios1 {
+	interrupts = <73 0>, <74 0>, <75 0>,
+		     <76 0>, <77 0>, <78 0>;
+};
+
+&emios2 {
+	interrupts = <79 0>, <80 0>, <81 0>,
+		     <82 0>, <83 0>, <84 0>;
+};
+
+&lpe_lpi2c {
+	interrupts = <230 0>;
+};
+
+&lpi2c0 {
+	interrupts = <143 0>;
+};
+
+&lpi2c1 {
+	interrupts = <144 0>;
+};
+
+&lpi2c2 {
+	interrupts = <145 0>;
+};
+
+&lpi2c3 {
+	interrupts = <146 0>;
+};
+
+&lpe_ftm {
+	interrupts = <223 0>;
+};
+
+&canxl {
+	interrupts = <97 0>;
+	interrupt-names = "rx_tx_mru_error";
+};
+
+&lpe_swt {
+	interrupts = <210 0>;
+};
+
+&swt_startup {
+	interrupts = <27 0>;
+};
+
+&lpe_lpspi0 {
+	interrupts = <231 0>;
+};
+
+&lpe_lpspi1 {
+	interrupts = <232 0>;
+};
+
+&lpspi0 {
+	interrupts = <147 0>;
+};
+
+&lpspi1 {
+	interrupts = <148 0>;
+};
+
+&lpspi2 {
+	interrupts = <149 0>;
+};
+
+&lpspi3 {
+	interrupts = <150 0>;
+};
+
+&lpspi4 {
+	interrupts = <151 0>;
+};
+
+&lpspi5 {
+	interrupts = <152 0>;
+};
+
+&edma {
+	interrupts = <5 0>, <6 0>, <7 0>, <8 0>,
+		     <9 0>, <10 0>, <11 0>, <12 0>,
+		     <13 0>, <14 0>, <15 0>, <16 0>,
+		     <17 0>, <18 0>, <19 0>, <20 0>;
+};

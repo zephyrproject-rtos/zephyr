@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	aliases {
+		pwm-test = &pwm0_0;
+	};
+};
+
+&tcpwm0_0 {
+	status = "okay";
+
+	pwm0_0 {
+		clocks = <&peri_clk_div3>;
+		status = "okay";
+		pinctrl-0 = <&p3_1_pwm0_0>;
+		pinctrl-names = "default";
+	};
+};
+
+&p3_1_pwm0_0 {
+	drive-push-pull;
+};
+
+&peri_clk_div3 {
+	status = "okay";
+};

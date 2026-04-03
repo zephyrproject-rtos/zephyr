@@ -1,0 +1,20 @@
+# Copyright (c) 2022-2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_AGILEX5
+	bool
+	select SOC_FAMILY_INTEL_SOCFPGA
+	help
+	  Intel SoC FPGA Agilex5 Series
+
+config SOC_SERIES
+	default "agilex5" if SOC_SERIES_AGILEX5
+
+config SOC_AGILEX5
+	bool
+	select SOC_SERIES_AGILEX5
+	help
+	  Intel SoC FPGA Agilex5
+
+config SOC
+	default "agilex5" if SOC_AGILEX5

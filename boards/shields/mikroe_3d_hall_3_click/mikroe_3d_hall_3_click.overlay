@@ -1,0 +1,20 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		magn0 = &lis2mdl_mikroe_3d_hall_3_click;
+	};
+};
+
+&mikrobus_i2c {
+	status = "okay";
+
+	lis2mdl_mikroe_3d_hall_3_click: lis2mdl@1e {
+		compatible = "st,lis2mdl";
+		reg = <0x1e>;
+		irq-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+	};
+};

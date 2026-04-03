@@ -1,0 +1,6 @@
+board:
+  name: weact_stm32g0b1_core
+  full_name: STM32G0B1 Core Board
+  vendor: weact
+  socs:
+    - name: stm32g0b1xx

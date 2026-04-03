@@ -1,0 +1,8 @@
+# Copyright (c) 2025, Magpie Embedded
+# SPDX-License-Identifier: Apache-2.0
+
+description: Rohm BH1790 Optical Sensor for Heart Rate Monitor IC.
+
+compatible: "rohm,bh1790"
+
+include: [sensor-device.yaml, i2c-device.yaml]

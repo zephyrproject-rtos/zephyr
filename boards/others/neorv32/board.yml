@@ -1,0 +1,9 @@
+board:
+  name: neorv32
+  full_name: NEORV32
+  vendor: others
+  socs:
+    - name: neorv32
+      variants:
+        - name: "minimalboot"
+        - name: "up5kdemo"

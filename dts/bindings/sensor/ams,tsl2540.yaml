@@ -1,0 +1,34 @@
+# Copyright (c) 2022 T-Mobile USA, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TSL2540 series ambient light sensor.  See datasheet at
+    https://ams.com/documents/20143/36005/TSL2540_DS000564_4-00.pdf/39728ac4-098c-9eca-b5ca-61d9c6f3a588
+
+compatible: "ams,tsl2540"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Identifies the interrupt pin
+
+  glass-attenuation:
+    type: int
+    default: 100000
+    description: |
+      Visible light attenuation.
+      Integer value for a representation with 5 decimal points.
+      This default value (1.00000) is chosen for free open space (no glass).
+      Example: 1.2 would be 120000
+
+  glass-ir-attenuation:
+    type: int
+    default: 100000
+    description: |
+      Infa-red light attenuation.
+      Integer value for a representation with 5 decimal points.
+      This default value (1.00000) is chosen for free open space (no glass).
+      Example: 1.2 would be 120000

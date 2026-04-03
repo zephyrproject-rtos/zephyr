@@ -1,0 +1,23 @@
+/*
+ * Copyright 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * stm32F0 has a WWDG clock by APB1 where the APB1 prescaler is 1..16
+ * Adjust the APB1 clock to match the WDG timeout.
+ */
+
+&rcc {
+	/delete-property/ apb1-prescaler;
+	apb1-prescaler = <16>;
+};
+
+&iwdg {
+	status = "disabled";
+};
+
+&wwdg {
+	status = "okay";
+};

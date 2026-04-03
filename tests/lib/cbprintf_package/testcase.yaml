@@ -1,0 +1,204 @@
+common:
+  platform_type:
+    - qemu
+    - native
+  tags: cbprintf
+  min_flash: 48
+tests:
+  libraries.cbprintf.package:
+    extra_configs:
+      - CONFIG_CBPRINTF_COMPLETE=y
+    integration_platforms:
+      - native_sim
+
+  libraries.cbprintf.package_no_generic:
+    extra_configs:
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_COMPILER_OPT="-DZ_C_GENERIC=0"
+    integration_platforms:
+      - native_sim
+
+  libraries.cbprintf.package_fp:
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_FPU=y
+    integration_platforms:
+      - native_sim
+
+  libraries.cbprintf.package_fp_align_offset:
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_COMPILER_OPT="-DCBPRINTF_PACKAGE_ALIGN_OFFSET=1"
+      - CONFIG_FPU=y
+    integration_platforms:
+      - native_sim
+
+  libraries.cbprintf.package_long_double:
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
+      - CONFIG_FPU=y
+      - CONFIG_MINIMAL_LIBC=y
+    integration_platforms:
+      - native_sim
+
+  libraries.cbprintf.package_long_double_align_offset:
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
+      - CONFIG_COMPILER_OPT="-DCBPRINTF_PACKAGE_ALIGN_OFFSET=1"
+      - CONFIG_FPU=y
+      - CONFIG_MINIMAL_LIBC=y
+    integration_platforms:
+      - native_sim
+
+  libraries.cbprintf.package_nano:
+    tags:
+      - nano
+    extra_configs:
+      - CONFIG_CBPRINTF_NANO=y
+    integration_platforms:
+      - native_sim
+
+  # Same test but with test compiled as C++
+  libraries.cbprintf.package_cpp:
+    extra_configs:
+      - CONFIG_CPP=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+    integration_platforms:
+      - native_sim
+
+  libraries.cbprintf.package_no_generic_cpp:
+    extra_configs:
+      - CONFIG_CPP=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_COMPILER_OPT="-DZ_C_GENERIC=0"
+    integration_platforms:
+      - native_sim
+
+  libraries.cbprintf.package_fp_cpp:
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_CPP=y
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_FPU=y
+    integration_platforms:
+      - native_sim
+
+  libraries.cbprintf.package_fp_align_offset_cpp:
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_CPP=y
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_COMPILER_OPT="-DCBPRINTF_PACKAGE_ALIGN_OFFSET=1"
+      - CONFIG_FPU=y
+    integration_platforms:
+      - native_sim
+
+  libraries.cbprintf.package_long_double_cpp:
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_CPP=y
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
+      - CONFIG_FPU=y
+      - CONFIG_MINIMAL_LIBC=y
+    integration_platforms:
+      - native_sim
+
+  libraries.cbprintf.package_long_double_align_offset_cpp:
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_CPP=y
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
+      - CONFIG_COMPILER_OPT="-DCBPRINTF_PACKAGE_ALIGN_OFFSET=1"
+      - CONFIG_FPU=y
+      - CONFIG_MINIMAL_LIBC=y
+    integration_platforms:
+      - native_sim
+
+  libraries.cbprintf.package_nano_cpp:
+    tags:
+      - nano
+    extra_configs:
+      - CONFIG_CPP=y
+      - CONFIG_CBPRINTF_NANO=y
+    integration_platforms:
+      - native_sim
+
+  libraries.cbprintf.package.picolibc:
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    tags: picolibc
+    extra_configs:
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_PICOLIBC=y
+    integration_platforms:
+      - qemu_x86
+
+  libraries.cbprintf.package_no_generic.picolibc:
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    tags: picolibc
+    extra_configs:
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_COMPILER_OPT="-DZ_C_GENERIC=0"
+      - CONFIG_PICOLIBC=y
+    integration_platforms:
+      - qemu_x86
+
+  libraries.cbprintf.package_fp.picolibc:
+    filter: CONFIG_CPU_HAS_FPU and CONFIG_PICOLIBC_SUPPORTED
+    tags: picolibc
+    extra_configs:
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_FPU=y
+      - CONFIG_PICOLIBC=y
+    integration_platforms:
+      - qemu_x86
+
+  # Same test but with test compiled as C++
+  libraries.cbprintf.package_cpp.picolibc:
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    tags: picolibc
+    extra_configs:
+      - CONFIG_CPP=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_PICOLIBC=y
+    integration_platforms:
+      - qemu_x86
+
+  libraries.cbprintf.package_no_generic_cpp.picolibc:
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    tags: picolibc
+    extra_configs:
+      - CONFIG_CPP=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_COMPILER_OPT="-DZ_C_GENERIC=0"
+      - CONFIG_PICOLIBC=y
+    integration_platforms:
+      - qemu_x86
+
+  libraries.cbprintf.package_fp_cpp.picolibc:
+    filter: CONFIG_CPU_HAS_FPU and CONFIG_PICOLIBC_SUPPORTED
+    tags: picolibc
+    extra_configs:
+      - CONFIG_CPP=y
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_FPU=y
+      - CONFIG_PICOLIBC=y
+    integration_platforms:
+      - qemu_x86

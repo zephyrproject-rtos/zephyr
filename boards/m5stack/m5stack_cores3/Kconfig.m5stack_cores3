@@ -1,0 +1,10 @@
+# M5Stack CoreS3 board configuration
+
+# Copyright (c) 2024 Zhang Xingtao <zhxt@live.cn>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_M5STACK_CORES3
+	select SOC_ESP32S3
+	select SOC_ESP32S3_PROCPU if BOARD_M5STACK_CORES3_ESP32S3_PROCPU || \
+				     BOARD_M5STACK_CORES3_ESP32S3_PROCPU_SE
+	select SOC_ESP32S3_APPCPU if BOARD_M5STACK_CORES3_ESP32S3_APPCPU

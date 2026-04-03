@@ -1,0 +1,19 @@
+identifier: nucleo_f042k6
+name: ST Nucleo F042K6
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 6
+flash: 32
+supported:
+  - i2c
+  - spi
+  - gpio
+  - adc
+  - usbd
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

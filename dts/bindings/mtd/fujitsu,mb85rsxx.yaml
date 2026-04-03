@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Fujitsu MB85RSXX SPI FRAM
+
+compatible: "fujitsu,mb85rsxx"
+
+include: ["eeprom-base.yaml", spi-device.yaml]
+
+properties:
+  size:
+    required: true
+    description: Total FRAM size in bytes.

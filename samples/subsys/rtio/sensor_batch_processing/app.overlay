@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2022 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	app {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		vsensor0: sensor@0 {
+			compatible = "vnd,sensor";
+			reg = <0>;
+			sample-period = <100>;
+			sample-size = <16>;
+			max-msgs = <8>;
+			status = "okay";
+		};
+
+		vsensor1: sensor@1 {
+			compatible = "vnd,sensor";
+			reg = <1>;
+			sample-period = <120>;
+			sample-size = <16>;
+			max-msgs = <4>;
+			status = "disabled";
+		};
+	};
+};

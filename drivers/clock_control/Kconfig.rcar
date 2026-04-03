@@ -1,0 +1,9 @@
+# Copyright (c) 2021-2023 IoT.bzh
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_RCAR_CPG_MSSR
+	bool "RCar CPG MSSR driver"
+	default y
+	depends on SOC_FAMILY_RENESAS_RCAR
+	help
+	  Enable support for Renesas RCar CPG MSSR driver.

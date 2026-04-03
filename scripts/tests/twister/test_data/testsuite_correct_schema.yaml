@@ -1,0 +1,4 @@
+tests:
+  testing.correct_schema:
+    tags: demo_correct correct_tags
+    platform_exclude: demo_board_1

@@ -1,0 +1,70 @@
+# Private config options for echo-server sample app
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Networking echo-server sample application"
+
+config NET_SAMPLE_NUM_HANDLERS
+	int "How many connections to serve at the same time"
+	default 1
+	help
+	  Each connection is served by a thread which needs
+	  memory. Only increase the value here if really needed.
+
+config NET_SAMPLE_IFACE2_MY_IPV6_ADDR
+	string "My IPv6 address for second interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE2_MY_IPV4_ADDR
+	string "My IPv4 address for second interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE2_MY_IPV4_NETMASK
+	string "My IPv4 netmask for second interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_PSK_HEADER_FILE
+	string "Header file containing PSK"
+	default "dummy_psk.h"
+	depends on MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
+	help
+	  Name of a header file containing a
+	  pre-shared key.
+
+config NET_SAMPLE_CERTS_WITH_SC
+	bool "Signed certificates"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Enable this flag, if you are interested to run this
+	  application with signed certificates and keys.
+
+config NET_SAMPLE_WEBSOCKET_CONSOLE
+	bool "Websocket console support"
+	default y if WEBSOCKET_CONSOLE
+	help
+	  Enable this flag, if you are interested to enable websocket console.
+	  You can use the overlay-ws-console.conf to set websocket options.
+
+config NET_SAMPLE_HTTPS_SERVICE
+	bool "Enable HTTPS service for the Webconsole"
+	default y if NET_SAMPLE_WEBSOCKET_CONSOLE
+	depends on NET_SOCKETS_SOCKOPT_TLS || TLS_CREDENTIALS
+
+config NET_SAMPLE_HTTPS_SERVER_SERVICE_PORT
+	int "Port number for HTTPS service"
+	default 443
+	depends on NET_SAMPLE_HTTPS_SERVICE
+
+if USB_DEVICE_STACK_NEXT
+# Source common USB sample options used to initialize new experimental USB
+# device stack. The scope of these options is limited to USB samples in project
+# tree, you cannot use them in your own application.
+	source "samples/subsys/usb/common/Kconfig.sample_usbd"
+endif
+
+source "samples/net/common/Kconfig"
+source "Kconfig.zephyr"

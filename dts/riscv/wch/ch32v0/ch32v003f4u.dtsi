@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2024 Michael Hope
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch32v0/ch32v003.dtsi>

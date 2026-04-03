@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2023 Ferroamp AB (publ)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay assumes the HSE clock has already been enabled,
+ * for example by hse_8.overlay.
+ */
+
+&clk_hse {
+	css-enabled;
+};

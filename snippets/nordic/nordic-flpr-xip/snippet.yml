@@ -1,0 +1,11 @@
+name: nordic-flpr-xip
+append:
+  EXTRA_DTC_OVERLAY_FILE: nordic-flpr-xip.overlay
+
+boards:
+  /.*/nrf54l15/cpuapp/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/nrf54l15_cpuapp.overlay
+  /.*/nrf54h20/cpuapp/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/nrf54h20_cpuapp.overlay

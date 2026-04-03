@@ -1,0 +1,80 @@
+# Copyright 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Snippet tests"
+
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
+
+# Snippet test types used by the test implementation to steer the test logic
+choice
+	prompt "Snippet Test Type"
+	default TEST_TYPE_NONE
+
+config TEST_TYPE_NONE
+	bool "Test Type: None"
+	help
+	  Test the initial state with no snippets applied.
+
+config TEST_TYPE_FOO
+	bool "Test Type: Foo"
+	help
+	  Test the `foo` snippet from the default application snippet root.
+
+config TEST_TYPE_BAR
+	bool "Test Type: Bar"
+	help
+	  Test the `bar` snippet from an extra snippet root.
+
+config TEST_TYPE_FOO_BAR
+	bool "Test Type: Foo-Bar"
+	help
+	  Test the snippet processing order (1. foo, 2. bar)
+
+config TEST_TYPE_BAR_FOO
+	bool "Test Type: Bar-Foo"
+	help
+	  Test the snippet processing order (1. bar, 2. foo)
+
+config TEST_TYPE_VER_CHECK
+	bool "Test Type: Version check"
+	help
+	  Test board version snippet application
+
+config TEST_TYPE_VER_CHECK_SPECIFIC
+	bool "Test Type: Version check specific"
+	help
+	  Test board version snippet application with specific board version
+
+endchoice
+
+# Test values set by the snippet config overlays and tested by the test logic
+config TEST_FOO_VAL
+	int "Test value set by the 'foo' snippet config overlay"
+	help
+	  This option's value should be overridden by the 'foo' snippet config
+	  overlay.
+
+config TEST_BAR_VAL
+	int "Test value set by the 'bar' snippet config overlay"
+	help
+	  This option's value should be overridden by the 'bar' snippet config
+	  overlay.
+
+config TEST_COMMON_VAL
+	int "Test value set by the snippet config overlays"
+	help
+	  This option's value should be overridden by the snippet config
+	  overlays.
+
+# Used for testing board version snippets
+config TEST_VER_CHECK_APPLIED
+	bool "Test version check snippet applied"
+	help
+	  This option's value should be set by the ver_check snippet.
+
+config TEST_VER_CHECK_SPECIFIC_VERSION_APPLIED
+	bool "Test version check with board version snippet applied"
+	help
+	  This option's value should be set by the ver_check snippet.

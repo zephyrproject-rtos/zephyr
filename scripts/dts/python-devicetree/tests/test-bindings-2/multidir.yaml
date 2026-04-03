@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Binding in test-bindings-2/
+
+compatible: "in-dir-2"

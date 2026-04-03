@@ -1,0 +1,13 @@
+sample:
+  description: Test network statistics functionality
+  name: Network statistics sample app
+tests:
+  sample.net.stats:
+    harness: net
+    min_ram: 64
+    tags:
+      - net
+      - statistics
+    depends_on: netif
+    integration_platforms:
+      - qemu_x86

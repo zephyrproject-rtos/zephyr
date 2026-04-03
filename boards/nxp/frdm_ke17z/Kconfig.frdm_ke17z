@@ -1,0 +1,7 @@
+# FRDM-KE17Z board configuration
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FRDM_KE17Z
+	select SOC_MKE17Z7
+	select SOC_PART_NUMBER_MKE17Z256VLL7

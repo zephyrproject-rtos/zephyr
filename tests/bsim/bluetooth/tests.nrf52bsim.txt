@@ -1,0 +1,3 @@
+# Search paths(s) for tests which will be run in the nrf52bsim
+# This file is used in CI to select which tests are run
+tests/bsim/bluetooth/

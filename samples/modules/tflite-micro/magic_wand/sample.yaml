@@ -1,0 +1,12 @@
+sample:
+  description: Magic Wand TensorFlow sample
+  name: magic wand tensorflow
+tests:
+  sample.tensorflow.magicwand:
+    platform_allow: litex_vexriscv
+    build_only: true
+    tags: tensorflow
+    integration_platforms:
+      - litex_vexriscv
+    modules:
+      - tflite-micro

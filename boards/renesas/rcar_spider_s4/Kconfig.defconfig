@@ -1,0 +1,5 @@
+# Copyright (c) 2024 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config BUILD_OUTPUT_BIN
+	default y if BOARD_RCAR_SPIDER_S4_R8A779F0_A55

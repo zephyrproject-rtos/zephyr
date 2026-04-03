@@ -1,0 +1,23 @@
+# Copyright (c) 2016 Zephyr Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_CORTEX_M3
+
+config BUILD_OUTPUT_BIN
+	default n
+
+# DWT is not properly emulated in QEMU
+choice NULL_POINTER_EXCEPTION_DETECTION
+	bool
+	default NULL_POINTER_EXCEPTION_DETECTION_NONE
+endchoice
+
+# BT relies on PSA Crypto API to perform crypto operations and, on this platform,
+# these APIs are provided through Mbed TLS. Unfortunately, this platform is not
+# provided with a true random number generator which is required to properly
+# initialize the PSA Crypto core, so we need to enable the fake TEST_RANDOM_GENERATOR.
+config TEST_RANDOM_GENERATOR
+	bool
+	default y if BT
+
+endif # BOARD_QEMU_CORTEX_M3

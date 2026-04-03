@@ -1,0 +1,360 @@
+# Bluetooth common configuration options
+
+# Copyright (c) 2017 Nordic Semiconductor ASA
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Bluetooth buffer configuration"
+
+config BT_BUF_ACL_TX_SIZE
+	int "Maximum supported ACL size for outgoing data"
+	range 27 $(UINT16_MAX)
+	default 37 if BT_MESH_GATT
+	default 27
+	help
+	  Maximum supported ACL size of data packets sent from the Host to the
+	  Controller. This value does not include the HCI ACL header.
+
+	  In a combined build this value will be set in both the Host and the
+	  Controller.
+
+	  In a Host-only build the Host will read the maximum ACL size supported
+	  by the Controller and use the smallest value supported by both the
+	  Host and the Controller.
+
+	  The Host supports sending of larger L2CAP PDUs than the ACL size and
+	  will fragment L2CAP PDUs into ACL data packets.
+	  The Controller will return this value in the HCI LE Read Buffer
+	  Size command response. If this size if greater than effective Link
+	  Layer transmission size then the Controller will perform
+	  fragmentation before transmitting the packet(s) on air.
+	  If this value is less than the effective Link Layer transmission size
+	  then this will restrict the maximum Link Layer transmission size.
+
+config BT_BUF_ACL_TX_COUNT
+	int "Number of outgoing ACL data buffers"
+	default 7 if BT_HCI_RAW
+	default 4 if BT_MESH_GATT
+	default 3
+	range 1 $(UINT8_MAX)
+	help
+	  Number of outgoing ACL data buffers sent from the Host to the
+	  Controller. This determines the maximum amount of data packets the
+	  Host can have queued in the Controller before waiting for the
+	  to notify the Host that more packets can be queued with the Number of
+	  Completed Packets event.
+	  The buffers are shared between all of the connections and the Host
+	  determines how to divide the buffers between the connections.
+	  The Controller will return this value in the HCI LE Read Buffer Size
+	  command response.
+
+config BT_BUF_ACL_RX_SIZE
+	int "Maximum supported ACL size for incoming data"
+	# For GOEP over RFCOMM, the minimum MTU of GOEP is 264, including,
+	# 255 bytes - the minimum MTU of GOEP,
+	# 4 bytes - L2CAP Header,
+	# 5 bytes - 4 bytes for RFCOMM header with extended length, 1 byte for FCS.
+	# For GOEP over L2CAP, the minimum MTU of GOEP is 265, including,
+	# 255 bytes - the minimum MTU of GOEP,
+	# 4 bytes - L2CAP Header,
+	# 6 bytes - Field length of L2CAP I-frame, including,
+	#   4 bytes - extended control field,
+	#   2 bytes - FCS field.
+	default 265 if BT_CLASSIC && BT_GOEP
+	default 200 if BT_CLASSIC
+	default 70 if BT_EATT
+	default 69 if BT_SMP
+	default 37 if BT_MESH_GATT
+	default 27
+	range 264 $(UINT16_MAX) if BT_CLASSIC && BT_GOEP
+	range 70 $(UINT16_MAX) if BT_EATT
+	range 69 $(UINT16_MAX) if BT_SMP
+	range 27 $(UINT16_MAX)
+	help
+	  Maximum support ACL size of data packets sent from the Controller to
+	  the Host. This value does not include the HCI ACL header.
+
+	  In a combined Host and Controller build, both the
+	  Host and the Controller will use this value for buffer sizes, making
+	  Controller to Host flow control not strictly necessary.
+
+	  In a Host only build with Controller to Host flow control enabled
+	  the Host will inform the Controller about the maximum ACL data size it
+	  can send by setting this value in the Host Buffer Size command.
+
+	  If Controller to Host flow control is not enabled then the Controller
+	  can assume the Host has to receive and process ACL data faster than
+	  the controller can produce it.
+
+	  In a Controller only build this will determine the maximum ACL size
+	  that the Controller will send to the Host.
+
+config BT_BUF_ACL_RX_COUNT_EXTRA
+	# As Host implementation unconditionally references this Kconfig, we
+	# hide it for !BT_CONN and default to 0.
+	int "Number of extra incoming ACL data buffers" if BT_CONN
+	range 1 65535 if BT_CONN
+	default BT_MAX_CONN if BT_CONN
+	range 0 0
+	default 0
+	help
+	  Number of incoming extra ACL data buffers sent from the Controller to
+	  the Host.
+
+	  By default, the total number of incoming ACL data buffers is equal to
+	  CONFIG_BT_MAX_CONN + 1, to support L2CAP recombination.
+
+	  The L2CAP recombination in the Host keeps the first Rx buffer for each
+	  connection and uses one Rx buffer across all connections to receive a
+	  fragment from the Controller.
+
+config BT_BUF_EVT_RX_SIZE
+	int "Maximum supported HCI Event buffer length"
+	default $(UINT8_MAX) if (BT_EXT_ADV && BT_OBSERVER) || BT_PER_ADV_SYNC || BT_DF_CONNECTION_CTE_RX || BT_CLASSIC || BT_CHANNEL_SOUNDING || BT_LE_EXTENDED_FEAT_SET
+	# LE Read Supported Commands command complete event.
+	default 68
+	range 68 $(UINT8_MAX)
+	range 78 $(UINT8_MAX) if BT_CHANNEL_SOUNDING
+	help
+	  Maximum supported HCI event buffer size. This value does not include
+	  the HCI Event header.
+	  This value is used by both the Host and the Controller for buffer
+	  sizes that include HCI events. It should be set according to the
+	  expected HCI events that can be generated from the configuration.
+	  If the subset of possible HCI events is unknown, this should be set to
+	  the maximum of 255.
+
+config BT_BUF_EVT_RX_COUNT
+	int "Number of HCI Event buffers"
+	default 20 if (BT_MESH && !(BT_BUF_EVT_DISCARDABLE_COUNT > 0))
+	default 10
+	range 2 $(UINT8_MAX)
+	help
+	  Number of buffers available for incoming HCI events from the
+	  Controller.
+
+config BT_BUF_CMD_TX_SIZE
+	int "Maximum support HCI Command buffer length"
+	default $(UINT8_MAX) if (BT_EXT_ADV || BT_CLASSIC || BT_ISO_CENTRAL || BT_CHANNEL_SOUNDING)
+	# LE Set Connection CTE Receive Parameters. Value required to store max allowed number
+	# of antenna ids for platforms other than Nordic.
+	default 83 if (!BT_EXT_ADV && !BT_CLASSIC && BT_CTLR_DF && BT_CTLR_DF_CONN_CTE_REQ && !SOC_COMPATIBLE_NRF)
+	# LE Generate DHKey v2 command
+	default 65
+	range 65 $(UINT8_MAX)
+	help
+	  Maximum data size for each HCI Command buffer. This value does not
+	  include the HCI Command header.
+	  This value is used by both the Host and the Controller for buffer
+	  sizes that include HCI commands. It should be set according to the
+	  expected HCI commands that can be sent from the configuration.
+	  If the subset of possible HCI commands is unknown, this should be set
+	  to the maximum of 255.
+
+config BT_BUF_CMD_TX_COUNT
+	# This option is only visible for a user when Host and Controller are build together, or for
+	# Host-only builds.
+	int "Number of HCI command buffers" if !BT_HCI_RAW || !HAS_BT_CTLR
+	# This option is present when Host and Controller are build together, or
+	# for Host only builds, or when Controller-to-Host ACL data flow control
+	# is disabled.
+	depends on !BT_HCI_RAW || !HAS_BT_CTLR || !BT_HCI_ACL_FLOW_CONTROL
+	# The Mesh stack usage in applications and tests can start both advertising and scanning in
+	# parallel. Also, when BT_MESH_WORKQ_SYS is enabled, the Mesh stack is starting Extended
+	# Advertising in the receive callback run in the system work queue and as the Host also uses
+	# the system work queue for HCI command Tx towards the Controller, one additional HCI
+	# command buffer is needed.
+	range 2 64 if BT_MESH
+	range 1 64
+	default 2 if BT_MESH
+	default 1
+	help
+	  Number of buffers available for outgoing HCI commands from the Host.
+
+	  HCI Controllers may not support Num_HCI_Command_Packets > 1, hence they default to 1 when
+	  not enabling Controller to Host data flow control (BT_HCI_ACL_FLOW_CONTROL), Read Remote
+	  Version Information (BT_REMOTE_VERSION), Auto-Initiate PHY update (BT_AUTO_PHY_UPDATE), or
+	  Auto-Initiate Data Length Update (BT_AUTO_DATA_LEN_UPDATE).
+
+	  Normal HCI commands follow the HCI command flow control using Num_HCI_Command_Packets
+	  return in HCI command complete and status.
+
+	  The Host Number of Completed Packets command does not follow normal flow control of HCI
+	  commands and the Controller side HCI drivers that allocates HCI command buffers with
+	  K_NO_WAIT can end up running out of command buffers.
+
+	  When Controller to Host data flow control is enabled in the Host-only or combined
+	  Host plus Controller build, the internal BT_BUF_CMD_TX_COUNT is adjusted accordingly
+	  taking into considerations the enabled auto-initiated procedures, and to follow the normal
+	  HCI command flow control to be able to send Ncmd normal HCI commands and
+	  BT_BUF_ACL_RX_COUNT of Host Number of Completed Packets command down to the Controller.
+
+	  When Controller to Host data flow control is supported in the Controller-only build,
+	  the internal BT_BUF_CMD_TX_COUNT is adjusted to be equal to (BT_BUF_RX_COUNT + Ncmd).
+
+	  Where Ncmd is supported maximum Num_HCI_Command_Packets in the Controller implementation.
+
+endmenu
+
+# Workaround to have commas on function arguments
+ZEPHYR_BT_HCI := zephyr,bt-hci
+
+config BT_HAS_HCI_VS
+	bool
+	default $(dt_chosen_bool_prop,$(ZEPHYR_BT_HCI),bt-hci-vs-ext)
+	help
+	  This option is set by the Bluetooth controller to indicate support
+	  for the Zephyr HCI Vendor-Specific Commands and Event.
+
+config BT_HCI_VS
+	bool "Zephyr HCI Vendor-Specific Commands"
+	depends on BT_HAS_HCI_VS || !HAS_BT_CTLR
+	default y if BT_HAS_HCI_VS
+	help
+	  Enable support for the Zephyr HCI Vendor-Specific Commands in the
+	  Host and/or Controller. This enables Set Version Information,
+	  Supported Commands, Supported Features vendor commands.
+
+config BT_HCI_VS_FATAL_ERROR_SUPPORT
+	bool
+
+config BT_HCI_VS_FATAL_ERROR
+	bool "Allow vendor specific HCI event Zephyr Fatal Error"
+	depends on BT_HCI_VS && BT_HCI_VS_FATAL_ERROR_SUPPORT
+	help
+	  Enable emitting HCI Vendor-Specific events for system and Controller
+	  errors that are unrecoverable.
+
+config BT_HCI_VS_EXT_DETECT
+	bool "Use heuristics to guess HCI vendor extensions support in advance"
+	depends on BT_HCI_VS && !HAS_BT_CTLR
+	default y if BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3 || BOARD_NATIVE_SIM
+	help
+	  Use some heuristics to try to guess in advance whether the controller
+	  supports the HCI vendor extensions in advance, in order to prevent
+	  sending vendor commands to controller which may interpret them in
+	  completely different ways.
+
+config BT_HCI_MESH_EXT
+	bool "Mesh HCI Command support"
+	depends on BT_BROADCASTER && BT_OBSERVER && !BT_LL_SW_SPLIT
+	help
+	  Enable support for the Bluetooth Mesh HCI Commands.
+
+config BT_WAIT_NOP
+	bool "Wait for \"NOP\" Command Complete event during init"
+	help
+	  Emit a Command Complete event from the Controller (and wait for it
+	  from the Host) for the NOP opcode to indicate that the Controller is
+	  ready to receive commands.
+
+config BT_RPA
+	bool
+	depends on BT_HOST_CRYPTO || BT_CTLR_CRYPTO
+
+config BT_PRIVATE_SHELL
+	bool
+	default n
+
+config BT_ASSERT
+	bool "Custom Bluetooth assert implementation"
+	default y
+	help
+	  Use a custom Bluetooth assert implementation instead of the
+	  kernel-wide __ASSERT() when CONFIG_ASSERT is disabled.
+
+if BT_ASSERT
+
+config BT_ASSERT_VERBOSE
+	bool "Print out an assert string when using BT_ASSERT"
+	default y
+	help
+	  When CONFIG_BT_ASSERT is enabled, this option turns on printing the
+	  cause of the assert to the console using printk().
+
+config BT_ASSERT_PANIC
+	bool "Use k_panic() instead of k_oops()"
+	help
+	  When CONFIG_BT_ASSERT is enabled, this option makes the code call
+	  k_panic() instead of k_oops() when an assertion is triggered.
+
+endif # BT_ASSERT
+
+config BT_HCI_ERR_TO_STR
+	bool "Print HCI error codes as strings [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This configuration enables printing of HCI error
+	  codes represented as strings.
+	  See bt_hci_err_to_str() for more details.
+
+config BT_MONITOR
+	bool
+	select LOG_OUTPUT
+
+choice BT_DEBUG_TYPE
+	prompt "Bluetooth debug type"
+	default BT_DEBUG_NONE
+
+config BT_DEBUG_NONE
+	bool "No debug log"
+	help
+	  Select this to disable all Bluetooth debug logs.
+
+config BT_DEBUG_MONITOR_UART
+	bool "Monitor protocol over UART"
+	select LOG
+	select CONSOLE_HAS_DRIVER
+	select BT_MONITOR
+	help
+	  Use a custom logging protocol over the console UART
+	  instead of plain-text output. Requires a special application
+	  on the host side that can decode this protocol. Currently
+	  the 'btmon' tool from BlueZ is capable of doing this.
+
+	  If the target board has two or more external UARTs it is
+	  possible to keep using UART_CONSOLE together with this option,
+	  however if there is only a single external UART then
+	  UART_CONSOLE needs to be disabled (in which case printk/printf
+	  will get encoded into the monitor protocol).
+
+config BT_DEBUG_MONITOR_RTT
+	bool "Monitor protocol over RTT"
+	depends on USE_SEGGER_RTT
+	depends on SEGGER_RTT_MAX_NUM_UP_BUFFERS >= 2
+	select LOG
+	select CONSOLE_HAS_DRIVER
+	select BT_MONITOR
+	help
+	  Use a custom logging protocol over the RTT buffer instead of
+	  plain-text output. Requires a special application
+	  on the host side that can decode this protocol. Currently
+	  the 'btmon' tool from BlueZ is capable of doing this.
+
+if BT_DEBUG_MONITOR_RTT
+
+config BT_DEBUG_MONITOR_RTT_BUFFER
+	int "Buffer number used for custom logger output."
+	range 1 SEGGER_RTT_MAX_NUM_UP_BUFFERS
+	default 1
+	help
+	  Select index of up-buffer used for logger output.
+	  Make sure the buffer number is not used by other logger,
+	  e.g. in LOG_BACKEND_RTT_BUFFER, otherwise the buffer will be
+	  overwritten.
+
+config BT_DEBUG_MONITOR_RTT_BUFFER_NAME
+	string "Buffer name used for custom logger output."
+	default "btmonitor"
+	help
+	  Select index of up-buffer used for logger output.
+
+config BT_DEBUG_MONITOR_RTT_BUFFER_SIZE
+	int "Size of reserved up-buffer for custom logger output."
+	default 1024
+	help
+	  Specify reserved size of up-buffer used for custom logger output.
+
+endif # BT_DEBUG_MONITOR_RTT
+
+endchoice # Bluetooth debug type

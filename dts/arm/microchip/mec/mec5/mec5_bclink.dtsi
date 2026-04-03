@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* From Microchip MEC5 MEC174x and onwards includes one instance of the
+ * BC-Link peripheral.
+ * Include this file in the soc {} section in the relevant chip DTSI files
+ */
+bclink0: bclink@4000cd00 {
+	reg = <0x4000cd00 0x20>;
+	interrupts = <96 3>, <97 3>;
+	interrupt-names = "bcm_err", "bcm_done";
+	girqs = <18 7>, <18 6>;
+	status = "disabled";
+};

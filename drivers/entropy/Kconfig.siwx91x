@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_SILABS_SIWX91X
+	bool "SiWx91x RNG driver"
+	default y
+	depends on DT_HAS_SILABS_SIWX91X_RNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	 Enable hardware Random Number Generator embedded on Silicon Labs
+	 SiWx91x chips.

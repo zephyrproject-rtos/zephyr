@@ -1,0 +1,36 @@
+# Copyright 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MCUX_SDIF
+	bool "NXP MCUX SDIF Driver"
+	default y
+	depends on DT_HAS_NXP_LPC_SDIF_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	select PINCTRL
+	help
+	  Enable the NXP SDIF Host controller driver
+
+if MCUX_SDIF
+
+config MCUX_SDIF_DMA_SUPPORT
+	bool "DMA support for MCUX SDIF driver"
+	default y
+	help
+	  Enable DMA support for MCUX SDIF driver. May be disabled to reduce
+	  footprint of driver.
+
+if MCUX_SDIF_DMA_SUPPORT
+
+# SDIF DMA needs 32 bit aligned buffers
+config SDHC_BUFFER_ALIGNMENT
+	default 4
+
+config MCUX_SDIF_DMA_BUFFER_SIZE
+	int "Size of DMA descriptor buffer in bytes"
+	default 256
+	help
+	  Size of MCUX SDIF DMA descriptor buffer in bytes
+
+endif #MCUX_SDIF_DMA_SUPPORT
+
+endif #MCUX_SDIF

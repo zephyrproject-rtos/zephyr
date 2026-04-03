@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2022 Konstantinos Papadopoulos <kostas.papadopulos@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+/ {
+	aliases {
+		lora0 = &lora_semtech_sx1262mb2das;
+	};
+};
+
+&arduino_spi {
+	status = "okay";
+
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_LOW>;
+
+	lora_semtech_sx1262mb2das: sx1262@0 {
+		compatible = "semtech,sx1262";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+		label = "SX1262";
+		reset-gpios = <&arduino_header ARDUINO_HEADER_R3_A0 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&arduino_header ARDUINO_HEADER_R3_D3 GPIO_ACTIVE_HIGH>;
+		antenna-enable-gpios = <&arduino_header ARDUINO_HEADER_R3_D8 GPIO_ACTIVE_HIGH>;
+		dio1-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
+		dio2-tx-enable;
+		tcxo-power-startup-delay-ms = <5>;
+	};
+};

@@ -1,0 +1,8 @@
+# Copyright (c) 2023, TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: Raspberry Pi Pico PIO
+
+compatible: "raspberrypi,pico-pio"
+
+include: [base.yaml, reset-device.yaml]

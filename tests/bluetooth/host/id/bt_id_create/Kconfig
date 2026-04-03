@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SELECT_BT_HCI_SET_PUBLIC_ADDR
+	bool "dummy kconfig"
+	select BT_HCI_SET_PUBLIC_ADDR
+	help
+	  dummy kconfig
+
+source "Kconfig.zephyr"

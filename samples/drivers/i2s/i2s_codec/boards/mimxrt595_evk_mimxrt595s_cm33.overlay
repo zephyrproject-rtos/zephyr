@@ -1,0 +1,30 @@
+/*
+ * Copyright 2024, 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-codec-rx = &i2s0;
+		i2s-codec-tx = &i2s1;
+	};
+};
+
+&i3c0 {
+	clk-divider = <20>;
+
+	status = "okay";
+};
+
+&i2s0 {
+	status = "okay";
+};
+
+&i2s1 {
+	status = "okay";
+};
+
+dmic_dev: &dmic0 {
+	status = "okay";
+};

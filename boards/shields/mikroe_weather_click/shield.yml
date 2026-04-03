@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024, Nordic Semiconductor ASA
+
+shields:
+  - name: mikroe_weather_click_i2c
+    full_name: Weather Click (I2C)
+    vendor: mikroe
+    supported_features:
+      - sensor
+
+  - name: mikroe_weather_click_spi
+    full_name: Weather Click (SPI)
+    vendor: mikroe
+    supported_features:
+      - sensor

@@ -1,0 +1,6 @@
+board:
+  name: pico2_spe
+  full_name: Pico2-SPE
+  vendor: kws
+  socs:
+  - name: rp2350a

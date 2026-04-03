@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for creating quadrature decoder device instance
+ */
+
+/ {
+	aliases {
+		qdec0 = &qdec;
+	};
+};
+
+&timers3 {
+	status = "okay";
+
+	qdec: qdec {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pa6 &tim3_ch2_pa7>;
+		pinctrl-names = "default";
+		st,input-polarity-inverted;
+		st,input-filter-level = <FDIV32_N8>;
+		st,counts-per-revolution = <16>;
+	};
+};

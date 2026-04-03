@@ -1,0 +1,14 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Workaround for pretending that the controller
+# supports CIS as the host expects the controller
+# to support these features.
+
+config BT_LL_SW_SPLIT
+	select BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
+	select BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu

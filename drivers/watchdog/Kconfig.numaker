@@ -1,0 +1,13 @@
+# NUMAKER Watchdog Driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config WWDT_NUMAKER
+	bool "Nuvoton NUMAKER MCU Window Watchdog driver"
+	default y
+	depends on DT_HAS_NUVOTON_NUMAKER_WWDT_ENABLED
+	help
+	  This option enables the Watchdog driver for Nuvoton NuMaker family of
+	  processors.
+	  Say y if you wish to enable NuMaker WWDT.

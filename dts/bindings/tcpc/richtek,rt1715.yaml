@@ -1,0 +1,74 @@
+# Copyright (c) 2024 Jianxiong Gu <jianxiong.gu@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The Richtek RT1715 is a Type-C Port Controller (TCPC) chip.
+
+    Example:
+
+    ports {
+        #address-cells = <1>;
+        #size-cells = <0>;
+        port0: usbc-port@0 {
+          compatible = "usb-c-connector";
+          reg = <0>;
+          tcpc = <&rt1715_tcpc0>;
+          vbus = <&vbus0>;
+          power-role = "sink";
+          sink-pdos = <PDO_FIXED(5000, 100, 0)>;
+        };
+    };
+
+    vbus0: vbus {
+      compatible = "zephyr,usb-c-vbus-adc";
+      status = "okay";
+      io-channels = <&adc 2>;
+      output-ohms = <10000>;
+      full-ohms = <(100000 + 10000)>;
+    };
+
+    i2c1 {
+      status = "okay";
+      clock-frequency = <I2C_BITRATE_FAST_PLUS>;
+      rt1715_tcpc0: rt1715@4e {
+        compatible = "richtek,rt1715";
+        reg = <0x4e>;
+        irq-gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+        status = "okay";
+      };
+    };
+
+compatible: "richtek,rt1715"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  irq-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Interrupt GPIO pin connected from the chip.
+
+  transmit-retries:
+    type: int
+    default: 2
+    description: |
+      Maximum number of packet retransmissions done by TCPC. Valid values are <0, 3>.
+      This value is used to fill the Retry Counter part of the TCPCI Transmit register.
+
+  vconn-ctrl-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin for VCONN control. RT1715 does not have built-in VCONN power supply. If the
+      state of the VCONN power supply need to be toggled, this pin and a switchable power
+      supply are required.
+
+  vconn-disc-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin for VCONN discharge control. RT1715 does not have VCONN discharge capability.
+      If VCONN discharge is not needed, this pin does not need to be defined in the device
+      tree. Otherwise, this pin and a discharge path are required.

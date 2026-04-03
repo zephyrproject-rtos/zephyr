@@ -1,0 +1,25 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_MCXL
+
+config MCUX_CORE_SUFFIX
+	default "_cm33" if SOC_MCXL255_CPU0 || SOC_MCXL254_CPU0 || \
+		SOC_MCXL253_CPU0
+	default "_cm0plus" if SOC_MCXL255_CPU1 || SOC_MCXL254_CPU1 || \
+		SOC_MCXL253_CPU1
+
+config CORTEX_M_SYSTICK
+	default y
+
+config NUM_IRQS
+	default 161
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+# Set to the minimal size of data which can be written.
+config FLASH_FILL_BUFFER_SIZE
+	default 512
+
+endif # SOC_FAMILY_MCXL

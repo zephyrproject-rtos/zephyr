@@ -1,0 +1,210 @@
+/*
+ * Copyright (C) 2020, 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define DT_DRV_COMPAT nxp_imx_wdog
+
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/watchdog.h>
+#include <zephyr/sys/device_mmio.h>
+#include <zephyr/sys_clock.h>
+#include <fsl_wdog.h>
+
+#define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
+#include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
+LOG_MODULE_REGISTER(wdt_mcux_wdog);
+
+#define WDOG_TMOUT_SEC(x)  (((x * 2) / MSEC_PER_SEC) - 1)
+
+#define DEV_CFG(_dev)  ((const struct mcux_wdog_config *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct mcux_wdog_data *)(_dev)->data)
+
+struct mcux_wdog_config {
+	DEVICE_MMIO_NAMED_ROM(reg);
+	void (*irq_config_func)(const struct device *dev);
+	const struct pinctrl_dev_config *pcfg;
+};
+
+struct mcux_wdog_data {
+	DEVICE_MMIO_NAMED_RAM(reg);
+	wdt_callback_t callback;
+	wdog_config_t wdog_config;
+	bool timeout_valid;
+};
+
+static inline WDOG_Type *get_base_address(const struct device *dev)
+{
+	return (WDOG_Type *)DEVICE_MMIO_NAMED_GET(dev, reg);
+}
+
+static int mcux_wdog_setup(const struct device *dev, uint8_t options)
+{
+	struct mcux_wdog_data *data = dev->data;
+	WDOG_Type *base = get_base_address(dev);
+
+	if (!data->timeout_valid) {
+		LOG_ERR("No valid timeouts installed");
+		return -EINVAL;
+	}
+
+	/*
+	 * WDT_OPT_PAUSE_IN_SLEEP is a bit tricky because depending on
+	 * the frequency the platform is running at and the wdog timeout
+	 * value relative to the sleep time, the system may wakeup enough
+	 * to keep system time accurate enough on timer rollovers. During
+	 * this time, the wdog will start ticking again so you can
+	 * possibly still have the wdog expire.
+	 *
+	 */
+	data->wdog_config.workMode.enableWait =
+		(options & WDT_OPT_PAUSE_IN_SLEEP) == 0U;
+
+	data->wdog_config.workMode.enableStop =
+		(options & WDT_OPT_PAUSE_IN_SLEEP) == 0U;
+
+	data->wdog_config.workMode.enableDebug =
+		(options & WDT_OPT_PAUSE_HALTED_BY_DBG) == 0U;
+
+	LOG_DBG("Setup the watchdog: options: %d", options);
+
+	WDOG_Init(base, &data->wdog_config);
+
+	return 0;
+}
+
+static int mcux_wdog_disable(const struct device *dev)
+{
+	struct mcux_wdog_data *data = dev->data;
+	WDOG_Type *base = get_base_address(dev);
+
+	WDOG_Deinit(base);
+	data->timeout_valid = false;
+	LOG_DBG("Disabled the watchdog");
+
+	return 0;
+}
+
+static int mcux_wdog_install_timeout(const struct device *dev,
+				     const struct wdt_timeout_cfg *cfg)
+{
+	struct mcux_wdog_data *data = dev->data;
+
+	if (data->timeout_valid) {
+		LOG_ERR("No more timeouts can be installed");
+		return -ENOMEM;
+	}
+
+	WDOG_GetDefaultConfig(&data->wdog_config);
+	data->wdog_config.interruptTimeValue = 0U;
+
+	if (cfg->window.max < (MSEC_PER_SEC / 2)) {
+		LOG_ERR("Invalid window max, shortest window is 500ms");
+		return -EINVAL;
+	}
+
+	data->wdog_config.timeoutValue =
+		  WDOG_TMOUT_SEC(cfg->window.max);
+
+	if (cfg->window.min) {
+		LOG_ERR("Invalid window.min, Do not support window model");
+		return -EINVAL;
+	}
+	if (data->wdog_config.timeoutValue > 128) {
+		LOG_ERR("Invalid timeoutValue, valid (0.5s - 128.0s)");
+		return -EINVAL;
+	}
+
+	data->wdog_config.enableInterrupt = cfg->callback != NULL;
+	data->callback = cfg->callback;
+	data->timeout_valid = true;
+
+	return 0;
+}
+
+static int mcux_wdog_feed(const struct device *dev, int channel_id)
+{
+	WDOG_Type *base = get_base_address(dev);
+
+	if (channel_id != 0) {
+		LOG_ERR("Invalid channel id");
+		return -EINVAL;
+	}
+
+	WDOG_Refresh(base);
+	LOG_DBG("Fed the watchdog");
+
+	return 0;
+}
+
+static void mcux_wdog_isr(const struct device *dev)
+{
+	struct mcux_wdog_data *data = dev->data;
+	WDOG_Type *base = get_base_address(dev);
+	uint32_t flags;
+
+	flags = WDOG_GetStatusFlags(base);
+	WDOG_ClearInterruptStatus(base, flags);
+
+	if (data->callback) {
+		data->callback(dev, 0);
+	}
+}
+
+static int mcux_wdog_init(const struct device *dev)
+{
+	const struct mcux_wdog_config *config = dev->config;
+	int ret;
+
+	/* Map the named MMIO region */
+	DEVICE_MMIO_NAMED_MAP(dev, reg, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+
+	config->irq_config_func(dev);
+
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0 && ret != -ENOENT) {
+		return ret;
+	}
+
+	return 0;
+}
+
+static DEVICE_API(wdt, mcux_wdog_api) = {
+	.setup = mcux_wdog_setup,
+	.disable = mcux_wdog_disable,
+	.install_timeout = mcux_wdog_install_timeout,
+	.feed = mcux_wdog_feed,
+};
+
+#define MCUX_WDOG_INIT(id)								\
+	static void mcux_wdog_config_func_##id(const struct device *dev);		\
+											\
+	PINCTRL_DT_INST_DEFINE(id);							\
+											\
+	static const struct mcux_wdog_config mcux_wdog_config_##id = {			\
+		DEVICE_MMIO_NAMED_ROM_INIT(reg, DT_DRV_INST(id)),			\
+		.irq_config_func = mcux_wdog_config_func_##id,				\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),				\
+	};										\
+											\
+	static struct mcux_wdog_data mcux_wdog_data_##id;				\
+											\
+	DEVICE_DT_INST_DEFINE(id,							\
+			      &mcux_wdog_init,						\
+			      NULL,							\
+			      &mcux_wdog_data_##id, &mcux_wdog_config_##id,		\
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			      &mcux_wdog_api);						\
+											\
+	static void mcux_wdog_config_func_##id(const struct device *dev)		\
+	{										\
+		IRQ_CONNECT(DT_INST_IRQN(id),						\
+			    DT_INST_IRQ(id, priority),					\
+			    mcux_wdog_isr, DEVICE_DT_INST_GET(id), 0);			\
+											\
+		irq_enable(DT_INST_IRQN(id));						\
+	}
+
+DT_INST_FOREACH_STATUS_OKAY(MCUX_WDOG_INIT)

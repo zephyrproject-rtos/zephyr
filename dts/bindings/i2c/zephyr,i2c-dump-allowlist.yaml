@@ -1,0 +1,16 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Devices allowlist for i2c messages dump
+
+compatible: "zephyr,i2c-dump-allowlist"
+
+include: base.yaml
+
+properties:
+  status:
+    const: "okay"
+
+  devices:
+    required: true
+    type: phandles

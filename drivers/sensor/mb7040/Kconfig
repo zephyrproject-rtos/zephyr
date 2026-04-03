@@ -1,0 +1,19 @@
+#MB7040 ultrasonic sensor config
+
+#Copyright 2025 Sabrina Simkhovich <sabrinasimkhovich @gmail.com>
+#SPDX-License-Identifier: Apache-2.0
+
+config MB7040
+	bool "MB7040 ultrasonic distance sensor"
+	default y
+	depends on DT_HAS_MAXBOTIX_MB7040_ENABLED
+	select I2C
+	help
+	  Enable driver for MB7040 distance sensor.
+
+config MB7040_DELAY_MS
+	int "Delay in milliseconds to wait for distance measurements"
+	default 100
+	depends on MB7040
+	help
+	  Timeout for sample fetch.

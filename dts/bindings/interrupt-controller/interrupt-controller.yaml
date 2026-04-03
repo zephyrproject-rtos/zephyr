@@ -1,0 +1,14 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for interrupt controllers
+
+properties:
+  "interrupt-controller":
+    type: boolean
+    required: true
+    description: Convey's this node is an interrupt controller
+  "#interrupt-cells":
+    type: int
+    required: true
+    description: Number of items to expect in an interrupt specifier

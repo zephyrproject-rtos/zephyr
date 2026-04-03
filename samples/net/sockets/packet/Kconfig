@@ -1,0 +1,31 @@
+# Private config options for packet socket sample app
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Networking packet socket sample application"
+
+config NET_SAMPLE_SEND_WAIT_TIME
+	int "Wait time between sent packets (in ms)"
+	default 5000
+	help
+	  By default the application will send a packet every 5 seconds.
+	  If set to 0, then the packets are sent as fast as possible, which
+	  will stress test the network stack.
+
+config NET_SAMPLE_ENABLE_PACKET_DGRAM
+	bool "Use AF_PACKET with SOCK_DGRAM"
+	depends on NET_SOCKETS_PACKET_DGRAM
+	default y
+	help
+	  This will strip Ethernet header from received packets
+	  and insert Ethernet header to sent packets.
+
+config NET_SAMPLE_DESTINATION_ADDR
+	string "Destination Ethernet MAC address"
+	depends on NET_SOCKETS_PACKET_DGRAM
+	default "00:11:22:33:44:55"
+	help
+	  Where to send the Ethernet frames.
+
+source "Kconfig.zephyr"

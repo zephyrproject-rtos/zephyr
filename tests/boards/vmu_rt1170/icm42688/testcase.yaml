@@ -1,0 +1,11 @@
+# Copyright 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  boards.vmu_rt1170.icm42688:
+    tags:
+      - drivers
+      - sensor
+      - subsys
+    platform_allow:
+      - vmu_rt1170/mimxrt1176/cm7

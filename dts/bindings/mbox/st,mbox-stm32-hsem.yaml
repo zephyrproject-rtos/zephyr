@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Celina Sophie Kalus <hello@celinakalus.de>
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 HSEM MBOX
+
+compatible: "st,mbox-stm32-hsem"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+mbox-cells:
+  - channel

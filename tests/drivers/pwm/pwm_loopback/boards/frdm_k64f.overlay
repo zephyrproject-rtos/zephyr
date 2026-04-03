@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2020-2021 Vestas Wind Systems A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&ftm0 0 0 PWM_POLARITY_NORMAL>, /* PTC1, J1 pin 5 */
+		       <&ftm3 4 0 PWM_POLARITY_NORMAL>; /* PTC8, J1 pin 7 */
+	};
+};

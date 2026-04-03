@@ -1,0 +1,21 @@
+# PCIe Endpoint configuration options
+
+# Copyright 2020 Broadcom
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PCIE_ENDPOINT
+	bool "PCIe Endpoint support"
+	help
+	  This option enables PCIe Endpoint support.
+
+if PCIE_ENDPOINT
+
+module = PCIE_EP
+module-str = PCIE_EP
+source "subsys/logging/Kconfig.template.log_config"
+
+comment "PCIe Endpoint Drivers"
+
+source "drivers/pcie/endpoint/Kconfig.iproc"
+
+endif # PCIE_ENDPOINT

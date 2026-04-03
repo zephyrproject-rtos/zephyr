@@ -1,0 +1,10 @@
+sample:
+  description: Demonstration of the AMS iAQ-core Digital VOC Sensor driver
+  name: iAQcore sample
+tests:
+  sample.sensor.iaqcore:
+    harness: sensor
+    tags: samples
+    depends_on:
+      - i2c
+      - arduino_i2c

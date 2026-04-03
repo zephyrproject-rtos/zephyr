@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay clears the msi clock back to a state equivalent to what could
+ * be found in stm32xx.dtsi
+ */
+
+&clk_msi {
+	status = "disabled";
+	/delete-property/ msi-range;
+};

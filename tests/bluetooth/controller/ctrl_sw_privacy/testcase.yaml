@@ -1,0 +1,6 @@
+common:
+  build_only: true
+  tags: bluetooth
+tests:
+  bluetooth.ctrl_sw_privacy.test:
+    platform_allow: nrf52_bsim

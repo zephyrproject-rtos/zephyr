@@ -1,0 +1,23 @@
+description: GigaDevice External Interrupt Controller
+
+compatible: "gd,gd32-exti"
+
+include: [base.yaml, interrupt-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#interrupt-cells":
+    const: 1
+
+  num-lines:
+    type: int
+    required: true
+    description: Number of lines supported by the interrupt controller.
+
+interrupt-cells:
+  - line

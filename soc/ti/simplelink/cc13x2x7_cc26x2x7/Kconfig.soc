@@ -1,0 +1,42 @@
+# Texas Instruments SimpleLink CC13x2 / CC26x2
+# Copyright (c) 2022 Vaishnav Achath
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CC13X2X7_CC26X2X7
+	bool
+	select SOC_FAMILY_TI_SIMPLELINK
+	help
+	  Enable support for TI SimpleLink CC13x2x7 / CC26x2x7 SoCs
+
+config SOC_CC1352P7
+	bool
+	select SOC_SERIES_CC13X2X7_CC26X2X7
+	help
+	  CC1352P7
+
+config SOC_CC1352R7
+	bool
+	select SOC_SERIES_CC13X2X7_CC26X2X7
+	help
+	  CC1352R7
+
+config SOC_CC2652P7
+	bool
+	select SOC_SERIES_CC13X2X7_CC26X2X7
+	help
+	  CC2652P7
+
+config SOC_CC2652R7
+	bool
+	select SOC_SERIES_CC13X2X7_CC26X2X7
+	help
+	  CC2652R7
+
+config SOC_SERIES
+	default "cc13x2x7_cc26x2x7" if SOC_SERIES_CC13X2X7_CC26X2X7
+
+config SOC
+	default "cc1352p7" if SOC_CC1352P7
+	default "cc1352r7" if SOC_CC1352R7
+	default "cc2652p7" if SOC_CC2652P7
+	default "cc2652r7" if SOC_CC2652R7

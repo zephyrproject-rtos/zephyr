@@ -1,0 +1,15 @@
+# Copyright (c) 2022 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel ADSP Timer
+
+compatible: "intel,adsp-timer"
+
+include: base.yaml
+
+properties:
+  syscon:
+    type: phandle
+    required: true
+    description: |
+      phandle to syscon node.

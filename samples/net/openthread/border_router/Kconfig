@@ -1,0 +1,9 @@
+# Private config options for OpenThread Border Router sample app
+
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "OpenThread Border Router sample application"
+
+source "samples/net/common/Kconfig"
+source "Kconfig.zephyr"

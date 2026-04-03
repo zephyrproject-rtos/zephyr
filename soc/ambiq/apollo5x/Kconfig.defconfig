@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025 Ambiq Micro Inc.
+
+if SOC_SERIES_APOLLO5X
+
+rsource "Kconfig.defconfig.apollo5*"
+
+config CACHE_MANAGEMENT
+	default y
+
+config DCACHE_LINE_SIZE
+	default 32
+
+config DCACHE
+	default y
+
+config ICACHE
+	default y
+
+# Need to enlarge the IDLE stack size because the power
+# management operations are executed in the idle task
+config IDLE_STACK_SIZE
+	default 2048 if PM
+
+endif # SOC_SERIES_APOLLO5X

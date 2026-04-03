@@ -1,0 +1,20 @@
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX-PS/2 channel pads node
+
+compatible: "nuvoton,npcx-ps2-channel"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  channel:
+    type: int
+    required: true
+    description: index of i2c channel
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

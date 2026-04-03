@@ -1,0 +1,31 @@
+# Atmel ATAES132A configuration options
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CRYPTO_ATAES132A
+	bool "Atmel ATAES132A 32k AES Serial EEPROM support"
+	default y
+	depends on DT_HAS_ATMEL_ATAES132A_ENABLED
+	depends on I2C
+	help
+	  Enable Atmel ATAES132A 32k AES Serial EEPROM support.
+
+if CRYPTO_ATAES132A
+
+choice
+	prompt "ATAES132A I2C bus speed"
+	default CRYPTO_ATAES132A_I2C_SPEED_STANDARD
+
+config CRYPTO_ATAES132A_I2C_SPEED_STANDARD
+	bool "Standard"
+	help
+	  Standard bis speed of up to 100KHz.
+
+config CRYPTO_ATAES132A_I2C_SPEED_FAST
+	bool "Fast"
+	help
+	  Fast bus speed of up to 400KHz.
+endchoice
+
+endif # CRYPTO_ATAES132A

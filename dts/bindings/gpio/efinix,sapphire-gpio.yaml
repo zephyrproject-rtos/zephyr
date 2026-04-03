@@ -1,0 +1,19 @@
+description: Efinix Sapphire GPIO
+
+compatible: "efinix,sapphire-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  ngpios:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

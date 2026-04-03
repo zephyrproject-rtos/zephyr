@@ -1,0 +1,12 @@
+tests:
+  libraries.uoscore:
+    min_flash: 240
+    modules:
+      - uoscore-uedhoc
+    tags:
+      - net
+      - crypto
+      - uoscore
+      - uoscore-uedhoc
+    integration_platforms:
+      - qemu_x86

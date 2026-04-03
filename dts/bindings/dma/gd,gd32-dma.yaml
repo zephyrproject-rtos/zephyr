@@ -1,0 +1,75 @@
+# Copyright (c) 2022, TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GD32 DMA controller
+
+  channel: Select channel for data transmitting
+
+  config: A 32bit mask specifying the DMA channel configuration
+    - bit 6-7:   Direction  (see dma.h)
+                 - 0x0: MEMORY to MEMORY
+                 - 0x1: MEMORY to PERIPH
+                 - 0x2: PERIPH to MEMORY
+                 - 0x3: reserved for PERIPH to PERIPH
+
+    - bit 9:     Peripheral address increase
+                 - 0x0: no address increment between transfers
+                 - 0x1: increment address between transfers
+
+    - bit 10:    Memory address increase
+                 - 0x0: no address increase between transfers
+                 - 0x1: increase address between transfers
+
+    - bit 11-12: Peripheral data width
+                 - 0x0: 8 bits
+                 - 0x1: 16 bits
+                 - 0x2: 32 bits
+                 - 0x3: reserved
+
+    - bit 13-14: Memory data width
+                 - 0x0: 8 bits
+                 - 0x1: 16 bits
+                 - 0x2: 32 bits
+                 - 0x3: reserved
+
+    - bit 15:    Peripheral Increment Offset Size
+                 - 0x0: offset size is linked to the peripheral bus width
+                 - 0x1: offset size is fixed to 4 (32-bit alignment)
+
+    - bit 16-17: Priority
+                 - 0x0: low
+                 - 0x1: medium
+                 - 0x2: high
+                 - 0x3: very high
+
+  Example of devicetree configuration
+
+  &spi0 {
+        status = "okay";
+        pinctrl-0 = <&spi0_default>;
+        pinctrl-names = "default";
+        cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+
+        dmas = <&dma0 3 0>, <&dma0 5 GD32_DMA_PRIORITY_HIGH>;
+        dma-names = "rx", "tx";
+  };
+
+  "spi0" uses dma0 for transmitting and receiving in the example.
+  Each is named "rx" and "tx".
+  The channel cell assigns channel 3 to receive and channel 5 to transmit.
+  The config cell can take various configs.
+  But the setting used depends on each driver implementation.
+  Set the priority for the transmitting channel as HIGH, LOW(the default) for receive channel.
+
+compatible: "gd,gd32-dma"
+
+include: ["gd,gd32-dma-base.yaml"]
+
+properties:
+  "#dma-cells":
+    const: 2
+
+dma-cells:
+  - channel
+  - config

@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2021 Jonathan Hahn
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+sample:
+  name: I3G4250D Sensor Sample
+tests:
+  sample.sensor.i3g4250d:
+    platform_allow: stm32f3_disco@E
+    tags: sensors

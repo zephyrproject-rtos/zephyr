@@ -1,0 +1,22 @@
+identifier: nucleo_wba25ce1
+name: ST Nucleo WBA25CE1
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - counter
+  - gpio
+  - i2c
+  - rng
+  - rtc
+  - spi
+  - watchdog
+ram: 64
+flash: 512
+vendor: st

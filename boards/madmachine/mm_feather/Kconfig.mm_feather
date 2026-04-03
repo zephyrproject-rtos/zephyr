@@ -1,0 +1,7 @@
+# Copyright (c) 2021, MADMACHINE LIMITED
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MM_FEATHER
+	select SOC_PART_NUMBER_MIMXRT1062DVL6A
+	select SOC_MIMXRT1062

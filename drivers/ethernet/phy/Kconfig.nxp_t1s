@@ -1,0 +1,11 @@
+# NXP 10BASE-T1S digital PHY driver configuration options
+
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config PHY_NXP_T1S
+	bool "NXP 10BASE-T1S Ethernet PHY Driver"
+	default y
+	depends on DT_HAS_NXP_T1S_PHY_ENABLED
+	help
+	  Enable NXP 10BASE-T1S PHY Driver.

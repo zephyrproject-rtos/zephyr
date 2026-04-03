@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dht0 = &adafruit_hts221;
+	};
+};
+
+&zephyr_i2c {
+	status = "okay";
+
+	adafruit_hts221: hts221@5f {
+		status = "okay";
+		compatible = "st,hts221";
+		reg = <0x5f>;
+	};
+};

@@ -1,0 +1,88 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/sam/sam_d5x_e5x/atsame54/atsame54p20a-pinctrl.h>
+
+&pinctrl {
+	sercom0_uart_default: sercom0-uart-default {
+		group1 {
+			pinmux = <PA5D_SERCOM0_PAD1>,
+				 <PA4D_SERCOM0_PAD0>;
+		};
+	};
+
+	sercom1_uart_default: sercom1-uart-default {
+		group1 {
+			pinmux = <PC23C_SERCOM1_PAD1>,
+				 <PC22C_SERCOM1_PAD0>;
+		};
+	};
+
+	sercom2_uart_default: sercom2_uart_default {
+		group1 {
+			pinmux = <PB25D_SERCOM2_PAD0>,
+				 <PB24D_SERCOM2_PAD1>;
+		};
+	};
+
+	sercom5_uart_default: sercom5-uart-default {
+		group1 {
+			pinmux = <PB17C_SERCOM5_PAD1>,
+				 <PB16C_SERCOM5_PAD0>;
+		};
+	};
+
+	sercom6_spi_default: sercom6_spi_default {
+		group1 {
+			pinmux = <PC4C_SERCOM6_PAD0>,
+				 <PC7C_SERCOM6_PAD3>,
+				 <PC5C_SERCOM6_PAD1>,
+				 <PC6C_SERCOM6_PAD2>;
+		};
+	};
+
+	sercom7_i2c_default: sercom7_i2c_default {
+		group1 {
+			pinmux = <PD8C_SERCOM7_PAD0>,
+				 <PD9C_SERCOM7_PAD1>;
+		};
+	};
+
+	tcc0_pwm_default: tcc0_pwm_default {
+		group1 {
+			pinmux = <PC18F_TCC0_WO2>;
+		};
+	};
+
+	tc0_pwm_default: tc0_pwm_default {
+		group1 {
+			pinmux = <PA4E_TC0_WO0>,
+				 <PA5E_TC0_WO1>;
+		};
+	};
+
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <PA3B_ADC0_AIN1>,	/* EXT2 pin 4 */
+				 <PB0B_ADC0_AIN12>;	/* EXT2 pin 3 */
+		};
+	};
+
+	adc1_default: adc1_default {
+		group1 {
+			pinmux = <PB4B_ADC1_AIN6>,	/* EXT1 pin 3 */
+				 <PB5B_ADC1_AIN7>,	/* EXT1 pin 4 */
+				 <PC2B_ADC1_AIN4>,	/* EXT3 pin 3 */
+				 <PC3B_ADC1_AIN5>;	/* EXT3 pin 4 */
+		};
+	};
+
+	dac_default: dac_default {
+		group1 {
+			pinmux = <PA2B_DAC_VOUT0>;
+		};
+	};
+};

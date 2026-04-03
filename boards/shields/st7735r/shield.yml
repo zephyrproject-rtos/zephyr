@@ -1,0 +1,6 @@
+shields:
+  - name: st7735r_ada_160x128
+    full_name: Adafruit 160x128 1.8" SPI TFT display
+    vendor: adafruit
+    supported_features:
+      - display

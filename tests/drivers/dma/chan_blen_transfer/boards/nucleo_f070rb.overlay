@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2021 Seagate Technology LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+tst_dma0: &dma1 {
+	status = "okay";
+};

@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/infineon-sar.h>
+#include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
+
+/ {
+	aliases {
+		adc = &adc0;
+	};
+
+	zephyr,user {
+		io-channels = <&adc0 0>;
+	};
+};
+
+&pinctrl {
+	p2_0_adc: p2_0_adc {
+		pinmux = <DT_CAT1_PINMUX(2, 0, HSIOM_SEL_GPIO)>;
+	};
+};
+
+&adc0 {
+	status = "okay";
+	vref-src = "internal";
+	pinctrl-0 = <&p2_0_adc>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,input-positive = <CY_SAR_ADDR_SARMUX_0>;
+		zephyr,resolution = <12>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+	};
+};

@@ -1,0 +1,15 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config TEST_SEQUENTIAL_READ_PATTERN_AMOUNT
+	int "Perform amount of sequential-read-pattern tests"
+	default 1000000
+
+config TEST_SEQUENTIAL_ALTERNATING_READ_PATTERN_AMOUNT
+	int "Perform amount of sequential-alternating-read-pattern tests"
+	default 1000000
+
+source "Kconfig.zephyr"

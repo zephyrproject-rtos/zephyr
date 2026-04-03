@@ -1,0 +1,12 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 Jorge Ramirez-Ortiz <jorge.ramirez@oss.qualcomm.com>
+ */
+
+/ {
+	zephyr,user {
+		pulse_gpios = <&gpioe 24 GPIO_ACTIVE_HIGH>;
+		ack_gpios = <&gpioe 25 GPIO_ACTIVE_HIGH>;
+	};
+};

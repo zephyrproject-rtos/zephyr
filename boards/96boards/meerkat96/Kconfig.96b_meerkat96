@@ -1,0 +1,7 @@
+# Copyright (c) 2019, Linaro Ltd.
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_96B_MEERKAT96
+	select SOC_PART_NUMBER_MCIMX7D5EVM10SC
+	select SOC_MCIMX7D_M4 if BOARD_96B_MEERKAT96_MCIMX7D_M4

@@ -1,0 +1,9 @@
+# Copyright (c) 2019-2020 Cobham Gaisler AB
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_GR716A
+	select SPARC
+	select SOC_SPARC_LEON
+	select CPU_HAS_FPU
+
+rsource "../Kconfig"

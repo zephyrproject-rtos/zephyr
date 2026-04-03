@@ -1,0 +1,8 @@
+# Copyright (c) 2022-2024 Intel Corporation Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_RAPTOR_LAKE
+	bool
+
+config SOC
+	default "raptor_lake" if SOC_RAPTOR_LAKE

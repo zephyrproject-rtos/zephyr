@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "MBOX Negative Test"
+
+config TEST_EXPECTED_MTU_VALUE
+	int "Maximum data field size"
+	default 0
+	help
+	  Expected value that mbox_mtu_get_dt() shall return.
+	  Maximum number of bytes possible in an outbound message.
+
+config TEST_REMOTE_BUSY_NOT_SUPPORTED
+	bool "Remote busy is NOT supported"
+	default y
+	help
+	  Value of 'y' means that transmitter is NOT able to detect
+	  if the remote hasn't yet read the last data sent.
+
+source "Kconfig.zephyr"

@@ -1,0 +1,23 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test phandle property container
+
+compatible: "vnd,phandle-holder"
+
+include: [base.yaml]
+
+properties:
+  ph: {type: "phandle"}
+  phs: {type: "phandles"}
+  phs-or: {type: "phandles"}
+  pha-gpios: {type: "phandle-array"}
+  gpios: {type: "phandle-array"}
+  foos: {type: "phandle-array"}
+  foo-names: {type: "string-array"}
+  pwms: {type: "phandle-array"}
+  pwm-names: {type: "string-array"}
+  bar:
+    type: "phandle-array"
+    specifier-space: baz
+  baz-names: {type: "string-array"}

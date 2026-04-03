@@ -1,0 +1,18 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config RETAINED_MEM_NRF_GPREGRET
+	bool "nRF GPREGRET driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_GPREGRET_ENABLED
+	help
+	  Enable driver for Nordic nRF GPREGRET-based retained memory
+	  register support.
+
+config RETAINED_MEM_NRF_RAM_CTRL
+	bool "nRF RAM retention driver"
+	default y
+	depends on DT_HAS_ZEPHYR_RETAINED_RAM_ENABLED && RETAINED_MEM_ZEPHYR_RAM && POWEROFF
+	depends on HAS_NORDIC_RAM_CTRL
+	help
+	  Enable driver for Nordic RAM retention.

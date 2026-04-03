@@ -1,0 +1,134 @@
+tests:
+  drivers.counter.basic_api:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    min_ram: 16
+    platform_exclude:
+      - nucleo_f302r8
+      - sam_e54_xpro
+      - pic32cx_sg41_cult
+    timeout: 600
+  drivers.counter.basic_api.nrf_zli:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow:
+      - nrf52840dk/nrf52840
+    timeout: 400
+    extra_configs:
+      - CONFIG_ZERO_LATENCY_IRQS=y
+    extra_args:
+      DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;boards/nrf52840dk_nrf52840_zli.overlay"
+  drivers.counter.basic_api.stm32_subsec:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow:
+      - nucleo_f429zi
+      - nucleo_wba55cg
+      - google_dragonclaw
+    timeout: 600
+    extra_configs:
+      - CONFIG_COUNTER_RTC_STM32_SUBSECONDS=y
+  drivers.counter.basic_api.rtc_1khz:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: mimxrt685_evk/mimxrt685s/cm33
+    timeout: 400
+    extra_args:
+      DTC_OVERLAY_FILE="boards/mimxrt685_evk_rtc_1khz.overlay"
+  drivers.counter.basic_api.standby.lpc_rtc_highres:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: frdm_rw612
+    timeout: 400
+    extra_configs:
+      - CONFIG_TEST_DRIVER_COUNTER_MCUX_LPC_RTC_HIGHRES=n
+    extra_args:
+      DTC_OVERLAY_FILE="enable_standby.overlay"
+  drivers.counter.basic_api.mcux_lptmr_alarm:
+    tags:
+      - drivers
+      - counter
+    filter: dt_compat_enabled("nxp,lptmr")
+    depends_on: counter
+    timeout: 600
+    extra_configs:
+      - CONFIG_COUNTER_MCUX_LPTMR_ALARM=y
+  drivers.counter.basic_api.mchp_tcc1:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: sam_e54_xpro
+    timeout: 600
+    extra_args:
+      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc1.overlay"
+  drivers.counter.basic_api.mchp_tcc2:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow:
+      - sam_e54_xpro
+      - pic32cx_sg41_cult
+    timeout: 600
+    extra_args:
+      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc2.overlay"
+  drivers.counter.basic_api.mchp_tcc3:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: sam_e54_xpro
+    timeout: 600
+    extra_args:
+      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc3.overlay"
+  drivers.counter.basic_api.mchp_tcc4:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: sam_e54_xpro
+    timeout: 600
+    extra_args:
+      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc4.overlay"
+  drivers.counter.basic_api.mchp_tc0:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow:
+      - sam_e54_xpro
+      - pic32cx_sg41_cult
+    timeout: 600
+    extra_args:
+      - platform:sam_e54_xpro/atsame54p20a:"DTC_OVERLAY_FILE=boards/microchip/sam_e54_xpro_tc0.overlay"
+      - platform:pic32cx_sg41_cult/pic32cx1025sg41128:"DTC_OVERLAY_FILE=boards/microchip/pic32cx_sg41_cult_tc0.overlay"
+  drivers.counter.basic_api.mchp_rtc:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: sam_e54_xpro
+    timeout: 600
+    extra_args:
+      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_rtc.overlay"
+  drivers.counter.basic_api.no_blobs:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    build_only: true
+    platform_allow:
+      - xg24_rb4187c/efr32mg24b220f1536im48
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y

@@ -1,0 +1,6 @@
+shield:
+  name: arduino_modulino_movement
+  full_name: Arduino Modulino Movement
+  vendor: arduino
+  supported_features:
+    - sensor

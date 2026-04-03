@@ -1,0 +1,48 @@
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM0 Main Clock Controller (MCLK)
+
+compatible: "atmel,sam0-mclk"
+
+include:
+  - base.yaml
+  - clock-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 2
+    description: |
+      - The OFFSET cell is an address of a bus mask. The buses can be
+      AHB and APB[A-D]. Each bus mask can enable a paripheral clock
+      selecting the BIT position in the mask.
+      - The BIT cell is the peripheral bit mask.
+
+      These information are used on PM and MCLK register to select the
+      clock for an specific peripheral. The generator 2 is used on this
+      example and can be defined by the user at board.
+
+      Example: Enable SERCOM0 on SAMD21
+        &sercom0 {
+          clocks = <&gclk 0x14>, <&pm 0x20 2>;
+          clock-names = "GCLK", "PM";
+
+          atmel,assigned-clocks = <&gclk 2>;
+          atmel,assigned-clock-names = "GCLK";
+        };
+
+      Example: Enable SERCOM0 on SAME54
+        &sercom0 {
+          clocks = <&gclk 7>, <&mclk 0x14 12>;
+          clock-names = "GCLK", "MCLK";
+
+          atmel,assigned-clocks = <&gclk 2>;
+          atmel,assigned-clock-names = "GCLK";
+        };
+
+clock-cells:
+  - offset
+  - bit

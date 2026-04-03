@@ -1,0 +1,14 @@
+identifier: odroid_go/esp32/procpu
+name: ODROID-GO PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - uart
+  - nvs
+vendor: hardkernel

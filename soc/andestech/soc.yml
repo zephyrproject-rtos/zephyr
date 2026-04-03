@@ -1,0 +1,6 @@
+family:
+- name: andes_v5
+  series:
+  - name: ae350
+    socs:
+    - name: ae350

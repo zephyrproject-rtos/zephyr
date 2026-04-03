@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* connect the PA03(J501 pin 1) to VCC(J500 pin 4) for the test */
+
+/ {
+	zephyr,user {
+		io-channels = <&adc0 1>;
+		reference-mv = <3300>;
+		expected-accuracy = <32>;
+	};
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <1>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&pinctrl {
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <PA3B_ADC0_AIN1>;
+		};
+	};
+};

@@ -1,0 +1,26 @@
+identifier: nucleo_l496zg
+name: ST Nucleo L496ZG
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 256
+flash: 1024
+supported:
+  - arduino_i2c
+  - arduino_gpio
+  - arduino_spi
+  - gpio
+  - i2c
+  - spi
+  - pwm
+  - counter
+  - usb_device
+  - usbd
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: st

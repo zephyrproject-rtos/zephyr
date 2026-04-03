@@ -1,0 +1,52 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32C5 RCC (Reset and Clock controller).
+
+description: |
+  This node is in charge of system clock ('SYSCLK') source selection and controlling
+  clocks for AHB (Advanced High Performance) and APB (Advanced Peripheral) bus domains.
+
+  It also allows the configuration of the different PSI clocks (PSIS, PSIK, PSIDIV3).
+
+  When using any of the PSI clocks, it is necessary to configure the PSI target
+  frequency (PSIFREQ register) and the PSI source clock (PSIREFSRC register).
+  From these two values, the value of the PSIREF register is automatically calculated.
+
+  Refer to st,stm32-rcc.yaml for more details.
+
+compatible: "st,stm32c5-rcc"
+
+include:
+  - name: st,stm32-rcc.yaml
+    property-blocklist:
+      - undershoot-prevention
+
+properties:
+  apb3-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+  st,psi-frequency:
+    type: int
+    description: |
+      PSI target frequency configuration, in MHz.
+    enum:
+      - 100
+      - 144
+      - 160
+
+  st,psi-source:
+    type: string
+    description: |
+      Clock source for PSI clock.
+    enum:
+      - "HSE"
+      - "LSE"
+      - "HSIDIV18"

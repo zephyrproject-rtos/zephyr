@@ -1,0 +1,21 @@
+common:
+  tags:
+    - net
+    - igmp
+  depends_on: netif
+  platform_allow: qemu_x86
+tests:
+  net.igmp:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.igmp.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+  net.igmpv3:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+      - CONFIG_NET_IPV4_IGMPV3=y
+  net.igmpv3.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+      - CONFIG_NET_IPV4_IGMPV3=y

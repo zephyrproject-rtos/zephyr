@@ -1,0 +1,58 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/imxrt/nxp_rt118x_cm7.dtsi>
+#include <nxp/imxrt/nxp_rt1186.dtsi>
+#include "frdm_imxrt1186.dtsi"
+#include <freq.h>
+
+/ {
+	model = "NXP FRDM-iMXRT1186 board";
+	compatible = "nxp,mimxrt1186";
+
+	/*
+	 * NOTE: Due to excessive RAM/Flash usage in this application, hyperram0 and
+	 * ext_flash are used instead of internal memory. These external memory regions
+	 * are initialized through J-Link debug scripts to ensure they are
+	 * accessible before use.
+	 */
+	chosen {
+		zephyr,sram = &hyperram0;
+		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
+		zephyr,console = &lpuart3;
+		zephyr,shell-uart = &lpuart3;
+		zephyr,flash = &ext_flash;
+	};
+
+	hyperram0: memory@28000000 {
+		/* Winbond W957A8MFYA5K */
+		device_type = "memory";
+		reg = <0x28000000 DT_SIZE_M(8)>;
+		status = "okay";
+	};
+
+	ext_flash: memory@4000000 {
+		device_type = "memory";
+		reg = <0x4000000 DT_SIZE_M(16)>;
+		status = "okay";
+	};
+};
+
+&cpu1 {
+	clock-frequency = <DT_FREQ_M(792)>;
+};
+
+&lpuart3 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&flexspi2 {
+	status = "disabled";
+};

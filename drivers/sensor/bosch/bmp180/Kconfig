@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Chris Ruehl
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMP180
+	bool "Bosch BMP180 pressure sensor"
+	default y
+	depends on DT_HAS_BOSCH_BMP180_ENABLED
+	select I2C
+	help
+	  Enable driver for the Bosch BMP180 pressure sensor
+
+if BMP180
+
+config BMP180_OSR_RUNTIME
+	bool "Change OSR at runtime."
+	help
+	  Enable runtime changes of the oversampling value
+
+endif # BMP180

@@ -1,0 +1,13 @@
+# Copyright (c) 2023, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Sensing subsystem physical sensor properties bindings.
+
+include: zephyr,sensing-sensor.yaml
+
+properties:
+  underlying-device:
+    type: phandle
+    required: true
+    description: underlying sensor device for physical sensor

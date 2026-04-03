@@ -1,0 +1,10 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config RESET_NXP_RSTCTL
+	bool "NXP RSTCTL driver"
+	default y
+	depends on DT_HAS_NXP_RSTCTL_ENABLED
+	help
+	  Enable the driver for the NXP RSTCTL,
+	  a peripheral reset controller.

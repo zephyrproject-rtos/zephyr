@@ -1,0 +1,6 @@
+# Copyright (c) 2025 STMicroelectronics
+
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ST_MB1897_CAM
+	def_bool $(shields_list_contains,st_mb1897_cam)

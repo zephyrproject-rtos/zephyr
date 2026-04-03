@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_ESP32
+	bool "ESP32 SDHC Driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_SDHC_SLOT_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	select PINCTRL
+	help
+	  Enables the ESP32 SD Host controller driver
+
+if SDHC_ESP32
+
+# ESP32 DMA needs 32 bit aligned buffers
+config SDHC_BUFFER_ALIGNMENT
+	default 4
+
+endif

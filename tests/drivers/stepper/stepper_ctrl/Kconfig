@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Josselin Bunt
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Stepper API Test"
+
+source "Kconfig.zephyr"
+
+config STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT
+	int "Stepper timing tolerance percentage"
+	default 20
+	help
+	  Additional margin (%) added to step timing during test timeouts.
+	  Accounts for execution and scheduling jitter.

@@ -1,0 +1,10 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TH02 Temperature and Humidity sensor. See datasheet at
+    http://www.datasheetspdf.com/mobile/748107/TH02.html
+
+compatible: "hoperf,th02"
+
+include: [sensor-device.yaml, i2c-device.yaml]

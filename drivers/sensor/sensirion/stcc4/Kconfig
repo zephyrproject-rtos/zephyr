@@ -1,0 +1,12 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config STCC4
+	bool "STCC4 CO2 Sensor"
+	default y
+	depends on DT_HAS_SENSIRION_STCC4_ENABLED
+	select I2C
+	select CRC
+	help
+	  Enable driver for the Sensirion STCC4 CO2 sensor based on
+	  thermal conductivity. Provides CO2, temperature, and humidity.

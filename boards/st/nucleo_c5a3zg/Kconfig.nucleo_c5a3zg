@@ -1,0 +1,5 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_C5A3ZG
+	select SOC_STM32C5A3XX

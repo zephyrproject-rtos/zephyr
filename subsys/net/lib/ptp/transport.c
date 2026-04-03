@@ -1,0 +1,364 @@
+/*
+ * Copyright (c) 2024 BayLibre SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(ptp_transport, CONFIG_PTP_LOG_LEVEL);
+
+#include <zephyr/kernel.h>
+
+#include <zephyr/net/socket.h>
+
+#include "transport.h"
+
+#define INTERFACE_NAME_LEN (32)
+
+union mcast_addr {
+	struct net_in_addr ipv4;
+#if defined(CONFIG_PTP_UDP_IPv6_PROTOCOL)
+	struct net_in6_addr ipv6;
+#endif
+};
+
+#if CONFIG_PTP_UDP_IPv4_PROTOCOL
+static union mcast_addr mcast_addr = {.ipv4 = {{{224, 0, 1, 129}}}};
+#elif CONFIG_PTP_UDP_IPv6_PROTOCOL
+static union mcast_addr mcast_addr = {.ipv6 = {{{0xff, 0xe, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+						 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x81}}}};
+#else
+#error "Chosen PTP transport protocol not implemented"
+#endif
+
+static int transport_socket_open(struct net_if *iface, struct net_sockaddr *addr)
+{
+	static const int feature_on = 1;
+	static const uint8_t priority = NET_PRIORITY_CA;
+	static const uint8_t ts_mask = ZSOCK_SOF_TIMESTAMPING_TX_HARDWARE |
+				       ZSOCK_SOF_TIMESTAMPING_RX_HARDWARE;
+	struct net_ifreq ifreq = { 0 };
+	int cnt;
+	int socket = zsock_socket(addr->sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+
+	if (net_if_get_by_iface(iface) < 0) {
+		LOG_ERR("Failed to obtain interface index");
+		return -1;
+	}
+
+	if (socket < 0) {
+		return -1;
+	}
+
+	if (zsock_setsockopt(socket, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR,
+			     &feature_on, sizeof(feature_on))) {
+		LOG_ERR("Failed to set SO_REUSEADDR");
+		goto error;
+	}
+
+	if (zsock_bind(socket, addr, sizeof(*addr))) {
+		LOG_ERR("Failed to bind socket");
+		goto error;
+	}
+
+	cnt = net_if_get_name(iface, ifreq.ifr_name, INTERFACE_NAME_LEN);
+	if (cnt > 0 && zsock_setsockopt(socket,
+					ZSOCK_SOL_SOCKET,
+					ZSOCK_SO_BINDTODEVICE,
+					ifreq.ifr_name,
+					sizeof(ifreq.ifr_name))) {
+		LOG_ERR("Failed to set socket binding to an interface");
+		goto error;
+	}
+
+	if (zsock_setsockopt(socket, ZSOCK_SOL_SOCKET, ZSOCK_SO_TIMESTAMPING,
+			     &ts_mask, sizeof(ts_mask))) {
+		LOG_ERR("Failed to set SO_TIMESTAMPING");
+		goto error;
+	}
+
+	if (zsock_setsockopt(socket, ZSOCK_SOL_SOCKET, ZSOCK_SO_PRIORITY,
+			     &priority, sizeof(priority))) {
+		LOG_ERR("Failed to set SO_PRIORITY");
+		goto error;
+	}
+
+	return socket;
+error:
+	zsock_close(socket);
+	return -1;
+}
+
+static int transport_join_multicast(struct ptp_port *port)
+{
+	if (IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL)) {
+		struct net_ip_mreqn mreqn = {0};
+
+		memcpy(&mreqn.imr_multiaddr, &mcast_addr, sizeof(struct net_in_addr));
+		mreqn.imr_ifindex = net_if_get_by_iface(port->iface);
+
+		zsock_setsockopt(port->socket[1], NET_IPPROTO_IP,
+				 ZSOCK_IP_ADD_MEMBERSHIP, &mreqn, sizeof(mreqn));
+	} else {
+		struct net_ipv6_mreq mreqn = {0};
+
+		memcpy(&mreqn.ipv6mr_multiaddr, &mcast_addr, sizeof(struct net_in6_addr));
+		mreqn.ipv6mr_ifindex = net_if_get_by_iface(port->iface);
+
+		zsock_setsockopt(port->socket[0], NET_IPPROTO_IPV6,
+				 ZSOCK_IPV6_ADD_MEMBERSHIP, &mreqn, sizeof(mreqn));
+	}
+
+	return 0;
+}
+
+static int transport_udp_ipv4_open(struct net_if *iface, uint16_t port)
+{
+	uint8_t tos;
+	net_socklen_t length;
+	int socket, ttl = 1;
+	struct net_sockaddr_in addr = {
+		.sin_family = NET_AF_INET,
+		.sin_addr = NET_INADDR_ANY_INIT,
+		.sin_port = net_htons(port),
+	};
+
+	socket = transport_socket_open(iface, (struct net_sockaddr *)&addr);
+	if (socket < 0) {
+		return -1;
+	}
+
+	if (zsock_setsockopt(socket, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_TTL, &ttl, sizeof(ttl))) {
+		LOG_ERR("Failed to set ip multicast ttl socket option");
+		goto error;
+	}
+
+	if (zsock_getsockopt(socket, NET_IPPROTO_IP, ZSOCK_IP_TOS, &tos, &length)) {
+		tos = 0;
+	}
+
+	tos &= ~0xFC;
+	tos |= CONFIG_PTP_DSCP_VALUE << 2;
+	length = sizeof(tos);
+
+	if (zsock_setsockopt(socket, NET_IPPROTO_IP, ZSOCK_IP_TOS, &tos, length)) {
+		LOG_WRN("Failed to set DSCP priority");
+	}
+
+	return socket;
+error:
+	zsock_close(socket);
+	return -1;
+}
+
+static int transport_udp_ipv6_open(struct net_if *iface, uint16_t port)
+{
+	uint8_t tclass;
+	net_socklen_t length;
+	int socket, hops = 1, feature_on = 1;
+	struct net_sockaddr_in6 addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_addr = NET_IN6ADDR_ANY_INIT,
+		.sin6_port = net_htons(port)
+	};
+
+	socket = transport_socket_open(iface, (struct net_sockaddr *)&addr);
+	if (socket < 0) {
+		return -1;
+	}
+
+	if (zsock_setsockopt(socket,
+			     NET_IPPROTO_IPV6,
+			     ZSOCK_IPV6_RECVPKTINFO,
+			     &feature_on,
+			     sizeof(feature_on))) {
+		LOG_ERR("Failed to set IPV6_RECVPKTINFO");
+		goto error;
+	}
+
+	if (zsock_setsockopt(socket, NET_IPPROTO_IPV6, ZSOCK_IPV6_MULTICAST_HOPS,
+			     &hops, sizeof(hops))) {
+		LOG_ERR("Failed to set ip multicast hops socket option");
+		goto error;
+	}
+
+	if (zsock_getsockopt(socket, NET_IPPROTO_IPV6, ZSOCK_IPV6_TCLASS, &tclass, &length)) {
+		tclass = 0;
+	}
+
+	tclass &= ~0xFC;
+	tclass |= CONFIG_PTP_DSCP_VALUE << 2;
+	length = sizeof(tclass);
+
+	if (zsock_setsockopt(socket, NET_IPPROTO_IPV6, ZSOCK_IPV6_TCLASS, &tclass, length)) {
+		LOG_WRN("Failed to set priority");
+	}
+
+	return socket;
+error:
+	zsock_close(socket);
+	return -1;
+}
+
+static int transport_send(int socket, int port, void *buf, int length, struct net_sockaddr *addr)
+{
+	struct net_sockaddr m_addr;
+	net_socklen_t addrlen;
+	int cnt;
+
+	if (!addr) {
+		if (IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL)) {
+			m_addr.sa_family = NET_AF_INET;
+			net_sin(&m_addr)->sin_port = net_htons(port);
+			net_sin(&m_addr)->sin_addr.s_addr = mcast_addr.ipv4.s_addr;
+
+		} else if (IS_ENABLED(CONFIG_PTP_UDP_IPv6_PROTOCOL)) {
+			m_addr.sa_family = NET_AF_INET6;
+			net_sin6(&m_addr)->sin6_port = net_htons(port);
+			memcpy(&net_sin6(&m_addr)->sin6_addr,
+			       &mcast_addr,
+			       sizeof(struct net_in6_addr));
+		}
+		addr = &m_addr;
+	}
+
+	addrlen = IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL) ? sizeof(struct net_sockaddr_in) :
+							     sizeof(struct net_sockaddr_in6);
+	cnt = zsock_sendto(socket, buf, length, 0, addr, addrlen);
+	if (cnt < 1) {
+		LOG_ERR("Failed to send message");
+		return -EFAULT;
+	}
+
+	return cnt;
+}
+
+int ptp_transport_open(struct ptp_port *port)
+{
+	static const int socket_ports[] = {PTP_SOCKET_PORT_EVENT, PTP_SOCKET_PORT_GENERAL};
+	int socket;
+
+	for (int i = 0; i < PTP_SOCKET_CNT; i++) {
+		socket = IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL) ?
+			transport_udp_ipv4_open(port->iface, socket_ports[i]) :
+			transport_udp_ipv6_open(port->iface, socket_ports[i]);
+
+		if (socket == -1) {
+			if (i == PTP_SOCKET_GENERAL) {
+				zsock_close(port->socket[PTP_SOCKET_EVENT]);
+				port->socket[PTP_SOCKET_EVENT] = -1;
+			}
+
+			return -1;
+		}
+
+		port->socket[i] = socket;
+	}
+
+	return transport_join_multicast(port);
+}
+
+int ptp_transport_close(struct ptp_port *port)
+{
+	for (int i = 0; i < PTP_SOCKET_CNT; i++) {
+
+		if (port->socket[i] >= 0) {
+			if (zsock_close(port->socket[i])) {
+				LOG_ERR("Failed to close socket on PTP Port %d",
+					port->port_ds.id.port_number);
+				return -1;
+			}
+		}
+
+		port->socket[i] = -1;
+	}
+
+	return 0;
+}
+
+int ptp_transport_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
+{
+	__ASSERT(PTP_SOCKET_CNT > idx, "Invalid socket index");
+
+	static const int socket_port[] = {PTP_SOCKET_PORT_EVENT, PTP_SOCKET_PORT_GENERAL};
+	int length = net_ntohs(msg->header.msg_length);
+
+	return transport_send(port->socket[idx], socket_port[idx], msg, length, NULL);
+}
+
+int ptp_transport_sendto(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
+{
+	__ASSERT(PTP_SOCKET_CNT > idx, "Invalid socket index");
+
+	static const int socket_port[] = {PTP_SOCKET_PORT_EVENT, PTP_SOCKET_PORT_GENERAL};
+	int length = net_ntohs(msg->header.msg_length);
+
+	return transport_send(port->socket[idx], socket_port[idx], msg, length, &msg->addr);
+}
+
+int ptp_transport_recv(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
+{
+	__ASSERT(PTP_SOCKET_CNT > idx, "Invalid socket index");
+
+	int cnt = 0;
+	uint8_t ctrl[NET_CMSG_SPACE(sizeof(struct net_ptp_time))] = {0};
+	struct net_cmsghdr *cmsg;
+	struct net_msghdr msghdr = {0};
+	struct net_iovec iov = {
+		.iov_base = msg,
+		.iov_len = sizeof(msg->mtu),
+	};
+
+	msghdr.msg_iov = &iov;
+	msghdr.msg_iovlen = 1;
+	msghdr.msg_control = ctrl;
+	msghdr.msg_controllen = sizeof(ctrl);
+
+	cnt = zsock_recvmsg(port->socket[idx], &msghdr, ZSOCK_MSG_DONTWAIT);
+	if (cnt < 0) {
+		LOG_ERR("Failed receive PTP message");
+	}
+
+	for (cmsg = NET_CMSG_FIRSTHDR(&msghdr); cmsg != NULL;
+	     cmsg = NET_CMSG_NXTHDR(&msghdr, cmsg)) {
+		if (cmsg->cmsg_level == ZSOCK_SOL_SOCKET &&
+		    cmsg->cmsg_type == ZSOCK_SO_TIMESTAMPING) {
+			memcpy(&msg->timestamp.host, NET_CMSG_DATA(cmsg),
+			       sizeof(struct net_ptp_time));
+		}
+	}
+
+	return cnt;
+}
+
+int ptp_transport_protocol_addr(struct ptp_port *port, uint8_t *addr)
+{
+	__ASSERT_NO_MSG(addr);
+
+	int length = 0;
+
+	if (IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL)) {
+		struct net_in_addr *ip = net_if_ipv4_get_global_addr(port->iface,
+								     NET_ADDR_PREFERRED);
+
+		if (ip) {
+			length = NET_IPV4_ADDR_SIZE;
+			*addr = ip->s_addr;
+		}
+	} else if (IS_ENABLED(CONFIG_PTP_UDP_IPv6_PROTOCOL)) {
+		struct net_in6_addr *ip = net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED,
+								  &port->iface);
+
+		if (ip) {
+			length = NET_IPV6_ADDR_SIZE;
+			memcpy(addr, ip, length);
+		}
+	}
+
+	return length;
+}
+
+struct net_linkaddr *ptp_transport_physical_addr(struct ptp_port *port)
+{
+	return net_if_get_link_addr(port->iface);
+}

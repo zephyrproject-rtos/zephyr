@@ -1,0 +1,18 @@
+# Copyright (c) 2025 CISPA Helmholtz Center for Information Security
+# SPDX-License-Identifier: Apache-2.0
+
+title: Xilinx AXI Ethernet Lite MAC driver bindings.
+
+include: [ethernet-controller.yaml]
+
+properties:
+  interrupts:
+    description: Xilinx AXI Ethernet uses edge-triggered interrupts to signal RX/TX completion.
+
+  xlnx,rx-ping-pong:
+    type: boolean
+    description: Does this device have a secondary RX buffer that is updated concurrently?
+
+  xlnx,tx-ping-pong:
+    type: boolean
+    description: Does this device have a secondary TX buffer that is updated concurrently?

@@ -1,0 +1,30 @@
+# Copyright (c) 2020 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_QEMU_ARC
+	bool
+
+config SOC_QEMU_ARC_EM
+	bool
+	select SOC_QEMU_ARC
+
+config SOC_QEMU_ARC_HS
+	bool
+	select SOC_QEMU_ARC
+
+config SOC_QEMU_ARC_HS5X
+	bool
+	select SOC_QEMU_ARC
+
+config SOC_QEMU_ARC_HS6X
+	bool
+	select SOC_QEMU_ARC
+
+config SOC_SERIES
+	default "qemu_arc" if SOC_QEMU_ARC
+
+config SOC
+	default "qemu_arc_em" if SOC_QEMU_ARC_EM
+	default "qemu_arc_hs" if SOC_QEMU_ARC_HS
+	default "qemu_arc_hs5x" if SOC_QEMU_ARC_HS5X
+	default "qemu_arc_hs6x" if SOC_QEMU_ARC_HS6X

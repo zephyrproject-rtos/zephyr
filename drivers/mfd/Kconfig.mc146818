@@ -1,0 +1,20 @@
+# Intel SoC RTC configuration options
+
+# Copyright (c) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_MOTOROLA_MC146818
+	bool "MOTOROLA MC146818 multi-function device driver"
+	default y
+	depends on DT_HAS_MOTOROLA_MC146818_MFD_ENABLED
+	help
+	  common code required by bbram and rtc, which will likely be a locking mechanism
+	  so both RTC and BBRAM can set/get regs safely and independently.
+
+config MFD_MOTOROLA_MC146818_INIT_PRIORITY
+	int "Init priority of mc146818 MFD"
+	depends on MFD_MOTOROLA_MC146818
+	default 50
+	help
+	  Initialization priority for the MOTOROLA MC146818 MFD driver.
+	  It must be greater than RTC, COUNTER and BBRAM driver init priority.

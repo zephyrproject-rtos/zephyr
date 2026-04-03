@@ -1,0 +1,13 @@
+# Kvaser PCIcan configuration options
+
+# Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_KVASER_PCI
+	bool "Kvaser PCIcan driver"
+	default y
+	depends on DT_HAS_KVASER_PCICAN_ENABLED
+	select PCIE
+	select CAN_SJA1000
+	help
+	  This enables support for the Kvaser PCIcan.

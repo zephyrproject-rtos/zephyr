@@ -1,0 +1,31 @@
+# I2C configuration options
+
+# Copyright (c) 2024, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_MCUX_FLEXCOMM
+	bool "MCUX FLEXCOMM I2C driver"
+	default y
+	depends on DT_HAS_NXP_LPC_I2C_ENABLED
+	select PINCTRL
+	select RESET
+	help
+	  Enable the mcux flexcomm i2c driver.
+
+config I2C_MCUX_FLEXCOMM_BUS_RECOVERY
+	bool "Bus recovery support"
+	depends on I2C_MCUX_FLEXCOMM && PINCTRL
+	select I2C_BITBANG
+	help
+	  Enable flexcomm i2c driver bus recovery support via GPIO bitbanging.
+
+config I2C_NXP_TRANSFER_TIMEOUT
+	int "Transfer timeout [ms]"
+	default 0
+	depends on I2C_MCUX_FLEXCOMM
+	help
+	  Timeout in milliseconds used for each I2C transfer.
+	  0 means that the driver should use the K_FOREVER value,
+	  i.e. it should wait as long as necessary.
+	  In conjunction with this, FSL_FEATURE_I2C_TIMEOUT_RECOVERY
+	  must be enabled to allow the driver to fully recover.

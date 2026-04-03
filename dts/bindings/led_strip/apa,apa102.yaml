@@ -1,0 +1,5 @@
+description: APA102 SPI LED strip
+
+compatible: "apa,apa102"
+
+include: [spi-device.yaml, led-strip.yaml]

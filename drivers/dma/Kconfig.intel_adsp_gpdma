@@ -1,0 +1,36 @@
+# DMA configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_INTEL_ADSP_GPDMA
+	bool "Intel ADSP General Purpose Direct Memory Access driver"
+	default y
+	depends on DT_HAS_INTEL_ADSP_GPDMA_ENABLED
+	help
+	  Intel ADSP DMA driver.
+
+if DMA_INTEL_ADSP_GPDMA
+
+config DMA_INTEL_ADSP_GPDMA_NEED_CONTROLLER_OWNERSHIP
+	bool
+	default y
+	help
+	  Hidden option to indicate that the driver needs to request
+	  dma controller ownership from the host.
+
+config DMA_INTEL_ADSP_GPDMA_HAS_LLP
+	bool "Intel ADSP GPDMA Linear Link Position Feature"
+	default y if SOC_SERIES_INTEL_ADSP_ACE
+	help
+	  Intel ADSP GPDMA may optionally have a linear link position
+	  feature.
+
+config DMA_INTEL_ADSP_GPDMA_DEBUG
+	bool "Debug dump for IP registers"
+	help
+	  Dump Intel ADSP GPDMA registers for debug
+
+source "drivers/dma/Kconfig.dw_common"
+
+endif # DMA_INTEL_ADSP_GPDMA

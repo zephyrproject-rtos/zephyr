@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: LAN865X MDIO Driver node
+
+compatible: "microchip,lan865x-mdio"
+
+include: mdio-controller.yaml
+
+on-bus: lan865x

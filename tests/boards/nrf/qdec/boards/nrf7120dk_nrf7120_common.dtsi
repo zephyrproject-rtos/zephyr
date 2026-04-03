@@ -1,0 +1,108 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Required loopbacks
+ * P1.11 <-> P1.12
+ * P1.13 <-> P1.15
+ * P1.02 <-> P1.3
+ * P1.00 <-> P1.14
+ */
+
+/ {
+	encoder-emulate {
+		compatible = "gpio-leds";
+
+		phase_a0: phase_a0 {
+			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+		};
+
+		phase_b0: phase_b0 {
+			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		phase_a1: phase_a1 {
+			gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		phase_b1: phase_b1 {
+			gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	qdec_loopbacks: loopbacks {
+		compatible = "test-qdec-loopbacks";
+
+		loopback0 {
+			qdec = <&qdec20>;
+			qenc-emul-gpios = <&phase_a0 &phase_b0>;
+		};
+
+		loopback1 {
+			qdec = <&qdec21>;
+			qenc-emul-gpios = <&phase_a1 &phase_b1>;
+		};
+	};
+};
+
+&pinctrl {
+	qdec_20_pinctrl: qdec_20_pinctrl {
+		group1 {
+			psels = <NRF_PSEL(QDEC_A, 1, 12)>,
+				<NRF_PSEL(QDEC_B, 1, 15)>;
+		};
+	};
+
+	qdec_20_sleep_pinctrl: qdec_20_sleep_pinctrl {
+		group1 {
+			psels = <NRF_PSEL(QDEC_A, 1, 12)>,
+				<NRF_PSEL(QDEC_B, 1, 15)>;
+			low-power-enable;
+		};
+	};
+
+	qdec_21_pinctrl: qdec_21_pinctrl {
+		group1 {
+			psels = <NRF_PSEL(QDEC_A, 1, 3)>,
+				<NRF_PSEL(QDEC_B, 1, 14)>;
+		};
+	};
+
+	qdec_21_sleep_pinctrl: qdec_21_sleep_pinctrl {
+		group1 {
+			psels = <NRF_PSEL(QDEC_A, 1, 3)>,
+				<NRF_PSEL(QDEC_B, 1, 14)>;
+			low-power-enable;
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&qdec20 {
+	status = "okay";
+	pinctrl-0 = <&qdec_20_pinctrl>;
+	pinctrl-1 = <&qdec_20_sleep_pinctrl>;
+	pinctrl-names = "default", "sleep";
+	steps = <127>;
+	led-pre = <500>;
+	zephyr,pm-device-runtime-auto;
+};
+
+&qdec21 {
+	status = "okay";
+	pinctrl-0 = <&qdec_21_pinctrl>;
+	pinctrl-1 = <&qdec_21_sleep_pinctrl>;
+	pinctrl-names = "default", "sleep";
+	steps = <127>;
+	led-pre = <500>;
+	zephyr,pm-device-runtime-auto;
+};

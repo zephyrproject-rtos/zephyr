@@ -1,0 +1,8 @@
+common:
+  platform_allow: native_sim
+  tags: pm
+tests:
+  pm.system: {}
+  pm.system.no.device.pm:
+    extra_args:
+      - CONF_FILE="no-device-pm.conf"

@@ -1,0 +1,10 @@
+identifier: stm32wba65i_dk1/stm32wba65xx
+name: ST STM32WBA65I Discovery kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 448
+flash: 2048
+vendor: st

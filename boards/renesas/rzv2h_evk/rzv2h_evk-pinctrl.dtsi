@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzv2h.h>
+
+&pinctrl {
+	/omit-if-no-ref/ sci0_pins: sci0 {
+		sci0-pinmux {
+			pinmux = <RZV_PINMUX(PORT_05, 0, 1)>, /* TXD */
+				 <RZV_PINMUX(PORT_05, 1, 1)>; /* RXD */
+			drive-strength = <1>;
+		};
+	};
+
+	/omit-if-no-ref/ gpt3_pins: gpt3 {
+		gpt3-pinmux {
+			pinmux = <RZV_PINMUX(PORT_08, 2, 9)>, /* GTIOCA */
+				 <RZV_PINMUX(PORT_08, 3, 9)>; /* GTIOCB */
+		};
+	};
+
+	/omit-if-no-ref/ gpt5_pins: gpt5 {
+		gpt5-pinmux {
+			pinmux = <RZV_PINMUX(PORT_08, 4, 9)>, /* GTIOCA */
+				 <RZV_PINMUX(PORT_08, 5, 9)>; /* GTIOCB */
+		};
+	};
+
+	/omit-if-no-ref/ i2c2_pins: i2c2 {
+		i2c2-pinmux {
+			pinmux = <RZV_PINMUX(PORT_02, 1, 4)>, /* SCL */
+				 <RZV_PINMUX(PORT_02, 0, 4)>; /* SDA */
+		};
+	};
+};

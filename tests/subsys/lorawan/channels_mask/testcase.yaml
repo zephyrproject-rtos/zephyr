@@ -1,0 +1,6 @@
+tests:
+  lorawan.channels_mask.set_channels_mask:
+    tags: lorawan
+    depends_on: lora
+    integration_platforms:
+      - b_l072z_lrwan1

@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	lcd_expansion_rtk7eka6m3b00001bu: parallel-graphics-connector {
+		compatible = "renesas,ra-parallel-graphics-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <5 0 &ek_ra8d1_parallel_graphics_expansion 4 0>,	/* IIC_SCL */
+			   <21 0 &ek_ra8d1_parallel_graphics_expansion 2 0>,	/* IIC_SDA */
+			   <35 0 &ek_ra8d1_parallel_graphics_expansion 6 0>,	/* DISP_RST */
+			   <38 0 &ek_ra8d1_parallel_graphics_expansion 3 0>,	/* DISP_INT */
+			   <39 0 &ek_ra8d1_parallel_graphics_expansion 1 0>;	/* DISP_BLEN */
+	};
+};

@@ -1,0 +1,25 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA USBHS internal PHY controller
+
+compatible: "renesas,ra-usbphyc"
+
+include: phy-controller.yaml
+
+properties:
+  clock:
+    type: phandle
+    description: |
+      Clock source for PHY clock in case internal clock is using
+
+  phys-clock-src:
+    type: string
+    enum:
+      - "internal"
+      - "xtal"
+    description: |
+      Select clock source for PHY clock as XTAL or use internal clock
+
+  "#phy-cells":
+    const: 0

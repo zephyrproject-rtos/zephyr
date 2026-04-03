@@ -1,0 +1,6 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools >= 48.0.0",
+    "wheel",
+]

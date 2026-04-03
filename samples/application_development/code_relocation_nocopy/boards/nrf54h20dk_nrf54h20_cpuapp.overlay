@@ -1,0 +1,17 @@
+&xip_region {
+	status = "okay";
+};
+
+&gpio6 {
+	status = "okay";
+};
+
+&exmif {
+	status = "okay";
+};
+
+&mx25uw63 {
+	status = "okay";
+
+	xip-config = <1 0 0x20000000 0>;
+};

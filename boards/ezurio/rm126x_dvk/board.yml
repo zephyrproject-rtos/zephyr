@@ -1,0 +1,11 @@
+boards:
+  - name: rm126x_dvk_rm1261
+    full_name: RM1261 DVK
+    vendor: ezurio
+    socs:
+      - name: efr32bg22c224f512im40
+  - name: rm126x_dvk_rm1262
+    full_name: RM1262 DVK
+    vendor: ezurio
+    socs:
+      - name: efr32bg22c224f512im40

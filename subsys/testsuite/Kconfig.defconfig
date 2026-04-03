@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if TEST
+
+choice RNG_GENERATOR_CHOICE
+	default XOSHIRO_RANDOM_GENERATOR if ZTRESS && ENTROPY_HAS_DRIVER
+endchoice
+
+endif # TEST

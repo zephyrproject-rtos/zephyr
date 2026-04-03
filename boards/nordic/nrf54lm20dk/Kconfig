@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF54LM20DK
+	select SOC_NRF54LM20A_DEVELOP_IN_NRF54LM20B if SOC_NRF54LM20A_CPUAPP || SOC_NRF54LM20A_CPUFLPR

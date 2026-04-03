@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzn-common.h>
+
+&pinctrl {
+	/omit-if-no-ref/ sci0_default: sci0_default {
+		sci0-pinmux {
+			pinmux = <RZN_PINMUX(PORT_16, 5, 1)>, /* TXD */
+				 <RZN_PINMUX(PORT_16, 6, 2)>; /* RXD */
+		};
+	};
+
+	/omit-if-no-ref/ sci3_default: sci3_default {
+		sci3-pinmux {
+			pinmux = <RZN_PINMUX(PORT_18, 0, 4)>, /* TXD */
+				 <RZN_PINMUX(PORT_17, 7, 4)>; /* RXD */
+		};
+	};
+
+	/omit-if-no-ref/ irq7_default: irq7_default {
+		irq7-pinmux {
+			pinmux = <RZN_PINMUX(PORT_16, 3, 0)>;
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ gpt4_pins: gpt4 {
+		gpt4-pinmux {
+			pinmux = <RZN_PINMUX(PORT_03, 5, 4)>, /* GTIOCA */
+				 <RZN_PINMUX(PORT_03, 6, 5)>; /* GTIOCB */
+		};
+	};
+
+	/omit-if-no-ref/ gpt5_pins: gpt5 {
+		gpt5-pinmux {
+			pinmux = <RZN_PINMUX(PORT_03, 7, 5)>, /* GTIOCA */
+				 <RZN_PINMUX(PORT_04, 0, 3)>; /* GTIOCB */
+		};
+	};
+
+	/omit-if-no-ref/ i2c1_default: i2c1_default {
+		i2c1-pinmux {
+			pinmux = <RZN_PINMUX(PORT_05, 2, 8)>, /* SCL */
+				 <RZN_PINMUX(PORT_05, 3, 9)>; /* SDA */
+		};
+	};
+
+	/omit-if-no-ref/ spi2_pins: spi2 {
+		spi2-pinmux {
+			pinmux = <RZN_PINMUX(PORT_18, 4, 3)>, /* CK2 */
+				 <RZN_PINMUX(PORT_18, 5, 3)>, /* MOSI2 */
+				 <RZN_PINMUX(PORT_18, 6, 5)>, /* MISO2 */
+				 <RZN_PINMUX(PORT_21, 1, 6)>; /* SSL20 */
+		};
+	};
+
+	/omit-if-no-ref/ xspi0_default: xspi0_default {
+		xspi0-pinmux {
+			pinmux = <RZN_PINMUX(PORT_14, 6, 0)>, /* XSPI0_CKP */
+				 <RZN_PINMUX(PORT_14, 5, 0)>, /* XSPI0_CKN */
+				 <RZN_PINMUX(PORT_15, 7, 0)>, /* XSPI0_CS0 */
+				 <RZN_PINMUX(PORT_14, 7, 0)>, /* XSPI0_IO0 */
+				 <RZN_PINMUX(PORT_15, 0, 0)>, /* XSPI0_IO1 */
+				 <RZN_PINMUX(PORT_15, 1, 0)>, /* XSPI0_IO2 */
+				 <RZN_PINMUX(PORT_15, 2, 0)>, /* XSPI0_IO3 */
+				 <RZN_PINMUX(PORT_16, 1, 0)>, /* XSPI0_RESET0 */
+				 <RZN_PINMUX(PORT_16, 3, 1)>; /* XSPI0_RSTO0 */
+		};
+	};
+};

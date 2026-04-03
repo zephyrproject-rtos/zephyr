@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2021 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay performs configuration from clean sheet.
+ * It is assumed that it is applied after clear_clocks.overlay file.
+ */
+
+/*
+ * Warning: HSE is not implemented on available boards, hence:
+ *          This configuration is only available for build
+ */
+
+&clk_hse {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(16)>;
+	hse-bypass;
+};
+
+&rcc {
+	clocks = <&clk_hse>;
+	clock-frequency = <DT_FREQ_M(16)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};

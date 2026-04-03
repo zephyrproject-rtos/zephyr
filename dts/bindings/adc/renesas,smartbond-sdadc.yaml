@@ -1,0 +1,31 @@
+# Copyright (c) 2023 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas SmartBond(tm) ADC node
+
+compatible: "renesas,smartbond-sdadc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+  clock-freq:
+    type: int
+    description: |
+      SDADC clock frequency selector;
+    enum:
+      - 0 # 250 kHz
+      - 1 # 500 kHz
+      - 2 # 1 MHz (default)
+      - 3 # 2 MHz
+
+io-channel-cells:
+  - input

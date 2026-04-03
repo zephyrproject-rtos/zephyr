@@ -1,0 +1,20 @@
+description: CAVS interrupt controller
+
+compatible: "intel,cavs-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#interrupt-cells":
+    const: 3
+
+interrupt-cells:
+  - irq
+  - sense
+  - priority

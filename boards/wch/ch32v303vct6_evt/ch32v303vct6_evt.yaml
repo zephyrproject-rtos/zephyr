@@ -1,0 +1,14 @@
+identifier: ch32v303vct6_evt
+name: WCH CH32V303VCT6-EVT Evaluation Board
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 32
+flash: 480
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - uart

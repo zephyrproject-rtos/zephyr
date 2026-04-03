@@ -1,0 +1,71 @@
+description: Microchip XEC DMA controller
+
+compatible: "microchip,xec-dmac"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pcrs:
+    type: array
+    required: true
+    description: PCR register index and bit position
+
+  girqs:
+    type: array
+    required: true
+    description: Encoded interrupt information
+
+  aggregated-girq:
+    type: phandle
+    description: |
+      If DMA driver uses aggregated interrupt mode
+      provide the handle to the GIRQ.
+
+  "#dma-cells":
+    const: 2
+
+  "pcr-cells":
+    type: int
+    const: 2
+
+  "girq-cells":
+    type: int
+    const: 2
+
+# #dma-cells : Must be <2>.
+# The 1st cell specifies the DMAC channel to be used for the data transfer.
+#   This channel should be unique between all peripherals that are using the
+#   DMAC instance.
+# The 2nd cell defines the peripheral trigger which is the source of the transfer.
+#   For details on trigger selection and trigger modes, refer to
+#   "Transfer Triggers and Actions".
+#   See the SoC's reference manual for all the supported request sources.
+#
+# Example of devicetree dma channel configuration:
+#
+# &sercom3 {
+#     /* Configure DMA channels for async operation */
+#     dmas = <&dmac 10 7>, <&dmac 11 8>;
+#     dma-names = "rx", "tx";
+# };
+#
+# In above fragment 10 and 11 represents the different channels used to
+# transfer data between peripheral and ram. The numbers 7/8 are, for instance,
+# uart_rx/tx peripheral trigger for sercom3.
+dma-cells:
+  - channel
+  - trigsrc
+
+pcr-cells:
+  - regidx
+  - bitpos
+
+girq-cells:
+  - girqno
+  - girqpos

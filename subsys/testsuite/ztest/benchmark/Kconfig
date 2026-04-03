@@ -1,0 +1,37 @@
+# Copyright (c) 2025 Måns Ansgariusson <mansgariusson@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "benchmarking options"
+config ZTEST_BENCHMARK
+	bool "ztest benchmarking features"
+	select TIMING_FUNCTIONS
+	select REQUIRES_FULL_LIBC
+	select REQUIRES_FLOAT_PRINTF
+	select EXPERIMENTAL
+	help
+		Enable features for benchmarking purposes.
+
+if ZTEST_BENCHMARK
+
+choice ZTEST_BENCHMARK_OUTPUT_FORMAT
+	prompt "Ztest benchmark output format"
+	default ZTEST_BENCHMARK_OUTPUT_VERBOSE
+	help
+	  Select the output format for benchmark results.
+
+config ZTEST_BENCHMARK_OUTPUT_VERBOSE
+	bool "Output verbose benchmark results"
+	help
+	  Output format designed to be read by humans. It will have a readable format with units and
+	  descriptions.
+
+config ZTEST_BENCHMARK_OUTPUT_CSV
+	bool "Output benchmark results in CSV format"
+	help
+	  Formats test output for machine parsing.
+	  It will output results in CSV format, which can be easily parsed by scripts or tools for
+	  further analysis.
+endchoice
+
+endif
+endmenu
