@@ -5,6 +5,8 @@
  */
 
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/init.h>
 
 #if !defined(CONFIG_SOC_SERIES_LPC11U6X)
@@ -38,6 +40,24 @@ static uint32_t volatile *iocon[] = {
 #define IOCON_TYPE_I 0x1
 #define IOCON_TYPE_A 0x2
 
+static inline int pinctrl_iocon_enable_clock(const struct device *clock_dev,
+					     clock_control_subsys_t subsys)
+{
+	if (!device_is_ready(clock_dev)) {
+		return -ENODEV;
+	}
+
+	return clock_control_on(clock_dev, subsys);
+}
+
+#define PINCTRL_IOCON_ENABLE_CLOCK(node_id)					\
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, clocks),				\
+		(pinctrl_iocon_enable_clock(					\
+			DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_IDX(node_id, 0)),	\
+			(clock_control_subsys_t)DT_CLOCKS_CELL_BY_IDX(		\
+				node_id, 0, name))),				\
+		(0))
+
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
@@ -68,16 +88,43 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 	return 0;
 }
 
-#if defined(CONFIG_SOC_FAMILY_LPC) && !defined(CONFIG_SOC_SERIES_LPC11U6X)
-/* LPC family (except 11u6x) needs iocon clock to be enabled */
-
 static int pinctrl_clock_init(void)
 {
+	/* LPC family (except 11u6x) needs iocon clock to be enabled */
+#if defined(CONFIG_SOC_FAMILY_LPC) && !defined(CONFIG_SOC_SERIES_LPC11U6X)
 	/* Enable IOCon clock */
 	CLOCK_EnableClock(kCLOCK_Iocon);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon))
+	{
+		int ret = PINCTRL_IOCON_ENABLE_CLOCK(DT_NODELABEL(iocon));
+
+		if (ret != 0) {
+			return ret;
+		}
+	}
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon1))
+	{
+		int ret = PINCTRL_IOCON_ENABLE_CLOCK(DT_NODELABEL(iocon1));
+
+		if (ret != 0) {
+			return ret;
+		}
+	}
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon2))
+	{
+		int ret = PINCTRL_IOCON_ENABLE_CLOCK(DT_NODELABEL(iocon2));
+
+		if (ret != 0) {
+			return ret;
+		}
+	}
+#endif
+
 	return 0;
 }
 
 SYS_INIT(pinctrl_clock_init, PRE_KERNEL_1, 0);
-
-#endif /* CONFIG_SOC_FAMILY_LPC  && !CONFIG_SOC_SERIES_LPC11U6X */
