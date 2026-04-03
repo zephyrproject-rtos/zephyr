@@ -54,6 +54,64 @@ config RTIO_SQE_CACHELINE_CHECK
 	  cache line otherwise the build will fail. This ensures high performance on
 	  systems that are sensitive to data cache effects.
 
+choice RTIO_BLOCK_POOL_PLACEMENT
+	prompt "RTIO block pool placement"
+	default RTIO_BLOCK_POOL_PLACEMENT_DTCM if $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
+	default RTIO_BLOCK_POOL_PLACEMENT_NOCACHE if NOCACHE_MEMORY
+	default RTIO_BLOCK_POOL_PLACEMENT_DEFAULT
+	help
+	  Select where the RTIO block pool is placed.
+
+	  - Default: placed in normal data/BSS
+	  - DTCM: placed in DTCM sections (uncached)
+	  - No-cache: placed in explicitly non-cacheable sections
+
+config RTIO_BLOCK_POOL_PLACEMENT_DEFAULT
+	bool "Default data memory"
+	help
+	  Place RTIO block pool in the default data/BSS memory region.
+
+config RTIO_BLOCK_POOL_PLACEMENT_DTCM
+	bool "DTCM (uncached)"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
+	help
+	  Place RTIO block pool in DTCM. On supported architectures DTCM is
+	  inherently uncached and typically needs no extra cache maintenance.
+
+config RTIO_BLOCK_POOL_PLACEMENT_NOCACHE
+	bool "Non-cacheable memory (NOCACHE)"
+	depends on NOCACHE_MEMORY
+	help
+	  Place RTIO block pool in a non-cacheable memory region. This assumes
+	  the board/linker provides corresponding no-cache data/bss sections.
+
+endchoice
+
+choice RTIO_SQE_PLACEMENT
+	prompt "RTIO SQE placement"
+	default RTIO_SQE_PLACEMENT_DTCM if $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
+	default RTIO_SQE_PLACEMENT_NOCACHE if NOCACHE_MEMORY
+	default RTIO_SQE_PLACEMENT_DEFAULT
+
+config RTIO_SQE_PLACEMENT_DEFAULT
+	bool "Default data memory"
+
+config RTIO_SQE_PLACEMENT_DTCM
+	bool "DTCM (uncached)"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
+	help
+	  Place SQE ring in a linker memory region named DTCM (uncached,
+	  low-latency)
+
+config RTIO_SQE_PLACEMENT_NOCACHE
+	bool "Non-cacheable memory (NOCACHE)"
+	depends on NOCACHE_MEMORY
+	help
+	  Place SQE ring in Zephyr's no-cache region to avoid D-cache
+	  coherency side effects for tiny transfers.
+
+endchoice
+
 rsource "Kconfig.workq"
 
 module = RTIO
