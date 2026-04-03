@@ -359,7 +359,7 @@ static inline int net_calc_chksum_icmpv4(struct net_pkt *pkt, uint16_t *out_chks
 
 static inline int net_calc_chksum_udp(struct net_pkt *pkt, uint16_t *out_chksum)
 {
-	uint16_t chksum;
+	uint16_t chksum = 0;
 	int ret;
 
 	ret = net_calc_chksum(pkt, NET_IPPROTO_UDP, &chksum);

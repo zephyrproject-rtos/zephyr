@@ -61,7 +61,7 @@ static int igmp_v2_create(struct net_pkt *pkt, const struct net_in_addr *addr,
 				   struct net_ipv4_igmp_v2_report);
 	struct net_ipv4_igmp_v2_report *igmp;
 	int ret;
-	uint16_t chksum;
+	uint16_t chksum = 0;
 
 	igmp = (struct net_ipv4_igmp_v2_report *)
 				net_pkt_get_data(pkt, &igmp_access);
@@ -107,7 +107,7 @@ static int igmp_v3_create(struct net_pkt *pkt, uint8_t type, struct net_if_mcast
 	struct net_ipv4_igmp_v3_report *igmp;
 	struct net_ipv4_igmp_v3_group_record *group_record;
 	int ret;
-	uint16_t chksum;
+	uint16_t chksum = 0;
 	uint16_t group_count = 0;
 
 	igmp = (struct net_ipv4_igmp_v3_report *)net_pkt_get_data(pkt, &igmp_access);
@@ -433,7 +433,7 @@ drop:
 enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *ip_hdr)
 {
 	int ret;
-	uint16_t chksum;
+	uint16_t chksum = 0;
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(igmpv2_access, struct net_ipv4_igmp_v2_query);
 
 	struct net_ipv4_igmp_v2_query *igmpv2_hdr;

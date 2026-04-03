@@ -918,7 +918,7 @@ ZTEST(net_chksum_offload, test_tx_chksum_offload_enabled_test_v4_icmp_frag)
 static void test_fragment_rx_udp(struct net_pkt *pkt,
 				 union net_proto_header *proto_hdr)
 {
-	uint16_t out_chksum;
+	uint16_t out_chksum = 0;
 	int ret;
 	size_t hdr_offset = net_pkt_ip_hdr_len(pkt) +
 			    net_pkt_ip_opts_len(pkt) +
@@ -946,7 +946,7 @@ static void recv_cb_offload_disabled(struct net_context *context,
 				     int status,
 				     void *user_data)
 {
-	uint16_t out_chksum;
+	uint16_t out_chksum = 0;
 	int ret;
 
 	zassert_not_null(proto_hdr->udp, "UDP header missing");
@@ -1179,7 +1179,7 @@ static enum net_verdict icmp_handler(struct net_icmp_ctx *ctx,
 				     void *user_data)
 {
 	struct k_sem *wait_data = user_data;
-	uint16_t chksum;
+	uint16_t chksum = 0;
 	int ret;
 
 	size_t hdr_offset = net_pkt_ip_hdr_len(pkt) +

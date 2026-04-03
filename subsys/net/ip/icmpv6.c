@@ -73,7 +73,7 @@ int net_icmpv6_finalize(struct net_pkt *pkt, bool force_chksum)
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV6_ICMP) ||
 		force_chksum) {
 		int ret;
-		uint16_t chksum;
+		uint16_t chksum = 0;
 
 		ret = net_calc_chksum_icmpv6(pkt, &chksum);
 		if (ret < 0) {
@@ -373,7 +373,7 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 
 	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV6_ICMP) ||
 	    net_pkt_is_ip_reassembled(pkt)) {
-		uint16_t chksum;
+		uint16_t chksum = 0;
 		int ret;
 
 		ret = net_calc_chksum_icmpv6(pkt, &chksum);

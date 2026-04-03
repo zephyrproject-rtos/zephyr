@@ -1507,7 +1507,7 @@ static bool uncompress_IPHC_header(struct net_pkt *pkt)
 
 		if (nhc & NET_6LO_NHC_UDP_CHECKSUM) {
 			int ret;
-			uint16_t chksum;
+			uint16_t chksum = 0;
 
 			udp->chksum = 0;
 			ret = net_calc_chksum_udp(pkt, &chksum);

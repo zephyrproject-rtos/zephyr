@@ -4226,7 +4226,7 @@ int net_tcp_finalize(struct net_pkt *pkt, bool force_chksum)
 
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), type) || force_chksum) {
 		int ret;
-		uint16_t chksum;
+		uint16_t chksum = 0;
 
 		ret = net_calc_chksum_tcp(pkt, &chksum);
 		if (ret < 0) {
@@ -4250,7 +4250,7 @@ struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
 	if (IS_ENABLED(CONFIG_NET_TCP_CHECKSUM) &&
 	    (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), type) ||
 	     net_pkt_is_ip_reassembled(pkt))) {
-		uint16_t chksum;
+		uint16_t chksum = 0;
 		int ret;
 
 		ret = net_calc_chksum_tcp(pkt, &chksum);
