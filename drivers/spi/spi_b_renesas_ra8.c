@@ -13,6 +13,8 @@
 #include <soc.h>
 #include <instances/r_dtc.h>
 #include <instances/r_spi_b.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ra8_spi_b);
@@ -43,6 +45,9 @@ struct ra_spi_data {
 	struct st_spi_b_extended_cfg fsp_config_extend;
 #if CONFIG_SPI_B_INTERRUPT
 	uint32_t data_len;
+#ifdef CONFIG_PM
+	bool interrupt_transfer_started;
+#endif
 #endif
 #if defined(CONFIG_SPI_B_RA_DTC)
 	/* RX */
@@ -61,6 +66,18 @@ struct ra_spi_data {
 #endif
 };
 
+static inline void ra_spi_b_pm_policy_state_lock_get(const struct device *dev)
+{
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
+static inline void ra_spi_b_pm_policy_state_lock_put(const struct device *dev)
+{
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
 static void spi_cb(spi_callback_args_t *p_args)
 {
 	struct device *dev = (struct device *)p_args->p_context;
@@ -70,6 +87,8 @@ static void spi_cb(spi_callback_args_t *p_args)
 	case SPI_EVENT_TRANSFER_COMPLETE:
 		spi_context_cs_control(&data->ctx, false);
 		spi_context_complete(&data->ctx, dev, 0);
+		/* Unlock PM when async transfer completes. */
+		ra_spi_b_pm_policy_state_lock_put(dev);
 		break;
 	case SPI_EVENT_ERR_MODE_FAULT:    /* Mode fault error */
 	case SPI_EVENT_ERR_READ_OVERFLOW: /* Read overflow error */
@@ -79,6 +98,8 @@ static void spi_cb(spi_callback_args_t *p_args)
 	case SPI_EVENT_ERR_MODE_UNDERRUN: /* Underrun error */
 		spi_context_cs_control(&data->ctx, false);
 		spi_context_complete(&data->ctx, dev, -EIO);
+		/* Unlock PM when async transfer completes. */
+		ra_spi_b_pm_policy_state_lock_put(dev);
 		break;
 	default:
 		break;
@@ -298,6 +319,7 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 #endif
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
+	ra_spi_b_pm_policy_state_lock_get(dev);
 
 	ret = ra_spi_b_configure(dev, config);
 	if (ret) {
@@ -334,6 +356,10 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 					 : MIN(data->ctx.tx_len, data->ctx.rx_len);
 	}
 
+#ifdef CONFIG_PM
+	/* Mark that interrupt transfer is starting. */
+	data->interrupt_transfer_started = true;
+#endif
 	if (data->ctx.rx_buf == NULL) {
 		R_SPI_B_Write(&data->spi, data->ctx.tx_buf, data->data_len, spi_width);
 	} else if (data->ctx.tx_buf == NULL) {
@@ -377,6 +403,19 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 #endif /* CONFIG_SPI_SLAVE */
 
 end:
+	/* PM unlock logic:
+	 * - Interrupt enabled:  Unlock only if transfer never started
+	 *                       Completed transfers are unlocked in spi_cb() callback
+	 * - Interrupt disabled: Always unlock after transfer completes
+	 */
+#if defined(CONFIG_PM) && defined(CONFIG_SPI_B_INTERRUPT)
+	if (!data->interrupt_transfer_started) {
+		ra_spi_b_pm_policy_state_lock_put(dev);
+	}
+	data->interrupt_transfer_started = false;
+#else
+	ra_spi_b_pm_policy_state_lock_put(dev);
+#endif
 	spi_context_release(&data->ctx, ret);
 
 	return ret;
@@ -613,6 +652,30 @@ static void ra_spi_eri_isr(const struct device *dev)
 }
 #endif
 
+#ifdef CONFIG_PM_DEVICE
+static int spi_b_ra_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct ra_spi_data *data = dev->data;
+	fsp_err_t fsp_err = FSP_SUCCESS;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (data->spi.open) {
+			fsp_err = R_SPI_B_Close(&data->spi);
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/* Force SPI to be reconfigured at next transfer */
+		data->ctx.config = NULL;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return (fsp_err == FSP_SUCCESS) ? 0 : -EIO;
+}
+#endif
+
 #define EVENT_SPI_RXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SPI, channel, _RXI))
 #define EVENT_SPI_TXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SPI, channel, _TXI))
 #define EVENT_SPI_TEI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SPI, channel, _TEI))
@@ -775,6 +838,7 @@ static void ra_spi_eri_isr(const struct device *dev)
 		return 0;                                                                          \
 	}                                                                                          \
                                                                                                    \
+	PM_DEVICE_DT_INST_DEFINE(index, spi_b_ra_pm_action);                                       \
 	SPI_DEVICE_DT_INST_DEFINE(index, spi_b_ra_init##index, PM_DEVICE_DT_INST_GET(index),       \
 				  &ra_spi_data_##index, &ra_spi_config_##index, POST_KERNEL,       \
 				  CONFIG_SPI_INIT_PRIORITY, &ra_spi_driver_api);
