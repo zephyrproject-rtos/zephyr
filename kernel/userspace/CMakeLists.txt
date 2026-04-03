@@ -9,3 +9,7 @@ target_sources(
   userspace_handler.c
   userspace.c
   )
+zephyr_sources(
+  mutex.c
+  user_work.c
+)
