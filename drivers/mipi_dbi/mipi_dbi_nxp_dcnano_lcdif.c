@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT nxp_mipi_dbi_dcnano_lcdif
 
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -26,6 +27,8 @@ struct mcux_dcnano_lcdif_dbi_data {
 struct mcux_dcnano_lcdif_dbi_config {
 	LCDIF_Type *base;
 	void (*irq_config_func)(const struct device *dev);
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 	lcdif_dbi_config_t dbi_config;
 	lcdif_panel_config_t panel_config;
 	const struct pinctrl_dev_config *pincfg;
@@ -159,10 +162,20 @@ static int mcux_dcnano_lcdif_dbi_init(const struct device *dev)
 {
 	const struct mcux_dcnano_lcdif_dbi_config *config = dev->config;
 	struct mcux_dcnano_lcdif_dbi_data *lcdif_data = dev->data;
-
-#ifndef CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
 	int ret;
 
+	if (config->clock_dev != NULL) {
+		if (!device_is_ready(config->clock_dev)) {
+			return -ENODEV;
+		}
+
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+#ifndef CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
 	/* Pin control is not applied when DCNano is used in MCUX DSI driver. */
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
@@ -363,6 +376,11 @@ static DEVICE_API(mipi_dbi, mcux_dcnano_lcdif_dbi_api) = {
 	struct mcux_dcnano_lcdif_dbi_config mcux_dcnano_lcdif_dbi_config_##n = {	\
 		.base = (LCDIF_Type *) DT_INST_REG_ADDR(n),				\
 		.irq_config_func = mcux_dcnano_lcdif_dbi_config_func_##n,		\
+		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),		\
+			(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL)),		\
+		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),		\
+			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name)),		\
+			((clock_control_subsys_t)0U)),					\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 		.reset_ctl = RESET_DT_SPEC_INST_GET_OR(n, {0}),				\
 		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),			\
