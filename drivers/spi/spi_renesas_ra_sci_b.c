@@ -12,6 +12,8 @@
 #include <zephyr/irq.h>
 #include <soc.h>
 #include <instances/r_sci_b_spi.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 #ifndef CONFIG_SPI_RENESAS_RA_SCI_B_INTERRUPT
 #include "rp_sci_b_spi.h"
@@ -38,6 +40,9 @@ struct spi_renesas_ra_sci_b_data {
 	struct spi_config config;
 #ifdef CONFIG_SPI_RENESAS_RA_SCI_B_INTERRUPT
 	uint32_t data_len;
+#endif
+#ifdef CONFIG_PM
+	bool interrupt_transfer_started;
 #endif
 #ifdef CONFIG_SPI_RENESAS_RA_SCI_B_DTC
 	/* RX */
@@ -73,6 +78,21 @@ extern void sci_b_spi_eri_isr(void);
 #define SPI_RENESAS_RA_SCI_B_IRQ_GET(id, name, cell)                                               \
 	COND_CODE_1(DT_IRQ_HAS_NAME(id, name), (DT_IRQ_BY_NAME(id, name, cell)),                   \
 		    ((IRQn_Type) FSP_INVALID_VECTOR))
+
+static inline void ra_spi_sci_b_pm_policy_state_lock_get(const struct device *dev)
+{
+	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
+static inline void ra_spi_sci_b_pm_policy_state_lock_put(const struct device *dev)
+{
+	pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
 /*
  * This function help to control the cs gpio when changing the CS GPIO active state in
  * runtime.
@@ -227,6 +247,8 @@ static void spi_renesas_ra_sci_b_callback(spi_callback_args_t *p_args)
 	default:
 		break;
 	}
+
+	ra_spi_sci_b_pm_policy_state_lock_put(dev);
 }
 #else /* !CONFIG_SPI_RENESAS_RA_SCI_B_INTERRUPT */
 static void renesas_ra_sci_b_transceive_data_polling(struct spi_renesas_ra_sci_b_data *data)
@@ -411,6 +433,7 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
+	ra_spi_sci_b_pm_policy_state_lock_get(dev);
 	ret = spi_renesas_ra_sci_b_configure(dev, config);
 	if (ret) {
 		goto end;
@@ -466,6 +489,10 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 					 : MIN(data->ctx.tx_len, data->ctx.rx_len);
 	}
 
+#ifdef CONFIG_PM
+	/* Mark that interrupt transfer is starting. */
+	data->interrupt_transfer_started = true;
+#endif
 	if (data->ctx.rx_buf == NULL) {
 		fsp_err = R_SCI_B_SPI_Write(&data->fsp_ctrl, data->ctx.tx_buf, data->data_len,
 					    SPI_BIT_WIDTH_8_BITS);
@@ -495,6 +522,19 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 #endif /* CONFIG_SPI_SLAVE */
 
 end:
+	/* PM unlock logic:
+	 * - Interrupt enabled:  Unlock only if transfer never started
+	 *			 Completed transfers are unlocked in spi_renesas_ra_sci_b_callback()
+	 * - Interrupt disabled: Always unlock after transfer completes
+	 */
+#if defined(CONFIG_PM) && defined(CONFIG_SPI_RENESAS_RA_SCI_B_INTERRUPT)
+	if (!data->interrupt_transfer_started) {
+		ra_spi_sci_b_pm_policy_state_lock_put(dev);
+	}
+	data->interrupt_transfer_started = false;
+#else
+	ra_spi_sci_b_pm_policy_state_lock_put(dev);
+#endif
 	spi_context_release(&data->ctx, ret);
 
 	return ret;
@@ -570,6 +610,30 @@ static DEVICE_API(spi, spi_renesas_ra_sci_b_driver_api) = {
 #endif /* CONFIG_SPI_ASYNC */
 	.release = spi_renesas_ra_sci_b_release,
 };
+
+#ifdef CONFIG_PM_DEVICE
+static int renesas_ra_sci_b_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct spi_renesas_ra_sci_b_data *data = dev->data;
+	fsp_err_t fsp_err = FSP_SUCCESS;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (data->fsp_ctrl.open) {
+			fsp_err = R_SCI_B_SPI_Close(&data->fsp_ctrl);
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		 /* Force SPI to be reconfigured at next transfer */
+		data->ctx.config = NULL;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return (fsp_err == FSP_SUCCESS) ? 0 : -EIO;
+}
+#endif
 
 #define EVENT_SCI_RXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _RXI))
 #define EVENT_SCI_TXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _TXI))
@@ -736,7 +800,9 @@ static DEVICE_API(spi, spi_renesas_ra_sci_b_driver_api) = {
 		return 0;                                                                          \
 	}                                                                                          \
                                                                                                    \
-	SPI_DEVICE_DT_INST_DEFINE(index, spi_renesas_ra_sci_b_init##index, NULL,                   \
+	PM_DEVICE_DT_INST_DEFINE(index, renesas_ra_sci_b_pm_action);                               \
+	SPI_DEVICE_DT_INST_DEFINE(index, spi_renesas_ra_sci_b_init##index,                         \
+				  PM_DEVICE_DT_INST_GET(index),                                    \
 				  &spi_renesas_ra_sci_b_data_##index,                              \
 				  &spi_renesas_ra_sci_b_config_##index, POST_KERNEL,               \
 				  CONFIG_SPI_INIT_PRIORITY, &spi_renesas_ra_sci_b_driver_api);
