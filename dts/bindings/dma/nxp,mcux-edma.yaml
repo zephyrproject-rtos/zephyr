@@ -8,6 +8,9 @@ compatible: "nxp,mcux-edma"
 include: [dma-controller.yaml, reset-device.yaml]
 
 properties:
+  clocks:
+    type: phandle-array
+
   reg:
     required: true
     description: |

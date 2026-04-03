@@ -168,6 +168,7 @@
 		nxp,version = <4>;
 		dma-channels = <16>;
 		dma-requests = <105>;
+		clocks = <&clkctl0 MCUX_EDMA0_CLK>;
 		reg = <0x140000 0x1000>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(2, 5)>;
 		interrupts = <59 0>, <60 0>, <61 0>, <62 0>,
@@ -184,6 +185,7 @@
 		nxp,version = <4>;
 		dma-channels = <16>;
 		dma-requests = <105>;
+		clocks = <&clkctl0 MCUX_EDMA1_CLK>;
 		reg = <0x160000 0x1000>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(2, 6)>;
 		interrupts = <75 0>, <76 0>, <77 0>, <78 0>,
