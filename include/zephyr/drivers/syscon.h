@@ -30,52 +30,58 @@ extern "C" {
 #endif
 
 /**
- * API template to get the base address of the syscon region.
- *
- * @see syscon_get_base
+ * @def_driverbackendgroup{SYSCON, syscon_interface}
+ * @{
+ */
+
+/**
+ * @brief Get the base address of the syscon region.
+ * See syscon_get_base() for argument description.
  */
 typedef int (*syscon_api_get_base)(const struct device *dev, uintptr_t *addr);
 
 /**
- * API template to read a single register.
- *
- * @see syscon_read_reg
+ * @brief Read a single register.
+ * See syscon_read_reg() for argument description.
  */
 typedef int (*syscon_api_read_reg)(const struct device *dev, uint16_t reg, uint32_t *val);
 
 /**
- * API template to write a single register.
- *
- * @see syscon_write_reg
+ * @brief Write a single register.
+ * See syscon_write_reg() for argument description.
  */
 typedef int (*syscon_api_write_reg)(const struct device *dev, uint16_t reg, uint32_t val);
 
 /**
- * API template to atomically update bits in a register.
- *
- * @see syscon_update_bits
+ * @brief Atomically update bits in a register.
+ * See syscon_update_bits() for argument description.
  */
 typedef int (*syscon_api_update_bits)(const struct device *dev, uint16_t reg,
 				      uint32_t mask, uint32_t val);
 
 /**
- * API template to get the size of the syscon register.
- *
- * @see syscon_get_size
+ * @brief Get the size of the syscon register region.
+ * See syscon_get_size() for argument description.
  */
 typedef int (*syscon_api_get_size)(const struct device *dev, size_t *size);
 
 /**
- * @brief System Control (syscon) register driver API
+ * @driver_ops{SYSCON}
  */
 __subsystem struct syscon_driver_api {
+	/** @driver_ops_optional @copybrief syscon_read_reg */
 	syscon_api_read_reg read;
+	/** @driver_ops_optional @copybrief syscon_write_reg */
 	syscon_api_write_reg write;
-	/** @see syscon_update_bits */
+	/** @driver_ops_optional @copybrief syscon_update_bits */
 	syscon_api_update_bits update_bits;
+	/** @driver_ops_optional @copybrief syscon_get_base */
 	syscon_api_get_base get_base;
+	/** @driver_ops_optional @copybrief syscon_get_size */
 	syscon_api_get_size get_size;
 };
+
+/** @} */
 
 /**
  * @brief Get the syscon base address
