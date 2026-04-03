@@ -23,6 +23,14 @@ if ETH_STM32_HAL
 choice ETH_STM32_HAL_API_VERSION
 	prompt "STM32Cube HAL Ethernet version"
 
+config ETH_STM32_HAL2_API
+	bool "Use official STM32Cube2 HAL driver"
+	depends on STM32_HAL2
+	select EVENTS
+	select USE_STM32_HAL_SBS
+	help
+	  Use the official STM32Cube2 HAL driver instead of the other two.
+
 config ETH_STM32_HAL_API_V2
 	bool "Use official STM32Cube HAL driver"
 	depends on SOC_SERIES_STM32F4X \
@@ -93,6 +101,30 @@ config ETH_STM32_HAL_TX_ASYNC
 	help
 	  Enable TX transmission asynchronous mode to enhance throughput
 	  performances.
+
+if ETH_STM32_HAL2_API
+
+config ETH_STM32_HAL_RX_BUF_POOL_COUNT
+	int "Number of RX buffers in STM32 HAL pool"
+	default 32
+	help
+	  Number of full-size RX net_bufs reserved for the STM32 HAL
+	  Ethernet driver. Set this higher than ETH_STM32_HAL_RX_DMA_BUF_COUNT
+	  so free buffers remain available while packets are processed.
+
+config ETH_STM32_HAL_RX_DMA_BUF_COUNT
+	int "Number of RX DMA buffers"
+	default 10
+	help
+	  Number of RX DMA buffers allocated for the STM32 HAL2 Ethernet driver.
+
+config ETH_STM32_HAL_TX_MAX_BUF
+	int "Maximum number of TX buffers per Ethernet packet"
+	default 10
+	help
+	  Maximum number of TX buffers (fragments) per Ethernet packet.
+
+endif #ETH_STM32_HAL2_API
 
 menuconfig PTP_CLOCK_STM32_HAL
 	bool "STM32 HAL PTP clock driver support"
