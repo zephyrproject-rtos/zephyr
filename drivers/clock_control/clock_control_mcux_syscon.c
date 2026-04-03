@@ -18,6 +18,46 @@ LOG_MODULE_REGISTER(clock_control);
 static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 					    clock_control_subsys_t sub_system)
 {
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX)
+	switch ((uint32_t)sub_system) {
+	case MCUX_GPIO0_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio0);
+		break;
+	case MCUX_GPIO1_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio1);
+		break;
+	case MCUX_GPIO2_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio2);
+		break;
+	case MCUX_GPIO3_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio3);
+		break;
+	case MCUX_GPIO4_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio4);
+		break;
+	case MCUX_GPIO5_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio5);
+		break;
+	case MCUX_GPIO6_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio6);
+		break;
+	case MCUX_GPIO7_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio7);
+		break;
+	case MCUX_GPIO8_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio8);
+		break;
+	case MCUX_GPIO9_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio9);
+		break;
+	case MCUX_GPIO10_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio10);
+		break;
+	default:
+		break;
+	}
+#endif
+
 #if defined(CONFIG_CAN_NXP_LPC_MCAN)
 	if ((uint32_t)sub_system == MCUX_MCAN_CLK) {
 		CLOCK_EnableClock(kCLOCK_Mcan);
