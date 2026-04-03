@@ -836,6 +836,11 @@ static inline int dwc2_handle_evt_dout(const struct device *dev,
 	struct net_buf *buf;
 	int err = 0;
 
+	if (cfg == NULL) {
+		LOG_ERR("No ep_cfg for DOUT event");
+		return -ENODEV;
+	}
+
 	buf = udc_buf_get(cfg);
 	if (buf == NULL) {
 		LOG_ERR("No buffer queued for ep 0x%02x", cfg->addr);
@@ -857,6 +862,11 @@ static int dwc2_handle_evt_din(const struct device *dev,
 			       struct udc_ep_config *const cfg)
 {
 	struct net_buf *buf;
+
+	if (cfg == NULL) {
+		LOG_ERR("No ep_cfg for DIN event");
+		return -ENODEV;
+	}
 
 	buf = udc_buf_peek(cfg);
 	if (buf == NULL) {
@@ -1175,6 +1185,14 @@ static void dwc2_unset_unused_fifo(const struct device *dev)
 
 	for (uint8_t i = priv->ineps - 1U; i > 0; i--) {
 		tmp = udc_get_ep_cfg(dev, i | USB_EP_DIR_IN);
+
+		if (tmp == NULL) {
+			/* No ep_cfg registered for this IN endpoint index;
+			 * clear any stale txf_set bit and continue.
+			 */
+			priv->txf_set &= ~BIT(i);
+			continue;
+		}
 
 		if (tmp->stat.enabled && (priv->txf_set & BIT(i))) {
 			return;
@@ -2465,9 +2483,8 @@ static inline void dwc2_handle_rxflvl(const struct device *dev)
 	case USB_DWC2_GRXSTSR_PKTSTS_OUT_DATA:
 		ep_cfg = udc_get_ep_cfg(dev, ep);
 
-		buf = udc_buf_peek(ep_cfg);
-
-		/* RxFIFO data must be retrieved even when buf is NULL */
+		/* RxFIFO data must be retrieved even when ep_cfg or buf is NULL */
+		buf = (ep_cfg != NULL) ? udc_buf_peek(ep_cfg) : NULL;
 		dwc2_read_fifo(dev, ep, buf, bcnt);
 		break;
 	case USB_DWC2_GRXSTSR_PKTSTS_OUT_DATA_DONE:
@@ -2492,6 +2509,11 @@ static inline void dwc2_handle_in_xfercompl(const struct device *dev,
 	struct net_buf *buf;
 
 	ep_cfg = udc_get_ep_cfg(dev, ep_idx | USB_EP_DIR_IN);
+	if (ep_cfg == NULL) {
+		LOG_ERR("No ep_cfg for IN ep 0x%02x", ep_idx | USB_EP_DIR_IN);
+		return;
+	}
+
 	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
@@ -2601,6 +2623,12 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 	uint32_t bcnt;
 	struct net_buf *buf;
 	uint32_t doeptsiz;
+
+	if (!ep_cfg) {
+		LOG_ERR("No ep_cfg for OUT ep 0x%02x", ep_idx);
+		return;
+	}
+
 	const bool is_iso = dwc2_ep_is_iso(ep_cfg);
 
 	doeptsiz = sys_read32((mem_addr_t)&base->out_ep[ep_idx].doeptsiz);
@@ -3167,6 +3195,11 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 			ep = pull_next_ep_from_bitmap(&eps);
 			ep_cfg = udc_get_ep_cfg(dev, ep);
 
+			if (ep_cfg == NULL) {
+				LOG_ERR("No ep_cfg for xfer ep 0x%02x", ep);
+				continue;
+			}
+
 			if (!udc_ep_is_busy(ep_cfg)) {
 				dwc2_handle_xfer_next(dev, ep_cfg);
 			} else {
@@ -3188,6 +3221,11 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 		while (eps) {
 			ep = pull_next_ep_from_bitmap(&eps);
 			ep_cfg = udc_get_ep_cfg(dev, ep);
+
+			if (ep_cfg == NULL) {
+				LOG_ERR("No ep_cfg for finished ep 0x%02x", ep);
+				continue;
+			}
 
 			if (USB_EP_DIR_IS_IN(ep)) {
 				LOG_DBG("DIN event ep 0x%02x", ep);
