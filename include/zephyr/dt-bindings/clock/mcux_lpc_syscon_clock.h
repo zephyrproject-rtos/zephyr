@@ -215,4 +215,10 @@
 /** GPIO10 peripheral clock identifier. */
 #define MCUX_GPIO10_CLK MCUX_LPC_CLK_ID(0x32, 0x0A)
 
+/** IOCON0 peripheral clock identifier. */
+#define MCUX_IOCON0_CLK MCUX_LPC_CLK_ID(0x33, 0x00)
+/** IOCON1 peripheral clock identifier. */
+#define MCUX_IOCON1_CLK MCUX_LPC_CLK_ID(0x33, 0x01)
+/** IOCON2 peripheral clock identifier. */
+#define MCUX_IOCON2_CLK MCUX_LPC_CLK_ID(0x33, 0x02)
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */
