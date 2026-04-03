@@ -7,15 +7,12 @@
 #include <string.h>
 #include <zephyr/debug/coredump.h>
 
-/* Identify the version of this block (in case of architecture changes).
- * To be interpreted by the target architecture specific block parser.
+/*
+ * v1: 22 registers (x0-x18, lr, spsr, elr)
+ * v2: 24 registers (v1 + fp, sp) - needed for GDB stack unwinding
  */
-#define ARCH_HDR_VER			1
+#define ARCH_HDR_VER			2
 
-/* Structure to store the architecture registers passed arch_coredump_info_dump
- * As callee saved registers are not provided in struct arch_esf structure in Zephyr
- * we just need 22 registers.
- */
 struct arm64_arch_block {
 	struct {
 		uint64_t x0;
@@ -40,6 +37,8 @@ struct arm64_arch_block {
 		uint64_t lr;
 		uint64_t spsr;
 		uint64_t elr;
+		uint64_t fp;
+		uint64_t sp;
 	} r;
 } __packed;
 
@@ -93,6 +92,27 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 	arch_blk.r.lr = esf->lr;
 	arch_blk.r.spsr = esf->spsr;
 	arch_blk.r.elr = esf->elr;
+
+#ifdef CONFIG_FRAME_POINTER
+	arch_blk.r.fp = esf->fp;
+#else
+	arch_blk.r.fp = 0;
+#endif
+	/*
+	 * The exception entry macro does: sub sp, sp, ___esf_t_SIZEOF
+	 * So the pre-fault SP is right above the saved ESF.
+	 * Note: for EL0 exceptions this is SP_EL1, not the user SP_EL0.
+	 */
+	arch_blk.r.sp = (uintptr_t)esf + sizeof(struct arch_esf);
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+	/*
+	 * When SAFE_EXCEPTION_STACK is enabled, for EL0 exceptions the vector
+	 * entry saves the original sp_el0 into esf->sp.
+	 */
+	if ((esf->spsr & SPSR_MODE_MASK) == SPSR_MODE_EL0T) {
+		arch_blk.r.sp = esf->sp;
+	}
+#endif
 
 	/* Send for output */
 	coredump_buffer_output((uint8_t *)&hdr, sizeof(hdr));
