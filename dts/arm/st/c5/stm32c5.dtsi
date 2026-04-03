@@ -153,6 +153,29 @@
 			status = "disabled";
 		};
 
+		mac: ethernet@40028000 {
+			compatible = "st,stm32-ethernet";
+			reg = <0x40028000 0x1400>;
+			clock-names = "mac-clk-int", "stm-eth", "mac-clk-tx", "mac-clk-rx",
+				      "eth1clk-sel", "eth1clkdiv-sel", "eth1refclk-sel";
+			clocks = <&rcc STM32_CLOCK(AHB1, 18)>,
+				 <&rcc STM32_CLOCK(AHB1, 19)>,
+				 <&rcc STM32_CLOCK(AHB1, 20)>,
+				 <&rcc STM32_CLOCK(AHB1, 21)>,
+				 <&rcc STM32_SRC_HSE ETH1CLK_SEL(3)>,
+				 <&rcc STM32_SRC_HSE ETH1CLKDIV_SEL(0)>,
+				 <&rcc STM32_SRC_HSE ETH1REFCLK_SEL(0)>;
+			interrupts = <94 0>;
+			status = "disabled";
+
+			mdio: mdio {
+				compatible = "st,stm32-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
 		exti: interrupt-controller@44022000 {
 			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
