@@ -10,6 +10,8 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/clock_control/renesas_ra_cgc.h>
 
@@ -60,6 +62,9 @@ struct i2c_ra_iic_data {
 #else
 	uint8_t target_buf;
 #endif /* CONFIG_I2C_TARGET_BUFFER_MODE */
+#ifdef CONFIG_PM
+	bool target_pm_locked;
+#endif /* CONFIG_PM */
 #endif /* CONFIG_I2C_TARGET */
 	struct k_mutex bus_mutex;
 	struct k_sem complete_sem;
@@ -95,6 +100,50 @@ struct ra_iic_ctrl_bitrate {
 	uint32_t brh;
 	uint32_t duty_error_percent;
 };
+
+static inline void i2c_ra_iic_pm_lock_get(const struct device *dev)
+{
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
+static inline void i2c_ra_iic_pm_lock_put(const struct device *dev)
+{
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
+#ifdef CONFIG_I2C_TARGET
+static inline void i2c_ra_iic_target_pm_lock_get(const struct device *dev)
+{
+#ifdef CONFIG_PM
+	struct i2c_ra_iic_data *data = (struct i2c_ra_iic_data *const)dev->data;
+
+	if (data->target_pm_locked) {
+		return;
+	}
+
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	data->target_pm_locked = true;
+#endif /* CONFIG_PM */
+}
+
+static inline void i2c_ra_iic_target_pm_lock_put(const struct device *dev)
+{
+#ifdef CONFIG_PM
+	struct i2c_ra_iic_data *data = (struct i2c_ra_iic_data *const)dev->data;
+
+	if (!data->target_pm_locked) {
+		return;
+	}
+
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	data->target_pm_locked = false;
+#endif /* CONFIG_PM */
+}
+#endif /* CONFIG_I2C_TARGET */
 
 static int i2c_ra_iic_configure(const struct device *dev, uint32_t dev_config)
 {
@@ -141,11 +190,15 @@ static int i2c_ra_iic_configure(const struct device *dev, uint32_t dev_config)
 		return err;
 	}
 
-	fsp_err = R_IIC_MASTER_Close(&data->control_ctrl);
-	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Failed to close I2C master instance. FSP_ERR=%d", fsp_err);
-		return -EIO;
+	if (data->control_ctrl.open) {
+		/* Only close the instance if it's already open */
+		fsp_err = R_IIC_MASTER_Close(&data->control_ctrl);
+		if (fsp_err != FSP_SUCCESS) {
+			LOG_ERR("Failed to close I2C master instance. FSP_ERR=%d", fsp_err);
+			return -EIO;
+		}
 	}
+
 	fsp_err = R_IIC_MASTER_Open(&data->control_ctrl, &data->ctrl_fconfig);
 	if (fsp_err != FSP_SUCCESS) {
 		LOG_ERR("Failed to open I2C master instance. FSP_ERR=%d", fsp_err);
@@ -220,6 +273,8 @@ static int i2c_ra_iic_transfer(const struct device *dev, struct i2c_msg *msgs, u
 	if (ret) {
 		return ret;
 	}
+
+	i2c_ra_iic_pm_lock_get(dev);
 
 	k_mutex_lock(&data->bus_mutex, K_FOREVER);
 
@@ -301,6 +356,7 @@ static int i2c_ra_iic_transfer(const struct device *dev, struct i2c_msg *msgs, u
 
 RELEASE_BUS:
 	k_mutex_unlock(&data->bus_mutex);
+	i2c_ra_iic_pm_lock_put(dev);
 
 	return ret;
 }
@@ -788,8 +844,10 @@ static int i2c_ra_iic_target_register(const struct device *dev, struct i2c_targe
 			LOG_ERR("Failed to re-open I2C Controller instance: %s", dev->name);
 		}
 		ret = -EIO;
+		goto RELEASE_BUS;
 	}
 
+	i2c_ra_iic_target_pm_lock_get(dev);
 RELEASE_BUS:
 	k_mutex_unlock(&data->bus_mutex);
 
@@ -822,6 +880,8 @@ static int i2c_ra_iic_target_unregister(const struct device *dev, struct i2c_tar
 	}
 
 	data->target_cfg = NULL;
+
+	i2c_ra_iic_target_pm_lock_put(dev);
 
 	fsp_err = R_IIC_MASTER_Open(&data->control_ctrl, &data->ctrl_fconfig);
 	if (fsp_err != FSP_SUCCESS) {
@@ -919,6 +979,30 @@ restore:
 	return ret;
 }
 #endif /* CONFIG_I2C_RENESAS_RA_IIC_BUS_RECOVERY */
+
+#ifdef CONFIG_PM_DEVICE
+static int i2c_ra_iic_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct i2c_ra_iic_data *data = dev->data;
+	fsp_err_t fsp_err = FSP_SUCCESS;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Only close if the i2c is open */
+		if (data->control_ctrl.open) {
+			fsp_err = R_IIC_MASTER_Close(&data->control_ctrl);
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		fsp_err = R_IIC_MASTER_Open(&data->control_ctrl, &data->ctrl_fconfig);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return (fsp_err == FSP_SUCCESS) ? 0 : -EIO;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(i2c, i2c_ra_iic_driver_api) = {
 	.configure = i2c_ra_iic_configure,
@@ -1110,7 +1194,8 @@ void iic_eri_isr(const struct device *dev)
 		return i2c_ra_iic_init(dev);                                                       \
 	}                                                                                          \
                                                                                                    \
-	I2C_DEVICE_DT_INST_DEFINE(index, i2c_renesas_ra_init##index, NULL,                         \
+	PM_DEVICE_DT_INST_DEFINE(index, i2c_ra_iic_pm_action);					   \
+	I2C_DEVICE_DT_INST_DEFINE(index, i2c_renesas_ra_init##index, PM_DEVICE_DT_INST_GET(index), \
 				  &i2c_ra_iic_data_##index, &i2c_ra_iic_config_##index,            \
 				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &i2c_ra_iic_driver_api);
 
