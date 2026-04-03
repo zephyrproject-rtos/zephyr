@@ -29,6 +29,16 @@ config USE_SWITCH_SUPPORTED
 	  currently enabled platform. This option should be selected by
 	  platforms that implement it.
 
+config MP_MAX_NUM_CPUS
+	int "Maximum number of CPUs/cores"
+	default 1
+	range 1 12
+	help
+	  Maximum number of multiprocessing-capable cores available to the
+	  multicpu API and SMP features.
+
+if SMP
+
 config SMP_BOOT_DELAY
 	bool "Delay booting secondary cores"
 	depends on SMP
@@ -37,14 +47,6 @@ config SMP_BOOT_DELAY
 	  Select this option to skip this and allow custom code
 	  (architecture/SoC/board/application) to boot secondary CPUs at
 	  a later time.
-
-config MP_MAX_NUM_CPUS
-	int "Maximum number of CPUs/cores"
-	default 1
-	range 1 12
-	help
-	  Maximum number of multiprocessing-capable cores available to the
-	  multicpu API and SMP features.
 
 config SCHED_IPI_SUPPORTED
 	bool
@@ -68,6 +70,41 @@ config SCHED_IPI_CASCADE
 	  priority than a currently executing thread on another CPU. Although
 	  these cascading IPIs will ensure that the system will settle upon a
 	  valid set of high priority threads, it comes at a performance cost.
+
+config SCHED_CPU_MASK
+	bool "CPU mask affinity/pinning API"
+	depends on SCHED_SIMPLE
+	help
+	  When true, the application will have access to the
+	  k_thread_cpu_mask_*() APIs which control per-CPU affinity masks in
+	  SMP mode, allowing applications to pin threads to specific CPUs or
+	  disallow threads from running on given CPUs.  Note that as currently
+	  implemented, this involves an inherent O(N) scaling in the number of
+	  idle-but-runnable threads, and thus works only with the simple
+	  scheduler (as SCALABLE and MULTIQ would see no benefit).
+
+	  Note that this setting does not technically depend on SMP and is
+	  implemented without it for testing purposes, but for obvious reasons
+	  makes sense as an application API only where there is more than one
+	  CPU.  With one CPU, it's just a higher overhead version of
+	  k_thread_start/stop().
+
+config SCHED_CPU_MASK_PIN_ONLY
+	bool "CPU mask variant with single-CPU pinning only"
+	depends on SCHED_CPU_MASK
+	help
+	  When true, enables a variant of SCHED_CPU_MASK where only
+	  one CPU may be specified for every thread.  Effectively, all
+	  threads have a single "assigned" CPU and they will never be
+	  scheduled symmetrically.  In general this is not helpful,
+	  but some applications have a carefully designed threading
+	  architecture and want to make their own decisions about how
+	  to assign work to CPUs.  In that circumstance, some moderate
+	  optimizations can be made (e.g. having a separate run queue
+	  per CPU, keeping the list length shorter). When selected,
+	  the CPU mask becomes an immutable thread attribute. It can
+	  only be modified before a thread is started.  Most
+	  applications don't want this.
 
 config TRACE_SCHED_IPI
 	bool "Test IPI"
@@ -126,5 +163,5 @@ config TICKET_SPINLOCKS
 	  Ticket spinlocks provide a FIFO order of lock acquisition
 	  which resolves such unfairness issue at the cost of slightly
 	  increased memory footprint.
-
+endif
 endmenu
