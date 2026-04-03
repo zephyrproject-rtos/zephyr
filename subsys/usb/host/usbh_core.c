@@ -64,6 +64,7 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 
 	if (ctx->root == NULL) {
 		ctx->root = udev;
+		udev->level = 1;
 	}
 
 	usbh_device_connect(ctx, udev);
