@@ -5,6 +5,9 @@ compatible: "nxp,kinetis-gpio"
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
+  clocks:
+    type: phandle-array
+
   reg:
     required: true
 
