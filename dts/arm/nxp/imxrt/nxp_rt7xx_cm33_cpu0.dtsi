@@ -208,6 +208,7 @@
 	iocon: pinctrl@4000 {
 		compatible = "nxp,lpc-iocon";
 		reg = <0x4000 0x1000>;
+		clocks = <&clkctl0 MCUX_IOCON0_CLK>;
 		status = "okay";
 	};
 

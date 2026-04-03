@@ -8,5 +8,8 @@ compatible: "nxp,lpc-iocon"
 include: base.yaml
 
 properties:
+  clocks:
+    type: phandle-array
+
   reg:
     required: true
