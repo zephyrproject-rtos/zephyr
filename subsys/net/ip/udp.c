@@ -56,7 +56,7 @@ int net_udp_finalize(struct net_pkt *pkt, bool force_chksum)
 
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), type) || force_chksum) {
 		int ret;
-		uint16_t chksum;
+		uint16_t chksum = 0;
 
 		udp_hdr->chksum = 0;
 		ret = net_calc_chksum_udp(pkt, &chksum);
@@ -161,7 +161,7 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
 				  struct net_pkt_data_access *udp_access)
 {
 	struct net_udp_hdr *udp_hdr;
-	uint16_t chksum;
+	uint16_t chksum = 0;
 	int ret;
 	enum net_if_checksum_type type = net_pkt_family(pkt) == NET_AF_INET6 ?
 		NET_IF_CHECKSUM_IPV6_UDP : NET_IF_CHECKSUM_IPV4_UDP;

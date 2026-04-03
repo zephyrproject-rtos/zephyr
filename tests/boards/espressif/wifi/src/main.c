@@ -125,7 +125,7 @@ static enum net_verdict icmp_event(struct net_icmp_ctx *ctx, struct net_pkt *pkt
 			    sizeof(struct net_icmp_hdr) + sizeof(struct net_icmpv4_echo_req);
 	size_t data_len = net_pkt_get_len(pkt) - hdr_offset;
 	char buf[50];
-	uint16_t chksum;
+	uint16_t chksum = 0;
 	int ret;
 
 	ret = net_calc_chksum_icmpv4(pkt, &chksum);

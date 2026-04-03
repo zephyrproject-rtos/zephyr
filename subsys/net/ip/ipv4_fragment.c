@@ -145,7 +145,7 @@ static void reassemble_packet(struct net_ipv4_reassembly *reass)
 	struct net_buf *last;
 	int i;
 	int ret;
-	uint16_t chksum;
+	uint16_t chksum = 0;
 
 	k_work_cancel_delayable(&reass->timer);
 
@@ -436,7 +436,7 @@ static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fi
 	struct net_pkt_cursor cur;
 	struct net_pkt_cursor cur_pkt;
 	uint16_t offset_pkt;
-	uint16_t chksum;
+	uint16_t chksum = 0;
 
 	frag_pkt = net_pkt_alloc_with_buffer(net_pkt_iface(pkt), fit_len +
 					     net_pkt_ip_hdr_len(pkt),

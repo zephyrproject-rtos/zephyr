@@ -1493,7 +1493,7 @@ static enum net_verdict udp_data_received(struct net_conn *conn,
 	static const char expected_data[] = "123456789.";
 	const size_t expected_data_len = sizeof(expected_data) - 1;
 	uint16_t i;
-	uint16_t out_chksum;
+	uint16_t out_chksum = 0;
 	int ret;
 
 	NET_DBG("Data %p received", pkt);
@@ -2234,7 +2234,7 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 	uint16_t expected_icmpv6_length = net_htons(test_recv_payload_len + ECHO_REPLY_H_LEN);
 	uint16_t i;
 	uint8_t expected_data = 0;
-	uint16_t chksum;
+	uint16_t chksum = 0;
 	int ret;
 
 	ARG_UNUSED(ctx);

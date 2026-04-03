@@ -204,7 +204,7 @@ static void check_ipv4_fragment_header(struct net_pkt *pkt, const uint8_t *orig_
 	uint16_t pkt_offset;
 	uint8_t pkt_flags;
 	const struct net_ipv4_hdr *hdr = NET_IPV4_HDR(pkt);
-	uint16_t chksum;
+	uint16_t chksum = 0;
 	int ret;
 
 	zassert_equal(hdr->vhl, orig_hdr[offsetof(struct net_ipv4_hdr, vhl)],
@@ -374,7 +374,7 @@ static enum net_verdict udp_data_received(struct net_conn *conn, struct net_pkt 
 	uint16_t udp_len;
 	uint16_t udp_checksum;
 	int ret_chksum;
-	uint16_t chksum;
+	uint16_t chksum = 0;
 
 	/* Update counts */
 	++upper_layer_packet_count;
@@ -460,7 +460,7 @@ static enum net_verdict tcp_data_received(struct net_conn *conn, struct net_pkt 
 	uint16_t tcp_checksum;
 	uint16_t tcp_urgent;
 	int ret_chksum;
-	uint16_t chksum;
+	uint16_t chksum = 0;
 
 	/* Update counts */
 	++upper_layer_packet_count;
@@ -617,7 +617,7 @@ ZTEST(net_ipv4_fragment, test_udp)
 	int ret;
 	uint16_t i;
 	uint16_t packet_len;
-	uint16_t chksum;
+	uint16_t chksum = 0;
 
 	/* Setup test variables */
 	active_test = TEST_UDP;
@@ -688,7 +688,7 @@ ZTEST(net_ipv4_fragment, test_tcp)
 	uint8_t tmp_buf[256];
 	uint16_t i;
 	uint16_t packet_len;
-	uint16_t chksum;
+	uint16_t chksum = 0;
 
 	/* Setup test variables */
 	active_test = TEST_TCP;
@@ -762,7 +762,7 @@ ZTEST(net_ipv4_fragment, test_fragment_timeout)
 	int ret;
 	uint8_t packets;
 	int sem_count;
-	uint16_t chksum;
+	uint16_t chksum = 0;
 
 	/* Setup test variables */
 	active_test = TEST_SINGLE_FRAGMENT;
@@ -839,7 +839,7 @@ ZTEST(net_ipv4_fragment, test_do_not_fragment)
 	uint8_t tmp_buf[256];
 	uint16_t i;
 	uint16_t packet_len;
-	uint16_t chksum;
+	uint16_t chksum = 0;
 
 	/* Setup test variables */
 	active_test = TEST_NO_FRAGMENT;
