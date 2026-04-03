@@ -216,6 +216,7 @@
 		status = "disabled";
 		reg = <0x100000 0x1000>, <0x4000 0x80>;
 		reg-names = "gpio", "iopctl_pio";
+		clocks = <&clkctl0 MCUX_GPIO0_CLK>;
 		interrupts = <91 0>, <92 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -227,6 +228,7 @@
 		status = "disabled";
 		reg = <0x102000 0x1000>, <0x4080 0x80>;
 		reg-names = "gpio", "iopctl_pio";
+		clocks = <&clkctl0 MCUX_GPIO1_CLK>;
 		interrupts = <93 0>, <94 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -238,6 +240,7 @@
 		status = "disabled";
 		reg = <0x104000 0x1000>, <0x4100 0x80>;
 		reg-names = "gpio", "iopctl_pio";
+		clocks = <&clkctl0 MCUX_GPIO2_CLK>;
 		interrupts = <95 0>, <96 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -249,6 +252,7 @@
 		status = "disabled";
 		reg = <0x106000 0x1000>, <0x4180 0x80>;
 		reg-names = "gpio", "iopctl_pio";
+		clocks = <&clkctl0 MCUX_GPIO3_CLK>;
 		interrupts = <97 0>, <98 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -260,6 +264,7 @@
 		status = "disabled";
 		reg = <0x108000 0x1000>, <0xa5000 0x80>;
 		reg-names = "gpio", "iopctl_pio";
+		clocks = <&clkctl0 MCUX_GPIO4_CLK>;
 		interrupts = <99 0>, <100 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -271,6 +276,7 @@
 		status = "disabled";
 		reg = <0x10a000 0x1000>, <0xa5080 0x80>;
 		reg-names = "gpio", "iopctl_pio";
+		clocks = <&clkctl0 MCUX_GPIO5_CLK>;
 		interrupts = <101 0>, <102 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -282,6 +288,7 @@
 		status = "disabled";
 		reg = <0x10c000 0x1000>, <0xa5100 0x80>;
 		reg-names = "gpio", "iopctl_pio";
+		clocks = <&clkctl0 MCUX_GPIO6_CLK>;
 		interrupts = <103 0>, <104 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -293,6 +300,7 @@
 		status = "disabled";
 		reg = <0x10e000 0x1000>, <0xa5180 0x80>;
 		reg-names = "gpio", "iopctl_pio";
+		clocks = <&clkctl0 MCUX_GPIO7_CLK>;
 		interrupts = <105 0>, <106 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
