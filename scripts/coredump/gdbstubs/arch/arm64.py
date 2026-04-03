@@ -50,12 +50,12 @@ class RegNum:
 
 
 class GdbStub_ARM64(GdbStub):
-    ARCH_DATA_BLK_STRUCT = "<QQQQQQQQQQQQQQQQQQQQQQ"
+    # v1: x0-x18, lr, spsr, elr  (22 regs, 176 bytes)
+    ARCH_DATA_BLK_STRUCT_V1 = "<" + ("Q" * 22)
+    # v2: v1 + fp, sp            (24 regs, 192 bytes)
+    ARCH_DATA_BLK_STRUCT_V2 = "<" + ("Q" * 24)
 
-    # Default signal used by all other script, just using the same
     GDB_SIGNAL_DEFAULT = 7
-
-    # The number of registers expected by GDB
     GDB_G_PKT_NUM_REGS = 33
 
     def __init__(self, logfile, elffile):
@@ -67,8 +67,14 @@ class GdbStub_ARM64(GdbStub):
 
     def parse_arch_data_block(self):
         arch_data_blk = self.logfile.get_arch_data()['data']
+        block_len = len(arch_data_blk)
 
-        tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT, arch_data_blk)
+        has_fp_sp = block_len == struct.calcsize(self.ARCH_DATA_BLK_STRUCT_V2)
+
+        if has_fp_sp:
+            tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT_V2, arch_data_blk)
+        else:
+            tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT_V1, arch_data_blk)
 
         self.registers = dict()
 
@@ -92,13 +98,18 @@ class GdbStub_ARM64(GdbStub):
         self.registers[RegNum.X17] = tu[17]
         self.registers[RegNum.X18] = tu[18]
 
-        # Callee saved registers are not provided in arch_esf structure
-        # So they will be omitted (set to undefined) when stub generates the
-        # packet in handle_register_group_read_packet.
-
         self.registers[RegNum.LR] = tu[19]
-        self.registers[RegNum.SP_EL0] = tu[20]
-        self.registers[RegNum.PC] = tu[21]
+        # tu[20] is SPSR - not a GDB GP register, skip it
+        self.registers[RegNum.PC] = tu[21]  # ELR = faulting PC
+
+        if has_fp_sp:
+            self.registers[RegNum.X29] = tu[22]  # FP
+            self.registers[RegNum.SP_EL0] = tu[23]  # SP at fault
+            logger.debug(
+                "LR=0x%016x PC=0x%016x FP=0x%016x SP=0x%016x", tu[19], tu[21], tu[22], tu[23]
+            )
+        else:
+            logger.debug("LR=0x%016x PC=0x%016x (no FP/SP)", tu[19], tu[21])
 
     def handle_register_group_read_packet(self):
         reg_fmt = "<Q"
