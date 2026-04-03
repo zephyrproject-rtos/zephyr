@@ -2,6 +2,12 @@
 
 zephyr_library_sources_ifdef(CONFIG_MDIO_SHELL mdio_shell.c)
 
+if(CONFIG_STM32_HAL2)
+  zephyr_library_sources_ifdef(CONFIG_MDIO_ST_STM32_HAL mdio_stm32_hal2.c)
+else()
+  zephyr_library_sources_ifdef(CONFIG_MDIO_ST_STM32_HAL mdio_stm32_hal.c)
+endif()
+
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_MDIO_ADIN2111 mdio_adin2111.c)
 zephyr_library_sources_ifdef(CONFIG_MDIO_ATMEL_SAM mdio_sam.c)
@@ -20,7 +26,6 @@ zephyr_library_sources_ifdef(CONFIG_MDIO_NXP_S32_NETC mdio_nxp_s32_netc.c)
 zephyr_library_sources_ifdef(CONFIG_MDIO_RENESAS_RA mdio_renesas_ra.c)
 zephyr_library_sources_ifdef(CONFIG_MDIO_RENESAS_RA_RMAC mdio_renesas_ra_rmac.c)
 zephyr_library_sources_ifdef(CONFIG_MDIO_SENSRY_SY1XX mdio_sy1xx.c)
-zephyr_library_sources_ifdef(CONFIG_MDIO_ST_STM32_HAL mdio_stm32_hal.c)
 zephyr_library_sources_ifdef(CONFIG_MDIO_WCH mdio_wch.c)
 zephyr_library_sources_ifdef(CONFIG_MDIO_XILINX_AXI_ENET mdio_xilinx_axienet.c)
 zephyr_library_sources_ifdef(CONFIG_MDIO_XILINX_AXI_ETHERNET_LITE mdio_xilinx_axi_ethernet_lite.c)
