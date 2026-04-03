@@ -13,6 +13,8 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 
@@ -70,6 +72,18 @@ struct sci_b_i2c_data {
 #endif /* CONFIG_I2C_RENESAS_RA_SCI_B_DTC */
 };
 
+static inline void renesas_ra_sci_b_i2c_pm_lock_get(const struct device *dev)
+{
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
+static inline void renesas_ra_sci_b_i2c_pm_lock_put(const struct device *dev)
+{
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
 static void calc_sci_b_iic_clock_setting(const struct device *dev, const uint32_t fsp_i2c_rate,
 					 sci_b_i2c_clock_settings_t *clk_cfg);
 
@@ -101,7 +115,9 @@ static int renesas_ra_sci_b_i2c_configure(const struct device *dev, uint32_t dev
 
 	calc_sci_b_iic_clock_setting(dev, data->i2c_config.rate, &data->ext_cfg.clock_settings);
 
-	R_SCI_B_I2C_Close(&data->ctrl);
+	if (data->ctrl.open) {
+		R_SCI_B_I2C_Close(&data->ctrl);
+	}
 	R_SCI_B_I2C_Open(&data->ctrl, &data->i2c_config);
 
 	/* save current devconfig. */
@@ -194,6 +210,7 @@ static int renesas_ra_sci_b_i2c_transfer(const struct device *dev, struct i2c_ms
 		return ret;
 	}
 
+	renesas_ra_sci_b_i2c_pm_lock_get(dev);
 	k_sem_take(&data->bus_lock, K_FOREVER);
 
 	/* Set destination address with configured address mode before sending msg. */
@@ -269,6 +286,7 @@ static int renesas_ra_sci_b_i2c_transfer(const struct device *dev, struct i2c_ms
 
 RELEASE_BUS:
 	k_sem_give(&data->bus_lock);
+	renesas_ra_sci_b_i2c_pm_lock_put(dev);
 
 	return ret;
 }
@@ -581,6 +599,30 @@ static void calc_sci_b_iic_clock_setting(const struct device *dev, const uint32_
 	clk_cfg->cycles_value = (uint8_t)sda_delay_counts;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int renesas_ra_sci_b_i2c_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct sci_b_i2c_data *data = dev->data;
+	fsp_err_t fsp_err = FSP_SUCCESS;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Only close if the i2c is open */
+		if (data->ctrl.open) {
+			fsp_err = R_SCI_B_I2C_Close(&data->ctrl);
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		fsp_err = renesas_ra_sci_b_i2c_configure(dev, data->dev_config);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return (fsp_err == FSP_SUCCESS) ? 0 : -EIO;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(i2c, renesas_ra_sci_b_i2c_driver_api) = {
 	.configure = renesas_ra_sci_b_i2c_configure,
 	.get_config = renesas_ra_sci_b_i2c_get_config,
@@ -717,7 +759,10 @@ static DEVICE_API(i2c, renesas_ra_sci_b_i2c_driver_api) = {
 				.clock_settings.clock_source = SCI_B_I2C_CLOCK_SOURCE_SCISPICLK,   \
 			},                                                                         \
 		SCI_B_I2C_DTC_INIT(index)};                                                        \
-	I2C_DEVICE_DT_INST_DEFINE(index, renesas_ra_sci_b_i2c_init, NULL, &sci_b_i2c_data_##index, \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(index, renesas_ra_sci_b_i2c_pm_action);			   \
+	I2C_DEVICE_DT_INST_DEFINE(index, renesas_ra_sci_b_i2c_init, PM_DEVICE_DT_INST_GET(index),  \
+				  &sci_b_i2c_data_##index,                                         \
 				  &sci_b_i2c_config_##index, POST_KERNEL,                          \
 				  CONFIG_I2C_INIT_PRIORITY, &renesas_ra_sci_b_i2c_driver_api);
 
