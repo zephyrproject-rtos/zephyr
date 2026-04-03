@@ -75,7 +75,7 @@ config X86_64
 	select 64BIT
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
-	select SCHED_IPI_SUPPORTED
+	select SCHED_IPI_SUPPORTED if SMP
 	select X86_MMU
 	select X86_CPU_HAS_MMX
 	select X86_CPU_HAS_SSE

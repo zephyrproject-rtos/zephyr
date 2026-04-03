@@ -122,41 +122,6 @@ config SCHED_DEADLINE
 	  single priority will choose the next expiring deadline and
 	  not simply the least recently added thread.
 
-config SCHED_CPU_MASK
-	bool "CPU mask affinity/pinning API"
-	depends on SCHED_SIMPLE
-	help
-	  When true, the application will have access to the
-	  k_thread_cpu_mask_*() APIs which control per-CPU affinity masks in
-	  SMP mode, allowing applications to pin threads to specific CPUs or
-	  disallow threads from running on given CPUs.  Note that as currently
-	  implemented, this involves an inherent O(N) scaling in the number of
-	  idle-but-runnable threads, and thus works only with the simple
-	  scheduler (as SCALABLE and MULTIQ would see no benefit).
-
-	  Note that this setting does not technically depend on SMP and is
-	  implemented without it for testing purposes, but for obvious reasons
-	  makes sense as an application API only where there is more than one
-	  CPU.  With one CPU, it's just a higher overhead version of
-	  k_thread_start/stop().
-
-config SCHED_CPU_MASK_PIN_ONLY
-	bool "CPU mask variant with single-CPU pinning only"
-	depends on SMP && SCHED_CPU_MASK
-	help
-	  When true, enables a variant of SCHED_CPU_MASK where only
-	  one CPU may be specified for every thread.  Effectively, all
-	  threads have a single "assigned" CPU and they will never be
-	  scheduled symmetrically.  In general this is not helpful,
-	  but some applications have a carefully designed threading
-	  architecture and want to make their own decisions about how
-	  to assign work to CPUs.  In that circumstance, some moderate
-	  optimizations can be made (e.g. having a separate run queue
-	  per CPU, keeping the list length shorter). When selected,
-	  the CPU mask becomes an immutable thread attribute. It can
-	  only be modified before a thread is started.  Most
-	  applications don't want this.
-
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
@@ -1046,7 +1011,7 @@ config HW_SHADOW_STACK_ALLOW_REUSE
 endmenu
 
 rsource "userspace/Kconfig"
-rsource "Kconfig.smp"
+rsource "smp/Kconfig"
 
 config TICKLESS_KERNEL
 	bool "Tickless kernel"

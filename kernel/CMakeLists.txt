@@ -54,7 +54,9 @@ add_library(kernel INTERFACE)
 target_link_libraries(kernel INTERFACE ${libkernel})
 
 else()
-
+# Own the kernel target in this directory so subdirectories can
+# contribute sources via target_sources().
+add_library(kernel)
 # FIXME: SHADOW_VARS: Remove this once we have enabled -Wshadow globally.
 add_compile_options($<TARGET_PROPERTY:compiler,warning_shadow_variables>)
 
@@ -91,10 +93,6 @@ if(CONFIG_CPU_CORTEX_M)
   endif()
 endif()
 
-kernel_sources_ifdef(CONFIG_SCHED_CPU_MASK
-  cpu_mask.c
-  )
-
 kernel_sources_ifdef(CONFIG_MULTITHREADING
   idle.c
   mailbox.c
@@ -115,13 +113,11 @@ if(CONFIG_MULTITHREADING)
 if(CONFIG_SCHED_SCALABLE OR CONFIG_WAITQ_SCALABLE)
 kernel_sources(priority_queues.c)
 endif()
-
-kernel_sources_ifdef(CONFIG_SMP
-     smp.c
-     ipi.c)
+add_subdirectory_ifdef(CONFIG_SMP smp)
 else() # CONFIG_MULTITHREADING
 kernel_sources(nothread.c)
 endif() # CONFIG_MULTITHREADING
+
 
 kernel_sources_ifdef(CONFIG_TIMESLICING timeslicing.c)
 kernel_sources_ifdef(CONFIG_SPIN_VALIDATE spinlock_validate.c)
@@ -130,7 +126,7 @@ kernel_sources_ifdef(CONFIG_BOOTARGS boot_args.c)
 kernel_sources_ifdef(CONFIG_THREAD_MONITOR thread_monitor.c)
 kernel_sources_ifdef(CONFIG_DEMAND_PAGING_STATS paging/statistics.c)
 
-add_library(kernel ${kernel_files})
+target_sources(kernel PRIVATE ${kernel_files})
 
 # Kernel files has the macro __ZEPHYR_SUPERVISOR__ set so that it
 # optimizes the code when userspace is enabled.
