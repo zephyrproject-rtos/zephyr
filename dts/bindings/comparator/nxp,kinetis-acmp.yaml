@@ -44,6 +44,9 @@ include:
   - reset-device.yaml
 
 properties:
+  clocks:
+    type: phandle-array
+
   interrupts:
     required: true
 
