@@ -920,8 +920,15 @@ static int mcux_lpadc_init(const struct device *dev)
 #endif /* FSL_FEATURE_LPADC_OFSTRIM_COUNT */
 #endif /* DEMO_LPADC_DO_OFFSET_CALIBRATION */
 #endif /* FSL_FEATURE_LPADC_HAS_OFSTRIM */
-	/* Request gain calibration. */
-	LPADC_DoAutoCalibration(base);
+	/* Request gain calibration.
+	 * A 1us delay is required between offset calibration and gain
+	 * calibration. Without it, the gain calibration request is not
+	 * accepted by the hardware, causing LPADC_FinishAutoCalibration()
+	 * to spin forever on GCC[RDY]. See GitHub issue #105652.
+	 */
+	k_busy_wait(1U);
+	LPADC_PrepareAutoCalibration(base);
+	LPADC_FinishAutoCalibration(base);
 #endif /* FSL_FEATURE_LPADC_HAS_CTRL_CALOFS */
 
 #if (defined(FSL_FEATURE_LPADC_HAS_CFG_CALOFS) && FSL_FEATURE_LPADC_HAS_CFG_CALOFS)
