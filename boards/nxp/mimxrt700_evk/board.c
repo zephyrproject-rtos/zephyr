@@ -203,17 +203,14 @@ void board_early_init_hook(void)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon))
 	RESET_ClearPeripheralReset(kIOPCTL0_RST_SHIFT_RSTn);
-	CLOCK_EnableClock(kCLOCK_Iopctl0);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon1))
 	RESET_ClearPeripheralReset(kIOPCTL1_RST_SHIFT_RSTn);
-	CLOCK_EnableClock(kCLOCK_Iopctl1);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon2))
 	RESET_ClearPeripheralReset(kIOPCTL2_RST_SHIFT_RSTn);
-	CLOCK_EnableClock(kCLOCK_Iopctl2);
 #endif
 
 #ifdef CONFIG_BOARD_MIMXRT700_EVK_MIMXRT798S_CM33_CPU0
