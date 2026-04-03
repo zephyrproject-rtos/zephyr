@@ -417,3 +417,148 @@ static void client_tests_after(void *fixture)
 }
 
 ZTEST_SUITE(http_client, NULL, NULL, client_tests_before, client_tests_after, NULL);
+
+/* Verify that body_frag_len equals the decoded body length when the server
+ * uses Transfer-Encoding: chunked.  The response is a single 16-byte chunk
+ * followed by the terminal chunk, all delivered in one recv call so the
+ * chunk framing bytes land in the same buffer as the body.
+ */
+
+#define CHUNKED_SERVER_PORT 8082
+#define CHUNKED_BODY_SIZE   16
+
+static const char chunked_te_response[] =
+	"HTTP/1.1 206 Partial Content\r\n"
+	"Content-Range: bytes 0-15/16\r\n"
+	"Transfer-Encoding: chunked\r\n"
+	"\r\n"
+	"10\r\n"
+	"AAAAAAAAAAAAAAAA"
+	"\r\n"
+	"0\r\n"
+	"\r\n";
+
+static K_THREAD_STACK_DEFINE(chunked_srv_stack, 1024);
+static struct k_thread chunked_srv_thread;
+static K_SEM_DEFINE(chunked_srv_ready, 0, 1);
+
+static void chunked_srv_fn(void *p1, void *p2, void *p3)
+{
+	struct net_sockaddr_in6 sa = { 0 };
+	char req_buf[256];
+	int srv, conn, ret;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	srv = zsock_socket(NET_AF_INET6, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	if (srv < 0) {
+		return;
+	}
+
+	sa.sin6_family = NET_AF_INET6;
+	sa.sin6_port = net_htons(CHUNKED_SERVER_PORT);
+	ret = zsock_inet_pton(NET_AF_INET6, SERVER_IPV6_ADDR, &sa.sin6_addr.s6_addr);
+	if (ret != 1) {
+		zsock_close(srv);
+		return;
+	}
+
+	ret = zsock_bind(srv, (struct net_sockaddr *)&sa, sizeof(sa));
+	if (ret < 0) {
+		zsock_close(srv);
+		return;
+	}
+
+	zsock_listen(srv, 1);
+	k_sem_give(&chunked_srv_ready);
+
+	conn = zsock_accept(srv, NULL, NULL);
+	if (conn >= 0) {
+		(void)zsock_recv(conn, req_buf, sizeof(req_buf) - 1, 0);
+		(void)zsock_send(conn, chunked_te_response,
+				 sizeof(chunked_te_response) - 1, 0);
+		zsock_close(conn);
+	}
+
+	zsock_close(srv);
+}
+
+static int chunked_client_fd = -1;
+static uint8_t chunked_recv_buf[256];
+static uint8_t chunked_response_buf[256];
+
+static void chunked_tests_before(void *fixture)
+{
+	struct net_sockaddr_in6 sa = { 0 };
+	int ret;
+
+	ARG_UNUSED(fixture);
+
+	memset(chunked_recv_buf, 0, sizeof(chunked_recv_buf));
+	memset(chunked_response_buf, 0, sizeof(chunked_response_buf));
+
+	k_thread_create(&chunked_srv_thread, chunked_srv_stack,
+			K_THREAD_STACK_SIZEOF(chunked_srv_stack),
+			chunked_srv_fn, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(7), 0, K_NO_WAIT);
+
+	ret = k_sem_take(&chunked_srv_ready, K_SECONDS(5));
+	zassert_equal(ret, 0, "chunked server did not start in time");
+
+	chunked_client_fd = zsock_socket(NET_AF_INET6, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	zassert_true(chunked_client_fd >= 0, "client socket failed");
+
+	sa.sin6_family = NET_AF_INET6;
+	sa.sin6_port = net_htons(CHUNKED_SERVER_PORT);
+	ret = zsock_inet_pton(NET_AF_INET6, SERVER_IPV6_ADDR, &sa.sin6_addr.s6_addr);
+	zassert_equal(ret, 1, "inet_pton failed");
+
+	ret = zsock_connect(chunked_client_fd, (struct net_sockaddr *)&sa, sizeof(sa));
+	zassert_equal(ret, 0, "connect failed (%d)", errno);
+}
+
+static void chunked_tests_after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	if (chunked_client_fd >= 0) {
+		(void)zsock_close(chunked_client_fd);
+		chunked_client_fd = -1;
+	}
+
+	k_thread_join(&chunked_srv_thread, K_SECONDS(5));
+}
+
+ZTEST(http_client_chunked_te, test_body_frag_len_chunked_te)
+{
+	struct http_request req = { 0 };
+	struct test_ctx ctx = { 0 };
+	int ret;
+
+	req.method = HTTP_GET;
+	req.url = "/firmware/app.bin";
+	req.host = SERVER_IPV6_ADDR;
+	req.protocol = "HTTP/1.1";
+	req.response = response_cb;
+	req.recv_buf = chunked_recv_buf;
+	req.recv_buf_len = sizeof(chunked_recv_buf);
+
+	ctx.buf = chunked_response_buf;
+	ctx.buflen = sizeof(chunked_response_buf);
+
+	ret = http_client_req(chunked_client_fd, &req, -1, &ctx);
+	zassert_true(ret > 0, "http_client_req() failed (%d)", ret);
+	zassert_true(ctx.final, "No final event received");
+	zassert_equal(ctx.status, 206, "Unexpected HTTP status code");
+
+	zassert_equal(ctx.offset, CHUNKED_BODY_SIZE,
+		      "body_frag_len overcount: got %zu, expected %d",
+		      ctx.offset, CHUNKED_BODY_SIZE);
+	zassert_mem_equal(chunked_response_buf, "AAAAAAAAAAAAAAAA",
+			  CHUNKED_BODY_SIZE, "Body content mismatch");
+}
+
+ZTEST_SUITE(http_client_chunked_te, NULL, NULL,
+	    chunked_tests_before, chunked_tests_after, NULL);
