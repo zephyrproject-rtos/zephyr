@@ -30,37 +30,40 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	/* Set BASEPRI to 0. */
 	irq_unlock(0);
 
-	if (!sl_si91x_power_manager_is_ok_to_sleep()) {
-		/* Device is not ready to sleep; perform necessary actions if required. */
-		goto out;
-	}
 
 	if (state == PM_STATE_RUNTIME_IDLE) {
 		sl_si91x_power_manager_standby();
 	} else {
+		if (!sl_si91x_power_manager_is_ok_to_sleep()) {
+			/* Deep-sleep path is not ready yet; skip this suspend attempt. */
+			goto out;
+		}
+
 		if (sli_si91x_config_clocks_to_mhz_rc() != 0) {
 			LOG_ERR("Failed to configure clocks for sleep mode");
 			goto out;
 		}
-		if (IS_ENABLED(CONFIG_SILABS_SIWX91X_NWP)) {
-			if (!(M4_ULP_SLP_STATUS_REG & ULP_MODE_SWITCHED_NPSS)) {
-				if (!sl_si91x_is_device_initialized()) {
-					LOG_ERR("Device is not initialized");
-					goto out;
-				}
-				sli_si91x_xtal_turn_off_request_from_m4_to_TA();
+
+		if (!(M4_ULP_SLP_STATUS_REG & ULP_MODE_SWITCHED_NPSS)) {
+			if (!sl_si91x_is_device_initialized()) {
+				LOG_ERR("Device is not initialized");
+				goto out;
 			}
+			sli_si91x_xtal_turn_off_request_from_m4_to_TA();
 		}
+
 		sl_si91x_power_manager_sleep();
-	}
 
-	if (!(M4_ULP_SLP_STATUS_REG & ULP_MODE_SWITCHED_NPSS)) {
-		if (frontend_switch_control != 0) {
-			sli_si91x_configure_wireless_frontend_controls(frontend_switch_control);
+		if (!(M4_ULP_SLP_STATUS_REG & ULP_MODE_SWITCHED_NPSS)) {
+			if (frontend_switch_control != 0) {
+				sli_si91x_configure_wireless_frontend_controls(
+					frontend_switch_control);
+			}
+
+			sl_si91x_host_clear_sleep_indicator();
+			sli_si91x_m4_ta_wakeup_configurations();
+
 		}
-
-		sl_si91x_host_clear_sleep_indicator();
-		sli_si91x_m4_ta_wakeup_configurations();
 	}
 out:
 	/* Clear PRIMASK */
