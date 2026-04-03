@@ -93,6 +93,7 @@ static inline void uart_ra_sci_b_rx_pm_policy_state_lock_get(const struct device
 		pm_device_busy_set(dev);
 #else
 		pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 #endif
 	}
@@ -110,6 +111,7 @@ static inline void uart_ra_sci_b_rx_pm_policy_state_lock_put(const struct device
 		}
 #else
 		pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 #endif
 	}
@@ -125,6 +127,7 @@ static inline void uart_ra_sci_b_tx_pm_policy_state_lock_get(const struct device
 		pm_device_busy_set(dev);
 #else
 		pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 #endif
 	}
@@ -142,6 +145,7 @@ static inline void uart_ra_sci_b_tx_pm_policy_state_lock_put(const struct device
 		}
 #else
 		pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 #endif
 	}
