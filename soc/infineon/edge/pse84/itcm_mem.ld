@@ -7,3 +7,4 @@
 
 KEEP(*(.cy_ramfunc))
 KEEP(*(.cy_itcm))
+*cy_syslib_ext.S.obj(.text*)
