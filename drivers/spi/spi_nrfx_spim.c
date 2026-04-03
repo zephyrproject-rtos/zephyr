@@ -475,7 +475,7 @@ static int spi_nrfx_release(const struct device *dev,
 	struct spi_nrfx_data *dev_data = dev->data;
 
 #ifdef CONFIG_MULTITHREADING
-	if (dev_data->ctx.owner != spi_cfg) {
+	if (dev_data->ctx.owner != NULL && dev_data->ctx.owner != spi_cfg) {
 		return -EALREADY;
 	}
 #endif
