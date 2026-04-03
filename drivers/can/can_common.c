@@ -236,6 +236,32 @@ static uint16_t sample_point_for_bitrate(uint32_t bitrate)
 }
 
 /**
+ * @brief Check whether the best bitrate error is within tolerance.
+ *
+ * @param br_err_min Absolute bitrate error in Hz.
+ * @param bitrate    Target bitrate in bits/s.
+ *
+ * @retval 0 if the error is within 0.5 % (5000 ppm) or zero.
+ * @retval -ENOTSUP if the error exceeds the tolerance.
+ */
+static int can_check_bitrate_tolerance(uint32_t br_err_min, uint32_t bitrate)
+{
+	uint32_t ppm;
+
+	if (br_err_min == 0) {
+		return 0;
+	}
+
+	ppm = (uint32_t)((uint64_t)br_err_min * 1000000U / bitrate);
+	if (ppm > 5000U) {
+		return -ENOTSUP;
+	}
+
+	LOG_DBG("Bitrate error: %u ppm", ppm);
+	return 0;
+}
+
+/**
  * @brief Internal function for calculating CAN timing parameters.
  *
  * @param dev        Pointer to the device structure for the driver instance.
@@ -254,9 +280,34 @@ static int can_calc_timing_internal(const struct device *dev, struct can_timing 
 				    const struct can_timing *min, const struct can_timing *max,
 				    uint32_t bitrate, uint16_t sample_pnt)
 {
-	uint32_t total_tq = CAN_SYNC_SEG + max->prop_seg + max->phase_seg1 + max->phase_seg2;
+	/*
+	 * Two-level ranking, mirroring Linux can_calc_bittiming():
+	 *
+	 *   1. PRIMARY  - minimise bitrate error
+	 *   2. SECONDARY - among candidates with equal bitrate error,
+	 *                  minimise sample-point error
+	 *
+	 * When a prescaler yields a strictly better (lower) bitrate error
+	 * the sample-point threshold is reset so that any sample point is
+	 * accepted.  This guarantees that bitrate accuracy always outranks
+	 * sample-point accuracy.
+	 *
+	 * After the search, candidates whose bitrate error exceeds 0.5 %
+	 * (5000 ppm) are rejected.  CiA 601 allows up to 1.58 % for
+	 * nominal bitrate; 0.5 % gives comfortable margin.
+	 *
+	 * For core clocks that are exact integer multiples of the bitrate
+	 * (the common case) the bitrate error will be 0 for the same
+	 * prescalers that the old exact-divisibility check accepted, so
+	 * existing validated configurations produce identical results.
+	 */
+	const uint32_t tq_min = CAN_SYNC_SEG + min->prop_seg +
+				min->phase_seg1 + min->phase_seg2;
+	const uint32_t tq_max = CAN_SYNC_SEG + max->prop_seg +
+				max->phase_seg1 + max->phase_seg2;
 	struct can_timing tmp_res = { 0 };
-	int err_min = INT_MAX;
+	int sp_err_min = INT_MAX;
+	uint32_t br_err_min = UINT32_MAX;
 	uint32_t core_clock;
 	int err;
 
@@ -273,47 +324,77 @@ static int can_calc_timing_internal(const struct device *dev, struct can_timing 
 		sample_pnt = sample_point_for_bitrate(bitrate);
 	}
 
-	for (int prescaler = MAX(core_clock / (total_tq * bitrate), min->prescaler);
-	     prescaler <= max->prescaler;
-	     prescaler++) {
+	for (int prescaler = MAX(core_clock / ((uint64_t)tq_max * bitrate),
+				 (uint32_t)min->prescaler);
+	     prescaler <= (int)max->prescaler; prescaler++) {
+		uint32_t total_tq;
+		uint32_t real_br;
+		uint32_t br_err;
+		uint64_t prod = (uint64_t)prescaler * bitrate;
 
-		if (core_clock % (prescaler * bitrate)) {
-			/* No integer total_tq for this prescaler setting */
+		/* Nearest-integer total_tq, no exact-divisibility gate */
+		total_tq = (uint32_t)((core_clock + prod / 2U) / prod);
+
+		if (total_tq < tq_min || total_tq > tq_max) {
 			continue;
 		}
 
-		total_tq = core_clock / (prescaler * bitrate);
+		/* Actual bitrate for this (prescaler, total_tq) pair */
+		real_br = (uint32_t)(core_clock /
+				     ((uint64_t)prescaler * total_tq));
+		br_err = (real_br > bitrate) ? (real_br - bitrate)
+					      : (bitrate - real_br);
 
-		err = update_sample_pnt(total_tq, sample_pnt, &tmp_res, min, max);
+		/* PRIMARY: skip if bitrate is strictly worse */
+		if (br_err > br_err_min) {
+			continue;
+		}
+
+		/* Better bitrate: reset SP error so any SP is accepted */
+		if (br_err < br_err_min) {
+			sp_err_min = INT_MAX;
+		}
+
+		/* SECONDARY: best SP among equal-bitrate candidates */
+		err = update_sample_pnt(total_tq, sample_pnt, &tmp_res,
+				       min, max);
 		if (err < 0) {
-			/* Sample point cannot be met for this prescaler setting */
 			continue;
 		}
 
-		if (err < err_min) {
-			/* Improved sample point match */
-			err_min = err;
+		if (err < sp_err_min) {
+			sp_err_min = err;
+			br_err_min = br_err;
 			res->prop_seg = tmp_res.prop_seg;
 			res->phase_seg1 = tmp_res.phase_seg1;
 			res->phase_seg2 = tmp_res.phase_seg2;
 			res->prescaler = (uint16_t)prescaler;
 
-			if (err == 0) {
-				/* Perfect sample point match */
+			/* Exact bitrate AND perfect SP - done */
+			if (br_err == 0 && err == 0) {
 				break;
 			}
 		}
 	}
 
-	if (err_min != 0U) {
-		LOG_DBG("Sample point error: %d 1/1000", err_min);
+	if (sp_err_min != 0 && sp_err_min != INT_MAX) {
+		LOG_DBG("Sample point error: %d 1/1000", sp_err_min);
 	}
 
-	/* Calculate default sjw as phase_seg2 / 2 and clamp the result */
-	res->sjw = MIN(res->phase_seg1, res->phase_seg2 / 2);
+	if (sp_err_min == INT_MAX) {
+		return -ENOTSUP;
+	}
+
+	err = can_check_bitrate_tolerance(br_err_min, bitrate);
+	if (err != 0) {
+		return err;
+	}
+
+	/* Calculate default SJW and clamp to hardware limits */
+	res->sjw = MIN(res->phase_seg1, res->phase_seg2 / 2U);
 	res->sjw = CLAMP(res->sjw, min->sjw, max->sjw);
 
-	return err_min == INT_MAX ? -ENOTSUP : err_min;
+	return sp_err_min;
 }
 
 int z_impl_can_calc_timing(const struct device *dev, struct can_timing *res,
