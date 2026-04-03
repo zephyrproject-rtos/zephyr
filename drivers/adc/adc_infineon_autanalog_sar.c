@@ -14,6 +14,7 @@
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/dt-bindings/adc/infineon-autanalog-sar.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/adc/infineon_autanalog_sar.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/logging/log.h>
@@ -37,20 +38,40 @@ LOG_MODULE_REGISTER(ifx_autanalog_sar_adc, CONFIG_ADC_LOG_LEVEL);
 #define IFX_AUTANALOG_SAR_NUM_ENABLED_CHANNELS(inst) DT_NUM_CHILDREN(DT_DRV_INST(inst))
 
 #define IFX_AUTANALOG_SAR_SAMPLETIME_COUNT 4
+#define IFX_AUTANALOG_SAR_MAX_FIR_FILTERS  2
 
 #define IFX_AUTANALOG_HF_CLK_SRC 9
 
 /* clang-format off */
 
-/* Helpers to split a combined channel bitmask into GPIO and MUX parts */
+/* FIR pseudo-channel support: FIR filter outputs appear as virtual ADC channels */
+#define IFX_AUTANALOG_SAR_FIR_CHANNEL_OFFSET                                                   \
+	(IFX_AUTANALOG_SAR_MAX_GPIO_CHANNELS + IFX_AUTANALOG_SAR_MAX_MUX_CHANNELS)
+
+/* Helpers to split a combined channel bitmask into GPIO, MUX, and FIR parts */
 #define IFX_GPIO_CHANNELS_MASK(channels) ((channels) & 0xFFu)
 #define IFX_MUX_CHANNELS_MASK(channels)                                                        \
 	(((channels) >> IFX_AUTANALOG_SAR_MUX_CHANNEL_OFFSET) & 0xFFFFu)
+#define IFX_FIR_CHANNELS_MASK(channels)                                                        \
+	(((channels) >> IFX_AUTANALOG_SAR_FIR_CHANNEL_OFFSET) & 0x3u)
+
+/* Mask of only non-FIR ADC channels in a bitmask */
+#define IFX_ADC_HW_CHANNELS_MASK(channels) ((channels) & 0x00FFFFFFu)
 
 /* clang-format on */
 struct ifx_autanalog_sar_channel_dt_config {
 	uint8_t channel_id;
 	bool mux_buf_bypass;
+};
+
+struct ifx_autanalog_sar_fir_config {
+	int16_t *coeff;
+	uint8_t channel_source;
+	uint8_t tap_count;
+	uint8_t shift_sel;
+	bool wait_tap_init;
+	uint8_t fir_limit;
+	uint8_t fifo_sel;
 };
 
 struct ifx_autanalog_sar_adc_config {
@@ -66,6 +87,9 @@ struct ifx_autanalog_sar_adc_config {
 	bool fifo_chan_id;
 	uint8_t num_dt_channels;
 	const struct ifx_autanalog_sar_channel_dt_config *dt_channels;
+	uint8_t fir_count;
+	uint8_t fir_result_mask;
+	struct ifx_autanalog_sar_fir_config fir[IFX_AUTANALOG_SAR_MAX_FIR_FILTERS];
 };
 
 struct ifx_autanalog_sar_adc_channel_config {
@@ -88,6 +112,8 @@ struct ifx_autanalog_sar_adc_data {
 	int conversion_result;
 	/* Bitmask of enabled channels */
 	uint32_t enabled_channels;
+	/* Zero value used when a FIR filter has no coefficients */
+	int16_t fir_zero_coeff;
 
 	struct ifx_autanalog_sar_adc_channel_config
 		autanalog_channel_cfg[IFX_AUTANALOG_SAR_MAX_NUM_CHANNELS];
@@ -105,6 +131,9 @@ struct ifx_autanalog_sar_adc_data {
 	/* PDL structures for MUX channels */
 	cy_stc_autanalog_sar_mux_chan_t
 		pdl_adc_mux_channel_cfg_obj_arr[IFX_AUTANALOG_SAR_MAX_MUX_CHANNELS];
+
+	/* PDL structures for FIR filters */
+	cy_stc_autanalog_sar_fir_cfg_t pdl_fir_cfg[IFX_AUTANALOG_SAR_MAX_FIR_FILTERS];
 };
 
 /**
@@ -129,8 +158,8 @@ static void ifx_init_pdl_structs(struct ifx_autanalog_sar_adc_data *data,
 		.hsSeqTabArr = &data->pdl_adc_seq_hs_cfg_obj[0],
 		.lpSeqTabNum = 0U,
 		.lpSeqTabArr = NULL,
-		.firNum = 0U,
-		.firCfg = NULL,
+		.firNum = cfg->fir_count,
+		.firCfg = (cfg->fir_count > 0) ? &data->pdl_fir_cfg[0] : NULL,
 		.fifoCfg = NULL,
 	};
 
@@ -168,7 +197,7 @@ static void ifx_init_pdl_structs(struct ifx_autanalog_sar_adc_data *data,
 		.intMuxChan = {NULL}, /* MUX channels configured during channel setup */
 		.limitCond = {NULL},  /* We don't expose the range detection */
 		.muxResultMask = 0u,  /* MUX result mask updated during channel setup */
-		.firResultMask = 0u,  /* We don't expose FIR functionality */
+		.firResultMask = cfg->fir_result_mask,
 	};
 
 	data->pdl_adc_hs_static_obj = (cy_stc_autanalog_sar_sta_hs_t){
@@ -192,6 +221,32 @@ static void ifx_init_pdl_structs(struct ifx_autanalog_sar_adc_data *data,
 			},
 		.hsGpioResultMask = 0,
 	};
+
+	/* Initialize FIR filter configurations from device tree */
+	for (uint8_t i = 0; i < cfg->fir_count; i++) {
+		uint8_t fifo_sel = cfg->fir[i].fifo_sel;
+		uint8_t pseudo_ch = i + IFX_AUTANALOG_SAR_FIR_CHANNEL_OFFSET;
+
+		/* Allow fifo-sel on the pseudo-channel node to override the FIR node */
+		if (data->autanalog_channel_cfg[pseudo_ch].fifo_sel !=
+		    IFX_AUTANALOG_SAR_FIFO_DISABLED) {
+			fifo_sel = data->autanalog_channel_cfg[pseudo_ch].fifo_sel;
+		}
+
+		data->pdl_fir_cfg[i] = (cy_stc_autanalog_sar_fir_cfg_t){
+			.chanSel = (cy_en_autanalog_sar_fir_channel_t)cfg->fir[i].channel_source,
+			/* PDL needs a valid address. If coeff doesn't exist, point at a
+			 * dedicated zero field.
+			 */
+			.coeff = (cfg->fir[i].coeff == NULL) ? &data->fir_zero_coeff
+							     : cfg->fir[i].coeff,
+			.tapSel = (cfg->fir[i].tap_count > 0) ? (cfg->fir[i].tap_count - 1u) : 0u,
+			.shiftSel = cfg->fir[i].shift_sel,
+			.waitTapInit = cfg->fir[i].wait_tap_init,
+			.firLimit = (cy_en_autanalog_sar_limit_t)cfg->fir[i].fir_limit,
+			.fifoSel = (cy_en_autanalog_fifo_sel_t)fifo_sel,
+		};
+	}
 } /* ifx_init_pdl_struct() */
 
 /**
@@ -227,6 +282,16 @@ static void ifx_autanalog_sar_get_results(uint32_t channels,
 				Cy_AutAnalog_SAR_ReadResult(0, CY_AUTANALOG_SAR_INPUT_MUX, i);
 		}
 	}
+
+	/* Read FIR pseudo-channel results (channels 24-25 map to FIR filters 0-1).
+	 * FIR filters run continuously in hardware, so we just read the latest
+	 * available result without waiting for or clearing result status.
+	 */
+	for (size_t i = 0; i < IFX_AUTANALOG_SAR_MAX_FIR_FILTERS; i++) {
+		if ((channels & BIT(i + IFX_AUTANALOG_SAR_FIR_CHANNEL_OFFSET)) != 0) {
+			*data->conversion_buffer++ = (uint32_t)Cy_AutAnalog_SAR_FIRreadResult(0, i);
+		}
+	}
 } /* ifx_autanalog_sar_get_results() */
 
 /**
@@ -244,17 +309,18 @@ static int ifx_build_hs_sequencer_entry(uint32_t channels, struct ifx_autanalog_
 {
 	uint8_t timer_index = IFX_AUTANALOG_SAR_SAMPLETIME_COUNT;
 	cy_stc_autanalog_sar_seq_tab_hs_t *seq_entry = &data->pdl_adc_seq_hs_cfg_obj[0];
-	uint8_t gpio_channels = IFX_GPIO_CHANNELS_MASK(channels);
-	uint16_t mux_channels = IFX_MUX_CHANNELS_MASK(channels);
+	uint32_t hw_channels = IFX_ADC_HW_CHANNELS_MASK(channels);
+	uint8_t gpio_channels = IFX_GPIO_CHANNELS_MASK(hw_channels);
+	uint16_t mux_channels = IFX_MUX_CHANNELS_MASK(hw_channels);
 	uint8_t mux_mode = CY_AUTANALOG_SAR_CHAN_CFG_MUX_DISABLED;
 	uint8_t mux0_sel = CY_AUTANALOG_SAR_CHAN_CFG_MUX0;
 	uint8_t mux1_sel = CY_AUTANALOG_SAR_CHAN_CFG_MUX0;
 
-	/* Verify that all channels in the sequence have the same acquisition time and the sample
-	 * time is configured in hardware.
+	/* Verify that all hardware channels in the sequence have the same acquisition time
+	 * and the sample time is configured in hardware.
 	 */
-	for (uint8_t i = 0; i < IFX_AUTANALOG_SAR_MAX_NUM_CHANNELS; i++) {
-		if ((channels & BIT(i)) == 0) {
+	for (uint8_t i = 0; i < IFX_AUTANALOG_SAR_FIR_CHANNEL_OFFSET; i++) {
+		if ((hw_channels & BIT(i)) == 0) {
 			continue;
 		}
 
@@ -357,6 +423,18 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		LOG_ERR("No channels specified");
 		data->conversion_result = -EINVAL;
 
+		return;
+	}
+
+	/* FIR pseudo-channels don't require an ADC acquisition — the FIR filters
+	 * process samples continuously in hardware.  If only FIR channels are
+	 * requested, skip the sequencer entirely and just read the FIR result
+	 * registers directly.
+	 */
+	if (IFX_ADC_HW_CHANNELS_MASK(sequence->channels) == 0) {
+		ifx_autanalog_sar_get_results(sequence->channels, data);
+		adc_context_on_sampling_done(&data->ctx, data->dev);
+		data->conversion_result = 0;
 		return;
 	}
 
@@ -718,14 +796,44 @@ static int ifx_autanalog_sar_setup_mux_channel(struct ifx_autanalog_sar_adc_data
 static int ifx_autanalog_sar_adc_channel_setup(const struct device *dev,
 					       const struct adc_channel_cfg *channel_cfg)
 {
+	const struct ifx_autanalog_sar_adc_config *cfg = dev->config;
 	struct ifx_autanalog_sar_adc_data *data = dev->data;
 	uint8_t sample_time_idx;
 	uint16_t timer_clock_cycles;
 	bool is_mux_channel;
+	bool is_fir_channel;
 
-	if (channel_cfg->channel_id >= IFX_AUTANALOG_SAR_MAX_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel ID: %d", channel_cfg->channel_id);
-		return -EINVAL;
+	/* FIR pseudo-channels are virtual — just mark as enabled.
+	 * Use input_positive as channel-source override.
+	 */
+	is_fir_channel = (channel_cfg->channel_id >= IFX_AUTANALOG_SAR_FIR_CHANNEL_OFFSET);
+	if (is_fir_channel) {
+		uint8_t fir_idx = channel_cfg->channel_id - IFX_AUTANALOG_SAR_FIR_CHANNEL_OFFSET;
+
+		if (fir_idx >= cfg->fir_count) {
+			return -EINVAL;
+		}
+
+		/* zephyr,input-positive on pseudo-channel overrides FIR channel source */
+		if (channel_cfg->input_positive != 0) {
+			if (channel_cfg->input_positive > IFX_AUTANALOG_SAR_FIR_CH_MUX15) {
+				LOG_ERR("Invalid FIR channel source for FIR %d: %d", fir_idx,
+					channel_cfg->input_positive);
+				return -EINVAL;
+			}
+
+			data->pdl_fir_cfg[fir_idx].chanSel =
+				(cy_en_autanalog_sar_fir_channel_t)channel_cfg->input_positive;
+			if (Cy_AutAnalog_SAR_LoadFIRconfig(0, fir_idx,
+							   &data->pdl_fir_cfg[fir_idx]) !=
+			    CY_AUTANALOG_SUCCESS) {
+				LOG_ERR("Failed to configure FIR %d channel source", fir_idx);
+				return -EIO;
+			}
+		}
+
+		data->enabled_channels |= BIT(channel_cfg->channel_id);
+		return 0;
 	}
 
 	/* Determine if this is a MUX channel based on channel_id range */
@@ -844,6 +952,83 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 	return 0;
 } /* ifx_autanalog_sar_adc_init() */
 
+/* Vendor-specific FIR API functions */
+
+int adc_ifx_autanalog_sar_fir_read_result(const struct device *dev, uint8_t fir_idx,
+					  int32_t *result)
+{
+	if (fir_idx >= IFX_AUTANALOG_SAR_MAX_FIR_FILTERS || result == NULL) {
+		return -EINVAL;
+	}
+
+	if ((Cy_AutAnalog_SAR_FIRgetResultStatus(0) & BIT(fir_idx)) == 0) {
+		return -EBUSY;
+	}
+
+	*result = Cy_AutAnalog_SAR_FIRreadResult(0, fir_idx);
+	Cy_AutAnalog_SAR_FIRclearResultStatus(0, BIT(fir_idx));
+
+	return 0;
+}
+
+int adc_ifx_autanalog_sar_fir_get_limit_status(const struct device *dev, uint8_t fir_idx,
+					       uint8_t *status)
+{
+	if (fir_idx >= IFX_AUTANALOG_SAR_MAX_FIR_FILTERS || status == NULL) {
+		return -EINVAL;
+	}
+
+	*status = (Cy_AutAnalog_SAR_FIRgetLimitStatus(0) & BIT(fir_idx));
+	return 0;
+}
+
+int adc_ifx_autanalog_sar_fir_clear_limit_status(const struct device *dev, uint8_t fir_idx)
+{
+	if (fir_idx >= IFX_AUTANALOG_SAR_MAX_FIR_FILTERS) {
+		return -EINVAL;
+	}
+
+	Cy_AutAnalog_SAR_FIRclearLimitStatus(0, BIT(fir_idx));
+	return 0;
+}
+
+int adc_ifx_autanalog_sar_fir_load_coefficients(const struct device *dev, uint8_t fir_idx,
+						const int16_t *coefficients,
+						uint8_t num_coefficients)
+{
+	struct ifx_autanalog_sar_adc_data *data = dev->data;
+	cy_stc_autanalog_sar_fir_cfg_t fir_cfg;
+	cy_en_autanalog_status_t result;
+
+	if (fir_idx >= IFX_AUTANALOG_SAR_MAX_FIR_FILTERS || coefficients == NULL ||
+	    num_coefficients == 0 || num_coefficients > CY_AUTANALOG_SAR_FIR_TAP_NUM) {
+		return -EINVAL;
+	}
+
+	/* Cy_AutAnalog_SAR_LoadFIRconfig() writes the coefficients into hardware registers
+	 * synchronously, so the caller-supplied buffer only needs to remain valid for the
+	 * duration of this call.  Apply the new coefficients and tap count through a local
+	 * copy of the FIR config rather than mutating data->pdl_fir_cfg[fir_idx]; that keeps
+	 * the persistent entry pointing at its boot-time (device-tree) coefficient array, so
+	 * a later channel reconfiguration can safely re-issue LoadFIRconfig without referencing
+	 * a caller buffer that may have gone out of scope.
+	 * Note: re-running channel_setup() therefore re-applies the device-tree coefficients;
+	 * runtime updates are not retained across a reconfiguration.
+	 */
+	fir_cfg = data->pdl_fir_cfg[fir_idx];
+	fir_cfg.coeff = (int16_t *)coefficients;
+	fir_cfg.tapSel = num_coefficients - 1u;
+
+	result = Cy_AutAnalog_SAR_LoadFIRconfig(0, fir_idx, &fir_cfg);
+	if (result != CY_AUTANALOG_SUCCESS) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+/* clang-format off */
+
 #ifdef CONFIG_ADC_ASYNC
 #define ADC_IFX_AUTANALOG_SAR_DRIVER_API(n)                                                        \
 	static DEVICE_API(adc, ifx_autanalog_sar_adc_api_##n) = {                                  \
@@ -861,6 +1046,48 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 	};
 #endif /* CONFIG_ADC_ASYNC */
 
+/* Cast a DT coefficient array element to int16_t */
+#define IFX_FIR_COEFF_ELEM(node_id, prop, idx) ((int16_t)DT_PROP_BY_IDX(node_id, prop, idx))
+
+/* Declare a static coefficient array for a FIR child node */
+#define IFX_FIR_COEFF_DECLARE(n, child_name)                                         \
+	static int16_t ifx_sar_fir_coeff_##n##_##child_name[] = {                    \
+		DT_FOREACH_PROP_ELEM_SEP(DT_INST_CHILD(n, child_name), coefficients,   \
+					 IFX_FIR_COEFF_ELEM, (,))                           \
+	}
+
+/* Initialize one FIR config sub-struct from DT child node properties */
+#define IFX_FIR_CFG_INIT(n, child_name)                                              \
+	{                                                                            \
+		.coeff = COND_CODE_1(                                                 \
+			DT_NODE_HAS_PROP(DT_INST_CHILD(n, child_name), coefficients),   \
+			(ifx_sar_fir_coeff_##n##_##child_name), (NULL)),                \
+		.channel_source = DT_PROP(DT_INST_CHILD(n, child_name), channel_source), \
+		.tap_count = COND_CODE_1(                                             \
+			DT_NODE_HAS_PROP(DT_INST_CHILD(n, child_name), coefficients),   \
+			((uint8_t)DT_PROP_LEN(DT_INST_CHILD(n, child_name),            \
+					      coefficients)),                            \
+			(0)),                                                          \
+		.shift_sel = DT_PROP(DT_INST_CHILD(n, child_name), shift_sel),       \
+		.wait_tap_init = DT_PROP(DT_INST_CHILD(n, child_name), wait_tap_init), \
+		.fir_limit = DT_PROP(DT_INST_CHILD(n, child_name), fir_limit),       \
+		.fifo_sel = DT_PROP(DT_INST_CHILD(n, child_name), fifo_sel),         \
+	}
+
+/*
+ * Compute the number of FIR config entries needed.  If fir-1 exists, we need 2 entries
+ * (even if fir-0 is absent, because the PDL array is indexed by FIR hardware index).
+ */
+#define IFX_FIR_COUNT(n)                                                                       \
+	(DT_NODE_EXISTS(DT_INST_CHILD(n, fir_1))                                                   \
+		 ? 2                                                                               \
+		 : (DT_NODE_EXISTS(DT_INST_CHILD(n, fir_0)) ? 1 : 0))
+
+/* Compute FIR result mask: bit 0 = FIR0, bit 1 = FIR1 */
+#define IFX_FIR_RESULT_MASK(n)                                                                 \
+	((DT_NODE_EXISTS(DT_INST_CHILD(n, fir_0)) << 0) |                                          \
+	 (DT_NODE_EXISTS(DT_INST_CHILD(n, fir_1)) << 1))
+
 /* Per-channel DT config: extract channel_id and DT-only channel settings. */
 #define IFX_CHAN_DT_CFG_ENTRY(child_node_id)                                                       \
 	COND_CODE_1(DT_NODE_HAS_PROP(child_node_id, reg),                                         \
@@ -875,8 +1102,14 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 
 /* Device Instantiation */
 #define IFX_AUTANALOG_SAR_ADC_INIT(n)                                                              \
-	ADC_IFX_AUTANALOG_SAR_DRIVER_API(n);                                                       \
-	static void ifx_autanalog_sar_adc_config_func_##n(void);                                   \
+	ADC_IFX_AUTANALOG_SAR_DRIVER_API(n);                                     \
+	/* Declare FIR coefficient arrays for each configured FIR filter */       \
+	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(n, fir_0)),                     \
+		(COND_CODE_1(DT_NODE_HAS_PROP(DT_INST_CHILD(n, fir_0), coefficients), \
+			(IFX_FIR_COEFF_DECLARE(n, fir_0);), ())), ())                \
+	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(n, fir_1)),                     \
+		(COND_CODE_1(DT_NODE_HAS_PROP(DT_INST_CHILD(n, fir_1), coefficients), \
+			(IFX_FIR_COEFF_DECLARE(n, fir_1);), ())), ())                \
 	/* Per-channel DT config array */                                                          \
 	IFX_CHAN_DT_CFG_ARRAY(n);                                                                  \
 	static void ifx_autanalog_sar_adc_config_func_##n(void);                                   \
@@ -891,9 +1124,17 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 		.acc_mode = DT_INST_PROP(n, acc_mode),                                             \
 		.shift_mode = DT_INST_PROP(n, shift_mode),                                         \
 		.fifo_chan_id = DT_INST_PROP(n, fifo_chan_id),                                     \
+		.fir_count = IFX_FIR_COUNT(n),                              \
+		.fir_result_mask = IFX_FIR_RESULT_MASK(n),                  \
+		.fir = {                                                    \
+			COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(n, fir_0)), \
+				(IFX_FIR_CFG_INIT(n, fir_0)), ({0})),          \
+			COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(n, fir_1)), \
+				(IFX_FIR_CFG_INIT(n, fir_1)), ({0})),          \
+		},                                                         \
 		.num_dt_channels = ARRAY_SIZE(ifx_sar_chan_dt_cfg_##n),                            \
 		.dt_channels = ifx_sar_chan_dt_cfg_##n,                                            \
-	};                                                                                         \
+	};                                                                                     \
 	static struct ifx_autanalog_sar_adc_data ifx_autanalog_sar_adc_data_##n = {                \
 		ADC_CONTEXT_INIT_LOCK(ifx_autanalog_sar_adc_data_##n, ctx),                        \
 		ADC_CONTEXT_INIT_TIMER(ifx_autanalog_sar_adc_data_##n, ctx),                       \
@@ -903,12 +1144,14 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 			      &ifx_autanalog_sar_adc_data_##n, &ifx_autanalog_sar_adc_config_##n,  \
 			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,                               \
 			      &ifx_autanalog_sar_adc_api_##n);                                     \
-                                                                                                   \
+                                                                                               \
 	static void ifx_autanalog_sar_adc_config_func_##n(void)                                    \
 	{                                                                                          \
 		ifx_autanalog_set_irq_handler(DEVICE_DT_GET(DT_INST_PARENT(n)),                    \
 					      DEVICE_DT_INST_GET(n), IFX_AUTANALOG_PERIPH_SAR_ADC, \
 					      ifx_autanalog_sar_adc_isr);                          \
 	}
+
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_AUTANALOG_SAR_ADC_INIT)
