@@ -2537,6 +2537,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - carlocaione
+  collaborators:
+    - pdgendt
   files:
     - include/zephyr/drivers/syscon.h
     - drivers/syscon/
