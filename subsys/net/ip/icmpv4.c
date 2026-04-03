@@ -55,7 +55,7 @@ int net_icmpv4_finalize(struct net_pkt *pkt, bool force_chksum)
 					      struct net_icmp_hdr);
 	struct net_icmp_hdr *icmp_hdr;
 	int ret;
-	uint16_t chksum;
+	uint16_t chksum = 0;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4_HDR_OPTIONS)) {
 		if (net_pkt_skip(pkt, net_pkt_ipv4_opts_len(pkt))) {
@@ -629,7 +629,7 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 	struct net_icmp_hdr *icmp_hdr;
 	enum net_verdict verdict;
 	int ret;
-	uint16_t chksum;
+	uint16_t chksum = 0;
 
 	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmp_access);
 	if (!icmp_hdr) {
