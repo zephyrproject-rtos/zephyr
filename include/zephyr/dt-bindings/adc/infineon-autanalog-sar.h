@@ -90,4 +90,61 @@
 #define IFX_AUTANALOG_SAR_BUF_PWR_ULTRA_HIGH_RAIL 10 /**< Ultra high, charge pump on */
 /** @} */
 
+/**
+ * @name FIR filter input channel (cy_en_autanalog_sar_fir_channel_t)
+ * @{
+ */
+#define IFX_AUTANALOG_SAR_FIR_CH_DISABLED 0  /**< FIR filter input disabled */
+#define IFX_AUTANALOG_SAR_FIR_CH_GPIO0    1  /**< GPIO channel 0 */
+#define IFX_AUTANALOG_SAR_FIR_CH_GPIO1    2  /**< GPIO channel 1 */
+#define IFX_AUTANALOG_SAR_FIR_CH_GPIO2    3  /**< GPIO channel 2 */
+#define IFX_AUTANALOG_SAR_FIR_CH_GPIO3    4  /**< GPIO channel 3 */
+#define IFX_AUTANALOG_SAR_FIR_CH_GPIO4    5  /**< GPIO channel 4 */
+#define IFX_AUTANALOG_SAR_FIR_CH_GPIO5    6  /**< GPIO channel 5 */
+#define IFX_AUTANALOG_SAR_FIR_CH_GPIO6    7  /**< GPIO channel 6 */
+#define IFX_AUTANALOG_SAR_FIR_CH_GPIO7    8  /**< GPIO channel 7 */
+#define IFX_AUTANALOG_SAR_FIR_CH_MUX0     9  /**< MUX channel 0 */
+#define IFX_AUTANALOG_SAR_FIR_CH_MUX1     10 /**< MUX channel 1 */
+#define IFX_AUTANALOG_SAR_FIR_CH_MUX2     11 /**< MUX channel 2 */
+#define IFX_AUTANALOG_SAR_FIR_CH_MUX3     12 /**< MUX channel 3 */
+#define IFX_AUTANALOG_SAR_FIR_CH_MUX4     13 /**< MUX channel 4 */
+#define IFX_AUTANALOG_SAR_FIR_CH_MUX5     14 /**< MUX channel 5 */
+#define IFX_AUTANALOG_SAR_FIR_CH_MUX6     15 /**< MUX channel 6 */
+#define IFX_AUTANALOG_SAR_FIR_CH_MUX7     16 /**< MUX channel 7 */
+#define IFX_AUTANALOG_SAR_FIR_CH_MUX8     17 /**< MUX channel 8 */
+#define IFX_AUTANALOG_SAR_FIR_CH_MUX9     18 /**< MUX channel 9 */
+#define IFX_AUTANALOG_SAR_FIR_CH_MUX10    19 /**< MUX channel 10 */
+#define IFX_AUTANALOG_SAR_FIR_CH_MUX11    20 /**< MUX channel 11 */
+#define IFX_AUTANALOG_SAR_FIR_CH_MUX12    21 /**< MUX channel 12 */
+#define IFX_AUTANALOG_SAR_FIR_CH_MUX13    22 /**< MUX channel 13 */
+#define IFX_AUTANALOG_SAR_FIR_CH_MUX14    23 /**< MUX channel 14 */
+#define IFX_AUTANALOG_SAR_FIR_CH_MUX15    24 /**< MUX channel 15 */
+/** @} */
+
+/**
+ * @name FIFO selection (cy_en_autanalog_fifo_sel_t)
+ * @{
+ */
+#define IFX_AUTANALOG_SAR_FIFO_DISABLED 0 /**< FIFO disabled */
+#define IFX_AUTANALOG_SAR_FIFO_0        1 /**< FIFO 0 */
+#define IFX_AUTANALOG_SAR_FIFO_1        2 /**< FIFO 1 */
+#define IFX_AUTANALOG_SAR_FIFO_2        3 /**< FIFO 2 */
+#define IFX_AUTANALOG_SAR_FIFO_3        4 /**< FIFO 3 */
+#define IFX_AUTANALOG_SAR_FIFO_4        5 /**< FIFO 4 */
+#define IFX_AUTANALOG_SAR_FIFO_5        6 /**< FIFO 5 */
+#define IFX_AUTANALOG_SAR_FIFO_6        7 /**< FIFO 6 */
+#define IFX_AUTANALOG_SAR_FIFO_7        8 /**< FIFO 7 */
+/** @} */
+
+/**
+ * @name Limit status selection (cy_en_autanalog_sar_limit_t)
+ * @{
+ */
+#define IFX_AUTANALOG_SAR_LIMIT_DISABLED 0 /**< Limit status disabled */
+#define IFX_AUTANALOG_SAR_LIMIT_STC0     1 /**< Limit status config 0 */
+#define IFX_AUTANALOG_SAR_LIMIT_STC1     2 /**< Limit status config 1 */
+#define IFX_AUTANALOG_SAR_LIMIT_STC2     3 /**< Limit status config 2 */
+#define IFX_AUTANALOG_SAR_LIMIT_STC3     4 /**< Limit status config 3 */
+/** @} */
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADC_INFINEON_AUTANALOG_SAR_H_ */
