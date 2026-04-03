@@ -2018,7 +2018,7 @@ static void tcp_resend_data(struct k_work *work)
  out:
 	k_mutex_unlock(&conn->lock);
 
-	if (conn_unref) {
+	if (conn_unref && conn->state != TCP_UNUSED && conn->state != TCP_CLOSED) {
 		tcp_conn_close(conn, -ETIMEDOUT);
 	}
 }
@@ -3753,9 +3753,10 @@ int net_tcp_put(struct net_context *context, bool force_close)
 
 			keep_alive_timer_stop(conn);
 		}
-	} else if (conn->in_connect) {
+	} else if (conn->in_connect && conn->state != TCP_CLOSED && conn->state != TCP_UNUSED) {
 		conn->in_connect = false;
 		k_sem_reset(&conn->connect_sem);
+		tcp_conn_close(conn, -ECONNABORTED);
 	}
 
 	k_mutex_unlock(&conn->lock);
