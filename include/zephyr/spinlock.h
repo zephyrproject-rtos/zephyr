@@ -334,10 +334,11 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
  * @cond INTERNAL_HIDDEN
  */
 
-#if defined(CONFIG_SMP) && defined(CONFIG_TEST)
+#if defined(CONFIG_SMP) && (defined(CONFIG_TEST) || defined(CONFIG_ASSERT))
 /*
  * @brief Checks if spinlock is held by some CPU, including the local CPU.
- *		This API shouldn't be used outside the tests for spinlock
+ *		This should only be used in tests or assertions, not to make
+ *		runtime control flow decisions.
  *
  * @param l A pointer to the spinlock
  * @retval true - if spinlock is held by some CPU; false - otherwise
@@ -352,7 +353,7 @@ static ALWAYS_INLINE bool z_spin_is_locked(struct k_spinlock *l)
 	return l->locked;
 #endif /* CONFIG_TICKET_SPINLOCKS */
 }
-#endif /* defined(CONFIG_SMP) && defined(CONFIG_TEST) */
+#endif /* defined(CONFIG_SMP) && (defined(CONFIG_TEST) || defined(CONFIG_ASSERT)) */
 
 /* Internal function: releases the lock, but leaves local interrupts disabled */
 static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
