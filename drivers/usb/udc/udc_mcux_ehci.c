@@ -737,19 +737,43 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 	}
 
 	if (config->clock_dev && config->clock_rate) {
-		clock_control_set_rate(
+		if (!device_is_ready(config->clock_dev)) {
+			return -ENODEV;
+		}
+
+		err = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (err != 0) {
+			return err;
+		}
+
+		err = clock_control_set_rate(
 			config->clock_dev,
 			config->clock_subsys,
 			config->clock_rate
 		);
+		if (err != 0) {
+			return err;
+		}
 	}
 
 	if (config->phy_clock_dev && config->phy_clock_rate) {
-		clock_control_set_rate(
+		if (!device_is_ready(config->phy_clock_dev)) {
+			return -ENODEV;
+		}
+
+		err = clock_control_on(config->phy_clock_dev, config->phy_clock_subsys);
+		if (err != 0) {
+			return err;
+		}
+
+		err = clock_control_set_rate(
 			config->phy_clock_dev,
 			config->phy_clock_subsys,
 			config->phy_clock_rate
 		);
+		if (err != 0) {
+			return err;
+		}
 	}
 
 	k_mutex_init(&data->mutex);
