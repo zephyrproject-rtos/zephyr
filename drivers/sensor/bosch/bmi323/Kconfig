@@ -34,4 +34,10 @@ config BMI323_BUS_SPI
 	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI323),spi)
 	select SPI
 
+config BMI323_BUS_I2C
+	bool "BMI323 driver support for I2C bus"
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI323),i2c)
+	select I2C
+
 endif # BMI323

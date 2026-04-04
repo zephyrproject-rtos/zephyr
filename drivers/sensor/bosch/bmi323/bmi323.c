@@ -4,15 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bmi323.h"
-#include "bmi323_spi.h"
-
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+
+#include "bmi323.h"
+
+#ifdef CONFIG_BMI323_BUS_SPI
+#include "bmi323_spi.h"
+#endif
+#ifdef CONFIG_BMI323_BUS_I3C
+#include "bmi323_i3c.h"
+#endif
+#ifdef CONFIG_BMI323_BUS_I2C
+#include "bmi323_i2c.h"
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bosch_bmi323);
@@ -26,34 +35,13 @@ LOG_MODULE_REGISTER(bosch_bmi323);
 #define IMU_BOSCH_DIE_TEMP_MICRO_DEG_CELSIUS_LSB    (1953L)
 
 typedef void (*bosch_bmi323_gpio_callback_ptr)(const struct device *dev, struct gpio_callback *cb,
-					       uint32_t pins);
+						   uint32_t pins);
 
 struct bosch_bmi323_config {
 	const struct bosch_bmi323_bus *bus;
 	const struct gpio_dt_spec int_gpio;
 
 	const bosch_bmi323_gpio_callback_ptr int_gpio_callback;
-};
-
-struct bosch_bmi323_data {
-	struct k_mutex lock;
-
-	struct sensor_value acc_samples[3];
-	struct sensor_value gyro_samples[3];
-	struct sensor_value temperature;
-
-	bool acc_samples_valid;
-	bool gyro_samples_valid;
-	bool temperature_valid;
-
-	uint32_t acc_full_scale;
-	uint32_t gyro_full_scale;
-
-	struct gpio_callback gpio_callback;
-	const struct sensor_trigger *trigger;
-	sensor_trigger_handler_t trigger_handler;
-	struct k_work callback_work;
-	const struct device *dev;
 };
 
 static int bosch_bmi323_bus_init(const struct device *dev)
@@ -66,7 +54,7 @@ static int bosch_bmi323_bus_init(const struct device *dev)
 }
 
 static int bosch_bmi323_bus_read_words(const struct device *dev, uint8_t offset, uint16_t *words,
-				       uint16_t words_count)
+					   uint16_t words_count)
 {
 	const struct bosch_bmi323_config *config = (const struct bosch_bmi323_config *)dev->config;
 
@@ -98,7 +86,7 @@ static int64_t bosch_bmi323_value_to_micro(int16_t value, int32_t lsb)
 
 /* lsb is the value of one 1/1000000 LSB */
 static void bosch_bmi323_value_to_sensor_value(struct sensor_value *result, int16_t value,
-					       int32_t lsb)
+						   int32_t lsb)
 {
 	int64_t ll_value = (int64_t)value * lsb;
 	int32_t int_part = (int32_t)(ll_value / 1000000);
@@ -176,7 +164,7 @@ static int bosch_bmi323_enable_feature_engine(const struct device *dev)
 }
 
 static int bosch_bmi323_driver_api_set_acc_odr(const struct device *dev,
-					       const struct sensor_value *val)
+						   const struct sensor_value *val)
 {
 	int ret;
 	uint16_t acc_conf;
@@ -224,7 +212,7 @@ static int bosch_bmi323_driver_api_set_acc_odr(const struct device *dev,
 }
 
 static int bosch_bmi323_driver_api_set_acc_full_scale(const struct device *dev,
-						      const struct sensor_value *val)
+							  const struct sensor_value *val)
 {
 	struct bosch_bmi323_data *data = (struct bosch_bmi323_data *)dev->data;
 	int ret;
@@ -241,15 +229,17 @@ static int bosch_bmi323_driver_api_set_acc_full_scale(const struct device *dev,
 
 	if (fullscale <= 2000) {
 		acc_conf |= IMU_BOSCH_BMI323_REG_VALUE(ACC_CONF, RANGE, G2);
+		data->acc_full_scale = 2000;
 	} else if (fullscale <= 4000) {
 		acc_conf |= IMU_BOSCH_BMI323_REG_VALUE(ACC_CONF, RANGE, G4);
+		data->acc_full_scale = 4000;
 	} else if (fullscale <= 8000) {
 		acc_conf |= IMU_BOSCH_BMI323_REG_VALUE(ACC_CONF, RANGE, G8);
+		data->acc_full_scale = 8000;
 	} else {
 		acc_conf |= IMU_BOSCH_BMI323_REG_VALUE(ACC_CONF, RANGE, G16);
+		data->acc_full_scale = 16000;
 	}
-
-	data->acc_full_scale = 0;
 
 	return bosch_bmi323_bus_write_words(dev, IMU_BOSCH_BMI323_REG_ACC_CONF, &acc_conf, 1);
 }
@@ -326,7 +316,7 @@ static int bosch_bmi323_driver_api_set_gyro_odr(const struct device *dev,
 }
 
 static int bosch_bmi323_driver_api_set_gyro_full_scale(const struct device *dev,
-						       const struct sensor_value *val)
+							   const struct sensor_value *val)
 {
 	struct bosch_bmi323_data *data = (struct bosch_bmi323_data *)dev->data;
 	int ret;
@@ -343,17 +333,20 @@ static int bosch_bmi323_driver_api_set_gyro_full_scale(const struct device *dev,
 
 	if (fullscale <= 125000) {
 		gyro_conf |= IMU_BOSCH_BMI323_REG_VALUE(GYRO_CONF, RANGE, DPS125);
+		data->gyro_full_scale = 125000;
 	} else if (fullscale <= 250000) {
 		gyro_conf |= IMU_BOSCH_BMI323_REG_VALUE(GYRO_CONF, RANGE, DPS250);
+		data->gyro_full_scale = 250000;
 	} else if (fullscale <= 500000) {
 		gyro_conf |= IMU_BOSCH_BMI323_REG_VALUE(GYRO_CONF, RANGE, DPS500);
+		data->gyro_full_scale = 500000;
 	} else if (fullscale <= 1000000) {
 		gyro_conf |= IMU_BOSCH_BMI323_REG_VALUE(GYRO_CONF, RANGE, DPS1000);
+		data->gyro_full_scale = 1000000;
 	} else {
 		gyro_conf |= IMU_BOSCH_BMI323_REG_VALUE(GYRO_CONF, RANGE, DPS2000);
+		data->gyro_full_scale = 2000000;
 	}
-
-	data->gyro_full_scale = 0;
 
 	return bosch_bmi323_bus_write_words(dev, IMU_BOSCH_BMI323_REG_GYRO_CONF, &gyro_conf, 1);
 }
@@ -382,8 +375,8 @@ static int bosch_bmi323_driver_api_set_gyro_feature_mask(const struct device *de
 }
 
 static int bosch_bmi323_driver_api_attr_set(const struct device *dev, enum sensor_channel chan,
-					    enum sensor_attribute attr,
-					    const struct sensor_value *val)
+						enum sensor_attribute attr,
+						const struct sensor_value *val)
 {
 	struct bosch_bmi323_data *data = (struct bosch_bmi323_data *)dev->data;
 	int ret;
@@ -528,7 +521,7 @@ static int bosch_bmi323_driver_api_get_acc_odr(const struct device *dev, struct 
 }
 
 static int bosch_bmi323_driver_api_get_acc_full_scale(const struct device *dev,
-						      struct sensor_value *val)
+							  struct sensor_value *val)
 {
 	uint16_t acc_conf;
 	int ret;
@@ -662,7 +655,7 @@ static int bosch_bmi323_driver_api_get_gyro_odr(const struct device *dev, struct
 }
 
 static int bosch_bmi323_driver_api_get_gyro_full_scale(const struct device *dev,
-						       struct sensor_value *val)
+							   struct sensor_value *val)
 {
 	uint16_t gyro_conf;
 	int ret;
@@ -725,7 +718,7 @@ static int bosch_bmi323_driver_api_get_gyro_feature_mask(const struct device *de
 }
 
 static int bosch_bmi323_driver_api_attr_get(const struct device *dev, enum sensor_channel chan,
-					    enum sensor_attribute attr, struct sensor_value *val)
+				enum sensor_attribute attr, struct sensor_value *val)
 {
 	struct bosch_bmi323_data *data = (struct bosch_bmi323_data *)dev->data;
 	int ret;
@@ -841,8 +834,8 @@ static int bosch_bmi323_driver_api_trigger_set_acc_motion(const struct device *d
 }
 
 static int bosch_bmi323_driver_api_trigger_set(const struct device *dev,
-					       const struct sensor_trigger *trig,
-					       sensor_trigger_handler_t handler)
+						   const struct sensor_trigger *trig,
+						   sensor_trigger_handler_t handler)
 {
 	struct bosch_bmi323_data *data = (struct bosch_bmi323_data *)dev->data;
 	int ret = -ENODEV;
@@ -905,8 +898,8 @@ static int bosch_bmi323_driver_api_fetch_acc_samples(const struct device *dev)
 	}
 
 	if ((bosch_bmi323_value_is_valid(buf[0]) == false) ||
-	    (bosch_bmi323_value_is_valid(buf[1]) == false) ||
-	    (bosch_bmi323_value_is_valid(buf[2]) == false)) {
+		(bosch_bmi323_value_is_valid(buf[1]) == false) ||
+		(bosch_bmi323_value_is_valid(buf[2]) == false)) {
 		return -ENODATA;
 	}
 
@@ -948,8 +941,8 @@ static int bosch_bmi323_driver_api_fetch_gyro_samples(const struct device *dev)
 	}
 
 	if ((bosch_bmi323_value_is_valid(buf[0]) == false) ||
-	    (bosch_bmi323_value_is_valid(buf[1]) == false) ||
-	    (bosch_bmi323_value_is_valid(buf[2]) == false)) {
+		(bosch_bmi323_value_is_valid(buf[1]) == false) ||
+		(bosch_bmi323_value_is_valid(buf[2]) == false)) {
 		return -ENODATA;
 	}
 
@@ -1045,7 +1038,7 @@ static int bosch_bmi323_driver_api_sample_fetch(const struct device *dev, enum s
 }
 
 static int bosch_bmi323_driver_api_channel_get(const struct device *dev, enum sensor_channel chan,
-					       struct sensor_value *val)
+						   struct sensor_value *val)
 {
 	struct bosch_bmi323_data *data = (struct bosch_bmi323_data *)dev->data;
 	int ret = 0;
@@ -1103,6 +1096,10 @@ static DEVICE_API(sensor, bosch_bmi323_api) = {
 	.trigger_set = bosch_bmi323_driver_api_trigger_set,
 	.sample_fetch = bosch_bmi323_driver_api_sample_fetch,
 	.channel_get = bosch_bmi323_driver_api_channel_get,
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = bmi323_submit,
+	.get_decoder = bmi323_get_decoder,
+#endif
 };
 
 static void bosch_bmi323_irq_callback(const struct device *dev)
@@ -1141,8 +1138,8 @@ static int bosch_bmi323_init_int1(const struct device *dev)
 	uint16_t buf;
 
 	buf = IMU_BOSCH_BMI323_REG_VALUE(IO_INT_CTRL, INT1_LVL, ACT_HIGH) |
-	      IMU_BOSCH_BMI323_REG_VALUE(IO_INT_CTRL, INT1_OD, PUSH_PULL) |
-	      IMU_BOSCH_BMI323_REG_VALUE(IO_INT_CTRL, INT1_OUTPUT_EN, EN);
+		  IMU_BOSCH_BMI323_REG_VALUE(IO_INT_CTRL, INT1_OD, PUSH_PULL) |
+		  IMU_BOSCH_BMI323_REG_VALUE(IO_INT_CTRL, INT1_OUTPUT_EN, EN);
 
 	return bosch_bmi323_bus_write_words(dev, IMU_BOSCH_BMI323_REG_IO_INT_CTRL, &buf, 1);
 }
@@ -1279,6 +1276,19 @@ static int bosch_bmi323_init(const struct device *dev)
 
 	data->dev = dev;
 
+	/* Set raw_data_offset: SPI=1 (no dummy), I2C/I3C=2 (2 dummy bytes) */
+	if (data->async_bus_type == BMI323_BUS_SPI) {
+		data->raw_data_offset = 1U;
+	} else {
+		data->raw_data_offset = 2U;
+	}
+
+#ifdef CONFIG_SENSOR_ASYNC_API
+	/* Init MPSC ring buffer indices */
+	mpsc_init(&data->io_q);
+	data->mpsc_busy = false;
+#endif
+
 	ret = bosch_bmi323_init_irq(dev);
 
 	if (ret < 0) {
@@ -1306,21 +1316,67 @@ static int bosch_bmi323_init(const struct device *dev)
 	return ret;
 }
 
-/*
- * Currently only support for the SPI bus is implemented. This shall be updated to
- * select the appropriate bus once I2C is implemented.
- */
 #define BMI323_DEVICE_BUS(inst)                                                                    \
-	BUILD_ASSERT(DT_INST_ON_BUS(inst, spi), "Unimplemented bus");                              \
-	BMI323_DEVICE_SPI_BUS(inst)
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi), (BMI323_DEVICE_SPI_BUS(inst)),                      \
+	(COND_CODE_1(DT_INST_ON_BUS(inst, i3c), (BMI323_DEVICE_I3C_BUS(inst)),                     \
+	(COND_CODE_1(DT_INST_ON_BUS(inst, i2c), (BMI323_DEVICE_I2C_BUS(inst)),                     \
+	(BUILD_ASSERT(0, "Unsupported bus type for BMI323")))))))
+
+/* RTIO context definition - one per device instance */
+#ifdef CONFIG_SENSOR_ASYNC_API
+#define BMI323_RTIO_DEFINE(inst)       RTIO_DEFINE(bmi323_rtio_ctx_##inst, 4, 4)
+
+/* Bus-specific IODEV definitions */
+#define BMI323_SPI_IODEV_DEFINE(inst) \
+	SPI_DT_IODEV_DEFINE(bmi323_iodev_##inst, DT_DRV_INST(inst), \
+			    SPI_WORD_SET(8))
+#define BMI323_I2C_IODEV_DEFINE(inst) \
+	I2C_DT_IODEV_DEFINE(bmi323_iodev_##inst, DT_DRV_INST(inst))
+#define BMI323_I3C_IODEV_DEFINE(inst) \
+	I3C_DT_IODEV_DEFINE(bmi323_iodev_##inst, DT_DRV_INST(inst))
+
+#define BMI323_BUS_IODEV(inst)         (&bmi323_iodev_##inst)
+#else
+#define BMI323_RTIO_DEFINE(inst)
+#define BMI323_SPI_IODEV_DEFINE(inst)
+#define BMI323_I2C_IODEV_DEFINE(inst)
+#define BMI323_I3C_IODEV_DEFINE(inst)
+#define BMI323_BUS_IODEV(inst)         NULL
+#endif
+
+#ifdef CONFIG_SENSOR_ASYNC_API
+/* Bus raw offset macros - read buffer sizing (still needed for async submit) */
+#define BMI323_BUS_RAW_OFFSET(inst)                                                                \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi), (BMI323_SPI_RAW_OFFSET),                           \
+	(COND_CODE_1(DT_INST_ON_BUS(inst, i3c), (BMI323_I3C_RAW_OFFSET),                          \
+	(COND_CODE_1(DT_INST_ON_BUS(inst, i2c), (BMI323_I2C_RAW_OFFSET),                          \
+	(BUILD_ASSERT(0, "Unsupported bus type for BMI323")))))))
+
+#define BMI323_BUS_TYPE(inst)                                                                      \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi), (BMI323_BUS_SPI),                                   \
+	(COND_CODE_1(DT_INST_ON_BUS(inst, i3c), (BMI323_BUS_I3C),                                  \
+	(COND_CODE_1(DT_INST_ON_BUS(inst, i2c), (BMI323_BUS_I2C),                                  \
+	(BUILD_ASSERT(0, "Unsupported bus type for BMI323")))))))
+
+#define BMI323_RTIO_DATA_INIT(inst)                                                                \
+	.r = &bmi323_rtio_ctx_##inst,                                                              \
+	.bus_iodev = BMI323_BUS_IODEV(inst),                                                       \
+	.async_bus_type = BMI323_BUS_TYPE(inst),
+#else
+#define BMI323_RTIO_DATA_INIT(inst)
+#endif
 
 #define BMI323_DEVICE(inst)                                                                        \
-	static struct bosch_bmi323_data bosch_bmi323_data_##inst;                                  \
+	BMI323_RTIO_DEFINE(inst);                                                                  \
                                                                                                    \
 	BMI323_DEVICE_BUS(inst);                                                                   \
                                                                                                    \
+	static struct bosch_bmi323_data bosch_bmi323_data_##inst = {                               \
+		BMI323_RTIO_DATA_INIT(inst)                                                        \
+	}; \
+                                                                                                   \
 	static void bosch_bmi323_irq_callback##inst(const struct device *dev,                      \
-						    struct gpio_callback *cb, uint32_t pins)       \
+						struct gpio_callback *cb, uint32_t pins)       \
 	{                                                                                          \
 		bosch_bmi323_irq_callback(DEVICE_DT_INST_GET(inst));                               \
 	}                                                                                          \
@@ -1334,7 +1390,7 @@ static int bosch_bmi323_init(const struct device *dev)
 	PM_DEVICE_DT_INST_DEFINE(inst, bosch_bmi323_pm_action);                                    \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, bosch_bmi323_init, PM_DEVICE_DT_INST_GET(inst),         \
-				     &bosch_bmi323_data_##inst, &bosch_bmi323_config_##inst,       \
-				     POST_KERNEL, 99, &bosch_bmi323_api);
+					 &bosch_bmi323_data_##inst, &bosch_bmi323_config_##inst,\
+					 POST_KERNEL, 99, &bosch_bmi323_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BMI323_DEVICE)
