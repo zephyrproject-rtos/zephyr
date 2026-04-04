@@ -420,7 +420,7 @@ static int ili9xxx_configure(const struct device *dev)
 		return r;
 	}
 
-	if (config->inversion) {
+	if (config->bit_inversion) {
 		r = ili9xxx_transmit(dev, ILI9XXX_DINVON, NULL, 0U);
 		if (r < 0) {
 			return r;
@@ -554,7 +554,7 @@ static const struct ili9xxx_quirks ili9488_quirks = {
 		.rotation = DT_PROP(INST_DT_ILI9XXX(n, t), rotation),                              \
 		.x_resolution = DT_PROP_OR(INST_DT_ILI9XXX(n, t), width, ILI##t##_X_RES),          \
 		.y_resolution = DT_PROP_OR(INST_DT_ILI9XXX(n, t), height, ILI##t##_Y_RES),         \
-		.inversion = DT_PROP(INST_DT_ILI9XXX(n, t), display_inversion),                    \
+		.bit_inversion = DT_PROP(INST_DT_ILI9XXX(n, t), display_inversion),                \
 		.disable_bgr_mode = DT_PROP(INST_DT_ILI9XXX(n, t), red_blue_swap),                 \
 		.te_mode = MIPI_DBI_TE_MODE_DT(INST_DT_ILI9XXX(n, t), te_mode),                    \
 		.regs = &ili##t##_regs_##n,                                                        \
