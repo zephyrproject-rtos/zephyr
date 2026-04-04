@@ -118,8 +118,8 @@ static int32_t analog_axis_out_deadzone(const struct device *dev,
 	const struct analog_axis_channel_config *axis_cfg = &cfg->channel_cfg[channel];
 	struct analog_axis_calibration *cal = &cfg->calibration[channel];
 
-	int16_t in_range = cal->in_max - cal->in_min;
-	int16_t out_range = axis_cfg->out_max - axis_cfg->out_min;
+	int32_t in_range = (int32_t)cal->in_max - cal->in_min;
+	int32_t out_range = (int32_t)axis_cfg->out_max - axis_cfg->out_min;
 	int16_t in_mid = DIV_ROUND_CLOSEST(cal->in_min + cal->in_max, 2);
 	int16_t in_min = cal->in_min;
 
@@ -146,8 +146,8 @@ static int32_t analog_axis_out_linear(const struct device *dev,
 	const struct analog_axis_channel_config *axis_cfg = &cfg->channel_cfg[channel];
 	struct analog_axis_calibration *cal = &cfg->calibration[channel];
 
-	int16_t in_range = cal->in_max - cal->in_min;
-	int16_t out_range = axis_cfg->out_max - axis_cfg->out_min;
+	int32_t in_range = (int32_t)cal->in_max - cal->in_min;
+	int32_t out_range = (int32_t)axis_cfg->out_max - axis_cfg->out_min;
 
 	return DIV_ROUND_CLOSEST((raw_val - cal->in_min) * out_range, in_range) + axis_cfg->out_min;
 }
