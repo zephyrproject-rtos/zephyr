@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
+source "drivers/led_matrix/arduino_uno_q/Kconfig.uno_q"
+
+config LED_MATRIX
+	bool "LED Matrix drivers"
+	help
+	  Enable LED matrix drivers.
