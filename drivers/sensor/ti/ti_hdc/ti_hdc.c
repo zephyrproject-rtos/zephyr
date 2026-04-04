@@ -120,7 +120,7 @@ static int ti_hdc_init(const struct device *dev)
 	uint16_t tmp;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 
@@ -143,8 +143,7 @@ static int ti_hdc_init(const struct device *dev)
 
 		/* setup data ready gpio interrupt */
 		if (!gpio_is_ready_dt(&cfg->drdy)) {
-			LOG_ERR("%s: device %s is not ready", dev->name,
-					cfg->drdy.port->name);
+			LOG_ERR_DEVICE_NOT_READY(cfg->drdy.port);
 			return -ENODEV;
 		}
 

@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(ADXL355, CONFIG_SENSOR_LOG_LEVEL);
 static int adxl355_bus_is_ready_i2c(const union adxl355_bus *bus)
 {
 	if (!i2c_is_ready_dt(&bus->i2c)) {
-		LOG_ERR("I2C bus not ready");
+		LOG_ERR_DEVICE_NOT_READY(bus->i2c.bus);
 		return -ENODEV;
 	}
 
@@ -47,7 +47,7 @@ static int adxl355_reg_access_i2c(const struct device *dev, bool read, uint8_t r
 static int adxl355_bus_is_ready_spi(const union adxl355_bus *bus)
 {
 	if (!spi_is_ready_dt(&bus->spi)) {
-		LOG_ERR("SPI bus not ready");
+		LOG_ERR_DEVICE_NOT_READY(bus->spi.bus);
 		return -ENODEV;
 	}
 

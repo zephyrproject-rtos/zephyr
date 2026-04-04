@@ -89,7 +89,7 @@ int tmag5170_trigger_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(cfg->int_gpio.port)) {
-		LOG_ERR("%s: device %s is not ready", dev->name, cfg->int_gpio.port->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->int_gpio.port);
 		return -ENODEV;
 	}
 

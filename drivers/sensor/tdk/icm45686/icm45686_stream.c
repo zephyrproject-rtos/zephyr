@@ -524,7 +524,7 @@ int icm45686_stream_init(const struct device *dev)
 
 	if (cfg->int_gpio.port) {
 		if (!gpio_is_ready_dt(&cfg->int_gpio)) {
-			LOG_ERR("Interrupt GPIO not ready");
+			LOG_ERR_DEVICE_NOT_READY(cfg->int_gpio.port);
 			return -ENODEV;
 		}
 

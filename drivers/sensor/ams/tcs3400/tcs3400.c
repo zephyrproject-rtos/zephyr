@@ -257,7 +257,7 @@ static int tcs3400_init(const struct device *dev)
 	data->dev = dev;
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("I2C bus is not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 
@@ -268,7 +268,7 @@ static int tcs3400_init(const struct device *dev)
 	}
 
 	if (!gpio_is_ready_dt(&cfg->int_gpio)) {
-		LOG_ERR("Interrupt GPIO device not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->int_gpio.port);
 		return -ENODEV;
 	}
 

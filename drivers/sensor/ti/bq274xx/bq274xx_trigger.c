@@ -117,7 +117,7 @@ int bq274xx_trigger_set(const struct device *dev,
 	}
 
 	if (!gpio_is_ready_dt(&config->int_gpios)) {
-		LOG_ERR("GPIO device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->int_gpios.port);
 		return -ENODEV;
 	}
 
