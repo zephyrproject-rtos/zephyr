@@ -595,9 +595,10 @@ static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
  * https://pubs.opengroup.org/onlinepubs/9699919799/functions/ioctl.html
  * for normative description.
  * This function enables querying or manipulating underlying socket parameters.
- * Currently supported @p request values include `ZFD_IOCTL_FIONBIO`, and
- * `ZFD_IOCTL_FIONREAD`, to set non-blocking mode, and query the number of
- * bytes available to read, respectively.
+ * Currently supported @p request values include:
+ *   - @ref ZFD_IOCTL_FIONBIO
+ *   - @ref ZFD_IOCTL_FIONREAD
+ *   - @ref ZFD_IOCTL_FIONWRITE
  * This function is also exposed as `ioctl()`
  * if @kconfig{CONFIG_POSIX_API} is defined (in which case
  * it may conflict with generic POSIX `ioctl()` function).

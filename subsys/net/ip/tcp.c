@@ -4753,6 +4753,25 @@ int net_tcp_get_option(struct net_context *context,
 	return ret;
 }
 
+int net_tcp_get_outq(struct net_context *context, int *outq_bytes)
+{
+	NET_ASSERT(context);
+
+	struct tcp *conn = context->tcp;
+
+	NET_ASSERT(conn);
+
+	if (outq_bytes == NULL) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&conn->lock, K_FOREVER);
+	*outq_bytes = (int)MIN(conn->send_data_total, (size_t)INT_MAX);
+	k_mutex_unlock(&conn->lock);
+
+	return 0;
+}
+
 const char *net_tcp_state_str(enum tcp_state state)
 {
 	return tcp_state_to_str(state, false);
