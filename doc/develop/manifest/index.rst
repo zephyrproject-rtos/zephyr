@@ -44,8 +44,12 @@ functionality.
 
 To enable any of the modules below, use the following commands::
 
-        west config manifest.project-filter -- +nanopb
+        west config manifest.project-filter -- +thrift
         west update
+
+.. note:: The project filter is not additive, so you will need to specify all
+   the projects you want to enable, including the active ones, when you update
+   the manifest.
 
 .. manifest-projects-table::
    :filter: inactive
