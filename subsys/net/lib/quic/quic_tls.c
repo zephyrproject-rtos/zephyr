@@ -19,12 +19,12 @@
 static int build_default_transport_params(struct quic_tls_context *ctx);
 
 /**
- * Add intermediate certificate to chain
+ * Add intermediate certificate to chain by sec_tag
  */
 static int quic_tls_add_cert_chain(struct quic_tls_context *ctx,
-						  const uint8_t *cert, size_t cert_len)
+				   sec_tag_t tag)
 {
-	if (ctx == NULL || cert == NULL) {
+	if (ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -32,8 +32,14 @@ static int quic_tls_add_cert_chain(struct quic_tls_context *ctx,
 		return -ENOBUFS;
 	}
 
-	ctx->cert_chain[ctx->cert_chain_count].cert = cert;
-	ctx->cert_chain[ctx->cert_chain_count].cert_len = cert_len;
+	for (size_t i = 0; i < ctx->cert_chain_count; i++) {
+		if (ctx->cert_chain_tags[i] == tag) {
+			/* Tag already in chain, ignore */
+			return 0;
+		}
+	}
+
+	ctx->cert_chain_tags[ctx->cert_chain_count] = tag;
 	ctx->cert_chain_count++;
 
 	return 0;
@@ -1421,29 +1427,47 @@ static int build_certificate(struct quic_tls_context *ctx,
 	cert_list_len_pos = pos;
 	pos += 3;
 
-	/* Add each certificate in the chain */
-	for (size_t i = 0; i < ctx->cert_chain_count; i++) {
-		const uint8_t *cert = ctx->cert_chain[i].cert;
-		size_t cert_len = ctx->cert_chain[i].cert_len;
+	/* Add each intermediate certificate in the chain, resolved from sec_tags */
+	credentials_lock();
 
-		if (pos + 3 + cert_len + 2 > buf_size) {
+	for (size_t i = 0; i < ctx->cert_chain_count; i++) {
+		struct tls_credential *cred;
+
+		cred = credential_get(ctx->cert_chain_tags[i],
+				      TLS_CREDENTIAL_CA_CERTIFICATE);
+		if (cred == NULL) {
+			cred = credential_get(ctx->cert_chain_tags[i],
+					      TLS_CREDENTIAL_PUBLIC_CERTIFICATE);
+		}
+
+		if (cred == NULL || cred->buf == NULL || cred->len == 0) {
+			NET_DBG("No certificate found for chain tag %d",
+				ctx->cert_chain_tags[i]);
+			credentials_unlock();
+			return -ENOENT;
+		}
+
+		if (pos + 3 + cred->len + 2 > buf_size) {
 			NET_DBG("Certificate buffer overflow at chain index %zu", i);
+			credentials_unlock();
 			return -ENOBUFS;
 		}
 
 		/* cert_data length (3 bytes, big-endian) */
-		buf[pos++] = (cert_len >> 16) & 0xFF;
-		buf[pos++] = (cert_len >> 8) & 0xFF;
-		buf[pos++] = cert_len & 0xFF;
+		buf[pos++] = (cred->len >> 16) & 0xFF;
+		buf[pos++] = (cred->len >> 8) & 0xFF;
+		buf[pos++] = cred->len & 0xFF;
 
 		/* cert_data */
-		memcpy(&buf[pos], cert, cert_len);
-		pos += cert_len;
+		memcpy(&buf[pos], cred->buf, cred->len);
+		pos += cred->len;
 
 		/* Extensions (empty for now) */
 		buf[pos++] = 0x00;
 		buf[pos++] = 0x00;
 	}
+
+	credentials_unlock();
 
 	/* Fill in certificate list length */
 	cert_list_len = pos - cert_list_len_pos - 3;
@@ -5076,6 +5100,50 @@ static int quic_tls_init(struct quic_tls_context *tls, bool is_server)
 			   * don't fail initialization
 			   */
 	}
+
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+	/* Parse intermediate certificates from cert_chain_tags into the
+	 * own_cert mbedtls chain so build_certificate() includes them.
+	 */
+	if (tls->cert_chain_count > 0) {
+		credentials_lock();
+
+		for (size_t i = 0; i < tls->cert_chain_count; i++) {
+			struct tls_credential *cred;
+
+			cred = credential_get(tls->cert_chain_tags[i],
+					      TLS_CREDENTIAL_CA_CERTIFICATE);
+			if (cred == NULL) {
+				cred = credential_get(tls->cert_chain_tags[i],
+						      TLS_CREDENTIAL_PUBLIC_CERTIFICATE);
+			}
+
+			if (cred == NULL || cred->buf == NULL || cred->len == 0) {
+				NET_DBG("No certificate for chain tag %d",
+					tls->cert_chain_tags[i]);
+				credentials_unlock();
+				ret = -ENOENT;
+				goto out;
+			}
+
+			ret = mbedtls_x509_crt_parse(&tls->own_cert,
+						     cred->buf, cred->len);
+			if (ret != 0) {
+				NET_DBG("Failed to parse chain cert tag %d: "
+					"-0x%04x", tls->cert_chain_tags[i],
+					-ret);
+				credentials_unlock();
+				ret = -EINVAL;
+				goto out;
+			}
+
+			NET_DBG("Added intermediate cert tag %d to chain",
+				tls->cert_chain_tags[i]);
+		}
+
+		credentials_unlock();
+	}
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
 
 	NET_DBG("[EP:%p/%d] TLS credentials set", tls->ep, quic_get_by_ep(tls->ep));
 

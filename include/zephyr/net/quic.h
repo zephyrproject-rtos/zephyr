@@ -108,8 +108,10 @@ enum {
 	ZSOCK_QUIC_SO_STREAM_TYPE = 1,
 	/**
 	 * Add an intermediate certificate to the certificate chain.
-	 * Option value is pointer to DER-encoded certificate data.
-	 * Option length is the certificate data length.
+	 * Option value is a pointer to a sec_tag_t referencing a credential
+	 * previously registered via tls_credential_add() (with type
+	 * TLS_CREDENTIAL_CA_CERTIFICATE or TLS_CREDENTIAL_PUBLIC_CERTIFICATE).
+	 * Option length must be sizeof(sec_tag_t).
 	 * Call multiple times to add multiple intermediate certificates.
 	 */
 	ZSOCK_QUIC_SO_CERT_CHAIN_ADD = 2,

@@ -351,11 +351,8 @@ struct quic_tls_context {
 	size_t my_key_len;
 	psa_key_id_t signing_key_id;  /* Imported signing key */
 
-	/* Certificate chain (multiple certs) */
-	struct {
-		const uint8_t *cert;
-		size_t cert_len;
-	} cert_chain[CONFIG_QUIC_TLS_MAX_CERT_CHAIN_DEPTH];
+	/* Intermediate certificate chain (sec_tags resolved at handshake time) */
+	sec_tag_t cert_chain_tags[CONFIG_QUIC_TLS_MAX_CERT_CHAIN_DEPTH];
 	size_t cert_chain_count;
 
 	/* CA chain (for peer verification) */

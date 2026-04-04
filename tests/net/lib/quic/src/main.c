@@ -2059,6 +2059,7 @@ ZTEST(net_socket_quic, test_22_cert_chain_add_option)
 {
 	int sock;
 	int ret;
+	sec_tag_t tag = CA_CERTIFICATE_TAG;
 
 	/* Create a server socket */
 	ret = quic_connection_open(NULL,
@@ -2066,20 +2067,25 @@ ZTEST(net_socket_quic, test_22_cert_chain_add_option)
 	zassert_true(ret >= 0, "Failed to open QUIC connection (%d)", ret);
 	sock = ret;
 
-	/* Add CA certificate as intermediate cert (just for testing the API) */
+	/* Add CA certificate as intermediate cert via sec_tag */
 	ret = zsock_setsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_CERT_CHAIN_ADD,
-			       ca_certificate, sizeof(ca_certificate));
+			       &tag, sizeof(tag));
 	zassert_equal(ret, 0, "Failed to add intermediate cert (%d)", -errno);
 
-	/* Add same cert again (should succeed, adds to chain) */
+	/* Add same tag again (should succeed, adds to chain) */
 	ret = zsock_setsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_CERT_CHAIN_ADD,
-			       ca_certificate, sizeof(ca_certificate));
+			       &tag, sizeof(tag));
 	zassert_equal(ret, 0, "Failed to add second intermediate cert (%d)", -errno);
 
-	/* Test with NULL/zero length (should fail) */
+	/* Test with NULL (should fail) */
 	ret = zsock_setsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_CERT_CHAIN_ADD,
 			       NULL, 0);
-	zassert_equal(ret, -1, "Should fail with NULL cert");
+	zassert_equal(ret, -1, "Should fail with NULL");
+
+	/* Test with wrong optlen (should fail) */
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_CERT_CHAIN_ADD,
+			       &tag, 1);
+	zassert_equal(ret, -1, "Should fail with wrong optlen");
 
 	ret = quic_connection_close(sock);
 	zassert_equal(ret, 0, "Failed to close connection (%d)", ret);

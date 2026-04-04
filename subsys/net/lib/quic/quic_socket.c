@@ -301,11 +301,18 @@ static int quic_setsockopt_ctx(void *obj, int level, int optname,
 	if (level == ZSOCK_SOL_QUIC) {
 		switch (optname) {
 		case ZSOCK_QUIC_SO_CERT_CHAIN_ADD:
+			if (optval == NULL || optlen != sizeof(sec_tag_t)) {
+				err = -EINVAL;
+				break;
+			}
+
 			err = quic_tls_add_cert_chain(&ep->crypto.tls,
-						     optval, optlen);
+						     *(const sec_tag_t *)optval);
 			if (err == 0) {
-				NET_DBG("[CO:%p/%d] Added intermediate cert, chain depth=%zd",
+				NET_DBG("[CO:%p/%d] Added intermediate cert tag=%d, "
+					"chain depth=%zd",
 					ctx, quic_get_by_conn(ctx),
+					*(const sec_tag_t *)optval,
 					ep->crypto.tls.cert_chain_count);
 			}
 
