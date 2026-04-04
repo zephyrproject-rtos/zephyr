@@ -448,7 +448,7 @@ static int fxls8974_init(const struct device *dev)
 
 		if (cfg->inst_on_bus == FXLS8974_BUS_I2C) {
 			if (!i2c_is_ready_dt(&i2c_spec)) {
-				LOG_ERR("I2C bus device not ready");
+				LOG_ERR_DEVICE_NOT_READY(i2c_spec.bus);
 				return -ENODEV;
 			}
 		}
@@ -459,7 +459,7 @@ static int fxls8974_init(const struct device *dev)
 
 		if (cfg->inst_on_bus == FXLS8974_BUS_SPI) {
 			if (!spi_is_ready_dt(&spi_spec)) {
-				LOG_ERR("SPI bus device not ready");
+				LOG_ERR_DEVICE_NOT_READY(spi_spec.bus);
 				return -ENODEV;
 			}
 		}

@@ -209,7 +209,7 @@ int bmi08x_accel_stream_init(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&cfg->int_gpio)) {
-		LOG_ERR("GPIO device not ready: %p - dev: %p", &cfg->int_gpio, dev);
+		LOG_ERR_DEVICE_NOT_READY(cfg->int_gpio.port);
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INPUT);

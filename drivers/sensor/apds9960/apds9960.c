@@ -571,8 +571,7 @@ static int apds9960_init_interrupt(const struct device *dev)
 	struct apds9960_data *drv_data = dev->data;
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name,
-			config->int_gpio.port->name);
+		LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 		return -ENODEV;
 	}
 
@@ -657,7 +656,7 @@ static int apds9960_init(const struct device *dev)
 	k_sleep(K_MSEC(6));
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -EINVAL;
 	}
 

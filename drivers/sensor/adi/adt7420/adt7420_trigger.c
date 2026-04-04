@@ -240,8 +240,7 @@ int adt7420_init_interrupt(const struct device *dev)
 	/* INT GPIO */
 	if (cfg->int_gpio.port) {
 		if (!gpio_is_ready_dt(&cfg->int_gpio)) {
-			LOG_ERR("%s: device %s is not ready", dev->name,
-				cfg->int_gpio.port->name);
+			LOG_ERR_DEVICE_NOT_READY(cfg->int_gpio.port);
 			return -ENODEV;
 		}
 		gpio_init_callback(&drv_data->int_gpio_cb,
@@ -265,8 +264,7 @@ int adt7420_init_interrupt(const struct device *dev)
 	/* CT GPIO */
 	if (cfg->ct_gpio.port) {
 		if (!gpio_is_ready_dt(&cfg->ct_gpio)) {
-			LOG_ERR("%s: device %s is not ready", dev->name,
-				cfg->ct_gpio.port->name);
+			LOG_ERR_DEVICE_NOT_READY(cfg->ct_gpio.port);
 			return -ENODEV;
 		}
 		gpio_init_callback(&drv_data->ct_gpio_cb,

@@ -164,7 +164,7 @@ static int veaa_x_3_init(const struct device *dev)
 	LOG_DBG("Initializing %s with range %u-%u kPa", dev->name, cfg->kpa_min, cfg->kpa_max);
 
 	if (!adc_is_ready_dt(&cfg->adc)) {
-		LOG_ERR("ADC not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->adc.dev);
 		return -ENODEV;
 	}
 
@@ -175,7 +175,7 @@ static int veaa_x_3_init(const struct device *dev)
 	}
 
 	if (!device_is_ready(cfg->dac)) {
-		LOG_ERR("DAC not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->dac);
 		return -ENODEV;
 	}
 
