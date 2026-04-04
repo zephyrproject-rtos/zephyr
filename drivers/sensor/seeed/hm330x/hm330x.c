@@ -94,7 +94,7 @@ int hm330x_init(const struct device *dev)
 	const struct hm330x_config *config = dev->config;
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C bus device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 

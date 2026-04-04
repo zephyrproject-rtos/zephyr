@@ -315,7 +315,7 @@ static int stm32_temp_init(const struct device *dev)
 	k_mutex_init(&data->mutex);
 
 	if (!device_is_ready(cfg->adc)) {
-		LOG_ERR("Device %s is not ready", cfg->adc->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->adc);
 		return -ENODEV;
 	}
 

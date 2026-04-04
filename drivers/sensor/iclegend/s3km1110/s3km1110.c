@@ -282,7 +282,7 @@ static int s3km1110_init(const struct device *dev)
 	int rc;
 
 	if (!device_is_ready(config->uart_dev)) {
-		LOG_ERR("%s is not ready", config->uart_dev->name);
+		LOG_ERR_DEVICE_NOT_READY(config->uart_dev);
 		return -ENODEV;
 	}
 

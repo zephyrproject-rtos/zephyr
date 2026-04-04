@@ -372,7 +372,7 @@ int isds_2536030320001_init_interrupt(const struct device *dev)
 	}
 
 	if (!gpio_is_ready_dt(&cfg->drdy_interrupt_gpio)) {
-		LOG_ERR("Device %s is not ready", cfg->drdy_interrupt_gpio.port->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->drdy_interrupt_gpio.port);
 		return -ENODEV;
 	}
 
@@ -399,7 +399,7 @@ int isds_2536030320001_init_interrupt(const struct device *dev)
 	}
 
 	if (!gpio_is_ready_dt(&cfg->events_interrupt_gpio)) {
-		LOG_ERR("Device %s is not ready", cfg->events_interrupt_gpio.port->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->events_interrupt_gpio.port);
 		return -ENODEV;
 	}
 

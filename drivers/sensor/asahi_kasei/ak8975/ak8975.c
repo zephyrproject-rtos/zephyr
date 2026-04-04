@@ -120,7 +120,7 @@ int ak8975_init(const struct device *dev)
 	uint8_t id;
 
 	if (!device_is_ready(drv_config->i2c.bus)) {
-		LOG_ERR("I2C bus device not ready");
+		LOG_ERR_DEVICE_NOT_READY(drv_config->i2c.bus);
 		return -ENODEV;
 	}
 
