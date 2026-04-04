@@ -484,6 +484,12 @@ New APIs and options
   * Wi-Fi
 
     * Add support for Wi-Fi Direct (P2P) mode.
+    * Add support for WEP (Wired Equivalent Privacy) security. This is disabled by default
+      but can be enabled by :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP`
+    * Use PSA crypto by default instead of legacy one. This can be controlled by
+      :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA` option.
+    * :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CLEANUP_INTERVAL`
+    * :kconfig:option:`CONFIG_WIFI_NM_HOSTAPD_CLEANUP_INTERVAL`
 
 * OTP
 
