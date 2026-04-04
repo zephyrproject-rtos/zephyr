@@ -174,4 +174,11 @@
 /** ENET QOS PTP peripheral clock identifier. */
 #define MCUX_ENET_QOS_PTP_CLK MCUX_LPC_CLK_ID(0x27, 0x00)
 
+/** USB0 peripheral clock identifier. */
+#define MCUX_USB0_CLK MCUX_LPC_CLK_ID(0x28, 0x00)
+/** USB1 peripheral clock identifier. */
+#define MCUX_USB1_CLK MCUX_LPC_CLK_ID(0x28, 0x01)
+/** USB PHY reference clock identifier. */
+#define MCUX_USBPHY_REF_CLK MCUX_LPC_CLK_ID(0x28, 0x02)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */
