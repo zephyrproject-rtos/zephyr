@@ -67,13 +67,6 @@
 			reg = <0x50185000 0x1000>, <0x18000000 DT_SIZE_M(128)>;
 		};
 	};
-
-	/* USB PLL */
-	usbclk: usbpll-clock {
-		compatible = "fixed-clock";
-		clock-frequency = <DT_FREQ_M(24)>;
-		#clock-cells = <0>;
-	};
 };
 
 &peripheral {
@@ -935,7 +928,8 @@
 		reg = <0x418000 0x1000>;
 		interrupts = <40 0>;
 		interrupt-names = "usb_otg";
-		clocks = <&usbclk>;
+		clocks = <&clkctl4 MCUX_USB0_CLK>, <&clkctl4 MCUX_USBPHY_REF_CLK>;
+		clock-rates = <DT_FREQ_M(24) DT_FREQ_M(24)>;
 		num-bidir-endpoints = <8>;
 		status = "disabled";
 	};
@@ -945,7 +939,8 @@
 		reg = <0x419000 0x1000>;
 		interrupts = <41 0>;
 		interrupt-names = "usb_otg";
-		clocks = <&usbclk>;
+		clocks = <&clkctl4 MCUX_USB1_CLK>;
+		clock-rates = <DT_FREQ_M(24)>;
 		num-bidir-endpoints = <8>;
 		status = "disabled";
 	};
