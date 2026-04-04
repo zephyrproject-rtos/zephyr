@@ -133,6 +133,17 @@
 #endif
 
 /* Unaligned access */
+#ifdef CONFIG_TRICORE
+#define UNALIGNED_GET(g) \
+__extension__ ({                                                            \
+	union {                                                              \
+		__typeof__(*(g)) __v;                                        \
+		unsigned char __b[sizeof(__typeof__(*(g)))];                 \
+	} __u = { 0 };                                                     \
+	__builtin_memcpy(__u.__b, (const void *)(g), sizeof(__u.__b));    \
+	__u.__v;                                                           \
+})
+#else
 #define UNALIGNED_GET(g)						\
 __extension__ ({							\
 	struct  __attribute__((__packed__)) {				\
@@ -140,6 +151,7 @@ __extension__ ({							\
 	} *__g = (__typeof__(__g)) (g);					\
 	__g->__v;							\
 })
+#endif
 
 
 #if (__GNUC__ >= 7) && (defined(CONFIG_ARM) || defined(CONFIG_ARM64))
