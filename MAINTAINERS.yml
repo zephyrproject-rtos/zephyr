@@ -2979,7 +2979,8 @@ Heap Management:
 IPC:
   status: maintained
   maintainers:
-    - doki-nordic
+    - iuliana-prodan
+    - anangl
   collaborators:
     - arnopo
   files:
