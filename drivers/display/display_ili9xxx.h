@@ -74,7 +74,7 @@ struct ili9xxx_config {
 	uint16_t rotation;
 	uint16_t x_resolution;
 	uint16_t y_resolution;
-	bool inversion;
+	bool bit_inversion;
 	bool disable_bgr_mode;
 	uint8_t te_mode;
 	const void *regs;
