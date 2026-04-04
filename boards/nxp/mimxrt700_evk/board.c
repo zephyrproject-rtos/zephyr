@@ -435,14 +435,8 @@ void board_early_init_hook(void)
 	SYSCON4->USBPHY0_CLK_ACTIVE |= SYSCON4_USBPHY0_CLK_ACTIVE_IPG_CLK_ACTIVE_MASK;
 	CLOCK_AttachClk(k32KHZ_WAKE_to_USB);
 	CLOCK_AttachClk(kOSC_CLK_to_USB_24MHZ);
-	CLOCK_EnableClock(kCLOCK_Usb0);
-	CLOCK_EnableClock(kCLOCK_UsbphyRef);
 	RESET_PeripheralReset(kUSB0_RST_SHIFT_RSTn);
 	RESET_PeripheralReset(kUSBPHY0_RST_SHIFT_RSTn);
-	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usbphy480M,
-				DT_PROP_BY_PHANDLE(DT_NODELABEL(usb0), clocks, clock_frequency));
-	CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M,
-				DT_PROP_BY_PHANDLE(DT_NODELABEL(usb0), clocks, clock_frequency));
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc0)) && CONFIG_IMX_USDHC
