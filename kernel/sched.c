@@ -49,7 +49,8 @@ TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
 static ALWAYS_INLINE void *thread_runq(struct k_thread *thread)
 {
 #ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
-	int cpu, m = thread->base.cpu_mask;
+	uint16_t cpu_mask = thread->base.cpu_mask;
+	int cpu;
 
 	/* Edge case: it's legal per the API to "make runnable" a
 	 * thread with all CPUs masked off (i.e. one that isn't
@@ -57,7 +58,11 @@ static ALWAYS_INLINE void *thread_runq(struct k_thread *thread)
 	 * we should address this in docs/assertions instead to avoid
 	 * the extra test.
 	 */
-	cpu = m == 0 ? 0 : u32_count_trailing_zeros(m);
+	if (cpu_mask == 0U) {
+		cpu = 0;
+	} else {
+		cpu = u32_count_trailing_zeros(cpu_mask);
+	}
 
 	return &_kernel.cpus[cpu].ready_q.runq;
 #else
