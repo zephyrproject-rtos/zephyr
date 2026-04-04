@@ -989,6 +989,10 @@ int z_unpend_all_locked(_wait_q_t *wait_q)
 	int need_sched = 0;
 	struct k_thread *thread;
 
+#ifdef CONFIG_SMP
+	__ASSERT(z_spin_is_locked(&_sched_spinlock), "sched lock not held");
+#endif
+
 	for (thread = z_waitq_head(wait_q); thread != NULL; thread = z_waitq_head(wait_q)) {
 		unpend_thread_no_timeout(thread);
 		z_abort_thread_timeout(thread);
