@@ -315,31 +315,33 @@ static int ili9xxx_set_orientation(const struct device *dev,
 {
 	const struct ili9xxx_config *config = dev->config;
 	struct ili9xxx_data *data = dev->data;
-
 	int r;
 
-	if (config->quirks->cmd_set == CMD_SET_1) {
-		if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-			data->madctl |= ILI9XXX_MADCTL_MX;
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
-			data->madctl |= ILI9XXX_MADCTL_MV;
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-			data->madctl |= ILI9XXX_MADCTL_MY | ILI9XXX_MADCTL_ML;
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
-			data->madctl |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MX |
-				   ILI9XXX_MADCTL_MY;
-		}
-	} else if (config->quirks->cmd_set == CMD_SET_2) {
-		if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-			/* Do nothing */
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
-			data->madctl |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MY;
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-			data->madctl |= ILI9XXX_MADCTL_MY | ILI9XXX_MADCTL_MX |
-				   ILI9XXX_MADCTL_ML;
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
-			data->madctl |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MX;
-		}
+	switch (orientation) {
+	case DISPLAY_ORIENTATION_NORMAL:
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_90:
+		/* row/column exchange + right-to-left Column Address order */
+		data->madctl |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MX;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_180:
+		/* right-to-left Column Address Order + bottom-to-top Row Address order */
+		data->madctl |= ILI9XXX_MADCTL_MX | ILI9XXX_MADCTL_MY;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_270:
+		/* row/column exchange + bottom-to-top Row Address order */
+		data->madctl |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MY;
+		break;
+	default:
+		break;
+	}
+
+	if (config->horizontal_mirror) {
+		data->madctl ^= ILI9XXX_MADCTL_MX;
+	}
+
+	if (config->vertical_mirror) {
+		data->madctl ^= ILI9XXX_MADCTL_MY;
 	}
 
 	r = ili9xxx_transmit(dev, ILI9XXX_MADCTL, &data->madctl, 1U);
@@ -404,6 +406,16 @@ static int ili9xxx_configure(const struct device *dev)
 
 	data->madctl = config->disable_bgr_mode ? 0 : ILI9XXX_MADCTL_BGR;
 
+	if (config->bottom_top_refresh) {
+		/* LCD Refresh bottom to top */
+		data->madctl |= ILI9XXX_MADCTL_ML;
+	}
+
+	if (config->right_left_refresh) {
+		/* LCD Refresh right to left */
+		data->madctl |= ILI9XXX_MADCTL_MH;
+	}
+
 	/* orientation */
 	if (config->rotation == 0U) {
 		orientation = DISPLAY_ORIENTATION_NORMAL;
@@ -416,6 +428,11 @@ static int ili9xxx_configure(const struct device *dev)
 	}
 
 	r = ili9xxx_set_orientation(dev, orientation);
+	LOG_DBG("MADCTL: 0x%02x (BGR:%d, MH:%d, ML:%d)",
+		data->madctl,
+		(data->madctl & ILI9XXX_MADCTL_BGR) ? 1 : 0,
+		(data->madctl & ILI9XXX_MADCTL_MH) ? 1 : 0,
+		(data->madctl & ILI9XXX_MADCTL_ML) ? 1 : 0);
 	if (r < 0) {
 		return r;
 	}
@@ -504,43 +521,12 @@ static DEVICE_API(display, ili9xxx_api) = {
 	.set_orientation = ili9xxx_set_orientation,
 };
 
-#ifdef CONFIG_ILI9163C
-static const struct ili9xxx_quirks ili9163c_quirks = {
-	.cmd_set = CMD_SET_2,
-};
-#endif
-
-#ifdef CONFIG_ILI9340
-static const struct ili9xxx_quirks ili9340_quirks = {
-	.cmd_set = CMD_SET_1,
-};
-#endif
-
-#ifdef CONFIG_ILI9341
-static const struct ili9xxx_quirks ili9341_quirks = {
-	.cmd_set = CMD_SET_2,
-};
-#endif
-
-#ifdef CONFIG_ILI9342C
-static const struct ili9xxx_quirks ili9342c_quirks = {
-	.cmd_set = CMD_SET_2,
-};
-#endif
-
-#ifdef CONFIG_ILI9488
-static const struct ili9xxx_quirks ili9488_quirks = {
-	.cmd_set = CMD_SET_1,
-};
-#endif
-
 #define INST_DT_ILI9XXX(n, t) DT_INST(n, ilitek_ili##t)
 
 #define ILI9XXX_INIT(n, t)                                                                         \
 	ILI##t##_REGS_INIT(n);                                                                     \
                                                                                                    \
 	static const struct ili9xxx_config ili9##t##_config_##n = {                                \
-		.quirks = &ili##t##_quirks,                                                        \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(INST_DT_ILI9XXX(n, t))),                       \
 		.dbi_config =                                                                      \
 			{                                                                          \
@@ -556,6 +542,10 @@ static const struct ili9xxx_quirks ili9488_quirks = {
 		.y_resolution = DT_PROP_OR(INST_DT_ILI9XXX(n, t), height, ILI##t##_Y_RES),         \
 		.bit_inversion = DT_PROP(INST_DT_ILI9XXX(n, t), display_inversion),                \
 		.disable_bgr_mode = DT_PROP(INST_DT_ILI9XXX(n, t), red_blue_swap),                 \
+		.horizontal_mirror = DT_PROP(INST_DT_ILI9XXX(n, t), h_mirror),                     \
+		.vertical_mirror = DT_PROP(INST_DT_ILI9XXX(n, t), v_mirror),                       \
+		.bottom_top_refresh = DT_PROP(INST_DT_ILI9XXX(n, t), bottom_top_refresh),          \
+		.right_left_refresh = DT_PROP(INST_DT_ILI9XXX(n, t), right_left_refresh),          \
 		.te_mode = MIPI_DBI_TE_MODE_DT(INST_DT_ILI9XXX(n, t), te_mode),                    \
 		.regs = &ili##t##_regs_##n,                                                        \
 		.regs_init_fn = ili##t##_regs_init,                                                \
