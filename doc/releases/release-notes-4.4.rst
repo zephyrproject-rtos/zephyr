@@ -67,7 +67,9 @@ Major enhancements with this release include:
   - A :ref:`Wake-up Controller (WUC) API <wuc_api>` for managing wake-up sources that can bring the
     system out of low-power states.
 
-**Zbus proxy agents**
+**Zbus async listeners and proxy agents**
+  Zbus async listeners enable non-blocking observer callbacks via workqueues.
+
   :ref:`Zbus proxy agents <zbus_proxy_agent>` extend publish-subscribe messaging across CPU and
   domain boundaries over IPC.
 
@@ -756,11 +758,21 @@ New APIs and options
 
 * Zbus
 
+   * :kconfig:option:`CONFIG_ZBUS_ASYNC_LISTENER`
+   * :kconfig:option:`CONFIG_ZBUS_ASYNC_LISTENER_EXEC_TIMEOUT`
    * :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT`
    * :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_IPC`
+   * :c:macro:`ZBUS_ASYNC_LISTENER_DEFINE`
+   * :c:macro:`ZBUS_ASYNC_LISTENER_DEFINE_WITH_ENABLE`
    * :c:macro:`ZBUS_PROXY_AGENT_DEFINE`
    * :c:macro:`ZBUS_PROXY_ADD_CHAN`
    * :c:macro:`ZBUS_SHADOW_CHAN_DEFINE`
+   * :c:macro:`ZBUS_SHADOW_CHAN_DEFINE_WITH_ID`
+   * :c:func:`zbus_chan_from_name`. Retrieve a zbus channel reference by its name string.
+   * :c:func:`zbus_async_listener_set_work_queue`. Set the work queue for an async listener
+     observer.
+   * :c:func:`zbus_chan_pub_stats_msg_age`. Get the message age in milliseconds since the last
+     publish.
 
 .. zephyr-keep-sorted-stop
 
@@ -1901,9 +1913,22 @@ Libraries / Subsystems
 
 * Zbus
 
+   * Added async listener support. Async listeners execute in a workqueue context instead of the
+     publisher's thread, enabling non-blocking operations without requiring a dedicated subscriber
+     thread.
+   * Added :zephyr:code-sample:`zbus-async-listeners`.
    * Added experimental proxy-agent communication with IPC backend support for
      forwarding channel data across domains.
    * Added :zephyr:code-sample:`zbus-proxy-agent-ipc`.
+   * Added the :c:func:`zbus_chan_from_name` function. Retrieve a zbus channel from its name string.
+   * Added the :c:func:`zbus_async_listener_set_work_queue` function. Set the work queue for an
+     async listener.
+   * Added the :c:func:`zbus_chan_pub_stats_msg_age` function. Get the message age in milliseconds
+     since the last publish.
+   * Clarified observer priority documentation and fixed spelling and grammar.
+   * Updated observer types image in documentation.
+   * Filtered out tests that are not SMP aware.
+
 
 Other notable changes
 *********************
