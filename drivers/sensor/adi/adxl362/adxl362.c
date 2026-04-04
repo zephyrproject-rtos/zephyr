@@ -771,7 +771,7 @@ static int adxl362_init(const struct device *dev)
 	int err;
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_DBG("spi device not ready: %s", config->bus.bus->name);
+		LOG_ERR("spi device not ready: %s", config->bus.bus->name);
 		return -EINVAL;
 	}
 

@@ -597,7 +597,7 @@ static int dps310_init(const struct device *dev)
 
 	/* wait for the sensor to load the calibration data */
 	if (!poll_rdy(dev, REG_ADDR_MEAS_CFG, IFX_DPS310_REG_ADDR_MEAS_CFG_SELF_INIT_OK)) {
-		LOG_DBG("Sensor not ready");
+		LOG_ERR("Sensor not ready");
 		return -EIO;
 	}
 
