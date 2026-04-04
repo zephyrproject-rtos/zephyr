@@ -1,0 +1,67 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright (c) 2026 Shankar Sridhar <shankar.sd.dev@gmail.com>
+ *
+ * Device tree overlay for Arduino UNO Q LED Matrix
+ */
+
+/ {
+	led_matrix: led-matrix {
+		compatible = "arduino,uno-q-ledmatrix";
+		/* 11 GPIO pins for Charlieplexing: PF0-PF10 */
+		gpios = <&gpiof 0 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_0 - PF0 */
+			<&gpiof 1 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_1 - PF1 */
+			<&gpiof 2 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_2 - PF2 */
+			<&gpiof 3 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_3 - PF3 */
+			<&gpiof 4 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_4 - PF4 */
+			<&gpiof 5 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_5 - PF5 */
+			<&gpiof 6 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_6 - PF6 */
+			<&gpiof 7 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_7 - PF7 */
+			<&gpiof 8 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_8 - PF8 */
+			<&gpiof 9 GPIO_ACTIVE_HIGH>,   /* LED_MATRIX_9 - PF9 */
+			<&gpiof 10 GPIO_ACTIVE_HIGH>;  /* LED_MATRIX_10 - PF10 */
+		rows = <8>;
+		columns = <13>;
+		brightness = <255>;
+
+		led-pairs = <
+			/* Row 0 — LED 1-13  (index 0-12) */
+			0 1    1 0    0 2    2 0    1 2    2 1    0 3
+			3 0    1 3    3 1    2 3    3 2    0 4
+
+			/* Row 1 — LED 14-26 (index 13-25) */
+			4 0    1 4    4 1    2 4    4 2    3 4    4 3
+			0 5    5 0    1 5    5 1    2 5    5 2
+
+			/* Row 2 — LED 27-39 (index 26-38) */
+			3 5    5 3    4 5    5 4    0 6    6 0    1 6
+			6 1    2 6    6 2    3 6    6 3    4 6
+
+			/* Row 3 — LED 40-52 (index 39-51) */
+			6 4    5 6    6 5    0 7    7 0    1 7    7 1
+			2 7    7 2    3 7    7 3    4 7    7 4
+
+			/* Row 4 — LED 53-65 (index 52-64) */
+			5 7    7 5    6 7    7 6    0 8    8 0    1 8
+			8 1    2 8    8 2    3 8    8 3    4 8
+
+			/* Row 5 — LED 66-78 (index 65-77) */
+			8 4    5 8    8 5    6 8    8 6    7 8    8 7
+			0 9    9 0    1 9    9 1    2 9    9 2
+
+			/* Row 6 — LED 79-91 (index 78-90) */
+			3 9    9 3    4 9    9 4    5 9    9 5    6 9
+			9 6    7 9    9 7    8 9    9 8    0 10
+
+			/* Row 7 — LED 92-104 (index 91-103) */
+			10 0   1 10   10 1   2 10   10 2   3 10   10 3
+			4 10   10 4   5 10   10 5   6 10   10 6
+		>;
+
+		status = "okay";
+	};
+
+	aliases {
+		ledmatrix = &led_matrix;
+	};
+};
