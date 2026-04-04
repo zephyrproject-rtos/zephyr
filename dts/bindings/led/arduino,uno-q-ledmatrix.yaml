@@ -1,0 +1,61 @@
+# Copyright 2026 Shankar Sridhar
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Arduino UNO Q LED Matrix Driver
+  
+  8x13 LED matrix (104 LEDs total) controlled through a packed binary format.
+  The matrix is managed by dedicated hardware on the STM32U585 MCU.
+  
+  Example:
+    led_matrix: led-matrix {
+        compatible = "arduino,uno-q-ledmatrix";
+        rows = <8>;
+        columns = <13>;
+        status = "okay";
+    };
+
+compatible: "arduino,uno-q-ledmatrix"
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Array of 11 GPIO pins used for charlieplexing the LED matrix.
+      These must be PF0-PF10 on the STM32U585.
+      Order: LED_MATRIX_0 to LED_MATRIX_10
+      
+  rows:
+    type: int
+    required: true
+    description: Number of rows in the LED matrix
+    const: 8
+
+  columns:
+    type: int
+    required: true  
+    description: Number of columns in the LED matrix
+    const: 13
+
+  led-pairs:
+    type: array
+    required: true
+    description: |
+      Flat array of anode/cathode GPIO index pairs, one pair per LED.
+      Each LED occupies two consecutive cells:
+        cell 0: anode pin index   (0-10, driven HIGH to source current)
+        cell 1: cathode pin index (0-10, driven LOW to sink current)
+ 
+      Pairs are ordered by LED index: row-major, left to right, top to
+      bottom. Total cell count must equal rows * columns * 2 = 208.
+ 
+      Pin indices refer to the position in the gpios phandle-array,
+      not the GPIO number on the SoC.
+      
+  brightness:
+    type: int
+    default: 255
+    description: |
+      Default brightness level (0-255).
+      Note: The UNO Q matrix supports 8-bit grayscale.
