@@ -141,6 +141,9 @@ The following CVEs are addressed by this release:
 
 * :cve:`2026-5589` Under embargo until 2026-06-03
 
+* :cve:`2026-5590` `Zephyr project bug tracker GHSA-4vqm-pw24-g9jp
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-4vqm-pw24-g9jp>`_
+
 API Changes
 ***********
 
