@@ -11,7 +11,6 @@ zephyr_library_sources(
   exception.S
   fatal.c
   irq_manage.c
-  irq_offload.c
   prep_c.c
   reboot.c
   switch.S
