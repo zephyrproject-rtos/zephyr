@@ -106,6 +106,7 @@ struct nxp_enet_qos_mac_config {
 struct nxp_enet_qos_tx_data {
 	struct k_sem tx_sem;
 	struct net_pkt *pkt;
+	int num_descs;
 	volatile union nxp_enet_qos_tx_desc descriptors[NUM_TX_BUFDESC];
 };
 
