@@ -80,6 +80,10 @@ Major enhancements with this release include:
   A new context switch implementation for ARM Cortex-M, enabled via
   :kconfig:option:`CONFIG_USE_SWITCH`, delivers significant performance improvements.
 
+**NAND flash support**
+  Added a new Flash Translation Layer (FTL) disk driver providing wear leveling and bad block
+  management, enabling NAND flash memories to be utilized as standard disk devices.
+
 **Developer experience improvements**
   This release adds several new tools and improvements to development and testing workflows:
 
@@ -408,6 +412,10 @@ New APIs and options
 
   * :dtcompatible:`jedec,mspi-nor` now allows MSPI configuration of read, write and
     control commands separately via devicetree.
+
+  * Added extended operations to the flash API to support marking blocks as bad
+    (:c:enum:`FLASH_EX_OP_MARK_BAD_BLOCK`) and checking if a block is bad
+    (:c:enum:`FLASH_EX_OP_IS_BAD_BLOCK`).
 
 * Haptics
 
