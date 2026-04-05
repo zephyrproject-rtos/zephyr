@@ -20,11 +20,12 @@
  * @{
  */
 
-#include <zephyr/kernel.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <zephyr/device.h>
-#include <zephyr/sys/util.h>
 #include <zephyr/net/ptp_time.h>
+#include <errno.h>
+
+struct phy_latency;
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,6 +41,7 @@ __subsystem struct ptp_clock_driver_api {
 	int (*get)(const struct device *dev, struct net_ptp_time *tm);
 	int (*adjust)(const struct device *dev, int increment);
 	int (*rate_adjust)(const struct device *dev, double ratio);
+	int (*set_latency)(const struct device *dev, const struct phy_latency *latency);
 };
 
 /**
@@ -108,6 +110,25 @@ static inline int ptp_clock_rate_adjust(const struct device *dev, double rate)
 		(const struct ptp_clock_driver_api *)dev->api;
 
 	return api->rate_adjust(dev, rate);
+}
+
+/**
+ * @brief Program ingress and egress timestamp latency compensation.
+ *
+ * @param dev PTP clock device
+ * @param latency PHY ingress and egress latency values in nanoseconds
+ *
+ * @return 0 if ok, `-ENOSYS` if the driver does not implement this API, <0 if error
+ */
+static inline int ptp_clock_set_latency(const struct device *dev, const struct phy_latency *latency)
+{
+	const struct ptp_clock_driver_api *api = (const struct ptp_clock_driver_api *)dev->api;
+
+	if (api->set_latency == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_latency(dev, latency);
 }
 
 #ifdef __cplusplus
