@@ -2262,3 +2262,21 @@ Under embargo until 2026-05-18
 ----------------
 
 Under embargo until 2026-06-03
+
+:cve:`2026-5590`
+----------------
+
+net: ip/tcp: Null pointer dereference can be triggered by a race condition
+
+A race condition during TCP connection teardown can cause tcp_recv() to operate on a connection that
+has already been released. If tcp_conn_search() returns NULL while processing a SYN packet, a NULL
+pointer derived from stale context data is passed to tcp_backlog_is_full() and dereferenced without
+validation, leading to a crash.
+
+- `Zephyr project bug tracker GHSA-4vqm-pw24-g9jp
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-4vqm-pw24-g9jp>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 102110 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/102110>`_
