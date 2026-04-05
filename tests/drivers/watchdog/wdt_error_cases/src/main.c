@@ -19,6 +19,8 @@
 #define WDT_NODE DT_INST(0, nordic_nrf_wdt)
 #elif DT_HAS_COMPAT_STATUS_OKAY(zephyr_counter_watchdog)
 #define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_counter_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_wdt)
+#define WDT_NODE DT_INST(0, nuvoton_numaker_wdt)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
@@ -70,6 +72,14 @@
 #define MAX_INSTALLABLE_TIMEOUTS (1)
 #define WDT_WINDOW_MAX_ALLOWED   (0x40001U)
 #define DEFAULT_OPTIONS          (WDT_OPT_PAUSE_IN_SLEEP | WDT_OPT_PAUSE_HALTED_BY_DBG)
+#elif defined(CONFIG_SOC_SERIES_M48X)
+#define WDT_TEST_FLAGS                                                                             \
+	(WDT_DISABLE_SUPPORTED | WDT_FLAG_RESET_NONE_SUPPORTED | WDT_FLAG_RESET_SOC_SUPPORTED |    \
+	 WDT_FLAG_ONLY_ONE_TIMEOUT_VALUE_SUPPORTED | WDT_OPT_PAUSE_HALTED_BY_DBG_SUPPORTED)
+#define DEFAULT_FLAGS            (WDT_FLAG_RESET_SOC)
+#define MAX_INSTALLABLE_TIMEOUTS (1)
+#define WDT_WINDOW_MAX_ALLOWED   (26215U)
+#define DEFAULT_OPTIONS          (WDT_OPT_PAUSE_HALTED_BY_DBG)
 #elif defined(CONFIG_SOC_FAMILY_MICROCHIP_SAM_D5X_E5X) ||					   \
 	defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
 #define WDT_TEST_FLAGS                                                                             \
