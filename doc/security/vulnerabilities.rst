@@ -2257,3 +2257,8 @@ Under embargo until 2026-05-18
 ----------------
 
 Under embargo until 2026-05-18
+
+:cve:`2026-5589`
+----------------
+
+Under embargo until 2026-06-03
