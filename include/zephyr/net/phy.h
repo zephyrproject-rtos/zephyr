@@ -97,6 +97,14 @@ struct phy_link_state {
 	bool is_up;
 };
 
+/** @brief PHY one-way ingress and egress latency values in nanoseconds. */
+struct phy_latency {
+	/** Ingress latency from line side to MAC side (nanoseconds). */
+	uint32_t ingress_ns;
+	/** Egress latency from MAC side to line side (nanoseconds). */
+	uint32_t egress_ns;
+};
+
 /** @brief Ethernet configure link flags. */
 enum phy_cfg_link_flag {
 	/** Auto-negotiation disable */
@@ -211,6 +219,9 @@ __subsystem struct ethphy_driver_api {
 
 	/* Get PLCA status */
 	int (*get_plca_sts)(const struct device *dev, bool *plca_sts);
+
+	/** Get PHY ingress and egress latency */
+	int (*get_latency)(const struct device *dev, struct phy_latency *latency);
 };
 /**
  * @endcond
@@ -441,6 +452,28 @@ static inline int phy_get_plca_sts(const struct device *dev, bool *plca_status)
 	}
 
 	return DEVICE_API_GET(ethphy, dev)->get_plca_sts(dev, plca_status);
+}
+
+/**
+ * @brief      Get PHY ingress and egress latency values
+ *
+ * This routine provides a generic interface to query PHY latency values.
+ * Link speed and interface are selected internally by the driver.
+ *
+ * @param[in]  dev        PHY device structure
+ * @param[out] latency    Pointer to receive latency values in nanoseconds
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If not supported.
+ * @retval -EIO If communication with PHY failed.
+ */
+static inline int phy_get_latency(const struct device *dev, struct phy_latency *latency)
+{
+	if (DEVICE_API_GET(ethphy, dev)->get_latency == NULL) {
+		return -ENOSYS;
+	}
+
+	return DEVICE_API_GET(ethphy, dev)->get_latency(dev, latency);
 }
 
 #ifdef __cplusplus
