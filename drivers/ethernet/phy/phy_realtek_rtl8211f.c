@@ -343,6 +343,32 @@ done:
 	return ret;
 }
 
+static int phy_rt_rtl8211f_get_latency(const struct device *dev, struct phy_latency *latency)
+{
+	struct rt_rtl8211f_data *data = dev->data;
+
+	if (latency == NULL) {
+		return -EINVAL;
+	}
+
+	if (!data->state.is_up) {
+		return -ENETDOWN;
+	}
+
+	if (PHY_LINK_IS_SPEED_1000M(data->state.speed)) {
+		latency->ingress_ns = 512;
+		latency->egress_ns = 172;
+	} else if (PHY_LINK_IS_SPEED_100M(data->state.speed)) {
+		latency->ingress_ns = 386;
+		latency->egress_ns = 570;
+	} else {
+		latency->ingress_ns = 3150;
+		latency->egress_ns = 4480;
+	}
+
+	return 0;
+}
+
 static int phy_rt_rtl8211f_link_cb_set(const struct device *dev,
 					phy_callback_t cb, void *user_data)
 {
@@ -607,6 +633,7 @@ skip_int_gpio:
 static DEVICE_API(ethphy, rt_rtl8211f_phy_api) = {
 	.get_link = phy_rt_rtl8211f_get_link,
 	.cfg_link = phy_rt_rtl8211f_cfg_link,
+	.get_latency = phy_rt_rtl8211f_get_latency,
 	.link_cb_set = phy_rt_rtl8211f_link_cb_set,
 	.read = phy_rt_rtl8211f_read,
 	.write = phy_rt_rtl8211f_write,
