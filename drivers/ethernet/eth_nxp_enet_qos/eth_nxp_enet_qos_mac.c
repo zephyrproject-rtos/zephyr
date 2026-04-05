@@ -124,7 +124,7 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	volatile union nxp_enet_qos_tx_desc *last_desc_ptr;
 
 	struct net_buf *fragment = pkt->frags;
-	int frags_count = 0, total_bytes = 0;
+	int frags_count = 0, total_bytes = 0, frags_idx = 0;
 	int ret;
 
 	/* Only allow send of the maximum normal packet size */
@@ -161,32 +161,46 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 
 	/* Setting up the descriptors  */
 	fragment = pkt->frags;
-	tx_desc_ptr->read.control2 |= FIRST_DESCRIPTOR_FLAG;
-	for (int i = 0; i < frags_count; i++) {
+	tx_desc_ptr->read.control2 = FIRST_DESCRIPTOR_FLAG;
+	while (frags_idx < frags_count) {
 		net_pkt_frag_ref(fragment);
 
 		tx_desc_ptr->read.buf1_addr = (uint32_t)fragment->data;
 		tx_desc_ptr->read.control1 = FIELD_PREP(0x3FFF, fragment->len);
 		tx_desc_ptr->read.control2 |= FIELD_PREP(0x7FFF, total_bytes);
 
+		/* if there are more fragments use buffer2 - ringbuffer mode */
+		if (frags_idx + 1 < frags_count) {
+			fragment = fragment->frags;
+			net_pkt_frag_ref(fragment);
+
+			tx_desc_ptr->read.buf2_addr = (uint32_t)fragment->data;
+			tx_desc_ptr->read.control1 |= FIELD_PREP(0x3FFF0000, fragment->len);
+			frags_idx++;
+		}
+
 		fragment = fragment->frags;
 		tx_desc_ptr++;
+		frags_idx++;
 	}
 	last_desc_ptr = tx_desc_ptr - 1;
 	last_desc_ptr->read.control2 |= LAST_DESCRIPTOR_FLAG;
 	last_desc_ptr->read.control1 |= TX_INTERRUPT_ON_COMPLETE_FLAG;
 
 	LOG_DBG("Starting TX DMA on packet %p", pkt);
+	data->tx.num_descs = (frags_count + 1) / 2;
 
 	/* Set the DMA ownership of all the used descriptors */
-	for (int i = 0; i < frags_count; i++) {
+	__DMB();
+	for (int i = 0; i < data->tx.num_descs; i++) {
 		data->tx.descriptors[i].read.control2 |= OWN_FLAG;
 	}
+	__DSB();
 
 	/* This implementation is clearly naive and basic, it just changes the
 	 * ring length for every TX send, there is room for optimization
 	 */
-	base->DMA_CH[0].DMA_CHX_TXDESC_RING_LENGTH = frags_count - 1;
+	base->DMA_CH[0].DMA_CHX_TXDESC_RING_LENGTH = data->tx.num_descs - 1;
 	base->DMA_CH[0].DMA_CHX_TXDESC_TAIL_PTR =
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TXDESC_TAIL_PTR, TDTP,
 			ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t) tx_desc_ptr));
