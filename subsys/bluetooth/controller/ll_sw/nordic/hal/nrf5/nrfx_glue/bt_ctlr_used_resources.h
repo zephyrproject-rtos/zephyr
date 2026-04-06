@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "../radio/radio_nrf5_resources.h"
 #include "../radio/radio_nrf5_fem.h"
+#include "../radio/radio_nrf5_resources.h"
 
 /* NOTE: BT_CTLR_USED_PPI_CHANNELS is defined based on PPI defines being
  *       defined in the below PPI/DPPI resources header file. Take care to

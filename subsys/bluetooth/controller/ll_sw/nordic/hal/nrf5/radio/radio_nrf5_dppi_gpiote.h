@@ -9,7 +9,8 @@
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 static inline void hal_palna_ppi_setup(void)
 {
-	nrf_timer_publish_set(EVENT_TIMER, NRF_TIMER_EVENT_COMPARE2,
+	nrf_timer_publish_set(EVENT_TIMER,
+			      nrf_timer_compare_event_get(HAL_EVENT_TIMER_PA_LNA_CC_OFFSET),
 			      HAL_ENABLE_PALNA_PPI);
 	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_DISABLED,
 			      HAL_DISABLE_PALNA_PPI);
@@ -58,7 +59,8 @@ static inline void hal_lna_ppi_setup(void)
 
 static inline void hal_fem_ppi_setup(void)
 {
-	nrf_timer_publish_set(EVENT_TIMER, NRF_TIMER_EVENT_COMPARE3,
+	nrf_timer_publish_set(EVENT_TIMER,
+			      nrf_timer_compare_event_get(HAL_EVENT_TIMER_PA_LNA_PDN_CC_OFFSET),
 			      HAL_ENABLE_FEM_PPI);
 	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_DISABLED,
 			      HAL_DISABLE_FEM_PPI);
