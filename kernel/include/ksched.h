@@ -93,7 +93,6 @@ void z_time_slice(void);
 void z_reset_time_slice(struct k_thread *curr);
 void z_sched_start(struct k_thread *thread);
 void z_ready_thread(struct k_thread *thread);
-void z_requeue_current(struct k_thread *curr);
 struct k_thread *z_swap_next_thread(void);
 void move_current_to_end_of_prio_q(void);
 
