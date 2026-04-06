@@ -16,6 +16,16 @@ endif()
 # https://www.raspberrypi.com/documentation/microcontrollers/debug-probe.html#debugging-with-swd
 board_runner_args(openocd --cmd-pre-init "set_adapter_speed_if_not_set 5000")
 
+# `west debug --openocd` will `reset halt` the core, resetting it and
+# attaching to it before the bootrom runs, which will leave the RP2350
+# redundancy coprocessor (RCP) uninitialized and the firmware unable to
+# call bootrom code.
+# This appends a `reset init` openocd command after the reset, which
+# does the necessary hardware initialization.
+# Note that this initialization code is specific to the downstream
+# Raspberry Pi fork of OpenOCD (https://github.com/raspberrypi/openocd).
+board_runner_args(openocd --gdb-pre-debug "monitor reset init")
+
 board_runner_args(probe-rs "--chip=RP235x")
 
 board_runner_args(jlink "--device=RP2350_M33_0")
