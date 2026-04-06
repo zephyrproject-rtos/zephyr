@@ -865,8 +865,13 @@ static void remote_info_available(struct bt_conn *conn,
 				  struct bt_conn_remote_info *remote_info)
 {
 	struct bt_conn_info info;
+	int err;
 
-	bt_conn_get_info(conn, &info);
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
+		bt_shell_error("Unable to get info: conn %p (err %d)", conn, err);
+		return;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_REMOTE_VERSION)) {
 		bt_shell_print("Remote LMP version %s (0x%02x) subversion 0x%04x "
