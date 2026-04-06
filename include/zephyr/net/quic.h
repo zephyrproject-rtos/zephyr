@@ -106,6 +106,7 @@ enum quic_stream_initiator {
 enum {
 	/** Get stream type (returns combination of direction | initiator bits) */
 	ZSOCK_QUIC_SO_STREAM_TYPE = 1,
+
 	/**
 	 * Add an intermediate certificate to the certificate chain.
 	 * Option value is a pointer to a sec_tag_t referencing a credential
@@ -116,8 +117,18 @@ enum {
 	 */
 	ZSOCK_QUIC_SO_CERT_CHAIN_ADD = 2,
 
+	/**
+	 * Delete an intermediate certificate from the certificate chain.
+	 * Option value is a pointer to a sec_tag_t referencing a credential
+	 * previously added by ZSOCK_QUIC_SO_CERT_CHAIN_ADD option.
+	 * Option length must be sizeof(sec_tag_t) or set to 0. If set to 0,
+	 * the option value can be omitted by setting it to NULL.
+	 * If set to 0, all intermediate certificates are removed.
+	 */
+	ZSOCK_QUIC_SO_CERT_CHAIN_DEL = 3,
+
 	/** Set the error code to use when sending STOP_SENDING frame on stream close */
-	ZSOCK_QUIC_SO_STOP_SENDING_CODE = 3,
+	ZSOCK_QUIC_SO_STOP_SENDING_CODE = 4,
 };
 
 /**
