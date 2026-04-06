@@ -16,6 +16,8 @@
 /**
  * @brief Interfaces for system control registers.
  * @defgroup syscon_interface System control (SYSCON)
+ * @since 2.7.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */
