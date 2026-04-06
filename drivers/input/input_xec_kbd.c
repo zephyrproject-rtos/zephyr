@@ -11,6 +11,7 @@
 #include <soc.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 #include <zephyr/input/input.h>
 #include <zephyr/input/input_kbd_matrix.h>
 #include <zephyr/irq.h>
@@ -18,17 +19,14 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
-#ifdef CONFIG_SOC_SERIES_MEC172X
-#include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
-#include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
-#endif
+#include <zephyr/sys/sys_io.h>
 
 LOG_MODULE_REGISTER(input_xec_kbd, CONFIG_INPUT_LOG_LEVEL);
 
 struct xec_kbd_config {
 	struct input_kbd_matrix_common_config common;
 
-	struct kscan_regs *regs;
+	mm_reg_t base;
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t enc_pcr;
 	uint8_t girq;
@@ -41,57 +39,37 @@ struct xec_kbd_data {
 	bool pm_lock_taken;
 };
 
-static void xec_kbd_clear_girq_status(const struct device *dev)
-{
-	struct xec_kbd_config const *cfg = dev->config;
-
-#ifdef CONFIG_SOC_SERIES_MEC172X
-	mchp_xec_ecia_girq_src_clr(cfg->girq, cfg->girq_pos);
-#else
-	MCHP_GIRQ_SRC(cfg->girq) = BIT(cfg->girq_pos);
-#endif
-}
-
-static void xec_kbd_configure_girq(const struct device *dev)
-{
-	struct xec_kbd_config const *cfg = dev->config;
-
-#ifdef CONFIG_SOC_SERIES_MEC172X
-	mchp_xec_ecia_enable(cfg->girq, cfg->girq_pos);
-#else
-	MCHP_GIRQ_ENSET(cfg->girq) = BIT(cfg->girq_pos);
-#endif
-}
-
 static void xec_kbd_drive_column(const struct device *dev, int data)
 {
 	struct xec_kbd_config const *cfg = dev->config;
-	struct kscan_regs *regs = cfg->regs;
+	mm_reg_t base = cfg->base;
 
 	if (data == INPUT_KBD_MATRIX_COLUMN_DRIVE_ALL) {
 		/* KSO output controlled by the KSO_SELECT field */
-		regs->KSO_SEL = MCHP_KSCAN_KSO_ALL;
+		sys_write32(MCHP_KSCAN_KSO_ALL, base + XEC_KBD_KSO_SEL_OFS);
 	} else if (data == INPUT_KBD_MATRIX_COLUMN_DRIVE_NONE) {
 		/* Keyboard scan disabled. All KSO output buffers disabled */
-		regs->KSO_SEL = MCHP_KSCAN_KSO_EN;
+		sys_write32(MCHP_KSCAN_KSO_EN, base + XEC_KBD_KSO_SEL_OFS);
 	} else {
 		/* Assume, ALL was previously set */
-		regs->KSO_SEL = data;
+		sys_write32(data, base + XEC_KBD_KSO_SEL_OFS);
 	}
 }
 
 static kbd_row_t xec_kbd_read_row(const struct device *dev)
 {
 	struct xec_kbd_config const *cfg = dev->config;
-	struct kscan_regs *regs = cfg->regs;
+	mm_reg_t base = cfg->base;
 
 	/* In this implementation a 1 means key pressed */
-	return ~(regs->KSI_IN & 0xff);
+	return ~(sys_read32(base + XEC_KBD_KSI_IN_OFS) & 0xff);
 }
 
 static void xec_kbd_isr(const struct device *dev)
 {
-	xec_kbd_clear_girq_status(dev);
+	struct xec_kbd_config const *cfg = dev->config;
+
+	soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
 	irq_disable(DT_INST_IRQN(0));
 
 	input_kbd_matrix_poll_start(dev);
@@ -101,7 +79,7 @@ static void xec_kbd_set_detect_mode(const struct device *dev, bool enabled)
 {
 	struct xec_kbd_config const *cfg = dev->config;
 	struct xec_kbd_data *data = dev->data;
-	struct kscan_regs *regs = cfg->regs;
+	mm_reg_t base = cfg->base;
 
 	if (enabled) {
 		if (data->pm_lock_taken) {
@@ -109,9 +87,9 @@ static void xec_kbd_set_detect_mode(const struct device *dev, bool enabled)
 						 PM_ALL_SUBSTATES);
 		}
 
-		regs->KSI_STS = MCHP_KSCAN_KSO_SEL_REG_MASK;
+		sys_write32(MCHP_KSCAN_KSO_SEL_REG_MASK, base + XEC_KBD_KSI_STS_OFS);
 
-		xec_kbd_clear_girq_status(dev);
+		soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
 		NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 		irq_enable(DT_INST_IRQN(0));
 	} else {
@@ -125,7 +103,7 @@ static void xec_kbd_set_detect_mode(const struct device *dev, bool enabled)
 static int xec_kbd_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	struct xec_kbd_config const *cfg = dev->config;
-	struct kscan_regs *regs = cfg->regs;
+	mm_reg_t base = cfg->base;
 	int ret;
 
 	ret = input_kbd_matrix_pm_action(dev, action);
@@ -145,15 +123,15 @@ static int xec_kbd_pm_action(const struct device *dev, enum pm_device_action act
 			return ret;
 		}
 
-		regs->KSO_SEL &= ~BIT(MCHP_KSCAN_KSO_EN_POS);
+		sys_clear_bits(base + XEC_KBD_KSO_SEL_OFS, BIT(MCHP_KSCAN_KSO_EN_POS));
 		/* Clear status register */
-		regs->KSI_STS = MCHP_KSCAN_KSO_SEL_REG_MASK;
-		regs->KSI_IEN = MCHP_KSCAN_KSI_IEN_REG_MASK;
+		sys_write32(MCHP_KSCAN_KSO_SEL_REG_MASK, base + XEC_KBD_KSI_STS_OFS);
+		sys_write32(MCHP_KSCAN_KSI_IEN_REG_MASK, base + XEC_KBD_KSI_IEN_OFS);
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
-		regs->KSO_SEL |= BIT(MCHP_KSCAN_KSO_EN_POS);
-		regs->KSI_IEN = (~MCHP_KSCAN_KSI_IEN_REG_MASK);
+		sys_set_bits(base + XEC_KBD_KSO_SEL_OFS, BIT(MCHP_KSCAN_KSO_EN_POS));
+		sys_write32(~MCHP_KSCAN_KSI_IEN_REG_MASK, base + XEC_KBD_KSI_IEN_OFS);
 		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
 		if (ret != -ENOENT) {
 			/* pinctrl-1 does not exist */
@@ -172,7 +150,7 @@ static int xec_kbd_pm_action(const struct device *dev, enum pm_device_action act
 static int xec_kbd_init(const struct device *dev)
 {
 	struct xec_kbd_config const *cfg = dev->config;
-	struct kscan_regs *regs = cfg->regs;
+	mm_reg_t base = cfg->base;
 	int ret;
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -184,17 +162,17 @@ static int xec_kbd_init(const struct device *dev)
 	soc_xec_pcr_sleep_en_clear(cfg->enc_pcr);
 
 	/* Enable predrive */
-	regs->KSO_SEL |= BIT(MCHP_KSCAN_KSO_EN_POS);
-	regs->EXT_CTRL = MCHP_KSCAN_EXT_CTRL_PREDRV_EN;
-	regs->KSO_SEL &= ~BIT(MCHP_KSCAN_KSO_EN_POS);
-	regs->KSI_IEN = MCHP_KSCAN_KSI_IEN_REG_MASK;
+	sys_set_bits(base + XEC_KBD_KSO_SEL_OFS, BIT(MCHP_KSCAN_KSO_EN_POS));
+	sys_write32(MCHP_KSCAN_EXT_CTRL_PREDRV_EN, base + XEC_KBD_EXT_CTRL_OFS);
+	sys_clear_bits(base + XEC_KBD_KSO_SEL_OFS, BIT(MCHP_KSCAN_KSO_EN_POS));
+	sys_write32(MCHP_KSCAN_KSI_IEN_REG_MASK, base + XEC_KBD_KSI_IEN_OFS);
 
 	/* Interrupts are enabled in the thread function */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    xec_kbd_isr, DEVICE_DT_INST_GET(0), 0);
 
-	xec_kbd_clear_girq_status(dev);
-	xec_kbd_configure_girq(dev);
+	soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
+	soc_ecia_girq_ctrl(cfg->girq, cfg->girq_pos, 1u);
 
 	return input_kbd_matrix_common_init(dev);
 }
@@ -219,7 +197,7 @@ static const struct input_kbd_matrix_api xec_kbd_api = {
  */
 static struct xec_kbd_config xec_kbd_cfg_0 = {
 	.common = INPUT_KBD_MATRIX_DT_INST_COMMON_CONFIG_INIT(0, &xec_kbd_api),
-	.regs = (struct kscan_regs *)(DT_INST_REG_ADDR(0)),
+	.base = DT_INST_REG_ADDR(0),
 	.girq = DEV_CFG_GIRQ(0),
 	.girq_pos = DEV_CFG_GIRQ_POS(0),
 	.enc_pcr = DT_INST_PROP(0, pcrs),
