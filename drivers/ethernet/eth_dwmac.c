@@ -572,6 +572,14 @@ static void dwmac_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 	dwmac_set_mac_addr(p, p->mac_addr, 0);
 
+	/*
+	 * Configure MAC address filter to
+	 *   - pass unicast packets with our MAC address
+	 *   - pass multicast packets
+	 *   - pass broadcast packets
+	 */
+	REG_WRITE(MAC_PKT_FILTER, MAC_PKT_FILTER_PM);
+
 	if (p->phy_dev != NULL) {
 		/* Do not start the interface until PHY link is up */
 		net_if_carrier_off(iface);
