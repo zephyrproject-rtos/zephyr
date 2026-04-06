@@ -24,7 +24,7 @@
 #endif /* BUILD_VERSION */
 #endif /* !BANNER_VERSION */
 
-void boot_banner(void)
+static int boot_banner(void)
 {
 #if defined(CONFIG_BOOT_DELAY) && (CONFIG_BOOT_DELAY > 0)
 #ifdef CONFIG_BOOT_BANNER
@@ -45,4 +45,8 @@ void boot_banner(void)
 #ifdef CONFIG_BOOT_BANNER
 	printk("*** " CONFIG_BOOT_BANNER_STRING " " BANNER_VERSION BANNER_POSTFIX " ***\n");
 #endif /* CONFIG_BOOT_BANNER */
+
+	return 0;
 }
+
+SYS_INIT(boot_banner, APPLICATION, 0);
