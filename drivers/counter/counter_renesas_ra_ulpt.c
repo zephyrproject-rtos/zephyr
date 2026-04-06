@@ -588,7 +588,7 @@ static DEVICE_API(counter, counter_renesas_ra_ulpt_driver_api) = {
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, counter_renesas_ra_ulpt_init, NULL,                            \
 			      &counter_renesas_ra_ulpt_data##inst,                                 \
-			      &counter_renesas_ra_ulpt_cfg##inst, POST_KERNEL,                     \
+			      &counter_renesas_ra_ulpt_cfg##inst, PRE_KERNEL_1,                    \
 			      CONFIG_COUNTER_INIT_PRIORITY, &counter_renesas_ra_ulpt_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_RENESAS_RA_ULPT_INIT)
