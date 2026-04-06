@@ -387,6 +387,12 @@ static void reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 	}
 }
 
+void z_sched_lock_reschedule(k_spinlock_key_t key)
+{
+	update_cache(0);
+	reschedule(&_sched_spinlock, key);
+}
+
 void z_sched_yield(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
@@ -613,39 +619,6 @@ void z_reschedule_irqlock(uint32_t key)
 	}
 }
 
-void k_sched_lock(void)
-{
-	LOG_DBG("scheduler locked (%p:%d)",
-		_current, _current->base.sched_locked);
-
-	K_SPINLOCK(&_sched_spinlock) {
-		SYS_PORT_TRACING_FUNC(k_thread, sched_lock);
-
-		__ASSERT(!arch_is_in_isr(), "");
-		__ASSERT(_current->base.sched_locked != 1U, "");
-
-		--_current->base.sched_locked;
-
-		compiler_barrier();
-	}
-}
-
-void k_sched_unlock(void)
-{
-	LOG_DBG("scheduler unlocked (%p:%d)",
-		_current, _current->base.sched_locked);
-
-	SYS_PORT_TRACING_FUNC(k_thread, sched_unlock);
-
-	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
-
-	__ASSERT(_current->base.sched_locked != 0U, "");
-	__ASSERT(!arch_is_in_isr(), "");
-	++_current->base.sched_locked;
-	update_cache(0);
-	reschedule(&_sched_spinlock, key);
-}
-
 struct k_thread *z_swap_next_thread(void)
 {
 	struct k_thread *ret = next_up();
@@ -808,50 +781,6 @@ int z_unpend_all(_wait_q_t *wait_q)
 	k_spin_unlock(&_sched_spinlock, key);
 	return need_sched;
 }
-
-static inline void unpend_all(_wait_q_t *wait_q)
-{
-	struct k_thread *thread;
-
-	for (thread = z_waitq_head(wait_q); thread != NULL; thread = z_waitq_head(wait_q)) {
-		unpend_thread_no_timeout(thread);
-		z_abort_thread_timeout(thread);
-		arch_thread_return_value_set(thread, 0);
-		ready_thread(thread);
-	}
-}
-
-void z_impl_k_reschedule(void)
-{
-	k_spinlock_key_t key;
-
-	key = k_spin_lock(&_sched_spinlock);
-
-	update_cache(0);
-
-	reschedule(&_sched_spinlock, key);
-}
-
-#ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_reschedule(void)
-{
-	z_impl_k_reschedule();
-}
-#include <zephyr/syscalls/k_reschedule_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
-k_tid_t z_impl_k_sched_current_thread_query(void)
-{
-	return _current;
-}
-
-#ifdef CONFIG_USERSPACE
-static inline k_tid_t z_vrfy_k_sched_current_thread_query(void)
-{
-	return z_impl_k_sched_current_thread_query();
-}
-#include <zephyr/syscalls/k_sched_current_thread_query_mrsh.c>
-#endif /* CONFIG_USERSPACE */
 
 static inline void unpend_all(_wait_q_t *wait_q)
 {

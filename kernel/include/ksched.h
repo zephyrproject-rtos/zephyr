@@ -68,6 +68,15 @@ void *z_get_next_switch_handle(void *interrupted);
 
 void z_thread_suspend_current(struct k_thread *thread);
 
+/**
+ * @brief Update the scheduler cache and reschedule, releasing the scheduler
+ * spinlock.  Callers must hold _sched_spinlock before calling; the lock is
+ * released (via reschedule) before this returns.
+ *
+ * @param key Spinlock key obtained from k_spin_lock(&_sched_spinlock).
+ */
+void z_sched_lock_reschedule(k_spinlock_key_t key);
+
 /* Wrapper around z_get_next_switch_handle() for the benefit of
  * non-SMP platforms that always pass a NULL interrupted handle.
  * Exposes the (extremely) common early exit case in a context that
