@@ -105,6 +105,104 @@ int adc_ifx_autanalog_sar_fir_load_coefficients(const struct device *dev, uint8_
 						const int16_t *coefficients,
 						uint8_t num_coefficients);
 
+/**
+ * @brief Read data from a FIFO buffer.
+ *
+ * Reads up to @a max_words conversion results from the specified FIFO buffer.
+ *
+ * @param dev        ADC device (infineon,autanalog-sar-adc instance).
+ * @param buf_idx    FIFO buffer index (0 to 7, depending on split config).
+ * @param data_out   Pointer to the output buffer for 32-bit signed results.
+ * @param max_words  Maximum number of words to read.
+ *
+ * @retval >=0 Number of words actually read.
+ * @retval -EINVAL if parameters are invalid.
+ */
+int adc_ifx_autanalog_sar_fifo_read(const struct device *dev, uint8_t buf_idx, int32_t *data_out,
+				    uint16_t max_words);
+
+/**
+ * @brief Read all data from a FIFO buffer.
+ *
+ * Drains the entire contents of the specified FIFO buffer into the output
+ * array.  The caller must ensure that @a data_out is large enough to hold
+ * the maximum buffer size (determined by the FIFO split configuration).
+ *
+ * @param dev        ADC device (infineon,autanalog-sar-adc instance).
+ * @param buf_idx    FIFO buffer index (0 to 7, depending on split config).
+ * @param data_out   Pointer to the output buffer for 32-bit signed results.
+ *
+ * @retval >=0 Number of words actually read.
+ * @retval -EINVAL if parameters are invalid.
+ */
+int adc_ifx_autanalog_sar_fifo_read_all(const struct device *dev, uint8_t buf_idx,
+					int32_t *data_out);
+
+/**
+ * @brief Read data and channel IDs from a FIFO buffer.
+ *
+ * Reads all data from the specified FIFO buffer together with the associated
+ * channel identifiers.  The fifo-chan-id property must be enabled on the
+ * parent SAR ADC node for channel IDs to be present in the FIFO data.
+ *
+ * @param dev        ADC device (infineon,autanalog-sar-adc instance).
+ * @param buf_idx    FIFO buffer index (0 to 7, depending on split config).
+ * @param input      ADC input type (0 = GPIO, 1 = MUX) for channel ID decoding.
+ * @param data_out   Pointer to the output buffer for 32-bit signed results.
+ * @param chan_id_out Pointer to the output buffer for channel ID values.
+ *
+ * @retval >=0 Number of words actually read.
+ * @retval -EINVAL if parameters are invalid.
+ */
+int adc_ifx_autanalog_sar_fifo_read_chan_id(const struct device *dev, uint8_t buf_idx,
+					    uint8_t input, int32_t *data_out, uint8_t *chan_id_out);
+
+/**
+ * @brief Get the current fill level of a FIFO buffer.
+ *
+ * Returns the number of data words currently stored in the specified
+ * FIFO buffer.
+ *
+ * @param dev        ADC device (infineon,autanalog-sar-adc instance).
+ * @param buf_idx    FIFO buffer index (0 to 7, depending on split config).
+ * @param size       Pointer to store the number of words in the buffer.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if parameters are invalid.
+ */
+int adc_ifx_autanalog_sar_fifo_get_size(const struct device *dev, uint8_t buf_idx, uint16_t *size);
+
+/**
+ * @brief FIFO watermark interrupt callback type.
+ *
+ * Called from ISR context when a FIFO watermark interrupt fires.
+ *
+ * @param dev          ADC device.
+ * @param fifo_status  FIFO interrupt status bitmask (CY_AUTANALOG_INT_FIFO_*).
+ * @param user_data    User data passed to adc_ifx_autanalog_sar_fifo_set_callback().
+ */
+typedef void (*adc_ifx_autanalog_sar_fifo_callback_t)(const struct device *dev,
+						      uint32_t fifo_status, void *user_data);
+
+/**
+ * @brief Register a callback for FIFO watermark interrupts.
+ *
+ * When a FIFO buffer fill level reaches its configured threshold, the
+ * registered callback is invoked from ISR context with the FIFO interrupt
+ * status bitmask.
+ *
+ * @param dev        ADC device (infineon,autanalog-sar-adc instance).
+ * @param callback   Callback function, or NULL to unregister.
+ * @param user_data  Opaque pointer passed to the callback.
+ *
+ * @retval 0 on success.
+ */
+int adc_ifx_autanalog_sar_fifo_set_callback(const struct device *dev,
+					    adc_ifx_autanalog_sar_fifo_callback_t callback,
+					    void *user_data);
+
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif

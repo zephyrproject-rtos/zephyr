@@ -147,4 +147,14 @@
 #define IFX_AUTANALOG_SAR_LIMIT_STC3     4 /**< Limit status config 3 */
 /** @} */
 
+/**
+ * @name FIFO split configuration (cy_en_autanalog_fifo_split_t)
+ * @{
+ */
+#define IFX_AUTANALOG_SAR_FIFO_SPLIT1 0 /**< Single 512-word buffer */
+#define IFX_AUTANALOG_SAR_FIFO_SPLIT2 1 /**< Two 256-word buffers */
+#define IFX_AUTANALOG_SAR_FIFO_SPLIT4 2 /**< Four 128-word buffers */
+#define IFX_AUTANALOG_SAR_FIFO_SPLIT8 3 /**< Eight 64-word buffers */
+/** @} */
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADC_INFINEON_AUTANALOG_SAR_H_ */

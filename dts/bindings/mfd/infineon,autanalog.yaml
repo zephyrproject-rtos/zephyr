@@ -37,6 +37,14 @@ properties:
 
   interrupts:
     required: true
+    description: |
+      The main AutAnalog subsystem interrupt (SAR, DAC, CTB, PTCOMP, AC) is
+      always required.  The autanalog_fifo interrupt is only needed when the
+      SAR ADC FIFO is used — it may be omitted if no FIFO child node is
+      configured in the SAR ADC.
+
+  interrupt-names:
+    required: true
 
   "#address-cells":
     const: 1
