@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_TI_MCAN
+	bool "TI M_CAN driver"
+	default y
+	depends on DT_HAS_TI_MCAN_ENABLED
+	depends on CLOCK_CONTROL
+	select CAN_MCAN
+	select PINCTRL
+	help
+	  Enable support for Texas Instruments MCAN controller.
