@@ -226,4 +226,4 @@ static int renesas_ra_idle_counter_start(void)
 	return -ENODEV;
 }
 
-SYS_INIT(renesas_ra_idle_counter_start, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
+SYS_INIT(renesas_ra_idle_counter_start, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
