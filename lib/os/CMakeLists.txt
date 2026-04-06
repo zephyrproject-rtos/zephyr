@@ -6,6 +6,7 @@ zephyr_syscall_header(
 )
 
 zephyr_sources(
+  boot_banner.c
   cbprintf_packaged.c
   clock.c
   printk.c

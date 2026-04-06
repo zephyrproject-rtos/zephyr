@@ -62,7 +62,6 @@ add_compile_options($<TARGET_PROPERTY:compiler,warning_shadow_variables>)
 
 kernel_sources(
   main_weak.c
-  banner.c
   busy_wait.c
   device.c
   errno.c
