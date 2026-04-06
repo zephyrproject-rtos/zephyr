@@ -28,8 +28,8 @@
 		zephyr,sram = &stcm0;
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
-		zephyr,uart-pipe = &lpuart0;
-		zephyr,bt-c2h-uart = &lpuart0;
+		zephyr,uart-pipe = &lpuart1;
+		zephyr,bt-c2h-uart = &lpuart1;
 	};
 
 	user_led {
@@ -109,13 +109,8 @@ lpuart0: &lpuart_0 {
 
 lpuart1: &lpuart_1 {
 	current-speed = <115200>;
-	status = "disabled";
+	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart1>;
-	pinctrl-names = "default";
-};
-
-nbu: &nbu {
-	pinctrl-0 = <&pinmux_nbu_hdi>;
 	pinctrl-names = "default";
 };
 

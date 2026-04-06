@@ -133,7 +133,11 @@ __weak void clock_init(void)
 	};
 
 	scg_sys_clk_config_t sys_clk_safe_config_source = {
+#ifdef CONFIG_SOC_MCXW70AC
+		.divPlat = (uint32_t)kSCG_SysClkDivBy1,
+#endif
 		.divSlow = (uint32_t)kSCG_SysClkDivBy4,
+		.divBus = (uint32_t)kSCG_SysClkDivBy1,
 		.divCore = (uint32_t)kSCG_SysClkDivBy1,
 		.src = (uint32_t)kSCG_SysClkSrcSirc,
 	};
@@ -149,9 +153,12 @@ __weak void clock_init(void)
 	(void)CLOCK_InitFirc(&scg_firc_config);
 
 	scg_sys_clk_config_t sys_clk_config = {
+#ifdef CONFIG_SOC_MCXW70AC
+		.divPlat = (uint32_t)kSCG_SysClkDivBy1, /* Platform Clock Divider: divided by 2 */
+#endif
 		.divSlow = (uint32_t)kSCG_SysClkDivBy4, /* Slow Clock Divider: divided by 4 */
 		.divBus = (uint32_t)kSCG_SysClkDivBy1,  /* Bus Clock Divider: divided by 1 */
-		.divCore = (uint32_t)kSCG_SysClkDivBy1, /* Core Clock Divider: divided by 1 */
+		.divCore = (uint32_t)kSCG_SysClkDivBy2, /* Core Clock Divider: divided by 1 */
 		.src = (uint32_t)kSCG_SysClkSrcFirc,    /* Select Fast IRC as System Clock */
 	};
 	CLOCK_SetRunModeSysClkConfig(&sys_clk_config);
@@ -217,6 +224,7 @@ __weak void clock_init(void)
 #endif
 #ifdef CONFIG_SOC_MCXW70AC
 	CLOCK_EnableClock(kCLOCK_Tstmr0);
+	CLOCK_EnableClock(kCLOCK_Fro_hf_div);
 #endif
 
 	/* Ungate clocks if the peripheral is enabled in devicetree */
