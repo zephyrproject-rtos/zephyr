@@ -809,20 +809,16 @@ int z_unpend_all(_wait_q_t *wait_q)
 	return need_sched;
 }
 
-void init_ready_q(struct _ready_q *ready_q)
+static inline void unpend_all(_wait_q_t *wait_q)
 {
-	_priq_run_init(&ready_q->runq);
-}
+	struct k_thread *thread;
 
-void z_sched_init(void)
-{
-#ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
-	for (int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
-		init_ready_q(&_kernel.cpus[i].ready_q);
+	for (thread = z_waitq_head(wait_q); thread != NULL; thread = z_waitq_head(wait_q)) {
+		unpend_thread_no_timeout(thread);
+		z_abort_thread_timeout(thread);
+		arch_thread_return_value_set(thread, 0);
+		ready_thread(thread);
 	}
-#else
-	init_ready_q(&_kernel.ready_q);
-#endif /* CONFIG_SCHED_CPU_MASK_PIN_ONLY */
 }
 
 void z_impl_k_reschedule(void)
