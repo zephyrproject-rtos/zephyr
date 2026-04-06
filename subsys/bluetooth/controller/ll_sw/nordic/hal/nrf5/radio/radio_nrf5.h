@@ -10,6 +10,9 @@
  */
 #include <hal/nrf_radio.h>
 
+/* This has to come before the radio resources and ppi/dppi includes below. */
+#include "radio_nrf5_fem.h"
+
 /* Common radio resources */
 #include "radio_nrf5_resources.h"
 
@@ -74,9 +77,6 @@
  * This has to come before the ppi/dppi includes below.
  */
 #define NRF_PPI_NONE 0
-
-/* This has to come before the ppi/dppi includes below. */
-#include "radio_nrf5_fem.h"
 
 /* Include RTC/GRTC Compare Index used to Trigger Radio TXEN/RXEN */
 #include "hal/cntr.h"

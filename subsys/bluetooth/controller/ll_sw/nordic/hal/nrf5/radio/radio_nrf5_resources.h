@@ -4,11 +4,42 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* TIMER0 on nRF52 Series has only 4 compare channels, all of which are in use
+ * without PA/LNA. When PA/LNA is used, use a timer instance with at least 6
+ * compare channels so that PA/LNA and nRF21540 PDN timing have dedicated
+ * compare channels, not shared with the deferred Tx/Rx compare used by the
+ * Radio Timer ISR.
+ *
+ * radio_nrf5_fem.h has to be included before this file.
+ */
+#if (defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)) && \
+	!defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#if (DT_PROP_OR(DT_NODELABEL(timer0), cc_num, 0) >= 6)
+#define EVENT_TIMER_PA_LNA_ID 0
+#elif DT_NODE_EXISTS(DT_NODELABEL(timer4))
+#define EVENT_TIMER_PA_LNA_ID 4
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(timer4))
+#error "timer4 is used by the Bluetooth Controller when FEM PA/LNA is in use"
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(timer4)) */
+#elif DT_NODE_EXISTS(DT_NODELABEL(timer3))
+#define EVENT_TIMER_PA_LNA_ID 3
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(timer3))
+#error "timer3 is used by the Bluetooth Controller when FEM PA/LNA is in use"
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(timer3)) */
+#endif /* DT_NODE_EXISTS(DT_NODELABEL(timer3)) */
+#endif /* (HAL_RADIO_GPIO_HAVE_PA_PIN || HAL_RADIO_GPIO_HAVE_LNA_PIN) &&
+	* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER
+	*/
+
 /* Use the timer instance ID, not NRF_TIMERx directly, so that it can be checked
  * in radio_nrf5_ppi.h by the preprocessor.
  */
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
+#if defined(EVENT_TIMER_PA_LNA_ID)
+#define EVENT_TIMER_ID   EVENT_TIMER_PA_LNA_ID
+#else /* !EVENT_TIMER_PA_LNA_ID */
 #define EVENT_TIMER_ID   0
+#endif /* !EVENT_TIMER_PA_LNA_ID */
 #define EVENT_TIMER      _CONCAT(NRF_TIMER, EVENT_TIMER_ID)
 #define EVENT_TIMER_IRQn _CONCAT_2(TIMER, EVENT_TIMER_ID, _IRQn)
 
@@ -46,8 +77,13 @@
 #define HAL_EVENT_TIMER_DEFERRED_TX_EVENT        NRF_TIMER_EVENT_COMPARE3
 #define HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk TIMER_INTENSET_COMPARE3_Msk
 
+#if defined(EVENT_TIMER_PA_LNA_ID)
+#define HAL_EVENT_TIMER_PA_LNA_CC_OFFSET         4
+#define HAL_EVENT_TIMER_PA_LNA_PDN_CC_OFFSET     5
+#else /* !EVENT_TIMER_PA_LNA_ID */
 #define HAL_EVENT_TIMER_PA_LNA_CC_OFFSET         2
 #define HAL_EVENT_TIMER_PA_LNA_PDN_CC_OFFSET     3
+#endif /* !EVENT_TIMER_PA_LNA_ID */
 
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
@@ -152,7 +188,11 @@
 #define HAL_EVENT_TIMER_PA_LNA_PDN_CC_OFFSET     3
 
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#if defined(EVENT_TIMER_PA_LNA_ID)
+#define EVENT_TIMER_ID   EVENT_TIMER_PA_LNA_ID
+#else /* !EVENT_TIMER_PA_LNA_ID */
 #define EVENT_TIMER_ID   0
+#endif /* !EVENT_TIMER_PA_LNA_ID */
 #define EVENT_TIMER      _CONCAT(NRF_TIMER, EVENT_TIMER_ID)
 #define EVENT_TIMER_IRQn _CONCAT_2(TIMER, EVENT_TIMER_ID, _IRQn)
 
@@ -244,7 +284,22 @@
 #define HAL_EVENT_TIMER_DEFERRED_TX_EVENT        NRF_TIMER_EVENT_COMPARE3
 #define HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk TIMER_INTENSET_COMPARE3_Msk
 
+#if defined(EVENT_TIMER_PA_LNA_ID)
+#define HAL_EVENT_TIMER_PA_LNA_CC_OFFSET         4
+#define HAL_EVENT_TIMER_PA_LNA_PDN_CC_OFFSET     5
+#else /* !EVENT_TIMER_PA_LNA_ID */
 #define HAL_EVENT_TIMER_PA_LNA_CC_OFFSET         2
 #define HAL_EVENT_TIMER_PA_LNA_PDN_CC_OFFSET     3
+#endif /* !EVENT_TIMER_PA_LNA_ID */
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
+/* nRF21540 PDN timing and the Radio Timer ISR need separate compare channels.
+ * There is none to spare with single timer use, or when no timer instance with
+ * at least 6 compare channels is available.
+ */
+#if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR) && defined(HAL_RADIO_FEM_IS_NRF21540) && \
+	FEM_HAS_PROP(pdn_gpios) && \
+	(HAL_EVENT_TIMER_PA_LNA_PDN_CC_OFFSET == HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET)
+#error "CONFIG_BT_CTLR_RADIO_TIMER_ISR not supported with nRF21540 pdn-gpios on this configuration"
+#endif
