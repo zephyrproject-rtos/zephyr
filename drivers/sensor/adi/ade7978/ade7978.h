@@ -58,6 +58,18 @@
 #define ADE7978_REG_BVAR 0xE51C /* Phase B reactive power */
 #define ADE7978_REG_CVAR 0xE51D /* Phase C reactive power */
 
+/* Registers used to check if sensor operates successfully */
+#define ADE7978_REG_CHECKSUM 0xE532 /* 32-bit - Checksum register */
+#define ADE7978_REG_COMPMODE 0xE60E /* 16-bit - Computation mode register */
+#define ADE7978_REG_LAST_OP  0xEA01 /* 8-bit - Type (R/W) of last comm */
+
+/* ADE7978 default uppon reset register values */
+#define ADE7978_CHECKSUM_POR_VAL  0x6BF87803U
+#define ADE7978_COMPMODE_POR_VAL  0x01FFU
+#define ADE7978_STATUS1_RSTDONE   BIT(15)
+#define ADE7978_LAST_OP_READ_VAL  0x35U
+#define ADE7978_LAST_OP_WRITE_VAL 0xCAU
+
 /* SPI Command bytes */
 #define ADE7978_CMD_READ  0x01 /* SPI read command */
 #define ADE7978_CMD_WRITE 0x00 /* SPI write command */
