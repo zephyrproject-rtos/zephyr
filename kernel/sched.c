@@ -22,6 +22,7 @@
 #include <zephyr/timing/timing.h>
 #include <zephyr/sys/util.h>
 #include <metairq.h>
+#include <run_q.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -41,117 +42,6 @@ static ALWAYS_INLINE void update_cache(int preempt_ok);
 static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state);
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
 static void ready_thread(struct k_thread *thread);
-
-
-#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
-TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
-#endif
-static ALWAYS_INLINE void *thread_runq(struct k_thread *thread)
-{
-#ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
-	uint16_t cpu_mask = thread->base.cpu_mask;
-	int cpu;
-
-	/* Edge case: it's legal per the API to "make runnable" a
-	 * thread with all CPUs masked off (i.e. one that isn't
-	 * actually runnable!).  Sort of a wart in the API and maybe
-	 * we should address this in docs/assertions instead to avoid
-	 * the extra test.
-	 */
-	if (cpu_mask == 0U) {
-		cpu = 0;
-	} else {
-		cpu = u32_count_trailing_zeros(cpu_mask);
-	}
-
-	return &_kernel.cpus[cpu].ready_q.runq;
-#else
-	ARG_UNUSED(thread);
-	return &_kernel.ready_q.runq;
-#endif /* CONFIG_SCHED_CPU_MASK_PIN_ONLY */
-}
-
-static ALWAYS_INLINE void *curr_cpu_runq(void)
-{
-#ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
-	return &arch_curr_cpu()->ready_q.runq;
-#else
-	return &_kernel.ready_q.runq;
-#endif /* CONFIG_SCHED_CPU_MASK_PIN_ONLY */
-}
-
-static ALWAYS_INLINE void runq_add(struct k_thread *thread)
-{
-	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
-	__ASSERT_NO_MSG(!is_thread_dummy(thread));
-
-	_priq_run_add(thread_runq(thread), thread);
-}
-
-static ALWAYS_INLINE void runq_remove(struct k_thread *thread)
-{
-	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
-	__ASSERT_NO_MSG(!is_thread_dummy(thread));
-
-	_priq_run_remove(thread_runq(thread), thread);
-}
-
-static ALWAYS_INLINE void runq_yield(void)
-{
-	_priq_run_yield(curr_cpu_runq());
-}
-
-static ALWAYS_INLINE struct k_thread *runq_best(void)
-{
-	return _priq_run_best(curr_cpu_runq());
-}
-
-/* _current is never in the run queue until context switch on
- * SMP configurations, see z_requeue_current()
- */
-static inline bool should_queue_thread(struct k_thread *thread)
-{
-	return !IS_ENABLED(CONFIG_SMP) || (thread != _current);
-}
-
-static ALWAYS_INLINE void queue_thread(struct k_thread *thread)
-{
-	z_mark_thread_as_queued(thread);
-	if (should_queue_thread(thread)) {
-		runq_add(thread);
-	}
-#ifdef CONFIG_SMP
-	if (thread == _current) {
-		/* add current to end of queue means "yield" */
-		_current_cpu->swap_ok = true;
-	}
-#endif /* CONFIG_SMP */
-}
-
-static ALWAYS_INLINE void dequeue_thread(struct k_thread *thread)
-{
-	z_mark_thread_as_not_queued(thread);
-	if (should_queue_thread(thread)) {
-		runq_remove(thread);
-	}
-}
-#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
-TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
-#endif
-
-/* Called out of z_swap() when CONFIG_SMP.  The current thread can
- * never live in the run queue until we are inexorably on the context
- * switch path on SMP, otherwise there is a deadlock condition where a
- * set of CPUs pick a cycle of threads to run and wait for them all to
- * context switch forever.
- */
-void z_requeue_current(struct k_thread *thread)
-{
-	if (z_is_thread_queued(thread)) {
-		runq_add(thread);
-	}
-	signal_pending_ipi();
-}
 
 /* Clear the halting bits (_THREAD_ABORTING and _THREAD_SUSPENDING) */
 static inline void clear_halting(struct k_thread *thread)
