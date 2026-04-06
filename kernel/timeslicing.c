@@ -7,6 +7,7 @@
 #include <kswap.h>
 #include <ksched.h>
 #include <ipi.h>
+#include <timeslicing.h>
 
 static int slice_ticks = DIV_ROUND_UP(CONFIG_TIMESLICE_SIZE * Z_HZ_ticks, Z_HZ_ms);
 static int slice_max_prio = CONFIG_TIMESLICE_PRIORITY;

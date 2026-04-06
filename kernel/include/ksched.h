@@ -97,8 +97,6 @@ static ALWAYS_INLINE void *z_sched_next_handle(struct k_thread *curr)
 	return z_get_next_switch_handle(NULL);
 }
 
-void z_time_slice(void);
-void z_reset_time_slice(struct k_thread *curr);
 void z_sched_start(struct k_thread *thread);
 void z_ready_thread(struct k_thread *thread);
 struct k_thread *z_swap_next_thread(void);
