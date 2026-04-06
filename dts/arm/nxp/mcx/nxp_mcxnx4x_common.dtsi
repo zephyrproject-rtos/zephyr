@@ -861,6 +861,11 @@
 			compatible = "nxp,enet-qos-mdio";
 			status = "disabled";
 		};
+
+		enet_ptp_clock: ptp_clock {
+			compatible = "nxp,enet-qos-ptp-clock";
+			status = "disabled";
+		};
 	};
 
 	wwdt0: watchdog@16000 {
