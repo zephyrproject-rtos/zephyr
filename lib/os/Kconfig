@@ -178,6 +178,33 @@ config BOOT_CLEAR_SCREEN
 	  Use this option to clear the screen before printing anything else.
 	  Using a VT100 enabled terminal on the client side is required for this to work.
 
+menuconfig BOOTARGS
+	bool "Support bootargs"
+	help
+	  Enables bootargs support and passing them to main().
+
+if BOOTARGS
+
+config DYNAMIC_BOOTARGS
+	bool "Support dynamic bootargs"
+	help
+	  Enables dynamic bootargs support.
+
+config BOOTARGS_STRING
+	string "static bootargs string"
+	depends on !DYNAMIC_BOOTARGS
+	help
+	  Static bootargs string. It includes argv[0], so if its expected that it
+	  contains executable name it should be put at the beginning of this string.
+
+config BOOTARGS_ARGS_BUFFER_SIZE
+	int "Size of buffer containing main arguments in bytes"
+	default 1024
+	help
+	  Configures size of buffer containing all arguments passed to main.
+
+endif # BOOTARGS
+
 rsource "Kconfig.cbprintf"
 rsource "zvfs/Kconfig"
 rsource "cpu_load/Kconfig"
