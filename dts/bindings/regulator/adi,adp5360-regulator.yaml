@@ -1,12 +1,15 @@
-# Copyright (c), 2023 Nordic Semiconductor ASA
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# Copyright (c) 2026 Analog Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Analog Devices ADP3560 PMIC
+  Analog Devices ADP5360 PMIC
 
   The PMIC has one buck converter and one buck-boost converter. Both need to be
   defined as children nodes, strictly following the BUCK and BUCKBOOST node
   names.
+
+  The regulators are modeled in DT as a child device of "adi,adp5360" compatible node.
 
 compatible: "adi,adp5360-regulator"
 
@@ -24,8 +27,13 @@ child-binding:
         - regulator-max-microvolt
         - regulator-allowed-modes
         - regulator-initial-mode
+        - regulator-active-discharge
 
   properties:
+    regulator-init-microvolt:
+      type: int
+      required: true
+
     adi,switch-delay-us:
       type: int
       enum:
@@ -33,7 +41,8 @@ child-binding:
         - 5
         - 10
         - 20
-      description: Switch delay time in hysteresis.
+      default: 0
+      description: Switch delay time in hysteresis. The device default for this setting is 0us.
 
     adi,soft-start-ms:
       type: int
@@ -42,7 +51,8 @@ child-binding:
         - 8
         - 64
         - 512
-      description: Soft start time in milliseconds
+      default: 1
+      description: Soft start time in milliseconds. The device default for this setting is 1ms.
 
     adi,ilim-milliamp:
       type: int
@@ -55,9 +65,11 @@ child-binding:
         - 600
         - 700
         - 800
+      default: 400
       description: |
         Peak current limit, in milliamperes. Values above 400mA are only
         applicable to buck boost.
+        The device default for this setting is 400mA.
 
     adi,enable-stop-pulse:
       type: boolean
@@ -68,6 +80,17 @@ child-binding:
     adi,enable-output-discharge:
       type: boolean
       description: Enable output discharge functionality
+
+    adi,enable-gpios:
+      type: phandle-array
+      description: |
+        Enable pin for the Buck/Buckboost regulator.
+        Note that the Buck regulator enable pin is logically AND-ed to its enable bit.
+        If the enable-gpios pin is not found on the Buck converter, it is assumed
+        that the EN1 pin is latched to high via hardware configuration.
+
+        The Buckboost regulator is logically OR-ed to its enable bit,
+        thus it is optional to use alongside the enable bit in the buckboost config register.
 
 examples:
   - |
