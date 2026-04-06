@@ -6,6 +6,8 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/charger.h)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE charger_handlers.c)
 
 # zephyr-keep-sorted-start
+zephyr_library_include_directories_ifdef(CONFIG_CHARGER_ADP5360 ${ZEPHYR_BASE}/drivers/mfd)
+zephyr_library_sources_ifdef(CONFIG_CHARGER_ADP5360 charger_adp5360.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_AXP2101 charger_axp2101.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_BQ24190 charger_bq24190.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_BQ2518X charger_bq2518x.c)

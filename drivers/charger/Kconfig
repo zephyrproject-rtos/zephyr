@@ -52,6 +52,7 @@ config CHARGER_SYSTEM_VOLTAGE_NOTIFICATIONS
 endmenu
 
 # zephyr-keep-sorted-start
+source "drivers/charger/Kconfig.adp5360"
 source "drivers/charger/Kconfig.axp2101"
 source "drivers/charger/Kconfig.bq24190"
 source "drivers/charger/Kconfig.bq2518x"
