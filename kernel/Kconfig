@@ -337,28 +337,6 @@ config WAITQ_SIMPLE
 endchoice # WAITQ_ALGORITHM
 
 menu "Misc Kernel related options"
-config LIBC_ERRNO
-	bool
-	help
-	  Use external libc errno, not the internal one. This eliminates any
-	  locally allocated errno storage and usage.
-
-config ERRNO
-	bool "Errno support"
-	default y
-	help
-	  Enable per-thread errno in the kernel. Application and library code must
-	  include errno.h provided by the C library (libc) to use the errno
-	  symbol. The C library must access the per-thread errno via the
-	  z_errno() symbol.
-
-config ERRNO_IN_TLS
-	bool "Store errno in thread local storage (TLS)"
-	depends on ERRNO && THREAD_LOCAL_STORAGE && !LIBC_ERRNO
-	default y
-	help
-	  Use thread local storage to store errno instead of storing it in
-	  the kernel thread struct. This avoids a syscall if userspace is enabled.
 
 config CURRENT_THREAD_USE_NO_TLS
 	bool
