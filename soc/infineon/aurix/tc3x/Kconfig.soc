@@ -1,8 +1,6 @@
 # Copyright (c) 2024 Infineon Technologies AG
 # SPDX-License-Identifier: Apache-2.0
 
-# Infineon Aurix 2nd Generation Devices
-
 config SOC_SERIES_TC3X
 	select SOC_FAMILY_AURIX
 	help
@@ -11,13 +9,22 @@ config SOC_SERIES_TC3X
 config SOC_SERIES
 	default "tc3x" if SOC_SERIES_TC3X
 
+config SOC_TC37x
+	bool
+	select SOC_SERIES_TC3X
+
 config SOC_TC39xB
 	bool
 	select SOC_SERIES_TC3X
+
+config SOC_TC375TP
+	bool
+	select SOC_TC37x
 
 config SOC_TC397XP
 	bool
 	select SOC_TC39xB
 
 config SOC
+	default "tc375tp" if SOC_TC375TP
 	default "tc397xp" if SOC_TC397XP
