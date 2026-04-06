@@ -1,0 +1,20 @@
+# Copyright (c) 2026, Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config FUEL_GAUGE_ADP5360
+	bool "ADP5360 Fuel Gauge"
+	default y
+	depends on DT_HAS_ADI_ADP5360_FUEL_GAUGE_ENABLED
+	select MFD
+	help
+	  Enable I2C-based driver for ADP5360 Fuel Gauge.
+
+if FUEL_GAUGE_ADP5360
+
+config FUEL_GAUGE_ADP5360_INIT_PRIORITY
+	int "Fuel Gauge ADP5360 Init Priority"
+	default 90
+	help
+	  Init priority for the Analog Devices ADP5360 Fuel Gauge Subsystem.
+
+endif #FUEL_GAUGE_ADP5360
