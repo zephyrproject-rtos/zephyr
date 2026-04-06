@@ -241,6 +241,17 @@ static void unready_thread(struct k_thread *thread)
 	update_cache(thread == _current);
 }
 
+/* This routine exists for benchmarking purposes. It is not used in
+ * general production code.
+ */
+void z_unready_thread(struct k_thread *thread)
+{
+	K_SPINLOCK(&_sched_spinlock) {
+		unready_thread(thread);
+	}
+}
+
+
 void z_sched_unready_locked(struct k_thread *thread)
 {
 	unready_thread(thread);
@@ -1056,14 +1067,4 @@ int z_sched_waitq_walk(_wait_q_t *wait_q, _waitq_walk_cb_t walk_func,
 	}
 
 	return status;
-}
-
-/* This routine exists for benchmarking purposes. It is not used in
- * general production code.
- */
-void z_unready_thread(struct k_thread *thread)
-{
-	K_SPINLOCK(&_sched_spinlock) {
-		unready_thread(thread);
-	}
 }
