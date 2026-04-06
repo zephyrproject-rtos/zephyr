@@ -80,3 +80,5 @@ add_subdirectory_ifdef(CONFIG_ZVFS zvfs)
 zephyr_syscall_header_ifdef(CONFIG_ZVFS_FDTABLE
   ${ZEPHYR_BASE}/include/zephyr/sys/fdtable.h
 )
+
+zephyr_sources_ifdef(CONFIG_BOOTARGS boot_args.c)

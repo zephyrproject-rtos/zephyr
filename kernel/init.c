@@ -331,10 +331,10 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 
 #ifdef CONFIG_BOOTARGS
 	extern int main(int, char **);
-	extern char **prepare_main_args(int *argc);
+	extern char **sys_boot_prepare_main_args(int *argc);
 
 	int argc = 0;
-	char **argv = prepare_main_args(&argc);
+	char **argv = sys_boot_prepare_main_args(&argc);
 	(void)main(argc, argv);
 #else
 	extern int main(void);
