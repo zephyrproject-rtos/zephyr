@@ -30,12 +30,9 @@ struct xec_kbd_config {
 
 	struct kscan_regs *regs;
 	const struct pinctrl_dev_config *pcfg;
+	uint8_t enc_pcr;
 	uint8_t girq;
 	uint8_t girq_pos;
-#ifdef CONFIG_SOC_SERIES_MEC172X
-	uint8_t pcr_idx;
-	uint8_t pcr_pos;
-#endif
 	bool wakeup_source;
 };
 
@@ -63,18 +60,6 @@ static void xec_kbd_configure_girq(const struct device *dev)
 	mchp_xec_ecia_enable(cfg->girq, cfg->girq_pos);
 #else
 	MCHP_GIRQ_ENSET(cfg->girq) = BIT(cfg->girq_pos);
-#endif
-}
-
-static void xec_kbd_clr_slp_en(const struct device *dev)
-{
-#ifdef CONFIG_SOC_SERIES_MEC172X
-	struct xec_kbd_config const *cfg = dev->config;
-
-	z_mchp_xec_pcr_periph_sleep(cfg->pcr_idx, cfg->pcr_pos, 0);
-#else
-	ARG_UNUSED(dev);
-	mchp_pcr_periph_slp_ctrl(PCR_KEYSCAN, 0);
 #endif
 }
 
@@ -196,7 +181,7 @@ static int xec_kbd_init(const struct device *dev)
 		return ret;
 	}
 
-	xec_kbd_clr_slp_en(dev);
+	soc_xec_pcr_sleep_en_clear(cfg->enc_pcr);
 
 	/* Enable predrive */
 	regs->KSO_SEL |= BIT(MCHP_KSCAN_KSO_EN_POS);
@@ -226,21 +211,20 @@ static const struct input_kbd_matrix_api xec_kbd_api = {
 	.set_detect_mode = xec_kbd_set_detect_mode,
 };
 
+#define DEV_CFG_GIRQ(inst)     MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(inst, girqs, 0))
+#define DEV_CFG_GIRQ_POS(inst) MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(inst, girqs, 0))
+
 /* To enable wakeup, set the "wakeup-source" on the keyboard scanning device
  * node.
  */
 static struct xec_kbd_config xec_kbd_cfg_0 = {
 	.common = INPUT_KBD_MATRIX_DT_INST_COMMON_CONFIG_INIT(0, &xec_kbd_api),
 	.regs = (struct kscan_regs *)(DT_INST_REG_ADDR(0)),
-	.girq = DT_INST_PROP_BY_IDX(0, girqs, 0),
-	.girq_pos = DT_INST_PROP_BY_IDX(0, girqs, 1),
-#ifdef CONFIG_SOC_SERIES_MEC172X
-	.pcr_idx = DT_INST_PROP_BY_IDX(0, pcrs, 0),
-	.pcr_pos = DT_INST_PROP_BY_IDX(0, pcrs, 1),
-#endif
+	.girq = DEV_CFG_GIRQ(0),
+	.girq_pos = DEV_CFG_GIRQ_POS(0),
+	.enc_pcr = DT_INST_PROP(0, pcrs),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-	.wakeup_source = DT_INST_PROP(0, wakeup_source)
-};
+	.wakeup_source = DT_INST_PROP(0, wakeup_source)};
 
 static struct xec_kbd_data kbd_data_0;
 
