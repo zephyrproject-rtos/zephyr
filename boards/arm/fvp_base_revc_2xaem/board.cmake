@@ -132,6 +132,13 @@ if(CONFIG_BOARD_FVP_BASE_REVC_2XAEM_A320)
   set(ARMFVP_MIN_VERSION 11.29.27)
 endif()
 
+if(CONFIG_BOARD_FVP_BASE_REVC_2XAEM_V8A_AARCH32)
+  set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
+    # Force AArch32 execution state for all exception levels in cluster0.
+    -C cluster0.has_aarch64=0
+    )
+endif()
+
 if(CONFIG_BUILD_WITH_TFA)
   set(TFA_PLAT "fvp")
 
