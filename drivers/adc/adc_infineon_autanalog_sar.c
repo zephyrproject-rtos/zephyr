@@ -59,8 +59,17 @@ LOG_MODULE_REGISTER(ifx_autanalog_sar_adc, CONFIG_ADC_LOG_LEVEL);
 #define IFX_ADC_HW_CHANNELS_MASK(channels) ((channels) & 0x00FFFFFFu)
 
 /* clang-format on */
+
+struct ifx_autanalog_sar_fifo_config {
+	uint8_t split;
+	uint8_t num_buffers;
+	uint16_t levels[CY_AUTANALOG_FIFO_BUFS_NUM];
+	uint8_t watermark_mask;
+};
+
 struct ifx_autanalog_sar_channel_dt_config {
 	uint8_t channel_id;
+	uint8_t fifo_sel;
 	bool mux_buf_bypass;
 };
 
@@ -90,6 +99,8 @@ struct ifx_autanalog_sar_adc_config {
 	uint8_t fir_count;
 	uint8_t fir_result_mask;
 	struct ifx_autanalog_sar_fir_config fir[IFX_AUTANALOG_SAR_MAX_FIR_FILTERS];
+	bool fifo_enabled;
+	struct ifx_autanalog_sar_fifo_config fifo_cfg;
 };
 
 struct ifx_autanalog_sar_adc_channel_config {
@@ -99,6 +110,8 @@ struct ifx_autanalog_sar_adc_channel_config {
 	uint8_t sample_time_idx;
 	/* Whether the MUX input buffer should be bypassed for this channel */
 	bool mux_buf_bypass;
+	/* FIFO selection for this channel */
+	uint8_t fifo_sel;
 };
 
 struct ifx_autanalog_sar_adc_data {
@@ -134,6 +147,13 @@ struct ifx_autanalog_sar_adc_data {
 
 	/* PDL structures for FIR filters */
 	cy_stc_autanalog_sar_fir_cfg_t pdl_fir_cfg[IFX_AUTANALOG_SAR_MAX_FIR_FILTERS];
+
+	/* PDL structure for FIFO configuration */
+	cy_stc_autanalog_fifo_cfg_t pdl_fifo_cfg;
+
+	/* FIFO watermark callback */
+	adc_ifx_autanalog_sar_fifo_callback_t fifo_callback;
+	void *fifo_callback_user_data;
 };
 
 /**
@@ -160,7 +180,7 @@ static void ifx_init_pdl_structs(struct ifx_autanalog_sar_adc_data *data,
 		.lpSeqTabArr = NULL,
 		.firNum = cfg->fir_count,
 		.firCfg = (cfg->fir_count > 0) ? &data->pdl_fir_cfg[0] : NULL,
-		.fifoCfg = NULL,
+		.fifoCfg = cfg->fifo_enabled ? &data->pdl_fifo_cfg : NULL,
 	};
 
 	data->pdl_adc_seq_hs_cfg_obj[0] = (cy_stc_autanalog_sar_seq_tab_hs_t){
@@ -246,6 +266,16 @@ static void ifx_init_pdl_structs(struct ifx_autanalog_sar_adc_data *data,
 			.firLimit = (cy_en_autanalog_sar_limit_t)cfg->fir[i].fir_limit,
 			.fifoSel = (cy_en_autanalog_fifo_sel_t)fifo_sel,
 		};
+	}
+
+	/* Initialize FIFO configuration from device tree */
+	if (cfg->fifo_enabled) {
+		data->pdl_fifo_cfg = (cy_stc_autanalog_fifo_cfg_t){
+			.split = (cy_en_autanalog_fifo_split_t)cfg->fifo_cfg.split,
+		};
+		for (uint8_t i = 0; i < cfg->fifo_cfg.num_buffers; i++) {
+			data->pdl_fifo_cfg.level[i] = cfg->fifo_cfg.levels[i];
+		}
 	}
 } /* ifx_init_pdl_struct() */
 
@@ -605,6 +635,29 @@ static void ifx_autanalog_sar_adc_isr(const struct device *dev)
 } /* ifx_autanalog_sar_adc_isr() */
 
 /**
+ * @brief FIFO interrupt handler
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * The FIFO has its own dedicated interrupt line that is separate from
+ * the main autanalog interrupt.
+ */
+static void ifx_autanalog_sar_fifo_isr(const struct device *dev)
+{
+	struct ifx_autanalog_sar_adc_data *data = dev->data;
+	uint32_t fifo_status = Cy_AutAnalog_FIFO_GetInterruptStatusMasked(0);
+
+	Cy_AutAnalog_FIFO_ClearInterrupt(0, fifo_status);
+
+	/* The callback is expected to have drained the FIFO below the
+	 * watermark so the level interrupt will not immediately re-fire.
+	 */
+	if (data->fifo_callback != NULL) {
+		data->fifo_callback(dev, fifo_status, data->fifo_callback_user_data);
+	}
+}
+
+/**
  * @brief Calculate the sample time register value based on requested acquisition
  * time
  *
@@ -729,7 +782,9 @@ static int ifx_autanalog_sar_setup_gpio_channel(struct ifx_autanalog_sar_adc_dat
 	pdl_channel->accShift = false;
 	pdl_channel->negCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
 	pdl_channel->hsLimit = CY_AUTANALOG_SAR_LIMIT_STATUS_DISABLED;
-	pdl_channel->fifoSel = CY_AUTANALOG_FIFO_DISABLED;
+	pdl_channel->fifoSel =
+		(cy_en_autanalog_fifo_sel_t)data->autanalog_channel_cfg[channel_cfg->channel_id]
+			.fifo_sel;
 
 	data->pdl_adc_hs_static_obj.hsGpioResultMask |= BIT(hw_channel);
 	data->autanalog_channel_cfg[channel_cfg->channel_id].sample_time_idx = sample_time_idx;
@@ -776,7 +831,9 @@ static int ifx_autanalog_sar_setup_mux_channel(struct ifx_autanalog_sar_adc_data
 	pdl_mux_channel->accShift = false;
 	pdl_mux_channel->negCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
 	pdl_mux_channel->muxLimit = CY_AUTANALOG_SAR_LIMIT_STATUS_DISABLED;
-	pdl_mux_channel->fifoSel = CY_AUTANALOG_FIFO_DISABLED;
+	pdl_mux_channel->fifoSel =
+		(cy_en_autanalog_fifo_sel_t)data->autanalog_channel_cfg[channel_cfg->channel_id]
+			.fifo_sel;
 
 	data->pdl_adc_top_static_obj.muxResultMask |= BIT(mux_idx);
 	data->autanalog_channel_cfg[channel_cfg->channel_id].sample_time_idx = sample_time_idx;
@@ -912,6 +969,7 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 
 	for (uint8_t i = 0; i < ARRAY_SIZE(data->autanalog_channel_cfg); i++) {
 		data->autanalog_channel_cfg[i].sample_time_idx = 0xFF;
+		data->autanalog_channel_cfg[i].fifo_sel = IFX_AUTANALOG_SAR_FIFO_DISABLED;
 		data->autanalog_channel_cfg[i].mux_buf_bypass = false;
 	}
 
@@ -925,6 +983,7 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 		if (ch < IFX_AUTANALOG_SAR_MAX_NUM_CHANNELS) {
 			data->autanalog_channel_cfg[ch].mux_buf_bypass =
 				cfg->dt_channels[i].mux_buf_bypass;
+			data->autanalog_channel_cfg[ch].fifo_sel = cfg->dt_channels[i].fifo_sel;
 		}
 	}
 
@@ -946,6 +1005,41 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 #if defined(CONFIG_ADC_ASYNC)
 	cfg->irq_func();
 #endif /* CONFIG_ADC_ASYNC */
+
+	/* Configure FIFO interrupts if FIFO is enabled */
+	if (cfg->fifo_enabled) {
+		static const uint32_t fifo_level_masks[] = {
+			CY_AUTANALOG_INT_FIFO_LEVEL0, CY_AUTANALOG_INT_FIFO_LEVEL1,
+			CY_AUTANALOG_INT_FIFO_LEVEL2, CY_AUTANALOG_INT_FIFO_LEVEL3,
+			CY_AUTANALOG_INT_FIFO_LEVEL4, CY_AUTANALOG_INT_FIFO_LEVEL5,
+			CY_AUTANALOG_INT_FIFO_LEVEL6, CY_AUTANALOG_INT_FIFO_LEVEL7,
+		};
+		static const uint32_t fifo_overflow_masks[] = {
+			CY_AUTANALOG_INT_FIFO_OVERFLOW0, CY_AUTANALOG_INT_FIFO_OVERFLOW1,
+			CY_AUTANALOG_INT_FIFO_OVERFLOW2, CY_AUTANALOG_INT_FIFO_OVERFLOW3,
+			CY_AUTANALOG_INT_FIFO_OVERFLOW4, CY_AUTANALOG_INT_FIFO_OVERFLOW5,
+			CY_AUTANALOG_INT_FIFO_OVERFLOW6, CY_AUTANALOG_INT_FIFO_OVERFLOW7,
+		};
+		static const uint32_t fifo_underflow_masks[] = {
+			CY_AUTANALOG_INT_FIFO_UNDERFLOW0, CY_AUTANALOG_INT_FIFO_UNDERFLOW1,
+			CY_AUTANALOG_INT_FIFO_UNDERFLOW2, CY_AUTANALOG_INT_FIFO_UNDERFLOW3,
+			CY_AUTANALOG_INT_FIFO_UNDERFLOW4, CY_AUTANALOG_INT_FIFO_UNDERFLOW5,
+			CY_AUTANALOG_INT_FIFO_UNDERFLOW6, CY_AUTANALOG_INT_FIFO_UNDERFLOW7,
+		};
+		uint32_t fifo_int_mask = 0;
+
+		for (uint8_t i = 0; i < CY_AUTANALOG_FIFO_BUFS_NUM; i++) {
+			if ((cfg->fifo_cfg.watermark_mask & BIT(i)) != 0) {
+				fifo_int_mask |= fifo_level_masks[i] | fifo_overflow_masks[i] |
+						 fifo_underflow_masks[i];
+			}
+		}
+		if (fifo_int_mask != 0) {
+			ifx_autanalog_set_fifo_irq_handler(cfg->mfd, dev,
+							   ifx_autanalog_sar_fifo_isr);
+			Cy_AutAnalog_FIFO_SetInterruptMask(0, fifo_int_mask);
+		}
+	}
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
@@ -1027,6 +1121,60 @@ int adc_ifx_autanalog_sar_fir_load_coefficients(const struct device *dev, uint8_
 	return 0;
 }
 
+/* Vendor-specific FIFO API functions */
+
+int adc_ifx_autanalog_sar_fifo_read(const struct device *dev, uint8_t buf_idx, int32_t *data_out,
+				    uint16_t max_words)
+{
+	if (data_out == NULL || buf_idx >= CY_AUTANALOG_FIFO_BUFS_NUM || max_words == 0) {
+		return -EINVAL;
+	}
+
+	return (int)Cy_AutAnalog_FIFO_ReadData(0, buf_idx, max_words, data_out);
+}
+
+int adc_ifx_autanalog_sar_fifo_read_all(const struct device *dev, uint8_t buf_idx,
+					int32_t *data_out)
+{
+	if (data_out == NULL || buf_idx >= CY_AUTANALOG_FIFO_BUFS_NUM) {
+		return -EINVAL;
+	}
+
+	return (int)Cy_AutAnalog_FIFO_ReadAllData(0, buf_idx, data_out);
+}
+
+int adc_ifx_autanalog_sar_fifo_read_chan_id(const struct device *dev, uint8_t buf_idx,
+					    uint8_t input, int32_t *data_out, uint8_t *chan_id_out)
+{
+	if (data_out == NULL || chan_id_out == NULL || buf_idx >= CY_AUTANALOG_FIFO_BUFS_NUM) {
+		return -EINVAL;
+	}
+
+	return (int)Cy_AutAnalog_FIFO_ReadDataChanId(0, buf_idx, (cy_en_autanalog_sar_input_t)input,
+						     data_out, chan_id_out);
+}
+
+int adc_ifx_autanalog_sar_fifo_get_size(const struct device *dev, uint8_t buf_idx, uint16_t *size)
+{
+	if (size == NULL || buf_idx >= CY_AUTANALOG_FIFO_BUFS_NUM) {
+		return -EINVAL;
+	}
+
+	*size = Cy_AutAnalog_FIFO_GetSize(0, buf_idx);
+	return 0;
+}
+
+int adc_ifx_autanalog_sar_fifo_set_callback(const struct device *dev,
+					    adc_ifx_autanalog_sar_fifo_callback_t callback,
+					    void *user_data)
+{
+	struct ifx_autanalog_sar_adc_data *data = dev->data;
+
+	data->fifo_callback = callback;
+	data->fifo_callback_user_data = user_data;
+	return 0;
+}
+
 /* clang-format off */
 
 #ifdef CONFIG_ADC_ASYNC
@@ -1094,11 +1242,43 @@ int adc_ifx_autanalog_sar_fir_load_coefficients(const struct device *dev, uint8_
 		({                                                                                 \
 			.channel_id = (uint8_t)DT_REG_ADDR(child_node_id),                         \
 			.mux_buf_bypass = DT_PROP_OR(child_node_id, mux_buf_bypass, 0),            \
+			.fifo_sel = (uint8_t)DT_PROP_OR(child_node_id, fifo_sel, 0),               \
 		},), ())
 
 #define IFX_CHAN_DT_CFG_ARRAY(n)                                                                   \
 	static const struct ifx_autanalog_sar_channel_dt_config ifx_sar_chan_dt_cfg_##n[] = {      \
 		DT_INST_FOREACH_CHILD_STATUS_OKAY(n, IFX_CHAN_DT_CFG_ENTRY)}
+
+/* FIFO configuration from DT child node named "fifo" */
+#define IFX_FIFO_ENABLED(n) DT_NODE_EXISTS(DT_INST_CHILD(n, fifo))
+
+#define IFX_FIFO_LEVEL_ENTRY(node_id, prop, idx) DT_PROP_BY_IDX(node_id, prop, idx)
+
+/* Derive FIFO split from number of fifo-levels entries:
+ *   1 -> SPLIT1 (0), 2 -> SPLIT2 (1), 4 -> SPLIT4 (2), 8 -> SPLIT8 (3)
+ */
+#define IFX_FIFO_NUM_BUFS(n) DT_PROP_LEN(DT_INST_CHILD(n, fifo), fifo_levels)
+
+#define IFX_FIFO_SPLIT_FROM_LEN(len) ((len) <= 1 ? 0 : (len) <= 2 ? 1 : (len) <= 4 ? 2 : 3)
+
+/* Derive watermark mask: bit set for each buffer with non-zero level */
+#define IFX_FIFO_WM_BIT(node_id, prop, idx)                                                    \
+	((DT_PROP_BY_IDX(node_id, prop, idx) > 0) ? BIT(idx) : 0)
+
+#define IFX_FIFO_WATERMARK_MASK(n)                                                             \
+	(DT_FOREACH_PROP_ELEM_SEP(DT_INST_CHILD(n, fifo), fifo_levels,                             \
+				  IFX_FIFO_WM_BIT, (|)))
+
+#define IFX_FIFO_CFG_INIT(n)                                                                   \
+	{                                                                                          \
+		.split = IFX_FIFO_SPLIT_FROM_LEN(IFX_FIFO_NUM_BUFS(n)),                            \
+		.num_buffers = IFX_FIFO_NUM_BUFS(n),                                               \
+		.levels = {                                                                     \
+			DT_FOREACH_PROP_ELEM_SEP(DT_INST_CHILD(n, fifo), fifo_levels,            \
+					 IFX_FIFO_LEVEL_ENTRY, (,))                               \
+		},                                                                            \
+		.watermark_mask = IFX_FIFO_WATERMARK_MASK(n),                                 \
+		}
 
 /* Device Instantiation */
 #define IFX_AUTANALOG_SAR_ADC_INIT(n)                                                              \
@@ -1132,6 +1312,9 @@ int adc_ifx_autanalog_sar_fir_load_coefficients(const struct device *dev, uint8_
 			COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(n, fir_1)), \
 				(IFX_FIR_CFG_INIT(n, fir_1)), ({0})),          \
 		},                                                         \
+		.fifo_enabled = IFX_FIFO_ENABLED(n),                                               \
+		.fifo_cfg = COND_CODE_1(IFX_FIFO_ENABLED(n),                                       \
+					(IFX_FIFO_CFG_INIT(n)), ({0})),            \
 		.num_dt_channels = ARRAY_SIZE(ifx_sar_chan_dt_cfg_##n),                            \
 		.dt_channels = ifx_sar_chan_dt_cfg_##n,                                            \
 	};                                                                                     \
