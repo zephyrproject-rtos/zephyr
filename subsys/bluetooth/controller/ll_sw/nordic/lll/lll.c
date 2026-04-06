@@ -1159,6 +1159,20 @@ static void ticker_start_op_cb(uint32_t status, void *param)
 	preempt_start_ack = preempt_start_req;
 }
 
+static void isr_radio_tmr_cb(void *param, uint8_t chain)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, preempt};
+	uint32_t ret;
+
+	LL_ASSERT_ERR(preempt_ack != preempt_req);
+	preempt_ack = preempt_req;
+
+	mfy.param = param;
+	ret = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_LLL, chain, &mfy);
+	LL_ASSERT_ERR(!ret || chain);
+}
+
 static uint32_t preempt_ticker_start(struct lll_event *first,
 				     struct lll_event *prev,
 				     struct lll_event *next)
@@ -1197,10 +1211,15 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 			return TICKER_STATUS_SUCCESS;
 		}
 
-		/* Stop any scheduled preempt ticker */
-		ret = preempt_ticker_stop();
-		LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
-			      (ret == TICKER_STATUS_BUSY));
+		if (IS_ENABLED(CONFIG_BT_CTLR_RADIO_TIMER_ISR)) {
+			LL_ASSERT_ERR(preempt_ack != preempt_req);
+			preempt_ack = preempt_req;
+		} else {
+			/* Stop any scheduled preempt ticker */
+			ret = preempt_ticker_stop();
+			LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+				      (ret == TICKER_STATUS_BUSY));
+		}
 
 		/* Schedule short preempt timeout */
 		first = next;
@@ -1214,6 +1233,36 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 
 		ticks_at_preempt_new = preempt_anchor + preempt_to;
 		ticks_at_preempt_new &= HAL_TICKER_CNTR_MASK;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_RADIO_TIMER_ISR)) {
+		uint32_t ticks_at_start = radio_tmr_start_get();
+		uint32_t ticks_offset;
+
+		ticks_at_preempt = ticks_at_preempt_new;
+
+		LL_ASSERT_ERR(preempt_req == preempt_ack);
+		preempt_req++;
+
+		ticks_offset = ticker_ticks_diff_get(ticks_at_preempt_new, ticks_at_start);
+		if ((ticks_offset != 0U) && ((ticks_offset & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U) &&
+		    ((prev != NULL) ||
+		     (ticks_offset > (HAL_TICKER_US_TO_TICKS_CEIL(EVENT_OVERHEAD_XTAL_US +
+								  EVENT_OVERHEAD_START_US))))) {
+			uint32_t offset_us;
+			uint32_t start_us;
+
+			offset_us = HAL_TICKER_TICKS_TO_US(ticks_offset);
+			start_us = radio_tmr_isr_set(offset_us, isr_radio_tmr_cb,
+						     first->prepare_param.param);
+			ARG_UNUSED(start_us);
+		} else {
+			(void)radio_tmr_isr_clear(NULL);
+
+			isr_radio_tmr_cb(first->prepare_param.param, 1U);
+		}
+
+		return TICKER_STATUS_SUCCESS;
 	}
 
 	preempt_start_req++;
@@ -1272,8 +1321,7 @@ static void preempt_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	preempt_ack = preempt_req;
 
 	mfy.param = param;
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
-			     0, &mfy);
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0U, &mfy);
 	LL_ASSERT_ERR(!ret);
 }
 
