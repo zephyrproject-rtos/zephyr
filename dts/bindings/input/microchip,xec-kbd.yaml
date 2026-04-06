@@ -6,7 +6,10 @@ description: Microchip XEC keyboard matrix controller
 
 compatible: "microchip,xec-kbd"
 
-include: [kbd-matrix-common.yaml, pinctrl-device.yaml]
+include:
+  - name: kbd-matrix-common.yaml
+  - name: pinctrl-device.yaml
+  - name: microchip,dmec-ecia-girq.yaml
 
 properties:
   "#address-cells":
@@ -23,15 +26,10 @@ properties:
   interrupts:
     required: true
 
-  girqs:
-    type: array
-    required: true
-    description: Array of pairs of GIRQ number and bit position
-
   pcrs:
-    type: array
+    type: int
     required: true
-    description: ADC PCR register index and bit position
+    description: KBD PCR register index and bit position
 
   row-size:
     required: true

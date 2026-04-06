@@ -479,8 +479,8 @@
 			compatible = "microchip,xec-kbd";
 			reg = <0x40009c00 0x18>;
 			interrupts = <135 0>;
-			girqs = <21 25>;
-			pcrs = <3 11>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(21, 25)>;
+			pcrs = <MCHP_XEC_SCR_ENCODE(3, 11)>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
