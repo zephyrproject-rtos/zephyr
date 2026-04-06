@@ -233,6 +233,19 @@ void z_sched_ready_locked(struct k_thread *thread)
 	ready_thread(thread);
 }
 
+static void unready_thread(struct k_thread *thread)
+{
+	if (z_is_thread_queued(thread)) {
+		dequeue_thread(thread);
+	}
+	update_cache(thread == _current);
+}
+
+void z_sched_unready_locked(struct k_thread *thread)
+{
+	unready_thread(thread);
+}
+
 /* This routine only used for testing purposes */
 void z_yield_testing_only(void)
 {
@@ -361,19 +374,6 @@ static void reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 		signal_pending_ipi();
 		k_spin_unlock(lock, key);
 	}
-}
-
-static void unready_thread(struct k_thread *thread)
-{
-	if (z_is_thread_queued(thread)) {
-		dequeue_thread(thread);
-	}
-	update_cache(thread == _current);
-}
-
-void z_sched_unready_locked(struct k_thread *thread)
-{
-	unready_thread(thread);
 }
 
 void z_sched_yield(void)
