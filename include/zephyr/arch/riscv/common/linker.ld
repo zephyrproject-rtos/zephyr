@@ -268,6 +268,19 @@ SECTIONS
 		 __data_region_start = .;
 		 __data_start = .;
 
+#if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_SRAM_SW_ISR_TABLE) && \
+    defined(CONFIG_RISCV_CORE_NORDIC_VPR)
+		/* Placing these early in .data avoids pushing .sbss out of GP-relative
+		 * range when CONFIG_RISCV_GP is enabled.
+		 */
+		. = ALIGN(CONFIG_ARCH_SW_ISR_TABLE_ALIGN);
+		*(_SW_ISR_TABLE_SECTION_SYMS)
+#if defined(CONFIG_SHARED_INTERRUPTS)
+		/* Keep shared ISR table sections too (if enabled) */
+		KEEP(*(_SHARED_SW_ISR_TABLE_SECTION_SYMS))
+#endif
+#endif
+
 		 *(.data)
 		 *(".data.*")
 

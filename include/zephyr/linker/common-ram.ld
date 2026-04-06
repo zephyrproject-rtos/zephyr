@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /* Please keep in sync with cmake/linker_script/common/common-ram.cmake */
 
 #include <zephyr/linker/iterable_sections.h>
@@ -17,7 +21,8 @@
 ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 #endif /* CONFIG_ARM_SCMI */
 
-#if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_SRAM_SW_ISR_TABLE)
+#if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_SRAM_SW_ISR_TABLE) && \
+    !defined(CONFIG_RISCV_CORE_NORDIC_VPR)
 	SECTION_DATA_PROLOGUE(sw_isr_table,,)
 	{
 		/*
