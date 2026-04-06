@@ -14,3 +14,4 @@ board:
       variants:
       - name: ns
   - name: a320
+  - name: v8a_aarch32
