@@ -27,7 +27,7 @@ SYSBUILD_PROJ_DIR = pathlib.Path(__file__).resolve().parent.parent.parent \
 BUILD_INFO_LOG = 'build_info.yml'
 
 BUILD_USAGE = '''\
-west build [-h] [-b BOARD[@REV]]] [-d BUILD_DIR]
+west build [-h] [-b BOARD[@REV]] [-d BUILD_DIR]
            [-S SNIPPET] [--shield SHIELD]
            [-t TARGET] [-p {auto, always, never}] [-c] [--cmake-only]
            [--cmake-opt CMAKE_OPT] [-n] [-o BUILD_OPT] [-f]
