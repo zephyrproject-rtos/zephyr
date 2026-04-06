@@ -23,6 +23,7 @@
 #include <zephyr/sys/util.h>
 #include <metairq.h>
 #include <run_q.h>
+#include <timeslicing.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 

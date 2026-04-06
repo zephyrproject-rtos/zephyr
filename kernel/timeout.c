@@ -13,6 +13,8 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/llext/symbol.h>
 
+#include <timeslicing.h>
+
 static uint64_t curr_tick;
 
 static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
