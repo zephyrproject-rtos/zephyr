@@ -91,6 +91,13 @@ i2c0: &scb0 {
 		status = "okay";
 		reg = <0x77>;
 	};
+
+	sht4x@44 {
+		status = "okay";
+		compatible = "sensirion,sht4x";
+		reg = <0x44>;
+		repeatability = <2>;
+	};
 };
 
 &peri0_group1_16bit_3 {
