@@ -77,8 +77,9 @@ static ALWAYS_INLINE struct k_thread *runq_best(void)
 	return _priq_run_best(curr_cpu_runq());
 }
 
-/* _current is never in the run queue until context switch on
- * SMP configurations, see z_requeue_current()
+/*
+ * _current is never in the run queue until context switch on
+ * SMP configurations.
  */
 static inline bool should_queue_thread(struct k_thread *thread)
 {
@@ -109,22 +110,5 @@ static ALWAYS_INLINE void dequeue_thread(struct k_thread *thread)
 #ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
 TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
 #endif
-
-
-
-/* Called out of z_swap() when CONFIG_SMP.  The current thread can
- * never live in the run queue until we are inexorably on the context
- * switch path on SMP, otherwise there is a deadlock condition where a
- * set of CPUs pick a cycle of threads to run and wait for them all to
- * context switch forever.
- */
-void z_requeue_current(struct k_thread *thread)
-{
-	if (z_is_thread_queued(thread)) {
-		runq_add(thread);
-	}
-	signal_pending_ipi();
-}
-
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_RUN_Q_H_ */
