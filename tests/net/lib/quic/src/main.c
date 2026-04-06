@@ -2091,6 +2091,64 @@ ZTEST(net_socket_quic, test_22_cert_chain_add_option)
 	zassert_equal(ret, 0, "Failed to close connection (%d)", ret);
 }
 
+ZTEST(net_socket_quic, test_22_cert_chain_del_option)
+{
+	int sock;
+	int ret;
+	sec_tag_t tag = CA_CERTIFICATE_TAG;
+
+	/* Create a server socket */
+	ret = quic_connection_open(NULL,
+				   (struct net_sockaddr *)&local_addr_ipv4);
+	zassert_true(ret >= 0, "Failed to open QUIC connection (%d)", ret);
+	sock = ret;
+
+	/* Add CA certificate as intermediate cert via sec_tag */
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_CERT_CHAIN_ADD,
+			       &tag, sizeof(tag));
+	zassert_equal(ret, 0, "Failed to add intermediate cert (%d)", -errno);
+
+	/* Delete the tag (should succeed, deletes the chain) */
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_CERT_CHAIN_DEL,
+			       &tag, sizeof(tag));
+	zassert_equal(ret, 0, "Failed to delete intermediate cert (%d)", -errno);
+
+	/* Delete same tag again (should fail) */
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_CERT_CHAIN_DEL,
+			       &tag, sizeof(tag));
+	zassert_true(ret == -1 && errno == ENOENT,
+		     "Succeed to remove intermediate cert (%d)", -errno);
+
+	/* Add again */
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_CERT_CHAIN_ADD,
+			       &tag, sizeof(tag));
+	zassert_equal(ret, 0, "Failed to add intermediate cert (%d)", -errno);
+
+	/* Test with NULL (should remove all) */
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_CERT_CHAIN_DEL,
+			       NULL, 0);
+	zassert_equal(ret, 0, "Failed with NULL");
+
+	/* Delete same tag again (should fail) */
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_CERT_CHAIN_DEL,
+			       &tag, sizeof(tag));
+	zassert_true(ret == -1 && errno == ENOENT,
+		     "Succeed to remove intermediate cert (%d)", -errno);
+
+	/* Test with wrong optlen (should fail) */
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_CERT_CHAIN_DEL,
+			       NULL, sizeof(tag));
+	zassert_true(ret == -1 && errno == EINVAL, "Should fail with wrong optlen");
+
+	/* If length is 0, then tag is ignored and all certs are removed, so this should succeed */
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_CERT_CHAIN_DEL,
+			       &tag, 0);
+	zassert_equal(ret, 0, "Failed with 0 optlen");
+
+	ret = quic_connection_close(sock);
+	zassert_equal(ret, 0, "Failed to close connection (%d)", ret);
+}
+
 ZTEST(net_socket_quic, test_23_invalid_quic_sockopt)
 {
 	int sock;

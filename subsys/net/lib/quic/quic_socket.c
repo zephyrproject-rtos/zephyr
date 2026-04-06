@@ -318,6 +318,41 @@ static int quic_setsockopt_ctx(void *obj, int level, int optname,
 
 			break;
 
+		case ZSOCK_QUIC_SO_CERT_CHAIN_DEL:
+			if (optlen > 0 && optlen != sizeof(sec_tag_t)) {
+				err = -EINVAL;
+				break;
+			}
+
+			if (optval == NULL && optlen > 0) {
+				err = -EINVAL;
+				break;
+			}
+
+			if (optlen == 0) {
+				/* If optlen is 0, ignore optval and delete all certs */
+				optval = NULL;
+			}
+
+			err = quic_tls_del_cert_chain(&ep->crypto.tls,
+						     (const sec_tag_t *)optval);
+			if (err == 0) {
+				if (optval == NULL || optlen == 0) {
+					NET_DBG("[CO:%p/%d] Deleted all intermediate certs, "
+						"chain depth=%zd",
+						ctx, quic_get_by_conn(ctx),
+						ep->crypto.tls.cert_chain_count);
+				} else {
+					NET_DBG("[CO:%p/%d] Deleted intermediate cert tag=%d, "
+						"chain depth=%zd",
+						ctx, quic_get_by_conn(ctx),
+						*(const sec_tag_t *)optval,
+						ep->crypto.tls.cert_chain_count);
+				}
+			}
+
+			break;
+
 		default:
 			err = -ENOPROTOOPT;
 			break;

@@ -45,6 +45,38 @@ static int quic_tls_add_cert_chain(struct quic_tls_context *ctx,
 	return 0;
 }
 
+/**
+ * Delete intermediate certificate from chain by sec_tag
+ */
+static int quic_tls_del_cert_chain(struct quic_tls_context *ctx,
+				   const sec_tag_t *tag)
+{
+	if (ctx == NULL) {
+		return -EINVAL;
+	}
+
+	if (tag == NULL) {
+		/* Clear entire chain if tag is NULL */
+		ctx->cert_chain_count = 0;
+		return 0;
+	}
+
+	/* Find and remove the specified tag */
+	for (size_t i = 0; i < ctx->cert_chain_count; i++) {
+		if (ctx->cert_chain_tags[i] == *tag) {
+			/* Shift remaining tags down */
+			for (size_t j = i; j < ctx->cert_chain_count - 1; j++) {
+				ctx->cert_chain_tags[j] = ctx->cert_chain_tags[j + 1];
+			}
+
+			ctx->cert_chain_count--;
+			return 0;
+		}
+	}
+
+	return -ENOENT;
+}
+
 #if defined(MBEDTLS_PK_PARSE_C)
 static bool check_key_type(const mbedtls_pk_context *pk)
 {
