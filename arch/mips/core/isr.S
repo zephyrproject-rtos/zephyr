@@ -68,7 +68,7 @@
 /* imports */
 GTEXT(z_mips_fault)
 
-GTEXT(_k_neg_eagain)
+GTEXT(_errno_neg_eagain)
 GTEXT(z_thread_mark_switched_in)
 GTEXT(z_thread_mark_switched_out)
 
@@ -242,10 +242,10 @@ skip_callee_saved_reg:
 
 	/*
 	 * Save stack pointer of current thread and set the default return value
-	 * of z_swap to _k_neg_eagain for the thread.
+	 * of z_swap to _errno_neg_eagain for the thread.
 	 */
 	OP_STOREREG sp, _thread_offset_to_sp(t1)
-	la t2, _k_neg_eagain
+	la t2, _errno_neg_eagain
 	lw t3, 0(t2)
 	sw t3, _thread_offset_to_swap_return_value(t1)
 

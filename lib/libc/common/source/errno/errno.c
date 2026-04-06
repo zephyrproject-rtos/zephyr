@@ -17,12 +17,12 @@
 #include <zephyr/linker/sections.h>
 
 /*
- * Define _k_neg_eagain for use in assembly files as errno.h is
+ * Define _errno_neg_eagain for use in assembly files as errno.h is
  * not assembly language safe.
  * FIXME: wastes 4 bytes
  */
 __pinned_rodata
-const int _k_neg_eagain = -EAGAIN;
+const int _errno_neg_eagain = -EAGAIN;
 
 #ifdef CONFIG_ERRNO
 
