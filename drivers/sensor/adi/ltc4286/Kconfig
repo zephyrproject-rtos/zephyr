@@ -1,0 +1,67 @@
+# LTC4286 power monitor configuration options
+
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LTC4286
+	bool "LTC4286 Power Monitor"
+	default y
+	depends on DT_HAS_ADI_LTC4286_ENABLED
+	select I2C
+	help
+	  Enable the driver for Analog Devices LTC4286 High Power Positive
+	  Hot-Swap Controller with Power Monitor.
+
+if LTC4286
+
+choice
+	prompt "Trigger mode"
+	default LTC4286_TRIGGER_NONE
+	help
+	  Specify the type of triggers used by the driver.
+
+config LTC4286_TRIGGER_NONE
+	bool "No trigger"
+
+config LTC4286_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	depends on LTC4286_HAS_TRIGGER_GPIO
+	select LTC4286_TRIGGER
+
+config LTC4286_TRIGGER_OWN_THREAD
+	bool "Use thread allocated to self"
+	depends on GPIO
+	depends on LTC4286_HAS_TRIGGER_GPIO
+	select LTC4286_TRIGGER
+
+endchoice
+
+config LTC4286_TRIGGER
+	bool
+
+config LTC4286_HAS_TRIGGER_GPIO
+	bool
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_LTC4286),op-status-gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ADI_LTC4286),oc-status-gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ADI_LTC4286),comp-out-gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ADI_LTC4286),fault-out-gpios)|| \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ADI_LTC4286),power-good-gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ADI_LTC4286),alert-gpios)
+
+config LTC4286_THREAD_PRIORITY
+	int "Thread priority"
+	depends on LTC4286_TRIGGER_OWN_THREAD && LTC4286_TRIGGER
+	default 10
+	help
+	  Priority of thread used by driver to handle interrupts.
+
+config LTC4286_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on LTC4286_TRIGGER_OWN_THREAD && LTC4286_TRIGGER
+	default 1024
+	help
+	  Stack size allocated to the thread used by the driver to handle interrupts.
+
+endif #LTC4286
