@@ -15,7 +15,7 @@ from pathlib import Path
 from twisterlib.constants import canonical_zephyr_base
 from twisterlib.error import StatusAttributeError, TwisterException, TwisterRuntimeError
 from twisterlib.statuses import TwisterStatus
-from twisterlib.testsuitedata import HarnessConfig
+from twisterlib.testsuitedata import HarnessConfig, RequiredApplication
 
 logger = logging.getLogger('twister')
 
@@ -454,7 +454,7 @@ class TestSuite:
         self._status = TwisterStatus.NONE
 
         self.harness_config: HarnessConfig | None = None
-        self.required_applications: list[dict] = []
+        self.required_applications: list[RequiredApplication] = []
 
         if data:
             self.load(data)
@@ -482,6 +482,9 @@ class TestSuite:
                 'Harness config error: console harness defined without a configuration.'
             )
         self.harness_config = HarnessConfig.from_dict(self.harness_config)
+        self.required_applications = [
+            RequiredApplication(**app) for app in self.required_applications
+        ]
 
     def compose_case_name(self, tc_name) -> str:
         return f"{self.id}.{tc_name}" if self.id != tc_name else tc_name
@@ -541,8 +544,8 @@ Tests should reference the category and subsystem with a dot as a separator.
                 # if neither application nor platform is specified, use the same application
                 continue
 
-            req_app = {"name": req_dev.application or self.id}
+            req_app = RequiredApplication(name=req_dev.application or self.id)
             if req_dev.platform:
-                req_app["platform"] = req_dev.platform
+                req_app.platform = req_dev.platform
             if req_app not in self.required_applications:
                 self.required_applications.append(req_app)
