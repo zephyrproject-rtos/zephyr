@@ -120,10 +120,42 @@ K_KERNEL_STACK_DEFINE(tx_ts_stack, CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE);
 K_FIFO_DEFINE(tx_ts_queue);
 
 static struct k_thread tx_thread_ts;
+static struct k_thread *timestamp_cb_dispatch_thread;
+static int timestamp_cb_dispatch_depth;
 
 /* We keep track of the timestamp callbacks in this list.
  */
 static sys_slist_t timestamp_callbacks;
+
+static void timestamp_cb_clear(struct net_if_timestamp_cb *handle)
+{
+	handle->pkt = NULL;
+	handle->iface = NULL;
+	handle->cb = NULL;
+}
+
+static bool timestamp_cb_dispatch_is_current(void)
+{
+	return timestamp_cb_dispatch_depth > 0 &&
+	       timestamp_cb_dispatch_thread == k_current_get();
+}
+
+static void timestamp_cb_prune_locked(void)
+{
+	sys_snode_t *sn, *sns, *prev = NULL;
+
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&timestamp_callbacks, sn, sns) {
+		struct net_if_timestamp_cb *handle =
+			CONTAINER_OF(sn, struct net_if_timestamp_cb, node);
+
+		if (handle->cb != NULL) {
+			prev = sn;
+			continue;
+		}
+
+		sys_slist_remove(&timestamp_callbacks, prev, sn);
+	}
+}
 #endif /* CONFIG_NET_PKT_TIMESTAMP_THREAD */
 
 #if CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG
@@ -6297,6 +6329,16 @@ void net_if_register_timestamp_cb(struct net_if_timestamp_cb *handle,
 				  struct net_if *iface,
 				  net_if_timestamp_callback_t cb)
 {
+	if (timestamp_cb_dispatch_is_current()) {
+		sys_slist_find_and_remove(&timestamp_callbacks, &handle->node);
+		sys_slist_prepend(&timestamp_callbacks, &handle->node);
+
+		handle->iface = iface;
+		handle->cb = cb;
+		handle->pkt = pkt;
+		return;
+	}
+
 	k_mutex_lock(&lock, K_FOREVER);
 
 	sys_slist_find_and_remove(&timestamp_callbacks, &handle->node);
@@ -6311,9 +6353,15 @@ void net_if_register_timestamp_cb(struct net_if_timestamp_cb *handle,
 
 void net_if_unregister_timestamp_cb(struct net_if_timestamp_cb *handle)
 {
+	if (timestamp_cb_dispatch_is_current()) {
+		timestamp_cb_clear(handle);
+		return;
+	}
+
 	k_mutex_lock(&lock, K_FOREVER);
 
 	sys_slist_find_and_remove(&timestamp_callbacks, &handle->node);
+	timestamp_cb_clear(handle);
 
 	k_mutex_unlock(&lock);
 }
@@ -6323,16 +6371,32 @@ void net_if_call_timestamp_cb(struct net_pkt *pkt)
 	sys_snode_t *sn, *sns;
 
 	k_mutex_lock(&lock, K_FOREVER);
+	timestamp_cb_dispatch_thread = k_current_get();
+	timestamp_cb_dispatch_depth++;
 
 	SYS_SLIST_FOR_EACH_NODE_SAFE(&timestamp_callbacks, sn, sns) {
 		struct net_if_timestamp_cb *handle =
 			CONTAINER_OF(sn, struct net_if_timestamp_cb, node);
+
+		if (handle->cb == NULL) {
+			continue;
+		}
 
 		if (((handle->iface == NULL) ||
 		     (handle->iface == net_pkt_iface(pkt))) &&
 		    (handle->pkt == NULL || handle->pkt == pkt)) {
 			handle->cb(pkt);
 		}
+	}
+
+	timestamp_cb_prune_locked();
+	NET_ASSERT(timestamp_cb_dispatch_depth > 0);
+	if (timestamp_cb_dispatch_depth > 0) {
+		timestamp_cb_dispatch_depth--;
+	}
+
+	if (timestamp_cb_dispatch_depth == 0) {
+		timestamp_cb_dispatch_thread = NULL;
 	}
 
 	k_mutex_unlock(&lock);
