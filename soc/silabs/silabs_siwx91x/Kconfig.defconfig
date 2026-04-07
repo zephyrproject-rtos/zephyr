@@ -41,27 +41,6 @@ configdefault PM_POLICY_DEVICE_CONSTRAINTS
 
 endif # PM_DEVICE
 
-if SILABS_SIWX91X_NWP_WISECONNECT
-
-# Wiseconnect needs more than 1024 bytes of main stack size to initialize
-# (especially with PM)
-configdefault MAIN_STACK_SIZE
-	default 2048
-
-config NUM_PREEMPT_PRIORITIES
-	default 56
-
-config CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT
-	default 2
-
-config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
-	default 1024
-
-config CMSIS_V2_THREAD_MAX_STACK_SIZE
-	default 2048
-
-endif
-
 rsource "*/Kconfig.defconfig"
 
 endif # SOC_FAMILY_SILABS_SIWX91X
