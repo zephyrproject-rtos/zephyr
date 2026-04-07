@@ -5435,6 +5435,7 @@ TI SimpleLink Platforms:
   collaborators:
     - bogdanovs
     - jpanisbl
+    - glneo
   files:
     - boards/ti/cc*/
     - boards/ti/msp*/
