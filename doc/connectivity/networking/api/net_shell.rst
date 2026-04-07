@@ -38,6 +38,8 @@ The following net-shell commands are implemented:
    "net nbr", "Print neighbor information. Only available if
    :kconfig:option:`CONFIG_NET_IPV6` is set."
    "net ping", "Ping a network host."
+   "net ptp", "Print information about PTP support. Use ``net ptp <port>`` for detailed
+   per-port view. Only available if :kconfig:option:`CONFIG_PTP` is set."
    "net qbv", "Show and configure IEEE 802.1Qbv Time-Aware Shaper (TAS) information.
    Only available if :kconfig:option:`CONFIG_NET_QBV` is set."
    "net route", "Show IPv6 network routes. Only available if
