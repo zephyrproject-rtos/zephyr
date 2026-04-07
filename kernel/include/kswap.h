@@ -12,6 +12,7 @@
 #include <zephyr/sys/barrier.h>
 #include <kernel_arch_func.h>
 #include <timeslicing.h>
+#include <usage.h>
 
 #ifdef CONFIG_STACK_SENTINEL
 extern void z_check_stack_sentinel(void);
