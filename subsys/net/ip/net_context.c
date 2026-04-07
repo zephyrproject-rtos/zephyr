@@ -2800,6 +2800,16 @@ skip_alloc:
 			goto fail;
 		}
 
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMPING)
+		if (context->options.timestamping & ZSOCK_SOF_TIMESTAMPING_TX_HARDWARE) {
+			net_pkt_set_tx_timestamping(pkt, true);
+		}
+
+		if (context->options.timestamping & ZSOCK_SOF_TIMESTAMPING_RX_HARDWARE) {
+			net_pkt_set_rx_timestamping(pkt, true);
+		}
+#endif
+
 		net_pkt_cursor_init(pkt);
 
 		struct net_sockaddr_ll_ptr *ll_src_addr;
