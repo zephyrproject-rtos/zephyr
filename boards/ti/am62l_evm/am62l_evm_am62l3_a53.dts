@@ -17,6 +17,7 @@
 		zephyr,console = &main_uart0;
 		zephyr,shell-uart = &main_uart0;
 		zephyr,sram = &ddr0;
+		zephyr,canbus = &main_mcan0;
 	};
 
 	aliases {
@@ -144,5 +145,11 @@
 };
 
 &main_rti0 {
+	status = "okay";
+};
+
+&main_mcan0 {
+	pinctrl-0 = <&main_mcan0_rx>, <&main_mcan0_tx>;
+	pinctrl-names = "default";
 	status = "okay";
 };

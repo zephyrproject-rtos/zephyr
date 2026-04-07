@@ -9,6 +9,7 @@ ram: 2048
 supported:
   - adc
   - uart
+  - can
 testing:
   ignore_tags:
     - net
