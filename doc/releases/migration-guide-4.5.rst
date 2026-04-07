@@ -50,6 +50,17 @@ Device Drivers and Devicetree
 Bluetooth
 *********
 
+Bluetooth Host
+==============
+
+* :kconfig:option:`CONFIG_BT_GATT_DYNAMIC_DB` no longer depends on
+  :kconfig:option:`CONFIG_BT_GATT_SERVICE_CHANGED`. If Service Changed is
+  disabled, :c:func:`bt_gatt_service_register` and :c:func:`bt_gatt_service_unregister`
+  return ``-ENOTSUP`` when called after :c:func:`bt_enable`; use only static services
+  or register dynamic services before the stack is initialized.
+  See :zephyr_file:`include/zephyr/bluetooth/gatt.h` for details.
+  (:github:`106421`)
+
 
 Networking
 **********

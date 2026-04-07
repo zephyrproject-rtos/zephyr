@@ -132,7 +132,7 @@ struct gatt_sc_cfg {
 	} data;
 };
 
-#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+#if IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)
 #define SC_CFG_MAX (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN)
 #else
 #define SC_CFG_MAX 0
@@ -153,7 +153,7 @@ enum {
 	SC_NUM_FLAGS,
 };
 
-#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+#if IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)
 static struct gatt_sc {
 	struct bt_gatt_indicate_params params;
 	uint16_t start;
@@ -162,7 +162,7 @@ static struct gatt_sc {
 
 	ATOMIC_DEFINE(flags, SC_NUM_FLAGS);
 } gatt_sc;
-#endif /* defined(CONFIG_BT_GATT_SERVICE_CHANGED) */
+#endif /* CONFIG_BT_GATT_SERVICE_CHANGED */
 
 #if defined(CONFIG_BT_GATT_CACHING)
 static struct db_hash {
@@ -1045,7 +1045,7 @@ static void bt_gatt_pairing_complete(struct bt_conn *conn, bool bonded)
 
 BT_GATT_SERVICE_DEFINE(_1_gatt_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GATT),
-#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+#if IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)
 	/* Bluetooth 5.0, Vol3 Part G:
 	 * The Service Changed characteristic Attribute Handle on the server
 	 * shall not change if the server has a trusted relationship with any
@@ -1161,12 +1161,12 @@ populate:
 
 static inline void sc_work_submit(k_timeout_t timeout)
 {
-#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+#if IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)
 	k_work_reschedule(&gatt_sc.work, timeout);
 #endif
 }
 
-#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+#if IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)
 static void sc_indicate_rsp(struct bt_conn *conn,
 			    struct bt_gatt_indicate_params *params, uint8_t err)
 {
@@ -1234,7 +1234,7 @@ static void sc_process(struct k_work *work)
 
 	atomic_set_bit(sc->flags, SC_INDICATE_PENDING);
 }
-#endif /* defined(CONFIG_BT_GATT_SERVICE_CHANGED) */
+#endif /* CONFIG_BT_GATT_SERVICE_CHANGED */
 
 static void clear_ccc_cfg(struct bt_gatt_ccc_cfg *cfg)
 {
@@ -1410,7 +1410,7 @@ void bt_gatt_init(void)
 	}
 #endif /* CONFIG_BT_GATT_CACHING */
 
-#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+#if IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)
 	k_work_init_delayable(&gatt_sc.work, sc_process);
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		/* Make sure to not send SC indications until SC
@@ -1418,7 +1418,7 @@ void bt_gatt_init(void)
 		 */
 		atomic_set_bit(gatt_sc.flags, SC_INDICATE_PENDING);
 	}
-#endif /* defined(CONFIG_BT_GATT_SERVICE_CHANGED) */
+#endif /* CONFIG_BT_GATT_SERVICE_CHANGED */
 
 #if defined(CONFIG_BT_SETTINGS_DELAYED_STORE)
 	k_work_init_delayable(&gatt_delayed_store.work, delayed_store);
@@ -1439,7 +1439,7 @@ void bt_gatt_init(void)
 
 static void sc_indicate(uint16_t start, uint16_t end)
 {
-#if defined(CONFIG_BT_GATT_SERVICE_CHANGED) && \
+#if IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED) && \
 	(defined(CONFIG_BT_GATT_DYNAMIC_DB) || \
 	 (defined(CONFIG_BT_GATT_CACHING) && defined(CONFIG_BT_SETTINGS)))
 	LOG_DBG("start 0x%04x end 0x%04x", start, end);
@@ -1590,7 +1590,7 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	__ASSERT(svc->attrs, "invalid parameters\n");
 	__ASSERT(svc->attr_count, "invalid parameters\n");
 
-#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+#if IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
 	    atomic_test_bit(gatt_flags, GATT_INITIALIZED) &&
 	    !atomic_test_bit(gatt_sc.flags, SC_LOAD)) {
@@ -1631,7 +1631,7 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 		return 0;
 	}
 
-#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+#if IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)
 	sc_indicate(svc->attrs[0].handle,
 		    svc->attrs[svc->attr_count - 1].handle);
 #endif
@@ -1680,7 +1680,7 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 		return 0;
 	}
 
-#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+#if IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)
 	sc_indicate(sc_start_handle, sc_end_handle);
 #endif
 
@@ -6089,7 +6089,7 @@ static int gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
 	return 0;
 }
 
-#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+#if IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)
 static int sc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		  void *cb_arg)
 {
