@@ -33,6 +33,8 @@
 #include <zephyr/llext/symbol.h>
 #include <zephyr/sys/iterable_sections.h>
 
+#include <usage.h>
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_OBJ_CORE_THREAD
