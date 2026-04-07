@@ -144,7 +144,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		z_current_thread_set(new_thread);
 
 #ifdef CONFIG_TIMESLICING
-		z_reset_time_slice(new_thread);
+		z_time_slice_reset(new_thread);
 #endif /* CONFIG_TIMESLICING */
 
 #ifdef CONFIG_SPIN_VALIDATE
