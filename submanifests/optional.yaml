@@ -4,12 +4,6 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
   # zephyr-keep-sorted-start re(^\s+\- name:)
   projects:
-    - name: canopennode
-      revision: dec12fa3f0d790cafa8414a4c2930ea71ab72ffd
-      path: modules/lib/canopennode
-      remote: upstream
-      groups:
-        - optional
     - name: chre
       revision: c4c2f49fdcaa2fed49eb1db027696a5734a010d2
       path: modules/lib/chre
