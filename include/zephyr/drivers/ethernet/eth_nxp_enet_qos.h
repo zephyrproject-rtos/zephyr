@@ -51,4 +51,8 @@ struct nxp_enet_qos_config {
 };
 #define ENET_QOS_MODULE_CFG(module_dev) ((struct nxp_enet_qos_config *) module_dev->config)
 
+#if IS_ENABLED(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+extern void nxp_enet_qos_ptp_reset(const struct device *module_dev);
+#endif
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_ETH_NXP_ENET_H__ */
