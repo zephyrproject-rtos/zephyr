@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 BayLibre SAS
+ * Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +8,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,6 +32,7 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 
 #define MIN_NSEC_TO_TIMEINTERVAL (0xFFFF800000000000ULL)
 #define MAX_NSEC_TO_TIMEINTERVAL (0x00007FFFFFFFFFFFULL)
+#define INGRESS_TS_PHC_DELTA_GUARD_NS (5ULL * NSEC_PER_SEC)
 
 /**
  * @brief PTP Clock structure.
@@ -243,6 +246,15 @@ static void clock_check_pollfd(void)
 	ptp_clk.pollfd_valid = true;
 }
 
+static void clock_notify_worker(void)
+{
+	if (ptp_clk.pollfd[0].events != ZSOCK_POLLIN) {
+		return;
+	}
+
+	zvfs_eventfd_write(ptp_clk.pollfd[0].fd, 1);
+}
+
 const struct ptp_clock *ptp_clock_init(void)
 {
 	struct ptp_default_ds *dds = &ptp_clk.default_ds;
@@ -324,7 +336,7 @@ void ptp_clock_handle_state_decision_evt(void)
 		if (!foreign) {
 			continue;
 		}
-		if (!best || ptp_btca_ds_cmp(&foreign->dataset, &best->dataset)) {
+		if (!best || ptp_btca_ds_cmp(&foreign->dataset, &best->dataset) > 0) {
 			best = foreign;
 		}
 	}
@@ -519,11 +531,55 @@ static double ptp_servo_pi(int64_t nanosecond_diff)
 	return ppb;
 }
 
-void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
+static void clock_servo_reset(void)
+{
+	int ret;
+
+	ptp_clk.pi_drift = 0.0;
+
+	ret = ptp_clock_rate_adjust(ptp_clk.phc, 1.0);
+	if (ret < 0) {
+		LOG_WRN("Failed to reset PHC rate to nominal (err %d)", ret);
+	}
+}
+
+static uint64_t clock_ptp_time_to_ns(const struct net_ptp_time *ptp_time)
+{
+	return ptp_time->second * NSEC_PER_SEC + ptp_time->nanosecond;
+}
+
+static uint64_t clock_abs_delta_u64(uint64_t a, uint64_t b)
+{
+	return a >= b ? a - b : b - a;
+}
+
+void ptp_clock_synchronize(uint64_t ingress, uint64_t egress, bool ingress_ts_valid)
 {
 	double ppb;
 	int64_t offset;
+	int ret;
 	int64_t delay = ptp_clk.current_ds.mean_delay >> 16;
+	struct net_ptp_time current;
+	uint64_t phc_now_ns;
+	uint64_t ingress_phc_delta;
+
+	ptp_clock_get(ptp_clk.phc, &current);
+	phc_now_ns = clock_ptp_time_to_ns(&current);
+	ingress_phc_delta = clock_abs_delta_u64(ingress, phc_now_ns);
+
+	if (!ingress_ts_valid || ingress_phc_delta > INGRESS_TS_PHC_DELTA_GUARD_NS) {
+		LOG_WRN("Ingress timestamp fallback (%s): ingress=%" PRIu64 ".%09u phc_now=%" PRIu64
+			".%09u |ingress-phc|=%" PRIu64 "ns",
+			ingress_ts_valid ? "out-of-range" : "missing",
+			ingress / NSEC_PER_SEC,
+			(uint32_t)(ingress % NSEC_PER_SEC),
+			current.second,
+			current.nanosecond,
+			ingress_phc_delta);
+
+		ingress = phc_now_ns;
+		ingress_phc_delta = 0;
+	}
 
 	ptp_clk.timestamp.t1 = egress;
 	ptp_clk.timestamp.t2 = ingress;
@@ -536,10 +592,20 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
 
 	/* If diff is too big, ptp_clk needs to be set first. */
 	if ((offset > (int64_t)NSEC_PER_SEC) || (offset < -(int64_t)NSEC_PER_SEC)) {
-		struct net_ptp_time current;
 		int32_t dest_nsec;
 
-		LOG_WRN("Clock offset exceeds 1 second.");
+		LOG_WRN("Clock offset exceeds 1 second (t1=%" PRIu64 ".%09u t2=%" PRIu64
+			".%09u delay=%lldns offset=%lldns phc_now=%" PRIu64 ".%09u |t2-phc|=%"
+			PRIu64 "ns)",
+			ptp_clk.timestamp.t1 / NSEC_PER_SEC,
+			(uint32_t)(ptp_clk.timestamp.t1 % NSEC_PER_SEC),
+			ptp_clk.timestamp.t2 / NSEC_PER_SEC,
+			(uint32_t)(ptp_clk.timestamp.t2 % NSEC_PER_SEC),
+			delay,
+			offset,
+			current.second,
+			current.nanosecond,
+			clock_abs_delta_u64(ptp_clk.timestamp.t2, phc_now_ns));
 
 		ptp_clock_get(ptp_clk.phc, &current);
 
@@ -555,8 +621,15 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
 		}
 
 		current.nanosecond = (uint32_t)dest_nsec;
-
 		ptp_clock_set(ptp_clk.phc, &current);
+
+		/* A hard step invalidates the timestamps used by the E2E delay path and
+		 * any accumulated frequency correction from the previous time base.
+		 */
+		memset(&ptp_clk.timestamp, 0, sizeof(ptp_clk.timestamp));
+		ptp_clk.current_ds.mean_delay = 0;
+		clock_servo_reset();
+
 		LOG_WRN("Set clock time: %"PRIu64".%09u", current.second, current.nanosecond);
 		return;
 	}
@@ -565,7 +638,13 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
 	ptp_clk.current_ds.offset_from_tt = clock_ns_to_timeinterval(offset);
 
 	ppb = ptp_servo_pi(-offset);
-	ptp_clock_rate_adjust(ptp_clk.phc, 1.0 + (ppb / 1000000000.0));
+	ret = ptp_clock_rate_adjust(ptp_clk.phc, 1.0 + (ppb / 1000000000.0));
+	if (ret < 0) {
+		LOG_WRN("Failed to adjust PHC rate for offset %lldns (ppb=%f err %d), "
+			"resetting servo",
+			offset, ppb, ret);
+		clock_servo_reset();
+	}
 }
 
 void ptp_clock_delay(uint64_t egress, uint64_t ingress)
@@ -582,6 +661,11 @@ void ptp_clock_delay(uint64_t egress, uint64_t ingress)
 	delay = ((int64_t)(ptp_clk.timestamp.t2 - ptp_clk.timestamp.t3) +
 		 (int64_t)(ptp_clk.timestamp.t4 - ptp_clk.timestamp.t1)) /
 		2LL;
+
+	if (llabs(delay) > (int64_t)NSEC_PER_SEC) {
+		LOG_WRN("Ignoring unrealistic delay sample: %lldns", delay);
+		return;
+	}
 
 	LOG_DBG("Delay %lldns", delay);
 	ptp_clk.current_ds.mean_delay = clock_ns_to_timeinterval(delay);
@@ -653,7 +737,13 @@ struct ptp_port *ptp_clock_port_from_iface(struct net_if *iface)
 
 void ptp_clock_pollfd_invalidate(void)
 {
+	bool was_valid = ptp_clk.pollfd_valid;
+
 	ptp_clk.pollfd_valid = false;
+
+	if (was_valid) {
+		clock_notify_worker();
+	}
 }
 
 void ptp_clock_signal_timeout(void)
@@ -663,7 +753,12 @@ void ptp_clock_signal_timeout(void)
 
 void ptp_clock_state_decision_req(void)
 {
+	if (ptp_clk.state_decision_event) {
+		return;
+	}
+
 	ptp_clk.state_decision_event = true;
+	clock_notify_worker();
 }
 
 void ptp_clock_port_add(struct ptp_port *port)
