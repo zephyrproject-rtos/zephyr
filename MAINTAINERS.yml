@@ -5427,14 +5427,6 @@ TI MSPM0 Platforms:
   labels:
     - "platform: Texas Instruments MSPM0"
 
-TI Platforms:
-  status: odd fixes
-  files:
-    - soc/ti/lm3s6965/
-    - dts/arm/ti/lm3s6965.dtsi
-  labels:
-    - "platform: TI"
-
 TI SimpleLink Platforms:
   status: maintained
   maintainers:
@@ -5457,6 +5449,14 @@ TI SimpleLink Platforms:
     - modules/Kconfig.simplelink
   labels:
     - "platform: TI SimpleLink"
+
+TI Stellaris Platforms:
+  status: odd fixes
+  files:
+    - soc/ti/lm3s6965/
+    - dts/arm/ti/lm3s6965.dtsi
+  labels:
+    - "platform: TI Stellaris"
 
 Task Watchdog:
   status: maintained
