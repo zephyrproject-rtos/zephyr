@@ -289,9 +289,9 @@ static int sdmmc_switch(struct sd_card *card, enum sd_switch_arg mode, enum sd_g
 	struct sdhc_data data = {0};
 
 	cmd.opcode = SD_SWITCH;
-	cmd.arg = ((mode & 0x1) << 31) | 0x00FFFFFF;
+	cmd.arg = (((uint32_t)mode & 0x1U) << 31) | 0x00FFFFFFU;
 	cmd.arg &= ~(0xFU << (group * 4));
-	cmd.arg |= (value & 0xF) << (group * 4);
+	cmd.arg |= ((uint32_t)value & 0xFU) << (group * 4);
 	cmd.response_type = (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	cmd.retries = CONFIG_SD_CMD_RETRIES;
