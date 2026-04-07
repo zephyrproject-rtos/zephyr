@@ -1,0 +1,61 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip USB G2 driver
+
+description: |
+  Microchip USB G2 driver bindings.
+
+  Group g2 USB driver supports following hardware peripherals:
+    - module name="USBHS" id="03787" version="2a0"
+
+compatible: "microchip,usb-g2"
+
+include:
+  - name: usb-ep.yaml
+  - name: usb-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Base address and size of the USBHS register block.
+
+  interrupts:
+    required: true
+    description: |
+      USB interrupt configuration.
+
+  clocks:
+    required: true
+    description: |
+      Clock configuration for the USB controller.
+
+  clock-names:
+    description: |
+      Names of the clock inputs.
+
+  num-bidir-endpoints:
+    type: int
+    required: true
+    description: |
+      Number of bidirectional endpoints including EP0.
+
+  num-in-endpoints:
+    type: int
+    description: |
+      Number of IN endpoints including EP0 IN.
+
+  num-out-endpoints:
+    type: int
+    description: |
+      Number of OUT endpoints including EP0 OUT.
+
+  vbus-poll-period-ms:
+    type: int
+    description: |
+      VBUS Polling Interval
+
+      The time in milliseconds between system work queue polls for VBUS levels;
+      if omitted, the system defaults to CONFIG_UDC_MCHP_G2_VBUS_POLL_PERIOD_MS.
