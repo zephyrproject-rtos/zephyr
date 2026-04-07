@@ -80,7 +80,7 @@
 		interrupt-parent = <&nvic>;
 		interrupts = <30 0>, <74 0>;
 		interrupt-names = "nwp_stack", "nwp_irq";
-		antenna-selection = "ext-gpios";
+		antenna-selection = "internal";
 		support-1p8v;
 		enable-xtal-correction;
 		qspi-80mhz-clk;

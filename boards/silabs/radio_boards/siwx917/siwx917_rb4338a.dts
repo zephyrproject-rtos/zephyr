@@ -20,6 +20,7 @@
 &nwp {
 	pinctrl-0 = <&nwp_default>;
 	pinctrl-names = "default";
+	antenna-selection = "ext-gpios";
 };
 
 / {
