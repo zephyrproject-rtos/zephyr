@@ -2644,8 +2644,9 @@ class DeviceMmioCheck(ComplianceTest):
     name = "DeviceMmioCheck"
     doc = zephyr_doc_detail_builder("/hardware/peripherals/index.html")
 
-    # Pattern: cast DT_INST_REG_ADDR or DT_REG_ADDR to a pointer type
-    RAW_REG_ADDR_RE = re.compile(r'\(\s*\w+\s*\*\s*\)\s*DT_(INST_)?REG_ADDR\b')
+    # Pattern: cast DT_[INST_]REG_ADDR[_BY_NAME] to a pointer type,
+    # e.g. (struct foo_regs *)DT_INST_REG_ADDR(n)
+    RAW_REG_ADDR_RE = re.compile(r'\([^)]*\*\s*\)\s*DT_(INST_)?REG_ADDR(_BY_NAME)?\b')
 
     MMIO_API_RE = re.compile(
         r'DEVICE_MMIO_ROM\b|DEVICE_MMIO_MAP\b|DEVICE_MMIO_NAMED|'
@@ -2654,7 +2655,7 @@ class DeviceMmioCheck(ComplianceTest):
 
     def run(self):
         for fname in get_files(filter='d'):
-            if not fname.startswith('drivers/') or not fname.endswith('.c'):
+            if not fname.startswith('drivers/') or not fname.endswith(('.c', '.h')):
                 continue
 
             path = GIT_TOP / fname
