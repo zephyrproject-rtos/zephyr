@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon Clock Oscillators
+
+description: Infineon Clock source Oscillators
+
+compatible: "infineon,clk-osc"
+
+include: [base.yaml, fixed-clock.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 0
