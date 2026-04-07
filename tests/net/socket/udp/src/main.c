@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
+#include <zephyr/net/ptp_time.h>
 
 #include "ipv6.h"
 #include "net_private.h"
@@ -2397,6 +2398,66 @@ ZTEST_USER(net_socket_udp, test_recvmsg_msg_controllen_update)
 			     &cmsgbuf.buf,
 			     sizeof(cmsgbuf.buf),
 			     false);
+
+	rv = zsock_close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = zsock_close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
+ZTEST_USER(net_socket_udp, test_recvmsg_timestamping_msg_controllen_update)
+{
+	int rv;
+	int client_sock;
+	int server_sock;
+	uint8_t timestamping = ZSOCK_SOF_TIMESTAMPING_RX_HARDWARE;
+	struct net_sockaddr_in client_addr;
+	struct net_sockaddr_in server_addr;
+	struct net_msghdr msg, server_msg;
+	struct net_iovec io_vector[1];
+	struct net_cmsghdr *cmsg;
+	union {
+		struct net_cmsghdr hdr;
+		unsigned char buf[NET_CMSG_SPACE(sizeof(struct net_ptp_time))];
+	} cmsgbuf;
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	rv = zsock_bind(server_sock, (struct net_sockaddr *)&server_addr, sizeof(server_addr));
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = zsock_bind(client_sock, (struct net_sockaddr *)&client_addr, sizeof(client_addr));
+	zassert_equal(rv, 0, "client bind failed");
+
+	rv = zsock_setsockopt(server_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_TIMESTAMPING, &timestamping,
+			      sizeof(timestamping));
+	zassert_equal(rv, 0, "timestamping setsockopt failed (%d)", errno);
+
+	memset(&cmsgbuf, 0, sizeof(cmsgbuf));
+
+	io_vector[0].iov_base = TEST_STR_SMALL;
+	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_name = &server_addr;
+	msg.msg_namelen = sizeof(server_addr);
+
+	comm_sendmsg_recvmsg(client_sock, (struct net_sockaddr *)&client_addr, sizeof(client_addr),
+			     &msg, server_sock, (struct net_sockaddr *)&server_addr,
+			     sizeof(server_addr), &server_msg, &cmsgbuf.buf, sizeof(cmsgbuf.buf),
+			     true);
+
+	cmsg = NET_CMSG_FIRSTHDR(&server_msg);
+	zassert_not_null(cmsg, "Missing timestamp control message");
+	zassert_equal(server_msg.msg_controllen, NET_CMSG_SPACE(sizeof(struct net_ptp_time)),
+		      "Unexpected msg_controllen %zu", server_msg.msg_controllen);
+	zassert_equal(cmsg->cmsg_level, ZSOCK_SOL_SOCKET, "Unexpected cmsg level");
+	zassert_equal(cmsg->cmsg_type, ZSOCK_SO_TIMESTAMPING, "Unexpected cmsg type");
+	zassert_equal(cmsg->cmsg_len, NET_CMSG_LEN(sizeof(struct net_ptp_time)),
+		      "Unexpected cmsg length %u", cmsg->cmsg_len);
 
 	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
