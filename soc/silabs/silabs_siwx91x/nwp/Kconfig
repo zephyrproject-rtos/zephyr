@@ -1,0 +1,32 @@
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SILABS_SIWX91X_NWP
+	bool "Silabs Network Coprocessor"
+	depends on DT_HAS_SILABS_SIWX91X_NWP_ENABLED
+	select SILABS_SIWX91X_NWP_WISECONNECT
+	help
+	  Add support for Network Coprocessor (also named NWP) presents on SiWx91x parts.
+
+config SILABS_SIWX91X_NWP_WISECONNECT
+	bool
+	select CODE_DATA_RELOCATION_SRAM
+	select CMSIS_RTOS_V2
+	select POLL
+	select DYNAMIC_THREAD
+	select THREAD_NAME
+	select THREAD_STACK_INFO
+	select THREAD_MONITOR
+	select INIT_STACKS
+
+if SILABS_SIWX91X_NWP_WISECONNECT
+
+config SIWX91X_NWP_INIT_PRIORITY
+	int "SiWx91x Network Processor init priority"
+	default 39
+	help
+	  Initialization priority of the SiWx91x Network Processor. NWP init must
+	  have a higher priority than services that depend on it, such as Bluetooth,
+	  Wi-Fi and crypto.
+
+endif

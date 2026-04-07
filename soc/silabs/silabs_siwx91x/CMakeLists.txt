@@ -3,6 +3,7 @@
 include(west)
 
 add_subdirectory(siwg917)
+add_subdirectory(nwp)
 
 # Necessary to not overwrite NWP Firmware
 if(CONFIG_FLASH_USES_MAPPED_PARTITION)
