@@ -726,7 +726,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 	info_err = bt_conn_get_info(conn, &info);
 	if (info_err != 0) {
-		bt_shell_error("Failed to connection information: %d", info_err);
+		bt_shell_error("Unable to get info: conn %p (err %d)", conn, info_err);
 		goto done;
 	}
 
@@ -753,14 +753,16 @@ done:
 static void disconnected_set_new_default_conn_cb(struct bt_conn *conn, void *user_data)
 {
 	struct bt_conn_info info;
+	int err;
 
 	if (default_conn != NULL) {
 		/* nop */
 		return;
 	}
 
-	if (bt_conn_get_info(conn, &info) != 0) {
-		bt_shell_error("Unable to get info: conn %p", conn);
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
+		bt_shell_error("Unable to get info: conn %p (err %d)", conn, err);
 		return;
 	}
 
@@ -784,7 +786,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		int err = bt_conn_get_info(conn, &info);
 
 		if (err != 0) {
-			bt_shell_error("Unable to get info: conn %p Err: %d", conn, err);
+			bt_shell_error("Unable to get info: conn %p (err %d)", conn, err);
 		}
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
@@ -4188,9 +4190,11 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 	struct bt_conn_info info;
 	const char *selected;
 	const char *role_str;
+	int err;
 
-	if (bt_conn_get_info(conn, &info) < 0) {
-		bt_shell_error("Unable to get info: conn %p", conn);
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
+		bt_shell_error("Unable to get info: conn %p (err %d)", conn, err);
 		return;
 	}
 
