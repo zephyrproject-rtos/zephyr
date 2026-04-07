@@ -1439,8 +1439,9 @@ void bt_gatt_init(void)
 
 static void sc_indicate(uint16_t start, uint16_t end)
 {
-#if defined(CONFIG_BT_GATT_DYNAMIC_DB) ||                                                          \
-	(defined(CONFIG_BT_GATT_CACHING) && defined(CONFIG_BT_SETTINGS))
+#if defined(CONFIG_BT_GATT_SERVICE_CHANGED) && \
+	(defined(CONFIG_BT_GATT_DYNAMIC_DB) || \
+	 (defined(CONFIG_BT_GATT_CACHING) && defined(CONFIG_BT_SETTINGS)))
 	LOG_DBG("start 0x%04x end 0x%04x", start, end);
 
 	if (!atomic_test_and_set_bit(gatt_sc.flags, SC_RANGE_CHANGED)) {
@@ -1461,7 +1462,7 @@ submit:
 
 	/* Reschedule since the range has changed */
 	sc_work_submit(SC_TIMEOUT);
-#endif /* BT_GATT_DYNAMIC_DB || (BT_GATT_CACHING && BT_SETTINGS) */
+#endif /* CONFIG_BT_GATT_SERVICE_CHANGED && (DYNAMIC_DB || ...) */
 }
 
 void bt_gatt_cb_register(struct bt_gatt_cb *cb)
@@ -1589,12 +1590,14 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	__ASSERT(svc->attrs, "invalid parameters\n");
 	__ASSERT(svc->attr_count, "invalid parameters\n");
 
+#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
 	    atomic_test_bit(gatt_flags, GATT_INITIALIZED) &&
 	    !atomic_test_bit(gatt_sc.flags, SC_LOAD)) {
 		LOG_DBG("Can't register service after init and before settings are loaded.");
 		return -EINVAL;
 	}
+#endif /* CONFIG_BT_GATT_SERVICE_CHANGED */
 
 	/* Init GATT core services */
 	bt_gatt_service_init();
@@ -1603,6 +1606,15 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	if (!bt_uuid_cmp(svc->attrs[0].uuid, BT_UUID_GAP) ||
 	    !bt_uuid_cmp(svc->attrs[0].uuid, BT_UUID_GATT)) {
 		return -EALREADY;
+	}
+
+	/* If Service Changed support is disabled, runtime registration
+	 * is not allowed after stack initialization since there is no
+	 * mechanism to notify connected peers of database changes.
+	 */
+	if (atomic_test_bit(gatt_flags, GATT_INITIALIZED) &&
+	    !IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)) {
+		return -ENOTSUP;
 	}
 
 	k_sched_lock();
@@ -1619,8 +1631,10 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 		return 0;
 	}
 
+#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
 	sc_indicate(svc->attrs[0].handle,
 		    svc->attrs[svc->attr_count - 1].handle);
+#endif
 
 	db_changed();
 
@@ -1636,6 +1650,15 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 	int err;
 
 	__ASSERT(svc, "invalid parameters\n");
+
+	/* If Service Changed support is disabled, runtime unregistration
+	 * is not allowed after stack initialization since there is no
+	 * mechanism to notify connected peers of database changes.
+	 */
+	if (atomic_test_bit(gatt_flags, GATT_INITIALIZED) &&
+	    !IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)) {
+		return -ENOTSUP;
+	}
 
 	/* gatt_unregister() clears handles when those were auto-assigned
 	 * by host
@@ -1657,7 +1680,9 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 		return 0;
 	}
 
+#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
 	sc_indicate(sc_start_handle, sc_end_handle);
+#endif
 
 	db_changed();
 
