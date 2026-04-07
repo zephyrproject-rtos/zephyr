@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Mentor Graphics MUSB device controller
+
+compatible: "mentor,musb"
+
+include: usb-ep.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      MUSB core register region. If the core is behind a vendor wrapper, use
+      the named regions "wrapper" and "core".
+
+  interrupts:
+    required: true
+
+  num-in-endpoints:
+    required: true
+
+  num-out-endpoints:
+    required: true
