@@ -781,12 +781,19 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 			conn_type |= BT_CONN_TYPE_BR;
 		}
 
-		bt_conn_get_info(conn, &info);
+		int err = bt_conn_get_info(conn, &info);
+
+		if (err != 0) {
+			bt_shell_error("Unable to get info: conn %p Err: %d", conn, err);
+		}
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
 
-		/* If we are connected to other devices, set one of them as default */
-		bt_conn_foreach(info.type, disconnected_set_new_default_conn_cb, NULL);
+		if (err == 0) {
+			/* If we are connected to other devices, set one of them as default */
+			bt_conn_foreach(info.type, disconnected_set_new_default_conn_cb, NULL);
+		}
+
 		if (default_conn == NULL) {
 			bt_conn_foreach(conn_type, disconnected_set_new_default_conn_cb, NULL);
 		}
