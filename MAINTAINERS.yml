@@ -5398,7 +5398,8 @@ TI K3 Platforms:
     - natto1784
     - Kronosblaster
   files:
-    - boards/ti/*am62*/
+    - boards/ti/*am2*/
+    - boards/ti/*am6*/
     - drivers/*/*davinci*
     - drivers/*/*omap*
     - drivers/*/*ti_k3*
