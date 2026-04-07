@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 BayLibre SAS
+ * Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +23,7 @@ LOG_MODULE_REGISTER(ptp_port, CONFIG_PTP_LOG_LEVEL);
 
 #define DEFAULT_LOG_MSG_INTERVAL (0x7F)
 
-#define PORT_DELAY_REQ_CLEARE_TO (3 * NSEC_PER_SEC)
+#define PORT_DELAY_REQ_CLEAR_TO (3 * NSEC_PER_SEC)
 
 #define PORT_LINK_UP	     BIT(0)
 #define PORT_LINK_DOWN	     BIT(1)
@@ -63,7 +64,7 @@ const char *port_id_str(struct ptp_port_id *port_id)
 
 static const char *port_state_str(enum ptp_port_state state)
 {
-	const static char * const states[] = {
+	static const char * const states[] = {
 		[PTP_PS_INITIALIZING]	      = "INITIALIZING",
 		[PTP_PS_FAULTY]		      = "FAULTY",
 		[PTP_PS_DISABLED]	      = "DISABLED",
@@ -444,7 +445,7 @@ static void port_delay_req_cleanup(struct ptp_port *port)
 		timestamp = msg->timestamp.host.second * NSEC_PER_SEC +
 			    msg->timestamp.host.nanosecond;
 
-		if (current - timestamp < PORT_DELAY_REQ_CLEARE_TO) {
+		if (current - timestamp < PORT_DELAY_REQ_CLEAR_TO) {
 			break;
 		}
 
@@ -515,13 +516,14 @@ static void port_sync_fup_ooo_handle(struct ptp_port *port, struct ptp_msg *msg)
 static int port_announce_msg_process(struct ptp_port *port, struct ptp_msg *msg)
 {
 	int ret = 0;
+	enum ptp_port_state state = ptp_port_state(port);
 	const struct ptp_default_ds *dds = ptp_clock_default_ds();
 
 	if (msg->announce.steps_rm >= dds->max_steps_rm) {
 		return ret;
 	}
 
-	switch (ptp_port_state(port)) {
+	switch (state) {
 	case PTP_PS_INITIALIZING:
 		__fallthrough;
 	case PTP_PS_DISABLED:
@@ -550,6 +552,13 @@ static int port_announce_msg_process(struct ptp_port *port, struct ptp_msg *msg)
 		break;
 	default:
 		break;
+	}
+
+	if (state == PTP_PS_LISTENING) {
+		port_timer_set_timeout_random(&port->timers.announce,
+					      port->port_ds.announce_receipt_timeout,
+					      1,
+					      port->port_ds.log_announce_interval);
 	}
 
 	return ret;
@@ -1338,7 +1347,7 @@ struct ptp_foreign_tt_clock *ptp_port_best_foreign(struct ptp_port *port)
 
 		if (!port->best) {
 			port->best = foreign;
-		} else if (ptp_btca_ds_cmp(&foreign->dataset, &port->best->dataset)) {
+		} else if (ptp_btca_ds_cmp(&foreign->dataset, &port->best->dataset) > 0) {
 			port->best = foreign;
 		} else {
 			port_clear_foreign_clock_records(foreign);
@@ -1349,8 +1358,8 @@ struct ptp_foreign_tt_clock *ptp_port_best_foreign(struct ptp_port *port)
 
 int ptp_port_add_foreign_tt(struct ptp_port *port, struct ptp_msg *msg)
 {
-	struct ptp_foreign_tt_clock *foreign;
-	struct ptp_msg *last;
+	struct ptp_foreign_tt_clock *foreign = NULL;
+	struct ptp_msg *last = NULL;
 	int diff = 0;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&port->foreign_list, foreign, node) {
@@ -1379,21 +1388,18 @@ int ptp_port_add_foreign_tt(struct ptp_port *port, struct ptp_msg *msg)
 		foreign->port = port;
 
 		sys_slist_append(&port->foreign_list, &foreign->node);
-
-		/* First message is not added to records. */
-		return 0;
 	}
 
 	foreign_clock_cleanup(foreign);
-	ptp_msg_ref(msg);
 
-	foreign->messages_count++;
-	k_fifo_put(&foreign->messages, (void *)msg);
-
-	if (foreign->messages_count > 1) {
+	if (foreign->messages_count > 0) {
 		last = (struct ptp_msg *)k_fifo_peek_tail(&foreign->messages);
 		diff = ptp_msg_announce_cmp(&msg->announce, &last->announce);
 	}
+
+	ptp_msg_ref(msg);
+	foreign->messages_count++;
+	k_fifo_put(&foreign->messages, (void *)msg);
 
 	return (foreign->messages_count == FOREIGN_TIME_TRANSMITTER_THRESHOLD ? 1 : 0) || diff;
 }
@@ -1421,6 +1427,7 @@ void ptp_port_free_foreign_tts(struct ptp_port *port)
 int ptp_port_update_current_time_transmitter(struct ptp_port *port, struct ptp_msg *msg)
 {
 	struct ptp_foreign_tt_clock *foreign = port->best;
+	struct ptp_msg *last = NULL;
 
 	if (!foreign ||
 	    !ptp_port_id_eq(&msg->header.src_port_id, &foreign->dataset.sender)) {
@@ -1428,19 +1435,21 @@ int ptp_port_update_current_time_transmitter(struct ptp_port *port, struct ptp_m
 	}
 
 	foreign_clock_cleanup(foreign);
-	ptp_msg_ref(msg);
 
-	k_fifo_put(&foreign->messages, (void *)msg);
+	if (foreign->messages_count > 0) {
+		last = (struct ptp_msg *)k_fifo_peek_tail(&foreign->messages);
+	}
+
+	ptp_msg_ref(msg);
 	foreign->messages_count++;
+	k_fifo_put(&foreign->messages, (void *)msg);
 
 	port_timer_set_timeout_random(&port->timers.announce,
 				      port->port_ds.announce_receipt_timeout,
 				      1,
 				      port->port_ds.log_announce_interval);
 
-	if (foreign->messages_count > 1) {
-		struct ptp_msg *last = (struct ptp_msg *)k_fifo_peek_tail(&foreign->messages);
-
+	if (last) {
 		return ptp_msg_announce_cmp(&msg->announce, &last->announce);
 	}
 
