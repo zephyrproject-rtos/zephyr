@@ -43,6 +43,13 @@ config CLOCK_CONTROL_IFX_CLOCK_V2
 	help
 	  This option enables the clock control driver for Infineon Traveo family.
 
+config CLOCK_CONTROL_IFX_PERI_CLOCK_V2
+	bool "Infineon Traveo peripheral clock driver"
+	default y
+	depends on DT_HAS_INFINEON_CLK_PERI_ENABLED
+	help
+	  This option enables the Peripheral clock driver for Infineon Traveo family.
+
 if CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK
 config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK_INIT_PRIORITY
 	int "Infineon fixed factor clock driver init priority"
