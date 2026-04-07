@@ -1,0 +1,15 @@
+sample:
+  name: I3C Bus Scan
+  description: Discover and display all I3C and I2C devices on an I3C bus.
+common:
+  tags: i3c
+  filter: dt_chosen_enabled("zephyr,i3c") or
+          dt_compat_enabled("snps,designware-i3c") or
+          dt_compat_enabled("cdns,i3c")
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "I3C Bus Discovery Sample"
+      - "Scan Complete"

@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 Alif Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Generic I3C overlay for I3C bus scan sample.
+ * Enables I3C0 controller with alias.
+ * Copy to boards/<your_board>.overlay or modify as needed.
+ */
+
+/ {
+	aliases {
+		i3c0 = &i3c0;
+	};
+};
+
+&i3c0 {
+	status = "okay";
+	/* I3C devices will be dynamically discovered via DAA */
+};
