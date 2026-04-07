@@ -2636,6 +2636,9 @@ class DeviceMmioCheck(ComplianceTest):
     Check that drivers use the device MMIO API instead of raw DT_REG_ADDR()
     for register access.
 
+    Only lines added or modified in the current changeset are checked, so
+    pre-existing violations do not block unrelated changes to the same file.
+
     Drivers that cast DT_INST_REG_ADDR() or DT_REG_ADDR() to a pointer and
     store it directly will fail on systems with an MMU, where physical
     addresses must be mapped before access.
@@ -2653,9 +2656,29 @@ class DeviceMmioCheck(ComplianceTest):
         r'DEVICE_MMIO_TOPLEVEL\b|device_map\s*\('
     )
 
+    # Parses unified diff hunk headers: @@ -old,count +new,count @@
+    HUNK_RE = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@')
+
+    @staticmethod
+    def _added_lines(fname):
+        """Return the set of line numbers that were added in COMMIT_RANGE."""
+        added = set()
+        diff_output = git('diff', '-U0', '--no-ext-diff', COMMIT_RANGE, '--', fname)
+        for line in diff_output.splitlines():
+            m = DeviceMmioCheck.HUNK_RE.match(line)
+            if m:
+                start = int(m.group(1))
+                count = int(m.group(2)) if m.group(2) is not None else 1
+                added.update(range(start, start + count))
+        return added
+
     def run(self):
         for fname in get_files(filter='d'):
             if not fname.startswith('drivers/') or not fname.endswith(('.c', '.h')):
+                continue
+
+            added = self._added_lines(fname)
+            if not added:
                 continue
 
             path = GIT_TOP / fname
@@ -2664,11 +2687,15 @@ class DeviceMmioCheck(ComplianceTest):
 
             with open(path, encoding='utf-8', errors='ignore') as f:
                 for line_no, line in enumerate(f, start=1):
-                    if raw_match_line is None and self.RAW_REG_ADDR_RE.search(line):
-                        raw_match_line = line_no
                     if self.MMIO_API_RE.search(line):
                         has_mmio_api = True
                         break
+                    if (
+                        raw_match_line is None
+                        and line_no in added
+                        and self.RAW_REG_ADDR_RE.search(line)
+                    ):
+                        raw_match_line = line_no
 
             if raw_match_line is not None and not has_mmio_api:
                 self.fmtd_failure(
