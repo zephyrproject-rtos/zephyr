@@ -39,16 +39,18 @@ static ssize_t read_test(struct bt_conn *conn, const struct bt_gatt_attr *attr, 
 
 static struct bt_gatt_attr test_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(&test_uuid),
-	BT_GATT_CHARACTERISTIC(&test_chrc_uuid.uuid, BT_GATT_CHRC_READ, BT_GATT_PERM_READ, read_test,
-			       NULL, test_value),
+	BT_GATT_CHARACTERISTIC(&test_chrc_uuid.uuid,
+			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
+			       read_test, NULL, test_value),
 };
 
 static struct bt_gatt_service test_svc = BT_GATT_SERVICE(test_attrs);
 
 static struct bt_gatt_attr test1_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(&test1_uuid),
-	BT_GATT_CHARACTERISTIC(&test1_chrc_uuid.uuid, BT_GATT_CHRC_READ, BT_GATT_PERM_READ, read_test,
-			       NULL, test_value),
+	BT_GATT_CHARACTERISTIC(&test1_chrc_uuid.uuid,
+			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
+			       read_test, NULL, test_value),
 };
 
 static struct bt_gatt_service test1_svc = BT_GATT_SERVICE(test1_attrs);
