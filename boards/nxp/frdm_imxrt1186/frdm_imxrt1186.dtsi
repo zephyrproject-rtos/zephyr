@@ -264,6 +264,10 @@
 	status = "okay";
 };
 
+&dac {
+	status = "okay";
+};
+
 &tmpsns {
 	status = "okay";
 };
