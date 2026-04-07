@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon High Frequency Clock(clk_hf)
+
+compatible: "infineon,clk-hf"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clocks:
+    required: true
+    description: HF CLock source
+
+  divider:
+    type: int
+    description: Divider for High Frequency Clock
+    default: 1
+    enum: [1, 2, 4, 8]
+
+  "#clock-cells":
+    const: 0
