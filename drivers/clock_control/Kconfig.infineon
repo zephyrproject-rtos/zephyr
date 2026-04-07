@@ -37,12 +37,20 @@ config CLOCK_CONTROL_IFX_PERI_CLOCK
 config CLOCK_CONTROL_IFX_TRAVEO
 	bool "Infineon Traveo clock control driver"
 	default y
-	depends on INFINEON_TRAVEO_FAMILY
+	depends on SOC_FAMILY_INFINEON_TRAVEO
 	depends on DT_HAS_INFINEON_CLK_OSC_ENABLED
 	depends on DT_HAS_INFINEON_CLK_PLL_ENABLED
 	depends on DT_HAS_INFINEON_CLK_HF_ENABLED
 	help
 	  This option enables the clock control driver for Infineon Traveo family.
+
+config CLOCK_CONTROL_IFX_TRAVEO_PERI_CLOCK
+	bool "Infineon Traveo peripheral clock driver"
+	default y
+	depends on SOC_FAMILY_INFINEON_TRAVEO
+	depends on DT_HAS_INFINEON_CLK_PERI_ENABLED
+	help
+	  This option enables the Peripheral clock driver for Infineon Traveo family.
 
 if CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK
 config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK_INIT_PRIORITY
