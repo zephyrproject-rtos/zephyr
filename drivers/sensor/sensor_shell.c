@@ -148,6 +148,7 @@ static const char *const sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
 	[SENSOR_ATTR_BATCH_DURATION] = "batch_dur",
 	[SENSOR_ATTR_GAIN] = "gain",
 	[SENSOR_ATTR_RESOLUTION] = "resolution",
+	[SENSOR_ATTR_CHIP_ID] = "chip_id",
 };
 
 enum sample_stats_state {
