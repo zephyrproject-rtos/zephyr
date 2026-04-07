@@ -23,10 +23,11 @@
 		ethernet@40028000 {
 			reg = <0x40028000 0x8000>;
 			compatible = "st,stm32-ethernet-controller";
-			clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx";
+			clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx", "mac-clk-ptp";
 			clocks = <&rcc STM32_CLOCK(AHB1, 19)>,
 				 <&rcc STM32_CLOCK(AHB1, 20)>,
-				 <&rcc STM32_CLOCK(AHB1, 21)>;
+				 <&rcc STM32_CLOCK(AHB1, 21)>,
+				 <&rcc STM32_SRC_PLL1_Q NO_SEL>;
 
 			mac: ethernet {
 				compatible = "st,stm32h5-ethernet", "st,stm32h7-ethernet",

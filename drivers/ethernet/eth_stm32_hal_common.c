@@ -113,15 +113,15 @@ static int eth_initialize(const struct device *dev)
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 	int ret = 0;
 
-	/* Enable clocks */
+	/* Set up gated and source clocks */
 	for (size_t n = 0; n < cfg->pclken_cnt; n++) {
-		if (n == cfg->kclk_sel_idx) {
+		if (IN_RANGE(cfg->pclken[n].bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
+			ret = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					       (clock_control_subsys_t)&cfg->pclken[n]);
+		} else {
 			ret = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 						      (clock_control_subsys_t)&cfg->pclken[n],
 						      NULL);
-		} else {
-			ret = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					       (clock_control_subsys_t)&cfg->pclken[n]);
 		}
 
 		if (ret != 0) {
@@ -365,11 +365,8 @@ static const struct eth_stm32_hal_dev_cfg eth0_config = {
 	.config_func = eth0_irq_config,
 	.pclken = eth0_pclken,
 	.pclken_cnt = DT_NUM_CLOCKS(DT_INST_PARENT(0)),
-	.kclk_sel_idx = COND_CODE_1(DT_PROP_HAS_NAME(DT_INST_PARENT(0), clocks, eth_ker),
-				    (DT_PHA_ELEM_IDX_BY_NAME(DT_INST_PARENT(0), clocks, eth_ker)),
-				    (UINT8_MAX)),
 #ifdef CONFIG_PTP_CLOCK_STM32_HAL
-	/* If no PTP clock is defined, bus clock ("stm-eth") gives the ethernet clock rate */
+	/* If no dedicated PTP clock is defined, fall back to the MAC bus clock. */
 	.rate_pclken_idx = DT_PHA_ELEM_IDX_BY_NAME(DT_INST_PARENT(0), clocks,
 						   COND_CODE_1(ETH_STM32_HAS_PTP_CLOCK,
 							       (mac_clk_ptp), (stm_eth))),

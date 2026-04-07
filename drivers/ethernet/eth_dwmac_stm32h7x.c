@@ -93,9 +93,16 @@ int dwmac_bus_init(struct dwmac_priv *p)
 	p->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	for (size_t n = 0; n < ARRAY_SIZE(pclken); n++) {
-		ret  = clock_control_on(p->clock, (clock_control_subsys_t)&pclken[n]);
-		if (ret) {
-			LOG_ERR("Failed to enable ethernet clock #%zu", n);
+		if (IN_RANGE(pclken[n].bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
+			ret = clock_control_on(p->clock, (clock_control_subsys_t)&pclken[n]);
+		} else {
+			ret = clock_control_configure(p->clock,
+						      (clock_control_subsys_t)&pclken[n],
+						      NULL);
+		}
+
+		if (ret != 0) {
+			LOG_ERR("Failed to setup ethernet clock #%zu", n);
 			return -EIO;
 		}
 	}
