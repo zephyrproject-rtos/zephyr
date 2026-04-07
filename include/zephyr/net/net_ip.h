@@ -1907,6 +1907,19 @@ static inline struct net_sockaddr *net_sad(const struct net_sockaddr_storage *ad
 }
 
 /**
+ * @brief Get net_sockaddr_storage from net_sockaddr. This is a helper so that
+ * the code calling this function can be made shorter.
+ *
+ * @param addr Socket address
+ *
+ * @return Pointer to socket storage address (struct net_sockaddr_storage)
+ */
+static inline struct net_sockaddr_storage *net_sas(const struct net_sockaddr *addr)
+{
+	return (struct net_sockaddr_storage *)addr;
+}
+
+/**
  * @brief Get net_sockaddr_in6 from net_sockaddr. This is a helper so that
  * the code calling this function can be made shorter.
  *
