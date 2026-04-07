@@ -9,3 +9,4 @@ zephyr_library_sources(core.c)
 
 # protocol module - implements protocol-related sub-commands
 zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_CLK_HELPERS clk.c)
+zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_RESET_HELPERS reset.c)
