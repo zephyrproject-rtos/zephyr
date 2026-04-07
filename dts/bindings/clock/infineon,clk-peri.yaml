@@ -1,0 +1,44 @@
+# Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+
+description: Infineon Peripheral Clock
+
+compatible: "infineon,clk-peri"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  ifx,8-bit-max-divider:
+    type: int
+    description: Maximum number of 8-bit dividers in peri group
+    required: true
+
+  ifx,16-bit-max-divider:
+    type: int
+    description: Maximum number of 16-bit dividers in peri group
+    required: true
+
+  ifx,16-5-bit-max-divider:
+    type: int
+    description: Maximum number of 16.5-bit dividers in peri group
+    required: true
+
+  ifx,24-5-bit-max-divider:
+    type: int
+    description: Maximum number of 24.5-bit dividers in peri group
+    required: true
+
+  ifx,peri-clk-inst:
+    type: int
+    description: peripheral clock divider instance
+    required: true
+
+  "#clock-cells":
+    const: 3
+
+clock-cells:
+  - rootclk-id
+  - divider-type
+  - divider-inst
