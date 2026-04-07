@@ -1016,9 +1016,10 @@ static int insert_pktinfo(struct net_msghdr *msg, int level, int type,
 			  void *pktinfo, size_t pktinfo_len)
 {
 	struct net_cmsghdr *cmsg;
+	size_t cmsg_space = NET_CMSG_SPACE(pktinfo_len);
 
-	if (msg->msg_controllen < pktinfo_len) {
-		return -EINVAL;
+	if (msg->msg_controllen < cmsg_space) {
+		return -ENOMEM;
 	}
 
 	for (cmsg = NET_CMSG_FIRSTHDR(msg); cmsg != NULL; cmsg = NET_CMSG_NXTHDR(msg, cmsg)) {
@@ -1160,7 +1161,7 @@ static int update_msg_controllen(struct net_msghdr *msg)
 		if (cmsg->cmsg_len == 0) {
 			break;
 		}
-		cmsg_space += cmsg->cmsg_len;
+		cmsg_space += NET_ALIGN_H(cmsg->cmsg_len);
 	}
 	msg->msg_controllen = cmsg_space;
 
