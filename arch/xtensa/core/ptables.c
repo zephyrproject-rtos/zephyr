@@ -1379,6 +1379,8 @@ int arch_mem_domain_deinit(struct k_mem_domain *domain)
 
 	domain->arch.ptables = NULL;
 
+	sys_slist_find_and_remove(&xtensa_domain_list, &domain->arch.node);
+
 	k_spin_unlock(&xtensa_mmu_lock, key);
 
 	K_SPINLOCK(&xtensa_counter_lock) {
