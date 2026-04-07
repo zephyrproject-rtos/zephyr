@@ -18,13 +18,21 @@ Requirements
 For generic host connectivity, that can be used for debugging purposes, see
 :ref:`networking_with_native_sim` for details.
 
+For testing with embedded devices, an Ethernet PHY with support for timestamping
+must be used. The sample application has been tested with the Ethernet PHYs on a
+:zephyr:board:`nucleo_h563zi` with ptp4l daemons, a GPS Clock (direct link),
+a PTP-capable switch and with a GPS Clock + PTP-capable switch.
+
 Building and Running
 ********************
 
 A good way to run this sample is to run this PTP application inside
-native_sim board as described in :ref:`networking_with_native_sim` or with
-embedded device like Nucleo-H743-ZI, Nucleo-H745ZI-Q, Nucleo-F767ZI or
-Nucleo-H563ZI. Note that PTP is only supported for
+:zephyr:board:`native_sim` board as described in
+:ref:`networking_with_native_sim` or with
+embedded device like :zephyr:board:`nucleo_h563zi`, :zephyr:board:`nucleo_h743zi`,
+:zephyr:board:`nucleo_h745zi_q` or :zephyr:board:`nucleo_f767zi`.
+
+Note that PTP is only supported for
 boards that have an Ethernet port and which has support for collecting
 timestamps for sent and received Ethernet frames.
 
@@ -35,73 +43,6 @@ Follow these steps to build the PTP sample application:
    :board: <board to use>
    :goals: build
    :compact:
-
-The net-shell command ``net ptp`` will print general PTP information.
-For detailed information about port 1, use ``net ptp 1`` (or ``net ptp port 1``).
-
-Setting up Linux Host
-=====================
-
-By default PTP in Zephyr will not print any PTP debug messages to console.
-One can enable debug prints by setting
-:kconfig:option:`CONFIG_PTP_LOG_LEVEL_DBG` in the config file.
-
-Get linuxptp project sources
-
-.. code-block:: console
-
-    git clone git://git.code.sf.net/p/linuxptp/code
-
-Compile the ``ptp4l`` daemon and start it like this:
-
-.. code-block:: console
-
-    sudo ./ptp4l -4 -i zeth -m -q -l 6 -S
-
-Or configure it with a config file like this:
-
-.. code-block:: console
-    [global]
-    # Delay mechanism must match your configuration
-    delay_mechanism        E2E
-
-    # Use hardware timestamping if your NIC supports it
-    time_stamping          hardware
-
-    # Choose the transport that matches your network:
-    # - L2 = EtherType 0x88f7 (typical in TSN/industrial, needs L2 reachability)
-    # - UDPv4 = common in IT networks / routed segments
-    network_transport      UDPv4
-
-    # Must match switch domain
-    domainNumber           0
-
-    # Message rates (adjust as needed)
-    logSyncInterval        -3
-    logMinDelayReqInterval -3
-
-    # Quality-of-life
-    tx_timestamp_timeout   20
-    summary_interval       1
-
-and start it like this:
-
-.. code-block:: console
-    sudo ./ptp4l -i zeth -f /path/to/config/p2p.cfg -m
-
-Compile Zephyr application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/net/ptp
-   :board: native_sim
-   :goals: build
-   :compact:
-
-When the Zephyr image is build, you can start it like this:
-
-.. code-block:: console
-
-    build/zephyr/zephyr.exe -attach_uart
 
 Interpreting net ptp Output
 ===========================
@@ -251,3 +192,147 @@ Role/state interpretation:
   grandmaster.
 - Once valid Announce messages are received and selected, the state typically
   transitions to ``TIME_RECEIVER`` or ``PASSIVE`` depending on BMCA results.
+
+Setting up Linux Host
+=====================
+
+By default PTP in Zephyr will not print any PTP debug messages to console.
+One can enable debug prints by setting
+:kconfig:option:`CONFIG_PTP_LOG_LEVEL_DBG` in the config file.
+
+First, get linuxptp project sources and build it:
+
+.. code-block:: console
+
+    git clone http://git.code.sf.net/p/linuxptp/code linuxptp
+    cd linuxptp
+    make
+
+Use Linux Host with an Embedded Device
+--------------------------------------
+
+Create a configuration file for ptp4l, for example
+:file:`p2p.cfg`, with contents like this:
+
+.. code-block:: ini
+
+    [global]
+    # Delay mechanism must match your configuration
+    delay_mechanism        E2E
+
+    # Use hardware timestamping if your NIC supports it
+    time_stamping          hardware
+
+    # Choose the transport that matches your network:
+    # - L2 = EtherType 0x88f7 (typical in TSN/industrial, needs L2 reachability)
+    # - UDPv4 = common in IT networks / routed segments
+    network_transport      UDPv4
+
+    # Must match switch domain
+    domainNumber           0
+
+    # Message rates (adjust as needed)
+    logSyncInterval        -3
+    logMinDelayReqInterval -3
+
+    # Quality-of-life
+    tx_timestamp_timeout   20
+    summary_interval       1
+
+and start it like this:
+
+.. code-block:: console
+
+    sudo ./ptp4l -i zeth -f /path/to/config/p2p.cfg -m
+
+Use Linux host with native_sim
+------------------------------
+
+This workflow uses three or four terminals:
+
+- Terminal #1: host network setup (``tools/net-tools``)
+- Terminal #2: ``ptp4l``
+- Terminal #3: Zephyr ``native_sim`` process
+- Terminal #4 (optional): attach to Zephyr shell UART PTY
+
+Step 1 - Build Zephyr application
+---------------------------------
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/ptp
+   :board: native_sim/native/64
+   :goals: build
+   :compact:
+
+Step 2 - Create host TAP interface
+----------------------------------
+
+In ``tools/net-tools``:
+
+.. code-block:: console
+
+    sudo ./net-setup.sh start
+
+Keep this interface while the sample is running. When done, remove it with:
+
+.. code-block:: console
+
+    sudo ./net-setup.sh stop
+
+Step 3 - Start ptp4l
+--------------------
+
+.. code-block:: console
+
+    sudo ./ptp4l -4 -i zeth -m -q -l 6 -S
+
+If ``ptp4l`` starts before Zephyr, temporary messages like ``link down`` and
+``FAULTY`` are expected. After Zephyr creates and brings up ``zeth``, ``ptp4l``
+transitions back to ``LISTENING`` and continues normal BMCA operation.
+
+Step 4 - Start Zephyr native_sim image
+--------------------------------------
+
+.. code-block:: console
+
+    build/zephyr/zephyr.exe
+
+Expected startup output includes:
+
+.. code-block:: console
+
+    uart connected to pseudotty: /dev/pts/<N>
+    *** Booting Zephyr OS build ... ***
+    <inf> net_ptp_sample: Runs forever
+
+``Runs forever`` is expected because ``CONFIG_NET_SAMPLE_RUN_DURATION=0`` in
+the sample configuration.
+
+Step 5 - Attach to Zephyr shell
+-------------------------------
+
+If ``screen`` is installed:
+
+.. code-block:: console
+
+    screen /dev/pts/<N>
+
+If ``screen`` is not installed, ``socat`` can be used:
+
+.. code-block:: console
+
+    socat -,rawer,echo=0,escape=0x1d /dev/pts/<N>,rawer,echo=0
+
+Press ``Ctrl-]`` to leave ``socat``.
+
+Step 6 - Check PTP state in Zephyr shell
+----------------------------------------
+
+.. code-block:: console
+
+    uart:~$ net ptp
+    uart:~$ net ptp 1
+
+On ``native_sim``, seeing both host and Zephyr transmit Announce/Sync traffic
+is normal. Depending on BMCA data, Zephyr can remain ``GRAND_MASTER`` even when
+``best foreign`` is present.
