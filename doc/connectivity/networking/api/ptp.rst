@@ -48,7 +48,7 @@ In the table below all supported features are listed.
     Non-volatile storage,
     UDP IPv4 transport protocol, yes
     UDP IPv6 transport protocol, yes
-    IEEE 802.3 (Ethernet) transport protocol,
+    IEEE 802.3 (Ethernet) transport protocol, yes
     Hardware timestamping, yes
     Software timestamping,
     TIME_RECEIVER_ONLY PTP Instance, yes
@@ -116,6 +116,38 @@ are supported:
     0x6000, DELAY_MECHANISM, GET
     0x6001, LOG_MIN_PDELAY_REQ_INTERVAL, GET SET
 
+Timestamping notes
+******************
+
+When RX hardware timestamps are unavailable or invalid, synchronization falls
+back to reading PHC time during receive processing. This can introduce
+additional jitter from software handling latency (packet path and scheduling)
+between frame arrival and PHC read.
+
+This behavior is expected for L2 AF_PACKET paths without true driver-provided
+RX hardware timestamps.
+
+For IEEE 802.3 transport, Sync is sent in two-step mode and Follow_Up is
+generated from TX timestamp callbacks. If a TX timestamp is missing or late,
+the stack logs a warning and skips Follow_Up for that Sync sequence, then
+continues normal Sync transmission on subsequent intervals (best-effort
+behavior).
+
+Supported hardware
+******************
+
+Although the stack itself is hardware independent, Ethernet frame timestamping
+support must be enabled in ethernet drivers.
+
+Boards supported:
+
+- :zephyr:board:`nucleo_h563zi`
+- :zephyr:board:`nucleo_h743zi`
+- :zephyr:board:`nucleo_h745zi_q`
+- :zephyr:board:`nucleo_f767zi`
+- :zephyr:board:`native_sim` (only usable for simple testing, limited capabilities
+  due to lack of hardware clock)
+
 Enabling the stack
 ******************
 
@@ -128,6 +160,30 @@ Testing
 
 The stack has been informally tested using the
 `Linux ptp4l <https://linuxptp.sourceforge.net/>`_ daemons.
+It has also been tested with the :zephyr:board:`nucleo_h563zi` board against a GPS clock,
+both with a direct Ethernet connection and with a PTP-capable switch in between.
+All tests were performed using the :zephyr:code-sample:`PTP sample application <ptp>`,
+with UDP IPv4, UDP IPv6, and IEEE 802.3 transport.
+
+The following table summarizes the informal test matrix:
+
++--------------------------------+-------------+----------+----------+
+|                                | IEEE 802.3  | UDP IPv4 | UDP IPv6 |
++================================+=============+==========+==========+
+| ptp4l daemons                  | yes         | yes      | yes      |
++--------------------------------+-------------+----------+----------+
+| GPS Clock (direct link)        | yes         | yes      | yes      |
++--------------------------------+-------------+----------+----------+
+| PTP-capable switch             | yes         | yes      | yes      |
++--------------------------------+-------------+----------+----------+
+| GPS Clock + PTP-capable switch | yes         | yes      | yes      |
++--------------------------------+-------------+----------+----------+
+
+For all tested configurations the device was configured as an Ordinary Clock.
+In theory, the stack should also be able to operate as a Boundary Clock,
+but this mode of operation has not been validated due to lack of dev-boards
+with multiple Ethernet interfaces on the market.
+
 The :zephyr:code-sample:`PTP sample application <ptp>` from the Zephyr
 source distribution can be used for testing.
 
