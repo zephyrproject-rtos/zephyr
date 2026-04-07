@@ -51,6 +51,8 @@ static void bt_uuid_to_uuid(const struct bt_uuid *src, struct uuid *dst)
 	case BT_UUID_TYPE_128:
 		sys_memcpy_swap(dst->val, BT_UUID_128(src)->val, UUID_SIZE);
 		return;
+	default:
+		__ASSERT(false, "Invalid UUID type: %d", src->type);
 	}
 }
 
@@ -135,12 +137,18 @@ bool bt_uuid_create(struct bt_uuid *uuid, const uint8_t *data, uint8_t data_len)
 
 void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 {
+	__maybe_unused int err;
+
 	switch (uuid->type) {
 	case BT_UUID_TYPE_16:
-		snprintk(str, len, "%04x", BT_UUID_16(uuid)->val);
+		err = snprintk(str, len, "%04x", BT_UUID_16(uuid)->val);
+		__ASSERT(err == BT_UUID_STR_LEN_16,
+			 "Unexpected snprintk result: %d", err);
 		break;
 	case BT_UUID_TYPE_32:
-		snprintk(str, len, "%08x", BT_UUID_32(uuid)->val);
+		err = snprintk(str, len, "%08x", BT_UUID_32(uuid)->val);
+		__ASSERT(err == BT_UUID_STR_LEN_32,
+			 "Unexpected snprintk result: %d", err);
 		break;
 	case BT_UUID_TYPE_128: {
 		struct uuid gen_uuid;
@@ -152,7 +160,9 @@ void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 			return;
 		}
 
-		snprintk(str, len, "%s", full);
+		err = snprintk(str, len, "%s", full);
+		__ASSERT(err == BT_UUID_STR_LEN_128,
+			 "Unexpected snprintk result: %d", err);
 		break;
 	}
 	default:
