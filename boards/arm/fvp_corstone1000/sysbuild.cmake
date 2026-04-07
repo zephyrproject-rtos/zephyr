@@ -483,7 +483,7 @@ fip_size=$(stat -c%s \"$1\")
 max_size=$2
 if [ \"$fip_size\" -gt \"$max_size\" ]; then
   echo \"ERROR: FIP ($fip_size bytes) exceeds partition ($max_size bytes).\"
-  echo \"Increase CORSTONE1000_FIP_PARTITION_SIZE_MB in sysbuild Kconfig.\"
+  echo \"Increase BOARD_CORSTONE1000_FIP_PARTITION_SIZE_MB in sysbuild Kconfig.\"
   exit 1
 fi
 ")
