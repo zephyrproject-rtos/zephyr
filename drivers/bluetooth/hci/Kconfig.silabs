@@ -6,7 +6,7 @@ config BT_SILABS_SIWX91X
 	bool "Silabs SiWx91x Bluetooth interface"
 	default y
 	depends on DT_HAS_SILABS_SIWX91X_BT_HCI_ENABLED
-	select SILABS_SIWX91X_NWP
+	select SILABS_SIWX91X_NWP_WISECONNECT
 	select ENTROPY_GENERATOR
 	select BT_HCI_SETUP
 	help

@@ -31,6 +31,12 @@ config SILABS_SIWX91X_SLOW_FLASH_DATA
 config SILABS_SIWX91X_NWP
 	bool "Silabs Network Coprocessor"
 	depends on DT_HAS_SILABS_SIWX91X_NWP_ENABLED
+	select SILABS_SIWX91X_NWP_WISECONNECT
+	help
+	  Add support for Network Coprocessor (also named NWP) presents on SiWx91x parts.
+
+config SILABS_SIWX91X_NWP_WISECONNECT
+	bool
 	select CODE_DATA_RELOCATION_SRAM
 	select CMSIS_RTOS_V2
 	select POLL
@@ -39,12 +45,10 @@ config SILABS_SIWX91X_NWP
 	select THREAD_STACK_INFO
 	select THREAD_MONITOR
 	select INIT_STACKS
-	help
-	  Add support for Network Coprocessor (also named NWP) presents on SiWx91x parts.
 
 config SOC_SIWX91X_PM_BACKEND_PMGR
 	bool
-	select SILABS_SIWX91X_NWP
+	select SILABS_SIWX91X_NWP_WISECONNECT
 	select SILABS_SLEEPTIMER_TIMER
 	default y if PM
 	help
@@ -84,7 +88,7 @@ config SIWX91X_ENCRYPT
 
 config SIWX91X_FIRMWARE_UPGRADE
 	bool "Support for firmware upgrade"
-	select SILABS_SIWX91X_NWP
+	select SILABS_SIWX91X_NWP_WISECONNECT
 	help
 	  The firmware upgrade process for SiWx91x devices involves coordinated
 	  communication with both the Network Co-Processor (NCP) and the ROM

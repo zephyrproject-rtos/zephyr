@@ -234,7 +234,7 @@ if(CONFIG_WIFI_SILABS_SIWX91X)
 endif() # CONFIG_WIFI_SILABS_SIWX91X
 
 
-if(CONFIG_SILABS_SIWX91X_NWP)
+if(CONFIG_SILABS_SIWX91X_NWP_WISECONNECT)
   zephyr_compile_definitions(
     SL_WIFI_COMPONENT_INCLUDED # Depite de the name, required for everything
   )
@@ -274,7 +274,7 @@ if(CONFIG_SILABS_SIWX91X_NWP)
     ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_ram.c
     LOCATION RAM
   )
-endif() # CONFIG_SILABS_SIWX91X_NWP
+endif() # CONFIG_SILABS_SIWX91X_NWP_WISECONNECT
 
 if(CONFIG_SILABS_SISDK_SLEEPTIMER)
   zephyr_include_directories(
