@@ -213,7 +213,7 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	base->DMA_CH[0].DMA_CHX_TXDESC_RING_LENGTH = data->tx.num_descs - 1;
 	base->DMA_CH[0].DMA_CHX_TXDESC_TAIL_PTR =
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TXDESC_TAIL_PTR, TDTP,
-			ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t) tx_desc_ptr));
+				  ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t)tx_desc_ptr));
 
 	return 0;
 }
@@ -261,15 +261,14 @@ skip:
 	/* Allows another send */
 	k_sem_give(&data->tx.tx_sem);
 	LOG_DBG("Gave driver TX sem %p by thread %s", &data->tx.tx_sem,
-						      k_thread_name_get(k_current_get()));
+		k_thread_name_get(k_current_get()));
 }
 
 static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct device *dev)
 {
-	return ETHERNET_LINK_100BASE |
-		ETHERNET_LINK_10BASE |
+	return ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE |
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
-		ETHERNET_PROMISC_MODE |
+	       ETHERNET_PROMISC_MODE |
 #endif
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
 	       ETHERNET_PTP |
@@ -883,20 +882,15 @@ static int eth_nxp_enet_qos_set_config(const struct device *dev,
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
-		memcpy(data->mac_addr.addr,
-		       cfg->mac_address.addr,
-		       sizeof(data->mac_addr.addr));
+		memcpy(data->mac_addr.addr, cfg->mac_address.addr, sizeof(data->mac_addr.addr));
 		/* Set MAC address */
 		base->MAC_ADDRESS0_HIGH =
 			ENET_QOS_REG_PREP(MAC_ADDRESS0_HIGH, ADDRHI,
-						data->mac_addr.addr[5] << 8 |
-						data->mac_addr.addr[4]);
-		base->MAC_ADDRESS0_LOW =
-			ENET_QOS_REG_PREP(MAC_ADDRESS0_LOW, ADDRLO,
-						data->mac_addr.addr[3] << 24 |
-						data->mac_addr.addr[2] << 16 |
-						data->mac_addr.addr[1] << 8  |
-						data->mac_addr.addr[0]);
+					  data->mac_addr.addr[5] << 8 | data->mac_addr.addr[4]);
+		base->MAC_ADDRESS0_LOW = ENET_QOS_REG_PREP(
+			MAC_ADDRESS0_LOW, ADDRLO,
+			data->mac_addr.addr[3] << 24 | data->mac_addr.addr[2] << 16 |
+				data->mac_addr.addr[1] << 8 | data->mac_addr.addr[0]);
 		LOG_INF("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x",
 			dev->name,
 			data->mac_addr.addr[0], data->mac_addr.addr[1],
