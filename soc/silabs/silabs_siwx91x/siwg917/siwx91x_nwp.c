@@ -561,21 +561,11 @@ BUILD_ASSERT(CONFIG_SIWX91X_NWP_INIT_PRIORITY < CONFIG_KERNEL_INIT_PRIORITY_DEFA
 	static const struct siwx91x_nwp_config siwx91x_nwp_config_##inst = {                       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 		.config_irq = silabs_siwx91x_nwp_irq_configure_##inst,                             \
-		.stack_size = DT_INST_PROP(inst, stack_size),                                      \
 		.support_1p8v = DT_INST_PROP(inst, support_1p8v),                                  \
 		.enable_xtal_correction = DT_INST_PROP(inst, enable_xtal_correction),              \
 		.qspi_80mhz_clk = DT_INST_PROP(inst, qspi_80mhz_clk),                              \
 		.antenna_selection = DT_INST_ENUM_IDX(inst, antenna_selection),                    \
 		.clock_frequency = DT_INST_PROP(inst, clock_frequency)                             \
-	};                                                                                         \
-                                                                                                   \
-	/* Coprocessor uses value stored in IVT to store its stack. We can't use Z_ISR_DECLARE() */\
-	static uint8_t __aligned(8) siwx91x_nwp_stack_##inst[DT_INST_PROP(inst, stack_size)];      \
-	static Z_DECL_ALIGN(struct _isr_list) Z_GENERIC_SECTION(.intList)                          \
-		__used __isr_siwg917_coprocessor_stack_irq_##inst = {                              \
-			.irq = DT_IRQ_BY_NAME(DT_DRV_INST(inst), nwp_stack, irq),                  \
-			.flags = ISR_FLAG_DIRECT,                                                  \
-			.func = &siwx91x_nwp_stack_##inst[sizeof(siwx91x_nwp_stack_##inst) - 1],   \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &siwx91x_nwp_init, NULL, &siwx91x_nwp_data_##inst,             \

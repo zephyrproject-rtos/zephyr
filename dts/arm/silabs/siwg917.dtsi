@@ -76,10 +76,9 @@
 
 	nwp: nwp {
 		compatible = "silabs,siwx91x-nwp";
-		stack-size = <10240>;
 		interrupt-parent = <&nvic>;
-		interrupts = <30 0>, <74 0>;
-		interrupt-names = "nwp_stack", "nwp_irq";
+		interrupts = <74 0>;
+		interrupt-names = "nwp_irq";
 		antenna-selection = "internal";
 		support-1p8v;
 		enable-xtal-correction;
