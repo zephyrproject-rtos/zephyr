@@ -14,6 +14,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/wifi.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/devicetree.h>
 
@@ -42,6 +43,7 @@ struct siwx91x_nwp_data {
 };
 
 struct siwx91x_nwp_config {
+	const struct pinctrl_dev_config *pcfg;
 	void (*config_irq)(const struct device *dev);
 	uint32_t stack_size;
 	uint8_t antenna_selection;
@@ -479,6 +481,14 @@ static int siwx91x_nwp_init(const struct device *dev)
 	sl_wifi_device_configuration_t network_config;
 	int ret;
 
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0 && ret != -ENOENT) {
+		return ret;
+	}
+	if (config->antenna_selection == 2 && ret == -ENOENT) {
+		LOG_WRN("'ext-gpios' expects some pinctrl configuration");
+	}
+
 	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X) || IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
 		data->power_profile = ASSOCIATED_POWER_SAVE;
 	}
@@ -547,7 +557,9 @@ BUILD_ASSERT(CONFIG_SIWX91X_NWP_INIT_PRIORITY < CONFIG_KERNEL_INIT_PRIORITY_DEFA
 		.power_profile = DEEP_SLEEP_WITH_RAM_RETENTION,                                    \
 	};                                                                                         \
                                                                                                    \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
 	static const struct siwx91x_nwp_config siwx91x_nwp_config_##inst = {                       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 		.config_irq = silabs_siwx91x_nwp_irq_configure_##inst,                             \
 		.stack_size = DT_INST_PROP(inst, stack_size),                                      \
 		.support_1p8v = DT_INST_PROP(inst, support_1p8v),                                  \

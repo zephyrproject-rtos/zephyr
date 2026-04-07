@@ -9,6 +9,19 @@
 #include <zephyr/dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
 #include "common.dtsi"
 
+&pinctrl0 {
+	nwp_default: nwp_default {
+		group {
+			pinmux = <WIFI_ANT0_ULP0>, <WIFI_ANT1_ULP4>, <WIFI_ANT2_ULP5>;
+		};
+	};
+};
+
+&nwp {
+	pinctrl-0 = <&nwp_default>;
+	pinctrl-names = "default";
+};
+
 / {
 	model = "Silicon Labs BRD4338A (SiWG917 Radio Board)";
 	compatible = "silabs,x917_rb4338a", "silabs,siwg917";
