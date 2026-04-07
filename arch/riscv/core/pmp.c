@@ -873,6 +873,102 @@ static inline unsigned int z_riscv_pmp_thread_init(enum pmp_mode mode,
 
 #if defined(CONFIG_USERSPACE) && defined(CONFIG_PMP_DATA_EXECUTION_PREVENTION)
 /*
+ * Same as z_riscv_pmp_read_config but only reads the pmpcfg for the specified PMP
+ * slot index.
+ *
+ * This is inlined and optimized into a single csrr instruction in
+ * set_userspace_blocker because it always reads a constant index.
+ */
+static inline void pmp_read_config_index(unsigned long *pmp_cfg, size_t pmp_cfg_size,
+					 unsigned int index)
+{
+	const unsigned int csr_index = index / PMPCFG_STRIDE;
+	unsigned long csr_value = 0;
+
+	__ASSERT(index < CONFIG_PMP_SLOTS, "Invalid PMP config index");
+
+	switch (csr_index) {
+#ifdef CONFIG_64BIT
+	case 0:
+		csr_value = csr_read(pmpcfg0);
+		break;
+	case 1:
+		csr_value = csr_read(pmpcfg2);
+		break;
+	case 2:
+		csr_value = csr_read(pmpcfg4);
+		break;
+	case 3:
+		csr_value = csr_read(pmpcfg6);
+		break;
+	case 4:
+		csr_value = csr_read(pmpcfg8);
+		break;
+	case 5:
+		csr_value = csr_read(pmpcfg10);
+		break;
+	case 6:
+		csr_value = csr_read(pmpcfg12);
+		break;
+	case 7:
+		csr_value = csr_read(pmpcfg14);
+		break;
+#else
+	case 0:
+		csr_value = csr_read(pmpcfg0);
+		break;
+	case 1:
+		csr_value = csr_read(pmpcfg1);
+		break;
+	case 2:
+		csr_value = csr_read(pmpcfg2);
+		break;
+	case 3:
+		csr_value = csr_read(pmpcfg3);
+		break;
+	case 4:
+		csr_value = csr_read(pmpcfg4);
+		break;
+	case 5:
+		csr_value = csr_read(pmpcfg5);
+		break;
+	case 6:
+		csr_value = csr_read(pmpcfg6);
+		break;
+	case 7:
+		csr_value = csr_read(pmpcfg7);
+		break;
+	case 8:
+		csr_value = csr_read(pmpcfg8);
+		break;
+	case 9:
+		csr_value = csr_read(pmpcfg9);
+		break;
+	case 10:
+		csr_value = csr_read(pmpcfg10);
+		break;
+	case 11:
+		csr_value = csr_read(pmpcfg11);
+		break;
+	case 12:
+		csr_value = csr_read(pmpcfg12);
+		break;
+	case 13:
+		csr_value = csr_read(pmpcfg13);
+		break;
+	case 14:
+		csr_value = csr_read(pmpcfg14);
+		break;
+	case 15:
+		csr_value = csr_read(pmpcfg15);
+		break;
+#endif
+	}
+
+	pmp_cfg[csr_index] = csr_value;
+}
+
+/*
  * Because the last register needs to be locked to apply to kernel
  * threads, we cannot remove it before changing to userspace. To prevent
  * user threads from having access to all data, put a region above it
@@ -891,7 +987,7 @@ static void set_userspace_blocker(bool set)
 	uint8_t *pmp_n_cfg = (uint8_t *)pmp_cfg;
 	const unsigned int index = CONFIG_PMP_SLOTS - 2;
 
-	z_riscv_pmp_read_config(pmp_cfg, pmp_cfg_size);
+	pmp_read_config_index(pmp_cfg, pmp_cfg_size, index);
 
 	if (set) {
 		pmp_addr[index] = PMP_ADDR_NAPOT(0, 0);
