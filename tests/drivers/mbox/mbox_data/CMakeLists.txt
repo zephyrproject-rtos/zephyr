@@ -24,7 +24,7 @@ if(CONFIG_BOARD_MIMXRT1170_EVK_MIMXRT1176_CM7 OR
    CONFIG_BOARD_MAX32690EVKIT)
   message(STATUS "${BOARD}/${BOARD_QUALIFIERS} compile as Main in this sample")
 else()
-  message(FATAL_ERROR "${BOARD}/${BOARD_QUALIFIERS} is not supported for this sample")
+  message(WARNING "${BOARD}/${BOARD_QUALIFIERS} is not supported for this sample")
 endif()
 
 project(mbox_data_ipc)
