@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 BayLibre SAS
+ * Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -115,8 +116,9 @@ int ptp_clock_management_msg_process(struct ptp_port *port, struct ptp_msg *msg)
  *
  * @param[in] ingress Timestamp of the message reception from the remote node in nanoseconds.
  * @param[in] egress  Timestamp of the message transmission to the local node in nanoseconds.
+ * @param[in] ingress_ts_valid True if ingress timestamp comes from RX HW timestamping.
  */
-void ptp_clock_synchronize(uint64_t ingress, uint64_t egress);
+void ptp_clock_synchronize(uint64_t ingress, uint64_t egress, bool ingress_ts_valid);
 
 /**
  * @brief Function updating PTP Clock path delay.

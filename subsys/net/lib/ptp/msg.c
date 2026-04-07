@@ -1,8 +1,11 @@
 /*
  * Copyright (c) 2024 BayLibre SAS
+ * Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <stddef.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ptp_msg, CONFIG_PTP_LOG_LEVEL);
@@ -196,8 +199,7 @@ static void msg_tlv_free(struct ptp_msg *msg)
 {
 	struct ptp_tlv_container *tlv_container;
 
-	for (sys_snode_t *iter = sys_slist_get(&msg->tlvs);
-	     iter;
+	for (sys_snode_t *iter = sys_slist_get(&msg->tlvs); iter;
 	     iter = sys_slist_get(&msg->tlvs)) {
 		tlv_container = CONTAINER_OF(iter, struct ptp_tlv_container, node);
 		ptp_tlv_free(tlv_container);
@@ -259,34 +261,35 @@ enum ptp_msg_type ptp_msg_type(const struct ptp_msg *msg)
 	return (enum ptp_msg_type)(msg->header.type_major_sdo_id & 0xF);
 }
 
-struct ptp_msg *ptp_msg_from_pkt(struct net_pkt *pkt)
+#if defined(CONFIG_PTP_UDP_IPv4_PROTOCOL) || defined(CONFIG_PTP_UDP_IPv6_PROTOCOL)
+static struct ptp_msg *msg_from_udp_pkt(struct net_pkt *pkt)
 {
-	static const size_t eth_hdr_len = IS_ENABLED(CONFIG_NET_VLAN) ?
-					  sizeof(struct net_eth_vlan_hdr) :
-					  sizeof(struct net_eth_hdr);
+	static const size_t eth_hdr_len = IS_ENABLED(CONFIG_NET_VLAN)
+						  ? sizeof(struct net_eth_vlan_hdr)
+						  : sizeof(struct net_eth_hdr);
 	struct net_udp_hdr *hdr;
 	struct ptp_msg *msg;
-	int port, payload;
+	int payload;
+	uint16_t port;
 
 	if (pkt->buffer->len == eth_hdr_len) {
-		/* Packet contain Ethernet header at the beginning. */
+		/* Packet contains Ethernet header at the beginning. */
 		struct net_buf *buf;
 
-		/* remove packet temporarily. */
+		/* Remove packet temporarily. */
 		buf = pkt->buffer;
 		pkt->buffer = buf->frags;
 		buf->frags = NULL;
 
 		hdr = net_udp_get_hdr(pkt, NULL);
 
-		/* insert back temporarily femoved frag. */
+		/* Insert back temporarily removed frag. */
 		net_pkt_frag_insert(pkt, buf);
 	} else {
 		hdr = net_udp_get_hdr(pkt, NULL);
 	}
 
 	if (!hdr) {
-		LOG_ERR("Couldn't retrieve UDP header from the net packet");
 		return NULL;
 	}
 
@@ -294,17 +297,94 @@ struct ptp_msg *ptp_msg_from_pkt(struct net_pkt *pkt)
 	port = net_ntohs(hdr->dst_port);
 
 	if (port != PTP_SOCKET_PORT_EVENT && port != PTP_SOCKET_PORT_GENERAL) {
-		LOG_ERR("Couldn't retrieve PTP message from the net packet");
 		return NULL;
 	}
 
 	msg = (struct ptp_msg *)((uintptr_t)hdr + NET_UDPH_LEN);
+	if (payload == net_ntohs(msg->header.msg_length)) {
+		return msg;
+	}
+
+	return NULL;
+}
+#endif /* CONFIG_PTP_UDP_IPv4_PROTOCOL || CONFIG_PTP_UDP_IPv6_PROTOCOL */
+
+#if defined(CONFIG_PTP_IEEE_802_3_PROTOCOL)
+static struct ptp_msg *msg_from_l2_pkt(struct net_pkt *pkt)
+{
+	struct net_buf *buf = pkt->frags;
+	struct ptp_msg *msg;
+	int payload;
+
+	if (!buf) {
+		return NULL;
+	}
+
+	if (buf->len >= sizeof(struct net_eth_hdr)) {
+		struct net_eth_hdr *eth = (struct net_eth_hdr *)buf->data;
+		uint16_t eth_type = net_ntohs(eth->type);
+		size_t ll_hdr_len = 0;
+
+		if (eth_type == NET_ETH_PTYPE_PTP) {
+			ll_hdr_len = sizeof(struct net_eth_hdr);
+		} else if (eth_type == NET_ETH_PTYPE_VLAN &&
+			   buf->len >= sizeof(struct net_eth_vlan_hdr) &&
+			   net_ntohs(((struct net_eth_vlan_hdr *)buf->data)->type) ==
+				   NET_ETH_PTYPE_PTP) {
+			ll_hdr_len = sizeof(struct net_eth_vlan_hdr);
+		} else {
+			ll_hdr_len = 0;
+		}
+
+		if (ll_hdr_len > 0) {
+			payload = net_pkt_get_len(pkt) - ll_hdr_len;
+			if (payload <= 0) {
+				return NULL;
+			}
+
+			if (buf->len == ll_hdr_len) {
+				buf = buf->frags;
+				if (!buf) {
+					return NULL;
+				}
+				msg = (struct ptp_msg *)buf->data;
+			} else {
+				msg = (struct ptp_msg *)((uint8_t *)buf->data + ll_hdr_len);
+			}
+
+			if (payload == net_ntohs(msg->header.msg_length)) {
+				return msg;
+			}
+
+			return NULL;
+		}
+	}
+
+	if (buf->len < sizeof(struct ptp_header)) {
+		return NULL;
+	}
+
+	msg = (struct ptp_msg *)buf->data;
+	payload = net_pkt_get_len(pkt);
 
 	if (payload == net_ntohs(msg->header.msg_length)) {
 		return msg;
 	}
 
 	return NULL;
+}
+#endif /* CONFIG_PTP_IEEE_802_3_PROTOCOL */
+
+struct ptp_msg *ptp_msg_from_pkt(struct net_pkt *pkt)
+{
+#if defined(CONFIG_PTP_UDP_IPv4_PROTOCOL) || defined(CONFIG_PTP_UDP_IPv6_PROTOCOL)
+	return msg_from_udp_pkt(pkt);
+#elif defined(CONFIG_PTP_IEEE_802_3_PROTOCOL)
+	return msg_from_l2_pkt(pkt);
+#else
+	(void)pkt;
+	return NULL;
+#endif
 }
 
 void ptp_msg_pre_send(struct ptp_msg *msg)
@@ -317,10 +397,12 @@ void ptp_msg_pre_send(struct ptp_msg *msg)
 	case PTP_MSG_SYNC:
 		break;
 	case PTP_MSG_DELAY_REQ:
-		current = k_uptime_get();
+		if (msg->timestamp.host.second == 0 && msg->timestamp.host.nanosecond == 0) {
+			current = k_uptime_get();
 
-		msg->timestamp.host.second = (uint64_t)(current / MSEC_PER_SEC);
-		msg->timestamp.host.nanosecond = (current % MSEC_PER_SEC) * NSEC_PER_MSEC;
+			msg->timestamp.host.second = (uint64_t)(current / MSEC_PER_SEC);
+			msg->timestamp.host.nanosecond = (current % MSEC_PER_SEC) * NSEC_PER_MSEC;
+		}
 		break;
 	case PTP_MSG_PDELAY_REQ:
 		break;
@@ -359,16 +441,16 @@ void ptp_msg_pre_send(struct ptp_msg *msg)
 int ptp_msg_post_recv(struct ptp_port *port, struct ptp_msg *msg, int cnt)
 {
 	static const int msg_size[] = {
-		[PTP_MSG_SYNC]		        = sizeof(struct ptp_sync_msg),
-		[PTP_MSG_DELAY_REQ]	        = sizeof(struct ptp_delay_req_msg),
-		[PTP_MSG_PDELAY_REQ]	        = sizeof(struct ptp_pdelay_req_msg),
-		[PTP_MSG_PDELAY_RESP]	        = sizeof(struct ptp_pdelay_resp_msg),
-		[PTP_MSG_FOLLOW_UP]	        = sizeof(struct ptp_follow_up_msg),
-		[PTP_MSG_DELAY_RESP]	        = sizeof(struct ptp_delay_resp_msg),
+		[PTP_MSG_SYNC] = sizeof(struct ptp_sync_msg),
+		[PTP_MSG_DELAY_REQ] = sizeof(struct ptp_delay_req_msg),
+		[PTP_MSG_PDELAY_REQ] = sizeof(struct ptp_pdelay_req_msg),
+		[PTP_MSG_PDELAY_RESP] = sizeof(struct ptp_pdelay_resp_msg),
+		[PTP_MSG_FOLLOW_UP] = sizeof(struct ptp_follow_up_msg),
+		[PTP_MSG_DELAY_RESP] = sizeof(struct ptp_delay_resp_msg),
 		[PTP_MSG_PDELAY_RESP_FOLLOW_UP] = sizeof(struct ptp_pdelay_resp_follow_up_msg),
-		[PTP_MSG_ANNOUNCE]	        = sizeof(struct ptp_announce_msg),
-		[PTP_MSG_SIGNALING]	        = sizeof(struct ptp_signaling_msg),
-		[PTP_MSG_MANAGEMENT]	        = sizeof(struct ptp_management_msg),
+		[PTP_MSG_ANNOUNCE] = sizeof(struct ptp_announce_msg),
+		[PTP_MSG_SIGNALING] = sizeof(struct ptp_signaling_msg),
+		[PTP_MSG_MANAGEMENT] = sizeof(struct ptp_management_msg),
 	};
 	enum ptp_msg_type type = ptp_msg_type(msg);
 	int64_t current;
@@ -410,10 +492,12 @@ int ptp_msg_post_recv(struct ptp_port *port, struct ptp_msg *msg, int cnt)
 		msg_port_id_post_recv(&msg->pdelay_resp_follow_up.req_port_id);
 		break;
 	case PTP_MSG_ANNOUNCE:
-		current = k_uptime_get();
+		if (msg->timestamp.host.second == 0 && msg->timestamp.host.nanosecond == 0) {
+			current = k_uptime_get();
 
-		msg->timestamp.host.second = (uint64_t)(current / MSEC_PER_SEC);
-		msg->timestamp.host.nanosecond = (current % MSEC_PER_SEC) * NSEC_PER_MSEC;
+			msg->timestamp.host.second = (uint64_t)(current / MSEC_PER_SEC);
+			msg->timestamp.host.nanosecond = (current % MSEC_PER_SEC) * NSEC_PER_MSEC;
+		}
 		msg_timestamp_post_recv(msg, &msg->announce.origin_timestamp);
 		msg->announce.current_utc_offset = net_ntohs(msg->announce.current_utc_offset);
 		msg->announce.gm_clk_quality.offset_scaled_log_variance =
@@ -474,11 +558,10 @@ struct ptp_tlv *ptp_msg_add_tlv(struct ptp_msg *msg, int length)
 
 int ptp_msg_announce_cmp(const struct ptp_announce_msg *m1, const struct ptp_announce_msg *m2)
 {
-	int len = sizeof(m1->gm_priority1) + sizeof(m1->gm_clk_quality) +
-		  sizeof(m1->gm_priority1) + sizeof(m1->gm_id) +
-		  sizeof(m1->steps_rm);
+	size_t offset = offsetof(struct ptp_announce_msg, gm_priority1);
+	size_t len = offsetof(struct ptp_announce_msg, time_src) - offset;
 
-	return memcmp(&m1->gm_priority1, &m2->gm_priority1, len);
+	return memcmp((const uint8_t *)m1 + offset, (const uint8_t *)m2 + offset, len);
 }
 
 bool ptp_msg_current_parent(const struct ptp_msg *msg)

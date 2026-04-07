@@ -9,6 +9,8 @@
 LOG_MODULE_REGISTER(ptp_port, CONFIG_PTP_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/ptp_clock.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ptp.h>
 #include <zephyr/net/ptp_time.h>
@@ -119,7 +121,8 @@ static void port_synchronize(struct ptp_port *port,
 			     struct net_ptp_time ingress_ts,
 			     struct net_ptp_time origin_ts,
 			     ptp_timeinterval correction1,
-			     ptp_timeinterval correction2)
+			     ptp_timeinterval correction2,
+			     bool ingress_ts_valid)
 {
 	uint64_t t1, t2, t1c;
 
@@ -127,7 +130,7 @@ static void port_synchronize(struct ptp_port *port,
 	t2 = ingress_ts.second * NSEC_PER_SEC + ingress_ts.nanosecond;
 	t1c = t1 + (correction1 >> 16) + (correction2 >> 16);
 
-	ptp_clock_synchronize(t2, t1c);
+	ptp_clock_synchronize(t2, t1c, ingress_ts_valid);
 
 	port_timer_set_timeout(&port->timers.sync,
 			       port->port_ds.announce_receipt_timeout,
@@ -206,44 +209,89 @@ static void port_sync_timestamp_cb(struct net_pkt *pkt)
 {
 	struct ptp_port *port = ptp_clock_port_from_iface(pkt->iface);
 	struct ptp_msg *msg = ptp_msg_from_pkt(pkt);
+	struct ptp_port_id src_port_id;
+	uint16_t sync_seq;
+	int ret;
 
 	if (!port || !msg) {
 		return;
 	}
 
-	msg->header.src_port_id.port_number = net_ntohs(msg->header.src_port_id.port_number);
+	if (ptp_msg_type(msg) != PTP_MSG_SYNC) {
+		return;
+	}
 
-	if (ptp_port_id_eq(&port->port_ds.id, &msg->header.src_port_id) &&
-	    ptp_msg_type(msg) == PTP_MSG_SYNC) {
+	src_port_id = msg->header.src_port_id;
+	src_port_id.port_number = net_ntohs(src_port_id.port_number);
+	sync_seq = net_ntohs(msg->header.sequence_id);
 
-		const struct ptp_default_ds *dds = ptp_clock_default_ds();
-		const struct ptp_time_prop_ds *tpds = ptp_clock_time_prop_ds();
-		struct ptp_msg *resp = ptp_msg_alloc();
+	if (!ptp_port_id_eq(&port->port_ds.id, &src_port_id)) {
+		return;
+	}
 
-		if (!resp) {
-			return;
-		}
+	if (!port->sync_fup_pending || sync_seq != port->sync_fup_sequence_id) {
+		LOG_DBG("Port %d ignores Sync TX timestamp for sequence %u (pending %u)",
+			port->port_ds.id.port_number,
+			sync_seq,
+			port->sync_fup_sequence_id);
+		return;
+	}
 
-		resp->header.type_major_sdo_id = PTP_MSG_FOLLOW_UP;
-		resp->header.version	       = PTP_VERSION;
-		resp->header.msg_length	       = sizeof(struct ptp_follow_up_msg);
-		resp->header.domain_number     = dds->domain;
-		resp->header.flags[1]	       = tpds->flags;
-		resp->header.src_port_id       = port->port_ds.id;
-		resp->header.sequence_id       = port->seq_id.sync++;
-		resp->header.log_msg_interval  = port->port_ds.log_sync_interval;
+	net_if_unregister_timestamp_cb(&port->sync_ts_cb);
 
-		resp->follow_up.precise_origin_timestamp.seconds_high = pkt->timestamp._sec.high;
-		resp->follow_up.precise_origin_timestamp.seconds_low = pkt->timestamp._sec.low;
-		resp->follow_up.precise_origin_timestamp.nanoseconds = pkt->timestamp.nanosecond;
+	if (ptp_port_state(port) != PTP_PS_TIME_TRANSMITTER &&
+	    ptp_port_state(port) != PTP_PS_GRAND_MASTER) {
+		port->sync_fup_pending = false;
+		port->seq_id.sync++;
+		return;
+	}
 
-		net_if_unregister_timestamp_cb(&port->sync_ts_cb);
+	if (pkt->timestamp.second == UINT64_MAX ||
+	    (pkt->timestamp.second == 0 && pkt->timestamp.nanosecond == 0)) {
+		LOG_WRN("Port %d missing TX timestamp for Sync sequence %u, skipping Follow_Up",
+			port->port_ds.id.port_number, sync_seq);
+		port->sync_fup_pending = false;
+		port->seq_id.sync++;
+		return;
+	}
 
-		port_msg_send(port, resp, PTP_SOCKET_GENERAL);
-		ptp_msg_unref(resp);
+	const struct ptp_default_ds *dds = ptp_clock_default_ds();
+	const struct ptp_time_prop_ds *tpds = ptp_clock_time_prop_ds();
+	struct ptp_msg *resp = ptp_msg_alloc();
 
+	if (!resp) {
+		LOG_WRN("Port %d failed to allocate Follow_Up message for sequence %u",
+			port->port_ds.id.port_number, sync_seq);
+		port->sync_fup_pending = false;
+		port->seq_id.sync++;
+		return;
+	}
+
+	resp->header.type_major_sdo_id = PTP_MSG_FOLLOW_UP;
+	resp->header.version	       = PTP_VERSION;
+	resp->header.msg_length	       = sizeof(struct ptp_follow_up_msg);
+	resp->header.domain_number     = dds->domain;
+	resp->header.flags[1]	       = tpds->flags;
+	resp->header.src_port_id       = port->port_ds.id;
+	resp->header.sequence_id       = sync_seq;
+	resp->header.log_msg_interval  = port->port_ds.log_sync_interval;
+
+	resp->follow_up.precise_origin_timestamp.seconds_high = pkt->timestamp._sec.high;
+	resp->follow_up.precise_origin_timestamp.seconds_low = pkt->timestamp._sec.low;
+	resp->follow_up.precise_origin_timestamp.nanoseconds = pkt->timestamp.nanosecond;
+
+	ret = port_msg_send(port, resp, PTP_SOCKET_GENERAL);
+	ptp_msg_unref(resp);
+
+	if (ret < 0) {
+		LOG_WRN("Port %d failed sending Follow_Up for sequence %u",
+			port->port_ds.id.port_number, sync_seq);
+	} else {
 		LOG_DBG("Port %d sends Follow_Up message", port->port_ds.id.port_number);
 	}
+
+	port->sync_fup_pending = false;
+	port->seq_id.sync++;
 }
 
 static int port_announce_msg_transmit(struct ptp_port *port)
@@ -305,10 +353,19 @@ static int port_delay_req_msg_transmit(struct ptp_port *port)
 	msg->header.sequence_id	      = port->seq_id.delay++;
 	msg->header.log_msg_interval  = DEFAULT_LOG_MSG_INTERVAL;
 
-	net_if_register_timestamp_cb(&port->delay_req_ts_cb,
-				     NULL,
-				     port->iface,
+	net_if_register_timestamp_cb(&port->delay_req_ts_cb, NULL, port->iface,
 				     port_delay_req_timestamp_cb);
+
+	if (IS_ENABLED(CONFIG_PTP_IEEE_802_3_PROTOCOL)) {
+		const struct device *phc = net_eth_get_ptp_clock(port->iface);
+
+		if (!phc || ptp_clock_get(phc, &msg->timestamp.host)) {
+			int64_t current = k_uptime_get();
+
+			msg->timestamp.host.second = (uint64_t)(current / MSEC_PER_SEC);
+			msg->timestamp.host.nanosecond = (current % MSEC_PER_SEC) * NSEC_PER_MSEC;
+		}
+	}
 
 	sys_slist_append(&port->delay_req_list, &msg->node);
 	ret = port_msg_send(port, msg, PTP_SOCKET_EVENT);
@@ -333,6 +390,14 @@ static int port_sync_msg_transmit(struct ptp_port *port)
 		return -ENOMEM;
 	}
 
+	if (port->sync_fup_pending) {
+		LOG_WRN("Port %d missing TX timestamp for previous Sync sequence %u, skipping "
+			"Follow_Up",
+			port->port_ds.id.port_number, port->sync_fup_sequence_id);
+		port->sync_fup_pending = false;
+		port->seq_id.sync++;
+	}
+
 	msg->header.type_major_sdo_id = PTP_MSG_SYNC;
 	msg->header.version	      = PTP_VERSION;
 	msg->header.msg_length	      = sizeof(struct ptp_sync_msg);
@@ -343,15 +408,24 @@ static int port_sync_msg_transmit(struct ptp_port *port)
 	msg->header.sequence_id	      = port->seq_id.sync;
 	msg->header.log_msg_interval  = port->port_ds.log_sync_interval;
 
+	msg->sync.origin_timestamp.seconds_high = 0;
+	msg->sync.origin_timestamp.seconds_low = 0;
+	msg->sync.origin_timestamp.nanoseconds = 0;
+
 	net_if_register_timestamp_cb(&port->sync_ts_cb,
 				     NULL,
 				     port->iface,
 				     port_sync_timestamp_cb);
 
+	port->sync_fup_pending = true;
+	port->sync_fup_sequence_id = msg->header.sequence_id;
+
 	ret = port_msg_send(port, msg, PTP_SOCKET_EVENT);
 	ptp_msg_unref(msg);
 
 	if (ret < 0) {
+		port->sync_fup_pending = false;
+		net_if_unregister_timestamp_cb(&port->sync_ts_cb);
 		return -EFAULT;
 	}
 	LOG_DBG("Port %d sends Sync message", port->port_ds.id.port_number);
@@ -490,7 +564,8 @@ static void port_sync_fup_ooo_handle(struct ptp_port *port, struct ptp_msg *msg)
 				 last->timestamp.host,
 				 msg->timestamp.protocol,
 				 last->header.correction,
-				 msg->header.correction);
+				 msg->header.correction,
+				 last->rx_timestamp_valid);
 
 		ptp_msg_unref(port->last_sync_fup);
 		port->last_sync_fup = NULL;
@@ -502,7 +577,8 @@ static void port_sync_fup_ooo_handle(struct ptp_port *port, struct ptp_msg *msg)
 				 msg->timestamp.host,
 				 last->timestamp.protocol,
 				 msg->header.correction,
-				 last->header.correction);
+				 last->header.correction,
+				 msg->rx_timestamp_valid);
 
 		ptp_msg_unref(port->last_sync_fup);
 		port->last_sync_fup = NULL;
@@ -587,7 +663,8 @@ static void port_sync_msg_process(struct ptp_port *port, struct ptp_msg *msg)
 				 msg->timestamp.host,
 				 msg->timestamp.protocol,
 				 msg->header.correction,
-				 0);
+				 0,
+				 msg->rx_timestamp_valid);
 
 		if (port->last_sync_fup) {
 			ptp_msg_unref(port->last_sync_fup);
@@ -891,6 +968,9 @@ static int port_enable(struct ptp_port *port)
 	}
 
 	port->link_status = PORT_LINK_UP;
+	port->l2_try_recvmsg = true;
+	port->l2_recvmsg_fallback_warned = false;
+	port->l2_recvmsg_retry_at = 0;
 
 	if (ptp_transport_open(port)) {
 		LOG_ERR("Couldn't open socket on Port %d.", port->port_ds.id.port_number);
@@ -929,10 +1009,19 @@ static void port_disable(struct ptp_port *port)
 	ptp_port_free_foreign_tts(port);
 	port->best = NULL;
 
+	if (port->last_sync_fup) {
+		ptp_msg_unref(port->last_sync_fup);
+		port->last_sync_fup = NULL;
+	}
+
+	port_clear_delay_req(port);
+
 	net_if_unregister_timestamp_cb(&port->sync_ts_cb);
 	net_if_unregister_timestamp_cb(&port->delay_req_ts_cb);
 
 	ptp_clock_pollfd_invalidate();
+	port->sync_fup_pending = false;
+	port->sync_fup_sequence_id = 0;
 	port->port_ds.enable = false;
 	LOG_DBG("Port %d disabled", port->port_ds.id.port_number);
 }
@@ -1036,6 +1125,11 @@ void ptp_port_init(struct net_if *iface, void *user_data)
 
 	port->state_machine = dds->time_receiver_only ? ptp_tr_state_machine : ptp_state_machine;
 	port->last_sync_fup = NULL;
+	port->sync_fup_pending = false;
+	port->sync_fup_sequence_id = 0;
+	port->l2_try_recvmsg = true;
+	port->l2_recvmsg_fallback_warned = false;
+	port->l2_recvmsg_retry_at = 0;
 
 	port_ds_init(port);
 	sys_slist_init(&port->foreign_list);
@@ -1303,7 +1397,8 @@ enum ptp_port_event ptp_port_timer_event_gen(struct ptp_port *port, struct k_tim
 
 bool ptp_port_id_eq(const struct ptp_port_id *p1, const struct ptp_port_id *p2)
 {
-	return memcmp(p1, p2, sizeof(struct ptp_port_id)) == 0;
+	return memcmp(&p1->clk_id, &p2->clk_id, sizeof(p1->clk_id)) == 0 &&
+	       p1->port_number == p2->port_number;
 }
 
 struct ptp_dataset *ptp_port_best_foreign_ds(struct ptp_port *port)
@@ -1333,7 +1428,7 @@ struct ptp_foreign_tt_clock *ptp_port_best_foreign(struct ptp_port *port)
 			continue;
 		}
 
-		last = (struct ptp_announce_msg *)k_fifo_peek_head(&foreign->messages);
+		last = (struct ptp_announce_msg *)k_fifo_peek_tail(&foreign->messages);
 
 		foreign->dataset.priority1 = last->gm_priority1;
 		foreign->dataset.priority2 = last->gm_priority2;
@@ -1412,13 +1507,7 @@ void ptp_port_free_foreign_tts(struct ptp_port *port)
 	while (!sys_slist_is_empty(&port->foreign_list)) {
 		iter = sys_slist_get(&port->foreign_list);
 		foreign = CONTAINER_OF(iter, struct ptp_foreign_tt_clock, node);
-
-		while (foreign->messages_count > FOREIGN_TIME_TRANSMITTER_THRESHOLD) {
-			struct ptp_msg *msg = (struct ptp_msg *)k_fifo_get(&foreign->messages,
-									   K_NO_WAIT);
-			foreign->messages_count--;
-			ptp_msg_unref(msg);
-		}
+		port_clear_foreign_clock_records(foreign);
 
 		k_mem_slab_free(&foreign_tts_slab, (void *)foreign);
 	}
