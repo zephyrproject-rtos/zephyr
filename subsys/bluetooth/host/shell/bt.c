@@ -3775,7 +3775,7 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_conn_get_info(conn, &info);
 	if (err) {
-		shell_print(sh, "Failed to get info");
+		shell_error(sh, "Failed to get info (err %d)", err);
 		goto done;
 	}
 
