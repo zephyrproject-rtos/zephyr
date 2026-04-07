@@ -11,6 +11,7 @@ supported:
   - uart
   - shdc
   - pwm
+  - can
 testing:
   ignore_tags:
     - net

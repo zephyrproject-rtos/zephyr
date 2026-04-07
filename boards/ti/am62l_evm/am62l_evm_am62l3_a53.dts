@@ -19,6 +19,7 @@
 		zephyr,sram = &ddr0;
 		zephyr,flash-controller = &main_ospi0;
 		zephyr,flash = &flash0_memory;
+		zephyr,canbus = &main_mcan0;
 	};
 
 	aliases {
@@ -273,4 +274,10 @@
 			ranges;
 		};
 	};
+};
+
+&main_mcan0 {
+	pinctrl-0 = <&main_mcan0_rx>, <&main_mcan0_tx>;
+	pinctrl-names = "default";
+	status = "okay";
 };
