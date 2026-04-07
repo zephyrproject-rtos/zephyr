@@ -47,8 +47,6 @@ target_include_directories(boot_stage2 PUBLIC
 if(CONFIG_PICOLIBC)
   target_compile_options(boot_stage2 PRIVATE "--specs=picolibc.specs")
   target_link_options(boot_stage2 PRIVATE "--specs=picolibc.specs")
-else()
-  target_link_options(boot_stage2 PRIVATE "--specs=nosys.specs")
 endif()
 
 target_link_options(boot_stage2 PRIVATE
