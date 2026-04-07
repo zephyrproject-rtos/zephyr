@@ -99,9 +99,6 @@ comment "loramac-node module not available."
 comment "LoRa Basics Modem module not available."
 	depends on !ZEPHYR_LORA_BASICS_MODEM_MODULE
 
-comment "CANopenNode module not available."
-	depends on !ZEPHYR_CANOPENNODE_MODULE
-
 comment "zcbor module not available."
 	depends on !ZEPHYR_ZCBOR_MODULE
 

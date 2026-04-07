@@ -1412,7 +1412,6 @@ Documentation Infrastructure:
     - include/zephyr/net/canbus.h
     - include/zephyr/net/socketcan*.h
     - samples/drivers/can/
-    - samples/modules/canopennode/
     - samples/net/sockets/can/
     - samples/subsys/canbus/
     - scripts/west_commands/runners/canopen_program.py
@@ -5964,15 +5963,6 @@ West:
   files: []
   labels:
     - "platform: nRF BSIM"
-
-"West project: canopennode":
-  status: maintained
-  maintainers:
-    - henrikbrixandersen
-  files:
-    - modules/canopennode/
-  labels:
-    - "area: CAN"
 
 "West project: chre":
   status: maintained
