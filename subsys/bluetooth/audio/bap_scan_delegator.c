@@ -1126,8 +1126,10 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 
 	state = &internal_state->state;
 
-	if (internal_state->pa_sync_requested) {
-		LOG_DBG("Cannot remove source ID 0x%02x while PA is synced or syncing",
+	if (internal_state->pa_sync_requested ||
+	    state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ ||
+	    state->pa_sync_state == BT_BAP_PA_STATE_SYNCED) {
+		LOG_DBG("Cannot remove source ID 0x%02x while PA is syncing or synced",
 			state->src_id);
 		err = k_mutex_unlock(&internal_state->mutex);
 		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
