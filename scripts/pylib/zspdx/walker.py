@@ -99,6 +99,9 @@ class Walker:
         # SDK install path from parsed CMake cache
         self.sdkPath = ""
 
+        # Meta file path from parsed CMake cache
+        self.metaFile = ""
+
     def _build_purl(self, url, version=None):
         if not url:
             return None
@@ -146,13 +149,6 @@ class Walker:
         # parse CMake cache file and get compiler path
         _logger.info("parsing CMake Cache file")
         self.getCacheFile()
-
-        # check if meta file is generated
-        if not self.metaFile:
-            _logger.error(
-                "CONFIG_BUILD_OUTPUT_META must be enabled to generate spdx files; bailing"
-            )
-            return False
 
         # parse codemodel from Walker cfg's build dir
         _logger.info("parsing CMake Codemodel files")
@@ -466,7 +462,12 @@ class Walker:
                 content = yaml.load(file.read(), yaml.SafeLoader)
                 if not self.setupZephyrDocument(content["zephyr"], content["modules"]):
                     return False
-        except (FileNotFoundError, yaml.YAMLError):
+        except FileNotFoundError:
+            _logger.error(
+                "CONFIG_BUILD_OUTPUT_META must be enabled to generate spdx files; bailing"
+            )
+            return False
+        except yaml.YAMLError:
             _logger.error("cannot find a valid zephyr.meta required for SPDX generation; bailing")
             return False
 
