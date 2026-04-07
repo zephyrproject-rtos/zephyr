@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_log.h>
+#include <zephyr/net/ptp_time.h>
 
 /* This test suite verifies that NET_AF_PACKET sockets behave according to well known behaviors.
  * Note, that this is not well standardized and relies on behaviors known from Linux or FreeBSD.
@@ -102,6 +103,10 @@ static const uint8_t test_payload[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 static uint8_t rx_buf[64];
 static uint8_t tx_buf[64];
 static struct net_in_addr fake_src = { { { 192, 0, 2, 2 } } };
+static struct net_ptp_time test_rx_timestamp = {
+	.second = 1234,
+	.nanosecond = 567890123,
+};
 
 static uint8_t lladdr1[] = { 0x02, 0x01, 0x01, 0x01, 0x01, 0x01 };
 static uint8_t lladdr2[] = { 0x02, 0x02, 0x02, 0x02, 0x02, 0x02 };
@@ -143,6 +148,8 @@ static int eth_fake_send(const struct device *dev, struct net_pkt *pkt)
 	recv_pkt = net_pkt_rx_clone(pkt, K_NO_WAIT);
 
 	net_pkt_set_iface(recv_pkt, target_iface);
+	net_pkt_set_timestamp(recv_pkt, &test_rx_timestamp);
+	net_pkt_set_rx_timestamping(recv_pkt, true);
 
 	k_sleep(K_MSEC(10)); /* Let the receiver run */
 
@@ -846,6 +853,79 @@ static void test_recv_common(int sock_type, int proto, bool success)
 	}
 }
 
+static void test_recvmsg_timestamping_common(size_t cmsgbuf_len, bool expect_trunc)
+{
+	struct net_sockaddr_ll ll_dst;
+	struct net_iovec io_vector = {
+		.iov_base = rx_buf,
+		.iov_len = sizeof(rx_buf),
+	};
+	struct net_msghdr msg = {
+		.msg_iov = &io_vector,
+		.msg_iovlen = 1,
+	};
+	uint8_t timestamping = ZSOCK_SOF_TIMESTAMPING_RX_HARDWARE;
+	uint16_t offset = sizeof(struct net_eth_hdr);
+	uint16_t pkt_len;
+	int ret;
+	union {
+		struct net_cmsghdr hdr;
+		uint8_t buf[NET_CMSG_SPACE(sizeof(struct net_ptp_time))];
+	} cmsgbuf = {0};
+
+	__ASSERT_NO_MSG(cmsgbuf_len <= sizeof(cmsgbuf.buf));
+
+	setup_packet_socket(&packet_sock_1, NET_SOCK_RAW, 0);
+	prepare_test_packet(NET_SOCK_RAW, ETH_P_IP, lladdr2, lladdr1, &pkt_len);
+	prepare_test_dst_lladdr(&ll_dst, ETH_P_IP, lladdr1, ud.second);
+
+	setup_packet_socket(&packet_sock_2, NET_SOCK_DGRAM, net_htons(ETH_P_ALL));
+	bind_packet_socket(packet_sock_2, ud.first);
+
+	ret = zsock_setsockopt(packet_sock_2, ZSOCK_SOL_SOCKET, ZSOCK_SO_TIMESTAMPING,
+			       &timestamping, sizeof(timestamping));
+	zassert_equal(ret, 0, "timestamping setsockopt failed (%d)", errno);
+
+	msg.msg_control = cmsgbuf.buf;
+	msg.msg_controllen = cmsgbuf_len;
+
+	ret = zsock_sendto(packet_sock_1, tx_buf, pkt_len, 0, (struct net_sockaddr *)&ll_dst,
+			   sizeof(struct net_sockaddr_ll));
+	zassert_not_equal(ret, -1, "Failed to send (%d)", errno);
+	zassert_equal(ret, pkt_len, "Invalid data length sent (%d/%d)", ret, pkt_len);
+
+	pkt_len -= offset;
+
+	ret = zsock_recvmsg(packet_sock_2, &msg, 0);
+	zassert_not_equal(ret, -1, "Failed to receive packet (%d)", errno);
+	zassert_equal(ret, pkt_len, "Invalid data size received (%d, expected %d)", ret, pkt_len);
+	zassert_mem_equal(rx_buf, tx_buf + offset, pkt_len, "Invalid payload received");
+
+	if (expect_trunc) {
+		zassert_true(msg.msg_flags & ZSOCK_MSG_CTRUNC,
+			     "Control data should have been truncated");
+		zassert_equal(msg.msg_controllen, 0, "Unexpected control data length %zu",
+			      msg.msg_controllen);
+		zassert_is_null(NET_CMSG_FIRSTHDR(&msg), "Unexpected control header");
+		return;
+	}
+
+	struct net_cmsghdr *cmsg = NET_CMSG_FIRSTHDR(&msg);
+	struct net_ptp_time timestamp;
+
+	zassert_not_null(cmsg, "Missing timestamp control message");
+	zassert_equal(msg.msg_controllen, NET_CMSG_SPACE(sizeof(struct net_ptp_time)),
+		      "Unexpected msg_controllen %zu", msg.msg_controllen);
+	zassert_equal(cmsg->cmsg_level, ZSOCK_SOL_SOCKET, "Unexpected cmsg level");
+	zassert_equal(cmsg->cmsg_type, ZSOCK_SO_TIMESTAMPING, "Unexpected cmsg type");
+	zassert_equal(cmsg->cmsg_len, NET_CMSG_LEN(sizeof(struct net_ptp_time)),
+		      "Unexpected cmsg length %u", cmsg->cmsg_len);
+
+	memcpy(&timestamp, NET_CMSG_DATA(cmsg), sizeof(timestamp));
+	zassert_mem_equal(&timestamp, &test_rx_timestamp, sizeof(timestamp),
+			  "Unexpected timestamp payload");
+}
+
 ZTEST(socket_packet, test_raw_sock_recv_no_proto)
 {
 	test_recv_common(NET_SOCK_RAW, 0, false);
@@ -936,6 +1016,16 @@ ZTEST(socket_packet, test_raw_sock_recvfrom_proto_wildcard)
 ZTEST(socket_packet, test_dgram_sock_recv_proto_wildcard)
 {
 	test_recv_common(NET_SOCK_DGRAM, ETH_P_ALL, true);
+}
+
+ZTEST(socket_packet, test_dgram_sock_recvmsg_timestamping)
+{
+	test_recvmsg_timestamping_common(NET_CMSG_SPACE(sizeof(struct net_ptp_time)), false);
+}
+
+ZTEST(socket_packet, test_dgram_sock_recvmsg_timestamping_truncated_control)
+{
+	test_recvmsg_timestamping_common(NET_CMSG_SPACE(sizeof(struct net_ptp_time)) - 1, true);
 }
 
 ZTEST(socket_packet, test_dgram_sock_recvfrom_proto_wildcard)
