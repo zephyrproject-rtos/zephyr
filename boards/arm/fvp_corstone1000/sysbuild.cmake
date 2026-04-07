@@ -254,15 +254,22 @@ add_custom_target(tfm_bl1 ALL DEPENDS ${CORSTONE1000_FIRMWARE_DIR}/bl1.bin)
 set(CREATE_FLASH_SCRIPT ${TFM_SOURCE_DIR}/platform/ext/target/arm/corstone1000/create-flash-image.sh)
 set(FIP_TYPE_UUID "6823A0A1-6B6C-4E4A-A4E3-A4B9A5A60D23")
 
+# FIP partitions sit right after their respective tfm_* partitions.
+# TF-M layout (from create-flash-image.sh):
+#   Bank 0: bl2_primary @ sector 72, tfm_primary @ sector 360 (+320K = ends at 1000)
+#   Bank 1: bl2_secondary @ sector 32784, tfm_secondary @ sector 33072 (+320K = ends at 33712)
+set(FIP_A_START_SECTOR 1000)
+math(EXPR FIP_B_START_SECTOR "33072 - 360 + ${FIP_A_START_SECTOR}")
+
 add_custom_command(
   OUTPUT ${CORSTONE1000_FIRMWARE_DIR}/cs1000_tfm.bin
   # First create base TF-M flash image
   COMMAND ${CREATE_FLASH_SCRIPT} ${TFM_BINARY_DIR}/bin cs1000_tfm.bin
   COMMAND ${CMAKE_COMMAND} -E copy ${TFM_BINARY_DIR}/bin/cs1000_tfm.bin ${CORSTONE1000_FIRMWARE_DIR}/cs1000_tfm.bin
-  # Add FIP_A partition (after tfm_primary, starting at sector 1000, size ~2.5MB)
-  COMMAND sgdisk --new=11:1000:+2560K --typecode=11:${FIP_TYPE_UUID} --change-name=11:'FIP_A' ${CORSTONE1000_FIRMWARE_DIR}/cs1000_tfm.bin || true
-  # Add FIP_B partition (after tfm_secondary, starting at sector 33712, size ~2.5MB)
-  COMMAND sgdisk --new=12:33712:+2560K --typecode=12:${FIP_TYPE_UUID} --change-name=12:'FIP_B' ${CORSTONE1000_FIRMWARE_DIR}/cs1000_tfm.bin || true
+  # Add FIP_A partition (after tfm_primary)
+  COMMAND sgdisk --new=11:${FIP_A_START_SECTOR}:+${SB_CONFIG_CORSTONE1000_FIP_PARTITION_SIZE_MB}M --typecode=11:${FIP_TYPE_UUID} --change-name=11:'FIP_A' ${CORSTONE1000_FIRMWARE_DIR}/cs1000_tfm.bin || true
+  # Add FIP_B partition (after tfm_secondary, same bank offset)
+  COMMAND sgdisk --new=12:${FIP_B_START_SECTOR}:+${SB_CONFIG_CORSTONE1000_FIP_PARTITION_SIZE_MB}M --typecode=12:${FIP_TYPE_UUID} --change-name=12:'FIP_B' ${CORSTONE1000_FIRMWARE_DIR}/cs1000_tfm.bin || true
   DEPENDS tfm_secure_enclave
   COMMENT "Creating Secure Enclave flash image with FIP partitions"
 )
@@ -448,14 +455,33 @@ add_custom_target(tfa_fip ALL DEPENDS ${CORSTONE1000_FIRMWARE_DIR}/fip.bin)
 # Combined Flash Image
 # =============================================================================
 
-# Write FIP to FIP_A partition in the flash image
-# FIP_A partition starts at sector 1000 (512 bytes/sector = offset 512000)
-# TF-M expects FIP_SIGNATURE_AREA_SIZE (0x1000 = 4KB = 8 sectors) before FIP TOC header
-# So actual FIP data goes at sector 1008 (partition start + 8)
+# Write FIP to FIP_A partition in the flash image.
+# TF-M expects FIP_SIGNATURE_AREA_SIZE (0x1000 = 4KB = 8 sectors) before FIP TOC header,
+# so actual FIP data goes 8 sectors past the partition start.
+math(EXPR FIP_A_DATA_SECTOR "${FIP_A_START_SECTOR} + 8")
+math(EXPR FIP_PARTITION_BYTES
+  "${SB_CONFIG_CORSTONE1000_FIP_PARTITION_SIZE_MB} * 1024 * 1024 - 4096")
+
+# Generate a small check script at configure time
+file(WRITE ${CORSTONE1000_FIRMWARE_DIR}/check_fip_size.sh
+"#!/bin/sh
+fip_size=$(stat -c%s \"$1\")
+max_size=$2
+if [ \"$fip_size\" -gt \"$max_size\" ]; then
+  echo \"ERROR: FIP ($fip_size bytes) exceeds partition ($max_size bytes).\"
+  echo \"Increase CORSTONE1000_FIP_PARTITION_SIZE_MB in sysbuild Kconfig.\"
+  exit 1
+fi
+")
+
 add_custom_command(
   OUTPUT ${CORSTONE1000_FIRMWARE_DIR}/cs1000.bin
   COMMAND ${CMAKE_COMMAND} -E copy ${CORSTONE1000_FIRMWARE_DIR}/cs1000_tfm.bin ${CORSTONE1000_FIRMWARE_DIR}/cs1000.bin
-  COMMAND dd if=${CORSTONE1000_FIRMWARE_DIR}/fip.bin of=${CORSTONE1000_FIRMWARE_DIR}/cs1000.bin bs=512 seek=1008 conv=notrunc 2>/dev/null
+  # Verify the FIP fits in the partition
+  COMMAND sh ${CORSTONE1000_FIRMWARE_DIR}/check_fip_size.sh
+    ${CORSTONE1000_FIRMWARE_DIR}/fip.bin ${FIP_PARTITION_BYTES}
+  COMMAND dd if=${CORSTONE1000_FIRMWARE_DIR}/fip.bin of=${CORSTONE1000_FIRMWARE_DIR}/cs1000.bin
+    bs=512 seek=${FIP_A_DATA_SECTOR} conv=notrunc 2>/dev/null
   DEPENDS tfm_flash tfa_fip
     ${CORSTONE1000_FIRMWARE_DIR}/cs1000_tfm.bin ${CORSTONE1000_FIRMWARE_DIR}/fip.bin
   COMMENT "Creating combined flash image with TF-M and TF-A FIP"

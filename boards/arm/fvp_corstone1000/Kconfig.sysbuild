@@ -22,4 +22,17 @@ config CORSTONE1000_TFA_DEBUG
 	help
 	  Build TF-A with debug configuration.
 
+config CORSTONE1000_FIP_PARTITION_SIZE_MB
+	int "FIP partition size in MB"
+	default 8
+	range 1 15
+	help
+	  Size of the FIP_A and FIP_B GPT partitions in the Secure Enclave
+	  flash image (in megabytes).  The FIP contains TF-A BL2, BL31, and
+	  the Zephyr application (BL33).  Increase this if the application
+	  binary is large.
+
+	  The 32 MB flash image must accommodate both FIP partitions plus
+	  the TF-M partitions, so the maximum practical value is ~15 MB.
+
 endif # BOARD_FVP_CORSTONE1000
