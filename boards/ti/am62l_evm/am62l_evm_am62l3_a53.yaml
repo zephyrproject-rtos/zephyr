@@ -8,6 +8,7 @@ toolchain:
 ram: 2048
 supported:
   - uart
+  - can
 testing:
   ignore_tags:
     - net
