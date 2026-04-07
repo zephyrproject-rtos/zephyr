@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include <errno.h>
+#include <stdbool.h>
 #if CONFIG_SPI_MAX32_DMA
 #include <zephyr/drivers/dma.h>
 #endif
@@ -460,30 +461,25 @@ static int spi_max32_transceive(const struct device *dev)
 
 		MXC_SPI_SetSlave(cfg->regs, ctx->config->slave);
 
-		{
-			bool use_dma_reload = data->dma_prepared &&
-					      (data->dma_spi_operation == ctx->config->operation);
+		ret = spi_max32_rx_dma_setup(dev, data->req.rxData, data->req.rxLen,
+					     data->req.rxLen >> dfs_shift, dfs_shift,
+					     data->dma_prepared);
+		if (ret < 0) {
+			LOG_ERR("RX DMA setup failed: %d", ret);
+			goto dma_rtio_exit;
+		}
 
-			ret = spi_max32_rx_dma_setup(dev, data->req.rxData, data->req.rxLen,
-						     data->req.rxLen >> dfs_shift, dfs_shift,
-						     use_dma_reload);
-			if (ret < 0) {
-				LOG_ERR("RX DMA setup failed: %d", ret);
-				goto dma_rtio_exit;
-			}
+		ret = spi_max32_tx_dma_setup(dev, data->req.txData, data->req.txLen,
+					     data->req.txLen >> dfs_shift, dfs_shift,
+					     data->dma_prepared);
+		if (ret < 0) {
+			LOG_ERR("TX DMA setup failed: %d", ret);
+			goto dma_rtio_exit;
+		}
 
-			ret = spi_max32_tx_dma_setup(dev, data->req.txData, data->req.txLen,
-						     data->req.txLen >> dfs_shift, dfs_shift,
-						     use_dma_reload);
-			if (ret < 0) {
-				LOG_ERR("TX DMA setup failed: %d", ret);
-				goto dma_rtio_exit;
-			}
-
-			if (!use_dma_reload) {
-				data->dma_prepared = true;
-				data->dma_spi_operation = ctx->config->operation;
-			}
+		if (!data->dma_prepared) {
+			data->dma_prepared = true;
+			data->dma_spi_operation = ctx->config->operation;
 		}
 
 		MXC_SPI_StartTransmission(cfg->regs);
@@ -705,7 +701,10 @@ static int spi_max32_tx_dma_load(const struct device *dev, const uint8_t *buf, u
 	if (use_reload) {
 		uint32_t src = buf ? (uint32_t)buf : (uint32_t)data->dummy;
 
-		/* Peripheral address is fixed by channel reqsel from dma_config; same as dest=0 there */
+		/*
+		 * Peripheral address is fixed by channel reqsel from dma_config;
+		 * same as dest=0 in the initial dma_config block.
+		 */
 		ret = dma_reload(config->tx_dma.dev, config->tx_dma.channel, src, 0, len);
 		if (ret < 0) {
 			LOG_ERR("Error reloading Tx DMA (%d)", ret);
@@ -772,7 +771,10 @@ static int spi_max32_rx_dma_load(const struct device *dev, const uint8_t *buf, u
 	if (use_reload) {
 		uint32_t dst = buf ? (uint32_t)buf : (uint32_t)data->dummy;
 
-		/* Peripheral address is fixed by channel reqsel from dma_config; same as source=0 there */
+		/*
+		 * Peripheral address is fixed by channel reqsel from dma_config;
+		 * same as source=0 in the initial dma_config block.
+		 */
 		ret = dma_reload(config->rx_dma.dev, config->rx_dma.channel, 0, dst, len);
 		if (ret < 0) {
 			LOG_ERR("Error reloading Rx DMA (%d)", ret);
@@ -834,7 +836,6 @@ static int spi_max32_transceive_dma(const struct device *dev)
 	uint32_t len, word_count;
 	uint8_t dfs_shift;
 	uint8_t dfs;
-	bool use_dma_reload;
 
 	len = spi_context_max_continuous_chunk(ctx);
 	dfs_shift = spi_max32_get_dfs_shift(ctx);
@@ -858,22 +859,21 @@ static int spi_max32_transceive_dma(const struct device *dev)
 		return ret;
 	}
 
-	use_dma_reload = data->dma_prepared &&
-			 (data->dma_spi_operation == ctx->config->operation);
-
-	ret = spi_max32_rx_dma_setup(dev, ctx->rx_buf, len, word_count, dfs_shift, use_dma_reload);
+	ret = spi_max32_rx_dma_setup(dev, ctx->rx_buf, len, word_count, dfs_shift,
+				     data->dma_prepared);
 	if (ret < 0) {
 		data->dma_prepared = false;
 		return ret;
 	}
 
-	ret = spi_max32_tx_dma_setup(dev, ctx->tx_buf, len, word_count, dfs_shift, use_dma_reload);
+	ret = spi_max32_tx_dma_setup(dev, ctx->tx_buf, len, word_count, dfs_shift,
+				     data->dma_prepared);
 	if (ret < 0) {
 		data->dma_prepared = false;
 		return ret;
 	}
 
-	if (!use_dma_reload) {
+	if (!data->dma_prepared) {
 		data->dma_prepared = true;
 		data->dma_spi_operation = ctx->config->operation;
 	}
