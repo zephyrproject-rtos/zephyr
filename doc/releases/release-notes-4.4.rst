@@ -555,6 +555,11 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_TIMEUTIL_APPLY_SKEW`
 
+* Userspace
+
+  * :c:func:`k_object_access_check`
+  * :c:func:`k_mem_domain_deinit`
+
 * Utilities
 
   * :abbr:`COBS (Consistent Overhead Byte Stuffing)` streaming support
