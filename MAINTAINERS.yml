@@ -5435,9 +5435,8 @@ TI SimpleLink Platforms:
     - drivers/*/*cc26*
     - drivers/*/*cc32*
     - dts/arm/ti/cc*
-    - dts/bindings/*/ti,*
+    - dts/bindings/*/ti,cc*
     - soc/ti/simplelink/
-    - dts/bindings/*/ti,*
     - modules/Kconfig.simplelink
   labels:
     - "platform: TI SimpleLink"
