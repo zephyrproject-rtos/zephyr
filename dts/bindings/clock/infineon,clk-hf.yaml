@@ -1,0 +1,36 @@
+# Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon High Frequency Clock(clk_hf)
+
+compatible: "infineon,clk-hf"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clocks:
+    required: true
+    description: HF CLock source
+
+  divider:
+    type: int
+    description: Divider for High Frequency Clock
+    default: 1
+    enum: [1, 2, 4, 8]
+
+  "#clock-cells":
+    const: 0
+
+  mem-clk-divider:
+    type: int
+    description: Memory clock divider for MEMCLK
+
+  slow-clk-divider:
+    type: int
+    description: |
+      Slow clock is used for CORTEX-M0 clock, slow clock is
+      derived from HF0 clock, if HF0 clock is configured
+      greater than slow clock max frequency, slow-clk-divider
+      is used to divide the HF0 clock to get respective slow
+      clock for CORTEX-M0. For more info see TRM SRSS Section
