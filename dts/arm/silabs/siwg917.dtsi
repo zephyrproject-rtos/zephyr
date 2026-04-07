@@ -79,7 +79,7 @@
 		interrupt-parent = <&nvic>;
 		interrupts = <74 0>;
 		interrupt-names = "nwp_irq";
-		antenna-selection = "ext-gpios";
+		antenna-selection = "internal";
 		support-1p8v;
 		enable-xtal-correction;
 		clock-frequency = <DT_FREQ_M(80)>;
