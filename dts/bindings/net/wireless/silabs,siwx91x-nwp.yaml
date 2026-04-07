@@ -13,6 +13,12 @@ compatible: "silabs,siwx91x-nwp"
 include: [base.yaml, pinctrl-device.yaml]
 
 properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
   interrupts:
     required: true
 
