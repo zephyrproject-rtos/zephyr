@@ -411,6 +411,10 @@ New APIs and options
     are requested. The existing ``get_stats`` API remains unchanged for backward
     compatibility.
 
+* Exception
+
+  * :kconfig:option:`CONFIG_EXCEPTION_DUMP_HOOK_ONLY`
+
 * Flash
 
   * :dtcompatible:`jedec,mspi-nor` now allows MSPI configuration of read, write and
