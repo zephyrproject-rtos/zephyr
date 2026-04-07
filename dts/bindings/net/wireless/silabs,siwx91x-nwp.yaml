@@ -16,11 +16,6 @@ properties:
   interrupts:
     required: true
 
-  stack-size:
-    type: int
-    description: Stack size for the NWP in bytes
-    required: true
-
   support-1p8v:
     type: boolean
     description: |
