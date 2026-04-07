@@ -23,6 +23,7 @@ from itertools import islice
 from pathlib import Path
 
 from twisterlib import ZEPHYR_BASE
+from twisterlib.testsuitedata import RequiredApplication
 
 import snippets
 
@@ -603,8 +604,8 @@ class TestPlan:
                                 )[0]
 
                         for req_app in suite.required_applications:
-                            if platform := req_app.get('platform', None):
-                                req_app['platform'] = self.verify_platforms_existence(
+                            if platform := req_app.platform:
+                                req_app.platform = self.verify_platforms_existence(
                                     [platform],
                                     f"required_applications.platform in {suite.name}"
                                 )[0]
@@ -1252,17 +1253,20 @@ class TestPlan:
 
         return instance.status not in do_not_process
 
-    def _find_required_instance(self, required_app, instance: TestInstance) -> TestInstance | None:
-        req_platform = required_app.get("platform", None) or instance.platform.name
+    def _find_required_instance(
+            self, required_app: RequiredApplication, instance: TestInstance
+    ) -> TestInstance | None:
+        req_platform = required_app.platform or instance.platform.name
         for inst in self.instances.values():
-            if required_app["name"] == inst.testsuite.id and req_platform == inst.platform.name:
+            if required_app.name == inst.testsuite.id and req_platform == inst.platform.name:
                 if self._should_instance_be_processed(inst):
                     return inst
                 break
         return None
 
-    def _find_required_application_in_outdir(self, required_app,
-                                             instance: TestInstance) -> str | None:
+    def _find_required_application_in_outdir(
+            self, required_app: RequiredApplication, instance: TestInstance
+    ) -> str | None:
         """Check if required application exists in build directory."""
         if not (
             self.options.no_clean
@@ -1272,12 +1276,11 @@ class TestPlan:
         ):
             return None
 
-        if platform := required_app.get("platform", None):
+        if platform := required_app.platform:
             platform = self.get_platform(platform)
         else:
             platform = instance.platform
-        name = required_app["name"]
-        glob_pattern = f"{self.options.outdir}/{platform.normalized_name}/**/{name}"
+        glob_pattern = f"{self.options.outdir}/{platform.normalized_name}/**/{required_app.name}"
         build_dirs = glob.glob(glob_pattern, recursive=True)
         if not build_dirs:
             return None
@@ -1315,10 +1318,10 @@ class TestPlan:
                         instance.required_build_dirs.append(req_build_dir)
                         continue
 
-                    instance.add_filter(f"Missing required application {required_app['name']}",
+                    instance.add_filter(f"Missing required application {required_app.name}",
                                         Filters.TESTSUITE)
                     logger.debug(
-                        f"{instance.name}: Required application '{required_app['name']}' was not"
+                        f"{instance.name}: Required application '{required_app.name}' was not"
                         " found. Please verify if required test is provided with --testsuite-root"
                         " or build all required applications and rerun twister with --no-cleanup"
                         " option."
