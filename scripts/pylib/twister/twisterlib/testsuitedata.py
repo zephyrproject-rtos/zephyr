@@ -77,3 +77,9 @@ class HarnessConfig:
 
     def __setitem__(self, key, value):
         setattr(self, key, value)
+
+
+@dataclass
+class RequiredApplication:
+    name: str
+    platform: str | None = None
