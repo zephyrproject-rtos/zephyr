@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Siemens AG
+# SPDX-License-Identifier: Apache-2.0
+description: Texas Instrument 8 channels SPI ADC
+
+compatible: "ti,ads131m08"
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+  drdy-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO for Data ready; active low
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO for Conversion synchronization or system reset; active low
+
+io-channel-cells:
+  - input

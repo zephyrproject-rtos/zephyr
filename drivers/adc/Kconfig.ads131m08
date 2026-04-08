@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Siemens AG
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ADS131M08
+	bool "Texas instruments ADS131M08"
+	default y
+	depends on DT_HAS_TI_ADS131M08_ENABLED
+	select ADC_CONFIGURABLE_INPUTS
+	select SPI
+	select GPIO
+	select ADS131M08_STREAM if ADC_STREAM
+	help
+	 Enable the driver for ADS131M08 ADC.
+
+config ADS131M08_STREAM
+	bool "Use FIFO to stream data"
+	depends on ADC_ADS131M08
+	select SPI_RTIO
+	select ADS131M08_TRIGGER
+	help
+	  Use this configuration option to enable streaming ADC data via RTIO.
+
+config ADS131M08_TRIGGER
+	bool "ADS131M08 interrupts"
+	depends on ADC_ADS131M08
+	help
+	  Enable interrupts for Texas Instruments ADS131M08.
